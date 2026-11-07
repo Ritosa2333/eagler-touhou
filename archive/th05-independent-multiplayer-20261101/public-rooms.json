@@ -1,0 +1,113 @@
+{
+  "schema": "eagler-touhou/th05-public-room-acceptance/1",
+  "url": "https://test.touhou.vip/",
+  "scope": "Actual published production Runtime and verified DATA; returning-user desktop browser room flow",
+  "targets": [
+    {
+      "game": "th05",
+      "players": 2,
+      "route": "rtc",
+      "passed": true,
+      "steps": [
+        "P1-directory",
+        "P1-room",
+        "P2-directory",
+        "P2-room",
+        "P1-ready",
+        "P2-ready",
+        "synchronized-start",
+        "actual-native-frame-180"
+      ],
+      "discoveryFallbacks": 4,
+      "runtime": [
+        {
+          "frame": 191,
+          "confirmed": 190,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "options": {
+            "player": 0,
+            "players": 2,
+            "mode": "lan",
+            "prediction": 0
+          }
+        },
+        {
+          "frame": 191,
+          "confirmed": 190,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "options": {
+            "player": 1,
+            "players": 2,
+            "mode": "lan",
+            "prediction": 0
+          }
+        }
+      ]
+    },
+    {
+      "game": "th05",
+      "players": 3,
+      "route": "relay",
+      "passed": true,
+      "steps": [
+        "P1-directory",
+        "P1-room",
+        "P2-directory",
+        "P2-room",
+        "P3-directory",
+        "P3-room",
+        "P1-ready",
+        "P2-ready",
+        "P3-ready",
+        "synchronized-start",
+        "actual-native-frame-180"
+      ],
+      "discoveryFallbacks": 6,
+      "runtime": [
+        {
+          "frame": 187,
+          "confirmed": 186,
+          "route": "relay",
+          "failed": false,
+          "error": "",
+          "options": {
+            "player": 0,
+            "players": 3,
+            "mode": "lan",
+            "prediction": 0
+          }
+        },
+        {
+          "frame": 187,
+          "confirmed": 186,
+          "route": "relay",
+          "failed": false,
+          "error": "",
+          "options": {
+            "player": 1,
+            "players": 3,
+            "mode": "lan",
+            "prediction": 0
+          }
+        },
+        {
+          "frame": 186,
+          "confirmed": 185,
+          "route": "relay",
+          "failed": false,
+          "error": "",
+          "options": {
+            "player": 2,
+            "players": 3,
+            "mode": "lan",
+            "prediction": 0
+          }
+        }
+      ]
+    }
+  ]
+}

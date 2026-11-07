@@ -40,7 +40,7 @@ bool PauseMenu::update(u32 pressed,u32 repeated){
    case 3:if(!child(134,6)||!child(143,6))return false;phase(14);break;
    case 4:for(i32 script:{135,144,150,152,155})if(!child(script,6))return false;phase(!progress.practice_record&&state.screen==PauseScreen::Pause?7:16);break;
   }state.age.set(0);}
-  if(!state.retry_controls){if((pressed&0x200000)&&menu.is_disabled(menu.selected)){for(i32 script:{135,144,150,152,155})if(!child(script,6))return false;phase(!progress.practice_record&&state.screen==PauseScreen::Pause?7:16);return true;}if(pressed&0x100){if(!close())return false;menu.select(0);phase(16);break;}}
+  if(!state.retry_controls){if((pressed&0x200000)&&!menu.is_disabled(4)){menu.select(4);for(i32 script:{135,144,150,152,155})if(!child(script,6))return false;phase(!progress.practice_record&&state.screen==PauseScreen::Pause?7:16);return true;}if(pressed&0x100){if(!close())return false;menu.select(0);phase(16);break;}}
   if(pressed&0x10000){if(!sound(7)||!child(132,6))return false;menu.select(1);phase(16);}break;
  case 7:case 9:
   if(age<20)break;if(age==20){menu.push();menu.count=2;menu.wrap=true;menu.select(1);if(!interrupt(state.menu_animation,14))return false;}

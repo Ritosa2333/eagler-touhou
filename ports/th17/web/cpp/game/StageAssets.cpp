@@ -13,14 +13,22 @@ i32 StageAssets::load_animation(const std::string& name,i32 preferred){
     if(!animations.load(bank,data.data(),data.size())||!animations.name_resource(bank,name)){fail("TH17 animation load failed: "+name+": "+animations.error);return -1;}loaded.emplace(name,bank);owned.push_back(bank);return bank;
 }
 bool StageAssets::animation(u32 slot,const std::string& name){if(slot<10||slot>=14)return fail("TH17 enemy animation alias outside stage banks");const i32 bank=load_animation(name,slot==10?12:i32(slot)+9);if(bank<0)return false;enemy_banks[slot-8]=bank;return true;}
+bool StageAssets::load_pilot(i32 character,i32 animal,ShtResource& shots,i32& bank){
+    if(u32(character)>=3||u32(animal)>=3)return fail("Invalid TH17 pilot loadout");
+    const std::string prefix="pl0"+std::to_string(character),shot_name=prefix+char('a'+animal)+".sht";
+    bank=load_animation(prefix+".anm",10);
+    if(bank<0)return false;
+    std::vector<u8> data;
+    return (read(shot_name,data)&&shots.open(data.data(),data.size()))||fail("Invalid TH17 shot resource: "+shot_name);
+}
 bool StageAssets::load(i32 stage,i32 selected_character,i32 selected_animal,const std::string& ascii_name){
     if(initialized)return fail("Stage assets already initialized");definition=StageConfiguration::get(stage);if(!definition||u32(selected_character)>=3||u32(selected_animal)>=3)return fail("Invalid TH17 stage loadout");character=selected_character;animal=selected_animal;
     if(ascii_name!="ascii.anm"&&ascii_name!="ascii_960.anm"&&ascii_name!="ascii_1280.anm")return fail("Invalid TH17 numeric font bank");
     const auto load=[&](i32& id,const std::string& name,i32 slot){id=load_animation(name,slot);return id>=0;};
     if(!load(ascii,ascii_name,2)||!animations.sprite_fallback(ascii)||!load(front,"front.anm",5)||!load(text,"text.anm",6)||!load(bullet,"bullet.anm",7)||!load(effect,"effect.anm",8)||!load(beast,"beast.anm",30))return false;
     enemy_banks[0]=bullet;enemy_banks[1]=effect;
-    const std::string prefix="pl0"+std::to_string(character),shot_name=prefix+char('a'+animal)+".sht";if(!load(player,prefix+".anm",10))return false;
-    std::vector<u8> data;if(!read(shot_name,data)||!shots.open(data.data(),data.size()))return fail("Invalid TH17 shot resource: "+shot_name);
+    if(!load_pilot(character,animal,shots,player))return false;
+    std::vector<u8> data;
     if(!read(definition->background,data)||!background.open(data.data(),data.size()))return fail("Invalid TH17 background: "+definition->background);
     if(!load(scenery,background.animation_name,9)||!load(logo,definition->logo,11))return false;
     const auto* message=definition->message(character,animal);if(!message||!read(*message,data)||!messages.open(data.data(),data.size(),false,source.localized_message(*message)))return fail("Invalid TH17 dialogue resource: "+messages.error);

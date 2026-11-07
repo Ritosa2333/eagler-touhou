@@ -69,14 +69,6 @@ TH17 普通版的产品能力表登记实际构建功能。逐项运行验收记
 
 当前生产构建的接入结果见[2026-10-30 验证记录](../../../archive/th17-development-20261030/migration-validation.md)，覆盖桌面 Chromium 的生产 Wasm、两种音乐模式、存档恢复与指定原版演示文件启动。
 
-## 检查
+## 多人版与同步
 
-```sh
-npm run ports:check -- --game=th17 --variant=normal
-node --test ports/th17/web/tests/adapter-browser.test.mjs
-npm run docs:check
-```
-
-`adapter-browser.test.mjs` 读取 `EAGLER_TH17_BUILD`（默认 `build-eagler/`）、`EAGLER_TH17_DATA`（默认 `games/th17/original/th17.dat`）、`EAGLER_TH17_MUSIC`（默认 `games/th17/assets-ogg/music`）和 `EAGLER_TH17_REPLAY`（默认个人解包的 `demo1.rpy`）。检查覆盖两种音乐模式、会话隔离、用户文件、输入清除、原生退出、IDBFS 跨文档恢复和原版录像启动。
-
-原生模块对照使用 WASI SDK，可通过 `TH17_WASI_CXX` 指定 clang++，先运行 `web/scripts/cpp/build.mjs`，再执行 `web/tests/cpp/*.test.mjs`。`TH17_UNICORN_MODULE` 指向个人安装的 `@alexaltea/unicorn-js/dist/unicorn_x86.js`；`web/reference/native/` 放开发包对照用 `unicorn-bounded.wasm`。字体重测工具的 `TH17_NATIVE_PACKAGE` 指向提供 Koffi 的 package.json。对照工具使用个人原版 EXE 和解包素材。原交付构建的版本、路线与设备范围随历史记录保留。
+联机会话、完整战斗回滚、房间与录像测试在 [TH17 MP 开发指南](../../th17-mp/docs/DEVELOPMENT.md)维护。通用修复沿[目录同步流程](../../../docs/adaptation/port-sync.md)进入多人版。

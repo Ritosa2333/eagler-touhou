@@ -1,7 +1,7 @@
 export interface ReplayStageDescription {id: number; label?: string; score: number | null; frames?: number}
 export interface ReplayDescription {
   name: string; date?: string; timestamp?: number; score?: number; slowdown?: number;
-  character: number; shot?: number; difficulty: number; lastStage?: number;
+  character: number; characters?: number[]; shot?: number; difficulty: number; lastStage?: number;
   spell?: string; spellName?: string; mode?: string; stages: ReplayStageDescription[];
 }
 
@@ -25,6 +25,9 @@ export function parseReplayDescription(value: unknown): ReplayDescription {
   if (Array.isArray(d.nameBytes) && d.nameBytes.length <= 128 && d.nameBytes.every(n => Number.isInteger(n) && n >= 0 && n <= 255))
     name = new TextDecoder('shift_jis').decode(new Uint8Array(d.nameBytes)).replace(/\0.*$/, '').trim();
   const result: ReplayDescription = {name, character: Number(d.character), difficulty: Number(d.difficulty), stages};
+  if (Array.isArray(d.characters) && [2, 3].includes(d.characters.length) &&
+      d.characters.every(character => Number.isInteger(character) && character >= 0 && character <= 3))
+    result.characters = [...d.characters];
   for (const key of ['score', 'slowdown', 'timestamp', 'lastStage', 'shot'] as const)
     if (typeof d[key] === 'number' && Number.isFinite(d[key])) result[key] = d[key];
   for (const key of ['date', 'spell', 'spellName', 'mode'] as const) if (typeof d[key] === 'string') result[key] = d[key].slice(0, 256);

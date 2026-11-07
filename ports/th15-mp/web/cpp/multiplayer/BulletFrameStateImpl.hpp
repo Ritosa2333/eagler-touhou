@@ -29,6 +29,8 @@ struct BulletFrameState::Data {
         bool cancelling=false,active=false,cached_overlay=false,cached_body=false;
         BulletScene::Slot::GrazeState graze;
         std::unique_ptr<AnmVm> body_image,overlay_image;
+        std::shared_ptr<AnmVmState> body_program;
+        std::shared_ptr<const AnmVm> unbound_overlay;
         Binding body_binding,overlay_binding;
         std::string error;
     };
@@ -64,7 +66,6 @@ struct BulletFrameState::Data {
         to.visible=from.visible;to.presentation_motion=from.presentation_motion;to.interpolation_idle=from.interpolation_idle;
     }
     std::vector<BodyMotion> body_motion;
-    std::vector<AnmVmState> body_programs;
     std::vector<AnmVm*> roots;
     u32 free_head=0,active_head=0,visible_count=0;
     BulletFrameContext context;
@@ -91,10 +92,14 @@ bool BulletFrameState::capture(BulletScene& scene,bool own_visuals,const AnmRegi
     const bool initialized=same_owner&&s.logic.size()==manager.slots.size();
     if(!initialized)s.logic=manager.slots;
     if(s.entries.size()<scene.slots.size())s.entries.resize(scene.slots.size());
-    if(!own_visuals&&s.body_motion.size()<scene.slots.size()){s.body_motion.resize(scene.slots.size());s.body_programs.resize(scene.slots.size());}
+    if(!own_visuals&&s.body_motion.size()<scene.slots.size())s.body_motion.resize(scene.slots.size());
     s.roots.clear();
     for(size_t i=0;i<scene.slots.size();++i){auto& slot=*scene.slots[i];auto& entry=s.entries[i];const auto& visual=slot.visual;const auto& live=manager.slots[i];
         const bool same_content=initialized&&!manager.snapshot_exposed[i]&&s.versions[i]==manager.snapshot_versions[i];
+        // An unchanged cold slot only needs attention if its runtime changed
+        // or it owns an overlay tree that may have registered children.
+        if(same_content&&!live.active&&!entry.active&&s.runtime_versions[i]==manager.snapshot_runtime_versions[i]&&
+           (own_visuals||(!visual.body.geometry.overlay&&!visual.overlay.geometry.overlay)))continue;
         const bool same_program=same_content&&!own_visuals&&entry.cached_body&&s.body_motion[i].program_version==visual.body.program_version;
         // Ring reuse normally sees the same plain active bullet. Its versions
         // prove that program, ownership and unbound overlay are unchanged.
@@ -115,24 +120,51 @@ bool BulletFrameState::capture(BulletScene& scene,bool own_visuals,const AnmRegi
             if((live.active&&(live.state.overlay_active||manager.snapshot_exposed[i]||visual.overlay.geometry.overlay))||borrowed(visual.overlay))s.roots.push_back(&slot.visual.overlay);
         }
         if(same_content&&!live.active&&!entry.active)continue;
-        const bool cached=entry.cached_overlay;
         entry.cancelling=slot.cancelling;
         if(!same_content||entry.graze.version!=slot.graze_state.version)entry.graze=slot.graze_state;
         entry.active=manager.slots[i].active;
         entry.cached_body=body_cached;
         entry.cached_overlay=entry.active&&!manager.slots[i].state.overlay_active&&!manager.snapshot_exposed[i]&&!visual.overlay.geometry.overlay;
+        auto& cache=slot.rollback_images;
+        const auto content=manager.snapshot_versions[i];
+        if(!entry.cached_body)entry.body_program.reset();
         if(entry.active&&own_visuals){
             if(!entry.body_image)entry.body_image=std::make_unique<AnmVm>();
             frame_values::copy_vm(*entry.body_image,visual.body);
         }else if(entry.cached_body){
-            if(!same_program)s.body_programs[i]=static_cast<const AnmVmState&>(visual.body);
+            if(!same_program){
+                const auto program=visual.body.program_version;
+                auto shared=cache.body_content==content&&cache.body_program==program?cache.body.lock():nullptr;
+                if(shared)entry.body_program=std::move(shared);
+                else{
+                    // Moving curves can change the program every tick. Reuse
+                    // this journal's buffer when no other frame owns it.
+                    if(!same_owner||!entry.body_program.unique())entry.body_program=std::make_shared<AnmVmState>();
+                    *entry.body_program=static_cast<const AnmVmState&>(visual.body);
+                    cache.body=entry.body_program;
+                    cache.body_content=content;
+                    cache.body_program=program;
+                }
+            }
             Data::copy_body(s.body_motion[i],visual.body);
         }
         // Unbound overlays do not tick. Keep their exact bytes and refresh the
         // cached image only when emission or rebinding gives it a new identity.
-        if(entry.active&&(own_visuals||entry.cached_overlay)){
+        if(entry.active&&!own_visuals&&entry.cached_overlay){
+            if(!same_content||!entry.unbound_overlay){
+                entry.unbound_overlay=cache.overlay_content==content?cache.overlay.lock():nullptr;
+                if(!entry.unbound_overlay){
+                    auto image=std::make_shared<AnmVm>();
+                    frame_values::copy_vm(*image,visual.overlay);
+                    entry.unbound_overlay=std::move(image);
+                    cache.overlay=entry.unbound_overlay;
+                    cache.overlay_content=content;
+                }
+            }
+        }else entry.unbound_overlay.reset();
+        if(entry.active&&own_visuals){
             if(!entry.overlay_image)entry.overlay_image=std::make_unique<AnmVm>();
-            if(own_visuals||!cached||!same_content)frame_values::copy_vm(*entry.overlay_image,visual.overlay);
+            frame_values::copy_vm(*entry.overlay_image,visual.overlay);
         }
         // Rebinding a cold visual replaces its VM but preserves these fields.
         // Any cold VM with live children is also captured by AnimationState.
@@ -160,11 +192,13 @@ bool BulletFrameState::restore(BulletScene& scene)const{
         if(manager.snapshot_exposed[i]||s.versions[i]!=manager.snapshot_versions[i]||slot.graze_state.version!=entry.graze.version)slot.graze_state=entry.graze;
         if(entry.active&&s.own_visuals)frame_values::copy_vm(visual.body,*entry.body_image);
         else if(entry.cached_body){
-            if(manager.snapshot_exposed[i]||s.versions[i]!=manager.snapshot_versions[i]||visual.body.program_version!=s.body_motion[i].program_version)static_cast<AnmVmState&>(visual.body)=s.body_programs[i];
+            if(manager.snapshot_exposed[i]||s.versions[i]!=manager.snapshot_versions[i]||visual.body.program_version!=s.body_motion[i].program_version)static_cast<AnmVmState&>(visual.body)=*entry.body_program;
             Data::restore_body(visual.body,s.body_motion[i]);visual.body.error.clear();
             if(!visual.body.geometry.empty())visual.body.geometry.clear();
         }else if(!entry.active)entry.body_binding.restore(visual.body);
-        if(entry.active&&(s.own_visuals||entry.cached_overlay)&&(s.own_visuals||manager.snapshot_exposed[i]||s.versions[i]!=manager.snapshot_versions[i]))frame_values::copy_vm(visual.overlay,*entry.overlay_image);else if(!entry.active)entry.overlay_binding.restore(visual.overlay);
+        if(entry.active&&s.own_visuals)frame_values::copy_vm(visual.overlay,*entry.overlay_image);
+        else if(entry.active&&entry.cached_overlay&&(manager.snapshot_exposed[i]||s.versions[i]!=manager.snapshot_versions[i]))frame_values::copy_vm(visual.overlay,*entry.unbound_overlay);
+        else if(!entry.active)entry.overlay_binding.restore(visual.overlay);
         visual.resource=entry.resource;visual.rate=entry.rate;visual.error=entry.error;
     }
     // Retain the monotonic allocator, restore identities of the captured content.

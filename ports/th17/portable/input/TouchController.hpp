@@ -12,15 +12,15 @@ struct TouchState {int context=0,instance=0;bool ready=false,choice=false;float 
 struct TouchSample {bool keys[256]{};int motion=0;float x=0,y=0;};
 class TouchController {
     struct Gesture {bool active=false;int id=0,count=0;float x=0,y=0,last_x=0,last_y=0;std::uint64_t start=0;};
-    Gesture menu,tap;eagler::input::DialogueGesture dialogue;std::set<int> fingers;int primary=0,instance=0,context=-1;
+    Gesture menu,tap;eagler::input::DialogueGesture dialogue;std::set<int> fingers;int primary=0,instance=0,context=-1,menu_instance=0;
     bool dragging=false,motion_blocked=false,tap_armed=false,tap_moved=false;float previous_x=0,previous_y=0,target_x=0,target_y=0,tap_x=0,tap_y=0;
     std::uint64_t tap_time=0;int confirm_ticks=0,bomb_ticks=0,escape_ticks=0;std::uint32_t bomb_serial=0,escape_serial=0;
     void sync_context(const TouchState& s){
-        if(context==s.context)return;
+        if(context==s.context&&(s.context!=0||menu_instance==s.instance))return;
         if((context==1||context==2)&&(s.context==1||s.context==2)){
             dialogue.clear();tap={};tap_armed=false;confirm_ticks=0;
         }else {cancel();confirm_ticks=bomb_ticks=escape_ticks=0;}
-        context=s.context;
+        context=s.context;menu_instance=s.instance;
     }
 public:
     bool enabled=true,unlimited=false,fire=false,focus=false,two_finger=false,double_tap=false;
@@ -34,7 +34,7 @@ public:
         if(type==0&&fingers.count(id)){fingers.erase(id);if(primary==id)clear_motion();if(menu.id==id)menu={};dialogue.erase(id);}
         if(type==2){fingers.erase(id);
             if(s.context==2&&dialogue.end(id,px,py,now,s.choice))confirm_ticks=3;else dialogue.erase(id);
-            if(menu.active&&(menu.id==id||menu.count>=2)){if(std::abs(menu.last_x-menu.x)<=24&&std::abs(menu.last_y-menu.y)<=24){if(menu.count>=2)escape_ticks=3;else confirm_ticks=3;}menu={};}
+            if(menu.active&&(menu.id==id||menu.count>=2)){if(std::abs(px-menu.x)<=24&&std::abs(py-menu.y)<=24){if(menu.count>=2){escape_ticks=3;confirm_ticks=0;}else if(!escape_ticks)confirm_ticks=3;}menu={};}
             if(tap.active&&tap.id==id){const float dx=px-tap.x,dy=py-tap.y;tap_armed=double_tap&&s.context==1&&now-tap.start<=220&&!tap_moved&&dx*dx+dy*dy<=576;tap_x=px;tap_y=py;tap_time=now;tap={};}
             if(primary==id)clear_motion();return;
         }

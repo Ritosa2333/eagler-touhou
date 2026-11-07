@@ -9,8 +9,8 @@
 #include <vector>
 #include <new>
 
-namespace {bool count_allocations=false;size_t allocation_count=0,largest_allocation=0;}
-void* operator new(size_t bytes){if(count_allocations){++allocation_count;largest_allocation=std::max(largest_allocation,bytes);}if(auto* value=std::malloc(bytes?bytes:1))return value;throw std::bad_alloc();}
+namespace {bool count_allocations=false;size_t allocation_count=0,largest_allocation=0,allocation_bytes=0;}
+void* operator new(size_t bytes){if(count_allocations){++allocation_count;allocation_bytes+=bytes;largest_allocation=std::max(largest_allocation,bytes);}if(auto* value=std::malloc(bytes?bytes:1))return value;throw std::bad_alloc();}
 void operator delete(void* value)noexcept{std::free(value);}
 void* operator new[](size_t bytes){return ::operator new(bytes);}
 void operator delete[](void* value)noexcept{std::free(value);}
@@ -87,17 +87,53 @@ void overflow_and_wrap(){
     require(registry.count()==8193&&order(registry)==expected,"overflow and generation-wrap order retained");
     for(auto h:handles)require(registry.find(h)!=nullptr,"all exact wrapped handles resolve");
 }
+void restore_pool_growth(){
+    AnmRegistry registry;
+    auto* first=registry.allocate();
+    auto* recycled=registry.allocate();
+    auto* third=registry.allocate();
+    require(registry.slot(*first)==0&&registry.slot(*recycled)==1&&registry.slot(*third)==2,"initial animation slots");
+    require(registry.discard(*recycled),"recycle a slot below the allocation frontier");
+    AnimationState before,after;
+    require(before.capture(registry),"capture recycled slot and untouched suffix");
+    require(registry.slot(*registry.allocate())==1&&registry.slot(*registry.allocate())==3,"use recycled slot before growing");
+    require(after.capture(registry),"capture grown pool");
+    require(before.restore(registry),"restore smaller pool");
+    require(registry.slot(*registry.allocate())==1&&registry.slot(*registry.allocate())==3,"restore exact recycled and untouched order");
+    require(before.restore(registry)&&after.restore(registry),"restore a larger pool from a smaller one");
+    require(registry.count()==4&&registry.slot(*registry.allocate())==4,"grown pool keeps its next untouched slot");
+}
 void unregistered_overlay_owner(){
     AnmRegistry registry;AnmVm owner;owner.geometry.overlay=std::make_unique<AnmOverlay>();
     owner.geometry.overlay->panels[0]=std::make_unique<AnmVm>();auto* panel=owner.geometry.overlay->panels[0].get();
     panel->creation_parent=&owner;panel->visual.translation={43,81,0};
+    panel->geometry.overlay=std::make_unique<AnmOverlay>();
+    auto& nested=panel->geometry.overlay->panels[1];
+    nested=std::make_unique<AnmVm>();
+    auto& sibling=owner.geometry.overlay->panels[2];
+    sibling=std::make_unique<AnmVm>();
+    nested->rotation_parent=sibling.get();
+    sibling->creation_parent=nested.get();
     auto* child=registry.allocate();const auto handle=registry.submit(*child,2);require(registry.attach(*child,*panel),"attach to nested owned VM");child->creation_parent=child->rotation_parent=panel;
+    auto* deep_child=registry.allocate();
+    const auto deep_handle=registry.submit(*deep_child,2);
+    require(registry.attach(*deep_child,*nested),"attach to deeper owned VM");
+    deep_child->rotation_parent=nested.get();
     AnimationState saved;require(saved.capture(registry,{&owner}),"capture unregistered overlay owner");
-    require(registry.destroy_tree(*child),"remove future nested child");owner.geometry.overlay.reset();
-    require(saved.restore(registry),"recreate owning root before borrowed panel binding");
-    auto* restored=owner.geometry.overlay->panels[0].get();child=registry.find(handle);
-    require(restored&&child&&child->creation_parent==restored&&restored->creation_parent==&owner,"nested registry and owning-VM references rebound together");
+    require(registry.destroy_tree(*panel)&&registry.destroy_tree(*nested),"remove future nested owners");
+    owner.geometry.overlay.reset();
+    AnmVm replacement;
+    require(saved.restore(registry,[&](AnmVm* original){return original==&owner?&replacement:original;}),"recreate owning root before borrowed panel binding");
+    auto* restored=replacement.geometry.overlay->panels[0].get();child=registry.find(handle);
+    require(restored&&child&&child->creation_parent==restored&&restored->creation_parent==&replacement,"nested registry and owning-VM references rebound together");
     require(restored->visual.translation.x==43&&registry.children(*restored).size()==1,"nested owned payload and registry graph");
+    auto* restored_nested=restored->geometry.overlay->panels[1].get();
+    auto* restored_sibling=replacement.geometry.overlay->panels[2].get();
+    deep_child=registry.find(deep_handle);
+    require(restored_nested&&restored_sibling&&deep_child&&deep_child->rotation_parent==restored_nested,
+            "deeper panel and its registered child rebound together");
+    require(restored_nested->rotation_parent==restored_sibling&&restored_sibling->creation_parent==restored_nested,
+            "panel references survive sibling and depth changes in traversal");
 }
 void repeated_restore_allocations(){
     AnmRegistry registry;std::vector<u32> handles;
@@ -168,6 +204,53 @@ void bounded_snapshot_growth(){
     require(nodes.restore(graph),"restore after bounded node growth");
     for(unsigned i=0;i<handles.size();++i)require(graph.find(handles[i])->visual.translation.x==float(i),"bounded node growth lost VM state");
 }
+void shared_snapshot_storage(){
+    AnmRegistry registry;std::vector<AnmVm> roots(512);std::vector<AnmVm*> input;
+    for(unsigned i=0;i<roots.size();++i){roots[i].visual.translation.x=float(i);input.push_back(&roots[i]);}
+    std::array<AnimationState,13> ring;
+    require(ring[0].capture(registry,input),"warm shared frame images");
+    allocation_bytes=0;count_allocations=true;
+    for(unsigned i=1;i<ring.size();++i)require(ring[i].capture(registry,input),"capture unchanged owning roots");
+    count_allocations=false;
+    std::printf("13 frames / 512 unchanged roots: %zu additional allocated bytes; VM bytes %zu\n",allocation_bytes,sizeof(AnmVm));
+    require(allocation_bytes<roots.size()*sizeof(AnmVm)*2,"unchanged VMs were cloned into every rollback slot");
+    roots[5].visual.translation.x=777;
+    roots[7].geometry.trail=std::make_unique<AnmTrail>();roots[7].geometry.trail->angle=3;
+    AnimationState changed;require(changed.capture(registry,input),"capture changed shared root and geometry");
+    roots[5].visual.translation.x=-1;roots[7].geometry.trail->angle=-1;
+    for(auto& frame:ring){
+        require(frame.restore(registry),"restore immutable shared frame");
+        require(roots[5].visual.translation.x==5&&!roots[7].geometry.trail,"future writes changed a retained snapshot");
+    }
+    require(changed.restore(registry),"restore copy-on-write frame");
+    require(roots[5].visual.translation.x==777&&roots[7].geometry.trail&&roots[7].geometry.trail->angle==3,"copy-on-write lost updated VM or geometry");
+    for(auto& frame:ring){frame.discard();require(!frame.ready()&&frame.instances()==0,"confirmed snapshot remains ready");
+        require(frame.retained_bytes()<roots.size()*sizeof(AnmVm)/2,"confirmed snapshot still owns its VM payloads");}
+    changed.discard();
+    require(ring[0].capture(registry,{input[0]}),"reuse after releasing confirmed snapshots");
+    roots[0].visual.translation.x=-1;require(ring[0].restore(registry)&&roots[0].visual.translation.x==0,"discard/reuse lost root identity");
+}
+void confirmed_image_reuse(){
+    AnmRegistry registry;
+    std::array<AnmVm,64> roots;
+    std::vector<AnmVm*> input;
+    for(auto& root:roots)input.push_back(&root);
+    AnimationState confirmed,pending;
+    require(confirmed.capture(registry,input),"capture first flat frame");
+    for(auto& root:roots)root.visual.translation.x=1;
+    require(pending.capture(registry,input),"retain next flat frame");
+    confirmed.discard();
+    for(auto& root:roots)root.visual.translation.x=2;
+    allocation_count=0;
+    count_allocations=true;
+    const bool captured=confirmed.capture(registry,input);
+    count_allocations=false;
+    require(captured&&allocation_count==0,"confirmed flat images must be reused without allocation");
+    require(pending.restore(registry),"restore the still-pending frame");
+    for(const auto& root:roots)require(root.visual.translation.x==1,"image reuse overwrote a retained frame");
+    require(confirmed.restore(registry),"restore the frame using recycled images");
+    for(const auto& root:roots)require(root.visual.translation.x==2,"recycled image retained stale state");
+}
 void geometry_copy_reuse(){
     AnmVm source,target;
     source.geometry.distortion=std::make_unique<AnmDistortion>();
@@ -228,4 +311,4 @@ void stopped_wait(){
 }
 
 }
-int main(){exact_graph();frozen_root();overflow_and_wrap();unregistered_overlay_owner();repeated_restore_allocations();capture_index_and_root_reuse();bounded_snapshot_growth();geometry_copy_reuse();tracked_interpolation();stopped_wait();std::puts("TH15 animation rollback ownership checks passed");}
+int main(){exact_graph();frozen_root();overflow_and_wrap();restore_pool_growth();unregistered_overlay_owner();repeated_restore_allocations();capture_index_and_root_reuse();bounded_snapshot_growth();shared_snapshot_storage();confirmed_image_reuse();geometry_copy_reuse();tracked_interpolation();stopped_wait();std::puts("TH15 animation rollback ownership checks passed");}

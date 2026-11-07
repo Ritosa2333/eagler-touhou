@@ -1,7 +1,7 @@
 #include "RoaringSystem.hpp"
 #include <cmath>
 namespace th17 {
-RoaringSystem::~RoaringSystem(){for(u32* h:{&visuals.hud,&visuals.outer_timer,&visuals.inner_timer,&visuals.mode_effect,&visuals.break_effect,&visuals.animal_effect,&visuals.reward_effect})animations.retire(*h);for(auto& h:visuals.otter_orbs)animations.retire(h);}
+RoaringSystem::~RoaringSystem(){for(u32* h:{&visuals.hud,&visuals.outer_timer,&visuals.inner_timer,&visuals.mode_effect,&visuals.break_effect,&visuals.animal_effect,&visuals.reward_effect})animations.retire(*h);for(auto& h:visuals.otter_orbs)animations.retire(h);for(auto& orbs:partner_orbs)for(auto& h:orbs)animations.retire(h);}
 bool RoaringSystem::interrupt(u32 handle,i32 label,bool immediate){if(animations.interrupt(handle,label,immediate))return true;error=animations.error;return false;}
 bool RoaringSystem::create(u32& handle,i32 script,const Vec3& p){handle=animations.create(resource,script,-1,0,p);if(handle)return true;error=animations.error;return false;}
 bool RoaringSystem::initialize_hud(){return create(visuals.hud,13);}
@@ -20,7 +20,36 @@ bool RoaringSystem::display_slot(i32 index){
     if(index<state.count)return send(*icon,4)&&send(*icon,state.inventory[u32(index)]+6)&&send(*border,4);
     return send(*icon,5)&&send(*border,5);
 }
-bool RoaringSystem::create_orbs(){for(u32 i=0;i<3;i++){if(!animations.retire(visuals.otter_orbs[i])||!create(visuals.otter_orbs[i],i32(i)+37,player.position)){error=animations.error;return false;}}return true;}
+bool RoaringSystem::create_orbs(std::array<u32,3>& orbs,const Vec3& position){
+    for(u32 i=0;i<orbs.size();++i)
+        if(!animations.retire(orbs[i])||!create(orbs[i],i32(i)+37,position)){error=animations.error;return false;}
+    return true;
+}
+bool RoaringSystem::stop_orbs(std::array<u32,3>& orbs){
+    for(auto& h:orbs){if(!interrupt(h,1))return false;h=0;}
+    return true;
+}
+bool RoaringSystem::stop_orbs(){
+    if(!stop_orbs(visuals.otter_orbs))return false;
+    for(auto& orbs:partner_orbs)if(!stop_orbs(orbs))return false;
+    return true;
+}
+bool RoaringSystem::update_orbs(std::array<u32,3>& orbs,const Vec3& position){
+    float z=float(position.z*2.f);
+    for(auto& h:orbs){
+        auto* vm=animations.registry.find(h);
+        if(!vm){h=0;continue;}
+        vm->visual.translation=position;
+        const float angle=float(vm->variables.rotation.z-.34906584f);
+        z=float(position.z+z);
+        const Vec3 p{float(float(std::cos(double(angle))*96.0)+position.x),float(position.y+float(std::sin(double(angle))*96.0)),z};
+        if(!host.cancel_bullets(p,28.f,1)||!host.cancel_lasers(p,28.f,1,true)){error="Otter barrier cancellation failed";return false;}
+        auto* source=damage.find(damage.circle(p,28.f,0.f,2,5));
+        if(!source){error="Otter barrier damage source unavailable";return false;}
+        source->callback_kind=4;
+    }
+    return true;
+}
 bool RoaringSystem::scale_timers(){
     auto* outer=animations.registry.find(visuals.outer_timer);auto* inner=animations.registry.find(visuals.inner_timer);if(!outer||!inner){error="Roaring timer animation missing";return false;}
     outer->visual.flags|=8;outer->visual.sprite_size.x=float(float(state.duration)*.125f+2.f);inner->visual.flags|=8;inner->visual.sprite_size.x=float(state.countdown.fractional*.125f);return true;
@@ -31,7 +60,7 @@ bool RoaringSystem::activate(){
     if(occurrences<3||(session.practice_tools&PracticeNoHyper)){state.kind=4;state.duration=1140;matched=3;}else{state.kind=matched+1;constexpr i32 durations[]={0,0,0,840,1140,1500};state.duration=durations[occurrences];if(matched==session.animal)state.duration=wrapping_add(state.duration,480);}
     state.countdown.set(state.duration);if(!interrupt(visuals.hud,matched+28,true))return false;state.flags|=2;state.extension=180;
     if(!animations.retire(visuals.outer_timer)||!create(visuals.outer_timer,30)||!animations.retire(visuals.inner_timer)||!create(visuals.inner_timer,31)||!scale_timers()){if(error.empty())error=animations.error;return false;}
-    if(state.kind==2){if(!create_orbs())return false;}else player.behavior_flags|=0x40;
+    if(state.kind==2){if(!create_orbs(visuals.otter_orbs,player.position))return false;}else player.behavior_flags|=0x40;
     if(state.kind!=4&&!create(visuals.animal_effect,state.kind+40,player.position))return false;
     if(!animations.retire(visuals.mode_effect)||!create(visuals.mode_effect,32,player.position)){if(error.empty())error=animations.error;return false;}
     if(!host.sound(77,true)){error="Roaring start audio failed";return false;}
@@ -46,7 +75,7 @@ bool RoaringSystem::collect(i32 kind){
 }
 bool RoaringSystem::break_roaring(bool death){
     error.clear();if(!create(visuals.break_effect,33,player.position)||!host.sound(44,true)||!interrupt(visuals.mode_effect,2)||!interrupt(visuals.outer_timer,1)||!interrupt(visuals.inner_timer,1)||!interrupt(visuals.animal_effect,1))return false;
-    visuals.outer_timer=visuals.inner_timer=visuals.animal_effect=0;if(state.kind==2)for(auto& h:visuals.otter_orbs){if(!interrupt(h,1))return false;h=0;}
+    visuals.outer_timer=visuals.inner_timer=visuals.animal_effect=0;if(state.kind==2&&!stop_orbs())return false;
     state.flags=(state.flags&~8u)|(death?8u:0u)|4;state.countdown.set(40);visuals.damage_source=damage.circle(player.position,8,0,40,5);if(state.kind==3)player.behavior_flags|=0x40;
     if(!(state.flags&0x800)&&!death&&(spell.flags&1)){if(spell.frame>=60){spell.bonus=0;spell.flags&=~0x22u;}else if(session.bomb_state==1)spell.flags|=0x20;}
     invulnerability.set(60);break_count=wrapping_add(break_count,1);break_chain=0;return true;
@@ -85,7 +114,7 @@ bool RoaringSystem::finish(){
         if(!animations.retire(visuals.reward_effect)||!create(visuals.reward_effect,44,{float(player.position.x*2.f),float(player.position.y*2.f),float(player.position.z*2.f)})){if(error.empty())error=animations.error;return false;}
         state.reward_age.set(0);
     }
-    if(state.kind==2)for(auto& h:visuals.otter_orbs){if(!interrupt(h,1))return false;h=0;}
+    if(state.kind==2&&!stop_orbs())return false;
     if(!host.sound(66,true)||!interrupt(visuals.mode_effect,1))return false;visuals.mode_effect=0;
     if(!reward_items())return false;state.flags&=~6u;
     if(!interrupt(visuals.outer_timer,1)||!interrupt(visuals.inner_timer,1)||!interrupt(visuals.animal_effect,1))return false;
@@ -93,7 +122,7 @@ bool RoaringSystem::finish(){
     state.count=0;for(i32 i=0;i<5;i++){state.inventory[u32(i)]=0;if(!display_slot(i))return false;}
     for(i32 i=0;i<state.reserve_count;i++){if(!collect(state.reserve[u32(i)]))return false;state.reserve[u32(i)]=0;if(!display_slot(i))return false;}state.reserve_count=0;return true;
 }
-bool RoaringSystem::update(float rate,bool hud_collect,u32 held){
+bool RoaringSystem::update(float rate,bool hud_collect,u32 held,const AnimalSpiritTargets* team){
     error.clear();animations.rate=rate;
     if(!(state.flags&1)){if(player.position.y>400.f&&player.position.x<-64.f){if(!interrupt(visuals.hud,3))return false;state.flags|=1;}}
     else if(player.position.y<384.f||player.position.x>-64.f){if(!interrupt(visuals.hud,2))return false;state.flags&=~1u;}
@@ -110,9 +139,9 @@ bool RoaringSystem::update(float rate,bool hud_collect,u32 held){
             if(host.active_player_shot()||visuals.hit_delay){state.countdown.decrement(&rate);state.flags|=0x400;}
         }
         if(state.flags&0x400){if(auto* vm=animations.registry.find(visuals.inner_timer)){if(animations.tick_instance(*vm)<0){error=animations.error;return false;}}else visuals.inner_timer=0;}
-        if(state.flags&0x100){if(auto* vm=animations.registry.find(visuals.mode_effect))pause(pause,*vm,false);state.flags&=~0x100u;if(state.kind==2&&!create_orbs())return false;}
+        if(state.flags&0x100){if(auto* vm=animations.registry.find(visuals.mode_effect))pause(pause,*vm,false);state.flags&=~0x100u;if(state.kind==2&&!create_orbs(visuals.otter_orbs,player.position))return false;}
     }else{
-        if(!(state.flags&0x100)&&state.kind==2)for(auto& h:visuals.otter_orbs){if(!interrupt(h,1))return false;h=0;}
+        if(!(state.flags&0x100)&&state.kind==2&&!stop_orbs())return false;
         if(auto* vm=animations.registry.find(visuals.mode_effect))pause(pause,*vm,true);state.flags|=0x100;
     }
     if(visuals.hit_delay)visuals.hit_delay=wrapping_add(visuals.hit_delay,-1);
@@ -122,11 +151,17 @@ bool RoaringSystem::update(float rate,bool hud_collect,u32 held){
         for(u32 handle:{visuals.mode_effect,visuals.animal_effect})if(auto* vm=animations.registry.find(handle))vm->visual.translation=player.position;
         if(!(state.flags&0x100)){
             if(state.kind==2){
-                float z=scaled.z;for(auto& h:visuals.otter_orbs){auto* vm=animations.registry.find(h);if(!vm){h=0;continue;}vm->visual.translation=player.position;
-                    const float angle=float(vm->variables.rotation.z-.34906584f);z=float(player.position.z+z);
-                    const Vec3 p{float(float(std::cos(double(angle))*96.0)+player.position.x),float(player.position.y+float(std::sin(double(angle))*96.0)),z};
-                    if(!host.cancel_bullets(p,28.f,1)||!host.cancel_lasers(p,28.f,1,true)){error="Otter barrier cancellation failed";return false;}
-                    auto* source=damage.find(damage.circle(p,28.f,0.f,2,5));if(!source){error="Otter barrier damage source unavailable";return false;}source->callback_kind=4;
+                if(!team||(*team)[0].active){
+                    if(team&&!visuals.otter_orbs[0]&&!create_orbs(visuals.otter_orbs,player.position))return false;
+                    if(!update_orbs(visuals.otter_orbs,player.position))return false;
+                }else if(!stop_orbs(visuals.otter_orbs))return false;
+                if(team)for(u32 seat=1;seat<team->size();++seat){
+                    auto& orbs=partner_orbs[seat-1];
+                    const auto& target=(*team)[seat];
+                    if(target.active){
+                        if(!orbs[0]&&!create_orbs(orbs,target.position))return false;
+                        if(!update_orbs(orbs,target.position))return false;
+                    }else if(!stop_orbs(orbs))return false;
                 }
             }
             if((held&2)&&!break_roaring(false))return false;

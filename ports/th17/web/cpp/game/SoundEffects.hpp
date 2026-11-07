@@ -9,6 +9,9 @@ extern const std::array<const char*,69> sound_samples;
 struct SoundOutput {
  virtual ~SoundOutput()=default;virtual bool sound_available(u32)const=0;virtual bool sound_playing(u32)=0;
  virtual void sound_stop(u32)=0;virtual void sound_position(u32,u32)=0;virtual void sound_pan(u32,i32)=0;virtual void sound_volume(u32,i32)=0;virtual void sound_play(u32,u32 flags)=0;
+ virtual void sound_restart(u32 id,i32 pan,i32 volume,u32 flags){
+    sound_stop(id);sound_position(id,0);sound_pan(id,pan);sound_volume(id,volume);sound_play(id,flags);
+ }
 };
 struct SoundQueue {std::array<i32,12> indices{},counts{};std::array<std::array<i32,128>,12> pans{};};
 struct SoundVoice {i32 renewal=-1,pan=0;bool resume=false;const SoundDefinition* definition=nullptr;};

@@ -1,0 +1,80 @@
+{
+  "sourceRevision": "5ed411c7bbf405444565a2172d8ce1998aec92e5",
+  "runtime": {
+    "normal": "c3ea26fa41072f465d8bba80b46bc718c36d2442127e4b10f8df9b5ef9cd74d2",
+    "multiplayer": "a705fa701748e8db652d7fdaf042e8c3aff579351c3a5f0e53b17ec507c44193"
+  },
+  "nativeChecks": {
+    "testsPassed": 2,
+    "retailShotTables": ["pl01a.sht", "pl01b.sht", "pl01c.sht"],
+    "fullPowerLaserCounts": { "ordinary": 4, "eagle": 5, "wolf": 0 },
+    "smallPowerHundredths": { "twoSeats": 2, "threeSeats": 3 }
+  },
+  "normalAdapter": {
+    "testsPassed": 1,
+    "scope": "Title, frame and audio events, exit, IDBFS reload, OGG and original replay"
+  },
+  "browserRooms": {
+    "engine": "Chromium",
+    "resolution": [1280, 960],
+    "seatsShareBrowserPage": true,
+    "cpuSlowdownFactor": 2,
+    "guestInputDelayMs": 110,
+    "baselineWasm": "9c9c7267c4a2bec16a36b09fd037cb17130a4299d2ae2032a6755bc90352aa65",
+    "comparisonMetric": "RAF callbacks with a completed simulation tick per second, recorded by both builds",
+    "rooms": [
+      {
+        "difficulty": "Normal",
+        "seats": 2,
+        "matchingConfirmedFrames": 1057,
+        "initialPowerHundredths": [100, 100],
+        "hostCallbacksWithTicksPerSecond": [15.24, 20.16],
+        "hostSimulationTicksPerSecond": [22.07, 41.85],
+        "hostWindowCommitsPerSecond": 20.16,
+        "hostRollbackP95Ms": [7.18, 6.83],
+        "corrections": [59, 8]
+      },
+      {
+        "difficulty": "Normal",
+        "seats": 3,
+        "matchingConfirmedFrames": 1052,
+        "initialPowerHundredths": [100, 100, 100],
+        "hostCallbacksWithTicksPerSecond": [10.90, 13.63],
+        "hostSimulationTicksPerSecond": [13.16, 16.43],
+        "hostWindowCommitsPerSecond": 13.65,
+        "hostRollbackP95Ms": [8.90, 8.05],
+        "corrections": [78, 14, 1]
+      },
+      {
+        "difficulty": "Extra",
+        "seats": 2,
+        "matchingConfirmedFrames": 1054,
+        "initialPowerHundredths": [400, 400],
+        "hostCallbacksWithTicksPerSecond": [16.31, 18.19],
+        "hostSimulationTicksPerSecond": [22.27, 29.19],
+        "hostWindowCommitsPerSecond": 18.22,
+        "hostRollbackP95Ms": [8.16, 9.23],
+        "corrections": [56, 9]
+      },
+      {
+        "difficulty": "Extra",
+        "seats": 3,
+        "matchingConfirmedFrames": 1053,
+        "initialPowerHundredths": [400, 400, 400],
+        "hostCallbacksWithTicksPerSecond": [11.04, 12.53],
+        "hostSimulationTicksPerSecond": [13.46, 13.94],
+        "hostWindowCommitsPerSecond": 12.86,
+        "hostRollbackP95Ms": [9.77, 10.17],
+        "corrections": [81, 15, 10]
+      }
+    ]
+  },
+  "stageTransition": {
+    "wasm": "a71897fb77ca98d15bc85e455fd5c02c58864c491d152d02971f10f2680db0e7",
+    "seats": 2,
+    "cpuSlowdownFactor": 1,
+    "guestInputDelayMs": 110,
+    "matchingConfirmedFrames": 10224,
+    "matchingStageTwoFrames": 249
+  }
+}

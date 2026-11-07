@@ -2260,6 +2260,86 @@
     "id": "multiplayer_loadout_th15_reisen",
     "params": []
   },
+  "game.title.th17mp": {
+    "id": "game_title_th17mp",
+    "params": []
+  },
+  "multiplayer.character": {
+    "id": "multiplayer_character",
+    "params": []
+  },
+  "multiplayer.firstSpell": {
+    "id": "multiplayer_firstSpell",
+    "params": []
+  },
+  "multiplayer.secondSpell": {
+    "id": "multiplayer_secondSpell",
+    "params": []
+  },
+  "multiplayer.animalSpirit": {
+    "id": "multiplayer_animalSpirit",
+    "params": []
+  },
+  "multiplayer.character.th17_reimu": {
+    "id": "multiplayer_character_th17_reimu",
+    "params": []
+  },
+  "multiplayer.character.th17_marisa": {
+    "id": "multiplayer_character_th17_marisa",
+    "params": []
+  },
+  "multiplayer.character.th17_youmu": {
+    "id": "multiplayer_character_th17_youmu",
+    "params": []
+  },
+  "multiplayer.spirit.th17_wolf": {
+    "id": "multiplayer_spirit_th17_wolf",
+    "params": []
+  },
+  "multiplayer.spirit.th17_otter": {
+    "id": "multiplayer_spirit_th17_otter",
+    "params": []
+  },
+  "multiplayer.spirit.th17_eagle": {
+    "id": "multiplayer_spirit_th17_eagle",
+    "params": []
+  },
+  "multiplayer.loadout.th17_reimu_wolf": {
+    "id": "multiplayer_loadout_th17_reimu_wolf",
+    "params": []
+  },
+  "multiplayer.loadout.th17_reimu_otter": {
+    "id": "multiplayer_loadout_th17_reimu_otter",
+    "params": []
+  },
+  "multiplayer.loadout.th17_reimu_eagle": {
+    "id": "multiplayer_loadout_th17_reimu_eagle",
+    "params": []
+  },
+  "multiplayer.loadout.th17_marisa_wolf": {
+    "id": "multiplayer_loadout_th17_marisa_wolf",
+    "params": []
+  },
+  "multiplayer.loadout.th17_marisa_otter": {
+    "id": "multiplayer_loadout_th17_marisa_otter",
+    "params": []
+  },
+  "multiplayer.loadout.th17_marisa_eagle": {
+    "id": "multiplayer_loadout_th17_marisa_eagle",
+    "params": []
+  },
+  "multiplayer.loadout.th17_youmu_wolf": {
+    "id": "multiplayer_loadout_th17_youmu_wolf",
+    "params": []
+  },
+  "multiplayer.loadout.th17_youmu_otter": {
+    "id": "multiplayer_loadout_th17_youmu_otter",
+    "params": []
+  },
+  "multiplayer.loadout.th17_youmu_eagle": {
+    "id": "multiplayer_loadout_th17_youmu_eagle",
+    "params": []
+  },
   "game.title.th12mp": {
     "id": "game_title_th12mp",
     "params": []
@@ -2498,6 +2578,14 @@
   },
   "settings.appleNotice": {
     "id": "settings_appleNotice",
+    "params": []
+  },
+  "settings.renderResolution": {
+    "id": "settings_renderResolution",
+    "params": []
+  },
+  "settings.renderResolutionHint": {
+    "id": "settings_renderResolutionHint",
     "params": []
   },
   "settings.localPlayerVisibility": {

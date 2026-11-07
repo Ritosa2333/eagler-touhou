@@ -1,5 +1,7 @@
 // Included only by the development BrowserRuntime. The real gate, input core,
 // frame journal, correction loop, sound commit and renderer execute unchanged.
+#include <malloc.h>
+#include <emscripten/heap.h>
 void th15_probe_capture_reset();
 extern "C++" {
 namespace {
@@ -32,7 +34,7 @@ bool profile_receive(unsigned through,bool mismatch){
 }
 EMSCRIPTEN_KEEPALIVE int th15_probe_rollback_prepare(unsigned players,unsigned stage,unsigned dense){
  using namespace th15::sdl;
- if(!app||running||players<2||players>3)return 0;
+ if(!app||running||players<2||players>3||stage<1||stage>7)return 0;
  profile_setup={};auto& s=profile_setup;s.session_id=417;s.seed=417;s.mode=0;
  s.player_count=players;s.local_player=0;s.difficulty=stage==7?4:1;s.automatic=false;
  s.selections=stage==7?std::array<unsigned,3>{2,2,3}:std::array<unsigned,3>{0,1,3};s.build={1,2,3,4};
@@ -44,10 +46,29 @@ EMSCRIPTEN_KEEPALIVE int th15_probe_rollback_prepare(unsigned players,unsigned s
  network.MarkLocalReady();
  for(unsigned seat=1;seat<players;++seat){peers[seat].MarkLocalReady();if(network.ApplySession(peers[seat].Ready())!=Netplay::SessionPacketResult::Accepted)return 0;}
  if(!network.CanStart()||!th15_mp_start())return 0;
+ if(stage!=s.initial_stage()){
+  app->selected_stage=stage;app->mp_options.stage=stage;
+  if(!app->begin_run())return 0;
+  mp_stage=stage;
+ }
  profile_remote=profile_first=0;profile_dense=dense!=0;
  app->graphics.presentation.enabled=false;app->audio_device.music_enabled=false;app->audio_device.suspend(false);
  for(auto& pilot:app->scene()->battle.pilots)if(pilot)pilot->player->life.invulnerability.set(30000);
  return 1;
+}
+EMSCRIPTEN_KEEPALIVE const unsigned* th15_probe_memory_status(){
+ using namespace th15::sdl;static std::array<unsigned,8> value{};
+ const auto memory=mallinfo();
+ unsigned snapshots=0;for(const auto& frame:mp_frames)if(frame.captured)++snapshots;
+ value={unsigned(memory.uordblks),unsigned(memory.fordblks),unsigned(emscripten_get_heap_size()),
+        app?unsigned(app->progress.stage):0,network.NextFrame(),snapshots,
+        app&&app->completed_recording?1u:0u,app?unsigned(app->progress.stage_frame):0};
+ return value.data();
+}
+EMSCRIPTEN_KEEPALIVE void th15_probe_memory_protect(){
+ using namespace th15::sdl;
+ if(app&&app->scene())for(auto& pilot:app->scene()->battle.pilots)
+  if(pilot)pilot->player->life.invulnerability.set(1000000);
 }
 EMSCRIPTEN_KEEPALIVE const double* th15_probe_rollback_work(unsigned depth,unsigned mismatch){
  using namespace th15::sdl;static std::array<double,15> result{};result.fill(0);
@@ -68,7 +89,7 @@ EMSCRIPTEN_KEEPALIVE const double* th15_probe_rollback_work(unsigned depth,unsig
  const auto begin=emscripten_get_now();app->audio_device.pump();app->graphics.frame_drawn=false;app->graphics.backend.defer=true;
  const bool ok=mp_tick(profile_input(frame,0,mismatch!=0).buttons);
  const bool presented=app->graphics.backend.commit();app->graphics.backend.defer=false;app->audio_device.pump();
- result={emscripten_get_now()-begin,double(network.NextFrame()-frame),double(mp_corrections-corrections),double(mp_replayed_frames-replayed),double(mp_last_depth),double(network.NextFrame()),double(network.Confirmed()),ready?1.:0.,presented?1.:0.,double(app->scene()->battle.bullet_scene->manager.visible_count),double(app->animations.registry.count()),ok?1.:0.,mp_profile_capture_ms,mp_profile_restore_ms,double(mp_profile_captures)};
+ result={emscripten_get_now()-begin,double(network.NextFrame()-frame),double(mp_corrections-corrections),double(mp_replayed_frames-replayed),double(mp_last_depth),double(network.NextFrame()),double(network.Confirmed()),ready?1.:0.,presented?1.:0.,app->scene()?double(app->scene()->battle.bullet_scene->manager.visible_count):0.,double(app->animations.registry.count()),ok?1.:0.,mp_profile_capture_ms,mp_profile_restore_ms,double(mp_profile_captures)};
  return result.data();
 }
 EMSCRIPTEN_KEEPALIVE int th15_probe_rollback_receive(unsigned through,unsigned mismatch){

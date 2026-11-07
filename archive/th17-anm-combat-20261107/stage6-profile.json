@@ -1,0 +1,212 @@
+{
+  "sha256": "a3f4ce7b95c4f6cac807aca7ff2127d5a4dbf6af7ee6b4b29c6291511ff08a6d",
+  "durationSeconds": 149.102941,
+  "samples": 97414,
+  "samplingIntervalUs": 1000,
+  "inclusiveWeightedMs": {
+    "gameLoop": 57967.068,
+    "capture": 19363.689,
+    "animationCheckpoint": 8097.982,
+    "draw": 16852.628,
+    "drawSubmission": 5861.132,
+    "audioPump": 1650.461,
+    "animationOpen": 59.27,
+    "stageLoad": 262.284
+  },
+  "insideGameLoopWeightedMs": {
+    "gameLoop": 57967.068,
+    "capture": 19363.689,
+    "animationCheckpoint": 8097.982,
+    "draw": 16852.628,
+    "drawSubmission": 5858.045,
+    "audioPump": 1648.676,
+    "animationOpen": 24.727,
+    "stageLoad": 262.284
+  },
+  "selfTop": [
+    {
+      "name": "(idle)",
+      "weightedMs": 72289.141
+    },
+    {
+      "name": "(program)",
+      "weightedMs": 12996.458
+    },
+    {
+      "name": "th17::sdl::(anonymous namespace)::RoomRuntime::capture(unsigned int)",
+      "weightedMs": 8878.454
+    },
+    {
+      "name": "th17::multiplayer::AnmCheckpoint::AnmCheckpoint(th17::AnmVm const&, std::__2::weak_ptr<th17::AnmInterpolators const>&, th17::multiplayer::AnmCheckpoint::Curves&)",
+      "weightedMs": 7771.961
+    },
+    {
+      "name": "th17::AnmRenderer::draw(th17::AnmVm&)",
+      "weightedMs": 2307.192
+    },
+    {
+      "name": "th17::AnmVm::tick(th17::Rng&, float)",
+      "weightedMs": 2251.027
+    },
+    {
+      "name": "th17::AnmVm::advance(float)",
+      "weightedMs": 1286.116
+    },
+    {
+      "name": "std::__2::__wrap_iter<unsigned char*> std::__2::vector<unsigned char, std::__2::allocator<unsigned char>>::__insert_with_size[abi:nqn220108]<std::__2::_ClassicAlgPolicy, unsigned char const*, unsigned char const*>(std::__2::__wrap_iter<unsigned char const*>, unsigned char const*, unsigned char const*, long)",
+      "weightedMs": 1156.186
+    },
+    {
+      "name": "th17::AnmManager::update(bool)",
+      "weightedMs": 1119.834
+    },
+    {
+      "name": "th17::anm_quad_positions(th17::AnmVm&, th17::Vec3 (&) [4])",
+      "weightedMs": 982.055
+    },
+    {
+      "name": "_emscripten_glBufferData",
+      "weightedMs": 980.483
+    },
+    {
+      "name": "th17::AnmRenderer::pack_quad(th17::AnmVm&, th17::Vec3 (&) [4], bool, unsigned int const*)",
+      "weightedMs": 926.285
+    },
+    {
+      "name": "th17::GameDraw::GameDraw(th17::StageGameplay&, th17::GameRun&, th17::GameRecords&, th17::SpellRecords&, th17::AnmManager&, th17::AnmRenderer&, th17::ZunGraphics&, th17::ScreenViews&, th17::AsciiText&, th17::StageDrawServices&)::$_0::__invoke(void*)",
+      "weightedMs": 885.823
+    },
+    {
+      "name": "",
+      "weightedMs": 747.589
+    },
+    {
+      "name": "emscripten_builtin_malloc",
+      "weightedMs": 737.803
+    },
+    {
+      "name": "th17::GameBattle::GameBattle(th17::AnmManager&, th17::AnmEnvironment&, th17::Rng&, th17::Rng&, th17::BattleWorldServices&, th17::EclProgram&, th17::ShtResource const&, int, th17::BattleResources)::$_6::__invoke(void*)",
+      "weightedMs": 720.627
+    },
+    {
+      "name": "touhou::sdl::Renderer::issue(touhou::sdl::State const&, touhou::graphics::Topology, unsigned int, void const*, unsigned int, void const*, touhou::graphics::IndexType, void const*, unsigned int, bool)",
+      "weightedMs": 686.743
+    },
+    {
+      "name": "wasm-to-js",
+      "weightedMs": 669.101
+    },
+    {
+      "name": "vorbis_decode_packet(stb_vorbis*, int*, int*, int*)",
+      "weightedMs": 645.384
+    },
+    {
+      "name": "start",
+      "weightedMs": 633.906
+    }
+  ],
+  "inclusiveTop": [
+    {
+      "name": "(root)",
+      "weightedMs": 149102.462
+    },
+    {
+      "name": "(idle)",
+      "weightedMs": 72289.141
+    },
+    {
+      "name": "tick",
+      "weightedMs": 58340.123
+    },
+    {
+      "name": "th17_loop_start::$_0::__invoke(double, void*)",
+      "weightedMs": 57967.068
+    },
+    {
+      "name": "th17::sdl::(anonymous namespace)::sample_and_tick()",
+      "weightedMs": 52671.458
+    },
+    {
+      "name": "js-to-wasm:di:i",
+      "weightedMs": 52652.217
+    },
+    {
+      "name": "th17::sdl::(anonymous namespace)::RoomRuntime::update(bool)",
+      "weightedMs": 52155.54
+    },
+    {
+      "name": "th17::multiplayer::Session::simulate(th17::multiplayer::World&)",
+      "weightedMs": 49457.194
+    },
+    {
+      "name": "th17::sdl::(anonymous namespace)::RoomRuntime::step(unsigned int, Netplay::FrameDecision const&)",
+      "weightedMs": 29948.909
+    },
+    {
+      "name": "th17::sdl::ApplicationState::step(unsigned int, unsigned int, unsigned int, float, bool)",
+      "weightedMs": 29298.378
+    },
+    {
+      "name": "th17::FrameScheduler::execute(th17::FramePass)",
+      "weightedMs": 27997.464
+    },
+    {
+      "name": "th17::sdl::(anonymous namespace)::RoomRuntime::capture(unsigned int)",
+      "weightedMs": 19363.689
+    },
+    {
+      "name": "th17::sdl::SceneDisplay::draw(double)",
+      "weightedMs": 16852.628
+    },
+    {
+      "name": "(program)",
+      "weightedMs": 12996.458
+    },
+    {
+      "name": "wasm-to-js",
+      "weightedMs": 9976.819
+    },
+    {
+      "name": "th17::multiplayer::AnmCheckpoint::AnmCheckpoint(th17::AnmVm const&, std::__2::weak_ptr<th17::AnmInterpolators const>&, th17::multiplayer::AnmCheckpoint::Curves&)",
+      "weightedMs": 8097.982
+    },
+    {
+      "name": "th17::AnmRenderer::draw(th17::AnmVm&)",
+      "weightedMs": 7899.077
+    },
+    {
+      "name": "js-to-wasm",
+      "weightedMs": 7889.227
+    },
+    {
+      "name": "th17::AnmDrawSchedule::AnmDrawSchedule(th17::FrameScheduler&, th17::AnmManager&, th17::AnmRenderer&, th17::ZunGraphics&, th17::AnmDrawServices&)::$_0::__invoke(void*)",
+      "weightedMs": 6813.483
+    },
+    {
+      "name": "touhou::sdl::Renderer::issue(touhou::sdl::State const&, touhou::graphics::Topology, unsigned int, void const*, unsigned int, void const*, touhou::graphics::IndexType, void const*, unsigned int, bool)",
+      "weightedMs": 5861.132
+    }
+  ],
+  "animationCheckpointSelfTop": [
+    {
+      "name": "th17::multiplayer::AnmCheckpoint::AnmCheckpoint(th17::AnmVm const&, std::__2::weak_ptr<th17::AnmInterpolators const>&, th17::multiplayer::AnmCheckpoint::Curves&)",
+      "weightedMs": 7771.961
+    },
+    {
+      "name": "th17::AnmGeometry::operator=(th17::AnmGeometry const&)",
+      "weightedMs": 179.005
+    },
+    {
+      "name": "emscripten_builtin_malloc",
+      "weightedMs": 71.614
+    },
+    {
+      "name": "void std::__2::vector<th17::AnmGeometryVertex, std::__2::allocator<th17::AnmGeometryVertex>>::__assign_with_size[abi:nqn220108]<std::__2::_ClassicAlgPolicy, th17::AnmGeometryVertex*, th17::AnmGeometryVertex*>(th17::AnmGeometryVertex*, th17::AnmGeometryVertex*, long)",
+      "weightedMs": 69.162
+    },
+    {
+      "name": "emscripten_builtin_free",
+      "weightedMs": 6.24
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "cpuThrottle": 4,
+  "scope": "Sequential paired desktop CPU samples; native logic and checkpoint/correction, plus CPU-side draw submission. Audio disabled during timing; no phone FPS claim.",
+  "stateHashesMatch": true,
+  "pairedCases": 36,
+  "results": [
+    {
+      "stage": 3,
+      "kind": "logic",
+      "rounds": 3,
+      "framesPerRound": 900,
+      "baselineMeanMedianMs": 0.11188888888392183,
+      "optimizedMeanMedianMs": 0.04622222220732106,
+      "reductionPercent": 58.68917578109662
+    },
+    {
+      "stage": 3,
+      "kind": "draw",
+      "rounds": 3,
+      "framesPerRound": 900,
+      "baselineMeanMedianMs": 1.484333333339956,
+      "optimizedMeanMedianMs": 1.355777777781089,
+      "reductionPercent": 8.660827906464853
+    },
+    {
+      "stage": 3,
+      "kind": "rollback",
+      "rounds": 3,
+      "framesPerRound": 900,
+      "baselineMeanMedianMs": 0.6597777777579096,
+      "optimizedMeanMedianMs": 0.5027777777943346,
+      "reductionPercent": 23.795890867543356
+    },
+    {
+      "stage": 4,
+      "kind": "logic",
+      "rounds": 3,
+      "framesPerRound": 900,
+      "baselineMeanMedianMs": 0.10300000002814663,
+      "optimizedMeanMedianMs": 0.05322222223712338,
+      "reductionPercent": 48.3279395897287
+    },
+    {
+      "stage": 4,
+      "kind": "draw",
+      "rounds": 3,
+      "framesPerRound": 900,
+      "baselineMeanMedianMs": 1.3960000000231796,
+      "optimizedMeanMedianMs": 1.3226666666567326,
+      "reductionPercent": 5.253104109257112
+    },
+    {
+      "stage": 4,
+      "kind": "rollback",
+      "rounds": 3,
+      "framesPerRound": 900,
+      "baselineMeanMedianMs": 0.5507777777810892,
+      "optimizedMeanMedianMs": 0.4063333333449231,
+      "reductionPercent": 26.225539639251128
+    }
+  ]
+}

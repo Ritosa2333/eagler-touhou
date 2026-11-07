@@ -84,7 +84,8 @@ class SourceHistoryTests(unittest.TestCase):
         (self.repo / "ports/th15-mp/README.md").write_text("multiplayer frame restoration\n", encoding="utf-8")
         self.git(self.repo, "add", ".")
         self.git(self.repo, "commit", "-qm", "adapt multiplayer")
-        result = history.verify(history.Repository(self.repo), base=self.base)
+        result = history.verify(history.Repository(self.repo), base=self.base, jobs=2)
+        self.assertEqual(result["subtrees"]["ports/th12"], self.upstream)
         split = result["subtrees"]["ports/th15-mp"]
         self.assertTrue(history.Repository(self.repo).ancestor(self.upstream, split))
         self.assertEqual(self.git(self.repo, "rev-parse", "HEAD:ports/th15-mp"), self.git(self.repo, "rev-parse", split + "^{tree}"))

@@ -9,6 +9,7 @@
 | [publication-review-20261018.json](publication-review-20261018.json) | 发布审阅记录 |
 | [reviewed-source-assets.json](reviewed-source-assets.json) | 已记录的源码素材身份 |
 | [stb-vorbis-provenance.json](stb-vorbis-provenance.json) | stb_vorbis 来源 |
+| [th05-eagler-20261101.json](th05-eagler-20261101.json) | uth05win 源码父链与 PR #143 音频身份 |
 | [th12-eagler-20261020.json](th12-eagler-20261020.json) | th12 导入身份与子树基点 |
 | [th12-subtree-20261024.md](th12-subtree-20261024.md) | th12 子树继承与独立导出 |
 | [th19-eagler-20261104.json](th19-eagler-20261104.json) | TH19 本地源码来源、普通版与双人对战接入 |

@@ -1,0 +1,882 @@
+[
+  [
+    "无敌",
+    "Invincibility",
+    "無敵"
+  ],
+  [
+    "锁残/不疮",
+    "Lock lives / no Game Over",
+    "残機固定 / ゲームオーバー無効"
+  ],
+  [
+    "不疮",
+    "No Game Over",
+    "ゲームオーバー無効"
+  ],
+  [
+    "锁梦点",
+    "Lock Dream",
+    "夢ゲージ固定"
+  ],
+  [
+    "锁Bomb",
+    "Lock bombs",
+    "ボム固定"
+  ],
+  [
+    "锁火力",
+    "Lock Power",
+    "パワー固定"
+  ],
+  [
+    "锁时",
+    "Freeze timer",
+    "タイマー固定"
+  ],
+  [
+    "自动B",
+    "Auto bomb",
+    "オートボム"
+  ],
+  [
+    "敌人无敌",
+    "Invincible enemies",
+    "敵無敵"
+  ],
+  [
+    "继续游戏",
+    "Resume",
+    "ゲームに戻る"
+  ],
+  [
+    "退出游戏",
+    "Save Replay and quit",
+    "リプレイ保存して終了"
+  ],
+  [
+    "不存rep退出游戏",
+    "Quit without Replay",
+    "保存せずに終了"
+  ],
+  [
+    "重新开始",
+    "Restart",
+    "やり直す"
+  ],
+  [
+    "更多游戏信息",
+    "Game information",
+    "ゲーム情報"
+  ],
+  [
+    "练习模式",
+    "Practice",
+    "プラクティス"
+  ],
+  [
+    "模式",
+    "Mode",
+    "モード"
+  ],
+  [
+    "正常模式",
+    "Normal",
+    "通常モード"
+  ],
+  [
+    "自定义模式",
+    "Custom",
+    "カスタムモード"
+  ],
+  [
+    "关卡",
+    "Stage",
+    "ステージ"
+  ],
+  [
+    "无",
+    "None",
+    "なし"
+  ],
+  [
+    "传送",
+    "Start at",
+    "開始位置"
+  ],
+  [
+    "道中Boss",
+    "Midboss",
+    "中ボス"
+  ],
+  [
+    "关底Boss",
+    "Boss",
+    "ボス"
+  ],
+  [
+    "帧",
+    "Frame",
+    "フレーム"
+  ],
+  [
+    "阶段",
+    "Phase",
+    "段階"
+  ],
+  [
+    "正常开始",
+    "Normal start",
+    "通常開始"
+  ],
+  [
+    "正常",
+    "Normal",
+    "通常"
+  ],
+  [
+    "发狂",
+    "Rage",
+    "発狂"
+  ],
+  [
+    "发狂 2",
+    "Rage 2",
+    "発狂 2"
+  ],
+  [
+    "进入方式",
+    "Entry",
+    "開始方法"
+  ],
+  [
+    "击破进入",
+    "Defeat",
+    "撃破"
+  ],
+  [
+    "超时进入",
+    "Timeout",
+    "時間切れ"
+  ],
+  [
+    "触发方式",
+    "Trigger",
+    "発動条件"
+  ],
+  [
+    "血量触发",
+    "HP trigger",
+    "体力"
+  ],
+  [
+    "时间触发",
+    "Time trigger",
+    "時間"
+  ],
+  [
+    "开始血量",
+    "Starting HP",
+    "開始体力"
+  ],
+  [
+    "对话",
+    "Dialogue",
+    "会話"
+  ],
+  [
+    "残机",
+    "Lives",
+    "残機"
+  ],
+  [
+    "分数",
+    "Score",
+    "スコア"
+  ],
+  [
+    "火力",
+    "Power",
+    "パワー"
+  ],
+  [
+    "擦弹",
+    "Graze",
+    "グレイズ"
+  ],
+  [
+    "累计蓝点",
+    "Total point items",
+    "累計点アイテム"
+  ],
+  [
+    "单关蓝点",
+    "Stage point items",
+    "ステージ点アイテム"
+  ],
+  [
+    "梦点",
+    "Dream",
+    "夢ゲージ"
+  ],
+  [
+    "锁Rank",
+    "Lock Rank",
+    "ランク固定"
+  ],
+  [
+    "参数无效",
+    "Invalid settings",
+    "無効な設定"
+  ],
+  [
+    "实战进入该关卡后解锁练习",
+    "Reach this stage to unlock Practice",
+    "本編で到達すると練習が解放されます"
+  ],
+  [
+    "从关卡开始处开始（没有道中）",
+    "Start of stage (no midboss)",
+    "ステージ開始（中ボスなし）"
+  ],
+  [
+    "高级选项",
+    "Advanced options",
+    "高度な設定"
+  ],
+  [
+    "游戏速度",
+    "Game speed",
+    "ゲーム速度"
+  ],
+  [
+    "帧率调整",
+    "Frame rate",
+    "フレームレート"
+  ],
+  [
+    "自由调整",
+    "Custom rate",
+    "自由設定"
+  ],
+  [
+    "应用",
+    "Apply",
+    "適用"
+  ],
+  [
+    "禁用键位",
+    "Key options",
+    "キー設定"
+  ],
+  [
+    "禁用 X 键",
+    "Disable X",
+    "X キーを無効化"
+  ],
+  [
+    "禁用 Z 键",
+    "Disable Z",
+    "Z キーを無効化"
+  ],
+  [
+    "禁用 Shift 键",
+    "Disable Shift",
+    "Shift キーを無効化"
+  ],
+  [
+    "强制按住 Shift 键",
+    "Force focus",
+    "低速移動を固定"
+  ],
+  [
+    "显示判定点",
+    "Show hitbox",
+    "当たり判定を表示"
+  ],
+  [
+    "低速时显示",
+    "While focused",
+    "低速時に表示"
+  ],
+  [
+    "常驻判定点",
+    "Always show hitbox",
+    "常時表示"
+  ],
+  [
+    "打开按键显示",
+    "Show input display",
+    "入力表示"
+  ],
+  [
+    "启用锁时计时",
+    "Time frozen intervals",
+    "タイマー固定の経過時間"
+  ],
+  [
+    "练习模式快速re",
+    "Practice fast retry",
+    "練習の高速リトライ"
+  ],
+  [
+    "将锁残修改为不疮",
+    "Use no Game Over instead of lock lives",
+    "残機固定をゲームオーバー無効に変更"
+  ],
+  [
+    "梦槽状态以数字显示",
+    "Numeric Dream gauge",
+    "夢ゲージを数値表示"
+  ],
+  [
+    "火力状态以数字显示",
+    "Numeric Power",
+    "パワーを数値表示"
+  ],
+  [
+    "红魔乡式血条",
+    "EoSD health bar",
+    "紅魔郷式体力ゲージ"
+  ],
+  [
+    "环形血条",
+    "Ring health bar",
+    "円形体力ゲージ"
+  ],
+  [
+    "血条提示阶段",
+    "Phase markers",
+    "段階マーカー"
+  ],
+  [
+    "按星星显示阶段数",
+    "Phase stars",
+    "段階を星で表示"
+  ],
+  [
+    "攻击循环显示",
+    "Attack cycle display",
+    "攻撃ループ表示"
+  ],
+  [
+    "阶段剩余时间/次数显示",
+    "Phase time / cycles",
+    "残り時間・回数を表示"
+  ],
+  [
+    "轮数",
+    "Cycles",
+    "回数"
+  ],
+  [
+    "时间",
+    "Time",
+    "時間"
+  ],
+  [
+    "反应力测试",
+    "Reaction test",
+    "反応速度テスト"
+  ],
+  [
+    "测试次数",
+    "Trials",
+    "試行回数"
+  ],
+  [
+    "显示等待时间进度条",
+    "Show waiting progress",
+    "待機時間を表示"
+  ],
+  [
+    "按太快了",
+    "Too early",
+    "早すぎます"
+  ],
+  [
+    "结果",
+    "Result",
+    "結果"
+  ],
+  [
+    "结果（平均值）",
+    "Average",
+    "平均"
+  ],
+  [
+    "开始测试（快捷键 Z / Shift）",
+    "Start (Z / Shift)",
+    "開始（Z / Shift）"
+  ],
+  [
+    "再测一次（快捷键 Z / Shift）",
+    "Retry (Z / Shift)",
+    "再試行（Z / Shift）"
+  ],
+  [
+    "按下反应测试（等待变色后按方向键）",
+    "Press test: press an arrow after the color changes",
+    "押下テスト：色が変わったら方向キーを押す"
+  ],
+  [
+    "弹起反应测试（按住方向键，变色后松开）",
+    "Release test: hold an arrow, then release after the color changes",
+    "離上テスト：方向キーを押し、色が変わったら離す"
+  ],
+  [
+    "等待红色变绿时按下或松开方向键",
+    "Wait for green, then press or release an arrow",
+    "緑色になったら方向キーを押す・離す"
+  ],
+  [
+    "开始记录APS",
+    "Record APS",
+    "APS 記録開始"
+  ],
+  [
+    "停止记录APS",
+    "Stop recording APS",
+    "APS 記録停止"
+  ],
+  [
+    "导出到游戏文件夹",
+    "Export APS",
+    "APS を保存"
+  ],
+  [
+    "关于thprac",
+    "About thprac",
+    "thprac について"
+  ],
+  [
+    "显示许可信息",
+    "Show licenses",
+    "ライセンスを表示"
+  ],
+  [
+    "隐藏许可信息",
+    "Hide licenses",
+    "ライセンスを閉じる"
+  ],
+  [
+    "F2 开启时正常扣残机，最后一命后不再进入 Game Over。",
+    "F2 consumes lives normally and prevents Game Over after the last life.",
+    "F2 は残機を通常通り消費し、最後の残機の後もゲームオーバーにしません。"
+  ],
+  [
+    "TH05 原速为 56 fps；此项调整游戏运行速度，音乐保持原速。",
+    "TH05 runs at 56 fps. This changes game speed while preserving music speed.",
+    "TH05 の標準速度は 56 fps です。ゲーム速度を変更し、音楽の速度は維持します。"
+  ],
+  [
+    "练习中 Miss 后自动重试；Shift+F 可手动触发。",
+    "Retry after a miss in Practice. Press Shift+F to retry manually.",
+    "練習中のミスで自動リトライ。Shift+F で手動リトライ。"
+  ],
+  [
+    "快捷键：Shift+D / Shift+A / Shift+S；本作没有绑定 C 键。",
+    "Shortcuts: Shift+D / Shift+A / Shift+S.",
+    "ショートカット：Shift+D / Shift+A / Shift+S。"
+  ],
+  [
+    "强制低速优先于禁用低速。只影响游戏操作，不影响菜单或录像回放。",
+    "Forced focus takes priority. Key filters apply to gameplay, preserving menus and Replay.",
+    "低速固定が優先されます。キー設定はプレイ操作に適用し、メニューとリプレイは維持します。"
+  ],
+  [
+    "攻击循环可选择轮数或时间；时间按原速56帧每秒换算，随机移动阶段的预计时间用~标记。",
+    "Show attack cycles or time at 56 fps. ~ marks an estimate for random movement.",
+    "攻撃ループを回数・時間で表示。56 fps 換算、ランダム移動の推定値は ~ で表示。"
+  ],
+  [
+    "界面与行为参考：Ack 的紫版 thprac，基于 touhouworldcup/thprac。原生游戏：uth05win；原版流程参考：ReC98。",
+    "UI: Ack's purple thprac / touhouworldcup/thprac. Game: uth05win. Original flow research: ReC98.",
+    "UI：Ack の紫版 thprac / touhouworldcup/thprac。ゲーム：uth05win。原作の解析：ReC98。"
+  ],
+  [
+    "灵梦",
+    "Reimu",
+    "霊夢"
+  ],
+  [
+    "魔理沙",
+    "Marisa",
+    "魔理沙"
+  ],
+  [
+    "魅魔",
+    "Mima",
+    "魅魔"
+  ],
+  [
+    "幽香",
+    "Yuuka",
+    "幽香"
+  ],
+  [
+    "游戏进行",
+    "Game status",
+    "進行状況"
+  ],
+  [
+    "最终攻击准备",
+    "Final attack setup",
+    "最終攻撃準備"
+  ],
+  [
+    "双 Boss",
+    "Dual bosses",
+    "二人同時"
+  ],
+  [
+    "人偶飞入",
+    "Dolls entering",
+    "人形登場"
+  ],
+  [
+    "开始单关练习",
+    "Stage Practice",
+    "ステージ練習を開始"
+  ],
+  [
+    "慢速模式：弹量较多时自动减速。",
+    "Slow: native slowdown with many bullets.",
+    "低速モード：弾数が多い時に減速。"
+  ],
+  [
+    "标准模式：不额外进行弹量减速。",
+    "Turbo: no extra bullet slowdown.",
+    "標準モード：弾数による減速なし。"
+  ],
+  [
+    "祝贺你通关 Extra Stage！",
+    "Extra Stage Clear!",
+    "エキストラクリアおめでとう！"
+  ],
+  [
+    "祝贺你全关卡通关！",
+    "All Stages Clear!",
+    "全ステージクリアおめでとう！"
+  ],
+  [
+    "作者：ＺＵＮ",
+    "By ZUN",
+    "作者：ＺＵＮ"
+  ],
+  [
+    "分",
+    "pts",
+    "点"
+  ],
+  [
+    "次",
+    "times",
+    "回"
+  ],
+  [
+    "％",
+    "%",
+    "％"
+  ],
+  [
+    "你的实力",
+    "Your skill",
+    "あなたの実力"
+  ],
+  [
+    "难度",
+    "Difficulty",
+    "難易度"
+  ],
+  [
+    "最终得分",
+    "Final score",
+    "最終得点"
+  ],
+  [
+    "失误次数",
+    "Misses",
+    "ミス回数"
+  ],
+  [
+    "炸弹使用次数",
+    "Bombs used",
+    "ボム使用回数"
+  ],
+  [
+    "游戏完成率",
+    "Completion",
+    "ゲーム進行率"
+  ],
+  [
+    "恶灵退治率",
+    "Enemy defeats",
+    "悪霊退治率"
+  ],
+  [
+    "道具回收率",
+    "Items collected",
+    "アイテム回収率"
+  ],
+  [
+    "蓝点最高点率",
+    "Max point items",
+    "最大得点率"
+  ],
+  [
+    "气势",
+    "Spirit",
+    "気合"
+  ],
+  [
+    "减速率",
+    "Slowdown",
+    "処理落ち率"
+  ],
+  [
+    "实力评价",
+    "Skill rating",
+    "実力評価"
+  ],
+  [
+    "简单",
+    "Easy",
+    "簡単"
+  ],
+  [
+    "普通",
+    "Normal",
+    "普通"
+  ],
+  [
+    "困难",
+    "Hard",
+    "難しい"
+  ],
+  [
+    "疯狂",
+    "Lunatic",
+    "狂気"
+  ],
+  [
+    "额外",
+    "Extra",
+    "エキストラ"
+  ],
+  [
+    "人间失格",
+    "No longer human",
+    "人間失格"
+  ],
+  [
+    "也许还不如死掉",
+    "Perhaps better off dead",
+    "死んだ方がましかも"
+  ],
+  [
+    "已经没救了",
+    "Beyond saving",
+    "もう手遅れ"
+  ],
+  [
+    "可能已经没救了",
+    "Possibly beyond saving",
+    "手遅れかもしれない"
+  ],
+  [
+    "再起不能",
+    "No recovery",
+    "再起不能"
+  ],
+  [
+    "真遗憾",
+    "Too bad",
+    "残念"
+  ],
+  [
+    "相当吃力",
+    "Very difficult",
+    "かなり苦しい"
+  ],
+  [
+    "可能有点吃力",
+    "A little difficult",
+    "少し苦しいかも"
+  ],
+  [
+    "还差一点的玩家",
+    "Almost there",
+    "あと一歩のプレイヤー"
+  ],
+  [
+    "水平尚可的玩家",
+    "Capable player",
+    "まずまずのプレイヤー"
+  ],
+  [
+    "合格的射击玩家",
+    "Qualified player",
+    "合格シューター"
+  ],
+  [
+    "擅长射击游戏的人",
+    "Skilled player",
+    "上手なシューター"
+  ],
+  [
+    "高级射击玩家",
+    "Expert player",
+    "上級シューター"
+  ],
+  [
+    "Ａ级射击玩家",
+    "Class A player",
+    "Ａ級シューター"
+  ],
+  [
+    "超Ａ级射击玩家",
+    "Super A player",
+    "超Ａ級シューター"
+  ],
+  [
+    "射击玩家免许皆传！！",
+    "Master shooter!",
+    "シューター免許皆伝！！"
+  ],
+  [
+    "究极名人",
+    "Ultimate master",
+    "究極名人"
+  ],
+  [
+    "传说中的人物",
+    "Legendary player",
+    "伝説の人物"
+  ],
+  [
+    "魔人",
+    "Demon",
+    "魔人"
+  ],
+  [
+    "路西法级射击玩家",
+    "Lucifer class",
+    "ルシファー級シューター"
+  ],
+  [
+    "再加把劲吧",
+    "Keep trying",
+    "もう少し頑張ろう"
+  ],
+  [
+    "还差得远呢",
+    "Keep practicing",
+    "まだまだです"
+  ],
+  [
+    "还算不错",
+    "Well done",
+    "なかなかです"
+  ],
+  [
+    "相当厉害",
+    "Excellent",
+    "かなり凄い"
+  ],
+  [
+    "无法评价",
+    "Unrated",
+    "評価不能"
+  ],
+  [
+    "因减速过多而无法评价",
+    "Too much slowdown",
+    "処理落ちが多く評価不能"
+  ],
+  [
+    "请认真玩哦",
+    "Play seriously",
+    "真剣に遊んでね"
+  ],
+  [
+    "目标：通关吧",
+    "Aim for a clear",
+    "目標：クリアしよう"
+  ],
+  [
+    "目标：挑战普通难度吧",
+    "Try Normal difficulty",
+    "目標：ノーマルに挑戦"
+  ],
+  [
+    "目标：不续关通关吧",
+    "Clear without continuing",
+    "目標：ノーコンティニュー"
+  ],
+  [
+    "目标：用炸弹活下去吧",
+    "Use bombs to survive",
+    "目標：ボムで生き残ろう"
+  ],
+  [
+    "目标：节约炸弹吧",
+    "Save your bombs",
+    "目標：ボムを節約しよう"
+  ],
+  [
+    "目标：减少失误吧",
+    "Reduce your misses",
+    "目標：ミスを減らそう"
+  ],
+  [
+    "目标：多吃点蓝点吧",
+    "Collect more point items",
+    "目標：点アイテムを集めよう"
+  ],
+  [
+    "目标：再多赚点分吧",
+    "Aim for a higher score",
+    "目標：もっと稼ごう"
+  ],
+  [
+    "目标：争取全国第一（笑）",
+    "Aim for the top!",
+    "目標：全国一を目指そう（笑）"
+  ],
+  [
+    "？？？？？？分",
+    "?????? pts",
+    "？？？？？？点"
+  ],
+  [
+    "第一关",
+    "Stage 1",
+    "第一面"
+  ],
+  [
+    "第二关",
+    "Stage 2",
+    "第二面"
+  ],
+  [
+    "第三关",
+    "Stage 3",
+    "第三面"
+  ],
+  [
+    "第四关",
+    "Stage 4",
+    "第四面"
+  ],
+  [
+    "第五关",
+    "Stage 5",
+    "第五面"
+  ],
+  [
+    "第六关",
+    "Stage 6",
+    "第六面"
+  ]
+]

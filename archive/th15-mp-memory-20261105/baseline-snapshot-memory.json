@@ -1,0 +1,8 @@
+{
+  "roots": 4096,
+  "snapshots": 13,
+  "vmBytes": 1504,
+  "snapshotAllocatedBytes": 82467736,
+  "heapBytes": 134217728,
+  "restored": true
+}

@@ -1,0 +1,164 @@
+{
+  "label": "fixed",
+  "coldStarts": [
+    3,
+    {
+      "backScene": 2
+    },
+    3,
+    {
+      "backScene": 2
+    }
+  ],
+  "samples": [
+    {
+      "name": "music-room",
+      "seconds": 8.0115,
+      "tickRate": 60.038694376833305,
+      "drawsPerTick": 9.002079002079002,
+      "uniformLookups": 0,
+      "heap": 115998720,
+      "displayFps": 60,
+      "textures": 7,
+      "textureBytes": 55312384
+    },
+    {
+      "name": "playing-0",
+      "seconds": 10.0045,
+      "tickRate": 55.97481133489929,
+      "drawsPerTick": 99.48214285714286,
+      "uniformLookups": 0,
+      "heap": 115998720,
+      "displayFps": 56,
+      "textures": 371,
+      "textureBytes": 38283264
+    },
+    {
+      "name": "playing-1",
+      "seconds": 10.005600000023842,
+      "tickRate": 56.06860158297985,
+      "drawsPerTick": 123.43137254901961,
+      "uniformLookups": 0,
+      "heap": 115998720,
+      "displayFps": 56,
+      "textures": 371,
+      "textureBytes": 38283264
+    },
+    {
+      "name": "playing-2",
+      "seconds": 10.004699999988079,
+      "tickRate": 55.973692364655335,
+      "drawsPerTick": 134.25714285714287,
+      "uniformLookups": 0,
+      "heap": 115998720,
+      "displayFps": 56,
+      "textures": 371,
+      "textureBytes": 38283264
+    },
+    {
+      "name": "playing-3",
+      "seconds": 10.01340000000596,
+      "tickRate": 56.02492659832485,
+      "drawsPerTick": 158.62210338680927,
+      "uniformLookups": 0,
+      "heap": 115998720,
+      "displayFps": 56.147144240077445,
+      "textures": 371,
+      "textureBytes": 38283264
+    },
+    {
+      "name": "playing-4",
+      "seconds": 10.003900000005961,
+      "tickRate": 55.97816851424608,
+      "drawsPerTick": 167.42142857142858,
+      "uniformLookups": 0,
+      "heap": 115998720,
+      "displayFps": 56,
+      "textures": 371,
+      "textureBytes": 38283264
+    },
+    {
+      "name": "playing-5",
+      "seconds": 10.009199999988079,
+      "tickRate": 55.948527354900186,
+      "drawsPerTick": 153.68928571428572,
+      "uniformLookups": 0,
+      "heap": 115998720,
+      "displayFps": 56,
+      "textures": 371,
+      "textureBytes": 38283264
+    },
+    {
+      "name": "playing-6",
+      "seconds": 10.00409999999404,
+      "tickRate": 55.977049409775354,
+      "drawsPerTick": 137.6625,
+      "uniformLookups": 0,
+      "heap": 115998720,
+      "displayFps": 56,
+      "textures": 371,
+      "textureBytes": 38283264
+    },
+    {
+      "name": "playing-7",
+      "seconds": 10.001299999982118,
+      "tickRate": 55.99272094637709,
+      "drawsPerTick": 120.91607142857143,
+      "uniformLookups": 0,
+      "heap": 115998720,
+      "displayFps": 56.12541126508432,
+      "textures": 371,
+      "textureBytes": 38283264
+    },
+    {
+      "name": "playing-8",
+      "seconds": 10.00340000000596,
+      "tickRate": 56.08093248292238,
+      "drawsPerTick": 149.2941176470588,
+      "uniformLookups": 0,
+      "heap": 115998720,
+      "displayFps": 56,
+      "textures": 371,
+      "textureBytes": 38283264
+    },
+    {
+      "name": "playing-9",
+      "seconds": 10.00730000001192,
+      "tickRate": 55.95914982056428,
+      "drawsPerTick": 151.31071428571428,
+      "uniformLookups": 0,
+      "heap": 115998720,
+      "displayFps": 55.98880224021939,
+      "textures": 371,
+      "textureBytes": 38283264
+    },
+    {
+      "name": "playing-10",
+      "seconds": 10.011399999976158,
+      "tickRate": 56.03611882467347,
+      "drawsPerTick": 134.90017825311944,
+      "uniformLookups": 0,
+      "heap": 115998720,
+      "displayFps": 55.96294866975517,
+      "textures": 371,
+      "textureBytes": 38283264
+    },
+    {
+      "name": "playing-11",
+      "seconds": 10.006,
+      "tickRate": 55.96642014791125,
+      "drawsPerTick": 124.89821428571429,
+      "uniformLookups": 0,
+      "heap": 115998720,
+      "displayFps": 56,
+      "textures": 371,
+      "textureBytes": 38283264
+    }
+  ],
+  "displayFps": {
+    "normal": 56,
+    "stalled": 14.06399115973488,
+    "recovered": 50.368074388026635
+  },
+  "errors": []
+}

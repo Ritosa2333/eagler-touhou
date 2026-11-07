@@ -58,6 +58,14 @@ const TH12_MULTIPLAYER_LOADOUTS = Object.freeze([REIMU_A, REIMU_B, MARISA_A, MAR
     Object.freeze({ labelKey: "multiplayer.loadout.sanaeA", glyph: "早", character: 2, shot: 0 }),
     Object.freeze({ labelKey: "multiplayer.loadout.sanaeB", glyph: "早", character: 2, shot: 1 })]);
 const TH15_MULTIPLAYER_LOADOUTS = Object.freeze(["reimu", "marisa", "sanae", "reisen"].map((name, character) => Object.freeze({ labelKey: `multiplayer.loadout.th15_${name}`, glyph: ["霊", "魔", "早", "鈴"][character], character, shot: 0 })));
+const TH17_MULTIPLAYER_LOADOUTS = Object.freeze(["reimu","marisa","youmu"].flatMap((name,character)=>
+    ["wolf","otter","eagle"].map((animal,shot)=>Object.freeze({
+        labelKey:`multiplayer.loadout.th17_${name}_${animal}`, glyph:["霊","魔","妖"][character],character,shot,
+        selection:Object.freeze([
+            Object.freeze({value:character,labelKey:`multiplayer.character.th17_${name}`}),
+            Object.freeze({value:shot,labelKey:`multiplayer.spirit.th17_${animal}`}),
+        ]),
+    }))));
 const STANDARD_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic", "Extra"]);
 const TH07_MULTIPLAYER_DIFFICULTIES = Object.freeze([...STANDARD_MULTIPLAYER_DIFFICULTIES, "Phantasm"]);
 const TH09_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic"]);
@@ -584,6 +592,8 @@ export const PRODUCT_GAMES = Object.freeze({
     th17: Object.freeze({
         testOnly: true,
         number: "17", title: "東方鬼形獣", subtitle: "Wily Beast and Weakest Creature", cardArtwork: "th17-card.webp",
+        renderScales: Object.freeze([2, 1]),
+        thpracRuntime: Object.freeze({session: "native"}),
         storage: Object.freeze({saveRoot: "/savesth17", scoreFile: "scoreth17.dat", configFiles: Object.freeze(["th17.cfg"])}),
         runtime: "./runtime/th17/th17.html",
         musicCapabilities: Object.freeze({midi: false}),
@@ -591,13 +601,24 @@ export const PRODUCT_GAMES = Object.freeze({
         touchFire: TOGGLE_TOUCH_FIRE,
         support: Object.freeze({highRefreshRate: false, sourceRepository: "https://github.com/Goan114/eagler-touhou", adaptationNotice: "early-test"}),
         runtimeFileLayout: "directory", requiredShared: Object.freeze(["/msgothic.ttc", "/unifont.otf"]),
-        runtimeAssets: Object.freeze(["th17.html", "manifest.json", "shell.mjs", "managed.css", "keyboard.mjs", "directory-keyboard.mjs", "gpu-timing.mjs", "th17.mjs", "th17.wasm", "resources.json", "fonts/cp932.bin"]),
+        runtimeAssets: Object.freeze(["th17.html", "manifest.json", "shell.mjs", "managed.css", "keyboard.mjs", "directory-keyboard.mjs", "direct-input-bridge.mjs", "gpu-timing.mjs", "th17.mjs", "th17.wasm", "resources.json", "fonts/cp932.bin", "local-replay.mjs", "local-replay-native.mjs", "spectator-playback.mjs"]),
         dataProvider: "retail-memory",
         package: Object.freeze({dataFileId: "game-data", dataTarget: "/th17.dat",
             rawDataImport: Object.freeze({fileNames: Object.freeze(["th17.dat"])}),
             musicSourceDirectories: Object.freeze({ogg: "music"}), musicMounts: Object.freeze({ogg: "/music"})}),
         replay: Object.freeze({prefix: "th17"}),
-        thpracRuntime: Object.freeze({session: "native"}),
+        multiplayerRuntime: "./runtime/th17/multiplayer/th17.html",
+        multiplayer: Object.freeze({
+            titleKey: "game.title.th17mp", gameplay: "cooperative",
+            playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
+            loadouts: TH17_MULTIPLAYER_LOADOUTS, peerTransportGlobal: "__th17PeerTransport",
+            loadoutFields: Object.freeze([
+                Object.freeze({labelKey:"multiplayer.character"}),
+                Object.freeze({labelKey:"multiplayer.animalSpirit"}),
+            ]),
+            spectator: true, titleRoomEntry: false,
+            inputTiming: Object.freeze({rollbackLimit: 12, sendPredictionLimit: 12, manualDelayLimit: 9}),
+        }),
         thpracExtraFunctionKeys: Object.freeze(["U"]),
         features: Object.freeze({thprac: true, languages: true, focusHitbox: false}),
     }),

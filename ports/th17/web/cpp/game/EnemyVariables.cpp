@@ -11,12 +11,12 @@ bool EnemyVariables::numeric(i32 index,float& value)noexcept{
         case 3:case 23:value=enemy.motion.position.x;break;case 4:case 24:value=enemy.motion.position.y;break;
         case 5:case 25:value=enemy.absolute.position.x;break;case 6:case 26:value=enemy.absolute.position.y;break;
         case 7:case 27:value=enemy.relative.position.x;break;case 8:case 28:value=enemy.relative.position.y;break;
-        case 9:case 35:value=world.player_position.x;break;case 10:case 36:value=world.player_position.y;break;
+        case 9:case 35:value=world.target(enemy.motion.position).x;break;case 10:case 36:value=world.target(enemy.motion.position).y;break;
         case 19:case 20:case 21:case 22:value=enemy.float_registers[index-19];break;
         case 29:value=enemy.absolute.angle;break;case 30:value=enemy.relative.angle;break;
         case 31:value=enemy.absolute.speed;break;case 32:value=enemy.relative.speed;break;
         case 33:value=enemy.absolute.radius;break;case 34:value=enemy.relative.radius;break;
-        case 42:value=direction(enemy.motion.velocity);break;case 56:value=distance(enemy.motion.position,world.player_position);break;
+        case 42:value=direction(enemy.motion.velocity);break;case 56:value=distance(enemy.motion.position,world.target(enemy.motion.position));break;
         case 61:case 62:case 63:case 64:value=world.boss?world.boss->float_registers[index-61]:0;break;
         case 65:case 66:case 67:case 68:value=enemy.temporary_registers[index-65];break;
         case 78:case 79:case 80:case 81:case 82:case 83:case 84:case 85:value=world.float_registers[index-78];break;
@@ -43,9 +43,9 @@ bool EnemyVariables::integer(i32 id,i32& value){const i32 index=wrapping_add(id,
 }
 bool EnemyVariables::floating(i32 id,float& value){const i32 index=wrapping_add(id,10000);if(numeric(index,value))return true;value=0;switch(index){
     case 0:value=float(random.next32()&0x7fffffff);break;case 1:value=random.unit();break;case 2:value=float(random.signed_unit()*3.1415927410125732421875f);break;case 13:value=random.signed_unit();break;
-    case 11:value=toward(enemy.motion.position,world.player_position);break;case 12:value=enemy.age_timer.fractional;break;
+    case 11:value=toward(enemy.motion.position,world.target(enemy.motion.position));break;case 12:value=enemy.age_timer.fractional;break;
     case 37:value=world.boss?world.boss->motion.position.x:0;break;case 38:value=world.boss?world.boss->motion.position.y:128;break;
-    case 44:value=toward(enemy.absolute.position,world.player_position);break;case 45:value=toward(enemy.relative.position,world.player_position);break;
+    case 44:value=toward(enemy.absolute.position,world.target(enemy.absolute.position));break;case 45:value=toward(enemy.relative.position,world.target(enemy.relative.position));break;
     case 86:value=float(enemy.id);break;case 91:value=float(enemy.parent_id);break;case 69:value=float(world.total);break;
     case 39:case 96:break;
     default:{i32 integer_value;if(!integer(id,integer_value))return false;value=float(integer_value);break;}

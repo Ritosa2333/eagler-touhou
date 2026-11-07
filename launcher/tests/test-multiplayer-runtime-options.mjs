@@ -66,6 +66,19 @@ for (const [product, limit] of [['th075mp', 8], ['th12mp', 12], ['th15mp', 12]])
   assert.equal(disabled.netplayAdonisMode, 1, `${product}: explicit pure delay`);
   assert.equal(disabled.netplayPredictionLimit, 0);
 }
+const th17=PRODUCT_GAMES.th17.multiplayer;
+const th17Room={...base,url:base.url.replace('th06mp','th17mp'),playerCount:3,inputDelay:2,
+  loadouts:[{character:0,shot:0},{character:1,shot:1},{character:2,shot:2}]};
+const th17Options=buildMultiplayerRuntimeOptions(th17Room,th17);
+assert.equal(th17Options.netplayAdonisMode,0);
+assert.equal(th17Options.netplayInputDelay,0);
+assert.equal(th17Options.netplayPredictionLimit,12);
+const th17Delay=buildMultiplayerRuntimeOptions({...th17Room,adonisMode:1},th17);
+assert.equal(th17Delay.netplayAdonisMode,1);
+assert.equal(th17Delay.netplayInputDelay,2);
+assert.equal(th17Delay.netplayPredictionLimit,0);
+assert.deepEqual(th17Options.netplayLoadouts,th17Room.loadouts);
+assert.throws(()=>buildMultiplayerRuntimeOptions({...th17Room,predictionLimit:4},th17),/12 帧/);
 for (const product of ['th06mp','th07mp','th075mp','th08mp','th09mp','th10mp','th11mp','th12mp','th15mp']) {
   const input = {...base, difficulty: 1, inputDelay: 0, ...(product === 'th15mp' ? {adonisMode: 1} : {}), url: base.url.replace('th06mp', product)};
   assert.equal(buildMultiplayerRuntimeOptions({...input, preferTurn: true}, th06).netplayPreferTurn, true, product);

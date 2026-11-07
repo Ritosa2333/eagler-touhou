@@ -1,0 +1,577 @@
+{
+  "source": "dbfb3cbc7fa5e1782f7b4ccf1681bbb9324da9e3",
+  "fixedSnapshotBytesRemoved": 209104,
+  "runs": {
+    "baseline-normal-opening": {
+      "wasm": "e1e456c8655498b70bb55a4a31a63272d32c66bb2454a97f3bb7bc49aadff865",
+      "difficulty": 1,
+      "renderScale": 2,
+      "cpuThrottle": 2,
+      "injectedDelayMs": 110,
+      "jitterMs": 0,
+      "throughStageTwo": false,
+      "rooms": [
+        {
+          "seats": 2,
+          "comparedFrames": 1050,
+          "maxEnemyBullets": 20,
+          "bossNonspellFrames": 0,
+          "activeSpellFrames": 0,
+          "stageTwoFrames": 0,
+          "pilots": [
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 59.302,
+              "captureMs": 1.113,
+              "presentationGapP95Ms": 19.825,
+              "presentationGapMaxMs": 98.43,
+              "updateP95Ms": 8.67,
+              "repairP95Ms": 10.35,
+              "corrections": 61,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 59.566,
+              "captureMs": 1.115,
+              "presentationGapP95Ms": 18.92,
+              "presentationGapMaxMs": 108.755,
+              "updateP95Ms": 8.235,
+              "repairP95Ms": 11.7,
+              "corrections": 15,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            }
+          ]
+        },
+        {
+          "seats": 3,
+          "comparedFrames": 1053,
+          "maxEnemyBullets": 18,
+          "bossNonspellFrames": 0,
+          "activeSpellFrames": 0,
+          "stageTwoFrames": 0,
+          "pilots": [
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 58.743,
+              "captureMs": 1.389,
+              "presentationGapP95Ms": 20.505,
+              "presentationGapMaxMs": 107.795,
+              "updateP95Ms": 12.395,
+              "repairP95Ms": 13.675,
+              "corrections": 51,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 59.062,
+              "captureMs": 1.439,
+              "presentationGapP95Ms": 19.715,
+              "presentationGapMaxMs": 105.23,
+              "updateP95Ms": 11.31,
+              "repairP95Ms": 14.86,
+              "corrections": 23,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 59.063,
+              "captureMs": 1.589,
+              "presentationGapP95Ms": 19.685,
+              "presentationGapMaxMs": 109.575,
+              "updateP95Ms": 11.03,
+              "repairP95Ms": 17.575,
+              "corrections": 37,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            }
+          ]
+        }
+      ]
+    },
+    "optimized-normal-opening": {
+      "wasm": "bb4ccd948a1af05e2f1e5930517bf4145edc95c3d72c8f4458a0fd9928048133",
+      "difficulty": 1,
+      "renderScale": 2,
+      "cpuThrottle": 2,
+      "injectedDelayMs": 110,
+      "jitterMs": 0,
+      "throughStageTwo": false,
+      "rooms": [
+        {
+          "seats": 2,
+          "comparedFrames": 1050,
+          "maxEnemyBullets": 20,
+          "bossNonspellFrames": 0,
+          "activeSpellFrames": 0,
+          "stageTwoFrames": 0,
+          "pilots": [
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 58.455,
+              "captureMs": 1.15,
+              "presentationGapP95Ms": 20.99,
+              "presentationGapMaxMs": 134.065,
+              "updateP95Ms": 11.175,
+              "repairP95Ms": 13.305,
+              "corrections": 43,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 58.397,
+              "captureMs": 1.158,
+              "presentationGapP95Ms": 20.63,
+              "presentationGapMaxMs": 139.85,
+              "updateP95Ms": 11.415,
+              "repairP95Ms": 11.71,
+              "corrections": 22,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            }
+          ]
+        },
+        {
+          "seats": 3,
+          "comparedFrames": 1052,
+          "maxEnemyBullets": 18,
+          "bossNonspellFrames": 0,
+          "activeSpellFrames": 0,
+          "stageTwoFrames": 0,
+          "pilots": [
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 58.279,
+              "captureMs": 1.369,
+              "presentationGapP95Ms": 21.26,
+              "presentationGapMaxMs": 88.915,
+              "updateP95Ms": 13.325,
+              "repairP95Ms": 14.22,
+              "corrections": 33,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 58.174,
+              "captureMs": 1.397,
+              "presentationGapP95Ms": 21.055,
+              "presentationGapMaxMs": 90.98,
+              "updateP95Ms": 12.32,
+              "repairP95Ms": 13.545,
+              "corrections": 18,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 58.445,
+              "captureMs": 1.567,
+              "presentationGapP95Ms": 20.52,
+              "presentationGapMaxMs": 152.45,
+              "updateP95Ms": 12.085,
+              "repairP95Ms": 16.335,
+              "corrections": 31,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            }
+          ]
+        }
+      ]
+    },
+    "optimized-repeat-opening": {
+      "wasm": "bb4ccd948a1af05e2f1e5930517bf4145edc95c3d72c8f4458a0fd9928048133",
+      "difficulty": 1,
+      "renderScale": 2,
+      "cpuThrottle": 2,
+      "injectedDelayMs": 110,
+      "jitterMs": 0,
+      "throughStageTwo": false,
+      "rooms": [
+        {
+          "seats": 2,
+          "comparedFrames": 1053,
+          "maxEnemyBullets": 20,
+          "bossNonspellFrames": 0,
+          "activeSpellFrames": 0,
+          "stageTwoFrames": 0,
+          "pilots": [
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 59.493,
+              "captureMs": 0.715,
+              "presentationGapP95Ms": 19.755,
+              "presentationGapMaxMs": 81.635,
+              "updateP95Ms": 5.61,
+              "repairP95Ms": 9.545,
+              "corrections": 69,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 59.725,
+              "captureMs": 0.737,
+              "presentationGapP95Ms": 18.49,
+              "presentationGapMaxMs": 81.56,
+              "updateP95Ms": 5.345,
+              "repairP95Ms": 12.875,
+              "corrections": 26,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            }
+          ]
+        },
+        {
+          "seats": 3,
+          "comparedFrames": 1050,
+          "maxEnemyBullets": 18,
+          "bossNonspellFrames": 0,
+          "activeSpellFrames": 0,
+          "stageTwoFrames": 0,
+          "pilots": [
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 59.038,
+              "captureMs": 1.128,
+              "presentationGapP95Ms": 19.675,
+              "presentationGapMaxMs": 118.49,
+              "updateP95Ms": 7.675,
+              "repairP95Ms": 11.935,
+              "corrections": 43,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 59.305,
+              "captureMs": 1.111,
+              "presentationGapP95Ms": 18.875,
+              "presentationGapMaxMs": 117.24,
+              "updateP95Ms": 7.43,
+              "repairP95Ms": 12.02,
+              "corrections": 24,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 59.2,
+              "captureMs": 1.121,
+              "presentationGapP95Ms": 19.135,
+              "presentationGapMaxMs": 117.385,
+              "updateP95Ms": 7.485,
+              "repairP95Ms": 11.65,
+              "corrections": 54,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            }
+          ]
+        }
+      ]
+    },
+    "baseline-repeat-opening": {
+      "wasm": "e1e456c8655498b70bb55a4a31a63272d32c66bb2454a97f3bb7bc49aadff865",
+      "difficulty": 1,
+      "renderScale": 2,
+      "cpuThrottle": 2,
+      "injectedDelayMs": 110,
+      "jitterMs": 0,
+      "throughStageTwo": false,
+      "rooms": [
+        {
+          "seats": 2,
+          "comparedFrames": 1051,
+          "maxEnemyBullets": 20,
+          "bossNonspellFrames": 0,
+          "activeSpellFrames": 0,
+          "stageTwoFrames": 0,
+          "pilots": [
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 58.686,
+              "captureMs": 1.108,
+              "presentationGapP95Ms": 20.56,
+              "presentationGapMaxMs": 77.42,
+              "updateP95Ms": 10.21,
+              "repairP95Ms": 11.6,
+              "corrections": 33,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 58.904,
+              "captureMs": 1.04,
+              "presentationGapP95Ms": 19.69,
+              "presentationGapMaxMs": 87.625,
+              "updateP95Ms": 9.99,
+              "repairP95Ms": 9.95,
+              "corrections": 26,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            }
+          ]
+        },
+        {
+          "seats": 3,
+          "comparedFrames": 1052,
+          "maxEnemyBullets": 18,
+          "bossNonspellFrames": 0,
+          "activeSpellFrames": 0,
+          "stageTwoFrames": 0,
+          "pilots": [
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 59.565,
+              "captureMs": 1.136,
+              "presentationGapP95Ms": 19.29,
+              "presentationGapMaxMs": 75.74,
+              "updateP95Ms": 7.88,
+              "repairP95Ms": 10.055,
+              "corrections": 57,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 59.671,
+              "captureMs": 1.11,
+              "presentationGapP95Ms": 18.645,
+              "presentationGapMaxMs": 80.375,
+              "updateP95Ms": 7.565,
+              "repairP95Ms": 10.26,
+              "corrections": 27,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 59.512,
+              "captureMs": 1.126,
+              "presentationGapP95Ms": 19.135,
+              "presentationGapMaxMs": 77.415,
+              "updateP95Ms": 7.545,
+              "repairP95Ms": 10.495,
+              "corrections": 68,
+              "bossCorrections": 0,
+              "spellCorrections": 0
+            }
+          ]
+        }
+      ]
+    },
+    "optimized-stress-opening": {
+      "wasm": "bb4ccd948a1af05e2f1e5930517bf4145edc95c3d72c8f4458a0fd9928048133",
+      "difficulty": 1,
+      "renderScale": 2,
+      "cpuThrottle": 4,
+      "injectedDelayMs": 145,
+      "jitterMs": 0,
+      "throughStageTwo": false,
+      "rooms": [
+        {
+          "seats": 3,
+          "comparedFrames": 1053,
+          "maxEnemyBullets": 18,
+          "bossNonspellFrames": 0,
+          "activeSpellFrames": 0,
+          "stageTwoFrames": 0,
+          "pilots": [
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 54.899,
+              "captureMs": 2.108,
+              "presentationGapP95Ms": 25.48,
+              "presentationGapMaxMs": 160.21,
+              "updateP95Ms": 16.86,
+              "repairP95Ms": 17.31,
+              "corrections": 39,
+              "bossCorrections": 0,
+              "spellCorrections": 0,
+              "gpuSampleCount": 22,
+              "gpuSampleMaxMs": 6.717
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 55.006,
+              "captureMs": 2.097,
+              "presentationGapP95Ms": 25.625,
+              "presentationGapMaxMs": 162.48,
+              "updateP95Ms": 16.12,
+              "repairP95Ms": 15.155,
+              "corrections": 18,
+              "bossCorrections": 0,
+              "spellCorrections": 0,
+              "gpuSampleCount": 22,
+              "gpuSampleMaxMs": 5.051
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 55.457,
+              "captureMs": 2.158,
+              "presentationGapP95Ms": 24.52,
+              "presentationGapMaxMs": 162.46,
+              "updateP95Ms": 16.04,
+              "repairP95Ms": 17.735,
+              "corrections": 55,
+              "bossCorrections": 0,
+              "spellCorrections": 0,
+              "gpuSampleCount": 22,
+              "gpuSampleMaxMs": 7.443
+            }
+          ]
+        }
+      ]
+    },
+    "baseline-stress-opening": {
+      "wasm": "e1e456c8655498b70bb55a4a31a63272d32c66bb2454a97f3bb7bc49aadff865",
+      "difficulty": 1,
+      "renderScale": 2,
+      "cpuThrottle": 4,
+      "injectedDelayMs": 145,
+      "jitterMs": 0,
+      "throughStageTwo": false,
+      "rooms": [
+        {
+          "seats": 3,
+          "comparedFrames": 1051,
+          "maxEnemyBullets": 18,
+          "bossNonspellFrames": 0,
+          "activeSpellFrames": 0,
+          "stageTwoFrames": 0,
+          "pilots": [
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 56.039,
+              "captureMs": 2.431,
+              "presentationGapP95Ms": 23.685,
+              "presentationGapMaxMs": 182.11,
+              "updateP95Ms": 16.26,
+              "repairP95Ms": 17.18,
+              "corrections": 27,
+              "bossCorrections": 0,
+              "spellCorrections": 0,
+              "gpuSampleCount": 21,
+              "gpuSampleMaxMs": 5.216
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 55.79,
+              "captureMs": 2.375,
+              "presentationGapP95Ms": 24.065,
+              "presentationGapMaxMs": 191.805,
+              "updateP95Ms": 15.89,
+              "repairP95Ms": 18.11,
+              "corrections": 14,
+              "bossCorrections": 0,
+              "spellCorrections": 0,
+              "gpuSampleCount": 21,
+              "gpuSampleMaxMs": 5.292
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 56.246,
+              "captureMs": 2.412,
+              "presentationGapP95Ms": 23.51,
+              "presentationGapMaxMs": 181.505,
+              "updateP95Ms": 15.56,
+              "repairP95Ms": 16.61,
+              "corrections": 38,
+              "bossCorrections": 0,
+              "spellCorrections": 0,
+              "gpuSampleCount": 21,
+              "gpuSampleMaxMs": 6.563
+            }
+          ]
+        }
+      ]
+    },
+    "optimized-normal-stage-two": {
+      "wasm": "bb4ccd948a1af05e2f1e5930517bf4145edc95c3d72c8f4458a0fd9928048133",
+      "difficulty": 1,
+      "renderScale": 2,
+      "cpuThrottle": 4,
+      "injectedDelayMs": 145,
+      "jitterMs": 0,
+      "throughStageTwo": true,
+      "rooms": [
+        {
+          "seats": 3,
+          "comparedFrames": 8913,
+          "maxEnemyBullets": 150,
+          "bossNonspellFrames": 1395,
+          "activeSpellFrames": 992,
+          "stageTwoFrames": 244,
+          "pilots": [
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 38.822,
+              "captureMs": 3.694,
+              "presentationGapP95Ms": 43.59,
+              "presentationGapMaxMs": 1754.35,
+              "updateP95Ms": 29.205,
+              "repairP95Ms": 24.565,
+              "corrections": 135,
+              "bossCorrections": 18,
+              "spellCorrections": 4,
+              "stageFps": {
+                "1/route": 41.083,
+                "1/nonspell": 30.204,
+                "1/dialogue": 38.235,
+                "1/spell": 42.715,
+                "2/entry": 52.368,
+                "2/route": 26.743
+              }
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 38.947,
+              "captureMs": 3.87,
+              "presentationGapP95Ms": 42.8,
+              "presentationGapMaxMs": 1855.705,
+              "updateP95Ms": 27.94,
+              "repairP95Ms": 23.095,
+              "corrections": 132,
+              "bossCorrections": 16,
+              "spellCorrections": 19,
+              "stageFps": {
+                "1/route": 41.081,
+                "1/nonspell": 30.719,
+                "1/dialogue": 39.741,
+                "1/spell": 42.962,
+                "2/entry": 48.751,
+                "2/route": 27.622
+              }
+            },
+            {
+              "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+              "presentationFps": 39.244,
+              "captureMs": 3.742,
+              "presentationGapP95Ms": 42.725,
+              "presentationGapMaxMs": 1786.46,
+              "updateP95Ms": 28.735,
+              "repairP95Ms": 26.86,
+              "corrections": 225,
+              "bossCorrections": 35,
+              "spellCorrections": 19,
+              "stageFps": {
+                "1/route": 41.443,
+                "1/nonspell": 30.685,
+                "1/dialogue": 38.403,
+                "1/spell": 43.48,
+                "2/entry": 52.386,
+                "2/route": 27.133
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

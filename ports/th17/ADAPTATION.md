@@ -175,3 +175,12 @@
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。
 
 - 2026-10-30，normal：[迁移与接入验证](../../archive/th17-development-20261030/migration-validation.md)。生产 Wasm 在桌面 Chromium 完成 OGG／无音乐、命令会话隔离、输入清除、原生退出、用户文件恢复及指定原版演示文件启动。随机数、演示输入解码与触控录像往返使用原生模块独立核对，范围与构建 SHA-256 见记录。
+- 2026-11-06，multiplayer：[双人和三人房间验证](../../archive/th17-multiplayer-room-20261106/room-validation.md)。生产 Wasm 使用本地 Relay 同步开局，对照确认输入模式的一面战斗状态及席位资源。
+- 2026-11-06，multiplayer：[战斗回滚验证](../../archive/th17-combat-rollback-20261106/room-validation.md)。生产 Wasm 在双人和三人 WebRTC 房间注入迟到输入，对照重演后的确认帧。
+- 2026-11-06，multiplayer：[回滚分帧压测](../../archive/th17-combat-rollback-20261106/performance-validation.md)。生产 Wasm 在 Chromium CPU 限速和 WebRTC 输入抖动下测量纠错回调耗时，逐帧比对双人和三人房的确认状态。
+- 2026-11-06，multiplayer：[Extra 密集弹幕压测](../../archive/th17-extra-dense-20261106/README.md)。生产 Wasm 在真实 Extra 房比对确认帧，并测量敌弹密集区段的活跃堆和纠错耗时。
+- 2026-11-06，multiplayer：[Extra Boss 三人回滚压测](../../archive/th17-extra-boss-20261106/README.md)。独立诊断包在高延迟三人 WebRTC 房核对关底非符和符卡，并分项测量快照、逻辑绘制与纠错耗时。
+- 2026-11-06，multiplayer：[Extra 关底全程回滚压测](../../archive/th17-extra-finale-20261106/README.md)。独立诊断包在高延迟三人 WebRTC 房跑完整个关底，并配对比较密集帧的活跃堆与快照容量。
+- 2026-11-06，multiplayer：[双人和三人 HUD 验证](../../archive/th17-multiplayer-hud-20261106/README.md)。正式多人包在 Extra 房显示分席资源和共享计数，原生测试核对图标层、席位高亮和碎片显示。
+- 2026-11-06，multiplayer：[HUD 行距和原版擦弹贴图](../../archive/th17-hud-spacing-20261106/README.md)。正式多人包在 Extra 房使用 TH15 的席位行距，并由 TH17 原生 ANM 绘制共享擦弹行。
+- 2026-11-06，multiplayer：[三人 HUD 碎片提示](../../archive/th17-3p-hud-fragments-20261106/README.md)。三人房为每席显示两种碎片计数，共享 PIV 和擦弹放在右栏底部。

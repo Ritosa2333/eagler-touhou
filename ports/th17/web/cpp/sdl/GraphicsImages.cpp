@@ -7,6 +7,38 @@
 #include <algorithm>
 #include <cmath>
 namespace th17::sdl {
+#if TH17_MULTIPLAYER
+bool GraphicsDevice::layout_room_front(TextureImage& image){
+    if(image.width!=1024||image.height!=1024||image.format!=touhou::graphics::PixelFormat::Bgra8)return false;
+    const auto pixel=[&](u32 x,u32 y){return image.pixels.data()+size_t(y)*image.pitch+x*4;};
+    // The retail right frame and logo share one sprite. Continue its own
+    // background into the logo area so the extra HUD rows stay legible.
+    constexpr u32 panel_left=64,panel_width=448,logo_top=576,panel_bottom=960;
+    for(u32 y=logo_top;y<panel_bottom;++y)
+        std::memcpy(pixel(panel_left,y),pixel(panel_left,2*logo_top-1-y),panel_width*4);
+
+    constexpr u32 graze_x=656,graze_y=36,graze_w=160,graze_h=36;
+    for(u32 y=0;y<graze_h;++y)for(u32 x=0;x<graze_w;++x)
+        if(pixel(graze_x+x,graze_y+y)[3])return true;
+
+    // TH17 keeps the Graze script but ships its atlas rectangle transparent.
+    // Fill it with the original TH15 label, below any localized replacement.
+    static constexpr u8 graze_png[]={
+#include "RoomGrazeTexture.inc"
+    };
+    int width=0,height=0;
+    auto* rgba=stbi_load_from_memory(graze_png,sizeof(graze_png),&width,&height,nullptr,4);
+    if(rgba&&width==144&&height==graze_h){
+        for(int y=0;y<height;++y)for(int x=0;x<width;++x){
+            const auto* from=rgba+(y*width+x)*4;
+            auto* to=pixel(graze_x+x,graze_y+y);
+            to[0]=from[2];to[1]=from[1];to[2]=from[0];to[3]=from[3];
+        }
+    }
+    stbi_image_free(rgba);
+    return true;
+}
+#endif
 // TH10 AnimationResources::override_embedded uses thcrap's per-sprite "auto"
 // replacement rule: opaque originals are blended with the PNG, while sprites
 // with transparency are replaced (including transparent pixels). Keep all

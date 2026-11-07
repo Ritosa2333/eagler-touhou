@@ -34,6 +34,8 @@ int EnemyVisualCommands::execute(EclContext& context,u16 opcode){
         return 0;
     }
     auto* vm=host->find(handle);if(!vm){handle=0;return 0;}auto& visual=vm->visual;auto& curves=vm->interpolators;
+    // ECL can start a curve after the ANM tick has cached its active channels.
+    if(opcode==326||opcode==328||opcode==330||opcode==332||opcode==333)curves.invalidate();
     switch(opcode){
         case 319:vm->variables.rotation.z=number(1);visual.flags|=4;break;
         case 325:{const u32 b=u32(integer(3))&255,g=u32(integer(2))&255,r=u32(integer(1))&255;visual.color=(visual.color&0xff000000)|(r<<16)|(g<<8)|b;break;}

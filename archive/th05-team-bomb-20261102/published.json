@@ -1,0 +1,19 @@
+{
+  "publishedAt": "2026-11-02T15:57:59Z",
+  "siteUrl": "https://touhouonline.com/",
+  "previous": "/var/www/eagler-touhou/releases/th12-spell-history-4d8d1ca089-20261102",
+  "current": "/var/www/eagler-touhou/releases/th05-team-bomb-20261102",
+  "releaseId": "sha256-7143516a42ce14de2c6f1b08df60db28c0c2a7142ee9d1353850e3681e826fb2",
+  "preservedFiles": 8199,
+  "updates": [
+    {
+      "game": "th05",
+      "variant": "multiplayer",
+      "root": "runtime/th05/multiplayer/",
+      "previousGeneration": "47c00f0484c1a656e6e1bc9c2690c3e96b6b7a44b13bf0137b7add3af0bcb767",
+      "generation": "02b81ca8fea3cff969cf2e64c2e3a9c2936f2b38fc4740712f572d2fa78179f0",
+      "files": 26
+    }
+  ],
+  "mode": "th05-team-bomb"
+}
