@@ -1,6 +1,6 @@
 # 文档总表
 
-共 475 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 476 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -304,6 +304,7 @@
 | 历史记录 | [archive/th17-development-20261030/docs/验收计划.md](../archive/th17-development-20261030/docs/验收计划.md) | 鬼形兽还原与发布验收 |
 | 历史记录 | [archive/th17-development-20261030/migration-validation.md](../archive/th17-development-20261030/migration-validation.md) | TH17 共用启动器接入验证 · 2026-10-30 |
 | 历史记录 | [archive/th17-directory-split-20261106/README.md](../archive/th17-directory-split-20261106/README.md) | TH17 独立普通版与多人版 · 2026-11-06 |
+| 历史记录 | [archive/th17-dual-motion-long-frames-20261107/README.md](../archive/th17-dual-motion-long-frames-20261107/README.md) | TH17 双席滑动长帧 · 2026-11-07 |
 | 历史记录 | [archive/th17-extra-boss-20261106/README.md](../archive/th17-extra-boss-20261106/README.md) | TH17 Extra Boss 三人回滚压测 · 2026-11-06 |
 | 历史记录 | [archive/th17-extra-dense-20261106/README.md](../archive/th17-extra-dense-20261106/README.md) | TH17 Extra 密集弹幕压测 · 2026-11-06 |
 | 历史记录 | [archive/th17-extra-finale-20261106/README.md](../archive/th17-extra-finale-20261106/README.md) | TH17 Extra 关底全程回滚压测 · 2026-11-06 |
