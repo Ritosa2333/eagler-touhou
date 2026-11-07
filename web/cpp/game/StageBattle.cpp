@@ -1251,8 +1251,45 @@ float StageBattle::query_enemy_damage(StageEnemy& state, float width, float heig
     return capped;
 }
 
+bool StageBattle::query_enemy_bomb_hit(const StageEnemy& enemy) const {
+    // 419b31..419b74 calls446870(param5=1): query only, with the Bomb
+    // marker separate from damage. All four Bomb vtable+0xc methods return0;
+    // the marker therefore comes from a live registration's flags bit2.
+    if (player_phase_clock_.current == player_phase_clock_.previous) return false;
+    i32 damage = 0;
+    bool bomb_hit = false;
+    for (const auto& registration : damage_registrations) {
+        if (!registration.active || !(registration.flags & 1u) ||
+            registration.clock.current == registration.clock.previous ||
+            registration.interval <= 0 || registration.clock.current % registration.interval != 0)
+            continue;
+        bool hit;
+        if (registration.flags & 2u) {
+            const double dx = double(enemy.position[0]) - registration.center_x;
+            const double dy = double(enemy.position[1]) - registration.center_y;
+            hit = dx * dx + dy * dy <= double(registration.radius) * registration.radius;
+        } else {
+            hit = shot_hits_enemy_box(registration.center_x, registration.center_y,
+                registration.width, registration.height, enemy.position[0], enemy.position[1],
+                enemy.hurtbox[0], enemy.hurtbox[1], registration.angle);
+        }
+        if (!hit) continue;
+        damage = wrapping_add(damage, i32(registration.damage));
+        if (registration.flags & 4u) bomb_hit = true;
+    }
+    // param5=1 does not invoke shot callbacks, accrue damage, score, or
+    // write the last-hit position; ordinary damage queries still do so below.
+    return damage != 0 && bomb_hit;
+}
+
 void StageBattle::collide_shots(StageEnemy& state) {
     StageEnemy* enemy = &state;
+    // 419a90 tests the Bomb-cancellable enemy flag before the normal 0x21
+    // damage gates. 41aad0 runs drops/death ECL before418e00 unlinks it.
+    if (!enemy->dead && (enemy->flags & 0x800u) && query_enemy_bomb_hit(*enemy)) {
+        if (sim.death_effects_and_drops(*enemy)) enemy->dead = true;
+        return;
+    }
     //419a90 gates the query by flags, not HP. BossDead keeps its entity
     // alive with bit80/10 and still consumes shots/awards hit points/spirits.
     if (enemy->dead || (enemy->flags & 0x21u)) return;

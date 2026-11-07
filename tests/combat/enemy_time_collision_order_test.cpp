@@ -141,7 +141,11 @@ TEST(constructor_resolves_lethal_shot_before_return_and_time_tick) {
     auto* enemy = fixture.target();
     CHECK(enemy != nullptr);
     if (!enemy) return;
-    CHECK(enemy->dead);
+    // 契约更正（0x418581 call 41a8a0 → 0x418586 直接覆盖 EAX，返回被忽略；
+    // 4183f0 构造趟不摘链）：构造期致死已执行 41aad0（下方 spirits/弹结算与
+    // age==0 均保持），敌机保持挂链非 dead，摘链由后续 0x418e00 完成
+    // （EX udmh04 e2141/e2183 全窗对拍实证）。
+    CHECK(!enemy->dead);
     CHECK_EQ(enemy->age, 0.0f);
     CHECK_EQ(fixture.spirits(), 2);  // 00419f3c age0: (60-0)/60+1
     // 契约更正（0x446c5a/0x446c8d/0x446531，同 player_shot_geometry 裁决）：
