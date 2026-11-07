@@ -1,6 +1,6 @@
 # 文档总表
 
-共 476 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 477 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -326,6 +326,7 @@
 | 历史记录 | [archive/th17-room-start-fix-20261106/README.md](../archive/th17-room-start-fix-20261106/README.md) | TH17 多人开局修复 · 2026-11-06 |
 | 历史记录 | [archive/th17-route-gap-trace-20261107/README.md](../archive/th17-route-gap-trace-20261107/README.md) | TH17 一面符卡切入长帧 · 2026-11-07 |
 | 历史记录 | [archive/th17-snapshot-compare-20261107/README.md](../archive/th17-snapshot-compare-20261107/README.md) | TH17 多人动画快照比较 · 2026-11-07 |
+| 历史记录 | [archive/th17-story-combat-pressure-20261107/README.md](../archive/th17-story-combat-pressure-20261107/README.md) | TH17 普通关实战帧时间 · 2026-11-07 |
 | 历史记录 | [archive/th17-story-perf-20261106/README.md](../archive/th17-story-perf-20261106/README.md) | TH17 普通关高清回滚 · 2026-11-06 |
 | 历史记录 | [archive/th17-tail-20261106/README.md](../archive/th17-tail-20261106/README.md) | TH17 密集弹幕快照与长帧 · 2026-11-06 |
 | 历史记录 | [archive/th17-teammate-effects-20261107/README.md](../archive/th17-teammate-effects-20261107/README.md) | TH17 队友射击与 Hyper 淡化 · 2026-11-07 |
