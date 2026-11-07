@@ -1,0 +1,117 @@
+{
+  "wasm": "25d5432098217725a84b646d01bdad4c58e17e174f79c29aadea86fe03459924",
+  "executable": "85cb011e2e43b316c8fa42a3c402565ecdf2f4379f3bab66d86bcb7beef8255f",
+  "original": [
+    {
+      "test": "anm-interpolation",
+      "passed": true,
+      "samples": null,
+      "frames": 120960,
+      "checks": 2056320,
+      "originalFunctions": null
+    },
+    {
+      "test": "anm-interpreter",
+      "passed": true,
+      "samples": null,
+      "frames": 1280,
+      "checks": 5120,
+      "originalFunctions": null
+    },
+    {
+      "test": "anm-random-polar",
+      "passed": true,
+      "samples": 2048,
+      "frames": null,
+      "checks": 4096,
+      "originalFunctions": [
+        "0x466de0",
+        "0x467e89",
+        "0x402880",
+        "0x405a10"
+      ]
+    },
+    {
+      "test": "anm-semantic-projected-renderer",
+      "passed": true,
+      "samples": 4096,
+      "frames": null,
+      "checks": 16384,
+      "originalFunctions": [
+        "0x46f8c0",
+        "0x46da20",
+        "0x46deb0",
+        "0x46c8b0"
+      ]
+    },
+    {
+      "test": "anm-semantic-shape-renderer",
+      "passed": true,
+      "samples": 2304,
+      "frames": null,
+      "checks": 16640,
+      "originalFunctions": [
+        "0x46f8c0",
+        "0x481ed0",
+        "0x482200",
+        "0x4822d0",
+        "0x482680",
+        "0x482850",
+        "0x482a80"
+      ]
+    },
+    {
+      "test": "anm-semantic-sprite-renderer",
+      "passed": true,
+      "samples": 4096,
+      "frames": null,
+      "checks": 16384,
+      "originalFunctions": [
+        "0x46f8c0",
+        "0x47dba0",
+        "0x47d840",
+        "0x47e4c0",
+        "0x46d0a0"
+      ]
+    },
+    {
+      "test": "anm-semantic-world-renderer",
+      "passed": true,
+      "samples": 1024,
+      "frames": null,
+      "checks": 9216,
+      "originalFunctions": [
+        "0x46f8c0",
+        "0x4801e0",
+        "0x480ae0",
+        "0x4846e0",
+        "0x47d840"
+      ]
+    },
+    {
+      "test": "bullet-visual",
+      "passed": true,
+      "samples": 528,
+      "frames": 59184,
+      "checks": 1538784,
+      "originalFunctions": [
+        "0x409510",
+        "0x4665f0",
+        "0x466de0",
+        "0x41a3a0"
+      ]
+    }
+  ],
+  "stripComparison": {
+    "baseline": "8efb08980",
+    "samples": 4096,
+    "modes": [
+      9,
+      13,
+      14,
+      24,
+      25
+    ],
+    "identicalBytes": true
+  }
+}

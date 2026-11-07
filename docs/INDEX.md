@@ -1,6 +1,6 @@
 # 文档总表
 
-共 477 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 478 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -279,6 +279,7 @@
 | 历史记录 | [archive/th15-rollback-performance-20261105/README.md](../archive/th15-rollback-performance-20261105/README.md) | th15 MP 回滚性能 |
 | 历史记录 | [archive/th15-stage-transition-rollback-20261028/README.md](../archive/th15-stage-transition-rollback-20261028/README.md) | TH15 多人回滚换面输入节奏 |
 | 历史记录 | [archive/th17-3p-hud-fragments-20261106/README.md](../archive/th17-3p-hud-fragments-20261106/README.md) | TH17 三人 HUD 碎片提示 · 2026-11-06 |
+| 历史记录 | [archive/th17-anm-combat-20261107/README.md](../archive/th17-anm-combat-20261107/README.md) | TH17 普通关动画与绘制开销 · 2026-11-07 |
 | 历史记录 | [archive/th17-combat-rollback-20261106/performance-validation.md](../archive/th17-combat-rollback-20261106/performance-validation.md) | TH17 回滚分帧压测 · 2026-11-06 |
 | 历史记录 | [archive/th17-combat-rollback-20261106/room-validation.md](../archive/th17-combat-rollback-20261106/room-validation.md) | TH17 战斗回滚验证 · 2026-11-06 |
 | 历史记录 | [archive/th17-desktop-fixes-20261107/README.md](../archive/th17-desktop-fixes-20261107/README.md) | TH17 单人快捷键、换面与实例绘制 · 2026-11-07 |
