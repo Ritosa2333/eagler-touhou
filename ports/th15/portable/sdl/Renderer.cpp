@@ -43,7 +43,6 @@ Renderer* current(){return active;}void set_current(Renderer* r){active=r;}
 State::State(){for(auto& m:matrix)m=identity;}
 Renderer::Renderer(int v,Resolve r,void* p):version(v),resolve(r),owner(p){}
 bool Renderer::initialize(){
- lastProgram=nullptr;lastLayout=nullptr;
  if(!SDL_Init(SDL_INIT_VIDEO|SDL_INIT_EVENTS)){failure=SDL_GetError();return false;}
  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,SDL_GL_CONTEXT_PROFILE_ES);SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3);SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,0);
  SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE,0);SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,0);SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE,0);SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
@@ -83,14 +82,8 @@ void Renderer::transform(MatrixKind kind,const void* p){auto& m=state.matrix[u32
 void Renderer::viewport(const Viewport& v){state.viewport=v;}
 void Renderer::select(const State& s){
  const auto& p=s.pipeline;auto arg=[](Argument a){return u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u);};
- std::array<u32,10> key{u32(!!s.texture),u32(p.alphaTest),u32(p.fog),u32(p.color.operation),u32(p.alpha.operation),arg(p.color.first),arg(p.color.second),arg(p.alpha.first),arg(p.alpha.second),u32(p.alphaCompare)|(u32(version==10&&p.depthTest&&(p.depthWrite||p.depthCompare!=Compare::Always))<<8)};
- // Warming clears the generic construction entry; cache only stable results.
- if(!warming&&lastProgram&&lastProgramKey==key){
-  program=lastProgram;if(program==&generic)++stats.genericBatches;
-  if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}return;
- }
- auto it=programs.find(key);
- if(it==programs.end()&&!warming){program=&generic;lastProgramKey=key;lastProgram=program;++stats.genericBatches;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}return;}
+ std::array<u32,10> key{u32(!!s.texture),u32(p.alphaTest),u32(p.fog),u32(p.color.operation),u32(p.alpha.operation),arg(p.color.first),arg(p.color.second),arg(p.alpha.first),arg(p.alpha.second),u32(p.alphaCompare)|(u32(version==10&&p.depthTest&&(p.depthWrite||p.depthCompare!=Compare::Always))<<8)};auto it=programs.find(key);
+ if(it==programs.end()&&!warming){program=&generic;++stats.genericBatches;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}return;}
  if(it==programs.end()){
   ++stats.programCompiles;
   static const char* constants[]{"hasTexture","alphaTest","fogEnabled","colorOp","alphaOp","colorArg1","colorArg2","alphaArg1","alphaArg2","alphaFunc"};
@@ -103,7 +96,7 @@ void Renderer::select(const State& s){
   const char* names[]{"viewport","transformed","textureTransform","instanced","world","view","projection","textureMatrix","fogEnabled","rangeFog","fogMode","fogParams","fogColor","hasTexture","factor","colorOp","colorArg1","colorArg2","alphaOp","alphaArg1","alphaArg2","alphaTest","alphaRef","alphaFunc","depth16","tex"};
   for(int i=0;i<26;i++)p.uniforms[i].location=glGetUniformLocation(p.id,names[i]);it=programs.emplace(key,p).first;
  }
- program=&it->second;if(!warming){lastProgramKey=key;lastProgram=program;}if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}
+ program=&it->second;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}
 }
 void Renderer::uniform(int i,int n,const float* p){auto& u=program->uniforms[i];if(u.location<0)return;if(u.count==n&&!std::memcmp(u.value.data(),p,n*4))return;std::memcpy(u.value.data(),p,n*4);u.count=n;if(n==16)glUniformMatrix4fv(u.location,1,false,p);else if(n==4)glUniform4fv(u.location,1,p);else if(n==3)glUniform3fv(u.location,1,p);else glUniform1f(u.location,*p);}
 void Renderer::integer(int i,int n){auto& u=program->uniforms[i];if(u.location<0)return;float f=float(n);if(u.count==1&&u.value[0]==f)return;u.count=1;u.value[0]=f;glUniform1i(u.location,n);}
@@ -214,8 +207,7 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  if(all||cached.colorMask!=p.colorMask)glColorMask(!!(p.colorMask&1),!!(p.colorMask&2),!!(p.colorMask&4),!!(p.colorMask&8));
  cached=p;drawState.valid=true;
  const std::array<u32,6> layoutKey{d.stride,u32(d.layout.screen),d.layout.diffuse,d.layout.specular,d.layout.uv,u32(!!instance)};
- if(!lastLayout||lastLayoutKey!=layoutKey){lastLayout=&layouts[layoutKey];lastLayoutKey=layoutKey;}
- auto& vao=*lastLayout;const bool setup=!vao;
+ auto& vao=layouts[layoutKey];const bool setup=!vao;
  if(setup)glGenVertexArrays(1,&vao);if(currentLayout!=vao){glBindVertexArray(vao);currentLayout=vao;}
  const u32 base=upload(vertices,GL_ARRAY_BUFFER,data,size,1048576);
 #ifdef __EMSCRIPTEN__
