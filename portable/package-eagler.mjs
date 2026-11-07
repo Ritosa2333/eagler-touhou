@@ -22,7 +22,7 @@ if(hash(wasm)!==build.sha256)throw Error('Wasm build identity mismatch');
 for(const {name} of WebAssembly.Module.exports(new WebAssembly.Module(wasm)))
  if(/^(?:application_|th17_probe|audit_|presentation_lab_)/.test(name)||(!roomBenchmark&&name.startsWith('th17_room_benchmark_')))throw Error('Diagnostic export in production: '+name);
 const mappingPath='fonts/cp932.bin';
-const browserHelpers=['local-replay.mjs','local-replay-native.mjs','spectator-playback.mjs'];
+const browserHelpers=['direct-input-bridge.mjs','local-replay.mjs','local-replay-native.mjs','spectator-playback.mjs'];
 const names=['th17.html','manifest.json','gpu-timing.mjs','shell.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','th17.mjs','th17.wasm','resources.json',mappingPath,...browserHelpers];
 const allowed=new Set([...names,'runtime-files.json']);
 function walk(dir){return existsSync(dir)?readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(resolve(dir,e.name)):[resolve(dir,e.name)]):[];}

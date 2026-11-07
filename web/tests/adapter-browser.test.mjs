@@ -5,6 +5,7 @@ import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
 import {launchBrowser} from '../../../../tools/browser/launch.mjs';
 import {loadPlaywright} from '../../../../tools/browser/playwright.mjs';
+import {checkDirectInput} from './direct-input-browser.mjs';
 
 const repository=resolve(import.meta.dirname,'../../../..');
 const build=resolve(process.env.EAGLER_TH17_BUILD||resolve(repository,'ports/th17/build-eagler'));
@@ -81,6 +82,7 @@ test('TH17 production adapter binds epochs and runs configure, files, input, hea
   assert.equal(keyboardNeutral,false);
   await mkdir(output,{recursive:true});
   const frame=page.frames().find(f=>f.url().includes('/runtime/'));
+  await checkDirectInput(frame);
   await frame.waitForFunction(()=>Module._th17_frame()>160);
   await frame.locator('canvas').evaluate(canvas=>{
    const {x,y,width,height}=canvas.getBoundingClientRect();

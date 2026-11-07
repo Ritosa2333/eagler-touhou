@@ -1,4 +1,5 @@
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
+import {createDirectInputBridge} from './direct-input-bridge.mjs';
 import createModule from './th17.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {gpuTiming} from './gpu-timing.mjs';
@@ -14,7 +15,7 @@ let core,gpuMonitor,launched=false,first=false,stopping=false,options={},music=t
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...((event==='first-frame'||event==='room-menu')?{launchSerial}:{}),...fields},location.origin);
 const inputActive=()=>(launched||roomPreview&&options.netplayMode!=='lan')&&!document.hidden&&!stopping;
 const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:location.origin,ready:inputActive,reset:clearKeyboard},accept:code=>!!scanCodes[code],send:(code,down)=>core?._th17_key(scanCodes[code],+down)});
-function clearKeyboard(){keyboard.clear();core?._th17_keys_clear();}
+function clearKeyboard(){invalidateTouchGeometry();keyboard.clear();core?._th17_keys_clear();}
 const err=()=>{const p=core._th17_error(),end=core.HEAPU8.indexOf(0,p);return new TextDecoder().decode(core.HEAPU8.subarray(p,end<0?p+256:end));};
 const fatal=e=>{const message=e?.message||String(e);$('#error').textContent=message;core?._th17_loop_pause(1);emit('error',{error:message});};
 const sync=(populate=false)=>{const current=chain.then(()=>new Promise((r,j)=>core.FS.syncfs(populate,e=>e?j(e):r())));chain=current.catch(()=>{});return current;};
@@ -174,7 +175,40 @@ const localReplay=createNativeLocalReplay({
  },
  onState:playback=>emit('runtime-info',{playback}),onError:fatal,
 });
-async function command(m){switch(m.command){
+const liveInputCommands=new Set(['keyboard','keyboard-clear','touch-cancel','direct-touch','touch-controls']);
+let cachedTouchGeometry=null;
+function invalidateTouchGeometry(){cachedTouchGeometry=null;}
+function touchGeometry(){
+ if(!cachedTouchGeometry){
+  const bounds=canvas.getBoundingClientRect();
+  cachedTouchGeometry={left:bounds.left,top:bounds.top,width:bounds.width,height:bounds.height,
+   viewportWidth:innerWidth,viewportHeight:innerHeight};
+ }
+ return cachedTouchGeometry;
+}
+for(const event of ['resize','scroll','fullscreenchange'])
+ window.addEventListener(event,invalidateTouchGeometry,{capture:true,passive:true});
+// The managed canvas is centered in a fixed viewport. A gesture keeps its
+// geometry until the viewport or canvas changes; motion never forces layout.
+new ResizeObserver(invalidateTouchGeometry).observe(canvas);
+for(const event of ['resize','scroll'])
+ window.visualViewport?.addEventListener(event,invalidateTouchGeometry,{passive:true});
+function dispatchInput(m){
+ if(!core)return false;
+ switch(m.command){
+case 'keyboard':if(typeof m.code!=='string'||typeof m.down!=='boolean')throw Error('键盘参数无效');if(inputActive())keyboard.event(m,m.down,'hosted');return true;
+case 'keyboard-clear':clearKeyboard();return true;
+case 'touch-cancel':invalidateTouchGeometry();core._th17_touch_cancel();return true;
+case 'direct-touch':{if(m.type==='cancel'){invalidateTouchGeometry();core._th17_touch_cancel();return true;}if(!['down','move','up'].includes(m.type)||!Number.isSafeInteger(m.id)||!Number.isFinite(m.x)||!Number.isFinite(m.y))throw Error('触点参数无效');if(!inputActive())return true;if(m.type==='down')invalidateTouchGeometry();const b=touchGeometry();if(b.width&&b.height)core._th17_touch(({down:0,move:1,up:2})[m.type],m.id,(m.x*b.viewportWidth-b.left)/b.width,(m.y*b.viewportHeight-b.top)/b.height);return true;}
+case 'touch-controls':{const t=m.controls||m;core.eaglerControls=t;if(t.touchSensitivity!=null){if(!(Number.isFinite(t.touchSensitivity)&&t.touchSensitivity>=100&&t.touchSensitivity<=300))throw Error('触控灵敏度无效');if(t.touchSensitivity!==options.touchSensitivity){options.touchSensitivity=t.touchSensitivity;apply();}}core._th17_touch_controls(+!!options.touchEnabled,+!!t.fireEnabled,+!!t.focusEnabled,t.bombSerial>>>0,t.escapeSerial>>>0);core._th17_touch_stick(Number(t.joystickX)||0,Number(t.joystickY)||0);return true;}
+default:return false;
+ }
+}
+if(validEpoch)Object.defineProperty(window,'__eaglerDirectInputBridge',{configurable:true,
+ value:createDirectInputBridge({protocol,game,epoch,origin:location.origin,ready:()=>!!core,dispatch:dispatchInput})});
+async function command(m){
+ if(dispatchInput(m))return {};
+ switch(m.command){
 case 'configure':{
  if(launched)throw Error('游戏已启动');
  if(!['ogg','none'].includes(m.music))throw Error('音乐模式无效');
@@ -196,11 +230,6 @@ case 'prepare-room':
  }
  return {presented:true};
 case 'resources':for(const r of m.resources||[])await resource(r);return {};
-case 'keyboard':if(typeof m.code!=='string'||typeof m.down!=='boolean')throw Error('键盘参数无效');if(inputActive())keyboard.event(m,m.down,'hosted');return {};
-case 'keyboard-clear':clearKeyboard();return {};
-case 'touch-cancel':core._th17_touch_cancel();return {};
-case 'direct-touch':{if(m.type==='cancel'){core._th17_touch_cancel();return {};}if(!['down','move','up'].includes(m.type)||!Number.isSafeInteger(m.id)||!Number.isFinite(m.x)||!Number.isFinite(m.y))throw Error('触点参数无效');const b=canvas.getBoundingClientRect();if(b.width&&b.height)core._th17_touch(({down:0,move:1,up:2})[m.type],m.id,(m.x*innerWidth-b.left)/b.width,(m.y*innerHeight-b.top)/b.height);return {};}
-case 'touch-controls':{const t=m.controls||m;core.eaglerControls=t;if(t.touchSensitivity!=null){if(!(Number.isFinite(t.touchSensitivity)&&t.touchSensitivity>=100&&t.touchSensitivity<=300))throw Error('触控灵敏度无效');if(t.touchSensitivity!==options.touchSensitivity){options.touchSensitivity=t.touchSensitivity;apply();}}core._th17_touch_controls(+!!options.touchEnabled,+!!t.fireEnabled,+!!t.focusEnabled,t.bombSerial>>>0,t.escapeSerial>>>0);core._th17_touch_stick(Number(t.joystickX)||0,Number(t.joystickY)||0);return {};}
 case 'thprac-mouse':{
  if(!options.thpracEnabled||!['down','move','up'].includes(m.type)||![m.x,m.y].every(Number.isFinite))return {};
  const r=canvas.getBoundingClientRect(),scale=Math.min(r.width/640,r.height/480);
@@ -245,7 +274,18 @@ case 'write':{
 }
 case 'remove':if(launched&&!options.replayViewer)throw Error('请先退出游戏');core.FS.unlink(saveRoot+'/'+path(m.path));await sync();return {};
 default:throw Error('不支持的操作');}}
-window.addEventListener('message',e=>{const m=e.data;if(e.source!==parent||e.origin!==location.origin||m?.protocol!==protocol||m.game!==game||!validEpoch||m.epoch!==epoch||typeof m.command!=='string')return;queue=queue.then(async()=>{if(await initialized===false)return;try{const result=await command(m);if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:true,...result},location.origin);}catch(e){if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:false,error:String(e),errno:e?.errno},location.origin);else fatal(e);}}).catch(fatal);});
+window.addEventListener('message',e=>{const m=e.data;if(e.source!==parent||e.origin!==location.origin||m?.protocol!==protocol||m.game!==game||!validEpoch||m.epoch!==epoch||typeof m.command!=='string')return;
+ if(core&&liveInputCommands.has(m.command)){
+  try{
+   dispatchInput(m);
+   if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:true},location.origin);
+  }catch(error){
+   if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:false,error:String(error)},location.origin);
+   else fatal(error);
+  }
+  return;
+ }
+ queue=queue.then(async()=>{if(await initialized===false)return;try{const result=await command(m);if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:true,...result},location.origin);}catch(e){if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:false,error:String(e),errno:e?.errno},location.origin);else fatal(e);}}).catch(fatal);});
 window.addEventListener('eagler-thprac-menu',e=>emit('thprac-menu',{open:!!e.detail?.open}));
 document.addEventListener('visibilitychange',()=>{if(launched||roomPreview){clearKeyboard();cancelCanvasPointers();core._th17_loop_pause(+document.hidden);if(document.hidden&&launched)try{void save().catch(fatal);}catch(e){fatal(e);}}});
 window.addEventListener('blur',()=>{clearKeyboard();cancelCanvasPointers();});
@@ -255,6 +295,7 @@ for(const event of ['keydown','keyup'])window.addEventListener(event,e=>{if(!inp
 for(const event of ['pointerdown','keydown'])window.addEventListener(event,()=>core?.SDL3?.audioContext?.resume().catch(()=>{}),{capture:true});
 const canvasPointers=new Set();
 function cancelCanvasPointers(){
+ invalidateTouchGeometry();
  canvasPointers.clear();
  core?._th17_touch_cancel();
 }
@@ -262,11 +303,12 @@ canvas.addEventListener('pointerdown',e=>{
  if(!inputActive()||!options.touchEnabled||e.pointerType==='mouse')return;
  e.preventDefault();
  canvasPointers.add(e.pointerId);
+ invalidateTouchGeometry();
  try{canvas.setPointerCapture(e.pointerId);}catch(error){if(error.name!=='NotFoundError')throw error;}
  sendCanvasTouch(0,e);
 });
 function sendCanvasTouch(type,e){
- const bounds=canvas.getBoundingClientRect();
+ const bounds=touchGeometry();
  if(bounds.width&&bounds.height)core._th17_touch(type,e.pointerId,(e.clientX-bounds.left)/bounds.width,(e.clientY-bounds.top)/bounds.height);
 }
 for(const [name,type] of [['pointermove',1],['pointerup',2]])window.addEventListener(name,e=>{
