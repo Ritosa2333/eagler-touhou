@@ -1173,7 +1173,7 @@
     "th17": {
       "normal": "ports/th17",
       "multiplayer": "ports/th17-mp",
-      "base": "cd0b9fc7f299b2b76e6c84e9cfa6964e955351af",
+      "base": "d2f09129a7434199864cc8110c541053335ee71d",
       "history": [
         {
           "kind": "manual",
@@ -1243,6 +1243,19 @@
             "ports/th17-mp/web/tests/single-player-browser.mjs"
           ],
           "note": "单人浏览器回归核对实际 1280×960 并支持单独诊断模块；测试入口按单人目录保留，MP 继续使用双人三人房间回归。投影合并与完整 MP 内容树写回已核验。"
+        },
+        {
+          "kind": "manual",
+          "base": "cd0b9fc7f299b2b76e6c84e9cfa6964e955351af",
+          "source": "d2f09129a7434199864cc8110c541053335ee71d",
+          "targetHead": "694c78e986c4ba9533f83a289aa23640affca5b8",
+          "paths": [
+            "ports/th17-mp/portable/package-eagler.mjs",
+            "ports/th17-mp/web/sdl-runtime/shell.mjs",
+            "ports/th17-mp/web/tests/adapter-browser.test.mjs",
+            "ports/th17-mp/web/tests/direct-input-browser.mjs"
+          ],
+          "note": "多人版同步触控通道、手势几何缓存和运行包资源；复用浏览器输入回归，在多人房间验证，普通版适配器继续验证原版录像。"
         }
       ]
     }
