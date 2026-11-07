@@ -34,11 +34,19 @@ assert.ok(!independent||!verifyReplay,'Replay fixture uses the shared page');
 const requestedRenderScale=process.env.TH17_ROOM_RENDER_SCALE;
 const renderScale=Number(requestedRenderScale??2);
 assert.ok(renderScale===1||renderScale===2);
+const seatRenderScales=process.env.TH17_ROOM_RENDER_SCALES?.split(',').map(Number);
+if(seatRenderScales){
+ assert.ok(requestedRenderScale===undefined,'Choose a single room scale or per-seat scales');
+ assert.ok([2,3].includes(seatRenderScales.length)&&seatRenderScales.every(scale=>scale===1||scale===2),
+  'Use two or three comma-separated render scales (1 or 2)');
+}
 const extraBoss=extraFinale||process.argv.includes('--extra-boss');
 const denseExtra=extraBoss||process.argv.includes('--dense-extra');
 const extended=throughStageTwo||process.argv.includes('--extended');
 const extendedSeats=Number(process.env.TH17_ROOM_SEATS??2);
 assert.ok(extendedSeats===2||extendedSeats===3);
+const roomSeatCounts=seatRenderScales?[seatRenderScales.length]:
+ touchDrag?[extendedSeats]:extraBoss?[3]:extended?[extendedSeats]:[2,3];
 const difficulty=Number(process.env.TH17_ROOM_DIFFICULTY??(denseExtra?4:throughStageTwo?0:1));
 assert.ok(Number.isInteger(difficulty)&&difficulty>=0&&difficulty<=4);
 assert.ok(!throughStageTwo||difficulty!==4);
@@ -50,7 +58,7 @@ const cpuThrottle=Number(process.env.TH17_ROOM_CPU_THROTTLE||1);
 const manifest=JSON.parse(await readFile(resolve(runtime,'manifest.json'),'utf8'));
 const directInput=touchDrag&&!!JSON.parse(await readFile(resolve(runtime,'runtime-files.json'),'utf8')).files['direct-input-bridge.mjs'];
 if(extraBoss)assert.ok(manifest.features.roomBenchmark&&rollback&&difficulty===4,'Extra boss profiling needs the dedicated Extra rollback benchmark build');
-if(verifyGhost)assert.ok(manifest.features.roomBenchmark&&throughStageTwo&&extendedSeats===3,
+if(verifyGhost)assert.ok(manifest.features.roomBenchmark&&throughStageTwo&&roomSeatCounts[0]===3,
  'Ghost revival requires a three-seat benchmark room through Stage 2');
 const baseline=process.env.TH17_ROOM_BASELINE?JSON.parse(await readFile(process.env.TH17_ROOM_BASELINE,'utf8')):null;
 const priorMemory=extraFinale&&baseline?JSON.parse(await readFile(resolve(dirname(process.env.TH17_ROOM_BASELINE),'heap-samples.json'),'utf8')):null;
@@ -162,7 +170,7 @@ try{
  const hardware=process.env.NATIVE_GPU==='1'||process.env.PIXEL_GPU==='1';
  const gpuFlags=hardware?(process.platform==='win32'?['--enable-gpu','--use-gl=angle','--use-angle=d3d11']:['--enable-gpu']):['--use-angle=swiftshader','--enable-unsafe-swiftshader'];
  browser=await launchBrowser({args:[...gpuFlags,'--disable-background-timer-throttling','--disable-renderer-backgrounding','--disable-backgrounding-occluded-windows','--autoplay-policy=no-user-gesture-required']});
- for(const seats of touchDrag?[extendedSeats]:extraBoss?[3]:extended?[extendedSeats]:[2,3]){
+ for(const seats of roomSeatCounts){
   const room='th17mp-room-test-'+seats,loadouts=Array.from({length:seats},(_,i)=>({character:i,shot:i}));
   const members=[];
   for(let seat=0;seat<seats;seat++){
@@ -180,7 +188,8 @@ try{
    ...(touchDrag?{touchEnabled:true,touchMovementMode:'touch-unlimited'}:{}),
    netplayMode:'lan',netplayAdonisMode:timing.adonisMode,netplayInputDelay:timing.inputDelay,netplayAllowWebsocketFallback:!extraBoss,
    netplayPlayer:seat,netplayPlayerCount:seats,netplaySeed:1234,netplayDifficulty:difficulty,netplayLoadouts:loadouts,
-   ...(requestedRenderScale?{renderScale}:{}),netplayUrl:endpoint+new URLSearchParams({room,run:String(start.serial),member:room+'-private-'+seat}),
+   ...(seatRenderScales||requestedRenderScale?{renderScale:seatRenderScales?.[seat]??renderScale}:{}),
+   netplayUrl:endpoint+new URLSearchParams({room,run:String(start.serial),member:room+'-private-'+seat}),
   }));
   const contexts=await Promise.all(Array.from({length:independent?seats:1},()=>browser.newContext({viewport:{width:independent?640:seats*640,height:480}})));
   if(glTrace)await Promise.all(contexts.map(context=>context.addInitScript(()=>{
@@ -585,9 +594,14 @@ try{
      denseUpdates:summarize(frameCosts.filter(entry=>!entry.repair&&entry.bullets>=256).map(entry=>entry.time)),
      denseRepairs:summarize(frameCosts.filter(entry=>entry.repair&&entry.bullets>=256).map(entry=>entry.time))};
    },{extraBoss,traceGaps})));
+   if(seatRenderScales||checkPresentation){
+    for(const [seat,lane] of diagnostics.entries()){
+     const scale=seatRenderScales?.[seat]??renderScale;
+     assert.deepEqual(lane.canvas,[640*scale,480*scale],`Seat ${seat+1} uses its requested output resolution`);
+    }
+   }
    if(checkPresentation){
     for(const lane of diagnostics){
-     assert.deepEqual(lane.canvas,[640*renderScale,480*renderScale],'room uses the requested output resolution');
      assert.ok(lane.actualPresentations>0&&lane.presentationEnd>lane.presentationStart,'window commits are counted');
     }
     const health=(await Promise.all(pages.map(current=>current.evaluate(()=>events.filter(event=>event.event==='frame-health'))))).flat();
@@ -742,7 +756,8 @@ try{
 }finally{
  await browser?.close();for(const socket of sockets)socket.close();relay.kill();server.closeAllConnections();server.close();
  await writeFile(resolve(out,'room-report.json'),JSON.stringify({rollback,extended,difficulty,version:manifest.version,wasm:manifest.execution.sha256,
-  throughStageTwo,denseExtra,extraBoss,extraFinale,independent,renderScale,music,cpuProfile,traceGaps,
+  throughStageTwo,denseExtra,extraBoss,extraFinale,independent,
+  ...(seatRenderScales?{seatRenderScales}:{renderScale}),music,cpuProfile,traceGaps,
   ...(tracePhases?{phaseOrder:['input','capture','restore','confirm','canvas','pcm','imageRelease','update','draw','flow']}:{}),
   glTrace,touchDrag,touchComparison,touchSeat,symmetricDelay,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
  if(finaleSamples)await writeFile(resolve(out,'heap-samples.json'),JSON.stringify({
