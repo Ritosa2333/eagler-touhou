@@ -233,11 +233,21 @@ void Renderer::flush_batch(){if(!batching)return;batching=false;if(instancing)is
 void Renderer::flush(){flush_batch();drain();}
 void Renderer::drain(){
  if(queuedDraws.empty())return;
- if(additive_batches){
+ // Most story passes submit fewer draws than the merge threshold. Submit
+ // those spans directly without building a plan that would keep every draw.
+ constexpr size_t minimumAdditiveSpan=16;
+ if(additive_batches&&queuedDraws.size()>=minimumAdditiveSpan){
   // Nonnegative additive color commutes on normalized 8-bit targets. No draw
   // may read existing depth. A span may have only one compatible depth-writing
   // group, whose internal primitive order remains unchanged after grouping.
-  const auto additive=[this](const QueuedDraw& q){const auto& p=q.state.pipeline;const auto f=resolve(owner,q.state.target).format;return (!p.depthTest||p.depthCompare==Compare::Always)&&!p.dither&&p.blend&&!p.separateAlphaBlend&&p.blendEquation==BlendEquation::Add&&p.destinationBlend==BlendFactor::One&&(p.sourceBlend==BlendFactor::One||p.sourceBlend==BlendFactor::SourceAlpha)&&(f==PixelFormat::Bgra8||f==PixelFormat::Bgrx8);};
+  const auto additive=[this](const QueuedDraw& q){
+   const auto& p=q.state.pipeline;
+   if((p.depthTest&&p.depthCompare!=Compare::Always)||p.dither||!p.blend||p.separateAlphaBlend||
+       p.blendEquation!=BlendEquation::Add||p.destinationBlend!=BlendFactor::One||
+       (p.sourceBlend!=BlendFactor::One&&p.sourceBlend!=BlendFactor::SourceAlpha))return false;
+   const auto format=resolve(owner,q.state.target).format;
+   return format==PixelFormat::Bgra8||format==PixelFormat::Bgrx8;
+  };
   const auto compatible=[this](const QueuedDraw& first,const QueuedDraw& q){const bool instances=q.instanceSize&&first.instanceSize;if(q.quads!=first.quads||q.topology!=first.topology||bool(q.instanceSize)!=bool(first.instanceSize)||!equal(q.state,first.state,instances))return false;if(instances)return q.size==first.size&&!std::memcmp(vertexArena.data()+q.offset,vertexArena.data()+first.offset,q.size);return q.topology==Topology::Triangles||q.topology==Topology::Lines;};
   // Keep the grouping plan in reusable flat arenas. The previous nested
   // vectors allocated a tiny heap block for every retained draw on every
@@ -249,7 +259,7 @@ void Renderer::drain(){
    if(!additive(queuedDraws[at])){retain(at,at+1);++at;continue;}
    size_t end=at+1,writer=queuedDraws[at].state.pipeline.depthTest&&queuedDraws[at].state.pipeline.depthWrite?at:queuedDraws.size();
    while(end<queuedDraws.size()&&queuedDraws[end].state.target==queuedDraws[at].state.target&&queuedDraws[end].state.depth==queuedDraws[at].state.depth&&additive(queuedDraws[end])){const auto& q=queuedDraws[end];if(q.state.pipeline.depthTest&&q.state.pipeline.depthWrite){if(writer!=queuedDraws.size()&&!compatible(queuedDraws[writer],q))break;writer=end;}++end;}
-   if(end-at<16){retain(at,end);at=end;continue;}
+   if(end-at<minimumAdditiveSpan){retain(at,end);at=end;continue;}
    const size_t firstGroup=mergeGroups.size();bool spanMerged=false;
    for(size_t i=at;i<end;i++){const auto& q=queuedDraws[i];size_t group=firstGroup;for(;group<mergeGroups.size();group++)if(compatible(queuedDraws[mergeGroups[group].first],q))break;
     mergeNext[i]=endLink;
@@ -294,8 +304,15 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  // fill path, whose immediate rasterization is covered by pixel regressions.
  if(staged_uploads&&!draining&&!index&&(d.layout.uv!=VertexAttributes::absent||primitive==Topology::Lines)){
   const size_t alignment=d.stride*(quads?4:1);const u32 offset=u32((vertexArena.size()+alignment-1)/alignment*alignment),io=u32(instanceArena.size());
-  vertexArena.resize(size_t(offset)+size);if(size)std::memcpy(vertexArena.data()+offset,data,size);
-  instanceArena.resize(size_t(io)+instanceSize);if(instanceSize)std::memcpy(instanceArena.data()+io,instance,instanceSize);
+  vertexArena.resize(offset);
+  if(size){
+   const auto* bytes=static_cast<const u8*>(data);
+   vertexArena.insert(vertexArena.end(),bytes,bytes+size);
+  }
+  if(instanceSize){
+   const auto* bytes=static_cast<const u8*>(instance);
+   instanceArena.insert(instanceArena.end(),bytes,bytes+instanceSize);
+  }
   queuedDraws.push_back({d,primitive,count,offset,size,io,instanceSize,quads});stats.copiedBytes+=size+instanceSize;
   if(vertexArena.size()+instanceArena.size()>=4*1048576)drain();return;
  }
