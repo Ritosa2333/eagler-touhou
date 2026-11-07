@@ -600,6 +600,8 @@
   "settings_appleNotice": "(苹果用户注意)",
   "settings_localPlayerVisibility": "增强本机玩家可见性",
   "settings_localPlayerVisibilityHint": "在游戏区域中使用白色定位线标出本机玩家。",
+  "settings_th075NativeResolution": "低开销渲染（640×480）",
+  "settings_th075NativeResolutionHint": "重新加载联机房后，本机以原生分辨率渲染，减轻绘制负担。",
   "options_touch": "触控设置",
   "options_files": "存档 / 录像设置",
   "settings_faithBar": "头顶信仰槽",

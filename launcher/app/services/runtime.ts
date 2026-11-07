@@ -3,7 +3,7 @@
 // below. No candidate UI, core replacement or test oracle is imported.
 import type {Translate} from '../i18n';
 import {directPreloadRuntimeUrl} from './direct-preload-runtime';
-import {liveRuntimeEntryAuthorized} from './runtime-entry-authority';
+import {liveRuntimeEntryAuthorized, th075SplitAssetUrl} from './runtime-entry-authority';
 import {errorText} from './error-text';
 import {GameDataAcquisitionError} from './game-data-acquisition';
 import {isReplayFilePath, isSafeReplayArchivePath} from '../../src/launcher/replay-files.mts';
@@ -99,6 +99,7 @@ export interface RuntimePlan {
   generation: InstalledPackageGeneration | null;
   /** Exact original hosted emscripten-preload fallback, with no Package DATA. */
   directPreloadHost?: SiteManifest;
+  th075SplitAssets?: true;
   /** Optional resources acquired after native ready; never replaces loaded DATA. */
   resourceGeneration?: InstalledPackageGeneration;
   entry: string;
@@ -844,9 +845,12 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (sessions.current() || closing || (fileClosing && fileOwner !== fileSession) || (fileSession && fileOwner !== fileSession)) throw new Error('Close the current Runtime before preparing another');
     if (!isGameId(input.game)) throw new Error('Invalid Runtime game');
     if (input.generation && (!input.generation.id || input.generation.game !== input.game || input.generation.descriptor.game !== input.game)) throw new Error('Invalid Runtime package generation');
+    const splitAssets = input.th075SplitAssets ? th075SplitAssetUrl(input, baseUrl) : null;
+    if (splitAssets && (input.generation || input.fileOnly || input.directPreloadHost))
+      throw new Error('TH075 split assets require a multiplayer room Runtime');
     if (!input.generation) {
-      directPreloadRuntimeUrl(input, baseUrl);
-      if (input.resourceGeneration || input.resourceFileIds?.length || input.localOgg) throw new Error('Direct preload cannot claim managed Package resources');
+      if (!splitAssets) directPreloadRuntimeUrl(input, baseUrl);
+      if (input.resourceGeneration || input.resourceFileIds?.length || input.localOgg) throw new Error('Unmanaged preload cannot claim managed Package resources');
     }
     if (input.runtimeVariant !== 'normal' && input.runtimeVariant !== 'multiplayer') throw new Error('Invalid Runtime variant');
     const source = new URL(input.entry, baseUrl);
@@ -887,7 +891,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
           // cannot satisfy this owner's exact document/epoch binding.
           const offlineWorker = plan.localCatalogRuntime ? await options.worker : null;
           assertOperation(); assertCurrent(token);
-          if (plan.generation && (plan.publishedRuntime || plan.localCatalogRuntime || offlineWorker)) {
+          if ((plan.generation || splitAssets) && (plan.publishedRuntime || plan.localCatalogRuntime || offlineWorker)) {
             // Keep current main's complete-generation verification + idle-based
             // download helper. No replacement timeout or latest-file fallback.
             const progressToken = token;
@@ -908,7 +912,13 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
             entry = prepared.url; codeGeneration = prepared.generation;
             codeUpdate = prepared.checkForUpdate ? {epoch:token.id,check:prepared.checkForUpdate} : null;
           }
-          const url = plan.generation ? new URL(managedRuntimeUrl(entry, plan.generation, plan.runtimeVariant, baseUrl)) : directPreloadRuntimeUrl(plan, baseUrl);
+          const url = splitAssets ? new URL(entry) : plan.generation
+            ? new URL(managedRuntimeUrl(entry, plan.generation, plan.runtimeVariant, baseUrl)) : directPreloadRuntimeUrl(plan, baseUrl);
+          if (splitAssets) {
+            url.searchParams.set('runtimeVariant', 'multiplayer');
+            url.searchParams.set('th075Assets', splitAssets.url.href);
+            url.searchParams.set('th075AssetsHash', splitAssets.sha256);
+          }
           if (url.origin !== origin) throw new Error('Runtime must share the Launcher origin');
           url.searchParams.set(RUNTIME_EPOCH_QUERY_PARAMETER, String(token.id));
           update({ source: url.href, codeGeneration });
@@ -939,12 +949,13 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
         const final = structuredClone(await onReady(token.id));
         assertOperation(); assertCurrent(token);
         if (final.game !== plan.game || final.runtimeVariant !== plan.runtimeVariant || final.entry !== plan.entry ||
-            final.publishedRuntime !== plan.publishedRuntime ||
+            final.publishedRuntime !== plan.publishedRuntime || final.th075SplitAssets !== plan.th075SplitAssets ||
             JSON.stringify(final.multiplayerProgram) !== JSON.stringify(plan.multiplayerProgram)) throw new Error('Ready continuation changed the Runtime identity');
         if (final.configure.options?.multiplayerPreflight && !checkOwner) throw new Error('Multiplayer preflight requires the game-check owner');
         const loaded = plan.generation;
         if (!loaded && final.generation) throw new Error('Ready continuation changed preload DATA ownership');
-        plan = {...final, generation: loaded, resourceGeneration: final.resourceGeneration ?? final.generation ?? undefined};
+        plan = {...final, generation: loaded, resourceGeneration: final.resourceGeneration ?? final.generation ?? undefined,
+          ...(splitAssets ? {runtimeHost: plan.runtimeHost} : {})};
       }
       if (plan.resourceGeneration) {
         const resources = plan.resourceGeneration, loaded = plan.generation;

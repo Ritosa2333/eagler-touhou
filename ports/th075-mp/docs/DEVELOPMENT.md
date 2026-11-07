@@ -12,6 +12,18 @@ node --test ports/th075-mp/tests/eagler/*.test.mjs
 
 启动器开发站将 `th075mp` 指向本目录的 `build-eagler-multiplayer/th075.html`，普通版使用 `ports/th075` 的独立输出。开发站清单检查逐项核对全部多人产品的 Runtime 归属。
 
+## 联机房按需下载
+
+从已准备的 `th075.data` 和同目录的 `music/` 生成联机房资源目录。游戏数据保留现有 zlib 字节，音乐沿用现有 OGG。
+
+```sh
+node ports/th075-mp/portable/prepare-split-content.mjs --prepared=/private/th075/assets-ogg --output=/private/publish/th075mp
+```
+
+将输出目录同源发布，例如放在 `/assets/th075mp/`。JSON 和 BIN 文件名包含 SHA-256，可以用长期缓存。部署新版多人 Runtime 后，在站点清单的 `games.th075` 写入 `th075MultiplayerAssets`，`path` 填索引的站内路径，`sha256` 填脚本返回的哈希。导入站点继续使用本地数据包。
+
+房间先下载索引、字体和音乐目录。初始化和开战沿原生文件读取顺序各自取用所需资源，音乐关闭时不会读取 OGG。角色脚本中共用的胜利对白随文件加载。剧情专用画面和片尾曲从联机索引排除。普通版、录像浏览和没有该清单字段的部署使用原有数据包入口。
+
 `portable/input/KeyboardMap.inc` 与原生源码、渲染器和 common 头文件共同参与构建输入身份核对，按键映射更新会使对应编译缓存失效。
 
 原生协议检查需要 WASI SDK，通过 `EAGLER_WASI_CXX` 指定 `clang++`，然后运行 `node ports/th075-mp/web/scripts/test-multiplayer.mjs`。检查覆盖 D=0/1/2/9、丢包重排、回滚修正和冲突状态中止。

@@ -60,6 +60,7 @@ export function SettingsBody({
         | 'faithBarEnabled'
         | 'thpracEnabled'
         | 'multiplayerLocalPlayerVisibility'
+        | 'th075NativeResolution'
         | 'pixelPerfectEnabled',
     ) =>
     () =>
@@ -247,6 +248,23 @@ export function SettingsBody({
             />
           }
         />
+        {context.productId === 'th075mp' && (
+          <OptionRow
+            className={item('option-frame-limit')}
+            label={t('settings.th075NativeResolution')}
+            hint={t('settings.th075NativeResolutionHint')}
+            hintId={id('nativeResolutionHint')}
+            control={
+              <OptionSwitch
+                id={id('nativeResolutionToggle')}
+                describedBy={id('nativeResolutionHint')}
+                label={t('settings.th075NativeResolution')}
+                checked={options.th075NativeResolution}
+                onChange={switchOption('th075NativeResolution')}
+              />
+            }
+          />
+        )}
         <div id={id('languageOption')} hidden={!multiplayer && context.languages.length <= 1}>
           <SettingsSelect
             id={id('languageSelect')}
