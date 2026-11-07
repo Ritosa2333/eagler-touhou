@@ -459,6 +459,7 @@ bool GameBattle::draw_players(AnmRenderer& renderer){
     return true;
 }
 void GameBattle::prepare_player_presentation(AnmRenderer& renderer){
+    renderer.pilot_opacity.fill(255);
     if(!partner_count)return;
     const u32 local=renderer.hud_viewer-1;
     if(local>=pilot_count())return;

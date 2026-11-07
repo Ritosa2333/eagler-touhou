@@ -208,6 +208,7 @@ void marisa_laser_modes(const char* asset){
         context.cooperative=true;
         DamageSources damage;
         PlayerShots shots(resource,context,damage,animations,random,visual,10,30);
+        shots.presentation_seat=2;
         const auto lasers=[&]{
             return std::count_if(shots.shots.begin(),shots.shots.end(),[&](const auto& shot){
                 return shot.state&&shots.specification(shot.specification)->type==2;
@@ -224,6 +225,9 @@ void marisa_laser_modes(const char* asset){
         auto beam=std::find_if(shots.shots.begin(),shots.shots.end(),[&](const auto& shot){
             return shot.state&&shots.specification(shot.specification)->type==2;
         });
+        auto* beam_vm=animations.registry.find(beam->animation);
+        require(beam_vm&&beam_vm->pilot_draw_owner==2&&beam_vm->pilot_effect,
+                "Eagle laser uses its shooter's effect fade");
         require(animations.retire(beam->animation)&&shots.update()&&lasers()==4,"lost animation releases its beam");
         fire();
         require(lasers()==5,"lost beam can respawn");
@@ -262,7 +266,10 @@ void shared_otter_barriers(const char* asset) {
     for(unsigned seat=1;seat<3;++seat)for(auto handle:spirits->roaring.partner_orbs[seat-1]){
         const auto* vm=animations.registry.find(handle);
         require(vm&&vm->visual.translation.x==team[seat].position.x,"otter barrier tracks its teammate");
+        require(vm->pilot_effect&&vm->pilot_draw_owner==seat+1,"otter barrier fades for its own seat");
     }
+    require(!animations.registry.find(spirits->roaring.visuals.inner_timer)->pilot_effect,
+            "shared Roaring countdown stays legible");
     multiplayer::FrameImage image;
     spirits->save_rollback(image);
     require(animations.save_rollback(image),"capture team otter barriers");
@@ -561,7 +568,10 @@ void logical_animation_draw(){
             submissions+=count;
             first_color=static_cast<const AnmGeometryVertex*>(data)->color;
         }
-        void primitives(Topology,u32 count,const void*,u32)override{submissions+=count;}
+        void primitives(Topology,u32 count,const void* data,u32)override{
+            submissions+=count;
+            std::memcpy(&first_color,static_cast<const u8*>(data)+offsetof(AnmGeometryVertex,color),sizeof(first_color));
+        }
         bool select_target(const AnmResource*,u32)override{return true;}
         bool clear_target(u32,const GraphicsViewport*)override{return true;}
         bool clear_depth(const GraphicsViewport*)override{return true;}
@@ -603,6 +613,36 @@ void logical_animation_draw(){
     require(renderer.draw(presented)==0,"local hitbox stays visible");
     renderer.flush();
     require(device.first_color>>24==255,"local alpha is unchanged");
+
+    presented.hud_viewer=0;
+    presented.pilot_effect=true;
+    presented.visual.flags|=9<<5;
+    require(renderer.draw(presented)==0,"draw local MAX-blended shot");
+    renderer.flush();
+    require(device.state.blendEquation==BlendEquation::Maximum&&device.first_color>>24==255,
+            "local effect keeps its blend and alpha");
+    renderer.hud_viewer=1;
+    renderer.pilot_opacity[2]=160;
+    require(renderer.draw(presented)==0,"draw distant teammate's MAX-blended shot");
+    renderer.flush();
+    require(device.state.blendEquation==BlendEquation::Add&&
+            device.state.sourceBlend==BlendFactor::SourceAlpha&&
+            device.state.destinationBlend==BlendFactor::InverseSourceAlpha&&device.first_color>>24==40,
+            "teammate MAX-blended effect actually uses the fade");
+
+    renderer.pilot_opacity[2]=72;
+    presented.visual.flags=3|(17u<<25)|(2u<<5);
+    presented.variables.integers[0]=12;
+    require(renderer.draw(presented)==0&&device.first_color>>24==18,
+            "nearby Roaring ring uses effect opacity");
+    presented.visual.flags=3|(9u<<25)|(1u<<5);
+    presented.variables.integers[0]=2;
+    presented.geometry.screen_vertices.resize(4);
+    for(auto& vertex:presented.geometry.screen_vertices)vertex.color=0xffaabbcc;
+    require(renderer.draw(presented)==0&&device.first_color==0x12aabbcc&&
+            device.state.destinationBlend==BlendFactor::One&&
+            presented.geometry.screen_vertices[0].color==0xffaabbcc,
+            "Roaring break fades additive strip vertices without mutating geometry");
 }
 
 void laser_restore(const char* asset){

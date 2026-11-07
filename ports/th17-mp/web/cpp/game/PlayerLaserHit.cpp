@@ -24,7 +24,7 @@ i32 PlayerShots::laser_hit(PlayerShot& shot,const DamageQuery& q,bool shorten){
     if(shot.age.current!=shot.age.previous&&shot.age.current%2==0){
         const double cosine=std::cos(double(shot.motion.angle)),sine=std::sin(double(shot.motion.angle));
         const Vec3 position={float(float(cosine*double(shot.hitbox.x))+shot.motion.position.x),float(float(sine*double(shot.hitbox.x))+shot.motion.position.y),0},velocity={float(cosine*64.),float(sine*64.),0};
-        const u32 handle=animations.create(player_resource,8,-1,0,position);auto* vm=animations.registry.find(handle);if(!vm){error=animations.error;return -1;}if(track_effect)track_effect(handle);vm->visual.flags|=4;vm->variables.rotation.z=shot.motion.angle;
+        const u32 handle=animations.create_pilot_effect(player_resource,8,presentation_seat,position);auto* vm=animations.registry.find(handle);if(!vm){error=animations.error;return -1;}if(track_effect)track_effect(handle);vm->visual.flags|=4;vm->variables.rotation.z=shot.motion.angle;
         const auto& delta=context.background_delta;vm->interpolators.invalidate();vm->interpolators.position.begin(20,4,{delta.x,delta.y,delta.z},{velocity.x,velocity.y,velocity.z});vm->interpolators.position.control1={delta.x,delta.y,delta.z};vm->interpolators.position.control2={delta.x,delta.y,delta.z};
     }
     if(shot.age.current!=shot.age.previous&&shot.age.current%4==0){if(context.roaring_flags&2)reward_counter=wrapping_add(reward_counter,100);return source->damage;}return 0;
