@@ -120,7 +120,7 @@
     "th08": {
       "normal": "ports/th08",
       "multiplayer": "ports/th08-mp",
-      "base": "fd90fbd845ecd627fab3c051c455df9cc936489f",
+      "base": "0b53caf56004cd2dd53695d8e9097fc73f9b5064",
       "history": [
         {
           "kind": "manual",
@@ -184,6 +184,17 @@
             "ports/th08-mp/web/sdl-runtime/directory-keyboard.mjs"
           ],
           "note": "已将映射接入、撤下、失效和替换时的旧按键释放同步到多人版；同一映射保留长按。41 项测试、正常/多人生产输入链及源码检查通过。源码祖先在本地验证分支核对，交付分支保留当前主线上的独立修改。"
+        },
+        {
+          "kind": "manual",
+          "base": "fd90fbd845ecd627fab3c051c455df9cc936489f",
+          "source": "0b53caf56004cd2dd53695d8e9097fc73f9b5064",
+          "targetHead": "1e5aed4a49d3e2790e16381aed45aeb96b57dcc8",
+          "paths": [
+            "ports/th08-mp/docs/DEVELOPMENT.md",
+            "ports/th08-mp/web/cpp/game/GameplayScene.cpp"
+          ],
+          "note": "普通版和多人版都使用关卡背景动画的色值为萤火虫着色。多人版构建指南已采用 Bun 安装和构建命令，保留该模式的启动说明。"
         }
       ],
       "origin": {
