@@ -16,6 +16,9 @@ const verifyReplay=process.argv.includes('--replay');
 const checkPresentation=process.argv.includes('--check-presentation');
 const verifyTransfer=process.argv.includes('--life-transfer');
 const independent=process.argv.includes('--independent-pages');
+const cpuProfile=process.argv.includes('--cpu-profile');
+const musicDirectory=process.env.TH17_ROOM_MUSIC_DIR;
+const music=musicDirectory?'ogg':'none';
 assert.ok(!independent||!verifyReplay,'Replay fixture uses the shared page');
 const requestedRenderScale=process.env.TH17_ROOM_RENDER_SCALE;
 const renderScale=Number(requestedRenderScale??2);
@@ -64,6 +67,13 @@ const assets={
  '/msgothic.ttc':await readFile(required('TH17_ROOM_GOTHIC')),
  '/unifont.otf':await readFile(required('TH17_ROOM_UNIFONT')),
 };
+const musicResources=[];
+if(musicDirectory)for(const name of ['th17_01','th17_03','th17_04','th17_05','th17_06','th128_08']){
+ const path='/music/'+name+'.ogg';
+ assets[path]=await readFile(resolve(musicDirectory,name+'.ogg'));
+ musicResources.push({path,url:path});
+}
+assert.ok(!musicDirectory||!denseExtra,'OGG profiling fixture covers the title and story stages 1–2');
 const relay=spawn(process.execPath,[resolve(repo,'services/relay/src/netplay-relay.mjs')],{
  cwd:repo,windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',
   EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe'],
@@ -102,7 +112,7 @@ window.rpc=(seat,command,fields={})=>new Promise((resolve,reject)=>{
 });
 window.startRuntime=async seat=>{
  const options=(await(await fetch('/options')).json())[seat];
- const configure={music:'none',language:'ja'};
+ const configure={music:${JSON.stringify(music)},language:'ja',resources:${JSON.stringify(musicResources)}};
  await rpc(seat,'configure',{...configure,sharedResources:['/msgothic.ttc','/unifont.otf'].map(path=>({path,url:path})),options:${launcherPreview}?{renderScale:options.renderScale}:options});
  if(${launcherPreview}){
   const result=await rpc(seat,'prepare-room');
@@ -180,7 +190,14 @@ try{
    else await throttle();
   }
   for(const current of pages)current.on('pageerror',error=>errors.push(error.message));
+  let profiler;
   try{
+   if(cpuProfile){
+    profiler=await contexts[0].newCDPSession(page);
+    await profiler.send('Profiler.enable');
+    await profiler.send('Profiler.setSamplingInterval',{interval:1000});
+    await profiler.send('Profiler.start');
+   }
    await Promise.all(pages.map(current=>current.goto('http://127.0.0.1:'+server.address().port)));
    for(let seat=0;seat<seats;seat++){
     await pageFor(seat).evaluate(seat=>addRuntime(seat),seat);
@@ -188,6 +205,8 @@ try{
    }
    if(independent)await Promise.all(pages.map((current,seat)=>current.evaluate(seat=>startRuntime(seat),seat)));
    else await page.evaluate(seats=>Promise.all(Array.from({length:seats},(_,seat)=>startRuntime(seat))),seats);
+   if(musicDirectory)for(let seat=0;seat<seats;seat++)
+    await pageFor(seat).waitForFunction(epoch=>events.some(event=>event.epoch===epoch&&event.event==='audio-health'&&event.musicEnabled),seat+1,{timeout:30000});
    const frames=pages.flatMap(current=>current.frames().filter(frame=>frame.url().includes('/runtime/')));
    for(const [seat,frame] of frames.entries()){
     await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,storyTiming,verifyTransfer})=>{
@@ -536,12 +555,16 @@ try{
     reports.at(-1).replay={playedThrough:240,seekTarget:150,canvasAdvanced:true};
     console.log(seats+' players, saved Replay plays, presents and seeks');
    }
-  }finally{await Promise.all(contexts.map(context=>context.close()));for(const socket of members)socket.close();}
+  }finally{
+   try{
+    if(profiler){const {profile}=await profiler.send('Profiler.stop');await writeFile(resolve(out,seats+'p.cpuprofile'),JSON.stringify(profile));}
+   }finally{await Promise.all(contexts.map(context=>context.close()));for(const socket of members)socket.close();}
+  }
  }
 }finally{
  await browser?.close();for(const socket of sockets)socket.close();relay.kill();server.closeAllConnections();server.close();
  await writeFile(resolve(out,'room-report.json'),JSON.stringify({rollback,extended,difficulty,version:manifest.version,wasm:manifest.execution.sha256,
-  throughStageTwo,denseExtra,extraBoss,extraFinale,independent,renderScale,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
+  throughStageTwo,denseExtra,extraBoss,extraFinale,independent,renderScale,music,cpuProfile,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
  if(finaleSamples)await writeFile(resolve(out,'heap-samples.json'),JSON.stringify({
   fields:['nextFrame','bullets','spell','heap','lasers','snapshots','unusedCapacity','bulletState','bulletVisual','itemVisual','idleItemVisual','animation'],
   samples:finaleSamples})+'\n');
