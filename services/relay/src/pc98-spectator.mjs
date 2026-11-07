@@ -5,7 +5,7 @@ const MAX_FRAMES=216000,MAX_BYTES=128*1024*1024,MAX_PACKET=16384,MAX_POINT=16*10
 const products=new Set(['th01mp','th02mp','th03mp','th04mp']);
 export function isPc98SpectatorRoom(room){return products.has(room.split('-')[0]);}
 export class Pc98SpectatorRelay{
-  constructor(players){this.players=players;this.history=[];this.bytes=0;this.next=0;this.started=false;this.ended=false;this.point=null;this.lastPoint=-1;}
+  constructor(players,{matchInitializers=false}={}){this.players=players;this.matchInitializers=matchInitializers;this.history=[];this.bytes=0;this.next=0;this.started=false;this.ended=false;this.point=null;this.lastPoint=-1;this.pendingMatch=0;}
   accept(payload){
     if(!(payload instanceof Uint8Array)||payload.length<16||payload.length>MAX_PACKET||
        payload[0]!==0x50||payload[1]!==0x39||payload[2]!==0x38||payload[3]!==0x53||payload[4]!==1||payload[6]!==this.players||payload[7])throw Error('invalid PC98 spectator packet');
@@ -22,6 +22,22 @@ export class Pc98SpectatorRelay{
       const point=this.point;if(point.frame!==first||point.size!==size||point.sha!==sha||point.offset!==offset)throw Error('PC98 checkpoint chunk gap');
       point.hash.update(chunk);point.offset+=chunk.length;
       if(point.offset===size){if(point.hash.digest('hex')!==sha)throw Error('PC98 checkpoint digest mismatch');this.lastPoint=first;this.point=null;}
+    }
+    else if(kind===6){
+      if(!this.matchInitializers||!this.started||this.point||payload.length!==16||count<1||count!==this.lastPoint||count>this.next)throw Error('invalid PC98 match initializer');
+      const kindOf=p=>p[5],frameOf=p=>p.readUInt32LE(8),countOf=p=>p.readUInt32LE(12);
+      const header=this.history.find(p=>kindOf(p)===1),base=this.history.filter(p=>kindOf(p)===4&&frameOf(p)===0);
+      const current=this.history.filter(p=>kindOf(p)===4&&frameOf(p)===count);
+      const inputs=this.history.filter(p=>kindOf(p)===2&&frameOf(p)+countOf(p)>=count);
+      if(!header||!base.length||!current.length||!inputs.length)throw Error('PC98 match initializer missing data');
+      this.history=[header,...base,Buffer.from(payload),...current,...inputs];
+      this.bytes=this.history.reduce((sum,p)=>sum+p.length,0);
+      if(count>=this.pendingMatch)this.pendingMatch=0;
+      return kind;
+    }
+    else if(kind===7){
+      if(!this.matchInitializers||!this.started||payload.length!==16||count<1||count>this.next||count<=this.pendingMatch)throw Error('invalid PC98 pending match');
+      this.pendingMatch=count;
     }
     else throw Error('invalid PC98 spectator event');
     if(this.bytes+payload.length>MAX_BYTES)throw Error('PC98 spectator history full');

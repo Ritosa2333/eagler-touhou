@@ -6,7 +6,8 @@ function packet(kind,players,first,count,body){
   view.setUint32(9,first,true);view.setUint32(13,count,true);bytes.set(body,17);return bytes;
 }
 export function createPc98SpectatorPublisher(header,tape,socket,onError=()=>{},getPoints=()=>[]){
-  let cursor=0,started=false,ended=false,closed=false,busy=false,timer,pointIndex=0,pointOffset=0,pointBytes,nextPointAt=0;
+  const pointDelay=header.game==='03'?35:50;
+  let cursor=0,started=false,ended=false,closed=false,busy=false,timer,pointIndex=0,pointOffset=0,pointBytes,nextPointAt=0,matchArmed=true,matchSeen=false;
   function stop(){closed=true;clearTimeout(timer);}
   async function pump(){
     timer=null;if(closed||ended||busy)return;busy=true;
@@ -18,19 +19,28 @@ export function createPc98SpectatorPublisher(header,tape,socket,onError=()=>{},g
         let count=Math.min(60,tape.length-cursor),body;
         do{body=await compress(encoder.encode(JSON.stringify(tape.slice(cursor,cursor+count))));if(body.length+16<=LIMIT)break;count=Math.floor(count/2);}while(count);
         if(!count)throw Error('观战单帧数据过大');
-        if(closed)return;ws.send(packet(2,header.players,cursor,count,body));cursor+=count;
+        if(closed)return;ws.send(packet(2,header.players,cursor,count,body));
+        if(header.game==='03')for(let i=0;i<count;i++){
+          const scene=tape.row(cursor+i).scene;
+          if(scene===2)matchArmed=true;
+          else if(scene===1&&matchArmed){matchArmed=false;if(matchSeen)ws.send(packet(7,header.players,cursor+count,cursor+i+1,new Uint8Array()));matchSeen=true;}
+        }
+        cursor+=count;
       }
       const points=getPoints(),point=points[pointIndex];
       if(!closed&&cursor===tape.length&&point&&point.frame<=cursor&&ws.bufferedAmount<=262144&&performance.now()>=nextPointAt){
         pointBytes??=Uint8Array.from(atob(point.data),c=>c.charCodeAt(0));
         const chunk=pointBytes.subarray(pointOffset,pointOffset+12000),body=new Uint8Array(72+chunk.length),view=new DataView(body.buffer);
         view.setUint32(0,pointBytes.length,true);view.setUint32(4,pointOffset,true);body.set(encoder.encode(point.sha),8);body.set(chunk,72);
-        ws.send(packet(4,header.players,point.frame,0,body));pointOffset+=chunk.length;nextPointAt=performance.now()+50;
-        if(pointOffset===pointBytes.length){pointIndex++;pointOffset=0;pointBytes=null;}
+        ws.send(packet(4,header.players,point.frame,0,body));pointOffset+=chunk.length;nextPointAt=performance.now()+pointDelay;
+        if(pointOffset===pointBytes.length){
+          if(header.game==='03'&&point.frame>0)ws.send(packet(6,header.players,cursor,point.frame,new Uint8Array()));
+          pointIndex++;pointOffset=0;pointBytes=null;
+        }
       }
       if(!closed&&tape.end&&cursor===tape.length&&!pointBytes){ws.send(packet(3,header.players,cursor,0,new Uint8Array()));ended=true;}
     }catch(error){stop();onError(error);}
-    finally{busy=false;if(!closed&&!ended)timer=setTimeout(pump,pointBytes?50:250);}
+    finally{busy=false;if(!closed&&!ended)timer=setTimeout(pump,pointBytes?pointDelay:250);}
   }
   void pump();return {kick(){if(tape.end){clearTimeout(timer);timer=null;void pump();}else if(!timer&&!busy)timer=setTimeout(()=>{timer=null;void pump();},250);},stop,get ended(){return ended;},
     async seal(timeout=2000){const deadline=performance.now()+timeout;this.kick();while(!ended&&!closed&&performance.now()<deadline)await new Promise(resolve=>setTimeout(resolve,25));return ended;}};

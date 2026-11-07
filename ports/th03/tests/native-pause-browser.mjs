@@ -28,7 +28,7 @@ await new Promise(r=>server.listen(Number(process.env.PC98_TEST_HTTP_PORT||18383
 function connection(url){
   const socket=new WebSocket(url),messages=[],waiters=[];sockets.push(socket);
   socket.addEventListener('message',event=>{const m=JSON.parse(event.data);messages.push(m);for(const waiter of [...waiters])if(waiter.test(m))waiter.resolve(m);});
-  return {socket,async send(message,test){messages.length=0;const pending=this.wait(test);socket.send(JSON.stringify(message));return pending;},wait(test){const previous=messages.find(test);if(previous)return Promise.resolve(previous);return new Promise((yes,no)=>{const timer=setTimeout(()=>no(Error('lobby timeout '+JSON.stringify(messages)+' '+log)),10000);const waiter={test,resolve(m){clearTimeout(timer);waiters.splice(waiters.indexOf(waiter),1);m.type==='error'?no(Error(m.error)):yes(m);}};waiters.push(waiter);});}};
+  return {socket,async send(message,test){messages.length=0;const pending=this.wait(test);socket.send(JSON.stringify(message));return pending;},wait(test,timeout=10000){const previous=messages.find(test);if(previous)return Promise.resolve(previous);return new Promise((yes,no)=>{const timer=setTimeout(()=>no(Error('lobby timeout '+JSON.stringify(messages)+' '+log)),timeout);const waiter={test,resolve(m){clearTimeout(timer);waiters.splice(waiters.indexOf(waiter),1);m.type==='error'?no(Error(m.error)):yes(m);}};waiters.push(waiter);});}};
 }
 try{
   browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
@@ -126,12 +126,36 @@ try{
     assert.equal(score.room.seats[match.winner].stats.wins,1);assert.equal(score.room.seats[match.winner^1].stats.losses,1);
     await lobbies[1].wait(m=>m.room?.seats?.[match.winner]?.stats?.wins===1);
     console.log('PASS native match surrender');
+    if(process.env.PC98_TEST_MATCH_SPECTATOR==='1'){
+    for(let i=0;i<30;i++){
+      if((await frames()[0].evaluate(()=>window.th03SyncState?.phase))===1)break;
+      for(let seat=0;seat<2;seat++)await send(seat,'KeyZ');
+      await new Promise(r=>setTimeout(r,400));
+    }
+    await wait(async()=>(await frames()[0].evaluate(()=>window.th03SyncState?.phase))===1,'second match begins',60000);
+    await wait(async()=>((await frames()[0].evaluate(()=>window.th03Replay?.snapshot()?.points?.map(p=>p.frame)||[])).length>=3),'second match initializer',90000);
+    const matchPoints=await frames()[0].evaluate(()=>window.th03Replay.snapshot().points.map(p=>p.frame));console.log('MATCH_INITIALIZERS',JSON.stringify(matchPoints));
+    await new Promise(r=>setTimeout(r,25000));
+    const spectator=connection('ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,lobby:'late-spectator',member:'late-spectator-private',intent:'join',players:'2',difficulty:'1'}));
+    await spectator.wait(m=>m.type==='state'||m.type==='error');
+    await spectator.send({type:'spectate'},m=>m.room?.spectators?.some(p=>p.clientId==='late-spectator')||m.type==='error');
+    await spectator.wait(m=>m.type==='spectator-start'||m.type==='error',90000);
+    await page.evaluate(()=>addRuntime(2,true));
+    await wait(()=>page.evaluate(()=>events.some(e=>e.epoch===3&&e.event==='ready')),'late spectator runtime ready');
+    await page.evaluate(async({room,relayPort,serial,generation})=>{await rpc(2,'configure',{music:'none',options:{netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,run:String(serial),member:'late-spectator-private',spectator:'late-spectator',runtimeGeneration:generation}),netplayPlayer:0,netplayPlayerCount:2,netplaySpectator:true,netplaySpectatorId:'late-spectator'}});await rpc(2,'launch');},{room,relayPort,serial:start.serial,generation});
+    await wait(async()=>page.evaluate(()=>events.some(e=>e.epoch===3&&e.event==='first-frame'||e.epoch===3&&e.event==='error')),'late spectator picture',120000);
+    const late=await page.evaluate(()=>({errors:events.filter(e=>e.epoch===3&&e.event==='error'),state:events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback}));
+    assert.deepEqual(late.errors,[]);assert.equal(late.state.min,matchPoints.at(-1));assert(late.state.position>=matchPoints.at(-1));
+    assert(late.state.nodes.every(node=>node.frame>=late.state.min),'timeline nodes must be within the retained match');
+    console.log('PASS late spectator starts second match',JSON.stringify(late.state));
+    await page.evaluate(async()=>{await rpc(2,'network-cancel');document.getElementById('p2').remove();});
+    }
     const states=await health();await page.screenshot({path:resolve(out,'multiplayer.png')});
     const route=process.env.PC98_TEST_RELAY==='1'?'relay':'rtc';
     assert(log.includes('mode='+route),'must exercise the requested '+route+' route: '+log);
-    assert.equal((await page.evaluate(()=>events.filter(e=>e.event==='first-frame'))).length,count);results.push({players:count,states});console.log('MP confirmed gameplay',JSON.stringify(states));
+    assert.equal((await page.evaluate(count=>events.filter(e=>e.event==='first-frame'&&e.epoch<=count),count)).length,count);results.push({players:count,states});console.log('MP confirmed gameplay',JSON.stringify(states));
     await page.evaluate(async count=>Promise.all(Array.from({length:count},(_,s)=>rpc(s,'network-cancel'))),count);
-    await wait(()=>page.evaluate(count=>events.filter(e=>e.event==='exit'&&e.status==='success').length===count,count),'all runtime exits',15000);
+    await wait(()=>page.evaluate(count=>events.filter(e=>e.event==='exit'&&e.status==='success'&&e.epoch<=count).length===count,count),'all runtime exits',15000);
     console.log('MP all runtime instances exited');
     if(battleReplayBytes){
       await page.evaluate(()=>addRuntime(2,false));await wait(()=>page.evaluate(()=>events.some(e=>e.event==='ready'&&e.epoch===3)),'Replay runtime ready');

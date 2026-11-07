@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import net from 'node:net';
 import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
 
 for (const route of ['rtc','relay']) test(`PC98 room admits a late viewer over ${route} and retains confirmed packets`,async()=>{
   const port=await new Promise(resolve=>{const server=net.createServer();server.listen(0,'127.0.0.1',()=>{const p=server.address().port;server.close(()=>resolve(p));});});
@@ -33,7 +34,30 @@ for (const route of ['rtc','relay']) test(`PC98 room admits a late viewer over $
       await wait(()=>room(a)?.spectators?.some(s=>s.clientId==='viewer_client_'+game),'admission');
       const viewer=await open(base+`&spectator=viewer_client_${game}&member=member_viewer${game}`);await wait(()=>viewer.binary.length>=2,'confirmed history');
       assert.deepEqual(viewer.binary.slice(0,2).map(p=>p[5]),[1,2]);
-      p0.ws.send(packet(3,1,0,[]));await wait(()=>viewer.binary.some(p=>p[5]===3),'end');
+      let endFrame=1;
+      if(game==='03'){
+        const point=(frame,value)=>{const data=Buffer.from(value),body=Buffer.alloc(72+data.length);body.writeUInt32LE(data.length,0);body.write(createHash('sha256').update(data).digest('hex'),8);data.copy(body,72);p0.ws.send(packet(4,frame,0,body));};
+        point(0,'base');point(1,'first match');p0.ws.send(packet(6,1,1,[]));
+        await wait(()=>viewer.binary.some(p=>p[5]===6),'first match initializer');
+        const pendingLobby=await open(`room=${id}&lobby=pending_viewer_${game}&member=pending_member${game}`);send(pendingLobby,{type:'spectate'});
+        await wait(()=>pendingLobby.json.some(m=>m.type==='spectator-start'),'prior admission');
+        p0.ws.send(packet(2,1,1,[3]));p0.ws.send(packet(7,2,2,[]));await wait(()=>viewer.binary.some(p=>p[5]===7),'match transition');
+        const pending=await open(base+`&spectator=pending_viewer_${game}&member=pending_member${game}`);
+        await new Promise(resolve=>setTimeout(resolve,100));assert.equal(pending.binary.length,0,'already admitted viewer waits for the new initializer');
+        point(2,'second match');p0.ws.send(packet(6,2,2,[]));
+        await wait(()=>pending.binary.some(p=>p[5]===5),'pending viewer bootstrap');
+        assert.deepEqual(pending.binary.map(p=>p[5]),[1,4,6,4,2,5]);
+        await wait(()=>viewer.binary.filter(p=>p[5]===6).length===2,'existing viewer receives both match initializers');
+        const lateLobby=await open(`room=${id}&lobby=late_viewer_${game}&member=late_member${game}`);send(lateLobby,{type:'spectate'});
+        await wait(()=>lateLobby.json.some(m=>m.type==='spectator-start'),'late admission');
+        const late=await open(base+`&spectator=late_viewer_${game}&member=late_member${game}`);
+        await wait(()=>late.binary.some(p=>p[5]===5),'late bootstrap');
+        assert.deepEqual(late.binary.map(p=>p[5]),[1,4,6,4,2,5]);
+        assert.equal(new DataView(late.binary[2].buffer).getUint32(12,true),2,'late viewer receives second match initializer');
+        assert.equal(new DataView(late.binary[4].buffer).getUint32(8,true),1,'only the boundary proof row precedes the current match');
+        assert.equal(viewer.closed,false);endFrame=2;
+      }
+      p0.ws.send(packet(3,endFrame,0,[]));await wait(()=>viewer.binary.some(p=>p[5]===3),'end');
       p0.ws.send(packet(2,0,1,[9]));await wait(()=>viewer.closed,'invalid spectator stream closes only the viewer');
       assert.equal(p0.closed,false);assert.equal(p1.closed,false);
       if(route==='relay'){p0.ws.send(new Uint8Array([0xe7,1,9,8,7]));await wait(()=>p1.binary.some(p=>p.at(-1)===7),'players continue');}

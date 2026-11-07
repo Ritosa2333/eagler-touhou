@@ -6,7 +6,7 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
   const viewer=Array.from(crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');
   const channel=channelFactory(`pc98-room-${game}-${room}-${run}`),rows=[],matches=createPc98MatchIndex(game);
   const abort=new AbortController();
-  let header,identity,replica,available=0,end=null,points=[],closed=false,busy=false,booting=false,paused=false,following=true,target=null,generation=0,timer=null,pullTimer=null,frames=0;
+  let header,identity,replica,available=0,minFrame=0,end=null,points=[],closed=false,busy=false,booting=false,paused=false,following=true,target=null,generation=0,timer=null,pullTimer=null,frames=0;
   let last=performance.now(),lastPresent=0,budget=0;
   let catching=false,delayed=false,delayFrames=0,catchSince=0,catchStartLag=0;
   const fail=error=>{stop();onError(error);};
@@ -55,6 +55,7 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
       validateHeader(data.header);if(data.header.game!==game)throw Error('观战作品不匹配');
       const nextIdentity=stable(data.header);if(identity&&identity!==nextIdentity)throw Error('观战来源身份改变');
       if(!Array.isArray(data.rows)||data.rows.length>60||!Number.isSafeInteger(data.first)||data.first<0||!Number.isSafeInteger(data.available)||data.available<0)throw Error('观战历史无效');
+      if(rows.length===0&&!replica&&data.min>0){if(!Number.isSafeInteger(data.min)||data.min<data.first||data.min>data.available)throw Error('观战局起点无效');rows.length=data.first;minFrame=data.min;}
       if(data.first<rows.length){if(data.first+data.rows.length>rows.length||data.rows.some((row,i)=>stable(row)!==stable(rows[data.first+i])))throw Error('观战历史重传冲突');return;}
       if(data.first!==rows.length||data.available<rows.length+data.rows.length||data.available<available)throw Error('观战历史缺帧');
       data.rows.forEach((row,i)=>validateRow(row,data.header,rows.length+i));
@@ -68,9 +69,9 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
   };
   pullTimer=setInterval(pull,50);pull();
   return {stop,pause(value){paused=!!value;following=!paused;target=null;last=performance.now();},
-    seek(frame){if(!Number.isInteger(frame)||frame<0||frame>rows.length)throw Error('观战位置无效');following=false;paused=true;target=frame;catching=true;
+    seek(frame){if(!Number.isInteger(frame)||frame<minFrame||frame>rows.length)throw Error('观战位置无效');following=false;paused=true;target=frame;catching=true;
       if(!replica||frame<replica.frame){generation++;replica?.stop();replica=null;void boot();}},
     live(){following=true;paused=false;target=rows.length;delayed=false;catchSince=0;catching=true;},
-    get frame(){return replica?.frame??0;},get executed(){return replica?.executed??0;},get received(){return rows.length;},get frames(){return frames;},
-    get nodes(){return matches.nodes;},get paused(){return paused;},get following(){return following;},get catching(){return catching;},get seeking(){return target!==null||!replica||!frames;},get target(){return target??(following?rows.length:this.frame);},get ended(){return !!end&&replica?.frame===end.frame;}};
+    get frame(){return replica?.frame??minFrame;},get min(){return minFrame;},get executed(){return replica?.executed??0;},get received(){return rows.length;},get frames(){return frames;},
+    get nodes(){return matches.nodes.filter(node=>node.frame>=minFrame-1).map(node=>node.frame<minFrame?{...node,frame:minFrame}:node);},get paused(){return paused;},get following(){return following;},get catching(){return catching;},get seeking(){return target!==null||!replica||!frames;},get target(){return target??(following?rows.length:this.frame);},get ended(){return !!end&&replica?.frame===end.frame;}};
 }

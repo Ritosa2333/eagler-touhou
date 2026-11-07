@@ -1235,7 +1235,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       if (seatChanged || spectatorChanged) broadcastLobby(room);
       if (room.lobby.phase !== 'lobby') {
         const run = room.runs.get(String(room.lobby.startSerial));
-        if (run?.spectatorTimeline && (!run.spectatorStages || run.spectatorAdmissionOpen) && !run.ended && !run.spectatorStopped) {
+        if (run?.spectatorTimeline && (!(run.spectatorStages||run.spectatorPc98?.matchInitializers) || run.spectatorAdmissionOpen) && !run.ended && !run.spectatorStopped) {
           run.admittedSpectators.add(clientId);
           run.memberIds.set(clientId, roomDirectory.memberIdFor(roomId, clientId));
           sendLobby(socket, {
@@ -1808,9 +1808,11 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
     // same retained tape until the replay cursor catches its append frontier.
     socket.spectatorReplaying = true;
     const replayEpoch = socket.spectatorReplayEpoch || 0;
+    if(run.spectatorPc98){socket.spectatorQueuedPc98=[];socket.spectatorQueuedPc98Bytes=0;}
     let index = 0,
       blockedAt = 0,
-      history = run.spectatorHistory;
+      history = run.spectatorPc98?.pendingMatch ? null : run.spectatorPc98 ? [...run.spectatorHistory] : run.spectatorHistory;
+    socket.spectatorSnapshotPending=history===null;
     const replay = () => {
       if (
         socket.readyState !== WebSocket.OPEN ||
@@ -1819,6 +1821,10 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
         run.spectatorClients.get(spectatorId) !== socket
       )
         return;
+      if(history===null){
+        if(run.spectatorPc98?.pendingMatch){socket.spectatorReplayTimer=setTimeout(replay,50);return;}
+        history=[...run.spectatorHistory];socket.spectatorSnapshotPending=false;
+      }
       if (socket.bufferedAmount > 64 * 1024) {
         blockedAt ||= Date.now();
         if (Date.now() - blockedAt > 15000) {
@@ -1829,7 +1835,9 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
         return;
       }
       blockedAt = 0;
-      if (index >= history.length && history !== run.spectatorHistory) {
+      if (index >= history.length && run.spectatorPc98 && socket.spectatorQueuedPc98?.length){
+        history=socket.spectatorQueuedPc98.splice(0);socket.spectatorQueuedPc98Bytes=0;index=0;
+      } else if (index >= history.length && history !== run.spectatorHistory && !run.spectatorPc98) {
         history = run.spectatorStages ? socket.spectatorQueuedStages?.shift() : run.spectatorHistory;
         if (!history) {socket.close(1011, 'spectator stage history gap'); return;}
         index = 0;
@@ -2119,14 +2127,25 @@ server.on('connection', (socket, request) => {
       const payload = incoming.subarray(1);
       if(isPc98SpectatorRoom(roomId)&&payload.length>=4&&payload[0]===0x50&&payload[1]===0x39&&payload[2]===0x38&&payload[3]===0x53){
         try{
-          const first=!run.spectatorPc98,stream=run.spectatorPc98||new Pc98SpectatorRelay(run.playerCount),kind=stream.accept(payload);
+          const first=!run.spectatorPc98,stream=run.spectatorPc98||new Pc98SpectatorRelay(run.playerCount,{matchInitializers:roomId.startsWith('th03mp-')}),kind=stream.accept(payload);
           if(run.spectatorGraceTimer){clearTimeout(run.spectatorGraceTimer);run.spectatorGraceTimer=null;}
-          run.spectatorPc98=stream;run.spectatorTimeline=true;run.spectatorAdmissionOpen=!stream.ended;run.spectatorComplete=stream.ended;
+          run.spectatorPc98=stream;run.spectatorTimeline=true;run.spectatorAdmissionOpen=!stream.ended&&!stream.pendingMatch;run.spectatorComplete=stream.ended;
           run.spectatorHistory=stream.history;run.spectatorHistoryBytes=stream.bytes;run.onSpectatorAvailabilityChange=()=>roomDirectory.changed();
-          for(const [id,target] of run.spectatorClients)if(!target.spectatorReplaying){
+          for(const [id,target] of run.spectatorClients){
+            if(target.spectatorReplaying){
+              if(target.spectatorSnapshotPending)continue;
+              target.spectatorQueuedPc98Bytes=(target.spectatorQueuedPc98Bytes||0)+payload.length;
+              if(target.spectatorQueuedPc98Bytes>128*1024*1024){target.close(1008,'spectator history too slow');continue;}
+              (target.spectatorQueuedPc98??=[]).push(Buffer.from(payload));continue;
+            }
             if(sendSpectatorPayload(target,payload,roomId,runId,id)&&first)sendSpectatorPayload(target,stream.bootstrap(),roomId,runId,id);
           }
-          if(first||kind===3){broadcastLobby(room);roomDirectory.changed();}
+          if(first||kind===3||kind===6||kind===7){broadcastLobby(room);roomDirectory.changed();}
+          if(kind===6&&!stream.pendingMatch)for(const id of room.lobby.spectators.keys())if(!run.admittedSpectators.has(id)){
+            const lobby=room.lobbyClients.get(id);if(!lobby)continue;
+            run.admittedSpectators.add(id);run.memberIds.set(id,roomDirectory.memberIdFor(roomId,id));
+            sendLobby(lobby,{type:'spectator-start',serial:room.lobby.startSerial,room:lobbySnapshot(room)});
+          }
           if(first)for(const id of room.lobby.spectators.keys()){const lobby=room.lobbyClients.get(id);if(lobby)sendLobby(lobby,{type:'spectator-start',serial:room.lobby.startSerial,room:lobbySnapshot(room)});}
         }catch(error){console.log(`PC98 SPECTATOR STOP room=${roomId} run=${runId} ${error.message}`);stopSpectatorStream(run);}
         return;
