@@ -4,6 +4,10 @@
 
 ## 准备输入
 
+公开发布版默认使用游客模式。自行接入兼容的账号服务时，在构建前设置 `VITE_ACCOUNTS_ENABLED=true`，将本站 `/api/` 反向代理到自己的账号服务，并将 `/u/<用户名>` 路由到应用入口。本地开发可以用 `EAGLER_UI_API_ORIGIN` 指定 API 监听地址。匿名联机可以独立使用。
+
+开放房间音乐时，在前端构建中设置 `VITE_LISTEN_TOGETHER_ENABLED=true`，并以 `VITE_METING_API_URL` 指定可从浏览器访问的 HTTPS Meting 接口。Relay 设置 `EAGLER_NETPLAY_LISTEN_TOGETHER=1` 后开放同步邀请。验收时用网易云音乐和 QQ 音乐分别检查搜索、歌单与播放，再用两个玩家席验证邀请和同步。
+
 需要 Node.js 22+、Python 3 和匹配当前 Launcher Product Catalog 的完整 `runtime-release/`。源码前端构建另需 Bun 1.4.4。每个已登记游戏都准备 `games/<game-id>/` 目录，并放入对应原作文件。游戏列表见 [`common/contracts/product-catalog.mjs`](../../common/contracts/product-catalog.mjs)。
 
 在 `launcher/` 或自托管包根目录使用以下目录结构：
@@ -63,4 +67,10 @@ npm run verify:deployed -- https://example.com/
 
 源码检出的 `npm run host` 和 `npm run import` 使用同一套 Launcher Host 实现。维护者通过[发布流程](RELEASE.md)生成便携自托管包。
 
-自托管包也提供 `bun.lock`。使用 Bun 时运行 `bun install --frozen-lockfile --ignore-scripts`，然后用 `bun host/build.mjs --build-only` 启动相同 Host。两种环境分别核对依赖记录；预编译包无需安装前端编译器。
+## 测试版功能
+
+右上角菜单的“开发人员选项”包含“显示调试信息”和“测试版功能”。测试版开关保存于本机，刷新当前页面后显示已发布的抢先体验作品。它只控制可见性，所有作品共用站点清单、Runtime、存档、录像与联机大厅。
+
+按[发布流程](RELEASE.md)把隐藏作品和常规作品一起发布。`testOnly` 控制作品默认是否显示，`--test-build=1` 可让站点默认显示测试作品。账号与内部预览入口由各自的部署配置控制。
+
+th13 的程序产物目前需显式提供：给 `scripts/package-runtime-release.mjs` 传入 `--th13-build=PATH`，组装站点时将 `th13` 加入 `--games`。它随同一站点发布，玩家开启测试版功能后即可看到。

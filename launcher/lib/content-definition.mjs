@@ -285,6 +285,17 @@ export const PRODUCT_CONTENT = Object.freeze({
       ogg: Object.freeze({kind: "prepared-content"}), dataAssets: Object.freeze({kind: "prepared-content"}),
     }),
   }),
+  th13: Object.freeze({
+    original: Object.freeze({
+      files: Object.freeze(["th13.dat"]),
+      oggSourceFiles: Object.freeze(["thbgm.dat"]),
+    }),
+    dataLayout: "sha256-9aceb48a8a4c87b1f3d916ae86c8788dee80e271ce42553f3246e699d91a7f18",
+    music: Object.freeze({
+      ogg: Object.freeze({mount: PRODUCT_GAMES.th13.package.musicMounts.ogg, files: Object.freeze(["thbgm.ogg"])}),
+    }),
+    hostPreparation: Object.freeze({dataAssets: Object.freeze({kind: "prepared-content"})}),
+  }),
   th15: Object.freeze({
     original: Object.freeze({
       files: Object.freeze(["th15.dat"]),
@@ -340,6 +351,12 @@ export const PRODUCT_CONTENT = Object.freeze({
       ogg: Object.freeze({kind: "prepared-content"}), dataAssets: Object.freeze({kind: "prepared-content"}),
     }),
   }),
+    th19: Object.freeze({
+        original: Object.freeze({files:Object.freeze(["th19.dat"])}),
+        dataLayout: "sha256-9f5de5e45de240535cbf33ef75749509ecc93e21f2b24b8e23b3201b7b430d95",
+        music: Object.freeze({ogg:Object.freeze({mount:"/music",files:Object.freeze(["th19_01.ogg", "th19_02.ogg", "th19_03.ogg", "th19_04.ogg", "th19_05.ogg", "th19_06.ogg", "th19_07.ogg", "th19_08.ogg", "th19_09.ogg", "th19_10.ogg", "th19_11.ogg", "th19_12.ogg", "th19_13.ogg", "th19_14.ogg", "th19_15.ogg", "th19_16.ogg", "th19_17.ogg", "th19_18.ogg", "th19_19.ogg", "th19_20.ogg", "th19_21.ogg", "th19_22.ogg", "th19_90.ogg", "th19_91.ogg"])})}),
+        hostPreparation: Object.freeze({artwork:Object.freeze({kind:"retail-memory-title-no-reader"}),dataAssets:Object.freeze({kind:"prepared-content"}),preparedContent:Object.freeze({directory:"assets-eagler",markerFiles:Object.freeze(["th19.data","music/th19_01.ogg"]),script:"scripts/prepare-th19-content.mjs"}),ogg:Object.freeze({kind:"prepared-content"})}),
+    }),
   th20: Object.freeze({
     original: Object.freeze({
       files: Object.freeze(["th20.dat"]),

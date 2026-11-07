@@ -72,8 +72,21 @@ try {
   const resumed = await lobby(hostId, hostMember);
   assert.equal((await replaced)[0], 4008, 'only the same member may replace its exact session');
   assert.equal(resumed.messages[0].room.seats[0].name, 'Host', 'legitimate reconnect preserves seat and state');
+  const guestReady = resumed.wait(m => m.type === 'state' && m.room?.seats[1]?.ready);
+  guest.socket.send(JSON.stringify({ type: 'room-nudge', ready: true }));
+  await sendAndWait(guest, { type: 'set-ready', ready: true }, m => m.room?.seats[1]?.ready);
+  await guestReady;
+  assert.ok(!resumed.messages.some(m => m.type === 'room-action' && m.action === 'nudge'),
+    'a nudge cannot claim the sender is ready');
+  const receivedNudge = resumed.wait(m => m.type === 'room-action' && m.action === 'nudge');
+  await sendAndWait(guest, { type: 'room-nudge' }, m => m.type === 'room-action' && m.action === 'nudge' && m.outgoing);
+  assert.equal((await receivedNudge).fromSeat, 1);
+  await sendAndWait(guest, { type: 'set-ready', ready: false }, m => m.room?.seats[1]?.ready === false);
+  guest.socket.send(JSON.stringify({ type: 'room-nudge' }));
+  await sendAndWait(guest, { type: 'set-ready', ready: true }, m => m.room?.seats[1]?.ready);
+  assert.ok(!guest.messages.some(m => m.type === 'room-action' && (m.action === 'nudge' || m.action === 'nudge-limited')),
+    'cancelled readiness suppresses nudges again');
   await sendAndWait(resumed, { type: 'set-ready', ready: true }, m => m.room?.seats[0]?.ready);
-  await sendAndWait(guest, { type: 'set-ready', ready: true }, m => m.room?.seats.slice(0, 2).every(s => s?.ready));
   const started = await sendAndWait(resumed, { type: 'start' }, m => m.type === 'start');
   const base = { room, run: String(started.serial), players: '2' };
   for (const role of [{ spectator: viewerId }, { player: '0' }, { player: '0', signal: '1' }]) {

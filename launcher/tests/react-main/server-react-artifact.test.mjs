@@ -313,19 +313,17 @@ describe('opt-in React artifacts use the actual server packager and generic veri
       resolve(temporary, 'external-features.json'),
       JSON.stringify({ ...features, resourceMode: 'external' }),
     );
-    await command(
-      [
-        'scripts/package-server.mjs',
-        `--output=${external}`,
-        `--runtime-release=${resolve(temporary, 'runtime')}`,
-        `--site-manifest=${resolve(hosted, 'site-manifest.json')}`,
-        `--feature-config=${resolve(temporary, 'external-features.json')}`,
-        '--profile=web-validation-react-server',
-        '--games=th08',
-        '--music=midi',
-      ],
-      { EAGLER_FRONTEND: 'react', EAGLER_REACT_BUILD_DIRECTORY: defaultBuild },
-    );
+    const externalArgs = [
+      'scripts/package-server.mjs',
+      `--runtime-release=${resolve(temporary, 'runtime')}`,
+      `--site-manifest=${resolve(hosted, 'site-manifest.json')}`,
+      `--feature-config=${resolve(temporary, 'external-features.json')}`,
+      '--profile=web-validation-react-server',
+      '--games=th08',
+      '--music=midi',
+    ];
+    const environment = { EAGLER_FRONTEND: 'react', EAGLER_REACT_BUILD_DIRECTORY: defaultBuild };
+    await command([...externalArgs, `--output=${external}`], environment);
     await verify(external);
     const deployment = await json(resolve(external, 'deployment.json'));
     assert.equal(deployment.resourceMode, 'external');

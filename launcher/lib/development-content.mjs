@@ -34,6 +34,7 @@ const th15ContentRoot = process.env.EAGLER_TH15_CONTENT_DIR?.trim()
   ? resolve(process.env.EAGLER_TH15_CONTENT_DIR.trim())
   : null;
 const th17ContentRoot = process.env.EAGLER_TH17_CONTENT_DIR?.trim() || null;
+const th19ContentRoot = process.env.EAGLER_TH19_CONTENT_DIR?.trim() ? resolve(process.env.EAGLER_TH19_CONTENT_DIR.trim()) : null;
 const th20ContentRoot = process.env.EAGLER_TH20_CONTENT_DIR?.trim()
   ? resolve(process.env.EAGLER_TH20_CONTENT_DIR.trim())
   : null;
@@ -230,6 +231,12 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       music: availableMusic(th17ContentRoot ? {ogg: Object.freeze({
         base: `${projectRelativePath(resolve(th17ContentRoot, "music"))}/`, ...PRODUCT_CONTENT.th17.music.ogg,
       })} : {}),
+    }),
+    th19: Object.freeze({
+      runtime: `${ws("th19","build-eagler","th19.html")}?hosted=1`,
+      multiplayerRuntime: `${ws("th19","build-eagler-multiplayer","th19.html")}?hosted=1`,
+      data: Object.freeze(th19ContentRoot ? {source:projectRelativePath(resolve(th19ContentRoot,"th19.dat")),layout:PRODUCT_CONTENT.th19.dataLayout} : {identity:Object.freeze({bytes:115306902,sha256:"effabd1d3ed5887bc462b595775b6382697e6ce766912c6ef451aca0d4c72213",layout:PRODUCT_CONTENT.th19.dataLayout})}),
+      music:availableMusic(th19ContentRoot ? {ogg:Object.freeze({base:`${projectRelativePath(resolve(th19ContentRoot,"music"))}/`,...PRODUCT_CONTENT.th19.music.ogg})} : {}),
     }),
     th20: Object.freeze({
       runtime: `${ws("th20", "build-eagler", "th20.html")}?hosted=1`,

@@ -18,12 +18,14 @@ import type { MultiplayerRoomSessionStore } from '../../src/launcher/multiplayer
 import { encodeRoomInvite, ROOM_INVITE_KEY } from '../../src/launcher/room-invite.mts';
 import type { UiMessageKey, UiMessageParams } from '../../src/launcher/i18n.mts';
 import { parseTh09PlayerStats, type Th09PlayerStats } from '../../src/launcher/th09-room-stats.mts';
+import {parseRoomAccountProfile, type RoomAccountProfile} from '../../src/launcher/room-account-profile.mts';
 
 export type DirectoryConnection = 'loading' | 'live' | 'offline' | 'unsupported' | 'missing';
 export type DirectoryFormMode = 'create' | 'join';
 export interface DirectorySeat {
   loadout?: number;
   name?: string;
+  profile?: RoomAccountProfile;
   machineSign?: string;
   stats?: Th09PlayerStats;
   initial: string;
@@ -33,6 +35,7 @@ export interface DirectorySeat {
 }
 export interface DirectoryRoom {
   startedAt?: number;
+  listeningTrack?: { name: string; artist: string };
   product: MultiplayerProductId;
   code: string;
   capacity: 2 | 3;
@@ -70,6 +73,7 @@ export interface DirectorySnapshot {
   mine: DirectoryMembership | null;
   recovering: DirectoryMembership | null;
   supportsRecovery: boolean;
+  globalRoomCodes: boolean;
   connection: DirectoryConnection;
   connectionInterrupted: boolean;
   loading: boolean;
@@ -162,6 +166,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     mine: null,
     recovering: null,
     supportsRecovery: false,
+    globalRoomCodes: false,
     connection: 'loading',
     connectionInterrupted: false,
     loading: true,
@@ -285,8 +290,10 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
             .replace(/[\u0000-\u001f\u007f]/g, '')
             .trim(),
         ][0] || '?';
+      const profile = parseRoomAccountProfile(seat?.profile);
       return Object.freeze({
         initial,
+        ...(profile ? {profile} : {}),
         ...(Number.isInteger(seat?.loadout) && Number(seat?.loadout) >= 0 && Number(seat?.loadout) < policy.loadouts.length ? {loadout: Number(seat?.loadout)} : {}),
         ...(row.publicNames === true ? {name:normalizePublicNickname(seat?.name)} : {}),
         ...(row.product === 'th09mp'
@@ -313,7 +320,13 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         controlMode: multiplayerControlMode(seat?.controlMode),
       });
     });
+    const track = record(row.listeningTrack);
+    const trackName = typeof track?.name === 'string' ? track.name.slice(0, 64).trim() : '';
     return Object.freeze({
+      ...(trackName ? {listeningTrack: {
+        name: trackName,
+        artist: typeof track?.artist === 'string' ? track.artist.slice(0, 64).trim() : '',
+      }} : {}),
       product: row.product,
       code: row.code,
       capacity,
@@ -414,6 +427,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         recovering,
         notice: noticeText,
         supportsRecovery: message.membershipRecovery === true,
+        globalRoomCodes: message.globalRoomCodes === true,
         rooms: Object.freeze(rooms),
         total: Math.max(rooms.length, bounded(message.total, 100000) - (candidates.length - rooms.length)),
         connection: 'live',
@@ -672,10 +686,12 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     const created = form.mode === 'create';
     if (created) {
       code = generateMultiplayerRoomCode(options.randomWord);
-      while (snapshot.rooms.some((room) => room.product === form.product && room.code === code))
+      while (snapshot.rooms.some((room) => (snapshot.globalRoomCodes || room.product === form.product) && room.code === code))
         code = String(1000 + ((Number(code) - 999) % 9000));
     }
-    const product = form.product;
+    const product = !created && snapshot.globalRoomCodes
+      ? snapshot.rooms.find(room => room.code === code)?.product ?? form.product
+      : form.product;
     pendingEntry = {
       owner,
       run: () =>

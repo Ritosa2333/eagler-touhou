@@ -1,0 +1,74 @@
+{
+  "passed": true,
+  "stage": "complete",
+  "results": [
+    {
+      "check": "Launcher create/join/seat/ready/start and native RTC state agreement",
+      "passed": true,
+      "hashes": [
+        [
+          120,
+          191122355
+        ],
+        [
+          240,
+          3236171515
+        ],
+        [
+          360,
+          1993253252
+        ]
+      ]
+    }
+  ],
+  "errors": [],
+  "room": "6141",
+  "states": [
+    {
+      "active": true,
+      "frame": 369,
+      "route": "rtc",
+      "hashes": [
+        [
+          120,
+          191122355
+        ],
+        [
+          240,
+          3236171515
+        ],
+        [
+          360,
+          1993253252
+        ]
+      ],
+      "options": {
+        "side": 0,
+        "count": 2
+      }
+    },
+    {
+      "active": true,
+      "frame": 364,
+      "route": "rtc",
+      "hashes": [
+        [
+          120,
+          191122355
+        ],
+        [
+          240,
+          3236171515
+        ],
+        [
+          360,
+          1993253252
+        ]
+      ],
+      "options": {
+        "side": 1,
+        "count": 2
+      }
+    }
+  ]
+}

@@ -1,6 +1,15 @@
 #include "RecordStore.hpp"
 #include <algorithm>
 namespace th15 {
+RecordStore& RecordStore::operator=(const RecordStore& from){
+ if(this==&from)return *this;
+ // Only codec APIs mutate the encoded blocks. Frame ring reuse still copies
+ // every public logical record, including writes through retained references.
+ if(codec_version!=from.codec_version)file=from.file;
+ codec_version=from.codec_version;
+ characters=from.characters;music=from.music;name=from.name;total_play_centiseconds=from.total_play_centiseconds;
+ error=from.error;endings=from.endings;ending_seen=from.ending_seen;checkpoint_remove=from.checkpoint_remove;return *this;
+}
 namespace {
 template<class T>T read(const u8* p,u32 at){T v;std::memcpy(&v,p+at,sizeof v);return v;}
 template<class T>void write(u8* p,u32 at,T v){std::memcpy(p+at,&v,sizeof v);}
@@ -21,6 +30,7 @@ void RecordStore::decode(){
  std::memcpy(name.data(),file.settings.data()+12,9);std::copy_n(file.settings.data()+0x16,8,endings.begin());ending_seen=file.settings[0x1e];std::copy(file.settings.begin()+0x26,file.settings.begin()+0x3a,music.begin());total_play_centiseconds=read<u64>(file.settings.data(),0x48);
 }
 void RecordStore::encode(){
+ codec_version=++codec_serial;
  for(u32 character=0;character<5;character++){auto* bytes=file.characters[character].data();const auto& input=characters[character];
   for(u32 mode=0;mode<2;mode++){const auto& bank=input.modes[mode];const u32 base=mode*0x5188;
    for(u32 rank=0;rank<6;rank++)for(u32 n=0;n<10;n++){const auto& row=bank.scores[rank][n];const u32 at=base+0x10+rank*320+n*32;write(bytes,at,row.score);bytes[at+4]=row.stage;bytes[at+5]=u8(row.continues);std::memcpy(bytes+at+6,row.name.data(),9);bytes[at+15]=row.reserved;for(u32 k=0;k<4;k++)write(bytes,at+16+k*4,row.details[k]);}
@@ -31,10 +41,10 @@ void RecordStore::encode(){
  }
  std::memcpy(file.settings.data()+12,name.data(),9);std::copy(endings.begin(),endings.end(),file.settings.begin()+0x16);file.settings[0x1e]=ending_seen;std::copy(music.begin(),music.end(),file.settings.begin()+0x26);write(file.settings.data(),0x48,total_play_centiseconds);
 }
-void RecordStore::reset(Rng& random){error.clear();file.reset(random);decode();}
+void RecordStore::reset(Rng& random){codec_version=++codec_serial;error.clear();file.reset(random);decode();}
 bool RecordStore::open(const u8* bytes,u32 size){encode();if(!file.open(bytes,size))return fail(file.error.c_str());decode();error.clear();return true;}
 bool RecordStore::save(std::vector<u8>& output){if(!error.empty())return false;encode();return file.save(output)||fail(file.error.c_str());}
-bool RecordStore::import_blocks(const u8* blocks,const u8* settings){if(!blocks||!settings)return fail("Missing score blocks");std::memcpy(file.characters.data(),blocks,ScoreFile::character_size*5);std::memcpy(file.settings.data(),settings,ScoreFile::settings_size);decode();return true;}
+bool RecordStore::import_blocks(const u8* blocks,const u8* settings){if(!blocks||!settings)return fail("Missing score blocks");codec_version=++codec_serial;std::memcpy(file.characters.data(),blocks,ScoreFile::character_size*5);std::memcpy(file.settings.data(),settings,ScoreFile::settings_size);decode();return true;}
 SessionHighScore RecordStore::high_score(const SessionRecordQuery& query){
  if(!character_valid(query.character)||query.difficulty<0||query.difficulty>=5){fail("Invalid high score selection");return {};}
  if(query.scope==RecordScope::Spell){if(query.spell<0||query.spell>=119){fail("Invalid spell record");return {};}return {mode(query.character,query.legacy).spells[query.spell].score,0};}

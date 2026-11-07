@@ -2,18 +2,18 @@
 namespace th15 {
 void inherit_nearby_bullet_motion(BulletManager& bullets)noexcept{
     for(u32 outer=bullets.first_active();outer!=BulletManager::none;outer=bullets.next_active(outer)){
-        const auto& source=*bullets.state(outer);if(source.step_limit!=1)continue;
+        const auto& source=bullets.slots[outer].state;if(source.step_limit!=1)continue;
         for(u32 inner=bullets.first_active();inner!=BulletManager::none;inner=bullets.next_active(inner)){
-            auto& target=*bullets.state(inner);if(target.step_limit!=0)continue;
+            auto& target=bullets.slots[inner].state;if(target.step_limit!=0)continue;
             const float dx=float(target.motion.position.x-source.motion.position.x),dy=float(target.motion.position.y-source.motion.position.y);
             const float distance=float(float(dx*dx)+float(dy*dy));if(!(400.f>=distance))continue;
-            target.step_limit=2;target.motion.velocity=source.motion.velocity;target.motion.speed=source.motion.speed;target.motion.angle=source.motion.angle;target.transform_index=8;
+            bullets.runtime_changed(inner);target.step_limit=2;target.motion.velocity=source.motion.velocity;target.motion.speed=source.motion.speed;target.motion.angle=source.motion.angle;target.transform_index=8;
         }
     }
 }
 void scale_bullets_near_players(BulletManager& bullets,const PlayerCollision* players,u32 count,float factor,bool dialogue)noexcept{
     for(u32 index=bullets.first_active();index!=BulletManager::none;index=bullets.next_active(index)){
-        auto& b=*bullets.state(index);if(b.step_limit!=1)continue;
+        auto& b=bullets.slots[index].state;if(b.step_limit!=1)continue;
         for(u32 seat=0;seat<count;++seat){const auto& player=players[seat];
             const float dx=float(player.position.x-b.motion.position.x),dy=float(player.position.y-b.motion.position.y),distance=float(float(dx*dx)+float(dy*dy));
             float radius=player.radius;if(player.enlarged)radius=float(float(player.size_multiplier*3.6f)*radius);
@@ -26,7 +26,7 @@ void scale_bullets_near_players(BulletManager& bullets,const PlayerCollision* pl
     }
 }
 void scale_bullets_near_player(BulletManager& bullets,const PlayerCollision& player,float factor,bool dialogue)noexcept{scale_bullets_near_players(bullets,&player,1,factor,dialogue);}
-bool cancel_unmarked_bullets(BulletScene& bullets,const Vec3& position,float radius){const float radius_squared=float(radius*radius);for(u32 index=bullets.manager.first_active();index!=BulletManager::none;){const u32 next=bullets.manager.next_active(index);auto& b=*bullets.manager.state(index);const float dx=float(position.x-b.motion.position.x),dy=float(position.y-b.motion.position.y),distance=float(float(dx*dx)+float(dy*dy));if(b.step_limit==0&&radius_squared>distance){b.cancellation_script=-1;if(!bullets.cancel_slot(index,0))return false;b.motion.velocity.x=float(b.motion.velocity.x*0.f);b.motion.velocity.y=float(b.motion.velocity.y*0.f);b.motion.velocity.z=float(b.motion.velocity.z*0.f);}index=next;}return true;}
+bool cancel_unmarked_bullets(BulletScene& bullets,const Vec3& position,float radius){const float radius_squared=float(radius*radius);for(u32 index=bullets.manager.first_active();index!=BulletManager::none;){const u32 next=bullets.manager.next_active(index);auto& b=bullets.manager.slots[index].state;const float dx=float(position.x-b.motion.position.x),dy=float(position.y-b.motion.position.y),distance=float(float(dx*dx)+float(dy*dy));if(b.step_limit==0&&radius_squared>distance){b.cancellation_script=-1;if(!bullets.cancel_slot(index,0))return false;b.motion.velocity.x=float(b.motion.velocity.x*0.f);b.motion.velocity.y=float(b.motion.velocity.y*0.f);b.motion.velocity.z=float(b.motion.velocity.z*0.f);}index=next;}return true;}
 bool enemy_update_rule(EnemyState& enemy,BulletScene& bullets,LaserScene& lasers,const PlayerCollision& player,bool dialogue){
     switch(enemy.update_rule){
         case EnemyUpdateRule::none:return true;

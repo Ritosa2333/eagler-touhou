@@ -27,6 +27,30 @@ function fixture(timeout = 1000) {
   return {router, sockets};
 }
 const flush = () => new Promise(resolve => queueMicrotask(resolve));
+
+test('room, directory and diagnostic roles use ordinary relay entries and preserve identity', async () => {
+  const {router, sockets} = fixture();
+  const query = '?room=th09-1234&run=run-1&member=a%2Bb&lobby=1';
+  assert.equal(router.resolve(primary), primary);
+  const routed = router.createSocket(primary + query);
+  await flush();
+  assert.equal(sockets[0].url, primary + query);
+  sockets[0].fail(); sockets[1].open();
+  assert.equal(sockets[1].url, backup + query);
+  for (const role of ['directory', 'diagnostic']) {
+    const client = router.createSocket(primary + query + `&${role}=1`);
+    await flush();
+    const url = new URL(sockets.at(-1).url);
+    assert.equal(url.origin, new URL(backup).origin);
+    assert.equal(url.searchParams.get('room'), 'th09-1234');
+    assert.equal(url.searchParams.get('run'), 'run-1');
+    assert.equal(url.searchParams.get('member'), 'a+b');
+    assert.equal(url.searchParams.has('channel'), false);
+    assert.equal(url.searchParams.get(role), '1');
+    client.close();
+  }
+  routed.close();
+});
 test('primary success makes no backup connection', async () => {
   const {router, sockets} = fixture();
   const routed = router.createSocket(primary + '?room=th09-1234&member=a%2Bb');

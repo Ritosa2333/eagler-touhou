@@ -39,7 +39,8 @@ test('shared port checks use their declared Vitest project or native Node runner
 
 test('TH05 declares source checks for both Runtime variants',()=>{
   const all=targets();
-  assert.equal(all.length,22,'all existing native source targets remain in --all');
+  assert.equal(all.length,24,'all existing native source targets remain in --all');
+  assert.deepEqual(all.filter(target=>target.game==='th19').map(target=>target.variant).sort(),['multiplayer','normal']);
   assert.ok(all.some(target=>target.game==='th06'&&target.variant==='normal'));
   assert.ok(all.some(target=>target.game==='th20'&&target.variant==='normal'));
   for(const [variant,directory] of [['normal','ports/th05'],['multiplayer','ports/th05-mp']]){

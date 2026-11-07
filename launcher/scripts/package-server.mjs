@@ -54,10 +54,11 @@ const required = name => {
 };
 const output = required("output");
 const siteUrl = normalizeSiteUrl(args["site-url"]);
+if (args["beta-mode"] !== undefined) throw Error("--beta-mode is retired. Publish one site and use the frontend beta-features toggle.");
 // React remains an explicit artifact selection. A build's isolated worker
 // permission is never widened to another public origin or mount by packaging.
 if (REACT_FRONTEND_ARTIFACT) {
-  const selectedSite = siteUrl ? new URL(siteUrl) : null;
+  const selectedSite = siteUrl ? new URL("./", siteUrl) : null;
   if (selectedSite && selectedSite.pathname !== REACT_FRONTEND_ARTIFACT.mountPath) {
     throw new Error("site URL does not match the React frontend artifact mount");
   }
@@ -926,7 +927,7 @@ validateSiteManifest(manifest);
 await writeFile(resolve(staging, SITE_MANIFEST_FILE), `${JSON.stringify(manifest, null, 2)}\n`);
 await writeLegacySiteManifestAlias(staging, manifest);
 await writeFile(resolve(staging, RELEASE_CATALOG_FILE), `${JSON.stringify(releaseCatalog, null, 2)}\n`);
-const appShellBuild = REACT_FRONTEND_ARTIFACT && !REACT_FRONTEND_ARTIFACT.appShell ? null : await buildAppShell({
+const appShellBuild = !REACT_FRONTEND_ARTIFACT.appShell ? null : await buildAppShell({
   quiet: true,
   globDirectory: staging,
   swDest: resolve(staging, "app-shell-sw.js"),
@@ -959,13 +960,13 @@ const deployment = {
   generatedAt: new Date().toISOString(),
   resourceMode: serverResourceMode,
   appShell: appShellBuild?.contract ?? null,
-  ...(REACT_FRONTEND_ARTIFACT ? { frontend: {
+  frontend: {
     kind: "react",
     mountPath: REACT_FRONTEND_ARTIFACT.mountPath,
     // Validation inputs are covered by Release Manifest's deployment hash,
     // rather than served as public .vite build metadata.
     validationMetadata: REACT_FRONTEND_ARTIFACT.metadata,
-  } } : {}),
+  },
   music: serverResourceMode === RESOURCE_MODE_HOSTED ? [...modes].sort() : [],
   files: inventory,
 };
@@ -998,7 +999,7 @@ await writeReleaseManifest(staging, {
   sources,
   parameters: { authority: buildAuthority, resourceMode: serverResourceMode, music: deployment.music,
     runtimeBuildProvenance: runtimeRelease ? "verified-runtime-release" : "not-verified-by-packager",
-    ...(REACT_FRONTEND_ARTIFACT ? { frontend: { kind: "react", mountPath: REACT_FRONTEND_ARTIFACT.mountPath } } : {}),
+    frontend: {kind: "react", mountPath: REACT_FRONTEND_ARTIFACT.mountPath},
     ...(externalRecoveryProvenance ? { externalRecovery: externalRecoveryProvenance } : {}) },
 });
 await rm(output, { recursive: true, force: true });

@@ -1,3 +1,4 @@
+import {TH19_VERSUS_RULES,validTh19VersusRules} from './th19-versus-rules.mjs';
 import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
 import {
   validTh15ChapterThreshold,
@@ -23,6 +24,7 @@ export interface MultiplayerRuntimeOptionConstraints {
 }
 
 export interface MultiplayerRuntimeOptionInput {
+  th19Rules?: number[];
   initialSpares?: number;
   initialBombs?: number;
   url: string;
@@ -51,6 +53,7 @@ export interface MultiplayerRuntimeOptionInput {
 }
 
 export interface MultiplayerRuntimeOptions {
+  netplayTh19Rules?: number[];
   netplayInitialSpares?: number;
   netplayInitialBombs?: number;
   netplayMode: 'lan';
@@ -95,6 +98,7 @@ export function buildMultiplayerRuntimeOptions(
   }
 
   const roomProduct = (url.searchParams.get('room') || '').split('-')[0];
+  if(input.th19Rules!==undefined&&(roomProduct!=='th19mp'||!validTh19VersusRules(input.th19Rules)))throw new Error('TH19 versus rules are invalid');
   if(input.initialSpares!==undefined&&(roomProduct!=='th05mp'||!validTh05InitialSpares(input.initialSpares))||input.initialBombs!==undefined&&(roomProduct!=='th05mp'||!validTh05InitialBombs(input.initialBombs)))throw new Error('TH05 initial stocks are invalid');
   if (input.allowWebsocketFallback !== undefined && typeof input.allowWebsocketFallback !== 'boolean')
     throw new Error('WebSocket 回退开关必须为布尔值');
@@ -157,7 +161,7 @@ export function buildMultiplayerRuntimeOptions(
   const fixedRollbackTitle = product === multiplayerConfigForProduct('th11mp') || product === multiplayerConfigForProduct('th12mp');
   const th075 = roomProduct === 'th075mp';
   const th15 = roomProduct === 'th15mp';
-  const requestedMode = input.adonisMode ?? (roomProduct === 'th11mp' || th075 || product.inputTiming?.rollbackDefault === false ? 1 : 0);
+  const requestedMode = input.adonisMode ?? (roomProduct === 'th11mp' || product.inputTiming?.rollbackDefault === false ? 1 : 0);
   const timingPolicy = multiplayerInputTimingPolicy(product);
   const rollback = timingPolicy.rollback && [0, 2].includes(requestedMode);
   const adonisMode = rollback ? 0 : requestedMode;
@@ -183,7 +187,8 @@ export function buildMultiplayerRuntimeOptions(
     !Number.isInteger(requestedMode) ||
     requestedMode < 0 ||
     requestedMode > 2 ||
-    (requestedMode !== 0 && !measuredTitle)
+    (requestedMode === 1 && !product.inputTiming) ||
+    (requestedMode === 2 && !measuredTitle)
   )
     throw new Error('该多人 Runtime 不支持 Adonis 时序');
   if (
@@ -200,6 +205,7 @@ export function buildMultiplayerRuntimeOptions(
     throw new Error(`Adonis 输入延迟必须为 0–${timingPolicy.manualDelayLimit} 帧`);
   return {
     netplayMode: 'lan',
+    ...(roomProduct==='th19mp'?{netplayTh19Rules:[...(input.th19Rules??TH19_VERSUS_RULES)]}:{}),
     ...(roomProduct==='th05mp'?{netplayInitialSpares:input.initialSpares??TH05_INITIAL_STOCK.spares,netplayInitialBombs:input.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
     ...(product.inGameSelection ? { netplayInGameSelection: true } : {}),
     ...(roomProduct === "th15mp"
@@ -252,7 +258,7 @@ export function buildMultiplayerRuntimeOptions(
     netplaySpectatorId: spectator ? input.spectatorId : '',
     netplaySpectatorCount: Math.max(0, Number(input.spectatorCount) || 0),
     ...(input.spectatorTimeline === true ? { netplaySpectatorTimeline: true } : {}),
-    ...(roomProduct === 'th09mp' && !spectator ? {
+    ...(['th09mp','th19mp'].includes(roomProduct) && !spectator ? {
       netplayReplayAutoSave: input.replayAutoSave !== false,
       netplayReplayNames: [0, 1].map(side => String(input.replayNames?.[side] || `P${side + 1}`).slice(0, 64)),
     } : {}),

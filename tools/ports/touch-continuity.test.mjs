@@ -15,7 +15,8 @@ function native(directory, fixture, includes, sources=[], prepare=()=>{}) {
   const program=join(temp,process.platform==='win32'?'verify.exe':'verify');
   execFileSync(process.env.CXX||'g++',['-std=c++17','-O2','-UNDEBUG',...includes.flatMap(path=>['-I',path]),'-I',temp,
    '-I',resolve(root,'common/include'),resolve(root,'tools/testing',fixture),...sources,'-o',program],{windowsHide:true,timeout:60000});
-  execFileSync(program,[],{windowsHide:true,timeout:10000});
+  // Allow cold executable startup on Windows hosts without changing assertions.
+  execFileSync(program,[],{windowsHide:true,timeout:60000});
  }finally{rmSync(temp,{recursive:true,force:true});}
 }
 // Compile the production delta-consumption functions independently of SDL and game assets.

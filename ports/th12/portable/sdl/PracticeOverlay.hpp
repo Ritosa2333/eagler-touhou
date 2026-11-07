@@ -6,6 +6,7 @@ namespace th12host {
 class Renderer;
 class PracticeOverlay {
     bool initialized=false;unsigned texture=0;
+    bool practice_menu_open=false;
     std::vector<unsigned char> font;
 public:
     void initialize(Renderer&);

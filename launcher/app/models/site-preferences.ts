@@ -1,24 +1,14 @@
-import {
-  SITE_NOTICE_DISMISSED_KEY, SITE_NOTICE_STORAGE_KEY,
-} from '../components/notices/site-notice-source';
-
-export {SITE_NOTICE_DISMISSED_KEY, SITE_NOTICE_STORAGE_KEY};
 export const LESS_MOTION_STORAGE_KEY = 'eagler-touhou-less-motion-v1';
 export type SitePreferenceStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
 export interface SitePreferencesSnapshot {
   readonly lessMotion: boolean;
-  readonly noticeEnabled: boolean;
-  readonly noticeDismissed: boolean;
 }
 export interface SitePreferencesModel {
   subscribe(listener: () => void): () => void;
   getSnapshot(): SitePreferencesSnapshot;
   setLessMotion(enabled: boolean): void;
   toggleMotion(): void;
-  setNoticeEnabled(enabled: boolean): void;
-  toggleNotice(): void;
-  dismissNotice(): void;
   syncStorageEvent(event: Pick<StorageEvent, 'key' | 'newValue'>): void;
 }
 
@@ -34,8 +24,6 @@ export function createSitePreferencesModel({storage}: {
   const write = (key: string, value: boolean) => {try {storage?.setItem(key, value ? '1' : '0');} catch {}};
   let snapshot: SitePreferencesSnapshot = Object.freeze({
     lessMotion: read(LESS_MOTION_STORAGE_KEY) === '1',
-    noticeEnabled: read(SITE_NOTICE_STORAGE_KEY) !== '0',
-    noticeDismissed: read(SITE_NOTICE_DISMISSED_KEY) === '1',
   });
   function publish(change: Partial<SitePreferencesSnapshot>) {
     const next = {...snapshot, ...change};
@@ -47,18 +35,11 @@ export function createSitePreferencesModel({storage}: {
     write(LESS_MOTION_STORAGE_KEY, enabled);
     publish({lessMotion: enabled});
   }
-  function setNoticeEnabled(enabled: boolean) {
-    write(SITE_NOTICE_STORAGE_KEY, enabled);
-    publish({noticeEnabled: enabled});
-  }
   return Object.freeze({
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};},
     getSnapshot: () => snapshot,
     setLessMotion,
     toggleMotion: () => setLessMotion(!snapshot.lessMotion),
-    setNoticeEnabled,
-    toggleNotice: () => setNoticeEnabled(!snapshot.noticeEnabled),
-    dismissNotice() {write(SITE_NOTICE_DISMISSED_KEY, true); publish({noticeDismissed: true});},
     syncStorageEvent(event: Pick<StorageEvent, 'key' | 'newValue'>) {
       // Motion remains document-shared; RuntimeDiagnostics owns its own key.
       if (event.key === LESS_MOTION_STORAGE_KEY) publish({lessMotion: event.newValue === '1'});

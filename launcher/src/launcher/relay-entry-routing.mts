@@ -32,8 +32,9 @@ export function createRelayEntryRouting(options: {
       const url = new URL(base);
       return url.origin === input.origin && url.pathname === input.pathname;
     });
-    if (!primary || !matching || bases.length < 2) return options.createSocket(value);
-    const preferred = resolve(primary);
+    if (!primary || !matching || bases.length < 2) return options.createSocket(input.href);
+    const candidate = selected.get(primary);
+    const preferred = candidate && bases.includes(candidate) ? candidate : primary;
     const candidates = [...new Set([preferred, ...bases])];
     const output = new EventTarget();
     let socket: WebSocket | null = null, state = 0, attempt = 0;

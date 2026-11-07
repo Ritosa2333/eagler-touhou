@@ -12,6 +12,7 @@
 | [th05-eagler-20261101.json](th05-eagler-20261101.json) | uth05win 源码父链与 PR #143 音频身份 |
 | [th12-eagler-20261020.json](th12-eagler-20261020.json) | th12 导入身份与子树基点 |
 | [th12-subtree-20261024.md](th12-subtree-20261024.md) | th12 子树继承与独立导出 |
+| [th19-eagler-20261104.json](th19-eagler-20261104.json) | TH19 本地源码来源、普通版与双人对战接入 |
 | [th17-eagler-20261030.json](th17-eagler-20261030.json) | TH17 开发交付选择性迁移与逐文件来源 |
 
 搬迁当时的验收原文见[旧文档去向表](../history/INDEX.md)。继续开发使用[工作区说明](../../WORKSPACE.md)与各组件开发指南。

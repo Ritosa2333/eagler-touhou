@@ -46,6 +46,7 @@ export async function createDevelopmentSiteManifestFromContent(content, { netpla
   for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
     if (selectedGames && !selectedGames.includes(game)) continue;
     const declaration = content.games[game];
+    if (!selectedGames && product.buildOptIn && !declaration) continue;
     if (!declaration) throw new Error(`${game}: missing development content declaration`);
     const data = await dataIdentity(game, declaration.data, sourceRoot);
     const music = { midi: { files: [] } };

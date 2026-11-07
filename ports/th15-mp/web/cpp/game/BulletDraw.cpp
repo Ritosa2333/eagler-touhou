@@ -1,12 +1,30 @@
 #include "BulletScene.hpp"
 namespace th15 {
 bool BulletVisual::draw(AnmRenderer& renderer,const MultiplayerGrazeVisual* graze){
- const auto prepare=[&](AnmVm& vm){vm.presentation_motion=true;if(vm.visual.render_flags&0x80){vm.variables.rotation.z=normalize_angle(float(state.motion.angle+1.5707963705062866f));vm.visual.flags|=4;}if(state.flags&0x40){vm.visual.flags|=8;vm.visual.secondary_scale={state.scale,state.scale};}};
  if(overlay.visual.visible()){overlay.variables.position=state.motion.position;prepare(overlay);if(renderer.draw(overlay)==-2){error=renderer.error;return false;}}
  body.visual.translation=state.motion.position;
- prepare(body);auto copy=body;if(graze){copy.visual.flags=(copy.visual.flags&~0x60000u)|graze->flags;copy.visual.secondary_color=graze->color;copy.variables.position=graze->jitter;}if(renderer.draw(graze?copy:body)==-2){error=renderer.error;return false;}state.visual_flags=body.visual.flags;return true;
+ prepare(body);int result=0;
+ // Multiplayer body drawing changes a temporary graze view. With no parent
+ // rotation or owned panels it has no durable VM writes to replay.
+ if(graze&&renderer.logical_frame()&&!body.rotation_parent&&!body.geometry.overlay){state.visual_flags=body.visual.flags;return true;}
+ if(!graze)result=renderer.draw(body);
+ else if(body.geometry.overlay){auto copy=body;copy.visual.flags=(copy.visual.flags&~0x60000u)|graze->flags;copy.visual.secondary_color=graze->color;copy.variables.position=graze->jitter;result=renderer.draw(copy);}
+ else if(body.geometry.empty()&&!body.rotation_parent&&!body.creation_parent&&body.visual.draw_mode()<=3){
+  const auto quad=body.visual.quad;const auto inherited=body.visual.inherited_color,flags=body.visual.flags,color=body.visual.secondary_color;const auto position=body.variables.position;
+  body.visual.flags=(flags&~0x60000u)|graze->flags;body.visual.secondary_color=graze->color;body.variables.position=graze->jitter;
+  result=renderer.draw(body);body.visual.flags=flags;body.visual.secondary_color=color;body.variables.position=position;body.visual.quad=quad;body.visual.inherited_color=inherited;
+ }
+ else{
+  // Graze tint is a view of the same VM. Restore every Draw-written value
+  // after submission instead of deep-copying the complete VM for each bullet.
+  const auto visual=body.visual;const auto variables=body.variables;
+  body.visual.flags=(body.visual.flags&~0x60000u)|graze->flags;body.visual.secondary_color=graze->color;body.variables.position=graze->jitter;
+  result=renderer.draw(body);body.visual=visual;body.variables=variables;
+ }
+ if(result==-2){error=renderer.error;return false;}state.visual_flags=body.visual.flags;return true;
 }
 bool BulletScene::draw(AnmRenderer& renderer){
- for(const auto& group:manager.draw_groups)for(u32 index:group){auto* vm=visual(index);if(!vm){error="Bullet draw slot unavailable";return false;}if(!vm->draw(renderer,viewpoint_graze(index))){error=vm->error;return false;}}return true;
+ const bool logical=renderer.logical_frame();
+ for(const auto& group:manager.draw_groups)for(u32 index:group){auto* vm=owned_visual(index);if(!vm){error="Bullet draw slot unavailable";return false;}const auto* graze=viewpoint_graze(index);if(logical&&graze&&vm->logical_draw())continue;if(!vm->draw(renderer,graze)){error=vm->error;return false;}}return true;
 }
 }

@@ -51,7 +51,7 @@ const listedProducts = JSON.parse(execFileSync(process.execPath, ["scripts/list-
   cwd: resolve(import.meta.dirname, ".."),
   encoding: "utf8",
 }));
-assert.deepEqual(listedProducts, Object.keys(PRODUCT_GAMES),
+assert.deepEqual(listedProducts, Object.keys(PRODUCT_GAMES).filter(game => !PRODUCT_GAMES[game].buildOptIn),
   "maintainer tooling must derive the game list from Product Catalog");
 const powershellLayout = readFileSync(resolve(import.meta.dirname, "..", "tools", "maintainer", "lib", "workspace-layout.psm1"), "utf8");
 assert.doesNotMatch(powershellLayout, /foreach\s*\(\$name\s+in\s+@\([^)]*th0\d/i,

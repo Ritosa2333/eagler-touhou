@@ -3,7 +3,7 @@ import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {parse, type DefaultTreeAdapterMap} from 'parse5';
 import {buildAppShell} from '../../lib/app-shell-build.mjs';
-import {STATIC_APP_SHELL_FILES, HOST_SITE_ARTWORK_FILES} from '../../lib/frontend-static-manifest.mjs';
+import {STATIC_APP_SHELL_FILES, HOST_SITE_ARTWORK_FILES, UI_REVIEW_DOCUMENT, hasUiReviewEntry} from '../../lib/frontend-static-manifest.mjs';
 import {buildRuntimeGenerationWorkerSource} from '../../lib/frontend-assets.mjs';
 import * as runtimeContract from '../../src/contracts/runtime-generations.mts';
 import {writeFileAtomic} from '../../lib/atomic-file.mjs';
@@ -24,7 +24,7 @@ interface BuildOptions {
  * manifest owns the emitted chunk, asset and dynamic-import dependency graph. */
 export async function writeReactAppShellGraph({clientDirectory, mountPath, appShell = null}: {clientDirectory: string; mountPath: string; appShell?: ReactAppShellDeployment | null}) {
   normalizeReactMountPath(mountPath);
-  const manifest = JSON.parse(await readFile(resolve(clientDirectory, '.vite/manifest.json'), 'utf8')) as Record<string, {file: string; css?: string[]; assets?: string[]; imports?: string[]; dynamicImports?: string[]}>;
+  const manifest = JSON.parse(await readFile(resolve(clientDirectory, '.vite/manifest.json'), 'utf8')) as Record<string, {file: string; src?: string; isEntry?: boolean; css?: string[]; assets?: string[]; imports?: string[]; dynamicImports?: string[]}>;
   const generatedFiles: string[] = [];
   for (const entry of Object.values(manifest)) {
     if (!entry || typeof entry.file !== 'string') throw new Error('Invalid Vite browser manifest');
@@ -35,6 +35,7 @@ export async function writeReactAppShellGraph({clientDirectory, mountPath, appSh
   // module/CSS graph for the old entrypoint graph. No legacy app.js is copied.
   const retiredEntryStyles = new Set(['lobby.css', 'touch-guide.css']);
   const staticFiles = STATIC_APP_SHELL_FILES.filter(path => !retiredEntryStyles.has(path));
+  if (hasUiReviewEntry(manifest)) staticFiles.push(UI_REVIEW_DOCUMENT.file);
   const graph: ReactShellGraph = {schema: 'eagler-touhou/react-app-shell-graph/1', mountPath, appShell,
     shellFiles: [...new Set([...staticFiles, ...generatedFiles])].sort()};
   await writeFileAtomic(resolve(clientDirectory, '.vite/react-app-shell-graph.json'), JSON.stringify(graph, null, 2) + '\n');

@@ -3,7 +3,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
  * first rendered pixel claim. Main app:4241–4289,5948–5983 and unchanged
  * runtime-session/generation-lease/preparation tests supply the expectations.
  */
-import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
+import {test, vi, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -71,7 +71,7 @@ function managedPlan(game = 'th10', options = {}) {
       base: {files: ['data']}, components: {}}, files: {data: {objectId: `obj-${game}-data`, revision: 'data-r1'}}},
     configure: {music: 'none', options}};
 }
-function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, ...overrides} = {}) {
+function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, serviceOptions, ...overrides} = {}) {
   const messageListeners = new Set(), loadListeners = new Set(), eventContexts = [], outbound = [], navigations = [], retained = [], released = [], codeCalls = [], dataReads = [];
   const timers = deterministicTimers();
   const host = {location: {origin, href: `${baseUrl}?game=th06`},
@@ -94,7 +94,7 @@ function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, ...ove
       async readResource() {throw new Error('Unexpected resource in lifecycle fixture');},
       async retainGeneration(game, generation, options) {retained.push({game, generation, options});},
       async releaseGeneration(id) {released.push(id);}, ...overrides,
-    }});
+    }, ...serviceOptions});
   const emit = (data, envelope = {}) => {for (const listener of messageListeners) listener({origin, source: runtime, data, ...envelope});};
   const event = (type, extra = {}, envelope = {}) => emit({protocol: 'eagler-touhou/1', game: service.getSnapshot().game,
     epoch: service.getSnapshot().epoch, event: type, ...extra}, envelope);
@@ -108,6 +108,22 @@ function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, ...ove
   const result = {service, host, frame, runtime, timers, eventContexts, outbound, navigations, retained, released, codeCalls, dataReads, emit, event, ack, prepare, loadListeners};
   fixtures.push(result); return result;
 }
+
+test('Runtime uses the ordinary Host entry and shared Runtime generation URL', async () => {
+  const codeRequests = [];
+  const f = fixture({async prepareCode(entry, options) {
+    codeRequests.push({entry, options});
+    return {url: `${baseUrl}runtime/th10/${hash}/th10.html`, generation: hash};
+  }});
+  const preparing = f.service.prepare(managedPlan());
+  await vi.waitFor(() => assert.ok(f.navigations.some(url => url.startsWith(baseUrl))));
+  assert.deepEqual(codeRequests.map(request => request.entry), [baseUrl + 'runtime/th10/th10.html']);
+  const navigation = f.navigations.find(url => url !== 'about:blank');
+  assert.ok(navigation.startsWith(baseUrl));
+  assert.equal(new URL(navigation).pathname.includes('/beta/'), false);
+  f.event('ready'); await flush(); f.ack('configure'); await preparing;
+  assert.equal(f.service.getSnapshot().source, navigation);
+});
 
 for (const cleanupFails of [false, true]) test(`game check preserves its original failure${cleanupFails ? ' together with failed frame retirement' : ''} and releases its owner`, async () => {
   const f=fixture(), plan=managedPlan(); plan.runtimeVariant='multiplayer';

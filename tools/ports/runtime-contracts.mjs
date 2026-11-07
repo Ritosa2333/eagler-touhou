@@ -15,7 +15,7 @@ export function runtimeSourceFiles(game, product) {
   if (game === 'th12') return ['src/managed-shell.mjs', 'src/managed-input.mjs', 'site/game-sdl.mjs'];
   if (product.runtimeFileLayout !== 'directory') return ['resources/shell.html'];
   if (game === 'th09') return ['web/sdl-runtime/managed.mjs'];
-  if (['th075', 'th15', 'th17'].includes(game)) return ['web/sdl-runtime/shell.mjs'];
+  if (['th075', 'th15', 'th17', 'th19'].includes(game)) return ['web/sdl-runtime/shell.mjs'];
   return ['web/sdl-runtime/shell.mjs', 'web/sdl-runtime/eagler-host.mjs'];
 }
 
@@ -79,7 +79,7 @@ export function checkRuntimeSource({game, variant, product, directory, nativeFil
   const padFiles = nativeBodies.filter(item => /BrowserGamepadState\(|ApplyGamepadVirtualKeys\(|SDL_GetGamepadButton|SDL_GetGamepadAxis/.test(item.text))
     .map(item => relative(resolve(root,directory),item.path).replaceAll('\\','/'));
   records.push(result('native-gamepad', ['INPUT-04'], padFiles, () => {
-    if (['th11', 'th15', 'th17', 'th20'].includes(game)) {
+    if (['th11', 'th15', 'th17', 'th19', 'th20'].includes(game)) {
       assert.match(native, /BrowserGamepadState\(/, 'Compiled native source must sample the Launcher gamepad owner');
       assert.match(native, /ApplyGamepadVirtualKeys\(/, 'Compiled native source must deliver normalized gamepad actions');
     } else {

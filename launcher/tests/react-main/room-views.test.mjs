@@ -22,6 +22,7 @@ before(async () => {
   work = await mkdtemp(resolve(project, '.cache/room-views-'));
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export * from './app/components/room/index.ts';
+    export * from './app/components/room/RoomMusic.tsx';
     export * from './app/components/room/RoomPanel.tsx';
     export * from './app/components/room/presentation.ts';
     export * from './app/components/launcher/OptionsPanel.tsx';
@@ -39,6 +40,8 @@ before(async () => {
   `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', outfile: resolve(work, 'actual.mjs'), logLevel: 'silent',
   plugins: [{name: 'installed-deps-authored-mts', setup(ctx) {
     ctx.onResolve({filter: /^[^./]/}, args => ({path: args.path, external: true}));
+    ctx.onResolve({filter: /\.webp\?url$/}, args => ({path: args.path, namespace: 'artwork'}));
+    ctx.onLoad({filter: /.*/, namespace: 'artwork'}, args => ({contents: `export default ${JSON.stringify(args.path)}`}));
     ctx.onResolve({filter: /^\.\.?\/.*\.mjs$/}, args => {const path = resolve(dirname(args.importer), args.path).replace(/\.mjs$/, '.mts'); if (existsSync(path)) return {path};});
   }}]}); owners = await import(pathToFileURL(resolve(work, 'actual.mjs')));
 });
@@ -204,7 +207,7 @@ for (const locale of ['zh-CN', 'en', 'ja']) test(`Member card artwork follows pr
     assert.equal(all('[role="progressbar"]',card).length,stopped ? 0 : 1);
     if (stopped) {
       assert.equal(n('.room-seat-ring',card).classList.contains('indeterminate'),false);
-      assert.equal(n('.mp-seat-loadout',card).hidden,true);
+      assert.equal(n('.mp-seat-loadout',card).textContent,t(locale,key));
     }
   }
 });
@@ -472,8 +475,8 @@ test('Measured rollback button routes through real room owner without overwritin
   await f.receive({seats: [{clientId: 'host12345', name: 'H', loadout: 0}, {clientId: f.id, name: 'A', loadout: 1}]}); assert.equal(n('#mpInputTiming').hidden, false); assert.equal(n('#mpRollbackToggle').disabled, true);
 });
 
-test('TH09 rollback discards a remembered one-frame delay at start and restores it only in pure delay mode', async () => {
-  const f=await fixture({product:'th09mp'}).live();
+for (const product of ['th09mp', 'th19mp']) test(`${product} rollback discards a remembered one-frame delay at start and restores it only in pure delay mode`, async () => {
+  const f=await fixture({product}).live();
   await f.report({status:'ready',stage:'runtime',percent:100});
   await act(()=>f.preparations[0].resolve());
   await act(()=>{void f.service.toggleReady();});
@@ -492,6 +495,9 @@ test('TH09 rollback discards a remembered one-frame delay at start and restores 
   await act(()=>f.service.start());
   assert.equal(f.socket.sent.at(-1).adonisMode,1);
   assert.equal(f.socket.sent.at(-1).inputDelay,1);
+  await f.receive({phase:'running',adonisMode:1,inputDelay:1});
+  assert.equal(f.service.runtimeOptions().netplayAdonisMode,1);
+  assert.equal(f.service.runtimeOptions().netplayInputDelay,1);
 });
 
 test('seated players may enter the spectator lounge before start, never during a live run', async () => {
@@ -584,6 +590,22 @@ async function panelFixture({strict = false} = {}) {
   const m = await mount(owners.RoomPanel, {open: true, kind: 'personal', onCloseRequest: () => requests++, onClosed: () => closures++, trigger: {current: trigger}, children: React.createElement('button', {id: 'child-action'}, 'Child')}, {strict});
   return {m, trigger, get requests() {return requests;}, get closures() {return closures;}, node: n('#mpRoomPanel')};
 }
+test('Music and spectator panels share the close control and opening music by keyboard focuses search', async () => {
+  const trigger = env.document.createElement('button');
+  env.document.body.append(trigger);
+  const m = await mount(owners.RoomPanel, {
+    open: true, kind: 'music', trigger: {current: trigger}, onCloseRequest() {},
+    initialFocus: '#roomMusicQuery', children: React.createElement('input', {id: 'roomMusicQuery'}),
+  });
+  assert.equal(env.document.activeElement, n('#roomMusicQuery'));
+  const close = n('#mpRoomPanelClose');
+  assert.equal(close.textContent, t('en', 'room.done'));
+  await m.update({open: false});
+  assert.equal(env.document.activeElement, trigger);
+  await m.update({open: true, kind: 'spectators', initialFocus: undefined});
+  assert.equal(n('#mpRoomPanelClose'), close);
+});
+
 test('Native modal Escape/backdrop request close; shared completion restores the exact original trigger', async () => {
   animationFixture();const h=await panelFixture();assert.equal(h.node.open,true);
   const cancel=new env.window.Event('cancel',{cancelable:true});await act(()=>h.node.dispatchEvent(cancel));assert.equal(cancel.defaultPrevented,true);assert.equal(h.requests,1);
@@ -646,11 +668,12 @@ for (const locale of ['zh-CN', 'en']) test(`compact room delay stepper retains h
     assert.equal(all('#mpInputDelay').length,0);
     await click('#mpReplayViewer');await click('#mpGamePackageImport');assert.deepEqual(events,['replay','import']);
     await f.live();const h=await mountRoom(f,{panel:{kind:'game'}},{locale});
-    const config=owners.multiplayerConfigForProduct(product),policy=owners.multiplayerInputTimingPolicy(config),value=n('#mpInputDelay');
+    const config=owners.multiplayerConfigForProduct(product),policy=owners.multiplayerInputTimingPolicy(config),value=n('#mpInputDelay'),supportsRollback=!!config.inputTiming&&policy.rollback;
     assert.equal(n('#mpRoomSettings').contains(value),true);assert.equal(n('#mpInputTiming').contains(value),false);
     assert.equal(n('#mpRoomSettings').contains(n('#mpRollbackToggle')),true);
     assert.equal(all('#mpInputDelayHint').length,0);
-    assert.equal(n('#mpInputDelaySetting').hidden,!!config.inputTiming?.measuredStartup&&policy.rollback);
+    assert.equal(n('#mpRollbackToggle').hidden,!supportsRollback,product);
+    assert.equal(n('#mpInputDelaySetting').hidden,supportsRollback,product);
     assert.ok(n('#mpRollbackToggle').compareDocumentPosition(n('#mpInputDelaySetting')) & env.window.Node.DOCUMENT_POSITION_FOLLOWING);
     if(config.inputTiming){
       if(policy.rollback){await act(()=>f.service.setRollbackEnabled(false));assert.equal(n('#mpInputDelaySetting').hidden,false);assert.equal(all('#mpInputDelayHint').length,0);}
@@ -677,7 +700,7 @@ for (const locale of ['zh-CN', 'en']) test(`compact room delay stepper retains h
         await f.receive({phase:'running',adonisMode:1,inputDelay:3,inputDelayAuto:true,timing});
         assert.equal(value.textContent,'3f');assert.equal(value.title,t(locale,'room.inputDelayMeasured',{frames:3}));
       }
-      if(policy.rollback){await f.receive({phase:'running',adonisMode:0});assert.equal(n('#mpInputDelaySetting').hidden,true);}
+      if(policy.rollback){await f.receive({phase:'running',adonisMode:0});assert.equal(n('#mpInputDelaySetting').hidden,true,product);}
       await act(()=>f.socket.close(1006));assert.equal(value.disabled,true);
     }else{
       assert.equal(n('#mpRollbackToggle').hidden,true);assert.equal(n('#mpInputDelaySetting').hidden,false);
@@ -819,10 +842,31 @@ test('public nickname editor waits for review and locks changes until the server
  await f.receive({seats:[{clientId:f.id,name:'Alice',loadout:0,ready:false},{clientId:'peer123456',name:'完整公开昵称',loadout:1,ready:false}],spectators:[{clientId:'watch123456',name:'完整观众昵称'}]});
  assert.equal(n('[data-mp-seat-name="1"]').textContent,'完整公开昵称');
  assert.equal(n('[data-mp-seat="1"] .mp-seat-loadout').textContent,'','TH09 native selection keeps room loadout labels empty');
- assert.equal(n('[data-mp-seat="0"] .mp-seat-control').textContent,'Keys / stick');
+ assert.equal(n('[data-mp-seat="0"] .mp-seat-loadout').textContent,`(${t('en','multiplayer.control.normal')})`);
  await m.update({panel:{kind:'spectators'}});
  assert.match(n('#mpSpectatorList').textContent,/完整观众昵称/);
  await act(()=>status({name:'Alice',status:'cooldown',attemptsLeft:0,nextChangeAt:Date.now()+86400000}));
  assert.equal(n('#mpNicknameSave').disabled,true);assert.match(n('#mpNicknameStatus').textContent,/No retries remaining/);
  await m.unmount();
+});
+
+
+test('Music seek stays at the released target through old ticks, then follows the room acknowledgement', async () => {
+  let state = {enabled:true,inRoom:true,seated:true,connected:true,joined:true,syncState:'shared',volume:1,position:90,seekTarget:null,duration:120,status:'playing',error:null,
+    current:{platform:'netease',id:'123',name:'Song',artist:'Artist'},session:{session:'listen',playback:1,revision:2,startedAt:0,pausedAt:null}};
+  const listeners=new Set(), seeks=[];
+  let accepted=true;
+  const model={getSnapshot:()=>state,subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn);},seek:seconds=>{seeks.push(seconds);if(accepted){state={...state,seekTarget:seconds};for(const listener of listeners)listener();}return accepted;}};
+  const publish=patch=>act(()=>{state={...state,...patch};for(const listener of listeners)listener();});
+  await mount(owners.RoomMusicStrip,{model,open:false,onOpen() {}});
+  const thumb=()=>n('.room-music-progress [role="slider"]');
+  const key=value=>act(()=>thumb().dispatchEvent(new env.window.KeyboardEvent('keydown',{key:value,bubbles:true,cancelable:true})));
+  await key('Home');
+  assert.deepEqual(seeks,[0]);assert.equal(thumb().getAttribute('aria-valuenow'),'0');
+  await publish({position:91});assert.equal(thumb().getAttribute('aria-valuenow'),'0','An old ticker update must not snap the released thumb backwards');
+  await publish({position:0,seekTarget:null,session:{...state.session,revision:3,playback:2}});
+  await publish({position:1});assert.equal(thumb().getAttribute('aria-valuenow'),'1');
+  accepted=false;await key('End');assert.equal(thumb().getAttribute('aria-valuenow'),'1','Rejected commands release their preview');
+  accepted=true;await key('End');await publish({error:'unavailable',seekTarget:null});
+  assert.equal(thumb().getAttribute('aria-valuenow'),'1','Failures release pending targets');
 });

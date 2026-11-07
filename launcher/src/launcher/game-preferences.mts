@@ -21,6 +21,7 @@ export function normalizeTh05MultiplayerDisplay(value: unknown): Readonly<Th05Mu
 
 export interface GameOptions {
   th05MultiplayerDisplay: Readonly<Th05MultiplayerDisplay>;
+  th075NativeResolution: boolean;
   thpracEnabled: boolean;
   thpracTouchControlsEnabled: boolean;
   magnifierEnabled: boolean;
@@ -28,6 +29,8 @@ export interface GameOptions {
   faithBarEnabled: boolean;
   frameLimit60Enabled: boolean;
   pixelPerfectEnabled: boolean;
+  bgmVolume: number;
+  sfxVolume: number;
   touchEnabled: boolean;
   touchMovementMode: TouchMovementMode;
   touchSensitivity: number;
@@ -46,6 +49,7 @@ export interface GameOptions {
 
 export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
   th05MultiplayerDisplay: DEFAULT_TH05_MULTIPLAYER_DISPLAY,
+  th075NativeResolution: false,
   thpracEnabled: false,
   thpracTouchControlsEnabled: false,
   magnifierEnabled: false,
@@ -53,6 +57,8 @@ export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
   faithBarEnabled: false,
   frameLimit60Enabled: true,
   pixelPerfectEnabled: false,
+  bgmVolume: 100,
+  sfxVolume: 100,
   touchEnabled: false,
   touchMovementMode: "touch-unlimited",
   touchSensitivity: 150,
@@ -68,6 +74,10 @@ export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
 export const TOUCH_MOVEMENT_MODES = new Set<TouchMovementMode>([
   "touch", "touch-unlimited", "joystick", "joystick-free",
 ]);
+
+export function normalizeGameVolume(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? Math.round(Math.max(0, Math.min(100, value))) : 100;
+}
 export const TOUCH_FOCUS_MODES = new Set<TouchFocusMode>([
   "two-finger", "hold-button", "toggle-button",
 ]);
@@ -262,7 +272,10 @@ export function normalizeStoredGamePreferences(
     focusHitboxEnabled: booleanOption(rawOptions, "focusHitboxEnabled", DEFAULT_GAME_OPTIONS.focusHitboxEnabled),
     faithBarEnabled: booleanOption(rawOptions, "faithBarEnabled", DEFAULT_GAME_OPTIONS.faithBarEnabled),
     frameLimit60Enabled: booleanOption(rawOptions, "frameLimit60Enabled", DEFAULT_GAME_OPTIONS.frameLimit60Enabled),
+    th075NativeResolution: booleanOption(rawOptions, "th075NativeResolution", DEFAULT_GAME_OPTIONS.th075NativeResolution),
     pixelPerfectEnabled: booleanOption(rawOptions, "pixelPerfectEnabled", DEFAULT_GAME_OPTIONS.pixelPerfectEnabled),
+    bgmVolume: normalizeGameVolume(rawOptions?.bgmVolume),
+    sfxVolume: normalizeGameVolume(rawOptions?.sfxVolume),
     touchEnabled: booleanOption(rawOptions, "touchEnabled", DEFAULT_GAME_OPTIONS.touchEnabled),
     touchMovementMode: migratedMovement,
     touchSensitivity,

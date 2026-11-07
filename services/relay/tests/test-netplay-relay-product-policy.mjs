@@ -86,9 +86,7 @@ async function openLobby(port, room, clientId, policy = '') {
 }
 
 async function sendAndReceive(socket, message) {
-  const response = nextJson(socket);
-  socket.send(JSON.stringify(message));
-  return response;
+  return sendAndMatch(socket, message, response => response.type === "state" || response.type === "error");
 }
 async function sendAndMatch(socket,message,predicate) {
   // Keep one listener until the match: several frames may arrive in one pump.

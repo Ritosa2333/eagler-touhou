@@ -34,5 +34,6 @@ struct AnmGeometry {
     AnmGeometry();~AnmGeometry();AnmGeometry(const AnmGeometry&);AnmGeometry& operator=(const AnmGeometry&);
     AnmGeometry(AnmGeometry&&)noexcept;AnmGeometry& operator=(AnmGeometry&&)noexcept;
     bool allocate(i32 segments,bool world);void clear();
+    bool empty()const noexcept{return !allocation_bytes&&screen_vertices.empty()&&world_vertices.empty()&&!distortion&&!trail&&!gather&&!overlay;}
 };
 }

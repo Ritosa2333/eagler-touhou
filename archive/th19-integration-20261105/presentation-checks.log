@@ -1,0 +1,24 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./vitest.config" without a file extension (vitest.workspace.config.ts:2:20). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.5 <workspace>/launcher
+
+stdout | tests/test-presentation-contract-coverage.mjs > presentation contract coverage
+{"presentationContractCoverage":"PASS","scope":"checked-in source Runtime wiring and actual native clock components; prebuilt Runtime presentation requires browser acceptance","games":["th06","th07","th08","th10","th09","th075","th11","th12","th15","th17","th19","th20"],"lanes":{"th06":"shared-preload","th07":"shared-preload","th08":"runtime","th10":"runtime","th09":"native-clock","th075":"native-clock","th11":"native-clock","th12":"runtime","th15":"native-clock","th17":"runtime","th19":"runtime","th20":"native-clock"}}
+
+ ✓ |workspace| tests/test-presentation-contract-coverage.mjs > presentation contract coverage 35555ms
+stdout | tests/test-native-frame-pacing.mjs > native frame pacing
+{"games":["th06","th07"],"simulationHz":60,"nativePresentation":"display-refresh","strictVsync":true,"cases":[{"displayHz":60,"callbacks":600,"updates":600,"draws":600},{"displayHz":75,"callbacks":750,"updates":600,"draws":750},{"displayHz":120,"callbacks":1200,"updates":600,"draws":1200},{"displayHz":144,"callbacks":1440,"updates":600,"draws":1440},{"displayHz":165,"callbacks":1650,"updates":600,"draws":1650},{"displayHz":180,"callbacks":1800,"updates":600,"draws":1800},{"displayHz":240,"callbacks":2400,"updates":600,"draws":2400}]}
+
+ ✓ |workspace| tests/test-native-frame-pacing.mjs > native frame pacing 534ms
+stdout | tests/test-mobile-frame-pacing.mjs > mobile frame pacing
+{"games":["th06","th07"],"targetSimulationHz":60,"optionalPresentationLimitHz":60,"cases":[{"refreshHz":60,"callbacks":600,"updates":600,"draws":600,"skipped":0,"maxUpdatesBeforeDraw":1,"alphaMin":1,"alphaMax":1},{"refreshHz":75,"callbacks":750,"updates":600,"draws":600,"skipped":150,"maxUpdatesBeforeDraw":1,"alphaMin":1,"alphaMax":1},{"refreshHz":90,"callbacks":900,"updates":600,"draws":600,"skipped":300,"maxUpdatesBeforeDraw":1,"alphaMin":1,"alphaMax":1},{"refreshHz":120,"callbacks":1200,"updates":600,"draws":600,"skipped":600,"maxUpdatesBeforeDraw":1,"alphaMin":1,"alphaMax":1},{"refreshHz":144,"callbacks":1440,"updates":600,"draws":600,"skipped":840,"maxUpdatesBeforeDraw":1,"alphaMin":1,"alphaMax":1},{"refreshHz":120,"callbacks":1200,"updates":600,"draws":1200,"skipped":0,"maxUpdatesBeforeDraw":1,"alphaMin":0,"alphaMax":0.5}],"delayedCallback":{"locked":{"callbacks":241,"updates":101,"draws":101,"skipped":140,"maxUpdatesBeforeDraw":1},"highRefresh":{"callbacks":241,"updates":103,"draws":241,"skipped":0,"maxUpdatesBeforeDraw":3},"replay":{"callbacks":241,"updates":101,"draws":241,"skipped":0,"maxUpdatesBeforeDraw":1}}}
+
+ ✓ |workspace| tests/test-mobile-frame-pacing.mjs > mobile frame pacing 32ms
+
+ Test Files  3 passed (3)
+      Tests  3 passed (3)
+   Start at  07:56:37
+   Duration  61.06s (tests 98%, transform 2%)
+

@@ -3,7 +3,6 @@ import type {ReactNode} from 'react';
 import { useLocale } from '../../i18n';
 import type { LibraryCardsProps } from './LibraryCards';
 import {BookDirectoryGames} from './BookDirectoryGames';
-import './directory-page.css';
 
 export interface LobbySurfaceProps extends Omit<
   LibraryCardsProps,

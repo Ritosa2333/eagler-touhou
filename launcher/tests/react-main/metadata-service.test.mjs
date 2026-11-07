@@ -168,6 +168,28 @@ test('metadata: host publication, test-only product and multiplayer-runtime filt
   hostTest.dispose();
 });
 
+test('visibility mode shows test products while metadata and Runtime identities stay on the same publication', async () => {
+  const published = host({th06: hostGame('th06'), th075: hostGame('th075', {multiplayerRuntime: 'runtime/th075/mp.html'}),
+    th20: hostGame('th20')});
+  const snapshots = [];
+  for (const testBuild of [false, true]) {
+    const net = network(published), service = fixture(net, {testBuild});
+    await service.initialize();
+    snapshots.push(service.getSnapshot());
+    assert.deepEqual(net.calls.map(call => new URL(call.url).pathname).sort(), [
+      '/deploy/release-catalog.json', '/deploy/site-manifest.json',
+    ]);
+    assert.ok(net.calls.every(call => !new URL(call.url).pathname.includes('/beta/')));
+    assert.equal(service.getSnapshot().releaseCatalog.games.th06.descriptor, 'th06.package.json');
+    assert.equal(service.getSnapshot().siteManifest.games.th06.runtime, 'runtime/th06/th06.html');
+    assert.equal(service.getSnapshot().products.includes('th20'), testBuild);
+    assert.equal(service.getSnapshot().products.includes('th075mp'), testBuild);
+    service.dispose();
+  }
+  assert.deepEqual(snapshots[0].siteManifest, snapshots[1].siteManifest);
+  assert.deepEqual(snapshots[0].releaseCatalog, snapshots[1].releaseCatalog);
+});
+
 test('metadata: original language overlays and music context use current package hints', async () => {
   const idb = readonlyIdb(); idb.generation = generation();
   const published = host({th06: hostGame('th06', {

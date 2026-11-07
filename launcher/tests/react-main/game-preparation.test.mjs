@@ -122,6 +122,7 @@ function acquisitionFixture({current = generation(), hostValue = null, catalogVa
     metadata: {getSnapshot: () => metadata, initialize: async () => {calls.push('metadata'); await initialize();},
       refreshInstalled: async game => {calls.push(`refresh:${game}`);}},
     dependencies: {readCurrent: async game => {calls.push(`current:${game}`); return installation();},
+      repairInstalled: async installed => installed.generation,
       installPublished: async () => {throw new Error('Unexpected published installation');}, ...dependencies},
   });
   return {acquisition, calls, metadata, get current() {return current;}, setCurrent(value) {current = value;}};
@@ -241,6 +242,7 @@ test('TH05 album acquisition includes its declared soundtrack files', async () =
     metadata: {getSnapshot: () => ({siteManifest: development, releaseCatalog: null}), initialize: async () => {}},
     fetchImpl: async url => {downloaded.push(new URL(url).pathname); return new Response(bytes);},
     dependencies: {readCurrent: async () => ({generation: current, installation: null}),
+      repairInstalled: async installed => installed.generation,
       installAcquired: async options => {
         assert.deepEqual(options.desiredFileIds, ['game-data', 'ogg:op.ogg', 'ogg:akyu-01.ogg']);
         for (const id of options.desiredFileIds) await options.acquire(id, options.descriptor.files[id]);
@@ -274,6 +276,42 @@ for (const kind of ['room', 'room-preload']) test(`${kind} program version polic
   const prepared=await api.prepareGame(gameInput(f,state,{productId:'th06mp',runtime:r.service,multiplayer}));
   assert.equal(calls.length,1);assert.equal(calls[0].requireCurrent,true);assert.equal(calls[0].expectedGeneration,hash);
   assert.deepEqual(prepared.plan.multiplayerProgram,{generation:hash});
+});
+
+test('TH075 room uses the split index without installing DATA or preloading OGG', async () => {
+  const base = host(), sample = base.games.th06;
+  const assetPath = 'assets/th075mp/' + hash + '.json';
+  const hostValue = api.validateSiteManifest({...base, games: {th075: {
+    ...sample, runtime: './runtime/th075/th075.html', multiplayerRuntime: './runtime/th075mp/th075.html',
+    gameData: {...sample.gameData, path: 'th075.data'},
+    th075MultiplayerAssets: {path: assetPath, sha256: hash},
+  }}});
+  const f = acquisitionFixture({hostValue, current: null}), r = runtimeFixture();
+  const input = gameInput(f, settingsFixture({productId: 'th075mp', music: 'ogg-stream'}), {
+    productId: 'th075mp', runtime: r.service, multiplayer: {kind: 'room-preload'},
+  });
+  const prepared = await api.prepareGame(input);
+  const native = new URL(r.navigations[0]);
+  assert.equal(native.searchParams.get('th075Assets'), new URL(assetPath, baseUrl).href);
+  assert.equal(native.searchParams.get('th075AssetsHash'), hash);
+  assert(!native.searchParams.has('managedData'));
+  assert.equal(prepared.plan.configure.music, 'ogg');
+  assert.deepEqual(prepared.plan.configure.resources, []);
+  assert.deepEqual(r.retained, []);
+  assert.deepEqual(f.calls, []);
+});
+
+test('TH075 native resolution is opt-in and scoped to multiplayer', () => {
+  const state = settingsFixture({productId: 'th075mp'});
+  const optionsFor = (settings, multiplayer) =>
+    api.gameRuntimeOptions({productId: settings.context.productId, settings, multiplayer}, 'ja', 'none', null);
+  const room = {kind: 'room-preload'};
+  assert.equal(optionsFor(state.snapshot, room).renderScale, undefined);
+  state.model.setOption('th075NativeResolution', true);
+  state.model.hydrate(state.snapshot.context);
+  assert.equal(optionsFor(state.model.getSnapshot(), room).renderScale, 1);
+  state.model.hydrate({...state.snapshot.context, productId: 'th075'});
+  assert.equal(optionsFor(state.model.getSnapshot()).renderScale, undefined);
 });
 
 test('main 5890: local current is chosen without initializing or waiting for remote metadata', async () => {
@@ -503,7 +541,8 @@ test('main 3953: development resource acquisition has the same actual-operation 
       initialize: async () => {throw new Error('Development current must already be installed');}},
       fetchImpl: async (url, options) => {
         assert.equal(String(url), `${baseUrl}development/th08.dat`); assert.equal(options.signal, controller.signal); return new Response(bytes);
-      }, dependencies: {readCurrent: async () => ({generation: current, installation: null}), installAcquired: async options => {
+      }, dependencies: {readCurrent: async () => ({generation: current, installation: null}),
+        repairInstalled: async installed => installed.generation, installAcquired: async options => {
         activity.push('install');
         if (mode === 'failure') throw new Error('fixture development failed');
         if (mode === 'cancel') {controller.abort(); throw new DOMException('Cancelled', 'AbortError');}
@@ -557,6 +596,24 @@ test('main 4126: cancelling language aborts launch rather than choosing optional
     onLanguageDownloadActivity: value => activity.push(value), onWarning: value => warnings.push(value)})), {name: 'AbortError'});
   assert.ok(order.indexOf('native-ready') < order.indexOf('language')); assert.equal(order.includes('configure'), false);
   assert.deepEqual(activity, [true, false]); assert.deepEqual(warnings, []); assert.equal(JSON.stringify([...state.storage]), before);
+});
+
+test('OGG startup downloads and keeps a single-file soundtrack enabled', async () => {
+  const current = generation();
+  current.descriptor.components.ogg.files = ['track-1'];
+  const acquisition = {
+    getMetadata: () => ({siteManifest: host()}),
+    getPublication: async () => ({catalog: catalog(), catalogUrl: new URL('release-catalog.json', baseUrl).href}),
+    getPackageFetch: () => fetch,
+    installPublished: async (_game, {addFileIds}) => {
+      assert.deepEqual(addFileIds, ['track-1']);
+      return {generation: added(current, addFileIds)};
+    },
+    refreshInstalled: async () => {},
+  };
+  const result = await api.ensureOggStartup({generation: current, music: 'ogg-stream', acquisition, translate: t});
+  assert.equal(result.music, 'ogg-stream');
+  assert.ok(result.generation.files['track-1']?.objectId);
 });
 
 test('complete-set OGG startup waits for every declared file and preserves DATA', async () => {
@@ -784,15 +841,15 @@ test('main disclosure lifetime: ordinary product changes preserve folds; a fresh
   const model = api.createGameSettingsModel({storage: null}), context = settingsFixture().snapshot.context;
   model.hydrate({...context, mobile: true}); model.setDisclosure('touch', false); model.setDisclosure('advanced', true);
   model.hydrate({...context, productId: 'th07', mobile: true});
-  assert.deepEqual(model.getSnapshot().disclosure, {touch: false, files: true, display: true, advanced: true});
+  assert.deepEqual(model.getSnapshot().disclosure, {touch: false, files: true, audio: false, display: true, advanced: true});
   const lobby = {...context, productId: 'th06mp', mobile: true};
   model.hydrate(lobby); model.setDisclosure('files', false); model.setDisclosure('advanced', true);
   model.hydrate(lobby);
-  assert.deepEqual(model.getSnapshot().disclosure, {touch: true, files: false, display: true, advanced: true});
+  assert.deepEqual(model.getSnapshot().disclosure, {touch: true, files: false, audio: false, display: true, advanced: true});
   model.hydrate(lobby, {resetDisclosure: true});
-  assert.deepEqual(model.getSnapshot().disclosure, {touch: true, files: true, display: true, advanced: false});
+  assert.deepEqual(model.getSnapshot().disclosure, {touch: true, files: true, audio: false, display: true, advanced: false});
   model.hydrate({...context, mobile: true});
-  assert.deepEqual(model.getSnapshot().disclosure, {touch: false, files: true, display: true, advanced: true});
+  assert.deepEqual(model.getSnapshot().disclosure, {touch: false, files: true, audio: false, display: true, advanced: true});
 });
 
 test('main 3630: initial two OGG reads run together; failure fences a sibling that completes after MIDI fallback', async () => {
