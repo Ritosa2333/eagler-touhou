@@ -89,7 +89,13 @@ int AnmRenderer::quad(AnmVm& vm,bool pixel){
 }
 int AnmRenderer::pack_quad(AnmVm& vm,Vec3 (&p)[4],bool pixel,const u32* supplied){
     for(auto& point:p){point.x=float(point.x+offset.x);point.y=float(point.y+offset.y);}if(pixel){p[0].x=float(float(std::nearbyint(p[0].x))-.5f);p[1].x=float(float(std::nearbyint(p[1].x))-.5f);p[0].y=float(float(std::nearbyint(p[0].y))-.5f);p[2].y=float(float(std::nearbyint(p[2].y))-.5f);p[1].y=p[0].y;p[2].x=p[0].x;p[3].x=p[1].x;p[3].y=p[2].y;}
-    std::copy(std::begin(p),std::end(p),vm.visual.quad.begin());float left=p[0].x,right=left,top=p[0].y,bottom=top;for(u32 i=1;i<4;i++){left=std::min(left,p[i].x);right=std::max(right,p[i].x);top=std::min(top,p[i].y);bottom=std::max(bottom,p[i].y);}
+    std::copy(std::begin(p),std::end(p),vm.visual.quad.begin());
+    float left=p[0].x,right=left,top=p[0].y,bottom=top;
+    if(pixel||vm.visual.draw_mode()==2){
+        // Pixel-aligned and unrotated quads have two distinct edges per axis.
+        left=std::min(left,p[1].x);right=std::max(right,p[1].x);
+        top=std::min(top,p[2].y);bottom=std::max(bottom,p[2].y);
+    }else for(u32 i=1;i<4;i++){left=std::min(left,p[i].x);right=std::max(right,p[i].x);top=std::min(top,p[i].y);bottom=std::max(bottom,p[i].y);}
     if(right<float(viewport.x)||bottom<float(viewport.y)||left>float(viewport.x+viewport.width)||top>float(viewport.y+viewport.height))return 0;
     auto& v=vm.visual;const u32 color_mode=v.flags>>17&3;
     if(!supplied&&color_mode<2){

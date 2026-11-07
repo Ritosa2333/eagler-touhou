@@ -33,7 +33,11 @@ API(bullet_spawn_event) i32 bullet_spawn_event(BulletStateFixture* p,u32 kind){s
 API(bullet_cancel) u32 bullet_cancel(BulletStateFixture* p,i32 kind,float rate){p->error.clear();p->cancel_rate=rate;return p->state.cancel(kind,rate,p->random,p->rewards,*p,*p,p->error);}
 API(bullet_cancel_counter) i32* bullet_cancel_counter(BulletStateFixture* p){return &p->rewards.count;}
 API(bullet_cancel_spell) void bullet_cancel_spell(BulletStateFixture* p,u32 active){p->rewards.spell_active=active!=0;}
-API(bullet_spawn_initialize) u32 bullet_spawn_initialize(BulletStateFixture* p,EnemyVariableFixture* e,u32 slot,i32 column,i32 row,float aim,float minimum){p->error.clear();return p->state.initialize(e->enemy.shooters.shooters[slot],column,row,aim,p->player,minimum,p->random,*p,p->error);}
+API(bullet_spawn_initialize) u32 bullet_spawn_initialize(BulletStateFixture* p,EnemyVariableFixture* e,u32 slot,i32 column,i32 row,float aim,float minimum){
+    p->error.clear();const auto& shooter=e->enemy.shooters.shooters[slot];
+    const auto program=std::make_shared<const BulletProgram>(shooter.transforms);
+    return p->state.initialize(shooter,column,row,aim,p->player,minimum,p->random,*p,p->error,program);
+}
 struct BulletManagerFixture:BulletManagerHost{std::array<BulletStateFixture,BulletManager::capacity> hosts;BulletManager manager;Rng random;u32 sounds=0;i32 last_sound=-1;BulletManagerFixture():manager(*this){manager.random=&random;for(u32 i=0;i<BulletManager::capacity;i++){hosts[i].external_state=manager.state(i);hosts[i].owner=&manager;hosts[i].slot=i;}}BulletFrameHost& bullet(u32 slot)override{return hosts[slot];}void prepare(u32,BulletFrameContext& context)override{context.sprite_size={16,16};}void play(i32 sound)override{sounds++;last_sound=sound;}};
 API(bullet_manager_create) BulletManagerFixture* bullet_manager_create(){return new BulletManagerFixture;}
 API(bullet_manager_delete) void bullet_manager_delete(BulletManagerFixture* p){delete p;}
