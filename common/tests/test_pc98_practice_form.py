@@ -19,6 +19,13 @@ with tempfile.TemporaryDirectory() as tmp:
         result=call(step,k);call(step,0);return result
     assert key(8)==1 and machine.mem_read(base+values,1)==b'\1'
     assert key(4)==1 and machine.mem_read(base+values,1)==b'\0'
+    assert call(step,8)==1
+    for _ in range(23): assert call(step,8)==0
+    assert call(step,8)==0
+    for _ in range(3): assert call(step,8)==0
+    assert call(step,8)==1, 'held direction repeats without new key edges'
+    assert machine.mem_read(base+values,1)==b'\2'
+    call(step,0);machine.mem_write(base+values,b'\0')
     assert key(1)==1 and machine.mem_read(base+choice,1)==b'\x0c'
     assert key(16)==1 and machine.mem_read(base+choice,1)==b'\0'
     assert key(8)==1

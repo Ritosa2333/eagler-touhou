@@ -13,6 +13,34 @@ practice_form_step:
     push cs
     pop ds
     mov bx,[cs:practice_form_keys]
+    ; Held horizontal keys repeat after a short delay. A fresh press still
+    ; moves by one, allowing exact values as well as practical large edits.
+    mov dx,ax
+    and dx,12
+    jz .repeat_reset
+    cmp dx,12
+    je .repeat_reset
+    cmp dx,[cs:practice_form_repeat_key]
+    jne .repeat_new
+    cmp byte [cs:practice_form_repeat_ticks],24
+    jb .repeat_count
+    inc byte [cs:practice_form_repeat_ticks]
+    test byte [cs:practice_form_repeat_ticks],3
+    jnz .repeat_ready
+    not dx
+    and bx,dx
+    jmp .repeat_ready
+.repeat_count:
+    inc byte [cs:practice_form_repeat_ticks]
+    jmp .repeat_ready
+.repeat_new:
+    mov [cs:practice_form_repeat_key],dx
+    mov byte [cs:practice_form_repeat_ticks],0
+    jmp .repeat_ready
+.repeat_reset:
+    mov word [cs:practice_form_repeat_key],0
+    mov byte [cs:practice_form_repeat_ticks],0
+.repeat_ready:
     mov cl,[cs:practice_form_choice]
     mov ch,13
     cmp byte [cs:practice_form_options_page],0
@@ -210,6 +238,8 @@ practice_form:
     mov byte [cs:practice_form_options_page],0
     mov byte [cs:practice_form_choice],0
     mov word [cs:practice_form_keys],0xffff
+    mov word [cs:practice_form_repeat_key],0
+    mov byte [cs:practice_form_repeat_ticks],0
     call practice_form_graphics_save
     call practice_form_save
     call practice_form_draw_screen
@@ -569,6 +599,8 @@ practice_form_choice: db 0
 practice_form_options_page: db 0
 practice_form_row_attr: db 0
 practice_form_keys: dw 0
+practice_form_repeat_key: dw 0
+practice_form_repeat_ticks: db 0
 practice_form_open: db 0
 practice_form_input: dw 0
 practice_form_request: db 0

@@ -4,8 +4,8 @@
   "languages": {
     "jp": {
       "url": "practice-jp.exe.gz",
-      "size": 146246,
-      "sha256": "22fac4be87bc0276de1d8b9e9388b00dece6879e7c44697c30299eb362e6e787",
+      "size": 146326,
+      "sha256": "d92346115b6f7975e8e44f3dda9ac95fc2d0e08be92d905d1d746c1a5c636322",
       "sourceMainSha256": "eec57979b004fc9ecb356d8f96202b6f98749e1d7ed30738e04650983f732302",
       "patch": {
         "file": "th02-solo-jp.hdi.gz",
@@ -25,10 +25,10 @@
         },
         "headerSize": 6656,
         "codeSegment": 2838,
-        "dataSegment": 8309,
-        "gap": 11488,
+        "dataSegment": 8314,
+        "gap": 11568,
         "originalMainSha256": "9e9a323781e793738c8e3a5b575d99c0cb6a71bac8c3d581178976b4977f0a92",
-        "mainSha256": "22fac4be87bc0276de1d8b9e9388b00dece6879e7c44697c30299eb362e6e787",
+        "mainSha256": "d92346115b6f7975e8e44f3dda9ac95fc2d0e08be92d905d1d746c1a5c636322",
         "hooks": [
           {
             "offset": 46619,
@@ -151,24 +151,24 @@
             "pauseRequest": 25675,
             "pauseAck": 25676,
             "pauseInput": 25677,
-            "formOpen": 27647,
-            "formInput": 27648,
-            "formValues": 27651,
-            "formRequest": 27650,
-            "formHp": 27661,
-            "formOptions": 27663,
-            "infoEnabled": 29202,
-            "infoValues": 29204
+            "formOpen": 27742,
+            "formInput": 27743,
+            "formValues": 27746,
+            "formRequest": 27745,
+            "formHp": 27756,
+            "formOptions": 27758,
+            "infoEnabled": 29297,
+            "infoValues": 29299
           },
-          "bytes": 9664,
+          "bytes": 9744,
           "descriptor": "T02PRA01"
         }
       }
     },
     "cn": {
       "url": "practice-cn.exe.gz",
-      "size": 146246,
-      "sha256": "c9b4f414cfa3f23fffbd85249905bb7218ac510a42d35b1c2a21fca7ec78a769",
+      "size": 146326,
+      "sha256": "78b6af70f20fcb71bb46343bd62c8abeb74e854f73673f1649d1b1926dff0985",
       "sourceMainSha256": "74a315562d6f37ee1ff4b4bd229e98937a3ca4c989becdc51e101798d52f8f5d",
       "patch": {
         "file": "th02-solo-cn.hdi.gz",
@@ -188,10 +188,10 @@
         },
         "headerSize": 6656,
         "codeSegment": 2838,
-        "dataSegment": 8309,
-        "gap": 11488,
+        "dataSegment": 8314,
+        "gap": 11568,
         "originalMainSha256": "d54640c76acab16c3f0bdf34774c5153468172d7ca132426ab845ef2a1c8dce8",
-        "mainSha256": "c9b4f414cfa3f23fffbd85249905bb7218ac510a42d35b1c2a21fca7ec78a769",
+        "mainSha256": "78b6af70f20fcb71bb46343bd62c8abeb74e854f73673f1649d1b1926dff0985",
         "hooks": [
           {
             "offset": 46619,
@@ -314,16 +314,16 @@
             "pauseRequest": 25675,
             "pauseAck": 25676,
             "pauseInput": 25677,
-            "formOpen": 27647,
-            "formInput": 27648,
-            "formValues": 27651,
-            "formRequest": 27650,
-            "formHp": 27661,
-            "formOptions": 27663,
-            "infoEnabled": 29202,
-            "infoValues": 29204
+            "formOpen": 27742,
+            "formInput": 27743,
+            "formValues": 27746,
+            "formRequest": 27745,
+            "formHp": 27756,
+            "formOptions": 27758,
+            "infoEnabled": 29297,
+            "infoValues": 29299
           },
-          "bytes": 9664,
+          "bytes": 9744,
           "descriptor": "T02PRA01"
         }
       }
