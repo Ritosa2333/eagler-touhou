@@ -2,8 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createLocalSpectator} from '../browser/pc98-local-spectator.mjs';
 
-test('TH03 normal playback presents each replay step even after scheduling delays',async()=>{
-  const header={game:'03',tickMs:5},rows=Array.from({length:60},()=>({})),batches=[];
+for(const game of ['02','03','04'])test(`TH${game} normal playback presents each replay step even after scheduling delays`,async()=>{
+  const header={game,tickMs:5},rows=Array.from({length:60},()=>({})),batches=[];
   let frame=0,presentations=0,stopped=false;
   const channel={ready:true,close(){},postMessage(message){
     if(message.type!=='pull')return;
@@ -12,7 +12,7 @@ test('TH03 normal playback presents each replay step even after scheduling delay
   }};
   const replica={get frame(){return frame;},get executed(){return frame;},stop(){stopped=true;},
     async advanceBatch(batch){batches.push(batch.length);frame+=batch.length;},async present(){presentations++;}};
-  const viewer=createLocalSpectator({game:'03',options:{netplayUrl:'ws://localhost/?room=test&run=1'},
+  const viewer=createLocalSpectator({game,options:{netplayUrl:'ws://localhost/?room=test&run=1'},
     smoothPresentation:true,channelFactory:()=>channel,createReplica:async()=>replica,
     validateHeader(){},validateRow(){},stable:JSON.stringify});
   try{

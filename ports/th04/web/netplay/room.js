@@ -823,7 +823,7 @@ function wake(delay=0){
     wakePending=false;wakeTimer=null;pump(performance.now());
   },delay);
 }
-function tick(now){if(running&&!stopped)pump(now);}
+function tick(now){if(running&&!stopped){observeInput();pump(now);}}
 function armRollback(){
   if(!inputPolicy.rollbackEnabled||session.role!=='host'||!running||membership||queue.activation!==null||!runtime.readyForRollback()||
      !onlinePeers().every(peer=>peer.rollbackReady))return;
