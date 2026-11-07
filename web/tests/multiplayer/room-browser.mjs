@@ -17,6 +17,7 @@ const checkPresentation=process.argv.includes('--check-presentation');
 const verifyTransfer=process.argv.includes('--life-transfer');
 const independent=process.argv.includes('--independent-pages');
 const cpuProfile=process.argv.includes('--cpu-profile');
+const glTrace=process.env.TH17_ROOM_GL_TRACE==='1';
 const musicDirectory=process.env.TH17_ROOM_MUSIC_DIR;
 const music=musicDirectory?'ogg':'none';
 assert.ok(!independent||!verifyReplay,'Replay fixture uses the shared page');
@@ -168,6 +169,16 @@ try{
    ...(requestedRenderScale?{renderScale}:{}),netplayUrl:endpoint+new URLSearchParams({room,run:String(start.serial),member:room+'-private-'+seat}),
   }));
   const contexts=await Promise.all(Array.from({length:independent?seats:1},()=>browser.newContext({viewport:{width:independent?640:seats*640,height:480}})));
+  if(glTrace)await Promise.all(contexts.map(context=>context.addInitScript(()=>{
+   globalThis.__th17GlCalls={};
+   for(const name of ['enableVertexAttribArray','vertexAttribDivisor','vertexAttribPointer','drawArraysInstanced']){
+    const original=WebGL2RenderingContext.prototype[name];
+    WebGL2RenderingContext.prototype[name]=function(...args){
+     __th17GlCalls[name]=(__th17GlCalls[name]||0)+1;
+     return original.apply(this,args);
+    };
+   }
+  })));
   if(rollback)await Promise.all(contexts.map(context=>context.addInitScript(({delayMs,jitterMs})=>{
    const send=RTCDataChannel.prototype.send;
    let sequence=0;
@@ -211,6 +222,7 @@ try{
    for(const [seat,frame] of frames.entries()){
     await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,storyTiming,verifyTransfer})=>{
      const callback=Module.onGameFrame;
+     if(globalThis.__th17GlCalls)globalThis.__th17GlCalls={};
      const optimized=typeof Module._th17_room_trace==='function';
      Module._th17_room_trace?.(1);
      globalThis.samples=new Map();
@@ -407,7 +419,7 @@ try{
      releaseMs:summarize(longCallbacks.map(row=>row.costs[9]/1000)),
      remainingMs:summarize(longCallbacks.map(row=>Math.max(0,row.time-(row.costs[1]+row.costs[3]+row.costs[5]+row.costs[7]+row.costs[9])/1000))),
     }:undefined;
-    return {...diagnostics,liveHeapBytes,captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections:spellCorrections??diagnostics.spellCorrections,bossCosts,
+    return {...diagnostics,glCalls:globalThis.__th17GlCalls,liveHeapBytes,captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections:spellCorrections??diagnostics.spellCorrections,bossCosts,
      tail,
      canvas:[canvas.width,canvas.height],renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):null,
      presentIntervals:summarize(presentIntervals),
@@ -564,7 +576,7 @@ try{
 }finally{
  await browser?.close();for(const socket of sockets)socket.close();relay.kill();server.closeAllConnections();server.close();
  await writeFile(resolve(out,'room-report.json'),JSON.stringify({rollback,extended,difficulty,version:manifest.version,wasm:manifest.execution.sha256,
-  throughStageTwo,denseExtra,extraBoss,extraFinale,independent,renderScale,music,cpuProfile,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
+  throughStageTwo,denseExtra,extraBoss,extraFinale,independent,renderScale,music,cpuProfile,glTrace,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
  if(finaleSamples)await writeFile(resolve(out,'heap-samples.json'),JSON.stringify({
   fields:['nextFrame','bullets','spell','heap','lasers','snapshots','unusedCapacity','bulletState','bulletVisual','itemVisual','idleItemVisual','animation'],
   samples:finaleSamples})+'\n');
