@@ -84,8 +84,8 @@ struct RoomRuntime final : multiplayer::World {
  bool advance_playback(bool advance);
  GameInput main_input;
  bool entered=false, trace=false, discarded_images=false, retry_forward=false;
- double replay_deadline=0,refresh_deadline=0,tick_cost_ms=5;
- double replay_step_start=0,logical_step_ms=4;
+ double replay_deadline=0,refresh_start=0,refresh_deadline=0,tick_cost_ms=5;
+ double replay_step_start=0,capture_start=0,logical_step_ms=4;
  std::uint64_t now_ms=0;
  u32 capture_count=0,capture_us=0,replay_slices=0,logical_draws=0;
  unsigned pending_releases=0;
@@ -141,13 +141,17 @@ struct RoomRuntime final : multiplayer::World {
   if(replayed<usual_slice&&now<replay_deadline)return true;
   if(!remaining||remaining>maximum_slice-replayed)return false;
   // Two moving peers can produce a correction longer than the usual slice.
-  // Take the extra steps only if the entire repair can reach a visible draw.
+  // Give a late RAF enough time for a cheap complete repair. Otherwise a
+  // sub-millisecond tail can wait an entire refresh even with no GPU work.
   const double cost=(remaining-1)*logical_step_ms+tick_cost_ms;
-  return now+cost+1<refresh_deadline;
+  const double late_deadline=refresh_start+3;
+  return now+cost+1<std::max(refresh_deadline,late_deadline);
  }
  bool blocked() const override{return app->room_barrier;}
  bool capture(u32 frame) override{
   const RoomPhaseTimer timing{Capture};
+  if(!app->graphics.logical_drawing&&!app->graphics.backend.presentation_pending())
+   capture_start=emscripten_get_now();
   auto& saved=state(frame);
   saved.number=frame;
   // Rewinding to a speculative frame restores exactly its existing image.
@@ -226,6 +230,9 @@ struct RoomRuntime final : multiplayer::World {
   return app->audio_device.error.empty()||app->fail(app->audio_device.error);
  }
  bool step(u32 number,const Netplay::FrameDecision& frame) override{
+  const bool measure_draw=!spectator&&!playing_replay&&!app->graphics.logical_drawing&&
+                          !app->graphics.backend.presentation_pending();
+  const double tick_start=measure_draw?(app->room_speculative?capture_start:emscripten_get_now()):0;
   restored_checkpoint=Netplay::INVALID_FRAME;
   app->room_barrier=false;
   if(!entered){
@@ -299,6 +306,10 @@ struct RoomRuntime final : multiplayer::World {
   if(trace){
    output.snapshot=status(number+1);
    if(logical)++logical_draws;
+  }
+  if(measure_draw&&app->graphics.backend.presentation_pending()){
+   const double cost=std::clamp(emscripten_get_now()-tick_start,.5,16.);
+   tick_cost_ms+=(cost-tick_cost_ms)*.25;
   }
   return true;
  }
@@ -763,25 +774,19 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
   // already done before this callback has consumed part of this refresh.
   const double deadline=begin+std::max(0.,1000./60.-std::max(0.,begin-time));
 #if TH17_MULTIPLAYER
-  if(room){room->refresh_deadline=deadline;room->released_confirmed=false;}
+  if(room){room->refresh_start=begin;room->refresh_deadline=deadline;room->released_confirmed=false;}
 #endif
   for(unsigned i=0;i<ticks&&ok;i++){
    const double tick_begin=emscripten_get_now();
 #if TH17_MULTIPLAYER
    const bool live=room&&!room->spectator&&!room->playing_replay&&!room->local_results;
    const auto previous_head=live?room->session.prediction_head():0;
-   const auto previous_repairs=live?room->session.resimulated_frames():0;
-   const bool measure=live&&!app->graphics.backend.presentation_pending();
 #endif
    ok=sample_and_tick();
    const double tick_end=emscripten_get_now();
 #if TH17_MULTIPLAYER
    const bool advanced=live&&room&&room->session.prediction_head()>previous_head;
    if(!live||advanced)++completed;
-   if(measure&&advanced&&room->session.resimulated_frames()==previous_repairs&&app->graphics.backend.presentation_pending()){
-    const double cost=std::clamp(tick_end-tick_begin,1.,16.);
-    room->tick_cost_ms+=(cost-room->tick_cost_ms)*.25;
-   }
    if(live&&room&&!room->terminal&&(room->session.repair_pending()||room->session.forward_deferred())){
     room->retry_forward|=room->session.forward_deferred();
     cadence.debt=std::min(.1,cadence.debt+(ticks-i-1)*period);

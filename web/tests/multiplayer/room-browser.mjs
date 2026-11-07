@@ -301,15 +301,25 @@ try{
       video.srcObject=Module.canvas.captureStream();
       document.body.append(video);
       globalThis.displayIntervals={};
-      let previousPhase,previousTime,previousFrame,id;
+      let previousPhase,previousTime,previousPresentation,previousFrame,id;
       const observe=(now,metadata)=>{
        if(displayPhase&&previousPhase===displayPhase){
-        const interval=displayIntervals[displayPhase]??={time:0,frames:0,callbacks:0,maxGapMs:0};
+        const interval=displayIntervals[displayPhase]??={
+         time:0,frames:0,callbacks:0,maxGapMs:0,maxAdjacentPresentationGapMs:0,adjacentPresentationGapsOver25Ms:0,
+        };
         const gap=now-previousTime;
-        interval.time+=gap;interval.frames+=metadata.presentedFrames-previousFrame;
+        const frames=metadata.presentedFrames-previousFrame;
+        interval.time+=gap;interval.frames+=frames;
         ++interval.callbacks;interval.maxGapMs=Math.max(interval.maxGapMs,gap);
+        // A busy main thread can coalesce notifications for several video frames.
+        if(frames===1){
+         const presentationGap=metadata.presentationTime-previousPresentation;
+         interval.maxAdjacentPresentationGapMs=Math.max(interval.maxAdjacentPresentationGapMs,presentationGap);
+         if(presentationGap>25)++interval.adjacentPresentationGapsOver25Ms;
+        }
        }
        previousPhase=displayPhase;previousTime=now;previousFrame=metadata.presentedFrames;
+       previousPresentation=metadata.presentationTime;
        id=video.requestVideoFrameCallback(observe);
       };
       id=video.requestVideoFrameCallback(observe);
@@ -412,7 +422,7 @@ try{
         pendingCallbackMs+=time;
         const phasePointer=tracePhases?Module._th17_room_phase_costs(1)>>>2:0;
         const timing={
-         frame:n,confirmed:committed,offsetMs:now-diagnostics.lastPresent,callbackMs:time,ticks,
+         frame:n,confirmed:committed,offsetMs:now-diagnostics.lastPresent,callbackMs:time,ticks,presented,
          repair:resimulated-diagnostics.resimulated,waitState,
          ...(phasePointer?{shellMs,phaseUs:Array.from(Module.HEAPU32.subarray(phasePointer,phasePointer+10))}:{}),
         };
@@ -430,7 +440,7 @@ try{
          }
          if(bullets>=256&&phase===1)densePresentIntervals.push(gap);
          const state=storyTiming&&samples.get(recorded);
-         if(storyTiming&&gap>=50)longPresentations.push({frame:n,confirmed:recorded,
+         if(storyTiming&&(gap>=50||(traceGaps&&gap>25)))longPresentations.push({frame:n,confirmed:recorded,
           stage:state?.[3],stageClock:state?.[4],gap,callbackMs:time,
           resimulated:resimulated-diagnostics.resimulated,
           ...(traceGaps?{startMs:diagnostics.lastPresent,gameCallbacksMs:pendingCallbackMs,
@@ -619,7 +629,7 @@ try{
      spellEntryGaps,
      longPresentations:longPresentations.sort((a,b)=>b.gap-a.gap).slice(0,20),
      phaseTrace:globalThis.roomPhaseTrace&&{...roomPhaseTrace,slow:roomPhaseTrace.slow.sort((a,b)=>b.callbackMs-a.callbackMs).slice(0,30)},
-     presentationsOver50Ms:longPresentations.length,
+     presentationsOver50Ms:longPresentations.filter(gap=>gap.gap>=50).length,
      storyPresentIntervals:Object.fromEntries([...storyPresentIntervals].map(([segment,gaps])=>[segment,{
       ...summarize(gaps),fps:gaps.length*1000/gaps.reduce((sum,gap)=>sum+gap,0),
      }])),
