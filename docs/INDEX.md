@@ -1,6 +1,6 @@
 # 文档总表
 
-共 466 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 467 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -307,6 +307,7 @@
 | 历史记录 | [archive/th17-extra-boss-20261106/README.md](../archive/th17-extra-boss-20261106/README.md) | TH17 Extra Boss 三人回滚压测 · 2026-11-06 |
 | 历史记录 | [archive/th17-extra-dense-20261106/README.md](../archive/th17-extra-dense-20261106/README.md) | TH17 Extra 密集弹幕压测 · 2026-11-06 |
 | 历史记录 | [archive/th17-extra-finale-20261106/README.md](../archive/th17-extra-finale-20261106/README.md) | TH17 Extra 关底全程回滚压测 · 2026-11-06 |
+| 历史记录 | [archive/th17-frame-spikes-20261107/README.md](../archive/th17-frame-spikes-20261107/README.md) | TH17 换面长帧对照 · 2026-11-07 |
 | 历史记录 | [archive/th17-hd-60-20261106/README.md](../archive/th17-hd-60-20261106/README.md) | TH17 1280×960 回滚呈现与快照 · 2026-11-06 |
 | 历史记录 | [archive/th17-hd-extra-power-20261106/README.md](../archive/th17-hd-extra-power-20261106/README.md) | TH17 多人换关、激光与 1280×960 呈现 · 2026-11-06 |
 | 历史记录 | [archive/th17-hud-spacing-20261106/README.md](../archive/th17-hud-spacing-20261106/README.md) | TH17 多人 HUD 行距和擦弹贴图 · 2026-11-06 |
