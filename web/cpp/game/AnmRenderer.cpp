@@ -54,8 +54,11 @@ bool AnmRenderer::material(AnmVm& vm,bool textured){
     const Combiner combiner{ColorOperation::Multiply,{ArgumentSource::Texture},{ArgumentSource::Diffuse}};
     // A sprite changes only this material subset. Avoid copying/comparing the
     // entire depth/fog/viewport-independent pipeline for every visible bullet.
-    if(state.alphaTest!=alpha_test||state.sourceBlend!=source||state.destinationBlend!=destination||state.blendEquation!=equation||state.minFilter!=filter||state.magFilter!=filter||state.addressU!=address_u||state.addressV!=address_v||state.textureTransform||!(state.color==combiner)||!(state.alpha==combiner))flush();
-    state.alphaTest=alpha_test;state.sourceBlend=source;state.destinationBlend=destination;state.blendEquation=equation;state.minFilter=state.magFilter=filter;state.addressU=address_u;state.addressV=address_v;state.textureTransform=false;state.color=state.alpha=combiner;return true;
+    if(state.alphaTest!=alpha_test||state.sourceBlend!=source||state.destinationBlend!=destination||state.blendEquation!=equation||state.minFilter!=filter||state.magFilter!=filter||state.addressU!=address_u||state.addressV!=address_v||state.textureTransform||!(state.color==combiner)||!(state.alpha==combiner)){
+        flush();
+        state.alphaTest=alpha_test;state.sourceBlend=source;state.destinationBlend=destination;state.blendEquation=equation;state.minFilter=state.magFilter=filter;state.addressU=address_u;state.addressV=address_v;state.textureTransform=false;state.color=state.alpha=combiner;
+    }
+    return true;
 }
 int AnmRenderer::shape(AnmVm& vm){
     if(logical_only)return 0;

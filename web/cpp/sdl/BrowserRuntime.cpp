@@ -97,6 +97,7 @@ struct RoomRuntime final : multiplayer::World {
 #if TH17_ROOM_BENCHMARK
  u32 benchmark_input_frame=0;
  u32 benchmark_ghost_seat=3;
+ i32 benchmark_story_stage=0;
  std::array<u32,4> benchmark_history{};
 #endif
 
@@ -239,7 +240,11 @@ struct RoomRuntime final : multiplayer::World {
    std::array<std::array<i32,2>,3> loadouts{};
    for(u32 seat=0;seat<setup.seats;++seat)
     loadouts[seat]={setup.loadouts[seat].character,setup.loadouts[seat].animal};
-   if(!app->begin_room(setup.seed,setup.difficulty,setup.seats,loadouts))return false;
+   i32 initial_stage=setup.difficulty==4?7:1;
+#if TH17_ROOM_BENCHMARK
+   if(benchmark_story_stage)initial_stage=benchmark_story_stage;
+#endif
+   if(!app->begin_room(setup.seed,setup.difficulty,setup.seats,loadouts,initial_stage))return false;
    app->renderer.hud_viewer=setup.local+1;
    entered=true;
   }
@@ -260,7 +265,7 @@ struct RoomRuntime final : multiplayer::World {
   if(!app->room_speculative)clear_image(output);
   output.number=number;output.sounds.clear();app->room_sounds=&output.sounds;
   if(app->scene())current_stage=u32(app->scene()->battle.stage);
-  if(!current_stage)current_stage=setup.difficulty==4?7u:1u;
+  if(!current_stage)current_stage=u32(app->progress.initial_stage);
   output.stage=current_stage;
   output.publication={};output.publication.frame=number;output.publication.stage=output.stage;
   if(!spectator&&!playing_replay&&!setup.local&&!publisher_failed&&app->scene()&&!app->scene()->active()&&
@@ -271,7 +276,7 @@ struct RoomRuntime final : multiplayer::World {
   }
   const auto bosses_before=app->scene()?app->scene()->battle.enemy_world.boss_ids:std::array<u32,3>{};
 #if TH17_ROOM_BENCHMARK
-  if(auto* scene=app->scene();scene&&scene->battle.stage==7){
+  if(auto* scene=app->scene();scene&&(scene->battle.stage==7||benchmark_story_stage)){
    for(u32 seat=0;seat<scene->battle.pilot_count();++seat)scene->battle.pilot(seat).life.invulnerability.set(2);
   }
   if(number==800&&benchmark_ghost_seat<setup.seats){
@@ -666,6 +671,12 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_phase_costs(unsigned enabled){
  return costs.data();
 }
 #if TH17_ROOM_BENCHMARK
+EMSCRIPTEN_KEEPALIVE int th17_room_fixture_story_stage(unsigned stage){
+ using namespace th17::sdl;
+ if(!room||room->setup.difficulty>=4||room->entered||stage<1||stage>6)return 0;
+ room->benchmark_story_stage=th17::i32(stage);
+ return 1;
+}
 EMSCRIPTEN_KEEPALIVE int th17_room_fixture_ghost(unsigned seat){
  using namespace th17::sdl;
  if(!room||room->setup.difficulty>=4||seat>=room->setup.seats||room->session.next_frame()>=800)return 0;

@@ -61,7 +61,7 @@ bool ApplicationState::start_game(i32 stage){
  progress.stage=progress.initial_stage=stage;progress.character=selection.character;progress.animal=selection.animal;progress.difficulty=stage==7?4:selection.difficulty;progress.spell_id=selection.spell_id;progress.scoring.mode_flags=selection.mode_flags;progress.practice_lives=selection.practice_checkpoint;progress.demo_slot=-1;selected_replay.reset();flow.title_return_reason=title?title->state.return_reason:1;flow.pending=AppScene::Game;return true;
 }
 #if TH17_MULTIPLAYER
-bool ApplicationState::begin_room(u16 seed,i32 difficulty,u32 seats,const std::array<std::array<i32,2>,3>& loadouts){
+bool ApplicationState::begin_room(u16 seed,i32 difficulty,u32 seats,const std::array<std::array<i32,2>,3>& loadouts,i32 initial_stage){
  if(!initialized||!title||room_seats||seats<2||seats>3||u32(difficulty)>4)return fail("TH17 room cannot start");
  room_seats=seats;room_loadouts=loadouts;
  Rng record_seed;record_seed.seed=seed;records.reset(record_seed);
@@ -69,7 +69,7 @@ bool ApplicationState::begin_room(u16 seed,i32 difficulty,u32 seats,const std::a
  environment.game_rng.calls=visual.calls=0;
  selection={};
  selection.character=loadouts[0][0];selection.animal=loadouts[0][1];selection.difficulty=difficulty;
- return start_game(difficulty==4?7:1)&&advance_flow();
+ return start_game(initial_stage)&&advance_flow();
 }
 #endif
 i32 ApplicationState::checkpoint_key()const{for(i32 number=1;number<=9;number++)if(keyboard_state.keys[(keyboard_state.format==2?48:1)+number]&0x80)return number;return 0;}

@@ -10,7 +10,12 @@ const repo=resolve(import.meta.dirname,'../../../../..');
 const runtime=resolve(process.env.EAGLER_TH17_BUILD||resolve(repo,'ports/th17-mp/build-eagler-multiplayer'));
 const out=resolve(process.env.TH17_ROOM_EVIDENCE||resolve(repo,'artifacts/th17-room'));
 const rollback=!process.argv.includes('--lockstep');
-const throughStageTwo=process.argv.includes('--through-stage-two');
+const throughStageThree=process.argv.includes('--through-stage-three');
+const throughStageTwo=throughStageThree||process.argv.includes('--through-stage-two');
+const fixtureStage=Number(process.env.TH17_ROOM_STORY_STAGE||0);
+assert.ok(Number.isInteger(fixtureStage)&&fixtureStage>=0&&fixtureStage<=6);
+const storyStage=throughStageThree?3:2;
+const storySamples=throughStageThree?1800:240;
 const extraFinale=process.argv.includes('--extra-finale');
 const launcherPreview=process.argv.includes('--launcher-preview');
 const verifyReplay=process.argv.includes('--replay');
@@ -45,7 +50,7 @@ if(seatRenderScales){
 }
 const extraBoss=extraFinale||process.argv.includes('--extra-boss');
 const denseExtra=extraBoss||process.argv.includes('--dense-extra');
-const extended=throughStageTwo||process.argv.includes('--extended');
+const extended=throughStageTwo||fixtureStage!==0||process.argv.includes('--extended');
 const extendedSeats=Number(process.env.TH17_ROOM_SEATS??2);
 assert.ok(extendedSeats===2||extendedSeats===3);
 const roomSeatCounts=seatRenderScales?[seatRenderScales.length]:
@@ -63,6 +68,8 @@ const delayMs=Number(process.env.TH17_ROOM_DELAY_MS||110);
 const jitterMs=Number(process.env.TH17_ROOM_JITTER_MS||0);
 const cpuThrottle=Number(process.env.TH17_ROOM_CPU_THROTTLE||1);
 const manifest=JSON.parse(await readFile(resolve(runtime,'manifest.json'),'utf8'));
+if(fixtureStage)assert.ok(manifest.features.roomBenchmark&&difficulty!==4&&!throughStageTwo,
+ 'Direct story entry requires the story benchmark build');
 const directInput=touchDrag&&!!JSON.parse(await readFile(resolve(runtime,'runtime-files.json'),'utf8')).files['direct-input-bridge.mjs'];
 if(extraBoss)assert.ok(manifest.features.roomBenchmark&&rollback&&difficulty===4,'Extra boss profiling needs the dedicated Extra rollback benchmark build');
 if(verifyGhost)assert.ok(manifest.features.roomBenchmark&&throughStageTwo&&roomSeatCounts[0]===3,
@@ -97,7 +104,8 @@ const assets={
  '/unifont.otf':await readFile(required('TH17_ROOM_UNIFONT')),
 };
 const musicResources=[];
-if(musicDirectory)for(const name of ['th17_01','th17_03','th17_04','th17_05','th17_06','th128_08']){
+const storyMusic=Array.from({length:Math.max(throughStageThree?3:2,fixtureStage)*2},(_,i)=>'th17_'+String(i+3).padStart(2,'0'));
+if(musicDirectory)for(const name of ['th17_01',...storyMusic,'th128_08']){
  const path='/music/'+name+'.ogg';
  assets[path]=await readFile(resolve(musicDirectory,name+'.ogg'));
  musicResources.push({path,url:path});
@@ -254,6 +262,15 @@ try{
     await pageFor(seat).evaluate(seat=>addRuntime(seat),seat);
     await pageFor(seat).waitForFunction(epoch=>ready.has(epoch),seat+1,{timeout:45000});
    }
+   if(fixtureStage)for(const frame of pages.flatMap(current=>current.frames().filter(frame=>frame.url().includes('/runtime/'))))
+    await frame.evaluate(stage=>{
+     const open=Module._th17_room_open;
+     Module._th17_room_open=(...args)=>{
+      const ok=open(...args);
+      if(ok&&!Module._th17_room_fixture_story_stage(stage))throw Error('Could not select benchmark story stage');
+      return ok;
+     };
+    },fixtureStage);
    if(independent)await Promise.all(pages.map((current,seat)=>current.evaluate(seat=>startRuntime(seat),seat)));
    else await page.evaluate(seats=>Promise.all(Array.from({length:seats},(_,seat)=>startRuntime(seat))),seats);
    if(musicDirectory)for(let seat=0;seat<seats;seat++)
@@ -289,7 +306,7 @@ try{
     },1000/120);
    },{seat:touchSeat,touchWindow,touchComparison,stagger:touchSeats.length>1?1:0});
    for(const [seat,frame] of frames.entries()){
-    await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,storyTiming,traceGaps,tracePhases,verifyTransfer,verifyGhost,touchDrag,touchSeats,touchWindow,symmetricDelay,observeDisplay})=>{
+    await frame.evaluate(({seat,rollback,extended,throughStageTwo,storyStage,fixtureStage,denseExtra,extraBoss,extraFinale,storyTiming,traceGaps,tracePhases,verifyTransfer,verifyGhost,touchDrag,touchSeats,touchWindow,symmetricDelay,observeDisplay})=>{
      const callback=Module.onGameFrame;
      if(traceGaps&&!Module._th17_room_wait_state)throw Error('Gap trace requires a runtime with room wait state');
      globalThis.stopRoomMeasurement=()=>{Module.onGameFrame=callback;};
@@ -362,6 +379,7 @@ try{
      globalThis.longPresentations=[];
      globalThis.densePresentIntervals=[];
      globalThis.storyPresentIntervals=new Map();
+     globalThis.storyTimeline={};
      globalThis.touchPresentIntervals=new Map();
      globalThis.touchCosts={};
      globalThis.touchLayoutReads=0;
@@ -383,7 +401,15 @@ try{
       const waitState=traceGaps||touchDrag?Module._th17_room_wait_state?.()??0:0;
       const touchPhase=n<touchWindow.keyboard?'stationary':n<touchWindow.start?'keyboard':
        n<touchWindow.end?'dragging':'released';
-      if(n>120)displayPhase=touchPhase;
+      const stage=samples.get(recorded)?.[3];
+      if(n>120)displayPhase=touchDrag?touchPhase:stage?'stage'+stage:undefined;
+      if(storyTiming&&stage){
+       const timeline=storyTimeline[stage]??={ticks:0,commits:0,advancingCommits:0,start:performance.now()};
+       timeline.end=performance.now();
+       timeline.ticks+=ticks;
+       timeline.commits+=presented;
+       if(presented&&ticks)++timeline.advancingCommits;
+      }
       if(touchDrag&&n>120){
        const cost=touchCosts[touchPhase]??={
         callbacks:0,withoutPresentation:0,repairWithoutPresentation:0,atPredictionCap:0,corrections:0,resimulated:0,
@@ -494,7 +520,7 @@ try{
        words[2]=0;
        if(words[0]===number&&number>120&&words[3]){
         samples.set(number,words);
-        if(words[3]===2)diagnostics.stageTwoFrames=(diagnostics.stageTwoFrames||0)+1;
+        if(words[3]===storyStage)diagnostics.storyFrames=(diagnostics.storyFrames||0)+1;
         if(extraFinale){
          if((words[30]&1)&&words[39]===100){
           diagnostics.finalFirst??=number;
@@ -509,19 +535,22 @@ try{
       if(extraBoss)return;
       if(verifyTransfer)Module._th17_key(42,+(seat===0&&n>=75&&n<105&&(n-75)%6<3));
       const centerGuest=extended&&seat===1&&n>=900&&n<952;
-      const reserve=(throughStageTwo||denseExtra)&&seat===1&&n>=1500;
+      const keyboardDodge=fixtureStage||storyStage===3&&stage===3;
+      const reserve=(throughStageTwo||denseExtra)&&seat===1&&n>=1500&&!keyboardDodge;
       const touchControlled=touchDrag&&touchSeats.includes(seat);
       const moveGuest=seat===1&&n>=600&&!centerGuest&&!reserve&&!touchControlled||
        touchControlled&&touchPhase==='keyboard';
-      Module._th17_key(205,+(seat===1&&n>=120&&n<170||moveGuest&&n%96<12||extended&&seat===0&&n>=300&&n<350));
-      Module._th17_key(203,+(seat===0&&n>=120&&n<170||moveGuest&&n%96>=48&&n%96<60||centerGuest||reserve&&n<1630));
+      const move=moveGuest||keyboardDodge&&seat===0;
+      const dodge=(n+(fixtureStage?seat*16:0))%96;
+      Module._th17_key(205,+(seat===1&&n>=120&&n<170||move&&dodge<12||extended&&seat===0&&n>=300&&n<350));
+      Module._th17_key(203,+(seat===0&&n>=120&&n<170||move&&dodge>=48&&dodge<60||centerGuest||reserve&&n<1630));
       Module._th17_key(200,+(seat===2&&n>=120&&n<150||reserve&&n<1630));
-      Module._th17_key(44,+(n>=140&&(touchDrag||n<260)||extended&&n>=900));
+      Module._th17_key(44,+(n>=140&&(touchDrag||fixtureStage||n<260)||extended&&n>=900));
       Module._th17_key(46,+(extended&&seat===0&&n>=1400&&n%120<100));
       Module._th17_key(45,+(seat===1&&n>=185&&n<193||extended&&n>=1800&&(n+seat*420)%840<9||
        denseExtra&&n>=1500&&(n+seat*420)%720<9));
      };
-    },{seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,traceGaps,tracePhases,verifyTransfer,verifyGhost,touchDrag,touchSeats,touchWindow,symmetricDelay,observeDisplay,storyTiming:checkPresentation&&difficulty!==4});
+    },{seat,rollback,extended,throughStageTwo,storyStage,fixtureStage,denseExtra,extraBoss,extraFinale,traceGaps,tracePhases,verifyTransfer,verifyGhost,touchDrag,touchSeats,touchWindow,symmetricDelay,observeDisplay,storyTiming:checkPresentation&&difficulty!==4});
    }
    let frontier=0,progressAt=Date.now(),coverageFailure;
    let cutoff=extendedTarget;
@@ -539,8 +568,9 @@ try{
      frontier=current;progressAt=Date.now();
     }else if(Date.now()-progressAt>20000)throw Error('Room stopped confirming input: '+JSON.stringify(status));
     if(throughStageTwo&&status.every(item=>item.diagnostics.phase===2))
-     throw Error('The fixture reached the pause or game-over menu before Stage 2');
-    if(throughStageTwo)return status.every(item=>item.diagnostics.stageTwoFrames>=240);
+     throw Error('The fixture reached the pause or game-over menu before the story sample was complete');
+    if(throughStageTwo)return status.every(item=>item.diagnostics.storyFrames>=storySamples);
+    if(fixtureStage)return status.every(item=>item.samples>=minimumSamples);
     if(extraFinale&&status.every(item=>item.diagnostics.finalFinished)){
      cutoff=Math.min(...status.map(item=>item.diagnostics.finalFinished));
      return true;
@@ -548,7 +578,7 @@ try{
     if(extraBoss)return current>=extendedTarget;
     return status.every(item=>item.samples>=minimumSamples)&&(!extended||!rollback||
      status.some(item=>item.diagnostics.spellCorrections>0)||current>=extendedTarget);
-   },throughStageTwo?'Stage 1 to Stage 2 transition':'confirmed room samples',extraFinale?1500000:extraBoss?900000:throughStageTwo?540000:extended||denseExtra?300000:90000*cpuThrottle);}
+   },throughStageTwo?'confirmed Stage '+storyStage+' samples':'confirmed room samples',extraFinale?1500000:extraBoss?900000:throughStageThree?900000:throughStageTwo?540000:extended||denseExtra?300000:90000*cpuThrottle);}
    catch(error){coverageFailure=error;}
    // Exporting thousands of snapshots can block the renderer and inflate the
    // presentation tail. End timing before Playwright serializes those values.
@@ -565,8 +595,8 @@ try{
    }
    const [,initial]=agreed[0];
    const [,last]=agreed.at(-1);
-   assert.equal(initial[3],difficulty===4?7:1,'room starts the selected stage');
-   if(checkPresentation)
+   assert.equal(initial[3],fixtureStage||(difficulty===4?7:1),'room starts the selected stage');
+   if(checkPresentation&&!fixtureStage)
     assert.deepEqual(initial.slice(24,24+seats),Array(seats).fill(difficulty===4?400:100),'all pilots start with the stage power');
    const initialLives=Array.from({length:seats},(_,seat)=>initial[14+seat*4]);
    if(verifyTransfer)assert.deepEqual(initialLives,seats===2?[1,3]:[1,3,2],'one life goes to P2 without changing P3');
@@ -622,6 +652,7 @@ try{
       over25Ms:gaps.filter(gap=>gap>25).length,
      }])),
      touchCosts,displayIntervals:globalThis.displayIntervals,
+     storyTimeline,
      glCalls:globalThis.__th17GlCalls,liveHeapBytes,captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections:spellCorrections??diagnostics.spellCorrections,bossCosts,
      tail,
      canvas:[canvas.width,canvas.height],renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):null,
@@ -672,6 +703,7 @@ try{
    const dialogueFrames=agreed.filter(([,state])=>state[33]).length;
    const bossNonspellFrames=agreed.filter(([,state])=>state[38]&&!(state[30]&1)&&!state[33]).length;
    const stageTwoFrames=agreed.filter(([,state])=>state[3]===2).length;
+   const stageThreeFrames=agreed.filter(([,state])=>state[3]===3).length;
    let ghostRevival;
    if(verifyGhost){
     const ghosts=agreed.filter(([,state])=>state[3]===1&&(state[43]&4));
@@ -713,7 +745,7 @@ try{
     frames[seat].evaluate(()=>Array.from(touchInputs.keys())))):[];
    const otherTouches=touchFrames.slice(1).map(frames=>new Set(frames));
    const simultaneousTouchFrames=touchFrames[0]?.filter(frame=>otherTouches.every(touches=>touches.has(frame))).length;
-   reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,bossNonspellFrames,stageTwoFrames,ghostRevival,denseWindows,
+   reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,bossNonspellFrames,stageTwoFrames,stageThreeFrames,ghostRevival,denseWindows,
     ...(movingSeats.length===1?{touchEvents:movingSeats[0].touchEvents,touchDelivery:movingSeats[0].touchDelivery}:{}),
     ...(movingSeats.length>1?{movingSeats,simultaneousTouchFrames}:{}),
     bossPatterns:bossPatterns.filter(pattern=>pattern.last-pattern.first>=30),
@@ -738,7 +770,7 @@ try{
       assert.ok(bossNonspellFrames>0&&diagnostics.some(item=>item.bossCorrections>0),'boss nonspell includes late corrections');
       assert.ok(activeSpellFrames>0&&diagnostics.some(item=>item.spellCorrections>0),'spell combat includes late corrections');
      }
-     if(throughStageTwo)assert.ok(stageTwoFrames>=200,'next stage confirmed on both peers');
+     if(throughStageTwo)assert.ok(throughStageThree?stageThreeFrames>=1700:stageTwoFrames>=200,'target stage confirmed on both peers');
     }
    }
    assert.ok(maxEnemyBullets>0,'fight includes enemy projectiles');
@@ -812,7 +844,7 @@ try{
 }finally{
  await browser?.close();for(const socket of sockets)socket.close();relay.kill();server.closeAllConnections();server.close();
  await writeFile(resolve(out,'room-report.json'),JSON.stringify({rollback,extended,difficulty,version:manifest.version,wasm:manifest.execution.sha256,
-  throughStageTwo,denseExtra,extraBoss,extraFinale,independent,
+  throughStageTwo,throughStageThree,fixtureStage,denseExtra,extraBoss,extraFinale,independent,
   ...(seatRenderScales?{seatRenderScales}:{renderScale}),music,cpuProfile,traceGaps,
   ...(tracePhases?{phaseOrder:['input','capture','restore','confirm','canvas','pcm','imageRelease','update','draw','flow']}:{}),
   glTrace,touchDrag,touchComparison,touchSeat,touchSeats,observeDisplay,throttleSeat,symmetricDelay,
