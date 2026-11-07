@@ -1,6 +1,6 @@
 # 文档总表
 
-共 462 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 463 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -281,6 +281,7 @@
 | 历史记录 | [archive/th17-3p-hud-fragments-20261106/README.md](../archive/th17-3p-hud-fragments-20261106/README.md) | TH17 三人 HUD 碎片提示 · 2026-11-06 |
 | 历史记录 | [archive/th17-combat-rollback-20261106/performance-validation.md](../archive/th17-combat-rollback-20261106/performance-validation.md) | TH17 回滚分帧压测 · 2026-11-06 |
 | 历史记录 | [archive/th17-combat-rollback-20261106/room-validation.md](../archive/th17-combat-rollback-20261106/room-validation.md) | TH17 战斗回滚验证 · 2026-11-06 |
+| 历史记录 | [archive/th17-desktop-fixes-20261107/README.md](../archive/th17-desktop-fixes-20261107/README.md) | TH17 单人快捷键、换面与实例绘制 · 2026-11-07 |
 | 历史记录 | [archive/th17-development-20261030/CHANGELOG.txt](../archive/th17-development-20261030/CHANGELOG.txt) | [2026-10-27] 鬼形兽 WEB 1.0.14 |
 | 历史记录 | [archive/th17-development-20261030/README-交付说明.md](../archive/th17-development-20261030/README-交付说明.md) | 鬼形兽 WEB 1.0.14 完整开发交付 · 2026-10-27 |
 | 历史记录 | [archive/th17-development-20261030/README.md](../archive/th17-development-20261030/README.md) | TH17 1.0.14 开发交付记录 |

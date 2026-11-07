@@ -1173,7 +1173,7 @@
     "th17": {
       "normal": "ports/th17",
       "multiplayer": "ports/th17-mp",
-      "base": "235ab562c539e81f43b94d109b44527d3a7a6573",
+      "base": "cd0b9fc7f299b2b76e6c84e9cfa6964e955351af",
       "history": [
         {
           "kind": "manual",
@@ -1217,6 +1217,32 @@
             "ports/th17-mp/web/cpp/game/AnmRegistry.hpp"
           ],
           "note": "两侧接收有序页地址查找和最近页缓存，多人回滚保持地址索引有效并恢复原动画队列顺序。"
+        },
+        {
+          "kind": "manual",
+          "base": "235ab562c539e81f43b94d109b44527d3a7a6573",
+          "source": "e230de27135e855645105092fcd2ff660b0831d1",
+          "targetHead": "e230de27135e855645105092fcd2ff660b0831d1",
+          "paths": [
+            "ports/th17-mp/portable/input/KeyboardMap.inc",
+            "ports/th17-mp/portable/sdl/Renderer.cpp",
+            "ports/th17-mp/web/cpp/game/PauseMenu.cpp",
+            "ports/th17-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th17-mp/web/cpp/sdl/SceneDisplay.cpp",
+            "ports/th17-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th17-mp/web/tests/single-player-browser.mjs"
+          ],
+          "note": "接收单人键盘 Tab/Backspace、R 重开、结算换面等待、桌面快捷键与触控面板共存，以及实例 VAO 属性初始化。通用源码在 MP 完整保留，联机运行包继续关闭练习器；single-player-browser.mjs 属于单人 thprac 浏览器回归，MP 沿独立房间回归维护。已在临时克隆合并双方投影，核对完整 MP 内容树并通过双父提交写回。"
+        },
+        {
+          "kind": "manual",
+          "base": "e230de27135e855645105092fcd2ff660b0831d1",
+          "source": "cd0b9fc7f299b2b76e6c84e9cfa6964e955351af",
+          "targetHead": "cd0b9fc7f299b2b76e6c84e9cfa6964e955351af",
+          "paths": [
+            "ports/th17-mp/web/tests/single-player-browser.mjs"
+          ],
+          "note": "单人浏览器回归核对实际 1280×960 并支持单独诊断模块；测试入口按单人目录保留，MP 继续使用双人三人房间回归。投影合并与完整 MP 内容树写回已核验。"
         }
       ]
     }
