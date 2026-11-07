@@ -42,7 +42,7 @@ const delayMs=Number(process.env.TH17_ROOM_DELAY_MS||110);
 const jitterMs=Number(process.env.TH17_ROOM_JITTER_MS||0);
 const cpuThrottle=Number(process.env.TH17_ROOM_CPU_THROTTLE||1);
 const manifest=JSON.parse(await readFile(resolve(runtime,'manifest.json'),'utf8'));
-const directInput=!!JSON.parse(await readFile(resolve(runtime,'runtime-files.json'),'utf8')).files['direct-input-bridge.mjs'];
+const directInput=touchDrag&&!!JSON.parse(await readFile(resolve(runtime,'runtime-files.json'),'utf8')).files['direct-input-bridge.mjs'];
 if(extraBoss)assert.ok(manifest.features.roomBenchmark&&rollback&&difficulty===4,'Extra boss profiling needs the dedicated Extra rollback benchmark build');
 const baseline=process.env.TH17_ROOM_BASELINE?JSON.parse(await readFile(process.env.TH17_ROOM_BASELINE,'utf8')):null;
 const priorMemory=extraFinale&&baseline?JSON.parse(await readFile(resolve(dirname(process.env.TH17_ROOM_BASELINE),'heap-samples.json'),'utf8')):null;
@@ -185,12 +185,12 @@ try{
     };
    }
   })));
-  if(rollback)await Promise.all(contexts.map(context=>context.addInitScript(({delayMs,jitterMs})=>{
+  if(rollback)await Promise.all(contexts.map(context=>context.addInitScript(({delayMs,jitterMs,touchDrag})=>{
    const send=RTCDataChannel.prototype.send;
-   globalThis.touchInputs=new Map();
+   if(touchDrag)globalThis.touchInputs=new Map();
    let sequence=0;
    RTCDataChannel.prototype.send=function(payload){
-    if(typeof payload!=='string'){
+    if(touchDrag&&typeof payload!=='string'){
      const bytes=payload instanceof ArrayBuffer?new Uint8Array(payload):new Uint8Array(payload.buffer,payload.byteOffset,payload.byteLength);
      if(bytes.length>=56&&bytes[5]===1){
       const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),count=bytes[42],offset=44+(count-1)*12;
@@ -205,7 +205,7 @@ try{
     globalThis.delayedPackets=(globalThis.delayedPackets||0)+1;
     setTimeout(()=>{if(this.readyState==='open')send.call(this,copy);},delayMs+(++sequence%5)*jitterMs/4);
    };
-  },{delayMs,jitterMs})));
+  },{delayMs,jitterMs,touchDrag})));
   const pages=await Promise.all(contexts.map(context=>context.newPage())),page=pages[0],errors=[];
   const pageFor=seat=>pages[independent?seat:0];
   let enableCpuThrottle;
@@ -270,8 +270,10 @@ try{
      globalThis.storyPresentIntervals=new Map();
      globalThis.touchPresentIntervals=new Map();
      globalThis.touchLayoutReads=0;
-     const measure=Module.canvas.getBoundingClientRect.bind(Module.canvas);
-     Module.canvas.getBoundingClientRect=()=>{++globalThis.touchLayoutReads;return measure();};
+     if(touchDrag){
+      const measure=Module.canvas.getBoundingClientRect.bind(Module.canvas);
+      Module.canvas.getBoundingClientRect=()=>{++globalThis.touchLayoutReads;return measure();};
+     }
      globalThis.heapSamples=[];
      let recorded=0,loadSample=0,bullets=0;
      let previousCosts=Array(10).fill(0);
@@ -625,7 +627,7 @@ try{
   }finally{
    try{
     if(profiler){const {profile}=await profiler.send('Profiler.stop');await writeFile(resolve(out,seats+'p.cpuprofile'),JSON.stringify(profile));}
-   }finally{await Promise.all(pages.map(page=>page.evaluate(()=>clearInterval(globalThis.touchDriver))));await Promise.all(contexts.map(context=>context.close()));for(const socket of members)socket.close();}
+   }finally{await Promise.all(contexts.map(context=>context.close()));for(const socket of members)socket.close();}
   }
  }
 }finally{
