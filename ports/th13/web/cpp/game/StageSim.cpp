@@ -503,6 +503,10 @@ StageEnemy* StageSim::spawn_enemy(const char* routine, float x, float y, float l
         sink.enemy_spawn(raw->serial, routine, x, y, enemy->vel.pos[2], life,
                          parent ? parent->serial : 0);
     tick_enemy(*raw);  // 0x4183f0:65 构造内直调 0x41a8a0（首趟，计入当前帧）
+    // 4183f0 ignores41a8a0's return, including ECL termination and Bomb
+    // queries. Only418e00 interprets that return as unlinking; an explicit
+    // 525 clear's persistent bit26 must still survive construction.
+    raw->dead = (raw->flags & 0x4000000u) != 0;
     raw->spirit_threshold = 1000;  // 0x4183f0:66，必须晚于构造首趟。
     // 4183f0 chooses these defaults after constructor ECL, including323.
     raw->death_sound = (raw->script_id & 1) + 3;
@@ -1831,16 +1835,16 @@ void StageSim::emit_et(const StageEt& et, u32 enemy_serial, u32 slot, const floa
                 }
                 break;
             case 4:
-                angle = aim_d;
-                angle = et.angle2 * static_cast<double>(way) + et.angle1 +
-                        static_cast<double>(idx) * kTwoPiF / static_cast<double>(count) +
-                        kPiF / static_cast<double>(count) + angle;
+            case 5: {
+                // 40e9b1 stores base+pi/count to f32;40e9c2 separately
+                // stores spoke+mid before adding the ring/base angle.
+                const float base = mode == 4 ? aim : 0.0f;
+                const float mid = float(kPiF / static_cast<double>(count) + base);
+                const float spoke = float(static_cast<double>(idx) * kTwoPiF /
+                                          static_cast<double>(count) + mid);
+                angle = (et.angle2 * static_cast<double>(way) + et.angle1) + spoke;
                 break;
-            case 5:
-                angle = et.angle2 * static_cast<double>(way) + et.angle1 +
-                        static_cast<double>(idx) * kTwoPiF / static_cast<double>(count) +
-                        kPiF / static_cast<double>(count);
-                break;
+            }
             case 6:
                 GameRandom::tag(13);
                 angle = et.angle2 +
