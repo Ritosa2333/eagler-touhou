@@ -77,7 +77,7 @@ struct World final : th17::multiplayer::World {
     bool can_predict() const override { return prediction_allowed; }
     void speculating(bool active) override { speculative=active; }
     void replaying(bool intermediate) override { logical_draw=intermediate; }
-    bool replay_budget(unsigned replayed) const override { return !replay_limit||replayed<replay_limit; }
+    bool replay_budget(unsigned replayed,unsigned) const override { return !replay_limit||replayed<replay_limit; }
     bool blocked() const override { return frame_blocked; }
     bool capture(std::uint32_t frame) override {
         auto [snapshot, fresh] = snapshots.try_emplace(frame);
@@ -213,6 +213,7 @@ void scenario(unsigned seats, bool rollback) {
         for(unsigned seat=0;seat<seats;++seat)capture(seat,seat==0?0x82:0);
         pump(3);
         require(sessions[0].tick(worlds[0])==waiting,"a boundary discovered during simulation stalls the frame");
+        require(!sessions[0].forward_deferred(),"a confirmed-input wait does not requeue a live tick");
         require(sessions[0].next_frame()==3&&worlds[0].state.position[0]==1&&worlds[0].state.bombs==1,
                 "aborted speculative side effects are restored");
         links[1].mute_input=false;
@@ -240,13 +241,14 @@ void scenario(unsigned seats, bool rollback) {
         sessions[0].capture_phase(false,now*1000);
         require(!sessions[0].needs_input(),"repair input keeps a two-frame lead at most");
         for(unsigned i=0;i<3;++i){
-            require(sessions[0].tick(worlds[0],false)==waiting&&sessions[0].repair_pending(),
-                    "repair-only callback yields with correction pending");
+            require(sessions[0].tick(worlds[0])==waiting&&sessions[0].repair_pending()&&sessions[0].forward_deferred(),
+                    "a sliced repair defers the unused forward tick");
             require(worlds[0].frames_committed==5&&worlds[0].bombs_committed==3,
                     "contiguous corrected output is committed once before yielding");
         }
-        require(sessions[0].tick(worlds[0],false)==advanced&&!sessions[0].repair_pending(),
-                "last repair-only callback completes the correction");
+        require(sessions[0].tick(worlds[0])==advanced&&!sessions[0].repair_pending()&&sessions[0].forward_deferred(),
+                "the completed repair preserves the forward tick when the budget is spent");
+        require(!sessions[0].has_confirmed_forward_input(),"repair cannot spend saved time predicting another tick");
         require(worlds[0].logical_steps==3&&!worlds[0].logical_draw&&sessions[0].next_frame()==8,
                 "only the final repaired frame submits a draw and no extra input tick runs");
         sessions[0].capture_phase(false,now*1000);
@@ -299,6 +301,7 @@ void confirmed_input_pipeline() {
     require(!p1.needs_input(),"transition input queue is bounded");
     const auto now=(start+8*Clock::IntervalUs)/1000;
     require(p2.pump(now)&&p1.pump(now),"deliver queued input");
+    require(p1.has_confirmed_forward_input(),"the delivered remote prefix permits exact catch-up");
     p1.capture_phase(false,now*1000);
     for(unsigned n=0;n<Clock::MaxLead;++n){
         require(!p1.needs_input(),"queued samples drain on resume before taking fresh input");

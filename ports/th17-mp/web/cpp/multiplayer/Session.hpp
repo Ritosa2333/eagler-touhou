@@ -31,7 +31,7 @@ public:
     virtual bool capture(std::uint32_t frame) = 0;
     virtual void speculating(bool) {}
     virtual void replaying(bool intermediate) {}
-    virtual bool replay_budget(unsigned replayed) const { return true; }
+    virtual bool replay_budget(unsigned replayed, unsigned remaining) const { return true; }
     virtual bool blocked() const { return false; }
     virtual bool step(std::uint32_t frame, const Netplay::FrameDecision&) = 0;
     virtual bool restore(std::uint32_t frame) = 0;
@@ -55,6 +55,9 @@ public:
     Tick tick(World&, bool advance = true);
     bool repair_pending() const { return replay_end_ != 0 || core_.HasRollbackRequest(); }
     std::uint32_t next_frame() const;
+    std::uint32_t prediction_head() const;
+    bool forward_deferred() const { return forward_deferred_; }
+    bool has_confirmed_forward_input() const;
     std::uint32_t confirmed_frames() const { return next_commit_; }
     std::uint32_t corrections() const { return corrections_; }
     std::uint32_t resimulated_frames() const { return resimulated_; }
@@ -71,6 +74,7 @@ private:
     Netplay::ConfirmedInputClock capture_clock_;
     std::uint64_t capture_now_us_ = 0;
     std::uint32_t capture_lead_ = 0;
+    bool forward_deferred_ = false;
     std::uint32_t next_capture_ = 0, next_commit_ = 0, replay_end_ = 0;
     std::uint32_t corrections_ = 0, resimulated_ = 0;
     const char* error_ = nullptr;
