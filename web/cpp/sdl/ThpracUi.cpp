@@ -23,6 +23,9 @@ namespace mobile=eagler::thprac::mobile;
 namespace nav=eagler::thprac::navigation;
 bool initialized=false,desktop=false,cheats=false,armed=false,was_open=false,drain_navigation=false;
 bool down[256]{},edge[256]{};
+// Keyboard shortcuts keep the desktop windows available alongside the
+// launcher's optional touch panels. Touch command bits retain mobile folding.
+u32 keyboard_hotkeys=0;
 bool editing=false,keiki_options=false,show_license=false,reset_speed_ui=false;
 bool spirit_menu=false,spirit_pointer=false;
 PracticeSpiritSpawn spirit_tool;
@@ -217,7 +220,7 @@ void setup(ApplicationState& app){
     if(!armed&&!down[90]&&!down[13]&&!down[88]&&!down[27])armed=true;
     const bool busy=editing||nav::busy();
     editing=nav::busy();
-    if(!armed||busy||mobile::captures_advanced(state.advanced))return;
+    if(!armed||busy||state.advanced||mobile::captures_advanced(false))return;
     if(edge[88]||edge[27]){
         state.menu=false;
         state.cancelled=!spell;
@@ -358,7 +361,7 @@ void advanced(ApplicationState& app){
     ImGui::SetNextWindowPos({0,0},ImGuiCond_Always);
     ImGui::SetNextWindowSize({640,480},ImGuiCond_Always);
     ImGui::SetNextWindowBgAlpha(.8f);
-    if(mobile::begin(mobile::Advanced,"Advanced###th17-purple-advanced",fixed_window,locale)){
+    if(state.advanced?ImGui::Begin("Advanced###th17-purple-advanced",nullptr,fixed_window):mobile::begin(mobile::Advanced,"Advanced###th17-purple-advanced",fixed_window,locale)){
         if(spirit_menu){spirit_options();ImGui::End();return;}
         ImGui::TextUnformatted(label(practice_TH_ADV_OPT));ImGui::Separator();
         ImGui::BeginChild("Adv. Options",{0,0});
@@ -389,7 +392,7 @@ void information(ApplicationState& app){
     ImGui::SetNextWindowSize({190,0});
     ImGui::SetNextWindowBgAlpha(.9f);
     constexpr auto flags=fixed_window|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoInputs|ImGuiWindowFlags_NoFocusOnAppearing;
-    if(mobile::begin(mobile::Information,"Info###th17-purple-info",flags,locale)){
+    if(app.practice.information?ImGui::Begin("Info###th17-purple-info",nullptr,flags):mobile::begin(mobile::Information,"Info###th17-purple-info",flags,locale)){
         char heading[128];
         std::snprintf(heading,sizeof heading,"%s (%s)",label(practice_IGI_DIFF[app.progress.difficulty]),
             label(practice_IGI_PL_17[app.progress.character*3+app.progress.animal]));
@@ -414,7 +417,7 @@ void information(ApplicationState& app){
 bool hotkey(const char* key,const char* text,bool enabled,bool disabled){
     ImGui::BeginDisabled(disabled);
     bool clicked;
-    if(mobile::enabled){
+    if(mobile::enabled&&!cheats){
         clicked=mobile::checkbox(key,text,enabled);
     }else{
         char name[192];
@@ -437,7 +440,7 @@ void cheat_overlay(ApplicationState& app,bool live_practice){
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,{6,5});
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,{4,2});
     constexpr auto flags=fixed_window|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoNav|ImGuiWindowFlags_NoFocusOnAppearing;
-    if(mobile::begin(mobile::Cheats,"Mod Menu###th17-purple-overlay",flags,locale)){
+    if(cheats?ImGui::Begin("Mod Menu###th17-purple-overlay",nullptr,flags):mobile::begin(mobile::Cheats,"Mod Menu###th17-purple-overlay",flags,locale)){
         ImGui::SetWindowFontScale(.875f);
         const char* labels[]{label(practice_TH_MUTEKI),label(practice_TH_INFLIVES2),label(practice_TH_INFBOMBS),
             label(practice_TH_INFPOWER),label(practice_TH_TIMELOCK),label(practice_TH_AUTOBOMB),
@@ -448,7 +451,7 @@ void cheat_overlay(ApplicationState& app,bool live_practice){
         }
         if(hotkey("F9",label(practice_TH_EL_BGM),state.everlasting_bgm,!live_practice))
             state.everlasting_bgm=!state.everlasting_bgm;
-        auto& tracker=mobile::enabled?mobile::expanded[mobile::Information]:state.information;
+        auto& tracker=mobile::enabled&&!cheats?mobile::expanded[mobile::Information]:state.information;
         if(hotkey("F10 / Tab",label(practice_THPRAC_INGAMEINFO),tracker,!app.scene()))tracker=!tracker;
         if(hotkey("U",label(practice_TH_ENEMY_MUTEKI),state.tools&PracticeEnemyInvincible,!live_practice))
             state.tools^=PracticeEnemyInvincible;
@@ -498,6 +501,7 @@ void cancel_pointer(){
 void reset_input(){
     std::fill(std::begin(down),std::end(down),false);
     std::fill(std::begin(edge),std::end(edge),false);
+    keyboard_hotkeys=0;
     armed=drain_navigation=editing=false;
     cancel_pointer();
     if(!initialized)return;
@@ -539,7 +543,7 @@ void process_event(const SDL_Event& event,float scale){
     }
 }
 bool captures_game_input(const ApplicationState& app){
-    return initialized&&(app.practice.menu||app.practice.confirmed||drain_navigation||mobile::captures_advanced(app.practice.advanced));
+    return initialized&&(app.practice.menu||app.practice.confirmed||drain_navigation||app.practice.advanced||mobile::captures_advanced(false));
 }
 bool captures_pointer(float x,float y){
     if(!initialized)return false;
@@ -555,6 +559,7 @@ void update_input(ApplicationState& app,const bool* keys){
     if(!initialized)return;
     const u32 bits=u32(EM_ASM_INT({return Module.eaglerControls?.thpracKeyboardBits|0;}));
     for(i32 i=0;i<256;++i){
+        if(keys[i]&&!down[i])keyboard_hotkeys|=i==8?1u:(i==9||i==121)?2u:i==123?4u:0u;
         const bool pressed=keys[i]||(i==8&&(bits&1))||(i==9&&(bits&256))||
             (i>=112&&i<=118&&(bits&(1u<<(i-111))))||(i==123&&(bits&512))||(i==85&&(bits&1024));
         edge[i]|=pressed&&!down[i];
@@ -568,19 +573,22 @@ void record_keys(const ApplicationState& app,Uint32 held){
 bool render(ApplicationState& app){
     if(!initialized)return true;
     auto& state=app.practice;
-    if(edge[8]&&!ImGui::IsAnyItemActive()){cheats=!cheats;publish_menu(cheats);}
     mobile::poll();
+    if(edge[8]&&!ImGui::IsAnyItemActive()){
+        if(!mobile::enabled||(keyboard_hotkeys&1)){cheats=!cheats;publish_menu(cheats);}
+        else mobile::expanded[mobile::Cheats]=!mobile::expanded[mobile::Cheats];
+    }
     if((edge[9]||((cheats||mobile::visible)&&edge[121]))&&app.scene()&&!ImGui::IsAnyItemActive()){
-        if(mobile::enabled)mobile::expanded[mobile::Information]=!mobile::expanded[mobile::Information];
+        if(mobile::enabled&&!(keyboard_hotkeys&2))mobile::expanded[mobile::Information]=!mobile::expanded[mobile::Information];
         else state.information=!state.information;
     }
     if(edge[123]){
-        if(mobile::enabled)mobile::expanded[mobile::Advanced]=!mobile::expanded[mobile::Advanced];
+        if(mobile::enabled&&!(keyboard_hotkeys&4))mobile::expanded[mobile::Advanced]=!mobile::expanded[mobile::Advanced];
         else state.advanced=!state.advanced;
     }
-    if(edge[27]&&mobile::captures_advanced(state.advanced)&&!state.menu){
-        if(mobile::enabled)mobile::expanded[mobile::Advanced]=false;
-        else state.advanced=false;
+    if(edge[27]&&(state.advanced||mobile::captures_advanced(false))&&!state.menu){
+        state.advanced=false;
+        mobile::expanded[mobile::Advanced]=false;
         drain_navigation=true;
     }
     const bool live_practice=app.scene()&&state.active&&!app.progress.practice_record;
@@ -606,7 +614,7 @@ bool render(ApplicationState& app){
     io.NavInputs[ImGuiNavInput_DpadUp]=down[38];io.NavInputs[ImGuiNavInput_DpadDown]=down[40];
     io.NavInputs[ImGuiNavInput_DpadLeft]=down[37];io.NavInputs[ImGuiNavInput_DpadRight]=down[39];
     io.NavInputs[ImGuiNavInput_Activate]=down[90]||down[13];io.NavInputs[ImGuiNavInput_Cancel]=down[88]||down[27];
-    const bool advanced_open=mobile::captures_advanced(state.advanced);
+    const bool advanced_open=state.advanced||mobile::captures_advanced(false);
     if(advanced_open)std::fill(std::begin(io.NavInputs),std::end(io.NavInputs),0.f);
     nav::prepare(state.menu&&!advanced_open);
     ImGui::NewFrame();
@@ -617,9 +625,9 @@ bool render(ApplicationState& app){
         app.run_input->spawn_spirit(spawn);
     }
     if(state.menu)setup(app);else was_open=false;
-    if(mobile::show(mobile::Advanced,state.advanced))advanced(app);
-    if(mobile::show(mobile::Cheats,cheats))cheat_overlay(app,live_practice);
-    if(app.scene()&&mobile::show(mobile::Information,state.information))information(app);
+    if(state.advanced||mobile::show(mobile::Advanced,false))advanced(app);
+    if(cheats||mobile::show(mobile::Cheats,false))cheat_overlay(app,live_practice);
+    if(app.scene()&&(state.information||mobile::show(mobile::Information,false)))information(app);
     if(app.scene()&&state.keyboard_monitor&&mobile::draw_tool(mobile::Keyboard,"Keys###th17-mobile-keys",{420,65},locale)){
         KeyRectStyle style;style.text_color_press=style.text_color_release=IM_COL32(32,32,32,255);
         KeysHUD(17,{1280,0},{840,0},style,true,false);
@@ -642,6 +650,7 @@ bool render(ApplicationState& app){
     }
     ImGui::Render();
     std::fill(std::begin(edge),std::end(edge),false);
+    keyboard_hotkeys=0;
     app.graphics.backend.render_imgui(ImGui::GetDrawData(),GraphicsDevice::screen);
     const auto* failure=app.graphics.backend.error();
     return !*failure||app.fail(failure);
