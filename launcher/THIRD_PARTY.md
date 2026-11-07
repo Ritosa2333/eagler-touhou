@@ -1,6 +1,6 @@
 # 第三方软件与资源致谢
 
-本文列出 Launcher 和 Host 使用的第三方代码、字体、图标与格式。资源附带的许可证保留在资源旁；根目录 [`LICENSE`](LICENSE) 和 [`NOTICE.txt`](NOTICE.txt) 按原样保留。
+本文列出 Launcher 和 Host 使用的第三方代码、字体、图标与格式。资源附带的许可证保留在资源旁；根目录 [`LICENSE`](LICENSE) 按原样保留。
 
 ## 浏览器与构建依赖
 
@@ -8,17 +8,19 @@
 | --- | --- | --- | --- |
 | `webaudio-tinysynth@1.1.3` | [g200kg/webaudio-tinysynth](https://github.com/g200kg/webaudio-tinysynth) | Apache-2.0 | MIDI Web 构建中的免采样 General MIDI 合成；随包文件为 `public/vendor/webaudio-tinysynth.min.js`。 |
 | `fflate@0.8.3` | [101arrowz/fflate](https://github.com/101arrowz/fflate) | MIT | 导入、导出保持 `.rpy` 字节不变的原格式 Replay；随包文件为 `public/vendor/fflate.min.js`。 |
+| `browser-image-compression@2.0.2`、UZIP.js | [Donaldcwl/browser-image-compression](https://github.com/Donaldcwl/browser-image-compression)、[photopea/UZIP.js](https://github.com/photopea/UZIP.js) | MIT | 头像与封面在浏览器中缩放、压缩，选图时加载同站脚本，Worker 与主线程共用该文件。 |
+| `react-easy-crop@6.2.4`、`normalize-wheel@1.0.1` | [ValentinH/react-easy-crop](https://github.com/ValentinH/react-easy-crop)、[basilfx/normalize-wheel](https://github.com/basilfx/normalize-wheel) | MIT、BSD-3-Clause | 头像和封面的固定比例裁切、拖动与缩放，裁切器按需加载。许可证位于 `public/vendor/`。 |
 | `marked@18.0.12` | [marked.js.org](https://marked.js.org/) | MIT | 将 FAQ、首次使用说明和多人指南 Markdown 构建为静态 HTML；属于构建依赖，不在 Launcher 运行时加载。 |
 | `fs-native-extensions@1.5.3` | [holepunchto/fs-native-extensions](https://github.com/holepunchto/fs-native-extensions) | Apache-2.0 | 构建任务的操作系统文件锁，不在浏览器加载。 |
 | Tailwind CSS、CVA、clsx、tailwind-merge | [Tailwind](https://github.com/tailwindlabs/tailwindcss)、[CVA](https://github.com/joe-bell/cva)、[clsx](https://github.com/lukeed/clsx)、[tailwind-merge](https://github.com/dcastil/tailwind-merge) | MIT | 通用 UI 的样式生成、组件变体与类名组合，版本由锁文件固定。 |
-| shadcn/ui | [官方 Radix 源码](https://github.com/shadcn-ui/ui/tree/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/registry/bases/radix) | MIT | 本地 UI 组件的组合、变体与部件设计参考。 |
+| shadcn/ui | [官方 Radix 源码](https://github.com/shadcn-ui/ui/tree/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/registry/bases/radix)、[Skeleton](https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/skeleton.tsx) | MIT | 本地 UI 组件的组合、变体与部件设计参考，以及图片加载的 Skeleton 占位。 |
 | Fumadocs Core / UI | [fuma-nama/fumadocs](https://github.com/fuma-nama/fumadocs) | MIT | 文档布局、目录与正文排版。文档和应用内说明共享阅读样式，版本由锁文件固定。 |
 
 重新生成随包 JavaScript：
 
 ```sh
-npm ci --ignore-scripts
-npm run vendor
+bun install --frozen-lockfile
+bun run vendor
 ```
 
 ## 字体
@@ -43,9 +45,8 @@ npm run vendor
 
 - 主页通用操作使用 [Lucide](https://github.com/lucide-icons/lucide)，包为 lucide-react@1.65.0，采用 ISC。作品封面独立于通用图标系统。
 
-- 公告栏图标来自 `@iconify-json/fa7-brands@1.2.4`（Font Awesome Brands 7.3.1），采用 CC BY 4.0。Bilibili、QQ、GitHub SVG 位于 `public/assets/notice-bilibili.svg`、`notice-qq.svg` 和 `notice-github.svg`；该包也是 Mizuki 前端使用的同一图标集。
+- 游戏来源图标来自 `@iconify-json/fa7-brands@1.2.4`（Font Awesome Brands 7.3.1），采用 CC BY 4.0。Bilibili 和 GitHub SVG 位于 `public/assets/notice-bilibili.svg` 和 `notice-github.svg`。
 - 站点页眉使用 `@iconify-json/material-symbols@1.2.86`，来源为 [Google Material Design Icons](https://github.com/google/material-design-icons)，采用 Apache License 2.0。内嵌图形为 `language`、`history`、`person`、`warning`；触控帮助还内嵌 `fullscreen`、`fullscreen_exit`、`help`、`screen_rotation`。
 - 房间和输入控件使用 [Phosphor](https://github.com/phosphor-icons/core) 中未修改的 regular 图标，包为 `@phosphor-icons/core@2.1.1`，采用 MIT。随包图标包括 caret、copy、gear、sliders、chart、user 和 users；许可证为 `public/assets/LICENSE-Phosphor.txt`。
-- `public/assets/notice-touhou-cloud.png` 是 [cloud.touhou.best](https://cloud.touhou.best/) 发布的 Touhou Cloud 标志；项目负责人确认可用于标识服务提供方。
 
 资源放置、Host 生成封面和发布规则见 [`ASSETS.md`](ASSETS.md)。

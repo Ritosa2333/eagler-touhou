@@ -56,7 +56,7 @@ for(const locale of ['zh-CN','en']) for(const product of ['th09mp','th06mp']) {
       await React.act(async()=>root.render(h(owners.LocaleProvider,{locale},h(React.Fragment,null,
         h(owners.RoomPersonal,{state,service,assetUrl:x=>x,hidden:false,th09NetworkOverlayOpen:false}),
         h(owners.RoomGameSettings,{state,service,hidden:false}),
-        h(owners.DirectoryRoomDialog,{service:directory,open:true,onCloseRequest(){}}),
+        h(owners.DirectoryRoomDialog,{service:directory,assetUrl:x=>x,open:true,onCloseRequest(){}}),
         h(owners.DirectoryRoomRows,{snapshot,service:directory,assetUrl:x=>x}),
       ))));
       const q=selector=>{const node=container.querySelector(selector);assert.ok(node,selector);return node;};

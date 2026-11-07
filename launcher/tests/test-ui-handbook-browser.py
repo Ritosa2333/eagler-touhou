@@ -73,7 +73,7 @@ def check_directory(rows, rooms):
         assert all(field["visible"] for key in ["controls", "watchers", "state"] for field in row[key]), row
         expected_rules = []
         if room["disableCheatMovement"]:
-            expected_rules.append("禁用不限速触控")
+            expected_rules.append("禁用作弊移动")
         if room["challengeMode"]:
             expected_rules.append("挑战模式")
         expected_rules = "".join(expected_rules) or "常规"
@@ -186,6 +186,9 @@ def check_populated_directory(page, base, cases):
     popup = page.get_by_role('menu', name='联机作品')
     row_heights = popup.locator('.book-lobby-menu-row').evaluate_all('(nodes)=>nodes.map(node=>node.getBoundingClientRect().height)')
     assert max(row_heights) - min(row_heights) < 1, row_heights
+    rail_order = page.locator('#lobbyGameRail [data-lobby-icon]').evaluate_all('(nodes)=>nodes.map(node=>node.dataset.lobbyIcon)')
+    menu_order = popup.locator('[data-lobby-product]').evaluate_all('(nodes)=>nodes.map(node=>node.dataset.lobbyProduct)')
+    assert rail_order == menu_order, (rail_order, menu_order)
     popup.get_by_role('menuitemcheckbox', name='筛选 東方風神録', exact=True).click()
     assert popup.is_visible(), 'Multiple selection must not close the work list'
     page.wait_for_function("document.querySelectorAll('.lobby-room-row').length===3")
@@ -210,6 +213,27 @@ def check_populated_directory(page, base, cases):
     assert abs(empty['empty']['bottom'] - empty['panel']['bottom']) <= 2, empty
     page.locator('#emptyAction').click()
     page.wait_for_function("document.querySelectorAll('.lobby-room-row').length===5")
+    page.locator('#createButton').click()
+    dialog = page.locator('#roomDialog[open]')
+    game_picker = dialog.locator('#gameSelect-trigger')
+    game_picker.press('Enter')
+    product_menu = dialog.get_by_role('menu', name='作品')
+    choice = product_menu.locator('[data-room-product="th09mp"]')
+    assert choice.locator('.book-lobby-cover').is_visible()
+    assert choice.locator('.book-lobby-subtitle').is_visible()
+    product_menu.press('Escape')
+    product_menu.wait_for(state='hidden')
+    assert dialog.is_visible()
+    game_picker.click()
+    choice.click()
+    product_menu.wait_for(state='hidden')
+    assert dialog.is_visible()
+    assert dialog.locator('#gameSelect').input_value() == 'th09mp'
+    assert '東方花映塚' in game_picker.inner_text()
+    dialog.locator('#closeDialog').click()
+    page.locator('#codeButton').click()
+    assert dialog.locator('#formNote').count() == 0
+    dialog.locator('#closeDialog').click()
     session.send('Emulation.setTouchEmulationEnabled', {'enabled': False})
     session.detach()
 

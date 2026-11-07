@@ -1,4 +1,5 @@
 import type {MidiSynthConstructor} from '../../src/launcher/app-types.mts';
+import type imageCompression from 'browser-image-compression';
 /** Native browser edges, deliberately separate from file/package/session policy. */
 export function createBrowserPorts({document, window, baseUrl}: {document: Document; window: Window; baseUrl: string}) {
   const vendorLoads = new Map<string, Promise<void>>();
@@ -34,6 +35,11 @@ export function createBrowserPorts({document, window, baseUrl}: {document: Docum
       const host = window as Window & {WebAudioTinySynth?: MidiSynthConstructor};
       await loadVendor('vendor/webaudio-tinysynth.min.js', () => !!host.WebAudioTinySynth, 'MIDI 合成器');
       return host.WebAudioTinySynth;
+    },
+    async loadImageCompressor(): Promise<typeof imageCompression> {
+      const host = window as Window & {imageCompression?: typeof imageCompression};
+      await loadVendor('vendor/browser-image-compression.min.js', () => typeof host.imageCompression === 'function', 'Image compressor');
+      return host.imageCompression!;
     },
     pickFile(accept: string): Promise<File | null> {
       const input = document.querySelector<HTMLInputElement>('#fileInput');
