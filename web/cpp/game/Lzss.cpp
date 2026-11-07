@@ -11,19 +11,50 @@ bool LzssStream::step(const u8* input,u32 size,u8* output,u32 capacity,u32 budge
     }while(written-start<budget);return !failed;
 }
 bool Lzss::decode(const u8* input,u32 size,u8* output,u32 capacity,u32& written) noexcept {
-    u32 cursor=0,head=1,buffer=0,available=0;written=0;
+    constexpr u32 window=8192,mask=window-1;
+    u32 cursor=0,buffer=0,available=0;written=0;
     // Consume whole code fields from a byte reservoir. Input past EOF is still
     // zero-filled, exactly as the original bit reader and omitted terminator.
     auto bits=[&](u32 count){while(available<count){buffer=(buffer<<8)|(cursor<size?input[cursor++]:0);available+=8;}available-=count;return (buffer>>available)&((1u<<count)-1);};
-    auto put=[&](u8 value){output[written++]=value;dictionary[head]=value;head=(head+1)&8191;};
+    bool ok=true;
     for(;;){
-        if(bits(1)){if(written==capacity)return false;put(bits(8));}
-        else {
-            const u32 offset=bits(13);if(!offset)return true;
-            const u32 length=bits(4)+3;if(length>capacity-written)return false;
-            for(u32 i=0;i<length;++i)put(dictionary[(offset+i)&8191]);
+        if(bits(1)){
+            if(written==capacity){ok=false;break;}
+            output[written++]=u8(bits(8));
+            continue;
         }
+        const u32 offset=bits(13);
+        if(!offset)break;
+        const u32 length=bits(4)+3;
+        if(length>capacity-written){ok=false;break;}
+
+        // The ring starts at slot 1. A reference to its current head reads
+        // the byte one full window back. Use output as the current history.
+        const u32 distance=((written-offset)&mask)+1;
+        auto* destination=output+written;
+        if(distance>written){
+            // Early tokens can use inherited bytes and then overlap their
+            // own output. Only the untouched part comes from the old ring.
+            for(u32 i=0;i<length;++i)
+                destination[i]=written+i<distance?dictionary[(offset+i)&mask]:output[written+i-distance];
+        }else{
+            const auto* source=destination-distance;
+            if(length<=distance)std::memcpy(destination,source,length);
+            else if(distance==1)std::memset(destination,*source,length);
+            else for(u32 i=0;i<length;++i)destination[i]=source[i];
+        }
+        written+=length;
     }
+    // Preserve the exact final ring, including any partial output on failure.
+    if(written){
+        const u32 retained=std::min(written,window);
+        const u32 tail=written-retained;
+        const u32 start=(tail+1)&mask;
+        const u32 first=std::min(retained,window-start);
+        std::memcpy(dictionary+start,output+tail,first);
+        if(first<retained)std::memcpy(dictionary,output+tail+first,retained-first);
+    }
+    return ok;
 }
 std::vector<u8> Lzss::encode(const u8* input,u32 size) {
     std::memset(dictionary,0,sizeof(dictionary));std::memset(tree,0,sizeof(tree));
