@@ -54,7 +54,7 @@ html:has(.book-masthead) .masthead-links>.book-profile-trigger{display:inline-fl
 .profile-social-users{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));column-gap:24px}.profile-social-user{min-width:0;border-bottom:1px solid var(--book-border)}.profile-social-user>div a{color:inherit;text-decoration:none}.profile-social-user>div a:hover{text-decoration:underline}.profile-social-user small{display:block}
 
 /* Public profile uses the approved cover, sidebar and compact mobile identity. */
-.profile-page .profile-wrap{width:calc(100% - 64px);max-width:1120px;margin:28px auto 80px;padding:0}
+.profile-page .profile-wrap{width:calc(100% - 64px);max-width:1040px;margin:28px auto 80px;padding:0}
 .profile-page .profile-hero{border-radius:10px}
 .player-profile .profile-cover{height:auto;aspect-ratio:4.25}
 .profile-cover>img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 36%}

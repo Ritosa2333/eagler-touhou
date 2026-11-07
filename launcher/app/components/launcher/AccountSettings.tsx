@@ -8,7 +8,8 @@ import {Toggle} from '../../ui/controls';
 import {Field, FieldContent, FieldGroup, FieldLabel} from '../../ui/field';
 import {animateSurface} from '../../ui/surface-motion';
 import {AccountRequestError,accountRequest} from '../../services/account-client';
-import {prepareCroppedProfileImage, validateProfileImage, ProfileImageError, type ProfileImageCrop, type ProfileImageKind} from '../../services/profile-image';
+import {notifyRoomProfileChange} from '../../services/account-session';
+import {prepareCroppedProfileImage, prepareStoredAvatarThumbnail, validateProfileImage, ProfileImageError, type ProfileImageCrop, type ProfileImageKind} from '../../services/profile-image';
 import {useLocale, type UiMessageKey} from '../../i18n';
 import {AccountAvatar} from './AccountAvatar';
 import {useUnsavedChanges} from '../../navigation/unsaved-changes';
@@ -59,6 +60,7 @@ function ProfileSettings({initialProfile,initialDisplay,onSave}: {
 }) {
   const {t} = useLocale();
   const [profile,setProfile] = useState(initialProfile);
+  const [roomThumbnail,setRoomThumbnail] = useState<string>();
   const [visible,setVisible] = useState(initialDisplay.visible);
   const [busy,setBusy] = useState(false);
   const [processing,setProcessing] = useState<Partial<Record<ProfileImageKind,boolean>>>({});
@@ -78,13 +80,13 @@ function ProfileSettings({initialProfile,initialDisplay,onSave}: {
     uploadTasks.current = {};
   }, []);
   const dirty = cropOpen || processingImages || profile.name !== initialProfile.name || profile.bio !== initialProfile.bio ||
-    profile.avatar !== initialProfile.avatar || profile.cover !== initialProfile.cover ||
+    profile.avatar !== initialProfile.avatar || !!roomThumbnail || profile.cover !== initialProfile.cover ||
     Object.keys(visible).some(key=>visible[key as keyof typeof visible]!==initialDisplay.visible[key as keyof typeof visible]) || profile.links.length !== initialProfile.links.length ||
     profile.links.some((link,index) => link.label !== initialProfile.links[index]?.label || link.url !== initialProfile.links[index]?.url);
   useUnsavedChanges(dirty, () => {
     for (const task of Object.values(uploadTasks.current)) task?.abort();
     uploadTasks.current = {};setProcessing({});setError(undefined);
-    setProfile(initialProfile);setVisible(initialDisplay.visible);setSaved(false);setCropOpen(false);setCropRequest(undefined);
+    setProfile(initialProfile);setRoomThumbnail(undefined);setVisible(initialDisplay.visible);setSaved(false);setCropOpen(false);setCropRequest(undefined);
     setLinkIds(initialProfile.links.map(() => nextId.current++));
   });
   const change = (next:Profile) => {setProfile(next);setSaved(false);};
@@ -94,8 +96,7 @@ function ProfileSettings({initialProfile,initialDisplay,onSave}: {
     uploadTasks.current[key]?.abort();delete uploadTasks.current[key];setProcessing(current=>({...current,[key]:false}));
     setError(undefined);setCropRequest({file,kind:key});setCropOpen(true);
   };
-  const upload = async (file:File|undefined,key:ProfileImageKind,crop:ProfileImageCrop) => {
-    if (!file) return;
+  const stageImage = async (file:File,key:ProfileImageKind,crop:ProfileImageCrop,thumbnail?:string) => {
     uploadTasks.current[key]?.abort();
     const task = new AbortController();
     uploadTasks.current[key] = task;
@@ -104,6 +105,7 @@ function ProfileSettings({initialProfile,initialDisplay,onSave}: {
       const image = await prepareCroppedProfileImage(file,key,crop,task.signal);
       if (task.signal.aborted || uploadTasks.current[key] !== task) return;
       setProfile(current=>({...current,[key]:image}));setError(undefined);
+      if (key === 'avatar') setRoomThumbnail(thumbnail);
     } catch (error) {
       if (!task.signal.aborted && uploadTasks.current[key] === task)
         setError(error instanceof ProfileImageError ? `profile.image.${error.code}` : 'profile.image.readFailed');
@@ -118,6 +120,7 @@ function ProfileSettings({initialProfile,initialDisplay,onSave}: {
     uploadTasks.current[key]?.abort();delete uploadTasks.current[key];
     setProcessing(current=>({...current,[key]:false}));
     setProfile(current=>({...current,[key]:''}));setSaved(false);setError(undefined);
+    if (key === 'avatar') setRoomThumbnail(undefined);
   };
   async function save(event:FormEvent) {
     event.preventDefault();
@@ -128,20 +131,35 @@ function ProfileSettings({initialProfile,initialDisplay,onSave}: {
       try {return !link.label || !['https:','http:'].includes(new URL(link.url).protocol);} catch {return true;}
     })) {setError('profile.links.invalid');return;}
     setBusy(true);setError(undefined);setSaved(false);
-    const next = {...profile,name:profile.name.trim(),links};
+    const {roomAvatarReady, ...fields} = profile;
+    const next = {...fields,name:profile.name.trim(),links};
     const display = {...initialDisplay,visible};
     try {
-      await accountRequest('v1/me/profile',{...next,display},{timeoutMs:60_000});
-      setProfile(current => current === profile ? next : current);
-      onSave(next,display);setSaved(true);
+      let avatarThumbnail = roomThumbnail ?? (next.avatar && roomAvatarReady === false
+        ? await prepareStoredAvatarThumbnail(next.avatar).catch(() => undefined)
+        : undefined);
+      const saveDetails = {...next,display};
+      try {
+        await accountRequest('v1/me/profile',{...saveDetails,avatarThumbnail},{timeoutMs:60_000});
+      } catch (error) {
+        if (roomThumbnail || !avatarThumbnail || !(error instanceof AccountRequestError && error.code === 'SAVE_QUOTA_EXCEEDED')) throw error;
+        avatarThumbnail = undefined;
+        await accountRequest('v1/me/profile',saveDetails,{timeoutMs:60_000});
+      }
+      const savedProfile = {...next,roomAvatarReady:!!next.avatar && (!!avatarThumbnail || !!roomAvatarReady)};
+      setProfile(current => current === profile ? savedProfile : current);
+      setRoomThumbnail(undefined);
+      onSave(savedProfile,display);setSaved(true);
       window.dispatchEvent(new Event('account-profile-change'));
+      if (next.name !== initialProfile.name || next.avatar !== initialProfile.avatar || avatarThumbnail ||
+          visible.records !== initialDisplay.visible.records) notifyRoomProfileChange();
     } catch(error) {setError(error instanceof AccountRequestError && error.code==='CONTENT_REJECTED'?'profile.contentRejected':error instanceof AccountRequestError && error.code==='REVIEW_UNAVAILABLE'?'profile.reviewUnavailable':error instanceof AccountRequestError && error.code==='SAVE_QUOTA_EXCEEDED'?'cloudSave.quota':'account.requestFailed');}
     finally {setBusy(false);}
   }
   return <section aria-labelledby="profile-settings-title">
     {cropOpen&&cropRequest&&<ProfileImageCropDialog file={cropRequest.file} kind={cropRequest.kind}
       onClose={()=>{setCropOpen(false);setCropRequest(undefined);}}
-      onConfirm={crop=>{const request=cropRequest;setCropOpen(false);setCropRequest(undefined);void upload(request.file,request.kind,crop);}}/>}
+      onConfirm={(crop,thumbnail)=>{const request=cropRequest;setCropOpen(false);setCropRequest(undefined);void stageImage(request.file,request.kind,crop,thumbnail);}}/>}
     <header className="account-settings-heading"><h2 id="profile-settings-title">{t('profile.personalSettings')}</h2></header>
     <form onSubmit={save}>
       <div className="profile-settings-editor">

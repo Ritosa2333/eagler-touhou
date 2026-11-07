@@ -263,6 +263,7 @@ export interface GameOptionClassification {
 // decided whether the next Runtime had to implement it.
 export const GAME_OPTION_CLASSIFICATION = Object.freeze({
   th05MultiplayerDisplay: {capability: "multiplayer", class: "optional", owner: "product"},
+  th075NativeResolution: {capability: "multiplayer", class: "optional", owner: "product"},
   thpracEnabled: { capability: "thprac", class: "optional", owner: "product" },
   thpracTouchControlsEnabled: { capability: "thprac-touch-bridge", class: "profile-required", owner: "launcher-runtime" },
   magnifierEnabled: { capability: "magnifier", class: "inherited", owner: "launcher" },
@@ -296,7 +297,7 @@ export const INHERITED_LAUNCHER_CAPABILITIES = Object.freeze([
   { id: "package-manager-ui", class: "inherited", owner: "launcher", summary: "Package Store install/update/import and transfer UI" },
   { id: "launcher-localization", class: "inherited", owner: "launcher", summary: "Launcher interface localization; distinct from optional in-game language packages" },
   { id: "pwa-app-shell", class: "inherited", owner: "launcher", summary: "Service Worker/App Shell lifecycle for Launcher-owned files" },
-  { id: "site-information", class: "inherited", owner: "launcher", summary: "FAQ, first-use notice, site notice and support surfaces" },
+  { id: "site-information", class: "inherited", owner: "launcher", summary: "FAQ, first-use notice and support surfaces" },
   { id: "frame-limit-control", class: "inherited", owner: "launcher", summary: "shared 60 Hz presentation-limit UI; the Runtime obligation is the required presentation-cadence contract" },
 ] satisfies readonly AdapterCapabilityDefinition[]);
 

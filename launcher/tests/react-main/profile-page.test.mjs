@@ -49,6 +49,7 @@ beforeAll(async()=>{
 });
 beforeEach(()=>{globalThis.__profileAccountRequest=async path=>{
   if(path==='auth/get-session')return {user:{username:'player'}};
+  if(/^v1\/profiles\/[^/]+\/th09-duels$/.test(path))return {summary:{games:0,wins:0},duels:[]};
   const profile=path.match(/^v1\/profiles\/([^/]+)$/);
   if(profile)return remoteProfile(decodeURIComponent(profile[1]));
   const statistics=path.match(/^v1\/profiles\/([^/]+)\/statistics$/);
@@ -166,7 +167,8 @@ test('cloud save uploads and deletions refresh the mounted profile statistics',a
     playCount:1,clearCount:1,oneCreditClearCount:null,loadouts:[],progress:[],warnings:[]};
   const uploaded={product:'th06',revision:1,uploadedAt:'2026-11-05T00:00:00.000Z',files:[file],statistics};
   const listing=()=>({products:[{id:'th06',game:'th06',multiplayer:false,files:['score.dat'],requiredFiles:['score.dat'],revision:savePresent?1:0}],
-    saves:savePresent?[uploaded]:[],limits:{fileBytes:1024,totalBytes:2048,files:6}});
+    saves:savePresent?[uploaded]:[],pending:[{product:'th06',deviceId:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',runId:'cccccccc-cccc-4ccc-8ccc-cccccccccccc',baseRevision:0,startedAt:'2026-11-05T00:00:00.000Z'}],
+    limits:{fileBytes:1024,totalBytes:2048,files:6}});
   const profileStatistics=()=>savePresent?{career:true,records:true,playtimeSeconds:3661,games:[{product:'th06',uploadedAt:uploaded.uploadedAt,statistics}]}:
     {career:false,records:true,playtimeSeconds:null,games:[]};
   globalThis.__profileAccountRequest=async(path,body)=>{
@@ -188,6 +190,14 @@ test('cloud save uploads and deletions refresh the mounted profile statistics',a
   await waitForProfile(()=>statisticsCalls>=1&&!!env.document.querySelector('.cloud-save-section'));
   assert.equal(env.document.getElementById('profile-records'),null,'the profile starts without uploaded save statistics');
 
+  await waitForProfile(()=>!!env.document.querySelector('.cloud-save-add button'));
+  assert.equal(env.document.querySelector('.cloud-save-row'),null,'a stale server marker does not imply a cloud save or a conflict');
+  await React.act(async()=>env.document.querySelector('.cloud-save-add button').dispatchEvent(
+    new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true})));
+  await waitForProfile(()=>!!env.document.querySelector('[role="option"]'));
+  await React.act(async()=>env.document.querySelector('[role="option"]').click());
+  await waitForProfile(()=>env.document.querySelector('.cloud-save-row[aria-expanded="true"]'));
+
   const input=env.document.querySelector('.cloud-save-upload input[type=file]');
   Object.defineProperty(input,'files',{configurable:true,value:[new env.window.File([Uint8Array.of(1)],'score.dat')]});
   await React.act(async()=>input.dispatchEvent(new env.window.Event('change',{bubbles:true})));
@@ -197,13 +207,14 @@ test('cloud save uploads and deletions refresh the mounted profile statistics',a
   await waitForProfile(()=>statisticsCalls>=2&&!!env.document.getElementById('profile-records'));
   assert.match(env.document.querySelector('#profile-records')?.textContent??'',/1h 1m/);
 
-  const deleteButton=env.document.querySelector(`.cloud-save-current button[aria-label="${owners.translate('en','cloudSave.delete')}"]`);
+  const deleteButton=env.document.querySelector('.cloud-save-delete');
   assert.ok(deleteButton,'the uploaded revision can be deleted');
   await React.act(async()=>deleteButton.click());
-  assert.equal(env.document.getElementById('decisionDialog')?.open,true);
-  await React.act(async()=>env.document.getElementById('decisionConfirm').click());
+  assert.equal(env.document.getElementById('cloudSaveDeleteDialog')?.open,true);
+  await React.act(async()=>env.document.getElementById('cloudSaveDeleteConfirm').click());
   await waitForProfile(()=>statisticsCalls>=3&&env.document.getElementById('profile-records')===null);
   assert.equal(env.document.querySelector('.cloud-save-current'),null,'the deleted cloud revision leaves the settings list');
+  assert.equal(env.document.querySelector('.cloud-save-row')?.getAttribute('aria-expanded'),'true','the selected product stays expanded after deletion');
 });
 
 test('visitor chart exposes viewing and export controls without a write path',async()=>{
@@ -215,4 +226,32 @@ test('visitor chart exposes viewing and export controls without a write path',as
   await React.act(async()=>env.document.querySelector('.career-check [role=checkbox]').click());
   assert.equal(env.window.localStorage.length,0,'visitor display adjustments stay in this view');
   assert.equal(saves,0);
+});
+
+test('profile shows all-time TH09 results and keeps paginated duels in the same panel',async()=>{
+  const original=globalThis.__profileAccountRequest;
+  const requests=[];
+  const endpoint='v1/profiles/player/th09-duels';
+  globalThis.__profileAccountRequest=async (path,body,options)=>{
+    if (!path.startsWith(endpoint)) return original(path,body,options);
+    requests.push(path);
+    const playedAt=Date.UTC(2026,10,6);
+    return path===endpoint ? {
+      summary:{games:9,wins:5},nextCursor:'later',
+      duels:[{duelId:'a1c12a01-195d-49f3-b229-15aac5260704',wins:5,losses:4,playedAt,opponent:{username:'marisa',displayName:'Marisa'}}],
+    } : {
+      summary:{games:9,wins:5},nextCursor:null,
+      duels:[{duelId:'a1c12a01-195d-49f3-b229-15aac5260705',wins:0,losses:1,playedAt,opponent:null}],
+    };
+  };
+  await mount(owners.ProfilePage,{},['/u/player?lang=en']);
+  await waitForProfile(()=>!!env.document.querySelector('.profile-th09-history li'));
+  const panel=env.document.querySelector('.profile-th09');
+  assert.deepEqual([...panel.querySelectorAll('dd')].map(node=>node.textContent),['9','5','56%']);
+  assert.equal(panel.querySelector('li strong').textContent,'5:4');
+  assert.equal(panel.querySelector('li a').getAttribute('href'),'/u/marisa');
+  await React.act(async()=>panel.querySelector('.profile-th09-actions button').click());
+  await waitForProfile(()=>panel.querySelectorAll('li').length===2);
+  assert.equal(panel.querySelector('li:last-child>span').textContent,'Guest');
+  assert.deepEqual(requests,[endpoint,endpoint+'?cursor=later']);
 });

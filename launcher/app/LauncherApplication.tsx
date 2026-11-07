@@ -63,7 +63,6 @@ export interface LauncherHost {
   assetUrl(path: string): string;
   lobbyHref: string;
   masthead: ReactNode;
-  footer: ReactNode;
   serverStatusNote?: ReactNode;
   lobby: LobbyPresentation;
   renderLobby?(props: LobbySurfaceProps): ReactNode;
@@ -308,7 +307,6 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
             onSelect={setPreview}
             onActivate={activate}
             masthead={null}
-            footer={host.footer}
             serverStatusNote={host.serverStatusNote}
             optionsOpen={presence.open}
             roomOpen={roomOpen}

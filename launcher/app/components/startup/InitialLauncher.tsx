@@ -6,7 +6,6 @@ import { LocaleProvider, useLocale, translate } from '../../i18n';
 import { LibrarySurface } from '../launcher/LibrarySurface';
 import { LobbySurface } from '../launcher/LobbySurface';
 import { LauncherMasthead } from '../launcher/LauncherMasthead';
-import { SiteFooter } from '../launcher/SiteFooter';
 import { createLibraryProducts } from '../launcher/products';
 import { LobbyRoomTools } from '../directory/LobbyRoomTools';
 import {
@@ -61,9 +60,7 @@ function InitialSurface({ lobby, profile, account }: { lobby: boolean; profile: 
       onMenuOpenChange={inactive}
       lessMotion={false}
       onToggleMotion={inactive}
-      noticeEnabled
       diagnosticsEnabled={false}
-      onToggleNotice={inactive}
       onToggleDiagnostics={inactive}
       onDonation={inactive}
       onFirstUse={inactive}
@@ -115,7 +112,6 @@ function InitialSurface({ lobby, profile, account }: { lobby: boolean; profile: 
   ) : (
     <LibrarySurface
       masthead={masthead}
-      footer={<SiteFooter onDonation={inactive} />}
       products={products}
       interactive={false}
       onSelect={inactive}

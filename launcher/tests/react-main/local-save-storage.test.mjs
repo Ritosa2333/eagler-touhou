@@ -159,7 +159,8 @@ test('a matching ready runtime is synced first, read-only, and receives unsigned
   const files = await collectLocalSaveFiles({product: 'th06', names: ['score.dat', 'score06.dat'], language: 'ja', indexedDB: factory.factory, runtime});
   assert.deepEqual(order, ['sync', 'score.dat', 'score06.dat']);
   assert.deepEqual([...await fileBytes(files[0])], [0, 127, 128, 255]);
-  assert.equal(factory.opened(), 0);
+  assert.equal(factory.opened(), 1,'metadata is read after syncing, while bytes remain owned by the Runtime');
+  assert.equal(files[0].lastModified,0,'an unknown modification date does not become today');
 });
 
 test('runtime sync errors, non-missing read errors, and epoch supersession never fall back to stale IDBFS', async () => {
@@ -203,13 +204,13 @@ test('runtime skips only errno 44 and applies the same per-file/aggregate limits
   })});
   const files = await collectLocalSaveFiles({product: 'th06', names: ['score.dat', 'score06.dat'], language: 'ja', indexedDB: factory.factory, runtime: missingOptional});
   assert.deepEqual(files.map(file => file.name), ['score.dat']);
-  assert.equal(factory.opened(), 0);
+  assert.equal(factory.opened(), 1);
 
   const tooLarge = runtimeFor({session: async (_game, operation) => operation({
     sync: async () => {}, send: async () => ({bytes: Array(4 * 1024 * 1024 + 1).fill(1)}),
   })});
   await assert.rejects(collectLocalSaveFiles({product: 'th06', names: ['score.dat'], language: 'ja', indexedDB: factory.factory, runtime: tooLarge}), /Invalid Runtime save contents/);
-  assert.equal(factory.opened(), 0);
+  assert.equal(factory.opened(), 1);
 
   const sparse = new Array(2);
   sparse[1] = 7;
@@ -217,7 +218,7 @@ test('runtime skips only errno 44 and applies the same per-file/aggregate limits
     sync: async () => {}, send: async () => ({bytes: sparse}),
   })});
   await assert.rejects(collectLocalSaveFiles({product: 'th06', names: ['score.dat'], language: 'ja', indexedDB: factory.factory, runtime: sparseBytes}), /Invalid Runtime save contents/);
-  assert.equal(factory.opened(), 0);
+  assert.equal(factory.opened(), 1);
 
   const four = new Array(4 * 1024 * 1024).fill(1);
   const exactLimit = runtimeFor({session: async (_game, operation) => operation({
@@ -226,14 +227,14 @@ test('runtime skips only errno 44 and applies the same per-file/aggregate limits
   const exactFiles = await collectLocalSaveFiles({product: 'th06', names: ['a.dat', 'b.dat'], language: 'ja', indexedDB: factory.factory, runtime: exactLimit});
   assert.equal(exactFiles.length, 2);
   assert.equal(exactFiles.reduce((sum, file) => sum + file.size, 0), 8 * 1024 * 1024);
-  assert.equal(factory.opened(), 0);
+  assert.equal(factory.opened(), 2);
 
   const three = new Array(3 * 1024 * 1024).fill(1);
   const aggregateOverflow = runtimeFor({session: async (_game, operation) => operation({
     sync: async () => {}, send: async () => ({bytes: three}),
   })});
   await assert.rejects(collectLocalSaveFiles({product: 'th06', names: ['a.dat', 'b.dat', 'c.dat'], language: 'ja', indexedDB: factory.factory, runtime: aggregateOverflow}), /upload limit/);
-  assert.equal(factory.opened(), 0);
+  assert.equal(factory.opened(), 2);
 });
 
 test('ReplayStorageReader still shares the same safe IDBFS reader', async () => {
@@ -249,4 +250,9 @@ test('ReplayStorageReader still shares the same safe IDBFS reader', async () => 
   assert.equal(rows.length, 1);
   assert.deepEqual([...rows[0].bytes], [128, 255, 84, 57]);
   await assert.rejects(reader.read('th09mp', {path: 'replay/../../score.dat'}));
+});
+
+test('committed save dates survive file collection',async()=>{
+ const factory=new IDBFactory();await seededDb(factory,'/savesth06',[['score.dat',new Uint8Array([7])]]);
+ const [file]=await readLocalSaveFiles('th06',['score.dat'],'ja',factory);assert.equal(file.lastModified,1);
 });

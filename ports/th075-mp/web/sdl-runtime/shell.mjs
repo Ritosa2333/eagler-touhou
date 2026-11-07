@@ -11,6 +11,7 @@ const canvas=document.querySelector('canvas'),$=s=>document.querySelector(s);
 const build=/*TH075_EAGLER_BUILD*/{version:'development',completeGame:false};
 let net,replayPrompt,showReplaySavePrompt,replayBaseline=new Set();
 let core,bundle,launched=false,stopping=false,busy=false,loopId=0,options={},music='none',commands=Promise.resolve(),roomPreview=false;
+const splitIndex=query.get('th075Assets'),splitHash=query.get('th075AssetsHash');
 let escapeSerial=0,stick={x:0,y:0},direct=null,actionButtons=0;
 const keyboard=createBrowserKeyboard({accept:code=>!!scanCodes[code],send:(code,down)=>core?._th075_key(scanCodes[code],+down)});
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
@@ -207,12 +208,21 @@ for(const type of ['pointerdown','keydown'])window.addEventListener(type,()=>cor
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();fatal(Error('WebGL context lost; restart the game.'));});
 setInterval(()=>{if(launched&&!busy&&!document.hidden)void save().catch(fatal);},30000);
 const initialized=(async()=>{
-  if(!validEpoch||query.get('managedData')!=='1'||parent===window||typeof parent.__eaglerPrepareManagedRuntimeDataV1!=='function')throw Error('Launch TH075 through eagler-touhou');
-  const {buffer}=await parent.__eaglerPrepareManagedRuntimeDataV1({game,generation:query.get('gameGeneration'),epoch});
-  bundle=parseContentBundle(buffer);
-  core=await createModule({canvas,resourceFiles:new Set([...bundle.paths.map(path=>path.slice(1))]),
-    async readAsset(path){if(path.startsWith('/music/')&&path.endsWith('.ogg')){try{return core.FS.readFile(path).buffer;}catch{throw Error('Music must be installed through Package Store');}}return (await bundle.read(path)).buffer;},
-    printErr:console.error,onAssetLoading(path,on){$('#loading').textContent=on?'正在准备场景…':'';}});
+  if(!validEpoch||parent===window||parent.location.origin!==location.origin)throw Error('Launch TH075 through eagler-touhou');
+  if(splitIndex){
+    const url=new URL(splitIndex,location.href);
+    if(!build.multiplayer||url.origin!==location.origin)throw Error('Invalid TH075 multiplayer asset origin');
+    const {openSplitContent}=await import('./split-content.mjs');
+    bundle=await openSplitContent(url,splitHash);
+  }else{
+    if(query.get('managedData')!=='1'||typeof parent.__eaglerPrepareManagedRuntimeDataV1!=='function')throw Error('Launch TH075 through eagler-touhou');
+    const {buffer}=await parent.__eaglerPrepareManagedRuntimeDataV1({game,generation:query.get('gameGeneration'),epoch});
+    bundle=parseContentBundle(buffer);
+  }
+  core=await createModule({canvas,th075OnDemandAssets:!!splitIndex,resourceFiles:new Set(bundle.paths.map(path=>path.slice(1))),
+    async readAsset(path){if(!splitIndex&&path.startsWith('/music/')&&path.endsWith('.ogg')){try{return core.FS.readFile(path).buffer;}catch{throw Error('Music must be installed through Package Store');}}return (await bundle.read(path)).buffer;},
+    printErr:console.error,onAssetLoading(path,on){$('#loading').textContent=on?'正在准备场景…':'';},
+    onAssetError(path,message){if(splitIndex)console.error('TH075 asset read failed',path,message);}});
   core.th075ContentIdentity=bundle.identity;
   core.SDL3=core.SDL3||{};if(parent.__touhouAudioContext)core.SDL3.audioContext=parent.__touhouAudioContext;
   window.Module=core;window.FS=core.FS;core.resetBrowserKeyboard=()=>keyboard.clear();

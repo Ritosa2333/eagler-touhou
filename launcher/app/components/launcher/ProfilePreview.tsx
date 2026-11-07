@@ -15,13 +15,14 @@ import {useLocale, type UiMessageKey} from '../../i18n';
 import {withUiLanguage} from '../../../src/launcher/i18n.mts';
 import './profile-preview.css';
 import {AccountSettings} from './AccountSettings';
+import {ProfileTh09Duels} from './ProfileTh09Duels';
 import {CountryFlag} from './CountryFlag';
 import {SocialFollowControl, SocialProvider, SocialSection} from './SocialSection';
 import {getProfileStatistics, type ProfileStatistics} from '../../services/cloud-saves';
 import type {LocalSaveReader} from '../../services/local-save-storage';
 const ProfileGameData=lazy(()=>import('./ProfileGameData'));
 type SocialLink = {label: string; url: string};
-export type Profile = {name: string; bio: string; avatar: string; cover: string; links: SocialLink[]};
+export type Profile = {name: string; bio: string; avatar: string; cover: string; links: SocialLink[]; roomAvatarReady?: boolean};
 type DisplayKey = 'friends' | 'career' | 'records' | 'content';
 type OverviewKey = DisplayKey | 'favorites';
 export type ProfileDisplay = {visible: Record<DisplayKey, boolean>; order: OverviewKey[]};
@@ -38,7 +39,7 @@ const validDisplay = (value: unknown): value is ProfileDisplay => {
 const blankProfile: Profile = {name: '', bio: '', avatar: '', cover: '', links: []};
 const imageData = (value: string) => /^data:image\/(png|jpeg|webp);base64,/i.test(value);
 const safeUrl = (value: string) => {try {const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url : null;} catch {return null;}};
-type RemoteProfile = {username: string; nickname: string; joinedAt: string; countryCode?:string | null; regionCode?:string | null; details: (Profile & {display:ProfileDisplay}) | null};
+type RemoteProfile = {username: string; nickname: string; joinedAt: string; countryCode?:string | null; regionCode?:string | null; roomAvatarReady?:boolean; details: (Profile & {display:ProfileDisplay}) | null};
 export function ProfilePage({readLocalSaves,cloudSync}:{readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null}={}) {
   const {pathname} = useLocation();
   const {state,retry} = useAccountSession();
@@ -89,7 +90,7 @@ function ProfileBody({remote,owner,panel,readLocalSaves,cloudSync}: {remote:Remo
   const location=useLocation(),navigate=useNavigate();
   const anchor=location.hash.replace(/^#profile-/,''),tab:ProfileTab=Object.hasOwn(tabLabels,anchor)?anchor as ProfileTab:'overview';
   const sectionAddress=(key:ProfileTab)=>({pathname:location.pathname,search:location.search,hash:`#profile-${key}`});
-  const [profile, setProfile] = useState<Profile>({...blankProfile,...remote.details,name:remote.nickname});
+  const [profile, setProfile] = useState<Profile>({...blankProfile,...remote.details,name:remote.nickname,roomAvatarReady:remote.roomAvatarReady});
   const settings = owner && !!panel;
   const [display,setDisplay] = useState(validDisplay(remote.details?.display) ? remote.details.display : defaultDisplay);
   const [statistics,setStatistics]=useState<ProfileStatistics>(),[statisticsError,setStatisticsError]=useState(false);
@@ -123,7 +124,9 @@ function ProfileBody({remote,owner,panel,readLocalSaves,cloudSync}: {remote:Remo
         {<nav className="profile-section-nav profile-nav-mobile" aria-label={t('profile.navigationSections')}>{navigation}</nav>}
       </section>
 <div className="profile-columns"><aside className="profile-aside"><div className="profile-sidebar-details">{details}</div><nav className="profile-section-nav profile-nav-desktop" aria-label={t('profile.navigationSections')}>{navigation}</nav></aside>
-        <div className="profile-content">{statistics&&<Suspense fallback={null}><ProfileGameData data={statistics} order={display.order} owner={owner} settingsHref={location.pathname+location.search+'#game-settings'}/></Suspense>}
+        <div className="profile-content">{statistics&&<Suspense fallback={null}><ProfileGameData data={statistics} order={display.order.filter(key=>key==='career')} owner={owner} settingsHref={location.pathname+location.search+'#game-settings'}/></Suspense>}
+        <ProfileTh09Duels key={remote.username} username={remote.username} owner={owner}/>
+        {statistics&&<Suspense fallback={null}><ProfileGameData data={statistics} order={display.order.filter(key=>key!=='career')} owner={owner} settingsHref={location.pathname+location.search+'#game-settings'}/></Suspense>}
         {statisticsError&&owner&&<p role="alert">{t('cloudSave.statisticsFailed')} <UiButton variant="quiet" onClick={()=>window.dispatchEvent(new Event('cloud-save-change'))}>{t('cloudSave.refresh')}</UiButton></p>}
         {visible.friends && <SocialSection username={remote.username}/>}
         <div className="profile-end-actions"><BackToTop/></div>

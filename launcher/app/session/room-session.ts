@@ -1,5 +1,5 @@
 import {createRoomMusic} from '../services/room-music';
-import {createTuneWeaveProvider} from '../services/music-provider';
+import {createMetingProvider} from '../services/music-provider';
 import {testFeaturesEnabled} from '../../src/launcher/test-features.mts';
 import { createRoomNetwork } from '../../src/launcher/room-network.mts';
 import { createMultiplayerQuickChatModel } from '../../src/launcher/multiplayer-quick-chat-model.mts';
@@ -11,12 +11,13 @@ import { createMultiplayerRoom, type MultiplayerRoomPorts } from '../services/mu
 import type { GameSettingsModel } from '../models/game-settings';
 import type { SitePreferencesModel } from '../models/site-preferences';
 import type { RuntimeService } from '../services/runtime';
-import {accountSession} from '../services/account-session';
-import {accountsEnabled} from '../release-features';
+import {accountSession,roomProfileChangeKey} from '../services/account-session';
+import {accountsEnabled, listenTogetherEnabled, previewFeaturesEnabled} from '../release-features';
+import {createRoomActionAudio} from '../services/room-action-audio';
 
 export interface RoomSessionOptions extends Omit<
   MultiplayerRoomPorts,
-  'identity' | 'sessions' | 'preferences' | 'network' | 'quickChat' | 'music' | 'online' | 'visible'
+  'identity' | 'sessions' | 'preferences' | 'network' | 'quickChat' | 'music' | 'onActionSound' | 'online' | 'visible'
 > {
   identity: MultiplayerIdentityStore;
   sessions: MultiplayerRoomSessionStore;
@@ -28,6 +29,7 @@ export interface RoomSessionOptions extends Omit<
   runtime(): RuntimeService | null;
   replayViewer(): boolean;
   titleOverlayOpen(): boolean;
+  onMusicAudibleChange?(audible: boolean): void;
 }
 /** Document-lived room transport, original probe channels and shared quick-chat state.
  * Gameplay remains the existing Runtime; probe metrics never certify its path. */
@@ -36,6 +38,7 @@ export function createRoomSession(options: RoomSessionOptions) {
     listeners = new Set<() => void>();
   let revision = 0,
     disposed = false;
+  const roomAudio = createRoomActionAudio(window as Window & typeof globalThis);
   let accountIdentity:string|null|undefined;
   let accountInvalidated = false;
   const quickChat = createMultiplayerQuickChatModel({
@@ -56,10 +59,22 @@ export function createRoomSession(options: RoomSessionOptions) {
       for (const listener of listeners) listener();
     }
   };
-  const music = testFeaturesEnabled(window) ? createRoomMusic({
-    provider: createTuneWeaveProvider(import.meta.env?.VITE_MUSIC_API_URL || '/music-api'),
+  const previewMusic = previewFeaturesEnabled && testFeaturesEnabled(window);
+  const configuredEndpoint = import.meta.env?.VITE_METING_API_URL;
+  let musicEndpoint: URL | null = null;
+  if (previewMusic || (listenTogetherEnabled && configuredEndpoint)) {
+    try {
+      const endpoint = new URL(configuredEndpoint || 'https://open.motues.top/music', window.location.href);
+      if (endpoint.protocol === 'https:' && !endpoint.username && !endpoint.password) musicEndpoint = endpoint;
+    } catch {
+      // An invalid provider setting must not prevent joining rooms.
+    }
+  }
+  const music = musicEndpoint ? createRoomMusic({
+    provider: createMetingProvider(musicEndpoint.href),
     storage: options.storage, send: message => service.sendControl(message),
     createAudio: () => document.createElement('audio'),
+    onAudibleChange: options.onMusicAudibleChange,
   }) : null;
   const probes = createRoomNetwork({ send: (message) => service.sendControl(message), changed });
   const service = createMultiplayerRoom({
@@ -71,6 +86,12 @@ export function createRoomSession(options: RoomSessionOptions) {
       quickChat.receive(message);
     } },
     music: {receive: message => music?.receive(message)},
+    onActionSound(sound) {
+      const settings = options.settingsModel.getSnapshot()?.options;
+      const volume = settings && 'sfxVolume' in settings && typeof settings.sfxVolume === 'number'
+        ? settings.sfxVolume / 100 : 1;
+      roomAudio.play(sound, volume);
+    },
     online: () => window.navigator.onLine,
     visible: () => document.visibilityState === 'visible',
   });
@@ -150,17 +171,35 @@ export function createRoomSession(options: RoomSessionOptions) {
   };
   const unsubscribeAccount = accountsEnabled ? accountSession.subscribe(accountChanged) : () => {};
   if (accountsEnabled) accountChanged();
+  const refreshRoomProfile = () => {
+    if (accountSession.getSnapshot().status === 'member') service.refreshAccount();
+  };
+  const profileStorageChanged = (event: StorageEvent) => {
+    if (event.key === roomProfileChangeKey) refreshRoomProfile();
+  };
+  if (accountsEnabled) {
+    window.addEventListener(roomProfileChangeKey, refreshRoomProfile);
+    window.addEventListener('storage', profileStorageChanged);
+  }
   const pageHide = () => service.pageHide(),
     pageShow = (event: PageTransitionEvent) => service.pageShow(event.persisted);
   const visible = () => {
     if (document.visibilityState === 'visible') service.reconnect();
   };
-  const activity = (event: Event) => service.noteActivity(event.isTrusted);
+  const unlockRoomAudio = (event: Event) => {
+    if (event.isTrusted && (service.getSnapshot().room || document.body.classList.contains('lobby-page')))
+      roomAudio.unlock();
+  };
+  const activity = (event: Event) => {
+    service.noteActivity(event.isTrusted);
+    unlockRoomAudio(event);
+  };
   window.addEventListener('pagehide', pageHide);
   window.addEventListener('pageshow', pageShow);
   window.addEventListener('online', service.reconnect);
   document.addEventListener('visibilitychange', visible);
   document.addEventListener('pointerdown', activity, { passive: true });
+  document.addEventListener('click', unlockRoomAudio);
   document.addEventListener('keydown', activity);
   return {
     service,
@@ -184,12 +223,17 @@ export function createRoomSession(options: RoomSessionOptions) {
     dispose() {
       if (disposed) return;
       music?.dispose();
+      roomAudio.dispose();
       quickChat.dispose();
       disposed = true;
       unsubscribeRoom();
       unsubscribeSettings();
       unsubscribePreferences();
       unsubscribeAccount();
+      if (accountsEnabled) {
+        window.removeEventListener(roomProfileChangeKey, refreshRoomProfile);
+        window.removeEventListener('storage', profileStorageChanged);
+      }
       service.dispose();
       probes.reset();
       listeners.clear();
@@ -198,6 +242,7 @@ export function createRoomSession(options: RoomSessionOptions) {
       window.removeEventListener('online', service.reconnect);
       document.removeEventListener('visibilitychange', visible);
       document.removeEventListener('pointerdown', activity);
+      document.removeEventListener('click', unlockRoomAudio);
       document.removeEventListener('keydown', activity);
     },
   };

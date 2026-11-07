@@ -17,6 +17,8 @@ function chatKeyboardPort(session: BrowserSession) {
     chat: session.room.quickChat,
     chatOwnsTarget: (target: EventTarget | null) =>
       target instanceof Element && !!target.closest('.mp-quick-chat') && !target.closest('[role=menu]'),
+    chatTextTarget: (target: EventTarget | null) =>
+      target instanceof Element && !!target.closest('.mp-quick-chat input'),
     launcherOwnsTarget: (target: EventTarget | null) =>
       !!target && 'closest' in target && typeof target.closest === 'function' && !!target.closest(keyboardUiSelector),
   };

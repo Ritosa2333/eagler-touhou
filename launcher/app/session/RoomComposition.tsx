@@ -2,10 +2,13 @@ import { useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import { isMultiplayerProductId } from '../../src/contracts/product-catalog.mts';
 import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
 import { RoomView } from '../components/room';
+import { RoomMusicInvite } from '../components/room/RoomMusic';
 import type { BrowserSession } from './browser-session';
+import { useLocale } from '../i18n';
 import { useSurfaceNavigation } from '../navigation/surface-navigation';
 import {SpectatorPlayback} from '../components/player/SpectatorPlayback';
 import {SpectatorMatchScore} from '../components/player/SpectatorMatchScore';
+import {GameSettingsPopover} from '../components/settings/GameAudioControls';
 
 /** Room chrome and fullscreen share one permanent Player and room owner. */
 export function RoomComposition({
@@ -18,6 +21,7 @@ export function RoomComposition({
   workspaceVisible: boolean;
 }) {
   const navigation = useSurfaceNavigation();
+  const {t} = useLocale();
   const transfer = useSyncExternalStore(
     session.transfer.subscribe,
     session.transfer.getSnapshot,
@@ -36,6 +40,7 @@ export function RoomComposition({
   );
   const [workspace, setWorkspace] = useState<{host:HTMLElement;stage:HTMLElement} | null>(null);
   const workspaceVisible = roomWorkspace && navigation.surface !== 'touch';
+  const canReturnToRoom = state.runtime?.runtimeVariant === 'multiplayer' && state.runtime.roomReturnSupported;
   const playback = state.runtime?.launched && state.runtime.spectator
     ? state.runtime.game !== 'th09' ? <SpectatorPlayback session={session}/>
       : room.room?.spectatorTimeline ? <SpectatorMatchScore
@@ -47,11 +52,13 @@ export function RoomComposition({
     const host = document.getElementById('player'), stage = host?.querySelector<HTMLElement>('.player-stage');
     if (host && stage) setWorkspace({host,stage});
   }, []);
-  return (
+  return <>
     <RoomView
       visible={workspaceVisible && !!navigation.productId && isMultiplayerProductId(navigation.productId)}
       service={session.room.service}
       quickChat={session.room.quickChat}
+      decisions={session.decisions}
+      products={session.metadata.getSnapshot().products.filter(isMultiplayerProductId)}
       music={session.room.music}
       network={session.room.network}
       context={{
@@ -73,6 +80,14 @@ export function RoomComposition({
       workspaceHost={workspace?.host}
       workspaceStage={workspace?.stage}
       playbackControls={playback}
+      playerSettings={state.runtime?.ready && (
+        <GameSettingsPopover model={session.settings}
+          exit={state.playerOpen && state.runtime.launched
+            ? {label: t(canReturnToRoom ? state.runtime.spectator ? 'player.exitSpectating' : 'netplay.return' : 'player.leaveRoom'),
+              onSelect: canReturnToRoom ? navigation.closeSurface : session.requestRoomLeave}
+            : undefined}
+        />
+      )}
       onFullscreen={()=>{void session.togglePlayerFullscreen();}}
       reloadPending={state.roomReloadPending}
       onReloadResources={session.reloadRoomResources}
@@ -85,5 +100,7 @@ export function RoomComposition({
       onOpenPanel={navigation.openRoomPanel}
       onClosePanel={navigation.closeRoomPanel}
     />
-  );
+    {room.room && session.room.music && navigation.surface !== 'touch' &&
+      <RoomMusicInvite model={session.room.music} panelOpen={!!navigation.roomPanel} />}
+  </>;
 }

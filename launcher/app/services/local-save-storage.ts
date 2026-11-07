@@ -11,10 +11,10 @@ export function validLocalSaveNames(names:readonly string[]) {
 export function validateLocalSaveFile(bytes:Uint8Array,total:number) {
   if(!bytes.length||bytes.length>4*1024*1024||total>8*1024*1024)throw new Error('Local save exceeds the upload limit');
 }
-export function localSaveFiles(files:{name:string;bytes:Uint8Array}[],product:ProductId,language:string) {
+export function localSaveFiles(files:{name:string;bytes:Uint8Array;modifiedAt?:number}[],product:ProductId,language:string) {
   const preferred=language==='lang_zh-hans'?'scoreth10c.dat':'scoreth10.dat';
   if((product==='th10'||product==='th10mp')&&files.some(file=>file.name===preferred))files=files.filter(file=>!/^scoreth10c?\.dat$/.test(file.name)||file.name===preferred);
-  return files.map(file=>new File([new Uint8Array(file.bytes)],file.name,{type:'application/octet-stream'}));
+  return files.map(file=>new File([new Uint8Array(file.bytes)],file.name,{type:'application/octet-stream',lastModified:file.modifiedAt&&file.modifiedAt>0&&file.modifiedAt<=8.64e15?file.modifiedAt:0}));
 }
 /** Reads one committed transaction. Runtime remains the only IDBFS writer. */
 export async function readLocalSaveFiles(product:ProductId,names:readonly string[],language:string,factory:IDBFactory) {
@@ -22,8 +22,8 @@ export async function readLocalSaveFiles(product:ProductId,names:readonly string
   const {database:databaseName,root}=replayStorageLocation(product,language),database=await openIdbfsDatabase(factory,databaseName);
   if(!database)return [];
   try {
-    const files=await new Promise<{name:string;bytes:Uint8Array}[]>((resolve,reject)=>{
-      const transaction=database.transaction('FILE_DATA','readonly'),store=transaction.objectStore('FILE_DATA'),files:{name:string;bytes:Uint8Array}[]=[];
+    const files=await new Promise<{name:string;bytes:Uint8Array;modifiedAt?:number}[]>((resolve,reject)=>{
+      const transaction=database.transaction('FILE_DATA','readonly'),store=transaction.objectStore('FILE_DATA'),files:{name:string;bytes:Uint8Array;modifiedAt?:number}[]=[];
       let total=0,problem:unknown;
       for(const name of names) {
         const request=store.get(root+'/'+name);
@@ -32,7 +32,7 @@ export async function readLocalSaveFiles(product:ProductId,names:readonly string
             const entry=request.result as IdBfsEntry|undefined;if(!entry)return;
             if((entry.mode&0xf000)!==0x8000)throw new Error('Invalid local save entry');
             const bytes=idbfsBytes(entry.contents);if(!bytes)throw new Error('Invalid local save contents');
-            total+=bytes.length;validateLocalSaveFile(bytes,total);files.push({name,bytes});
+            total+=bytes.length;validateLocalSaveFile(bytes,total);files.push({name,bytes,modifiedAt:Number.isFinite(Number(entry.timestamp))?Number(entry.timestamp):0});
           }catch(error){problem=error;transaction.abort();}
         };
       }
@@ -50,7 +50,7 @@ export async function collectLocalSaveFiles({product,names,language,indexedDB,ru
   const current=runtime?.getSnapshot(),variant=isMultiplayerProductId(product)?'multiplayer':'normal';
   if(!runtime||!current?.ready||current.game!==gameIdForProduct(product)||current.runtimeVariant!==variant)return readLocalSaveFiles(product,names,language,indexedDB);
   return runtime.withFileSession(gameIdForProduct(product),async access=>{
-    await access.sync();const files:{name:string;bytes:Uint8Array}[]=[];let total=0;
+    await access.sync();const files:{name:string;bytes:Uint8Array;modifiedAt?:number}[]=[];let total=0;
     for(const name of names) {
       try {
         const response=await access.send('read',{path:name});
@@ -58,6 +58,12 @@ export async function collectLocalSaveFiles({product,names,language,indexedDB,ru
         for(let index=0;index<response.bytes.length;index++)if(!Object.prototype.hasOwnProperty.call(response.bytes,index)||!Number.isInteger(response.bytes[index])||response.bytes[index]<0||response.bytes[index]>255)throw new Error('Invalid Runtime save contents');
         const bytes=new Uint8Array(response.bytes);total+=bytes.length;validateLocalSaveFile(bytes,total);files.push({name,bytes});
       }catch(error){if(!(error&&typeof error==='object'&&'errno'in error&&error.errno===44))throw error;}
+    }
+    const persisted=await readLocalSaveFiles(product,names,language,indexedDB).catch(()=>[]);
+    for(const file of files){
+      const saved=persisted.find(item=>item.name===file.name);if(!saved||saved.size!==file.bytes.length)continue;
+      const bytes=new Uint8Array(await saved.arrayBuffer());
+      if(bytes.every((value,index)=>value===file.bytes[index]))file.modifiedAt=saved.lastModified;
     }
     return localSaveFiles(files,product,language);
   },{readOnly:true,runtimeVariant:variant,epoch:current.epoch??undefined});

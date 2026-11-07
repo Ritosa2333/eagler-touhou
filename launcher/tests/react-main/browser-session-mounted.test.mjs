@@ -64,7 +64,7 @@ before(async () => {
     export {getSettingsRenderCount} from 'captured-settings-render';
     export {getAcquisitionOptions} from 'captured-acquisition';
     export {setPackageReadGate} from 'gated-package-read';
-    export {setCloudSaveBeforeLaunch, getCloudSaveBeforeLaunchCalls, getCloudSaveEvents} from 'captured-cloud-save-sync';
+    export {setCloudRunProbe, setCloudBeforeStartProbe, getCloudSaveStartedProducts, getCloudSaveEvents} from 'captured-cloud-save-sync';
     export {setAccountSessionResult} from 'captured-account-client';
     export {accountSession as testAccountSession} from './app/services/account-session.ts';
     export {validateSiteManifest} from './src/contracts/site-manifest.mts';
@@ -107,14 +107,16 @@ before(async () => {
         let options; export const getAcquisitionOptions = () => options;
         export function createPackageAcquisition(value) {options = value; return create(value);}
       ` : args.path === 'captured-cloud-save-sync' ? `
-        let beforeLaunchGate=null; const calls=[],events=[]; export let cloudSaveEnabled=false;
-        export function setCloudSaveBeforeLaunch(value){beforeLaunchGate=value;cloudSaveEnabled=!!value;calls.length=0;events.length=0;}
-        export function getCloudSaveBeforeLaunchCalls(){return [...calls];}
+        let cloudRunProbe=null,cloudBeforeStart=null; const calls=[],events=[]; export let cloudSaveEnabled=false;
+        export function setCloudRunProbe(value){cloudRunProbe=value;cloudBeforeStart=null;cloudSaveEnabled=!!value;calls.length=0;events.length=0;}
+        export function setCloudBeforeStartProbe(value){cloudBeforeStart=value;}
+        export function getCloudSaveStartedProducts(){return [...calls];}
         export function getCloudSaveEvents(){return [...events];}
-        export function createCloudSaveSync(){return {beforeLaunch(product,signal){calls.push({product,signal});events.push({type:'beforeLaunch',product});return beforeLaunchGate?beforeLaunchGate(product,signal):Promise.resolve(true);},finished(){events.push({type:'finished'});},dispose(){events.push({type:'dispose'});}};}
+        export function createCloudSaveSync(){return {prepareLocalLaunch(){events.push({type:'prepareLocalLaunch'});},async beforeStart(product,signal){events.push({type:'beforeStart',product});return cloudBeforeStart?cloudBeforeStart(product,signal):'continue';},started(product){calls.push(product);events.push({type:'started',product});void cloudRunProbe?.(product);},finished(){events.push({type:'finished'});},dispose(){events.push({type:'dispose'});}};}
       ` : args.path === 'cloud-sync-release-features' ? `
         import {cloudSaveEnabled} from 'captured-cloud-save-sync';
         export {cloudSaveEnabled as accountsEnabled};
+        export const previewFeaturesEnabled = true;
       ` : `
         import {readCurrentPackageGeneration as readCurrent} from './package/package-store.mjs';
         let gate; export function setPackageReadGate(value) {gate = value;}
@@ -137,7 +139,7 @@ before(async () => {
 });
 afterEach(async () => {
   api?.setPackageReadGate(null);
-  api?.setCloudSaveBeforeLaunch(null);
+  api?.setCloudRunProbe(null);
   api?.setAccountSessionResult(new Error('account service offline'));
   if (mounted?.root) {
     const current = mounted;
@@ -248,7 +250,7 @@ function siteManifest(mode = 'hosted') {
       ...(mode === 'import' ? {offlineCompatibility: {schema: 'eagler-touhou/offline-game-pack/1', runtimeCompatibility: {protocol: 'eagler-touhou/1', dataLayout: `sha256-${'b'.repeat(64)}`, versionSource: 'offline-pack'}, requiredShared: ['/msgothic.ttc', '/unifont.otf'], languages: {source: 'offline-pack', baseline: ['ja']}}} : {}),
       languages: [], languageOptions: [{id: 'ja', title: '日本語', pack: null}], music: {midi: {files: []}}}}};
 }
-async function mountBrowser({initial = '/?game=th06&keep=a%20b', autoReady = true, strictMode = false, blockStorage = false, resourceMode = 'hosted', noticeEnabled = false, touchDevice = false, mobileDevice = false,
+async function mountBrowser({initial = '/?game=th06&keep=a%20b', autoReady = true, strictMode = false, blockStorage = false, resourceMode = 'hosted', touchDevice = false, mobileDevice = false,
   hydrate = false, host = siteManifest(resourceMode), holdHost = false, holdFirstUse = false, seedStorage = () => {}, seedPackages = [], socketBoundary = false, directoryTransport = false, actualHistory = false, fetchBoundary = () => null, extra = null} = {}) {
   api.validateSiteManifest(host); api.validateReleaseCatalog({schema: 'eagler-touhou/release-catalog/1', games: {}});
   Object.defineProperty(env.window.navigator, 'maxTouchPoints', {configurable:true,value:touchDevice ? 2 : 0});
@@ -256,7 +258,6 @@ async function mountBrowser({initial = '/?game=th06&keep=a%20b', autoReady = tru
   env.errors.length = 0; env.window.history.replaceState(null, '', initial);
   const storage = new MemoryStorage(), sessionStorage = new MemoryStorage();
   storage.values.set('eagler-touhou-first-use-notice-seen-v1', '1');
-  storage.values.set('eagler-touhou-site-notice-enabled-v1', noticeEnabled ? '1' : '0');
   storage.values.set('eagler-touhou-less-motion-v1', '1');
   storage.values.set('browser-warning-dismissed', '1');
   storage.values.set('eagler-touch-help-seen-v8', '1');
@@ -283,7 +284,6 @@ async function mountBrowser({initial = '/?game=th06&keep=a%20b', autoReady = tru
       return Response.json(host);
     }
     if (url.pathname.endsWith('/release-catalog.json')) return Response.json({schema: 'eagler-touhou/release-catalog/1', games: {}});
-    if (url.pathname.endsWith('/NOTICE.txt')) return new Response('');
     if (url.pathname.endsWith('/content/FIRST_USE_NOTICE.html')) {await firstUseReady; return new Response(await readFile(resolve(project, 'public/content/FIRST_USE_NOTICE.html'), 'utf8'));}
     if (url.pathname.endsWith('/content/MULTIPLAYER.html')) return new Response(await readFile(resolve(project, 'public/content/MULTIPLAYER.html'), 'utf8'));
     throw new Error(`Unexpected fixture network ${url.pathname}`);
@@ -628,6 +628,24 @@ test('actual BrowserLauncher: Back waits for native sync; repeated Back does not
   await until(() => !playerOpen() && currentUrl() === previous, 'successful native sync returns to its options');
 });
 
+test('actual BrowserLauncher: in-game settings show volume and exit waits for a native save', async () => {
+  const f = await mountBrowser();
+  await start();
+  await until(() => api.getTestSession()?.getRuntime()?.getSnapshot().launched === true, 'game is running');
+  f.syncMode = 'hold';
+  const previous = currentUrl(), gameDocument = f.native.document;
+  await click('.touch-utility-row .game-settings-toggle');
+  await until(() => !!env.document.querySelector('.game-settings-popover'), 'in-game settings opened');
+  assert.equal(env.document.querySelectorAll('.game-settings-popover [role="slider"]').length, 2);
+  await click('.game-settings-exit');
+  await until(() => f.pendingSync.length === 1, 'the exit action starts the normal native save');
+  assert.equal(playerOpen(), true);
+  assert.equal(f.native.document, gameDocument, 'Runtime remains until the save completes');
+  await React.act(async () => {f.native.respond(f.pendingSync[0]);});
+  await until(() => !playerOpen() && currentUrl() === previous, 'successful save returns to its options');
+  assert.equal(env.document.querySelector('.game-settings-popover'), null);
+});
+
 test('actual BrowserLauncher: fullscreen locks Escape before delayed native preparation and releases it on exit', async t => {
   const prior = Object.getOwnPropertyDescriptor(env.window.navigator, 'keyboard'), calls = [];
   Object.defineProperty(env.window.navigator, 'keyboard', {configurable:true, value:{
@@ -659,63 +677,59 @@ test('actual BrowserLauncher: fullscreen exit during native preparation conceals
   assert.equal(f.native.location.href, 'about:blank'); assert.equal(currentUrl(), '/?game=th06&keep=a%20b');
 });
 
-for (const cancellation of ['runtime-close', 'options-close', 'product-change']) test(`actual BrowserLauncher: ${cancellation} cancels an awaited cloud-save launch before Player or Runtime configuration`, async () => {
+test('actual BrowserLauncher: red mist starts while its cloud request is pending', async () => {
   let release;
-  const gate = new Promise(resolve => {release = resolve;});
-  api.setCloudSaveBeforeLaunch(() => gate);
+  const pending = new Promise(resolve => {release = resolve;});
+  api.setCloudRunProbe(() => pending);
   const f = await mountBrowser();
-  await start();
-  await until(() => api.getCloudSaveBeforeLaunchCalls().length === 1, 'cloud-save launch gate is awaiting confirmation');
-  const [call] = api.getCloudSaveBeforeLaunchCalls();
-  assert.equal(call.product, 'th06');
-  assert.equal(playerOpen(), false, 'the Player stays closed while cloud-save confirmation is pending');
-
-  if (cancellation === 'runtime-close') {
-    assert.equal(await React.act(async () => api.getTestSession().requestRuntimeClose()), true);
-  } else if (cancellation === 'options-close') {
-    await click('#libraryBack');
-    await until(() => {const url=new URL(currentUrl(),'https://launcher.invalid');return !url.searchParams.has('game')&&url.searchParams.get('keep')==='a b';}, 'closing Options returns to the Library');
-  } else {
-    await React.act(async () => api.getTestSession().selectRouteProduct('th07'));
-    assert.equal(api.getTestSession().settings.getSnapshot().context.productId, 'th07');
-  }
-
-  assert.equal(call.signal.aborted, true, 'the pending cloud-save decision receives cancellation');
-  await React.act(async () => {release(true); await Promise.resolve();});
-  await until(() => api.getTestSession().getSnapshot().activity === 0, 'cancelled Start settles');
-  assert.equal(playerOpen(), false);
-  assert.equal(commands().some(command => command === 'configure' || command === 'launch'), false);
-  assert.equal(f.navigations.some(url => url !== 'about:blank'), false, 'no Runtime document is opened after cancellation');
-});
-
-test('actual BrowserLauncher: a confirmed account arriving after an offline cloud gate cancels the unknown-identity launch', async () => {
   let releaseFullscreen;
-  api.setCloudSaveBeforeLaunch(() => Promise.resolve(true));
-  api.setAccountSessionResult(new Error('account service offline'));
-  const f = await mountBrowser();
   f.fullscreenReady = new Promise(resolve => {releaseFullscreen = resolve;});
-
   try {
     await start();
-    await until(() => api.getCloudSaveBeforeLaunchCalls().length === 1, 'cloud-save gate accepts the start');
-    const [call] = api.getCloudSaveBeforeLaunchCalls();
-    await until(() => api.testAccountSession.getSnapshot().status === 'error' && f.order.includes('fullscreen-enter'), 'offline account check leaves the Player waiting for fullscreen');
-    assert.equal(call.signal.aborted, false, 'an unconfirmed identity does not cancel by itself');
+    await until(() => f.order.includes('fullscreen-enter'), 'local fullscreen opens');
+    assert.deepEqual(api.getCloudSaveStartedProducts(), [], 'the cloud check waits for the game to start');
     assert.equal(playerOpen(), true);
-    assert.equal(commands().some(command => command === 'configure' || command === 'launch'), false);
+    await React.act(async () => releaseFullscreen());
+    await until(() => api.getTestSession().getRuntime().getSnapshot().launched && api.getCloudSaveStartedProducts().length === 1, 'native launch starts the background check');
+    assert.deepEqual(api.getCloudSaveStartedProducts(), ['th06']);
+    assert.ok(commands().includes('launch'));
+    await React.act(async () => {f.native.emit('first-frame');});
+    await React.act(async () => {assert.equal(await api.getTestSession().requestRuntimeClose(), true);});
+    await until(() => !playerOpen(), 'native save and exit complete while cloud is still pending');
+    assert.ok(api.getCloudSaveEvents().some(event => event.type === 'finished'));
+  } finally {releaseFullscreen();release();}
+});
 
+test('actual BrowserLauncher: cancelling local preparation never starts a cloud run', async () => {
+  api.setCloudRunProbe(() => assert.fail('a cancelled game cannot start a cloud run'));
+  const f = await mountBrowser({autoReady: false});
+  await start();
+  await until(() => f.navigations.some(url => url !== 'about:blank'), 'native preparation begins');
+  await React.act(async () => {assert.equal(await api.getTestSession().requestRuntimeClose(), true);});
+  await until(() => !playerOpen(), 'cancelled Player closes');
+  assert.deepEqual(api.getCloudSaveStartedProducts(), []);
+  assert.equal(commands().includes('launch'), false);
+});
+
+test('actual BrowserLauncher: an account change during fullscreen leaves local Start active', async () => {
+  let releaseFullscreen;
+  api.setCloudRunProbe(() => Promise.resolve());
+  api.setAccountSessionResult(new Error('account service offline'));
+  const unsubscribe = api.testAccountSession.subscribe(() => {});
+  const f = await mountBrowser();
+  f.fullscreenReady = new Promise(resolve => {releaseFullscreen = resolve;});
+  try {
+    await start();
+    await until(() => f.order.includes('fullscreen-enter'), 'fullscreen is pending');
+    assert.deepEqual(api.getCloudSaveStartedProducts(), []);
     api.setAccountSessionResult({user: {username: 'alice', name: 'Alice'}});
     await React.act(async () => env.window.dispatchEvent(new env.window.StorageEvent('storage', {key: 'account-session-changed', newValue: 'other-tab'})));
-    await until(() => api.testAccountSession.getSnapshot().status === 'member' && call.signal.aborted, 'confirmed Alice identity cancels the start that passed with unknown identity');
+    await until(() => api.testAccountSession.getSnapshot().status === 'member', 'account is confirmed during fullscreen');
     await React.act(async () => releaseFullscreen());
-    await until(() => !playerOpen(), 'cancelled unknown-identity Player closes after fullscreen settles');
-
-    assert.equal(commands().some(command => command === 'configure' || command === 'launch'), false, 'the stale start never configures Runtime');
-    assert.equal(f.native.location.href, 'about:blank');
-    assert.ok(visibleOptions(), 'the user can retry Start under the confirmed account');
-  } finally {
-    if (releaseFullscreen) await React.act(async () => releaseFullscreen());
-  }
+    await until(() => commands().includes('launch') && api.getCloudSaveStartedProducts().length === 1, 'local Start survives account activity');
+    assert.deepEqual(api.getCloudSaveStartedProducts(), ['th06']);
+    assert.equal(playerOpen(), true);
+  } finally {unsubscribe();releaseFullscreen();}
 });
 
 test('actual BrowserLauncher: warning cancel has no fullscreen/native side effect, repeated Start owns one launch', async () => {
@@ -1207,9 +1221,9 @@ test('actual BrowserLauncher: import-only Start → invalid file → valid canon
 });
 
 test('actual BrowserLauncher: StrictMode initialization owns one notice request, iframe, DATA callback and player input lifetime', async () => {
-  const f = await mountBrowser({strictMode: true, noticeEnabled: true}); await tick();
+  const f = await mountBrowser({strictMode: true}); await tick();
   assert.equal(f.order.filter(value => value === 'boot-ready').length, 1);
-  assert.equal(f.fetches.filter(item => new URL(item.url).pathname.endsWith('/NOTICE.txt')).length, 1);
+  assert.equal(f.fetches.filter(item => new URL(item.url).pathname.endsWith('/NOTICE.txt')).length, 0);
   assert.equal(env.document.querySelectorAll('#gameFrame').length, 1);
   assert.equal(typeof env.window.__eaglerPrepareManagedRuntimeDataV1, 'function');
   await start(); await until(() => commands().includes('launch'), 'StrictMode real session launches');
@@ -1616,50 +1630,27 @@ for (const boundary of ['warning', 'fullscreen']) test(`actual BrowserLauncher: 
   await back(); await until(() => !playerOpen(), 'selected fallback Runtime closes normally');
 });
 
-for (const acceptFallbackGate of [true, false]) test(`actual BrowserLauncher: Host fallback ${acceptFallbackGate ? 'waits for the selected product gate' : 'returns to Options when its cloud save gate is declined'}`, async () => {
-  let releaseOldProduct, releaseFullscreen, releaseSelectedProduct;
-  const oldProductGate = new Promise(resolve => {releaseOldProduct = resolve;});
-  const selectedProductGate = new Promise(resolve => {releaseSelectedProduct = resolve;});
-  api.setCloudSaveBeforeLaunch(product => product === 'th07' ? oldProductGate : selectedProductGate);
+test('actual BrowserLauncher: Host fallback checks cloud saves for the game that actually starts', async () => {
+  let releaseFullscreen;
+  api.setCloudRunProbe(() => Promise.resolve());
   const initial = '/?game=th07&keep=a%20b#retained';
   const f = await mountBrowser({initial, holdHost: true, host: subsetHost(['th06']), seedStorage(storage) {
     storage.values.set(api.gamePreferenceStorageKey('th07'), JSON.stringify({music: 'none', options: {touchEnabled: false}}));
   }});
   f.fullscreenReady = new Promise(resolve => {releaseFullscreen = resolve;});
-  await click('#launch');
-  assert.equal(node('#decisionDialog').open, true);
-  await click('#decisionConfirm');
-  await until(() => api.getCloudSaveBeforeLaunchCalls().some(call => call.product === 'th07'), 'original product passes cloud save gate');
-  assert.equal(playerOpen(), false, 'Player stays closed until the original product gate succeeds');
-  await React.act(async () => {releaseOldProduct(true);});
-  await until(() => f.order.includes('fullscreen-enter'), 'Player waits for fullscreen while the cloud run is active');
-  await acceptHeldHost(f);
-  assert.equal(node('#gameId').dataset.game, 'th06');
-  await React.act(async () => {releaseFullscreen();});
-  await until(() => api.getCloudSaveBeforeLaunchCalls().some(call => call.product === 'th06'), 'selected Host fallback passes a fresh cloud save gate');
-
-  const events = api.getCloudSaveEvents();
-  const oldGate = events.findIndex(event => event.type === 'beforeLaunch' && event.product === 'th07');
-  const releasedOldRun = events.findIndex((event,index) => index > oldGate && event.type === 'finished');
-  const newGate = events.findIndex((event,index) => index > releasedOldRun && event.type === 'beforeLaunch' && event.product === 'th06');
-  assert.ok(oldGate >= 0 && releasedOldRun > oldGate && newGate > releasedOldRun, 'the old product lock is released before acquiring the fallback product');
-  const selectedCall = api.getCloudSaveBeforeLaunchCalls().find(call => call.product === 'th06');
-  assert.equal(selectedCall.signal.aborted, false, 'the fallback product gets a live cancellation signal');
-  assert.equal(commands().some(command => command === 'configure' || command === 'launch'), false, 'Runtime configuration waits for the fallback product gate');
-
-  await React.act(async () => {releaseSelectedProduct(acceptFallbackGate);});
-  if (acceptFallbackGate) {
-    await until(() => commands().includes('launch'), 'the fallback Runtime launches after its cloud save gate succeeds');
+  try {
+    await click('#launch');
+    assert.equal(node('#decisionDialog').open, true);
+    await click('#decisionConfirm');
+    await until(() => f.order.includes('fullscreen-enter'), 'Player waits for fullscreen');
+    assert.deepEqual(api.getCloudSaveStartedProducts(), []);
+    await acceptHeldHost(f);
+    assert.equal(node('#gameId').dataset.game, 'th06');
+    await React.act(async () => releaseFullscreen());
+    await until(() => commands().includes('launch') && api.getCloudSaveStartedProducts().length === 1, 'fallback Runtime launches');
     assert.equal(f.outbound.find(message => message.command === 'configure').game, 'th06');
-    assert.match(f.native.location.href, /\/runtime\/th06\/th06\.html/);
-    await back(); await until(() => !playerOpen(), 'selected fallback Runtime closes normally');
-  } else {
-    await until(() => !playerOpen(), 'declined fallback gate closes the unlaunched Player');
-    assert.ok(visibleOptions(), 'the selected Host options return after declining cloud sync');
-    assert.equal(currentUrl(), initial, 'the original product URL remains intact');
-    assert.equal(commands().some(command => command === 'configure' || command === 'launch'), false);
-    assert.equal(f.native.location.href, 'about:blank');
-  }
+    assert.deepEqual(api.getCloudSaveStartedProducts(), ['th06']);
+  } finally {if (releaseFullscreen) releaseFullscreen();}
 });
 
 // Host fallback before Start changes the music choice; the current UI presents
@@ -1756,19 +1747,6 @@ test('directory can filter th11mp without a hosted multiplayer Runtime', async (
 
 // Main lobby.mts has no automatic first-use presentation. A route-owned shared
 // component must not let the previous Launcher request appear over that page.
-for(const initial of ['/login.html','/profile.html'])test(`account entry ${initial} hides announcements and preserves library notice controls`,async()=>{
-  const f=await mountBrowser({initial,noticeEnabled:true,actualHistory:true,host:subsetHost(['th06']),
-    fetchBoundary:url=>url.pathname.endsWith('/NOTICE.txt')?new Response('界面检查公告'):null});
-  assert.equal(node('#siteNotice').hidden,true);
-  const noticeReads=f.fetches.filter(item=>new URL(item.url).pathname.endsWith('/NOTICE.txt')).length;
-  const preferences=api.getTestSession().preferences;
-  await React.act(async()=>{preferences.setNoticeEnabled(false);preferences.setNoticeEnabled(true);});
-  assert.equal(node('#siteNotice').hidden,true,'Enabling announcements does not cover an account form');
-  await React.act(async()=>{await f.router.navigate('/');});
-  await React.act(async()=>{preferences.setNoticeEnabled(false);preferences.setNoticeEnabled(true);});
-  await until(()=>!node('#siteNotice').hidden,'Library announcement controls remain available');
-  assert.equal(f.fetches.filter(item=>new URL(item.url).pathname.endsWith('/NOTICE.txt')).length,noticeReads+1);
-});
 test('actual BrowserLauncher: delayed automatic first-use cannot open or mark seen after entering lobby', async () => {
   const f = await mountBrowser({initial: '/?keep=a%20b', holdFirstUse: true, host: subsetHost(['th06', 'th07']), seedStorage(storage) {
     storage.values.delete('eagler-touhou-first-use-notice-seen-v1');
@@ -1786,7 +1764,7 @@ test('actual BrowserLauncher: delayed automatic first-use cannot open or mark se
 });
 
 // Main app9784–9793 applies first-use gating on the Launcher independently of
-// the lobby's site-notice-only entry. An interrupted load remains unseen.
+// a lobby entry. An interrupted first-use load remains unseen.
 test('actual BrowserLauncher: unseen first-use resumes automatically on library return after lobby', async () => {
   const f = await mountBrowser({initial: '/?keep=a%20b', holdFirstUse: true, host: subsetHost(['th06', 'th07']), seedStorage(storage) {
     storage.values.delete('eagler-touhou-first-use-notice-seen-v1');
@@ -1809,13 +1787,13 @@ test('actual BrowserLauncher: unseen first-use resumes automatically on library 
 
 
 test('actual BrowserLauncher hydrates shared static cards into one live session without duplicate IDs or initial owners', async () => {
-  const f = await mountBrowser({initial: '/?keep=a%20b', hydrate: true, noticeEnabled: true}); await tick();
+  const f = await mountBrowser({initial: '/?keep=a%20b', hydrate: true}); await tick();
   assert.ok(f.initialNodes.length > 0); assert.ok(f.initialNodes.every(node => !node.isConnected));
   const ids = [...env.document.querySelectorAll('[id]')].map(node => node.id);
   assert.equal(new Set(ids).size, ids.length);
   assert.equal(env.document.querySelectorAll('#gameFrame').length, 1);
   assert.equal(f.order.filter(value => value === 'boot-ready').length, 1);
-  assert.equal(f.fetches.filter(item => new URL(item.url).pathname.endsWith('/NOTICE.txt')).length, 1);
+  assert.equal(f.fetches.filter(item => new URL(item.url).pathname.endsWith('/NOTICE.txt')).length, 0);
   assert.equal(typeof env.window.__eaglerPrepareManagedRuntimeDataV1, 'function');
   const frame = node('#gameFrame');
   await click('.book-lobby-link'); await tick();
@@ -2766,6 +2744,49 @@ test('room start binds the run to its native preload without a second navigation
   const configure = f.outbound.findLast(message => message.command === 'configure');
   assert.equal(configure.options.netplayMode, 'lan'); assert.equal(configure.options.netplayPlayer, 0);
   assert.equal(new URL(configure.options.netplayUrl).searchParams.get('run'), '2');
+
+  await React.act(async () => f.native.emit('first-frame'));
+  await click('.touch-utility-row .game-settings-toggle');
+  assert.equal(node('.game-settings-exit').textContent, 'Return to room');
+  await click('.game-settings-exit');
+  await until(() => !session.getRuntime().getSnapshot().launched, 'game settings return the player to the room');
+  assert.ok(commands().includes('return-room'));
+  assert.equal(session.room.service.getSnapshot().room?.code, '1234');
+  assert.equal(socket.closes.length, 0);
+});
+
+for (const localSeat of [0,1]) test(`room title switch reuses the room code and seat identity for P${localSeat+1}`, async () => {
+  const host = subsetHost(['th06','th07']); host.shared.netplayRelay = 'wss://relay.invalid/socket';
+  const f = await mountBrowser({initial:'/?game=th06mp&mpRoom=1234', host, socketBoundary:true, seedPackages:['th06','th07']});
+  const session=api.getTestSession();
+  await until(()=>f.sockets.length>0,'original room socket');
+  const socket=f.sockets[0],clientId=new URL(socket.url).searchParams.get('lobby');
+  const local={clientId,name:'Local',loadout:1,ready:false};
+  const peer={clientId:'room_switch_peer',name:'Peer',loadout:0,ready:false};
+  const seats=localSeat===0?[local,peer]:[peer,local];
+  const room={code:'1234',playerCount:2,difficulty:1,phase:'lobby',startSerial:0,seats,spectators:[]};
+  await React.act(async()=>{socket.open();socket.message({type:'state',roomDirectory:{version:1,globalRoomCodes:true},room});});
+  await until(()=>session.room.service.getSnapshot().seat===localSeat,'original player seat');
+  if(localSeat===0){
+    await until(()=>!!env.document.querySelector('#roomProductSelect'),'host game selector');
+    assert.equal(node('#roomProductSelect').textContent,'');
+    await React.act(async()=>node('#roomProductSelect').dispatchEvent(
+      new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true})));
+    await until(()=>!!env.document.querySelector('[data-room-product="th07mp"]'),'shared game menu option');
+    assert.equal(node('[data-room-product="th06mp"]').getAttribute('aria-checked'),'true');
+    assert.ok(node('[data-room-product="th07mp"] .book-lobby-cover'));
+    await click('[data-room-product="th07mp"]');
+    assert.deepEqual(socket.sent.at(-1),{type:'switch-product',product:'th07mp'});
+  }else assert.equal(env.document.querySelector('#roomProductSelect'),null);
+  await React.act(async()=>socket.message({type:'room-product',product:'th07mp',code:'1234',spectator:false}));
+  await until(()=>f.sockets.length>1,'replacement room socket');
+  const moved=f.sockets.at(-1),url=new URL(moved.url);
+  assert.equal(url.searchParams.get('room'),'th07mp-1234');
+  assert.equal(url.searchParams.get('lobby'),clientId);
+  await React.act(async()=>{moved.open();moved.message({type:'state',roomDirectory:{version:1,globalRoomCodes:true},room});});
+  assert.equal(session.room.service.getSnapshot().product,'th07mp');
+  assert.equal(session.room.service.getSnapshot().room.code,'1234');
+  assert.equal(session.room.service.getSnapshot().seat,localSeat);
 });
 
 test('actual BrowserLauncher: spectator toolbar exits playback into the existing room', async () => {
@@ -3327,4 +3348,17 @@ for(const game of multiplayerGames)test(`${game} prepared room title stays visib
  await click('#fullscreenToggle');
  assert.equal(f.fullscreen,null);assert.equal(node('#player').classList.contains('room-workspace'),true);
  assert.equal(node('#player').getAttribute('aria-hidden'),'false');
+});
+
+
+test('actual BrowserLauncher: save choice runs after native preparation and before the first launch',async()=>{
+ api.setCloudRunProbe(()=>{});let choose;api.setCloudBeforeStartProbe(()=>new Promise(resolve=>{choose=resolve;}));
+ const f=await mountBrowser();await start();
+ await until(()=>typeof choose==='function','the prepared game reaches save review');
+ assert.equal(api.getTestSession().getRuntime().getSnapshot().ready,true);
+ assert.equal(commands().includes('launch'),false,'the native game cannot read a selected save until review settles');
+ await React.act(async()=>choose('continue'));
+ await until(()=>api.getTestSession().getRuntime().getSnapshot().launched,'the browser save starts normally');
+ const order=api.getCloudSaveEvents().map(event=>event.type);
+ assert.ok(order.indexOf('beforeStart')<order.indexOf('started'));
 });

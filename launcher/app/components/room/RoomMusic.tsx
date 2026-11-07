@@ -22,9 +22,10 @@ import {
 } from 'lucide-react';
 import { type CSSProperties, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useLocale } from '../../i18n';
-import { type MusicPlatform, type MusicTrack, musicPlaylistId } from '../../services/music-provider';
-import type { MusicError, RoomMusic } from '../../services/room-music';
+import { type MusicPlatform, type MusicProvider, type MusicTrack, musicPlaylistId } from '../../services/music-provider';
+import type { MusicError, MusicLookup, RoomMusic } from '../../services/room-music';
 import { Button } from '../../ui/controls';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../../ui/dialog';
 import { InputGroup, InputGroupInput } from '../../ui/input-group';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '../../ui/popover';
 import { Slider } from '../../ui/slider';
@@ -36,6 +37,7 @@ import '../../ui/menu-motion.css';
 const time = (seconds: number) =>
   `${Math.floor(Math.max(0, seconds) / 60)}:${String(Math.floor(Math.max(0, seconds) % 60)).padStart(2, '0')}`;
 export type MusicPanelTab = 'search' | 'queue';
+const tracksPerPage = 30;
 const paletteCache = new Map<string, string[]>();
 function MusicCover({ url, onColors }: { url?: string; onColors?(colors: string[]): void }) {
   const [cors, setCors] = useState(!!onColors),
@@ -88,13 +90,75 @@ function MusicCover({ url, onColors }: { url?: string; onColors?(colors: string[
   );
 }
 
+export function RoomMusicInvite({ model, panelOpen }: { model: RoomMusic; panelOpen: boolean }) {
+  const { t } = useLocale();
+  const invite = useSyncExternalStore(model.subscribe, model.getPendingInvitation, model.getPendingInvitation);
+  const focusReturn = useRef<HTMLElement | null>(null);
+  const cancel = useRef<HTMLButtonElement>(null);
+  const session = invite?.session;
+  const track = invite?.queue?.[invite.queueIndex ?? 0]?.name;
+  const open = !!session;
+  const anchor = open && panelOpen ? document.getElementById('mpRoomPanel') : null;
+
+  return (
+    <Dialog open={open} onOpenChange={next => { if (!next) model.declineInvitation(); }}>
+      <DialogContent
+        portalAnchor={anchor}
+        showClose={false}
+        onOpenAutoFocus={event => {
+          event.preventDefault();
+          focusReturn.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+          cancel.current?.focus({ preventScroll: true });
+        }}
+        onCloseAutoFocus={event => {
+          event.preventDefault();
+          focusReturn.current?.focus({ preventScroll: true });
+        }}
+      >
+        <DialogTitle>{t('music.offer')}</DialogTitle>
+        <DialogDescription className="break-words">{track || t('music.invitePrompt')}</DialogDescription>
+        <div className="flex justify-end gap-2">
+          <Button ref={cancel} type="button" onClick={model.declineInvitation}>{t('action.cancel')}</Button>
+          <Button variant="primary" type="button" onClick={() => {
+            if (model.getPendingInvitation()?.session === session) model.requestSync();
+          }}>{t('music.join')}</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function TrackArtwork({ provider, track, url }: { provider: MusicProvider; track: MusicTrack; url?: string }) {
+  const { platform, id } = track;
+  const element = useRef<HTMLSpanElement>(null);
+  const [thumbnail, setThumbnail] = useState<string>();
+  useEffect(() => {
+    if (url || thumbnail || !provider.cover || !element.current || typeof IntersectionObserver === 'undefined') return;
+    const controller = new AbortController();
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      observer.disconnect();
+      void provider.cover!({ platform, id }, controller.signal).then((cover) => {
+        if (!controller.signal.aborted) setThumbnail(cover);
+      }).catch(() => {});
+    });
+    observer.observe(element.current);
+    return () => { observer.disconnect(); controller.abort(); };
+  }, [provider, platform, id, url, thumbnail]);
+  const artwork = url ?? thumbnail;
+  return <span className="room-music-artwork" ref={element}>
+    <MusicCover key={artwork ?? 'empty'} url={artwork} />
+    <span className="room-music-artwork-action"><Play size={18} fill="currentColor" aria-hidden="true" /></span>
+  </span>;
+}
+
 export function RoomMusicToggle({ model, open, onToggle }: {
   model: RoomMusic;
   open: boolean;
   onToggle(): void;
 }) {
   const { t } = useLocale();
-  const offered = useSyncExternalStore(model.subscribe, () => model.getSnapshot().syncState === 'offered');
+  const offered = useSyncExternalStore(model.subscribe, () => !!model.getPendingInvitation());
   return (
     <Button variant={open ? "action" : "quiet"} size="sm" className="room-workspace-music-toggle" aria-expanded={open}
       aria-controls={open ? 'roomMusicPlayer' : undefined} onClick={onToggle}>
@@ -126,11 +190,12 @@ export function RoomMusicStrip({
   const loading = state.status === 'loading';
   const playing = active && session.pausedAt == null && state.status !== 'ended' && !failed;
   const enabled = state.inRoom;
+  const readOnly = state.joined && !state.seated;
   const {syncState} = state;
-  const syncLabel = t(syncState === 'offered' ? 'music.join' : syncState === 'waiting' ? 'music.cancelInvite' :
+  const syncLabel = t(syncState === 'offered' ? 'music.join' :
     syncState === 'shared' ? 'music.leave' : 'music.title');
-  const canSync = state.eligible && state.enabled && state.connected &&
-    (syncState !== 'solo' || (state.canInvite && active && !!state.duration && !loading && !failed));
+  const canSync = state.enabled && state.connected &&
+    (syncState !== 'solo' || (state.seated && active && !!state.duration && !loading && !failed));
   const repeat = session?.repeat ?? 'off';
   const repeatLabel = t(`music.repeat.${repeat}`);
   const label = t(failed ? 'music.retry' : playing ? 'music.pause' : 'music.play');
@@ -150,14 +215,14 @@ export function RoomMusicStrip({
       />
       <span className="room-music-track">
         <strong>{current?.name || t('music.title')}</strong>
-        <small>{syncState === 'waiting' ? t('music.waiting') : current?.artist || t('music.choose')}</small>
+        <small>{current?.artist || t('music.choose')}</small>
       </span>
     </span>
   );
   return (
     <section id={embedded ? undefined : 'roomMusicPlayer'} className="room-music-strip" aria-label={t('music.title')} style={style}>
       <div className="room-music-heading">
-        {embedded ? (
+        {embedded || readOnly ? (
           heading
         ) : (
           <Button
@@ -176,15 +241,15 @@ export function RoomMusicStrip({
           size="sm"
           aria-label={syncState === 'solo' ? undefined : `${t('music.title')} | ${syncLabel}`}
           title={syncState === 'solo' && !canSync
-            ? t(!state.eligible ? 'music.seatedOnly' : !state.enabled ? 'music.disabled' : !state.canInvite ? 'music.needPlayer' : 'music.choose')
+            ? t(!state.enabled ? 'music.disabled' : !state.seated ? 'music.seatedOnly' : 'music.choose')
             : syncLabel}
-          aria-pressed={syncState === 'shared' || syncState === 'waiting'}
+          aria-pressed={syncState === 'shared'}
           disabled={!canSync}
-          onClick={syncState === 'shared' || syncState === 'waiting' ? model.leave : model.requestSync}
+          onClick={syncState === 'shared' ? model.leave : model.requestSync}
         >
           {t('music.title')}
         </Button>
-        {!embedded && (
+        {!embedded && !readOnly && (
           <Button
             variant="quiet"
             size="icon-sm"
@@ -217,12 +282,12 @@ export function RoomMusicStrip({
                 onValueChange={model.setVolume}
               />
             </div>
-            {(syncState === 'shared' || syncState === 'waiting') && (
+            {syncState === 'shared' && (
               <div className="room-music-leave-row">
                 <PopoverClose asChild>
                   <Button variant="quiet" size="sm" onClick={model.leave}>
                     <LogOut size={16} aria-hidden="true" />
-                    {t(syncState === 'waiting' ? 'music.cancelInvite' : 'music.leave')}
+                    {t('music.leave')}
                   </Button>
                 </PopoverClose>
               </div>
@@ -238,7 +303,7 @@ export function RoomMusicStrip({
           max={Math.max(1, state.duration)}
           step={0.1}
           value={Math.min(shown, state.duration)}
-          disabled={!enabled || !active || loading || !state.duration}
+          disabled={readOnly || !enabled || !active || loading || !state.duration}
           onPointerDownCapture={() => {
             interactionKey.current = progressKey;
           }}
@@ -257,7 +322,7 @@ export function RoomMusicStrip({
           <span>-{time(state.duration - shown)}</span>
         </div>
       </div>
-      <div className="room-music-transport">
+      {!readOnly && <div className="room-music-transport">
         <Button
           variant="quiet"
           size="icon-sm"
@@ -324,10 +389,11 @@ export function RoomMusicStrip({
         >
           {repeat === 'one' ? <Repeat1 aria-hidden="true" /> : <Repeat aria-hidden="true" />}
         </Button>
-      </div>
+      </div>}
       {state.error && (
         <p className="room-music-feedback" role="alert">
           {t(`music.${state.error}`)}
+          {readOnly && <Button size="sm" variant="quiet" onClick={model.retry}>{t('music.retry')}</Button>}
         </p>
       )}
     </section>
@@ -353,11 +419,12 @@ export function RoomMusicPanel({
     [results, setResults] = useState<MusicTrack[]>([]);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState<MusicError | null>(null),
-    [more, setMore] = useState(false);
+    [visibleCount, setVisibleCount] = useState(tracksPerPage);
   const pending = useRef<AbortController | null>(null),
     searchKey = useRef(''),
-    nextOffset = useRef(0);
-  const enabled = state.inRoom;
+    queryInput = useRef<HTMLInputElement>(null);
+  const readOnly = state.joined && !state.seated;
+  const enabled = state.inRoom && !readOnly;
   useEffect(() => {
     if (hidden || !enabled) {
       pending.current?.abort();
@@ -373,40 +440,31 @@ export function RoomMusicPanel({
     pending.current?.abort();
     pending.current = null;
     searchKey.current = '';
-    nextOffset.current = 0;
     setBusy(false);
     setError(null);
     setResults([]);
-    setMore(false);
+    setVisibleCount(tracksPerPage);
   }
-  async function search(append = false) {
+  async function search(entry: MusicLookup = { platform, mode, query }) {
+    const { platform, mode, query } = entry;
     if (!query.trim() || !enabled) return;
     pending.current?.abort();
     const controller = new AbortController();
     pending.current = controller;
     const timeout = setTimeout(() => controller.abort(), 25000);
     controller.signal.addEventListener('abort', () => clearTimeout(timeout), { once: true });
-    const key = `${platform}:${mode}:${query.trim()}`;
-    const offset = append && searchKey.current === key ? nextOffset.current : 0;
-    searchKey.current = key;
+    searchKey.current = query.trim();
     setBusy(true);
     setError(null);
     try {
-      const found =
-        mode === 'playlist'
-          ? await model.provider.playlist(platform, musicPlaylistId(platform, query), offset, controller.signal)
-          : await model.provider.search(platform, query.trim(), offset, controller.signal);
+      const value = mode === 'playlist' ? musicPlaylistId(platform, query) : query.trim();
+      model.rememberLookup({ platform, mode, query: value });
+      const found = mode === 'playlist'
+        ? await model.provider.playlist(platform, value, controller.signal)
+        : await model.provider.search(platform, value, controller.signal);
       if (controller.signal.aborted || pending.current !== controller) return;
-      nextOffset.current = offset + found.length;
-      const limit = mode === 'playlist' ? 100 : 300;
-      setResults((previous) =>
-        [
-          ...new Map(
-            (offset ? [...previous, ...found] : found).map((track) => [`${track.platform}:${track.id}`, track]),
-          ).values(),
-        ].slice(0, limit),
-      );
-      setMore(found.length === 30 && offset + found.length < limit);
+      setResults(found);
+      setVisibleCount(tracksPerPage);
     } catch (failure) {
       if (pending.current === controller)
         setError(failure instanceof Error && failure.message === 'invalidPlaylist' ? 'invalidPlaylist' : 'unavailable');
@@ -415,6 +473,7 @@ export function RoomMusicPanel({
       if (pending.current === controller) setBusy(false);
     }
   }
+  const showHistory = !searchKey.current && state.lookups.length > 0;
   const queue = state.session?.queue ?? [];
   const sameTrack = (a: MusicTrack, b?: MusicTrack | null) => a.platform === b?.platform && a.id === b.id;
   function trackRow(track: MusicTrack, index: number, queued: boolean) {
@@ -435,12 +494,7 @@ export function RoomMusicPanel({
           aria-label={`${action} | ${track.name || track.id} | ${track.artist}`}
           onClick={() => model.choose(track)}
         >
-          <span className="room-music-artwork">
-            <MusicCover key={artwork ?? 'empty'} url={artwork} />
-            <span className="room-music-artwork-action">
-              <Play size={18} fill="currentColor" aria-hidden="true" />
-            </span>
-          </span>
+          <TrackArtwork provider={model.provider} track={track} url={artwork} />
           <span className="room-music-track">
             <strong>{track.name || track.id}</strong>
             <small>
@@ -476,7 +530,7 @@ export function RoomMusicPanel({
   }
   return (
     <section className="room-music-panel" hidden={hidden}>
-      <Tabs className="room-music-library" value={tab} onValueChange={(value) => onTabChange(value as MusicPanelTab)}>
+      {!readOnly && <Tabs className="room-music-library" value={tab} onValueChange={(value) => onTabChange(value as MusicPanelTab)}>
         <TabsList aria-label={t('music.source')}>
           <TabsTrigger value="search">
             <Search size={16} aria-hidden="true" />
@@ -514,6 +568,7 @@ export function RoomMusicPanel({
             <InputGroup>
               {mode === 'playlist' ? <ListMusic aria-hidden="true" /> : <Search aria-hidden="true" />}
               <InputGroupInput
+                ref={queryInput}
                 aria-label={t(mode === 'search' ? 'music.keyword' : 'music.playlistInput')}
                 placeholder={t(mode === 'search' ? 'music.keyword' : 'music.playlistInput')}
                 value={query}
@@ -523,6 +578,10 @@ export function RoomMusicPanel({
                   setQuery(event.target.value);
                 }}
               />
+              {query && <Button variant="quiet" size="icon-sm" type="button" aria-label={t('library.clearSearch')}
+                onClick={() => { clearSearch(); setQuery(''); queryInput.current?.focus(); }}>
+                <X aria-hidden="true" />
+              </Button>}
               <Button
                 variant="quiet"
                 size="icon"
@@ -587,18 +646,37 @@ export function RoomMusicPanel({
                     </Button>
                   )}
                 </div>
-                <ul className="room-music-results">{results.map((track, index) => trackRow(track, index, false))}</ul>
+                <ul className="room-music-results">
+                  {results.slice(0, visibleCount).map((track, index) => trackRow(track, index, false))}
+                </ul>
               </>
             )}
-            {!results.length && !searchKey.current && state.selected && mode === 'search' && (
+            {showHistory && (
               <>
                 <div className="room-music-list-heading">
-                  <h4>{t('music.last')}</h4>
+                  <h4>{t('music.history')}</h4>
                 </div>
-                <ul className="room-music-results room-music-recent">{trackRow(state.selected, 0, false)}</ul>
+                <ul className="room-music-results">
+                  {state.lookups.map(entry => <li key={`${entry.platform}:${entry.mode}:${entry.query}`}>
+                    <Button variant="unstyled" className="room-music-row" disabled={!enabled}
+                      onClick={() => {
+                        clearSearch();
+                        setPlatform(entry.platform);
+                        setMode(entry.mode);
+                        setQuery(entry.query);
+                        void search(entry);
+                      }}>
+                      {entry.mode === 'playlist' ? <ListMusic aria-hidden="true" /> : <Search aria-hidden="true" />}
+                      <span className="room-music-track">
+                        <strong>{entry.query}</strong>
+                        <small>{t(`music.${entry.platform}`)}{entry.mode === 'playlist' ? ` | ${t('music.playlist')}` : ''}</small>
+                      </span>
+                    </Button>
+                  </li>)}
+                </ul>
               </>
             )}
-            {!results.length && (!state.selected || searchKey.current || mode === 'playlist') && !error && (
+            {!results.length && !showHistory && !error && (
               <div className="room-music-empty" role="status">
                 {busy ? (
                   <LoaderCircle className="room-music-loading" size={30} />
@@ -618,21 +696,19 @@ export function RoomMusicPanel({
                 </p>
               </div>
             )}
-            {more && (
+            {visibleCount < results.length && (
               <Button
                 className="room-music-load-more"
                 variant="quiet"
                 disabled={busy}
-                onClick={() => {
-                  void search(true);
-                }}
+                onClick={() => setVisibleCount((count) => count + tracksPerPage)}
               >
                 {t('music.more')}
               </Button>
             )}
           </div>
         </TabsContent>
-      </Tabs>
+      </Tabs>}
       <RoomMusicStrip model={model} open embedded onOpen={(_element, next) => onTabChange(next)} />
     </section>
   );

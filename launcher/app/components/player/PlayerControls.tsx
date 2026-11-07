@@ -20,9 +20,10 @@ import { NetplayCalibrationReport } from '../NetplayCalibrationReport';
 import { RuntimeDiagnostics, type NetplayDiagnosticLines } from './RuntimeDiagnostics';
 import { TransferPanel } from './TransferPanel';
 import { TouchControlPreview } from '../settings/TouchControlPreview';
+import { GameSettingsPopover } from '../settings/GameAudioControls';
 import { useSurfaceNavigation } from '../../navigation/surface-navigation';
 import { useLocale } from '../../i18n';
-import { FullscreenIcons, PlaybackExitIcon, TouchHelpIcon, OrientationIcon } from './utility-icons';
+import { FullscreenIcons, PlayerExitIcon, TouchHelpIcon, OrientationIcon } from './utility-icons';
 import { SpectatorMatchScore } from './SpectatorMatchScore';
 import { Th09MatchStats } from './Th09MatchStats';
 import { SpectatorPlayback } from './SpectatorPlayback';
@@ -309,6 +310,8 @@ function PlayerUtilities({
     state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const [, updateOrientation] = useState(0);
   const spectating = session.getPlayerMode() === 'spectator';
+  const inRoom = navigation.roomCode !== null;
+  const canReturnToRoom = state.runtime?.runtimeVariant === 'multiplayer' && state.runtime.roomReturnSupported;
   const portrait =
     (window.visualViewport?.height || window.innerHeight) > (window.visualViewport?.width || window.innerWidth);
   useLayoutEffect(() => {
@@ -347,7 +350,7 @@ function PlayerUtilities({
             title={t(state.replayViewer ? 'player.exitPlayback' : 'player.exitSpectating')}
             onClick={navigation.closeSurface}
           >
-            <PlaybackExitIcon />
+            <PlayerExitIcon />
           </UiButton>
         )}
         {!roomWorkspace && (
@@ -410,6 +413,14 @@ function PlayerUtilities({
           <strong>{t('action.reset')}</strong>
           <small id="gameZoomScale">100%</small>
         </UiButton>
+        {!roomWorkspace && state.runtime?.ready && (
+          <GameSettingsPopover model={session.settings}
+            exit={state.runtime.launched && !state.replayViewer && !spectating
+              ? {label: t(inRoom ? canReturnToRoom ? 'netplay.return' : 'player.leaveRoom' : 'player.exitGame'),
+                onSelect: inRoom && !canReturnToRoom ? session.requestRoomLeave : navigation.closeSurface}
+              : undefined}
+          />
+        )}
       </nav>
     </>
   );

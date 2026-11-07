@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Heart as HeartIcon,
   Info as InfoCircledIcon,
-  Bell as BellIcon,
   Activity as ActivityLogIcon,
   BookOpen as ReaderIcon,
   Check as CheckIcon,
@@ -26,7 +25,7 @@ import { AccountMenu } from './AccountMenu';
 import { NavigationIcon } from './NavigationIcon';
 import { SiteBrand } from './SiteBrand';
 import { UI_LOCALES, UI_LOCALE_LABELS, withUiLanguage } from '../../../src/launcher/i18n.mts';
-import { accountsEnabled, previewFeaturesEnabled, siteNoticeEnabled } from '../../release-features';
+import { accountsEnabled, previewFeaturesEnabled } from '../../release-features';
 import '../../ui/menu-motion.css';
 import {testFeaturesEnabled,reloadTestFeatures} from '../../../src/launcher/test-features.mts';
 
@@ -47,8 +46,6 @@ export interface LauncherMastheadProps {
   onMenuOpenChange: (open: boolean) => void;
   lessMotion: boolean;
   onToggleMotion: () => void;
-  noticeEnabled: boolean;
-  onToggleNotice: () => void;
   diagnosticsEnabled: boolean;
   onToggleDiagnostics: () => void;
   onDonation: () => void;
@@ -239,10 +236,12 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                   checked={props.diagnosticsEnabled} onCheckedChange={props.onToggleDiagnostics}>
                   <ActivityLogIcon/>{t('diagnostics.toggle')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator>
                 </DropdownMenu.CheckboxItem>
-                <DropdownMenu.CheckboxItem className="ui-menu-item" id="betaFeaturesToggle" checked={testFeatures}
-                  onCheckedChange={enabled=>reloadTestFeatures(window,enabled===true)}>
-                  <FlaskConical/>{t('developer.betaFeatures')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator>
-                </DropdownMenu.CheckboxItem>
+                {previewFeaturesEnabled && (
+                  <DropdownMenu.CheckboxItem className="ui-menu-item" id="betaFeaturesToggle" checked={testFeatures}
+                    onCheckedChange={enabled=>reloadTestFeatures(window,enabled===true)}>
+                    <FlaskConical/>{t('developer.betaFeatures')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator>
+                  </DropdownMenu.CheckboxItem>
+                )}
               </> : languagesOpen ? (
                 <>
                   <DropdownMenu.Item
@@ -299,20 +298,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                         <CheckIcon />
                       </DropdownMenu.ItemIndicator>
                     </DropdownMenu.CheckboxItem>
-                    {siteNoticeEnabled && (
-                      <DropdownMenu.CheckboxItem
-                        className="ui-menu-item"
-                        id="siteNoticeToggle"
-                        checked={props.noticeEnabled}
-                        onCheckedChange={props.onToggleNotice}
-                      >
-                        <BellIcon />
-                        {t('notice.label')}
-                        <DropdownMenu.ItemIndicator>
-                          <CheckIcon />
-                        </DropdownMenu.ItemIndicator>
-                      </DropdownMenu.CheckboxItem>
-                    )}
                     <DropdownMenu.Item
                       className="ui-menu-item masthead-language-trigger"
                       onSelect={(event) => {

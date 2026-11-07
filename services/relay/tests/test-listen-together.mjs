@@ -72,63 +72,52 @@ test('disabled Relay does not advertise or emit music state', {timeout: 15000}, 
     assert.equal(peer.messages.some(message => message.type === type), false);
 });
 
-test('seated players consent, change track, resume and exit independently', {timeout: 15000}, async t => {
+test('players and viewers opt into playback independently, and only players can control it', {timeout: 15000}, async t => {
   const {host, guest, viewer, open} = await setup(t, true);
   host.send({type: 'set-ready', ready: true});
   await guest.wait(message => message.room?.seats?.[0]?.ready, 'ready state');
-  assert.equal(host.messages.some(message => message.type === type), false);
+  assert.equal(host.messages.filter(message => message.type === type).at(-1).session, null);
   host.music('invite', {track: {...first, url: 'https://ignored.example/'}});
   const offer = await guest.wait(message => message.type === type && message.session, 'invite');
   assert.deepEqual(offer.track, first);
-  assert.equal(offer.startedAt, null);
+  assert.ok(Number.isInteger(offer.startedAt));
+  assert.equal(offer.joined, false);
   assert.deepEqual(offer.participants, ['host_lobby']);
 
   viewer.music('join', {session: offer.session});
-  host.music('join', {session: offer.session});
-  host.music('sync');
-  const pending = await host.wait(message => message.type === type && message.startedAt === null &&
-    host.messages.filter(item => item.type === type).length >= 2, 'still pending after self approval');
-  assert.equal(pending.session, offer.session);
-  assert.ok(host.messages.filter(item => item.type === type).every(item => item.startedAt === null));
+  const listening = await viewer.wait(message => message.session === offer.session && message.joined, 'viewer opts in');
+  assert.deepEqual(listening.participants, ['host_lobby']);
+  viewer.music('select', {session: offer.session, revision: listening.revision, track: second});
+  viewer.music('sync');
+  await viewer.wait(message => message.session === offer.session && message.joined &&
+    viewer.messages.filter(item => item.session === offer.session && item.joined).length >= 2, 'viewer sync');
+  assert.equal(viewer.messages.some(message => message.track?.id === second.id), false);
 
   guest.music('join', {session: offer.session});
-  const started = await host.wait(message => message.type === type && Number.isInteger(message.startedAt), 'start');
+  const started = await guest.wait(message => message.session === offer.session && message.joined, 'player opts in');
   assert.deepEqual(started.participants, ['host_lobby', 'guest_lobby']);
   guest.music('select', {session: offer.session, revision: started.revision, track: second});
   const changed = await host.wait(message => message.type === type && message.track?.id === second.id, 'track change');
   assert.ok(changed.startedAt >= started.startedAt);
   assert.ok(changed.serverTime >= changed.startedAt);
-
   assert.equal(host.messages.filter(message => message.type === 'state').at(-1).room.seats[0].ready, true);
 
   const resumed = await open('guest_lobby');
   await resumed.wait(message => message.type === type && message.track?.id === second.id, 'reconnect snapshot');
   resumed.music('leave', {session: offer.session});
-  await host.wait(message => message.type === type && message.session === null, 'leave ends music');
-  await resumed.wait(message => message.type === type && message.session === null, 'leaving client stops');
-
-  host.music('invite', {track: first});
-  const next = await resumed.wait(message => message.type === type && message.session && message.session !== offer.session, 'new invite');
-  resumed.music('join', {session: offer.session});
-  resumed.music('sync');
-  await resumed.wait(message => message.type === type && message.session === next.session &&
-    resumed.messages.filter(item => item.session === next.session).length >= 2, 'stale consent ignored');
-  assert.ok(resumed.messages.filter(item => item.session === next.session).every(item => item.startedAt === null));
-  resumed.music('join', {session: next.session});
-  await host.wait(message => message.type === type && message.session === next.session && message.startedAt, 'new start');
-  resumed.send({type: 'spectate'});
-  await resumed.wait(message => message.type === type && message.session === null &&
-    resumed.messages.filter(item => item.type === type && item.session === null).length === 2, 'demotion stops music');
-  await host.wait(message => message.room?.spectatorCount === 2, 'demotion');
-  assert.equal(viewer.messages.some(message => message.type === type), false);
+  await resumed.wait(message => message.session === offer.session && message.joined === false, 'leaving client stops');
+  viewer.music('sync');
+  const continuing = await viewer.wait(message => message.session === offer.session && message.joined &&
+    message.track?.id === second.id && message.participants.length === 1, 'other listeners continue');
+  assert.deepEqual(continuing.participants, ['host_lobby']);
 });
 
-test('stale concurrent changes are rejected, rate limits allow exit, ended state clears on reconnect', {timeout: 15000}, async t => {
+test('stale concurrent changes are rejected and rate limits still allow an independent exit', {timeout: 15000}, async t => {
   const {host, guest, open} = await setup(t, true);
   host.music('invite', {track: first});
   const offer = await guest.wait(m => m.type === type && m.session, 'offer');
   guest.music('join', {session: offer.session});
-  const state = await host.wait(m => m.type === type && m.startedAt, 'consent');
+  const state = await guest.wait(m => m.session === offer.session && m.joined, 'consent');
   const select = {session: state.session, revision: state.revision, track: second};
   host.music('select', select);
   const change = await guest.wait(m => m.type === type && m.revision > state.revision, 'first writer');
@@ -141,9 +130,11 @@ test('stale concurrent changes are rejected, rate limits allow exit, ended state
   for (let i = 0; i < 12; i++) host.music('sync');
   await host.wait(m => m.type === type && m.error === 'rate-limited', 'bounded controls');
   host.music('leave', {session: state.session});
-  await guest.wait(m => m.type === type && m.session === null, 'exit during rate limit');
-  const reconnect = await open('guest_lobby');
-  await reconnect.wait(m => m.type === type && m.session === null, 'idle reconnect clears old audio');
+  await host.wait(m => m.session === state.session && m.joined === false, 'exit during rate limit');
+  const reconnect = await open('host_lobby');
+  const snapshot = await reconnect.wait(m => m.type === type && m.session === state.session, 'reconnect gets current offer');
+  assert.equal(snapshot.joined, false);
+  assert.deepEqual(snapshot.participants, ['guest_lobby']);
 });
 
 test('three-player membership is independent and stale sockets cannot control music', async () => {
@@ -152,26 +143,29 @@ test('three-player membership is independent and stale sockets cannot control mu
   const room = {lobby:{seats:['a','b','c'].map(clientId => ({clientId}))}, lobbyClients:sockets};
   const music = createListenTogether({send:(socket,data)=>socket?.messages.push(JSON.parse(data)),now:()=>1000});
   const send = (id,action,extra={}) => music.handle(room,id,sockets.get(id),{action,...extra});
+  const current = id => sockets.get(id).messages.at(-1);
+  send('a','invite',{track:{platform:'qq',id:'https://evil.example'}});
+  assert.equal(current('b'), undefined);
   send('a','invite',{track:first});
-  const offer=sockets.get('b').messages.at(-1);
+  const offer=current('b');
   music.handle(room,'b',{readyState:1},{action:'join',session:offer.session});
-  assert.equal(sockets.get('a').messages.at(-1).startedAt,null);
+  music.sync(room,'b');
+  assert.equal(current('b').joined,false);
   send('b','join',{session:offer.session});
   send('c','join',{session:offer.session});
   send('a','leave',{session:offer.session});
-  assert.deepEqual(sockets.get('a').messages.at(-1).participants,['b','c']);
+  assert.deepEqual(current('a').participants,['b','c']);
+  assert.equal(current('a').joined,false);
   room.lobby.seats[1]=null;
-  music.reconcile(room);
-  for(const socket of sockets.values())assert.equal(socket.messages.at(-1).session,null);
-  room.lobby.seats[1]={clientId:'b'};
-  send('a','invite',{track:{platform:'qq',id:'https://evil.example'}});
-  assert.equal(sockets.get('b').messages.at(-1).session,null);
-  send('a','invite',{track:first});
-  const next=sockets.get('b').messages.at(-1);
-  assert.notEqual(next.session,offer.session);
-  room.lobby.seats[0]=null;
-  music.reconcile(room);
-  assert.equal(sockets.get('b').messages.at(-1).session,null);
+  music.sync(room,'b');
+  assert.deepEqual(current('b').participants,['c']);
+  assert.equal(current('b').joined,true);
+  send('b','select',{session:offer.session,revision:offer.revision,track:second});
+  music.sync(room,'c');
+  assert.deepEqual(current('c').track,first);
+  music.close(room);
+  music.sync(room,'c');
+  assert.equal(current('c').session,null);
 });
 
 test('shared transport is versioned, freezes the room clock and excludes nonparticipants', async () => {

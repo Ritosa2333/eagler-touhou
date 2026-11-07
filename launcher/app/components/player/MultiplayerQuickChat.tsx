@@ -10,8 +10,9 @@ import {
 import type { QuickChatPhrase } from '../../../src/contracts/multiplayer-quick-chat.mts';
 import type { MultiplayerQuickChatModel, QuickChatEntry } from '../../../src/launcher/multiplayer-quick-chat-model.mts';
 import { useLocale } from '../../i18n';
+import type { DecisionStore } from '../../models/decisions';
 import { animateUiFrames, type SurfaceAnimation } from '../../ui/surface-motion';
-import { ChatComposer, ChatMessageContent } from '../room/ChatControls';
+import { ChatComposer, ChatMessageContent, QuickChatPhrases, useChatReportConfirmation } from '../room/ChatControls';
 import { shallowEqual, useStoreSelector } from '../../shared/react-store';
 
 const chatPresentation = (state: ReturnType<MultiplayerQuickChatModel['getSnapshot']>) => ({
@@ -19,24 +20,20 @@ const chatPresentation = (state: ReturnType<MultiplayerQuickChatModel['getSnapsh
   entries: state.entries,
   muted: state.muted,
   pickerOpen: state.pickerOpen,
-  registered: state.registered,
+  editingText: state.editingText,
 });
 const isolate = (event: SyntheticEvent) => event.stopPropagation();
-function isolatePointer(event: SyntheticEvent) {
-  event.stopPropagation();
-  if (
-    event.target instanceof Element &&
-    event.target.closest('input,textarea,[contenteditable="true"],[aria-haspopup="menu"],[role="menu"]')
-  )
-    return;
-  event.preventDefault();
-}
 
 /** React owns the message list and its events. Effects only measure scrolling
  * and animate row movement/expiry. Muting hides a row without moving its DOM. */
-export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatModel }) {
+export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
+  model: MultiplayerQuickChatModel;
+  iconUrl: string;
+  decisions: Pick<DecisionStore, 'askConfirmation'>;
+}) {
   const { t } = useLocale();
   const root = useRef<HTMLElement>(null),
+    picker = useRef<HTMLDivElement>(null),
     log = useRef<HTMLDivElement>(null);
   const rows = useRef(new Map<number, HTMLParagraphElement>());
   const fades = useRef(new Map<number, SurfaceAnimation>()),
@@ -85,6 +82,8 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
   const state = useStoreSelector(presentation, chatPresentation, shallowEqual);
   const context = state.context;
   const th09 = context?.room.startsWith('th09mp-') === true;
+  const enabled = !!context?.connected && (context.localSeat != null || context.localSpectator === true);
+  const confirmReport = useChatReportConfirmation(model, decisions);
   const returnToGame = () => {
     model.dismiss();
     const frame = document.getElementById('gameFrame') as HTMLIFrameElement | null;
@@ -103,11 +102,8 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
     }
   };
   useLayoutEffect(() => {
-    if (!state.registered || !state.pickerOpen || !context?.visible || context.inRoom) return;
-    root.current
-      ?.querySelector<HTMLElement>('input:not(:disabled),button[aria-haspopup="menu"]')
-      ?.focus({ preventScroll: true });
-  }, [state.registered, state.pickerOpen, context?.visible, context?.inRoom]);
+    if (state.pickerOpen && context?.visible && !context.inRoom) picker.current?.focus({ preventScroll: true });
+  }, [state.pickerOpen, context?.visible, context?.inRoom]);
 
   const isReduced = useCallback(() => {
     return !!(model.getSnapshot().context?.lessMotion || matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -170,12 +166,11 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
     <section
       ref={root}
       className={`mp-quick-chat${th09 ? ' th09-player-chat' : ''}`}
-      data-member={state.registered}
-      data-composer-open={state.registered && state.pickerOpen}
+      data-composer-open={state.pickerOpen}
       hidden={!context?.visible || context.inRoom}
       aria-label={t('chat.players')}
-      onPointerDown={isolatePointer}
-      onMouseDown={isolatePointer}
+      onPointerDown={isolate}
+      onMouseDown={isolate}
       onPointerMove={isolate}
       onPointerUp={isolate}
       onPointerCancel={isolate}
@@ -186,36 +181,31 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
       onKeyDown={isolateKey}
       onKeyUp={isolate}
     >
-      {state.registered ? (
-        <>
-          <UiButton
-            variant="quiet"
-            type="button"
-            className="mp-quick-chat-prompt text-inherit hover:text-inherit"
-            aria-expanded={state.pickerOpen}
-            disabled={!context?.connected}
-            onClick={model.togglePicker}
-            title={t('chat.keyboardHint')}
-          >
-            <img className="th09-chat-icon" src={new URL('assets/player-chat.svg', document.baseURI).href} alt="" />
-            {t('chat.title')}
-            <kbd className="mp-quick-chat-shortcut" aria-hidden="true">
-              Alt
-            </kbd>
-          </UiButton>
-          <div className="mp-quick-chat-picker" hidden={!state.pickerOpen}>
-            <ChatComposer model={model} />
-          </div>
-        </>
-      ) : (
-        <ChatComposer model={model} />
-      )}
+      <UiButton
+        variant="quiet"
+        type="button"
+        className="mp-quick-chat-prompt text-inherit hover:text-inherit"
+        aria-expanded={state.pickerOpen}
+        aria-keyshortcuts="Alt"
+        disabled={!enabled}
+        onClick={model.togglePicker}
+        title={t('chat.keyboardHint')}
+      >
+        <img className="th09-chat-icon" src={iconUrl} alt="" />
+        {t('chat.title')}
+        <kbd className="mp-quick-chat-shortcut" aria-hidden="true">Alt</kbd>
+      </UiButton>
+      <div ref={picker} className="mp-quick-chat-picker" tabIndex={-1} hidden={!state.pickerOpen}>
+        <ChatComposer model={model} gameplay />
+        {!state.editingText && <QuickChatPhrases enabled={enabled} language={context?.language ?? ''} numbered onSelect={model.sendPhrase}/>}
+      </div>
       <div ref={log} className="mp-quick-chat-log" role="log" aria-live="polite">
         {state.entries.map((entry) => (
           <ChatRow
             key={entry.id}
             entry={entry}
             model={model}
+            confirmReport={confirmReport}
             label={label(entry.phrase)}
             rows={rows.current}
             visible={!state.muted.includes(entry.clientId)}
@@ -233,12 +223,14 @@ function ChatRow({
   label,
   rows,
   visible,
+  confirmReport,
 }: {
   entry: QuickChatEntry;
   model: MultiplayerQuickChatModel;
   label: string;
   rows: Map<number, HTMLParagraphElement>;
   visible: boolean;
+  confirmReport(entry: QuickChatEntry): void;
 }) {
   const ref = useCallback(
     (row: HTMLParagraphElement | null) => {
@@ -254,7 +246,7 @@ function ChatRow({
   const sender = `${entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`}${entry.name ? `(${entry.name})` : ''}`;
   return (
     <p ref={ref} hidden={!visible} title={`${sender}: ${label}`} className="room-chat-entry">
-      <ChatMessageContent entry={entry} model={model} label={label} />
+      <ChatMessageContent entry={entry} model={model} label={label} confirmReport={confirmReport} />
     </p>
   );
 }

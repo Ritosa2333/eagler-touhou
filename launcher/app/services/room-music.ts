@@ -1,13 +1,29 @@
 import { applyMusicControl, createMusicPlayback, MUSIC_POSITION_LIMIT, MUSIC_QUEUE_LIMIT, musicPlaybackSnapshot,
   type MusicPlayback, type MusicRepeat, sameMusicTrack, uniqueMusicQueue } from '../../../common/contracts/music-playback.mjs';
 import type { RoomOwnerSnapshot } from './multiplayer-room';
-import { type MusicProvider, type MusicRef, type MusicTrack, validMusicRef } from './music-provider';
+import { type MusicPlatform, type MusicProvider, type MusicRef, type MusicTrack, validMusicRef } from './music-provider';
+
+export interface MusicLookup {
+  platform: MusicPlatform;
+  mode: 'search' | 'playlist';
+  query: string;
+}
+
+const MUSIC_LOOKUP_KEY = 'eagler-touhou-music-lookups-v1';
+const MUSIC_LOOKUP_LIMIT = 40;
+function validLookup(value: unknown): value is MusicLookup {
+  if (!value || typeof value !== 'object') return false;
+  const {platform, mode, query} = value as Partial<MusicLookup>;
+  return (platform === 'netease' || platform === 'qq') && typeof query === 'string' &&
+    (mode === 'search' ? !!query.trim() && query.length <= 500 : mode === 'playlist' && /^\d{1,24}$/.test(query));
+}
 
 interface Session {
   session: string;
   revision: number;
   track: MusicRef;
   participants: string[];
+  joined?: boolean;
   startedAt: number | null;
   pausedAt?: number | null;
   playback?: number;
@@ -30,14 +46,14 @@ export type MusicError =
   | 'queueFull';
 export interface RoomMusicSnapshot {
   enabled: boolean;
-  eligible: boolean;
+  seated: boolean;
   inRoom: boolean;
-  canInvite: boolean;
   connected: boolean;
   session: Session | null;
   joined: boolean;
-  syncState: 'solo' | 'offered' | 'waiting' | 'shared';
+  syncState: 'solo' | 'offered' | 'shared';
   selected: MusicTrack | null;
+  lookups: MusicLookup[];
   current: MusicTrack | null;
   status: 'idle' | 'loading' | 'playing' | 'paused' | 'ended';
   error: MusicError | null;
@@ -52,15 +68,18 @@ export function createRoomMusic({
   storage,
   send,
   createAudio,
+  onAudibleChange,
   clock = performance.now.bind(performance),
 }: {
   provider: MusicProvider;
   storage: Pick<Storage, 'getItem' | 'setItem'> | null;
   send(message: Record<string, unknown>): boolean;
   createAudio(): HTMLAudioElement;
+  onAudibleChange?(audible: boolean): void;
   clock?: () => number;
 }) {
   let selected: MusicTrack | null = null;
+  let lookups: MusicLookup[] = [];
   try {
     const item = JSON.parse(storage?.getItem(LAST_MUSIC_KEY) || 'null');
     if (validMusicRef(item)) {
@@ -72,16 +91,20 @@ export function createRoomMusic({
       };
     }
   } catch {}
+  try {
+    const saved = JSON.parse(storage?.getItem(MUSIC_LOOKUP_KEY) || '[]');
+    if (Array.isArray(saved)) lookups = saved.filter(validLookup).slice(0, MUSIC_LOOKUP_LIMIT);
+  } catch {}
   let snapshot: RoomMusicSnapshot = {
     enabled: false,
-    eligible: false,
+    seated: false,
     inRoom: false,
-    canInvite: false,
     connected: false,
     session: null,
     joined: false,
     syncState: 'solo',
     selected,
+    lookups,
     current: null,
     status: 'idle',
     error: null,
@@ -102,6 +125,8 @@ export function createRoomMusic({
   let transportSerial = 0;
   let audio: HTMLAudioElement | null = null,
     controller: AbortController | null = null;
+  let producingAudio = false;
+  let audible = false;
   let details: AbortController | null = null;
   let ticker: ReturnType<typeof setInterval> | null = null;
   let anchor = { server: 0, local: 0 },
@@ -120,6 +145,7 @@ export function createRoomMusic({
     playbackKey = '';
     endedPlayback = -1;
     stopTicker();
+    quiet();
     if (audio) {
       audio.pause();
       audio.removeAttribute('src');
@@ -145,7 +171,7 @@ export function createRoomMusic({
     return (
       !disposed &&
       snapshot.enabled &&
-      snapshot.eligible &&
+      snapshot.inRoom &&
       snapshot.connected &&
       send({ type: 'listen-together', action, ...fields })
     );
@@ -153,7 +179,8 @@ export function createRoomMusic({
   function control(action: string, fields: Record<string, unknown> = {}) {
     const state = snapshot.session;
     if (!state || disposed) return false;
-    if (snapshot.joined) return command(action, { session: state.session, revision: state.revision, ...fields });
+    if (snapshot.joined)
+      return snapshot.seated && command(action, { session: state.session, revision: state.revision, ...fields });
     if (!personal || !snapshot.inRoom) return false;
     const time = clock();
     if (snapshot.status === 'playing' && personal.pausedAt === null && audio)
@@ -180,6 +207,7 @@ export function createRoomMusic({
   }
   function finished() {
     stopTicker();
+    quiet();
     audio?.pause();
     patch({ status: 'ended', position: snapshot.duration });
     const state = snapshot.session;
@@ -188,17 +216,40 @@ export function createRoomMusic({
       control('ended', { playback: state.playback, durationMs: Math.round(snapshot.duration * 1000) });
     }
   }
+  function reportDuration() {
+    const {session, joined, seated, duration} = snapshot;
+    if (joined && seated && session?.playback !== undefined && duration)
+      command('duration', {session: session.session, playback: session.playback, durationMs: Math.round(duration * 1000)});
+  }
   function progress() {
     const start = snapshot.session?.startedAt;
     const time = snapshot.session?.pausedAt ?? anchor.server + clock() - anchor.local;
     return start == null ? 0 : Math.max(0, (time - start) / 1000);
   }
-  function prime() {
-    audio ??= createAudio();
+  function reportAudible() {
+    const next = producingAudio && !!audio && !audio.paused && !audio.ended && !audio.muted && audio.volume > 0;
+    if (next === audible) return;
+    audible = next;
+    onAudibleChange?.(audible);
+  }
+  function sounding() { producingAudio = true; reportAudible(); }
+  function quiet() { producingAudio = false; reportAudible(); }
+  // Buffering can resume at any moment. Keep the game BGM muted until playback actually stops.
+  const quietEvents = ['pause', 'ended', 'emptied', 'error'] as const;
+  function playerAudio() {
+    if (audio) return audio;
+    audio = createAudio();
     audio.preload = 'auto';
     audio.volume = snapshot.volume;
+    audio.addEventListener('playing', sounding);
+    audio.addEventListener('volumechange', reportAudible);
+    for (const event of quietEvents) audio.addEventListener(event, quiet);
+    return audio;
+  }
+  function prime() {
+    const player = playerAudio();
     // Reserve playback permission during the user's gesture.
-    if (!audio.src) void audio.play().catch(() => {});
+    if (!player.src) void player.play().catch(() => {});
   }
   function load(player: HTMLAudioElement, url: string, signal: AbortSignal): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -238,13 +289,14 @@ export function createRoomMusic({
     const isCurrent = () => controller === task && serial === transportSerial && !task.signal.aborted && !disposed;
     if (!player || !isCurrent()) return;
     stopTicker();
-    if (progress() >= snapshot.duration) {
+    if (snapshot.session?.ended || progress() >= snapshot.duration) {
       finished();
       return;
     }
     player.currentTime = progress();
     if (snapshot.session?.pausedAt != null) {
       player.pause();
+      quiet();
       patch({ status: 'paused', position: player.currentTime });
       return;
     }
@@ -254,6 +306,7 @@ export function createRoomMusic({
       if (!isCurrent()) return;
       if (snapshot.session?.pausedAt != null) {
         player.pause();
+        quiet();
         patch({ status: 'paused', position: progress() });
         return;
       }
@@ -311,30 +364,32 @@ export function createRoomMusic({
     patch({ status: 'loading', error: null, position: 0, duration: 0 });
     const isCurrent = () => !task.signal.aborted && !disposed && controller === task;
     try {
-      const stream = await provider.stream(state.track, task.signal);
+      const urls = await provider.stream(state.track, task.signal);
       if (!isCurrent()) return;
-      patch({ duration: stream.duration });
-      audio ??= createAudio();
-      audio.volume = snapshot.volume;
-      for (let i = 0; i < stream.urls.length; i++) {
+      const player = playerAudio();
+      for (const [index, url] of urls.entries()) {
         try {
-          await load(audio, stream.urls[i], task.signal);
-          if (!isCurrent()) return;
-          if (!snapshot.joined && personal?.pausedAt === null) {
-            // A personal track starts when it is ready. Shared tracks follow the room clock.
-            personal.startedAt += clock() - anchor.local;
-            const ready = personalSnapshot(personal);
-            anchor = { server: ready.serverTime, local: ready.serverTime };
-            patch({ session: ready });
-          }
-          await applyTransport(task, key);
-          return;
+          await load(player, url, task.signal);
+          break;
         } catch (error) {
           if (!isCurrent()) return;
-          if (error instanceof Error && error.name === 'NotAllowedError') throw Error('blocked');
-          if (i === stream.urls.length - 1) throw error;
+          if (index === urls.length - 1) throw error;
         }
       }
+      if (!isCurrent()) return;
+      const duration = player.duration;
+      if (!Number.isFinite(duration) || duration <= 0 || duration * 1000 > MUSIC_POSITION_LIMIT)
+        throw Error('unavailable');
+      patch({ duration });
+      reportDuration();
+      if (!snapshot.joined && personal?.pausedAt === null) {
+        // A personal track starts when it is ready. Shared tracks follow the room clock.
+        personal.startedAt += clock() - anchor.local;
+        const ready = personalSnapshot(personal);
+        anchor = { server: ready.serverTime, local: ready.serverTime };
+        patch({ session: ready });
+      }
+      await applyTransport(task, key);
     } catch (error) {
       playbackFailed(task, key, error);
     } finally {
@@ -342,7 +397,7 @@ export function createRoomMusic({
     }
   }
   function receive(message: Record<string, unknown>) {
-    if (!snapshot.enabled || !snapshot.eligible || !snapshot.connected) return;
+    if (!snapshot.enabled || !snapshot.inRoom || !snapshot.connected) return;
     if (message.error === 'rate-limited' || message.error === 'queue-full') {
       clearSeek();
       if (snapshot.joined) patch({ error: message.error === 'queue-full' ? 'queueFull' : 'rateLimited' });
@@ -357,6 +412,7 @@ export function createRoomMusic({
     }
     if (
       typeof message.session !== 'string' ||
+      (message.joined !== undefined && typeof message.joined !== 'boolean') ||
       !Number.isSafeInteger(message.revision) ||
       !validMusicRef(message.track) ||
       !Array.isArray(message.participants) ||
@@ -386,7 +442,7 @@ export function createRoomMusic({
     const state = message as unknown as Session;
     if (remote?.session === state.session && remote.revision > state.revision) return;
     remote = state;
-    const participating = state.session !== suppressed && state.participants.includes(localId);
+    const participating = state.session !== suppressed && (state.joined ?? state.participants.includes(localId));
     if (participating && state.startedAt !== null) {
       if (!snapshot.joined && personal) {
         const time = clock();
@@ -399,7 +455,7 @@ export function createRoomMusic({
       applyState(state, true);
       if (conflict) patch({ error: 'conflict' });
     } else if (snapshot.joined) restorePersonal();
-    else patch({ syncState: participating ? 'waiting' : 'offered' });
+    else patch({ syncState: 'offered' });
   }
 
   function applyState(state: Session, joined: boolean) {
@@ -435,7 +491,7 @@ export function createRoomMusic({
       details = null;
       const label = state.queue?.[state.queueIndex ?? 0];
       patch({ current: label || { ...state.track, name: state.track.id, artist: '' } });
-      if (joined) resolveDetails(state.track);
+      if (joined || !label?.cover) resolveDetails(state.track);
     }
     if (deferSeekTransport) return;
     const key = mediaKey(state);
@@ -444,7 +500,7 @@ export function createRoomMusic({
     else if (controller && (restarted || pauseChanged || (state.pausedAt != null && snapshot.status !== 'paused'))) {
       const task = controller;
       // A pending stream reads the latest transport state when it finishes loading.
-      if (snapshot.status !== 'loading' || audio?.readyState) {
+      if (snapshot.duration > 0 && (snapshot.status !== 'loading' || audio?.readyState)) {
         void applyTransport(task, key).catch((error) => playbackFailed(task, key, error));
       }
     }
@@ -474,12 +530,10 @@ export function createRoomMusic({
     }
   }
   function leave() {
-    if (!remote || (!snapshot.joined && snapshot.syncState !== 'waiting')) return;
+    if (!remote || !snapshot.joined) return;
     suppressed = remote.session;
     command('leave', { session: remote.session });
-    remote = null;
-    if (snapshot.joined) restorePersonal();
-    else patch({ syncState: 'solo' });
+    restorePersonal();
   }
   function reset() {
     personal = null;
@@ -500,33 +554,54 @@ export function createRoomMusic({
       };
     },
     getSnapshot: () => snapshot,
+    getPendingInvitation: () =>
+      snapshot.syncState === 'offered' && remote && remote.session !== suppressed &&
+        !(remote.joined ?? remote.participants.includes(localId)) ? remote : null,
+    declineInvitation() {
+      if (!remote || snapshot.joined) return;
+      suppressed = remote.session;
+      patch({syncState: 'offered'});
+    },
     receive,
+    rememberLookup(entry: MusicLookup) {
+      if (disposed || !validLookup(entry)) return;
+      const query = entry.query.trim().toLowerCase();
+      const lookups = [entry, ...snapshot.lookups.filter(item =>
+        item.platform !== entry.platform || item.mode !== entry.mode || item.query.trim().toLowerCase() !== query,
+      )].slice(0, MUSIC_LOOKUP_LIMIT);
+      try { storage?.setItem(MUSIC_LOOKUP_KEY, JSON.stringify(lookups)); } catch {}
+      patch({ lookups });
+    },
     update(room: RoomOwnerSnapshot) {
       const key = room.room ? `${room.product}:${room.room.code}` : '';
       const inRoom = !!room.room;
-      const eligible = room.seat !== null && inRoom;
+      const seated = room.seat != null && inRoom;
+      const gainedSeat = seated && !snapshot.seated;
       const enabled = room.listenTogetherSupported === true;
-      const canInvite = (room.room?.seats?.filter((seat) => seat && !seat.offline).length ?? 0) >= 2;
+      const requestState = enabled && inRoom && room.connected &&
+        (key !== roomKey || !snapshot.enabled || !snapshot.connected);
       localId = room.localClientId;
       if (key !== roomKey) reset();
-      else if ((!room.connected || !enabled || !eligible) && remote) {
+      else if ((!room.connected || !enabled) && remote) {
         remote = null;
         pendingTrack = null;
         if (snapshot.joined) restorePersonal();
         else patch({ syncState: 'solo' });
       }
       roomKey = key;
+      if (!seated && snapshot.seated) clearSeek();
       if (
         snapshot.inRoom !== inRoom ||
         snapshot.enabled !== enabled ||
-        snapshot.eligible !== eligible ||
-        snapshot.connected !== room.connected ||
-        snapshot.canInvite !== canInvite
+        snapshot.seated !== seated ||
+        snapshot.connected !== room.connected
       )
-        patch({ inRoom, enabled, eligible, canInvite, connected: room.connected });
+        patch({ inRoom, enabled, seated, connected: room.connected });
+      if (requestState) command('sync');
+      if (gainedSeat) reportDuration();
     },
     choose(track: MusicTrack, queue?: MusicTrack[]) {
-      if (disposed || !snapshot.inRoom || !validMusicRef(track)) return;
+      if (disposed || !snapshot.inRoom || (snapshot.joined && !snapshot.seated) || !validMusicRef(track)) return;
       const list = queue && uniqueMusicQueue(queue.filter(validMusicRef)).slice(0, MUSIC_QUEUE_LIMIT);
       if (list && !list.some(item => sameMusicTrack(item, track))) return;
       prime();
@@ -546,21 +621,20 @@ export function createRoomMusic({
       patch({ selected: track, error: null });
     },
     requestSync() {
-      if (disposed || !snapshot.enabled || !snapshot.eligible || !snapshot.connected || snapshot.joined) return;
+      if (disposed || !snapshot.enabled || !snapshot.inRoom || !snapshot.connected || snapshot.joined) return;
       if (remote) {
-        if (snapshot.syncState === 'waiting') return;
         prime();
         suppressed = '';
-        if (remote.participants.includes(localId)) command('sync');
-        else command('join', { session: remote.session });
+        command('join', { session: remote.session });
         return;
       }
-      if (!snapshot.canInvite || !personal || !snapshot.duration || snapshot.status === 'loading' || snapshot.error) return;
+      if (!snapshot.seated || !personal || !snapshot.duration || snapshot.status === 'loading' || snapshot.error) return;
       const position = Math.min(audio?.currentTime ?? snapshot.position, Math.max(0, snapshot.duration - 0.05));
       command('invite', {
         track: wireTrack(personal.queue[personal.order[personal.cursor]]),
         queue: personal.queue.map(wireTrack),
         positionMs: Math.min(MUSIC_POSITION_LIMIT, Math.round(position * 1000)),
+        durationMs: Math.round(snapshot.duration * 1000),
         paused: personal.pausedAt !== null, repeat: personal.repeat, shuffle: personal.shuffle,
       });
     },
@@ -576,7 +650,8 @@ export function createRoomMusic({
       control(state.pausedAt == null && !state.ended && snapshot.status !== 'ended' ? 'pause' : 'resume');
     },
     seek(seconds: number) {
-      if (disposed || !snapshot.inRoom || !snapshot.duration || !Number.isFinite(seconds)) return false;
+      if (disposed || !snapshot.inRoom || (snapshot.joined && !snapshot.seated) ||
+        !snapshot.duration || !Number.isFinite(seconds)) return false;
       const positionMs = Math.round(Math.max(0, Math.min(snapshot.duration - 0.05, seconds)) * 1000);
       if (!snapshot.joined) return control('seek', { positionMs });
       if (pendingSeek) {
@@ -612,11 +687,15 @@ export function createRoomMusic({
       if (disposed || !Number.isFinite(volume)) return;
       const value = Math.max(0, Math.min(1, volume));
       if (audio) audio.volume = value;
+      reportAudible();
       patch({ volume: value });
     },
     dispose() {
-      if (remote && (snapshot.joined || snapshot.syncState === 'waiting')) command('leave', { session: remote.session });
+      if (remote && snapshot.joined) command('leave', { session: remote.session });
       reset();
+      audio?.removeEventListener('playing', sounding);
+      audio?.removeEventListener('volumechange', reportAudible);
+      for (const event of quietEvents) audio?.removeEventListener(event, quiet);
       audio = null;
       disposed = true;
       listeners.clear();

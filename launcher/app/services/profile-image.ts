@@ -5,6 +5,8 @@ import { createBrowserPorts } from './browser-ports';
 export type ProfileImageKind = 'avatar' | 'cover';
 export const PROFILE_IMAGE_MAX_BYTES = 150_000;
 export const PROFILE_IMAGE_SOURCE_MAX_BYTES = 20 * 1024 * 1024;
+const ROOM_AVATAR_SIZE = 64;
+const ROOM_AVATAR_MAX_BYTES = 8 * 1024;
 export class ProfileImageError extends Error {
   constructor(public readonly code: 'invalid' | 'sourceTooLarge' | 'readFailed') {
     super(code);
@@ -18,11 +20,9 @@ export function validateProfileImage(file:File) {
   if (file.size>PROFILE_IMAGE_SOURCE_MAX_BYTES) throw new ProfileImageError('sourceTooLarge');
 }
 
-/** Crop the original once, at its final dimensions, before lossy compression. */
-export async function prepareCroppedProfileImage(file:File,kind:ProfileImageKind,crop:ProfileImageCrop,signal?:AbortSignal) {
-  validateProfileImage(file);abortIfNeeded(signal);
-  if (![crop.x,crop.y,crop.width,crop.height].every(Number.isFinite) || crop.x<0 || crop.y<0 || crop.width<=0 || crop.height<=0 || crop.x+crop.width>100.01 || crop.y+crop.height>100.01) throw new ProfileImageError('invalid');
-  const url=URL.createObjectURL(file),image=new Image();
+async function withProfileImage<T>(url: string, render: (image: HTMLImageElement) => Promise<T>, signal?: AbortSignal) {
+  abortIfNeeded(signal);
+  const image=new Image();
   const cancel=()=>{image.src='';};
   try {
     await new Promise<void>((resolve,reject)=>{
@@ -32,18 +32,67 @@ export async function prepareCroppedProfileImage(file:File,kind:ProfileImageKind
       signal?.addEventListener('abort',abort,{once:true});image.src=url;
     });
     abortIfNeeded(signal);
-    const width=image.naturalWidth*crop.width/100,height=image.naturalHeight*crop.height/100;
-    if (!width || !height || image.naturalWidth*image.naturalHeight>60_000_000) throw new ProfileImageError('invalid');
-    if(Math.abs(width/height-PROFILE_IMAGE_ASPECT[kind])>0.01)throw new ProfileImageError('invalid');
-    const scale=Math.min(1,(kind==='avatar'?512:1600)/Math.max(width,height)),canvas=document.createElement('canvas');
-    canvas.width=Math.max(1,Math.round(width*scale));canvas.height=Math.max(1,Math.round(height*scale));
-    const context=canvas.getContext('2d');if(!context)throw new ProfileImageError('readFailed');
-    context.imageSmoothingQuality='high';
-    context.drawImage(image,image.naturalWidth*crop.x/100,image.naturalHeight*crop.y/100,width,height,0,0,canvas.width,canvas.height);
-    const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new ProfileImageError('readFailed')),'image/png'));
-    canvas.width=canvas.height=0;abortIfNeeded(signal);
-    return prepareProfileImage(new File([blob],'profile.png',{type:'image/png'}),kind,signal);
-  } finally {cancel();URL.revokeObjectURL(url);}
+    return await render(image);
+  } finally {cancel();}
+}
+
+function drawProfileCrop(image: HTMLImageElement, crop: ProfileImageCrop, aspect: number, maximum: number) {
+  if (![crop.x,crop.y,crop.width,crop.height].every(Number.isFinite) || crop.x<0 || crop.y<0 || crop.width<=0 || crop.height<=0 || crop.x+crop.width>100.01 || crop.y+crop.height>100.01) throw new ProfileImageError('invalid');
+  const width=image.naturalWidth*crop.width/100,height=image.naturalHeight*crop.height/100;
+  if (!width || !height || image.naturalWidth*image.naturalHeight>60_000_000 || Math.abs(width/height-aspect)>0.01) throw new ProfileImageError('invalid');
+  const scale=Math.min(1,maximum/Math.max(width,height)),canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(width*scale));
+  canvas.height=aspect===1?canvas.width:Math.max(1,Math.round(height*scale));
+  const context=canvas.getContext('2d');if(!context)throw new ProfileImageError('readFailed');
+  context.imageSmoothingQuality='high';
+  context.drawImage(image,image.naturalWidth*crop.x/100,image.naturalHeight*crop.y/100,width,height,0,0,canvas.width,canvas.height);
+  return canvas;
+}
+
+function encodeCanvas(canvas: HTMLCanvasElement, type: string, quality?: number) {
+  return new Promise<Blob>((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new ProfileImageError('readFailed')),type,quality));
+}
+
+/** Crop the original once, at its final dimensions, before lossy compression. */
+export async function prepareCroppedProfileImage(file:File,kind:ProfileImageKind,crop:ProfileImageCrop,signal?:AbortSignal) {
+  validateProfileImage(file);
+  const url=URL.createObjectURL(file);
+  try {
+    const blob = await withProfileImage(url, async image => {
+      const canvas = drawProfileCrop(image, crop, PROFILE_IMAGE_ASPECT[kind], kind === 'avatar' ? 512 : 1600);
+      try { return await encodeCanvas(canvas, 'image/png'); }
+      finally { canvas.width = canvas.height = 0; }
+    }, signal);
+    return await prepareProfileImage(new File([blob],'profile.png',{type:'image/png'}),kind,signal);
+  } finally {URL.revokeObjectURL(url);}
+}
+
+export async function prepareRoomAvatarThumbnail(image: HTMLImageElement, crop: ProfileImageCrop) {
+  const canvas = drawProfileCrop(image, crop, PROFILE_IMAGE_ASPECT.avatar, ROOM_AVATAR_SIZE);
+  try {
+    let thumbnail = await encodeCanvas(canvas, 'image/webp', 0.75);
+    if (thumbnail.type === 'image/webp' && thumbnail.size > ROOM_AVATAR_MAX_BYTES)
+      thumbnail = await encodeCanvas(canvas, 'image/webp', 0.45);
+    if (thumbnail.type !== 'image/webp' || thumbnail.size > ROOM_AVATAR_MAX_BYTES)
+      thumbnail = await encodeCanvas(canvas, 'image/jpeg', 0.65);
+    if (!['image/webp', 'image/jpeg'].includes(thumbnail.type) || !thumbnail.size || thumbnail.size > ROOM_AVATAR_MAX_BYTES)
+      throw new ProfileImageError('readFailed');
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new window.FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new ProfileImageError('readFailed'));
+      reader.readAsDataURL(thumbnail);
+    });
+  } finally { canvas.width = canvas.height = 0; }
+}
+
+export function prepareStoredAvatarThumbnail(url: string) {
+  return withProfileImage(url, image => {
+    const size = Math.min(image.naturalWidth, image.naturalHeight);
+    const width = 100 * size / image.naturalWidth;
+    const height = 100 * size / image.naturalHeight;
+    return prepareRoomAvatarThumbnail(image, {x: (100 - width) / 2, y: (100 - height) / 2, width, height});
+  });
 }
 
 let compressorLoad: Promise<typeof imageCompression> | undefined;

@@ -11,7 +11,6 @@ const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const outputDirectory = resolve(PUBLIC_SOURCE_ROOT, "assets", "fonts");
 const sources = [
   ...APP_SHELL_FILES.filter(path => !path.startsWith("vendor/") && /\.(?:html|css|js|mjs)$/.test(path)),
-  "NOTICE.txt",
   "content/FIRST_USE_NOTICE.md",
   "content/MULTIPLAYER.md",
   "product-catalog.mjs",

@@ -747,6 +747,24 @@
     "id": "room_cancelReady",
     "params": []
   },
+  "room.nudge": {
+    "id": "room_nudge",
+    "params": []
+  },
+  "room.nudgeSent": {
+    "id": "room_nudgeSent",
+    "params": []
+  },
+  "room.nudgeReceived": {
+    "id": "room_nudgeReceived",
+    "params": [
+      "seat"
+    ]
+  },
+  "room.nudgeCooldown": {
+    "id": "room_nudgeCooldown",
+    "params": []
+  },
   "room.gameSettingsGroup": {
     "id": "room_gameSettingsGroup",
     "params": []
@@ -969,6 +987,14 @@
   },
   "spectator.realtimeReserved": {
     "id": "spectator_realtimeReserved",
+    "params": []
+  },
+  "player.exitGame": {
+    "id": "player_exitGame",
+    "params": []
+  },
+  "player.leaveRoom": {
+    "id": "player_leaveRoom",
     "params": []
   },
   "player.exitPlayback": {
@@ -2134,22 +2160,6 @@
     "id": "preload_aria",
     "params": []
   },
-  "notice.aria": {
-    "id": "notice_aria",
-    "params": []
-  },
-  "notice.label": {
-    "id": "notice_label",
-    "params": []
-  },
-  "notice.close": {
-    "id": "notice_close",
-    "params": []
-  },
-  "notice.dismissForever": {
-    "id": "notice_dismissForever",
-    "params": []
-  },
   "diagnostics.toggle": {
     "id": "diagnostics_toggle",
     "params": []
@@ -2382,6 +2392,18 @@
     "id": "settings_music",
     "params": []
   },
+  "options.volume": {
+    "id": "options_volume",
+    "params": []
+  },
+  "settings.bgmVolume": {
+    "id": "settings_bgmVolume",
+    "params": []
+  },
+  "settings.sfxVolume": {
+    "id": "settings_sfxVolume",
+    "params": []
+  },
   "gameLanguage.ja": {
     "id": "gameLanguage_ja",
     "params": []
@@ -2488,6 +2510,14 @@
   },
   "settings.localPlayerVisibilityHint": {
     "id": "settings_localPlayerVisibilityHint",
+    "params": []
+  },
+  "settings.th075NativeResolution": {
+    "id": "settings_th075NativeResolution",
+    "params": []
+  },
+  "settings.th075NativeResolutionHint": {
+    "id": "settings_th075NativeResolutionHint",
     "params": []
   },
   "options.touch": {
@@ -4057,10 +4087,6 @@
       "music"
     ]
   },
-  "notice.restoreHint": {
-    "id": "notice_restoreHint",
-    "params": []
-  },
   "package.objectNotPersisted": {
     "id": "package_objectNotPersisted",
     "params": []
@@ -5624,22 +5650,6 @@
   },
   "chat.spectator": {
     "id": "chat_spectator",
-    "params": []
-  },
-  "footer.license": {
-    "id": "footer_license",
-    "params": []
-  },
-  "footer.repository": {
-    "id": "footer_repository",
-    "params": []
-  },
-  "footer.group": {
-    "id": "footer_group",
-    "params": []
-  },
-  "footer.donate": {
-    "id": "footer_donate",
     "params": []
   },
   "game.name.th06": {
@@ -8703,12 +8713,28 @@
     "id": "chat_title",
     "params": []
   },
+  "chat.historyScroll": {
+    "id": "chat_historyScroll",
+    "params": []
+  },
+  "chat.noMessages": {
+    "id": "chat_noMessages",
+    "params": []
+  },
+  "room.fourWayTouch": {
+    "id": "room_fourWayTouch",
+    "params": []
+  },
   "chat.keyboardHint": {
     "id": "chat_keyboardHint",
     "params": []
   },
   "chat.message": {
     "id": "chat_message",
+    "params": []
+  },
+  "chat.freeInputHint": {
+    "id": "chat_freeInputHint",
     "params": []
   },
   "chat.send": {
@@ -8809,6 +8835,10 @@
     "id": "profile_image_cropHint",
     "params": []
   },
+  "profile.image.roomPreview": {
+    "id": "profile_image_roomPreview",
+    "params": []
+  },
   "profile.image.zoom": {
     "id": "profile_image_zoom",
     "params": []
@@ -8849,14 +8879,6 @@
     "id": "cloudSave_refresh",
     "params": []
   },
-  "cloudSave.manualHint": {
-    "id": "cloudSave_manualHint",
-    "params": []
-  },
-  "cloudSave.game": {
-    "id": "cloudSave_game",
-    "params": []
-  },
   "cloudSave.latest": {
     "id": "cloudSave_latest",
     "params": []
@@ -8886,14 +8908,6 @@
     "params": [
       "files"
     ]
-  },
-  "cloudSave.previous": {
-    "id": "cloudSave_previous",
-    "params": []
-  },
-  "cloudSave.downloadPrevious": {
-    "id": "cloudSave_downloadPrevious",
-    "params": []
   },
   "cloudSave.uploaded": {
     "id": "cloudSave_uploaded",
@@ -9235,6 +9249,34 @@
     "id": "cloudSave_autoHint",
     "params": []
   },
+  "cloudSave.autoSync": {
+    "id": "cloudSave_autoSync",
+    "params": []
+  },
+  "cloudSave.pausedHint": {
+    "id": "cloudSave_pausedHint",
+    "params": []
+  },
+  "cloudSave.preferenceFailed": {
+    "id": "cloudSave_preferenceFailed",
+    "params": []
+  },
+  "cloudSave.noSave": {
+    "id": "cloudSave_noSave",
+    "params": []
+  },
+  "cloudSave.addSave": {
+    "id": "cloudSave_addSave",
+    "params": []
+  },
+  "cloudSave.versionConflict": {
+    "id": "cloudSave_versionConflict",
+    "params": []
+  },
+  "cloudSave.pendingHere": {
+    "id": "cloudSave_pendingHere",
+    "params": []
+  },
   "cloudSave.syncConflict": {
     "id": "cloudSave_syncConflict",
     "params": []
@@ -9243,20 +9285,8 @@
     "id": "cloudSave_syncPending",
     "params": []
   },
-  "cloudSave.syncConflictChoice": {
-    "id": "cloudSave_syncConflictChoice",
-    "params": []
-  },
-  "cloudSave.otherDevicePending": {
-    "id": "cloudSave_otherDevicePending",
-    "params": []
-  },
   "cloudSave.otherAccountPending": {
     "id": "cloudSave_otherAccountPending",
-    "params": []
-  },
-  "cloudSave.syncOffline": {
-    "id": "cloudSave_syncOffline",
     "params": []
   },
   "cloudSave.syncUnavailable": {
@@ -9267,8 +9297,8 @@
     "id": "cloudSave_sameBrowserActive",
     "params": []
   },
-  "cloudSave.pendingSession": {
-    "id": "cloudSave_pendingSession",
+  "cloudSave.review": {
+    "id": "cloudSave_review",
     "params": []
   },
   "cloudSave.useCloud": {
@@ -9287,6 +9317,16 @@
     "id": "cloudSave_claimLocal",
     "params": []
   },
+  "room.viewProfile": {
+    "id": "room_viewProfile",
+    "params": [
+      "name"
+    ]
+  },
+  "room.editAccountNickname": {
+    "id": "room_editAccountNickname",
+    "params": []
+  },
   "music.title": {
     "id": "music_title",
     "params": []
@@ -9297,10 +9337,6 @@
   },
   "music.leave": {
     "id": "music_leave",
-    "params": []
-  },
-  "music.waiting": {
-    "id": "music_waiting",
     "params": []
   },
   "music.idle": {
@@ -9327,10 +9363,6 @@
     "id": "music_seatedOnly",
     "params": []
   },
-  "music.needPlayer": {
-    "id": "music_needPlayer",
-    "params": []
-  },
   "music.volume": {
     "id": "music_volume",
     "params": []
@@ -9339,8 +9371,8 @@
     "id": "music_retry",
     "params": []
   },
-  "music.last": {
-    "id": "music_last",
+  "music.history": {
+    "id": "music_history",
     "params": []
   },
   "music.select": {
@@ -9499,8 +9531,159 @@
     "id": "music_offer",
     "params": []
   },
-  "music.cancelInvite": {
-    "id": "music_cancelInvite",
+  "music.invitePrompt": {
+    "id": "music_invitePrompt",
+    "params": []
+  },
+  "th09.accountRecord": {
+    "id": "th09_accountRecord",
+    "params": []
+  },
+  "th09.totalGames": {
+    "id": "th09_totalGames",
+    "params": []
+  },
+  "th09.totalWins": {
+    "id": "th09_totalWins",
+    "params": []
+  },
+  "th09.winRate": {
+    "id": "th09_winRate",
+    "params": []
+  },
+  "th09.duelHistory": {
+    "id": "th09_duelHistory",
+    "params": []
+  },
+  "th09.guestOpponent": {
+    "id": "th09_guestOpponent",
+    "params": []
+  },
+  "th09.noDuels": {
+    "id": "th09_noDuels",
+    "params": []
+  },
+  "th09.moreDuels": {
+    "id": "th09_moreDuels",
+    "params": []
+  },
+  "th09.accountCard": {
+    "id": "th09_accountCard",
+    "params": [
+      "games",
+      "rate"
+    ]
+  },
+  "cloudSave.browserVersion": {
+    "id": "cloudSave_browserVersion",
+    "params": []
+  },
+  "cloudSave.accountVersion": {
+    "id": "cloudSave_accountVersion",
+    "params": []
+  },
+  "cloudSave.unknownValue": {
+    "id": "cloudSave_unknownValue",
+    "params": []
+  },
+  "cloudSave.noVersion": {
+    "id": "cloudSave_noVersion",
+    "params": []
+  },
+  "cloudSave.playCount": {
+    "id": "cloudSave_playCount",
+    "params": []
+  },
+  "cloudSave.clearDifficulties": {
+    "id": "cloudSave_clearDifficulties",
+    "params": []
+  },
+  "cloudSave.bestScore": {
+    "id": "cloudSave_bestScore",
+    "params": []
+  },
+  "cloudSave.files": {
+    "id": "cloudSave_files",
+    "params": []
+  },
+  "cloudSave.replaceBrowser": {
+    "id": "cloudSave_replaceBrowser",
+    "params": []
+  },
+  "cloudSave.replaceCloud": {
+    "id": "cloudSave_replaceCloud",
+    "params": []
+  },
+  "cloudSave.startBrowserSync": {
+    "id": "cloudSave_startBrowserSync",
+    "params": []
+  },
+  "cloudSave.playBrowserOnly": {
+    "id": "cloudSave_playBrowserOnly",
+    "params": []
+  },
+  "cloudSave.restoreFailed": {
+    "id": "cloudSave_restoreFailed",
+    "params": []
+  },
+  "cloudSave.comparing": {
+    "id": "cloudSave_comparing",
+    "params": []
+  },
+  "cloudSave.duration": {
+    "id": "cloudSave_duration",
+    "params": []
+  },
+  "cloudSave.localModified": {
+    "id": "cloudSave_localModified",
+    "params": []
+  },
+  "cloudSave.cloudUploaded": {
+    "id": "cloudSave_cloudUploaded",
+    "params": []
+  },
+  "cloudSave.newer": {
+    "id": "cloudSave_newer",
+    "params": []
+  },
+  "cloudSave.changed": {
+    "id": "cloudSave_changed",
+    "params": []
+  },
+  "cloudSave.chooseVersion": {
+    "id": "cloudSave_chooseVersion",
+    "params": []
+  },
+  "cloudSave.startCloud": {
+    "id": "cloudSave_startCloud",
+    "params": []
+  },
+  "cloudSave.syncDeferred": {
+    "id": "cloudSave_syncDeferred",
+    "params": []
+  },
+  "cloudSave.otherPlayUnfinished": {
+    "id": "cloudSave_otherPlayUnfinished",
+    "params": []
+  },
+  "cloudSave.otherPlayTitle": {
+    "id": "cloudSave_otherPlayTitle",
+    "params": []
+  },
+  "cloudSave.stopAndCheck": {
+    "id": "cloudSave_stopAndCheck",
+    "params": []
+  },
+  "cloudSave.continueAndOverwrite": {
+    "id": "cloudSave_continueAndOverwrite",
+    "params": []
+  },
+  "cloudSave.tabHandoffFailed": {
+    "id": "cloudSave_tabHandoffFailed",
+    "params": []
+  },
+  "cloudSave.localReadFailed": {
+    "id": "cloudSave_localReadFailed",
     "params": []
   }
 }

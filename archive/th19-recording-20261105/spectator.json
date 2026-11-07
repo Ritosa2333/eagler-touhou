@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "errors": [],
+  "checks": [
+    "spectator pause, rewind and return-live use retained confirmed input",
+    "late spectator catches up and follows confirmed live frames",
+    "observer saves versus recording; playback and rewind match all native hashes"
+  ],
+  "frames": 360
+}

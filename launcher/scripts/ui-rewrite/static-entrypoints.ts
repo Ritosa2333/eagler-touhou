@@ -1,11 +1,12 @@
 import {mkdir, readFile, readdir, rename, rmdir} from 'node:fs/promises';
 import {dirname, resolve} from 'node:path';
-import {REACT_DOCUMENTS} from '../../lib/frontend-static-manifest.mjs';
+import {REACT_DOCUMENTS, UI_REVIEW_DOCUMENT} from '../../lib/frontend-static-manifest.mjs';
 
 /** RR prerenders the flat launcher document addresses as directories. Preserve
  * those original .html addresses without broad server rewrites. */
-export async function finalizeOriginalEntrypoints(clientDirectory: string, mountPath = '/') {
-  for (const {path, file} of REACT_DOCUMENTS) {
+export async function finalizeOriginalEntrypoints(clientDirectory: string, mountPath = '/', includeUiReview = false) {
+  const documents = includeUiReview ? [...REACT_DOCUMENTS, UI_REVIEW_DOCUMENT] : REACT_DOCUMENTS;
+  for (const {path, file} of documents) {
     if (path === '/') continue;
     // Supported basename prerenders include the mount in their output path.
     // Flatten the file in the mount-local publication without changing HTML.

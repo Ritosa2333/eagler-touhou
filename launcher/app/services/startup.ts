@@ -18,7 +18,6 @@ export interface StartupPorts {
   warnDiscouragedBrowser(isCurrent: () => boolean): Promise<boolean>;
   /** The shared content owner must recheck this before opening/marking seen. */
   showFirstUseAutomatically(isCurrent: () => boolean): Promise<boolean>;
-  loadSiteNotice(): Promise<unknown>;
   onError(error: unknown): void;
 }
 export interface StartupOptions {
@@ -130,9 +129,7 @@ export function createStartupController(options: StartupOptions) {
       if (!current(id) || !continueVisit) return;
     }
     if (!current(id) || roomCodeFromUrl(ports.url)) return;
-    if (debug || preview) {await ports.loadSiteNotice(); return;}
-    const shown = await ports.showFirstUseAutomatically(() => current(id));
-    if (current(id) && !shown) await ports.loadSiteNotice();
+    if (!debug && !preview) await ports.showFirstUseAutomatically(() => current(id));
   }
   function attach(ports: StartupPorts): () => void {
     if (disposed) return () => {};

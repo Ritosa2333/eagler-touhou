@@ -157,7 +157,7 @@ const query = (selector) => {
   assert.ok(value, selector);
   return value;
 };
-async function mount(model, { strict = false, dispose, room = false } = {}) {
+async function mount(model, { strict = false, dispose, room = false, decisions = {askConfirmation:async()=>false} } = {}) {
   const host = env.document.createElement('div');
   env.document.body.append(host);
   const root = createRoot(host);
@@ -174,7 +174,7 @@ async function mount(model, { strict = false, dispose, room = false } = {}) {
         onElement: () => {},
       },
       React.createElement(React.Fragment, null,
-        React.createElement(owner.MultiplayerQuickChat, {model}),
+        React.createElement(owner.MultiplayerQuickChat, {model,iconUrl:'/assets/player-chat.svg',decisions}),
         room === 'split' ? React.createElement(React.Fragment, null,
           React.createElement('div', {id:'roomUpperSpace'}, React.createElement(owner.RoomQuickChat, {model,part:'log'})),
           React.createElement('div', {id:'roomBottomControls'}, React.createElement(owner.RoomQuickChat, {model,part:'actions'})))
@@ -319,25 +319,19 @@ test('guest room UI keeps quick chat and shared history; registered chat can sen
   assert.deepEqual(notifications,['report-rate-limited']);
 });
 
-test('guest gameplay chat uses shared quick and mute menus with no text input or account request', async () => {
+test('guest gameplay chat opens numbered quick phrases and keeps the shared mute controls', async () => {
   const {model,calls}=fixture();
   await mount(model,{strict:true});
   const frame=query('#gameFrame');
-  assert.equal(env.document.querySelector('.mp-quick-chat-prompt'),null,'guest sees the shared composer directly');
+  const quickTrigger=query('.mp-quick-chat-prompt');
   assert.equal(env.document.querySelector('.mp-quick-chat input[aria-label="Message"]'),null);
-  assert.equal(env.document.querySelector('.mp-quick-chat-row'),null,'the retired quick-chat grid is absent');
-
-  const quickTrigger=query('.mp-quick-chat .room-quick-chat-trigger');
-  await act(()=>quickTrigger.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true})));
-  await React.act(async()=>vi.waitFor(()=>assert.ok(env.document.querySelector('[role="menu"]')),{timeout:1000,interval:1}));
-  const quickMenu=query('[role="menu"]');
-  assert.ok(quickMenu.classList.contains('room-quick-chat-picker'));
-  assert.equal(quickMenu.getAttribute('data-side'),'top');
-  assert.equal(quickMenu.getAttribute('data-align'),'start');
-  const phrase=query('.room-quick-chat-picker [data-phrase="1"]');
+  await act(()=>quickTrigger.click());
+  assert.deepEqual([...query('.mp-quick-chat-slots').querySelectorAll('[aria-keyshortcuts]')].map(
+    (button)=>button.getAttribute('aria-keyshortcuts')), ['1','2','3','4','5','6','7','8','9']);
+  const phrase=query('.mp-quick-chat-slots [data-phrase="1"]');
   phrase.focus();
   await act(()=>model.receive(message()));
-  assert.equal(query('.mp-quick-chat-log .room-chat-entry button[aria-label="Message actions"]') !== null,true);
+  assert.equal(query('.mp-quick-chat-log .room-chat-entry').querySelector('button'),null);
   assert.equal(query('.mp-quick-chat-log .room-chat-entry').hidden,false);
   assert.equal(query('.mp-quick-chat-log').querySelector('img'),null);
   assert.equal(query('.mp-quick-chat-log strong').textContent,'P2(<img src=x onerror=alert(1)>)');
@@ -348,17 +342,15 @@ test('guest gameplay chat uses shared quick and mute menus with no text input or
     phrase.click();
     await vi.waitFor(()=>assert.deepEqual(calls.at(-1),['send',{type:'quick-chat',phrase:'1',serial:7}]),{timeout:1000,interval:1});
   });
+  assert.equal(query('.mp-quick-chat-picker').hidden,true);
   const sentBeforeMute=calls.filter(([kind])=>kind==='send');
-  const action=query('.mp-quick-chat-log .room-chat-entry button[aria-label="Message actions"]');
-  await act(()=>action.dispatchEvent(new env.window.PointerEvent('pointerdown',{button:0,bubbles:true,cancelable:true})));
-  await React.act(async()=>vi.waitFor(()=>assert.ok(env.document.querySelector('[role="menuitem"]')),{timeout:1000,interval:1}));
-  const messageMenu=query('[role="menu"]');
-  assert.deepEqual([...messageMenu.querySelectorAll('[role="menuitem"]')].map(item=>item.textContent.trim()),['Mute messages'],
-    'guest message actions expose mute without report');
-  await React.act(async()=>{
-    messageMenu.querySelector('[role="menuitem"]').click();
-    await vi.waitFor(()=>assert.deepEqual(model.getSnapshot().muted,['b']),{timeout:1000,interval:1});
-  });
+  await act(()=>quickTrigger.click());
+  const muteTrigger=query('.mp-quick-chat .room-chat-mute-trigger');
+  await act(()=>muteTrigger.dispatchEvent(new env.window.PointerEvent('pointerdown',{button:0,bubbles:true,cancelable:true})));
+  const mutedMember=query('[role="menuitemcheckbox"]');
+  assert.match(mutedMember.textContent,/P2/);
+  assert.equal(mutedMember.getAttribute('aria-checked'),'false');
+  await act(()=>mutedMember.click());
   assert.deepEqual(model.getSnapshot().muted,['b']);
   assert.equal(query('.mp-quick-chat-log .room-chat-entry'),retainedRow);
   assert.equal(retainedRow.hidden,true);
@@ -368,11 +360,7 @@ test('guest gameplay chat uses shared quick and mute menus with no text input or
   assert.ok([...query('.mp-quick-chat-log').children].every(row=>row.hidden),'muted text remains hidden');
   assert.equal(calls.filter(([kind])=>kind==='voice').length,voices,'mute also suppresses later incoming voice');
 
-  const muteTrigger=query('.mp-quick-chat .room-chat-mute-trigger');
-  await act(()=>muteTrigger.dispatchEvent(new env.window.PointerEvent('pointerdown',{button:0,bubbles:true,cancelable:true})));
-  await React.act(async()=>vi.waitFor(()=>assert.ok(env.document.querySelector('[role="menuitemcheckbox"]')),{timeout:1000,interval:1}));
-  const mutedMember=[...env.document.querySelectorAll('[role="menuitemcheckbox"]')].find(item=>item.textContent.includes('P2'));
-  assert.ok(mutedMember);assert.equal(mutedMember.getAttribute('aria-checked'),'true');
+  assert.equal(mutedMember.getAttribute('aria-checked'),'true');
   await React.act(async()=>{
     mutedMember.click();
     await vi.waitFor(()=>assert.deepEqual(model.getSnapshot().muted,[]),{timeout:1000,interval:1});
@@ -386,12 +374,12 @@ test('guest gameplay chat uses shared quick and mute menus with no text input or
   assert.ok([...query('.mp-quick-chat-log').children].every(row=>!row.hidden));
 
   await act(()=>model.update({...context(),localSeat:null}));
-  assert.equal(query('.mp-quick-chat .room-quick-chat-trigger').disabled,true);
+  assert.equal(quickTrigger.disabled,true);
   await act(()=>model.update({...context(),connected:false}));
-  assert.equal(query('.mp-quick-chat .room-quick-chat-trigger').disabled,true);
+  assert.equal(quickTrigger.disabled,true);
   assert.equal(query('#gameFrame'),frame);
 });
-test('native input effects cancel focus transfer and isolate input without cancelling touch scrolling', async () => {
+test('gameplay chat isolates pointer and touch without cancelling native controls or scrolling', async () => {
   const { model } = fixture();
   model.receive({type:'chat-status',registered:true,authorId:'account-1',bannedUntil:0});
   await mount(model, {
@@ -408,14 +396,14 @@ test('native input effects cancel focus transfer and isolate input without cance
       cancelable: true,
     });
     button.dispatchEvent(pointer);
-    assert.equal(pointer.defaultPrevented, true);
+    assert.equal(pointer.defaultPrevented, false);
     assert.equal(leaked, 0);
     const mouse = new env.window.MouseEvent('mousedown', {
       bubbles: true,
       cancelable: true,
     });
     button.dispatchEvent(mouse);
-    assert.equal(mouse.defaultPrevented, true);
+    assert.equal(mouse.defaultPrevented, false);
     const touch = new env.window.Event('touchmove', {
       bubbles: true,
       cancelable: true,
@@ -463,42 +451,49 @@ test('gameplay free-chat input keeps pointer focus, isolates game keys, and bloc
     env.document.removeEventListener('keydown',observe);
   }
 });
-test('gameplay report action opens the real Radix menu by PointerEvent with shared placement and width', async () => {
+test('tapping another player’s free chat opens a report confirmation and sends only on confirm', async () => {
   const {model,calls}=fixture();
-  await mount(model,{strict:true});
-  await act(()=>model.receive({type:'chat-status',registered:true,authorId:'account-1',bannedUntil:0}));
+  const decisions=owner.createDecisionStore();
+  await mount(model,{strict:true,decisions,dispose:decisions.dispose});
   await act(()=>model.receive({type:'free-chat',room:'th06mp-1234',serial:7,messageId:30,seat:1,spectator:false,
     clientId:'other',authorId:'account-2',name:'Marisa',text:'Hello room'}));
-  const trigger=query('.mp-quick-chat-log .room-chat-entry button[aria-label="Message actions"]');
+  const trigger=query('.mp-quick-chat-log .chat-report-trigger');
+  assert.match(trigger.textContent,/Hello room/);
   const pointer=new env.window.PointerEvent('pointerdown',{button:0,bubbles:true,cancelable:true});
   await act(()=>trigger.dispatchEvent(pointer));
-  assert.equal(trigger.getAttribute('aria-expanded'),'true');
-  await React.act(async()=>vi.waitFor(()=>assert.ok(env.document.querySelector('[role="menu"]')),{timeout:1000,interval:1}));
-  const menu=query('[role="menu"]');
-  assert.ok(menu.classList.contains('room-chat-message-menu'));
-  assert.equal(menu.getAttribute('data-side'),'bottom');
-  assert.equal(menu.getAttribute('data-align'),'end');
-  assert.match(menu.style.minWidth,/140px/);
-  assert.ok(menu.querySelector('[role="menuitem"]'));
-  const report= [...menu.querySelectorAll('[role="menuitem"]')].find(item=>item.textContent.includes('Report'));
-  assert.ok(report);
-  await React.act(async()=>{
-    report.click();
-    await vi.waitFor(()=>assert.deepEqual(calls.at(-1),['send',{type:'chat-report',messageId:30}]),{timeout:1000,interval:1});
-  });
+  assert.equal(pointer.defaultPrevented,false);
+  await act(()=>trigger.click());
+  assert.equal(decisions.getSnapshot().message,'Hello room');
+  assert.equal(decisions.getSnapshot().confirmText,'Report');
+  assert.equal(env.document.querySelector('[role="menu"]'),null);
+  await act(()=>decisions.resolve('cancel'));
+  assert.deepEqual(calls,[]);
+  await act(()=>trigger.click());
+  await act(()=>decisions.resolve('confirm'));
+  assert.deepEqual(calls,[['send',{type:'chat-report',messageId:30}]]);
 });
-test('openComposer focuses the gameplay input; Enter sends, IME Enter stays local, and Escape returns to game', async () => {
+test('openComposer focuses the quick panel and typing hides slots while Enter and Escape still work', async () => {
   const {model,calls}=fixture();
   await mount(model,{strict:true});
+  const prompt=query('.mp-quick-chat-prompt'),icon=prompt.querySelector('img');
+  assert.equal(icon.getAttribute('src'),'/assets/player-chat.svg');
   await act(()=>model.receive({type:'chat-status',registered:true,authorId:'account-1',bannedUntil:0}));
+  assert.equal(query('.mp-quick-chat-prompt'),prompt);
+  assert.equal(prompt.querySelector('img'),icon);
   await act(()=>model.openComposer());
   const input=query('.mp-quick-chat-picker input[aria-label="Message"]'),frame=query('#gameFrame'),
     form=input.closest('form'),send=query('.mp-quick-chat-picker button[aria-label="Send"]');
-  assert.equal(env.document.activeElement,input,'opening the composer moves focus to text entry');
+  assert.equal(env.document.activeElement,query('.mp-quick-chat-picker'));
+  assert.equal(input.placeholder,'Press Tab to switch to free chat');
+  assert.ok(query('.mp-quick-chat-slots [aria-keyshortcuts="9"]'));
+  input.focus();
 
   const setter=Object.getOwnPropertyDescriptor(env.window.HTMLInputElement.prototype,'value').set;
   setter.call(input,'mounted message');
   await act(()=>input.dispatchEvent(new env.window.Event('input',{bubbles:true})));
+  assert.equal(model.getSnapshot().editingText,true);
+  assert.equal(env.document.querySelector('.mp-quick-chat-slots'),null);
+  assert.equal(env.document.activeElement,input);
   const composingEnter=new env.window.KeyboardEvent('keydown',{key:'Enter',isComposing:true,bubbles:true,cancelable:true});
   await act(()=>input.dispatchEvent(composingEnter));
   assert.equal(composingEnter.defaultPrevented,true);
@@ -519,13 +514,16 @@ test('openComposer focuses the gameplay input; Enter sends, IME Enter stays loca
   assert.equal(escape.defaultPrevented,true);
   assert.equal(model.getSnapshot().pickerOpen,false);
   assert.equal(env.document.activeElement,frame,'Escape returns keyboard focus to the game iframe');
+  await act(()=>model.openComposer());
+  assert.ok(query('.mp-quick-chat-slots [aria-keyshortcuts="9"]'));
 });
-test('typing in the gameplay composer does not measure retained message rows', async () => {
+test('typing after the slots close does not measure retained message rows', async () => {
   const {model}=fixture();
   await mount(model);
   await act(()=>model.receive(message()));
   await act(()=>model.receive({type:'chat-status',registered:true,authorId:'account-1',bannedUntil:0}));
   await act(()=>query('.mp-quick-chat-prompt').click());
+  await act(()=>model.setDraft('t'));
   const row=query('.mp-quick-chat-log .room-chat-entry');
   let measurements=0;
   const measure=row.getBoundingClientRect.bind(row);
@@ -905,12 +903,16 @@ test('RoomSession gates listen-together on opt-in and routes a peer offer back t
       socket.message({type:'state',listenTogether:2,room:roomSnapshot(room.identity,{phase:'lobby'})});
     });
     assert.equal(room.session.service.getSnapshot().listenTogetherSupported, true);
-    assert.deepEqual(Object.fromEntries(['enabled','eligible','connected','canInvite'].map(key=>[key,room.session.music.getSnapshot()[key]])),
-      {enabled:true,eligible:true,connected:true,canInvite:true});
+    const music = room.session.music.getSnapshot();
+    assert.equal(music.enabled, true);
+    assert.equal(music.connected, true);
+    assert.equal(music.seated, true);
+    assert.equal(music.syncState, 'solo');
 
-    await act(() => socket.message({type:'listen-together',session:'peer-session',revision:1,
-      participants:['remote123456'],track:{platform:'netease',id:'song-1',name:'Song',artist:'Artist'},
-      startedAt:null,pausedAt:null,serverTime:room.clock.now}));
+    const track = {platform:'netease',id:'song-1',name:'Song',artist:'Artist'};
+    await act(() => socket.message({type:'listen-together',session:'peer-session',revision:1,track,
+      participants:['remote123456'],joined:false,queue:[track],
+      queueIndex:0,playback:1,startedAt:null,pausedAt:null,serverTime:room.clock.now}));
     assert.equal(room.session.music.getSnapshot().syncState, 'offered');
     room.session.music.requestSync();
     assert.deepEqual(socket.sent.at(-1), {type:'listen-together',action:'join',session:'peer-session'});
@@ -920,6 +922,28 @@ test('RoomSession gates listen-together on opt-in and routes a peer offer back t
     Object.assign(media, mediaMethods);
     if (previousOptIn === null) env.window.localStorage.removeItem(TEST_FEATURES_KEY);
     else env.window.localStorage.setItem(TEST_FEATURES_KEY, previousOptIn);
+  }
+});
+
+test('RoomSession only sends nudges while the non-host player is ready', async () => {
+  const room = makeRoomSession(owner);
+  const service = room.session.service;
+  try {
+    await act(() => service.enterRoom('th06mp', '1234', true));
+    const socket = room.sockets[0];
+    const lobby = roomSnapshot(room.identity,{phase:'lobby'});
+    const [local,peer] = lobby.seats;
+    socket.open();
+    for (const ready of [false,true,false]) {
+      socket.message({type:'state',roomActions:1,room:{...lobby,seats:[peer,{...local,ready}]}});
+      assert.equal(service.getSnapshot().canNudge,ready);
+      const before = socket.sent.length;
+      service.nudge();
+      assert.deepEqual(socket.sent.slice(before),ready ? [{type:'room-nudge'}] : []);
+    }
+  } finally {
+    room.session.dispose();
+    room.decisions.dispose();
   }
 });
 
@@ -1032,12 +1056,11 @@ test('non-TH09 spectator quick chat mounts, sends through the shared model, and 
     ]});
   await mount(model);
   assert.equal(query('.mp-quick-chat').hidden, false);
-  const quickTrigger=query('.mp-quick-chat .room-quick-chat-trigger');
+  const quickTrigger=query('.mp-quick-chat-prompt');
   assert.equal(quickTrigger.disabled,false);
-  await act(()=>quickTrigger.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true})));
-  await React.act(async()=>vi.waitFor(()=>assert.ok(env.document.querySelector('.room-quick-chat-picker [data-phrase="thanks"]')),{timeout:1000,interval:1}));
+  await act(()=>quickTrigger.click());
   await React.act(async()=>{
-    query('.room-quick-chat-picker [data-phrase="thanks"]').click();
+    query('.mp-quick-chat-slots [data-phrase="thanks"]').click();
     await vi.waitFor(()=>assert.deepEqual(calls.at(-1),['send',{type:'quick-chat',phrase:'thanks',serial:7}]),{timeout:1000,interval:1});
   });
   assert.deepEqual(calls.at(-1), ['send', {type: 'quick-chat', phrase: 'thanks', serial: 7}]);

@@ -1,7 +1,9 @@
 import {useEffect,useState} from 'react';
 import {DropdownMenu} from 'radix-ui';
-import {LogIn,RotateCw} from 'lucide-react';
+import {RotateCw} from 'lucide-react';
+import {Button} from '../../ui/button';
 import {AccountAvatar} from './AccountAvatar';
+import {NavigationIcon} from './NavigationIcon';
 import {useLocation} from 'react-router';
 import {AppLink} from './AppLink';
 import {accountRequest} from '../../services/account-client';
@@ -33,17 +35,15 @@ export function AccountMenu({interactive}:{interactive:boolean}) {
   if (state.status==='loading') return <span className="masthead-action account-loading" aria-busy="true"><span className="account-avatar account-avatar-loading"/></span>;
   if (state.status==='error') return <button className="masthead-action" onClick={retry} aria-label={t('account.requestFailed')}><RotateCw aria-hidden="true"/></button>;
   if (!user) {
-    const login=new URL(withUiLanguage('/login.html',locale),location.origin);
+    const login=new URL(withUiLanguage('/login.html',locale),'https://launcher.invalid');
     if (path.pathname !== '/login.html') login.searchParams.set('next',path.pathname+path.search+path.hash);
-    const loginHref = login.pathname+login.search;
-    login.searchParams.set('mode','register');
-    return <span className="masthead-account-entry account-guest">
-      <AppLink className="masthead-link account-login-link" href={loginHref} aria-label={t('account.login')+' / '+t('account.register')}>
-        <span className="account-login-icon"><LogIn aria-hidden="true"/></span><span className="account-guest-label">{t('account.login')}</span>
+    const label=t('nav.account');
+    return <Button asChild variant="ghost" size="icon"
+      className="masthead-action account-login-link w-auto px-2 max-[780px]:w-11 max-[780px]:px-0 [&_svg]:size-5">
+      <AppLink href={login.pathname+login.search} aria-label={label} title={label}>
+        <NavigationIcon name="profile"/><span className="account-guest-label">{label}</span>
       </AppLink>
-      <span className="account-guest-separator" aria-hidden="true">/</span>
-      <AppLink className="masthead-link account-register-link" href={login.pathname+login.search} aria-label={t('account.register')}>{t('account.register')}</AppLink>
-    </span>;
+    </Button>;
   }
   const current = identity?.username === user.username ? identity : undefined;
   const nickname = current?.nickname || user.name;

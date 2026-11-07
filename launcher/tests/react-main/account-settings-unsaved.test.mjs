@@ -66,6 +66,7 @@ beforeAll(async () => {
         export class AccountRequestError extends Error {
           constructor(code, status) { super(code); this.name = 'AccountRequestError'; this.code = code; this.status = status; }
         }
+        export function cancelAccountRequests() {}
         export async function accountRequest(path, body) {
           const request = globalThis.__accountRequest;
           if (!request) throw new Error('account request fixture is not installed');
@@ -80,6 +81,7 @@ beforeAll(async () => {
         import React,{useEffect} from 'react';
         export default function CropperFixture(props){
           useEffect(()=>{const size=globalThis.__cropImageSizes.get(props.image);if(!size)return;
+            props.setImageRef?.({current:{naturalWidth:size.naturalWidth,naturalHeight:size.naturalHeight}});
             props.onMediaLoaded(size);
             const area={x:0,y:0,width:100,height:100};props.onCropAreaChange(area,area);
           },[props.image]);
@@ -226,12 +228,13 @@ async function chooseImage(selector, file) {
   Object.defineProperty(control, 'files', {configurable: true, value: [file]});
   await settle(() => control.dispatchEvent(new env.window.Event('change', {bubbles: true})));
   let confirm;
-  for(let attempt=0;attempt<30;attempt++){
+  for(let attempt=0;attempt<80;attempt++){
     await settle();
     confirm=[...env.document.querySelectorAll('button')].find(node=>node.textContent===owner.translate('en','profile.image.useCrop'));
     if(confirm&&!confirm.disabled)break;
   }
   assert.ok(confirm&&!confirm.disabled,'the crop dialog is ready to confirm');
+  if(selector==='#settings-avatar')assert.ok(env.document.querySelector('.profile-image-crop-preview img'),'the debounced room-avatar preview is ready before crop confirmation');
   await click(confirm);
 }
 
@@ -303,6 +306,7 @@ test('avatar and cover compression run independently and block save until both f
   await settle();
   assert.deepEqual(requests.map(request => request.path), ['v1/me/profile']);
   assert.equal(requests[0].body.avatar, 'data:image/webp;base64,saved-avatar.webp');
+  assert.match(requests[0].body.avatarThumbnail,/^data:image\/webp;base64,/,'the browser-generated crop preview is uploaded with the profile');
   assert.equal(requests[0].body.cover, 'data:image/webp;base64,saved-cover.webp');
   assert.equal(beforeUnloadIsPrevented(), false);
 });

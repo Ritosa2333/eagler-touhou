@@ -99,7 +99,6 @@ try {
   screenshotAddress.searchParams.set('lang','zh-CN');
   const goto = async address => {
     await page.goto(address,{waitUntil:'networkidle2'});
-    await page.addStyleTag({content:'.site-notice{display:none!important}'});
   };
   await goto(screenshotAddress.href);
   await page.evaluate(() => document.fonts.ready);
@@ -449,32 +448,30 @@ try {
   await menuItems.at(-1).click();
   await page.waitForFunction(() => location.pathname === '/');
   sessionUser = null;
-  await page.waitForSelector('.account-guest');
-  assert.ok(await page.$('.account-guest .account-login-icon svg'), 'guest header uses the login glyph');
-  assert.ok(await page.$('.account-guest a[href*="mode=register"]'), 'guest header offers registration');
+  await page.waitForSelector('.account-login-link');
+  await page.setViewport({width: 1440, height: 900});
+  assert.ok(await page.$('.account-login-link .book-navigation-icon'), 'guest header uses the navigation icon');
+  assert.ok(await page.$('.account-login-link .account-guest-label'), 'desktop login link has a label');
+  assert.equal(await page.$('.masthead-links a[href*="mode=register"]'), null);
   await page.setViewport({width: 320, height: 720});
   const compactHeader = await page.evaluate(() => {
-    const root = document.documentElement, brand = document.querySelector('.book-brand'), account = document.querySelector('.account-guest'), actions = document.querySelector('.masthead-links'), theme = document.querySelector('.book-theme-toggle');
-    const b = brand.getBoundingClientRect(), a = actions.getBoundingClientRect(), c = account.getBoundingClientRect(), t = theme.getBoundingClientRect();
-    const login = account.querySelector('.account-login-link'), register = account.querySelector('.account-register-link');
-    const loginText = login.querySelector('.account-guest-label'), loginTextRect = loginText.getBoundingClientRect(), loginRect = login.getBoundingClientRect();
-    return {overflow: root.scrollWidth > innerWidth, brandRight: b.right, actionsLeft: a.left, themeLeft: t.left, accountRight: c.right, accountLeft: c.left,
-      loginLabel: login.getAttribute('aria-label'), registerLabel: register.getAttribute('aria-label'),
-      loginIcon: getComputedStyle(login.querySelector('.account-login-icon')).display !== 'none',
-      registerLinkHidden: getComputedStyle(register).display === 'none',
-      loginTextHidden: loginTextRect.width <= 1,
-      loginTargetSize: loginRect.width >= 44 && loginRect.height >= 44};
+    const brand = document.querySelector('.book-brand'), login = document.querySelector('.account-login-link');
+    const theme = document.querySelector('.book-theme-toggle'), loginRect = login.getBoundingClientRect(), themeRect = theme.getBoundingClientRect();
+    const loginIcon = login.querySelector('.book-navigation-icon'), themeIcon = theme.querySelector('.book-navigation-icon');
+    return {overflow: document.documentElement.scrollWidth > innerWidth, brandRight: brand.getBoundingClientRect().right,
+      themeLeft: themeRect.left, accountLeft: loginRect.left, loginLabel: login.getAttribute('aria-label'),
+      loginIconMatches: getComputedStyle(loginIcon).width === getComputedStyle(themeIcon).width &&
+        getComputedStyle(loginIcon).strokeWidth === getComputedStyle(themeIcon).strokeWidth,
+      loginTextHidden: getComputedStyle(login.querySelector('.account-guest-label')).display === 'none',
+      loginTargetSize: loginRect.width === themeRect.width && loginRect.height === themeRect.height && loginRect.width >= 44};
   });
   assert.equal(compactHeader.overflow, false, '320px header has no horizontal overflow');
   assert.ok(compactHeader.accountLeft >= compactHeader.brandRight, `320px brand and account controls do not overlap: ${JSON.stringify(compactHeader)}`);
   assert.ok(compactHeader.themeLeft >= compactHeader.brandRight + 2, `320px brand and theme control remain separated: ${JSON.stringify(compactHeader)}`);
-  assert.ok(compactHeader.loginLabel && compactHeader.registerLabel, 'narrow account links retain accessible names');
-  assert.ok(compactHeader.loginLabel.includes('/'), 'one narrow account entry exposes both login and registration');
-  assert.equal(compactHeader.loginIcon, true, 'narrow login link keeps its icon');
-  assert.equal(compactHeader.registerLinkHidden, true, 'narrow header hides the duplicate registration link');
+  assert.ok(compactHeader.loginLabel, 'the narrow login link retains its accessible name');
+  assert.equal(compactHeader.loginIconMatches, true, 'the login icon matches the adjacent theme control');
   assert.equal(compactHeader.loginTextHidden, true, 'narrow account link hides its visible label');
   assert.equal(compactHeader.loginTargetSize, true, 'narrow account icon keeps a 44px target');
-  assert.ok(await page.$('.account-guest .account-login-icon svg'));
   assert.deepEqual(errors, []);
   console.log('PASS: aligned viewport layout, stable artwork, immutable OTP challenge, expiry recovery, localized login errors, profile navigation and no credential persistence');
 } finally {await browser.close();}

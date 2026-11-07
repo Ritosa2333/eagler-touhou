@@ -1,5 +1,17 @@
 import {SITE_BRAND_FACES,SITE_BRAND_DEFAULT} from './site-brand.mjs';
 /** Router addresses and their mount-local publication files have one inventory. */
+export function uiReviewEnabled(environment = globalThis.process?.env ?? {}) {
+  const preview = environment.VITE_PREVIEW_FEATURES;
+  return preview === 'true' || (preview !== 'false' && environment.NODE_ENV === 'development');
+}
+
+export const UI_REVIEW_DOCUMENT = Object.freeze({path: '/ui-review.html', file: 'ui-review.html', source: 'app/routes/ui-review.tsx'});
+
+/** @param {Record<string, {src?: string, isEntry?: boolean}>} manifest */
+export function hasUiReviewEntry(manifest) {
+  return Object.values(manifest).some(entry => entry?.isEntry && entry.src?.split('?')[0] === UI_REVIEW_DOCUMENT.source);
+}
+
 export const REACT_DOCUMENTS = Object.freeze([
   {path: '/', file: 'index.html'},
   {path: '/en.html', file: 'en.html'},
@@ -8,7 +20,6 @@ export const REACT_DOCUMENTS = Object.freeze([
   {path: '/profile.html', file: 'profile.html'},
   {path: '/login.html', file: 'login.html'},
   {path: '/u/account-profile-template', file: 'profile-entry.html'},
-  {path: '/ui-review.html', file: 'ui-review.html'},
   {path: '/faq.html', file: 'faq.html'},
   {path: '/about.html', file: 'about.html'},
   {path: '/guide.html', file: 'guide.html'},
@@ -103,9 +114,7 @@ const entries = [
   ['assets/quick-chat/thanks.wav', true],
   ['assets/quick-chat/xxzj.wav', true],
   ['assets/notice-bilibili.svg', true],
-  ['assets/notice-touhou-cloud.png', true],
   ['assets/notice-github.svg', true],
-  ['assets/notice-qq.svg', true],
   ['assets/fonts/touhou98.woff2', true],
   ['assets/fonts/unifont-site.woff2', true],
   ['assets/fonts/yatra-one-latin.woff2', true],
@@ -119,7 +128,6 @@ const entries = [
   ['assets/fonts/OFL-Unifont.txt', false],
   ['assets/fonts/OFL-YatraOne.txt', false],
   ['assets/fonts/OFL-ChillRoundGothic.txt', false],
-  ['NOTICE.txt', false],
   ['content/FIRST_USE_NOTICE.html', true],
   ['content/MULTIPLAYER.html', true],
   ['README.md', false],

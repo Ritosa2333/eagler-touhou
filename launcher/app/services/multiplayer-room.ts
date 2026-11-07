@@ -42,6 +42,7 @@ import type { DecisionStore } from '../models/decisions';
 import type { DirectorySocket } from './lobby-directory';
 import { errorText } from './error-text';
 import {isAbortError} from './abort-signals';
+import type {RoomActionSound} from './room-action-audio';
 
 export type RoomSocket = DirectorySocket & {
   addEventListener(type: 'open', listener: () => void): void;
@@ -67,6 +68,7 @@ export interface RoomOwnerSnapshot {
   connected: boolean;
   directorySupported: boolean;
   controlModesSupported: boolean;
+  globalRoomCodes?: boolean;
   listenTogetherSupported?: boolean;
   seat: number | null;
   ready: boolean;
@@ -84,6 +86,7 @@ export interface RoomOwnerSnapshot {
   rollbackEnabled: boolean;
   preferTurn: boolean;
   canStart: boolean;
+  canNudge?: boolean;
   localClientId: string;
 }
 export interface RoomOperationContext {
@@ -109,6 +112,7 @@ export interface MultiplayerRoomPorts {
   decisions: DecisionStore;
   translate(key: UiMessageKey, params?: UiMessageParams): string;
   notify(message: string, duration?: number): void;
+  onActionSound?(sound: RoomActionSound): void;
   /** Main's real install-only/worker-aware preparation. Never reports synthetic ready. */
   prepareResources(
     context: RoomOperationContext,
@@ -135,6 +139,7 @@ export interface MultiplayerRoomPorts {
     restore(input: { product: MultiplayerProductId; code: string; fromDirectory: boolean }): void;
     enter(input: { product: MultiplayerProductId; code: string; created: boolean }): void;
     settleInvite(): void;
+    switchProduct?(input: {product: MultiplayerProductId; code: string; fromDirectory: boolean; spectator: boolean}): void;
     leave(input: { product: MultiplayerProductId; fromDirectory: boolean; message?: string }): void;
   };
   network: {
@@ -210,7 +215,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     connected: false,
     directorySupported: false,
     controlModesSupported: false,
+    globalRoomCodes: false,
     listenTogetherSupported: false,
+    roomActionsSupported: false,
     seat: null as number | null,
     ready: false,
     spectatorRequested: false,
@@ -273,6 +280,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       localClientId: clientId,
       room: room ? Object.freeze({ ...room }) : null,
       canStart: !!canStart,
+      canNudge: !!(state.roomActionsSupported && state.connected && state.ready && room?.synced && room.phase === 'lobby' &&
+        state.seat != null && state.seat > 0 && room.seats?.some(seat => seat && seat.clientId !== clientId && !seat.offline)),
       preparation: state.preparation ? Object.freeze({ ...state.preparation }) : null,
     });
     if (!disposed) {
@@ -389,6 +398,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     socketRoom = '';
     state.connected = false;
     state.listenTogetherSupported = false;
+    state.roomActionsSupported = false;
     if (previous && previous.readyState < 2) {
       try {
         previous.close(1000, 'leave room');
@@ -525,6 +535,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     socket = null;
     state.connected = false;
     state.listenTogetherSupported = false;
+    state.roomActionsSupported = false;
     if (previous && previous.readyState < 2) {
       try {
         previous.close(1000, 'replace lobby socket');
@@ -533,6 +544,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const next = ports.createSocket(relay.url);
     state.directorySupported = false;
     state.controlModesSupported = false;
+    state.globalRoomCodes = false;
     runtimeVersionsSupported = false;
     ports.network.reset(reconnecting);
     registeredName = false;
@@ -597,8 +609,34 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         ports.music?.receive(message);
         return;
       }
+      if (message.type === 'room-action') {
+        if (!state.roomActionsSupported || room?.phase !== 'lobby') return;
+        if (message.action === 'seat' || message.action === 'ready') ports.onActionSound?.(message.action);
+        else if (message.action === 'nudge-limited') ports.notify(ports.translate('room.nudgeCooldown'));
+        else if (message.action === 'nudge' && typeof message.fromSeat === 'number' &&
+          Number.isInteger(message.fromSeat) && message.fromSeat > 0 && message.fromSeat < room.playerCount) {
+          ports.onActionSound?.('nudge');
+          ports.notify(message.outgoing === true
+            ? ports.translate('room.nudgeSent')
+            : ports.translate('room.nudgeReceived', {seat: message.fromSeat + 1}));
+        }
+        return;
+      }
       if (['quick-chat','free-chat','chat-history','chat-retract','chat-status','chat-result'].includes(String(message.type))) {
         ports.quickChat?.receive(message);
+        return;
+      }
+      if (message.type === 'room-product' && ports.routes.switchProduct && room &&
+          message.code === room.code && typeof message.product === 'string' &&
+          isMultiplayerProductId(message.product) && message.product !== product) {
+        ports.identity.retainLobbyClientId(message.product, clientId);
+        preparation?.controller.abort();
+        ports.releasePreparedResources?.();
+        socket = null;
+        stopped = true;
+        state.connected = false;
+        publish();
+        ports.routes.switchProduct({product: message.product, code: room.code, fromDirectory: state.fromDirectory, spectator: message.spectator === true});
         return;
       }
       if (message.type === 'state') {
@@ -610,7 +648,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           }).catch(() => { /* Guest nicknames are provided by the relay. */ });
         }
         if (message.listenTogether === 2) state.listenTogetherSupported = true;
+        if (message.roomActions === 1) state.roomActionsSupported = true;
         if (record(message.roomDirectory)?.version === 1) state.directorySupported = true;
+        if (record(message.roomDirectory)?.globalRoomCodes === true) state.globalRoomCodes = true;
         if (record(message.roomDirectory)?.controlModes === true)
           state.controlModesSupported = true;
         if (record(message.roomDirectory)?.runtimeVersions === true) runtimeVersionsSupported = true;
@@ -1576,6 +1616,14 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     setDisplayName,
     changeLoadout,
     toggleReady,
+    nudge() {
+      if (snapshot.canNudge) send({type: 'room-nudge'});
+    },
+    switchProduct(nextProduct: MultiplayerProductId) {
+      if (state.globalRoomCodes && state.seat === 0 && room?.synced && room.phase === 'lobby' &&
+          !state.launchBusy && !state.checkBusy && nextProduct !== product && isMultiplayerProductId(nextProduct))
+        send({type: 'switch-product', product: nextProduct});
+    },
     setRoomSettings,
     setPreferTurn(enabled: boolean) {
       if (!room?.synced || !state.connected || room.phase !== 'lobby' || state.seat == null ||
@@ -1620,7 +1668,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     acceptTh09Match(value: unknown) {
       if (
         product !== 'th09mp' ||
-        state.seat !== 0 ||
+        (state.seat !== 0 && state.seat !== 1) ||
         state.spectatorRequested ||
         !state.connected ||
         !ports.isLaunched() ||
@@ -1629,6 +1677,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       )
         return;
       const match = value as Record<string, unknown>;
+      if (state.seat === 1 && match.winner !== 0 && match.winner !== 1) return;
       send({
         type: 'th09-match',
         serial: state.startSerial,

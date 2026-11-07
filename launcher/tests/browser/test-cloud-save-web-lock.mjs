@@ -1,4 +1,4 @@
-/** Two real Chromium pages share the product lock; closing a live page releases it. */
+/** Two real Chromium tabs transfer the product lock after the first commits local data. */
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {createServer} from 'node:http';
@@ -15,12 +15,27 @@ const allowed=[scoreName,...PRODUCT_GAMES.th06.storage.configFiles,...(PRODUCT_G
 const bytes=[4,5,6],sha256=value=>createHash('sha256').update(Buffer.from(value)).digest('hex');
 const built=await build({absWorkingDir:project,stdin:{resolveDir:project,loader:'ts',contents:`
   import {createCloudSaveSync} from './app/services/cloud-save-sync.ts';
-  window.installCloudSaveSync = initial => {
+  import {accountSession} from './app/services/account-session.ts';
+  window.installCloudSaveSync = async initial => {
     window.mutableSaveBytes = initial;
     window.saveReadCount = 0;
     window.cloudSaveSync = createCloudSaveSync({storage:window.localStorage,
       read:async()=>{window.saveReadCount++;return window.mutableSaveBytes.length?[new File([new Uint8Array(window.mutableSaveBytes)],${JSON.stringify(scoreName)},{type:'application/octet-stream'})]:[];},
-      isRunning:()=>false,decide:async()=> 'local',restore:async()=>{},notify:key=>(window.cloudSaveNotices??=[]).push(key)});
+      isRunning:()=>false,decide:async()=> 'local',restore:async()=>{},notify:key=>(window.cloudSaveNotices??=[]).push(key),
+      decideStart:async kind=>{(window.cloudSaveDecisions??=[]).push(kind);return false;},
+      closeForHandoff:async()=>{
+        await new Promise(resolve=>setTimeout(resolve,120));
+        localStorage.setItem('fixture-committed-save',JSON.stringify(window.mutableSaveBytes));
+        window.cloudSaveSync.finished(true);
+        window.handoffClosed=true;
+        return true;
+      },
+      retirePrepared:async()=>{
+        window.mutableSaveBytes=JSON.parse(localStorage.getItem('fixture-committed-save'));
+        window.handoffReloaded=true;
+        return true;
+      }});
+    await accountSession.whenReady();
   };
 `},bundle:true,platform:'browser',format:'iife',write:false,logLevel:'silent',define:{'import.meta.env':JSON.stringify({VITE_ACCOUNTS_ENABLED:'true'})},plugins:[authoredSourcesPlugin(project)]});
 const script=built.outputFiles[0].text;
@@ -60,21 +75,31 @@ try{
   await Promise.all([active.goto(origin),follower.goto(origin)]);
   await Promise.all([active.evaluate(initial=>window.installCloudSaveSync(initial),[]),follower.evaluate(initial=>window.installCloudSaveSync(initial),bytes)]);
   assert.equal(await active.evaluate(()=>navigator.locks?.request instanceof Function),true,'Chromium exposes Web Locks on this same-origin fixture');
-  assert.equal(await active.evaluate(()=>window.cloudSaveSync.beforeLaunch('th06')),true,'the first page owns the game lock and registers its run');
-  const readsBefore=await follower.evaluate(()=>window.saveReadCount);
-  assert.equal(await follower.evaluate(()=>window.cloudSaveSync.beforeLaunch('th06')),false,'the second page is held at the launch gate');
-  await follower.evaluate(()=>window.cloudSaveSync.flush());
-  assert.equal(await follower.evaluate(()=>window.saveReadCount),readsBefore,'a follower never reads the active game’s save files');
-  assert.equal(sessionCount,1);assert.equal(uploadCount,0);
-  // This closes the actual document. It does not call sync.dispose(), finished(), or release a test-owned lock.
-  await active.close();
-  await follower.evaluate(values=>{window.mutableSaveBytes=values;},bytes);
+  const beforeStart=page=>page.evaluate(()=>window.cloudSaveSync.beforeStart('th06',new AbortController().signal));
+  assert.equal(await beforeStart(active),'continue');
+  await active.evaluate(()=>window.cloudSaveSync.started('th06'));
+  await active.waitForFunction(()=>localStorage.getItem('eagler-cloud-sync-v1:save:th06')?.includes('"runId":"'));
+  await active.evaluate(values=>{window.mutableSaveBytes=values;},bytes);
+
+  assert.equal(await beforeStart(follower),'reload','the follower starts after the previous tab saves and retires');
+  assert.equal(await active.evaluate(()=>window.handoffClosed),true);
+  assert.equal(await follower.evaluate(()=>window.handoffReloaded),true);
+  assert.deepEqual(await follower.evaluate(()=>window.mutableSaveBytes),bytes);
+  assert.deepEqual(await follower.evaluate(()=>window.cloudSaveDecisions??=[]),[]);
+  assert.deepEqual(await active.evaluate(()=>window.cloudSaveNotices??=[]),[]);
+  assert.equal(uploadCount,0,'handoff does not flush cloud progress while starting the next game');
+  assert.equal(sessionCount,1,'both tabs use the same device and local journal');
+
+  await follower.evaluate(()=>window.cloudSaveSync.started('th06'));
+  await follower.evaluate(()=>window.cloudSaveSync.finished());
   for(let attempt=0;attempt<30&&uploadCount===0;attempt++){
     await follower.evaluate(()=>window.cloudSaveSync.flush());
     if(uploadCount===0)await new Promise(resolve=>setTimeout(resolve,100));
   }
-  assert.equal(uploadCount,1,'the remaining page immediately recovers and uploads after Chromium closes the lock holder');
-  assert.equal(pending.length,0);assert.deepEqual(errors,[]);
+  assert.equal(uploadCount,1,'the last tab commits to the cloud on exit');
+  assert.equal(pending.length,0);
+  assert.deepEqual(errors,[]);
+  await active.close();
   await follower.close();
 }finally{
   await browser?.close();

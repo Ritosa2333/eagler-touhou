@@ -1,20 +1,27 @@
-import { memo, useSyncExternalStore } from 'react';
+import { memo, useCallback, useSyncExternalStore } from 'react';
 import { ChevronUp, Ellipsis, Flag, Send, VolumeX, Zap } from 'lucide-react';
 import { Button } from '../../ui/button';
+import { Button as UiButton } from '../../ui/controls';
 import { InputGroup, InputGroupInput } from '../../ui/input-group';
 import { ActionMenu, ActionMenuCheckboxItem, ActionMenuItem } from '../../ui/action-menu';
 import { RoomActionMenu } from './RoomActionMenu';
-import { QUICK_CHAT_ROWS } from '../../../src/contracts/multiplayer-quick-chat.mts';
-import type {
-  MultiplayerQuickChatModel,
-  QuickChatContext,
-  QuickChatEntry,
+import { QUICK_CHAT_PHRASES } from '../../../src/contracts/multiplayer-quick-chat.mts';
+import {
+  QUICK_CHAT_SLOT_COUNT,
+  type MultiplayerQuickChatModel,
+  type QuickChatContext,
+  type QuickChatEntry,
 } from '../../../src/launcher/multiplayer-quick-chat-model.mts';
+import type { DecisionStore } from '../../models/decisions';
 import { useLocale } from '../../i18n';
 import { shallowEqual, useStoreSelector } from '../../shared/react-store';
 import './chat-controls.css';
 
-export function ChatComposer({ model }: { model: MultiplayerQuickChatModel }) {
+export function ChatComposer({ model, gameplay = false, openOnClick = false }: {
+  model: MultiplayerQuickChatModel;
+  gameplay?: boolean;
+  openOnClick?: boolean;
+}) {
   const { t, locale } = useLocale();
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot),
     context = state.context;
@@ -32,10 +39,11 @@ export function ChatComposer({ model }: { model: MultiplayerQuickChatModel }) {
               day: 'numeric',
             }).format(state.bannedUntil),
           })
-        : t('chat.message');
-  const quick = (
+        : t(gameplay ? 'chat.freeInputHint' : 'chat.message');
+  const quick = !gameplay && (
     <RoomActionMenu
       enabled={enabled}
+      openOnClick={openOnClick}
       label={t('room.quickChat')}
       triggerContent={
         state.registered ? (
@@ -49,7 +57,7 @@ export function ChatComposer({ model }: { model: MultiplayerQuickChatModel }) {
       }
       triggerKind={state.registered ? 'action' : 'quick-chat'}
       menuClassName="room-quick-chat-picker"
-      items={QUICK_CHAT_ROWS.flat().map((phrase) => ({
+      items={QUICK_CHAT_PHRASES.map((phrase) => ({
         id: phrase.id,
         label: locale === 'en' ? phrase.en : phrase.zh,
         select: () => model.sendPhrase(phrase.id),
@@ -90,9 +98,55 @@ export function ChatComposer({ model }: { model: MultiplayerQuickChatModel }) {
         </form>
       )}
       {quick}
-      <ChatMuteMenu model={model} />
+      <ChatMuteMenu model={model} compact={gameplay} openOnClick={openOnClick} />
     </div>
   );
+}
+
+export function QuickChatPhrases({ enabled, language, numbered, onSelect }: {
+  enabled: boolean;
+  language: string;
+  numbered?: boolean;
+  onSelect(phraseId: string): void;
+}) {
+  const { t } = useLocale();
+  return (
+    <div className={`chat-phrase-grid${numbered ? ' mp-quick-chat-slots' : ''}`} role="group" aria-label={t('room.quickChat')}>
+      {QUICK_CHAT_PHRASES.map((phrase, index) => {
+        const key = numbered && index < QUICK_CHAT_SLOT_COUNT ? String(index + 1) : undefined;
+        const text = language === 'en' ? phrase.en : phrase.zh;
+        return (
+          <Button key={phrase.id} type="button" variant="outline" size="row"
+            className="min-h-9 min-w-0 items-center gap-1.5 py-1.5 pointer-coarse:min-h-10 max-[780px]:min-h-10"
+            disabled={!enabled} data-phrase={phrase.id} title={text} aria-keyshortcuts={key}
+            onClick={() => onSelect(phrase.id)}>
+            {key && <kbd aria-hidden="true">{key}</kbd>}
+            <span className="min-w-0 truncate">{text}</span>
+          </Button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function useChatReportConfirmation(model: MultiplayerQuickChatModel, decisions?: Pick<DecisionStore, 'askConfirmation'>) {
+  const { t } = useLocale();
+  return useCallback(async (entry: QuickChatEntry) => {
+    if (!entry.messageId || !decisions) return;
+    const confirmed = await decisions.askConfirmation({
+      title: t('chat.report'),
+      message: entry.phrase.zh,
+      confirmText: t('chat.report'),
+      confirmOnEnter: false,
+    });
+    if (confirmed && model.getSnapshot().entries.includes(entry)) model.reportMessage(entry.messageId);
+  }, [decisions, model, t]);
+}
+
+export function ChatMessageText({ entry, label }: {entry: QuickChatEntry; label: string}) {
+  const {t} = useLocale();
+  const sender = `${entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`}${entry.name ? `(${entry.name})` : ''}`;
+  return <><strong>{sender}</strong>{`: ${label}`}</>;
 }
 
 function localClientId(context: QuickChatContext | null) {
@@ -107,7 +161,7 @@ const chatMembers = (state: ReturnType<MultiplayerQuickChatModel['getSnapshot']>
   registered: state.registered,
   authorId: state.authorId,
 });
-const ChatMuteMenu = memo(function ChatMuteMenu({ model }: { model: MultiplayerQuickChatModel }) {
+const ChatMuteMenu = memo(function ChatMuteMenu({ model, compact, openOnClick }: { model: MultiplayerQuickChatModel; compact: boolean; openOnClick: boolean }) {
   const { t } = useLocale(),
     state = useStoreSelector(model, chatMembers, shallowEqual),
     context = state.context,
@@ -124,6 +178,7 @@ const ChatMuteMenu = memo(function ChatMuteMenu({ model }: { model: MultiplayerQ
   return (
     <ActionMenu
       label={t('chat.mute')}
+      openOnClick={openOnClick}
       side="top"
       className="room-chat-mute-menu"
       minimumWidth={220}
@@ -131,8 +186,8 @@ const ChatMuteMenu = memo(function ChatMuteMenu({ model }: { model: MultiplayerQ
       trigger={
         <Button
           variant="outline"
-          size={state.registered ? 'default' : 'icon'}
-          className={state.registered ? 'room-chat-mute-trigger px-3' : 'room-chat-mute-trigger size-12'}
+          size={state.registered ? 'default' : compact ? 'icon-sm' : 'icon'}
+          className={state.registered ? 'room-chat-mute-trigger px-3' : compact ? 'room-chat-mute-trigger' : 'room-chat-mute-trigger size-12'}
           aria-label={t('chat.mute')}
           title={t('chat.mute')}
           disabled={!members.size}
@@ -156,7 +211,7 @@ const ChatMuteMenu = memo(function ChatMuteMenu({ model }: { model: MultiplayerQ
 });
 
 const chatIdentity = (state: ReturnType<MultiplayerQuickChatModel['getSnapshot']>) => ({
-  registered: state.registered,
+  canReport: !!state.context?.connected && (state.context.localSeat != null || state.context.localSpectator === true),
   authorId: state.authorId,
   localClientId: localClientId(state.context),
   muted: state.muted,
@@ -165,21 +220,28 @@ export const ChatMessageContent = memo(function ChatMessageContent({
   entry,
   model,
   label,
+  confirmReport,
 }: {
   entry: QuickChatEntry;
   model: MultiplayerQuickChatModel;
   label: string;
+  confirmReport?(entry: QuickChatEntry): void;
 }) {
   const { t } = useLocale(),
     state = useStoreSelector(model, chatIdentity, shallowEqual);
-  const sender = `${entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`}${entry.name ? `(${entry.name})` : ''}`;
   const own = entry.clientId === state.localClientId || (!!entry.authorId && entry.authorId === state.authorId),
-    canReport = !!entry.messageId && state.registered && !own;
+    canReport = !!entry.messageId && !!entry.authorId && state.canReport && !own;
+  const content = <ChatMessageText entry={entry} label={label}/>;
+  if (confirmReport) return canReport ? (
+    <UiButton variant="unstyled" className="room-chat-message chat-report-trigger"
+      aria-haspopup="dialog" title={t('chat.report')} onClick={() => confirmReport(entry)}>
+      {content}
+    </UiButton>
+  ) : <span className="room-chat-message">{content}</span>;
   return (
     <>
       <span className="room-chat-message" data-actions={!own || undefined}>
-        <strong>{sender}</strong>
-        {`: ${label}`}
+        {content}
       </span>
       {!own && (
         <ActionMenu

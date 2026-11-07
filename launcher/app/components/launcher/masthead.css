@@ -147,7 +147,7 @@
   .book-masthead .book-top-faq::after {
     display: none;
   }
-  .book-masthead :is(.book-theme-toggle, .masthead-menu-toggle, .book-profile-trigger) {
+  .book-masthead :is(.book-theme-toggle, .masthead-menu-toggle, .book-profile-trigger, .account-login-link) {
     appearance: none;
     display: inline-flex;
     align-items: center;
@@ -166,10 +166,11 @@
     color: var(--kit-muted-foreground);
     cursor: pointer;
   }
-  .book-masthead :is(.book-theme-toggle, .masthead-menu-toggle, .book-profile-trigger):hover {
+  .book-masthead :is(.book-theme-toggle, .masthead-menu-toggle, .book-profile-trigger, .account-login-link):hover {
     background: var(--kit-accent);
     color: var(--kit-foreground);
   }
+  .book-masthead .account-login-link {width:auto;gap:6px;padding-inline:8px}
   .book-masthead .book-profile-trigger > span {
     display: flex;
     align-items: center;
@@ -283,12 +284,13 @@
       padding: 0 12px;
       font-size: 14px;
     }
-    .book-masthead :is(.book-theme-toggle, .masthead-menu-toggle, .book-profile-trigger) {
+    .book-masthead :is(.book-theme-toggle, .masthead-menu-toggle, .book-profile-trigger, .account-login-link) {
       width: 44px;
       height: 44px;
       min-height: 44px;
       padding: 0;
     }
+    .account-login-link .account-guest-label {display:none}
     .book-masthead .book-top-faq {
       display: none;
     }
@@ -353,18 +355,14 @@
 
 .masthead-account-entry{display:inline-flex;align-items:center;gap:7px;min-width:0;min-height:38px;max-width:13rem;padding:3px 7px;border:0;border-radius:7px;background:transparent;color:var(--kit-foreground);font:inherit;font-size:13px;font-weight:550;text-decoration:none}
 button.masthead-account-entry{cursor:pointer}.masthead-account-entry:is(:hover,[data-state=open]){background:var(--kit-accent)}
-.account-avatar,.account-login-icon{display:inline-grid;place-items:center;width:var(--account-avatar-size,28px);height:var(--account-avatar-size,28px);flex:none;overflow:hidden;border-radius:var(--account-avatar-radius,50%);background:var(--kit-secondary)}
+.account-avatar{display:inline-grid;place-items:center;width:var(--account-avatar-size,28px);height:var(--account-avatar-size,28px);flex:none;overflow:hidden;border-radius:var(--account-avatar-radius,50%);background:var(--kit-secondary)}
 .account-avatar>img{display:block;width:100%;height:100%;object-fit:cover}
 .account-avatar>.site-brand{display:block;width:100%;height:100%;max-width:none;aspect-ratio:1;overflow:hidden}
 .account-avatar>.site-brand img{display:block;width:312.5%;max-width:none;height:100%;object-fit:fill}
 .account-handle{min-width:0;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
-.account-login-icon svg{width:16px;height:16px}.account-guest{gap:4px;max-width:none;white-space:nowrap}
-.account-guest>a{color:inherit;text-decoration:none}.account-guest>a:hover{text-decoration:underline}.account-guest>span{color:var(--kit-muted-foreground)}
-.account-login-link{display:inline-flex;align-items:center;gap:7px}
 .account-menu-panel{min-width:196px;max-width:calc(100vw - 20px)}
 .account-menu-identity{display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:3px;border-bottom:1px solid var(--kit-border)}
 .account-menu-identity strong,.account-menu-identity small{display:block;overflow-wrap:anywhere}.account-menu-identity small{color:var(--kit-muted-foreground)}
 .profile-avatar>.account-avatar,.profile-draft-avatar>.account-avatar{width:100%;height:100%;border-radius:inherit}
-@media(max-width:600px){.masthead-account-entry{max-width:clamp(78px,24vw,110px);gap:5px;padding-inline:3px;font-size:12px}.account-guest{gap:3px;max-width:none}.account-login-link{gap:4px}.masthead-account-entry .account-avatar,.account-login-icon{width:24px;height:24px}}
-@media(max-width:380px){.account-guest{gap:0}.account-guest-separator,.account-register-link{display:none}.account-login-link{width:44px;min-width:44px;min-height:44px;padding:0;justify-content:center;gap:0;border-radius:7px}.account-login-link:hover{background:var(--kit-accent);text-decoration:none}.account-guest-label{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0}}
+@media(max-width:600px){.masthead-account-entry{max-width:clamp(78px,24vw,110px);gap:5px;padding-inline:3px;font-size:12px}.masthead-account-entry .account-avatar{width:24px;height:24px}}
 @media(max-width:380px){.book-masthead .site-brand{width:136px}}

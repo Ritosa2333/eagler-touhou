@@ -1,4 +1,6 @@
-import { quickChatPhrase, type QuickChatPhrase } from '../contracts/multiplayer-quick-chat.mjs';
+import { QUICK_CHAT_PHRASES, quickChatPhrase, type QuickChatPhrase } from '../contracts/multiplayer-quick-chat.mjs';
+
+export const QUICK_CHAT_SLOT_COUNT = 9;
 
 export interface QuickChatSeat {
   clientId: string;
@@ -33,6 +35,7 @@ export interface QuickChatSnapshot {
   readonly entries: readonly QuickChatEntry[];
   readonly muted: readonly string[];
   readonly pickerOpen: boolean;
+  readonly editingText: boolean;
   readonly registered: boolean;
   readonly authorId: string;
   readonly bannedUntil: number;
@@ -58,6 +61,7 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
     entries: [],
     muted: [],
     pickerOpen: false,
+    editingText: false,
     registered: false,
     authorId: '',
     bannedUntil: 0,
@@ -141,7 +145,8 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
     publish({
       ...snapshot,
       context,
-      ...(reset ? { entries: [], muted: [], pickerOpen: false, draft: '', sending: false } : {}),
+      ...(reset ? { entries: [], muted: [], draft: '', sending: false } : {}),
+      ...(reset || next.inRoom || !next.visible || !next.connected ? { pickerOpen: false, editingText: false } : {}),
       ...(!next.connected ? { registered: false, authorId: '', bannedUntil: 0, sending: false } : {}),
     });
   }
@@ -158,7 +163,7 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
       if (banTimer !== undefined) ports.timers.clearTimeout(banTimer);
       banTimer = undefined;
       publish({ ...snapshot, registered, authorId: registered ? String(message.authorId) : '', bannedUntil,
-        ...(!registered ? {sending: false} : {}) });
+        ...(!registered ? {sending: false, editingText: false} : {}) });
       if (bannedUntil > now())
         banTimer = ports.timers.setTimeout(
           () => {
@@ -200,7 +205,7 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
           ...(message.ok === true && snapshot.draft === submittedDraft ? { draft: '' } : {}),
         });
       if (message.ok !== true) {
-        if (message.code === 'sign-in-required') publish({ ...snapshot, registered: false });
+        if (message.code === 'sign-in-required') publish({ ...snapshot, registered: false, editingText: false });
         ports.notify?.(typeof message.code === 'string' ? message.code : 'service-unavailable');
       } else if (message.action === 'chat-report') ports.notify?.('reported');
       return;
@@ -291,6 +296,14 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
         ports.timers.setTimeout(() => expire(entry), 10000),
       );
   }
+  function sendPhrase(id: unknown) {
+    const context = snapshot.context,
+      phrase = quickChatPhrase(id);
+    if (disposed || !phrase || !context?.connected || (context.localSeat == null && !context.localSpectator)) return;
+    ports.voice(phrase.id);
+    ports.send({ type: 'quick-chat', phrase: phrase.id, serial: context.serial });
+    publish({ ...snapshot, pickerOpen: false, editingText: false });
+  }
   return {
     getSnapshot: () => snapshot,
     subscribe(listener: () => void) {
@@ -302,7 +315,13 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
     update,
     receive,
     setDraft(draft: string) {
-      if (!disposed) publish({ ...snapshot, draft: draft.slice(0, 500) });
+      const value = draft.slice(0, 500);
+      if (!disposed && snapshot.draft !== value)
+        publish({
+          ...snapshot,
+          draft: value,
+          editingText: snapshot.editingText || (snapshot.pickerOpen && snapshot.registered),
+        });
     },
     sendText() {
       const context = snapshot.context;
@@ -332,21 +351,23 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
       ports.send({ type: 'free-chat', text, serial: context.serial });
     },
     reportMessage(messageId: number) {
+      const context = snapshot.context;
       const entry = snapshot.entries.find((item) => item.messageId === messageId);
       if (
         !disposed &&
-        snapshot.context?.connected &&
-        snapshot.registered &&
+        context?.connected &&
+        (context.localSeat != null || context.localSpectator) &&
         entry?.authorId &&
+        entry.clientId !== context.localClientId &&
         entry.authorId !== snapshot.authorId
       )
         ports.send({ type: 'chat-report', messageId });
     },
     openComposer() {
-      if (!disposed && !snapshot.pickerOpen) publish({ ...snapshot, pickerOpen: true });
+      if (!disposed && !snapshot.pickerOpen) publish({ ...snapshot, pickerOpen: true, editingText: false });
     },
     togglePicker() {
-      if (!disposed) publish({ ...snapshot, pickerOpen: !snapshot.pickerOpen });
+      if (!disposed) publish({ ...snapshot, pickerOpen: !snapshot.pickerOpen, editingText: false });
     },
     toggleMember(clientId: string) {
       if (!disposed)
@@ -358,22 +379,12 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
         });
     },
     dismiss() {
-      if (!disposed) publish({ ...snapshot, pickerOpen: false });
+      if (!disposed && snapshot.pickerOpen) publish({ ...snapshot, pickerOpen: false, editingText: false });
     },
-    sendPhrase(id: unknown) {
-      const context = snapshot.context,
-        phrase = quickChatPhrase(id);
-      if (
-        disposed ||
-        !phrase ||
-        !context ||
-        (context.localSeat == null && !context.localSpectator) ||
-        !context.connected
-      )
-        return;
-      ports.voice(phrase.id);
-      ports.send({ type: 'quick-chat', phrase: phrase.id, serial: context.serial });
-      publish({ ...snapshot, pickerOpen: false });
+    sendPhrase,
+    sendSlot(slot: number) {
+      if (snapshot.pickerOpen && !snapshot.editingText && slot >= 1 && slot <= QUICK_CHAT_SLOT_COUNT)
+        sendPhrase(QUICK_CHAT_PHRASES[slot - 1]?.id);
     },
     setExpiryPresenter(next: ExpiryPresenter) {
       presenter = next;
@@ -391,7 +402,7 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
       retracted.clear();
       disposed = true;
       presenter = null;
-      publish({ ...snapshot, entries: [], muted: [], pickerOpen: false });
+      publish({ ...snapshot, entries: [], muted: [], pickerOpen: false, editingText: false });
       listeners.clear();
     },
   };

@@ -6,7 +6,8 @@ import {FullscreenTransient} from '../components/FullscreenTransient';
 import {ConfirmationDialog} from '../components/ConfirmationDialog';
 import {useLocale} from '../i18n';
 import type {DecisionStore} from '../models/decisions';
-import {resolveRoomInvite, normalizeRoomCode, roomRouteHistoryOperation, launcherHomeHistoryOperation, returnToRoomHistoryOperation, roomPanelHistoryOperation, roomSettingsHistoryOperation, MP_PANEL_HISTORY_KEY, MP_SETTINGS_HISTORY_KEY, MP_ROOM_HISTORY_KEY, PLAYER_HISTORY_KEY, type HistoryOperation} from '../../src/launcher/route-state.mts';
+import type {RoomPanelKind} from '../components/room/types';
+import {resolveRoomInvite, normalizeRoomCode, clearRoomUrlParams, roomRouteHistoryOperation, launcherHomeHistoryOperation, returnToRoomHistoryOperation, roomPanelHistoryOperation, roomSettingsHistoryOperation, MP_PANEL_HISTORY_KEY, MP_SETTINGS_HISTORY_KEY, MP_ROOM_HISTORY_KEY, PLAYER_HISTORY_KEY, type HistoryOperation} from '../../src/launcher/route-state.mts';
 import {encodeRoomInvite, ROOM_INVITE_KEY} from '../../src/launcher/room-invite.mts';
 import {localeHome, uiLocaleSearch, type UiLocale} from '../../src/launcher/i18n.mts';
 import {updateSearchParameters} from '../../src/launcher/url-query.mts';
@@ -20,7 +21,6 @@ const newDialogSession = () => `${Date.now().toString(36)}-${++dialogSessionSequ
 
 export type Surface = 'library' | 'options' | 'touch' | 'room';
 export type SurfaceContext = 'library' | 'lobby';
-export type RoomPanelKind = 'personal' | 'network' | 'spectators' | 'game' | 'music';
 export type DirectoryFormMode = 'create' | 'join';
 export const INFORMATION_DIALOG_IDS = ['mpGuideDialog', 'firstUseNoticeDialog', 'donationDialog', 'appleRefreshDialog', 'replayDialog', 'lobbyNetworkDialog'] as const;
 export type InformationDialogId = typeof INFORMATION_DIALOG_IDS[number];
@@ -104,6 +104,7 @@ interface SurfaceNavigation extends SurfaceAddress {
   setLocaleAddress(locale: UiLocale): void;
   restoreRoomRoute(input: {product: ProductId; code: string; fromDirectory: boolean}): void;
   enterRoomRoute(input: {product: ProductId; code: string}): void;
+  switchRoomProduct(input: {product: ProductId; code: string; fromDirectory: boolean; spectator: boolean}): void;
   settleRoomInvite(): void;
   leaveTitleRoomRoute(baseProduct: ProductId): void;
   leaveRoomRoute(input: {product: ProductId; fromDirectory: boolean; message?: string}): 'options' | 'directory';
@@ -876,6 +877,14 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     applyRoomOperations([preserveSameRoomDirectoryOrigin(roomRouteHistoryOperation({currentUrl: roomUrl, currentState: withoutEntry(location.state),
       product: input.product, roomCode: normalizeRoomCode(input.code), push: true}), source)]);
   }
+  function switchRoomProduct(input: {product: ProductId; code: string; fromDirectory: boolean; spectator: boolean}) {
+    if (!isMultiplayerProductId(input.product) || address.roomCode !== input.code) return;
+    const url = currentUrl();
+    url.searchParams.delete('game');
+    clearRoomUrlParams(url);
+    url.searchParams.set(ROOM_INVITE_KEY, encodeRoomInvite({g: input.product, r: input.code, f: input.fromDirectory, a: 'join', s: input.spectator}));
+    applyRoomOperations([{kind: 'replace', url: url.href, state: {...withoutEntry(location.state), [MP_ROOM_HISTORY_KEY]: input.code, [PLAYER_HISTORY_KEY]: false}}]);
+  }
   function settleRoomInvite() {
     const url = currentUrl(), invite = resolveRoomInvite(url);
     if (!invite || address.surface !== 'room') return;
@@ -1084,7 +1093,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     }
     void navigate(target(params), {replace: true, preventScrollReset: true, state: withoutEntry(location.state)});
   }
-  return <NavigationContext.Provider value={{...address, navigateAddress: address => {void navigate(address);}, hasSelection, routedProductId: baseAddress.productId, applyHostSelection, syncSelectionFromRoute, filterProductId: urlAddress.context === 'lobby' ? urlAddress.productId : null, openOptions, selectLobbyProduct, openDirectory, setLocaleAddress, restoreRoomRoute, enterRoomRoute, settleRoomInvite, leaveTitleRoomRoute, leaveRoomRoute, roomPanel, roomNetworkPeer: validPanel && typeof panelEntry.peer === 'string' ? panelEntry.peer : undefined, openRoomPanel, closeRoomPanel, roomSettingsOpen, openRoomSettings, closeRoomSettings, directoryFormMode, directoryFormParentKey: validForm && typeof formEntry.parentKey === 'string' && formEntry.parentKey !== location.key ? formEntry.parentKey : null, openDirectoryForm, closeDirectoryForm, openTouchLayout, playerOpen, openPlayer, openRoomFullscreen, closeRoomFullscreen, closeSurface, completeRuntimeClose, infoDialogOpen, openInfoDialog, closeInfoDialog}}>
+  return <NavigationContext.Provider value={{...address, navigateAddress: address => {void navigate(address);}, hasSelection, routedProductId: baseAddress.productId, applyHostSelection, syncSelectionFromRoute, filterProductId: urlAddress.context === 'lobby' ? urlAddress.productId : null, openOptions, selectLobbyProduct, openDirectory, setLocaleAddress, restoreRoomRoute, enterRoomRoute, switchRoomProduct, settleRoomInvite, leaveTitleRoomRoute, leaveRoomRoute, roomPanel, roomNetworkPeer: validPanel && typeof panelEntry.peer === 'string' ? panelEntry.peer : undefined, openRoomPanel, closeRoomPanel, roomSettingsOpen, openRoomSettings, closeRoomSettings, directoryFormMode, directoryFormParentKey: validForm && typeof formEntry.parentKey === 'string' && formEntry.parentKey !== location.key ? formEntry.parentKey : null, openDirectoryForm, closeDirectoryForm, openTouchLayout, playerOpen, openPlayer, openRoomFullscreen, closeRoomFullscreen, closeSurface, completeRuntimeClose, infoDialogOpen, openInfoDialog, closeInfoDialog}}>
     <UnsavedChangesContext.Provider value={{register: registerUnsavedGuard, confirmDiscard}}><SurfaceLayersContext.Provider value={{values: localValues, set: setSurfaceLayer}}>{children}</SurfaceLayersContext.Provider></UnsavedChangesContext.Provider>
     <FullscreenTransient><ConfirmationDialog key={applicationDecision ? `application:${applicationDecision.requestId}` : 'navigation'}
       open={applicationDecision !== null || (blocker.state === 'blocked' && (pendingBlockKind.current === 'touch' || pendingBlockKind.current === 'unsaved'))}
@@ -1097,6 +1106,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
       variant={applicationDecision?.variant || ''} hideCancel={applicationDecision?.hideCancel || false}
       confirmOnEnter={applicationDecision?.confirmOnEnter || false}
       input={applicationDecision?.input}
+      comparison={applicationDecision?.comparison}
       onSecondary={() => {if (applicationDecision) decisions?.resolve('secondary');}}
       onCancel={() => {
         if (applicationDecision) decisions?.resolve('cancel');

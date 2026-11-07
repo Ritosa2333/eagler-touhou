@@ -40,6 +40,8 @@ before(async () => {
   `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', outfile: resolve(work, 'actual.mjs'), logLevel: 'silent',
   plugins: [{name: 'installed-deps-authored-mts', setup(ctx) {
     ctx.onResolve({filter: /^[^./]/}, args => ({path: args.path, external: true}));
+    ctx.onResolve({filter: /\.webp\?url$/}, args => ({path: args.path, namespace: 'artwork'}));
+    ctx.onLoad({filter: /.*/, namespace: 'artwork'}, args => ({contents: `export default ${JSON.stringify(args.path)}`}));
     ctx.onResolve({filter: /^\.\.?\/.*\.mjs$/}, args => {const path = resolve(dirname(args.importer), args.path).replace(/\.mjs$/, '.mts'); if (existsSync(path)) return {path};});
   }}]}); owners = await import(pathToFileURL(resolve(work, 'actual.mjs')));
 });
@@ -205,7 +207,7 @@ for (const locale of ['zh-CN', 'en', 'ja']) test(`Member card artwork follows pr
     assert.equal(all('[role="progressbar"]',card).length,stopped ? 0 : 1);
     if (stopped) {
       assert.equal(n('.room-seat-ring',card).classList.contains('indeterminate'),false);
-      assert.equal(n('.mp-seat-loadout',card).hidden,true);
+      assert.equal(n('.mp-seat-loadout',card).textContent,t(locale,key));
     }
   }
 });
@@ -824,7 +826,7 @@ test('public nickname editor waits for review and locks changes until the server
  await f.receive({seats:[{clientId:f.id,name:'Alice',loadout:0,ready:false},{clientId:'peer123456',name:'完整公开昵称',loadout:1,ready:false}],spectators:[{clientId:'watch123456',name:'完整观众昵称'}]});
  assert.equal(n('[data-mp-seat-name="1"]').textContent,'完整公开昵称');
  assert.equal(n('[data-mp-seat="1"] .mp-seat-loadout').textContent,'','TH09 native selection keeps room loadout labels empty');
- assert.equal(n('[data-mp-seat="0"] .mp-seat-control').textContent,'Keys / stick');
+ assert.equal(n('[data-mp-seat="0"] .mp-seat-loadout').textContent,`(${t('en','multiplayer.control.normal')})`);
  await m.update({panel:{kind:'spectators'}});
  assert.match(n('#mpSpectatorList').textContent,/完整观众昵称/);
  await act(()=>status({name:'Alice',status:'cooldown',attemptsLeft:0,nextChangeAt:Date.now()+86400000}));
@@ -834,7 +836,7 @@ test('public nickname editor waits for review and locks changes until the server
 
 
 test('Music seek stays at the released target through old ticks, then follows the room acknowledgement', async () => {
-  let state = {enabled:true,inRoom:true,eligible:true,connected:true,joined:true,syncState:'shared',volume:1,position:90,seekTarget:null,duration:120,status:'playing',error:null,
+  let state = {enabled:true,inRoom:true,seated:true,connected:true,joined:true,syncState:'shared',volume:1,position:90,seekTarget:null,duration:120,status:'playing',error:null,
     current:{platform:'netease',id:'123',name:'Song',artist:'Artist'},session:{session:'listen',playback:1,revision:2,startedAt:0,pausedAt:null}};
   const listeners=new Set(), seeks=[];
   let accepted=true;

@@ -4,6 +4,8 @@ import {applyMusicControl, createMusicPlayback, MUSIC_POSITION_LIMIT, MUSIC_QUEU
 
 const TYPE = 'listen-together';
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
+const validDuration = ms => Number.isSafeInteger(ms) && ms >= 1000 && ms <= MUSIC_POSITION_LIMIT;
+const currentTrack = state => state.queue[state.order[state.cursor]];
 
 function readTrack(track) {
   if (!track || (track.platform !== 'netease' && track.platform !== 'qq') ||
@@ -24,71 +26,78 @@ function readQueue(values, fallback) {
   return queue.some(track => sameMusicTrack(track, fallback)) ? queue : null;
 }
 
-export function createListenTogether({send, now = Date.now, random = Math.random}) {
+export function createListenTogether({send, onPublicTrackChange, now = Date.now, random = Math.random}) {
   const sessions = new WeakMap();
   const budgets = new WeakMap();
+  const publicTracks = new WeakMap();
 
-  function seats(room) {
-    return new Set(room.lobby.seats.flatMap(seat => seat ? [seat.clientId] : []));
-  }
+  const playerIds = room => room.lobby.seats.flatMap(seat => seat ? [seat.clientId] : []);
 
-  function snapshot(state) {
-    return JSON.stringify(state ? {
+  function snapshot(room, state, joined) {
+    if (!state) return JSON.stringify({type: TYPE, session: null, serverTime: now()});
+    const playback = musicPlaybackSnapshot(state);
+    return JSON.stringify({
       type: TYPE,
       session: state.id,
-      ...musicPlaybackSnapshot(state),
-      participants: [...state.participants],
-      startedAt: state.pending ? null : state.startedAt,
+      ...playback,
+      ...(joined ? {} : {queue: [playback.queue[playback.queueIndex]], queueIndex: 0}),
+      joined,
+      participants: playerIds(room).filter(id => state.participants.has(id)),
       serverTime: now(),
-    } : {type: TYPE, session: null, serverTime: now()});
+    });
   }
-  function publish(room, audience, state) {
-    const message = snapshot(state);
-    for (const id of audience) send(room.lobbyClients.get(id), message);
+  function publish(room, state) {
+    scheduleTrackEnd(room, state);
+    const previous = publicTracks.get(room);
+    const current = state.ended ? null : currentTrack(state);
+    if (previous?.name !== current?.name || previous?.artist !== current?.artist) {
+      if (current) publicTracks.set(room, {name: current.name, artist: current.artist});
+      else publicTracks.delete(room);
+      onPublicTrackChange?.();
+    }
+    let playing, offer;
+    for (const [id, socket] of room.lobbyClients)
+      send(socket, state.participants.has(id)
+        ? (playing ??= snapshot(room, state, true))
+        : (offer ??= snapshot(room, state, false)));
+  }
+
+  function scheduleTrackEnd(room, state) {
+    clearTimeout(state.endTimer);
+    const durationMs = currentTrack(state).durationMs;
+    if (!durationMs || state.ended || state.pausedAt !== null) return;
+    const endsAt = state.startedAt + durationMs;
+    state.endTimer = setTimeout(() => {
+      if (sessions.get(room) !== state) return;
+      if (now() < endsAt) scheduleTrackEnd(room, state);
+      else if (applyMusicControl(state, 'ended', {durationMs}, endsAt, random)) publish(room, state);
+    }, Math.max(0, endsAt - now()));
+    state.endTimer.unref?.();
   }
 
   function sync(room, clientId) {
     const state = sessions.get(room);
-    if (room.lobby.seats.some(seat => seat?.clientId === clientId))
-      send(room.lobbyClients.get(clientId), snapshot(state));
+    send(room.lobbyClients.get(clientId), snapshot(room, state, state?.participants.has(clientId)));
   }
 
-  function end(room, state) {
+  function disconnect(room, clientId) {
+    sessions.get(room)?.participants.delete(clientId);
+  }
+  function close(room) {
+    clearTimeout(sessions.get(room)?.endTimer);
     sessions.delete(room);
-    publish(room, state.audience, null);
-  }
-
-  function reconcile(room) {
-    const state = sessions.get(room);
-    if (!state) return;
-    const audience = seats(room);
-    if (audience.size === state.audience.size &&
-        [...audience].every(id => state.audience.has(id))) return;
-    const removed = [...state.audience].filter(id => !audience.has(id));
-    for (const id of removed) state.participants.delete(id);
-    if (state.participants.size < (state.pending ? 1 : 2) || audience.size < 2) {
-      end(room, state);
-      return;
-    }
-    state.audience = audience;
-    state.revision++;
-    if (removed.length) publish(room, removed, null);
-    publish(room, audience, state);
+    publicTracks.delete(room);
   }
 
   function handle(room, clientId, socket, message) {
     if (room.lobbyClients.get(clientId) !== socket) return;
-    if (!room.lobby.seats.some(seat => seat?.clientId === clientId)) return;
+    const seated = playerIds(room).includes(clientId);
     const time = now();
     const state = sessions.get(room);
     // Leaving remains available after a burst of controls.
     if (message.action === 'leave' && state && message.session === state.id) {
-      if (!state.participants.delete(clientId)) return;
-      if (state.participants.size < 2) end(room, state);
-      else {
-        state.revision++;
-        publish(room, state.audience, state);
-      }
+      disconnect(room, clientId);
+      sync(room, clientId);
       return;
     }
     let budget = budgets.get(socket);
@@ -102,53 +111,51 @@ export function createListenTogether({send, now = Date.now, random = Math.random
     }
 
     if (message.action === 'sync') {
-      send(socket, snapshot(state));
+      sync(room, clientId);
       return;
     }
     if (message.action === 'invite') {
-      if (state) { send(socket, snapshot(state)); return; }
+      if (!seated || state) { sync(room, clientId); return; }
       const track = readTrack(message.track);
-      const audience = seats(room);
-      if (!track || ![...audience].some(id => id !== clientId &&
-          room.lobbyClients.get(id)?.readyState === 1)) return;
+      if (!track) return;
       const queue=readQueue(message.queue,message.track);
       if(!queue)return;
       const {positionMs = 0, paused = false, repeat = 'off', shuffle = false} = message;
       if (!Number.isFinite(positionMs) || positionMs < 0 || positionMs > MUSIC_POSITION_LIMIT ||
           typeof paused !== 'boolean' || !['off', 'all', 'one'].includes(repeat) || typeof shuffle !== 'boolean') return;
-      const pending = {
+      const active = {
         ...createMusicPlayback(track, queue, time, {positionMs, paused, repeat, shuffle}, random),
-        id: randomUUID(), audience, participants: new Set([clientId]), pending: true, offeredAt: time,
+        id: randomUUID(), participants: new Set([clientId]),
       };
-      sessions.set(room, pending);
-      publish(room, audience, pending);
+      if (validDuration(message.durationMs)) currentTrack(active).durationMs = message.durationMs;
+      sessions.set(room, active);
+      publish(room, active);
       return;
     }
     if (!state || message.session !== state.id) {
-      send(socket, snapshot(state));
+      sync(room, clientId);
       return;
     }
     if (message.action === 'join') {
-      if (state.participants.has(clientId)) return;
-      if (state.pending &&
-          ![...state.participants].some(id => room.lobbyClients.get(id)?.readyState === 1)) return;
       state.participants.add(clientId);
-      if (state.pending) {
-        const wait = time - state.offeredAt;
-        state.startedAt += wait;
-        if (state.pausedAt !== null) state.pausedAt = time;
-        state.pending = false;
-      }
-      state.revision++;
-      publish(room, state.audience, state);
+      sync(room, clientId);
       return;
     }
-    if (state.pending || !state.participants.has(clientId)) return;
+    if (!seated || !state.participants.has(clientId)) return;
     const {action} = message;
+    if (action === 'duration') {
+      const track = currentTrack(state);
+      if (!track.durationMs && message.playback === state.playback && validDuration(message.durationMs)) {
+        track.durationMs = message.durationMs;
+        scheduleTrackEnd(room, state);
+      }
+      return;
+    }
     if (action === 'ended') {
       if (message.playback !== state.playback || state.pausedAt !== null || state.ended) return;
+      if (currentTrack(state).durationMs) return;
     } else if (message.revision !== state.revision) {
-      send(socket, snapshot(state));
+      sync(room, clientId);
       return;
     }
 
@@ -163,8 +170,8 @@ export function createListenTogether({send, now = Date.now, random = Math.random
     const changed = applyMusicControl(state, action, fields, time, random);
     if (changed === 'queue-full') send(socket, JSON.stringify({type: TYPE, error: changed}));
     if (changed !== true) return;
-    publish(room,state.audience,state);
+    publish(room,state);
   }
 
-  return {handle, reconcile, sync};
+  return {handle, disconnect, close, sync, publicTrack: room => publicTracks.get(room)};
 }

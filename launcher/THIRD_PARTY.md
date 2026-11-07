@@ -1,6 +1,6 @@
 # 第三方软件与资源致谢
 
-本文列出 Launcher 和 Host 使用的第三方代码、字体、图标与格式。资源附带的许可证保留在资源旁；根目录 [`LICENSE`](LICENSE) 和 [`NOTICE.txt`](NOTICE.txt) 按原样保留。
+本文列出 Launcher 和 Host 使用的第三方代码、字体、图标与格式。资源附带的许可证保留在资源旁；根目录 [`LICENSE`](LICENSE) 按原样保留。
 
 ## 浏览器与构建依赖
 
@@ -45,9 +45,8 @@ bun run vendor
 
 - 主页通用操作使用 [Lucide](https://github.com/lucide-icons/lucide)，包为 lucide-react@1.65.0，采用 ISC。作品封面独立于通用图标系统。
 
-- 公告栏图标来自 `@iconify-json/fa7-brands@1.2.4`（Font Awesome Brands 7.3.1），采用 CC BY 4.0。Bilibili、QQ、GitHub SVG 位于 `public/assets/notice-bilibili.svg`、`notice-qq.svg` 和 `notice-github.svg`；该包也是 Mizuki 前端使用的同一图标集。
+- 游戏来源图标来自 `@iconify-json/fa7-brands@1.2.4`（Font Awesome Brands 7.3.1），采用 CC BY 4.0。Bilibili 和 GitHub SVG 位于 `public/assets/notice-bilibili.svg` 和 `notice-github.svg`。
 - 站点页眉使用 `@iconify-json/material-symbols@1.2.86`，来源为 [Google Material Design Icons](https://github.com/google/material-design-icons)，采用 Apache License 2.0。内嵌图形为 `language`、`history`、`person`、`warning`；触控帮助还内嵌 `fullscreen`、`fullscreen_exit`、`help`、`screen_rotation`。
 - 房间和输入控件使用 [Phosphor](https://github.com/phosphor-icons/core) 中未修改的 regular 图标，包为 `@phosphor-icons/core@2.1.1`，采用 MIT。随包图标包括 caret、copy、gear、sliders、chart、user 和 users；许可证为 `public/assets/LICENSE-Phosphor.txt`。
-- `public/assets/notice-touhou-cloud.png` 是 [cloud.touhou.best](https://cloud.touhou.best/) 发布的 Touhou Cloud 标志；项目负责人确认可用于标识服务提供方。
 
 资源放置、Host 生成封面和发布规则见 [`ASSETS.md`](ASSETS.md)。

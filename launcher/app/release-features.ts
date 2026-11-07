@@ -3,18 +3,17 @@ export type ReleaseFeatureEnvironment = {
   DEV?: boolean;
   VITE_PREVIEW_FEATURES?: string;
   VITE_ACCOUNTS_ENABLED?: string;
-  VITE_SITE_NOTICE?: string;
+  VITE_LISTEN_TOGETHER_ENABLED?: string;
 };
 
 export function resolveReleaseFeatures(environment: ReleaseFeatureEnvironment) {
   const previewSetting = environment.VITE_PREVIEW_FEATURES;
   const previewFeaturesEnabled = previewSetting === 'true' || (previewSetting !== 'false' && (environment.DEV ?? true));
   const accountsEnabled = environment.VITE_ACCOUNTS_ENABLED === 'true';
-  const siteNoticeEnabled = environment.VITE_SITE_NOTICE !== 'false';
   return {
     previewFeaturesEnabled,
     accountsEnabled,
-    siteNoticeEnabled,
+    listenTogetherEnabled: environment.VITE_LISTEN_TOGETHER_ENABLED === 'true',
     isPreviewOnlyPage(pathname: string) {
       const previewPage = /\/ui-review\.html\/?$/.test(pathname);
       const accountPage = /^(?:\/(?:login|profile)\.html|\/u\/[^/]+)\/?$/.test(pathname);
@@ -26,5 +25,5 @@ export function resolveReleaseFeatures(environment: ReleaseFeatureEnvironment) {
 const releaseFeatures = resolveReleaseFeatures(import.meta.env ?? {});
 export const previewFeaturesEnabled = releaseFeatures.previewFeaturesEnabled;
 export const accountsEnabled = releaseFeatures.accountsEnabled;
-export const siteNoticeEnabled = releaseFeatures.siteNoticeEnabled;
+export const listenTogetherEnabled = releaseFeatures.listenTogetherEnabled;
 export const isPreviewOnlyPage = releaseFeatures.isPreviewOnlyPage;

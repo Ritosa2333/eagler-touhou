@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import {
   Search,
@@ -35,7 +35,7 @@ import {impressFavorite} from './ink-feedback';
 import { BookWorkNumber } from './BookWorkNumber';
 import {useLibraryMotion} from './use-library-motion';
 
-type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & { footer?: ReactNode };
+type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'>;
 const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
   { id: 'all', Icon: LayoutGrid },
   { id: 'favorites', Icon: Star },
@@ -46,7 +46,7 @@ const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
 ];
 
 /** Product membership, settings activation and persistence stay with their existing owners. */
-export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, footer }: Props) {
+export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true }: Props) {
   const { t } = useLocale(),
     [search] = useSearchParams();
   const [category, setCategory] = useState<BookCategory>('all');
@@ -349,7 +349,6 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
             )}
           </div>
         </div>
-        {footer}
       </div>
     </div>
   );

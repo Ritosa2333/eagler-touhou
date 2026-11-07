@@ -8,6 +8,8 @@ import type { MultiplayerRoomService } from '../../services/multiplayer-room';
 import type { TouchMovementMode } from '../../../src/launcher/game-preferences.mts';
 import type { MultiplayerQuickChatModel } from '../../../src/launcher/multiplayer-quick-chat-model.mts';
 import type {ReactNode} from 'react';
+import type {MultiplayerProductId} from '../../../src/contracts/product-catalog.mts';
+import type {DecisionStore} from '../../models/decisions';
 export type RoomPanelKind = 'personal' | 'network' | 'spectators' | 'game' | 'music';
 export interface RoomNetworkPresentation {
   subscribe(listener: () => void): () => void;
@@ -31,6 +33,8 @@ export interface RoomViewContext {
 export interface RoomViewProps {
   music?: RoomMusic | null;
   quickChat?: MultiplayerQuickChatModel;
+  decisions: Pick<DecisionStore, 'askConfirmation'>;
+  products: readonly MultiplayerProductId[];
   service: MultiplayerRoomService;
   network: RoomNetworkPresentation;
   context: RoomViewContext;
@@ -45,6 +49,7 @@ export interface RoomViewProps {
   workspaceHost?: HTMLElement | null;
   workspaceStage?: HTMLElement | null;
   playbackControls?: ReactNode;
+  playerSettings?: ReactNode;
   reloadPending?: boolean;
   onReloadResources?(): void;
   onRestoreSettings?(): void;

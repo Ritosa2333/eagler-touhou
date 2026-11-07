@@ -7,17 +7,18 @@ import type {RoomPanelKind} from './types';
 /** Router owns the entry. The native owner animates visibility changes and
  * restores the exact opening control after committed closure. */
 export function RoomPanel({open, kind, peerId, onCloseRequest, onClosed, trigger, children}: {
-  open: boolean; kind: RoomPanelKind; peerId?: string; onCloseRequest(): void; onClosed(): void;
+  open: boolean; kind: RoomPanelKind; peerId?: string; onCloseRequest(): void; onClosed?(): void;
   trigger: RefObject<HTMLElement | null>; children: ReactNode;
 }) {
   const {t} = useLocale();
+  const iconClose = kind === 'music';
   const dialog = useMainDialog({open, onCloseRequest, onClosed() {
-    onClosed();
+    onClosed?.();
     if (trigger.current?.isConnected) trigger.current.focus({preventScroll:true});
   }});
   // biome-ignore lint/a11y/useKeyWithClickEvents: Native cancel and the Done button provide keyboard dismissal; this click checks outside the panel rectangle.
   return <dialog ref={dialog.ref} id="mpRoomPanel" className="mp-room-panel" aria-labelledby="mpRoomPanelTitle" data-panel={kind} data-network-peer={peerId}
     onCancel={event => {event.preventDefault(); onCloseRequest();}} onClick={event => {if (event.target !== event.currentTarget) return; const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) onCloseRequest();}}>
-    <header className="mp-panel-head"><h3 id="mpRoomPanelTitle">{kind === 'music' && <Music2 size={20} aria-hidden="true"/>}{t(kind === 'music' ? 'music.title' : kind === 'personal' ? 'room.playerOptions' : kind === 'network' ? 'room.network' : kind === 'game' ? 'multiplayer.gameSettings' : 'room.spectatorLounge')}</h3><UiButton variant={kind === 'music' ? 'quiet' : 'icon'} size={kind === 'music' ? 'icon' : undefined} type="button" id="mpRoomPanelClose" aria-label={t('room.done')} onClick={onCloseRequest}>{kind === 'music' ? <X size={18} aria-hidden="true"/> : t('room.done')}</UiButton></header>{children}
+    <header className="mp-panel-head"><h3 id="mpRoomPanelTitle">{kind === 'music' && <Music2 size={20} aria-hidden="true"/>}{t(kind === 'music' ? 'music.title' : kind === 'personal' ? 'room.playerOptions' : kind === 'network' ? 'room.network' : kind === 'game' ? 'multiplayer.gameSettings' : 'room.spectatorLounge')}</h3><UiButton variant={iconClose ? 'quiet' : 'icon'} size={iconClose ? 'icon' : undefined} type="button" id="mpRoomPanelClose" aria-label={t('room.done')} onClick={onCloseRequest}>{iconClose ? <X size={18} aria-hidden="true"/> : t('room.done')}</UiButton></header>{children}
   </dialog>;
 }

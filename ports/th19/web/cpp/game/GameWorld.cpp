@@ -168,6 +168,9 @@ bool GameWorld::fire_bullets(const LaserShooter&s,float ox,float oy){
         const float randomAngle=(s.aim_mode==6||s.aim_mode==8)?bullet_rng.signedUnit():0;
         const float randomSpeed=(s.aim_mode==7||s.aim_mode==8)?bullet_rng.unit():0;
         BulletPatternPoint p;if(!nativeBulletPattern(s.aim_mode,s.count1,s.count2,col,row,s.angle,s.angle2,s.speed,s.speed2,aim,p,randomAngle,randomSpeed))return false;
+        // A full native pool refuses the new bullet; existing live bullets stay.
+        // Keep the emitter's random draws in order even when its pool is full.
+        if(bullets.size()>=bullet_capacity){++dropped_bullets;continue;}
         auto&b=spawn_bullet();b.x=x+std::cos(p.angle)*s.muzzle_radius;b.y=y+std::sin(p.angle)*s.muzzle_radius;b.kind=s.type;b.color=s.color;b.sprite=sprite;b.scripted=true;
         b.vx=std::cos(p.angle)*p.speed;b.vy=std::sin(p.angle)*p.speed;
         b.cancel_script=nativeBulletCancelScript(b.kind,b.color);b.visual_heading=p.angle;b.changes.records=s.changes;b.change_sound=s.end_sound;
@@ -203,7 +206,16 @@ bool GameWorld::damage_enemy(Enemy& e,int damage,bool forced){
             if(e.card_damage_frame!=battle_frame){e.card_damage_frame=battle_frame;e.card_damage_sum=0;}
             const int previous=e.card_damage_sum;e.card_damage_sum+=damage;
             damage+=e.card_damage_sum/2-previous/2;
-        }e.hit_pending=true;
+        }
+        // 0x520864..0x520875 caps the aggregate damage for one target,
+        // after the proximity-card bonus. Overlapping flame regions share it.
+        if(player_damage_cap>0){
+            if(e.damage_budget_frame!=battle_frame){e.damage_budget_frame=battle_frame;e.damage_budget_used=0;}
+            damage=std::min(damage,std::max(0,player_damage_cap-e.damage_budget_used));
+            e.damage_budget_used+=damage;
+            if(damage<=0)return false;
+        }
+        e.hit_pending=true;
         if(e.native_update_callback==1)e.recoil_pending=true;
         // 0x509e16: keep hit feedback while protecting HP, before phase/death checks.
         if((e.flags&0x10)||int(e.invulnerability_time)>0)return false;
@@ -233,6 +245,7 @@ bool GameWorld::damage_enemy(Enemy& e,int damage,bool forced){
     if(!(e.status_flags&0x20000000u)){
         // 0x50c1f0 -> 0x51d4e0/0x51cc70: independent expanding damage region.
         const int kind=(e.status_flags>>20)&7;
+        combo_attack.on_death(kind, combo);
         // 0x51d4e0 case0 checks the pre-increment combo count; case3 (kind5)
         // contributes 50 independently. Other death rewards need mode parameters.
         if(reward_mode>=0){const auto r=nativeDeathRewards(kind,e.ecl_ints[2],combo,battle_frame,reward_mode,reward_stage);
@@ -674,5 +687,9 @@ void GameWorld::tick_wave(){
     }
     // integrate spirit velocity toward the player
     for(auto& s:spirits){if(s.active){s.x+=s.vx;s.y+=s.vy;}}
+    // Native destruction unregisters these objects. Retaining dead enemies kept
+    // their VM stacks/children forever, and copied them into every rollback slot.
+    enemies.erase(std::remove_if(enemies.begin(),enemies.end(),[](const auto&e){return !e.active;}),enemies.end());
+    spirits.erase(std::remove_if(spirits.begin(),spirits.end(),[](const auto&s){return !s.active;}),spirits.end());
 }
 }

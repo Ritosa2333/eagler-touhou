@@ -45,9 +45,9 @@ const send = (socket, message) => socket.ws.send(JSON.stringify(message));
 const latest = socket => [...socket.json].reverse().find(message => message.room && typeof message.room === 'object')?.room;
 try {
   await wait(() => log.includes('listening'), 'relay ready');
-  for(const [game, definition] of spectatorGames){
+  for(const [index, [game, definition]] of spectatorGames.entries()){
   const product=game+'mp',timing=multiplayerInputTimingPolicy(definition.multiplayer);
-  const room=product+'-720001';
+  const room=product+'-'+(720001+index);
   const hostId=product+'_chat_host',viewerId=product+'_chat_viewer';
   const host = await open(`room=${room}&lobby=${hostId}&member=${product}_chat_member_host`);
   const guest = await open(`room=${room}&lobby=${product}_chat_guest&member=${product}_chat_member_guest`);

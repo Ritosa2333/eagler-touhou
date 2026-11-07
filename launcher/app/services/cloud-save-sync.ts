@@ -5,29 +5,32 @@ import {
   PRODUCT_IDS,
   type ProductId,
 } from '../../src/contracts/product-catalog.mts';
-import { sha256Hex } from '../../src/launcher/sha256.mts';
 import type { UiMessageKey } from '../i18n';
 import { isAbortError, linkAbortSignals, waitWithAbort } from './abort-signals';
 import { AccountRequestError, accountRequest } from './account-client';
 import { accountSession } from './account-session';
 import { type CloudSaveList, type CloudSaveSnapshot, listCloudSaves, uploadCloudSave } from './cloud-saves';
 import type { LocalSaveReader } from './local-save-storage';
+import { compareSaveVersions, localSaveFingerprint, manifestFingerprint, relateSaveVersions, type SaveVersionComparison } from './cloud-save-comparison';
 
 const prefix = 'eagler-cloud-sync-v1:';
+const pausedKey = (owner: string) => prefix + 'paused:' + owner;
+const reviewKey = (product: ProductId) => prefix + 'review:' + product;
 const lockLeaseMs = 12_000;
 const recordSchema = z.object({
   owner: z.string().max(12),
-  product: z.custom<ProductId>((value) => isProductId(value) && !isMultiplayerProductId(value)),
+  product: z.custom<ProductId>((value) => typeof value === 'string' && isProductId(value) && !isMultiplayerProductId(value)),
   revision: z.number().int().nonnegative(),
   fingerprint: z.string().max(1024),
   runId: z.string().uuid().nullable(),
-  activeUntil: z.number().finite().nonnegative(),
   unclaimed: z.boolean().default(false),
-  registered: z.boolean().default(true),
+  verifiedBase: z.boolean().default(false),
 });
 type RecordState = z.infer<typeof recordSchema>;
-type IdentityStatus = 'member' | 'guest' | 'unknown';
+type IdentityStatus = 'member' | 'guest' | 'unknown' | 'expired';
 type ProductLock = { signal: AbortSignal; assert(): boolean; release(): void };
+type ActiveRun = { product: ProductId; owner: string; lease?: ProductLock };
+type LaunchCloudState = { product: ProductId; user: string; revision: number; pending: CloudSaveList['pending'] };
 type Ports = {
   storage: Storage;
   read: LocalSaveReader;
@@ -36,62 +39,48 @@ type Ports = {
     snapshot: CloudSaveSnapshot,
     signal: AbortSignal,
     allowedFiles: readonly string[],
+    preparing?: boolean,
   ): Promise<void>;
   decide(
-    kind: 'conflict' | 'otherDevice' | 'offline' | 'otherAccount' | 'claim',
+    kind: 'conflict' | 'claim',
     product: ProductId,
     signal?: AbortSignal,
+    comparison?: SaveVersionComparison,
+    context?: 'launch' | 'manual',
   ): Promise<'local' | 'cloud' | 'cancel'>;
+  decideStart(kind: 'other-device' | 'tab-unavailable', signal: AbortSignal): Promise<boolean>;
+  closeForHandoff(product: ProductId): Promise<boolean>;
+  retirePrepared(product: ProductId): Promise<boolean>;
   notify(key: UiMessageKey): void;
   isRunning(): boolean;
+  isPlaying?(): boolean;
 };
 export type CloudSyncStatus = { product: ProductId; error: UiMessageKey } | null;
-type ManifestFile = { name: string; sha256: string };
-const manifestFingerprint = (files: ManifestFile[]) =>
-  files
-    .map((file) => `${file.name}:${file.sha256}`)
-    .sort()
-    .join('|');
-export async function localSaveFingerprint(files: File[]) {
-  return manifestFingerprint(
-    await Promise.all(
-      files.map(async (file) => ({
-        name: file.name,
-        sha256: await sha256Hex(new Uint8Array(await file.arrayBuffer())),
-      })),
-    ),
-  );
-}
 export function createCloudSaveSync(ports: Ports) {
-  let deviceId = ports.storage.getItem(prefix + 'device');
-  if (!z.string().uuid().safeParse(deviceId).success) {
-    deviceId = crypto.randomUUID();
-    ports.storage.setItem(prefix + 'device', deviceId);
-  }
-  const device = deviceId!;
+  const deviceKey = prefix + 'device';
+  const savedDevice = ports.storage.getItem(deviceKey);
+  const device = z.string().uuid().safeParse(savedDevice).data ?? crypto.randomUUID();
+  if (device !== savedDevice) ports.storage.setItem(deviceKey, device);
   let owner = '',
     identityStatus: IdentityStatus = 'unknown',
-    generation = 0,
+    enabled = true,
     disposed = false,
-    launching = false,
+    active: ActiveRun | null = null,
     task: Promise<void> | null = null;
   let controller = new AbortController(),
     status: CloudSyncStatus = null;
-  const live = new Map<ProductId, string>(),
-    runLocks = new Map<ProductId, ProductLock>(),
-    listeners = new Set<() => void>();
+  let markerTask: Promise<void> | null = null;
+  let launchData: LaunchCloudState | null = null;
+  let launchLease: {product: ProductId; lease: ProductLock} | null = null;
+  const handoff = typeof window.BroadcastChannel === 'function' ? new window.BroadcastChannel(prefix + 'handoff') : null;
+  let closingForHandoff = false;
+  handoff?.addEventListener('message', ({data}: MessageEvent<unknown>) => {
+    if (disposed || closingForHandoff || !active?.lease?.assert() || data !== active.product) return;
+    closingForHandoff = true;
+    void ports.closeForHandoff(active.product).catch(() => false).finally(() => { closingForHandoff = false; });
+  });
+  const listeners = new Set<() => void>();
   const productIds = PRODUCT_IDS.filter((product): product is ProductId => !isMultiplayerProductId(product));
-  const records = () =>
-    productIds.flatMap((product) => {
-      const raw = ports.storage.getItem(prefix + 'save:' + product);
-      if (raw === null) return [];
-      try {
-        const parsed = recordSchema.safeParse(JSON.parse(raw));
-        return parsed.success && parsed.data.product === product ? [parsed.data] : [];
-      } catch {
-        return [];
-      }
-    });
   const readRecord = (product: ProductId) => {
     const raw = ports.storage.getItem(prefix + 'save:' + product);
     if (raw === null) return undefined;
@@ -102,6 +91,7 @@ export function createCloudSaveSync(ports: Ports) {
       return undefined;
     }
   };
+  const records = () => productIds.map(readRecord).filter(record => record !== undefined);
   const writeRecord = (record: RecordState, lease?: ProductLock) => {
     if (lease && !lease.assert()) throw new DOMException('Product lock was lost', 'AbortError');
     ports.storage.setItem(prefix + 'save:' + record.product, JSON.stringify(record));
@@ -111,37 +101,39 @@ export function createCloudSaveSync(ports: Ports) {
     status = value;
     for (const listener of listeners) listener();
   };
-  const check = (signal: AbortSignal, user: string, lease?: ProductLock) => {
-    if (signal.aborted || disposed || identityStatus !== 'member' || owner !== user || (lease && !lease.assert()))
+  const check = (signal: AbortSignal, user: string, lease: ProductLock, requireEnabled = true) => {
+    if (signal.aborted || disposed || (requireEnabled && !enabled) || owner !== user || !lease.assert() || !validAccount())
       throw new DOMException('Cancelled', 'AbortError');
   };
-  const identity = (record: RecordState) => ({ deviceId: device, runId: record.runId! });
-  const complete = (record: RecordState, revision: number, signal: AbortSignal) =>
-    accountRequest(
-      `v1/me/cloud-saves/${record.product}/sessions/complete`,
-      { ...identity(record), baseRevision: revision },
-      { signal },
-    );
-  const register = (record: RecordState, signal: AbortSignal, allowPending = false) =>
-    accountRequest(
-      `v1/me/cloud-saves/${record.product}/sessions`,
-      { ...identity(record), baseRevision: record.revision, allowPending },
-      { signal },
-    );
-  const clean = (record: RecordState, revision: number, fingerprint: string, lease: ProductLock) => {
+  const clean = (record: RecordState, revision: number, fingerprint: string, verifiedBase: boolean, lease: ProductLock) => {
     const current = readRecord(record.product);
-    if (current?.owner === record.owner && current.runId === record.runId)
+    if (current?.owner === record.owner && current.runId === record.runId) {
       writeRecord(
-        { ...record, revision, fingerprint, runId: null, activeUntil: 0, unclaimed: false, registered: true },
+        { ...record, revision, fingerprint, verifiedBase, runId: null, unclaimed: false },
         lease,
       );
+      window.dispatchEvent(new Event('cloud-save-change'));
+    }
   };
   const errorKey = (error: unknown): UiMessageKey =>
-    error instanceof AccountRequestError && error.status === 409
+    error instanceof AccountRequestError && error.code === 'SAVE_CONFLICT'
       ? 'cloudSave.syncConflict'
       : error instanceof AccountRequestError && error.code === 'SAVE_QUOTA_EXCEEDED'
         ? 'cloudSave.quota'
         : 'cloudSave.syncPending';
+
+  function validAccount() {
+    const state = accountSession.getSnapshot();
+    if (state.status !== 'member') return false;
+    if (state.expiresAt === undefined || state.expiresAt > Date.now()) return true;
+    accountSession.expire(state.user.username);
+    return false;
+  }
+  function sessionExpired(error: unknown, user: string) {
+    if (!(error instanceof AccountRequestError) || error.status !== 401) return false;
+    accountSession.expire(user);
+    return true;
+  }
 
   async function acquireProductLock(product: ProductId): Promise<ProductLock | null> {
     const key = prefix + 'product:' + product;
@@ -245,57 +237,66 @@ export function createCloudSaveSync(ports: Ports) {
     }
   }
 
-  async function synchronize(record: RecordState, data: CloudSaveList, signal: AbortSignal, lease: ProductLock) {
-    if (!record.runId || record.owner !== owner || record.unclaimed || live.has(record.product)) return;
-    const user = owner,
-      product = data.products.find((item) => item.id === record.product && !item.multiplayer);
-    if (!product) return;
-    const files = await ports.read(record.product, product.files);
-    check(signal, user, lease);
-    const fingerprint = await localSaveFingerprint(files);
-    check(signal, user, lease);
-    const latest = data.saves.find((item) => item.product === record.product && item.revision === product.revision);
-    const uploadedAlready = !!latest && fingerprint === manifestFingerprint(latest.files);
-    // Upload atomically retires its marker. A lost response is recognized by the manifest.
-    if (uploadedAlready) {
-      await complete(record, product.revision, signal);
-      check(signal, user, lease);
-      clean(record, product.revision, fingerprint, lease);
-      return;
+  async function completeMarker(product: ProductId, user: string, data: CloudSaveList, revision: number, signal: AbortSignal) {
+    const marker = data.pending.find(item => item.product === product && item.deviceId === device);
+    if (!marker) return;
+    try {
+      await bounded(requestSignal => accountRequest(
+        `v1/me/cloud-saves/${product}/sessions/complete`,
+        {deviceId: device, runId: marker.runId, baseRevision: revision},
+        {signal: requestSignal},
+      ), signal);
+    } catch (error) {
+      if (!signal.aborted) sessionExpired(error, user);
     }
-    if (fingerprint === record.fingerprint) {
-      // Complete is idempotent when no marker exists, and also repairs the
-      // register-success/localStorage-failure window.
-      await complete(record, product.revision, signal);
-      check(signal, user, lease);
-      clean(record, record.revision, fingerprint, lease);
-      return;
-    }
-    if (product.revision !== record.revision) throw new AccountRequestError('SAVE_CONFLICT', 409);
-    if (!files.length || !product.requiredFiles.some((name) => files.some((file) => file.name === name)))
-      throw new AccountRequestError('MAIN_SAVE_REQUIRED');
-    let current = record;
-    if (!current.registered) {
-      await register(current, signal, true);
-      check(signal, user, lease);
-      current = { ...current, registered: true };
-      writeRecord(current, lease);
-    }
-    const saved = await uploadCloudSave(current.product, current.revision, files, signal, identity(current));
-    check(signal, user, lease);
-    clean(current, saved.revision, fingerprint, lease);
-    window.dispatchEvent(new Event('cloud-save-change'));
   }
 
-  async function flush() {
-    if (task || !owner || identityStatus !== 'member' || disposed || launching || ports.isRunning()) return task;
+  async function synchronize(record: RecordState, data: CloudSaveList, signal: AbortSignal, lease: ProductLock) {
+    const product = data.products.find(item => item.id === record.product && !item.multiplayer);
+    if (!product) return;
+    const verify = () => {
+      check(signal, record.owner, lease);
+      if (active || ports.isRunning()) throw new DOMException('Cancelled', 'AbortError');
+      if (needsReview(record.product)) throw new DOMException('Cancelled', 'AbortError');
+    };
+    verify();
+    const files = await ports.read(record.product, product.files);
+    verify();
+    const fingerprint = await localSaveFingerprint(files);
+    verify();
+    const latest = data.saves.find(item => item.product === record.product && item.revision === product.revision);
+    const cloudFingerprint = latest && manifestFingerprint(latest.files);
+    let revision = product.revision;
+    if (fingerprint === cloudFingerprint) {
+      // Another device saved the same bytes, or the previous upload response was lost.
+      clean(record, revision, fingerprint, true, lease);
+    } else if (fingerprint === record.fingerprint) {
+      // Leave the common base intact so the next launch can pull a newer cloud save.
+      clean(record, record.revision, fingerprint, record.verifiedBase, lease);
+    } else {
+      const cloudStillAtBase = !!latest && cloudFingerprint === record.fingerprint;
+      if (revision !== record.revision && !cloudStillAtBase) throw new AccountRequestError('SAVE_CONFLICT', 409);
+      if (!product.requiredFiles.some(name => files.some(file => file.name === name)))
+        throw new AccountRequestError('MAIN_SAVE_REQUIRED');
+      // Compare-and-set at upload is the concurrency guard. A marker says nothing about saved bytes.
+      const saved = await uploadCloudSave(record.product, revision, files, signal);
+      verify();
+      revision = saved.revision;
+      clean(record, revision, fingerprint, true, lease);
+    }
+    await completeMarker(record.product, record.owner, data, revision, signal);
+  }
+
+  async function flush(): Promise<void> {
+    if (task || !enabled || !owner || disposed || active || ports.isRunning() || !validAccount()) return task ?? undefined;
+    if (markerTask) return markerTask.then(flush);
     const signal = controller.signal,
       user = owner;
     task = (async () => {
       let pending: RecordState[];
       try {
         pending = records().filter(
-          (record) => record.owner === user && record.runId && !record.unclaimed && !live.has(record.product),
+          (record) => record.owner === user && record.runId && !record.unclaimed,
         );
       } catch {
         publish({ product: productIds[0]!, error: 'cloudSave.syncPending' });
@@ -314,16 +315,23 @@ export function createCloudSaveSync(ports: Ports) {
             current.runId !== record.runId ||
             current.owner !== user ||
             current.unclaimed ||
-            live.has(record.product)
+            active || ports.isRunning()
           )
             continue;
+          if (needsReview(record.product)) continue;
           const data = await listCloudSaves(operationSignal);
           check(operationSignal, user, lease);
           await synchronize(current, data, operationSignal, lease);
           check(operationSignal, user, lease);
           publish(null);
         } catch (error) {
-          if (!operationSignal.aborted) publish({ product: record.product, error: errorKey(error) });
+          if (!operationSignal.aborted && !isAbortError(error) && !sessionExpired(error, user)) {
+            const key = errorKey(error);
+            if (key === 'cloudSave.syncConflict') {
+              flagReview(record.product);
+              warn(record.product, key);
+            } else publish({product: record.product, error: key});
+          }
         } finally {
           linked.dispose();
           lease.release();
@@ -342,339 +350,341 @@ export function createCloudSaveSync(ports: Ports) {
   const currentAccount = () => {
     const state = accountSession.getSnapshot();
     if (state.status === 'member') return { status: 'member' as const, owner: state.user.username.toLowerCase() };
-    if (state.status === 'guest') return { status: 'guest' as const, owner: '' };
+    if (state.status === 'guest') return { status: state.expired ? 'expired' as const : 'guest' as const, owner: '' };
     return { status: 'unknown' as const, owner: '' };
   };
+
+  function readEnabled(user: string) {
+    try {
+      return !user || ports.storage.getItem(pausedKey(user)) !== '1';
+    } catch {
+      return false;
+    }
+  }
+  function interruptSync() {
+    controller.abort();
+    controller = new AbortController();
+  }
+  function queueFlush() {
+    void Promise.resolve(task).then(() => flush());
+  }
+  function invalidateSync() {
+    launchData = null;
+    interruptSync();
+    publish(null);
+    if (identityStatus === 'member' && enabled) queueFlush();
+  }
+  function refreshEnabled() {
+    const next = readEnabled(owner);
+    if (next === enabled) return;
+    enabled = next;
+    invalidateSync();
+  }
   const changeOwner = () => {
     const next = currentAccount();
     if (next.status === identityStatus && next.owner === owner) return;
+    if (active && (next.status === 'member' || next.status === 'guest') && active.owner !== next.owner) flagReview(active.product);
     identityStatus = next.status;
     owner = next.owner;
-    generation++;
-    controller.abort();
-    controller = new AbortController();
-    publish(null);
-    if (identityStatus === 'member') void Promise.resolve(task).then(() => flush());
+    enabled = readEnabled(owner);
+    invalidateSync();
   };
   const unsubscribe = accountSession.subscribe(changeOwner);
   changeOwner();
-  const timer = setInterval(() => {
-    for (const [product, runId] of live)
-      try {
-        const record = readRecord(product),
-          lease = runLocks.get(product);
-        if (record?.runId === runId) writeRecord({ ...record, activeUntil: Date.now() + 45_000 }, lease);
-      } catch {
-        publish({ product, error: 'cloudSave.syncPending' });
-      }
-    void flush();
-  }, 15_000);
+  const timer = setInterval(() => { void flush(); }, 15_000);
   const online = () => {
     void flush();
   };
+  const storageChanged = (event: StorageEvent) => {
+    if (owner && (event.key === pausedKey(owner) || event.key === null)) refreshEnabled();
+    if (event.key?.startsWith(prefix + 'review:') && event.newValue) interruptSync();
+  };
   window.addEventListener('online', online);
+  window.addEventListener('storage', storageChanged);
 
-  async function saveOfflineRun(
-    product: ProductId,
-    signal: AbortSignal,
-    user: string,
-    knownMember: boolean,
-    lease: ProductLock,
-  ) {
-    const answer = await ports.decide('offline', product, signal);
-    if (
-      answer === 'cancel' ||
-      signal.aborted ||
-      disposed ||
-      (knownMember && (identityStatus !== 'member' || owner !== user))
-    )
-      return false;
-    let record = readRecord(product);
-    if (knownMember && record?.owner && record.owner !== user && record.runId) {
-      await ports.decide('otherAccount', product, signal);
-      return false;
+  function warn(product: ProductId, error: UiMessageKey) {
+    if (status?.product === product && status.error === error) return;
+    publish({product, error});
+    ports.notify(error);
+  }
+  const needsReview = (product: ProductId) => ports.storage.getItem(reviewKey(product)) !== null;
+  function flagReview(product: ProductId) {
+    try { ports.storage.setItem(reviewKey(product), '1'); }
+    catch { warn(product, 'cloudSave.syncPending'); }
+  }
+  const otherRunIds = (data: CloudSaveList, product: ProductId) =>
+    data.pending.filter(item => item.product === product && item.deviceId !== device).map(item => item.runId);
+  const approvedKey = (product: ProductId, user: string) => prefix + 'approved:' + user + ':' + product;
+
+  async function trackRun(run: ActiveRun, account: ReturnType<typeof currentAccount>, data: LaunchCloudState | null) {
+    const {product} = run;
+    const lease = run.lease ?? await acquireProductLock(product);
+    if (active !== run || disposed) { lease?.release(); return; }
+    if (!lease) {
+      flagReview(product);
+      publish({product, error: 'cloudSave.sameBrowserActive'});
+      return;
     }
-    const hasUnclaimedData = !!record && (record.unclaimed || record.owner !== user);
-    if (knownMember && hasUnclaimedData) {
-      const claim = await ports.decide('claim', product, signal);
-      if (claim !== 'local' || signal.aborted || identityStatus !== 'member' || owner !== user) return false;
+    run.lease = lease;
+    const previous = readRecord(product);
+    const user = account.owner;
+    if (previous?.owner && previous.owner !== user) {
+      if (account.status !== 'expired') {
+        flagReview(product);
+        warn(product, 'cloudSave.otherAccountPending');
+      }
+      return;
     }
-    if (!knownMember && record?.owner) {
-      record = {
-        ...record,
-        runId: record.runId ?? crypto.randomUUID(),
-        activeUntil: Date.now() + 45_000,
-        registered: record.runId ? record.registered : false,
-      };
-    } else if (record?.owner === user) {
-      record = {
-        ...record,
-        runId: record.runId ?? crypto.randomUUID(),
-        activeUntil: Date.now() + 45_000,
-        unclaimed: !knownMember,
-        registered: record.runId ? record.registered : false,
-      };
-    } else {
-      record = {
-        owner: knownMember ? user : '',
-        product,
-        revision: 0,
-        fingerprint: '',
-        runId: crypto.randomUUID(),
-        activeUntil: Date.now() + 45_000,
-        unclaimed: !knownMember,
-        registered: false,
-      };
-    }
-    try {
-      writeRecord(record, lease);
-    } catch {
-      publish({ product, error: 'cloudSave.syncPending' });
-      ports.notify('cloudSave.syncPending');
-      return false;
-    }
-    live.set(product, record.runId!);
-    publish(null);
-    return true;
+    if (account.status === 'member' && (owner !== user || !enabled || !validAccount())) return;
+    if (needsReview(product) || (previous?.unclaimed && user)) return;
+    const runId = previous?.runId ?? crypto.randomUUID();
+    const revision = previous?.revision ?? 0;
+    // Record locally before play can change files. Flush compares the committed bytes after exit.
+    writeRecord({
+      owner: user, product, revision, fingerprint: previous?.fingerprint ?? '',
+      runId, unclaimed: account.status !== 'member', verifiedBase: previous?.verifiedBase ?? false,
+    }, lease);
+    if (!data || !user || data.revision !== revision || data.pending.some(item => item.deviceId === device)) return;
+    const signal = controller.signal;
+    // Another device may confirm starting from this revision. The upload still checks its version.
+    const registration = bounded(requestSignal => accountRequest(
+      `v1/me/cloud-saves/${product}/sessions`, {deviceId: device, runId, baseRevision: revision, allowPending: true}, {signal: requestSignal},
+    ), signal).then(() => {}, error => {
+      if (!signal.aborted) sessionExpired(error, user);
+    }).finally(() => {
+      if (markerTask === registration) markerTask = null;
+    });
+    markerTask = registration;
   }
 
-  async function beforeLaunchCore(
-    product: ProductId,
-    lease: ProductLock,
-    externalSignal?: AbortSignal,
-  ): Promise<boolean> {
-    if (isMultiplayerProductId(product)) return true;
-    if (externalSignal) await waitWithAbort(accountSession.whenReady(), externalSignal);
-    else await accountSession.whenReady();
-    if (task) {
-      if (externalSignal) await waitWithAbort(task, externalSignal);
-      else await task;
-    }
-    if (disposed || externalSignal?.aborted) return false;
-    const user = owner,
-      knownMember = identityStatus === 'member',
-      statusAtStart = identityStatus,
-      revision = generation;
-    const linked = linkAbortSignals(controller.signal, externalSignal, lease.signal),
-      signal = linked.signal!;
-    const recordAtStart = readRecord(product);
+  async function bounded<T>(operation:(signal:AbortSignal)=>Promise<T>,signal:AbortSignal,ms=2500):Promise<T> {
+    const deadline=new AbortController(),linked=linkAbortSignals(signal,deadline.signal);
+    const timer=setTimeout(()=>deadline.abort(new Error('Cloud check timed out')),ms);
+    try{return await waitWithAbort(operation(linked.signal),linked.signal);}
+    finally{clearTimeout(timer);linked.dispose();}
+  }
+  function baselineFor(product: ProductId, user: string) {
+    const previous = readRecord(product);
+    return previous?.owner === user && !previous.unclaimed ? previous : undefined;
+  }
+
+  async function review(product: ProductId, externalSignal: AbortSignal, context: 'launch' | 'manual', reserved?: ProductLock): Promise<'continue' | 'reload' | 'cancel'> {
+    const preparing = context === 'launch';
+    if (!owner || disposed || active || (!preparing && ports.isRunning()) || ports.isPlaying?.() ||
+        isMultiplayerProductId(product) || !validAccount() || (preparing && !enabled)) return 'continue';
+    const user = owner;
+    const lease = reserved ?? await acquireProductLock(product).catch(() => {
+      warn(product, 'cloudSave.syncPending');
+      return null;
+    });
+    if (!lease) return 'continue';
+    const linked = linkAbortSignals(controller.signal, externalSignal, lease.signal);
+    const verify = () => {
+      check(linked.signal, user, lease, false);
+      if (active || (!preparing && ports.isRunning()) || ports.isPlaying?.())
+        throw new DOMException('Cancelled', 'AbortError');
+    };
     try {
-      if (!knownMember) {
-        if (statusAtStart === 'unknown') return await saveOfflineRun(product, signal, user, false, lease);
-        if (recordAtStart?.owner) {
-          await ports.decide('otherAccount', product, signal);
-          return false;
-        }
-        let record = recordAtStart;
-        const runId = record?.runId ?? crypto.randomUUID();
-        record = record
-          ? { ...record, runId, activeUntil: Date.now() + 45_000, registered: record.runId ? record.registered : false }
-          : {
-              owner: '',
-              product,
-              revision: 0,
-              fingerprint: '',
-              runId,
-              activeUntil: Date.now() + 45_000,
-              unclaimed: true,
-              registered: false,
-            };
-        try {
-          writeRecord(record, lease);
-        } catch {
-          publish({ product, error: 'cloudSave.syncPending' });
-          ports.notify('cloudSave.syncPending');
-          return false;
-        }
-        live.set(product, runId!);
-        return true;
-      }
-      if (recordAtStart?.owner && recordAtStart.owner !== user && recordAtStart.runId) {
-        await ports.decide('otherAccount', product, signal);
-        return false;
-      }
-      let data: CloudSaveList;
-      try {
-        data = await listCloudSaves(signal);
-        check(signal, user, lease);
-      } catch (error) {
-        if (signal.aborted) return false;
-        return saveOfflineRun(product, signal, user, true, lease);
-      }
-      const definition = data.products.find((item) => item.id === product && !item.multiplayer);
-      if (!definition) return true;
-      let record = readRecord(product);
-      if (record?.owner === user && record.runId && !record.unclaimed) {
-        try {
-          await synchronize({ ...record, activeUntil: 0 }, data, signal, lease);
-          check(signal, user, lease);
-          data = await listCloudSaves(signal);
-          check(signal, user, lease);
-          record = readRecord(product);
-        } catch (error) {
-          if (signal.aborted) return false;
-          if (!(error instanceof AccountRequestError && error.status === 409)) {
-            ports.notify(errorKey(error));
-            return false;
+      verify();
+      let data = await bounded(listCloudSaves, linked.signal);
+      verify();
+      while (true) {
+        const current = data.products.find(item => item.id === product && !item.multiplayer);
+        if (!current) return 'continue';
+        const rememberMarkers = () => {
+          if (preparing) launchData = {product, user, revision: current.revision, pending: data.pending.filter(item => item.product === product)};
+        };
+        rememberMarkers();
+        const key = approvedKey(product, user);
+        const pendingRuns = preparing ? otherRunIds(data, product) : [];
+        const approved = new Set(ports.storage.getItem(key)?.split('|'));
+        const confirmOverwrite = pendingRuns.some(id => !approved.has(id));
+        if (confirmOverwrite) {
+          const proceed = await ports.decideStart('other-device', linked.signal);
+          verify();
+          if (!proceed) return 'cancel';
+          const checked = await bounded(listCloudSaves, linked.signal);
+          verify();
+          const confirmed = new Set([...approved, ...pendingRuns]);
+          const currentRuns = otherRunIds(checked, product);
+          if (checked.products.find(item => item.id === product)?.revision !== current.revision ||
+              currentRuns.some(id => !confirmed.has(id))) {
+            data = checked;
+            continue;
           }
+          data = checked;
+          rememberMarkers();
         }
-      }
-      const current = data.products.find((item) => item.id === product)!;
-      const latest = data.saves.find((item) => item.product === product && item.revision === current.revision);
-      let files = await ports.read(product, current.files);
-      check(signal, user, lease);
-      let fingerprint = await localSaveFingerprint(files);
-      check(signal, user, lease);
-      let cloudFingerprint = latest ? manifestFingerprint(latest.files) : '';
-      const hasForeignOwner = !!record && record.owner !== user;
-      const localChanged =
-        files.length > 0 && (!record || hasForeignOwner || record.unclaimed || record.fingerprint !== fingerprint);
-      const cloudChanged = !record || hasForeignOwner || record.revision !== current.revision;
-      let choice: 'cloud' | 'local' | 'cancel' = !localChanged && cloudChanged && latest ? 'cloud' : 'local';
-      if (files.length && !latest && (hasForeignOwner || record?.unclaimed)) {
-        choice = await ports.decide('claim', product, signal);
-      } else if (
-        (localChanged && cloudChanged && latest && fingerprint !== cloudFingerprint) ||
-        (record?.unclaimed && !!latest && files.length > 0) ||
-        (hasForeignOwner && !!latest && files.length > 0)
-      ) {
-        choice = await ports.decide('conflict', product, signal);
-      }
-      check(signal, user, lease);
-      if (choice === 'cancel') return false;
-      if (choice === 'cloud' && latest) {
-        await ports.restore(product, latest, signal, current.files);
-        check(signal, user, lease);
-        files = await ports.read(product, current.files);
-        fingerprint = await localSaveFingerprint(files);
-        check(signal, user, lease);
-        cloudFingerprint = latest ? manifestFingerprint(latest.files) : '';
-      }
-      const other = data.pending.some((item) => item.product === product && item.deviceId !== device);
-      if (other && (await ports.decide('otherDevice', product, signal)) === 'cancel') return false;
-      check(signal, user, lease);
-      if (record?.owner === user && record.runId) {
-        if (!record.unclaimed) {
-          await complete(record, current.revision, signal);
-          check(signal, user, lease);
-        } else if (record.registered) {
-          await complete(record, current.revision, signal);
-          check(signal, user, lease);
+        const latest = data.saves.find(item => item.product === product && item.revision === current.revision) ?? null;
+        const files = await bounded(() => ports.read(product, current.files), linked.signal);
+        verify();
+        const fingerprint = await localSaveFingerprint(files);
+        verify();
+        const previous = readRecord(product);
+        const base = previous?.owner === user && !previous.unclaimed ? previous : undefined;
+        const relation = relateSaveVersions(fingerprint, latest, current.revision, base);
+        const unowned = !!previous && !base;
+        const quarantined = needsReview(product);
+        const deleted = !latest && current.revision > (base?.revision ?? 0);
+        let choice: 'local' | 'cloud' | 'cancel' = 'local';
+        if (confirmOverwrite) {
+          choice = !files.length && latest ? 'cloud' : 'local';
+        } else if (!preparing || (relation !== 'same' && relation !== 'cloud-ahead' &&
+          (quarantined || unowned || deleted || (!!latest && relation !== 'browser-ahead')))) {
+          const comparison = await compareSaveVersions(product, files, latest, relation, linked.signal);
+          verify();
+          choice = await ports.decide(latest ? 'conflict' : 'claim', product, linked.signal, comparison, context);
+          verify();
+          if (choice === 'cancel') {
+            if (preparing) flagReview(product);
+            return preparing ? 'continue' : 'cancel';
+          }
+          const checked = await bounded(listCloudSaves, linked.signal);
+          verify();
+          if (checked.products.find(item => item.id === product)?.revision !== current.revision) {
+            data = checked;
+            continue;
+          }
+          data = checked;
+          rememberMarkers();
+        } else if (relation === 'cloud-ahead') {
+          choice = 'cloud';
         }
-      }
-      const run: RecordState = {
-        owner: user,
-        product,
-        revision: current.revision,
-        fingerprint: cloudFingerprint,
-        runId: crypto.randomUUID(),
-        activeUntil: Date.now() + 45_000,
-        unclaimed: false,
-        registered: false,
-      };
-      try {
-        writeRecord(run, lease);
-      } catch {
-        publish({ product, error: 'cloudSave.syncPending' });
-        ports.notify('cloudSave.syncPending');
-        return false;
-      }
-      try {
-        await register(run, signal, other);
-        check(signal, user, lease);
-        const registered = { ...run, registered: true };
-        try {
-          writeRecord(registered, lease);
-        } catch {
-          publish({ product, error: 'cloudSave.syncPending' });
-          ports.notify('cloudSave.syncPending');
-          return false;
+        const restoring = choice === 'cloud' && latest !== null && relation !== 'same';
+        if (restoring) {
+          // Let the archive writer finish rolling back before continuing with local files.
+          const deadline = new AbortController();
+          const restoreSignal = linkAbortSignals(linked.signal, deadline.signal);
+          const timer = setTimeout(() => deadline.abort(new Error('Cloud restore timed out')), 4000);
+          try {
+            await ports.restore(product, latest, restoreSignal.signal, current.files, preparing);
+          } catch (error) {
+            if (linked.signal.aborted) throw error;
+            if (preparing) {
+              launchData = null;
+              flagReview(product);
+            }
+            if (!sessionExpired(error, user)) warn(product, 'cloudSave.restoreFailed');
+            return 'continue';
+          } finally {
+            clearTimeout(timer);
+            restoreSignal.dispose();
+          }
+          verify();
         }
-      } catch (error) {
-        if (signal.aborted) return false;
-        if (error instanceof AccountRequestError && error.status === 409) {
-          publish({ product, error: 'cloudSave.syncConflict' });
-          ports.notify('cloudSave.syncConflict');
-          return false;
+        let revision = current.revision;
+        let baseline = latest ? manifestFingerprint(latest.files) : '';
+        if (!preparing && choice === 'local' && relation !== 'same') {
+          const saved = await uploadCloudSave(product, revision, files, linked.signal);
+          verify();
+          revision = saved.revision;
+          baseline = manifestFingerprint(saved.files);
         }
-        const answer = await ports.decide('offline', product, signal);
-        if (
-          answer === 'cancel' ||
-          signal.aborted ||
-          generation !== revision ||
-          identityStatus !== 'member' ||
-          owner !== user
-        )
-          return false;
+        writeRecord({
+          owner: user, product, revision, fingerprint: baseline, unclaimed: false, verifiedBase: true,
+          runId: preparing && !restoring && fingerprint !== baseline ? base?.runId ?? null : null,
+        }, lease);
+        ports.storage.removeItem(reviewKey(product));
+        if (confirmOverwrite) ports.storage.setItem(key, otherRunIds(data, product).join('|'));
+        publish(null);
+        window.dispatchEvent(new Event('cloud-save-change'));
+        if (!preparing) await completeMarker(product, user, data, revision, linked.signal);
+        return preparing && restoring ? 'reload' : 'continue';
       }
-      live.set(product, run.runId!);
-      publish(null);
-      return true;
+    } catch (error) {
+      if (preparing) launchData = null;
+      if (externalSignal.aborted) throw error;
+      if (!linked.signal.aborted && !isAbortError(error) && !sessionExpired(error, user))
+        warn(product, errorKey(error));
+      return 'continue';
     } finally {
       linked.dispose();
+      if (!reserved) lease.release();
     }
   }
 
-  return {
-    async beforeLaunch(product: ProductId, signal?: AbortSignal) {
-      if (launching || disposed || signal?.aborted) return false;
-      launching = true;
-      let started = false;
-      let lease: ProductLock | null = null;
-      try {
-        if (isMultiplayerProductId(product)) return true;
-        try {
-          lease = await acquireProductLock(product);
-        } catch {
-          publish({ product, error: 'cloudSave.syncPending' });
-          ports.notify('cloudSave.syncPending');
-          return false;
-        }
-        if (!lease) {
-          ports.notify('cloudSave.sameBrowserActive');
-          return false;
-        }
-        if (disposed || signal?.aborted) return false;
-        try {
-          started = await beforeLaunchCore(product, lease, signal);
-        } catch (error) {
-          if (!isAbortError(error)) {
-            publish({ product, error: errorKey(error) });
-            ports.notify(errorKey(error));
-          }
-          return false;
-        }
-        if (started) {
-          runLocks.set(product, lease);
-          return true;
-        }
-        return false;
-      } finally {
-        if (!started) lease?.release();
-        launching = false;
-        if (!started) void flush();
+  function releaseLaunchLease() {
+    launchLease?.lease.release();
+    launchLease = null;
+  }
+
+  async function beforeStart(product: ProductId, signal: AbortSignal): Promise<'continue' | 'reload' | 'cancel'> {
+    if (disposed || active || ports.isPlaying?.() || isMultiplayerProductId(product)) return 'continue';
+    releaseLaunchLease();
+    let lease: ProductLock | null;
+    try {
+      lease = await acquireProductLock(product);
+    } catch {
+      warn(product, 'cloudSave.syncPending');
+      return 'continue';
+    }
+    const occupied = lease === null;
+    if (occupied && handoff && !signal.aborted) {
+      handoff.postMessage(product);
+      const deadline = Date.now() + 5000;
+      while (!lease && !disposed && Date.now() < deadline) {
+        await waitWithAbort(new Promise(resolve => setTimeout(resolve, 100)), signal);
+        lease = await acquireProductLock(product).catch(() => null);
       }
+    }
+    if (signal.aborted || disposed) {
+      lease?.release();
+      return 'cancel';
+    }
+    if (!lease) {
+      await ports.decideStart('tab-unavailable', signal);
+      return 'cancel';
+    }
+    launchLease = {product, lease};
+    let accepted = false;
+    try {
+      // The retiring tab commits its IDBFS before releasing the product lock.
+      // Discard this tab's preloaded view so all reads use those committed files.
+      if (occupied && !await ports.retirePrepared(product)) return 'cancel';
+      if (signal.aborted) return 'cancel';
+      const result = await review(product, signal, 'launch', lease);
+      accepted = result !== 'cancel';
+      return occupied && result === 'continue' ? 'reload' : result;
+    } finally {
+      if (!accepted) releaseLaunchLease();
+    }
+  }
+
+  async function resolve(product:ProductId,signal:AbortSignal){await review(product,signal,'manual');}
+
+  return {
+    prepareLocalLaunch() { launchData = null; releaseLaunchLease(); interruptSync(); },
+    beforeStart,
+    started(product: ProductId) {
+      if (disposed || active || isMultiplayerProductId(product)) return;
+      validAccount();
+      const account = currentAccount();
+      const lease = launchLease?.product === product ? launchLease.lease : undefined;
+      if (lease) launchLease = null;
+      const run: ActiveRun = {product, owner: account.owner, lease};
+      active = run;
+      const data = launchData?.product === product && launchData.user === account.owner ? launchData : null;
+      launchData = null;
+      void trackRun(run, account, data).catch(error => {
+        if (active === run && !isAbortError(error)) warn(product, errorKey(error));
+      });
     },
     flush,
-    finished() {
-      try {
-        for (const [product, runId] of live)
-          try {
-            const record = readRecord(product),
-              lease = runLocks.get(product);
-            if (record?.runId === runId) writeRecord({ ...record, activeUntil: 0 }, lease);
-          } catch {
-            publish({ product, error: 'cloudSave.syncPending' });
-          }
-      } finally {
-        live.clear();
-        for (const lease of runLocks.values())
-          try {
-            lease.release();
-          } catch {}
-        runLocks.clear();
-        void flush();
+    resolve,
+    finished(handedOff = false) {
+      launchData = null;
+      releaseLaunchLease();
+      if (active) {
+        const {lease} = active;
+        active = null;
+        lease?.release();
       }
+      if (!handedOff) queueFlush();
+    },
+    async versionRelation(product: ProductId, files: File[], latest: CloudSaveSnapshot | null, revision: number) {
+      const fingerprint = await localSaveFingerprint(files);
+      const base = owner && validAccount() ? baselineFor(product, owner) : undefined;
+      return relateSaveVersions(fingerprint, latest, revision, base);
     },
     subscribe(listener: () => void) {
       listeners.add(listener);
@@ -683,17 +693,33 @@ export function createCloudSaveSync(ports: Ports) {
       };
     },
     getSnapshot: () => status,
+    getEnabled: () => identityStatus === 'member' ? enabled : null,
+    setEnabled(value: boolean) {
+      if (disposed || identityStatus !== 'member' || value === enabled) return;
+      if (value) ports.storage.removeItem(pausedKey(owner));
+      else ports.storage.setItem(pausedKey(owner), '1');
+      refreshEnabled();
+    },
+    hasLocalPending(product: ProductId) {
+      if (identityStatus !== 'member') return false;
+      try {
+        const record = readRecord(product);
+        return needsReview(product) || !!record?.runId && (record.owner === owner || record.unclaimed);
+      } catch {
+        return false;
+      }
+    },
     dispose() {
       disposed = true;
       controller.abort();
+      releaseLaunchLease();
+      handoff?.close();
       unsubscribe();
       clearInterval(timer);
       window.removeEventListener('online', online);
-      for (const lease of runLocks.values())
-        try {
-          lease.release();
-        } catch {}
-      runLocks.clear();
+      window.removeEventListener('storage', storageChanged);
+      active?.lease?.release();
+      active = null;
       listeners.clear();
     },
   };

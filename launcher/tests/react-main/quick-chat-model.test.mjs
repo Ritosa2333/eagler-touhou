@@ -600,7 +600,7 @@ test('server ban blocks free text until its deadline and clears through the room
   model.sendText();
   assert.deepEqual(sends,[{type:'free-chat',text:'still banned',serial:7}]);
 });
-test('reports contain only the message id and are limited to registered reporters and other authors', (t) => {
+test('room participants including guests can report other authors by message id', (t) => {
   const {model,sends,notifications}=fixture(t,context({localClientId:'local'}));
   model.receive({type:'chat-status',registered:true,authorId:'account-1',bannedUntil:0});
   const free=(messageId,authorId)=>({type:'free-chat',room:'ROOM',serial:7,seat:1,clientId:'peer',authorId,messageId,name:'Marisa',text:'hello'});
@@ -614,7 +614,7 @@ test('reports contain only the message id and are limited to registered reporter
   assert.deepEqual(notifications,['reported','report-rate-limited']);
   model.receive({type:'chat-status',registered:false,authorId:'',bannedUntil:0});
   model.reportMessage(20);
-  assert.deepEqual(sends,[{type:'chat-report',messageId:20}]);
+  assert.deepEqual(sends,[{type:'chat-report',messageId:20},{type:'chat-report',messageId:20}]);
 });
 test('retraction removes an author prefix, preserves quick chat and drops delayed free messages', (t) => {
   const {model,clock}=fixture(t);

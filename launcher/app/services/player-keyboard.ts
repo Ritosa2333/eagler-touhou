@@ -8,7 +8,11 @@ import { keyboardInputBridge } from '../../src/launcher/touch-runtime-protocol.m
 import type { RuntimeService, RuntimeMidiEventContext } from './runtime';
 import type { KeyboardPreferences } from '../../src/launcher/keyboard-preferences.mts';
 import type { Th09LocalInput } from '../../src/launcher/th09-local-input.mts';
-import type { MultiplayerQuickChatModel } from '../../src/launcher/multiplayer-quick-chat-model.mts';
+import {
+  QUICK_CHAT_SLOT_COUNT,
+  type MultiplayerQuickChatModel,
+  type QuickChatContext,
+} from '../../src/launcher/multiplayer-quick-chat-model.mts';
 import type { HostedKeyboardEvent } from '../../src/launcher/hosted-keyboard.mts';
 
 export interface PlayerKeyboardOptions {
@@ -25,8 +29,9 @@ export interface PlayerKeyboardOptions {
   isPlayerFullscreen(): boolean;
   android: boolean;
   shortcutsOnly?: boolean;
-  chat?: Pick<MultiplayerQuickChatModel, 'getSnapshot' | 'subscribe' | 'openComposer' | 'dismiss'>;
+  chat?: Pick<MultiplayerQuickChatModel, 'getSnapshot' | 'subscribe' | 'openComposer' | 'dismiss' | 'sendSlot'>;
   chatOwnsTarget?(target: EventTarget | null): boolean;
+  chatTextTarget?(target: EventTarget | null): boolean;
   preferences?: KeyboardPreferences;
   th19Preferences?: KeyboardPreferences;
   th09Local?: Th09LocalInput;
@@ -60,12 +65,9 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
     chatFocused = false;
   const modifiers = new Set<string>(),
     suppressed = new Set<string>();
-  type ChatKey = HostedKeyboardEvent & { isComposing?: boolean; target?: EventTarget | null };
-  function chatAvailable() {
-    const state = options.chat?.getSnapshot(),
-      context = state?.context;
+  type ChatKey = HostedKeyboardEvent & { isComposing?: boolean; shiftKey?: boolean; target?: EventTarget | null };
+  function chatAvailable(context: QuickChatContext | null | undefined) {
     return (
-      !!state?.registered &&
       !!context?.visible &&
       !context.inRoom &&
       context.connected &&
@@ -73,10 +75,6 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
       options.playerOpen() &&
       options.runtime.getInputContext().launched
     );
-  }
-  function chatOpen() {
-    const state = options.chat?.getSnapshot();
-    return chatAvailable() && !!state?.pickerOpen;
   }
   function focusGame() {
     if (
@@ -97,16 +95,17 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
     } catch {}
   }
   function syncChat() {
-    const open = chatOpen();
+    const state = options.chat?.getSnapshot();
+    const open = !!state?.pickerOpen && chatAvailable(state.context);
     if (open === chatFocused) return;
     chatFocused = open;
     if (open) {
       stopFocusRelay();
       clear();
-    } else if (options.chat?.getSnapshot().context?.inRoom !== true) focusGame();
+    } else if (state?.context?.inRoom !== true) focusGame();
   }
   function consumeChatKey(event: ChatKey, down: boolean) {
-    const code = event.code || (event.key === 'Alt' ? 'AltLeft' : event.key === 'Escape' ? 'Escape' : '');
+    const code = event.code || (event.key === 'Alt' ? 'AltLeft' : event.key);
     if (suppressed.has(code)) {
       if (!down) suppressed.delete(code);
       return true;
@@ -116,6 +115,7 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
       else modifiers.delete(code);
     }
     const alt = code === 'AltLeft' || code === 'AltRight';
+    const state = options.chat?.getSnapshot();
     const ownsTarget = options.launcherOwnsTarget(event.target ?? null),
       chatTarget = options.chatOwnsTarget?.(event.target ?? null) === true;
     if (pendingAlt && down && (!alt || pendingAlt.code !== code)) pendingAlt.used = true;
@@ -127,26 +127,44 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
         !modifiers.size &&
         !event.isComposing &&
         (!ownsTarget || chatTarget) &&
-        chatAvailable();
+        chatAvailable(state?.context);
       pendingAlt = null;
       if (activate) {
-        if (chatOpen()) options.chat?.dismiss();
+        if (state?.pickerOpen) options.chat?.dismiss();
         else options.chat?.openComposer();
       }
       return true;
     }
-    if (!chatAvailable() || event.isComposing) return false;
+    if (!chatAvailable(state?.context) || event.isComposing) return false;
     if (ownsTarget && !chatTarget) return false;
     if (alt && down && event.key !== 'AltGraph' && !event.ctrlKey && !event.metaKey && !modifiers.size) {
       if (!pendingAlt && !event.repeat) pendingAlt = { code, used: false };
       return !!pendingAlt;
     }
-    if (down && code === 'Escape' && chatOpen()) {
+    const open = !!state?.pickerOpen;
+    if (down && code === 'Escape' && open) {
       suppressed.add(code);
       options.chat?.dismiss();
       return true;
     }
-    if (chatOpen() && !ownsTarget) {
+    if (
+      open &&
+      down &&
+      !event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey &&
+      !state.editingText &&
+      !options.chatTextTarget?.(event.target ?? null)
+    ) {
+      const slot = Number(event.key);
+      if (event.key.length === 1 && slot >= 1 && slot <= QUICK_CHAT_SLOT_COUNT) {
+        suppressed.add(code);
+        if (!event.repeat) options.chat?.sendSlot(slot);
+        return true;
+      }
+    }
+    if (open && !ownsTarget && !chatTarget) {
       if (down) suppressed.add(code);
       return true;
     }

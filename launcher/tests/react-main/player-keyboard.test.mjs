@@ -40,12 +40,13 @@ function clock() {
     } now = end;}};
 }
 function chatFixture({registered=true,context={}}={}) {
-  const listeners=new Set(),calls={open:0,dismiss:0};
-  const snapshot={registered,authorId:registered?'account-1':'',pickerOpen:false,context:{visible:true,room:'th06mp-1234',connected:true,inRoom:false,localSeat:0,localSpectator:false,...context}};
+  const listeners=new Set(),calls={open:0,dismiss:0,slots:[]};
+  const snapshot={registered,authorId:registered?'account-1':'',pickerOpen:false,editingText:false,context:{visible:true,room:'th06mp-1234',connected:true,inRoom:false,localSeat:0,localSpectator:false,...context}};
   const publish=()=>{for(const listener of listeners)listener();};
   return {snapshot,calls,model:{getSnapshot:()=>snapshot,subscribe(listener){listeners.add(listener);return()=>listeners.delete(listener);},
     openComposer(){calls.open++;snapshot.pickerOpen=true;publish();},
-    dismiss(){calls.dismiss++;snapshot.pickerOpen=false;publish();}},
+    dismiss(){calls.dismiss++;snapshot.pickerOpen=false;publish();},
+    sendSlot(slot){calls.slots.push(slot);snapshot.pickerOpen=false;publish();}},
     update(patch){Object.assign(snapshot,patch);if(patch.context)snapshot.context={...snapshot.context,...patch.context};publish();}};
 }
 function fixture({android = false,chat:chatState=null,shortcutsOnly=false,mappingBridge=false,game='th15',preferences,th19Preferences} = {}) {
@@ -76,6 +77,7 @@ function fixture({android = false,chat:chatState=null,shortcutsOnly=false,mappin
   const owner = createPlayerKeyboard({runtime, window, document, frame: frame.target, playerOpen: () => playerOpen,
     launcherOwnsTarget: target => !!target&&'closest' in target&&typeof target.closest==='function'&&!!target.closest('input,select,textarea,button,dialog,[role="dialog"],[role="menu"]'),
     chat:chatState?.model,chatOwnsTarget:target=>target instanceof window.Element&&!!target.closest('.mp-quick-chat')&&!target.closest('[role="menu"]'),
+    chatTextTarget:target=>target === document.getElementById('chatInput'),
     preferences,th19Preferences,
     shortcutsOnly,
     releaseHeldTouchFire: () => calls.release++, cancelTouchFunction: () => calls.cancel++, toggleFullscreen: () => calls.toggle++,
@@ -164,9 +166,36 @@ test('chat shortcut: Escape closes, focuses the game, and suppresses every repea
   assert.equal(f.key('keyup',escape).defaultPrevented,true);
 });
 
-test('chat shortcut: unavailable guest, solo, room, disconnected and inactive states do not toggle', () => {
+test('chat shortcut: guests can open with Alt and send a single numbered slot before focus returns to the game', () => {
+  const chat=chatFixture({registered:false}),f=fixture({chat});
+  const alt={code:'AltLeft',key:'Alt',keyCode:18,altKey:true};
+  const digit={code:'Digit9',key:'9',keyCode:57};
+  f.nativeKey('keydown',alt);
+  f.nativeKey('keyup',{...alt,altKey:false});
+  assert.equal(chat.snapshot.pickerOpen,true);
+  assert.equal(f.key('keydown',digit,f.document.querySelector('.mp-quick-chat')).defaultPrevented,true);
+  assert.deepEqual(chat.calls.slots,[9]);
+  assert.equal(chat.snapshot.pickerOpen,false);
+  assert.equal(f.nativeKey('keydown',{...digit,repeat:true}).defaultPrevented,true);
+  assert.equal(f.nativeKey('keyup',digit).defaultPrevented,true);
+  assert.equal(keyboard(f).length,0);
+});
+
+test('chat shortcut: input accepts a leading digit and editing disables shortcuts until the panel closes', () => {
+  const chat=chatFixture(),f=fixture({chat});
+  const digit={code:'Digit1',key:'1',keyCode:49};
+  const panel=f.document.querySelector('.mp-quick-chat'),input=f.document.getElementById('chatInput');
+  chat.model.openComposer();
+  assert.equal(f.key('keydown',{code:'Tab',key:'Tab',keyCode:9},panel).defaultPrevented,false);
+  assert.equal(f.key('keydown',digit,input).defaultPrevented,false);
+  assert.deepEqual(chat.calls.slots,[]);
+  chat.update({editingText:true});
+  f.key('keydown',digit,panel);
+  assert.deepEqual(chat.calls.slots,[]);
+});
+
+test('chat shortcut: solo, room, disconnected and inactive states do not toggle', () => {
   const cases=[
-    ['guest',chatFixture({registered:false})],
     ['solo',chatFixture({context:{visible:false}})],
     ['room workspace',chatFixture({context:{inRoom:true}})],
     ['disconnected',chatFixture({context:{connected:false}})],

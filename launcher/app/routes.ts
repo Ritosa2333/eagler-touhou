@@ -1,9 +1,10 @@
 import {index, route, type RouteConfig} from '@react-router/dev/routes';
+import {UI_REVIEW_DOCUMENT, uiReviewEnabled} from '../lib/frontend-static-manifest.mjs';
 /** Original launcher document addresses only. Assets and Runtime URLs are not
  * application fallbacks and must retain the existing publication routing. */
 export default [
   index('routes/surface.tsx', {id: 'library'}),
-  route('ui-review.html', 'routes/ui-review.tsx'),
+  ...(uiReviewEnabled() ? [route(UI_REVIEW_DOCUMENT.path.slice(1), 'routes/ui-review.tsx')] : []),
   route('faq.html', 'routes/help.tsx', {id:'help-faq'}),
   route('about.html', 'routes/help.tsx', {id:'help-about'}),
   route('guide.html', 'routes/help.tsx', {id:'help-guide'}),

@@ -16,7 +16,6 @@ before(async()=>{
  await require('esbuild').build({absWorkingDir:project,stdin:{resolveDir:project,loader:'ts',contents:`
  export * from './app/components/launcher/OptionsPanel.tsx';
  export * from './app/components/launcher/LauncherMasthead.tsx';
- export * from './app/components/launcher/SiteFooter.tsx';
  export * from './app/components/launcher/MainSelect.tsx';
  export * from './app/components/launcher/products.ts';
  export * from './app/components/room/MultiplayerDiagnostics.tsx';
@@ -74,7 +73,7 @@ test('Original hidden legacy online fold preserves readiness, retained normalize
  await click('#mpJoinRoom');assert.deepEqual(joins,['12345678']);await click('[data-mp-fold=online]');assert.equal(head.getAttribute('aria-expanded'),'false');assert.equal(n('[data-mp-fold-body=online]').hasAttribute('inert'),true);
  await React.act(async()=>update('missing'));await React.act(async()=>update('ready'));assert.equal(head.getAttribute('aria-expanded'),'true');assert.equal(input.value,'12345678');assert.equal(fold.hidden,true);
 });
-function Masthead({variant='lobby',assetUrl=x=>x,launcherHref='/en.html',faqHref='faq.html',aboutHref='about.html',...props}){const[open,setOpen]=React.useState(false);return el(owners.LauncherMasthead,{...props,variant,assetUrl,launcherHref,faqHref,aboutHref,menuOpen:open,onMenuOpenChange:setOpen,lessMotion:false,onToggleMotion(){},noticeEnabled:true,onToggleNotice(){},diagnosticsEnabled:false,onToggleDiagnostics(){},onDonation(){},onFirstUse(){},languageControl:el(owners.MainSelect,{id:'uiLanguageSelect',className:'option-select ui-language-select','data-trigger-i18n':'ui.language.menu',value:'en',onChange(){}},el('option',{value:'zh-CN'},'简体中文'),el('option',{value:'en'},'English'),el('option',{value:'ja'},'日本語'))});}
+function Masthead({variant='lobby',assetUrl=x=>x,launcherHref='/en.html',faqHref='faq.html',aboutHref='about.html',...props}){const[open,setOpen]=React.useState(false);return el(owners.LauncherMasthead,{...props,variant,assetUrl,launcherHref,faqHref,aboutHref,menuOpen:open,onMenuOpenChange:setOpen,lessMotion:false,onToggleMotion(){},diagnosticsEnabled:false,onToggleDiagnostics(){},onDonation(){},onFirstUse(){},languageControl:el(owners.MainSelect,{id:'uiLanguageSelect',className:'option-select ui-language-select','data-trigger-i18n':'ui.language.menu',value:'en',onChange(){}},el('option',{value:'zh-CN'},'简体中文'),el('option',{value:'en'},'English'),el('option',{value:'ja'},'日本語'))});}
 test('Lobby launcher back keeps original anchor and uses Router, standalone docs remain native',async()=>{await mount(el(Masthead));assert.equal(n('#launcherLink').getAttribute('href'),'/en.html');assert.equal(n('a[href="faq.html"]').getAttribute('data-discover'),null);await click('#launcherLink');assert.equal(n('#address').textContent,'/en.html');});
 async function openMasthead() {await React.act(async()=>{const trigger=n('#mastheadMenuToggle');trigger.focus();trigger.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));});await vi.waitFor(async()=>{await React.act(async()=>{await new Promise(resolve=>env.window.requestAnimationFrame(resolve));});assert.ok(env.document.querySelector('#mastheadMenuPanel'));});}
 test('Radix masthead menu opens by keyboard and Escape restores its trigger',async()=>{
@@ -136,7 +135,7 @@ test('mounted Router links remove the deployment mount before navigation', async
   assert.equal(n('.book-lobby-link').getAttribute('href'), '/review/lobby.html?lang=en');
 });
 
-test('source-only preview keeps account routes gated unless accounts are explicitly enabled', async () => {
+test('source-only preview keeps account routes gated unless accounts are explicitly enabled', () => {
   const sourceOnly = owners.resolveReleaseFeatures({DEV: true});
   assert.equal(sourceOnly.previewFeaturesEnabled, true);
   assert.equal(sourceOnly.accountsEnabled, false);
@@ -144,8 +143,6 @@ test('source-only preview keeps account routes gated unless accounts are explici
   for (const path of ['/login.html', '/profile.html', '/u/reimu.1_test']) assert.equal(sourceOnly.isPreviewOnlyPage(path), true);
   assert.equal(owners.previewFeaturesEnabled, true);
   assert.equal(owners.accountsEnabled, true, 'the synthetic component harness opts into account navigation');
-  await mount(el(owners.SiteFooter, {onDonation(){}}));
-  assert.ok(n('footer.site-footer'));
 });
 
 test('production hides account routes by default and supports account-only opt-in', () => {

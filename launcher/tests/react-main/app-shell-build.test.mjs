@@ -27,7 +27,7 @@ before(async () => {
   // launcher cache. Keep dependency installation shared; copy no build output.
   for (const path of ['app', 'src', 'lib', 'messages', 'project.inlang/settings.json', 'compat', 'package', 'public', 'config', 'scripts', 'host', 'server', 'integrations',
     'content', 'favicon.ico', 'docs/FAQ.md', 'docs/SELF_HOSTING.md', 'docs/SELF_HOSTING_REFERENCE.md', 'docs/EXTERNAL_RESOURCE_MODE.md',
-    'product-catalog.mjs','site-manifest.mjs','release-catalog.mjs','resource-mode.mjs','runtime-protocol.mjs','NOTICE.txt', 'README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'package.json', 'package-lock.json', 'bun.lock', '.bun-version', 'tsconfig.launcher.json', 'tsconfig.contracts.json',
+    'product-catalog.mjs','site-manifest.mjs','release-catalog.mjs','resource-mode.mjs','runtime-protocol.mjs','README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'package.json', 'package-lock.json', 'bun.lock', '.bun-version', 'tsconfig.launcher.json', 'tsconfig.contracts.json',
     'tsconfig.ui-rewrite.json', 'tsconfig.ui-rewrite.tools.json', 'vite.config.ts', 'react-router.config.ts']) {
     await mkdir(resolve(coldSource, path, '..'), {recursive: true});
     await cp(resolve(path), resolve(coldSource, path), {recursive: true});
@@ -170,7 +170,7 @@ test('actual build keeps canonical public URLs including bounded legacy readers'
       assert.ok(order>=0&&order<style,`${file}: layer order precedes split stylesheets`);
       assert.equal([...html.matchAll(/name="darkreader-lock"/g)].length,1,`${file}: explicit theme ownership`);
     }
-    for (const file of ['README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'NOTICE.txt']) {
+    for (const file of ['README.md', 'ASSETS.md', 'THIRD_PARTY.md']) {
       assert.deepEqual(await readFile(resolve(directory, file)), await readFile(resolve(file)));
     }
     for (const file of ['faq.html', 'content/FIRST_USE_NOTICE.html', 'content/MULTIPLAYER.html']) {

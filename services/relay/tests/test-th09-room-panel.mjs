@@ -84,5 +84,13 @@ try{
   second.h.ws.send(Buffer.from([0xe8,0x53,0x54,0x4f,0x50,1]));
   await wait(()=>directoryRoom()?.spectatable===false,'stopped spectator stream withdraws directory entry');
   assert.equal(second.h.closed,false);assert.equal(second.g.closed,false);
+  for(const s of [second.h,second.g,second.hs,second.gs])s.ws.close();
+  await wait(()=>latest(host)?.phase==='lobby','second run returned to lobby');
+  send(guest,{type:'stand-up'});
+  await wait(()=>!directoryRoom()?.seats[1]&&directoryRoom()?.seats[0]?.stats?.wins===0,'departing opponent clears current pair score');
+  const replacement=await open(`room=${room}&lobby=timeline_replacement&member=timeline_member_replacement`);
+  send(replacement,{type:'take-seat',seat:1,loadout:1});
+  await wait(()=>directoryRoom()?.seats[1]?.stats?.wins===0,'replacement starts a fresh scoreboard');
+  assert.deepEqual(latest(host).seats[0].stats,{wins:0,losses:0,minutes:0});
   console.log('TH09 experimental spectator: late admission, ordered history/live handoff, same-connection match initializer and history pruning, logical ends, persistent lobby and isolated next-run prefix PASS');
 }finally{for(const ws of sockets)ws.close();child.kill();await new Promise(r=>child.once('exit',r));}
