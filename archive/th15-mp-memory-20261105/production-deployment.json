@@ -1,0 +1,193 @@
+{
+  "pullRequest": 191,
+  "activation": {
+    "previous": "/var/www/eagler-touhou/releases/formal-th19-cover-d03246c2",
+    "candidate": "/var/www/eagler-touhou/releases/formal-th15mp-pr191-f6a8b7d9",
+    "releaseId": "sha256-027488b10d214f64f8b683057fdc44371d30e7309717aa67fc6e4c3afb74b31f",
+    "buildId": "b7d0a5a32e5104a95e72",
+    "siteUrl": "https://touhouonline.com/",
+    "files": 8846,
+    "preserved": 8825,
+    "updates": [
+      {
+        "game": "th15",
+        "variant": "multiplayer",
+        "root": "runtime/th15/multiplayer/",
+        "previousGeneration": "cc7f01caed14479d3b5fc5c65817c55bc638f2d38cab642fc1e8e0cd4ee182cd",
+        "generation": "10adcf3632598135cc4351b13486b2d84a1283a6a5b108bc4a03c982b1bbb030",
+        "files": 15
+      }
+    ],
+    "revision": "f6a8b7d9e979585bd2bb76932d349face45075ff",
+    "syncPointerExceptions": [],
+    "publishedAt": "2026-11-05T12:31:32.980446+00:00",
+    "runtimeVersion": "1.0.3-eagler-5c72edaaa2f5",
+    "wasmSha256": "5c72edaaa2f5acd4ef3e16b16d5570b0bf14c9d93e2463509b84c43866ba3075",
+    "testCurrent": "/var/www/eagler-touhou-test/releases/test-rtt-ea6cb4ae",
+    "configHashes": {
+      "/etc/nginx/sites-available/touhouonline.com": "72349599afdb7d450f17f34a50fae8c09684db5faa82aee6ea284ccff5c7c7b2",
+      "/etc/nginx/sites-available/test.touhouonline.com": "698c8f32935c1492883e8ac769c1de1bd16e62acd701431772ccadc3522a45b2"
+    },
+    "originRuntimeFilesVerified": 15
+  },
+  "serverVerification": {
+    "valid": true,
+    "resourceMode": "external",
+    "files": 8846,
+    "music": []
+  },
+  "publicBrowser": {
+    "passed": true,
+    "browser": "Chrome/156.0.8078.81",
+    "runtimeReady": true,
+    "roomPreview": true,
+    "site": "https://touhouonline.com",
+    "title": "东方Project 原作 STG ~ EAGLER TOUHOU",
+    "releaseId": "sha256-027488b10d214f64f8b683057fdc44371d30e7309717aa67fc6e4c3afb74b31f",
+    "generation": "10adcf3632598135cc4351b13486b2d84a1283a6a5b108bc4a03c982b1bbb030",
+    "version": "1.0.3-eagler-5c72edaaa2f5",
+    "files": [
+      {
+        "path": "crash-code-identities.json",
+        "bytes": 312,
+        "sha256": "a9e2468a5559f65bccfa26f2c9cd5555eabf33eeb16d44f2659dab063d5c3908",
+        "type": "application/json",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "path": "runtime-crash-reporter.js",
+        "bytes": 16483,
+        "sha256": "7b69322fe8d78c47da9e2efd2c8f08aed6ca7bdccf4acf1dd6c678b4714bd9d6",
+        "type": "text/javascript",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "path": "th15.html",
+        "bytes": 555,
+        "sha256": "1eda5d7e5d7a74142f6e284c7a61b4e30f823622cf3f055e2740f7aeede1f3a0",
+        "type": "text/html",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "path": "manifest.json",
+        "bytes": 1356,
+        "sha256": "3de19ad00a08da0781a80fffe08fc935a911d0c22e9b8f4972507ef17a59ee42",
+        "type": "application/json",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "path": "startup-branding.mjs",
+        "bytes": 38200,
+        "sha256": "f69b813c6132bcdde504c2713e4f7713df17f92fb05a03d19f31dba89aa5c222",
+        "type": "text/javascript",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "path": "shell.mjs",
+        "bytes": 35742,
+        "sha256": "8e32d70f2a52246307959d963feb66b3651c8e2fa648d1d3e5fa7ce121a06897",
+        "type": "text/javascript",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "path": "managed.css",
+        "bytes": 733,
+        "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da",
+        "type": "text/css",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "path": "keyboard.mjs",
+        "bytes": 1298,
+        "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274",
+        "type": "text/javascript",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "path": "directory-keyboard.mjs",
+        "bytes": 11600,
+        "sha256": "72e0b099698f8e0696a9b271a62262f141990e6b2ad7666e36be825ac848e56d",
+        "type": "text/javascript",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "path": "th15.mjs",
+        "bytes": 289174,
+        "sha256": "4ec52ebb00ad7b2c9eb4d703f99bd6d0fc9d33822106024299c696ad8d85df3b",
+        "type": "text/javascript",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "path": "th15.wasm",
+        "bytes": 3588801,
+        "sha256": "5c72edaaa2f5acd4ef3e16b16d5570b0bf14c9d93e2463509b84c43866ba3075",
+        "type": "application/wasm",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "path": "resources.json",
+        "bytes": 183,
+        "sha256": "2943b9bf5ed453125b17a42ec4afb7ee8dba26c8527280f3209bd1850ed10467",
+        "type": "application/json",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "path": "fonts/cp932.bin",
+        "bytes": 131072,
+        "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6",
+        "type": "application/octet-stream",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "path": "multiplayer.mjs",
+        "bytes": 8081,
+        "sha256": "289acbdf66c9b74d6620a540752cb1d9c6986b80a6d28a554d2d1175c982a89c",
+        "type": "text/javascript",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "path": "adonis-calibration.mjs",
+        "bytes": 4062,
+        "sha256": "8577d83d4f3ee083e1bb4ff0b0c7702e86a38aff3e5726ee57a3bc324cd006fa",
+        "type": "text/javascript",
+        "cache": "public, max-age=31536000, immutable"
+      }
+    ],
+    "previousRuntime": 200,
+    "appShellWorker": 200,
+    "th15Normal": "runtime/th15/f8ba946420a114ab23c087a8bc7311bf7748049fcdf3c65c12127eba1d3fc61d/th15.html?hosted=1",
+    "th19": "runtime/th19/ce79c398c191eae03642df200016eb08d1884a4ea020cdbceb46aa9f1f0db8dd/th19.html?hosted=1"
+  },
+  "multiplayerSmoke": [
+    {
+      "id": "th15-2p-normal-relay",
+      "passed": true,
+      "wasmSha256": "5c72edaaa2f5acd4ef3e16b16d5570b0bf14c9d93e2463509b84c43866ba3075",
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "late-join-after-recovery",
+        "screenshots"
+      ]
+    },
+    {
+      "id": "th15-3p-normal-relay",
+      "passed": true,
+      "wasmSha256": "5c72edaaa2f5acd4ef3e16b16d5570b0bf14c9d93e2463509b84c43866ba3075",
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "late-join-after-recovery",
+        "screenshots"
+      ]
+    }
+  ]
+}
