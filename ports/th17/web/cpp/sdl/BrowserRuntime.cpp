@@ -1,5 +1,7 @@
 #include <eagler/input/BrowserGamepad.hpp>
 #include "ApplicationState.hpp"
+#include "ThpracUi.hpp"
+#include <eagler/thprac/PracticePointer.hpp>
 #include "../game/GameKeyboard.hpp"
 #include "../../../portable/sdl/FrameCadence.hpp"
 #include "../../../portable/input/TouchController.hpp"
@@ -10,6 +12,7 @@
 #include <cmath>
 #include <cstdio>
 #include <ctime>
+#include <optional>
 EM_JS(void, th17_browser_frame, (int ok,double milliseconds,unsigned ticks), { Module["onGameFrame"]?.(ok,milliseconds,ticks); });
 EM_JS(void, th17_browser_frame_begin, (), { Module["onGameFrameStart"]?.(); });
 EM_JS(int, th17_host_has_focus, (), {
@@ -25,6 +28,10 @@ std::string last_error;
 struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
+eagler::thprac::PracticePointer practice_pointers;
+std::optional<int> imgui_touch;
+bool practice_fast=false,practice_slow=false,practice_debug=false;
+double previous_period=1./60.;
 // Submit the nearest 60 Hz tick, retaining signed phase error. A fixed 1 ms
 // epsilon still dropped one in six presentations when RAF phase jitter crossed
 // that threshold. Half a tick covers both sides of the nearest-tick boundary
@@ -42,15 +49,16 @@ float measured_fps=60;
 double presentation_start=-1;u32 presentation_frames=0;float presentation_fps=60;
 void reset_presentation_clock(){presentation_start=-1;presentation_frames=0;presentation_fps=60;}
 void add_controller(SDL_JoystickID id){if(!controller)controller=SDL_OpenJoystick(id);}
-void clear_inputs(){th17_browser_keyboard_reset();for(auto& key:keyboard_map)key.hosted=false;SDL_ResetKeyboard();gestures.reset();controls={};if(app){app->keyboard_state={};app->touch={};if(app->scene())app->scene()->battle.player->motion.touch={};}}
+void clear_inputs(){th17_browser_keyboard_reset();for(auto& key:keyboard_map)key.hosted=false;SDL_ResetKeyboard();gestures.reset();practice_pointers.reset();imgui_touch.reset();ThpracUi::reset_input();practice_fast=practice_slow=practice_debug=false;controls={};if(app){app->keyboard_state={};app->touch={};if(app->scene())app->scene()->battle.player->motion.touch={};}}
 void initialize_controller(){if(controller){SDL_CloseJoystick(controller);controller=nullptr;}SDL_InitSubSystem(SDL_INIT_JOYSTICK);int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;i++)add_controller(ids[i]);SDL_free(ids);}
 touhou::input::TouchState touch_state(){
  touhou::input::TouchState value;if(!app||!app->scene()||!app->run_input)return value;
  if(app->pause&&app->pause->state.screen!=PauseScreen::Inactive)return value;
  if(app->progress.practice_record){value.context=3;return value;}
- auto& stage=*app->scene();if(stage.battle.dialogue_present()){value.context=2;return value;}
+ auto& stage=*app->scene();
  auto& player=*stage.battle.player;auto& motion=player.motion;
- value.context=1;value.instance=app->progress.stage;value.ready=player.life.state==1&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000));
+ value.context=stage.battle.dialogue_present()?2:1;
+ value.instance=app->progress.stage;value.ready=player.life.state==1&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000));
  value.x=motion.position.x;value.y=motion.position.y;value.fast=float(motion.normal_speed)/128;value.slow=float(motion.focus_speed)/128;
  value.min_x=-184;value.max_x=184;value.min_y=32;value.max_y=432;return value;
 }
@@ -65,6 +73,7 @@ u32 sample_controller(u32& buttons){
 }
 bool sample_and_tick(){
  if(!app)return false;SDL_Event event;while(SDL_PollEvent(&event)){
+  ThpracUi::process_event(event,float(render_scale));
   if(event.type==SDL_EVENT_WINDOW_FOCUS_LOST){clear_inputs();lost_focus=!th17_host_has_focus();}
   else if(event.type==SDL_EVENT_JOYSTICK_ADDED)add_controller(event.jdevice.which);
   else if(event.type==SDL_EVENT_JOYSTICK_REMOVED&&controller&&SDL_GetJoystickID(controller)==event.jdevice.which){SDL_CloseJoystick(controller);controller=nullptr;int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;i++)add_controller(ids[i]);SDL_free(ids);}
@@ -75,7 +84,24 @@ bool sample_and_tick(){
  app->keyboard_state.format=2;for(u32 i=0;i<256;i++)app->keyboard_state.keys[i]=keys[i]?128:0;
  const auto sample=gestures.sample(touch_state(),SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
  for(u32 i=0;i<256;i++)keys[i]=keys[i]||sample.keys[i];app->touch={sample.motion,sample.x,sample.y};
- u32 buttons=0;const u32 held=keyboard_keys(keys)|(mappedPad<0?sample_controller(buttons):0);controls.update(held);app->controller_buttons=buttons;
+ u32 buttons=0;
+ const u32 controller_keys=mappedPad<0?sample_controller(buttons):0;
+ ThpracUi::update_input(*app,keys);
+ practice_fast=keys[85];practice_slow=keys[16];practice_debug=keys[32];
+ u32 held=keyboard_keys(keys)|controller_keys;
+ if(app->practice.enabled&&app->scene()&&!app->progress.practice_record){
+  std::array<u8,256> virtual_keys{};
+  for(u32 i=0;i<256;++i)virtual_keys[i]=keys[i]?0x80:0;
+  if(held&1)virtual_keys[90]=0x80;
+  if(held&2)virtual_keys[88]=0x80;
+  if(held&8)virtual_keys[160]=0x80;
+  app->practice.input.apply(virtual_keys.data());
+  virtual_keys[16]=virtual_keys[160]|virtual_keys[161];
+  for(u32 i=0;i<256;++i)keys[i]=(virtual_keys[i]&0x80)!=0;
+  held=keyboard_keys(keys)|(controller_keys&~0xbu);
+ }
+ if(ThpracUi::captures_game_input(*app)){held=buttons=0;app->touch={};}
+ controls.update(held);app->controller_buttons=buttons;
  if(app->display)app->display->presentation_fps=presentation_fps;
  const bool focus=lost_focus;lost_focus=false;
  const bool ok=app->step(controls.held,controls.pressed,controls.repeated,measured_fps,focus);
@@ -86,7 +112,7 @@ bool sample_and_tick(){
 }
 }
 extern "C" {
-EMSCRIPTEN_KEEPALIVE int th17_initialize(){using namespace th17::sdl;if(running)return 1;clear_inputs();if(controller){SDL_CloseJoystick(controller);controller=nullptr;}app.reset();app=std::make_unique<ApplicationState>();app->graphics.render_scale=render_scale;app->audio_device.music_enabled=music_enabled;if(!app->initialize(true)){last_error=app->failure;app.reset();return 0;}reset_presentation_clock();for(auto& key:keyboard_map)key.native=SDL_GetScancodeFromName(key.sdl);initialize_controller();window_start=0;window_ticks=0;measured_fps=60;return 1;}
+EMSCRIPTEN_KEEPALIVE int th17_initialize(){using namespace th17::sdl;if(running)return 1;clear_inputs();if(controller){SDL_CloseJoystick(controller);controller=nullptr;}ThpracUi::shutdown();app.reset();app=std::make_unique<ApplicationState>();app->graphics.render_scale=render_scale;app->audio_device.music_enabled=music_enabled;if(!app->initialize(true)||!ThpracUi::initialize(*app)){last_error=app->failure;app.reset();return 0;}reset_presentation_clock();for(auto& key:keyboard_map)key.native=SDL_GetScancodeFromName(key.sdl);initialize_controller();window_start=0;window_ticks=0;measured_fps=60;return 1;}
 EMSCRIPTEN_KEEPALIVE void th17_always_hitbox(unsigned enabled){th17::presentation::always_hitbox=enabled!=0;}
 EMSCRIPTEN_KEEPALIVE void th17_render_scale(unsigned scale){if(!th17::sdl::running)th17::sdl::render_scale=scale>=2?2:1;}
 EMSCRIPTEN_KEEPALIVE const char* th17_error(){using namespace th17::sdl;return app?app->failure.c_str():last_error.c_str();}
@@ -106,7 +132,9 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
  using namespace th17::sdl;if(running||!app||!app->initialized)return;running=true;suspended=false;previous_frame=-1;cadence.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();app->audio_device.suspend(false);
  emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
   if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
-  if(suspended){cadence.reset();return EM_TRUE;}if(presentation_start<0)presentation_start=time;const auto ticks=cadence.advance(delta);bool ok=true;app->graphics.backend.defer=true;
+  if(suspended){cadence.reset();return EM_TRUE;}if(presentation_start<0)presentation_start=time;const double period=app->practice.enabled&&app->scene()?app->practice.speed.interval(app->progress.practice_record,practice_fast,practice_slow,practice_debug):touhou::sdl::FrameCadence::interval;
+  if(period!=previous_period){cadence.reset();previous_period=period;}
+  const auto ticks=cadence.advance(delta,period);bool ok=true;app->graphics.backend.defer=true;
   if(ticks)th17_browser_frame_begin();unsigned completed=0;double predicted_tick=0;
   // RAF's timestamp and emscripten_get_now share the performance clock. Work
   // already done before this callback has consumed part of this refresh.
@@ -114,18 +142,45 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
   for(unsigned i=0;i<ticks&&ok;i++){const double tick_begin=emscripten_get_now();ok=sample_and_tick();++completed;const double tick_end=emscripten_get_now();predicted_tick=std::max(predicted_tick,tick_end-tick_begin);if(app->exiting)break;
    // Check whether the NEXT complete update/draw fits, rather than noticing
    // an overrun only after it happened. Keep unexecuted ticks as short debt.
-   if(i+1<ticks&&tick_end+predicted_tick>=deadline){cadence.debt=std::min(.1,cadence.debt+(ticks-i-1)*touhou::sdl::FrameCadence::interval);break;}
-  }app->graphics.backend.commit();app->graphics.backend.defer=false;app->audio_device.pump();
+   if(i+1<ticks&&tick_end+predicted_tick>=deadline){cadence.debt=std::min(.1,cadence.debt+(ticks-i-1)*period);break;}
+  }
+  if(ok&&completed)ok=ThpracUi::render(*app);
+  app->graphics.backend.commit();app->graphics.backend.defer=false;app->audio_device.pump();
   if(ok&&completed)++presentation_frames;const double elapsed=time-presentation_start;if(elapsed>=1000){presentation_fps=float(presentation_frames*1000./elapsed);presentation_start=time;presentation_frames=0;}
   if(completed)th17_browser_frame(ok?1:0,emscripten_get_now()-begin,completed);if(!ok)running=false;return running?EM_TRUE:EM_FALSE;
  },reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
-EMSCRIPTEN_KEEPALIVE void th17_touch(unsigned type,int id,float x,float y){using namespace th17::sdl;if(std::isfinite(x)&&std::isfinite(y))gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);}
-EMSCRIPTEN_KEEPALIVE void th17_touch_cancel(){using namespace th17::sdl;gestures.cancel();if(app){app->touch={};if(app->scene())app->scene()->battle.player->motion.touch={};}}
+EMSCRIPTEN_KEEPALIVE void th17_touch(unsigned type,int id,float x,float y){
+ using namespace th17::sdl;
+ if(type>2||!std::isfinite(x)||!std::isfinite(y))return;
+ const float px=x*640,py=y*480;
+ using Route=eagler::thprac::PracticePointer::TouchRoute;
+ if(type==0&&imgui_touch==id){imgui_touch.reset();ThpracUi::cancel_pointer();}
+ const auto decision=practice_pointers.route_touch(type,id,type==0&&ThpracUi::captures_pointer(px,py),
+     type==0&&ThpracUi::passive_pointer(px,py),px,py);
+ if(decision.route==Route::Pending)return;
+ if(decision.route==Route::Tap){
+  if(!imgui_touch){ThpracUi::mouse(1,decision.x,decision.y);ThpracUi::mouse(2,px,py);}
+  return;
+ }
+ if(decision.route==Route::Ui){
+  if(type==0&&!imgui_touch)imgui_touch=id;
+  if(imgui_touch==id){
+   ThpracUi::mouse(type==0?1:type==2?2:0,px,py);
+   if(type==2)imgui_touch.reset();
+  }
+  return;
+ }
+ const auto state=touch_state();const auto now=SDL_GetTicks();
+ if(decision.route==Route::BeginGame)gestures.pointer(0,id,decision.x/640,decision.y/480,now,state,false);
+ gestures.pointer(type,id,x,y,now,state,false);
+}
+EMSCRIPTEN_KEEPALIVE void th17_thprac_mouse(int type,float x,float y){th17::sdl::ThpracUi::mouse(type,x,y);}
+EMSCRIPTEN_KEEPALIVE void th17_touch_cancel(){using namespace th17::sdl;practice_pointers.reset();imgui_touch.reset();gestures.cancel();ThpracUi::cancel_pointer();if(app){app->touch={};if(app->scene())app->scene()->battle.player->motion.touch={};}}
 EMSCRIPTEN_KEEPALIVE void th17_touch_options(unsigned enabled,unsigned mode,float sensitivity,unsigned two_finger,unsigned double_tap){using namespace th17::sdl;gestures.enabled=enabled!=0;gestures.mode=mode<=3?int(mode):0;gestures.unlimited=mode==1;gestures.sensitivity=std::isfinite(sensitivity)?std::clamp(sensitivity,.25f,4.f):1;gestures.two_finger=two_finger!=0;gestures.double_tap=double_tap!=0;gestures.cancel();}
 EMSCRIPTEN_KEEPALIVE void th17_touch_controls(unsigned enabled,unsigned fire,unsigned focus,unsigned bomb,unsigned escape){using namespace th17::sdl;gestures.enabled=enabled!=0;gestures.controls(fire!=0,focus!=0,bomb,escape,0,0);}
 EMSCRIPTEN_KEEPALIVE void th17_touch_stick(float x,float y){using namespace th17::sdl;gestures.stick_x=std::isfinite(x)?std::clamp(x/32767.f,-1.f,1.f):0;gestures.stick_y=std::isfinite(y)?std::clamp(y/32767.f,-1.f,1.f):0;}
-EMSCRIPTEN_KEEPALIVE int th17_open_replay(const char* name,int stage){using namespace th17::sdl;if(running||!app||!app->title||!name||!app->files.replay(name,app->selected_replay)||!app->selected_replay)return 0;if(stage==0){for(int i=1;i<=7;i++)if(app->selected_replay->stage(i)){stage=i;break;}}th17::ReplayStageState entry;if(!app->selected_replay->initial_state(stage,entry))return 0;auto& p=app->progress;p.stage=p.initial_stage=stage;p.character=entry.run.character;p.animal=entry.run.animal;p.difficulty=entry.run.difficulty;p.spell_id=entry.run.spell_id;p.scoring.mode_flags=0;p.demo_slot=-1;app->flow.pending=th17::AppScene::ReplayStart;return 1;}
+EMSCRIPTEN_KEEPALIVE int th17_open_replay(const char* name,int stage){using namespace th17::sdl;if(running||!app||!app->title||!name||!app->files.replay(name,app->selected_replay)||!app->selected_replay)return 0;if(stage==0){for(int i=1;i<=7;i++)if(app->selected_replay->stage(i)){stage=i;break;}}th17::ReplayStageState entry;if(!app->selected_replay->initial_state(stage,entry))return 0;auto& p=app->progress;p.stage=p.initial_stage=stage;p.character=entry.run.character;p.animal=entry.run.animal;p.difficulty=entry.run.difficulty;p.spell_id=entry.run.spell_id;p.scoring.mode_flags=app->selected_replay->mode_flags()&2?0x20u:app->selected_replay->practice()?0x10u:0;p.demo_slot=-1;app->flow.pending=th17::AppScene::ReplayStart;return 1;}
 #if TH17_DEVELOPMENT_HARNESS
 // Enter the supplied replay without menu automation. All subsequent ticks use
 // the production input, audio, update, draw and RAF presentation paths.
@@ -136,6 +191,7 @@ EMSCRIPTEN_KEEPALIVE int th17_probe_tick(){return !th17::sdl::running&&th17::sdl
 // Diagnostic replay batches retain every update/draw and defer only window presentation.
 EMSCRIPTEN_KEEPALIVE int th17_probe_ticks(unsigned count){using namespace th17::sdl;if(running||!app||count>120)return 0;app->graphics.backend.defer=true;bool ok=true;for(unsigned i=0;i<count&&ok;i++)ok=sample_and_tick();app->graphics.backend.commit();app->graphics.backend.defer=false;return ok;}
 EMSCRIPTEN_KEEPALIVE const int* th17_probe_state(){using namespace th17::sdl;return app?app->projection():nullptr;}
+EMSCRIPTEN_KEEPALIVE int th17_probe_dialogue(){return th17::sdl::touch_state().context==2;}
 // On-demand development snapshot, never sampled by the production frame loop.
 // Each record identifies a bank/script/layer/mode and its live instance count.
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_probe_animation_load(){using namespace th17::sdl;static std::vector<unsigned> result;result.assign(3,0);if(!app)return result.data();auto& registry=app->animations.registry;result[1]=registry.count();for(unsigned layer=0;layer<44;layer++)for(auto* vm:registry.layer(layer)){const unsigned bank=unsigned(app->animations.resource_id(vm->resource)),script=unsigned(vm->source_script),mode=vm->visual.draw_mode();size_t at=3;for(;at<result.size();at+=5)if(result[at]==bank&&result[at+1]==script&&result[at+2]==layer&&result[at+3]==mode)break;if(at==result.size())result.insert(result.end(),{bank,script,layer,mode,0});++result[at+4];++result[2];}result[0]=(result.size()-3)/5;return result.data();}

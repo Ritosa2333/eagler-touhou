@@ -23,7 +23,7 @@ bool StageAssets::load(i32 stage,i32 selected_character,i32 selected_animal,cons
     std::vector<u8> data;if(!read(shot_name,data)||!shots.open(data.data(),data.size()))return fail("Invalid TH17 shot resource: "+shot_name);
     if(!read(definition->background,data)||!background.open(data.data(),data.size()))return fail("Invalid TH17 background: "+definition->background);
     if(!load(scenery,background.animation_name,9)||!load(logo,definition->logo,11))return false;
-    const auto* message=definition->message(character,animal);if(!message||!read(*message,data)||!messages.open(data.data(),data.size()))return fail("Invalid TH17 dialogue resource");
+    const auto* message=definition->message(character,animal);if(!message||!read(*message,data)||!messages.open(data.data(),data.size(),false,source.localized_message(*message)))return fail("Invalid TH17 dialogue resource: "+messages.error);
     if(!scripts.load(definition->enemy_script,*this)||!scripts.error.empty()||!error.empty())return fail(scripts.error);
     if(scripts.find_index("main")<0)return fail("TH17 main routine unavailable");initialized=true;return true;
 }

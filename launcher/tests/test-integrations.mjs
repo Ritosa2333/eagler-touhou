@@ -96,7 +96,7 @@ assert.deepEqual(THPRAC_SUPPORTED_GAMES, declaredThpracGames,
 const nativeThpracGames = Object.entries(PRODUCT_GAMES)
   .filter(([, product]) => product.features.thprac && product.thpracRuntime?.session === "native")
   .map(([game]) => game);
-assert.deepEqual(nativeThpracGames, ["th05"], "native thprac products must declare their non-session adapter");
+assert.deepEqual(nativeThpracGames, ["th05", "th17"], "native thprac products must declare their non-session adapter");
 assert.equal(THPRAC_SUPPORTED_GAMES.includes("th05"), false,
   "TH05 native practice must not be reported as a Windows thprac session schema");
 assert.throws(() => createThpracSession("th05"), /unsupported thprac game: th05/);

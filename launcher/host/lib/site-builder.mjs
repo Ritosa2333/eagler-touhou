@@ -261,7 +261,11 @@ async function prepareLanguages(projectRoot, layout, python, thtk, font) {
       if (preparation.inputMode === "archives") {
         args.push("--archives", PRODUCT_CONTENT[game].original.files.map(name => resolve(layout.games[game], name)).join(";"));
       } else if (preparation.inputMode === "archive" && preparation.archive) {
-        args.push("--archive", resolve(layout.games[game], preparation.archive));
+        const original = resolve(layout.games[game], preparation.archive);
+        const archive = preparation.preparedArchive && !await fileExists(original)
+          ? resolve(layout.games[game], preparation.preparedArchive)
+          : original;
+        args.push("--archive", archive);
       } else {
         throw new Error(`${game}: invalid language Host preparation input mode`);
       }

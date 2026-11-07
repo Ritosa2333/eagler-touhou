@@ -28,7 +28,7 @@ bool RoaringSystem::scale_timers(){
 bool RoaringSystem::activate(){
     i32 mode=1,matched=0,occurrences=0;
     for(;mode<4;mode++){occurrences=0;for(i32 value:state.inventory)occurrences+=value==mode;if(occurrences>2)break;matched++;}
-    if(occurrences<3){state.kind=4;state.duration=1140;}else{state.kind=matched+1;constexpr i32 durations[]={0,0,0,840,1140,1500};state.duration=durations[occurrences];if(matched==session.animal)state.duration=wrapping_add(state.duration,480);}
+    if(occurrences<3||(session.practice_tools&PracticeNoHyper)){state.kind=4;state.duration=1140;matched=3;}else{state.kind=matched+1;constexpr i32 durations[]={0,0,0,840,1140,1500};state.duration=durations[occurrences];if(matched==session.animal)state.duration=wrapping_add(state.duration,480);}
     state.countdown.set(state.duration);if(!interrupt(visuals.hud,matched+28,true))return false;state.flags|=2;state.extension=180;
     if(!animations.retire(visuals.outer_timer)||!create(visuals.outer_timer,30)||!animations.retire(visuals.inner_timer)||!create(visuals.inner_timer,31)||!scale_timers()){if(error.empty())error=animations.error;return false;}
     if(state.kind==2){if(!create_orbs())return false;}else player.behavior_flags|=0x40;
@@ -103,8 +103,12 @@ bool RoaringSystem::update(float rate,bool hud_collect,u32 held){
         for(auto* child:animations.registry.children(vm))self(self,*child,paused);
     };
     if((!hud_collect&&!(state.flags&0x200))||(state.flags&4)){
-        state.countdown.decrement(&rate);state.flags&=~0x400u;
-        if(host.active_player_shot()||visuals.hit_delay){state.countdown.decrement(&rate);state.flags|=0x400;}
+        const bool freeze=(session.practice_tools&PracticeInfiniteRoaring)&&!(state.flags&4)&&state.countdown.current>40;
+        state.flags&=~0x400u;
+        if(!freeze){
+            state.countdown.decrement(&rate);
+            if(host.active_player_shot()||visuals.hit_delay){state.countdown.decrement(&rate);state.flags|=0x400;}
+        }
         if(state.flags&0x400){if(auto* vm=animations.registry.find(visuals.inner_timer)){if(animations.tick_instance(*vm)<0){error=animations.error;return false;}}else visuals.inner_timer=0;}
         if(state.flags&0x100){if(auto* vm=animations.registry.find(visuals.mode_effect))pause(pause,*vm,false);state.flags&=~0x100u;if(state.kind==2&&!create_orbs())return false;}
     }else{

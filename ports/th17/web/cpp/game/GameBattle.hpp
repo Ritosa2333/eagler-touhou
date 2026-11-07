@@ -66,6 +66,7 @@ public:
     std::unique_ptr<Dialogue> dialogue;
     std::unique_ptr<BulletScene> bullet_scene;std::unique_ptr<LaserScene> laser_scene;
     std::unique_ptr<EnemyCombat> combat;std::unique_ptr<EnemyDamage> enemy_damage;std::unique_ptr<EnemyDeath> enemy_death;std::unique_ptr<EnemyManager> enemies;
+    bool enhanced_practice=false;
     i32 character=0,stage=1,graze_total=0,graze_chapter=0;std::string error;
     bool historical_web_replay=false;
     GameBattle(AnmManager&,AnmEnvironment&,Rng&,Rng&,BattleWorldServices&,EclProgram&,const ShtResource&,i32,BattleResources={});

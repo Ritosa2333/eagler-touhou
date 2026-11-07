@@ -10,6 +10,7 @@
 
 // Semantic GLES renderer shared by the two games. Matrices and vertices stay
 // in C++; only resource decoding knows the original file format codes.
+struct ImDrawData;
 namespace touhou::sdl {
 using u32=uint32_t;using i32=int32_t;using u8=uint8_t;
 using namespace touhou::graphics;
@@ -43,6 +44,9 @@ public:
     void copy(u32 source,const i32* rect,u32 target,const i32* point);
     bool resample(u32,const i32*,u32,const i32*,const float*,u32,u32);
     void changed(u32,u32,const std::array<u32,4>&);void read(u32);void release(u32);void present(u32);void prepare(u32);
+#if TH_ENABLE_THPRAC
+    void render_imgui(const ImDrawData*,u32 target);
+#endif
     const char* error()const{return failure.c_str();}
     int version;Resolve resolve;void* owner;
 private:
@@ -57,6 +61,10 @@ private:
     GLuint vertex=0,currentProgram=0,boundTexture=~0u,readFramebuffer=~0u,drawFramebuffer=~0u;
     std::map<std::array<u32,6>,GLuint> layouts;GLuint currentLayout=0;
     std::map<GLuint,u32> instanceBases;
+#if TH_ENABLE_THPRAC
+    GLuint imguiProgram=0,imguiVao=0,imguiVbo=0,imguiEbo=0,imguiFontTexture=0;
+    GLint imguiProjMtx=-1,imguiTexture=-1;
+#endif
     GLuint resampleProgram=0,resampleVao=0,weightTexture=0;
     Program generic{};bool warming=true,buildingGeneric=false;Program* program=nullptr;
     Stream vertices{},indices{},instances{};GLuint quadIndices=0;u32 quadIndexCapacity=0;State batchState{};

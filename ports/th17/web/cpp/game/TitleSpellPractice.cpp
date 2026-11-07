@@ -4,7 +4,7 @@
 namespace th17 {
 bool TitleSpellPractice::check(bool ok,const char* why){if(!ok&&error.empty())error=why;return ok;}
 bool TitleSpellPractice::visual(bool ok){return check(ok,visuals.error.c_str());}
-bool TitleSpellPractice::text(i32 row,const std::string& bytes,u32 color){auto* vm=animations.registry.find(state.handles[291+row]);if(!vm){state.handles[291+row]=0;return check(false,"Spell practice text row unavailable");}TextureText request;request.bytes=bytes;request.color=color;return check(host.text(*vm,request),"Spell practice text rendering failed");}
+bool TitleSpellPractice::text(i32 row,const std::string& bytes,u32 color,bool utf8){auto* vm=animations.registry.find(state.handles[291+row]);if(!vm){state.handles[291+row]=0;return check(false,"Spell practice text row unavailable");}TextureText request;request.bytes=bytes;request.color=color;request.utf8=utf8;return check(host.text(*vm,request),"Spell practice text rendering failed");}
 bool TitleSpellPractice::paint(i32 selected_group){
  if(stage<0||stage>=7||selected_group<0||selected_group>=SpellCatalog::groups[stage]||state.spell_character.selected<0||state.spell_character.selected>=9)return check(false,"Spell practice group outside original range");
  spells.fill(-2);for(i32 i=262;i<=268;i++){u32 old=state.handles[i];if(!check(animations.retire(old),"Spell practice label retirement failed"))return false;}
@@ -15,7 +15,13 @@ bool TitleSpellPractice::paint(i32 selected_group){
   const i32 id=raw[n],difficulty=SpellCatalog::rank(id),slot=stage==6?(difficulty==4?0:1):difficulty;
   if(stage==6&&!visual(visuals.create(difficulty==4?266:268)))return false;
   const auto& all=records.spells.aggregate[id];const auto& personal=records.spells.loadouts[state.spell_character.selected][id];char prefix[32];std::snprintf(prefix,sizeof prefix," No.%3d  ",id+1);
-  if(all.attempts[0]){spells[slot]=id;std::string name=all.name;while(name.size()<42)name+=' ';if(!text(slot,std::string(prefix)+name,personal.captures[1]?0xffff80:0xefefef))return false;}
+  if(all.attempts[0]){
+   spells[slot]=id;
+   const auto* translated=host.localized_spell(id);
+   std::string name=translated?*translated:all.name;
+   if(!translated)while(name.size()<42)name+=' ';
+   if(!text(slot,std::string(prefix)+name,personal.captures[1]?0xffff80:0xefefef,translated!=nullptr))return false;
+  }
   else {spells[slot]=-1;std::string unknown;for(i32 i=0;i<11;i++){unknown+=char(0x81);unknown+=char(0x48);}if(!text(slot,std::string(prefix)+unknown,0xb0b0b0))return false;}
   if(!visual(visuals.interrupt(291+slot,2)))return false;highest=std::max(highest,slot);
  }
@@ -88,7 +94,7 @@ bool TitleSpellPractice::rank_menu(u32 pressed,u32 repeated){
   if(state.menu.reserved!=state.menu.selected&&(!check(host.sound(10),"Spell rank navigation sound failed")||!paint_selection()))return false;
   if(!horizontal(pressed|repeated))return false;
   if(pressed&0x102){state.change_substate(4);return check(host.sound(9),"Spell rank cancel sound failed");}
-  if(pressed&0x80001){if(!visual(visuals.interrupt(291+state.menu.selected,6)))return false;state.change_substate(3);return check(host.sound(7)&&host.fade_menu_music()&&host.sound(50),"Spell practice launch sound failed");}break;
+  if(pressed&0x80001){if(host.configure_practice(stage+1,spells[state.menu.selected])==PracticeMenuResult::Configure)return true;if(!visual(visuals.interrupt(291+state.menu.selected,6)))return false;state.change_substate(3);return check(host.sound(7)&&host.fade_menu_music()&&host.sound(50),"Spell practice launch sound failed");}break;
  case 3:
   if(state.age.current==10&&(!check(host.show_loading_indicator()&&host.begin_transition(transition),"Spell practice transition failed")||!check(animations.interrupt(transition,7),"Spell practice transition animation failed")))return false;
   if(state.age.current>39){const i32 choice=state.menu.selected;if(choice<0||choice>=5||spells[choice]<0)return check(false,"Spell practice launch has no selected card");state.menu.push();state.change_screen(TitleScreen::Quit);selection.stage=stage+1;selection.spell_id=spells[choice];selection.character=state.spell_character.selected/3;selection.animal=state.spell_character.selected%3;selection.difficulty=SpellCatalog::rank(selection.spell_id);state.return_reason=5;saved.stage=stage;saved.group=group;saved.rank=choice;return check(host.start_game(selection.stage),"Spell practice game creation failed");}break;

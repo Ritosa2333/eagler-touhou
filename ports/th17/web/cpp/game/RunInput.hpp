@@ -7,11 +7,13 @@ struct RunInputServices {virtual ~RunInputServices()=default;virtual bool replay
 // pause callback at 11 can stop the pass before a replay frame is consumed.
 class RunInput {
  StageGameplay& scene;GameRun& progress;RunInputServices& host;Replay* replay;ReplayRecording* recording;
- FrameCallback callback,acceleration_callback;ReplayStageState snapshot;bool active=false,entered=false;u32 physical=0;float fps=60;PlayerTouch touch;
+ FrameCallback callback,acceleration_callback;ReplayStageState snapshot;bool active=false,entered=false;u32 physical=0,practice_tools=0;float fps=60;PlayerTouch touch;
+ PracticeSpiritSpawn pending_spirit;
  bool fail(const std::string&);i32 scheduled();i32 accelerate_replay();
 public:
- GameInput input;bool auto_focus=false;u8 recorded_fps=60;std::string error;
+ GameInput input;bool auto_focus=false;u8 recorded_fps=60;u32 lock_frames=0;std::string error;
  RunInput(StageGameplay&,GameRun&,RunInputServices&,Replay*,ReplayRecording*,u16 seed,bool fresh);
- ~RunInput();bool activate();void controls(u32 held,float rate,PlayerTouch value={})noexcept{physical=held;fps=rate;touch=value;}
+ ~RunInput();bool activate();void controls(u32 held,float rate,PlayerTouch value={},u32 tools=0)noexcept{physical=held;fps=rate;touch=value;practice_tools=tools;}
+ void spawn_spirit(const PracticeSpiritSpawn& value)noexcept{if(entered&&!replay&&value.valid())pending_spirit=value;}
 };
 }

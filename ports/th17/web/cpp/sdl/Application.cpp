@@ -1,20 +1,48 @@
 #include "ApplicationState.hpp"
+#include "ThpracUi.hpp"
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <ctime>
 namespace th17::sdl {
+namespace {
+void load_table(LocalizationTable& table,const char* name){
+ const std::string path=std::string("/thcrap/th17/localization/")+name;
+ size_t size=0;
+ auto* bytes=static_cast<u8*>(SDL_LoadFile(path.c_str(),&size));
+ if(bytes)table.open(bytes,size);
+ SDL_free(bytes);
+}
+}
 Application::Application():state(std::make_unique<ApplicationState>()){}Application::~Application()=default;
 bool Application::initialize(bool device){return state->initialize(device);}bool Application::step(u32 h,u32 p,u32 r,float fps,bool lost){return state->step(h,p,r,fps,lost);}const std::string& Application::error()const{return state->failure;}const i32* Application::projection()const{return state->projection();}
 bool ApplicationState::fail(const std::string& why){if(failure.empty())failure=why.empty()?"TH17 application operation failed":why;return false;}
+bool ApplicationState::localized_message(const std::string& name)const{
+ SDL_PathInfo info;
+ return has_language_pack&&SDL_GetPathInfo(("/thcrap/th17/"+name).c_str(),&info)&&info.type==SDL_PATHTYPE_FILE;
+}
 bool ApplicationState::read(const std::string& requested,std::vector<u8>& bytes){
  const auto slash=requested.find_last_of("/\\");const auto name=requested.substr(slash==std::string::npos?0:slash+1);if(name.empty()||name=="."||name==".."||name.find(char(0))!=std::string::npos)return fail("Invalid game asset name");
  const auto cached=resource_cache.find(name);if(cached!=resource_cache.end()){bytes=cached->second;return true;}
+ if(has_language_pack&&(name.size()>4&&(name.compare(name.size()-4,4,".msg")==0||name.compare(0,5,"help_")==0))){
+  size_t size=0;
+  auto* data=static_cast<u8*>(SDL_LoadFile(("/thcrap/th17/"+name).c_str(),&size));
+  if(data){
+   bytes.assign(data,data+size);
+   SDL_free(data);
+   resource_cache.emplace(name,bytes);
+   return true;
+  }
+ }
  if(!archive_bytes.empty()){const auto at=archive_names.find(name);if(at==archive_names.end()||!archive.read(at->second,bytes))return fail("Missing or invalid game archive entry: "+name);}
  else {size_t n=0;auto* data=static_cast<u8*>(SDL_LoadFile(("/assets/"+name).c_str(),&n));if(!data)return fail("Missing game asset: "+name);bytes.assign(data,data+n);SDL_free(data);}
  if(bytes.size()<=1024*1024&&name.size()>=4&&name.substr(name.size()-4)!=".wav"&&name.substr(name.size()-4)!=".anm")resource_cache.emplace(name,bytes);return true;
 }
 bool ApplicationState::initialize(bool device){
- if(initialized)return true;if(!graphics.initialize()||!fonts.initialize())return fail(graphics.error.empty()?fonts.error:graphics.error);graphics.backend.defer=true;
+ if(initialized)return true;
+ SDL_PathInfo language_path;
+ has_language_pack=SDL_GetPathInfo("/thcrap/th17/localization/options.json",&language_path);
+ graphics.language_pack=has_language_pack;
+ if(!graphics.initialize()||!fonts.initialize())return fail(graphics.error.empty()?fonts.error:graphics.error);graphics.backend.defer=true;
  size_t n=0;auto* packed=static_cast<u8*>(SDL_LoadFile("/th17.dat",&n));if(packed){archive_bytes.assign(packed,packed+n);SDL_free(packed);if(!archive.open(archive_bytes.data(),archive_bytes.size()))return fail("Invalid TH17 asset archive");for(u32 i=0;i<archive.entries.size();i++)archive_names.emplace(archive.entries[i].name,i);}
  if(!files.initialize(records,config,visual))return fail(files.error);std::memcpy(controller.values.data(),config.bytes.data()+4,20);volumes={config.music_volume(),config.sound_volume(),u8(config.auto_focus())};
  if(!audio_device.initialize(*this,device)||!volume(volumes.music_volume,volumes.sound_volume,0))return fail(audio_device.error);
@@ -34,8 +62,18 @@ bool ApplicationState::initialize(bool device){
   if(!animations.load(bank.second,std::move(logical))||!animations.name_resource(bank.second,bank.first))return fail("Application animation load: "+std::string(bank.first)+": "+animations.error);shared.emplace(bank.first,bank.second);if(bank.second==0&&!animations.sprite_fallback(0))return fail("ASCII fallback atlas unavailable");
   if(!graphics.preload(*animations.resource(bank.second),false,atlas))return fail(graphics.error);
  }
- if(!animations.sprite_fallback(0))return fail("ASCII fallback atlas unavailable");for(i32 style=0;style<23;style++)if(!fonts.preload(style))return fail(fonts.error);
- if(!read("musiccmt.txt",bytes)||!comments.open(bytes.data(),bytes.size()))return fail(comments.error);if(!read("trophy.txt",bytes)||!trophy_catalog.open(bytes.data(),bytes.size(),&visual))return fail(trophy_catalog.error);
+ if(!animations.sprite_fallback(0))return fail("ASCII fallback atlas unavailable");
+ if(!read("musiccmt.txt",bytes)||!comments.open(bytes.data(),bytes.size()))return fail(comments.error);
+ LocalizationTable themes,music_comments;
+ load_table(spell_names,"spells.etl");
+ load_table(themes,"themes.etl");
+ load_table(music_comments,"musiccmt.etl");
+ load_table(comments.warning_table(),"music-warning.etl");
+ comments.localize(themes,music_comments);
+ if(!read("trophy.txt",bytes)||!trophy_catalog.open(bytes.data(),bytes.size(),&visual))return fail(trophy_catalog.error);
+ LocalizationTable trophies;
+ load_table(trophies,"trophy.etl");
+ trophy_catalog.localize(trophies);
  scene_effects=std::make_unique<AnmSceneEffects>(animations,environment.game_rng,visual,8);if(!captions.initialize(0))return fail(captions.error);
  global_layers=std::make_unique<AnmDrawSchedule>(scheduler,animations,renderer,graphics,views);global_letters=std::make_unique<AsciiDrawSchedule>(scheduler,captions,renderer,views);
  const FrameCallback::Function functions[]={[](void* p)->i32{auto& app=*static_cast<ApplicationState*>(p);return !app.title||app.title->update()?1:5;},[](void* p)->i32{return static_cast<ApplicationState*>(p)->animations.update(true)?1:5;},[](void* p)->i32{return static_cast<ApplicationState*>(p)->animations.update(false)?1:5;},[](void* p)->i32{auto& app=*static_cast<ApplicationState*>(p);return !app.title||app.title->draw()?1:5;}};constexpr i32 priorities[]={7,10,35,70};
@@ -60,6 +98,7 @@ bool ApplicationState::release_game(){
  run.reset();for(i32 bank:{0,6,8})animations.retire_resource(bank);animations.collect_resources();reset_graphics();if(!scene_effects&&!exiting)scene_effects=std::make_unique<AnmSceneEffects>(animations,environment.game_rng,visual,8);return true;
 }
 bool ApplicationState::begin_title(){
+ practice.active={};practice.menu=practice.confirmed=practice.cancelled=practice.accepted=false;
  reset_graphics();if(!scene_effects)scene_effects=std::make_unique<AnmSceneEffects>(animations,environment.game_rng,visual,8);
  title=std::make_unique<TitleScene>(progress,selection,selection_player,selection_score,records,choices,volumes,controller,comments,trophy_catalog,spell_memory,animations,*this,scheduler);
  title->frame.demo_idle=title_demo_idle;title->frame.demo_index=title_demo_index;title->frame.saved_difficulty=title_saved_difficulty;title->saved_replay_selection=title_saved_replay_selection;title->state.return_reason=flow.title_return_reason;title->live=recording.get();return title->error.empty()||fail(title->error);
@@ -72,15 +111,36 @@ bool ApplicationState::bind_display(StageGameplay* previous){
 }
 bool ApplicationState::begin_game(bool playback){
  if(!save_settings())return false;scene_effects.reset();reset_graphics();progress.scene_flags=0;progress.ending_age=0;progress.practice_record=playback;
+ if(playback)practice.active=selected_replay?selected_replay->practice():PracticePatch{};
+ progress.enhanced_practice=bool(practice.active);
+ practice.tools=0;
  progress.historical_web_replay=playback&&selected_replay&&selected_replay->historical_web_recording();
  if(flow.fresh&&progress.historical_web_replay&&progress.stage!=1)return fail("This early WEB recording needs continuous playback from Stage 1");
- ReplayStageState entry;const ReplayStageState* initial=nullptr;if(playback){if(!selected_replay||!selected_replay->initial_state(progress.stage,entry))return fail("Requested original replay stage unavailable");initial=&entry;stage_seed=entry.seed;}
+ ReplayStageState entry;const ReplayStageState* initial=nullptr;if(playback){
+  if(!selected_replay||!selected_replay->initial_state(progress.stage,entry))return fail("Requested original replay stage unavailable");
+  if(flow.fresh&&practice.repair_roaring_replay&&!selected_replay->web_rules_revision()&&entry.run.initial_stage==progress.stage)
+   entry.run.roaring.flags&=~6u;
+  initial=&entry;stage_seed=entry.seed;
+ }
  else {stage_seed=environment.game_rng.seed;if(!flow.fresh)visual.seed=stage_seed;environment.game_rng.calls=0;}
  if(flow.fresh){run.reset();run=std::make_unique<RunGameplay>(*this,animations,environment,environment.game_rng,visual,progress,records.game,records.spells,*this,&shared);
   if(!playback){recording=std::make_unique<ReplayRecording>();auto& description=recording->description();std::memcpy(description.data()+0x88,&progress.character,4);std::memcpy(description.data()+0x8c,&progress.animal,4);std::memcpy(description.data()+0x90,&progress.difficulty,4);std::memcpy(description.data()+0x98,&progress.scoring.continues,4);std::memcpy(description.data()+0x9c,&progress.spell_id,4);description[10]=u8((progress.scoring.mode_flags>>4&1)|((progress.scoring.mode_flags&0x30)==0x20?2:0));}
-  else recording.reset();completed_recording=false;if(!run->load(progress.stage,camera,initial))return fail(run->error);
+  else recording.reset();completed_recording=false;if(!run->load(progress.stage,camera,initial,practice.active))return fail(run->error);
+  if(practice.active){
+   if(recording)recording->use_practice(practice.active);
+   const auto* parameters=playback?selected_replay->native_practice_settings():&practice.settings;
+   if(parameters&&(progress.scoring.mode_flags&0x30)==0x10){
+    const auto& settings=*parameters;auto& battle=scene()->battle;
+    if(playback)battle.items->roaring.state={};
+    battle.session.extra_lives=settings.lives;battle.session.life_pieces=settings.life_pieces;
+    battle.session.bombs=settings.bombs;battle.session.bomb_pieces=settings.bomb_pieces;
+    battle.session.power=std::min(settings.power,battle.score.max_power);
+    battle.score.score=i32(settings.score/10);battle.score.point_value=settings.value*100;
+    progress.initial_point_value=battle.score.point_value;battle.graze_total=settings.graze;
+   }
+  }
  }else if(!run||!run->next(progress.stage,camera,initial))return fail(run?run->error:"Retained run unavailable");
- if(!preload_run())return false;if(!(progress.scoring.mode_flags&0x40)&&(!audio_device.queue_music_track(0,assets()->definition->stage_music)||!audio_device.queue_music_track(1,assets()->definition->boss_music)||!audio_device.finish_music_requests()))return fail(audio_device.error);run_input=std::make_unique<RunInput>(*scene(),progress,*this,playback?selected_replay.get():nullptr,recording.get(),stage_seed,flow.fresh);run_input->auto_focus=config.auto_focus();
+ if(!preload_run())return false;if(!(progress.scoring.mode_flags&0x40)&&(!audio_device.queue_music_track(0,practice.active&&!practice.active.dialogue&&practice_bgm(practice.active.section)?assets()->definition->boss_music:assets()->definition->stage_music)||!audio_device.queue_music_track(1,assets()->definition->boss_music)||!audio_device.finish_music_requests()))return fail(audio_device.error);run_input=std::make_unique<RunInput>(*scene(),progress,*this,playback?selected_replay.get():nullptr,recording.get(),stage_seed,flow.fresh);run_input->auto_focus=config.auto_focus();
  if(!flow.fresh)run_input->input=retained_input;
  if(recording){recording->use_current_web_rules();live_description=recording->description();}else if(selected_replay)std::copy_n(selected_replay->decoded().begin(),live_description.size(),live_description.begin());
  if(!bind_display(run->previous_scene())||!retire_loading())return false;
@@ -100,9 +160,14 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
  if(!initialized||exiting||!failure.empty())return false;if(loading_destination!=AppScene::Uninitialized)return step_loading();manual_pressed=pressed;manual_repeated=repeated;physical_input.update(held);
  if(pending_page>=0){pending_page=-1;if(title){if(!title->manual_page_ready())return fail(title->error);}else if(pause_manual&&!pause_manual->page_loaded())return fail(pause_manual->error);}
  if(pending_bank>=0&&ending){const auto bank=pending_bank;pending_bank=-1;auto bytes=std::move(pending_animation);if(!ending->animation_ready(bank,bytes.data(),bytes.size()))return fail(ending->error);}
- if(title)title->controls({held,pressed,repeated,0,1},controller_buttons);if(ending)ending->controls({held,pressed,physical_input.duration[0],1},0);
+ if(title){
+  if(practice.confirmed)title->controls({1,1,0,0,1},0);
+  else title->controls({held,pressed,repeated,0,1},controller_buttons);
+ }if(ending)ending->controls({held,pressed,physical_input.duration[0],1},0);
  if(scene()){
-  if(pause)pause->controls({pressed,repeated,lost_focus,true});run_input->controls(held,fps,touch);StageGameplayFrame input;input.battle.held=held;input.battle.pressed=pressed;input.battle.rate=progress.rate;input.battle.practice=(progress.scoring.mode_flags&0x30)!=0;
+  ThpracUi::record_keys(*this,held);
+  if(scene()->battle.spell_card)scene()->battle.spell_card->hide_master=practice.hide_master;
+  if(pause)pause->controls({pressed,repeated,lost_focus,true});run_input->controls(held,fps,touch,practice.active&&!progress.practice_record?practice.active_tools(progress.scoring.continues):0);StageGameplayFrame input;input.battle.held=held;input.battle.pressed=pressed;input.battle.rate=progress.rate;input.battle.practice=(progress.scoring.mode_flags&0x30)!=0;
   if(!scene()->step(input))return fail(scene()->error.empty()?run_input->error:scene()->error);
   if(run->previous_scene()&&!run->update_previous(progress.rate))return fail(run->error);
  }else {if(scheduler.update()<0)return fail(title&&!title->error.empty()?title->error:ending&&!ending->error.empty()?ending->error:animations.error);}
