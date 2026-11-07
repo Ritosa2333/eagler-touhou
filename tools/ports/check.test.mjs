@@ -37,17 +37,19 @@ test('shared port checks use their declared Vitest project or native Node runner
   }
 });
 
-test('prebuilt-only TH05 stays out of source checks and explains explicit source requests',()=>{
+test('TH05 declares source checks for both Runtime variants',()=>{
   const all=targets();
-  assert.equal(all.some(target=>target.game==='th05'),false,
-    'prebuilt Runtime Release products must not receive source-input evidence');
-  assert.equal(all.length,23,'all existing native source targets remain in --all');
+  assert.equal(all.length,25,'all existing native source targets remain in --all');
   assert.deepEqual(all.filter(target=>target.game==='th17').map(target=>target.variant).sort(),['multiplayer','normal']);
   assert.deepEqual(all.filter(target=>target.game==='th19').map(target=>target.variant).sort(),['multiplayer','normal']);
   assert.ok(all.some(target=>target.game==='th06'&&target.variant==='normal'));
   assert.ok(all.some(target=>target.game==='th20'&&target.variant==='normal'));
-  assert.throws(()=>targets({game:'th05',variant:'normal'}),/th05\/normal: source build is not declared; use a prebuilt Runtime Release/);
-  assert.throws(()=>targets({game:'th05',variant:'multiplayer'}),/th05\/multiplayer: source build is not declared; use a prebuilt Runtime Release/);
+  for(const [variant,directory] of [['normal','ports/th05'],['multiplayer','ports/th05-mp']]){
+    const [target]=targets({game:'th05',variant});
+    assert.equal(target.directory,directory);
+    assert.equal(target.recipe.kind,'node');
+    assert.deepEqual(target.recipe.build,['scripts/build-eagler.mjs']);
+  }
 });
 
 test('th20 compiler include precedence uses the same module order on every platform',()=>{

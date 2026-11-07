@@ -1,0 +1,488 @@
+{
+  "schema": "eagler-touhou/th05-main-rooms/1",
+  "siteUrl": "https://touhouonline.com/",
+  "targets": [
+    {
+      "players": 2,
+      "route": "rtc",
+      "language": "lang_zh-hans",
+      "rollbackRequested": true,
+      "repeatRoom": true,
+      "startedAt": "2026-11-02T02:57:15.129Z",
+      "finishedAt": "2026-11-02T02:58:40.121Z",
+      "harnessSha256": "511d2d507125e681a94fcf7790ca43ca141244339f0f68e6dd66017425a1621d",
+      "passed": true,
+      "errors": [],
+      "httpErrors": [
+        {
+          "seat": 0,
+          "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+          "status": 503
+        },
+        {
+          "seat": 0,
+          "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Flanguage%2Flang_zh-hans.zip%3Fv%3Df05a1c93332bab2a01ef261ad7d4a1e426d2a1b0e6e8daadfb9460812ed44cc5",
+          "status": 503
+        },
+        {
+          "seat": 1,
+          "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+          "status": 503
+        },
+        {
+          "seat": 1,
+          "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Flanguage%2Flang_zh-hans.zip%3Fv%3Df05a1c93332bab2a01ef261ad7d4a1e426d2a1b0e6e8daadfb9460812ed44cc5",
+          "status": 503
+        }
+      ],
+      "discoveryMisses": [
+        {
+          "seat": 0,
+          "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+          "status": 503
+        },
+        {
+          "seat": 0,
+          "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Flanguage%2Flang_zh-hans.zip%3Fv%3Df05a1c93332bab2a01ef261ad7d4a1e426d2a1b0e6e8daadfb9460812ed44cc5",
+          "status": 503
+        },
+        {
+          "seat": 1,
+          "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+          "status": 503
+        },
+        {
+          "seat": 1,
+          "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Flanguage%2Flang_zh-hans.zip%3Fv%3Df05a1c93332bab2a01ef261ad7d4a1e426d2a1b0e6e8daadfb9460812ed44cc5",
+          "status": 503
+        }
+      ],
+      "previewLanguage": [
+        {
+          "active": false,
+          "frame": -1,
+          "confirmed": -1,
+          "route": "",
+          "failed": false,
+          "error": "",
+          "options": {},
+          "language": {
+            "codepage": 936,
+            "config": "MOD_FILE = chs.dat\n",
+            "simplifiedGlyphs": 0,
+            "practiceLabel": "无敌"
+          }
+        },
+        {
+          "active": false,
+          "frame": -1,
+          "confirmed": -1,
+          "route": "",
+          "failed": false,
+          "error": "",
+          "options": {},
+          "language": {
+            "codepage": 936,
+            "config": "MOD_FILE = chs.dat\n",
+            "simplifiedGlyphs": 0,
+            "practiceLabel": "无敌"
+          }
+        }
+      ],
+      "native": [
+        {
+          "active": true,
+          "frame": 607,
+          "confirmed": 605,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "initialStock": [
+            [
+              3,
+              3
+            ],
+            [
+              3,
+              3
+            ]
+          ],
+          "options": {
+            "player": 0,
+            "players": 2,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8,
+            "initialSpares": 2,
+            "initialBombs": 3
+          },
+          "language": {
+            "codepage": 936,
+            "config": "MOD_FILE = chs.dat\n",
+            "simplifiedGlyphs": 0,
+            "practiceLabel": "无敌"
+          }
+        },
+        {
+          "active": true,
+          "frame": 607,
+          "confirmed": 605,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "initialStock": [
+            [
+              3,
+              3
+            ],
+            [
+              3,
+              3
+            ]
+          ],
+          "options": {
+            "player": 1,
+            "players": 2,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8,
+            "initialSpares": 2,
+            "initialBombs": 3
+          },
+          "language": {
+            "codepage": 936,
+            "config": "MOD_FILE = chs.dat\n",
+            "simplifiedGlyphs": 0,
+            "practiceLabel": "无敌"
+          }
+        }
+      ],
+      "returnedLanguage": [
+        {
+          "active": false,
+          "frame": 731,
+          "confirmed": 730,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "initialStock": [
+            [
+              3,
+              3
+            ],
+            [
+              3,
+              3
+            ]
+          ],
+          "options": {},
+          "language": {
+            "codepage": 936,
+            "config": "MOD_FILE = chs.dat\n",
+            "simplifiedGlyphs": 0,
+            "practiceLabel": "无敌"
+          }
+        },
+        {
+          "active": false,
+          "frame": 731,
+          "confirmed": 730,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "initialStock": [
+            [
+              3,
+              3
+            ],
+            [
+              3,
+              3
+            ]
+          ],
+          "options": {},
+          "language": {
+            "codepage": 936,
+            "config": "MOD_FILE = chs.dat\n",
+            "simplifiedGlyphs": 0,
+            "practiceLabel": "无敌"
+          }
+        }
+      ],
+      "secondNative": [
+        {
+          "active": true,
+          "frame": 181,
+          "confirmed": 179,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "initialStock": [
+            [
+              3,
+              3
+            ],
+            [
+              3,
+              3
+            ]
+          ],
+          "options": {
+            "player": 0,
+            "players": 2,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8,
+            "initialSpares": 2,
+            "initialBombs": 3
+          },
+          "language": {
+            "codepage": 936,
+            "config": "MOD_FILE = chs.dat\n",
+            "simplifiedGlyphs": 0,
+            "practiceLabel": "无敌"
+          }
+        },
+        {
+          "active": true,
+          "frame": 181,
+          "confirmed": 179,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "initialStock": [
+            [
+              3,
+              3
+            ],
+            [
+              3,
+              3
+            ]
+          ],
+          "options": {
+            "player": 1,
+            "players": 2,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8,
+            "initialSpares": 2,
+            "initialBombs": 3
+          },
+          "language": {
+            "codepage": 936,
+            "config": "MOD_FILE = chs.dat\n",
+            "simplifiedGlyphs": 0,
+            "practiceLabel": "无敌"
+          }
+        }
+      ]
+    },
+    {
+      "players": 3,
+      "route": "relay",
+      "language": "ja",
+      "rollbackRequested": true,
+      "repeatRoom": false,
+      "startedAt": "2026-11-02T02:57:15.128Z",
+      "finishedAt": "2026-11-02T02:59:03.803Z",
+      "harnessSha256": "511d2d507125e681a94fcf7790ca43ca141244339f0f68e6dd66017425a1621d",
+      "passed": true,
+      "errors": [],
+      "httpErrors": [
+        {
+          "seat": 0,
+          "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+          "status": 503
+        },
+        {
+          "seat": 1,
+          "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+          "status": 503
+        },
+        {
+          "seat": 2,
+          "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+          "status": 503
+        }
+      ],
+      "discoveryMisses": [
+        {
+          "seat": 0,
+          "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+          "status": 503
+        },
+        {
+          "seat": 1,
+          "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+          "status": 503
+        },
+        {
+          "seat": 2,
+          "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+          "status": 503
+        }
+      ],
+      "previewLanguage": [
+        {
+          "active": false,
+          "frame": -1,
+          "confirmed": -1,
+          "route": "",
+          "failed": false,
+          "error": "",
+          "options": {},
+          "language": {
+            "codepage": 932,
+            "config": "",
+            "simplifiedGlyphs": 0,
+            "practiceLabel": "無敵"
+          }
+        },
+        {
+          "active": false,
+          "frame": -1,
+          "confirmed": -1,
+          "route": "",
+          "failed": false,
+          "error": "",
+          "options": {},
+          "language": {
+            "codepage": 932,
+            "config": "",
+            "simplifiedGlyphs": 0,
+            "practiceLabel": "無敵"
+          }
+        },
+        {
+          "active": false,
+          "frame": -1,
+          "confirmed": -1,
+          "route": "",
+          "failed": false,
+          "error": "",
+          "options": {},
+          "language": {
+            "codepage": 932,
+            "config": "",
+            "simplifiedGlyphs": 0,
+            "practiceLabel": "無敵"
+          }
+        }
+      ],
+      "native": [
+        {
+          "active": true,
+          "frame": 611,
+          "confirmed": 605,
+          "route": "relay",
+          "failed": false,
+          "error": "",
+          "initialStock": [
+            [
+              6,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              6,
+              0
+            ]
+          ],
+          "options": {
+            "player": 0,
+            "players": 3,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8,
+            "initialSpares": 5,
+            "initialBombs": 0
+          },
+          "language": {
+            "codepage": 932,
+            "config": "",
+            "simplifiedGlyphs": 0,
+            "practiceLabel": "無敵"
+          }
+        },
+        {
+          "active": true,
+          "frame": 612,
+          "confirmed": 606,
+          "route": "relay",
+          "failed": false,
+          "error": "",
+          "initialStock": [
+            [
+              6,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              6,
+              0
+            ]
+          ],
+          "options": {
+            "player": 1,
+            "players": 3,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8,
+            "initialSpares": 5,
+            "initialBombs": 0
+          },
+          "language": {
+            "codepage": 932,
+            "config": "",
+            "simplifiedGlyphs": 0,
+            "practiceLabel": "無敵"
+          }
+        },
+        {
+          "active": true,
+          "frame": 611,
+          "confirmed": 605,
+          "route": "relay",
+          "failed": false,
+          "error": "",
+          "initialStock": [
+            [
+              6,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              6,
+              0
+            ]
+          ],
+          "options": {
+            "player": 2,
+            "players": 3,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8,
+            "initialSpares": 5,
+            "initialBombs": 0
+          },
+          "language": {
+            "codepage": 932,
+            "config": "",
+            "simplifiedGlyphs": 0,
+            "practiceLabel": "無敵"
+          }
+        }
+      ]
+    }
+  ]
+}

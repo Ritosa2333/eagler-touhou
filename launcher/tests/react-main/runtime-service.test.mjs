@@ -201,12 +201,13 @@ test('room preload: binding a run reuses the epoch/DATA and retains the prepared
 
 test('room return keeps the same engine, synchronizes first and rejects first frames from an older launch', async () => {
   const f=fixture(), plan=managedPlan();plan.runtimeVariant='multiplayer';
+  plan.configure.language='lang_zh-hans';
   await f.prepare(plan,{roomReturn:true});
   const epoch=f.service.getSnapshot().epoch,document=f.runtime.document,navigations=f.navigations.length,reads=f.dataReads.length;
   let previousSerial=0;
   for(let attempt=0;attempt<3;attempt++){
     const configuring=f.service.configurePreparedRoom(epoch,{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?run=7',netplaySpectator:true});
-    await flush();f.ack('configure');await configuring;
+    await flush();assert.equal(f.ack('configure').language,'lang_zh-hans');await configuring;
     const launching=f.service.launch({awaitFirstFrame:true});await flush();const launched=f.ack('launch');
     if(previousSerial){const events=f.eventContexts.length;f.event('first-frame',{launchSerial:previousSerial});f.event('room-menu',{launchSerial:previousSerial});assert.equal(f.service.getSnapshot().firstFrame,false);assert.equal(f.eventContexts.length,events,'old launch events never reach presentation owners');}
     f.event('first-frame',{launchSerial:launched.launchSerial});await launching;previousSerial=launched.launchSerial;
@@ -216,6 +217,7 @@ test('room return keeps the same engine, synchronizes first and rejects first fr
     assert.equal(f.service.getSnapshot().phase,'configuring');
     assert.equal(f.service.getInputContext().launched,false,'menu input waits for Runtime option restoration');
     const restored=f.ack('configure');
+    assert.equal(restored.language,'lang_zh-hans');assert.equal(restored.runtimePack,undefined);
     assert.equal(restored.options.netplayMode,undefined,'the actual Runtime receives local menu options');
     assert.equal(restored.options.netplaySpectator,undefined);
     assert.deepEqual(restored.resources,[]);assert.deepEqual(restored.runtimeResources,[]);assert.deepEqual(restored.sharedResources,[]);
@@ -262,6 +264,7 @@ test('room preload: a stale run cannot configure a replacement engine', async ()
 
 test('room preview is prelaunch, native-acknowledged, and binds the same engine without remounting resources', async () => {
   const f=fixture(), plan=managedPlan();plan.runtimeVariant='multiplayer';
+  plan.configure.language='lang_zh-hans';
   const preparing=f.service.prepare(plan);await flush();f.event('ready',{roomPreview:true});await flush();f.ack('configure');await preparing;
   const epoch=f.service.getSnapshot().epoch,navigations=f.navigations.length;
   const preview=f.service.prepareRoomPreview(epoch);await flush();
@@ -275,6 +278,7 @@ test('room preview is prelaunch, native-acknowledged, and binds the same engine 
   await flush();assert.equal(f.service.getInputContext().launched,false);
   assert.equal(f.service.postInput('keyboard',{code:'KeyZ',down:true}),false);
   const wire=f.ack('configure');await binding;
+  assert.equal(wire.language,'lang_zh-hans');
   assert.deepEqual(wire.resources,[]);assert.deepEqual(wire.runtimeResources,[]);assert.equal(wire.runtimePack,undefined);
   const launch=f.service.launch();await flush();f.ack('launch');await launch;
   assert.equal(f.service.getSnapshot().roomPreview,false);

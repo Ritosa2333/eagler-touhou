@@ -1,0 +1,48 @@
+{
+  "label": "baseline",
+  "coldStarts": [
+    3,
+    {
+      "backScene": 4
+    },
+    3,
+    {
+      "backScene": 4
+    }
+  ],
+  "samples": [
+    {
+      "name": "music-room",
+      "seconds": 8.00869999998808,
+      "tickRate": 60.05968509255135,
+      "drawsPerTick": 1242.012474012474,
+      "uniformLookups": 0,
+      "heap": 115998720
+    },
+    {
+      "name": "playing-0",
+      "seconds": 10.017100000023841,
+      "tickRate": 56.004232761843724,
+      "drawsPerTick": 777.74688057041,
+      "uniformLookups": 0,
+      "heap": 115998720
+    },
+    {
+      "name": "playing-1",
+      "seconds": 10.01409999999404,
+      "tickRate": 56.021010375404074,
+      "drawsPerTick": 754.0392156862745,
+      "uniformLookups": 0,
+      "heap": 115998720
+    },
+    {
+      "name": "playing-2",
+      "seconds": 10.01709999999404,
+      "tickRate": 56.004232762010346,
+      "drawsPerTick": 722.8609625668449,
+      "uniformLookups": 0,
+      "heap": 115998720
+    }
+  ],
+  "errors": []
+}

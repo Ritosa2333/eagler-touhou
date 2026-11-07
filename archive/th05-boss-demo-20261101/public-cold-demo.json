@@ -1,0 +1,39 @@
+{
+  "passed": true,
+  "staged": false,
+  "profile": "android",
+  "demo": {
+    "scene": 4,
+    "input": 14,
+    "ticks": 1171
+  },
+  "continued": {
+    "scene": 4,
+    "input": 14,
+    "ticks": 1451
+  },
+  "audio": {
+    "backend": "uth05-browser-audio",
+    "robust": true,
+    "mode": "ogg",
+    "decodeMode": "stream",
+    "musicSource": "original",
+    "track": "OP.M2",
+    "path": "/music/op-m86-opus64-single-loop-v2.ogg",
+    "playing": true,
+    "loopStart": 0.018,
+    "loopEnd": 82.099,
+    "queuedMs": 0,
+    "underruns": 0,
+    "sfx": {
+      "backend": "uth05win-original-se",
+      "played": 31,
+      "restarted": 28,
+      "active": [
+        3,
+        1
+      ]
+    }
+  },
+  "errors": []
+}

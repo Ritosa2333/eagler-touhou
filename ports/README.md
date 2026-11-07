@@ -6,6 +6,7 @@
 
 | 游戏 | 普通版 | MP | 适配检查 |
 | --- | --- | --- | --- |
+| th05 | [开发](th05/README.md) | [开发](th05-mp/docs/MULTIPLAYER.md) | [普通版](th05/ADAPTATION.md) · [MP](th05-mp/ADAPTATION.md) |
 | th06 | [源码与开发](th06/README.md) | 同一源码目录，单独构建 | [普通版／MP](th06/ADAPTATION.md) |
 | th07 | [源码与开发](th07/README.md) | 同一源码目录，单独构建 | [普通版／MP](th07/ADAPTATION.md) |
 | th075 | [开发](th075/README.md) | [开发](th075-mp/README.md) | [普通版](th075/ADAPTATION.md) · [MP](th075-mp/ADAPTATION.md) |

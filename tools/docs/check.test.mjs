@@ -23,9 +23,10 @@ const capabilitySource = readFileSync(new URL('../../launcher/src/contracts/adap
 const requiredContracts = extractRequiredBehaviorContracts(capabilitySource);
 const port = portDefinitions().find(item => item.game === 'th06');
 
-test('prebuilt-only TH05 does not receive a source adaptation record', () => {
+test('TH05 source adaptation records cover both Runtime variants', () => {
   const ports = portDefinitions();
-  assert.equal(ports.some(item => item.game === 'th05'), false);
+  assert.deepEqual(ports.filter(item => item.game === 'th05').map(({directory,variants}) => [directory,variants]),
+    [['ports/th05',['normal']],['ports/th05-mp',['multiplayer']]]);
   assert.ok(ports.some(item => item.game === 'th06'));
 });
 

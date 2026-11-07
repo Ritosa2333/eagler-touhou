@@ -1,0 +1,546 @@
+{
+  "cases": [
+    {
+      "count": 2,
+      "characters": [
+        0,
+        0,
+        0
+      ],
+      "ghost": 0,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 2707608891
+        },
+        {
+          "frame": 240,
+          "hash": 771507961
+        },
+        {
+          "frame": 360,
+          "hash": 101792876
+        }
+      ],
+      "rollbacks": 109,
+      "passed": true
+    },
+    {
+      "count": 2,
+      "characters": [
+        0,
+        0,
+        0
+      ],
+      "ghost": 1,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 2832144699
+        },
+        {
+          "frame": 240,
+          "hash": 1170104620
+        },
+        {
+          "frame": 360,
+          "hash": 2591164118
+        }
+      ],
+      "rollbacks": 109,
+      "passed": true
+    },
+    {
+      "count": 2,
+      "characters": [
+        1,
+        2,
+        3
+      ],
+      "ghost": 0,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 866505632
+        },
+        {
+          "frame": 240,
+          "hash": 749334807
+        },
+        {
+          "frame": 360,
+          "hash": 3069633282
+        }
+      ],
+      "rollbacks": 109,
+      "passed": true
+    },
+    {
+      "count": 2,
+      "characters": [
+        1,
+        2,
+        3
+      ],
+      "ghost": 1,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 185805013
+        },
+        {
+          "frame": 240,
+          "hash": 3677320655
+        },
+        {
+          "frame": 360,
+          "hash": 812054312
+        }
+      ],
+      "rollbacks": 109,
+      "passed": true
+    },
+    {
+      "count": 2,
+      "characters": [
+        2,
+        3,
+        0
+      ],
+      "ghost": 0,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 1824212061
+        },
+        {
+          "frame": 240,
+          "hash": 1969801004
+        },
+        {
+          "frame": 360,
+          "hash": 3798873711
+        }
+      ],
+      "rollbacks": 109,
+      "passed": true
+    },
+    {
+      "count": 2,
+      "characters": [
+        2,
+        3,
+        0
+      ],
+      "ghost": 1,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 3718827657
+        },
+        {
+          "frame": 240,
+          "hash": 3399714172
+        },
+        {
+          "frame": 360,
+          "hash": 3835298911
+        }
+      ],
+      "rollbacks": 109,
+      "passed": true
+    },
+    {
+      "count": 2,
+      "characters": [
+        3,
+        1,
+        2
+      ],
+      "ghost": 0,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 3512489230
+        },
+        {
+          "frame": 240,
+          "hash": 2965410282
+        },
+        {
+          "frame": 360,
+          "hash": 2937094565
+        }
+      ],
+      "rollbacks": 109,
+      "passed": true
+    },
+    {
+      "count": 2,
+      "characters": [
+        3,
+        1,
+        2
+      ],
+      "ghost": 1,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 1067930959
+        },
+        {
+          "frame": 240,
+          "hash": 3100500961
+        },
+        {
+          "frame": 360,
+          "hash": 551924415
+        }
+      ],
+      "rollbacks": 109,
+      "passed": true
+    },
+    {
+      "count": 3,
+      "characters": [
+        0,
+        0,
+        0
+      ],
+      "ghost": 0,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 2698946056
+        },
+        {
+          "frame": 240,
+          "hash": 1531760539
+        },
+        {
+          "frame": 360,
+          "hash": 1966455769
+        }
+      ],
+      "rollbacks": 205,
+      "passed": true
+    },
+    {
+      "count": 3,
+      "characters": [
+        0,
+        0,
+        0
+      ],
+      "ghost": 1,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 1832505293
+        },
+        {
+          "frame": 240,
+          "hash": 1241468838
+        },
+        {
+          "frame": 360,
+          "hash": 1855604338
+        }
+      ],
+      "rollbacks": 205,
+      "passed": true
+    },
+    {
+      "count": 3,
+      "characters": [
+        0,
+        0,
+        0
+      ],
+      "ghost": 2,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 111302156
+        },
+        {
+          "frame": 240,
+          "hash": 2808888580
+        },
+        {
+          "frame": 360,
+          "hash": 182875374
+        }
+      ],
+      "rollbacks": 205,
+      "passed": true
+    },
+    {
+      "count": 3,
+      "characters": [
+        1,
+        2,
+        3
+      ],
+      "ghost": 0,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 1832879976
+        },
+        {
+          "frame": 240,
+          "hash": 170478093
+        },
+        {
+          "frame": 360,
+          "hash": 865625801
+        }
+      ],
+      "rollbacks": 205,
+      "passed": true
+    },
+    {
+      "count": 3,
+      "characters": [
+        1,
+        2,
+        3
+      ],
+      "ghost": 1,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 2857351491
+        },
+        {
+          "frame": 240,
+          "hash": 584313982
+        },
+        {
+          "frame": 360,
+          "hash": 2590195573
+        }
+      ],
+      "rollbacks": 205,
+      "passed": true
+    },
+    {
+      "count": 3,
+      "characters": [
+        1,
+        2,
+        3
+      ],
+      "ghost": 2,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 4075279246
+        },
+        {
+          "frame": 240,
+          "hash": 1063990078
+        },
+        {
+          "frame": 360,
+          "hash": 3290169120
+        }
+      ],
+      "rollbacks": 205,
+      "passed": true
+    },
+    {
+      "count": 3,
+      "characters": [
+        2,
+        3,
+        0
+      ],
+      "ghost": 0,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 3354390509
+        },
+        {
+          "frame": 240,
+          "hash": 1904223717
+        },
+        {
+          "frame": 360,
+          "hash": 3876054342
+        }
+      ],
+      "rollbacks": 205,
+      "passed": true
+    },
+    {
+      "count": 3,
+      "characters": [
+        2,
+        3,
+        0
+      ],
+      "ghost": 1,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 1339051594
+        },
+        {
+          "frame": 240,
+          "hash": 2643778762
+        },
+        {
+          "frame": 360,
+          "hash": 2937214561
+        }
+      ],
+      "rollbacks": 205,
+      "passed": true
+    },
+    {
+      "count": 3,
+      "characters": [
+        2,
+        3,
+        0
+      ],
+      "ghost": 2,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 2981048262
+        },
+        {
+          "frame": 240,
+          "hash": 3970681626
+        },
+        {
+          "frame": 360,
+          "hash": 1415651686
+        }
+      ],
+      "rollbacks": 205,
+      "passed": true
+    },
+    {
+      "count": 3,
+      "characters": [
+        3,
+        1,
+        2
+      ],
+      "ghost": 0,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 400361958
+        },
+        {
+          "frame": 240,
+          "hash": 223147485
+        },
+        {
+          "frame": 360,
+          "hash": 4280209227
+        }
+      ],
+      "rollbacks": 205,
+      "passed": true
+    },
+    {
+      "count": 3,
+      "characters": [
+        3,
+        1,
+        2
+      ],
+      "ghost": 1,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 1394080523
+        },
+        {
+          "frame": 240,
+          "hash": 707561607
+        },
+        {
+          "frame": 360,
+          "hash": 1889351604
+        }
+      ],
+      "rollbacks": 205,
+      "passed": true
+    },
+    {
+      "count": 3,
+      "characters": [
+        3,
+        1,
+        2
+      ],
+      "ghost": 2,
+      "frames": 360,
+      "comparisons": 1,
+      "confirmedHashes": [
+        {
+          "frame": 120,
+          "hash": 2056888448
+        },
+        {
+          "frame": 240,
+          "hash": 2051346847
+        },
+        {
+          "frame": 360,
+          "hash": 2148256374
+        }
+      ],
+      "rollbacks": 205,
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

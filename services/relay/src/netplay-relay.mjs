@@ -3,6 +3,7 @@ import {Th19SpectatorHistory} from './th19-spectator.mjs';
 import {createNicknameService} from './nickname-service.mjs';
 import {createNicknameRequestGuard} from './nickname-request-guard.mjs';
 import {normalizePublicNickname} from '../../../common/contracts/public-nickname.mjs';
+import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from '../../../common/contracts/th05-initial-stock.mjs';
 import {
   validTh15ChapterThreshold,
   defaultTh15ChapterThreshold,
@@ -27,6 +28,7 @@ import {
   createRelayMessageGate,
   acceptRelayMessage,
   createBoundedRelaySender,
+  relayGameplayPayload,
   normalizeRelaySignal,
   clearSpectatorHistory,
   stopSpectatorStream,
@@ -393,6 +395,7 @@ function newRoom(id) {
       ...(id.startsWith('th19mp-')?{th19Rules:[...TH19_VERSUS_RULES]}:{}),
       visibility: 'public',
       disableCheatMovement: false,
+      ...(id.startsWith('th05mp-') ? { initialSpares: TH05_INITIAL_STOCK.spares, initialBombs: TH05_INITIAL_STOCK.bombs } : {}),
       ...(id.startsWith('th09mp-') ? {disableLocalChargePriority:false} : {}),
       ...(id.startsWith("th15mp-")
         ? {
@@ -766,7 +769,7 @@ function maybeStartRouteTimer(roomId, runId, room, run) {
 function maybeResolveRoute(roomId, runId, room, run) {
   if (run.route || run.playerCount < 2) return;
   if (run.rtcFailed) {
-    if (!allowGameplayRelayFallback) {
+    if (!allowGameplayRelayFallback && !roomId.startsWith('th05mp-')) {
       failRoute(roomId, runId, run, 'WebRTC connection unavailable');
       return;
     }
@@ -921,6 +924,7 @@ function lobbySnapshot(room) {
     difficulty: room.lobby.difficulty,
     visibility: room.lobby.visibility,
     disableCheatMovement: room.lobby.disableCheatMovement,
+    ...(room.id.startsWith('th05mp-')?{initialSpares:room.lobby.initialSpares,initialBombs:room.lobby.initialBombs}:{}),
     ...(room.id.startsWith('th09mp-') ? {disableLocalChargePriority:room.lobby.disableLocalChargePriority} : {}),
     ...(room.id.startsWith('th19mp-')?{th19Rules:[...room.lobby.th19Rules]}:{}),
     ...(room.th15 ? { chapterThreshold: room.lobby.chapterThreshold } : {}),
@@ -1662,6 +1666,8 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       }
       const difficultyMax = Math.max(0, (room.multiplayer?.difficulties?.length ?? 6) - 1);
       const difficulty = Math.max(0, Math.min(difficultyMax, Number(message.difficulty) || 0));
+      if(message.initialSpares!==undefined&&(!room.id.startsWith('th05mp-')||!validTh05InitialSpares(message.initialSpares))||message.initialBombs!==undefined&&(!room.id.startsWith('th05mp-')||!validTh05InitialBombs(message.initialBombs))){sendLobby(socket,{type:'error',error:'invalid TH05 initial stocks'});return;}
+      const initialSpares=message.initialSpares??room.lobby.initialSpares,initialBombs=message.initialBombs??room.lobby.initialBombs;
       if (
         message.chapterThreshold !== undefined &&
         (!room.th15 || !validTh15ChapterThreshold(message.chapterThreshold))
@@ -1708,6 +1714,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.disableLocalChargePriority !== disableLocalChargePriority ||
         room.lobby.challengeMode !== challengeMode ||
         room.lobby.prankMode !== prankMode ||
+        room.lobby.initialSpares !== initialSpares || room.lobby.initialBombs !== initialBombs ||
         (room.th15 && room.lobby.chapterThreshold !== chapterThreshold)
       ) {
         invalidateLobbyReady(room);
@@ -1716,6 +1723,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=disableLocalChargePriority;
         room.lobby.challengeMode = challengeMode;
         room.lobby.prankMode = prankMode;
+        if(room.id.startsWith('th05mp-')){room.lobby.initialSpares=initialSpares;room.lobby.initialBombs=initialBombs;}
         if (room.th15) room.lobby.chapterThreshold = chapterThreshold;
         room.lobby.playerCount = playerCount;
         room.lobby.difficulty = difficulty;
@@ -1832,7 +1840,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         inputDelay > timingPolicy.manualDelayLimit ||
         (configurablePredictionLimit != null &&
           (!Number.isInteger(predictionLimit) ||
-            predictionLimit < 1 ||
+            predictionLimit < (timingPolicy.rollback ? 1 : 0) ||
             predictionLimit > configurablePredictionLimit))
       ) {
         sendLobby(socket, { type: 'error', error: 'invalid input timing' });
@@ -2345,7 +2353,7 @@ server.on('connection', (socket, request) => {
         }
       return;
     }
-    if (!allowGameplayRelayFallback) return;
+    if (!allowGameplayRelayFallback && !roomId.startsWith('th05mp-')) return;
     let requestedPeer = null;
     let forwardedPayload = incoming;
     if (incoming.length >= 2 && incoming[0] === targetedEnvelopeMarker) {
@@ -2395,7 +2403,7 @@ server.on('connection', (socket, request) => {
       if (dropEvery > 0 && sequence % dropEvery === 0) continue;
       const spread = jitterMs > 0 ? ((sequence * 17) % (jitterMs * 2 + 1)) - jitterMs : 0;
       const wait = Math.max(0, delayMs + spread);
-      sendBounded(target, forwardedPayload, { binary: true, delayMs: wait });
+      sendBounded(target, relayGameplayPayload(multiplayer,player,forwardedPayload), { binary: true, delayMs: wait });
     }
   });
 

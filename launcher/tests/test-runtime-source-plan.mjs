@@ -75,7 +75,7 @@ try {
       plans.push(plan);
     }
   }
-  assert.equal(plans.length, 23);
+  assert.equal(plans.length, 25);
   const th19 = plans.filter(plan => plan.game === "th19");
   assert.deepEqual(th19.map(plan => plan.variant), ["normal", "multiplayer"]);
   assert(th19.every(plan => plan.source === layout.path("th19")));

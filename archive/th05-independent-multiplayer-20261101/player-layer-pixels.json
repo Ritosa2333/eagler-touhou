@@ -1,0 +1,89 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "character": "reimu",
+      "seat": 0,
+      "opaquePixels": 773,
+      "mismatches": 0,
+      "example": []
+    },
+    {
+      "character": "reimu",
+      "seat": 1,
+      "opaquePixels": 773,
+      "mismatches": 0,
+      "example": []
+    },
+    {
+      "character": "reimu",
+      "seat": 2,
+      "opaquePixels": 773,
+      "mismatches": 0,
+      "example": []
+    },
+    {
+      "character": "marisa",
+      "seat": 0,
+      "opaquePixels": 731,
+      "mismatches": 0,
+      "example": []
+    },
+    {
+      "character": "marisa",
+      "seat": 1,
+      "opaquePixels": 731,
+      "mismatches": 0,
+      "example": []
+    },
+    {
+      "character": "marisa",
+      "seat": 2,
+      "opaquePixels": 731,
+      "mismatches": 0,
+      "example": []
+    },
+    {
+      "character": "mima",
+      "seat": 0,
+      "opaquePixels": 670,
+      "mismatches": 0,
+      "example": []
+    },
+    {
+      "character": "mima",
+      "seat": 1,
+      "opaquePixels": 670,
+      "mismatches": 0,
+      "example": []
+    },
+    {
+      "character": "mima",
+      "seat": 2,
+      "opaquePixels": 670,
+      "mismatches": 0,
+      "example": []
+    },
+    {
+      "character": "yuuka",
+      "seat": 0,
+      "opaquePixels": 514,
+      "mismatches": 0,
+      "example": []
+    },
+    {
+      "character": "yuuka",
+      "seat": 1,
+      "opaquePixels": 514,
+      "mismatches": 0,
+      "example": []
+    },
+    {
+      "character": "yuuka",
+      "seat": 2,
+      "opaquePixels": 514,
+      "mismatches": 0,
+      "example": []
+    }
+  ]
+}

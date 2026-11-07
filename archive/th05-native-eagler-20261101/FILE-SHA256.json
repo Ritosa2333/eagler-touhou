@@ -1,0 +1,78 @@
+{
+  "audio-source.json": {
+    "bytes": 16993,
+    "sha256": "35338937cc0f170bda1a54a4d60311d3837d127fecc237d6e30810265a9fea3f"
+  },
+  "baseline-room.log": {
+    "bytes": 1656,
+    "sha256": "217d82e39e5a54f8dd3b19598d8dffd11ad6f55d74eb821ed6d6c409ac512541"
+  },
+  "browser-native.json": {
+    "bytes": 2267,
+    "sha256": "7c4b865a2034c0e5456e51130aa39af417518585499ef27da60accc8fa3df9ac"
+  },
+  "browser-production.json": {
+    "bytes": 1906,
+    "sha256": "9e6d7a5b75d976ad83faa5344e3231909d2c09b16c0b06ae372562be8a87180d"
+  },
+  "checks.json": {
+    "bytes": 3114,
+    "sha256": "c6b97d1c77930ccc0e1d2964251fdcd159b91ad7fc02dc37874070b38ed74261"
+  },
+  "docs-check.log": {
+    "bytes": 67,
+    "sha256": "aad21470b9dc2ca69b8924f0650596e94520151ec110e1e71a022991f599fb64"
+  },
+  "external-packaging.log": {
+    "bytes": 1049,
+    "sha256": "6b0760f9806506c99f30e3628b6b5df044e2ea8b3824c01d03ef02b8300666c2"
+  },
+  "gameplay.png": {
+    "bytes": 28581,
+    "sha256": "f2485040610958dab9703fcc6cdc112940e16fbf70a785871999705100db5a4a"
+  },
+  "launcher-practice-akyu.png": {
+    "bytes": 93710,
+    "sha256": "d156b77493d8328dd0012d67f10988a27f5965efa6165ac21558b293ebfcca3e"
+  },
+  "launcher-settings.log": {
+    "bytes": 8098,
+    "sha256": "bc9c15b43228fb9f25f788fb31faf8e33b08e214c3723fc6d458095f516bf21a"
+  },
+  "launcher-vanilla-original.png": {
+    "bytes": 92501,
+    "sha256": "374ecdbab2d45a5ab3e78d1eb9d9bb83380ad655ae232be2284760c0c455cc1b"
+  },
+  "launcher.json": {
+    "bytes": 1701,
+    "sha256": "01d9bb79848c7cc44244d7a68c3cc38cc55cc6336db52e767b885af063a38141"
+  },
+  "port-contracts.log": {
+    "bytes": 32,
+    "sha256": "83816bd0a0cae7952344a1a58e527144e26ff008676141478ef5860296b5e134"
+  },
+  "README.md": {
+    "bytes": 2387,
+    "sha256": "cf98b4a41363f37ddda28e06adc5d7763dda0ecaf95e4d8f6f7b3df205f68797"
+  },
+  "runtime-build.json": {
+    "bytes": 28064,
+    "sha256": "a575fda20adcb51dba4a45efe0767faa5987ed877e42e2d7ef0832d1f1e218ed"
+  },
+  "runtime-files.json": {
+    "bytes": 2611,
+    "sha256": "0baceb04f2cc01388a4418c0cc5ee992005c7bbf2eb9e668132c85fa9d2e6233"
+  },
+  "source-build-receipt.json": {
+    "bytes": 10656,
+    "sha256": "1ac66ef8fd09aefb9fcc9ca815823c15004ca3cde6709c467d4b756cb1b46f79"
+  },
+  "source-history.json": {
+    "bytes": 392,
+    "sha256": "f46705328e3f8679d2ec60c86cf9e7b2f94ba57cb26dee503161b289ab3d3565"
+  },
+  "title.png": {
+    "bytes": 56047,
+    "sha256": "5ccabf86a6d272ddef997ab2390961731ece12bf8db4de99ded95a24cd848170"
+  }
+}
