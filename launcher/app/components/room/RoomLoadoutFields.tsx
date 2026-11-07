@@ -19,7 +19,7 @@ export function RoomLoadoutFields({state, service}: {
         if (!choice || field.dependsOn?.some(dependency => values?.[dependency]?.value !== selected[dependency]?.value)) continue;
         choices.set(choice.value, choice.labelKey);
       }
-      return <SettingsSelect key={index} id={`mpLoadoutField${index}`} label={t(field.labelKey as UiMessageKey)}
+      return <SettingsSelect key={field.labelKey} id={`mpLoadoutField${index}`} label={t(field.labelKey as UiMessageKey)}
         value={selected[index]?.value} disabled={disabled} onChange={event => {
           const value = Number(event.currentTarget.value);
           const next = config.loadouts.findIndex(loadout => loadout.selection?.every((choice, dimension) =>

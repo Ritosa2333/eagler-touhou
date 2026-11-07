@@ -843,6 +843,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         subtitle: "Wily Beast and Weakest Creature";
         cardArtwork: "th17-card.webp";
         renderScales: readonly [2, 1];
+        thpracRuntime: Readonly<{session: "native"}>;
         storage: Readonly<{
             saveRoot: "/savesth17";
             scoreFile: "scoreth17.dat";
