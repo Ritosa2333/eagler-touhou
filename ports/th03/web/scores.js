@@ -35,6 +35,22 @@ export function unlockScores(bytes) {
   return result;
 }
 
+// Fresh score tables, with the existing character unlock retained. Saved user
+// score files are installed separately after this default has been prepared.
+export function emptyScores(){
+  const output=new Uint8Array(sectionSize*4);
+  for(let rank=0;rank<4;rank++){
+    const section=new Uint8Array(sectionSize);section.fill(42,2,82);section[clearOffset]=99;
+    section.fill(32,84,184);section.fill(33,194,204);
+    const sum=section.subarray(2).reduce((a,b)=>a+b,0)&0xffff;section[0]=sum&255;section[1]=sum>>>8;
+    let feedback=0;for(let i=203;i>=0;i--){section[i]=(section[i]-feedback)&255;feedback=rotateRight3(section[i]);}
+    output.set(section,rank*sectionSize);
+  }
+  return output;
+}
+
+export function resetDiskScores(fat){fat.replace(fat.find('YUMEZIKU/YUME.NEM'),emptyScores());}
+
 export function unlockDiskScores(fat) {
   const entry = fat.find('YUMEZIKU/YUME.NEM'), bytes = unlockScores(fat.read(entry));
   const chain = fat.chain(fat.view.getUint16(entry + 26, true));

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {existsSync,readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {createRequire} from 'node:module';
 import {runInNewContext} from 'node:vm';
@@ -20,11 +20,18 @@ async function compileShell(game) {
         if(args.kind==='dynamic-import' && args.importer===resolve(owner,'managed-shell.mjs'))
           return {path:args.path==='./managed-room-layout.mjs'?'room-layout':'engine',namespace:'boundary'};
         if(args.path==='./pc98-game-fps.mjs')return {path:'fps',namespace:'boundary'};
+        if(args.importer===resolve(owner,'managed-shell.mjs')&&args.path==='./bgm-version.js')return {path:'bgm-version',namespace:'boundary'};
         if(['./directory-keyboard.mjs','./direct-input-bridge.mjs'].includes(args.path))
           return {path:resolve(root,'common/browser',args.path.slice(2))};
+        if(args.importer===resolve(owner,'managed-shell.mjs')&&args.path.startsWith('./')){
+          const shared=resolve(root,'common/browser',args.path.slice(2));
+          if(!existsSync(resolve(owner,args.path))&&existsSync(shared))return {path:shared};
+        }
       });
       ctx.onLoad({filter:/./,namespace:'boundary'},args=>({contents:args.path==='fps'
         ? 'export function mountGameFps(){return {update(){}};}'
+        : args.path==='bgm-version'
+        ? 'export function setManagedBgmVersion(){}'
         : args.path==='room-layout'
         ? 'export function mountManagedRoom(){}'
         : args.path==='engine'

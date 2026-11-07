@@ -1,5 +1,5 @@
 import {Fat12,installNativePause,nativeAssets,sha256} from '../disk.js';
-import {unlockDiskScores} from '../scores.js';
+import {unlockDiskScores,resetDiskScores} from '../scores.js';
 import {installNetworkAudio} from '../network-audio.js';
 import {loadVerifiedBytes,loadNetworkAssets} from '../startup-assets.js';
 export async function bootBattleResources(settings){
@@ -10,7 +10,7 @@ export async function bootBattleResources(settings){
   const data=(await loadVerifiedBytes(meta.url,meta.sha256,{gzip:true})).slice();
   const decode=(at,n)=>new TextDecoder().decode(data.subarray(at,at+n));
   if(data.length!==meta.size||decode(meta.autoexecSizeOffset-28,11)!=='AUTOEXECBAT'||decode(meta.languageMarkerOffset,8)!==meta.languageMarker)throw Error('对战磁盘布局不一致');
-  unlockDiskScores(new Fat12(data));await installNativePause(data,language);const music=await installNetworkAudio(data);
+  resetDiskScores(new Fat12(data));unlockDiskScores(new Fat12(data));await installNativePause(data,language);const music=await installNetworkAudio(data);
   const script=new TextEncoder().encode('@ECHO OFF\r\nPATH A:\\DOS;A:\\\r\nSET TEMP=A:\\DOS\r\nSET DOSDIR=A:\\DOS\r\nA:\r\nCD \\YUMEZIKU\r\nCALL GAME.BAT\r\n');
   if(script.length>meta.autoexecCapacity)throw Error('对战启动脚本越界');
   data.fill(0,meta.autoexecOffset,meta.autoexecOffset+meta.autoexecCapacity);data.set(script,meta.autoexecOffset);new DataView(data.buffer).setUint32(meta.autoexecSizeOffset,script.length,true);

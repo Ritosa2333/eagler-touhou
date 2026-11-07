@@ -21,7 +21,9 @@ export const managedAPI={
     if(!Array.isArray(loadouts)||loadouts.length!==count||loadouts.some(l=>![0,1].includes(l.character)||![0,1].includes(l.shot)))throw Error('机体选择无效');
     const difficulty=options.netplayDifficulty;
     if(!Number.isInteger(difficulty)||difficulty<0||difficulty>4)throw Error('难度无效');
-    const settings={players:count,difficulty,lives:3,bombs:2,language:language==='ja'?'jp':'cn',rollback:options.netplayAdonisMode===0,
+    const spares=options.netplayInitialSpares??3,bombs=options.netplayInitialBombs??2;
+    if(!Number.isInteger(spares)||spares<0||spares>5||!Number.isInteger(bombs)||bombs<0||bombs>2)throw Error('初始残机或 Bomb 无效');
+    const settings={players:count,difficulty,lives:spares+1,bombs,language:language==='ja'?'jp':'cn',rollback:options.netplayAdonisMode===0,
       p1:loadouts[0].character*2+loadouts[0].shot,p2:loadouts[1].character*2+loadouts[1].shot,p3:loadouts[2]?loadouts[2].character*2+loadouts[2].shot:0};
     session={role:roles[local],room:url.searchParams.get('room'),token:'launcher-owned'};
     state={phase:'loading',generation:[session.room,runId,url.searchParams.get('runtimeGeneration')].join(':'),runId,revision:1,settings,

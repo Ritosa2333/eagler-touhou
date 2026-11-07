@@ -1,4 +1,4 @@
-export const launchDefaults=Object.freeze({stage:0,difficulty:1,lives:2,bombs:3,focusEnabled:true,focusPercent:50,teamTargeting:true});
+export const launchDefaults=Object.freeze({stage:0,difficulty:1,lives:3,bombs:2,focusEnabled:true,focusPercent:50,teamTargeting:true});
 export function launchConfig(settings){
  const bounds={stage:[0,5],difficulty:[0,3],lives:[0,5],bombs:[0,5],p1:[0,2],p2:[0,2],p3:[0,2],players:[2,3]};
  for(const [key,[lo,hi]]of Object.entries(bounds))if(!Number.isInteger(settings[key])||settings[key]<lo||settings[key]>hi)throw Error(`TH02 开局设置无效：${key}`);

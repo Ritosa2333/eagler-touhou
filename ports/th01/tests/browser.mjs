@@ -52,9 +52,12 @@ try{
     await page.screenshot({path:resolve(out,'solo.png')});
     const frame=page.frames().find(f=>f.url().includes('runtimeEpoch='));
     const health=await frame.evaluate(async()=>{const m=await import('./app.js');return m.managedAPI.health();});
-    assert(health.frames>0);results.push({solo:health});console.log('SOLO presented',health.frames);
+    assert(health.frames>0);assert.equal(health.menu,1,'single player starts at the native title menu');
+    await new Promise(r=>setTimeout(r,1000));assert.equal((await frame.evaluate(async()=>(await import('./app.js')).managedAPI.health())).menu,1,'title remains open without input');
+    results.push({solo:health});console.log('SOLO presented',health.frames);
     await page.evaluate(()=>rpc(0,'sync'));const saved=await page.evaluate(()=>rpc(0,'list'));
     assert(saved.files.some(file=>file.path==='scores.dat'),'native score must be exported');
+    const score=await page.evaluate(()=>rpc(0,'read',{path:'scores.dat'}));for(let at=8;at<808;at+=20)assert.equal(new DataView(Uint8Array.from(score.bytes).buffer).getUint32(at,true),0,'fresh score table is empty');
   }
   if(!process.argv.includes('--solo-only')){
     relay=spawn(process.execPath,['services/relay/src/netplay-relay.mjs'],{cwd:root,windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_RTC_TIMEOUT_MS:'10000'},stdio:['ignore','pipe','pipe']});

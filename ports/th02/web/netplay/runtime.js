@@ -85,6 +85,7 @@ async function boot(settings){
  const disk=await assetBytes(entry.file,{hash:entry.sha256,size:entry.size,gzip:true});
  if(disk.length!==entry.size||await sha256(disk)!==entry.sha256)throw Error('TH02 游戏磁盘校验失败');
  const fat=new Fat12(disk),main=fat.find('HUMAROKU/MAIN.EXE');let exe=fat.read(main);
+ const {emptyPc98Scores}=await import('../pc98-empty-scores.mjs');fat.replace(fat.find('HUMAROKU/HUUHI.DAT'),emptyPc98Scores('th02'));
  if(await sha256(exe)!==entry.mainSha256)throw Error('TH02 主程序校验失败');
  const overlay=(await get('./native-pause-overlay.json')).languages[config.language];
  if(!overlay||overlay.sourceMainSha256!==entry.mainSha256||overlay.codeSegment!==patch.codeSegment||overlay.dataSegment!==patch.dataSegment)throw Error('TH02 联机暂停补丁版本不匹配');

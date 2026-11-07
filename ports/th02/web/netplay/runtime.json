@@ -52,7 +52,7 @@
     "netplay/focus-display.js": "077df650a677d1ec25a7c07b6f9dad7b6e2a9db903c5ac93fd1df2a6bf84b282",
     "netplay/input-latch.js": "755218c5dea4bdae65848cb65a98ab3c0deb442ab2758bdfea68187a0fb1f8b6",
     "netplay/input-transport.js": "1ebc7119d439ed35feccbb834a5526232419c877b723c58d692d171727c2cd38",
-    "netplay/launch-config.js": "8b935c440e8e407a97d4efa5a97ea99a58b465ec4798f3494e9401c490104f25",
+    "netplay/launch-config.js": "37af2fbb6942b23788c86287e29ccf6e39f436f4f1f6ea1f4f6644742bad1c52",
     "netplay/local-bgm.js": "5d9438076c15cb9ea12d3f526e74b41729319ce668d8a4263c857a264cd703ef",
     "netplay/local-sfx.js": "88c9bb5504d08268132b007e319214715219bcbed03d08e85f21d226f13207b3",
     "netplay/membership.js": "a84a5b38066e29a876db2c900e2411f3d4168f329bcb83fb44a81226a88e6fca",
@@ -65,7 +65,7 @@
     "netplay/runtime-worker-client.js": "fddfa037e223a2219cd819fbc11bd43b70b9678c7054ce7aa3fa35282952281a",
     "netplay/runtime-worker.js": "f5c43356d63a82343d8bd615c83a5c59b4d3f7d2abfdcfa9c7378e7a09176263",
     "netplay/runtime.html": "4d770aeb0e4efb5a4b1e1eb6f00e76e8cfec7f1411b7f6e656ef70957a2b928f",
-    "netplay/runtime.js": "fb24cecf62ff9b757dbe5292986fd646f20ed4262242136ed3ea20315daa6d7e",
+    "netplay/runtime.js": "302ab6f5a893a8de5a0bfa37f00578331995998247a8587cdfba868fd6274ecf",
     "netplay/sha256.js": "9cb7be2bc039bcea2a4d727ef98bcd9047a78dfd4c11950355723147423e1f43",
     "netplay/sound-patch.json": "18cf7b4164560a11ee6ff385196c3a09fe342527d43ee992ae749c569da42791",
     "netplay/state-swap-patch.json": "6a82abb129caa289abe3e96895ca8733ddc6e8f6add526cdfcabb6cd3fb37df7",
@@ -138,7 +138,8 @@
     "vendor/dosbox-x/snapshot-diff-tracked.wasm": "9b563935571f450950575e8feafb6bfa840f31dfdd7a033e2822396a299ac6e1",
     "vendor/dosbox-x/snapshot-diff.wasm": "bb1b100252f74fd6b7ee5e9428cb5d701d7053dab8bcae0b0ed9157b607a31b3",
     "netplay/native-pause-overlay.json": "6df85ec28389fe81f41277897ca2c5e1dc86ccda50a3d2749bb1b4e664d68c2d",
-    "pc98-net-pause.mjs": "49d1219e24fcbd6bccdf7025020992345351ef26e72d496a8af111611afd5963"
+    "pc98-net-pause.mjs": "49d1219e24fcbd6bccdf7025020992345351ef26e72d496a8af111611afd5963",
+    "pc98-empty-scores.mjs": "07c64bfc7d8a3a07d70ba24cc7fbb81192c7984aab83fd0bbf962f8be09e9146"
   },
   "cores": {
     "plain": {

@@ -8,7 +8,7 @@ import {bootToSelection} from './dosbox-boot.js';
 import {loadVerifiedBytes, loadNetworkAssets, loadLocalCore} from './startup-assets.js';
 import {mountControls} from './controls.js';
 import {Fat12, installNativePause, nativeAssets, sha256} from './disk.js';
-import {unlockDiskScores} from './scores.js';
+import {unlockDiskScores,resetDiskScores} from './scores.js';
 import {NativePause} from './native-pause.js';
 import {Netplay} from './netplay.js';
 import {mountPlayer} from './player-ui.js';
@@ -301,6 +301,7 @@ async function loadDisk(lang) {
   status('正在加载梦时空镜像');
   const prepared=online&&roomHost?.preloadPromise?await roomHost.preloadPromise:null;
   const data = prepared?.language===lang?prepared.diskBytes.slice():await loadVerifiedBytes(meta.url, meta.sha256, {gzip: true});
+  resetDiskScores(new Fat12(data));
   return prepareDisk(data, meta);
 }
 function diskChanged(name) {

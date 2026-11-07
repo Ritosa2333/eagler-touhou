@@ -134,6 +134,7 @@ async function start({language,music,options}){
   assist=await createSoloAssist(()=>emulator);
   if(!playback){
     const fat=new Fat12(disk);
+    if(!globalThis.__eaglerPC98Files.memory.has('YUME.NEM')){const {resetDiskScores}=await import('./scores.js');resetDiskScores(fat);}
     for(const [name,bytes] of globalThis.__eaglerPC98Files.memory)if(['YUME.NEM','YUME.CFG'].includes(name))fat.put('YUMEZIKU/'+name,bytes);
     await assist.install(disk);
     soloMusic=new SoloMusic(report,{independentSfx:true});

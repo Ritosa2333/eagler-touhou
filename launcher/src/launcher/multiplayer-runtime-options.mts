@@ -1,3 +1,4 @@
+import {PC98_INITIAL_STOCK,isPc98StockProduct,validPc98InitialSpares,validPc98InitialBombs} from './pc98-initial-stock.mjs';
 import {TH19_VERSUS_RULES,validTh19VersusRules} from './th19-versus-rules.mjs';
 import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
 import {
@@ -103,7 +104,7 @@ export function buildMultiplayerRuntimeOptions(
 
   const roomProduct = (url.searchParams.get('room') || '').split('-')[0];
   if(input.th19Rules!==undefined&&(roomProduct!=='th19mp'||!validTh19VersusRules(input.th19Rules)))throw new Error('TH19 versus rules are invalid');
-  if(input.initialSpares!==undefined&&(roomProduct!=='th05mp'||!validTh05InitialSpares(input.initialSpares))||input.initialBombs!==undefined&&(roomProduct!=='th05mp'||!validTh05InitialBombs(input.initialBombs)))throw new Error('TH05 initial stocks are invalid');
+  if(input.initialSpares!==undefined&&(isPc98StockProduct(roomProduct)?!validPc98InitialSpares(input.initialSpares):(roomProduct!=='th05mp'||!validTh05InitialSpares(input.initialSpares)))||input.initialBombs!==undefined&&(isPc98StockProduct(roomProduct)?!validPc98InitialBombs(input.initialBombs):(roomProduct!=='th05mp'||!validTh05InitialBombs(input.initialBombs))))throw new Error('TH05 initial stocks are invalid');
   if (input.allowWebsocketFallback !== undefined && typeof input.allowWebsocketFallback !== 'boolean')
     throw new Error('WebSocket 回退开关必须为布尔值');
   if (input.preferTurn !== undefined && typeof input.preferTurn !== 'boolean')
@@ -212,7 +213,7 @@ export function buildMultiplayerRuntimeOptions(
   return {
     netplayMode: 'lan',
     ...(roomProduct==='th19mp'?{netplayTh19Rules:[...(input.th19Rules??TH19_VERSUS_RULES)]}:{}),
-    ...(roomProduct==='th05mp'?{netplayInitialSpares:input.initialSpares??TH05_INITIAL_STOCK.spares,netplayInitialBombs:input.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
+    ...((roomProduct==='th05mp'||isPc98StockProduct(roomProduct))?{netplayInitialSpares:input.initialSpares??(isPc98StockProduct(roomProduct)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).spares,netplayInitialBombs:input.initialBombs??(isPc98StockProduct(roomProduct)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).bombs}:{}),
     ...(product.inGameSelection ? { netplayInGameSelection: true } : {}),
     ...(roomProduct === "th15mp"
       ? {

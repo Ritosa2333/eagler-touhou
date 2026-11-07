@@ -55,6 +55,10 @@ try{
     assert(health.frames>0);results.push({solo:health});console.log('SOLO presented',health.frames);
     await page.evaluate(()=>rpc(0,'sync'));const saved=await page.evaluate(()=>rpc(0,'list'));
     assert(saved.files.some(file=>file.path==='YUME.NEM'),'native score must be exported');
+    const score=await page.evaluate(()=>rpc(0,'read',{path:'YUME.NEM'}));
+    const {decodeScoreSection}=await import('../web/scores.js');
+    const bytes=Uint8Array.from(score.bytes);
+    for(let at=0;at<bytes.length;at+=206)assert(decodeScoreSection(bytes.subarray(at,at+206)).subarray(84,184).every(value=>value===32),'fresh score table is empty');
     assert(saved.files.some(file=>file.path==='YUME.CFG'),'native config must be exported');
   }
   if(!process.argv.includes('--solo-only')){

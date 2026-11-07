@@ -1,4 +1,6 @@
 import {TH19_VERSUS_RULES,validTh19VersusRules} from '../../../common/contracts/th19-versus-rules.mjs';
+import {PC98_INITIAL_STOCK,validPc98InitialSpares,validPc98InitialBombs} from '../../../common/contracts/pc98-initial-stock.mjs';
+const pc98StockRoom=id=>/^th0[24]mp-/.test(id);
 import {createNicknameService} from './nickname-service.mjs';
 import {createNicknameRequestGuard} from './nickname-request-guard.mjs';
 import {normalizePublicNickname} from '../../../common/contracts/public-nickname.mjs';
@@ -391,6 +393,7 @@ function getRoom(id, socket) {
         ...(id.startsWith('th09mp-') ? {disableLocalChargePriority:false} : {}),
         ...(id.startsWith('th03mp-') ? {disableFocus:false} : {}),
         ...(id.startsWith('th01mp-') ? {ballCount:2} : {}),
+        ...(pc98StockRoom(id)?{initialSpares:PC98_INITIAL_STOCK.spares,initialBombs:PC98_INITIAL_STOCK.bombs}:{}),
         ...(id.startsWith("th15mp-")
           ? {
               chapterThreshold: defaultTh15ChapterThreshold(
@@ -887,6 +890,7 @@ function lobbySnapshot(room) {
     ...(room.id.startsWith('th09mp-') ? {disableLocalChargePriority:room.lobby.disableLocalChargePriority} : {}),
     ...(room.id.startsWith('th03mp-') ? {disableFocus:room.lobby.disableFocus} : {}),
     ...(room.id.startsWith('th01mp-') ? {ballCount:room.lobby.ballCount} : {}),
+    ...(pc98StockRoom(room.id)?{initialSpares:room.lobby.initialSpares,initialBombs:room.lobby.initialBombs}:{}),
     ...(room.id.startsWith('th19mp-')?{th19Rules:[...room.lobby.th19Rules]}:{}),
     ...(room.th15 ? { chapterThreshold: room.lobby.chapterThreshold } : {}),
     challengeMode: room.lobby.challengeMode,
@@ -1040,6 +1044,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=initialPolicy?.disableLocalChargePriority===true;
     if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=initialPolicy?.disableFocus===true;
     if(room.id.startsWith('th01mp-') && [1,2,3,4,6,8].includes(initialPolicy?.ballCount))room.lobby.ballCount=initialPolicy.ballCount;
+    if(pc98StockRoom(room.id)&&validPc98InitialSpares(initialPolicy?.initialSpares)&&validPc98InitialBombs(initialPolicy?.initialBombs)){room.lobby.initialSpares=initialPolicy.initialSpares;room.lobby.initialBombs=initialPolicy.initialBombs;}
     const modesSupported = room.multiplayer?.gameplay === 'cooperative' && room.multiplayer.challengeMode !== false;
     room.lobby.challengeMode = modesSupported && initialPolicy?.challengeMode === true;
     room.lobby.prankMode = false;
@@ -1547,6 +1552,8 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       const disableFocus=message.disableFocus??room.lobby.disableFocus;
       if(message.ballCount!==undefined && (!room.id.startsWith('th01mp-') || ![1,2,3,4,6,8].includes(message.ballCount))){sendLobby(socket,{type:'error',error:'invalid ball count'});return;}
       const ballCount=message.ballCount??room.lobby.ballCount;
+      if(pc98StockRoom(room.id)&&(!validPc98InitialSpares(message.initialSpares??room.lobby.initialSpares)||!validPc98InitialBombs(message.initialBombs??room.lobby.initialBombs))){sendLobby(socket,{type:'error',error:'invalid initial stock'});return;}
+      const initialSpares=pc98StockRoom(room.id)?(message.initialSpares??room.lobby.initialSpares):room.lobby.initialSpares,initialBombs=pc98StockRoom(room.id)?(message.initialBombs??room.lobby.initialBombs):room.lobby.initialBombs;
       const modesSupported = room.multiplayer?.gameplay === 'cooperative' && room.multiplayer.challengeMode !== false;
       const challengeMode =
         modesSupported &&
@@ -1564,6 +1571,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.disableLocalChargePriority !== disableLocalChargePriority ||
         room.lobby.disableFocus !== disableFocus ||
         room.lobby.ballCount !== ballCount ||
+        room.lobby.initialSpares !== initialSpares || room.lobby.initialBombs !== initialBombs ||
         room.lobby.challengeMode !== challengeMode ||
         room.lobby.prankMode !== prankMode ||
         (room.th15 && room.lobby.chapterThreshold !== chapterThreshold)
@@ -1574,6 +1582,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=disableLocalChargePriority;
         if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=disableFocus;
         if(room.id.startsWith('th01mp-'))room.lobby.ballCount=ballCount;
+        if(pc98StockRoom(room.id)){room.lobby.initialSpares=initialSpares;room.lobby.initialBombs=initialBombs;}
         room.lobby.challengeMode = challengeMode;
         room.lobby.prankMode = prankMode;
         if (room.th15) room.lobby.chapterThreshold = chapterThreshold;
@@ -1953,6 +1962,8 @@ server.on('connection', (socket, request) => {
       disableLocalChargePriority: url.searchParams.get('disableLocalChargePriority') === '1',
       disableFocus: url.searchParams.get('disableFocus') === '1',
       ballCount: url.searchParams.has('ballCount') ? Number(url.searchParams.get('ballCount')) : undefined,
+      initialSpares: url.searchParams.has('initialSpares') ? Number(url.searchParams.get('initialSpares')) : undefined,
+      initialBombs: url.searchParams.has('initialBombs') ? Number(url.searchParams.get('initialBombs')) : undefined,
       th19Rules: url.searchParams.has('th19Rules') ? (()=>{try{return JSON.parse(url.searchParams.get('th19Rules'));}catch{return null;}})() : undefined,
       chapterThreshold: url.searchParams.has('chapterThreshold')
         ? Number(url.searchParams.get('chapterThreshold'))

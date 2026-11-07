@@ -105,7 +105,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayerRuntime:'./runtime/th01/multiplayer/th01.html',
         multiplayer:Object.freeze({titleKey:'game.title.th01mp',gameplay:'cooperative',playerCounts:STANDARD_MULTIPLAYER_PLAYER_COUNTS,difficulties:TH09_MULTIPLAYER_DIFFICULTIES,
             loadouts:Object.freeze([TH01_REIMU]),peerTransportGlobal:'__th01PeerTransport',relaySourceEnvelope:true,spectator:true,titleRoomEntry:false,preflightWithoutRoom:true,challengeMode:false,
-            inputTiming:Object.freeze({rollbackLimit:0,sendPredictionLimit:0,rollbackDefault:false,runtimeTiming:true})}),
+            inputTiming:Object.freeze({rollbackLimit:12,sendPredictionLimit:6,rollbackDefault:true,runtimeTiming:true})}),
         features:Object.freeze({thprac:false,languages:false,focusHitbox:false}),
     }),
     th02: Object.freeze({
@@ -122,7 +122,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayerRuntime:'./runtime/th02/multiplayer/th02.html',
         multiplayer:Object.freeze({titleKey:'game.title.th02mp',gameplay:'cooperative',playerCounts:STANDARD_MULTIPLAYER_PLAYER_COUNTS,difficulties:STANDARD_MULTIPLAYER_DIFFICULTIES,
             loadouts:Object.freeze(['fast','balanced','slow'].map((name,shot)=>Object.freeze({labelKey:'multiplayer.loadout.th02_'+name,glyph:'霊',character:0,shot}))),peerTransportGlobal:'__th02PeerTransport',relaySourceEnvelope:true,spectator:true,titleRoomEntry:false,preflightWithoutRoom:true,challengeMode:false,
-            inputTiming:Object.freeze({rollbackLimit:12,sendPredictionLimit:6,rollbackDefault:false,runtimeTiming:true})}),
+            inputTiming:Object.freeze({rollbackLimit:12,sendPredictionLimit:6,rollbackDefault:true,runtimeTiming:true})}),
         features:Object.freeze({thprac:false,languages:false,focusHitbox:false}),
     }),
     th03: Object.freeze({
@@ -138,7 +138,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayerRuntime:'./runtime/th03/multiplayer/th03.html',
         multiplayer:Object.freeze({titleKey:'game.title.th03mp',gameplay:'versus',inGameSelection:true,playerCounts:Object.freeze([2]),difficulties:TH09_MULTIPLAYER_DIFFICULTIES,
             loadouts:Object.freeze([REIMU_A]),peerTransportGlobal:'__th03PeerTransport',relaySourceEnvelope:true,spectator:true,titleRoomEntry:false,preflightWithoutRoom:true,challengeMode:false,
-            inputTiming:Object.freeze({rollbackLimit:12,sendPredictionLimit:6,rollbackDefault:false,runtimeTiming:true})}),
+            inputTiming:Object.freeze({rollbackLimit:12,sendPredictionLimit:6,rollbackDefault:true,runtimeTiming:true})}),
         features:Object.freeze({thprac:false,languages:false,focusHitbox:false}),
     }),
     th04: Object.freeze({
@@ -155,7 +155,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayerRuntime:'./runtime/th04/multiplayer/th04.html',
         multiplayer:Object.freeze({titleKey:'game.title.th04mp',gameplay:'cooperative',playerCounts:STANDARD_MULTIPLAYER_PLAYER_COUNTS,difficulties:STANDARD_MULTIPLAYER_DIFFICULTIES,
             loadouts:TH06_MULTIPLAYER_LOADOUTS,peerTransportGlobal:'__th04PeerTransport',relaySourceEnvelope:true,spectator:true,titleRoomEntry:false,preflightWithoutRoom:true,challengeMode:false,
-            inputTiming:Object.freeze({rollbackLimit:12,sendPredictionLimit:6,rollbackDefault:false,runtimeTiming:true})}),
+            inputTiming:Object.freeze({rollbackLimit:12,sendPredictionLimit:6,rollbackDefault:true,runtimeTiming:true})}),
         features:Object.freeze({thprac:false,languages:false,focusHitbox:false}),
     }),
     // support.highRefreshRate describes currently implemented presentation for

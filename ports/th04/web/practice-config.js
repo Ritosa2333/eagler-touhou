@@ -1,6 +1,6 @@
 export const PRACTICE_VERSION='th04-browser-practice/1';
 export const PRACTICE_DEFAULTS=Object.freeze({invincible:false,lockLives:false,lockBombs:false,lockPower:false,lockTime:false,enemyInvincible:false,lockRank:false,disableBomb:false,disableFocus:false,disableShot:false,forceFocus:false,quickRetry:true,preparedRetry:false,showKeys:false,showInfo:false,alwaysPoint:false,speed:1});
-export const PRACTICE_SETUP=Object.freeze({stage:0,character:0,difficulty:1,entry:'stage',phase:0,branch:'auto',lives:0,bombs:0,power:128,rank:16,hp:0});
+export const PRACTICE_SETUP=Object.freeze({stage:0,character:0,difficulty:1,entry:'stage',phase:0,branch:'auto',lives:3,bombs:2,power:128,rank:16,hp:0});
 export const PRACTICE_RANK_LIMITS=Object.freeze([[4,16],[11,24],[20,32],[22,34],[16,20]].map(Object.freeze));
 // Only actual attack states; entrance/fill/transform states are not targets.
 export const PRACTICE_PHASES=Object.freeze([[2,3,4],[2,3,4,5],[3],[2],[2,4,5,7,8,10,11,13,14,16,17],[2,4,8,12,14,16],[2,4,6]]);

@@ -9,6 +9,7 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
     text=text.slice(0,start)+`function loadScores(){
       const saved=globalThis.__eaglerPC98Files.memory.get('scores.dat');
       if(saved){if(saved.length!==core.th_score_size())throw Error('TH01 成绩文件大小无效');new Uint8Array(core.memory.buffer,core.th_score_data(),saved.length).set(saved);core.th_score_load(saved.length);}
+      else{const bytes=new Uint8Array(core.memory.buffer,core.th_score_data(),core.th_score_size());if(bytes.length!==812)throw Error('TH01 成绩格式不匹配');for(let at=8;at<808;at+=20)bytes.fill(0,at,at+12);let hash=2166136261;for(let i=0;i<808;i++)hash=Math.imul(hash^bytes[i],16777619);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setUint32(808,hash>>>0,true);if(!core.th_score_load(bytes.length))throw Error('TH01 初始成绩初始化失败');}
       scoreRevision=core.th_get(110,0);formalScores=new Uint8Array(core.memory.buffer,core.th_score_data(),core.th_score_size()).slice();
     }
     function saveScores(){const revision=core.th_get(110,0);if(revision===scoreRevision)return;scoreRevision=revision;

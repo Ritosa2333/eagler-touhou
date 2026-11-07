@@ -134,6 +134,7 @@ async function boot(config){
   await bootProgress('校验游戏磁盘（局域网 HTTP 下可能需要更长时间）',3);
   if(disk.length!==meta.size||await sha256(disk)!==meta.sha256)throw Error('游戏磁盘校验失败，请刷新页面');
   const overlay=(await get('./native-pause-overlay.json')).languages[selected.language],fat=new Fat12(disk),main=fat.find('GENSO/MAIN.EXE');
+  const {emptyPc98Scores}=await import('../pc98-empty-scores.mjs');fat.replace(fat.find('GENSO/GENSOU.SCR'),emptyPc98Scores('th04'));
   if(!overlay||overlay.codeSegment!==patch.code_segment||overlay.dataSegment!==patch.data_segment||await sha256(fat.read(main))!==overlay.sourceMainSha256)throw Error('TH04 联机暂停补丁版本不匹配');
   installConfig(disk,patch,encodeConfig(config));
   await bootProgress('安装本局配置和声音补丁',4);

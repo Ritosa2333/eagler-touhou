@@ -6,6 +6,7 @@ import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
 import puppeteer from 'puppeteer-core';
 import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
+import {emptyPc98Scores} from '../../../common/browser/pc98-empty-scores.mjs';
 
 const repo=resolve(import.meta.dirname,'../../..');
 const games=process.argv.slice(2).length?process.argv.slice(2):['th02','th04'];
@@ -82,6 +83,12 @@ for(const game of games){
         await frame.$eval('canvas',n=>n.focus());await page.keyboard.press('KeyZ',{delay:100});await new Promise(r=>setTimeout(r,600));
       }
       await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.mode==='full'&&p.ready&&p.frames>5;},{timeout:90000});
+      const initial=(await state()).native.practice.restartSetup;
+      assert.equal(initial.difficulty,1,'fresh default difficulty is Normal');
+      assert.equal(initial.lives,3,'fresh default is three spare lives');
+      assert.equal(initial.bombs,2,'fresh default is two Bombs');
+      const score=await page.evaluate(game=>rpc('read',{path:game==='th02'?'HUUHI.DAT':'GENSOU.SCR'}),game);
+      assert.deepEqual(Uint8Array.from(score.bytes),emptyPc98Scores(game),'fresh native score table is empty');
     }else{
     const stage=Number(process.env.PC98_PRACTICE_STAGE??(game==='th02'?5:6));
     const entry=process.env.PC98_PRACTICE_ENTRY||'boss',character=Number(process.env.PC98_PRACTICE_CHARACTER||0);
@@ -97,9 +104,10 @@ for(const game of games){
     await frame.select('[data-jump=entry]',entry);
     const lives=Number(process.env.PC98_PRACTICE_LIVES??2),bombs=Number(process.env.PC98_PRACTICE_BOMBS??3);
     for(const [name,value] of [['lives',lives],['bombs',bombs]]){
+      const initial=Number(await frame.$eval(`[data-jump=${name}]`,node=>node.value));
       await frame.focus(`[data-jump=${name}]`);await page.keyboard.press('ArrowRight');
-      assert.equal(await frame.$eval(`[data-jump=${name}]`,node=>node.value),'1',name+' increases with the right arrow');
-      await page.keyboard.press('ArrowLeft');assert.equal(await frame.$eval(`[data-jump=${name}]`,node=>node.value),'0',name+' decreases with the left arrow');
+      assert.equal(await frame.$eval(`[data-jump=${name}]`,node=>node.value),String(initial+1),name+' increases with the right arrow');
+      await page.keyboard.press('ArrowLeft');assert.equal(await frame.$eval(`[data-jump=${name}]`,node=>node.value),String(initial),name+' decreases with the left arrow');
       await frame.$eval(`[data-jump=${name}]`,(node,value)=>{node.value=String(value);},value);
     }
     if(game==='th04'&&stage===6)await frame.select('[data-jump=branch]','gengetsu');
