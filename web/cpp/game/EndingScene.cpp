@@ -233,10 +233,19 @@ bool EndingScene::update(const GameInput& input) {
         finished_ = true;
         return true;
     }
-    // 0x416610 返 0 分支：帧计数 +0x24++（返回 1/6 的跳过节拍不 port——
-    // 「Now Loading」闪烁/任务层细节，行为面由 op5/6 的 %6 门承载）。
+    // 0x416610: increment +0x24 before testing the frame-restart cadence.
     frames_++;
     return true;
+}
+
+bool EndingScene::should_restart(const GameInput& input) const {
+    // 00416632..0041666b: loading, first good-ending viewing and staff-only
+    // gates are independent of op5/6's per-text waiting/skip permission.
+    if (finished_ || !error.empty() || (state_flags_ & 4u) ||
+        (scene_flags_ & 2u) || !(state_flags_ & 2u)) return false;
+    const bool held = (input.held & 0x200u) ||
+                      ((input.held & 1u) && input.repeat_age[0] >= 20);
+    return held && frames_ % 12 != 0;
 }
 
 bool EndingScene::op_page_line(const Record& r) {
