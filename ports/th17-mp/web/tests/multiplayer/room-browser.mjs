@@ -259,6 +259,7 @@ try{
    for(const [seat,frame] of frames.entries()){
     await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,storyTiming,verifyTransfer,touchDrag,touchSeat,symmetricDelay})=>{
      const callback=Module.onGameFrame;
+     globalThis.stopRoomMeasurement=()=>{Module.onGameFrame=callback;};
      if(globalThis.__th17GlCalls)globalThis.__th17GlCalls={};
      const optimized=typeof Module._th17_room_trace==='function';
      Module._th17_room_trace?.(1);
@@ -266,6 +267,7 @@ try{
      globalThis.diagnostics={corrections:0,resimulated:0,maxPrediction:0,combatCorrections:0};
      globalThis.frameCosts=[];
      globalThis.presentIntervals=[];
+     globalThis.longPresentations=[];
      globalThis.densePresentIntervals=[];
      globalThis.storyPresentIntervals=new Map();
      globalThis.touchPresentIntervals=new Map();
@@ -314,6 +316,9 @@ try{
          }
          if(bullets>=256&&phase===1)densePresentIntervals.push(gap);
          const state=storyTiming&&samples.get(recorded);
+         if(storyTiming&&gap>=50)longPresentations.push({frame:n,confirmed:recorded,
+          stage:state?.[3],stageClock:state?.[4],gap,callbackMs:time,
+          resimulated:resimulated-diagnostics.resimulated});
          if(state){
           const segment=state[3]>1&&state[4]<90?'entry':state[33]?'dialogue':
            state[30]&1?'spell':state[38]?'nonspell':'route';
@@ -414,6 +419,9 @@ try{
      status.some(item=>item.diagnostics.spellCorrections>0)||current>=extendedTarget);
    },throughStageTwo?'Stage 1 to Stage 2 transition':'confirmed room samples',extraFinale?1500000:extraBoss?900000:throughStageTwo?540000:extended||denseExtra?300000:90000*cpuThrottle);}
    catch(error){coverageFailure=error;}
+   // Exporting thousands of snapshots can block the renderer and inflate the
+   // presentation tail. End timing before Playwright serializes those values.
+   await Promise.all(frames.map(frame=>frame.evaluate(()=>stopRoomMeasurement())));
    const states=await Promise.all(frames.map(frame=>frame.evaluate(()=>Array.from(samples))));
    if(extraFinale)finaleSamples=await frames[0].evaluate(()=>heapSamples);
    const first=new Map(states[0]),other=states.slice(1).map(state=>new Map(state));
@@ -474,6 +482,8 @@ try{
      tail,
      canvas:[canvas.width,canvas.height],renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):null,
      presentIntervals:summarize(presentIntervals),
+     longPresentations:longPresentations.sort((a,b)=>b.gap-a.gap).slice(0,20),
+     presentationsOver50Ms:longPresentations.length,
      storyPresentIntervals:Object.fromEntries([...storyPresentIntervals].map(([segment,gaps])=>[segment,{
       ...summarize(gaps),fps:gaps.length*1000/gaps.reduce((sum,gap)=>sum+gap,0),
      }])),
