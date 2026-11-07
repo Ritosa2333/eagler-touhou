@@ -755,11 +755,11 @@ function fakeTimers() {
 function sharedNodes() {return Object.fromEntries(['#mpSettingsFold', '.tools-head', '.mp-settings-body', '#mpReplayViewer', '#mpGamePackageImport', '#mpTouchLayoutEdit'].map(selector => [selector, n(selector)]));}
 function assertSharedNodes(nodes) {for (const [selector, node] of Object.entries(nodes)) {assert.ok(n(selector) === node, `Preserve original node: ${selector}`); assert.equal(all(selector).length, 1);} const ids = all('[id]').map(node => node.id); assert.equal(new Set(ids).size, ids.length);}
 
-test('Real shared SettingsBody moves one header/fold into drawer and back across StrictMode, rerender, product/context switches', async () => {
-  const f = await fixture().live(); const h = await sharedDrawer(f, {strict: true, roomOpen: false, open: false}), nodes = sharedNodes();
-  assert.equal(nodes['#mpSettingsFold'].parentElement.id, 'mpShell'); assert.equal(nodes['.tools-head'].parentElement.classList.contains('tools'), true);
-  await h.m.update({roomOpen: true, open: true}); assertSharedNodes(nodes);
-  const drawer = n('#mpSettingsRoomDrawer'); assert.ok(nodes['.tools-head'].parentElement === drawer); assert.equal(nodes['#mpSettingsFold'].parentElement.id, 'mpSettingsRoomDrawerContent'); assert.equal(nodes['#mpSettingsFold'].classList.contains('mp-room-drawer-mounted'), true);
+test('Real shared SettingsBody has one header/fold in the active surface across StrictMode and context switches', async () => {
+  const f = await fixture().live(); const h = await sharedDrawer(f, {strict: true, roomOpen: false, open: false}), initial = sharedNodes();
+  assert.equal(initial['#mpSettingsFold'].parentElement.id, 'mpShell'); assert.equal(initial['.tools-head'].parentElement.classList.contains('tools'), true);
+  await h.m.update({roomOpen: true, open: true}); const nodes = sharedNodes(); assertSharedNodes(nodes);
+  const drawer = n('#mpSettingsRoomDrawer'); assert.equal(nodes['.tools-head'].parentElement.id, 'mpSettingsRoomDrawerHeader'); assert.equal(nodes['#mpSettingsFold'].parentElement.id, 'mpSettingsRoomDrawerContent'); assert.equal(nodes['#mpSettingsFold'].classList.contains('mp-room-drawer-mounted'), true);
   assert.ok(env.document.activeElement === n('#libraryBack'), 'Drawer opening focuses original libraryBack'); assert.equal(n('#libraryBack').getAttribute('aria-label'), t('en', 'settings.drawerClose'));
   assert.equal(drawer.querySelector('#mpInputDelaySetting'), null, 'room-wide timing stays out of the local options drawer');
   const actions = n('#mpReplayViewer').closest('.launch-actions');
@@ -769,7 +769,7 @@ test('Real shared SettingsBody moves one header/fold into drawer and back across
   assert.equal(env.document.querySelector('#mpShareSettingsToggle'), null); assert.equal(h.model.getSnapshot().shareSingleplayerSettings, true); assertSharedNodes(nodes);
   await act(() => h.model.refreshContext(settingsContext(f.product, {mobile: true}))); assertSharedNodes(nodes);
   await act(() => h.model.hydrate(settingsContext('th07mp'))); await h.m.update({product: 'th07mp'}); assertSharedNodes(nodes); assert.equal(n('#gameId').dataset.game, 'th07');
-  await h.m.update({roomOpen: false, open: false}); assertSharedNodes(nodes); assert.equal(nodes['#mpSettingsFold'].parentElement.id, 'mpShell'); assert.equal(nodes['#mpSettingsFold'].classList.contains('mp-room-drawer-mounted'), false);
+  await h.m.update({roomOpen: false, open: false}); const returned = sharedNodes(); assertSharedNodes(returned); assert.equal(returned['#mpSettingsFold'].parentElement.id, 'mpShell'); assert.equal(returned['#mpSettingsFold'].classList.contains('mp-room-drawer-mounted'), false);
   await h.m.unmount(); assert.equal(all('.mizuki-select-menu').length, 0); assert.equal(all('.mizuki-select').length, 0);
 });
 
