@@ -136,7 +136,9 @@
     "vendor/dosbox-x/dosbox-rollback.mjs": "b86ffabafe90b43c0e12745ebd2d03e0da3353a53f765ad50a2008d12e291e8e",
     "vendor/dosbox-x/emulators.js": "066176a9e9e6babfb5388552a5154f3c1f81ed778af3bf4a1f9f904161e3c4bb",
     "vendor/dosbox-x/snapshot-diff-tracked.wasm": "9b563935571f450950575e8feafb6bfa840f31dfdd7a033e2822396a299ac6e1",
-    "vendor/dosbox-x/snapshot-diff.wasm": "bb1b100252f74fd6b7ee5e9428cb5d701d7053dab8bcae0b0ed9157b607a31b3"
+    "vendor/dosbox-x/snapshot-diff.wasm": "bb1b100252f74fd6b7ee5e9428cb5d701d7053dab8bcae0b0ed9157b607a31b3",
+    "netplay/native-pause-overlay.json": "5901d7906449f27ca7244b231d755a5538d6d2571814102cfeb21c6663a7550e",
+    "pc98-net-pause.mjs": "49d1219e24fcbd6bccdf7025020992345351ef26e72d496a8af111611afd5963"
   },
   "cores": {
     "plain": {

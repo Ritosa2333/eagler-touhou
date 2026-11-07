@@ -3,6 +3,7 @@
 ; plane is 0x2000 bytes after the character plane. CX = cell count.
 ; Saves both planes into CS:practice_text_saved; the matching restore uses
 ; the same ES:DI and CX. The caller must stay within the 240-cell buffer.
+%ifndef PRACTICE_NETWORK_PAUSE
 practice_text_save:
     push ax
     push bx
@@ -51,6 +52,7 @@ practice_text_restore:
     pop ax
     ret
 
+%endif
 ; DS:SI points to a zero-terminated ASCII string, ES:DI to its first cell,
 ; BL is the PC-98 text attribute. Only single-byte glyphs are accepted.
 practice_text_write:
@@ -76,4 +78,6 @@ practice_text_write:
     popf
     ret
 
+%ifndef PRACTICE_NETWORK_PAUSE
 practice_text_saved: times 240*4 db 0
+%endif

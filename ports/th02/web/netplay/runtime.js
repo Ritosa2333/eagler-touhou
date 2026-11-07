@@ -7,6 +7,7 @@ import {runBoot} from './boot-runner.js';
 import {LocalSfx} from './local-sfx.js';
 import {assetBytes} from '../preload-cache.js';
 import {hashNativeMemory} from './native-hash.js';
+import {installNetPause} from '../pc98-net-pause.mjs';
 const workerHost=globalThis.th02WorkerHost;
 const PROTOCOL='th02-rollback/6',canvas=workerHost?.canvas??document.getElementById('canvas'),details=workerHost?{}:document.getElementById('details');
 const nativeCanvas=workerHost?.canvas??document.createElement('canvas');nativeCanvas.width=640;nativeCanvas.height=400;
@@ -83,8 +84,10 @@ async function boot(settings){
  await progress('解压并校验 TH02 合作磁盘',3);
  const disk=await assetBytes(entry.file,{hash:entry.sha256,size:entry.size,gzip:true});
  if(disk.length!==entry.size||await sha256(disk)!==entry.sha256)throw Error('TH02 游戏磁盘校验失败');
- const fat=new Fat12(disk),main=fat.find('HUMAROKU/MAIN.EXE'),exe=fat.read(main);
+ const fat=new Fat12(disk),main=fat.find('HUMAROKU/MAIN.EXE');let exe=fat.read(main);
  if(await sha256(exe)!==entry.mainSha256)throw Error('TH02 主程序校验失败');
+ const overlay=(await get('./native-pause-overlay.json')).languages[config.language];
+ if(!overlay||overlay.sourceMainSha256!==entry.mainSha256||overlay.codeSegment!==patch.codeSegment||overlay.dataSegment!==patch.dataSegment)throw Error('TH02 联机暂停补丁版本不匹配');
  // Patch only this session's verified MAIN; shipped disks and art layouts stay pinned.
  const swap=await get('./state-swap-patch.json'),swapBase=patch.headerSize+patch.codeSegment*16;
  const swapBytes=hex=>Uint8Array.from(hex.match(/../g)||[],n=>parseInt(n,16));
@@ -123,7 +126,7 @@ async function boot(settings){
  }
  for(const edit of soundPolicy.edits)exe.set(edit.replacement.match(/../g).map(n=>parseInt(n,16)),patch.headerSize+edit.imageOffset);
  const at=patch.headerSize+patch.codeSegment*16+patch.entries.run_config;
- exe[at]=config.p2;exe[at+1]=config.p3;exe[at+2]=players;fat.replace(main,exe);
+ exe[at]=config.p2;exe[at+1]=config.p3;exe[at+2]=players;exe=installNetPause(exe,overlay);patch.dataSegment+=overlay.bytes/16;fat.replace(main,exe);
  const core=config.rollback&&supportsWriteJournal()?'tracked':'plain',coreEntry=version.cores[core];
  await progress('下载并校验本局 WASM 核心',4);
  const wasmBinary=await assetBytes(coreEntry.file,{hash:coreEntry.sha256});

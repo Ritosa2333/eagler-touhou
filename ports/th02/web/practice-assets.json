@@ -4,8 +4,8 @@
   "languages": {
     "jp": {
       "url": "practice-jp.exe.gz",
-      "size": 142070,
-      "sha256": "385497576831edaccc8ac6087111cda63b56f3315118df9dec4b470530ef536e",
+      "size": 141638,
+      "sha256": "d21b5db2267f8208ea1ead2d3238be47a325979c6d3791e19e6e74420e2911c3",
       "sourceMainSha256": "eec57979b004fc9ecb356d8f96202b6f98749e1d7ed30738e04650983f732302",
       "patch": {
         "file": "th02-solo-jp.hdi.gz",
@@ -25,10 +25,10 @@
         },
         "headerSize": 6656,
         "codeSegment": 2838,
-        "dataSegment": 8048,
-        "gap": 7312,
+        "dataSegment": 8021,
+        "gap": 6880,
         "originalMainSha256": "9e9a323781e793738c8e3a5b575d99c0cb6a71bac8c3d581178976b4977f0a92",
-        "mainSha256": "385497576831edaccc8ac6087111cda63b56f3315118df9dec4b470530ef536e",
+        "mainSha256": "d21b5db2267f8208ea1ead2d3238be47a325979c6d3791e19e6e74420e2911c3",
         "hooks": [
           {
             "offset": 46619,
@@ -147,20 +147,20 @@
             "resultAck": 24705,
             "resultInput": 24706,
             "waitHold": 20969,
-            "pauseOpen": 25122,
-            "pauseRequest": 25124,
-            "pauseAck": 25125,
-            "pauseInput": 25126
+            "pauseOpen": 25104,
+            "pauseRequest": 25106,
+            "pauseAck": 25107,
+            "pauseInput": 25108
           },
-          "bytes": 5488,
+          "bytes": 5056,
           "descriptor": "T02PRA01"
         }
       }
     },
     "cn": {
       "url": "practice-cn.exe.gz",
-      "size": 142070,
-      "sha256": "ec52e42e51aa77c2d4ca1bda969c8a4afca1620c130a445c5af386e04144b971",
+      "size": 141638,
+      "sha256": "35ae9992deb39f1de65713a589dbe651a1bd104f95259196e446fe003ce8998c",
       "sourceMainSha256": "74a315562d6f37ee1ff4b4bd229e98937a3ca4c989becdc51e101798d52f8f5d",
       "patch": {
         "file": "th02-solo-cn.hdi.gz",
@@ -180,10 +180,10 @@
         },
         "headerSize": 6656,
         "codeSegment": 2838,
-        "dataSegment": 8048,
-        "gap": 7312,
+        "dataSegment": 8021,
+        "gap": 6880,
         "originalMainSha256": "d54640c76acab16c3f0bdf34774c5153468172d7ca132426ab845ef2a1c8dce8",
-        "mainSha256": "ec52e42e51aa77c2d4ca1bda969c8a4afca1620c130a445c5af386e04144b971",
+        "mainSha256": "35ae9992deb39f1de65713a589dbe651a1bd104f95259196e446fe003ce8998c",
         "hooks": [
           {
             "offset": 46619,
@@ -302,12 +302,12 @@
             "resultAck": 24705,
             "resultInput": 24706,
             "waitHold": 20969,
-            "pauseOpen": 25122,
-            "pauseRequest": 25124,
-            "pauseAck": 25125,
-            "pauseInput": 25126
+            "pauseOpen": 25104,
+            "pauseRequest": 25106,
+            "pauseAck": 25107,
+            "pauseInput": 25108
           },
-          "bytes": 5488,
+          "bytes": 5056,
           "descriptor": "T02PRA01"
         }
       }

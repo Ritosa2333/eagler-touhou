@@ -10,6 +10,8 @@ import {createPersonalHud} from './personal-hud.js';
 import {readSoloFault} from '../solo-fault.js';
 import {LocalSe,readNativeSe} from './local-se.js';
 import {assetBytes} from '../preload-cache.js';
+import {Fat12} from '../solo-fat12.js';
+import {installNetPause} from '../pc98-net-pause.mjs';
 const workerHost=globalThis.th04WorkerHost;
 const canvas=workerHost?.canvas??document.getElementById('canvas'),details=workerHost?{}:document.getElementById('details');
 const nativeCanvas=workerHost?.canvas??document.createElement('canvas');
@@ -117,6 +119,8 @@ async function boot(config){
   const disk=await assetBytes(selected.coopDisk,{hash:meta.sha256,size:meta.size,gzip:true});
   await bootProgress('校验游戏磁盘（局域网 HTTP 下可能需要更长时间）',3);
   if(disk.length!==meta.size||await sha256(disk)!==meta.sha256)throw Error('游戏磁盘校验失败，请刷新页面');
+  const overlay=(await get('./native-pause-overlay.json')).languages[selected.language],fat=new Fat12(disk),main=fat.find('GENSO/MAIN.EXE');
+  if(!overlay||overlay.codeSegment!==patch.code_segment||overlay.dataSegment!==patch.data_segment||await sha256(fat.read(main))!==overlay.sourceMainSha256)throw Error('TH04 联机暂停补丁版本不匹配');
   installConfig(disk,patch,encodeConfig(config));
   await bootProgress('安装本局配置和声音补丁',4);
   // BGM OFF / FM SE arbitration ON; driver play calls use browser samples.
@@ -131,6 +135,7 @@ async function boot(config){
     }
   }
   for(const edit of sound.edits)edit.targets.forEach((at,i)=>{disk[at]=edit.values[i];});
+  fat.replace(main,installNetPause(fat.read(main),overlay));
   await bootProgress('下载、编译并初始化 DOSBox-X WASM 与音频设备',5);
   const tracked=config.rollback!==false&&WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,5,5,2,0,1,0,1]));
   const core=tracked?'wdosbox-x-rollback-tracked.wasm':'wdosbox-x-rollback.wasm';

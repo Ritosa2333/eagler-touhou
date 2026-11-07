@@ -4,8 +4,8 @@
   "languages": {
     "cn": {
       "url": "practice-cn.exe.gz",
-      "sha256": "0330c736ecf187d64758ed49ea9cfe17a8cc80432cb85193634734aca381793a",
-      "size": 164450,
+      "sha256": "651d5f7cf7b3287b276117d965d026c5ad47a91841e0b883fd8ba7e0ca924dfa",
+      "size": 164018,
       "sourceMainSha256": "039e00e3d1b022a6af853a0663fe922414010b0b8dfa2b994dcaa6a3604318b3",
       "patch": {
         "version": 1,
@@ -36,11 +36,11 @@
             "payload_bytes_added": 0
           }
         ],
-        "sha256": "0330c736ecf187d64758ed49ea9cfe17a8cc80432cb85193634734aca381793a",
+        "sha256": "651d5f7cf7b3287b276117d965d026c5ad47a91841e0b883fd8ba7e0ca924dfa",
         "insert_image_offset": 78048,
-        "insert_size": 8192,
+        "insert_size": 7760,
         "code_segment": 2735,
-        "data_segment": 9012,
+        "data_segment": 8985,
         "mailbox_cs_offset": 34306,
         "signature": "TH04SOLOINPUTv1!",
         "entries": [
@@ -306,19 +306,19 @@
             "resultRequest": 41085,
             "resultAck": 41086,
             "resultInput": 41087,
-            "pauseOpen": 41497,
-            "pauseRequest": 41499,
-            "pauseAck": 41500,
-            "pauseInput": 41501
+            "pauseOpen": 41479,
+            "pauseRequest": 41481,
+            "pauseAck": 41482,
+            "pauseInput": 41483
           },
-          "bytes": 6096
+          "bytes": 5664
         }
       }
     },
     "jp": {
       "url": "practice-jp.exe.gz",
-      "sha256": "4371527b956742d05bb1d22b6462b572187c6ca24b1dc3602f1ea033de978bb8",
-      "size": 164450,
+      "sha256": "a93087d0d745c383e7829f16cef2bfec6df78400e1945f041544973f96f560c2",
+      "size": 164018,
       "sourceMainSha256": "72009d521ba986ae10ca60a4bd12ba027328cc7420e8458ed42276da459aba62",
       "patch": {
         "version": 1,
@@ -349,11 +349,11 @@
             "payload_bytes_added": 0
           }
         ],
-        "sha256": "4371527b956742d05bb1d22b6462b572187c6ca24b1dc3602f1ea033de978bb8",
+        "sha256": "a93087d0d745c383e7829f16cef2bfec6df78400e1945f041544973f96f560c2",
         "insert_image_offset": 78048,
-        "insert_size": 8192,
+        "insert_size": 7760,
         "code_segment": 2735,
-        "data_segment": 9012,
+        "data_segment": 8985,
         "mailbox_cs_offset": 34306,
         "signature": "TH04SOLOINPUTv1!",
         "entries": [
@@ -616,12 +616,12 @@
             "resultRequest": 41085,
             "resultAck": 41086,
             "resultInput": 41087,
-            "pauseOpen": 41497,
-            "pauseRequest": 41499,
-            "pauseAck": 41500,
-            "pauseInput": 41501
+            "pauseOpen": 41479,
+            "pauseRequest": 41481,
+            "pauseAck": 41482,
+            "pauseInput": 41483
           },
-          "bytes": 6096
+          "bytes": 5664
         }
       }
     }
