@@ -4,6 +4,7 @@ import {createServer} from 'node:http';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,dirname,extname,sep} from 'node:path';
 import {launchBrowser} from '../../../../../tools/browser/launch.mjs';
+import {checkDirectInput} from '../direct-input-browser.mjs';
 
 const repo=resolve(import.meta.dirname,'../../../../..');
 const runtime=resolve(process.env.EAGLER_TH17_BUILD||resolve(repo,'ports/th17-mp/build-eagler-multiplayer'));
@@ -17,6 +18,9 @@ const checkPresentation=process.argv.includes('--check-presentation');
 const verifyTransfer=process.argv.includes('--life-transfer');
 const independent=process.argv.includes('--independent-pages');
 const cpuProfile=process.argv.includes('--cpu-profile');
+const touchDrag=process.argv.includes('--touch-drag');
+const symmetricDelay=process.argv.includes('--symmetric-delay');
+const touchSeat=Number(process.env.TH17_ROOM_TOUCH_SEAT??1);
 const glTrace=process.env.TH17_ROOM_GL_TRACE==='1';
 const musicDirectory=process.env.TH17_ROOM_MUSIC_DIR;
 const music=musicDirectory?'ogg':'none';
@@ -38,6 +42,7 @@ const delayMs=Number(process.env.TH17_ROOM_DELAY_MS||110);
 const jitterMs=Number(process.env.TH17_ROOM_JITTER_MS||0);
 const cpuThrottle=Number(process.env.TH17_ROOM_CPU_THROTTLE||1);
 const manifest=JSON.parse(await readFile(resolve(runtime,'manifest.json'),'utf8'));
+const directInput=!!JSON.parse(await readFile(resolve(runtime,'runtime-files.json'),'utf8')).files['direct-input-bridge.mjs'];
 if(extraBoss)assert.ok(manifest.features.roomBenchmark&&rollback&&difficulty===4,'Extra boss profiling needs the dedicated Extra rollback benchmark build');
 const baseline=process.env.TH17_ROOM_BASELINE?JSON.parse(await readFile(process.env.TH17_ROOM_BASELINE,'utf8')):null;
 const priorMemory=extraFinale&&baseline?JSON.parse(await readFile(resolve(dirname(process.env.TH17_ROOM_BASELINE),'heap-samples.json'),'utf8')):null;
@@ -149,7 +154,7 @@ try{
  const hardware=process.env.NATIVE_GPU==='1'||process.env.PIXEL_GPU==='1';
  const gpuFlags=hardware?(process.platform==='win32'?['--enable-gpu','--use-gl=angle','--use-angle=d3d11']:['--enable-gpu']):['--use-angle=swiftshader','--enable-unsafe-swiftshader'];
  browser=await launchBrowser({args:[...gpuFlags,'--disable-background-timer-throttling','--disable-renderer-backgrounding','--disable-backgrounding-occluded-windows','--autoplay-policy=no-user-gesture-required']});
- for(const seats of extraBoss?[3]:extended?[extendedSeats]:[2,3]){
+ for(const seats of touchDrag?[extendedSeats]:extraBoss?[3]:extended?[extendedSeats]:[2,3]){
   const room='th17mp-room-test-'+seats,loadouts=Array.from({length:seats},(_,i)=>({character:i,shot:i}));
   const members=[];
   for(let seat=0;seat<seats;seat++){
@@ -164,6 +169,7 @@ try{
   const timing={adonisMode:rollback?0:1,inputDelay:rollback?0:2,inputDelayAuto:false};
   const start=await lobby(members[0],{type:'start',...timing},value=>value.type==='start');
   options=Array.from({length:seats},(_,seat)=>({
+   ...(touchDrag?{touchEnabled:true,touchMovementMode:'touch-unlimited'}:{}),
    netplayMode:'lan',netplayAdonisMode:timing.adonisMode,netplayInputDelay:timing.inputDelay,netplayAllowWebsocketFallback:!extraBoss,
    netplayPlayer:seat,netplayPlayerCount:seats,netplaySeed:1234,netplayDifficulty:difficulty,netplayLoadouts:loadouts,
    ...(requestedRenderScale?{renderScale}:{}),netplayUrl:endpoint+new URLSearchParams({room,run:String(start.serial),member:room+'-private-'+seat}),
@@ -181,8 +187,17 @@ try{
   })));
   if(rollback)await Promise.all(contexts.map(context=>context.addInitScript(({delayMs,jitterMs})=>{
    const send=RTCDataChannel.prototype.send;
+   globalThis.touchInputs=new Map();
    let sequence=0;
    RTCDataChannel.prototype.send=function(payload){
+    if(typeof payload!=='string'){
+     const bytes=payload instanceof ArrayBuffer?new Uint8Array(payload):new Uint8Array(payload.buffer,payload.byteOffset,payload.byteLength);
+     if(bytes.length>=56&&bytes[5]===1){
+      const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),count=bytes[42],offset=44+(count-1)*12;
+      if(count&&offset+12<=bytes.length&&bytes[offset+2]===2)
+       touchInputs.set(view.getUint32(24,true),[view.getFloat32(offset+4,true),view.getFloat32(offset+8,true)]);
+     }
+    }
     if(!globalThis.delayInput||typeof payload==='string')return send.call(this,payload);
     // Delay the guest's binary samples and repairs after the RTC handshake.
     // Otherwise a repaired input can arrive before the delayed sample.
@@ -219,8 +234,30 @@ try{
    if(musicDirectory)for(let seat=0;seat<seats;seat++)
     await pageFor(seat).waitForFunction(epoch=>events.some(event=>event.epoch===epoch&&event.event==='audio-health'&&event.musicEnabled),seat+1,{timeout:30000});
    const frames=pages.flatMap(current=>current.frames().filter(frame=>frame.url().includes('/runtime/')));
+   if(touchDrag&&directInput)for(const [seat,frame] of frames.entries())await checkDirectInput(frame,seat+1);
+   if(touchDrag)await pageFor(touchSeat).evaluate(({seat})=>{
+    let active=false,established=false,sent=0,lastDown=-100,downs=0,direct=0,fallback=0;
+    globalThis.touchDriver=setInterval(()=>{
+     const target=document.getElementById('p'+seat)?.contentWindow;
+     if(!target?.Module)return;
+     const module=target.Module,pointer=module._th17_room_rollback()>>>2,n=module.HEAPU32[pointer];
+     const dragging=n>=600&&n<1800;
+     if(!dragging&&!active)return;
+     established||=target.touchInputs?.size>0;
+     const time=n/60;
+     const message={protocol:'eagler-touhou/1',game:'th17',epoch:seat+1,command:'direct-touch',
+      type:dragging?active&&(established||n-lastDown<20)?'move':'down':'up',id:73,x:.5+Math.sin(time*2)*.13,y:.78+Math.cos(time*2)*.025};
+     if(message.type==='down'){lastDown=n;++downs;}
+     const bridge=target.__eaglerDirectInputBridge;
+     if(bridge?.submit(message))++direct;
+     else {++fallback;target.postMessage(message,location.origin);}
+     active=dragging;++sent;
+     globalThis.touchEvents=sent;
+     globalThis.touchDelivery={downs,direct,fallback};
+    },1000/120);
+   },{seat:touchSeat});
    for(const [seat,frame] of frames.entries()){
-    await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,storyTiming,verifyTransfer})=>{
+    await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,storyTiming,verifyTransfer,touchDrag,touchSeat,symmetricDelay})=>{
      const callback=Module.onGameFrame;
      if(globalThis.__th17GlCalls)globalThis.__th17GlCalls={};
      const optimized=typeof Module._th17_room_trace==='function';
@@ -231,6 +268,10 @@ try{
      globalThis.presentIntervals=[];
      globalThis.densePresentIntervals=[];
      globalThis.storyPresentIntervals=new Map();
+     globalThis.touchPresentIntervals=new Map();
+     globalThis.touchLayoutReads=0;
+     const measure=Module.canvas.getBoundingClientRect.bind(Module.canvas);
+     Module.canvas.getBoundingClientRect=()=>{++globalThis.touchLayoutReads;return measure();};
      globalThis.heapSamples=[];
      let recorded=0,loadSample=0,bullets=0;
      let previousCosts=Array(10).fill(0);
@@ -264,6 +305,11 @@ try{
         if(diagnostics.lastPresent){
          const gap=now-diagnostics.lastPresent;
          presentIntervals.push(gap);
+         if(touchDrag){
+          const segment=n<600?'stationary':n<1800?'dragging':'released';
+          if(!touchPresentIntervals.has(segment))touchPresentIntervals.set(segment,[]);
+          touchPresentIntervals.get(segment).push(gap);
+         }
          if(bullets>=256&&phase===1)densePresentIntervals.push(gap);
          const state=storyTiming&&samples.get(recorded);
          if(state){
@@ -306,7 +352,7 @@ try{
       diagnostics.corrections=corrections;diagnostics.resimulated=resimulated;
       diagnostics.combatCorrections=combatCorrections;diagnostics.spellCorrections=spellCorrections;
       diagnostics.maxPrediction=Math.max(diagnostics.maxPrediction,n-committed);
-      globalThis.delayInput=rollback&&seat===1&&n>=115;
+      globalThis.delayInput=rollback&&(symmetricDelay||seat===1)&&n>=115;
       for(let number=Math.max(recorded+1,committed-15);number<=committed;number++){
        const p=Module._th17_room_confirmed(number)>>>2,words=Array.from(Module.HEAPU32.subarray(p,p+(extraBoss?43:optimized?39:38)));
        words[2]=0;
@@ -328,16 +374,16 @@ try{
       if(verifyTransfer)Module._th17_key(42,+(seat===0&&n>=75&&n<105&&(n-75)%6<3));
       const centerGuest=extended&&seat===1&&n>=900&&n<952;
       const reserve=(throughStageTwo||denseExtra)&&seat===1&&n>=1500;
-      const moveGuest=seat===1&&n>=600&&!centerGuest&&!reserve;
+      const moveGuest=seat===1&&n>=600&&!centerGuest&&!reserve&&!(touchDrag&&seat===touchSeat);
       Module._th17_key(205,+(seat===1&&n>=120&&n<170||moveGuest&&n%96<12||extended&&seat===0&&n>=300&&n<350));
       Module._th17_key(203,+(seat===0&&n>=120&&n<170||moveGuest&&n%96>=48&&n%96<60||centerGuest||reserve&&n<1630));
       Module._th17_key(200,+(seat===2&&n>=120&&n<150||reserve&&n<1630));
-      Module._th17_key(44,+(n>=140&&n<260||extended&&n>=900));
+      Module._th17_key(44,+(n>=140&&(touchDrag||n<260)||extended&&n>=900));
       Module._th17_key(46,+(extended&&seat===0&&n>=1400&&n%120<100));
       Module._th17_key(45,+(seat===1&&n>=185&&n<193||extended&&n>=1800&&(n+seat*420)%840<9||
        denseExtra&&n>=1500&&(n+seat*420)%720<9));
      };
-    },{seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,verifyTransfer,storyTiming:checkPresentation&&difficulty!==4});
+    },{seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,verifyTransfer,touchDrag,touchSeat,symmetricDelay,storyTiming:checkPresentation&&difficulty!==4});
    }
    let frontier=0,progressAt=Date.now(),coverageFailure;
    let cutoff=extendedTarget;
@@ -351,7 +397,7 @@ try{
      await enableCpuThrottle();enableCpuThrottle=undefined;
     }
     if(current>frontier){
-     if((extended||extraBoss)&&Math.floor(current/1000)>Math.floor(frontier/1000))console.log('room confirmed through '+current);
+     if((extended||extraBoss||touchDrag)&&Math.floor(current/1000)>Math.floor(frontier/1000))console.log('room confirmed through '+current);
      frontier=current;progressAt=Date.now();
     }else if(Date.now()-progressAt>20000)throw Error('Room stopped confirming input: '+JSON.stringify(status));
     if(throughStageTwo&&status.every(item=>item.diagnostics.phase===2))
@@ -419,7 +465,10 @@ try{
      releaseMs:summarize(longCallbacks.map(row=>row.costs[9]/1000)),
      remainingMs:summarize(longCallbacks.map(row=>Math.max(0,row.time-(row.costs[1]+row.costs[3]+row.costs[5]+row.costs[7]+row.costs[9])/1000))),
     }:undefined;
-    return {...diagnostics,glCalls:globalThis.__th17GlCalls,liveHeapBytes,captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections:spellCorrections??diagnostics.spellCorrections,bossCosts,
+    return {...diagnostics,touchInputFrames:globalThis.touchInputs?.size||0,touchInputTargets:new Set([...globalThis.touchInputs?.values()||[]].map(value=>value.join(','))).size,
+     touchCombatInputs:[...samples].filter(([frame,state])=>state[10]>0&&globalThis.touchInputs?.has(frame)).length,touchLayoutReads:globalThis.touchLayoutReads,
+     touchPresentIntervals:Object.fromEntries([...touchPresentIntervals].map(([segment,gaps])=>[segment,{...summarize(gaps),fps:gaps.length*1000/gaps.reduce((sum,gap)=>sum+gap,0)}])),
+     glCalls:globalThis.__th17GlCalls,liveHeapBytes,captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections:spellCorrections??diagnostics.spellCorrections,bossCosts,
      tail,
      canvas:[canvas.width,canvas.height],renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):null,
      presentIntervals:summarize(presentIntervals),
@@ -486,14 +535,20 @@ try{
     }
    }
    reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,bossNonspellFrames,stageTwoFrames,denseWindows,
+    ...(touchDrag?await pageFor(touchSeat).evaluate(()=>({touchEvents:touchEvents||0,touchDelivery})):{}),
     bossPatterns:bossPatterns.filter(pattern=>pattern.last-pattern.first>=30),
     ...(priorMemory?{matchedMemory:compareMemory(priorMemory.samples,finaleSamples),lateMatchedMemory:compareMemory(priorMemory.samples,finaleSamples,lateStart)}:{}),
     settledPeaks:settledPeaks.filter(peak=>peak.bullets||peak.lasers),diagnostics,initialPower:initial.slice(24,24+seats),initialLives,last,difference});
    if(coverageFailure)throw coverageFailure;
+   if(touchDrag){
+    assert.ok(diagnostics[touchSeat].touchInputFrames>500,'touch movement reaches captured network inputs');
+    assert.ok(diagnostics[touchSeat].touchInputTargets>100,'continuous drag produces changing field targets');
+    assert.ok(diagnostics[touchSeat].touchCombatInputs>0,'touch movement overlaps enemy projectiles');
+   }
    if(difference)assert.deepEqual(difference.peer,difference.host,'world at frame '+difference.frame);
    if(rollback){
     assert.ok(diagnostics.some(item=>item.corrections>0&&item.resimulated>0),'late input triggers correction and replay');
-    assert.ok(diagnostics.some(item=>item.combatCorrections>0),'at least one correction happens while enemy projectiles are present');
+    if(!touchDrag)assert.ok(diagnostics.some(item=>item.combatCorrections>0),'at least one correction happens while enemy projectiles are present');
     assert.ok(diagnostics.every(item=>item.maxPrediction<=12));
     if(diagnostics[0].captures!==undefined){
      assert.ok(diagnostics.some(item=>item.logicalDraws>0),'intermediate replay omits GPU draws');
@@ -570,13 +625,13 @@ try{
   }finally{
    try{
     if(profiler){const {profile}=await profiler.send('Profiler.stop');await writeFile(resolve(out,seats+'p.cpuprofile'),JSON.stringify(profile));}
-   }finally{await Promise.all(contexts.map(context=>context.close()));for(const socket of members)socket.close();}
+   }finally{await Promise.all(pages.map(page=>page.evaluate(()=>clearInterval(globalThis.touchDriver))));await Promise.all(contexts.map(context=>context.close()));for(const socket of members)socket.close();}
   }
  }
 }finally{
  await browser?.close();for(const socket of sockets)socket.close();relay.kill();server.closeAllConnections();server.close();
  await writeFile(resolve(out,'room-report.json'),JSON.stringify({rollback,extended,difficulty,version:manifest.version,wasm:manifest.execution.sha256,
-  throughStageTwo,denseExtra,extraBoss,extraFinale,independent,renderScale,music,cpuProfile,glTrace,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
+  throughStageTwo,denseExtra,extraBoss,extraFinale,independent,renderScale,music,cpuProfile,glTrace,touchDrag,touchSeat,symmetricDelay,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
  if(finaleSamples)await writeFile(resolve(out,'heap-samples.json'),JSON.stringify({
   fields:['nextFrame','bullets','spell','heap','lasers','snapshots','unusedCapacity','bulletState','bulletVisual','itemVisual','idleItemVisual','animation'],
   samples:finaleSamples})+'\n');
