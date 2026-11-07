@@ -106,6 +106,9 @@ bool ApplicationState::release_game(){
  close_options();fades.clear();display.reset();pause.reset();if(run_input&&flow.pending==AppScene::NextStage)retained_input=run_input->input;run_input.reset();if(!run)return true;
  selection_player=scene()->battle.session;selection_score=scene()->battle.score;
  if(flow.pending==AppScene::NextStage)return true;
+#if TH17_MULTIPLAYER
+ room_spell_title.reset();drawn_room_spell_title.reset();
+#endif
  run.reset();for(i32 bank:{0,6,8})animations.retire_resource(bank);animations.collect_resources();reset_graphics();if(!scene_effects&&!exiting)scene_effects=std::make_unique<AnmSceneEffects>(animations,environment.game_rng,visual,8);return true;
 }
 bool ApplicationState::begin_title(){
@@ -228,6 +231,10 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
 #if TH17_MULTIPLAYER
   // A tick can open a pause or cross a scene boundary during its update.
   if(graphics.logical_drawing&&room_sounds&&!can_rollback())graphics.logical_drawing=false;
+  if(!graphics.logical_drawing&&room_spell_title!=drawn_room_spell_title){
+   if(room_spell_title&&!fonts.write_text(room_spell_title->layout,room_spell_title->request))return fail(fonts.error);
+   drawn_room_spell_title=room_spell_title;
+  }
 #endif
   double clock_seconds=-1;
 #if TH17_MULTIPLAYER

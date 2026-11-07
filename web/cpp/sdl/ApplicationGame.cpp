@@ -12,8 +12,22 @@ bool ApplicationState::finish_practice(){return rollback_boundary()&&(pause&&pau
 bool ApplicationState::record_play_time(){return rollback_boundary()&&(pause&&pause->time.account(i32(flow.current))||fail(pause?pause->time.error:"Run play-time owner unavailable"));}
 bool ApplicationState::return_to_title(){if(!rollback_boundary())return false;if(progress.practice_record)return replay_finished();flow.pending=AppScene::Title;return true;}
 bool ApplicationState::dialogue_text(AnmVm& vm,u32 color,u32 shadow,i32 style,i32 x,i32 spacing,const std::string& bytes){return rollback_boundary()&&(fonts.dialogue(vm,color,shadow,style,x,spacing,bytes)||fail(fonts.error));}
-bool ApplicationState::spell_title(AnmVm& vm,const std::string& bytes){if(!rollback_boundary())return false;const auto* name=scene()?localized_spell(scene()->battle.spell.id):nullptr;
- return fonts.spell_title(vm,name?*name:bytes,name!=nullptr)||fail(fonts.error);}
+bool ApplicationState::spell_title(AnmVm& vm,const std::string& bytes){
+ const auto* name=scene()?localized_spell(scene()->battle.spell.id):nullptr;
+#if TH17_MULTIPLAYER
+ if(room_sounds){
+  // Resolve the title slot at creation. Only a physical draw writes the
+  // shared atlas, using the request restored with the current timeline.
+  auto request=FontDevice::spell_title_request(name?*name:bytes,name!=nullptr);
+  TextLayout layout;
+  if(!TextLayout::prepare(vm,request,fonts.fallback,layout))return fail("Missing spell title animation or style");
+  room_spell_title=std::make_shared<RoomSpellTitle>(RoomSpellTitle{layout,std::move(request)});
+  vm.visual.flags|=1;
+  return true;
+ }
+#endif
+ return fonts.spell_title(vm,name?*name:bytes,name!=nullptr)||fail(fonts.error);
+}
 bool ApplicationState::music_control(i32 operation,i32 value){
  if(!rollback_boundary())return false;
  if(practice.active&&assets()&&!practice.active.dialogue&&practice_bgm(practice.active.section)){
