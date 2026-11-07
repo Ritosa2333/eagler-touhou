@@ -340,6 +340,25 @@ void borrowed_animation_graph(){
 }
 
 void animation_curve_rollback(){
+    // Exercise every byte, all word alignments and both unequal directions.
+    // Raw byte arrays avoid constructing an invalid bool/float representation.
+    constexpr auto size=sizeof(AnmInterpolators);
+    std::array<unsigned char,size+8> first_bytes{},second_bytes{};
+    u32 seed=1234;
+    for(auto& byte:first_bytes){seed=seed*1664525u+1013904223u;byte=u8(seed>>24);}
+    for(size_t alignment=0;alignment<8;++alignment){
+        auto* a=first_bytes.data()+alignment;auto* b=second_bytes.data()+alignment;
+        std::memcpy(b,a,size);
+        require(multiplayer::snapshot_equal<size>(a,b),"identical unaligned snapshot bytes match");
+        for(size_t at=0;at<size;++at){
+            b[at]^=0x80;
+            require(!multiplayer::snapshot_equal<size>(a,b)&&!multiplayer::snapshot_equal<size>(b,a),
+                    "snapshot comparison detects every changed byte");
+            b[at]^=0x80;
+        }
+    }
+    require(multiplayer::snapshot_equal<0>(nullptr,nullptr),"empty snapshot comparison does not load");
+    require(multiplayer::snapshot_equal<1>(first_bytes.data(),first_bytes.data()),"short snapshot tail matches");
     AnmVm vm;
     vm.interpolators.mask_valid=true;
     vm.interpolators.position.control1={1,2,3};
