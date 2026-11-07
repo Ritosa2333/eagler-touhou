@@ -7,9 +7,10 @@ namespace th17 {
 class AnmRenderer {
     ZunGraphics& graphics;touhou::graphics::PipelineState& render_state;const bool indexed_quads;
     std::vector<AnmGeometryVertex> vertices;u32 vertex_count=0,bound_texture=~0u;bool quad_batch=false;
+    std::vector<AnmGeometryVertex> faded_strip;
     struct ColorVertex {Vec3 position;float reciprocal_w;u32 color;};std::vector<ColorVertex> shapes;
     bool material(AnmVm&,bool textured=true);int quad(AnmVm&,bool pixel);int pack_quad(AnmVm&,Vec3 (&)[4],bool pixel,const u32* colors=nullptr);int projected_quad(AnmVm&,bool fog);int world_quad(AnmVm&);int mesh(AnmVm&);int shape(AnmVm&);int trail(AnmVm&);
-    u32 tint_color(u32)const noexcept;int overlay(AnmVm&);
+    u32 tint_color(u32)const noexcept;u32 draw_opacity(const AnmVm&)const noexcept;int overlay(AnmVm&);
 public:
     Vec2 offset{};GraphicsViewport viewport;AnmCamera camera;bool tint_enabled=false;u32 tint=0x80808080;
     bool logical_only=false;

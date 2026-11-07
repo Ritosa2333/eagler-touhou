@@ -63,7 +63,7 @@ bool PlayerShots::initialize(PlayerShot& shot,u32 id,const Vec3& position){
     else shot.motion.angle=normalize_angle(specified>=995&&option?context.option_angles[option-1]:specified);
     if(s->type==2){if(context.power_step==0){error="Player power divisor is zero";return false;}context.laser_power[lock]=context.power/context.power_step;}
     shot.motion.integrate(rate);shot.motion.position.x=float(float(s->offset.x-shot.motion.velocity.x)+shot.motion.position.x);shot.motion.position.y=float(float(s->offset.y-shot.motion.velocity.y)+shot.motion.position.y);
-    shot.animation=animations.create(player_resource,i32(s->animation)+5,-1,0,{},0,0,presentation_seat);auto* vm=animations.registry.find(shot.animation);if(!vm){error=animations.error;return false;}if(vm->visual.render_flags&0x80){vm->visual.flags|=4;vm->variables.rotation.z=specified;}
+    shot.animation=animations.create_pilot_effect(player_resource,i32(s->animation)+5,presentation_seat,{});auto* vm=animations.registry.find(shot.animation);if(!vm){error=animations.error;return false;}if(vm->visual.render_flags&0x80){vm->visual.flags|=4;vm->variables.rotation.z=specified;}
     shot.damage_source=damage.rectangle(shot.motion.position,shot.motion.angle,shot.hitbox,9999999,shot.damage);auto* source=damage.find(shot.damage_source);if(!source){error="Player shot damage source unavailable";return false;}source->callback_kind=1;source->damage_limit=10000000;source->shot_index=shot.index;shot.flags|=1;
     switch(s->spawn_kind){
     case 0:break;case 1:shot.target=0;break;

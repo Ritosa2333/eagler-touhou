@@ -29,7 +29,7 @@ i32 PlayerShots::contact(PlayerShot& shot,const ShotSpec& spec,const DamageQuery
     }
     if(kind==1){
         const float variation=float(visual_random.signed_unit()*.34906584f),angle=normalize_angle(float(normalize_angle(float(shot.motion.angle+variation))+3.1415927f));
-        const u32 handle=animations.create(effect_resource,149,-1,0,shot.motion.position,angle);auto* vm=animations.registry.find(handle);if(!vm){error=animations.error;return -1;}
+        const u32 handle=animations.create_pilot_effect(effect_resource,149,presentation_seat,shot.motion.position,angle);auto* vm=animations.registry.find(handle);if(!vm){error=animations.error;return -1;}
         const u32 r=(visual_random.next32()&127)+127,g=(visual_random.next32()&63)+64,b=(visual_random.next32()&63)+64,a=(visual_random.next32()&63)+96;vm->visual.color=b|(g<<8)|(r<<16)|(a<<24);
         reward(50);return ordinary_hit(shot);
     }
