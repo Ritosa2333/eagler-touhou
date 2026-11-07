@@ -644,7 +644,7 @@ $('start').addEventListener('click', async () => {
       if(netQuery.get('role')==='host')replayRecorder.connectNetwork({room:netQuery.get('room'),token:netQuery.get('token'),runId:Number(netQuery.get('runId'))});
       const options={recorder:replayRecorder,proof:()=>battleProof(emulator,nativePause,controls,nativeMusic,pauseSeat,pauseSelection,hiddenSeats),scene:()=>nativePause.selecting?2:nativeState?.phase===1?1:0,network:netplay,rollbackEnabled,inputDelay:inputPolicy.inputDelay,predictionLead:inputPolicy.predictionLead,snapshotStride:2,onError:report,onState:message=>status(message)};
       sync=emulator.isNetworkWorker?new AsyncLockstep({...options,execute:(inputs,frame)=>emulator.execute(inputs,frame),replaySlice:(frame,plans)=>emulator.replaySlice(frame,plans),restore:frame=>emulator.restore(frame),
-        confirmQueued:(prefix,retain)=>emulator.confirmQueued(prefix,retain),present:()=>emulator.present(presentationDue)})
+        confirmQueued:(prefix,retain)=>emulator.confirmQueued(prefix,retain),present:()=>emulator.present()})
         :new Lockstep({...options,step:stepSynchronized,present:presentFrame,hash:syncHash,capture:captureSynchronized,restore:restoreSynchronized,confirm:confirmSynchronized});
     }
     // Boot can contain menu SE while the other device is still loading.
