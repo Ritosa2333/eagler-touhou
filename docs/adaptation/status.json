@@ -6,10 +6,10 @@
       "game": "th05",
       "variant": "multiplayer",
       "directory": "ports/th05-mp",
-      "sourceDigest": "2156268bfa5e416c149065724b71a7af2218f2fc1680b2befa6c85ad94427e4c",
+      "sourceDigest": "b932e317b558e7f3642cc587f94942b54edc241ea34eff1cdcd7dc31e26f1d88",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
-      "translationUnits": 90,
+      "translationUnits": 96,
       "features": {
         "thcrap": true,
         "thprac": false
@@ -87,7 +87,11 @@
             "INPUT-04"
           ],
           "files": [
+            "../../common/src/netplay/NetplayCore.cpp",
+            "../../common/src/netplay/NetplayProtocol.cpp",
+            "../../common/src/netplay/RollbackJournal.cpp",
             "Game/Coop/Coop.cpp",
+            "Game/Coop/WorldRollback.cpp",
             "Game/ED/Ending.cpp",
             "Game/GlobalVariableAndStatistics.cpp",
             "Game/HighScoreScreen/HighScoreScreen.cpp",
@@ -169,8 +173,10 @@
             "gameLib/th5DatFile/th5DatFile.cpp",
             "portable/Game.cpp",
             "portable/Graphics.cpp",
+            "portable/Netplay.cpp",
             "portable/Platform.cpp",
             "portable/Pointer.cpp",
+            "portable/Spectator.cpp",
             "portable/Text.cpp",
             "portable/UI.cpp",
             "third_party/imgui/imgui.cpp",
@@ -207,6 +213,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -225,6 +233,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -242,6 +252,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -261,7 +273,7 @@
       "game": "th05",
       "variant": "normal",
       "directory": "ports/th05",
-      "sourceDigest": "f11e58fb7762f53f9d0549753e463fd1245d09bf0c4e9ba3da4cda0c2f96fc99",
+      "sourceDigest": "f3eff7dc1fdd818490eba4566f77b18bfd897f52d2175c7d7bf5c04467ceb00a",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 89,
@@ -461,6 +473,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -479,6 +493,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -496,6 +512,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -535,7 +553,7 @@
       "game": "th06",
       "variant": "multiplayer",
       "directory": "ports/th06",
-      "sourceDigest": "0f9bd591bd922026d22a70bf9379ca8362d3bf71f99dc94d291713084d9ba897",
+      "sourceDigest": "a5a40a40ddd183590a2080209f5d7b66077d7a46cad3662fe85364b12ce7e9b4",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -724,7 +742,7 @@
       "game": "th06",
       "variant": "normal",
       "directory": "ports/th06",
-      "sourceDigest": "85386f5376351f9fd3fbd8c5703867d652aa703fc5c1bf6a3260f78319556d62",
+      "sourceDigest": "36307ebf4b4770a09555bd144aca481b0a0ef08ce2b019a20de9c3276ae74f50",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -885,6 +903,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -934,7 +955,7 @@
       "game": "th07",
       "variant": "multiplayer",
       "directory": "ports/th07",
-      "sourceDigest": "79f28e95d4a36888d6a1df497ce4cbf52c9a0d66ace9c49fb6d4a061067d2f4c",
+      "sourceDigest": "a717f25167ddf6dda7b0e4c5c0d9206036932c050b60e5154e955209676522bf",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -1123,7 +1144,7 @@
       "game": "th07",
       "variant": "normal",
       "directory": "ports/th07",
-      "sourceDigest": "67ca406effa4f6df65addc776fa249f70db02850f3fb145f64b9ad07ac2aa60c",
+      "sourceDigest": "7eeaab3c79f438621f050bed0b227b16ff439101ece3dd2e3745f05cba1a8219",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -1284,6 +1305,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -1333,7 +1357,7 @@
       "game": "th075",
       "variant": "multiplayer",
       "directory": "ports/th075-mp",
-      "sourceDigest": "ce1a1f728cdfecbaa9a46ef8b4c53c871ca2396ae0e3dafb89af55dfa1191d1c",
+      "sourceDigest": "7127084938eee39de777e2983059f07a3fbe9a91cf652c8cb48ec577a21cbd1a",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 207,
@@ -1487,7 +1511,7 @@
       "game": "th075",
       "variant": "normal",
       "directory": "ports/th075",
-      "sourceDigest": "9c846845136abdd6ff2cd7b513ca6c22d67362bc2daae39fb5e27f763c36b243",
+      "sourceDigest": "9582148420de060f6227b99eddca91efc5a1f59d58d4dbd93d675291ec64690a",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 200,
@@ -1636,6 +1660,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -1661,7 +1688,7 @@
       "game": "th08",
       "variant": "multiplayer",
       "directory": "ports/th08-mp",
-      "sourceDigest": "f7e09bb9d1b80e836f49a0872b6471e2c6b6c2c005ff83b24971d7a622e297ba",
+      "sourceDigest": "1422cb988c0f024c5868a831ab14c286d62e8880607d8eb2eb6ba945729df7e9",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 225,
@@ -1816,7 +1843,7 @@
       "game": "th08",
       "variant": "normal",
       "directory": "ports/th08",
-      "sourceDigest": "8d2e04fcbfa2073138506bf20c944d10871183fd9895d8d3159e1adc662c1841",
+      "sourceDigest": "ed49a63ba82cfb8bbae3723b28e20aeff960d5f3712b23d535dc79bdc96c3546",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 196,
@@ -1966,6 +1993,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -1991,7 +2021,7 @@
       "game": "th09",
       "variant": "multiplayer",
       "directory": "ports/th09",
-      "sourceDigest": "01bdd915c72113bde0a2d2266ff2bdc40e5198cf6e256590cbd83ae9ad565a68",
+      "sourceDigest": "3d897564f3687b87899c5449844c75fecc5a938e807cd58a5d8f0a255c7cf247",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 116,
@@ -2143,7 +2173,7 @@
       "game": "th09",
       "variant": "normal",
       "directory": "ports/th09",
-      "sourceDigest": "dbb1d6be448e16ac795a71a502b7d2030018630fcb7ef55dacdf6ac6a2172ec0",
+      "sourceDigest": "278b5a4c5a0010dd86e749cd29c89b3e579081fe370f835da4d582275b34c738",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 116,
@@ -2291,6 +2321,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -2316,7 +2349,7 @@
       "game": "th10",
       "variant": "multiplayer",
       "directory": "ports/th10-mp",
-      "sourceDigest": "07928b7737466c42a840d333acd17bd237c6792cb2700538ccc088ea4ec0fcef",
+      "sourceDigest": "56b354fcb3c26ef7584493a1a664a0f60bb6b538d4c1796b063802ebf5b55efc",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 277,
@@ -2470,7 +2503,7 @@
       "game": "th10",
       "variant": "normal",
       "directory": "ports/th10",
-      "sourceDigest": "d0fbfd5033ad50bf673ed76343d728ecf3d20c3258ea4f8eae0b7ded20d03d31",
+      "sourceDigest": "87aff7aa49f532f5f257ccf8dfeaf0bdebefd1b8ef2bf0ee106719181c6d0480",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 249,
@@ -2620,6 +2653,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -2645,7 +2681,7 @@
       "game": "th11",
       "variant": "multiplayer",
       "directory": "ports/th11-mp",
-      "sourceDigest": "fb3163b2c2822bdc76c6c19c46b0db9a8cadab089254057f499c70f358210cae",
+      "sourceDigest": "41291f1abea08fb909e35a69171cfd365455536e3e0aeed4668837440e0a326c",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 139,
@@ -2799,7 +2835,7 @@
       "game": "th11",
       "variant": "normal",
       "directory": "ports/th11",
-      "sourceDigest": "6b23cea181fb9f233ee058983dfa4e3625afa63d8a615b582f1bf32b03787bac",
+      "sourceDigest": "d8c143054dfd686f56dcbd4180efbca88a5e2f3c154c5db208d40f43e5bb09c5",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 115,
@@ -2949,6 +2985,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -2974,7 +3013,7 @@
       "game": "th12",
       "variant": "multiplayer",
       "directory": "ports/th12-mp",
-      "sourceDigest": "6666e8be67977aa94589aaeac3bd10112e34ecbfddaf4d8cd4663bbeeac5a4f9",
+      "sourceDigest": "a396fb1ff19f0e55dd1b42993a28ff143ae7e9163551750e6b4a8edb97254b1d",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 95,
@@ -3134,7 +3173,7 @@
       "game": "th12",
       "variant": "normal",
       "directory": "ports/th12",
-      "sourceDigest": "aec5d8a5a564657e140b8b77887ad126c68e3de48c185563022a1ecf3ddf8049",
+      "sourceDigest": "f03c3720abd3e9cf55d0324b1e5610e4e042fd9505940c58c99c3e288fadaa12",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 81,
@@ -3290,6 +3329,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -3315,7 +3357,7 @@
       "game": "th15",
       "variant": "multiplayer",
       "directory": "ports/th15-mp",
-      "sourceDigest": "09ba6b94528b1fa5f34ce5d806d719683319d4b7d818f21cf3a8ea2bb700c7b7",
+      "sourceDigest": "b59813a931da034d0b4aa2ff3dd502bf8711932eb48e749eb008f591faf27b7d",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 271,
@@ -3468,7 +3510,7 @@
       "game": "th15",
       "variant": "normal",
       "directory": "ports/th15",
-      "sourceDigest": "bd661bd0dc0edbd757515c06172d55c3d7fb721bad7631a665ea6349bfa4d5e0",
+      "sourceDigest": "b99710f5ba632680a81c946d7892e4e850fe3b8fc8c077f7b80cc92557580753",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 253,
@@ -3617,6 +3659,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -3642,7 +3687,7 @@
       "game": "th17",
       "variant": "normal",
       "directory": "ports/th17",
-      "sourceDigest": "5f83900dcad1e53aef4b7b158b904fe9cd1231ceedb4c33d39e8d49d00259c10",
+      "sourceDigest": "35adfdec84099e0ba5f04a9f0d7770ea9483a1d6b53d3bb26f2845c45529f898",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 211,
@@ -3802,6 +3847,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -3827,7 +3875,7 @@
       "game": "th19",
       "variant": "multiplayer",
       "directory": "ports/th19",
-      "sourceDigest": "184a6fef6be0ce312a94eda8a6c733548c56465e3e6ad6cebdb7ee25e823604c",
+      "sourceDigest": "da6fb4b9f4649ac4e68edc59cbbdf536647269bdef1952f09d2e2a76a47c5af6",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 14,
@@ -3979,7 +4027,7 @@
       "game": "th19",
       "variant": "normal",
       "directory": "ports/th19",
-      "sourceDigest": "eea082caef010bc8678de68526286fc6a1b1adec31ff135641a71c18ab3061e6",
+      "sourceDigest": "90b30c7b3634238a20f7bd862cdaaa4d7b35d0a27eae6de71177697a00b8676e",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 14,
@@ -4126,6 +4174,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -4151,7 +4202,7 @@
       "game": "th20",
       "variant": "normal",
       "directory": "ports/th20",
-      "sourceDigest": "d3254a2e8519bf0062c08b5054a6488a046f865e28fea6e7c2f57660eee212eb",
+      "sourceDigest": "3ed95ada879c4cbc61b429e5a91cacbc28b584befb869bdb5c888ed6d5fbf5c5",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 478,
@@ -4300,6 +4351,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
