@@ -116,7 +116,7 @@ async function mountLobby(f, extra = {}, options = {}) {
 }
 async function mountDialog(f, mode = 'create', extra = {}, options = {}) {
   await React.act(async () => assert.equal(f.service.prepareForm(mode), true)); let requests = 0;
-  const m = await mount(owners.DirectoryRoomDialog, {service: f.service, open: true, onCloseRequest: () => requests++, ...extra}, options);
+  const m = await mount(owners.DirectoryRoomDialog, {service: f.service, assetUrl, open: true, onCloseRequest: () => requests++, ...extra}, options);
   return {m, get requests() {return requests;}};
 }
 async function click(selector, scope) {await React.act(async () => {const target=n(selector,scope);if(target.getAttribute('aria-haspopup')==='menu'){target.focus();target.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));}else target.click();await new Promise(resolve=>setTimeout(resolve,0));});}
@@ -154,7 +154,8 @@ function expectedDialog(f, locale) {
   n('#submitRoom', doc).textContent = t(locale, create ? 'lobby.create' : 'lobby.joinRoom');
   n('#createFields', doc).hidden = n('#policyFields', doc).hidden = !create; n('#codeField', doc).hidden = create;
   n('#roomCodeInput', doc).required = !create;
-  n('#formNote', doc).textContent = t(locale, create ? form.visibility === 'private' ? 'room.privateHint' : 'lobby.publicRoom' : 'lobby.codeHint');
+  if (create) n('#formNote', doc).textContent = t(locale, form.visibility === 'private' ? 'room.privateHint' : 'lobby.publicRoom');
+  else n('#formNote', doc).remove();
   for (const [id, key] of [['gameSelect','lobby.game'], ['capacitySelect','lobby.capacity'], ['difficultySelect','lobby.difficulty'], ['visibilitySelect','room.visibility'], ['cheatSelect','room.cheatMovement']]) n('#'+id, doc).setAttribute('aria-label', t(locale,key));
   return n('#roomDialog', doc);
 }
@@ -425,7 +426,8 @@ for (const locale of ['zh-CN', 'en']) for (const mode of ['create', 'join']) tes
   assert.deepEqual(normalize(n('#roomDialog')), normalize(expectedDialog(f, locale)));
   assert.equal(n('#roomDialog').open, true); assert.equal(n('#roomDialog').getAttribute('aria-labelledby'), 'dialogTitle');
   assert.deepEqual(all('#roomDialog select.custom-select-native').map(s => s.id), ['gameSelect', 'capacitySelect', 'difficultySelect', 'visibilitySelect', 'cheatSelect']);
-  assert.equal(all('#roomDialog [role="combobox"]').length, 5);
+  assert.equal(all('#roomDialog [role="combobox"]').length, mode === 'create' ? 4 : 5);
+  if (mode === 'create') assert.equal(n('#gameSelect-trigger').getAttribute('aria-haspopup'), 'menu');
   for (const select of all('#roomDialog select.custom-select-native')) assert.equal(select.nextElementSibling.getAttribute('aria-label'), select.getAttribute('aria-label'));
   assert.equal(n('#gameSelect').value, 'th06mp'); assert.equal(n('#capacitySelect').value, '2'); assert.equal(n('#difficultySelect').value, '1');
   assert.equal(n('#roomCodeInput').required, mode === 'join'); if (mode === 'join') assert.equal(env.document.activeElement, n('#roomCodeInput'));
@@ -443,7 +445,7 @@ test('Dialog retains code/visibility/cheat fields while each open/game change re
   await change('#capacitySelect', '3'); await change('#difficultySelect', '5'); await change('#gameSelect', 'th09mp');
   assert.deepEqual(all('#capacitySelect option').map(x => x.value), ['2']); assert.equal(n('#difficultySelect').value, '1');
   assert.equal(n('#roomCodeInput').value, '456789'); assert.equal(n('#visibilitySelect').value, 'private'); assert.equal(n('#cheatSelect').value, '1');
-  assert.equal(n('#formNote').textContent, t('en', 'lobby.codeHint'));
+  assert.equal(env.document.querySelector('#formNote'), null);
 });
 for (const locale of ['zh-CN', 'en']) test(`Dialog invalid code uses native validity and input clears localized error: ${locale}`, async () => {
   const f = await fixture({locale}).live(); const mounted = await mountDialog(f, 'join', {}, {locale});
@@ -489,7 +491,7 @@ test('Dialog cancel is prevented; only target dialog with coordinates strictly o
 });
 test('Dialog StrictMode setup/cleanup and full unmount never execute pending entry', async () => {
   const f = await fixture().live(); f.service.prepareForm('create'); assert.equal(f.service.submitForm(), 'close');
-  const m = await mount(owners.DirectoryRoomDialog, {service: f.service, open: true, onCloseRequest() {}}, {strict: true});
+  const m = await mount(owners.DirectoryRoomDialog, {service: f.service, assetUrl, open: true, onCloseRequest() {}}, {strict: true});
   assert.equal(n('#roomDialog').open, true); assert.equal(f.closeCalls, 0); assert.equal(f.navigations.length, 0);
   await m.unmount(); assert.equal(f.closeCalls, 0); assert.equal(f.navigations.length, 0); assert.equal(f.sessionWrites.length, 0);
 });
@@ -505,7 +507,7 @@ async function mountRouter(f, {strict = false} = {}) {
   function Carrier() {
     nav = owners.useSurfaceNavigation();
     React.useLayoutEffect(() => {if (nav.directoryFormMode) f.service.restoreFormMode(nav.directoryFormMode);}, [nav.directoryFormMode]);
-    return React.createElement(owners.DirectoryRoomDialog, {service: f.service, open: !!nav.directoryFormMode, onCloseRequest: nav.closeDirectoryForm});
+    return React.createElement(owners.DirectoryRoomDialog, {service: f.service, assetUrl, open: !!nav.directoryFormMode, onCloseRequest: nav.closeDirectoryForm});
   }
   let tree = React.createElement(owners.LocaleProvider, {locale: 'en'}, React.createElement(owners.SurfaceNavigationProvider,
     {dirty: false, isEditing: false, onDiscard() {}}, React.createElement(Carrier)));
@@ -600,7 +602,7 @@ test('No multiplayer products disables create/code/submit while keeping the orig
   const f = await fixture({host: {games: ['th20']}}).live(); await mountLobby(f);
   assert.deepEqual(f.service.getSnapshot().products, []); assert.equal(n('#createButton').disabled, true); assert.equal(n('#codeButton').disabled, true);
   assert.equal(f.service.prepareForm('create'), false);
-  await mount(owners.DirectoryRoomDialog, {service: f.service, open: true, onCloseRequest() {assert.fail('Unavailable form must not close');}});
+  await mount(owners.DirectoryRoomDialog, {service: f.service, assetUrl, open: true, onCloseRequest() {assert.fail('Unavailable form must not close');}});
   assert.equal(n('#submitRoom').disabled, true); assert.equal(all('#gameSelect option').length, 0);
   for (const select of all('#roomDialog select')) assert.equal(select.disabled, false, 'Main disables submit, not native form fields');
   await submit(); assert.equal(f.closeCalls, 0); assert.equal(f.navigations.length, 0);

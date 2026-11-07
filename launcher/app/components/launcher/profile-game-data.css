@@ -2,6 +2,9 @@
 .profile-work-art-fallback{display:grid;place-items:center;width:100%;height:100%;background:var(--book-raised);color:var(--book-muted);border-radius:4px;font-size:13px}.profile-playtime-game>.profile-work-art-fallback{width:32px;height:32px}
 .profile-flight-total{display:flex;gap:8px;align-items:baseline;white-space:nowrap;font-size:12px;color:var(--book-muted)}.profile-flight-total strong{font-size:15px;font-variant-numeric:tabular-nums;color:var(--book-ink)}
 .profile-playtime-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px 24px}.profile-playtime-game{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;gap:10px;min-width:0;padding:5px 0}.profile-playtime-game img{width:32px;height:32px;object-fit:cover;border-radius:4px}.profile-playtime-game strong{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}.profile-playtime-game>span{font-size:12px;color:var(--book-muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.profile-clear-frame{overflow:clip;transition:height var(--ui-surface-duration) var(--ui-surface-easing)}
+.less-motion .profile-clear-frame{transition:none}
+@media(prefers-reduced-motion:reduce){.profile-clear-frame{transition:none}}
 .profile-clear-chart{--clear-size:clamp(14px,3.4cqw,24px);--clear-step:clamp(24px,5cqw,36px);--clear-column:clamp(18px,6cqw,56px);--clear-gap:clamp(4px,1.4cqw,12px)}
 .profile-clear-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;min-height:32px;margin-bottom:12px}.profile-clear-legend{display:flex;gap:12px;font-size:10px;color:var(--book-muted)}.profile-clear-legend>span{display:flex;gap:4px;align-items:center}.profile-clear-legend i{width:8px;height:8px;min-height:0}.profile-clear-modes{display:flex;gap:2px}
 .profile-clear-scroll{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}.profile-clear-plot{position:relative;display:flex;justify-content:center;align-items:flex-start;gap:var(--clear-gap);width:max-content;min-width:100%;min-height:182px;padding:6px 2px 12px;box-sizing:border-box}
@@ -15,5 +18,5 @@
 .profile-clear-plot[data-tilted=true] .profile-clear-character-name{margin-top:12px;transform:rotate(-35deg);transform-origin:50% 0}
 .profile-clear-cell[data-status=unavailable]{background:transparent;border-style:dashed}
 .profile-clear-cell[data-status=not-applicable]{visibility:hidden}
-@media(max-width:480px){.profile-flight-total{font-size:10px;gap:5px}.profile-flight-total strong{font-size:13px}.profile-clear-axis{min-width:42px;font-size:9px}.profile-game-data .profile-section-title h2{font-size:15px}.profile-clear-legend{gap:8px}}
+@media(max-width:480px){.profile-flight-total{font-size:10px;gap:5px}.profile-flight-total strong{font-size:13px}.profile-clear-axis{min-width:42px;font-size:9px}.profile-game-data .profile-section-title h2{font-size:15px}.profile-clear-legend{gap:8px}.profile-clear-back-label{display:none}}
 @supports not(container-type:inline-size){.profile-clear-chart{--clear-size:18px;--clear-step:28px;--clear-column:40px;--clear-gap:8px}}
