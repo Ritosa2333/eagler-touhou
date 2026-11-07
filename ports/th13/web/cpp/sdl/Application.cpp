@@ -5,6 +5,7 @@
 #include "StageTransitionClock.hpp"
 #include "game/TitleFrame.hpp"
 #include "game/VisualBootstrap.hpp"
+#include "game/ReplayFastForward.hpp"
 
 #include <SDL3/SDL.h>
 
@@ -521,6 +522,34 @@ bool ApplicationState::initialize(bool device) {
     };
     if (scheduler.add(fps_text_draw, FramePass::Draw, 77) < 0)
         return fail("FPS text draw callback registration failed");
+    replay_fast_forward.owner = this;
+    replay_fast_forward.enabled = true;
+    replay_fast_forward.run = [](void* p) -> i32 {
+        auto& app = *static_cast<ApplicationState*>(p);
+        if (!app.run || !app.replay_active || !app.physical_input ||
+            app.pending_destination >= 0) return 1;
+        app.restart_update = replay_fast_forward_restart(app.physical_input->held,
+            app.replay_consumed, app.replay_consumed != app.replay_pass_start,
+            app.environment.paused, app.progress.scene_flags, app.replay_finished);
+        // Stop before the late ANM chain (34). step() restarts the whole
+        // Update pass, including the application-owned stage-transition clocks.
+        return app.restart_update ? 3 : 1;
+    };
+    if (scheduler.add(replay_fast_forward, FramePass::Update, 30) < 0)
+        return fail("Replay fast-forward callback registration failed");
+    ending_update.owner = this;
+    ending_update.enabled = true;
+    ending_update.run = [](void* p) -> i32 {
+        auto& app = *static_cast<ApplicationState*>(p);
+        if (!app.ending || !app.physical_input) return 1;
+        if (!app.ending->update(*app.physical_input)) return 5;
+        app.restart_update = app.pending_destination < 0 &&
+                             app.ending->should_restart(*app.physical_input);
+        return app.restart_update ? 3 : 1;
+    };
+    // 00416190 sets EBX=0x1f before registering 004166b0 -> 00416610.
+    if (scheduler.add(ending_update, FramePass::Update, 31) < 0)
+        return fail("Ending update callback registration failed");
     initialized = true;
     return begin_title(0);
 }
@@ -534,6 +563,8 @@ ApplicationState::~ApplicationState() {
     }
     release_run();
     scheduler.remove(loading_battle_draw);
+    scheduler.remove(replay_fast_forward);
+    scheduler.remove(ending_update);
     for (auto& callback : animation_updates) scheduler.remove(callback);
     display.reset();
     animations.resource_release = nullptr;
@@ -1214,9 +1245,7 @@ bool ApplicationState::complete_loading() {
     return true;
 }
 
-bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) {
-    if (!initialized || exiting || !failure.empty()) return false;
-    if (!complete_loading()) return false;
+bool ApplicationState::update_scene_pass(const GameInput& input) {
     bool loaded_transition = false;
     if (stage_transition_loading) {
         if (!prepare_next_stage()) return false;
@@ -1298,15 +1327,6 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
                                                                            : title->frame.error
                                                 : title->error);
     } else if (run) {
-        if (pause) {
-            if (pause->active()) {
-                pause->controls({input.pressed, input.repeated, lost_focus});
-            } else if (input.pressed & 0x100) {  // Esc：暂停覆盖层
-                if (!pause->open(PauseEntrance::Pause)) return fail(pause->error);
-            } else if (lost_focus) {
-                if (!pause->open(PauseEntrance::Pause)) return fail(pause->error);
-            }
-        }
         const i32 previous_stage_frame = progress.stage_frame;
         run->controls(input);  // 战斗输入（Z 射击/X 炸弹/方向）：唯一实例直通 StageBattle
         if (scheduler.update() < 0)
@@ -1318,11 +1338,10 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
             ordinary_records_dirty = true;
         }
     } else if (ending) {
-        // Ending 场景帧（0x416610 → 0x416a10）：物理输入驱动对话推进/快进
-        //（0x4e49f0/0x4e49fc/0x4e4b04 语义见 EndingScene）；动画调度器照常
-        // 推进（op7/op8 cue 的 ANM VM 属同一 registry）。
-        if (!ending->update(input)) return fail(ending->error);
-        if (scheduler.update() < 0) return fail(animations.error);
+        // Ending runs at original Update 31; its return-6 cadence restarts
+        // the pass before the late ANM chain, rather than skipping just text.
+        if (scheduler.update() < 0)
+            return fail(ending->error.empty() ? animations.error : ending->error);
         if (!graphics.select_target(nullptr, 0) ||
             !graphics.clear_target(0xff000000, nullptr))
             return fail(graphics.error);
@@ -1339,6 +1358,30 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
             {&progress, &selection_player, &selection_score, &game_random, &visual}, log, error))
             return fail(error);
     }
+    return true;
+}
+
+bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) {
+    if (!initialized || exiting || !failure.empty()) return false;
+    if (!complete_loading()) return false;
+    // Physical menu edges are sampled once per presented frame, not again
+    // when Replay/Ending asks to restart the simulation Update pass.
+    if (run && pause) {
+        if (pause->active()) pause->controls({input.pressed, input.repeated, lost_focus});
+        else if ((input.pressed & 0x100u) || lost_focus)
+            if (!pause->open(PauseEntrance::Pause)) return fail(pause->error);
+    }
+    physical_input = &input;
+    do {
+        restart_update = false;
+        replay_pass_start = replay_consumed;
+        if (!update_scene_pass(input)) {
+            physical_input = nullptr;
+            return false;
+        }
+        // Scene handoffs finish the normal draw/loading boundary first.
+    } while (restart_update && pending_destination < 0);
+    physical_input = nullptr;
     ending_fades.erase(std::remove_if(ending_fades.begin(), ending_fades.end(),
         [this](const auto& fade) { return !scheduler.contains(fade->update); }), ending_fades.end());
     audio_device.update();
@@ -1355,7 +1398,7 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
             const float window_fps =
                 float(double(slow_window_frames_) / slow_window_time_);
             slow_window_fps_ = window_fps;
-            if (!environment.paused && !(progress.scene_flags & 0x70u) &&
+            if (!environment.paused && !(progress.scene_flags & 0x14u) &&
                 !loading_waiting()) {
                 slow_budget_ += 60.0;
                 slow_actual_ += window_fps <= 57.0f ? double(window_fps) : 60.0;
