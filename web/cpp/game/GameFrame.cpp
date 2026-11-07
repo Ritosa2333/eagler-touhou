@@ -10,7 +10,7 @@ i32 GameFrame::update(const GameFrameContext& input){
         if(run.ending_age==180&&!host.transition({5,200,83,0xffffffff}))return fail("Ending transition unavailable");
         if(run.ending_age>=380)run.screen=(run.application_flags&0x2000)?2:(run.difficulty==4?16:15);
     }
-    if((hud.flags&0x100)&&hud.notice_age.current<120&&!(run.scene_flags&0x10))return i32(FrameAction::Continue);
+    if(waiting_for_stage_clear())return i32(FrameAction::Continue);
     if(age.current==0){const i32 result=host.initialize_stage();if(result<0)return fail("Stage initialization failed");if(result)return i32(FrameAction::Continue);}
     else if(age.current==30&&!host.start_stage())return fail("Stage start unavailable");
     if(host.loading_state()==2&&!host.retire_loading())return fail("Loading scene retirement unavailable");

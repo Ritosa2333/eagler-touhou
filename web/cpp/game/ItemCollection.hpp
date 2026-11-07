@@ -10,13 +10,15 @@ struct ItemCollectionHost {
 };
 class ItemCollection {
     PlayerLifeSession& player;ItemScoreState& score;PlayerMotion& motion;ItemCollectionHost& world;i32 character;
+    i32& life_piece_tier;
     void add_score(i32 displayed)noexcept;
     i32 point_value(const ItemState&,u32& color)const noexcept;
-    bool power(const ItemState&,bool large);bool point(const ItemState&);bool full_power(const ItemState&);
+    bool power(const ItemState&,bool large,i32 small_power);bool point(const ItemState&);bool full_power(const ItemState&);
     bool life();bool life_piece();bool bomb();bool bomb_piece();
 public:
     std::string error;
-    ItemCollection(PlayerLifeSession& p,ItemScoreState& s,PlayerMotion& m,ItemCollectionHost& h,i32 ch):player(p),score(s),motion(m),world(h),character(ch){}
-    bool award(const ItemState&);
+    ItemCollection(PlayerLifeSession& p,ItemScoreState& s,PlayerMotion& m,ItemCollectionHost& h,i32 ch,i32* own_tier=nullptr):player(p),score(s),motion(m),world(h),character(ch),life_piece_tier(own_tier?*own_tier:s.life_piece_tier){}
+    bool award(const ItemState&,i32 small_power=1);
+    bool needs_power()const noexcept{return player.power<score.max_power;}
 };
 }

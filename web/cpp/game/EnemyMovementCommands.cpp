@@ -41,7 +41,7 @@ int EnemyMovementCommands::execute(EclContext& context,u16 opcode){
             const float x=enemy.motion.position.x,quarter_width=float(enemy.bound_size.x*.25f);
             if(float(enemy.bound_center.x-quarter_width)>x)angle=float(float(random.signed_unit()*pi)/3.f);
             else if(x>float(enemy.bound_center.x+quarter_width))angle=normalize_angle(float(float(float(random.signed_unit()*pi)/3.f)+pi));
-            else{angle=float(float(random.signed_unit()*pi)*.25f);const u16 word=random.next16();if(world.player_position.x>x?word%3==0:word%3!=0)angle=float(angle+pi);}
+            else{angle=float(float(random.signed_unit()*pi)*.25f);const u16 word=random.next16();if(world.target(enemy.motion.position).x>x?word%3==0:word%3!=0)angle=float(angle+pi);}
             const float quarter_height=float(enemy.bound_size.y*.25f),y=enemy.motion.position.y;
             if(float(enemy.bound_center.y-quarter_height)>y)angle=std::fabs(angle);else if(y>float(enemy.bound_center.y+quarter_height))angle=-std::fabs(angle);
             if(std::fabs(float(angle+half_pi))<.05000000074505806f)angle=angle<-half_pi?-1.6207963228225708f:-1.5207964181900024f;

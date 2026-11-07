@@ -4,10 +4,14 @@ import {createServer} from 'node:http';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
 import {launchBrowser} from '../../../../tools/browser/launch.mjs';
+import {loadPlaywright} from '../../../../tools/browser/playwright.mjs';
+import {checkDirectInput} from './direct-input-browser.mjs';
 
 const repository=resolve(import.meta.dirname,'../../../..');
 const build=resolve(process.env.EAGLER_TH17_BUILD||resolve(repository,'ports/th17/build-eagler'));
 const data=resolve(process.env.EAGLER_TH17_DATA||resolve(repository,'games/th17/original/th17.dat'));
+const shared=resolve(process.env.EAGLER_TH17_SHARED||resolve(repository,'shared'));
+const sharedResources=['/msgothic.ttc','/unifont.otf'].map(path=>({path,url:path}));
 const output=resolve(repository,'artifacts/validation/th17');
 
 test('TH17 production adapter binds epochs and runs configure, files, input, health and exit', {timeout:180000},async()=>{
@@ -24,6 +28,10 @@ test('TH17 production adapter binds epochs and runs configure, files, input, hea
    if(path==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}
    const local=path.startsWith('/runtime/')?path.slice(9):'';
    const music=path==='/music/th17_01.ogg';
+   if(sharedResources.some(resource=>resource.path===path)){
+    res.setHeader('Content-Type','application/octet-stream');
+    res.end(await readFile(resolve(shared,path.slice(1))));return;
+   }
    if(path!=='/game.dat'&&!music&&(!local||local.split('/').some(p=>p==='..'||!p))){res.writeHead(404).end();return;}
    res.setHeader('Content-Type',path==='/game.dat'?'application/octet-stream':({'.mjs':'text/javascript','.wasm':'application/wasm','.html':'text/html','.json':'application/json','.css':'text/css'}[extname(path)]||'application/octet-stream'));
    res.end(await readFile(path==='/game.dat'?data:music?resolve(process.env.EAGLER_TH17_MUSIC||resolve(repository,'games/th17/assets-ogg/music'),'th17_01.ogg'):resolve(build,local)));
@@ -32,7 +40,8 @@ test('TH17 production adapter binds epochs and runs configure, files, input, hea
  await new Promise(yes=>server.listen(0,'127.0.0.1',yes));
  let browser;
  try{
-  browser=await launchBrowser();const page=await browser.newPage({viewport:{width:1024,height:900}});
+  browser=process.env.TH17_BROWSER==='webkit'?await (await loadPlaywright()).webkit.launch():await launchBrowser();
+  const page=await browser.newPage({viewport:{width:1024,height:900}});
   const errors=[];page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:'+server.address().port);
   await page.click('#start');
@@ -52,7 +61,7 @@ test('TH17 production adapter binds epochs and runs configure, files, input, hea
   assert.equal(await page.evaluate(()=>events.slice(0).some(e=>e.event==='first-frame')),false);
   assert.equal((await command('configure',{music:'midi'})).ok,false);
   assert.equal((await command('configure',{music:'none',options:{touchSensitivity:301}})).ok,false);
-  assert.equal((await command('configure',{music:'none',language:'ja',options:{touchEnabled:true,touchSensitivity:200,alwaysHitbox:true}})).ok,true);
+  assert.equal((await command('configure',{music:'none',language:'ja',sharedResources,options:{touchEnabled:true,touchSensitivity:200,alwaysHitbox:true}})).ok,true);
   assert.equal((await command('resources',{resources:[{path:'/th17.dat',url:'/game.dat'}]})).ok,false);
   assert.equal((await command('resources',{resources:[{path:'/music/th17_01.ogg',url:'https://example.invalid/music.ogg'}]})).ok,false);
   assert.equal((await command('read',{path:'../th17.dat'})).ok,false);
@@ -73,7 +82,22 @@ test('TH17 production adapter binds epochs and runs configure, files, input, hea
   assert.equal(keyboardNeutral,false);
   await mkdir(output,{recursive:true});
   const frame=page.frames().find(f=>f.url().includes('/runtime/'));
+  await checkDirectInput(frame);
   await frame.waitForFunction(()=>Module._th17_frame()>160);
+  await frame.locator('canvas').evaluate(canvas=>{
+   const {x,y,width,height}=canvas.getBoundingClientRect();
+   const event=(type,id)=>new PointerEvent(type,{pointerId:id,pointerType:'touch',clientX:x+width/2,clientY:y+height/2,bubbles:true,cancelable:true});
+   // Rapid taps can arrive before the next animation frame. A capture
+   // cancellation must discard their queued confirmation.
+   for(let id=1;id<=5;id++){
+    canvas.dispatchEvent(event('pointerdown',id));
+    window.dispatchEvent(event('pointerup',id));
+   }
+   canvas.dispatchEvent(event('pointerdown',6));
+   canvas.dispatchEvent(event('pointercancel',6));
+  });
+  await frame.waitForFunction(()=>Module._th17_frame()>170);
+  assert.equal(await frame.evaluate(()=>Module._th17_phase()),0);
   await page.screenshot({path:resolve(output,'title.png')});
   for(let i=0;i<2;i++){
    await command('keyboard',{code:'Escape',down:true});await page.waitForTimeout(80);
@@ -89,7 +113,7 @@ test('TH17 production adapter binds epochs and runs configure, files, input, hea
   const savedConfig=await command('read',{path:'th17.cfg'});
   await page.reload();await page.click('#start');await page.waitForFunction(()=>events.some(e=>e.event==='ready'));
   assert.deepEqual((await command('read',{path:'th17.cfg'})).bytes,savedConfig.bytes,'IDBFS persists across documents');
-  assert.equal((await command('configure',{music:'ogg',resources:[{path:'/music/th17_01.ogg',url:'/music/th17_01.ogg'}]})).ok,true);
+  assert.equal((await command('configure',{music:'ogg',sharedResources,resources:[{path:'/music/th17_01.ogg',url:'/music/th17_01.ogg'}]})).ok,true);
   assert.equal((await command('launch')).ok,true);
   await page.waitForFunction(()=>events.some(e=>e.event==='error')||events.some(e=>e.event==='audio-health'&&e.musicEnabled));
   assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[]);
@@ -97,7 +121,7 @@ test('TH17 production adapter binds epochs and runs configure, files, input, hea
   await page.reload();await page.click('#start');await page.waitForFunction(()=>events.some(e=>e.event==='ready'));
   const replay=await readFile(process.env.EAGLER_TH17_REPLAY||resolve(repository,'ports/th17/web/reference/assets/demo1.rpy'));
   assert.equal((await command('write',{path:'replay/th17_ud0001.rpy',bytes:[...replay]})).ok,true);
-  assert.equal((await command('configure',{music:'none',options:{replayPath:'replay/th17_ud0001.rpy',alwaysHitbox:true}})).ok,true);
+  assert.equal((await command('configure',{music:'none',sharedResources,options:{replayPath:'replay/th17_ud0001.rpy',alwaysHitbox:true}})).ok,true);
   assert.equal((await command('launch')).ok,true);
   const replayFrame=page.frames().find(f=>f.url().includes('/runtime/'));
   await replayFrame.waitForFunction(()=>Module._th17_phase()===1&&Module._th17_frame()>200);

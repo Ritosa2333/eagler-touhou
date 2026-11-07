@@ -14,17 +14,21 @@
 #include "SpellAnmHost.hpp"
 #include "Hud.hpp"
 #include "Dialogue.hpp"
+#include "GameInput.hpp"
 namespace th17 {
 struct BattleResources {i32 player=10,bullet=7,effect=8,animal=30,text=6;std::array<i32,6> enemy{{7,8,-1,-1,-1,-1}};};
+struct CoopPlayerInput {u32 held=0;PlayerTouch touch;};
 struct BattleFrame {
     u32 held=0,pressed=0,game_flags=0;float rate=1;Vec3 background_delta{};i32 shoot_frames=0,skip_frames=0;
     bool focus_allowed=true,hud_available=true,hud_collect=false,animation_paused=false,practice=false;
     bool player_enabled=true,bomb_enabled=true,enemies_enabled=true,lasers_enabled=true,bullets_enabled=true,items_enabled=true,spirits_enabled=true;
+    std::array<CoopPlayerInput,2> partners{};
 };
 // Presentation and scene progression have explicit owners. A development
 // fixture may capture these boundaries, but an unavailable action is an error.
 struct BattleWorldServices {
     virtual ~BattleWorldServices()=default;
+    virtual bool rollback_boundary(){return true;}
     virtual bool audio(i32,float,PlayerShots::SoundAction,bool)=0;
     virtual bool life_hud(i32,i32)=0;virtual bool bomb_hud(i32,i32)=0;
     virtual bool game_over()=0;virtual bool notice(i32)=0;
@@ -39,6 +43,10 @@ struct BattleWorldServices {
 };
 class GameBattle {
     struct Services;std::unique_ptr<Services> services;
+    struct Partner;
+    std::array<std::unique_ptr<Partner>,2> partners;
+    u32 partner_count=0;
+    bool primary_retired=false;
     AnmManager& animations;AnmEnvironment& environment;Rng& game_random;Rng& visual_random;BattleWorldServices& presentation;BattleResources resources;
     std::array<FrameCallback,9> callbacks;FrameCallback spell_callback,hud_callback;FrameScheduler schedule;FrameScheduler* active_schedule=&schedule;
     SpellStartContext spell_context;
@@ -50,8 +58,14 @@ class GameBattle {
     bool spawn_item(i32,const Vec3&,float,float);bool cleanup_enemy(EnemyState&);
     bool death_effect(const EnemyDeathEffect&);bool scene_effect(const EnemyEffectRequest&);
     bool refresh_world();bool refresh_player(PlayerFrameContext&);
+    bool refresh_partner(Player&,PlayerFrameContext&);
+    BombController* pilot_bomb(u32 seat) const noexcept;
+    bool pilot_game_over(u32 seat);
+    bool pilot_active(u32 seat) const noexcept;
+    Vec3 aim_target(const Vec3& origin) noexcept;
+    void protect_teammates(u32 caster,i32 frames) noexcept;
     i32 update_animations(bool);i32 update_player();i32 update_bomb();i32 update_enemies();i32 update_lasers();i32 update_bullets();i32 update_items();i32 update_spirits();i32 update_spell();i32 update_hud();
-    bool life_hud(i32,i32);bool bomb_hud(i32,i32);
+    bool life_hud(i32,i32,u32 seat=0);bool bomb_hud(i32,i32,u32 seat=0);
     bool scene_message(i32);bool message_complete(bool&);bool update_dialogue();
     ItemSpiritFrame item_frame()const;
 public:
@@ -81,8 +95,22 @@ public:
     bool prepare_frame(const BattleFrame&);bool step(const BattleFrame&);
     void world_active(bool active)noexcept;
     bool attach(FrameScheduler&);bool detach(FrameScheduler&);
-    const PlayerCollision& player_collision()noexcept;
-    bool record_graze(const Vec3&);
+    bool add_coop_player(const ShtResource&,i32 character,i32 animal,i32 bank);
+    u32 pilot_count() const noexcept {return partner_count+1;}
+    u32 viable_pilots() const noexcept;
+    i32 boss_damage(EnemyState&,i32);
+    Player& pilot(u32 seat) noexcept;
+    i32 life_piece_tier(u32 seat) const noexcept;
+    void restore_piece_tier(u32 seat,i32 value) noexcept;
+    bool initialize_partner_hud();
+    void save_rollback(multiplayer::FrameImage&);
+    bool reset_players();
+    bool finish_player_options();
+    bool stop_bombs();
+    bool draw_players(AnmRenderer&);
+    void prepare_player_presentation(AnmRenderer&);
+    const PlayerCollision& player_collision(u32 seat=0)noexcept;
+    bool record_graze(const Vec3&,u32 seat=0);
     const BattleFrame& frame_state()const noexcept{return input;}
     BattleFrame& active_frame()noexcept{return input;}
 };

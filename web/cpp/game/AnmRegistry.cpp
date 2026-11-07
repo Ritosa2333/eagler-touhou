@@ -5,18 +5,47 @@ namespace th17 {
 void AnmRegistry::retire_resource(const AnmResource* resource)noexcept{if(!resource)return;for(auto& group:groups)for(auto* entry:group)if(entry->vm.resource==resource)entry->vm.visual.render_flags=(entry->vm.visual.render_flags&~64u)|32u;}
 bool AnmRegistry::references_resource(const AnmResource* resource)const noexcept{
  if(!resource)return false;const auto uses=[&](auto&& self,const AnmVm& vm)->bool{if(vm.resource==resource||vm.sprite_resource==resource)return true;if(vm.geometry.overlay)for(const auto& panel:vm.geometry.overlay->panels)if(panel&&self(self,*panel))return true;return false;};
- for(u32 i=0;i<slot_mask;i++)if(pool[i].active&&uses(uses,pool[i].vm))return true;
+ for(u32 i=0;i<next_slot;i++)if(auto* entry=pooled(i);entry->active&&uses(uses,entry->vm))return true;
  for(const auto& entry:nodes)if(entry.second->active&&uses(uses,entry.second->vm))return true;
  for(const auto& entry:external)if(entry.second->active&&uses(uses,*entry.second->borrowed))return true;return false;
 }
-AnmRegistry::AnmRegistry():pool(std::make_unique<Node[]>(slot_mask)){free_slots.reserve(slot_mask);for(u32 i=slot_mask;i>0;i--){free_slots.push_back(i-1);pool[i-1].slot=i-1;}}
+AnmRegistry::Node* AnmRegistry::pooled(u32 slot)const noexcept{
+    const auto page=slot/page_size;
+    return page<page_count?&pages[page][slot%page_size]:nullptr;
+}
 AnmRegistry::Node* AnmRegistry::node(AnmVm& vm)const noexcept{
-    const auto address=reinterpret_cast<uintptr_t>(&vm),base=reinterpret_cast<uintptr_t>(&pool[0].vm);
-    if(address>=base&&address-base<size_t(slot_mask)*sizeof(Node)&&(address-base)%sizeof(Node)==0)return &pool[(address-base)/sizeof(Node)];
+    const auto address=reinterpret_cast<uintptr_t>(&vm);
+    const auto within=[&](Node* page)->Node*{
+        if(!page)return nullptr;
+        const auto base=reinterpret_cast<uintptr_t>(&page[0].vm);
+        if(address<base||address-base>=size_t(page_size)*sizeof(Node)||(address-base)%sizeof(Node)!=0)return nullptr;
+        return &page[(address-base)/sizeof(Node)];
+    };
+    if(auto* entry=within(recent_page))return entry;
+    auto page=std::upper_bound(address_pages.begin(),address_pages.end(),address,
+        [](uintptr_t key,const Node* first){return key<reinterpret_cast<uintptr_t>(&first->vm);});
+    if(page!=address_pages.begin())if(auto* entry=within(*--page)){
+        recent_page=*page;
+        return entry;
+    }
     const auto it=nodes.find(&vm);if(it!=nodes.end())return it->second;const auto borrowed=external.find(&vm);return borrowed==external.end()?nullptr:borrowed->second.get();
 }
 AnmVm* AnmRegistry::allocate(){
-    Node* entry=nullptr;if(!free_slots.empty()){const u32 slot=free_slots.back();free_slots.pop_back();entry=&pool[slot];}
+    Node* entry=nullptr;if(!free_slots.empty()){entry=pooled(free_slots.back());free_slots.pop_back();}
+    else if(next_slot<slot_mask){
+        const auto slot=next_slot++;
+        if(slot/page_size==page_count){
+            auto page=std::make_unique<Node[]>(page_size);
+            auto* first=page.get();
+            const auto position=std::lower_bound(address_pages.begin(),address_pages.end(),first,
+                [](const Node* a,const Node* b){return reinterpret_cast<uintptr_t>(a)<reinterpret_cast<uintptr_t>(b);});
+            address_pages.insert(position,first);
+            pages[page_count++]=std::move(page);
+        }
+        entry=pooled(slot);
+        if(entry->slot!=slot_mask)entry->vm=AnmVm{};
+        entry->slot=slot;
+    }
     else if(!free_overflow.empty()){entry=free_overflow.back();free_overflow.pop_back();entry->vm=AnmVm{};}
     else{auto extra=std::make_unique<Node>();entry=extra.get();nodes.emplace(&entry->vm,entry);overflow.emplace(entry,std::move(extra));}
     entry->active=true;entry->registered=false;entry->handle=0;entry->parent=nullptr;entry->children.clear();entry->vm.rotation_parent=entry->vm.creation_parent=nullptr;active_count++;return &entry->vm;
@@ -28,7 +57,7 @@ u32 AnmRegistry::submit(AnmVm& vm,u32 ordering){
 }
 AnmVm* AnmRegistry::find(u32 handle)const noexcept{
     if(!handle)return nullptr;const u32 slot=handle&slot_mask;
-    if(slot<slot_mask){const auto* entry=&pool[slot];return entry->active&&entry->handle==handle?const_cast<AnmVm*>(&entry->vm):nullptr;}
+    if(slot<slot_mask){auto* entry=pooled(slot);return entry&&entry->active&&entry->handle==handle?&entry->vm:nullptr;}
     const auto range=overflow_handles.equal_range(handle);if(range.first==range.second)return nullptr;
     auto next=range.first;++next;if(next==range.second)return &range.first->second->vm;
     // A forced generation wrap can produce duplicate overflow handles. The
@@ -40,7 +69,7 @@ bool AnmRegistry::attach(AnmVm& child,AnmVm& parent){
     auto* entry=node(child);auto* owner=node(parent);if(!entry||entry->borrowed||!entry->active||entry==owner||entry->parent){error="Animation child relationship invalid";return false;}
     // Player and bullet objects embed their root VM instead of allocating it
     // in the global pool. Track only its child list; never own its lifetime.
-    if(!owner){auto borrowed=std::make_unique<Node>();borrowed->borrowed=&parent;borrowed->active=true;owner=borrowed.get();external.emplace(&parent,std::move(borrowed));}
+    if(!owner){auto borrowed=std::make_shared<Node>();borrowed->borrowed=&parent;borrowed->active=true;owner=borrowed.get();external.emplace(&parent,std::move(borrowed));}
     if(!owner->active){error="Animation parent inactive";return false;}
     for(auto* ancestor=owner;ancestor;ancestor=ancestor->parent)if(ancestor==entry){error="Animation parent cycle";return false;}
     entry->parent=owner;entry->child_position=owner->children.insert(owner->children.begin(),entry->child_link);return true;
@@ -57,7 +86,7 @@ void AnmRegistry::erase(Node& entry){
     if(entry.parent)entry.parent->children.erase(entry.child_position);
     for(auto* child:entry.children){child->parent=nullptr;child->vm.rotation_parent=child->vm.creation_parent=nullptr;}entry.children.clear();
     entry.vm.rotation_parent=entry.vm.creation_parent=nullptr;entry.vm.instruction_offset=-1;entry.active=entry.registered=false;entry.handle=0;active_count--;
-    if(entry.slot<slot_mask)free_slots.push_back(entry.slot);else free_overflow.push_back(&entry);
+    if(entry.slot<slot_mask)free_slots.push_back(u16(entry.slot));else free_overflow.push_back(&entry);
 }
 bool AnmRegistry::discard(AnmVm& vm){auto* entry=node(vm);if(!entry||!entry->active)return true;if(!entry->children.empty()){error="Animation with children needs recursive deletion";return false;}pending_deletion.erase(std::remove(pending_deletion.begin(),pending_deletion.end(),entry),pending_deletion.end());erase(*entry);return true;}
 bool AnmRegistry::destroy_tree(AnmVm& vm){auto* entry=node(vm);if(!entry||!entry->active)return true;while(!entry->children.empty())if(!destroy_tree(entry->children.front()->vm))return false;pending_deletion.erase(std::remove(pending_deletion.begin(),pending_deletion.end(),entry),pending_deletion.end());erase(*entry);return true;}

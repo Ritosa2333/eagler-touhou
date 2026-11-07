@@ -40,4 +40,4 @@ API(enemy_scene_fixture_rule) i32 enemy_scene_fixture_rule(EnemySceneFixture* p)
 API(enemy_scene_fixture_rule_state) i32 enemy_scene_fixture_rule_state(EnemySceneFixture* p){return p->enemy.enemy.update_rule_state;}
 API(enemy_scene_fixture_distortion) EnemyDistortionState* enemy_scene_fixture_distortion(EnemySceneFixture* p){return &p->enemy.enemy.distortion;}
 API(enemy_callback_run) u32 enemy_callback_run(EnemyVariableFixture* p,BulletManagerFixture* b,i32 rule){p->enemy.update_rule=EnemyUpdateRule(rule);return enemy_update_rule(p->enemy,b->manager,p->random);}
-API(bullet_callback_transform_bytes) const u8* bullet_callback_transform_bytes(BulletStateFixture* p){static BulletShooter shot;shot.transforms=(p->external_state?*p->external_state:p->state).transforms;return shooter_bytes(shot)+40;}
+API(bullet_callback_transform_bytes) const u8* bullet_callback_transform_bytes(BulletStateFixture* p){static BulletShooter shot;shot.transforms=(p->external_state?*p->external_state:p->state).transforms();return shooter_bytes(shot)+40;}
