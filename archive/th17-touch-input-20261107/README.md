@@ -16,3 +16,5 @@
 [三人房完整记录](three-player-room.json)包含分段呈现间隔、回滚次数和确认帧状态。旧包的[两人输入记录](baseline-input.json)收到 1,544 条滑动手势事件，逐条经消息队列传递并读取画布尺寸。性能数据覆盖上述桌面浏览器限速条件。
 
 两侧内容树和原始来源祖先已核对。[目录投影](projection.json) · [合并写回](writeback.json)
+
+正式站于北京时间 10:40:32 切换两个 TH17 运行包，Relay 持续运行。公网校验覆盖两个入口的 30 个文件。[发布回执](activation.json) · [公网校验](public-verification.json)
