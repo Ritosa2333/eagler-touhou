@@ -365,7 +365,10 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,transformed?4:3,GL_FLOAT,fa
  {
 #endif
  if(draining)glBindBuffer(GL_ARRAY_BUFFER,instances.id);instanceBases[vao]=b;
- for(int i=0;i<4;i++){glEnableVertexAttribArray(4+i);glVertexAttribPointer(4+i,4,GL_FLOAT,false,instanceStride,reinterpret_cast<void*>(b+i*16));glVertexAttribDivisor(4+i,1);glEnableVertexAttribArray(9+i);glVertexAttribPointer(9+i,4,GL_FLOAT,false,instanceStride,reinterpret_cast<void*>(b+68+i*16));glVertexAttribDivisor(9+i,1);}glEnableVertexAttribArray(8);glVertexAttribPointer(8,4,GL_UNSIGNED_BYTE,true,instanceStride,reinterpret_cast<void*>(b+64));glVertexAttribDivisor(8,1);}
+ // Enabled attributes and divisors belong to this instanced VAO. ImGui and
+ // resampling use their own VAOs; only pointers change with the batch offset.
+ if(setup)for(int location=4;location<=12;location++){glEnableVertexAttribArray(location);glVertexAttribDivisor(location,1);}
+ for(int i=0;i<4;i++){glVertexAttribPointer(4+i,4,GL_FLOAT,false,instanceStride,reinterpret_cast<void*>(b+i*16));glVertexAttribPointer(9+i,4,GL_FLOAT,false,instanceStride,reinterpret_cast<void*>(b+68+i*16));}glVertexAttribPointer(8,4,GL_UNSIGNED_BYTE,true,instanceStride,reinterpret_cast<void*>(b+64));}
  glDrawArraysInstanced(mode,draining?drawOffset/d.stride:0,n,instanceSize/instanceStride);}
  else if(quads){
   // Four vertices per sprite, with exactly the original two triangles and

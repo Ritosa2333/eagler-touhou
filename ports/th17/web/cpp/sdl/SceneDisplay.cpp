@@ -38,7 +38,7 @@ bool SceneDisplay::draw(double logical_seconds){
     } logical{renderer};
     renderer.logical_only=graphics.logical_drawing;
     if(!error.empty()||!compositor||!game)return false;if(!graphics.select_target(nullptr,0))return fail(graphics.error);
-    if(outgoing_background&&scene.battle.pilot_count()>1){
+    if(outgoing_background){
         const bool hold=scene.controller->waiting_for_stage_clear();
         outgoing_background->hold_transition=hold;
         game->background.hold_transition=hold;
