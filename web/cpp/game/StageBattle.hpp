@@ -432,6 +432,7 @@ private:
     void update_firing(bool held);
     void step_bomb();
     float query_enemy_damage(StageEnemy& enemy, float width, float height);
+    bool query_enemy_bomb_hit(const StageEnemy& enemy) const;
     void explode_orb(PlayerBombOrb& orb);
     void fire_shots(i32 frame);
     void step_shots();
