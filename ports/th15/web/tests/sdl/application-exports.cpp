@@ -5,6 +5,7 @@
 #include <emscripten.h>
 using namespace th15;
 namespace {bool presentation_test=false;std::unique_ptr<sdl::ApplicationState> app;std::string last_error,music_name;}
+namespace {FrameCallback capture_marker; i32 capture_marker_x=0;}
 extern "C" {
 EMSCRIPTEN_KEEPALIVE void application_test_presentation_enable(unsigned enabled){presentation_test=enabled!=0;if(app)app->graphics.presentation.enabled=presentation_test;}
 i32 application_initialize(i32 device){if(!app)app=std::make_unique<sdl::ApplicationState>();app->graphics.presentation.enabled=presentation_test;if(!app->initialize(device!=0)){last_error=app->failure;app.reset();return 0;}return 1;}
@@ -25,7 +26,7 @@ i32 application_test_game_over(){if(!app||!app->scene()||!app->pause)return 0;ap
 i32 application_test_death(){return app&&app->scene()&&app->scene()->battle.player->life.commit_death();}
 const i32* application_pause_state(){static std::array<i32,6> value;value.fill(-1);if(app&&app->pause){auto& p=app->pause->state;value={i32(p.screen),p.phase,p.menu.cursor,p.names.cursor,p.age.current,i32(app->audio_device.sound_playing(14))};}return value.data();}
 void application_test_finish_name(){if(app&&app->pause)app->pause->state.names.select(90);}
-void application_close(){sdl::ThpracUi::shutdown();app.reset();}
+void application_close(){if(app)app->scheduler.remove(capture_marker);sdl::ThpracUi::shutdown();app.reset();}
 // Private development harness: calls the same THPrac owner as BrowserRuntime.
 EMSCRIPTEN_KEEPALIVE int application_practice_initialize(){return app&&sdl::ThpracUi::initialize(*app);}
 EMSCRIPTEN_KEEPALIVE void application_practice_frame(){if(!app)return;bool keys[256]{};for(int i=0;i<256;i++)keys[i]=app->keyboard_state.keys[i]!=0;sdl::ThpracUi::update_input(*app,keys);sdl::ThpracUi::render(*app);app->graphics.backend.present(sdl::GraphicsDevice::screen);app->graphics.backend.commit();}
@@ -61,4 +62,28 @@ extern "C" EMSCRIPTEN_KEEPALIVE int application_test_chapter_reward(){
  scene.battle.enemy_world.chapter_total=100;scene.battle.enemy_world.chapter_defeated=36;
  scene.battle.score.graze_chapter=223;
  return scene.chapter_reward(false);
+}
+
+// Controlled entry and a unique moving marker in the real stage render chain.
+// Does not replace STD/ECL, chapter effects, player or projectile drawing.
+extern "C" EMSCRIPTEN_KEEPALIVE int application_test_capture_stage(int stage){
+ if(!app||stage<1||stage>6||app->scene())return 0;
+ app->selected_stage=stage;app->progress.character=0;app->progress.difficulty=0;
+ app->selection_player.mode_flags=0x10;app->progress.new_run=true;
+ if(!app->begin_run())return 0;
+ capture_marker.owner=app.get();capture_marker.enabled=true;capture_marker.run=[](void* owner)->i32{
+  auto& a=*static_cast<sdl::ApplicationState*>(owner);auto& g=a.graphics;
+  a.renderer.invalidate();const auto saved=g.backend.state;auto& p=g.pipeline();
+  p.depthTest=p.depthWrite=p.alphaTest=p.blend=p.fog=p.textureTransform=false;
+  p.color.operation=p.alpha.operation=touhou::graphics::ColorOperation::First;
+  p.color.first=p.alpha.first={touhou::graphics::ArgumentSource::Diffuse};
+  g.bind_texture(0);g.set_layout(touhou::graphics::VertexLayout::ScreenColorUv);
+  capture_marker_x=200+i32(a.frames%64);const float x=float(capture_marker_x),y=440;
+  const AnmGeometryVertex vertices[]={{{x,y,0},1,0xff07fb13,{}},{{x+8,y,0},1,0xff07fb13,{}},{{x,y+8,0},1,0xff07fb13,{}},{{x+8,y,0},1,0xff07fb13,{}},{{x,y+8,0},1,0xff07fb13,{}},{{x+8,y+8,0},1,0xff07fb13,{}}};
+  g.triangles(2,vertices,sizeof(AnmGeometryVertex));g.backend.flush();g.backend.state=saved;a.renderer.invalidate();return 1;
+ };
+ return app->scheduler.add(capture_marker,FramePass::Draw,39)>=0;
+}
+extern "C" EMSCRIPTEN_KEEPALIVE const i32* application_test_capture_state(){
+ static std::array<i32,5> value{};value={capture_marker_x-96,444,app?i32(app->graphics.backend.stats.captureCopies):0,app&&app->scene()?i32(app->scene()->battle.bullet_scene->manager.visible_count):0,app?app->progress.stage_frame:0};return value.data();
 }

@@ -2939,7 +2939,7 @@
       "game": "th15",
       "variant": "normal",
       "directory": "ports/th15",
-      "sourceDigest": "8c1e5a958686eefa39c90eeb32b499b576e9175330e276b5b58002aeee422068",
+      "sourceDigest": "92043298c23fd63d15aad13c50dfe58b290b928a12fa181785c9fe693d01da97",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 253,
