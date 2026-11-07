@@ -23,6 +23,10 @@
 
 普通版 `1.0.14-eagler-0e4435ae1eb6` 通过浏览器适配器测试。多人原生测试通过，并核对 967 项原版射击配置及妖梦的各蓄力模式。
 
+## 主站发布
+
+[PR #199](https://github.com/Ritosa2333/eagler-touhou/pull/199) 已接收 `610a07110`。主站于 2026-11-07 13:07 发布本次普通版和多人版，公网核对两套运行包共 30 个文件的哈希和 Wasm 类型。[发布回执](activation.json) · [公网校验](public-verification.json)
+
 ## 复测
 
 三人房环境变量参照[普通关函数采样](../th17-release-profile-20261107/README.md)，增加 `TH17_ROOM_RENDER_SCALE=2`，依次选择两个运行包。
