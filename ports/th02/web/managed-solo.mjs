@@ -94,10 +94,27 @@ async function returnToTitle(save,restarting=false,current=emulator){
   await syncFiles();if(emulator!==current)return;emulator.assist({address:mailbox,generation:state.generation,...(restarting?{restart:true}:{quit:true})});if(!restarting){suppressedLoad=emulator.practice?.loadCount??null;mailbox=-1;cursor=0;}input.clear();pausePrevious=0;emulator.run();music?.resume();void attempt?.sfx?.resume().catch(()=>{});canvas.focus();
 }
 async function naturalExit(){await syncFiles();globalThis.__eaglerPC98Emit({event:'exit',code:0});}
-const practiceUI=mountPractice({host,onRelease:release,onFocus:()=>canvas.focus(),onChange:value=>{emulator?.practiceOptions(value);},
+const practiceUI=mountPractice({host,onNativeOpen:openNativeForm,onRelease:release,onFocus:()=>canvas.focus(),onChange:value=>{emulator?.practiceOptions(value);},
   onStart:value=>void restart(value).catch(report),onRetry:()=>void restart({...lastPractice,options:practiceUI.options},true).catch(report),onSave:()=>void saveRecording().catch(report),
   onPause:()=>{if(emulator&&!pauseMenu.visible){emulator.key('Escape',true);setTimeout(()=>emulator?.key('Escape',false),120);}}});
-const managedPractice=mountManagedPractice(practiceUI,input,{release,nativeKey:(code,down)=>emulator?.key(code,down),readState:()=>({...readState(),practice:emulator?.practice?.status})});
+const managedPractice=mountManagedPractice(practiceUI,input,{release,nativeOpen:openNativeForm,nativeKey:(code,down)=>emulator?.key(code,down),readState:()=>({...readState(),practice:emulator?.practice?.status})});
+let deferredForm=false,formBooting=false;
+function openNativeForm(){
+  const state=readState(),e=patch?.practice?.entries;if(!emulator||playback)return;
+  if(!state||state.mode!==1||!valid(emulator.module.HEAPU8,mailbox)||!Number.isInteger(e?.formOpen)){
+    if(!formBooting){formBooting=true;deferredForm=true;void restart({...lastPractice,mode:'full',directStart:true}).catch(error=>{deferredForm=false;report(error);}).finally(()=>{formBooting=false;});}return;
+  }
+  const h=emulator.module.HEAPU8,base=mailbox-patch.entries.mailbox,setup=lastPractice.setup;
+  if(h[base+e.resultVisible])return;
+  const values=[setup.stage,setup.character,setup.difficulty,({stage:0,mid:1,boss:2})[setup.entry],setup.phase,setup.lives,setup.bombs,setup.power,0,setup.rank+6];
+  h.set(values,base+e.formValues);new DataView(h.buffer).setUint16(base+e.formHp,setup.hp,true);h[base+e.formRequest]=0;h[base+e.formOpen]=1;release();
+}
+function completeNativeForm(ps){
+  const form=ps?.nativeForm,e=patch?.practice?.entries;if(!form?.request||!emulator||!valid(emulator.module.HEAPU8,mailbox))return;
+  emulator.module.HEAPU8[mailbox-patch.entries.mailbox+e.formRequest]=0;
+  const [stage,character,difficulty,entry,phase,lives,bombs,power,,rank]=form.values;
+  try{const config=normalizePractice({...lastPractice,mode:'target',setup:{...lastPractice.setup,stage,character,difficulty,entry:['stage','mid','boss'][entry],phase,lives,bombs,power,rank:rank-6,hp:form.hp},options:ps.options});void restart(config).catch(report);}catch(error){report(error);}
+}
 async function handleNativeResult(ps,state){
   const request=ps?.nativeResult?.request||0;if(!request){nativeResultHandled=0;return;}
   if(nativeResultBusy||nativeResultHandled===request||!state)return;
@@ -120,11 +137,17 @@ function tick(now){
   if(!emulator)return;const frameState=readState(),sample=input.sample({play:!pauseMenu.visible&&frameState?.mode===1&&!frameState.hit}),edge=sample&~pausePrevious;pausePrevious=sample;
   if(pauseMenu.visible){if(edge&1)pauseMenu.move(-1);if(edge&2)pauseMenu.move(1);if(edge&(32|256))pauseMenu.confirm();else if(edge&(128|16))pauseMenu.confirmResume();loop=requestAnimationFrame(tick);return;}
   const state=frameState,ps=emulator.practice?.status;practiceUI.update({practice:ps,retryReady:!!retrySlot?.ready});prepareRetry(ps);
+  if(deferredForm&&state?.mode===1&&ps?.ready){deferredForm=false;openNativeForm();}
   if(state&&valid(emulator.module.HEAPU8,mailbox)&&Number.isInteger(patch.practice?.entries.pauseOpen)){
     const h=emulator.module.HEAPU8,base=mailbox-patch.entries.mailbox,e=patch.practice.entries;
-    if((edge&128)&&state.mode===1&&!ps?.nativePause?.visible&&!ps?.nativeResult?.visible&&!playback)h[base+e.pauseOpen]=1;
+    if((edge&128)&&state.mode===1&&!ps?.nativePause?.visible&&!ps?.nativeResult?.visible&&!ps?.nativeForm?.visible&&!playback)h[base+e.pauseOpen]=1;
     if(h[base+e.pauseOpen])new DataView(h.buffer).setUint16(base+e.pauseInput,(sample&1?1:0)|(sample&2?2:0)|(sample&(32|256)?4:0)|(sample&(128|16)?8:0),true);
   }
+  if(state&&ps?.nativeForm?.visible&&valid(emulator.module.HEAPU8,mailbox)){
+    const e=patch.practice.entries,base=mailbox-patch.entries.mailbox;
+    new DataView(emulator.module.HEAPU8.buffer).setUint16(base+e.formInput,(sample&1?1:0)|(sample&2?2:0)|(sample&4?4:0)|(sample&8?8:0)|(sample&(32|256)?16:0)|(sample&(128|16)?32:0),true);
+  }
+  if(ps?.nativeForm?.request){completeNativeForm(ps);loop=requestAnimationFrame(tick);return;}
   if(state?.mode===1&&ps?.nativePause?.visible){void handleNativePause(ps,state);}
   if(ps?.nativeResult?.visible&&emulator.state==='running'&&emulator.externalHost?.status.held)emulator.externalHost.pause(false);
   if(ps?.nativeResult?.visible&&state&&valid(emulator.module.HEAPU8,mailbox)){
@@ -135,7 +158,7 @@ function tick(now){
   if(ps?.outcome&&!playback){if(ps.nativeResult){void handleNativeResult(ps,state);if(ps.nativeResult.request===1)return;}else practiceUI.complete({outcome:ps.outcome,recording:!!recorder,ready:!!recorder?.state.ready,failed:recorder?.state.failed});}
   if((edge&128)&&state?.mode===1&&!Number.isInteger(patch.practice?.entries.pauseOpen)&&!document.documentElement.dataset.browserPracticeOpen?.includes('true')&&!playback){release();emulator.pause();music?.suspend();void attempt?.sfx?.context.suspend();input.clear();pausePrevious=0;pauseMenu.open();loop=requestAnimationFrame(tick);return;}
   if(emulator.state==='running'&&!playback){
-    const playing=state?.mode===1&&!state.hit;let bits=sample;
+    const playing=state?.mode===1&&!state.hit&&!ps?.nativeForm?.visible;let bits=ps?.nativeForm?.visible?0:sample;
     if(playing){
       if(Number.isInteger(patch.practice?.entries.pauseOpen))bits&=~128;
       if(ps?.options.disableBomb)bits&=~16;if(ps?.options.disableShot)bits&=~32;if(ps?.options.disableFocus)bits&=~64;else if(ps?.options.forceFocus)bits|=64;

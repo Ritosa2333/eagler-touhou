@@ -79,5 +79,5 @@ practice_text_write:
     ret
 
 %ifndef PRACTICE_NETWORK_PAUSE
-practice_text_saved: times 240*4 db 0
+practice_text_saved: times 325*4 db 0
 %endif

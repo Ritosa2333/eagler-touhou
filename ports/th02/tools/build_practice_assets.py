@@ -10,6 +10,7 @@ SOURCES={'jp':'eec57979b004fc9ecb356d8f96202b6f98749e1d7ed30738e04650983f732302'
 NAMES=('load','frame','miss','world','entryPause','hold','targetPractice','lockLives','unlimitedBombs','enemyLock',
        'deathGate','lifeConsume','bombGate','bombConsume','livesZero','bombsZero','shotsReturn','dialogBox','dialogPre','dialogPost',
        'powerDirty','lockTime','timeMid1','timeMid2','timeMid3','timeMid4','timeMima','transition','entities','pauseCall','assistFlags','targetPreparing','initialLives','initialBombs','initialPower','initialRank','targetResources','initialPhase','bossPhase','targetAdvance','initialEntry','warpState','targetWarp','arrivalPending','targetArrival','targetReached','targetCheck','initialHp','targetHp','initialStage','targetOutcome','targetOutcomeStep','resultVisible','resultRequest','resultAck','resultInput','waitHold','pauseOpen','pauseRequest','pauseAck','pauseInput')
+NAMES+=('formOpen','formInput','formValues','formRequest','formHp')
 def main():
     out=ROOT/'build/practice';out.mkdir(parents=True,exist_ok=True)
     nasm=os.environ.get('NASM','nasm')
@@ -33,7 +34,7 @@ def main():
         subprocess.run([str(nasm),'-f','bin','-I',str(out)+'/', '-I',str(common)+'/', '-I',str(ROOT/'patches')+'/',str(ROOT/'patches/practice.asm'),'-o',str(out/'practice.bin')],check=True)
         code=(out/'practice.bin').read_bytes();assert code[:8]==b'T02PRA01'
         entries=dict(zip(NAMES,struct.unpack_from('<'+str(len(NAMES))+'H',code,8)));gap=(len(code)+15)&~15
-        assert gap<=5632 and insert-cs*16+gap<65536
+        assert gap<=8192 and insert-cs*16+gap<65536
         insert_bridge(h,image,rel,insert,gap);image[insert:insert+len(code)]=code
         edits=[]
         def patch(at,before,after):
@@ -62,7 +63,7 @@ def main():
         # Result-menu wait uses the same relocated far frame-delay target as
         # MAIN's native pause loop.
         needle=bytes.fromhex('6a019ac801')+struct.pack('<H',delay_segment)
-        assert code.count(needle)==2
+        assert code.count(needle)==3
         rel.extend(insert+i+5 for i in range(len(code)) if code.startswith(needle,i))
         # FAR CALL retains the native near epilogue/CS. Reproduce only the
         # damage statistic and AX load; native POP/LEAVE/RET 8 remain in place.

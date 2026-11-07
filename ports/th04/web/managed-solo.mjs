@@ -45,10 +45,27 @@ async function returnToTitle(save,restarting=false,current=emulator){
   input.clear();pausePrevious=0;emulator.run();music?.resume();void attempt?.sfx?.resume().catch(()=>{});canvas.focus();
 }
 async function naturalExit(){await syncFiles();globalThis.__eaglerPC98Emit({event:'exit',code:0});}
-const practiceUI=mountPractice({host,onRelease:release,onFocus:()=>canvas.focus(),onChange:value=>{emulator?.practiceOptions(value);},
+const practiceUI=mountPractice({host,onNativeOpen:openNativeForm,onRelease:release,onFocus:()=>canvas.focus(),onChange:value=>{emulator?.practiceOptions(value);},
   onStart:value=>void restart(value).catch(report),onRetry:()=>void restart({...lastPractice,options:practiceUI.options},true).catch(report),onSave:()=>void saveRecording().catch(report),
   onPause:()=>{if(emulator&&!pauseMenu.visible){key('Escape',27,true);setTimeout(()=>emulator&&key('Escape',27,false),120);}}});
-const managedPractice=mountManagedPractice(practiceUI,input,{release,nativeKey:(code,down)=>{const number={Backspace:8,F1:112,F2:113,F3:114,F4:115,F5:116,KeyU:85}[code];if(emulator)key(code,number,down);},readState:()=>({...readState(),practice:emulator?.snapshot.practice})});
+const managedPractice=mountManagedPractice(practiceUI,input,{release,nativeOpen:openNativeForm,nativeKey:(code,down)=>{const number={Backspace:8,F1:112,F2:113,F3:114,F4:115,F5:116,KeyU:85}[code];if(emulator)key(code,number,down);},readState:()=>({...readState(),practice:emulator?.snapshot.practice})});
+let deferredForm=false,formBooting=false;
+async function openNativeForm(){
+  const state=readState();if(!emulator||playback)return;
+  if(!state||state.mode!==1){
+    if(!formBooting){formBooting=true;deferredForm=true;void restart({...lastPractice,mode:'full',directStart:true}).catch(error=>{deferredForm=false;report(error);}).finally(()=>{formBooting=false;});}return;
+  }
+  const setup=lastPractice.setup,values=[setup.stage,setup.character,setup.difficulty,({stage:0,mid:1,boss:2})[setup.entry],setup.phase,setup.lives,setup.bombs,setup.power,setup.branch==='gengetsu'?1:0,setup.rank-4];
+  release();await emulator.call('practiceFormOpen',[state.at,state.generation,values,setup.hp]);
+}
+let formBusy=false;
+async function completeNativeForm(ps,state){
+  if(formBusy||!ps?.nativeForm?.request||!state)return;formBusy=true;
+  try{const current=emulator,values=ps.nativeForm.values;if(!await current.call('practiceFormTake',[state.at,state.generation]))return;
+    const [stage,character,difficulty,entry,phase,lives,bombs,power,branch,rank]=values;
+    const config=normalizePractice({...lastPractice,mode:'target',setup:{...lastPractice.setup,stage,character,difficulty,entry:['stage','mid','boss'][entry],phase,lives,bombs,power,branch:branch?'gengetsu':'auto',rank:rank+4,hp:ps.nativeForm.hp},options:ps.options});await restart(config);
+  }catch(error){report(error);}finally{formBusy=false;}
+}
 async function handleNativeResult(ps,state){
   const request=ps?.nativeResult?.request||0;if(!request){nativeResultHandled=0;return;}
   if(nativeResultBusy||nativeResultHandled===request||!state)return;
@@ -71,15 +88,18 @@ function tick(){
   if(!emulator)return;const frameState=readState(),sample=input.sample({play:!pauseMenu.visible&&frameState?.mode===1&&!frameState.flags}),edge=sample&~pausePrevious;pausePrevious=sample;
   if(pauseMenu.visible){if(edge&1)pauseMenu.move(-1);if(edge&2)pauseMenu.move(1);if(edge&(32|256))pauseMenu.confirm();else if(edge&(128|16))pauseMenu.confirmResume();loop=requestAnimationFrame(tick);return;}
   const state=frameState,ps=emulator.snapshot.practice;practiceUI.update({practice:ps,retryReady:!!retrySlot?.ready});prepareRetry(ps);
-  if(state&&!playback&&(ps?.nativePause?.visible||((edge&128)&&state.mode===1&&!ps?.nativeResult?.visible))){
+  if(deferredForm&&state?.mode===1&&ps?.ready){deferredForm=false;void openNativeForm();}
+  if(state&&!playback&&(ps?.nativePause?.visible||((edge&128)&&state.mode===1&&!ps?.nativeResult?.visible&&!ps?.nativeForm?.visible))){
     const pauseInput=(sample&1?1:0)|(sample&2?2:0)|(sample&(32|256)?4:0)|(sample&(128|16)?8:0);
     emulator.setInput({address:state.at,generation:state.generation,pauseInput,openPause:!!((edge&128)&&!ps?.nativePause?.visible)});
   }
+  if(state&&ps?.nativeForm?.visible){const formInput=(sample&1?1:0)|(sample&2?2:0)|(sample&4?4:0)|(sample&8?8:0)|(sample&(32|256)?16:0)|(sample&(128|16)?32:0);emulator.setInput({address:state.at,generation:state.generation,formInput});}
+  if(ps?.nativeForm?.request){void completeNativeForm(ps,state);loop=requestAnimationFrame(tick);return;}
   if(ps?.nativePause?.visible){void handleNativePause(ps,state);}
   if(ps?.nativeResult?.visible&&state){const resultInput=(sample&1?1:0)|(sample&2?2:0)|(sample&(32|256)?4:0)|(sample&(128|16)?8:0);emulator.setInput({address:state.at,generation:state.generation,resultInput});}
   if(ps?.outcome&&!playback){if(ps.nativeResult){void handleNativeResult(ps,state);if(ps.nativeResult.request===1)return;}else practiceUI.complete({outcome:ps.outcome,recording:!!recorder,ready:!!recorder?.state.ready,failed:recorder?.state.failed});}
   if(emulator.state==='running'&&!playback){
-    const playing=state?.mode===1&&!state.flags;let bits=sample;
+    const playing=state?.mode===1&&!state.flags&&!ps?.nativeForm?.visible;let bits=ps?.nativeForm?.visible?0:sample;
     if(playing){
       bits&=~128;
       if(ps?.options.disableBomb)bits&=~16;if(ps?.options.disableShot)bits&=~32;if(ps?.options.disableFocus)bits&=~64;else if(ps?.options.forceFocus)bits|=64;

@@ -23,6 +23,7 @@ dw practice_initial_reimu,practice_target_advance
 dw practice_initial_stage,practice_outcome,practice_target_outcome
 dw practice_result_visible,practice_result_request,practice_result_ack,practice_result_input
 dw practice_pause_open,practice_pause_request,practice_pause_ack,practice_pause_input
+dw practice_form_open,practice_form_input,practice_form_values,practice_form_request,practice_form_hp
 entry_pause: db 0
 hold: db 0
 target_practice: db 0
@@ -132,6 +133,19 @@ frame_hook:
     pop gs
     pop fs
 .pause_closed:
+    cmp byte [cs:practice_form_open],0
+    je .form_closed
+    cmp byte [cs:practice_assists_drawn],0
+    je .form_ready
+    mov byte [cs:practice_assists_open],0
+    call practice_assists_draw
+.form_ready:
+    push fs
+    push gs
+    call practice_form
+    pop gs
+    pop fs
+.form_closed:
     ; Poll the PC-98 BIOS keyboard bitmap in the game process. The native
     ; trainer state is independent of browser keyboard focus or DOM controls.
     push es
@@ -415,4 +429,15 @@ dialog_run_fast:
     mov ax,[si+0x4260]
 %endmacro
 %include 'practice-pause.inc'
+%define FORM_STAGE_MAX 6
+%define FORM_CHARACTER_MAX 3
+%define FORM_PHASE_MAX 17
+%define FORM_STOCK_MAX 8
+%define FORM_POWER_MAX 128
+%define FORM_BRANCH_MAX 1
+%define FORM_RANK_DEFAULT 12
+%define FORM_RANK_MAX 30
+%define FORM_RANK_BASE 4
+%define FORM_HP_MAX 30000
+%include 'practice-form.inc'
 practice_pause_call equ frame_hook.pause_call

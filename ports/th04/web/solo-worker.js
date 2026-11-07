@@ -23,6 +23,11 @@ function applyAssist(value){
   if(at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b))return;
   if(!ownsSoloMailbox(h,v,at))return;
   if(value.generation!==v.getUint16(at+24,true))return;
+  if(Number.isInteger(value.formInput)){
+    const entries=patch.practice?.entries,base=at-patch.mailbox_cs_offset;
+    if(entries&&h[base+entries.formOpen])v.setUint16(base+entries.formInput,value.formInput&63,true);
+    return;
+  }
   if(Number.isInteger(value.pauseInput)){
     const entries=patch.practice?.entries,base=at-patch.mailbox_cs_offset;
     if(entries&&Number.isInteger(entries.pauseOpen)){
@@ -153,6 +158,14 @@ async function dispatch(message){
     if(!h[base+entries.resultVisible]||!h[base+entries.resultRequest])return false;
     h[base+entries.resultAck]=ack;return true;
   }
+  if(method==='practiceFormOpen'||method==='practiceFormTake'){
+    const [at,generation,values,hp]=args,h=emulator.module.HEAPU8,v=new DataView(h.buffer),e=patch?.practice?.entries;
+    if(game!=='04'||!e||at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b)||!ownsSoloMailbox(h,v,at)||v.getUint16(at+24,true)!==generation)return false;
+    const base=at-patch.mailbox_cs_offset;
+    if(method==='practiceFormTake'){if(!h[base+e.formRequest])return false;h[base+e.formRequest]=0;return true;}
+    if(h[base+e.resultVisible]||!Array.isArray(values)||values.length!==10||!Number.isInteger(hp)||hp<0||hp>30000||values.some(n=>!Number.isInteger(n)||n<0||n>255))return false;
+    h.set(values,base+e.formValues);v.setUint16(base+e.formHp,hp,true);h[base+e.formRequest]=0;h[base+e.formOpen]=1;return true;
+  }
   if(method==='practicePauseAck'){
     const [at,generation,ack]=args,h=emulator.module.HEAPU8,v=new DataView(h.buffer),entries=patch?.practice?.entries;
     if(game!=='04'||!entries||![1,2].includes(ack)||at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b)||v.getUint16(at+24,true)!==generation)return false;
@@ -166,7 +179,7 @@ async function dispatch(message){
     if(emulator.key)emulator.key(event.code,event.type==='keydown');else environment.key(event);return;
   }
   if(method==='input'){
-    lastInput=performance.now();input=args[0];if(Number.isInteger(input.resultInput)||Number.isInteger(input.pauseInput)){applyAssist(input);if(emulator.state==='running'&&emulator.externalHost?.status.held)emulator.externalHost.pause(false);}else queueAssist(input);return;
+    lastInput=performance.now();input=args[0];if(Number.isInteger(input.resultInput)||Number.isInteger(input.pauseInput)||Number.isInteger(input.formInput)){applyAssist(input);if(emulator.state==='running'&&emulator.externalHost?.status.held)emulator.externalHost.pause(false);}else queueAssist(input);return;
   }
   if(method==='clear'){clear();return;}
   if(method==='coopHit'){if(!coop)throw Error('本地合作尚未启动');coop.hit();return;}

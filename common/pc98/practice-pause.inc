@@ -10,6 +10,22 @@ practice_pause:
 .loop:
     inc dword [cs:SOLO_MAILBOX+16]
     PRACTICE_PAUSE_WAIT
+    cmp byte [cs:practice_form_open],0
+    je .request
+    call practice_pause_screen_restore
+    call practice_form
+    cmp byte [cs:practice_form_request],0
+    jne .form_finish
+    call practice_pause_screen_save
+    mov word [cs:practice_pause_keys],0xffff
+    call practice_pause_draw
+    jmp .loop
+.form_finish:
+    mov byte [cs:practice_pause_open],0
+    mov byte [cs:practice_pause_request],0
+    mov byte [cs:practice_pause_ack],0
+    ret
+.request:
     cmp byte [cs:practice_pause_request],0
     je .input
     cmp byte [cs:practice_pause_ack],0

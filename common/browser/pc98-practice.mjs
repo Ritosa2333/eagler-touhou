@@ -1,6 +1,6 @@
 // The lab owns the browser panel, practice configuration and native engine.
 // This boundary only restores its entry and routes the Launcher's keyboard.
-export function mountManagedPractice(ui, input, {release, readState, nativeKey}) {
+export function mountManagedPractice(ui, input, {release, readState, nativeKey, nativeOpen}) {
   const panel = document.querySelector('#practice-panel');
   const screen = panel.parentElement;
   const button = document.querySelector('[data-practice-toolbar]');
@@ -12,7 +12,7 @@ export function mountManagedPractice(ui, input, {release, readState, nativeKey})
   button.classList.add('managed-practice-open');
   button.textContent = '练习 / 辅助 · F12';
   button.hidden = true;
-  button.onclick = () => { release(); ui.show(true); };
+  button.onclick = () => { release(); if(nativeOpen)nativeOpen();else ui.show(true); };
   screen.append(button);
   const style = document.createElement('style');
   style.textContent = `html,body{overflow:hidden}
@@ -79,7 +79,7 @@ export function mountManagedPractice(ui, input, {release, readState, nativeKey})
       const visible = message.thpracMobilePanelsEnabled === true && message.thpracMobilePanelsVisible === true;
       if (!enabled || visible === mobileVisible) return;
       mobileVisible = visible;
-      if (visible) { if (panel.hidden || !panel.classList.contains('practice-full')) { release(); ui.show(true); } }
+      if (visible) { if (panel.hidden || !panel.classList.contains('practice-full')) { release(); if(nativeOpen)nativeOpen();else ui.show(true); } }
       else if (!panel.hidden) panel.querySelector('[data-close-practice]').click();
     },
   };

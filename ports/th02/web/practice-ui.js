@@ -2,7 +2,7 @@ import {PRACTICE_DEFAULTS,PRACTICE_SETUP,PRACTICE_VERSION,normalizePracticeSetup
 const labels={invincible:'F1 无敌',lockLives:'F2 锁残机',lockBombs:'F3 无限 Bomb',lockPower:'F4 锁当前火力',lockTime:'F5 锁阶段超时',enemyInvincible:'U 敌人无敌',lockRank:'锁 Rank',disableBomb:'Shift+D 禁用 X',disableFocus:'Shift+A 禁用低速',disableShot:'Shift+S 禁用射击',forceFocus:'强制低速',quickRetry:'启用 Shift+F 重试',preparedRetry:'预备快速重试（额外内存）',alwaysPoint:'常驻判定点',showKeys:'显示按键',showInfo:'显示游戏信息'};
 const hotkeys={F1:'invincible',F2:'lockLives',F3:'lockBombs',F4:'lockPower',F5:'lockTime',KeyU:'enemyInvincible'};
 const tools=Object.entries(labels);
-export function mountPractice({host,onChange=()=>{},onStart=()=>{},onRetry=()=>{},onSave=()=>{},onPause=()=>{},onFocus=()=>{},isSynthetic=()=>false,onRelease=()=>{}}){
+export function mountPractice({host,onChange=()=>{},onStart=()=>{},onRetry=()=>{},onSave=()=>{},onPause=()=>{},onNativeOpen=null,onFocus=()=>{},isSynthetic=()=>false,onRelease=()=>{}}){
   const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('practice-ui.css',import.meta.url).href;document.head.append(css);
   const screen=host.querySelector('.solo-screen');screen.classList.add('practice-screen');
   const panel=document.createElement('aside');panel.className='practice-panel';panel.id='practice-panel';panel.hidden=true;panel.setAttribute('aria-label','单人辅助与练习');
@@ -73,7 +73,7 @@ export function mountPractice({host,onChange=()=>{},onStart=()=>{},onRetry=()=>{
     }
     if(event.ctrlKey||event.metaKey||event.altKey||event.target?.closest?.('input,select,textarea,[contenteditable="true"]'))return;
     if(!host.contains(document.activeElement)&&document.activeElement!==document.body)return;
-    if(['Backspace','Tab','F12'].includes(event.code)){event.preventDefault();event.stopImmediatePropagation();if(event.repeat)return;if(event.code==='Tab')change('showInfo',!options.showInfo);else{if(event.code==='F12'&&result.open)result.close();show(event.code==='F12');}return;}
+    if(['Backspace','Tab','F12'].includes(event.code)){event.preventDefault();event.stopImmediatePropagation();if(event.repeat)return;if(event.code==='Tab')change('showInfo',!options.showInfo);else{if(event.code==='F12'&&onNativeOpen){onNativeOpen();return;}if(event.code==='F12'&&result.open)result.close();show(event.code==='F12');}return;}
     let key=hotkeys[event.code];if(event.shiftKey&&['KeyD','KeyA','KeyS'].includes(event.code))key={KeyD:'disableBomb',KeyA:'disableFocus',KeyS:'disableShot'}[event.code];
     // Block browser F1/F5 actions too, but only the compact menu may toggle tools.
     if(key){event.preventDefault();event.stopImmediatePropagation();}
