@@ -273,9 +273,10 @@ i32 GameBattle::boss_damage(EnemyState& enemy,i32 amount){
     return i32(scaled/12);
 }
 i32 GameBattle::life_piece_tier(u32 seat) const noexcept{return seat?partners[seat-1]->life_piece_tier:score.life_piece_tier;}
-void GameBattle::restore_piece_tier(u32 seat,i32 value) noexcept{
-    if(seat){partners[seat-1]->life_piece_tier=value;partners[seat-1]->retired=partners[seat-1]->session.extra_lives<0;}
-    else {score.life_piece_tier=value;primary_retired=session.extra_lives<0;}
+void GameBattle::restore_pilot_stock(u32 seat,i32 tier,bool retired) noexcept{
+    if(seat){partners[seat-1]->life_piece_tier=tier;partners[seat-1]->retired=retired;}
+    else {score.life_piece_tier=tier;primary_retired=retired;}
+    if(retired)pilot(seat).life.state=2;
 }
 bool GameBattle::initialize_partner_hud(){
     for(u32 index=0;index<partner_count;++index){
@@ -311,14 +312,52 @@ bool GameBattle::add_coop_player(const ShtResource& shots,i32 character,i32 anim
     return true;
 }
 bool GameBattle::pilot_game_over(u32 seat){
+    if(!partner_count)return check(presentation.game_over(),"Game-over scene unavailable");
+    if(!pilot_active(seat))return true;
     transfers[seat]={};
     if(seat)partners[seat-1]->retired=true;
-    else if(partner_count)primary_retired=true;
+    else primary_retired=true;
+    const u32 seed=u32(game_random.seed)^(0x9e3779b9u*(seat+1));
+    ghosts[seat]={seed?seed:1};
+    auto& dead=pilot(seat);
+    if(dead.session.bomb_state&&!pilot_bomb(seat)->stop())return fail(pilot_bomb(seat)->error);
+    if(!dead.shots.clear_lasers())return fail(dead.shots.error);
+    dead.motion.option_count=0;
+    for(auto& option:dead.motion.options)option.active=0;
+    for(auto& pair:dead.visuals.option_handles)
+        for(auto& handle:pair)if(!animations.retire(handle))return fail(animations.error);
+    for(auto& shot:dead.shots.shots){
+        if(!shot.state)continue;
+        if(!animations.retire(shot.animation))return fail(animations.error);
+        shot.state=0;
+        shot.damage_source=0;
+    }
+    for(auto& damage:dead.damage.sources)damage.flags=0;
+    if(!dead.visuals.focus_begin(false,1)||!dead.visuals.barrier_remove())return fail(animations.error);
     for(u32 index=0;index<pilot_count();++index)
         if(index!=seat&&pilot_active(index))return true;
     return check(presentation.game_over(),"Game-over scene unavailable");
 }
 bool GameBattle::pilot_active(u32 seat) const noexcept{return seat?!partners[seat-1]->retired:!primary_retired;}
+bool GameBattle::update_ghost(u32 seat){
+    auto& ghost=ghosts[seat];
+    if(ghost.clock++%90==0){
+        const auto next=[&](){
+            ghost.random^=ghost.random<<13;
+            ghost.random^=ghost.random>>17;
+            ghost.random^=ghost.random<<5;
+            return ghost.random;
+        };
+        ghost.dx=i32(next()%97)-48;
+        ghost.dy=i32(next()%81)-40;
+    }
+    auto& dead=pilot(seat);
+    auto& motion=dead.motion;
+    motion.position_fixed.x=std::clamp(motion.position_fixed.x+ghost.dx,-23552,23552);
+    motion.position_fixed.y=std::clamp(motion.position_fixed.y+ghost.dy,4096,55296);
+    motion.position={float(motion.position_fixed.x)/128,float(motion.position_fixed.y)/128,0};
+    return animations.tick_instance(dead.visuals.root)>=0||fail(animations.error);
+}
 bool GameBattle::revive_pilot(u32 seat,i32 invulnerability){
     auto& target=pilot(seat);
     auto& stock=target.session;
@@ -330,6 +369,7 @@ bool GameBattle::revive_pilot(u32 seat,i32 invulnerability){
     if(!target.reset_for_stage())return fail(target.error);
     target.motion.snap_options();
     target.life.invulnerability.set(invulnerability);
+    ghosts[seat]={};
     transfers[seat]={};
     if(seat)partners[seat-1]->retired=false;
     else primary_retired=false;
@@ -432,18 +472,17 @@ void GameBattle::protect_teammates(u32 caster,i32 frames) noexcept{
 }
 bool GameBattle::reset_players(){
     transfers={};
-    if(!primary_retired&&!player->reset_for_stage())return fail(player->error);
-    for(u32 index=0;index<partner_count;++index){
-        auto& partner=*partners[index];
-        if(partner.retired)continue;
-        partner.input={};
-        if(!partner.player.reset_for_stage())return fail(partner.player.error);
+    for(u32 seat=0;seat<pilot_count();++seat){
+        if(seat)partners[seat-1]->input={};
+        if(!pilot_active(seat)){
+            if(!revive_pilot(seat,120))return false;
+        }else if(!pilot(seat).reset_for_stage())return fail(pilot(seat).error);
     }
     return true;
 }
 bool GameBattle::finish_player_options(){
     for(u32 seat=0;seat<pilot_count();++seat)
-        if(!pilot(seat).finish_stage_options())return fail(pilot(seat).error);
+        if(pilot_active(seat)&&!pilot(seat).finish_stage_options())return fail(pilot(seat).error);
     return true;
 }
 bool GameBattle::stop_bombs(){
@@ -454,8 +493,24 @@ bool GameBattle::stop_bombs(){
     return true;
 }
 bool GameBattle::draw_players(AnmRenderer& renderer){
-    for(u32 seat=0;seat<pilot_count();++seat)
-        if(!pilot(seat).draw(renderer))return fail(pilot(seat).error);
+    for(u32 seat=0;seat<pilot_count();++seat){
+        auto& p=pilot(seat);
+        if(pilot_active(seat)){
+            if(!p.draw(renderer))return fail(p.error);
+            continue;
+        }
+        if(renderer.logical_only)continue;
+        // Draw a copy so native death flags and the hitbox stay in the
+        // authoritative player state, while the spirit remains visible.
+        auto body=p.visuals.root;
+        body.pilot_draw_owner=0;
+        body.visual.flags=(body.visual.flags|3u)&~0x60000u;
+        body.visual.render_flags=(body.visual.render_flags&~0x80060u)|0x40000u;
+        const u32 alpha=renderer.hud_viewer==seat+1?112:88;
+        body.visual.color=(body.visual.color&0xffffffu)|(alpha<<24);
+        body.visual.translation=p.motion.position;
+        if(renderer.draw(body)==-2)return fail(renderer.error);
+    }
     return true;
 }
 void GameBattle::prepare_player_presentation(AnmRenderer& renderer){
@@ -560,10 +615,17 @@ bool GameBattle::step(const BattleFrame& frame){return prepare_frame(frame)&&act
 i32 GameBattle::update_animations(bool alternate){animations.rate=input.rate;if(!animations.update(alternate)){fail(animations.error);return 5;}return error.empty()?1:5;}
 i32 GameBattle::update_player(){
     PlayerFrameContext frame;frame.held=input.held;frame.pressed=input.pressed;items->before_player();
-    if(!refresh_player(frame)||(!primary_retired&&!player->update(frame,input.rate))){fail(player->error);return 5;}
+    if(!refresh_player(frame)){fail(player->error);return 5;}
+    if(primary_retired){
+        if(!update_ghost(0))return 5;
+    }else if(!player->update(frame,input.rate)){fail(player->error);return 5;}
     items->after_player();
     for(u32 i=0;i<partner_count;++i){
-        auto& partner=*partners[i];if(partner.retired)continue;
+        auto& partner=*partners[i];
+        if(partner.retired){
+            if(!update_ghost(i+1))return 5;
+            continue;
+        }
         partner.input.update(input.partners[i].held);
         partner.player.motion.touch=input.partners[i].touch;
         const auto timer=items->roaring.state.countdown.current;
@@ -634,7 +696,7 @@ i32 GameBattle::update_spirits(){
 i32 GameBattle::update_hud(){if(hud){hud->current_seconds=enemy_world.boss_seconds;hud->game_flags=input.game_flags;hud->dialogue=dialogue_present();if(!hud->update(input.rate)){fail(hud->error);return 5;}}return error.empty()?1:5;}
 #if TH17_MULTIPLAYER
 void GameBattle::save_rollback(multiplayer::FrameImage& image){
-    image.save(primary_retired,transfers,spell_context,hud_context,input,world_running,session,spell,score,
+    image.save(primary_retired,ghosts,transfers,spell_context,hud_context,input,world_running,session,spell,score,
         effects.handles,effects.cursor,effects.error,grid_viewport,graze_total,graze_chapter,error);
     image.restore_with([this]{dialogue.reset();targets.clear();services->projectiles.finish_contacts();return true;});
     const auto save_pilot=[&](Player& p,BombController& b,i32 ch){

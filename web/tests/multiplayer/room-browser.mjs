@@ -16,10 +16,13 @@ const launcherPreview=process.argv.includes('--launcher-preview');
 const verifyReplay=process.argv.includes('--replay');
 const checkPresentation=process.argv.includes('--check-presentation');
 const verifyTransfer=process.argv.includes('--life-transfer');
+const verifyGhost=process.argv.includes('--ghost-revive');
 const independent=process.argv.includes('--independent-pages');
 const cpuProfile=process.argv.includes('--cpu-profile');
 const traceGaps=process.argv.includes('--trace-gaps');
-const touchDrag=process.argv.includes('--touch-drag');
+const touchComparison=process.argv.includes('--touch-comparison');
+const touchDrag=touchComparison||process.argv.includes('--touch-drag');
+const touchWindow=touchComparison?{keyboard:480,start:960,end:3500}:{keyboard:600,start:600,end:1800};
 const symmetricDelay=process.argv.includes('--symmetric-delay');
 const touchSeat=Number(process.env.TH17_ROOM_TOUCH_SEAT??1);
 const glTrace=process.env.TH17_ROOM_GL_TRACE==='1';
@@ -37,7 +40,7 @@ assert.ok(extendedSeats===2||extendedSeats===3);
 const difficulty=Number(process.env.TH17_ROOM_DIFFICULTY??(denseExtra?4:throughStageTwo?0:1));
 assert.ok(Number.isInteger(difficulty)&&difficulty>=0&&difficulty<=4);
 assert.ok(!throughStageTwo||difficulty!==4);
-const minimumSamples=Number(process.env.TH17_ROOM_SAMPLES||(denseExtra?4200:1050));
+const minimumSamples=Number(process.env.TH17_ROOM_SAMPLES||(touchComparison?3850:denseExtra?4200:1050));
 const extendedTarget=Number(process.env.TH17_ROOM_TICKS||(extraFinale?39000:extraBoss?15000:12000));
 const delayMs=Number(process.env.TH17_ROOM_DELAY_MS||110);
 const jitterMs=Number(process.env.TH17_ROOM_JITTER_MS||0);
@@ -45,6 +48,8 @@ const cpuThrottle=Number(process.env.TH17_ROOM_CPU_THROTTLE||1);
 const manifest=JSON.parse(await readFile(resolve(runtime,'manifest.json'),'utf8'));
 const directInput=touchDrag&&!!JSON.parse(await readFile(resolve(runtime,'runtime-files.json'),'utf8')).files['direct-input-bridge.mjs'];
 if(extraBoss)assert.ok(manifest.features.roomBenchmark&&rollback&&difficulty===4,'Extra boss profiling needs the dedicated Extra rollback benchmark build');
+if(verifyGhost)assert.ok(manifest.features.roomBenchmark&&throughStageTwo&&extendedSeats===3,
+ 'Ghost revival requires a three-seat benchmark room through Stage 2');
 const baseline=process.env.TH17_ROOM_BASELINE?JSON.parse(await readFile(process.env.TH17_ROOM_BASELINE,'utf8')):null;
 const priorMemory=extraFinale&&baseline?JSON.parse(await readFile(resolve(dirname(process.env.TH17_ROOM_BASELINE),'heap-samples.json'),'utf8')):null;
 const baselineBoss=baseline?.reports[0]?.bossPatterns?.find(pattern=>pattern.spell>=91)?.boss;
@@ -235,19 +240,26 @@ try{
    if(musicDirectory)for(let seat=0;seat<seats;seat++)
     await pageFor(seat).waitForFunction(epoch=>events.some(event=>event.epoch===epoch&&event.event==='audio-health'&&event.musicEnabled),seat+1,{timeout:30000});
    const frames=pages.flatMap(current=>current.frames().filter(frame=>frame.url().includes('/runtime/')));
+   if(verifyGhost)for(const frame of frames)
+    assert.equal(await frame.evaluate(()=>Module._th17_room_fixture_ghost(2)),1,'schedule the same last-life hit on each peer');
    if(touchDrag&&directInput)for(const [seat,frame] of frames.entries())await checkDirectInput(frame,seat+1);
-   if(touchDrag)await pageFor(touchSeat).evaluate(({seat})=>{
+   if(touchDrag)await pageFor(touchSeat).evaluate(({seat,touchWindow,touchComparison})=>{
     let active=false,established=false,sent=0,lastDown=-100,downs=0,direct=0,fallback=0;
+    let startedAt=0;
     globalThis.touchDriver=setInterval(()=>{
      const target=document.getElementById('p'+seat)?.contentWindow;
      if(!target?.Module)return;
      const module=target.Module,pointer=module._th17_room_rollback()>>>2,n=module.HEAPU32[pointer];
-     const dragging=n>=600&&n<1800;
+     const dragging=n>=touchWindow.start&&n<touchWindow.end;
      if(!dragging&&!active)return;
      established||=target.touchInputs?.size>0;
-     const time=n/60;
+     const now=performance.now();
+     if(dragging&&!active)startedAt=now;
+     const time=touchComparison?(now-startedAt)/1000:n/60;
      const message={protocol:'eagler-touhou/1',game:'th17',epoch:seat+1,command:'direct-touch',
-      type:dragging?active&&(established||n-lastDown<20)?'move':'down':'up',id:73,x:.5+Math.sin(time*2)*.13,y:.78+Math.cos(time*2)*.025};
+      type:dragging?active&&(established||n-lastDown<20)?'move':'down':'up',id:73,
+      x:.5+Math.sin(time*2)*.13+(touchComparison?Math.sin(time*11)*.025:0),
+      y:.78+Math.cos(time*2)*.025};
      if(message.type==='down'){lastDown=n;++downs;}
      const bridge=target.__eaglerDirectInputBridge;
      if(bridge?.submit(message))++direct;
@@ -256,9 +268,9 @@ try{
      globalThis.touchEvents=sent;
      globalThis.touchDelivery={downs,direct,fallback};
     },1000/120);
-   },{seat:touchSeat});
+   },{seat:touchSeat,touchWindow,touchComparison});
    for(const [seat,frame] of frames.entries()){
-    await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,storyTiming,traceGaps,verifyTransfer,touchDrag,touchSeat,symmetricDelay})=>{
+    await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,storyTiming,traceGaps,verifyTransfer,verifyGhost,touchDrag,touchSeat,touchWindow,symmetricDelay})=>{
      const callback=Module.onGameFrame;
      if(traceGaps&&!Module._th17_room_wait_state)throw Error('Gap trace requires a runtime with room wait state');
      globalThis.stopRoomMeasurement=()=>{Module.onGameFrame=callback;};
@@ -274,6 +286,7 @@ try{
      globalThis.densePresentIntervals=[];
      globalThis.storyPresentIntervals=new Map();
      globalThis.touchPresentIntervals=new Map();
+     globalThis.touchCosts={};
      globalThis.touchLayoutReads=0;
      if(touchDrag){
       const measure=Module.canvas.getBoundingClientRect.bind(Module.canvas);
@@ -288,6 +301,15 @@ try{
       const r=Module._th17_room_rollback()>>>2;
       const [n,committed,corrections,resimulated,combatCorrections,spellCorrections]=Module.HEAPU32.subarray(r,r+6);
       const phase=Module._th17_phase();
+      const touchPhase=n<touchWindow.keyboard?'stationary':n<touchWindow.start?'keyboard':
+       n<touchWindow.end?'dragging':'released';
+      if(touchDrag&&n>120){
+       const cost=touchCosts[touchPhase]??={callbacks:0,withoutPresentation:0,corrections:0,resimulated:0};
+       ++cost.callbacks;
+       if(!presented)++cost.withoutPresentation;
+       cost.corrections+=corrections-diagnostics.corrections;
+       cost.resimulated+=resimulated-diagnostics.resimulated;
+      }
       let costs;
       if(extraBoss){
        const d=Module._th17_room_benchmark_draw()>>>2,c=Module._th17_room_performance()>>>2;
@@ -322,9 +344,8 @@ try{
          presentIntervals.push(gap);
          if(traceGaps)presentFrames.push(n);
          if(touchDrag){
-          const segment=n<600?'stationary':n<1800?'dragging':'released';
-          if(!touchPresentIntervals.has(segment))touchPresentIntervals.set(segment,[]);
-          touchPresentIntervals.get(segment).push(gap);
+          if(!touchPresentIntervals.has(touchPhase))touchPresentIntervals.set(touchPhase,[]);
+          touchPresentIntervals.get(touchPhase).push(gap);
          }
          if(bullets>=256&&phase===1)densePresentIntervals.push(gap);
          const state=storyTiming&&samples.get(recorded);
@@ -377,7 +398,8 @@ try{
       diagnostics.maxPrediction=Math.max(diagnostics.maxPrediction,n-committed);
       globalThis.delayInput=rollback&&(symmetricDelay||seat===1)&&n>=115;
       for(let number=Math.max(recorded+1,committed-15);number<=committed;number++){
-       const p=Module._th17_room_confirmed(number)>>>2,words=Array.from(Module.HEAPU32.subarray(p,p+(extraBoss?43:optimized?39:38)));
+       const p=Module._th17_room_confirmed(number)>>>2;
+       const words=Array.from(Module.HEAPU32.subarray(p,p+(verifyGhost?44:extraBoss?43:optimized?39:38)));
        words[2]=0;
        if(words[0]===number&&number>120&&words[3]){
         samples.set(number,words);
@@ -397,7 +419,8 @@ try{
       if(verifyTransfer)Module._th17_key(42,+(seat===0&&n>=75&&n<105&&(n-75)%6<3));
       const centerGuest=extended&&seat===1&&n>=900&&n<952;
       const reserve=(throughStageTwo||denseExtra)&&seat===1&&n>=1500;
-      const moveGuest=seat===1&&n>=600&&!centerGuest&&!reserve&&!(touchDrag&&seat===touchSeat);
+      const moveGuest=seat===1&&n>=600&&!centerGuest&&!reserve&&!(touchDrag&&seat===touchSeat)||
+       touchDrag&&seat===touchSeat&&touchPhase==='keyboard';
       Module._th17_key(205,+(seat===1&&n>=120&&n<170||moveGuest&&n%96<12||extended&&seat===0&&n>=300&&n<350));
       Module._th17_key(203,+(seat===0&&n>=120&&n<170||moveGuest&&n%96>=48&&n%96<60||centerGuest||reserve&&n<1630));
       Module._th17_key(200,+(seat===2&&n>=120&&n<150||reserve&&n<1630));
@@ -406,7 +429,7 @@ try{
       Module._th17_key(45,+(seat===1&&n>=185&&n<193||extended&&n>=1800&&(n+seat*420)%840<9||
        denseExtra&&n>=1500&&(n+seat*420)%720<9));
      };
-    },{seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,traceGaps,verifyTransfer,touchDrag,touchSeat,symmetricDelay,storyTiming:checkPresentation&&difficulty!==4});
+    },{seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,traceGaps,verifyTransfer,verifyGhost,touchDrag,touchSeat,touchWindow,symmetricDelay,storyTiming:checkPresentation&&difficulty!==4});
    }
    let frontier=0,progressAt=Date.now(),coverageFailure;
    let cutoff=extendedTarget;
@@ -501,7 +524,12 @@ try{
     }):undefined;
     return {...diagnostics,touchInputFrames:globalThis.touchInputs?.size||0,touchInputTargets:new Set([...globalThis.touchInputs?.values()||[]].map(value=>value.join(','))).size,
      touchCombatInputs:[...samples].filter(([frame,state])=>state[10]>0&&globalThis.touchInputs?.has(frame)).length,touchLayoutReads:globalThis.touchLayoutReads,
-     touchPresentIntervals:Object.fromEntries([...touchPresentIntervals].map(([segment,gaps])=>[segment,{...summarize(gaps),fps:gaps.length*1000/gaps.reduce((sum,gap)=>sum+gap,0)}])),
+     touchPresentIntervals:Object.fromEntries([...touchPresentIntervals].map(([segment,gaps])=>[segment,{
+      ...summarize(gaps),fps:gaps.length*1000/gaps.reduce((sum,gap)=>sum+gap,0),
+      overFrameBudget:gaps.filter(gap=>gap>1000/60).length,
+      over25Ms:gaps.filter(gap=>gap>25).length,
+     }])),
+     touchCosts,
      glCalls:globalThis.__th17GlCalls,liveHeapBytes,captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections:spellCorrections??diagnostics.spellCorrections,bossCosts,
      tail,
      canvas:[canvas.width,canvas.height],renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):null,
@@ -546,6 +574,15 @@ try{
    const dialogueFrames=agreed.filter(([,state])=>state[33]).length;
    const bossNonspellFrames=agreed.filter(([,state])=>state[38]&&!(state[30]&1)&&!state[33]).length;
    const stageTwoFrames=agreed.filter(([,state])=>state[3]===2).length;
+   let ghostRevival;
+   if(verifyGhost){
+    const ghosts=agreed.filter(([,state])=>state[3]===1&&(state[43]&4));
+    const positions=new Set(ghosts.map(([,state])=>state.slice(20,22).join('/')));
+    const revived=agreed.find(([,state])=>state[3]===2&&!(state[43]&4)&&state[24+2]===200&&state[14+8]<0x80000000);
+    assert.ok(ghosts.length>=90&&positions.size>1,'third pilot drifts as a ghost through Stage 1');
+    assert.ok(revived,'third pilot revives with half power on Stage 2 activation');
+    ghostRevival={ghostFrames:ghosts.length,firstGhost:ghosts[0][0],positions:positions.size,revived:revived[0]};
+   }
    const bossPatterns=[],settledPeaks=[];
    if(extraBoss){
     assert.ok(diagnostics[1].delayedPackets>0,'guest used the delayed RTC channel');
@@ -571,7 +608,7 @@ try{
      }
     }
    }
-   reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,bossNonspellFrames,stageTwoFrames,denseWindows,
+   reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,bossNonspellFrames,stageTwoFrames,ghostRevival,denseWindows,
     ...(touchDrag?await pageFor(touchSeat).evaluate(()=>({touchEvents:touchEvents||0,touchDelivery})):{}),
     bossPatterns:bossPatterns.filter(pattern=>pattern.last-pattern.first>=30),
     ...(priorMemory?{matchedMemory:compareMemory(priorMemory.samples,finaleSamples),lateMatchedMemory:compareMemory(priorMemory.samples,finaleSamples,lateStart)}:{}),
@@ -668,7 +705,7 @@ try{
 }finally{
  await browser?.close();for(const socket of sockets)socket.close();relay.kill();server.closeAllConnections();server.close();
  await writeFile(resolve(out,'room-report.json'),JSON.stringify({rollback,extended,difficulty,version:manifest.version,wasm:manifest.execution.sha256,
-  throughStageTwo,denseExtra,extraBoss,extraFinale,independent,renderScale,music,cpuProfile,traceGaps,glTrace,touchDrag,touchSeat,symmetricDelay,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
+  throughStageTwo,denseExtra,extraBoss,extraFinale,independent,renderScale,music,cpuProfile,traceGaps,glTrace,touchDrag,touchComparison,touchSeat,symmetricDelay,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
  if(finaleSamples)await writeFile(resolve(out,'heap-samples.json'),JSON.stringify({
   fields:['nextFrame','bullets','spell','heap','lasers','snapshots','unusedCapacity','bulletState','bulletVisual','itemVisual','idleItemVisual','animation'],
   samples:finaleSamples})+'\n');

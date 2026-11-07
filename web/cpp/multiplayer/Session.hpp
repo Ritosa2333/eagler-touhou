@@ -46,7 +46,8 @@ public:
 
     explicit Session(Netplay::PeerTransport& transport) : channel_(transport) {}
     bool begin(const SessionSetup&, std::uint64_t now_ms);
-    bool pump(std::uint64_t now_ms);
+    bool pump(std::uint64_t now_ms, bool capture_follows = false);
+    bool flush_inputs(std::uint64_t now_ms);
     void capture_phase(bool confirmed, std::uint64_t now_us);
     bool needs_input() const;
     bool capture_input(const Netplay::FrameInput&, std::uint64_t now_ms);
@@ -69,7 +70,7 @@ private:
     Netplay::SessionChannel channel_;
     Netplay::ConfirmedInputClock capture_clock_;
     std::uint64_t capture_now_us_ = 0;
-    bool confirmed_phase_ = false;
+    std::uint32_t capture_lead_ = 0;
     std::uint32_t next_capture_ = 0, next_commit_ = 0, replay_end_ = 0;
     std::uint32_t corrections_ = 0, resimulated_ = 0;
     const char* error_ = nullptr;

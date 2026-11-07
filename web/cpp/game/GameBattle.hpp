@@ -47,6 +47,8 @@ class GameBattle {
     std::array<std::unique_ptr<Partner>,2> partners;
     u32 partner_count=0;
     bool primary_retired=false;
+    struct GhostMotion {u32 random=1,clock=0;i32 dx=0,dy=0;};
+    std::array<GhostMotion,3> ghosts{};
     struct TransferGesture {u8 life=0,power=0;};
     std::array<TransferGesture,3> transfers{};
     AnmManager& animations;AnmEnvironment& environment;Rng& game_random;Rng& visual_random;BattleWorldServices& presentation;BattleResources resources;
@@ -64,6 +66,7 @@ class GameBattle {
     BombController* pilot_bomb(u32 seat) const noexcept;
     bool pilot_game_over(u32 seat);
     bool pilot_active(u32 seat) const noexcept;
+    bool update_ghost(u32 seat);
     bool revive_pilot(u32 seat,i32 invulnerability);
     bool update_transfers();
     Vec3 aim_target(const Vec3& origin) noexcept;
@@ -105,7 +108,8 @@ public:
     i32 boss_damage(EnemyState&,i32);
     Player& pilot(u32 seat) noexcept;
     i32 life_piece_tier(u32 seat) const noexcept;
-    void restore_piece_tier(u32 seat,i32 value) noexcept;
+    bool pilot_ghost(u32 seat) const noexcept{return !pilot_active(seat);}
+    void restore_pilot_stock(u32 seat,i32 tier,bool retired) noexcept;
     bool initialize_partner_hud();
     void save_rollback(multiplayer::FrameImage&);
     bool reset_players();

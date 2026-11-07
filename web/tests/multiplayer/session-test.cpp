@@ -232,6 +232,13 @@ void scenario(unsigned seats, bool rollback) {
         }
         links[1].mute_input=false;
         pump(8);
+        for(unsigned i=0;i<2;++i){
+            sessions[0].capture_phase(false,now*1000);
+            capture(0,0);
+            now+=17;
+        }
+        sessions[0].capture_phase(false,now*1000);
+        require(!sessions[0].needs_input(),"repair input keeps a two-frame lead at most");
         for(unsigned i=0;i<3;++i){
             require(sessions[0].tick(worlds[0],false)==waiting&&sessions[0].repair_pending(),
                     "repair-only callback yields with correction pending");
@@ -242,6 +249,8 @@ void scenario(unsigned seats, bool rollback) {
                 "last repair-only callback completes the correction");
         require(worlds[0].logical_steps==3&&!worlds[0].logical_draw&&sessions[0].next_frame()==8,
                 "only the final repaired frame submits a draw and no extra input tick runs");
+        sessions[0].capture_phase(false,now*1000);
+        require(!sessions[0].needs_input(),"ordinary simulation drains input captured during repair");
     }
 }
 

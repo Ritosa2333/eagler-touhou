@@ -41,7 +41,7 @@ std::unique_ptr<ApplicationState> app;
 std::string last_error;
 #if TH17_MULTIPLAYER
 struct RoomRuntime final : multiplayer::World {
- using Status=std::array<u32,43>;
+ using Status=std::array<u32,44>;
  struct Frame {
   u32 number=Netplay::INVALID_FRAME;
   multiplayer::FrameImage image;
@@ -79,6 +79,7 @@ struct RoomRuntime final : multiplayer::World {
  u32 combat_corrections=0,spell_corrections=0;
 #if TH17_ROOM_BENCHMARK
  u32 benchmark_input_frame=0;
+ u32 benchmark_ghost_seat=3;
  std::array<u32,4> benchmark_history{};
 #endif
 
@@ -206,6 +207,16 @@ struct RoomRuntime final : multiplayer::World {
   if(auto* scene=app->scene();scene&&scene->battle.stage==7){
    for(u32 seat=0;seat<scene->battle.pilot_count();++seat)scene->battle.pilot(seat).life.invulnerability.set(2);
   }
+  if(number==800&&benchmark_ghost_seat<setup.seats){
+   auto* scene=app->scene();
+   if(!scene||!scene->active()){
+    app->room_sounds=nullptr;
+    return app->fail("Ghost fixture needs an active stage");
+   }
+   auto& pilot=scene->battle.pilot(benchmark_ghost_seat);
+   pilot.session.extra_lives=0;
+   if(!pilot.life.hit()){app->room_sounds=nullptr;return app->fail(pilot.life.error);}
+  }
 #endif
   const bool previous_draw_mode=app->graphics.logical_drawing;
   // Keep one completed image per RAF and advance draw-dependent state on the extra ticks.
@@ -227,7 +238,7 @@ struct RoomRuntime final : multiplayer::World {
   }
   return true;
  }
- bool poll(){
+ bool poll(bool capture_follows=false){
   const double now=emscripten_get_now();
   now_ms=std::uint64_t(now);
   session.capture_phase(entered&&!can_predict(),std::uint64_t(now*1000));
@@ -235,7 +246,7 @@ struct RoomRuntime final : multiplayer::World {
   if(spectator)return receive_spectator();
   if(playing_replay)return true;
   if(local_results){session.pump(now_ms);publish(true);return true;}
-  return session.pump(now_ms)||app->fail(session.error());
+  return session.pump(now_ms,capture_follows&&!terminal)||app->fail(session.error());
  }
  bool capture_physical(u32 held,const PlayerTouch& touch){
   Netplay::FrameInput sample(u16(held&0x3fbu));
@@ -266,6 +277,7 @@ struct RoomRuntime final : multiplayer::World {
  bool update(bool advance=true){
   if(spectator||playing_replay)return advance_playback(advance);
   if(local_results)return true;
+  if(!session.flush_inputs(now_ms))return app->fail(session.error());
   const auto result=terminal?multiplayer::Session::Tick::Waiting:session.tick(*this,advance);
   if(trace&&result==multiplayer::Session::Tick::Waiting&&session.repair_pending())++replay_slices;
   if(result==multiplayer::Session::Tick::Failed)return app->fail(session.error());
@@ -302,6 +314,7 @@ RoomRuntime::Status RoomRuntime::status(u32 number)const{
    result[12+seat*4]=u32(pilot.motion.position_fixed.x);result[13+seat*4]=u32(pilot.motion.position_fixed.y);
    result[14+seat*4]=u32(pilot.session.extra_lives);result[15+seat*4]=u32(pilot.session.bombs);
    result[24+seat]=u32(pilot.session.power);
+   if(battle.pilot_ghost(seat))result[43]|=1u<<seat;
   }
   result[27]=battle.items->items.active_count;result[28]=battle.items->spirits.count();
   result[29]=battle.laser_scene->manager.count();result[30]=battle.spell.flags;result[31]=app->visual.calls;
@@ -408,7 +421,7 @@ bool sample_and_tick(){
  }
 #if TH17_MULTIPLAYER
  if(room){
-  if(!room->poll())return false;
+  if(!room->poll(true))return false;
   if(!room->local_results){
    if(room->spectator||room->playing_replay)return room->update();
    if(room->terminal)return room->update(false);
@@ -446,7 +459,11 @@ bool sample_and_tick(){
  }
  if(ThpracUi::captures_game_input(*app)){held=buttons=0;app->touch={};}
 #if TH17_MULTIPLAYER
- if(room&&!room->local_results)return room->capture_physical(held,app->touch)&&room->update();
+ if(room&&!room->local_results){
+  if(room->capture_physical(held,app->touch))return room->update();
+  room->session.flush_inputs(room->now_ms);
+  return false;
+ }
 #endif
  controls.update(held);app->controller_buttons=buttons;
  const bool focus=lost_focus;lost_focus=false;
@@ -564,6 +581,14 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_confirmed(unsigned number){
 EMSCRIPTEN_KEEPALIVE void th17_room_trace(unsigned enabled){
  if(th17::sdl::room)th17::sdl::room->trace=enabled!=0;
 }
+#if TH17_ROOM_BENCHMARK
+EMSCRIPTEN_KEEPALIVE int th17_room_fixture_ghost(unsigned seat){
+ using namespace th17::sdl;
+ if(!room||room->setup.difficulty>=4||seat>=room->setup.seats||room->session.next_frame()>=800)return 0;
+ room->benchmark_ghost_seat=seat;
+ return 1;
+}
+#endif
 EMSCRIPTEN_KEEPALIVE unsigned th17_room_wait_state(){
  using namespace th17::sdl;
  if(!room||!app)return 0;
