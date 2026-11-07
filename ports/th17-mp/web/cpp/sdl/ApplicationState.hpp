@@ -73,7 +73,7 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  bool room_preview=false;
  std::function<bool(i32,const std::array<char,9>&,bool)> room_replay_save;
  std::unique_ptr<ReplayRecording> room_description;
- bool begin_room(u16 seed,i32 difficulty,u32 seats,const std::array<std::array<i32,2>,3>& loadouts);
+ bool begin_room(u16 seed,i32 difficulty,u32 seats,const std::array<std::array<i32,2>,3>& loadouts,i32 initial_stage);
  bool restore_room_stage(const multiplayer::StageEntry&);
  bool can_rollback() const;
  bool save_rollback(multiplayer::FrameImage&);
