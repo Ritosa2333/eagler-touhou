@@ -43,7 +43,7 @@ void CShinkiBullet::Step()
 		if (m_bullet[i].flag==1)
 		{
 			m_bullet[i].radius-=2.0f*16.0f;
-			if (m_bullet[i].radius>16.001f*16.0f)
+			if (m_bullet[i].radius>=16.0f*16.0f)
 				continue;
 			m_bullet[i].flag++;
 		}

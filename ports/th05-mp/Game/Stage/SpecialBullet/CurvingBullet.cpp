@@ -19,7 +19,7 @@ void CCurvingBullet::Initialize()
 
 void CCurvingBullet::AddBullet(float origX,float origY,float angle, float speed, unsigned char colorIdx)
 {
-	for (int i=0;i<(original::DemoActive()?7:CURVING_BULLET_N_RECORD);i++)
+	for (int i=0;i<CURVING_BULLET_N_RECORD;i++)
 		if (m_bullet[i].flag==0)
 		{
 			m_bullet[i].flag=1;

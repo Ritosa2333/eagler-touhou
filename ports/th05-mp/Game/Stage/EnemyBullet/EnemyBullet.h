@@ -110,6 +110,8 @@ protected:
 	ENEMY_BULLET m_bullets[ENEMY_BULLET_N_RECORD];
 protected:
 	CStage *m_pStage;
+	unsigned char m_templateSpreadAngle;
+	void RememberSpreadAngle(const ENEMY_SHOOT_INFO& info);
  // Conservative occupied prefixes. Flag 2 stays covered until Step clears it.
  int m_dotEnd=0,m_imageEnd=ENEMY_BULLET_N_RECORD_DOT;
 public:

@@ -83,20 +83,14 @@ int CBossStage2::BounceWalk(int nFrame,float speed)
 {
 	if (m_curPhaseFrame==1)
 	{
-		float angle=(float)(original::Random()%256);
-		m_velX=(float)cos(angle/256.0f*2*PI)*speed;
-		m_velY=(float)sin(angle/256.0f*2*PI)*speed;
+		const int angle=original::Random()&255;
+		m_velX=float(original::math::X(angle,int(speed)));
+		m_velY=float(original::math::Y(angle,int(speed)));
 	}
 	m_curX+=m_velX;
 	m_curY+=m_velY;
-	if (m_curX<=48.0f*16.0f)
-		m_velX=fabs(m_velX);
-	if (m_curX>=336.0f*16.0f)
-		m_velX=-fabs(m_velX);
-	if (m_curY<=48.0f*16.0f)
-		m_velY=fabs(m_velY);
-	if (m_curY>=96.0f*16.0f)
-		m_velY=-fabs(m_velY);
+	if (m_curX<=48*16||m_curX>=336*16)m_velX=-m_velX;
+	if (m_curY<=48*16||m_curY>=96*16)m_velY=-m_velY;
 
 	return m_curPhaseFrame>=nFrame?1:0;
 }

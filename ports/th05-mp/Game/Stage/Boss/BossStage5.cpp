@@ -83,21 +83,15 @@ int CBossStage5::RandomWalkVerStage5(int nFrame,float speed)
 {
 	if (m_curPhaseFrame==1)
 	{
-		float angle=(float)(original::Random()%256);
-		m_velX=(float)cos(angle/256.0f*2*PI)*speed;
-		m_velY=(float)sin(angle/256.0f*2*PI)*speed;
+		const int angle=original::Random()&255;
+		m_velX=float(original::math::X(angle,int(speed)));
+		m_velY=float(original::math::Y(angle,int(speed)));
 		m_curImage=188;
 	}
 	m_curX+=m_velX;
 	m_curY+=m_velY;
-	if (m_curX<=48.0f*16.0f)
-		m_velX=fabs(m_velX);
-	if (m_curX>=336.0f*16.0f)
-		m_velX=-fabs(m_velX);
-	if (m_curY<=48.0f*16.0f)
-		m_velY=fabs(m_velY);
-	if (m_curY>=128.0f*16.0f)
-		m_velY=-fabs(m_velY);
+	if (m_curX<=48*16||m_curX>=336*16)m_velX=-m_velX;
+	if (m_curY<=48*16||m_curY>=128*16)m_velY=-m_velY;
 
 	if (m_curPhaseFrame<nFrame)
 		return 0;
@@ -375,9 +369,10 @@ void CBossStage5::Phase4Shoot()
 	}
 	if (m_curPhaseFrame%m_phase4ShootKnifeInterval==0)
 	{
-		float origX=(float)(16*16+original::Random()%(352*16));
+		const int angleOffset=(original::Random()&31)-15;
 		float origY=(float)(original::Random()%(96*16));
-		float angle=m_pStage->AimAngle(origX,origY)+(float)(original::Random()%32-15);
+		float origX=(float)(16*16+original::Random()%(352*16));
+		float angle=m_pStage->AimAngle(origX,origY,true)+angleOffset;
 		m_knifeBullet.AddBullet(origX,origY,angle,76,32);
 	}
 	if (m_curHP<m_curPhaseEndHP+600&&m_phase4CrazyMode==false)
@@ -436,17 +431,18 @@ void CBossStage5::Phase7Shoot()
 	}
 	if (m_curPhaseFrame%m_phase7ShootKnifeInterval==0)
 	{
-		float laserX=(float)(64*16+original::Random()%256*16);
+		float laserX=(float)(64*16+original::Random()%(256*16));
 		float laserY=32.0f*16.0f;
-		float laserAngle=m_pStage->AimAngle(laserX,laserY);
+		float laserAngle=m_pStage->AimAngle(laserX,laserY,true);
 		float color[]={m_pStage->m_pStageRes->m_palette[8*3]/255.0f,m_pStage->m_pStageRes->m_palette[8*3+1]/255.0f,
 					   m_pStage->m_pStageRes->m_palette[8*3+2]/255.0f};
 		m_pStage->m_pLaser->AddLaserShootOut(laserX,laserY,color,laserAngle,28,100);
 		for (int i=0;i<2;i++)
 		{
-			float origX=(float)(16*16+original::Random()%(352*16));
+			const int angleOffset=(original::Random()&31)-15;
 			float origY=(float)(original::Random()%(96*16));
-			float angle=m_pStage->AimAngle(origX,origY)+(float)(original::Random()%32-15);
+			float origX=(float)(16*16+original::Random()%(352*16));
+			float angle=m_pStage->AimAngle(origX,origY,true)+angleOffset;
 			m_knifeBullet.AddBullet(origX,origY,angle,76,32);
 		}
 	}
