@@ -21,10 +21,18 @@ struct PhaseTimeout {
   return WithCycles(Frames(n,0,estimate),limit-completed);
  }
  // Same convergence as CBoss::MoveTo, without changing the real position.
- static int MoveAxisFrames(float position,float target){
-  int n=0;
-  while(position!=target&&n<256){float delta=target-position;float distance=std::fabs(delta);position+=distance>=16?delta/16:distance>=4?delta/4:delta;++n;}
-  return n+1; // MoveTo reports completion on the following call.
+ static int MoveAxisFrames(float position,float target,int nearDivisor=4){
+  int remaining=int(target-position);
+  int frames=1;
+  int step=remaining/16;
+  if(!step)step=remaining/nearDivisor;
+  while(step){
+   remaining-=step;
+   ++frames;
+   step=remaining/16;
+   if(!step)step=remaining/nearDivisor;
+  }
+  return frames;
  }
 };
 } }

@@ -633,10 +633,8 @@ struct PracticeTests {
      }
      seconds.clear();phase=boss->m_curPhase;
     }
-    // Stage 3's pre-existing final attack does not finish on timeout alone.
-    if(stage==2&&phase==14&&boss->m_curPhaseFrame>1100)break;
    }
-   Check(phase>=0xfd||(stage==2&&phase==14),"native timeout fixture reaches its real terminal phase");
+   Check(phase>=0xfd,"native timeout fixture reaches its real terminal phase");
    g.m_replay.CloseStage(false);delete st;game.m_pCurScheme=NULL;
   }
   // Also run both four-stage branches and each loop-driven midboss directly.
