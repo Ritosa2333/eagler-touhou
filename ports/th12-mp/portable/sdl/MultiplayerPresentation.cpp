@@ -1,8 +1,10 @@
+#include <eagler/input/LocalPlayerCue.hpp>
 #include "Scene.hpp"
 #ifdef TH12_MULTIPLAYER
 #include "RuntimeOptions.hpp"
 #include "game/GameState.hpp"
 #include "game/Multiplayer.hpp"
+#include "multiplayer/Session.hpp"
 namespace th12host {
 void Scene::capture_multiplayer_hud(int frame){
     using namespace th12::multiplayer;
@@ -27,6 +29,8 @@ void Scene::capture_multiplayer_hud(int frame){
         text("/"+std::to_string(r.maxPower/100)+".",574,y+50,4,1,0xffff8030);text(fraction(r.maxPower),606,y+57,4,1,0xffff8030,.6f);
         const auto taps=p.lifeTaps>=3?"L "+std::to_string(p.lifeTaps)+"/5":p.powerTaps>=3?"P "+std::to_string(p.powerTaps)+"/5":"";
         if(!taps.empty())text(taps,p.px/128.f+224,p.py/128.f,1,0,0xffffffff,1,45,2);
+        if(int(seat)==local_seat&&!session.network.ReadOnly())
+            eagler::presentation::local_player_cue(seat,p.px/128.f+224,p.py/128.f+16);
         if(int(seat)==local_seat&&!p.ghost){
             if(runtime_options.always_hitbox&&!std::binary_search(owners.begin(),owners.end(),p.owner()+32)){SampleOptions marker;marker.entity=p.owner()+32;add(BankBullet,77,std::max(18,frame),p.px/128.f+224,p.py/128.f+16,0,1,std::nullopt,marker,1,34,1);}
             if(local_visibility)for(const auto& b:std::initializer_list<std::array<float,4>>{{-7,-7,-3,-6},{3,-7,7,-6},{-7,6,-3,7},{3,6,7,7}}){Pose q;q.kind=Pose::Rectangle;for(int j=0;j<4;++j)q.bounds[j]=b[j]+(j%2?p.py/128.f+16:p.px/128.f+224);q.argb=0xc0ffffff;q.has_priority=true;q.priority=24;q.clip=1;poses.push_back(q);}

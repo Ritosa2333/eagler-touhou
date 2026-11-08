@@ -606,6 +606,10 @@ bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha,bool draw
         const u32 pressed=n==0?(ui&~previous_ui)|pad.pressed:0;if(n==0)previous_ui=ui;
         auto& state=menus->state;
         if(ending){
+#ifdef TH12_MULTIPLAYER
+            if(mp_playing&&!mp_replay&&!th12::multiplayer::session.network.ReadOnly()&&(ui&InSkip))ending->skip();
+            else
+#endif
             ending->tick(ui,pressed);
             if(ending->finished()){
                 if(!ending->error.empty())host::log("ending: %s",ending->error.c_str());
