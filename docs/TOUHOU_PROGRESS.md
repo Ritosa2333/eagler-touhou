@@ -17,7 +17,7 @@
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th16.jpg" width="40" height="40" alt="东方天空璋"> | **[th16] 東方天空璋 v1.00a** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th17.jpg" width="40" height="40" alt="东方鬼形兽"> | **[th17] 東方鬼形獣 v1.00b** | SteinsGateON<br>![In Progress][in-progress] | [源码与构建](../ports/th17/README.md)<br>![In Progress][in-progress] | [共用启动器适配](../ports/th17/ADAPTATION.md)<br>![In Progress][in-progress] | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th18.jpg" width="40" height="40" alt="东方虹龙洞"> | **[th18] 東方虹龍洞 v1.00a** | [owo-aya](https://github.com/owo-aya)<br>![In Progress][in-progress] | - | - | - |
-| <img src="../launcher/docs/assets/game-covers/thumbnails/th19.jpg" width="40" height="40" alt="东方兽王园"> | **[th19] 東方獣王園 v1.10c** | [Idle](https://github.com/Idle233333)<br>![In Progress][in-progress] | - | - | - |
+| <img src="../launcher/docs/assets/game-covers/thumbnails/th19.jpg" width="40" height="40" alt="东方兽王园"> | **[th19] 東方獣王園 v1.10c** | [Idle](https://github.com/Idle233333)<br>![Done][done] | [Idle](https://github.com/Idle233333)<br>![Done][done] | [Idle](https://github.com/Idle233333)<br>![Done][done] | [Idle](https://github.com/Idle233333)<br>![Done][done] |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th20.jpg" width="40" height="40" alt="东方锦上京"> | **[th20] 東方錦上京 v1.00c** | [Oracatt](https://github.com/Oracatt/Touhou20/tree/main)<br>![Done][done] | [Ritosa2333](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th20)<br>![Done][done] | 搁置 | - |
 
 ## 旧作（PC-98）
@@ -47,7 +47,7 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th125.jpg" width="40" height="40" alt="东方文花帖DS"> | **[th125] ダブルスポイラー** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th128.jpg" width="40" height="40" alt="妖精大战争"> | **[th128] 妖精大戦争** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th135.jpg" width="40" height="40" alt="东方心绮楼"> | **[th135] 東方心綺楼** | ![Unassigned][unassigned] | - | - | - |
-| <img src="../launcher/docs/assets/game-covers/thumbnails/th143.jpg" width="40" height="40" alt="弹幕天邪鬼"> | **[th143] 弾幕アマノジャク** | ![Unassigned][unassigned] | - | - | - |
+| <img src="../launcher/docs/assets/game-covers/thumbnails/th143.jpg" width="40" height="40" alt="弹幕天邪鬼"> | **[th143] 弾幕アマノジャク** |[Idle](https://github.com/Idle233333)<br>![In Progress][in-progress]] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th145.jpg" width="40" height="40" alt="东方深秘录"> | **[th145] 東方深秘録** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th155.jpg" width="40" height="40" alt="东方凭依华"> | **[th155] 東方憑依華** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th165.jpg" width="40" height="40" alt="秘封噩梦日记"> | **[th165] 秘封ナイトメアダイアリー** | ![Unassigned][unassigned] | - | - | - |
