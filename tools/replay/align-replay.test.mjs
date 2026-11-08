@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { alignReplay } from './align-replay.mjs';
+import { alignReplay, convertWebToJunowen } from './align-replay.mjs';
 import { encodeJunowen } from '../../ports/th19/tools/replay/junowen-format.mjs';
 import { encodeTh19Replay, th19StreamBegin, th19StreamFrame, th19StreamEnd } from '../../ports/th19/web/sdl-runtime/th19-recording.mjs';
 
@@ -26,4 +26,21 @@ test('reports frame and key divergence without starting a player', () => {
   const report = alignReplay(webReplay([1]), encodeJunowen({ header, inputs: [[2, 0]] }));
   assert.equal(report.aligned, false);
   assert.deepEqual(report.mismatches[0], { frame: 0, seat: 0, webKeys: 1, expectedNative: 1, nativeKeys: 2 });
+});
+
+test('converts web replay to Ju.N.Owen 17-byte file layout', async () => {
+  const web = webReplay([1, 1024, 1025]);
+  const converted = convertWebToJunowen(web);
+  assert.equal(converted.bytes.length, 17 + 3 * 4);
+  const report = alignReplay(web, converted.bytes);
+  assert.equal(report.aligned, true);
+  assert.equal(converted.header.randSeed1, 1);
+  assert.equal(converted.seed2Fallback, true);
+});
+
+test('rejects touch displacement that native replay cannot encode', () => {
+  const packets = [th19StreamBegin(config), th19StreamFrame(0, { keys: 1, direct: 1, x: 4, y: 5 }, { keys: 0, direct: 0, x: 0, y: 0 }, { played: true, hash: 1 })];
+  const payload = packets[1].slice();
+  const web = encodeTh19Replay({ kind: 'versus', game: 'th19', build: config.build, seed: config.seed, config, frames: 1, startedAt: 1, names: ['p1', 'p2'], partial: false }, payload);
+  assert.throws(() => convertWebToJunowen(web), /touch movement/);
 });
