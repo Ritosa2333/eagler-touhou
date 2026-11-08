@@ -1,3 +1,4 @@
+#include "../../Original/CombatThresholds.h"
 #include "../../Practice/Practice.h"
 #include ".\bossstage4.h"
 #include "../Stage.h"
@@ -779,8 +780,8 @@ void CBossStage4::Phase2()
 	if (bEndPhase==false)
 	{
 		const int combinedHP=m_curHP+m_2curHP;
-		const bool nativeThresholds=original::BombAndRageEnabled();
-		if (combinedHP<(nativeThresholds?5500:5501))
+		const int legacyOffset=original::BombAndRageEnabled()?0:1;
+		if (combinedHP<original::TwinFirstRageHP+legacyOffset)
 		{
 			if (m_nModeChange<9)
 			{
@@ -789,7 +790,7 @@ void CBossStage4::Phase2()
 				m_nModeChange=9;
 			}
 			else
-				if (combinedHP<(nativeThresholds?2250:2251))
+				if (combinedHP<original::TwinSecondRageHP+legacyOffset)
 					if (m_nModeChange<14)
 					{
       // HP interruption skips MaiShootType1's frame-160 laser stop.

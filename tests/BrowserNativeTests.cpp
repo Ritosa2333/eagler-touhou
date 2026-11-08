@@ -1,3 +1,4 @@
+#include "../Game/Original/CombatThresholds.h"
 // Compiled only into TH05_BROWSER_TESTS builds. Exercise the production game
 // classes with actual DAT resources without rendering thousands of frames.
 #include "../Game/Game.h"
@@ -20,6 +21,7 @@
 #include "../Game/Practice/Practice.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <stdexcept>
 #include <cstring>
 namespace th5w { namespace original { extern bool auditRandom;
@@ -850,6 +852,75 @@ struct PracticeTests {
     throw std::runtime_error("Boss straight motion accumulated quantized velocity");
   }
  }
+ static void UpdatedPracticeStarts(){
+  auto* game=CGame::s_pCurGame;
+  auto& g=CGame::GVar();
+  const auto reset=[&](){
+   delete game->m_pCurScheme;game->m_pCurScheme=nullptr;g.m_replay.CloseStage(false);
+  };
+  const auto initialize=[&](){
+   g.OnBeginGame();
+   auto* stage=new CStage;
+   game->m_pCurScheme=stage;game->m_curSchemeID=4;
+   stage->Initialize();
+   return stage;
+  };
+  const auto start=[&](int stage,int section,int rage,int trigger=0){
+   reset();
+   g.m_bReplayMode=false;g.m_bPracticeMode=true;g.m_playStage=stage;
+   g.m_playDifficulty=1;g.m_playChara=0;
+   auto& config=g.m_practiceConfig;
+   config=practice::Config();
+   config.mode=1;config.stage=stage;config.warp=2;
+   config.section=section;config.rage=rage;config.trigger=trigger;
+   config.Clamp(g.m_playDifficulty);
+   return initialize();
+  };
+  for(int rage:{1,2}){
+   auto* boss=static_cast<CBossStage4*>(start(3,1,rage)->m_pBoss);
+   const int boundary=rage==1?original::TwinFirstRageHP:original::TwinSecondRageHP;
+   if(boss->m_curHP+boss->m_2curHP!=boundary-1||boss->m_nModeChange!=(rage==1?10:15))
+    throw std::runtime_error("Twin practice did not enter the strict-HP rage state");
+  }
+  for(int section:{2,4}){
+   auto* boss=static_cast<CBossStage5*>(start(4,section,1)->m_pBoss);
+   const bool red=section==2;
+   const auto timer=boss->GetPhaseTimeout().ForDisplay(false,true);
+   if(boss->m_curPhaseFrame!=32||!(red?boss->m_phase4CrazyMode:boss->m_phase7CrazyMode)
+      ||timer.unit!=practice::PhaseTimeout::Ticks||timer.value!=1968)
+    throw std::runtime_error("Yumeko practice must start at the first rage frame");
+  }
+  CReplay recorded=g.m_replay;
+  recorded.CloseStage(false);
+  for(unsigned version:{CReplay::CurrentPracticeVersion,3u}){
+   const char* path="/th05-practice-start-test.rpy";
+   recorded.m_practiceVersion=version;
+   reset();
+   if(!recorded.SaveFile(path)||!g.m_replay.LoadFile(path)||g.m_replay.m_practiceVersion!=version)
+    throw std::runtime_error("Could not round-trip practice setup version");
+   std::remove(path);
+   g.m_bReplayMode=true;g.m_playStage=4;
+   if(initialize()->m_pBoss->m_curPhaseFrame!=(version==3?65:32))
+    throw std::runtime_error("Replay opened with the wrong practice start");
+  }
+  for(int trigger:{0,1})for(int rage:{1,2}){
+   auto* stage=start(5,6,rage,trigger);
+   auto* boss=static_cast<CBossStage6*>(stage->m_pBoss);
+   const int mode=rage==1?LASER_MODE_GROW:LASER_MODE_PRESENT;
+   for(int laser=0;laser<4;laser++)if(stage->m_pLaser->GetMode(laser)!=mode)
+    throw std::runtime_error("Shinki practice did not advance the wing lasers to the selected state");
+   const bool enabled=practice::Available();
+   if(!enabled)practice::Configure(true);
+   auto& options=practice::Options();
+   const bool previousFrames=options.phaseTimeoutAsFrames;
+   options.phaseTimeoutAsFrames=true;
+   const auto timer=stage->GetPhaseTimeout();
+   options.phaseTimeoutAsFrames=previousFrames;
+   if(!enabled)practice::Configure(false);
+   if(timer.unit!=practice::PhaseTimeout::Ticks||timer.value!=original::ShinkiWingEndFrame-boss->m_curPhaseFrame)
+    throw std::runtime_error("Wing phase timer did not include the selected start frame");
+  }
+ }
  static int Matrix(){
   auto* game=CGame::s_pCurGame;if(!game)return 0;int checked=0;
   for(int character=0;character<4;character++)for(int stage=0;stage<7;stage++)for(int warp=0;warp<3;warp++){
@@ -879,6 +950,7 @@ struct PracticeTests {
    if(!Start(stage,2))throw std::runtime_error("Could not start TH05 stage");
    BossPatterns(static_cast<CStage*>(game->m_pCurScheme),stage);
   }
+  UpdatedPracticeStarts();
   return checked;
  }
 };

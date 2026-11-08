@@ -1,3 +1,4 @@
+#include "../../Original/CombatThresholds.h"
 #include "../../Practice/Practice.h"
 #include ".\bossstage6.h"
 #include "../Stage.h"
@@ -555,7 +556,7 @@ void CBossStage6::Phase10Shoot(float originY)
 	if (m_curPhaseFrame<192)
 		return;
 	int idx=m_curPhaseFrame-192;
-	if (m_curHP<=5600||practice::AllowTimeout(m_curPhaseFrame>=1800))
+	if (m_curHP<=original::ShinkiLaserHP||practice::AllowTimeout(m_curPhaseFrame>=original::ShinkiLaserFrame))
 		if (m_phase10Timer==0)
 		{
 			float c[]={m_pStage->m_pStageRes->m_palette[14*3]/255.0f,m_pStage->m_pStageRes->m_palette[14*3+1]/255.0f,
@@ -701,7 +702,7 @@ void CBossStage6::Phase10Shoot(float originY)
 					if (m_phase10VarI==56)
 						m_phase10VarD=1;
 				}
-				if (m_curHP<=3800||practice::AllowTimeout(m_curPhaseFrame>=2500))
+				if (m_curHP<=original::ShinkiFastHP||practice::AllowTimeout(m_curPhaseFrame>=original::ShinkiFastFrame))
 				{
 					if (m_phase10Timer==65)
 					{
@@ -741,7 +742,7 @@ void CBossStage6::Phase9_10()
 		Phase9Shoot(originY);
 	else
 		Phase10Shoot(originY);
-	if (practice::BeforeTimeout(m_curPhaseFrame<3000))
+	if (practice::BeforeTimeout(m_curPhaseFrame<original::ShinkiWingEndFrame))
 	{
 		int res=GetDmgOnAndCrashChara();
 		if (m_pStage->m_bInCharaBomb)
@@ -1369,8 +1370,7 @@ practice::PhaseTimeout CBossStage6::GetPhaseTimeout() const {
  case 3:return practice::PhaseTimeout::Timeline(16,m_nModeChange,m_curMode,m_curPhaseFrame,[](int n){return 92;},[](int){return 60;});
  case 6:return practice::PhaseTimeout::Frames(3000,m_curPhaseFrame);
  case 7:return practice::PhaseTimeout::Frames(3000,m_curPhaseFrame);
- case 9:return practice::PhaseTimeout::Frames(3000,m_curPhaseFrame);
- case 10:return practice::PhaseTimeout::Frames(3000,m_curPhaseFrame);
+ case 9:case 10:return practice::PhaseTimeout::Frames(original::ShinkiWingEndFrame,m_curPhaseFrame);
  case 12:return practice::PhaseTimeout::Frames(3000,m_curPhaseFrame);
  default:return practice::PhaseTimeout();
  }

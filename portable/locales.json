@@ -1023,5 +1023,65 @@
     "每侧三路弹（Lunatic）",
     "Three-way spread per side (Lunatic)",
     "左右から3方向弾（Lunatic）"
+  ],
+  [
+    "合计 HP < %d / %d 时切换狂暴。",
+    "Rage changes below %d / %d combined HP.",
+    "合計 HP が %d / %d 未満で発狂。"
+  ],
+  [
+    "HP < %d 时进入狂暴。",
+    "Rage starts below %d HP.",
+    "HP が %d 未満で発狂。"
+  ],
+  [
+    "Bomb 期间每帧扣 1 HP，阶段继续至计时结束或 Bomb 后击破。",
+    "Bombs reduce HP by 1 per frame. The phase lasts until timeout or a defeat after the bomb.",
+    "ボム中は毎フレーム HP が 1 減少。時間切れかボム後の撃破で終了。"
+  ],
+  [
+    "激光：HP ≤ %d 或第 %d 帧起。加速：HP ≤ %d 或第 %d 帧起。",
+    "Lasers: HP ≤ %d or from frame %d. Faster shots: HP ≤ %d or from frame %d.",
+    "レーザー：HP ≤ %d または %d フレーム以降。高速化：HP ≤ %d または %d フレーム以降。"
+  ],
+  [
+    "弹速随 HP 降低而提高。",
+    "Shots speed up as HP falls.",
+    "HP が減るほど弾速が上がる。"
+  ],
+  [
+    "Bomb 期间及之后 %d 帧免伤。",
+    "Immune during bombs and for %d frames afterward.",
+    "ボム中と終了後 %d フレームはダメージ無効。"
+  ],
+  [
+    "激光展开",
+    "Lasers",
+    "レーザー展開"
+  ],
+  [
+    "发弹加速",
+    "Faster shots",
+    "弾の発射間隔短縮"
+  ],
+  [
+    "计时单位",
+    "Countdown units",
+    "表示単位"
+  ],
+  [
+    "原速秒数",
+    "Native seconds",
+    "原速の秒数"
+  ],
+  [
+    "原速帧数",
+    "Native frames",
+    "原速のフレーム数"
+  ],
+  [
+    "秒数按原速 56 帧每秒换算。轮数模式下，固定计时的阶段显示秒数。F6 冻结剩余量和时间触发的狂暴，血量仍可触发狂暴。估算值带 ~。",
+    "Seconds use the original 56 fps. In rounds mode, timed phases display seconds. F6 freezes the countdown and timed rage triggers. HP triggers stay active. Estimates carry a ~.",
+    "秒数は原速 56 fps で換算。ラウンド表示でも時間制の段階は秒数を表示。F6 で残り時間と時間による発狂を固定し、HP による発狂は有効。推定値には ~ を表示。"
   ]
 ]
