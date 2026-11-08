@@ -81,8 +81,8 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
   );
   const state = useStoreSelector(presentation, chatPresentation, shallowEqual);
   const context = state.context;
-  const th09 = context?.room.startsWith('th09mp-') === true;
-  const enabled = !!context?.connected && (context.localSeat != null || context.localSpectator === true);
+  const playing = context?.localSeat != null && context.localSpectator !== true;
+  const enabled = !!context?.connected && (playing || context.localSpectator === true);
   const confirmReport = useChatReportConfirmation(model, decisions);
   const returnToGame = () => {
     model.dismiss();
@@ -165,7 +165,8 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
   const section = (
     <section
       ref={root}
-      className={`mp-quick-chat${th09 ? ' th09-player-chat' : ''}`}
+      className="mp-quick-chat"
+      data-player={playing || undefined}
       data-composer-open={state.pickerOpen}
       hidden={!context?.visible || context.inRoom}
       aria-label={t('chat.players')}
@@ -192,7 +193,7 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
         onClick={model.togglePicker}
         title={t('chat.keyboardHint')}
       >
-        <img className="th09-chat-icon" src={iconUrl} alt="" />
+        <img className="mp-quick-chat-icon" src={iconUrl} alt="" />
         {t('chat.title')}
         <kbd className="mp-quick-chat-shortcut">Alt</kbd>
       </UiButton>

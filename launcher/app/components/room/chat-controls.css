@@ -41,12 +41,6 @@
     max-height: calc(100% - max(20px, env(safe-area-inset-bottom)) - 10px);
     gap: 6px;
   }
-  .player.touch-enabled .mp-quick-chat {
-    left: auto;
-    right: max(10px, env(safe-area-inset-right));
-    z-index: 38;
-    align-items: flex-end;
-  }
   .mp-quick-chat .mp-quick-chat-picker {
     position: relative;
     inset: auto;

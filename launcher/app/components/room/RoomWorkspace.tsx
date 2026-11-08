@@ -134,7 +134,7 @@ export function RoomWorkspace(props: RoomViewProps) {
       </RoomPanel>
     </section>,props.workspaceHost)}
     {createPortal(roster,props.workspaceStage)}
-    {(narrow || playbackHost) && createPortal(<RoomPlaybackPanel workspace={props.workspaceHost}>{props.playbackControls}</RoomPlaybackPanel>, narrow ? props.workspaceStage : playbackHost!)}
+    {playbackHost && createPortal(<RoomPlaybackPanel workspace={props.workspaceHost}>{props.playbackControls}</RoomPlaybackPanel>, playbackHost)}
     {sideLounge && loungeHost && createPortal(lounge,loungeHost)}
     {viewport && createPortal(<>
       {props.reloadPending && !context.launched && <section className="room-resource-reload" aria-label={t('room.reloadResources')}>

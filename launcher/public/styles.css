@@ -903,6 +903,7 @@ body.mp-room-active #mpRoomView.mp-room-view{animation:mp-room-surface-in .18s c
 
 
 .mp-quick-chat{position:absolute;left:max(10px,env(safe-area-inset-left));right:auto;bottom:max(10px,env(safe-area-inset-bottom));top:auto;z-index:auto;width:220px;max-width:calc(100vw - 20px);display:flex;flex-direction:column-reverse;color:#e8e6e8;font:12px/1.4 var(--ui-font);pointer-events:none}
+@media(pointer:coarse){.mp-quick-chat[data-player]{left:auto;right:max(10px,env(safe-area-inset-right));z-index:38;align-items:flex-end}}
 .mp-quick-chat[hidden],.mp-quick-chat [hidden]{display:none}
 .mp-quick-chat button{font:inherit;color:inherit;border:1px solid rgba(255,255,255,.07);border-radius:9px;background:rgba(24,24,27,.82);padding:5px 6px;cursor:pointer;touch-action:manipulation;pointer-events:auto}
 .mp-quick-chat button:focus-visible{outline:2px solid #e7d6ef;outline-offset:1px}
@@ -915,7 +916,7 @@ body.mp-room-active #mpRoomView.mp-room-view{animation:mp-room-surface-in .18s c
 .mp-quick-chat-picker button{text-align:left}.mp-quick-chat-picker p{margin:4px;color:#aeb4a7}
 .mp-quick-chat{font-size:13px}
 .mp-quick-chat .mp-quick-chat-prompt{display:flex;align-items:center;gap:7px;width:fit-content;min-height:36px;height:auto;padding:7px 12px;font-size:13px!important;text-align:left}
-.th09-chat-icon{width:17px;height:17px;filter:brightness(0) invert(.9);flex:none}
+.mp-quick-chat-icon{width:17px;height:17px;filter:brightness(0) invert(.9);flex:none}
 .mp-quick-chat .mp-quick-chat-picker{bottom:44px}
 
 
