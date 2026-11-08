@@ -80,7 +80,7 @@ bool CCharaBullet::UsesOriginalShots() const
 {
  if(original::DemoActive())return true;
  const auto& game=CGame::GVar();
- return !game.m_bReplayMode||game.m_replay.m_originalPlayerShots;
+ return !game.m_bReplayMode||game.m_replay.m_combatRevision>=original::OriginalPlayerShots;
 }
 
 void CCharaBullet::ShootOriginal(int character,int level,int timer,float x,float y)

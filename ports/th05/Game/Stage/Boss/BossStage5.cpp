@@ -114,8 +114,8 @@ void CBossStage5::Phase2ShootType1()
 		float angle=(float)(112-(m_curPhaseFrame-34)/2*6);
 		if (m_bPhase2KnifeClockwise)
 			angle=128.0f-angle;
-		float origX=m_curX+(float)cos(angle/256.0f*2*PI)*48.0f*16.0f;
-		float origY=m_curY+(float)sin(angle/256.0f*2*PI)*48.0f*16.0f;
+		float origX=m_curX+original::PatternOffsetX(angle,48.0f*16.0f);
+		float origY=m_curY+original::PatternOffsetY(angle,48.0f*16.0f);
 		m_knifeBullet.AddBullet(origX,origY,angle,80,48);
 		if (m_bPhase2KnifeClockwise)
 			angle=128.0f-angle;
@@ -150,8 +150,8 @@ void CBossStage5::Phase2ShootType2()
 		m_pStage->m_pEnemyBullet->TuneEnemyShootInfo(&si);
 		si.shootAngle=(float)(original::Random()%256);
 		float len=(float)(original::Random()%(32*16));
-		si.shootOrigX=m_curX+(float)cos(si.shootAngle/256.0f*2*PI)*len;
-		si.shootOrigY=m_curY+(float)sin(si.shootAngle/256.0f*2*PI)*len;
+		si.shootOrigX=m_curX+original::PatternOffsetX(si.shootAngle,len);
+		si.shootOrigY=m_curY+original::PatternOffsetY(si.shootAngle,len);
 		m_pStage->m_pEnemyBullet->Shoot(&si);
 		m_pStage->m_bPlaySound[3]=true;
 	}
@@ -189,13 +189,13 @@ void CBossStage5::Phase5ShootType1()
 
 		si.bulletImg=44;
 
-		si.shootOrigX=m_curX+(float)cos(b/256.0f*2*PI)*48.0f*16.0f;
-		si.shootOrigY=m_curY+(float)sin(b/256.0f*2*PI)*48.0f*16.0f;
+		si.shootOrigX=m_curX+original::PatternOffsetX(b,48.0f*16.0f);
+		si.shootOrigY=m_curY+original::PatternOffsetY(b,48.0f*16.0f);
 		si.shootAngle=b+a;
 		m_pStage->m_pEnemyBullet->Shoot(&si,true);
 
-		si.shootOrigX=m_curX+(float)cos((b+128.0f)/256.0f*2*PI)*48.0f*16.0f;
-		si.shootOrigY=m_curY+(float)sin((b+128.0f)/256.0f*2*PI)*48.0f*16.0f;
+		si.shootOrigX=m_curX+original::PatternOffsetX((b+128.0f),48.0f*16.0f);
+		si.shootOrigY=m_curY+original::PatternOffsetY((b+128.0f),48.0f*16.0f);
 		si.shootAngle=b+a+128.0f;
 		m_pStage->m_pEnemyBullet->Shoot(&si,true);
 
@@ -203,13 +203,13 @@ void CBossStage5::Phase5ShootType1()
 
 		si.bulletImg=0;
 
-		si.shootOrigX=m_curX+(float)cos(b/256.0f*2*PI)*32.0f*16.0f;		//why PC98 ver change to 32 here
-		si.shootOrigY=m_curY+(float)sin(b/256.0f*2*PI)*32.0f*16.0f;
+		si.shootOrigX=m_curX+original::PatternOffsetX(b,32.0f*16.0f);		//why PC98 ver change to 32 here
+		si.shootOrigY=m_curY+original::PatternOffsetY(b,32.0f*16.0f);
 		si.shootAngle=b-a;
 		m_pStage->m_pEnemyBullet->Shoot(&si,true);
 
-		si.shootOrigX=m_curX+(float)cos((b+128.0f)/256.0f*2*PI)*32.0f*16.0f;
-		si.shootOrigY=m_curY+(float)sin((b+128.0f)/256.0f*2*PI)*32.0f*16.0f;
+		si.shootOrigX=m_curX+original::PatternOffsetX((b+128.0f),32.0f*16.0f);
+		si.shootOrigY=m_curY+original::PatternOffsetY((b+128.0f),32.0f*16.0f);
 		si.shootAngle=b-a+128.0f;
 		m_pStage->m_pEnemyBullet->Shoot(&si,true);
 
@@ -244,15 +244,15 @@ void CBossStage5::Phase5ShootType2()
 		si.shootAngle=0;
 		si.bulletImg=68;
 
-		float angle=(float)128-(m_curPhaseFrame-16)/8*8;
-		si.shootOrigX=m_curX+(float)cos(angle/256.0f*2*PI)*48.0f*16.0f;
-		si.shootOrigY=m_curY+(float)sin(angle/256.0f*2*PI)*48.0f*16.0f;
+		float angle=128.0f+(m_curPhaseFrame-16)/8*(original::BossGeometryEnabled()?8:-8);
+		si.shootOrigX=m_curX+original::PatternOffsetX(angle,48.0f*16.0f);
+		si.shootOrigY=m_curY+original::PatternOffsetY(angle,48.0f*16.0f);
 		si.nWay=5;
 		m_pStage->m_pEnemyBullet->Shoot(&si);
 
 		angle=128.0f-angle;
-		si.shootOrigX=m_curX+(float)cos(angle/256.0f*2*PI)*48.0f*16.0f;
-		si.shootOrigY=m_curY+(float)sin(angle/256.0f*2*PI)*48.0f*16.0f;
+		si.shootOrigX=m_curX+original::PatternOffsetX(angle,48.0f*16.0f);
+		si.shootOrigY=m_curY+original::PatternOffsetY(angle,48.0f*16.0f);
 		si.nWay=4;
 		m_pStage->m_pEnemyBullet->Shoot(&si);
 
@@ -345,8 +345,8 @@ void CBossStage5::Phase4Shoot()
 	{
 		if (m_curPhaseFrame%64==0)
 		{
-			m_phase4ShootAngle[0]=m_pStage->m_pChara->AngleToChara(m_curX-32.0f*16.0f,m_curY-16.0f*16.0f);
-			m_phase4ShootAngle[1]=m_pStage->m_pChara->AngleToChara(m_curX+32.0f*16.0f,m_curY-16.0f*16.0f);
+			m_phase4ShootAngle[0]=m_pStage->m_pChara->AngleToChara(m_curX-32.0f*16.0f,m_curY-16.0f*16.0f,original::BossGeometryEnabled());
+			m_phase4ShootAngle[1]=m_pStage->m_pChara->AngleToChara(m_curX+32.0f*16.0f,m_curY-16.0f*16.0f,original::BossGeometryEnabled());
 		}
 		ENEMY_SHOOT_INFO si;
 		si.bulletBornType=18;
@@ -407,8 +407,8 @@ void CBossStage5::Phase7Shoot()
 	{
 		if (m_curPhaseFrame%64==0)
 		{
-			m_phase7ShootAngle[0]=m_pStage->m_pChara->AngleToChara(m_curX-32.0f*16.0f,m_curY-16.0f*16.0f);
-			m_phase7ShootAngle[1]=m_pStage->m_pChara->AngleToChara(m_curX+32.0f*16.0f,m_curY-16.0f*16.0f);
+			m_phase7ShootAngle[0]=m_pStage->m_pChara->AngleToChara(m_curX-32.0f*16.0f,m_curY-16.0f*16.0f,original::BossGeometryEnabled());
+			m_phase7ShootAngle[1]=m_pStage->m_pChara->AngleToChara(m_curX+32.0f*16.0f,m_curY-16.0f*16.0f,original::BossGeometryEnabled());
 		}
 		ENEMY_SHOOT_INFO si;
 		si.bulletBornType=18;
@@ -544,7 +544,7 @@ void CBossStage5::Phase8Shoot()
 					m_phase8KnifePart=true;
 					return;
 				}
-				m_phase8ShootPartAngle=m_pStage->m_pChara->AngleToChara(m_curX,m_curY);
+				m_phase8ShootPartAngle=m_pStage->m_pChara->AngleToChara(m_curX,m_curY,original::BossGeometryEnabled());
 			}
 			m_phase8ShootPartSpeed+=8;
 			si.bulletSpeed=m_phase8ShootPartSpeed;

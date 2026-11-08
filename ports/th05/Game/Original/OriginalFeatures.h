@@ -2,6 +2,10 @@
 #include <cstdint>
 #include <vector>
 namespace th5w { class CStage; namespace original {
+enum CombatRevision : unsigned int { LegacyCombat, OriginalPlayerShots, OriginalBossGeometry };
+bool BossGeometryEnabled();
+float PatternOffsetX(float angle,float radius);
+float PatternOffsetY(float angle,float radius);
 // Resident counters and integer arithmetic from th05_maine.asm sub_CA9B.
 struct RunStats {
  uint32_t frames,slowFrames;uint16_t stdFrames,itemsSpawned,itemsCollected,points,maxPoints,enemiesGone,enemiesKilled,graze;

@@ -353,6 +353,8 @@ void CBossStage3::Phase2Shoot()
 		shootInfo.bulletBornType=2;
 		shootInfo.shootType=EST13_RANDOM_BASE_SPEED_32;
 		shootInfo.nWay=2;
+		if (original::BossGeometryEnabled())
+			shootInfo.shootAngle=m_pStage->m_pEnemyBullet->TemplateAngle();
 		m_pStage->m_pEnemyBullet->TuneEnemyShootInfo(&shootInfo);
 		for (int i=0;i<32;i++)
 		{
@@ -528,7 +530,7 @@ void CBossStage3::Phase9ShootType2_12_1()
 	}
 	if (m_curPhaseFrame==64)
 	{
-		float angle=m_pStage->m_pChara->AngleToChara(m_curX,m_curY-8.0f*16.0f);
+		float angle=m_pStage->m_pChara->AngleToChara(m_curX,m_curY-8.0f*16.0f,original::BossGeometryEnabled());
 		float c[3]={m_pStage->m_pStageRes->m_palette[6*3]/255.0f,m_pStage->m_pStageRes->m_palette[6*3+1]/255.0f,
 					m_pStage->m_pStageRes->m_palette[6*3+2]/255.0f};
 		m_pStage->m_pLaser->AddLaserShootOut(m_curX,m_curY-8.0f*16.0f,c,angle,40,80);

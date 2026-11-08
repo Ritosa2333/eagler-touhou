@@ -7,6 +7,7 @@ to compare the resulting frame traces against the compiled browser runtime.
 import argparse
 import json
 import runpy
+import struct
 from pathlib import Path
 
 ns = runpy.run_path(str(Path(__file__).with_name('Verify-OriginalDemos.py')))
@@ -16,7 +17,16 @@ ds=VM.DS*16
 def shot_speeds(vm):
     mem=vm.u.mem_read(ds+0x5f2a,400*32)
     return sorted(mem[i+16] for i in range(0,len(mem),32) if mem[i]==1)
-def capture(stage,kind,exe,resources,diff,rank):
+def shot_geometry(vm):
+    pool = vm.u.mem_read(ds + 0x5f2a, 400 * 32)
+    return [
+        list(struct.unpack_from('<hh', pool, offset + 2)) +
+        list(struct.unpack_from('<hh', pool, offset + 10)) +
+        [pool[offset + 17], pool[offset + 16]]
+        for offset in range(0, len(pool), 32) if pool[offset] == 1
+    ]
+
+def capture(stage,kind,exe,resources,diff,rank,geometry=False):
     vm=VM(5 if stage==6 else 1,exe,resources,stage=stage,difficulty=4 if stage==6 else diff)
     assert vm.r(0x576f)==(4 if stage==6 else diff)
     if kind in ('mai','yuki'):
@@ -97,6 +107,7 @@ def capture(stage,kind,exe,resources,diff,rank):
             vm.indirect(0xc67c,True)
         vm.call(0x170a2,vm.C3,True)
         result['frames'].append([scroll,cursor,shot_speeds(vm),meta,vm.r(0x3626),trace_special()])
+        if geometry:result['frames'][-1].append(shot_geometry(vm))
         if kind!='enemy':vm.call(0x12ce5)
     return result,phases
 
@@ -107,6 +118,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--difficulty', type=int, choices=range(4), default=3)
     parser.add_argument('--rank', type=int, choices=range(65), default=32)
+    parser.add_argument('--geometry', action='store_true', help='Include initial positions, velocities and angles')
     args = parser.parse_args()
     resources = ns['read_resources'](args.resources)
     args.output.mkdir(parents=True, exist_ok=True)
@@ -114,7 +126,7 @@ def main():
         for stage in range(7):
             if (stage==5 and kind=='midboss') or (stage!=3 and kind in ('mai','yuki')):
                 continue
-            result, phases = capture(stage,kind,args.exe,resources,args.difficulty,args.rank)
+            result, phases = capture(stage,kind,args.exe,resources,args.difficulty,args.rank,args.geometry)
             path = args.output / f'pc98-{kind}-{stage}.json'
             path.write_text(json.dumps(result,separators=(',',':')), encoding='utf-8')
             print(kind,stage,len(result['frames']),sum(len(f[2]) for f in result['frames']),phases,flush=True)

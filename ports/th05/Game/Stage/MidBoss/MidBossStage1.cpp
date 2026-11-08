@@ -55,8 +55,8 @@ void CMidBossStage1::Phase3()
 		m_bHitThisFrame=true;
 	m_curHP-=dmg;
     float radius=(float)((1000-m_curHP)*1024/1000);
-	m_curX=192.0f*16.0f+(float)cos(m_phase3CircularMoveAngle/256.0f*2*PI)*radius;
-	m_curY=96.0f*16.0f+(float)sin(m_phase3CircularMoveAngle/256.0f*2*PI)*radius;
+	m_curX=192.0f*16.0f+original::PatternOffsetX(m_phase3CircularMoveAngle,radius);
+	m_curY=96.0f*16.0f+original::PatternOffsetY(m_phase3CircularMoveAngle,radius);
 	m_phase3CircularMoveAngle-=2;
 	if (practice::AllowTimeout(m_curPhaseFrame>=1500)||m_curHP<=0)
 	{
@@ -102,8 +102,8 @@ void CMidBossStage1::Phase3Shoot()
 		shootInfo.bulletImg=44;
 		m_pStage->m_pEnemyBullet->TuneEnemyShootInfo(&shootInfo);
 		shootInfo.shootAngle=(float)(original::Random()%256);
-		shootInfo.shootOrigX=m_curX+(float)cos(shootInfo.shootAngle/256.0f*2*PI)*32.0f*16.0f;
-		shootInfo.shootOrigY=m_curY+(float)sin(shootInfo.shootAngle/256.0f*2*PI)*32.0f*16.0f;
+		shootInfo.shootOrigX=m_curX+original::PatternOffsetX(shootInfo.shootAngle,32.0f*16.0f);
+		shootInfo.shootOrigY=m_curY+original::PatternOffsetY(shootInfo.shootAngle,32.0f*16.0f);
 		m_pStage->m_pEnemyBullet->Shoot(&shootInfo);
 	}
 }

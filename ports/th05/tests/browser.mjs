@@ -27,7 +27,7 @@ try{
  if(process.argv[2]==='--pc98-patterns'){
   assert.ok(process.argv[3],'Pass the directory from Verify-OriginalPatterns.py');
   const {comparePatterns}=await import('./pc98-patterns.mjs');
-  await comparePatterns(await launch(false),resolve(process.argv[3]));
+  await comparePatterns(await launch(false),resolve(process.argv[3]),{requireGeometry:process.argv.includes("--require-geometry")});
  }else if(process.argv[2]==='--pc98-player-shots'){
   assert.ok(process.argv[3],'Pass the capture from Verify-OriginalPlayerShots.py');
   const {comparePlayerShots}=await import('./pc98-player-shots.mjs');
@@ -60,20 +60,25 @@ try{
     if(bytes[53+stage])at+=4+2*view.getUint32(at,true);
    }
    if(String.fromCharCode(...bytes.slice(at,at+4))!=='TSH5')throw Error('Shot rules were not saved');
-   const current=m._th05_native_shot_rules();
+   const current=[m._th05_native_shot_rules(),m._th05_native_boss_rules()];
    const name='/savesth05/replay/legacy.rpy';
-   m.FS.writeFile(name,Uint8Array.from([...bytes.slice(0,at),...bytes.slice(at+8)]));
    const path=new TextEncoder().encode(name+String.fromCharCode(0)),ptr=m._malloc(path.length);
    try{
     m.HEAPU8.set(path,ptr);
-    if(!m._th05_replay_open(ptr,0))throw Error('Legacy replay did not open');
-    return [current,m._th05_native_shot_rules()];
+    const revisionOne=Uint8Array.from(bytes);
+    new DataView(revisionOne.buffer).setUint32(at+4,1,true);
+    const open=fixture=>{
+     m.FS.writeFile(name,fixture);
+     if(!m._th05_replay_open(ptr,0))throw Error('Legacy replay did not open');
+     return [m._th05_native_shot_rules(),m._th05_native_boss_rules()];
+    };
+    return [current,open(revisionOne),open(Uint8Array.from([...bytes.slice(0,at),...bytes.slice(at+8)]))];
    }finally{
     m._free(ptr);
     m.FS.unlink(name);
    }
   },recorded.bytes);
-  assert.deepEqual(rules,[1,0]);
+  assert.deepEqual(rules,[[1,1],[1,0],[0,0]]);
   report.shotReplayRules=true;
  }
  assert.equal(inspectReplay(new Uint8Array(recorded.bytes)).touch,true);report.touchReplayFrames=recorded.actual.length;
