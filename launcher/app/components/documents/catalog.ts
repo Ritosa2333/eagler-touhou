@@ -4,6 +4,7 @@ export const helpDocuments = [
   {id:'firstUse', path:'guide.html', title:'firstUseNotice.title', content:'content.firstUse',source:'content/FIRST_USE_NOTICE.md'},
   {id:'faq', path:'faq.html', title:'nav.faq', content:'content.faq',source:'docs/FAQ.md'},
   {id:'multiplayer', path:'multiplayer.html', title:'multiplayerGuide.title', content:'content.multiplayer',source:'content/MULTIPLAYER.md'},
+  {id:'privacy', path:'privacy.html', title:'document.privacy', content:'content.privacy', source:'content/PRIVACY_POLICY.md'},
   {id:'about', path:'about.html', title:'nav.about', content:'content.about',source:'content/ABOUT.html'},
 ] as const satisfies readonly {id:string;path:string;title:UiMessageKey;content:UiMessageKey;source:string}[];
 export type HelpDocument = typeof helpDocuments[number];

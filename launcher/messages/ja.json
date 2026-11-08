@@ -2321,5 +2321,7 @@
   "cloudSave_stopAndCheck": "中止して確認",
   "cloudSave_continueAndOverwrite": "続けて上書き",
   "cloudSave_tabHandoffFailed": "別のタブでゲームが開いています",
-  "cloudSave_localReadFailed": "このブラウザーのセーブを読み取れません。クラウドの記録はこのブラウザーの進行状況ではありません。"
+  "cloudSave_localReadFailed": "このブラウザーのセーブを読み取れません。クラウドの記録はこのブラウザーの進行状況ではありません。",
+  "document_privacy": "プライバシーポリシー",
+  "nav_privacyPolicy": "プライバシーポリシー"
 }

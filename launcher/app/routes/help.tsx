@@ -43,7 +43,7 @@ function Documentation({ page }: { page: HelpDocument }) {
   const { locale, t } = useLocale(),
     base = useHref('/');
   const { body, toc } = useMemo(
-    () => prepareHelpDocument(t(page.content), base, locale),
+    () => prepareHelpDocument(page.id === 'privacy' ? translate('zh-CN', page.content) : t(page.content), base, locale),
     [page.content, locale, t, base],
   );
   const tree = {
@@ -89,7 +89,7 @@ function Documentation({ page }: { page: HelpDocument }) {
           }}
         >
           <DocsTitle>{t(page.title)}</DocsTitle>
-          <DocsBody data-help-page={page.id}>{body}</DocsBody>
+          <DocsBody data-help-page={page.id} lang={page.id === 'privacy' ? 'zh-CN' : undefined}>{body}</DocsBody>
           <DocumentRevision page={page} />
         </DocsPage>
       </DocsLayout>

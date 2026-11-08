@@ -9769,5 +9769,17 @@
   "cloudSave.localReadFailed": {
     "id": "cloudSave_localReadFailed",
     "params": []
+  },
+  "document.privacy": {
+    "id": "document_privacy",
+    "params": []
+  },
+  "content.privacy": {
+    "id": "content_privacy",
+    "params": []
+  },
+  "nav.privacyPolicy": {
+    "id": "nav_privacyPolicy",
+    "params": []
   }
 }

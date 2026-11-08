@@ -2321,5 +2321,7 @@
   "cloudSave_stopAndCheck": "Stop and check",
   "cloudSave_continueAndOverwrite": "Continue and overwrite",
   "cloudSave_tabHandoffFailed": "Another tab is still open",
-  "cloudSave_localReadFailed": "This browser’s save could not be read. Cloud records do not represent this browser’s progress."
+  "cloudSave_localReadFailed": "This browser’s save could not be read. Cloud records do not represent this browser’s progress.",
+  "document_privacy": "Privacy Policy",
+  "nav_privacyPolicy": "Privacy Policy"
 }
