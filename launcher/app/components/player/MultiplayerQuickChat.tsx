@@ -5,6 +5,7 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
+  useState,
   type SyntheticEvent,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
@@ -23,6 +24,7 @@ const chatPresentation = (state: ReturnType<MultiplayerQuickChatModel['getSnapsh
   pickerOpen: state.pickerOpen,
   editingText: state.editingText,
 });
+const visibleChatLimit = 3;
 const isolate = (event: SyntheticEvent) => event.stopPropagation();
 
 /** React owns the message list and its events. Effects only measure scrolling
@@ -82,6 +84,15 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
   );
   const state = useStoreSelector(presentation, chatPresentation, shallowEqual);
   const context = state.context;
+  const [historyAnchor, setHistoryAnchor] = useState<number | null>(null);
+  const unmutedEntries = state.entries.filter((entry) => !state.muted.includes(entry.clientId));
+  const anchorIndex = state.pickerOpen && historyAnchor !== null
+    ? unmutedEntries.findIndex((entry) => entry.id === historyAnchor)
+    : -1;
+  const end = anchorIndex < 0 ? unmutedEntries.length : anchorIndex + 1;
+  const start = Math.max(0, end - visibleChatLimit);
+  const visibleEntries = new Set(unmutedEntries.slice(start, end).map((entry) => entry.id));
+  const newerEnd = end + visibleChatLimit;
   const playing = context?.localSeat != null && context.localSpectator !== true;
   const enabled = !!context?.connected && (playing || context.localSpectator === true);
   const confirmReport = useChatReportConfirmation(model, decisions);
@@ -104,6 +115,7 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
   };
   useLayoutEffect(() => {
     if (state.pickerOpen && context?.visible && !context.inRoom) picker.current?.focus({ preventScroll: true });
+    else setHistoryAnchor(null);
   }, [state.pickerOpen, context?.visible, context?.inRoom]);
 
   const isReduced = useCallback(() => {
@@ -142,7 +154,8 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
         animation.cancel();
         fades.current.delete(id);
       }
-    element.scrollTop = !previous || previous.following ? element.scrollHeight : previous.top;
+    if (!previous) element.scrollTop = historyAnchor === null ? element.scrollHeight : 0;
+    else element.scrollTop = previous.following ? element.scrollHeight : previous.top;
     if (isReduced()) {
       for (const animation of fades.current.values()) animation.complete();
       return;
@@ -161,13 +174,12 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
       });
       if (animation) moves.current.set(row, animation);
     }
-  }, [state, isReduced]);
+  }, [state, historyAnchor, isReduced]);
   const label = (phrase: QuickChatPhrase) => (context?.language === 'en' ? phrase.en : phrase.zh);
   const section = (
     <section
       ref={root}
       className="mp-quick-chat"
-      data-player={playing || undefined}
       data-composer-open={state.pickerOpen}
       hidden={!context?.visible || context.inRoom}
       aria-label={t('chat.players')}
@@ -206,6 +218,18 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
             <X aria-hidden="true" size={18} />
           </UiButton>
         </div>
+        {state.pickerOpen && unmutedEntries.length > visibleChatLimit && (
+          <div className="mp-quick-chat-history">
+            <UiButton variant="quiet" type="button" disabled={start === 0}
+              onClick={() => setHistoryAnchor(unmutedEntries[start - 1].id)}>
+              {t('document.previousPage')}
+            </UiButton>
+            <UiButton variant="quiet" type="button" disabled={end === unmutedEntries.length}
+              onClick={() => setHistoryAnchor(newerEnd < unmutedEntries.length ? unmutedEntries[newerEnd - 1].id : null)}>
+              {t('document.nextPage')}
+            </UiButton>
+          </div>
+        )}
         {!state.editingText && <QuickChatPhrases enabled={enabled} language={context?.language ?? ''} numbered onSelect={model.sendPhrase}/>}
       </div>
       <div ref={log} className="mp-quick-chat-log" role="log" aria-live="polite">
@@ -217,7 +241,7 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
             confirmReport={state.pickerOpen ? confirmReport : undefined}
             label={label(entry.phrase)}
             rows={rows.current}
-            visible={!state.muted.includes(entry.clientId)}
+            visible={visibleEntries.has(entry.id)}
           />
         ))}
       </div>

@@ -1129,10 +1129,11 @@ test('muted rows stay mounted through eviction and reset cancels their active ex
     await act(() => model.toggleMember('b'));
     assert.equal(query('.mp-quick-chat-log').children.length, 50);
     assert.deepEqual([...query('.mp-quick-chat-log').children],mutedRows);
-    assert.ok(mutedRows.every(row=>!row.hidden));
+    assert.deepEqual(mutedRows.filter(row=>!row.hidden),mutedRows.slice(-3));
     await act(() => clock.tick(10000));
     const fades = native.records.filter(expiryAnimation);
-    assert.equal(fades.length, 50);
+    assert.equal(fades.length, 3);
+    assert.equal(model.getSnapshot().entries.length, 3);
     await act(() => model.toggleMember('b'));
     assert.equal(
       fades.some((fade) => fade.cancelled),

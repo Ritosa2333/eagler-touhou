@@ -21,16 +21,17 @@ inline void local_player_cue(unsigned seat, float x, float y) {
                 cue.until = 0;
                 if (cue.label) cue.label.hidden = true;
             };
+            const isControl = event => event.code === "ControlLeft" || event.code === "ControlRight";
             addEventListener("keydown", event => {
-                if (event.code === "KeyI" && !event.repeat && !event.isComposing &&
-                    !event.ctrlKey && !event.altKey && !event.metaKey &&
+                if (isControl(event) && !event.repeat && !event.isComposing &&
+                    !event.altKey && !event.metaKey &&
                     !event.target?.closest?.("input, textarea, [contenteditable]")) {
                     cue.held = true;
                     cue.until = performance.now() + 1200;
                 }
             }, true);
             addEventListener("keyup", event => {
-                if (event.code === "KeyI") cue.held = false;
+                if (isControl(event)) cue.held = event.ctrlKey;
             }, true);
             addEventListener("blur", reset);
             document.addEventListener("visibilitychange", reset);

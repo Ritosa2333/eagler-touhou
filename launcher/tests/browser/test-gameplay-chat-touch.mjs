@@ -81,6 +81,44 @@ try{
   assert.equal((await inspect()).hit,'touchBomb','B stays available after closing free chat');
   await page.touchscreen.tap(opened.x,opened.y);
   assert.equal(await page.evaluate(()=>globalThis.bombs),2);
+  await page.evaluate(() => {
+    for (let i=9;i<=13;i++) chat.receive({type:'free-chat',room:'th11mp-4023',serial:1,messageId:i,
+      seat:1,clientId:'b',authorId:'account-b',name:'P2',text:'Message '+i});
+  });
+  const messages=()=>page.$$eval('.mp-quick-chat-log p:not([hidden])',rows=>rows.map(row=>row.textContent));
+  const latest=['P2(P2): Message 11','P2(P2): Message 12','P2(P2): Message 13'];
+  await page.waitForFunction(()=>document.querySelectorAll('.mp-quick-chat-log p:not([hidden])').length===3);
+  assert.deepEqual(await messages(),latest);
+  await page.evaluate(()=>chat.openComposer());
+  await page.waitForSelector('.mp-quick-chat-history button');
+  assert.deepEqual(await messages(),latest);
+  await page.$eval('.mp-quick-chat-history button:first-child',button=>button.click());
+  await page.waitForFunction(()=>document.querySelector('.mp-quick-chat-log p:not([hidden])').textContent.includes('A message'));
+  assert.deepEqual(await messages(),['P2(P2): A message over the controls','P2(P2): Message 9','P2(P2): Message 10']);
+  await page.$eval('.mp-quick-chat-history button:last-child',button=>button.click());
+  await page.waitForFunction(()=>document.querySelector('.mp-quick-chat-log p:not([hidden])').textContent.endsWith('11'));
+  assert.deepEqual(await messages(),latest);
+  await page.evaluate(() => {
+    document.querySelector('#player').classList.remove('touch-layout-custom');
+    document.querySelector('#touchBomb').removeAttribute('style');
+    chat.dismiss();
+  });
+  await page.setViewport({width:390,height:844,isMobile:true,hasTouch:true,deviceScaleFactor:2});
+  const defaultBomb=await page.evaluate(()=>{
+    const b=document.querySelector('#touchBomb').getBoundingClientRect();
+    const x=b.left+b.width/2,y=b.top+b.height/2;
+    const log=document.querySelector('.mp-quick-chat-log').getBoundingClientRect();
+    const prompt=document.querySelector('.mp-quick-chat-prompt').getBoundingClientRect();
+    const overlaps=box=>b.left<box.right&&b.right>box.left&&b.top<box.bottom&&b.bottom>box.top;
+    return {x,y,overlap:overlaps(log)||overlaps(prompt),hit:document.elementFromPoint(x,y)?.id};
+  });
+  assert.equal(defaultBomb.overlap,true,'portrait layout exercises the default controls overlapping chat');
+  assert.equal(defaultBomb.hit,'touchBomb');
+  await page.touchscreen.tap(defaultBomb.x,defaultBomb.y);
+  assert.equal(await page.evaluate(()=>globalThis.bombs),3);
+  await page.tap('.mp-quick-chat-prompt');
+  await page.waitForSelector('.mp-quick-chat-picker:not([hidden])',{visible:true});
+  assert.deepEqual(await messages(),latest);
   assert.deepEqual(errors,[]);
   console.log('PASS: mobile chat and B touch hit testing');
 }finally{await browser?.close();await new Promise(done=>server.close(done));}

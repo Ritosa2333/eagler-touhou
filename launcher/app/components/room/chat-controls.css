@@ -71,6 +71,11 @@
     width: 44px;
     min-height: 44px;
   }
+  .mp-quick-chat-history {
+    display: flex;
+    flex: none;
+    gap: 6px;
+  }
   .mp-quick-chat-picker .room-chat-controls[data-member="false"] {
     justify-content: flex-end;
   }
