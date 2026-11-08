@@ -1,3 +1,4 @@
+#include <eagler/input/LocalPlayerCue.hpp>
 #include <eagler/gameplay/CooperativeRules.hpp>
 #include "../platform/World.hpp"
 #include "PlayerCollisionBroadphase.hpp"
@@ -865,6 +866,9 @@ i32 World::draw_player(Player* player){
     const i32 result=draw->draw(environment);
     draw->animation.color=color;
     draw->animation.secondary_color=secondary;
+    if(!engine.suppress_rollback_sprite_output&&!state.netplay_runtime.Spectator()&&
+       !state.netplay_runtime.Playback()&&pilot->seat==local_player)
+        eagler::presentation::local_player_cue(local_player,draw->position.x+224.f,draw->position.y+16.f);
     if(engine.enhance_local_player_visibility&&!engine.suppress_rollback_sprite_output&&
        !state.netplay_runtime.Spectator()&&!state.netplay_runtime.Playback()&&pilot->seat==local_player){
         const float x=draw->position.x+224.f,y=draw->position.y+16.f;
