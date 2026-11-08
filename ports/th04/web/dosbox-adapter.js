@@ -90,7 +90,9 @@ export class DOSBoxPC98 {
     this.state='ready';
     const m=this.module;
     m.netKey=(type,event)=>this.key(event.code,type==='keydown');
-    m.netBeginFrame=(frame,replay)=>{this.frame=frame;this.replaying=!!replay;this.outputs.set(frame,[]);};
+    // Multiplayer's independent sound bridge never queues native PCM. Avoid
+    // allocating an empty array and Map entry on every simulated/replayed tick.
+    m.netBeginFrame=(frame,replay)=>{this.frame=frame;this.replaying=!!replay;if(!this.config.externalEffects)this.outputs.set(frame,[]);};
     m.netEndFrame=()=>{this.snapshots?.seal();this.frame=null;this.replaying=false;};
     m.netConfirm=(prefix,retainFrame=prefix)=>{this.snapshots?.confirm(prefix,retainFrame);for(const [frame,blocks]of this.outputs)if(frame<prefix){for(const samples of blocks)this.audio.push([samples]);this.outputs.delete(frame);}};
     m.netDiscardFrame=frame=>this.outputs.delete(frame);
