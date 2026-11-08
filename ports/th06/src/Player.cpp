@@ -1,3 +1,4 @@
+#include <eagler/input/LocalPlayerCue.hpp>
 #include <eagler/gameplay/CooperativeRules.hpp>
 #include "Player.hpp"
 #ifdef TH_ENABLE_THPRAC
@@ -153,7 +154,6 @@ void DrawLocalPlayerLocator(const Player *player, const ZunVec3 &drawPlayerPos)
 {
     if(MultiplayerGameplay::GetState().spectator)return;
     if (!player || !MultiplayerGameplay::IsMultiplayer() ||
-        !EaglerOptions::EnhanceLocalPlayerVisibility() ||
         player->initParam != MultiplayerGameplay::GetLocalPlayerSlot() ||
         g_GameManager.isInGameMenu || g_GameManager.isInRetryMenu || g_GameManager.isInReplay)
         return;
@@ -164,6 +164,8 @@ void DrawLocalPlayerLocator(const Player *player, const ZunVec3 &drawPlayerPos)
     const f32 bottom = top + g_GameManager.arcadeRegionSize.y;
     const f32 x = left + drawPlayerPos.x;
     const f32 y = top + drawPlayerPos.y;
+    eagler::presentation::local_player_cue(player->initParam, x, y);
+    if (!EaglerOptions::EnhanceLocalPlayerVisibility()) return;
     const f32 halfThickness = LOCAL_PLAYER_LOCATOR_THICKNESS * 0.5f;
     ZunRect horizontal{left, y - halfThickness, right, y + halfThickness};
     ZunRect vertical{x - halfThickness, top, x + halfThickness, bottom};
