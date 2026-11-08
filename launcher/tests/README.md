@@ -24,7 +24,7 @@ Host 工作区检查覆盖 th12 的原始音轨输入与 `assets-eagler` 成品�
 
 `npm run test:keyboard-mapping:browser` 枚举 STG 普通版与 MP 的生产 JS 输入边界，单作使用 `-- --game=th08 --variant=all`。角色动作和设备验收见[输入指南](../../docs/adaptation/input.md)。
 
-`npm run test:audio-output:browser` 渲染生产 WebSfx 的实际 PCM，范围见[声音验收方法](../../docs/adaptation/presentation.md#声音验收方法)。两个浏览器入口由根 CI 的 `shared-input-audio` 执行，环境使用下述锁定 Playwright 依赖和 Chromium。
+`npm run test:audio-output:browser` 渲染生产 WebSfx 的实际 PCM，范围见[声音验收方法](../../docs/adaptation/presentation.md#声音验收方法)。两个浏览器入口按需运行，环境使用下述锁定 Playwright 依赖和 Chromium。
 
 跨站点存档迁移检查以产品目录为准逐项核对数据库，包含 th12 的 `/savesth12`。
 
@@ -42,7 +42,7 @@ Host 工作区检查覆盖 th12 的原始音轨输入与 `assets-eagler` 成品�
 
 交互预览挂载真实设置抽屉与共用设置模型，房间人数、难度和规则会更新展示状态，输入延迟遵循作品目录声明的能力。成员菜单与快捷发言使用同一浮层组件，覆盖展开、收起、键盘返回和减少动态效果。
 
-`bun run test:ui-handbook:browser` 在已构建的 UI 手册中检查生产房间部件。四种视口、亮暗主题、两人和三人房各遍历五种席位状态，验证单行卡片、隐藏席位及状态切换前后的几何。结果写入 `artifacts/validation/ui-handbook/`，失败时保存截图；此入口由 `ui-behavior` CI 执行。
+`bun run test:ui-handbook:browser` 在已构建的 UI 手册中检查生产房间部件。四种视口、亮暗主题、两人和三人房各遍历五种席位状态，验证单行卡片、隐藏席位及状态切换前后的几何。先以 `VITE_PREVIEW_FEATURES=true` 运行 `bun run build:ui-rewrite`。结果写入 `artifacts/validation/ui-handbook/`，失败时保存截图。
 
 旧界面的对照输入保存在 [`fixtures/ui-history/`](fixtures/ui-history/README.md)，按固定 SHA-256 校验；完整检出与稀疏检出使用同一组输入。Python 场景比较通过标准输入接收检查脚本，支持 Windows 下的大份历史输入。
 
@@ -80,6 +80,6 @@ Node 测试使用锁定的 `puppeteer-core`，通过 `EAGLER_CHROME_PATH` 或标
 
 联机介绍通过固定历史转换器对照当前原文，另用独立的对战章节输入覆盖 th09 分组；正文按内容文档维护。
 
-工作区手柄检查由 Node 编译共用映射，遍历 4096 种逻辑按键组合，并检查生成副本、中立、断开与键盘独立持有。Vitest 与 CI 调用同一入口。共享 R 键发送由 `test-touch-runtime-protocol.mjs` 检查，暂停重开按本作 Runtime 验收，合作多人入口为 `ports:mp --lifecycle`。
+工作区手柄检查由 Node 编译共用映射，遍历 4096 种逻辑按键组合，并检查生成副本、中立、断开与键盘独立持有。共享 R 键发送由 `test-touch-runtime-protocol.mjs` 检查，暂停重开按本作 Runtime 验收，合作多人入口为 `ports:mp --lifecycle`。
 
 `npm run test:site-mirror:browser` 使用本地 HTTPS 服务检查镜像回退、完整性校验、离线刷新与浏览器重启，证书由 `EAGLER_TEST_TLS_CERT`、`EAGLER_TEST_TLS_KEY` 提供。`react-main/relay-entry-routing.test.mjs` 和 `site-mirror-routing.test.mjs` 检查入口选择、超时、取消与请求身份。

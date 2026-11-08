@@ -3,13 +3,9 @@ import {execFileSync} from 'node:child_process';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 
-export function nodeBuildTargets(affected, workspace, builds) {
-  return Object.entries(builds.games).flatMap(([game,entry])=>['normal','multiplayer'].flatMap(variant=>{
-    const definition=entry.variants[variant];
-    if (!definition || {...entry.sourceBuild,...definition.sourceBuild}.kind!=='node') return [];
-    const directory=workspace.repositories[definition.workspaceRepository ?? entry.workspaceRepository];
-    return affected.includes(directory) ? [{game,variant,directory}] : [];
-  }));
+export function frontendAffected(files) {
+  const inputs = ['launcher/', 'common/', 'tools/browser/', 'tools/testing/', 'tools/ci/', '.github/workflows/'];
+  return files === null || files.some(file => inputs.some(prefix => file.startsWith(prefix)));
 }
 
 export function affectedComponents(files, workspace, builds) {
@@ -19,8 +15,8 @@ export function affectedComponents(files, workspace, builds) {
   const all = ['launcher', workspace.repositories.common, ...runtimes, ...services];
   if (files === null) return all.sort();
   const affected = new Set(['launcher']);
-  if (files.some(file => file.startsWith('common/') || file.startsWith('tools/') ||
-      file.startsWith('.github/') || file.startsWith('launcher/config/'))) return all.sort();
+  if (files.some(file => file.startsWith('common/') || file.startsWith('tools/build/') ||
+      file.startsWith('launcher/config/'))) return all.sort();
   for (const directory of runtimes) if (files.some(file => file === directory || file.startsWith(directory + '/'))) affected.add(directory);
   for (const directory of services) if (files.some(file => file === directory || file.startsWith(directory + '/'))) affected.add(directory);
   // Ordinary and MP fixes require semantic review together, even when the
@@ -46,8 +42,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const result = JSON.stringify(affected);
   if (process.env.GITHUB_OUTPUT) {
     const checkout = [...new Set(['tools', 'launcher/config', 'common', ...affected])].join('\n');
-    await appendFile(process.env.GITHUB_OUTPUT, `affected=${result}\ncheckout<<EAGLER_SCOPE\n${checkout}\nEAGLER_SCOPE\n`);
-    await appendFile(process.env.GITHUB_OUTPUT, `node-builds=${JSON.stringify(nodeBuildTargets(affected,workspace,builds))}\n`);
+    await appendFile(process.env.GITHUB_OUTPUT, `affected=${result}\nfrontend=${frontendAffected(files)}\ncheckout<<EAGLER_SCOPE\n${checkout}\nEAGLER_SCOPE\n`);
   }
   console.log(result);
 }

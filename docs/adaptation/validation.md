@@ -18,11 +18,11 @@
 | 保持触点与禁移恢复 | `node --test tools/ports/touch-continuity.test.mjs` | 按构建目录枚举生产输入架构，检查触点、增量消费或格斗方向输入在暂时禁移后的连续性。th12 同时核对状态生成与输入接线。游戏内死亡、决死窗口与设备事件按 [INPUT／TOUCH](input.md) 验收。 |
 | 音乐与音效 | `node --test tools/ports/sfx-routing.test.mjs`、`npm --prefix launcher run test:audio-output:browser` | 前者逐构建核对生产音效接线与头文件输入，后者离线渲染生产 WebSfx 的双声道 PCM、音量、暂停恢复、停止、清空及音乐任务未完成时的输出，并校验延迟输出反例。各作曲目与设备输出按 [AUDIO／MIDI](presentation.md) 验收。 |
 
-根 CI 的 `shared-input-audio` 运行上述改键与 WebSfx 浏览器测试，以及已有的[浏览器程序交付身份检查](../../tools/browser/verified-runtime.test.mjs)。`port-adaptation` 遍历 `tools/ports/*.test.mjs` 与 `tools/testing/*.test.mjs`，包含 MP 打包归属、帧率统计与驱动覆盖校验。这些检查使用源码与合成输入；真实 DATA、房间及设备验收按各自输入另行执行。
+改键、WebSfx 和[浏览器程序交付身份](../../tools/browser/verified-runtime.test.mjs)按需验证。运行 `node --test tools/ports/*.test.mjs tools/testing/*.test.mjs` 检查 MP 打包归属、帧率统计和驱动覆盖。真实 DATA、房间及设备验收按各自输入执行。
 
-`Checks` 汇总启动器核心、界面、输入音频、适配工具及本次受影响的 common、Relay、TURN 任务；其中任一失败或取消都会阻止汇总通过。
+`Checks` 汇总 Git 来源、文档和发布文件检查。前端、作品入口、common 和服务按影响范围分别报告。前端日常检查包含 lint、翻译、类型和启动、按键、云存档及快捷聊天回归，完整前端构建与测试按需执行。
 
-共用网络测试覆盖自适应选路、旁观会话恢复、Replay 传输与播放桥；[合作菜单输入测试](../../common/tests/cooperative-menu-input-test.cpp)验证多席位按键边沿和状态恢复。common CTest 自动发现 `tests/`、`browser/`、`testkit/` 中的 Node 测试，包含回放时钟、旁观时间轴和采集文件校验。Launcher 的旁观往返与角色切换场景按产品目录的联机能力生成，夹具沿用目录中的网络策略。这些测试随对应的 common 或前端 CI 执行。`shared-checks.json` 维护适配表编号与执行检查的映射，完整测试入口见[启动器测试](../../launcher/tests/README.md)及根 CI。
+共用网络测试覆盖自适应选路、旁观会话恢复、Replay 传输与播放桥；[合作菜单输入测试](../../common/tests/cooperative-menu-input-test.cpp)验证多席位按键边沿和状态恢复。common CTest 自动发现 `tests/`、`browser/`、`testkit/` 中的 Node 测试，包含回放时钟、旁观时间轴和采集文件校验。Launcher 的旁观往返与角色切换场景按产品目录的联机能力生成，夹具沿用目录中的网络策略。`shared-checks.json` 维护适配表编号与执行检查的映射，完整测试入口见[启动器测试](../../launcher/tests/README.md)。
 
 改键命令可用 `-- --game=th08 --variant=all` 选择单作，模式可选 `normal`、`multiplayer`、`all`。未指定作品时检查全部适用作品；新增作品对应现有接收代码布局时随配置纳入，其他布局在浏览器夹具中接入其生产模块。
 
@@ -91,7 +91,7 @@ Relay 的作品规则测试为每作分配独立成员身份，逐项验证普�
 
 虚拟设备与其生产映射 bundle 在同一个浏览器初始化脚本中按顺序安装。运行报告分别保留页面异常、Console 错误与 HTTP 失败，初始化错误可直接定位到驱动入口。
 
-在 `launcher/` 运行 `npm run test:support`，检查浏览器辅助器、独立 Package 模块准备、当前键盘入口和本地 HTTP 服务。历史场景输入从固定夹具读取并校验哈希，当前代码沿用生产模块。根 CI 在界面行为任务中执行这组检查。
+在 `launcher/` 运行 `npm run test:support`，检查浏览器辅助器、独立 Package 模块准备、当前键盘入口和本地 HTTP 服务。历史场景输入从固定夹具读取并校验哈希，当前代码沿用生产模块。
 
 开发服务的 HTTP 检查读取清单中的字体别名并核对响应字节，同时保持游戏 DATA 身份与每次运行的 Relay 配置。字体路径发布与游戏内容身份分别验证。
 
