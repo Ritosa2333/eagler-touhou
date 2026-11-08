@@ -1,5 +1,5 @@
 // Shared TH04 runtime, with serial native operations and page-owned audio.
-import {stable} from '../replay/tape.js';
+import {stable,digest,toBase64} from '../replay/tape.js';
 const send=(message,transfer=[])=>postMessage(message,transfer);
 const audioContext={sampleRate:44100,state:'running',currentTime:0,
  addEventListener(){},removeEventListener(){},resume:async()=>{},close:async()=>{}};
@@ -82,11 +82,15 @@ onmessage=({data})=>{
    }
    if(data.stagePresentation&&applied&&data.plans[applied-1].end)present(true);
    result={applied,records,blocked,exited,sliceMs:performance.now()-sliceStarted};
+  }else if(data.type==='replaySavePoint'){
+   if(!th04WorkerHost.replayOnly)throw Error('检查点只能由旁观实例生成');
+   const point=await r.replaySave(...data.args);
+   result={frame:point.frame,size:point.bytes.length,sha:await digest(point.bytes),data:toBase64(point.bytes),bytes:point.bytes};
   }else if(data.type==='present')result=present();
   else if(data.type==='stop'){stopped=true;r.stop();return;}
   else {if(typeof r[data.type]!=='function')throw Error('Unknown TH04 worker command');result=await r[data.type](...data.args);if(data.type==='step')simulatedSteps++;}
   if(data.type==='confirm'&&data.oneWay){if(result==='exit')send({type:'confirmed-exit'});return;}
-  send({type:'result',id:data.id,result,status:status(['load','start','replayLoad','faultReport'].includes(data.type)),executionMs:performance.now()-started});
+  send({type:'result',id:data.id,result,status:status(['load','start','replayLoad','faultReport'].includes(data.type)),executionMs:performance.now()-started},data.type==='replaySavePoint'?[result.bytes.buffer]:[]);
  }).catch(error=>{
   stopped=true;let fault;try{fault=th04WorkerHost.runtime?.faultReport();}catch{/* Preserve the command failure. */}
   send({type:'error',id:data.id,message:error.stack||String(error),fault});

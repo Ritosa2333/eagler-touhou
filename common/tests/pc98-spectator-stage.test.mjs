@@ -17,3 +17,18 @@ test('TH04 publishes stage checkpoints and relay retains the latest stage', asyn
     assert(relay.history.some(packet=>packet[5]===4&&packet.readUInt32LE(8)===0));
   }finally{publisher.stop();}
 });
+
+test('publisher sends transferred checkpoint bytes without decoding on the page', async()=>{
+  const relay=new Pc98SpectatorRelay(2,{matchInitializers:true}),sent=[];
+  const socket={readyState:1,bufferedAmount:0,send(packet){sent.push(packet);relay.accept(packet.subarray(1));}};
+  const bytes=new TextEncoder().encode('checkpoint bytes'),key=Symbol.for('pc98.spectator.checkpoint.bytes');
+  const point={frame:0,sha:createHash('sha256').update(bytes).digest('hex'),data:'invalid base64'};
+  Object.defineProperty(point,key,{value:bytes,configurable:true});
+  const tape={length:0,end:null,slice:()=>[]};
+  const publisher=createPc98SpectatorPublisher({game:'04',players:2},tape,()=>socket,assert.fail,()=>[point]);
+  try{
+    const until=Date.now()+2000;while(!sent.some(packet=>packet[6]===4)&&Date.now()<until)await new Promise(r=>setTimeout(r,20));
+    const packet=sent.find(packet=>packet[6]===4);assert(packet,'checkpoint was published');
+    assert.deepEqual(packet.subarray(17+72),bytes);assert.equal(point[key],undefined);
+  }finally{publisher.stop();}
+});

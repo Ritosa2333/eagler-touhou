@@ -38,7 +38,7 @@ export async function createReplica(header,{onFrame=()=>{},onEvent=()=>{},onProg
         const r=await request('executeBatch',[],{frame,rows});frame+=rows.length;executed+=rows.length;scene=r.status.scene??null;return r;
       },
       present:()=>request('present'),
-      async save(){const r=await request('replaySave',[header.identity]);return r.value;},
+      async save(){const r=await request('replaySavePoint',[header.identity]);return r.value;},
       async restore(bytes,baseBytes){const r=await request('replayLoad',[bytes,baseBytes,header.identity]);frame=r.value.frame;return r.value;},
       request
     };

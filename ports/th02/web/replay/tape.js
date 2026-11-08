@@ -3,7 +3,7 @@ import {validNativeCommand} from './native-command-schema.js';
 export const VERSION='pc98-confirmed-tape/1',MAX_FRAMES=216000,MAX_RAW=48*1024*1024;
 export const MAX_POINT_BYTES=16*1024*1024;
 export const MAX_POINT_TOTAL=128*1024*1024;
-export function toBase64(bytes){let s='';for(let n=0;n<bytes.length;n+=16384)s+=String.fromCharCode(...bytes.subarray(n,n+16384));return btoa(s);}
+export function toBase64(bytes){if(typeof bytes.toBase64==='function')return bytes.toBase64();let s='';for(let n=0;n<bytes.length;n+=16384)s+=String.fromCharCode(...bytes.subarray(n,n+16384));return btoa(s);}
 export function pointBytes(point){return Uint8Array.from(atob(point.data),c=>c.charCodeAt(0));}
 export function stable(value){
   if(value===undefined)return 'null';

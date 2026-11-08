@@ -1,5 +1,5 @@
 import {createReplica} from './replica.js';
-import {digest,toBase64,MAX_POINT_BYTES,MAX_POINT_TOTAL} from './tape.js';
+import {MAX_POINT_BYTES,MAX_POINT_TOTAL} from './tape.js';
 import {sceneKey} from './scenes.js';
 // The player only appends small confirmed rows. Capture/compression belongs to this replica.
 export function createBuilder(header,getRows,onPoint,onError){
@@ -9,9 +9,10 @@ export function createBuilder(header,getRows,onPoint,onError){
   async function save(){
     const point=await replica.save();if(stopped)return;
     if(point.frame===lastSaved)return;
-    if(++points>128||point.bytes.length>MAX_POINT_BYTES||(total+=point.bytes.length)>MAX_POINT_TOTAL)throw Error('检查点达到容量上限，保留完整输入');
-    const sha=await digest(point.bytes);if(stopped)return;
-    onPoint({frame:point.frame,sha,data:toBase64(point.bytes),scene:replica.scene});lastSaved=point.frame;lastScene=sceneKey(replica.scene);
+    if(++points>128||point.size>MAX_POINT_BYTES||(total+=point.size)>MAX_POINT_TOTAL)throw Error('检查点达到容量上限，保留完整输入');
+    const published={frame:point.frame,sha:point.sha,data:point.data,scene:replica.scene};
+    Object.defineProperty(published,Symbol.for('pc98.spectator.checkpoint.bytes'),{value:point.bytes,configurable:true});
+    onPoint(published);lastSaved=point.frame;lastScene=sceneKey(replica.scene);
   }
   async function pump(){
     if(stopped||busy||!replica)return;busy=true;

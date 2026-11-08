@@ -71,6 +71,9 @@ function nativePauseActive(){
 function restartNativeGame(){
   const h=emulator.module.HEAPU8,v=new DataView(h.buffer),code=mailbox-patch.mailbox_cs_offset,data=gameDataBase(),resident=residentAddress;
   if(!mailboxOwned(mailbox,guestMemoryBase,resident)||h[code+0x86]!==0x75||h[code+0x87]!==5||h[code+0x8d]!==0x1e||h[code+0x8e]!==0x68||v.getUint16(code+0x8f,true)!==0xcd)throw Error('TH04 联机重开入口不匹配');
+  emulator.module.thDirtyMark?.(resident+11,63);
+  emulator.module.thDirtyMark?.(code+0x88,9);
+  emulator.module.thDirtyMark?.(data+0x5392,1);
   const stage=musicSettings.difficulty===4?6:0;
   // Match the private launcher's fresh-run initialization, including stocks,
   // score and P1 loadout. The sound-board bytes come from its resident config.
@@ -250,12 +253,12 @@ function applyP1(bits){
 function stepInner(inputs){
   // Browser-written input lives in the guest's conventional-memory window.
   // Native writes and host glue writes are journaled by the tracked core.
-  if(guestMemoryBase>=0)emulator.module.thDirtyMark?.(guestMemoryBase,1048576);
   const touchInputs=inputs;
   if(!enabled)throw Error(runtimeFailure?.message||'本机游戏没有运行');
   // There is no native stage pause before the first gameplay mailbox exists.
   if(mailbox<0&&emulatedTicks%15===0)findMailbox();
   if(mailbox>=0){
+    emulator.module.thDirtyMark?.(mailbox-patch.mailbox_cs_offset+patch.focus_visible_mask_cs_offset,1);
     emulator.module.HEAPU8[mailbox-patch.mailbox_cs_offset+patch.focus_visible_mask_cs_offset]=
       workerHost?.replayOnly || !(pointPreferences.always || pointPreferences.focus && (touchInputs[localSlot]&64)) ? 0 : (1 << localSlot);
   }
@@ -269,6 +272,7 @@ function stepInner(inputs){
   inputs=inputs.map((value,i)=>{blocked[i]&=value;return value&~blocked[i]&~(128|512|1024|(challenge?16:0));});
   const pauseAt=nativePauseAddress(),active=nativePauseActive();
   if(pauseAt>=0){
+    emulator.module.thDirtyMark?.(pauseAt,3);
     const heap=emulator.module.HEAPU8;
     heap[pauseAt]=1;heap[pauseAt+1]=pauseMenu.paused?1:0;heap[pauseAt+2]=pauseMenu.selection;
     if(pauseMenu.paused||active||result==='resume'||result==='restart'){
@@ -283,9 +287,11 @@ function stepInner(inputs){
     const heap=emulator.module.HEAPU8;
     for(let slot=1;slot<playerCount;slot++){
       const at=slot===1?mailbox+22:mailbox-patch.mailbox_cs_offset+patch.p3_input_cs_offset;
+      emulator.module.thDirtyMark?.(at,3);
       heap[at]=inputs[slot]&63;heap[at+1]=0;heap[at+2]=(inputs[slot]>>>6)&1;
     }
   }
+  if(mailbox>=0)emulator.module.thDirtyMark?.(mailbox-patch.mailbox_cs_offset+patch.touch_cs_offset,3*patch.touch_stride);
   writeNativeTouch(emulator.module.HEAPU8,mailbox,patch,touchInputs,pauseMenu.paused||active||result==='resume');
   const previousMailbox=mailbox,challengeLayout=challenge&&mailboxOwned(mailbox,guestMemoryBase,residentAddress)&&!pauseMenu.paused&&!active?challengeStockLayout('04',emulator.module.HEAPU8,mailbox,patch,residentAddress):null;
   const offline=mailbox>=0?emulator.module.HEAPU8[mailbox-patch.mailbox_cs_offset+patch.offline_mask_cs_offset]:0;
@@ -320,7 +326,7 @@ function step(inputs,{frame=ticks,replay=false,offlineMask=0}={}){
   emulator.module.netBeginFrame(frame,replay);
   try{
     refreshMailbox();
-    if(mailbox>=0)emulator.module.HEAPU8[mailbox-patch.mailbox_cs_offset+patch.offline_mask_cs_offset]=offlineMask;
+    if(mailbox>=0){const at=mailbox-patch.mailbox_cs_offset+patch.offline_mask_cs_offset;emulator.module.thDirtyMark?.(at,1);emulator.module.HEAPU8[at]=offlineMask;}
     currentEffect.result=stepInner(inputs);effects.set(frame,currentEffect);
     if(!replay)presentationPending=true;
     return currentEffect.result;
