@@ -77,7 +77,7 @@ void CEnemyBullet::TuneEnemyShootInfo(ENEMY_SHOOT_INFO *pInfo)
 			break;
 		case EST06_MULTI:
 		case EST07_MULTI_TO_CHARA:
-			pInfo->deltaSpeed-=pInfo->deltaSpeed/4;
+			pInfo->deltaSpeed-=static_cast<int>(pInfo->deltaSpeed)/4;
 			if (pInfo->nMulti>=2)	//PC98 ver uses "if pInfo->nWayUnitAngle", which doen't make sense. should be bug
 				pInfo->nMulti--;
 		    break;
@@ -102,7 +102,7 @@ void CEnemyBullet::TuneEnemyShootInfo(ENEMY_SHOOT_INFO *pInfo)
 		case EST07_MULTI_TO_CHARA:
 		case EST08_NWAY_MULTI:
 		case EST09_NWAY_MULTI_TO_CHARA:
-			pInfo->deltaSpeed+=pInfo->deltaSpeed/2;
+			pInfo->deltaSpeed+=static_cast<int>(pInfo->deltaSpeed)/2;
 		    break;
 		case EST12_RANDOM:
 		case EST13_RANDOM_BASE_SPEED_32:
@@ -133,7 +133,7 @@ void CEnemyBullet::TuneEnemyShootInfo(ENEMY_SHOOT_INFO *pInfo)
 			break;
 		case EST06_MULTI:
 		case EST07_MULTI_TO_CHARA:
-			pInfo->deltaSpeed+=pInfo->deltaSpeed/2;
+			pInfo->deltaSpeed+=static_cast<int>(pInfo->deltaSpeed)/2;
 			pInfo->nMulti++;
 		    break;
 		case EST12_RANDOM:
@@ -390,8 +390,22 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 				speedFadeIn=0;
 
 	int nRecordNeeded=GetNRecordNeeded(shootInfo);
+	if (!original::DemoActive() &&
+	    (shootInfo->shootType==EST06_MULTI || shootInfo->shootType==EST07_MULTI_TO_CHARA))
+	{
+		// The first shot at or above 10 pixels/frame ends a plain stack.
+		for (int i=0;i<nRecordNeeded-1;i++)
+		{
+			if (shootInfo->bulletSpeed+i*shootInfo->deltaSpeed>=160)
+			{
+				nRecordNeeded=i+1;
+				break;
+			}
+		}
+	}
 	int freeRecIdx[ENEMY_BULLET_N_RECORD];
-	FindFreeRecord(freeRecIdx,startRec,nRec,nRecordNeeded);
+	const int found=FindFreeRecord(freeRecIdx,startRec,nRec,nRecordNeeded);
+	freeRecIdx[found]=-1;
 
 	for (int i=0;i<nRecordNeeded;i++)
 	{
