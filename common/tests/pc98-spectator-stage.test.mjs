@@ -32,3 +32,15 @@ test('publisher sends transferred checkpoint bytes without decoding on the page'
     assert.deepEqual(packet.subarray(17+72),bytes);assert.equal(point[key],undefined);
   }finally{publisher.stop();}
 });
+
+test('checkpoints progress while confirmed inputs keep arriving', async()=>{
+  const relay=new Pc98SpectatorRelay(2,{matchInitializers:true}),sent=[];
+  const bytes=Buffer.from('base'),points=[{frame:0,sha:createHash('sha256').update(bytes).digest('hex'),data:bytes.toString('base64')}];
+  let length=300;
+  const tape={get length(){return length++;},end:null,slice:(a,b)=>Array.from({length:b-a},()=>({}))};
+  const socket={readyState:1,bufferedAmount:0,send(packet){sent.push(packet[6]);relay.accept(packet.subarray(1));}};
+  const publisher=createPc98SpectatorPublisher({game:'04',players:2},tape,()=>socket,assert.fail,()=>points);
+  try{const until=Date.now()+3000;while(!sent.includes(4)&&Date.now()<until)await new Promise(r=>setTimeout(r,20));
+    assert(sent.includes(4),'checkpoint must not wait for a moving input frontier');
+  }finally{publisher.stop();}
+});

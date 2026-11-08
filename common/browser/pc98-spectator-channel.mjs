@@ -17,7 +17,7 @@ export function createPc98SpectatorChannel(options,onError,WebSocketClass=WebSoc
     if(closed)return;const bytes=new Uint8Array(event.data),v=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
     if(bytes.length<16||bytes[0]!==0x50||bytes[1]!==0x39||bytes[2]!==0x38||bytes[3]!==0x53||bytes[4]!==1||bytes[6]!==options.netplayPlayerCount||bytes[7])throw Error('观战数据格式无效');
     const kind=bytes[5],first=v.getUint32(8,true),count=v.getUint32(12,true);
-    if(kind!==4&&kind!==6&&!(kind===2&&!haveRows&&segment!==null)&&first!==rowBase+rows.length||end)throw Error('观战确认历史缺帧');
+    if(kind!==4&&kind!==6&&!(kind===2&&!haveRows&&segment!==null)&&first!==rowBase+rows.length||end&&kind!==5)throw Error('观战确认历史缺帧');
     if(kind===1){if(header||first||count)throw Error('观战开局数据无效');header=JSON.parse(new TextDecoder().decode(bytes.subarray(16)));}
     else if(kind===2){if(!header||count<1||count>60||first+count>216000)throw Error('观战输入范围无效');if(!haveRows&&segment!==null){if(first>segment||first+count<segment)throw Error('观战局输入起点无效');rowBase=first;initialMin=segment;}const batch=JSON.parse(await inflate(bytes.subarray(16)));if(!Array.isArray(batch)||batch.length!==count)throw Error('观战输入数量不符');rows.push(...batch);haveRows=true;}
     else if(kind===3){if(!header||count||bytes.length!==16)throw Error('观战结束数据无效');end={frame:first,reason:'本局结束'};}

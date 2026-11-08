@@ -23,3 +23,16 @@ for(const game of ['02','03','04'])test(`TH${game} normal playback presents each
   }finally{viewer.stop();}
   assert(stopped);
 });
+
+test('viewer starts before a growing history is fully downloaded',async()=>{
+  let created=false;
+  const channel={ready:true,close(){},postMessage(message){
+    if(message.type==='pull'&&message.first===0)queueMicrotask(()=>channel.onmessage?.({data:{type:'slice',viewer:message.viewer,
+      header:{game:'01',tickMs:16},first:0,rows:[{}],available:100}}));
+  }};
+  const viewer=createLocalSpectator({game:'01',options:{netplayUrl:'ws://localhost/?room=test&run=1'},channelFactory:()=>channel,
+    createReplica:async()=>{created=true;return {frame:0,stop(){},async present(){},async advance(){}};},
+    validateHeader(){},validateRow(){},stable:JSON.stringify});
+  try{await new Promise(resolve=>setTimeout(resolve,30));assert(created,'playback should start while later history is still downloading');}
+  finally{viewer.stop();}
+});

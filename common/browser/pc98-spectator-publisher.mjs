@@ -29,7 +29,7 @@ export function createPc98SpectatorPublisher(header,tape,socket,onError=()=>{},g
         cursor+=count;
       }
       const points=getPoints(),point=points[pointIndex];
-      if(!closed&&cursor===tape.length&&point&&point.frame<=cursor&&ws.bufferedAmount<=262144&&performance.now()>=nextPointAt){
+      if(!closed&&point&&point.frame<=cursor&&ws.bufferedAmount<=262144&&performance.now()>=nextPointAt){
         pointBytes??=point[checkpointBytes]??(typeof Uint8Array.fromBase64==='function'?Uint8Array.fromBase64(point.data):Uint8Array.from(atob(point.data),c=>c.charCodeAt(0)));
         const chunk=pointBytes.subarray(pointOffset,pointOffset+12000),body=new Uint8Array(72+chunk.length),view=new DataView(body.buffer);
         view.setUint32(0,pointBytes.length,true);view.setUint32(4,pointOffset,true);body.set(encoder.encode(point.sha),8);body.set(chunk,72);
@@ -39,7 +39,7 @@ export function createPc98SpectatorPublisher(header,tape,socket,onError=()=>{},g
           delete point[checkpointBytes];pointIndex++;pointOffset=0;pointBytes=null;
         }
       }
-      if(!closed&&tape.end&&cursor===tape.length&&!pointBytes){ws.send(packet(3,header.players,cursor,0,new Uint8Array()));ended=true;}
+      if(!closed&&tape.end&&cursor===tape.length&&!pointBytes&&!getPoints()[pointIndex]){ws.send(packet(3,header.players,cursor,0,new Uint8Array()));ended=true;}
     }catch(error){stop();onError(error);}
     finally{busy=false;if(!closed&&!ended)timer=setTimeout(pump,pointBytes?pointDelay:250);}
   }
