@@ -1,6 +1,9 @@
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
 import {packTouch,unpackTouch} from './touch-input.js';
 const buttons = {ArrowUp:1,ArrowDown:2,ArrowLeft:4,ArrowRight:8,KeyX:16,KeyZ:32,ShiftLeft:64,ShiftRight:64,Escape:128,Enter:256};
+// A complete swipe may arrive between samples. Keep its target active for a
+// few samples so the native frame can consume it, but apply the delta once.
+const RELEASE_GRACE_SAMPLES = 4;
 export function managedInput({game, epoch, active, options}) {
   let practice, menuPulse = 0;
   const held = new Set(), secondary = new Set(); let touch = {}, pulse = 0, keyPulse = 0, bomb = 0, escape = 0, point = null, motion = {x:0,y:0,active:false};
@@ -22,6 +25,7 @@ export function managedInput({game, epoch, active, options}) {
     releaseGameplay() { secondary.clear(); held.clear(); pulse = keyPulse = menuPulse = 0; point = null; motion = {x:0,y:0,active:false}; changed(); },
     key(message) { keyboard.event(message, message.down, 'hosted'); },
     clear() { secondary.clear(); keyboard.clear(); practice?.clear(); touch = {}; pulse = keyPulse = menuPulse = 0; point = null; motion = {x:0,y:0,active:false}; changed(); },
+    cancelTouch() { secondary.clear(); touch = {}; pulse = menuPulse = 0; point = null; motion = {x:0,y:0,active:false}; changed(); },
     touch(message) {
       if (typeof message.fireEnabled !== 'boolean' || typeof message.focusEnabled !== 'boolean' || !['bombSerial','escapeSerial'].every(k => Number.isSafeInteger(message[k]) && message[k] >= 0) || !['joystickX','joystickY'].every(k => Number.isFinite(message[k]) && Math.abs(message[k]) <= 32767)) throw Error('触控输入无效');
       if (options().touchEnabled && message.bombSerial !== bomb) pulse |= 16;
@@ -37,10 +41,11 @@ export function managedInput({game, epoch, active, options}) {
       else if (point?.id === message.id && message.type === 'move') {
         const scale = 16 * (options().touchSensitivity ?? 150) / 100;
         motion.x += (message.x - point.x) * 640 * scale; motion.y += (message.y - point.y) * 400 * scale;
+        if(message.x!==point.x||message.y!==point.y)motion.moved=true;
         const dx=message.x-point.startX, dy=message.y-point.startY;
         if (!point.menuMoved && Math.max(Math.abs(dx),Math.abs(dy)) >= 0.05) {menuPulse |= Math.abs(dx)>Math.abs(dy) ? (dx<0?4:8) : (dy<0?1:2);point.menuMoved=true;}
         point = {...point, x:message.x, y:message.y};
-      } else if (point?.id === message.id) { if (!point.menuMoved) menuPulse |= 256; point = null; motion = {x:0,y:0,active:false}; }
+      } else if (point?.id === message.id) { if (!point.menuMoved) menuPulse |= 256; point = null; motion = motion.moved ? {...motion,releaseSamples:RELEASE_GRACE_SAMPLES} : {x:0,y:0,active:false}; }
       } finally {changed();}
     },
     sample({play = true} = {}) {
@@ -55,7 +60,7 @@ export function managedInput({game, epoch, active, options}) {
       if (pad >= 0) for (const [mask, out] of [[1,32],[2,16],[4,64],[8,128],[16,1],[32,2],[64,4],[128,8],[512,256]]) if (pad & mask) bits |= out;
       return bits;
     },
-    motion() { if (practice?.blocked()) { point = null; motion = {x:0,y:0,active:false}; } const value = unpackTouch(packTouch(0,{...motion, unlimited:options().touchMovementMode === 'touch-unlimited'})); motion.x = motion.y = 0; motion.begin = false; return value; },
+    motion() { if (practice?.blocked()) { point = null; motion = {x:0,y:0,active:false}; } const value = unpackTouch(packTouch(0,{...motion, unlimited:options().touchMovementMode === 'touch-unlimited'})); if(motion.releaseSamples===1)motion={x:0,y:0,active:false};else {if(motion.releaseSamples)motion.releaseSamples--;motion.x = motion.y = 0; motion.begin = false;} return value; },
   };
   for (const type of ['keydown','keyup']) addEventListener(type, event => {
     if (event.__eaglerPC98Synthetic) return;
