@@ -89,7 +89,7 @@ const sync={
  capture:frame=>request('capture',[frame]),step:(inputs,options)=>{stagedMode=false;discardPrepared();return request('step',[inputs,options]);},restore:async frame=>{discardFrames();return request('restore',[frame]);},
  async confirm(prefix){if(prefix<=acknowledgedPrefix)return;const result=await request('confirm',[prefix]);acknowledgedPrefix=Math.max(acknowledgedPrefix,prefix);sentPrefix=Math.max(sentPrefix,prefix);return result;},
  confirmQueued(prefix,onExit){if(prefix<=sentPrefix||stopped||!worker)return false;sentPrefix=prefix;worker.postMessage({type:'confirm',args:[prefix],oneWay:true});if(onExit)sync.onConfirmedExit=onExit;rpcMetrics.queuedConfirmations++;return true;},
- replayProof:()=>cache.proof,checksum:()=>check,snapshot:()=>cache.game??null,
+ replayProof:()=>cache.proof,checksum:()=>check,snapshot:()=>cache.game??null,sampleGame:()=>request('snapshot'),
  present(){if(stopped)return false;if(stagedMode){if(!preparedReady)return false;preparedReady=false;if(!preparedFrame)return false;const frame=preparedFrame;preparedFrame=null;queueForDisplay(frame);return true;}if(presentPending)return false;rpcMetrics.presentationRpcs++;presentPending=true;request('present').catch(e=>{if(!stopped)fatal(e.message);}).finally(()=>{presentPending=false;});return true;},
  onInput(callback){listener=callback;},onMenuAction(){},
  setMusicVolume(value){volume=Math.max(0,Math.min(1,Number(value)||0));bgm?.setVolume(volume);},

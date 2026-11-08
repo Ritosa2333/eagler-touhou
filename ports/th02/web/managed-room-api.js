@@ -36,6 +36,7 @@ export const managedAPI={
     Object.assign(globalThis,{__eaglerNetplayLanActive:running,__eaglerNetplayLanFrame:queue?.frame??0,__eaglerNetplayLanConfirmed:queue?.confirmed??0,
       __eaglerNetplayLanRollback:rollbackCount,__eaglerNetplayLanResimulated:resimulated,__eaglerNetplayInputDelayFrames:queue?.active?queue.inputDelay:queue?.lockstepDelay});
     return {gameFrame:runtime?.snapshot()?.gameFrame,frames:render.pageDrawn??render.drawn??0,frameMs:averageCost,audio:{state:running?'running':'loading'},music:runtime?.faultReport()?.music,running,stopped,frame:queue?.frame??0,confirmed:queue?.confirmed??0,challenge:runtime?.faultReport()?.challenge??null};},
+  sampleGame(){return runtime?.sampleGame?.()??Promise.resolve(null);},
   stop(){if(stopped&& !runtime)return;stopped=true;running=false;runEpoch++;clearInput();clearTimers();runtime?.stop();disconnect();replayRecorder.close();iframe?.remove();iframe=null;runtime=null;},
   files:message=>globalThis.__eaglerPC98FileCommands(message),
   playback(){throw Error('多人录像工作台尚未启用');},

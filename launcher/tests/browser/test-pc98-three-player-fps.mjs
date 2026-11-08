@@ -5,9 +5,9 @@
 // Relay delay defaults to 45 ms each way plus 5 ms jitter. Set
 // PC98_FPS_ROLLBACK=0 for a confirmed-lockstep comparison. All three players
 // share this machine, so CPU contention differs from three separate devices.
-// The runtime publishes its game counter every six steps; individual one-second
-// samples can therefore fluctuate by several frames around the true rate.
+// The benchmark explicitly samples the worker's native game counter each second.
 // PC98_FPS_MIN can optionally make any lower one-second sample fail the run.
+// PC98_FPS_SECONDS sets the sampling duration (default 20 seconds).
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
@@ -18,6 +18,8 @@ import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 import {PRODUCT_GAMES,multiplayerInputTimingPolicy} from '../../../common/contracts/product-catalog.mjs';
 const game=process.env.ROOM_RUNTIME_GAME;
 assert(['th02','th04'].includes(game),'ROOM_RUNTIME_GAME must be th02 or th04');
+const sampleSeconds=Number(process.env.PC98_FPS_SECONDS??20);
+assert(Number.isInteger(sampleSeconds)&&sampleSeconds>=1&&sampleSeconds<=300,'invalid PC98_FPS_SECONDS');
 const timing={...multiplayerInputTimingPolicy(PRODUCT_GAMES[game].multiplayer),rollback:process.env.PC98_FPS_ROLLBACK!=='0'};
 for(const key of ['ROOM_RUNTIME_ROOT','ROOM_RUNTIME_DATA'])assert(process.env[key],key+' is required');
 const runtime=resolve(process.env.ROOM_RUNTIME_ROOT),data=await readFile(process.env.ROOM_RUNTIME_DATA);
@@ -77,10 +79,10 @@ try{
   await page.evaluate(()=>Promise.all([0,1,2].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}))));
   await wait(async()=>{const values=await Promise.all(frames().slice(0,3).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>120);},'native players advancing');
   await wait(async()=>{const values=await Promise.all(frames().map(f=>f.evaluate(playerFrame)));return values.every(v=>v>=300);},'warmup',120000);
-  const sample=(includeTape=false)=>Promise.all(frames().map(f=>f.evaluate(async({game,includeTape})=>{const {managedAPI}=await import('./netplay/room.js');const recorder=globalThis[game+'Replay'];return {health:managedAPI.health(),pointError:recorder?.pointError||'',snapshot:includeTape?recorder?.snapshot():null,diagnostics:includeTape?document.getElementById('diagnostics')?.textContent||'':''};},{game,includeTape})));
+  const sample=(includeTape=false)=>Promise.all(frames().map(f=>f.evaluate(async({game,includeTape})=>{const {managedAPI}=await import('./netplay/room.js');const recorder=globalThis[game+'Replay'],health=managedAPI.health();const native=await managedAPI.sampleGame();if(!native||!Number.isInteger(native.gameFrame))throw Error('native game counter unavailable');health.gameFrame=native.gameFrame;return {health,pointError:recorder?.pointError||'',snapshot:includeTape?recorder?.snapshot():null,diagnostics:includeTape?document.getElementById('diagnostics')?.textContent||'':''};},{game,includeTape})));
   const begin=await sample(),at=performance.now();
   const directions=setInterval(()=>void page.evaluate(()=>Promise.all([0,1,2].map(n=>rpc(n,'keyboard',{code:'ArrowLeft',key:'ArrowLeft',keyCode:37,location:0,down:Math.floor(Date.now()/300)%2===0})))).catch(()=>{}),300);
-  const windows=[];let prior=begin,priorAt=at;for(let n=0;n<20;n++){await new Promise(r=>setTimeout(r,1000));const next=await sample(),now=performance.now(),seconds=(now-priorAt)/1000;windows.push(next.map((x,i)=>(x.health.gameFrame-prior[i].health.gameFrame)/seconds));prior=next;priorAt=now;}clearInterval(directions);const elapsed=(priorAt-at)/1000,finalTape=await sample(true),end=prior;for(let i=0;i<end.length;i++){end[i].snapshot=finalTape[i].snapshot;end[i].pointError=finalTape[i].pointError;end[i].diagnostics=finalTape[i].diagnostics;}
+  const windows=[];let prior=begin,priorAt=at;for(let n=0;n<sampleSeconds;n++){await new Promise(r=>setTimeout(r,1000));const next=await sample(),now=performance.now(),seconds=(now-priorAt)/1000;windows.push(next.map((x,i)=>(x.health.gameFrame-prior[i].health.gameFrame)/seconds));prior=next;priorAt=now;}clearInterval(directions);const elapsed=(priorAt-at)/1000,finalTape=await sample(true),end=prior;for(let i=0;i<end.length;i++){end[i].snapshot=finalTape[i].snapshot;end[i].pointError=finalTape[i].pointError;end[i].diagnostics=finalTape[i].diagnostics;}
   assert.deepEqual(errors,[]);const boundary=Math.floor(Math.min(...end.map(x=>x.snapshot.rows.length))/120)*120;
   const hashes=end.map(x=>x.snapshot.rows[boundary-1]?.hash);assert(hashes.every(h=>h&&h.tick===boundary&&typeof h.hash==='string'&&JSON.stringify(h)===JSON.stringify(hashes[0])),'confirmed hashes missing or differ');assert(end.every(x=>!x.pointError),'checkpoint builder error');
   console.log('RESULT',JSON.stringify({elapsed,boundary,hashes,points:(finalTape[0].snapshot.points||[]).map(p=>({frame:p.frame,base64Bytes:p.data.length})),windows,diagnostics:end.map(x=>x.diagnostics),clients:begin.map((b,i)=>({begin:b.health,end:end[i].health,gameFps:(end[i].health.gameFrame-b.health.gameFrame)/elapsed,syncFps:(end[i].health.frame-b.health.frame)/elapsed,drawFps:(end[i].health.frames-b.health.frames)/elapsed}))}));
