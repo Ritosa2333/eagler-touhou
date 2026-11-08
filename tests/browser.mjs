@@ -28,6 +28,10 @@ try{
   assert.ok(process.argv[3],'Pass the directory from Verify-OriginalPatterns.py');
   const {comparePatterns}=await import('./pc98-patterns.mjs');
   await comparePatterns(await launch(false),resolve(process.argv[3]));
+ }else if(process.argv[2]==='--pc98-player-shots'){
+  assert.ok(process.argv[3],'Pass the capture from Verify-OriginalPlayerShots.py');
+  const {comparePlayerShots}=await import('./pc98-player-shots.mjs');
+  await comparePlayerShots(await launch(false),resolve(process.argv[3]));
  }else{
  let frame=await launch(false);
  report.vanilla=await frame.evaluate(()=>({enabled:Module._th05_practice_enabled(),scene:Module._th05_scene(),ticks:Module._th05_ticks()}));assert.equal(report.vanilla.enabled,0);
@@ -44,7 +48,35 @@ try{
 
  const gamepad=await frame.evaluate(()=>{const x=Module._th05_player_x();globalThis.__eaglerGamepadInputBridge={owned:()=>true,sample:()=>128};Module._th05_step();const moved=Module._th05_player_x();globalThis.__eaglerGamepadInputBridge.sample=()=>0;Module._th05_step();delete globalThis.__eaglerGamepadInputBridge;return {x,moved};});assert.ok(gamepad.moved>gamepad.x);report.gamepad=true;
  const recorded=await frame.evaluate(()=>{const history=[];for(let n=0;n<24;n++){Module._th05_touch_motion(n%2?1:-2,-.5,1);Module._th05_step();history.push({frame:Module._th05_replay_frame(),x:Module._th05_player_x(),y:Module._th05_player_y()});}const text=new TextEncoder().encode('/savesth05/replay/replay00.rpy'+String.fromCharCode(0)),ptr=Module._malloc(text.length);Module.HEAPU8.set(text,ptr);if(!Module._th05_replay_save(ptr))throw Error('Replay save failed');const bytes=Array.from(Module.FS.readFile('/savesth05/replay/replay00.rpy'));if(!Module._th05_replay_open(ptr,0))throw Error('Replay open failed');Module._free(ptr);const actual=[];for(let n=0;n<2000;n++){Module._th05_step();const index=Module._th05_replay_frame();if(history.some(h=>h.frame===index))actual.push({frame:index,x:Module._th05_player_x(),y:Module._th05_player_y()});if(index>=history.at(-1).frame)break;}return {history,actual,bytes};});
- assert.deepEqual(recorded.actual,recorded.history);assert.equal(inspectReplay(new Uint8Array(recorded.bytes)).touch,true);report.touchReplayFrames=recorded.actual.length;
+ assert.deepEqual(recorded.actual,recorded.history);
+ if(process.env.TH05_BROWSER_TESTS==='1'){
+  const rules=await frame.evaluate(bytes=>{
+   const m=Module;
+   const tag=String.fromCharCode(...bytes.slice(0,4));
+   if(tag!=='RPY ')throw Error('Unexpected replay format');
+   const view=new DataView(Uint8Array.from(bytes).buffer);
+   let at=340;
+   for(let stage=0;stage<7;stage++){
+    if(bytes[53+stage])at+=4+2*view.getUint32(at,true);
+   }
+   if(String.fromCharCode(...bytes.slice(at,at+4))!=='TSH5')throw Error('Shot rules were not saved');
+   const current=m._th05_native_shot_rules();
+   const name='/savesth05/replay/legacy.rpy';
+   m.FS.writeFile(name,Uint8Array.from([...bytes.slice(0,at),...bytes.slice(at+8)]));
+   const path=new TextEncoder().encode(name+String.fromCharCode(0)),ptr=m._malloc(path.length);
+   try{
+    m.HEAPU8.set(path,ptr);
+    if(!m._th05_replay_open(ptr,0))throw Error('Legacy replay did not open');
+    return [current,m._th05_native_shot_rules()];
+   }finally{
+    m._free(ptr);
+    m.FS.unlink(name);
+   }
+  },recorded.bytes);
+  assert.deepEqual(rules,[1,0]);
+  report.shotReplayRules=true;
+ }
+ assert.equal(inspectReplay(new Uint8Array(recorded.bytes)).touch,true);report.touchReplayFrames=recorded.actual.length;
  await press(90,60);await page.screenshot({path:resolve(root,'artifacts/gameplay-vanilla.png')});
  const list=await page.evaluate(()=>command('list'));assert.equal(list.ok,true);assert.ok(list.files.some(f=>f.path==='game.cfg'));
  frame=await launch(true,'en-US');const persisted=await page.evaluate(()=>command('read',{path:'replay/replay00.rpy'}));assert.equal(persisted.ok,true);assert.deepEqual(persisted.bytes,recorded.bytes);report.replayDurability=true;assert.equal(await frame.evaluate(()=>Module._th05_practice_enabled()),1);await frame.evaluate(()=>{Module._th05_key(112,1);Module._th05_step();Module._th05_key(112,0);});assert.equal(await frame.evaluate(()=>Module._th05_practice_tool(0)),1);report.thprac=true;
