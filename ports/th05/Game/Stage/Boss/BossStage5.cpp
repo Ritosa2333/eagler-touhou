@@ -360,6 +360,7 @@ void CBossStage5::Phase4Shoot()
 		si.bulletImg=84;
 		si.shootType=EST00_SINGLE;
 		si.bulletSpeed=96;
+		m_pStage->m_pEnemyBullet->TuneEnemyShootInfo(&si);
 
 		si.shootOrigX=m_curX-32.0f*16.0f;
 		si.shootOrigY=m_curY-16.0f*16.0f;
@@ -420,6 +421,7 @@ void CBossStage5::Phase7Shoot()
 		si.bulletImg=116;
 		si.shootType=EST00_SINGLE;
 		si.bulletSpeed=96;
+		m_pStage->m_pEnemyBullet->TuneEnemyShootInfo(&si);
 
 		si.shootOrigX=m_curX-32.0f*16.0f;
 		si.shootOrigY=m_curY-16.0f*16.0f;
