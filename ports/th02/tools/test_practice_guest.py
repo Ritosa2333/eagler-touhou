@@ -70,12 +70,17 @@ for lang,item in manifest['languages'].items():
     byte(cb+e['targetPreparing'],0);u.mem_write(power_update,saved_power_update)
     checks.append(lang+': target resource initialization executes in guest')
     byte(db+0x19f6,1);w(db+0x1a0c,0x1234);w(db+0x1a0e,0x5678);w(db+0x1a10,0x1234);w(db+0x1a12,0x5678)
-    for stage,phase,requested,damage,expected,clock in ((0,1,2,0,700,0),(0,1,3,0,1400,0),(1,1,2,0,701,0),(1,1,3,0,1501,0),(4,1,3,0,600,0),(4,3,5,0,700,0),(4,5,7,0,800,0),(4,7,9,0,1500,0),(4,2,3,0,0,100),(5,0,3,0,0,50),(5,1,3,0,1800,0)):
+    for stage,phase,requested,damage,expected,clock in ((0,1,2,0,700,0),(0,1,3,0,1400,0),(1,1,2,0,701,0),(1,1,3,0,1501,0),(4,1,3,0,0,100),(4,1,5,0,0,100),(4,1,7,0,0,100),(4,1,9,0,0,100),(4,3,5,0,700,0),(4,5,7,0,800,0),(4,7,9,0,1500,0),(4,2,3,0,0,100),(5,0,3,0,0,50),(5,1,3,0,1800,0)):
         byte(db+0x8f5,stage);byte(db+0x7886,(phase-1)&255);w(db+0x91f8,phase);byte(db+0x7b42,phase);w(db+0x2bea,damage);w(db+0x2be0,0)
         byte(cb+e['targetPreparing'],1);byte(cb+e['initialPhase'],requested);run('targetAdvance')
         assert word(db+0x2bea)==expected and word(db+0x2be0)==clock,(lang,stage,phase)
         if stage==1:assert u.mem_read(db+0x7886,2)==bytes((requested-1,0))
+        if stage==4 and phase==1:assert word(db+0x91f8)==requested-1
     byte(cb+e['targetPreparing'],0);checks.append(lang+': guest advances earlier native Boss attacks')
+    byte(cb+e['targetPreparing'],1);byte(cb+e['initialEntry'],1);byte(db+0x8f5,1);byte(db+0x2baa,1)
+    w(db+0x2be0,1);w(db+0x2be6,-16);w(db+0x2be8,-16);run('targetAdvance')
+    assert (word(db+0x2be0),word(db+0x2be6),word(db+0x2be8))==(319,63,63)
+    byte(cb+e['targetPreparing'],0);checks.append(lang+': stage 2 midboss descent reaches its native attack position')
     for entry in (0,1,2):
         byte(cb+e['targetPreparing'],1);byte(cb+e['initialEntry'],entry);byte(cb+e['warpState'],0)
         w(db+0x1a0c,0x1234);w(db+0x1a0e,0x5678);w(db+0x91d0,0);w(db+0x91d2,0)
@@ -87,7 +92,7 @@ for lang,item in manifest['languages'].items():
         assert u.mem_read(db+0xa91,1)[0]==(1 if entry==2 else 0)
         assert word(db+0x28da)==(93 if entry==1 else 0)
     byte(cb+e['targetPreparing'],0);checks.append(lang+': guest initializes native target spawners')
-    for entry,stage,phase,requested,clock,boss,expected in ((0,0,0,0,0,False,1),(1,0,0,0,17,False,0),(1,0,0,0,18,False,1),(1,1,0,0,320,False,1),(2,4,2,0,0,True,0),(2,4,3,0,0,True,1),(2,4,3,5,0,True,0),(2,4,3,3,0,True,1)):
+    for entry,stage,phase,requested,clock,boss,expected in ((0,0,0,0,0,False,1),(1,0,0,0,17,False,0),(1,0,0,0,18,False,1),(1,1,0,0,320,False,1),(2,4,2,0,0,True,0),(2,4,3,0,0,True,1),(2,4,3,5,0,True,0),(2,4,3,3,0,True,1),(2,4,9,9,0,True,0),(2,4,9,9,1,True,1)):
         byte(cb+e['targetPreparing'],1);byte(cb+e['initialEntry'],entry);byte(cb+e['initialPhase'],requested)
         byte(cb+e['arrivalPending'],0);byte(cb+e['entryPause'],0)
         byte(db+0x8f5,stage);byte(db+0x19f6,int(boss));byte(db+0x2baa,1);byte(db+0x2bfa,0)
@@ -167,6 +172,23 @@ for lang,item in manifest['languages'].items():
         w(ss*16+0xf800,0xfff0);w(ss*16+0xf802,cs)
         u.emu_start(cb+e[name],cb+0xfff0,count=20000)
         assert u.reg_read(UC_X86_REG_CS)==cs and u.reg_read(UC_X86_REG_SP)==0xf804
+    for targeted,entry,phase,hit,expected_zero,expected_outcome in ((0,2,10,0,1,0),(1,0,10,0,1,0),(1,2,9,0,0,0),(1,2,10,0,0,1),(1,2,10,1,0,0)):
+        byte(cb+e['targetPractice'],targeted);byte(cb+e['targetPreparing'],0);byte(cb+e['initialEntry'],entry)
+        byte(cb+e['targetOutcome'],0);byte(cb+e['hold'],0);byte(db+0xaa7,0);byte(db+0x2b94,hit);w(db+0x91f8,phase)
+        run_far('mimaTerminal')
+        assert bool(u.reg_read(UC_X86_REG_EFLAGS)&0x40)==bool(expected_zero)
+        assert u.mem_read(cb+e['targetOutcome'],1)[0]==expected_outcome
+    checks.append(lang+': Mima final practice clear precedes the original ending')
+    for name,native in (('mimaFadeOut',0x289c),('mimaFadeIn',0x285c)):
+        for preparing,stage in ((1,4),(0,4),(1,3)):
+            byte(cb+e['targetPreparing'],preparing);byte(db+0x8f5,stage)
+            for reg,val in ((UC_X86_REG_CS,cs),(UC_X86_REG_DS,ds),(UC_X86_REG_SS,ss),(UC_X86_REG_SP,0xf800),(UC_X86_REG_EFLAGS,0x202)):u.reg_write(reg,val)
+            w(ss*16+0xf800,0xfff0);w(ss*16+0xf802,cs);w(ss*16+0xf804,3)
+            skip=preparing and stage==4;dest=cb+0xfff0 if skip else load*16+native
+            u.emu_start(cb+e[name],dest,count=100)
+            assert u.reg_read(UC_X86_REG_CS)*16+u.reg_read(UC_X86_REG_IP)==dest
+            assert u.reg_read(UC_X86_REG_SP)==(0xf806 if skip else 0xf800)
+    checks.append(lang+': Mima practice fades skip without changing native far calls')
     for stage,phase,requested,preparing,expected in ((4,1,3,1,0),(4,2,3,1,55),(4,3,3,1,55),(5,3,5,1,0),(5,3,5,0,55)):
         byte(db+0x8f5,stage);byte(db+0x19f6,1);w(db+0x1a0c,0x1234);w(db+0x1a0e,0x5678);w(db+0x1a10,0x1234);w(db+0x1a12,0x5678)
         w(db+0x91f8,phase);byte(db+0x7b42,phase);w(db+0x2be0,55)

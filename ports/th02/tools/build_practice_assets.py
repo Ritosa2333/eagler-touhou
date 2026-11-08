@@ -14,6 +14,8 @@ NAMES+=('formOpen','formInput','formValues','formRequest','formHp','formOptions'
 NAMES+=('restartPending','restartValues','resultSelecting')
 NAMES+=('focusHook','focusTest')
 NAMES+=('mimaIntro',)
+NAMES+=('mimaTerminal',)
+NAMES+=('mimaFadeOut','mimaFadeIn','mimaFadeOutPtr','mimaFadeInPtr')
 def main():
     out=ROOT/'build/practice';out.mkdir(parents=True,exist_ok=True)
     nasm=os.environ.get('NASM','nasm')
@@ -80,8 +82,13 @@ def main():
         for at,before,name in [(0x13a85,'813eda28b800','timeMid1'),(0x143c7,'813ee02b4006','timeMid2'),
                                (0x11689,'803e385504','timeMid3'),(0x1a3a3,'803e0d930c','timeMid4'),
                                (0x193ba,'a14e923b068292','timeMima'),(0x193a8,'833ee02b00','transition'),
-                               (0x16706,'833ee02b00','transition')]:
+                               (0x16706,'833ee02b00','transition'),(0x19924,'833ef8910a','mimaTerminal')]:
             far(at+oldgap+gap,bytes.fromhex(before),name)
+        for at,before,name in ((0x19a2a,'9a9c280000','mimaFadeOut'),(0x19b34,'9a5c280000','mimaFadeIn')):
+            moved=at+oldgap+gap
+            assert moved+3 in rel
+            patch(moved,bytes.fromhex(before),b'\x9a'+struct.pack('<HH',entries[name],cs))
+        rel.extend(cs*16+entries[name]+2 for name in ('mimaFadeOutPtr','mimaFadeInPtr'))
         # Far thunks retain the near ABI using PUSH CS / RETF. Ordinary full
         # runs execute every displaced instruction in the original segment.
         for at,name in [(0x13055,'dialogBox'),(0x12de0,'dialogPre'),(0x12e95,'dialogPost')]:

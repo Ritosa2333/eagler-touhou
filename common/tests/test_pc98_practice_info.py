@@ -39,7 +39,12 @@ for game in (2, 4):
             for reg,n in ((UC_X86_REG_CS,0x1000),(UC_X86_REG_DS,0x3000),(UC_X86_REG_SS,0x8000),(UC_X86_REG_SP,0xff00)):u.reg_write(reg,n)
             write(0x8ff00,'<H',0xfff0);u.emu_start(code+draw,code+0xfff0,count=100000)
             assert u.reg_read(UC_X86_REG_IP)==0xfff0
+        # TH04's own difficulty label occupies the row below the mask.
+        if game==4:
+            difficulty=0xa0000+23*160+52*2
+            u.mem_write(difficulty,b'\x5a\x00'*28)
         write(code+enabled,'<B',1);draw_panel();draw_panel()
+        if game==4:assert bytes(u.mem_read(difficulty,56))==b'\x5a\x00'*28,'difficulty row must remain visible'
         write(code+enabled,'<B',0);draw_panel()
         assert [bytes(u.mem_read(a,32000)) for a in planes]==original,(game,'graphics cache changed')
 print('PASS TH02/TH04 native information counters and graphics preservation')

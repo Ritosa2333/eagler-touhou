@@ -53,6 +53,22 @@ practice_target_transition:
 practice_target_advance:
     cmp byte [cs:target_preparing],0
     je .done
+    ; The stage 2 midboss spends 319 frames descending one pixel every four
+    ; frames. Keep frame 1's native setup, then place both pages at the end
+    ; of that movement and let the original frame 320 start the attack.
+    cmp byte [cs:practice_initial_entry],1
+    jne .boss
+    cmp byte [0x8f5],1
+    jne .done
+    cmp byte [0x2baa],0
+    je .done
+    cmp word [0x2be0],1
+    jne .done
+    mov word [0x2be6],63
+    mov word [0x2be8],63
+    mov word [0x2be0],319
+    ret
+.boss:
     cmp byte [0x19f6],1
     jne .done
     mov eax,[0x1a0c]
@@ -72,6 +88,15 @@ practice_target_advance:
     dec al
     cmp [0x7886],al
     jae .read_phase
+    cmp byte [0x7886],0
+    jne .direct_meira_phase
+    cmp byte [cs:practice_checkpoint_seekable],0
+    je .direct_meira_phase
+    cmp byte [cs:practice_checkpoint_baseline_valid],0
+    jne .direct_meira_phase
+    mov bl,1
+    call practice_checkpoint_capture_baseline
+.direct_meira_phase:
     mov [0x7886],al
     mov byte [0x7887],0
     mov word [0x2be0],0
@@ -87,6 +112,43 @@ practice_target_advance:
     mov bl,al
     cmp byte [0x8f5],4
     jne .extra
+    ; Save the first-form baseline before seeking later attacks. The native
+    ; transition below keeps its own resource and attack initialization.
+    cmp al,1
+    jne .mima_seek
+    cmp byte [cs:practice_initial_entry],2
+    jne .mima_seek
+    cmp byte [cs:practice_initial_phase],3
+    jb .mima_seek
+    cmp byte [cs:practice_initial_phase],7
+    ja .mima_seek
+    cmp byte [cs:practice_checkpoint_seekable],0
+    je .mima_seek
+    cmp byte [cs:practice_checkpoint_baseline_valid],0
+    jne .mima_seek
+    call practice_checkpoint_capture_baseline
+.mima_seek:
+    mov al,bl
+    ; Once Mima's first attack has performed its shared initialization,
+    ; enter the native transition immediately preceding the requested attack.
+    ; The transition itself still installs its HP, patterns, palette and, for
+    ; phase 9, loads the second-form sprite resources.
+    cmp al,1
+    jne .mima_transition
+    mov al,[cs:practice_initial_phase]
+    cmp al,3
+    jb .mima_transition
+    cmp al,9
+    ja .mima_transition
+    test al,1
+    jz .mima_transition
+    dec al
+    xor ah,ah
+    mov [0x91f8],ax
+    mov word [0x2be0],100
+    ret
+.mima_transition:
+    mov al,bl
     cmp al,[cs:practice_initial_phase]
     jae .extra
     test al,1
@@ -193,7 +255,15 @@ practice_target_check:
     cmp byte [cs:practice_initial_phase],0
     je .whole_boss
     cmp al,[cs:practice_initial_phase]
-    je .reached
+    jne .done
+    ; The second-form transition clears both pages before installing phase
+    ; 9. Let its first native update draw the new sprite before pausing.
+    cmp byte [0x8f5],4
+    jne .reached
+    cmp al,9
+    jne .reached
+    cmp word [0x2be0],0
+    jne .reached
     ret
 .whole_boss:
     cmp byte [0x8f5],4

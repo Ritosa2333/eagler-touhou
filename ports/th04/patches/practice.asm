@@ -181,7 +181,6 @@ frame_hook:
     call practice_assists_draw
 .assist_done:
     call practice_info_tick
-    call practice_info_draw
     pop es
     call practice_power_lock
     pop es
@@ -240,6 +239,9 @@ world_hook:
     pushf
     pushad
     push es
+    ; HUD counters can be redrawn later than frame_hook. Repaint the text
+    ; mask at the end of the frame, after those updates and before display.
+    call practice_info_draw
     call practice_target_outcome
     pop es
     popad

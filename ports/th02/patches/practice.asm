@@ -32,6 +32,8 @@ dw practice_restart_pending,practice_restart_values,practice_result_selecting
 dw practice_focus_hook
 dw practice_focus_test
 dw mima_intro
+dw mima_terminal
+dw mima_fade_out,mima_fade_in,mima_fade_out_ptr,mima_fade_in_ptr
 entry_pause: db 0
 hold: db 0
 target_practice: db 0
@@ -492,6 +494,59 @@ mima_intro:
     push dword 0x00200010
     jmp mima_intro_body
 BACK mima_intro_body,(0x1a529-0xfac0+10)
+
+; Mima enters the ending synchronously on phase 10, before the usual world
+; hook can display a practice result. Divert only boss practice here and
+; leave a simultaneous player death to the normal outcome logic.
+mima_terminal:
+    cmp byte [cs:target_practice],0
+    je .native
+    cmp byte [cs:target_preparing],0
+    jne .native
+    cmp byte [cs:practice_initial_entry],2
+    jne .native
+    cmp word [0x91f8],10
+    jne .native
+    cmp byte [0xaa7],0
+    jne .suppress
+    cmp byte [0x2b94],0
+    jne .suppress
+    mov byte [cs:practice_outcome],1
+    mov byte [cs:hold],1
+.suppress:
+    cmp word [0x91f8],0xffff ; force the caller's JNE past mima_end
+    retf
+.native:
+    cmp word [0x91f8],10
+    retf
+
+; These two fades belong to Mima's pre-fight cutscene. Keep the real palette
+; and resource initialization, but avoid waiting for invisible fades while
+; a practice target is being prepared. Preserve the original far-call ABI.
+mima_fade_out:
+    pushf
+    cmp byte [cs:target_preparing],0
+    je .native
+    cmp byte [0x8f5],4
+    jne .native
+    popf
+    retf 2
+.native:
+    popf
+    jmp far [cs:mima_fade_out_ptr]
+mima_fade_in:
+    pushf
+    cmp byte [cs:target_preparing],0
+    je .native
+    cmp byte [0x8f5],4
+    jne .native
+    popf
+    retf 2
+.native:
+    popf
+    jmp far [cs:mima_fade_in_ptr]
+mima_fade_out_ptr: dw 0x289c,0
+mima_fade_in_ptr: dw 0x285c,0
 
 %include 'practice-assists.inc'
 %include 'practice-assists-draw.inc'

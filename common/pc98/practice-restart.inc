@@ -106,11 +106,26 @@ practice_quick_retry_tick:
 ; clock, audio, diagnostics and replay bookkeeping.
 practice_form_native_start:
 %ifdef PRACTICE_CHECKPOINT_BYTES
+    mov byte [cs:practice_checkpoint_retarget],0
+    mov byte [cs:practice_checkpoint_use_baseline],0
     cmp byte [cs:practice_checkpoint_requested],0
+    jne .checkpoint_requested
+    call practice_checkpoint_can_seek
+    cmp byte [cs:practice_checkpoint_retarget],0
     je .reload
+.checkpoint_requested:
     mov byte [cs:practice_checkpoint_requested],0
+    cmp byte [cs:practice_checkpoint_retarget],0
+    jne .retarget_ready
     cmp byte [cs:practice_checkpoint_valid],0
+    jne .checkpoint_ready
+    cmp byte [cs:practice_checkpoint_baseline_valid],0
     je .reload
+    mov byte [cs:practice_checkpoint_use_baseline],1
+    jmp .checkpoint_ready
+.retarget_ready:
+    mov byte [cs:practice_checkpoint_use_baseline],1
+.checkpoint_ready:
     ; Notify the replay/clock bridge that the following transition stays in
     ; this MAIN, then restore the native data and resident configuration.
     mov byte [cs:practice_restart_pending],2
@@ -121,7 +136,34 @@ practice_form_native_start:
     mov dx,0x7fe1
 %endif
     call signal
+    cmp byte [cs:practice_checkpoint_use_baseline],0
+    je .restore_selected
+    cmp byte [cs:practice_checkpoint_retarget],0
+    je .restore_baseline
+    call practice_checkpoint_promote
+.restore_baseline:
+    mov ax,[cs:practice_checkpoint_buffer]
+    push ax
+    mov ax,[cs:practice_checkpoint_baseline_buffer]
+    mov [cs:practice_checkpoint_buffer],ax
     call practice_checkpoint_restore
+    pop ax
+    mov [cs:practice_checkpoint_buffer],ax
+    cmp byte [cs:practice_checkpoint_retarget],0
+    je .restore_finished
+    ; The new selected attack will save over its own checkpoint at arrival.
+    mov byte [cs:practice_checkpoint_valid],0
+    jmp .restore_finished
+.restore_selected:
+    call practice_checkpoint_restore
+.restore_finished:
+    cmp byte [cs:practice_checkpoint_retarget],0
+    je .restored_setup
+    mov al,[cs:practice_form_values+4]
+    mov [cs:practice_initial_phase],al
+    mov ax,[cs:practice_form_hp]
+    mov [cs:practice_initial_hp],ax
+.restored_setup:
     mov byte [cs:practice_restart_pending],0
     mov byte [cs:practice_restart_committed],1
     mov byte [cs:practice_result_selecting],0
@@ -274,10 +316,21 @@ practice_native_restrictions:
 %else
     ; A long Boss attempt must not trigger the unrelated stage midboss.
     cmp byte [cs:practice_initial_entry],2
-    jne .input04
+    jne .mid04
     mov ax,[0x538a]
     dec ax
     mov [0x53c0],ax
+    jmp .input04
+.mid04:
+    ; Stage 1's midboss immediately retreats once the map scroll accelerates.
+    ; Keep its actual combat available for a dedicated practice attempt.
+    cmp byte [cs:practice_initial_entry],1
+    jne .input04
+    cmp byte [0x5394],0
+    jne .input04
+    cmp byte [0x4277],2
+    jbe .input04
+    mov byte [0x4277],2
 .input04:
     mov bx,0x3974
     mov cx,0x20
@@ -367,6 +420,9 @@ practice_native_setup:
 %endif
     jne .done
     mov dword [es:0x4e0],0
+%ifdef PRACTICE_CHECKPOINT_BYTES
+    mov byte [cs:practice_checkpoint_seekable],1
+%endif
     xor bx,bx
 .copy:
     mov al,[es:bx+0x4e4]

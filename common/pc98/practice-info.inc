@@ -3,7 +3,8 @@
 %ifdef PRACTICE_RESTART_TH02
 %define INFO_ROWS 10
 %else
-%define INFO_ROWS 13
+; Leave the original difficulty label on the last HUD row visible.
+%define INFO_ROWS 12
 %endif
 practice_info_reset:
     mov dword [cs:practice_info_frames],0

@@ -5,6 +5,72 @@ practice_target_advance:
     je .done
     cmp byte [cs:practice_initial_entry],0
     je .done
+    cmp byte [cs:practice_initial_entry],1
+    jne .boss
+    ; The first midboss spends 288 frames rising, 96 transforming, then
+    ; another 24 animating. Advance the motion to each native transition;
+    ; the original update still performs the tile, sprite and HP setup.
+    cmp byte [0x5394],0
+    jne .done
+    mov ax,[0x46b6]
+    test ax,ax
+    jz .done
+    cmp ax,0x11c0
+    je .done
+    mov al,[0x53c5]
+    mov bl,[cs:practice_initial_phase]
+    test bl,bl
+    jnz .mid_target
+    mov bl,3
+.mid_target:
+    cmp al,bl
+    jae .done
+    cmp al,0
+    jne .mid_one
+    mov ax,[0x53c6]
+    test ax,ax
+    jz .done
+    cmp ax,287
+    jae .done
+    mov cx,287
+    sub cx,ax
+    shl cx,4
+    sub [0x53b6],cx
+    mov ax,[0x53b6]
+    mov [0x53ba],ax
+    mov word [0x53c6],287
+    ret
+.mid_one:
+    cmp al,1
+    jne .mid_two
+    mov ax,[0x53c6]
+    cmp ax,95
+    jae .done
+    mov cx,95
+    sub cx,ax
+    shl cx,1
+    add [0x53b6],cx
+    mov ax,[0x53b6]
+    mov [0x53ba],ax
+    mov byte [0x53c4],139
+    mov word [0x53c6],95
+    ret
+.mid_two:
+    cmp al,2
+    jne .done
+    mov ax,[0x53c6]
+    cmp ax,24
+    jae .done
+    mov cx,24
+    sub cx,ax
+    shl cx,1
+    add [0x53b6],cx
+    mov ax,[0x53b6]
+    mov [0x53ba],ax
+    mov byte [0x53c4],146
+    mov word [0x53c6],24
+    ret
+.boss:
     mov ax,[0xbcd0]
     test ax,ax
     jz .done
@@ -151,6 +217,16 @@ practice_target_advance:
     ; HP boundaries, so initialize the requested attack directly here.
     cmp dl,2
     jne .gen_seek
+    ; Gengetsu's phase-two resources are shared by her later attacks. Keep
+    ; that initialized baseline so selecting an earlier attack can seek in
+    ; the same MAIN instead of loading Mugetsu and the stage again.
+    cmp byte [cs:practice_checkpoint_seekable],0
+    je .gen_direct
+    cmp byte [cs:practice_checkpoint_baseline_valid],0
+    jne .gen_direct
+    mov bl,2
+    call practice_checkpoint_capture_baseline
+.gen_direct:
     mov bl,[cs:practice_initial_phase]
     cmp bl,3
     jb .gen_seek
@@ -208,6 +284,56 @@ practice_target_advance:
     jae .elly
     mov word [0x53da],127
 .elly:
+    ; Yuuka's phase 3 waits at frames 64 and 128 after her vanish/appear
+    ; animations finish. Skip only the empty waits, retaining both native
+    ; animations and the frame-64 position/clone setup.
+    cmp dh,5
+    jne .early_checkpoint
+    cmp dl,3
+    jne .early_checkpoint
+    cmp byte [cs:practice_initial_phase],4
+    jb .early_checkpoint
+    mov bx,[0x53da]
+    test bx,bx
+    jz .early_checkpoint
+    cmp bx,63
+    jae .yuuka_appear
+    cmp byte [0x46c6],0
+    jne .early_checkpoint
+    mov word [0x53da],63
+    jmp .early_checkpoint
+.yuuka_appear:
+    cmp bx,64
+    jb .early_checkpoint
+    cmp bx,127
+    jae .early_checkpoint
+    cmp byte [0x46c6],0
+    je .early_checkpoint
+    mov word [0x53da],127
+.early_checkpoint:
+    ; Normal-stage Bosses retain their resources across attacks. Save their
+    ; first attack separately from the selected-attack retry checkpoint.
+    cmp byte [cs:practice_initial_entry],2
+    jne .elly_intro
+    cmp dh,5
+    ja .elly_intro
+    mov bl,2
+    cmp dh,2
+    jne .early_minimum
+    inc bl
+.early_minimum:
+    cmp dl,bl
+    jne .elly_intro
+    cmp byte [cs:practice_initial_phase],0
+    je .elly_intro
+    cmp [cs:practice_initial_phase],bl
+    jbe .elly_intro
+    cmp byte [cs:practice_checkpoint_seekable],0
+    je .elly_intro
+    cmp byte [cs:practice_checkpoint_baseline_valid],0
+    jne .elly_intro
+    call practice_checkpoint_capture_baseline
+.elly_intro:
     cmp dh,2
     jne .group
     cmp dl,1

@@ -97,6 +97,12 @@ with tempfile.TemporaryDirectory() as tmp:
         assert struct.unpack('<H',u.mem_read(data+keys_offset,2))[0]==0x4f
         if game==2:assert struct.unpack('<h',u.mem_read(data+0x2802,2))[0]==-4
         else:assert u.mem_read(data+0x5395,1)==b'\x14' and u.mem_read(data+0x3976,1)==b'\0'
+        if game==4:
+            for stage,entry,speed,expected in ((0,1,4,2),(0,1,1,1),(1,1,4,4),(0,0,4,4)):
+                u.mem_write(code+initial_entry,bytes([entry]));u.mem_write(data+0x5394,bytes([stage]));u.mem_write(data+0x4277,bytes([speed]))
+                u.reg_write(UC_X86_REG_SP,0xff00);u.mem_write(0x8ff00,struct.pack('<H',0xfff0))
+                u.emu_start(code+restrictions,code+0xfff0,count=1000)
+                assert u.mem_read(data+0x4277,1)==bytes([expected])
         u.mem_write(code+assists,b'\x35')
         u.reg_write(UC_X86_REG_SP,0xff00);u.mem_write(0x8ff00,struct.pack('<H',0xfff0))
         u.emu_start(code+native_start,code+0xfff0,count=2000)
