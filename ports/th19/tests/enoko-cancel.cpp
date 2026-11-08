@@ -18,6 +18,8 @@ int main(){
  }
  {GameWorld w;auto&b=w.spawn_bullet();b.x=200;b.y=100;b.state=1;b.hit_width=2;
   w.cancel_enoko_trap(200,100,0);assert(w.cancelled_bullets==0);}
+ {GameWorld w;auto&b=w.spawn_bullet();b.x=149;b.y=100;b.state=1;b.hit_width=2;
+  w.cancel_enoko_trap(149,100,0);assert(w.cancelled_bullets==1);}
  for(bool straight:{false,true})for(int type:{0,8,18,31,38})for(int lock:{0,1}){
   GameWorld w;InfiniteLaser l;l.x=-24;l.y=100;l.angle=0;l.length=48;l.phase=2;
   l.straight=straight;l.source.type=type;l.cancel_lock=lock;w.lasers.push_back(l);

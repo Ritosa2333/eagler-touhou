@@ -14,7 +14,6 @@ export class ConfirmedTimeline {
   constructor(config) {
     if (!validTh19RecordingConfig(config)) throw Error("录像开局配置无效");
     this.config = structuredClone(config);
-    this.compatibility = !!config?.legacy;
     this.rows = [];
     this.played = false;
     this.terminal = false;
@@ -99,7 +98,7 @@ export class VersusReplayRunner {
       );
       if (
         result !== r.result ||
-        (!this.timeline.compatibility && r.hash !== null && core._th19_network_hash() >>> 0 !== r.hash)
+        (r.hash !== null && core._th19_network_hash() >>> 0 !== r.hash)
       )
         throw Error(`录像状态校验失败（第 ${this.frame + 1} 帧）`);
       ++this.frame;
@@ -322,10 +321,11 @@ export function createReplayPlayer({
     async open(nextPath, bytes) {
       const recording = decodeTh19Replay(bytes),
         m = recording.meta;
-      // Older compatible web builds remain playable; decodeTh19Replay already validates the container.
+      if (m.build !== build)
+        throw Error("录像来自不同游戏构建，请使用录制时的版本");
       let next;
       if (m.kind === "versus") {
-        const tape = new ConfirmedTimeline({ ...m.config, legacy: !!m.legacy || m.build !== build });
+        const tape = new ConfirmedTimeline(m.config);
         for (let i = 0; i < m.frames; i++)
           tape.append(
             recording.payload.subarray(

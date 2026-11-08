@@ -151,8 +151,7 @@ case 'playback':{
   if(launched&&!options.replayViewer&&!player?.active)throw Error('请先退出游戏再播放录像');
   if(m.stage!==undefined&&m.stage!==0)throw Error('录像章节无效');
   const name=path(m.path),bytes=core.FS.readFile(saveRoot+'/'+name);
-  const decoded=decodeTh19Replay(bytes);// Replay playback accepts recordings from prior compatible web builds.
-  // The container, CRC, frame sequence and input validation remain mandatory.
+  const decoded=decodeTh19Replay(bytes);if(decoded.meta.build!==build)throw Error('录像来自不同游戏构建，请使用录制时的版本');
   clearInput();netplay?.close();netplay=null;
   if(decoded.meta.kind==='versus')openGame(decoded.meta.seed);
   if(!player)player=createReplayPlayer({getCore:()=>core,restartNormal,build,onState:playback=>emit('runtime-info',{playback}),onError:fatal,onFrame:()=>{if(!first){first=true;emit('first-frame',launchSerial==null?{}:{launchSerial});}}});
@@ -228,12 +227,6 @@ let healthLast=performance.now(),healthFrames=0;
 function newModule(){return createModule({canvas,printErr:console.error,onGameExit(){if(!player?.active)queueMicrotask(()=>{void stop({exit:true}).catch(fatal);});},onReplayEnd(){},onGameFrame:frameHealth});}
 async function mountSaves(){
  core.FS.mkdirTree(saveRoot);core.FS.mount(core.FS.filesystems.IDBFS,{},saveRoot);await sync(true);core.FS.mkdirTree(saveRoot+'/replay');
- // Explicit local migration requested by the owner: retire pre-cutover web
- // recordings once, without touching scores/config or future-version files.
- const marker=saveRoot+'/th19-replay-cutover-20261106.txt';
- if(!core.FS.analyzePath(marker).exists){
-  core.FS.writeFile(marker,build);await sync();
- }
 }
 function bindModule(){window.Module=core;window.FS=core.FS;core.resetBrowserKeyboard=()=>keyboard.clear();core.SDL3=core.SDL3||{};if(parent!==window&&parent.__touhouAudioContext)core.SDL3.audioContext=parent.__touhouAudioContext;}
 async function restartNormal(meta){

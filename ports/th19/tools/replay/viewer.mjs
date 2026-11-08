@@ -9,7 +9,7 @@ function update(p){if(!p)return;$('seek').max=p.total;$('seek').value=p.frame;$(
 async function open(bytes){
  if(!ready||opening)throw Error('播放器正在准备，请稍后再试');
  const tape=decodeTh19Replay(bytes);
- // Decoding validates the format; the runtime checks deterministic replay state.
+ if(tape.meta.build!==session.build)throw Error('此录像与播放器版本不同，请使用录制时的游戏目录。');
  opening=true;$('error').textContent='';
  try{
   await command('write',{path:'replay/th19_ud0000.rpy',bytes:Array.from(bytes)});

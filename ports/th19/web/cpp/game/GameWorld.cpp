@@ -374,7 +374,8 @@ int GameWorld::cancel_bullets_rect(float x,float y,float width,float height,floa
 // Retail 0x54aae0 -> 0x4ee0d0 and 0x5303f0. No bullet-style whitelist.
 void GameWorld::cancel_enoko_trap(float x,float y,float angle){
     cancel_bullets_shape([=](float px,float py,float radius){
-        return nativeEnemyRectangleContact(px-x,py-y,angle,24,56,radius);
+        return nativeEnemyRectangleContact(px,py-224,0,296,448,radius) &&
+               nativeEnemyRectangleContact(px-x,py-y,angle,24,56,radius);
     });
     const auto point=[=](float px,float py){
         const float dx=px-x,dy=py-y,c=std::cos(angle),s=std::sin(angle);

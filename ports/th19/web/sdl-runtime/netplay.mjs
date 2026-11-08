@@ -12,7 +12,7 @@ const neutral=()=>({keys:0,direct:0,x:0,y:0});
 
 export class Netplay {
  constructor(core,{onStatus=()=>{},onClose=()=>{},onResult=()=>{},onBegin=()=>{},onConfirmed=()=>{},onEnd=()=>{},onPlayback=()=>{},onMatch=()=>{}}={}){
-  this.onMatch=onMatch;this.matchReported=false;this.matchStart=0;this.core=core;this.onStatus=onStatus;this.onClose=onClose;this.onResult=onResult;
+  this.onMatch=onMatch;this.matchReported=false;this.core=core;this.onStatus=onStatus;this.onClose=onClose;this.onResult=onResult;
   this.onBegin=onBegin;this.onConfirmed=onConfirmed;this.onEnd=onEnd;this.confirmedFrames=0;this.replayFlush=Promise.resolve();
   this.onPlayback=onPlayback;this.spectatorRevision=0;
   this.connected=false;this.active=false;this.finished=false;this.prepared=false;
@@ -56,7 +56,7 @@ export class Netplay {
   // The shared run serial gives each rematch a fresh, identical seed on both seats.
   const seed=((options.netplaySeed>>>0)^Math.imul(Number(url.searchParams.get('run')),0x9e3779b9))>>>0;
   const rules=options.netplayTh19Rules??[0,1,1,4,4,1,1,0,0];const v=rules;if(!(Array.isArray(v)&&v.length===9&&v.every((n,i)=>Number.isInteger(n)&&n>=0&&n<([7,3,4,5,5,4,4,39,39][i]))&&v[0]===0&&v[3]===v[4]&&v[5]===1&&v[6]===1&&(v[2]!==2||(v[7]<2&&v[8]<2))))throw Error("对战规则无效");
-  this.config={rules,protocol:1,build,seed:seed||1,difficulty,characters,delay,rollback:this.rollbackEnabled};this.matchStart=0; // Each lobby run has its own serial and starts at frame zero.
+  this.config={rules,protocol:1,build,seed:seed||1,difficulty,characters,delay,rollback:this.rollbackEnabled};
   this.helloConfig=JSON.stringify(this.config);
   this.core.eaglerOptions=options;
   if(spectator){this.connectSpectator(url,options);return;}
@@ -346,7 +346,7 @@ export class Netplay {
   if(this.side===0&&!this.spectator&&!this.matchReported&&effects.played){
    const winner=effects.winner??-1;
    if(winner>=0||this.confirmedFrames%600===0){
-    this.onMatch({start:this.matchStart,frames:this.confirmedFrames,...(winner>=0?{winner}:{})});
+    this.onMatch({start:0,frames:this.confirmedFrames,...(winner>=0?{winner}:{})});
     if(winner>=0)this.matchReported=true;
    }
   }
@@ -420,7 +420,7 @@ export class Netplay {
   const catchup=seeking||this.spectatorFollowing&&queued>30;
   const count=this.spectatorPaused&&!seeking?0:Math.min(end-runner.frame,catchup?32:Math.floor(this.budget)),start=performance.now();
   for(let n=0;n<count;n++){
-   runner.step(n===count-1||runner.frame+1===end,{silent:seeking||this.spectatorFollowing&&queued>30});this.frame=runner.frame;this.budget=Math.max(0,this.budget-1);
+   runner.step(n===0||n===count-1||runner.frame+1===end,{silent:catchup});this.frame=runner.frame;this.budget=Math.max(0,this.budget-1);
    globalThis.__eaglerNetplayLanFrame=globalThis.__eaglerNetplayLanConfirmed=this.frame;
    if(performance.now()-start>=timeSlice)break;
   }
@@ -445,7 +445,7 @@ export class Netplay {
  }
  complete(){if(this.finished&&this.peerFinished&&!this.completed){
   const winner=this.core._th19_network_winner?.()??-1;
-  if(this.side===0&&!this.spectator&&!this.matchReported&&winner>=0){this.onMatch({start:this.matchStart,frames:this.confirmedFrames,winner});this.matchReported=true;}
+  if(this.side===0&&!this.spectator&&!this.matchReported&&winner>=0){this.onMatch({start:0,frames:this.confirmedFrames,winner});this.matchReported=true;}
   this.completed=true;void this.finishRecording(!!this.spectatorEnd?.partial).then(()=>this.onResult());}}
  close(reason=''){
   if(!this.connected)return;

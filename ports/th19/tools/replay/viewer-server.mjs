@@ -16,8 +16,8 @@ export async function startReplayViewer({root=resolve(here,'../..'),file,port=0}
  if(file){
   if((await stat(file)).size>32*1024*1024)throw Error('录像超过32 MiB');
   replay=await readFile(file);
-  decodeTh19Replay(replay);
-  // Replay files from prior compatible web builds are accepted after full decode validation.
+  const parsed=decodeTh19Replay(replay);
+  if(parsed.meta.build!==manifest.buildId)throw Error('录像版本不匹配，请使用录制时的游戏目录；不会强行转换录像。');
  }
  const token=randomBytes(24).toString('hex'),prefix=`/${token}/`;
  const server=http.createServer(async(req,res)=>{

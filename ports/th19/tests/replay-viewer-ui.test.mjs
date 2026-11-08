@@ -28,5 +28,5 @@ test('viewer uses existing replay commands, isolates game input, and preserves v
  await node('restart').onclick();assert.deepEqual(commands.slice(-2).map(c=>c.action),['seek','play']);
  const wrong=encodeTh19Replay({kind:'versus',config:{...config,build:'b'.repeat(64)},build:'b'.repeat(64),seed:1,frames:1,startedAt:0},th19StreamFrame(0,input,input,{played:true}));
  node('file').files=[{size:wrong.length,arrayBuffer:async()=>wrong.buffer}];
- const count=commands.length;await node('file').onchange();assert.ok(commands.length>count);assert.equal(node('error').textContent,'');assert.deepEqual(Uint8Array.from(commands.at(-2).bytes),wrong);
+ const count=commands.length;await node('file').onchange();assert.equal(commands.length,count);assert.match(node('error').textContent,/版本不同/);
 });

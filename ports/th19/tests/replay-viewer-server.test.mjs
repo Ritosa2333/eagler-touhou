@@ -7,7 +7,7 @@ import http from 'node:http';
 import {startReplayViewer} from '../tools/replay/viewer-server.mjs';
 import {encodeTh19Replay,th19StreamFrame} from '../web/sdl-runtime/th19-recording.mjs';
 
-test('local viewer serves only token-scoped resources, accepts decoded recordings from prior builds, and never launches a game',async()=>{
+test('local viewer serves only token-scoped resources, verifies recording build, and never launches a game',async()=>{
  const root=await mkdtemp(resolve(tmpdir(),'th19-viewer-test-'));
  const build='a'.repeat(64),config={protocol:1,build,seed:123,difficulty:2,characters:[0,18],delay:0,rollback:true,rules:[0,1,1,4,4,1,1,0,0]};
  const input={keys:0,direct:0,x:0,y:0};
@@ -34,10 +34,7 @@ test('local viewer serves only token-scoped resources, accepts decoded recording
   const rejectedHost=await new Promise((ok,no)=>http.get(started.url,{headers:{host:'example.com'}},r=>{r.resume();ok(r.statusCode);}).on('error',no));
   assert.equal(rejectedHost,403);
   await writeFile(resolve(root,'runtime/manifest.json'),JSON.stringify({buildId:'b'.repeat(64)}));
-  const compatible=await startReplayViewer({root,file});
-  await new Promise(ok=>compatible.server.close(ok));
-  await writeFile(file,new Uint8Array([1,2,3]));
-  await assert.rejects(startReplayViewer({root,file}));
+  await assert.rejects(startReplayViewer({root,file}),/版本不匹配/);
  }finally{
   if(server)await new Promise(ok=>server.close(ok));
   // root is the exact absolute path returned by mkdtemp, not user input.

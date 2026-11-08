@@ -184,7 +184,7 @@ function decodeLegacyReplay(b) {
       new TextDecoder("utf-8", { fatal: true }).decode(b.subarray(16, 16 + h)),
     ),
     payload = b.subarray(16 + h, b.length - 4);
-  return { ...validateLegacyPayload(meta, payload), meta: { ...meta, legacy: true } };
+  return validateLegacyPayload(meta, payload);
 }
 function validateLegacyPayload(meta, payload) {
   if (

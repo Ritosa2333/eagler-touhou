@@ -4041,7 +4041,7 @@
       "game": "th19",
       "variant": "multiplayer",
       "directory": "ports/th19",
-      "sourceDigest": "a5810a827a43497c638d566735b5801e80c26832b5d3a6f030127eff754ded09",
+      "sourceDigest": "c8f7b06a67a4351053e83dcad0342a9340657214e3e55397c5dd42bcf9d7dcbb",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 14,
@@ -4116,8 +4116,7 @@
           "files": [
             "tools/ports/touch-continuity.test.mjs"
           ],
-          "status": "failed",
-          "error": "Executable checks failed; see held-touch-continuity.log"
+          "status": "passed"
         },
         {
           "id": "immediate-sfx-routing",
@@ -4194,7 +4193,7 @@
       "game": "th19",
       "variant": "normal",
       "directory": "ports/th19",
-      "sourceDigest": "b1874f38fa0547f50aaacb2c4f5bb179166e1a128eed79367cfeaaa93c2563cc",
+      "sourceDigest": "1214da286811c82b543e65e637fb9e3503ab7e5577ff28e29ab23e3b22917b78",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 14,
@@ -4268,8 +4267,7 @@
           "files": [
             "tools/ports/touch-continuity.test.mjs"
           ],
-          "status": "failed",
-          "error": "Executable checks failed; see held-touch-continuity.log"
+          "status": "passed"
         },
         {
           "id": "immediate-sfx-routing",
@@ -4362,8 +4360,7 @@
             "launcher/tests/test-presentation-contract-coverage.mjs"
           ],
           "complete": true,
-          "status": "failed",
-          "error": "Executable checks failed; see normal-presentation.log"
+          "status": "passed"
         }
       ]
     },
