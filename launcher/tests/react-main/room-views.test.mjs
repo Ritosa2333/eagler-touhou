@@ -58,7 +58,7 @@ after(async () => {env?.close(); if (work) await rm(work, {recursive: true, forc
 class Storage {values = new Map(); getItem(key) {return this.values.get(key) ?? null;} setItem(key, value) {this.values.set(key, String(value));} removeItem(key) {this.values.delete(key);}}
 test('Room connection distinguishes initial connect, synchronization and actual reconnect', async () => {
   const f = await fixture({product: 'th11mp', locale: 'zh-CN'}).enter();
-  const message = () => owners.roomConnectionMessage(f.service.getSnapshot(), key => t('zh-CN', key));
+  const message = () => owners.roomConnectionMessage(f.service.getSnapshot(), (key, params) => t('zh-CN', key, params));
   assert.equal(message(), t('zh-CN', 'multiplayer.connectingRoom'));
   await act(() => f.socket.open());
   assert.equal(message(), t('zh-CN', 'multiplayer.syncingMembers'));
@@ -68,7 +68,7 @@ test('Room connection distinguishes initial connect, synchronization and actual 
   await f.receive();
   assert.equal(f.service.getSnapshot().room.synced, true);
   await act(() => f.socket.close(1006));
-  assert.equal(message(), t('zh-CN', 'multiplayer.reconnecting'));
+  assert.equal(message(), `${t('zh-CN', 'multiplayer.reconnecting')} | ${t('zh-CN', 'network.relayClosed', {code: 1006})}`);
 });
 class Socket {
   readyState = 0; sent = []; listeners = new Map(); closes = [];
@@ -490,7 +490,7 @@ for (const locale of ['zh-CN', 'en']) test(`Synthetic network metrics match exec
   for (const context of [{...defaultContext, launched: true}, {...defaultContext, launched: true, th09NetworkOverlayOpen: true}]) {await m.update({context}); compare(f, {panel, context});}
   await m.update({context: defaultContext}); await f.receive({seats: [null, seats[1]]}); compare(f, {panel}); assert.equal(n('#mpRoomNetworkRetry').disabled, true);
   await f.receive(); compare(f, {panel}); assert.equal(n('.mp-network-empty').textContent, t(locale, 'room.waitPeer'));
-  await act(() => f.socket.close(1006)); compare(f, {panel}); assert.equal(n('.mp-network-empty').textContent, t(locale, 'multiplayer.reconnecting'));
+  await act(() => f.socket.close(1006)); compare(f, {panel}); assert.equal(n('.mp-network-empty').textContent, `${t(locale, 'multiplayer.reconnecting')} | ${t(locale, 'network.relayClosed', {code: 1006})}`);
 });
 
 test('Measured rollback button routes through real room owner without overwriting selected delay; applied running value wins', async () => {

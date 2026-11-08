@@ -2321,5 +2321,14 @@
   "cloudSave_stopAndCheck": "停止，去检查",
   "cloudSave_continueAndOverwrite": "继续并覆盖",
   "cloudSave_tabHandoffFailed": "另一个标签页尚未退出",
-  "cloudSave_localReadFailed": "无法读取此浏览器的存档；下方云端记录不代表此浏览器的进度。"
+  "cloudSave_localReadFailed": "无法读取此浏览器的存档；下方云端记录不代表此浏览器的进度。",
+  "network_routeLookup": "节点清单 {host}",
+  "network_transfer": "下载 {host}",
+  "network_timeout": "超时",
+  "network_connectFailed": "连接失败",
+  "network_badResponse": "响应异常",
+  "network_relayNoReply": "已请求联机大厅，但未收到房间列表",
+  "network_manifestUnavailable": "无法读取站点联机配置",
+  "network_relayClosed": "联机连接已关闭（代码 {code}）",
+  "network_relayHandshake": "未能连接联机入口"
 }
