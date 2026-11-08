@@ -33,10 +33,9 @@ export function recordBookLaunch(productId: string) {
   writeBookPreference('recent', [productId, ...recent.filter(id => id !== productId)].slice(0, 20));
 }
 
-/** The doujin slot intentionally has no catalogue mapping yet. It is reserved
- * for independently published titles when real support becomes available. */
 export type BookCategory = 'all' | 'favorites' | 'pc98' | 'windows' | 'spin-off' | 'doujin';
-export function bookCategory(product: LibraryProduct): BookCategory {
+export function bookCategory(product: {gameId: string; number: string}): BookCategory {
+  if (product.gameId === 'hsob') return 'doujin';
   const number = Number(product.number);
   if (!Number.isInteger(number)) return 'spin-off';
   return isPc98Product(product) ? 'pc98' : 'windows';

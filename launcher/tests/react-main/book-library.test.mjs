@@ -117,6 +117,15 @@ test('only supplied published products become cards; hidden/MP/demo titles never
   assert.equal(env.document.querySelector('[data-book-product="dj01"]'), null);
   await click('[data-book-category="spin-off"]'); assert.deepEqual(ids(), ['th075']);
 });
+test('HSoB is listed with doujin games and not with official spin-offs', async () => {
+  const products = api.createLibraryProducts(['th075'], p => p, id => '?game=' + id);
+  products.push({...products[0], id: 'hsob', gameId: 'hsob', number: 'HSOB', title: 'Hollow Song of Birds'});
+  await mount(products);
+  await click('[data-book-category="doujin"]');
+  assert.deepEqual(ids(), ['hsob']);
+  await click('[data-book-category="spin-off"]');
+  assert.deepEqual(ids(), ['th075']);
+});
 test('TH05 is discoverable through the PC98 category in the current library', async () => {
   const products = api.createLibraryProducts(['th05', 'th06'], p => p, id => '?game=' + id);
   await mount(products);
