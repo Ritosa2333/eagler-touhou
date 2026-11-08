@@ -18,7 +18,15 @@ struct Codec {
 #define GAME_FIELDS(X) X(m_nCurLife) X(m_nCurBomb) X(m_curPower) X(m_powerOverflowLevel) X(m_curDream) X(m_curScore) X(m_totalNPointItem) X(m_curNGraze) X(m_playerPerformance) X(m_curHighScore) X(m_nContinueUsed) X(m_nContinueLimit) X(m_pointItemMaxScore) X(m_grazeBonus) X(m_playerPerformanceLowerBound) X(m_playerPerformanceUpperBound) X(m_nLifeOnContinue) X(m_nBombOnMiss)
 #define STAT_FIELDS(X) X(frames) X(slowFrames) X(stdFrames) X(itemsSpawned) X(itemsCollected) X(points) X(maxPoints) X(enemiesGone) X(enemiesKilled) X(graze) X(misses) X(bombs) X(legacyUnknown) X(highestScore) X(finalScore) X(initialLives) X(initialBombs) X(endSequence) X(stage) X(difficulty)
 struct State {th5w::coop::Session run;int stage=0;int game[18]{};int seeds[7]{};th5w::original::RunStats stats;};
-void Wire(Codec& c,State& s){int magic=0x35535631;c.Value(magic);if(magic!=0x35535631)throw std::runtime_error("Unsupported TH05 stage state");
+// Keep the same wire layout. The magic selects the shot rules for the
+// whole stage, including when opening an older cooperative recording.
+constexpr int LegacyStageMagic=0x35535631;
+constexpr int OriginalShotStageMagic=0x35535632;
+void Wire(Codec& c,State& s){
+ int magic=s.run.originalPlayerShots?OriginalShotStageMagic:LegacyStageMagic;
+ c.Value(magic);
+ if(magic!=LegacyStageMagic&&magic!=OriginalShotStageMagic)throw std::runtime_error("Unsupported TH05 stage state");
+ s.run.originalPlayerShots=magic==OriginalShotStageMagic;
  c.Value(s.run.count);c.Value(s.stage);c.Value(s.run.seed);c.Value(s.run.difficulty);c.Value(s.run.initialSpares);c.Value(s.run.initialBombs);for(auto& n:s.run.characters)c.Value(n);c.Flag(s.run.challenge);c.Flag(s.run.continuing);
  for(auto& stock:s.run.carry){c.Value(stock.lives);c.Value(stock.bombs);c.Value(stock.power);c.Value(stock.overflow);c.Value(stock.fraction);c.Value(stock.deaths);c.Flag(stock.ghost);c.Flag(stock.offline);}
  for(auto& n:s.game)c.Value(n);for(auto& n:s.seeds)c.Value(n);

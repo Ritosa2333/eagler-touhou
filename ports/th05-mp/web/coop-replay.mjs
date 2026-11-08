@@ -13,10 +13,11 @@ function checkpointInfo(state) {
   const count = view.getInt32(4, true), stage = view.getInt32(8, true);
   const difficulty = view.getInt32(16, true);
   const characters = Array.from({length: 3}, (_, seat) => view.getInt32(28 + seat * 4, true));
-  if (view.getUint32(0, true) !== 0x35535631 || ![2, 3].includes(count) ||
+  const stageMagic = view.getUint32(0, true);
+  if (![0x35535631, 0x35535632].includes(stageMagic) || ![2, 3].includes(count) ||
       !inRange(stage, 0, 6) || !inRange(difficulty, 0, 4) || (stage === 6) !== (difficulty === 4) ||
       !characters.every(character => inRange(character, 0, 3))) throw Error('Invalid TH05 replay checkpoint');
-  return {count, stage, difficulty, characters: characters.slice(0, count)};
+  return {count, stage, difficulty, stageMagic, characters: characters.slice(0, count)};
 }
 
 export function inspectCoopReplay(bytes) {
@@ -33,7 +34,7 @@ export function inspectCoopReplay(bytes) {
     const state = bytes.subarray(offset + 4, offset + 4 + STATE_BYTES);
     const info = checkpointInfo(state);
     const id = info.stage + 1;
-    if (run && (id <= stages.at(-1).id || info.count !== run.count || info.difficulty !== run.difficulty ||
+    if (run && (id <= stages.at(-1).id || info.count !== run.count || info.difficulty !== run.difficulty || info.stageMagic !== run.stageMagic ||
         info.characters.some((character, seat) => character !== run.characters[seat]))) throw Error('Inconsistent TH05 replay stages');
     run ??= info;
     offset += 4 + STATE_BYTES;

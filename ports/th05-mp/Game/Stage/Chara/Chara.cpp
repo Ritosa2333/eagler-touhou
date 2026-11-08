@@ -393,7 +393,11 @@ void CChara::Step()
 		{
 			if (m_charaShootTimer%6==0)
 				m_pStage->m_bPlaySound[1]=true;
-			if(original::DemoActive())GetCharaBullet()->ShootOriginal(CGame::GVar().m_playChara,m_powerLevel,m_charaShootTimer,m_curX,m_curY);else ShootBullet();
+			auto* shots=GetCharaBullet();
+			if(shots->UsesOriginalShots())
+				shots->ShootOriginal(CGame::GVar().m_playChara,m_powerLevel,m_charaShootTimer,m_curX,m_curY);
+			else
+				ShootBullet();
 			m_charaShootTimer--;
 		}
 	}

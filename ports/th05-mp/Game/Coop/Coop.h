@@ -15,6 +15,7 @@ struct Session {
  uint64_t random=0;
  Input input[3]{};
  Stock carry[3]{};
+ bool originalPlayerShots=true;
  bool continuing=false,finished=false,challenge=false,localVisibility=false;
 };
 Session& Run();
