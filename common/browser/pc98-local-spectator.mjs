@@ -22,7 +22,7 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
       if(catching&&following){
         if(!catchSince){catchSince=now;catchStartLag=lag;}
         else if(now-catchSince>=4000){
-          if(smoothPresentation&&catchStartLag-lag>=30){catchSince=now;catchStartLag=lag;}
+          if(smoothPresentation&&catchStartLag-lag>=(header.spectatorInputOnly?1:30)){catchSince=now;catchStartLag=lag;}
           else{delayed=true;delayFrames=lag;target=null;catching=false;}
         }
       }else catchSince=0;

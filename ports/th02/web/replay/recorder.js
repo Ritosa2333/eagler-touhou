@@ -2,7 +2,6 @@ import {ConfirmedTape,VERSION,encodeTape,fingerprint,randomId,stable} from './ta
 import {GAME,SOURCE_PATHS} from './profile.js';
 import {publishNetwork} from './network.js';
 import {LOCAL_CHUNK,pointSize,pointIndex} from './local-points.js';
-import {createBuilder} from './builder.js';
 // Every public operation isolates failures from the player's execution loop.
 export function createRecorder(toolbar){
   let tape=null,error='',channel=null,roomChannel=null,publisher=null,builder=null,pointError='',points=[],network=null,closed=false,localSolo=false;
@@ -27,17 +26,17 @@ export function createRecorder(toolbar){
         remote.hidden=true;upload.textContent='';
         const identity=await fingerprint(SOURCE_PATHS);if(closed)return;
         tape=new ConfirmedTape({version:VERSION,game:GAME,adapter,settings:structuredClone(settings),players,hostSlot,tickMs,identity,opening});
+        tape.header.spectatorInputOnly=true;
         localSolo=adapter==='native-local/1'&&players===1;
         open.hidden=!localSolo;
         watch.hidden=localSolo;
-        // The host builds checkpoints from confirmed inputs for late spectators.
+        // Players publish confirmed inputs; spectators simulate on their own devices.
         if(!localSolo){
           channel=new BroadcastChannel('pc98-replay-'+id);
           const options=globalThis.__eaglerPC98Options?.(),url=options?.netplayUrl?new URL(options.netplayUrl):null;
           if(options?.netplayPlayer===0&&url?.searchParams.get('room')&&url.searchParams.get('run')){
             roomChannel=new BroadcastChannel('pc98-room-'+GAME+'-'+url.searchParams.get('room')+'-'+url.searchParams.get('run'));
             publisher=globalThis.__eaglerPC98SpectatorPublisher?.(tape.header,tape,()=>globalThis['__th'+GAME+'PeerTransport']?.relay,error=>{remote.title=error.message;},()=>points);
-            builder=createBuilder(tape.header,()=>tape,point=>{points.push(point);publisher?.kick();},e=>{pointError=String(e.message||e);update();});
           }
         }
         let lastReply=0;

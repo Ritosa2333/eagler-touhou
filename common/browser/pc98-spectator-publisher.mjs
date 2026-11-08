@@ -21,7 +21,7 @@ export function createPc98SpectatorPublisher(header,tape,socket,onError=()=>{},g
         do{body=await compress(encoder.encode(JSON.stringify(tape.slice(cursor,cursor+count))));if(body.length+16<=LIMIT)break;count=Math.floor(count/2);}while(count);
         if(!count)throw Error('观战单帧数据过大');
         if(closed)return;ws.send(packet(2,header.players,cursor,count,body));
-        if(header.game==='03')for(let i=0;i<count;i++){
+        if(header.game==='03'&&!header.spectatorInputOnly)for(let i=0;i<count;i++){
           const scene=tape.row(cursor+i).scene;
           if(scene===2)matchArmed=true;
           else if(scene===1&&matchArmed){matchArmed=false;if(matchSeen)ws.send(packet(7,header.players,cursor+count,cursor+i+1,new Uint8Array()));matchSeen=true;}

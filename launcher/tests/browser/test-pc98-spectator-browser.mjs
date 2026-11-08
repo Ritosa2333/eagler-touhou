@@ -187,9 +187,15 @@ try{
     await wait(async()=>await frames()[0].evaluate(()=>globalThis.th03SyncState?.pauseSeat===null),'recorded native resume',30000);
   }
   if(process.env.PC98_TEST_LATE_STAGE==='1'){await wait(async()=>await frames()[0].evaluate(game=>globalThis[game+'Replay']?.publishedSegment>0,game),'published stage checkpoint',120000);await new Promise(resolve=>setTimeout(resolve,10000));}
+  if(process.env.PC98_TEST_INPUT_ONLY_LATE==='1'){
+    await wait(async()=>await frames()[0].evaluate(playerFrame)>=1800,'late input-only spectator join',120000);
+    const points=await frames()[0].evaluate(game=>globalThis[game+'Replay']?.snapshot()?.points??[],game);
+    assert.equal(points.length,0,'players must not create a replay simulation to build checkpoints');
+  }
   await configure(2,1);
   await page.waitForFunction(()=>events.some(e=>e.epoch===3&&['first-frame','error'].includes(e.event)),{timeout:120000});const viewerError=await page.evaluate(()=>events.find(e=>e.epoch===3&&e.event==='error'));if(viewerError)throw Error(JSON.stringify(viewerError));
   await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&!s.seeking;},{timeout:90000});
+  if(process.env.PC98_TEST_INPUT_ONLY_LATE==='1')await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&s.received>1800&&s.received-s.position<180;},{timeout:120000});
   if(process.env.PC98_TEST_LATE_STAGE==='1')assert((await page.evaluate(()=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback?.min))>0,'late spectator should start from a stage checkpoint');
   if(game==='th02')await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));
   if((game==='th02'||game==='th04')&&process.env.PC98_NATIVE_MARKER==='1')
@@ -210,12 +216,13 @@ try{
   const target=await page.evaluate(()=>Math.floor(events.findLast(e=>e.epoch===3&&e.spectatorPlayback).spectatorPlayback.position/2));
   await control('seek',target);await page.waitForFunction(target=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s?.paused&&!s.seeking&&s.position===target;},{timeout:90000},target);
   await control('live');await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s?.following&&!s.paused&&!s.seeking;},{timeout:90000});
+  if(process.env.PC98_TEST_INPUT_ONLY_LATE==='1')await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&s.received-s.position<180;},{timeout:120000});
   if((game==='th02'||game==='th04')&&process.env.PC98_NATIVE_MARKER==='1'){
     const start=await frames()[1].evaluate(playerFrame);
     await wait(async()=>await frames()[1].evaluate(playerFrame)>=start+300,'marker stays synchronized while spectating',30000);
     await page.evaluate(()=>rpc(1,'keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:false}));
   }
-  if((game==='th02'||game==='th03'||game==='th04')&&process.env.PC98_TEST_LATE_STAGE!=='1'){
+  if((game==='th02'||game==='th03'||game==='th04')&&process.env.PC98_TEST_LATE_STAGE!=='1'&&process.env.PC98_TEST_INPUT_ONLY_LATE!=='1'){
     await page.click('#p0');await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));
     await page.waitForFunction(()=>events.some(e=>e.epoch===3&&e.event==='audio-health'&&e.effects>0&&e.effectsPeak>0.001),{timeout:20000});
     await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}));

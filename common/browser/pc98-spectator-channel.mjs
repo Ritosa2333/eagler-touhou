@@ -37,7 +37,7 @@ export function createPc98SpectatorChannel(options,onError,WebSocketClass=WebSoc
   }).catch(fail);};
   ws.onerror=()=>fail(Error('观战连接失败'));
   ws.onclose=event=>{if(!closed&&!end)fail(Error('观战连接已断开'+(event.reason?'：'+event.reason:'')));};
-  const channel={onmessage:null,get ready(){return ready&&(header?.game!=='03'||segment!==null);},get relay(){return ws;},
+  const channel={onmessage:null,get ready(){return ready&&(header?.game!=='03'||header?.spectatorInputOnly===true||segment!==null);},get relay(){return ws;},
     addEventListener(type,fn){if(type==='message')listeners.add(fn);},removeEventListener(type,fn){if(type==='message')listeners.delete(fn);},
     postMessage(message){
       if(message.type==='pull'){pull=message;deliver();return;}

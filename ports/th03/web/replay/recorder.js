@@ -2,7 +2,6 @@ import {ConfirmedTape,VERSION,encodeTape,encodeBattleMatch,fingerprint,randomId,
 import {GAME,SOURCE_PATHS} from './profile.js';
 import {publishNetwork} from './network.js';
 import {LOCAL_CHUNK,pointSize,pointIndex} from './local-points.js';
-import {createBuilder} from './builder.js';
 // Every public operation isolates failures from the player's execution loop.
 export function createRecorder(toolbar,{onBattleReplay=()=>{}}={}){
   let tape=null,error='',channel=null,roomChannel=null,publisher=null,builder=null,pointError='',points=[],network=null,closed=false,localSolo=false;
@@ -29,17 +28,18 @@ export function createRecorder(toolbar,{onBattleReplay=()=>{}}={}){
         remote.hidden=true;upload.textContent='';
         const identity=await fingerprint(SOURCE_PATHS);if(closed)return;
         tape=new ConfirmedTape({version:VERSION,game:GAME,adapter,settings:structuredClone(settings),players,hostSlot,tickMs,identity,opening});
+        // The host publishes confirmed inputs only; viewers own playback.
+        tape.header.spectatorInputOnly=true;
         localSolo=adapter==='native-local/1'&&players===1;
         open.hidden=!localSolo;
         watch.hidden=localSolo;
-        // Only the host builds confirmed match initializers for late viewers.
+        // The host publishes confirmed input without running a second game.
         if(!localSolo){
           channel=new BroadcastChannel('pc98-replay-'+id);
           const options=globalThis.__eaglerPC98Options?.(),url=options?.netplayUrl?new URL(options.netplayUrl):null;
           if(options?.netplayPlayer===0&&url?.searchParams.get('room')&&url.searchParams.get('run')){
             roomChannel=new BroadcastChannel('pc98-room-'+GAME+'-'+url.searchParams.get('room')+'-'+url.searchParams.get('run'));
             publisher=globalThis.__eaglerPC98SpectatorPublisher?.(tape.header,tape,()=>globalThis['__th'+GAME+'PeerTransport']?.relay,error=>{remote.title=error.message;},()=>points);
-            builder=createBuilder(tape.header,()=>tape,point=>{points.push(point);publisher?.kick();},e=>{pointError='观战局起点生成失败：'+String(e.message||e);update();});
           }
         }
         let lastReply=0;
