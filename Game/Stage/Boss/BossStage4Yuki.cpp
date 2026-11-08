@@ -317,7 +317,7 @@ void CBossStage4Yuki::Phase6()
 
 void CBossStage4Yuki::Phase7Shoot()
 {
-	if (m_curPhaseFrame<=8)
+	if (m_curPhaseFrame<8)
 		return;
 	if (m_curPhaseFrame==8)
 	{
@@ -326,7 +326,7 @@ void CBossStage4Yuki::Phase7Shoot()
 	}
 	if (m_curPhaseFrame%4==0)
 	{
-		ENEMY_SHOOT_INFO si;
+		ENEMY_SHOOT_INFO si{};
 		si.shootOrigX=m_curX;
 		si.shootOrigY=m_curY;
 		si.bulletBornType=16;
@@ -336,7 +336,6 @@ void CBossStage4Yuki::Phase7Shoot()
 		si.nWay=4+CGame::GVar().m_playDifficulty*2;
 		si.bulletSpeed=32;
 		si.specialMoveVar=1;
-		m_pStage->m_pEnemyBullet->TuneEnemyShootInfo(&si);
 		m_pStage->m_pEnemyBullet->Shoot(&si,true);
 	}
 	if (m_curPhaseFrame>=128)
