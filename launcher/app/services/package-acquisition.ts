@@ -1,3 +1,4 @@
+import {downloadFailureDetail} from './network-failure';
 import {normalizeGameVersion} from "../../package/game-version.mjs";
 import {validateReleaseCatalog} from "../../release-catalog.mjs";
 import type {GameVersion} from "../../src/contracts/package-read-models.mts";
@@ -198,7 +199,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
         return {kind: 'managed', generation: result.generation, deferredUpdate: null};
       } catch (error) {
         checkPreparationAbort(request.signal);
-        throw new GameDataAcquisitionError(preparationErrorText(error), {cause: error});
+        throw new GameDataAcquisitionError(downloadFailureDetail(error, t) || preparationErrorText(error), {cause: error});
       } finally {request.onAcquisitionActivity?.(false);}
     }
     // Development materializes the currently selected OGG before reusing current,
@@ -225,7 +226,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       } catch (error) {
         checkPreparationAbort(request.signal);
         if (error instanceof Error && error.name === 'AbortError') throw error;
-        throw new GameDataAcquisitionError(preparationErrorText(error), {cause: error});
+        throw new GameDataAcquisitionError(downloadFailureDetail(error, t) || preparationErrorText(error), {cause: error});
       } finally {request.onAcquisitionActivity?.(false);}
     }
     if (!host) throw new GameDataAcquisitionError(metadataSnapshot.releaseCatalogError
@@ -237,7 +238,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       try {
         const result = await installDevelopment(game, host, request);
         if (result) return {kind: 'managed', generation: result.generation, deferredUpdate: null};
-      } catch (error) {checkPreparationAbort(request.signal); throw new GameDataAcquisitionError(preparationErrorText(error), {cause: error});}
+      } catch (error) {checkPreparationAbort(request.signal); throw new GameDataAcquisitionError(downloadFailureDetail(error, t) || preparationErrorText(error), {cause: error});}
       throw new GameDataAcquisitionError(t('package.importServerNoFiles'));
     }
     const hosted = host.games[game];
@@ -276,7 +277,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
         } catch (updateError) {failure = updateError;}
       }
       checkPreparationAbort(request.signal);
-      throw new GameDataAcquisitionError(preparationErrorText(failure), {cause: failure});
+      throw new GameDataAcquisitionError(downloadFailureDetail(failure, t) || preparationErrorText(failure), {cause: failure});
     } finally {if (active) request.onAcquisitionActivity?.(false);}
   }
   async function importPackage({game, file, signal, onProgress, gameVersion}: {

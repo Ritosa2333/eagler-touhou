@@ -1,3 +1,4 @@
+import {downloadFailureDetail} from '../services/network-failure';
 import {gameIdForProduct, type ProductId} from '../../src/contracts/product-catalog.mts';
 import {createGameDataContinuation, gameDataContinuationMatches, type GameDataContinuation} from '../../src/launcher/launcher-lifecycle.mts';
 import type {Translate} from '../i18n';
@@ -240,8 +241,9 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
     if (getContext().importServer) {
       beginImportRequired(message); ports.feedback.status(message); ports.feedback.toast(message); return true;
     }
-    beginManual({reason: t('package.resourceFailureLocal'), continuation: captured, useReasonVerbatim: true});
-    ports.feedback.status(t('package.resourceFailureStatus')); return true;
+    const detail = downloadFailureDetail(error, t) || message;
+    beginManual({reason: `${t('package.resourceFailureLocal')}\n\n${detail}`, continuation: captured, useReasonVerbatim: true});
+    ports.feedback.status(`${t('package.resourceFailureStatus')} | ${detail}`); return true;
   }
   publish();
   return Object.freeze({

@@ -100,6 +100,9 @@ test('all failed entries report one terminal failure', async () => {
   routed.addEventListener('error', () => errors++); routed.addEventListener('close', () => closes++);
   await flush(); sockets[0].fail(); sockets[1].fail();
   assert.equal(errors, 1); assert.equal(closes, 1); assert.equal(routed.readyState, 3);
+  assert.deepEqual(routed.failedAttempts, [
+    {host: 'primary.example', reason: 'connection'}, {host: 'backup.example', reason: 'connection'},
+  ]);
 });
 test('application rejection does not try another entry', async () => {
   const {router, sockets} = fixture();

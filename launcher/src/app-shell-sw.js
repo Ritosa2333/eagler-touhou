@@ -243,16 +243,6 @@ self.addEventListener("fetch", event => {
     })());
     return;
   }
-  if (siteRouting && url.pathname === "/_eagler/resource-routes") {
-    event.respondWith(siteRouting.run(url, async response => {
-      const text = await response.clone().text();
-      if (text.length > 256 * 1024 || JSON.parse(text).schema !== "eagler-touhou/resource-routes/1") {
-        throw new Error("Invalid resource routing response");
-      }
-      return response;
-    }, {stallMs: 1500}));
-    return;
-  }
   const entry = manifestByPathname.get(url.pathname);
   if (entry) event.respondWith(shellCacheFirst(entry));
 });

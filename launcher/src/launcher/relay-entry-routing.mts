@@ -1,6 +1,8 @@
 import type {SiteManifestShared} from '../contracts/site-manifest.mts';
 
+export type RelayAttempt = {host: string; reason: 'timeout' | 'connection'};
 export interface RelayEntrySocket {
+  readonly failedAttempts?: readonly RelayAttempt[];
   readonly readyState: number;
   send(data: string): void;
   close(code?: number, reason?: string): void;
@@ -37,6 +39,7 @@ export function createRelayEntryRouting(options: {
     const preferred = candidate && bases.includes(candidate) ? candidate : primary;
     const candidates = [...new Set([preferred, ...bases])];
     const output = new EventTarget();
+    const failedAttempts: RelayAttempt[] = [];
     let socket: WebSocket | null = null, state = 0, attempt = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let generation = 0;
@@ -53,8 +56,9 @@ export function createRelayEntryRouting(options: {
       url.search = input.search;
       url.hash = '';
       let next: WebSocket;
-      const failed = () => {
+      const failed = (reason: RelayAttempt['reason'] = 'connection') => {
         if (generation !== id || state !== 0) return;
+        failedAttempts.push({host: url.host, reason});
         clear(); ++generation;
         try {socket?.close();} catch {}
         if (attempt < candidates.length) connect();
@@ -65,10 +69,10 @@ export function createRelayEntryRouting(options: {
       };
       try {next = options.createSocket(url.href); socket = next;}
       catch {failed(); return;}
-      timer = setTimeout(failed, options.connectTimeoutMs ?? 2000);
+      timer = setTimeout(() => failed('timeout'), options.connectTimeoutMs ?? 2000);
       next.addEventListener('open', () => {
         if (generation !== id || state !== 0) return;
-        clear(); state = 1; selected.set(primary, base);
+        clear(); state = 1; failedAttempts.length = 0; selected.set(primary, base);
         output.dispatchEvent(new Event('open'));
       });
       next.addEventListener('message', event => {
@@ -86,6 +90,7 @@ export function createRelayEntryRouting(options: {
       });
     }
     const routed = Object.assign(output, {
+      get failedAttempts() {return failedAttempts;},
       send(data: string) {
         if (state !== 1 || !socket) throw new DOMException('Relay is not open', 'InvalidStateError');
         socket.send(data);

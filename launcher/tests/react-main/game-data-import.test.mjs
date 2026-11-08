@@ -129,8 +129,8 @@ test('main DATA errors have separate hosted/import-server recovery; engine/OGG e
   const hosted = fixture();
   assert.equal(await hosted.model.handleLaunchFailure(new Error('OGG decoder failed')), false); assert.equal(hosted.model.getSnapshot().attempt, null);
   assert.equal(await hosted.model.handleLaunchFailure(new api.GameDataAcquisitionError('missing data')), true);
-  assert.equal(hosted.model.getSnapshot().reason, t('package.resourceFailureLocal')); assert.equal(hosted.model.getSnapshot().attempt.continuation.kind, 'launch');
-  assert.deepEqual(hosted.statuses, [t('package.resourceFailureStatus')]);
+  assert.equal(hosted.model.getSnapshot().reason, `${t('package.resourceFailureLocal')}\n\nmissing data`); assert.equal(hosted.model.getSnapshot().attempt.continuation.kind, 'launch');
+  assert.deepEqual(hosted.statuses, [`${t('package.resourceFailureStatus')} | missing data`]);
   const imported = fixture({context: {importServer: true}});
   await imported.model.handleLaunchFailure(new api.GameDataAcquisitionError('missing data'));
   assert.equal(imported.model.getSnapshot().reason, t('package.importServerOnly', {reason: 'missing data'}));

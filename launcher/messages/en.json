@@ -2321,5 +2321,14 @@
   "cloudSave_stopAndCheck": "Stop and check",
   "cloudSave_continueAndOverwrite": "Continue and overwrite",
   "cloudSave_tabHandoffFailed": "Another tab is still open",
-  "cloudSave_localReadFailed": "This browser’s save could not be read. Cloud records do not represent this browser’s progress."
+  "cloudSave_localReadFailed": "This browser’s save could not be read. Cloud records do not represent this browser’s progress.",
+  "network_routeLookup": "Node list {host}",
+  "network_transfer": "Download {host}",
+  "network_timeout": "Timed out",
+  "network_connectFailed": "Connection failed",
+  "network_badResponse": "Invalid response",
+  "network_relayNoReply": "The lobby did not return a room list",
+  "network_manifestUnavailable": "Could not load the site’s multiplayer configuration",
+  "network_relayClosed": "Relay connection closed (code {code})",
+  "network_relayHandshake": "Could not connect to the relay"
 }
