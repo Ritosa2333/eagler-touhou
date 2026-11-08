@@ -72,7 +72,10 @@ bool Session::begin(const SessionSetup& setup, std::uint64_t now_ms) {
     // Bomb and pause still require actual input.
     input.predictableButtons = 0x2f9;
     input.directionButtons = 0xf0;
-    input.maxDirectionPredictionFrames = 2;
+    // In a three-player room two held directions can both fall out of the
+    // prediction window while their samples are in flight. Keep them for
+    // four frames, then fall back to neutral if neither sample has arrived.
+    input.maxDirectionPredictionFrames = setup.seats == 3 ? 4 : 2;
     input.directTouchIsAbsolute = true;
     Netplay::SessionChannelConfig channel;
     channel.inputResendMs = 16;

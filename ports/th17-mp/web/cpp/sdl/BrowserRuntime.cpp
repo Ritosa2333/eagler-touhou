@@ -143,17 +143,18 @@ struct RoomRuntime final : multiplayer::World {
   if(intermediate)replay_step_start=emscripten_get_now();
  }
  bool replay_budget(unsigned replayed,unsigned remaining) const override{
+  if(replayed>=multiplayer::Session::rollback_frames)return false;
   const double now=emscripten_get_now();
-  constexpr unsigned usual_slice=4,maximum_slice=multiplayer::Session::rollback_frames;
-  if(replayed>=maximum_slice)return false;
-  if(replayed<usual_slice&&now<replay_deadline)return true;
-  if(!remaining||remaining>maximum_slice-replayed)return false;
-  // Two moving peers can produce a correction longer than the usual slice.
-  // Give a late RAF enough time for a cheap complete repair. Otherwise a
-  // sub-millisecond tail can wait an entire refresh even with no GPU work.
-  const double cost=(remaining-1)*logical_step_ms+tick_cost_ms;
-  const double late_deadline=refresh_start+3;
-  return now+cost+1<std::max(refresh_deadline,late_deadline);
+  // Preserve the short repair slice even when the browser delivered RAF late.
+  // Estimating the cost before every step can otherwise leave only one step
+  // per callback in a dense fight.
+  if(replayed<4&&now<replay_deadline)return true;
+  if(!remaining)return false;
+  // Spend spare refresh time on the next repair step. The whole tail does
+  // not have to fit to make progress.
+  const bool logical=remaining>1||app->graphics.backend.presentation_pending();
+  const double cost=logical?logical_step_ms:tick_cost_ms;
+  return now+cost+1<std::max(refresh_deadline,refresh_start+3);
  }
  bool blocked() const override{return app->room_barrier;}
  bool capture(u32 frame) override{
@@ -309,10 +310,6 @@ struct RoomRuntime final : multiplayer::World {
   app->graphics.logical_drawing=previous_draw_mode;
   app->room_sounds=nullptr;
   if(!ok){if(app->room_barrier)barrier=number;return false;}
-  if(previous_draw_mode&&logical){
-   const double cost=std::clamp(emscripten_get_now()-replay_step_start,.25,16.);
-   logical_step_ms+=(cost-logical_step_ms)*.25;
-  }
   output.score=app->scene()?u32(app->scene()->battle.score.score):u32(app->selection_score.score);
   if(app->scene())for(unsigned slot=0;slot<3;++slot)
    if(app->scene()->battle.enemy_world.boss_ids[slot]&&app->scene()->battle.enemy_world.boss_ids[slot]!=bosses_before[slot])
@@ -321,6 +318,10 @@ struct RoomRuntime final : multiplayer::World {
   if(trace){
    output.snapshot=status(number+1);
    if(logical)++logical_draws;
+  }
+  if(previous_draw_mode&&logical){
+   const double cost=std::clamp(emscripten_get_now()-replay_step_start,.25,16.);
+   logical_step_ms+=(cost-logical_step_ms)*.25;
   }
   if(measure_draw&&app->graphics.backend.presentation_pending()){
    const double cost=std::clamp(emscripten_get_now()-tick_start,.5,16.);
