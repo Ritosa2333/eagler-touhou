@@ -7,13 +7,13 @@ root = Path(__file__).resolve().parents[1] / 'pc98'
 for game in (2, 4):
     with tempfile.TemporaryDirectory() as tmp:
         source, binary = Path(tmp)/'info.asm', Path(tmp)/'info.bin'
-        source.write_text('bits 16\ncpu 386\n%define PRACTICE_PAGE_BACK 0\ndw practice_info_reset,practice_info_tick,practice_info_values,practice_info_misses,practice_info_frames,target_practice,target_preparing,practice_outcome,practice_form_options,practice_info_draw,practice_info_enabled,practice_info_overlay_mask,practice_info_overlay_restore\n'
+        source.write_text('bits 16\ncpu 386\n%define PRACTICE_PAGE_BACK 0\ndw practice_info_reset,practice_info_tick,practice_info_values,practice_info_misses,practice_info_frames,target_practice,target_preparing,practice_outcome,practice_form_options,practice_info_draw,practice_info_enabled\n'
             'target_practice: db 1\ntarget_preparing: db 0\npractice_outcome: db 0\npractice_form_options: times 11 db 0\npractice_form_scroll: dw 0\n'
             + ('%define PRACTICE_RESTART_TH02 1\n' if game == 2 else '')
             + f'%include "{(root / "practice-info.inc").as_posix()}"\n%include "{(root / "practice-text.inc").as_posix()}"\n')
         subprocess.run([os.environ.get('NASM','nasm'),'-f','bin',str(source),'-o',str(binary)],check=True)
         image=binary.read_bytes()
-        reset,tick,values,misses,frames,target,preparing,outcome,options,draw,enabled,mask,restore=struct.unpack_from('<13H',image)
+        reset,tick,values,misses,frames,target,preparing,outcome,options,draw,enabled=struct.unpack_from('<11H',image)
         u=Uc(UC_ARCH_X86,UC_MODE_16);u.mem_map(0,0x100000);code=0x10000;data=0x30000;resident=0x40100
         u.mem_write(code,image)
         def write(at,fmt,*nums):u.mem_write(at,struct.pack(fmt,*nums))
@@ -40,19 +40,6 @@ for game in (2, 4):
             write(0x8ff00,'<H',0xfff0);u.emu_start(code+draw,code+0xfff0,count=100000)
             assert u.reg_read(UC_X86_REG_IP)==0xfff0
         write(code+enabled,'<B',1);draw_panel();draw_panel()
-        def interrupt(uc,number,user):
-            assert number==0x21 and uc.reg_read(UC_X86_REG_AH)==0x48
-            uc.reg_write(UC_X86_REG_AX,0x5000);uc.reg_write(UC_X86_REG_EFLAGS,uc.reg_read(UC_X86_REG_EFLAGS)&~1)
-        def ignore_out(uc,port,size,value,user):pass
-        u.hook_add(UC_HOOK_INTR,interrupt);u.hook_add(UC_HOOK_INSN,ignore_out,None,1,0,UC_X86_INS_OUT)
-        def overlay(at):
-            for reg,n in ((UC_X86_REG_CS,0x1000),(UC_X86_REG_DS,0x3000),(UC_X86_REG_SS,0x8000),(UC_X86_REG_SP,0xff00)):u.reg_write(reg,n)
-            write(0x8ff00,'<H',0xfff0);u.emu_start(code+at,code+0xfff0,count=500000)
-            assert u.reg_read(UC_X86_REG_IP)==0xfff0
-        overlay(mask)
-        assert bytes(u.mem_read(planes[0]+176*80+52,28))==bytes(28)
-        overlay(restore)
-        assert [bytes(u.mem_read(a,32000)) for a in planes]==original,(game,'overlay did not restore graphics cache')
         write(code+enabled,'<B',0);draw_panel()
         assert [bytes(u.mem_read(a,32000)) for a in planes]==original,(game,'graphics cache changed')
 print('PASS TH02/TH04 native information counters and graphics preservation')
