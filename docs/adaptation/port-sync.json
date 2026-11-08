@@ -1656,6 +1656,12 @@
         }
       }
     },
+    "th13": {
+      "normal": "ports/th13",
+      "multiplayer": "ports/th13-mp",
+      "base": "e1111b4daeb21296a5d0da526e2d512efc449aa2",
+      "history": []
+    },
     "th17": {
       "normal": "ports/th17",
       "multiplayer": "ports/th17-mp",

@@ -1,0 +1,15 @@
+{
+  "schema": "th13/replay-draws-golden/v1",
+  "cases": {
+    "noinput-st01": {
+      "first_divergence_frame": "511",
+      "window": 3600,
+      "ops": 320268
+    },
+    "udsr01-st01": {
+      "first_divergence_frame": "124",
+      "window": 11065,
+      "ops": 1144220
+    }
+  }
+}
