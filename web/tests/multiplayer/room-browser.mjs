@@ -279,8 +279,13 @@ try{
     },fixtureStage);
    if(independent)await Promise.all(pages.map((current,seat)=>current.evaluate(seat=>startRuntime(seat),seat)));
    else await page.evaluate(seats=>Promise.all(Array.from({length:seats},(_,seat)=>startRuntime(seat))),seats);
-   if(musicDirectory)for(let seat=0;seat<seats;seat++)
-    await pageFor(seat).waitForFunction(epoch=>events.some(event=>event.epoch===epoch&&event.event==='audio-health'&&event.musicEnabled),seat+1,{timeout:30000});
+   if(musicDirectory)await Promise.all(Array.from({length:seats},async(_,seat)=>{
+    const current=pageFor(seat),epoch=seat+1;
+    const startup=await current.waitForFunction(epoch=>events.find(event=>event.epoch===epoch&&
+     (event.event==='error'||event.event==='audio-health'&&event.musicEnabled)),epoch,{timeout:45000});
+    const event=await startup.jsonValue();
+    assert.equal(event.event,'audio-health',JSON.stringify(event));
+   }));
    const frames=pages.flatMap(current=>current.frames().filter(frame=>frame.url().includes('/runtime/')));
    if(verifyGhost)for(const frame of frames)
     assert.equal(await frame.evaluate(()=>Module._th17_room_fixture_ghost(2)),1,'schedule the same last-life hit on each peer');
@@ -316,7 +321,7 @@ try{
      const callback=Module.onGameFrame;
      if(traceGaps&&!Module._th17_room_wait_state)throw Error('Gap trace requires a runtime with room wait state');
      globalThis.stopRoomMeasurement=()=>{Module.onGameFrame=callback;};
-     let displayPhase;
+     let displayPhase,displaySegment;
      if(observeDisplay){
       const video=document.createElement('video');
       video.muted=true;video.playsInline=true;
@@ -324,10 +329,9 @@ try{
       video.srcObject=Module.canvas.captureStream();
       document.body.append(video);
       globalThis.displayIntervals={};
-      let previousPhase,previousTime,previousPresentation,previousFrame,id;
-      const observe=(now,metadata)=>{
-       if(displayPhase&&previousPhase===displayPhase){
-        const interval=displayIntervals[displayPhase]??={
+      let previousPhase,previousSegment,previousTime,previousPresentation,previousFrame,id;
+      const recordDisplay=(key,now,metadata)=>{
+        const interval=displayIntervals[key]??={
          time:0,frames:0,callbacks:0,maxGapMs:0,maxAdjacentPresentationGapMs:0,adjacentPresentationGapsOver25Ms:0,
         };
         const gap=now-previousTime;
@@ -340,8 +344,11 @@ try{
          interval.maxAdjacentPresentationGapMs=Math.max(interval.maxAdjacentPresentationGapMs,presentationGap);
          if(presentationGap>25)++interval.adjacentPresentationGapsOver25Ms;
         }
-       }
-       previousPhase=displayPhase;previousTime=now;previousFrame=metadata.presentedFrames;
+      };
+      const observe=(now,metadata)=>{
+       if(displayPhase&&previousPhase===displayPhase)recordDisplay(displayPhase,now,metadata);
+       if(displaySegment&&previousSegment===displaySegment)recordDisplay(displaySegment,now,metadata);
+       previousPhase=displayPhase;previousSegment=displaySegment;previousTime=now;previousFrame=metadata.presentedFrames;
        previousPresentation=metadata.presentationTime;
        id=video.requestVideoFrameCallback(observe);
       };
@@ -397,6 +404,8 @@ try{
      globalThis.heapSamples=[];
      let recorded=0,loadSample=0,bullets=0;
      let pendingCallbacks=[],pendingCallbackMs=0;
+     let repairStreak=0,repairSegment;
+     diagnostics.repairWaits={};
      let previousCosts=Array(10).fill(0);
      Module.onGameFrame=(ok,time,ticks,presented)=>{
       const shellStart=tracePhases?performance.now():0;
@@ -406,11 +415,20 @@ try{
       const [n,committed,corrections,resimulated,combatCorrections,spellCorrections]=Module.HEAPU32.subarray(r,r+6);
       const phase=Module._th17_phase();
       const waitState=traceGaps||touchDrag?Module._th17_room_wait_state?.()??0:0;
+      const storyState=samples.get(recorded);
+      const segment=storyState?.[33]?'dialogue':storyState?.[30]&1?'spell':storyState?.[38]?'nonspell':'route';
+      if(traceGaps&&fixtureStage&&n>120&&(waitState&1)&&!presented){
+       if(segment!==repairSegment){repairStreak=0;repairSegment=segment;}
+       const waits=diagnostics.repairWaits[segment]??={callbacks:0,longestStreak:0};
+       waits.callbacks++;
+       waits.longestStreak=Math.max(waits.longestStreak,++repairStreak);
+      }else repairStreak=0;
       const phasePointer=tracePhases?Module._th17_room_phase_costs(1)>>>2:0;
       const touchPhase=n<touchWindow.keyboard?'stationary':n<touchWindow.start?'keyboard':
        n<touchWindow.end?'dragging':'released';
-      const stage=samples.get(recorded)?.[3];
+      const stage=storyState?.[3];
       if(n>120)displayPhase=touchDrag?touchPhase:stage?'stage'+stage:undefined;
+      displaySegment=observeDisplay&&!touchDrag&&fixtureStage&&stage===fixtureStage&&n>120?displayPhase+'/'+segment:undefined;
       if(storyTiming&&stage){
        const timeline=storyTimeline[stage]??={ticks:0,commits:0,advancingCommits:0,start:performance.now()};
        timeline.end=performance.now();
