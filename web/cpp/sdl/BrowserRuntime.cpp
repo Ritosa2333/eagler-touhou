@@ -329,11 +329,13 @@ struct RoomRuntime final : multiplayer::World {
   }
   return true;
  }
- bool poll(bool capture_follows=false){
+ bool poll(bool capture_follows=false,double input_time=-1){
   const RoomPhaseTimer timing{Input};
   const double now=emscripten_get_now();
   now_ms=std::uint64_t(now);
-  session.capture_phase(entered&&!can_predict(),std::uint64_t(now*1000));
+  // Input cadence follows the refresh clock. Use the live clock for the
+  // transport so callback jitter does not change packet and retry timings.
+  session.capture_phase(entered&&!can_predict(),std::uint64_t((input_time>=0?input_time:now)*1000));
   replay_deadline=now+8;
   if(spectator)return receive_spectator();
   if(playing_replay)return true;
@@ -515,7 +517,7 @@ u32 sample_controller(u32& buttons){
  const auto hat=SDL_GetNumJoystickHats(controller)>0?SDL_GetJoystickHat(controller,0):0;
  if(hat&SDL_HAT_UP)keys|=0x10;if(hat&SDL_HAT_DOWN)keys|=0x20;if(hat&SDL_HAT_LEFT)keys|=0x40;if(hat&SDL_HAT_RIGHT)keys|=0x80;return keys;
 }
-bool sample_and_tick(){
+bool sample_and_tick(double input_time=-1){
  if(!app)return false;SDL_Event event;while(SDL_PollEvent(&event)){
   ThpracUi::process_event(event,float(render_scale));
   if(event.type==SDL_EVENT_WINDOW_FOCUS_LOST){clear_inputs();lost_focus=!th17_host_has_focus();}
@@ -524,7 +526,7 @@ bool sample_and_tick(){
  }
 #if TH17_MULTIPLAYER
  if(room){
-  if(!room->poll(true))return false;
+  if(!room->poll(true,input_time))return false;
   if(!room->local_results){
    if(room->spectator||room->playing_replay)return room->update();
    if(room->terminal)return room->update(false);
@@ -816,7 +818,7 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
    const bool live=room&&!room->spectator&&!room->playing_replay&&!room->local_results;
    const auto previous_head=live?room->session.prediction_head():0;
 #endif
-   ok=sample_and_tick();
+   ok=sample_and_tick(time);
    const double tick_end=emscripten_get_now();
 #if TH17_MULTIPLAYER
    const bool advanced=live&&room&&room->session.prediction_head()>previous_head;
@@ -835,14 +837,14 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
    if(i+1<ticks&&tick_end+predicted_tick>=deadline){cadence.debt=std::min(.1,cadence.debt+(ticks-i-1)*period);break;}
   }
 #if TH17_MULTIPLAYER
-  if(!ticks&&work)ok=room->poll()&&room->update(false);
+  if(!ticks&&work)ok=room->poll(false,time)&&room->update(false);
   // Spend the single saved tick only on an already confirmed input. A
   // speculative catch-up would push the head forward and multiply repairs.
   if(ok&&ticks==1&&completed==1&&room&&room->retry_forward&&!room->terminal&&!room->session.repair_pending()&&
       room->session.has_confirmed_forward_input()&&emscripten_get_now()+room->tick_cost_ms+1<deadline){
    const auto head=room->session.prediction_head();
    room->retry_forward=false;
-   ok=sample_and_tick();
+   ok=sample_and_tick(time);
    if(room){
     completed+=unsigned(room->session.prediction_head()>head);
     room->retry_forward=room->session.forward_deferred();

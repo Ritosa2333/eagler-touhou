@@ -112,8 +112,8 @@ void Session::capture_phase(bool confirmed, std::uint64_t now_us) {
     const bool waiting = repair_pending() || next_frame() - next_commit_ >= rollback_frames;
     const auto lead = !setup_.rollback ? 0u :
         confirmed ? Netplay::ConfirmedInputClock::MaxLead : replay_end_ ? 3u : waiting ? 2u : 0u;
-    // A combat repair continues the sampling clock set by the last capture.
-    if (confirmed && lead && !capture_lead_) capture_clock_.BeginPhase(now_us);
+    // Keep the sampling deadline established by the last physical input.
+    // Entering an exact-input phase must not postpone an already due sample.
     capture_lead_ = lead;
     capture_now_us_ = now_us;
 }
