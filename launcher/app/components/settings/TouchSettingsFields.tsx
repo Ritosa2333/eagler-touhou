@@ -38,7 +38,10 @@ export function TouchSettingsFields({model, actions, onAdjustViewport, onResetVi
     <div className="touch-layout-setting-row"><span><span>{title}</span><small>{hint}</small></span><OptionSwitch id={id} checked={options[name]} label={title} onChange={() => model.setOption(name, !options[name])}/></div>;
   return <section className="touch-layout-settings touch-settings-fields" id="touchLayoutSettingsPanel" aria-label={t('touch.settingsAria')}><div className="touch-layout-settings-list">
     <div className="touch-layout-setting-row"><label htmlFor="touchMovementMode">{t('touch.movement')}</label><MainSelect className="option-select" id="touchMovementMode" value={options.touchMovementMode} aria-label={t('touch.movement')} onChange={event => setMovement(event.target.value)}>
-      <option value="touch" hidden={nativeActions}>{t('touch.movement.touch')}</option><option value="touch-unlimited" hidden={nativeActions}>{t('touch.movement.unlimited')}</option><option value="joystick">{t('touch.movement.joystick')}</option><option value="joystick-free">{t('touch.movement.joystickFree')}</option>
+      <option value="touch" hidden={nativeActions}>{t('touch.movement.touch')}</option>
+      <option value="touch-unlimited" hidden={nativeActions}>{t('touch.movement.unlimited')}</option>
+      <option value="joystick">{t('multiplayer.control.normal')}</option>
+      <option value="joystick-free">{t('touch.movement.joystickFree')}</option>
     </MainSelect></div>
     <div className="touch-layout-setting-row" hidden={nativeActions}><label htmlFor="touchFocusMode">{t('touch.focusMethod')}</label><MainSelect className="option-select" id="touchFocusMode" value={options.touchFocusMode} aria-label={t('touch.focusMethod')} onChange={event => {if (isTouchFocusMode(event.target.value)) model.setOption('touchFocusMode', event.target.value);}}>
       <option value="hold-button">{t('touch.focus.hold')}</option><option value="toggle-button">{t('touch.focus.toggle')}</option><option value="two-finger" disabled={wheel}>{t('touch.focus.twoFinger')}</option>

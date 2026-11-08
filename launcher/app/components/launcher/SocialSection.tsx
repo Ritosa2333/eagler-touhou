@@ -97,8 +97,9 @@ export function SocialFollowControl({username}: {username: string}) {
     finally {setPending(false);}
   }
   if (state.error) return <span role="alert">{t('profile.social.loadFailed')}</span>;
-  return <><BookButton variant="action" type="button" disabled={pending || following === undefined} aria-pressed={following}
+  return <><BookButton variant="action" type="button" className="min-w-24" disabled={pending || following === undefined}
+    aria-busy={pending} aria-pressed={following}
     aria-label={following ? t('profile.unfollowAction') : t('profile.followAction')} onClick={() => void toggle()}>
-    {following ? t('profile.following') : t('profile.followAction')}
+    {following ? t('profile.followed') : t('profile.followAction')}
   </BookButton>{error && <span role="alert">{t('profile.social.updateFailed')}</span>}</>;
 }

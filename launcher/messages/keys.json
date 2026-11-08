@@ -7422,6 +7422,10 @@
     "id": "profile_follow_action",
     "params": []
   },
+  "profile.followed": {
+    "id": "profile_followed",
+    "params": []
+  },
   "profile.unfollowAction": {
     "id": "profile_unfollow_action",
     "params": []
@@ -8803,10 +8807,6 @@
   },
   "chat.noMessages": {
     "id": "chat_noMessages",
-    "params": []
-  },
-  "room.fourWayTouch": {
-    "id": "room_fourWayTouch",
     "params": []
   },
   "chat.keyboardHint": {

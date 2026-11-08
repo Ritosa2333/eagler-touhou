@@ -6,8 +6,8 @@ export function publicControlMode(seat) {
   if (seat.touchEnabled === false) return 'normal';
   if (seat.touchEnabled !== true) return null;
   if (seat.movementMode === 'touch-unlimited') return 'cheat';
-  if (seat.movementMode === 'touch') return 'touch';
-  return ['joystick', 'joystick-free'].includes(seat.movementMode) ? 'normal' : null;
+  if (seat.movementMode === 'touch' || seat.movementMode === 'joystick-free') return 'touch';
+  return seat.movementMode === 'joystick' ? 'normal' : null;
 }
 
 // Discovery never joins a room. Membership is anonymous and browser-scoped;
