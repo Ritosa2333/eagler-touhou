@@ -57,7 +57,9 @@ export class AsyncLockstep extends Lockstep {
     let replayProgress=false,replayWaiting=false;
     try{
       now=Math.max(now,this.last);this.budget+=now-this.last;this.last=now;
-      this.budget=this.budget>=TICK_MS*4?TICK_MS:Math.min(this.budget,TICK_MS*2);
+      // Keep up to two ticks after a scheduler stall, so the next pump can
+      // recover without an unbounded burst or dropping an extra game tick.
+      this.budget=Math.min(this.budget,TICK_MS*2);
       if(this.queue.waitReason)this.budget=Math.min(this.budget,TICK_MS);
       const started=performance.now();let steps=0;
       const confirm=async()=>{const at=performance.now();const result=await this.confirmFrames();this.costs.confirm+=performance.now()-at;return result;};

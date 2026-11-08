@@ -37,3 +37,15 @@ test('late input during worker execution is reconciled without scanning unchange
     assert.equal(scans,1,'matching frames do not rescan rollback history');
   }finally{sync.wakeChannel?.port1.close();sync.wakeChannel?.port2.close();}
 });
+
+test('a long scheduling stall retains at most two simulation ticks for recovery',async()=>{
+  const network={localSeat:0,capture:()=>neutral(),sendPacket(){},setPacketHandler(){}};
+  const sync=new AsyncLockstep({network,rollbackEnabled:false,execute:async()=>({proof:'ok'}),
+    confirmQueued(){},recorder:{stage(){},confirm(){}},onError:error=>{throw error;}});
+  sync.running=true;sync.last=0;sync.budget=0;sync.schedule=()=>{};sync.wake=()=>{};
+  try{
+    await sync.pump(TICK_MS*10);
+    assert.equal(sync.queue.frame,2,'recover two ticks instead of dropping all but one');
+    assert.ok(sync.budget<TICK_MS,'discard excess elapsed time to bound catch-up');
+  }finally{sync.running=false;sync.wakeChannel?.port1.close();sync.wakeChannel?.port2.close();}
+});
