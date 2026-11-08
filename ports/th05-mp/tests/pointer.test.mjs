@@ -35,8 +35,8 @@ test('auto-fire leaves cold title and character confirmation edges available',()
 });
 
 test('an ending long press supplies Ctrl only while the stationary finger is held',()=>{
- let time=0;const keys=[];
- const input=createTouchInput({send:(...key)=>keys.push(key),options:()=>({touchEnabled:true}),scene:()=>5,clock:()=>time});
+ let time=0,scene=5;const keys=[];
+ const input=createTouchInput({send:(...key)=>keys.push(key),options:()=>({touchEnabled:true,touchMovementMode:'touch'}),position:()=>({x:100,y:100}),scene:()=>scene,clock:()=>time});
  input.pointer({type:'down',id:1,x:100,y:100});
  time=499;input.tick();assert.deepEqual(keys,[]);
  time=500;input.tick();assert.deepEqual(keys,[['ControlLeft',true]]);
@@ -45,4 +45,7 @@ test('an ending long press supplies Ctrl only while the stationary finger is hel
  input.pointer({type:'down',id:2,x:100,y:100});
  input.pointer({type:'move',id:2,x:130,y:100});
  time=1100;input.tick();assert.ok(keys.slice(2).every(([key])=>key!=='ControlLeft'));
+ input.cancel();scene=4;input.pointer({type:'down',id:3,x:100,y:100});
+ time=1700;scene=5;input.tick();
+ assert.ok(keys.slice(2).every(([key])=>key!=='ControlLeft'),'a finger held before the ending cannot skip it');
 });
