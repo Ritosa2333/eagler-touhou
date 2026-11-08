@@ -179,7 +179,7 @@ int CBossStageEx::Phase2ShootType1()
 	si.shootOrigY=m_curY;
 	si.bulletBornType=16;
 	si.bulletSpeed=(float)(40+original::Random()%32);
-	si.shootAngle=(float)(original::DemoActive()?(original::Random()&0x78)-64:original::Random()%16*8-64);
+	si.shootAngle=(float)(original::BossGeometryEnabled()?(original::Random()&0x78)-64:original::Random()%16*8-64);
 	si.shootType=EST03_NWAY_TO_CHARA;
 	si.bulletImg=84;
 	si.nWay=5;
@@ -194,7 +194,7 @@ int CBossStageEx::Phase2ShootType1()
 int CBossStageEx::Phase2ShootType2()
 {
 	if (m_curPhaseFrame==64){
-  if(original::DemoActive())m_demoPatternState=static_cast<unsigned char>(1-m_demoPatternState);
+  if(original::BossGeometryEnabled())m_demoPatternState=static_cast<unsigned char>(1-m_demoPatternState);
   else m_phase2Type2Angle=(float)(original::Random()%256);
  }
 	if (m_curPhaseFrame%4==0)
@@ -209,7 +209,7 @@ int CBossStageEx::Phase2ShootType2()
 			m_phase2Type2Angle+=2;
 		else
 			m_phase2Type2Angle-=2;
-  if(original::DemoActive())si.shootAngle=float((original::Demo().bulletTemplateAngle+(m_demoPatternState?2:-2))&255);
+  if(original::BossGeometryEnabled())si.shootAngle=float((m_pStage->m_pEnemyBullet->TemplateAngle()+(m_demoPatternState?2:-2))&255);
 		si.shootType=EST04_NWAY_ALLAROUND;
 		si.bulletMoveType=EBMT01_SLOW_DOWN_THEN_TURN_TO_CHARA;
 		si.specialMoveVar=1;
@@ -271,9 +271,9 @@ int CBossStageEx::Phase6ShootType2()
 {
 	if (m_curPhaseFrame==64)
 	{
-  if(original::DemoActive())m_demoPatternState=static_cast<unsigned char>(1-m_demoPatternState);
+  if(original::BossGeometryEnabled())m_demoPatternState=static_cast<unsigned char>(1-m_demoPatternState);
   else m_bPhase6Type2AngleInc=!m_bPhase6Type2AngleInc;
-		if(!original::DemoActive())m_phase6Type2Angle=(float)(original::Random()%256);
+		if(!original::BossGeometryEnabled())m_phase6Type2Angle=(float)(original::Random()%256);
 	}
 	if (m_curPhaseFrame%8==0)
 	{
@@ -282,8 +282,8 @@ int CBossStageEx::Phase6ShootType2()
 		si.shootOrigY=m_curY;
 		si.bulletBornType=19;
 		si.bulletSpeed=88;
-  if(original::DemoActive())m_phase6Type2Angle=float(original::Demo().bulletTemplateAngle);
-		if (original::DemoActive()?m_demoPatternState!=0:m_bPhase6Type2AngleInc)
+  if(original::BossGeometryEnabled())m_phase6Type2Angle=float(m_pStage->m_pEnemyBullet->TemplateAngle());
+		if (original::BossGeometryEnabled()?m_demoPatternState!=0:m_bPhase6Type2AngleInc)
 			m_phase6Type2Angle+=3;
 		else
 			m_phase6Type2Angle-=3;

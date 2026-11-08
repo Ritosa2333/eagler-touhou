@@ -108,7 +108,7 @@ void CBossStage4Yuki::Phase3ShootType1()
 		m_pStage->m_pEnemyBullet->Shoot(&si,true);
 		m_pStage->m_bPlaySound[3]=true;
 		if (m_curPhaseFrame%16==0)
-			m_phase3ShootType1Angle+=m_phase3ShootType1DeltaAngle*16;
+			m_phase3ShootType1Angle+=m_phase3ShootType1DeltaAngle*(original::BossGeometryEnabled()?12:16);
 	}
 	if (m_curPhaseFrame==160)
 		m_phase3ShootType1DeltaAngle=-m_phase3ShootType1DeltaAngle;

@@ -84,7 +84,12 @@ int CBossStage4::RandomWalkVerStage4(int frameIdx,float &angle,int &forceMove,
 
 	if (frameIdx==0)
 	{
-		if (x<144.0f*16.0f)
+		if (original::BossGeometryEnabled())
+		{
+			const int random=original::Random();
+			angle=float(x<144*16?random%96-48:x>240*16?(random&0x60)+0x30:random&255);
+		}
+		else if (x<144.0f*16.0f)
 			angle=(float)(original::Random()%96-48);
 		else
 			if (x>240.0f*16.0f)
@@ -97,12 +102,12 @@ int CBossStage4::RandomWalkVerStage4(int frameIdx,float &angle,int &forceMove,
 			angle+=256.0f;
 		if (forceMove==1&&angle<128.0f)
 			angle=256.0f-angle;
-		if (forceMove==2&&angle>128.0f)
+		if (forceMove==2&&(angle>128.0f||(original::BossGeometryEnabled()&&angle==128.0f)))
 			angle=256.0f-angle;
 		forceMove=0;
 	}
-	vx=(float)cos(angle/256.0f*2*PI)*(100-frameIdx*2);
-	vy=(float)sin(angle/256.0f*2*PI)*(100-frameIdx*2);
+	vx=original::PatternOffsetX(angle,100-frameIdx*2);
+	vy=original::PatternOffsetY(angle,100-frameIdx*2);
 	x+=vx;
 	y+=vy;
 	if (vx<0)

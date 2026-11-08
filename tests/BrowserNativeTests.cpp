@@ -16,6 +16,7 @@
 #include "../Game/Stage/Boss/BossStageEx.h"
 #include "../portable/Graphics.hpp"
 #include "../Game/Practice/Practice.h"
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <cstring>
@@ -121,6 +122,7 @@ struct PracticeTests {
   return 1;
  }
  static inline int auditData[ENEMY_BULLET_N_RECORD+12]={};
+ static inline int auditGeometry[400*6]={};
  static int AuditFrame(int frame,int kind,int damage){
   auto* s=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
   s->m_curFrame=frame;
@@ -164,8 +166,12 @@ struct PracticeTests {
    boss->Step();
   }
   s->m_pGatherEffect->Step();
-  for(const auto& b:bullets->m_bullets)if(b.flag==1)
-   auditData[12+auditData[0]++]=int(b.origSpeed*256);
+  for(const auto& b:bullets->m_bullets)if(b.flag==1){
+   const int index=auditData[0]++;
+   const int row[]={int(b.curX*256),int(b.curY*256),int(b.velX*256),int(b.velY*256),int(b.curAngle*256),int(b.origSpeed*256)};
+   std::copy_n(row,6,auditGeometry+index*6);
+   auditData[12+index]=row[5];
+  }
   auditData[1]=original::Demo().ringIndex;
   return 1;
  }
@@ -212,11 +218,12 @@ struct PracticeTests {
      boss->m_curPhaseFrame=frame;
      (boss->*shoot)();
      int emitted[2]={};
-     for(const auto& bullet:bullets->m_bullets){
+     for(int index=ENEMY_BULLET_N_RECORD-1;index>=0;--index){
+      const auto& bullet=bullets->m_bullets[index];
       if(!bullet.flag)continue;
       const int side=bullet.curX>boss->m_curX?1:0;
       const int shot=emitted[side]++;
-      const float spread=difficulty==3?(shot-1)*6.0f:0.0f;
+      const float spread=difficulty==3?(shot==2?-6.0f:shot*6.0f):0.0f;
       const float stack=difficulty==2?shot*6.0f:0.0f;
       if(bullet.imgIdx<image||bullet.imgIdx>=image+32||
          std::abs(std::remainder(bullet.curAngle-aim[side]-spread,256.0f))>0.001f||
@@ -271,7 +278,8 @@ struct PracticeTests {
    const float firstAngle=frame==32?0:127;
    const float turn=frame==32?-64:64;
    int count=0;
-   for(const auto& bullet:bullets->m_bullets){
+   for(int index=ENEMY_BULLET_N_RECORD-1;index>=0;--index){
+    const auto& bullet=bullets->m_bullets[index];
     if(!bullet.flag)continue;
     if((count==0&&bullet.curAngle!=firstAngle)||bullet.delta!=turn||bullet.origSpeed!=38)
      throw std::runtime_error("Wrong Yumeko final ring angle, turn or speed");
@@ -303,7 +311,7 @@ struct PracticeTests {
     for(int i=start;i<start+limit;i++){
      auto& bullet=bullets->m_bullets[i];
      if(!bullet.flag)continue;
-     if(!bullet.fromStageScript||!std::isfinite(bullet.curX)||!std::isfinite(bullet.curY)||
+     if(!bullet.fixedPoint||!std::isfinite(bullet.curX)||!std::isfinite(bullet.curY)||
         bullet.curAngle<0||bullet.curAngle>=256||bullet.origSpeed<0||bullet.origSpeed>255)
       throw std::runtime_error("Invalid scripted enemy bullet");
      ++shots;
@@ -484,7 +492,7 @@ struct PracticeTests {
     for(int frame=192;frame<=320&&shinki->m_phase10Timer<=65;frame++){
      bullets->Initialize();
      shinki->m_curPhaseFrame=frame;
-     shinki->Phase10Shoot();
+     shinki->Phase10Shoot(shinki->m_curY);
     }
     if(shinki->m_phase10Var3!=intervals[difficulty])throw std::runtime_error("Wrong Shinki late ball interval");
    }
@@ -515,6 +523,62 @@ struct PracticeTests {
     throw std::runtime_error("Wrong Extra Alice fire wave duration");
   }
  }
+ static void BossMotionAndPractice(){
+  auto* game=CGame::s_pCurGame;
+  auto& g=CGame::GVar();
+  delete game->m_pCurScheme;
+  game->m_pCurScheme=nullptr;
+  g.m_replay.CloseStage(false);
+  g.m_bPracticeMode=true;
+  g.m_bReplayMode=false;
+  g.m_playStage=4;
+  g.m_playDifficulty=3;
+  g.m_playChara=0;
+  auto& config=g.m_practiceConfig;
+  config=practice::Config();
+  config.mode=1;
+  config.stage=4;
+  config.warp=2;
+  config.section=4;
+  config.rage=1;
+  config.Clamp(g.m_playDifficulty);
+  g.OnBeginGame();
+  auto* stage=new CStage;
+  game->m_pCurScheme=stage;
+  game->m_curSchemeID=4;
+  stage->Initialize();
+  auto* boss=static_cast<CBossStage5*>(stage->m_pBoss);
+  if(!boss||!boss->m_phase7CrazyMode)throw std::runtime_error("Yumeko rage was not reached");
+  for(int i=0;i<LASER_N_RECORD;i++)
+   if(stage->m_pLaser->GetMode(i)!=LASER_MODE_NONE)
+    throw std::runtime_error("Yumeko rage practice retained a warm-up laser");
+
+  auto* bullets=stage->m_pEnemyBullet;
+  auto& b=bullets->m_bullets[0];
+  b.fixedPoint=true;
+  b.curAngle=17;
+  b.curSpeed=8;
+  b.specialMoveType=EBMT03_SPEED_UP;
+  b.specialMoveVar=2;
+  for(int speed:{8,10,12}){
+   bullets->SpecialMove(0);
+   if(b.curSpeed!=speed+2||b.velX!=original::math::X(17,speed)||b.velY!=original::math::Y(17,speed))
+    throw std::runtime_error("Boss acceleration used the next tick's speed");
+  }
+
+  b.specialMoveType=EBMT10_STRAIGHT;
+  b.curSpeed=32;
+  b.origX=b.curX=2000;
+  b.origY=b.curY=1000;
+  b.totalDistanceTravelled=0;
+  for(int distance:{32,64,96}){
+   bullets->SpecialMove(0);
+   b.curX+=b.velX;
+   b.curY+=b.velY;
+   if(b.curX!=2000+original::math::X(17,distance)||b.curY!=1000+original::math::Y(17,distance))
+    throw std::runtime_error("Boss straight motion accumulated quantized velocity");
+  }
+ }
  static int Matrix(){
   auto* game=CGame::s_pCurGame;if(!game)return 0;int checked=0;
   for(int character=0;character<4;character++)for(int stage=0;stage<7;stage++)for(int warp=0;warp<3;warp++){
@@ -537,6 +601,7 @@ struct PracticeTests {
   }
   if(waves!=1672)throw std::runtime_error("Not all TH05 enemy waves were processed");
   Yumeko();
+  BossMotionAndPractice();
   if(!Start(2,0))throw std::runtime_error("Could not start TH05 stage 3");
   Stage3FairyVolley(static_cast<CStage*>(game->m_pCurScheme));
   for(int stage:{0,1,3,5,6}){
@@ -568,4 +633,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_audit_special(){return th
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_shot_start(int character,int power,int homing){return th5w::PracticeTests::ShotStart(character,power,homing);}
 extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_shot_step(int frame){return th5w::PracticeTests::ShotStep(frame);}
 
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_boss_rules(){return th5w::original::BossGeometryEnabled();}
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_shot_rules(){return th5w::PracticeTests::ShotRules();}
+
+extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_audit_geometry(){return th5w::PracticeTests::auditGeometry;}
