@@ -28,7 +28,7 @@ bool CReplay::Reset()
 	m_playChara=0;
 	m_bPracticeMode=false;
  m_turboMode=true;
- m_combatRevision=original::OriginalBossGeometry;
+ m_combatRevision=original::OriginalMotion;
  m_practiceConfig=practice::Config();
 	memset(m_stageFlag,0,sizeof(m_stageFlag));
 	memset(m_nCurLife,0,sizeof(m_nCurLife));
@@ -39,6 +39,7 @@ bool CReplay::Reset()
 	memset(m_curScore,0,sizeof(m_curScore));
 	memset(m_totalNPointItem,0,sizeof(m_totalNPointItem));
 	memset(m_playerPerformance,0,sizeof(m_playerPerformance));
+ memset(m_itemRankProgress,0,sizeof(m_itemRankProgress));
 	memset(m_stageScore,0,sizeof(m_stageScore));
 	memset(m_randSeed,0,sizeof(m_randSeed));
 	for (int i=0;i<7;i++)
@@ -147,6 +148,9 @@ bool CReplay::SaveFile(const char *fileName)
   const unsigned int version=m_combatRevision;
   FAIL_CLOSE_RETURN(fwrite("TSH5",1,4,fp)!=4)
   FAIL_CLOSE_RETURN(fwrite(&version,4,1,fp)!=1)
+  if(version>=original::OriginalMotion){
+   FAIL_CLOSE_RETURN(fwrite(m_itemRankProgress,1,7,fp)!=7)
+  }
  }
  // Legacy Turbo files remain byte-compatible; Slow stores its run timing.
  if(!m_turboMode){const unsigned int version=1,mode=0;
@@ -173,6 +177,7 @@ bool CReplay::LoadFile(const char *fileName)
  for(int stage=0;stage<7;stage++){m_keyState[stage].clear();m_touchMotion[stage].clear();}
  m_turboMode=true;
  m_combatRevision=original::LegacyCombat;
+ memset(m_itemRankProgress,0,sizeof(m_itemRankProgress));
  m_practiceConfig=practice::Config();
 #define FAIL_CLOSE_RETURN(x) if (x) {fclose(fp);return false;}
 	FILE *fp=fopen(fileName,"rb");
@@ -240,8 +245,12 @@ bool CReplay::LoadFile(const char *fileName)
   FAIL_CLOSE_RETURN(fread(sig+1,1,3,fp)!=3||fread(&version,4,1,fp)!=1)
   if(!memcmp(sig,"TSH5",4)){
    FAIL_CLOSE_RETURN(m_combatRevision!=original::LegacyCombat||seenSpeed||seenTouch||
-     version<original::OriginalPlayerShots||version>original::OriginalBossGeometry)
+     version<original::OriginalPlayerShots||version>original::OriginalMotion)
    m_combatRevision=version;
+   if(version>=original::OriginalMotion){
+    FAIL_CLOSE_RETURN(fread(m_itemRankProgress,1,7,fp)!=7)
+    for(const auto progress:m_itemRankProgress)FAIL_CLOSE_RETURN(progress>=32)
+   }
   }
   else if(version!=1){FAIL_CLOSE_RETURN(true)}
   else if(!memcmp(sig,"TSP5",4)){unsigned int mode=0;FAIL_CLOSE_RETURN(seenSpeed||seenTouch||fread(&mode,4,1,fp)!=1||mode>1) m_turboMode=mode!=0;seenSpeed=true;}
@@ -279,6 +288,7 @@ bool CReplay::OpenStage(int stageIdx,bool bRead)
 		m_curScore[stageIdx]=CGame::GVar().m_curScore;
 		m_totalNPointItem[stageIdx]=CGame::GVar().m_totalNPointItem;
 		m_playerPerformance[stageIdx]=CGame::GVar().m_playerPerformance;
+  m_itemRankProgress[stageIdx]=CGame::GVar().m_itemRankProgress;
 		m_stageScore[stageIdx]=CGame::GVar().m_curScore;
 		m_randSeed[stageIdx]=CGame::GVar().m_randomSeed[stageIdx];
 	}

@@ -62,21 +62,29 @@ try{
   load();check();
   for(let stage=0;stage<3;stage++){
    for(let tick=0;tick<180;tick++){for(let seat=0;seat<count;seat++){const key=32|(tick%60<30?4:8);host._th05_coop_input(seat,key,0,0,0);viewer._th05_coop_input(seat,key,0,0,0);}host._th05_tick(0);viewer._th05_tick(0);check();}
+   const progress=(host._th05_native_coop_probe(38,0,0)+14)%32;
+   for(let item=0;item<7;item++){
+    host._th05_native_coop_probe(2,item%count,2);
+    viewer._th05_native_coop_probe(2,item%count,2);
+   }
+   if(host._th05_native_coop_probe(38,0,0)!==progress)throw Error('Dream items did not share Rank progress');
+   check();
    const before=host._th05_spectator_serial();host._th05_native_coop_probe(12,0,0);
    let ticks=0;while(host._th05_spectator_serial()===before&&ticks++<240)host._th05_tick(0);
    if(host._th05_spectator_serial()===before)throw Error('Stage did not transition');load();check();
+   if(viewer._th05_native_coop_probe(38,0,0)!==progress)throw Error('Stage checkpoint lost Rank progress');
    result.push({stage:stage+1,transitionTicks:ticks,bytes:host._th05_spectator_size(),checksum:host._th05_coop_checksum()});
   }
   const size=host._th05_spectator_size();
   const legacy=host.HEAPU8.slice(host._th05_spectator_state(),host._th05_spectator_state()+size);
   const header=new DataView(legacy.buffer);
-  if(header.getUint32(0,true)!==0x35535633)throw Error('Current combat rules were not recorded');
+  if(header.getUint32(0,true)!==0x35535634)throw Error('Current combat rules were not recorded');
   const ptr=viewer._malloc(size);
   try{
-   for(const revision of [0x35535632,0x35535631]){
+   for(const revision of [0x35535633,0x35535632,0x35535631]){
     header.setUint32(0,revision,true);
-    viewer.HEAPU8.set(legacy,ptr);
-    if(!viewer._th05_spectator_load(ptr,size))throw Error('Legacy stage checkpoint rejected');
+    viewer.HEAPU8.set(legacy.subarray(0,size-4),ptr);
+    if(!viewer._th05_spectator_load(ptr,size-4))throw Error('Legacy stage checkpoint rejected');
     const magic=new DataView(viewer.HEAPU8.buffer).getUint32(viewer._th05_spectator_state(),true);
     if(magic!==revision)throw Error('Legacy combat rules were not retained');
    }

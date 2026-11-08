@@ -531,12 +531,12 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 			pBul.curSpeed=pBul.origSpeed;
 			pBul.dieStageAndMoveType=2;
 			UpdateVelXYFromSpeedAngle(recordIdx);
-			pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
+			if(!original::MotionEnabled())pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
 		}
 		else
 		{
 			UpdateVelXYFromSpeedAngle(recordIdx);
-			pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
+			if(!original::MotionEnabled())pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
 			pBul.curSpeed-=2;
 			if (pBul.curSpeed<0) pBul.curSpeed=0;
 			if (pBul.curSpeed<32)
@@ -606,6 +606,7 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 
 void CEnemyBullet::Step()
 {
+ const bool nativeMotion=original::MotionEnabled();
  const bool demo=original::DemoActive();
  const int dotEnd=demo?ENEMY_BULLET_N_RECORD_DOT:m_dotEnd;
  const int count=demo?ENEMY_BULLET_N_RECORD:dotEnd+m_imageEnd-ENEMY_BULLET_N_RECORD_DOT;
@@ -615,7 +616,8 @@ void CEnemyBullet::Step()
 	{
 		for (int iteration=0;iteration<count;iteration++)
 		{
-   const int i=demo?ENEMY_BULLET_N_RECORD-1-iteration:(iteration<dotEnd?iteration:ENEMY_BULLET_N_RECORD_DOT+iteration-dotEnd);
+   const int index=nativeMotion?count-1-iteration:iteration;
+   const int i=index<dotEnd?index:ENEMY_BULLET_N_RECORD_DOT+index-dotEnd;
 			if (m_bullets[i].flag==0||m_bullets[i].flag==2)
 			{
 				m_bullets[i].flag=0;
@@ -654,7 +656,7 @@ void CEnemyBullet::Step()
 					m_pStage->AddScore(removeBulletScore);
 				}
 			}
-			if(demo)++m_bullets[i].age;
+			if(nativeMotion)++m_bullets[i].age;
 			if (m_bullets[i].bornStageAndGrazeFlag==2)	//set grazed flag to false for bullets just ended born stage
 				m_bullets[i].bornStageAndGrazeFlag=0;
 			if (m_bullets[i].bornStageAndGrazeFlag>2)	//bullets still in born stage
@@ -686,8 +688,8 @@ void CEnemyBullet::Step()
 					}
 				if (m_bullets[i].bornStageAndGrazeFlag>=20)			//born stage end, change to normal mode
 				{
-					if (m_bullets[i].curX<=m_clipXLow||m_bullets[i].curX>=m_clipXHigh||
-						m_bullets[i].curY<=m_clipYLow||m_bullets[i].curY>=m_clipYHigh)
+					if ((nativeMotion?m_bullets[i].curX<m_clipXLow:m_bullets[i].curX<=m_clipXLow)||m_bullets[i].curX>=m_clipXHigh||
+						(nativeMotion?m_bullets[i].curY<m_clipYLow:m_bullets[i].curY<=m_clipYLow)||m_bullets[i].curY>=m_clipYHigh)
 						m_bullets[i].flag=2;						//outside play area, remove
 					else
 						m_bullets[i].bornStageAndGrazeFlag=2;		//2 for just ended born stage
@@ -723,7 +725,7 @@ void CEnemyBullet::Step()
 					m_bullets[i].flag=2;						//outside play area, remove
 					continue;
 				}
-				if (m_clearEnemyBulletTimeLeft>0 || (demo&&m_pStage->m_pChara->m_invulnerableTimeLeft!=0))
+				if (m_clearEnemyBulletTimeLeft>0 || (nativeMotion&&!m_pStage->Cooperative()&&m_pStage->m_pChara->m_invulnerableTimeLeft!=0))
 					continue;
  if(m_pStage->Cooperative()) {
   m_pStage->GrazePlayers(m_bullets[i].curX,m_bullets[i].curY,m_bullets[i].coopGrazeMask);
@@ -736,8 +738,8 @@ void CEnemyBullet::Step()
 				{
 					//the graze area inf PC98 ver is very strange: left 16, right 20, up/down 22
 					//we rotate it 90 degrees clockwise here: up 16, down 20, left/right 22
-					if (demo?(m_bullets[i].curX>=charaX-256&&m_bullets[i].curX<=charaX+320):(m_bullets[i].curX>=charaX-352&&m_bullets[i].curX<=charaX+352))
-						if (demo?(m_bullets[i].curY>=charaY-352&&m_bullets[i].curY<=charaY+352):(m_bullets[i].curY>=charaY-256&&m_bullets[i].curY<=charaY+320))
+					if (nativeMotion?(m_bullets[i].curX>=charaX-256&&m_bullets[i].curX<=charaX+320):(m_bullets[i].curX>=charaX-352&&m_bullets[i].curX<=charaX+352))
+						if (nativeMotion?(m_bullets[i].curY>=charaY-352&&m_bullets[i].curY<=charaY+352):(m_bullets[i].curY>=charaY-256&&m_bullets[i].curY<=charaY+320))
 						{
 							m_pStage->m_pSparkEffect->AddEffect(m_bullets[i].curX,m_bullets[i].curY,32,2,false);
 							m_bullets[i].bornStageAndGrazeFlag=1;
@@ -770,7 +772,8 @@ void CEnemyBullet::Step()
 		int maxSingleBonus=bonusLimit[CGame::GVar().m_playDifficulty];
 		for (int iteration=0;iteration<count;iteration++)
 		{
-   const int i=demo?ENEMY_BULLET_N_RECORD-1-iteration:(iteration<dotEnd?iteration:ENEMY_BULLET_N_RECORD_DOT+iteration-dotEnd);
+   const int index=nativeMotion?count-1-iteration:iteration;
+   const int i=index<dotEnd?index:ENEMY_BULLET_N_RECORD_DOT+index-dotEnd;
 			if (m_bullets[i].flag==1)
 			{
 				m_bullets[i].velX=m_bullets[i].velY=0;

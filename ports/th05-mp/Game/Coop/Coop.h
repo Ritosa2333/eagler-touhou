@@ -16,7 +16,7 @@ struct Session {
  uint64_t random=0;
  Input input[3]{};
  Stock carry[3]{};
- unsigned int combatRevision=original::OriginalBossGeometry;
+ unsigned int combatRevision=original::OriginalMotion;
  bool continuing=false,finished=false,challenge=false,localVisibility=false;
 };
 Session& Run();
