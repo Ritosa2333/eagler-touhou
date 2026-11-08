@@ -30,10 +30,12 @@ practice::BossBarData CStage::GetBossBarData() const {
  practice::BossBarData out;
  if(m_bLogo||m_bQuit||m_bContinueScr||m_pDialogue->IsRunning())return out;
  const HealthPhase* phases=NULL;int count=0,phase=0,hp=0,variant=0,extra=0;
+ bool nativeGaugeVisible=false;
  const auto use=[&](const HealthPhase* list,int size){phases=list;count=size;};
  const int stage=CGame::GVar().m_playStage;
  if(m_pBoss){
-  if(m_pBoss->m_curPhase>=0xfd||m_pBoss->m_lastDrawnHP<=0)return out;
+  if(m_pBoss->m_curPhase>=0xfd)return out;
+  nativeGaugeVisible=m_pBoss->m_lastDrawnHP>0;
   phase=m_pBoss->m_curPhase;hp=m_pBoss->m_curHP;variant=1;
   static const HealthPhase s1[]={{2,4650,2550,0,0},{3,2550,450,0,0},{4,450,0,0,0}};
   static const HealthPhase s2[]={{2,4400,3000,0,0},{4,3000,1900,0,0},{5,1900,500,0,0},{7,500,0,0,0}};
@@ -58,13 +60,16 @@ practice::BossBarData CStage::GetBossBarData() const {
    case 6:use(ex,9);break;
   }
  }else if(m_pMidBoss){
-  if(m_pMidBoss->m_curPhase>=0xfe||m_pMidBoss->m_lastDrawnHP<=0)return out;
+  if(m_pMidBoss->m_curPhase>=0xfe)return out;
+  nativeGaugeVisible=m_pMidBoss->m_lastDrawnHP>0;
   phase=m_pMidBoss->m_curPhase;hp=m_pMidBoss->m_curHP;variant=4;
   static const HealthPhase m1[]={{3,1000,0,200,0}},m2[]={{1,1400,400,800,600},{2,400,0,0,0}};
   static const HealthPhase m3[]={{1,1400,0,0,0}},m4[]={{1,1100,0,0,0}},m5[]={{1,1550,0,0,0}},mx[]={{1,3000,0,1000,0}};
   switch(stage){case 0:use(m1,1);break;case 1:use(m2,2);break;case 2:use(m3,1);break;case 3:use(m4,1);break;case 4:use(m5,1);break;case 6:use(mx,1);break;}
  }
  for(int i=0;i<count;i++)if(phase<=phases[i].phase){
+  // A practice start can enter an active attack before the native gauge fills.
+  if(!nativeGaugeVisible&&phase!=phases[i].phase)return out;
   out.present=true;out.key=stage*1000+variant*100+i;out.hp=hp;
   out.start=phases[i].start;out.end=phases[i].end;out.enrage=phases[i].enrage;out.cut2=phases[i].cut2;
   out.remaining=count-i-1+extra;
@@ -101,7 +106,10 @@ void CStage::DrawBossBar(){
   for(int i=0;i<data.remaining;i++)CPC98Font::DrawString("\x81\x9a",1,x+i*8,y+18,1,1,1,alpha,true,.5f);
   CGame::GVar().m_bUseSystemFont=systemFont;
  }else Number(x+48,y,data.remaining,1,1,.5f,alpha);
- const int left=x+64,width=272,filled=int(m_bossBar.displayed*width);
+ // Leave room for up to five digits, F, and the optional estimate prefix.
+ // Keep the width stable when the number of digits changes.
+ const int left=x+64,width=practice::Options().phaseTimeoutAsFrames?200:272;
+ const int filled=int(m_bossBar.displayed*width);
  if(!ring&&filled>0){
   CCommonFunctionGraphic::DrawRectangle(float(left),float(y+8),float(left+filled-1),float(y+9),1,1,0,alpha);
   const int thresholds[]={data.enrage,data.cut2};

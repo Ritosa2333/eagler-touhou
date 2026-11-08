@@ -501,6 +501,13 @@ struct PracticeTests {
   }
  }
  static void UpdatedPracticeStarts(){
+  const bool enabled=practice::Available();
+  if(!enabled)practice::Configure(true);
+  auto& options=practice::Options();
+  const auto previousOptions=options;
+  options.eosdBar=false;
+  options.ringBar=true;
+  options.phaseTimeoutAsFrames=true;
   auto* game=CGame::s_pCurGame;
   auto& g=CGame::GVar();
   const auto reset=[&](){
@@ -525,18 +532,31 @@ struct PracticeTests {
    return initialize();
   };
   for(int rage:{1,2}){
-   auto* boss=static_cast<CBossStage4*>(start(3,1,rage)->m_pBoss);
+   auto* stage=start(3,1,rage);
+   auto* boss=static_cast<CBossStage4*>(stage->m_pBoss);
    const int boundary=rage==1?original::TwinFirstRageHP:original::TwinSecondRageHP;
    if(boss->m_curHP+boss->m_2curHP!=boundary-1||boss->m_nModeChange!=(rage==1?10:15))
     throw std::runtime_error("Twin practice did not enter the strict-HP rage state");
+   for(const auto& ring:stage->m_bossRings)
+    if(!ring.data.present||ring.data.hp!=boundary-1||ring.data.full!=9000||
+       ring.data.markerCount!=2||ring.data.markers[0]!=original::TwinFirstRageHP||
+       ring.data.markers[1]!=original::TwinSecondRageHP)
+     throw std::runtime_error("Twin rings did not start with shared HP and both rage markers");
   }
+  options.ringBar=false;
+  options.eosdBar=true;
   for(int section:{2,4}){
-   auto* boss=static_cast<CBossStage5*>(start(4,section,1)->m_pBoss);
+   auto* stage=start(4,section,1);
+   auto* boss=static_cast<CBossStage5*>(stage->m_pBoss);
    const bool red=section==2;
-   const auto timer=boss->GetPhaseTimeout().ForDisplay(false,true);
+   const auto timer=stage->GetPhaseTimeout();
    if(boss->m_curPhaseFrame!=32||!(red?boss->m_phase4CrazyMode:boss->m_phase7CrazyMode)
       ||timer.unit!=practice::PhaseTimeout::Ticks||timer.value!=1968)
     throw std::runtime_error("Yumeko practice must start at the first rage frame");
+   const auto& bar=stage->m_bossBar.data;
+   if(!bar.present||bar.hp!=boss->m_curHP||bar.enrage!=boss->m_curHP+1||
+      bar.remaining!=(red?4:2))
+    throw std::runtime_error("Yumeko's top bar did not start with the active phase and rage marker");
   }
   CReplay recorded=g.m_replay;
   recorded.CloseStage(false);
@@ -551,23 +571,25 @@ struct PracticeTests {
    if(initialize()->m_pBoss->m_curPhaseFrame!=(version==3?65:32))
     throw std::runtime_error("Replay opened with the wrong practice start");
   }
+  options.eosdBar=false;
+  options.ringBar=true;
   for(int trigger:{0,1})for(int rage:{1,2}){
    auto* stage=start(5,6,rage,trigger);
    auto* boss=static_cast<CBossStage6*>(stage->m_pBoss);
    const int mode=rage==1?LASER_MODE_GROW:LASER_MODE_PRESENT;
    for(int laser=0;laser<4;laser++)if(stage->m_pLaser->GetMode(laser)!=mode)
     throw std::runtime_error("Shinki practice did not advance the wing lasers to the selected state");
-   const bool enabled=practice::Available();
-   if(!enabled)practice::Configure(true);
-   auto& options=practice::Options();
-   const bool previousFrames=options.phaseTimeoutAsFrames;
-   options.phaseTimeoutAsFrames=true;
    const auto timer=stage->GetPhaseTimeout();
-   options.phaseTimeoutAsFrames=previousFrames;
-   if(!enabled)practice::Configure(false);
    if(timer.unit!=practice::PhaseTimeout::Ticks||timer.value!=original::ShinkiWingEndFrame-boss->m_curPhaseFrame)
     throw std::runtime_error("Wing phase timer did not include the selected start frame");
+   const auto& ring=stage->m_bossRings[0].data;
+   if(!ring.present||ring.hp!=boss->m_curHP-2800||ring.full!=5800||
+      ring.markerCount!=2||ring.markers[0]!=original::ShinkiLaserHP-2800||
+      ring.markers[1]!=original::ShinkiFastHP-2800||stage->GetBossBarData().remaining!=1)
+    throw std::runtime_error("Shinki's wing ring did not start with both attack thresholds");
   }
+  options=previousOptions;
+  if(!enabled)practice::Configure(false);
  }
  static int Matrix(){
   auto* game=CGame::s_pCurGame;if(!game)return 0;int checked=0;
