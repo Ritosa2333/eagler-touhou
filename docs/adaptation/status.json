@@ -273,7 +273,7 @@
       "game": "th05",
       "variant": "normal",
       "directory": "ports/th05",
-      "sourceDigest": "af8129eb5bbb4f1dcb9d2ec372c1a2dfc19f4335283b07080056cb2b872f9c30",
+      "sourceDigest": "4bcddce3b1ecaf29afb55acbe039cc5545791162e7f46f921cfb0d23085553c1",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 89,

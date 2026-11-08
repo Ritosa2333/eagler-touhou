@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "dda93f9339cc8d1d8441d97a1d4c3919d6baee6b",
+      "base": "38bc525eb99f96edd104e280bdab91ec368d91cd",
       "history": [
         {
           "kind": "manual",
@@ -311,6 +311,17 @@
             "ports/th05-mp/web/replay.mjs"
           ],
           "note": "同步原版 Bomb、Boss 免伤、低血量狂暴与特殊弹消退。多人保留队伍保护、目标分配和旧录像规则。"
+        },
+        {
+          "kind": "manual",
+          "base": "dda93f9339cc8d1d8441d97a1d4c3919d6baee6b",
+          "source": "38bc525eb99f96edd104e280bdab91ec368d91cd",
+          "targetHead": "e3345111359cc57fcb8e92a7aa35b713ff25f1bc",
+          "paths": [
+            "ports/th05-mp/scripts/Verify-OriginalCombat.py",
+            "ports/th05-mp/tests/pc98-combat.mjs"
+          ],
+          "note": "普通版对照脚本的文件末尾格式修整。"
         }
       ]
     },
