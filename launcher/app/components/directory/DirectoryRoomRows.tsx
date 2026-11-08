@@ -82,7 +82,7 @@ function RoomRow({
   const artwork = bookGameArtwork(gameIdForProduct(room.product)) ?? ('cardArtwork' in meta && meta.cardArtwork ? assetUrl(`assets/${meta.cardArtwork}`) : undefined);
   const title = meta.title;
   const policy = multiplayerConfigForProduct(room.product)!;
-  const duel = room.product === 'th09mp';
+  const duel = room.product === 'th09mp' || room.product === 'th19mp';
   const firstWins = room.seats[0]?.stats?.wins ?? 0;
   const secondWins = room.seats[1]?.stats?.wins ?? 0;
   const hasDuelPair = duel && !!room.seats[0] && !!room.seats[1];
@@ -99,7 +99,7 @@ function RoomRow({
     const compact = abbreviate(value);
     return compact.length <= 4 ? compact : value.toExponential(0).replace('e+', 'e');
   };
-  const duelRecords = duel && accountsEnabled ? room.seats.slice(0, 2).map((seat, side) => {
+  const duelRecords = room.product === 'th09mp' && accountsEnabled ? room.seats.slice(0, 2).map((seat, side) => {
     const record = seat?.profile?.th09;
     const rate = record && formatTh09WinRate(record, locale);
     const games = record && rate ? record.games : '?';
@@ -177,7 +177,7 @@ function RoomRow({
           data-capacity={room.capacity}
         >
           {room.seats.map((seat, index) => {
-            const control = seat?.controlMode ? t(seat.name !== undefined && seat.controlMode === 'normal' ? 'multiplayer.control.keysOrStick' : `multiplayer.control.${seat.controlMode}`) : '';
+            const control = seat?.controlMode ? t(`multiplayer.control.${seat.controlMode}`) : '';
             const label =
               t(
                 !seat

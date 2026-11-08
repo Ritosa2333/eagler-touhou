@@ -16,6 +16,9 @@ struct ChargeRegion {
     int count=1;
     std::array<Point,3> centers{};
     static bool supported(int ch){return ch>=0&&ch<19;}
+    // 0x42b260: Aura+8 starts at zero; emit before increment, every 7 ticks.
+    // 0x5200f0 receives radius=current radius, growth=0, lifetime=1, damage=4.
+    bool damage_pulse()const{return character==16&&held&&age>0&&(age-1)%7==0;}
     Point rotated(float dx,float dy,float px,float py)const{return {px+dx*std::cos(angle)-dy*std::sin(angle),py+dx*std::sin(angle)+dy*std::cos(angle)};}
     void tick(int ch,bool down,float px,float py,float strength=100){
         const float dx=character==ch?px-last_px:0;

@@ -1,7 +1,5 @@
 import {afterEach, expect, it, vi} from 'vitest';
 
-const backup = 'https://cn-site.touhouonline.com:8443';
-
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
@@ -15,38 +13,19 @@ async function loadAccountClient(fetcher) {
   return import('../../app/services/account-client.ts');
 }
 
-it('uses the backup for writes when the primary fails its readiness probe', async () => {
-  const fetcher = vi.fn(async input => {
-    const url = String(input);
-    if (url === '/api/ready') throw new Error('primary unavailable');
-    if (url === `${backup}/api/ready`) return Response.json({ready: true});
-    if (url === `${backup}/api/auth/sign-in/email`) return Response.json({user: {id: 'user-1'}});
-    throw new Error(`Unexpected request: ${url}`);
-  });
+it('keeps writes on the account origin when readiness fails', async () => {
+  const fetcher = vi.fn(async () => {throw new TypeError('connection lost');});
   const {accountRequest} = await loadAccountClient(fetcher);
-
   await expect(accountRequest('auth/sign-in/email', {email: 'player@example.com', password: 'private-pass'}))
-    .resolves.toEqual({user: {id: 'user-1'}});
-  expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual([
-    '/api/ready', `${backup}/api/ready`, `${backup}/api/auth/sign-in/email`,
-  ]);
+    .rejects.toMatchObject({code: 'ACCOUNT_API_UNAVAILABLE'});
+  expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual(['/api/ready']);
 });
 
-it('retries a GET on the backup after an uncertain primary response', async () => {
-  const fetcher = vi.fn(async input => {
-    const url = String(input);
-    if (url === '/api/ready') return Response.json({ready: true});
-    if (url === '/api/v1/profiles/reimu') return new Response(null, {status: 503});
-    if (url === `${backup}/api/ready`) return Response.json({ready: true});
-    if (url === `${backup}/api/v1/profiles/reimu`) return Response.json({username: 'reimu'});
-    throw new Error(`Unexpected request: ${url}`);
-  });
+it('reports a transient read failure on the account origin', async () => {
+  const fetcher = vi.fn(async input => input === '/api/ready' ? Response.json({ready: true}) : new Response(null, {status: 503}));
   const {accountRequest} = await loadAccountClient(fetcher);
-
-  await expect(accountRequest('v1/profiles/reimu')).resolves.toEqual({username: 'reimu'});
-  expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual([
-    '/api/ready', '/api/v1/profiles/reimu', `${backup}/api/ready`, `${backup}/api/v1/profiles/reimu`,
-  ]);
+  await expect(accountRequest('v1/profiles/reimu')).rejects.toMatchObject({code: 'ACCOUNT_API_UNAVAILABLE', status: 503});
+  expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual(['/api/ready', '/api/v1/profiles/reimu']);
 });
 
 it('accepts usernames containing dots and underscores in public-profile paths', async () => {

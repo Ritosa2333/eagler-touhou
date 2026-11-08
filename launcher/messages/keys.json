@@ -7422,6 +7422,10 @@
     "id": "profile_follow_action",
     "params": []
   },
+  "profile.followed": {
+    "id": "profile_followed",
+    "params": []
+  },
   "profile.unfollowAction": {
     "id": "profile_unfollow_action",
     "params": []
@@ -8805,10 +8809,6 @@
     "id": "chat_noMessages",
     "params": []
   },
-  "room.fourWayTouch": {
-    "id": "room_fourWayTouch",
-    "params": []
-  },
   "chat.keyboardHint": {
     "id": "chat_keyboardHint",
     "params": []
@@ -9768,6 +9768,48 @@
   },
   "cloudSave.localReadFailed": {
     "id": "cloudSave_localReadFailed",
+    "params": []
+  },
+  "network.routeLookup": {
+    "id": "network_routeLookup",
+    "params": [
+      "host"
+    ]
+  },
+  "network.transfer": {
+    "id": "network_transfer",
+    "params": [
+      "host"
+    ]
+  },
+  "network.timeout": {
+    "id": "network_timeout",
+    "params": []
+  },
+  "network.connectFailed": {
+    "id": "network_connectFailed",
+    "params": []
+  },
+  "network.badResponse": {
+    "id": "network_badResponse",
+    "params": []
+  },
+  "network.relayNoReply": {
+    "id": "network_relayNoReply",
+    "params": []
+  },
+  "network.manifestUnavailable": {
+    "id": "network_manifestUnavailable",
+    "params": []
+  },
+  "network.relayClosed": {
+    "id": "network_relayClosed",
+    "params": [
+      "code"
+    ]
+  },
+  "network.relayHandshake": {
+    "id": "network_relayHandshake",
     "params": []
   }
 }

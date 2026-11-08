@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 import {th19StreamBegin,th19StreamFrame,th19StreamEnd,parseTh19StreamPacket,encodeTh19Replay,decodeTh19Replay,th19InputEdges} from '../web/sdl-runtime/th19-recording.mjs';
 import {Netplay} from '../web/sdl-runtime/netplay.mjs';
-import {createVersusRecorder,ConfirmedTimeline,VersusReplayRunner} from '../web/sdl-runtime/replay-session.mjs';
+import {createReplayPlayer,createVersusRecorder,ConfirmedTimeline,VersusReplayRunner} from '../web/sdl-runtime/replay-session.mjs';
 const build='a'.repeat(64),config={rules:[0,1,1,4,4,1,1,0,0],protocol:1,build,seed:123,difficulty:3,characters:[0,18],delay:0,rollback:true};
 const input={keys:3,direct:1,x:1.25,y:-2.5};
 test('standalone Runtime and Relay decode the exact same recording protocol',()=>{
@@ -47,6 +47,32 @@ test('spectator never sends input and drains only verified ordered frames',()=>{
   n.budget=1;n.pumpSpectator();assert.equal(n.frame,1);assert.equal(n.completed,true);
  }finally{n.close();globalThis.WebSocket=OldSocket;}
 });
+test('spectator checks state hashes even when the stream supplies a legacy flag',()=>{
+ const OldSocket=globalThis.WebSocket;
+ globalThis.WebSocket=class{close(){}};
+ const core={_th19_network_end(){},_th19_network_set_rules:()=>1,_th19_network_begin:()=>1,
+  _th19_network_step:()=>1,_th19_network_hash:()=>456};
+ const n=new Netplay(core);n.config=config;
+ try{
+  n.connectSpectator('ws://localhost/',{});
+  const receive=bytes=>n.socket.onmessage({data:bytes.buffer});
+  receive(th19StreamBegin({...config,legacy:true}));
+  receive(th19StreamFrame(0,input,input,{played:true,hash:123}));
+  assert.throws(()=>n.spectatorRunner.step(),/状态校验失败/);
+  assert.equal(n.spectatorRunner.frame,0);
+ }finally{n.close();globalThis.WebSocket=OldSocket;}
+});
+test('spectator presents a frame even if catch-up exhausts its time slice', t=>{
+ let now=100;
+ t.mock.method(performance,'now',()=>now);
+ const presented=[],n=new Netplay({});
+ const runner={frame:0,step(present){presented.push(present);++this.frame;now+=9;}};
+ Object.assign(n,{connected:true,active:true,lastTick:80,budget:0,receivedFrames:120,
+  spectatorRunner:runner,spectatorTarget:null,spectatorPaused:false,spectatorFollowing:true});
+ n.pumpSpectator();
+ assert.deepEqual(presented,[true]);
+ assert.equal(n.frame,1);
+});
 test('Launcher sync updates one file and leaves the match recorder live',async()=>{
  const files=[],r=createVersusRecorder({build,write:(bytes,path)=>{files.push({bytes,path});return path||'replay/th19_ud0000.rpy';}});
  r.begin(config);r.frame(th19StreamFrame(0,input,input,{played:true}));await r.snapshot();
@@ -87,6 +113,13 @@ test('shared runner restarts seed on rewind and stops at first mismatch',()=>{
  const runner=new VersusReplayRunner(core,tape);runner.reset();runner.step();runner.step();runner.seek(0);runner.step();assert.equal(starts,2);bad=true;assert.throws(()=>runner.step(),/校验失败/);assert.equal(runner.frame,1);assert.throws(()=>runner.step(),/已停止/);
  assert.throws(()=>tape.append(th19StreamFrame(3,input,input)),/不连续/);
 });
+test('file playback rejects a mismatched build before touching the runtime', async()=>{
+ const otherBuild='b'.repeat(64);
+ const bytes=encodeTh19Replay({kind:'versus',config:{...config,build:otherBuild},
+  build:otherBuild,seed:config.seed,frames:1,startedAt:0},th19StreamFrame(0,input,input,{played:true,hash:123}));
+ const player=createReplayPlayer({getCore:()=>assert.fail('replay must not start'),build});
+ await assert.rejects(player.open('replay/older.rpy',bytes),/不同游戏构建/);
+});
 
 test('paused observer saves received confirmed input once, independent of its cursor',async()=>{
  const OldSocket=globalThis.WebSocket;let socket;globalThis.WebSocket=class{constructor(){socket=this;}close(){}};
@@ -112,3 +145,16 @@ test('timeline rejects duplicate, missing and post-result input without advancin
  const tape=new ConfirmedTimeline(config);assert.throws(()=>tape.append(th19StreamFrame(1,input,input)),/不连续/);assert.equal(tape.length,0);
  tape.append(th19StreamFrame(0,input,input,{played:true,result:2}));assert.throws(()=>tape.append(th19StreamFrame(1,input,input)),/不连续/);assert.equal(tape.length,1);tape.end(1);
 });
+
+ test('spectator accepts committed in-game characters/cards but rejects changed build and rules',()=>{
+ const old=globalThis.WebSocket;let socket;globalThis.WebSocket=class{constructor(){socket=this;}close(){}};
+ const selected={...config,characters:[15,7],rules:[...config.rules.slice(0,7),3,5]};
+ try{for(const kind of ['selected','build','difficulty','lives']){
+  let begun;const core={_th19_network_set_rules:()=>1,_th19_network_begin:(...args)=>{begun=args;return 1;},_th19_network_end(){}};
+  const n=new Netplay(core);n.config=structuredClone(config);n.connectSpectator('ws://localhost/',{});
+  const c=structuredClone(selected);if(kind==='build')c.build='b'.repeat(64);if(kind==='difficulty')c.difficulty=0;if(kind==='lives')c.rules[3]=c.rules[4]=2;
+  socket.onmessage({data:th19StreamBegin(c).buffer});
+  assert.equal(n.prepared,kind==='selected');if(kind==='selected'){assert.deepEqual(begun,[config.seed,config.difficulty,15,7]);assert.deepEqual(n.config.rules,c.rules);}
+  n.close();
+ }}finally{globalThis.WebSocket=old;}
+ });

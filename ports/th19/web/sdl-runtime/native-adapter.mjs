@@ -14,7 +14,7 @@ export function nativeRollbackCore(core,{present=()=>false}={}){
    finally{if(safe)count=core._th19_rollback_effect_end();}
    if(!result)throw Error('Rollback input sequence invalid');
    const offset=safe?core._th19_rollback_effect_data()/4:0;
-   return {sounds:Array.from(core.HEAP32.subarray(offset,offset+count)),result,left:{...a},right:{...b},played:!!core._th19_played_frames(),
+   return {winner:core._th19_network_winner?.()??-1,sounds:Array.from(core.HEAP32.subarray(offset,offset+count)),result,left:{...a},right:{...b},played:!!core._th19_played_frames(),
     hash:(frame+1)%120===0?core._th19_network_hash()>>>0:null};
   },
   commit(effects){for(const sound of effects.sounds)core._th19_rollback_effect_commit(sound);}

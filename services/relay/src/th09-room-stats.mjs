@@ -1,3 +1,4 @@
+import {th19PlayerStats} from './th19-room-stats.mjs';
 import {randomUUID} from 'node:crypto';
 
 function currentSeats(room, ids) {
@@ -19,6 +20,7 @@ export function bindTh09Duel(room, run, players = null) {
 }
 
 export function th09PlayerStats(room, clientId) {
+  if (room.id.startsWith('th19mp-')) return th19PlayerStats(room, clientId);
   if (!room.id.startsWith('th09mp-')) return undefined;
   const duel = room.th09Duel;
   const side = duel && currentSeats(room, duel.clientIds) ? duel.clientIds.indexOf(clientId) : -1;

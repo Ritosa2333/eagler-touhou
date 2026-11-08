@@ -1,0 +1,55 @@
+PASS: 17-byte header, 4 matchup layouts, exact fixture roundtrip, 512 input mappings, native RNG reference sequence
+✔ work\eagler-touhou\ports\th19\tests\junowen-format.test.mjs (222.5243ms)
+✔ timer model matches 120 original x86 instruction results (4.8755ms)
+✔ RNG model matches 156 original x86 instruction results (4.2144ms)
+✔ fractional clock may retain or skip integer indices; a network tick is not a native frame (0.6987ms)
+{ rtt: 40, frames: 358, fps: 59.666666666666664, lead: [ 1, 1 ] }
+{ rtt: 100, frames: 356, fps: 59.333333333333336, lead: [ 3, 3 ] }
+{ rtt: 200, frames: 353, fps: 58.833333333333336, lead: [ 6, 6 ] }
+✔ confirmed UI input pipeline at 40ms RTT (30.8433ms)
+✔ confirmed UI input pipeline at 100ms RTT (13.8436ms)
+✔ confirmed UI input pipeline at 200ms RTT (12.5176ms)
+✔ configured input delay remains contiguous (4.8996ms)
+▶ server ICE servers replace Launcher fallback for both offer and peer-join answer
+  ✔ offer side (38.8761ms)
+  ✔ answer side waits for peer-join (0.5946ms)
+✔ server ICE servers replace Launcher fallback for both offer and peer-join answer (41.9802ms)
+✔ an empty server ICE list overrides Launcher fallback (0.9184ms)
+▶ missing or invalid server ICE data preserves Launcher fallback
+  ✔ missing on offer side (0.4572ms)
+  ✔ invalid on peer-join answer side (0.6081ms)
+✔ missing or invalid server ICE data preserves Launcher fallback (1.7044ms)
+✔ RTC must pass the shared route barrier before delivering game input (1.581ms)
+✔ a server-selected Relay cannot silently bypass the client fallback preference (0.5426ms)
+✔ explicit fallback opens both streams before the server route barrier (0.7983ms)
+✔ launcher peer exposes the live TH19 RTC connection across the route barrier (7.9449ms)
+✔ standalone Runtime and Relay decode the exact same recording protocol (8.1071ms)
+✔ portable versus file validates CRC, sequence, result and metadata (2.2827ms)
+✔ new files reject single-player and unplayed sessions (0.4293ms)
+✔ only contiguous committed frames are saved once, transport failure leaves players connected (2.1728ms)
+✔ spectator never sends input and drains only verified ordered frames (36.3599ms)
+✔ Launcher sync updates one file and leaves the match recorder live (5.4249ms)
+✔ versus initialization and countdown without actual gameplay never save a recording (3.1617ms)
+✔ native edge tuples preserve press, hold, release for both seats (1.8575ms)
+✔ pending save and rematch never mix headers, paths or inputs (1.3343ms)
+✔ shared runner restarts seed on rewind and stops at first mismatch (1.2197ms)
+✔ paused observer saves received confirmed input once, independent of its cursor (1.6507ms)
+✔ disconnect retains observer history and finalizes a partial recording (0.7283ms)
+✔ timeline rejects duplicate, missing and post-result input without advancing (0.3786ms)
+✔ native header has no auto-detect signature; explicit inspection preserves settings (3.9121ms)
+✔ CPU recorder/reader layout disagreement and unmapped flags are reported (0.4826ms)
+✔ web v2 identifies exact barriers without substituting guessed seeds or dropping pointer input (4.5803ms)
+✔ local viewer serves only token-scoped resources, verifies recording build, and never launches a game (154.5742ms)
+✔ viewer uses existing replay commands, isolates game input, and preserves version rejection (21.4451ms)
+✔ late remote input restores the native checkpoint and commits corrected frames once (2.8633ms)
+✔ prediction does not repeat a Bomb, pause edge or direct displacement (0.3743ms)
+✔ conflicting input and nonfinite touch data are rejected (1.8808ms)
+✔ unconfirmed resource transitions do not advance simulation (0.3906ms)
+ℹ tests 41
+ℹ suites 0
+ℹ pass 41
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 875.8181

@@ -637,7 +637,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayerRuntime: "./runtime/th19/multiplayer/th19.html",
         multiplayer: Object.freeze({titleKey: "game.title.th19mp",gameplay: "versus",playerCounts: Object.freeze([2]),difficulties: TH19_MULTIPLAYER_DIFFICULTIES,
             loadouts: Object.freeze(TH19_CHARACTERS.map((glyph,character)=>Object.freeze({labelKey:`multiplayer.loadout.th19_${character}`,glyph,character,shot:0}))),
-            inputTiming: Object.freeze({rollbackLimit:8,sendPredictionLimit:8,manualDelayLimit:8}),peerTransportGlobal:"__th19PeerTransport",spectator:true,titleRoomEntry:false}),
+            inputTiming: Object.freeze({rollbackLimit:8,sendPredictionLimit:8,manualDelayLimit:8}),peerTransportGlobal:"__th19PeerTransport",spectator:true,titleRoomEntry:false,inGameCharacterSelection:true}),
         features: Object.freeze({thprac:false,languages:false,focusHitbox:false}),
     }),
     th20: Object.freeze({

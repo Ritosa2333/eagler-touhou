@@ -1,7 +1,5 @@
 import { accountsEnabled } from '../release-features';
 
-const backup = 'https://cn-site.touhouonline.com:8443';
-let chosen = '';
 const transientStatuses = new Set([502, 503, 504]);
 type RequestOptions = {signal?: AbortSignal; responseType?: 'json' | 'blob'; timeoutMs?: number};
 const activeRequests = new Set<AbortController>();
@@ -29,14 +27,14 @@ function accountErrorCode(value: unknown) {
   return typeof code === 'string' && /^[A-Z0-9_]+$/.test(code) ? code : 'ACCOUNT_REQUEST_FAILED';
 }
 
-async function accountReady(entry: string, signal?: AbortSignal) {
+async function accountReady(signal?: AbortSignal) {
   const controller = new AbortController();
   const abort = () => controller.abort();
   signal?.addEventListener('abort', abort, {once: true});
   if (signal?.aborted) controller.abort();
   const timeout = setTimeout(abort, 3500);
   try {
-    const response = await fetch(`${entry}/api/ready`, {
+    const response = await fetch('/api/ready', {
       credentials: 'include', cache: 'no-store', signal: controller.signal,
     });
     return response.ok && (await response.json()).ready === true;
@@ -48,7 +46,6 @@ async function accountReady(entry: string, signal?: AbortSignal) {
   }
 }
 
-/** Writes are never replayed after dispatch; only idempotent reads can fail over on an uncertain response. */
 export async function accountRequest<T = unknown>(path: string, body?: Record<string, unknown> | FormData, options: RequestOptions = {}): Promise<T> {
   const controller = new AbortController();
   const abort = () => controller.abort();
@@ -74,57 +71,38 @@ async function sendAccountRequest<T>(path: string, body: Record<string, unknown>
     segments.some((segment) => !segment || segment === '.' || segment === '..')
   )
     throw new AccountRequestError('ACCOUNT_REQUEST_FAILED');
-  const entries = location.origin === 'https://touhouonline.com' ? [...new Set([chosen, '', backup])] : [''];
   const hasBody = body !== undefined;
-  let lastReadError: unknown;
-  for (const entry of entries) {
-    if(options.signal?.aborted)throw new DOMException('Request cancelled','AbortError');
-    const ready = await accountReady(entry, options.signal);
-    if(options.signal?.aborted)throw new DOMException('Request cancelled','AbortError');
-    if (!ready) continue;
-    const controller=new AbortController(),abort=()=>controller.abort();
-    options.signal?.addEventListener('abort',abort,{once:true});
-    if(options.signal?.aborted)controller.abort();
-    const timeout=setTimeout(()=>controller.abort(),options.timeoutMs??20000);
-    try {
-      const multipart=body instanceof FormData;
-      const response = await fetch(`${entry}/api/${path}`, {
-        credentials: 'include',
-        cache: 'no-store',
-        method: hasBody ? 'POST' : 'GET',
-        headers: hasBody && !multipart ? { 'Content-Type': 'application/json' } : undefined,
-        body: hasBody ? multipart ? body : JSON.stringify(body) : undefined,
-        signal: controller.signal,
-      });
-      if (!hasBody && transientStatuses.has(response.status)) {
-        lastReadError = new AccountRequestError('ACCOUNT_API_UNAVAILABLE', response.status);
-        continue;
-      }
-      if(response.ok && options.responseType==='blob') {const blob=await response.blob();chosen=entry;return blob as T;}
-      let data: unknown;
-      try {
-        data = await response.json();
-      } catch {
-        if (!response.ok) {
-          chosen = entry;
-          throw new AccountRequestError('ACCOUNT_REQUEST_FAILED', response.status);
-        }
-        if (!hasBody) {
-          lastReadError = new AccountRequestError('ACCOUNT_RESPONSE_INVALID', response.status);
-          continue;
-        }
-        throw new AccountRequestError('ACCOUNT_RESPONSE_INVALID', response.status);
-      }
-      chosen = entry;
-      if (!response.ok) throw new AccountRequestError(accountErrorCode(data), response.status);
-      return data as T;
-    } catch (cause) {
-      if(options.signal?.aborted)throw new DOMException('Request cancelled','AbortError');
-      if (cause instanceof AccountRequestError) throw cause;
-      if (hasBody) throw new AccountRequestError('ACCOUNT_REQUEST_FAILED');
-      lastReadError = cause;
-    } finally {clearTimeout(timeout);options.signal?.removeEventListener('abort',abort);}
+  const ready = await accountReady(options.signal);
+  if (options.signal?.aborted) throw new DOMException('Request cancelled', 'AbortError');
+  if (!ready) throw new AccountRequestError('ACCOUNT_API_UNAVAILABLE');
+  const controller = new AbortController(), abort = () => controller.abort();
+  options.signal?.addEventListener('abort', abort, {once: true});
+  const timeout = setTimeout(abort, options.timeoutMs ?? 20000);
+  try {
+    const multipart = body instanceof FormData;
+    const response = await fetch(`/api/${path}`, {
+      credentials: 'include',
+      cache: 'no-store',
+      method: hasBody ? 'POST' : 'GET',
+      headers: hasBody && !multipart ? {'Content-Type': 'application/json'} : undefined,
+      body: hasBody ? multipart ? body : JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+    if (transientStatuses.has(response.status)) throw new AccountRequestError('ACCOUNT_API_UNAVAILABLE', response.status);
+    if (response.ok && options.responseType === 'blob') return await response.blob() as T;
+    let data: unknown;
+    try {data = await response.json();}
+    catch {
+      throw new AccountRequestError(response.ok ? 'ACCOUNT_RESPONSE_INVALID' : 'ACCOUNT_REQUEST_FAILED', response.status);
+    }
+    if (!response.ok) throw new AccountRequestError(accountErrorCode(data), response.status);
+    return data as T;
+  } catch (error) {
+    if (options.signal?.aborted) throw new DOMException('Request cancelled', 'AbortError');
+    if (error instanceof AccountRequestError) throw error;
+    throw new AccountRequestError(hasBody ? 'ACCOUNT_REQUEST_FAILED' : 'ACCOUNT_API_UNAVAILABLE');
+  } finally {
+    clearTimeout(timeout);
+    options.signal?.removeEventListener('abort', abort);
   }
-  if (lastReadError instanceof AccountRequestError) throw lastReadError;
-  throw new AccountRequestError('ACCOUNT_API_UNAVAILABLE');
 }

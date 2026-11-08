@@ -1,6 +1,6 @@
 # 文档总表
 
-共 521 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 526 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -375,6 +375,7 @@
 | 历史记录 | [archive/th19-audio-20261105/README.md](../archive/th19-audio-20261105/README.md) | TH19 重复音效验收 |
 | 历史记录 | [archive/th19-character-grid-20261106/README.md](../archive/th19-character-grid-20261106/README.md) | Character-grid entrance |
 | 历史记录 | [archive/th19-development-20261104/README.md](../archive/th19-development-20261104/README.md) | TH19 源码交付来源 |
+| 历史记录 | [archive/th19-enoko-cancel-20261107/README.md](../archive/th19-enoko-cancel-20261107/README.md) | Enoko trap cancellation |
 | 历史记录 | [archive/th19-gameplay-20261105/README.md](../archive/th19-gameplay-20261105/README.md) | TH19 1.10c gameplay verification |
 | 历史记录 | [archive/th19-gameplay-20261105/multiplayer-splash.md](../archive/th19-gameplay-20261105/multiplayer-splash.md) | Multiplayer recording and splash damage |
 | 历史记录 | [archive/th19-gameplay-20261105/replay-audit.md](../archive/th19-gameplay-20261105/replay-audit.md) | Original ReplayInf evidence |
@@ -385,9 +386,13 @@
 | 历史记录 | [archive/th19-junowen-interop-20261106/README.md](../archive/th19-junowen-interop-20261106/README.md) | Ju.N.Owen static interoperability audit |
 | 历史记录 | [archive/th19-match-policy-20261105/README.md](../archive/th19-match-policy-20261105/README.md) | TH19 统一生命与固定对局规则 |
 | 历史记录 | [archive/th19-menu-20261106/README.md](../archive/th19-menu-20261106/README.md) | TH19 menu navigation parity |
+| 历史记录 | [archive/th19-network-selection-20261106/README.md](../archive/th19-network-selection-20261106/README.md) | TH19 network character selection |
+| 历史记录 | [archive/th19-orin-rank-20261106/README.md](../archive/th19-orin-rank-20261106/README.md) | Orin EX attack rank source |
+| 历史记录 | [archive/th19-orin-revival-20261108/README.md](../archive/th19-orin-revival-20261108/README.md) | 阿燐死灵妖精复活 |
 | 历史记录 | [archive/th19-recording-20261105/README.md](../archive/th19-recording-20261105/README.md) | TH19 旁观、录像与容量验证 |
 | 历史记录 | [archive/th19-shot-impact-20261106/README.md](../archive/th19-shot-impact-20261106/README.md) | TH19 projectile impacts |
 | 历史记录 | [archive/th19-touch-charge-20261105/README.md](../archive/th19-touch-charge-20261105/README.md) | TH19 蓄力触屏按钮 |
+| 历史记录 | [archive/th19-tsukasa-strengthening-20261106/README.md](../archive/th19-tsukasa-strengthening-20261106/README.md) | 管牧典 EX 弹幕强化 |
 | 历史记录 | [archive/th19-versus-settings-20261105/README.md](../archive/th19-versus-settings-20261105/README.md) | TH19 专属输入与对局设置验收 |
 | 历史记录 | [archive/thprac-information-touch-20261027/README.md](../archive/thprac-information-touch-20261027/README.md) | THPrac 信息窗触控归属 |
 | 历史记录 | [archive/turn-fallback-20261028/README.md](../archive/turn-fallback-20261028/README.md) | TURN 选择同步 |

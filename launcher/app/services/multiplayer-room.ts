@@ -1,3 +1,4 @@
+import {relayFailureDetail} from './network-failure';
 import {accountRequest} from './account-client';
 import {TH19_VERSUS_RULES,validTh19VersusRules} from '../../src/launcher/th19-versus-rules.mts';
 import {normalizePublicNickname, parsePublicNicknameState, type PublicNicknameState} from '../../src/contracts/public-nickname.mts';
@@ -66,6 +67,7 @@ export interface RoomOwnerSnapshot {
   epoch: number;
   fromDirectory: boolean;
   connected: boolean;
+  connectionDetail?: string;
   directorySupported: boolean;
   controlModesSupported: boolean;
   globalRoomCodes?: boolean;
@@ -213,6 +215,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   const state = {
     fromDirectory: false,
     connected: false,
+    connectionDetail: undefined as string | undefined,
     directorySupported: false,
     controlModesSupported: false,
     globalRoomCodes: false,
@@ -555,6 +558,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     next.addEventListener('open', () => {
       if (socket !== next || !current(ownedEpoch)) return;
       state.connected = true;
+      state.connectionDetail = undefined;
       reconnectAttempt = 0;
       ownedRoom.connection = ownedRoom.synced ? 'connected' : 'syncing';
       if (state.seat != null) {
@@ -711,6 +715,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     });
     next.addEventListener('close', (event) => {
       if (socket !== next || !current(ownedEpoch)) return;
+      const wasConnected = state.connected;
       ports.network.reset(true);
       socket = null;
       state.connected = false;
@@ -744,6 +749,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       }
       if (room?.code === ownedRoom.code) {
         room.connection = 'reconnecting';
+        state.connectionDetail = wasConnected ? ports.translate('network.relayClosed', {code: event.code})
+          : relayFailureDetail(ports.translate, next.failedAttempts, event.code);
         scheduleReconnect(ownedRoom.code);
       }
       publish();
@@ -752,6 +759,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     next.addEventListener('error', () => {});
   }
   function resetRoom() {
+    state.connectionDetail = undefined;
     settingsReloadPending = false;
     ownerController.abort();
     ownerController = new AbortController();
@@ -1277,6 +1285,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         spectatorTimeline: room.spectatorTimeline === true,
         ...(product === 'th09mp' ? {
           disableLocalChargePriority:room.disableLocalChargePriority === true,
+        } : {}),
+        ...(['th09mp','th19mp'].includes(product!) ? {
           replayAutoSave: ports.settings().replayAutoSave ?? ports.preferences.replayAutoSave(product),
           replayNames: [0, 1].map(side => room!.seats?.[side]?.name || `P${side + 1}`),
         } : {}),
@@ -1667,7 +1677,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     acceptMeasuredTiming,
     acceptTh09Match(value: unknown) {
       if (
-        product !== 'th09mp' ||
+        !['th09mp', 'th19mp'].includes(product!) ||
         (state.seat !== 0 && state.seat !== 1) ||
         state.spectatorRequested ||
         !state.connected ||
@@ -1677,7 +1687,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       )
         return;
       const match = value as Record<string, unknown>;
-      if (state.seat === 1 && match.winner !== 0 && match.winner !== 1) return;
+      if (product === 'th09mp' && state.seat === 1 && match.winner !== 0 && match.winner !== 1) return;
       send({
         type: 'th09-match',
         serial: state.startSerial,

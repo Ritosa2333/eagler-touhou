@@ -337,7 +337,10 @@ for (const [kind, title, hint] of [['offline', 'lobby.offline', 'lobby.refreshHi
     const f = fixture({host: {relay: kind !== 'missing'}, loadError: kind === 'offline'}); await mountLobby(f); await f.start();
     if (kind === 'unsupported') await f.emit('close', {code: 1008});
     assert.equal(f.service.getSnapshot().connection, kind); assert.equal(n('#connectionWarning').hidden, false);
-    assert.equal(n('#connectionWarningTitle').textContent, t('en', title)); assert.equal(n('#connectionWarningHint').textContent, t('en', hint));
+    assert.equal(n('#connectionWarningTitle').textContent, t('en', title));
+    const detail = kind === 'offline' ? t('en', 'network.manifestUnavailable')
+      : kind === 'unsupported' ? t('en', 'network.relayClosed', {code: 1008}) : '';
+    assert.equal(n('#connectionWarningHint').textContent, [t('en', hint), detail].filter(Boolean).join(' | '));
     assert.equal(n('#connectionWarning').getAttribute('role'), 'alert'); assert.equal(env.document.querySelector('#emptyState'), null);
     assert.equal(n('#createButton').disabled, true); assert.equal(n('#codeButton').disabled, true);
     const before = f.sockets.length; await click('#connectionRefresh'); await flush();
@@ -754,6 +757,19 @@ test('Legacy duel names use the machine label, then initial, and describe empty 
   await f.receive([room({product:'th09mp',capacity:2,seats:[{initial:'花',machineSign:'Reimu',online:true},null]})]);
   await m.update({snapshot:f.service.getSnapshot()});
   assert.equal(n('.lobby-seat-name').textContent,'Reimu');
+});
+
+test('TH19 directory preserves and updates whole-match scores received from relay', async () => {
+  const row = wins => room({product:'th19mp',capacity:2,players:2,seats:wins.map((win,index)=>({initial:String(index),online:true,stats:{wins:win,losses:0,minutes:8}}))});
+  const f = await fixture({selectedProduct:'th19mp',host:{games:['th19']}}).live([row([0,0])]);
+  const m = await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
+  assert.equal(n('.book-room-score-value').textContent,'0 : 0');
+  for (const wins of [[1,0],[1,1],[1,2]]) {
+    await f.receive([row(wins)]);
+    await m.update({snapshot:f.service.getSnapshot()});
+    assert.equal(n('.book-room-score-value').textContent,wins.join(' : '));
+  }
+  await m.unmount();
 });
 
 test('Flower View keeps Japanese identity, score, shared facts and one contextual entry', async () => {

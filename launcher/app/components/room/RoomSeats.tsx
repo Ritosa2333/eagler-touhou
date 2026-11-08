@@ -3,7 +3,6 @@ import {OverflowText} from '../../ui/overflow-text';
 import {Ellipsis, Plus} from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { multiplayerDisplayInitial } from '../../../src/launcher/multiplayer-identity.mts';
-import { touchMovementUsesJoystick } from '../../../src/launcher/game-preferences.mts';
 import { formatTh09WinRate } from '../../../src/launcher/th09-room-stats.mts';
 import type { MultiplayerRoomService, RoomOwnerSnapshot } from '../../services/multiplayer-room';
 import { useLocale } from '../../i18n';
@@ -82,16 +81,13 @@ function RoomSeat({
   const seatLabel = label(seat ? seat.loadout : state.preferredLoadout);
   const control =
     state.seat === index
-      ? !context.touchEnabled || touchMovementUsesJoystick(context.touchMovementMode)
+      ? !context.touchEnabled || context.touchMovementMode === 'joystick'
         ? 'normal'
         : context.touchMovementMode === 'touch-unlimited'
           ? 'cheat'
           : 'touch'
       : seat?.controlMode;
-  const touchEnabled = state.seat === index ? context.touchEnabled : seat?.touchEnabled;
-  const controlLabel = control
-    ? t(control === 'normal' && touchEnabled ? 'room.fourWayTouch' : `multiplayer.control.${control}`)
-    : '';
+  const controlLabel = control ? t(`multiplayer.control.${control}`) : '';
   const message = networkMessage(state, context, t),
     local = seat?.clientId === state.localClientId;
   const diagnostics = (['direct', 'turn'] as const).map((lane) => {

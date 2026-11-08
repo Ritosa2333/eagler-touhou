@@ -4,6 +4,7 @@
 #include "BulletPattern.hpp"
 #include "PlayerDamage.hpp"
 #include "EnemyDeath.hpp"
+#include "EnemyOrbit.hpp"
 #include "BulletSprites.hpp"
 #include "GameWorld.hpp"
 #include "EclVm.hpp"
@@ -201,7 +202,7 @@ bool GameWorld::damage_enemy(Enemy& e,int damage,bool forced){
     // 0x509980: bit 0/5 excludes damage; bit 4 excludes HP reduction;
     // bit 7 suppresses automatic death. Invisible controllers are never targets.
     if(!e.active||e.sprite<0||(e.flags&0x21)||(!forced&&damage<=0))return false;
-    if(!e.pending_phase.empty())return false;
+    if(e.death_pending||!e.pending_phase.empty())return false;
     if(!forced){if(card_near_damage&&(player_x-e.x)*(player_x-e.x)+(player_y-e.y)*(player_y-e.y)<=2304.f){
             if(e.card_damage_frame!=battle_frame){e.card_damage_frame=battle_frame;e.card_damage_sum=0;}
             const int previous=e.card_damage_sum;e.card_damage_sum+=damage;
@@ -233,13 +234,18 @@ bool GameWorld::damage_enemy(Enemy& e,int damage,bool forced){
         }
         if(e.life>0||(e.flags&0x80))return false;
     }
-    e.active=false;++defeated;earned_score+=std::max(0,e.score);
+    // 0x50c4ca: the death callback runs after death effects/rewards. Keep the
+    // host until the damage pass ends, so an ECL spawn cannot invalidate a
+    // caller's enemy iteration. Only native flag 0x08000000 preserves it.
+    e.death_pending=!e.death_callback.empty()&&bool(e.vm);
+    e.active=e.death_pending;++defeated;earned_score+=std::max(0,e.score);
     // Native death dispatch preserves ECL323's file/script override.
     const int deathScript=e.death_script?e.death_script:nativeEnemyDeathScript(e.animations[0].file,e.sprite);
     const float heading=e.vx*e.vx+e.vy*e.vy<.2f*.2f?-1.57079632679f:std::atan2(e.vy,e.vx);
     deaths.push_back({e.x,e.y,heading,deathScript,3+int(e.id&1),e.death_file});
     auto drop=[&](int type,float vx,float vy){if(type<1||type>14)return;Pickup p;p.id=next_id++;p.x=std::clamp(e.x,-192.f,192.f);p.y=e.y;p.type=type;p.vx=vx;p.vy=vy;pickups.push_back(p);};
     if(e.item>0)drop(e.item,0,-2.2f);
+    e.item=0; // 0x50c3c5: an item is dropped once, even if the host revives.
     // 0x50c1f0 -> 0x549780: excluded actors do not extend/count the chain.
     // ECL 1032 supplies the extension (default 20), capped at 60 frames.
     if(!(e.status_flags&0x20000000u)){
@@ -279,8 +285,22 @@ bool GameWorld::damage_enemy(Enemy& e,int damage,bool forced){
     if(combo>5)for(int n=0;n<((e.status_flags&0x8000000u)?1:std::min(3,combo/12+1));++n){pickup_fraction+=pickup_rate;while(pickup_fraction>=100){pickup_fraction-=100;drop(9,0,-2.f);}}
     return true;
 }
+void GameWorld::finish_enemy_deaths(){
+    for(size_t i=0;i<enemies.size();++i){
+        if(!enemies[i].death_pending)continue;
+        const std::string callback=enemies[i].death_callback;
+        auto*vm=enemies[i].vm.get();
+        // 0x50c4d9..0x50c510 resets the VM, executes time zero, clears the
+        // one-shot name, then tests the retention flag. Reacquire after step.
+        const bool started=vm&&vm->start(callback.c_str());
+        if(started)vm->step();
+        auto&e=enemies[i];e.death_callback.clear();e.death_pending=false;
+        if(!started||!(e.status_flags&0x08000000u))e.active=false;
+    }
+}
 // 0x509980 tail: evaluate once after all damage, never once per projectile.
 void GameWorld::finish_hit_feedback(u32 mode){
+    finish_enemy_deaths();
     for(auto&e:enemies){
         const bool hit=e.hit_pending;e.hit_pending=false;
         if(!e.active)continue;
@@ -351,10 +371,36 @@ int GameWorld::cancel_bullets_rect(float x,float y,float width,float height,floa
     }
     return count;
 }
+// Retail 0x54aae0 -> 0x4ee0d0 and 0x5303f0. No bullet-style whitelist.
+void GameWorld::cancel_enoko_trap(float x,float y,float angle){
+    cancel_bullets_shape([=](float px,float py,float radius){
+        return nativeEnemyRectangleContact(px,py-224,0,296,448,radius) &&
+               nativeEnemyRectangleContact(px-x,py-y,angle,24,56,radius);
+    });
+    const auto point=[=](float px,float py){
+        const float dx=px-x,dy=py-y,c=std::cos(angle),s=std::sin(angle);
+        return std::abs(dx*c+dy*s)<=12&&std::abs(dy*c-dx*s)<=28;
+    };
+    // 52a970/52d350 -> 4d2c30: oriented rectangle against each
+    // 16-unit sample rectangle (dimensions are the native step vector).
+    const auto sample=[=](float px,float py,float a){
+        const float c=std::cos(angle),s=std::sin(angle),bc=std::cos(a),bs=std::sin(a);
+        const float hx=std::abs(8*bc),hy=std::abs(8*bs),dx=px-x,dy=py-y;
+        if(std::hypot(dx,dy)>=std::hypot(12.f,28.f)+std::hypot(hx,hy))return false;
+        const float axes[4][2]={{c,s},{-s,c},{bc,bs},{-bs,bc}};
+        for(const auto&axis:axes){const float u=axis[0],v=axis[1];
+            if(std::abs(dx*u+dy*v)>12*std::abs(c*u+s*v)+28*std::abs(-s*u+c*v)
+                +hx*std::abs(bc*u+bs*v)+hy*std::abs(-bs*u+bc*v))return false;
+        }
+        return true;
+    };
+    cancel_lasers_region(point,true,sample);
+}
 int GameWorld::cancel_lasers_circle(float x,float y,float radius,bool respect_lock){
     return cancel_lasers_region([=](float px,float py){return (x-px)*(x-px)+(y-py)*(y-py)<=radius*radius;},respect_lock);
 }
-int GameWorld::cancel_lasers_region(const std::function<bool(float,float)>& insideRegion,bool respect_lock){
+int GameWorld::cancel_lasers_region(const std::function<bool(float,float)>& insideRegion,bool respect_lock,
+    const std::function<bool(float,float,float)>& rectangleSample){
     // 0x530c60 -> 0x52a040 (+0x30); 0x52ac90 splits on 16-unit samples.
     const size_t initial=lasers.size();int hits=0;
     for(size_t i=0;i<initial;++i){auto base=lasers[i];
@@ -380,10 +426,10 @@ int GameWorld::cancel_lasers_region(const std::function<bool(float,float)>& insi
             }
             continue;
         }
-        if(base.straight&&base.source.type==8){ // 0x52c9f0 -> 0x52d680, 16-unit samples.
+        if(base.straight&&(base.source.type==8||rectangleSample)){ // 0x52c9f0 -> 0x52d680, 16-unit samples.
             std::vector<bool> mask;
-            for(float d=8;d+8<base.length&&mask.size()<512;d+=16){float px=base.x+std::cos(base.angle)*d,py=base.y+std::sin(base.angle)*d;
-                bool cut=insideRegion(px,py);mask.push_back(cut);
+            for(float d=8;(rectangleSample?d+8<=base.length:d+8<base.length)&&mask.size()<512;d+=16){float px=base.x+std::cos(base.angle)*d,py=base.y+std::sin(base.angle)*d;
+                bool cut=rectangleSample?rectangleSample(px,py,base.angle):insideRegion(px,py);mask.push_back(cut);
                 if(cut){++hits;++cancelled_bullets;bullet_cancels.push_back({px,py,212+base.source.color*2});}}
             if(std::none_of(mask.begin(),mask.end(),[](bool b){return b;}))continue;
             lasers[i].active=false;bool kept=false;
@@ -396,11 +442,11 @@ int GameWorld::cancel_lasers_region(const std::function<bool(float,float)>& insi
             continue;
         }
         // Only descriptor 38 and its moving remnants are verified at present.
-        if(base.source.type!=38)continue;
+        if(base.source.type!=38&&!rectangleSample)continue;
         std::vector<bool> cut;
-        for(float d=8;d+8<base.length&&cut.size()<512;d+=16){
+        for(float d=8;(rectangleSample?d+8<=base.length:d+8<base.length)&&cut.size()<512;d+=16){
             float px=base.x+std::cos(base.angle)*d,py=base.y+std::sin(base.angle)*d;
-            bool inside=insideRegion(px,py);cut.push_back(inside);
+            bool inside=rectangleSample?rectangleSample(px,py,base.angle):insideRegion(px,py);cut.push_back(inside);
             if(inside){++hits;++cancelled_bullets;
                 if(px+32>-148&&px-32<148&&py+32>0&&py-32<448)
                     bullet_cancels.push_back({px,py,212+base.source.color*2});}
@@ -469,7 +515,7 @@ int GameWorld::purify_orin(float x,float y,float radius){
     int converted=0;for(auto&e:enemies){
         if(!e.active||!(e.status_flags&0x700000)||(e.status_flags&0x80000)||e.callbacks[0].empty()||!e.vm)continue;
         float dx=e.x-x,dy=e.y-y,r=radius+e.hitbox_w*.5f;if(dx*dx+dy*dy>r*r)continue;
-        if(e.vm->start(e.callbacks[0].c_str())){e.status_flags|=0x80000;++converted;}
+        if(e.vm->start(e.callbacks[0].c_str())){e.status_flags|=0x80000;e.spirit_aura_exit=true;++converted;}
     }return converted;
 }
 int GameWorld::convert_zanmu(float x,float y,float radius,int&ordinary_count){
@@ -484,6 +530,30 @@ int GameWorld::convert_zanmu(float x,float y,float radius,int&ordinary_count){
     }
     for(const auto&p:pending)spawn_enemy(p.sub,p.x,p.y,100,0,0);
     return int(pending.size());
+}
+// ECL624(2), 0x4fbff0: strict 32-unit radius, age >20, last host ID.
+// 0x4f11a0 changes appearance/contact size without resetting motion or age.
+void GameWorld::strengthen_tsukasa_bullets(const Enemy& e){
+    for(auto&b:bullets){
+        if(b.state==4||b.age<=20||b.last_tsukasa_id==e.id)continue;
+        const float dx=b.x-e.x,dy=b.y-e.y;
+        if(dx*dx+dy*dy>=1024.f)continue;
+        b.last_tsukasa_id=e.id;
+        int kind=-1,color=1;
+        switch(b.kind){case 0:case 1:kind=4;color=b.color;break;
+            case 4:case 5:kind=18;break;case 8:kind=20;break;
+            case 9:kind=31;break;case 18:kind=33;break;default:continue;}
+        b.kind=kind;b.color=color;b.sprite=nativeBulletSprite(kind,color);
+        b.hit_width=nativeBulletContactRadius(kind);
+        b.cancel_script=nativeBulletCancelScript(kind,color);
+        b.animation={};b.attached_effect={};
+        if(bullet_scripts){
+            auto it=bullet_scripts->find(nativeBulletAnimation(kind));
+            if(it!=bullet_scripts->end()){b.animation.bind_entry(it->second.stream,it->second.len,bullet_scripts);b.animation.tick();}
+            const int attached=nativeBulletAttachedEffect(kind);it=bullet_scripts->find(attached);
+            if(attached&&it!=bullet_scripts->end())b.attached_effect.bind_entry(it->second.stream,it->second.len,bullet_scripts);
+        }
+    }
 }
 void GameWorld::apply_bullet_changes(Bullet& b){
     // 0x4f1460 immediate type/color/ANM, sound and blend-mode changes.
@@ -522,13 +592,29 @@ void GameWorld::tick_bullet_graze(float px,float py,float player_radius){
         b.graze_x=b.graze_y=0;b.graze_tint=0;
         if(b.state!=1||(b.flags&0x200))continue;
         const int contact=nativeOrdinaryBulletContact(b.kind,px-b.x,py-b.y,nativeBulletContactRadius(b.kind),player_radius);
-        const bool grazed=contact==2||(contact==0&&charge_region.contains(b.x,b.y,nativeBulletContactRadius(b.kind)));
+        // The positive (X) region is checked independently of the normal
+        // 40px graze shell. A small bullet can therefore be both in the
+        // visual graze shell and inside the charge region; retail credits the
+        // charge-region reward path in that case and does not spawn a pickup.
+        const bool aura_graze=charge_region.contains(b.x,b.y,nativeBulletContactRadius(b.kind));
+        const bool grazed=contact==2||aura_graze;
         const auto result=b.graze.tick(grazed);
         if(result.interrupt&&b.attached_effect.stream){b.attached_effect.interrupt(result.interrupt);b.attached_effect.tick();}
         if(grazed){b.graze_tint=0xffff0080u|(u32(result.alpha)<<8);b.graze_y=graze_rng.signedUnit();b.graze_x=graze_rng.signedUnit();}
         if(!result.reward)continue;
+        if(aura_graze){
+            // 0x4f5130 -> 0x549fb0: the positive-region graze reward emits
+            // exactly one type-9 charge point at the reward tick. Native
+            // pickup initialization uses vx=0, vy=-2 (upward throw).
+            Pickup p;p.id=next_id++;p.x=b.x;p.y=b.y;p.type=9;p.vx=0;p.vy=-2.f;pickups.push_back(p);
+            continue;
+        }
         grazed_bullets=std::min(grazed_bullets+1,99999999);sound_events.push_back(42);
         GrazeParticle particle;particle.start(b.x,b.y,nativeGrazeColor(b.kind,b.color),graze_rng);graze_particles.push_back(particle);
+        // Retail 0x4f5130 routes positive charge-region contact through the
+        // same 521c60 reward path: create a visible charge point first. The
+        // player gauge is increased only when that point is collected by
+        // tick_pickups (not at the moment of bullet contact).
         graze_fraction+=pickup_rate;
         while(graze_fraction>=100){graze_fraction-=100;
             const float a=-1.5707963705f+graze_rng.signedUnit()*.1745329252f;
@@ -577,6 +663,7 @@ void GameWorld::tick_wave(){
         if(b.attached_effect.stream)b.attached_effect.tick();
         if(b.animation.stream)b.animation.tick();
         if(b.native_timer>0)--b.native_timer;
+        ++b.age;
         if(!b.changes.preserves_bounds()&&(b.x < -220||b.x>220||b.y < -80||b.y>520))b.state=4;
     }
     std::vector<InfiniteLaser> reflected_lasers;
@@ -599,7 +686,7 @@ void GameWorld::tick_wave(){
         if((spirit.status_flags&0x700000u)&&!(spirit.status_flags&0x80000u)&&
            spirit.vm&&!spirit.callbacks[0].empty()&&charge_region.contains(spirit.x,spirit.y,spirit.hitbox_w*.5f)){
             const auto callback=spirit.callbacks[0];
-            if(spirit.vm->start(callback.c_str()))spirit.status_flags|=0x80000u;
+            if(spirit.vm->start(callback.c_str())){spirit.status_flags|=0x80000u;spirit.spirit_aura_exit=true;}
         }
         // 0x509030 applies 0.5 to ordinary enemy movement and script clocks.
         // Invisible wave controllers and bosses do not enter this path.
@@ -621,7 +708,14 @@ void GameWorld::tick_wave(){
         // The separately allocated VM remains stable across vector reallocations.
         EclVm* vm=enemies[i].vm.get();
         if(enemies[i].script_initialized_this_tick)enemies[i].script_initialized_this_tick=false;
-        else if(vm)vm->step();
+        else {
+            // EXE 0x4fbea0 is dispatched before the enemy ECL step.  Suika's
+            // ExAttackFunc reads the updated Enemy+0xac angle while it builds
+            // its shooter descriptor; running this callback after vm->step()
+            // leaves the descriptor at its initial angle (0 = right).
+            enemies[i].apply_suika_steering(opponent_controls,opponent_x,opponent_y);
+            if(vm)vm->step();
+        }
         // Integrate field-local movement after executing this frame's ECL.
         Enemy& e=enemies[i];
         if(!e.death_initialized){
@@ -641,6 +735,7 @@ void GameWorld::tick_wave(){
                 if(m.elapsed>=m.duration){v=m.to;m.duration=0;}
             };
             const float previous_combined_x=e.x;
+            const float previous_combined_y=e.y;
             if(e.relative_ellipse){e.x-=e.relative_x;e.y-=e.relative_y;}
             advance(e.scale_x,e.sx);advance(e.scale_y,e.sy);
             advance(e.turn,e.angle);advance(e.accelerate,e.speed);
@@ -659,30 +754,64 @@ void GameWorld::tick_wave(){
                 const float y=e.orbit_y+v;
                 e.vx=x-e.x;e.vy=y-e.y;e.x=x;e.y=y;
             }else{
-                if(e.polar){e.vx=std::cos(e.angle)*e.speed;e.vy=std::sin(e.angle)*e.speed;}
+                // EXE callback table 0x5994f8 entry 3 -> 0x4fbea0
+                // rewrites Enemy+0xac (angle).  The following native motion
+                // step consumes that angle even for the small-Suika actor;
+                // its ECL record does not set the generic polar bit.
+                if(e.polar||e.native_update_callback==3){e.vx=std::cos(e.angle)*e.speed;e.vy=std::sin(e.angle)*e.speed;}
                 e.x+=e.vx;e.y+=e.vy;
             }
             if(e.relative_ellipse){
                 e.relative_phase=std::remainder(e.relative_phase+e.relative_omega,6.28318530718f);
                 e.relative_radius+=e.relative_radial;
-                const float u=std::cos(e.relative_phase)*e.relative_radius*e.relative_ratio,v=std::sin(e.relative_phase)*e.relative_radius;
-                e.relative_x=e.relative_center_x+u*std::cos(e.relative_rotation)-v*std::sin(e.relative_rotation);
-                e.relative_y=e.relative_center_y+u*std::sin(e.relative_rotation)+v*std::cos(e.relative_rotation);
+                const auto offset=enemyEllipseOffset(e.relative_phase,e.relative_rotation,e.relative_radius,e.relative_ratio);
+                e.relative_x=e.relative_center_x+offset[0];
+                e.relative_y=e.relative_center_y+offset[1];
                 e.x+=e.relative_x;e.y+=e.relative_y;
             }
             // 0x50c540 writes +80 from absolute+relative minus previous
             // combined position, before clamping. Do not overwrite base vx.
             const float animation_dx=e.x-previous_combined_x;
+            // pl14b ANM13/15: after the 60/40-frame warning, ANM424(1)
+            // follows motion. Retail 0x508af8..0x508b19 writes this angle
+            // to BOTH the animation and EnemyInf+0x130 (contact rectangle).
+            // Keep this in simulation, independent of rendering/rollback skips.
+            const auto& body=e.animations[0];
+            if(body.file>=2&&body.file-2<int(e.animation_files.size())&&
+               e.animation_files[body.file-2]=="pl14b.anm"&&
+               (body.script==13||body.script==15)&&!(e.flags&2))
+                e.contact_angle=std::atan2(e.y-previous_combined_y,animation_dx);
             // 0x50c540: ECL504 bounds clamp the combined enemy position.
             if(e.status_flags&2u){
                 e.x=std::clamp(e.x,e.bound_x-e.bound_w*.5f,e.bound_x+e.bound_w*.5f);
                 e.y=std::clamp(e.y,e.bound_y-e.bound_h*.5f,e.bound_y+e.bound_h*.5f);
             }
-            e.apply_suika_steering(opponent_controls);
+            if(e.native_update_callback==2)strengthen_tsukasa_bullets(e);
             e.apply_hit_recoil(player_x,player_y);
             e.update_direction_animation(animation_dx);
             ++e.age;
-            if(e.sprite>=0&&e.age>90&&(e.x < -240||e.x>240||e.y < -128||e.y>520))e.active=false;
+            // Retail's enemy-list pass (0x42ec80..0x42edb0) retires a
+            // converted spirit as soon as it has left the playfield.  The
+            // previous web path applied the ordinary enemy grace period
+            // (age>90 and y<-128), so an aura-held spirit could travel well
+            // past the top edge and remain registered.  Converted spirits
+            // use the field edge directly; ordinary enemies retain their
+            // existing grace-period cull.
+            // 0x10000000 is the retail pure-spirit marker; it is checked
+            // alongside the 0x700000 animal-kind mask by 0x42ecaa before
+            // the spirit object is retired.  Pure spirits do not carry the
+            // aura-converted 0x80000 bit, so testing that bit alone leaves
+            // them registered after their upward exit.
+            const bool spirit_like=e.spirit_aura_exit||((e.status_flags&(0x10000000u|0x700000u))!=0);
+            if(spirit_like){
+                if(e.x < -240||e.x>240||e.y < -32||e.y>480)e.active=false;
+                // The retail object manager retires a spirit when its
+                // registered disable/exit ECL returns.  The web VM used to
+                // leave the host enemy alive after that return, which is why
+                // spirits that stop just above the field edge remained
+                // visible forever.
+                if(e.vm&&e.vm->finished()&&(e.status_flags&(0x80000u|0x10000000u)))e.active=false;
+            }else if(e.sprite>=0&&e.age>90&&(e.x < -240||e.x>240||e.y < -128||e.y>520))e.active=false;
         }
     }
     // integrate spirit velocity toward the player

@@ -6,8 +6,8 @@ export function publicControlMode(seat) {
   if (seat.touchEnabled === false) return 'normal';
   if (seat.touchEnabled !== true) return null;
   if (seat.movementMode === 'touch-unlimited') return 'cheat';
-  if (seat.movementMode === 'touch') return 'touch';
-  return ['joystick', 'joystick-free'].includes(seat.movementMode) ? 'normal' : null;
+  if (seat.movementMode === 'touch' || seat.movementMode === 'joystick-free') return 'touch';
+  return seat.movementMode === 'joystick' ? 'normal' : null;
 }
 
 // Discovery never joins a room. Membership is anonymous and browser-scoped;
@@ -96,7 +96,7 @@ export function createRoomDirectory({
               loadout: seat.loadout,
               ...(publicNames ? {name:seat.name || ''} : {}),
               profile: publicProfile?.(room, seat.clientId),
-              ...(match[1] === 'th09mp'
+              ...(['th09mp', 'th19mp'].includes(match[1])
                 ? {
                     ...(!publicNames && typeof seat.machineSign === 'string' && seat.machineSign.trim()
                       ? {
