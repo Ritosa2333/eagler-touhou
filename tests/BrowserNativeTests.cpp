@@ -6,7 +6,7 @@
 #include "../Game/Stage/Laser/Laser.h"
 #include "../Game/Stage/StageResource.h"
 #include "../Game/Stage/Background/Background.h"
-#include "../Game/Stage/Boss/Boss.h"
+#include "../Game/Stage/Boss/BossStage5.h"
 #include "../portable/Graphics.hpp"
 #include "../Game/Practice/Practice.h"
 #include <cmath>
@@ -57,6 +57,53 @@ struct PracticeTests {
   for(int n=0;n<8;n++)lasers->Step();
   web::graphics::BeginFrame();glDisable(GL_SCISSOR_TEST);glColorMask(1,1,1,1);glClearColor(0,0,0,1);glClear(GL_COLOR_BUFFER_BIT);lasers->Draw();web::graphics::Present();return 1;
  }
+ static void Yumeko(){
+  if(!Start(4,2))throw std::runtime_error("Could not start TH05 stage 5");
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  auto* boss=dynamic_cast<CBossStage5*>(stage->m_pBoss);
+  if(!boss)throw std::runtime_error("Yumeko is missing from stage 5");
+  auto* bullets=stage->m_pEnemyBullet;
+  boss->m_curX=192*16;
+  boss->m_curY=80*16;
+  boss->m_curHP=boss->m_curPhaseEndHP+700;
+
+  for(bool blue:{false,true})for(int difficulty=0;difficulty<4;difficulty++){
+   CGame::GVar().m_playDifficulty=difficulty;
+   const auto shoot=blue?&CBossStage5::Phase7Shoot:&CBossStage5::Phase4Shoot;
+   const auto* aim=blue?boss->m_phase7ShootAngle:boss->m_phase4ShootAngle;
+   const int image=blue?116:84;
+   const int perSide=difficulty<2?1:difficulty;
+   boss->m_curPhaseFrame=16;
+   (boss->*shoot)();
+
+   for(int performance:{12,48}){
+    stage->m_playerPerformance=performance;
+    const float speed=stage->AdjustSpeedBasedOnPlayerPerformance(96);
+    for(int frame=64;frame<=96;frame++){
+     bullets->Initialize();
+     boss->m_curPhaseFrame=frame;
+     (boss->*shoot)();
+     int emitted[2]={};
+     for(const auto& bullet:bullets->m_bullets){
+      if(!bullet.flag)continue;
+      const int side=bullet.curX>boss->m_curX?1:0;
+      const int shot=emitted[side]++;
+      const float spread=difficulty==3?(shot-1)*6.0f:0.0f;
+      const float stack=difficulty==2?shot*6.0f:0.0f;
+      if(bullet.imgIdx<image||bullet.imgIdx>=image+32||
+         std::abs(std::remainder(bullet.curAngle-aim[side]-spread,256.0f))>0.001f||
+         std::abs(bullet.origSpeed-speed-stack)>0.001f){
+       throw std::runtime_error("Yumeko volley has the wrong sprite, angle or speed");
+      }
+     }
+     const int expected=frame<96&&frame%2==0?perSide:0;
+     if(emitted[0]!=expected||emitted[1]!=expected){
+      throw std::runtime_error("Yumeko volley has the wrong bullet count or cadence");
+     }
+    }
+   }
+  }
+ }
  static int Matrix(){
   auto* game=CGame::s_pCurGame;if(!game)return 0;int checked=0;
   for(int character=0;character<4;character++)for(int stage=0;stage<7;stage++)for(int warp=0;warp<3;warp++){
@@ -71,6 +118,7 @@ struct PracticeTests {
    }
    checked++;
   }
+  Yumeko();
   return checked;
  }
 };
