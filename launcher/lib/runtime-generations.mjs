@@ -10,6 +10,7 @@ import {
   validateRuntimeManifest,
 } from "./contracts/runtime-generations.mjs";
 import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
+import { extractGameDataLayout } from "./runtime-data-layout.mjs";
 
 const hash = bytes => createHash("sha256").update(bytes).digest("hex");
 const json = value => `${JSON.stringify(value, null, 2)}\n`;
@@ -258,6 +259,18 @@ export async function verifyRuntimePublication(site, host) {
     }
     const expected = manifest.groups.map(group => runtimeGenerationEntry(group.root, group.current));
     if (actual.size !== expected.length || expected.some(path => !actual.has(path))) throw new Error("Host / Runtime Manifest entries disagree");
+    for (const [game, entry] of Object.entries(host.games)) {
+      if (PRODUCT_GAMES[game]?.dataProvider !== "emscripten-preload") continue;
+      for (const field of ["runtime", "multiplayerRuntime"]) {
+        if (!entry[field]) continue;
+        const path = new URL(entry[field], "https://runtime.invalid/").pathname.slice(1);
+        const script = await ordinaryFile(resolve(site, dirname(path), `${game}.js`));
+        const data = extractGameDataLayout(script.toString("utf8"), game);
+        if (data.layout !== entry.gameData?.layout || data.bytes !== entry.gameData?.bytes) {
+          throw new Error(`${game} ${field}: Runtime DATA layout does not match the Site Manifest`);
+        }
+      }
+    }
   }
   return manifest;
 }

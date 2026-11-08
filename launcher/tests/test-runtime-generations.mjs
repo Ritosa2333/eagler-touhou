@@ -111,6 +111,24 @@ try {
   for(const [game,entry] of Object.entries(host.games))for(const field of ["runtime","multiplayerRuntime"])if(entry[field]) {
     assert.equal(parseRuntimeGenerationPath(entry[field].split("?")[0]).generation,runtimeRelease.games[game][field].generation);
   }
+  const brokenSource = resolve(temp, "broken-source");
+  const brokenSite = resolve(temp, "broken-site");
+  const multiplayerRoot = "runtime/th06/multiplayer/";
+  const entry = "th06.html";
+  await mkdir(brokenSource);
+  await writeFile(resolve(brokenSource, entry), '<script src="./th06.js"></script>');
+  await writeFile(resolve(brokenSource, "th06.js"), "/* Built with external assets and no Emscripten preload. */");
+  const broken = await writeRuntimeGeneration({
+    site: brokenSite, source: brokenSource, root: multiplayerRoot, entry, names: [entry, "th06.js"],
+  });
+  await publishRuntimeManifest(brokenSite, [{root: multiplayerRoot, current: broken}]);
+  await assert.rejects(verifyRuntimePublication(brokenSite, {
+    shared: host.shared,
+    games: {th06: {
+      gameData: host.games.th06.gameData,
+      multiplayerRuntime: `${multiplayerRoot}${broken.generation}/${entry}?hosted=1`,
+    }},
+  }), /th06: Emscripten loadPackage metadata missing/);
   const generations=catalog.groups.map(group=>group.current.generation);
   await command("scripts/refresh-deployment-app-shell.mjs",output,"--frontend");
   assert.deepEqual((await readRuntimeManifest(output)).groups.map(group=>group.current.generation),generations,"Launcher-only refresh does not rebuild game generations");
