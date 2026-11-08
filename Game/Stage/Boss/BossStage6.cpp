@@ -146,7 +146,7 @@ int CBossStage6::Phase2ShootType2()
 		si.shootType=EST04_NWAY_ALLAROUND;
 		si.nWay=16;
 
-		si.shootAngle=m_phase2Type1Angle+(m_curPhaseFrame-32)/interval*8;
+		si.shootAngle=m_phase2Type2Angle+(m_curPhaseFrame-32)/interval*8;
 		float len=(float)(original::Random()%(32*16));
 		si.shootOrigX=m_curX+(float)cos(si.shootAngle/256.0f*2*PI)*len;
 		si.shootOrigY=m_curY+(float)sin(si.shootAngle/256.0f*2*PI)*len;
@@ -690,7 +690,7 @@ void CBossStage6::Phase10Shoot()
 				{
 					if (m_phase10Timer==65)
 					{
-						int d[]={52,20,12,8};
+						int d[]={52,20,16,12};
 						m_phase10Var3=d[CGame::GVar().m_playDifficulty];
 						AddExplodeEffect(0,m_curX,m_curY);
 					}

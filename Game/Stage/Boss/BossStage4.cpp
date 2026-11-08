@@ -301,7 +301,7 @@ int CBossStage4::MaiShootType0_2__2_2()
 		shootInfo.nWayUnitAngle=10;
 		shootInfo.bulletSpeed=50;
 		m_pStage->m_pEnemyBullet->TuneEnemyShootInfo(&shootInfo);
-		m_pStage->m_pEnemyBullet->Shoot(&shootInfo);
+		m_pStage->m_pEnemyBullet->Shoot(&shootInfo,false,false);
 		m_pStage->m_bPlaySound[3]=true;
 	}
 	if (m_curPhaseFrame!=160)

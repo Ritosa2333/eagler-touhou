@@ -119,7 +119,7 @@ void CMidBossStage4::Phase1Mode1()
 		{
 			shootInfo.bulletImg=i%2*116;
 			shootInfo.shootOrigX=m_curX+(float)(original::Random()%(48*16)-24*16);
-			shootInfo.shootOrigY=m_curY+(float)(original::Random()%(48*16)-(original::DemoActive()?32:24)*16);
+			shootInfo.shootOrigY=m_curY+(float)(original::Random()%(48*16)-32*16);
 			m_pStage->m_pEnemyBullet->Shoot(&shootInfo,false,false);
 			shootInfo.bulletSpeed+=16;
 		}
