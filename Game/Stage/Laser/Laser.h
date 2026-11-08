@@ -53,7 +53,7 @@ protected:
 public:
 	void Initialize();
 	void Step();
- void FinishDemoFrame();
+ void FinishFrame();
 	void Draw();
 public:
 	CLaser(CStage *pStage);

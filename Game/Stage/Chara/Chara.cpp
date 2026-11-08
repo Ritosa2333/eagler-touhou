@@ -50,7 +50,7 @@ void CChara::MoveChara(unsigned short keyState)
 	if (m_bCharaCanMove==false)
 		return;
 
-	if(original::DemoActive()){
+	if(original::MotionEnabled()){
   // Native player_move rejects opposing directions, then retries after
   // removing the previous valid input. A retry does not update that input.
   unsigned short movement=keyState&15;
@@ -194,6 +194,8 @@ void CChara::OnMissDropItem()
 
 void CChara::CaughtItem(float itemX,float itemY,unsigned char itemType)
 {
+ const bool nativeRank=original::MotionEnabled();
+ int& itemRank=nativeRank?m_pStage->m_itemRankProgress:m_getPointItemPerformance;
  if(m_pStage->Cooperative()) {
   if(itemType==ITEM_1UP){m_pStage->TeamLife();return;}
   if(itemType==ITEM_BOMB){m_pStage->TeamBomb();return;}
@@ -245,7 +247,7 @@ void CChara::CaughtItem(float itemX,float itemY,unsigned char itemType)
 			}
 			if (pointScorePenalty<=0)
 			{
-				m_getPointItemPerformance++;
+				itemRank++;
 				if (m_pStage->m_bInCharaBombForItem==false)
 				{
 					int deltaDream=6-((int)itemY)/1024;
@@ -256,7 +258,7 @@ void CChara::CaughtItem(float itemX,float itemY,unsigned char itemType)
 			else
 				maxScore=2800-pointScorePenalty/2;
 			score=maxScore;
-			m_getPointItemPerformance++;
+			itemRank++;
 			m_pStage->m_totalNPointItem++;
 			if (m_pStage->m_curNPointItem<999)
 				m_pStage->m_curNPointItem++;
@@ -287,9 +289,9 @@ void CChara::CaughtItem(float itemX,float itemY,unsigned char itemType)
 			score=12800;
 			popupNumberColor=1;
 		}
-		m_getPointItemPerformance+=2;
-		if (m_pStage->m_bInCharaBombForItem==false)
-			m_getPointItemPerformance+=2;
+		itemRank+=2;
+		if (m_pStage->m_bInCharaBombForItem==nativeRank)
+			itemRank+=2;
 	    break;
 	case ITEM_BIGPOWER:
 		if (m_power<128)
@@ -335,9 +337,9 @@ void CChara::CaughtItem(float itemX,float itemY,unsigned char itemType)
 	color[1]=m_pStage->m_pStageRes->m_palette[(15-popupNumberColor*4)*3+1]/255.0f;
 	color[2]=m_pStage->m_pStageRes->m_palette[(15-popupNumberColor*4)*3+2]/255.0f;
 	m_pStage->m_pPopupNumber->AddNumber(itemX,itemY,score*10,color[0],color[1],color[2]);
-	if (m_getPointItemPerformance>=32)
+	if (itemRank>=32)
 	{
-		m_getPointItemPerformance-=32;
+		itemRank-=32;
 		m_pStage->ChangePlayerPerformance(1);
 	}
 }

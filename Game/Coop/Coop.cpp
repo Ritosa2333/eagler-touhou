@@ -271,7 +271,7 @@ unsigned int CStage::CoopChecksum(){
  SaveSeat();unsigned int hash=2166136261u;
  auto add=[&](int value){for(int n=0;n<4;n++){hash=(hash^static_cast<unsigned char>(value>>(n*8)))*16777619u;}};
  add(int(coop::Run().random));add(int(coop::Run().random>>32));
- add(CGame::GVar().m_playStage);add(m_curFrame);add(m_curScore);add(m_curDream);add(m_totalNPointItem);add(m_curNGraze);add(m_playerPerformance);add(m_bPaused);add(m_bContinueScr);add(m_bInCharaBomb);add(m_bombOwner);
+ add(CGame::GVar().m_playStage);add(m_curFrame);add(m_curScore);add(m_curDream);add(m_totalNPointItem);add(m_curNGraze);add(m_playerPerformance);if(original::MotionEnabled())add(m_itemRankProgress);add(m_bPaused);add(m_bContinueScr);add(m_bInCharaBomb);add(m_bombOwner);
  for(int i=0;i<m_seatCount;i++){const auto& s=m_seats[i];add(s.stock.lives);add(s.stock.bombs);add(s.stock.ghost);add(s.stock.fraction);add(s.stock.overflow);add(s.stock.deaths);add(s.previous);add(s.current);add(s.rescue);add(s.rescueAge);add(s.rescueTarget);add(s.player->GetPower());add(int(s.player->m_curX*256));add(int(s.player->m_curY*256));}
  for(const auto& laser:m_pLaser->m_laser){add(laser.mode);if(laser.mode){add(int(laser.srcX*256));add(int(laser.srcY*256));add(int(laser.angle*256));add(int(laser.width*256));add(int(laser.lenLower*256));add(int(laser.lenUpper*256));add(laser.age);}}
  for(const auto& enemy:m_pEnemy->m_enemy){add(enemy.flag);if(enemy.flag){add(enemy.age);add(enemy.life);add(int(enemy.curX*256));add(int(enemy.curY*256));add(int(enemy.curSpeed*256));add(int(enemy.curAngle*256));}}

@@ -116,6 +116,7 @@ void CStage::UploadVarToGlobal()
 	CGame::GVar().m_curHighScore=m_highScore;
 	CGame::GVar().m_totalNPointItem=m_totalNPointItem;
 	CGame::GVar().m_playerPerformance=m_playerPerformance;
+ CGame::GVar().m_itemRankProgress=m_itemRankProgress;
 	CGame::GVar().m_nContinueUsed=m_nContinueUsed;
 	CGame::GVar().m_curPower=m_pChara->GetPower();
 }
@@ -142,6 +143,7 @@ void CStage::DownloadVarFromGlobal()
 	m_totalNPointItem=CGame::GVar().m_totalNPointItem;
 	m_curNGraze=CGame::GVar().m_practiceConfig.mode?CGame::GVar().m_practiceConfig.graze:0;
 	m_playerPerformance=CGame::GVar().m_playerPerformance;
+ m_itemRankProgress=CGame::GVar().m_itemRankProgress;
 	m_nContinueUsed=CGame::GVar().m_nContinueUsed;
 
 	m_nContinueLimit=CGame::GVar().m_nContinueLimit;
@@ -705,7 +707,7 @@ int CStage::StepFrame(unsigned short liveInput)
 	if (m_pStage2BG)
 		m_pStage2BG->Step();
 	if(Cooperative())StepPlayerBomb();else if(m_bInCharaBomb)m_pChara->StepBomb();
- m_pLaser->FinishDemoFrame();
+ m_pLaser->FinishFrame();
 	m_pTextOverlay->Step();
 	m_pFloatingText->Step();
  if(practice::Options().showKeys)practice::RecordKey(5,m_curGameKeyState);
