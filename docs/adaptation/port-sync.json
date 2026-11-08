@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "1081974f95f9e1103f7a21e3bb0166d21eb203fc",
+      "base": "196ad997987cf01a560f8334679d6eaf47333993",
       "history": [
         {
           "kind": "manual",
@@ -189,6 +189,26 @@
             "ports/th05-mp/tests/PracticeTests.cpp"
           ],
           "note": "Synchronize localized practice phase labels, inherited difficulty hints, native timeout schedules, and the Alice final deadline."
+        },
+        {
+          "kind": "manual",
+          "base": "1081974f95f9e1103f7a21e3bb0166d21eb203fc",
+          "source": "196ad997987cf01a560f8334679d6eaf47333993",
+          "targetHead": "94fc8160d00ebce90bdd8e3d9f06bf3820c75d98",
+          "paths": [
+            "ports/th05-mp/Game/Original/OriginalShots.h",
+            "ports/th05-mp/Game/Replay.cpp",
+            "ports/th05-mp/Game/Replay.h",
+            "ports/th05-mp/Game/Stage/Chara/Chara.cpp",
+            "ports/th05-mp/Game/Stage/CharaBullet/CharaBullet.cpp",
+            "ports/th05-mp/Game/Stage/CharaBullet/CharaBullet.h",
+            "ports/th05-mp/scripts/Verify-OriginalPlayerShots.py",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp",
+            "ports/th05-mp/tests/browser.mjs",
+            "ports/th05-mp/tests/pc98-player-shots.mjs",
+            "ports/th05-mp/web/replay.mjs"
+          ],
+          "note": "Use audited PC-98 shot patterns in both ports, retaining multiplayer seat pools and old replay rules; keep the retail trace harness in the normal port."
         }
       ]
     },
