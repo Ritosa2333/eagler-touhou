@@ -31,6 +31,7 @@ void CEnemyBullet::Initialize()
  m_dotEnd=0;m_imageEnd=ENEMY_BULLET_N_RECORD_DOT;
 	m_noEnemyBullet=false;
 	m_templateSpreadAngle=0;
+	m_templateAngle=0;
 	m_clearEnemyBulletTimeLeft=0;
 
 	m_clipXLow=-128;
@@ -211,10 +212,10 @@ int CEnemyBullet::FindFreeRecord(int *retIdxArray,int startIdx,int nIdx,int nNee
 	return nFound;
 }
 
-void CEnemyBullet::FillRecordSpeedAndAngle(int *freeRecIdx,ENEMY_SHOOT_INFO *shootInfo)
+void CEnemyBullet::FillRecordSpeedAndAngle(int *freeRecIdx,ENEMY_SHOOT_INFO *shootInfo,bool originalPattern)
 {
-	float angleToChara=m_pStage->AimAngle(shootInfo->shootOrigX,shootInfo->shootOrigY,shootInfo->fromStageScript);
- if(shootInfo->fromStageScript||original::DemoActive()){
+	float angleToChara=m_pStage->AimAngle(shootInfo->shootOrigX,shootInfo->shootOrigY,originalPattern);
+ if(originalPattern){
   const int type=shootInfo->shootType<=EST15_DEFAULT_SINGLE_TO_CHARA?shootInfo->shootType:EST14_DEFAULT_SINGLE;int way=1,stack=1;
   if((type>=2&&type<=5)||(type>=8&&type<=13))way=shootInfo->nWay?shootInfo->nWay:1;
   if(type>=6&&type<=11)stack=shootInfo->nMulti?shootInfo->nMulti:1;
@@ -338,10 +339,16 @@ unsigned char CEnemyBullet::AdjustBulletImageBasedOnAngle(unsigned char curImgId
 	return baseIdx+discreteAngle/8;
 }
 
+unsigned char CEnemyBullet::TemplateAngle() const
+{
+	return original::DemoActive()?original::Demo().bulletTemplateAngle:m_templateAngle;
+}
+
 void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bAdjustSpeed)
 {
 	RememberSpreadAngle(*shootInfo);
- if(original::DemoActive())original::Demo().bulletTemplateAngle=static_cast<unsigned char>(int(shootInfo->shootAngle));
+ if(original::BossGeometryEnabled())m_templateAngle=static_cast<unsigned char>(int(shootInfo->shootAngle));
+ if(original::DemoActive())original::Demo().bulletTemplateAngle=m_templateAngle;
 	if (m_noEnemyBullet==true)
 		return;
 
@@ -376,7 +383,7 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 	{
 		m_pStage->MarkPlayerMiss();
 	}
-	const bool originalPattern=shootInfo->fromStageScript||original::DemoActive();
+	const bool originalPattern=shootInfo->fromStageScript||original::BossGeometryEnabled();
 	if (bAdjustSpeed)
 		shootInfo->bulletSpeed=m_pStage->AdjustSpeedBasedOnPlayerPerformance(shootInfo->bulletSpeed);
 
@@ -439,12 +446,12 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
   int& end=freeRecIdx[i]<ENEMY_BULLET_N_RECORD_DOT?m_dotEnd:m_imageEnd;if(end<=freeRecIdx[i])end=freeRecIdx[i]+1;
   m_bullets[freeRecIdx[i]].coopGrazeMask=0;
 		m_bullets[freeRecIdx[i]].bornStageAndGrazeFlag=bornStage;
-		m_bullets[freeRecIdx[i]].curX=shootInfo->shootOrigX;
-		m_bullets[freeRecIdx[i]].curY=shootInfo->shootOrigY;
+		m_bullets[freeRecIdx[i]].curX=originalPattern?float(int(shootInfo->shootOrigX)):shootInfo->shootOrigX;
+		m_bullets[freeRecIdx[i]].curY=originalPattern?float(int(shootInfo->shootOrigY)):shootInfo->shootOrigY;
 		if (bSpecialBullet)
 		{
-			m_bullets[freeRecIdx[i]].origX=shootInfo->shootOrigX;
-			m_bullets[freeRecIdx[i]].origY=shootInfo->shootOrigY;
+			m_bullets[freeRecIdx[i]].origX=m_bullets[freeRecIdx[i]].curX;
+			m_bullets[freeRecIdx[i]].origY=m_bullets[freeRecIdx[i]].curY;
 			m_bullets[freeRecIdx[i]].dieStageAndMoveType=1;
 			m_bullets[freeRecIdx[i]].totalDistanceTravelled=0;
 			m_bullets[freeRecIdx[i]].accumulator=0;
@@ -460,11 +467,11 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 		}
 		m_bullets[freeRecIdx[i]].age=0;
 		m_bullets[freeRecIdx[i]].bulletType=shootInfo->shootType;
-		m_bullets[freeRecIdx[i]].fromStageScript=shootInfo->fromStageScript;
+		m_bullets[freeRecIdx[i]].fixedPoint=originalPattern;
 	}
 
 	//calculate speed and angle of all bullets that are shot
-	FillRecordSpeedAndAngle(freeRecIdx,shootInfo);
+	FillRecordSpeedAndAngle(freeRecIdx,shootInfo,originalPattern);
 
 	//update velX,velY and image based on speed and angle
 	for (int i=0;i<nRecordNeeded;i++)
@@ -484,6 +491,7 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 void CEnemyBullet::SpecialMove(int recordIdx)
 {
 	ENEMY_BULLET &pBul=m_bullets[recordIdx];
+	const bool nativeMotion=original::BossGeometryEnabled();
 
 	bool bTurnToChara=false;
 	bool bBounceXLow=false,bBounceYLow=false,bBounceXHigh=false,bBounceYHigh=false;
@@ -496,7 +504,7 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 		{
 			pBul.accumulator++;
 			if (bTurnToChara)
-				pBul.curAngle=m_pStage->AimAngle(pBul.curX,pBul.curY);
+				pBul.curAngle=m_pStage->AimAngle(pBul.curX,pBul.curY,nativeMotion);
 			else
 				pBul.curAngle+=pBul.delta;
 			pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
@@ -512,7 +520,7 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 		}
 		return;
 	case EBMT03_SPEED_UP:
-		if(original::DemoActive()){
+		if(nativeMotion){
    UpdateVelXYFromSpeedAngle(recordIdx);pBul.curSpeed=float((int(pBul.curSpeed)+pBul.specialMoveVar)&255);
   }else{pBul.curSpeed+=pBul.specialMoveVar;UpdateVelXYFromSpeedAngle(recordIdx);}
 		return;
@@ -536,7 +544,7 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 				float deltaAngle=pBul.delta-pBul.curAngle;
 				while(deltaAngle>128) deltaAngle-=256;
 				while(deltaAngle<-128) deltaAngle+=256;
-				if(original::DemoActive())pBul.curAngle=float((int(pBul.curAngle)+int(int8_t(int(pBul.delta)-int(pBul.curAngle)))/4)&255);
+				if(nativeMotion)pBul.curAngle=float((int(pBul.curAngle)+int(int8_t(int(pBul.delta)-int(pBul.curAngle)))/4)&255);
     else pBul.curAngle+=deltaAngle/4;
 			}
 		}
@@ -554,7 +562,7 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 		bBounceXLow=bBounceXHigh=bBounceYLow=true;
 	    break;
 	case EBMT09_SPEED_UP_VERTICAL:
-  if(original::DemoActive()){
+  if(nativeMotion){
    if(m_pStage->m_curFrame&1)pBul.velY=float(int16_t(int(pBul.velY)+pBul.specialMoveVar));
    return;
   }
@@ -566,7 +574,7 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 		}
 	    return;
 	case EBMT10_STRAIGHT:
-  if(original::DemoActive()){
+  if(nativeMotion){
    // Native BSM_EXACT_LINEAR recomputes the point from total distance.
    // Repeatedly adding a quantized velocity follows a different trajectory.
    const int distance=int16_t(int(pBul.totalDistanceTravelled)+int(pBul.curSpeed));
@@ -672,8 +680,8 @@ void CEnemyBullet::Step()
 					{
 						m_bullets[i].lastX=m_bullets[i].curX;		//move forward with 1/3x speed
 						m_bullets[i].lastY=m_bullets[i].curY;
-						m_bullets[i].curX+=((m_bullets[i].fromStageScript||original::DemoActive())?float(int(m_bullets[i].velX)/3):m_bullets[i].velX/3);
-						m_bullets[i].curY+=((m_bullets[i].fromStageScript||original::DemoActive())?float(int(m_bullets[i].velY)/3):m_bullets[i].velY/3);
+						m_bullets[i].curX+=((m_bullets[i].fixedPoint||original::DemoActive())?float(int(m_bullets[i].velX)/3):m_bullets[i].velX/3);
+						m_bullets[i].curY+=((m_bullets[i].fixedPoint||original::DemoActive())?float(int(m_bullets[i].velY)/3):m_bullets[i].velY/3);
 						m_bullets[i].bornStageAndGrazeFlag++;
 					}
 				if (m_bullets[i].bornStageAndGrazeFlag>=20)			//born stage end, change to normal mode
@@ -695,7 +703,7 @@ void CEnemyBullet::Step()
 					{
 						m_bullets[i].accumulator--;
 						//speed transit from 72 to origSpeed linearly within 32 frames
-						m_bullets[i].curSpeed=m_bullets[i].origSpeed+((m_bullets[i].fromStageScript||original::DemoActive())?float((int(m_bullets[i].delta)*m_bullets[i].accumulator)/32):m_bullets[i].delta*m_bullets[i].accumulator/32.0f);
+						m_bullets[i].curSpeed=m_bullets[i].origSpeed+((m_bullets[i].fixedPoint||original::DemoActive())?float((int(m_bullets[i].delta)*m_bullets[i].accumulator)/32):m_bullets[i].delta*m_bullets[i].accumulator/32.0f);
 						if (m_bullets[i].accumulator==0)			//end of fade in frames
 						{
 							m_bullets[i].curSpeed=m_bullets[i].origSpeed;

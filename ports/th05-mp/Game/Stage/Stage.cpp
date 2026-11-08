@@ -395,7 +395,12 @@ void CStage::ApplyPracticeSection()
  if(auto* boss=dynamic_cast<CBossStage4*>(m_pBoss))boss->m_curvingBullet.Initialize();
  if(auto* boss=dynamic_cast<CBossStage4Mai*>(m_pBoss))boss->m_largeBullet.Initialize();
  if(auto* boss=dynamic_cast<CBossStage4Yuki*>(m_pBoss))boss->m_largeBullet.Initialize();
- if(auto* boss=dynamic_cast<CBossStage5*>(m_pBoss))boss->m_knifeBullet.Initialize();
+ if(auto* boss=dynamic_cast<CBossStage5*>(m_pBoss)){
+  boss->m_knifeBullet.Initialize();
+  // Seeking the blue volley's rage state runs its earlier laser spawn.
+  // Practice starts at the selected attack without those synthetic lasers.
+  if(p.rage&&selected->phase==7&&original::BossGeometryEnabled())m_pLaser->Initialize();
+ }
  if(auto* boss=dynamic_cast<CBossStage6*>(m_pBoss)){boss->m_curvingBullet.Initialize();boss->m_shinkiBullet.Initialize();}
  if(auto* boss=dynamic_cast<CBossStageEx*>(m_pBoss))boss->m_curvingBullet.Initialize();
  m_pItem->Initialize();m_pPopupNumber->Initialize();m_pGatherEffect->Initialize();m_pSparkEffect->Initialize();m_pCircle->Initialize();

@@ -76,8 +76,8 @@ int CMidBossStage4::FadeOutAndIn()
 	{
 		if (frameIdx==32)
 		{
-			m_phase1FadeCenterX=original::DemoActive()?float(1024+original::Random()%4096):(float)(64+original::Random()%256)*16;
-			m_curY=original::DemoActive()?float(1024+original::Random()%512):(float)(64+original::Random()%32)*16;
+			m_phase1FadeCenterX=original::BossGeometryEnabled()?float(1024+original::Random()%4096):(float)(64+original::Random()%256)*16;
+			m_curY=original::BossGeometryEnabled()?float(1024+original::Random()%512):(float)(64+original::Random()%32)*16;
 			return 0;
 		}
 		frameIdx=64-frameIdx;
@@ -110,7 +110,7 @@ void CMidBossStage4::Phase1Mode1()
 	shootInfo.bulletBornType=2;
 	shootInfo.shootType=EST13_RANDOM_BASE_SPEED_32;
 	shootInfo.nWay=7;
-	if(original::DemoActive())shootInfo.shootAngle=m_phase1Mode2Angle;
+	if(original::BossGeometryEnabled())shootInfo.shootAngle=m_phase1Mode2Angle;
 	m_pStage->m_pEnemyBullet->TuneEnemyShootInfo(&shootInfo);
 	if (m_curPhaseFrame>=48&&m_curPhaseFrame<=80&&m_curPhaseFrame%8==0)
 	{
@@ -198,7 +198,7 @@ void CMidBossStage4::Phase1Mode3()
 	{
 		shootInfo.bulletSpeed=(float)16+(m_curPhaseFrame-48)/4*12;
 		shootInfo.shootAngle=(float)32-(m_curPhaseFrame-48)/4*8;
-		if(original::DemoActive())m_phase1Mode2Angle=float((int(shootInfo.shootAngle)-8)&255);
+		if(original::BossGeometryEnabled())m_phase1Mode2Angle=float((int(shootInfo.shootAngle)-8)&255);
 		m_pStage->m_pEnemyBullet->Shoot(&shootInfo);
 		m_pStage->m_bPlaySound[15]=true;
 	}
@@ -227,7 +227,7 @@ void CMidBossStage4::Phase1()
 			m_phase1CurMode=m_phase1NModeChange%3+1;
 			if (practice::AllowTimeout(m_phase1NModeChange>=16))
 				bPhaseEnd=true;
-			if (m_phase1CurMode==2&&!original::DemoActive())
+			if (m_phase1CurMode==2&&!original::BossGeometryEnabled())
 				m_phase1Mode2Angle=(float)(original::Random()%256);
 		}
 		break;
