@@ -15,10 +15,10 @@ protected:
 	void Phase1();
 	void Phase2();
 	void Phase2Shoot();
-	void Phase2ShootType1();
-	void Phase2ShootType2();
-	void Phase2ShootType3();
-	void Phase2ShootType4();
+	void Phase2ShootType1(float x,float y);
+	void Phase2ShootType2(float x,float y);
+	void Phase2ShootType3(float x,float y);
+	void Phase2ShootType4(float x,float y);
 	void Phase3();
 	void Phase3Shoot();
 	void Phase3ShootType1();

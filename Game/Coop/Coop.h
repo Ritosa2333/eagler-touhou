@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include "../Original/OriginalFeatures.h"
 
 namespace th5w { namespace coop {
 // The shared world advances once. Only player-owned objects and resources
@@ -15,7 +16,7 @@ struct Session {
  uint64_t random=0;
  Input input[3]{};
  Stock carry[3]{};
- bool originalPlayerShots=true;
+ unsigned int combatRevision=original::OriginalBossGeometry;
  bool continuing=false,finished=false,challenge=false,localVisibility=false;
 };
 Session& Run();

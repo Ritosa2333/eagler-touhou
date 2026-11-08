@@ -36,7 +36,7 @@ public:
 	int m_playChara;
 	bool m_bPracticeMode;
  bool m_turboMode;
- bool m_originalPlayerShots;
+ unsigned int m_combatRevision;
  practice::Config m_practiceConfig;
 
 public:

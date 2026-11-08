@@ -69,13 +69,17 @@ try{
   }
   const size=host._th05_spectator_size();
   const legacy=host.HEAPU8.slice(host._th05_spectator_state(),host._th05_spectator_state()+size);
-  new DataView(legacy.buffer).setUint32(0,0x35535631,true);
+  const header=new DataView(legacy.buffer);
+  if(header.getUint32(0,true)!==0x35535633)throw Error('Current combat rules were not recorded');
   const ptr=viewer._malloc(size);
   try{
-   viewer.HEAPU8.set(legacy,ptr);
-   if(!viewer._th05_spectator_load(ptr,size))throw Error('Legacy stage checkpoint rejected');
-   const magic=new DataView(viewer.HEAPU8.buffer).getUint32(viewer._th05_spectator_state(),true);
-   if(magic!==0x35535631)throw Error('Legacy shot rules were not retained');
+   for(const revision of [0x35535632,0x35535631]){
+    header.setUint32(0,revision,true);
+    viewer.HEAPU8.set(legacy,ptr);
+    if(!viewer._th05_spectator_load(ptr,size))throw Error('Legacy stage checkpoint rejected');
+    const magic=new DataView(viewer.HEAPU8.buffer).getUint32(viewer._th05_spectator_state(),true);
+    if(magic!==revision)throw Error('Legacy combat rules were not retained');
+   }
   }finally{viewer._free(ptr);}
   return result;
  },count);

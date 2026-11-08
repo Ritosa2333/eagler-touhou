@@ -14,7 +14,7 @@ function checkpointInfo(state) {
   const difficulty = view.getInt32(16, true);
   const characters = Array.from({length: 3}, (_, seat) => view.getInt32(28 + seat * 4, true));
   const stageMagic = view.getUint32(0, true);
-  if (![0x35535631, 0x35535632].includes(stageMagic) || ![2, 3].includes(count) ||
+  if (![0x35535631, 0x35535632, 0x35535633].includes(stageMagic) || ![2, 3].includes(count) ||
       !inRange(stage, 0, 6) || !inRange(difficulty, 0, 4) || (stage === 6) !== (difficulty === 4) ||
       !characters.every(character => inRange(character, 0, 3))) throw Error('Invalid TH05 replay checkpoint');
   return {count, stage, difficulty, stageMagic, characters: characters.slice(0, count)};

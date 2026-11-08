@@ -192,11 +192,12 @@ struct PracticeTests {
      boss->m_curPhaseFrame=frame;
      (boss->*shoot)();
      int emitted[2]={};
-     for(const auto& bullet:bullets->m_bullets){
+     for(int index=ENEMY_BULLET_N_RECORD-1;index>=0;--index){
+      const auto& bullet=bullets->m_bullets[index];
       if(!bullet.flag)continue;
       const int side=bullet.curX>boss->m_curX?1:0;
       const int shot=emitted[side]++;
-      const float spread=difficulty==3?(shot-1)*6.0f:0.0f;
+      const float spread=difficulty==3?(shot==2?-6.0f:shot*6.0f):0.0f;
       const float stack=difficulty==2?shot*6.0f:0.0f;
       if(bullet.imgIdx<image||bullet.imgIdx>=image+32||
          std::abs(std::remainder(bullet.curAngle-aim[side]-spread,256.0f))>0.001f||
@@ -251,7 +252,8 @@ struct PracticeTests {
    const float firstAngle=frame==32?0:127;
    const float turn=frame==32?-64:64;
    int count=0;
-   for(const auto& bullet:bullets->m_bullets){
+   for(int index=ENEMY_BULLET_N_RECORD-1;index>=0;--index){
+    const auto& bullet=bullets->m_bullets[index];
     if(!bullet.flag)continue;
     if((count==0&&bullet.curAngle!=firstAngle)||bullet.delta!=turn||bullet.origSpeed!=38)
      throw std::runtime_error("Wrong Yumeko final ring angle, turn or speed");
@@ -283,7 +285,7 @@ struct PracticeTests {
     for(int i=start;i<start+limit;i++){
      auto& bullet=bullets->m_bullets[i];
      if(!bullet.flag)continue;
-     if(!bullet.fromStageScript||!std::isfinite(bullet.curX)||!std::isfinite(bullet.curY)||
+     if(!bullet.fixedPoint||!std::isfinite(bullet.curX)||!std::isfinite(bullet.curY)||
         bullet.curAngle<0||bullet.curAngle>=256||bullet.origSpeed<0||bullet.origSpeed>255)
       throw std::runtime_error("Invalid scripted enemy bullet");
      ++shots;
@@ -464,7 +466,7 @@ struct PracticeTests {
     for(int frame=192;frame<=320&&shinki->m_phase10Timer<=65;frame++){
      bullets->Initialize();
      shinki->m_curPhaseFrame=frame;
-     shinki->Phase10Shoot();
+     shinki->Phase10Shoot(shinki->m_curY);
     }
     if(shinki->m_phase10Var3!=intervals[difficulty])throw std::runtime_error("Wrong Shinki late ball interval");
    }

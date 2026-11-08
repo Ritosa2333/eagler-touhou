@@ -68,13 +68,13 @@ void CBossStage1::Phase1()
 	}
 }
 
-void CBossStage1::Phase2ShootType1()
+void CBossStage1::Phase2ShootType1(float x,float y)
 {
 	if (m_curPhaseFrame%2==0)
 	{
 		ENEMY_SHOOT_INFO shootInfo;
-		shootInfo.shootOrigX=m_curX;
-		shootInfo.shootOrigY=m_curY;
+		shootInfo.shootOrigX=x;
+		shootInfo.shootOrigY=y;
 		shootInfo.bulletBornType=2;
 		shootInfo.bulletImg=44;
 		shootInfo.shootType=EST00_SINGLE;
@@ -85,13 +85,13 @@ void CBossStage1::Phase2ShootType1()
 	}
 }
 
-void CBossStage1::Phase2ShootType2()
+void CBossStage1::Phase2ShootType2(float x,float y)
 {
 	if (m_curPhaseFrame%2==0)
 	{
 		ENEMY_SHOOT_INFO shootInfo;
-		shootInfo.shootOrigX=m_curX;
-		shootInfo.shootOrigY=m_curY;
+		shootInfo.shootOrigX=x;
+		shootInfo.shootOrigY=y;
 		shootInfo.bulletBornType=2;
 		shootInfo.bulletImg=44;
 		shootInfo.shootType=EST00_SINGLE;
@@ -102,13 +102,13 @@ void CBossStage1::Phase2ShootType2()
 	}
 }
 
-void CBossStage1::Phase2ShootType3()
+void CBossStage1::Phase2ShootType3(float x,float y)
 {
 	if (m_curPhaseFrame==32)
 	{
 		ENEMY_SHOOT_INFO shootInfo;
-		shootInfo.shootOrigX=m_curX;
-		shootInfo.shootOrigY=m_curY;
+		shootInfo.shootOrigX=x;
+		shootInfo.shootOrigY=y;
 		shootInfo.bulletBornType=18;
 		shootInfo.bulletImg=48;
 		shootInfo.shootType=EST09_NWAY_MULTI_TO_CHARA;
@@ -124,13 +124,13 @@ void CBossStage1::Phase2ShootType3()
 	}
 }
 
-void CBossStage1::Phase2ShootType4()
+void CBossStage1::Phase2ShootType4(float x,float y)
 {
 	if (m_curPhaseFrame%8==0)
 	{
 		ENEMY_SHOOT_INFO shootInfo;
-		shootInfo.shootOrigX=m_curX;
-		shootInfo.shootOrigY=m_curY;
+		shootInfo.shootOrigX=x;
+		shootInfo.shootOrigY=y;
 		shootInfo.bulletBornType=18;
 		shootInfo.bulletImg=48;
 		shootInfo.shootType=EST06_MULTI;
@@ -155,7 +155,9 @@ void CBossStage1::Phase2Shoot()
 	}
 	else
 	{
+		float x=m_curX,y=m_curY;
 		const bool finished=RandomWalk(m_curPhaseFrame-16)!=0;
+		if (!original::BossGeometryEnabled()){x=m_curX;y=m_curY;}
 		// The original calls the pattern once more after clearing its clock.
 		if (finished&&m_curMode!=3)
 		{
@@ -165,16 +167,16 @@ void CBossStage1::Phase2Shoot()
 		switch(m_curMode)
 		{
 		case 1:
-			Phase2ShootType1();
+			Phase2ShootType1(x,y);
 			break;
 		case 2:
-			Phase2ShootType2();
+			Phase2ShootType2(x,y);
 			break;
 		case 3:
-			if (!finished)Phase2ShootType3();
+			if (!finished)Phase2ShootType3(x,y);
 		    break;
 		case 4:
-			Phase2ShootType4();
+			Phase2ShootType4(x,y);
 		    break;
 		}
 		if (finished)
