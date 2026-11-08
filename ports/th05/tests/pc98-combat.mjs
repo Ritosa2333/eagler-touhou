@@ -47,4 +47,3 @@ export async function compareCombat(frame, file) {
  assert.deepEqual(result.specialErrors,[]);
  console.log(`PC-98 combat: ${result.cases} damage cases, ${result.frames} Bomb frames, ${result.specialFrames} special projectile frames`);
 }
-
