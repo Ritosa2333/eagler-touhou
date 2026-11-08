@@ -67,6 +67,16 @@ try{
    if(host._th05_spectator_serial()===before)throw Error('Stage did not transition');load();check();
    result.push({stage:stage+1,transitionTicks:ticks,bytes:host._th05_spectator_size(),checksum:host._th05_coop_checksum()});
   }
+  const size=host._th05_spectator_size();
+  const legacy=host.HEAPU8.slice(host._th05_spectator_state(),host._th05_spectator_state()+size);
+  new DataView(legacy.buffer).setUint32(0,0x35535631,true);
+  const ptr=viewer._malloc(size);
+  try{
+   viewer.HEAPU8.set(legacy,ptr);
+   if(!viewer._th05_spectator_load(ptr,size))throw Error('Legacy stage checkpoint rejected');
+   const magic=new DataView(viewer.HEAPU8.buffer).getUint32(viewer._th05_spectator_state(),true);
+   if(magic!==0x35535631)throw Error('Legacy shot rules were not retained');
+  }finally{viewer._free(ptr);}
   return result;
  },count);
  report.errors=errors;report.runtimeErrors=await page.evaluate(()=>events.filter(e=>e.event==='error'));assert.deepEqual(errors,[]);assert.deepEqual(report.runtimeErrors,[]);report.passed=true;await writeFile(resolve(out,'spectator.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));
