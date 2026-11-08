@@ -699,17 +699,40 @@ void GameBattle::save_rollback(multiplayer::FrameImage& image){
     image.save(primary_retired,ghosts,transfers,spell_context,hud_context,input,world_running,session,spell,score,
         effects.handles,effects.cursor,effects.error,grid_viewport,graze_total,graze_chapter,error);
     image.restore_with([this]{dialogue.reset();targets.clear();services->projectiles.finish_contacts();return true;});
-    const auto save_pilot=[&](Player& p,BombController& b,i32 ch){
+    struct PilotProjectiles {
+        decltype(PlayerShots::shots) shots;
+        decltype(DamageSources::sources) sources;
+    };
+    struct ProjectileSnapshot {
+        std::vector<PilotProjectiles> pilots;
+        // These fixed-size arrays own no resources. The next capture
+        // overwrites them and the pool retains at most one spare.
+        void reset(){}
+    };
+    auto& projectiles=image.reuse<ProjectileSnapshot>().pilots;
+    projectiles.resize(pilot_count());
+    const auto save_pilot=[&](Player& p,BombController& b,i32 ch,u32 seat){
         auto& v=p.visuals;auto& f=p.frame;auto& life=p.life;auto& shot=p.shot_context;auto& shooting=f.shooting;
-        image.save(p.resource.header,p.motion,p.damage,p.error,p.initialized,v.root,v.focus_handle,v.barrier_handle,
+        auto& damage=p.damage;
+        auto& projectile=projectiles[seat];
+        projectile.shots=p.shots.shots;
+        projectile.sources=damage.sources;
+        image.save(p.resource.header,p.motion,p.error,p.initialized,v.root,v.focus_handle,v.barrier_handle,
             v.option_handles,p.options.power_level,p.options.error);
-        image.save(p.shots.shots,p.shots.error,p.shots.rate,p.shots.reward_counter,p.shots.reward_auxiliary,
+        image.save(damage.cursor,damage.maximum_damage,damage.score,damage.shared_score,damage.uncap_score,
+            damage.error,damage.hit_callback);
+        image.save(p.shots.error,p.shots.rate,p.shots.reward_counter,p.shots.reward_auxiliary,
             shot.option_angles,shot.laser_power,shot.power,shot.power_step,shot.shoot_frame,shot.player_state,
             shot.roaring_kind,shot.roaring_flags,shot.enemy_scene,shot.bomb_active,shot.screen_origin,shot.background_delta);
         image.save(life.state,life.age,life.invulnerability,life.last_death_position,life.error,
             f.input_age,f.ready_age,f.bounds,f.collision,f.error,shooting.shot,shooting.continuous,shooting.charge,
             shooting.charge_origin,shooting.charge_handle,shooting.auxiliary,shooting.auxiliary_active,shooting.error);
-        image.restore_with([&p]{p.frame.context={};p.frame.active_rate=nullptr;p.shot_context.targets.clear();p.visuals.hitbox_display.reset();return true;});
+        image.restore_with([&p,saved=&projectile]{
+            p.shots.shots=saved->shots;
+            p.damage.sources=saved->sources;
+            p.frame.context={};p.frame.active_rate=nullptr;p.shot_context.targets.clear();p.visuals.hitbox_display.reset();
+            return true;
+        });
         auto& c=b.context;
         image.save(b.position,b.angle,b.age,b.main_handle,b.secondary_handle,b.aura_handle,b.failed_spell,b.error,
             b.score_popup,b.rate,c.hud_available,c.hud_collect,c.roaring_available,c.enemy_available);
@@ -727,11 +750,11 @@ void GameBattle::save_rollback(multiplayer::FrameImage& image){
             image.save(youmu.handles,youmu.sides,youmu.heights,youmu.timers,youmu.emitted,youmu.interval,youmu.spawn_age);
         }
     };
-    save_pilot(*player,*bomb,character);
+    save_pilot(*player,*bomb,character,0);
     for(u32 seat=0;seat<partner_count;++seat){
         auto& p=*partners[seat];
         image.save(p.session,p.life_piece_tier,p.collection.error,p.input,p.retired);
-        save_pilot(p.player,*p.bomb,p.character);
+        save_pilot(p.player,*p.bomb,p.character,seat+1);
     }
     auto& h=*hud;auto& s=*spell_card;
     image.save(h.seats,h.partner_stock,h.life_handles,h.bomb_handles,h.clock_handles,h.gauges,h.phase_handles,

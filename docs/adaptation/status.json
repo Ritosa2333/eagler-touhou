@@ -3687,7 +3687,7 @@
       "game": "th17",
       "variant": "multiplayer",
       "directory": "ports/th17-mp",
-      "sourceDigest": "67e6b303cd4175722081df44017f8400a81f8491c1171459940d5bae9c3fd83e",
+      "sourceDigest": "75f3e80309a1b9f99b10e1a7e0912e5e33f172eb3dc4eb06d0a993fc8c1ec8e9",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 233,
