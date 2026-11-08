@@ -7,6 +7,7 @@
 // share this machine, so CPU contention differs from three separate devices.
 // The runtime publishes its game counter every six steps; individual one-second
 // samples can therefore fluctuate by several frames around the true rate.
+// PC98_FPS_MIN can optionally make any lower one-second sample fail the run.
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
@@ -83,4 +84,5 @@ try{
   assert.deepEqual(errors,[]);const boundary=Math.floor(Math.min(...end.map(x=>x.snapshot.rows.length))/120)*120;
   const hashes=end.map(x=>x.snapshot.rows[boundary-1]?.hash);assert(hashes.every(h=>h&&h.tick===boundary&&typeof h.hash==='string'&&JSON.stringify(h)===JSON.stringify(hashes[0])),'confirmed hashes missing or differ');assert(end.every(x=>!x.pointError),'checkpoint builder error');
   console.log('RESULT',JSON.stringify({elapsed,boundary,hashes,points:(finalTape[0].snapshot.points||[]).map(p=>({frame:p.frame,base64Bytes:p.data.length})),windows,diagnostics:end.map(x=>x.diagnostics),clients:begin.map((b,i)=>({begin:b.health,end:end[i].health,gameFps:(end[i].health.gameFrame-b.health.gameFrame)/elapsed,syncFps:(end[i].health.frame-b.health.frame)/elapsed,drawFps:(end[i].health.frames-b.health.frames)/elapsed}))}));
+  if(process.env.PC98_FPS_MIN!==undefined){const min=Number(process.env.PC98_FPS_MIN);assert(Number.isFinite(min)&&min>=0,'invalid PC98_FPS_MIN');assert(windows.every(window=>window.every(fps=>fps>=min)),`one-second game frame rate fell below ${min}`);}
 }finally{for(const c of clients)c.close();await browser?.close();await new Promise(r=>server.close(r));relay.kill();}
