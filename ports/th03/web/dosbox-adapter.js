@@ -29,7 +29,7 @@ export class DOSBoxPC98 {
     const NativeDate=globalThis.Date;
     class VirtualDate extends NativeDate {constructor(...args){super(...(args.length?args:[epoch+(emulator.module?.virtualNow||0)]));}static now(){return epoch+(emulator.module?.virtualNow||0);}getTimezoneOffset(){return 0;}getFullYear(){return this.getUTCFullYear();}getMonth(){return this.getUTCMonth();}getDate(){return this.getUTCDate();}getDay(){return this.getUTCDay();}getHours(){return this.getUTCHours();}getMinutes(){return this.getUTCMinutes();}getSeconds(){return this.getUTCSeconds();}}
     const queue=[];let receiver;
-    this.module={canvas:this.config.canvas,wasmBinary,worker:!!this.config.workerRuntime,SDL2:{audioContext:context},virtualDate:VirtualDate,virtualNow:0,targetNow:0,deterministic:net,nativeScheduling:true,nativeCpu:true,nativePlanar:false,nativeFramePresentation:false,
+    this.module={canvas:this.config.canvas,wasmBinary,worker:!!this.config.workerRuntime,SDL2:{audioContext:context},virtualDate:VirtualDate,virtualNow:0,targetNow:0,deterministic:net,nativeScheduling:true,nativeCpu:true,nativePlanar:net,nativeFramePresentation:false,
       mobileRuntime:{core:'dosbox-x',cpuCore:'simple',continuation:net?'Asyncify':'JSPI',writeJournal:tracked},
       locateFile:f=>new URL(f==='wdosbox-x-jspi.wasm'?(net?(tracked?'wdosbox-x-rollback-tracked.wasm':'wdosbox-x-rollback.wasm'):'wdosbox-x-fast.wasm'):f==='wdosbox-x.wasm'?(tracked?'wdosbox-x-rollback-tracked.wasm':'wdosbox-x-rollback.wasm'):f,vendor).href,
       postMessage:(name,props)=>{if(receiver)receiver(name,props);else queue.push([name,props]);},

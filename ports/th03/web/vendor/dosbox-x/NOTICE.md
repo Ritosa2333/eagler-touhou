@@ -67,6 +67,11 @@ differential/storage checks passed; TH03 gameplay and mobile performance remain
 unverified. The distribution manifests select native scheduling and CPU, with
 planar lookup disabled (`cpu` profile plus `adaptive-word8` snapshots).
 
+2026-11-08: Multiplayer enables the existing PC-98 planar lookup. Replayed
+battle snapshots were compared against the original path for guest state, RGB
+and GPU pixels. Local play retains its existing renderer. This validation does
+not guarantee frame rate under every device, network or bullet pattern.
+
 2026-10-15 battle update: `tools/build_battle_idle_candidate.mjs` applies a
 pinned Binaryen transform to both TH03 network cores. It recognizes the exact
 TH03 RAM wait sequence MOV AL,[6599]; MOV AH,0; CMP AX,[11ea]; JA back. It charges

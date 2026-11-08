@@ -53,7 +53,7 @@
   "releaseProfile": {
     "nativeScheduling": true,
     "nativeCpu": true,
-    "nativePlanar": false,
+    "nativePlanar": true,
     "nativeFramePresentation": false
   },
   "localRuntimeFiles": {

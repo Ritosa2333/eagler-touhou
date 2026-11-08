@@ -4,11 +4,32 @@ import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
 import {createRequire} from 'node:module';
 import {spawn} from 'node:child_process';
+import {createHash} from 'node:crypto';
 import {findChromiumExecutable} from '../../../launcher/lib/chromium-executable.mjs';
 const require=createRequire(new URL('../../../launcher/package.json',import.meta.url)),puppeteer=require('puppeteer-core');
 const root=resolve(import.meta.dirname,'../../..'),portRoot=resolve(import.meta.dirname,'..'),runtime=resolve(portRoot,'build-eagler'),out=resolve(portRoot,'.cache/browser');
 await mkdir(out,{recursive:true});
 const data=await readFile(resolve(portRoot,'content/th03.data'));
+const planarParity=process.env.PC98_TEST_PLANAR_PARITY==='1';
+const parityWorker=planarParity?await readFile(resolve(import.meta.dirname,'planar-parity-worker.txt'),'utf8'):null;
+async function instrumented(path,bytes){
+  if(!planarParity)return bytes;
+  if(path==='app.js')return Buffer.from(bytes.toString()+'\nglobalThis.__planarTest=()=>emulator.call("qa-planar");\n');
+  if(path==='netplay/simulation-worker.js'){
+    const source=bytes.toString(),needle="  if(method==='restore')";
+    if(!source.includes(needle))throw Error('Planar parity injection point missing');
+    return Buffer.from(source.replace(needle,parityWorker+needle));
+  }
+  if(path==='lockstep-runtime.json'){
+    const manifest=JSON.parse(bytes);
+    for(const table of [manifest.files,manifest.assets])if(table)for(const name of ['app.js','netplay/simulation-worker.js'])if(table[name]){
+      const modified=await instrumented(name,await readFile(resolve(runtime,name)));
+      table[name]=createHash('sha256').update(modified).digest('hex');
+    }
+    return Buffer.from(JSON.stringify(manifest));
+  }
+  return bytes;
+}
 let browser,relay,page,log='',battleReplayBytes;const sockets=[],errors=[],requests=[],failures=[],results=[];
 const wait=async(check,label,ms=90000)=>{const end=Date.now()+ms;while(Date.now()<end){if(await check())return;await new Promise(r=>setTimeout(r,100));}throw Error(label+' timeout events='+JSON.stringify(await page.evaluate(()=>events))+'\n'+log);};
 const html=`<!doctype html><style>body{margin:0;background:#111}iframe{width:640px;height:480px;border:0}</style><script>
@@ -22,7 +43,7 @@ const server=createServer(async(req,res)=>{try{
   if(path==='/data'){res.end(data);return;}
   if(!path.startsWith('/runtime/')){res.writeHead(404).end();return;}
   const file=resolve(runtime,decodeURIComponent(path.slice(9)));if(!file.startsWith(runtime+sep))throw Error('path');
-  res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.wasm':'application/wasm','.css':'text/css','.json':'application/json'})[extname(file)]||'application/octet-stream');let bytes=await readFile(file);if(process.env.PC98_TEST_WORKER==='1'&&path==='/runtime/managed-room.mjs')bytes=Buffer.from(bytes.toString().replace("netWorker:'0'","netWorker:'1'"));res.end(bytes);
+  res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.wasm':'application/wasm','.css':'text/css','.json':'application/json'})[extname(file)]||'application/octet-stream');let bytes=await instrumented(path.slice(9),await readFile(file));if(process.env.PC98_TEST_WORKER==='1'&&path==='/runtime/managed-room.mjs')bytes=Buffer.from(bytes.toString().replace("netWorker:'0'","netWorker:'1'"));res.end(bytes);
 }catch(error){res.writeHead(404).end(error.message);}});
 await new Promise(r=>server.listen(Number(process.env.PC98_TEST_HTTP_PORT||18383),'127.0.0.1',r));
 function connection(url){
@@ -80,11 +101,16 @@ try{
       await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyZ',down:false});});await new Promise(r=>setTimeout(r,500));
     }
     await wait(async()=>(await frames()[0].evaluate(()=>window.th03SyncState?.phase))===1,'battle phase',60000);
+    if(process.env.PC98_TEST_PLANAR_PARITY==='1'){
+      const parity=await frames()[0].evaluate(()=>window.__planarTest());
+      console.log('PLANAR_PARITY initial',JSON.stringify(parity));assert.equal(parity.equal,true,'planar pixel and state parity');
+    }
     if(process.env.PC98_TEST_PERF_SECONDS){
       const seconds=Number(process.env.PC98_TEST_PERF_SECONDS),samples=[];
       await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyZ',down:true});});
       for(let n=0;n<seconds;n++){
         await new Promise(resolve=>setTimeout(resolve,1000));
+        if(process.env.PC98_TEST_PLANAR_PARITY==='1'&&n%10===9){const parity=await frames()[0].evaluate(()=>window.__planarTest());console.log('PLANAR_PARITY',n+1,JSON.stringify(parity));assert.equal(parity.equal,true,'planar pixel and state parity');}
         // Optional attack pulses exercise longer match sequences. Screenshots
         // are only for scene inspection: they perturb timing, so do not use
         // screenshot runs as frame-rate benchmarks.
