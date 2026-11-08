@@ -78,7 +78,8 @@ void CEnemyBullet::TuneEnemyShootInfo(ENEMY_SHOOT_INFO *pInfo)
 		case EST06_MULTI:
 		case EST07_MULTI_TO_CHARA:
 			pInfo->deltaSpeed-=static_cast<int>(pInfo->deltaSpeed)/4;
-			if (pInfo->nMulti>=2)	//PC98 ver uses "if pInfo->nWayUnitAngle", which doen't make sense. should be bug
+			// The original Easy stack rule checks the stored spread angle.
+			if (pInfo->fromStageScript?pInfo->nWayUnitAngle>=2:pInfo->nMulti>=2)
 				pInfo->nMulti--;
 		    break;
 		}
@@ -178,10 +179,10 @@ int CEnemyBullet::GetNRecordNeeded(ENEMY_SHOOT_INFO *shootInfo)
 	return 0;
 }
 
-int CEnemyBullet::FindFreeRecord(int *retIdxArray,int startIdx,int nIdx,int nNeeded)
+int CEnemyBullet::FindFreeRecord(int *retIdxArray,int startIdx,int nIdx,int nNeeded,bool originalPool)
 {
 	int nFound=0;
- if(original::DemoActive()){
+ if(originalPool){
   nIdx=startIdx==0?180:220;
   for(int i=startIdx+nIdx-1;i>=startIdx;i--)if(!m_bullets[i].flag){retIdxArray[nFound++]=i;if(nFound==nNeeded)return nNeeded;}
   retIdxArray[nFound]=-1;return nFound;
@@ -201,9 +202,9 @@ int CEnemyBullet::FindFreeRecord(int *retIdxArray,int startIdx,int nIdx,int nNee
 
 void CEnemyBullet::FillRecordSpeedAndAngle(int *freeRecIdx,ENEMY_SHOOT_INFO *shootInfo)
 {
-	float angleToChara=m_pStage->m_pChara->AngleToChara(shootInfo->shootOrigX,shootInfo->shootOrigY);
- if(original::DemoActive()){
-  const int type=shootInfo->shootType;int way=1,stack=1;
+	float angleToChara=m_pStage->m_pChara->AngleToChara(shootInfo->shootOrigX,shootInfo->shootOrigY,shootInfo->fromStageScript);
+ if(shootInfo->fromStageScript||original::DemoActive()){
+  const int type=shootInfo->shootType<=EST15_DEFAULT_SINGLE_TO_CHARA?shootInfo->shootType:EST14_DEFAULT_SINGLE;int way=1,stack=1;
   if((type>=2&&type<=5)||(type>=8&&type<=13))way=shootInfo->nWay?shootInfo->nWay:1;
   if(type>=6&&type<=11)stack=shootInfo->nMulti?shootInfo->nMulti:1;
   const bool spread=type==2||type==3||type==8||type==9,ring=type==4||type==5||type==10||type==11;
@@ -361,9 +362,11 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 	{
 		m_pStage->m_pChara->m_bMiss=true;
 	}
-	//adjust speed
+	const bool originalPattern=shootInfo->fromStageScript||original::DemoActive();
 	if (bAdjustSpeed)
-		shootInfo->bulletSpeed=m_pStage->AdjustSpeedBasedOnPlayerPerformance(shootInfo->bulletSpeed);
+		shootInfo->bulletSpeed=originalPattern
+			?float(original::math::Speed(int(shootInfo->bulletSpeed),m_pStage->m_playerPerformance))
+			:m_pStage->AdjustSpeedBasedOnPlayerPerformance(shootInfo->bulletSpeed);
 
 	//dot bullets and imaged bullets are put in different ranges
 	int startRec,nRec;
@@ -390,7 +393,16 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 				speedFadeIn=0;
 
 	int nRecordNeeded=GetNRecordNeeded(shootInfo);
-	if (!original::DemoActive() &&
+	if (nRecordNeeded==0)
+	{
+		if (!originalPattern)
+		{
+			shootInfo->bulletSpeed=bulletSpeedBackup;
+			return;
+		}
+		nRecordNeeded=1;
+	}
+	if (!originalPattern &&
 	    (shootInfo->shootType==EST06_MULTI || shootInfo->shootType==EST07_MULTI_TO_CHARA))
 	{
 		// The first shot at or above 10 pixels/frame ends a plain stack.
@@ -404,7 +416,7 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 		}
 	}
 	int freeRecIdx[ENEMY_BULLET_N_RECORD];
-	const int found=FindFreeRecord(freeRecIdx,startRec,nRec,nRecordNeeded);
+	const int found=FindFreeRecord(freeRecIdx,startRec,nRec,nRecordNeeded,originalPattern);
 	freeRecIdx[found]=-1;
 
 	for (int i=0;i<nRecordNeeded;i++)
@@ -434,6 +446,7 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 		}
 		m_bullets[freeRecIdx[i]].age=0;
 		m_bullets[freeRecIdx[i]].bulletType=shootInfo->shootType;
+		m_bullets[freeRecIdx[i]].fromStageScript=shootInfo->fromStageScript;
 	}
 
 	//calculate speed and angle of all bullets that are shot
@@ -642,8 +655,8 @@ void CEnemyBullet::Step()
 					{
 						m_bullets[i].lastX=m_bullets[i].curX;		//move forward with 1/3x speed
 						m_bullets[i].lastY=m_bullets[i].curY;
-						m_bullets[i].curX+=(original::DemoActive()?float(int(m_bullets[i].velX)/3):m_bullets[i].velX/3);
-						m_bullets[i].curY+=(original::DemoActive()?float(int(m_bullets[i].velY)/3):m_bullets[i].velY/3);
+						m_bullets[i].curX+=((m_bullets[i].fromStageScript||original::DemoActive())?float(int(m_bullets[i].velX)/3):m_bullets[i].velX/3);
+						m_bullets[i].curY+=((m_bullets[i].fromStageScript||original::DemoActive())?float(int(m_bullets[i].velY)/3):m_bullets[i].velY/3);
 						m_bullets[i].bornStageAndGrazeFlag++;
 					}
 				if (m_bullets[i].bornStageAndGrazeFlag>=20)			//born stage end, change to normal mode
@@ -665,7 +678,7 @@ void CEnemyBullet::Step()
 					{
 						m_bullets[i].accumulator--;
 						//speed transit from 72 to origSpeed linearly within 32 frames
-						m_bullets[i].curSpeed=m_bullets[i].origSpeed+(original::DemoActive()?float((int(m_bullets[i].delta)*m_bullets[i].accumulator)/32):m_bullets[i].delta*m_bullets[i].accumulator/32.0f);
+						m_bullets[i].curSpeed=m_bullets[i].origSpeed+((m_bullets[i].fromStageScript||original::DemoActive())?float((int(m_bullets[i].delta)*m_bullets[i].accumulator)/32):m_bullets[i].delta*m_bullets[i].accumulator/32.0f);
 						if (m_bullets[i].accumulator==0)			//end of fade in frames
 						{
 							m_bullets[i].curSpeed=m_bullets[i].origSpeed;

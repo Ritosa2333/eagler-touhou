@@ -157,6 +157,76 @@ struct PracticeTests {
   }
 
  }
+
+
+ static int StageEnemyWaves(CStage* stage,int number){
+  const int lastFrame[]={8240,6240,9050,11200,7960,1850,11190};
+  const int waveCount[]={204,283,229,352,229,84,291};
+  auto* enemies=stage->m_pEnemy;
+  auto* bullets=stage->m_pEnemyBullet;
+  int waves=0,shots=0;
+  for(int frame=1;frame<=lastFrame[number]+256;frame++){
+   stage->m_curFrame=frame;
+   stage->m_pBackground->Step();
+   const auto* before=enemies->m_pEnemyTableReadPtr;
+   enemies->StepEnemyTable();
+   if(enemies->m_pEnemyTableReadPtr!=before)++waves;
+   stage->m_pGatherEffect->Step();
+   enemies->Step();
+   // Count births without letting the live bullet cap hide later script emissions.
+   for(int start:{0,ENEMY_BULLET_N_RECORD_DOT}){
+    const int limit=start?220:180;
+    for(int i=start;i<start+limit;i++){
+     auto& bullet=bullets->m_bullets[i];
+     if(!bullet.flag)continue;
+     if(!bullet.fromStageScript||!std::isfinite(bullet.curX)||!std::isfinite(bullet.curY)||
+        bullet.curAngle<0||bullet.curAngle>=256||bullet.origSpeed<0||bullet.origSpeed>255)
+      throw std::runtime_error("Invalid scripted enemy bullet");
+     ++shots;
+     bullet.flag=0;
+    }
+   }
+  }
+  if(waves!=waveCount[number]||shots==0)
+   throw std::runtime_error("Stage enemy wave count or firing failed");
+  return waves;
+ }
+ static void Stage3FairyVolley(CStage* stage){
+  auto* enemies=stage->m_pEnemy;
+  auto* bullets=stage->m_pEnemyBullet;
+  const int speeds[]={18,24,30};
+  const int increments[]={5,6,9,9};
+  const int ranks[]={16,32,48};
+  for(int difficulty=0;difficulty<4;difficulty++)for(int rank=0;rank<3;rank++){
+   CGame::GVar().m_playDifficulty=difficulty;
+   stage->m_playerPerformance=ranks[rank];
+   enemies->Initialize();
+   bullets->Initialize();
+   // ST02 type 1, subtype 1: change the spread stack to an aimed stack.
+   enemies->AddEnemy(1,1,100*16,80*16,0xfe);
+   auto& enemy=enemies->m_enemy[0];
+   enemies->StepEnemyScript(&enemy);
+   for(int frame=0;frame<160&&!enemy.bAutoShoot;frame++)enemies->StepEnemyScript(&enemy);
+   if(!enemy.bAutoShoot||enemy.shootInfo.shootType!=EST07_MULTI_TO_CHARA)
+    throw std::runtime_error("Stage 3 fairy did not switch to an aimed stack");
+   if(difficulty==0&&enemy.autoShootInterval!=255)
+    throw std::runtime_error("Easy fairy autofire must use the original 255-frame interval");
+   enemy.autoShootTimer=enemy.autoShootInterval-1;
+   enemies->Step();
+   int count=0;
+   float angle=0;
+   for(int i=179;i>=0;i--){
+    const auto& bullet=bullets->m_bullets[i];
+    if(!bullet.flag)continue;
+    if(count==0)angle=bullet.curAngle;
+    if(bullet.imgIdx!=0||bullet.curAngle!=angle||bullet.origSpeed!=speeds[rank]+count*increments[difficulty])
+     throw std::runtime_error("Stage 3 fairy aimed stack has the wrong shape or speed");
+    ++count;
+   }
+   if(count!=7+rank+(difficulty==3))
+    throw std::runtime_error("Stage 3 fairy aimed stack has the wrong number of shots");
+  }
+ }
  static void BossPatterns(CStage* stage, int number){
   auto* boss=stage->m_pBoss;
   if(!boss)throw std::runtime_error("Could not start TH05 boss pattern check");
@@ -172,6 +242,7 @@ struct PracticeTests {
   boss->m_curX=192*16;
   boss->m_curY=80*16;
   boss->m_curHP=10000;
+  boss->m_curPhaseEndHP=0;
   bullets->Initialize();
 
   if(number==0){
@@ -188,7 +259,8 @@ struct PracticeTests {
     if(std::abs(std::remainder(bullet.curAngle,256.0f))>4)
      throw std::runtime_error("Sara's first spread should be centered at angle zero");
    }
-   if(pellets!=8||active()!=9)throw std::runtime_error("Wrong Sara opening volley size");
+   if(pellets!=8||active()!=9)
+    throw std::runtime_error("Wrong Sara opening volley size: "+std::to_string(pellets)+" pellets, "+std::to_string(active())+" total");
 
    bullets->Initialize();
    ENEMY_SHOOT_INFO stack{};
@@ -333,7 +405,16 @@ struct PracticeTests {
    }
    checked++;
   }
+  int waves=0;
+  for(int stage=0;stage<7;stage++){
+   if(!Start(stage,0))throw std::runtime_error("Could not start TH05 enemy wave audit");
+   CGame::GVar().m_playDifficulty=stage==6?4:3;
+   waves+=StageEnemyWaves(static_cast<CStage*>(game->m_pCurScheme),stage);
+  }
+  if(waves!=1672)throw std::runtime_error("Not all TH05 enemy waves were processed");
   Yumeko();
+  if(!Start(2,0))throw std::runtime_error("Could not start TH05 stage 3");
+  Stage3FairyVolley(static_cast<CStage*>(game->m_pCurScheme));
   for(int stage:{0,1,3,5,6}){
    if(!Start(stage,2))throw std::runtime_error("Could not start TH05 stage");
    BossPatterns(static_cast<CStage*>(game->m_pCurScheme),stage);
