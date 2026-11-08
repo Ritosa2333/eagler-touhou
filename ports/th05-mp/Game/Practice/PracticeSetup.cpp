@@ -87,8 +87,16 @@ int DrawSetup(int age){
    if(selected){
     if(p.stage==4&&p.warp==2&&(selected->phase==4||selected->phase==7))
      ImGui::TextWrapped("%s",YumekoShotHint(CGame::GVar().m_initDifficulty));
+    const auto hint=AttackHint(p.stage,p.warp,*selected);
+    if(hint.text)
+     ImGui::TextWrapped(hint.text,hint.values[0],hint.values[1],hint.values[2],hint.values[3]);
+    if(const auto* hint=BombHint(p.stage,p.warp,selected->phase))
+     ImGui::TextWrapped(hint,original::ExtraAliceBombTimer-1);
     const int oldRage=p.rage;
-    if(selected->rageCount){const char* rageNames[]={th5w::locale::Text(u8"\u6b63\u5e38"),th5w::locale::Text(u8"\u53d1\u72c2"),th5w::locale::Text(u8"\u53d1\u72c2 2")};SetupCombo(th5w::locale::Text(u8"\u72b6\u6001"),&p.rage,rageNames,selected->rageCount+1);}
+    if(selected->rageCount){const char* rageNames[]={th5w::locale::Text(u8"\u6b63\u5e38"),th5w::locale::Text(u8"\u53d1\u72c2"),th5w::locale::Text(u8"\u53d1\u72c2 2")};
+     if(p.warp==2&&p.stage==5){rageNames[1]=ShinkiRageName(1);rageNames[2]=ShinkiRageName(2);}
+     SetupCombo(th5w::locale::Text(u8"\u72b6\u6001"),&p.rage,rageNames,selected->rageCount+1);
+    }
     if(p.warp==1&&p.stage==1&&selected->phase==2){const char* entries[]={th5w::locale::Text(u8"\u51fb\u7834\u8fdb\u5165"),th5w::locale::Text(u8"\u8d85\u65f6\u8fdb\u5165")};SetupCombo(th5w::locale::Text(u8"\u8fdb\u5165\u65b9\u5f0f"),&p.trigger,entries,2);}
     if(p.warp==2&&p.stage==5&&selected->phase==10&&p.rage){const char* triggers[]={th5w::locale::Text(u8"\u8840\u91cf\u89e6\u53d1"),th5w::locale::Text(u8"\u65f6\u95f4\u89e6\u53d1")};SetupCombo(th5w::locale::Text(u8"\u89e6\u53d1\u65b9\u5f0f"),&p.trigger,triggers,2);}
     if(p.warp==1&&p.stage==0&&oldRage!=p.rage)p.startHP=p.rage?200:selected->startHP;

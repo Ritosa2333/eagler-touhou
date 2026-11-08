@@ -1,3 +1,4 @@
+#include "../../Original/CombatThresholds.h"
 #include "../../Practice/Practice.h"
 #include ".\bossstage5.h"
 #include "../Stage.h"
@@ -397,7 +398,7 @@ void CBossStage5::Phase4Shoot()
 		float angle=m_pStage->AimAngle(origX,origY,true)+angleOffset;
 		m_knifeBullet.AddBullet(origX,origY,angle,76,32);
 	}
-	if (m_curHP<m_curPhaseEndHP+600&&m_phase4CrazyMode==false)
+	if (m_curHP<m_curPhaseEndHP+original::YumekoRedRageMargin&&m_phase4CrazyMode==false)
 	{
 		m_phase4CrazyMode=true;
 		int interval[]={16,8,4,4};
@@ -468,7 +469,7 @@ void CBossStage5::Phase7Shoot()
 			m_knifeBullet.AddBullet(origX,origY,angle,76,32);
 		}
 	}
-	if (m_curHP<m_curPhaseEndHP+500&&m_phase7CrazyMode==false)
+	if (m_curHP<m_curPhaseEndHP+original::YumekoBlueRageMargin&&m_phase7CrazyMode==false)
 	{
 		m_phase7CrazyMode=true;
 		int interval[]={34,28,20,20};

@@ -1,3 +1,4 @@
+#include "../Original/CombatThresholds.h"
 // TH06-style presentation adapted from th06/src/Gui.cpp UpdateStageElements.
 // Game state remains owned by the native TH05 boss implementations.
 #include "Stage.h"
@@ -37,11 +38,11 @@ practice::BossBarData CStage::GetBossBarData() const {
   static const HealthPhase s1[]={{2,4650,2550,0,0},{3,2550,450,0,0},{4,450,0,0,0}};
   static const HealthPhase s2[]={{2,4400,3000,0,0},{4,3000,1900,0,0},{5,1900,500,0,0},{7,500,0,0,0}};
   static const HealthPhase s3[]={{3,9600,7400,0,0},{6,7400,5200,0,0},{9,5200,3000,0,0},{12,3000,800,0,0},{14,800,0,0,0}};
-  static const HealthPhase both[]={{2,9000,0,5500,2250}};
+  static const HealthPhase both[]={{2,9000,0,original::TwinFirstRageHP,original::TwinSecondRageHP}};
   static const HealthPhase mai[]={{3,7800,5800,0,0},{5,5800,2800,0,0},{7,2800,1200,0,0},{9,1200,0,0,0}};
   static const HealthPhase yuki[]={{3,7900,4600,0,0},{5,4600,3200,0,0},{7,3200,1200,0,0},{9,1200,0,0,0}};
-  static const HealthPhase s5[]={{2,8300,7500,0,0},{4,7500,5700,6300,0},{5,5700,4500,0,0},{7,4500,2700,3200,0},{8,2700,1200,0,0},{10,1200,0,0,0}};
-  static const HealthPhase s6[]={{2,22800,20600,0,0},{3,20600,18400,0,0},{6,18400,14600,0,0},{7,14600,11600,0,0},{9,11600,8600,0,0},{10,8600,2800,5600,3800},{12,2800,0,0,0}};
+  static const HealthPhase s5[]={{2,8300,7500,0,0},{4,7500,5700,5700+original::YumekoRedRageMargin,0},{5,5700,4500,0,0},{7,4500,2700,2700+original::YumekoBlueRageMargin,0},{8,2700,1200,0,0},{10,1200,0,0,0}};
+  static const HealthPhase s6[]={{2,22800,20600,0,0},{3,20600,18400,0,0},{6,18400,14600,0,0},{7,14600,11600,0,0},{9,11600,8600,0,0},{10,8600,2800,original::ShinkiLaserHP,original::ShinkiFastHP},{12,2800,0,0,0}};
   static const HealthPhase ex[]={{2,26500,23800,0,0},{4,23800,21000,0,0},{6,21000,18100,0,0},{8,18100,15100,0,0},{10,15100,12600,0,0},{12,12600,9600,0,0},{14,9600,6800,0,0},{16,6800,3400,0,0},{17,3400,0,0,0}};
   switch(stage){
    case 0:use(s1,3);break;
@@ -116,10 +117,16 @@ void CStage::DrawBossBar(){
  const practice::PhaseTimeout timer=GetPhaseTimeout();
  if(timer.unit!=practice::PhaseTimeout::None){
   const bool turns=timer.unit==practice::PhaseTimeout::Turns;
-  const float tint=timer.value<=(turns?5:10)?.65f:1.f;
+  const bool frames=timer.unit==practice::PhaseTimeout::Ticks;
+  const float tint=timer.value<=(turns?5:frames?560:10)?.65f:1.f;
   const int right=x+384;
-  Number(right-(turns?16:0),y,timer.value,1,tint,tint,alpha,true);
-  if(timer.estimated)CPC98Font::DrawString("~",1,right-48,y,1,tint,tint,alpha);
+  const int numberRight=right-(turns||frames?16:0);
+  Number(numberRight,y,timer.value,1,tint,tint,alpha,true);
+  if(timer.estimated){
+   int digits=1;for(int n=timer.value;n>=10;n/=10)++digits;
+   CPC98Font::DrawString("~",1,numberRight-16*(digits+1),y,1,tint,tint,alpha);
+  }
+  if(frames)CPC98Font::DrawString("F",1,right-16,y,1,tint,tint,alpha);
   if(turns)CTh5ExtFont::DrawExtChar(0xbd,right-16,y,1,tint,tint,alpha);
  }
 }
