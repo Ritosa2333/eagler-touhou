@@ -22,7 +22,8 @@ void CMidBossStage1::Initialize()
 	m_curHP=1000;
 	m_curImage=200;
 
-	m_phase3CircularMoveAngle=(float)(original::Random()%256);	//PC98 does does not initialize this var, but it doens't matter much
+	// The stage-one orbit starts from the zeroed angle byte.
+	m_phase3CircularMoveAngle=original::BombAndRageEnabled()?0.0f:float(original::Random()%256);
 }
 
 

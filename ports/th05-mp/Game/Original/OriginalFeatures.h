@@ -2,9 +2,10 @@
 #include <cstdint>
 #include <vector>
 namespace th5w { class CStage; namespace original {
-enum CombatRevision : unsigned int { LegacyCombat, OriginalPlayerShots, OriginalBossGeometry, OriginalMotion };
+enum CombatRevision : unsigned int { LegacyCombat, OriginalPlayerShots, OriginalBossGeometry, OriginalMotion, OriginalBombAndRage };
 bool BossGeometryEnabled();
 bool MotionEnabled();
+bool BombAndRageEnabled();
 float PatternOffsetX(float angle,float radius);
 float PatternOffsetY(float angle,float radius);
 // Resident counters and integer arithmetic from th05_maine.asm sub_CA9B.

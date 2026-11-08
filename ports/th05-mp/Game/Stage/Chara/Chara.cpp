@@ -156,9 +156,9 @@ void CChara::DropBomb()
 
 void CChara::DecreaseDreamInBomb()
 {
- // sub_C52D: even frames in phase 0, only 2 mod 4 in later boss phases.
+ // PC-98 drains Dream on even frames before the boss fight and every fourth frame during it.
  const bool nativeDrain=(m_bombTimer%2==0)&&(!m_pStage->m_pBoss||m_pStage->m_pBoss->GetCurPhase()==0||m_bombTimer%4!=0);
-	if (original::DemoActive()?nativeDrain:(m_bombTimer%2==0||(m_pStage->m_bInBossBattle&&m_bombTimer%4==0)))
+	if (original::BombAndRageEnabled()?nativeDrain:(m_bombTimer%2==0||(m_pStage->m_bInBossBattle&&m_bombTimer%4==0)))
 	{
 		if (m_pStage->GetDream()>1)
 			m_pStage->SetDream(m_pStage->GetDream()-1);
@@ -403,7 +403,7 @@ void CChara::Step()
 			m_charaShootTimer--;
 		}
 	}
-	if (original::DemoActive()?CCommonFunctionInput::XKey(m_pStage->m_curGameKeyState):CCommonFunctionInput::XPressed(m_pStage->m_curGameKeyState,m_pStage->m_lastGameKeyState))
+	if (original::BombAndRageEnabled()?CCommonFunctionInput::XKey(m_pStage->m_curGameKeyState):CCommonFunctionInput::XPressed(m_pStage->m_curGameKeyState,m_pStage->m_lastGameKeyState))
 		DropBomb();
 	if (m_nextLifeComeTimeLeft!=0)
 	{

@@ -2,7 +2,9 @@ const MAGIC = 0x35504d52; // RMP5
 const VERSION = 1;
 const LEGACY_STATE_BYTES = 360;
 const RANK_STATE_MAGIC = 0x35535634;
-const checkpointSize = magic => magic === RANK_STATE_MAGIC ? LEGACY_STATE_BYTES + 4 : LEGACY_STATE_BYTES;
+const CURRENT_STATE_MAGIC = 0x35535635;
+const hasRankState = magic => magic >= RANK_STATE_MAGIC && magic <= CURRENT_STATE_MAGIC;
+const checkpointSize = magic => hasRankState(magic) ? LEGACY_STATE_BYTES + 4 : LEGACY_STATE_BYTES;
 const INPUT_BYTES = 12;
 const LIMIT = 32 * 1024 * 1024;
 
@@ -17,8 +19,8 @@ function checkpointInfo(state) {
   const characters = Array.from({length: 3}, (_, seat) => view.getInt32(28 + seat * 4, true));
   const stageMagic = view.getUint32(0, true);
   if (state.length !== checkpointSize(stageMagic) ||
-      (stageMagic === RANK_STATE_MAGIC && !inRange(view.getInt32(LEGACY_STATE_BYTES, true), 0, 31)) ||
-      ![0x35535631, 0x35535632, 0x35535633, RANK_STATE_MAGIC].includes(stageMagic) || ![2, 3].includes(count) ||
+      (hasRankState(stageMagic) && !inRange(view.getInt32(LEGACY_STATE_BYTES, true), 0, 31)) ||
+      !inRange(stageMagic, 0x35535631, CURRENT_STATE_MAGIC) || ![2, 3].includes(count) ||
       !inRange(stage, 0, 6) || !inRange(difficulty, 0, 4) || (stage === 6) !== (difficulty === 4) ||
       !characters.every(character => inRange(character, 0, 3))) throw Error('Invalid TH05 replay checkpoint');
   return {count, stage, difficulty, stageMagic, characters: characters.slice(0, count)};

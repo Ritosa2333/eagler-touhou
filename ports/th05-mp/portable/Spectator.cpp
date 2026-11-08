@@ -24,7 +24,7 @@ constexpr int LegacyStageMagic=0x35535631;
 void Wire(Codec& c,State& s){
  int magic=LegacyStageMagic+int(s.run.combatRevision);
  c.Value(magic);
- if(magic<LegacyStageMagic||magic>LegacyStageMagic+int(th5w::original::OriginalMotion))throw std::runtime_error("Unsupported TH05 stage state");
+ if(magic<LegacyStageMagic||magic>LegacyStageMagic+int(th5w::original::OriginalBombAndRage))throw std::runtime_error("Unsupported TH05 stage state");
  s.run.combatRevision=unsigned(magic-LegacyStageMagic);
  c.Value(s.run.count);c.Value(s.stage);c.Value(s.run.seed);c.Value(s.run.difficulty);c.Value(s.run.initialSpares);c.Value(s.run.initialBombs);for(auto& n:s.run.characters)c.Value(n);c.Flag(s.run.challenge);c.Flag(s.run.continuing);
  for(auto& stock:s.run.carry){c.Value(stock.lives);c.Value(stock.bombs);c.Value(stock.power);c.Value(stock.overflow);c.Value(stock.fraction);c.Value(stock.deaths);c.Flag(stock.ghost);c.Flag(stock.offline);}

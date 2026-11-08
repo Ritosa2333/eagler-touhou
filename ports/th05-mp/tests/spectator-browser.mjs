@@ -78,13 +78,14 @@ try{
   const size=host._th05_spectator_size();
   const legacy=host.HEAPU8.slice(host._th05_spectator_state(),host._th05_spectator_state()+size);
   const header=new DataView(legacy.buffer);
-  if(header.getUint32(0,true)!==0x35535634)throw Error('Current combat rules were not recorded');
+  if(header.getUint32(0,true)!==0x35535635)throw Error('Current combat rules were not recorded');
   const ptr=viewer._malloc(size);
   try{
-   for(const revision of [0x35535633,0x35535632,0x35535631]){
+   for(const revision of [0x35535634,0x35535633,0x35535632,0x35535631]){
+    const legacySize=revision===0x35535634?size:size-4;
     header.setUint32(0,revision,true);
-    viewer.HEAPU8.set(legacy.subarray(0,size-4),ptr);
-    if(!viewer._th05_spectator_load(ptr,size-4))throw Error('Legacy stage checkpoint rejected');
+    viewer.HEAPU8.set(legacy.subarray(0,legacySize),ptr);
+    if(!viewer._th05_spectator_load(ptr,legacySize))throw Error('Legacy stage checkpoint rejected');
     const magic=new DataView(viewer.HEAPU8.buffer).getUint32(viewer._th05_spectator_state(),true);
     if(magic!==revision)throw Error('Legacy combat rules were not retained');
    }
