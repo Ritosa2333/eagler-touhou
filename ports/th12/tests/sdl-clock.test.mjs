@@ -28,6 +28,13 @@ test('SDL clock keeps 60 logical ticks under 144 Hz presentation and rebases ful
         presented+=c.present(i/144.,true);
       }
       assert(ticks==120&&presented==60); // accelerated logic obeys the display limit
+      c.reset();assert(c.advance(0)==0);assert(c.present(0,true));
+      for(unsigned i=1;i<=180;++i){
+        const double deadline=i*FrameClock::interval;
+        const double early=deadline-.002,callback=deadline+(i%2?-.0008:.0003);
+        assert(c.advance(early)==0);assert(!c.present(early,true));
+        assert(c.advance(callback)==1);assert(c.present(callback,true));
+      }
       th12host::PresentationCounter pictures;pictures.frame(0,1,0,true);
       for(unsigned i=1;i<=120;++i)pictures.frame(i*1000./120,1,i/2.,true);
       assert(pictures.value()>119&&pictures.value()<121);
