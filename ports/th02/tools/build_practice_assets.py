@@ -13,6 +13,7 @@ NAMES=('load','frame','miss','world','entryPause','hold','targetPractice','lockL
 NAMES+=('formOpen','formInput','formValues','formRequest','formHp','formOptions','infoEnabled','infoValues')
 NAMES+=('restartPending','restartValues','resultSelecting')
 NAMES+=('focusHook','focusTest')
+NAMES+=('mimaIntro',)
 def main():
     out=ROOT/'build/practice';out.mkdir(parents=True,exist_ok=True)
     nasm=os.environ.get('NASM','nasm')
@@ -29,7 +30,7 @@ def main():
         dialog_cs=0xfac0//16+oldgap//16
         assert image[0xbca4:0xbca9]==bytes.fromhex('6a019ac801') and 0xbca9 in rel
         delay_segment=struct.unpack_from('<H',image,0xbca9)[0]
-        cfg={'PRACTICE_ORG':insert-cs*16,'SOLO_UPDATE':p['entries']['update'],'SOLO_PAUSE':p['entries']['pause'],'SOLO_MAILBOX':p['entries']['mailbox'],'SOLO_CURRENT_INPUT':p['entries']['currentInput'],'PRACTICE_DELAY_SEGMENT':delay_segment,
+        cfg={'PRACTICE_ORG':insert-cs*16,'SOLO_UPDATE':p['entries']['update'],'SOLO_PAUSE':p['entries']['pause'],'SOLO_MAILBOX':p['entries']['mailbox'],'SOLO_CURRENT_INPUT':p['entries']['currentInput'],'PRACTICE_DELAY_SEGMENT':delay_segment,'PRACTICE_CHECKPOINT_BYTES':(struct.unpack_from('<H',h,14)[0]-p['dataSegment'])*16,
              'DIALOG_DELTA':p['dataSegment']-dialog_cs}
         (out/'practice-config.inc').write_text(''.join(f'%define {k} {v}\n' for k,v in cfg.items()))
         common=ROOT.parent.parent/'common/pc98'
@@ -91,6 +92,8 @@ def main():
             # Save audited prologues separately; out-of-segment wrappers execute
             # them before returning to their native body.
             patch(moved,before,b'\xea'+struct.pack('<HH',entries[name],cs));rel.append(moved+3)
+        moved=0x1a529+oldgap+gap
+        patch(moved,bytes.fromhex('558bec56666810002000'),b'\xea'+struct.pack('<HH',entries['mimaIntro'],cs)+b'\x90'*5);rel.append(moved+3)
         exe=mz_finish(h,image,rel);name=f'practice-{language}.exe.gz';(ROOT/'web'/name).write_bytes(gzip.compress(exe,mtime=0))
         p['dataSegment']+=gap//16;p['gap']+=gap;p['mainSha256']=sha(exe)
         p['practice']={'version':1,'entries':entries,'bytes':gap,'descriptor':'T02PRA01'}

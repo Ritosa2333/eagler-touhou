@@ -52,7 +52,7 @@ export function createPracticeEngine({mod,patch,config,clock,restarting=false,na
   function prepare(){
     if(nativeSetup&&Number.isInteger(e.targetOutcome)&&heap()[csBase+e.targetOutcome]){preparing=false;ready=true;waiting=false;clock?.setSpeed(options.speed);finish('failed');return;}
     if(++prepareFrames>30000){error='TH02 练习目标准备超时，请改选关卡开头';preparing=false;flag('hold',1);return;}
-    if(prepareFrames===1&&setup.entry!=='stage'){
+    if(prepareFrames===1&&setup.entry!=='stage'&&!Number.isInteger(e.targetReached)){
       // Let the next native loop erase both title rows before the Boss
       // initializer can reset the stage clock. Keep this frame on the stage.
       if(!Number.isInteger(e.restartPending)){resources();w8(0x2b94,0);w8(0x2b95,2);w32(0x2ba2,159);}return;

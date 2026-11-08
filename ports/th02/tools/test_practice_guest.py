@@ -1,13 +1,17 @@
 """Execute the real CN/JP 16-bit bridge with DOS MZ relocations in Unicorn."""
 from pathlib import Path
 import gzip,json,struct
-from unicorn import Uc,UC_ARCH_X86,UC_MODE_16,UC_HOOK_INSN
+from unicorn import Uc,UC_ARCH_X86,UC_MODE_16,UC_HOOK_INSN,UC_HOOK_INTR
 from unicorn.x86_const import *
 ROOT=Path(__file__).resolve().parents[1]
 manifest=json.loads((ROOT/'web/practice-assets.json').read_text());checks=[]
 for lang,item in manifest['languages'].items():
     p=item['patch'];exe=gzip.decompress((ROOT/'web'/item['url']).read_bytes());hs=struct.unpack_from('<H',exe,8)[0]*16
     u=Uc(UC_ARCH_X86,UC_MODE_16);u.mem_map(0,0x100000);load=0x1000;u.mem_write(load*16,exe[hs:])
+    def dos(uc,number,data):
+        assert number==0x21 and uc.reg_read(UC_X86_REG_AH)==0x48
+        uc.reg_write(UC_X86_REG_EFLAGS,uc.reg_read(UC_X86_REG_EFLAGS)|1)
+    u.hook_add(UC_HOOK_INTR,dos)
     def w(at,x):u.mem_write(at,struct.pack('<H',x&65535))
     def byte(at,x):u.mem_write(at,bytes([x]))
     def word(at):return struct.unpack('<H',u.mem_read(at,2))[0]
@@ -32,6 +36,18 @@ for lang,item in manifest['languages'].items():
         assert u.reg_read(UC_X86_REG_IP)==end,(lang,name,hex(u.reg_read(UC_X86_REG_IP)))
         assert u.reg_read(UC_X86_REG_DS)==ds
     original=lambda at:at-0xb160
+    # The shortcut must keep the original near-call stack, while a full game
+    # must execute the displaced prologue and continue in the original code.
+    for preparing,stage,skip in ((0,4,False),(1,3,False),(1,4,True)):
+        byte(cb+e['targetPreparing'],preparing)
+        byte(db+0x8f5,stage)
+        for reg,val in [(UC_X86_REG_CS,cs),(UC_X86_REG_DS,ds),(UC_X86_REG_SS,ss),(UC_X86_REG_SP,0xf800),(UC_X86_REG_BP,0x1234),(UC_X86_REG_SI,0x5678),(UC_X86_REG_EFLAGS,0x202)]:u.reg_write(reg,val)
+        w(ss*16+0xf800,0xfff0)
+        destination=load*16+(0x13c90 if skip else 0x1a533)+p['gap']
+        u.emu_start(cb+e['mimaIntro'],destination,count=100)
+        assert u.reg_read(UC_X86_REG_CS)*16+u.reg_read(UC_X86_REG_IP)==destination,(lang,preparing)
+        assert u.reg_read(UC_X86_REG_SP)==(0xf800 if skip else 0xf7f8),(lang,preparing)
+    checks.append(lang+': Mima intro shortcut preserves the full-game branch')
     # The adapter's actual focus accessor must obey native options, including
     # disabled input taking priority over force-focus.
     for targeted,disabled,forced,raw,expected in ((0,1,1,0x100,0x100),(1,1,0,0x100,0),(1,0,1,0,0x100),(1,1,1,0x100,0),(1,0,0,0x100,0x100)):
@@ -54,10 +70,11 @@ for lang,item in manifest['languages'].items():
     byte(cb+e['targetPreparing'],0);u.mem_write(power_update,saved_power_update)
     checks.append(lang+': target resource initialization executes in guest')
     byte(db+0x19f6,1);w(db+0x1a0c,0x1234);w(db+0x1a0e,0x5678);w(db+0x1a10,0x1234);w(db+0x1a12,0x5678)
-    for stage,phase,requested,damage,expected,clock in ((0,1,2,0,700,0),(0,1,3,0,1400,0),(1,1,2,0,701,0),(4,1,3,0,1600,0),(4,2,3,0,0,100),(5,0,3,0,0,50)):
+    for stage,phase,requested,damage,expected,clock in ((0,1,2,0,700,0),(0,1,3,0,1400,0),(1,1,2,0,701,0),(1,1,3,0,1501,0),(4,1,3,0,600,0),(4,3,5,0,700,0),(4,5,7,0,800,0),(4,7,9,0,1500,0),(4,2,3,0,0,100),(5,0,3,0,0,50),(5,1,3,0,1800,0)):
         byte(db+0x8f5,stage);byte(db+0x7886,(phase-1)&255);w(db+0x91f8,phase);byte(db+0x7b42,phase);w(db+0x2bea,damage);w(db+0x2be0,0)
         byte(cb+e['targetPreparing'],1);byte(cb+e['initialPhase'],requested);run('targetAdvance')
         assert word(db+0x2bea)==expected and word(db+0x2be0)==clock,(lang,stage,phase)
+        if stage==1:assert u.mem_read(db+0x7886,2)==bytes((requested-1,0))
     byte(cb+e['targetPreparing'],0);checks.append(lang+': guest advances earlier native Boss attacks')
     for entry in (0,1,2):
         byte(cb+e['targetPreparing'],1);byte(cb+e['initialEntry'],entry);byte(cb+e['warpState'],0)

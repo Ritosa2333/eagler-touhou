@@ -33,6 +33,9 @@ for(const game of games){
     if(!path.startsWith('/runtime/')||!file.startsWith(root+sep))throw Error('route');
     res.setHeader('content-type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.json':'application/json','.wasm':'application/wasm','.css':'text/css'})[extname(file)]||'application/octet-stream');
     let contents=await readFile(file);
+    if(process.env.PC98_TEST_CHECKPOINT==='1'&&path==='/runtime/dosbox-adapter.js')contents=Buffer.from(contents.toString().replace('const inplace=h[base+e.restartPending]===2;','const inplace=h[base+e.restartPending]===2;if(inplace)globalThis.testNativeCheckpointCount=(globalThis.testNativeCheckpointCount||0)+1;'));
+    if(process.env.PC98_TEST_CHECKPOINT==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?"\nexport function testCheckpointCount(){return globalThis.testNativeCheckpointCount||0;}\n":"\nexport function testCheckpointCount(){return emulator.call('testCheckpointCount');}\n")]);
+    if(process.env.PC98_TEST_CHECKPOINT==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')","if(method==='testCheckpointCount')return globalThis.testNativeCheckpointCount||0;if(method==='soloFault')"));
     if(path==='/runtime/managed-solo.mjs')contents=Buffer.from(contents.toString().replace('async function returnToTitle(save,restarting=false,current=emulator,practiceConfig=null){','async function returnToTitle(save,restarting=false,current=emulator,practiceConfig=null){globalThis.testHostTransitions=(globalThis.testHostTransitions||0)+1;'));
     if(path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from('\nlet previousAttempt;export function testMarkAttempt(){previousAttempt=emulator;} export function testAttemptSame(){return !!emulator&&emulator===previousAttempt;}\n')]);
     if(process.env.PC98_PRACTICE_PERF==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from('\nexport function testDisableStandby(){retryBlocked=true;discardRetry();}\n'+(game==='th04'?"export function testDense(){return emulator.call('practiceTestDense');} export function testPerfProbe(){return emulator.call('practicePerfProbe');}\n":"export function testDense(){globalThis.testDenseMode=true;} export function testPerfProbe(){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8;let bullets=0;for(let i=0;i<150;i++)if(h[d+0x2c18+i*20]===1)bullets++;return {bullets,slowdown:h[d+0x2bfd]};}\n"))]);
@@ -50,6 +53,9 @@ for(const game of games){
       contents=Buffer.from(contents.toString().replace("if(method==='soloFault')", `if(method==='practiceTestText'){const b=emulator.practice.debug.base;return {bytes:Array.from(emulator.module.HEAPU8.subarray(b+0xa0000,b+0xa1000))};}if(method==='practiceTestHit'){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8,r=emulator.practice.debug.resident;${hit}return;}if(method==='soloFault')`));
     }
     if(process.env.PC98_PRACTICE_CLEAR==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?`\nexport function testPracticeClear(){const d=emulator.practice.debug.d;emulator.module.HEAPU8[d+0x2bfa]=1;}\n`:`\nexport function testPracticeClear(){return emulator.call('practiceTestClear');}\n`)]);
+    if(process.env.PC98_TEST_PHASE_END==='1'&&game==='th04'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from("\nexport function testBossHp(value){return emulator.call('practiceTestBossHp',[value]);}\n")]);
+    if(process.env.PC98_TEST_PHASE_END==='1'&&game==='th02'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from("\nexport function testBossDamage(value){const d=emulator.practice.debug.d,v=new DataView(emulator.module.HEAPU8.buffer);if(value!==undefined)v.setUint16(d+0x2bea,value,true);return v.getUint16(d+0x2bea,true);}\n")]);
+    if(process.env.PC98_TEST_PHASE_END==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')","if(method==='practiceTestBossHp'){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8;new DataView(h.buffer).setInt16(d+0x53d6,args[0],true);return;}if(method==='soloFault')"));
     if(process.env.PC98_PRACTICE_CLEAR==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')", "if(method==='practiceTestClear'){const d=emulator.practice.debug.d;emulator.module.HEAPU8[d+0x53d9]=254;return;}if(method==='soloFault')"));
     if(process.env.PC98_PRACTICE_REPLAY==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?"\nexport function testProgram(){const m=emulator.module,r=emulator.practice?.debug.resident;return globalThis.titleOpened?'OP':r>=0&&m.HEAPU8[r+39]?'DEMO':m.UTF8ToString(m._emGetRunningProgram());} export function armTitle(){const fs=emulator.module.FS,open=fs.open;fs.open=function(path,...args){if(/(?:^|[\\\\/])OP(?:\\.EXE)?$/i.test(String(path)))globalThis.titleOpened=true;return open.call(this,path,...args);};}\n":"\nexport function testProgram(){return emulator.call('testProgram');} export function armTitle(){return emulator.call('armTitle');}\n")]);
     if(process.env.PC98_PRACTICE_REPLAY==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')","if(method==='armTitle'){const fs=emulator.module.FS,open=fs.open;fs.open=function(path,...args){if(/(?:^|[\\\\/])OP(?:\\.EXE)?$/i.test(String(path)))globalThis.titleOpened=true;return open.call(this,path,...args);};return;}if(method==='testProgram'){const m=emulator.module,r=emulator.practice?.debug.resident;return globalThis.titleOpened?'OP':r>=0&&m.HEAPU8[r+62]?'DEMO':m.UTF8ToString(m._emGetRunningProgram());}if(method==='soloFault')"));
@@ -132,22 +138,59 @@ for(const game of games){
       }
       await key('F12','F12',123); await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.nativeForm?.visible,{timeout:15000});
       const extra=process.env.PC98_TRANSITION_EXTRA==='1';
+      const targetStage=game==='th04'?Number(process.env.PC98_TH04_STAGE??1):Number(process.env.PC98_TH02_STAGE??1);
       if(extra)await key('ArrowLeft','ArrowLeft',37);
-      else{await key('ArrowRight','ArrowRight',39);await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);}
+      else{for(let i=0;i<targetStage;i++)await key('ArrowRight','ArrowRight',39);await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);}
       const gengetsu=extra&&game==='th04'&&process.env.PC98_TRANSITION_GENGETSU==='1';
       const boss=process.env.PC98_TRANSITION_BOSS==='1'||gengetsu;
-      if(gengetsu){for(let i=0;i<3;i++)await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);for(let i=0;i<5;i++)await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);for(let i=0;i<4;i++)await key('ArrowUp','ArrowUp',38);await key('ArrowRight','ArrowRight',39);for(let i=0;i<7;i++)await key('ArrowDown','ArrowDown',40);}
-      else if(boss){assert(!extra);await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);await key('ArrowRight','ArrowRight',39);await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);}
+      if(gengetsu){for(let i=0;i<3;i++)await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);for(let i=0;i<5;i++)await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);for(let i=0;i<4;i++)await key('ArrowUp','ArrowUp',38);for(let i=0;i<Number(process.env.PC98_GEN_PHASE_INDEX??1);i++)await key('ArrowRight','ArrowRight',39);for(let i=0;i<7;i++)await key('ArrowDown','ArrowDown',40);}
+      else if(boss){assert(!extra||game==='th02');for(let i=0;i<(extra?3:1);i++)await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);if(!(game==='th02'&&!extra&&targetStage===4)&&!(game==='th04'&&targetStage>3))await key('ArrowRight','ArrowRight',39);await key('ArrowDown','ArrowDown',40);for(let i=0;i<(game==='th02'?Number(process.env.PC98_TH02_BOSS_PHASE??1):1);i++)await key('ArrowRight','ArrowRight',39);}
       const restrictions=process.env.PC98_TEST_RESTRICTIONS==='1';
       if(restrictions){assert(!boss&&!extra);for(let i=0;i<3;i++)await key('ArrowUp','ArrowUp',38);await key('KeyZ','z',90);for(let i=0;i<4;i++){await key('KeyZ','z',90);await key('ArrowDown','ArrowDown',40);}await key('Escape','Escape',27);await key('ArrowUp','ArrowUp',38);}
-      else if(!gengetsu)for(let i=0;i<(extra?2:boss?6:4);i++)await key('ArrowUp','ArrowUp',38);
-      await key('KeyZ','z',90);
+      else if(!gengetsu)for(let i=0;i<(boss?6:extra?2:4);i++)await key('ArrowUp','ArrowUp',38);
+      const seekStarted=Date.now();await key('KeyZ','z',90);
       await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.mode==='target'&&p.ready&&p.waiting;},{timeout:90000});
-      const p=(await state()).native.practice; assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testAttemptSame()),true,'target must reuse same emulator'); assert.equal(p.setup.stage,extra?(game==='th02'?5:6):1);assert.equal(p.setup.character,extra?0:1);assert.equal(p.setup.difficulty,extra?4:2); assert.equal(p.stage,p.setup.stage);
+      console.log(game,'native target initialization',Date.now()-seekStarted,'ms');
+      const p=(await state()).native.practice; assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testAttemptSame()),true,'target must reuse same emulator'); assert.equal(p.setup.stage,extra?(game==='th02'?5:6):targetStage);assert.equal(p.setup.character,extra?0:1);assert.equal(p.setup.difficulty,extra?4:2); assert.equal(p.stage,p.setup.stage);
       assert.equal(await frame.evaluate(()=>globalThis.testHostTransitions||0),0,'the guest must initiate the form transition');
-      if(boss){assert.equal(p.setup.entry,'boss');assert.equal(p.setup.phase,gengetsu?2:game==='th02'?1:2);if(gengetsu)assert.equal(p.setup.branch,'gengetsu');}
+      if(boss){assert.equal(p.setup.entry,'boss');const index=Number(process.env.PC98_TH02_BOSS_PHASE??1),th02Phase=(extra||targetStage===4)?[0,1,3,5,7,9][index]:index;assert.equal(p.setup.phase,gengetsu?[0,2,3,4,5,7,8][Number(process.env.PC98_GEN_PHASE_INDEX??1)]:game==='th02'?th02Phase:targetStage===2?3:2);if(gengetsu){assert.equal(p.setup.branch,'gengetsu');assert.equal(p.bossUpdate,0xc7da,'the selected encounter must actually be Gengetsu');assert.equal(p.phase,p.setup.phase||2,'the native encounter must reach the selected phase');const phase=p.setup.phase||2;assert.equal(p.bossHp,({2:18700,3:14700,4:12700,5:8900,7:5500,8:3000})[phase],'native attack starting HP');assert.equal(p.phaseEndHp,({2:14700,3:12700,4:8900,5:5500,7:3000,8:0})[phase],'native attack end threshold');}}
+      if(process.env.PC98_TEST_PHASE_END==='1'&&game==='th02'&&targetStage===4&&p.setup.phase===3)assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testBossDamage()),0,'Mima phase 3 must reset damage at the native transition');
       if(restrictions)for(const option of ['lockRank','disableBomb','disableFocus','disableShot'])assert.equal(p.options[option],true,option);
-      await key('Enter','Enter',13); await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.elapsed>5,{timeout:30000});
+      await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.mode===2,{timeout:15000});
+      await key('Enter','Enter',13); try{await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.elapsed>5,{timeout:30000});}catch(error){console.error(game,'entry resume diagnostic',JSON.stringify((await state()).native));throw error;}
+      if(process.env.PC98_TEST_PHASE_END==='1'){
+        await key('Backspace','Backspace',8);await key('F1','F1',112);await key('Backspace','Backspace',8);
+        await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.options?.invincible,{timeout:10000});
+      }
+      if(gengetsu||(boss&&game==='th02')){
+        await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.elapsed>60&&!p.outcome;},{timeout:30000});
+        const live=(await state()).native.practice;assert.equal(live.phase,p.setup.phase||2);if(gengetsu){assert.equal(live.bossUpdate,0xc7da);assert(live.bossHp>live.phaseEndHp,'selected attack must remain alive');}
+      }
+      if(process.env.PC98_TEST_PHASE_END==='1'&&process.env.PC98_TEST_PHASE_END_AFTER_RETRY!=='1'&&game==='th04'&&boss){
+        const before=(await state()).native.practice,threshold=before.phaseEndHp;
+        await frame.evaluate(async value=>await (await import('./managed-solo.mjs')).testBossHp(value),threshold+1);
+        await frame.waitForFunction(async count=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.elapsed>=count||p?.outcome;},{timeout:15000},before.elapsed+15);
+        assert.equal((await state()).native.practice.outcome,null,'one HP above threshold must remain active');
+        await frame.evaluate(async value=>await (await import('./managed-solo.mjs')).testBossHp(value),threshold);
+        await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.nativeResult?.visible,{timeout:30000});
+        assert.equal((await state()).native.practice.outcome,'clear','reaching native HP threshold must complete the selected attack');
+        console.log(game,'native phase end threshold OK',before.stage,before.phase);continue;
+      }
+      if(process.env.PC98_TEST_PHASE_END==='1'&&game==='th02'&&boss){
+        const before=(await state()).native.practice,threshold=({0:{1:700,2:1400,3:2260},1:{1:701,2:1501,3:2400},4:{1:600,3:700,5:800,7:1500,9:1100},5:{1:1800,3:1800,5:1800,7:1800,9:1300}})[before.setup.stage]?.[before.setup.phase];assert.notEqual(threshold,undefined,'test needs a native threshold for this attack');
+        await frame.evaluate(async value=>(await import('./managed-solo.mjs')).testBossDamage(value),threshold-1);
+        await frame.waitForFunction(async count=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.elapsed>=count||p?.outcome;},{timeout:15000},before.elapsed+15);
+        assert.equal((await state()).native.practice.outcome,null,'damage below threshold must remain active');
+        if(before.setup.stage<2&&before.setup.phase===3){
+          // Meira's final defeat threshold is checked inside the real shot
+          // collision branch, so a live hit must cross the boundary.
+          await page.evaluate(()=>rpc('keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));
+        }else await frame.evaluate(async value=>(await import('./managed-solo.mjs')).testBossDamage(value),threshold);
+        await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.nativeResult?.visible,{timeout:30000});
+        if(before.setup.stage<2&&before.setup.phase===3)await page.evaluate(()=>rpc('keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}));
+        assert.equal((await state()).native.practice.outcome,'clear','native phase transition must complete the selected attack');
+        console.log(game,'native phase end threshold OK',before.stage,before.phase);continue;
+      }
       if(process.env.PC98_TEST_INFO==='1'){
         await key('Tab','Tab',9);
         await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.options?.showInfo,{timeout:10000});
@@ -167,7 +210,8 @@ for(const game of games){
           await key('Escape','Escape',27);await frame.waitForFunction(async()=>!(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.nativeForm?.visible,{timeout:10000});
         }
       if(process.env.PC98_TEST_RESULT_SELECT==='1'){
-        assert.equal(process.env.PC98_PRACTICE_DEATH,'1');assert(!extra&&!boss);
+        assert.equal(process.env.PC98_PRACTICE_DEATH,'1');assert((!extra&&!boss)||process.env.PC98_TEST_CHECKPOINT==='1');
+        const priorCheckpoint=process.env.PC98_TEST_CHECKPOINT==='1'?await frame.evaluate(async()=>await (await import('./managed-solo.mjs')).testCheckpointCount()):0;
         await page.evaluate(()=>rpc('keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));
         await frame.evaluate(async()=>await (await import('./managed-solo.mjs')).testPracticeHit(0));
           try{await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.nativeResult?.visible,{timeout:30000});}
@@ -180,6 +224,7 @@ for(const game of games){
           await key('KeyZ','z',90);
           await frame.waitForFunction(async()=>{const current=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return current?.ready&&current.waiting&&!current.outcome;},{timeout:90000});
           assert.equal(await frame.evaluate(()=>globalThis.testHostTransitions||0),0,'result retry must start in the guest');
+          if(process.env.PC98_TEST_CHECKPOINT==='1')assert.equal(await frame.evaluate(async()=>await (await import('./managed-solo.mjs')).testCheckpointCount()),priorCheckpoint+1,'result retry must restore the game-owned checkpoint');
           assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testAttemptSame()),true);
           await key('Enter','Enter',13);
           await frame.waitForFunction(async()=>{const current=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return current?.elapsed>5&&!current.waiting;},{timeout:30000});
@@ -205,15 +250,34 @@ for(const game of games){
         console.log(game,'native result selection OK');continue;
       }
       if(process.env.PC98_TEST_QUICK_RETRY==='1'){
+        for(let retry=0;retry<3;retry++){
+        const retryStarted=Date.now();
+        const priorCheckpoint=process.env.PC98_TEST_CHECKPOINT==='1'?await frame.evaluate(async()=>await (await import('./managed-solo.mjs')).testCheckpointCount()):0;
         await page.evaluate(()=>rpc('keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:true}));
         await key('KeyF','f',70);
         await page.evaluate(()=>rpc('keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:false}));
-        await frame.waitForFunction(async()=>{const current=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return current?.ready&&current.waiting&&!current.outcome;},{timeout:90000});
+        try{await frame.waitForFunction(async()=>{const current=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return current?.ready&&current.waiting&&!current.outcome;},{timeout:30000});}catch(error){console.error(game,'quick retry diagnostic',JSON.stringify((await state()).native));throw error;}
+          console.log(game,'native quick retry initialization',Date.now()-retryStarted,'ms');
         assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testAttemptSame()),true);
         const current=(await state()).native.practice;assert.deepEqual(current.setup,p.setup);
           assert.equal(await frame.evaluate(()=>globalThis.testHostTransitions||0),0,'quick retry must start in the guest');
+          if(process.env.PC98_TEST_CHECKPOINT==='1')assert.equal(await frame.evaluate(async()=>await (await import('./managed-solo.mjs')).testCheckpointCount()),priorCheckpoint+1,'retry must restore the game-owned checkpoint');
           if(process.env.PC98_TEST_ASSIST_PERSIST==='1')assert.equal(current.options.invincible,true,'native retry must preserve assist flags');
+        await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.mode===2,{timeout:15000});
+        if(game==='th04'&&boss)assert.equal(current.bossHp,p.bossHp,'repeated retries must restore initial boss HP');
         await key('Enter','Enter',13);await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.elapsed>5,{timeout:30000});
+          if(process.env.PC98_TEST_CHECKPOINT==='1'&&boss){await frame.waitForFunction(async()=>{const q=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return q?.elapsed>60&&!q.outcome;},{timeout:30000});const resumed=(await state()).native.practice;assert.equal(resumed.phase,p.phase,'checkpoint retry must continue the selected attack');await (await frame.$('canvas')).screenshot({path:resolve(output,`${game}-checkpoint-retry.png`)});}
+        }
+          if(process.env.PC98_TEST_PHASE_END_AFTER_RETRY==='1'&&game==='th04'){
+            const before=(await state()).native.practice,threshold=before.phaseEndHp;
+            await frame.evaluate(async value=>await (await import('./managed-solo.mjs')).testBossHp(value),threshold+1);
+            await frame.waitForFunction(async count=>{const q=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return q?.elapsed>=count||q?.outcome;},{timeout:15000},before.elapsed+15);
+            assert.equal((await state()).native.practice.outcome,null,'checkpoint attack must stay active above its threshold');
+            await frame.evaluate(async value=>await (await import('./managed-solo.mjs')).testBossHp(value),threshold);
+            await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.nativeResult?.visible,{timeout:30000});
+            assert.equal((await state()).native.practice.outcome,'clear','checkpoint attack must finish at its native threshold');
+            console.log(game,'checkpoint phase end threshold OK',before.stage,before.phase);continue;
+          }
       }
       if(process.env.PC98_TEST_LOADING_CLEAR==='1'){
         assert.equal(process.env.PC98_PRACTICE_DEATH,'1');

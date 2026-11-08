@@ -92,6 +92,9 @@ practice_quick_retry_tick:
     cmp byte [cs:practice_outcome],0
     jne .done
     mov byte [cs:practice_form_request],1
+%ifdef PRACTICE_CHECKPOINT_BYTES
+    mov byte [cs:practice_checkpoint_requested],1
+%endif
     call practice_form_native_start
     mov byte [cs:practice_form_request],0
     mov byte [cs:practice_restart_committed],0
@@ -102,6 +105,43 @@ practice_quick_retry_tick:
 ; guest. The signal lets the host mirror the already-selected setup for its
 ; clock, audio, diagnostics and replay bookkeeping.
 practice_form_native_start:
+%ifdef PRACTICE_CHECKPOINT_BYTES
+    cmp byte [cs:practice_checkpoint_requested],0
+    je .reload
+    mov byte [cs:practice_checkpoint_requested],0
+    cmp byte [cs:practice_checkpoint_valid],0
+    je .reload
+    ; Notify the replay/clock bridge that the following transition stays in
+    ; this MAIN, then restore the native data and resident configuration.
+    mov byte [cs:practice_restart_pending],2
+    push dx
+%ifdef PRACTICE_RESTART_TH02
+    mov dx,0x7fd1
+%else
+    mov dx,0x7fe1
+%endif
+    call signal
+    call practice_checkpoint_restore
+    mov byte [cs:practice_restart_pending],0
+    mov byte [cs:practice_restart_committed],1
+    mov byte [cs:practice_result_selecting],0
+    mov byte [cs:practice_outcome],0
+    mov byte [cs:hold],0
+    mov byte [cs:target_preparing],1
+    mov byte [cs:practice_target_reached],0
+    mov byte [cs:practice_arrival_pending],0
+%ifdef PRACTICE_RESTART_TH02
+    mov byte [cs:redraw_pending],2
+    mov dx,0x7fd0
+%else
+    mov byte [cs:practice_redraw_pending],2
+    mov dx,0x7fe0
+%endif
+    call signal
+    pop dx
+    ret
+.reload:
+%endif
     push dx
 %ifdef PRACTICE_RESTART_TH02
     mov dx,0x7fd1

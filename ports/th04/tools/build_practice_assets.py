@@ -43,7 +43,7 @@ def main():
         assert image[power_update:power_update+14]==bytes.fromhex('33db33c0a06446b909003b87de1e')
         assert image[power_update+25:power_update+38]==bytes.fromhex('88166546031e9c448b07a39a44')
         assert image[dream_put:dream_put+16]==bytes.fromhex('558bec666811003e00a1ccbc6bc00a50')
-        (out/'practice-config.inc').write_text(f'%define PRACTICE_ORG {insert-cs*16}\n%define SOLO_UPDATE {p["entries"][1]}\n%define SOLO_PAUSE {p["entries"][4]}\n%define SOLO_FRAME {p["entries"][7]}\n%define SOLO_MAILBOX {p["mailbox_cs_offset"]}\n%define DIALOG_BODY {dialog+4-cs*16}\n%define DIALOG_OP {dialog_op-cs*16}\n%define POWER_UPDATE {power_update-cs*16}\n%define DREAM_PUT {dream_put-cs*16}\n')
+        (out/'practice-config.inc').write_text(f'%define PRACTICE_ORG {insert-cs*16}\n%define SOLO_UPDATE {p["entries"][1]}\n%define SOLO_PAUSE {p["entries"][4]}\n%define SOLO_FRAME {p["entries"][7]}\n%define SOLO_MAILBOX {p["mailbox_cs_offset"]}\n%define PRACTICE_CHECKPOINT_BYTES {(struct.unpack_from("<H",h,14)[0]-p["data_segment"])*16}\n%define DIALOG_BODY {dialog+4-cs*16}\n%define DIALOG_OP {dialog_op-cs*16}\n%define POWER_UPDATE {power_update-cs*16}\n%define DREAM_PUT {dream_put-cs*16}\n')
         nasm=os.environ.get('NASM',str(ROOT/'tools/nasm-2.16.03/nasm.exe'))
         common=ROOT.parent.parent/'common/pc98'
         subprocess.run([str(nasm),'-f','bin','-I',str(out)+'/', '-I',str(common)+'/', '-I',str(ROOT/'patches')+'/',str(ROOT/'patches/practice.asm'),'-o',str(out/'practice.bin')],check=True)

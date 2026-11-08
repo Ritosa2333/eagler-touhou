@@ -127,7 +127,7 @@ export class DOSBoxPC98 {
     const [stage,character,difficulty,entry,phase,lives,bombs,power,,rank]=h.subarray(base+e.formValues,base+e.formValues+10);
     const options=decodeNativeOptions(Array.from(h.subarray(base+e.formOptions,base+e.formOptions+11)),this.practice.status.options),hp=new DataView(h.buffer).getUint16(base+e.formHp,true);
     const config=normalizePractice({...this.config.practice,mode:'target',setup:{...this.config.practice.setup,stage,character,difficulty,entry:['stage','mid','boss'][entry],phase,lives,bombs,power,rank:rank-6,hp},options});
-    this.config.practice=config;this.practice=createPracticeEngine({mod:this.module,patch:this.config.practicePatch,config,clock:this.practiceClock,restarting:true,nativeSetup:true});this.nativeTransition=true;return true;
+    const inplace=h[base+e.restartPending]===2;this.config.practice=config;this.practice=createPracticeEngine({mod:this.module,patch:this.config.practicePatch,config,clock:this.practiceClock,restarting:!inplace,nativeSetup:true});this.nativeTransition=true;return true;
   }
   restartPractice(restarting=false){if(!this.practice)return;const config={...this.config.practice,options:this.practice.status.options};this.config.practice=config;this.practice=createPracticeEngine({mod:this.module,patch:this.config.practicePatch,config,clock:this.practiceClock,restarting});}
   assist(input){if(this.externalHost){if(this.externalHost.status.mode==='playback')return;this.externalHost.queue({type:'assist',input});}else this.config.applyReplayInput?.(input);}

@@ -113,6 +113,9 @@ practice_result_tick:
     mov byte [cs:practice_result_visible],0
     mov byte [cs:practice_result_selecting],1
     mov byte [cs:practice_form_request],1
+%ifdef PRACTICE_CHECKPOINT_BYTES
+    mov byte [cs:practice_checkpoint_requested],1
+%endif
     call practice_form_native_start
     mov byte [cs:practice_form_request],0
     mov byte [cs:practice_restart_committed],0

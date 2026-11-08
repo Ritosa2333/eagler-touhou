@@ -191,6 +191,7 @@ practice_target_arrival:
     mov word [0x4656],0
     mov word [0x4658],0
     mov word [0x3974],0
+    call practice_checkpoint_save
 .done:
     ret
 practice_arrival_pending: db 0

@@ -490,5 +490,6 @@ dialog_run_fast:
 %define FORM_HP_MAX 30000
 %include 'practice-form.inc'
 %include 'practice-info.inc'
+%include 'practice-checkpoint.inc'
 %include 'practice-restart.inc'
 practice_pause_call equ frame_hook.pause_call

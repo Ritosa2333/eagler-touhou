@@ -31,6 +31,7 @@ dw practice_form_open,practice_form_input,practice_form_values,practice_form_req
 dw practice_restart_pending,practice_restart_values,practice_result_selecting
 dw practice_focus_hook
 dw practice_focus_test
+dw mima_intro
 entry_pause: db 0
 hold: db 0
 target_practice: db 0
@@ -473,6 +474,25 @@ BACK pre_body,(0x12de0-0xfac0+5)
 BACK post_body,(0x12e95-0xfac0+5)
 BACK dialog_return,(0x13c90-0xfac0)
 
+; Skip only Mima's sealing animation while preparing a practice target. The
+; remaining initializer still loads sprites, sets palettes, and starts music.
+mima_intro:
+    pushf
+    cmp byte [cs:target_preparing],0
+    je .native
+    cmp byte [0x8f5],4
+    jne .native
+    popf
+    jmp dialog_return
+.native:
+    popf
+    push bp
+    mov bp,sp
+    push si
+    push dword 0x00200010
+    jmp mima_intro_body
+BACK mima_intro_body,(0x1a529-0xfac0+10)
+
 %include 'practice-assists.inc'
 %include 'practice-assists-draw.inc'
 %include 'practice-text.inc'
@@ -506,5 +526,6 @@ BACK dialog_return,(0x13c90-0xfac0)
 %include 'practice-form.inc'
 %define PRACTICE_RESTART_TH02 1
 %include 'practice-info.inc'
+%include 'practice-checkpoint.inc'
 %include 'practice-restart.inc'
 practice_pause_call equ frame_hook.pause_call

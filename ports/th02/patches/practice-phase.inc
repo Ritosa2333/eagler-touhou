@@ -58,6 +58,31 @@ practice_target_advance:
     mov eax,[0x1a0c]
     cmp eax,[0x1a10]
     jne .done
+    ; Meira's three attacks use an explicit major phase and pattern index.
+    ; Her normal Boss initializer has already run at this point; select the
+    ; requested attack directly instead of waiting for the preceding pattern
+    ; to complete its current cycle.
+    cmp byte [0x8f5],1
+    jne .read_phase
+    mov al,[cs:practice_initial_phase]
+    cmp al,2
+    jb .read_phase
+    cmp al,3
+    ja .read_phase
+    dec al
+    cmp [0x7886],al
+    jae .read_phase
+    mov [0x7886],al
+    mov byte [0x7887],0
+    mov word [0x2be0],0
+    mov ax,701
+    cmp byte [cs:practice_initial_phase],2
+    je .direct_meira
+    mov ax,1501
+.direct_meira:
+    mov [0x2bea],ax
+    ret
+.read_phase:
     call practice_boss_phase
     mov bl,al
     cmp byte [0x8f5],4
@@ -98,10 +123,21 @@ practice_target_advance:
     jb .done
     test bl,1
     jz .done
-    mov ax,1600
+    mov ax,1800
     cmp byte [0x8f5],4
+    jne .write
+    ; Advance each Mima attack at its native damage threshold. Her next
+    ; attack initializer resets damage after the transition.
+    mov ax,600
+    cmp bl,1
     je .write
-    mov ax,1900
+    mov ax,700
+    cmp bl,3
+    je .write
+    mov ax,800
+    cmp bl,5
+    je .write
+    mov ax,1500
 .write:
     mov [0x2bea],ax
 .done:
