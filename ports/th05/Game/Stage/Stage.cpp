@@ -272,6 +272,7 @@ void CStage::Initialize()
  }
  GetPhaseTimeout();
  CGame::GVar().OnStageEnter();
+ TickBossBar();
 }
 
 void CStage::ApplyPracticeWarp()
