@@ -742,7 +742,8 @@ namespace th5w {
 practice::PhaseTimeout CBossStage4Mai::GetPhaseTimeout() const {
  switch(m_curPhase){
  case 3:return practice::PhaseTimeout::Timeline(36,m_nModeChange,m_curMode,m_curPhaseFrame,[](int n){return n%2?192:160;},[](int){return 60;});
- case 5:return practice::PhaseTimeout::Frames(5000,m_curPhaseFrame);
+ // This pattern can skip ahead after the laser retracts.
+ case 5:return practice::PhaseTimeout::Frames(5000,m_curPhaseFrame,true);
  case 7:return practice::PhaseTimeout::Timeline(36,m_nModeChange,m_curMode,m_curPhaseFrame,[](int n){return n%2?192:224;},[](int){return 60;});
  case 9:return practice::PhaseTimeout::Timeline(20,m_nModeChange,m_curMode,m_curPhaseFrame,[](int n){return 129;},[](int){return 32;});
  default:return practice::PhaseTimeout();

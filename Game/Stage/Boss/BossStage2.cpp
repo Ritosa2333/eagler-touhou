@@ -545,9 +545,9 @@ namespace th5w {
 practice::PhaseTimeout CBossStage2::GetPhaseTimeout() const {
  using practice::PhaseTimeout;
  switch(m_curPhase){
- case 2:return PhaseTimeout::Timeline(20,m_nModeChange,m_curMode,m_curPhaseFrame,[](int n){return n%2?96:64;},[](int){return 64;});
+ case 2:return PhaseTimeout::Timeline(20,m_nModeChange,m_curMode,m_curPhaseFrame,[](int n){return n%2?96:64;},[](int){return 96;});
  case 4:return PhaseTimeout::Timeline(20,m_nModeChange,0,m_curPhaseFrame,[](int){return 0;},[](int){return 128;});
- case 5:return PhaseTimeout::Timeline(20,m_nModeChange,m_curMode,m_curPhaseFrame,[](int n){return n%2?64:128;},[](int){return 48;});
+ case 5:return PhaseTimeout::Timeline(20,m_nModeChange,m_curMode,m_curPhaseFrame,[](int n){return n%2?128:64;},[](int){return 48;});
  case 7:return PhaseTimeout::Timeline(10,m_nModeChange,0,m_curPhaseFrame,[](int){return 0;},[](int){return 128;});
  default:return PhaseTimeout();
  }

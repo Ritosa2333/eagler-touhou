@@ -85,6 +85,8 @@ int DrawSetup(int age){
    if(oldSection!=p.section){p.rage=p.trigger=0;p.startHP=-1;}
    const Section* selected=SelectedSection(p.stage,p.warp,p.section);
    if(selected){
+    if(p.stage==4&&p.warp==2&&(selected->phase==4||selected->phase==7))
+     ImGui::TextWrapped("%s",YumekoShotHint(CGame::GVar().m_initDifficulty));
     const int oldRage=p.rage;
     if(selected->rageCount){const char* rageNames[]={th5w::locale::Text(u8"\u6b63\u5e38"),th5w::locale::Text(u8"\u53d1\u72c2"),th5w::locale::Text(u8"\u53d1\u72c2 2")};SetupCombo(th5w::locale::Text(u8"\u72b6\u6001"),&p.rage,rageNames,selected->rageCount+1);}
     if(p.warp==1&&p.stage==1&&selected->phase==2){const char* entries[]={th5w::locale::Text(u8"\u51fb\u7834\u8fdb\u5165"),th5w::locale::Text(u8"\u8d85\u65f6\u8fdb\u5165")};SetupCombo(th5w::locale::Text(u8"\u8fdb\u5165\u65b9\u5f0f"),&p.trigger,entries,2);}
