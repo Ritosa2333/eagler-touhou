@@ -2,6 +2,8 @@
 // classes with actual DAT resources without rendering thousands of frames.
 #include "../Game/Game.h"
 #include "../Game/Stage/Stage.h"
+#include "../Game/Stage/Item/Item.h"
+#include "../Game/Stage/Summary/Summary.h"
 #include "../Game/Stage/Chara/Chara.h"
 #include "../Game/Stage/CharaBullet/CharaBullet.h"
 #include "../Game/Stage/Laser/Laser.h"
@@ -97,6 +99,149 @@ struct PracticeTests {
   }
   return playerShots;
  }
+ static inline int motionData[14]={};
+ static bool PlayerMotionStart(int character){
+  if(!Start(0,0,character))return false;
+  auto* p=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme)->m_pChara;
+  p->m_bCharaCanMove=true;
+  p->m_curX=192*16;
+  p->m_curY=184*16;
+  return true;
+ }
+ static const int* PlayerMotionStep(int key){
+  auto* p=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme)->m_pChara;
+  p->MoveChara(key);
+  motionData[0]=int(p->m_curX);motionData[1]=int(p->m_curY);
+  motionData[2]=int(p->m_deltaX);motionData[3]=int(p->m_deltaY);
+  return motionData;
+ }
+ static void BulletMotionStart(int type,int cloud,int x,int y,int angle,int speed,int parameter,int delta){
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  stage->m_pChara->m_curX=3000;stage->m_pChara->m_curY=5100;
+  stage->m_pChara->m_invulnerableTimeLeft=255;
+  auto* bullets=stage->m_pEnemyBullet;
+  bullets->Initialize();
+  ENEMY_SHOOT_INFO info{};
+  info.shootOrigX=x;info.shootOrigY=y;info.shootAngle=angle;info.bulletSpeed=speed;
+  info.bulletBornType=cloud==4?2:cloud==3?3:0;
+  if(type!=-1)info.bulletBornType|=16;
+  info.bulletImg=84;info.shootType=EST00_SINGLE;
+  info.bulletMoveType=type;info.specialMoveVar=parameter;info.specialBulletDelta=delta;
+  bullets->Shoot(&info,type>0,false);
+  stage->m_curScore=stage->m_curNGraze=0;
+ }
+ static void BulletMotionPlayer(int x,int y,int invulnerable){
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  stage->m_pChara->m_curX=x;stage->m_pChara->m_curY=y;
+  stage->m_pChara->m_invulnerableTimeLeft=invulnerable;
+ }
+ static const int* BulletMotionStep(int tick,int clear){
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  stage->m_curFrame=tick;
+  stage->m_pChara->m_bMiss=false;
+  auto* bullets=stage->m_pEnemyBullet;
+  if(clear)bullets->SetClearBulletTimeLeft(20);
+  bullets->Step();
+  const auto& b=bullets->m_bullets[ENEMY_BULLET_N_RECORD_DOT+219];
+  const int row[]={b.flag,int(b.curX),int(b.curY),int(b.velX),int(b.velY),b.imgIdx,
+                   int(b.curSpeed),int(b.curAngle),b.bornStageAndGrazeFlag,b.dieStageAndMoveType,b.age,
+                   stage->m_curScore,stage->m_curNGraze,stage->m_pChara->m_bMiss};
+  std::copy_n(row,14,motionData);
+  return motionData;
+ }
+ static void LaserMotionStart(int mode,int x,int y,int angle,int width,int speed,int tail,int head,int age,int grow,int shrink,int finalWidth){
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  stage->m_pEnemyBullet->Initialize();
+  stage->m_pLaser->Initialize();
+  auto& l=stage->m_pLaser->m_laser[0];
+  l.mode=mode;l.srcX=x;l.srcY=y;l.angle=angle;l.width=width;l.speed=speed;
+  l.lenLower=tail;l.lenUpper=head;l.age=age;l.ageThres=grow;l.shootAgeThres=shrink;l.expectedWidth=finalWidth;
+ }
+ static const int* LaserMotionStep(int clear){
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  stage->m_pChara->m_bMiss=false;
+  if(clear)stage->m_pEnemyBullet->SetClearBulletTimeLeft(20);
+  stage->m_pLaser->Step();
+  stage->m_pLaser->FinishFrame();
+  const auto& l=stage->m_pLaser->m_laser[0];
+  const int row[]={l.mode,int(l.lenLower),int(l.lenUpper),int(l.speed),l.age,int(l.width),stage->m_pChara->m_bMiss};
+  std::copy_n(row,7,motionData);
+  return motionData;
+ }
+ static int SlowdownProbe(int difficulty,int count,int odd,bool turbo){
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  auto* bullets=stage->m_pEnemyBullet;
+  bullets->Initialize();
+  for(int i=0;i<count;i++){
+   auto& b=bullets->m_bullets[i];
+   b.flag=1;b.curX=b.curY=1000;b.dieStageAndMoveType=2;
+  }
+  CGame::GVar().m_playDifficulty=difficulty;
+  CGame::GVar().m_runTurboMode=turbo;
+  stage->m_curFrame=odd;
+  original::BeginTimingFrame();
+  bullets->Step();
+  return original::FrameDelay();
+ }
+ static const int* RankInitial(int difficulty){
+  auto& g=CGame::GVar();
+  g.m_bReplayMode=g.m_bPracticeMode=false;
+  g.m_playStage=difficulty==4?6:0;
+  g.m_playDifficulty=difficulty;
+  g.OnBeginGame();
+  motionData[0]=g.m_playerPerformance;
+  motionData[1]=g.m_playerPerformanceLowerBound;
+  motionData[2]=g.m_playerPerformanceUpperBound;
+  return motionData;
+ }
+ static const int* RankTune(int difficulty,int rank,int group,int ways,int spread,int stack,int delta){
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  CGame::GVar().m_playDifficulty=difficulty;
+  stage->m_playerPerformance=rank;
+  ENEMY_SHOOT_INFO info{};
+  info.fromStageScript=true;info.shootType=group;info.nWay=ways;info.nWayUnitAngle=spread;
+  info.nMulti=stack;info.deltaSpeed=delta;
+  stage->m_pEnemyBullet->TuneEnemyShootInfo(&info);
+  const int row[]={info.shootType,info.nWay,int(info.nWayUnitAngle),info.nMulti,int(info.deltaSpeed)};
+  std::copy_n(row,5,motionData);
+  return motionData;
+ }
+ static const int* RankItem(int kind,int pull,int dream,int y){
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  stage->m_bInCharaBombForItem=pull;
+  stage->SetDream(dream);
+  stage->m_pChara->CaughtItem(1000,y,kind);
+  motionData[0]=stage->m_playerPerformance;
+  motionData[1]=stage->m_itemRankProgress;
+  return motionData;
+ }
+ static int RankCarry(){
+  auto* game=CGame::s_pCurGame;
+  auto* previous=static_cast<CStage*>(game->m_pCurScheme);
+  previous->m_itemRankProgress=31;
+  previous->UploadVarToGlobal();
+  delete previous;
+  auto& g=CGame::GVar();
+  g.m_replay.CloseStage(false);
+  g.m_playStage=1;
+  g.m_practiceConfig=practice::Config();
+  auto* next=new CStage;
+  game->m_pCurScheme=next;
+  next->Initialize();
+  return g.m_replay.m_itemRankProgress[1]==31?next->m_itemRankProgress:-1;
+ }
+ static int RankSummary(int graze,int points){
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  stage->m_playerPerformance=32;
+  stage->m_nMiss=stage->m_nBomb=1;
+  stage->m_curNPointItem=points;
+  stage->m_curNGraze=graze;
+  stage->SetDream(90);
+  stage->m_pSummary->Initialize();
+  stage->m_pSummary->Run();
+  stage->m_pSummary->Step();
+  return stage->m_playerPerformance;
+ }
  static int AuditStart(int number,int difficulty,int rank,int kind){
   original::auditRandom=false;
   if(!Start(number,kind==2?1:kind?2:0))return 0;
@@ -122,7 +267,7 @@ struct PracticeTests {
   return 1;
  }
  static inline int auditData[ENEMY_BULLET_N_RECORD+12]={};
- static inline int auditGeometry[400*6]={};
+ static inline int auditGeometry[400*9]={};
  static int AuditFrame(int frame,int kind,int damage){
   auto* s=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
   s->m_curFrame=frame;
@@ -166,10 +311,11 @@ struct PracticeTests {
    boss->Step();
   }
   s->m_pGatherEffect->Step();
+  if(kind)s->m_pLaser->FinishFrame();
   for(const auto& b:bullets->m_bullets)if(b.flag==1){
    const int index=auditData[0]++;
-   const int row[]={int(b.curX*256),int(b.curY*256),int(b.velX*256),int(b.velY*256),int(b.curAngle*256),int(b.origSpeed*256)};
-   std::copy_n(row,6,auditGeometry+index*6);
+   const int row[]={int(b.curX*256),int(b.curY*256),int(b.velX*256),int(b.velY*256),int(b.curAngle*256),int(b.origSpeed*256),b.imgIdx*256,b.bornStageAndGrazeFlag*256,b.dieStageAndMoveType*256};
+   std::copy_n(row,9,auditGeometry+index*9);
    auditData[12+index]=row[5];
   }
   auditData[1]=original::Demo().ringIndex;
@@ -633,7 +779,26 @@ extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_audit_special(){return th
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_shot_start(int character,int power,int homing){return th5w::PracticeTests::ShotStart(character,power,homing);}
 extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_shot_step(int frame){return th5w::PracticeTests::ShotStep(frame);}
 
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_motion_rules(){return th5w::original::MotionEnabled();}
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_boss_rules(){return th5w::original::BossGeometryEnabled();}
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_shot_rules(){return th5w::PracticeTests::ShotRules();}
 
 extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_audit_geometry(){return th5w::PracticeTests::auditGeometry;}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_player_motion_start(int character){return th5w::PracticeTests::PlayerMotionStart(character);}
+extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_player_motion_step(int key){return th5w::PracticeTests::PlayerMotionStep(key);}
+extern "C" EMSCRIPTEN_KEEPALIVE void th05_native_bullet_motion_start(int type,int cloud,int x,int y,int angle,int speed,int parameter,int delta){th5w::PracticeTests::BulletMotionStart(type,cloud,x,y,angle,speed,parameter,delta);}
+extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_bullet_motion_step(int tick,int clear){return th5w::PracticeTests::BulletMotionStep(tick,clear);}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void th05_native_laser_motion_start(int mode,int x,int y,int angle,int width,int speed,int tail,int head,int age,int grow,int shrink,int finalWidth){th5w::PracticeTests::LaserMotionStart(mode,x,y,angle,width,speed,tail,head,age,grow,shrink,finalWidth);}
+extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_laser_motion_step(int clear){return th5w::PracticeTests::LaserMotionStep(clear);}
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_slowdown_probe(int difficulty,int count,int odd,int turbo){return th5w::PracticeTests::SlowdownProbe(difficulty,count,odd,turbo);}
+
+extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_rank_initial(int difficulty){return th5w::PracticeTests::RankInitial(difficulty);}
+extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_rank_tune(int difficulty,int rank,int group,int ways,int spread,int stack,int delta){return th5w::PracticeTests::RankTune(difficulty,rank,group,ways,spread,stack,delta);}
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_rank_speed(int rank,int speed){return th5w::original::math::Speed(speed,rank);}
+extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_rank_item(int kind,int pull,int dream,int y){return th5w::PracticeTests::RankItem(kind,pull,dream,y);}
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_rank_carry(){return th5w::PracticeTests::RankCarry();}
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_rank_summary(int graze,int points){return th5w::PracticeTests::RankSummary(graze,points);}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void th05_native_bullet_motion_player(int x,int y,int invulnerable){th5w::PracticeTests::BulletMotionPlayer(x,y,invulnerable);}

@@ -570,7 +570,7 @@ int CBossStage4::YukiShootType0_4()
 	if (m_curPhaseFrame%8==0)
 	{
 		ENEMY_SHOOT_INFO shootInfo;
-		shootInfo.bulletBornType=16;
+		shootInfo.bulletBornType=original::MotionEnabled()?18:16;
 		shootInfo.shootType=EST02_NWAY;
 		shootInfo.shootAngle=64;
 		shootInfo.bulletImg=50;
