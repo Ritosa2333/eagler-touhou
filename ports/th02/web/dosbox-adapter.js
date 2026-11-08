@@ -70,6 +70,9 @@ export class DOSBoxPC98 {
       }
     }else factory=(await import(net?(tracked?'./vendor/dosbox-x/dosbox-rollback-tracked.mjs':'./vendor/dosbox-x/dosbox-rollback.mjs'):'./vendor/dosbox-x/dosbox-jspi.mjs')).default;
     await factory(this.module);
+    // Use the core's planar lookup only for lockstep. Mark the host write so
+    // rollback retains the same renderer configuration at every boundary.
+    if(net){const api=this.module.nativeExports(),at=api.thPlanarState?.();if(!at)throw Error('TH02 联机图形核心接口不匹配');this.module.thDirtyMark?.(at,4);this.module.HEAPU32[at>>>2]=1;}
     if(art)this.module.playerArt=installPlayerArt(this.module,this.config.artPatch,art);
     this.module.callMain([this.transport.sessionId]);
     // The DOS batch returns only when Quit is selected at the title.
