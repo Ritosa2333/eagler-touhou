@@ -63,6 +63,7 @@ bool UsesCombatRevision(CombatRevision revision){
 }
 bool BossGeometryEnabled(){return UsesCombatRevision(OriginalBossGeometry);}
 bool MotionEnabled(){return UsesCombatRevision(OriginalMotion);}
+bool BombAndRageEnabled(){return UsesCombatRevision(OriginalBombAndRage);}
 DemoState& Demo(){return demo;}bool DemoActive(){return demo.active;}
 int IRandom(){if(!demo.active){if(coop::Run().count>1){auto& seed=coop::Run().random;seed=6364136223846793005ULL*seed+1;return int(seed>>33);}return std::rand();}demo.seed=demo.seed*0x015a4e35u+1;return int((demo.seed>>16)&32767);}
 int Random(){

@@ -304,7 +304,7 @@ int CBossStageEx::Phase10ShootType1()
 	{
 		float c[]={m_pStage->m_pStageRes->m_palette[3*3]/255.0f,m_pStage->m_pStageRes->m_palette[3*3+1]/255.0f,
 				   m_pStage->m_pStageRes->m_palette[3*3+2]/255.0f};
-		float angle=m_pStage->AimAngle(m_curX,m_curY);
+		float angle=m_pStage->AimAngle(m_curX,m_curY,original::BombAndRageEnabled());
 		if (m_curPhaseFrame%16==0)
 		{
 			m_pStage->m_pLaser->AddLaserFixed((m_curPhaseFrame-64)/8,m_curX,m_curY,c,8,angle+48,47,80);
@@ -371,7 +371,7 @@ int CBossStageEx::Phase14ShootType1()
 		m_pStage->m_pEnemyBullet->Shoot(&si);
 		if (m_curPhaseFrame%64==0)
 		{
-			float angle=m_pStage->AimAngle(m_curX,m_curY);
+			float angle=m_pStage->AimAngle(m_curX,m_curY,original::BombAndRageEnabled());
 			if (m_curPhaseFrame%128==0)
 				angle+=32;
 			else
@@ -387,7 +387,7 @@ int CBossStageEx::Phase14ShootType2()
 {
 	if (m_curPhaseFrame%8==0)
 	{
-		float angle=m_pStage->AimAngle(m_curX,m_curY);
+		float angle=m_pStage->AimAngle(m_curX,m_curY,original::BombAndRageEnabled());
 		if (m_curPhaseFrame%16==0)
 			angle+=64;
 		else
@@ -442,8 +442,8 @@ int CBossStageEx::Phase4Shoot()
 			{
 				m_phase4AimX=m_curX+(float)(original::Random()%(96*16)-48*16);
 				m_phase4AimY=m_curY+(float)(original::Random()%(64*16)-32*16);
-				m_phase4AimAngle=m_pStage->AimAngle(m_phase4AimX,m_phase4AimY);
-    if(original::DemoActive())m_demoPatternState=static_cast<unsigned char>(int(m_phase4AimAngle));
+				m_phase4AimAngle=m_pStage->AimAngle(m_phase4AimX,m_phase4AimY,original::BombAndRageEnabled());
+    if(original::BombAndRageEnabled())m_demoPatternState=static_cast<unsigned char>(int(m_phase4AimAngle));
 			}
 		}
 		si.shootOrigX=m_phase4AimX;
@@ -483,7 +483,7 @@ int CBossStageEx::Phase4Shoot()
 
 int CBossStageEx::Phase8Shoot()
 {
-	if (m_curPhaseFrame==64&&!original::DemoActive())
+	if (m_curPhaseFrame==64&&!original::BombAndRageEnabled())
 		m_phase8Angle=(float)(original::Random()%256);
 	if (m_curPhaseFrame%16==0)
 	{
@@ -499,7 +499,8 @@ int CBossStageEx::Phase8Shoot()
 		if (si.nWay>14)
 			si.nWay=14;
 		si.specialMoveVar=1;
-  if(original::DemoActive())m_phase8Angle=float(original::Demo().bulletTemplateAngle);
+  if(original::BombAndRageEnabled())
+			m_phase8Angle=float(m_pStage->m_pEnemyBullet->TemplateAngle());
 		m_phase8Angle+=2;
 		si.shootAngle=m_phase8Angle;
 		m_pStage->m_pEnemyBullet->Shoot(&si,true);
@@ -794,7 +795,7 @@ void CBossStageEx::Phase17Shoot()
 		m_curImage=181;
 		m_pStage->m_bPlaySound[8]=true;
 		m_phase17ShootAngle=(float)(original::Random()%256);
-  if(original::DemoActive()){m_velX=0;m_demoPatternState=0;}
+  if(original::BombAndRageEnabled()){m_velX=0;m_demoPatternState=0;}
 	}
 	if (m_curPhaseFrame>=128)
 	{
@@ -808,7 +809,10 @@ void CBossStageEx::Phase17Shoot()
 			si.shootType=EST02_NWAY;
 			si.nWay=5;
 			si.nWayUnitAngle=21;
-			si.bulletSpeed=40.0f+64.0f*(float)(3400-m_curHP)/3400.0f;
+			// The original divides in subpixels before adding the base speed.
+			si.bulletSpeed=original::BombAndRageEnabled()
+				? float(40+(3400-m_curHP)*64/3400)
+				: 40.0f+64.0f*(float)(3400-m_curHP)/3400.0f;
 			si.shootAngle=m_phase17ShootAngle;
 			m_pStage->m_pEnemyBullet->Shoot(&si);
 			si.shootAngle+=128.0f;
@@ -817,7 +821,7 @@ void CBossStageEx::Phase17Shoot()
 			m_pStage->m_bPlaySound[9]=true;
 		}
 		float angle=(float)((m_curPhaseFrame-128)*2);
-  if(original::DemoActive()){
+  if(original::BombAndRageEnabled()){
    m_curX=float(3072+original::math::Y(m_demoPatternState,int(m_velX)));
    m_demoPatternState=static_cast<unsigned char>(m_demoPatternState+2);
    m_velX=float(((3400-m_curHP)*1024)/3400);
