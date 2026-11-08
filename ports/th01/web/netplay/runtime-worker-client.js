@@ -48,6 +48,7 @@ export class WorkerGameRuntime extends GameRuntime{
   receive(data){
     if(data.type==='frame'){
       if(this.stopped){data.bitmap.close();return;}
+      if(data.generation!==(this.renderGeneration??0)){this.releaseFrame(data);return;}
       if(data.frame<=(this.presentedFrame??-1)||this.queuedFrame&&data.frame<=this.queuedFrame.frame){this.releaseFrame(data);return;}
       if(this.queuedFrame)this.releaseFrame(this.queuedFrame);this.queuedFrame=data;
       if(!this.presentRequest)this.presentRequest=requestAnimationFrame(()=>this.draw());return;
@@ -67,6 +68,7 @@ export class WorkerGameRuntime extends GameRuntime{
   }
   async execute(inputs,frame,capture=false){const result=await this.call('execute',{inputs,frame,capture});if(!this.stopped)this.apply(result,false);return result;}
   async restore(frame){
+    this.renderGeneration=(this.renderGeneration??0)+1;
     if(this.presentRequest!==null)cancelAnimationFrame(this.presentRequest);this.presentRequest=null;
     if(this.queuedFrame){this.releaseFrame(this.queuedFrame);this.queuedFrame=null;}
     for(const at of this.pendingEffects.keys())if(at>=frame)this.pendingEffects.delete(at);

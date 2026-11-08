@@ -7,6 +7,19 @@ const binary = await readFile(new URL('../web/game.wasm',import.meta.url));
 const makeCore = async () => (await WebAssembly.instantiate(binary,{})).instance.exports;
 const settings = {players:2,count:2,rank:1,lifeCompensation:true,startStage:'normal'};
 
+test('rescued players immediately move and retain their action pose',async()=>{
+  for(const slot of [0,1]){
+    const core=await makeCore();core.th_init(2,2,1,0);core.th_step(4,0,0);
+    core.th_debug_position(0,150);core.th_debug_position(1,300);
+    core.th_debug_hit(slot,1);core.th_step(0,0,0);assert.equal(core.th_get(33,slot),1);
+    core.th_debug_position(slot,slot===0?295:155);core.th_step(0,0,0);
+    assert.equal(core.th_get(33,slot),0);assert.equal(core.th_get(129,slot),0);
+    const before=core.th_get(30,slot);core.th_step(slot===0?2:0,slot===1?2:0,0);
+    assert(core.th_get(30,slot)>before);assert.equal(core.th_get(40,slot),core.th_get(30,slot));
+    assert.notEqual(core.th_get(39,slot),64,'moving pose must not be replaced by the idle pose');
+  }
+});
+
 test('later stages keep native results visible through rapid fire',async()=>{
   for(const stage of [1,6,7,9,11,14,16,19]){
     const core=await makeCore(),sim=new NativeSimulation(core,settings,0);sim.reset();
