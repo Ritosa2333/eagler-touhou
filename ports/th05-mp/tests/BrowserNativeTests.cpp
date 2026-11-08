@@ -10,6 +10,9 @@
 #include "../Game/Stage/Dialogue/Dialogue.h"
 #include "../Game/Stage/Background/Background.h"
 #include "../Game/Stage/Boss/BossStage5.h"
+#include "../Game/Stage/Boss/BossStage4Yuki.h"
+#include "../Game/Stage/Boss/BossStage6.h"
+#include "../Game/Stage/Boss/BossStageEx.h"
 #include "../Game/Stage/Boss/BossStage4.h"
 #include "../Game/Stage/MidBoss/MidBoss.h"
 #include "../portable/Graphics.hpp"
@@ -37,6 +40,7 @@ struct PracticeTests {
   auto* game=CGame::s_pCurGame;if(!game||game->m_curSchemeID!=4)return 0;
   auto* s=static_cast<CStage*>(game->m_pCurScheme);if(!s->Cooperative()||seat<0||seat>=s->m_seatCount)return 0;
   if(op==34){Yumeko(s);return 1;}
+  if(op==35){BossPatterns(s,CGame::GVar().m_playStage);return 1;}
   s->BindSeat(seat);auto* p=s->m_pChara;
   if(op==32){
    auto* bullets=s->m_pEnemyBullet;bullets->Initialize();auto& bullet=bullets->m_bullets[ENEMY_BULLET_N_RECORD_DOT];
@@ -204,6 +208,217 @@ struct PracticeTests {
      }
     }
    }
+  }
+  // The opening sweep ends after the knife at angle 16 on frame 66.
+  for(bool clockwise:{false,true}){
+   boss->m_bPhase2KnifeClockwise=clockwise;
+   boss->m_curMode=1;
+   boss->m_curPhaseFrame=64;
+   boss->Phase2ShootType1();
+   if(boss->m_curMode!=1)throw std::runtime_error("Yumeko ended her knife sweep early");
+   boss->m_curPhaseFrame=66;
+   boss->Phase2ShootType1();
+   if(boss->m_curMode!=0||boss->m_curPhaseFrame!=0)
+    throw std::runtime_error("Yumeko added an extra knife to her sweep");
+  }
+
+  stage->m_playerPerformance=32;
+  CGame::GVar().m_playDifficulty=3;
+  boss->m_phase8KnifePart=false;
+  boss->m_phase8ShootPartSpeed=128;
+  boss->m_phase8ShootPartNReset=1;
+  for(int frame=64;frame<=256;frame+=4){
+   bullets->Initialize();
+   boss->m_curPhaseFrame=frame;
+   boss->Phase8Shoot();
+   int count=0;
+   const float expectedSpeed=stage->AdjustSpeedBasedOnPlayerPerformance(16+(frame-64)/4%12*8);
+   for(const auto& bullet:bullets->m_bullets){
+    if(!bullet.flag)continue;
+    ++count;
+    if(bullet.origSpeed!=expectedSpeed)throw std::runtime_error("Wrong Yumeko aimed wave speed");
+   }
+   if(count!=(frame==256?0:5)||boss->m_phase8KnifePart!=(frame==256))
+    throw std::runtime_error("Wrong Yumeko aimed wave length");
+  }
+
+  for(int frame:{32,48}){
+   bullets->Initialize();
+   boss->m_curPhaseFrame=frame;
+   boss->Phase10Shoot();
+   const float firstAngle=frame==32?0:127;
+   const float turn=frame==32?-64:64;
+   int count=0;
+   for(const auto& bullet:bullets->m_bullets){
+    if(!bullet.flag)continue;
+    if((count==0&&bullet.curAngle!=firstAngle)||bullet.delta!=turn||bullet.origSpeed!=38)
+     throw std::runtime_error("Wrong Yumeko final ring angle, turn or speed");
+    ++count;
+   }
+   if(count!=24)throw std::runtime_error("Wrong Yumeko final ring size");
+  }
+
+ }
+ static void BossPatterns(CStage* stage, int number){
+  auto* boss=stage->m_pBoss;
+  if(!boss)throw std::runtime_error("Could not start TH05 boss pattern check");
+  auto* bullets=stage->m_pEnemyBullet;
+  const auto active=[&]{
+   int count=0;
+   for(const auto& bullet:bullets->m_bullets)count+=bullet.flag==1;
+   return count;
+  };
+  auto& difficulty=CGame::GVar().m_playDifficulty;
+  difficulty=number==6?4:3;
+  stage->m_playerPerformance=32;
+  boss->m_curX=192*16;
+  boss->m_curY=80*16;
+  boss->m_curHP=10000;
+  bullets->Initialize();
+
+  if(number==0){
+   boss->m_curPhase=4;
+   boss->m_curPhaseFrame=31;
+   boss->Step();
+   stage->m_curFrame=64;
+   boss->m_curPhaseFrame=39;
+   boss->Step();
+   int pellets=0;
+   for(const auto& bullet:bullets->m_bullets){
+    if(!bullet.flag||bullet.imgIdx!=0)continue;
+    ++pellets;
+    if(std::abs(std::remainder(bullet.curAngle,256.0f))>4)
+     throw std::runtime_error("Sara's first spread should be centered at angle zero");
+   }
+   if(pellets!=8||active()!=9)throw std::runtime_error("Wrong Sara opening volley size");
+
+   bullets->Initialize();
+   ENEMY_SHOOT_INFO stack{};
+   stack.shootType=EST06_MULTI;
+   stack.shootOrigX=boss->m_curX;
+   stack.shootOrigY=boss->m_curY;
+   stack.bulletSpeed=112;
+   stack.nMulti=8;
+   stack.deltaSpeed=16;
+   bullets->Shoot(&stack);
+   if(active()!=4)throw std::runtime_error("A stack should end with its first shot at speed 160");
+   stack.deltaSpeed=7;
+   bullets->TuneEnemyShootInfo(&stack);
+   if(stack.deltaSpeed!=10)throw std::runtime_error("Stack speed increments must use whole subpixels");
+  }else if(number==1){
+   boss->m_curPhase=2;
+   boss->m_curMode=0;
+   boss->m_nModeChange=0;
+   boss->m_velX=boss->m_velY=0;
+   boss->m_curPhaseFrame=63;
+   boss->Step();
+   if(boss->m_curMode!=0)throw std::runtime_error("Louise ended her movement too early");
+   boss->m_curPhaseFrame=95;
+   boss->Step();
+   if(boss->m_curMode!=2)throw std::runtime_error("Louise did not begin her red stack cycle");
+   boss->m_curPhaseFrame=31;
+   boss->Step();
+   if(active()!=0)throw std::runtime_error("Louise fired her red stack during charge");
+   boss->Step();
+   boss->Step();
+   if(active()!=14)throw std::runtime_error("Wrong Louise opening stack size");
+   for(const auto& bullet:bullets->m_bullets)
+    if(bullet.flag&&bullet.curAngle!=192)throw std::runtime_error("Wrong Louise opening stack angle");
+
+   bullets->Initialize();
+   stage->m_pLaser->Initialize();
+   boss->m_curPhase=5;
+   boss->m_curMode=0;
+   boss->m_nModeChange=0;
+   boss->m_curPhaseFrame=47;
+   boss->Step();
+   boss->m_curPhaseFrame=31;
+   boss->Step();
+   if(active()!=0||stage->m_pLaser->GetMode(0)!=LASER_MODE_SHOOT_OUT)
+    throw std::runtime_error("Louise's final cycle should start with lasers");
+   boss->m_curPhaseFrame=127;
+   boss->Step();
+   boss->m_curPhaseFrame=47;
+   boss->Step();
+   boss->m_curPhaseFrame=31;
+   boss->Step();
+   if(active()!=160)throw std::runtime_error("Wrong Louise final red ring size");
+   for(const auto& bullet:bullets->m_bullets){
+    if(bullet.flag&&bullet.origSpeed==20)return;
+   }
+   throw std::runtime_error("Wrong Louise final red ring base speed");
+  }else if(number==3){
+   CBossStage4 twins;
+   twins.m_pStage=stage;
+   twins.Initialize();
+   twins.m_curPhaseFrame=48;
+   stage->m_playerPerformance=48;
+   twins.MaiShootType0_2__2_2();
+   if(active()!=7)throw std::runtime_error("Wrong Mai spread size");
+   for(const auto& bullet:bullets->m_bullets)
+    if(bullet.flag&&bullet.origSpeed!=50)throw std::runtime_error("Mai spread should keep its fixed speed");
+
+   CBossStage4Yuki yuki;
+   yuki.SetStage(stage);
+   yuki.SetX(192*16);
+   yuki.SetY(80*16);
+   yuki.Initialize();
+   const int counts[]={4,6,8,10};
+   for(difficulty=0;difficulty<4;difficulty++){
+    bullets->Initialize();
+    yuki.m_curPhaseFrame=8;
+    yuki.Phase7Shoot();
+    if(active()!=0||yuki.m_curImage!=208)throw std::runtime_error("Wrong Yuki charge frame");
+    yuki.m_curPhaseFrame=12;
+    yuki.Phase7Shoot();
+    if(active()!=counts[difficulty])throw std::runtime_error("Yuki accelerated shots were tuned twice");
+   }
+  }else if(number==5){
+   auto* shinki=static_cast<CBossStage6*>(boss);
+   shinki->m_phase2Type1Angle=-1000;
+   shinki->m_curPhaseFrame=32;
+   shinki->Phase2ShootType2();
+   int centered=0;
+   for(const auto& bullet:bullets->m_bullets)
+    if(bullet.flag&&bullet.curAngle==shinki->m_phase2Type2Angle)++centered;
+   if(active()!=32||centered!=1)throw std::runtime_error("Shinki's rings should use their own starting angle");
+
+   const int intervals[]={52,20,16,12};
+   for(difficulty=0;difficulty<4;difficulty++){
+    shinki->m_phase10Timer=0;
+    shinki->m_curHP=3800;
+    for(int frame=192;frame<=320&&shinki->m_phase10Timer<=65;frame++){
+     bullets->Initialize();
+     shinki->m_curPhaseFrame=frame;
+     shinki->Phase10Shoot();
+    }
+    if(shinki->m_phase10Var3!=intervals[difficulty])throw std::runtime_error("Wrong Shinki late ball interval");
+   }
+  }else if(number==6){
+   auto* alice=static_cast<CBossStageEx*>(boss);
+   const int frames[]={64,128,768,896};
+   const int counts[]={8,9,14,14};
+   for(int i=0;i<4;i++){
+    bullets->Initialize();
+    alice->m_curPhaseFrame=frames[i];
+    alice->Phase8Shoot();
+    if(active()!=counts[i])throw std::runtime_error("Wrong Extra Alice bouncing ring size");
+   }
+
+   alice->m_curPhaseFrame=64;
+   alice->Phase4Shoot();
+   alice->m_curPhaseFrame=128;
+   alice->Phase4Shoot();
+   if(!alice->m_bFireWave[0]||alice->m_bFireWave[1])
+    throw std::runtime_error("Extra Alice's first fire wave should be on the left");
+   for(int frame=0;frame<128;frame++)alice->StepFireWave();
+   alice->m_curPhaseFrame=256;
+   alice->Phase4Shoot();
+   if(!alice->m_bFireWave[0]||!alice->m_bFireWave[1])
+    throw std::runtime_error("Extra Alice's next fire wave should be on the right");
+   for(int frame=0;frame<20;frame++)alice->StepFireWave();
+   if(alice->m_bFireWave[0]||!alice->m_bFireWave[1])
+    throw std::runtime_error("Wrong Extra Alice fire wave duration");
   }
  }
  static int Matrix(){

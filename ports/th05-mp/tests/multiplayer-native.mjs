@@ -102,6 +102,14 @@ try{
   return m._th05_native_coop_probe(34,0,0);
  });
  assert.equal(report.yumeko,1);
+ report.bossPatterns=await page.evaluate(()=>{
+  const m=document.querySelector('iframe').contentWindow.Module;
+  return [0,1,3,5,6].map(stage=>{
+   if(!m._th05_coop_start(3,0,stage===6?4:3,741,0,1,2)||!m._th05_native_coop_stage(stage,2))throw Error('Boss pattern stage start');
+   return m._th05_native_coop_probe(35,0,0);
+  });
+ });
+ assert.deepEqual(report.bossPatterns,[1,1,1,1,1]);
  await writeFile(resolve(out,'native.json'),JSON.stringify(report,null,2)+'\n');console.log('PASS native shared-world resources, rescue and '+report.cases.length+' synchronized stage cases');
 }catch(error){console.error(report,errors);await page.screenshot({path:resolve(out,'native-failure.png')});throw error;}
 finally{await browser.close();await site.close();}

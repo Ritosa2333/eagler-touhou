@@ -457,7 +457,7 @@ int CBossStageEx::Phase4Shoot()
 	}
 	if (m_curPhaseFrame%128==0)
 	{
-		if ((m_curPhaseFrame%256==0)!=original::DemoActive())
+		if (m_curPhaseFrame%256!=0)
 		{
 			if (m_bFireWave[0]==false)
 			{
@@ -495,7 +495,7 @@ int CBossStageEx::Phase8Shoot()
 		si.bulletSpeed=32;
 		si.shootType=EST04_NWAY_ALLAROUND;
 		si.bulletMoveType=EBMT08_BOUNCE_X_YTOP;
-		si.nWay=(original::DemoActive()?8:6)+m_curPhaseFrame/128;
+		si.nWay=8+m_curPhaseFrame/128;
 		if (si.nWay>14)
 			si.nWay=14;
 		si.specialMoveVar=1;
@@ -540,8 +540,8 @@ int CBossStageEx::Phase12Shoot()
 		if (m_curPhaseFrame>=512&&m_curPhaseFrame%16==0)
 		{
 			ENEMY_SHOOT_INFO si;
-			si.shootOrigX=original::DemoActive()?shootX:m_curX;
-			si.shootOrigY=original::DemoActive()?shootY:m_curY;
+			si.shootOrigX=shootX;
+			si.shootOrigY=shootY;
 			si.bulletBornType=16;
 			si.shootType=EST05_NWAY_ALLAROUND_TO_CHARA;
 			si.shootAngle=0;
@@ -971,7 +971,7 @@ void CBossStageEx::StepFireWave()
 		if (m_bFireWave[i])
 		{
 			m_fireWaveY[i]+=4;
-			if (m_fireWaveY[i]>=(original::DemoActive()?592:604))
+			if (m_fireWaveY[i]>=592)
 				m_bFireWave[i]=false;
 		}
  if(original::DemoActive()){

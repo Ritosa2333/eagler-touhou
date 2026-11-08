@@ -59,7 +59,7 @@ int CMidBossStageEx::ShootType1()
 
 int CMidBossStageEx::ShootType2()
 {
-	if (m_pStage->m_curFrame%2==(original::DemoActive()?0:1))
+	if (m_pStage->m_curFrame%2==0)
 	{
 		ENEMY_SHOOT_INFO shootInfo;
 		shootInfo.shootOrigX=m_curX;

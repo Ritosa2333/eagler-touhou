@@ -142,7 +142,7 @@ void CBossStage2::Phase2ShootType1()
 void CBossStage2::Phase2ShootType2()
 {
 	int res=ShootAnimation(96);
-	if (res==0)
+	if (res<2)
 		return;
 	if (res==3)
 	{
@@ -164,7 +164,7 @@ void CBossStage2::Phase2ShootType2()
 		const float deltaSpeed[]={5,5,6,6};
 		shootInfo.nMulti=nMulti[CGame::GVar().m_playDifficulty];
 		shootInfo.deltaSpeed=deltaSpeed[CGame::GVar().m_playDifficulty];
-		shootInfo.shootAngle=(float)(192+(m_curPhaseFrame-32)/2*8*((m_nModeChange/2)%2*2-1));
+		shootInfo.shootAngle=(float)(192+(m_curPhaseFrame-34)/2*8*((m_nModeChange/2)%2*2-1));
 		m_pStage->m_pEnemyBullet->Shoot(&shootInfo);
 		m_pStage->m_bPlaySound[15]=true;
 	}
@@ -174,7 +174,7 @@ void CBossStage2::Phase2()
 {
 	if (m_curMode==0)
 	{
-		if (BounceWalk(64,16)!=0)
+		if (BounceWalk(96,16)!=0)
 		{
 			m_curPhaseFrame=0;
 			m_nModeChange++;
@@ -324,7 +324,7 @@ void CBossStage2::Phase5ShootType2()
 		shootInfo.bulletBornType=18;
 		shootInfo.bulletImg=84;
 		shootInfo.shootType=EST11_NWAY_ALLAROUND_MULTI_TO_CHARA;
-		shootInfo.bulletSpeed=(float)(20+m_nModeChange/2*4);
+		shootInfo.bulletSpeed=(float)(20+(m_nModeChange-1)/2*4);
 		if (shootInfo.bulletSpeed>32)
 			shootInfo.bulletSpeed=32;
 		shootInfo.nWay=24;
@@ -359,7 +359,7 @@ void CBossStage2::Phase5()
 	}
 	else
 	{
-		if (m_nModeChange%2==0)
+		if (m_nModeChange%2==1)
 			Phase5ShootType1();
 		else
 			Phase5ShootType2();

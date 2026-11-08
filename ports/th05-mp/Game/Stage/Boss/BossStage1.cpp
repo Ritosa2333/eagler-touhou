@@ -407,15 +407,15 @@ void CBossStage1::Phase4Shoot()
 		m_pStage->m_pLaser->StartGrow(1);
 	}
 	bool bChange=false;
-	if (m_pStage->m_pLaser->LaserAngle(1)>=128)
+	if (m_pStage->m_pLaser->LaserAngle(1)>128)
 		bChange=true;
-	if (m_pStage->m_pLaser->LaserAngle(1)<128&&m_pStage->m_pLaser->LaserAngle(1)>=96&&m_curPhaseFrame%2==0)
+	if (m_pStage->m_pLaser->LaserAngle(1)<=128&&m_pStage->m_pLaser->LaserAngle(1)>96&&m_curPhaseFrame%2==0)
 		bChange=true;
-	if (m_pStage->m_pLaser->LaserAngle(1)<96&&m_pStage->m_pLaser->LaserAngle(1)>=88&&m_curPhaseFrame%3==0)
+	if (m_pStage->m_pLaser->LaserAngle(1)<=96&&m_pStage->m_pLaser->LaserAngle(1)>88&&m_curPhaseFrame%3==0)
 		bChange=true;
-	if (m_pStage->m_pLaser->LaserAngle(1)<88&&m_pStage->m_pLaser->LaserAngle(1)>=80&&m_curPhaseFrame%4==0)
+	if (m_pStage->m_pLaser->LaserAngle(1)<=88&&m_pStage->m_pLaser->LaserAngle(1)>80&&m_curPhaseFrame%4==0)
 		bChange=true;
-	if (m_pStage->m_pLaser->LaserAngle(1)<80&&m_curPhaseFrame%5==0)
+	if (m_pStage->m_pLaser->LaserAngle(1)<=80&&m_curPhaseFrame%5==0)
 		bChange=true;
 	if (bChange&&m_pStage->m_pLaser->LaserAngle(1)>74)
 	{
@@ -428,7 +428,7 @@ void CBossStage1::Phase4Shoot()
 		shootInfo.shootOrigX=m_curX;
 		shootInfo.shootOrigY=m_curY;
 		shootInfo.bulletBornType=16;
-		shootInfo.shootAngle=(float)(m_curPhaseFrame-48)/16*14;
+		shootInfo.shootAngle=(float)((m_curPhaseFrame-33)/16*14);
 		shootInfo.shootType=EST02_NWAY;
 		shootInfo.bulletMoveType=EBMT10_STRAIGHT;
 		const int nWay[]={5,6,7,8};
