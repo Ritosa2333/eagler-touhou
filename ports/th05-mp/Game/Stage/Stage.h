@@ -109,7 +109,7 @@ public:
  int ShotsDamage(float x,float y,float w,float h,bool boss,bool reflect=false);
  void ProtectPlayers(int time); void DisablePlayerBombs();
  int TargetSeat(float x,float y) const;
- float AimAngle(float x,float y);
+ float AimAngle(float x,float y,bool originalAngle=false);
  void PersistCoop(){SaveCoop();}
  int m_bossDamageFraction[2]{};
  void ChooseTarget(float x,float y);

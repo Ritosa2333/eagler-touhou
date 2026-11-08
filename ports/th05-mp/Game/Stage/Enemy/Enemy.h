@@ -67,9 +67,10 @@ protected:
 protected:
 	__forceinline static void UpdateVelXYFromSpeedAngle(ENEMY *pEnemy)
 	{
-		if(original::DemoActive()){pEnemy->velX=float(original::math::X(int(pEnemy->curAngle),int((unsigned char)int(pEnemy->curSpeed))));pEnemy->velY=float(original::math::Y(int(pEnemy->curAngle),int((unsigned char)int(pEnemy->curSpeed))));return;}
-		pEnemy->velX=(float)cos(pEnemy->curAngle/256.0f*2*PI)*pEnemy->curSpeed;
-		pEnemy->velY=(float)sin(pEnemy->curAngle/256.0f*2*PI)*pEnemy->curSpeed;
+		const int angle=static_cast<int>(pEnemy->curAngle);
+		const int speed=static_cast<unsigned char>(static_cast<int>(pEnemy->curSpeed));
+		pEnemy->velX=float(original::math::X(angle,speed));
+		pEnemy->velY=float(original::math::Y(angle,speed));
 	}
 	__forceinline static bool MoveAndTestLeave(ENEMY *pEnemy)
 	{
@@ -77,9 +78,9 @@ protected:
 		pEnemy->lastY=pEnemy->curY;
 		pEnemy->curX+=pEnemy->velX;
 		pEnemy->curY+=pEnemy->velY;
-		if ((pEnemy->canLeave&1)&&((original::DemoActive()?pEnemy->curX<-256.0f:pEnemy->curX<=-256.0f)||pEnemy->curX>=400.0f*16.0f))
+		if ((pEnemy->canLeave&1)&&(pEnemy->curX<-256.0f||pEnemy->curX>=400.0f*16.0f))
 			return true;
-		if ((pEnemy->canLeave&0x10)&&((original::DemoActive()?pEnemy->curY<-256.0f:pEnemy->curY<=-256.0f)||pEnemy->curY>=384.0f*16.0f))
+		if ((pEnemy->canLeave&0x10)&&(pEnemy->curY<-256.0f||pEnemy->curY>=384.0f*16.0f))
 			return true;
 		return false;
 	}

@@ -152,9 +152,9 @@ int CStage::TargetSeat(float x,float y) const {
  }
  return best;
 }
-float CStage::AimAngle(float x,float y){
- if(!Cooperative())return m_pChara->AngleToChara(x,y);
- return m_seats[TargetSeat(x,y)].player->AngleToChara(x,y);
+float CStage::AimAngle(float x,float y,bool originalAngle){
+ if(!Cooperative())return m_pChara->AngleToChara(x,y,originalAngle);
+ return m_seats[TargetSeat(x,y)].player->AngleToChara(x,y,originalAngle);
 }
 void CStage::ChooseTarget(float x,float y){if(Cooperative())BindSeat(TargetSeat(x,y));}
 bool CStage::CollectItem(float x,float y,unsigned char type){
