@@ -136,10 +136,10 @@ i32 EclVm::var_int(i32 addr) const {
 }
 float EclVm::var_float(i32 addr) const {
     if(addr==-9942)return float(var_int(addr)); // same alias in 0x4fc530
-    // 0x4fc530 -> 0x404b70: signed unit random, used by pl01 laser angles.
-    if(addr==-9999)return world_?world_->bullet_rng.unit():AnmVm::rand_unit();
-    if(addr==-9998)return (world_?world_->bullet_rng.signedUnit():AnmVm::rand_unit()*2.f-1.f)*3.14159274101257324219f;
-    if(addr==-9987)return world_?world_->bullet_rng.signedUnit():AnmVm::rand_unit()*2.f-1.f;
+    // 0x4fc58e / 0x4fc5c6 / 0x4fc5aa use the same RNG at 0x5c6620 for both fields.
+    if(addr==-9999)return AnmVm::rand_unit(true);
+    if(addr==-9998)return AnmVm::rand_signed_unit(3.14159274101257324219f,true);
+    if(addr==-9987)return AnmVm::rand_signed_unit(1.f,true);
     if(world_&&addr==-9896)return world_->boss_escape_result;
     if(world_&&addr==-9887)return world_->story_boss_phase;
     if(world_&&addr==-9886)return world_->story_final_boss;
@@ -228,7 +228,7 @@ bool EclVm::do_call(const std::string& name,bool async,const EclInstruction* cal
         }
         child->locals_=std::move(args);
         child->enter_sub(p,s);
-        children.push_back(std::move(child));
+        tree_root_->children.push_back(std::move(child));
         return true;
     }
     Frame fr;fr.prog=prog_;fr.sub=sub_;fr.ip=(call_ins? call_ins->offset+call_ins->size : ip_);fr.bp=bp_;
@@ -248,16 +248,16 @@ bool EclVm::do_return(){
 
 bool EclVm::stop_async_id(i32 id){
     // Native 0x568ac3 marks the matching context ended, without deleting it.
-    for(auto& child:children){
+    for(auto it=children.rbegin();it!=children.rend();++it){
+        auto& child=*it;
         if(child->async_id_==id&&!child->ended_){child->ended_=true;return true;}
-        if(child->stop_async_id(id))return true;
     }
     return false;
 }
 void EclVm::stop_async_children(){
     // Native 0x568a30 ends every asynchronous context owned by this host.
     // Keep objects alive while a child can still be executing this instruction.
-    for(auto& child:children){child->ended_=true;child->stop_async_children();}
+    for(auto& child:children)child->ended_=true;
 }
 void EclVm::advance_float_motions(){
     for(auto&m:float_motions_)if(m.active){
@@ -269,10 +269,16 @@ void EclVm::advance_float_motions(){
 }
 bool EclVm::step(){
     if(!tree_root_)tree_root_=this;
+    const size_t pending=children.size();
     bool active=step_self();
     if(!ended_&&!error_)advance_float_motions();
-    // Async execution belongs to the VM tree, including hostless root scripts.
-    for(auto& child:children){child->tree_root_=tree_root_;if(child->step())active=true;}
+    // 0x5682d0 prepends to the host's context list. 0x56b4e0 saves the
+    // successor before dispatch, so contexts created this tick wait a tick.
+    for(size_t i=std::min(pending,children.size());i>0;--i){
+        auto* child=children[i-1].get();
+        child->tree_root_=tree_root_;
+        if(child->step())active=true;
+    }
     return active;
 }
 bool EclVm::step_self(){

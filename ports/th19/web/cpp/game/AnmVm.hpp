@@ -88,7 +88,8 @@ struct AnmVm {
     void  write_var_f(i32 id, float v);
     i32   read_var_i(i32 id) const;
     void  write_var_i(i32 id, i32 v);
-    static float rand_unit();
+    static float rand_unit(bool primary = false);
+    static float rand_signed_unit(float scale, bool primary = false);
     static u32 rand_integer();
     static void seed_random(u32 seed);
     static u32 random_checkpoint(bool primary=false);

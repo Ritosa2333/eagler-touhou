@@ -208,6 +208,7 @@ struct Enemy {
     i32 life_reset_4=0,life_reset_8=0,life_reset_c=0; // native HP record +4/+8/+c
     i32 combo_frames=20;        // EnemyInf +0x5120, ECL 1032; native 0x50ac4a
     bool script_initialized_this_tick=false;
+    u8 spawn_hold=0;
     i32 sprite=-1,kind=0;        // sprite = main sprite (slot 0); kind from ins_1027
     u32 flags=0;                // enemy flags: ins_502 sets (bitmask), ins_503 clears
     u32 status_flags=0;         // EnemyInf+0x5170, distinct from +0x516c above

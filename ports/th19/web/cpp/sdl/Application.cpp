@@ -480,6 +480,7 @@ int g_vs_scene_side=0;th19::VsScene g_vs_scene{1,1};
 bool g_vs_first_confirmed=false;bool g_vs_second_confirmed=false;int g_vs_match_confirm=-1;
 th19::VsMatch g_vs_match;bool g_battle_timeout=false;
 int g_vs_rules[7]={0,1,1,4,4,1,1};bool g_vs_rule_edit=false;int g_vs_rule_pending=0;
+int g_local_vs_time=0;
 i32 g_vs_rule_time=5,g_vs_rule_round=1,g_vs_rule_card=0,g_vs_rule_p1life=5,g_vs_rule_p2life=5;
 bool g_vs_random_reveal=false;
 i32 g_char_sel = 0;           // 角色选择页选中角色 0-18
@@ -620,6 +621,8 @@ int g_card_menu_index=0,g_card_menu_exit=-1;
 th19::AnmVm g_card_name_vm,g_card_summary_vm;
 
 std::map<u32, std::pair<i32,i32>> g_front_sprites;   // front.anm 边框/HUD 精灵映射
+std::unordered_map<i32,th19::AnmScriptLoc> g_front_banner_scripts;
+std::array<th19::AnmVm,2> g_vs_round_announcements;
 // 大字提示（front.anm entry13 精灵 168-180：勝利/完全勝利/敗北/弾幕開始/第一~最終戦）
 i32 g_big_sprite = -1;   // 当前大字精灵 id（-1=无）
 i32 g_big_frame = 0;     // 大字动画帧计数
@@ -2458,13 +2461,13 @@ void draw_title_version(){
 }
 void draw_vs_rules(){
     for(int i=0;i<17;++i){const auto&r=VS_RULE_ROWS[i];const int sel=r.selection;
-        if(sel==0||sel==4||sel==5||sel==6)continue;
+        if(sel==4||sel==5||sel==6)continue;
         const bool chosen=sel==g_sub_sel;
         const u32 color=sel<0?0xffffffff:chosen?0xffffff20:g_vs_rule_edit?0x80303030:0xff808080;
-        const char*text=i>=10?VS_RULE_VALUES[sel][g_vs_rule_edit&&chosen?g_vs_rule_pending:g_vs_rules[sel]]:r.text;
+        const int value=sel<0||sel>=7?0:sel==0?g_local_vs_time:g_vs_rules[sel];
+        const char*text=i>=10?VS_RULE_VALUES[sel][g_vs_rule_edit&&chosen?g_vs_rule_pending:value]:r.text;
         if(sel==3&&i<10)text="Both Players Life";
-        const float y=sel<0?40.f:sel==1?(i>=10?230.f:180.f):sel==2?(i>=10?350.f:300.f):sel==3?(i>=10?470.f:420.f):sel==7?620.f:720.f;
-        draw_text(text,40,640,y,color,35,0);
+        draw_text(text,40,640,r.y,color,35,0);
     }
 }
 void draw_sub_screen() {
@@ -2852,7 +2855,8 @@ void draw_big_text() {
     else if (g_big_frame < 75) { scale = 2.0f; alpha = 255; }
     else if (g_big_frame < 105){ scale = 2.0f; alpha = u32(255.0f * float(105 - g_big_frame) / 30.0f); }
     else { g_big_sprite = -1; g_big_frame = 0; return; }
-    for(float cx:{GAME_F1_CX,GAME_F2_CX}) emit_quad(40, ti->second, sp, cx, SCREEN_H * 0.5f, scale*.5f, scale*.5f, 0, 0, 0x00ffffff | (alpha << 24), 0);
+    if(!g_vs_round_announcements[0].stream)
+        for(float cx:{GAME_F1_CX,GAME_F2_CX}) emit_quad(40, ti->second, sp, cx, SCREEN_H * 0.5f, scale*.5f, scale*.5f, 0, 0, 0x00ffffff | (alpha << 24), 0);
     if(!g_paused)++g_big_frame;
 }
 
@@ -2895,7 +2899,7 @@ void load_world_std() {
     for(const auto&q:g_stage.quads){if(g_stage_anms.count(q.animation))continue;
         auto sc=g_world_scripts.find(q.script);if(sc==g_world_scripts.end())continue;
         auto&vm=g_stage_anms[q.animation];vm.bind_entry(sc->second.stream,sc->second.len,&g_world_scripts);vm.tick();
-        if(vm.special_effect==5||vm.special_effect==6)g_stage_strips[q.animation].init(vm.special_effect,0x197900u+q.animation*7919);
+        if(vm.special_effect==5||vm.special_effect==6)g_stage_strips[q.animation].init(vm.special_effect);
     }
     g_stage.tick();
     dispatch_world_events();
@@ -3122,8 +3126,12 @@ void retry_story_stage(){
 
 // 517790: VS stage and music share a random choice of participating character.
 void start_vs_match(bool newMatch=true) {
-    g_vs_rules[0]=0;g_vs_rules[4]=g_vs_rules[3];g_vs_rules[5]=g_vs_rules[6]=1;
+    g_vs_rules[0]=g_network_active?0:g_local_vs_time;
+    g_vs_rules[4]=g_vs_rules[3];g_vs_rules[5]=g_vs_rules[6]=1;
     g_story_challenge_run=false;
+    // 0x51787b / 0x5178dd copy the secondary RNG state to the round's
+    // private stream. 0x5181a6 advances it only when choosing a new stage.
+    g_vs_scene_rng.state=th19::AnmVm::random_checkpoint();
     if(newMatch){
         g_vs_match.begin(g_vs_rules[0],g_vs_rules[1]);
         // 0x517790: subsequent rounds reuse the participating side already chosen.
@@ -3131,9 +3139,10 @@ void start_vs_match(bool newMatch=true) {
         g_vs_scene=th19::vsScene(g_char_sel,g_opp_sel,g_vs_scene_side);
         g_owned_cards.clear();g_opponent_cards.clear();g_owned_card_vms.clear();g_opponent_card_vms.clear();g_cards_draw_frame=g_opponent_cards_draw_frame=-1;g_card_options.clear();g_card_reward=-1;g_card_reward_exit=-1;
         load_ability_cards();
+        auto cardRng=g_vs_scene_rng;
         for(int side=0;side<2;++side){
             const int mode=g_vs_rules[2],character=side?g_opp_sel:g_char_sel;
-            const int card=mode==0?0:mode==1?1+int(g_vs_scene_rng.next()%38):g_vs_cards[side].card(character,mode==3);
+            const int card=mode==0?0:mode==1?1+int(cardRng.next()%38):g_vs_cards[side].card(character,mode==3);
             if(card>0&&card<=38)(side?g_opponent_cards:g_owned_cards).push_back(card);
         }
     }else g_vs_match.next();
@@ -3160,6 +3169,16 @@ void start_vs_match(bool newMatch=true) {
     const int completed=g_vs_match.wins[0]+g_vs_match.wins[1];
     const int script=g_vs_rules[1]==0?347:g_vs_rules[1]==1?(completed==0?351:completed==1?355:367):351+4*std::min(completed,4);
     show_big_text(175+(script-347)/4);
+    auto banner=g_front_banner_scripts.find(script);
+    if(banner!=g_front_banner_scripts.end()){
+        // The original round constructor initializes each field with its own interrupt.
+        for(int side=0;side<2;++side){
+            auto& animation=g_vs_round_announcements[side];
+            animation.bind_entry(banner->second.stream,banner->second.len,&g_front_banner_scripts);
+            animation.tick();
+            animation.interrupt(side+7);
+        }
+    }
 }
 // screenswitch.anm, native 0x4db540 / 0x4dbe90. The four VMs live
 // across stage destruction/recreation; their origin is (320,240).
@@ -3267,6 +3286,7 @@ void start_dialogue() {
 bool begin_battle_report(int winner, bool timeout) {
     if(g_battle_report_frame>=0||g_story_session.phase()!=th19::StoryPhase::Battle)return false;
     g_battle_timeout=timeout;g_battle_winner=winner;g_battle_report_frame=0;g_battle_reports[0]={};g_battle_reports[1]={};g_big_sprite=-1;
+    g_vs_round_announcements={};
     // A completed round clears the active playfield before the result card is
     // shown.  Leaving ECL objects alive caused bullets/enemies to remain
     // visible through the victory announcement and looked like a freeze.
@@ -3281,14 +3301,11 @@ void tick_battle_report(){
     if(g_battle_report_frame==120){
         // Native515540 credits the winner when the result is announced.
         if(g_vs_mode)g_vs_match.result(g_battle_winner);
-        static std::unordered_map<i32,th19::AnmScriptLoc> scripts;
-        if(scripts.empty())for(const auto&e:g_front)for(const auto&sc:e.scripts)
-            scripts[sc.id]={g_front_bytes.data()+e.base+sc.offset,u32(g_front_bytes.size()-e.base-sc.offset),&e.scripts};
         // 515540: winner's death counter +0x64==0 selects result flag0x100000.
         const bool complete=g_battle_winner>=0&&g_stage_deaths[g_battle_winner]==0;
         for(int side=0;side<2;++side){int id=g_battle_winner<0?346:g_battle_timeout?(side==g_battle_winner?340:345):side==g_battle_winner?(complete?337:334):(complete?344:343);
-            auto it=scripts.find(id);if(it==scripts.end())continue;auto&v=g_battle_reports[side];
-            v.bind_entry(it->second.stream,it->second.len,&scripts);v.tick();v.interrupt_all(side+7);
+            auto it=g_front_banner_scripts.find(id);if(it==g_front_banner_scripts.end())continue;auto&v=g_battle_reports[side];
+            v.bind_entry(it->second.stream,it->second.len,&g_front_banner_scripts);v.tick();v.interrupt_all(side+7);
         }
     }
     for(auto&v:g_battle_reports)if(v.stream)v.tick();
@@ -3319,8 +3336,7 @@ void tick_battle_report(){
         }
     }
 }
-void draw_battle_report(){
-    if(g_battle_report_frame<120)return;
+void draw_battle_banners(){
     auto draw=[&](auto&&self,const th19::AnmVm&v,float x,float y,float sx,float sy)->void{
         if(!v.visible)return;
         const float unit=(v.coordinate_mode==2||v.coordinate_mode==4||v.coordinate_mode==6)?1.f:2.f;
@@ -3340,7 +3356,10 @@ void draw_battle_report(){
             const float csy=c.ignore_parent_transform?sy:sy*v.sy;
             self(self,c,x,y,csx,csy);
         }
-    };for(const auto&v:g_battle_reports)draw(draw,v,0,0,1,1);
+    };
+    for(const auto&v:g_vs_round_announcements)if(v.stream)draw(draw,v,0,0,1,1);
+    if(g_battle_report_frame>=120)
+        for(const auto&v:g_battle_reports)draw(draw,v,0,0,1,1);
 }
 
 
@@ -3467,6 +3486,7 @@ void start_game(bool preserveMusic) {
     g_bg_scroll = 0.0f;
     g_spell_show = false;
     g_big_sprite = -1;
+    g_vs_round_announcements={};
     g_p1_x = 0.0f; g_p1_y = 400.0f;
     g_p2_x = 0.0f; g_p2_y = 400.0f;
     init_player_options();
@@ -3590,8 +3610,9 @@ void load_ecl_engine() {
         auto& field=g_ecl_fields[side];
         field.vm=th19::EclVm{};field.world=th19::GameWorld{};
         field.programs.clear();field.loaded.clear();
-        // Development seed, not a reconstruction of the native shared RNG stream.
-        field.world.wave_schedule.seed(g_game_seed);field.world.extra_rng.state=g_game_seed?g_game_seed:1;
+        // VS fills the shared 256-draw table after stage selection (0x518b7c).
+        field.world.wave_schedule.seed(g_vs_mode?g_vs_scene_rng.state:g_game_seed);
+        field.world.extra_rng.state=g_game_seed?g_game_seed:1;
         field.world.spirit_rank=g_global_rank.value;field.world.spirit_rank_cap=g_global_rank.cap;
         field.world.difficulty=g_story_difficulty;field.world.bullet_scripts=&g_bullet_scripts;field.world.bullet_sprite_sizes=&g_bullet_sprite_sizes;
         // Native 0x558419 initializes story progress to 1; 0x553c47 increments
@@ -4454,6 +4475,32 @@ void tick_spirit_transits(){
         }w.counter_bullet_requests.clear();
     }
 }
+void steer_homing_shot(PlayerProjectile& shot,int age){
+    const th19::Enemy* target=nullptr;
+    float best=256.f*256.f;
+    // 0x508530 / 0x42fc50 use the same eligibility flags for acquisition
+    // and retention. An invalid retained target is cleared for the next tick.
+    for(const auto& enemy:g_ecl_fields[shot.side].world.enemies){
+        if(!enemy.active||(enemy.flags&0x21)||(enemy.status_flags&0xc00))continue;
+        if(shot.target_id){
+            if(enemy.id==shot.target_id){target=&enemy;break;}
+        }else{
+            const float dx=enemy.x-shot.x,dy=enemy.y-shot.y;
+            const float distance=dx*dx+dy*dy;
+            if(distance<best){best=distance;target=&enemy;}
+        }
+    }
+    shot.target_id=target?target->id:0;
+    const float angle=target?std::atan2(target->y-shot.y,target->x-shot.x):shot.angle;
+    th19::advanceHomingShot(age,target!=nullptr,angle,shot.angle,shot.speed);
+}
+
+void move_player_shot(PlayerProjectile& shot){
+    // 0x4d4d41 floors the translated coordinates on a 1/100 grid.
+    shot.x=std::floor((shot.x+shot.vx)*100.f)/100.f;
+    shot.y=std::floor((shot.y+shot.vy)*100.f)/100.f;
+}
+
 void tick_player_shots(bool firing,bool focused){
     // 54e490: ordinary emitter is disabled while the aura/charge counter is active.
     firing=firing&&!g_charge[0].held;
@@ -4588,11 +4635,7 @@ void tick_player_shots(bool firing,bool focused){
             const bool expired=b.update==9?b.age>=120:(b.laser_duration>0?b.age>=b.laser_duration:!sideFiring);
             if(expired&&!b.ending){b.vm.interrupt_all(1);b.ending=true;}
         }else{
-            if(!b.ending&&b.update==1){float speed=std::hypot(b.vx,b.vy),angle=std::atan2(b.vy,b.vx);const th19::Enemy*target=nullptr;float best=1e20f;
-                for(const auto&e:g_ecl_fields[side].world.enemies)if(e.active&&e.sprite>=0&&!(e.flags&3)&&e.y>=0&&e.y<448){float d=(e.x-b.x)*(e.x-b.x)+(e.y-b.y)*(e.y-b.y);if(e.id==b.target_id){target=&e;break;}if(d<best){target=&e;best=d;}}
-                b.target_id=target?target->id:0;th19::advanceHomingShot(b.age,target!=nullptr,target?std::atan2(target->y-b.y,target->x-b.x):angle,angle,speed);
-                b.angle=angle;b.speed=speed;b.vx=std::cos(angle)*speed;b.vy=std::sin(angle)*speed;
-            }
+            if(!b.ending&&b.update==1)steer_homing_shot(b,b.age+1);
             if(b.update==10){
                 if(b.age%30==0){b.turn_rate=(th19::AnmVm::rand_unit()*2-1)*3.14159265359f/180;b.acceleration=(th19::AnmVm::rand_unit()*2-1)*.2f;}
                 b.angle=std::remainder(b.angle+b.turn_rate,6.28318530718f);if(b.speed>=2||b.acceleration>=0)b.speed+=b.acceleration;
@@ -4619,7 +4662,7 @@ void tick_player_shots(bool firing,bool focused){
             // Native 0x54d... adds SHT +0x18/+0x20 after the callback.
             if(!b.ending){b.angle=std::remainder(b.angle+b.table_turn,6.28318530718f);b.speed+=b.table_acceleration;}
             b.vx=std::cos(b.angle)*b.speed;b.vy=std::sin(b.angle)*b.speed;
-            if(b.update!=13||!th19::enokoChargeFrozen(b.age,b.transition_frame)){b.x+=b.vx;b.y+=b.vy;}
+            if(b.update!=13||!th19::enokoChargeFrozen(b.age,b.transition_frame))move_player_shot(b);
         }
         if(!b.ending&&b.damage>0){
             auto&world=g_ecl_fields[side].world;
@@ -4634,7 +4677,12 @@ void tick_player_shots(bool firing,bool focused){
                 }
                 float x0=old_x,y0=old_y,x1=b.x,y1=b.y;if(beam){x1+=std::cos(b.angle)*b.length;y1+=std::sin(b.angle)*b.length;}
                 if(b.update==11){x0=b.x-std::cos(b.angle)*b.length;y0=b.y-std::sin(b.angle)*b.length;}
-                if(th19::sweptShotHit(x0,y0,x1,y1,b.angle,b.hit_width,b.update==11?28.f:b.hit_height,e.x,e.y,e.hitbox_w,e.hitbox_h)){
+                // 0x509c58 passes a circle of radius hitbox width / 2
+                // for ordinary enemies. 0x51e736 checks the current shot box.
+                const bool hit=b.update==1&&!(e.flags&0x1000)
+                    ? th19::nativeEnemyRectangleContact(e.x-b.x,e.y-b.y,b.angle,b.hit_width,b.hit_height,e.hitbox_w*.5f)
+                    : th19::sweptShotHit(x0,y0,x1,y1,b.angle,b.hit_width,b.update==11?28.f:b.hit_height,e.x,e.y,e.hitbox_w,e.hitbox_h);
+                if(hit){
                     if(beam){b.target_id=e.id;if(th19::laserDamageTick(b.hit_callback,b.age,b.init_callback))world.damage_enemy(e,b.damage);}
                     else if(b.update==11||b.piercing){world.damage_enemy(e,b.damage);spawnImpactEffect(b);}
                     else {float d=(e.x-old_x)*(e.x-old_x)+(e.y-old_y)*(e.y-old_y);if(d<distance){distance=d;nearest=&e;}}
@@ -4723,6 +4771,13 @@ void tick_player_shots(bool firing,bool focused){
         // the persistent-hit flag. pl14's C2 rods are the only init=19 rows.
         b.piercing=d.init==11||d.init==16||d.init==19||d.init==21||sunMeitianC2Rod;b.hit_script=d.hit_script;b.hit_callback=d.hit;b.hit_growth=d.hit_growth;b.damage=d.damage;b.hit_width=d.hit_width;b.hit_height=d.hit_height;b.option=d.option;b.type=d.type;b.update=d.update;b.laser_id=d.laser_id;b.offset_x=d.x;b.offset_y=d.y;
         b.table_turn=d.angular_velocity;b.table_acceleration=d.acceleration;b.lifetime=d.lifetime;b.laser_duration=d.laser_duration;b.transition_frame=d.transition_frame;b.charged=charged;
+        if(d.init==1&&d.update==1){
+            // 0x54ece5 subtracts the initial velocity before the birth update.
+            b.x-=b.vx;b.y-=b.vy;
+            steer_homing_shot(b,0);
+            b.vx=std::cos(b.angle)*b.speed;b.vy=std::sin(b.angle)*b.speed;
+            move_player_shot(b);
+        }
         play_sfx(d.sound);
         if(d.init==2||d.init==12||d.init==18)play_sfx(20);
         if(charged)++g_attacks[side].charge_attack.emitted;
@@ -5174,20 +5229,37 @@ void bind_warning_portrait(int ch,int side){
     for(const auto&e:g_plf[ch])for(const auto&sc:e.scripts)if(sc.id==side)
         g_warning_portrait.bind(g_plf_bytes[ch].data()+e.base+sc.offset,u32(g_plf_bytes[ch].size()-e.base-sc.offset));
 }
+std::pair<int,const th19::AnmSprite*> ascii_glyph(int id){
+    for(int ei=0;ei<int(g_ascii.size());++ei)for(const auto&sp:g_ascii[ei].sprites)if(int(sp.id)==id)return {ei,&sp};
+    return {-1,nullptr};
+}
+
 // 0x4e7610 / 0x4e5850: native font7/9 and12/13, sprite widths and top anchor.
 void draw_warning_ascii(const std::string&text,int font,float cx,float y,u32 outline){
-    auto glyph=[&](int id)->std::pair<int,const th19::AnmSprite*>{
-        for(int ei=0;ei<int(g_ascii.size());++ei)for(const auto&sp:g_ascii[ei].sprites)if(int(sp.id)==id)return {ei,&sp};
-        return {-1,nullptr};
-    };
     const int base=font==7?0x1e4:0x2a8,shadow=font==7?0x246:0x30c;
-    float width=0;for(unsigned char c:text){auto g=glyph(base+c);if(g.second)width+=g.second->w;}
+    float width=0;for(unsigned char c:text){auto g=ascii_glyph(base+c);if(g.second)width+=g.second->w;}
     for(int pass=0;pass<2;++pass){float x=cx-width*.5f;
-        for(unsigned char c:text){auto g=glyph((pass?base:shadow)+c);auto main=glyph(base+c);
+        for(unsigned char c:text){auto g=ascii_glyph((pass?base:shadow)+c);auto main=ascii_glyph(base+c);
             if(g.second){auto tx=g_ascii_tex.find(g.first);if(tx!=g_ascii_tex.end())
                 emit_quad(42,tx->second,*g.second,x,y,1,1,1,1,pass?0xffffffff:outline,0);}
             if(main.second)x+=main.second->w;
         }
+    }
+}
+
+void draw_vs_countdown(){
+    if(!g_vs_mode||g_vs_match.limit<=0)return;
+    const auto digits=std::to_string((g_vs_match.remaining+59)/60);
+    // 0x512f19: font 4 at (318, 0). 0x4e59d6 and 0x4e6639:
+    // 12 logical pixels per digit, using the pre-outlined glyphs 239–248.
+    constexpr float advance=24.f;
+    float x=636.f-advance*.5f*digits.size();
+    for(char digit:digits){
+        auto [entry,sprite]=ascii_glyph(239+digit-'0');
+        auto texture=g_ascii_tex.find(entry);
+        if(sprite&&texture!=g_ascii_tex.end())
+            emit_quad(42,texture->second,*sprite,x,0,1,1,1,1,0xffffffff,0);
+        x+=advance;
     }
 }
 void draw_attack_warning(){
@@ -5306,8 +5378,8 @@ void draw_game() {
     draw_field_hud(GAME_F1_CX, g_p1_lives, g_p1_bombs, g_p1_charge, g_p1_fragments);
     draw_field_hud(GAME_F2_CX, g_p2_lives, g_p2_bombs, g_p2_charge, g_p2_fragments);
     // 大字提示（勝利/敗北/弾幕開始等，layer 40）
-    draw_big_text();draw_battle_report();
-    if(g_vs_mode&&g_vs_match.limit>0){char timer[16];std::snprintf(timer,sizeof(timer),"%d",(g_vs_match.remaining+59)/60);draw_warning_ascii(timer,4,636,0,0xff000000);}
+    draw_big_text();draw_battle_banners();
+    draw_vs_countdown();
     // 符卡名横幅
     draw_spell_name();
     draw_attack_warning();
@@ -5380,7 +5452,7 @@ void render() {
 
 bool rb_frame_oldEsc=false,rb_frame_oldUp=false,rb_frame_oldDown=false,rb_frame_oldOk=false,rb_frame_oldCancel=false;
 bool rb_frame_oldLeft=false,rb_frame_oldRight=false;
-void frame() {
+void frame(bool worldAdvanced) {
     ++g_frame;
     ++g_sfx_tick;
     const bool* pauseKeys=game_keyboard_state();
@@ -5451,7 +5523,13 @@ void frame() {
     if(g_battle_report_frame>=0){tick_battle_report();g_audio.pump();render();return;}
     if((g_screen==SCR_GAME||g_screen==SCR_DIALOG)&&g_attack_warning.advance_freeze()){g_audio.pump();render();return;}
     if(g_story_switch.phase){tick_story_switch();g_audio.pump();render();return;}
-    if(g_vs_mode&&g_screen==SCR_GAME&&g_big_sprite<0&&g_vs_match.tick()){
+    if(g_screen==SCR_GAME){
+        for(auto&v:g_vs_round_announcements)if(v.stream){
+            v.tick();
+            if(v.deleted&&v.children.empty())v={};
+        }
+    }
+    if(g_vs_mode&&g_screen==SCR_GAME&&g_vs_match.tick()){
         const int winner=th19::VsMatch::timeout(g_stage_deaths[0],g_stage_deaths[1],g_vs_attack_counts[0][0]+g_vs_attack_counts[0][1],g_vs_attack_counts[1][0]+g_vs_attack_counts[1][1],g_charge[0].energy,g_charge[1].energy);
         begin_battle_report(winner,true);
         g_audio.pump();render();return;
@@ -5500,7 +5578,7 @@ void frame() {
     // 5593b0 state3: after fourteen ticks enter native state8 (difficulty).
     if(g_vs_entry_transition>=0&&++g_vs_entry_transition>=14){
         g_vs_entry_transition=-1;
-        if(g_vs_entry==3){g_screen=SCR_VSRULES;g_sub_sel=1;g_vs_rule_edit=false;start_sub_screen(g_screen);}
+        if(g_vs_entry==3){g_screen=SCR_VSRULES;g_sub_sel=0;g_vs_rule_edit=false;start_sub_screen(g_screen);}
         else if(g_vs_entry==4){g_key_return_screen=SCR_VS;g_screen=SCR_KEYCONFIG;start_sub_screen(g_screen);}
         else {g_screen=SCR_STORY;g_sub_sel=1;g_story_cursor=1;
             start_sub_screen(SCR_STORY);}
@@ -5521,7 +5599,42 @@ void frame() {
         return;
     }
     // 游戏场内 tick 玩家 idle 动画（其余转场逻辑照常走）
-    if (g_screen == SCR_GAME || g_screen == SCR_DIALOG) { g_player_vm.tick(); g_opp_vm.tick(); tick_player_options(pressed(SDL_SCANCODE_LSHIFT)||pressed(SDL_SCANCODE_RSHIFT)); ++g_bg_scroll; tick_world(); if (g_screen == SCR_GAME && g_big_sprite < 0 && g_ecl_ready) { ++g_played_frames; g_global_rank.tick();g_reflection_rank=g_global_rank.value;g_reflection_rank_cap=g_global_rank.cap; for(int side=0;side<2;++side){auto& field=g_ecl_fields[side];field.world.spirit_rank=g_global_rank.value;field.world.spirit_rank_cap=g_global_rank.cap;field.world.player_x=side?g_p2_x:g_p1_x;field.world.player_y=side?g_p2_y:g_p1_y;field.world.opponent_x=side?g_p1_x:g_p2_x;field.world.opponent_y=side?g_p1_y:g_p2_y;field.world.opponent_controls=side?((pressed(SDL_SCANCODE_LEFT)?64:0)|(pressed(SDL_SCANCODE_RIGHT)?128:0)|g_cpu_left_bits):g_opponent_controls;field.world.incoming_extra_level=g_charge[1-side].ex_level;field.world.incoming_boss_level=g_charge[1-side].boss_level;field.vm.step();field.world.tick_wave();for(const auto&request:field.world.screen_shake_events)g_screen_shake.start(request);field.world.screen_shake_events.clear();for(int sound:field.world.sound_events)play_sfx(sound);field.world.sound_events.clear();} } }
+    if (g_screen == SCR_GAME || g_screen == SCR_DIALOG) {
+        g_player_vm.tick();
+        g_opp_vm.tick();
+        tick_player_options(pressed(SDL_SCANCODE_LSHIFT)||pressed(SDL_SCANCODE_RSHIFT));
+        ++g_bg_scroll;
+        if(!worldAdvanced)tick_world();
+    }
+    const bool playing=g_screen==SCR_GAME&&g_big_sprite<0;
+    if(playing&&g_ecl_ready){
+        ++g_played_frames;
+        g_global_rank.tick();
+        g_reflection_rank=g_global_rank.value;
+        g_reflection_rank_cap=g_global_rank.cap;
+    }
+    // The native VS stage's ECL advances under the round banner, from tick 2.
+    if(g_ecl_ready&&g_screen==SCR_GAME&&(g_vs_mode?g_vs_match.elapsed>1:playing)){
+        for(int side=0;side<2;++side){
+            auto& field=g_ecl_fields[side];
+            auto& world=field.world;
+            world.spirit_rank=g_global_rank.value;
+            world.spirit_rank_cap=g_global_rank.cap;
+            world.player_x=side?g_p2_x:g_p1_x;
+            world.player_y=side?g_p2_y:g_p1_y;
+            world.opponent_x=side?g_p1_x:g_p2_x;
+            world.opponent_y=side?g_p1_y:g_p2_y;
+            world.opponent_controls=side?((pressed(SDL_SCANCODE_LEFT)?64:0)|(pressed(SDL_SCANCODE_RIGHT)?128:0)|g_cpu_left_bits):g_opponent_controls;
+            world.incoming_extra_level=g_charge[1-side].ex_level;
+            world.incoming_boss_level=g_charge[1-side].boss_level;
+            field.vm.step();
+            world.tick_wave();
+            for(const auto& request:world.screen_shake_events)g_screen_shake.start(request);
+            world.screen_shake_events.clear();
+            for(int sound:world.sound_events)play_sfx(sound);
+            world.sound_events.clear();
+        }
+    }
     if (g_screen == SCR_CHARSEL) {
         // Native state2 begins selection highlights only after its 30-frame entrance.
         if(g_charsel_frame==30&&!g_sub_vms.empty()){
@@ -5705,6 +5818,7 @@ void game_tick() {
     if(g_screen==SCR_ENDING&&g_ending_tail>=0){
         if(++g_ending_tail>=120){if(g_ending_return_screen==SCR_TITLE)start_staff();else{g_next_screen=g_ending_return_screen;g_trans=TRANS_OUT;g_trans_frame=0;g_ending_tail=-1;}}
     }
+    bool worldAdvanced=false;
     if (!gameInputBlocked && g_phase == PHASE_TITLE && g_trans == TRANS_NONE && g_confirm_delay == 0 && g_cancel_delay == 0 && g_game_load_frames == 0) {
         if (g_screen == SCR_TITLE) {
             // 上下选择，跳过灰色 Online VS Mode (index 2)
@@ -5788,12 +5902,19 @@ void game_tick() {
             }
         } else if(g_screen==SCR_VSRULES){
             if(!g_vs_rule_edit){
-                if(up&&!rb_game_tick_prev_up){const int rows[]={1,2,3,7,8};int i=0;while(i<4&&rows[i]!=g_sub_sel)++i;g_sub_sel=rows[(i+4)%5];play_sfx(10);}
-                if(dn&&!rb_game_tick_prev_dn){const int rows[]={1,2,3,7,8};int i=0;while(i<4&&rows[i]!=g_sub_sel)++i;g_sub_sel=rows[(i+1)%5];play_sfx(10);}
-                if((g_sub_sel==1||g_sub_sel==2)&&((left&&!rb_game_tick_prev_left)||(right&&!rb_game_tick_prev_right))){int&i=g_vs_rules[g_sub_sel];i=(i+(left?-1:1)+VS_RULE_COUNTS[g_sub_sel])%VS_RULE_COUNTS[g_sub_sel];play_sfx(10);}
+                if((up&&!rb_game_tick_prev_up)||(dn&&!rb_game_tick_prev_dn)){
+                    const int rows[]={0,1,2,3,7,8};
+                    int i=0;while(i<5&&rows[i]!=g_sub_sel)++i;
+                    g_sub_sel=rows[(i+(up?5:1))%6];play_sfx(10);
+                }
+                if(g_sub_sel<3&&((left&&!rb_game_tick_prev_left)||(right&&!rb_game_tick_prev_right))){
+                    int& rule=g_sub_sel==0?g_local_vs_time:g_vs_rules[g_sub_sel];
+                    const int count=VS_RULE_COUNTS[g_sub_sel];
+                    rule=(rule+(left?count-1:1))%count;play_sfx(10);
+                }
                 if(z&&!rb_game_tick_prev_z){play_sfx(7);
                     if(g_sub_sel==3){g_vs_rule_edit=true;g_vs_rule_pending=g_vs_rules[g_sub_sel];}
-                    else if(g_sub_sel==7){int defaults[]={0,1,1,4,4,1,1};std::copy(defaults,defaults+7,g_vs_rules);}
+                    else if(g_sub_sel==7){int defaults[]={0,1,1,4,4,1,1};std::copy(defaults,defaults+7,g_vs_rules);g_local_vs_time=defaults[0];}
                 }
                 if((x&&!rb_game_tick_prev_x)||(z&&!rb_game_tick_prev_z&&g_sub_sel==8)){g_screen=SCR_VS;g_sub_sel=3;start_sub_screen(g_screen);play_sfx(9);}
             }else{
@@ -5940,8 +6061,14 @@ void game_tick() {
         } else if (g_screen == SCR_GAME) {
             tick_story_actor();
             // Gameplay movement; acquired cards use the native HUD path.
+            const bool combatOpen=g_vs_mode?g_vs_match.weaponsReady():g_big_sprite<0;
+            // VS stage ANM consumes the shared stream before the shot emitters.
+            if(g_vs_mode&&combatOpen&&g_vs_match.remaining!=1){
+                tick_world();
+                worldAdvanced=true;
+            }
             const bool cpuLeft=g_vs_mode&&g_vs_entry==2;
-            if(cpuLeft&&g_big_sprite<0)tick_cpu_opponent(0);
+            if(cpuLeft&&combatOpen)tick_cpu_opponent(0);
             const bool moveLeft=cpuLeft?(g_cpu_left_bits&64)!=0:(keys[SDL_SCANCODE_LEFT]||(g_injected_keys[SDL_SCANCODE_LEFT])),moveRight=cpuLeft?(g_cpu_left_bits&128)!=0:(keys[SDL_SCANCODE_RIGHT]||(g_injected_keys[SDL_SCANCODE_RIGHT]));
             const bool moveUp=cpuLeft?(g_cpu_left_bits&16)!=0:(keys[SDL_SCANCODE_UP]||(g_injected_keys[SDL_SCANCODE_UP])),moveDown=cpuLeft?(g_cpu_left_bits&32)!=0:(keys[SDL_SCANCODE_DOWN]||(g_injected_keys[SDL_SCANCODE_DOWN]));
             const bool slow=cpuLeft?(g_cpu_left_bits&8)!=0:keys[SDL_SCANCODE_LSHIFT]||g_injected_keys[SDL_SCANCODE_LSHIFT];
@@ -5949,7 +6076,7 @@ void game_tick() {
             const bool diagonal=(moveLeft!=moveRight)&&(moveUp!=moveDown);
             const auto& movement=g_charge[0];
             const float spd=!g_player_damage[0].controllable()?0:diagonal?(slow?movement.slow_diagonal_speed:movement.diagonal_speed):(slow?movement.slow_speed:movement.move_speed);
-            if(g_big_sprite<0){
+            if(combatOpen){
                 if(g_vs_mode&&g_vs_entry==0){
                     // Web local-player2 binding; independent from the CPU controller.
                     auto k=[&](int c){return keys[c]||g_injected_keys[c];};
@@ -5984,7 +6111,7 @@ void game_tick() {
             g_p1_x=std::clamp(g_p1_x,-GAME_FIELD_W*.5f+marginX,GAME_FIELD_W*.5f-marginX);
             if(g_player_damage[0].state!=th19::PlayerDamage::Respawning)g_p1_y=std::clamp(g_p1_y,marginY,GAME_FIELD_H-marginY);
             // Native CPU output bits feed the same SHT movement speeds.
-            if(g_big_sprite<0&&g_player_damage[1].controllable()){
+            if(combatOpen&&g_player_damage[1].controllable()){
                 const int dx=((g_opponent_controls&128)!=0)-((g_opponent_controls&64)!=0);
                 const int dy=((g_opponent_controls&32)!=0)-((g_opponent_controls&16)!=0);
                 const auto&m=g_charge[1];bool slow=(g_opponent_controls&8)!=0;
@@ -5994,7 +6121,7 @@ void game_tick() {
                 g_p2_y=std::clamp(g_p2_y+(direct?g_network_motion_y[1]:dy*speed),32.f,432.f);
                 if(dx!=g_opp_direction){g_opp_direction=dx;bind_opp_dir(dx);}
             }
-            if(g_big_sprite<0)for(int side=0;side<2;++side){auto&w=g_ecl_fields[side].world;auto&r=w.charge_region;float px=side?g_p2_x:g_p1_x,py=side?g_p2_y:g_p1_y;
+            if(combatOpen)for(int side=0;side<2;++side){auto&w=g_ecl_fields[side].world;auto&r=w.charge_region;float px=side?g_p2_x:g_p1_x,py=side?g_p2_y:g_p1_y;
                 r.tick(side?g_opp_sel:g_char_sel,g_charge[side].held,px,py,th19::ownsCard(player_cards(side),10)?125.f:100.f);
                 // Chiyari's held-X aura creates an independent one-frame damage
                 // circle (0x42b305..0x42b318), consumed by the shared area path.
@@ -6096,7 +6223,7 @@ void game_tick() {
     }
     rb_game_tick_prev_up = up; rb_game_tick_prev_dn = dn; rb_game_tick_prev_z = z; rb_game_tick_prev_x = x;
     rb_game_tick_prev_left = left; rb_game_tick_prev_right = right; rb_game_tick_prev_v = v; rb_game_tick_prev_c = c;
-    frame();
+    frame(worldAdvanced);
 }
 #include "ApplicationCheckpoint.inc"
 std::map<u32,std::unique_ptr<ApplicationCheckpoint>> rb_checkpoints;
@@ -6246,7 +6373,7 @@ __attribute__((export_name("th19_network_hash"))) u32 th19_network_hash(){
     auto integer=[&](u32 value){for(int i=0;i<4;++i){hash^=(value>>(8*i))&255;hash*=16777619u;}};
     auto number=[&](float value){u32 bits;std::memcpy(&bits,&value,4);integer(bits);};
     integer(g_network_frame);integer(g_screen);integer(g_vs_match.round);integer(g_story_difficulty);for(int rule:g_vs_rules)integer(rule);for(int side=0;side<2;++side){integer(player_cards(side).size());for(int id:player_cards(side))integer(id);}
-    integer(g_vs_match.wins[0]);integer(g_vs_match.wins[1]);integer(g_vs_match.remaining);
+    integer(g_vs_match.wins[0]);integer(g_vs_match.wins[1]);integer(g_vs_match.remaining);integer(g_vs_match.elapsed);
     integer(g_global_rank.value);integer(g_global_rank.cap);integer(g_global_rank.interval);integer(g_global_rank.clock);
     integer(g_paused);integer(g_battle_report_frame);integer(g_battle_winner);
     number(g_p1_x);number(g_p1_y);number(g_p2_x);number(g_p2_y);
@@ -6256,7 +6383,7 @@ __attribute__((export_name("th19_network_hash"))) u32 th19_network_hash(){
         const auto&w=g_ecl_fields[side].world;
         integer(w.bullets.size());integer(w.enemies.size());integer(w.lasers.size());
         for(const auto&b:w.bullets){number(b.x);number(b.y);number(b.vx);number(b.vy);integer(b.kind);}
-        for(const auto&e:w.enemies){number(e.x);number(e.y);integer(e.life);integer(e.active);}
+        for(const auto&e:w.enemies){number(e.x);number(e.y);integer(e.life);integer(e.active);integer(e.spawn_hold);}
         for(const auto&l:w.lasers){number(l.x);number(l.y);number(l.angle);number(l.length);number(l.width);
             for(const auto&node:l.curve.nodes){number(node.x);number(node.y);}}
     }
@@ -6275,7 +6402,7 @@ __attribute__((export_name("th19_room_title"))) u32 th19_room_title(){
     g_confirm_delay=g_cancel_delay=g_game_load_frames=0;g_notice_id=-1;
     g_charsel_cancel_frame=g_difficulty_confirm_frame=g_menu_cancel_frame=-1;
     g_vs_entry_transition=g_battle_report_frame=g_final_exit=-1;
-    g_sub_vms.clear();g_retiring_menu.clear();g_big_sprite=-1;
+    g_sub_vms.clear();g_retiring_menu.clear();g_big_sprite=-1;g_vs_round_announcements={};
     start_animation();start_title_music();g_loop_paused=false;render();return 1;
 }
 // A completed match is distinct from quitting or a single round win.
@@ -6318,6 +6445,9 @@ __attribute__((export_name("th19_game_open"))) u32 th19_game_open(u32 seed) {
             g_title_v_scripts[sc.id]={g_title_v_bytes.data()+e.base+sc.offset,u32(g_title_v_bytes.size()-e.base-sc.offset),&e.scripts};
     }
     if (!load_anm("/front.anm", g_front_bytes, g_front)) return 0;
+    g_front_banner_scripts.clear();
+    for(const auto&e:g_front)for(const auto&sc:e.scripts)
+        g_front_banner_scripts[sc.id]={g_front_bytes.data()+e.base+sc.offset,u32(g_front_bytes.size()-e.base-sc.offset),&e.scripts};
     if (!load_anm("/text.anm", g_story_text_bytes, g_story_text)) return 0;
     g_story_text_scripts.clear();for(const auto&e:g_story_text)for(const auto&sc:e.scripts)
         g_story_text_scripts[sc.id]={g_story_text_bytes.data()+e.base+sc.offset,u32(g_story_text_bytes.size()-e.base-sc.offset),&e.scripts};
@@ -7103,7 +7233,7 @@ __attribute__((export_name("th19_entry_status"))) u32 th19_entry_status(){
 }
 __attribute__((export_name("th19_audio_path"))) const char* th19_audio_path(){return g_audio.current_music.c_str();}
 __attribute__((export_name("th19_test_vs_scene"))) u32 th19_test_vs_scene(i32 left,i32 right,u32 seed,i32 life0,i32 life1){
- g_char_sel=std::clamp(left,0,18);g_opp_sel=std::clamp(right,0,18);g_vs_scene_rng.state=seed?seed:1;
+ g_char_sel=std::clamp(left,0,18);g_opp_sel=std::clamp(right,0,18);th19::AnmVm::seed_random(seed?seed:1);
  g_vs_rules[3]=std::clamp(life0,1,5)-1;g_vs_rules[4]=std::clamp(life1,1,5)-1;g_vs_entry=0;start_vs_match();render();return th19_entry_status();
 }
 __attribute__((export_name("th19_save_snapshot"))) u32 th19_save_snapshot() {

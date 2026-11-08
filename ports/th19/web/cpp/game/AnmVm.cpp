@@ -28,8 +28,11 @@ void AnmVm::restore_random(u32 state,bool primary){(primary?primary_animation_ra
 // original object states separately and align other gameplay consumers.
 void AnmVm::seed_random(u32 seed){animation_random.state=primary_animation_random.state=seed;}
 u32 AnmVm::rand_integer(){return animation_random.next();}
-float AnmVm::rand_unit(){
-    return animation_random.unit();
+float AnmVm::rand_unit(bool primary){
+    return (primary?primary_animation_random:animation_random).unit();
+}
+float AnmVm::rand_signed_unit(float scale,bool primary){
+    return (primary?primary_animation_random:animation_random).signedUnit(scale);
 }
 float AnmVm::read_var_f(i32 id) const{
     switch(id){

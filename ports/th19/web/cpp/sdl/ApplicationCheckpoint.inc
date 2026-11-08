@@ -63,6 +63,7 @@ struct ApplicationCheckpoint {
  decltype(g_vs_card_vms) saved_g_vs_card_vms;
  decltype(g_big_sprite) saved_g_big_sprite;
  decltype(g_big_frame) saved_g_big_frame;
+ decltype(g_vs_round_announcements) saved_g_vs_round_announcements;
  decltype(g_spell_idx) saved_g_spell_idx;
  decltype(g_spell_show) saved_g_spell_show;
  decltype(g_life_capacity) saved_g_life_capacity;
@@ -251,6 +252,7 @@ struct ApplicationCheckpoint {
   rb_assign(saved_g_vs_card_vms,g_vs_card_vms);
   rb_assign(saved_g_big_sprite,g_big_sprite);
   rb_assign(saved_g_big_frame,g_big_frame);
+  rb_assign(saved_g_vs_round_announcements,g_vs_round_announcements);
   rb_assign(saved_g_spell_idx,g_spell_idx);
   rb_assign(saved_g_spell_show,g_spell_show);
   rb_assign(saved_g_life_capacity,g_life_capacity);
@@ -439,6 +441,7 @@ struct ApplicationCheckpoint {
   rb_assign(g_vs_card_vms,saved_g_vs_card_vms);
   rb_assign(g_big_sprite,saved_g_big_sprite);
   rb_assign(g_big_frame,saved_g_big_frame);
+  rb_assign(g_vs_round_announcements,saved_g_vs_round_announcements);
   rb_assign(g_spell_idx,saved_g_spell_idx);
   rb_assign(g_spell_show,saved_g_spell_show);
   rb_assign(g_life_capacity,saved_g_life_capacity);

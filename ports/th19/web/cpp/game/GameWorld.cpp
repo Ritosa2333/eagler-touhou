@@ -683,6 +683,7 @@ void GameWorld::tick_wave(){
         // 0x509030: spirits enter the registered Disable script once;
         // only ordinary enemies use the half-speed clock below.
         auto&spirit=enemies[i];
+        if(spirit.spawn_hold){--spirit.spawn_hold;continue;}
         if((spirit.status_flags&0x700000u)&&!(spirit.status_flags&0x80000u)&&
            spirit.vm&&!spirit.callbacks[0].empty()&&charge_region.contains(spirit.x,spirit.y,spirit.hitbox_w*.5f)){
             const auto callback=spirit.callbacks[0];
@@ -707,7 +708,12 @@ void GameWorld::tick_wave(){
         // step() can grow enemies and invalidate every Enemy reference.
         // The separately allocated VM remains stable across vector reallocations.
         EclVm* vm=enemies[i].vm.get();
-        if(enemies[i].script_initialized_this_tick)enemies[i].script_initialized_this_tick=false;
+        if(enemies[i].script_initialized_this_tick){
+            enemies[i].script_initialized_this_tick=false;
+            // The immediate native update leaves two guards set. The
+            // manager clears bit 4 first, then 0x508ee5 clears 0x4000000.
+            enemies[i].spawn_hold=2;
+        }
         else {
             // EXE 0x4fbea0 is dispatched before the enemy ECL step.  Suika's
             // ExAttackFunc reads the updated Enemy+0xac angle while it builds
