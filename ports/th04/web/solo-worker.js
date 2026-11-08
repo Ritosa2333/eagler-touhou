@@ -41,7 +41,7 @@ function applyAssist(value){
   if(Number.isInteger(value.pauseAck)){const e=patch.practice?.entries,base=at-patch.mailbox_cs_offset;if(e&&h[base+e.pauseOpen]&&h[base+e.pauseRequest])h[base+e.pauseAck]=value.pauseAck;return;}
   if(Number.isInteger(value.resultInput)){
     const entries=patch.practice?.entries,base=at-patch.mailbox_cs_offset;
-    if(entries&&h[base+entries.resultVisible])v.setUint16(base+entries.resultInput,value.resultInput&15,true);
+    if(entries&&h[base+entries.resultVisible])v.setUint16(base+entries.resultInput,value.resultInput&31,true);
     return;
   }
   if(Number.isInteger(value.resultAck)){const e=patch.practice?.entries,base=at-patch.mailbox_cs_offset;if(e&&h[base+e.resultVisible]&&h[base+e.resultRequest])h[base+e.resultAck]=value.resultAck;return;}

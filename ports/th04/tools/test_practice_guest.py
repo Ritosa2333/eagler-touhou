@@ -78,8 +78,9 @@ def main():
         for at in (0x4349,0x435a):assert bytes(u.mem_read(db+at,8))==bytes(8)
         for at in (0x4656,0x4658,0x3974):assert u.mem_read(db+at,2)==b'\x00\x00'
         assert u.mem_read(cb+e['arrivalPending'],1)==b'\x00';checked+=1
-        for entry,hp,maximum,minimum,expected in ((0,100,800,300,800),(1,0,500,0,500),(1,600,500,0,500),(1,50,500,0,50),(2,100,1200,300,301),(2,2000,1200,300,1200),(2,500,1200,300,500)):
+        for entry,hp,maximum,minimum,expected in ((0,100,800,300,800),(1,0,500,0,500),(1,600,500,0,500),(1,50,500,0,50),(2,1,1200,300,301),(2,100,1200,300,400),(2,2000,1200,300,1200),(2,500,1200,300,800),(2,30000,31000,10000,31000)):
             u,_=guest(spec);init(u);u.mem_write(cb+e['initialEntry'],bytes([entry]));u.mem_write(cb+e['initialHp'],struct.pack('<H',hp))
+            u.mem_write(cb+e['initialPhase'],b'\x02')
             at=0x53c2 if entry==1 else 0x53d6
             u.mem_write(db+at,struct.pack('<H',maximum));u.mem_write(db+0x53e0,struct.pack('<H',minimum))
             u.emu_start(cb+e['targetHp'],cb+0xfff0,count=1000)

@@ -89,7 +89,7 @@ for lang,item in manifest['languages'].items():
     assert all(word(db+at)==0 for at in (0xb28,0xb2a,0x3e3c,0x3e3e,0x3e40,0xb46,0x2538))
     assert bytes(u.mem_read(db+0x109d,2))==b'\xff\xff' and u.mem_read(cb+e['arrivalPending'],1)==b'\x00'
     checks.append(lang+': guest clears target arrival state')
-    for entry,stage,phase,hp,damage in ((1,0,0,50,251),(1,1,0,81,300),(2,0,0,261,2000),(2,0,2,100,1300),(2,1,3,200,2200),(2,3,0,500,400),(2,4,5,300,500),(2,5,9,300,1000)):
+    for entry,stage,phase,hp,damage in ((1,0,0,50,251),(1,1,0,81,300),(2,0,0,261,2000),(2,0,2,100,1300),(2,1,3,200,2200),(2,3,0,500,400),(2,4,5,300,500),(2,5,9,300,1000),(2,0,1,8500,0)):
         byte(cb+e['initialEntry'],entry);byte(cb+e['initialPhase'],phase);w(cb+e['initialHp'],hp);byte(db+0x8f5,stage);w(db+0x2bea,0)
         run('targetHp');assert word(db+0x2bea)==damage,(lang,entry,stage,phase,hp)
     w(cb+e['initialHp'],0);checks.append(lang+': guest initializes native target HP thresholds')
@@ -133,7 +133,8 @@ for lang,item in manifest['languages'].items():
     for targeted in [0,1]:
         byte(cb+e['targetPractice'],targeted)
         for name,stock,body in [('livesZero',0xb2c,0xdf79),('bombsZero',0xb2d,0xdfc7)]:
-            byte(db+stock,3);run(name,original(body));assert u.mem_read(db+stock,1)[0]==(0 if targeted else 3)
+            for value in (0,3,5,8):
+                byte(db+stock,value);run(name,original(body));assert u.mem_read(db+stock,1)[0]==(min(value,5) if targeted else value)
     checks.append(lang+': inventory clamped at native redraw, full run untouched')
     for name,body in [('dialogPre',0x12de0),('dialogPost',0x12e95),('dialogBox',0x13055)]:
         # Wrapper returns to the relocated original segment with the displaced

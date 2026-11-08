@@ -248,6 +248,7 @@ world_hook:
     mov dx,0x7fe4
     call signal
     pop dx
+    call practice_info_graphics_mask
     call refresh_resources
     pushf
     pushad

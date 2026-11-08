@@ -848,7 +848,11 @@ practice_form_extra: db 'EXTRA',0
 practice_form_stage_value: db 'STAGE',0
 practice_form_mid: db 'MID',0
 practice_form_boss: db 'BOSS',0
+%ifdef FORM_TH02
 practice_form_auto: db 'AUTO',0
+%else
+practice_form_auto: db 'MUGETSU',0
+%endif
 practice_form_gengetsu: db 'GENGETSU',0
 %include 'practice-menu-input.inc'
 %include 'practice-menu-values.inc'

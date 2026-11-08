@@ -208,6 +208,16 @@ practice_target_hp:
     mov si,0x53c2
     xor dx,dx
 .bounds:
+    ; A selected attack ends at phase_end_hp, not at zero. The form's HP
+    ; denotes remaining HP in that attack, so convert it to total Boss HP.
+    cmp byte [cs:practice_initial_entry],2
+    jne .limit
+    cmp byte [cs:practice_initial_phase],0
+    je .limit
+    add ax,dx
+    jno .limit
+    mov ax,0x7fff
+.limit:
     cmp ax,[si]
     jle .minimum
     mov ax,[si]

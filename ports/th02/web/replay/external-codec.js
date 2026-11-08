@@ -60,7 +60,7 @@ function validAssist(game,input){
   if(game==='02'&&input.formInput!==undefined)return integer(input.formInput,0,64);
   if(game==='02'&&input.pauseInput!==undefined)return integer(input.pauseInput,0,15)&&(input.openPause===undefined||typeof input.openPause==='boolean');
   if(game==='02'&&input.pauseAck!==undefined)return integer(input.pauseAck,1,2);
-  if(game==='02'&&input.resultInput!==undefined)return integer(input.resultInput,0,15);
+  if(game==='02'&&input.resultInput!==undefined)return integer(input.resultInput,0,31);
   if(game==='02'&&input.resultAck!==undefined)return integer(input.resultAck,1,2);
   if(game==='02'&&input.resultRetry===true)return true;
   if(game==='02')return integer(input.currentInput,0,256)&&!(input.currentInput&255)&&typeof input.focusEnabled==='boolean'&&

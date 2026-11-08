@@ -17,6 +17,10 @@ practice_result_tick:
     call practice_result_save
     mov byte [cs:practice_result_visible],1
     mov byte [cs:practice_result_choice],0
+    mov byte [cs:practice_result_confirm_armed],0
+    ; Wait until the input bridge has sampled the visible menu. Gameplay shot
+    ; may still be held even though the old result-input mailbox was zero.
+    mov word [cs:practice_result_input],0xffff
     mov word [cs:practice_result_keys],0xffff
     call practice_result_draw
 .ack:
@@ -42,10 +46,28 @@ practice_result_tick:
     ret
 .input:
     mov dx,[cs:practice_result_input]
+    cmp dx,0xffff
+    je .done
     mov bx,[cs:practice_result_keys]
     mov [cs:practice_result_keys],dx
     not bx
     and bx,dx
+    test dl,4
+    jnz .shot_held
+    or byte [cs:practice_result_confirm_armed],1
+.shot_held:
+    test byte [cs:practice_result_confirm_armed],1
+    jnz .enter_check
+    and bl,0xfb
+.enter_check:
+    test dl,16
+    jnz .enter_held
+    or byte [cs:practice_result_confirm_armed],2
+.enter_held:
+    test byte [cs:practice_result_confirm_armed],2
+    jnz .confirm_ready
+    and bl,0xef
+.confirm_ready:
     test bl,8
     jz .up
     mov byte [cs:practice_result_choice],0
@@ -72,7 +94,7 @@ practice_result_tick:
     call practice_result_draw
     ret
 .accept:
-    test bl,4
+    test bl,20
     jz .done
     mov al,[cs:practice_result_choice]
 %ifdef PRACTICE_NATIVE_FORM_START
@@ -121,6 +143,7 @@ practice_result_tick:
     call practice_result_save
     mov byte [cs:practice_result_visible],1
     mov byte [cs:practice_result_choice],2
+    mov byte [cs:practice_result_confirm_armed],0
     ; The key that closed the form must not also reset the result selection.
     mov word [cs:practice_result_input],8
     mov word [cs:practice_result_keys],8
@@ -214,5 +237,6 @@ practice_result_choice: db 0
 practice_result_request: db 0 ; 1 retry, 2 save, 3 select target
 practice_result_ack: db 0     ; 1 success, 2 reject
 practice_result_input: dw 0   ; held directions, confirm and cancel
+practice_result_confirm_armed: db 0
 practice_result_keys: dw 0
 practice_result_selecting: db 0

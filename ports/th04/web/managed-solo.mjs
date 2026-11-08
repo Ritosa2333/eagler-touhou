@@ -100,7 +100,7 @@ function tick(){
   if(state&&ps?.nativeForm?.visible){const formInput=(sample&1?1:0)|(sample&2?2:0)|(sample&4?4:0)|(sample&8?8:0)|(sample&(32|256)?16:0)|(sample&(128|16)?32:0);emulator.setInput({address:state.at,generation:state.generation,formInput});}
   if(ps?.nativeForm?.request){void completeNativeForm(ps,state);loop=requestAnimationFrame(tick);return;}
   if(ps?.nativePause?.visible){void handleNativePause(ps,state);}
-  if(ps?.nativeResult?.visible&&state){const resultInput=(sample&1?1:0)|(sample&2?2:0)|(sample&(32|256)?4:0)|(sample&(128|16)?8:0);emulator.setInput({address:state.at,generation:state.generation,resultInput});}
+  if(ps?.nativeResult?.visible&&state){const resultInput=(sample&1?1:0)|(sample&2?2:0)|(sample&32?4:0)|(sample&(128|16)?8:0)|(sample&256?16:0);emulator.setInput({address:state.at,generation:state.generation,resultInput});}
   if(ps?.outcome&&!playback){if(ps.nativeResult){void handleNativeResult(ps,state);}else practiceUI.complete({outcome:ps.outcome,recording:!!recorder,ready:!!recorder?.state.ready,failed:recorder?.state.failed});}
   if(emulator.state==='running'&&!playback){
     const playing=state?.mode===1&&!state.flags&&!ps?.nativeForm?.visible;let bits=ps?.nativeForm?.visible?0:sample;

@@ -134,18 +134,29 @@ for(const game of games){
       const extra=process.env.PC98_TRANSITION_EXTRA==='1';
       if(extra)await key('ArrowLeft','ArrowLeft',37);
       else{await key('ArrowRight','ArrowRight',39);await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);}
-      const boss=process.env.PC98_TRANSITION_BOSS==='1';
-      if(boss){assert(!extra);await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);await key('ArrowRight','ArrowRight',39);await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);}
+      const gengetsu=extra&&game==='th04'&&process.env.PC98_TRANSITION_GENGETSU==='1';
+      const boss=process.env.PC98_TRANSITION_BOSS==='1'||gengetsu;
+      if(gengetsu){for(let i=0;i<3;i++)await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);for(let i=0;i<5;i++)await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);for(let i=0;i<4;i++)await key('ArrowUp','ArrowUp',38);await key('ArrowRight','ArrowRight',39);for(let i=0;i<7;i++)await key('ArrowDown','ArrowDown',40);}
+      else if(boss){assert(!extra);await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);await key('ArrowRight','ArrowRight',39);await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);}
       const restrictions=process.env.PC98_TEST_RESTRICTIONS==='1';
       if(restrictions){assert(!boss&&!extra);for(let i=0;i<3;i++)await key('ArrowUp','ArrowUp',38);await key('KeyZ','z',90);for(let i=0;i<4;i++){await key('KeyZ','z',90);await key('ArrowDown','ArrowDown',40);}await key('Escape','Escape',27);await key('ArrowUp','ArrowUp',38);}
-      else for(let i=0;i<(extra?2:boss?6:4);i++)await key('ArrowUp','ArrowUp',38);
+      else if(!gengetsu)for(let i=0;i<(extra?2:boss?6:4);i++)await key('ArrowUp','ArrowUp',38);
       await key('KeyZ','z',90);
       await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.mode==='target'&&p.ready&&p.waiting;},{timeout:90000});
       const p=(await state()).native.practice; assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testAttemptSame()),true,'target must reuse same emulator'); assert.equal(p.setup.stage,extra?(game==='th02'?5:6):1);assert.equal(p.setup.character,extra?0:1);assert.equal(p.setup.difficulty,extra?4:2); assert.equal(p.stage,p.setup.stage);
       assert.equal(await frame.evaluate(()=>globalThis.testHostTransitions||0),0,'the guest must initiate the form transition');
-      if(boss){assert.equal(p.setup.entry,'boss');assert.equal(p.setup.phase,game==='th02'?1:2);}
+      if(boss){assert.equal(p.setup.entry,'boss');assert.equal(p.setup.phase,gengetsu?2:game==='th02'?1:2);if(gengetsu)assert.equal(p.setup.branch,'gengetsu');}
       if(restrictions)for(const option of ['lockRank','disableBomb','disableFocus','disableShot'])assert.equal(p.options[option],true,option);
       await key('Enter','Enter',13); await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.elapsed>5,{timeout:30000});
+      if(process.env.PC98_TEST_INFO==='1'){
+        await key('Tab','Tab',9);
+        await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.options?.showInfo,{timeout:10000});
+        await new Promise(resolve=>setTimeout(resolve,1000));
+        await (await frame.$('canvas')).screenshot({path:resolve(output,`${game}-practice-info.png`)});
+        await key('Tab','Tab',9);
+        await frame.waitForFunction(async()=>!(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.options?.showInfo,{timeout:10000});
+        await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.elapsed>60,{timeout:30000});
+      }
         if(process.env.PC98_TEST_ASSIST_PERSIST==='1'){
           await key('Backspace','Backspace',8);await key('F1','F1',112);await key('Backspace','Backspace',8);
           await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.options?.invincible,{timeout:10000});
@@ -155,14 +166,21 @@ for(const game of games){
         }
       if(process.env.PC98_TEST_RESULT_SELECT==='1'){
         assert.equal(process.env.PC98_PRACTICE_DEATH,'1');assert(!extra&&!boss);
+        await page.evaluate(()=>rpc('keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));
         await frame.evaluate(async()=>await (await import('./managed-solo.mjs')).testPracticeHit(0));
           try{await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.nativeResult?.visible,{timeout:30000});}
           catch(error){console.error(game,'death diagnostic',JSON.stringify((await state()).native));throw error;}
+        await new Promise(resolve=>setTimeout(resolve,1500));
+        assert.equal((await state()).native.practice.nativeResult.visible,true,'held fire must not select retry');
+        await page.evaluate(()=>rpc('keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}));
+        await new Promise(resolve=>setTimeout(resolve,250));
         if(process.env.PC98_TEST_RESULT_RETRY==='1'){
           await key('KeyZ','z',90);
           await frame.waitForFunction(async()=>{const current=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return current?.ready&&current.waiting&&!current.outcome;},{timeout:90000});
           assert.equal(await frame.evaluate(()=>globalThis.testHostTransitions||0),0,'result retry must start in the guest');
           assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testAttemptSame()),true);
+          await key('Enter','Enter',13);
+          await frame.waitForFunction(async()=>{const current=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return current?.elapsed>5&&!current.waiting;},{timeout:30000});
           console.log(game,'native result retry OK');continue;
         }
         if(process.env.PC98_TEST_RESULT_SAVE==='1'){

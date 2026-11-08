@@ -53,7 +53,7 @@ def main():
         names+=('formOpen','formInput','formValues','formRequest','formHp','formOptions','infoEnabled','infoValues')
         names+=('restartPending','restartValues','resultSelecting')
         entries=dict(zip(names,struct.unpack_from('<'+str(len(names))+'H',code,8)))
-        gap=(len(code)+15)&~15;assert gap<=12288 and insert-cs*16+gap<65536
+        gap=(len(code)+15)&~15;assert gap<=14336 and insert-cs*16+gap<65536
         insert_bridge(h,image,rel,insert,gap);image[insert:insert+len(code)]=code
         edits=[]
         def patch(at,before,after):

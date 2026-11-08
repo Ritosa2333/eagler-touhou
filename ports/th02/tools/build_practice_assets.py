@@ -36,7 +36,7 @@ def main():
         subprocess.run([str(nasm),'-f','bin','-I',str(out)+'/', '-I',str(common)+'/', '-I',str(ROOT/'patches')+'/',str(ROOT/'patches/practice.asm'),'-o',str(out/'practice.bin')],check=True)
         code=(out/'practice.bin').read_bytes();assert code[:8]==b'T02PRA01'
         entries=dict(zip(NAMES,struct.unpack_from('<'+str(len(NAMES))+'H',code,8)));gap=(len(code)+15)&~15
-        assert gap<=12288 and insert-cs*16+gap<65536
+        assert gap<=13312 and insert-cs*16+gap<65536
         insert_bridge(h,image,rel,insert,gap);image[insert:insert+len(code)]=code
         edits=[]
         def patch(at,before,after):

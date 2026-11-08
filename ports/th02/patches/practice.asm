@@ -262,6 +262,7 @@ world_hook:
     mov dx,0x7fd4
     call signal
     pop dx
+    call practice_info_graphics_mask
     call wait_hold
     retf
 entities_hook:
@@ -346,7 +347,9 @@ bomb_consume:
     pushf
     cmp byte [cs:target_practice],0
     je %%native
-    mov byte [%2],0
+    cmp byte [%2],5
+    jbe %%native
+    mov byte [%2],5
 %%native:
     popf
     push bp
@@ -498,7 +501,7 @@ BACK dialog_return,(0x13c90-0xfac0)
 %define FORM_RANK_BASE -6
 %define FORM_HP_MAX 8500
 %include 'practice-form.inc'
-%include 'practice-info.inc'
 %define PRACTICE_RESTART_TH02 1
+%include 'practice-info.inc'
 %include 'practice-restart.inc'
 practice_pause_call equ frame_hook.pause_call

@@ -45,7 +45,7 @@ function applyAssist(value){
   if(Number.isInteger(value.formInput)){if(e&&(heap[base+e.formOpen]||value.formInput===64))view.setUint16(base+e.formInput,value.formInput&127,true);return;}
   if(Number.isInteger(value.pauseInput)){if(e){if(value.openPause&&!heap[base+e.resultVisible])heap[base+e.pauseOpen]=1;if(heap[base+e.pauseOpen])view.setUint16(base+e.pauseInput,value.pauseInput&15,true);}return;}
   if(Number.isInteger(value.pauseAck)){if(e&&heap[base+e.pauseOpen]&&heap[base+e.pauseRequest])heap[base+e.pauseAck]=value.pauseAck;return;}
-  if(Number.isInteger(value.resultInput)){if(e&&heap[base+e.resultVisible])view.setUint16(base+e.resultInput,value.resultInput&15,true);return;}
+  if(Number.isInteger(value.resultInput)){if(e&&heap[base+e.resultVisible])view.setUint16(base+e.resultInput,value.resultInput&31,true);return;}
   if(Number.isInteger(value.resultAck)){if(e&&heap[base+e.resultVisible]&&heap[base+e.resultRequest])heap[base+e.resultAck]=value.resultAck;return;}
   if(value.resultRetry===true){if(e&&heap[base+e.resultVisible]&&!heap[base+e.resultRequest])heap[base+e.resultRequest]=1;return;}
   if(value.quit||value.restart){
@@ -163,7 +163,7 @@ function tick(now){
   if(state?.mode===1&&ps?.nativePause?.visible){void handleNativePause(ps,state);}
   if(!nativeTransitionHolding&&ps?.nativeResult?.visible&&emulator.state==='running'&&emulator.externalHost?.status.held)emulator.externalHost.pause(false);
   if(ps?.nativeResult?.visible&&state&&valid(emulator.module.HEAPU8,mailbox)){
-    const resultInput=(sample&1?1:0)|(sample&2?2:0)|(sample&(32|256)?4:0)|(sample&(128|16)?8:0);
+    const resultInput=(sample&1?1:0)|(sample&2?2:0)|(sample&32?4:0)|(sample&(128|16)?8:0)|(sample&256?16:0);
     emulator.assist({address:mailbox,generation:state.generation,resultInput});
   }
 

@@ -97,6 +97,9 @@ practice_target_hp:
     mov ax,[cs:practice_genji_limits+bx]
 .write:
     sub ax,[cs:practice_initial_hp]
+    jns .store
+    xor ax,ax
+.store:
     mov [0x2bea],ax
 .done:
     ret

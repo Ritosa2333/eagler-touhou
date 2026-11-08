@@ -1,5 +1,10 @@
 ; Native replacement information panel on the right HUD, in text VRAM.
 ; Practice counters are maintained in MAIN. Visibility is a frontend input.
+%ifdef PRACTICE_RESTART_TH02
+%define INFO_ROWS 10
+%else
+%define INFO_ROWS 13
+%endif
 practice_info_reset:
     mov dword [cs:practice_info_frames],0
     mov word [cs:practice_info_misses],0
@@ -78,7 +83,175 @@ practice_info_frames: dd 0
 practice_info_misses: dw 0
 practice_info_initial_bombs: db 0
 
+; Save the HUD's two graphics pages on open. Mask after the game has drawn
+; each frame; text-plane spaces alone do not hide graphics underneath.
+practice_info_graphics_save:
+    pushf
+    pushad
+    push ds
+    push es
+    cld
+    mov ax,[cs:practice_form_scroll]
+    add ax,176
+    xor dx,dx
+    mov cx,400
+    div cx
+    mov ax,dx
+    mov cx,80
+    mul cx
+    add ax,52
+    mov [cs:practice_info_offset],ax
+    mov bx,INFO_ROWS*256
+    mov ah,0x48
+    int 0x21
+    jc .failed
+    mov [cs:practice_info_buffer],ax
+    mov es,ax
+    xor di,di
+    xor al,al
+    out 0x7c,al
+    xor dx,dx
+.page:
+    mov al,dl
+    out 0xa6,al
+    xor bx,bx
+.plane:
+    mov ax,[cs:practice_info_planes+bx]
+    mov ds,ax
+    mov si,[cs:practice_info_offset]
+    mov bp,INFO_ROWS*16
+.row:
+    mov cx,28
+    rep movsb
+    add si,52
+    cmp si,32000
+    jb .next
+    sub si,32000
+.next:
+    dec bp
+    jnz .row
+    add bx,2
+    cmp bx,8
+    jb .plane
+    inc dl
+    cmp dl,2
+    jb .page
+    mov al,[cs:practice_info_page]
+    out 0xa6,al
+    jmp .done
+.failed:
+    mov word [cs:practice_info_buffer],0
+.done:
+    pop es
+    pop ds
+    popad
+    popf
+    ret
+
+practice_info_graphics_restore:
+    cmp word [cs:practice_info_buffer],0
+    je .done
+    pushf
+    pushad
+    push ds
+    push es
+    cld
+    mov ds,[cs:practice_info_buffer]
+    xor si,si
+    xor al,al
+    out 0x7c,al
+    xor dx,dx
+.page:
+    mov al,dl
+    out 0xa6,al
+    xor bx,bx
+.plane:
+    mov ax,[cs:practice_info_planes+bx]
+    mov es,ax
+    mov di,[cs:practice_info_offset]
+    mov bp,INFO_ROWS*16
+.row:
+    mov cx,28
+    rep movsb
+    add di,52
+    cmp di,32000
+    jb .next
+    sub di,32000
+.next:
+    dec bp
+    jnz .row
+    add bx,2
+    cmp bx,8
+    jb .plane
+    inc dl
+    cmp dl,2
+    jb .page
+    mov al,[cs:practice_info_page]
+    out 0xa6,al
+    mov es,[cs:practice_info_buffer]
+    mov ah,0x49
+    int 0x21
+    mov word [cs:practice_info_buffer],0
+    pop es
+    pop ds
+    popad
+    popf
+.done:
+    ret
+
+practice_info_graphics_mask:
+    cmp byte [cs:practice_info_drawn],0
+    je .done
+    cmp word [cs:practice_info_buffer],0
+    je .done
+    pushf
+    pushad
+    push es
+    cld
+    mov ax,[cs:practice_form_scroll]
+    add ax,176
+    xor dx,dx
+    mov cx,400
+    div cx
+    mov ax,dx
+    mov cx,80
+    mul cx
+    add ax,52
+    mov si,ax
+    xor al,al
+    out 0x7c,al
+    xor bx,bx
+.plane:
+    mov es,[cs:practice_info_planes+bx]
+    mov di,si
+    mov bp,INFO_ROWS*16
+.row:
+    xor ax,ax
+    mov cx,14
+    rep stosw
+    add di,52
+    cmp di,32000
+    jb .next
+    sub di,32000
+.next:
+    dec bp
+    jnz .row
+    add bx,2
+    cmp bx,8
+    jb .plane
+    pop es
+    popad
+    popf
+.done:
+    ret
+practice_info_planes: dw 0xa800,0xb000,0xb800,0xe000
+practice_info_buffer: dw 0
+practice_info_offset: dw 0
+practice_info_page: db 0
+
 practice_info_draw:
+    mov al,[PRACTICE_PAGE_BACK]
+    mov [cs:practice_info_page],al
     push ds
     push es
     push cs
@@ -89,11 +262,12 @@ practice_info_draw:
     jne .show
     cmp byte [cs:practice_info_drawn],0
     je .done
+    call practice_info_graphics_restore
     mov di,11*160+52*2
     mov si,practice_info_saved
-    mov dx,12
+    mov dx,INFO_ROWS
 .restore_row:
-    mov cx,20
+    mov cx,28
 .restore_cell:
     mov ax,[cs:si]
     mov [es:di],ax
@@ -102,7 +276,7 @@ practice_info_draw:
     add si,4
     add di,2
     loop .restore_cell
-    add di,120
+    add di,104
     dec dx
     jnz .restore_row
     mov byte [cs:practice_info_drawn],0
@@ -110,11 +284,12 @@ practice_info_draw:
 .show:
     cmp byte [cs:practice_info_drawn],0
     jne .paint
+    call practice_info_graphics_save
     mov di,11*160+52*2
     mov si,practice_info_saved
-    mov dx,12
+    mov dx,INFO_ROWS
 .save_row:
-    mov cx,20
+    mov cx,28
 .save_cell:
     mov ax,[es:di]
     mov [cs:si],ax
@@ -123,7 +298,7 @@ practice_info_draw:
     add si,4
     add di,2
     loop .save_cell
-    add di,120
+    add di,104
     dec dx
     jnz .save_row
     mov byte [cs:practice_info_drawn],1
@@ -134,7 +309,7 @@ practice_info_draw:
 .row:
     push bx
     push di
-    mov cx,20
+    mov cx,28
 .background:
     mov word [es:di],0x20
     mov word [es:di+0x2000],0x05
@@ -172,7 +347,7 @@ practice_info_draw:
     add bp,2
     sub di,2*2
     add di,160
-    cmp bx,24
+    cmp bx,INFO_ROWS*2
     jb .row
 .done:
     pop es
@@ -181,7 +356,7 @@ practice_info_draw:
 practice_info_enabled: db 0
 practice_info_drawn: db 0
 practice_info_values: times 12 dw 0
-practice_info_labels: dw .lives,.stock,.miss,.bomb,.power,.rank,.time,.keys,.blank,.blank,.blank,.blank
+practice_info_labels: dw .lives,.stock,.miss,.bomb,.power,.rank,.time,.keys,.blank,.blank,.blank,.blank,.blank
 .lives: db 'LIVES',0
 .stock: db 'BOMBS',0
 .miss: db 'MISS',0
@@ -191,4 +366,4 @@ practice_info_labels: dw .lives,.stock,.miss,.bomb,.power,.rank,.time,.keys,.bla
 .time: db 'TIME',0
 .keys: db 'KEYS',0
 .blank: db ' ',0
-practice_info_saved: times 20*12*4 db 0
+practice_info_saved: times 28*INFO_ROWS*4 db 0
