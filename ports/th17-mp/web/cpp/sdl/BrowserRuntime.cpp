@@ -1,3 +1,4 @@
+#include <eagler/input/LocalPlayerCue.hpp>
 #include <eagler/input/BrowserGamepad.hpp>
 #include "ApplicationState.hpp"
 #include "ThpracUi.hpp"
@@ -262,7 +263,9 @@ struct RoomRuntime final : multiplayer::World {
    return {input.unlimited?2:1,input.x,input.y};
   };
   const auto menu_before=main_input;
-  main_input.update(frame.inputs[0].buttons);
+  u32 menu_buttons=frame.inputs[0].buttons;
+  if(app->ending)for(u32 seat=1;seat<setup.seats;++seat)menu_buttons|=frame.inputs[seat].buttons&0x200u;
+  main_input.update(menu_buttons);
   if((main_input.pressed&0x100)&&!app->rollback_boundary()){barrier=number;return false;}
   app->touch=movement(frame.inputs[0]);
   for(u32 seat=1;seat<setup.seats;++seat)
@@ -312,6 +315,11 @@ struct RoomRuntime final : multiplayer::World {
   if(previous_draw_mode&&logical){
    const double cost=std::clamp(emscripten_get_now()-replay_step_start,.25,16.);
    logical_step_ms+=(cost-logical_step_ms)*.25;
+  }
+  if(!logical&&!spectator&&!playing_replay&&app->scene()){
+   auto& battle=app->scene()->battle;
+   const auto& pos=battle.pilot(setup.local).motion.position;
+   eagler::presentation::local_player_cue(setup.local,pos.x+224,pos.y+16);
   }
   output.score=app->scene()?u32(app->scene()->battle.score.score):u32(app->selection_score.score);
   if(app->scene())for(unsigned slot=0;slot<3;++slot)
@@ -491,6 +499,7 @@ void initialize_controller(){if(controller){SDL_CloseJoystick(controller);contro
 touhou::input::TouchState touch_state(){
  touhou::input::TouchState value;
  if(app&&app->title)value.instance=1+int(app->title->state.screen)*256+app->title->state.substate;
+ if(app&&app->ending){value.context=2;return value;}
  if(!app||!app->scene()||!app->run_input)return value;
  if(app->pause&&app->pause->state.screen!=PauseScreen::Inactive)return value;
  if(app->progress.practice_record){value.context=3;return value;}
