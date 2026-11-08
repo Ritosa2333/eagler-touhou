@@ -113,7 +113,7 @@ const headerFiles = dir => readdirSync(dir, {withFileTypes: true}).flatMap(entry
     headerFiles(resolve(dir, entry.name))) :
     /\.(h|hpp|inc)$/.test(entry.name) ? [resolve(dir, entry.name)] : []);
 const headers = [...headerFiles(resolve(root, 'cpp')),...headerFiles(imgui), ...headerFiles(resolve(workspace, 'portable/sdl')),
-  ...headerFiles(resolve(workspace, 'portable/input')),...headerFiles(resolve(netplayRoot,'include/eagler/thprac')), resolve(netplayRoot, 'include/eagler/input/DialogueGesture.hpp'),
+  ...headerFiles(resolve(workspace, 'portable/input')),...headerFiles(resolve(netplayRoot,'include/eagler/thprac')), resolve(netplayRoot, 'include/eagler/input/DialogueGesture.hpp'),resolve(netplayRoot, 'include/eagler/input/LocalPlayerCue.hpp'),
   ...(multiplayer ? headerFiles(resolve(netplayRoot, 'include')) : [resolve(netplayRoot,'include/eagler/text/RuntimeFontRaster.hpp')])].sort();
 const headerHash = sha(headers.map(path => path + sha(readObserved(path))).join('\n'));
 readObserved(fileURLToPath(import.meta.url));

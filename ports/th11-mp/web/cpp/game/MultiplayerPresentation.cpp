@@ -1,3 +1,4 @@
+#include <eagler/input/LocalPlayerCue.hpp>
 #include <eagler/gameplay/CooperativeRules.hpp>
 #ifdef TH11_MULTIPLAYER
 #include "GameBattle.hpp"
@@ -80,6 +81,7 @@ bool GameBattle::mp_draw_players(AnmRenderer& renderer){
         body.flags=(body.flags|2u)&~0x8000u;body.color=(body.color&0xffffff)|(u32(renderer.multiplayer_opacity[i+1])<<24);
         body.position={float(double(pos.x)+224),float(double(pos.y)+16),0};if(renderer.draw(body)==-2)return false;}else if(!p.player->draw(renderer))return false;}
     auto& local=*pilots[mp_options.local_seat];const auto p=local.player->motion.state.position;const float x=p.x+224,y=p.y+16;
+    if(!mp_options.spectator)eagler::presentation::local_player_cue(mp_options.local_seat,x,y);
     if(!local.ghost&&!mp_options.spectator&&mp_local_visibility){renderer.pipeline().sourceBlend=touhou::graphics::BlendFactor::SourceAlpha;const u32 c=0xc0ffffff;
         renderer.solid_rectangle(x-7,y-7,x-3,y-6,c);renderer.solid_rectangle(x+3,y-7,x+7,y-6,c);renderer.solid_rectangle(x-7,y+6,x-3,y+7,c);renderer.solid_rectangle(x+3,y+6,x+7,y+7,c);
     }
