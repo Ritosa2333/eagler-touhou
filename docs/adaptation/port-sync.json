@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "86ea87dceb9054417e453f16a77719f479e4bab3",
+      "base": "3b2e191be83b880c615f32d522cb6fdefefecdf0",
       "history": [
         {
           "kind": "manual",
@@ -245,6 +245,38 @@
             "ports/th05-mp/web/replay.mjs"
           ],
           "note": "对照 PC-98 逐帧核对弹幕发射点、速度向量与特殊移动，多人沿用联机目标选择并保留历史录像规则。"
+        },
+        {
+          "kind": "manual",
+          "base": "86ea87dceb9054417e453f16a77719f479e4bab3",
+          "source": "3b2e191be83b880c615f32d522cb6fdefefecdf0",
+          "targetHead": "e26530e0dbf72c34a3d65b312e94ea81e9d075ed",
+          "paths": [
+            "ports/th05-mp/Game/GlobalVariableAndStatistics.cpp",
+            "ports/th05-mp/Game/GlobalVariableAndStatistics.h",
+            "ports/th05-mp/Game/Original/OriginalFeatures.cpp",
+            "ports/th05-mp/Game/Original/OriginalFeatures.h",
+            "ports/th05-mp/Game/Practice/PracticeConfig.h",
+            "ports/th05-mp/Game/Replay.cpp",
+            "ports/th05-mp/Game/Replay.h",
+            "ports/th05-mp/Game/Stage/Boss/BossStage2.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4.cpp",
+            "ports/th05-mp/Game/Stage/Chara/Chara.cpp",
+            "ports/th05-mp/Game/Stage/EnemyBullet/EnemyBullet.cpp",
+            "ports/th05-mp/Game/Stage/Laser/Laser.cpp",
+            "ports/th05-mp/Game/Stage/Laser/Laser.h",
+            "ports/th05-mp/Game/Stage/Stage.cpp",
+            "ports/th05-mp/Game/Stage/Stage.h",
+            "ports/th05-mp/Game/Stage/Summary/Summary.cpp",
+            "ports/th05-mp/scripts/Verify-OriginalMotion.py",
+            "ports/th05-mp/scripts/Verify-OriginalPatterns.py",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp",
+            "ports/th05-mp/tests/browser.mjs",
+            "ports/th05-mp/tests/pc98-motion.mjs",
+            "ports/th05-mp/tests/pc98-patterns.mjs",
+            "ports/th05-mp/web/replay.mjs"
+          ],
+          "note": "按 PC-98 核对方向键与低速、敌弹生命周期、激光和 Rank。多人共用道具 Rank 计数，随回滚、关卡与录像恢复。"
         }
       ]
     },
