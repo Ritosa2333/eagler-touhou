@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "3b2e191be83b880c615f32d522cb6fdefefecdf0",
+      "base": "dda93f9339cc8d1d8441d97a1d4c3919d6baee6b",
       "history": [
         {
           "kind": "manual",
@@ -277,6 +277,40 @@
             "ports/th05-mp/web/replay.mjs"
           ],
           "note": "按 PC-98 核对方向键与低速、敌弹生命周期、激光和 Rank。多人共用道具 Rank 计数，随回滚、关卡与录像恢复。"
+        },
+        {
+          "kind": "manual",
+          "base": "3b2e191be83b880c615f32d522cb6fdefefecdf0",
+          "source": "dda93f9339cc8d1d8441d97a1d4c3919d6baee6b",
+          "targetHead": "6d984bd81b9403382d628831b37b578cd556a01a",
+          "paths": [
+            "ports/th05-mp/Game/Original/OriginalFeatures.cpp",
+            "ports/th05-mp/Game/Original/OriginalFeatures.h",
+            "ports/th05-mp/Game/Replay.cpp",
+            "ports/th05-mp/Game/Stage/Boss/Boss.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage5.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage5.h",
+            "ports/th05-mp/Game/Stage/Boss/BossStage6.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStageEx.cpp",
+            "ports/th05-mp/Game/Stage/Chara/Chara.cpp",
+            "ports/th05-mp/Game/Stage/Chara/CharaMarisa.cpp",
+            "ports/th05-mp/Game/Stage/Chara/CharaMima.cpp",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStage1.cpp",
+            "ports/th05-mp/Game/Stage/SpecialBullet/CurvingBullet.cpp",
+            "ports/th05-mp/Game/Stage/SpecialBullet/KnifeBullet.cpp",
+            "ports/th05-mp/Game/Stage/SpecialBullet/KnifeBullet.h",
+            "ports/th05-mp/Game/Stage/SpecialBullet/ShinkiBullet.cpp",
+            "ports/th05-mp/Game/Stage/SpecialBullet/ShinkiBullet.h",
+            "ports/th05-mp/scripts/Verify-OriginalCombat.py",
+            "ports/th05-mp/scripts/Verify-OriginalPatterns.py",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp",
+            "ports/th05-mp/tests/browser.mjs",
+            "ports/th05-mp/tests/pc98-combat.mjs",
+            "ports/th05-mp/tests/pc98-patterns.mjs",
+            "ports/th05-mp/web/replay.mjs"
+          ],
+          "note": "同步原版 Bomb、Boss 免伤、低血量狂暴与特殊弹消退。多人保留队伍保护、目标分配和旧录像规则。"
         }
       ]
     },
