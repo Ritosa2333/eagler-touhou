@@ -80,6 +80,7 @@ void SetKey(int key,bool down); void ClearKeys(); void SampleKeys(BYTE* scans); 
 void BeginUI(); void EndUI(); void InitializeUI(); void ShutdownUI();
 C2DImage* WideText(const wchar_t* text);
 void MusicTrack(const char* name); void MusicAction(int action,double value=0);
+void MusicRoomTrack(const char* name,const char* label);
 void PlaySound(int index); void ReportError(const char* message);
 }}
 
