@@ -69,6 +69,7 @@ for(const game of games){
   try{
     browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
     page=await browser.newPage();await page.setViewport({width:1100,height:800});
+    if(process.env.PC98_TEST_REPLAY_DOWNLOAD==='1'){const cdp=await page.createCDPSession();await cdp.send('Page.setDownloadBehavior',{behavior:'allow',downloadPath:output});}
     page.on('pageerror',e=>{errors.push(e.message);console.error(game,e.message);});
     page.on('console',m=>{if(m.type()==='error')console.error(game,m.text());});
     await page.goto('http://127.0.0.1:'+server.address().port);
@@ -381,6 +382,12 @@ for(const game of games){
       await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.finishRecording());
       await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().recordingReady,{timeout:30000});
       const path=await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.saveRecording()); assert(path);
+      if(process.env.PC98_TEST_REPLAY_DOWNLOAD==='1'){
+        const expected=await frame.evaluate(path=>Array.from(globalThis.__eaglerPC98Files.memory.get(path)),path),file=resolve(output,path.split('/').at(-1));
+        let bytes;for(let i=0;i<100;i++){try{bytes=await readFile(file);if(bytes.length===expected.length)break;}catch{}await new Promise(r=>setTimeout(r,100));}
+        assert(bytes,'Replay browser download was not created');assert.deepEqual(bytes,Buffer.from(expected),'download must match the playable stored Replay');
+        console.log(game,'browser replay download OK',bytes.length);
+      }
       if(process.env.PC98_TEST_LEGACY==='1')await frame.evaluate(async({path,game})=>{
         const store=globalThis.__eaglerPC98Files,bytes=store.memory.get(path),view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),size=view.getUint32(8,true),header=JSON.parse(new TextDecoder().decode(bytes.subarray(12,12+size)));
         const overrides={'../practice-attempt.js':game==='th02'?'ac1563453bc96f4dc01b00f3f5f1f07f6b6323e178fb864ee9507e5c834ec2cd':'091e33204a297f396901c0b13d1da7f6686b4811dd7d59139f2d3e6bcb0616d9','./external-host.js':'a8ccea815c47f0ab5ae478f2af4e7a9365a22d12bcf9337fe5e6faa7610a4bbf',...(game==='th04'?{'../solo-worker.js':'c606d752e295310d381628ec109960c1f9661b7b9dbdbf352fd46c176b60d48e'}:{})};

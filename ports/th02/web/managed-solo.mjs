@@ -5,6 +5,7 @@ import {normalizePractice,encodeNativeOptions,decodeNativeOptions} from './pract
 import {mountManagedPractice} from './pc98-practice.mjs';
 import {Fat12} from './solo-fat12.js';
 import {decodeExternalReplay} from './replay/external-codec.js';
+import {downloadReplay} from './replay/download.js';
 import {userPath} from './managed-storage.mjs';
 
 const host=document.getElementById('game'),input=globalThis.__eaglerPC98Input;
@@ -101,7 +102,7 @@ const pauseMenu=mountPauseMenu(host.querySelector('.solo-screen'),{
 function transition(save,restarting=false){const current=emulator;void returnToTitle(save,restarting,current).catch(error=>{if(emulator===current){pauseMenu.open();report(error);}});}
 const savedReplays=new WeakMap();
 async function saveReplay(blob){recordBlob=blob;if(savedReplays.has(blob))return savedReplays.get(blob);const task=(async()=>{const name=`replay/th02_${Date.now()}_${crypto.randomUUID().slice(0,8)}.th02r`;await globalThis.__eaglerPC98Files.write(name,await blob.arrayBuffer());return name;})();savedReplays.set(blob,task);return task;}
-async function saveRecording(){if(!recorder?.state.ready)return null;return saveReplay(await recorder.save());}
+async function saveRecording({download=true}={}){if(!recorder?.state.ready)return null;const blob=await recorder.save(),path=await saveReplay(blob);if(download)downloadReplay(blob,path.slice(path.lastIndexOf('/')+1));return path;}
 async function syncFiles(){if(!emulator||playback)return;const fat=new Fat12(await emulator.getDiskImage('th02-solo.hdi'));
   for(const name of ['HUUHI.DAT','HUUMA.CFG']){const entry=fat.find('HUMAROKU/'+name,{optional:true});if(entry!==undefined)await globalThis.__eaglerPC98Files.write(name,fat.read(entry));}}
 async function returnToTitle(save,restarting=false,current=emulator,practiceConfig=null){
@@ -194,7 +195,7 @@ function tick(now){
   loop=requestAnimationFrame(tick);
 }
 function discardRetry(){retrySlot?.stop();retrySlot=undefined;}
-function makeAttempt(target,practice,settings,replay=null,standby=false,effects=null){return createSoloAttempt({canvas:target,practice,settings,replay,standby,effects,deferReplay:true,sources,applyReplayInput:applyAssist,callbacks:{onError:report,onResult:result=>{if(lastPractice?.mode==='full'&&['game-over','clear'].includes(result.timeline?.reason)){autoSaveTask=saveRecording().catch(report).finally(()=>{autoSaveTask=null;});}},onExit:()=>void naturalExit().catch(report),onPlaybackEnd:matches=>{replayResult=matches;playbackFrame=playbackTotal;playbackTarget=null;playbackEnded=true;playbackPaused=true;emulator?.pauseReplay(true);music?.suspend();void attempt?.sfx?.context?.suspend();publishPlayback();if(!matches)report(Error('Replay 终态内存校验不一致'));}}});}
+function makeAttempt(target,practice,settings,replay=null,standby=false,effects=null){return createSoloAttempt({canvas:target,practice,settings,replay,standby,effects,deferReplay:true,sources,applyReplayInput:applyAssist,callbacks:{onError:report,onResult:result=>{if(lastPractice?.mode==='full'&&['game-over','clear'].includes(result.timeline?.reason)){autoSaveTask=saveRecording({download:false}).catch(report).finally(()=>{autoSaveTask=null;});}},onExit:()=>void naturalExit().catch(report),onPlaybackEnd:matches=>{replayResult=matches;playbackFrame=playbackTotal;playbackTarget=null;playbackEnded=true;playbackPaused=true;emulator?.pauseReplay(true);music?.suspend();void attempt?.sfx?.context?.suspend();publishPlayback();if(!matches)report(Error('Replay 终态内存校验不一致'));}}});}
 function prepareRetry(){discardRetry();}
 async function launch(config,replay=null,cached=null,effects=null){
   suppressedLoad=null;playback=!!replay;replayResult=null;lastPractice=normalizePractice(replay?.header.practice||config);practiceUI.setRunning(!playback,lastPractice);
