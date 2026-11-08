@@ -15,7 +15,7 @@ const commonAvailable=existsSync(resolve(common,'include/eagler/input/BrowserGam
 const sources=['web/cpp/game','web/cpp/sdl'].flatMap(directory=>readdirSync(resolve(root,directory)).filter(n=>n.endsWith('.cpp')).sort().map(n=>resolve(root,directory,n)));
 sources.push(resolve(root,'portable/sdl/Renderer.cpp'));
 const headers=['web/cpp','portable/sdl','portable/input'].flatMap(directory=>walk(resolve(root,directory))).filter(name=>/\.(?:h|hpp|inc)$/.test(name));
-if(commonAvailable)headers.push(resolve(common,'include/eagler/input/BrowserGamepad.hpp'),resolve(common,'browser/browser-gamepad-input.hpp'),resolve(common,'include/eagler/input/DialogueGesture.hpp'),resolve(common,'include/eagler/audio/WebSfx.hpp'));
+if(commonAvailable)headers.push(resolve(common,'include/eagler/input/BrowserGamepad.hpp'),resolve(common,'browser/browser-gamepad-input.hpp'),resolve(common,'include/eagler/input/DialogueGesture.hpp'),resolve(common,'include/eagler/input/LocalPlayerCue.hpp'),resolve(common,'include/eagler/audio/WebSfx.hpp'));
 else headers.push(...walk(resolve(root,'portable/compat')).filter(name=>/\.(?:h|hpp|inc)$/.test(name)));
 const flags=['-O2',args.includes('--debug')?'-g2':'-g0','-std=c++17','-fno-exceptions','-fno-rtti','-ffp-contract=off',
  '-I'+resolve(root,'portable/input'),'-I'+resolve(root,'web/cpp/game'),'-I'+resolve(root,'web/cpp/sdl'),'-I'+resolve(root,'portable/sdl'),

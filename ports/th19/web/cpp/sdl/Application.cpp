@@ -1,3 +1,6 @@
+#if __has_include(<eagler/input/LocalPlayerCue.hpp>)
+#include <eagler/input/LocalPlayerCue.hpp>
+#endif
 #include "ReplayInput.hpp"
 #include "WorldCheckpoint.hpp"
 #include "ResourceCrypt.hpp"
@@ -156,6 +159,7 @@ static bool g_touch_keys[512]{};
 static touhou::input::TouchController g_touch_input;
 static int g_touch_side=0;
 static bool g_network_active=false,g_network_finished=false;
+static int g_network_local_seat=-1;
 static u32 g_network_frame=0;
 static bool g_network_unlimited[2]{};
 static float g_network_motion_x[2]{},g_network_motion_y[2]{};
@@ -2545,6 +2549,10 @@ void draw_field_player(const th19::AnmVm& vm, const std::map<u32,std::pair<i32,i
     auto ti = tex.find(ei);
     if (ti == tex.end()) return;
     g_actor_clip=cx>640?1:0;
+#if __has_include(<eagler/input/LocalPlayerCue.hpp>)
+    if(g_network_active&&!g_skip_present&&!g_paused&&g_screen==SCR_GAME&&g_network_local_seat==g_actor_clip)
+        eagler::presentation::local_player_cue(g_network_local_seat,(cx+fx*GAME_SCALE)*.5f,(GAME_FY0+fy*GAME_SCALE)*.5f);
+#endif
     emit_quad(30, ti->second, sp, cx + fx * GAME_SCALE, GAME_FY0 + fy * GAME_SCALE,
               GAME_SCALE, GAME_SCALE, 0, 0,
               g_screen==SCR_GAME&&g_barrier[cx>640?1:0].invulnerable>0&&g_player_damage[cx>640?1:0].frame%3==0?0xffff0000:0xffffffff, 0);
@@ -6107,6 +6115,9 @@ __attribute__((export_name("th19_network_set_rules"))) u32 th19_network_set_rule
 
 // Network frames enter the existing local human-versus-human simulation.
 // Only confirmed input reaches this entry point; SDL device state is excluded.
+__attribute__((export_name("th19_network_set_local_seat"))) void th19_network_set_local_seat(i32 seat){
+    g_network_local_seat=seat==0||seat==1?seat:-1;
+}
 __attribute__((export_name("th19_network_begin"))) u32 th19_network_begin(u32 seed,i32 difficulty,i32 left,i32 right){
     if(g_network_active||difficulty<0||difficulty>3||left<0||left>=19||right<0||right>=19)return 0;
     g_replay_input.playing=g_replay_input.recording=false;g_played_frames=0;
@@ -6156,7 +6167,7 @@ __attribute__((export_name("th19_network_step"))) u32 th19_network_step(u32 fram
 }
 __attribute__((export_name("th19_network_end"))) void th19_network_end(){
     rb_checkpoints.clear();rb_checkpoint_pool.clear();rb_collect_effects=false;rb_effects.clear();
-    g_network_active=false;g_network_finished=false;g_loop_paused=true;
+    g_network_active=false;g_network_finished=false;g_network_local_seat=-1;g_loop_paused=true;
     std::fill(std::begin(g_injected_keys),std::end(g_injected_keys),0);
     g_touch_unlimited=false;g_touch_motion_x=g_touch_motion_y=0;
 }

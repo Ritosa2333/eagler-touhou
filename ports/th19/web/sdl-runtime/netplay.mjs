@@ -109,6 +109,7 @@ export class Netplay {
     if(JSON.stringify(config)!==JSON.stringify(this.config))throw Error('双方游戏版本或房间设置不同，请刷新后重试');
     if(!this.prepared){
      const c=this.config;
+     this.core._th19_network_set_local_seat?.(this.spectator?-1:this.side);
      if(!this.core._th19_network_set_rules(...c.rules)||!this.core._th19_network_begin(c.seed,c.difficulty,...c.characters))throw Error('无法启动人间 vs 人间对战');
      this.prepared=true;
      if(this.rollbackEnabled)this.prepareRollback();
