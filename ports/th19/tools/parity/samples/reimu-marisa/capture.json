@@ -1,0 +1,17 @@
+{
+  "originalExecutableSha256": "804107d9033601f69c251a5e6e449bd88d9add36591129db394765295893bac6",
+  "replayFixtureSha256": "53772ce82013f5d95fc7e9ee189d9216003424afab52d2674da2a0f536f84574",
+  "boundary": "D3D9 pre-Present",
+  "cpuDriverSha256": "69c5548830580a09708d3fdf037ab176c476412dac6798a1a6d6d4e9ae7c96c3",
+  "cpuSecondRng": 424182232,
+  "cpuSelection": {
+    "mode": 2,
+    "matchup": 2,
+    "difficulty": 3,
+    "characters": [
+      0,
+      1
+    ]
+  },
+  "traceSha256": "3cc309f161dd6e89e232e09807c888363770b9255956d938244fc8aef5158591"
+}

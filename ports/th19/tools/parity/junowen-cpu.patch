@@ -1,0 +1,90 @@
+--- a/archives/th19replayplayer-lib/src/lib.rs
++++ b/archives/th19replayplayer-lib/src/lib.rs
+@@ -60,7 +60,7 @@
+
+     pub fn read_from_reader(reader: &mut impl BufRead) -> Result<Self> {
+         let mut buf = BytesMut::new();
+-        buf.resize(13, 0);
++        buf.resize(17, 0);
+         reader.read_exact(&mut buf)?;
+         let rand_seed1 = buf.get_u32_le();
+         let rand_seed2 = buf.get_u32_le();
+@@ -156,3 +156,17 @@
+         Ok(())
+     }
+ }
++
++#[cfg(test)]
++mod replay_fixture_tests {
++    use super::*;
++
++    #[test]
++    fn reads_character_and_card_bytes_from_cpu_fixture_header() {
++        let bytes = [1, 0, 0, 0, 2, 0, 0, 0, 3, 2, 68, 10, 10, 0, 7, 1, 9, 0, 0, 0, 0];
++        let replay = ReplayFile::read_from_reader(&mut std::io::Cursor::new(bytes)).unwrap();
++        assert!(replay.player_matchup == PlayerMatchup::CpuVsCpu);
++        assert_eq!([replay.p1_character, replay.p1_card, replay.p2_character, replay.p2_card], [0, 7, 1, 9]);
++        assert!(matches!(replay.inputs, FileInputList::HumanVsHuman(ref frames) if frames.len() == 1));
++    }
++}
+--- a/archives/th19replayplayer/Cargo.toml
++++ b/archives/th19replayplayer/Cargo.toml
+@@ -15,4 +15,4 @@
+ interprocess = "1.2.1"
+ junowen-lib.workspace = true
+ th19replayplayer-lib = { path = "../th19replayplayer-lib" }
+-windows = "0.51.1"
++windows = { version = "0.51.1", features = ["Win32_Foundation", "Win32_System_Console", "Win32_System_SystemServices"] }
+--- a/archives/th19replayplayer/src/lib.rs
++++ b/archives/th19replayplayer/src/lib.rs
+@@ -169,6 +169,23 @@
+ fn init_battle(th19: &mut Th19, replay_file: &ReplayFile) {
+     th19.set_rand_seed1(replay_file.rand_seed1).unwrap();
+     th19.set_rand_seed2(replay_file.rand_seed2).unwrap();
++    if let Ok(value) = std::env::var("TH19_CAPTURE_SECOND_RNG") {
++        let seed: u32 = value.parse().expect("invalid second RNG state");
++        th19.set_rand_seed3(seed).unwrap();
++        th19.set_rand_seed4(seed).unwrap();
++    }
++    if std::env::var_os("TH19_CAPTURE_CPU").is_some() {
++        let selection = th19.selection();
++        let identity = format!(
++            "{{\"mode\":{},\"matchup\":{},\"difficulty\":{},\"characters\":[{},{}]}}\n",
++            selection.game_mode as u32,
++            selection.player_matchup as u32,
++            selection.difficulty as u32,
++            selection.p1().character,
++            selection.p2().character,
++        );
++        std::fs::write("cpu-selection.json", identity).unwrap();
++    }
+ }
+
+ fn tick_battle(
+@@ -176,6 +193,9 @@
+     round_frame: &RoundFrame,
+     replay_file: &ReplayFile,
+ ) -> bool {
++    if replay_file.player_matchup == PlayerMatchup::CpuVsCpu {
++        return true;
++    }
+     match &replay_file.inputs {
+         FileInputList::HumanVsHuman(vec) => {
+             if round_frame.frame as usize >= vec.len() {
+--- a/junowen-lib/src/th19/th19_helpers.rs
++++ b/junowen-lib/src/th19/th19_helpers.rs
+@@ -221,10 +221,10 @@
+                 select_cursor(th19.menu_input_mut().prev(), menu.cursor_mut(), 1)
+             }
+             (ScreenId::PlayerMatchupSelect, _, _) => {
+-                let target = if target_player_matchup == PlayerMatchup::HumanVsCpu {
+-                    1
+-                } else {
+-                    0
++                let target = match target_player_matchup {
++                    PlayerMatchup::HumanVsCpu => 1,
++                    PlayerMatchup::CpuVsCpu => 2,
++                    _ => 0,
+                 };
+                 select_cursor(th19.menu_input_mut().prev(), menu.cursor_mut(), target)
+             }
