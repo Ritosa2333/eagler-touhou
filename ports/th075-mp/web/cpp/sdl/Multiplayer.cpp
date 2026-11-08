@@ -1,4 +1,5 @@
 #if TH075_MULTIPLAYER
+#include <eagler/input/LocalPlayerCue.hpp>
 #include "Multiplayer.hpp"
 #include "Application.hpp"
 #include "RollbackState.hpp"
@@ -216,6 +217,14 @@ bool advance_one(double us,bool resimulation,bool drawForward,bool& advanced){
     const bool played=play(inputs);
     app->graphics.suppress(false);app->rollbackResimulating=false;app->collectRollbackSound=false;
     if(!played)return false;
+    if(!skipDraw&&!resimulation&&!spectator&&app->current_scene()==0&&app->battle&&!app->battle->progress.paused){
+        const auto& sim=app->battle->simulation;
+        const auto& camera=sim.story.camera;const auto& motion=sim.characters[contract.localPlayer]->actor.motion;
+        const float scale=1.f-((320.f-camera.span)/320.f)/3.f;
+        const float x=scale*(camera.x-160.f+motion.x)+(320.f-camera.span)*.5f-160.f;
+        const float y=scale*(camera.y+420.f-motion.y)-(camera.span/320.f)*240.f-60.f;
+        eagler::presentation::local_player_cue(contract.localPlayer,x,y-54.f);
+    }
     if(speculative&&!app->rollback_predictable()){
         // A predicted hit may end a round. Restore before committing that edge;
         // it is replayed exactly once when all preceding input is confirmed.
