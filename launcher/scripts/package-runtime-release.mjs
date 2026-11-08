@@ -7,6 +7,7 @@ import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { RUNTIME_RELEASE_SCHEMA, runtimeStem, runtimeFileNames, validateRuntimeReleaseManifest, verifyRuntimeRelease, directoryFeatureAttestation } from "../lib/runtime-release.mjs";
 import { extractGameDataLayout } from "../lib/runtime-data-layout.mjs";
 import { assertRuntimeDataShell } from "../lib/runtime-data-provider.mjs";
+import { withPlayerCueScript } from "../lib/runtime-player-cue.mjs";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const args = Object.fromEntries(process.argv.slice(2).map(value => {
@@ -75,6 +76,12 @@ async function copyVariant(game, build, root, variant) {
 
 async function immutableVariant(game, build, root, variant) {
   const files = await copyVariant(game, build, root, variant);
+  if (variant === "multiplayer") {
+    const entry = `${runtimeStem(game)}.html`, target = resolve(staging, root, entry);
+    const [html, source] = await Promise.all([readFile(target, "utf8"), readFile(resolve(project, "../common/browser/local-player-cue.js"), "utf8")]);
+    await writeFile(target, withPlayerCueScript(html, source));
+    files[entry] = await identity(target);
+  }
   const generation = await writeRuntimeGeneration({ site: staging, root: root + "/",
     source: resolve(staging, root), entry: `${runtimeStem(game)}.html`,
     names: Object.keys(files), expected: files });
