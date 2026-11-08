@@ -45,6 +45,7 @@ import { isSpectatorFrameForRoom } from './spectator-frame.mjs';
 import { COOPERATIVE_SPECTATOR_MARKERS, SpectatorStageRelay } from './spectator-stages.mjs';
 import {SpectatorReplayTransfer} from './spectator-replay.mjs';
 import { th09PlayerStats, acceptTh09MatchStats, bindTh09Duel, reconcileTh09Duel } from './th09-room-stats.mjs';
+import { acceptTh19MatchStats } from './th19-room-stats.mjs';
 import {
   parseMeasuredNetplayTiming,
   resolveAdonisPredictionReserve,
@@ -719,6 +720,10 @@ function chooseRoute(roomId, runId, room, run, route) {
   }
   if (String(room.lobby.startSerial) === String(runId) && room.lobby.phase === 'starting') {
     room.lobby.phase = 'running';
+    if (roomId.startsWith('th19mp-') && run.lobbyClientIds?.length === 2) {
+      // Lobby reports can arrive after the gameplay sockets have closed.
+      room.th19StatsRun = {serial:room.lobby.startSerial,clientIds:[...run.lobbyClientIds],reports:[null,null]};
+    }
     broadcastLobby(room);
   }
   console.log(`ROUTE room=${roomId} run=${runId} mode=${route}`);
@@ -1481,11 +1486,11 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       return;
     }
     if (message.type === 'th09-match') {
-      if (
-        room.lobby.phase === 'running' &&
-        acceptTh09MatchStats(room, room.runs.get(String(message.serial)), clientId, message)
-      )
-        broadcastLobby(room);
+      const changed = room.id.startsWith('th19mp-')
+        ? acceptTh19MatchStats(room, clientId, message)
+        : room.lobby.phase === 'running' &&
+          acceptTh09MatchStats(room, room.runs.get(String(message.serial)), clientId, message);
+      if (changed) broadcastLobby(room);
       return;
     }
 

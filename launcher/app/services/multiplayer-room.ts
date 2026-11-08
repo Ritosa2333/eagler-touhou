@@ -1687,7 +1687,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       )
         return;
       const match = value as Record<string, unknown>;
-      if (state.seat === 1 && match.winner !== 0 && match.winner !== 1) return;
+      if (product === 'th09mp' && state.seat === 1 && match.winner !== 0 && match.winner !== 1) return;
       send({
         type: 'th09-match',
         serial: state.startSerial,

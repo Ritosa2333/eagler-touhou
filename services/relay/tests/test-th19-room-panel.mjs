@@ -38,22 +38,26 @@ try{
   assert.ok(directoryRoom().seats.every(seat => !('name' in seat) && !('machineSign' in seat)),
     'public machine signs are optional; private room names are not a fallback');
   send(host,{type:'th09-match',serial:1,start:0,frames:3600});
+  send(guest,{type:'th09-match',serial:1,start:0,frames:3600});
   await wait(()=>directoryRoom()?.seats[0]?.stats?.minutes===1,'small round progress published');
   assert.deepEqual(directoryRoom().seats.slice(0,2).map(s=>s.stats.wins),[0,0]);
   assert.deepEqual(latest(host).seats.slice(0,2).map(s=>s.stats.wins),[0,0]);
   send(host,{type:'th09-match',serial:1,start:0,frames:7200,winner:0});
   send(host,{type:'th09-match',serial:1,start:0,frames:7200,winner:0});
-  await wait(()=>directoryRoom()?.seats[0]?.stats?.wins===1,'whole match public score');
-  await wait(()=>latest(guest)?.seats[0]?.stats?.wins===1,'guest room score');
-  assert.deepEqual(directoryRoom().seats.slice(0,2).map(s=>s.stats.wins),[1,0]);
+  send(guest,{type:'th09-match',serial:1,start:0,frames:7200});
+  await wait(()=>directoryRoom()?.seats[0]?.stats?.minutes===2,'confirmed progress published');
+  assert.deepEqual(directoryRoom().seats.slice(0,2).map(s=>s.stats.wins),[0,0]);
   for(const s of [first.h,first.g,first.hs,first.gs])s.ws.close();
   await wait(()=>latest(host)?.phase==='lobby','return to lobby');
+  send(guest,{type:'th09-match',serial:1,start:0,frames:7200,winner:0});
+  await wait(()=>[host,guest].every(s=>latest(s)?.seats[0]?.stats?.wins===1),'late final confirms the room score');
+  assert.deepEqual(latest(host).seats.slice(0,2).map(s=>s.stats.wins),[1,0]);
   const second=await start(2);
+  send(guest,{type:'th09-match',serial:2,start:0,frames:3600,winner:1});
   send(host,{type:'th09-match',serial:2,start:0,frames:3600,winner:1});
   await wait(()=>directoryRoom()?.seats[1]?.stats?.wins===1,'next whole match public score');
   assert.deepEqual(directoryRoom().seats.slice(0,2).map(s=>s.stats.wins),[1,1]);
   await wait(()=>latest(host)?.seats[1]?.stats?.wins===1,'next whole match host room score');
-  await wait(()=>latest(host)?.seats[1]?.stats?.wins===1,'next whole match host room score');
   assert.deepEqual(latest(host).seats.slice(0,2).map(s=>s.stats.wins),[1,1]);
-  console.log('TH19 real relay: small round 0:0, whole match 1:0, duplicate ignored, next run 1:1; room and directory PASS');
+  console.log('TH19 real relay: both seats confirm progress, late final settles once, next run 1:1; room and directory PASS');
 }finally{for(const ws of sockets)ws.close();if(child){child.kill();await new Promise(r=>child.once('exit',r));}}

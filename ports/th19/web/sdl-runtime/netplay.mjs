@@ -343,7 +343,7 @@ export class Netplay {
  confirm(frame,left,right,effects){
   if(frame!==this.confirmedFrames)throw Error('录像确认帧不连续');
   ++this.confirmedFrames;
-  if(this.side===0&&!this.spectator&&!this.matchReported&&effects.played){
+  if((this.side===0||this.side===1)&&!this.spectator&&!this.matchReported&&effects.played){
    const winner=effects.winner??-1;
    if(winner>=0||this.confirmedFrames%600===0){
     this.onMatch({start:0,frames:this.confirmedFrames,...(winner>=0?{winner}:{})});
@@ -444,8 +444,6 @@ export class Netplay {
   this.lastTick=performance.now();this.budget=0;return this.reportSpectator();
  }
  complete(){if(this.finished&&this.peerFinished&&!this.completed){
-  const winner=this.core._th19_network_winner?.()??-1;
-  if(this.side===0&&!this.spectator&&!this.matchReported&&winner>=0){this.onMatch({start:0,frames:this.confirmedFrames,winner});this.matchReported=true;}
   this.completed=true;void this.finishRecording(!!this.spectatorEnd?.partial).then(()=>this.onResult());}}
  close(reason=''){
   if(!this.connected)return;
