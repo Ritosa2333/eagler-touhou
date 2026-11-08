@@ -76,6 +76,7 @@ export function buildMultiplayerLobbyRelayUrl(
     if(product === 'th01mp')url.searchParams.set('ballCount',String(ballCount ?? 2));
     if(product === 'th02mp'||product === 'th04mp'){url.searchParams.set('initialSpares',String(initialSpares??3));url.searchParams.set('initialBombs',String(initialBombs??2));}
     if(product === 'th03mp')url.searchParams.set('disableFocus',disableFocus!==false?'1':'0');
+    if(product === 'th02mp')url.searchParams.set('disableFocus',disableFocus===true?'1':'0');
     if(challengeMode!==undefined)url.searchParams.set("challengeMode",challengeMode?"1":"0");
     if(product === "th15mp" && chapterThreshold !== undefined)url.searchParams.set("chapterThreshold",String(chapterThreshold));
     if(product === 'th19mp' && th19Rules !== undefined)url.searchParams.set('th19Rules',JSON.stringify(th19Rules));

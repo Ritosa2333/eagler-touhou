@@ -38,6 +38,7 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
   let module=null,boundary=0,count=0,eventCursor=0,queued=[],buffer=new Uint8Array(CLOCK_BYTES*CLOCK_CHUNK),used=0;
   let stopped=false,ending=false,held=false,wake=null,timer=null,lastWake=0,recording=mode==='record',finished=false,extraClockReads=0,detached=false;
   let runStart=null,runStage=0,runReason='manual',pauseStart=null,skipCursor=0,fastYield=realNow(),sealedHold=false,manualFast=false,waitForInactive=false;
+  let playbackRate=1,seekBoundary=null;
   const skipRanges=[];
   const source=clocks?new DataView(clocks.buffer,clocks.byteOffset,clocks.byteLength):null;
   const started=realNow();
@@ -106,7 +107,7 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
   function isFast(){
     if(held||stopped)return false;
     if(mode==='record')return shouldFastForward();
-    if(manualFast)return true;
+    if(manualFast||seekBoundary!==null||playbackRate===0)return true;
     const ranges=timeline?.skipRanges||[];
     while(ranges[skipCursor]&&boundary>=ranges[skipCursor].to)skipCursor++;
     return !!(ranges[skipCursor]&&boundary>=ranges[skipCursor].from&&boundary<ranges[skipCursor].to);
@@ -131,6 +132,7 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
       // delivering commands that the DOS instance has not consumed yet.
       if(held){if(ending)finish(boundaryMode,'before-input');return;}
       if(detached){const next=wake;wake=null;next();return;}
+      if(mode==='playback'&&seekBoundary!==null&&boundary>=seekBoundary){seekBoundary=null;held=true;return;}
       onBoundary();
       // Seal before input delivery: a queued continue/confirmation belongs to
       // the live game after this run, never to its replay.
@@ -181,7 +183,7 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
             // Consume the unchanged tape during skips. Yield regularly so
             // browser pause/stop controls remain responsive.
             if(isFast()&&realNow()-fastYield<8)queueMicrotask(resume);
-            else{fastYield=realNow();timer=setTimeout(resume,isFast()?0:nonSkippable?Math.max(0,ms)/(clock?.speed||1):0);}
+            else{fastYield=realNow();timer=setTimeout(resume,isFast()?0:nonSkippable?Math.max(0,ms)/((clock?.speed||1)*(mode==='playback'?playbackRate||1:1)):0);}
           });
           lastWake=now;module.last_wakeup=now;module.nativeBurstStarted=realNow();
         });
@@ -206,7 +208,9 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
     dispose(){detached=true;recording=false;ending=false;used=0;queued=[];held=false;stopped=false;if(wake)timer=setTimeout(resume,0);},
     pause(value){if(!value&&sealedHold)return;held=!!value;if(!held&&wake)timer=setTimeout(resume,0);},
     fastForward(value){manualFast=!!value;},
+    seek(value){if(mode!=='playback'||!Number.isSafeInteger(value)||value<=boundary||value>=endBoundary)throw Error('录像位置无效');seekBoundary=value;held=false;if(wake)timer=setTimeout(resume,0);},
+    rate(value){if(mode!=='playback'||![0,.5,1,2,4,8].includes(value))throw Error('录像速度无效');playbackRate=value;},
     get boundary(){return boundaryMode==='clock'?count:boundary;},
-    get status(){return {mode,boundaryMode,boundary,count,stopped,held,recording,finished,extraClockReads,fastForward:isFast()};},
+    get status(){return {mode,boundaryMode,boundary,count,stopped,held,recording,finished,extraClockReads,seekBoundary,rate:playbackRate,fastForward:isFast()};},
   };
 }

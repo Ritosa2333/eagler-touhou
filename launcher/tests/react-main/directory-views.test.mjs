@@ -775,6 +775,14 @@ test('TH03 versus rooms use the duel layout and mark enabled focus as a special 
   assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','directory.regularRules'));
 });
 
+test('TH02 rooms mark disabled focus as a special rule',async()=>{
+  const f=await fixture({selectedProduct:'th02mp',locale:'zh-CN',host:{games:['th02']}}).live([room({product:'th02mp',disableFocus:true})]);
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});
+  assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','room.th02SpecialFocus'));
+  await f.receive([room({product:'th02mp',disableFocus:false})]);await m.update({snapshot:f.service.getSnapshot()});
+  assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','directory.regularRules'));
+});
+
 test('TH03 creation exposes difficulty and defaults to Lunatic',async()=>{
   const f=await fixture({selectedProduct:'th03mp',locale:'zh-CN',host:{games:['th03']}}).live();
   const {m}=await mountDialog(f,'create',{}, {locale:'zh-CN'});

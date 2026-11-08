@@ -71,7 +71,7 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
   return {stop,pause(value){paused=!!value;following=!paused;target=null;last=performance.now();},
     seek(frame){if(!Number.isInteger(frame)||frame<minFrame||frame>rows.length)throw Error('观战位置无效');following=false;paused=true;target=frame;catching=true;
       if(!replica||frame<replica.frame){generation++;replica?.stop();replica=null;void boot();}},
-    live(){following=true;paused=false;target=rows.length;delayed=false;catchSince=0;catching=true;},
+    live(){following=true;paused=false;const delay=['02','04'].includes(game)?Math.round((smoothPresentation?1200:600)/(header?.tickMs||1000/60)):0;target=Math.max(minFrame,rows.length-delay);delayed=false;catchSince=0;catching=true;if(replica&&target<=replica.frame)target=null;},
     get frame(){return replica?.frame??minFrame;},get min(){return minFrame;},get executed(){return replica?.executed??0;},get received(){return rows.length;},get frames(){return frames;},
     get nodes(){return matches.nodes.filter(node=>node.frame>=minFrame-1).map(node=>node.frame<minFrame?{...node,frame:minFrame}:node);},get paused(){return paused;},get following(){return following;},get catching(){return catching;},get seeking(){return target!==null||!replica||!frames;},get target(){return target??(following?rows.length:this.frame);},get ended(){return !!end&&replica?.frame===end.frame;}};
 }

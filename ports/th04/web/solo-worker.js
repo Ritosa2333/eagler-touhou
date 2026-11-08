@@ -210,6 +210,9 @@ async function dispatch(message){
   if(method==='externalReplayFinish'){emulator?.finishReplay();return;}
   if(method==='externalReplayRearm'){emulator?.rearmBrowserRecording(!!args[0]);return;}
   if(method==='externalReplayHold'){transitionHold=!!args[0];emulator?.externalHost?.pause(transitionHold);return;}
+  if(method==='externalReplayStatus')return emulator?.externalHost?.status;
+  if(method==='externalReplaySeek'){emulator?.externalHost?.seek(args[0]);return;}
+  if(method==='externalReplayRate'){emulator?.externalHost?.rate(args[0]);return;}
   if(method==='externalReplayFast'){emulator?.fastForwardReplay(args[0]);return;}
   if(method==='externalReplayDisable'){emulator?.stopBrowserRecording();return;}
   if(method==='externalReplayPause'){const paused=!!args[0];if(paused)emulator?.pause();else emulator?.run();return;}

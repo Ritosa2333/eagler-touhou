@@ -14,8 +14,8 @@ export function stable(value){
 import {sha256} from './sha256.js';
 export const digest=bytes=>sha256(bytes instanceof ArrayBuffer?new Uint8Array(bytes):bytes);
 export function randomId(){return Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');}
-export async function fingerprint(paths){
-  const entries=await Promise.all(paths.map(async path=>{const r=await fetch(new URL(path,import.meta.url),{cache:'no-cache'});if(!r.ok)throw Error('录像资源读取失败：'+path);return [path,await digest(await r.arrayBuffer())];}));
+export async function fingerprint(paths,overrides={}){
+  const entries=await Promise.all(paths.map(async path=>{if(overrides[path])return [path,overrides[path]];const r=await fetch(new URL(path,import.meta.url),{cache:'no-cache'});if(!r.ok)throw Error('录像资源读取失败：'+path);return [path,await digest(await r.arrayBuffer())];}));
   return digest(new TextEncoder().encode(stable(entries)));
 }
 export function validateHeader(h){

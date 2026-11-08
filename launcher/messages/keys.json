@@ -1305,6 +1305,14 @@
       "count"
     ]
   },
+  "room.pc98ChallengeEnabled": {
+    "id": "room_pc98ChallengeEnabled",
+    "params": []
+  },
+  "room.pc98ChallengeHint": {
+    "id": "room_pc98ChallengeHint",
+    "params": []
+  },
   "room.challengeHint": {
     "id": "room_challengeHint",
     "params": []
@@ -8958,5 +8966,13 @@
     "params": [
       "count"
     ]
+  },
+  "room.th02DisableFocus": {
+    "id": "room_th02DisableFocus",
+    "params": []
+  },
+  "room.th02SpecialFocus": {
+    "id": "room_th02SpecialFocus",
+    "params": []
   }
 }

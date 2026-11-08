@@ -423,7 +423,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       visibility: room.visibility || 'public',
       disableCheatMovement: !!room.disableCheatMovement,
       ...(product === 'th09mp' ? {disableLocalChargePriority:!!room.disableLocalChargePriority} : {}),
-      ...(product === 'th03mp' ? {disableFocus:room.disableFocus !== false} : {}),
+      ...(product === 'th03mp' ? {disableFocus:room.disableFocus !== false} : product === 'th02mp' ? {disableFocus:room.disableFocus === true} : {}),
       ...(product === 'th01mp' ? {ballCount:room.ballCount ?? 2} : {}),
       ...(product === "th15mp"
         ? {
@@ -459,7 +459,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ...(product==='th19mp'?{th19Rules:[...(normalized.th19Rules??TH19_VERSUS_RULES)]}:{}),
       ...((product==='th05mp'||isPc98StockProduct(product))?{initialSpares:normalized.initialSpares??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).spares,initialBombs:normalized.initialBombs??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).bombs}:{}),
       ...(product === 'th09mp' ? {disableLocalChargePriority:normalized.disableLocalChargePriority ?? false} : {}),
-      ...(product === 'th03mp' ? {disableFocus:normalized.disableFocus ?? true} : {}),
+      ...(product === 'th03mp' ? {disableFocus:normalized.disableFocus ?? true} : product === 'th02mp' ? {disableFocus:normalized.disableFocus === true} : {}),
       ...(product === 'th01mp' ? {ballCount:normalized.ballCount ?? 2} : {}),
       prankMode: false,
       inputDelayAuto: normalized.inputDelayAuto ?? false,
@@ -774,7 +774,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       visibility: saved?.room.visibility ?? (invite.v === 'private' ? 'private' : 'public'),
       disableCheatMovement: saved?.room.disableCheatMovement ?? invite.c === true,
       ...(product === 'th09mp' ? {disableLocalChargePriority:saved?.room.disableLocalChargePriority ?? false} : {}),
-      ...(product === 'th03mp' ? {disableFocus:saved?.room.disableFocus ?? true} : {}),
+      ...(product === 'th03mp' ? {disableFocus:saved?.room.disableFocus ?? true} : product === 'th02mp' ? {disableFocus:saved?.room.disableFocus === true} : {}),
       ...(product === 'th01mp' ? {ballCount:saved?.room.ballCount ?? 2} : {}),
       chapterThreshold: saved?.room.chapterThreshold,
       ...(product==='th19mp'?{th19Rules:[...(saved?.room.th19Rules??TH19_VERSUS_RULES)]}:{}),
@@ -812,7 +812,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       code,
       playerCount: policy()!.playerCounts[0],
       difficulty: nextProduct === 'th03mp' ? 3 : 1,
-      ...(nextProduct === 'th03mp' ? {disableFocus:true} : {}),
+      ...(nextProduct === 'th03mp' ? {disableFocus:true} : nextProduct === 'th02mp' ? {disableFocus:false} : {}),
       created,
       seats: null,
       synced: false,
@@ -1028,7 +1028,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       return;
     if(patch.disableLocalChargePriority !== undefined && product !== 'th09mp')return;
     if(patch.ballCount !== undefined && (product !== 'th01mp' || ![1,2,3,4,6,8].includes(patch.ballCount)))return;
-    if(patch.disableFocus !== undefined && (product !== 'th03mp'||typeof patch.disableFocus!=='boolean'))return;
+    if(patch.disableFocus !== undefined && ((product !== 'th02mp' && product !== 'th03mp')||typeof patch.disableFocus!=='boolean'))return;
     if(patch.th19Rules!==undefined&&(product!=='th19mp'||room.phase!=='lobby'||!validTh19VersusRules(patch.th19Rules)))return;
     if((patch.initialSpares!==undefined||patch.initialBombs!==undefined)&&(room.phase!=='lobby'||(isPc98StockProduct(product)?(!validPc98InitialSpares(patch.initialSpares??room.initialSpares??3)||!validPc98InitialBombs(patch.initialBombs??room.initialBombs??2)):(product!=='th05mp'||!validTh05InitialSpares(patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares)||!validTh05InitialBombs(patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs)))))return;
     if (
@@ -1076,7 +1076,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       visibility: patch.visibility ?? room.visibility ?? 'public',
       disableCheatMovement: patch.disableCheatMovement ?? !!room.disableCheatMovement,
       ...(product === 'th09mp' ? {disableLocalChargePriority:patch.disableLocalChargePriority ?? !!room.disableLocalChargePriority} : {}),
-      ...(product === 'th03mp' ? {disableFocus:patch.disableFocus ?? (room.disableFocus !== false)} : {}),
+      ...(product === 'th03mp' ? {disableFocus:patch.disableFocus ?? (room.disableFocus !== false)} : product === 'th02mp' ? {disableFocus:patch.disableFocus ?? (room.disableFocus === true)} : {}),
       ...(product === 'th01mp' ? {ballCount:patch.ballCount ?? room.ballCount ?? 2} : {}),
       challengeMode: patch.challengeMode ?? !!room.challengeMode,
       prankMode: false,
@@ -1232,7 +1232,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         spectatorId: spectator ? clientId : '',
         spectatorCount: Math.max(0, Number(room.spectatorCount) || 0),
         spectatorTimeline: room.spectatorTimeline === true,
-        ...(product === 'th03mp' ? {disableFocus:room.disableFocus!==false} : {}),
+        ...(product === 'th03mp' ? {disableFocus:room.disableFocus!==false} : product === 'th02mp' ? {disableFocus:room.disableFocus===true} : {}),
         ...(product === 'th01mp' ? {ballCount:room.ballCount ?? 2} : {}),
         ...(product === 'th09mp' ? {
           disableLocalChargePriority:room.disableLocalChargePriority === true,

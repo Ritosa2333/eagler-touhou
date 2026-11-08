@@ -322,7 +322,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       seats: Object.freeze(seats),
       disableCheatMovement: row.disableCheatMovement === true,
       challengeMode: row.challengeMode === true,
-      ...(row.product === 'th03mp' ? {disableFocus: row.disableFocus !== false} : {}),
+      ...(row.product === 'th03mp' ? {disableFocus: row.disableFocus !== false} : row.product === 'th02mp' ? {disableFocus: row.disableFocus === true} : {}),
       ...(row.product === 'th01mp' ? {ballCount:[1,2,3,4,6,8].includes(row.ballCount as number) ? row.ballCount as number : 2} : {}),
       players: seats.filter(Boolean).length,
       ready: bounded(row.ready, capacity),

@@ -319,6 +319,8 @@
   "room_th15ChapterThreshold": "奖残所需得分",
   "room_th15ChapterSettingsHint": "（可在“房间/难度设置”处更改）",
   "room_th15ChapterGraze": "折合100%击破率的擦弹数：{count}",
+  "room_pc98ChallengeEnabled": "挑战模式",
+  "room_pc98ChallengeHint": "无限残机，不能使用 Bomb；每人中弹 +1，获得 Bomb、1UP 或分数奖残 −1。",
   "room_challengeHint": "无法使用 Bomb，原先的残机个数改为死亡次数",
   "room_modeOn": "开启",
   "room_modeOff": "关闭",
@@ -2122,5 +2124,7 @@
   "room_th03DisableFocus": "禁用低速",
   "room_th03SpecialFocus": "启用低速",
   "room_th01BallCount": "球的数量",
-  "room_th01SpecialBalls": "{count} 球"
+  "room_th01SpecialBalls": "{count} 球",
+  "room_th02DisableFocus": "禁用低速",
+  "room_th02SpecialFocus": "禁用低速"
 }

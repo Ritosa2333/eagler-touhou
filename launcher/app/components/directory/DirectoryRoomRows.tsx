@@ -128,8 +128,8 @@ function RoomRow({
         </div>
       </div>
       <div className="lobby-room-rules">
-        {!room.disableCheatMovement && !room.challengeMode && !(room.product === 'th03mp' && room.disableFocus === false) && (room.ballCount ?? 2) === 2 ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
-          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : '', room.product === 'th03mp' && room.disableFocus === false ? t('room.th03SpecialFocus') : '', (room.ballCount ?? 2) !== 2 ? t('room.th01SpecialBalls',{count:room.ballCount ?? 2}) : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
+        {!room.disableCheatMovement && !room.challengeMode && !(room.product === 'th03mp' && room.disableFocus === false) && !(room.product === 'th02mp' && room.disableFocus === true) && (room.ballCount ?? 2) === 2 ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
+          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t(room.product==='th02mp'||room.product==='th04mp'?'room.pc98ChallengeEnabled':'room.challengeMode') : '', room.product === 'th03mp' && room.disableFocus === false ? t('room.th03SpecialFocus') : '', room.product === 'th02mp' && room.disableFocus === true ? t('room.th02SpecialFocus') : '', (room.ballCount ?? 2) !== 2 ? t('room.th01SpecialBalls',{count:room.ballCount ?? 2}) : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
       </div>
       <div className="lobby-room-status">
         <span className="lobby-room-state" data-state={state}>{t(`lobby.${state}`)}</span>

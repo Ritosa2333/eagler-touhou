@@ -37,6 +37,7 @@ for(const game of games){
     if(process.env.PC98_TEST_CHECKPOINT==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?"\nexport function testCheckpointCount(){return globalThis.testNativeCheckpointCount||0;}\n":"\nexport function testCheckpointCount(){return emulator.call('testCheckpointCount');}\n")]);
     if(process.env.PC98_TEST_CHECKPOINT==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')","if(method==='testCheckpointCount')return globalThis.testNativeCheckpointCount||0;if(method==='soloFault')"));
     if(path==='/runtime/managed-solo.mjs')contents=Buffer.from(contents.toString().replace('async function returnToTitle(save,restarting=false,current=emulator,practiceConfig=null){','async function returnToTitle(save,restarting=false,current=emulator,practiceConfig=null){globalThis.testHostTransitions=(globalThis.testHostTransitions||0)+1;'));
+    if(process.env.PC98_TEST_LEGACY==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from('\nexport function testReplaySources(){return sources;}\n')]);
     if(path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from('\nlet previousAttempt;export function testMarkAttempt(){previousAttempt=emulator;} export function testAttemptSame(){return !!emulator&&emulator===previousAttempt;}\n')]);
     if(process.env.PC98_PRACTICE_PERF==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from('\nexport function testDisableStandby(){retryBlocked=true;discardRetry();}\n'+(game==='th04'?"export function testDense(){return emulator.call('practiceTestDense');} export function testPerfProbe(){return emulator.call('practicePerfProbe');}\n":"export function testDense(){globalThis.testDenseMode=true;} export function testPerfProbe(){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8;let bullets=0;for(let i=0;i<150;i++)if(h[d+0x2c18+i*20]===1)bullets++;return {bullets,slowdown:h[d+0x2bfd]};}\n"))]);
     if(process.env.PC98_PRACTICE_PERF==='1'&&game==='th04'&&path==='/runtime/solo-worker.js'){
@@ -380,9 +381,38 @@ for(const game of games){
       await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.finishRecording());
       await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().recordingReady,{timeout:30000});
       const path=await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.saveRecording()); assert(path);
-      await frame.evaluate(async(path)=>{const api=(await import('./managed-solo.mjs')).managedAPI;api.stop();await api.playback({action:'open',path});},path);
+      if(process.env.PC98_TEST_LEGACY==='1')await frame.evaluate(async({path,game})=>{
+        const store=globalThis.__eaglerPC98Files,bytes=store.memory.get(path),view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),size=view.getUint32(8,true),header=JSON.parse(new TextDecoder().decode(bytes.subarray(12,12+size)));
+        const overrides={'../practice-attempt.js':game==='th02'?'ac1563453bc96f4dc01b00f3f5f1f07f6b6323e178fb864ee9507e5c834ec2cd':'091e33204a297f396901c0b13d1da7f6686b4811dd7d59139f2d3e6bcb0616d9','./external-host.js':'a8ccea815c47f0ab5ae478f2af4e7a9365a22d12bcf9337fe5e6faa7610a4bbf',...(game==='th04'?{'../solo-worker.js':'c606d752e295310d381628ec109960c1f9661b7b9dbdbf352fd46c176b60d48e'}:{})};
+        header.identity=await (await import('./replay/tape.js')).fingerprint((await import('./managed-solo.mjs')).testReplaySources(),overrides);
+        const encoded=new TextEncoder().encode(JSON.stringify(header)),prefix=bytes.slice(0,12);new DataView(prefix.buffer).setUint32(8,encoded.length,true);
+        await store.write(path,new Uint8Array(await new Blob([prefix,encoded,bytes.subarray(12+size)]).arrayBuffer()));
+      },{path,game});
+      await page.evaluate(()=>rpc('network-cancel'));
+      await page.evaluate(()=>rpc('configure',{music:'none',language:'ja',options:{replayViewer:true},resources:[],runtimeResources:[],sharedResources:[]}));
+      await page.evaluate(()=>rpc('launch',{launchSerial:2}));
+      const info=await page.evaluate(path=>rpc('playback',{action:'inspect',path}),path);assert.equal(info.description.stages[0].id,0);
+      await page.evaluate(path=>rpc('playback',{action:'open',path}),path);
+      await page.evaluate(()=>rpc('playback',{action:'pause'}));
+      const pausedFrame=await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.health().gameFrame);
+      await new Promise(resolve=>setTimeout(resolve,500));
+      assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.health().gameFrame),pausedFrame,'paused replay must not advance');
+      await page.evaluate(()=>rpc('playback',{action:'rate',value:2}));
+      await page.evaluate(()=>rpc('playback',{action:'rate',value:1}));
+      const total=await page.evaluate(()=>events.filter(e=>e.event==='runtime-info'&&e.playback?.total>0).at(-1).playback.total);
+      const target=Math.floor(total/2);await page.evaluate(value=>rpc('playback',{action:'seek',value}),target);
+      await page.waitForFunction(target=>events.some(e=>e.event==='runtime-info'&&e.playback?.paused&&e.playback?.frame>=target&&!e.playback.seeking),{timeout:120000},target);
+      await page.evaluate(()=>rpc('playback',{action:'seek',value:0}));
+      await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.playback({action:'play'}));
       await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.health().replayResult!==null,{timeout:180000});
-      assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.health().replayResult),true,'same-instance transition must replay deterministically');console.log(game,'native practice transition and replay OK');
+      assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.health().replayResult),true,'same-instance transition must replay deterministically');
+      await frame.evaluate(async()=>{const api=(await import('./managed-solo.mjs')).managedAPI;await api.playback({action:'seek',value:0});await api.playback({action:'pause'});});
+      assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.health().replayResult),null,'restart must open a fresh playback');
+      await frame.evaluate(async(path)=>{const api=(await import('./managed-solo.mjs')).managedAPI;await api.playback({action:'open',path});await api.playback({action:'pause'});},path);
+      const moved=path.replace(/(\.th0[24]r)$/, '-moved$1');
+      await page.evaluate(async({path,moved})=>{const file=await rpc('read',{path});await rpc('write',{path:moved,bytes:file.bytes});await rpc('playback',{action:'relocate',path,target:moved});await rpc('remove',{path:moved});},{path,moved});
+      assert.equal(await page.evaluate(moved=>events.some(event=>event.event==='runtime-info'&&event.playback?.path===moved),moved),true,'relocation must publish the new replay path');
+      console.log(game,'native practice transition and replay OK');
       continue;
     }
     for(let restartCount=0;restartCount<(full?2:1);restartCount++){

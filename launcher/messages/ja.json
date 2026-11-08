@@ -319,6 +319,8 @@
   "room_th15ChapterThreshold": "残機の欠片に必要なチャプタースコア",
   "room_th15ChapterSettingsHint": "（「部屋／難易度設定」で変更できます）",
   "room_th15ChapterGraze": "撃破率100%換算のグレイズ数：{count}",
+  "room_pc98ChallengeEnabled": "チャレンジモード",
+  "room_pc98ChallengeHint": "残機無限、ボム使用不可。各プレイヤーは被弾で +1、ボム・1UP・スコアエクステンド獲得で −1。",
   "room_challengeHint": "ボムは使用できません。残機表示は死亡回数に変わります。",
   "room_modeOn": "オン",
   "room_modeOff": "オフ",
@@ -2122,5 +2124,7 @@
   "room_th03DisableFocus": "低速移動を禁止",
   "room_th03SpecialFocus": "低速移動を有効",
   "room_th01BallCount": "玉の数",
-  "room_th01SpecialBalls": "{count} 玉"
+  "room_th01SpecialBalls": "{count} 玉",
+  "room_th02DisableFocus": "低速移動を無効",
+  "room_th02SpecialFocus": "低速移動なし"
 }

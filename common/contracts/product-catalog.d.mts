@@ -54,7 +54,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
         replay:Readonly<{prefix:'th02';extensions:readonly string[];naming:'filename'}>;
         multiplayerRuntime:'./runtime/th02/multiplayer/th02.html';
-        multiplayer:Readonly<{titleKey:'game.title.th02mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th02PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:false;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:false;runtimeTiming:true}>}>;
+        multiplayer:Readonly<{titleKey:'game.title.th02mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th02PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:true;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:false;runtimeTiming:true}>}>;
         features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
     }>;
     th03: Readonly<{
@@ -82,7 +82,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
         replay:Readonly<{prefix:'th04';extensions:readonly string[];naming:'filename'}>;
         multiplayerRuntime:'./runtime/th04/multiplayer/th04.html';
-        multiplayer:Readonly<{titleKey:'game.title.th04mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th04PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:false;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:false;runtimeTiming:true}>}>;
+        multiplayer:Readonly<{titleKey:'game.title.th04mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th04PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:true;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:false;runtimeTiming:true}>}>;
         features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
     }>;
     th05: Readonly<{

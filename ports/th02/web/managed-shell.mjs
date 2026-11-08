@@ -32,7 +32,7 @@ globalThis.__eaglerPC98FileCommands=async message=>{
   if(message.command==='list')return {files:[...store.memory].map(([path,bytes])=>({path,size:bytes.byteLength}))};
   const path=userPath(message.path);
   if(message.command==='read'){const bytes=store.memory.get(path);if(!bytes)throw Error('文件不存在');return {bytes:Array.from(bytes)};}
-  if(launched)throw Error('请退出游戏后管理文件');
+  if(launched&&!(options.replayViewer&&path.startsWith('replay/')))throw Error('请退出游戏后管理文件');
   if(message.command==='remove'){await store.remove(path);return {};}
   if(message.command==='write'){
     if(!Array.isArray(message.bytes)||message.bytes.some(n=>!Number.isInteger(n)||n<0||n>255))throw Error('用户文件字节无效');
@@ -56,7 +56,7 @@ async function command(message){
       if(message.options!==undefined&&(!message.options||typeof message.options!=='object'||Array.isArray(message.options)))throw Error('运行配置无效');
       const next={...message.options};
       if(next.touchSensitivity!==undefined&&(!Number.isFinite(next.touchSensitivity)||next.touchSensitivity<100||next.touchSensitivity>300))throw Error('触控灵敏度无效');
-      if(next.replayViewer)throw Error('此接入预览尚未启用多人观战与录像工作台');
+      if(multiplayer&&next.replayViewer)throw Error('此接入预览尚未启用多人观战与录像工作台');
       if(next.musicSource!==undefined&&!['original','akyu'].includes(next.musicSource))throw Error('音乐音源无效');
       setManagedBgmVersion(next.musicSource??'original');
       const nextLanguage=message.language??'ja';if(nextLanguage!==language)preview?.stop();
@@ -76,9 +76,9 @@ async function command(message){
       }
       preview?.stop();launchSerial=message.launchSerial??0;firstFrame=false;launched=true;
       api=multiplayer&&options.netplaySpectator?(await import('./pc98-managed-spectator.mjs')).createManagedSpectator('02',emit):playerApi;
-      try{await api.start({options,music,language});}catch(error){launched=false;api.stop();throw error;}
+      try{await api.start({options,music,language});}catch(error){launched=false;await api.stop();throw error;}
       emit({event:'runtime-info',renderer:'DOSBox-X / PC-98',architecture:'wasm',version:'pc98-managed-preview/1'});return {};
-    case 'network-cancel':await api.files({command:'sync'});input.clear();preview?.stop();api.stop();launched=false;emit({event:'exit',code:0});return {};
+    case 'network-cancel':await api.files({command:'sync'});input.clear();preview?.stop();await api.stop();launched=false;emit({event:'exit',code:0});return {};
     case 'list':case 'read':case 'write':case 'remove':case 'sync':return api.files(message);
     case 'playback':return api.playback(message);
     case 'spectator-playback':if(!options.netplaySpectator)throw Error('当前不是观战模式');return api.playback(message);

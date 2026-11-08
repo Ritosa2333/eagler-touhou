@@ -1,0 +1,19 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {createPc98SpectatorPublisher} from '../browser/pc98-spectator-publisher.mjs';
+import {Pc98SpectatorRelay} from '../../services/relay/src/pc98-spectator.mjs';
+
+test('TH04 publishes stage checkpoints and relay retains the latest stage', async()=>{
+  const relay=new Pc98SpectatorRelay(2,{matchInitializers:true}),sent=[];
+  const socket={readyState:1,bufferedAmount:0,send(packet){sent.push(packet[6]);relay.accept(packet.subarray(1));}};
+  const point=(frame,text,stage)=>{const bytes=Buffer.from(text);return {frame,sha:createHash('sha256').update(bytes).digest('hex'),data:bytes.toString('base64'),scene:stage===null?null:{kind:'stage',stage}};};
+  const points=[point(0,'base',null),point(2,'stage one',0),point(4,'stage two',1)];
+  const tape={length:6,end:null,slice:(a,b)=>Array.from({length:b-a},()=>({}))};
+  const publisher=createPc98SpectatorPublisher({game:'04',players:2},tape,()=>socket,assert.fail,()=>points);
+  try{const until=Date.now()+3000;while(sent.filter(n=>n===6).length<2&&Date.now()<until)await new Promise(r=>setTimeout(r,30));
+    assert.equal(sent.filter(n=>n===6).length,2);assert.equal(relay.lastPoint,4);
+    const init=relay.history.find(packet=>packet[5]===6);assert.equal(init.readUInt32LE(12),4);
+    assert(relay.history.some(packet=>packet[5]===4&&packet.readUInt32LE(8)===0));
+  }finally{publisher.stop();}
+});

@@ -391,7 +391,7 @@ function getRoom(id, socket) {
         visibility: 'public',
         disableCheatMovement: false,
         ...(id.startsWith('th09mp-') ? {disableLocalChargePriority:false} : {}),
-        ...(id.startsWith('th03mp-') ? {disableFocus:true} : {}),
+        ...(id.startsWith('th03mp-') ? {disableFocus:true} : id.startsWith('th02mp-') ? {disableFocus:false} : {}),
         ...(id.startsWith('th01mp-') ? {ballCount:2} : {}),
         ...(pc98StockRoom(id)?{initialSpares:PC98_INITIAL_STOCK.spares,initialBombs:PC98_INITIAL_STOCK.bombs}:{}),
         ...(id.startsWith("th15mp-")
@@ -888,7 +888,7 @@ function lobbySnapshot(room) {
     visibility: room.lobby.visibility,
     disableCheatMovement: room.lobby.disableCheatMovement,
     ...(room.id.startsWith('th09mp-') ? {disableLocalChargePriority:room.lobby.disableLocalChargePriority} : {}),
-    ...(room.id.startsWith('th03mp-') ? {disableFocus:room.lobby.disableFocus} : {}),
+    ...((room.id.startsWith('th02mp-') || room.id.startsWith('th03mp-')) ? {disableFocus:room.lobby.disableFocus} : {}),
     ...(room.id.startsWith('th01mp-') ? {ballCount:room.lobby.ballCount} : {}),
     ...(pc98StockRoom(room.id)?{initialSpares:room.lobby.initialSpares,initialBombs:room.lobby.initialBombs}:{}),
     ...(room.id.startsWith('th19mp-')?{th19Rules:[...room.lobby.th19Rules]}:{}),
@@ -1043,6 +1043,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     room.lobby.disableCheatMovement = initialPolicy?.disableCheatMovement === true;
     if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=initialPolicy?.disableLocalChargePriority===true;
     if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=initialPolicy?.disableFocus!==false;
+    if(room.id.startsWith('th02mp-'))room.lobby.disableFocus=initialPolicy?.disableFocus===true;
     if(room.id.startsWith('th01mp-') && [1,2,3,4,6,8].includes(initialPolicy?.ballCount))room.lobby.ballCount=initialPolicy.ballCount;
     if(pc98StockRoom(room.id)&&validPc98InitialSpares(initialPolicy?.initialSpares)&&validPc98InitialBombs(initialPolicy?.initialBombs)){room.lobby.initialSpares=initialPolicy.initialSpares;room.lobby.initialBombs=initialPolicy.initialBombs;}
     const modesSupported = room.multiplayer?.gameplay === 'cooperative' && room.multiplayer.challengeMode !== false;
@@ -1548,7 +1549,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         sendLobby(socket,{type:'error',error:'invalid local charge priority setting'});return;
       }
       const disableLocalChargePriority=message.disableLocalChargePriority ?? room.lobby.disableLocalChargePriority;
-      if(message.disableFocus!==undefined&&(!room.id.startsWith('th03mp-')||typeof message.disableFocus!=='boolean')){sendLobby(socket,{type:'error',error:'invalid focus rule'});return;}
+      if(message.disableFocus!==undefined&&(!(room.id.startsWith('th02mp-')||room.id.startsWith('th03mp-'))||typeof message.disableFocus!=='boolean')){sendLobby(socket,{type:'error',error:'invalid focus rule'});return;}
       const disableFocus=message.disableFocus??room.lobby.disableFocus;
       if(message.ballCount!==undefined && (!room.id.startsWith('th01mp-') || ![1,2,3,4,6,8].includes(message.ballCount))){sendLobby(socket,{type:'error',error:'invalid ball count'});return;}
       const ballCount=message.ballCount??room.lobby.ballCount;
@@ -1580,7 +1581,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         if(room.id.startsWith('th19mp-'))room.lobby.th19Rules=[...th19Rules];
         room.lobby.disableCheatMovement = disableCheatMovement;
         if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=disableLocalChargePriority;
-        if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=disableFocus;
+        if(room.id.startsWith('th02mp-')||room.id.startsWith('th03mp-'))room.lobby.disableFocus=disableFocus;
         if(room.id.startsWith('th01mp-'))room.lobby.ballCount=ballCount;
         if(pc98StockRoom(room.id)){room.lobby.initialSpares=initialSpares;room.lobby.initialBombs=initialBombs;}
         room.lobby.challengeMode = challengeMode;
@@ -1792,6 +1793,7 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
     run.playerCount !== playerCount ||
     !run.admittedSpectators.has(spectatorId)
   ) {
+    console.log(`SPECTATOR DENY room=${roomId} run=${runId} historyUnavailable=${!!run?.spectatorHistoryUnavailable} admitted=${!!run?.admittedSpectators.has(spectatorId)} stream=${!!run?.spectatorPc98} admissionOpen=${!!run?.spectatorAdmissionOpen} ended=${!!run?.spectatorPc98?.ended} pending=${run?.spectatorPc98?.pendingMatch} stopped=${!!run?.spectatorStopped}`);
     socket.close(1008, 'spectator was not admitted within the join window');
     return;
   }
@@ -1991,6 +1993,14 @@ server.on('connection', (socket, request) => {
     socket.close(1008, 'runtime version mismatch');
     return;
   }
+  // A spectator who stayed in the lobby can join after the initial grace
+  // window once the confirmed PC-98 stream is available.
+  const lateSpectator=url.searchParams.get('spectator');
+  if(lateSpectator&&existingRun?.spectatorPc98&&existingRun.spectatorAdmissionOpen&&
+    existingRoom.lobby.spectators.has(lateSpectator)&&existingRoom.lobbyClients.has(lateSpectator)&&
+    memberId&&roomDirectory.memberIdFor(roomId,lateSpectator)===memberId){
+    existingRun.admittedSpectators.add(lateSpectator);existingRun.memberIds.set(lateSpectator,memberId);
+  }
   if (
     existingRun?.memberIds ||
     existingRoom?.lobbyClients.size ||
@@ -2127,7 +2137,7 @@ server.on('connection', (socket, request) => {
       const payload = incoming.subarray(1);
       if(isPc98SpectatorRoom(roomId)&&payload.length>=4&&payload[0]===0x50&&payload[1]===0x39&&payload[2]===0x38&&payload[3]===0x53){
         try{
-          const first=!run.spectatorPc98,stream=run.spectatorPc98||new Pc98SpectatorRelay(run.playerCount,{matchInitializers:roomId.startsWith('th03mp-')}),kind=stream.accept(payload);
+          const first=!run.spectatorPc98,stream=run.spectatorPc98||new Pc98SpectatorRelay(run.playerCount,{matchInitializers:/^th0[234]mp-/.test(roomId)}),kind=stream.accept(payload);
           if(run.spectatorGraceTimer){clearTimeout(run.spectatorGraceTimer);run.spectatorGraceTimer=null;}
           run.spectatorPc98=stream;run.spectatorTimeline=true;run.spectatorAdmissionOpen=!stream.ended&&!stream.pendingMatch;run.spectatorComplete=stream.ended;
           run.spectatorHistory=stream.history;run.spectatorHistoryBytes=stream.bytes;run.onSpectatorAvailabilityChange=()=>roomDirectory.changed();

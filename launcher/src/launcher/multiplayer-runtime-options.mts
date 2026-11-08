@@ -115,7 +115,7 @@ export function buildMultiplayerRuntimeOptions(
   if(input.disableLocalChargePriority !== undefined && (roomProduct !== 'th09mp' || typeof input.disableLocalChargePriority !== 'boolean'))
     throw new Error('蓄力进度参数无效');
   if(input.ballCount!==undefined && (roomProduct!=='th01mp'||![1,2,3,4,6,8].includes(input.ballCount)))throw new Error('TH01 ball count is invalid');
-  if(input.disableFocus!==undefined&&(roomProduct!=='th03mp'||typeof input.disableFocus!=='boolean'))throw new Error('低速规则参数无效');
+  if(input.disableFocus!==undefined&&((roomProduct!=='th02mp'&&roomProduct!=='th03mp')||typeof input.disableFocus!=='boolean'))throw new Error('低速规则参数无效');
   if (
     input.chapterThreshold !== undefined &&
     (roomProduct !== "th15mp" ||
@@ -223,7 +223,7 @@ export function buildMultiplayerRuntimeOptions(
     ...(input.challengeMode !== undefined ? { netplayChallengeMode: input.challengeMode } : {}),
     ...(roomProduct === 'th09mp' ? {netplayDisableLocalChargePriority:input.disableLocalChargePriority===true} : {}),
     ...(roomProduct === 'th01mp' ? {netplayBallCount:input.ballCount ?? 2} : {}),
-    ...(roomProduct === 'th03mp' ? {netplayDisableFocus:input.disableFocus!==false} : {}),
+    ...(roomProduct === 'th03mp' ? {netplayDisableFocus:input.disableFocus!==false} : roomProduct === 'th02mp' ? {netplayDisableFocus:input.disableFocus===true} : {}),
     netplayUrl: url.href,
     netplayPlayer: player,
     netplayPlayerCount: playerCount,

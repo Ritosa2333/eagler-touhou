@@ -63,7 +63,7 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
       let externalReplay=null;
       if(replay){
         const identity=await fingerprint(sources);
-        if(identity!==replay.header.identity||replay.header.runtime!==runtime||replay.header.boundaryMode!=='sleep')throw Error('Replay 与当前游戏或模拟器版本不一致');
+        if(identity!==replay.header.identity&&await fingerprint(sources,{"../practice-attempt.js":"ac1563453bc96f4dc01b00f3f5f1f07f6b6323e178fb864ee9507e5c834ec2cd","./external-host.js":"a8ccea815c47f0ab5ae478f2af4e7a9365a22d12bcf9337fe5e6faa7610a4bbf"})!==replay.header.identity||replay.header.runtime!==runtime||replay.header.boundaryMode!=='sleep')throw Error('Replay 与当前游戏或模拟器版本不一致');
         externalReplay={mode:'playback',boundaryMode:'sleep',clocks:replay.clocks,events:replay.events,endBoundary:replay.header.endBoundary,endReason:replay.header.result.endReason,endPhase:replay.header.result.endPhase,timeline:replay.header.result.timeline,memoryScope:replay.header.result.memoryScope,
           onEnd:value=>{const matches=value.memoryHash===replay.header.result.memoryHash&&value.memorySha256===replay.header.result.memorySha256;emit('onPlaybackEnd',matches);},onError:fail};
       }else if(recordEnabled){

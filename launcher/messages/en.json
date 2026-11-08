@@ -319,6 +319,8 @@
   "room_th15ChapterThreshold": "Chapter score required for a life fragment",
   "room_th15ChapterSettingsHint": "(Change in Room / Difficulty settings)",
   "room_th15ChapterGraze": "Equivalent Graze count at 100% defeat rate: {count}",
+  "room_pc98ChallengeEnabled": "Challenge mode",
+  "room_pc98ChallengeHint": "Unlimited lives; bombs disabled. Each player gains 1 on a hit and loses 1 for a bomb, 1UP, or score extend.",
   "room_challengeHint": "Bombs are disabled. The lives counter becomes a death counter.",
   "room_modeOn": "On",
   "room_modeOff": "Off",
@@ -2122,5 +2124,7 @@
   "room_th03DisableFocus": "Disable focus movement",
   "room_th03SpecialFocus": "Focus enabled",
   "room_th01BallCount": "Number of balls",
-  "room_th01SpecialBalls": "{count} balls"
+  "room_th01SpecialBalls": "{count} balls",
+  "room_th02DisableFocus": "Disable focus",
+  "room_th02SpecialFocus": "No focus"
 }

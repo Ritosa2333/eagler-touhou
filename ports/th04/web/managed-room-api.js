@@ -23,7 +23,8 @@ export const managedAPI={
     if(!Number.isInteger(difficulty)||difficulty<0||difficulty>4)throw Error('难度无效');
     const spares=options.netplayInitialSpares??3,bombs=options.netplayInitialBombs??2;
     if(!Number.isInteger(spares)||spares<0||spares>5||!Number.isInteger(bombs)||bombs<0||bombs>2)throw Error('初始残机或 Bomb 无效');
-    const settings={players:count,difficulty,lives:spares+1,bombs,language:language==='ja'?'jp':'cn',rollback:options.netplayAdonisMode===0,
+    const challengeMode=options.netplayChallengeMode===true;
+    const settings={players:count,difficulty,lives:challengeMode?2:spares+1,bombs:challengeMode?0:bombs,...(challengeMode?{challengeMode:true}:{}),language:language==='ja'?'jp':'cn',rollback:options.netplayAdonisMode===0,
       p1:loadouts[0].character*2+loadouts[0].shot,p2:loadouts[1].character*2+loadouts[1].shot,p3:loadouts[2]?loadouts[2].character*2+loadouts[2].shot:0};
     session={role:roles[local],room:url.searchParams.get('room'),token:'launcher-owned'};
     state={phase:'loading',generation:[session.room,runId,url.searchParams.get('runtimeGeneration')].join(':'),runId,revision:1,settings,
@@ -34,7 +35,7 @@ export const managedAPI={
   health(){const render=runtime?.renderInfo()??{};
     Object.assign(globalThis,{__eaglerNetplayLanActive:running,__eaglerNetplayLanFrame:queue?.frame??0,__eaglerNetplayLanConfirmed:queue?.confirmed??0,
       __eaglerNetplayLanRollback:rollbackCount,__eaglerNetplayLanResimulated:resimulated,__eaglerNetplayInputDelayFrames:queue?.active?queue.inputDelay:queue?.lockstepDelay});
-    return {gameFrame:runtime?.snapshot()?.gameFrame,frames:render.pageDrawn??render.drawn??0,frameMs:averageCost,audio:{state:running?'running':'loading'},music:runtime?.faultReport()?.music,running,stopped,frame:queue?.frame??0,confirmed:queue?.confirmed??0};},
+    return {gameFrame:runtime?.snapshot()?.gameFrame,frames:render.pageDrawn??render.drawn??0,frameMs:averageCost,audio:{state:running?'running':'loading'},music:runtime?.faultReport()?.music,running,stopped,frame:queue?.frame??0,confirmed:queue?.confirmed??0,challenge:runtime?.faultReport()?.challenge??null};},
   snapshot(){return runtime?.snapshot();},
   replayProof(){return runtime?.replayProof();},
   stop(){if(stopped&& !runtime)return;stopped=true;running=false;runEpoch++;clearInput();clearTimers();runtime?.stop();disconnect();replayRecorder.close();iframe?.remove();iframe=null;runtime=null;},

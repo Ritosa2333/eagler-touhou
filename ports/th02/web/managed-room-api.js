@@ -23,7 +23,8 @@ export const managedAPI={
     if(!Number.isInteger(difficulty)||difficulty<0||difficulty>4)throw Error('难度无效');
     const lives=options.netplayInitialSpares??3,bombs=options.netplayInitialBombs??2;
     if(!Number.isInteger(lives)||lives<0||lives>5||!Number.isInteger(bombs)||bombs<0||bombs>2)throw Error('初始残机或 Bomb 无效');
-    const settings={players:count,difficulty,lives,bombs,stage:difficulty===4?5:0,focusEnabled:true,focusPercent:50,teamTargeting:true,language:language==='ja'?'jp':'cn',rollback:options.netplayAdonisMode===0,
+    const challengeMode=options.netplayChallengeMode===true;
+    const settings={players:count,difficulty,lives:challengeMode?2:lives,bombs:challengeMode?0:bombs,...(challengeMode?{challengeMode:true}:{}),stage:difficulty===4?5:0,focusEnabled:options.netplayDisableFocus!==true,focusPercent:50,teamTargeting:true,language:language==='ja'?'jp':'cn',rollback:options.netplayAdonisMode===0,
       p1:loadouts[0].shot,p2:loadouts[1].shot,p3:loadouts[2]?loadouts[2].shot:0};
     session={role:roles[local],room:url.searchParams.get('room'),token:'launcher-owned'};
     state={phase:'loading',transport:'ws',connectionCommitted:true,generation:[session.room,runId,url.searchParams.get('runtimeGeneration')].join(':'),runId,revision:1,settings,
@@ -34,7 +35,7 @@ export const managedAPI={
   health(){const render=runtime?.renderInfo()??{};
     Object.assign(globalThis,{__eaglerNetplayLanActive:running,__eaglerNetplayLanFrame:queue?.frame??0,__eaglerNetplayLanConfirmed:queue?.confirmed??0,
       __eaglerNetplayLanRollback:rollbackCount,__eaglerNetplayLanResimulated:resimulated,__eaglerNetplayInputDelayFrames:queue?.active?queue.inputDelay:queue?.lockstepDelay});
-    return {gameFrame:runtime?.snapshot()?.gameFrame,frames:render.pageDrawn??render.drawn??0,frameMs:averageCost,audio:{state:running?'running':'loading'},music:runtime?.faultReport()?.music,running,stopped,frame:queue?.frame??0,confirmed:queue?.confirmed??0};},
+    return {gameFrame:runtime?.snapshot()?.gameFrame,frames:render.pageDrawn??render.drawn??0,frameMs:averageCost,audio:{state:running?'running':'loading'},music:runtime?.faultReport()?.music,running,stopped,frame:queue?.frame??0,confirmed:queue?.confirmed??0,challenge:runtime?.faultReport()?.challenge??null};},
   stop(){if(stopped&& !runtime)return;stopped=true;running=false;runEpoch++;clearInput();clearTimers();runtime?.stop();disconnect();replayRecorder.close();iframe?.remove();iframe=null;runtime=null;},
   files:message=>globalThis.__eaglerPC98FileCommands(message),
   playback(){throw Error('多人录像工作台尚未启用');},

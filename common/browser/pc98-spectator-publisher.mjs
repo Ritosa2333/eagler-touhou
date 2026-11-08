@@ -6,8 +6,8 @@ function packet(kind,players,first,count,body){
   view.setUint32(9,first,true);view.setUint32(13,count,true);bytes.set(body,17);return bytes;
 }
 export function createPc98SpectatorPublisher(header,tape,socket,onError=()=>{},getPoints=()=>[]){
-  const pointDelay=header.game==='03'?35:50;
-  let cursor=0,started=false,ended=false,closed=false,busy=false,timer,pointIndex=0,pointOffset=0,pointBytes,nextPointAt=0,matchArmed=true,matchSeen=false;
+  const pointDelay=['02','03','04'].includes(header.game)?35:50;
+  let cursor=0,started=false,ended=false,closed=false,busy=false,timer,pointIndex=0,pointOffset=0,pointBytes,nextPointAt=0,lastStage=null,lastSegment=0,matchArmed=true,matchSeen=false;
   function stop(){closed=true;clearTimeout(timer);}
   async function pump(){
     timer=null;if(closed||ended||busy)return;busy=true;
@@ -34,7 +34,7 @@ export function createPc98SpectatorPublisher(header,tape,socket,onError=()=>{},g
         view.setUint32(0,pointBytes.length,true);view.setUint32(4,pointOffset,true);body.set(encoder.encode(point.sha),8);body.set(chunk,72);
         ws.send(packet(4,header.players,point.frame,0,body));pointOffset+=chunk.length;nextPointAt=performance.now()+pointDelay;
         if(pointOffset===pointBytes.length){
-          if(header.game==='03'&&point.frame>0)ws.send(packet(6,header.players,cursor,point.frame,new Uint8Array()));
+          if(point.frame>0&&(header.game==='03'||(['02','04'].includes(header.game)&&point.scene?.kind==='stage'&&point.scene.stage!==lastStage))){ws.send(packet(6,header.players,cursor,point.frame,new Uint8Array()));lastSegment=point.frame;if(point.scene?.kind==='stage')lastStage=point.scene.stage;}
           pointIndex++;pointOffset=0;pointBytes=null;
         }
       }
@@ -42,6 +42,6 @@ export function createPc98SpectatorPublisher(header,tape,socket,onError=()=>{},g
     }catch(error){stop();onError(error);}
     finally{busy=false;if(!closed&&!ended)timer=setTimeout(pump,pointBytes?pointDelay:250);}
   }
-  void pump();return {kick(){if(tape.end){clearTimeout(timer);timer=null;void pump();}else if(!timer&&!busy)timer=setTimeout(()=>{timer=null;void pump();},250);},stop,get ended(){return ended;},
+  void pump();return {kick(){if(tape.end){clearTimeout(timer);timer=null;void pump();}else if(!timer&&!busy)timer=setTimeout(()=>{timer=null;void pump();},250);},stop,get ended(){return ended;},get segment(){return lastSegment;},
     async seal(timeout=2000){const deadline=performance.now()+timeout;this.kick();while(!ended&&!closed&&performance.now()<deadline)await new Promise(resolve=>setTimeout(resolve,25));return ended;}};
 }

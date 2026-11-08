@@ -2,6 +2,7 @@
 // Tests live playback, pause, seeking, and original sound effects.
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
+import {createHash} from 'node:crypto';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
 import {spawn} from 'node:child_process';
@@ -15,6 +16,43 @@ for(const key of ['ROOM_RUNTIME_ROOT','ROOM_RUNTIME_DATA'])assert(process.env[ke
 const runtime=resolve(process.env.ROOM_RUNTIME_ROOT),out=resolve('.cache/native-room-retention',game);
 await mkdir(out,{recursive:true});
 const data=await readFile(process.env.ROOM_RUNTIME_DATA),fonts=new Map();
+let instrumentedRuntime=null;
+if(process.env.PC98_TEST_CHALLENGE_EVENTS==='1'){
+  assert(['th02','th04'].includes(game));
+  const source=await readFile(resolve(runtime,'netplay/runtime.js'),'utf8');
+  const marker='  try{emulator.step();}catch(error){challenge?.abort();throw error;}';
+  assert(source.includes(marker),'challenge instrumentation boundary');
+  const inject=game==='th02'?`if(challengeLayout&&[180,360,540,720].includes(ticks)){
+    const h=m.HEAPU8,v=new DataView(h.buffer),cb=mailbox-patch.entries.mailbox,d=cb+(patch.dataSegment-patch.codeSegment)*16;
+    if(ticks===540){m.thDirtyMark?.(d+0x2b94,1);h[d+0x2b94]=1;}
+    else{
+      if(ticks===720){m.thDirtyMark?.(cb+patch.entries.personal_stats,4);v.setUint32(cb+patch.entries.personal_stats,999999,true);}
+      let at=-1;for(let i=0;i<20;i++){const q=d+0x3ce6+i*16;if(h[q]===0){at=q;break;}}if(at<0)throw Error('test item slot');
+      m.thDirtyMark?.(at,16);h.fill(0,at,at+16);h[at]=1;h[at+1]=ticks===180?2:ticks===360?4:1;
+      const x=v.getInt16(d+0x2b86,true),y=v.getInt16(d+0x2b88,true)*16;
+      for(const k of [2,6])v.setInt16(at+k,x,true);for(const k of [4,8])v.setInt16(at+k,y,true);
+    }
+  }`:`if(challengeLayout&&[180,360,540,720].includes(ticks)){
+    const h=emulator.module.HEAPU8,v=new DataView(h.buffer),cb=mailbox-patch.mailbox_cs_offset,d=gameDataBase();
+    if(ticks===540){emulator.module.thDirtyMark?.(d+0x4662,9);h[d+0x4662]=0;h[d+0x4669]=1;h[d+0x466a]=0;}
+    else if(ticks===720){emulator.module.thDirtyMark?.(cb+patch.personal_stats.cs_offset,4);v.setUint32(cb+patch.personal_stats.cs_offset,3000000,true);}
+    else{
+      let at=-1;for(let i=0;i<32;i++){const q=d+0xaf34+i*20;if(h[q]===0){at=q;break;}}if(at<0)throw Error('test item slot');
+      emulator.module.thDirtyMark?.(at,20);h.fill(0,at,at+20);h[at]=1;h[at+14]=ticks===180?4:5;
+      const x=v.getInt16(d+0x464e,true),y=v.getInt16(d+0x4650,true);
+      for(const k of [2,6])v.setInt16(at+k,x,true);for(const k of [4,8])v.setInt16(at+k,y,true);
+    }
+  }`;
+  instrumentedRuntime=Buffer.from(source.replace(marker,inject+'\n'+marker));
+}
+if(process.env.PC98_TEST_DISABLE_FOCUS==='1'){
+  assert.equal(game,'th02');
+  const source=instrumentedRuntime?.toString()??await readFile(resolve(runtime,'netplay/runtime.js'),'utf8');
+  const marker=' writeInputs(m.HEAPU8,mailbox,patch,nativeInput(inputs),players,config);';
+  assert(source.includes(marker),'native focus instrumentation boundary');
+  instrumentedRuntime=Buffer.from(source.replace(marker,marker+`
+ if(mailbox>=0&&state()&&(config.focusEnabled!==false||m.HEAPU8[mailbox+patch.focus.enabledOffset]!==0))throw Error('TH02 disabled focus did not reach native game');`));
+}
 let relayLog='',browser,page;
 const clients=[],errors=[],relay=spawn(process.execPath,['services/relay/src/netplay-relay.mjs'],{
   cwd:resolve('..'),windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE:'1'},stdio:['ignore','pipe','pipe']});
@@ -32,7 +70,9 @@ const server=createServer(async(req,res)=>{try{
   if(fonts.has(path)){res.end(fonts.get(path));return;}
   if(!path.startsWith('/runtime/'))throw Error('route');
   const file=resolve(runtime,path.slice(9));if(!file.startsWith(runtime+sep))throw Error('path');
-  res.setHeader('content-type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.wasm':'application/wasm','.json':'application/json','.css':'text/css'})[extname(file)]||'application/octet-stream');res.end(await readFile(file));
+  res.setHeader('content-type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.wasm':'application/wasm','.json':'application/json','.css':'text/css'})[extname(file)]||'application/octet-stream');if(instrumentedRuntime&&path==='/runtime/netplay/runtime.js'){res.end(instrumentedRuntime);return;}
+  if(instrumentedRuntime&&game==='th02'&&path==='/runtime/netplay/runtime.json'){const manifest=JSON.parse(await readFile(file,'utf8'));manifest.assets['netplay/runtime.js']=createHash('sha256').update(instrumentedRuntime).digest('hex');res.end(JSON.stringify(manifest));return;}
+  res.end(await readFile(file));
 }catch{res.writeHead(404).end();}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 function send(client,message,predicate){return new Promise((ok,no)=>{const timer=setTimeout(()=>{cleanup();no(Error('Relay timeout '+JSON.stringify(message)));},15000);
@@ -63,7 +103,7 @@ try{
   for(let actor=0;actor<2;actor++)await send(clients[actor],{type:'set-ready',ready:true},m=>m.room?.seats[actor]?.ready);
   const start=await send(clients[0],{type:'start',inputDelay:0,adonisMode:timing.rollback?0:1,predictionLimit:timing.predictionLimit},m=>m.type==='start');
   let run=start.serial,roles=[0,1,null];
-  const options=actor=>({touchEnabled:process.env.PC98_TOUCH_INPUT==='1',touchMovementMode:'touch-unlimited',touchSensitivity:150,netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(run),member:'retention_member_'+actor,...roles[actor]===null?{spectator:'retention_client_'+actor}:{player:String(roles[actor])}}),netplayPlayer:roles[actor]??0,netplayPlayerCount:2,netplaySeed:1234,netplayDifficulty:1,netplayLoadouts:[{character:0,shot:0},{character:0,shot:1}],netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:timing.rollback?0:1,netplayPredictionLimit:timing.predictionLimit,netplaySpectator:roles[actor]===null,netplaySpectatorId:roles[actor]===null?'retention_client_'+actor:'',netplaySpectatorCount:1,netplaySpectatorTimeline:true});
+  const options=actor=>({touchEnabled:process.env.PC98_TOUCH_INPUT==='1',touchMovementMode:'touch-unlimited',touchSensitivity:150,netplayMode:'lan',netplayChallengeMode:process.env.PC98_TEST_CHALLENGE==='1',netplayDisableFocus:process.env.PC98_TEST_DISABLE_FOCUS==='1',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(run),member:'retention_member_'+actor,...roles[actor]===null?{spectator:'retention_client_'+actor}:{player:String(roles[actor])}}),netplayPlayer:roles[actor]??0,netplayPlayerCount:2,netplaySeed:1234,netplayDifficulty:1,netplayLoadouts:[{character:0,shot:0},{character:0,shot:1}],netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:timing.rollback?0:1,netplayPredictionLimit:timing.predictionLimit,netplaySpectator:roles[actor]===null,netplaySpectatorId:roles[actor]===null?'retention_client_'+actor:'',netplaySpectatorCount:1,netplaySpectatorTimeline:true});
   const configure=async(actor,serial)=>{
     await page.evaluate(async({actor,options})=>rpc(actor,'configure',{music:'none',options,resources:[],runtimeResources:[],sharedResources:[]}),{actor,options:options(actor)});
     // Give the running native title several ticks between protocol commands.
@@ -81,17 +121,34 @@ try{
   }
   if(game==='th02'||game==='th04')await page.evaluate(()=>Promise.all([0,1].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}))));
   await wait(async()=>{const values=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>120);},'native players advancing');
+  if(process.env.PC98_TEST_CHALLENGE==='1'){
+    await (await frames()[0].$('canvas')).screenshot({path:resolve(out,'challenge-native-hud.png')});
+    for(const f of frames().slice(0,2)){
+      const challenge=await f.evaluate(async()=>{const {managedAPI}=await import('./netplay/room.js');return managedAPI.health().challenge;});
+      assert.deepEqual(challenge,[0,0],'challenge starts each player at zero');
+    }
+    if(process.env.PC98_TEST_CHALLENGE_EVENTS==='1'){
+      const expected=[{frame:240,value:[-1,0]},{frame:420,value:[-2,0]},{frame:650,value:[-1,0]},{frame:850,value:[-2,-1]}];
+      for(const checkpoint of expected){
+        await wait(async()=>await frames()[0].evaluate(playerFrame)>=checkpoint.frame,'challenge event '+checkpoint.frame,90000);
+        for(const f of frames().slice(0,2)){const value=await f.evaluate(async()=>(await import('./netplay/room.js')).managedAPI.health().challenge);assert.deepEqual(value,checkpoint.value,`challenge native event at ${checkpoint.frame}`);}
+      }
+      await (await frames()[0].$('canvas')).screenshot({path:resolve(out,'challenge-native-events.png')});
+    }
+
+  }
+
   if(game==='th03'&&process.env.PC98_TOUCH_INPUT==='1'){
     await wait(async()=>(await Promise.all(frames().slice(0,2).map(f=>f.evaluate(()=>globalThis.th03SyncState?.phase===1)))).every(Boolean),'touch selection enters gameplay',30000);
-    const position=()=>frames()[1].evaluate(async()=>(await import('./managed-room.mjs')).managedAPI.health().players.find(p=>p.seat===1)?.x);
+    const position=()=>frames()[1].evaluate(async()=>(await import('./netplay/room.js')).managedAPI.health().players.find(p=>p.seat===1)?.x);
     const before=await position();assert.equal(typeof before,'number');
     await page.evaluate(()=>rpc(1,'direct-touch',{type:'down',id:42,x:.4,y:.5}));
     for(let i=1;i<=8;i++){await page.evaluate(i=>rpc(1,'direct-touch',{type:'move',id:42,x:.4+i*.015,y:.5}),i);await new Promise(r=>setTimeout(r,100));}
     await page.evaluate(()=>rpc(1,'direct-touch',{type:'up',id:42,x:.52,y:.5}));await new Promise(r=>setTimeout(r,500));
     assert.notEqual(await position(),before,'P2 drag moves the actual player');
     await page.evaluate(()=>rpc(1,'keyboard',{code:'Space',key:' ',keyCode:32,location:0,down:true}));
-    await wait(async()=>frames()[1].evaluate(async()=>(await import('./managed-room.mjs')).managedAPI.health().players.some(p=>p.seat===1&&p.focused)),'native focus activated',20000);
-    const marker=await frames()[1].evaluate(async()=>(await import('./managed-room.mjs')).managedAPI.health().players.find(p=>p.seat===1));
+    await wait(async()=>frames()[1].evaluate(async()=>(await import('./netplay/room.js')).managedAPI.health().players.some(p=>p.seat===1&&p.focused)),'native focus activated',20000);
+    const marker=await frames()[1].evaluate(async()=>(await import('./netplay/room.js')).managedAPI.health().players.find(p=>p.seat===1));
     await (await frames()[1].$('#canvas')).screenshot({path:resolve(out,'native-marker.png')});
     console.log('Native marker position',JSON.stringify(marker));
     const beforeFocus=await frames()[1].evaluate(playerFrame);
@@ -119,9 +176,11 @@ try{
     await new Promise(r=>setTimeout(r,800));await key('ArrowDown');await new Promise(r=>setTimeout(r,500));await key('Escape');
     await wait(async()=>await frames()[0].evaluate(()=>globalThis.th03SyncState?.pauseSeat===null),'recorded native resume',30000);
   }
+  if(process.env.PC98_TEST_LATE_STAGE==='1'){await wait(async()=>await frames()[0].evaluate(game=>globalThis[game+'Replay']?.publishedSegment>0,game),'published stage checkpoint',120000);await new Promise(resolve=>setTimeout(resolve,10000));}
   await configure(2,1);
   await page.waitForFunction(()=>events.some(e=>e.epoch===3&&['first-frame','error'].includes(e.event)),{timeout:120000});const viewerError=await page.evaluate(()=>events.find(e=>e.epoch===3&&e.event==='error'));if(viewerError)throw Error(JSON.stringify(viewerError));
   await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&!s.seeking;},{timeout:90000});
+  if(process.env.PC98_TEST_LATE_STAGE==='1')assert((await page.evaluate(()=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback?.min))>0,'late spectator should start from a stage checkpoint');
   if(game==='th02')await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));
   if((game==='th02'||game==='th04')&&process.env.PC98_NATIVE_MARKER==='1')
     await page.evaluate(()=>rpc(1,'keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:true}));
@@ -146,11 +205,11 @@ try{
     await wait(async()=>await frames()[1].evaluate(playerFrame)>=start+300,'marker stays synchronized while spectating',30000);
     await page.evaluate(()=>rpc(1,'keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:false}));
   }
-  if(game==='th02'||game==='th03'||game==='th04'){
+  if((game==='th02'||game==='th03'||game==='th04')&&process.env.PC98_TEST_LATE_STAGE!=='1'){
     await page.click('#p0');await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));
     await page.waitForFunction(()=>events.some(e=>e.epoch===3&&e.event==='audio-health'&&e.effects>0&&e.effectsPeak>0.001),{timeout:20000});
     await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}));
   }
   assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[]);
   console.log('PASS PC98 real managed players and spectator',JSON.stringify(await page.evaluate(()=>events.filter(e=>e.epoch===3&&e.spectatorPlayback).at(-1))));
-}finally{if(page){console.log('QA errors',JSON.stringify(await page.evaluate(()=>events.filter(e=>e.event==='error'))));console.log('QA tail',JSON.stringify(await page.evaluate(()=>events.filter(e=>e.epoch===3).slice(-6))));console.log('QA relay',relayLog);console.log('QA game',JSON.stringify(await Promise.all(page.frames().filter(f=>f.url().includes('runtimeEpoch=')).map(f=>f.evaluate(()=>({state:globalThis.th03SyncState||null,replayError:globalThis.th03Replay?.error||'',replayEnd:globalThis.th03Replay?.snapshot()?.end||null}))))));}for(const c of clients)c.close();await browser?.close();await new Promise(r=>server.close(r));relay.kill();}
+}finally{if(page){console.log('QA errors',JSON.stringify(await page.evaluate(()=>events.filter(e=>e.event==='error'))));console.log('QA tail',JSON.stringify(await page.evaluate(()=>events.filter(e=>e.epoch===3).slice(-6))));console.log('QA relay',relayLog);console.log('QA game',JSON.stringify(await Promise.all(page.frames().filter(f=>f.url().includes('runtimeEpoch=')).map(f=>f.evaluate(()=>({state:globalThis.th03SyncState||null,replayError:globalThis.th03Replay?.error||globalThis.th02Replay?.error||globalThis.th04Replay?.error||'',replayEnd:(globalThis.th03Replay||globalThis.th02Replay||globalThis.th04Replay)?.snapshot()?.end||null,recorderEnded:(globalThis.th03Replay||globalThis.th02Replay||globalThis.th04Replay)?.ended??null,pointError:(globalThis.th03Replay||globalThis.th02Replay||globalThis.th04Replay)?.pointError||'',replayPoints:(globalThis.th03Replay||globalThis.th02Replay||globalThis.th04Replay)?.snapshot()?.points?.map(p=>({frame:p.frame,scene:p.scene}))||[]}))))));}for(const c of clients)c.close();await browser?.close();await new Promise(r=>server.close(r));relay.kill();}
