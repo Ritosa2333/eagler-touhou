@@ -1,3 +1,4 @@
+#include <eagler/input/LocalPlayerCue.hpp>
 #include <eagler/gameplay/CooperativeRules.hpp>
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/CooperativeResources.hpp"
@@ -314,14 +315,17 @@ JobResult GameplayScene::draw_players(bool impacts){
             else if(eagler::cooperative::TapCount(c.progress)>=3&&c.target>=0){text.color=0xffd5efc8;ascii.add_format({p.x+30.f,p.y-8.f,0},false,"L %u/5",eagler::cooperative::TapCount(c.progress));}
         }
         text.color=color;text.scale_x=scale.x;text.scale_y=scale.y;text.gui=gui;text.selected=selected;
-        if(enhance&&!paused&&!retrying&&!menus.context.pause_state&&!menus.context.show_retry&&
+        if(live_view&&!paused&&!retrying&&!menus.context.pause_state&&!menus.context.show_retry&&
            !renderer.visual_geometry_suppressed&&!renderer.rollback_visual_geometry_suppressed){
             const auto p=pilot(session.local_player).presentation_position();
             const auto& origin=ascii_context.arcade_origin;const auto& size=ascii_context.arcade_size;
             const float x=origin.x+p.x+renderer.shake.x,y=origin.y+p.y+renderer.shake.y;
+            eagler::presentation::local_player_cue(session.local_player,x,y);
+            if(enhance){
             const u32 white[4]={0xffffffff,0xffffffff,0xffffffff,0xffffffff};
             renderer.draw_rectangle(origin.x,y-.5f,origin.x+size.x,y+.5f,white);
             renderer.draw_rectangle(x-.5f,origin.y,x+.5f,origin.y+size.y,white);
+            }
         }
     }
     return JobResult::Continue;

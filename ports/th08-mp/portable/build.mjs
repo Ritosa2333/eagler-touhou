@@ -60,7 +60,7 @@ await printRuntimeInputs({workspace,root,sources:[...sources,renderer,resolve(ro
 if(printPlan){console.log(JSON.stringify({game,profile,variant:multiplayerFixtures?'multiplayer-fixtures':multiplayer?'multiplayer':'normal',outputDirectory:out,flags,linkFlags,sources},null,2));process.exit(0);}
 const netplayHeaders=multiplayer?headers(resolve(netplayRoot,'include')):[];
 const fixtureHeaders=multiplayerFixtures?headers(resolve(workspace,'portable/multiplayer')):[];
-const dialogueHeaders=[resolve(netplayRoot,'include/eagler/input/DialogueGesture.hpp'),resolve(netplayRoot,'include/eagler/audio/WebSfx.hpp')];
+const dialogueHeaders=[resolve(netplayRoot,'include/eagler/input/DialogueGesture.hpp'),resolve(netplayRoot,'include/eagler/input/LocalPlayerCue.hpp'),resolve(netplayRoot,'include/eagler/audio/WebSfx.hpp')];
 const hash=createHash('sha256');for(const path of [...headers(resolve(root,'cpp')),...headers(imgui),...headers(shared),...headers(numeric),...headers(input),...netplayHeaders,...headers(resolve(netplayRoot,'include/eagler/thprac')),...dialogueHeaders,...fixtureHeaders].sort())hash.update(path).update(observed(path));
 const prefix=JSON.stringify([flags,hash.digest('hex')]);
 const objects=resolve(out,'objects');if(!printingRuntimeInputs)mkdirSync(objects,{recursive:true});
