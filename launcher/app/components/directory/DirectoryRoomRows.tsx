@@ -177,7 +177,7 @@ function RoomRow({
           data-capacity={room.capacity}
         >
           {room.seats.map((seat, index) => {
-            const control = seat?.controlMode ? t(seat.name !== undefined && seat.controlMode === 'normal' ? 'multiplayer.control.keysOrStick' : `multiplayer.control.${seat.controlMode}`) : '';
+            const control = seat?.controlMode ? t(`multiplayer.control.${seat.controlMode}`) : '';
             const label =
               t(
                 !seat

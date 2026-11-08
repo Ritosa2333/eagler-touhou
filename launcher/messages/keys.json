@@ -8805,10 +8805,6 @@
     "id": "chat_noMessages",
     "params": []
   },
-  "room.fourWayTouch": {
-    "id": "room_fourWayTouch",
-    "params": []
-  },
   "chat.keyboardHint": {
     "id": "chat_keyboardHint",
     "params": []
