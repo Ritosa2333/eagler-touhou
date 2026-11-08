@@ -3,9 +3,18 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {FrameQueue,MAX_ROLLBACK} from '../web/netplay/queue.js';
 import {NativeSimulation} from '../web/netplay/runtime-core.js';
+import {AUDITED_CORE,replicaBinary} from '../web/replay/native-state.js';
+import {createHash} from 'node:crypto';
 const binary = await readFile(new URL('../web/game.wasm',import.meta.url));
 const makeCore = async () => (await WebAssembly.instantiate(binary,{})).instance.exports;
 const settings = {players:2,count:2,rank:1,lifeCompensation:true,startStage:'normal'};
+
+test('shipped native core is accepted by the spectator replica',async()=>{
+  assert.equal(createHash('sha256').update(binary).digest('hex'),AUDITED_CORE);
+  const replica=(await WebAssembly.instantiate(await replicaBinary(binary),{})).instance.exports;
+  assert(replica.__replay_stack instanceof WebAssembly.Global);
+  assert.equal(replica.memory.buffer.byteLength,4194304);
+});
 
 test('rescued players immediately move and retain their action pose',async()=>{
   for(const slot of [0,1]){
@@ -28,6 +37,20 @@ test('later stages keep native results visible through rapid fire',async()=>{
     for(let n=0;n<24;n++)sim.step([n%2?0:4,0]);
     assert.equal(core.th_get(27,0),stage);assert.equal(core.th_get(0,0),2);
     sim.step([4,0]);assert.equal(core.th_get(27,0),stage+1);
+  }
+});
+
+test('both final bosses reach the native ending in multiplayer',async()=>{
+  for(const startStage of ['m20','j20']){
+    const core=await makeCore(),sim=new NativeSimulation(core,{...settings,startStage,qa:true},0);sim.reset();
+    for(let i=0;i<220;i++)sim.step([4,0]);
+    for(let i=0;i<3000&&core.th_get(50,0)!==10;i++){
+      if(i%15===0)core.th_stage_command(20,0,99999,0,0,0);
+      sim.step([0,0]);
+    }
+    assert.equal(core.th_get(50,0),10,`${startStage} should enter the ending`);
+    const age=core.th_get(106,0);for(let i=0;i<10;i++)sim.step([0,0]);
+    assert(core.th_get(106,0)>age,'ending must continue advancing');
   }
 });
 

@@ -11,6 +11,8 @@ import {LocalSfx} from './local-sfx.js';
 import {assetBytes} from '../preload-cache.js';
 import {hashNativeMemory} from './native-hash.js';
 import {installNetPause} from '../pc98-net-pause.mjs';
+import {extractOriginalPmd} from '../pmd-archives.mjs';
+import {endingMusicSignatures,scanEndingMusic} from './ending-music.js';
 const workerHost=globalThis.th02WorkerHost;
 const PROTOCOL='th02-rollback/6',canvas=workerHost?.canvas??document.getElementById('canvas'),details=workerHost?{}:document.getElementById('details');
 const nativeCanvas=workerHost?.canvas??document.createElement('canvas');nativeCanvas.width=640;nativeCanvas.height=400;
@@ -25,6 +27,7 @@ let soundPolicy,bgm,musicTask,musicError='',musicVolume=.7,musicSequence=-1,musi
 let pendingNative=[0,0,0],consumedNative=[0,0,0];
 let sfx,sfxSequence=0;
 let guestMemoryBase=-1,residentAddress=-1,gameplaySeen=false,challenge=null;
+let endingSignatures=[],endingMatches=[];
 const residentSignature=new TextEncoder().encode('MIKOConfig\0');
 function refreshMailbox(scan=false){
  const h=emulator.module.HEAPU8,v=new DataView(h.buffer);
@@ -90,6 +93,7 @@ async function boot(settings){
  const disk=await assetBytes(entry.file,{hash:entry.sha256,size:entry.size,gzip:true});
  if(disk.length!==entry.size||await sha256(disk)!==entry.sha256)throw Error('TH02 游戏磁盘校验失败');
  const fat=new Fat12(disk),main=fat.find('HUMAROKU/MAIN.EXE');let exe=fat.read(main);
+ endingSignatures=endingMusicSignatures(extractOriginalPmd('th02',fat));endingMatches=[];
  const {emptyPc98Scores}=await import('../pc98-empty-scores.mjs');fat.replace(fat.find('HUMAROKU/HUUHI.DAT'),emptyPc98Scores('th02'));
  if(await sha256(exe)!==entry.mainSha256)throw Error('TH02 主程序校验失败');
  const overlay=(await get('./native-pause-overlay.json')).languages[config.language];
@@ -244,10 +248,8 @@ function step(inputs,{frame=ticks,replay=false,offlineMask=0}={}){
   if(mailbox>=0){
    const offlineAt=mailbox-patch.entries.mailbox+patch.entries.offline_mask;
    m.thDirtyMark?.(offlineAt,1);m.HEAPU8[offlineAt]=offlineMask;
-   m.thDirtyMark?.(mailbox,patch.players.mailboxSize);
-   m.thDirtyMark?.(mailbox-patch.entries.mailbox+patch.entries.touch_state,2*patch.touch.stride+6);
   }
- writeInputs(m.HEAPU8,mailbox,patch,nativeInput(inputs),players,config);
+ writeInputs(m.HEAPU8,mailbox,patch,nativeInput(inputs),players,config,(at,size)=>m.thDirtyMark?.(at,size));
  if(mailbox>=0)m.HEAPU8[mailbox+patch.focus.pointOffset]=workerHost?.replayOnly || !(points.always || points.focus && (inputs[localSlot]&64)) ? 0 : 1<<localSlot;
   // Before MAIN and inside native pause, P1 operates original menus. Every
   // seat can request pause/confirm; all key events carry the virtual timestamp.
@@ -273,14 +275,17 @@ function step(inputs,{frame=ticks,replay=false,offlineMask=0}={}){
   const quitAt=previousMailbox-patch.entries.mailbox+(patch.dataSegment-patch.codeSegment)*16+0x2b97;
   const exit=pausedBefore&&!nativePaused(m.HEAPU8,mailbox,patch)&&m.HEAPU8[quitAt]===1&&m.HEAPU8[previousMailbox-patch.entries.mailbox+patch.pauseRestartResult]!==2;
   if(challenge&&pausedBefore&&!nativePaused(m.HEAPU8,mailbox,patch)&&m.HEAPU8[previousMailbox-patch.entries.mailbox+patch.pauseRestartResult]===2)challenge.reset();
-  effects.set(frame,{exit,music:mailbox>=0?readMusic():null,sounds:mailbox>=0?readSfx():[]});if(!replay)pending=true;
+  let music=mailbox>=0?readMusic():null;
+  if(mailbox>=0)endingMatches=[];
+  else if(gameplaySeen&&guestMemoryBase>=0&&ticks%30===0){const found=scanEndingMusic(m.HEAPU8,guestMemoryBase,endingSignatures,endingMatches);endingMatches=found.found;if(found.name)music={name:found.name,ax:0};}
+  effects.set(frame,{exit,music,sounds:mailbox>=0?readSfx():[]});if(!replay)pending=true;
  }finally{m.netEndFrame();}
 }
 function capture(frame,restored=false){
  if(states.has(frame))throw Error('TH02 重复检查点');
  const previous=states.get(frame-1),nativeFrame=previous?.nativeFrame===frame-1?frame-1:frame;
  if(nativeFrame===frame)emulator.module.netCapture(frame,restored);
- states.set(frame,{nativeFrame,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs:previousInputs.slice(),pendingNative:pendingNative.slice(),consumedNative:consumedNative.slice(),challenge:challenge?.snapshot(),musicSequence,musicName,sfxSequence});
+ states.set(frame,{nativeFrame,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs:previousInputs.slice(),pendingNative:pendingNative.slice(),consumedNative:consumedNative.slice(),endingMatches:endingMatches.slice(),challenge:challenge?.snapshot(),musicSequence,musicName,sfxSequence});
 }
 function restore(frame){
  pending=false;const saved=states.get(frame);
@@ -289,7 +294,7 @@ function restore(frame){
  if(!checkpoint||(from!==frame&&!checkpoint.execution))throw Error('TH02 检查点历史缺失');
  emulator.module.netRestore(from);
  ({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen}=checkpoint);previousInputs=checkpoint.previousInputs.slice();
- pendingNative=checkpoint.pendingNative.slice();consumedNative=checkpoint.consumedNative.slice();if(challenge)challenge.restore(checkpoint.challenge);({musicSequence,musicName,sfxSequence}=checkpoint);
+ pendingNative=checkpoint.pendingNative.slice();consumedNative=checkpoint.consumedNative.slice();endingMatches=checkpoint.endingMatches.slice();if(challenge)challenge.restore(checkpoint.challenge);({musicSequence,musicName,sfxSequence}=checkpoint);
  for(const at of states.keys())if(at>=from)states.delete(at);
  for(const at of effects.keys())if(at>=from)effects.delete(at);
  if(from!==frame){
@@ -339,7 +344,7 @@ function portableBoundary(){
 async function replaySave(identity){
  portableBoundary();const {createPortableCheckpoint,encodeCheckpoint}=await import('../replay/portable.js');
  portableReplay??=createPortableCheckpoint(emulator.module,emulator.ci);
- const host={identity,frame:ticks,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs,pendingNative,consumedNative,challenge:challenge?.snapshot(),musicSequence,musicName,sfxSequence,playedName,pendingMusic,musicError,emulator:{tick:emulator.tick,keys:[...emulator.keys],state:emulator.state},audio:workerHost.captureAudioState?.(),proof:sync.replayProof(),check:checksum()};
+ const host={identity,frame:ticks,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs,pendingNative,consumedNative,endingMatches,challenge:challenge?.snapshot(),musicSequence,musicName,sfxSequence,playedName,pendingMusic,musicError,emulator:{tick:emulator.tick,keys:[...emulator.keys],state:emulator.state},audio:workerHost.captureAudioState?.(),proof:sync.replayProof(),check:checksum()};
  const state=portableReplay.capture(host),bytes=await encodeCheckpoint(state,ticks?portableBase:null);
  if(!ticks)portableBase=state;
  return {frame:ticks,bytes,proof:host.proof,check:host.check};
@@ -349,7 +354,7 @@ async function replayLoad(bytes,baseBytes,identity){
  portableReplay??=createPortableCheckpoint(emulator.module,emulator.ci);
  const base=baseBytes?await decodeCheckpoint(baseBytes):null,state=await decodeCheckpoint(bytes,base),h=state.host;
  if(h?.identity!==identity||!Number.isSafeInteger(h.frame)||h.frame<0||h.frame>216000||h.frame!==h.ticks)throw Error('完整检查点身份或帧号无效');
- portableReplay.restore(state);({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs,pendingNative,consumedNative,musicSequence,musicName,sfxSequence,playedName,pendingMusic,musicError}=h);
+ portableReplay.restore(state);({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs,pendingNative,consumedNative,musicSequence,musicName,sfxSequence,playedName,pendingMusic,musicError}=h);endingMatches=h.endingMatches??[];
  if(challenge)challenge.restore(h.challenge);emulator.tick=h.emulator.tick;emulator.keys=new Set(h.emulator.keys);emulator.state=h.emulator.state;emulator.outputs.clear();
   confirmedPrefix=ticks;states.clear();effects.clear();pending=true;
  if(sync.replayProof()!==h.proof||JSON.stringify(checksum())!==JSON.stringify(h.check))throw Error('完整检查点恢复校验不一致');

@@ -19,9 +19,12 @@ export function guestBase(heap,mailbox,patch){
  return base;
 }
 export function nativePaused(heap,mailbox,patch){return mailboxActive(heap,patch,mailbox)&&!!heap[mailbox-patch.entries.mailbox+patch.entries.touch_paused];}
-export function writeInputs(heap,mailbox,patch,inputs,players,settings={}){
+export function writeInputs(heap,mailbox,patch,inputs,players,settings={},mark=()=>{}){
  if(!mailboxActive(heap,patch,mailbox))return;
  const v=new DataView(heap.buffer),cb=mailbox-patch.entries.mailbox,blocked=!heap[mailbox+22]||nativePaused(heap,mailbox,patch);
+ mark(mailbox,patch.players.mailboxSize);
+ mark(cb+patch.entries.touch_state,2*patch.touch.stride+6);
+ mark(cb+patch.entries.touch_remainder,3*4);
  for(let slot=0;slot<3;slot++){
   const offline=!!(heap[cb+patch.entries.offline_mask]&(1<<slot));
   const value=slot<players&&!offline?inputs[slot]:0;

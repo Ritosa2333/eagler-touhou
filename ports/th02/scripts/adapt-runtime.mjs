@@ -91,7 +91,7 @@ await patch('netplay/runtime.html',text=>replaceOnce(text,'<script>','<script ty
 for(const name of await files(resolve(port,'web'))) if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')) { await copyFile(resolve(port,'web',name),resolve(output,name)); runtime.push(name); }
 {
   const path=resolve(output,'netplay/runtime.json'), manifest=JSON.parse(await readFile(path,'utf8'));
-  for(const name of ['managed-rapid-fire.mjs','managed-bomb-background.mjs','managed-gameover.mjs'])manifest.assets[name]=createHash('sha256').update(await readFile(resolve(output,name))).digest('hex');
+  for(const name of ['managed-rapid-fire.mjs','managed-bomb-background.mjs','managed-gameover.mjs','netplay/ending-music.js','pmd-archives.mjs'])manifest.assets[name]=createHash('sha256').update(await readFile(resolve(output,name))).digest('hex');
   await writeFile(path,JSON.stringify(manifest,null,2)+'\n');
 }
 for(const name of ['pc98-spectator-audio.mjs','pc98-spectator-channel.mjs','pc98-spectator-publisher.mjs','pc98-local-spectator.mjs','pc98-match-index.mjs','pc98-managed-spectator.mjs','directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs','pc98-game-fps.mjs','pc98-practice.mjs','pc98-practice-theme.css','pc98-pause-menu.mjs','pc98-net-pause.mjs','pc98-empty-scores.mjs','pc98-challenge-counters.mjs','pc98-challenge-stocks.mjs','pc98-challenge-layouts.mjs','pc98-challenge-hud-install.mjs']) {await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}

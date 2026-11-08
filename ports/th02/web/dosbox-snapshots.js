@@ -34,9 +34,13 @@ export function createDosboxSnapshots(emulator){
     // heap scan at every boundary. Filesystem writes remain tracked meanwhile.
     seal(){active=null;},
     restore(frame){active=null;const s=frames.get(frame);if(!s)throw Error('DOSBox-X 快照已过期');
-      syncMemory();const undo=[];for(const key of [...frames.keys()].sort((a,b)=>b-a))if(key>=frame){const saved=frames.get(key);for(const [buffer,pages]of saved.writes)for(const [at,data]of pages)buffer.set(data,at);if(diff)for(let i=saved.undo.length-1;i>=0;i--)undo.push(saved.undo[i]);}
-      if(diff){if(diff.restoreBlocks)diff.restoreBlocks(undo);else for(const block of undo)diff.restoreBlock(block);}
-      if(s.memory)m.HEAPU8.set(s.memory);globals.forEach((g,i)=>{g.value=s.globals[i];});m.restoreContinuation(s.continuation);emulator.tick=s.tick;emulator.keys=new Set(s.keys);emulator.ci.keyMatrix={...s.keyMatrix};
+      syncMemory();const restoring=[...frames.keys()].filter(key=>key>=frame).sort((a,b)=>b-a).map(key=>frames.get(key));
+      if(diff){const blocks=restoring.flatMap(saved=>saved.undo.slice().reverse());if(diff.restoreBlocks)diff.restoreBlocks(blocks);else for(const block of blocks)diff.restoreBlock(block);}
+      if(s.memory)m.HEAPU8.set(s.memory);
+      const filePages=new Set();
+      for(const saved of restoring)for(const [buffer,pages]of saved.writes)for(const [at,data]of pages){buffer.set(data,at);if(diff&&buffer.buffer===m.HEAPU8.buffer)for(let p=(buffer.byteOffset+at)>>>12;p<=((buffer.byteOffset+at+data.length-1)>>>12);p++)filePages.add(p);}
+      for(const page of filePages)diff.sync(page);
+      globals.forEach((g,i)=>{g.value=s.globals[i];});m.restoreContinuation(s.continuation);emulator.tick=s.tick;emulator.keys=new Set(s.keys);emulator.ci.keyMatrix={...s.keyMatrix};
       // Restore the framebuffer pointer/size alongside the native allocation.
       // The GPU stays unchanged until the room finishes catching up.
       m.framePresenter?.restore(s.presentation);

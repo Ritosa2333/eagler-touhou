@@ -94,10 +94,19 @@ try{
     const frames=()=>page.frames().filter(f=>/th02.html\?runtimeEpoch=/.test(f.url()));
     const health=()=>Promise.all(frames().map(f=>f.evaluate(async()=>{const {managedAPI}=await import('./netplay/room.js');return managedAPI.health();})));
     await wait(async()=>{const errors=await page.evaluate(()=>events.filter(e=>e.event==='error'));if(errors.length)throw Error(JSON.stringify(errors));const states=await health();return states.length===count&&states.every(s=>s.running&&s.confirmed>=120&&s.frames>0);},'MP confirmed gameplay',120000);
+    if(process.env.PC98_TEST_FOCUS_SYNC==='1')await page.evaluate(()=>rpc(0,'keyboard',{code:'ShiftLeft',down:true}));
     await page.evaluate(async count=>{for(let s=0;s<count;s++)await rpc(s,'keyboard',{code:s%2?'ArrowLeft':'ArrowRight',down:true});},count);
     const before=(await health())[0].confirmed;
     await wait(async()=>(await health()).every(s=>s.confirmed>=before+360),'moving players remain synchronized',30000);
     await page.evaluate(async count=>{for(let s=0;s<count;s++)await rpc(s,'keyboard-clear');},count);
+    if(process.env.PC98_TEST_INPUT_LATENCY==='1'){
+      const f=frames()[0],position=async()=>(await f.evaluate(async()=>(await import('./netplay/room.js')).managedAPI.sampleGame()))?.players?.[0]?.x;
+      await wait(async()=>Number.isFinite(await position()),'latency player state');const samples=[];
+      for(let i=0;i<5;i++){const before=await position(),code=before>200?'ArrowLeft':'ArrowRight',started=performance.now();
+        await page.evaluate(code=>rpc(0,'keyboard',{code,down:true}),code);const deadline=performance.now()+10000;while(await position()===before){if(performance.now()>deadline)throw Error('input response timeout');await new Promise(r=>setTimeout(r,5));}
+        samples.push(performance.now()-started);await page.evaluate(code=>rpc(0,'keyboard',{code,down:false}),code);await new Promise(r=>setTimeout(r,150));}
+      console.log('INPUT RESPONSE TH02 (RPC to observed native position, ms)',JSON.stringify(samples));
+    }
     if(process.env.PC98_TEST_TOUCH==='1'){
       const position=async()=>{const s=await frames()[0].evaluate(async()=>(await import('./netplay/room.js')).managedAPI.sampleGame());return s?.players?.[0]?.x;};
       await wait(async()=>Number.isFinite(await position()),'native player state',30000);const before=await position();

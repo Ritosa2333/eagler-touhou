@@ -56,12 +56,12 @@ async function fixture(source,game,multiplayer) {
       health:()=>({frames:12,audio:{}})},
   };
   const parent={postMessage:message=>messages.push(message),__eaglerPrepareManagedRuntimeDataV1:async()=>({buffer:new ArrayBuffer(0)})};
-  const context={boundary,parent,URL,Uint8Array,ArrayBuffer,TextEncoder,TextDecoder,console,
+  const context={boundary,parent,URL,Uint8Array,ArrayBuffer,TextEncoder,TextDecoder,console,queueMicrotask,
     location:{href:`https://test.invalid/${game}?runtimeEpoch=7&runtimeVariant=${multiplayer?'multiplayer':'normal'}`,origin:'https://test.invalid'},
     addEventListener(type,fn){const rows=listeners.get(type)??[];rows.push(fn);listeners.set(type,rows);},
     setInterval(fn){timers.push(fn);},performance:{now:()=>clock},
     fetch:async()=>({text:async()=>''}),DOMParser:class {parseFromString(){return {querySelectorAll:()=>[],body:{childNodes:[]}};}},
-    document:{head:{append(){}},body:{replaceChildren(){}},querySelector:()=>({}),
+    document:{head:{append(){}},body:{replaceChildren(){}},addEventListener(){},querySelector:()=>({}),
       createElement:()=>({}),getElementById:()=>({})},
   };
   context.window=context;

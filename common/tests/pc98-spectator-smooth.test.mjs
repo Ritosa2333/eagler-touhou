@@ -36,3 +36,16 @@ test('viewer starts before a growing history is fully downloaded',async()=>{
   try{await new Promise(resolve=>setTimeout(resolve,30));assert(created,'playback should start while later history is still downloading');}
   finally{viewer.stop();}
 });
+
+test('pause waits for an in-flight replica batch before reporting a settled position',async()=>{
+  let frame=0,release,entered;
+  const started=new Promise(resolve=>entered=resolve),pending=new Promise(resolve=>release=resolve);
+  const channel={ready:true,close(){},postMessage(message){if(message.type==='pull'&&message.first===0)queueMicrotask(()=>channel.onmessage?.({data:{type:'slice',viewer:message.viewer,header:{game:'01',tickMs:16},first:0,rows:Array.from({length:60},()=>({})),available:60}}));}};
+  const viewer=createLocalSpectator({game:'01',options:{netplayUrl:'ws://localhost/?room=test&run=1'},channelFactory:()=>channel,
+    createReplica:async(_,{onFrame})=>({get frame(){return frame;},stop(){},async present(){onFrame({});},async advanceBatch(batch){entered();await pending;frame+=batch.length;}}),
+    validateHeader(){},validateRow(){},stable:JSON.stringify});
+  try{await started;viewer.pause(true);assert.equal(viewer.seeking,true);release();
+    const deadline=Date.now()+1000;while(viewer.seeking&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,5));
+    assert.equal(viewer.seeking,false);const settled=viewer.frame;await new Promise(resolve=>setTimeout(resolve,40));assert.equal(viewer.frame,settled);
+  }finally{release();viewer.stop();}
+});

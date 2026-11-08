@@ -11,12 +11,24 @@ import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 import {PRODUCT_GAMES,multiplayerInputTimingPolicy} from '../../../common/contracts/product-catalog.mjs';
 const game=process.env.ROOM_RUNTIME_GAME;
 assert(['th01','th02','th03','th04'].includes(game),'ROOM_RUNTIME_GAME must be a multiplayer title');
+const lateJoin=process.env.PC98_TEST_INPUT_ONLY_LATE==='1'||process.env.PC98_TEST_LATE_JOIN==='1';
 const timing=multiplayerInputTimingPolicy(PRODUCT_GAMES[game].multiplayer);
 for(const key of ['ROOM_RUNTIME_ROOT','ROOM_RUNTIME_DATA'])assert(process.env[key],key+' is required');
 const runtime=resolve(process.env.ROOM_RUNTIME_ROOT),out=resolve('.cache/native-room-retention',game);
 await mkdir(out,{recursive:true});
 const data=await readFile(process.env.ROOM_RUNTIME_DATA),fonts=new Map();
 let instrumentedRuntime=null;
+if(process.env.PC98_TEST_ENDING==='1'){
+  assert.equal(game,'th02');
+  let source=await readFile(resolve(runtime,'netplay/runtime.js'),'utf8');
+  const config='config={...launchDefaults,...settings};';
+  assert(source.includes(config));source=source.replace(config,'config={...launchDefaults,...settings,stage:4};');
+  const marker=' m.netBeginFrame(frame,replay);';assert(source.includes(marker));
+  source=source.replace(marker,` if(frame===500&&mailbox>=0){const h=emulator.module.HEAPU8,cb=mailbox-patch.entries.mailbox,d=cb+(patch.dataSegment-patch.codeSegment)*16,end=h.slice(d+0x1a18,d+0x1a1c);emulator.module.thDirtyMark?.(cb+patch.entries.input_hook,5);h[cb+patch.entries.input_hook]=0xea;h.set(end,cb+patch.entries.input_hook+1);}\n`+marker);
+  const hook=' emulator.module.playerArt.view(localSlot);';assert(source.includes(hook));
+  source=source.replace(hook,hook+`\n {const fs=emulator.module.FS,open=fs.open;fs.open=function(path,...args){const result=open.call(this,path,...args);if(typeof path==='string'&&/maine\\.exe$/i.test(path))notifyParent({protocol:PROTOCOL,event:'qa-ending-open'});return result;};}`);
+  instrumentedRuntime=Buffer.from(source);
+}
 if(process.env.PC98_TEST_CHALLENGE_EVENTS==='1'){
   assert(['th02','th04'].includes(game));
   const source=await readFile(resolve(runtime,'netplay/runtime.js'),'utf8');
@@ -48,7 +60,7 @@ if(process.env.PC98_TEST_CHALLENGE_EVENTS==='1'){
 if(process.env.PC98_TEST_DISABLE_FOCUS==='1'){
   assert.equal(game,'th02');
   const source=instrumentedRuntime?.toString()??await readFile(resolve(runtime,'netplay/runtime.js'),'utf8');
-  const marker=' writeInputs(m.HEAPU8,mailbox,patch,nativeInput(inputs),players,config);';
+  const marker=' writeInputs(m.HEAPU8,mailbox,patch,nativeInput(inputs),players,config,(at,size)=>m.thDirtyMark?.(at,size));';
   assert(source.includes(marker),'native focus instrumentation boundary');
   instrumentedRuntime=Buffer.from(source.replace(marker,marker+`
  if(mailbox>=0&&state()&&(config.focusEnabled!==false||m.HEAPU8[mailbox+patch.focus.enabledOffset]!==0))throw Error('TH02 disabled focus did not reach native game');`));
@@ -72,6 +84,7 @@ const server=createServer(async(req,res)=>{try{
   const file=resolve(runtime,path.slice(9));if(!file.startsWith(runtime+sep))throw Error('path');
   res.setHeader('content-type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.wasm':'application/wasm','.json':'application/json','.css':'text/css'})[extname(file)]||'application/octet-stream');if(instrumentedRuntime&&path==='/runtime/netplay/runtime.js'){res.end(instrumentedRuntime);return;}
   if(instrumentedRuntime&&game==='th02'&&path==='/runtime/netplay/runtime.json'){const manifest=JSON.parse(await readFile(file,'utf8'));manifest.assets['netplay/runtime.js']=createHash('sha256').update(instrumentedRuntime).digest('hex');res.end(JSON.stringify(manifest));return;}
+  if(process.env.PC98_TEST_ENDING==='1'&&path==='/runtime/netplay/managed-runtime.js'){const source=await readFile(file,'utf8');assert(source.includes('notify(data.message)'));res.end(source.replace('notify(data.message)',"(data.message.event?.startsWith('qa-')?globalThis.__eaglerPC98Emit({event:data.message.event,name:data.message.name,tick:data.message.tick}):notify(data.message))"));return;}
   if(process.env.PC98_TEST_LATE_FRAME==='1'&&path==='/runtime/netplay/managed-runtime.js'){const source=await readFile(file,'utf8');if(!source.includes('return sync;'))throw Error('test runtime hook missing');res.end(source.replace('return sync;','globalThis.testManagedRuntime=sync;return sync;'));return;}
   res.end(await readFile(file));
 }catch{res.writeHead(404).end();}});
@@ -87,7 +100,7 @@ const playerFrame=()=>{
 try{
   await wait(()=>/listening ws:\/\/127.0.0.1:(\d+)/.test(relayLog),'Relay startup');
   const port=/listening ws:\/\/127.0.0.1:(\d+)/.exec(relayLog)[1],room=game+'mp-1234';
-  for(let actor=0;actor<3;actor++){
+  for(let actor=0;actor<(lateJoin?2:3);actor++){
     const client=new WebSocket('ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,lobby:'retention_client_'+actor,member:'retention_member_'+actor,intent:actor?'join':'create',players:'2',difficulty:'1'}));clients.push(client);
     client.addEventListener('message',e=>{const message=JSON.parse(e.data);if(message.room)client.retentionRoom=message.room;});
     await send(client,null,m=>m.type==='state');
@@ -122,6 +135,18 @@ try{
   }
   if(game==='th02'||game==='th04')await page.evaluate(()=>Promise.all([0,1].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}))));
   await wait(async()=>{const values=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>120);},'native players advancing');
+  if(process.env.PC98_TEST_ENDING==='1'){
+    await page.evaluate(()=>{let down=false;window.qaEndingKeys=setInterval(()=>{down=!down;void rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down});},250);});
+    await wait(()=>page.evaluate(()=>[1,2].every(epoch=>events.some(e=>e.epoch===epoch&&e.event==='qa-ending-open'))),'both players load native ending',120000);
+    await wait(async()=>{const values=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>=3800);},'ending progresses',120000);
+    await page.evaluate(()=>clearInterval(window.qaEndingKeys));
+    const captures=[];for(let n=0;n<2;n++)captures.push(await (await frames()[n].$('canvas')).screenshot({path:resolve(out,`ending-player-${n}.png`)}));
+    assert(captures.every(b=>b.length>3000),'both players should render the ending');
+    assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[]);
+    await wait(async()=>{const music=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(async()=>(await import('./netplay/room.js')).managedAPI.health().music)));return music.every(m=>m.track==='end1-m86');},'both players hear the native ending track',30000);
+    console.log('TH02 ending music',JSON.stringify(await Promise.all(frames().slice(0,2).map(f=>f.evaluate(async()=>(await import('./netplay/room.js')).managedAPI.health().music)))));
+    console.log('PASS TH02 multiplayer ending render');
+  } else {
   if(process.env.PC98_TEST_LATE_FRAME==='1'){
     await page.evaluate(()=>{globalThis.testStall=setInterval(()=>{const until=performance.now()+100;while(performance.now()<until){}},400);});
     await new Promise(resolve=>setTimeout(resolve,5000));await page.evaluate(()=>clearInterval(globalThis.testStall));
@@ -192,6 +217,11 @@ try{
     const points=await frames()[0].evaluate(game=>globalThis[game+'Replay']?.snapshot()?.points??[],game);
     assert.equal(points.length,0,'players must not create a replay simulation to build checkpoints');
   }
+  if(lateJoin){
+    const client=new WebSocket('ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,lobby:'retention_client_2',member:'retention_member_2',intent:'join',players:'2',difficulty:'1'}));clients.push(client);
+    await send(client,null,m=>m.type==='state');
+    await send(client,{type:'spectate'},m=>m.type==='spectator-start');
+  }
   await configure(2,1);
   await page.waitForFunction(()=>events.some(e=>e.epoch===3&&['first-frame','error'].includes(e.event)),{timeout:120000});const viewerError=await page.evaluate(()=>events.find(e=>e.epoch===3&&e.event==='error'));if(viewerError)throw Error(JSON.stringify(viewerError));
   await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&!s.seeking;},{timeout:90000});
@@ -213,6 +243,10 @@ try{
   await page.waitForFunction(()=>events.some(e=>e.epoch===3&&e.spectatorPlayback?.position>30),{timeout:120000});
   const control=async(action,frame)=>page.evaluate(async({action,frame})=>{const run=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback.run;await rpc(2,'spectator-playback',{run,action,...frame===undefined?{}:{frame}});},{action,frame});
   await control('pause');await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s?.paused&&!s.seeking;},{timeout:30000});
+  const playerBefore=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));
+  const pausedAt=await page.evaluate(()=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback).spectatorPlayback.position);
+  await wait(async()=>{const now=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));return now.every((value,i)=>value>=playerBefore[i]+90);},'players advance while spectator is paused',30000);
+  assert.equal(await page.evaluate(()=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback).spectatorPlayback.position),pausedAt,'spectator remains paused while players continue');
   const target=await page.evaluate(()=>Math.floor(events.findLast(e=>e.epoch===3&&e.spectatorPlayback).spectatorPlayback.position/2));
   await control('seek',target);await page.waitForFunction(target=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s?.paused&&!s.seeking&&s.position===target;},{timeout:90000},target);
   await control('live');await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s?.following&&!s.paused&&!s.seeking;},{timeout:90000});
@@ -229,4 +263,5 @@ try{
   }
   assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[]);
   console.log('PASS PC98 real managed players and spectator',JSON.stringify(await page.evaluate(()=>events.filter(e=>e.epoch===3&&e.spectatorPlayback).at(-1))));
+  }
 }finally{if(page){console.log('QA errors',JSON.stringify(await page.evaluate(()=>events.filter(e=>e.event==='error'))));console.log('QA tail',JSON.stringify(await page.evaluate(()=>events.filter(e=>e.epoch===3).slice(-6))));console.log('QA relay',relayLog);console.log('QA game',JSON.stringify(await Promise.all(page.frames().filter(f=>f.url().includes('runtimeEpoch=')).map(f=>f.evaluate(()=>({state:globalThis.th03SyncState||null,replayError:globalThis.th03Replay?.error||globalThis.th02Replay?.error||globalThis.th04Replay?.error||'',replayEnd:(globalThis.th03Replay||globalThis.th02Replay||globalThis.th04Replay)?.snapshot()?.end||null,recorderEnded:(globalThis.th03Replay||globalThis.th02Replay||globalThis.th04Replay)?.ended??null,pointError:(globalThis.th03Replay||globalThis.th02Replay||globalThis.th04Replay)?.pointError||'',replayPoints:(globalThis.th03Replay||globalThis.th02Replay||globalThis.th04Replay)?.snapshot()?.points?.map(p=>({frame:p.frame,scene:p.scene}))||[]}))))));}for(const c of clients)c.close();await browser?.close();await new Promise(r=>server.close(r));relay.kill();}
