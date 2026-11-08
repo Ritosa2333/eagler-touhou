@@ -26,6 +26,10 @@ void CLaser::AddLaserFixed(int laserIdx,float srcX,float srcY,float color[3],flo
 {
 	if (m_laser[laserIdx].mode!=LASER_MODE_NONE)
 		return;
+
+#ifdef TH05_BROWSER_TESTS
+	original::AuditSpecialShot(0,0);
+#endif
 	m_laser[laserIdx].mode=LASER_MODE_WAIT_TO_GROW;
 	m_laser[laserIdx].srcX=srcX;
 	m_laser[laserIdx].srcY=srcY;
@@ -57,6 +61,10 @@ void CLaser::AddLaserShootOut(float srcX,float srcY,float color[3],float angle,i
 			m_laser[i].color[1]=color[1];
 			m_laser[i].color[2]=color[2];
 			m_laser[i].speed=m_pStage->AdjustSpeedBasedOnPlayerPerformance(speed);
+
+#ifdef TH05_BROWSER_TESTS
+	original::AuditSpecialShot(0,int(m_laser[i].speed));
+#endif
 			m_laser[i].expectedWidth=6;
 			m_laser[i].width=6;
 			m_laser[i].angle=angle;

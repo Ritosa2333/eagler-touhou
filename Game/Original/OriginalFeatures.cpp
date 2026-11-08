@@ -45,8 +45,15 @@ Verdict Evaluate(const RunStats& s){
 }
 DemoState& Demo(){return demo;}bool DemoActive(){return demo.active;}
 int IRandom(){if(!demo.active)return std::rand();demo.seed=demo.seed*0x015a4e35u+1;return int((demo.seed>>16)&32767);}
+#ifdef TH05_BROWSER_TESTS
+bool auditRandom=false;
+#endif
 int Random(){
+#ifdef TH05_BROWSER_TESTS
+ if(!demo.active&&!auditRandom)return std::rand();
+#else
  if(!demo.active)return std::rand();
+#endif
  // randring1 and randring2 share one byte cursor. The word read at 255
  // includes the cursor byte itself, before INC wraps it back to zero.
  const unsigned int i=demo.ringIndex;const int value=demo.ring[i]|((i==255?demo.ringIndex:demo.ring[i+1])<<8);++demo.ringIndex;return value;

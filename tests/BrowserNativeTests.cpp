@@ -5,16 +5,24 @@
 #include "../Game/Stage/Chara/Chara.h"
 #include "../Game/Stage/Laser/Laser.h"
 #include "../Game/Stage/StageResource.h"
+#include "../Game/Stage/MidBoss/MidBoss.h"
 #include "../Game/Stage/Background/Background.h"
 #include "../Game/Stage/Boss/BossStage5.h"
 #include "../Game/Stage/Boss/BossStage4.h"
 #include "../Game/Stage/Boss/BossStage4Yuki.h"
+#include "../Game/Stage/Boss/BossStage4Mai.h"
 #include "../Game/Stage/Boss/BossStage6.h"
 #include "../Game/Stage/Boss/BossStageEx.h"
 #include "../portable/Graphics.hpp"
 #include "../Game/Practice/Practice.h"
 #include <cmath>
 #include <stdexcept>
+#include <cstring>
+namespace th5w { namespace original { extern bool auditRandom;
+static int auditSpecial[512],auditSpecialCount=0;
+void AuditSpecialShot(int kind,int speed){
+ if(auditRandom&&auditSpecialCount<512)auditSpecial[auditSpecialCount++]=kind*256+speed;
+} } }
 namespace th5w {
 struct PracticeTests {
  static int Draw(int atlas){
@@ -44,6 +52,79 @@ struct PracticeTests {
   g.m_practiceConfig=practice::Config();g.m_practiceConfig.mode=1;g.m_practiceConfig.stage=stage;g.m_practiceConfig.warp=warp;g.m_practiceConfig.Clamp(g.m_playDifficulty);g.OnBeginGame();
   auto* current=new CStage;game->m_pCurScheme=current;game->m_curSchemeID=4;current->Initialize();current->m_bLogo=false;current->m_bCanPause=true;
   if(!practice::Enabled(practice::Invincible))practice::Toggle(practice::Invincible);return 1;
+ }
+ static int AuditStart(int number,int difficulty,int rank,int kind){
+  original::auditRandom=false;
+  if(!Start(number,kind==2?1:kind?2:0))return 0;
+  auto* s=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  CGame::GVar().m_playDifficulty=difficulty;
+  s->m_playerPerformance=rank;
+  s->m_pChara->m_curX=(kind?192:-1000)*16;
+  s->m_pChara->m_curY=(kind?320:1000)*16;
+  s->m_pChara->m_invulnerableTimeLeft=10000;
+  s->m_practiceSeekDamage=0;
+  s->m_pEnemyBullet->Initialize();
+  s->m_pGatherEffect->Initialize();
+  if(kind==2){++s->m_curFrame;s->CheckMidBoss();}
+  if(kind==3||kind==4){
+   delete s->m_pBoss;
+   auto* boss=kind==3?static_cast<CBoss*>(new CBossStage4Mai):static_cast<CBoss*>(new CBossStage4Yuki);
+   s->m_pBoss=boss;
+   boss->m_pStage=s;
+   boss->m_curX=192*16;
+   boss->m_curY=64*16;
+   boss->Initialize();
+  }
+  return 1;
+ }
+ static inline int auditData[ENEMY_BULLET_N_RECORD+12]={};
+ static int AuditFrame(int frame,int kind,int damage){
+  auto* s=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  s->m_curFrame=frame;
+  s->m_pChara->m_bMiss=false;
+  original::auditSpecialCount=0;
+  struct AuditScope { AuditScope(){original::auditRandom=true;} ~AuditScope(){original::auditRandom=false;} } scope;
+  if(!kind){
+   s->m_pBackground->Step();
+   auditData[9]=s->m_pBackground->m_curDeltaPixel;
+  }
+  auto* bullets=s->m_pEnemyBullet;
+  for(auto& b:bullets->m_bullets)b.flag=0;
+  auditData[0]=0;
+  if(!kind){
+   s->m_pEnemy->StepEnemyTable();
+   s->m_pEnemy->Step();
+  }else if(kind==2){
+   auto* mid=s->m_pMidBoss;
+   if(!mid)return 0;
+   auditData[2]=mid->m_curPhase;
+   auditData[3]=mid->m_curPhaseFrame;
+   auditData[4]=0;
+   auditData[5]=mid->m_curHP;
+   auditData[6]=0;
+   auditData[7]=int(mid->m_curX);
+   auditData[8]=int(mid->m_curY);
+   s->m_pLaser->Step();
+   mid->Step();
+  }else{
+   auto* boss=s->m_pBoss;
+   if(!boss)return 0;
+   if(damage)boss->m_curHP=boss->m_curPhaseEndHP;
+   auditData[2]=boss->m_curPhase;
+   auditData[3]=boss->m_curPhaseFrame;
+   auditData[4]=boss->m_curMode;
+   auditData[5]=boss->m_curHP;
+   auditData[6]=boss->m_curPhaseEndHP;
+   auditData[7]=int(boss->m_curX);
+   auditData[8]=int(boss->m_curY);
+   s->m_pLaser->Step();
+   boss->Step();
+  }
+  s->m_pGatherEffect->Step();
+  for(const auto& b:bullets->m_bullets)if(b.flag==1)
+   auditData[12+auditData[0]++]=int(b.origSpeed*256);
+  auditData[1]=original::Demo().ringIndex;
+  return 1;
  }
  static int Background(int legacy){
   auto* game=CGame::s_pCurGame;if(!game||game->m_curSchemeID!=4)return 0;
@@ -432,3 +513,11 @@ extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_draw_probe(int atlas){return th5
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_effect_probe(int kind){return th5w::PracticeTests::Effects(kind);}
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_demo_start(int number){return th5w::PracticeTests::DemoStart(number);}
 extern "C" EMSCRIPTEN_KEEPALIVE unsigned th05_native_demo_info(int field){return th5w::PracticeTests::DemoInfo(field);}
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_audit_start(int stage,int diff,int rank,int kind){return th5w::PracticeTests::AuditStart(stage,diff,rank,kind);}
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_audit_frame(int frame,int kind,int damage){return th5w::PracticeTests::AuditFrame(frame,kind,damage);}
+extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_audit_data(){return th5w::PracticeTests::auditData;}
+extern "C" EMSCRIPTEN_KEEPALIVE unsigned char* th05_native_audit_ring(){return th5w::original::Demo().ring;}
+extern "C" EMSCRIPTEN_KEEPALIVE void th05_native_audit_cursor(int index){th5w::original::Demo().ringIndex=index;}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_audit_special_count(){return th5w::original::auditSpecialCount;}
+extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_audit_special(){return th5w::original::auditSpecial;}

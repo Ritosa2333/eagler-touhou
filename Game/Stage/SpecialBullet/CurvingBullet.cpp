@@ -19,9 +19,13 @@ void CCurvingBullet::Initialize()
 
 void CCurvingBullet::AddBullet(float origX,float origY,float angle, float speed, unsigned char colorIdx)
 {
-	for (int i=0;i<(original::DemoActive()?7:CURVING_BULLET_N_RECORD);i++)
+	for (int i=0;i<CURVING_BULLET_N_RECORD;i++)
 		if (m_bullet[i].flag==0)
 		{
+
+#ifdef TH05_BROWSER_TESTS
+	original::AuditSpecialShot(4,int(speed));
+#endif
 			m_bullet[i].flag=1;
 			m_bullet[i].angle=angle;
 			m_bullet[i].speed=speed;

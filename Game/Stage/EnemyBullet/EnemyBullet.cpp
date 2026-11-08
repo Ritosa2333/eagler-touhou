@@ -29,6 +29,7 @@ void CEnemyBullet::Initialize()
 {
 	memset(m_bullets,0,sizeof(m_bullets));
 	m_noEnemyBullet=false;
+	m_templateSpreadAngle=0;
 	m_clearEnemyBulletTimeLeft=0;
 
 	m_clipXLow=-128;
@@ -46,8 +47,18 @@ void CEnemyBullet::Initialize()
 	m_bDropPointItemOnBonus=false;
 }
 
+void CEnemyBullet::RememberSpreadAngle(const ENEMY_SHOOT_INFO& info)
+{
+	// Stage script shots copy the entire PC-98 template; boss scripts
+	// usually write the spread angle only when setting up a spread.
+	if (info.fromStageScript||info.shootType==EST02_NWAY||info.shootType==EST03_NWAY_TO_CHARA||
+		info.shootType==EST08_NWAY_MULTI||info.shootType==EST09_NWAY_MULTI_TO_CHARA)
+		m_templateSpreadAngle=static_cast<unsigned char>(int(info.nWayUnitAngle));
+}
+
 void CEnemyBullet::TuneEnemyShootInfo(ENEMY_SHOOT_INFO *pInfo)
 {
+	RememberSpreadAngle(*pInfo);
 	if (pInfo->shootType==EST06_MULTI||pInfo->shootType==EST07_MULTI_TO_CHARA)
 	{
 		if (m_pStage->m_playerPerformance>=38)
@@ -79,7 +90,7 @@ void CEnemyBullet::TuneEnemyShootInfo(ENEMY_SHOOT_INFO *pInfo)
 		case EST07_MULTI_TO_CHARA:
 			pInfo->deltaSpeed-=static_cast<int>(pInfo->deltaSpeed)/4;
 			// The original Easy stack rule checks the stored spread angle.
-			if (pInfo->fromStageScript?pInfo->nWayUnitAngle>=2:pInfo->nMulti>=2)
+			if (m_templateSpreadAngle>=2&&pInfo->nMulti>=2)
 				pInfo->nMulti--;
 		    break;
 		}
@@ -183,7 +194,6 @@ int CEnemyBullet::FindFreeRecord(int *retIdxArray,int startIdx,int nIdx,int nNee
 {
 	int nFound=0;
  if(originalPool){
-  nIdx=startIdx==0?180:220;
   for(int i=startIdx+nIdx-1;i>=startIdx;i--)if(!m_bullets[i].flag){retIdxArray[nFound++]=i;if(nFound==nNeeded)return nNeeded;}
   retIdxArray[nFound]=-1;return nFound;
  }
@@ -277,16 +287,18 @@ void CEnemyBullet::FillRecordSpeedAndAngle(int *freeRecIdx,ENEMY_SHOOT_INFO *sho
 		{
 			if (freeRecIdx[i]==-1)
 				return;
-			m_bullets[freeRecIdx[i]].curAngle=(float)(original::Random()%256);
-			m_bullets[freeRecIdx[i]].curSpeed=shootInfo->bulletSpeed+(bRandSpeed?(float)(original::Random()%32):0);
+			const int speedOffset=bRandSpeed?(original::Random()&31):0;
+			m_bullets[freeRecIdx[i]].curAngle=float(original::Random()&255);
+			m_bullets[freeRecIdx[i]].curSpeed=shootInfo->bulletSpeed+speedOffset;
 		}
 		return;
 	}
 
 	baseAngle+=shootInfo->shootAngle;
 	int curIdx=0;
-	for (int i=0;i<nWay;i++)
-		for (int j=0;j<nMulti;j++)
+	// Finish each speed layer before allocating the next one.
+	for (int j=0;j<nMulti;j++)
+		for (int i=0;i<nWay;i++)
 		{
 			if (freeRecIdx[curIdx]==-1)
 				return;
@@ -327,6 +339,7 @@ unsigned char CEnemyBullet::AdjustBulletImageBasedOnAngle(unsigned char curImgId
 
 void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bAdjustSpeed)
 {
+	RememberSpreadAngle(*shootInfo);
  if(original::DemoActive())original::Demo().bulletTemplateAngle=static_cast<unsigned char>(int(shootInfo->shootAngle));
 	if (m_noEnemyBullet==true)
 		return;
@@ -364,21 +377,19 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 	}
 	const bool originalPattern=shootInfo->fromStageScript||original::DemoActive();
 	if (bAdjustSpeed)
-		shootInfo->bulletSpeed=originalPattern
-			?float(original::math::Speed(int(shootInfo->bulletSpeed),m_pStage->m_playerPerformance))
-			:m_pStage->AdjustSpeedBasedOnPlayerPerformance(shootInfo->bulletSpeed);
+		shootInfo->bulletSpeed=m_pStage->AdjustSpeedBasedOnPlayerPerformance(shootInfo->bulletSpeed);
 
 	//dot bullets and imaged bullets are put in different ranges
 	int startRec,nRec;
 	if (shootInfo->bulletImg!=0)
 	{
 		startRec=ENEMY_BULLET_N_RECORD_DOT;
-		nRec=ENEMY_BULLET_N_RECORD_IMAGED;
+		nRec=220; // Retail sprite-bullet pool.
 	}
 	else
 	{
 		startRec=0;
-		nRec=ENEMY_BULLET_N_RECORD_DOT;
+		nRec=180; // Retail pellet pool.
 	}
 
 	unsigned char bornStage=0;
