@@ -36,6 +36,7 @@ public:
 	int m_playChara;
 	bool m_bPracticeMode;
  bool m_turboMode;
+ bool m_originalPlayerShots;
  practice::Config m_practiceConfig;
 
 public:

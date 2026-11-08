@@ -28,6 +28,7 @@ bool CReplay::Reset()
 	m_playChara=0;
 	m_bPracticeMode=false;
  m_turboMode=true;
+ m_originalPlayerShots=true;
  m_practiceConfig=practice::Config();
 	memset(m_stageFlag,0,sizeof(m_stageFlag));
 	memset(m_nCurLife,0,sizeof(m_nCurLife));
@@ -140,6 +141,13 @@ bool CReplay::SaveFile(const char *fileName)
   FAIL_CLOSE_RETURN(fwrite(&size,4,1,fp)!=1)
   FAIL_CLOSE_RETURN(fwrite(&m_practiceConfig,1,size,fp)!=size)
  }
+ // Older replays use the legacy web shot logic. Record the new rules so
+ // opening or seeking an older recording keeps its existing behavior.
+ if(m_originalPlayerShots){
+  const unsigned int version=1;
+  FAIL_CLOSE_RETURN(fwrite("TSH5",1,4,fp)!=4)
+  FAIL_CLOSE_RETURN(fwrite(&version,4,1,fp)!=1)
+ }
  // Legacy Turbo files remain byte-compatible; Slow stores its run timing.
  if(!m_turboMode){const unsigned int version=1,mode=0;
   FAIL_CLOSE_RETURN(fwrite("TSP5",1,4,fp)!=4)
@@ -164,6 +172,7 @@ bool CReplay::LoadFile(const char *fileName)
 {
  for(int stage=0;stage<7;stage++){m_keyState[stage].clear();m_touchMotion[stage].clear();}
  m_turboMode=true;
+ m_originalPlayerShots=false;
  m_practiceConfig=practice::Config();
 #define FAIL_CLOSE_RETURN(x) if (x) {fclose(fp);return false;}
 	FILE *fp=fopen(fileName,"rb");
@@ -229,7 +238,8 @@ bool CReplay::LoadFile(const char *fileName)
  bool seenSpeed=false,seenTouch=false;
  while(true){const int first=fgetc(fp);if(first==EOF)break;char sig[4]={char(first),0,0,0};unsigned int version=0;
   FAIL_CLOSE_RETURN(fread(sig+1,1,3,fp)!=3||fread(&version,4,1,fp)!=1||version!=1)
-  if(!memcmp(sig,"TSP5",4)){unsigned int mode=0;FAIL_CLOSE_RETURN(seenSpeed||seenTouch||fread(&mode,4,1,fp)!=1||mode>1) m_turboMode=mode!=0;seenSpeed=true;}
+  if(!memcmp(sig,"TSH5",4)){FAIL_CLOSE_RETURN(m_originalPlayerShots||seenSpeed||seenTouch) m_originalPlayerShots=true;}
+  else if(!memcmp(sig,"TSP5",4)){unsigned int mode=0;FAIL_CLOSE_RETURN(seenSpeed||seenTouch||fread(&mode,4,1,fp)!=1||mode>1) m_turboMode=mode!=0;seenSpeed=true;}
   else if(!memcmp(sig,"TCH5",4)){FAIL_CLOSE_RETURN(seenTouch)seenTouch=true;
    for(int stage=0;stage<7;stage++){unsigned int count=0;FAIL_CLOSE_RETURN(fread(&count,4,1,fp)!=1||count>m_keyState[stage].size())
     auto& samples=m_touchMotion[stage];samples.resize(count);unsigned int previous=0;

@@ -3,6 +3,7 @@
 #include "../Game/Game.h"
 #include "../Game/Stage/Stage.h"
 #include "../Game/Stage/Chara/Chara.h"
+#include "../Game/Stage/CharaBullet/CharaBullet.h"
 #include "../Game/Stage/Laser/Laser.h"
 #include "../Game/Stage/StageResource.h"
 #include "../Game/Stage/MidBoss/MidBoss.h"
@@ -45,13 +46,55 @@ struct PracticeTests {
   if(field==4)return unsigned(s->m_pChara->GetCurX());if(field==5)return unsigned(s->m_pChara->GetCurY());if(field==6)return unsigned(s->m_curFrame);
   unsigned hash=2166136261u;const auto* data=reinterpret_cast<const unsigned char*>(s->m_pEnemyBullet->m_bullets);for(size_t n=0;n<sizeof(s->m_pEnemyBullet->m_bullets);n++)hash=(hash^data[n])*16777619u;return hash;
  }
- static int Start(int stage,int warp){
+ static int Start(int stage,int warp,int character=0){
   auto* game=CGame::s_pCurGame;if(!game||stage<0||stage>6||warp<0||warp>2)return 0;
   auto& g=CGame::GVar();delete game->m_pCurScheme;game->m_pCurScheme=nullptr;original::StopDemo();g.m_replay.CloseStage(false);
-  g.m_bReplayMode=false;g.m_bPracticeMode=true;g.m_playStage=stage;g.m_playChara=0;g.m_playDifficulty=stage==6?4:1;
+  g.m_bReplayMode=false;g.m_bPracticeMode=true;g.m_playStage=stage;g.m_playChara=character;g.m_playDifficulty=stage==6?4:1;
   g.m_practiceConfig=practice::Config();g.m_practiceConfig.mode=1;g.m_practiceConfig.stage=stage;g.m_practiceConfig.warp=warp;g.m_practiceConfig.Clamp(g.m_playDifficulty);g.OnBeginGame();
   auto* current=new CStage;game->m_pCurScheme=current;game->m_curSchemeID=4;current->Initialize();current->m_bLogo=false;current->m_bCanPause=true;
   if(!practice::Enabled(practice::Invincible))practice::Toggle(practice::Invincible);return 1;
+ }
+ static inline int playerShots[1+64*7]={};
+ static int ShotStart(int character,int power,int homing){
+  if(character<0||character>3||power<1||power>128||!Start(0,0,character))return 0;
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  stage->m_pChara->SetPower(power);
+  stage->m_pChara->m_curX=192*16;
+  stage->m_pChara->m_curY=320*16;
+  stage->m_pChara->m_cannotControlTimeLeft=0;
+  stage->m_pChara->m_bCharaCanShoot=true;
+  stage->m_pChara->m_invulnerableTimeLeft=10000;
+  stage->m_bHomingEnemyExist=homing;
+  stage->m_homingEnemyX=120*16;
+  stage->m_homingEnemyY=140*16;
+  return 1;
+ }
+ static bool ShotRules(){
+  auto* game=CGame::s_pCurGame;
+  return game&&game->m_curSchemeID==4&&
+   static_cast<CStage*>(game->m_pCurScheme)->m_pCharaBullet->UsesOriginalShots();
+ }
+ static int* ShotStep(int frame){
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  stage->m_curFrame=frame;
+  stage->m_curGameKeyState=32;
+  struct AuditScope {
+   AuditScope(){original::auditRandom=true;}
+   ~AuditScope(){original::auditRandom=false;}
+  } scope;
+  stage->m_pChara->Step();
+  auto* bullets=stage->m_pCharaBullet;
+  bullets->Step();
+  playerShots[0]=0;
+  int* out=playerShots+1;
+  for(const auto& b:bullets->m_bullets){
+   if(b.flag!=1)continue;
+   ++playerShots[0];
+   *out++=int(b.curX*256);*out++=int(b.curY*256);
+   *out++=int(b.velX*256);*out++=int(b.velY*256);
+   *out++=b.imgIdx;*out++=b.bulletType;*out++=b.damage;
+  }
+  return playerShots;
  }
  static int AuditStart(int number,int difficulty,int rank,int kind){
   original::auditRandom=false;
@@ -521,3 +564,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE void th05_native_audit_cursor(int index){th5w::o
 
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_audit_special_count(){return th5w::original::auditSpecialCount;}
 extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_audit_special(){return th5w::original::auditSpecial;}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_shot_start(int character,int power,int homing){return th5w::PracticeTests::ShotStart(character,power,homing);}
+extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_shot_step(int frame){return th5w::PracticeTests::ShotStep(frame);}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_shot_rules(){return th5w::PracticeTests::ShotRules();}
