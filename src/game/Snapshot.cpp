@@ -693,7 +693,7 @@ const std::string& captureState() {
           << ',' << s.grazed << ',' << s.rotateToMotion << ',' << s.spawnDuration << ','
           << s.cancelAge << ',' << s.collisionDelay << ',' << s.offscreenGrace << ',' << s.active
           << ',' << s.cursor << ',' << s.pendingRetire << "],\"extensions\":";
-      snapshotProgram(out, s.program);
+      snapshotProgram(out, s.program());
       out << ",\"transforms\":[";
       snapshotMotion(out, s.fast);
       out << ',';

@@ -16,6 +16,34 @@ UfoEffects& UfoEffects::operator=(const UfoEffects& other) {
   std::erase_if(states_, [&](const auto& entry) { return !other.states_.contains(entry.first); });
   return *this;
 }
+UfoEffects::Snapshot UfoEffects::snapshot() const {
+  Snapshot saved;
+  snapshot(saved);
+  return saved;
+}
+void UfoEffects::snapshot(Snapshot& saved) const {
+  saved.serial = serial_;
+  saved.states.resize(states_.size());
+  size_t index = 0;
+  // bind() stores nodeId as the map key; state() only exposes const payloads.
+  for (const auto& [id, state] : states_) saved.states[index++] = *state;
+}
+void UfoEffects::restore(const Snapshot& saved) {
+  serial_ = saved.serial;
+  for (const auto& state : saved.states) {
+    const auto found = states_.find(state.nodeId);
+    if (found == states_.end()) states_.emplace(state.nodeId, std::make_shared<UfoEffectState>(state));
+    else *found->second = state;
+  }
+  if (states_.size() > saved.states.size()) {
+    restoreIds_.clear(); restoreIds_.reserve(saved.states.size());
+    for (const auto& state : saved.states) restoreIds_.push_back(state.nodeId);
+    std::sort(restoreIds_.begin(), restoreIds_.end());
+    std::erase_if(states_, [&](const auto& entry) {
+      return !std::binary_search(restoreIds_.begin(), restoreIds_.end(), entry.first);
+    });
+  }
+}
 namespace {
 constexpr uint64_t EffectKeyBase = 0x7900000000000000ull;
 constexpr float Pi = 3.1415927410125732f, Tau = 6.2831854820251465f;

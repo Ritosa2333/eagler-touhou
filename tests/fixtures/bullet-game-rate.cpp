@@ -12,7 +12,11 @@ struct RateWorld:World{
 State state;std::string output;
 extern "C"{
 void rate_begin(float rate,int phase){world.rate=rate;state={};initialize(state,1,{},3,0,12,120,.3f,1.8f,world);state.phase=Phase(phase);state.offscreenGrace=1000;}
-void rate_record(int index,int kind,int c,int d,float a,float b,int concurrent){set(state.program,index,concurrent,kind,c,d,a,b);}
+void rate_record(int index,int kind,int c,int d,float a,float b,int concurrent){
+  Program program=state.program();
+  set(program,index,concurrent,kind,c,d,a,b);
+  state.programStorage=std::make_shared<const Program>(program);
+}
 void rate_dispatch(){start(state,world);}
 void rate_tick(){tick(state,world);}
 const char* rate_snapshot(){std::ostringstream out;out.precision(9);out<<"{\"position\":["<<state.x<<','<<state.y<<"],\"velocity\":["<<state.vx<<','<<state.vy<<"],\"speed\":"<<state.speed<<",\"angle\":"<<state.angle<<",\"active\":"<<state.active<<",\"cursor\":"<<state.cursor<<",\"phase\":"<<uint32_t(state.phase)<<",\"age\":"<<state.age<<'}';output=out.str();return output.c_str();}

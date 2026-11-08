@@ -156,18 +156,24 @@ extern "C" SDL_AppResult SDL_AppIterate(void* state){
     const double now=host::seconds(),period=app.game->logical_interval();
     double (*pace)(double)=nullptr;
     bool spectator_cadence=false;
+    bool smooth_rollback=false;
 #ifdef TH12_MULTIPLAYER
     if(th12::multiplayer::active){
+        const auto& network=th12::multiplayer::session.network;
         pace=[](double elapsed){return th12::multiplayer::session.network.PacedElapsed(elapsed*1000)/1000;};
+        smooth_rollback=runtime_options.limit_presentation&&!network.Spectator()&&network.AllowsRollback()&&!network.Setup().mode;
 #ifdef __EMSCRIPTEN__
-        spectator_cadence=runtime_options.limit_presentation&&th12::multiplayer::session.network.Spectator();
+        spectator_cadence=runtime_options.limit_presentation&&network.Spectator();
 #endif
     }
 #endif
-    // Draw the spectator world on the same callback that advances it. Borrow
-    // up to 2 ms for early browser callbacks and repay it from the next tick.
-    const unsigned ticks=app.clock.advance(now,period,pace,spectator_cadence?0.002:0.);
-    const bool draw_frame=spectator_cadence?ticks!=0:app.clock.present(now,runtime_options.limit_presentation);
+    const bool present=!spectator_cadence&&app.clock.present(now,runtime_options.limit_presentation);
+    // A 60 Hz rollback room samples on its presentation callbacks. Keeping
+    // separate phases on high refresh displays can show zero then two ticks.
+    const unsigned ticks=!smooth_rollback||present?
+        app.clock.advance(now,period,pace,smooth_rollback,spectator_cadence?0.002:0.):0;
+    // In spectator playback, publish the same callback that advances the world.
+    const bool draw_frame=spectator_cadence?ticks!=0:present;
     if(!ticks&&!draw_frame){
 #ifndef __EMSCRIPTEN__
         SDL_Delay(1);
