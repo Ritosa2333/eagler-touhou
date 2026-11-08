@@ -28,6 +28,7 @@ public:
     Registry registry;
     Runtime runtime;
     uint32_t nextId = 1;
+    bool collectionPending = false;
     std::vector<Node> nodes;
     std::vector<std::pair<uint64_t, uint32_t>> roots;
     std::array<std::vector<uint32_t>, 3> chains;
@@ -38,6 +39,8 @@ private:
   std::unordered_map<uint32_t, std::shared_ptr<Node>> nodes_;
   Node* executing_ = nullptr;
   uint32_t nextId_ = 1;
+  bool collectionPending_ = false;
+  void retire(Node& node) noexcept;
   std::vector<uint32_t> restoreNodeIds_;
   std::vector<uint64_t> restoreRootKeys_;
   Runtime runtimeFor(Node& node);

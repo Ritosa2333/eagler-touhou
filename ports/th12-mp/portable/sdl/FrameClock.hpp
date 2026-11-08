@@ -8,12 +8,19 @@ class FrameClock {
 public:
     static constexpr double interval=1./60.;
     void reset(){previous=-1;debt=0;last_present=-1;}
-    unsigned advance(double now,double period=interval,double (*pace)(double)=nullptr,double early=0){
+    unsigned advance(double now,double period=interval,double (*pace)(double)=nullptr,
+                     bool smooth_rollback=false,double early=0){
         period=std::clamp(period,1./9999.,1.);
         if(previous<0){previous=now;return 0;}
         const double elapsed=std::clamp(now-previous,0.,4*interval);
         debt+=pace?pace(elapsed):elapsed;previous=now;
-        const unsigned count=unsigned(std::clamp(std::floor((debt+early+1e-9)/period),0.,256.));
+        unsigned count=unsigned(std::clamp(std::floor((debt+early+1e-9)/period),0.,256.));
+        // Near 60 Hz, keep one update per callback while timing jitter
+        // straddles a tick boundary. Retain any borrowed time in debt so
+        // sustained peer pacing and genuine stalls still adjust the rate.
+        const double margin=period*.3;
+        if(smooth_rollback&&std::abs(elapsed-period)<=margin&&
+           debt>=period-margin&&debt<2*period+margin)count=1;
         debt-=count*period;return count;
     }
     float alpha(double period=interval)const{return float(std::clamp(debt/period,0.,1.));}
