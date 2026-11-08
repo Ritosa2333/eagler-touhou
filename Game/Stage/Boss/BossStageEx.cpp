@@ -1,3 +1,4 @@
+#include "../../Original/CombatThresholds.h"
 #include "../../Practice/Practice.h"
 #include ".\bossstageex.h"
 #include "../Stage.h"
@@ -45,7 +46,7 @@ void CBossStageEx::Initialize()
 int CBossStageEx::GetDmgVerStageEx()
 {
 	if (m_pStage->m_bInCharaBomb)
-		m_invulnerableTimeLeft=39;
+		m_invulnerableTimeLeft=original::ExtraAliceBombTimer;
 	if (m_invulnerableTimeLeft==0)
 		return GetDmgOnAndCrashChara();
 	return 0;

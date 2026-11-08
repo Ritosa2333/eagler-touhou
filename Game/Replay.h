@@ -37,6 +37,8 @@ public:
 	bool m_bPracticeMode;
  bool m_turboMode;
  unsigned int m_combatRevision;
+ static constexpr unsigned int CurrentPracticeVersion=4;
+ unsigned int m_practiceVersion;
  practice::Config m_practiceConfig;
 
 public:

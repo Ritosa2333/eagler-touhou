@@ -31,6 +31,8 @@ try{
   });
  });
  assert.deepEqual(report.modifiers,[1,1,1]);
+ report.practiceCases=await page.evaluate(()=>document.querySelector('iframe').contentWindow.Module._th05_native_stage_matrix());
+ assert.equal(report.practiceCases,84);
  report.resources=await page.evaluate(()=>{
   const m=document.querySelector('iframe').contentWindow.Module;if(!m._th05_coop_start(3,0,1,741,0,1,2))throw Error('start');
   const probe=(op,seat,value)=>{if(!m._th05_native_coop_probe(op,seat,value))throw Error('probe');};

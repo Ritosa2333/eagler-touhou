@@ -29,6 +29,7 @@ bool CReplay::Reset()
 	m_bPracticeMode=false;
  m_turboMode=true;
  m_combatRevision=original::OriginalBombAndRage;
+ m_practiceVersion=CurrentPracticeVersion;
  m_practiceConfig=practice::Config();
 	memset(m_stageFlag,0,sizeof(m_stageFlag));
 	memset(m_nCurLife,0,sizeof(m_nCurLife));
@@ -136,7 +137,7 @@ bool CReplay::SaveFile(const char *fileName)
 			FAIL_CLOSE_RETURN(fwrite(m_keyState[i].data(),2,nkey,fp)!=nkey)
 		}
  if(m_practiceConfig.mode){
-  const unsigned int version=3,size=sizeof(practice::Config);
+  const unsigned int version=m_practiceVersion,size=sizeof(practice::Config);
   FAIL_CLOSE_RETURN(fwrite("TPC5",1,4,fp)!=4)
   FAIL_CLOSE_RETURN(fwrite(&version,4,1,fp)!=1)
   FAIL_CLOSE_RETURN(fwrite(&size,4,1,fp)!=1)
@@ -177,6 +178,7 @@ bool CReplay::LoadFile(const char *fileName)
  for(int stage=0;stage<7;stage++){m_keyState[stage].clear();m_touchMotion[stage].clear();}
  m_turboMode=true;
  m_combatRevision=original::LegacyCombat;
+ m_practiceVersion=3;
  memset(m_itemRankProgress,0,sizeof(m_itemRankProgress));
  m_practiceConfig=practice::Config();
 #define FAIL_CLOSE_RETURN(x) if (x) {fclose(fp);return false;}
@@ -231,9 +233,10 @@ bool CReplay::LoadFile(const char *fileName)
  if(replayVersion!=CGame::GVar().m_gameVersion){
   char sig[4];unsigned int version=0,size=0;
   FAIL_CLOSE_RETURN(fread(sig,1,4,fp)!=4||memcmp(sig,"TPC5",4)!=0)
-  FAIL_CLOSE_RETURN(fread(&version,4,1,fp)!=1||(version<1||version>3))
+  FAIL_CLOSE_RETURN(fread(&version,4,1,fp)!=1||(version<1||version>CurrentPracticeVersion))
   FAIL_CLOSE_RETURN(fread(&size,4,1,fp)!=1||size!=(version==1?14*4:version==2?18*4:sizeof(practice::Config)))
   FAIL_CLOSE_RETURN(fread(&m_practiceConfig,1,size,fp)!=size)
+  if(version==CurrentPracticeVersion)m_practiceVersion=version;
   FAIL_CLOSE_RETURN(m_playDifficulty<0||m_playDifficulty>4||m_playChara<0||m_playChara>3)
   FAIL_CLOSE_RETURN(!m_bPracticeMode||m_practiceConfig.mode!=1||!m_practiceConfig.ValidReplay(m_playDifficulty))
   for(int stage=0;stage<7;stage++)FAIL_CLOSE_RETURN((m_stageFlag[stage]!=0)!=(stage==m_practiceConfig.stage))

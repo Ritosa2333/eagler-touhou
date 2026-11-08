@@ -59,10 +59,17 @@ bool Initialize(HWND window) {
   for(int warp=1;warp<=2;warp++){
    int count=0;
    const auto* sections=Sections(stage,warp,count);
-   for(int index=0;index<count;index++)ranges.AddText(sections[index].name);
+   for(int index=0;index<count;index++){
+    const auto& section=sections[index];
+    ranges.AddText(section.name);
+    const auto hint=AttackHint(stage,warp,section);
+    if(hint.text)ranges.AddText(hint.text);
+    if(const auto* hint=BombHint(stage,warp,section.phase))ranges.AddText(hint);
+   }
   }
  }
  for(int difficulty=1;difficulty<=3;difficulty++)ranges.AddText(YumekoShotHint(difficulty));
+ for(int rage=1;rage<=2;rage++)ranges.AddText(ShinkiRageName(rage));
  ranges.AddText(th5w::locale::Text(u8"\u5bf9\u8bdd"));ranges.BuildRanges(&glyphRanges);
  if (GetFileAttributesA(font)==INVALID_FILE_ATTRIBUTES || !io.Fonts->AddFontFromFileTTF(font,16,NULL,glyphRanges.Data)) io.Fonts->AddFontDefault();
 #ifdef __EMSCRIPTEN__

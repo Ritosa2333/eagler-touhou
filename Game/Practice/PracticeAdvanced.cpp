@@ -15,6 +15,11 @@ namespace th5w { namespace practice {
 namespace {
 AdvancedOptions options;int fpsDraft=56;bool open=false,retryRequest=false,quickIntro=false;
 const char* settingsFile=TH05_SAVE("thprac-uth05.ini");
+const char* const CountdownLabel=th5w::locale::Text(u8"\u9636\u6bb5\u5269\u4f59\u65f6\u95f4/\u6b21\u6570\u663e\u793a");
+const char* const CountdownUnitsLabel=th5w::locale::Text(u8"\u8ba1\u65f6\u5355\u4f4d");
+const char* const NativeSecondsLabel=th5w::locale::Text(u8"\u539f\u901f\u79d2\u6570");
+const char* const NativeFramesLabel=th5w::locale::Text(u8"\u539f\u901f\u5e27\u6570");
+const char* const CountdownHelp=th5w::locale::Text(u8"\u79d2\u6570\u6309\u539f\u901f 56 \u5e27\u6bcf\u79d2\u6362\u7b97\u3002\u8f6e\u6570\u6a21\u5f0f\u4e0b\uff0c\u56fa\u5b9a\u8ba1\u65f6\u7684\u9636\u6bb5\u663e\u793a\u79d2\u6570\u3002F6 \u51bb\u7ed3\u5269\u4f59\u91cf\u548c\u65f6\u95f4\u89e6\u53d1\u7684\u72c2\u66b4\uff0c\u8840\u91cf\u4ecd\u53ef\u89e6\u53d1\u72c2\u66b4\u3002\u4f30\u7b97\u503c\u5e26 ~\u3002");
 double ClockMs(){LARGE_INTEGER now,freq;QueryPerformanceCounter(&now);QueryPerformanceFrequency(&freq);return double(now.QuadPart)*1000.0/double(freq.QuadPart);}
 double WaitMs(){static std::mt19937 random(GetTickCount());return std::uniform_int_distribution<int>(1200,3500)(random);}
 bool Shift(){const auto& io=ImGui::GetIO();return io.KeysDown[VK_SHIFT]||io.KeysDown[VK_LSHIFT]||io.KeysDown[VK_RSHIFT];}
@@ -43,6 +48,7 @@ void LoadAdvancedOptions(){
  options.phaseStars=GetPrivateProfileIntA("Advanced","phaseStars",0,settingsFile)!=0;
  options.ringBar=GetPrivateProfileIntA("Advanced","ringBar",0,settingsFile)!=0;
  options.hpPhaseMarkers=GetPrivateProfileIntA("Advanced","hpPhaseMarkers",0,settingsFile)!=0;
+ options.phaseTimeoutAsFrames=GetPrivateProfileIntA("Advanced","phaseTimeoutAsFrames",0,settingsFile)!=0;
  options.phaseTimeout=GetPrivateProfileIntA("Advanced","phaseTimeout",0,settingsFile)!=0;
  options.numericDream=GetPrivateProfileIntA("Advanced","numericDream",0,settingsFile)!=0;
  options.numericPower=GetPrivateProfileIntA("Advanced","numericPower",0,settingsFile)!=0;
@@ -70,6 +76,7 @@ void SaveAdvancedOptions(){
  WritePrivateProfileStringA("Advanced","numericDream",options.numericDream?"1":"0",settingsFile);
  WritePrivateProfileStringA("Advanced","numericPower",options.numericPower?"1":"0",settingsFile);
  WritePrivateProfileStringA("Advanced","phaseTimeoutAsTime",options.phaseTimeoutAsTime?"1":"0",settingsFile);
+ WritePrivateProfileStringA("Advanced","phaseTimeoutAsFrames",options.phaseTimeoutAsFrames?"1":"0",settingsFile);
  WritePrivateProfileStringA("Advanced","phaseTimeout",options.phaseTimeout?"1":"0",settingsFile);
  WritePrivateProfileStringA("Advanced","hpPhaseMarkers",options.hpPhaseMarkers?"1":"0",settingsFile);
  char number[24];sprintf_s(number,"%d",Config::Bound(options.fps,1,6000));WritePrivateProfileStringA("Advanced","FPS",number,settingsFile);
@@ -169,12 +176,17 @@ void DrawAdvanced(){
   changed|=ImGui::Checkbox(th5w::locale::Text(u8"\u68a6\u69fd\u72b6\u6001\u4ee5\u6570\u5b57\u663e\u793a"),&options.numericDream);
   changed|=ImGui::Checkbox(th5w::locale::Text(u8"\u706b\u529b\u72b6\u6001\u4ee5\u6570\u5b57\u663e\u793a"),&options.numericPower);
   if(options.eosdBar||options.ringBar){options.phaseTimeout=true;ImGui::PushItemFlag(ImGuiItemFlags_Disabled,true);ImGui::PushStyleVar(ImGuiStyleVar_Alpha,ImGui::GetStyle().Alpha*.5f);}
-  changed|=ImGui::Checkbox(th5w::locale::Text(u8"\u9636\u6bb5\u5269\u4f59\u65f6\u95f4/\u6b21\u6570\u663e\u793a"),&options.phaseTimeout);
-  if(options.eosdBar||options.ringBar){ImGui::PopStyleVar();ImGui::PopItemFlag();}Help(th5w::locale::Text(u8"\u5269\u4f59\u79d2\u6570\u6309\u539f\u901f 56 \u5e27\u6bcf\u79d2\u6362\u7b97\u3002\u5faa\u73af\u653b\u51fb\u4e5f\u53ef\u663e\u793a\u8f6e\u6570\u3002\u53d7\u968f\u673a\u79fb\u52a8\u6216\u8df3\u5e27\u5f71\u54cd\u7684\u4f30\u7b97\u65f6\u95f4\u4ee5 ~ \u6807\u8bb0\u3002"));
+  changed|=ImGui::Checkbox(CountdownLabel,&options.phaseTimeout);
+  if(options.eosdBar||options.ringBar){ImGui::PopStyleVar();ImGui::PopItemFlag();}
+  Help(CountdownHelp);
   if(options.phaseTimeout){
-   int unit=options.phaseTimeoutAsTime?1:0;
-   const char* units[]={th5w::locale::Text(u8"\u8f6e\u6570"),th5w::locale::Text(u8"\u65f6\u95f4")};
-   if(ImGui::Combo(th5w::locale::Text(u8"\u653b\u51fb\u5faa\u73af\u663e\u793a"),&unit,units,2)){options.phaseTimeoutAsTime=unit==1;changed=true;}
+   int unit=options.phaseTimeoutAsFrames?2:options.phaseTimeoutAsTime?1:0;
+   const char* units[]={th5w::locale::Text(u8"\u8f6e\u6570"),NativeSecondsLabel,NativeFramesLabel};
+   if(ImGui::Combo(CountdownUnitsLabel,&unit,units,3)){
+    options.phaseTimeoutAsTime=unit==1;
+    options.phaseTimeoutAsFrames=unit==2;
+    changed=true;
+   }
   }
   if(ImGui::Checkbox(th5w::locale::Text(u8"\u8840\u6761\u63d0\u793a\u9636\u6bb5"),&options.hpPhaseMarkers)){changed=true;if(options.hpPhaseMarkers){options.eosdBar=false;options.ringBar=false;}}
   if(ImGui::Checkbox(th5w::locale::Text(u8"\u7ea2\u9b54\u4e61\u5f0f\u8840\u6761"),&options.eosdBar)){changed=true;if(options.eosdBar){options.ringBar=false;options.hpPhaseMarkers=false;options.phaseTimeout=true;}}
@@ -225,5 +237,11 @@ void DrawRuntimeHUD(){
  KeysHUD(5,ImVec2(1280,0),ImVec2(833,0),style);
 
 }
-const char* AdvancedGlyphs(){return th5w::locale::Text(u8"\u73af\u5f62\u8840\u6761\u6309\u661f\u661f\u663e\u793a\u9636\u6bb5\u6570\u653b\u51fb\u5faa\u73af\u663e\u793a\u8f6e\u6570\u65f6\u95f4\u9884\u8ba1\u968f\u673a\u79fb\u52a8\u6362\u7b97\u6807\u8bb0\u7ea2\u9b54\u4e61\u5f0f\u8840\u6761\u8840\u6761\u63d0\u793a\u9636\u6bb5\u2191\u2190\u2193\u2192\u0394\u03a3\u5f00\u59cb\u8bb0\u5f55APS\u505c\u6b62\u8bb0\u5f55APS\u5bfc\u51fa\u5230\u6e38\u620f\u6587\u4ef6\u5939\u9636\u6bb5\u5269\u4f59\u65f6\u95f4/\u6b21\u6570\u663e\u793a\u5269\u4f59\u79d2\u6570\u6309\u539f\u901f 56 \u5e27\u6bcf\u79d2\u6362\u7b97\u3002\u5faa\u73af\u653b\u51fb\u4e5f\u53ef\u663e\u793a\u8f6e\u6570\u3002\u53d7\u968f\u673a\u79fb\u52a8\u6216\u8df3\u5e27\u5f71\u54cd\u7684\u4f30\u7b97\u65f6\u95f4\u4ee5 ~ \u6807\u8bb0\u3002\u68a6\u69fd\u72b6\u6001\u4ee5\u6570\u5b57\u663e\u793a\u706b\u529b\u72b6\u6001\u4ee5\u6570\u5b57\u663e\u793a\u4f5c\u5f0a\u4f4e\u901f\u65f6\u663e\u793a\u5e38\u9a7b\u5224\u5b9a\u70b9\u5e94\u7528\u6309\u4e0b\u53cd\u5e94\u6d4b\u8bd5\uff08\u7b49\u5f85\u53d8\u8272\u540e\u6309\u65b9\u5411\u952e\uff09\u5f39\u8d77\u53cd\u5e94\u6d4b\u8bd5\uff08\u6309\u4f4f\u65b9\u5411\u952e\uff0c\u53d8\u8272\u540e\u677e\u5f00\uff09\u663e\u793a\u7b49\u5f85\u65f6\u95f4\u8fdb\u5ea6\u6761\u6d4b\u8bd5\u6b21\u6570\u6309\u592a\u5feb\u4e86\u7ed3\u679c\u7ed3\u679c\uff08\u5e73\u5747\u503c\uff09\u5f00\u59cb\u6d4b\u8bd5\uff08\u5feb\u6377\u952e Z / Shift\uff09\u518d\u6d4b\u4e00\u6b21\uff08\u5feb\u6377\u952e Z / Shift\uff09\u7b49\u5f85\u7ea2\u8272\u53d8\u7eff\u65f6\u6309\u4e0b\u6216\u677e\u5f00\u65b9\u5411\u952e\u9ad8\u7ea7\u9009\u9879\u6e38\u620f\u901f\u5ea6\u5e27\u7387\u8c03\u6574\u81ea\u7531\u8c03\u6574\u6062\u590d\u539f\u901fTH05 \u539f\u901f\u4e3a 56 fps\uff1b\u6b64\u9879\u8c03\u6574\u6e38\u620f\u8fd0\u884c\u901f\u5ea6\uff0c\u97f3\u4e50\u4fdd\u6301\u539f\u901f\u3002\u6e38\u620f\u8fdb\u884c\u5c06\u9501\u6b8b\u4fee\u6539\u4e3a\u4e0d\u75aeF2 \u5f00\u542f\u65f6\u6b63\u5e38\u6263\u6b8b\u673a\uff0c\u6700\u540e\u4e00\u547d\u540e\u4e0d\u518d\u8fdb\u5165 Game Over\u3002\u7981\u7528\u952e\u4f4d\u7981\u7528 X \u952e\u7981\u7528 Shift \u952e\u7981\u7528 Z \u952e\u5feb\u6377\u952e\uff1aShift+D / Shift+A / Shift+S\uff1b\u672c\u4f5c\u6ca1\u6709\u7ed1\u5b9a C \u952e\u3002\u5f3a\u5236\u6309\u4f4f Shift \u952e\u5f3a\u5236\u4f4e\u901f\u4f18\u5148\u4e8e\u7981\u7528\u4f4e\u901f\u3002\u53ea\u5f71\u54cd\u6e38\u620f\u64cd\u4f5c\uff0c\u4e0d\u5f71\u54cd\u83dc\u5355\u6216\u5f55\u50cf\u56de\u653e\u3002\u6253\u5f00\u6309\u952e\u663e\u793a\u542f\u7528\u9501\u65f6\u8ba1\u65f6\u7ec3\u4e60\u6a21\u5f0f\u5feb\u901fre\u7ec3\u4e60\u4e2d Miss \u540e\u81ea\u52a8\u91cd\u8bd5\uff1bShift+F \u53ef\u624b\u52a8\u89e6\u53d1\u3002\u663e\u793a\u5224\u5b9a\u70b9\u59cb\u7ec8\u663e\u793a\u81ea\u673a\u5224\u5b9a\u70b9\uff1b\u539f\u6709\u7684\u4f4e\u901f\u663e\u793a\u4fdd\u7559\u3002\u53cd\u5e94\u529b\u6d4b\u8bd5\u5173\u4e8ethprac\u754c\u9762\u4e0e\u884c\u4e3a\u53c2\u8003\uff1aAck \u7684\u7d2b\u7248 thprac\uff0c\u57fa\u4e8e touhouworldcup/thprac\u3002\u539f\u751f\u6e38\u620f\uff1auth05win\uff1b\u539f\u7248\u6d41\u7a0b\u53c2\u8003\uff1aReC98\u3002\u9690\u85cf\u8bb8\u53ef\u4fe1\u606f\u663e\u793a\u8bb8\u53ef\u4fe1\u606f\u6309\u952e\u663e\u793a###TH05 Key Monitor");}
+const char* AdvancedGlyphs(){
+ static std::string glyphs;
+ glyphs=th5w::locale::Text(u8"\u73af\u5f62\u8840\u6761\u6309\u661f\u661f\u663e\u793a\u9636\u6bb5\u6570\u653b\u51fb\u5faa\u73af\u663e\u793a\u8f6e\u6570\u65f6\u95f4\u9884\u8ba1\u968f\u673a\u79fb\u52a8\u6362\u7b97\u6807\u8bb0\u7ea2\u9b54\u4e61\u5f0f\u8840\u6761\u8840\u6761\u63d0\u793a\u9636\u6bb5\u2191\u2190\u2193\u2192\u0394\u03a3\u5f00\u59cb\u8bb0\u5f55APS\u505c\u6b62\u8bb0\u5f55APS\u5bfc\u51fa\u5230\u6e38\u620f\u6587\u4ef6\u5939\u9636\u6bb5\u5269\u4f59\u65f6\u95f4/\u6b21\u6570\u663e\u793a\u5269\u4f59\u79d2\u6570\u6309\u539f\u901f 56 \u5e27\u6bcf\u79d2\u6362\u7b97\u3002\u5faa\u73af\u653b\u51fb\u4e5f\u53ef\u663e\u793a\u8f6e\u6570\u3002\u53d7\u968f\u673a\u79fb\u52a8\u6216\u8df3\u5e27\u5f71\u54cd\u7684\u4f30\u7b97\u65f6\u95f4\u4ee5 ~ \u6807\u8bb0\u3002\u68a6\u69fd\u72b6\u6001\u4ee5\u6570\u5b57\u663e\u793a\u706b\u529b\u72b6\u6001\u4ee5\u6570\u5b57\u663e\u793a\u4f5c\u5f0a\u4f4e\u901f\u65f6\u663e\u793a\u5e38\u9a7b\u5224\u5b9a\u70b9\u5e94\u7528\u6309\u4e0b\u53cd\u5e94\u6d4b\u8bd5\uff08\u7b49\u5f85\u53d8\u8272\u540e\u6309\u65b9\u5411\u952e\uff09\u5f39\u8d77\u53cd\u5e94\u6d4b\u8bd5\uff08\u6309\u4f4f\u65b9\u5411\u952e\uff0c\u53d8\u8272\u540e\u677e\u5f00\uff09\u663e\u793a\u7b49\u5f85\u65f6\u95f4\u8fdb\u5ea6\u6761\u6d4b\u8bd5\u6b21\u6570\u6309\u592a\u5feb\u4e86\u7ed3\u679c\u7ed3\u679c\uff08\u5e73\u5747\u503c\uff09\u5f00\u59cb\u6d4b\u8bd5\uff08\u5feb\u6377\u952e Z / Shift\uff09\u518d\u6d4b\u4e00\u6b21\uff08\u5feb\u6377\u952e Z / Shift\uff09\u7b49\u5f85\u7ea2\u8272\u53d8\u7eff\u65f6\u6309\u4e0b\u6216\u677e\u5f00\u65b9\u5411\u952e\u9ad8\u7ea7\u9009\u9879\u6e38\u620f\u901f\u5ea6\u5e27\u7387\u8c03\u6574\u81ea\u7531\u8c03\u6574\u6062\u590d\u539f\u901fTH05 \u539f\u901f\u4e3a 56 fps\uff1b\u6b64\u9879\u8c03\u6574\u6e38\u620f\u8fd0\u884c\u901f\u5ea6\uff0c\u97f3\u4e50\u4fdd\u6301\u539f\u901f\u3002\u6e38\u620f\u8fdb\u884c\u5c06\u9501\u6b8b\u4fee\u6539\u4e3a\u4e0d\u75aeF2 \u5f00\u542f\u65f6\u6b63\u5e38\u6263\u6b8b\u673a\uff0c\u6700\u540e\u4e00\u547d\u540e\u4e0d\u518d\u8fdb\u5165 Game Over\u3002\u7981\u7528\u952e\u4f4d\u7981\u7528 X \u952e\u7981\u7528 Shift \u952e\u7981\u7528 Z \u952e\u5feb\u6377\u952e\uff1aShift+D / Shift+A / Shift+S\uff1b\u672c\u4f5c\u6ca1\u6709\u7ed1\u5b9a C \u952e\u3002\u5f3a\u5236\u6309\u4f4f Shift \u952e\u5f3a\u5236\u4f4e\u901f\u4f18\u5148\u4e8e\u7981\u7528\u4f4e\u901f\u3002\u53ea\u5f71\u54cd\u6e38\u620f\u64cd\u4f5c\uff0c\u4e0d\u5f71\u54cd\u83dc\u5355\u6216\u5f55\u50cf\u56de\u653e\u3002\u6253\u5f00\u6309\u952e\u663e\u793a\u542f\u7528\u9501\u65f6\u8ba1\u65f6\u7ec3\u4e60\u6a21\u5f0f\u5feb\u901fre\u7ec3\u4e60\u4e2d Miss \u540e\u81ea\u52a8\u91cd\u8bd5\uff1bShift+F \u53ef\u624b\u52a8\u89e6\u53d1\u3002\u663e\u793a\u5224\u5b9a\u70b9\u59cb\u7ec8\u663e\u793a\u81ea\u673a\u5224\u5b9a\u70b9\uff1b\u539f\u6709\u7684\u4f4e\u901f\u663e\u793a\u4fdd\u7559\u3002\u53cd\u5e94\u529b\u6d4b\u8bd5\u5173\u4e8ethprac\u754c\u9762\u4e0e\u884c\u4e3a\u53c2\u8003\uff1aAck \u7684\u7d2b\u7248 thprac\uff0c\u57fa\u4e8e touhouworldcup/thprac\u3002\u539f\u751f\u6e38\u620f\uff1auth05win\uff1b\u539f\u7248\u6d41\u7a0b\u53c2\u8003\uff1aReC98\u3002\u9690\u85cf\u8bb8\u53ef\u4fe1\u606f\u663e\u793a\u8bb8\u53ef\u4fe1\u606f\u6309\u952e\u663e\u793a###TH05 Key Monitor");
+ for(const auto* label:{CountdownLabel,CountdownUnitsLabel,NativeSecondsLabel,NativeFramesLabel,CountdownHelp})
+  glyphs+=label;
+ return glyphs.c_str();
+}
 } }
