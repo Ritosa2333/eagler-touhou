@@ -2736,8 +2736,8 @@ test('room start binds the run to its native preload without a second navigation
   await React.act(async () => {socket.open(); socket.message({type: 'start', serial: 2, room});});
   await until(() => node('#decisionDialog').open, 'original music confirmation');
   await click('#decisionConfirm'); await until(() => session.getRuntime().getSnapshot().launched, 'preloaded engine launched');
-  assert.equal(f.fullscreen,node('#player'),'desktop Start requests browser fullscreen for the game');
-  assert.equal(node('#player').classList.contains('room-workspace'),false,'the fullscreen game is presented while waiting for the first frame/path');
+  assert.equal(f.fullscreen,null,'desktop Start keeps the browser chrome visible');
+  assert.equal(node('#player').classList.contains('room-workspace'),false,'the game fills the browser viewport while waiting for the first frame/path');
   assert.equal(env.document.querySelector('#mpRoomView'),null,'startup has no second room renderer');
   assert.equal(session.getRuntime().getSnapshot().epoch, epoch);
   assert.equal(f.navigations.length, navigations); assert.equal(f.dataReads.length, reads);
@@ -3009,16 +3009,22 @@ for (const mobileDevice of [false,true]) for (const nativeFullscreen of [true,fa
  f.native[api.multiplayerConfigForProduct('th06mp').peerTransportGlobal]={peers:new Map(),relay:{readyState:1}};
  await React.act(async()=>f.native.emit('first-frame'));
  await until(()=>session.getSnapshot().roomLaunchStage===null,'player first frame and gameplay path settled');
- assert.equal(f.fullscreen,nativeFullscreen?node('#player'):null,'Start automatically requests real browser fullscreen on desktop and mobile');
- assert.equal(node('#fullscreenToggle').dataset.fullscreen,String(nativeFullscreen),'the fullscreen button reports the native browser state');
+ assert.equal(f.fullscreen,null,'Start never requests browser fullscreen');
+ assert.equal(node('#player').classList.contains('room-workspace'),false);
+ assert.equal(node('#fullscreenToggle').dataset.fullscreen,'false');
+ await click('#fullscreenToggle');
+ assert.equal(f.fullscreen,nativeFullscreen?node('#player'):null,'only the explicit toggle enters browser fullscreen');
  if(!nativeFullscreen){
   env.window.HTMLElement.prototype.requestFullscreen=request;
   await click('#fullscreenToggle');
-  assert.equal(f.fullscreen,node('#player'),'one manual click retries a blocked automatic request');
-  assert.equal(node('#gameFrame'),frame);assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
+  assert.equal(f.fullscreen,node('#player'),'retrying the manual request enters browser fullscreen');
  }
- if(f.fullscreen)await React.act(async()=>env.document.exitFullscreen());
- else if(session.getSnapshot().roomPlayerExpanded)await React.act(async()=>session.togglePlayerFullscreen());
+ await React.act(async()=>env.document.exitFullscreen());
+ assert.equal(f.fullscreen,null);
+ assert.equal(node('#player').classList.contains('room-workspace'),false,'system fullscreen exit returns to the viewport-sized match');
+ assert.equal(node('#gameFrame'),frame);assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
+ await React.act(async()=>session.exitRoomPlayerFullscreen());
+ await React.act(async()=>env.window.history.back());
  assert.equal(node('#player').classList.contains('room-workspace'),true);
  assert.equal(node('.room-workspace-preparation').hidden,true);
  assert.equal(env.document.querySelector('#touchHud'),null,'room picture has no gameplay controls');
@@ -3181,7 +3187,8 @@ for(const failure of ['first frame','gameplay path'])test(`actual BrowserLaunche
   await until(()=>node('#decisionDialog').open||session.getRuntime().getSnapshot().launched,'room music choice');
   if(node('#decisionDialog').open)await click('#decisionConfirm');
   await until(()=>session.getRuntime().getSnapshot().launched,'native acknowledged launch');
-  assert.equal(f.fullscreen,node('#player'),'room Start already entered browser fullscreen before the failed wait');
+  assert.equal(f.fullscreen,null,'room Start keeps browser chrome even before the first frame');
+  assert.equal(node('#player').classList.contains('room-workspace'),false);
   if(failure==='first frame')await React.act(async()=>timers.fire(timers.live(122_000)[0]));
   else await React.act(async()=>{f.native.Module={eaglerOptions:{netplayMode:'lan'}};f.native.__eaglerPeerTransport={peers:new Map()};f.native.__eaglerNetplayFailed=true;f.native.__eaglerNetplayError='fixture gameplay path failed';f.native.emit('first-frame');});
   await until(()=>session.startupError.getSnapshot().open,'room reports the failed wait');
