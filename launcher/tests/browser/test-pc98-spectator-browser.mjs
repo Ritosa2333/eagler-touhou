@@ -72,6 +72,7 @@ const server=createServer(async(req,res)=>{try{
   const file=resolve(runtime,path.slice(9));if(!file.startsWith(runtime+sep))throw Error('path');
   res.setHeader('content-type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.wasm':'application/wasm','.json':'application/json','.css':'text/css'})[extname(file)]||'application/octet-stream');if(instrumentedRuntime&&path==='/runtime/netplay/runtime.js'){res.end(instrumentedRuntime);return;}
   if(instrumentedRuntime&&game==='th02'&&path==='/runtime/netplay/runtime.json'){const manifest=JSON.parse(await readFile(file,'utf8'));manifest.assets['netplay/runtime.js']=createHash('sha256').update(instrumentedRuntime).digest('hex');res.end(JSON.stringify(manifest));return;}
+  if(process.env.PC98_TEST_LATE_FRAME==='1'&&path==='/runtime/netplay/managed-runtime.js'){const source=await readFile(file,'utf8');if(!source.includes('return sync;'))throw Error('test runtime hook missing');res.end(source.replace('return sync;','globalThis.testManagedRuntime=sync;return sync;'));return;}
   res.end(await readFile(file));
 }catch{res.writeHead(404).end();}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -121,6 +122,15 @@ try{
   }
   if(game==='th02'||game==='th04')await page.evaluate(()=>Promise.all([0,1].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}))));
   await wait(async()=>{const values=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>120);},'native players advancing');
+  if(process.env.PC98_TEST_LATE_FRAME==='1'){
+    await page.evaluate(()=>{globalThis.testStall=setInterval(()=>{const until=performance.now()+100;while(performance.now()<until){}},400);});
+    await new Promise(resolve=>setTimeout(resolve,5000));await page.evaluate(()=>clearInterval(globalThis.testStall));
+    for(const f of frames().slice(0,2)){
+      const metrics=await f.evaluate(()=>globalThis.testManagedRuntime?.renderInfo()?.pageRpc??globalThis.testManagedRuntime?.performanceInfo?.()?.page);
+      assert(metrics&&metrics.lateDisplayed>0,'late newest frames must still reach the canvas');
+      assert.equal(metrics.expired,0,'latest frames must not be discarded merely because the UI stalled');
+    }
+  }
   if(process.env.PC98_TEST_CHALLENGE==='1'){
     await (await frames()[0].$('canvas')).screenshot({path:resolve(out,'challenge-native-hud.png')});
     for(const f of frames().slice(0,2)){

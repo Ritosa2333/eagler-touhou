@@ -20,14 +20,14 @@ globalThis.th04WorkerHost={canvas:new OffscreenCanvas(640,400),audioContext,
  },stop:()=>send({type:'se-stop'}),dispose(){},
  info:()=>({sequence,played,status:'浏览器音效：确认事件交给页面',loaded:17})}
 };
-let lastDiagnostics=-Infinity,lastGameAt=-Infinity,lastGameStep=-30,simulatedSteps=0;
+let lastDiagnostics=-Infinity,lastGameAt=-Infinity,lastGameStep=-6,simulatedSteps=0;
 function status(force=false){
  const r=th04WorkerHost.runtime,now=performance.now();
  // Control, prediction and replay proof must follow every completed command.
  // UI-only diagnostics match the room's 250 ms refresh, including during replay.
  const state={proof:r.replayProof(),ready:r.readyForRollback(),reason:r.predictionBlockReason(),touch:r.touchContext()};
  if(th04WorkerHost.replayOnly)state.scene=r.replayScene();
- if(force||simulatedSteps-lastGameStep>=30||now-lastGameAt>=1000){state.game=r.snapshot();lastGameStep=simulatedSteps;lastGameAt=now;}
+ if(force||simulatedSteps-lastGameStep>=6||now-lastGameAt>=1000){state.game=r.snapshot();lastGameStep=simulatedSteps;lastGameAt=now;}
  if(force||now-lastDiagnostics>=250){
   Object.assign(state,{rollback:r.rollbackInfo(),render:r.renderInfo(),diagnostics:r.diagnosticText(),fault:r.faultReport({cpu:false})});
   lastDiagnostics=now;

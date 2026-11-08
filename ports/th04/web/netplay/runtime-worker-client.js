@@ -15,9 +15,10 @@ if(!ctx)throw Error('浏览器无法创建游戏画面');
 if(!bitmapContext)ctx.imageSmoothingEnabled=false;
 let worker,serial=0,stopped=false,settings,configuration=[0,0,2],volume=.7,blocked=false,listener=()=>{},keys=new Set();
 let fat,pmd,context,se,bgm,musicTask,musicError='',seError='',pendingMusic=[],cache={},check=null,queuedFrame=null,preparedFrame=null,raf=0,presentPending=false;
+let frameCutoff=0;
 let raw=false,points={focus:true,always:false},lastPoints='',acknowledgedPrefix=0,sentPrefix=0,stagedMode=false,preparedReady=false,bootPromise,lastFaultCpu=null;
 let drawn=0,replaced=0,lastDraw=0,intervals=[],executionMs=0,stoppedMusic=null;
-const rpcMetrics={renderer:bitmapContext?'bitmaprenderer':'2d',displayMs:0,expired:0,hiddenDiscarded:0,queuedConfirmations:0,presentationRpcs:0};
+const rpcMetrics={renderer:bitmapContext?'bitmaprenderer':'2d',displayMs:0,expired:0,lateDisplayed:0,hiddenDiscarded:0,queuedConfirmations:0,presentationRpcs:0};
 const requests=new Map();
 function request(type,args=[],extra={}){
  if(stopped||!worker)return Promise.reject(Error('TH04 Worker 未运行'));
@@ -31,13 +32,16 @@ function fire(type,args=[]){if(worker)void request(type,args).catch(e=>{if(!stop
 function clearKeys(){keys.clear();listener(0);}
 function releaseFrame(frame){frame.bitmap.close();worker?.postMessage({type:'frame-ack',sequence:frame.sequence});}
 function discardPrepared(){preparedReady=false;if(preparedFrame){releaseFrame(preparedFrame);preparedFrame=null;}}
-function discardFrames(){preparedReady=false;if(preparedFrame){releaseFrame(preparedFrame);preparedFrame=null;}if(queuedFrame){releaseFrame(queuedFrame);queuedFrame=null;}if(raf){cancelAnimationFrame(raf);raf=0;}}
+function discardFrames(){frameCutoff=performance.timeOrigin+performance.now();preparedReady=false;if(preparedFrame){releaseFrame(preparedFrame);preparedFrame=null;}if(queuedFrame){releaseFrame(queuedFrame);queuedFrame=null;}if(raf){cancelAnimationFrame(raf);raf=0;}}
 function queueForDisplay(frame){if(document.hidden){releaseFrame(frame);rpcMetrics.hiddenDiscarded++;return;}if(queuedFrame){releaseFrame(queuedFrame);replaced++;}queuedFrame=frame;if(!raf)raf=requestAnimationFrame(draw);}
 function draw(){
  raf=0;if(!queuedFrame||stopped)return;
  const frame=queuedFrame;queuedFrame=null;
- const hidden=document.hidden,expired=Number.isFinite(frame.producedAt)&&performance.timeOrigin+performance.now()-frame.producedAt>50;
- if(hidden||expired){releaseFrame(frame);rpcMetrics[hidden?'hiddenDiscarded':'expired']++;return;}
+ // queueForDisplay has already discarded older frames, and rollback clears
+ // this queue. Even when the UI thread stalls, this is the newest valid frame;
+ // displaying it avoids a second visible freeze while waiting for another.
+ if(document.hidden){releaseFrame(frame);rpcMetrics.hiddenDiscarded++;return;}
+ if(Number.isFinite(frame.producedAt)&&performance.timeOrigin+performance.now()-frame.producedAt>50)rpcMetrics.lateDisplayed++;
  const began=performance.now();
  try{if(bitmapContext)bitmapContext.transferFromImageBitmap(frame.bitmap);else ctx.drawImage(frame.bitmap,0,0,640,400);drawn++;const now=performance.now();rpcMetrics.displayMs+=now-began;if(lastDraw)intervals.push(now-lastDraw);lastDraw=now;if(intervals.length>120)intervals.shift();}
  catch(error){fatal(error.message);}
@@ -82,7 +86,7 @@ async function load(config){
    if(!seError)try{se.confirm(data.event);}catch(e){seError='浏览器音效错误：'+e.message;se.stop();}return;
   }
   if(data.type==='se-stop'){se.stop();return;}
-  if(data.type==='frame'){if(data.staged){if(preparedFrame)releaseFrame(preparedFrame);preparedFrame=data;}else queueForDisplay(data);return;}
+  if(data.type==='frame'){if(Number.isFinite(data.producedAt)&&data.producedAt<=frameCutoff){releaseFrame(data);return;}if(data.staged){if(preparedFrame)releaseFrame(preparedFrame);preparedFrame=data;}else queueForDisplay(data);return;}
   if(data.type==='error'){
    if(data.fault){cache.fault=data.fault;lastFaultCpu=data.fault.cpu;}
    const pending=requests.get(data.id);requests.delete(data.id);pending?.reject(Error(data.message));fatal(data.message);return;

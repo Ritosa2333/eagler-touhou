@@ -13,9 +13,10 @@ if(!ctx)throw Error('浏览器无法创建游戏画面');
 if(!bitmapContext)ctx.imageSmoothingEnabled=false;
 let worker,serial=0,stopped=false,settings,configuration=[0,0,2],volume=.7,blocked=false,listener=()=>{},keys=new Set();
 let fat,pmd,context,sfx,bgm,musicTask,musicError='',playedName='',pendingMusic=[],cache={},check=null,queuedFrame=null,preparedFrame=null,raf=0,presentPending=false;
+let frameCutoff=0;
 let raw=false,points={focus:true,always:false},lastPoints='',acknowledgedPrefix=0,sentPrefix=0,stagedMode=false,preparedReady=false,bootPromise;
 const requests=new Map();
-const rpcMetrics={renderer:bitmapContext?'bitmaprenderer':'2d',roundTripMs:0,commands:0,workerExecutionMs:0,loadRoundTripMs:0,loadExecutionMs:0,displayMs:0,displayed:0,replaced:0,expired:0,hiddenDiscarded:0,queuedConfirmations:0,presentationRpcs:0};
+const rpcMetrics={renderer:bitmapContext?'bitmaprenderer':'2d',roundTripMs:0,commands:0,workerExecutionMs:0,loadRoundTripMs:0,loadExecutionMs:0,displayMs:0,displayed:0,replaced:0,expired:0,lateDisplayed:0,hiddenDiscarded:0,queuedConfirmations:0,presentationRpcs:0};
 function request(type,args=[],extra={}){
  if(stopped)return Promise.reject(Error('TH02 worker 已停止'));
  const id=++serial;return new Promise((resolve,reject)=>{requests.set(id,{resolve,reject,type,started:performance.now()});worker.postMessage({type,args,id,...extra});});
@@ -25,12 +26,15 @@ function fire(type,args=[]){if(worker)void request(type,args).catch(e=>{if(!stop
 function clearKeys(){keys.clear();listener(0);}
 function releaseFrame(frame){frame.bitmap.close();worker?.postMessage({type:'frame-ack',sequence:frame.sequence});}
 function discardPrepared(){preparedReady=false;if(preparedFrame){releaseFrame(preparedFrame);preparedFrame=null;}}
-function discardFrames(){preparedReady=false;if(preparedFrame){releaseFrame(preparedFrame);preparedFrame=null;}if(queuedFrame){releaseFrame(queuedFrame);queuedFrame=null;}if(raf){cancelAnimationFrame(raf);raf=0;}}
+function discardFrames(){frameCutoff=performance.timeOrigin+performance.now();preparedReady=false;if(preparedFrame){releaseFrame(preparedFrame);preparedFrame=null;}if(queuedFrame){releaseFrame(queuedFrame);queuedFrame=null;}if(raf){cancelAnimationFrame(raf);raf=0;}}
 function queueForDisplay(frame){if(document.hidden){releaseFrame(frame);rpcMetrics.hiddenDiscarded++;return;}if(queuedFrame){releaseFrame(queuedFrame);rpcMetrics.replaced++;}queuedFrame=frame;if(!raf)raf=requestAnimationFrame(draw);}
 function draw(){
  raf=0;if(!queuedFrame||stopped)return;const frame=queuedFrame;queuedFrame=null;
- const hidden=document.hidden,expired=Number.isFinite(frame.producedAt)&&performance.timeOrigin+performance.now()-frame.producedAt>50;
- if(hidden||expired){releaseFrame(frame);rpcMetrics[hidden?'hiddenDiscarded':'expired']++;return;}
+ // queueForDisplay has already discarded older frames, and rollback clears
+ // this queue. Even when the UI thread stalls, this is the newest valid frame;
+ // displaying it avoids a second visible freeze while waiting for another.
+ if(document.hidden){releaseFrame(frame);rpcMetrics.hiddenDiscarded++;return;}
+ if(Number.isFinite(frame.producedAt)&&performance.timeOrigin+performance.now()-frame.producedAt>50)rpcMetrics.lateDisplayed++;
  const at=performance.now();
  try{if(bitmapContext)bitmapContext.transferFromImageBitmap(frame.bitmap);else ctx.drawImage(frame.bitmap,0,0,640,400);rpcMetrics.displayMs+=performance.now()-at;rpcMetrics.displayed++;}
  catch(error){fatal(error.message);}
@@ -60,7 +64,7 @@ async function load(config){
   if(data.type==='notify'){window.parent.postMessage(data.message,location.origin);return;}
   if(data.type==='music'){music(data.event);return;}
   if(data.type==='sfx'){if(!document.hidden)sfx.play(data.id);return;}
-  if(data.type==='frame'){if(stopped){releaseFrame(data);return;}if(data.staged){if(preparedFrame)releaseFrame(preparedFrame);preparedFrame=data;}else queueForDisplay(data);return;}
+  if(data.type==='frame'){if(stopped||Number.isFinite(data.producedAt)&&data.producedAt<=frameCutoff){releaseFrame(data);return;}if(data.staged){if(preparedFrame)releaseFrame(preparedFrame);preparedFrame=data;}else queueForDisplay(data);return;}
   if(data.type==='confirmed-exit'){if(!stopped)window.th02Sync?.onConfirmedExit?.();return;}
   if(data.type==='error'){const pending=requests.get(data.id);requests.delete(data.id);pending?.reject(Error(data.message));fatal(data.message);return;}
   if(data.type!=='result')return;

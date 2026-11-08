@@ -8,7 +8,7 @@ const transfers=new Set();
 // authoritative inputs while this Worker owns a short native batch.
 const REPLAY_MAX_STEPS=4,REPLAY_BUDGET_MS=6;
 const metrics={captureMs:0,captures:0,stepMs:0,steps:0,replaySteps:0,restoreMs:0,restores:0,confirmMs:0,confirmations:0,hashMs:0,hashes:0,presentMs:0,presentations:0,bitmapMs:0,bitmaps:0,nativeMs:0,nativeSteps:0,nativeMaxMs:0,statusMs:0,queueMs:0,commands:0};
-const slowSteps=[];let detailAt=-Infinity,lastGameAt=-Infinity,lastGameStep=-30;
+const slowSteps=[];let detailAt=-Infinity,lastGameAt=-Infinity,lastGameStep=-6;
 function timed(kind,count,action){const at=performance.now();try{return action();}finally{metrics[kind]+=performance.now()-at;metrics[count]++;}}
 globalThis.th02WorkerHost={canvas:new OffscreenCanvas(640,400),audioContext,
  captureAudioState:()=>({music:replayMusic.capture()}),
@@ -20,7 +20,7 @@ globalThis.th02WorkerHost={canvas:new OffscreenCanvas(640,400),audioContext,
 function status(force=false){const at=performance.now(),r=th02WorkerHost.runtime;
  const value={proof:r.replayProof(),ready:r.readyForRollback(),reason:r.predictionBlockReason(),touch:r.touchContext()};
  if(th02WorkerHost.replayOnly)value.scene=r.replayScene();
- if(force||metrics.steps-lastGameStep>=30||at-lastGameAt>=1000){value.game=r.snapshot();lastGameStep=metrics.steps;lastGameAt=at;}
+ if(force||metrics.steps-lastGameStep>=6||at-lastGameAt>=1000){value.game=r.snapshot();lastGameStep=metrics.steps;lastGameAt=at;}
  // Expensive display percentile sorting and fault detail are observational;
  // keep them out of every step/confirm RPC, while game policy stays current.
  if(at-detailAt>=250){detailAt=at;Object.assign(value,{rollback:r.rollbackInfo(),render:r.renderInfo(),diagnostics:r.diagnosticText(),fault:r.faultReport(),slowSteps:slowSteps.slice()});}
