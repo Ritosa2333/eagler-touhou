@@ -59,8 +59,7 @@ async function startPractice(value){const config=normalizePractice(value),state=
 async function openNativeForm(){
   const state=readState();if(!emulator||playback)return;
   if(!state||state.mode!==1)return;
-  const setup=lastPractice.setup,values=[setup.stage,setup.character,setup.difficulty,({stage:0,mid:1,boss:2})[setup.entry],setup.phase,setup.lives,setup.bombs,setup.power,setup.branch==='gengetsu'?1:0,setup.rank-4];
-  release();await emulator.call('practiceFormOpen',[state.at,state.generation,values,setup.hp,encodeNativeOptions(emulator.snapshot.practice.options)]);
+  release();await emulator.call('practiceFormOpen',[state.at,state.generation,true]);
 }
 let formBusy=false;
 async function completeNativeForm(ps,state){

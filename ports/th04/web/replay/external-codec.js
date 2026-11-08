@@ -56,7 +56,7 @@ function validAssist(game,input){
   if(input.address!==undefined&&!integer(input.address,-1,2**31-1)||
     input.generation!==undefined&&!integer(input.generation,0,65535))return false;
   if(input.quit===true||input.restart===true){if(input.quit&&input.restart||!['02','04'].includes(game))return false;if(input.practiceConfig!==undefined){try{if(!input.restart||game!=='04'||normalizePractice(input.practiceConfig).mode!=='target')return false;}catch{return false;}}return true;}
-  if(game==='04'&&input.formOpen){const f=input.formOpen;return Array.isArray(f.values)&&f.values.length===10&&f.values.every(n=>integer(n,0,255))&&Array.isArray(f.settings)&&f.settings.length===11&&f.settings.every((n,i)=>integer(n,0,i===10?5:1))&&integer(f.hp,0,30000);}
+  if(game==='04'&&input.formOpen){const f=input.formOpen;return f===true||Array.isArray(f.values)&&f.values.length===10&&f.values.every(n=>integer(n,0,255))&&Array.isArray(f.settings)&&f.settings.length===11&&f.settings.every((n,i)=>integer(n,0,i===10?5:1))&&integer(f.hp,0,30000);}
   if(game==='04'&&input.formInput!==undefined)return integer(input.formInput,0,64);
   if(game==='04'&&input.pauseInput!==undefined)return integer(input.pauseInput,0,15)&&(input.openPause===undefined||typeof input.openPause==='boolean');
   if(game==='04'&&input.pauseAck!==undefined)return integer(input.pauseAck,1,2);

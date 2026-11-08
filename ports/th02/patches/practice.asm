@@ -167,6 +167,7 @@ frame_hook:
     jz .assist_done
     call practice_assists_draw
 .assist_done:
+    call practice_info_tick
     call practice_info_draw
     pop es
     call practice_power_lock
@@ -201,6 +202,14 @@ wait_hold:
     popf
     ret
 miss_hook:
+    cmp byte [cs:target_practice],0
+    je .counted
+    cmp byte [cs:target_preparing],0
+    jne .counted
+    cmp byte [cs:practice_outcome],0
+    jne .counted
+    inc word [cs:practice_info_misses]
+.counted:
     push dx
     mov dx,0x7fd2
     call signal

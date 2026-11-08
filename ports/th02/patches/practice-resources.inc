@@ -33,6 +33,7 @@ practice_target_arrival:
     mov byte [cs:practice_seen_boss],0
     mov byte [cs:practice_fatal],0
     mov byte [cs:practice_outcome],0
+    call practice_info_reset
     mov dword [0xb28],0
     mov dword [0x3e3c],0
     mov word [0x3e40],0

@@ -41,7 +41,7 @@ function applyAssist(value){
   if(!emulator)return;const at=value.address,heap=emulator.module.HEAPU8;if(!valid(heap,at))return;
   const view=new DataView(heap.buffer),base=at-patch.entries.mailbox;if(value.generation!==view.getUint16(at+24,true))return;
   const e=patch.practice?.entries;
-  if(value.formOpen){const f=value.formOpen;if(!e||!Array.isArray(f.values)||f.values.length!==10||!Array.isArray(f.settings)||f.settings.length!==11||!Number.isInteger(f.hp)||f.hp<0||f.hp>8500||f.values.some(n=>!Number.isInteger(n)||n<0||n>255)||f.settings.some((n,i)=>!Number.isInteger(n)||n<0||n>(i===10?5:1))||heap[base+e.resultVisible])return;heap.set(f.values,base+e.formValues);heap.set(f.settings,base+e.formOptions);view.setUint16(base+e.formHp,f.hp,true);heap[base+e.formRequest]=0;heap[base+e.formOpen]=1;return;}
+  if(value.formOpen){const f=value.formOpen;if(!e||heap[base+e.resultVisible])return;if(f!==true){if(!Array.isArray(f.values)||f.values.length!==10||!Array.isArray(f.settings)||f.settings.length!==11||!Number.isInteger(f.hp)||f.hp<0||f.hp>8500||f.values.some(n=>!Number.isInteger(n)||n<0||n>255)||f.settings.some((n,i)=>!Number.isInteger(n)||n<0||n>(i===10?5:1)))return;heap.set(f.values,base+e.formValues);heap.set(f.settings,base+e.formOptions);view.setUint16(base+e.formHp,f.hp,true);}heap[base+e.formRequest]=0;heap[base+e.formOpen]=1;return;}
   if(Number.isInteger(value.formInput)){if(e&&(heap[base+e.formOpen]||value.formInput===64))view.setUint16(base+e.formInput,value.formInput&127,true);return;}
   if(Number.isInteger(value.pauseInput)){if(e){if(value.openPause&&!heap[base+e.resultVisible])heap[base+e.pauseOpen]=1;if(heap[base+e.pauseOpen])view.setUint16(base+e.pauseInput,value.pauseInput&15,true);}return;}
   if(Number.isInteger(value.pauseAck)){if(e&&heap[base+e.pauseOpen]&&heap[base+e.pauseRequest])heap[base+e.pauseAck]=value.pauseAck;return;}
@@ -117,10 +117,9 @@ async function startPractice(value){const config=normalizePractice(value),state=
 function openNativeForm(){
   const state=readState(),e=patch?.practice?.entries;if(!emulator||playback)return;
   if(!state||state.mode!==1||!valid(emulator.module.HEAPU8,mailbox)||!Number.isInteger(e?.formOpen))return;
-  const h=emulator.module.HEAPU8,base=mailbox-patch.entries.mailbox,setup=lastPractice.setup;
+  const h=emulator.module.HEAPU8,base=mailbox-patch.entries.mailbox;
   if(h[base+e.resultVisible])return;
-  const values=[setup.stage,setup.character,setup.difficulty,({stage:0,mid:1,boss:2})[setup.entry],setup.phase,setup.lives,setup.bombs,setup.power,0,setup.rank+6];
-  emulator.assist({address:mailbox,generation:state.generation,formOpen:{values,hp:setup.hp,settings:encodeNativeOptions(emulator.practice.status.options)}});release();
+  emulator.assist({address:mailbox,generation:state.generation,formOpen:true});release();
 }
 function completeNativeForm(ps){
   const form=ps?.nativeForm,e=patch?.practice?.entries;if(!form?.request||!emulator||!valid(emulator.module.HEAPU8,mailbox))return;

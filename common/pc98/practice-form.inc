@@ -669,7 +669,7 @@ practice_form_values: db 0,0,1,0,0,3,2,FORM_POWER_MAX,0,FORM_RANK_DEFAULT
 practice_form_hp: dw 0
 ; lock rank, disable bomb/focus/shot, force focus, quick retry, always point,
 ; show keys, show info, prepared retry, speed index.
-practice_form_options: times 11 db 0
+practice_form_options: db 0,0,0,0,0,1,0,0,0,0,3
 practice_form_min: db 0,0,0,0,0,0,0,1,0,0
 practice_form_max: db FORM_STAGE_MAX,FORM_CHARACTER_MAX,4,2,FORM_PHASE_MAX,FORM_STOCK_MAX,FORM_STOCK_MAX,FORM_POWER_MAX,FORM_BRANCH_MAX,FORM_RANK_MAX
 

@@ -152,8 +152,8 @@ def main():
     cpu = Uc(UC_ARCH_X86, UC_MODE_16)
     cpu.mem_map(0, 0x100000)
     cpu.mem_write(0x1000, code)
-    original = bytes((n * 7) & 255 for n in range(480))
-    attrs = bytes((n * 11) & 255 for n in range(480))
+    original = bytes((n * 7) & 255 for n in range(1200))
+    attrs = bytes((n * 11) & 255 for n in range(1200))
     cpu.mem_write(0xa0000, original)
     cpu.mem_write(0xa2000, attrs)
     cpu.mem_write(0x18000, b'\x00\x20')
@@ -165,14 +165,13 @@ def main():
         cpu.reg_write(UC_X86_REG_SP, 0)
         cpu.emu_start(0x1000 + entry, 0x3000, count=10000)
     draw(1, 0x21)
-    assert bytes(cpu.mem_read(0xa0000 + 100, 4)) == b'F\x001\x00'
-    assert cpu.mem_read(0xa0000 + 100 + 16, 1)[0] == ord('1')
-    assert cpu.mem_read(0xa0000 + 420 + 46, 1)[0] == ord('1')
+    assert bytes(cpu.mem_read(0xa0000 + 176, 6)) == b'[\x00F\x001\x00'
+    assert cpu.mem_read(0xa0000 + 176 + 5*160, 1)[0] == ord('[')
     draw(1, 0)
-    assert cpu.mem_read(0xa0000 + 100 + 16, 1)[0] == ord('0')
+    assert cpu.mem_read(0xa0000 + 176, 1)[0] == ord(' ')
     draw(0, 0)
-    assert bytes(cpu.mem_read(0xa0000, 480)) == original
-    assert bytes(cpu.mem_read(0xa2000, 480)) == attrs
+    assert bytes(cpu.mem_read(0xa0000, 1200)) == original
+    assert bytes(cpu.mem_read(0xa2000, 1200)) == attrs
     print('guest assist menu: draw, update and restore passed')
 
     with tempfile.TemporaryDirectory() as tmp:

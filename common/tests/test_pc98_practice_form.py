@@ -32,7 +32,7 @@ with tempfile.TemporaryDirectory() as tmp:
     assert key(8)==1
     assert key(1)==1 and machine.mem_read(base+choice,1)==b'\x0a'
     assert key(1)==1 and machine.mem_read(base+choice,1)==b'\x09'
-    assert key(8)==1 and machine.mem_read(base+options+10,1)==b'\x01'
+    assert key(8)==1 and machine.mem_read(base+options+10,1)==b'\x04'
     assert key(32)==1 and machine.mem_read(base+choice,1)==b'\x0c'
     assert key(2)==1 and machine.mem_read(base+choice,1)==b'\0'
     # Difficulty and stage changes must discard phase/HP and non-Extra branch.

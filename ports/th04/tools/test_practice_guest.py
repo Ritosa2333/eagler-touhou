@@ -247,6 +247,9 @@ def main():
         u.mem_write(0x9000d,b'\x02');u.mem_write(0x8ff00,struct.pack('<H',0xfff0))
         u.emu_start(cb+e['bombConsume'],cb+0xfff0,count=100)
         assert u.mem_read(0x9000d,1)==b'\x02';checked+=3
+        u,_=guest(spec);init(u);u.reg_write(UC_X86_REG_BX,0);u.mem_write(0x9000b,b'\x01')
+        u.mem_write(cb+e['targetPractice'],b'\x01');u.emu_start(cb+e['respawnLives'],BASE*16+0x10a9a,count=100)
+        assert u.mem_read(cb+e['targetOutcome'],1)==b'\x02' and u.mem_read(cb+e['hold'],1)==b'\x01';checked+=1
         for lock in (0,1):
             for stock in (0,1,2):
                 u,_=guest(spec);init(u);u.reg_write(UC_X86_REG_BX,0);u.mem_write(0x9000b,bytes([stock]));u.mem_write(cb+e['lockLives'],bytes([lock]))

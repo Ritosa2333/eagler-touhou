@@ -137,6 +137,8 @@ practice_form_native_start:
     inc bx
     cmp bx,11
     jb .save_options
+    mov al,[cs:practice_assists]
+    mov [es:0x4fb],al
 %ifdef PRACTICE_RESTART_TH02
     mov dword [es:0x4e0],0x32525054 ; TPR2
 %else
@@ -193,6 +195,17 @@ practice_preparation_guard:
     cmp byte [cs:target_preparing],0
     je .done
     inc word [cs:practice_prepare_frames]
+%ifdef PRACTICE_RESTART_TH02
+    cmp word [cs:practice_prepare_frames],30000
+%else
+    cmp word [cs:practice_prepare_frames],40000
+%endif
+    jb .prepare
+    mov byte [cs:target_preparing],0
+    mov byte [cs:practice_outcome],2
+    mov byte [cs:hold],1
+    ret
+.prepare:
 %ifdef PRACTICE_RESTART_TH02
     mov byte [0x2b94],0
     mov byte [0x2b95],2
@@ -331,6 +344,8 @@ practice_native_setup:
     inc bx
     cmp bx,11
     jb .copy_options
+    mov al,[es:0x4fb]
+    mov [cs:practice_assists],al
     mov byte [cs:target_practice],1
     mov byte [cs:target_preparing],1
     mov al,[cs:practice_form_values]

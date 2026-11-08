@@ -24,7 +24,7 @@ function applyAssist(value){
   if(at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b))return;
   if(!ownsSoloMailbox(h,v,at))return;
   if(value.generation!==v.getUint16(at+24,true))return;
-  if(value.formOpen){const e=patch.practice?.entries,f=value.formOpen,base=at-patch.mailbox_cs_offset;if(!e||h[base+e.resultVisible]||!Array.isArray(f.values)||f.values.length!==10||!Array.isArray(f.settings)||f.settings.length!==11||f.settings.some((n,i)=>!Number.isInteger(n)||n<0||n>(i===10?5:1))||!Number.isInteger(f.hp)||f.hp<0||f.hp>30000||f.values.some(n=>!Number.isInteger(n)||n<0||n>255))return;h.set(f.values,base+e.formValues);h.set(f.settings,base+e.formOptions);v.setUint16(base+e.formHp,f.hp,true);h[base+e.formRequest]=0;h[base+e.formOpen]=1;return;}
+  if(value.formOpen){const e=patch.practice?.entries,f=value.formOpen,base=at-patch.mailbox_cs_offset;if(!e||h[base+e.resultVisible])return;if(f!==true){if(!Array.isArray(f.values)||f.values.length!==10||!Array.isArray(f.settings)||f.settings.length!==11||f.settings.some((n,i)=>!Number.isInteger(n)||n<0||n>(i===10?5:1))||!Number.isInteger(f.hp)||f.hp<0||f.hp>30000||f.values.some(n=>!Number.isInteger(n)||n<0||n>255))return;h.set(f.values,base+e.formValues);h.set(f.settings,base+e.formOptions);v.setUint16(base+e.formHp,f.hp,true);}h[base+e.formRequest]=0;h[base+e.formOpen]=1;return;}
   if(Number.isInteger(value.formInput)){
     const entries=patch.practice?.entries,base=at-patch.mailbox_cs_offset;
     if(entries&&(h[base+entries.formOpen]||value.formInput===64))v.setUint16(base+entries.formInput,value.formInput&127,true);
@@ -174,6 +174,7 @@ async function dispatch(message){
     if(game!=='04'||!e||at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b)||!ownsSoloMailbox(h,v,at)||v.getUint16(at+24,true)!==generation)return false;
     const base=at-patch.mailbox_cs_offset;
     if(method==='practiceFormTake'){if(![1,2].includes(values)||h[base+e.formOpen]||h[base+e.formRequest]!==values)return false;h[base+e.formRequest]=0;return true;}
+    if(values===true){if(h[base+e.resultVisible])return false;emulator.assist({address:at,generation,formOpen:true});return true;}
     if(h[base+e.resultVisible]||!Array.isArray(values)||values.length!==10||!Array.isArray(settings)||settings.length!==11||settings.some((n,i)=>!Number.isInteger(n)||n<0||n>(i===10?5:1))||!Number.isInteger(hp)||hp<0||hp>30000||values.some(n=>!Number.isInteger(n)||n<0||n>255))return false;
     emulator.assist({address:at,generation,formOpen:{values,hp,settings}});return true;
   }

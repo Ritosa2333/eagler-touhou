@@ -180,6 +180,7 @@ frame_hook:
     jz .assist_done
     call practice_assists_draw
 .assist_done:
+    call practice_info_tick
     call practice_info_draw
     pop es
     call practice_power_lock
@@ -191,6 +192,20 @@ player_hook:
     pushf
     pushad
     call practice_native_restrictions
+    cmp byte [cs:target_practice],0
+    je .counted
+    cmp byte [cs:target_preparing],0
+    jne .counted
+    cmp byte [cs:practice_outcome],0
+    jne .counted
+    cmp byte [0x4669],0
+    je .counted
+    cmp byte [0x4662],1
+    ja .counted
+    cmp byte [0x466a],0
+    jne .counted
+    inc word [cs:practice_info_misses]
+.counted:
     popad
     popf
     push dx
@@ -292,6 +307,17 @@ respawn_lives:
     jbe .gameover
     jmp (0x10a96-0xaaf0)
 .gameover:
+    ; The original branch exits MAIN immediately, before the world hook can
+    ; observe the final death. Keep the current attempt alive until its native
+    ; result menu takes ownership of the next frame.
+    cmp byte [cs:target_practice],0
+    je .original_gameover
+    cmp byte [cs:target_preparing],0
+    jne .original_gameover
+    mov byte [cs:practice_outcome],2
+    mov byte [cs:hold],1
+    jmp .locked
+.original_gameover:
     jmp (0x10ab7-0xaaf0)
 .locked:
     jmp (0x10a9a-0xaaf0)

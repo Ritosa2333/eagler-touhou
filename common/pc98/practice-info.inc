@@ -1,5 +1,83 @@
 ; Native replacement information panel on the right HUD, in text VRAM.
-; Host updates the six counters and visibility at the existing frame boundary.
+; Practice counters are maintained in MAIN. Visibility is a frontend input.
+practice_info_reset:
+    mov dword [cs:practice_info_frames],0
+    mov word [cs:practice_info_misses],0
+%ifdef PRACTICE_RESTART_TH02
+    mov al,[0xbde]
+%else
+    les bx,[0xba86]
+    mov al,[es:bx+50]
+%endif
+    mov [cs:practice_info_initial_bombs],al
+    ret
+
+practice_info_tick:
+    cmp byte [cs:target_practice],0
+    je .done
+    cmp byte [cs:target_preparing],0
+    jne .done
+    cmp byte [cs:practice_outcome],0
+    jne .done
+    inc dword [cs:practice_info_frames]
+%ifdef PRACTICE_RESTART_TH02
+    movzx ax,byte [0xb2c]
+    mov [cs:practice_info_values],ax
+    movzx ax,byte [0xb2d]
+    mov [cs:practice_info_values+2],ax
+    mov al,[0xbde]
+    movzx bx,byte [0xaa6]
+    mov [cs:practice_info_values+8],bx
+    mov bx,[0x2802]
+    test bx,bx
+    jns .rank_ready
+    xor bx,bx
+.rank_ready:
+    mov [cs:practice_info_values+10],bx
+    mov bx,[0x2538]
+%else
+    les bx,[0xba86]
+    xor ax,ax
+    mov al,[es:bx+11]
+    test al,al
+    jz .lives_ready
+    dec ax
+.lives_ready:
+    mov [cs:practice_info_values],ax
+    movzx ax,byte [es:bx+13]
+    mov [cs:practice_info_values+2],ax
+    mov al,[es:bx+50]
+    movzx bx,byte [0x4664]
+    mov [cs:practice_info_values+8],bx
+    movzx bx,byte [0x5395]
+    mov [cs:practice_info_values+10],bx
+    mov bx,[0x3974]
+%endif
+    sub al,[cs:practice_info_initial_bombs]
+    xor ah,ah
+    mov [cs:practice_info_values+6],ax
+    mov ax,[cs:practice_info_misses]
+    mov [cs:practice_info_values+4],ax
+    cmp byte [cs:practice_form_options+7],0
+    jne .keys_ready
+    xor bx,bx
+.keys_ready:
+    mov [cs:practice_info_values+14],bx
+    mov eax,[cs:practice_info_frames]
+    xor edx,edx
+    mov ecx,56
+    div ecx
+    cmp eax,65535
+    jbe .time_ready
+    mov ax,65535
+.time_ready:
+    mov [cs:practice_info_values+12],ax
+.done:
+    ret
+practice_info_frames: dd 0
+practice_info_misses: dw 0
+practice_info_initial_bombs: db 0
+
 practice_info_draw:
     push ds
     push es

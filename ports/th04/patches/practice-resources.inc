@@ -176,6 +176,7 @@ practice_target_arrival:
     mov byte [cs:practice_seen_gengetsu],0
     mov byte [cs:practice_fatal],0
     mov byte [cs:practice_outcome],0
+    call practice_info_reset
     mov dword [0x4349],0
     mov dword [0x434d],0
     mov dword [0x435a],0

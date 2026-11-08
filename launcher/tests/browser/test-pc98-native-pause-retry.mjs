@@ -46,7 +46,7 @@ for(const game of games){
     if(process.env.PC98_PRACTICE_BASELINE==='1'&&path==='/runtime/practice-engine.js')contents=Buffer.from(contents.toString().replace('heap()[resident+73]=1;','').replace('w8(0x53a0,1);',''));
     if(process.env.PC98_PRACTICE_DEATH==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?`\nexport function testPracticeHit(lives){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8;h[d+0xb2c]=lives;h[d+0xb2d]=0;h[d+0x2b94]=1;} export function testReadText(){return Array.from(emulator.module.HEAPU8.subarray(emulator.practice.debug.base+0xa0000,emulator.practice.debug.base+0xa1000));}\n`:`\nexport function testPracticeHit(lives){return emulator.call('practiceTestHit',[lives]);} export function testReadText(){return emulator.call('practiceTestText');}\n`)]);
     if(process.env.PC98_PRACTICE_DEATH==='1'&&game==='th04'&&path==='/runtime/solo-worker.js'){
-      const hit=process.env.PC98_TEST_RESULT_SELECT==='1'?"h[emulator.practice.debug.csBase+patch.practice.entries.targetOutcome]=2;emulator.practice.gameOver();":"h[r+11]=args[0]+1;h[r+13]=0;h[d+0x4669]=1;";
+      const hit="h[r+11]=args[0]+1;h[r+13]=0;h[d+0x4662]=0;h[d+0x466a]=0;h[d+0x4669]=1;";
       contents=Buffer.from(contents.toString().replace("if(method==='soloFault')", `if(method==='practiceTestText'){const b=emulator.practice.debug.base;return {bytes:Array.from(emulator.module.HEAPU8.subarray(b+0xa0000,b+0xa1000))};}if(method==='practiceTestHit'){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8,r=emulator.practice.debug.resident;${hit}return;}if(method==='soloFault')`));
     }
     if(process.env.PC98_PRACTICE_CLEAR==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?`\nexport function testPracticeClear(){const d=emulator.practice.debug.d;emulator.module.HEAPU8[d+0x2bfa]=1;}\n`:`\nexport function testPracticeClear(){return emulator.call('practiceTestClear');}\n`)]);
@@ -146,10 +146,18 @@ for(const game of games){
       if(boss){assert.equal(p.setup.entry,'boss');assert.equal(p.setup.phase,game==='th02'?1:2);}
       if(restrictions)for(const option of ['lockRank','disableBomb','disableFocus','disableShot'])assert.equal(p.options[option],true,option);
       await key('Enter','Enter',13); await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.elapsed>5,{timeout:30000});
+        if(process.env.PC98_TEST_ASSIST_PERSIST==='1'){
+          await key('Backspace','Backspace',8);await key('F1','F1',112);await key('Backspace','Backspace',8);
+          await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.options?.invincible,{timeout:10000});
+          await key('F12','F12',123);await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.nativeForm?.visible,{timeout:10000});
+          assert.deepEqual((await state()).native.practice.nativeForm.values.slice(0,3),[1,1,2],'game retains the selected target');
+          await key('Escape','Escape',27);await frame.waitForFunction(async()=>!(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.nativeForm?.visible,{timeout:10000});
+        }
       if(process.env.PC98_TEST_RESULT_SELECT==='1'){
         assert.equal(process.env.PC98_PRACTICE_DEATH,'1');assert(!extra&&!boss);
         await frame.evaluate(async()=>await (await import('./managed-solo.mjs')).testPracticeHit(0));
-        await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.nativeResult?.visible,{timeout:30000});
+          try{await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.nativeResult?.visible,{timeout:30000});}
+          catch(error){console.error(game,'death diagnostic',JSON.stringify((await state()).native));throw error;}
         if(process.env.PC98_TEST_RESULT_RETRY==='1'){
           await key('KeyZ','z',90);
           await frame.waitForFunction(async()=>{const current=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return current?.ready&&current.waiting&&!current.outcome;},{timeout:90000});
@@ -184,6 +192,7 @@ for(const game of games){
         assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testAttemptSame()),true);
         const current=(await state()).native.practice;assert.deepEqual(current.setup,p.setup);
           assert.equal(await frame.evaluate(()=>globalThis.testHostTransitions||0),0,'quick retry must start in the guest');
+          if(process.env.PC98_TEST_ASSIST_PERSIST==='1')assert.equal(current.options.invincible,true,'native retry must preserve assist flags');
         await key('Enter','Enter',13);await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.elapsed>5,{timeout:30000});
       }
       if(process.env.PC98_TEST_LOADING_CLEAR==='1'){

@@ -7,9 +7,9 @@ root = Path(__file__).resolve().parents[1] / 'pc98'
 with tempfile.TemporaryDirectory() as tmp:
     for game in (2, 4):
         source, binary = Path(tmp) / 'restart.asm', Path(tmp) / 'restart.bin'
-        source.write_text('bits 16\ndw practice_restart_tick,practice_restart_pending,practice_restart_values,practice_result_selecting,hold,practice_loading_clear_if_present,practice_native_setup,practice_form_values,practice_initial_stage,practice_initial_entry,practice_initial_phase,practice_initial_lives,practice_initial_bombs,practice_initial_power,practice_initial_rank,practice_initial_hp,practice_initial_gengetsu,practice_initial_reimu,target_preparing,target_practice,practice_form_options,practice_native_restrictions\n'
+        source.write_text('bits 16\ndw practice_restart_tick,practice_restart_pending,practice_restart_values,practice_result_selecting,hold,practice_loading_clear_if_present,practice_native_setup,practice_form_values,practice_initial_stage,practice_initial_entry,practice_initial_phase,practice_initial_lives,practice_initial_bombs,practice_initial_power,practice_initial_rank,practice_initial_hp,practice_initial_gengetsu,practice_initial_reimu,target_preparing,target_practice,practice_form_options,practice_native_restrictions,practice_assists,practice_form_native_start,practice_preparation_guard,practice_prepare_frames,practice_outcome\n'
                           'practice_result_selecting: db 0\nhold: db 0\ntarget_preparing: db 0\ntarget_practice: db 0\npractice_outcome: db 0\npractice_initial_entry: db 0\npractice_initial_stage: db 0\npractice_initial_phase: db 0\npractice_initial_lives: db 0\npractice_initial_bombs: db 0\npractice_initial_power: db 0\npractice_initial_rank: dw 0\npractice_initial_hp: dw 0\npractice_initial_gengetsu: db 0\npractice_initial_reimu: db 0\npractice_form_hp: dw 0\npractice_form_values: times 10 db 0\npractice_form_options: times 11 db 0\nsignal: ret\npractice_text_write: ret\n'
-                          'practice_form_input: dw 0\npractice_form_open: db 0\npractice_pause_open: db 0\npractice_form_request: db 0\n'
+                          'practice_form_input: dw 0\npractice_form_open: db 0\npractice_pause_open: db 0\npractice_form_request: db 0\npractice_assists: db 0\n'
                           'times 0x200-($-$$) db 0\n' +
                           ('%define PRACTICE_RESTART_TH02 1\n%define SOLO_CURRENT_INPUT 0x180\n' if game == 2 else '') +
                           f'%include "{(root / "practice-restart.inc").as_posix()}"\n')
@@ -17,7 +17,7 @@ with tempfile.TemporaryDirectory() as tmp:
         image = binary.read_bytes()
         (entry,pending,values,selecting,hold,clear_loading,native_setup,form_values,
          initial_stage,initial_entry,initial_phase,initial_lives,initial_bombs,initial_power,
-         initial_rank,initial_hp,initial_gen,initial_reimu,preparing,target,form_options,restrictions)=struct.unpack_from('<22H', image)
+         initial_rank,initial_hp,initial_gen,initial_reimu,preparing,target,form_options,restrictions,assists,native_start,guard,prepare_frames,outcome)=struct.unpack_from('<27H', image)
         u = Uc(UC_ARCH_X86, UC_MODE_16)
         u.mem_map(0, 0x100000)
         code, data, resident = 0x10000, 0x30000, 0x40100
@@ -76,10 +76,12 @@ with tempfile.TemporaryDirectory() as tmp:
         u.mem_write(0x4e0,b'TPR4' if game==4 else b'TPR2')
         u.mem_write(0x4e4,fields+struct.pack('<H',345))
         u.mem_write(0x4f0,bytes([1,0,1,0,1,1,0,0,0,0,3]))
+        u.mem_write(0x4fb,b'\x2a')
         u.reg_write(UC_X86_REG_SP,0xff00);u.mem_write(0x8ff00,struct.pack('<H',0xfff0))
         u.emu_start(code+native_setup,code+0xfff0,count=1000)
         assert bytes(u.mem_read(0x4e0,4))==b'\0'*4 and bytes(u.mem_read(code+form_values,10))==fields
         assert bytes(u.mem_read(code+form_options,11))==bytes([1,0,1,0,1,1,0,0,0,0,3])
+        assert bytes(u.mem_read(code+assists,1))==b'\x2a', 'native assist flags survive MAIN reload'
         assert [u.mem_read(code+at,1)[0] for at in (initial_stage,initial_entry,initial_phase,initial_lives,initial_bombs,initial_power,preparing,target)]==[1,2,4,3,2,64,1,1]
         assert struct.unpack('<H',u.mem_read(code+initial_hp,2))[0]==345
         if game==2:assert struct.unpack('<h',u.mem_read(code+initial_rank,2))[0]==-4
@@ -95,4 +97,14 @@ with tempfile.TemporaryDirectory() as tmp:
         assert struct.unpack('<H',u.mem_read(data+keys_offset,2))[0]==0x4f
         if game==2:assert struct.unpack('<h',u.mem_read(data+0x2802,2))[0]==-4
         else:assert u.mem_read(data+0x5395,1)==b'\x14' and u.mem_read(data+0x3976,1)==b'\0'
+        u.mem_write(code+assists,b'\x35')
+        u.reg_write(UC_X86_REG_SP,0xff00);u.mem_write(0x8ff00,struct.pack('<H',0xfff0))
+        u.emu_start(code+native_start,code+0xfff0,count=2000)
+        assert bytes(u.mem_read(0x4e0,4))==(b'TPR2' if game==2 else b'TPR4')
+        assert bytes(u.mem_read(0x4fb,1))==b'\x35', 'native retry saves assist flags'
+        u.mem_write(code+preparing,b'\x01');u.mem_write(code+hold,b'\x00');u.mem_write(code+outcome,b'\x00')
+        u.mem_write(code+prepare_frames,struct.pack('<H',29999 if game==2 else 39999))
+        u.reg_write(UC_X86_REG_SP,0xff00);u.mem_write(0x8ff00,struct.pack('<H',0xfff0))
+        u.emu_start(code+guard,code+0xfff0,count=1000)
+        assert bytes(u.mem_read(code+preparing,1))==b'\x00' and bytes(u.mem_read(code+outcome,1))==b'\x02' and bytes(u.mem_read(code+hold,1))==b'\x01'
 print('PASS TH02/TH04 native resident configuration and MAIN restart')
