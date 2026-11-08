@@ -1,3 +1,4 @@
+#include <eagler/input/LocalPlayerCue.hpp>
 #include "Coop.h"
 #include "../Stage/Stage.h"
 #include "../Stage/Chara/Chara.h"
@@ -313,6 +314,11 @@ void CStage::DrawPlayers(int layer){
 void CStage::DrawCoopStatistics(){
  // PR #143 uses the original 128-pixel sidebar, not an application window.
  // Coordinates retain the original 640x400 image with uth05win's 40-pixel inset.
+ if(!m_bLogo&&!BrowserMenu()){
+  const int local=coop::Run().local;
+  const auto* player=m_seats[local].player;
+  eagler::presentation::local_player_cue(local,m_playAreaUpperLeftX+player->m_curX/16,m_playAreaUpperLeftY+player->m_curY/16);
+ }
  SaveSeat();const auto& display=practice::Options();
  const unsigned char high[]={0xd6,0xd7,0xd8,0xd9,0},score[]={0xd7,0xd8,0xd9,0};
  CTh5ExtFont::DrawExtString(high,4,480,88,1,1,0);

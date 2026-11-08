@@ -33,3 +33,16 @@ test('auto-fire leaves cold title and character confirmation edges available',()
  for(const active of [2,3]){scene=active;input.pointer({type:'down',id:1,x:200,y:200});input.pointer({type:'up',id:1,x:200,y:200});input.tick();input.tick();assert.deepEqual(keys.slice(-2),[['KeyZ',true],['KeyZ',false]]);}
  scene=4;input.tick();assert.deepEqual(keys.at(-1),['KeyZ',true]);scene=14;input.tick();assert.deepEqual(keys.at(-1),['KeyZ',false]);input.tick();assert.deepEqual(keys.at(-1),['KeyZ',false]);scene=2;input.tick();
 });
+
+test('an ending long press supplies Ctrl only while the stationary finger is held',()=>{
+ let time=0;const keys=[];
+ const input=createTouchInput({send:(...key)=>keys.push(key),options:()=>({touchEnabled:true}),scene:()=>5,clock:()=>time});
+ input.pointer({type:'down',id:1,x:100,y:100});
+ time=499;input.tick();assert.deepEqual(keys,[]);
+ time=500;input.tick();assert.deepEqual(keys,[['ControlLeft',true]]);
+ input.pointer({type:'up',id:1,x:100,y:100});input.tick();
+ assert.deepEqual(keys,[['ControlLeft',true],['ControlLeft',false]]);
+ input.pointer({type:'down',id:2,x:100,y:100});
+ input.pointer({type:'move',id:2,x:130,y:100});
+ time=1100;input.tick();assert.ok(keys.slice(2).every(([key])=>key!=='ControlLeft'));
+});

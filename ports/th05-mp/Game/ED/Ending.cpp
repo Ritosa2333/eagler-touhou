@@ -1,4 +1,6 @@
 #include ".\ending.h"
+#include "../Coop/Coop.h"
+#include <algorithm>
 #include "../../gameLib/PMDPlayer/PMDPlayer.h"
 #include "../Game.h"
 #include "../../gameLib/CommonFunction/CommonFunctionMusicSE.h"
@@ -91,6 +93,7 @@ int CEnding::Step()
 	m_curFrame++;
 	m_lastKey=m_curKey;
 	m_curKey=CCommonFunctionInput::GetAllKeyState();
+	const bool fast=coop::Run().count>1 && CCommonFunctionInput::LCtrlKey(m_curKey);
 
 	if (m_bMusicFadeOut)
 	{
@@ -104,7 +107,7 @@ int CEnding::Step()
 	}
 	if (m_bWaitNFrame)
 	{
-		m_nWaitFrameLeft--;
+		m_nWaitFrameLeft=std::max(0,m_nWaitFrameLeft-(fast?6:1));
 		if (m_nWaitFrameLeft==0)
 			m_bWaitNFrame=false;
 		return 0;
@@ -123,7 +126,7 @@ int CEnding::Step()
 	}
 	if (m_textFade<100)
 	{
-		m_textFade+=5;
+		m_textFade+=fast?30:5;
 		if (m_textFade>=100)
 		{
 			m_textFade=100;
@@ -133,7 +136,7 @@ int CEnding::Step()
 	}
 	if (m_bWaitKey)
 	{
-		if (CCommonFunctionInput::ZPressed(m_curKey,m_lastKey))
+		if (fast || CCommonFunctionInput::ZPressed(m_curKey,m_lastKey))
 			m_bWaitKey=false;
 		return 0;
 	}
