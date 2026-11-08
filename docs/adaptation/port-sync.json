@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "84716d27fa7471a74089d692a002550a87212459",
+      "base": "1081974f95f9e1103f7a21e3bb0166d21eb203fc",
       "history": [
         {
           "kind": "manual",
@@ -167,6 +167,28 @@
             "ports/th05-mp/tests/pc98-patterns.mjs"
           ],
           "note": "Synchronize PC-98 firing frames, speeds, and pool limits; retain multiplayer targeting and rollback; keep the retail capture harness in the normal port."
+        },
+        {
+          "kind": "manual",
+          "base": "84716d27fa7471a74089d692a002550a87212459",
+          "source": "1081974f95f9e1103f7a21e3bb0166d21eb203fc",
+          "targetHead": "89c913eb0ebc377ca04dec8beca5e92b896ab414",
+          "paths": [
+            "ports/th05-mp/Game/Practice/PhaseTimeout.h",
+            "ports/th05-mp/Game/Practice/Practice.cpp",
+            "ports/th05-mp/Game/Practice/PracticeAdvanced.cpp",
+            "ports/th05-mp/Game/Practice/PracticeSections.h",
+            "ports/th05-mp/Game/Practice/PracticeSetup.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage2.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage3.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4Mai.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4Yuki.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage5.cpp",
+            "ports/th05-mp/portable/LocalizationTable.inc",
+            "ports/th05-mp/portable/locales.json",
+            "ports/th05-mp/tests/PracticeTests.cpp"
+          ],
+          "note": "Synchronize localized practice phase labels, inherited difficulty hints, native timeout schedules, and the Alice final deadline."
         }
       ]
     },
