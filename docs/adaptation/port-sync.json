@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "38bc525eb99f96edd104e280bdab91ec368d91cd",
+      "base": "22eb32d0febe43f1d85bbbb4d8dd47429a58b611",
       "history": [
         {
           "kind": "manual",
@@ -322,6 +322,37 @@
             "ports/th05-mp/tests/pc98-combat.mjs"
           ],
           "note": "普通版对照脚本的文件末尾格式修整。"
+        },
+        {
+          "kind": "manual",
+          "base": "38bc525eb99f96edd104e280bdab91ec368d91cd",
+          "source": "22eb32d0febe43f1d85bbbb4d8dd47429a58b611",
+          "targetHead": "bdcbfc1231f5714f420d06c1717169ce6c996df3",
+          "paths": [
+            "ports/th05-mp/Game/Original/CombatThresholds.h",
+            "ports/th05-mp/Game/Practice/PhaseTimeout.h",
+            "ports/th05-mp/Game/Practice/Practice.cpp",
+            "ports/th05-mp/Game/Practice/PracticeAdvanced.cpp",
+            "ports/th05-mp/Game/Practice/PracticeAdvanced.h",
+            "ports/th05-mp/Game/Practice/PracticeSections.h",
+            "ports/th05-mp/Game/Practice/PracticeSetup.cpp",
+            "ports/th05-mp/Game/Replay.cpp",
+            "ports/th05-mp/Game/Replay.h",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage5.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage6.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStageEx.cpp",
+            "ports/th05-mp/Game/Stage/Stage.cpp",
+            "ports/th05-mp/Game/Stage/StageBossHud.cpp",
+            "ports/th05-mp/PRACTICE.md",
+            "ports/th05-mp/portable/LocalizationTable.inc",
+            "ports/th05-mp/portable/PracticeMobile.hpp",
+            "ports/th05-mp/portable/locales.json",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp",
+            "ports/th05-mp/tests/PracticeTests.cpp",
+            "ports/th05-mp/web/replay.mjs"
+          ],
+          "note": "同步新版狂暴练习入口、Bomb 抗性说明、F12 原速帧数与旧练习录像兼容。"
         }
       ]
     },
