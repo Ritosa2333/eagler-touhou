@@ -1,3 +1,4 @@
+import {packTouch,unpackTouch} from './touch-input.js';
 export const BOOT_DELAY=2,INPUT_DELAY=0,TICK_MS=1000/60,MAX_ROLLBACK=12;
 export const DIRECTION_PREDICTION=6;
 export const neutral=()=>({actions:[],touch:0,focusEnabled:true,points:true,commands:[]});
@@ -40,7 +41,11 @@ export class FrameQueue {
     const lane=this.inputs[slot];if(lane.has(frame))return lane.get(frame);
     for(let age=1;age<=MAX_ROLLBACK;age++)if(lane.has(frame-age)){
       const source=lane.get(frame-age);
-      return {...source,touch:0,actions:source.actions.filter(action=>HELD.has(action)||(age<=this.directionPrediction&&DIRECTIONS.has(action))),commands:[]};
+      // Keep a stationary held drag active, but never repeat deltas or a
+      // gesture-start edge. Actual movement and release still correct history.
+      const touch=unpackTouch(source.touch);
+      const predictedTouch=touch.active?packTouch(0,{active:true,unlimited:touch.unlimited}):0;
+      return {...source,touch:predictedTouch,actions:source.actions.filter(action=>HELD.has(action)||(age<=this.directionPrediction&&DIRECTIONS.has(action))),commands:[]};
     }
     return neutral();
   }

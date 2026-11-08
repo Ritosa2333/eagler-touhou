@@ -75,6 +75,7 @@ try{
     const preview=await page.evaluate(()=>rpc(0,'prepare-room'));assert.equal(preview.presented,true);console.log('MP title presented');await page.screenshot({path:resolve(out,'room.png')});
     for(let seat=0;seat<count;seat++)await lobbies[seat].send({type:'set-ready',ready:true,runtimeGeneration:generation},m=>m.room?.seats[seat]?.ready||m.type==='error');
     const start=await lobbies[0].send({type:'start',adonisMode:process.env.PC98_TEST_ROLLBACK==='1'?0:1},m=>m.type==='start'||m.type==='error');
+    if(process.env.PC98_TEST_MIXED==='1')await page.evaluate(()=>{document.getElementById('p1').contentWindow.OffscreenCanvas=undefined;});
     await page.evaluate(async({count,room,relayPort,serial,generation,rollback})=>Promise.all(Array.from({length:count},async(_,s)=>{
       await rpc(s,'configure',{music:'ogg',options:{netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,run:String(serial),member:'pc98-private-'+s,runtimeGeneration:generation}),netplayPlayer:s,musicSource:s===0?'akyu':'original',netplayPlayerCount:count,netplayDifficulty:1,netplaySeed:1234,netplayAdonisMode:rollback?0:1,netplayLoadouts:Array.from({length:count},(_,i)=>({character:0,shot:0}))}});
       if(s===0)for(let i=1;i<=21;i++){const name=String(i).padStart(2,'0')+'.ogg',response=await fetch('/music/'+name),blob=await response.blob(),bytes=await blob.arrayBuffer(),sha256=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(x=>x.toString(16).padStart(2,'0')).join(''),url=URL.createObjectURL(blob);try{await rpc(s,'resources',{resources:[{url,path:'/bgm/akyu/'+name,bytes:bytes.byteLength,sha256}]});}finally{URL.revokeObjectURL(url);}}
@@ -83,6 +84,9 @@ try{
     const frames=()=>page.frames().filter(f=>/th03.html\?runtimeEpoch=/.test(f.url()));
     const health=()=>Promise.all(frames().map(f=>f.evaluate(async()=>{const {managedAPI}=await import('./managed-room.mjs');return managedAPI.health();})));
     await wait(async()=>{const errors=await page.evaluate(()=>events.filter(e=>e.event==='error'));if(errors.length)throw Error(JSON.stringify(errors));const states=await health();return states.length===count&&states.every(s=>s.running&&s.confirmed>=120&&s.frames>0);},'MP confirmed gameplay',120000);
+    const threadStates=await health();
+    assert.equal(threadStates[0].executionThread,'worker','managed TH03 should use the simulation worker');
+    assert.equal(threadStates[1].executionThread,process.env.PC98_TEST_MIXED==='1'?'page':'worker','fallback thread selection');
     for(const [index,frame] of frames().entries()){
       const audio=await frame.evaluate(async()=>{
         const version=await import('./bgm-version.js');

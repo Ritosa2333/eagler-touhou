@@ -43,7 +43,9 @@ export class AsyncLockstep extends Lockstep {
     this.queue.prune(prefix);return this.queue.dirty===null;
   }
   async pump(now=performance.now()){
-    if(!this.running||this.pumping)return;this.pumping=true;
+    if(!this.running)return;
+    if(this.pumping){this.pumpRequested=true;return;}
+    this.pumping=true;
     let replayProgress=false,replayWaiting=false;
     try{
       now=Math.max(now,this.last);this.budget+=now-this.last;this.last=now;
@@ -114,7 +116,10 @@ export class AsyncLockstep extends Lockstep {
       if(this.replayUntil===null)this.present?.();
     }catch(error){this.fail(error);}finally{
       this.pumping=false;
-      if(this.running){this.schedule();this.wake(this.queue.dirty!==null?0:this.replayUntil!==null?(replayProgress&&!replayWaiting?0:16):Math.max(1,TICK_MS-this.budget-(performance.now()-this.last)));}
+      if(this.running){
+        const requested=this.pumpRequested;this.pumpRequested=false;
+        this.schedule();this.wake(requested||this.queue.dirty!==null?0:this.replayUntil!==null?(replayProgress&&!replayWaiting?0:16):Math.max(1,TICK_MS-this.budget-(performance.now()-this.last)));
+      }
     }
   }
 }
