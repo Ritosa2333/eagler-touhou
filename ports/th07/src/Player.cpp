@@ -1,3 +1,4 @@
+#include <eagler/input/LocalPlayerCue.hpp>
 #include <eagler/gameplay/CooperativeRules.hpp>
 #include "Player.hpp"
 
@@ -108,7 +109,6 @@ void DrawLocalPlayerLocator(const Player *player, const ZunVec3 &drawPlayerPos)
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if(MultiplayerGameplay::GetState().spectator)return;
     if (!player || !MultiplayerGameplay::IsMultiplayer() ||
-        !EaglerOptions::EnhanceLocalPlayerVisibility() ||
         player->initParam != MultiplayerGameplay::GetLocalPlayerSlot() ||
         !g_GameManager.notInMenu || g_GameManager.replay ||
         g_GameManager.isInPauseMenu || g_GameManager.isInRetryMenu)
@@ -120,6 +120,8 @@ void DrawLocalPlayerLocator(const Player *player, const ZunVec3 &drawPlayerPos)
     const f32 bottom = top + g_GameManager.arcadeRegionSize.y;
     const f32 x = left + drawPlayerPos.x;
     const f32 y = top + drawPlayerPos.y;
+    eagler::presentation::local_player_cue(player->initParam, x, y);
+    if (!EaglerOptions::EnhanceLocalPlayerVisibility()) return;
     const f32 halfThickness = LOCAL_PLAYER_LOCATOR_THICKNESS * 0.5f;
 
     // Screen-space presentation only. Keep both strokes strictly inside the
