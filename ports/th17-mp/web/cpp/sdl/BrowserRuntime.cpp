@@ -78,7 +78,7 @@ struct RoomRuntime final : multiplayer::World {
  multiplayer::SessionSetup setup;
  multiplayer::ReplayArchive replay;
  Netplay::SpectatorStagePublisher publisher;
- Netplay::SpectatorStagePlayback playback;
+ Netplay::SpectatorStagePlayback playback{Netplay::SpectatorStagePlayback::RestoreMode::Run};
  Netplay::SpectatorStageView spectator_view;
  bool spectator=false,playing_replay=false,local_results=false,publisher_failed=false,ended=false;
  bool publication_started=false,terminal=false;
@@ -681,7 +681,7 @@ EMSCRIPTEN_KEEPALIVE void th17_room_close(){th17::sdl::room.reset();}
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_status(){
  using namespace th17::sdl;
  static RoomRuntime::Status value{};
- value=room&&app?room->status(room->session.next_frame()):RoomRuntime::Status{};
+ value=room&&app?room->status(room->spectator?room->playback.Position():room->session.next_frame()):RoomRuntime::Status{};
  return value.data();
 }
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_confirmed(unsigned number){

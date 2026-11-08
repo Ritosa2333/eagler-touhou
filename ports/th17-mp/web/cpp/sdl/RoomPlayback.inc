@@ -62,6 +62,7 @@ bool RoomRuntime::receive_spectator(){
    Netplay::SpectatorStageEvent event;
    if(!Netplay::DecodeSpectatorStageEvent(bytes.data(),bytes.size(),&event)||event.game!='G'||
       event.playerCount!=setup.seats||event.sessionId!=setup.room||event.gameplayAbi!=setup.gameplay_abi()||
+      (event.kind==Netplay::SpectatorEventKind::Checkpoint&&event.schema!=multiplayer::StageEntry::schema)||
       !playback.Receive(event))return app->fail("TH17 spectator stage contract mismatch");
   }else{
    Netplay::SpectatorFramePacket frame;
