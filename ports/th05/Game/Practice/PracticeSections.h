@@ -1,5 +1,6 @@
 #include "../../portable/Localization.hpp"
 #pragma once
+#include "../Original/CombatThresholds.h"
 namespace th5w { namespace practice {
 struct Section {int phase,variant,startHP,endHP,rageCount,continuous;const char* name;};
 inline const Section* Sections(int stage,int warp,int& count){
@@ -111,6 +112,25 @@ inline const char* YumekoShotHint(int difficulty) {
  if(difficulty==3)return th5w::locale::Text(u8"\u6bcf\u4fa7\u4e09\u8def\u5f39\uff08Lunatic\uff09");
  if(difficulty==2)return th5w::locale::Text(u8"\u6bcf\u4fa7\u53cc\u53e0\u5f39\uff08Hard\uff09");
  return th5w::locale::Text(u8"\u6bcf\u4fa7\u5355\u53d1\uff08Easy / Normal\uff09");
+}
+struct SectionHint {const char* text=nullptr;int values[4]={};};
+inline SectionHint AttackHint(int stage,int warp,const Section& section){
+ if(warp!=2||section.variant)return {};
+ if(stage==3&&section.phase==2)return {th5w::locale::Text(u8"\u5408\u8ba1 HP < %d / %d \u65f6\u5207\u6362\u72c2\u66b4\u3002"),{original::TwinFirstRageHP,original::TwinSecondRageHP}};
+ if(stage==4&&section.phase==4)return {th5w::locale::Text(u8"HP < %d \u65f6\u8fdb\u5165\u72c2\u66b4\u3002"),{section.endHP+original::YumekoRedRageMargin}};
+ if(stage==4&&section.phase==7)return {th5w::locale::Text(u8"HP < %d \u65f6\u8fdb\u5165\u72c2\u66b4\u3002"),{section.endHP+original::YumekoBlueRageMargin}};
+ if(stage==5&&section.phase==10)return {th5w::locale::Text(u8"\u6fc0\u5149\uff1aHP \u2264 %d \u6216\u7b2c %d \u5e27\u8d77\u3002\u52a0\u901f\uff1aHP \u2264 %d \u6216\u7b2c %d \u5e27\u8d77\u3002"),{original::ShinkiLaserHP,original::ShinkiLaserFrame,original::ShinkiFastHP,original::ShinkiFastFrame}};
+ if(stage==6&&section.phase==17)return {th5w::locale::Text(u8"\u5f39\u901f\u968f HP \u964d\u4f4e\u800c\u63d0\u9ad8\u3002")};
+ return {};
+}
+inline const char* BombHint(int stage,int warp,int phase){
+ if(warp!=2)return nullptr;
+ if(stage==5&&(phase==9||phase==10))return th5w::locale::Text(u8"Bomb \u671f\u95f4\u6bcf\u5e27\u6263 1 HP\uff0c\u9636\u6bb5\u7ee7\u7eed\u81f3\u8ba1\u65f6\u7ed3\u675f\u6216 Bomb \u540e\u51fb\u7834\u3002");
+ if(stage==6)return th5w::locale::Text(u8"Bomb \u671f\u95f4\u53ca\u4e4b\u540e %d \u5e27\u514d\u4f24\u3002");
+ return nullptr;
+}
+inline const char* ShinkiRageName(int rage){
+ return rage==1?th5w::locale::Text(u8"\u6fc0\u5149\u5c55\u5f00"):th5w::locale::Text(u8"\u53d1\u5f39\u52a0\u901f");
 }
 inline const char* SectionGlyphs(){return th5w::locale::Text(u8"\u6b63\u5e38\u5f00\u59cb\u9636\u6bb5\u72b6\u6001\u53d1\u72c2\u8fdb\u5165\u65b9\u5f0f\u51fb\u7834\u8d85\u65f6\u89e6\u53d1\u8840\u91cf\u8d77\u59cb");}
 } }

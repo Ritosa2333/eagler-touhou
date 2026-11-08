@@ -353,7 +353,7 @@ struct PracticeTests {
      std::vector<double> states;for(int f=0;f<100;f++){record->StepFrame((f/30)%2?4:8);const auto v=capture(record);states.insert(states.end(),v.begin(),v.end());}
      if(stage==2&&warp==2&&selected.phase>=13)Check(record->m_pBoss->m_curHP==800,"Alice final practice keeps native 800 HP without delayed puppet death damage");
      const int nextRandom=rand();record->SetQuit(STAGE_END_SAVE_EXIT);int end=0;for(int f=0;f<60&&!end;f++)end=record->StepFrame(0);
-     Check(g.m_replay.SaveFile("phase-roundtrip.rpy"),"phase preset saves the version-two TPC5 extension");delete record;game.m_pCurScheme=NULL;
+     Check(g.m_replay.SaveFile("phase-roundtrip.rpy"),"phase preset saves the TPC5 extension");delete record;game.m_pCurScheme=NULL;
      Check(g.m_replay.LoadFile("phase-roundtrip.rpy"),"phase preset reloads from the real replay file");
      const auto& saved=g.m_replay.m_practiceConfig;Check(saved.section==index+1&&saved.rage==rage&&saved.trigger==trigger&&saved.startHP==menu.startHP,"replay restores all phase preset fields");
      g.m_bReplayMode=true;g.m_playStage=stage;g.OnBeginGame();CStage* playback=new CStage;playback->Initialize();game.m_pCurScheme=playback;
@@ -413,7 +413,7 @@ struct PracticeTests {
    Check(frames<10000,"original dialogue finishes with native Ctrl skip and enters the chosen practice start");
    if(entry){const auto* section=practice::SelectedSection(stage,2,menu.section);Check(record->m_pBoss->m_curPhase==section->phase,"dialogue completion initializes the selected first phase");}
    const int nextRandom=rand();record->SetQuit(STAGE_END_SAVE_EXIT);int end=0;for(int i=0;i<60&&!end;i++)end=record->StepFrame(0);
-   Check(g.m_replay.SaveFile("dialogue-roundtrip.rpy"),"dialogue practice records in TPC5 v3");delete record;game.m_pCurScheme=NULL;
+   Check(g.m_replay.SaveFile("dialogue-roundtrip.rpy"),"dialogue practice records in the current TPC5 version");delete record;game.m_pCurScheme=NULL;
    Check(g.m_replay.LoadFile("dialogue-roundtrip.rpy")&&g.m_replay.m_practiceConfig.dialogue==1,"replay restores the dialogue flag");
    g.m_bReplayMode=true;g.m_playStage=stage;g.OnBeginGame();CStage* playback=new CStage;playback->Initialize();game.m_pCurScheme=playback;
    bool equal=true;size_t at=0;for(int i=0;i<frames;i++){playback->StepFrame(0);for(double value:capture(playback))if(value!=states[at++])equal=false;}
