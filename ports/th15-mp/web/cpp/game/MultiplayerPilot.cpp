@@ -1,3 +1,4 @@
+#include <eagler/input/LocalPlayerCue.hpp>
 #include "../multiplayer/FrameFence.hpp"
 #include <eagler/gameplay/CooperativeRules.hpp>
 #if TH15_MULTIPLAYER
@@ -285,6 +286,10 @@ void GameBattle::mp_prepare_presentation(AnmRenderer& r){
 }
 bool GameBattle::mp_draw(AnmRenderer& r){
     mp_prepare_presentation(r);
+    if(!mp_options.spectator){
+        const auto& pos=pilots[mp_options.local_seat]->player->motion.position;
+        eagler::presentation::local_player_cue(mp_options.local_seat,pos.x+224,pos.y+16);
+    }
     for(unsigned s=0;s<mp_options.seat_count;++s){auto& pilot=*pilots[s];
         if(!pilot.ghost){if(!pilot.player->draw(r))return fail(pilot.player->error);continue;}
         // A presentation copy keeps the original character sprite visible,

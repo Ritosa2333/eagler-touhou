@@ -121,6 +121,8 @@ bool mp_tick(u32 held,bool physical=true,bool forward=true){
   if(!network.Pump(false)){last_error=network.Error();return false;}
   if(!network.Retired()){if(!network.Finish(false,true)&&*network.Error()){last_error=network.Error();return false;}return true;}
   if(app->exiting||!physical)return true;mp_menu.update(held);
+  // The ending now belongs to this browser; fast-forward can differ per player.
+  if(app->ending)app->ending->script.run.first_seen_flags=0;
   if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return false;}return true;
  }
  if(!network.Pump(true)){last_error=network.Error();return false;}
@@ -317,7 +319,13 @@ void clear_inputs(bool preserve_keyboard=false){
 }
 void initialize_controller(){if(controller){SDL_CloseJoystick(controller);controller=nullptr;}SDL_InitSubSystem(SDL_INIT_JOYSTICK);int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;i++)add_controller(ids[i]);SDL_free(ids);}
 touhou::input::TouchState touch_state(){
- touhou::input::TouchState value;if(!app||!app->scene()||!app->session)return value;
+ touhou::input::TouchState value;if(app&&app->ending){
+#if TH15_MULTIPLAYER
+  if(network.ReadOnly()){value.context=3;return value;}
+#endif
+  value.context=2;return value;
+ }
+ if(!app||!app->scene()||!app->session)return value;
  if(app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive)return value;
  if(app->progress.replay
 #if TH15_MULTIPLAYER
