@@ -16,7 +16,11 @@ globalThis.th04WorkerHost={canvas:new OffscreenCanvas(640,400),audioContext,
   const count=(event.sequence-sequence)&65535;
   if(count>8)throw Error('音效事件超过桥接队列容量');
   for(let i=0;i<count;i++){const id=event.ring[(sequence+i)&7];if(!Number.isInteger(id)||id<0||id>=17)throw Error('原生音效编号无效');}
-  sequence=event.sequence;played+=count;send({type:'se',event});
+  sequence=event.sequence;played+=count;
+  // The native observer is sampled every confirmed step, but an unchanged
+  // sequence contains no sound command. Avoid posting an empty event for
+  // every player and the checkpoint replica at 60 Hz.
+  if(count)send({type:'se',event});
  },stop:()=>send({type:'se-stop'}),dispose(){},
  info:()=>({sequence,played,status:'浏览器音效：确认事件交给页面',loaded:17})}
 };
