@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "21385b86267abbe616c6c6193fe4f0d55f03c534",
+      "base": "7bbf59b24b769072e80f4ee028b08ff855f49288",
       "history": [
         {
           "kind": "manual",
@@ -86,6 +86,17 @@
             "ports/th05-mp/portable/Platform.cpp"
           ],
           "note": "两侧 SetKey 保留练习快捷键使用的即时 KeysDown 边沿；Shift/Ctrl 修饰标志继续只在 BeginUI 发布，避免帧内不一致。多人保留相同输入处理，目录合并 2993bfb84 已按验证树写回。"
+        },
+        {
+          "kind": "manual",
+          "base": "21385b86267abbe616c6c6193fe4f0d55f03c534",
+          "source": "7bbf59b24b769072e80f4ee028b08ff855f49288",
+          "targetHead": "20fba5194723d875c8fded400cfd0779cfbad6b0",
+          "paths": [
+            "ports/th05-mp/Game/Stage/Boss/BossStage5.cpp",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp"
+          ],
+          "note": "按 ReC98 b6ba5b0 的梦子红蓝弹阶段恢复难度调节；多人保留联机瞄准，浏览器测试覆盖两色、四难度及高低 Rank。"
         }
       ]
     },
