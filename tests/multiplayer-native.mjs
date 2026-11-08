@@ -96,6 +96,12 @@ try{
  });
  assert.ok(report.ending.scenes.includes(5));assert.ok(report.ending.scenes.includes(9));
  await page.screenshot({path:resolve(out,'native-three-player.png')});assert.deepEqual(errors,[]);report.errors=errors;
+ report.yumeko=await page.evaluate(()=>{
+  const m=document.querySelector('iframe').contentWindow.Module;
+  if(!m._th05_coop_start(3,0,3,741,0,1,2)||!m._th05_native_coop_stage(4,2))throw Error('Yumeko stage start');
+  return m._th05_native_coop_probe(34,0,0);
+ });
+ assert.equal(report.yumeko,1);
  await writeFile(resolve(out,'native.json'),JSON.stringify(report,null,2)+'\n');console.log('PASS native shared-world resources, rescue and '+report.cases.length+' synchronized stage cases');
 }catch(error){console.error(report,errors);await page.screenshot({path:resolve(out,'native-failure.png')});throw error;}
 finally{await browser.close();await site.close();}
