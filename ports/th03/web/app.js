@@ -92,7 +92,7 @@ function performanceTotals(){
   return {at:performance.now(),steps:sync?.queue.frame??module?.localFrameCount??0,
     executed:costs?.steps??module?.localFrameCount??0,simulate:costs?.simulate??module?.localStepMs??0,
     uploads:module?.frameUploads||0,presentations:online?presentationCount:module?.frameUploads||0,
-    capture:costs?.capture||0,captures:costs?.captures||0,hash:costs?.hash||0,
+    capture:costs?.capture||0,captures:costs?.captures||0,hash:costs?.hash||0,prepare:costs?.prepare||0,
     restore:costs?.restore||0,restores:costs?.restores||0,replays:costs?.replays||0,presentationMs,
     confirm:costs?.confirm||0,confirmCallbacks:costs?.confirmCallbacks||0,skippedConfirmations:costs?.skippedConfirmations||0,
     native:module?.stepMetrics?.totalMs||0,nativeSteps:module?.stepMetrics?.count||0};
@@ -108,7 +108,7 @@ setInterval(()=>{
     snapshotMs:delta('capture')/Math.max(1,delta('captures')),hashMs:delta('hash'),
     replaySteps:delta('replays'),rollbackCount:delta('restores'),restoreMs:delta('restore'),snapshotBytes:emulator.module.netSnapshotInfo?.().snapshotBytes||0,
     confirmMs:delta('confirm'),confirmCallbacks:delta('confirmCallbacks'),skippedConfirmations:delta('skippedConfirmations'),
-    nativeMs:delta('native')/Math.max(1,delta('nativeSteps')),presentationMs:delta('presentationMs')/Math.max(1,delta('presentations'))};
+    nativeMs:delta('native')/Math.max(1,delta('nativeSteps')),prepareMs:delta('prepare')/Math.max(1,delta('executed')),presentationMs:delta('presentationMs')/Math.max(1,delta('presentations'))};
   window.th03Performance=stats;
   if(online)networkHistory.push({at:next.at,intervalMs:dt,...stats,frame:sync?.queue.frame??null,confirmed:sync?.queue.confirmed??null,
     tick:emulator.tick,virtualNow:emulator.module.virtualNow,waitReason:sync?.queue.waitReason??'',replayUntil:sync?.replayUntil??null,

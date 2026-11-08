@@ -35,13 +35,13 @@ async function dispatch(method,args){
     return {events:bootMusic,hash:simulation.hash()};
   }
   if(method==='execute'){
-    const [inputs,options]=args;let captureMs=0,hashMs=0,hash;
+    const [inputs,options]=args;let captureMs=0,hashMs=0,presentMs=0,hash;
     if(options.capture){const at=performance.now();simulation.capture(options.frame);captureMs=performance.now()-at;}
     const at=performance.now();simulation.step(inputs,options.frame,options.replay);const simulateMs=performance.now()-at;steps++;
     if(options.hash){const at=performance.now();hash=simulation.hash();hashMs=performance.now()-at;}
     const proof=simulation.proof();
-    if(options.prepareFrame&&!options.replay)present(true);
-    return {hash,captureMs,hashMs,simulateMs,proof,scene:simulation.pause.selecting?2:simulation.state?.phase===1?1:0};
+    if(options.prepareFrame&&!options.replay){const at=performance.now();present(true);presentMs=performance.now()-at;}
+    return {hash,captureMs,hashMs,simulateMs,presentMs,proof,scene:simulation.pause.selecting?2:simulation.state?.phase===1?1:0};
   }
   if(method==='replay-slice'){
     const [frame,plans,prepareFrame=false]=args;

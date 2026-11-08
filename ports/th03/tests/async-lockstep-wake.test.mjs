@@ -19,3 +19,21 @@ test('worker input wake arriving during simulation is serviced immediately',asyn
     assert.equal(wakes.at(-1),0,'do not defer a wake that arrived during the worker RPC');
   }finally{sync.running=false;sync.wakeChannel?.port1.close();sync.wakeChannel?.port2.close();}
 });
+
+test('late input during worker execution is reconciled without scanning unchanged frames',()=>{
+  const network={localSeat:0,capture:()=>neutral(),sendPacket(){},setPacketHandler(){}};
+  const sync=new AsyncLockstep({network,rollbackEnabled:true,execute(){},onError:error=>{throw error;}});
+  try{
+    const q=sync.queue;q.arm(2);
+    for(let i=0;i<2;i++)q.commit(q.peek());
+    q.capture(neutral());const predicted=q.peek();
+    q.receive(2,{...neutral(),actions:['right']});
+    q.commit(predicted);
+    let scans=0;const reconcile=sync.reconcile.bind(sync);sync.reconcile=()=>{scans++;return reconcile();};
+    assert.equal(sync.reconcileCommitted(2,predicted),2,'in-flight input must correct executed prediction');
+    assert.equal(scans,1);
+    q.rewind(2);const corrected=q.peek();q.commit(corrected);q.dirty=null;
+    assert.equal(sync.reconcileCommitted(2,corrected),null);
+    assert.equal(scans,1,'matching frames do not rescan rollback history');
+  }finally{sync.wakeChannel?.port1.close();sync.wakeChannel?.port2.close();}
+});

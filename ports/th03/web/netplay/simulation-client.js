@@ -15,14 +15,14 @@ export class WorkerNetworkSimulation {
     this.context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});this.context.resume().catch(()=>{});
     this.audio={context:this.context};this.module={SDL2:{audioContext:this.context},executionThread:'worker',heapBytes:0,
       netSnapshotInfo:()=>this.snapshot.snapshots||{snapshotBytes:0,snapshots:0},netKey(){}};
-    this.displayMetrics={expired:0,lateDrawn:0,hiddenDiscarded:0,replaced:0};this.module.displayMetrics=this.displayMetrics;
+    this.displayMetrics={expired:0,lateDrawn:0,hiddenDiscarded:0,replaced:0,maxGapMs:0,gapsOver25Ms:0,gapsOver50Ms:0};this.lastPresentedAt=null;this.module.displayMetrics=this.displayMetrics;
     try{this.worker=new Worker(new URL('./simulation-worker.js',import.meta.url),{type:'module',name:'TH03 network simulation'});}
     catch(error){this.context.close().catch(()=>{});throw error;}
     this.worker.onmessage=({data})=>this.receive(data);
     this.worker.onerror=event=>this.fail(Error(event.message||'联机模拟线程失败'));
     this.worker.onmessageerror=()=>this.fail(Error('联机模拟线程通信失败'));
     this.onPageHide=()=>this.dispose();window.addEventListener('pagehide',this.onPageHide);
-    this.onVisibility=()=>{if(document.hidden)this.clearFrames();};document.addEventListener('visibilitychange',this.onVisibility);
+    this.onVisibility=()=>{if(document.hidden){this.lastPresentedAt=null;this.clearFrames();}};document.addEventListener('visibilitychange',this.onVisibility);
     this.onContextLost=()=>this.fail(Error('游戏画面上下文已丢失，请重新开始'));config.canvas.addEventListener('contextlost',this.onContextLost);
   }
   call(method,args=[]){
@@ -81,7 +81,12 @@ export class WorkerNetworkSimulation {
     // A delayed frame is still the newest completed image when there is no
     // replacement. Discarding it can freeze display throughout a long stall.
     if(expired)this.displayMetrics.lateDrawn++;
-    try{if(!this.closed){this.onDraw?.(frame.bitmap);this.drawn=(this.drawn||0)+1;}}catch(error){this.fail(error);}finally{this.releaseFrame(frame);}
+    try{if(!this.closed){
+      this.onDraw?.(frame.bitmap);this.drawn=(this.drawn||0)+1;
+      const now=performance.now();
+      if(this.lastPresentedAt!=null){const gap=now-this.lastPresentedAt;this.displayMetrics.maxGapMs=Math.max(this.displayMetrics.maxGapMs||0,gap);if(gap>25)this.displayMetrics.gapsOver25Ms=(this.displayMetrics.gapsOver25Ms||0)+1;if(gap>50)this.displayMetrics.gapsOver50Ms=(this.displayMetrics.gapsOver50Ms||0)+1;}
+      this.lastPresentedAt=now;
+    }}catch(error){this.fail(error);}finally{this.releaseFrame(frame);}
   }
   present(due){
     if(this.closed)return;this.onSnapshot?.(this.snapshot);
@@ -89,7 +94,10 @@ export class WorkerNetworkSimulation {
       if(!this.preparedFrame||(due&&!due(performance.now())))return;
       if(this.queuedFrame)this.releaseFrame(this.queuedFrame);
       this.queuedFrame=this.preparedFrame;this.queuedFrame.staged=false;this.preparedFrame=null;
-      if(!this.drawHandle)this.drawHandle=requestAnimationFrame(()=>this.draw());return;
+      // The simulation has already reconciled this frame. Submit immediately;
+      // the browser compositor displays the canvas at its next refresh.
+      if(this.drawHandle)cancelAnimationFrame(this.drawHandle);this.drawHandle=0;
+      this.draw();return;
     }
     const key=`${this.snapshot.frameUploads||0}:${this.snapshot.renderEpoch||0}`;
     if(this.presentPending||this.presentedKey===key)return;

@@ -80,6 +80,22 @@ try{
       await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyZ',down:false});});await new Promise(r=>setTimeout(r,500));
     }
     await wait(async()=>(await frames()[0].evaluate(()=>window.th03SyncState?.phase))===1,'battle phase',60000);
+    if(process.env.PC98_TEST_PERF_SECONDS){
+      const seconds=Number(process.env.PC98_TEST_PERF_SECONDS),samples=[];
+      await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyZ',down:true});});
+      for(let n=0;n<seconds;n++){
+        await new Promise(resolve=>setTimeout(resolve,1000));
+        samples.push(await Promise.all(frames().map(frame=>frame.evaluate(async()=>({
+          time:performance.now(),perf:window.th03Performance,state:window.th03SyncState,
+          health:(await import('./managed-room.mjs')).managedAPI.health(),
+          connection:document.querySelector('.network-status')?.textContent?.replace(/\s+/g,' ').trim()||''
+        })))));
+        if(n%2===0)await page.evaluate(async n=>{for(let seat=0;seat<2;seat++){await rpc(seat,'keyboard',{code:n%4?'ArrowLeft':'ArrowRight',down:false});await rpc(seat,'keyboard',{code:n%4?'ArrowRight':'ArrowLeft',down:true});}},n);
+      }
+      await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard-clear');});
+      await writeFile(resolve(out,'performance-80-100ms.json'),JSON.stringify({delay:process.env.EAGLER_NETPLAY_RELAY_DELAY_MS,jitter:process.env.EAGLER_NETPLAY_RELAY_JITTER_MS,samples},null,2));
+      console.log('TH03 battle performance samples saved:',samples.length);
+    }
     if(process.env.PC98_TEST_MIXED_RAPID==='1'){
       await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyZ',down:true});});
       await wait(async()=>frames()[0].evaluate(()=>window.th03Replay?.snapshot()?.rows?.slice(-30).some(row=>row.inputs[0].actions.includes('shot')&&row.inputs[1].actions.includes('rapid'))),'per-player rapid preferences',15000);

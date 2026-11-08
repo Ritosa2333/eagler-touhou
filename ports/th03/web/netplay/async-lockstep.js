@@ -21,6 +21,14 @@ export class AsyncLockstep extends Lockstep {
     for(const [at,pair]of q.used)if(!same(pair[remote],q.predicted(remote,at)))q.dirty=q.dirty===null?at:Math.min(q.dirty,at);
     return q.dirty;
   }
+  reconcileCommitted(frame,pair){
+    const q=this.queue,remote=q.slot^1;
+    // receive() already marks older changed predictions. An input may also
+    // arrive while execute() is in flight, before this frame enters used.
+    // Avoid rescanning the whole rollback history for an unchanged frame.
+    if(q.dirty!==null||!same(pair[remote],q.predicted(remote,frame)))return this.reconcile();
+    return null;
+  }
   async confirmFrames(){
     if(this.queue.dirty!==null)return false;
     const prefix=Math.min(this.queue.frame,this.queue.confirmed),preceding=[...this.checkpoints].filter(frame=>frame<=prefix).at(-1);
@@ -60,9 +68,9 @@ export class AsyncLockstep extends Lockstep {
         const capture=q.active&&frame>=q.confirmed&&(previous===undefined||frame-previous>=this.snapshotStride),hash=(frame+1)%120===0;
         const at=performance.now();const result=await this.execute(pair,{frame,replay,capture,hash});
         if(!this.running)return false;
-        this.costs.simulate+=performance.now()-at;
+        this.costs.simulate+=performance.now()-at;this.costs.prepare+=result?.presentMs||0;
         if(capture){this.checkpoints.add(frame);this.costs.captures++;this.costs.capture+=result?.captureMs||0;}
-        q.commit(pair);this.costs.steps++;this.reconcile();
+        q.commit(pair);this.costs.steps++;this.reconcileCommitted(frame,pair);
         if(hash){this.pendingHashes.set(q.frame,result.hash);this.costs.hash+=result.hashMs||0;}
         this.recorder?.stage(frame,{inputs:pair,offlineMask:0,proof:result.proof,hash:hash?result.hash:null,scene:result.scene});
         steps++;this.lastProgress=performance.now();return true;
@@ -90,6 +98,7 @@ export class AsyncLockstep extends Lockstep {
           for(let index=0;index<outcome.applied;index++){
             const plan=plans[index],record=outcome.records[index];
             if(record.frame!==plan.frame)throw Error('TH03 回滚补算记录帧异常');
+            this.costs.prepare+=record.presentMs||0;
             if(plan.capture){this.checkpoints.add(plan.frame);this.costs.captures++;this.costs.capture+=record.captureMs||0;}
             this.queue.commit(plan.inputs);steps++;this.costs.steps++;this.costs.replays++;
             if(plan.hash){this.pendingHashes.set(plan.frame+1,record.hash);this.costs.hash+=record.hashMs||0;}

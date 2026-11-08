@@ -5,7 +5,7 @@ export class Lockstep {
     Object.assign(this,{network,step,present,hash,onError,onState,capture,restore,confirm,recorder,proof,scene,rollbackEnabled,snapshotStride});
     this.checkpoints=new Set();this.lastConfirmation=null;
     this.queue=new FrameQueue(network.localSeat,{rollbackEnabled,directionPrediction,predictionLead,inputDelay});this.hashes=new Map();this.remoteHashes=new Map();this.pendingHashes=new Map();
-    this.costs={simulate:0,steps:0,capture:0,captures:0,restore:0,restores:0,hash:0,confirm:0,confirmCallbacks:0,skippedConfirmations:0,replays:0};
+    this.costs={simulate:0,steps:0,prepare:0,capture:0,captures:0,restore:0,restores:0,hash:0,confirm:0,confirmCallbacks:0,skippedConfirmations:0,replays:0};
     this.running=false;this.applying=false;this.last=0;this.budget=0;this.lastProgress=performance.now();this.replayUntil=null;
     this.timer=null;this.wakeTimer=null;this.wakePending=false;this.wakeToken=0;this.frameHandle=null;this.pumping=false;
     this.wakeChannel=typeof MessageChannel==='function'?new MessageChannel():null;
