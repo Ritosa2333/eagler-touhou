@@ -85,6 +85,12 @@ try{
       await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyZ',down:true});});
       for(let n=0;n<seconds;n++){
         await new Promise(resolve=>setTimeout(resolve,1000));
+        // Optional attack pulses exercise longer match sequences. Screenshots
+        // are only for scene inspection: they perturb timing, so do not use
+        // screenshot runs as frame-rate benchmarks.
+        if(process.env.PC98_TEST_PERF_ATTACK==='1'&&n%10===5)await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyX',down:true});});
+        if(process.env.PC98_TEST_PERF_ATTACK==='1'&&n%10===6)await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyX',down:false});});
+        if(process.env.PC98_TEST_PERF_SHOTS==='1'&&n%5===4)await page.screenshot({path:resolve(out,`battle-load-${n+1}.png`)});
         samples.push(await Promise.all(frames().map(frame=>frame.evaluate(async()=>({
           time:performance.now(),perf:window.th03Performance,state:window.th03SyncState,
           health:(await import('./managed-room.mjs')).managedAPI.health(),
