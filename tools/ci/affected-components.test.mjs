@@ -1,22 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {affectedComponents,nodeBuildTargets} from './affected-components.mjs';
+import {affectedComponents, frontendAffected} from './affected-components.mjs';
 const workspace = JSON.parse(await readFile(new URL('../../launcher/config/workspace.json', import.meta.url), 'utf8'));
 const builds = JSON.parse(await readFile(new URL('../../launcher/config/runtime-builds.json', import.meta.url), 'utf8'));
 
-test('source build matrix follows actual recipes and retains both shared-source product modes',()=>{
-  assert.deepEqual(nodeBuildTargets(['launcher'],workspace,builds),[]);
-  const affected=affectedComponents(['ports/th08/web/cpp/game/Player.cpp'],workspace,builds);
-  assert.deepEqual(nodeBuildTargets(affected,workspace,builds).map(({game,variant})=>`${game}/${variant}`),['th08/normal','th08/multiplayer']);
-  const targets=nodeBuildTargets(affectedComponents(null,workspace,builds),workspace,builds);
-  assert.equal(targets.filter(target=>target.game==='th09').length,2);
-  assert.equal(targets.filter(target=>target.game==='th20').length,1);
-  assert.deepEqual(targets.filter(target=>target.game==='th075').map(target=>target.variant), ['normal','multiplayer']);
-  assert.ok(targets.every(target=>!['th06','th07'].includes(target.game)));
-});
 test('Launcher-only contribution does not schedule native consumers', () => {
   assert.deepEqual(affectedComponents(['launcher/app/routes/home.tsx'], workspace, builds), ['launcher']);
+});
+test('frontend and workflow changes do not schedule game or service suites', () => {
+  const files = ['launcher/app/routes/home.tsx', '.github/workflows/ci.yml', 'tools/ci/affected-components.mjs'];
+  assert.equal(frontendAffected(files), true);
+  assert.deepEqual(affectedComponents(files, workspace, builds), ['launcher']);
+  assert.equal(frontendAffected(['docs/README.md', 'ports/th12/src/main.cpp']), false);
 });
 test('an ordinary fix schedules its independently maintained MP source', () => {
   const ordinary = workspace.repositories.th08, mp = workspace.repositories.th08mp;

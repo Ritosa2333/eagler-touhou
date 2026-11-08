@@ -4,11 +4,11 @@
 
 需要原生 ahead／behind 与分支合并时，使用 `project-history.py` 按原仓库来源投影目录历史。先在临时克隆验证内容树、祖先和同步往返；操作方法与已验证快照见上述文档。
 
-`python tools/ports/check-history.py --base <目标分支>` 是作品来源的 PR 检查：核对迁入作品的原仓库祖先，验证已登记子树的连接提交和导出内容，并要求新作品目录登记来源。th12 的单目录子树使用[来源记录](../../docs/migration/th12-eagler-20261020.json)及[导出说明](../../docs/migration/th12-subtree-20261024.md)；普通版与 MP 的独立分支继续使用 `project-history.py`。
+`Source history` 每次检查原仓库祖先、子树连接和新作品的来源登记。新增子树或修改来源连接时，它导出受影响的目录并核对内容与父链。手动验收单个目录用 `python tools/ports/check-history.py --subtree ports/th12`。回推独立仓库时加 `--push <远端> <分支>`，工具校验通过后推送同一个导出提交。其他目录投影见[普通版与多人版同步](../../docs/adaptation/port-sync.md)。
 
 `audit-history.py` 对照目录历史分支，识别整提交、文件与修改块补丁对应，生成[历史对账表](../../docs/history/port-sync-audit.md)；MP 来源比较覆盖普通版完整历史；当前内容证据结合路径迁移检查，固定快照决定明确已接收、同次维护、共用目录接替和待同步范围。MP 逐项来源与合并节点也进入固定快照决定；待同步范围须通过来源新增与目标缺失证据检查。快照变化时保留历史决定并标明需要复核。
 
-命令先编译当前前端模块，再执行各项检查。模块 gate 中的 Vitest 测试需要 Bun 1.4.4；`shared-checks.json` 按测试计划选择 `repository`、`unit` 或 `workspace` 项目。原生 `node:test` gate 仍由 Node 运行。CI 在 Windows 和 Linux 都安装该 Bun 版本。
+命令先编译当前前端模块，再执行各项检查。模块检查中的 Vitest 测试需要 Bun 1.4.4，`shared-checks.json` 按测试计划选择 `repository`、`unit` 或 `workspace` 项目。原生 `node:test` 检查由 Node 运行。
 
 源码检查只包含声明了 `sourceBuild` 的目标。仅接入预制 Runtime Release 的作品不写入源码验收状态；显式选择这类作品时会报告尚未声明源码构建。浏览器 Runtime 验收仍按实际发布产品覆盖。
 
@@ -28,7 +28,7 @@
 
 目录规则检查 Git 当前跟踪或新增的源码，生成物和本地依赖继续由忽略规则隔离。退役目录、组件内 CI 和未登记的汇编／目标文件会使检查失败。当前目录职责见[源码布局](../../docs/architecture/source-layout.md)。
 
-根 CI 在 Windows 与 Linux 执行源码和模块检查。源码构建按目录映射与配方生成矩阵，成对选择普通版和 MP；共用生产程序也分别登记模式。TH06、TH07 使用已有 CMake 构建任务，其余作品使用 Emscripten 6.0.9 和共用构建入口。CI 保存检查日志与构建来源记录。
+根 CI 检查受影响作品的构建入口和共用依赖。各作编译、全作适配和专项回归按需在本地执行，构建参数见[源码与构建](../../docs/adaptation/build.md)。
 
 已执行的构建和打包可在 `status.json` 登记 `build`／`package` 范围的结果，附命令、环境与产物 SHA-256。源码身份相同时，重新检查会保留这些执行记录并显示“已验证”；源码身份改变后重新验收。源码接口检查失败始终优先显示。
 
