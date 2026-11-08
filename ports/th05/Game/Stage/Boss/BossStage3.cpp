@@ -211,7 +211,7 @@ void CBossStage3::StepPuppet()
 	for (int i=0;i<2;i++)
 	{
 		if (m_puppet[i].flag==0)
-			return;
+			continue;
 		if (m_puppet[i].flag!=1)
 		{
 			if (m_puppet[i].flag%4==0)
@@ -235,22 +235,12 @@ void CBossStage3::StepPuppet()
 		}
 		if (m_puppet[i].curX!=m_puppet[i].tarX||m_puppet[i].curY!=m_puppet[i].tarY)
 		{
-			float deltaX=(m_puppet[i].tarX-m_puppet[i].curX);
-            if (fabs(deltaX)>=32.0f)
-				m_puppet[i].curX+=deltaX/32.0f;
-			else
-				if (fabs(deltaX)>=4.0f)
-					m_puppet[i].curX+=deltaX/4.0f;
-				else
-					m_puppet[i].curX=m_puppet[i].tarX;
-			float deltaY=(m_puppet[i].tarY-m_puppet[i].curY);
-			if (fabs(deltaY)>=32.0f)
-				m_puppet[i].curY+=deltaY/32.0f;
-			else
-				if (fabs(deltaY)>=4.0f)
-					m_puppet[i].curY+=deltaY/4.0f;
-				else
-					m_puppet[i].curY=m_puppet[i].tarY;
+			auto& puppet=m_puppet[i];
+			const int dx=int(puppet.tarX-puppet.curX),dy=int(puppet.tarY-puppet.curY);
+			const int stepX=dx/32?dx/32:dx/4;
+			const int stepY=dy/32?dy/32:dy/4;
+			puppet.curX=stepX?puppet.curX+stepX:puppet.tarX;
+			puppet.curY=stepY?puppet.curY+stepY:puppet.tarY;
 			m_puppet[i].image=192;
 		}
 		else

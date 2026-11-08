@@ -155,13 +155,15 @@ void CBossStage1::Phase2Shoot()
 	}
 	else
 	{
-		if (RandomWalk(m_curPhaseFrame-16)!=0)
+		const bool finished=RandomWalk(m_curPhaseFrame-16)!=0;
+		// The original calls the pattern once more after clearing its clock.
+		if (finished&&m_curMode!=3)
 		{
-			m_curPhaseFrame=0;
-			m_curMode=0;
+			const int cadence=m_curMode==4?8:2;
+			m_curPhaseFrame=(m_curPhaseFrame+cadence-1)/cadence*cadence;
 		}
-		switch(m_curMode)		//behavior here is a bit different than PC98 ver, because copying that will make
-		{						//the code somewhat ugly
+		switch(m_curMode)
+		{
 		case 1:
 			Phase2ShootType1();
 			break;
@@ -169,11 +171,16 @@ void CBossStage1::Phase2Shoot()
 			Phase2ShootType2();
 			break;
 		case 3:
-			Phase2ShootType3();
+			if (!finished)Phase2ShootType3();
 		    break;
 		case 4:
 			Phase2ShootType4();
 		    break;
+		}
+		if (finished)
+		{
+			m_curPhaseFrame=0;
+			m_curMode=0;
 		}
 	}
 }

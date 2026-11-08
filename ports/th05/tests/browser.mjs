@@ -24,6 +24,11 @@ try{
  async function launch(enabled,locale='ja-JP',language='ja',audioMode='none',source='original',viewer=false){await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>events.some(e=>e.event==='ready'),null,{timeout:30000});
   const config=await page.evaluate(async({enabled,locale,language,audioMode,source,viewer})=>{const pack=language==='lang_zh-hans'?await (await fetch('/language.json')).json():null;if(pack)for(const file of pack.files)file.bytes=new Uint8Array(file.bytes);return command('configure',{music:audioMode==='none'?'none':'ogg',language,...(pack?{runtimePack:pack}:{}),sharedResources:[{path:'/data/gothic.ttf',url:'/font.ttf'}],options:{replayViewer:viewer,musicSource:source,oggDecodeMode:audioMode==='full'?'full':'stream',thpracEnabled:enabled,thpracLocale:locale,alwaysHitbox:true,touchEnabled:true,touchSensitivity:150,touchMovementMode:'touch-unlimited'}});},{enabled,locale,language,audioMode,source,viewer});assert.equal(config.ok,true,JSON.stringify(config));
   const result=await page.evaluate(()=>command('launch'));assert.equal(result.ok,true,JSON.stringify(result));await page.waitForFunction(()=>events.some(e=>e.event==='first-frame'),null,{timeout:15000});return page.frames().find(f=>f.url().includes('/runtime/'));}
+ if(process.argv[2]==='--pc98-patterns'){
+  assert.ok(process.argv[3],'Pass the directory from Verify-OriginalPatterns.py');
+  const {comparePatterns}=await import('./pc98-patterns.mjs');
+  await comparePatterns(await launch(false),resolve(process.argv[3]));
+ }else{
  let frame=await launch(false);
  report.vanilla=await frame.evaluate(()=>({enabled:Module._th05_practice_enabled(),scene:Module._th05_scene(),ticks:Module._th05_ticks()}));assert.equal(report.vanilla.enabled,0);
  await frame.evaluate(()=>{Module._th05_key(112,1);Module._th05_step();Module._th05_key(112,0);});assert.equal(await frame.evaluate(()=>Module._th05_practice_tool(0)),0);
@@ -85,4 +90,5 @@ try{
  assert.deepEqual(logs.filter(e=>!e.includes('404')&&!e.includes('GL Driver Message')),[]);
  report.logs=logs;report.events=await page.evaluate(()=>events.map(e=>e.event).filter(Boolean));report.protocol='eagler-touhou/1';console.log(JSON.stringify(report,null,2));
  await mkdir(resolve(root,'artifacts'),{recursive:true});const {writeFile}=await import('node:fs/promises');await writeFile(resolve(root,'artifacts/browser-validation.json'),JSON.stringify(report,null,2)+'\n');await writeFile(resolve(root,'artifacts/browser-'+(process.env.TH05_BROWSER_TESTS==='1'?'native':'production')+'-validation.json'),JSON.stringify(report,null,2)+'\n');
+ }
 }catch(error){console.error('Browser logs:',logs);console.error('Report:',report);throw error;}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}

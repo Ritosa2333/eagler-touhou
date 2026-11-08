@@ -15,7 +15,7 @@ class VM:
     DS = 0x309d
     C1 = 0x1ae1
     C3 = 0x2527
-    def __init__(self, number, image, resources):
+    def __init__(self, number, image, resources, *, stage=None, difficulty=3):
         self.resources=resources
         f=image.read_bytes()
         assert hashlib.sha256(f).hexdigest() == 'c41f6e6b9a97b2433acc576ceaee800707c8d4ea7e498150a259663c8fa7d4f0'
@@ -56,15 +56,20 @@ class VM:
         self.u.hook_add(UC_HOOK_CODE,gameover,None,self.BASE+0xd85c,self.BASE+0xd85c)
         resident=0x80000;self.resident=resident
         self.w(0x41fc,0,2);self.w(0x41fe,0x8000,2)
-        for off,value in {0xd:3,0xe:3,0x11:3,0x14:[0,1,2,3,2][number-1],0x1f:number,0x1d:[3,1,2,4,6][number-1]}.items():self.put(resident+off,value)
-        self.w(0x576e,[3,1,2,4,6][number-1])
+        stage_index = [3,1,2,4,6][number-1] if stage is None else stage
+        character = [0,1,2,3,2][number-1] if stage is None else 0
+        for off,value in {0xd:3,0xe:3,0x11:difficulty,0x14:character,
+                          0x16:1 if stage is not None else 0,
+                          0x1f:number if stage is None else 0,0x1d:stage_index}.items():
+            self.put(resident+off,value)
+        self.w(0x576e,stage_index)
         self.call(0xb063)
         self.w(0x36f0,1 if number==5 else 128)
         self.w(0x418,318,4)
         self.call(0xb55a)
         # Midboss wrappers are installed by the native reset and setup code.
         self.call(0x1c4a1,self.C3,True)
-        self.call([0x14797,0x1460b,0x146c8,0x14871,0x149fe][number-1])
+        self.call([0x1453c,0x1460b,0x146c8,0x14797,0x14871,0x1496e,0x149fe][stage_index])
         self.call(0xe5c2)
         self.call(0xc742)
         if number==5:
@@ -80,7 +85,7 @@ class VM:
         self.call(0xbb9e)
         # Start in stage play rather than simulating the video-device intro.
         self.w(0xc656,0x8bec if number==5 else 0x8be5,2)
-        self.rec=self.resources[f'DEMO{number-1}.REC']
+        self.rec=self.resources[f'DEMO{number-1}.REC'] if stage is None else b''
         self.frame=0;self.index=0;self.part2=False
         self.w(0x351a,0) # draw-only flag, not the scroll simulator
         self.w(0x4ad6,1) # retail stage initialization selects back page 1

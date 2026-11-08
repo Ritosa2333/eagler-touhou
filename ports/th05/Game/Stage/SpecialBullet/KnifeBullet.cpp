@@ -24,6 +24,10 @@ void CKnifeBullet::AddBullet(float origX,float origY,float angle,float speed, in
 	for (int i=0;i<KNIFE_BULLET_N_RECORD;i++)
 		if (m_bullet[i].flag==0)
 		{
+
+#ifdef TH05_BROWSER_TESTS
+	original::AuditSpecialShot(1,int(speed1));
+#endif
 			m_bullet[i].flag=1;
 			m_bullet[i].curX=origX;
 			m_bullet[i].curY=origY;

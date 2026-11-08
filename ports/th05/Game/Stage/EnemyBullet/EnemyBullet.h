@@ -109,6 +109,8 @@ protected:
 	ENEMY_BULLET m_bullets[ENEMY_BULLET_N_RECORD];
 protected:
 	CStage *m_pStage;
+	unsigned char m_templateSpreadAngle;
+	void RememberSpreadAngle(const ENEMY_SHOOT_INFO& info);
 public:
 	void Initialize();
 	void Step();
