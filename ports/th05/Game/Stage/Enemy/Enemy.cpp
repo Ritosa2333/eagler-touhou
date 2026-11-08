@@ -54,11 +54,8 @@ void CEnemy::AddEnemy(unsigned char enemyType,unsigned char subType,float enemyX
 			m_enemy[i].loopCounter=0;
 			m_enemy[i].pScript=m_pStage->m_pStageRes->m_pStageStd->m_enemyScript[enemyType];
 			// Native enemies_add resolves random coordinates only after finding a free slot.
-			if (original::DemoActive())
-			{
-				if (enemyX==999*16) enemyX=float(original::Random()%(384*16));
-				if (enemyY==999*16) enemyY=float(original::Random()%(368*16));
-			}
+			if (enemyX==999*16) enemyX=float(original::Random()%(384*16));
+			if (enemyY==999*16) enemyY=float(original::Random()%(368*16));
 			m_enemy[i].curX=enemyX;
 			m_enemy[i].curY=enemyY;
 			if (m_enemy[i].curX>=192.0f*16.0f)
@@ -86,6 +83,7 @@ void CEnemy::AddEnemy(unsigned char enemyType,unsigned char subType,float enemyX
 			m_enemy[i].shootInfo.shootOrigX=0.0f;
 			m_enemy[i].shootInfo.shootOrigY=0.0f;
 			m_enemy[i].shootInfo.bulletImg=0;
+			m_enemy[i].shootInfo.fromStageScript=true;
 			break;
 		}
 }
@@ -137,17 +135,10 @@ void CEnemy::StepEnemyTable()
 			int xInt=*(short *)(m_pEnemyTableReadPtr+1);
 			int yInt=*(short *)(m_pEnemyTableReadPtr+3);
 //			printf("%d %d %d\n",enemyType,xInt,yInt);
-			float x=(float)xInt;
-			float y=(float)yInt;
-			if (!original::DemoActive())
-			{
-				if (xInt==999*16) x=(float)(original::Random()%(384*16));
-				if (yInt==999*16) y=(float)(original::Random()%(368*16));
-			}
 			unsigned char dropItemType=m_pEnemyTableReadPtr[5];
 			unsigned char enemySubType=m_pEnemyTableReadPtr[6];
 			if (!m_noAddEnemy)
-				AddEnemy(enemyType,enemySubType,x,y,dropItemType);
+				AddEnemy(enemyType,enemySubType,float(xInt),float(yInt),dropItemType);
 			m_pEnemyTableReadPtr+=8;
 		}
 	}
@@ -276,13 +267,13 @@ void CEnemy::StepEnemyScript(ENEMY *pEnemy)
 			}
 			if (ptr[0]==11)
 			{
-				pEnemy->velX=(original::DemoActive()?float(original::math::X(int(pEnemy->curAngle),ptr[1])):(float)cos(pEnemy->curAngle/256.0f*2*PI)*ptr[1]);
+				pEnemy->velX=float(original::math::X(int(pEnemy->curAngle),ptr[1]));
 				pEnemy->velY=*(char *)(ptr+3);
 			}
 			else
 			{
 				pEnemy->velX=*(char *)(ptr+3);
-				pEnemy->velY=(original::DemoActive()?float(original::math::X(int(pEnemy->curAngle),ptr[1])):(float)cos(pEnemy->curAngle/256.0f*2*PI)*ptr[1]);
+				pEnemy->velY=float(original::math::X(int(pEnemy->curAngle),ptr[1]));
 			}
 			if (MoveAndTestLeave(pEnemy))
 				VANISH_AND_RETURN;
@@ -291,7 +282,7 @@ void CEnemy::StepEnemyScript(ENEMY *pEnemy)
 			return;
 		case 13:
 			pEnemy->curSpeed=ptr[2];
-			pEnemy->curAngle=m_pStage->m_pChara->AngleToChara(pEnemy->curX,pEnemy->curY)+ptr[1];
+			pEnemy->curAngle=m_pStage->m_pChara->AngleToChara(pEnemy->curX,pEnemy->curY,true)+ptr[1];
 			UpdateVelXYFromSpeedAngle(pEnemy);
 			ptr+=3;
 			break;
@@ -307,7 +298,6 @@ void CEnemy::StepEnemyScript(ENEMY *pEnemy)
 			break;
 		case 16:
 			pEnemy->curAngle=(float)(original::Random()%256);
-			if(!original::DemoActive())UpdateVelXYFromSpeedAngle(pEnemy);
 			ptr+=1;
 			break;
 		case 17:
@@ -374,8 +364,7 @@ void CEnemy::StepEnemyScript(ENEMY *pEnemy)
 			ptr+=2;
 			break;
 		case 27:
-			if(original::DemoActive())pEnemy->shootInfo.shootType=ptr[1];
-			else pEnemy->shootInfo.shootType+=*(char *)(ptr+1);
+			pEnemy->shootInfo.shootType=ptr[1];
 			ptr+=2;
 			break;
 		case 28:
@@ -383,7 +372,7 @@ void CEnemy::StepEnemyScript(ENEMY *pEnemy)
 				int newInterval=ptr[1]*(32-m_pStage->m_playerPerformance)/64+ptr[1];
 				if (newInterval<16) newInterval=16;
 				if (newInterval>255) newInterval=255;
-				pEnemy->autoShootInterval=newInterval;
+				pEnemy->autoShootInterval=CGame::GVar().m_playDifficulty==0?255:newInterval;
 				ptr+=2;
 				break;
 			}
@@ -475,7 +464,7 @@ void CEnemy::StepEnemyScript(ENEMY *pEnemy)
 		case 48:
 			pEnemy->curAngle=ptr[1];
 			pEnemy->curSpeed=ptr[2];
-			if (original::DemoActive()?!pEnemy->atLeftHalfOfScreen:pEnemy->atLeftHalfOfScreen)
+			if (!pEnemy->atLeftHalfOfScreen)
 				pEnemy->curAngle=128.0f-pEnemy->curAngle;
 			UpdateVelXYFromSpeedAngle(pEnemy);
 			ptr+=3;
@@ -518,7 +507,7 @@ void CEnemy::StepEnemyScript(ENEMY *pEnemy)
 			break;
 		case 58:
 			pEnemy->shootInfo.shootAngle=m_pStage->m_pChara->AngleToChara(pEnemy->curX+pEnemy->shootInfo.shootOrigX,
-																		  pEnemy->curY+pEnemy->shootInfo.shootOrigY);
+																		  pEnemy->curY+pEnemy->shootInfo.shootOrigY,true);
 			pEnemy->shootInfo.shootAngle+=*(char *)(ptr+1);
 			ptr+=2;
 			break;
@@ -602,11 +591,9 @@ void CEnemy::Step()
 			m_enemy[i].autoShootTimer++;
 			if (m_enemy[i].autoShootTimer>=m_enemy[i].autoShootInterval)
 				if (m_enemy[i].curY<304.f*16.0f)
-					// Native unsigned safe-box checks exclude the right and bottom edges.
-					if (original::DemoActive() ?
-						(static_cast<unsigned short>(int(m_enemy[i].curX-m_pStage->m_pChara->GetCurX())+48*16)>=96*16 ||
-						 static_cast<unsigned short>(int(m_enemy[i].curY-m_pStage->m_pChara->GetCurY())+48*16)>=96*16) :
-						!m_pStage->m_pChara->TestCrash(m_enemy[i].curX,m_enemy[i].curY,48.0f*16.0f,48.0f*16.0f))
+					// Autofire is blocked inside the original half-open 96x96 safe box.
+					if ((static_cast<unsigned short>(int(m_enemy[i].curX-m_pStage->m_pChara->GetCurX())+48*16)>=96*16 ||
+						 static_cast<unsigned short>(int(m_enemy[i].curY-m_pStage->m_pChara->GetCurY())+48*16)>=96*16))
 					{
 						m_enemy[i].autoShootTimer=0;
 						ENEMY_SHOOT_INFO shootInfo;

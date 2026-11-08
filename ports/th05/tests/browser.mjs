@@ -68,7 +68,19 @@ try{
   report.audio.push({mode,source,prIdentity:true,sfx:health.sfx.backend,loopStart:health.loopStart,loopEnd:health.loopEnd});
  }
  const invalid=await page.evaluate(()=>command('read',{path:'../score.dat'}));assert.equal(invalid.ok,false);
- if(process.env.TH05_BROWSER_TESTS==='1'){report.nativeStageCases=await frame.evaluate(()=>Module._th05_native_stage_matrix());assert.equal(report.nativeStageCases,84);}
+ if(process.env.TH05_BROWSER_TESTS==='1'){
+  report.nativeStageCases=await frame.evaluate(()=>{
+   const onError=Module.eaglerError;
+   let failure;
+   Module.eaglerError=message=>{failure=message;onError?.(message);};
+   try{
+    const cases=Module._th05_native_stage_matrix();
+    if(failure)throw Error(failure);
+    return cases;
+   }finally{Module.eaglerError=onError;}
+  });
+  assert.equal(report.nativeStageCases,84);
+ }
  const runtimeErrors=await page.evaluate(()=>events.filter(e=>e.event==='error'||e.event==='music-error'));assert.deepEqual(runtimeErrors,[]);
  assert.deepEqual(logs.filter(e=>!e.includes('404')&&!e.includes('GL Driver Message')),[]);
  report.logs=logs;report.events=await page.evaluate(()=>events.map(e=>e.event).filter(Boolean));report.protocol='eagler-touhou/1';console.log(JSON.stringify(report,null,2));
