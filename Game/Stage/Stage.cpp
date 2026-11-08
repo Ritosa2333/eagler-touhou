@@ -286,6 +286,7 @@ void CStage::Initialize()
  GetPhaseTimeout();
  CGame::GVar().OnStageEnter();
  InitCoop();
+ TickBossBar();
 }
 
 void CStage::ApplyPracticeWarp()
