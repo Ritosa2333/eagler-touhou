@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "196ad997987cf01a560f8334679d6eaf47333993",
+      "base": "86ea87dceb9054417e453f16a77719f479e4bab3",
       "history": [
         {
           "kind": "manual",
@@ -209,6 +209,42 @@
             "ports/th05-mp/web/replay.mjs"
           ],
           "note": "Use audited PC-98 shot patterns in both ports, retaining multiplayer seat pools and old replay rules; keep the retail trace harness in the normal port."
+        },
+        {
+          "kind": "manual",
+          "base": "196ad997987cf01a560f8334679d6eaf47333993",
+          "source": "86ea87dceb9054417e453f16a77719f479e4bab3",
+          "targetHead": "df0b3a8914b64d4fc2031342d465dc464f8bafe2",
+          "paths": [
+            "ports/th05-mp/Game/Original/OriginalFeatures.cpp",
+            "ports/th05-mp/Game/Original/OriginalFeatures.h",
+            "ports/th05-mp/Game/Replay.cpp",
+            "ports/th05-mp/Game/Replay.h",
+            "ports/th05-mp/Game/Stage/Boss/BossStage1.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage1.h",
+            "ports/th05-mp/Game/Stage/Boss/BossStage3.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4Yuki.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage5.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage6.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage6.h",
+            "ports/th05-mp/Game/Stage/Boss/BossStageEx.cpp",
+            "ports/th05-mp/Game/Stage/CharaBullet/CharaBullet.cpp",
+            "ports/th05-mp/Game/Stage/EnemyBullet/EnemyBullet.cpp",
+            "ports/th05-mp/Game/Stage/EnemyBullet/EnemyBullet.h",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStage1.cpp",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStage2.cpp",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStage4.cpp",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStage5.cpp",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStageEx.cpp",
+            "ports/th05-mp/Game/Stage/Stage.cpp",
+            "ports/th05-mp/scripts/Verify-OriginalPatterns.py",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp",
+            "ports/th05-mp/tests/browser.mjs",
+            "ports/th05-mp/tests/pc98-patterns.mjs",
+            "ports/th05-mp/web/replay.mjs"
+          ],
+          "note": "对照 PC-98 逐帧核对弹幕发射点、速度向量与特殊移动，多人沿用联机目标选择并保留历史录像规则。"
         }
       ]
     },
