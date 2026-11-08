@@ -211,6 +211,7 @@ protected:
 	int m_totalNPointItem;
 	int m_curNGraze;
 	int m_playerPerformance;
+ int m_itemRankProgress;
 	int m_nContinueUsed;
 
 	//constant during game

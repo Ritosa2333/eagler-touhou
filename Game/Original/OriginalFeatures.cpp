@@ -52,11 +52,15 @@ Verdict Evaluate(const RunStats& s){
  else if(s.endSequence==2)v.comment=2;else v.comment=s.bombs<=s.misses*2?5:s.stage>=4&&s.points<=350?6:3;
  return v;
 }
-bool BossGeometryEnabled(){
+namespace {
+bool UsesCombatRevision(CombatRevision revision){
  if(DemoActive())return true;
  const auto& game=CGame::GVar();
- return !game.m_bReplayMode||game.m_replay.m_combatRevision>=OriginalBossGeometry;
+ return !game.m_bReplayMode||game.m_replay.m_combatRevision>=revision;
 }
+}
+bool BossGeometryEnabled(){return UsesCombatRevision(OriginalBossGeometry);}
+bool MotionEnabled(){return UsesCombatRevision(OriginalMotion);}
 DemoState& Demo(){return demo;}bool DemoActive(){return demo.active;}
 int IRandom(){if(!demo.active)return std::rand();demo.seed=demo.seed*0x015a4e35u+1;return int((demo.seed>>16)&32767);}
 #ifdef TH05_BROWSER_TESTS

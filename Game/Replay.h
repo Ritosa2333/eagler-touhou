@@ -49,6 +49,7 @@ public:
 	int m_curScore[7];
 	int m_totalNPointItem[7];
 	int m_playerPerformance[7];
+ unsigned char m_itemRankProgress[7];
 	int m_stageScore[7];
 	int m_randSeed[7];
 	vector<unsigned short> m_keyState[7];

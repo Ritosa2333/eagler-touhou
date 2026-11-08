@@ -150,7 +150,7 @@ void CBossStage2::Phase2ShootType2()
 		ENEMY_SHOOT_INFO shootInfo;
 		shootInfo.shootOrigX=m_curX;
 		shootInfo.shootOrigY=m_curY;
-		shootInfo.bulletBornType=18;
+		shootInfo.bulletBornType=original::MotionEnabled()?0:18;
 		shootInfo.bulletImg=84;
 		shootInfo.shootType=EST06_MULTI;
 		shootInfo.bulletSpeed=32;

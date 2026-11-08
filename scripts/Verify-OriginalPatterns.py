@@ -22,7 +22,8 @@ def shot_geometry(vm):
     return [
         list(struct.unpack_from('<hh', pool, offset + 2)) +
         list(struct.unpack_from('<hh', pool, offset + 10)) +
-        [pool[offset + 17], pool[offset + 16]]
+        [pool[offset + 17], pool[offset + 16],
+         struct.unpack_from('<H', pool, offset + 24)[0], pool[offset + 18], pool[offset + 19]]
         for offset in range(0, len(pool), 32) if pool[offset] == 1
     ]
 
@@ -118,7 +119,8 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--difficulty', type=int, choices=range(4), default=3)
     parser.add_argument('--rank', type=int, choices=range(65), default=32)
-    parser.add_argument('--geometry', action='store_true', help='Include initial positions, velocities and angles')
+    parser.add_argument('--extra-rank', type=int, choices=range(32, 37), help='Override the performance value in Extra')
+    parser.add_argument('--geometry', action='store_true', help='Include initial positions, velocities, angles, sprites and motion flags')
     args = parser.parse_args()
     resources = ns['read_resources'](args.resources)
     args.output.mkdir(parents=True, exist_ok=True)
@@ -126,7 +128,8 @@ def main():
         for stage in range(7):
             if (stage==5 and kind=='midboss') or (stage!=3 and kind in ('mai','yuki')):
                 continue
-            result, phases = capture(stage,kind,args.exe,resources,args.difficulty,args.rank,args.geometry)
+            rank = args.extra_rank if stage == 6 and args.extra_rank is not None else args.rank
+            result, phases = capture(stage,kind,args.exe,resources,args.difficulty,rank,args.geometry)
             path = args.output / f'pc98-{kind}-{stage}.json'
             path.write_text(json.dumps(result,separators=(',',':')), encoding='utf-8')
             print(kind,stage,len(result['frames']),sum(len(f[2]) for f in result['frames']),phases,flush=True)
