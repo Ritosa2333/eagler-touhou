@@ -112,3 +112,16 @@ test('timeline rejects duplicate, missing and post-result input without advancin
  const tape=new ConfirmedTimeline(config);assert.throws(()=>tape.append(th19StreamFrame(1,input,input)),/不连续/);assert.equal(tape.length,0);
  tape.append(th19StreamFrame(0,input,input,{played:true,result:2}));assert.throws(()=>tape.append(th19StreamFrame(1,input,input)),/不连续/);assert.equal(tape.length,1);tape.end(1);
 });
+
+ test('spectator accepts committed in-game characters/cards but rejects changed build and rules',()=>{
+ const old=globalThis.WebSocket;let socket;globalThis.WebSocket=class{constructor(){socket=this;}close(){}};
+ const selected={...config,characters:[15,7],rules:[...config.rules.slice(0,7),3,5]};
+ try{for(const kind of ['selected','build','difficulty','lives']){
+  let begun;const core={_th19_network_set_rules:()=>1,_th19_network_begin:(...args)=>{begun=args;return 1;},_th19_network_end(){}};
+  const n=new Netplay(core);n.config=structuredClone(config);n.connectSpectator('ws://localhost/',{});
+  const c=structuredClone(selected);if(kind==='build')c.build='b'.repeat(64);if(kind==='difficulty')c.difficulty=0;if(kind==='lives')c.rules[3]=c.rules[4]=2;
+  socket.onmessage({data:th19StreamBegin(c).buffer});
+  assert.equal(n.prepared,kind==='selected');if(kind==='selected'){assert.deepEqual(begun,[config.seed,config.difficulty,15,7]);assert.deepEqual(n.config.rules,c.rules);}
+  n.close();
+ }}finally{globalThis.WebSocket=old;}
+ });

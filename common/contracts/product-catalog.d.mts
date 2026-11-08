@@ -998,6 +998,7 @@ export interface MultiplayerProductConfig {
     titleKey: string;
     gameplay: "cooperative" | "versus";
     inGameSelection?: boolean;
+    inGameCharacterSelection?: boolean;
     inputTiming?: Readonly<MultiplayerInputTimingConfig>;
     playerCounts: readonly (2 | 3)[];
     difficulties: readonly string[];

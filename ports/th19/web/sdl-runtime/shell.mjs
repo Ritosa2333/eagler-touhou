@@ -139,7 +139,7 @@ case 'launch':if(!configured)throw Error('请先配置游戏');launchSerial=Numb
  openGame();
  core._th19_loop_pause(0);launched=true;first=false;if(runtimeVariant==='multiplayer'&&options.netplayMode==='lan'){
  const recorder=activeRecorder=createVersusRecorder({build,names:options.netplayReplayNames,write:writeReplay,notice:message=>emit('notice',{message})});
- netplay=new Netplay(core,{onPlayback:spectatorPlayback=>emit('runtime-info',{spectatorPlayback}),onBegin:config=>{if(options.netplayReplayAutoSave!==false)recorder.begin(config);},onConfirmed:bytes=>recorder.frame(bytes),onEnd:details=>recorder.end(details),onStatus:message=>emit('notice',{message}),onClose:message=>{emit('notice',{message});void stop().catch(fatal);},onResult:()=>{emit('notice',{message:'对局结束，已返回房间'});void stop().catch(fatal);}});
+ netplay=new Netplay(core,{onMatch:th09Match=>emit('runtime-info',{th09Match}),onPlayback:spectatorPlayback=>emit('runtime-info',{spectatorPlayback}),onBegin:config=>{if(options.netplayReplayAutoSave!==false)recorder.begin(config);},onConfirmed:bytes=>recorder.frame(bytes),onEnd:details=>recorder.end(details),onStatus:message=>emit('notice',{message}),onClose:message=>{emit('notice',{message});void stop().catch(fatal);},onResult:()=>{emit('notice',{message:'对局结束，已返回房间'});void stop().catch(fatal);}});
  core._th19_loop_pause(1);await netplay.connect(options);
  }else core._th19_loop_start();$('#loading').textContent='';window.__th19Runtime={core,status,save,command,netplay};emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,version:'th19-eagler-adapter-1'});}return {};
 case 'sync':if(!player?.active){await activeRecorder?.snapshot();}await save();return {};
@@ -151,7 +151,8 @@ case 'playback':{
   if(launched&&!options.replayViewer&&!player?.active)throw Error('请先退出游戏再播放录像');
   if(m.stage!==undefined&&m.stage!==0)throw Error('录像章节无效');
   const name=path(m.path),bytes=core.FS.readFile(saveRoot+'/'+name);
-  const decoded=decodeTh19Replay(bytes);if(decoded.meta.build!==build)throw Error('录像来自不同游戏构建，请使用录制时的版本');
+  const decoded=decodeTh19Replay(bytes);// Replay playback accepts recordings from prior compatible web builds.
+  // The container, CRC, frame sequence and input validation remain mandatory.
   clearInput();netplay?.close();netplay=null;
   if(decoded.meta.kind==='versus')openGame(decoded.meta.seed);
   if(!player)player=createReplayPlayer({getCore:()=>core,restartNormal,build,onState:playback=>emit('runtime-info',{playback}),onError:fatal,onFrame:()=>{if(!first){first=true;emit('first-frame',launchSerial==null?{}:{launchSerial});}}});
@@ -231,13 +232,6 @@ async function mountSaves(){
  // recordings once, without touching scores/config or future-version files.
  const marker=saveRoot+'/th19-replay-cutover-20261106.txt';
  if(!core.FS.analyzePath(marker).exists){
-  for(const name of core.FS.readdir(saveRoot+'/replay')){
-   if(!/^th19_(?:\d{2}|ud[a-z0-9]{4})\.rpy$/i.test(name))continue;
-   const target=saveRoot+'/replay/'+name;
-   if(!core.FS.isFile(core.FS.stat(target).mode))continue;
-   let old=false;try{old=decodeTh19Replay(core.FS.readFile(target)).meta.build!==build;}catch{continue;}
-   if(old)core.FS.unlink(target);
-  }
   core.FS.writeFile(marker,build);await sync();
  }
 }

@@ -19,6 +19,7 @@ struct ChargeGauge {
         if((integer(0)&65535)!=6)return false;
         for(int i=0;i<4;++i){int n=integer(0x2c+i*4);if(n<0||n>250)return false;}
         for(int i=0;i<4;++i)thresholds[i]=integer(0x2c+i*4)*10;
+        energy=std::clamp(thresholds[0],0,2500);
         std::memcpy(&move_speed,bytes.data()+0x10,4);std::memcpy(&slow_speed,bytes.data()+0x14,4);
         std::memcpy(&diagonal_speed,bytes.data()+0x18,4);std::memcpy(&slow_diagonal_speed,bytes.data()+0x1c,4);return true;
     }

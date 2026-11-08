@@ -57,7 +57,7 @@
 | TOUCH-06 | [切换低速](../../docs/adaptation/input.md#touch-06) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-07 | [双指低速](../../docs/adaptation/input.md#touch-07) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-08 | [射击、Bomb 与暂停](../../docs/adaptation/input.md#touch-08) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
-| TOUCH-09 | [暂时禁移与触点连续性](../../docs/adaptation/input.md#touch-09) | 待核对 | 待核对 | normal：[held-touch-continuity](../../docs/adaptation/status.json)；multiplayer：[held-touch-continuity](../../docs/adaptation/status.json) |
+| TOUCH-09 | [暂时禁移与触点连续性](../../docs/adaptation/input.md#touch-09) | 检查失败 | 检查失败 | normal：[held-touch-continuity](../../docs/adaptation/status.json)；multiplayer：[held-touch-continuity](../../docs/adaptation/status.json) |
 | TOUCH-10 | [无限速移动落率记录](../../docs/adaptation/input.md#touch-10) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-11 | [双击 Bomb](../../docs/adaptation/input.md#touch-11) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-12 | [菜单与对话手势](../../docs/adaptation/input.md#touch-12) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
@@ -73,9 +73,9 @@
 
 | 编号 | 检查项 | normal | multiplayer | 记录 |
 | --- | --- | --- | --- | --- |
-| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 已实现 | 待核对 | normal：[normal-presentation](../../docs/adaptation/status.json)；multiplayer：按本项步骤执行，结果写入验证记录 |
-| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 已实现 | 待核对 | normal：[normal-presentation](../../docs/adaptation/status.json)；multiplayer：按本项步骤执行，结果写入验证记录 |
-| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 已实现 | 待核对 | normal：[normal-presentation](../../docs/adaptation/status.json)；multiplayer：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 检查失败 | 待核对 | normal：[normal-presentation](../../docs/adaptation/status.json)；multiplayer：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 检查失败 | 待核对 | normal：[normal-presentation](../../docs/adaptation/status.json)；multiplayer：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 检查失败 | 待核对 | normal：[normal-presentation](../../docs/adaptation/status.json)；multiplayer：按本项步骤执行，结果写入验证记录 |
 | DISPLAY-04 | [连续视觉字段插值](../../docs/adaptation/presentation.md#display-04) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | DISPLAY-05 | [出生、销毁和瞬移](../../docs/adaptation/presentation.md#display-05) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | DISPLAY-06 | [暂停画面的表现](../../docs/adaptation/presentation.md#display-06) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |

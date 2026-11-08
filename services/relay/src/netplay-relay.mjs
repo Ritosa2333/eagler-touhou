@@ -954,7 +954,7 @@ function lobbySnapshot(room) {
         ? {
             clientId: seat.clientId,
             name: seat.name || '',
-            ...(room.id.startsWith('th09mp-')
+            ...(/^th(?:09|19)mp-/.test(room.id)
               ? { stats: th09PlayerStats(room, seat.clientId) }
               : {}),
             loadout: seat.loadout,

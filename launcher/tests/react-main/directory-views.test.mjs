@@ -756,6 +756,19 @@ test('Legacy duel names use the machine label, then initial, and describe empty 
   assert.equal(n('.lobby-seat-name').textContent,'Reimu');
 });
 
+test('TH19 directory preserves and updates whole-match scores received from relay', async () => {
+  const row = wins => room({product:'th19mp',capacity:2,players:2,seats:wins.map((win,index)=>({initial:String(index),online:true,stats:{wins:win,losses:0,minutes:8}}))});
+  const f = await fixture({selectedProduct:'th19mp',host:{games:['th19']}}).live([row([0,0])]);
+  const m = await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
+  assert.equal(n('.book-room-score-value').textContent,'0 : 0');
+  for (const wins of [[1,0],[1,1],[1,2]]) {
+    await f.receive([row(wins)]);
+    await m.update({snapshot:f.service.getSnapshot()});
+    assert.equal(n('.book-room-score-value').textContent,wins.join(' : '));
+  }
+  await m.unmount();
+});
+
 test('Flower View keeps Japanese identity, score, shared facts and one contextual entry', async () => {
   const f = await fixture({selectedProduct:'th09mp',locale:'zh-CN'}).live([room({product:'th09mp',capacity:2,phase:'playing',startedAt:Date.now()-65000,players:2,joinable:false,seats:[{initial:'A',online:true,stats:{wins:3,losses:2,minutes:7}},{initial:'B',online:true,stats:{wins:5,losses:1,minutes:8}}]})]);
   const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});

@@ -1,3 +1,4 @@
+import {th19PlayerStats, acceptTh19MatchStats} from './th19-room-stats.mjs';
 import {randomUUID} from 'node:crypto';
 
 function currentSeats(room, ids) {
@@ -19,6 +20,7 @@ export function bindTh09Duel(room, run, players = null) {
 }
 
 export function th09PlayerStats(room, clientId) {
+  if (room.id.startsWith('th19mp-')) return th19PlayerStats(room, clientId);
   if (!room.id.startsWith('th09mp-')) return undefined;
   const duel = room.th09Duel;
   const side = duel && currentSeats(room, duel.clientIds) ? duel.clientIds.indexOf(clientId) : -1;
@@ -46,6 +48,7 @@ function confirmTh09Result(run, side, message, recordRound) {
 // Legacy clients still supply the room's live scoreboard. Account history
 // requires identical confirmed results from both admitted seats.
 export function acceptTh09MatchStats(room, run, clientId, message, recordRound) {
+  if (room.id.startsWith('th19mp-')) return acceptTh19MatchStats(room, run, clientId, message);
   if (!room.id.startsWith('th09mp-') || !run || run.ended || !run.th09Duel ||
       run.th09Duel !== room.th09Duel || !currentSeats(room, run.lobbyClientIds) ||
       message.serial !== room.lobby.startSerial) return false;

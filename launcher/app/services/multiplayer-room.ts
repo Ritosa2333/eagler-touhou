@@ -1277,6 +1277,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         spectatorTimeline: room.spectatorTimeline === true,
         ...(product === 'th09mp' ? {
           disableLocalChargePriority:room.disableLocalChargePriority === true,
+        } : {}),
+        ...(['th09mp','th19mp'].includes(product!) ? {
           replayAutoSave: ports.settings().replayAutoSave ?? ports.preferences.replayAutoSave(product),
           replayNames: [0, 1].map(side => room!.seats?.[side]?.name || `P${side + 1}`),
         } : {}),
@@ -1667,7 +1669,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     acceptMeasuredTiming,
     acceptTh09Match(value: unknown) {
       if (
-        product !== 'th09mp' ||
+        !['th09mp', 'th19mp'].includes(product!) ||
         (state.seat !== 0 && state.seat !== 1) ||
         state.spectatorRequested ||
         !state.connected ||

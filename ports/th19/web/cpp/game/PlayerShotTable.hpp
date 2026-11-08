@@ -34,6 +34,8 @@ inline void advanceChargeTalisman(int age,float& speed){
 // 0x54aae0 sets motion flag 0x20 at the bite transition. 0x4d4dc0
 // and 0x4d4a00 then skip velocity integration; only the callback's
 // explicit four-unit movement on the next ten ticks remains.
+// 0x54aae0: the bite clears only on [transition+10, transition+20).
+inline bool enokoChargeCancels(int age,int transition){return age>=transition+10&&age<transition+20;}
 inline bool enokoChargeFrozen(int age,int transition){return age>=transition;}
 inline float enokoChargeStep(int age,int transition){return age>transition&&age<=transition+10?4.f:0.f;}
 // Native update callbacks 0x54c7a0 (3) / 0x54a960 (14).

@@ -11,8 +11,8 @@ const keyBits={KeyZ:1,Enter:1,NumpadEnter:1,KeyX:2,KeyC:4,ShiftLeft:8,ShiftRight
 const neutral=()=>({keys:0,direct:0,x:0,y:0});
 
 export class Netplay {
- constructor(core,{onStatus=()=>{},onClose=()=>{},onResult=()=>{},onBegin=()=>{},onConfirmed=()=>{},onEnd=()=>{},onPlayback=()=>{}}={}){
-  this.core=core;this.onStatus=onStatus;this.onClose=onClose;this.onResult=onResult;
+ constructor(core,{onStatus=()=>{},onClose=()=>{},onResult=()=>{},onBegin=()=>{},onConfirmed=()=>{},onEnd=()=>{},onPlayback=()=>{},onMatch=()=>{}}={}){
+  this.onMatch=onMatch;this.matchReported=false;this.matchStart=0;this.core=core;this.onStatus=onStatus;this.onClose=onClose;this.onResult=onResult;
   this.onBegin=onBegin;this.onConfirmed=onConfirmed;this.onEnd=onEnd;this.confirmedFrames=0;this.replayFlush=Promise.resolve();
   this.onPlayback=onPlayback;this.spectatorRevision=0;
   this.connected=false;this.active=false;this.finished=false;this.prepared=false;
@@ -56,7 +56,8 @@ export class Netplay {
   // The shared run serial gives each rematch a fresh, identical seed on both seats.
   const seed=((options.netplaySeed>>>0)^Math.imul(Number(url.searchParams.get('run')),0x9e3779b9))>>>0;
   const rules=options.netplayTh19Rules??[0,1,1,4,4,1,1,0,0];const v=rules;if(!(Array.isArray(v)&&v.length===9&&v.every((n,i)=>Number.isInteger(n)&&n>=0&&n<([7,3,4,5,5,4,4,39,39][i]))&&v[0]===0&&v[3]===v[4]&&v[5]===1&&v[6]===1&&(v[2]!==2||(v[7]<2&&v[8]<2))))throw Error("对战规则无效");
-  this.config={rules,protocol:1,build,seed:seed||1,difficulty,characters,delay,rollback:this.rollbackEnabled};
+  this.config={rules,protocol:1,build,seed:seed||1,difficulty,characters,delay,rollback:this.rollbackEnabled};this.matchStart=0; // Each lobby run has its own serial and starts at frame zero.
+  this.helloConfig=JSON.stringify(this.config);
   this.core.eaglerOptions=options;
   if(spectator){this.connectSpectator(url,options);return;}
   this.side=side;this.core._th19_touch_side?.(side);this.delay=delay;this.direct=options.touchEnabled===true&&options.touchMovementMode==='touch-unlimited';
@@ -106,15 +107,27 @@ export class Netplay {
   switch(bytes[5]){
    case 1:{
     const config=JSON.parse(new TextDecoder().decode(bytes.subarray(6)));
-    if(JSON.stringify(config)!==JSON.stringify(this.config))throw Error('双方游戏版本或房间设置不同，请刷新后重试');
-    if(!this.prepared){
+    if(JSON.stringify(config)!==this.helloConfig)throw Error('双方游戏版本或房间设置不同，请刷新后重试');
+    if(!this.selectionStarted){
      const c=this.config;
-     if(!this.core._th19_network_set_rules(...c.rules)||!this.core._th19_network_begin(c.seed,c.difficulty,...c.characters))throw Error('无法启动人间 vs 人间对战');
-     this.prepared=true;
-     if(this.rollbackEnabled)this.prepareRollback();
-     for(let i=0;i<this.delay;++i){this.local.set(i,neutral());this.remote.set(i,neutral());}
+     if(!this.core._th19_network_set_rules(...c.rules)||!this.core._th19_network_select_begin(c.seed,c.difficulty,...c.characters))throw Error('无法进入联机角色选择');
+     this.selectionStarted=true;this.selecting=true;this.selectionFrame=0;this.selectionNext=0;
+     this.selectionLocal=new Map();this.selectionRemote??=new Map();this.selectionTick=performance.now();this.selectionBudget=0;this.selectionInputBudget=0;
+     this.onStatus('游戏内选择角色：方向键移动，Z 确认，X 取消确认');
     }
-    this.send(packet(2));this.activate();break;
+    break;
+   }
+   case 8:{
+    if(bytes.length!==12)throw Error('选人输入格式错误');
+    const frame=data.getUint32(6,true),keys=data.getUint16(10,true);
+    if(keys>2047||frame>(this.selectionFrame||0)+120)throw Error('选人输入无效');
+    this.selectionRemote??=new Map();const old=this.selectionRemote.get(frame);
+    if(old!==undefined&&old!==keys)throw Error('选人输入冲突');
+    this.selectionRemote.set(frame,keys);break;
+   }
+   case 9:{
+    if(bytes.length!==10)throw Error('选人确认格式错误');
+    this.selectionPeer=Array.from(bytes.subarray(6));this.finishSelection();break;
    }
    case 2:if(bytes.length!==6)throw Error('联机握手格式错误');this.peerReady=true;this.activate();break;
    case 3:{
@@ -164,8 +177,9 @@ export class Netplay {
   const now=performance.now();
   if(now-this.lastReceived>(this.active?30000:180000))throw Error('等待对手超时，已返回房间');
   if(this.socket.readyState!==WebSocket.OPEN||!this.routeReady)return;
-  if(!this.active&&now-this.lastHello>500)this.sendHello();
+  if(!this.active&&!this.selectionStarted&&now-this.lastHello>500)this.sendHello();
   if(now-this.lastPing>2000){const bytes=packet(6,14);new DataView(bytes.buffer).setFloat64(6,now,true);this.send(bytes);this.lastPing=now;}
+  if(this.selecting){this.pumpSelection(now);return;}
   if(!this.active||this.finished)return;
   if(this.rollback){this.pumpRollback(now);return;}
   const elapsed=(now-this.lastTick)*60/1000;this.lastTick=now;
@@ -203,7 +217,7 @@ export class Netplay {
    const present=count===steps-1;
    const result=this.core._th19_network_step(this.frame,left.keys,right.keys,left.x,left.y,right.x,right.y,left.direct,right.direct,+present);
    if(!result)throw Error('对局输入帧不连续');
-   this.confirm(this.frame,left,right,{result,played:!!this.core._th19_played_frames(),hash:(this.frame+1)%120===0?this.core._th19_network_hash()>>>0:null});
+   this.confirm(this.frame,left,right,{result,winner:this.core._th19_network_winner?.()??-1,played:!!this.core._th19_played_frames(),hash:(this.frame+1)%120===0?this.core._th19_network_hash()>>>0:null});
    this.local.delete(this.frame);this.remote.delete(this.frame);++this.frame;--this.budget;
    globalThis.__eaglerNetplayLanFrame=globalThis.__eaglerNetplayLanConfirmed=this.frame;
    if(this.frame%120===0){
@@ -216,6 +230,46 @@ export class Netplay {
   }
   if(steps){const cost=(performance.now()-workStart)/steps;this.stepCostMs=this.stepCostMs?this.stepCostMs*.8+cost*.2:cost;}
   globalThis.__th19NetplayPerformance={queuedFrames:this.nextInputFrame-this.frame,stepCostMs:this.stepCostMs,rttMs:latestRtt,baselineRttMs:this.baselineRttMs??latestRtt,maxInputLead};
+ }
+ pumpSelection(now){
+  if(this.selectionOwn){this.finishSelection();return;}
+  const elapsed=(now-this.selectionTick)*60/1000;this.selectionTick=now;
+  this.selectionBudget=Math.min(4,this.selectionBudget+elapsed);
+  this.selectionInputBudget=Math.min(8,(this.selectionInputBudget||0)+elapsed);
+  const latestRtt=globalThis.__th19PeerTransport?.peers.get(1-this.side)?.rttMs||0;
+  const peerRtt=Math.min(latestRtt,(this.baselineRttMs??latestRtt)+100);
+  const maxLead=Math.min(60,Math.max(4,Math.ceil(peerRtt*60/2000)+2));
+  // Separate packet type and frame counter: no selection input enters replay.
+  while(this.selectionInputBudget>=1&&this.selectionNext<this.selectionFrame+maxLead){
+   const frame=this.selectionNext++,keys=this.sample().keys;this.selectionLocal.set(frame,keys);
+   const bytes=packet(8,12),view=new DataView(bytes.buffer);view.setUint32(6,frame,true);view.setUint16(10,keys,true);this.send(bytes);--this.selectionInputBudget;
+  }
+  if(this.selectionNext>=this.selectionFrame+maxLead)this.selectionInputBudget=0;
+  let steps=0;while(steps<Math.floor(this.selectionBudget)&&this.selectionLocal.has(this.selectionFrame+steps)&&this.selectionRemote.has(this.selectionFrame+steps))++steps;
+  for(let count=0;count<steps;++count){
+   const own=this.selectionLocal.get(this.selectionFrame),other=this.selectionRemote.get(this.selectionFrame);
+   const inputs=this.side===0?[own,other]:[other,own];
+   const result=this.core._th19_network_step(this.selectionFrame,...inputs,0,0,0,0,0,0,+(count===steps-1));
+   if(!result)throw Error('选人帧不同步');
+   this.selectionLocal.delete(this.selectionFrame);this.selectionRemote.delete(this.selectionFrame);++this.selectionFrame;--this.selectionBudget;
+   if(result===3){
+    const p=this.core._th19_network_select_info()/4;this.selectionOwn=Array.from(this.core.HEAP32.subarray(p+1,p+5));
+    const bytes=packet(9,10);bytes.set(this.selectionOwn,6);this.send(bytes);this.finishSelection();break;
+   }
+  }
+ }
+ finishSelection(){
+  if(!this.selectionOwn||!this.selectionPeer||this.prepared)return;
+  if(JSON.stringify(this.selectionOwn)!==JSON.stringify(this.selectionPeer))throw Error('双方选人结果不同步');
+  const [left,right,card0,card1]=this.selectionOwn,c=this.config;
+  c.characters=[left,right];c.rules=[...c.rules.slice(0,7),card0,card1];
+  this.core._th19_network_end();
+  if(!this.core._th19_network_set_rules(...c.rules)||!this.core._th19_network_begin(c.seed,c.difficulty,...c.characters))throw Error('无法开始所选角色对局');
+  this.selecting=false;this.prepared=true;this.clear();
+  this.selectionLocal.clear();this.selectionRemote.clear();
+  if(this.rollbackEnabled)this.prepareRollback();
+  for(let i=0;i<this.delay;++i){this.local.set(i,neutral());this.remote.set(i,neutral());}
+  this.send(packet(2));this.activate();
  }
  prepareRollback(){
   this.rollbackCore=nativeRollbackCore(this.core,{present:()=>this.rollbackPresent!==false});
@@ -289,6 +343,13 @@ export class Netplay {
  confirm(frame,left,right,effects){
   if(frame!==this.confirmedFrames)throw Error('录像确认帧不连续');
   ++this.confirmedFrames;
+  if(this.side===0&&!this.spectator&&!this.matchReported&&effects.played){
+   const winner=effects.winner??-1;
+   if(winner>=0||this.confirmedFrames%600===0){
+    this.onMatch({start:this.matchStart,frames:this.confirmedFrames,...(winner>=0?{winner}:{})});
+    if(winner>=0)this.matchReported=true;
+   }
+  }
   if(frame>=TH19_RECORDING_LIMITS.frames){this.finishRecording(true);return;}
   const bytes=th19StreamFrame(frame,left,right,effects);
   try{this.onConfirmed(bytes);}catch{this.onStatus('录像记录失败，对局继续');}
@@ -314,7 +375,12 @@ export class Netplay {
    const bytes=new Uint8Array(event.data),row=parseTh19StreamPacket(bytes);
    if(row.kind==='begin'){
     const c=row.config;
-    if(this.prepared||Object.keys(this.config).some(k=>JSON.stringify(c[k])!==JSON.stringify(this.config[k])))throw Error('旁观版本或对局设置不一致，请刷新');
+    if(this.prepared)throw Error('旁观重复收到开局消息');
+    if(c.build!==this.config.build)throw Error('旁观游戏版本与对局不同，请双方刷新并重新开局');
+    // Character/card selection is committed in-game, after lobby configuration.
+    const fixed=['protocol','seed','difficulty','delay','rollback'];
+    if(fixed.some(k=>c[k]!==this.config[k])||JSON.stringify(c.rules.slice(0,7))!==JSON.stringify(this.config.rules.slice(0,7)))throw Error('旁观对局设置不一致，请重新进入房间');
+    this.config=structuredClone(c);
     this.spectatorTape=new ConfirmedTimeline(c);this.spectatorRunner=new VersusReplayRunner(this.core,this.spectatorTape);this.spectatorRunner.reset();
     this.prepared=true;this.active=true;this.receivedFrames=0;this.lastTick=performance.now();this.budget=0;
     this.onBegin(c);this.onStatus('正在旁观');globalThis.__eaglerNetplayLanActive=true;
@@ -326,6 +392,8 @@ export class Netplay {
      void this.finishRecording(false);
     }else{
      this.spectatorTape.append(bytes);this.receivedFrames=this.spectatorTape.length;
+     const receivedNow=performance.now(),receivedElapsed=receivedNow-this.spectatorReceivedAt;
+     if(receivedElapsed>=250){this.spectatorReceiveRate=(this.receivedFrames-this.spectatorReceivedBase)*1000/receivedElapsed;this.spectatorReceivedBase=this.receivedFrames;this.spectatorReceivedAt=receivedNow;}
      this.confirm(row.frame,row.left,row.right,row);
     }
    }
@@ -337,27 +405,32 @@ export class Netplay {
    this.spectatorTape.end();this.spectatorEnd={frame:this.receivedFrames,partial:true};
    void this.finishRecording(true);this.onStatus('旁观连接已断开，可观看已接收部分');
   };
+  this.spectatorReceivedAt=performance.now();this.spectatorReceivedBase=0;this.spectatorReceiveRate=60;
   this.timer=setInterval(()=>{try{this.pumpSpectator();}catch(error){this.close(error.message);}},8);
   this.onStatus('正在接收旁观历史…');
  }
  pumpSpectator(){
   if(!this.connected||!this.active||this.finished)return;
   const now=performance.now(),runner=this.spectatorRunner,queued=this.receivedFrames-runner.frame;
-  this.budget=Math.min(8,this.budget+(now-this.lastTick)*60/1000);this.lastTick=now;
+  // Normal playback is 60 fps; accelerate only while the receive queue is behind.
+  const catchupRate=queued>900?3:queued>240?2:1;
+  const timeSlice=queued>240?16:8;
+  this.budget=Math.min(48,this.budget+(now-this.lastTick)*60/1000*catchupRate);this.lastTick=now;
   const seeking=this.spectatorTarget!==null,end=seeking?this.spectatorTarget:this.receivedFrames;
-  const count=this.spectatorPaused&&!seeking?0:Math.min(end-runner.frame,seeking||this.spectatorFollowing&&queued>120?8:Math.floor(this.budget)),start=performance.now();
+  const catchup=seeking||this.spectatorFollowing&&queued>30;
+  const count=this.spectatorPaused&&!seeking?0:Math.min(end-runner.frame,catchup?32:Math.floor(this.budget)),start=performance.now();
   for(let n=0;n<count;n++){
-   runner.step(n===0||n===count-1||runner.frame+1===end,{silent:seeking||this.spectatorFollowing&&queued>120});this.frame=runner.frame;this.budget=Math.max(0,this.budget-1);
+   runner.step(n===count-1||runner.frame+1===end,{silent:seeking||this.spectatorFollowing&&queued>30});this.frame=runner.frame;this.budget=Math.max(0,this.budget-1);
    globalThis.__eaglerNetplayLanFrame=globalThis.__eaglerNetplayLanConfirmed=this.frame;
-   if(performance.now()-start>=8)break;
+   if(performance.now()-start>=timeSlice)break;
   }
   if(this.spectatorTarget!==null&&this.frame>=this.spectatorTarget)this.spectatorTarget=null;
   if(now-(this.lastSpectatorReport||0)>=100){this.lastSpectatorReport=now;this.reportSpectator();}
   if(this.spectatorEnd&&this.frame===this.spectatorEnd.frame){this.finished=this.peerFinished=true;this.complete();}
  }
  reportSpectator(){
-  const received=this.receivedFrames||0,seeking=this.spectatorTarget!==null||this.spectatorFollowing&&received-this.frame>120;
-  const state={version:1,run:this.spectatorRun,revision:++this.spectatorRevision,min:0,position:this.frame,received,edge:received,target:this.spectatorTarget??this.frame,paused:this.spectatorPaused,seeking,following:this.spectatorFollowing,ended:!!this.spectatorEnd,nodes:[]};
+  const received=this.receivedFrames||0,queued=Math.max(0,received-this.frame),seeking=this.spectatorTarget!==null||this.spectatorFollowing&&received-this.frame>120;
+  const state={version:1,run:this.spectatorRun,revision:++this.spectatorRevision,min:0,position:this.frame,received,edge:received,target:this.spectatorTarget??this.frame,paused:this.spectatorPaused,seeking,following:this.spectatorFollowing,ended:!!this.spectatorEnd,queued,receiveRate:Math.round(this.spectatorReceiveRate||60),playRate:queued>900?3:queued>240?2:1,nodes:[]};
   this.onPlayback(state);return state;
  }
  spectatorControl({run,action,frame}){
@@ -370,14 +443,17 @@ export class Netplay {
   }else throw Error('旁观操作无效');
   this.lastTick=performance.now();this.budget=0;return this.reportSpectator();
  }
- complete(){if(this.finished&&this.peerFinished&&!this.completed){this.completed=true;void this.finishRecording(!!this.spectatorEnd?.partial).then(()=>this.onResult());}}
+ complete(){if(this.finished&&this.peerFinished&&!this.completed){
+  const winner=this.core._th19_network_winner?.()??-1;
+  if(this.side===0&&!this.spectator&&!this.matchReported&&winner>=0){this.onMatch({start:this.matchStart,frames:this.confirmedFrames,winner});this.matchReported=true;}
+  this.completed=true;void this.finishRecording(!!this.spectatorEnd?.partial).then(()=>this.onResult());}}
  close(reason=''){
   if(!this.connected)return;
   this.finishRecording(true);
   this.connected=false;this.active=false;clearInterval(this.timer);this.timer=null;
   this.socket?.close();this.clear();
   this.rollback?.close();this.rollback=null;
-  if(this.prepared)this.core._th19_network_end();
+  if(this.prepared||this.selectionStarted)this.core._th19_network_end();
   globalThis.__eaglerNetplayLanActive=false;
   if(reason)this.onClose(reason);
  }
