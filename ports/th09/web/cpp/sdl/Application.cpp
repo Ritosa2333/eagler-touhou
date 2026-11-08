@@ -1,3 +1,4 @@
+#include <eagler/input/LocalPlayerCue.hpp>
 #include "browser-gamepad-input.hpp"
 // SDL application integration under validation. Test-only entry points are
 // compiled behind TH09_DEVELOPMENT_HARNESS; no original executable is linked.
@@ -379,6 +380,11 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     void draw(bool present=true){
         TH09_PERF_SCOPE(draw_cost,SemanticDraw);
         presentation.begin_frame();if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();
+        if(present&&network.active&&!spectator_mode&&!in_title&&!paused&&!over&&world&&world->battle){
+            const int side=network.side;auto& b=*world->battle;
+            const auto p=b.state.geometry[side].to_screen(b.fields[side].player->motion.position);
+            eagler::presentation::local_player_cue(side,p.x+presentation.offsets[side].x,p.y+presentation.offsets[side].y);
+        }
         TH09_PERF_STOP(draw_cost);
         if(present){TH09_PERF_SCOPE(present_cost,Present);graphics.present();}
     }
