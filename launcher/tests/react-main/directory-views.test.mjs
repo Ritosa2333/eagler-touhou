@@ -337,7 +337,10 @@ for (const [kind, title, hint] of [['offline', 'lobby.offline', 'lobby.refreshHi
     const f = fixture({host: {relay: kind !== 'missing'}, loadError: kind === 'offline'}); await mountLobby(f); await f.start();
     if (kind === 'unsupported') await f.emit('close', {code: 1008});
     assert.equal(f.service.getSnapshot().connection, kind); assert.equal(n('#connectionWarning').hidden, false);
-    assert.equal(n('#connectionWarningTitle').textContent, t('en', title)); assert.equal(n('#connectionWarningHint').textContent, t('en', hint));
+    assert.equal(n('#connectionWarningTitle').textContent, t('en', title));
+    const detail = kind === 'offline' ? t('en', 'network.manifestUnavailable')
+      : kind === 'unsupported' ? t('en', 'network.relayClosed', {code: 1008}) : '';
+    assert.equal(n('#connectionWarningHint').textContent, [t('en', hint), detail].filter(Boolean).join(' | '));
     assert.equal(n('#connectionWarning').getAttribute('role'), 'alert'); assert.equal(env.document.querySelector('#emptyState'), null);
     assert.equal(n('#createButton').disabled, true); assert.equal(n('#codeButton').disabled, true);
     const before = f.sockets.length; await click('#connectionRefresh'); await flush();

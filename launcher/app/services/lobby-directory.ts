@@ -1,3 +1,5 @@
+import {relayFailureDetail} from './network-failure';
+import type {RelayAttempt} from '../../src/launcher/relay-entry-routing.mts';
 import {normalizePublicNickname} from '../../src/contracts/public-nickname.mts';
 import {
   PRODUCT_IDS,
@@ -76,6 +78,7 @@ export interface DirectorySnapshot {
   globalRoomCodes: boolean;
   connection: DirectoryConnection;
   connectionInterrupted: boolean;
+  connectionDetail?: string;
   loading: boolean;
   initialized: boolean;
   leaving: boolean;
@@ -85,6 +88,7 @@ export interface DirectorySnapshot {
   siteManifest: SiteManifest | null;
 }
 export interface DirectorySocket {
+  readonly failedAttempts?: readonly RelayAttempt[];
   readonly readyState: number;
   send(data: string): void;
   close(code?: number, reason?: string): void;
@@ -189,7 +193,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   function publish(patch: Partial<DirectorySnapshot> = {}) {
     if (disposed) return;
     const next = { ...snapshot, ...patch };
-    if (next.connection === 'live') next.connectionInterrupted = false;
+    if (next.connection === 'live') {next.connectionInterrupted = false; next.connectionDetail = undefined;}
     else if (next.connection !== 'loading') next.connectionInterrupted = true;
     next.loading =
       next.connection === 'loading' ||
@@ -247,7 +251,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       const requestedSocket = socket;
       directoryReplyTimer = later(() => {
         if (socket !== requestedSocket) return;
-        publish({ connection: 'offline' });
+        publish({connection: 'offline', connectionDetail: options.translate('network.relayNoReply')});
         disconnect();
         scheduleReconnect();
       }, 20000);
@@ -354,7 +358,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     try {
       next = options.createSocket(buildMultiplayerDirectoryRelayUrl(relay, options.memberId()));
     } catch {
-      publish({ connection: 'offline' });
+      publish({connection: 'offline', connectionDetail: relayFailureDetail(options.translate)});
       scheduleReconnect();
       return;
     }
@@ -362,7 +366,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     let received = false;
     handshakeTimer = later(() => {
       if (socket !== next || received) return;
-      publish({ connection: 'offline' });
+      publish({connection: 'offline', connectionDetail: options.translate('network.relayNoReply')});
       disconnect();
       scheduleReconnect();
     }, 20000);
@@ -446,6 +450,8 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       publish({
         recovering: null,
         connectionInterrupted: true,
+        connectionDetail: received ? options.translate('network.relayClosed', {code: event.code})
+          : relayFailureDetail(options.translate, next.failedAttempts, event.code),
         ...(hadRecovery ? { notice: options.translate('lobby.releaseFailed') } : {}),
         connection: unsupported ? 'unsupported' : received ? 'loading' : 'offline',
       });
@@ -453,7 +459,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     });
     next.addEventListener('error', () => {
       if (disposed || socket !== next) return;
-      publish({ connection: 'offline' });
+      publish({connection: 'offline', connectionDetail: relayFailureDetail(options.translate, next.failedAttempts)});
       disconnect();
       scheduleReconnect();
     });
@@ -518,7 +524,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       else connect();
     } catch {
       if (!disposed && generation === bootGeneration && !snapshot.leaving) {
-        publish({ connection: 'offline' });
+        publish({connection: 'offline', connectionDetail: options.translate('network.manifestUnavailable')});
         scheduleReconnect();
       }
     } finally {

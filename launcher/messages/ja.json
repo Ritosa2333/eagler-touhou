@@ -2321,5 +2321,14 @@
   "cloudSave_stopAndCheck": "中止して確認",
   "cloudSave_continueAndOverwrite": "続けて上書き",
   "cloudSave_tabHandoffFailed": "別のタブでゲームが開いています",
-  "cloudSave_localReadFailed": "このブラウザーのセーブを読み取れません。クラウドの記録はこのブラウザーの進行状況ではありません。"
+  "cloudSave_localReadFailed": "このブラウザーのセーブを読み取れません。クラウドの記録はこのブラウザーの進行状況ではありません。",
+  "network_routeLookup": "ノード一覧 {host}",
+  "network_transfer": "ダウンロード {host}",
+  "network_timeout": "タイムアウト",
+  "network_connectFailed": "接続失敗",
+  "network_badResponse": "応答が無効",
+  "network_relayNoReply": "ロビーからルーム一覧の応答がありません",
+  "network_manifestUnavailable": "サイトのマルチプレイ設定を読み込めません",
+  "network_relayClosed": "リレー接続が切断されました（コード {code}）",
+  "network_relayHandshake": "リレーに接続できませんでした"
 }
