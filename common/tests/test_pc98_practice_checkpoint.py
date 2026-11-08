@@ -23,7 +23,9 @@ for game,size,res_size in ((2,0x93c0,48),(4,0xbdc0,74)):
    for r,v in ((UC_X86_REG_CS,0x1000),(UC_X86_REG_DS,0x3000),(UC_X86_REG_SS,0x8000),(UC_X86_REG_SP,0xff00)):u.reg_write(r,v)
    u.mem_write(0x8ff00,struct.pack('<H',0xfff0));u.emu_start(code+at,code+0xfff0,count=300000)
    assert u.reg_read(UC_X86_REG_IP)==0xfff0
-  run(save);assert u.mem_read(code+valid,1)==b'\1'
-  u.mem_write(data,bytes(size));u.mem_write(resident,bytes(res_size));run(save);run(restore)
-  assert bytes(u.mem_read(data,size))==bytes(original) and bytes(u.mem_read(resident,res_size))==before_res
+  for kind in (0,1,2):
+   u.mem_write(code+valid,b'\0');u.mem_write(code+entry,bytes([kind]));u.mem_write(data,bytes(original));u.mem_write(resident,before_res)
+   run(save);assert u.mem_read(code+valid,1)==b'\1'
+   u.mem_write(data,bytes(size));u.mem_write(resident,bytes(res_size));run(save);run(restore)
+   assert bytes(u.mem_read(data,size))==bytes(original) and bytes(u.mem_read(resident,res_size))==before_res
 print('PASS TH02/TH04 game-owned checkpoint saves and restores data and resident')

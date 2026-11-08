@@ -70,6 +70,26 @@ practice_pause:
     mov al,[cs:practice_pause_choice]
     test al,al
     jz .finish
+%ifdef PRACTICE_CHECKPOINT_BYTES
+    ; The practice menu's Restart must use the same in-game checkpoint as
+    ; quick retry and the result menu, rather than asking the host to EXEC
+    ; MAIN and seek through the encounter again.
+    cmp al,3
+    jne .host_request
+    cmp byte [cs:target_practice],0
+    je .host_request
+    call practice_pause_screen_restore
+    mov byte [cs:practice_pause_open],0
+    mov byte [cs:practice_pause_request],0
+    mov byte [cs:practice_pause_ack],0
+    mov byte [cs:practice_form_request],1
+    mov byte [cs:practice_checkpoint_requested],1
+    call practice_form_native_start
+    mov byte [cs:practice_form_request],0
+    mov byte [cs:practice_restart_committed],0
+    ret
+.host_request:
+%endif
     mov [cs:practice_pause_request],al ; 1 save and quit, 2 quit, 3 retry
     jmp .loop
 .finish:

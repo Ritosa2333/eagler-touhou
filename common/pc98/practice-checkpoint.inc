@@ -1,4 +1,4 @@
-; A same-MAIN checkpoint for selected Boss attacks. The stack is above the
+; A same-MAIN checkpoint for practice targets. The stack is above the
 ; saved data range. DOS owns the buffer and frees it when MAIN exits.
 %ifdef PRACTICE_RESTART_TH02
 %define PRACTICE_RESIDENT_PTR 0x27fc
@@ -18,8 +18,6 @@ practice_checkpoint_save:
     jne .done
     cmp byte [cs:target_practice],0
     je .done
-    cmp byte [cs:practice_initial_entry],2
-    jne .done
     pushf
     pushad
     push ds

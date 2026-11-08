@@ -243,7 +243,7 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{},r
       }
       // The state machine has changed phase, but the selected attack has not
       // updated yet. Retire old emitters before gather/items/render run.
-      if(port===0x7fe5&&preparing&&(warped||Number.isInteger(e.targetReached)&&heap()[csBase+e.targetReached])&&setup.entry!=='stage')arrive();
+      if(port===0x7fe5&&preparing&&(warped||Number.isInteger(e.targetReached)&&heap()[csBase+e.targetReached])&&(setup.entry!=='stage'||Number.isInteger(e.targetReached)&&heap()[csBase+e.targetReached]))arrive();
       if(port===0x7fe5&&targeted&&ready&&!waiting&&!outcome){if(Number.isInteger(e.targetOutcome)){const result=heap()[csBase+e.targetOutcome];if(result)finish(result===1?'clear':'failed');}else if(!u8(0x466a)&&!u8(0x4669)&&complete())finish('clear');}
     },
     get status(){return status();},get debug(){const cleanup=entryCleanup?.native&&csBase>=0?Object.fromEntries(['bullets','lasers','gather','items','circles','custom'].map((name,i)=>[name,view().getUint16(csBase+e.cleanupCounts+i*2,true)])):entryCleanup;return {base,d,csBase,resident,prepareFrames,entryCleanup:cleanup};}

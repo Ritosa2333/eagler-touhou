@@ -4,8 +4,8 @@
   "languages": {
     "cn": {
       "url": "practice-cn.exe.gz",
-      "sha256": "d87e6ea1a1cf88a888ec41882a124ebd8fc0e60fa421dc97d2f1d38474b2f287",
-      "size": 171858,
+      "sha256": "e4d12fed4edb79888fda617d29a75924bf908760dc887c2c1676deae1cffb633",
+      "size": 171906,
       "sourceMainSha256": "039e00e3d1b022a6af853a0663fe922414010b0b8dfa2b994dcaa6a3604318b3",
       "patch": {
         "version": 1,
@@ -36,11 +36,11 @@
             "payload_bytes_added": 0
           }
         ],
-        "sha256": "d87e6ea1a1cf88a888ec41882a124ebd8fc0e60fa421dc97d2f1d38474b2f287",
+        "sha256": "e4d12fed4edb79888fda617d29a75924bf908760dc887c2c1676deae1cffb633",
         "insert_image_offset": 78048,
-        "insert_size": 15600,
+        "insert_size": 15648,
         "code_segment": 2735,
-        "data_segment": 9475,
+        "data_segment": 9478,
         "mailbox_cs_offset": 34306,
         "signature": "TH04SOLOINPUTv1!",
         "entries": [
@@ -306,30 +306,30 @@
             "resultRequest": 42765,
             "resultAck": 42766,
             "resultInput": 42767,
-            "pauseOpen": 43242,
-            "pauseRequest": 43244,
-            "pauseAck": 43245,
-            "pauseInput": 43246,
-            "formOpen": 45466,
-            "formInput": 45467,
-            "formValues": 45470,
-            "formRequest": 45469,
-            "formHp": 45480,
-            "formOptions": 45482,
-            "infoEnabled": 47082,
-            "infoValues": 47084,
-            "restartPending": 48954,
-            "restartValues": 48955,
+            "pauseOpen": 43305,
+            "pauseRequest": 43307,
+            "pauseAck": 43308,
+            "pauseInput": 43309,
+            "formOpen": 45529,
+            "formInput": 45530,
+            "formValues": 45533,
+            "formRequest": 45532,
+            "formHp": 45543,
+            "formOptions": 45545,
+            "infoEnabled": 47145,
+            "infoValues": 47147,
+            "restartPending": 49009,
+            "restartValues": 49010,
             "resultSelecting": 42772
           },
-          "bytes": 13504
+          "bytes": 13552
         }
       }
     },
     "jp": {
       "url": "practice-jp.exe.gz",
-      "sha256": "60a183002aae6b9e1a1be049ca70714943b0e542584267ca32e8f3f6fe7c68bb",
-      "size": 171858,
+      "sha256": "00784d8c6f5938424e14935afaa47d238a6768b969d0d2a83da0a5fe6a53969c",
+      "size": 171906,
       "sourceMainSha256": "72009d521ba986ae10ca60a4bd12ba027328cc7420e8458ed42276da459aba62",
       "patch": {
         "version": 1,
@@ -360,11 +360,11 @@
             "payload_bytes_added": 0
           }
         ],
-        "sha256": "60a183002aae6b9e1a1be049ca70714943b0e542584267ca32e8f3f6fe7c68bb",
+        "sha256": "00784d8c6f5938424e14935afaa47d238a6768b969d0d2a83da0a5fe6a53969c",
         "insert_image_offset": 78048,
-        "insert_size": 15600,
+        "insert_size": 15648,
         "code_segment": 2735,
-        "data_segment": 9475,
+        "data_segment": 9478,
         "mailbox_cs_offset": 34306,
         "signature": "TH04SOLOINPUTv1!",
         "entries": [
@@ -627,23 +627,23 @@
             "resultRequest": 42765,
             "resultAck": 42766,
             "resultInput": 42767,
-            "pauseOpen": 43242,
-            "pauseRequest": 43244,
-            "pauseAck": 43245,
-            "pauseInput": 43246,
-            "formOpen": 45466,
-            "formInput": 45467,
-            "formValues": 45470,
-            "formRequest": 45469,
-            "formHp": 45480,
-            "formOptions": 45482,
-            "infoEnabled": 47082,
-            "infoValues": 47084,
-            "restartPending": 48954,
-            "restartValues": 48955,
+            "pauseOpen": 43305,
+            "pauseRequest": 43307,
+            "pauseAck": 43308,
+            "pauseInput": 43309,
+            "formOpen": 45529,
+            "formInput": 45530,
+            "formValues": 45533,
+            "formRequest": 45532,
+            "formHp": 45543,
+            "formOptions": 45545,
+            "infoEnabled": 47145,
+            "infoValues": 47147,
+            "restartPending": 49009,
+            "restartValues": 49010,
             "resultSelecting": 42772
           },
-          "bytes": 13504
+          "bytes": 13552
         }
       }
     }

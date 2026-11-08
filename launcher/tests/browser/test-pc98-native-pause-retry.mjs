@@ -33,7 +33,7 @@ for(const game of games){
     if(!path.startsWith('/runtime/')||!file.startsWith(root+sep))throw Error('route');
     res.setHeader('content-type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.json':'application/json','.wasm':'application/wasm','.css':'text/css'})[extname(file)]||'application/octet-stream');
     let contents=await readFile(file);
-    if(process.env.PC98_TEST_CHECKPOINT==='1'&&path==='/runtime/dosbox-adapter.js')contents=Buffer.from(contents.toString().replace('const inplace=h[base+e.restartPending]===2;','const inplace=h[base+e.restartPending]===2;if(inplace)globalThis.testNativeCheckpointCount=(globalThis.testNativeCheckpointCount||0)+1;'));
+    if(process.env.PC98_TEST_CHECKPOINT==='1'&&path==='/runtime/dosbox-adapter.js'){const source=contents.toString(),marker=game==='th02'?'const inplace=h[base+e.restartPending]===2;':'this.config.practice=config;this.practice=createPracticeEngine(';assert(source.includes(marker));contents=Buffer.from(source.replace(marker,(game==='th02'?marker:'')+'if(h[base+e.restartPending]===2)globalThis.testNativeCheckpointCount=(globalThis.testNativeCheckpointCount||0)+1;'+(game==='th04'?marker:'')));}
     if(process.env.PC98_TEST_CHECKPOINT==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?"\nexport function testCheckpointCount(){return globalThis.testNativeCheckpointCount||0;}\n":"\nexport function testCheckpointCount(){return emulator.call('testCheckpointCount');}\n")]);
     if(process.env.PC98_TEST_CHECKPOINT==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')","if(method==='testCheckpointCount')return globalThis.testNativeCheckpointCount||0;if(method==='soloFault')"));
     if(path==='/runtime/managed-solo.mjs')contents=Buffer.from(contents.toString().replace('async function returnToTitle(save,restarting=false,current=emulator,practiceConfig=null){','async function returnToTitle(save,restarting=false,current=emulator,practiceConfig=null){globalThis.testHostTransitions=(globalThis.testHostTransitions||0)+1;'));
@@ -142,19 +142,20 @@ for(const game of games){
       if(extra)await key('ArrowLeft','ArrowLeft',37);
       else{for(let i=0;i<targetStage;i++)await key('ArrowRight','ArrowRight',39);await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);}
       const gengetsu=extra&&game==='th04'&&process.env.PC98_TRANSITION_GENGETSU==='1';
-      const boss=process.env.PC98_TRANSITION_BOSS==='1'||gengetsu;
+      const boss=process.env.PC98_TRANSITION_BOSS==='1'||gengetsu,mid=process.env.PC98_TRANSITION_MID==='1';
       if(gengetsu){for(let i=0;i<3;i++)await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);for(let i=0;i<5;i++)await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);for(let i=0;i<4;i++)await key('ArrowUp','ArrowUp',38);for(let i=0;i<Number(process.env.PC98_GEN_PHASE_INDEX??1);i++)await key('ArrowRight','ArrowRight',39);for(let i=0;i<7;i++)await key('ArrowDown','ArrowDown',40);}
-      else if(boss){assert(!extra||game==='th02');for(let i=0;i<(extra?3:1);i++)await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);if(!(game==='th02'&&!extra&&targetStage===4)&&!(game==='th04'&&targetStage>3))await key('ArrowRight','ArrowRight',39);await key('ArrowDown','ArrowDown',40);for(let i=0;i<(game==='th02'?Number(process.env.PC98_TH02_BOSS_PHASE??1):1);i++)await key('ArrowRight','ArrowRight',39);}
+      else if(boss||mid){assert(!extra||game==='th02');for(let i=0;i<(extra?3:1);i++)await key('ArrowDown','ArrowDown',40);await key('ArrowRight','ArrowRight',39);if(boss&&!(game==='th02'&&!extra&&targetStage===4)&&!(game==='th04'&&targetStage>3))await key('ArrowRight','ArrowRight',39);await key('ArrowDown','ArrowDown',40);for(let i=0;i<(mid?0:game==='th02'?Number(process.env.PC98_TH02_BOSS_PHASE??1):1);i++)await key('ArrowRight','ArrowRight',39);}
       const restrictions=process.env.PC98_TEST_RESTRICTIONS==='1';
       if(restrictions){assert(!boss&&!extra);for(let i=0;i<3;i++)await key('ArrowUp','ArrowUp',38);await key('KeyZ','z',90);for(let i=0;i<4;i++){await key('KeyZ','z',90);await key('ArrowDown','ArrowDown',40);}await key('Escape','Escape',27);await key('ArrowUp','ArrowUp',38);}
-      else if(!gengetsu)for(let i=0;i<(boss?6:extra?2:4);i++)await key('ArrowUp','ArrowUp',38);
+      else if(!gengetsu)for(let i=0;i<(boss||mid?6:extra?2:4);i++)await key('ArrowUp','ArrowUp',38);
       const seekStarted=Date.now();await key('KeyZ','z',90);
-      await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.mode==='target'&&p.ready&&p.waiting;},{timeout:90000});
+      try{await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.mode==='target'&&p.ready&&p.waiting;},{timeout:90000});}catch(error){console.error(game,'target entry diagnostic',JSON.stringify((await state()).native));throw error;}
       console.log(game,'native target initialization',Date.now()-seekStarted,'ms');
       const p=(await state()).native.practice; assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testAttemptSame()),true,'target must reuse same emulator'); assert.equal(p.setup.stage,extra?(game==='th02'?5:6):targetStage);assert.equal(p.setup.character,extra?0:1);assert.equal(p.setup.difficulty,extra?4:2); assert.equal(p.stage,p.setup.stage);
       assert.equal(await frame.evaluate(()=>globalThis.testHostTransitions||0),0,'the guest must initiate the form transition');
       if(boss){assert.equal(p.setup.entry,'boss');const index=Number(process.env.PC98_TH02_BOSS_PHASE??1),th02Phase=(extra||targetStage===4)?[0,1,3,5,7,9][index]:index;assert.equal(p.setup.phase,gengetsu?[0,2,3,4,5,7,8][Number(process.env.PC98_GEN_PHASE_INDEX??1)]:game==='th02'?th02Phase:targetStage===2?3:2);if(gengetsu){assert.equal(p.setup.branch,'gengetsu');assert.equal(p.bossUpdate,0xc7da,'the selected encounter must actually be Gengetsu');assert.equal(p.phase,p.setup.phase||2,'the native encounter must reach the selected phase');const phase=p.setup.phase||2;assert.equal(p.bossHp,({2:18700,3:14700,4:12700,5:8900,7:5500,8:3000})[phase],'native attack starting HP');assert.equal(p.phaseEndHp,({2:14700,3:12700,4:8900,5:5500,7:3000,8:0})[phase],'native attack end threshold');}}
       if(process.env.PC98_TEST_PHASE_END==='1'&&game==='th02'&&targetStage===4&&p.setup.phase===3)assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testBossDamage()),0,'Mima phase 3 must reset damage at the native transition');
+      if(mid)assert.equal(p.setup.entry,'mid');
       if(restrictions)for(const option of ['lockRank','disableBomb','disableFocus','disableShot'])assert.equal(p.options[option],true,option);
       await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.mode===2,{timeout:15000});
       await key('Enter','Enter',13); try{await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.elapsed>5,{timeout:30000});}catch(error){console.error(game,'entry resume diagnostic',JSON.stringify((await state()).native));throw error;}
@@ -221,11 +222,14 @@ for(const game of games){
         await page.evaluate(()=>rpc('keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}));
         await new Promise(resolve=>setTimeout(resolve,250));
         if(process.env.PC98_TEST_RESULT_RETRY==='1'){
-          await key('KeyZ','z',90);
+          const started=Date.now();await key('KeyZ','z',90);
           await frame.waitForFunction(async()=>{const current=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return current?.ready&&current.waiting&&!current.outcome;},{timeout:90000});
           assert.equal(await frame.evaluate(()=>globalThis.testHostTransitions||0),0,'result retry must start in the guest');
           if(process.env.PC98_TEST_CHECKPOINT==='1')assert.equal(await frame.evaluate(async()=>await (await import('./managed-solo.mjs')).testCheckpointCount()),priorCheckpoint+1,'result retry must restore the game-owned checkpoint');
           assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testAttemptSame()),true);
+          await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.mode===2,{timeout:15000});
+          await frame.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+          console.log(game,'result RETRY to visible pause menu',Date.now()-started,'ms');
           await key('Enter','Enter',13);
           await frame.waitForFunction(async()=>{const current=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return current?.elapsed>5&&!current.waiting;},{timeout:30000});
           console.log(game,'native result retry OK');continue;
@@ -248,6 +252,32 @@ for(const game of games){
         assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testAttemptSame()),true,'select must reuse the emulator');
         assert.equal(await frame.evaluate(()=>globalThis.testHostTransitions||0),0,'result selection must start in the guest');
         console.log(game,'native result selection OK');continue;
+      }
+      if(process.env.PC98_TEST_LONG_RETRY==='1'){
+        await key('Backspace','Backspace',8);await key('F1','F1',112);await key('Backspace','Backspace',8);
+        await frame.waitForFunction(async()=>{const q=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return q?.elapsed>800&&!q.outcome;},{timeout:60000});
+      }
+      if(process.env.PC98_TEST_PAUSE_RETRY==='1'){
+        for(let retry=0;retry<3;retry++){
+        await key('Escape','Escape',27);
+        await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.nativePause?.visible,{timeout:15000});
+        for(let i=0;i<3;i++)await key('ArrowDown','ArrowDown',40);
+        await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.nativePause?.choice===3,{timeout:15000});
+        const checkpointBefore=process.env.PC98_TEST_CHECKPOINT==='1'?await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testCheckpointCount()):0;
+        const started=Date.now();
+        await page.evaluate(()=>rpc('keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));
+        await new Promise(resolve=>setTimeout(resolve,160));
+        await page.evaluate(()=>rpc('keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}));
+        try{await frame.waitForFunction(async()=>{const n=(await import('./managed-solo.mjs')).managedAPI.practiceState().native;return n?.mode===2&&n.practice?.ready&&n.practice.waiting&&!n.practice.nativePause?.visible;},{timeout:20000});}catch(error){console.error(game,'pause retry diagnostic',JSON.stringify((await state()).native));throw error;}
+        if(process.env.PC98_TEST_CHECKPOINT==='1')assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testCheckpointCount()),checkpointBefore+1,'pause Restart must restore the in-game checkpoint');
+        assert.equal(await frame.evaluate(()=>globalThis.testHostTransitions||0),0,'pause Restart must not reload MAIN');
+        await frame.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+        const duration=Date.now()-started;console.log(game,'pause RESTART to visible pause menu',duration,'ms');
+        assert(duration<3000,'pause menu must appear within three seconds');
+        const after=(await state()).native.practice;assert.deepEqual(after.setup,p.setup);assert.equal(after.stage,p.stage);if(boss)assert.equal(after.phase,p.phase);
+        await (await frame.$('canvas')).screenshot({path:resolve(output,`${game}-pause-restart-visible.png`)});
+        await key('Enter','Enter',13);await frame.waitForFunction(async()=>{const q=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return q?.elapsed>60&&!q.outcome;},{timeout:30000});
+        }
       }
       if(process.env.PC98_TEST_QUICK_RETRY==='1'){
         for(let retry=0;retry<3;retry++){
