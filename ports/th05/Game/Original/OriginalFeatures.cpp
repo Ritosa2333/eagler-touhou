@@ -61,6 +61,7 @@ bool UsesCombatRevision(CombatRevision revision){
 }
 bool BossGeometryEnabled(){return UsesCombatRevision(OriginalBossGeometry);}
 bool MotionEnabled(){return UsesCombatRevision(OriginalMotion);}
+bool BombAndRageEnabled(){return UsesCombatRevision(OriginalBombAndRage);}
 DemoState& Demo(){return demo;}bool DemoActive(){return demo.active;}
 int IRandom(){if(!demo.active)return std::rand();demo.seed=demo.seed*0x015a4e35u+1;return int((demo.seed>>16)&32767);}
 #ifdef TH05_BROWSER_TESTS

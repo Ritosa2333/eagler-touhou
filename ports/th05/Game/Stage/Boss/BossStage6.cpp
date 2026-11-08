@@ -748,6 +748,8 @@ void CBossStage6::Phase9_10()
 		{
 			res=0;
 			m_curHP+=m_HPLostThisFrame;
+			if (original::BombAndRageEnabled())
+				m_curHP--;
 		}
 		if (res!=0)
 			AddDefeatScoreAndPopupNumbers(25);

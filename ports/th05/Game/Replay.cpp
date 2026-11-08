@@ -28,7 +28,7 @@ bool CReplay::Reset()
 	m_playChara=0;
 	m_bPracticeMode=false;
  m_turboMode=true;
- m_combatRevision=original::OriginalMotion;
+ m_combatRevision=original::OriginalBombAndRage;
  m_practiceConfig=practice::Config();
 	memset(m_stageFlag,0,sizeof(m_stageFlag));
 	memset(m_nCurLife,0,sizeof(m_nCurLife));
@@ -245,7 +245,7 @@ bool CReplay::LoadFile(const char *fileName)
   FAIL_CLOSE_RETURN(fread(sig+1,1,3,fp)!=3||fread(&version,4,1,fp)!=1)
   if(!memcmp(sig,"TSH5",4)){
    FAIL_CLOSE_RETURN(m_combatRevision!=original::LegacyCombat||seenSpeed||seenTouch||
-     version<original::OriginalPlayerShots||version>original::OriginalMotion)
+     version<original::OriginalPlayerShots||version>original::OriginalBombAndRage)
    m_combatRevision=version;
    if(version>=original::OriginalMotion){
     FAIL_CLOSE_RETURN(fread(m_itemRankProgress,1,7,fp)!=7)

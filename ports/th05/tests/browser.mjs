@@ -27,7 +27,11 @@ try{
  if(process.argv[2]==='--pc98-patterns'){
   assert.ok(process.argv[3],'Pass the directory from Verify-OriginalPatterns.py');
   const {comparePatterns}=await import('./pc98-patterns.mjs');
-  await comparePatterns(await launch(false),resolve(process.argv[3]),{requireGeometry:process.argv.includes("--require-geometry"),requireAppearance:process.argv.includes("--require-appearance")});
+  await comparePatterns(await launch(false),resolve(process.argv[3]),{requireGeometry:process.argv.includes("--require-geometry"),requireAppearance:process.argv.includes("--require-appearance"),hpSweep:process.argv.includes("--hp-sweep")});
+ }else if(process.argv[2]==='--pc98-combat'){
+  assert.ok(process.argv[3],'Pass the capture from Verify-OriginalCombat.py');
+  const {compareCombat}=await import('./pc98-combat.mjs');
+  await compareCombat(await launch(false),resolve(process.argv[3]));
  }else if(process.argv[2]==='--pc98-motion'){
   assert.ok(process.argv[3],'Pass the capture from Verify-OriginalMotion.py');
   const {compareMotion}=await import('./pc98-motion.mjs');
@@ -64,7 +68,7 @@ try{
     if(bytes[53+stage])at+=4+2*view.getUint32(at,true);
    }
    if(String.fromCharCode(...bytes.slice(at,at+4))!=='TSH5')throw Error('Shot rules were not saved');
-   const readRules=()=>[m._th05_native_shot_rules(),m._th05_native_boss_rules(),m._th05_native_motion_rules()];
+   const readRules=()=>[m._th05_native_shot_rules(),m._th05_native_boss_rules(),m._th05_native_motion_rules(),m._th05_native_bomb_rage_rules()];
    const current=readRules();
    const name='/savesth05/replay/legacy.rpy';
    const path=new TextEncoder().encode(name+String.fromCharCode(0)),ptr=m._malloc(path.length);
@@ -81,13 +85,15 @@ try{
      header.setUint32(at+4,revision,true);
      return open(oldTrailer);
     });
-    return [current,...earlier,open(Uint8Array.from([...bytes.slice(0,at),...bytes.slice(at+15)]))];
+    const motionTrailer=Uint8Array.from(bytes);
+    new DataView(motionTrailer.buffer).setUint32(at+4,3,true);
+    return [current,open(motionTrailer),...earlier,open(Uint8Array.from([...bytes.slice(0,at),...bytes.slice(at+15)]))];
    }finally{
     m._free(ptr);
     m.FS.unlink(name);
    }
   },recorded.bytes);
-  assert.deepEqual(rules,[[1,1,1],[1,1,0],[1,0,0],[0,0,0]]);
+  assert.deepEqual(rules,[[1,1,1,1],[1,1,1,0],[1,1,0,0],[1,0,0,0],[0,0,0,0]]);
   report.shotReplayRules=true;
  }
  assert.equal(inspectReplay(new Uint8Array(recorded.bytes)).touch,true);report.touchReplayFrames=recorded.actual.length;
