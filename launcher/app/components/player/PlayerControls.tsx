@@ -84,7 +84,7 @@ export function PlayerControls({
   const mode = session.getPlayerMode(),
     spectating = mode === 'spectator';
   const netplay = network?.diagnostics as NetplayDiagnosticLines | undefined;
-  const th09Information = state.runtime?.launched === true && room.product === 'th09mp' && !state.replayViewer;
+  const th09Information = state.runtime?.launched === true && (room.product === 'th09mp' || room.product === 'th19mp') && !state.replayViewer;
   const cooperativeSpectator =
     state.runtime?.launched === true &&
     state.runtime.spectator === true &&

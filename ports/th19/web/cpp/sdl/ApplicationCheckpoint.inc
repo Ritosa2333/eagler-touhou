@@ -83,6 +83,7 @@ struct ApplicationCheckpoint {
  decltype(g_spirit_overflow) saved_g_spirit_overflow;
  decltype(g_spirit_enhanced) saved_g_spirit_enhanced;
  decltype(g_spirit_suppressed) saved_g_spirit_suppressed;
+ decltype(g_global_rank) saved_g_global_rank;
  decltype(g_reflection_rank) saved_g_reflection_rank;
  decltype(g_reflection_rank_cap) saved_g_reflection_rank_cap;
  decltype(g_attacks) saved_g_attacks;
@@ -270,6 +271,7 @@ struct ApplicationCheckpoint {
   rb_assign(saved_g_spirit_overflow,g_spirit_overflow);
   rb_assign(saved_g_spirit_enhanced,g_spirit_enhanced);
   rb_assign(saved_g_spirit_suppressed,g_spirit_suppressed);
+  rb_assign(saved_g_global_rank,g_global_rank);
   rb_assign(saved_g_reflection_rank,g_reflection_rank);
   rb_assign(saved_g_reflection_rank_cap,g_reflection_rank_cap);
   rb_assign(saved_g_attacks,g_attacks);
@@ -457,6 +459,7 @@ struct ApplicationCheckpoint {
   rb_assign(g_spirit_overflow,saved_g_spirit_overflow);
   rb_assign(g_spirit_enhanced,saved_g_spirit_enhanced);
   rb_assign(g_spirit_suppressed,saved_g_spirit_suppressed);
+  rb_assign(g_global_rank,saved_g_global_rank);
   rb_assign(g_reflection_rank,saved_g_reflection_rank);
   rb_assign(g_reflection_rank_cap,saved_g_reflection_rank_cap);
   rb_assign(g_attacks,saved_g_attacks);

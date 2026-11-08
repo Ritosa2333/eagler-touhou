@@ -1,6 +1,7 @@
 #include "EclVm.hpp"
 #include "GameWorld.hpp"
 #include "BossMovement.hpp"
+#include "EnemyOrbit.hpp"
 #include <cmath>
 #include <cstdio>
 #include <algorithm>
@@ -48,7 +49,13 @@ bool EclVm::game_object(const EclInstruction& ins){
         case 601: {
             if(!has_host)return false;const int index=param_i32(ins,0);
             for(auto&e:world_->enemies)if(e.id==host_id){auto it=e.laser_shooters.find(index);
-                return it!=e.laser_shooters.end()&&world_->fire_bullets(it->second,e.x,e.y);}
+                if(it==e.laser_shooters.end())return false;
+                // EXE 0x4fbea0 updates the small Suika actor's angle before
+                // ExAttackFunc emits its shooter. Preserve that angle in the
+                // descriptor; leaving the initial value (0) fires right.
+                auto shooter=it->second;
+                if(e.native_update_callback==3)shooter.angle=e.angle;
+                return world_->fire_bullets(shooter,e.x,e.y);}
             return false;
         }
 
@@ -195,7 +202,7 @@ bool EclVm::game_object(const EclInstruction& ins){
         }
         case 624: { // 0x501458 -> table 0x5994f8; 1 = Nazrin recoil 0x4fc120.
             const int callback=param_i32(ins,0);
-            if(callback<0||callback>3||callback==2)return false;
+            if(callback<0||callback>3)return false;
             if(has_host)for(auto&e:world_->enemies)if(e.id==host_id){e.native_update_callback=callback;e.recoil_pending=false;break;}
             return true;
         }
@@ -414,10 +421,10 @@ bool EclVm::game_object(const EclInstruction& ins){
                 if(radius>-999999)e.relative_radius=radius;if(radial>-999999)e.relative_radial=radial;
                 if(rotation>-999999)e.relative_rotation=rotation;if(ratio>-999999)e.relative_ratio=ratio;
                 e.relative_ellipse=true;
-                const float u=std::cos(e.relative_phase)*e.relative_radius*e.relative_ratio,v=std::sin(e.relative_phase)*e.relative_radius;
+                const auto offset=enemyEllipseOffset(e.relative_phase,e.relative_rotation,e.relative_radius,e.relative_ratio);
                 e.x-=e.relative_x;e.y-=e.relative_y;
-                e.relative_x=e.relative_center_x+u*std::cos(e.relative_rotation)-v*std::sin(e.relative_rotation);
-                e.relative_y=e.relative_center_y+u*std::sin(e.relative_rotation)+v*std::cos(e.relative_rotation);
+                e.relative_x=e.relative_center_x+offset[0];
+                e.relative_y=e.relative_center_y+offset[1];
                 e.x+=e.relative_x;e.y+=e.relative_y;break;
             }return true;
         }
@@ -560,6 +567,16 @@ bool EclVm::game_object(const EclInstruction& ins){
             const u32 mask=ins.id==1038?0x08000000u:ins.id==1039?0x10000000u:ins.id==1041?0x20000000u:0x00800000u;
             const bool enabled=(param_i32(ins,0)&1)!=0;
             if(has_host)for(auto&e:world_->enemies)if(e.id==host_id){e.status_flags=(e.status_flags&~mask)|(enabled?mask:0u);break;}
+            return true;
+        }
+        case 550: { // 0x502d92: copy the death ECL name into EnemyInf+0x55e8.
+            if(ins.param_bytes<4)return false;
+            const int len=read_i32(param_off(0));
+            if(len<0||u32(len)>ins.param_bytes-4)return false;
+            std::string name(reinterpret_cast<const char*>(stream()+param_off(1)),size_t(len));
+            const auto zero=name.find('\0');if(zero!=std::string::npos)name.resize(zero);
+            if(name.size()>63)return false;
+            if(has_host)for(auto&e:world_->enemies)if(e.id==host_id){e.death_callback=name;break;}
             return true;
         }
         case 549: { // enemyExists(out, id), NOT a wave-spawn command.

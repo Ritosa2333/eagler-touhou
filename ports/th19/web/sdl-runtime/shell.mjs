@@ -139,7 +139,7 @@ case 'launch':if(!configured)throw Error('请先配置游戏');launchSerial=Numb
  openGame();
  core._th19_loop_pause(0);launched=true;first=false;if(runtimeVariant==='multiplayer'&&options.netplayMode==='lan'){
  const recorder=activeRecorder=createVersusRecorder({build,names:options.netplayReplayNames,write:writeReplay,notice:message=>emit('notice',{message})});
- netplay=new Netplay(core,{onPlayback:spectatorPlayback=>emit('runtime-info',{spectatorPlayback}),onBegin:config=>{if(options.netplayReplayAutoSave!==false)recorder.begin(config);},onConfirmed:bytes=>recorder.frame(bytes),onEnd:details=>recorder.end(details),onStatus:message=>emit('notice',{message}),onClose:message=>{emit('notice',{message});void stop().catch(fatal);},onResult:()=>{emit('notice',{message:'对局结束，已返回房间'});void stop().catch(fatal);}});
+ netplay=new Netplay(core,{onMatch:th09Match=>emit('runtime-info',{th09Match}),onPlayback:spectatorPlayback=>emit('runtime-info',{spectatorPlayback}),onBegin:config=>{if(options.netplayReplayAutoSave!==false)recorder.begin(config);},onConfirmed:bytes=>recorder.frame(bytes),onEnd:details=>recorder.end(details),onStatus:message=>emit('notice',{message}),onClose:message=>{emit('notice',{message});void stop().catch(fatal);},onResult:()=>{emit('notice',{message:'对局结束，已返回房间'});void stop().catch(fatal);}});
  core._th19_loop_pause(1);await netplay.connect(options);
  }else core._th19_loop_start();$('#loading').textContent='';window.__th19Runtime={core,status,save,command,netplay};emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,version:'th19-eagler-adapter-1'});}return {};
 case 'sync':if(!player?.active){await activeRecorder?.snapshot();}await save();return {};
@@ -227,19 +227,6 @@ let healthLast=performance.now(),healthFrames=0;
 function newModule(){return createModule({canvas,printErr:console.error,onGameExit(){if(!player?.active)queueMicrotask(()=>{void stop({exit:true}).catch(fatal);});},onReplayEnd(){},onGameFrame:frameHealth});}
 async function mountSaves(){
  core.FS.mkdirTree(saveRoot);core.FS.mount(core.FS.filesystems.IDBFS,{},saveRoot);await sync(true);core.FS.mkdirTree(saveRoot+'/replay');
- // Explicit local migration requested by the owner: retire pre-cutover web
- // recordings once, without touching scores/config or future-version files.
- const marker=saveRoot+'/th19-replay-cutover-20261106.txt';
- if(!core.FS.analyzePath(marker).exists){
-  for(const name of core.FS.readdir(saveRoot+'/replay')){
-   if(!/^th19_(?:\d{2}|ud[a-z0-9]{4})\.rpy$/i.test(name))continue;
-   const target=saveRoot+'/replay/'+name;
-   if(!core.FS.isFile(core.FS.stat(target).mode))continue;
-   let old=false;try{old=decodeTh19Replay(core.FS.readFile(target)).meta.build!==build;}catch{continue;}
-   if(old)core.FS.unlink(target);
-  }
-  core.FS.writeFile(marker,build);await sync();
- }
 }
 function bindModule(){window.Module=core;window.FS=core.FS;core.resetBrowserKeyboard=()=>keyboard.clear();core.SDL3=core.SDL3||{};if(parent!==window&&parent.__touhouAudioContext)core.SDL3.audioContext=parent.__touhouAudioContext;}
 async function restartNormal(meta){

@@ -1285,6 +1285,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         spectatorTimeline: room.spectatorTimeline === true,
         ...(product === 'th09mp' ? {
           disableLocalChargePriority:room.disableLocalChargePriority === true,
+        } : {}),
+        ...(['th09mp','th19mp'].includes(product!) ? {
           replayAutoSave: ports.settings().replayAutoSave ?? ports.preferences.replayAutoSave(product),
           replayNames: [0, 1].map(side => room!.seats?.[side]?.name || `P${side + 1}`),
         } : {}),
@@ -1675,7 +1677,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     acceptMeasuredTiming,
     acceptTh09Match(value: unknown) {
       if (
-        product !== 'th09mp' ||
+        !['th09mp', 'th19mp'].includes(product!) ||
         (state.seat !== 0 && state.seat !== 1) ||
         state.spectatorRequested ||
         !state.connected ||
@@ -1685,7 +1687,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       )
         return;
       const match = value as Record<string, unknown>;
-      if (state.seat === 1 && match.winner !== 0 && match.winner !== 1) return;
+      if (product === 'th09mp' && state.seat === 1 && match.winner !== 0 && match.winner !== 1) return;
       send({
         type: 'th09-match',
         serial: state.startSerial,

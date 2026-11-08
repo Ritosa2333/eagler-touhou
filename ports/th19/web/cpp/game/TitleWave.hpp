@@ -43,9 +43,18 @@ struct TitleWave {
         Vertex v{x,y,x/1280,y/960,0xffffffff};
         // 005059e0 resets ALL vertices to white; 00554130 changes only the interior.
         if(column==0||row==0||column==columns-1||row==rows-1)return v;
-        const float dx=x-640,dy=y-480;
-        float angle=2*pi*std::sqrt(dx*dx+dy*dy)/120;
-        while(angle>pi)angle-=2*pi;
+        // The radial phase depends only on the fixed native 42x32 grid.
+        // Cache it without changing floating-point operation order or mesh size.
+        static const auto radial=[]{
+            std::array<float,columns*rows> values{};
+            for(int col=0;col<columns;++col)for(int row=0;row<rows;++row){
+                const float dx=float(col)*1280/(columns-1)-640,dy=float(row)*960/(rows-1)-480;
+                float a=2*pi*std::sqrt(dx*dx+dy*dy)/120;
+                while(a>pi)a-=2*pi;
+                values[col*rows+row]=a;
+            }return values;
+        }();
+        float angle=radial[column*rows+row];
         angle+=framePhase;
         while(angle>pi)angle-=2*pi;
         while(angle < -pi)angle+=2*pi;

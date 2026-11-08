@@ -145,10 +145,16 @@ struct Enemy {
     float sx=1,sy=1;
     float bound_x=0,bound_y=0,bound_w=0,bound_h=0;
     int native_update_callback=0;
-    void apply_suika_steering(unsigned controls){
+    // Set by the retail 0x509030 aura-disable dispatch.  This is kept
+    // separately because pure spirits use several different kind bits.
+    bool spirit_aura_exit=false;
+    void apply_suika_steering(unsigned controls,float target_x,float target_y){
         if(native_update_callback!=3)return;
         const float pi=3.141592741f;
-        float target=pi*.5f+((controls&64)?pi*.25f:(controls&128)?-pi*.25f:0.f);
+        float target=std::atan2(target_y-y,target_x-x);
+        // The native callback adds the side movement quarter-turn only when
+        // the corresponding opponent-direction flag is present.
+        target+=((controls&64)?pi*.25f:(controls&128)?-pi*.25f:0.f);
         float heading=std::atan2(vy,vx);
         angle=std::remainder(heading+(target-heading)*.05f,2*pi);
     }
@@ -184,6 +190,8 @@ struct Enemy {
     std::unordered_map<int,LaserShooter> laser_shooters;
     std::array<int,16> change_append{}; // native +4e2c, NOT copied by ECL614
     i32 death_script=0,death_file=1;bool death_initialized=false;
+    std::string death_callback; // ECL550, outer Enemy+0x6818 (one-shot).
+    bool death_pending=false;
     BossPhaseTriggers phases;std::string pending_phase;
     int boss_slot=0; // EnemyInf +0x5180; valid while status_flags bit 0x80 is set.
     i32 age=0;
@@ -222,6 +230,7 @@ struct Bullet {
     float x=0,y=0,vx=0,vy=0;
     i32 sprite=0,kind=0;
     int color=0;bool reflected=false,scripted=false;
+    int age=0;u32 last_tsukasa_id=0; // Bullet+104c / +1070; preserved across morphs.
     BulletChanges changes;int change_sound=-1;
     BulletGraze graze;float graze_x=0,graze_y=0;u32 graze_tint=0;
     AnmVm animation,attached_effect;float visual_heading=0;int native_timer=0;
@@ -317,9 +326,12 @@ public:
     bool card_near_damage=false;
     int player_damage_cap=0; // SHT+0x28; zero for worlds without a player SHT.
     bool damage_enemy(Enemy& enemy,int damage,bool forced=false);
+    void finish_enemy_deaths();
     void finish_hit_feedback(u32 native_mode_flags=0);
     int cancel_bullets_circle(float x,float y,float radius,int limit=99999,bool respect_lock=true);
-    int cancel_lasers_region(const std::function<bool(float,float)>& inside,bool respect_lock=true);
+    int cancel_lasers_region(const std::function<bool(float,float)>& inside,bool respect_lock=true,
+        const std::function<bool(float,float,float)>& rectangleSample={});
+    void cancel_enoko_trap(float x,float y,float angle);
     int cancel_bullets_shape(const std::function<bool(float,float,float)>& contact);
     int cancel_bullets_polygon(float x,float y,float radius,float angle,int sides);
     int cancel_bullets_rect(float x,float y,float width,float height,float angle=0);
@@ -353,6 +365,7 @@ public:
     std::vector<ScreenShakeRequest> screen_shake_events;
     std::vector<i32> sound_events;
     ChargeRegion charge_region;
+    void strengthen_tsukasa_bullets(const Enemy& e);
     void apply_bullet_changes(Bullet& bullet);
     void tick_wave();  // advance enemy VMs + their children
 
