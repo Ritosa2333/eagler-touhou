@@ -1,4 +1,5 @@
 import { Button as UiButton } from '../../ui/controls';
+import { X } from 'lucide-react';
 import {
   useCallback,
   useLayoutEffect,
@@ -12,7 +13,7 @@ import type { MultiplayerQuickChatModel, QuickChatEntry } from '../../../src/lau
 import { useLocale } from '../../i18n';
 import type { DecisionStore } from '../../models/decisions';
 import { animateUiFrames, type SurfaceAnimation } from '../../ui/surface-motion';
-import { ChatComposer, ChatMessageContent, QuickChatPhrases, useChatReportConfirmation } from '../room/ChatControls';
+import { ChatComposer, ChatMessageContent, ChatMessageText, QuickChatPhrases, useChatReportConfirmation } from '../room/ChatControls';
 import { shallowEqual, useStoreSelector } from '../../shared/react-store';
 
 const chatPresentation = (state: ReturnType<MultiplayerQuickChatModel['getSnapshot']>) => ({
@@ -190,7 +191,7 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
         aria-label={t('chat.title')}
         aria-keyshortcuts="Alt"
         disabled={!enabled}
-        onClick={model.togglePicker}
+        onClick={state.pickerOpen ? returnToGame : model.openComposer}
         title={t('chat.keyboardHint')}
       >
         <img className="mp-quick-chat-icon" src={iconUrl} alt="" />
@@ -198,7 +199,13 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
         <kbd className="mp-quick-chat-shortcut">Alt</kbd>
       </UiButton>
       <div ref={picker} className="mp-quick-chat-picker" tabIndex={-1} hidden={!state.pickerOpen}>
-        <ChatComposer model={model} gameplay />
+        <div className="mp-quick-chat-compose-row">
+          <ChatComposer model={model} gameplay />
+          <UiButton variant="quiet" type="button" className="mp-quick-chat-close"
+            aria-label={t('action.close')} title={t('action.close')} onClick={returnToGame}>
+            <X aria-hidden="true" size={18} />
+          </UiButton>
+        </div>
         {!state.editingText && <QuickChatPhrases enabled={enabled} language={context?.language ?? ''} numbered onSelect={model.sendPhrase}/>}
       </div>
       <div ref={log} className="mp-quick-chat-log" role="log" aria-live="polite">
@@ -207,7 +214,7 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
             key={entry.id}
             entry={entry}
             model={model}
-            confirmReport={confirmReport}
+            confirmReport={state.pickerOpen ? confirmReport : undefined}
             label={label(entry.phrase)}
             rows={rows.current}
             visible={!state.muted.includes(entry.clientId)}
@@ -232,7 +239,7 @@ function ChatRow({
   label: string;
   rows: Map<number, HTMLParagraphElement>;
   visible: boolean;
-  confirmReport(entry: QuickChatEntry): void;
+  confirmReport?(entry: QuickChatEntry): void;
 }) {
   const ref = useCallback(
     (row: HTMLParagraphElement | null) => {
@@ -248,7 +255,9 @@ function ChatRow({
   const sender = `${entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`}${entry.name ? `(${entry.name})` : ''}`;
   return (
     <p ref={ref} hidden={!visible} title={`${sender}: ${label}`} className="room-chat-entry">
-      <ChatMessageContent entry={entry} model={model} label={label} confirmReport={confirmReport} />
+      {confirmReport
+        ? <ChatMessageContent entry={entry} model={model} label={label} confirmReport={confirmReport} />
+        : <span className="room-chat-message"><ChatMessageText entry={entry} label={label} /></span>}
     </p>
   );
 }

@@ -457,6 +457,9 @@ test('tapping another player’s free chat opens a report confirmation and sends
   await mount(model,{strict:true,decisions,dispose:decisions.dispose});
   await act(()=>model.receive({type:'free-chat',room:'th06mp-1234',serial:7,messageId:30,seat:1,spectator:false,
     clientId:'other',authorId:'account-2',name:'Marisa',text:'Hello room'}));
+  assert.match(query('.mp-quick-chat-log').textContent,/Hello room/);
+  assert.equal(env.document.querySelector('.mp-quick-chat-log .chat-report-trigger'),null,'closed chat is display-only');
+  await act(()=>model.openComposer());
   const trigger=query('.mp-quick-chat-log .chat-report-trigger');
   assert.match(trigger.textContent,/Hello room/);
   const pointer=new env.window.PointerEvent('pointerdown',{button:0,bubbles:true,cancelable:true});
@@ -516,6 +519,21 @@ test('openComposer focuses the quick panel and typing hides slots while Enter an
   assert.equal(env.document.activeElement,frame,'Escape returns keyboard focus to the game iframe');
   await act(()=>model.openComposer());
   assert.ok(query('.mp-quick-chat-slots [aria-keyshortcuts="9"]'));
+});
+test('the visible close button dismisses free chat and restores game focus', async () => {
+  const {model,calls}=fixture();
+  await mount(model,{strict:true});
+  await act(()=>model.receive({type:'chat-status',registered:true,authorId:'account-1',bannedUntil:0}));
+  await act(()=>model.openComposer());
+  const input=query('.mp-quick-chat-picker input');
+  input.focus();
+  await act(()=>model.setDraft('unsent message'));
+  assert.equal(model.getSnapshot().editingText,true);
+  await act(()=>query('.mp-quick-chat-close').click());
+  assert.equal(query('.mp-quick-chat-picker').hidden,true);
+  assert.equal(env.document.activeElement,query('#gameFrame'));
+  assert.equal(model.getSnapshot().draft,'unsent message');
+  assert.deepEqual(calls,[]);
 });
 test('typing after the slots close does not measure retained message rows', async () => {
   const {model}=fixture();

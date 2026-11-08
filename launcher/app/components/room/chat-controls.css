@@ -42,9 +42,6 @@
     gap: 6px;
   }
   .mp-quick-chat .mp-quick-chat-picker {
-    position: relative;
-    inset: auto;
-    flex-direction: column-reverse;
     min-height: 0;
     max-height: min(48dvh, 380px);
     padding: 8px;
@@ -58,8 +55,21 @@
   .mp-quick-chat-picker:focus {
     outline: none;
   }
-  .mp-quick-chat-picker .room-chat-controls {
+  .mp-quick-chat-compose-row {
     flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mp-quick-chat-compose-row .room-chat-controls {
+    flex: 1;
+  }
+  .mp-quick-chat-close {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    min-height: 44px;
   }
   .mp-quick-chat-picker .room-chat-controls[data-member="false"] {
     justify-content: flex-end;
@@ -134,4 +144,13 @@
   height: 1.4em;
   min-height: 0;
   padding: 0;
+}
+
+/* The publisher styles also define the game overlay. Keep the picker in
+ * the chat stack so the composer, shortcuts and log cannot cover each other. */
+section.mp-quick-chat > .mp-quick-chat-picker {
+  position: relative;
+  inset: auto;
+  flex: none;
+  flex-direction: column-reverse;
 }
