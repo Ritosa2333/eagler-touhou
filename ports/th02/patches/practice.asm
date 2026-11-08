@@ -87,6 +87,7 @@ frame_hook:
     pushf
     pushad
     push es
+    call practice_info_overlay_restore
     PRACTICE_CAPTURE_SCROLL
     mov [cs:practice_form_scroll],ax
     call practice_target_resources
@@ -208,6 +209,10 @@ miss_hook:
     jne .counted
     cmp byte [cs:practice_outcome],0
     jne .counted
+    cmp byte [0x2b94],0
+    je .counted
+    cmp byte [0x2b99],0
+    jne .counted
     inc word [cs:practice_info_misses]
 .counted:
     push dx
@@ -262,7 +267,7 @@ world_hook:
     mov dx,0x7fd4
     call signal
     pop dx
-    call practice_info_graphics_mask
+    call practice_info_overlay_mask
     call wait_hold
     retf
 entities_hook:

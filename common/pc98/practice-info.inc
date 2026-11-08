@@ -83,14 +83,74 @@ practice_info_frames: dd 0
 practice_info_misses: dw 0
 practice_info_initial_bombs: db 0
 
-; Save the HUD's two graphics pages on open. Mask after the game has drawn
-; each frame; text-plane spaces alone do not hide graphics underneath.
-practice_info_graphics_save:
+; The right-hand VRAM also stores background tiles. Save the current page
+; immediately before masking and restore it before the next game update.
+practice_info_overlay_restore:
+    cmp byte [cs:practice_info_overlay_active],0
+    je .done
     pushf
     pushad
     push ds
     push es
     cld
+    mov al,[PRACTICE_PAGE_BACK]
+    mov [cs:practice_info_return_page],al
+    mov al,[cs:practice_info_overlay_page]
+    out 0xa6,al
+    xor al,al
+    out 0x7c,al
+    mov ds,[cs:practice_info_overlay_buffer]
+    xor si,si
+    xor bx,bx
+.plane:
+    mov es,[cs:practice_info_planes+bx]
+    mov di,[cs:practice_info_overlay_offset]
+    mov bp,INFO_ROWS*16
+.row:
+    mov cx,28
+    rep movsb
+    add di,52
+    cmp di,32000
+    jb .next
+    sub di,32000
+.next:
+    dec bp
+    jnz .row
+    add bx,2
+    cmp bx,8
+    jb .plane
+    mov al,[cs:practice_info_return_page]
+    out 0xa6,al
+    mov byte [cs:practice_info_overlay_active],0
+    pop es
+    pop ds
+    popad
+    popf
+.done:
+    ret
+
+practice_info_overlay_mask:
+    cmp byte [cs:practice_info_enabled],0
+    je .done
+    cmp byte [cs:practice_info_drawn],0
+    je .done
+    cmp byte [cs:practice_info_overlay_active],0
+    jne .done
+    pushf
+    pushad
+    push ds
+    push es
+    cld
+    cmp word [cs:practice_info_overlay_buffer],0
+    jne .allocated
+    mov bx,INFO_ROWS*112
+    mov ah,0x48
+    int 0x21
+    jc .exit
+    mov [cs:practice_info_overlay_buffer],ax
+.allocated:
+    mov al,[PRACTICE_PAGE_BACK]
+    mov [cs:practice_info_overlay_page],al
     mov ax,[cs:practice_form_scroll]
     add ax,176
     xor dx,dx
@@ -100,29 +160,23 @@ practice_info_graphics_save:
     mov cx,80
     mul cx
     add ax,52
-    mov [cs:practice_info_offset],ax
-    mov bx,INFO_ROWS*256
-    mov ah,0x48
-    int 0x21
-    jc .failed
-    mov [cs:practice_info_buffer],ax
-    mov es,ax
+    mov [cs:practice_info_overlay_offset],ax
+    mov es,[cs:practice_info_overlay_buffer]
     xor di,di
     xor al,al
     out 0x7c,al
-    xor dx,dx
-.page:
-    mov al,dl
-    out 0xa6,al
     xor bx,bx
 .plane:
-    mov ax,[cs:practice_info_planes+bx]
-    mov ds,ax
-    mov si,[cs:practice_info_offset]
+    mov ds,[cs:practice_info_planes+bx]
+    mov si,[cs:practice_info_overlay_offset]
     mov bp,INFO_ROWS*16
 .row:
     mov cx,28
-    rep movsb
+.cell:
+    lodsb
+    stosb
+    mov byte [si-1],0
+    loop .cell
     add si,52
     cmp si,32000
     jb .next
@@ -133,125 +187,22 @@ practice_info_graphics_save:
     add bx,2
     cmp bx,8
     jb .plane
-    inc dl
-    cmp dl,2
-    jb .page
-    mov al,[cs:practice_info_page]
-    out 0xa6,al
-    jmp .done
-.failed:
-    mov word [cs:practice_info_buffer],0
-.done:
+    mov byte [cs:practice_info_overlay_active],1
+.exit:
     pop es
     pop ds
-    popad
-    popf
-    ret
-
-practice_info_graphics_restore:
-    cmp word [cs:practice_info_buffer],0
-    je .done
-    pushf
-    pushad
-    push ds
-    push es
-    cld
-    mov ds,[cs:practice_info_buffer]
-    xor si,si
-    xor al,al
-    out 0x7c,al
-    xor dx,dx
-.page:
-    mov al,dl
-    out 0xa6,al
-    xor bx,bx
-.plane:
-    mov ax,[cs:practice_info_planes+bx]
-    mov es,ax
-    mov di,[cs:practice_info_offset]
-    mov bp,INFO_ROWS*16
-.row:
-    mov cx,28
-    rep movsb
-    add di,52
-    cmp di,32000
-    jb .next
-    sub di,32000
-.next:
-    dec bp
-    jnz .row
-    add bx,2
-    cmp bx,8
-    jb .plane
-    inc dl
-    cmp dl,2
-    jb .page
-    mov al,[cs:practice_info_page]
-    out 0xa6,al
-    mov es,[cs:practice_info_buffer]
-    mov ah,0x49
-    int 0x21
-    mov word [cs:practice_info_buffer],0
-    pop es
-    pop ds
-    popad
-    popf
-.done:
-    ret
-
-practice_info_graphics_mask:
-    cmp byte [cs:practice_info_drawn],0
-    je .done
-    cmp word [cs:practice_info_buffer],0
-    je .done
-    pushf
-    pushad
-    push es
-    cld
-    mov ax,[cs:practice_form_scroll]
-    add ax,176
-    xor dx,dx
-    mov cx,400
-    div cx
-    mov ax,dx
-    mov cx,80
-    mul cx
-    add ax,52
-    mov si,ax
-    xor al,al
-    out 0x7c,al
-    xor bx,bx
-.plane:
-    mov es,[cs:practice_info_planes+bx]
-    mov di,si
-    mov bp,INFO_ROWS*16
-.row:
-    xor ax,ax
-    mov cx,14
-    rep stosw
-    add di,52
-    cmp di,32000
-    jb .next
-    sub di,32000
-.next:
-    dec bp
-    jnz .row
-    add bx,2
-    cmp bx,8
-    jb .plane
-    pop es
     popad
     popf
 .done:
     ret
 practice_info_planes: dw 0xa800,0xb000,0xb800,0xe000
-practice_info_buffer: dw 0
-practice_info_offset: dw 0
-practice_info_page: db 0
+practice_info_overlay_buffer: dw 0
+practice_info_overlay_offset: dw 0
+practice_info_overlay_active: db 0
+practice_info_overlay_page: db 0
+practice_info_return_page: db 0
 
 practice_info_draw:
-    mov al,[PRACTICE_PAGE_BACK]
-    mov [cs:practice_info_page],al
     push ds
     push es
     push cs
@@ -262,7 +213,6 @@ practice_info_draw:
     jne .show
     cmp byte [cs:practice_info_drawn],0
     je .done
-    call practice_info_graphics_restore
     mov di,11*160+52*2
     mov si,practice_info_saved
     mov dx,INFO_ROWS
@@ -284,7 +234,6 @@ practice_info_draw:
 .show:
     cmp byte [cs:practice_info_drawn],0
     jne .paint
-    call practice_info_graphics_save
     mov di,11*160+52*2
     mov si,practice_info_saved
     mov dx,INFO_ROWS
@@ -316,7 +265,11 @@ practice_info_draw:
     add di,2
     loop .background
     pop di
+%ifdef PRACTICE_RESTART_TH02
     add di,2*2
+%else
+    add di,4*2
+%endif
     mov si,[cs:bp]
     mov bl,0xe1
     call practice_text_write
@@ -345,7 +298,11 @@ practice_info_draw:
 .next_row:
     add bx,2
     add bp,2
+%ifdef PRACTICE_RESTART_TH02
     sub di,2*2
+%else
+    sub di,4*2
+%endif
     add di,160
     cmp bx,INFO_ROWS*2
     jb .row

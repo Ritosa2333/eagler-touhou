@@ -97,6 +97,7 @@ frame_hook:
     pushf
     pushad
     push es
+    call practice_info_overlay_restore
     PRACTICE_CAPTURE_SCROLL
     mov [cs:practice_form_scroll],ax
     call practice_target_resources
@@ -248,7 +249,7 @@ world_hook:
     mov dx,0x7fe4
     call signal
     pop dx
-    call practice_info_graphics_mask
+    call practice_info_overlay_mask
     call refresh_resources
     pushf
     pushad

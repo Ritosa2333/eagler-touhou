@@ -152,10 +152,12 @@ for(const game of games){
         await key('Tab','Tab',9);
         await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.options?.showInfo,{timeout:10000});
         await new Promise(resolve=>setTimeout(resolve,1000));
+        if(process.env.PC98_TEST_INFO_MOVING==='1')await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.elapsed>800,{timeout:45000});
         await (await frame.$('canvas')).screenshot({path:resolve(output,`${game}-practice-info.png`)});
         await key('Tab','Tab',9);
         await frame.waitForFunction(async()=>!(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.options?.showInfo,{timeout:10000});
         await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.elapsed>60,{timeout:30000});
+        if(process.env.PC98_TEST_INFO_MOVING==='1'){await new Promise(resolve=>setTimeout(resolve,1000));await (await frame.$('canvas')).screenshot({path:resolve(output,`${game}-practice-info-closed.png`)});}
       }
         if(process.env.PC98_TEST_ASSIST_PERSIST==='1'){
           await key('Backspace','Backspace',8);await key('F1','F1',112);await key('Backspace','Backspace',8);
