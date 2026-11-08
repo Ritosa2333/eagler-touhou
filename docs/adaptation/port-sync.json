@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "7bbf59b24b769072e80f4ee028b08ff855f49288",
+      "base": "2f7694a01177aabf128fbc7ec3434bb1e71276f0",
       "history": [
         {
           "kind": "manual",
@@ -97,6 +97,42 @@
             "ports/th05-mp/tests/BrowserNativeTests.cpp"
           ],
           "note": "按 ReC98 b6ba5b0 的梦子红蓝弹阶段恢复难度调节；多人保留联机瞄准，浏览器测试覆盖两色、四难度及高低 Rank。"
+        },
+        {
+          "kind": "manual",
+          "base": "7bbf59b24b769072e80f4ee028b08ff855f49288",
+          "source": "b4e6dbc1124de14098951d44ecc2516e75418962",
+          "targetHead": "0b9e1aed2626106f78a35b931a875de2ee4b6429",
+          "paths": [
+            "ports/th05-mp/Game/Stage/Boss/BossStage1.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage2.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4Yuki.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage5.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage6.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStageEx.cpp",
+            "ports/th05-mp/Game/Stage/EnemyBullet/EnemyBullet.cpp",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStage4.cpp",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStageEx.cpp",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp"
+          ],
+          "note": "按 ReC98 修正首领与道中首领的弹组、发射时序及火墙；多人保留联机瞄准与各玩家碰撞。"
+        },
+        {
+          "kind": "manual",
+          "base": "b4e6dbc1124de14098951d44ecc2516e75418962",
+          "source": "2f7694a01177aabf128fbc7ec3434bb1e71276f0",
+          "targetHead": "c1940c733fc1404fe87c35d65f9ffe436488b984",
+          "paths": [
+            "ports/th05-mp/Game/Stage/Chara/Chara.h",
+            "ports/th05-mp/Game/Stage/Enemy/Enemy.cpp",
+            "ports/th05-mp/Game/Stage/Enemy/Enemy.h",
+            "ports/th05-mp/Game/Stage/EnemyBullet/EnemyBullet.cpp",
+            "ports/th05-mp/Game/Stage/EnemyBullet/EnemyBullet.h",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp",
+            "ports/th05-mp/tests/browser.mjs"
+          ],
+          "note": "按 ReC98 核对七关 STD，恢复三面瞄准叠弹、脚本运动与自动射击规则。单人和多人实跑所有刷怪批次，多人保留目标选择与回滚。"
         }
       ]
     },
