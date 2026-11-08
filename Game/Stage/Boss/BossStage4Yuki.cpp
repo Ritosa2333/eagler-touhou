@@ -139,12 +139,13 @@ void CBossStage4Yuki::Phase3ShootType2()
 		si.bulletBornType=18;
 		si.shootType=EST02_NWAY;
 		si.bulletImg=48;
-		si.nWay=original::Random()%8;
+		si.bulletSpeed=float(8+(original::Random()&31));
+		si.nWay=original::Random()&7;
 		si.nWayUnitAngle=6;
-		si.bulletSpeed=(float)(8+original::Random()%32);
 		si.shootAngle=(float)(128+(m_curPhaseFrame-10)/2*6);
 		m_pStage->m_pEnemyBullet->TuneEnemyShootInfo(&si);
-		m_pStage->m_pEnemyBullet->Shoot(&si,true);
+		if (!si.nWay)si.nWay=1;
+		m_pStage->m_pEnemyBullet->Shoot(&si);
 		m_pStage->m_bPlaySound[3]=true;
 	}
 	if (m_curPhaseFrame==256)
