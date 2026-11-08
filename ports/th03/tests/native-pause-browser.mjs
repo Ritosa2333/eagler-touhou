@@ -71,7 +71,7 @@ try{
     await page.evaluate(({count,mp})=>{for(let i=0;i<count;i++)addRuntime(i,mp);},{count,mp});
     await wait(async()=>{const result=await page.evaluate(count=>({ready:events.filter(e=>e.event==='ready').length===count,errors:events.filter(e=>e.event==='error')}),count);if(result.errors.length)throw Error(JSON.stringify(result.errors));return result.ready;},'Runtime ready');
   };
-  if(!process.argv.includes('--solo-only')){
+  multiplayer: if(!process.argv.includes('--solo-only')){
     relay=spawn(process.execPath,['services/relay/src/netplay-relay.mjs'],{cwd:root,windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_RTC_TIMEOUT_MS:'10000'},stdio:['ignore','pipe','pipe']});
     relay.stdout.on('data',b=>{log+=b;});relay.stderr.on('data',b=>{log+=b;});
     await wait(()=>/listening ws:\/\/127.0.0.1:(\d+)/.test(log),'relay startup',15000);
@@ -116,6 +116,8 @@ try{
         // screenshot runs as frame-rate benchmarks.
         if(process.env.PC98_TEST_PERF_ATTACK==='1'&&n%10===5)await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyX',down:true});});
         if(process.env.PC98_TEST_PERF_ATTACK==='1'&&n%10===6)await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyX',down:false});});
+        if(process.env.PC98_TEST_PERF_CHARGE==='1'&&n%8===2)await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'ShiftLeft',down:true});});
+        if(process.env.PC98_TEST_PERF_CHARGE==='1'&&n%8===6)await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'ShiftLeft',down:false});});
         if(process.env.PC98_TEST_PERF_SHOTS==='1'&&n%5===4)await page.screenshot({path:resolve(out,`battle-load-${n+1}.png`)});
         samples.push(await Promise.all(frames().map(frame=>frame.evaluate(async()=>({
           time:performance.now(),perf:window.th03Performance,state:window.th03SyncState,
@@ -127,6 +129,28 @@ try{
       await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard-clear');});
       await writeFile(resolve(out,'performance-80-100ms.json'),JSON.stringify({delay:process.env.EAGLER_NETPLAY_RELAY_DELAY_MS,jitter:process.env.EAGLER_NETPLAY_RELAY_JITTER_MS,samples},null,2));
       console.log('TH03 battle performance samples saved:',samples.length);
+      const windows=[];
+      for(let i=1;i<samples.length;i++)for(let seat=0;seat<count;seat++){
+        const previous=samples[i-1][seat],current=samples[i][seat];
+        if(previous?.state?.phase!==1||current?.state?.phase!==1)continue;
+        const elapsed=current.time-previous.time;
+        if(elapsed<=0||!Number.isFinite(current.health?.frames)||!Number.isFinite(previous.health?.frames))throw Error('Invalid performance sample');
+        windows.push({sample:i,seat,ms:elapsed,frames:current.health.frames-previous.health.frames,fps:(current.health.frames-previous.health.frames)*1000/elapsed});
+      }
+      await writeFile(resolve(out,'performance-battle-windows.json'),JSON.stringify(windows,null,2));
+      console.log('TH03 battle display windows',JSON.stringify(Array.from({length:count},(_,seat)=>{
+        const rates=windows.filter(window=>window.seat===seat).map(window=>window.fps);
+        return {seat,count:rates.length,min:rates.length?Math.min(...rates):null,under50:rates.filter(fps=>fps<50).length};
+      })));
+      if(process.env.PC98_TEST_FPS_MIN!==undefined){
+        if(planarParity||process.env.PC98_TEST_PERF_SHOTS==='1')throw Error('Do not combine frame threshold with parity or screenshots');
+        const minimum=Number(process.env.PC98_TEST_FPS_MIN);
+        if(!Number.isFinite(minimum)||minimum<0||!windows.length)throw Error('Invalid frame threshold or no battle samples');
+        if(windows.some(window=>window.ms<750||window.ms>1500))throw Error('Performance sample interval is too irregular for a one-second threshold');
+        const below=windows.filter(window=>window.fps<minimum);
+        assert.equal(below.length,0,`Battle display rate fell below ${minimum}: ${JSON.stringify(below)}`);
+      }
+      if(process.env.PC98_TEST_PERF_ONLY==='1')break multiplayer;
     }
     if(process.env.PC98_TEST_MIXED_RAPID==='1'){
       await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyZ',down:true});});
