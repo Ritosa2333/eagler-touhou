@@ -817,12 +817,14 @@ void CBossStage3::Phase14()
 	m_puppet[0].mode=4;
 	m_puppet[1].mode=4;
 	Phase14Shoot();
-	if (practice::AllowTimeout(m_curPhaseFrame>=1000))
-		m_bSuccessDefeat=false;
-	if (GetDmgOnAndCrashChara()==0)
-		return;
-	else
+	if (practice::BeforeTimeout(m_curPhaseFrame<1000))
+	{
+		if (GetDmgOnAndCrashChara()==0)
+			return;
 		m_bSuccessDefeat=true;
+	}
+	else
+		m_bSuccessDefeat=false;
 	m_curPhaseFrame=0;
 	m_curPhase=0xfd;
 	m_puppet[0].flag=2;
