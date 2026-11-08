@@ -65,6 +65,7 @@ typedef struct strENEMY_BULLET{
 	float origY;
 	float totalDistanceTravelled;
 	unsigned char specialMoveVar;			//this field is new, PC98 ver uses a global var to store it
+	bool fromStageScript;
 }ENEMY_BULLET;
 
 typedef struct strENEMY_SHOOT_INFO{
@@ -82,6 +83,7 @@ typedef struct strENEMY_SHOOT_INFO{
 	float bulletSpeed;
 	float specialBulletDelta;				//these two fields are new, PC98 ver uses global vars to store them
 	unsigned char specialMoveVar;
+	bool fromStageScript=false;
 }ENEMY_SHOOT_INFO;
 
 class CStage;
@@ -125,7 +127,7 @@ public:
 
 protected:
 	static int GetNRecordNeeded(ENEMY_SHOOT_INFO *shootInfo);
-	int FindFreeRecord(int *retIdxArray,int startIdx,int nIdx,int nNeeded);
+	int FindFreeRecord(int *retIdxArray,int startIdx,int nIdx,int nNeeded,bool originalPool);
 	void FillRecordSpeedAndAngle(int *freeRecIdx,ENEMY_SHOOT_INFO *shootInfo);
 	void SpecialMove(int recordIdx);
 public:
@@ -133,7 +135,7 @@ public:
 
 	__forceinline void UpdateVelXYFromSpeedAngle(int recordIdx)
 	{
-		if(original::DemoActive()){auto& b=m_bullets[recordIdx];b.curAngle=float(int(b.curAngle)&255);b.curSpeed=float(int(b.curSpeed)&255);b.velX=float(original::math::X(int(b.curAngle),int(b.curSpeed)));b.velY=float(original::math::Y(int(b.curAngle),int(b.curSpeed)));return;}
+		if(m_bullets[recordIdx].fromStageScript||original::DemoActive()){auto& b=m_bullets[recordIdx];b.curAngle=float(int(b.curAngle)&255);b.curSpeed=float(int(b.curSpeed)&255);b.velX=float(original::math::X(int(b.curAngle),int(b.curSpeed)));b.velY=float(original::math::Y(int(b.curAngle),int(b.curSpeed)));return;}
 		m_bullets[recordIdx].velX=(float)cos(m_bullets[recordIdx].curAngle/256.0*2*PI)*m_bullets[recordIdx].curSpeed;
 		m_bullets[recordIdx].velY=(float)sin(m_bullets[recordIdx].curAngle/256.0*2*PI)*m_bullets[recordIdx].curSpeed;
 
