@@ -44,7 +44,7 @@ function Documentation({ page }: { page: HelpDocument }) {
     base = useHref('/');
   const { body, toc } = useMemo(
     () => prepareHelpDocument(page.id === 'privacy' ? translate('zh-CN', page.content) : t(page.content), base, locale),
-    [page.content, locale, t, base],
+    [page.id, page.content, locale, t, base],
   );
   const tree = {
     $id: `help-${locale}`,
