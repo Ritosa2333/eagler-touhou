@@ -12,6 +12,8 @@ const out=resolve(process.env.TH17_ROOM_EVIDENCE||resolve(repo,'artifacts/th17-r
 const rollback=!process.argv.includes('--lockstep');
 const throughStageThree=process.argv.includes('--through-stage-three');
 const throughStageTwo=throughStageThree||process.argv.includes('--through-stage-two');
+const verifySpectators=process.argv.includes('--spectator');
+assert.ok(!verifySpectators||throughStageTwo&&!throughStageThree,'Spectator fixture crosses the Stage 2 boundary');
 const fixtureStage=Number(process.env.TH17_ROOM_STORY_STAGE||0);
 assert.ok(Number.isInteger(fixtureStage)&&fixtureStage>=0&&fixtureStage<=6);
 const storyBulletFloor=Number(process.env.TH17_ROOM_STORY_BULLET_FLOOR||0);
@@ -598,6 +600,55 @@ try{
      };
     },{seat,rollback,extended,throughStageTwo,storyStage,fixtureStage,storyBulletFloor,denseExtra,extraBoss,extraFinale,traceGaps,tracePhases,verifyTransfer,verifyGhost,touchDrag,touchSeats,touchWindow,symmetricDelay,observeDisplay,storyTiming:checkPresentation&&difficulty!==4});
    }
+   const viewers=[];
+   let matchedOpening=false;
+   const addViewer=async label=>{
+    const seat=options.length,client=room+'-'+label,member=client+'-private';
+    const socket=new WebSocket(endpoint+new URLSearchParams({room,lobby:client,member,intent:'join'}));
+    sockets.push(socket);
+    await lobby(socket,null,value=>!!value.room);
+    await lobby(socket,{type:'spectate',name:label},value=>value.type==='spectator-start');
+    options.push({...options[0],renderScale:1,netplaySpectator:true,netplaySpectatorId:client,
+     netplayUrl:endpoint+new URLSearchParams({room,run:String(start.serial),member})});
+    const context=await browser.newContext({viewport:{width:640,height:480}});
+    contexts.push(context);
+    const view=await context.newPage();
+    view.on('pageerror',error=>errors.push(error.message));
+    await view.goto('http://127.0.0.1:'+server.address().port);
+    await view.evaluate(seat=>addRuntime(seat),seat);
+    await view.waitForFunction(epoch=>ready.has(epoch),seat+1,{timeout:45000});
+    const frame=view.frames().at(-1);
+    await view.evaluate(seat=>startRuntime(seat),seat);
+    await frame.evaluate(()=>{
+     const callback=Module.onGameFrame;
+     const decoder=new TextDecoder();
+     globalThis.spectatorSamples=new Map();
+     globalThis.spectatorTimeline=()=>{
+      const pointer=Module._th17_mp_spectator_state();
+      return pointer?JSON.parse(decoder.decode(Module.HEAPU8.subarray(pointer,Module.HEAPU8.indexOf(0,pointer)))):null;
+     };
+     Module._th17_room_trace(1);
+     Module.onGameFrame=(...args)=>{
+      callback(...args);
+      const timeline=spectatorTimeline();
+      if(!timeline||timeline.seeking||spectatorSamples.has(timeline.position))return;
+      const p=Module._th17_room_status()>>>2;
+      const words=Array.from(Module.HEAPU32.subarray(p,p+39));
+      words[0]=timeline.position;words[2]=0;
+      if(words[3])spectatorSamples.set(timeline.position,words);
+     };
+    });
+    viewers.push({label,view,frame});
+   };
+   if(verifySpectators){
+    await wait(async()=>{
+     const failures=(await Promise.all(pages.map(current=>current.evaluate(()=>events.filter(e=>e.event==='error'))))).flat();
+     assert.deepEqual(failures,[]);
+     return frames[0].evaluate(()=>diagnostics.lastConfirmed>180);
+    },'first spectator history');
+    await addViewer('early');
+    console.log('early spectator joined Stage 1');
+   }
    let frontier=0,progressAt=Date.now(),coverageFailure;
    let cutoff=extendedTarget;
    const sampleTimeout=fixtureStage?Math.max(300000,minimumSamples*80):
@@ -608,6 +659,34 @@ try{
     assert.deepEqual(failures,[]);
     const status=await Promise.all(frames.map(frame=>frame.evaluate(()=>({samples:samples.size,diagnostics}))));
     const current=Math.min(...status.map(item=>item.diagnostics.lastConfirmed||0));
+    if(verifySpectators){
+     for(const {view,label} of viewers){
+      const failures=await view.evaluate(()=>events.filter(e=>e.event==='error'));
+      assert.deepEqual(failures,[],label+' spectator Runtime errors');
+     }
+     if(!matchedOpening){
+      const opening=await viewers[0].frame.evaluate(()=>Array.from(spectatorSamples).filter(([,words])=>words[3]===1).slice(0,200));
+      if(opening.length===200){
+       const hosts=await frames[0].evaluate(numbers=>numbers.map(number=>samples.get(number)),opening.map(([number])=>number));
+       let compared=0;
+       for(const [index,[number,words]] of opening.entries())if(hosts[index]){
+        assert.deepEqual(words,hosts[index],'opening spectator world at frame '+number);
+        ++compared;
+       }
+       assert.ok(compared>=50);
+       matchedOpening=true;
+      }
+     }
+     if(viewers.length===1&&status[0].diagnostics.storyFrames>=100){
+      await addViewer('late');
+      console.log('late spectator joined Stage 2');
+     }
+     if(viewers.length===2){
+      const counts=await Promise.all(viewers.map(({frame})=>frame.evaluate(()=>
+       Array.from(spectatorSamples.values()).filter(words=>words[3]===2).length)));
+      if(counts.every(count=>count>=180))return true;
+     }
+    }
     if(enableCpuThrottle&&current>=cpuWarmupThrough){
      await enableCpuThrottle();enableCpuThrottle=undefined;
     }
@@ -617,7 +696,7 @@ try{
     }else if(Date.now()-progressAt>20000)throw Error('Room stopped confirming input: '+JSON.stringify(status));
     if(throughStageTwo&&status.every(item=>item.diagnostics.phase===2))
      throw Error('The fixture reached the pause or game-over menu before the story sample was complete');
-    if(throughStageTwo)return status.every(item=>item.diagnostics.storyFrames>=storySamples);
+    if(throughStageTwo)return !verifySpectators&&status.every(item=>item.diagnostics.storyFrames>=storySamples);
     if(fixtureStage)return status.every(({samples,diagnostics})=>samples>=minimumSamples&&
      (diagnostics.storyBulletFrames||0)>=storyBulletFrames&&(diagnostics.storySpellFrames||0)>=storySpellFrames);
     if(extraFinale&&status.every(item=>item.diagnostics.finalFinished)){
@@ -829,6 +908,24 @@ try{
     ...(priorMemory?{matchedMemory:compareMemory(priorMemory.samples,finaleSamples),lateMatchedMemory:compareMemory(priorMemory.samples,finaleSamples,lateStart)}:{}),
     settledPeaks:settledPeaks.filter(peak=>peak.bullets||peak.lasers),diagnostics,initialPower:initial.slice(24,24+seats),initialLives,last,difference});
    if(coverageFailure)throw coverageFailure;
+   if(verifySpectators){
+    const spectatorReports=[];
+    for(const {label,frame} of viewers){
+     const values=await frame.evaluate(()=>Array.from(spectatorSamples));
+     const counts=[0,0,0];
+     for(const [number,actual] of values){
+      const expected=first.get(number);
+      if(!expected)continue;
+      assert.deepEqual(actual,expected,label+' spectator world at frame '+number);
+      ++counts[actual[3]];
+     }
+     if(label==='early')assert.ok(counts[1]>=100,'early spectator matches Stage 1');
+     assert.ok(counts[2]>=100,label+' spectator matches Stage 2');
+     spectatorReports.push({label,stageOneFrames:counts[1],stageTwoFrames:counts[2]});
+    }
+    reports.at(-1).spectators=spectatorReports;
+    console.log(JSON.stringify(spectatorReports));
+   }
    if(touchDrag)for(const touchSeat of touchSeats){
     assert.ok(diagnostics[touchSeat].touchInputFrames>500,'touch movement reaches captured network inputs');
     assert.ok(diagnostics[touchSeat].touchInputTargets>100,'continuous drag produces changing field targets');
