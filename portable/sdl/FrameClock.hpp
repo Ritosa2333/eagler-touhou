@@ -8,12 +8,12 @@ class FrameClock {
 public:
     static constexpr double interval=1./60.;
     void reset(){previous=-1;debt=0;last_present=-1;}
-    unsigned advance(double now,double period=interval,double (*pace)(double)=nullptr){
+    unsigned advance(double now,double period=interval,double (*pace)(double)=nullptr,double early=0){
         period=std::clamp(period,1./9999.,1.);
         if(previous<0){previous=now;return 0;}
         const double elapsed=std::clamp(now-previous,0.,4*interval);
         debt+=pace?pace(elapsed):elapsed;previous=now;
-        const unsigned count=std::min(256u,unsigned(std::floor((debt+1e-9)/period)));
+        const unsigned count=unsigned(std::clamp(std::floor((debt+early+1e-9)/period),0.,256.));
         debt-=count*period;return count;
     }
     float alpha(double period=interval)const{return float(std::clamp(debt/period,0.,1.));}

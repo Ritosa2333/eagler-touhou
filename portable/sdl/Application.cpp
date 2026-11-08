@@ -155,11 +155,19 @@ extern "C" SDL_AppResult SDL_AppIterate(void* state){
     auto& app=*static_cast<Application*>(state);if(app.stop)return SDL_APP_SUCCESS;
     const double now=host::seconds(),period=app.game->logical_interval();
     double (*pace)(double)=nullptr;
+    bool spectator_cadence=false;
 #ifdef TH12_MULTIPLAYER
-    if(th12::multiplayer::active)pace=[](double elapsed){return th12::multiplayer::session.network.PacedElapsed(elapsed*1000)/1000;};
+    if(th12::multiplayer::active){
+        pace=[](double elapsed){return th12::multiplayer::session.network.PacedElapsed(elapsed*1000)/1000;};
+#ifdef __EMSCRIPTEN__
+        spectator_cadence=runtime_options.limit_presentation&&th12::multiplayer::session.network.Spectator();
 #endif
-    const unsigned ticks=app.clock.advance(now,period,pace);
-    const bool draw_frame=app.clock.present(now,runtime_options.limit_presentation);
+    }
+#endif
+    // Draw the spectator world on the same callback that advances it. Borrow
+    // up to 2 ms for early browser callbacks and repay it from the next tick.
+    const unsigned ticks=app.clock.advance(now,period,pace,spectator_cadence?0.002:0.);
+    const bool draw_frame=spectator_cadence?ticks!=0:app.clock.present(now,runtime_options.limit_presentation);
     if(!ticks&&!draw_frame){
 #ifndef __EMSCRIPTEN__
         SDL_Delay(1);
