@@ -1480,6 +1480,14 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                     vm->visual.translation = {offset.x + enemy->position[0],
                                               offset.y + enemy->position[1],
                                               enemy->position[2] + offset.z};
+                    // 41a9d1..41aa0c: op424 follows inner+78/+7c motion,
+                    // without the bullet draw path's pi/2 offset. The direct
+                    // position branch (08000000) does not write rotation.
+                    if (!(enemy->flags & 0x8000000u) && (vm->visual.render_flags & 0x40u)) {
+                        vm->variables.rotation.z = float(std::atan2(double(enemy->motion_delta[1]),
+                                                                   double(enemy->motion_delta[0])));
+                        vm->visual.flags |= 4u;
+                    }
                 }
         }
     }
