@@ -30,3 +30,22 @@ test('worker presentation uses the next browser refresh without a second 60 Hz g
     } finally {globalThis.document = oldDocument;}
   } finally {globalThis.requestAnimationFrame = oldRaf;}
 });
+
+test('a delayed newest frame is drawn while older frames yield to newer ones', () => {
+  const original = globalThis.document;
+  globalThis.document = {hidden:false};
+  try {
+    const drawn=[],released=[];
+    const client=Object.assign(Object.create(WorkerNetworkSimulation.prototype),{
+      closed:false,drawHandle:1,displayMetrics:{expired:0,lateDrawn:0,hiddenDiscarded:0,replaced:0},
+      onDraw:bitmap=>drawn.push(bitmap),releaseFrame:(frame,discarded)=>released.push([frame.bitmap,discarded])
+    });
+    const old=()=>({bitmap:'late',producedAt:performance.timeOrigin+performance.now()-80});
+    client.queuedFrame=old();client.draw();
+    assert.deepEqual(drawn,['late']);assert.equal(client.displayMetrics.lateDrawn,1);
+    client.queuedFrame=old();client.preparedFrame={bitmap:'new'};client.draw();
+    assert.deepEqual(drawn,['late']);assert.equal(client.displayMetrics.expired,1);assert.deepEqual(released.at(-1),['late',true]);
+    globalThis.document.hidden=true;client.preparedFrame=null;client.queuedFrame=old();client.draw();
+    assert.equal(client.displayMetrics.hiddenDiscarded,1);
+  } finally {globalThis.document=original;}
+});

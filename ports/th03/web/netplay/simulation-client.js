@@ -15,7 +15,7 @@ export class WorkerNetworkSimulation {
     this.context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});this.context.resume().catch(()=>{});
     this.audio={context:this.context};this.module={SDL2:{audioContext:this.context},executionThread:'worker',heapBytes:0,
       netSnapshotInfo:()=>this.snapshot.snapshots||{snapshotBytes:0,snapshots:0},netKey(){}};
-    this.displayMetrics={expired:0,hiddenDiscarded:0,replaced:0};this.module.displayMetrics=this.displayMetrics;
+    this.displayMetrics={expired:0,lateDrawn:0,hiddenDiscarded:0,replaced:0};this.module.displayMetrics=this.displayMetrics;
     try{this.worker=new Worker(new URL('./simulation-worker.js',import.meta.url),{type:'module',name:'TH03 network simulation'});}
     catch(error){this.context.close().catch(()=>{});throw error;}
     this.worker.onmessage=({data})=>this.receive(data);
@@ -75,7 +75,12 @@ export class WorkerNetworkSimulation {
   draw(){
     this.drawHandle=0;const frame=this.queuedFrame;this.queuedFrame=null;if(!frame)return;
     const hidden=document.hidden,expired=Number.isFinite(frame.producedAt)&&performance.timeOrigin+performance.now()-frame.producedAt>50;
-    if(hidden||expired){this.releaseFrame(frame,true);this.displayMetrics[hidden?'hiddenDiscarded':'expired']++;return;}
+    if(hidden||(expired&&this.preparedFrame)){
+      this.releaseFrame(frame,true);this.displayMetrics[hidden?'hiddenDiscarded':'expired']++;return;
+    }
+    // A delayed frame is still the newest completed image when there is no
+    // replacement. Discarding it can freeze display throughout a long stall.
+    if(expired)this.displayMetrics.lateDrawn++;
     try{if(!this.closed){this.onDraw?.(frame.bitmap);this.drawn=(this.drawn||0)+1;}}catch(error){this.fail(error);}finally{this.releaseFrame(frame);}
   }
   present(due){

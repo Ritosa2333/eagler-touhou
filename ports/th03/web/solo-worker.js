@@ -2,7 +2,7 @@ import {workerEnvironment} from './solo-worker-environment.js';
 import {createRestartVisualGate} from './restart-visual.js';
 
 let emulator, environment, bridge, music, patch, game;
-let awaitingSnapshot=false, pendingMusic=[], pendingResults=[], lastPublish=0, costs=[], lastInput=performance.now();
+let awaitingSnapshot=false, pendingMusic=[], pendingResults=[], lastPublish=0, costs=[], lastInput=performance.now(), inputExpired=false;
 const held=new Map();
 function postReplay(type,value){
   if(type==='chunk'&&value.clocks)postMessage({type:'external-replay-chunk',chunk:value},[value.clocks.buffer]);
@@ -52,7 +52,7 @@ function clear(){
 function update(){
   if(!emulator)return;
   const now=performance.now();
-  if(now-lastInput>750)clear();
+  if(!inputExpired&&now-lastInput>750){inputExpired=true;clear();}
   const h=emulator.module.HEAPU8,state=bridge.update(now),markers=bridge.markers();
   const visual=emulator.module.restartVisual;if(visual){visual.observe(state);if(visual.closed)emulator.module.restartVisual=null;}
   if(state)state.ticks=new DataView(h.buffer).getUint32(state.at+patch.fields.ticks,true);
@@ -92,7 +92,7 @@ async function dispatch({method,args=[]}){
   }
   if(method==='audio')return emulator.state==='running'?emulator.readAudio():null;
   if(method==='key'){
-    lastInput=performance.now();const event=args[0];
+    lastInput=performance.now();inputExpired=false;const event=args[0];
     if(event.type==='keydown')held.set(event.code,event);else if(event.type==='keyup')held.delete(event.code);
     if(event.type==='keydown'||event.type==='keyup')emulator.key(event.code,event.type==='keydown');return;
   }
@@ -102,7 +102,7 @@ async function dispatch({method,args=[]}){
     return;
   }
   if(method==='input'){
-    lastInput=performance.now();queueAssist(args[0]);return;
+    lastInput=performance.now();inputExpired=false;queueAssist(args[0]);return;
   }
   if(method==='nativeRequest'){
     const state=bridge.update();
@@ -133,7 +133,7 @@ async function dispatch({method,args=[]}){
   if(method==='reset'){
     pendingMusic=[];pendingResults=[];clear();bridge.reset();music?.reset();await emulator.reset();return;
   }
-  if(method==='run'){lastInput=performance.now();emulator.run();return;}
+  if(method==='run'){lastInput=performance.now();inputExpired=false;emulator.run();return;}
   if(method==='externalReplayFinish'){emulator?.finishReplay();return;}
   if(method==='externalReplayRearm'){emulator?.rearmBrowserRecording();return;}
   if(method==='externalReplayFast'){emulator?.fastForwardReplay(args[0]);return;}

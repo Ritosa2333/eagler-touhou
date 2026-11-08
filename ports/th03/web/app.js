@@ -114,7 +114,7 @@ setInterval(()=>{
     tick:emulator.tick,virtualNow:emulator.module.virtualNow,waitReason:sync?.queue.waitReason??'',replayUntil:sync?.replayUntil??null,
     predictionLead:Math.max(0,(sync?.queue.frame??0)-(sync?.queue.confirmed??0)),directionPrediction:sync?.queue.directionPrediction??null,
     inputDelay:sync?.queue.inputDelay??null,bootInputDelay:sync?.queue.bootDelay??null,inputPolicy:netplay?.inputPolicy??null,
-    startupRttSamples:netplay?.rttSamples??null,transportStats:netplay?.inputTransportStats??null,
+    startupRttSamples:netplay?.rttSamples??null,transportStats:netplay?.inputTransportStats??null,displayMetrics:emulator.module.displayMetrics?{...emulator.module.displayMetrics}:null,
     predictionLeadLimit:sync?.queue.active?sync.queue.predictionLead:0,
     phase:nativeState?.phase??0,selecting:nativePause?.selecting??false,pauseSeat,hiddenSeats:[...hiddenSeats],documentHidden:document.hidden,
     nativeMaxMs:emulator.module.stepMetrics?.maxMs??0,program:emulator.module.programReads?.at(-1)?.name??null,
