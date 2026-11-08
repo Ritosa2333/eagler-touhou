@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "22eb32d0febe43f1d85bbbb4d8dd47429a58b611",
+      "base": "df8e381502b44a760ee3d38d8faed6a2513bde35",
       "history": [
         {
           "kind": "manual",
@@ -353,6 +353,19 @@
             "ports/th05-mp/web/replay.mjs"
           ],
           "note": "同步新版狂暴练习入口、Bomb 抗性说明、F12 原速帧数与旧练习录像兼容。"
+        },
+        {
+          "kind": "manual",
+          "base": "22eb32d0febe43f1d85bbbb4d8dd47429a58b611",
+          "source": "df8e381502b44a760ee3d38d8faed6a2513bde35",
+          "targetHead": "beeaec42c25578fd2b013376b9ddf0695ac53e27",
+          "paths": [
+            "ports/th05-mp/Game/Stage/Stage.cpp",
+            "ports/th05-mp/Game/Stage/StageBossHud.cpp",
+            "ports/th05-mp/PRACTICE.md",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp"
+          ],
+          "note": "同步练习攻击入口的红魔乡式与环形血条，并为横条旁的帧数计时预留空间。"
         }
       ]
     },
