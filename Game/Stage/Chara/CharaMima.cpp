@@ -17,7 +17,7 @@ CCharaMima::CCharaMima(void)
 	m_bombInvulnerableTime=144;
 	m_bombClearEnemyBulletTime=96;
  // The native animation union is zeroed BSS, including the first bomb frame.
- if(original::DemoActive())memset(m_bombAni,0,sizeof(m_bombAni));
+ if(original::BombAndRageEnabled())memset(m_bombAni,0,sizeof(m_bombAni));
 }
 
 CCharaMima::~CCharaMima(void)
@@ -36,10 +36,10 @@ void CCharaMima::StepBomb()
 				m_bombAni[i].radius=MIMA_BOMB_ANI_RECORD_RADIUS_UNUSED;
 		}
 		// Native circles use AND 7, so frames 0/4/8/12 are valid slots
-  // 4/5/6/7. Retain their random draws for the original recorded input.
-		if (m_bombTimer%4==0&&(original::DemoActive()||m_bombTimer>=16))
+  // 4/5/6/7. These draws advance the same RNG used by enemy patterns.
+		if (m_bombTimer%4==0&&(original::BombAndRageEnabled()||m_bombTimer>=16))
 		{
-   const int slot=original::DemoActive()?((m_bombTimer-16)/4&7):(m_bombTimer-16)/4%8;
+   const int slot=original::BombAndRageEnabled()?((m_bombTimer-16)/4&7):(m_bombTimer-16)/4%8;
 			m_bombAni[slot].radius=256.0f*16.0f;
 			m_bombAni[slot].angle=(float)(original::Random()%256);
 		}

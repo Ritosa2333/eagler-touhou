@@ -12,6 +12,8 @@ CBoss::CBoss(void)
 	m_curMode=0;
 	m_nModeChange=0;
 	m_curPhaseFrame=0;
+	m_curHP=0;
+	m_curPhaseEndHP=0;
 	m_velX=0;
 	m_velY=0;
 	m_bHitThisFrame=false;

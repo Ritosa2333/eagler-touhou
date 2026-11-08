@@ -402,7 +402,7 @@ int CBossStage4::MaiShootType2_1()
 	if (m_curPhaseFrame==48||m_curPhaseFrame==96)
 	{
 		float angle=m_curX<m_2curX?64.0f:-64.0f;
-		angle+=m_pStage->m_pChara->AngleToChara(m_curX,m_curY);
+		angle+=m_pStage->m_pChara->AngleToChara(m_curX,m_curY,original::BombAndRageEnabled());
 		m_curvingBullet.AddBullet(m_curX,m_curY,angle,32,9);
 		m_pStage->m_bPlaySound[15]=true;
 	}
@@ -631,7 +631,7 @@ int CBossStage4::YukiShootType2_1()
 	if (m_curPhaseFrame==48||m_curPhaseFrame==96)
 	{
 		float angle=m_2curX<m_curX?64.0f:-64.0f;
-		angle+=m_pStage->m_pChara->AngleToChara(m_2curX,m_2curY);
+		angle+=m_pStage->m_pChara->AngleToChara(m_2curX,m_2curY,original::BombAndRageEnabled());
 		m_curvingBullet.AddBullet(m_2curX,m_2curY,angle,32,11);
 		m_pStage->m_bPlaySound[15]=true;
 	}
@@ -778,7 +778,9 @@ void CBossStage4::Phase2()
 	}
 	if (bEndPhase==false)
 	{
-		if (m_curHP+m_2curHP<=5500)
+		const int combinedHP=m_curHP+m_2curHP;
+		const bool nativeThresholds=original::BombAndRageEnabled();
+		if (combinedHP<(nativeThresholds?5500:5501))
 		{
 			if (m_nModeChange<9)
 			{
@@ -787,7 +789,7 @@ void CBossStage4::Phase2()
 				m_nModeChange=9;
 			}
 			else
-				if (m_curHP+m_2curHP<=2250)
+				if (combinedHP<(nativeThresholds?2250:2251))
 					if (m_nModeChange<14)
 					{
       // HP interruption skips MaiShootType1's frame-160 laser stop.

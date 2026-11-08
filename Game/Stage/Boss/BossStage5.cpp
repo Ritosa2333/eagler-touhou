@@ -105,6 +105,9 @@ void CBossStage5::Phase2ShootType1()
 	{
 		m_curImage=184;
 		m_bPhase2KnifeClockwise=(original::Random()%2!=0);
+		// The knife script leaves its direction byte for the next phase.
+		if (original::BombAndRageEnabled())
+			m_phase4ShootAngle[0]=m_bPhase2KnifeClockwise?1.0f:0.0f;
 		return;
 	}
 	if (m_curPhaseFrame<=32)
@@ -171,6 +174,11 @@ void CBossStage5::Phase5ShootType1()
 		{
 			m_curImage=184;
 			m_pStage->m_bPlaySound[8]=true;
+			if (original::BombAndRageEnabled())
+			{
+				m_phase7ShootAngle[0]=96;
+				m_phase7ShootAngle[1]=64;
+			}
 		}
 		return;
 	}
@@ -178,6 +186,11 @@ void CBossStage5::Phase5ShootType1()
 	{
 		float a=(float)64-(m_curPhaseFrame-16)/8*6;
 		float b=(float)96-(m_curPhaseFrame-16)/8*8;
+		if (original::BombAndRageEnabled())
+		{
+			m_phase7ShootAngle[0]=int(b-8)&255;
+			m_phase7ShootAngle[1]=int(a-6)&255;
+		}
 
 		ENEMY_SHOOT_INFO si;
 		si.bulletBornType=16;
@@ -231,6 +244,8 @@ void CBossStage5::Phase5ShootType2()
 		{
 			m_curImage=184;
 			m_pStage->m_bPlaySound[8]=true;
+			if (original::BombAndRageEnabled())
+				m_phase7ShootAngle[0]=128;
 		}
 		return;
 	}
@@ -245,6 +260,8 @@ void CBossStage5::Phase5ShootType2()
 		si.bulletImg=68;
 
 		float angle=128.0f+(m_curPhaseFrame-16)/8*(original::BossGeometryEnabled()?8:-8);
+		if (original::BombAndRageEnabled())
+			m_phase7ShootAngle[0]=int(angle+8)&255;
 		si.shootOrigX=m_curX+original::PatternOffsetX(angle,48.0f*16.0f);
 		si.shootOrigY=m_curY+original::PatternOffsetY(angle,48.0f*16.0f);
 		si.nWay=5;
@@ -347,6 +364,11 @@ void CBossStage5::Phase4Shoot()
 		{
 			m_phase4ShootAngle[0]=m_pStage->m_pChara->AngleToChara(m_curX-32.0f*16.0f,m_curY-16.0f*16.0f,original::BossGeometryEnabled());
 			m_phase4ShootAngle[1]=m_pStage->m_pChara->AngleToChara(m_curX+32.0f*16.0f,m_curY-16.0f*16.0f,original::BossGeometryEnabled());
+			if (original::BombAndRageEnabled())
+			{
+				m_phase7ShootAngle[0]=m_phase4ShootAngle[0];
+				m_phase7ShootAngle[1]=m_phase4ShootAngle[1];
+			}
 		}
 		ENEMY_SHOOT_INFO si;
 		si.bulletBornType=18;

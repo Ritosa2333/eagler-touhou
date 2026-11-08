@@ -100,6 +100,93 @@ struct PracticeTests {
   return playerShots;
  }
  static inline int motionData[14]={};
+ static bool CombatStart(int stageNumber,int character,int phase){
+  if(!Start(stageNumber,phase?2:0,character))return false;
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  auto* player=stage->m_pChara;
+  stage->m_practiceSeekDamage=0;
+  stage->m_nCurBomb=3;
+  stage->m_curDream=128;
+  stage->m_playerPerformance=32;
+  stage->m_curGameKeyState=stage->m_lastGameKeyState=0;
+  stage->m_pEnemyBullet->Initialize();
+  player->m_curX=192*16;
+  player->m_curY=300*16;
+  player->m_invulnerableTimeLeft=0;
+  player->m_cannotControlTimeLeft=0;
+  player->m_nextLifeComeTimeLeft=0;
+  player->m_bombTimer=0;
+  if(phase)stage->m_pBoss->m_curPhase=phase;
+  return true;
+ }
+ static int CombatDamage(int boss,int bombing,int age,int frame,int x,int y,int shots){
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  stage->m_curFrame=frame;
+  stage->m_bInCharaBomb=bombing;
+  stage->m_pChara->m_bombTimer=age;
+  stage->m_pChara->m_curX=x;
+  stage->m_pChara->m_curY=y;
+  auto* pool=stage->m_pCharaBullet;
+  pool->Initialize();
+  for(int i=0;shots;i++,shots>>=8){
+   auto& bullet=pool->m_bullets[i];
+   bullet.flag=1;
+   bullet.imgIdx=20;
+   bullet.curX=192*16;
+   bullet.curY=96*16;
+   bullet.damage=shots&255;
+  }
+  return stage->GetDamageFromChara(192*16,96*16,24*16,24*16,boss);
+ }
+ static const int* CombatBombStep(int frame,int key){
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  auto* player=stage->m_pChara;
+  stage->m_curFrame=frame;
+  stage->m_lastGameKeyState=stage->m_curGameKeyState;
+  stage->m_curGameKeyState=key;
+  player->Step();
+  stage->m_pEnemyBullet->Step();
+  original::auditRandom=true;
+  if(stage->m_bInCharaBomb)player->StepBomb();
+  original::auditRandom=false;
+  const int state[]={stage->m_bInCharaBomb,player->m_bombTimer,player->m_invulnerableTimeLeft,
+   stage->m_pEnemyBullet->GetClearBulletTimeLeft(),stage->m_nCurBomb,stage->m_curDream,
+   stage->m_bInCharaBombForItem,stage->m_playerPerformance,original::Demo().ringIndex};
+  std::copy_n(state,9,motionData);
+  return motionData;
+ }
+ static inline CKnifeBullet auditKnife;
+ static inline CShinkiBullet auditBall;
+ static void CombatSpecialStart(int kind,int angle){
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  stage->m_pChara->m_curX=3000;
+  stage->m_pChara->m_curY=5000;
+  if(kind==0){
+   auditKnife.m_pStage=stage;
+   auditKnife.Initialize();
+   auditKnife.AddBullet(3000,3000,float(angle),61,16);
+  }else{
+   auditBall.m_pStage=stage;
+   auditBall.Initialize();
+   auditBall.AddBullet(3000,3000,201,float(angle),61);
+  }
+ }
+ static const int* CombatSpecialStep(int kind,int clear){
+  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
+  stage->m_pEnemyBullet->m_clearEnemyBulletTimeLeft=clear;
+  if(kind==0){
+   auditKnife.Step();
+   const auto& b=auditKnife.m_bullet[0];
+   const int row[]={b.flag,int(b.curX),int(b.curY),int(b.velX),int(b.velY),b.img,b.cooldown};
+   std::copy_n(row,7,motionData);
+  }else{
+   auditBall.Step();
+   const auto& b=auditBall.m_bullet[0];
+   const int row[]={b.flag,int(b.curX),int(b.curY),int(b.velX),int(b.velY),b.img,int(b.radius)};
+   std::copy_n(row,7,motionData);
+  }
+  return motionData;
+ }
  static bool PlayerMotionStart(int character){
   if(!Start(0,0,character))return false;
   auto* p=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme)->m_pChara;
@@ -268,7 +355,8 @@ struct PracticeTests {
  }
  static inline int auditData[ENEMY_BULLET_N_RECORD+12]={};
  static inline int auditGeometry[400*9]={};
- static int AuditFrame(int frame,int kind,int damage){
+ static inline int auditTrajectory[49]={};
+ static int AuditFrame(int frame,int kind,int damage,int hp,int otherHP,int flags){
   auto* s=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
   s->m_curFrame=frame;
   s->m_pChara->m_bMiss=false;
@@ -281,12 +369,27 @@ struct PracticeTests {
   auto* bullets=s->m_pEnemyBullet;
   for(auto& b:bullets->m_bullets)b.flag=0;
   auditData[0]=0;
+  if(flags&1){
+   bullets->Step();
+   s->m_bInCharaBomb=(flags&2)!=0;
+   s->m_pChara->m_bombTimer=0;
+   auto& shot=s->m_pCharaBullet->m_bullets[0];
+   shot.flag=0;
+   if(flags&4){
+    shot.flag=1;
+    shot.imgIdx=20;
+    shot.damage=16;
+    shot.curX=s->m_pBoss->m_curX;
+    shot.curY=s->m_pBoss->m_curY;
+   }
+  }
   if(!kind){
    s->m_pEnemy->StepEnemyTable();
    s->m_pEnemy->Step();
   }else if(kind==2){
    auto* mid=s->m_pMidBoss;
    if(!mid)return 0;
+   if(hp>=0)mid->m_curHP=hp;
    auditData[2]=mid->m_curPhase;
    auditData[3]=mid->m_curPhaseFrame;
    auditData[4]=0;
@@ -300,6 +403,8 @@ struct PracticeTests {
    auto* boss=s->m_pBoss;
    if(!boss)return 0;
    if(damage)boss->m_curHP=boss->m_curPhaseEndHP;
+   if(hp>=0)boss->m_curHP=hp;
+   if(otherHP>=0)static_cast<CBossStage4*>(boss)->m_2curHP=otherHP;
    auditData[2]=boss->m_curPhase;
    auditData[3]=boss->m_curPhaseFrame;
    auditData[4]=boss->m_curMode;
@@ -312,6 +417,26 @@ struct PracticeTests {
   }
   s->m_pGatherEffect->Step();
   if(kind)s->m_pLaser->FinishFrame();
+  if((flags&1)&&kind==1){
+   const CCurvingBullet* curves=nullptr;
+   if(const auto* twins=dynamic_cast<CBossStage4*>(s->m_pBoss))curves=&twins->m_curvingBullet;
+   if(const auto* alice=dynamic_cast<CBossStageEx*>(s->m_pBoss))curves=&alice->m_curvingBullet;
+   if(curves){
+    int* out=auditTrajectory;
+    for(const auto& curve:curves->m_bullet){
+     if(!curve.flag){std::fill_n(out,7,0);out+=7;continue;}
+     const int row[]={curve.mode,curve.demoHeadX,curve.demoHeadY,int(curve.velX),
+      int(curve.velY),int(curve.angle),int(curve.speed)};
+     out=std::copy_n(row,7,out);
+    }
+   }else if(dynamic_cast<CBossStage6*>(s->m_pBoss)){
+    for(int i=0;i<4;i++){
+     const auto& laser=s->m_pLaser->m_laser[i];
+     auditTrajectory[i*2]=laser.mode;
+     auditTrajectory[i*2+1]=laser.mode?int(laser.angle)&255:0;
+    }
+   }
+  }
   for(const auto& b:bullets->m_bullets)if(b.flag==1){
    const int index=auditData[0]++;
    const int row[]={int(b.curX*256),int(b.curY*256),int(b.velX*256),int(b.velY*256),int(b.curAngle*256),int(b.origSpeed*256),b.imgIdx*256,b.bornStageAndGrazeFlag*256,b.dieStageAndMoveType*256};
@@ -768,7 +893,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_effect_probe(int kind){return th
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_demo_start(int number){return th5w::PracticeTests::DemoStart(number);}
 extern "C" EMSCRIPTEN_KEEPALIVE unsigned th05_native_demo_info(int field){return th5w::PracticeTests::DemoInfo(field);}
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_audit_start(int stage,int diff,int rank,int kind){return th5w::PracticeTests::AuditStart(stage,diff,rank,kind);}
-extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_audit_frame(int frame,int kind,int damage){return th5w::PracticeTests::AuditFrame(frame,kind,damage);}
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_audit_frame(int frame,int kind,int damage,int hp,int otherHP,int flags){return th5w::PracticeTests::AuditFrame(frame,kind,damage,hp,otherHP,flags);}
 extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_audit_data(){return th5w::PracticeTests::auditData;}
 extern "C" EMSCRIPTEN_KEEPALIVE unsigned char* th05_native_audit_ring(){return th5w::original::Demo().ring;}
 extern "C" EMSCRIPTEN_KEEPALIVE void th05_native_audit_cursor(int index){th5w::original::Demo().ringIndex=index;}
@@ -783,6 +908,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_motion_rules(){return th5w::orig
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_boss_rules(){return th5w::original::BossGeometryEnabled();}
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_shot_rules(){return th5w::PracticeTests::ShotRules();}
 
+extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_audit_trajectory(){return th5w::PracticeTests::auditTrajectory;}
 extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_audit_geometry(){return th5w::PracticeTests::auditGeometry;}
 
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_player_motion_start(int character){return th5w::PracticeTests::PlayerMotionStart(character);}
@@ -802,3 +928,9 @@ extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_rank_carry(){return th5w::Practi
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_rank_summary(int graze,int points){return th5w::PracticeTests::RankSummary(graze,points);}
 
 extern "C" EMSCRIPTEN_KEEPALIVE void th05_native_bullet_motion_player(int x,int y,int invulnerable){th5w::PracticeTests::BulletMotionPlayer(x,y,invulnerable);}
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_combat_start(int stage,int character,int phase){return th5w::PracticeTests::CombatStart(stage,character,phase);}
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_combat_damage(int boss,int bombing,int age,int frame,int x,int y,int shots){return th5w::PracticeTests::CombatDamage(boss,bombing,age,frame,x,y,shots);}
+extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_combat_bomb_step(int frame,int key){return th5w::PracticeTests::CombatBombStep(frame,key);}
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_bomb_rage_rules(){return th5w::original::BombAndRageEnabled();}
+extern "C" EMSCRIPTEN_KEEPALIVE void th05_native_combat_special_start(int kind,int angle){th5w::PracticeTests::CombatSpecialStart(kind,angle);}
+extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_combat_special_step(int kind,int clear){return th5w::PracticeTests::CombatSpecialStep(kind,clear);}

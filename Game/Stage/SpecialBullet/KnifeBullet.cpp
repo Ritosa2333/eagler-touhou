@@ -1,5 +1,6 @@
 #include ".\knifebullet.h"
 #include "../Stage.h"
+#include "../../Original/OriginalMath.h"
 #include "../Chara/Chara.h"
 #include "../Circle/Circle.h"
 
@@ -31,8 +32,16 @@ void CKnifeBullet::AddBullet(float origX,float origY,float angle,float speed, in
 			m_bullet[i].flag=1;
 			m_bullet[i].curX=origX;
 			m_bullet[i].curY=origY;
-			m_bullet[i].velX=(float)cos(angle/256.0f*2*PI)*speed1;
-			m_bullet[i].velY=(float)sin(angle/256.0f*2*PI)*speed1;
+			if (original::BombAndRageEnabled())
+			{
+				m_bullet[i].velX=float(original::math::X(int(angle),int(speed1)));
+				m_bullet[i].velY=float(original::math::Y(int(angle),int(speed1)));
+			}
+			else
+			{
+				m_bullet[i].velX=(float)cos(angle/256.0f*2*PI)*speed1;
+				m_bullet[i].velY=(float)sin(angle/256.0f*2*PI)*speed1;
+			}
 			m_bullet[i].angle=angle;
 			m_bullet[i].img=m_pStage->m_pEnemyBullet->AdjustBulletImageBasedOnAngle(193,angle);
 			m_bullet[i].speed=speed1;
@@ -93,8 +102,16 @@ void CKnifeBullet::Step()
 			if (m_bullet[i].img<225)
 			{
 				m_bullet[i].img=225;
-				m_bullet[i].velX/=2.0f;
-				m_bullet[i].velY/=2.0f;
+				if (original::BombAndRageEnabled())
+				{
+					m_bullet[i].velX=float(int(m_bullet[i].velX)/2);
+					m_bullet[i].velY=float(int(m_bullet[i].velY)/2);
+				}
+				else
+				{
+					m_bullet[i].velX/=2.0f;
+					m_bullet[i].velY/=2.0f;
+				}
 				m_bullet[i].vanishAge=0;
 			}
 			else
