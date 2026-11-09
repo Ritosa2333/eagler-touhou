@@ -66,7 +66,14 @@ function manifest({games = ['th06', 'th07', 'th08', 'th09', 'th10'], relay = tru
   return {schema: 'eagler-touhou/site-manifest/1', protocol: 'eagler-touhou/1', profile: 'synthetic-directory-views',
     shared: {resourceMode: 'hosted', testBuild: true, vanillaFont: 'font.ttf', unicodeFont: 'font.otf', ...(relay ? {netplayRelay: 'wss://relay.invalid/netplay'} : {})},
     games: Object.fromEntries(games.map(id => [id, {runtime: `runtime/${id}.html`, ...('multiplayerRuntime' in owners.PRODUCT_GAMES[id] ? {multiplayerRuntime: `runtime/${id}-mp.html`} : {}),
-      gameData: {path: owners.PRODUCT_GAMES[id].package.dataTarget.slice(1), bytes: 1, sha256: hash, version: `sha256-${hash}`, layout: `sha256-${hash}`}, music: {midi: {files: []}}}]))};
+      gameData: {path: owners.PRODUCT_GAMES[id].package.dataTarget.slice(1), bytes: 1, sha256: hash, version: `sha256-${hash}`, layout: `sha256-${hash}`}, music: {midi: {files: []}},
+      ...(owners.PRODUCT_GAMES[id].importOnly ? {offlineCompatibility: {
+        schema: 'eagler-touhou/offline-game-pack/1',
+        runtimeCompatibility: {protocol: 'eagler-touhou/1', dataLayout: `sha256-${hash}`, versionSource: 'offline-pack'},
+        requiredShared: owners.PRODUCT_GAMES[id].requiredShared,
+        languages: {source: 'offline-pack', baseline: ['ja']},
+      }} : {}),
+    }]))};
 }
 class Socket {
   readyState = 1; listeners = new Map(); sent = []; closes = [];
