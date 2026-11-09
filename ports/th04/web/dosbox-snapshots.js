@@ -14,7 +14,13 @@ export function createDosboxSnapshots(emulator){
   function release(saved){if(saved.memory)pool.push(saved.memory);else for(const block of saved.undo)diff.release(block);}
   const write=m.MEMFS.stream_ops.write;
   m.MEMFS.stream_ops.write=function(stream,buffer,offset,length,position,canOwn){
-    const contents=stream.node.contents;if(tracking&&contents&&length){let pages=tracking.writes.get(contents);if(!pages){pages=new Map();tracking.writes.set(contents,pages);}for(let at=Math.floor(position/4096)*4096;at<Math.min(contents.length,position+length);at+=4096)if(!pages.has(at))pages.set(at,contents.slice(at,at+4096));}
+    const contents=stream.node.contents;
+    if(tracking&&contents&&length){
+      // Heap-backed file views share native checkpoint pages. Capturing a
+      // second preimage here can overwrite earlier native writes on restore.
+      if(contents.buffer===m.HEAPU8.buffer)m.thDirtyMark?.(contents.byteOffset+position,Math.min(length,Math.max(0,contents.length-position)));
+      else{let pages=tracking.writes.get(contents);if(!pages){pages=new Map();tracking.writes.set(contents,pages);}for(let at=Math.floor(position/4096)*4096;at<Math.min(contents.length,position+length);at+=4096)if(!pages.has(at))pages.set(at,contents.slice(at,at+4096));}
+    }
     return write.call(this,stream,buffer,offset,length,position,canOwn);
   };
   if(m.MEMFS.ops_table)m.MEMFS.ops_table.file.stream.write=m.MEMFS.stream_ops.write;
@@ -36,9 +42,7 @@ export function createDosboxSnapshots(emulator){
       syncMemory();const restoring=[...frames.keys()].filter(key=>key>=frame).sort((a,b)=>b-a).map(key=>frames.get(key));
       if(diff){const blocks=restoring.flatMap(saved=>saved.undo.slice().reverse());if(diff.restoreBlocks)diff.restoreBlocks(blocks);else for(const block of blocks)diff.restoreBlock(block);}
       if(s.memory)m.HEAPU8.set(s.memory);
-      const filePages=new Set();
-      for(const saved of restoring)for(const [buffer,pages]of saved.writes)for(const [at,data]of pages){buffer.set(data,at);if(diff&&buffer.buffer===m.HEAPU8.buffer)for(let p=(buffer.byteOffset+at)>>>12;p<=((buffer.byteOffset+at+data.length-1)>>>12);p++)filePages.add(p);}
-      for(const page of filePages)diff.sync(page);
+      for(const saved of restoring)for(const [buffer,pages]of saved.writes)for(const [at,data]of pages)buffer.set(data,at);
       globals.forEach((g,i)=>{g.value=s.globals[i];});m.restoreContinuation(s.continuation);emulator.tick=s.tick;emulator.keys=new Set(s.keys);emulator.ci.keyMatrix={...s.keyMatrix};
       // Restore the framebuffer pointer/size alongside the native allocation.
       // The GPU stays unchanged until the room finishes catching up.
