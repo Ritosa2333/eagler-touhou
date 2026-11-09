@@ -15,12 +15,12 @@ export function rollbackRttForSamples(samples){
 export function rollbackPolicyForRtt(rtt,rollbackEnabled=true,players=2){
   if(!Number.isFinite(rtt)||rtt<0||rtt>30000||typeof rollbackEnabled!=='boolean'||![2,3].includes(players))throw Error('无效网络延迟');
   const rttMs=Math.ceil(rtt),transitSteps=rollbackEnabled&&rttMs>20?Math.ceil(rttMs/2/TICK_MS):0;
-  // Three peers multiply correction work. Use measured transit buffering to
-  // keep their shared simulation moving, while preserving the 2P policy.
-  const predictionSteps=Math.min(players===3?0:HYBRID_RESERVE,Math.max(0,transitSteps-1));
+  // Shift one transit step to prediction in 3P, limiting extra repair work
+  // while avoiding a full one-way trip of local input delay.
+  const predictionSteps=Math.min(players===3?1:HYBRID_RESERVE,Math.max(0,transitSteps-1));
   const inputDelay=Math.min(MAX_ROLLBACK_INPUT_DELAY,transitSteps-predictionSteps);
   const predictionLead=rollbackEnabled?predictionSteps+PREDICTION_JITTER_STEPS:0;
-  return {schema:2,rollbackEnabled,rttMs,transitSteps,inputDelay,predictionSteps,predictionLead};
+  return {schema:3,rollbackEnabled,rttMs,transitSteps,inputDelay,predictionSteps,predictionLead};
 }
 export function validRollbackPolicy(policy,players=2){
   if(!policy)return false;

@@ -529,7 +529,7 @@ function attachChannel(peer,channel){
           if(!Number.isInteger(m.delay)||m.delay<BOOT_DELAY||m.delay>MAX_INPUT_DELAY)throw Error('无效开局输入缓冲');
           if(!Number.isInteger(m.inputDelay)||m.inputDelay<0||m.inputDelay>MAX_ROLLBACK_INPUT_DELAY||
              m.inputDelay>m.delay||(!inputPolicy.rollbackEnabled&&m.inputDelay!==0))throw Error('无效回滚输入策略');
-          if(!validRollbackPolicy(m.policy)||m.policy.rollbackEnabled!==inputPolicy.rollbackEnabled||
+          if(!validRollbackPolicy(m.policy,state.settings.players)||m.policy.rollbackEnabled!==inputPolicy.rollbackEnabled||
              m.policy.inputDelay!==m.inputDelay||m.policy.rttMs<Math.ceil(Math.max(...[...peers.values()].map(p=>rollbackRttForSamples(p.timingSamples)))))throw Error('无效混合输入策略');
           runDelay=m.delay;runInputDelay=m.inputDelay;runPolicy=m.policy;
           runRequested=true;maybeRun();break;
@@ -791,7 +791,7 @@ function maybeRun(){
     if(![...peers.values()].every(peer=>Number.isFinite(peer.startRtt)))return;
     const rtt=Math.max(...[...peers.values()].flatMap(peer=>[peer.startRtt,...peer.timingSamples]));
     const rollbackRtt=Math.max(...[...peers.values()].flatMap(peer=>[peer.startRollbackRtt,rollbackRttForSamples(peer.timingSamples)]));
-    runPolicy=rollbackPolicyForRtt(rollbackRtt,inputPolicy.rollbackEnabled);
+    runPolicy=rollbackPolicyForRtt(rollbackRtt,inputPolicy.rollbackEnabled,state.settings.players);
     runInputDelay=runPolicy.inputDelay;
     runDelay=inputPolicy.rollbackEnabled?Math.max(BOOT_DELAY,runInputDelay):lockstepDelayForRtt(rtt,inputPolicy.jitterSteps);
     broadcast({type:'run',delay:runDelay,inputDelay:runInputDelay,policy:runPolicy});runRequested=true;
