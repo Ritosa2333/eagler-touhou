@@ -27,7 +27,7 @@ const char* pauseLabels[] = {th5w::locale::Text(u8"\u7ee7\u7eed\u6e38\u620f"), t
 bool Replay() { return CGame::s_pCurGame && (CGame::GVar().m_bReplayMode||original::DemoActive()); }
 }
 bool Available(){return available;}
-void Configure(bool value){available=value;if(!value){memset(tools,0,sizeof(tools));overlayOpen=infoOpen=assisted=false;SetAdvancedOpen(false);++timeoutLockRevision;}}
+void Configure(bool value){available=value;if(!value){memset(tools,0,sizeof(tools));overlayOpen=infoOpen=assisted=false;if(initialized)SetAdvancedOpen(false);++timeoutLockRevision;}}
 void PreparingSection(bool value){preparingSection=value;}
 bool Enabled(Tool tool) { return available && tools[tool] && !Replay() && !preparingSection; }
 void Toggle(Tool tool) { if (available && !Replay()) { tools[tool] = !tools[tool]; if(tool==LockTimeout)++timeoutLockRevision; if (tools[tool]) MarkAssisted(); } }
@@ -43,6 +43,7 @@ unsigned int TimeoutLockRevision(){return timeoutLockRevision;}
 bool AllowTimeout(bool expired) { return expired && !Enabled(LockTimeout); }
 bool BeforeTimeout(bool beforeDeadline) { return beforeDeadline || Enabled(LockTimeout); }
 bool Initialize(HWND window) {
+ if (!available||initialized) return true;
  IMGUI_CHECKVERSION(); ImGui::CreateContext();
  ImGuiIO& io = ImGui::GetIO(); io.IniFilename = NULL; io.LogFilename = NULL;
  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -89,14 +90,14 @@ void Shutdown() { if (!initialized) return; SaveAdvancedOptions();
  ImGui_ImplOpenGL2_Shutdown(); ImGui_ImplWin32_Shutdown();
 #endif
  ImGui::DestroyContext(); initialized=false; }
-void BeginFrame() { if (!initialized) return;
+void BeginFrame() { if (!available||!initialized) return;
 #ifdef __EMSCRIPTEN__
  web::BeginUI();
 #else
  ImGui_ImplOpenGL2_NewFrame(); ImGui_ImplWin32_NewFrame();
 #endif
  ImGui::NewFrame(); ImGui::GetIO().MouseDrawCursor=false; }
-void EndFrame(bool render) { if (!initialized) return; ImGui::Render();
+void EndFrame(bool render) { if (!available||!initialized) return; ImGui::Render();
 #ifdef __EMSCRIPTEN__
  if(render)web::EndUI();
 #else
@@ -127,7 +128,7 @@ void WindowMessage(HWND window,UINT message,WPARAM key,LPARAM data) {
 // Only the renderer/backend and game-state actions are adapted for uth05win.
 void FocusPause() { focusPause=true; pauseAge=0; pauseAlpha=0; pauseAction=-1; actionAge=0; }
 void DrawPause(CStage& stage) {
- if (!initialized||AdvancedOpen()) return;
+ if (!available||!initialized||AdvancedOpen()) return;
  ImGuiIO& io=ImGui::GetIO(); io.MouseDrawCursor=true;
  ++pauseAge;
  if (pauseAction<0) pauseAlpha=ImMin(.8f,pauseAlpha+.1f);

@@ -19,6 +19,7 @@ struct Session {
  unsigned int combatRevision=original::OriginalBombAndRage;
  bool continuing=false,finished=false,challenge=false,localVisibility=false;
 };
+inline constexpr int MenuLeft=123,MenuTop=178,MenuWidth=215,MenuRowHeight=35,MenuRowStep=39,MenuRows=3;
 Session& Run();
 void CaptureSpectatorStage();
 void Reset();

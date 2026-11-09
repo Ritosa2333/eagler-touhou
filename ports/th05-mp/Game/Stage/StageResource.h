@@ -16,6 +16,9 @@ class CStageResource
 public:
 	CStage *m_pStage;
  C2DImage* m_pCoopGhost=nullptr;
+#ifdef __EMSCRIPTEN__
+ C2DImage* m_pCoopMenuLabels[3]{};
+#endif
  float m_playerOpacity=1.f;
 #ifdef __EMSCRIPTEN__
  GLuint m_spriteAtlas=0;
