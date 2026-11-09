@@ -404,6 +404,7 @@ try{
      globalThis.heapSamples=[];
      let recorded=0,loadSample=0,bullets=0;
      let pendingCallbacks=[],pendingCallbackMs=0;
+     let previousCallbackStart, maxCallbackStartGapMs=0, boundaryWaitCallbacks=0;
      let repairStreak=0,repairSegment;
      diagnostics.repairWaits={};
      let previousCosts=Array(10).fill(0);
@@ -470,8 +471,18 @@ try{
        diagnostics.presentationStart??=now;
        diagnostics.presentationEnd=now;
        diagnostics.actualPresentations=(diagnostics.actualPresentations||0)+presented;
+       if(traceGaps){
+        // The engine time excludes the shell and browser scheduling. Idle
+        // time between presentations can include regular callbacks waiting
+        // for inputs, so keep their actual start gaps as separate evidence.
+        const callbackStart=now-time-shellMs;
+        if(diagnostics.lastPresent&&previousCallbackStart!==undefined)
+         maxCallbackStartGapMs=Math.max(maxCallbackStartGapMs,callbackStart-previousCallbackStart);
+        previousCallbackStart=callbackStart;
+       }
        if(traceGaps&&diagnostics.lastPresent){
         pendingCallbackMs+=time;
+        if(!ticks&&!presented&&(waitState&6))++boundaryWaitCallbacks;
         const timing={
          frame:n,confirmed:committed,offsetMs:now-diagnostics.lastPresent,callbackMs:time,ticks,presented,
          repair:resimulated-diagnostics.resimulated,waitState,
@@ -495,7 +506,8 @@ try{
           stage:state?.[3],stageClock:state?.[4],gap,callbackMs:time,
           resimulated:resimulated-diagnostics.resimulated,
           ...(traceGaps?{startMs:diagnostics.lastPresent,gameCallbacksMs:pendingCallbackMs,
-           betweenCallbacksMs:Math.max(0,gap-pendingCallbackMs),callbacks:pendingCallbacks}:{}),
+           betweenCallbacksMs:Math.max(0,gap-pendingCallbackMs),maxCallbackStartGapMs,
+           boundaryWaitCallbacks,callbacks:pendingCallbacks}:{}),
          });
          if(state){
           const segment=state[3]>1&&state[4]<90?'entry':state[33]?'dialogue':
@@ -505,7 +517,7 @@ try{
           storyPresentIntervals.get(key).push(gap);
          }
         }
-        if(traceGaps){pendingCallbacks=[];pendingCallbackMs=0;}
+        if(traceGaps){pendingCallbacks=[];pendingCallbackMs=0;maxCallbackStartGapMs=0;boundaryWaitCallbacks=0;}
         diagnostics.lastPresent=now;
        }
       }
@@ -690,6 +702,7 @@ try{
       over25Ms:gaps.filter(gap=>gap>25).length,
      }])),
      touchCosts,displayIntervals:globalThis.displayIntervals,
+     ...(traceGaps?{browserTimeOrigin:performance.timeOrigin}:{}),
      storyTimeline,
      glCalls:globalThis.__th17GlCalls,liveHeapBytes,captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections:spellCorrections??diagnostics.spellCorrections,bossCosts,
      tail,
