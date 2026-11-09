@@ -2,7 +2,8 @@ import {extractOriginalEffectBank} from './pmd-archives.mjs';
 
 export class OriginalSfx {
   static async create(game,fat){
-    const context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});await context.resume();
+    let context;try{context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});}catch{context=new AudioContext();}
+    await context.resume();
     await context.audioWorklet.addModule(new URL('./sfx-worklet.js',import.meta.url));
     const node=new AudioWorkletNode(context,'pc98-original-effects',{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[1]});
     node.connect(context.destination);
@@ -15,7 +16,7 @@ export class OriginalSfx {
     await new Promise((resolve,reject)=>{
       worker.onmessage=({data})=>{if(data.type==='ready')resolve();else if(data.type==='audio')node.port.postMessage(data.samples,[data.samples.buffer]);else if(data.type==='error')reject(Error(data.message));};
       worker.onerror=event=>reject(Error(event.message));
-      worker.postMessage({type:'start',driver,bank,fixture,wasm});
+      worker.postMessage({type:'start',driver,bank,fixture,wasm,sampleRate:context.sampleRate});
     });
     return instance;
   }

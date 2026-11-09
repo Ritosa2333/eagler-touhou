@@ -41,6 +41,13 @@ try{
   page.on('request',r=>requests.push(r.url()));page.on('requestfailed',r=>failures.push({url:r.url(),error:r.failure()?.errorText}));
   page.on('response',r=>{if(r.status()>=400)failures.push({url:r.url(),status:r.status()});});
   if(process.env.PC98_TEST_RELAY==='1')await page.evaluateOnNewDocument(()=>{delete window.RTCPeerConnection;});
+  if(process.env.PC98_TEST_AUDIO_RATE_FALLBACK==='1')await page.evaluateOnNewDocument(()=>{
+    if(location.search.includes('runtimeVariant=multiplayer')&&location.search.includes('runtimeEpoch=1'))return;
+    const NativeAudioContext=window.AudioContext;
+    window.AudioContext=class extends NativeAudioContext {
+      constructor(options){if(options?.sampleRate===44100)throw new DOMException('unsupported sample rate','NotSupportedError');super({sampleRate:48000});}
+    };
+  });
   if(process.env.PC98_TEST_PACKET_LOSS==='1')await page.evaluateOnNewDocument(()=>{
     const send=RTCDataChannel.prototype.send;window.testLoss={enabled:false,sent:0,dropped:0};
     RTCDataChannel.prototype.send=function(data){

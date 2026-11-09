@@ -52,7 +52,12 @@ function music(event){
  void prepareMusic();
 }
 async function load(config){
- settings=config;context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});await context.resume().catch(()=>{});
+ settings=config;
+ // Device audio is local; the Worker always runs the deterministic 44100 Hz
+ // core independently. Some mobile browsers reject an explicit sample rate.
+ try{context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});}
+ catch{context=new AudioContext();}
+ await context.resume().catch(()=>{});
  const patch=await (await fetch(new URL('../local-patch.json',import.meta.url))).json(),entry=patch.disks[config.language];
  fat=new Fat12(await assetBytes(entry.file,{hash:entry.sha256,size:entry.size,gzip:true}));
  [sfx,pmd]=await Promise.all([OriginalSfx.create('th02',fat),PmdPlayer.prepare(context,new URL('../',import.meta.url))]);

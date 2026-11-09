@@ -10,7 +10,8 @@ export class WorkerNP21 {
     this.config=config;this.setup=setup;this.state='loading';this.isWorker=true;
     this.pending=new Map();this.serial=0;this.closed=false;this.sources=new Set();this.audioEnd=0;this.audioEpoch=0;
     this.snapshot={state:null,markers:[]};this.nativeResults=[];
-    this.context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});this.context.resume().catch(()=>{});
+    try{this.context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});}catch{this.context=new AudioContext();}
+    this.context.resume().catch(()=>{});
     this.module={heapBytes:0,SDL2:{audioContext:this.context},executionThread:'worker'};
     this.worker=new Worker(new URL('./solo-worker.js',import.meta.url),{type:'module',name:'TH'+setup.game+' simulation'});
     this.worker.onmessage=({data})=>this.receive(data);

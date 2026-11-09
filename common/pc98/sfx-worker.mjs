@@ -16,10 +16,11 @@ function step(){
 onmessage=async({data})=>{
   if(data.type==='start'){
     try{
-      const canvas=new OffscreenCanvas(640,400);workerEnvironment(canvas,44100);
+      const rate=Number.isInteger(data.sampleRate)&&data.sampleRate>=8000&&data.sampleRate<=192000?data.sampleRate:44100;
+      const canvas=new OffscreenCanvas(640,400);workerEnvironment(canvas,rate);
       const {DOSBoxPC98}=await import('./dosbox-adapter.js');
       emulator=await DOSBoxPC98.create({canvas,lockstep:true,rollbackEnabled:false,wasmBinary:data.wasm});
-      const conf='[dosbox]\nmachine=pc98\nmemsize=16\n[cpu]\ncore=simple\ncputype=386\ncycles=16000\n[render]\nscaler=none\n[sblaster]\nsbtype=none\n[pc98]\npc-98 fm board=board86\n[mixer]\nrate=44100\nblocksize=512\nprebuffer=20\n[autoexec]\n@echo off\nmount a /home/web_user/game\na:\nPMD /M8 /V0 /E2 /K\nSFX.COM\n';
+      const conf='[dosbox]\nmachine=pc98\nmemsize=16\n[cpu]\ncore=simple\ncputype=386\ncycles=16000\n[render]\nscaler=none\n[sblaster]\nsbtype=none\n[pc98]\npc-98 fm board=board86\n[mixer]\nrate='+rate+'\nblocksize=512\nprebuffer=20\n[autoexec]\n@echo off\nmount a /home/web_user/game\na:\nPMD /M8 /V0 /E2 /K\nSFX.COM\n';
       emulator.ci=await globalThis.emulators.backend([
         {path:'game/PMD.COM',contents:new Uint8Array(data.driver)},
         {path:'game/SOUND.EFC',contents:new Uint8Array(data.bank)},

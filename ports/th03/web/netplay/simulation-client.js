@@ -6,13 +6,16 @@ export class WorkerNetworkSimulation {
     const client=new WorkerNetworkSimulation(config);
     try{
       const {canvas,onError,onExit,onDiskChange,audioContext,...plain}=config;
-      const result=await client.call('init',[{config:plain,bridge,sampleRate:client.context.sampleRate}]);
+      const result=await client.call('init',[{config:plain,bridge,sampleRate:44100}]);
       client.module.mobileRuntime=result.runtime;client.state='ready';return client;
     }catch(error){client.dispose();throw error;}
   }
   constructor(config){
     this.config=config;this.isWorker=true;this.isNetworkWorker=true;this.state='loading';this.tick=0;this.serial=0;this.pending=new Map();this.snapshot={};this.closed=false;
-    this.context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});this.context.resume().catch(()=>{});
+    // Device audio is local. Keep the worker's deterministic audio clock at
+    // 44100 even when this device only supports a different output rate.
+    try{this.context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});}catch{this.context=new AudioContext();}
+    this.context.resume().catch(()=>{});
     this.audio={context:this.context};this.module={SDL2:{audioContext:this.context},executionThread:'worker',heapBytes:0,
       netSnapshotInfo:()=>this.snapshot.snapshots||{snapshotBytes:0,snapshots:0},netKey(){}};
     this.displayMetrics={expired:0,lateDrawn:0,hiddenDiscarded:0,replaced:0,maxGapMs:0,gapsOver25Ms:0,gapsOver50Ms:0};this.lastPresentedAt=null;this.module.displayMetrics=this.displayMetrics;

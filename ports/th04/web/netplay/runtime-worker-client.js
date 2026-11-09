@@ -63,8 +63,12 @@ function music(event){
  void prepareMusic();
 }
 async function load(config){
- settings=config;context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});await context.resume().catch(()=>{});
- if(context.sampleRate!==44100)throw Error('此浏览器未提供统一的 44100 Hz 音频');
+ settings=config;
+ // Device audio is local; the Worker always runs the deterministic 44100 Hz
+ // core independently. Some mobile browsers reject an explicit sample rate.
+ try{context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});}
+ catch{context=new AudioContext();}
+ await context.resume().catch(()=>{});
  const selected=gameVersion(config.language),meta=await (await fetch(new URL('../'+selected.coopMeta,import.meta.url))).json();
  fat=new Fat12(await assetBytes(selected.coopDisk,{hash:meta.sha256,size:meta.size,gzip:true}));
  [se,pmd]=await Promise.all([OriginalSfx.create('th04',fat),PmdPlayer.prepare(context,new URL('../',import.meta.url))]);
