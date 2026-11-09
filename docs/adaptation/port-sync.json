@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "df8e381502b44a760ee3d38d8faed6a2513bde35",
+      "base": "333d6ca5d285218ab4f651f8ac48636e06912f56",
       "history": [
         {
           "kind": "manual",
@@ -366,6 +366,22 @@
             "ports/th05-mp/tests/BrowserNativeTests.cpp"
           ],
           "note": "同步练习攻击入口的红魔乡式与环形血条，并为横条旁的帧数计时预留空间。"
+        },
+        {
+          "kind": "manual",
+          "base": "df8e381502b44a760ee3d38d8faed6a2513bde35",
+          "source": "333d6ca5d285218ab4f651f8ac48636e06912f56",
+          "targetHead": "c7831669ba375664b9af989eb83186cd1b7536f2",
+          "paths": [
+            "ports/th05-mp/Game/Practice/PracticeSetup.cpp",
+            "ports/th05-mp/Game/SelectCharaScreen/SelectCharaScreen.cpp",
+            "ports/th05-mp/portable/LocalizationTable.inc",
+            "ports/th05-mp/portable/locales.json",
+            "ports/th05-mp/tests/pointer.test.mjs",
+            "ports/th05-mp/web/input.mjs",
+            "ports/th05-mp/web/shell.mjs"
+          ],
+          "note": "同步练习页面的手机确认与返回、菜单补帧输入以及 thprac 关卡开放规则；正式多人房间沿用原有的 thprac 限制。"
         }
       ]
     },
