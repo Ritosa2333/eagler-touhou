@@ -114,6 +114,7 @@ function RoomQuickPicker({model, enabled, openOnClick, registered, locale}: {
     {ids.map((id, index) => {
       const phrase = quickChatPhrase(id);
       if (!phrase) return null;
+      // biome-ignore lint/suspicious/noArrayIndexKey: favorites may repeat and slots have fixed positions.
       return <ActionMenuItem key={`${id}-${index}`} data-phrase={id} onSelect={event => {
         if (view === 'slots') {event.preventDefault(); setSlot(index); switchView('choose');}
         else if (view === 'choose') {event.preventDefault(); model.setSlot(slot, id); switchView('slots');}
@@ -146,6 +147,7 @@ export function QuickChatPhrases({ enabled, language, numbered, onSelect, model 
         if (!phrase) return null;
         const key = numbered ? String(index + 1) : undefined;
         const text = language === 'en' ? phrase.en : phrase.zh;
+        // biome-ignore lint/suspicious/noArrayIndexKey: favorites may repeat and slots have fixed positions.
         return <Button key={`${id}-${index}`} type="button" variant="outline" size="row"
           className="min-h-9 min-w-0 items-center gap-1.5 py-1.5 pointer-coarse:min-h-10 max-[780px]:min-h-10"
           disabled={!enabled} data-phrase={id} title={text} aria-label={text} aria-keyshortcuts={key} onClick={() => onSelect(id)}>
