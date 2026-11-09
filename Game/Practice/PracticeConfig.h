@@ -15,7 +15,7 @@ struct Config {
  }
  static int Bound(int n,int lo,int hi){return n<lo?lo:n>hi?hi:n;}
  static int RankMin(int difficulty){const int v[]={16,24,44,48,32};return v[Bound(difficulty,0,4)];}
- static int RankMax(int difficulty){const int v[]={32,40,54,58,32};return v[Bound(difficulty,0,4)];}
+ static int RankMax(int difficulty){const int v[]={32,40,54,58,36};return v[Bound(difficulty,0,4)];}
  void Clamp(int difficulty){
   mode=Bound(mode,0,1);stage=Bound(stage,0,6);warp=Bound(warp,0,3);frame=Bound(frame,0,60000);
   lives=Bound(lives,0,8);bombs=Bound(bombs,0,8);score=Bound(score,0,99999990)/10*10;

@@ -83,18 +83,20 @@ int CSelectCharaScreen::Step()
 	}
 
  if(m_bThpracSetup){
+  const auto state=CCommonFunctionInput::GetAllKeyState();
   if(m_stageSelectClosing){
    if(--m_stageSelectAge<=0){m_bThpracSetup=m_bStageSelect=m_stageSelectClosing=false;}
-   m_lastKeyState=CCommonFunctionInput::GetAllKeyState();return 0;
+   m_lastKeyState=state;return 0;
   }
   ++m_stageSelectAge;
-  if(m_setupAction==2){m_stageSelectClosing=true;m_stageSelectAge=8;m_setupAction=0;}
+  // The browser two-finger gesture sends Esc, like the original menu.
+  if(m_setupAction==2||(m_stageSelectAge>=10&&CCommonFunctionInput::ESCPressed(state,m_lastKeyState))){m_stageSelectClosing=true;m_stageSelectAge=8;m_setupAction=0;}
   else if(m_setupAction==1&&practice::StartSetup()){
    m_bThpracSetup=m_bStageSelect=false;
    m_bQuit=true;m_quitCode=SELECTCHARASCREEN_END_SELECTED_CHARA;
    CGame::s_pCurGame->m_soundEffect.PlaySound(11);
   }
-  m_lastKeyState=CCommonFunctionInput::GetAllKeyState();return 0;
+  m_lastKeyState=state;return 0;
  }
 	if (m_bStageSelect && m_stageSelectClosing) {
         if (--m_stageSelectAge<=0) { m_bStageSelect=false; m_stageSelectClosing=false; }
@@ -185,9 +187,11 @@ void CSelectCharaScreen::ParseStageKey(unsigned short state)
   m_stageSelectClosing=true; m_stageSelectAge=10;
   CGame::s_pCurGame->m_soundEffect.PlaySound(1);
  } else if (CCommonFunctionInput::ZPressed(state,m_lastKeyState)) {
-  if (!CGame::GVar().PracticeStageUnlocked(m_stageCursor)) { m_lastKeyState=state; return; }
-  CGame::GVar().m_playStage=m_stageCursor;
-  CGame::GVar().OnBeginGame();
+  auto& game=CGame::GVar();
+  if (!game.PracticeStageUnlocked(m_stageCursor)) { m_lastKeyState=state; return; }
+  game.m_practiceConfig=practice::Config();
+  game.m_practiceConfig.stage=game.m_playStage=m_stageCursor;
+  game.OnBeginGame();
   m_bQuit=true; m_quitCode=SELECTCHARASCREEN_END_SELECTED_CHARA;
   CGame::s_pCurGame->m_soundEffect.PlaySound(11);
  } else {
@@ -226,7 +230,8 @@ void CSelectCharaScreen::ParseKeyEvent()
 				m_bStageSelect=true; m_stageSelectClosing=false; m_stageSelectAge=0;
                 m_stageCursor=0;
                 for(int i=0;i<6;i++) if(CGame::GVar().PracticeStageUnlocked(i)) { m_stageCursor=i; break; }
-                m_bThpracSetup=true;m_setupAction=0;practice::OpenSetup(m_stageCursor);
+                m_bThpracSetup=practice::Available();m_setupAction=0;
+                if(m_bThpracSetup)practice::OpenSetup(m_stageCursor);
                 m_lastKeyState=curState; return;
 			}
 			CGame::GVar().OnBeginGame();

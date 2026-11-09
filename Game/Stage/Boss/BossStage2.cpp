@@ -83,20 +83,14 @@ int CBossStage2::BounceWalk(int nFrame,float speed)
 {
 	if (m_curPhaseFrame==1)
 	{
-		float angle=(float)(original::Random()%256);
-		m_velX=(float)cos(angle/256.0f*2*PI)*speed;
-		m_velY=(float)sin(angle/256.0f*2*PI)*speed;
+		const int angle=original::Random()&255;
+		m_velX=float(original::math::X(angle,int(speed)));
+		m_velY=float(original::math::Y(angle,int(speed)));
 	}
 	m_curX+=m_velX;
 	m_curY+=m_velY;
-	if (m_curX<=48.0f*16.0f)
-		m_velX=fabs(m_velX);
-	if (m_curX>=336.0f*16.0f)
-		m_velX=-fabs(m_velX);
-	if (m_curY<=48.0f*16.0f)
-		m_velY=fabs(m_velY);
-	if (m_curY>=96.0f*16.0f)
-		m_velY=-fabs(m_velY);
+	if (m_curX<=48*16||m_curX>=336*16)m_velX=-m_velX;
+	if (m_curY<=48*16||m_curY>=96*16)m_velY=-m_velY;
 
 	return m_curPhaseFrame>=nFrame?1:0;
 }
@@ -142,7 +136,7 @@ void CBossStage2::Phase2ShootType1()
 void CBossStage2::Phase2ShootType2()
 {
 	int res=ShootAnimation(96);
-	if (res==0)
+	if (res<2)
 		return;
 	if (res==3)
 	{
@@ -156,7 +150,7 @@ void CBossStage2::Phase2ShootType2()
 		ENEMY_SHOOT_INFO shootInfo;
 		shootInfo.shootOrigX=m_curX;
 		shootInfo.shootOrigY=m_curY;
-		shootInfo.bulletBornType=18;
+		shootInfo.bulletBornType=original::MotionEnabled()?0:18;
 		shootInfo.bulletImg=84;
 		shootInfo.shootType=EST06_MULTI;
 		shootInfo.bulletSpeed=32;
@@ -164,7 +158,7 @@ void CBossStage2::Phase2ShootType2()
 		const float deltaSpeed[]={5,5,6,6};
 		shootInfo.nMulti=nMulti[CGame::GVar().m_playDifficulty];
 		shootInfo.deltaSpeed=deltaSpeed[CGame::GVar().m_playDifficulty];
-		shootInfo.shootAngle=(float)(192+(m_curPhaseFrame-32)/2*8*((m_nModeChange/2)%2*2-1));
+		shootInfo.shootAngle=(float)(192+(m_curPhaseFrame-34)/2*8*((m_nModeChange/2)%2*2-1));
 		m_pStage->m_pEnemyBullet->Shoot(&shootInfo);
 		m_pStage->m_bPlaySound[15]=true;
 	}
@@ -174,7 +168,7 @@ void CBossStage2::Phase2()
 {
 	if (m_curMode==0)
 	{
-		if (BounceWalk(64,16)!=0)
+		if (BounceWalk(96,16)!=0)
 		{
 			m_curPhaseFrame=0;
 			m_nModeChange++;
@@ -324,7 +318,7 @@ void CBossStage2::Phase5ShootType2()
 		shootInfo.bulletBornType=18;
 		shootInfo.bulletImg=84;
 		shootInfo.shootType=EST11_NWAY_ALLAROUND_MULTI_TO_CHARA;
-		shootInfo.bulletSpeed=(float)(20+m_nModeChange/2*4);
+		shootInfo.bulletSpeed=(float)(20+(m_nModeChange-1)/2*4);
 		if (shootInfo.bulletSpeed>32)
 			shootInfo.bulletSpeed=32;
 		shootInfo.nWay=24;
@@ -359,7 +353,7 @@ void CBossStage2::Phase5()
 	}
 	else
 	{
-		if (m_nModeChange%2==0)
+		if (m_nModeChange%2==1)
 			Phase5ShootType1();
 		else
 			Phase5ShootType2();
@@ -551,9 +545,9 @@ namespace th5w {
 practice::PhaseTimeout CBossStage2::GetPhaseTimeout() const {
  using practice::PhaseTimeout;
  switch(m_curPhase){
- case 2:return PhaseTimeout::Timeline(20,m_nModeChange,m_curMode,m_curPhaseFrame,[](int n){return n%2?96:64;},[](int){return 64;});
+ case 2:return PhaseTimeout::Timeline(20,m_nModeChange,m_curMode,m_curPhaseFrame,[](int n){return n%2?96:64;},[](int){return 96;});
  case 4:return PhaseTimeout::Timeline(20,m_nModeChange,0,m_curPhaseFrame,[](int){return 0;},[](int){return 128;});
- case 5:return PhaseTimeout::Timeline(20,m_nModeChange,m_curMode,m_curPhaseFrame,[](int n){return n%2?64:128;},[](int){return 48;});
+ case 5:return PhaseTimeout::Timeline(20,m_nModeChange,m_curMode,m_curPhaseFrame,[](int n){return n%2?128:64;},[](int){return 48;});
  case 7:return PhaseTimeout::Timeline(10,m_nModeChange,0,m_curPhaseFrame,[](int){return 0;},[](int){return 128;});
  default:return PhaseTimeout();
  }

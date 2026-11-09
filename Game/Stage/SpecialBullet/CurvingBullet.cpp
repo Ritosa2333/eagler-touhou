@@ -19,7 +19,7 @@ void CCurvingBullet::Initialize()
 
 void CCurvingBullet::AddBullet(float origX,float origY,float angle, float speed, unsigned char colorIdx)
 {
-	for (int i=0;i<(original::DemoActive()?7:CURVING_BULLET_N_RECORD);i++)
+	for (int i=0;i<CURVING_BULLET_N_RECORD;i++)
 		if (m_bullet[i].flag==0)
 		{
 			m_bullet[i].flag=1;
@@ -35,7 +35,7 @@ void CCurvingBullet::AddBullet(float origX,float origY,float angle, float speed,
 				m_bullet[i].nodeX[j]=origX;
 				m_bullet[i].nodeY[j]=origY;
 			}
-   if(original::DemoActive()){
+   if(original::BombAndRageEnabled()){
     auto& b=m_bullet[i];b.angle=float(uint8_t(int(angle)));b.speed=float(uint8_t(int(speed)));
     b.demoHeadX=int(origX);b.demoHeadY=int(origY);
     b.velX=float(original::math::X(int(b.angle),int(b.speed)));
@@ -48,21 +48,20 @@ void CCurvingBullet::AddBullet(float origX,float origY,float angle, float speed,
 
 void CCurvingBullet::Step()
 {
- if(original::DemoActive()){
+ if(original::BombAndRageEnabled()){
   for(int i=0;i<7;i++){
    auto& b=m_bullet[i];if(!b.flag)continue;b.age=uint16_t(b.age+1);
-   const int px=int(m_pStage->m_pChara->GetCurX()),py=int(m_pStage->m_pChara->GetCurY());
    for(int j=15;j>0;j--){
     b.nodeX[j]=b.nodeX[j-1];b.nodeY[j]=b.nodeY[j-1];
-    if(abs(int(b.nodeX[j])-px)<=96&&abs(int(b.nodeY[j])-py)<=96)m_pStage->MarkPlayerMiss();
+    if(m_pStage->TestPlayerCrash(b.nodeX[j],b.nodeY[j],96,96))m_pStage->MarkPlayerMiss();
    }
    b.nodeX[0]=float(b.demoHeadX);b.nodeY[0]=float(b.demoHeadY);
    if(b.nodeX[15]<=-16*16||b.nodeX[15]>=400*16||b.nodeY[15]<=-16*16||b.nodeY[15]>=384*16){b.flag=0;continue;}
    b.demoHeadX=int16_t(b.demoHeadX+int(b.velX));b.demoHeadY=int16_t(b.demoHeadY+int(b.velY));
-   if(abs(b.demoHeadX-px)<=128&&abs(b.demoHeadY-py)<=128)m_pStage->MarkPlayerMiss();
+   if(m_pStage->TestPlayerCrash(float(b.demoHeadX),float(b.demoHeadY),128,128))m_pStage->MarkPlayerMiss();
    if(b.mode==1){b.speed=float(uint8_t(int(b.speed)-1));if(b.speed<=4)b.mode=2;}
    else b.speed=float(uint8_t(int(b.speed)+(m_pStage->m_curFrame&1)+1));
-   const int aim=original::math::Angle(py-b.demoHeadY,px-b.demoHeadX);
+   const int aim=int(m_pStage->AimAngle(float(b.demoHeadX),float(b.demoHeadY),true));
    int delta=uint8_t(int(b.angle)-aim);if(delta>2&&delta<254)delta=delta>=128?-1:1;
    b.angle=float(uint8_t(int(b.angle)-delta));
    b.velX=float(original::math::X(int(b.angle),int(b.speed)));

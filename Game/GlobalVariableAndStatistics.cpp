@@ -285,6 +285,7 @@ void CGlobalVariableAndStatistics::OnBeginGame()
 		m_curScore=m_replay.m_curScore[m_playStage];
 		m_totalNPointItem=m_replay.m_totalNPointItem[m_playStage];
 		m_playerPerformance=m_replay.m_playerPerformance[m_playStage];
+  m_itemRankProgress=m_replay.m_itemRankProgress[m_playStage];
 		m_bPracticeMode=m_replay.m_bPracticeMode;
 		m_playDifficulty=m_replay.m_playDifficulty;
 		m_playChara=m_replay.m_playChara;
@@ -322,6 +323,7 @@ void CGlobalVariableAndStatistics::OnBeginGame()
 		m_totalNPointItem=0;
 		int initP[]={32,32,44,48,32};
 		m_playerPerformance=initP[m_playDifficulty];
+  m_itemRankProgress=0;
 		if (m_bPracticeMode)
 		{
 			m_curPower=128;
@@ -337,10 +339,8 @@ void CGlobalVariableAndStatistics::OnBeginGame()
 	}
 
 	m_curNGraze=0;
-	int PL[]={16,24,44,48,32};
-	int PU[]={32,40,54,58,32};
-	m_playerPerformanceLowerBound=PL[m_playDifficulty];
-	m_playerPerformanceUpperBound=PU[m_playDifficulty];
+	m_playerPerformanceLowerBound=practice::Config::RankMin(m_playDifficulty);
+	m_playerPerformanceUpperBound=m_playDifficulty==4&&!original::MotionEnabled()?32:practice::Config::RankMax(m_playDifficulty);
 
  if(m_bPracticeMode&&m_practiceConfig.mode){
   if(!m_bReplayMode){

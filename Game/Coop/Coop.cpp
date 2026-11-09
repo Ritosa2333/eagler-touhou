@@ -11,8 +11,7 @@
 #include "../Stage/Enemy/Enemy.h"
 #include "../Stage/Laser/Laser.h"
 #include "../Game.h"
-#include "../../third_party/imgui/imgui.h"
-#include "../../portable/Localization.hpp"
+#include "../../gameLib/CommonFunction/CommonFunctionGraphic.h"
 #include "../Practice/Practice.h"
 #include "../../gameLib/Graphic/PC98Font.h"
 #include "../../gameLib/Graphic/Th5ExtFont.h"
@@ -152,9 +151,9 @@ int CStage::TargetSeat(float x,float y) const {
  }
  return best;
 }
-float CStage::AimAngle(float x,float y){
- if(!Cooperative())return m_pChara->AngleToChara(x,y);
- return m_seats[TargetSeat(x,y)].player->AngleToChara(x,y);
+float CStage::AimAngle(float x,float y,bool originalAngle){
+ if(!Cooperative())return m_pChara->AngleToChara(x,y,originalAngle);
+ return m_seats[TargetSeat(x,y)].player->AngleToChara(x,y,originalAngle);
 }
 void CStage::ChooseTarget(float x,float y){if(Cooperative())BindSeat(TargetSeat(x,y));}
 bool CStage::CollectItem(float x,float y,unsigned char type){
@@ -271,7 +270,7 @@ unsigned int CStage::CoopChecksum(){
  SaveSeat();unsigned int hash=2166136261u;
  auto add=[&](int value){for(int n=0;n<4;n++){hash=(hash^static_cast<unsigned char>(value>>(n*8)))*16777619u;}};
  add(int(coop::Run().random));add(int(coop::Run().random>>32));
- add(CGame::GVar().m_playStage);add(m_curFrame);add(m_curScore);add(m_curDream);add(m_totalNPointItem);add(m_curNGraze);add(m_playerPerformance);add(m_bPaused);add(m_bContinueScr);add(m_bInCharaBomb);add(m_bombOwner);
+ add(CGame::GVar().m_playStage);add(m_curFrame);add(m_curScore);add(m_curDream);add(m_totalNPointItem);add(m_curNGraze);add(m_playerPerformance);if(original::MotionEnabled())add(m_itemRankProgress);add(m_bPaused);add(m_bContinueScr);add(m_bInCharaBomb);add(m_bombOwner);
  for(int i=0;i<m_seatCount;i++){const auto& s=m_seats[i];add(s.stock.lives);add(s.stock.bombs);add(s.stock.ghost);add(s.stock.fraction);add(s.stock.overflow);add(s.stock.deaths);add(s.previous);add(s.current);add(s.rescue);add(s.rescueAge);add(s.rescueTarget);add(s.player->GetPower());add(int(s.player->m_curX*256));add(int(s.player->m_curY*256));}
  for(const auto& laser:m_pLaser->m_laser){add(laser.mode);if(laser.mode){add(int(laser.srcX*256));add(int(laser.srcY*256));add(int(laser.angle*256));add(int(laser.width*256));add(int(laser.lenLower*256));add(int(laser.lenUpper*256));add(laser.age);}}
  for(const auto& enemy:m_pEnemy->m_enemy){add(enemy.flag);if(enemy.flag){add(enemy.age);add(enemy.life);add(int(enemy.curX*256));add(int(enemy.curY*256));add(int(enemy.curSpeed*256));add(int(enemy.curAngle*256));}}
@@ -397,18 +396,28 @@ void CStage::DrawCoopStatistics(){
   difficultyColors[difficulty][0],difficultyColors[difficulty][1],difficultyColors[difficulty][2]);
  char fps[24];snprintf(fps,sizeof(fps),"FPS: %.1f",CGame::s_pCurGame->m_fps);text(fps,564,460,1,1,1);
  if(!m_bPaused&&!m_bContinueScr)return;
- ImGui::SetNextWindowPos(ImVec2(115,170),ImGuiCond_Always);ImGui::SetNextWindowSize(ImVec2(235,150),ImGuiCond_Always);
- ImGui::Begin("TH05 Pause",nullptr,ImGuiWindowFlags_NoDecoration|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoNav);
- const char* labels[]={locale::Text(m_bContinueScr?u8"继续":u8"继续游戏"),locale::Text(u8"重新开始"),locale::Text(u8"返回房间")};
- for(int i=0;i<3;i++){
-  if(i==m_pauseSelection)ImGui::PushStyleColor(ImGuiCol_Button,ImVec4(.4f,.2f,.6f,1));
-  if(ImGui::Button(labels[i],ImVec2(215,35))){
+ const int center=coop::MenuLeft+coop::MenuWidth/2;
+ const unsigned char pause[]={0xf0,0xf1,0};
+ const unsigned char cont[]={0xac,0xb8,0xb7,0xbd,0xb2,0xb7,0xbe,0xae,0x8,0};
+ CTh5ExtFont::DrawExtString(m_bContinueScr?cont:pause,100,center-(m_bContinueScr?72:16),coop::MenuTop-24,1,1,0);
 #ifdef __EMSCRIPTEN__
-   EM_ASM({Module.eaglerCoopAction?.($0);},i);
+ const wchar_t* labels[]={L"\u7ee7\u7eed\u6e38\u620f",L"\u91cd\u65b0\u5f00\u59cb",L"\u8fd4\u56de\u623f\u95f4"};
+#else
+ const char* labels[]={"Resume","Restart","Return to Room"};
 #endif
-  }
-  if(i==m_pauseSelection)ImGui::PopStyleColor();
+ for(int i=0;i<coop::MenuRows;i++){
+  const int y=coop::MenuTop+i*coop::MenuRowStep+(coop::MenuRowHeight-16)/2;
+  const float blue=i==m_pauseSelection?1.f:0.f;
+#ifdef __EMSCRIPTEN__
+  auto*& label=m_pStageRes->m_pCoopMenuLabels[i];
+  if(!label)label=web::WideText(labels[i]);
+  const int width=label?label->m_width:0;
+  if(label)label->DrawColorScaled(float(center-width/2),float(y),1,1,blue);
+#else
+  const int width=int(strlen(labels[i]))*8;
+  text(labels[i],center-width/2,y,1,1,blue);
+#endif
+  if(i==m_pauseSelection)CCommonFunctionGraphic::DrawRectangle(float(center-width/2),float(y+17),float(center+width/2-1),float(y+17),1,1,1);
  }
- ImGui::End();
 }
 }

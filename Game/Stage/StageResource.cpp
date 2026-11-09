@@ -36,6 +36,7 @@ CStageResource::~CStageResource(void)
 {
 #ifdef __EMSCRIPTEN__
  if(m_spriteAtlas)glDeleteTextures(1,&m_spriteAtlas);
+ SAFE_ARRAY_DESTROY(m_pCoopMenuLabels,3);
 #endif
 	SAFE_DESTROY(m_pCoopGhost);
 	SAFE_DELETE(m_pStageStd);
@@ -111,8 +112,8 @@ void CStageResource::Initialize()
 										//also make sure this call is before initialization of any stage
 										//component as they may require stage data that is loaded by this function
 
-	strcpy(m_stage4BossPart2BGMNames[0],"— Ø‚è‚Ì­—@` Judas Kiss");
-	strcpy(m_stage4BossPart2BGMNames[1],"^g‚Ì­—@` Crimson Dead!!");
+	strcpy(m_stage4BossPart2BGMNames[0],"ï¿½ï¿½ï¿½Ø‚ï¿½Ìï¿½ï¿½ï¿½ï¿½@ï¿½` Judas Kiss");
+	strcpy(m_stage4BossPart2BGMNames[1],"ï¿½^ï¿½gï¿½Ìï¿½ï¿½ï¿½ï¿½@ï¿½` Crimson Dead!!");
 
 	InitTranslation();					//load translation data to overwrite the data loaded
 
