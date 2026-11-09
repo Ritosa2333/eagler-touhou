@@ -116,7 +116,7 @@
   .mp-quick-chat-log .chat-sender {color:#fff;text-shadow:0 1px 3px #000,0 0 2px #000}
   .mp-quick-chat-log .chat-role {background:#202126d9;color:#fff;text-shadow:none}
   .mp-quick-chat-log .chat-body {color:#fff;text-shadow:0 1px 3px #000,0 0 2px #000}
-  .mp-quick-chat-log .room-chat-entry[data-speaker="player"] .chat-body {color:#ffc04d;-webkit-text-stroke:.45px #fff;paint-order:stroke fill;text-shadow:0 1px 3px #000,0 0 2px #000}
+  .mp-quick-chat-log .room-chat-entry[data-speaker="player"] .chat-body {color:#efc08a;-webkit-text-stroke:.25px #fff8;paint-order:stroke fill;text-shadow:0 1px 3px #000,0 0 2px #000}
   .chat-report-trigger:is(:hover, :focus-visible) {
     background: var(--kit-accent);
   }
