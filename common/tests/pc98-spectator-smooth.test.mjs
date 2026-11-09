@@ -1,8 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createLocalSpectator} from '../browser/pc98-local-spectator.mjs';
+import {createLocalSpectator,spectatorNextDelay} from '../browser/pc98-local-spectator.mjs';
 
-for(const game of ['02','03','04'])test(`TH${game} normal playback presents each replay step even after scheduling delays`,async()=>{
+for(const game of ['01','02','03','04'])test(`TH${game} normal playback presents each replay step even after scheduling delays`,async()=>{
   const header={game,tickMs:5},rows=Array.from({length:60},()=>({})),batches=[];
   let frame=0,presentations=0,stopped=false;
   const channel={ready:true,close(){},postMessage(message){
@@ -48,4 +48,12 @@ test('pause waits for an in-flight replica batch before reporting a settled posi
     const deadline=Date.now()+1000;while(viewer.seeking&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,5));
     assert.equal(viewer.seeking,false);const settled=viewer.frame;await new Promise(resolve=>setTimeout(resolve,40));assert.equal(viewer.frame,settled);
   }finally{release();viewer.stop();}
+});
+
+
+test('spectator subtracts execution time from the next frame wait',()=>{
+  assert.equal(spectatorNextDelay(0,20,14,true),6);
+  assert.equal(spectatorNextDelay(0,20,21,true),0);
+  assert.equal(spectatorNextDelay(1,20,2,true),0);
+  assert.equal(spectatorNextDelay(0,20,21,false),8);
 });

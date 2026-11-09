@@ -19,7 +19,7 @@ export function createManagedSpectator(game,emit,{createAudio=createPc98Spectato
       Object.assign(canvas.style,{position:'fixed',inset:'0',width:'100%',height:'100%',objectFit:'contain',imageRendering:'pixelated',background:'#000',zIndex:'2'});
       document.body.append(canvas);const context=canvas.getContext('2d',{alpha:false});
       audio=createAudio(game,music,error=>emit({event:'error',message:error.message}));
-      viewer=createLocalSpectator({game,options,createReplica,validateHeader,validateRow,validatePointIndex,readLocalPoint,stable,smoothPresentation:['02','03','04'].includes(game),
+      viewer=createLocalSpectator({game,options,createReplica,validateHeader,validateRow,validatePointIndex,readLocalPoint,stable,smoothPresentation:['01','02','03','04'].includes(game),
         channelFactory:()=>{const channel=createPc98SpectatorChannel(options,error=>{viewer?.stop();emit({event:'error',message:error.message});});transport={peers:new Map(),get relay(){return channel.relay;}};globalThis['__th'+game+'PeerTransport']=transport;return channel;},
         onHeader:header=>{void audio.start(header.settings);},
         onFrame:bitmap=>context.drawImage(bitmap,0,0),onEvent:event=>audio.event(event),onError:error=>emit({event:'error',message:error.message})});

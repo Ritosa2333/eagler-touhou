@@ -1,4 +1,7 @@
 import {createPc98MatchIndex} from './pc98-match-index.mjs';
+export function spectatorNextDelay(budget,tick,workMs,hasInput){
+  return hasInput?Math.min(8,Math.max(0,(1-budget)*tick-workMs)):8;
+}
 // A viewer owns its replica and only receives the host's confirmed prefix.
 export function createLocalSpectator({game,options,createReplica,validateHeader,validateRow,validatePointIndex,readLocalPoint,stable,smoothPresentation=false,channelFactory=name=>new BroadcastChannel(name),onHeader=()=>{},onFrame=()=>{},onEvent=()=>{},onError=()=>{}}){
   const url=new URL(options.netplayUrl),room=url.searchParams.get('room'),run=url.searchParams.get('run');
@@ -14,10 +17,10 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
   function pull(){if(!closed)channel.postMessage({type:'pull',viewer,first:rows.length});}
   async function pump(){
     if(closed||busy||!replica)return;busy=true;
-    const owner=replica;let workPending=false;
+    const owner=replica;let nextDelay=8;
     try{
       const now=performance.now(),tick=header.tickMs;budget=Math.min(8,budget+(now-last)/tick);last=now;
-      const lag=rows.length-owner.frame,normalDelay=Math.round((smoothPresentation?1200:600)/tick);
+      const lag=rows.length-owner.frame,normalDelay=Math.round((smoothPresentation&&game!=='01'?1200:600)/tick);
       catching=target!==null||following&&!delayed&&lag>normalDelay+30;
       if(catching&&following){
         if(!catchSince){catchSince=now;catchStartLag=lag;}
@@ -34,10 +37,15 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
         else{await owner.advance(rows[owner.frame]);count++;}
       }
       if(!catching)budget=Math.max(0,budget-count);
-      workPending=count>0&&budget>=1;
       if(owner===replica&&target!==null&&owner.frame>=target){target=null;paused=!following;}
       if(count&&owner===replica&&(!catching||performance.now()-lastPresent>=150)){await owner.present();lastPresent=performance.now();}
-    }catch(error){if(!closed&&owner===replica)fail(error);}finally{busy=false;if(!closed)timer=setTimeout(pump,catching||smoothPresentation&&workPending?0:8);}
+      // Include simulation, worker messaging and presentation in the tick budget.
+      // Sleeping another fixed 8 ms after that work caps even fast viewers well
+      // below the game's rate; retain one presentation per simulated frame.
+      if(smoothPresentation&&!catching&&!paused){
+        nextDelay=spectatorNextDelay(budget,tick,performance.now()-last,owner.frame<edge);
+      }
+    }catch(error){if(!closed&&owner===replica)fail(error);}finally{busy=false;if(!closed)timer=setTimeout(pump,catching?0:nextDelay);}
   }
   async function boot(){
     if(booting||replica||closed)return;booting=true;

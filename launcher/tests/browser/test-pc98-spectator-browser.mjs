@@ -232,7 +232,13 @@ try{
     await page.evaluate(()=>rpc(1,'keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:true}));
   assert(await frames()[2].evaluate(game=>{const peer=globalThis['__'+game+'PeerTransport'];return peer?.relay?.readyState===WebSocket.OPEN&&peer.peers instanceof Map;},game),'launcher can observe the live spectator relay');
   await frames()[2].waitForFunction(()=>{const c=[...document.querySelectorAll('canvas')].find(n=>n.style.position==='fixed');if(!c)return false;const context=c.getContext('2d'),pixels=context.getImageData(0,0,c.width,c.height).data;for(let i=0;i<pixels.length;i+=4)if(pixels[i]||pixels[i+1]||pixels[i+2])return true;return false;},{timeout:90000});
-  if(process.env.PC98_SPECTATOR_PERF==='1'){await measure('spectator active');console.log('QA spectator',JSON.stringify(await page.evaluate(()=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback)));}
+  if(process.env.PC98_SPECTATOR_PERF==='1'){
+    await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&s.received-s.position<120;},{timeout:120000});
+    await frames()[2].evaluate(()=>{const c=[...document.querySelectorAll('canvas')].find(n=>n.style.position==='fixed'),ctx=c.getContext('2d'),draw=ctx.drawImage.bind(ctx);globalThis.__spectatorDraws=0;ctx.drawImage=(...args)=>{globalThis.__spectatorDraws++;return draw(...args);};});
+    const start=await frames()[2].evaluate(()=>globalThis.__spectatorDraws),position=await page.evaluate(()=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback?.position),at=performance.now();
+    await measure('spectator active');const elapsed=(performance.now()-at)/1000,draws=await frames()[2].evaluate(()=>globalThis.__spectatorDraws),state=await page.evaluate(()=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback);
+    console.log('QA spectator rate',JSON.stringify({drawFps:(draws-start)/elapsed,simulationFps:(state.position-position)/elapsed,elapsed,state}));
+  }
   assert(await frames()[2].evaluate(()=>{const c=[...document.querySelectorAll('canvas')].find(n=>n.style.position==='fixed'),r=c.getBoundingClientRect();return document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)===c;}),'spectator canvas is visible above the room');
   if(game==='th01'){
     const read=()=>frames()[2].evaluate(()=>{const c=[...document.querySelectorAll('canvas')].find(n=>n.style.position==='fixed'),p=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let hash=2166136261;for(let i=0;i<p.length;i+=4)hash=Math.imul(hash^p[i]^p[i+1]<<8^p[i+2]<<16,16777619);return hash>>>0;});
