@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "7271fa77b14f3a2f04219136d06ee26119ee9ea7",
+      "base": "0a25d695676a42b5f6523c7fd6fe5264d6c022f6",
       "history": [
         {
           "kind": "manual",
@@ -413,6 +413,20 @@
             "ports/th05-mp/web/audio.mjs"
           ],
           "note": "两种模式均启用音乐室后台播放和系统媒体控制，多人版保留联机音频队列。"
+        },
+        {
+          "kind": "manual",
+          "base": "7271fa77b14f3a2f04219136d06ee26119ee9ea7",
+          "source": "0a25d695676a42b5f6523c7fd6fe5264d6c022f6",
+          "targetHead": "3e5af0c4a5ebae303977dec1f957fb0553d446ef",
+          "paths": [
+            "ports/th05-mp/Game/MusicRoom/MusicRoom.cpp",
+            "ports/th05-mp/portable/Audio.hpp",
+            "ports/th05-mp/portable/Platform.cpp",
+            "ports/th05-mp/portable/Platform.hpp",
+            "ports/th05-mp/web/audio.mjs"
+          ],
+          "note": "合并 #213 的原作弹幕、移动、Rank 和菜单校准与音乐室后台播放。两种模式保留各自的输入和会话逻辑。"
         }
       ]
     },
