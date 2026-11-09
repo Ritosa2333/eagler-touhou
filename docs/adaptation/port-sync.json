@@ -1272,7 +1272,7 @@
     "th17": {
       "normal": "ports/th17",
       "multiplayer": "ports/th17-mp",
-      "base": "97e7dcb809b7834f6b1c3e8b89e09538a5092626",
+      "base": "55f808d311cdfbb2458e15824e26214772223467",
       "history": [
         {
           "kind": "manual",
@@ -1419,6 +1419,28 @@
             "ports/th17-mp/portable/sdl/Renderer.cpp"
           ],
           "note": "顶点着色器保留 fogEnabled。四面与六面 54 个战斗画面采样和优化前一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "97e7dcb809b7834f6b1c3e8b89e09538a5092626",
+          "source": "55f808d311cdfbb2458e15824e26214772223467",
+          "targetHead": "79b79caca715f334bbc0ed5dfefadf39624fc81e",
+          "paths": [
+            "ports/th17-mp/ADAPTATION.md",
+            "ports/th17-mp/web/cpp/game/TextLayout.cpp",
+            "ports/th17-mp/web/cpp/game/TextRaster.cpp",
+            "ports/th17-mp/web/cpp/sdl/Application.cpp",
+            "ports/th17-mp/web/cpp/sdl/ApplicationGame.cpp",
+            "ports/th17-mp/web/cpp/sdl/ApplicationLoading.cpp",
+            "ports/th17-mp/web/cpp/sdl/ApplicationState.hpp",
+            "ports/th17-mp/web/cpp/sdl/FontDevice.hpp",
+            "ports/th17-mp/web/cpp/sdl/FontLocalization.cpp",
+            "ports/th17-mp/web/cpp/sdl/SceneDisplay.cpp",
+            "ports/th17-mp/web/cpp/sdl/SceneDisplay.hpp",
+            "ports/th17-mp/web/cpp/sdl/TrophyNotice.cpp",
+            "ports/th17-mp/web/cpp/sdl/TrophyNotice.hpp"
+          ],
+          "note": "成就解锁弹窗、字体和提示音属于 TH17 单机版。多人版保留原有成就呈现与适配文档。"
         }
       ]
     }
