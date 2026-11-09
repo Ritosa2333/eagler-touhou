@@ -69,11 +69,6 @@ async function load(config){
  try{context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});}
  catch{context=new AudioContext();}
  await context.resume().catch(()=>{});
- const selected=gameVersion(config.language),meta=await (await fetch(new URL('../'+selected.coopMeta,import.meta.url))).json();
- fat=new Fat12(await assetBytes(selected.coopDisk,{hash:meta.sha256,size:meta.size,gzip:true}));
- [se,pmd]=await Promise.all([OriginalSfx.create('th04',fat),PmdPlayer.prepare(context,new URL('../',import.meta.url))]);
- if(stopped){se.dispose();throw Error('TH04 Worker 已停止');}
- void prepareMusic();
  worker=new Worker(new URL('./runtime-worker.js',import.meta.url),{type:'module'});
  worker.onerror=e=>fatal(e.message||'TH04 Worker 失败');
  worker.onmessageerror=()=>fatal('TH04 Worker 消息读取失败');
@@ -87,9 +82,9 @@ async function load(config){
   }
   if(data.type==='music'){music(data.event);return;}
   if(data.type==='se'){
-   if(!seError)try{se.confirm(data.event);}catch(e){seError='浏览器音效错误：'+e.message;se.stop();}return;
+   if(!seError&&se)try{se.confirm(data.event);}catch(e){seError='浏览器音效错误：'+e.message;se.stop();}return;
   }
-  if(data.type==='se-stop'){se.stop();return;}
+  if(data.type==='se-stop'){se?.stop();return;}
   if(data.type==='frame'){if(Number.isFinite(data.producedAt)&&data.producedAt<=frameCutoff){releaseFrame(data);return;}if(data.staged){if(preparedFrame)releaseFrame(preparedFrame);preparedFrame=data;}else queueForDisplay(data);return;}
   if(data.type==='error'){
    if(data.fault){cache.fault=data.fault;lastFaultCpu=data.fault.cpu;}
@@ -98,7 +93,15 @@ async function load(config){
   if(data.type!=='result')return;
   Object.assign(cache,data.status);executionMs=data.executionMs;const pending=requests.get(data.id);requests.delete(data.id);pending?.resolve(data.result);
  };
- const result=await request('load',[],{settings:config,configure:configuration});
+ const workerLoading=request('load',[],{settings:config,configure:configuration});
+ const audioLoading=(async()=>{
+ const selected=gameVersion(config.language),meta=await (await fetch(new URL('../'+selected.coopMeta,import.meta.url))).json();
+ fat=new Fat12(await assetBytes(selected.coopDisk,{hash:meta.sha256,size:meta.size,gzip:true}));
+ [se,pmd]=await Promise.all([OriginalSfx.create('th04',fat),PmdPlayer.prepare(context,new URL('../',import.meta.url))]);
+ if(stopped){se.dispose();throw Error('TH04 Worker 已停止');}
+ void prepareMusic();
+ })();
+ let result;try{[result]=await Promise.all([workerLoading,audioLoading]);}catch(error){sync.stop();throw error;}
  await request('setRawPresentation',[raw]);await request('setPointPreferences',[points]);return result;
 }
 const sync={

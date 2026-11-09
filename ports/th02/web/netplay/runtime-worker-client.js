@@ -58,17 +58,12 @@ async function load(config){
  try{context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});}
  catch{context=new AudioContext();}
  await context.resume().catch(()=>{});
- const patch=await (await fetch(new URL('../local-patch.json',import.meta.url))).json(),entry=patch.disks[config.language];
- fat=new Fat12(await assetBytes(entry.file,{hash:entry.sha256,size:entry.size,gzip:true}));
- [sfx,pmd]=await Promise.all([OriginalSfx.create('th02',fat),PmdPlayer.prepare(context,new URL('../',import.meta.url))]);
- if(stopped){sfx.dispose();throw Error('TH02 worker 已停止');}
- void prepareMusic();
  worker=new Worker(new URL('./runtime-worker.js',import.meta.url),{type:'module'});
  worker.onerror=e=>fatal(e.message||'TH02 worker 失败');
  worker.onmessage=({data})=>{
   if(data.type==='notify'){window.parent.postMessage(data.message,location.origin);return;}
   if(data.type==='music'){music(data.event);return;}
-  if(data.type==='sfx'){if(!document.hidden)sfx.play(data.id);return;}
+  if(data.type==='sfx'){if(!document.hidden)sfx?.play(data.id);return;}
   if(data.type==='frame'){if(stopped||Number.isFinite(data.producedAt)&&data.producedAt<=frameCutoff){releaseFrame(data);return;}if(data.staged){if(preparedFrame)releaseFrame(preparedFrame);preparedFrame=data;}else queueForDisplay(data);return;}
   if(data.type==='confirmed-exit'){if(!stopped)window.th02Sync?.onConfirmedExit?.();return;}
   if(data.type==='error'){const pending=requests.get(data.id);requests.delete(data.id);pending?.reject(Error(data.message));fatal(data.message);return;}
@@ -76,7 +71,15 @@ async function load(config){
   cache={...cache,...data.status};const pending=requests.get(data.id);requests.delete(data.id);
   if(pending){const elapsed=performance.now()-pending.started;if(pending.type==='load'){rpcMetrics.loadRoundTripMs+=elapsed;rpcMetrics.loadExecutionMs+=data.executionMs;}else{rpcMetrics.roundTripMs+=elapsed;rpcMetrics.workerExecutionMs+=data.executionMs;rpcMetrics.commands++;}}pending?.resolve(data.result);
  };
- const result=await request('load',[],{settings:config,configure:configuration});check=result.initial;
+ const workerLoading=request('load',[],{settings:config,configure:configuration});
+ const audioLoading=(async()=>{
+ const patch=await (await fetch(new URL('../local-patch.json',import.meta.url))).json(),entry=patch.disks[config.language];
+ fat=new Fat12(await assetBytes(entry.file,{hash:entry.sha256,size:entry.size,gzip:true}));
+ [sfx,pmd]=await Promise.all([OriginalSfx.create('th02',fat),PmdPlayer.prepare(context,new URL('../',import.meta.url))]);
+ if(stopped){sfx.dispose();throw Error('TH02 Worker 已停止');}
+ void prepareMusic();
+ })();
+ let result;try{[result]=await Promise.all([workerLoading,audioLoading]);}catch(error){sync.stop();throw error;}check=result.initial;
  await request('setRawPresentation',[raw]);await request('setPointPreferences',[points]);return result;
 }
 const sync={
