@@ -70,6 +70,7 @@
   "chat_failed": "Could not complete the request. Please try again.",
   "profile_contentRejected": "Your profile did not pass review. Please edit it and try again.",
   "profile_reviewUnavailable": "Profile review is unavailable. Please try again later.",
+  "profile_reviewPending": "Saved. Changes will appear after review.",
   "document_toc": "On this page",
   "document_nextPage": "Next page",
   "document_previousPage": "Previous page",

@@ -70,6 +70,7 @@
   "chat_failed": "操作失败，请稍后重试。",
   "profile_contentRejected": "资料未通过审核，请修改后重试。",
   "profile_reviewUnavailable": "资料审核暂不可用，请稍后重试。",
+  "profile_reviewPending": "已保存，审核通过后自动展示。",
   "document_toc": "本页目录",
   "document_nextPage": "下一页",
   "document_previousPage": "上一页",
