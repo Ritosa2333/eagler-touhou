@@ -25,6 +25,7 @@ beforeAll(async()=>{
     export {AccountMenu} from './app/components/launcher/AccountMenu.tsx';
     export {LocaleProvider} from './app/i18n.tsx';
     export {MemoryRouter} from 'react-router';
+    export {Tooltip} from 'radix-ui';
   `},bundle:true,platform:'node',format:'esm',jsx:'automatic',packages:'external',
     define:{'import.meta.env':JSON.stringify({VITE_ACCOUNTS_ENABLED:'true'})},
     outfile:resolve(work,'owners.mjs'),plugins:[{name:'account-request-fixture',setup(context){
@@ -66,9 +67,9 @@ function SessionProbe({name}){
 async function mount(){
   const container=env.document.createElement('div');env.document.body.append(container);root=createRoot(container);
   await React.act(async()=>root.render(React.createElement(owners.MemoryRouter,{initialEntries:['/']},
-    React.createElement(owners.LocaleProvider,{locale:'en'},React.createElement(React.Fragment,null,
+    React.createElement(owners.LocaleProvider,{locale:'en'},React.createElement(owners.Tooltip.Provider,null,React.createElement(React.Fragment,null,
       React.createElement(SessionProbe,{name:'masthead'}),React.createElement(SessionProbe,{name:'page'}),
-      React.createElement(owners.AccountMenu,{interactive:true}))))));
+      React.createElement(owners.AccountMenu,{interactive:true})))))));
   return container;
 }
 async function waitFor(predicate,message){
