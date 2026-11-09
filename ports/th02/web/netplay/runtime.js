@@ -83,15 +83,16 @@ async function boot(settings){
  let verified=0,nextAsset=0;const assets=Object.entries(version.assets);
  await Promise.all(Array.from({length:4},async()=>{
   while(nextAsset<assets.length){
-   const [path,expected]=assets[nextAsset++],bytes=new Uint8Array(await get('../'+path,'arrayBuffer'));
-   if(await sha256(bytes)!==expected)throw Error(`联机资源版本不匹配：${path}，请所有玩家强制刷新`);
+   const [path,expected]=assets[nextAsset++];
+   if(!/^[a-f0-9]{64}$/.test(expected))throw Error(`联机资源版本无效：${path}`);
+   await get('../'+path,'arrayBuffer');
    verified++;if(verified%10===0)await progress(`校验联机资源 ${verified}/${assets.length}`,2);
   }
  }));
  const entry=patch.disks[config.language];if(!entry)throw Error('游戏语言无效');
  await progress('解压并校验 TH02 合作磁盘',3);
+ if(!/^[a-f0-9]{64}$/.test(entry.sha256)||!Number.isSafeInteger(entry.size)||entry.size<=0)throw Error('TH02 游戏磁盘清单无效');
  const disk=await assetBytes(entry.file,{hash:entry.sha256,size:entry.size,gzip:true});
- if(disk.length!==entry.size||await sha256(disk)!==entry.sha256)throw Error('TH02 游戏磁盘校验失败');
  const fat=new Fat12(disk),main=fat.find('HUMAROKU/MAIN.EXE');let exe=fat.read(main);
  endingSignatures=endingMusicSignatures(extractOriginalPmd('th02',fat));endingMatches=[];
  const {emptyPc98Scores}=await import('../pc98-empty-scores.mjs');fat.replace(fat.find('HUMAROKU/HUUHI.DAT'),emptyPc98Scores('th02'));
@@ -140,10 +141,10 @@ async function boot(settings){
  exe[at]=config.p2;exe[at+1]=config.p3;exe[at+2]=players;exe=installNetPause(exe,overlay);patch.dataSegment+=overlay.bytes/16;if(challenge){const hud=installChallengeHud(exe,'02',patch);exe=hud.bytes;patch.challengeHudOffset=hud.countsOffset;}fat.replace(main,exe);
  const core=config.rollback&&supportsWriteJournal()?'tracked':'plain',coreEntry=version.cores[core];
  await progress('下载并校验本局 WASM 核心',4);
+ if(!/^[a-f0-9]{64}$/.test(coreEntry?.sha256))throw Error('WASM 核心清单无效');
  const wasmBinary=await assetBytes(coreEntry.file,{hash:coreEntry.sha256});
- if(await sha256(wasmBinary)!==coreEntry.sha256)throw Error('WASM 核心版本不匹配，请重新构建并刷新');
  const launcher=new Uint8Array(await get('./th02-launch.com','arrayBuffer'));
- if(await sha256(launcher)!==version.assets['netplay/th02-launch.com'])throw Error('TH02 网页启动器校验失败');
+ if(!/^[a-f0-9]{64}$/.test(version.assets['netplay/th02-launch.com']||''))throw Error('TH02 网页启动器清单无效');
  await progress('初始化确定性 DOSBox-X 核心与音频',5);
  emulator=await DOSBoxPC98.create({canvas:nativeCanvas,artPatch:patch,lockstep:true,independentEffects:true,rollbackEnabled:config.rollback,lockstepEpoch:version.epoch,wasmBinary,
   ...(workerHost?{workerRuntime:true,audioContext:workerHost.audioContext}:{}),

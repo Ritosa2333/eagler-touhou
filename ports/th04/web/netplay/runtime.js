@@ -137,9 +137,15 @@ async function boot(config){
     get('../'+selected.coopMeta),get('../'+selected.coopPatch),get('./runtime.json')]);
   patch=manifest;
   await bootProgress('解压游戏磁盘',2);
-  const disk=await assetBytes(selected.coopDisk,{hash:meta.sha256,size:meta.size,gzip:true});
-  await bootProgress('校验游戏磁盘（局域网 HTTP 下可能需要更长时间）',3);
-  if(disk.length!==meta.size||await sha256(disk)!==meta.sha256)throw Error('游戏磁盘校验失败，请刷新页面');
+  if(!/^[a-f0-9]{64}$/.test(meta.sha256)||!Number.isSafeInteger(meta.size)||meta.size<=0)throw Error('游戏磁盘清单无效');
+  const tracked=config.rollback!==false&&WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,5,5,2,0,1,0,1]));
+  const core=tracked?'wdosbox-x-rollback-tracked.wasm':'wdosbox-x-rollback.wasm';
+  const wasmHash=tracked?version.write_journal?.wasm_sha256:version.rollback_wasm?.sha256;
+  if(!/^[a-f0-9]{64}$/.test(wasmHash))throw Error('WASM 核心清单无效');
+  const [disk,wasmBinary]=await Promise.all([
+    assetBytes(selected.coopDisk,{hash:meta.sha256,size:meta.size,gzip:true}),
+    assetBytes(`vendor/dosbox-x/${core}`,{hash:wasmHash})]);
+  await bootProgress('游戏磁盘已校验',3);
   const overlay=(await get('./native-pause-overlay.json')).languages[selected.language],fat=new Fat12(disk),main=fat.find('GENSO/MAIN.EXE');
   const {emptyPc98Scores}=await import('../pc98-empty-scores.mjs');fat.replace(fat.find('GENSO/GENSOU.SCR'),emptyPc98Scores('th04'));
   if(!overlay||overlay.codeSegment!==patch.code_segment||overlay.dataSegment!==patch.data_segment||await sha256(fat.read(main))!==overlay.sourceMainSha256)throw Error('TH04 联机暂停补丁版本不匹配');
@@ -159,10 +165,6 @@ async function boot(config){
   for(const edit of sound.edits)edit.targets.forEach((at,i)=>{disk[at]=edit.values[i];});
   let patchedMain=installNetPause(fat.read(main),overlay);if(challenge){const hud=installChallengeHud(patchedMain,'04',patch);patchedMain=hud.bytes;patch.challengeHudOffset=hud.countsOffset;patch.data_segment+=hud.addedParagraphs;}fat.replace(main,patchedMain);
   await bootProgress('下载、编译并初始化 DOSBox-X WASM 与音频设备',5);
-  const tracked=config.rollback!==false&&WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,5,5,2,0,1,0,1]));
-  const core=tracked?'wdosbox-x-rollback-tracked.wasm':'wdosbox-x-rollback.wasm';
-  const wasmHash=tracked?version.write_journal?.wasm_sha256:version.rollback_wasm?.sha256;
-  const wasmBinary=await assetBytes(`vendor/dosbox-x/${core}`,{hash:wasmHash});
   emulator=await NP21.create({canvas:nativeCanvas,artPatch:patch,wasmBinary,lockstep:true,externalEffects:true,
     ...(workerHost?{workerRuntime:true,audioContext:workerHost.audioContext}:{}),rollbackEnabled:config.rollback!==false,lockstepEpoch:version.epoch,
     ExMemory:7,Latencys:40,SampleHz:44100,SNDboard:4,
