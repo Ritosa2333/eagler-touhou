@@ -10,6 +10,8 @@ export function managedInput({game, epoch, active, options}) {
   const input = {
     key(message) { if(message.down)localKeys.add(message.code);else localKeys.delete(message.code);keyboard.event(message, message.down, 'hosted');changed(); },
     clear() { secondary.clear(); localKeys.clear();keyboard.clear(); touch = {}; pulse = keyPulse = menuPulse = menuUntil = 0; point = null; motion = {x:0,y:0,active:false}; changed(); },
+    clearKeyboard() { localKeys.clear(); keyboard.clear(); held.clear(); keyPulse = 0; changed(); },
+    cancelTouch() { secondary.clear(); touch = {}; pulse = menuPulse = menuUntil = 0; point = null; motion = {x:0,y:0,active:false}; changed(); },
     localSecond() {let bits=0;for(const code of localKeys)bits|=local2[code]??0;return bits;},
     touch(message) {
       if (typeof message.fireEnabled !== 'boolean' || typeof message.focusEnabled !== 'boolean' || !['bombSerial','escapeSerial'].every(k => Number.isSafeInteger(message[k]) && message[k] >= 0) || !['joystickX','joystickY'].every(k => Number.isFinite(message[k]) && Math.abs(message[k]) <= 32767)) throw Error('触控输入无效');
@@ -54,7 +56,8 @@ export function managedInput({game, epoch, active, options}) {
     const down=type==='keydown',handled=keyboard.mapped()?keyboard.mapNative(event,down):keyboard.event(event,down);
     changed();if (handled) { event.preventDefault(); event.stopImmediatePropagation(); }
   }, true);
-  addEventListener('blur', () => input.clear());
+  // The host touch surface is outside the iframe; focus changes release keys only.
+  addEventListener('blur', () => input.clearKeyboard());
   addEventListener('pagehide', () => input.clear());
   document.addEventListener('visibilitychange', () => { if(document.hidden)input.clear(); });
   return input;

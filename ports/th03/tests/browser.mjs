@@ -6,6 +6,8 @@ import {createRequire} from 'node:module';
 import {spawn} from 'node:child_process';
 import {findChromiumExecutable} from '../../../launcher/lib/chromium-executable.mjs';
 const require=createRequire(new URL('../../../launcher/package.json',import.meta.url)),puppeteer=require('puppeteer-core');
+const {build}=require('esbuild');
+const touchDriver=(await build({entryPoints:[resolve(import.meta.dirname,'../../../launcher/app/services/player-direct-touch.ts')],bundle:true,format:'esm',platform:'browser',write:false})).outputFiles[0].contents;
 const root=resolve(import.meta.dirname,'../../..'),portRoot=resolve(import.meta.dirname,'..'),runtime=resolve(portRoot,'build-eagler'),out=resolve(portRoot,'.cache/browser');
 await mkdir(out,{recursive:true});
 const data=await readFile(resolve(portRoot,'content/th03.data'));
@@ -19,6 +21,7 @@ window.rpc=(seat,command,fields={})=>new Promise((yes,no)=>{const f=document.get
 const server=createServer(async(req,res)=>{try{
   const path=new URL(req.url,'http://localhost').pathname;
   if(path==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}
+  if(path==='/touch-driver.js'){res.setHeader('Content-Type','text/javascript');res.end(touchDriver);return;}
   if(path==='/data'){res.end(data);return;}
   if(/^\/music\/\d{2}\.ogg$/.test(path)){res.setHeader('Content-Type','audio/ogg');res.end(await readFile(resolve(portRoot,'content',path.slice(1))));return;}
   if(!path.startsWith('/runtime/')){res.writeHead(404).end();return;}
@@ -44,11 +47,28 @@ try{
     await page.evaluate(({count,mp})=>{for(let i=0;i<count;i++)addRuntime(i,mp);},{count,mp});
     await wait(async()=>{const result=await page.evaluate(count=>({ready:events.filter(e=>e.event==='ready').length===count,errors:events.filter(e=>e.event==='error')}),count);if(result.errors.length)throw Error(JSON.stringify(result.errors));return result.ready;},'Runtime ready');
   };
+  const verifyTouch=async()=>{
+    const frame=page.frames().find(f=>f.url().includes('runtimeEpoch=1'));
+    await frame.evaluate(()=>{const input=globalThis.__eaglerPC98Input,original=input.pointer.bind(input);globalThis.testMoves=[];globalThis.restoreTestPointer=()=>{input.pointer=original;};input.pointer=message=>{original(message);if(message.type==='move')globalThis.testMoves.push(input.motion());};});
+    await page.evaluate(async()=>{
+      const frame=document.getElementById('p0'),r=frame.getBoundingClientRect(),surface=document.createElement('div');surface.id='testTouchSurface';
+      Object.assign(surface.style,{position:'absolute',left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px',zIndex:'999',touchAction:'none'});document.body.append(surface);
+      const {bindPlayerDirectTouch}=await import('/touch-driver.js');
+      bindPlayerDirectTouch({surface,frame,ios:false,allowed:()=>true,zoom:{isActive:()=>false},context:()=>({target:frame.contentWindow,targetOrigin:location.origin,protocol:'eagler-touhou/1',game:'th03',epoch:1,launched:true,ready:true,spectator:false})});frame.contentWindow.focus();
+    });
+    const cdp=await page.createCDPSession();await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:256,y:240,id:1}]});
+    await page.evaluate(()=>{const button=document.createElement('button');document.body.append(button);button.focus();button.remove();});
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:320,y:240,id:1}]});
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();
+    const moves=await frame.evaluate(()=>{globalThis.restoreTestPointer();return globalThis.testMoves;});assert(moves.some(m=>m.active&&m.x>0),'launcher drag survives iframe focus loss');
+    await page.evaluate(()=>document.getElementById('testTouchSurface').remove());console.log('PASS launcher touch and focus');
+  };
   if(!process.argv.includes('--net-only')){
     await load(1,false);console.log('SOLO ready');
     await page.evaluate(()=>rpc(0,'configure',{music:'ogg',options:{touchEnabled:true,touchSensitivity:150,alwaysHitbox:true}}));
     await page.evaluate(()=>rpc(0,'launch'));console.log('SOLO launch acknowledged');
     await wait(()=>page.evaluate(()=>events.some(e=>e.event==='first-frame')),'solo presentation');
+    if(process.env.PC98_TEST_TOUCH==='1')await verifyTouch();
     await page.screenshot({path:resolve(out,'solo.png')});
     const frame=page.frames().find(f=>f.url().includes('runtimeEpoch='));
     const health=await frame.evaluate(async()=>{const m=await import('./managed-solo.mjs');return m.managedAPI.health();});
@@ -84,6 +104,7 @@ try{
     const frames=()=>page.frames().filter(f=>/th03.html\?runtimeEpoch=/.test(f.url()));
     const health=()=>Promise.all(frames().map(f=>f.evaluate(async()=>{const {managedAPI}=await import('./managed-room.mjs');return managedAPI.health();})));
     await wait(async()=>{const errors=await page.evaluate(()=>events.filter(e=>e.event==='error'));if(errors.length)throw Error(JSON.stringify(errors));const states=await health();return states.length===count&&states.every(s=>s.running&&s.confirmed>=120&&s.frames>0);},'MP confirmed gameplay',120000);
+    if(process.env.PC98_TEST_TOUCH==='1')await verifyTouch();
     const threadStates=await health();
     assert.equal(threadStates[0].executionThread,'worker','managed TH03 should use the simulation worker');
     assert.equal(threadStates[1].executionThread,process.env.PC98_TEST_MIXED==='1'?'page':'worker','fallback thread selection');

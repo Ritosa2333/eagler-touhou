@@ -24,6 +24,7 @@ export function managedInput({game, epoch, active, options}) {
     setPractice(value) { practice = value; },
     releaseGameplay() { secondary.clear(); held.clear(); pulse = keyPulse = menuPulse = 0; point = null; motion = {x:0,y:0,active:false}; changed(); },
     key(message) { keyboard.event(message, message.down, 'hosted'); },
+    clearKeyboard() { keyboard.clear(); held.clear(); keyPulse = 0; changed(); },
     clear() { secondary.clear(); keyboard.clear(); practice?.clear(); touch = {}; pulse = keyPulse = menuPulse = 0; point = null; motion = {x:0,y:0,active:false}; changed(); },
     cancelTouch() { secondary.clear(); touch = {}; pulse = menuPulse = 0; point = null; motion = {x:0,y:0,active:false}; changed(); },
     touch(message) {
@@ -75,7 +76,9 @@ export function managedInput({game, epoch, active, options}) {
       event.preventDefault(); event.stopImmediatePropagation();
     }
   }, true);
-  addEventListener('blur', () => input.clear());
+  // The Launcher touch surface lives outside this iframe. Moving focus to it
+  // must release keys without destroying an in-progress hosted touch.
+  addEventListener('blur', () => input.clearKeyboard());
   addEventListener('pagehide', () => input.clear());
   document.addEventListener('visibilitychange', () => {if (document.hidden) input.clear();});
   return input;

@@ -6,6 +6,8 @@ import {createRequire} from 'node:module';
 import {spawn} from 'node:child_process';
 import {findChromiumExecutable} from '../../../launcher/lib/chromium-executable.mjs';
 const require=createRequire(new URL('../../../launcher/package.json',import.meta.url)),puppeteer=require('puppeteer-core');
+const {build}=require('esbuild');
+const touchDriver=(await build({entryPoints:[resolve(import.meta.dirname,'../../../launcher/app/services/player-direct-touch.ts')],bundle:true,format:'esm',platform:'browser',write:false})).outputFiles[0].contents;
 const root=resolve(import.meta.dirname,'../../..'),portRoot=resolve(import.meta.dirname,'..'),runtime=resolve(portRoot,'build-eagler'),out=resolve(portRoot,'.cache/browser');
 await mkdir(out,{recursive:true});
 const data=await readFile(resolve(portRoot,'content/th02.data'));
@@ -19,6 +21,7 @@ window.rpc=(seat,command,fields={})=>new Promise((yes,no)=>{const f=document.get
 const server=createServer(async(req,res)=>{try{
   const path=new URL(req.url,'http://localhost').pathname;
   if(path==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}
+  if(path==='/touch-driver.js'){res.setHeader('Content-Type','text/javascript');res.end(touchDriver);return;}
   if(path==='/data'){res.end(data);return;}
   if(!path.startsWith('/runtime/')){res.writeHead(404).end();return;}
   const file=resolve(runtime,decodeURIComponent(path.slice(9)));if(!file.startsWith(runtime+sep))throw Error('path');
@@ -43,6 +46,24 @@ try{
     await page.evaluate(({count,mp})=>{for(let i=0;i<count;i++)addRuntime(i,mp);},{count,mp});
     await wait(async()=>{const result=await page.evaluate(count=>({ready:events.filter(e=>e.event==='ready').length===count,errors:events.filter(e=>e.event==='error')}),count);if(result.errors.length)throw Error(JSON.stringify(result.errors));return result.ready;},'Runtime ready');
   };
+  const installTouch=async()=>page.evaluate(async()=>{
+    document.getElementById('testTouchSurface')?.remove();
+    const frame=document.getElementById('p0'),r=frame.getBoundingClientRect();
+    const surface=document.createElement('div');surface.id='testTouchSurface';
+    Object.assign(surface.style,{position:'absolute',left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px',zIndex:'999',touchAction:'none'});document.body.append(surface);
+    const {bindPlayerDirectTouch}=await import('/touch-driver.js');
+    bindPlayerDirectTouch({surface,frame,ios:false,allowed:()=>true,zoom:{isActive:()=>false},context:()=>({target:frame.contentWindow,targetOrigin:location.origin,protocol:'eagler-touhou/1',game:'th02',epoch:1,launched:true,ready:true,spectator:false})});
+    frame.contentWindow.focus();
+  });
+  const dragTouch=async(startX,endX)=>{
+    await installTouch();const cdp=await page.createCDPSession();
+    const send=(type,x)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x,y:240,id:1}]});
+    await send('touchStart',startX);
+    // A real change of focus across the iframe must not cancel hosted touch.
+    await page.evaluate(()=>{const b=document.createElement('button');document.body.append(b);b.focus();b.remove();});
+    for(let i=1;i<=8;i++){await send('touchMove',startX+(endX-startX)*i/8);await new Promise(r=>setTimeout(r,100));}
+    await send('touchEnd',endX);await cdp.detach();
+  };
   if(!process.argv.includes('--net-only')){
     await load(1,false);console.log('SOLO ready');
     await page.evaluate(()=>rpc(0,'configure',{music:'ogg',options:{touchEnabled:true,touchSensitivity:150,alwaysHitbox:true}}));
@@ -58,9 +79,7 @@ try{
       }
       await wait(async()=>{const s=await state();return s?.mode===1&&s.ticks>60&&!s.hit&&s.x>0;},'touch gameplay',90000);
       await new Promise(r=>setTimeout(r,2000));const before=await state();
-      await page.evaluate(()=>rpc(0,'direct-touch',{type:'down',id:8,x:.4,y:.5}));
-      for(let i=1;i<=8;i++){await page.evaluate(i=>rpc(0,'direct-touch',{type:'move',id:8,x:.4+i*.015,y:.5}),i);await new Promise(r=>setTimeout(r,100));}
-      await page.evaluate(()=>rpc(0,'direct-touch',{type:'up',id:8,x:.52,y:.5}));await new Promise(r=>setTimeout(r,400));
+      await dragTouch(256,333);await new Promise(r=>setTimeout(r,400));
       const after=await state();console.log('SOLO touch position',before,after);assert.notEqual(after?.x,before?.x,'touch drag moves the native solo player');
       await frame.evaluate(()=>{const bridge=globalThis.__eaglerDirectInputBridge;for(const [type,x] of [['down',.6],['move',.45],['up',.45]])assertBridge(bridge.submit({protocol:'eagler-touhou/1',game:'th02',epoch:1,command:'direct-touch',type,id:9,x,y:.5}));function assertBridge(ok){if(!ok)throw Error('touch bridge refused input');}});
       await new Promise(r=>setTimeout(r,400));const quick=await state();assert.ok(quick.x<after.x,'a swipe released before the next sample still moves the player');
@@ -110,8 +129,8 @@ try{
     if(process.env.PC98_TEST_TOUCH==='1'){
       const position=async()=>{const s=await frames()[0].evaluate(async()=>(await import('./netplay/room.js')).managedAPI.sampleGame());return s?.players?.[0]?.x;};
       await wait(async()=>Number.isFinite(await position()),'native player state',30000);const before=await position();
-      await frames()[0].evaluate(()=>{const b=globalThis.__eaglerDirectInputBridge;for(const [type,x] of [['down',.6],['move',.45],['up',.45]])if(!b.submit({protocol:'eagler-touhou/1',game:'th02',epoch:1,command:'direct-touch',type,id:9,x,y:.5}))throw Error('touch bridge refused input');});
-      await wait(async()=>(await position())<before,'short touch moves multiplayer player',15000);
+      await dragTouch(384,288);
+      await wait(async()=>(await position())<before,'launcher touch drag moves multiplayer player',15000);
       console.log('PASS TH02 multiplayer short swipe');
     }
     const states=await health();await page.screenshot({path:resolve(out,'multiplayer.png')});

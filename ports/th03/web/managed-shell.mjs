@@ -20,7 +20,8 @@ globalThis.__eaglerPC98Input=input;globalThis.__eaglerPC98Emit=emit;globalThis._
 function live(message){
   switch(message.command){
     case 'keyboard':if(typeof message.code!=='string'||typeof message.down!=='boolean')throw Error('键盘输入无效');input.key(message);break;
-    case 'keyboard-clear':case 'touch-cancel':input.clear();break;
+    case 'keyboard-clear':input.clearKeyboard();break;
+    case 'touch-cancel':input.cancelTouch();break;
     case 'touch-controls':input.touch(message);break;
     case 'direct-touch':input.pointer(message);break;
     default:return false;

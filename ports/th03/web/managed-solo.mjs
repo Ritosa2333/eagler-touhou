@@ -169,7 +169,7 @@ async function start({language,music,options}){
     onDiskChange:()=>{},onExit:()=>void naturalExit().catch(report)};
   emulator=await WorkerNP21.create(config,{game:'03',patch:assist.bridge.meta,music:soloMusic?.reader.patch,onError:report});
   emulator.onScoreSaved=scoreSaved;
-  globalThis.__eaglerPC98Input.menuPointer=pausePointer;globalThis.__eaglerPC98Input.onChange=()=>processInput(performance.now());canvas.addEventListener('pointerup',canvasPausePointer);window.addEventListener('blur',releaseInput);document.addEventListener('visibilitychange',onVisibilityChange);
+  globalThis.__eaglerPC98Input.menuPointer=pausePointer;globalThis.__eaglerPC98Input.onChange=()=>processInput(performance.now());canvas.addEventListener('pointerup',canvasPausePointer);document.addEventListener('visibilitychange',onVisibilityChange);
   recorder?.attach(emulator);
   emulator.onMusic=(ax,hash)=>{if((ax>>>8)===0x0c)localSfx?.command(ax);else soloMusic?.player.command(ax,hash);};
   await emulator.addDiskImage(`3-${lang}.hdi`,disk);await emulator.setHdd(0,`3-${lang}.hdi`);
@@ -216,7 +216,7 @@ export const managedAPI={
     }
     throw Error('录像操作无效');
   },
-  stop(){cancelAnimationFrame(loop);delete globalThis.__eaglerPC98Input.onChange;releaseInput();previous=0;lastReconcile=0;lastVersus=false;pauseState=null;pauseTransition=guestPaused=pauseRequestHandled=false;delete globalThis.__eaglerPC98Input.menuPointer;canvas.removeEventListener('pointerup',canvasPausePointer);window.removeEventListener('blur',releaseInput);document.removeEventListener('visibilitychange',onVisibilityChange);fire.reset();recorder?.dispose();localSfx?.dispose();soloMusic?.dispose();emulator?.dispose();emulator=undefined;
+  stop(){cancelAnimationFrame(loop);delete globalThis.__eaglerPC98Input.onChange;releaseInput();previous=0;lastReconcile=0;lastVersus=false;pauseState=null;pauseTransition=guestPaused=pauseRequestHandled=false;delete globalThis.__eaglerPC98Input.menuPointer;canvas.removeEventListener('pointerup',canvasPausePointer);document.removeEventListener('visibilitychange',onVisibilityChange);fire.reset();recorder?.dispose();localSfx?.dispose();soloMusic?.dispose();emulator?.dispose();emulator=undefined;
     battleReplay?.stop();battleReplay=undefined;viewerSettings=playbackPath=playbackDescription=undefined;lastReplayStatus=0;lastReplayKey='';recorder=localSfx=soloMusic=undefined;const next=canvas.cloneNode(false);canvas.replaceWith(next);canvas=next;},
 };
 function publishBattleStatus(state,force=false){

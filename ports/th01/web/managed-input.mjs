@@ -9,6 +9,8 @@ export function managedInput({game, epoch, active, options}) {
   const input = {
     key(message) { keyboard.event(message, message.down, 'hosted'); },
     clear() { secondary.clear(); keyboard.clear(); touch = {}; pulse = menuPulse = localPulse = netKeyPulse = localKeyPulse = keyPulse = 0; point = null; motion = {x:0,y:0,active:false}; },
+    clearKeyboard() { keyboard.clear(); held.clear(); netKeyPulse = localKeyPulse = keyPulse = 0; },
+    cancelTouch() { secondary.clear(); touch = {}; pulse = menuPulse = localPulse = 0; point = null; motion = {x:0,y:0,active:false}; },
     touch(message) {
       if (typeof message.fireEnabled !== 'boolean' || typeof message.focusEnabled !== 'boolean' || !['bombSerial','escapeSerial'].every(k => Number.isSafeInteger(message[k]) && message[k] >= 0) || !['joystickX','joystickY'].every(k => Number.isFinite(message[k]) && Math.abs(message[k]) <= 32767)) throw Error('触控输入无效');
       if (message.focusEnabled && !touch.focusEnabled) {netKeyPulse |= 8; localKeyPulse |= 8; keyPulse |= 16;}
@@ -70,6 +72,7 @@ export function managedInput({game, epoch, active, options}) {
     motion() { const value = {...motion, unlimited:options().touchMovementMode === 'touch-unlimited'}; motion.x = motion.y = 0; motion.begin = false; return value; },
   };
   for (const type of ['keydown','keyup']) addEventListener(type, event => { if (event.__eaglerPC98Synthetic) return; if (keyboard.mapNative(event, type === 'keydown')) { event.preventDefault(); event.stopImmediatePropagation(); } }, true);
-  addEventListener('blur', () => input.clear());
+  // The host touch surface is outside the iframe; focus changes release keys only.
+  addEventListener('blur', () => input.clearKeyboard());
   return input;
 }
