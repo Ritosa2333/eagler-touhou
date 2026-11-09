@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Slider } from '../../ui/slider';
-import { ChatComposer, ChatMessageContent, useChatReportConfirmation } from './ChatControls';
+import { ChatAvatar, ChatComposer, ChatMessageContent, useChatReportConfirmation } from './ChatControls';
 import type { MultiplayerQuickChatModel } from '../../../src/launcher/multiplayer-quick-chat-model.mts';
 import type { DecisionStore } from '../../models/decisions';
 import { useLocale } from '../../i18n';
@@ -52,7 +52,8 @@ function RoomChatLog({model, mobile, decisions}: {
     return () => observer.disconnect();
   }, [entries, muted, mobile]);
   const messages = entries.filter(entry => !muted.includes(entry.clientId)).map(entry => (
-    <p key={entry.id} className="room-chat-entry">
+    <p key={entry.id} className="room-chat-entry" data-speaker={entry.spectator?'spectator':'player'}>
+      <ChatAvatar entry={entry} model={model}/>
       <ChatMessageContent entry={entry} model={model} label={locale === 'en' ? entry.phrase.en : entry.phrase.zh}
         confirmReport={mobile && decisions ? confirmReport : undefined}/>
     </p>

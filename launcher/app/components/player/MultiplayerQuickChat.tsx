@@ -12,7 +12,7 @@ import type { MultiplayerQuickChatModel, QuickChatEntry } from '../../../src/lau
 import { useLocale } from '../../i18n';
 import type { DecisionStore } from '../../models/decisions';
 import { animateUiFrames, type SurfaceAnimation } from '../../ui/surface-motion';
-import { ChatComposer, ChatMessageContent, QuickChatPhrases, useChatReportConfirmation } from '../room/ChatControls';
+import { ChatAvatar, ChatComposer, ChatMessageContent, QuickChatPhrases, useChatReportConfirmation } from '../room/ChatControls';
 import { shallowEqual, useStoreSelector } from '../../shared/react-store';
 
 const chatPresentation = (state: ReturnType<MultiplayerQuickChatModel['getSnapshot']>) => ({
@@ -247,7 +247,8 @@ function ChatRow({
   const { t } = useLocale();
   const sender = `${entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`}${entry.name ? `(${entry.name})` : ''}`;
   return (
-    <p ref={ref} hidden={!visible} title={`${sender}: ${label}`} className="room-chat-entry">
+    <p ref={ref} hidden={!visible} title={`${sender}: ${label}`} className="room-chat-entry" data-speaker={entry.spectator?'spectator':'player'}>
+      <ChatAvatar entry={entry} model={model}/>
       <ChatMessageContent entry={entry} model={model} label={label} confirmReport={confirmReport} />
     </p>
   );

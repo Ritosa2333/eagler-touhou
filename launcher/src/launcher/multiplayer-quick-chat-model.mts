@@ -1,10 +1,12 @@
 import { QUICK_CHAT_PHRASES, quickChatPhrase, type QuickChatPhrase } from '../contracts/multiplayer-quick-chat.mjs';
+import type {RoomAccountProfile} from './room-account-profile.mjs';
 
 export const QUICK_CHAT_SLOT_COUNT = 9;
 
 export interface QuickChatSeat {
   clientId: string;
   name: string;
+  profile?: RoomAccountProfile;
 }
 export interface QuickChatContext {
   visible: boolean;
@@ -126,7 +128,7 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
       previous.seats.length !== next.seats.length ||
       next.seats.some(
         (seat, index) =>
-          seat?.clientId !== previous.seats[index]?.clientId || seat?.name !== previous.seats[index]?.name,
+          seat?.clientId !== previous.seats[index]?.clientId || seat?.name !== previous.seats[index]?.name || JSON.stringify(seat?.profile) !== JSON.stringify(previous.seats[index]?.profile),
       );
     if (!changed) return;
     if ((reset || !next.connected) && sendTimer !== undefined) {

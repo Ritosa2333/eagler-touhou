@@ -16,6 +16,7 @@ import type { DecisionStore } from '../../models/decisions';
 import { useLocale } from '../../i18n';
 import { shallowEqual, useStoreSelector } from '../../shared/react-store';
 import './chat-controls.css';
+import {ParticipantAvatar} from './ParticipantAvatar';
 
 export function ChatComposer({ model, gameplay = false, openOnClick = false }: {
   model: MultiplayerQuickChatModel;
@@ -145,8 +146,15 @@ export function useChatReportConfirmation(model: MultiplayerQuickChatModel, deci
 
 export function ChatMessageText({ entry, label }: {entry: QuickChatEntry; label: string}) {
   const {t} = useLocale();
-  const sender = `${entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`}${entry.name ? `(${entry.name})` : ''}`;
-  return <><strong>{sender}</strong>{`: ${label}`}</>;
+  const badge = entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`;
+  return <><span className="chat-sender"><strong>{entry.name || badge}</strong><span className="chat-role">{badge}</span></span><span className="chat-body">{label}</span></>;
+}
+
+export function ChatAvatar({entry, model}: {entry:QuickChatEntry; model:MultiplayerQuickChatModel}) {
+  const context = useStoreSelector(model, state=>state.context);
+  const member = [...(context?.seats ?? []), ...(context?.spectators ?? [])].find(item=>item?.clientId===entry.clientId);
+  const initial = Array.from(entry.name.trim())[0] || '?';
+  return <ParticipantAvatar className="chat-avatar" name={entry.name} profile={member?.profile}>{initial}</ParticipantAvatar>;
 }
 
 function localClientId(context: QuickChatContext | null) {

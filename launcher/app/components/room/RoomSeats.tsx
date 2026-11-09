@@ -207,6 +207,7 @@ function RoomSeat({
             '?',
           )}
         </ParticipantAvatar>
+        {occupied && index > 0 && <span className="room-seat-number-badge">P{index + 1}</span>}
         {index === 0 && (
           <span className="mp-seat-owner-mark" role="img" aria-label={t('multiplayer.host')}>
             <svg viewBox="0 0 24 24" aria-hidden="true">

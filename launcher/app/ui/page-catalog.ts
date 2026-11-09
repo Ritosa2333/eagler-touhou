@@ -267,7 +267,7 @@ export const catalogPages: readonly CatalogPage[] = [
       region(
         'chat',
         '聊天与快捷发言',
-        ['messages', '消息记录', '空消息、本人消息、观战发言、长昵称'],
+        ['messages', '消息记录', '圆形头像、昵称在消息上方；玩家座位与观众标记、无头像回退、长昵称；游戏中玩家消息为橘红色描边，观众消息为白色'],
         ['phrases', '快捷发言菜单与箭头', '展开、Esc、外部关闭、断线禁用'],
       ),
       region(
