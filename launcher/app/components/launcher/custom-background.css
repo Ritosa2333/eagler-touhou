@@ -1,0 +1,16 @@
+@layer components {
+  html[data-custom-background] body:not(.mp-room-active):has(.book-masthead),
+  html[data-custom-background][data-ui-home] body:not(.mp-room-active) {
+    background-image:linear-gradient(color-mix(in srgb,var(--kit-background) var(--custom-background-shade),transparent),color-mix(in srgb,var(--kit-background) var(--custom-background-shade),transparent)),var(--custom-background-image);
+    background-size:cover;
+    background-position:center;
+    background-attachment:fixed;
+  }
+  html[data-custom-background][data-ui-home] body:not(.mp-room-active) .sheet {background:transparent}
+  html[data-custom-background] body:not(.mp-room-active) :is(.book-masthead,.book-card,.lobby-list-surface,.profile-hero,.profile-panel) {background-color:color-mix(in srgb,var(--book-surface) var(--custom-panel-opacity),transparent)}
+  .custom-background-dialog {width:min(440px,calc(100vw - 32px))}
+  .custom-background-dialog p {color:var(--kit-muted-foreground);font-size:13px}
+  .custom-background-actions {display:flex;gap:8px;flex-wrap:wrap}
+  .custom-background-dialog label {display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:16px;font-size:13px}
+  .custom-background-dialog input[type=range] {grid-column:1/-1;width:100%;accent-color:var(--kit-foreground)}
+}
