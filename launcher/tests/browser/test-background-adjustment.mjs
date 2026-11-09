@@ -10,6 +10,13 @@ try {
   await page.goto(new URL('lobby.html', process.argv[2] || 'http://127.0.0.1:5173/'), {waitUntil:'networkidle2'});
   await page.click('.book-theme-toggle');
   await page.waitForSelector('.custom-background-dialog');
+  const desktop = await page.evaluate(() => {
+    const panel = document.querySelector('.custom-background-dialog').getBoundingClientRect();
+    const overlay = getComputedStyle(document.querySelector('.custom-background-overlay'));
+    return {right: innerWidth - panel.right, left: panel.left, overlay: overlay.backgroundColor};
+  });
+  assert.equal(desktop.overlay, 'rgba(0, 0, 0, 0)', 'preview is not dimmed by the dialog');
+  assert.ok(desktop.right <= 40 && desktop.left > desktop.right, 'desktop settings panel sits at the right edge');
   await page.click('.custom-theme-switch [data-theme-value="light"]');
   await page.waitForFunction(() => document.documentElement.dataset.bookTheme === 'light');
   await page.click('.custom-theme-switch [data-theme-value="dark"]');
@@ -33,6 +40,16 @@ try {
   await page.waitForFunction(() => document.documentElement.hasAttribute('data-custom-background'));
   assert.equal(await page.evaluate(() => document.documentElement.style.getPropertyValue('--custom-category-opacity')), '90%');
   assert.equal(await page.evaluate(() => document.documentElement.dataset.bookTheme), 'dark');
+  await page.setViewport({width:390, height:844});
+  await page.click('.book-theme-toggle');
+  await page.waitForSelector('.custom-background-dialog');
+  const mobile = await page.$eval('.custom-background-dialog', panel => {
+    const box = panel.getBoundingClientRect();
+    return {left:box.left, right:box.right, width:innerWidth};
+  });
+  assert.ok(mobile.left >= 0 && mobile.right <= mobile.width, 'mobile settings fit within the viewport');
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.custom-background-dialog', {hidden:true});
   console.log('PASS: continuous background adjustment and persistence');
 } finally {
   await browser.close();

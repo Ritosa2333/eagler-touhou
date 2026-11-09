@@ -15,6 +15,10 @@
   html[data-custom-background] body:not(.mp-room-active) .book-directory .book-lobby-item[data-selected="true"] {background-color:color-mix(in srgb,var(--kit-accent) var(--custom-category-opacity),transparent)}
   html[data-custom-background] body:not(.mp-room-active) .book-view-covers .book-card .book-identity {background:transparent}
   .custom-background-dialog {width:min(440px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow-y:auto}
+  .ui-kit-dialog-overlay.custom-background-overlay {background:transparent;animation:none}
+  @media (min-width: 781px) {
+    .ui-kit-dialog.custom-background-dialog {left:auto;right:24px;transform:translateY(-50%)}
+  }
   .custom-background-dialog p {color:var(--kit-muted-foreground);font-size:13px}
   .custom-background-dialog h3 {font-size:14px;font-weight:600;margin:20px 0 0}
   .custom-background-dialog .custom-theme-base {display:grid;gap:8px;margin-top:16px;font-size:13px;font-weight:600}
