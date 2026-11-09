@@ -151,6 +151,21 @@ test('unavailable history IDs are ignored, search is case insensitive, numeric s
   assert.deepEqual(api.readBookPreference('favorites', [], api.stringArray), []);
 });
 
+test('number sorting places numeric works including decimals before lettered fan works', () => {
+  const [base] = api.createLibraryProducts(['th06'], p => p, id => '?game=' + id);
+  const products = [
+    {...base, id:'thalpha', number:'alpha', title:'A'},
+    {...base, id:'th10', number:'10', title:'B'},
+    {...base, id:'th075', number:'7.5', title:'C'},
+    {...base, id:'th06', number:'6', title:'D'},
+    {...base, id:'thbeta', number:'beta', title:'E'},
+  ];
+  assert.deepEqual(api.filterBookProducts(products, 'all', [], '', 'number').map(p=>p.id), ['th06','th075','th10','thalpha','thbeta']);
+  assert.deepEqual(api.filterBookProducts(products, 'all', [], '', 'reverse').map(p=>p.id), ['th10','th075','th06','thalpha','thbeta']);
+  assert.deepEqual(api.filterBookProducts(products, 'doujin', [], '', 'number').map(p=>p.id), ['thalpha','thbeta']);
+  assert.deepEqual(api.filterBookProducts(products, 'all', [], '', 'name').map(p=>p.id), ['thalpha','th10','th075','th06','thbeta']);
+});
+
 test('appearance defaults to dark, persists light, and restores it on remount', async () => {
   const container = env.document.createElement('div'); env.document.body.append(container);
   const render = () => React.createElement(api.LocaleProvider, {locale:'en'}, React.createElement(api.BookThemeToggle));

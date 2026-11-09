@@ -33,13 +33,20 @@ export function recordBookLaunch(productId: string) {
   writeBookPreference('recent', [productId, ...recent.filter(id => id !== productId)].slice(0, 20));
 }
 
-/** The doujin slot intentionally has no catalogue mapping yet. It is reserved
- * for independently published titles when real support becomes available. */
 export type BookCategory = 'all' | 'favorites' | 'pc98' | 'windows' | 'spin-off' | 'doujin';
 export function bookCategory(product: LibraryProduct): BookCategory {
+  if (/^th[a-z]/i.test(product.id)) return 'doujin';
   const number = Number(product.number);
   if (!Number.isInteger(number)) return 'spin-off';
   return isPc98Product(product) ? 'pc98' : 'windows';
+}
+
+function compareBookNumbers(a: LibraryProduct, b: LibraryProduct, reverse: boolean) {
+  const numeric = (product: LibraryProduct) => /^th\d+(?:\.\d+)?$/i.test(product.id) && /^\d+(?:\.\d+)?$/.test(product.number);
+  const aNumeric = numeric(a), bNumeric = numeric(b);
+  if (aNumeric !== bNumeric) return aNumeric ? -1 : 1;
+  if (!aNumeric) return a.id.localeCompare(b.id, 'en');
+  return (Number(a.number) - Number(b.number)) * (reverse ? -1 : 1);
 }
 
 export function filterBookProducts(products: readonly LibraryProduct[], category: BookCategory, favorites: readonly string[], query: string, sort: string) {
@@ -47,5 +54,5 @@ export function filterBookProducts(products: readonly LibraryProduct[], category
   return products.filter(product => !product.hidden && !product.multiplayer)
     .filter(product => category === 'all' || (category === 'favorites' ? favorites.includes(product.id) : bookCategory(product) === category))
     .filter(product => `${product.id} th${product.number} ${product.title} ${product.subtitle}`.toLocaleLowerCase().includes(term))
-    .sort((a, b) => sort === 'name' ? a.title.localeCompare(b.title, 'zh-CN') : (Number(a.number) - Number(b.number)) * (sort === 'reverse' ? -1 : 1));
+    .sort((a, b) => sort === 'name' ? a.title.localeCompare(b.title, 'zh-CN') : compareBookNumbers(a, b, sort === 'reverse'));
 }
