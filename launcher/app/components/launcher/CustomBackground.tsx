@@ -4,8 +4,10 @@ import {Button} from '../../ui/button';
 import {useLocale} from '../../i18n';
 import './custom-background.css';
 
-const event = 'eagler-background-change';
+const settingsEvent = 'eagler-background-settings-change';
+const imageEvent = 'eagler-background-image-change';
 const settingsKey = 'eagler.background.settings';
+const imageRevisionKey = 'eagler.background.image-revision';
 const defaults = {shade: 45, panel: 88, navigation: 88, category: 88, card: 88, fit: 'cover' as 'cover'|'contain'};
 const text = {
   'zh-CN': {title:'背景图片', choose:'选择图片', change:'更换图片', remove:'移除图片', shade:'背景遮罩', panel:'内容面板不透明度', navigation:'顶部栏不透明度', category:'分类条不透明度', card:'作品卡片不透明度', fit:'图片铺放', cover:'铺满', contain:'完整显示', note:'图片只保存在此浏览器中。', error:'无法保存图片，请选择不超过 10 MB 的有效图片。'},
@@ -26,19 +28,52 @@ async function imageStore(mode: IDBTransactionMode, value?: Blob | null): Promis
   const database=await db();
   try {return await new Promise((resolve,reject)=>{const tx=database.transaction('images',mode), store=tx.objectStore('images'); let result:Blob|undefined; const request=mode==='readonly'?store.get('background'):value ? store.put(value,'background') : store.delete('background'); request.onsuccess=()=>{if(mode==='readonly') result=request.result as Blob|undefined;}; tx.oncomplete=()=>resolve(result); tx.onerror=()=>reject(tx.error); tx.onabort=()=>reject(tx.error);});} finally {database.close();}
 }
-function announce() {window.dispatchEvent(new Event(event));}
+function announceImage() {
+  window.dispatchEvent(new Event(imageEvent));
+  try {localStorage.setItem(imageRevisionKey, crypto.randomUUID());} catch {}
+}
 
 export function BackgroundController() {
-  useEffect(()=>{let url='',serial=0; const update=async()=>{const current=++serial, values=settings(), root=document.documentElement; root.style.setProperty('--custom-background-shade',`${values.shade}%`); for(const key of ['panel','navigation','category','card'] as const) root.style.setProperty(`--custom-${key}-opacity`,`${values[key]}%`); root.style.setProperty('--custom-background-fit',values.fit); try {const blob=await imageStore('readonly'); if(current!==serial)return; const next=blob?URL.createObjectURL(blob):''; root.style.setProperty('--custom-background-image', next?`url("${next}")`:'none'); root.toggleAttribute('data-custom-background',!!next); if(url)URL.revokeObjectURL(url); url=next;} catch {root.removeAttribute('data-custom-background');}}; void update(); window.addEventListener(event,update); window.addEventListener('storage',update); return ()=>{serial++;window.removeEventListener(event,update);window.removeEventListener('storage',update);if(url)URL.revokeObjectURL(url);};},[]);
+  useEffect(()=>{
+    let url='',serial=0;
+    const root=document.documentElement;
+    const updateSettings=()=>{
+      const values=settings();
+      root.style.setProperty('--custom-background-shade',`${values.shade}%`);
+      for(const key of ['panel','navigation','category','card'] as const) root.style.setProperty(`--custom-${key}-opacity`,`${values[key]}%`);
+      root.style.setProperty('--custom-background-fit',values.fit);
+    };
+    const updateImage=async()=>{
+      const current=++serial;
+      try {
+        const blob=await imageStore('readonly');
+        if(current!==serial)return;
+        const next=blob?URL.createObjectURL(blob):'';
+        root.style.setProperty('--custom-background-image',next?`url("${next}")`:'none');
+        root.toggleAttribute('data-custom-background',!!next);
+        if(url)URL.revokeObjectURL(url);
+        url=next;
+      } catch {if(current===serial)root.removeAttribute('data-custom-background');}
+    };
+    const storage=(change:StorageEvent)=>{
+      if(change.key===settingsKey||change.key===null)updateSettings();
+      if(change.key===imageRevisionKey||change.key===null)void updateImage();
+    };
+    updateSettings(); void updateImage();
+    window.addEventListener(settingsEvent,updateSettings);
+    window.addEventListener(imageEvent,updateImage);
+    window.addEventListener('storage',storage);
+    return ()=>{serial++;window.removeEventListener(settingsEvent,updateSettings);window.removeEventListener(imageEvent,updateImage);window.removeEventListener('storage',storage);if(url)URL.revokeObjectURL(url);};
+  },[]);
   return null;
 }
 export function BackgroundSettings({open,onOpenChange}:{open:boolean;onOpenChange(open:boolean):void}) {
   const {locale}=useLocale(), labels=text[locale] ?? text.en, input=useRef<HTMLInputElement>(null);
   const [values,setValues]=useState(defaults),[hasImage,setHasImage]=useState(false),[error,setError]=useState(false);
   useEffect(()=>{if(open){setValues(settings()); void imageStore('readonly').then(blob=>setHasImage(!!blob)).catch(()=>setError(true));}},[open]);
-  function setValue(key:keyof typeof defaults,value:number|'cover'|'contain'){const next={...values,[key]:value}; setValues(next); try{localStorage.setItem(settingsKey,JSON.stringify(next));announce();}catch{setError(true);}}
-  async function choose(file:File|undefined){if(!file)return; try{if(!file.type.startsWith('image/')||file.size>10*1024*1024)throw Error(); const bitmap=await createImageBitmap(file);bitmap.close();await imageStore('readwrite',file);setHasImage(true);setError(false);announce();}catch{setError(true);} finally {if(input.current)input.current.value='';}}
-  async function remove(){try{await imageStore('readwrite',null);setHasImage(false);setError(false);announce();}catch{setError(true);}}
+  function setValue(key:keyof typeof defaults,value:number|'cover'|'contain'){const next={...values,[key]:value}; setValues(next); try{localStorage.setItem(settingsKey,JSON.stringify(next));window.dispatchEvent(new Event(settingsEvent));}catch{setError(true);}}
+  async function choose(file:File|undefined){if(!file)return; try{if(!file.type.startsWith('image/')||file.size>10*1024*1024)throw Error(); const bitmap=await createImageBitmap(file);bitmap.close();await imageStore('readwrite',file);setHasImage(true);setError(false);announceImage();}catch{setError(true);} finally {if(input.current)input.current.value='';}}
+  async function remove(){try{await imageStore('readwrite',null);setHasImage(false);setError(false);announceImage();}catch{setError(true);}}
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="custom-background-dialog" aria-describedby={undefined}><DialogTitle>{labels.title}</DialogTitle><p>{labels.note}</p><div className="custom-background-actions"><input ref={input} type="file" accept="image/*" hidden onChange={e=>void choose(e.currentTarget.files?.[0])}/><Button type="button" onClick={()=>input.current?.click()}>{hasImage?labels.change:labels.choose}</Button>{hasImage&&<Button type="button" variant="secondary" onClick={()=>void remove()}>{labels.remove}</Button>}</div><label>{labels.fit}<select value={values.fit} onChange={e=>setValue('fit',e.currentTarget.value as 'cover'|'contain')}><option value="cover">{labels.cover}</option><option value="contain">{labels.contain}</option></select></label>{(['shade','navigation','category','card','panel'] as const).map(key=><label key={key}>{labels[key]}<output>{values[key]}%</output><input type="range" min="0" max="100" value={values[key]} onChange={e=>setValue(key,Number(e.currentTarget.value))}/></label>)}{error&&<p role="alert">{labels.error}</p>}</DialogContent></Dialog>;
 }
 export function backgroundLabel(locale:string){return (text[locale as keyof typeof text] ?? text.en).title;}
