@@ -1,8 +1,8 @@
-import {TICK_MS} from '../frame-queue.js';
+import {TICK_MS,MAX_ROLLBACK} from '../frame-queue.js';
 
-export const SYNC_PROTOCOL='th03-rollback/8';
+export const SYNC_PROTOCOL='th03-rollback/9';
 export const MAX_INPUT_DELAY=6,RTT_SAMPLES=3,ZERO_DELAY_RTT_MS=20;
-export const HYBRID_RESERVE=8,PREDICTION_JITTER_STEPS=2;
+export const HYBRID_RESERVE=8,PREDICTION_JITTER_STEPS=4;
 export function validInputReport(report){
   return report&&typeof report.rollbackEnabled==='boolean'
     &&Number.isSafeInteger(report.rttMs)&&report.rttMs>=0
@@ -14,7 +14,7 @@ export function chooseInputPolicy(local,remote){
   const transitSteps=rollbackEnabled&&rttMs>ZERO_DELAY_RTT_MS?Math.ceil(rttMs/2/TICK_MS):0;
   const predictionSteps=Math.min(HYBRID_RESERVE,transitSteps);
   const inputDelay=Math.min(MAX_INPUT_DELAY,transitSteps-predictionSteps);
-  const predictionLead=rollbackEnabled?predictionSteps+PREDICTION_JITTER_STEPS:0;
+  const predictionLead=rollbackEnabled?Math.min(MAX_ROLLBACK,predictionSteps+PREDICTION_JITTER_STEPS):0;
   return {schema:2,rollbackEnabled,rttMs,transitSteps,inputDelay,predictionSteps,predictionLead};
 }
 export function validInputPolicy(policy){

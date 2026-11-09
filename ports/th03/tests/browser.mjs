@@ -41,6 +41,17 @@ try{
   page.on('request',r=>requests.push(r.url()));page.on('requestfailed',r=>failures.push({url:r.url(),error:r.failure()?.errorText}));
   page.on('response',r=>{if(r.status()>=400)failures.push({url:r.url(),status:r.status()});});
   if(process.env.PC98_TEST_RELAY==='1')await page.evaluateOnNewDocument(()=>{delete window.RTCPeerConnection;});
+  if(process.env.PC98_TEST_PACKET_LOSS==='1')await page.evaluateOnNewDocument(()=>{
+    const send=RTCDataChannel.prototype.send;window.testLoss={enabled:false,sent:0,dropped:0};
+    RTCDataChannel.prototype.send=function(data){
+      if(window.testLoss.enabled&&this.label.endsWith('-fast')){
+        const n=++window.testLoss.sent;
+        // 20% scattered loss plus short bursts, in both directions.
+        if(n%5===0||n%70<5){window.testLoss.dropped++;return;}
+      }
+      return send.call(this,data);
+    };
+  });
   page.on('console',m=>{if(m.type()==='error')console.error('CONSOLE',m.text());});
   const load=async(count,mp)=>{
     await page.goto('http://127.0.0.1:'+server.address().port);
@@ -105,6 +116,25 @@ try{
     const health=()=>Promise.all(frames().map(f=>f.evaluate(async()=>{const {managedAPI}=await import('./managed-room.mjs');return managedAPI.health();})));
     await wait(async()=>{const errors=await page.evaluate(()=>events.filter(e=>e.event==='error'));if(errors.length)throw Error(JSON.stringify(errors));const states=await health();return states.length===count&&states.every(s=>s.running&&s.confirmed>=120&&s.frames>0);},'MP confirmed gameplay',120000);
     if(process.env.PC98_TEST_TOUCH==='1')await verifyTouch();
+    if(process.env.PC98_TEST_PACKET_LOSS==='1'){
+      for(let i=0;i<30;i++){
+        if(await frames()[0].evaluate(()=>window.th03SyncState?.phase===1))break;
+        await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyZ',down:true});});await new Promise(r=>setTimeout(r,160));
+        await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyZ',down:false});});await new Promise(r=>setTimeout(r,500));
+      }
+      await wait(async()=>(await frames()[0].evaluate(()=>window.th03SyncState?.phase))===1,'battle phase',60000);
+      for(const frame of frames())await frame.evaluate(()=>{window.testLoss.enabled=true;});
+      const start=await health();
+      for(let i=0;i<5;i++){
+        await page.evaluate(async i=>{for(let seat=0;seat<2;seat++){await rpc(seat,'keyboard-clear');await rpc(seat,'keyboard',{code:i%2?'ArrowLeft':'ArrowRight',down:true});}},i);
+        await new Promise(r=>setTimeout(r,1000));
+      }
+      await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard-clear');});
+      const end=await health();
+      const drops=await Promise.all(frames().map(f=>f.evaluate(()=>window.testLoss)));
+      for(let i=0;i<count;i++){assert(drops[i].dropped>0,'fast lane must actually drop packets');assert(end[i].running&&end[i].confirmed>start[i].confirmed+60,'session must keep confirming frames under loss');}
+      console.log('PACKET LOSS',JSON.stringify({drops,start,end}));
+    }
     const threadStates=await health();
     assert.equal(threadStates[0].executionThread,'worker','managed TH03 should use the simulation worker');
     assert.equal(threadStates[1].executionThread,process.env.PC98_TEST_MIXED==='1'?'page':'worker','fallback thread selection');

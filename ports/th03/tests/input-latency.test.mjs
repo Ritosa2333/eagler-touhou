@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {chooseInputPolicy,validInputPolicy} from '../web/netplay/input-policy.js';
 import {FrameQueue,neutral} from '../web/frame-queue.js';
+import {Lockstep} from '../web/lockstep.js';
 import {packTouch,unpackTouch} from '../web/touch-input.js';
 
 test('rollback prioritizes local input until the prediction budget is exhausted',()=>{
@@ -52,4 +53,21 @@ test('actual touch movement still corrects a stationary prediction',()=>{
   queue.capture(neutral());queue.receive(2,{...neutral(),touch:packTouch(0,{active:true})});queue.commit(queue.peek());
   queue.capture(neutral());queue.commit(queue.peek());
   queue.receive(3,{...neutral(),touch:packTouch(0,{active:true,x:16})});assert.equal(queue.dirty,3);
+});
+
+// A dropped remote input should be hidden by bounded prediction; its eventual
+// arrival still corrects history instead of being silently skipped.
+test('rollback survives a short missing input burst and repairs changed input',()=>{
+  const report={rollbackEnabled:true,rttMs:0,maxRttMs:0},policy=chooseInputPolicy(report,report);
+  assert.equal(policy.predictionLead,4);
+  const network={localSeat:0,setPacketHandler(){}};
+  const sync=new Lockstep({network,rollbackEnabled:true,predictionLead:policy.predictionLead});
+  try{
+    const q=sync.queue;q.arm(2);for(let i=0;i<2;i++)q.commit(q.peek());
+    for(let i=0;i<4;i++){q.capture(neutral());const pair=sync.nextInputs();assert.ok(pair);q.commit(pair);}
+    q.capture(neutral());assert.equal(sync.nextInputs(),null);assert.equal(q.waitReason,'prediction-lead');
+    q.receive(2,{...neutral(),actions:['right']});assert.equal(q.dirty,2);
+    for(let i=3;i<6;i++)q.receive(i,neutral());
+    assert.equal(q.confirmed,6);q.rewind(2);assert.deepEqual(q.peek()[1].actions,['right']);
+  }finally{sync.wakeChannel?.port1.close();sync.wakeChannel?.port2.close();}
 });

@@ -19,15 +19,15 @@ def valid_input_policy(value):
     if not 0 <= rtt <= 60000:
         return False
     transit = (rtt*3+99)//100 if enabled and rtt > 20 else 0
-    prediction = min(2, max(0, transit-1))
+    prediction = min(8, transit)
     return value == {'schema': 2, 'rollbackEnabled': enabled, 'rttMs': rtt, 'transitSteps': transit,
                      'inputDelay': min(6, transit-prediction), 'predictionSteps': prediction,
-                     'predictionLead': prediction+2 if enabled else 0}
+                     'predictionLead': min(12, prediction+4) if enabled else 0}
 
 def valid_message(message):
     if not isinstance(message, dict):
         return False
-    if message.get('sync') == 'th03-rollback/7':
+    if message.get('sync') == 'th03-rollback/9':
         kind = message.get('type')
         if kind == 'sync-ready':
             return isinstance(message.get('identity'), dict)
