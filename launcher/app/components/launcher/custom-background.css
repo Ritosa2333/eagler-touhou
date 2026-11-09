@@ -16,6 +16,10 @@
   html[data-custom-background] body:not(.mp-room-active) .book-view-covers .book-card .book-identity {background:transparent}
   .custom-background-dialog {width:min(440px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow-y:auto}
   .custom-background-dialog p {color:var(--kit-muted-foreground);font-size:13px}
+  .custom-background-dialog h3 {font-size:14px;font-weight:600;margin:20px 0 0}
+  .custom-background-dialog .custom-theme-base {display:flex;gap:16px;margin:16px 0 0;padding:0;border:0}
+  .custom-background-dialog .custom-theme-base legend {font-size:13px;font-weight:600}
+  .custom-background-dialog .custom-theme-base label {display:flex;align-items:center;gap:6px;margin-top:8px}
   .custom-background-actions {display:flex;gap:8px;flex-wrap:wrap}
   .custom-background-dialog label {display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:16px;font-size:13px}
   .custom-background-dialog input[type=range] {grid-column:1/-1;width:100%;accent-color:var(--kit-foreground)}

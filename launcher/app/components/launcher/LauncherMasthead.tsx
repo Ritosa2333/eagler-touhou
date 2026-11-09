@@ -13,7 +13,6 @@ import {
   PlaySquare,
   Code,
   FlaskConical,
-  Image as ImageIcon,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { uiPortalHost } from '../../ui/portal';
@@ -23,7 +22,6 @@ import { AppLink } from './AppLink';
 import { BookThemeToggle } from './BookThemeToggle';
 import { useLocation } from 'react-router';
 import { AccountMenu } from './AccountMenu';
-import {BackgroundSettings, backgroundLabel} from './CustomBackground';
 import { NavigationIcon } from './NavigationIcon';
 import { SiteBrand } from './SiteBrand';
 import { UI_LOCALES, UI_LOCALE_LABELS, withUiLanguage } from '../../../src/launcher/i18n.mts';
@@ -73,7 +71,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
     replayAfterClose = useRef(false),
     [languagesOpen, setLanguagesOpen] = useState(false);
   const [developerOpen,setDeveloperOpen]=useState(false);
-  const [backgroundOpen,setBackgroundOpen]=useState(false);
   const returnToDeveloper=useRef(false);
   const [testFeatures,setTestFeatures]=useState(false);
   useLayoutEffect(() => {if (interactive) setTestFeatures(testFeaturesEnabled(window));}, [interactive]);
@@ -301,7 +298,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                         <CheckIcon />
                       </DropdownMenu.ItemIndicator>
                     </DropdownMenu.CheckboxItem>
-                    <DropdownMenu.Item className="ui-menu-item" onSelect={() => setBackgroundOpen(true)}><ImageIcon aria-hidden="true"/>{backgroundLabel(locale)}</DropdownMenu.Item>
                     <DropdownMenu.Item
                       className="ui-menu-item masthead-language-trigger"
                       onSelect={(event) => {
@@ -402,7 +398,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
       </nav>
-      {interactive && <BackgroundSettings open={backgroundOpen} onOpenChange={setBackgroundOpen}/>}
     </header>
   );
 }

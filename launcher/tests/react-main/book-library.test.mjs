@@ -158,12 +158,13 @@ test('appearance defaults to dark, persists light, and restores it on remount', 
   await React.act(async () => root.render(render()));
   assert.equal(env.document.documentElement.dataset.bookTheme, 'dark');
   await click('.book-theme-toggle');
+  await click('input[name="base-theme"]:first-of-type');
   assert.equal(env.document.documentElement.dataset.bookTheme, 'light');
   await React.act(async () => root.unmount()); root = createRoot(container);
   await React.act(async () => root.render(render()));
   assert.equal(env.document.documentElement.dataset.bookTheme, 'light');
-  assert.equal(node('.book-theme-toggle').getAttribute('aria-pressed'), 'false');
   await click('.book-theme-toggle');
+  await click('.custom-theme-base label:last-child input');
   assert.equal(env.document.documentElement.dataset.bookTheme, 'dark');
 });
 

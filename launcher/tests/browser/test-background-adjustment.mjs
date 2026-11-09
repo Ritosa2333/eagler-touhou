@@ -6,9 +6,14 @@ const image = fileURLToPath(new URL('../../public/assets/favicon.png', import.me
 const browser = await puppeteer.launch({executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true});
 try {
   const page = await browser.newPage();
+  await page.emulateMediaFeatures([{name:'prefers-reduced-motion', value:'reduce'}]);
   await page.goto(new URL('lobby.html', process.argv[2] || 'http://127.0.0.1:5173/'), {waitUntil:'networkidle2'});
-  await page.click('#mastheadMenuToggle');
-  await page.locator('::-p-text(背景图片)').click();
+  await page.click('.book-theme-toggle');
+  await page.waitForSelector('.custom-background-dialog');
+  await page.click('input[name="base-theme"]:first-of-type');
+  await page.waitForFunction(() => document.documentElement.dataset.bookTheme === 'light');
+  await page.click('.custom-theme-base label:last-child input');
+  await page.waitForFunction(() => document.documentElement.dataset.bookTheme === 'dark');
   await (await page.$('.custom-background-dialog input[type=file]')).uploadFile(image);
   await page.waitForFunction(() => document.documentElement.hasAttribute('data-custom-background'));
   const imageUrl = await page.evaluate(() => document.documentElement.style.getPropertyValue('--custom-background-image'));
@@ -27,6 +32,7 @@ try {
   await page.reload({waitUntil:'networkidle2'});
   await page.waitForFunction(() => document.documentElement.hasAttribute('data-custom-background'));
   assert.equal(await page.evaluate(() => document.documentElement.style.getPropertyValue('--custom-category-opacity')), '90%');
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.bookTheme), 'dark');
   console.log('PASS: continuous background adjustment and persistence');
 } finally {
   await browser.close();

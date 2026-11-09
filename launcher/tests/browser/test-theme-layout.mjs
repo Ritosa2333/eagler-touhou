@@ -4,19 +4,23 @@ import puppeteer from 'puppeteer-core';
 const browser = await puppeteer.launch({executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true});
 try {
   const page = await browser.newPage();
+  await page.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1'));
   const base = process.argv[2] || 'http://127.0.0.1:5173/';
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewport({width, height: 900});
     for (const route of ['', 'lobby.html', 'profile.html', 'login.html']) {
       await page.goto(new URL(route, base).href, {waitUntil: 'networkidle2'});
       await page.evaluate(() => document.fonts.ready);
-      await page.waitForSelector('.book-theme-toggle');
+      await page.waitForSelector('.book-theme-toggle:not(:disabled)');
       const geometry = () => page.evaluate(() => [...document.querySelectorAll('.book-masthead,.book-library,.book-card,.book-directory,.profile-wrap,.account-shell')].map(el => {
         const rect = el.getBoundingClientRect();
         return [rect.x, rect.width];
       }));
       const before = await geometry();
       await page.click('.book-theme-toggle');
+      await page.waitForSelector('.custom-theme-base');
+      const theme = await page.evaluate(() => document.documentElement.dataset.bookTheme);
+      await page.click(theme === 'dark' ? '.custom-theme-base label:first-of-type input' : '.custom-theme-base label:last-of-type input');
       assert.deepEqual(await geometry(), before, `${width}/${route}: geometry during theme change`);
       await page.evaluate(() => Promise.all(document.getAnimations().filter(a => a.effect?.getTiming().iterations !== Infinity).map(a => a.finished.catch(() => {}))));
       assert.deepEqual(await geometry(), before, `${width}/${route}: geometry after theme change`);
