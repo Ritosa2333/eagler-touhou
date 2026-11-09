@@ -27,6 +27,8 @@ export const QUICK_CHAT_ROWS = Object.freeze([
     [{ id: "you-first", zh: "你先选", en: "You choose first" }],
     [{ id: "nice", zh: "nice", en: "Nice" }],
     [{ id: "amazing", zh: "好厉害", en: "Amazing" }],
+    [{ id: "great-opportunity", zh: "多么好的机会啊", en: "What a great opportunity" }],
+    [{ id: "feels-good", zh: "好舒服啊", en: "That feels good" }],
 ]);
 export const QUICK_CHAT_PHRASES = Object.freeze(QUICK_CHAT_ROWS.flat());
 export function quickChatPhrase(id) {
