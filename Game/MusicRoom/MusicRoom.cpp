@@ -54,10 +54,10 @@ bool CMusicRoom::Play(int track){
  std::string name=musicFiles[m_game][track];int id=m_music.GetChildFileIndex((name+".M2").c_str());
  if(id<0)id=m_music.GetChildFileIndex((name+".M").c_str());
  if(id<0)return false;
- #ifdef __EMSCRIPTEN__
- web::MusicTrack((name+".M2").c_str());
-#endif
  if(!CPMDPlayer::LoadPMDData(m_music.GetChildFileContentPointer(id),m_music.GetChildFileLength(id))){m_playFailed=true;return false;}
+#ifdef __EMSCRIPTEN__
+ web::MusicRoomTrack((name+".M2").c_str(),musicChoices[m_game][track]);
+#endif
  CPMDPlayer::SetVolume(100);CPMDPlayer::Play();m_playing=track;m_playFailed=false;
  for(int i=0;i<10;i++)m_comment[i]=Line(m_game,track,i);m_commentAge=0;return true;
 }
