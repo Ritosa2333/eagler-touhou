@@ -1,5 +1,6 @@
 #include ".\shinkibullet.h"
 #include "../Stage.h"
+#include "../../Original/OriginalMath.h"
 #include "../Chara/Chara.h"
 
 namespace th5w{
@@ -23,11 +24,23 @@ void CShinkiBullet::AddBullet(float origX,float origY,int imgIdx,float angle, fl
 	for (int i=0;i<SHINKI_BULLET_N_RECORD;i++)
 		if (m_bullet[i].flag==0)
 		{
+
+#ifdef TH05_BROWSER_TESTS
+	original::AuditSpecialShot(3,int(speed1));
+#endif
 			m_bullet[i].flag=1;
 			m_bullet[i].curX=origX;
 			m_bullet[i].curY=origY;
-			m_bullet[i].velX=(float)cos(angle/256.0f*2*PI)*speed1;
-			m_bullet[i].velY=(float)sin(angle/256.0f*2*PI)*speed1;
+			if (original::BombAndRageEnabled())
+			{
+				m_bullet[i].velX=float(original::math::X(int(angle),int(speed1)));
+				m_bullet[i].velY=float(original::math::Y(int(angle),int(speed1)));
+			}
+			else
+			{
+				m_bullet[i].velX=(float)cos(angle/256.0f*2*PI)*speed1;
+				m_bullet[i].velY=(float)sin(angle/256.0f*2*PI)*speed1;
+			}
 			m_bullet[i].img=imgIdx;
 			m_bullet[i].radius=48.0f*16.0f;
 			break;
@@ -43,7 +56,7 @@ void CShinkiBullet::Step()
 		if (m_bullet[i].flag==1)
 		{
 			m_bullet[i].radius-=2.0f*16.0f;
-			if (m_bullet[i].radius>16.001f*16.0f)
+			if (m_bullet[i].radius>=16.0f*16.0f)
 				continue;
 			m_bullet[i].flag++;
 		}
@@ -62,8 +75,16 @@ void CShinkiBullet::Step()
 			if (m_bullet[i].img<204)
 			{
 				m_bullet[i].img=204;
-				m_bullet[i].velX/=2.0f;
-				m_bullet[i].velY/=2.0f;
+				if (original::BombAndRageEnabled())
+				{
+					m_bullet[i].velX=float(int(m_bullet[i].velX)/2);
+					m_bullet[i].velY=float(int(m_bullet[i].velY)/2);
+				}
+				else
+				{
+					m_bullet[i].velX/=2.0f;
+					m_bullet[i].velY/=2.0f;
+				}
 				m_bullet[i].vanishAge=0;
 			}
 			else

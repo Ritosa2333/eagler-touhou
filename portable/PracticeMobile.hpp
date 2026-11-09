@@ -4,7 +4,7 @@
 #ifdef __EMSCRIPTEN__
 #include <eagler/thprac/PracticeMobilePanels.hpp>
 #endif
-namespace th5w::mobile {
+namespace th5w { namespace mobile {
 enum Panel { Cheats, Advanced, Information, Keyboard, Indicators, Result };
 inline bool Enabled() {
 #ifdef __EMSCRIPTEN__
@@ -35,4 +35,4 @@ inline bool Begin(Panel panel,const char* id,ImGuiWindowFlags flags) {
  return ImGui::Begin(id,nullptr,flags);
 #endif
 }
-}
+} }

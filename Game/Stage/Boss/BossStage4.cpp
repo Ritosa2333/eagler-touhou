@@ -1,3 +1,4 @@
+#include "../../Original/CombatThresholds.h"
 #include "../../Practice/Practice.h"
 #include ".\bossstage4.h"
 #include "../Stage.h"
@@ -84,7 +85,12 @@ int CBossStage4::RandomWalkVerStage4(int frameIdx,float &angle,int &forceMove,
 
 	if (frameIdx==0)
 	{
-		if (x<144.0f*16.0f)
+		if (original::BossGeometryEnabled())
+		{
+			const int random=original::Random();
+			angle=float(x<144*16?random%96-48:x>240*16?(random&0x60)+0x30:random&255);
+		}
+		else if (x<144.0f*16.0f)
 			angle=(float)(original::Random()%96-48);
 		else
 			if (x>240.0f*16.0f)
@@ -97,12 +103,12 @@ int CBossStage4::RandomWalkVerStage4(int frameIdx,float &angle,int &forceMove,
 			angle+=256.0f;
 		if (forceMove==1&&angle<128.0f)
 			angle=256.0f-angle;
-		if (forceMove==2&&angle>128.0f)
+		if (forceMove==2&&(angle>128.0f||(original::BossGeometryEnabled()&&angle==128.0f)))
 			angle=256.0f-angle;
 		forceMove=0;
 	}
-	vx=(float)cos(angle/256.0f*2*PI)*(100-frameIdx*2);
-	vy=(float)sin(angle/256.0f*2*PI)*(100-frameIdx*2);
+	vx=original::PatternOffsetX(angle,100-frameIdx*2);
+	vy=original::PatternOffsetY(angle,100-frameIdx*2);
 	x+=vx;
 	y+=vy;
 	if (vx<0)
@@ -301,7 +307,7 @@ int CBossStage4::MaiShootType0_2__2_2()
 		shootInfo.nWayUnitAngle=10;
 		shootInfo.bulletSpeed=50;
 		m_pStage->m_pEnemyBullet->TuneEnemyShootInfo(&shootInfo);
-		m_pStage->m_pEnemyBullet->Shoot(&shootInfo);
+		m_pStage->m_pEnemyBullet->Shoot(&shootInfo,false,false);
 		m_pStage->m_bPlaySound[3]=true;
 	}
 	if (m_curPhaseFrame!=160)
@@ -397,7 +403,7 @@ int CBossStage4::MaiShootType2_1()
 	if (m_curPhaseFrame==48||m_curPhaseFrame==96)
 	{
 		float angle=m_curX<m_2curX?64.0f:-64.0f;
-		angle+=m_pStage->m_pChara->AngleToChara(m_curX,m_curY);
+		angle+=m_pStage->m_pChara->AngleToChara(m_curX,m_curY,original::BombAndRageEnabled());
 		m_curvingBullet.AddBullet(m_curX,m_curY,angle,32,9);
 		m_pStage->m_bPlaySound[15]=true;
 	}
@@ -565,7 +571,7 @@ int CBossStage4::YukiShootType0_4()
 	if (m_curPhaseFrame%8==0)
 	{
 		ENEMY_SHOOT_INFO shootInfo;
-		shootInfo.bulletBornType=16;
+		shootInfo.bulletBornType=original::MotionEnabled()?18:16;
 		shootInfo.shootType=EST02_NWAY;
 		shootInfo.shootAngle=64;
 		shootInfo.bulletImg=50;
@@ -626,7 +632,7 @@ int CBossStage4::YukiShootType2_1()
 	if (m_curPhaseFrame==48||m_curPhaseFrame==96)
 	{
 		float angle=m_2curX<m_curX?64.0f:-64.0f;
-		angle+=m_pStage->m_pChara->AngleToChara(m_2curX,m_2curY);
+		angle+=m_pStage->m_pChara->AngleToChara(m_2curX,m_2curY,original::BombAndRageEnabled());
 		m_curvingBullet.AddBullet(m_2curX,m_2curY,angle,32,11);
 		m_pStage->m_bPlaySound[15]=true;
 	}
@@ -773,7 +779,9 @@ void CBossStage4::Phase2()
 	}
 	if (bEndPhase==false)
 	{
-		if (m_curHP+m_2curHP<=5500)
+		const int combinedHP=m_curHP+m_2curHP;
+		const int legacyOffset=original::BombAndRageEnabled()?0:1;
+		if (combinedHP<original::TwinFirstRageHP+legacyOffset)
 		{
 			if (m_nModeChange<9)
 			{
@@ -782,7 +790,7 @@ void CBossStage4::Phase2()
 				m_nModeChange=9;
 			}
 			else
-				if (m_curHP+m_2curHP<=2250)
+				if (combinedHP<original::TwinSecondRageHP+legacyOffset)
 					if (m_nModeChange<14)
 					{
       // HP interruption skips MaiShootType1's frame-160 laser stop.

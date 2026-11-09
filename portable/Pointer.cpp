@@ -23,7 +23,7 @@ extern "C" {
 EMSCRIPTEN_KEEPALIVE int th05_mobile_state(){using namespace eagler::thprac::mobile;poll();return int(enabled)|(int(visible)<<1)|(int(expanded[Cheats])<<2)|(int(expanded[Advanced])<<3)|(int(expanded[Information])<<4);}
 EMSCRIPTEN_KEEPALIVE void th05_pointer_cancel(){pointers.reset();edges.clear();if(ImGui::GetCurrentContext())ImGui::GetIO().MouseDown[0]=false;}
 EMSCRIPTEN_KEEPALIVE int th05_pointer(int type,int id,double x,double y,int mouse){
- if(!ImGui::GetCurrentContext()||type<0||type>2)return 0;
+ if(!th5w::practice::Available()||!ImGui::GetCurrentContext()||type<0||type>2)return 0;
  if(mouse){auto& io=ImGui::GetIO();io.MousePos={float(x),float(y)};if(type!=1)Queue(x,y,type==0);return Hit(x,y);}
  const bool passive=th5w::practice::Available()&&eagler::thprac::mobile::passive_pointer(x,y);
  const auto decision=pointers.route_touch(type,id,Hit(x,y),passive,x,y);

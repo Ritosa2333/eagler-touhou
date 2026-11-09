@@ -65,6 +65,7 @@ public:
 public:
 	void AddBullet(float bulletX, float bulletY, unsigned char imgIdx,unsigned char bulletType,
 				   float velX, float velY, float moveAngle,unsigned char damage);
+	bool UsesOriginalShots() const;
 	void ShootOriginal(int character,int level,int timer,float x,float y);
 	void Step();
 	void Draw();
