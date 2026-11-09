@@ -56,10 +56,10 @@ export function MastheadOverview({host, open, onOpenChange, trigger, lobbyHref, 
     }
   }
   function mainLink(href: string, current: boolean, label: string, icon: ReactNode) {
-    const props = {href, 'aria-current': current ? 'page' as const : undefined, children: <>{icon}<span>{label}</span></>};
+    const props = {'aria-current': current ? 'page' as const : undefined, children: <>{icon}<span>{label}</span></>};
     return <Button asChild variant="ghost" size="row">{host.nativeLinks
-      ? <a {...props} onClick={event => follow(event, true)}/>
-      : <AppLink {...props} replace onClick={event => follow(event, false)}/>}
+      ? <a {...props} href={href} onClick={event => follow(event, true)}/>
+      : <AppLink {...props} href={href} replace onClick={event => follow(event, false)}/>}
     </Button>;
   }
   function overviewLinks(links: readonly MastheadSiteLink[]) {

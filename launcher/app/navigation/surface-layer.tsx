@@ -39,7 +39,9 @@ export function StandaloneSurfaceLayers({children}: {children: ReactNode}) {
   const entry = location.state?.[LOCAL_LAYERS_KEY];
   const values: SurfaceLayers['values'] = entry?.session === session && entry.href === layerAddress(location) ? entry.values ?? {} : {};
   const pending = useRef<{location: Location; id: string; value: LayerValue} | null>(null);
-  useLayoutEffect(() => {pending.current = null;}, [location.key]);
+  useLayoutEffect(() => {
+    if (pending.current?.location !== location) pending.current = null;
+  }, [location]);
   function navigateLayer(to: To | number, options?: NavigateOptions) {
     if (typeof to === 'number') return navigate(to);
     const record = nextPageHistory(readPageHistory(location.state), pageOf(location), options?.replace === true);
