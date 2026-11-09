@@ -1,6 +1,6 @@
 # 文档总表
 
-共 526 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 527 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -171,6 +171,7 @@
 | Launcher | [launcher/app/components/launcher/tracker-attribution.md](../launcher/app/components/launcher/tracker-attribution.md) | Touhou 1CC chart |
 | Launcher | [launcher/compat/README.md](../launcher/compat/README.md) | 旧数据迁移 |
 | Launcher | [launcher/content/MULTIPLAYER.md](../launcher/content/MULTIPLAYER.md) | 联机玩法介绍 |
+| Launcher | [launcher/content/PRIVACY_POLICY.md](../launcher/content/PRIVACY_POLICY.md) | Eagler-Touhou 在线服务 个人信息处理与隐私保护政策 |
 | Launcher | [launcher/docs/ADAPTER_BEHAVIOR_INVARIANTS.md](../launcher/docs/ADAPTER_BEHAVIOR_INVARIANTS.md) | Adapter 行为不变量 |
 | Launcher | [launcher/docs/ADAPTER_CAPABILITIES.md](../launcher/docs/ADAPTER_CAPABILITIES.md) | Adapter 能力参考 |
 | Launcher | [launcher/docs/ARCHITECTURE.md](../launcher/docs/ARCHITECTURE.md) | 启动器结构与职责 |

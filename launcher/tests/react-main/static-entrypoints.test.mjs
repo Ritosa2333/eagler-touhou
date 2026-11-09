@@ -9,7 +9,7 @@ import {finalizeOriginalEntrypoints} from '../../scripts/ui-rewrite/static-entry
 
 const flatFiles = [
   'en.html', 'ja.html', 'lobby.html', 'profile.html', 'login.html', 'faq.html', 'about.html',
-  'guide.html', 'multiplayer.html',
+  'guide.html', 'multiplayer.html', 'privacy.html',
 ];
 const html = '<script>window.__reactRouterContext = {}; window.__reactRouterRouteModules = {};</script>';
 

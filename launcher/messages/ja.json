@@ -1512,6 +1512,8 @@
   "replay_ui_parsing": "リプレイを解析中…",
   "replay_ui_parseFailed": "リプレイを解析できません",
   "replay_ui_empty": "リプレイはありません",
+  "replay_hsobImport": "Main_replay*.dat ファイル、またはリプレイ ZIP を選択してください",
+  "replay_hsobPlayback": "インポートしたリプレイはゲームのタイトルメニューの Replay から再生できます。",
   "replay_ui_drop": "リプレイをインポートするか、ここにドロップしてください",
   "replay_ui_download": "ダウンロード",
   "replay_ui_rename": "名前を変更",
@@ -2330,5 +2332,8 @@
   "network_relayNoReply": "ロビーからルーム一覧の応答がありません",
   "network_manifestUnavailable": "サイトのマルチプレイ設定を読み込めません",
   "network_relayClosed": "リレー接続が切断されました（コード {code}）",
-  "network_relayHandshake": "リレーに接続できませんでした"
+  "network_relayHandshake": "リレーに接続できませんでした",
+  "document_privacy": "プライバシーポリシー",
+  "content_privacy": "プライバシーポリシーは簡体字中国語で公開しています。",
+  "nav_privacyPolicy": "プライバシーポリシー"
 }

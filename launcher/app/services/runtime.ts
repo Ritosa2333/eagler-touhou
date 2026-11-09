@@ -6,7 +6,7 @@ import {directPreloadRuntimeUrl} from './direct-preload-runtime';
 import {liveRuntimeEntryAuthorized, th075SplitAssetUrl} from './runtime-entry-authority';
 import {errorText} from './error-text';
 import {GameDataAcquisitionError} from './game-data-acquisition';
-import {isReplayFilePath, isSafeReplayArchivePath} from '../../src/launcher/replay-files.mts';
+import {isHsobReplayPath, isReplayFilePath} from '../../src/launcher/replay-files.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 /**
  * Bounded current-main Runtime orchestration seam, independent of React/DOM UI.
@@ -935,6 +935,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
             url.searchParams.set('th075AssetsHash', splitAssets.sha256);
           }
           if (url.origin !== origin) throw new Error('Runtime must share the Launcher origin');
+          if (plan.game === 'hsob' && plan.fileOnly) url.searchParams.set('fileOnly', '1');
           url.searchParams.set(RUNTIME_EPOCH_QUERY_PARAMETER, String(token.id));
           update({ source: url.href, codeGeneration });
           const ready = waitFor('ready', token, options.timeouts?.ready ?? 120_000);
@@ -1300,7 +1301,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
           if (readOnly && !['list', 'read'].includes(command)) throw new Error('Read-only Runtime file sessions cannot mutate files');
           if (replayMutation && ['write', 'remove'].includes(command)) {
             const path = (payload as {path?: unknown}).path;
-            if (!isReplayFilePath(path) || !isSafeReplayArchivePath(path)) throw new Error('A Replay mutation cannot change save, config or Hint files');
+            if (!isReplayFilePath(path) || isHsobReplayPath(path) !== (game === 'hsob')) throw new Error('A Replay mutation cannot change save, config or Hint files');
           }
           const response = await send(command, payload); assertAccess(); return response;
         },

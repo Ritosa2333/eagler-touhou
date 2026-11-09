@@ -11,7 +11,7 @@ import {readCurrentPackageGeneration} from '../../package/package-store.mjs';
 import {adaptLegacyGamePackToPackage} from '../../compat/legacy-package-adapter.mjs';
 import {parseStoredGameDataPack} from '../../compat/legacy-game-pack.mjs';
 import {HOST_PROTOCOL, PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, productEnabledForBuild, productFeatureAvailable,
-  type GameId, type ProductId} from '../../src/contracts/product-catalog.mts';
+  productRequiresImport, type GameId, type ProductId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest, SiteGameData} from '../../src/contracts/site-manifest.mts';
 import {RELEASE_CATALOG_FILE, type ReleaseCatalog} from '../../src/contracts/release-catalog.mts';
 import type {CurrentPackageGeneration, InstalledPackageGeneration, PackageDescriptor, InstalledPackageResult} from '../../src/contracts/package-read-models.mts';
@@ -232,7 +232,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     if (!host) throw new GameDataAcquisitionError(metadataSnapshot.releaseCatalogError
       ? t('package.remoteUnavailableNoLocal', {game: game, reason: preparationErrorText(metadataSnapshot.releaseCatalogError)})
       : t('package.releaseNotReadyNoLocal', {game: game}));
-    if (host.shared.resourceMode === 'import') throw new GameDataAcquisitionError(t('package.importServerNoFiles'));
+    if (productRequiresImport(game) || host.shared.resourceMode === 'import') throw new GameDataAcquisitionError(t('package.importServerNoFiles'));
     if (host.shared.resourceMode === 'external') throw new GameDataAcquisitionError('外部游戏资源当前不可用，请检查网络 / CDN，或导入本地游戏包');
     if (PRODUCT_GAMES[game].dataProvider === 'retail-memory') {
       try {
@@ -325,7 +325,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     const data = expectedData(), legacy = await deps.parseLegacy(file); checkPreparationAbort(signal);
     if (legacy.manifest.game !== game) throw new Error(t('package.legacyWrongGame', {actual: legacy.manifest.game, expected: game}));
     if (legacy.manifest.data.path !== data.path) throw new Error(t('package.dataPathMismatch'));
-    if (host?.shared.resourceMode === 'import' && !legacy.offline) throw new Error(t('package.serverNoContent'));
+    if ((productRequiresImport(game) || host?.shared.resourceMode === 'import') && !legacy.offline) throw new Error(t('package.serverNoContent'));
     if (legacy.offline) {
       const missing = requiredShared(game).find(target => !legacy.offline!.shared.some(item => item.target === target));
       if (missing) throw new Error(t('package.missingRequiredResource', {resource: missing.slice(1)}));
