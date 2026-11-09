@@ -8,6 +8,12 @@
     background-attachment:fixed;
   }
   html[data-custom-background][data-ui-home] body:not(.mp-room-active) .sheet {background:transparent}
+  html[data-background-mode="dots"] body:not(.mp-room-active):has(.book-masthead),
+  html[data-background-mode="dots"][data-ui-home] body:not(.mp-room-active) {background-image:radial-gradient(circle, color-mix(in srgb,var(--kit-foreground) 18%,transparent) 1px, transparent 1.5px);background-size:28px 28px;background-repeat:repeat}
+  html[data-background-mode="grid"] body:not(.mp-room-active):has(.book-masthead),
+  html[data-background-mode="grid"][data-ui-home] body:not(.mp-room-active) {background-image:linear-gradient(color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px, transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px,transparent 1px);background-size:36px 36px;background-repeat:repeat}
+  html[data-background-mode="waves"] body:not(.mp-room-active):has(.book-masthead),
+  html[data-background-mode="waves"][data-ui-home] body:not(.mp-room-active) {background-image:repeating-radial-gradient(ellipse at 50% 100%,transparent 0 23px,color-mix(in srgb,var(--kit-foreground) 9%,transparent) 24px 25px,transparent 26px 48px);background-size:200px 100px;background-repeat:repeat}
   html[data-custom-background] body:not(.mp-room-active) :is(.lobby-list-surface,.profile-hero,.profile-panel) {background-color:color-mix(in srgb,var(--book-surface) var(--custom-panel-opacity),transparent)}
   html[data-custom-background] body:not(.mp-room-active) .book-masthead {background-color:color-mix(in srgb,var(--book-surface) var(--custom-navigation-opacity),transparent)}
   html[data-custom-background] body:not(.mp-room-active) .book-card {background-color:color-mix(in srgb,var(--book-surface) var(--custom-card-opacity),transparent)}
@@ -21,6 +27,15 @@
   }
   .custom-background-dialog p {color:var(--kit-muted-foreground);font-size:13px}
   .custom-background-dialog h3 {font-size:14px;font-weight:600;margin:20px 0 0}
+  .background-presets {display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:8px;margin-top:10px}
+  .background-preset {min-width:0;display:grid;gap:5px;padding:4px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--kit-muted-foreground);font:inherit;font-size:12px;text-align:left;cursor:pointer}
+  .background-preset[aria-pressed="true"] {border-color:var(--kit-foreground);color:var(--kit-foreground)}
+  .background-preset:focus-visible {outline:2px solid var(--kit-ring);outline-offset:2px}
+  .background-preset-preview {display:block;height:48px;border:1px solid var(--kit-border);border-radius:4px;background-color:var(--kit-background)}
+  .background-preset[data-preset="image"] .background-preset-preview {background-image:var(--custom-background-image);background-size:cover;background-position:center}
+  .background-preset[data-preset="dots"] .background-preset-preview {background-image:radial-gradient(circle,color-mix(in srgb,var(--kit-foreground) 25%,transparent) 1px,transparent 1.5px);background-size:14px 14px}
+  .background-preset[data-preset="grid"] .background-preset-preview {background-image:linear-gradient(color-mix(in srgb,var(--kit-foreground) 12%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--kit-foreground) 12%,transparent) 1px,transparent 1px);background-size:18px 18px}
+  .background-preset[data-preset="waves"] .background-preset-preview {background-image:repeating-radial-gradient(ellipse at 50% 100%,transparent 0 11px,color-mix(in srgb,var(--kit-foreground) 14%,transparent) 12px 13px,transparent 14px 24px);background-size:100px 50px}
   .custom-background-dialog .custom-theme-base {display:grid;gap:8px;margin-top:16px;font-size:13px;font-weight:600}
   .custom-theme-switch {position:relative;isolation:isolate;display:flex;gap:3px;padding:3px;border:1px solid var(--kit-border);border-radius:7px;background:var(--kit-muted)}
   .custom-theme-switch::before {content:"";position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 9px)/2);border-radius:6px;background:var(--kit-card);box-shadow:0 1px 3px #00000012;transition:translate 420ms cubic-bezier(.22,.7,.2,1);pointer-events:none}

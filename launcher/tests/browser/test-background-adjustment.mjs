@@ -24,6 +24,16 @@ try {
   await (await page.$('.custom-background-dialog input[type=file]')).uploadFile(image);
   await page.waitForFunction(() => document.documentElement.hasAttribute('data-custom-background'));
   const imageUrl = await page.evaluate(() => document.documentElement.style.getPropertyValue('--custom-background-image'));
+  for (const mode of ['dots', 'grid', 'waves']) {
+    await page.click(`.background-preset[data-preset="${mode}"]`);
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.backgroundMode), mode);
+    assert.equal(await page.$eval(`.background-preset[data-preset="${mode}"]`, node => node.getAttribute('aria-pressed')), 'true');
+    assert.match(await page.evaluate(() => getComputedStyle(document.body).backgroundImage), /gradient/);
+  }
+  await page.click('.background-preset[data-preset="plain"]');
+  assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-custom-background')), false);
+  await page.click('.background-preset[data-preset="image"]');
+  assert.equal(await page.evaluate(() => document.documentElement.style.getPropertyValue('--custom-background-image')), imageUrl, 'presets preserve the selected image');
   await page.evaluate(() => {
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
     for (const slider of document.querySelectorAll('.custom-background-dialog input[type=range]')) {
@@ -40,6 +50,7 @@ try {
   await page.waitForFunction(() => document.documentElement.hasAttribute('data-custom-background'));
   assert.equal(await page.evaluate(() => document.documentElement.style.getPropertyValue('--custom-category-opacity')), '90%');
   assert.equal(await page.evaluate(() => document.documentElement.dataset.bookTheme), 'dark');
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.backgroundMode), 'image');
   await page.setViewport({width:390, height:844});
   await page.click('.book-theme-toggle');
   await page.waitForSelector('.custom-background-dialog');
@@ -48,8 +59,12 @@ try {
     return {left:box.left, right:box.right, width:innerWidth};
   });
   assert.ok(mobile.left >= 0 && mobile.right <= mobile.width, 'mobile settings fit within the viewport');
+  await page.click('.background-preset[data-preset="waves"]');
   await page.keyboard.press('Escape');
   await page.waitForSelector('.custom-background-dialog', {hidden:true});
+  await page.reload({waitUntil:'networkidle2'});
+  await page.waitForFunction(() => document.documentElement.dataset.backgroundMode === 'waves');
+  assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-custom-background')), true, 'built-in background persists');
   console.log('PASS: continuous background adjustment and persistence');
 } finally {
   await browser.close();

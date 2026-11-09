@@ -10,17 +10,19 @@ const settingsEvent = 'eagler-background-settings-change';
 const imageEvent = 'eagler-background-image-change';
 const settingsKey = 'eagler.background.settings';
 const imageRevisionKey = 'eagler.background.image-revision';
-const defaults = {shade: 45, panel: 88, navigation: 88, category: 88, card: 88, fit: 'cover' as 'cover'|'contain'};
+const backgroundModes = ['plain','image','dots','grid','waves'] as const;
+type BackgroundMode = typeof backgroundModes[number];
+const defaults = {mode:'image' as BackgroundMode, shade: 45, panel: 88, navigation: 88, category: 88, card: 88, fit: 'cover' as 'cover'|'contain'};
 const text = {
-  'zh-CN': {title:'主题设置', base:'主题基底', light:'亮色', dark:'暗色', background:'背景图片', choose:'选择图片', change:'更换图片', remove:'移除图片', shade:'背景遮罩', panel:'内容面板不透明度', navigation:'顶部栏不透明度', category:'分类条不透明度', card:'作品卡片不透明度', fit:'图片铺放', cover:'铺满', contain:'完整显示', note:'图片只保存在此浏览器中。', error:'无法保存图片，请选择不超过 10 MB 的有效图片。'},
-  en: {title:'Theme settings', base:'Base theme', light:'Light', dark:'Dark', background:'Background image', choose:'Choose image', change:'Change image', remove:'Remove image', shade:'Background overlay', panel:'Content panel opacity', navigation:'Navigation opacity', category:'Category opacity', card:'Game card opacity', fit:'Image fit', cover:'Cover', contain:'Contain', note:'The image is stored only in this browser.', error:'Could not save the image. Choose a valid image up to 10 MB.'},
-  ja: {title:'テーマ設定', base:'基本テーマ', light:'ライト', dark:'ダーク', background:'背景画像', choose:'画像を選択', change:'画像を変更', remove:'画像を削除', shade:'背景の覆い', panel:'コンテンツの不透明度', navigation:'ナビの不透明度', category:'カテゴリーの不透明度', card:'作品カードの不透明度', fit:'画像の表示', cover:'画面を埋める', contain:'画像全体', note:'画像はこのブラウザーにのみ保存されます。', error:'画像を保存できません。10 MB 以下の画像を選択してください。'},
+  'zh-CN': {title:'主题设置', base:'主题基底', light:'亮色', dark:'暗色', background:'背景', presets:'内置背景', plain:'空白', image:'自定义图片', dots:'星点', grid:'方格', waves:'波纹', choose:'选择图片', change:'更换图片', remove:'移除图片', shade:'背景遮罩', panel:'内容面板不透明度', navigation:'顶部栏不透明度', category:'分类条不透明度', card:'作品卡片不透明度', fit:'图片铺放', cover:'铺满', contain:'完整显示', note:'图片只保存在此浏览器中。', error:'无法保存图片，请选择不超过 10 MB 的有效图片。'},
+  en: {title:'Theme settings', base:'Base theme', light:'Light', dark:'Dark', background:'Background', presets:'Built-in backgrounds', plain:'Plain', image:'Custom image', dots:'Dots', grid:'Grid', waves:'Waves', choose:'Choose image', change:'Change image', remove:'Remove image', shade:'Background overlay', panel:'Content panel opacity', navigation:'Navigation opacity', category:'Category opacity', card:'Game card opacity', fit:'Image fit', cover:'Cover', contain:'Contain', note:'The image is stored only in this browser.', error:'Could not save the image. Choose a valid image up to 10 MB.'},
+  ja: {title:'テーマ設定', base:'基本テーマ', light:'ライト', dark:'ダーク', background:'背景', presets:'背景のプリセット', plain:'なし', image:'カスタム画像', dots:'星点', grid:'格子', waves:'波紋', choose:'画像を選択', change:'画像を変更', remove:'画像を削除', shade:'背景の覆い', panel:'コンテンツの不透明度', navigation:'ナビの不透明度', category:'カテゴリーの不透明度', card:'作品カードの不透明度', fit:'画像の表示', cover:'画面を埋める', contain:'画像全体', note:'画像はこのブラウザーにのみ保存されます。', error:'画像を保存できません。10 MB 以下の画像を選択してください。'},
 };
 function settings(): typeof defaults {
   try {
     const value=JSON.parse(localStorage.getItem(settingsKey) || '{}');
     const number=(key:'shade'|'panel'|'navigation'|'category'|'card') => Math.max(0,Math.min(100,Number.isFinite(value[key])?value[key]:defaults[key]));
-    return {shade:number('shade'),panel:number('panel'),navigation:number('navigation'),category:number('category'),card:number('card'),fit:value.fit==='contain'?'contain':'cover'};
+    return {mode:backgroundModes.includes(value.mode)?value.mode:'image',shade:number('shade'),panel:number('panel'),navigation:number('navigation'),category:number('category'),card:number('card'),fit:value.fit==='contain'?'contain':'cover'};
   } catch {return defaults;}
 }
 function db(): Promise<IDBDatabase> {
@@ -38,12 +40,14 @@ function announceImage() {
 export function BackgroundController() {
   useEffect(()=>{
     let url='',serial=0;
+    const applyMode=()=>{const mode=settings().mode; root.dataset.backgroundMode=mode; root.toggleAttribute('data-custom-background',mode==='image'?!!url:mode!=='plain');};
     const root=document.documentElement;
     const updateSettings=()=>{
       const values=settings();
       root.style.setProperty('--custom-background-shade',`${values.shade}%`);
       for(const key of ['panel','navigation','category','card'] as const) root.style.setProperty(`--custom-${key}-opacity`,`${values[key]}%`);
       root.style.setProperty('--custom-background-fit',values.fit);
+      applyMode();
     };
     const updateImage=async()=>{
       const current=++serial;
@@ -52,9 +56,9 @@ export function BackgroundController() {
         if(current!==serial)return;
         const next=blob?URL.createObjectURL(blob):'';
         root.style.setProperty('--custom-background-image',next?`url("${next}")`:'none');
-        root.toggleAttribute('data-custom-background',!!next);
         if(url)URL.revokeObjectURL(url);
         url=next;
+        applyMode();
       } catch {if(current===serial)root.removeAttribute('data-custom-background');}
     };
     const storage=(change:StorageEvent)=>{
@@ -73,8 +77,8 @@ export function BackgroundSettings({open,onOpenChange,dark,onThemeChange}:{open:
   const {locale}=useLocale(), labels=text[locale] ?? text.en, input=useRef<HTMLInputElement>(null);
   const [values,setValues]=useState(defaults),[hasImage,setHasImage]=useState(false),[error,setError]=useState(false);
   useEffect(()=>{if(open){setValues(settings()); void imageStore('readonly').then(blob=>setHasImage(!!blob)).catch(()=>setError(true));}},[open]);
-  function setValue(key:keyof typeof defaults,value:number|'cover'|'contain'){const next={...values,[key]:value}; setValues(next); try{localStorage.setItem(settingsKey,JSON.stringify(next));window.dispatchEvent(new Event(settingsEvent));}catch{setError(true);}}
-  async function choose(file:File|undefined){if(!file)return; try{if(!file.type.startsWith('image/')||file.size>10*1024*1024)throw Error(); const bitmap=await createImageBitmap(file);bitmap.close();await imageStore('readwrite',file);setHasImage(true);setError(false);announceImage();}catch{setError(true);} finally {if(input.current)input.current.value='';}}
+  function setValue(key:keyof typeof defaults,value:number|'cover'|'contain'|BackgroundMode){const next={...values,[key]:value}; setValues(next); try{localStorage.setItem(settingsKey,JSON.stringify(next));window.dispatchEvent(new Event(settingsEvent));}catch{setError(true);}}
+  async function choose(file:File|undefined){if(!file)return; try{if(!file.type.startsWith('image/')||file.size>10*1024*1024)throw Error(); const bitmap=await createImageBitmap(file);bitmap.close();await imageStore('readwrite',file);setHasImage(true);setError(false);setValue('mode','image');announceImage();}catch{setError(true);} finally {if(input.current)input.current.value='';}}
   async function remove(){try{await imageStore('readwrite',null);setHasImage(false);setError(false);announceImage();}catch{setError(true);}}
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="custom-background-dialog" overlayClassName="custom-background-overlay" aria-describedby={undefined}><DialogTitle>{labels.title}</DialogTitle><div className="custom-theme-base"><span id="custom-theme-label">{labels.base}</span><ChoiceGroup type="single" aria-labelledby="custom-theme-label" className="custom-theme-switch" data-theme={dark?'dark':'light'} value={dark?'dark':'light'} onValueChange={value=>{if(value==='dark'||value==='light')onThemeChange(value);}}><ChoiceItem value="light" data-theme-value="light"><Sun aria-hidden="true"/>{labels.light}</ChoiceItem><ChoiceItem value="dark" data-theme-value="dark"><Moon aria-hidden="true"/>{labels.dark}</ChoiceItem></ChoiceGroup></div><h3>{labels.background}</h3><p>{labels.note}</p><div className="custom-background-actions"><input ref={input} type="file" accept="image/*" hidden onChange={e=>void choose(e.currentTarget.files?.[0])}/><Button type="button" onClick={()=>input.current?.click()}>{hasImage?labels.change:labels.choose}</Button>{hasImage&&<Button type="button" variant="secondary" onClick={()=>void remove()}>{labels.remove}</Button>}</div><label>{labels.fit}<select value={values.fit} onChange={e=>setValue('fit',e.currentTarget.value as 'cover'|'contain')}><option value="cover">{labels.cover}</option><option value="contain">{labels.contain}</option></select></label>{(['shade','navigation','category','card','panel'] as const).map(key=><label key={key}>{labels[key]}<output>{values[key]}%</output><input type="range" min="0" max="100" value={values[key]} onChange={e=>setValue(key,Number(e.currentTarget.value))}/></label>)}{error&&<p role="alert">{labels.error}</p>}</DialogContent></Dialog>;
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="custom-background-dialog" overlayClassName="custom-background-overlay" aria-describedby={undefined}><DialogTitle>{labels.title}</DialogTitle><div className="custom-theme-base"><span id="custom-theme-label">{labels.base}</span><ChoiceGroup type="single" aria-labelledby="custom-theme-label" className="custom-theme-switch" data-theme={dark?'dark':'light'} value={dark?'dark':'light'} onValueChange={value=>{if(value==='dark'||value==='light')onThemeChange(value);}}><ChoiceItem value="light" data-theme-value="light"><Sun aria-hidden="true"/>{labels.light}</ChoiceItem><ChoiceItem value="dark" data-theme-value="dark"><Moon aria-hidden="true"/>{labels.dark}</ChoiceItem></ChoiceGroup></div><h3>{labels.background}</h3><div className="background-presets" role="group" aria-label={labels.presets}>{backgroundModes.filter(mode=>mode!=='image'||hasImage).map(mode=><button type="button" key={mode} className="background-preset" data-preset={mode} aria-pressed={(values.mode==='image'&&!hasImage?'plain':values.mode)===mode} onClick={()=>setValue('mode',mode)}><span className="background-preset-preview" aria-hidden="true"/><span>{labels[mode]}</span></button>)}</div><p>{labels.note}</p><div className="custom-background-actions"><input ref={input} type="file" accept="image/*" hidden onChange={e=>void choose(e.currentTarget.files?.[0])}/><Button type="button" onClick={()=>input.current?.click()}>{hasImage?labels.change:labels.choose}</Button>{hasImage&&<Button type="button" variant="secondary" onClick={()=>void remove()}>{labels.remove}</Button>}</div><label>{labels.fit}<select value={values.fit} onChange={e=>setValue('fit',e.currentTarget.value as 'cover'|'contain')}><option value="cover">{labels.cover}</option><option value="contain">{labels.contain}</option></select></label>{(['shade','navigation','category','card','panel'] as const).map(key=><label key={key}>{labels[key]}<output>{values[key]}%</output><input type="range" min="0" max="100" value={values[key]} onChange={e=>setValue(key,Number(e.currentTarget.value))}/></label>)}{error&&<p role="alert">{labels.error}</p>}</DialogContent></Dialog>;
 }
