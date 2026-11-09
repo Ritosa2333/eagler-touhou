@@ -482,3 +482,5 @@ CSS 层级在文档头的样式表链接之前声明为 `properties, foundation,
 - [apps/v4/app/(app)/examples/tasks/components/data-table-toolbar.tsx](https://github.com/shadcn-ui/ui/blob/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/app/(app)/examples/tasks/components/data-table-toolbar.tsx)
 - [apps/v4/examples/radix/field-responsive.tsx](https://github.com/shadcn-ui/ui/blob/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/examples/radix/field-responsive.tsx)
 - [apps/v4/examples/radix/drawer-dialog.tsx](https://github.com/shadcn-ui/ui/blob/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/examples/radix/drawer-dialog.tsx)
+
+联机房间的音乐播放器在自定义背景下沿用内容面板不透明度，封面取色渐变随背景一起变化，文字与播放控件保持清晰。
