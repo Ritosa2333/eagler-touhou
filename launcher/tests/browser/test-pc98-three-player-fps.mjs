@@ -1,4 +1,4 @@
-// Three real PC-98 player runtimes and a delayed local Relay.
+// Two or three real PC-98 player runtimes and a delayed local Relay.
 // Reports native gameplay and displayed frames; does not assert machine-specific FPS.
 // Run from launcher with ROOM_RUNTIME_GAME, ROOM_RUNTIME_ROOT and
 // ROOM_RUNTIME_DATA pointing to a built TH02 or TH04 runtime and data file.
@@ -8,6 +8,7 @@
 // The benchmark explicitly samples the worker's native game counter each second.
 // PC98_FPS_MIN can optionally make any lower one-second sample fail the run.
 // PC98_FPS_SECONDS sets the sampling duration (default 20 seconds).
+// PC98_FPS_PLAYERS selects 2 or 3 players (default 3).
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
@@ -18,6 +19,8 @@ import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 import {PRODUCT_GAMES,multiplayerInputTimingPolicy} from '../../../common/contracts/product-catalog.mjs';
 const game=process.env.ROOM_RUNTIME_GAME;
 assert(['th02','th04'].includes(game),'ROOM_RUNTIME_GAME must be th02 or th04');
+const playerCount=Number(process.env.PC98_FPS_PLAYERS??3);
+assert([2,3].includes(playerCount),'PC98_FPS_PLAYERS must be 2 or 3');
 const sampleSeconds=Number(process.env.PC98_FPS_SECONDS??20);
 assert(Number.isInteger(sampleSeconds)&&sampleSeconds>=1&&sampleSeconds<=300,'invalid PC98_FPS_SECONDS');
 const timing={...multiplayerInputTimingPolicy(PRODUCT_GAMES[game].multiplayer),rollback:process.env.PC98_FPS_ROLLBACK!=='0'};
@@ -50,8 +53,8 @@ const playerFrame=()=>globalThis.__eaglerNetplayLanFrame??0;
 try{
   await wait(()=>/listening ws:\/\/127.0.0.1:(\d+)/.test(relayLog),'Relay startup');
   const port=/listening ws:\/\/127.0.0.1:(\d+)/.exec(relayLog)[1],room=game+'mp-1234';
-  for(let actor=0;actor<3;actor++){
-    const client=new WebSocket('ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,lobby:'retention_client_'+actor,member:'retention_member_'+actor,intent:actor?'join':'create',players:'3',difficulty:'1'}));clients.push(client);
+  for(let actor=0;actor<playerCount;actor++){
+    const client=new WebSocket('ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,lobby:'retention_client_'+actor,member:'retention_member_'+actor,intent:actor?'join':'create',players:String(playerCount),difficulty:'1'}));clients.push(client);
     client.addEventListener('message',e=>{const message=JSON.parse(e.data);if(message.room)client.retentionRoom=message.room;});
     await send(client,null,m=>m.type==='state');
     await send(client,{type:'take-seat',seat:actor,loadout:0},m=>!!m.room?.seats[actor]);
@@ -61,13 +64,13 @@ try{
   page.on('dialog',dialog=>{errors.push(dialog.message());void dialog.dismiss();});
   page.on('console',m=>console.log('Runtime:',m.text()));
   await page.setViewport({width:1920,height:540});await page.goto('http://127.0.0.1:'+server.address().port);
-  await page.evaluate(()=>{for(let n=0;n<3;n++)addRuntime(n);});
-  await page.waitForFunction(()=>events.filter(e=>e.event==='ready').length===3,{timeout:120000});
-  const frames=()=>[1,2,3].map(epoch=>page.frames().find(f=>new URL(f.url()).searchParams.get('runtimeEpoch')===String(epoch)));
-  for(let actor=0;actor<3;actor++)await send(clients[actor],{type:'set-ready',ready:true},m=>m.room?.seats[actor]?.ready);
+  await page.evaluate(count=>{for(let n=0;n<count;n++)addRuntime(n);},playerCount);
+  await page.waitForFunction(count=>events.filter(e=>e.event==='ready').length===count,{timeout:120000},playerCount);
+  const frames=()=>Array.from({length:playerCount},(_,i)=>i+1).map(epoch=>page.frames().find(f=>new URL(f.url()).searchParams.get('runtimeEpoch')===String(epoch)));
+  for(let actor=0;actor<playerCount;actor++)await send(clients[actor],{type:'set-ready',ready:true},m=>m.room?.seats[actor]?.ready);
   const start=await send(clients[0],{type:'start',inputDelay:0,adonisMode:timing.rollback?0:1,predictionLimit:timing.predictionLimit},m=>m.type==='start');
   const run=start.serial;
-  const options=actor=>({touchEnabled:process.env.PC98_TOUCH_INPUT==='1',touchMovementMode:'touch-unlimited',touchSensitivity:150,netplayMode:'lan',netplayChallengeMode:process.env.PC98_TEST_CHALLENGE==='1',netplayDisableFocus:process.env.PC98_TEST_DISABLE_FOCUS==='1',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(run),member:'retention_member_'+actor,player:String(actor)}),netplayPlayer:actor,netplayPlayerCount:3,netplaySeed:1234,netplayDifficulty:1,netplayLoadouts:[{character:0,shot:0},{character:0,shot:1},{character:game==='th02'?0:1,shot:game==='th02'?2:0}],netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:timing.rollback?0:1,netplayPredictionLimit:timing.predictionLimit,netplaySpectator:false,netplaySpectatorCount:0,netplaySpectatorTimeline:true});
+  const options=actor=>({touchEnabled:process.env.PC98_TOUCH_INPUT==='1',touchMovementMode:'touch-unlimited',touchSensitivity:150,netplayMode:'lan',netplayChallengeMode:process.env.PC98_TEST_CHALLENGE==='1',netplayDisableFocus:process.env.PC98_TEST_DISABLE_FOCUS==='1',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(run),member:'retention_member_'+actor,player:String(actor)}),netplayPlayer:actor,netplayPlayerCount:playerCount,netplaySeed:1234,netplayDifficulty:1,netplayLoadouts:[{character:0,shot:0},{character:0,shot:1},{character:game==='th02'?0:1,shot:game==='th02'?2:0}].slice(0,playerCount),netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:timing.rollback?0:1,netplayPredictionLimit:timing.predictionLimit,netplaySpectator:false,netplaySpectatorCount:0,netplaySpectatorTimeline:true});
   const configure=async(actor,serial)=>{
     await page.evaluate(async({actor,options})=>rpc(actor,'configure',{music:'none',options,resources:[],runtimeResources:[],sharedResources:[]}),{actor,options:options(actor)});
     // Give the running native title several ticks between protocol commands.
@@ -75,16 +78,16 @@ try{
     await new Promise(r=>setTimeout(r,500));
     await page.evaluate(({actor,serial})=>rpc(actor,'launch',{launchSerial:serial}),{actor,serial});
   };
-  await Promise.all([configure(0,1),configure(1,1),configure(2,1)]);
-  await page.evaluate(()=>Promise.all([0,1,2].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}))));
+  await Promise.all(Array.from({length:playerCount},(_,i)=>configure(i,1)));
+  await page.evaluate(count=>Promise.all(Array.from({length:count},(_,n)=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}))),playerCount);
   await wait(async()=>{const values=await Promise.all(frames().slice(0,3).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>120);},'native players advancing');
   await wait(async()=>{const values=await Promise.all(frames().map(f=>f.evaluate(playerFrame)));return values.every(v=>v>=300);},'warmup',120000);
   const sample=(includeTape=false)=>Promise.all(frames().map(f=>f.evaluate(async({game,includeTape})=>{const {managedAPI}=await import('./netplay/room.js');const recorder=globalThis[game+'Replay'],health=managedAPI.health();const native=await managedAPI.sampleGame();if(!native||!Number.isInteger(native.gameFrame))throw Error('native game counter unavailable');health.gameFrame=native.gameFrame;return {health,pointError:recorder?.pointError||'',snapshot:includeTape?recorder?.snapshot():null,diagnostics:includeTape?document.getElementById('diagnostics')?.textContent||'':''};},{game,includeTape})));
   const begin=await sample(),at=performance.now();
-  const directions=setInterval(()=>void page.evaluate(()=>Promise.all([0,1,2].map(n=>rpc(n,'keyboard',{code:'ArrowLeft',key:'ArrowLeft',keyCode:37,location:0,down:Math.floor(Date.now()/300)%2===0})))).catch(()=>{}),300);
+  const directions=setInterval(()=>void page.evaluate(count=>Promise.all(Array.from({length:count},(_,n)=>rpc(n,'keyboard',{code:'ArrowLeft',key:'ArrowLeft',keyCode:37,location:0,down:Math.floor(Date.now()/300)%2===0}))),playerCount).catch(()=>{}),300);
   const windows=[];let prior=begin,priorAt=at;for(let n=0;n<sampleSeconds;n++){await new Promise(r=>setTimeout(r,1000));const next=await sample(),now=performance.now(),seconds=(now-priorAt)/1000;windows.push(next.map((x,i)=>(x.health.gameFrame-prior[i].health.gameFrame)/seconds));prior=next;priorAt=now;}clearInterval(directions);const elapsed=(priorAt-at)/1000,finalTape=await sample(true),end=prior;for(let i=0;i<end.length;i++){end[i].snapshot=finalTape[i].snapshot;end[i].pointError=finalTape[i].pointError;end[i].diagnostics=finalTape[i].diagnostics;}
   assert.deepEqual(errors,[]);const boundary=Math.floor(Math.min(...end.map(x=>x.snapshot.rows.length))/120)*120;
   const hashes=end.map(x=>x.snapshot.rows[boundary-1]?.hash);assert(hashes.every(h=>h&&h.tick===boundary&&typeof h.hash==='string'&&JSON.stringify(h)===JSON.stringify(hashes[0])),'confirmed hashes missing or differ');assert(end.every(x=>!x.pointError),'checkpoint builder error');
-  console.log('RESULT',JSON.stringify({elapsed,boundary,hashes,points:(finalTape[0].snapshot.points||[]).map(p=>({frame:p.frame,base64Bytes:p.data.length})),windows,diagnostics:end.map(x=>x.diagnostics),clients:begin.map((b,i)=>({begin:b.health,end:end[i].health,gameFps:(end[i].health.gameFrame-b.health.gameFrame)/elapsed,syncFps:(end[i].health.frame-b.health.frame)/elapsed,drawFps:(end[i].health.frames-b.health.frames)/elapsed}))}));
+  console.log('RESULT',JSON.stringify({playerCount,elapsed,boundary,hashes,points:(finalTape[0].snapshot.points||[]).map(p=>({frame:p.frame,base64Bytes:p.data.length})),windows,diagnostics:end.map(x=>x.diagnostics),clients:begin.map((b,i)=>({begin:b.health,end:end[i].health,gameFps:(end[i].health.gameFrame-b.health.gameFrame)/elapsed,syncFps:(end[i].health.frame-b.health.frame)/elapsed,drawFps:(end[i].health.frames-b.health.frames)/elapsed}))}));
   if(process.env.PC98_FPS_MIN!==undefined){const min=Number(process.env.PC98_FPS_MIN);assert(Number.isFinite(min)&&min>=0,'invalid PC98_FPS_MIN');assert(windows.every(window=>window.every(fps=>fps>=min)),`one-second game frame rate fell below ${min}`);}
 }finally{for(const c of clients)c.close();await browser?.close();await new Promise(r=>server.close(r));relay.kill();}

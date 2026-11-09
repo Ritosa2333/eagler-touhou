@@ -2,7 +2,7 @@ import {publishNetworkStatus,mountNetworkStatus} from '../network-status.js';
 import {startFrameLoop} from '../frame-limit.js';
 import {createInputChannel,acceptInputChannel} from './input-transport.js';
 import {readNetworkMode,networkUrl} from './network-mode.js';
-import {PROTOCOL,RollbackQueue,TICK_MS,MAX_ROLLBACK,BOOT_DELAY,MAX_INPUT_DELAY,MAX_ROLLBACK_INPUT_DELAY,lockstepDelayForRtt,rollbackPolicyForRtt,validRollbackPolicy,rollbackRttForSamples} from './rollback-queue.js';
+import {PROTOCOL,POLICY_SCHEMA,RollbackQueue,TICK_MS,MAX_ROLLBACK,BOOT_DELAY,MAX_INPUT_DELAY,MAX_ROLLBACK_INPUT_DELAY,lockstepDelayForRtt,rollbackPolicyForRtt,validRollbackPolicy,rollbackRttForSamples} from './rollback-queue.js';
 import {mountPlayer} from '../player-ui.js';
 import {isBound,keyboardBits,gamepadBits,gamepadStatus,normalize} from './controls.js';
 import {mountFocusSettings} from './focus-display.js';
@@ -499,7 +499,7 @@ function attachChannel(peer,channel){
       if(stopped&&m.type!=='end'&&m.type!=='end-ack')return;
       switch(m.type){
         case 'hello':
-          if(m.inputPolicy?.policySchema!==2)throw Error('输入策略版本不同，请所有玩家刷新后重新建房');
+          if(m.inputPolicy?.policySchema!==POLICY_SCHEMA)throw Error('输入策略版本不同，请所有玩家刷新后重新建房');
           if(JSON.stringify(m.settings)!==JSON.stringify(state.settings)||JSON.stringify(m.slots)!==JSON.stringify(state.slots))throw Error('开局设置不一致');
           if(m.inputPolicy?.inputDelay!==inputPolicy.inputDelay||m.inputPolicy?.directionPrediction!==inputPolicy.directionPrediction||m.inputPolicy?.rollbackEnabled!==inputPolicy.rollbackEnabled)throw Error('联机性能策略不一致，请全员刷新并使用相同网络模式');
           peer.hello=true;maybeRun();break;
@@ -643,7 +643,7 @@ async function setupConnections(){
   for(const peer of oldPeers){clearTimeout(peer.connectTimer);peer.channel?.close();peer.pc.close();}
   relay?.close();relay=null;
   runPolicy=null;
-  inputPolicy=Object.freeze({inputDelay:0,directionPrediction:6,policySchema:2,rollbackEnabled:state.settings.rollback});
+  inputPolicy=Object.freeze({inputDelay:0,directionPrediction:6,policySchema:POLICY_SCHEMA,rollbackEnabled:state.settings.rollback});
   queue=new RollbackQueue(state.slots[session.role],state.settings.players,inputPolicy);
   let rtcConfiguration=null;
   if(!relayMode){
