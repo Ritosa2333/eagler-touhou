@@ -445,10 +445,12 @@
 }
 @media (hover:hover) and (pointer:fine) {
   .book-masthead .book-top-faq:is(:hover,:focus-visible) > svg {transform: rotate(-10deg) scale(1.08)}
-  .book-masthead .book-top-donation:is(:hover,:focus-visible):not(:disabled) > svg {transform: scale(1.16)}
+  .book-masthead .book-top-donation:is(:hover,:focus-visible):not(:disabled) > svg {animation: masthead-heartbeat 800ms ease-in-out both}
 }
-.book-masthead :is(.book-top-faq, .book-top-donation):active:not(:disabled) > svg {transform: scale(.9)}
+@keyframes masthead-heartbeat {0%, 100% {transform:scale(1)} 25% {transform:scale(1.18)} 45% {transform:scale(1)} 65% {transform:scale(1.12)}}
+.book-masthead .book-top-faq:active > svg {transform:rotate(8deg) scale(.94)}
+.book-masthead .book-top-donation:active:not(:disabled) > svg {animation:none;transform:scale(.9)}
 @media (prefers-reduced-motion:reduce) {
-  .book-masthead :is(.book-top-faq, .book-top-donation) > svg {transition:none;transform:none!important}
+  .book-masthead :is(.book-top-faq, .book-top-donation) > svg {animation:none!important;transition:none;transform:none!important}
 }
-.less-motion .book-masthead :is(.book-top-faq, .book-top-donation) > svg {transition:none;transform:none!important}
+.less-motion .book-masthead :is(.book-top-faq, .book-top-donation) > svg {animation:none!important;transition:none;transform:none!important}
