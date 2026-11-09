@@ -17,7 +17,11 @@ void BulletManager::save_rollback(multiplayer::FrameImage& image){
         std::vector<Active> active;
         std::vector<Inactive> inactive;
         void reset(){
-            if(active.capacity()*sizeof(Active)+inactive.capacity()*sizeof(Inactive)>256*1024){
+            // A dense story pattern can keep over 700 bullets alive. Keep one
+            // spare at that size so clearing an image does not force another
+            // large allocation during the next repair.
+            constexpr size_t maximum_cached_bytes=768*1024;
+            if(active.capacity()*sizeof(Active)+inactive.capacity()*sizeof(Inactive)>maximum_cached_bytes){
                 *this=Snapshot{};
                 return;
             }

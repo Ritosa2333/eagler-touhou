@@ -509,12 +509,16 @@ void recycled_item_rollback(){
     EffectManager effects(animations,30);
     auto items=std::make_unique<ItemManager>(animations,effects,30);
     const ItemManager& view=*items;
+    require(view.free_head(false)==ItemManager::ordinary_count&&view.free_head(true)==ItemManager::pool_size,
+            "fresh item banks start from the highest free index");
     const u32 id=items->spawn(9,{0,100,0},0,1);
     require(id&&items->falling(id),"spawn cancellation item");
     auto* const vm=items->find(id)->body.get();
     vm->variables.position.x=11;
     require(items->release(id),"recycle cancellation item");
+    multiplayer::FrameImage::BufferPool pool;
     multiplayer::FrameImage before,overlapping,active;
+    for(auto* image:{&before,&overlapping,&active})image->use_buffer_pool(pool);
     items->save_rollback(before);
     items->save_rollback(overlapping);
 
@@ -530,7 +534,14 @@ void recycled_item_rollback(){
             "discard a later item and remove it from sparse traversal");
     require(active.restore()&&view.find(id)->state.state==2&&vm->variables.position.x==27,
             "restore the same item after reuse");
+    require(view.free_head(true)==abandoned,"restore the untouched cancellation range below the active item");
     require(overlapping.restore()&&vm->variables.position.x==11,"overlapping idle snapshots remain immutable");
+    require(view.free_head(true)==id,"restore the recycled item at the top of the free stack");
+    before.clear();
+    require(items->spawn(9,{0,160,0},0,1)==id&&items->falling(id),"consume the restored recycled item first");
+    items->save_rollback(before);
+    require(overlapping.restore()&&view.free_head(true)==id&&vm->variables.position.x==11,
+            "reusing a discarded item's snapshot buffers leaves the live image unchanged");
 }
 
 void animation_page_order(){

@@ -298,8 +298,8 @@ void confirmed_input_pipeline() {
     const std::uint64_t start=40'000;
     for(unsigned n=0;n<Clock::MaxLead;++n){
         const auto due=start+n*Clock::IntervalUs;
-        p1.capture_phase(true,due);
-        p2.capture_phase(true,due);
+        p1.capture_phase(n!=0,due);
+        p2.capture_phase(n!=0,due);
         require(p1.capture_input(Netplay::FrameInput(n==3?2:0),due/1000),"queue host input during transition");
         require(p2.capture_input(Netplay::FrameInput{},due/1000),"queue guest input during transition");
         require(!p1.needs_input()&&!p2.needs_input(),"one physical capture per due time");
