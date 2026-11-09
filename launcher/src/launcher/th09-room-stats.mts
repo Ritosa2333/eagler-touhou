@@ -1,3 +1,9 @@
+import {PRODUCT_GAMES} from '../contracts/product-catalog.mjs';
+
+export function th09CharacterLoadout(character: unknown) {
+  return PRODUCT_GAMES.th09.multiplayer.loadouts.find(loadout => loadout.character === character);
+}
+
 export interface Th09PlayerStats { wins: number; losses: number; minutes: number; }
 export function parseTh09PlayerStats(value: unknown): Th09PlayerStats | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return;

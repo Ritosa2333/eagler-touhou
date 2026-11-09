@@ -9859,6 +9859,18 @@
     "id": "th09_totalGames",
     "params": []
   },
+  "th09.recordedDuration": {
+    "id": "th09_recordedDuration",
+    "params": []
+  },
+  "th09.characterRecord": {
+    "id": "th09_characterRecord",
+    "params": []
+  },
+  "th09.characterGames": {
+    "id": "th09_characterGames",
+    "params": ["count"]
+  },
   "th09.totalWins": {
     "id": "th09_totalWins",
     "params": []

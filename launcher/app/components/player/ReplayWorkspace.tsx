@@ -9,6 +9,7 @@ import {useSurfaceLayerState} from '../../navigation/surface-layer';
 import {groupReplayFolders} from '../../models/replays';
 import {isTh09ReplayDirectory} from '../../../src/launcher/th09-replay-match.mts';
 import {isReplayImportFileName} from '../../../src/launcher/replay-files.mts';
+import {th09CharacterLoadout} from '../../../src/launcher/th09-room-stats.mjs';
 import {FullscreenIcons} from './utility-icons';
 import {MainSelect} from '../launcher/MainSelect';
 import {BookProductMenu} from '../launcher/BookDirectoryGames';
@@ -32,7 +33,7 @@ export interface ReplayPlaybackState extends ReplayTransportState {
 export function ReplayWorkspace({session, products = []}: {session: BrowserSession; products?: readonly ProductId[]}) {
   const {t} = useLocale();
   const characterName = (id: number, side: number) => {
-    const loadout = PRODUCT_GAMES.th09.multiplayer.loadouts.find(item => item.character === id);
+    const loadout = th09CharacterLoadout(id);
     return loadout ? t(loadout.labelKey as UiMessageKey) : `P${side + 1}`;
   };
   const model = session.getReplays()!, navigation = useSurfaceNavigation();

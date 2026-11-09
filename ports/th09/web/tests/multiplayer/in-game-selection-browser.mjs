@@ -13,10 +13,11 @@ const label=process.env.RUN_LABEL;if(!/^[\w-]+$/.test(label||''))throw Error('Un
 const buildDir=resolve(process.env.PC_BUILD||resolve(root,'artifacts/in-game-selection-release-20261015'));
 const out=resolve(root,'artifacts/multiplayer-tests',label);if(existsSync(out))throw Error('Retained run already exists');mkdirSync(out,{recursive:true});
 const fallback=process.argv.includes('--relay'),mode=Number(process.env.ADONIS_MODE||0),selectionOnly=process.argv.includes('--selection-only'),packetDelay=Number(process.env.MENU_PACKET_DELAY_MS||0);
+const exitAfterDecision=process.argv.includes('--exit-after-decision');
 const report={passed:false,scope:process.argv.includes('--reentry-only')?'Five room return/start cycles with real Release worlds and local Relay. Each restart compares a common confirmed frame hash.':selectionOnly?'Local Chromium selection cadence, independent character inputs and shared difficulty/stage controls under delayed packets. Not full-match/public-network/device acceptance.':'Local Chromium, real Release worlds and shared transport. Natural match completion. Not public-network/device acceptance.',build:JSON.parse(readFileSync(resolve(buildDir,'build.json'))).sha256,fallback,mode,stages:[],errors:[]};
 const stage=(name,details={})=>{const row={name,at:new Date().toISOString(),...details};report.stages.push(row);console.log(JSON.stringify(row));};
 const relayPort=await new Promise(r=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p));});});
-const relay=spawn(process.execPath,[resolve(process.env.TH09_SELECTION_RELAY||resolve(root,'../../eagler-touhou/services/netplay/netplay-relay.mjs'))],{windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(relayPort),EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE:'1'},stdio:['ignore','pipe','pipe']});
+const relay=spawn(process.execPath,[resolve(process.env.TH09_SELECTION_RELAY||resolve(root,'../../eagler-touhou/services/netplay/netplay-relay.mjs'))],{windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(relayPort),EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE:'1',EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK:fallback?'1':'0'},stdio:['ignore','pipe','pipe']});
 let relayLog='';relay.stderr.on('data',b=>relayLog+=b);await new Promise((ok,fail)=>{relay.stdout.on('data',b=>{relayLog+=b;if(relayLog.includes('netplay relay listening'))ok();});relay.on('error',fail);relay.on('exit',code=>fail(Error('relay '+code+' '+relayLog)));});
 const host=await presentationServer(0,{release:true,artifactDirectory:buildDir});
 const browser=await launchBrowser({headless:true,args:['--enable-gpu','--use-gl=angle','--use-angle=d3d11','--autoplay-policy=no-user-gesture-required']});
@@ -32,7 +33,7 @@ if(fallback)window.RTCPeerConnection=undefined;
     const {scanCodes}=await import('/app/keyboard.mjs');core.resetBrowserKeyboard=()=>{};
     addEventListener('keydown',e=>{if(scanCodes[e.code]){e.preventDefault();core._th09_key(scanCodes[e.code],1);}});
     addEventListener('keyup',e=>{if(scanCodes[e.code]){e.preventDefault();core._th09_key(scanCodes[e.code],0);}});
-    window.notices=[];window.closeEvents=[];window.begins=[];window.ends=[];window.hashes={};
+    window.notices=[];window.closeEvents=[];window.begins=[];window.ends=[];window.finals=[];window.hashes={};
     window.lobby=new WebSocket(`ws://127.0.0.1:${relayPort}/?room=th09mp-0777&lobby=selectionpeer${index}&member=selectionmember${index}`);
     lobby.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='error')throw Error(m.error);window.room=m.room||window.room;window.roomMessage=m;};
   },{index,relayPort,fallback,packetDelay});
@@ -41,15 +42,20 @@ if(fallback)window.RTCPeerConnection=undefined;
 async function state(page){return page.evaluate(()=>{
   const words=(fn,n)=>{const at=fn()/4;return Array.from(core.HEAP32.subarray(at,at+n));};
   const p=core._th09_error(),a=core.HEAPU8,e=a.indexOf(0,p);
-  return {selection:words(core._th09_network_selection_info,16),title:words(core._th09_title_status,8),session:words(core._th09_session_status,8),rollback:words(core._th09_rollback_info,8),viewer:words(core._th09_spectator_playback_info,11),hash:core._th09_network_hash()>>>0,error:new TextDecoder().decode(a.subarray(p,e)),closed:closeEvents,notices:notices.slice(-4),begins,ends,active:window.play?.active,route:window.__eaglerNetplayTransport};
+  return {selection:words(core._th09_network_selection_info,16),title:words(core._th09_title_status,8),session:words(core._th09_session_status,8),rollback:words(core._th09_rollback_info,8),viewer:words(core._th09_spectator_playback_info,11),hash:core._th09_network_hash()>>>0,error:new TextDecoder().decode(a.subarray(p,e)),closed:closeEvents,notices:notices.slice(-4),begins,ends,finals,active:window.play?.active,route:window.__eaglerNetplayTransport};
 });}
 async function waitFor(page,predicate,name,timeout=30000){const until=Date.now()+timeout;while(Date.now()<until){const s=await state(page);if(s.error||s.closed.length)throw Error(name+': '+JSON.stringify(s));if(predicate(s))return s;await page.waitForTimeout(50);}throw Error(name+' timeout '+JSON.stringify(await state(page)));}
 async function press(index,key){await pages[index].keyboard.press(key,{delay:100});await pages[index].waitForTimeout(180);}
-async function connect(index){await pages[index].evaluate(async({index,relayPort,mode})=>{
+async function connect(index){await pages[index].evaluate(async({index,relayPort,mode,fallback})=>{
   const {SharedNetplay}=await import('/app/shared-netplay.mjs');const spectator=index>=2;
-  const options={netplayUrl:`ws://127.0.0.1:${relayPort}/?room=th09mp-0777&run=${window.room.startSerial}&players=2&member=selectionmember${index}&${spectator?'spectator=selectionpeer'+index:'player='+index}`,netplayPlayer:spectator?0:index,netplayPlayerCount:2,netplaySeed:12345,netplayDifficulty:3,netplayLoadouts:[{character:0},{character:1}],netplayInGameSelection:true,netplaySpectator:spectator,netplaySpectatorId:spectator?'selectionpeer'+index:'',netplaySpectatorCount:2,netplaySpectatorTimeline:true,netplayIceServers:[],netplayAdonisMode:mode,netplayInputDelay:mode?2:0,netplayInputDelayAuto:false};
-  core.eaglerOptions=options;window.play=new SharedNetplay(core,{onStatus:s=>notices.push(s),onClose:s=>closeEvents.push(s),onResult:()=>{}});
+  const options={netplayUrl:`ws://127.0.0.1:${relayPort}/?room=th09mp-0777&run=${window.room.startSerial}&players=2&member=selectionmember${index}&${spectator?'spectator=selectionpeer'+index:'player='+index}`,netplayPlayer:spectator?0:index,netplayPlayerCount:2,netplaySeed:12345,netplayDifficulty:3,netplayLoadouts:[{character:0},{character:1}],netplayInGameSelection:true,netplaySpectator:spectator,netplaySpectatorId:spectator?'selectionpeer'+index:'',netplaySpectatorCount:2,netplaySpectatorTimeline:true,netplayIceServers:[],netplayAllowWebsocketFallback:fallback,netplayAdonisMode:mode,netplayInputDelay:mode?2:0,netplayInputDelayAuto:false};
+  core.eaglerOptions=options;window.play=new SharedNetplay(core,{onStatus:s=>notices.push(s),onClose:s=>closeEvents.push(s),onResult:()=>{},onMatch:match=>{
+    if(match.winner!==undefined)finals.push({match,phase:core.HEAP32[core._th09_session_status()/4]});
+    lobby.send(JSON.stringify({type:'th09-match',serial:room.startSerial,...match}));
+  }});
   const readHash=frame=>{const at=core._th09_confirmed_frame_hash(frame)/4;if(core.HEAPU32[at]===frame)hashes[frame+1]=core.HEAPU32[at+1];};
+  core.onNetworkReplayBoundary=(frame,winner)=>{if(winner<0)play.startMatchReport(frame);};
+  core.onNetworkMatchDecided=(...args)=>play.finishMatchReport(...args);
   core.onNetworkSpectatorBegin=(frame,bytes)=>{begins.push({frame,bytes:bytes.length});play.beginMatch(frame,bytes);};
   core.onNetworkSpectatorEnd=(frame,winner)=>{ends.push({frame,winner});play.endMatch(frame,winner);};
   core.onNetworkSpectatorRound=(...args)=>play.roundStart(...args);
@@ -59,7 +65,7 @@ async function connect(index){await pages[index].evaluate(async({index,relayPort
     if(spectator&&window.pauseAt!==undefined&&core._th09_spectator_frame()===window.pauseAt){core._th09_spectator_control(0,0);window.pauseAt=undefined;}
     play.frame();};
   core._th09_room_preview(0);core._th09_loop_start();core._th09_loop_pause(1);await play.connect(options);
-},{index,relayPort,mode});}
+},{index,relayPort,mode,fallback});}
 async function menu(screen){for(const page of pages.slice(0,2))await waitFor(page,s=>s.selection[1]===1&&s.title[2]===screen&&s.title[3]===1&&s.title[5]>=10,'menu '+screen);}
 try{selectionRun:{
   await actor(0);await actor(1);await actor(2);
@@ -133,6 +139,20 @@ try{selectionRun:{
   await pages[2].locator('#spectatorToggle').click();await pages[2].locator('#spectatorPause').click();const held=await state(pages[2]);
   for(const page of pages.slice(0,2)){await page.keyboard.down('KeyZ');await page.keyboard.down('ControlLeft');}
   stage('both-selected-and-playing',{characters:first.selection.slice(8,10),health:first.selection.slice(10,12),route:first.route,pausedViewer:held.viewer});
+  const [firstFinal,peerFinal]=await Promise.all(pages.slice(0,2).map(page=>
+    waitFor(page,s=>s.finals.length===1,'deciding frame report',240000)));
+  assert.deepEqual(firstFinal.finals,peerFinal.finals);
+  const [{match,phase}]=firstFinal.finals;
+  assert.equal(phase,1,'report was emitted while the native match was still running');
+  assert.deepEqual(match.characters,[1,2]);
+  assert.ok(match.frames>0);
+  stage('both-confirm-decision',{match,phase});
+  if(exitAfterDecision){
+    await pages[1].close();
+    await pages[0].waitForFunction(winner=>room.seats[winner]?.stats?.wins===1,match.winner);
+    stage('result-recorded-without-reselecting');
+    break selectionRun;
+  }
   const completed=await waitFor(pages[0],s=>s.session[0]===3&&s.ends.length===1,'natural match completion',240000);
   for(const page of pages.slice(0,2)){await page.keyboard.up('KeyZ');await page.keyboard.up('ControlLeft');}
   stage('natural-match-complete',{end:completed.ends[0],frame:completed.rollback[0]});await pages[0].screenshot({path:resolve(out,'first-result.png')});

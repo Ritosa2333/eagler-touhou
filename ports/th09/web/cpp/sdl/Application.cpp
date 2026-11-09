@@ -39,6 +39,7 @@ Netplay::PeerTransport& th09_shared_transport();
 EM_JS(void, th09_browser_frame, (int ok,double milliseconds), { Module["onGameFrame"]?.(ok,milliseconds); });
 EM_JS(void, th09_network_result, (), { Module["onNetworkResult"]?.(); });
 EM_JS(void, th09_network_replay_boundary, (std::uint32_t frame,int winner), { Module["onNetworkReplayBoundary"]?.(frame,winner); });
+EM_JS(void, th09_network_match_decided, (std::uint32_t frame,int winner,int first,int second), { Module["onNetworkMatchDecided"]?.(frame,winner,first,second); });
 EM_JS(void, th09_network_spectator_begin, (std::uint32_t frame,const void* bytes,std::uint32_t size), {
     Module["onNetworkSpectatorBegin"]?.(frame,HEAPU8.slice(bytes,bytes+size));
 });
@@ -98,7 +99,8 @@ struct RollbackFrame {
     bool captured=false;
     bool hasBegin=false,hasEnd=false,gameplay=false;
     u32 beginFrame=0;
-    i32 winner=-1;
+    i32 winner=-1,decidedWinner=-1;
+    std::array<i32,2> decidedCharacters{};
     i32 round=-1;
     u32 replayRoundFrame=0;
     SpectatorBeginState begin;
@@ -711,6 +713,7 @@ bool publish_rollback_outputs(){
         record.sounds.clear();
         // Both players archive only reconciled full-match boundaries.
         if(record.hasBegin)th09_network_replay_boundary(record.beginFrame,-1);
+        if(record.decidedWinner>=0)th09_network_match_decided(rollback_published+1,record.decidedWinner,record.decidedCharacters[0],record.decidedCharacters[1]);
         if(record.hasEnd)th09_network_replay_boundary(rollback_published+1,record.winner);
         if(network.side==0){std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> in;if(!rollback.ConfirmedInputs(rollback_published,&in))return false;const auto mode=[](const Netplay::FrameInput& i){return i.analogMode==Netplay::AnalogMode::None?0:i.analogMode==Netplay::AnalogMode::Joystick?1:i.unlimited?3:2;};
             if(record.hasBegin)th09_network_spectator_begin(record.beginFrame,&record.begin,spectator_begin_bytes);
@@ -830,7 +833,7 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         record.captured=speculative;
         if(speculative){if(!record.state)record.state=std::make_unique<multiplayer::WorldState>();if(!probe->checkpoint(*record.state)){probe->error="Rollback world capture failed";return 0;}probe->graphics.checkpoint=record.state.get();}
         // Retain arena capacity across exact and speculative frames.
-        record.hasBegin=record.hasEnd=false;record.round=-1;record.beginFrame=f;record.gameplay=!probe->in_title;recording_frame=&record;
+        record.hasBegin=record.hasEnd=false;record.decidedWinner=record.round=-1;record.beginFrame=f;record.gameplay=!probe->in_title;recording_frame=&record;
         if(probe->session&&!probe->in_title)for(unsigned side=0;side<2;++side){const auto& in=decision.inputs[side];probe->session->motion_input[side]={in.analogMode!=Netplay::AnalogMode::None,in.x,in.y,in.unlimited,in.analogMode==Netplay::AnalogMode::DirectTouch};}
         // Recovery does not consume the wall-clock tick's forward step. Replay
         // through the old frontier, then capture/simulate its new input once.
@@ -843,6 +846,7 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         TH09_PERF_COUNT(ForwardTicks,final?1:0);TH09_PERF_COUNT(ReplayTicks,final?0:1);TH09_PERF_COUNT(SpeculativeTicks,speculative?1:0);
         const bool wasComplete=probe->complete;
         const auto priorRoundFrames=probe->world?probe->world->rules.progress.round_frames:0;
+        const bool matchUndecided=!probe->world||probe->world->scene->decided_winner()<0;
         const bool deferPresent=refresh||(render&&final&&speculative&&!probe->in_title);
         probe->charge_frames={};
         // Resource replacement requires exact keys and a reconciled past.
@@ -874,6 +878,13 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         }
         if(!record.hasBegin&&probe->world&&probe->world->rules.progress.round_frames<priorRoundFrames&&probe->world->rules.progress.round>0){
             record.round=probe->world->rules.progress.round;record.replayRoundFrame=probe->session->recording.frame();}
+        // A confirmed deciding round is independent of the later Replay and spectator end.
+        if(record.gameplay&&matchUndecided&&probe->world&&!probe->in_title){
+            const auto& world=*probe->world;
+            record.decidedWinner=world.scene->decided_winner();
+            if(record.decidedWinner>=0)
+                for(i32 side=0;side<2;++side)record.decidedCharacters[side]=world.configuration.selection.characters[side];
+        }
         record.hasEnd=!wasComplete&&probe->complete;
         if(record.hasEnd)record.winner=probe->world->scene->winner;
         recording_frame=nullptr;probe->graphics.checkpoint=nullptr;
@@ -984,7 +995,14 @@ TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){TH09_PERF_SCOPE(gam
     if(network.active){if(network.wants_input()){sample_keys(keys);const u32 frame=network.sending_frame();const auto m=probe->session&&!probe->in_title?probe->session->motion_input[network.side]:GameSession::MotionSample{};const u8 mode=!m.enabled?NetworkInput::MotionNone:m.target?(m.unlimited?NetworkInput::MotionTargetUnlimited:NetworkInput::MotionTarget):NetworkInput::MotionVelocity;if(!network.submit(network.side,frame,keys[2],mode,m.x,m.y))return 0;th09_network_send(frame,keys[2],i32(mode),m.x,m.y);}if(network.failed){probe->error="Network input order invalid";return 0;}NetworkInput::Motion motion[2];const u32 frame=network.frame();const bool publisher=network.side==0;if(!network.take(keys,motion))return 2;if(probe->session)for(i32 s=0;s<2;++s)probe->session->motion_input[s]={motion[s].enabled,motion[s].x,motion[s].y,motion[s].unlimited,motion[s].target};
         const bool wasComplete=probe->complete;
         const auto priorRoundFrames=probe->world?probe->world->rules.progress.round_frames:0;
+        const bool matchUndecided=probe->world&&!probe->in_title&&probe->world->scene->decided_winner()<0;
         const u32 ok=probe->tick_inputs(keys[0],keys[1],keys[2],render!=0);
+        if(ok&&matchUndecided&&probe->world&&!probe->in_title){
+            const auto& world=*probe->world;
+            const auto winner=world.scene->decided_winner();
+            const auto& characters=world.configuration.selection.characters;
+            if(winner>=0)th09_network_match_decided(frame+1,winner,characters[0],characters[1]);
+        }
         if(ok&&publisher){const auto mode=[](const NetworkInput::Motion& m){return !m.enabled?0:m.target?(m.unlimited?3:2):1;};
             th09_network_spectator_frame(frame,keys[0],keys[1],mode(motion[0]),motion[0].x,motion[0].y,mode(motion[1]),motion[1].x,motion[1].y,nullptr,0);}
         if(ok&&probe->world&&probe->world->rules.progress.round_frames<priorRoundFrames&&probe->world->rules.progress.round>0)

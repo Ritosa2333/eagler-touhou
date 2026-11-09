@@ -49,16 +49,11 @@ function touchPolicy(value){
 }
 let launchSerial=0,roomOwned=false;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...((event==='first-frame'||event==='room-menu')?{launchSerial}:{}),...fields},location.origin);
-let peerMatchStart=-1;
 function replayBoundary(frame,winner){
  if(winner<0){
-  peerMatchStart=options.netplayMode==='lan'&&options.netplayPlayer===1&&!options.netplaySpectator?frame:-1;
-  autoReplay?.begin(frame);return;
- }
- const start=peerMatchStart;peerMatchStart=-1;
- if(start>=0&&frame>start&&(winner===0||winner===1)&&netplay?.connected&&!netplay.spectator)
-  emit('runtime-info',{th09Match:{start,frames:frame-start,winner}});
- autoReplay?.end(frame,winner);
+  netplay?.startMatchReport(frame);
+  autoReplay?.begin(frame);
+ }else autoReplay?.end(frame,winner);
 }
 const values=(fn,n)=>Array.from(core.HEAP32.subarray(fn()/4,fn()/4+n));
 const status=()=>({title:values(core._th09_title_status,8),session:values(core._th09_session_status,8),touch:values(core._th09_touch_state,4)});
@@ -275,7 +270,7 @@ for(const [name,type] of [['pointerdown',0],['pointermove',1],['pointerup',2],['
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();clearKeyboard();fatal(Error('图形环境失效，请退出后重新开始。'));});window.addEventListener('pagehide',()=>{revokeLifetime(true);replayPlayer?.close();clearKeyboard();if(launched){netplay?.close();core._th09_loop_pause(1);void save();}});
 const initialized=(async()=>{
  const initializingLifetime=lifetime;let last=performance.now(),lastFrames=0;
-  core=await createModule({canvas,resetBrowserKeyboard:()=>keyboard.clear(),printErr:console.error,onNetworkRequest:openNetwork,onNetworkReplayBoundary:replayBoundary,onNetworkResult:()=>netplay?.result(),onNetworkInput:(...args)=>netplay?.input(...args),onNetworkSpectatorBegin:(...args)=>netplay?.beginMatch(...args),onNetworkSpectatorEnd:(...args)=>netplay?.endMatch(...args),onNetworkSpectatorRound:(frame,round,replayFrame)=>{autoReplay?.roundStart(replayFrame);netplay?.roundStart(frame,round);},onNetworkSpectatorFrame:(...args)=>netplay?.publish(...args),onGameFrame(ok,ms){if(!ok){fatal(Error(err()));return;}netplay?.frame();if(!first){first=true;emit('first-frame');}const current=core._th09_storage_revision();if(current!==revision){revision=current;void sync().catch(fatal);}const now=performance.now(),frames=status().title[0];if(now-last>=1000){emit('frame-health',{fps:(frames-lastFrames)*1000/(now-last),maxGapMs:ms});emit('audio-health',{backend:'script',robust:core.SDL3?.audioContext?.state==='running'});last=now;lastFrames=frames;}const title=status().title;if(title[7]===0||(netplay?.finished&&title[1]&&title[2]===1)||(netplay?.spectator&&!netplay.timelineExperiment&&title[1]&&(title[2]===14||title[2]===1)))void stop().catch(fatal);}});
+  core=await createModule({canvas,resetBrowserKeyboard:()=>keyboard.clear(),printErr:console.error,onNetworkRequest:openNetwork,onNetworkReplayBoundary:replayBoundary,onNetworkMatchDecided:(...args)=>netplay?.finishMatchReport(...args),onNetworkResult:()=>netplay?.result(),onNetworkInput:(...args)=>netplay?.input(...args),onNetworkSpectatorBegin:(...args)=>netplay?.beginMatch(...args),onNetworkSpectatorEnd:frame=>netplay?.endMatch(frame),onNetworkSpectatorRound:(frame,round,replayFrame)=>{autoReplay?.roundStart(replayFrame);netplay?.roundStart(frame,round);},onNetworkSpectatorFrame:(...args)=>netplay?.publish(...args),onGameFrame(ok,ms){if(!ok){fatal(Error(err()));return;}netplay?.frame();if(!first){first=true;emit('first-frame');}const current=core._th09_storage_revision();if(current!==revision){revision=current;void sync().catch(fatal);}const now=performance.now(),frames=status().title[0];if(now-last>=1000){emit('frame-health',{fps:(frames-lastFrames)*1000/(now-last),maxGapMs:ms});emit('audio-health',{backend:'script',robust:core.SDL3?.audioContext?.state==='running'});last=now;lastFrames=frames;}const title=status().title;if(title[7]===0||(netplay?.finished&&title[1]&&title[2]===1)||(netplay?.spectator&&!netplay.timelineExperiment&&title[1]&&(title[2]===14||title[2]===1)))void stop().catch(fatal);}});
  assertLifetime(initializingLifetime,core);
  window.Module=core;window.FS=core.FS;core.SDL3=core.SDL3||{};if(parent!==window&&parent.__touhouAudioContext)core.SDL3.audioContext=parent.__touhouAudioContext;
  core.FS.mkdirTree(saveRoot);core.FS.mount(core.IDBFS,{},saveRoot);await sync(true);assertLifetime(initializingLifetime,core);core.FS.mkdirTree(saveRoot+'/replay');core.FS.symlink(saveRoot,'/save');
