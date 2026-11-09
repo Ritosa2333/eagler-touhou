@@ -606,15 +606,18 @@ test('room participants including guests can report other authors by message id'
   const free=(messageId,authorId)=>({type:'free-chat',room:'ROOM',serial:7,seat:1,clientId:'peer',authorId,messageId,name:'Marisa',text:'hello'});
   model.receive(free(20,'account-2'));
   model.receive(free(21,'account-1'));
-  model.reportMessage(20);
-  model.reportMessage(21);
-  assert.deepEqual(sends,[{type:'chat-report',messageId:20}]);
+  model.reportMessage(20, '   ');
+  model.reportMessage(20, 'x'.repeat(501));
+  assert.deepEqual(sends,[]);
+  model.reportMessage(20, 'test reason');
+  model.reportMessage(21, 'test reason');
+  assert.deepEqual(sends,[{type:'chat-report',messageId:20,reason:'test reason'}]);
   model.receive({type:'chat-result',action:'chat-report',ok:true});
   model.receive({type:'chat-result',action:'chat-report',ok:false,code:'report-rate-limited'});
   assert.deepEqual(notifications,['reported','report-rate-limited']);
   model.receive({type:'chat-status',registered:false,authorId:'',bannedUntil:0});
-  model.reportMessage(20);
-  assert.deepEqual(sends,[{type:'chat-report',messageId:20},{type:'chat-report',messageId:20}]);
+  model.reportMessage(20, 'test reason');
+  assert.deepEqual(sends,[{type:'chat-report',messageId:20,reason:'test reason'},{type:'chat-report',messageId:20,reason:'test reason'}]);
 });
 test('retraction removes an author prefix, preserves quick chat and drops delayed free messages', (t) => {
   const {model,clock}=fixture(t);

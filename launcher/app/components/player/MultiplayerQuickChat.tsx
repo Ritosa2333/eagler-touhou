@@ -29,7 +29,7 @@ const isolate = (event: SyntheticEvent) => event.stopPropagation();
 export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
   model: MultiplayerQuickChatModel;
   iconUrl: string;
-  decisions: Pick<DecisionStore, 'askConfirmation'>;
+  decisions: Pick<DecisionStore, 'askText'>;
 }) {
   const { t } = useLocale();
   const root = useRef<HTMLElement>(null),
@@ -249,7 +249,7 @@ function ChatRow({
   return (
     <p ref={ref} hidden={!visible} title={`${sender}: ${label}`} className="room-chat-entry" data-speaker={entry.spectator?'spectator':'player'}>
       <ChatAvatar entry={entry} model={model}/>
-      <ChatMessageContent entry={entry} model={model} label={label} confirmReport={confirmReport} />
+      <ChatMessageContent entry={entry} model={model} label={label} confirmReport={confirmReport} directReport />
     </p>
   );
 }

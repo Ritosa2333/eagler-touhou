@@ -14,7 +14,7 @@ const chatLog = (state: ReturnType<MultiplayerQuickChatModel['getSnapshot']>) =>
 function RoomChatLog({model, mobile, decisions}: {
   model: MultiplayerQuickChatModel;
   mobile: boolean;
-  decisions?: Pick<DecisionStore, 'askConfirmation'>;
+  decisions?: Pick<DecisionStore, 'askText'>;
 }) {
   const {locale, t} = useLocale();
   const {entries, muted} = useStoreSelector(model, chatLog, shallowEqual);
@@ -55,7 +55,7 @@ function RoomChatLog({model, mobile, decisions}: {
     <p key={entry.id} className="room-chat-entry" data-speaker={entry.spectator?'spectator':'player'}>
       <ChatAvatar entry={entry} model={model}/>
       <ChatMessageContent entry={entry} model={model} label={locale === 'en' ? entry.phrase.en : entry.phrase.zh}
-        confirmReport={mobile && decisions ? confirmReport : undefined}/>
+        confirmReport={decisions ? confirmReport : undefined} directReport={mobile}/>
     </p>
   ));
   if (!mobile) return <div className="mp-room-chat-log" ref={log} role="log" aria-live="polite" aria-label={t('chat.players')}>{messages}</div>;
@@ -82,7 +82,7 @@ export function RoomQuickChat({model, part = 'all', mobile = false, decisions}: 
   model: MultiplayerQuickChatModel;
   part?: 'all' | 'log' | 'actions';
   mobile?: boolean;
-  decisions?: Pick<DecisionStore, 'askConfirmation'>;
+  decisions?: Pick<DecisionStore, 'askText'>;
 }) {
   const {t} = useLocale();
   const log = <RoomChatLog model={model} mobile={mobile} decisions={decisions}/>;

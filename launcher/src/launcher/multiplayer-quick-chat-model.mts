@@ -352,18 +352,19 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
       }, 12000);
       ports.send({ type: 'free-chat', text, serial: context.serial });
     },
-    reportMessage(messageId: number) {
+    reportMessage(messageId: number, reason: string) {
       const context = snapshot.context;
       const entry = snapshot.entries.find((item) => item.messageId === messageId);
       if (
         !disposed &&
         context?.connected &&
         (context.localSeat != null || context.localSpectator) &&
+        typeof reason === 'string' && reason.trim().length > 0 && reason.trim().length <= 500 &&
         entry?.authorId &&
         entry.clientId !== context.localClientId &&
         entry.authorId !== snapshot.authorId
       )
-        ports.send({ type: 'chat-report', messageId });
+        ports.send({ type: 'chat-report', messageId, reason: reason.trim() });
     },
     openComposer() {
       if (!disposed && !snapshot.pickerOpen) publish({ ...snapshot, pickerOpen: true, editingText: false });

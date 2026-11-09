@@ -130,18 +130,19 @@ export function QuickChatPhrases({ enabled, language, numbered, onSelect }: {
   );
 }
 
-export function useChatReportConfirmation(model: MultiplayerQuickChatModel, decisions?: Pick<DecisionStore, 'askConfirmation'>) {
-  const { t } = useLocale();
+export function useChatReportConfirmation(model: MultiplayerQuickChatModel, decisions?: Pick<DecisionStore, 'askText'>) {
+  const { t, locale } = useLocale();
   return useCallback(async (entry: QuickChatEntry) => {
     if (!entry.messageId || !decisions) return;
-    const confirmed = await decisions.askConfirmation({
+    const reason = await decisions.askText({
       title: t('chat.report'),
       message: entry.phrase.zh,
       confirmText: t('chat.report'),
       confirmOnEnter: false,
+      input: {label: locale === 'zh-CN' ? '举报理由' : locale === 'ja' ? '通報理由' : 'Report reason', defaultValue:'', validate:value => !value.trim() || value.trim().length > 500 ? (locale === 'zh-CN' ? '请填写 1 至 500 个字符的理由' : locale === 'ja' ? '理由を1～500文字で入力してください' : 'Enter a reason of 1 to 500 characters') : null},
     });
-    if (confirmed && model.getSnapshot().entries.includes(entry)) model.reportMessage(entry.messageId);
-  }, [decisions, model, t]);
+    if (reason && model.getSnapshot().entries.includes(entry)) model.reportMessage(entry.messageId, reason);
+  }, [decisions, model, t, locale]);
 }
 
 export function ChatMessageText({ entry, label }: {entry: QuickChatEntry; label: string}) {
@@ -229,18 +230,20 @@ export const ChatMessageContent = memo(function ChatMessageContent({
   model,
   label,
   confirmReport,
+  directReport = false,
 }: {
   entry: QuickChatEntry;
   model: MultiplayerQuickChatModel;
   label: string;
   confirmReport?(entry: QuickChatEntry): void;
+  directReport?: boolean;
 }) {
   const { t } = useLocale(),
     state = useStoreSelector(model, chatIdentity, shallowEqual);
   const own = entry.clientId === state.localClientId || (!!entry.authorId && entry.authorId === state.authorId),
     canReport = !!entry.messageId && !!entry.authorId && state.canReport && !own;
   const content = <ChatMessageText entry={entry} label={label}/>;
-  if (confirmReport) return canReport ? (
+  if (directReport && confirmReport) return canReport ? (
     <UiButton variant="unstyled" className="room-chat-message chat-report-trigger"
       aria-haspopup="dialog" title={t('chat.report')} onClick={() => confirmReport(entry)}>
       {content}
@@ -272,8 +275,8 @@ export const ChatMessageContent = memo(function ChatMessageContent({
             <VolumeX aria-hidden="true" />
             {t(state.muted.includes(entry.clientId) ? 'chat.unmute' : 'chat.mute')}
           </ActionMenuItem>
-          {canReport && (
-            <ActionMenuItem onAction={() => model.reportMessage(entry.messageId!)}>
+          {canReport && confirmReport && (
+            <ActionMenuItem onAction={() => confirmReport(entry)}>
               <Flag aria-hidden="true" />
               {t('chat.report')}
             </ActionMenuItem>

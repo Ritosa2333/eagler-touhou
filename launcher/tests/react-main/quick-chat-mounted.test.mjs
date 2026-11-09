@@ -157,7 +157,7 @@ const query = (selector) => {
   assert.ok(value, selector);
   return value;
 };
-async function mount(model, { strict = false, dispose, room = false, decisions = {askConfirmation:async()=>false} } = {}) {
+async function mount(model, { strict = false, dispose, room = false, decisions = {askText:async()=> 'test reason'} } = {}) {
   const host = env.document.createElement('div');
   env.document.body.append(host);
   const root = createRoot(host);
@@ -176,9 +176,9 @@ async function mount(model, { strict = false, dispose, room = false, decisions =
       React.createElement(React.Fragment, null,
         React.createElement(owner.MultiplayerQuickChat, {model,iconUrl:'/assets/player-chat.svg',decisions}),
         room === 'split' ? React.createElement(React.Fragment, null,
-          React.createElement('div', {id:'roomUpperSpace'}, React.createElement(owner.RoomQuickChat, {model,part:'log'})),
+          React.createElement('div', {id:'roomUpperSpace'}, React.createElement(owner.RoomQuickChat, {model,part:'log',decisions})),
           React.createElement('div', {id:'roomBottomControls'}, React.createElement(owner.RoomQuickChat, {model,part:'actions'})))
-          : room ? React.createElement(owner.RoomQuickChat, {model}) : null),
+          : room ? React.createElement(owner.RoomQuickChat, {model,decisions}) : null),
     ),
   );
   mounted = {
@@ -327,7 +327,7 @@ test('guest room UI keeps quick chat and shared history; registered chat can sen
   assert.equal(report.textContent.includes('Report'),true);
   await React.act(async()=>{
     report.click();
-    await vi.waitFor(()=>assert.deepEqual(calls.at(-1),['send',{type:'chat-report',messageId:30}]),{timeout:1000,interval:1});
+    await vi.waitFor(()=>assert.deepEqual(calls.at(-1),['send',{type:'chat-report',messageId:30,reason:'test reason'}]),{timeout:1000,interval:1});
   });
   await act(()=>model.receive({type:'chat-result',action:'chat-report',ok:false,code:'report-rate-limited'}));
   assert.deepEqual(notifications,['report-rate-limited']);
@@ -483,8 +483,8 @@ test('tapping another player’s free chat opens a report confirmation and sends
   await act(()=>decisions.resolve('cancel'));
   assert.deepEqual(calls,[]);
   await act(()=>trigger.click());
-  await act(()=>decisions.resolve('confirm'));
-  assert.deepEqual(calls,[['send',{type:'chat-report',messageId:30}]]);
+  await act(()=>decisions.resolve('confirm','test reason'));
+  assert.deepEqual(calls,[['send',{type:'chat-report',messageId:30,reason:'test reason'}]]);
 });
 test('openComposer focuses the quick panel and typing hides slots while Enter and Escape still work', async () => {
   const {model,calls}=fixture();
@@ -870,7 +870,7 @@ test('actual RoomSession routes valid socket chat into React and UI sends throug
     assert.ok(reportItem);
     await React.act(async()=>{
       reportItem.click();
-      await vi.waitFor(()=>assert.deepEqual(socket.sent.at(-1),{type:'chat-report',messageId:51}),{timeout:1000,interval:1});
+      await vi.waitFor(()=>assert.deepEqual(socket.sent.at(-1),{type:'chat-report',messageId:51,reason:'test reason'}),{timeout:1000,interval:1});
     });
     await act(()=>socket.message({type:'chat-result',action:'chat-report',ok:false,code:'report-rate-limited'}));
     assert.deepEqual(notifications,['chat.sendRateLimited','chat.reportRateLimited']);

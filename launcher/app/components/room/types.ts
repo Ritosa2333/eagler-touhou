@@ -33,7 +33,7 @@ export interface RoomViewContext {
 export interface RoomViewProps {
   music?: RoomMusic | null;
   quickChat?: MultiplayerQuickChatModel;
-  decisions: Pick<DecisionStore, 'askConfirmation'>;
+  decisions: Pick<DecisionStore, 'askText'>;
   products: readonly MultiplayerProductId[];
   service: MultiplayerRoomService;
   network: RoomNetworkPresentation;
