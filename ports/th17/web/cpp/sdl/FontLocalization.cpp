@@ -113,7 +113,7 @@ bool FontDevice::write_localized(TextureImage& image,const TextLayout& layout,co
     style.fallback=false;
     auto& font=localized_fonts[request.font];
     auto& gothic=japanese_fallback[request.font];
-    constexpr i32 sizes[]={32,32,15,15,40,40,15,15,26};
+    constexpr i32 sizes[]={32,32,15,15,40,40,15,15,26,24};
     const i32 preferred=request.music_detail?(english_music_details?24:30):sizes[request.font];
     if(!font){
         font=TTF_OpenFont(font_path.c_str(),float(preferred));

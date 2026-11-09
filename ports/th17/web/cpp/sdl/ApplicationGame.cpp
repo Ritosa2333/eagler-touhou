@@ -6,7 +6,14 @@ bool ApplicationState::audio(i32 id,float pan,PlayerShots::SoundAction action,bo
  if(room_sounds){room_sounds->push_back({id,pan,action,queued});return true;}
 #endif
  if(action==PlayerShots::SoundAction::stop)return audio_device.effects.stop(id);if(action==PlayerShots::SoundAction::pan){audio_device.sound_pan(u32(id),truncate_int(float(float(pan*1000.f)/192.f)));return true;}return (queued?audio_device.effects.enqueue(id,truncate_int(float(float(pan*1000.f)/192.f))):audio_device.effects.positioned(id,pan))||fail(audio_device.effects.error);}
-bool ApplicationState::popup(const Vec3&,i32,u32){return true;}bool ApplicationState::trophy(i32 id){return progress.enhanced_practice||records.trophy(id)||fail(records.error);}
+bool ApplicationState::popup(const Vec3&,i32,u32){return true;}
+bool ApplicationState::trophy(i32 id){
+ if(progress.enhanced_practice)return true;
+ const bool first=u32(id)<records.trophies.size()&&!records.trophies[id];
+ if(!records.trophy(id))return fail(records.error);
+ if(first&&!progress.practice_record&&progress.demo_slot<0)trophy_notice.enqueue(id);
+ return true;
+}
 bool ApplicationState::game_over(){return rollback_boundary()&&(pause&&pause->open(PauseEntrance::GameOver)||fail(pause?pause->error:"Game-over menu unavailable"));}
 bool ApplicationState::finish_practice(){return rollback_boundary()&&(pause&&pause->open(PauseEntrance::Results)||fail(pause?pause->error:"Practice result menu unavailable"));}
 bool ApplicationState::record_play_time(){return rollback_boundary()&&(pause&&pause->time.account(i32(flow.current))||fail(pause?pause->time.error:"Run play-time owner unavailable"));}
