@@ -1512,6 +1512,8 @@
   "replay_ui_parsing": "Parsing replay…",
   "replay_ui_parseFailed": "Cannot parse replay",
   "replay_ui_empty": "No replays yet",
+  "replay_hsobImport": "Choose a Main_replay*.dat file or a replay ZIP",
+  "replay_hsobPlayback": "Play imported recordings from Replay in the game's title menu.",
   "replay_ui_drop": "Import a replay or drop a file here",
   "replay_ui_download": "Download",
   "replay_ui_rename": "Rename",
@@ -2330,5 +2332,8 @@
   "network_relayNoReply": "The lobby did not return a room list",
   "network_manifestUnavailable": "Could not load the site’s multiplayer configuration",
   "network_relayClosed": "Relay connection closed (code {code})",
-  "network_relayHandshake": "Could not connect to the relay"
+  "network_relayHandshake": "Could not connect to the relay",
+  "document_privacy": "Privacy Policy",
+  "content_privacy": "The privacy policy is published in Simplified Chinese.",
+  "nav_privacyPolicy": "Privacy Policy"
 }

@@ -31,7 +31,7 @@ function cancellable<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
   });
 }
 
-export const resourcePath = (url: URL) => /^\/(?:games|shared|language|language-updates)\//.test(url.pathname);
+export const resourcePath = (url: URL) => /^\/(?:games|shared|language)\//.test(url.pathname);
 
 /** Routes identify byte-identical locations. The Package installer still owns
  * complete-file integrity and publication. Policy is shared by a session's fetch. */

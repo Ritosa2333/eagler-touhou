@@ -7,10 +7,10 @@ import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
 import {loadCompatibleSiteManifest} from '../../src/contracts/compat/host-manifest.mts';
 import {createNetplayTelemetry} from '../../src/launcher/netplay-telemetry.mts';
 import {isAbortError, linkAbortSignals, waitWithAbort} from '../services/abort-signals';
-import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId, type GameId} from '../../src/contracts/product-catalog.mts';
+import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, productRequiresImport, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId, type GameId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import {detectUiLocale, isUiLocale, isUiMessageKey, localeHome, UI_LOCALE_STORAGE_KEY, type UiLocale} from '../../src/launcher/i18n.mts';
-import {replayImportAccept} from '../../src/launcher/replay-files.mts';
+import {replayImportAcceptFor} from '../../src/launcher/replay-files.mts';
 import {discouragedBrowserId} from '../../src/launcher/browser-support.mts';
 import {createMultiplayerIdentityStore, multiplayerMemberId} from '../../src/launcher/multiplayer-identity.mts';
 import {createMultiplayerRoomSessionStore} from '../../src/launcher/multiplayer-room-session.mts';
@@ -541,7 +541,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       roomCode: roomCodeFromUrl(window.location.href) || null, replayViewer: snapshot.replayViewer,
       runtimeEpoch: runtime?.getSnapshot().epoch ?? null,
       runtimeReady: runtime?.getSnapshot().ready === true && !roomPreload, launched: runtime?.getSnapshot().launched === true,
-      playerOpen: snapshot.playerOpen, importServer: metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import',
+      playerOpen: snapshot.playerOpen, importServer: productRequiresImport(gameIdForProduct(settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID)) || metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import',
       fallback: metadata.getSnapshot().siteManifest?.shared.gameDataFallback ?? null}),
     ports: {
       pickFile: ({accept}) => ports.pickFile(accept), feedback, showGameDataTransfer: transfer.revealGameData,
@@ -975,6 +975,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   }
   let replayPreparation: Promise<void> | null = null;
   function prepareReplayWorkspace(product: ProductId): Promise<void> {
+    if (product === 'hsob') return Promise.resolve();
     if (!replays?.getSnapshot().open) return Promise.reject(new RuntimeSessionSupersededError());
     const owner = requiredRuntime(), state = owner.getSnapshot();
     if (snapshot.replayViewer && state.launched && state.game === gameIdForProduct(product) && state.runtimeVariant === (isMultiplayerProductId(product) ? 'multiplayer' : 'normal')) return Promise.resolve();
@@ -1009,7 +1010,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (owner.getSnapshot().launched) {frame?.focus({preventScroll: true}); return;}
       if (isMultiplayerProductId(product)) {await roomSession!.service.launch(); return;}
       cloudSync?.prepareLocalLaunch();
-      if (metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import' && !(await acquisition.readCurrent(gameIdForProduct(product))).generation) {
+      const game = gameIdForProduct(product);
+      if ((productRequiresImport(game) || metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import') && !(await acquisition.readCurrent(game)).generation) {
         publish({startupError: null}); feedback.status(t('package.needImport')); gameData.beginImportRequired(); return;
       }
       if (!await confirmTouchInput('singleplayer') || !await confirmMusicWarnings()) return;
@@ -1428,7 +1430,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       } catch (error) {feedback.playerStatus(t('fullscreen.switchFailed', {reason: errorText(error)}));}
     },
     getRuntime: () => runtime, getReplays: () => replays, getDiagnostics: () => diagnostics, getGameplayNetwork: () => gameplayNetwork,
-    async chooseReplayFile(product: ProductId) {const file = await ports.pickFile(replayImportAccept); if (file) {if (!files) throw new Error('File service is not attached'); await activity(() => files!.importFile('replay', file, product));}},
+    async chooseReplayFile(product: ProductId) {const file = await ports.pickFile(replayImportAcceptFor(product)); if (file) {if (!files) throw new Error('File service is not attached'); await activity(() => files!.importFile('replay', file, product));}},
     async warnDiscouragedBrowser(isCurrent: () => boolean = () => true): Promise<boolean> {
       let dismissed = false; try {dismissed = storage?.getItem('browser-warning-dismissed') === '1';} catch {}
       if (dismissed || !discouragedBrowserId(window.navigator.userAgent)) return !disposed && isCurrent();

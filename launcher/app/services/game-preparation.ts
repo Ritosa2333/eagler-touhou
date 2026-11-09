@@ -1,7 +1,7 @@
 import {isReplayFilePath} from '../../src/launcher/replay-files.mts';
 import {componentFileIds} from '../../package/package-generation.mjs';
 import {PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, languagePriority, productFeatureAvailable,
-  type ProductId} from '../../src/contracts/product-catalog.mts';
+  productRequiresImport, type ProductId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import type {InstalledPackageGeneration} from '../../src/contracts/package-read-models.mts';
 import type {RuntimeConfigureOptions} from '../../src/contracts/runtime-protocol.mts';
@@ -123,7 +123,7 @@ function effectiveMusic(input: GamePreparationInput, generation: InstalledPackag
   return resolveEffectiveMusicMode({audio: settings.context.musicAvailability.audio,
     musicSources: 'sources' in policy ? policy.sources : [],
     midiAvailable: PRODUCT_GAMES[settings.gameId].musicCapabilities.midi && hosted?.music.midi.supported !== false,
-    importServer: host?.shared.resourceMode === 'import', remoteOggAdvertised: !!hosted?.music.ogg || splitAssets,
+    importServer: productRequiresImport(settings.gameId) || host?.shared.resourceMode === 'import', remoteOggAdvertised: !!hosted?.music.ogg || splitAssets,
     remoteRevision: acquisition.getMetadata().releaseCatalog?.games[settings.gameId]?.revision ?? null,
     installed: generation ? {revision: generation.descriptor.revision, oggFileIds: componentFileIds(generation.descriptor, 'ogg'), files: generation.files} : null,
     requested: settings.musicPreference, explicit: settings.musicPreferenceExplicit});

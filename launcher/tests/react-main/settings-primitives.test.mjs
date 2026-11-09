@@ -63,6 +63,23 @@ test('TH05 settings expose the PR album, language and one thprac switch', async 
   assert.equal(restored.getSnapshot().music,'ogg-akyu');assert.equal(restored.getSnapshot().language,'lang_zh-hans');assert.equal(restored.getSnapshot().options.thpracEnabled,true);
 });
 
+test('TH05 settings expose the PR album, language and one thprac switch', async () => {
+  const saved=new Map(),storage={getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value)};
+  const model=owners.createGameSettingsModel({storage});
+  const context={productId:'th05',uiLocale:'zh-CN',languages:[{id:'ja',title:'日本語'},{id:'lang_zh-hans',title:'简体中文'}],musicAvailability:{audio:true,midiAvailable:false,importServer:false,remoteOggAdvertised:true},webMidiAvailable:false,mobile:false};
+  model.hydrate(context);
+  const midi={enabled:false,granted:false,busy:false,supported:false,outputs:[],selectedId:'',hint:''};
+  const unexpected=()=>{throw Error('Unexpected file action');};
+  const actions={confirm:unexpected,file:unexpected,showAppleNotice:unexpected,feedback(){},reportError:unexpected,externalMidi:{subscribe:()=>()=>{},getSnapshot:()=>midi,setEnabled:unexpected,selectOutput:unexpected}};
+  await render(React.createElement(owners.LocaleProvider,{locale:'zh-CN'},React.createElement(owners.SettingsBody,{model,actions,onOpenTouchLayout:unexpected})));
+  assert.equal(n('#musicSelect option[value="ogg-akyu"]').textContent,'幺乐团专辑版');
+  assert.equal(n('#musicSelect option[value="midi"]').disabled,true);
+  await act(()=>{model.setMusic('ogg-akyu');model.setLanguage('lang_zh-hans');model.setOption('thpracEnabled',true);});
+  assert.equal(n('#musicSelect').value,'ogg-akyu');
+  const restored=owners.createGameSettingsModel({storage});restored.hydrate(context);
+  assert.equal(restored.getSnapshot().music,'ogg-akyu');assert.equal(restored.getSnapshot().language,'lang_zh-hans');assert.equal(restored.getSnapshot().options.thpracEnabled,true);
+});
+
 test('third launch consumer shares shell/icon order and retains current intent, disabled and label ownership', async () => {
   const calls = []; let submits = 0;
   async function update(label, disabled = false) {
