@@ -1,6 +1,8 @@
 import {SITE_BRAND_FACES,SITE_BRAND_DEFAULT} from './site-brand.mjs';
 /** Router addresses and their mount-local publication files have one inventory. */
 export function uiReviewEnabled(environment = globalThis.process?.env ?? {}) {
+  const review = environment.VITE_UI_REVIEW_ENABLED;
+  if (review === 'false' || review === 'true') return review === 'true';
   const preview = environment.VITE_PREVIEW_FEATURES;
   return preview === 'true' || (preview !== 'false' && environment.NODE_ENV === 'development');
 }
