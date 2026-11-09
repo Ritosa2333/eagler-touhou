@@ -132,6 +132,11 @@ bool ApplicationState::start_replay(i32 file_index, i32 stage_index) {
         !replay_slots[u32(file_index)].decoded)
         return fail("Replay start on empty slot: " + std::to_string(file_index));
     if (stage_index < 0) return fail("Replay start with negative stage index");
+    // 0x452a43/0x452a55: the replay launch creates the effect.anm script0
+    // overlay and applies label7 while still in the title scene; 0x42c550's
+    // label1 later rebinds it for the first stage. Queue only after the
+    // run-owned owner exists.
+    if (!begin_run_transition()) return false;
     pending_replay_file = file_index;
     replay_catalog_index = file_index;
     pending_replay_stage_slot = stage_index;
@@ -556,6 +561,7 @@ bool ApplicationState::initialize(bool device) {
 
 ApplicationState::~ApplicationState() {
     clear_ending_windows();
+    (void)release_run_transition();
     title.reset();
     if (ending) {
         ending->teardown();
@@ -571,6 +577,10 @@ ApplicationState::~ApplicationState() {
 }
 
 void ApplicationState::release_run(bool preserve_hud) {
+    // 0x415650/0x402ff0 的 overlay root 是 run-owned：它必须跨 title.reset()
+    // 与 0xa/0xb Retry 存活，只在 begin_title/析构退役。故这里不释放它，
+    // 并保留它引用的 effect(8)/astral(25) bank。
+    const bool transition_alive = run_transition.active();
     // 0x44a373（ThreadInf 声音对象销毁）：or eax,-1 → 0x460d40(-1) 停全部
     // SE voice。原版场景退出销毁声音线程对象时 loop 声（se_lazer00.wav id55、
     // se_lazer02.wav id20）随之终止；web 的 voices 与 BGM 流分离，stop(-1)
@@ -588,10 +598,13 @@ void ApplicationState::release_run(bool preserve_hud) {
     // 对局 bank 卸载（unload 从 banks 摘除并落 retired 队列，供重开再装载）；
     // 常驻 bank（text/ascii/effect）只 retire 活动 VM，资源本体跨场景常驻。
     for (const auto bank : {kFrontBank, kStageBank, kBulletBank, kPlayerBank, kSceneryBank, 26, kStageLogoBank,
-                            kSpiritBank})
-        if (!preserve_hud || bank != kFrontBank) animations.unload(bank);
+                            kSpiritBank}) {
+        if (preserve_hud && bank == kFrontBank) continue;
+        animations.unload(bank);
+    }
     if (!preserve_hud)
-        for (const auto bank : {0, 2, 8}) animations.retire_resource(bank);
+        for (const auto bank : {0, 2, 8})
+            if (!(transition_alive && bank == 8)) animations.retire_resource(bank);
     // 004172e0's caption slot must not outlive the run. preserve_hud keeps
     // bank 2 loaded, so retire the tree explicitly instead of dropping the
     // handle (an abandoned transition would otherwise keep spawning script16
@@ -633,6 +646,7 @@ bool ApplicationState::preload_scenery_animation(i32 bank, const std::string& na
 }
 
 bool ApplicationState::begin_title(i32 reason) {
+    if (!release_run_transition()) return false;
     // 0042bfa0 saves before destroying a battle, including Replay. Ending
     // teardown alone (43c1c0 case 10) is not a score save point.
     if (run || ordinary_records_dirty) {
@@ -672,6 +686,40 @@ bool ApplicationState::begin_title(i32 reason) {
     return title->error.empty() || fail(title->error);
 }
 
+bool ApplicationState::begin_run_transition() {
+    // 0x415650(effect type 0) creates effect.anm script0 in the title scene;
+    // 0x402ff0 initializes its AnmOverlay (panels 3..6 + astral), and
+    // 0x46fc30(handle, 7) applies label7 (0x403630: layer 26/mode 0).
+    // The handle is DAT_004dc86c, owned by the run, not by TitleScene.
+    // 00417370 is unrelated: it creates ascii.anm script17 (the loading
+    // prayer) and is modeled separately by transition_prayer/loading_prayer.
+    if (!animations.resource(8))
+        return fail("Run transition effect bank unavailable");
+    // Native title launch has no astral bank yet (AstralInf is created during
+    // battle load), so 0x402ff0 builds four effect panels only.
+    if (!run_transition.create())
+        return fail(run_transition.error.empty() ? "Run transition effect create failed"
+                                                 : run_transition.error);
+    return true;
+}
+
+bool ApplicationState::stage_start_run_transition() {
+    // 0x42c550:0x42c86a..0x42c88c sends label1 on every activation. A live
+    // launch overlay rebinds its panels to scripts 7..10; after its natural
+    // completion the stale handle is a no-op, also on 0xc continuation.
+    if (!run_transition.stage_start())
+        return fail(run_transition.error.empty() ? "Run transition stage start failed"
+                                                 : run_transition.error);
+    return true;
+}
+
+bool ApplicationState::release_run_transition() {
+    if (!run_transition.release())
+        return fail(run_transition.error.empty() ? "Run transition effect retire failed"
+                                                 : run_transition.error);
+    return true;
+}
+
 bool ApplicationState::begin_run() {
     const bool new_run = progress.new_run;  // 关终 0xc 换关为延续对局（非新开）
     const bool preserve_hud = run && !new_run;
@@ -687,11 +735,22 @@ bool ApplicationState::begin_run() {
         if (!files.save_score()) return fail(files.error);
         ordinary_records_dirty = false;
     }
+    // TitleScene stores the 0x415650 handle in its own state only until the
+    // launch frame; native DAT_004dc86c outlives the title manager. Transfer
+    // ownership before title.reset() so ~TitleScene does not retire it.
+    if (title) {
+        const u32 title_effect = title->state.start_effect;
+        title->state.start_effect = 0;
+        if (!run_transition.adopt(title_effect))
+            return fail(run_transition.error.empty() ? "Run transition adopt failed"
+                                                      : run_transition.error);
+    }
     title.reset();
     if (continuing) {
         pause.reset();
         previous_run = std::move(run);
-        for (i32 bank : {kStageBank, kBulletBank, kSpiritBank, kStageLogoBank}) animations.unload(bank);
+        for (i32 bank : {kStageBank, kBulletBank, kSpiritBank, kStageLogoBank})
+            animations.unload(bank);
         animations.collect_resources();
     } else {
         release_run(preserve_hud);
@@ -840,6 +899,11 @@ bool ApplicationState::begin_run() {
         if (!animations.retire(transition_prayer))
             return fail("Next-stage loading caption release: " + animations.error);
     }
+    // 0x42c550:0x42c886..0x42c88c: after the prayer caption is retired, the
+    // persistent DAT_004dc86c overlay receives label1. This is the only path
+    // that rebinds panels 3..6 to effect scripts 7..10; it must run on every
+    // stage activation, first launch and 0xc continuation alike.
+    if (!stage_start_run_transition()) return false;
     if (!replay_session) run->record_input = [this](const GameInput& input) {
         // 录像 slow 事件字节（0x4484d0；回放 FPS 显示直读该流）：取最近
         // 1s 采样窗的整数 fps，正常 60 → 恒 60 字节（slow rate 0%）。
