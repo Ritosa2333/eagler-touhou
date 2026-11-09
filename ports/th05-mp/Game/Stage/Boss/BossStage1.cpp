@@ -68,13 +68,13 @@ void CBossStage1::Phase1()
 	}
 }
 
-void CBossStage1::Phase2ShootType1()
+void CBossStage1::Phase2ShootType1(float x,float y)
 {
 	if (m_curPhaseFrame%2==0)
 	{
 		ENEMY_SHOOT_INFO shootInfo;
-		shootInfo.shootOrigX=m_curX;
-		shootInfo.shootOrigY=m_curY;
+		shootInfo.shootOrigX=x;
+		shootInfo.shootOrigY=y;
 		shootInfo.bulletBornType=2;
 		shootInfo.bulletImg=44;
 		shootInfo.shootType=EST00_SINGLE;
@@ -85,13 +85,13 @@ void CBossStage1::Phase2ShootType1()
 	}
 }
 
-void CBossStage1::Phase2ShootType2()
+void CBossStage1::Phase2ShootType2(float x,float y)
 {
 	if (m_curPhaseFrame%2==0)
 	{
 		ENEMY_SHOOT_INFO shootInfo;
-		shootInfo.shootOrigX=m_curX;
-		shootInfo.shootOrigY=m_curY;
+		shootInfo.shootOrigX=x;
+		shootInfo.shootOrigY=y;
 		shootInfo.bulletBornType=2;
 		shootInfo.bulletImg=44;
 		shootInfo.shootType=EST00_SINGLE;
@@ -102,13 +102,13 @@ void CBossStage1::Phase2ShootType2()
 	}
 }
 
-void CBossStage1::Phase2ShootType3()
+void CBossStage1::Phase2ShootType3(float x,float y)
 {
 	if (m_curPhaseFrame==32)
 	{
 		ENEMY_SHOOT_INFO shootInfo;
-		shootInfo.shootOrigX=m_curX;
-		shootInfo.shootOrigY=m_curY;
+		shootInfo.shootOrigX=x;
+		shootInfo.shootOrigY=y;
 		shootInfo.bulletBornType=18;
 		shootInfo.bulletImg=48;
 		shootInfo.shootType=EST09_NWAY_MULTI_TO_CHARA;
@@ -124,13 +124,13 @@ void CBossStage1::Phase2ShootType3()
 	}
 }
 
-void CBossStage1::Phase2ShootType4()
+void CBossStage1::Phase2ShootType4(float x,float y)
 {
 	if (m_curPhaseFrame%8==0)
 	{
 		ENEMY_SHOOT_INFO shootInfo;
-		shootInfo.shootOrigX=m_curX;
-		shootInfo.shootOrigY=m_curY;
+		shootInfo.shootOrigX=x;
+		shootInfo.shootOrigY=y;
 		shootInfo.bulletBornType=18;
 		shootInfo.bulletImg=48;
 		shootInfo.shootType=EST06_MULTI;
@@ -155,25 +155,34 @@ void CBossStage1::Phase2Shoot()
 	}
 	else
 	{
-		if (RandomWalk(m_curPhaseFrame-16)!=0)
+		float x=m_curX,y=m_curY;
+		const bool finished=RandomWalk(m_curPhaseFrame-16)!=0;
+		if (!original::BossGeometryEnabled()){x=m_curX;y=m_curY;}
+		// The original calls the pattern once more after clearing its clock.
+		if (finished&&m_curMode!=3)
+		{
+			const int cadence=m_curMode==4?8:2;
+			m_curPhaseFrame=(m_curPhaseFrame+cadence-1)/cadence*cadence;
+		}
+		switch(m_curMode)
+		{
+		case 1:
+			Phase2ShootType1(x,y);
+			break;
+		case 2:
+			Phase2ShootType2(x,y);
+			break;
+		case 3:
+			if (!finished)Phase2ShootType3(x,y);
+		    break;
+		case 4:
+			Phase2ShootType4(x,y);
+		    break;
+		}
+		if (finished)
 		{
 			m_curPhaseFrame=0;
 			m_curMode=0;
-		}
-		switch(m_curMode)		//behavior here is a bit different than PC98 ver, because copying that will make
-		{						//the code somewhat ugly
-		case 1:
-			Phase2ShootType1();
-			break;
-		case 2:
-			Phase2ShootType2();
-			break;
-		case 3:
-			Phase2ShootType3();
-		    break;
-		case 4:
-			Phase2ShootType4();
-		    break;
 		}
 	}
 }
@@ -407,15 +416,15 @@ void CBossStage1::Phase4Shoot()
 		m_pStage->m_pLaser->StartGrow(1);
 	}
 	bool bChange=false;
-	if (m_pStage->m_pLaser->LaserAngle(1)>=128)
+	if (m_pStage->m_pLaser->LaserAngle(1)>128)
 		bChange=true;
-	if (m_pStage->m_pLaser->LaserAngle(1)<128&&m_pStage->m_pLaser->LaserAngle(1)>=96&&m_curPhaseFrame%2==0)
+	if (m_pStage->m_pLaser->LaserAngle(1)<=128&&m_pStage->m_pLaser->LaserAngle(1)>96&&m_curPhaseFrame%2==0)
 		bChange=true;
-	if (m_pStage->m_pLaser->LaserAngle(1)<96&&m_pStage->m_pLaser->LaserAngle(1)>=88&&m_curPhaseFrame%3==0)
+	if (m_pStage->m_pLaser->LaserAngle(1)<=96&&m_pStage->m_pLaser->LaserAngle(1)>88&&m_curPhaseFrame%3==0)
 		bChange=true;
-	if (m_pStage->m_pLaser->LaserAngle(1)<88&&m_pStage->m_pLaser->LaserAngle(1)>=80&&m_curPhaseFrame%4==0)
+	if (m_pStage->m_pLaser->LaserAngle(1)<=88&&m_pStage->m_pLaser->LaserAngle(1)>80&&m_curPhaseFrame%4==0)
 		bChange=true;
-	if (m_pStage->m_pLaser->LaserAngle(1)<80&&m_curPhaseFrame%5==0)
+	if (m_pStage->m_pLaser->LaserAngle(1)<=80&&m_curPhaseFrame%5==0)
 		bChange=true;
 	if (bChange&&m_pStage->m_pLaser->LaserAngle(1)>74)
 	{
@@ -428,7 +437,7 @@ void CBossStage1::Phase4Shoot()
 		shootInfo.shootOrigX=m_curX;
 		shootInfo.shootOrigY=m_curY;
 		shootInfo.bulletBornType=16;
-		shootInfo.shootAngle=(float)(m_curPhaseFrame-48)/16*14;
+		shootInfo.shootAngle=(float)((m_curPhaseFrame-33)/16*14);
 		shootInfo.shootType=EST02_NWAY;
 		shootInfo.bulletMoveType=EBMT10_STRAIGHT;
 		const int nWay[]={5,6,7,8};

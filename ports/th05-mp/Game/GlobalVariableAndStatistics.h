@@ -85,6 +85,7 @@ public:
 	int m_totalNPointItem;
 	int m_curNGraze;
 	int m_playerPerformance;
+ int m_itemRankProgress=0;
 	int m_curHighScore;
 	int m_nContinueUsed;
 

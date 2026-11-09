@@ -1,11 +1,20 @@
 #include "OriginalFeatures.h"
+#include "OriginalMath.h"
 #include "../Game.h"
 #include <algorithm>
 #include <cstdlib>
+#include <cmath>
 namespace th5w { namespace original {
-namespace {RunStats stats;DemoState demo;int frameDelay=1;
+namespace {constexpr double pi=3.1415926535897932384626433832795;
+RunStats stats;DemoState demo;int frameDelay=1;
 uint32_t Fraction(uint16_t total,uint16_t share){return total?(total==share?1000000u:(1000000u/total)*share):0;}
 void ReadDemo(int file){char name[16];sprintf_s(name,"DEMO%d.REC",file);auto& pack=CGame::s_pCurGame->m_th5Dat2;const int idx=pack.GetChildFileIndex(name);demo.data.clear();if(idx>=0){auto* p=pack.GetChildFileContentPointer(idx);const int n=pack.GetChildFileLength(idx);demo.data.assign(p,p+n);}}
+}
+float PatternOffsetX(float angle,float radius){
+ return BossGeometryEnabled()?float(math::X(int(angle),int(radius))):float(std::cos(angle/256.0f*2*pi))*radius;
+}
+float PatternOffsetY(float angle,float radius){
+ return BossGeometryEnabled()?float(math::Y(int(angle),int(radius))):float(std::sin(angle/256.0f*2*pi))*radius;
 }
 RunStats& Stats(){return stats;}
 void BeginTimingFrame(){frameDelay=1;}
@@ -43,10 +52,27 @@ Verdict Evaluate(const RunStats& s){
  else if(s.endSequence==2)v.comment=2;else v.comment=s.bombs<=s.misses*2?5:s.stage>=4&&s.points<=350?6:3;
  return v;
 }
+namespace {
+bool UsesCombatRevision(CombatRevision revision){
+ if(DemoActive())return true;
+ const auto& game=CGame::GVar();
+ return !game.m_bReplayMode||game.m_replay.m_combatRevision>=revision;
+}
+}
+bool BossGeometryEnabled(){return UsesCombatRevision(OriginalBossGeometry);}
+bool MotionEnabled(){return UsesCombatRevision(OriginalMotion);}
+bool BombAndRageEnabled(){return UsesCombatRevision(OriginalBombAndRage);}
 DemoState& Demo(){return demo;}bool DemoActive(){return demo.active;}
 int IRandom(){if(!demo.active)return std::rand();demo.seed=demo.seed*0x015a4e35u+1;return int((demo.seed>>16)&32767);}
+#ifdef TH05_BROWSER_TESTS
+bool auditRandom=false;
+#endif
 int Random(){
+#ifdef TH05_BROWSER_TESTS
+ if(!demo.active&&!auditRandom)return std::rand();
+#else
  if(!demo.active)return std::rand();
+#endif
  // randring1 and randring2 share one byte cursor. The word read at 255
  // includes the cursor byte itself, before INC wraps it back to zero.
  const unsigned int i=demo.ringIndex;const int value=demo.ring[i]|((i==255?demo.ringIndex:demo.ring[i+1])<<8);++demo.ringIndex;return value;

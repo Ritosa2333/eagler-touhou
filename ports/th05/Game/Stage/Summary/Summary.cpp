@@ -93,6 +93,8 @@ void CSummary::StepNormalSummary()
 		else
 			if (totalScore>=800000)
 				m_pStage->ChangePlayerPerformance(2);
+			else if (original::MotionEnabled()&&totalScore>=500000)
+				m_pStage->ChangePlayerPerformance(1);
 			else
 				if (totalScore<=100000)
 					m_pStage->ChangePlayerPerformance(-2);
@@ -132,17 +134,20 @@ void CSummary::StepEndGameSummary()
 			totalScore+=50000;
 		totalScore+=m_pStage->m_totalNPointItem*250;
 
-		if (totalScore>=1200000)
-			m_pStage->ChangePlayerPerformance(4);
-		else
-			if (totalScore>=800000)
-				m_pStage->ChangePlayerPerformance(2);
+		if (!original::MotionEnabled())
+		{
+			if (totalScore>=1200000)
+				m_pStage->ChangePlayerPerformance(4);
 			else
-				if (totalScore<=100000)
-					m_pStage->ChangePlayerPerformance(-2);
+				if (totalScore>=800000)
+					m_pStage->ChangePlayerPerformance(2);
 				else
-					if (totalScore<=200000)
-						m_pStage->ChangePlayerPerformance(-1);
+					if (totalScore<=100000)
+						m_pStage->ChangePlayerPerformance(-2);
+					else
+						if (totalScore<=200000)
+							m_pStage->ChangePlayerPerformance(-1);
+		}
 		if (m_pStage->m_pBoss->m_bSuccessDefeat==false)
 			totalScore=0;
 		else

@@ -202,7 +202,17 @@ bool ApplicationState::begin_game(bool playback){
 #endif
  return true;
 }
-bool ApplicationState::begin_ending(){ending=std::make_unique<EndingScene>(animations,records,*this,scheduler,6);const i32 index=preview_index;preview_index=-1;return ending->initialize(progress,index)||fail(ending->error);}
+bool ApplicationState::begin_ending(){
+ ending=std::make_unique<EndingScene>(animations,records,*this,scheduler,6);
+ const i32 index=preview_index;preview_index=-1;
+ if(!ending->initialize(progress,index))return fail(ending->error);
+#if TH17_MULTIPLAYER
+ // Room viewers may have different local records. Use the same skip policy
+ // for every confirmed input stream, regardless of past local clears.
+ if(room_seats>1)ending->script.run.first_seen_flags=0;
+#endif
+ return true;
+}
 bool ApplicationState::draw_global(){
  if(!graphics.select_target(nullptr,0))return fail(graphics.error);graphics.clear(0xff000000);graphics.set_fog(false);views.camera(DrawCamera::Fullscreen,false);
  if(scheduler.draw()<0)return fail(title&&!title->error.empty()?title->error:global_layers->error.empty()?global_letters->error:global_layers->error);renderer.flush();graphics.present();return graphics.error.empty()||fail(graphics.error);

@@ -20,6 +20,7 @@
 #include "../multiplayer/ReplayArchive.hpp"
 #include "../multiplayer/StageEntry.hpp"
 #include <eagler/netplay/BrowserPeerTransport.hpp>
+#include <eagler/input/LocalPlayerCue.hpp>
 #include <eagler/netplay/SpectatorStagePublisher.hpp>
 #include <eagler/netplay/SpectatorStageView.hpp>
 #include <eagler/replay/Workspace.hpp>
@@ -77,7 +78,7 @@ struct RoomRuntime final : multiplayer::World {
  multiplayer::SessionSetup setup;
  multiplayer::ReplayArchive replay;
  Netplay::SpectatorStagePublisher publisher;
- Netplay::SpectatorStagePlayback playback;
+ Netplay::SpectatorStagePlayback playback{Netplay::SpectatorStagePlayback::RestoreMode::Run};
  Netplay::SpectatorStageView spectator_view;
  bool spectator=false,playing_replay=false,local_results=false,publisher_failed=false,ended=false;
  bool publication_started=false,terminal=false;
@@ -143,17 +144,18 @@ struct RoomRuntime final : multiplayer::World {
   if(intermediate)replay_step_start=emscripten_get_now();
  }
  bool replay_budget(unsigned replayed,unsigned remaining) const override{
+  if(replayed>=multiplayer::Session::rollback_frames)return false;
   const double now=emscripten_get_now();
-  constexpr unsigned usual_slice=4,maximum_slice=multiplayer::Session::rollback_frames;
-  if(replayed>=maximum_slice)return false;
-  if(replayed<usual_slice&&now<replay_deadline)return true;
-  if(!remaining||remaining>maximum_slice-replayed)return false;
-  // Two moving peers can produce a correction longer than the usual slice.
-  // Give a late RAF enough time for a cheap complete repair. Otherwise a
-  // sub-millisecond tail can wait an entire refresh even with no GPU work.
-  const double cost=(remaining-1)*logical_step_ms+tick_cost_ms;
-  const double late_deadline=refresh_start+3;
-  return now+cost+1<std::max(refresh_deadline,late_deadline);
+  // Preserve the short repair slice even when the browser delivered RAF late.
+  // Estimating the cost before every step can otherwise leave only one step
+  // per callback in a dense fight.
+  if(replayed<4&&now<replay_deadline)return true;
+  if(!remaining)return false;
+  // Spend spare refresh time on the next repair step. The whole tail does
+  // not have to fit to make progress.
+  const bool logical=remaining>1||app->graphics.backend.presentation_pending();
+  const double cost=logical?logical_step_ms:tick_cost_ms;
+  return now+cost+1<std::max(refresh_deadline,refresh_start+3);
  }
  bool blocked() const override{return app->room_barrier;}
  bool capture(u32 frame) override{
@@ -262,7 +264,9 @@ struct RoomRuntime final : multiplayer::World {
    return {input.unlimited?2:1,input.x,input.y};
   };
   const auto menu_before=main_input;
-  main_input.update(frame.inputs[0].buttons);
+  u32 menu_buttons=frame.inputs[0].buttons;
+  if(app->ending)for(u32 seat=1;seat<setup.seats;++seat)menu_buttons|=frame.inputs[seat].buttons&0x200u;
+  main_input.update(menu_buttons);
   if((main_input.pressed&0x100)&&!app->rollback_boundary()){barrier=number;return false;}
   app->touch=movement(frame.inputs[0]);
   for(u32 seat=1;seat<setup.seats;++seat)
@@ -309,9 +313,10 @@ struct RoomRuntime final : multiplayer::World {
   app->graphics.logical_drawing=previous_draw_mode;
   app->room_sounds=nullptr;
   if(!ok){if(app->room_barrier)barrier=number;return false;}
-  if(previous_draw_mode&&logical){
-   const double cost=std::clamp(emscripten_get_now()-replay_step_start,.25,16.);
-   logical_step_ms+=(cost-logical_step_ms)*.25;
+  if(!logical&&!spectator&&!playing_replay&&app->scene()){
+   auto& battle=app->scene()->battle;
+   const auto& pos=battle.pilot(setup.local).motion.position;
+   eagler::presentation::local_player_cue(setup.local,pos.x+224,pos.y+16);
   }
   output.score=app->scene()?u32(app->scene()->battle.score.score):u32(app->selection_score.score);
   if(app->scene())for(unsigned slot=0;slot<3;++slot)
@@ -322,17 +327,23 @@ struct RoomRuntime final : multiplayer::World {
    output.snapshot=status(number+1);
    if(logical)++logical_draws;
   }
+  if(previous_draw_mode&&logical){
+   const double cost=std::clamp(emscripten_get_now()-replay_step_start,.25,16.);
+   logical_step_ms+=(cost-logical_step_ms)*.25;
+  }
   if(measure_draw&&app->graphics.backend.presentation_pending()){
    const double cost=std::clamp(emscripten_get_now()-tick_start,.5,16.);
    tick_cost_ms+=(cost-tick_cost_ms)*.25;
   }
   return true;
  }
- bool poll(bool capture_follows=false){
+ bool poll(bool capture_follows=false,double input_time=-1){
   const RoomPhaseTimer timing{Input};
   const double now=emscripten_get_now();
   now_ms=std::uint64_t(now);
-  session.capture_phase(entered&&!can_predict(),std::uint64_t(now*1000));
+  // Input cadence follows the refresh clock. Use the live clock for the
+  // transport so callback jitter does not change packet and retry timings.
+  session.capture_phase(entered&&!can_predict(),std::uint64_t((input_time>=0?input_time:now)*1000));
   replay_deadline=now+8;
   if(spectator)return receive_spectator();
   if(playing_replay)return true;
@@ -490,6 +501,7 @@ void clear_inputs(){th17_browser_keyboard_reset();for(auto& key:keyboard_map)key
 void initialize_controller(){if(controller){SDL_CloseJoystick(controller);controller=nullptr;}SDL_InitSubSystem(SDL_INIT_JOYSTICK);int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;i++)add_controller(ids[i]);SDL_free(ids);}
 touhou::input::TouchState touch_state(){
  touhou::input::TouchState value;
+ if(app&&app->ending){value.context=2;return value;}
  if(app&&app->title)value.instance=1+int(app->title->state.screen)*256+app->title->state.substate;
  if(!app||!app->scene()||!app->run_input)return value;
  if(app->pause&&app->pause->state.screen!=PauseScreen::Inactive)return value;
@@ -514,7 +526,7 @@ u32 sample_controller(u32& buttons){
  const auto hat=SDL_GetNumJoystickHats(controller)>0?SDL_GetJoystickHat(controller,0):0;
  if(hat&SDL_HAT_UP)keys|=0x10;if(hat&SDL_HAT_DOWN)keys|=0x20;if(hat&SDL_HAT_LEFT)keys|=0x40;if(hat&SDL_HAT_RIGHT)keys|=0x80;return keys;
 }
-bool sample_and_tick(){
+bool sample_and_tick(double input_time=-1){
  if(!app)return false;SDL_Event event;while(SDL_PollEvent(&event)){
   ThpracUi::process_event(event,float(render_scale));
   if(event.type==SDL_EVENT_WINDOW_FOCUS_LOST){clear_inputs();lost_focus=!th17_host_has_focus();}
@@ -523,7 +535,7 @@ bool sample_and_tick(){
  }
 #if TH17_MULTIPLAYER
  if(room){
-  if(!room->poll(true))return false;
+  if(!room->poll(true,input_time))return false;
   if(!room->local_results){
    if(room->spectator||room->playing_replay)return room->update();
    if(room->terminal)return room->update(false);
@@ -669,7 +681,7 @@ EMSCRIPTEN_KEEPALIVE void th17_room_close(){th17::sdl::room.reset();}
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_status(){
  using namespace th17::sdl;
  static RoomRuntime::Status value{};
- value=room&&app?room->status(room->session.next_frame()):RoomRuntime::Status{};
+ value=room&&app?room->status(room->spectator?room->playback.Position():room->session.next_frame()):RoomRuntime::Status{};
  return value.data();
 }
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_confirmed(unsigned number){
@@ -815,7 +827,7 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
    const bool live=room&&!room->spectator&&!room->playing_replay&&!room->local_results;
    const auto previous_head=live?room->session.prediction_head():0;
 #endif
-   ok=sample_and_tick();
+   ok=sample_and_tick(time);
    const double tick_end=emscripten_get_now();
 #if TH17_MULTIPLAYER
    const bool advanced=live&&room&&room->session.prediction_head()>previous_head;
@@ -834,14 +846,14 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
    if(i+1<ticks&&tick_end+predicted_tick>=deadline){cadence.debt=std::min(.1,cadence.debt+(ticks-i-1)*period);break;}
   }
 #if TH17_MULTIPLAYER
-  if(!ticks&&work)ok=room->poll()&&room->update(false);
+  if(!ticks&&work)ok=room->poll(false,time)&&room->update(false);
   // Spend the single saved tick only on an already confirmed input. A
   // speculative catch-up would push the head forward and multiply repairs.
   if(ok&&ticks==1&&completed==1&&room&&room->retry_forward&&!room->terminal&&!room->session.repair_pending()&&
       room->session.has_confirmed_forward_input()&&emscripten_get_now()+room->tick_cost_ms+1<deadline){
    const auto head=room->session.prediction_head();
    room->retry_forward=false;
-   ok=sample_and_tick();
+   ok=sample_and_tick(time);
    if(room){
     completed+=unsigned(room->session.prediction_head()>head);
     room->retry_forward=room->session.forward_deferred();

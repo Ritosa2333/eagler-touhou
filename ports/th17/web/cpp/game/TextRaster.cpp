@@ -54,9 +54,20 @@ bool TextRaster::write(TextureImage& image,const TextRect& rect,const std::strin
     return rasterize(text,style)&&copy(image,rect,style);
 }
 bool TextRaster::copy(TextureImage& image,const TextRect& rect,const TextStyle& style){
-    if(image.format!=scratch.format||rect.left<0||rect.top<0||rect.right<=rect.left||rect.bottom<=rect.top||rect.right>i32(image.width)||rect.bottom>i32(image.height)||image.pitch<image.width*2||image.pixels.size()<u64(image.pitch)*image.height)return false;
+    const bool bgra=image.format==touhou::graphics::PixelFormat::Bgra8;
+    const u32 bytes=bgra?4:2;
+    if((!bgra&&image.format!=scratch.format)||rect.left<0||rect.top<0||rect.right<=rect.left||rect.bottom<=rect.top||rect.right>i32(image.width)||rect.bottom>i32(image.height)||image.pitch<image.width*bytes||image.pixels.size()<u64(image.pitch)*image.height)return false;
     const u32 width=rect.right-rect.left,height=rect.bottom-rect.top,sourceWidth=std::min(1024u,width),offset=style.fallback&&style.font!=2&&style.font!=6?6:0;if(height+offset>scratch.height)return false;
     // Point sampling uses the original source rectangle, not a smooth downscale.
-    for(u32 y=0;y<height;++y)for(u32 x=0;x<width;++x){const u32 sx=u32((u64(x)*2+1)*sourceWidth/(u64(width)*2));std::memcpy(image.pixels.data()+(rect.top+y)*image.pitch+(rect.left+x)*2,scratch.pixels.data()+(y+offset)*scratch.pitch+sx*2,2);}return true;
+    for(u32 y=0;y<height;++y)for(u32 x=0;x<width;++x){
+        const u32 sx=u32((u64(x)*2+1)*sourceWidth/(u64(width)*2));
+        const auto* source=scratch.pixels.data()+(y+offset)*scratch.pitch+sx*2;
+        auto* target=image.pixels.data()+(rect.top+y)*image.pitch+(rect.left+x)*bytes;
+        if(bgra){
+            const u16 rgba=read<u16>(source);
+            for(u32 channel=0;channel<4;channel++)target[channel]=u8(((rgba>>(channel*4))&15)*17);
+        }else std::memcpy(target,source,2);
+    }
+    return true;
 }
 }

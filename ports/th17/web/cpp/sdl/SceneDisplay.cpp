@@ -4,7 +4,7 @@ namespace th17::sdl {
 #if TH17_ROOM_BENCHMARK
 std::array<u32,4> room_benchmark_draw{};
 #endif
-SceneDisplay::SceneDisplay(StageGameplay& s,AnmManager& a,AnmEnvironment& e,GraphicsDevice& g,AnmRenderer& r):scene(s),animations(a),environment(e),graphics(g),renderer(r),views(r,e),captions(a,e),capture_device(g,r){}
+SceneDisplay::SceneDisplay(StageGameplay& s,AnmManager& a,AnmEnvironment& e,GraphicsDevice& g,AnmRenderer& r,TrophyNotice& t):scene(s),animations(a),environment(e),graphics(g),renderer(r),views(r,e),captions(a,e),trophy_notice(t),capture_device(g,r){}
 SceneDisplay::~SceneDisplay(){renderer.flush();scene.frame_scheduler().remove(fps_callback);screenshots.reset();scene.scene_animations.fill(nullptr);targets.reset();game.reset();outgoing_background.reset();compositor.reset();letters.reset();layers.reset();graphics.select_target(nullptr,0);}
 bool SceneDisplay::fail(const std::string& reason){if(error.empty())error=reason.empty()?"TH17 scene drawing failed":reason;return false;}
 bool SceneDisplay::initialize(GameRun& run,GameRecords& records,SpellRecords& spells,StageDrawServices& host,i32 text_bank,i32 ascii_bank,StageGameplay* previous){
@@ -54,6 +54,7 @@ bool SceneDisplay::draw(double logical_seconds){
     if(!game->draw())return fail(game->error.empty()?game->background.error:game->error);
     if(outgoing_background&&!outgoing_background->error.empty())return fail(outgoing_background->error);
     if(!compositor->error.empty())return fail(compositor->error);if(!layers->error.empty())return fail(layers->error);if(!letters->error.empty())return fail(letters->error);
+    if(!trophy_notice.draw(renderer,views,environment))return fail(trophy_notice.error);
     renderer.flush();if(!graphics.logical_drawing&&!screenshots->finish_frame())return fail(screenshots->error);graphics.present();
     const double seconds=logical_seconds>=0?logical_seconds:double(SDL_GetPerformanceCounter())/double(SDL_GetPerformanceFrequency());
     if(!scene.presented(seconds))return fail(scene.error);return graphics.error.empty()||fail(graphics.error);

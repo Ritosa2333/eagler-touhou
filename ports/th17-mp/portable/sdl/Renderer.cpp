@@ -67,7 +67,7 @@ bool Renderer::initialize(){
  glGenVertexArrays(1,&resampleVao);glGenTextures(1,&weightTexture);
  warming=false;set_current(this);return true;
 }
-Renderer::~Renderer(){discard();if(context){SDL_GL_MakeCurrent(window,context);for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);glDeleteBuffers(1,&quadIndices);
+Renderer::~Renderer(){discard();if(context){SDL_GL_MakeCurrent(window,context);for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second.vao);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);glDeleteBuffers(1,&quadIndices);
 #if TH_ENABLE_THPRAC
  glDeleteProgram(imguiProgram);glDeleteVertexArrays(1,&imguiVao);glDeleteBuffers(1,&imguiVbo);glDeleteBuffers(1,&imguiEbo);glDeleteTextures(1,&imguiFontTexture);
 #endif
@@ -113,8 +113,12 @@ void Renderer::select(const State& s){
 }
 void Renderer::uniform(int i,int n,const float* p){auto& u=program->uniforms[i];if(u.location<0)return;if(u.count==n&&!std::memcmp(u.value.data(),p,n*4))return;std::memcpy(u.value.data(),p,n*4);u.count=n;if(n==16)glUniformMatrix4fv(u.location,1,false,p);else if(n==4)glUniform4fv(u.location,1,p);else if(n==3)glUniform3fv(u.location,1,p);else glUniform1f(u.location,*p);}
 void Renderer::integer(int i,int n){auto& u=program->uniforms[i];if(u.location<0)return;float f=float(n);if(u.count==1&&u.value[0]==f)return;u.count=1;u.value[0]=f;glUniform1i(u.location,n);}
+void Renderer::bind_array_buffer(GLuint id){
+ if(boundArrayBuffer!=id){glBindBuffer(GL_ARRAY_BUFFER,id);boundArrayBuffer=id;}
+}
 u32 Renderer::upload(Stream& s,GLenum target,const void* bytes,u32 count,u32 minimum){
- glBindBuffer(target,s.id);stats.vertexUploadBytes+=count;
+ if(target==GL_ARRAY_BUFFER)bind_array_buffer(s.id);else glBindBuffer(target,s.id);
+ stats.vertexUploadBytes+=count;
 #ifdef __EMSCRIPTEN__
  // Replace the backing store for each submitted batch. Updating successive
  // subranges while previous draws still reference the store stalls some mobile
@@ -134,7 +138,7 @@ void Renderer::changed(u32 id,u32 previous,const std::array<u32,4>& region){
  else {g.dirty={};g.dirtyBase=~0u;}
 }
 Renderer::GPU& Renderer::surface(u32 h){
- auto s=resolve(owner,h);if(!s.handle||!s.width||!s.height){std::fprintf(stderr,"SDL invalid surface %u\n",h);std::abort();}auto& g=surfaces[h];if(!g.texture){glGenTextures(1,&g.texture);glGenFramebuffers(1,&g.framebuffer);bind_texture(g.texture);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,g.texture,0);}
+ auto s=resolve(owner,h);if(!s.handle||!s.width||!s.height){std::fprintf(stderr,"SDL invalid surface %u\n",h);std::abort();}auto& g=surfaces[h];g.renderScale=s.renderScale;if(!g.texture){glGenTextures(1,&g.texture);glGenFramebuffers(1,&g.framebuffer);bind_texture(g.texture);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,g.texture,0);}
  // Merge every known CPU edit since the last upload. Unknown edits retain
  // the full-image path so overlapping writes cannot be lost.
  const auto& r=g.dirty;
@@ -325,7 +329,7 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  if(all||cached.dither!=p.dither)p.dither?glEnable(GL_DITHER):glDisable(GL_DITHER);
  GPU* texture=d.texture?&surface(d.texture):nullptr;const bool consumesDepth=p.depthTest&&(p.depthWrite||p.depthCompare!=Compare::Always);auto& g=target(d.target,lazy_depth_clears&&!consumesDepth?~0u:d.depth);const auto& v=d.viewport;
  if(lazy_depth_clears&&p.depthTest&&(p.depthWrite||p.depthCompare!=Compare::Always))flush_depth(d.depth,d.target);
- const auto scale=resolve(owner,d.target).renderScale;const Viewport physical{v.x*scale,v.y*scale,v.width*scale,v.height*scale,v.min,v.max};
+ const auto scale=g.renderScale;const Viewport physical{v.x*scale,v.y*scale,v.width*scale,v.height*scale,v.min,v.max};
  if(!drawState.has_viewport||std::memcmp(&drawState.viewport,&physical,sizeof(physical))){glViewport(physical.x,physical.y,physical.width,physical.height);glDepthRangef(v.min,v.max);drawState.viewport=physical;drawState.has_viewport=true;}select(d);
  float vp[]{float(v.x),float(v.y),float(v.width),float(v.height)};uniform(0,4,vp);const bool transformed=d.layout.screen;
  integer(1,transformed);integer(2,p.textureTransform);integer(3,!!instance);
@@ -369,10 +373,10 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  if(all||cached.colorMask!=p.colorMask)glColorMask(!!(p.colorMask&1),!!(p.colorMask&2),!!(p.colorMask&4),!!(p.colorMask&8));
  cached=p;drawState.valid=true;
  const std::array<u32,6> layoutKey{d.stride,u32(d.layout.screen),d.layout.diffuse,d.layout.specular,d.layout.uv,u32(!!instance)};
- auto& vao=layouts[layoutKey];const bool setup=!vao;
+ auto& layout=layouts[layoutKey];auto& vao=layout.vao;const bool setup=!vao;
  if(setup)glGenVertexArrays(1,&vao);if(currentLayout!=vao){glBindVertexArray(vao);currentLayout=vao;}
  const u32 base=draining?0:upload(vertices,GL_ARRAY_BUFFER,data,size,1048576);
- if(draining&&setup)glBindBuffer(GL_ARRAY_BUFFER,vertices.id);
+ if(draining&&setup)bind_array_buffer(vertices.id);
 #ifdef __EMSCRIPTEN__
  if(setup){
 #else
@@ -389,11 +393,11 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,transformed?4:3,GL_FLOAT,fa
  // than replacing this compact instance buffer. The vertex arena stays shared.
  if(instance){u32 b=draining&&instanceOffset!=~0u?instanceOffset:upload(instances,GL_ARRAY_BUFFER,instance,instanceSize,65536);
 #ifdef __EMSCRIPTEN__
- if(setup||instanceBases[vao]!=b){
+ if(setup||layout.instanceBase!=b){
 #else
  {
 #endif
- if(draining)glBindBuffer(GL_ARRAY_BUFFER,instances.id);instanceBases[vao]=b;
+ if(draining)bind_array_buffer(instances.id);layout.instanceBase=b;
  // Enabled attributes and divisors belong to this instanced VAO. ImGui and
  // resampling use their own VAOs; only pointers change with the batch offset.
  if(setup)for(int location=4;location<=12;location++){glEnableVertexAttribArray(location);glVertexAttribDivisor(location,1);}
@@ -404,11 +408,14 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,transformed?4:3,GL_FLOAT,fa
   // provoking vertices. A reusable index table also addresses each aligned
   // sprite span without changing any VAO attribute pointers on WebGL2.
   const u32 first=draining?drawOffset/d.stride/4:0,required=first+count/2;
-  if(!quadIndices)glGenBuffers(1,&quadIndices);glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,quadIndices);
+  if(!quadIndices)glGenBuffers(1,&quadIndices);
+  // Element buffers belong to the VAO. Ordinary indexed draws can replace
+  // this binding, while utility passes use their own vertex arrays.
+  if(layout.elements!=quadIndices){glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,quadIndices);layout.elements=quadIndices;}
   if(required>quadIndexCapacity){quadIndexCapacity=std::max(required,std::max(1024u,quadIndexCapacity*2));std::vector<u32> table(size_t(quadIndexCapacity)*6);for(u32 i=0;i<quadIndexCapacity;i++){const u32 v=i*4;const u32 row[]={v,v+1,v+2,v+1,v+2,v+3};std::copy(std::begin(row),std::end(row),table.begin()+size_t(i)*6);}glBufferData(GL_ELEMENT_ARRAY_BUFFER,table.size()*sizeof(u32),table.data(),GL_STATIC_DRAW);stats.vertexUploadBytes+=table.size()*sizeof(u32);++stats.bufferReplacements;}
   glDrawElements(GL_TRIANGLES,count*3,GL_UNSIGNED_INT,reinterpret_cast<void*>(size_t(first)*6*sizeof(u32)));
  }
- else if(index){u32 b=upload(indices,GL_ELEMENT_ARRAY_BUFFER,index,n*(indexFormat==IndexType::UInt16?2:4),65536);glDrawElements(mode,n,indexFormat==IndexType::UInt16?GL_UNSIGNED_SHORT:GL_UNSIGNED_INT,reinterpret_cast<void*>(b));}
+ else if(index){u32 b=upload(indices,GL_ELEMENT_ARRAY_BUFFER,index,n*(indexFormat==IndexType::UInt16?2:4),65536);layout.elements=indices.id;glDrawElements(mode,n,indexFormat==IndexType::UInt16?GL_UNSIGNED_SHORT:GL_UNSIGNED_INT,reinterpret_cast<void*>(b));}
  else glDrawArrays(mode,draining?drawOffset/d.stride:0,n);g.rendered=true;
 }
 void Renderer::queue_depth(float value,const i32* rects,u32 count){

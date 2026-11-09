@@ -98,3 +98,15 @@ test('actual shell keeps gameplay gestures continuous through other deaths and s
  localMisses++;const next=context.state();assert.notEqual(next.key,initial.key);
  assert.equal(touch.sample(next).motion.x,1280);assert.equal(touch.points.size,1);
 });
+
+test('an ending long press owns only Skip, and releasing cannot press Confirm',()=>{
+ const touch=input(), ending={key:'ending:1',kind:'ending',ready:false};
+ const pointer=(type,x=100)=>touch.pointer({id:1,type,x,y:200},ending,type==='down'?0:550);
+ pointer('down');
+ assert.deepEqual(touch.sample(ending,{now:499}),{held:0,pressed:0,motion:null});
+ assert.deepEqual(touch.sample(ending,{now:500}),{held:512,pressed:0,motion:null});
+ pointer('up');
+ assert.deepEqual(touch.sample(ending,{now:560}),{held:0,pressed:0,motion:null});
+ pointer('down');pointer('move',130);
+ assert.deepEqual(touch.sample(ending,{now:600}),{held:0,pressed:0,motion:null});
+});

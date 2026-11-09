@@ -73,8 +73,10 @@ void verify(bool reference){
   const auto before=snapshot(source);target=source;equal(source,target);
   if(!reference){require(target.ordered()[2]==slots[2],"same-kind restore keeps its object");require(target.ordered()[2]->state.nodes.data()==nodes,"same-kind restore keeps curve-node capacity");}
   source=source;require(snapshot(source)==before,"self assignment preserves the full graph");
+  auto saved = source.snapshot();
+  const auto retained = saved;
   for(unsigned count:{3u,0u,30u,256u,1u,17u})for(unsigned rotation=0;rotation<3;++rotation){
-    fill(source,count,rotation,32+rotation*17);target=source;equal(source,target);
+    fill(source,count,rotation,32+rotation*17);source.snapshot(saved);target.restore(saved);equal(source,target);
     for(auto* object:target.ordered()){
       const auto kind=object->state.kind;
       require((kind==Kind::Moving&&dynamic_cast<MovingLaser*>(object))||
@@ -89,6 +91,8 @@ void verify(bool reference){
     equal(target,cold);require(a.events==b.events&&a.rng==b.rng,"continuation callbacks and RNG agree");
     hash(snapshot(target));
   }
+  target.restore(retained);
+  require(snapshot(target)==before,"retained compact snapshot owns its full ordered laser state");
   for(unsigned count:{2u,3u}){
     selectStage(1);multiplayer::Options options;options.count=count;options.selections={0,3,5};
     require(multiplayer::begin(options),"start synthetic multiplayer world");fill(laserManager,32);
@@ -114,6 +118,13 @@ int main(int argc,char** argv){
   const auto elapsed=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-begin).count();
   counting=false;equal(source,target);hash(snapshot(target));
   if(!reference)require(allocations==0,"steady laser checkpoint assignment has no allocations");
-  std::printf("{\"assignments\":1000,\"lasers\":192,\"curveNodes\":192,\"allocations\":%zu,\"elapsedMs\":%.3f,\"outputHash\":\"%016llx\"}\n",
-    allocations,elapsed,(unsigned long long)digest);
+  const auto assignmentAllocations=allocations;
+  auto compact = source.snapshot();
+  allocations=0;counting=true;
+  for(unsigned n=0;n<1000;++n)source.snapshot(compact);
+  counting=false;
+  require(allocations==0,"steady compact laser capture reuses state and curve buffers");
+  target.reset();target.restore(compact);equal(source,target);
+  std::printf("{\"assignments\":1000,\"lasers\":192,\"curveNodes\":192,\"allocations\":%zu,\"compactCaptureAllocations\":%zu,\"elapsedMs\":%.3f,\"outputHash\":\"%016llx\"}\n",
+    assignmentAllocations,allocations,elapsed,(unsigned long long)digest);
 }

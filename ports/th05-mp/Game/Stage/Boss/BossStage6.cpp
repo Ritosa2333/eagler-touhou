@@ -1,3 +1,4 @@
+#include "../../Original/CombatThresholds.h"
 #include "../../Practice/Practice.h"
 #include ".\bossstage6.h"
 #include "../Stage.h"
@@ -107,8 +108,16 @@ int CBossStage6::Phase2ShootType1()
 {
 	if (m_curPhaseFrame==32)
 	{
-		m_phase2Type1DeltaAngle=(float)(original::Random()%2*4-2);
-		m_phase2Type1Angle=(float)(original::Random()%256);
+		if (original::BossGeometryEnabled())
+		{
+			m_phase2Type1Angle=float(original::Random()&255);
+			m_phase2Type1DeltaAngle=(original::Random()&1)?2.0f:-2.0f;
+		}
+		else
+		{
+			m_phase2Type1DeltaAngle=(float)(original::Random()%2*4-2);
+			m_phase2Type1Angle=(float)(original::Random()%256);
+		}
 		m_pStage->m_bPlaySound[15]=true;
 	}
 	if (m_curPhaseFrame%4==0)
@@ -146,14 +155,17 @@ int CBossStage6::Phase2ShootType2()
 		si.shootType=EST04_NWAY_ALLAROUND;
 		si.nWay=16;
 
-		si.shootAngle=m_phase2Type1Angle+(m_curPhaseFrame-32)/interval*8;
+		si.shootAngle=original::BossGeometryEnabled()?m_phase2Type2Angle:
+			m_phase2Type2Angle+(m_curPhaseFrame-32)/interval*8;
 		float len=(float)(original::Random()%(32*16));
-		si.shootOrigX=m_curX+(float)cos(si.shootAngle/256.0f*2*PI)*len;
-		si.shootOrigY=m_curY+(float)sin(si.shootAngle/256.0f*2*PI)*len;
+		si.shootOrigX=m_curX+original::PatternOffsetX(si.shootAngle,len);
+		si.shootOrigY=m_curY+original::PatternOffsetY(si.shootAngle,len);
 
 		si.bulletSpeed=32;
 		m_pStage->m_pEnemyBullet->Shoot(&si);
 		si.shootAngle+=8;
+		if (original::BossGeometryEnabled())
+			m_phase2Type2Angle=float(int(si.shootAngle)&255);
 		si.bulletSpeed=64;
 		m_pStage->m_pEnemyBullet->Shoot(&si);
 		m_pStage->m_bPlaySound[3]=true;
@@ -173,6 +185,8 @@ int CBossStage6::Phase3ShootType1()
 		si.bulletBornType=18;
 		si.bulletSpeed=28;
 		si.shootType=EST13_RANDOM_BASE_SPEED_32;
+		if (original::BossGeometryEnabled())
+			si.shootAngle=m_pStage->m_pEnemyBullet->TemplateAngle();
 		si.nWay=3;
 		m_pStage->m_pEnemyBullet->TuneEnemyShootInfo(&si);
 		si.shootOrigY=m_curY;
@@ -407,7 +421,7 @@ void CBossStage6::Phase6Shoot()
 	}
 }
 
-void CBossStage6::Phase7Shoot()
+void CBossStage6::Phase7Shoot(float originY)
 {
 	if (m_curPhaseFrame<128)
 		return;
@@ -415,7 +429,7 @@ void CBossStage6::Phase7Shoot()
 	{
 		ENEMY_SHOOT_INFO si;
 		si.shootOrigX=m_curX;
-		si.shootOrigY=m_curY;
+		si.shootOrigY=originY;
 		si.bulletBornType=18;
 		si.bulletImg=45;
 		si.shootType=EST02_NWAY;
@@ -430,7 +444,7 @@ void CBossStage6::Phase7Shoot()
 	int interval[]={128,48,32,24};
 	if (m_curPhaseFrame%interval[CGame::GVar().m_playDifficulty]==0)
 	{
-		m_curvingBullet.AddBullet(m_curX,m_curY,(float)(original::Random()%3*64),64,11);
+		m_curvingBullet.AddBullet(m_curX,originY,(float)(original::Random()%3*64),64,11);
 		m_pStage->m_bPlaySound[3]=true;
 	}
 }
@@ -439,11 +453,13 @@ void CBossStage6::Phase6_7()
 {
 	if (m_bgColor[2]<128&&m_pStage->m_curFrame%16==0)
 		m_bgColor[2]++;
+	const float previousY=m_curY;
 	FloatMove();
+	const float originY=original::BossGeometryEnabled()?previousY:m_curY;
 	if (m_curPhase==6)
 		Phase6Shoot();
 	else
-		Phase7Shoot();
+		Phase7Shoot(originY);
 	if (practice::BeforeTimeout(m_curPhaseFrame<3000))
 		if (GetDmgOnAndCrashChara()!=0)
 			AddDefeatScoreAndPopupNumbers(25);
@@ -498,15 +514,15 @@ void CBossStage6::Phase8()
 	}
 }
 
-void CBossStage6::Phase9Shoot()
+void CBossStage6::Phase9Shoot(float originY)
 {
 	if (m_curPhaseFrame<=128)
 		return;
 	int interval[]={96,32,28,24};
 	if (m_curPhaseFrame%interval[CGame::GVar().m_playDifficulty]==0)
 	{
-		float angle=m_pStage->AimAngle(m_curX,m_curY);
-		m_shinkiBullet.AddBullet(m_curX,m_curY,201,angle,64);
+		float angle=m_pStage->AimAngle(m_curX,originY,original::BossGeometryEnabled());
+		m_shinkiBullet.AddBullet(m_curX,originY,201,angle,64);
 	}
 	if (m_curPhaseFrame%4==0)
 	{
@@ -518,7 +534,7 @@ void CBossStage6::Phase9Shoot()
 		si.bulletBornType=18;
 		si.bulletSpeed=40;
 		si.bulletImg=84;
-		si.shootOrigY=m_curY;
+		si.shootOrigY=originY;
 		if (m_curPhaseFrame%128<64)
 			si.shootAngle=(float)(m_curPhaseFrame%128*3);
 		else
@@ -535,20 +551,20 @@ void CBossStage6::Phase9Shoot()
 	}
 }
 
-void CBossStage6::Phase10Shoot()
+void CBossStage6::Phase10Shoot(float originY)
 {
 	if (m_curPhaseFrame<192)
 		return;
 	int idx=m_curPhaseFrame-192;
-	if (m_curHP<=5600||practice::AllowTimeout(m_curPhaseFrame>=1800))
+	if (m_curHP<=original::ShinkiLaserHP||practice::AllowTimeout(m_curPhaseFrame>=original::ShinkiLaserFrame))
 		if (m_phase10Timer==0)
 		{
 			float c[]={m_pStage->m_pStageRes->m_palette[14*3]/255.0f,m_pStage->m_pStageRes->m_palette[14*3+1]/255.0f,
 					   m_pStage->m_pStageRes->m_palette[14*3+2]/255.0f};
-			m_pStage->m_pLaser->AddLaserFixed(0,m_curX+96.0f*16.0f,m_curY,c,6,64);
-			m_pStage->m_pLaser->AddLaserFixed(1,m_curX+32.0f*16.0f,m_curY,c,6,64);
-			m_pStage->m_pLaser->AddLaserFixed(2,m_curX-32.0f*16.0f,m_curY,c,6,64);
-			m_pStage->m_pLaser->AddLaserFixed(3,m_curX-96.0f*16.0f,m_curY,c,6,64);
+			m_pStage->m_pLaser->AddLaserFixed(0,m_curX+96.0f*16.0f,originY,c,6,64);
+			m_pStage->m_pLaser->AddLaserFixed(1,m_curX+32.0f*16.0f,originY,c,6,64);
+			m_pStage->m_pLaser->AddLaserFixed(2,m_curX-32.0f*16.0f,originY,c,6,64);
+			m_pStage->m_pLaser->AddLaserFixed(3,m_curX-96.0f*16.0f,originY,c,6,64);
 			m_phase10Timer++;
 			AddExplodeEffect(0,m_curX,m_curY);
 		}
@@ -580,7 +596,7 @@ void CBossStage6::Phase10Shoot()
 			si.nWay=1;
 		si.nWayUnitAngle=48;
 		si.bulletSpeed=112;
-		si.shootOrigY=m_curY;
+		si.shootOrigY=originY;
 
 		si.shootOrigX=m_curX+96.0f*16.0f;
 		si.shootAngle=(float)m_phase10Var5;
@@ -645,7 +661,7 @@ void CBossStage6::Phase10Shoot()
 		{
 			float x=m_curX+(float)(original::Random()%(256*16)-128*16);
 			float y=m_curY+(float)(16*16-original::Random()%(64*16));
-			float angle=m_pStage->AimAngle(x,y);
+			float angle=m_pStage->AimAngle(x,y,original::BossGeometryEnabled());
 			m_shinkiBullet.AddBullet(x,y,201,angle,60);
 		}
 		m_pStage->m_bPlaySound[3]=true;
@@ -686,11 +702,11 @@ void CBossStage6::Phase10Shoot()
 					if (m_phase10VarI==56)
 						m_phase10VarD=1;
 				}
-				if (m_curHP<=3800||practice::AllowTimeout(m_curPhaseFrame>=2500))
+				if (m_curHP<=original::ShinkiFastHP||practice::AllowTimeout(m_curPhaseFrame>=original::ShinkiFastFrame))
 				{
 					if (m_phase10Timer==65)
 					{
-						int d[]={52,20,12,8};
+						int d[]={52,20,16,12};
 						m_phase10Var3=d[CGame::GVar().m_playDifficulty];
 						AddExplodeEffect(0,m_curX,m_curY);
 					}
@@ -719,18 +735,22 @@ void CBossStage6::Phase9_10()
 		if (m_bgColor[0]<128&&m_pStage->m_curFrame%16==0)
 			m_bgColor[0]++;
 	}
+	const float previousY=m_curY;
 	FloatMove();
+	const float originY=original::BossGeometryEnabled()?previousY:m_curY;
 	if (m_curPhase==9)
-		Phase9Shoot();
+		Phase9Shoot(originY);
 	else
-		Phase10Shoot();
-	if (practice::BeforeTimeout(m_curPhaseFrame<3000))
+		Phase10Shoot(originY);
+	if (practice::BeforeTimeout(m_curPhaseFrame<original::ShinkiWingEndFrame))
 	{
 		int res=GetDmgOnAndCrashChara();
 		if (m_pStage->m_bInCharaBomb)
 		{
 			res=0;
 			m_curHP+=m_HPLostThisFrame;
+			if (original::BombAndRageEnabled())
+				m_curHP--;
 		}
 		if (res!=0)
 			AddDefeatScoreAndPopupNumbers(25);
@@ -772,13 +792,13 @@ void CBossStage6::Phase12Shoot()
 	if (m_curPhaseFrame%8==0)
 	{
 		float angle=(float)((m_curPhaseFrame-128)/8*8);
-		float x=m_curX+(float)cos(angle/256.0f*2*PI)*64.0f*16.0f;
-		float y=m_curY+(float)sin(angle/256.0f*2*PI)*64.0f*16.0f;
+		float x=m_curX+original::PatternOffsetX(angle,64.0f*16.0f);
+		float y=m_curY+original::PatternOffsetY(angle,64.0f*16.0f);
 		m_shinkiBullet.AddBullet(x,y,200,angle,60);
 
 		angle+=128;
-		x=m_curX+(float)cos(angle/256.0f*2*PI)*64.0f*16.0f;
-		y=m_curY+(float)sin(angle/256.0f*2*PI)*64.0f*16.0f;
+		x=m_curX+original::PatternOffsetX(angle,64.0f*16.0f);
+		y=m_curY+original::PatternOffsetY(angle,64.0f*16.0f);
 		m_shinkiBullet.AddBullet(x,y,200,angle,60);
 		m_pStage->m_bPlaySound[3]=true;
 	}
@@ -1350,8 +1370,7 @@ practice::PhaseTimeout CBossStage6::GetPhaseTimeout() const {
  case 3:return practice::PhaseTimeout::Timeline(16,m_nModeChange,m_curMode,m_curPhaseFrame,[](int n){return 92;},[](int){return 60;});
  case 6:return practice::PhaseTimeout::Frames(3000,m_curPhaseFrame);
  case 7:return practice::PhaseTimeout::Frames(3000,m_curPhaseFrame);
- case 9:return practice::PhaseTimeout::Frames(3000,m_curPhaseFrame);
- case 10:return practice::PhaseTimeout::Frames(3000,m_curPhaseFrame);
+ case 9:case 10:return practice::PhaseTimeout::Frames(original::ShinkiWingEndFrame,m_curPhaseFrame);
  case 12:return practice::PhaseTimeout::Frames(3000,m_curPhaseFrame);
  default:return practice::PhaseTimeout();
  }

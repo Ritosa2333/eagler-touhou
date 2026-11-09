@@ -31,6 +31,8 @@ try{
   });
  });
  assert.deepEqual(report.modifiers,[1,1,1]);
+ report.practiceCases=await page.evaluate(()=>document.querySelector('iframe').contentWindow.Module._th05_native_stage_matrix());
+ assert.equal(report.practiceCases,84);
  report.resources=await page.evaluate(()=>{
   const m=document.querySelector('iframe').contentWindow.Module;if(!m._th05_coop_start(3,0,1,741,0,1,2))throw Error('start');
   const probe=(op,seat,value)=>{if(!m._th05_native_coop_probe(op,seat,value))throw Error('probe');};
@@ -96,6 +98,34 @@ try{
  });
  assert.ok(report.ending.scenes.includes(5));assert.ok(report.ending.scenes.includes(9));
  await page.screenshot({path:resolve(out,'native-three-player.png')});assert.deepEqual(errors,[]);report.errors=errors;
+ report.yumeko=await page.evaluate(()=>{
+  const m=document.querySelector('iframe').contentWindow.Module;
+  if(!m._th05_coop_start(3,0,3,741,0,1,2)||!m._th05_native_coop_stage(4,2))throw Error('Yumeko stage start');
+  return m._th05_native_coop_probe(34,0,0);
+ });
+ assert.equal(report.yumeko,1);
+ report.bossPatterns=await page.evaluate(()=>{
+  const m=document.querySelector('iframe').contentWindow.Module;
+  return [0,1,3,5,6].map(stage=>{
+   if(!m._th05_coop_start(3,0,stage===6?4:3,741,0,1,2)||!m._th05_native_coop_stage(stage,2))throw Error('Boss pattern stage start');
+   return m._th05_native_coop_probe(35,0,0);
+  });
+ });
+ assert.deepEqual(report.bossPatterns,[1,1,1,1,1]);
+ report.stage3Fairy=await page.evaluate(()=>{
+  const m=document.querySelector('iframe').contentWindow.Module;
+  if(!m._th05_coop_start(3,0,3,741,0,1,2)||!m._th05_native_coop_stage(2,0))throw Error('Stage 3 fairy fixture start');
+  return m._th05_native_coop_probe(36,0,0);
+ });
+ assert.equal(report.stage3Fairy,1);
+ report.enemyWaves=await page.evaluate(()=>{
+  const m=document.querySelector('iframe').contentWindow.Module;
+  return [0,1,2,3,4,5,6].map(stage=>{
+   if(!m._th05_coop_start(3,0,stage===6?4:3,741,0,1,2)||!m._th05_native_coop_stage(stage,0))throw Error('Enemy wave fixture start');
+   return m._th05_native_coop_probe(37,0,0);
+  });
+ });
+ assert.deepEqual(report.enemyWaves,[204,283,229,352,229,84,291]);
  await writeFile(resolve(out,'native.json'),JSON.stringify(report,null,2)+'\n');console.log('PASS native shared-world resources, rescue and '+report.cases.length+' synchronized stage cases');
 }catch(error){console.error(report,errors);await page.screenshot({path:resolve(out,'native-failure.png')});throw error;}
 finally{await browser.close();await site.close();}

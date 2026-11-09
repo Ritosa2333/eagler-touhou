@@ -51,7 +51,7 @@ public:
     const char* error()const{return failure.c_str();}
     int version;Resolve resolve;void* owner;
 private:
-    struct GPU {GLuint texture=0,framebuffer=0;u32 version=~0u,dirtyBase=~0u;std::array<u32,4> dirty{};bool rendered=false;GLuint attached=~0u;std::array<GLint,4> sampler{};};
+    struct GPU {GLuint texture=0,framebuffer=0;u32 version=~0u,dirtyBase=~0u,renderScale=1;std::array<u32,4> dirty{};bool rendered=false;GLuint attached=~0u;std::array<GLint,4> sampler{};};
     struct DepthClear {u32 target;std::array<i32,4> rect;float value;};
     struct Depth {GLuint buffer=0;bool stencil=false;std::vector<DepthClear> pending;};
     struct Uniform {GLint location=-1;std::array<float,16> value{};int count=-1;};
@@ -60,8 +60,9 @@ private:
     SDL_Window* window=nullptr;SDL_GLContext context=nullptr;
     std::map<u32,GPU> surfaces;std::map<u32,Depth> depths;std::map<std::array<u32,10>,Program> programs;
     GLuint vertex=0,currentProgram=0,boundTexture=~0u,readFramebuffer=~0u,drawFramebuffer=~0u;
-    std::map<std::array<u32,6>,GLuint> layouts;GLuint currentLayout=0;
-    std::map<GLuint,u32> instanceBases;
+    struct Layout {GLuint vao=0,elements=0;u32 instanceBase=~0u;};
+    std::map<std::array<u32,6>,Layout> layouts;
+    GLuint currentLayout=0,boundArrayBuffer=~0u;
 #if TH_ENABLE_THPRAC
     GLuint imguiProgram=0,imguiVao=0,imguiVbo=0,imguiEbo=0,imguiFontTexture=0;
     GLint imguiProjMtx=-1,imguiTexture=-1;
@@ -80,7 +81,7 @@ private:
     bool draining=false;u32 drawOffset=0,instanceOffset=0;
     void flush_batch();void drain();
     GPU& surface(u32);GPU& target(u32,u32);void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32,bool quads=false);
-    void bind_texture(GLuint);void bind_framebuffer(GLenum,GLuint);
+    void bind_texture(GLuint);void bind_framebuffer(GLenum,GLuint);void bind_array_buffer(GLuint);
     void flush_depth(u32,u32 preferredTarget=0);void queue_depth(float,const i32*,u32);
     void select(const State&);void uniform(int,int,const float*);void integer(int,int);
     u32 upload(Stream&,GLenum,const void*,u32,u32);

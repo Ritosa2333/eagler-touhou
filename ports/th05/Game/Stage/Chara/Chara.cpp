@@ -50,7 +50,7 @@ void CChara::MoveChara(unsigned short keyState)
 	if (m_bCharaCanMove==false)
 		return;
 
-	if(original::DemoActive()){
+	if(original::MotionEnabled()){
   // Native player_move rejects opposing directions, then retries after
   // removing the previous valid input. A retry does not update that input.
   unsigned short movement=keyState&15;
@@ -148,9 +148,9 @@ void CChara::DropBomb()
 
 void CChara::DecreaseDreamInBomb()
 {
- // sub_C52D: even frames in phase 0, only 2 mod 4 in later boss phases.
+ // PC-98 drains Dream on even frames before the boss fight and every fourth frame during it.
  const bool nativeDrain=(m_bombTimer%2==0)&&(!m_pStage->m_pBoss||m_pStage->m_pBoss->GetCurPhase()==0||m_bombTimer%4!=0);
-	if (original::DemoActive()?nativeDrain:(m_bombTimer%2==0||(m_pStage->m_bInBossBattle&&m_bombTimer%4==0)))
+	if (original::BombAndRageEnabled()?nativeDrain:(m_bombTimer%2==0||(m_pStage->m_bInBossBattle&&m_bombTimer%4==0)))
 	{
 		if (m_pStage->GetDream()>1)
 			m_pStage->SetDream(m_pStage->GetDream()-1);
@@ -186,6 +186,8 @@ void CChara::OnMissDropItem()
 
 void CChara::CaughtItem(float itemX,float itemY,unsigned char itemType)
 {
+ const bool nativeRank=original::MotionEnabled();
+ int& itemRank=nativeRank?m_pStage->m_itemRankProgress:m_getPointItemPerformance;
  original::ItemCollected(itemType==ITEM_POINT,itemType==ITEM_POINT&&(m_pStage->GetDream()>=128||itemY-m_pStage->GetDream()*24-896<=0));
 	const int powerOverflowBonus[]={1,1,2,3,4,5,6,7,8,9,
 									10,20,30,40,50,60,70,80,90,100,
@@ -232,7 +234,7 @@ void CChara::CaughtItem(float itemX,float itemY,unsigned char itemType)
 			}
 			if (pointScorePenalty<=0)
 			{
-				m_getPointItemPerformance++;
+				itemRank++;
 				if (m_pStage->m_bInCharaBombForItem==false)
 				{
 					int deltaDream=6-((int)itemY)/1024;
@@ -243,7 +245,7 @@ void CChara::CaughtItem(float itemX,float itemY,unsigned char itemType)
 			else
 				maxScore=2800-pointScorePenalty/2;
 			score=maxScore;
-			m_getPointItemPerformance++;
+			itemRank++;
 			m_pStage->m_totalNPointItem++;
 			if (m_pStage->m_curNPointItem<999)
 				m_pStage->m_curNPointItem++;
@@ -273,9 +275,9 @@ void CChara::CaughtItem(float itemX,float itemY,unsigned char itemType)
 			score=12800;
 			popupNumberColor=1;
 		}
-		m_getPointItemPerformance+=2;
-		if (m_pStage->m_bInCharaBombForItem==false)
-			m_getPointItemPerformance+=2;
+		itemRank+=2;
+		if (m_pStage->m_bInCharaBombForItem==nativeRank)
+			itemRank+=2;
 	    break;
 	case ITEM_BIGPOWER:
 		if (m_power<128)
@@ -321,9 +323,9 @@ void CChara::CaughtItem(float itemX,float itemY,unsigned char itemType)
 	color[1]=m_pStage->m_pStageRes->m_palette[(15-popupNumberColor*4)*3+1]/255.0f;
 	color[2]=m_pStage->m_pStageRes->m_palette[(15-popupNumberColor*4)*3+2]/255.0f;
 	m_pStage->m_pPopupNumber->AddNumber(itemX,itemY,score*10,color[0],color[1],color[2]);
-	if (m_getPointItemPerformance>=32)
+	if (itemRank>=32)
 	{
-		m_getPointItemPerformance-=32;
+		itemRank-=32;
 		m_pStage->ChangePlayerPerformance(1);
 	}
 }
@@ -379,11 +381,15 @@ void CChara::Step()
 		{
 			if (m_charaShootTimer%6==0)
 				m_pStage->m_bPlaySound[1]=true;
-			if(original::DemoActive())GetCharaBullet()->ShootOriginal(CGame::GVar().m_playChara,m_powerLevel,m_charaShootTimer,m_curX,m_curY);else ShootBullet();
+			auto* shots=GetCharaBullet();
+			if(shots->UsesOriginalShots())
+				shots->ShootOriginal(CGame::GVar().m_playChara,m_powerLevel,m_charaShootTimer,m_curX,m_curY);
+			else
+				ShootBullet();
 			m_charaShootTimer--;
 		}
 	}
-	if (original::DemoActive()?CCommonFunctionInput::XKey(m_pStage->m_curGameKeyState):CCommonFunctionInput::XPressed(m_pStage->m_curGameKeyState,m_pStage->m_lastGameKeyState))
+	if (original::BombAndRageEnabled()?CCommonFunctionInput::XKey(m_pStage->m_curGameKeyState):CCommonFunctionInput::XPressed(m_pStage->m_curGameKeyState,m_pStage->m_lastGameKeyState))
 		DropBomb();
 	if (m_nextLifeComeTimeLeft!=0)
 	{

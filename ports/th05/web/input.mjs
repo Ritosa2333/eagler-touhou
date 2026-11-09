@@ -12,10 +12,13 @@ export function createTouchInput({send,position,options,move,scene=()=>4,clock=(
    else if(message.type==='up'){const old=points.get(message.id);if(old&&!old.dragged){if(!old.paired&&!(scene()===13&&clock()-old.startTime>=280))pulse.set('KeyZ',2);else if(old.paired&&scene()!==4&&points.size===1)pulse.set('Escape',2);}points.delete(message.id);if(!points.size)target=null;}
    else {const old=points.get(message.id);if(!old)return;const dx=message.x-old.x,dy=message.y-old.y;if(Math.hypot(message.x-old.startX,message.y-old.startY)>12)old.dragged=true;if(points.keys().next().value===message.id){if(scene()!==4){if(Math.abs(dx)>24||Math.abs(dy)>24)pulse.set(Math.abs(dx)>Math.abs(dy)?(dx>0?'ArrowRight':'ArrowLeft'):(dy>0?'ArrowDown':'ArrowUp'),2);else return;}else {target??=position();const sensitivity=(snapshot.touchSensitivity??options().touchSensitivity)/100;target.x+=dx*sensitivity;target.y+=dy*sensitivity;target.x=Math.max(40,Math.min(408,target.x));target.y=Math.max(64,Math.min(408,target.y));}}points.set(message.id,{...old,x:message.x,y:message.y});}
   },
-  tick(){const next=new Set();if(options().touchEnabled){if(scene()===4&&snapshot.fireEnabled)next.add('KeyZ');if(scene()===13&&points.size===1){const point=points.values().next().value;if(!point.paired&&clock()-point.startTime>=280)next.add('ControlLeft');}if(snapshot.focusEnabled||options().touchFocusMode==='two-finger'&&points.size>1)next.add('ShiftLeft');
+  tick(render=true){const activeScene=scene(),next=new Set();if(options().touchEnabled){if(activeScene===4&&snapshot.fireEnabled)next.add('KeyZ');if(activeScene===13&&points.size===1){const point=points.values().next().value;if(!point.paired&&clock()-point.startTime>=280)next.add('ControlLeft');}if(snapshot.focusEnabled||options().touchFocusMode==='two-finger'&&points.size>1)next.add('ShiftLeft');
    const x=snapshot.joystickX,y=snapshot.joystickY;if(scene()===4&&options().touchMovementMode==='joystick-free'){if(Math.hypot(x,y)>4096)move(x/32767*64,y/32767*64,false);}else{if(x< -4096)next.add('ArrowLeft');if(x>4096)next.add('ArrowRight');if(y< -4096)next.add('ArrowUp');if(y>4096)next.add('ArrowDown');}
    if(scene()===4&&target&&points.size&&options().touchMovementMode.startsWith('touch')){const p=position();move(target.x-p.x,target.y-p.y,options().touchMovementMode==='touch-unlimited');}}
-   for(const [key,left] of pulse){if(left===2)next.add(key);if(left>1)pulse.set(key,left-1);else pulse.delete(key);}publish(next);
+   // Native ImGui menus sample keys only when the game draws a frame.
+   if(render||activeScene===4)for(const [key,left] of pulse){if(left===2)next.add(key);if(left>1)pulse.set(key,left-1);else pulse.delete(key);}
+   else for(const [key,left] of pulse)if(left===1&&held.has(key))next.add(key);
+   publish(next);
   },cancel,
  };
 }

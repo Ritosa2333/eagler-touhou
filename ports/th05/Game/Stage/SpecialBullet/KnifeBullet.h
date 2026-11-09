@@ -21,6 +21,7 @@ class CStage;
 
 class CKnifeBullet
 {
+friend struct PracticeTests;
 protected:
 	KNIFE_BULLET m_bullet[KNIFE_BULLET_N_RECORD];
 
