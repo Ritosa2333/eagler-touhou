@@ -1,4 +1,12 @@
 @layer foundation {
+@keyframes workspace-panel-enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.workspace-product-heading{display:flex;align-items:center;justify-content:center;min-width:0}
+.workspace-product-heading .workspace-product-trigger{display:grid;place-items:center;flex:none;width:28px;height:32px;margin-inline:2px 0;padding:0;border:0;background:transparent;color:var(--kit-muted-foreground)}
+.workspace-product-trigger:not(:disabled):is(:hover,[aria-expanded='true']){color:var(--kit-foreground)}
+.workspace-product-trigger svg{width:15px;height:15px}
+@media(max-width:780px),(pointer:coarse){
+ .workspace-product-heading .workspace-product-trigger{width:44px;height:44px;min-height:44px;margin-inline:-6px -9px}
+}
 /* Desktop uses the available width/height; stacked layouts follow image height. */
 #player:is(.room-workspace,.replay-workspace) #gameViewport:not(:fullscreen,:-webkit-full-screen){
   flex:1;box-sizing:border-box;min-height:0;min-width:0;width:100%!important;

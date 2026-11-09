@@ -258,9 +258,9 @@ test('launched Player conceals retained options and restores the same nodes when
   await navigate('/?game=th06');assertOpen();assert.equal(node('.tools'),panel);
 });
 
-for(const context of ['library','lobby'])test(context+': a surface timing token controls the real animation, with no mirrored deadline',async()=>{
-  const home=context==='lobby'?'/lobby.html':'/';const {clock}=await mount({entry:home+'?game=th06'});
-  node('.tools').style.setProperty('--ui-surface-duration','360ms');await navigate(home);
+for(const [context,mobile] of [['library',true],['library',false],['lobby',true],['lobby',false]])test(`${context} ${mobile?'phone':'desktop'}: a surface timing token controls the real animation, with no mirrored deadline`,async()=>{
+  const home=context==='lobby'?'/lobby.html':'/';const {clock}=await mount({entry:home+'?game=th06',mobile});
+  node('.tools').style.setProperty(mobile?'--ui-surface-duration':'--ui-window-exit-duration','360ms');await navigate(home);
   assert.equal(currentMotion().options.duration,360);await clock.advance(10000);assertOpen('th06',true);await finishOptions();assertClosed();
 });
 

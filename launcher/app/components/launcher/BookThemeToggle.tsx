@@ -3,6 +3,7 @@ import {useEffect, useState} from 'react';
 import {useLocale} from '../../i18n';
 import {BOOK_PREFERENCES_EVENT, readBookPreference, writeBookPreference} from './book-preferences';
 import {NavigationIcon} from './NavigationIcon';
+import {MastheadTooltip} from './MastheadTooltip';
 import {impressTheme} from './ink-feedback';
 
 let themeTransitionTimer: number | undefined;
@@ -43,7 +44,7 @@ function applyTheme(value: 'light' | 'dark', animate: boolean) {
   }, 180);
 }
 
-export function BookThemeToggle({interactive = true}: {interactive?: boolean}) {
+export function BookThemeToggle({interactive = true, row = false, tooltip = false}: {interactive?: boolean; row?: boolean; tooltip?: boolean}) {
   const {t} = useLocale();
   const [dark, setDark] = useState(true);
   const [ready, setReady] = useState(false);
@@ -56,9 +57,10 @@ export function BookThemeToggle({interactive = true}: {interactive?: boolean}) {
     refresh(); window.addEventListener('storage', refresh); window.addEventListener(BOOK_PREFERENCES_EVENT, refresh);
     return () => {window.removeEventListener('storage', refresh); window.removeEventListener(BOOK_PREFERENCES_EVENT, refresh);};
   }, []);
-  return <UiButton type="button" variant="ghost" size="icon" className="masthead-action book-theme-toggle [&_svg]:size-5" disabled={!interactive || !ready} aria-pressed={dark}
+  const button = <UiButton type="button" variant="ghost" size={row ? 'row' : 'icon'} className={row ? 'masthead-overview-theme' : 'masthead-action book-theme-toggle'} disabled={!interactive || !ready} aria-pressed={dark}
     aria-label={t('theme.dark')} onClick={(event) => {
-      impressTheme(event.currentTarget);
+      if (!row) impressTheme(event.currentTarget);
       const next = !dark; setDark(next); applyTheme(next ? 'dark' : 'light', true); writeBookPreference('theme', next ? 'dark' : 'light');
-    }} title={t('theme.toggle')}><NavigationIcon name={dark ? 'moon' : 'sun'}/></UiButton>;
+    }}><NavigationIcon name={dark ? 'moon' : 'sun'}/>{row && <span>{t('theme.dark')}</span>}</UiButton>;
+  return tooltip ? <MastheadTooltip label={t('theme.toggle')}>{button}</MastheadTooltip> : button;
 }

@@ -4,12 +4,15 @@ import {LauncherMasthead} from './components/launcher/LauncherMasthead';
 import {MainSelect} from './components/launcher/MainSelect';
 import {DonationDialog} from './components/notices/DonationDialog';
 import {FirstUseNotice, type FirstUseNoticeHandle} from './components/notices/FirstUseNotice';
-import {LocaleProvider, useLocale, type UiMessageKey} from './i18n';
-import {useDocumentUiLocale} from './navigation/document-locale';
+import {LocaleProvider, translate, useLocale, type UiMessageKey} from './i18n';
+import {sitePageTitle, useDocumentUiLocale} from './navigation/document-locale';
+import {StandaloneSurfaceLayers} from './navigation/surface-layer';
 import {UI_LOCALES, UI_LOCALE_LABELS, UI_LOCALE_STORAGE_KEY, isUiLocale, localeHome, withUiLanguage} from '../src/launcher/i18n.mts';
 import {createSitePreferencesModel, bindSitePreferencesToDocument} from './models/site-preferences';
 import {RUNTIME_DIAGNOSTICS_STORAGE_KEY} from './models/runtime-diagnostics';
 import {validateSiteManifest, siteOriginMigrationAvailable} from '../src/contracts/site-manifest.mts';
+import {createBrandUpdateAge, type BrandUpdateAgeSnapshot} from './models/brand-update-age';
+import {readReactAppShellDeployment} from './services/app-shell-deployment';
 
 function localStorageOrNull() {try {return window.localStorage;} catch {return null;}}
 
@@ -27,6 +30,18 @@ function StandaloneShell({children, titleKey, mainClassName}: {children: ReactNo
   const [donationAvailable, setDonationAvailable] = useState(true), [diagnostics, setDiagnostics] = useState(false);
   const [migration, setMigration] = useState({known: false, available: false});
   const firstUse = useRef<FirstUseNoticeHandle>(null);
+  const [updatedAge, setUpdatedAge] = useState<BrandUpdateAgeSnapshot>();
+  useEffect(() => {
+    const baseUrl = new URL(base, window.location.href);
+    const deployment = readReactAppShellDeployment(document, baseUrl);
+    const worker = navigator.serviceWorker;
+    const age = createBrandUpdateAge({baseUrl: baseUrl.href, translate: (key, params) => translate(locale, key as UiMessageKey, params), timers: window});
+    const update = () => setUpdatedAge(age.getSnapshot());
+    const unsubscribe = age.subscribe(update);
+    update();
+    void age.bind(Promise.resolve(), () => !!deployment && worker?.controller?.scriptURL === deployment.workerUrl);
+    return () => {unsubscribe(); age.dispose();};
+  }, [base, locale]);
   useEffect(() => {
     setPreferences(createSitePreferencesModel({storage: localStorageOrNull()}));
     try {setDiagnostics(localStorageOrNull()?.getItem(RUNTIME_DIAGNOSTICS_STORAGE_KEY) === '1');} catch {}
@@ -40,7 +55,7 @@ function StandaloneShell({children, titleKey, mainClassName}: {children: ReactNo
   useEffect(() => {
     document.documentElement.lang = locale;
     document.documentElement.dataset.uiLocale = locale;
-    document.title = `${t(titleKey)} | EAGLER TOUHOU`;
+    document.title = sitePageTitle(t(titleKey));
   }, [locale, t, titleKey]);
   useEffect(() => {
     const controller = new AbortController();
@@ -53,7 +68,7 @@ function StandaloneShell({children, titleKey, mainClassName}: {children: ReactNo
   }, [base]);
   const Main=mainClassName==='documentation-shell'?'div':'main';
   return <div className="standalone-page-shell">
-    <LauncherMasthead variant="help" nativeLinks compactDocumentation={mainClassName==='documentation-shell'} assetUrl={assetUrl} launcherHref={assetUrl(localeHome(locale))}
+    <StandaloneSurfaceLayers><LauncherMasthead variant="help" nativeLinks updatedAge={updatedAge} assetUrl={assetUrl} launcherHref={assetUrl(localeHome(locale))}
       faqHref={withUiLanguage(assetUrl('faq.html'), locale)} aboutHref={withUiLanguage(assetUrl('about.html'), locale)}
       migrationPolicyKnown={migration.known} migrationHref={migration.available ? assetUrl('migrate.html') : undefined}
       menuOpen={menu} onMenuOpenChange={setMenu} lessMotion={prefs.lessMotion} onToggleMotion={preferences.toggleMotion}
@@ -65,7 +80,7 @@ function StandaloneShell({children, titleKey, mainClassName}: {children: ReactNo
         if (!isUiLocale(value)) return;
         try {localStorageOrNull()?.setItem(UI_LOCALE_STORAGE_KEY, value);} catch {}
         navigate(withUiLanguage(location.pathname + location.search + location.hash, value));
-      }}>{UI_LOCALES.map(value => <option key={value} value={value}>{t(UI_LOCALE_LABELS[value])}</option>)}</MainSelect>}/>
+      }}>{UI_LOCALES.map(value => <option key={value} value={value}>{t(UI_LOCALE_LABELS[value])}</option>)}</MainSelect>}/></StandaloneSurfaceLayers>
     <Main className={mainClassName}>{children}</Main>
     <DonationDialog open={donation} onCloseRequest={() => setDonation(false)} assetUrl={assetUrl} onArtworkUnavailable={() => setDonationAvailable(false)}/>
     <FirstUseNotice ref={firstUse} open={notice} onOpenRequest={() => setNotice(true)} onCloseRequest={() => setNotice(false)} contentUrl={assetUrl('content/FIRST_USE_NOTICE.html')} edgeGestures={false}/>

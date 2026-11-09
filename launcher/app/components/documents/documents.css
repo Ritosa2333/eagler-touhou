@@ -1,6 +1,7 @@
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
-@import "fumadocs-ui/css/neutral.css";
-@import "fumadocs-ui/css/preset.css";
+@import "@fumadocs/base-ui/css/generated/spacious.css";
+@import "@fumadocs/base-ui/css/neutral.css";
+@import "@fumadocs/base-ui/css/preset.css";
 @reference "../../ui/tailwind.css";
 
 /* Fumadocs expects Tailwind's reset. Limit its base rules to the docs shell. */
@@ -9,7 +10,7 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    border: 0 solid;
+    border: 0 solid var(--color-fd-border);
   }
   :where(.documentation-shell a) {
     color: inherit;
@@ -37,190 +38,137 @@
     height: auto;
   }
 }
+
 .documentation-shell {
-  --documentation-header: var(--site-header-height, 61px);
-  --fd-banner-height: var(--documentation-header);
-  --color-fd-background: var(--kit-background);
-  --color-fd-foreground: var(--kit-foreground);
-  --color-fd-muted: var(--kit-muted);
-  --color-fd-muted-foreground: var(--kit-muted-foreground);
-  --color-fd-card: var(--kit-card);
-  --color-fd-card-foreground: var(--kit-foreground);
-  --color-fd-primary: var(--kit-primary);
-  --color-fd-primary-foreground: var(--kit-primary-foreground);
-  --color-fd-border: var(--kit-border);
-  --color-fd-accent: var(--kit-accent);
-  --color-fd-accent-foreground: var(--kit-foreground);
-  --color-fd-secondary: var(--kit-secondary);
-  --color-fd-secondary-foreground: var(--kit-foreground);
-  --color-fd-popover: var(--kit-popover);
-  --color-fd-popover-foreground: var(--kit-foreground);
-  --color-fd-ring: var(--kit-ring);
+  --fd-banner-height: var(--site-header-height, 61px);
   font: 400 16px / 1.5 var(--kit-font);
-  background: var(--color-fd-background);
   color: var(--color-fd-foreground);
 }
-.documentation-shell #nd-sidebar {
-  --color-fd-muted: var(--kit-muted);
-  --color-fd-secondary: var(--kit-secondary);
-  --color-fd-muted-foreground: var(--kit-muted-foreground);
-  transition-property: opacity, transform;
+
+.documentation-shell #fd-spacious-layout {
+  --fd-header-height: 40px;
 }
-.documentation-shell #nd-docs-layout {
-  transition: none;
-  --fd-layout-width: 1440px;
+
+.documentation-shell #nd-sidebar [role="presentation"]:has(> [data-id$="-viewport"]) {
+  margin-block-start: 0;
 }
-.documentation-shell .prose {
-  font-size: 15px;
-  line-height: 1.7;
+
+.documentation-shell [data-help-page] {
+  --documentation-heading-offset: calc(var(--fd-header-height) + 12px);
 }
-.documentation-shell #nd-page {
-  padding: 28px 24px;
-}
-.documentation-shell #nd-page > h1 {
-  font-size: 28px;
-  line-height: 1.35;
-}
-@media (min-width: 781px) {
-  .documentation-shell #nd-docs-layout {
-    --fd-sidebar-width: 220px;
-  }
-}
-@media (min-width: 1100px) {
-  .documentation-shell #nd-docs-layout {
-    --fd-toc-width: 200px;
-    --fd-toc-popover-height: 0px;
-  }
-  .documentation-shell #nd-toc {
-    display: flex;
-    padding-top: 28px;
-  }
-  .documentation-shell [data-toc-popover] {
-    display: none;
-  }
-}
-.documentation-shell,
-.documentation-shell * {
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-}
-.documentation-shell .prose :is(h2, h3, h4, h5, h6) {
-  scroll-margin-top: calc(var(--documentation-header) + 100px);
-}
-.documentation-shell .prose :where(h2, h3, h4) {
+
+.documentation-shell [data-help-page] :is(h2, h3, h4, h5, h6)[id] {
+  scroll-margin-block-start: var(--documentation-heading-offset);
   text-wrap: balance;
 }
-.documentation-mobile-links {
+
+.documentation-shell [data-help-page] li > p {
+  margin-block: 0;
+}
+
+.documentation-shell [data-help-page] li > p + p {
+  margin-block-start: .5em;
+}
+
+.documentation-guide-picker {
   display: none;
-  padding: 4px 16px 16px;
-  border-bottom: 1px solid var(--kit-border);
 }
-.documentation-site-links {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 12px;
+
+.documentation-guide-steps {
+  margin-block: 12px;
 }
-.documentation-site-links a {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  border: 1px solid var(--kit-border);
-  border-radius: 6px;
-  font-size: 14px;
+
+.documentation-shell .documentation-mechanisms th[scope="row"] {
+  white-space: nowrap;
+  vertical-align: top;
 }
-.documentation-site-links svg {
-  width: 18px;
-  height: 18px;
+
+.documentation-shell .documentation-mechanisms ul {
+  margin-block: 0;
+  padding-inline-start: 1.15em;
+  list-style-type: "- ";
 }
-.documentation-page-links {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
+
+.documentation-shell .documentation-mechanisms li > a {
+  font-weight: 700;
+  text-decoration-color: var(--color-fd-muted-foreground);
+  text-underline-offset: .2em;
 }
-.documentation-page-links a {
-  display: flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 8px;
-  border-radius: 6px;
-  font-size: 13px;
+
+.documentation-shell .documentation-mechanisms li > a:hover {
+  text-decoration-color: currentColor;
 }
-.documentation-page-links a:hover {
-  background: var(--kit-accent);
+
+.documentation-shell .documentation-mechanisms li > span {
+  margin-inline-start: .65em;
+  color: var(--color-fd-muted-foreground);
+  font-weight: 400;
 }
-.documentation-revision {
-  margin-top: 24px;
-  color: var(--kit-muted-foreground);
-  font-size: 12px;
+
+.documentation-shell .documentation-mechanisms rt {
+  color: var(--color-fd-muted-foreground);
+  font-size: .65em;
 }
-.documentation-revision a:hover {
-  text-decoration: underline;
-}
-.documentation-shell [data-toc-popover] > header {
-  transition: none;
-  background: var(--kit-background) !important;
-}
-@media (max-width: 780px) {
-  .documentation-mobile-links {
-    display: block;
+
+/* Keep an inline TOC while the article still has room beside a compact rail. */
+@container (42rem <= width < 64rem) {
+  .documentation-shell #nd-toc {
+    --fd-toc-width: clamp(12rem, 28cqi, 17rem);
+    width: var(--fd-toc-width);
+    padding-inline-start: 24px;
+    visibility: visible;
+    opacity: 1;
   }
-  .documentation-shell #nd-docs-layout {
-    --fd-sidebar-width: 0px;
-    --fd-sidebar-col: 0px;
-    --fd-toc-width: 0px;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "toc-popover" "main";
-    grid-template-rows: 44px minmax(0, 1fr);
-  }
-  .documentation-shell :is([data-sidebar-placeholder], #nd-sidebar, #nd-toc, button[aria-controls="nd-sidebar"]) {
+
+  .documentation-shell #nd-page-panel > header .documentation-toc-trigger {
     display: none;
   }
-  .documentation-shell [data-toc-popover] {
-    display: block;
-    height: 44px;
-  }
-  .documentation-shell [data-toc-popover-content] > div {
-    max-height: calc(100dvh - var(--documentation-header) - 44px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-  .documentation-shell [data-toc-popover-content] > div > div:not(.documentation-mobile-links) {
-    overflow: visible;
-    flex: none;
-    mask: none;
-  }
+}
+
+@media (max-width: 780px) {
   .documentation-shell {
-    --documentation-header: var(--site-header-height, 56px);
-  }
-  .documentation-shell #nd-docs-layout {
-    --fd-toc-popover-height: 44px;
-  }
-  .documentation-shell [data-toc-popover-trigger] {
-    min-height: 44px;
-  }
-  .documentation-shell #nd-page {
-    padding: 20px 16px;
-  }
-  .documentation-shell .prose {
-    font-size: 14px;
-    line-height: 1.65;
-  }
-  .documentation-shell .prose :is(h2, h3) {
-    font-size: 18px;
-    line-height: 1.5;
-    margin-top: 24px;
-    margin-bottom: 12px;
-  }
-  .documentation-shell #nd-page > h1 {
-    font-size: 24px;
-    line-height: 1.4;
+    --fd-banner-height: var(--site-header-height, 105px);
   }
 }
-@media (max-width: 780px), (pointer: coarse) {
-  .documentation-shell :is(#nd-sidebar a, #nd-sidebar-mobile a, [data-toc-popover] a) {
+
+@media (width < 768px) {
+  .documentation-shell .documentation-mechanisms li > span {
+    display: block;
+    margin-inline-start: 0;
+  }
+
+  .documentation-guide-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .documentation-guide-picker {
+    display: block;
+    flex: none;
+  }
+
+  .documentation-guide-picker button {
+    min-width: 44px;
     min-height: 44px;
   }
+
+  .documentation-shell #fd-spacious-layout {
+    --fd-header-height: 44px;
+  }
+
+  .documentation-shell [data-help-page] {
+    --documentation-heading-offset: calc(var(--fd-docs-row-3) + 12px);
+  }
+}
+
+.documentation-revision {
+  margin-top: 24px;
+  color: var(--color-fd-muted-foreground);
+  font-size: 12px;
+}
+
+.documentation-revision a:hover {
+  text-decoration: underline;
 }

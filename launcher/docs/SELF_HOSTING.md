@@ -8,7 +8,7 @@
 
 可选的账号 API 双线路通过 `VITE_ACCOUNT_EDGE_ORIGIN` 和 `VITE_ACCOUNT_DIRECT_ORIGIN` 启用，分别使用站点的 `api.` 和 `direct-api.` HTTPS 子域。两个入口共用账号服务和站点域的会话 Cookie，允许本站携带凭据跨域访问，并对账号响应设置 `Cache-Control: private, no-store`。`/api/ready` 以 `X-Eagler-Account-Route` 返回 `direct` 或 `edge`，跨域入口须暴露此响应头。国内使用同源 API，海外优先使用边缘入口，失败时改用直连子域。
 
-开放房间音乐时，在前端构建中设置 `VITE_LISTEN_TOGETHER_ENABLED=true`，并以 `VITE_METING_API_URL` 指定可从浏览器访问的 HTTPS Meting 接口。Relay 设置 `EAGLER_NETPLAY_LISTEN_TOGETHER=1` 后开放同步邀请。验收时用网易云音乐和 QQ 音乐分别检查搜索、歌单与播放，再用两个玩家席验证邀请和同步。
+房间音乐默认开放。前端构建可用 `VITE_METING_API_URL` 指定可从浏览器访问的 HTTPS Meting 接口，或用 `VITE_LISTEN_TOGETHER_ENABLED=false` 关闭房间音乐。Relay 设置 `EAGLER_NETPLAY_LISTEN_TOGETHER=1` 后开放同步邀请。验收时用网易云音乐和 QQ 音乐分别检查搜索、歌单与播放，再用两个玩家席验证邀请和同步。
 
 需要 Node.js 22+、Python 3 和匹配当前 Launcher Product Catalog 的完整 `runtime-release/`。源码前端构建另需 Bun 1.4.4。每个已登记游戏都准备 `games/<game-id>/` 目录，并放入对应原作文件。游戏列表见 [`common/contracts/product-catalog.mjs`](../../common/contracts/product-catalog.mjs)。
 

@@ -16,10 +16,13 @@ export async function finalizeOriginalEntrypoints(clientDirectory: string, mount
     if (!html.includes('window.__reactRouterContext =') || !html.includes('window.__reactRouterRouteModules =')) throw new Error(`Missing hydration scripts for ${file}`);
     if (source === target) continue;
     const entries = await readdir(directory);
-    if (entries.length !== 1 || entries[0] !== 'index.html') throw new Error(`Unexpected prerender contents for ${file}`);
+    const childPaths = documents.filter(document => document.path.startsWith(path + '/'));
+    if (entries.some(entry => entry !== 'index.html' && !childPaths.some(document => document.path === `${path}/${entry}`))) {
+      throw new Error(`Unexpected prerender contents for ${file}`);
+    }
     const temporary = resolve(clientDirectory, `${file.replaceAll('/', '_')}.prerender-tmp`);
     await rename(source, temporary);
-    await rmdir(directory); // Only the validated empty generated directory.
+    if (entries.length === 1) await rmdir(directory);
     await mkdir(dirname(target), {recursive: true});
     await rename(temporary, target);
   }

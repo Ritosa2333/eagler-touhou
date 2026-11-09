@@ -58,18 +58,26 @@ afterEach(async () => {
 });
 after(async () => {env.close(); await rm(work, {recursive: true, force: true});});
 
-test('entrance and exit share tokens and never animate layout or centering transforms', async () => {
+test('window phases share the scale recipe while preserving the centering transform', async () => {
   const element = surface(); element.style.transform = 'translate(-50%, -50%)';
-  element.style.setProperty('--ui-surface-duration', '0.24s'); element.style.setProperty('--ui-surface-easing', 'cubic-bezier(.1,.2,.3,1)');
+  element.style.setProperty('--ui-window-enter-duration', '0.24s'); element.style.setProperty('--ui-window-enter-easing', 'cubic-bezier(.1,.2,.3,1)');
   const entered = animate(element, 'enter', {kind: 'dialog'});
-  assert.ok(entered); assert.equal(native.length, 2);
+  assert.ok(entered); assert.equal(native.length, 3);
   assert.deepEqual(native[0].keyframes, {opacity: ['0', '1']}); assert.deepEqual(native[1].keyframes, {translate: ['0 6px', '0 0']});
+  assert.deepEqual(native[2].keyframes, {scale: ['.965', '1']});
   assert.equal(native[0].options.duration, 240); assert.equal(native[0].options.easing, 'cubic-bezier(0.1, 0.2, 0.3, 1)');
   finish(element); await entered.finished;
-  assert.equal(element.style.opacity, ''); assert.equal(element.style.translate, ''); assert.equal(element.style.transform, 'translate(-50%, -50%)');
+  assert.equal(element.style.opacity, ''); assert.equal(element.style.translate, ''); assert.equal(element.style.scale, ''); assert.equal(element.style.transform, 'translate(-50%, -50%)');
   const exited = animate(element, 'exit', {kind: 'dialog'});
-  assert.deepEqual(native.at(-2).keyframes, {opacity: ['1', '0']});
+  assert.deepEqual(native.at(-3).keyframes, {opacity: ['1', '0']});
+  assert.deepEqual(native.at(-1).keyframes, {scale: ['1', '.965']});
+  assert.equal(native.at(-1).options.duration, 150);
   finish(element); await exited.finished; assert.equal(element.style.opacity, '');
+  element.style.setProperty('--ui-window-scrim-exit-easing', 'cubic-bezier(.42,0,.58,1)');
+  const scrim = animate(element, 'exit', {kind: 'backdrop'});
+  assert.equal(native.at(-1).options.duration, 150);
+  assert.equal(native.at(-1).options.easing, 'cubic-bezier(0.42, 0, 0.58, 1)');
+  finish(element); await scrim.finished;
 });
 
 
@@ -83,6 +91,21 @@ test('interrupted close and reopen continue from current opacity and retire stal
   assert.equal(native.filter(item => item.playState === 'running').length, 1);
   entrance.cancel(); exit.cancel(); assert.equal(native.at(-1).playState, 'running');
   finish(element); await reopen.finished;
+});
+
+test('a phone options panel fades without moving and reverses from its current opacity', async () => {
+  const element = surface();
+  const enter = animate(element, 'enter', {kind: 'panel'});
+  assert.equal(native.length, 1);
+  assert.deepEqual(native[0].keyframes, {opacity: ['0', '1']});
+  native[0].values.opacity = '.6';
+  const exit = animate(element, 'exit', {kind: 'panel', fromCurrent: true});
+  await enter.finished;
+  assert.equal(native.length, 2);
+  assert.equal(native[0].playState, 'idle');
+  assert.deepEqual(native[1].keyframes, {opacity: ['.6', '0']});
+  finish(element); await exit.finished;
+  assert.equal(element.style.opacity, '');
 });
 
 test('cancellation restores owned inline properties and priorities', async () => {
@@ -161,7 +184,7 @@ test('zero duration, reduced motion and missing WAAPI use immediate presentation
 
 test('invalid timing tokens use shared defaults', () => {
   const element = surface(); element.style.setProperty('--ui-surface-duration', 'invalid'); element.style.setProperty('--ui-surface-easing', 'cubic-bezier(2,0,3,1)');
-  assert.deepEqual(api.surfaceMotionTokens(element, 'backdrop'), {duration: 180, ease: [.2, 0, 0, 1], distance: 0});
+  assert.deepEqual(api.surfaceMotionTokens(element), {duration: 180, ease: [.2, 0, 0, 1], distance: 0, scale: undefined});
 });
 
 test('a partially failed native start releases created effects and original styles', async () => {

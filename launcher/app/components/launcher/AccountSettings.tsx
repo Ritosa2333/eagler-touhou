@@ -68,8 +68,6 @@ function ProfileSettings({initialProfile,initialDisplay,onSave}: {
   const uploadTasks = useRef<Partial<Record<ProfileImageKind,AbortController>>>({});
   const [cropRequest,setCropRequest]=useState<{file:File;kind:ProfileImageKind}>();
   const [cropOpen,setCropOpen]=useSurfaceLayerState<boolean>('profile-image-crop',false);
-  const wasCropping=useRef(false);
-  useEffect(()=>{if(wasCropping.current&&!cropOpen)setCropRequest(undefined);wasCropping.current=cropOpen;},[cropOpen]);
   const processingImages = !!processing.avatar || !!processing.cover;
   const [error,setError] = useState<UiMessageKey>();
   const [saved,setSaved] = useState(false);
@@ -90,7 +88,7 @@ function ProfileSettings({initialProfile,initialDisplay,onSave}: {
     setProfile(initialProfile);setRoomThumbnail(undefined);setVisible(initialDisplay.visible);setSaved(false);setCropOpen(false);setCropRequest(undefined);
     setLinkIds(initialProfile.links.map(() => nextId.current++));
   });
-  const change = (next:Profile) => {setProfile(next);setSaved(false);};
+  const change = (next:Profile) => {setProfile(next);setSaved(false);setError(undefined);};
   const chooseImage = (file:File|undefined,key:ProfileImageKind) => {
     if(!file)return;
     try {validateProfileImage(file);} catch(error) {setError(error instanceof ProfileImageError?`profile.image.${error.code}`:'profile.image.readFailed');return;}
@@ -157,18 +155,20 @@ function ProfileSettings({initialProfile,initialDisplay,onSave}: {
     } catch(error) {setError(error instanceof AccountRequestError && error.code==='CONTENT_REJECTED'?'profile.contentRejected':error instanceof AccountRequestError && error.code==='REVIEW_UNAVAILABLE'?'profile.reviewUnavailable':error instanceof AccountRequestError && error.code==='SAVE_QUOTA_EXCEEDED'?'cloudSave.quota':'account.requestFailed');}
     finally {setBusy(false);}
   }
+  const preview = error === 'profile.contentRejected' ? initialProfile : profile;
   return <section aria-labelledby="profile-settings-title">
-    {cropOpen&&cropRequest&&<ProfileImageCropDialog file={cropRequest.file} kind={cropRequest.kind}
-      onClose={()=>{setCropOpen(false);setCropRequest(undefined);}}
-      onConfirm={(crop,thumbnail)=>{const request=cropRequest;setCropOpen(false);setCropRequest(undefined);void stageImage(request.file,request.kind,crop,thumbnail);}}/>}
+    {cropRequest&&<ProfileImageCropDialog open={cropOpen} file={cropRequest.file} kind={cropRequest.kind}
+      onClose={()=>setCropOpen(false)}
+      onClosed={()=>setCropRequest(current=>current===cropRequest?undefined:current)}
+      onConfirm={(crop,thumbnail)=>{setCropOpen(false);void stageImage(cropRequest.file,cropRequest.kind,crop,thumbnail);}}/>}
     <header className="account-settings-heading"><h2 id="profile-settings-title">{t('profile.personalSettings')}</h2></header>
     <form onSubmit={save}>
       <div className="profile-settings-editor">
         <div className="settings-artwork">
           <div className="settings-profile-preview" aria-hidden="true">
-            <div className="settings-preview-cover">{profile.cover && <img src={profile.cover} alt=""/>}</div>
-            <div className="settings-preview-identity"><AccountAvatar src={profile.avatar}/><strong>{profile.name || t('profile.name.missing')}</strong>
-              {profile.bio && <p>{profile.bio}</p>}
+            <div className="settings-preview-cover">{preview.cover && <img src={preview.cover} alt=""/>}</div>
+            <div className="settings-preview-identity"><AccountAvatar src={preview.avatar}/><strong>{preview.name || t('profile.name.missing')}</strong>
+              {preview.bio && <p>{preview.bio}</p>}
             </div>
           </div>
           <FieldGroup>

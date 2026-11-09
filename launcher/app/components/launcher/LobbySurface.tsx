@@ -9,7 +9,7 @@ export interface LobbySurfaceProps extends Omit<
   'variant' | 'lobbyLink' | 'inert'
 > {
   masthead: ReactNode;
-  onGuide: (() => void) | null;
+  guideHref: string | null;
   onNetwork: (() => void) | null;
   networkRunning?: boolean;
   connectionWarning?: ReactNode;
@@ -35,7 +35,7 @@ export interface LobbySurfaceProps extends Omit<
 /** Dedicated lobby skeleton from main lobby.html43–105, without home brand/footer. */
 export function LobbySurface({
   masthead,
-  onGuide,
+  guideHref,
   onNetwork,
   networkRunning = false,
   connectionWarning,
@@ -60,15 +60,13 @@ export function LobbySurface({
         <header className="lobby-intro">
           <h1 className="visually-hidden">{t('lobby.title')}</h1>
           <nav className="lobby-support-links" aria-label={t('multiplayerGuide.title')}>
-            <BookButton variant="quiet" size="sm"
+            <BookButton variant="quiet" size="sm" asChild={!!guideHref}
               className="lobby-support-link h-9 px-0 max-[780px]:h-11"
               id="lobbyGuideOpen"
-              type="button"
-              disabled={!onGuide}
-              onClick={onGuide ?? undefined}
+              disabled={guideHref ? undefined : true}
             >
-              <span>{t('multiplayerGuide.action')}</span>
-              <span aria-hidden="true">›</span>
+              {guideHref ? <a href={guideHref}><span>{t('multiplayerGuide.action')}</span><span aria-hidden="true">›</span></a>
+                : <span>{t('multiplayerGuide.action')}</span>}
             </BookButton>
             <BookButton variant="quiet" size="sm"
               className={`lobby-support-link h-9 px-0 max-[780px]:h-11${networkRunning ? ' running' : ''}`}

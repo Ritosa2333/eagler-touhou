@@ -1,4 +1,5 @@
 import {SITE_BRAND_FACES,SITE_BRAND_DEFAULT} from './site-brand.mjs';
+import {MULTIPLAYER_GUIDE_TOPICS, multiplayerGuidePath} from './multiplayer-guide.mjs';
 /** Router addresses and their mount-local publication files have one inventory. */
 export function uiReviewEnabled(environment = globalThis.process?.env ?? {}) {
   const review = environment.VITE_UI_REVIEW_ENABLED;
@@ -27,6 +28,9 @@ export const REACT_DOCUMENTS = Object.freeze([
   {path: '/about.html', file: 'about.html'},
   {path: '/guide.html', file: 'guide.html'},
   {path: '/multiplayer.html', file: 'multiplayer.html'},
+  ...[multiplayerGuidePath(), ...MULTIPLAYER_GUIDE_TOPICS.map(multiplayerGuidePath)].map(path => ({
+    path, file: `${path.slice(1)}/index.html`,
+  })),
   {path: '/uptime/', file: 'uptime/index.html'},
 ].map(document => Object.freeze(document)));
 export const REACT_DOCUMENT_FILES = Object.freeze(REACT_DOCUMENTS.map(document => document.file));

@@ -1,4 +1,204 @@
 {
+  "document.multiplayer.title": {
+    "id": "document_multiplayer_title",
+    "params": []
+  },
+  "document.multiplayer.common": {
+    "id": "document_multiplayer_common",
+    "params": []
+  },
+  "document.multiplayer.coop": {
+    "id": "document_multiplayer_coop",
+    "params": []
+  },
+  "document.multiplayer.navigation": {
+    "id": "document_multiplayer_navigation",
+    "params": []
+  },
+  "document.multiplayer.create": {
+    "id": "document_multiplayer_create",
+    "params": []
+  },
+  "document.multiplayer.join": {
+    "id": "document_multiplayer_join",
+    "params": []
+  },
+  "document.multiplayer.ready": {
+    "id": "document_multiplayer_ready",
+    "params": []
+  },
+  "document.multiplayer.basicFlow": {
+    "id": "document_multiplayer_basicFlow",
+    "params": []
+  },
+  "document.multiplayer.coopIntro": {
+    "id": "document_multiplayer_coopIntro",
+    "params": []
+  },
+  "document.multiplayer.coopGuide": {
+    "id": "document_multiplayer_coopGuide",
+    "params": []
+  },
+  "document.multiplayer.versusIntro": {
+    "id": "document_multiplayer_versusIntro",
+    "params": []
+  },
+  "document.multiplayer.versusPending": {
+    "id": "document_multiplayer_versusPending",
+    "params": []
+  },
+  "document.multiplayer.category": {
+    "id": "document_multiplayer_category",
+    "params": []
+  },
+  "document.multiplayer.mechanism": {
+    "id": "document_multiplayer_mechanism",
+    "params": []
+  },
+  "document.multiplayer.mode": {
+    "id": "document_multiplayer_mode",
+    "params": []
+  },
+  "document.multiplayer.challengeSummary": {
+    "id": "document_multiplayer_challengeSummary",
+    "params": []
+  },
+  "document.multiplayer.resources": {
+    "id": "document_multiplayer_resources",
+    "params": []
+  },
+  "document.multiplayer.lifeAction": {
+    "id": "document_multiplayer_lifeAction",
+    "params": []
+  },
+  "document.multiplayer.lifeTerm": {
+    "id": "document_multiplayer_lifeTerm",
+    "params": []
+  },
+  "document.multiplayer.lifeTransferTail": {
+    "id": "document_multiplayer_lifeTransferTail",
+    "params": []
+  },
+  "document.multiplayer.powerDropsLabel": {
+    "id": "document_multiplayer_powerDropsLabel",
+    "params": []
+  },
+  "document.multiplayer.powerDrops": {
+    "id": "document_multiplayer_powerDrops",
+    "params": []
+  },
+  "document.multiplayer.powerTransferLabel": {
+    "id": "document_multiplayer_powerTransferLabel",
+    "params": []
+  },
+  "document.multiplayer.powerTransfer": {
+    "id": "document_multiplayer_powerTransfer",
+    "params": []
+  },
+  "document.multiplayer.survival": {
+    "id": "document_multiplayer_survival",
+    "params": []
+  },
+  "document.multiplayer.deathLabel": {
+    "id": "document_multiplayer_deathLabel",
+    "params": []
+  },
+  "document.multiplayer.deathSummary": {
+    "id": "document_multiplayer_deathSummary",
+    "params": []
+  },
+  "document.multiplayer.combat": {
+    "id": "document_multiplayer_combat",
+    "params": []
+  },
+  "document.multiplayer.deathbombLabel": {
+    "id": "document_multiplayer_deathbombLabel",
+    "params": []
+  },
+  "document.multiplayer.deathbombSummary": {
+    "id": "document_multiplayer_deathbombSummary",
+    "params": []
+  },
+  "document.multiplayer.tableNote": {
+    "id": "document_multiplayer_tableNote",
+    "params": []
+  },
+  "document.multiplayer.exceptions": {
+    "id": "document_multiplayer_exceptions",
+    "params": []
+  },
+  "document.multiplayer.exception.th07": {
+    "id": "document_multiplayer_exception_th07",
+    "params": []
+  },
+  "document.multiplayer.exception.th08": {
+    "id": "document_multiplayer_exception_th08",
+    "params": []
+  },
+  "document.multiplayer.exception.th10": {
+    "id": "document_multiplayer_exception_th10",
+    "params": []
+  },
+  "document.multiplayer.exception.th11": {
+    "id": "document_multiplayer_exception_th11",
+    "params": []
+  },
+  "document.multiplayer.exception.th15": {
+    "id": "document_multiplayer_exception_th15",
+    "params": []
+  },
+  "document.multiplayer.bossLabel": {
+    "id": "document_multiplayer_bossLabel",
+    "params": []
+  },
+  "document.multiplayer.bossSummary": {
+    "id": "document_multiplayer_bossSummary",
+    "params": []
+  },
+  "document.multiplayer.play": {
+    "id": "document_multiplayer_play",
+    "params": []
+  },
+  "document.multiplayer.controlsLabel": {
+    "id": "document_multiplayer_controlsLabel",
+    "params": []
+  },
+  "document.multiplayer.controlsSummary": {
+    "id": "document_multiplayer_controlsSummary",
+    "params": []
+  },
+  "document.multiplayer.progress": {
+    "id": "document_multiplayer_progress",
+    "params": []
+  },
+  "document.multiplayer.unlockLabel": {
+    "id": "document_multiplayer_unlockLabel",
+    "params": []
+  },
+  "document.multiplayer.unlockSummary": {
+    "id": "document_multiplayer_unlockSummary",
+    "params": []
+  },
+  "document.multiplayer.differences": {
+    "id": "document_multiplayer_differences",
+    "params": []
+  },
+  "document.multiplayer.versus": {
+    "id": "document_multiplayer_versus",
+    "params": []
+  },
+  "document.multiplayer.th09": {
+    "id": "document_multiplayer_th09",
+    "params": []
+  },
+  "document.multiplayer.th19": {
+    "id": "document_multiplayer_th19",
+    "params": []
+  },
+  "document.title": {
+    "id": "document_title",
+    "params": []
+  },
   "document.toc": {
     "id": "document_toc",
     "params": []
@@ -2164,6 +2364,10 @@
     "id": "nav_siteInfo",
     "params": []
   },
+  "nav.site": {
+    "id": "nav_site",
+    "params": []
+  },
   "nav.lessMotion": {
     "id": "nav_lessMotion",
     "params": []
@@ -2210,6 +2414,10 @@
   },
   "nav.about": {
     "id": "nav_about",
+    "params": []
+  },
+  "nav.aboutSite": {
+    "id": "nav_aboutSite",
     "params": []
   },
   "nav.more": {
@@ -4687,6 +4895,10 @@
     "id": "firstUseNotice_title",
     "params": []
   },
+  "firstUseNotice.dismiss": {
+    "id": "firstUseNotice_dismiss",
+    "params": []
+  },
   "browserWarning.title": {
     "id": "browserWarning_title",
     "params": []
@@ -6662,6 +6874,10 @@
     "id": "guide_th09",
     "params": []
   },
+  "guide.th19": {
+    "id": "guide_th19",
+    "params": []
+  },
   "guide.th10": {
     "id": "guide_th10",
     "params": []
@@ -7400,6 +7616,10 @@
   },
   "profile.navigation": {
     "id": "profile_navigation",
+    "params": []
+  },
+  "profile.pageTitle": {
+    "id": "profile_pageTitle",
     "params": []
   },
   "profile.tab.overview": {

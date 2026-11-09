@@ -46,8 +46,8 @@ function layoutWatch(): Plugin {
   return {name:'local-layout-watch',configureServer:install,configurePreviewServer:install};
 }
 export default defineConfig({base: deployment.mountPath,
-  ssr:{noExternal:['fumadocs-core','fumadocs-ui']},
-  optimizeDeps:{exclude:['fumadocs-core','fumadocs-ui']},
+  ssr:{noExternal:['fumadocs-core','@fumadocs/base-ui']},
+  optimizeDeps:{exclude:['fumadocs-core','@fumadocs/base-ui']},
   // Generated fixtures are not authored UI inputs. Watching them also holds
   // directory handles that block publication/refresh renames on Windows.
   server: {proxy: {...serverProxy, ...(accountServer ? {'/api/': {target: accountServer}} : {})}, watch: {ignored: path => /^(?:\.cache|artifacts|src\/paraglide)(?:\/|$)/.test(relative(sourceRoot, path).replaceAll('\\', '/'))}},

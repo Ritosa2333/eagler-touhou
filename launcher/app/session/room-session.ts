@@ -1,6 +1,5 @@
 import {createRoomMusic} from '../services/room-music';
 import {createMetingProvider} from '../services/music-provider';
-import {testFeaturesEnabled} from '../../src/launcher/test-features.mts';
 import { createRoomNetwork } from '../../src/launcher/room-network.mts';
 import { createMultiplayerQuickChatModel } from '../../src/launcher/multiplayer-quick-chat-model.mts';
 import { playQuickChatVoice } from '../../src/launcher/quick-chat-voice.mts';
@@ -12,7 +11,7 @@ import type { GameSettingsModel } from '../models/game-settings';
 import type { SitePreferencesModel } from '../models/site-preferences';
 import type { RuntimeService } from '../services/runtime';
 import {accountSession,roomProfileChangeKey} from '../services/account-session';
-import {accountsEnabled, listenTogetherEnabled, previewFeaturesEnabled} from '../release-features';
+import {accountsEnabled, listenTogetherEnabled} from '../release-features';
 import {createRoomActionAudio} from '../services/room-action-audio';
 
 export interface RoomSessionOptions extends Omit<
@@ -59,12 +58,10 @@ export function createRoomSession(options: RoomSessionOptions) {
       for (const listener of listeners) listener();
     }
   };
-  const previewMusic = previewFeaturesEnabled && testFeaturesEnabled(window);
-  const configuredEndpoint = import.meta.env?.VITE_METING_API_URL;
   let musicEndpoint: URL | null = null;
-  if (previewMusic || (listenTogetherEnabled && configuredEndpoint)) {
+  if (listenTogetherEnabled) {
     try {
-      const endpoint = new URL(configuredEndpoint || 'https://open.motues.top/music', window.location.href);
+      const endpoint = new URL(import.meta.env?.VITE_METING_API_URL || 'https://open.motues.top/music', window.location.href);
       if (endpoint.protocol === 'https:' && !endpoint.username && !endpoint.password) musicEndpoint = endpoint;
     } catch {
       // An invalid provider setting must not prevent joining rooms.

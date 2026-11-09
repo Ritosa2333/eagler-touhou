@@ -215,6 +215,7 @@
     "test:th19-touch-room:browser": "node tests/browser/test-th19-touch-charge-room.mjs"
   },
   "dependencies": {
+    "@fumadocs/base-ui": "16.17.9",
     "@radix-ui/colors": "3.0.0",
     "@radix-ui/react-icons": "1.3.2",
     "browser-image-compression": "2.0.2",
@@ -224,7 +225,6 @@
     "fflate": "0.8.3",
     "fs-native-extensions": "1.5.3",
     "fumadocs-core": "16.17.9",
-    "fumadocs-ui": "16.17.9",
     "lucide-react": "1.65.0",
     "motion": "14.9.0",
     "radix-ui": "1.8.1",

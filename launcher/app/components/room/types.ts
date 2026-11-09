@@ -41,7 +41,7 @@ export interface RoomViewProps {
   assetUrl(path: string): string;
   onLeave(): void | Promise<void>;
   onCopyRoomCode(code: string): void | Promise<void>;
-  onGuide(): void;
+  guideHref: string;
   onOpenSettings(): void;
   settingsOpen: boolean;
   visible?: boolean;

@@ -7,6 +7,15 @@ html[data-ui-app] .library-background {display:none}
 body:not(.mp-room-active):has(.book-masthead) :is(.sheet,.book-directory) {position:relative;z-index:1;background:transparent}
 /* The same route layer serves the library, multiplayer, and profile pages. */
 .launcher-page-surface {position:relative;width:100%;max-width:var(--launcher-layout-width);margin-inline:auto;view-transition-name:launcher-page}
+.book-masthead {view-transition-name:launcher-masthead}
+/* Keep the real masthead clickable while the content snapshots crossfade. */
+html[data-ui-route-transition],html[data-ui-route-transition] .book-masthead,
+html[data-ui-route-transition="inline"] .launcher-page-surface {view-transition-name:none}
+html[data-ui-route-transition]::view-transition {pointer-events:none}
+@media (max-width: 780px) {
+  /* A desktop history entry can still ask the Router for a snapshot after resizing. */
+  html[data-ui-route-transition] .launcher-page-surface {view-transition-name:none}
+}
 ::view-transition-group(launcher-masthead) {animation:none}
 ::view-transition-old(launcher-masthead) {animation:none;visibility:hidden}
 ::view-transition-new(launcher-masthead) {animation:none;opacity:1}
@@ -15,7 +24,7 @@ body:not(.mp-room-active):has(.book-masthead) :is(.sheet,.book-directory) {posit
    Existing settings models, focus handling and close transitions stay intact. */
 body:not(.mp-room-active) .tools[data-options-panel] {
   border:1px solid var(--book-border);border-radius:12px;
-  background:var(--book-surface);color:var(--book-ink);box-shadow:0 22px 70px #0007;
+  background:var(--book-surface);color:var(--book-ink);box-shadow:var(--ui-window-shadow);
 }
 body:not(.mp-room-active) .tools[data-options-panel] :is(.item) {border-color:var(--book-border)}
 body:not(.mp-room-active) .tools[data-options-panel] :is(.option-row,.itemtop,.options-summary) {color:var(--book-ink);font-size:13px}
@@ -25,15 +34,14 @@ body:not(.mp-room-active) .tools[data-options-panel] .tools-callout-title {color
 
 /* One material and control language for startup/help, decisions, file tasks,
    keyboard/gamepad binding, and the create/join lobby form. */
-body:not(.mp-room-active) :is(.informational-dialog,.first-use-notice-dialog,.decision-dialog,.replay-dialog,.lobby-dialog,.game-data-import-window,.game-data-link-window) {
-  border:1px solid var(--book-border);border-radius:12px;background:var(--book-surface);color:var(--book-ink);box-shadow:0 22px 70px #0007;
+body:not(.mp-room-active) :is(.informational-dialog,.decision-dialog,.replay-dialog,.lobby-dialog,.game-data-import-window,.game-data-link-window) {
+  border:1px solid var(--book-border);border-radius:12px;background:var(--book-surface);color:var(--book-ink);box-shadow:var(--ui-window-shadow);
 }
-body:not(.mp-room-active) :is(.informational-dialog,.first-use-notice-dialog,.decision-dialog,.replay-dialog,.lobby-dialog)::backdrop {background:#090c0bc4}
 body:not(.mp-room-active) :is(.informational-window,.first-use-notice-window,.replay-window,.decision-window,.lobby-dialog form) {background:var(--book-surface);color:var(--book-ink)}
-body:not(.mp-room-active) :is(.informational-window,.first-use-notice-window,.replay-window,.game-data-import-window,.game-data-link-window)>header {
+body:not(.mp-room-active) :is(.informational-window,.replay-window,.game-data-import-window,.game-data-link-window)>header {
   min-height:53px;padding:10px 18px;border-bottom:1px solid var(--book-border);background:var(--book-surface);color:var(--book-ink);
 }
-body:not(.mp-room-active) :is(.informational-window,.first-use-notice-window,.replay-window,.lobby-dialog)>header :is(h1,h2,strong) {color:var(--book-ink);font:700 17px/1.4 var(--ui-font)}
+body:not(.mp-room-active) :is(.informational-window,.replay-window,.lobby-dialog)>header :is(h1,h2,strong) {color:var(--book-ink);font:700 17px/1.4 var(--ui-font)}
 body:not(.mp-room-active) :is(.informational-content,.apple-refresh-content,.mp-guide-content,.donation-content,.decision-body,.replay-drop-hint,.replay-list,.replay-row,.lobby-dialog p) {
   border-color:var(--book-border);background:transparent;color:var(--book-muted);font-size:13px;line-height:1.75;
 }
@@ -43,8 +51,6 @@ body:not(.mp-room-active) .decision-mark {color:var(--book-accent);background:va
 .decision-body p {color:var(--ui-text)}
 body:not(.mp-room-active) :is(.decision-window footer,.replay-window footer) {border-color:var(--book-border);background:var(--book-bg)}
 body:not(.mp-room-active) .game-data-link-row a {color:var(--book-accent)}
-body:not(.mp-room-active) .first-use-notice-window {padding:0 18px 16px}
-body:not(.mp-room-active) .first-use-notice-window>header {padding-inline:0}
 
 /* The Replay workspace is a Launcher surface; playback keeps its native frame. */
 
@@ -76,8 +82,6 @@ body:not(.mp-room-active) .multiplayer-rule-tabs-shell {background:var(--book-su
 body:not(.mp-room-active) .multiplayer-rule-game-tabs {background:var(--book-bg)}
 body:not(.mp-room-active) .multiplayer-rule-game-tab {color:var(--book-muted)}
 body:not(.mp-room-active) .multiplayer-rule-game-tab.selected {background:var(--book-accent-soft);color:var(--book-accent)}
-body:not(.mp-room-active) .first-use-notice-window .edge-drawer-swipe-hint>span:first-child {background:var(--book-bg);color:var(--book-ink)}
-body:not(.mp-room-active) .first-use-notice-window .edge-drawer-swipe-hint {color:var(--book-muted)}
 .server-status-note {top:auto;bottom:0;padding-bottom:max(3px,env(safe-area-inset-bottom))}
 :is(.tools[data-options-panel],.mp-settings-room-drawer) .library-back svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8}
 

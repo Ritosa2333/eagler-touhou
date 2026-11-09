@@ -58,8 +58,9 @@ import { Slider } from '../ui/slider';
 import { Skeleton } from '../ui/skeleton';
 import '../components/player/replay-workspace.css';
 import '../ui/review.css';
+import { sitePageTitle } from '../navigation/document-locale';
 
-export function meta() {return [{title:'UI 手册 | EAGLER TOUHOU'}];}
+export function meta() {return [{title:sitePageTitle('UI 手册')}];}
 
 export default function UiReview() {
   return (

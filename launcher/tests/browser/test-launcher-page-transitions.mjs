@@ -8,13 +8,21 @@ try {
   const page = await browser.newPage();
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto(origin, {waitUntil:'networkidle2'});
+  const fixtures = {
+    '/api/ready': {ready:true},
+    '/api/auth/get-session': {user:{username:'reimu', name:'Reimu'}},
+    '/api/v1/profiles/reimu': {username:'reimu', nickname:'Reimu', joinedAt:'2025-01-01T00:00:00Z', details:null},
+  };
+  await page.setRequestInterception(true);
+  page.on('request', request => {
+    const fixture = fixtures[new URL(request.url()).pathname];
+    if (fixture) void request.respond({contentType:'application/json', body:JSON.stringify(fixture)});
+    else void request.continue();
+  });
+  await page.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1'));
+  await page.goto(origin, {waitUntil:'domcontentloaded'});
   await page.waitForSelector('.launcher-page-surface');
   await page.waitForFunction(() => window.__eaglerBoot?.done === true && !document.querySelector('#eaglerPreload'));
-  if (await page.$('#firstUseNoticeDialog[open]')) {
-    await page.click('#firstUseNoticeCloseHint');
-    await page.waitForFunction(() => document.querySelector('#firstUseNoticeDialog')?.open !== true);
-  }
   await page.evaluate(() => document.querySelector('#siteNotice:not([hidden]) #siteNoticeClose')?.click());
   await page.evaluate(() => {
     window.routeTransitions = [];
@@ -31,6 +39,7 @@ try {
           old:style('::view-transition-old(launcher-page)'),
           root:style('::view-transition-new(root)'),
           header:style('::view-transition-new(launcher-masthead)'),
+          snapshots:[document.documentElement, document.querySelector('.book-masthead')].map(el => getComputedStyle(el).viewTransitionName),
           participants:[...document.querySelectorAll('body *')].filter(el => getComputedStyle(el).viewTransitionName === 'launcher-page').map(el => el.className),
           nestedAnimations:[...document.querySelectorAll('.sheet,.lobby-main,.player-profile')].map(el => getComputedStyle(el).animationName),
         });
@@ -39,29 +48,47 @@ try {
       return transition;
     };
   });
+  async function openProfile() {
+    await page.waitForSelector('.masthead-account-entry', {visible:true});
+    await page.click('.masthead-account-entry');
+    const profile = '.account-menu-panel a[href*="/u/"]';
+    await page.waitForSelector(profile, {visible:true});
+    await page.click(profile);
+  }
   async function navigate(destination) {
-    let selector = '.book-profile-trigger';
-    if (destination !== 'profile') {
-      const mobile = await page.$eval('.book-main-nav', el => getComputedStyle(el).display === 'none');
-      if (mobile) {
+    const compact = page.viewport().width <= 780;
+    const count = await page.evaluate(() => {window.routeTransitionFinished = false; return window.routeTransitions.length;});
+    if (destination === 'profile') await openProfile();
+    else {
+      if (compact) {
+        await page.waitForSelector('#mastheadMenuPanel', {hidden:true});
+        await page.waitForSelector('#mastheadMenuToggle[aria-haspopup="dialog"]', {visible:true});
         await page.click('#mastheadMenuToggle');
         await page.waitForFunction(() => {
-          const menu = document.querySelector('#mastheadMenuPanel');
-          return menu.getAttribute('aria-hidden') === 'false' && getComputedStyle(menu).opacity === '1';
+          const panel = document.querySelector('#mastheadMenuPanel[data-state="open"]');
+          const transform = panel && getComputedStyle(panel).transform;
+          return transform && (transform === 'none' || Math.abs(new DOMMatrixReadOnly(transform).m41) < .5);
         });
       }
-      selector = `${mobile ? '.book-mobile-nav' : '.book-main-nav'} a:${destination === 'library' ? 'first' : 'last'}-child`;
+      const selector = `${compact ? '#mastheadMenuPanel[data-state="open"] nav' : '.book-main-nav'} a:nth-child(${destination === 'library' ? 1 : 2})`;
+      await page.waitForSelector(selector, {visible:true});
+      await page.click(selector);
     }
-    const count = await page.evaluate(() => {window.routeTransitionFinished = false; return window.routeTransitions.length;});
-    await page.click(selector);
-    await page.waitForFunction(count => window.routeTransitions.length > count && window.routeTransitionFinished, {}, count);
-    const result = await page.evaluate(() => window.routeTransitions.at(-1));
-    assert.deepEqual(result.content, {name:'launcher-route-in', duration:'0.42s'});
-    assert.deepEqual(result.old, {name:'launcher-route-out', duration:'0.42s'});
-    assert.equal(result.root.name, 'none');
-    assert.equal(result.header.name, 'none');
-    assert.deepEqual(result.participants, ['launcher-page-surface']);
-    assert.ok(result.nestedAnimations.every(name => name === 'none'));
+    if (compact) {
+      await page.waitForSelector(`.launcher-page-surface[data-page="${destination}"]`);
+      assert.equal(await page.evaluate(() => window.routeTransitions.length), count, 'mobile changes live content without a snapshot');
+    } else {
+      await page.waitForFunction(count => window.routeTransitions.length > count && window.routeTransitionFinished, {}, count);
+      const result = await page.evaluate(() => window.routeTransitions.at(-1));
+      assert.deepEqual(result.content, {name:'launcher-route-in', duration:'0.16s'});
+      assert.deepEqual(result.old, {name:'launcher-route-out', duration:'0.16s'});
+      assert.equal(result.root.name, 'none');
+      assert.equal(result.header.name, 'none');
+      assert.deepEqual(result.snapshots, ['none', 'none']);
+      assert.deepEqual(result.participants, ['launcher-page-surface']);
+      assert.ok(result.nestedAnimations.every(name => name === 'none'));
+    }
+    if (destination === 'profile') await page.waitForSelector('.profile-wrap');
     const geometry = await page.evaluate(() => {
       const header = document.querySelector('.book-masthead').getBoundingClientRect();
       const container = document.querySelector('.book-library,.book-directory,.profile-wrap');
@@ -93,11 +120,12 @@ try {
     }
     console.log(`PASS ${width}px: six transitions, stable masthead and content bounds`);
   }
+  await page.setViewport({width:1440, height:900});
   const before = await page.evaluate(() => {window.routeTransitionFinished=false;return window.routeTransitions.length;});
   await page.goBack();
   await page.waitForFunction(n => window.routeTransitions.length > n && window.routeTransitionFinished, {}, before);
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
-  await page.click('.book-profile-trigger');
+  await openProfile();
   await page.waitForFunction(() => document.querySelector('.launcher-page-surface').dataset.page === 'profile');
   assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement,'::view-transition-new(launcher-page)').animationName), 'none');
   assert.deepEqual(errors, []);

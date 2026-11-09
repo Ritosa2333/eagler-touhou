@@ -30,6 +30,7 @@ import type { GameSettingsModel, SettingsContext } from './models/game-settings'
 import type { DecisionStore } from './models/decisions';
 import type { TouchLayoutModel } from './models/touch-layout';
 import { SurfaceNavigationProvider, useSurfaceNavigation } from './navigation/surface-navigation';
+import { useNavigationPageMotion } from './navigation/navigation-motion';
 import { useStoreSelector, shallowEqual } from './shared/react-store';
 import { accountsEnabled } from './release-features';
 import type {LocalSaveReader} from './services/local-save-storage';
@@ -127,6 +128,7 @@ export function LauncherApplication({ host }: { host: LauncherHost }) {
 function LauncherSurfaces({ host }: { host: LauncherHost }) {
   const navigation = useSurfaceNavigation();
   const pathname = useLocation().pathname;
+  const pageSurface = useNavigationPageMotion(pathname, host.lessMotion === true);
   const accountPage = accountsEnabled && /\/login\.html\/?$/.test(pathname);
   const profilePage = accountsEnabled && /^(?:\/profile\.html|\/u\/[^/]+)\/?$/.test(pathname);
   const settings = useSyncExternalStore(host.settings.subscribe, host.settings.getSnapshot, host.settings.getSnapshot);
@@ -286,6 +288,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
     <OptionsOwnership value={presence.targets}>
       {host.masthead}
       <div
+        ref={pageSurface}
         className="launcher-page-surface"
         data-page={accountPage ? 'account' : profilePage ? 'profile' : navigation.context}
       >

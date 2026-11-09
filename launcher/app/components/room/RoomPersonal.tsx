@@ -16,14 +16,14 @@ export function RoomPersonal({state, service, network, assetUrl, th09NetworkOver
   const member = account.status === 'member' ? account.user : null;
   const roomMember = state.seat == null ? room.spectators?.find(entry => entry.clientId === state.localClientId) : room.seats?.[state.seat];
   const memberName = roomMember?.profile?.username === member?.username.toLowerCase() ? roomMember?.name || member?.name : member?.name;
-  const input = useRef<HTMLInputElement>(null), latest = useRef(service); latest.current = service;
+  const input = useRef<HTMLInputElement>(null), edited = useRef(false), latest = useRef(service); latest.current = service;
   const moderated = !member && !!state.nickname, moderatedRef = useRef(moderated); moderatedRef.current = moderated;
   const [clock, setClock] = useState(Date.now);
   useEffect(() => {if (!moderated || hidden) return; const timer=setInterval(()=>setClock(Date.now()),60000);return()=>clearInterval(timer);},[moderated,hidden]);
   const queued = state.nickname?.status === 'queued';
   const pending = queued || state.nickname?.status === 'reviewing', locked = !!state.nickname && state.nickname.nextChangeAt > clock;
-  const statusKey = state.nickname?.attemptsLeft === 0 ? 'nickname.exhausted' : state.nickname ? `nickname.${state.nickname.status}` as const : 'nickname.idle';
-  const detail = queued ? t('nickname.queuedHint') : locked ? t('nickname.nextChange',{time:new Date(state.nickname!.nextChangeAt).toLocaleString(undefined,{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}) : state.nickname?.attemptsLeft === 1 ? t('nickname.oneRetry') : state.nickname?.status === 'approved' && state.nickname.name ? t('nickname.firstApproved') : state.nickname?.status === 'idle' ? t('nickname.briefHint') : '';
+  const statusKey = state.nickname ? `nickname.${state.nickname.status}` as const : 'nickname.idle';
+  const detail = queued ? t('nickname.queuedHint') : locked ? t('nickname.nextChange',{time:new Date(state.nickname!.nextChangeAt).toLocaleString(undefined,{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}) : state.nickname?.status === 'approved' && state.nickname.name ? t('nickname.firstApproved') : state.nickname?.status === 'idle' ? t('nickname.briefHint') : '';
   const draft = state.nickname?.pendingName || state.displayName;
   const save = useCallback(() => {if (input.current) input.current.value = latest.current.setDisplayName(input.current.value);}, []);
   const commit = useCallback(() => {if (!moderatedRef.current) save();}, [save]);
@@ -33,8 +33,13 @@ export function RoomPersonal({state, service, network, assetUrl, th09NetworkOver
     node?.addEventListener('change', commit);
     return () => node?.removeEventListener('change', commit);
   }, [commit, member]);
-  useLayoutEffect(() => {if (input.current && document.activeElement !== input.current) input.current.value = draft;}, [draft]);
-  const editor = <label className="mp-name-editor" id="mpNameEditor"><span>{t('multiplayer.name')}</span><Input ref={input} id="mpDisplayName" type="text" maxLength={12} autoComplete="off" placeholder={t('multiplayer.namePlaceholder')} aria-label={t('multiplayer.nameAria')} title={t(moderated ? 'nickname.hint' : 'multiplayer.nameEditableHint')} disabled={moderated && (locked || pending)} defaultValue={draft} onBlur={commit}/></label>;
+  useLayoutEffect(() => {
+    const field = input.current;
+    if (!field) return;
+    if (field.value === draft && state.nickname?.status === 'approved') edited.current = false;
+    if ((!moderated || !edited.current) && document.activeElement !== field) field.value = draft;
+  }, [draft, moderated, state.nickname?.status]);
+  const editor = <label className="mp-name-editor" id="mpNameEditor"><span>{t('multiplayer.name')}</span><Input ref={input} id="mpDisplayName" type="text" maxLength={12} autoComplete="off" placeholder={t('multiplayer.namePlaceholder')} aria-label={t('multiplayer.nameAria')} title={t(moderated ? 'nickname.hint' : 'multiplayer.nameEditableHint')} defaultValue={draft} onChange={() => {if (moderated) edited.current = true;}} onBlur={commit}/></label>;
   const arrow = (id: string, previous: boolean) => (config.inGameSelection || config.inGameCharacterSelection) ? null : <UiButton variant="icon" id={id} type="button" aria-label={t(previous ? 'multiplayer.previousCharacter' : 'multiplayer.nextCharacter')} onClick={() => service.changeLoadout(previous ? -1 : 1)}><img className="room-icon" src={assetUrl(previous ? 'assets/room-caret-left.svg' : 'assets/room-caret-right.svg')} alt=""/></UiButton>;
   return <div className="mp-room-body" data-room-panel="personal" hidden={hidden}>
     {member ? <div className="room-personal-account">

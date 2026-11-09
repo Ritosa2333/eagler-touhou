@@ -141,6 +141,9 @@ function AccountForm() {
     } catch (cause) {
       const expired = cause instanceof AccountRequestError && cause.status === 410;
       setRegistrationExpired(registering && expired);
+      if (registering && cause instanceof AccountRequestError && cause.code === 'CONTENT_REJECTED') {
+        setChallenge(null); setRemaining(0); setCode('');
+      }
       setApiError(expired ? null : errorMessage(cause, registering ? 'verify' : 'login'));
     }
     finally {setBusy(false);}
@@ -153,7 +156,7 @@ function AccountForm() {
         <form method="post" onSubmit={submit} aria-busy={busy}>
           {registering ? <>
             <label>{t('account.username')}<Input className="max-[959px]:text-base" name="username" autoComplete="username" minLength={3} maxLength={12} pattern="[A-Za-z0-9_.]{3,12}" required disabled={busy || registrationLocked} value={username} onChange={event => setUsername(event.target.value)} placeholder={t('account.usernamePlaceholder')}/></label>
-            <label>{t('profile.name')}<Input className="max-[959px]:text-base" name="nickname" required maxLength={24} disabled={busy || registrationLocked} value={nickname} onChange={event => setNickname([...event.target.value].slice(0,12).join(''))}/></label>
+            <label>{t('profile.name')}<Input className="max-[959px]:text-base" name="nickname" required maxLength={24} disabled={busy || registrationLocked} value={nickname} placeholder={t('profile.name.placeholder')} onChange={event => setNickname([...event.target.value].slice(0,12).join(''))}/></label>
             <label>{t('account.email')}<Input className="max-[959px]:text-base" name="email" type="email" autoComplete="email" required disabled={busy || registrationLocked} value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com"/></label>
           </> : <label>{t('account.identity')}<Input ref={entryInput} className="max-[959px]:text-base" name="identity" autoComplete="username" required value={identity} onChange={event => setIdentity(event.target.value)} placeholder={t('account.identityPlaceholder')}/></label>}
           <label htmlFor="account-password">{t('account.password')}<PasswordField id="account-password" key={registering ? 'register' : 'login'} aria-label={t('account.password')} name="password" autoComplete={registering ? 'new-password' : 'current-password'} minLength={registering ? 8 : undefined} maxLength={128} required disabled={busy || (registering && registrationLocked)} value={registering ? registrationPassword : loginPassword} onChange={event => registering ? setRegistrationPassword(event.target.value) : setLoginPassword(event.target.value)} placeholder={registering ? t('account.newPasswordPlaceholder') : t('account.passwordPlaceholder')}/></label>

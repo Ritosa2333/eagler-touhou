@@ -45,6 +45,12 @@ export async function buildContentPages({project = defaultProject, check = false
   }
 
   const renderer = new Renderer();
+  renderer.heading = function heading(token) {
+    const content = this.parser.parseInline(token.tokens);
+    const anchor = / \{#([a-z][a-z0-9-]*)\}$/.exec(content);
+    const title = anchor ? content.slice(0, anchor.index) : content;
+    return `<h${token.depth}${anchor ? ` id="${anchor[1]}"` : ''}>${title}</h${token.depth}>\n`;
+  };
   renderer.link = function link(token) {
     const href = safeContentHref(token.href);
     if (!href) return this.parser.parseInline(token.tokens);

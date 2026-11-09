@@ -2,9 +2,11 @@ import { Link, useHref, useLocation, type LinkProps } from 'react-router';
 import { nextPageHistory, pageOf, readPageHistory, PAGE_HISTORY_KEY } from '../../navigation/page-history';
 import { routerDestination } from '../../navigation/addresses';
 import { isStandalonePage } from '../documents/catalog';
+import { useCompactNavigation } from '../../navigation/navigation-motion';
 
 /** Known launcher document links share the Router's fixed page parent records. */
 export function AppLink({ href, state, replace, ...props }: Omit<LinkProps, 'to'> & { href: string }) {
+  const compact = useCompactNavigation();
   const location = useLocation(),
     routerBase = useHref('/'),
     currentAddress = useHref(location.pathname + location.search + location.hash);
@@ -21,7 +23,7 @@ export function AppLink({ href, state, replace, ...props }: Omit<LinkProps, 'to'
     <Link
       {...props}
       reloadDocument={reloadDocument}
-      viewTransition={!reloadDocument && url.pathname !== currentUrl.pathname && props.viewTransition !== false}
+      viewTransition={!compact && !reloadDocument && url.pathname !== currentUrl.pathname && props.viewTransition !== false}
       to={destination}
       replace={replace}
       state={{ ...state, [PAGE_HISTORY_KEY]: record }}

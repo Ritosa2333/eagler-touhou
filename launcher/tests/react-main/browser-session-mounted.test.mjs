@@ -1701,7 +1701,7 @@ test('actual BrowserLauncher: desktop rows and mobile icons share the multi-filt
 });
 
 // A direct game query seeds the common filter before or after Launcher Host resolves.
-for (const timing of ['together', 'after-directory']) test(`actual BrowserLauncher: lobby guide follows the selected product across Host timing (${timing})`, async () => {
+for (const timing of ['together', 'after-directory']) test(`actual BrowserLauncher: lobby guide links to the overview across Host timing (${timing})`, async () => {
   const f = await mountBrowser({initial: '/lobby.html?game=th07mp&keep=a%20b', holdHost: timing === 'after-directory' ? 'launcher' : true, host: subsetHost(['th06', 'th07'])});
   if (timing === 'after-directory') await until(() => env.document.querySelector('.book-lobby-desktop [data-lobby-product="th07mp"][data-selected="true"]'), 'actual directory views TH07 before Launcher Host');
   await React.act(async () => {f.releaseHost();}); await tick();
@@ -1709,29 +1709,23 @@ for (const timing of ['together', 'after-directory']) test(`actual BrowserLaunch
   assert.equal(node('.book-lobby-desktop [data-lobby-product="th07mp"] [role=checkbox]').getAttribute('aria-checked'), 'true');
   assert.equal(f.fetches.filter(item => new URL(item.url).pathname.endsWith('/site-manifest.json')).length, 2);
   assert.equal(node('#lobbyOptionsDialog').open, false, 'the directory filter is not an instruction to open game settings');
-  await click('#lobbyGuideOpen');
-  await until(() => env.document.querySelector('#mpGuideContent .multiplayer-rule-game-tab.selected'), 'authored guide content loads');
-  assert.equal(node('#mpGuideContent .multiplayer-rule-game-tab.selected').dataset.game, 'th07');
-  assert.equal(node('#mpGuideContent .multiplayer-rule-panel:not([hidden])').dataset.game, 'th07');
+  const guidePath = () => new URL(node('#lobbyGuideOpen').href).pathname;
+  assert.equal(guidePath(), '/docs/multiplayer');
   assert.equal(new URL(currentUrl(), env.window.location.href).searchParams.get('game'), 'th07mp');
   assert.equal(playerOpen(), false); assert.deepEqual(f.navigations, []);
-  await click('#mpGuideClose'); await until(() => !node('#mpGuideDialog').open, 'guide closes its own entry');
   await click('.book-lobby-all');
   await until(() => !new URL(currentUrl(), env.window.location.href).searchParams.has('game'), 'all multiplayer clears the viewed game');
   await click('.book-lobby-desktop [data-lobby-product="th07mp"] .book-lobby-game');
   await until(() => new URL(currentUrl(), env.window.location.href).searchParams.get('games') === 'th07mp', 'row selects that product');
   assert.equal(node('.book-lobby-desktop [data-lobby-product="th07mp"] [role=checkbox]').getAttribute('aria-checked'), 'true');
   assert.equal(node('#lobbyOptionsDialog').open, false, 'game options are not opened from the directory card');
-  await click('#lobbyGuideOpen'); await until(() => node('#mpGuideDialog').open, 'guide reopens for viewed product');
-  assert.equal(node('#mpGuideContent .multiplayer-rule-game-tab.selected').dataset.game, 'th07');
-  await click('#mpGuideClose'); await until(() => !node('#mpGuideDialog').open, 'guide closes');
+  assert.equal(guidePath(), '/docs/multiplayer');
   await click('.book-lobby-all');
   await click('.book-lobby-desktop [data-lobby-product="th06mp"] .book-lobby-game');
   assert.equal(node('#lobbyOptionsDialog').open, false, 'viewing another game does not open settings');
   assert.equal(node('.book-lobby-desktop [data-lobby-product="th06mp"] [role=checkbox]').getAttribute('aria-checked'), 'true');
-  await click('#lobbyGuideOpen'); await until(() => node('#mpGuideDialog').open, 'directory guide reopens after another product settings');
-  assert.equal(node('#mpGuideContent .multiplayer-rule-game-tab.selected').dataset.game, 'th06');
-  assert.equal(f.fetches.filter(item => new URL(item.url).pathname.endsWith('/content/MULTIPLAYER.html')).length, 1, 'cached authored guide follows the filter on reopen');
+  assert.equal(guidePath(), '/docs/multiplayer');
+  assert.equal(env.document.querySelector('#mpGuideDialog'), null);
 });
 
 test('directory can filter th11mp without a hosted multiplayer Runtime', async () => {
@@ -2471,7 +2465,7 @@ test('offline lobby masthead Replay opens the selected multiplayer workspace and
 test('Replay root Back uses real BrowserHistory and folder, move, then manager layers unwind one at a time', async () => {
   const opener = React.createElement('button', {id: 'testReplayOpen', type: 'button', hidden: true,
     onClick: () => {const session = api.getTestSession(); void session.openReplayViewer('th09mp').catch(session.reportError);}}, 'open Replay');
-  const f = await mountBrowser({initial: '/?keep=a%20b', actualHistory: true, host: subsetHost(['th09']), seedPackages: ['th09'], extra: opener});
+  const f = await mountBrowser({initial: '/?keep=a%20b', actualHistory: true, host: subsetHost(['th06','th09']), seedPackages: ['th06','th09'], extra: opener});
   const session = api.getTestSession();
   const database = await new Promise((resolve, reject) => {
     const request = env.window.indexedDB.open('/savesth09mp', 21);
@@ -2490,11 +2484,17 @@ test('Replay root Back uses real BrowserHistory and folder, move, then manager l
     await until(() => session.getRuntime().getSnapshot().launched, 'standalone Replay Runtime is ready');
   };
   await openReplay();
-  const frame = node('#gameFrame'), parentKey = f.router.state.location.state.launcherInformationDialogs.parentKey;
+  const frame = node('#gameFrame'), replayFiles = node('.replay-workspace-files');
+  const parentKey = f.router.state.location.state.launcherInformationDialogs.parentKey;
   assert.equal(typeof parentKey, 'string', 'home Replay owns a real Router parent even from the first browser entry');
 
   await click('[data-replay-folder="replay/group"]');
   await until(() => node('.replay-breadcrumb').textContent.includes('group'), 'folder layer opens');
+  await browserBack();
+  await until(() => !node('.replay-breadcrumb').textContent.includes('group'), 'Back restores the Replay root');
+  assert.equal(node('.replay-workspace-files'), replayFiles);
+  await click('[data-replay-folder="replay/group"]');
+  await until(() => node('.replay-breadcrumb').textContent.includes('group'), 'the same folder can be opened immediately after Back');
   const manageLabel = api.translate(session.getSnapshot().locale, 'replay.ui.manage', {name: 'th9_01.rpy'});
   await click(`[aria-label=${JSON.stringify(manageLabel)}]`);
   const moveLabel = api.translate(session.getSnapshot().locale, 'replay.ui.move');
@@ -2509,6 +2509,7 @@ test('Replay root Back uses real BrowserHistory and folder, move, then manager l
   await browserBack();
   await until(() => !node('.replay-breadcrumb').textContent.includes('group') && !!env.document.querySelector('.replay-file-browser'), 'second BrowserHistory Back closes only the folder');
   assert.equal(playerOpen(), true); assert.equal(node('#gameFrame'), frame);
+  assert.equal(node('.replay-workspace-files'), replayFiles, 'returning to a parent folder preserves the scroll container');
 
   await browserBack();
   await until(() => f.router.state.location.key === parentKey && !env.document.querySelector('.replay-file-browser') && !session.getSnapshot().replayViewer,
@@ -2521,6 +2522,19 @@ test('Replay root Back uses real BrowserHistory and folder, move, then manager l
     'manager can be entered again after BrowserHistory cleanup');
   const secondParent = f.router.state.location.state.launcherInformationDialogs.parentKey;
   assert.equal(typeof secondParent, 'string');
+  const previousEpoch = session.getRuntime().getSnapshot().epoch, manager = node('.replay-file-browser');
+  await click('[data-replay-folder="replay/group"]');
+  await until(() => node('.replay-breadcrumb').textContent.includes('group'), 'folder opens before switching games');
+  await click('#replayProductSelect');
+  await until(() => !!env.document.querySelector('[data-product-choice="th06mp"]'), 'Replay uses the shared product menu');
+  await click('[data-product-choice="th06mp"]');
+  await until(() => session.getReplays().getSnapshot().productId === 'th06mp' &&
+    !node('.replay-breadcrumb').textContent.includes('group') && session.getRuntime().getSnapshot().launched, 'Replay opens the new title at its root');
+  assert.notEqual(session.getRuntime().getSnapshot().epoch, previousEpoch);
+  assert.equal(session.getRuntime().getSnapshot().game, 'th06');
+  assert.equal(node('#gameFrame'), frame);
+  assert.equal(node('.replay-file-browser'), manager, 'changing titles keeps the workspace mounted');
+  assert.equal('launcherLocalLayers' in f.router.state.location.state, false);
   await browserBack();
   await until(() => f.router.state.location.key === secondParent && !env.document.querySelector('.replay-file-browser'),
     'second Replay Back returns to its parent without stale child layers');
@@ -2772,10 +2786,10 @@ for (const localSeat of [0,1]) test(`room title switch reuses the room code and 
     assert.equal(node('#roomProductSelect').textContent,'');
     await React.act(async()=>node('#roomProductSelect').dispatchEvent(
       new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true})));
-    await until(()=>!!env.document.querySelector('[data-room-product="th07mp"]'),'shared game menu option');
-    assert.equal(node('[data-room-product="th06mp"]').getAttribute('aria-checked'),'true');
-    assert.ok(node('[data-room-product="th07mp"] .book-lobby-cover'));
-    await click('[data-room-product="th07mp"]');
+    await until(()=>!!env.document.querySelector('[data-product-choice="th07mp"]'),'shared game menu option');
+    assert.equal(node('[data-product-choice="th06mp"]').getAttribute('aria-checked'),'true');
+    assert.ok(node('[data-product-choice="th07mp"] .book-lobby-cover'));
+    await click('[data-product-choice="th07mp"]');
     assert.deepEqual(socket.sent.at(-1),{type:'switch-product',product:'th07mp'});
   }else assert.equal(env.document.querySelector('#roomProductSelect'),null);
   await React.act(async()=>socket.message({type:'room-product',product:'th07mp',code:'1234',spectator:false}));

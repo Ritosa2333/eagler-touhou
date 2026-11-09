@@ -45,7 +45,7 @@ function Body(){const navigation=useSurfaceNavigation(),app=useSyncExternalStore
 function Fixture(){return <SurfaceNavigationProvider dirty={false} isEditing={false} onDiscard={()=>{}} playerOpen><Body/></SurfaceNavigationProvider>;}
 const router=createMemoryRouter([{path:'*',element:<Fixture/>}],{initialEntries:['/?game=th11']});createRoot(document.getElementById('root')).render(<RouterProvider router={router}/>);
 `;
-await build({absWorkingDir:project,stdin:{contents:entry,resolveDir:project,loader:'tsx'},outfile:resolve(out,'ui.mjs'),bundle:true,format:'esm',platform:'browser',jsx:'automatic',external:['/assets/*'],plugins:[authoredSourcesPlugin(project)],logLevel:'silent'});
+await build({absWorkingDir:project,stdin:{contents:entry,resolveDir:project,loader:'tsx'},outfile:resolve(out,'ui.mjs'),bundle:true,format:'esm',platform:'browser',jsx:'automatic',external:['/assets/*'],loader:{'.webp':'dataurl'},plugins:[authoredSourcesPlugin(project)],logLevel:'silent'});
 const engine=`<!doctype html><style>body{margin:0;background:#000}canvas{width:100vw;height:100vh;object-fit:contain}</style><canvas id="canvas" width="640" height="480"></canvas><script type="module">
 import createModule from '/native.mjs';import{createNativeLocalReplay}from'/local-replay-native.mjs';let core;
 const emit=(event,fields={})=>parent.postMessage({protocol:'eagler-touhou/1',game:'th11',epoch:1,event,...fields},location.origin);

@@ -6,7 +6,7 @@ import boldFontUrl from '../../../public/assets/fonts/chill-round-gothic-site-bo
 import {originalBootstrap as original} from 'virtual:original-bootstrap';
 import {useLocation} from 'react-router';
 import {translate} from '../../i18n';
-import {useDocumentUiLocale} from '../../navigation/document-locale';
+import {sitePageTitle, useDocumentUiLocale} from '../../navigation/document-locale';
 import {isLauncherHomePath} from '../../navigation/addresses';
 
 // ES5 dispatch only: the original compatibility gate must precede the modern
@@ -26,13 +26,16 @@ export function LauncherNavigationTransitionOptIn() {
   return <style id="launcherNavigationTransition">{'@view-transition{navigation:auto}'}</style>;
 }
 export function OriginalBootstrapHead() {
-  const {pathname} = useLocation();
+  const {pathname, search} = useLocation();
   const locale = useDocumentUiLocale();
   const lobby = /\/(?:lobby|lobby\.html)\/?$/.test(pathname);
   const account = /\/login\.html\/?$/.test(pathname);
   const profile = /^(?:\/profile\.html|\/u\/[^/]+)\/?$/.test(pathname);
   const home = isLauncherHomePath(pathname);
-  const title = account ? translate(locale, 'account.documentTitle') : lobby ? `${translate(locale, 'lobby.title')} ~ EAGLER TOUHOU` : profile ? `${translate(locale, 'profile.navigation')} ~ EAGLER TOUHOU` : translate(locale, 'site.documentTitle');
+  const mode = account ? new URLSearchParams(search).get('mode') : null;
+  const page = account ? mode === 'register' ? 'account.register' : mode === 'reset' ? 'account.forgotPassword' : 'account.login'
+    : lobby ? 'lobby.title' : profile ? 'profile.pageTitle' : null;
+  const title = page ? sitePageTitle(translate(locale, page)) : translate(locale, 'site.documentTitle');
   const description = translate(locale, 'site.description');
   return <>
     <script>{dispatch}</script>
@@ -42,6 +45,7 @@ export function OriginalBootstrapHead() {
       html{background:var(--kit-background)}
       body:not(.mp-room-active){background-color:var(--kit-background)}
       :is(#eaglerPreload,#lobbyPreload){background:var(--kit-background);color:var(--kit-foreground);font-family:var(--kit-font)}
+      :is(#eaglerPreload,#lobbyPreload).is-done{pointer-events:none}
       :is(.eagler-preload-card,.lobby-preload-card){width:72px;height:72px;border-radius:12px;background:var(--kit-card);border-color:var(--kit-border);box-shadow:none}
       :is(.eagler-preload-spinner,.lobby-preload-spinner){border-color:var(--kit-border);border-top-color:var(--kit-brand)}
       .lobby-preload-failure a{color:var(--kit-foreground)}
@@ -57,7 +61,7 @@ export function OriginalBootstrapHead() {
       <meta name="description" content={description} data-i18n-content="site.description"/>
       <meta property="og:type" content="website"/>
       <meta property="og:site_name" content="EAGLER TOUHOU"/>
-      <meta property="og:title" content={title} data-i18n-content="site.documentTitle"/>
+      <meta property="og:title" content={title} data-i18n-content={page ? undefined : 'site.documentTitle'}/>
       <meta property="og:description" content={description} data-i18n-content="site.description"/>
       <meta name="mobile-web-app-capable" content="yes"/>
       <meta name="apple-mobile-web-app-capable" content="yes"/>

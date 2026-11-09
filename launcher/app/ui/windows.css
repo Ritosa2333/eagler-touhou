@@ -1,66 +1,4 @@
 @layer components {
-  .first-use-notice-dialog {
-    position: fixed;
-    inset: 0 0 0 auto;
-    box-sizing: border-box;
-    width: min(560px, calc(100vw - 24px));
-    height: 100dvh;
-    max-height: none;
-    margin: 0 0 0 auto;
-    padding: 0;
-    text-align: left;
-    overflow: hidden;
-  }
-  .first-use-notice-dialog::backdrop {
-    background: #0008;
-  }
-  .first-use-notice-window {
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    box-sizing: border-box;
-    height: 100%;
-    padding: 0;
-    font: 400 13px / 1.65 var(--kit-font);
-  }
-  .first-use-notice-window > header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-  }
-  .first-use-notice-window h1 {
-    margin: 0;
-    color: var(--kit-foreground);
-    font: 600 16px / 1.4 var(--kit-font);
-  }
-  .first-use-notice-text {
-    min-height: 0;
-    padding: 4px 20px 20px;
-    margin: 0;
-    overflow: auto;
-    overflow-wrap: anywhere;
-  }
-  .first-use-notice-text .first-use-notice-list {
-    margin: 0;
-  }
-  .first-use-notice-text .first-use-notice-item {
-    padding: 12px 0;
-    border: 0;
-  }
-  .first-use-notice-loading,
-  .first-use-notice-empty {
-    margin: 16px 0;
-    color: var(--kit-muted-foreground);
-  }
-  .first-use-notice-error {
-    color: var(--kit-destructive);
-  }
-  .first-use-notice-window > footer {
-    display: flex;
-    justify-content: flex-end;
-    padding: 12px 20px;
-    border-top: 1px solid var(--kit-border);
-  }
   .transfer,
   .startup-error,
   .th09-network-window,
@@ -71,7 +9,7 @@
     border-radius: 10px;
     background: var(--kit-card);
     color: var(--kit-foreground);
-    box-shadow: 0 8px 28px #0002;
+    box-shadow: var(--ui-window-shadow);
     font: 400 13px / 1.5 var(--kit-font);
     text-shadow: none;
   }
@@ -347,7 +285,7 @@
     place-items: center;
     box-sizing: border-box;
     padding: 16px;
-    background: #0008;
+    background: var(--ui-window-scrim);
     overflow: auto;
     overscroll-behavior: contain;
     touch-action: auto;
@@ -496,12 +434,9 @@
     border-radius: 10px;
     background: var(--kit-card);
     color: var(--kit-foreground);
-    box-shadow: 0 16px 48px #0003;
+    box-shadow: var(--ui-window-shadow);
     font: 400 13px / 1.5 var(--kit-font);
     overflow: auto;
-  }
-  .calibration-dialog::backdrop {
-    background: #0008;
   }
   .calibration-dialog header {
     display: flex;
@@ -643,8 +578,6 @@
     stroke-width: 1.75;
   }
   .decision-dialog {
-    --ui-surface-duration: var(--ui-feedback-duration);
-    --ui-surface-distance-dialog: 0px;
     width: min(420px, calc(100vw - 24px));
     padding: 0;
     overflow: hidden;
@@ -738,25 +671,15 @@
     border-radius: 10px;
     background: var(--kit-card);
     color: var(--kit-foreground);
-    box-shadow: 0 16px 48px #0003;
+    box-shadow: var(--ui-window-shadow);
     font-family: var(--kit-font);
-  }
-  :is(
-    .informational-dialog,
-    .first-use-notice-dialog,
-    .decision-dialog,
-    .replay-dialog,
-    .input-settings-dialog,
-    .lobby-dialog
-  )::backdrop {
-    background: #0008;
   }
   :is(.informational-window, .first-use-notice-window, .decision-window, .replay-window, .lobby-dialog form) {
     background: var(--kit-card);
     color: var(--kit-foreground);
     font-family: var(--kit-font);
   }
-  :is(.informational-window, .first-use-notice-window, .replay-window, .game-data-import-window, .game-data-link-window)
+  :is(.informational-window, .replay-window, .game-data-import-window, .game-data-link-window)
     > header,
   .decision-window > header {
     min-height: 56px;
@@ -767,7 +690,6 @@
   }
   :is(
       .informational-window,
-      .first-use-notice-window,
       .replay-window,
       .lobby-dialog,
       .game-data-import-window,
@@ -821,6 +743,73 @@
   }
   .lobby-dialog .lobby-submit {
     width: 100%;
+  }
+  #roomDialog {
+    width: min(420px, calc(100vw - 32px));
+    padding: 0;
+  }
+  #roomDialog[data-mode="join"] {
+    width: min(340px, calc(100vw - 32px));
+  }
+  #roomForm {
+    display: grid;
+    gap: 16px;
+    padding: 16px 20px 20px;
+  }
+  #roomForm .lobby-dialog-head {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  #roomForm .lobby-close {
+    flex: none;
+    width: 44px;
+    height: 44px;
+  }
+  #roomForm .lobby-field {
+    min-width: 0;
+    margin: 0;
+    gap: 6px;
+  }
+  #roomForm .lobby-form-pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 12px;
+  }
+  #roomForm .lobby-form-pair:has(> :last-child[hidden]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lobby-create-rules {
+    border-block: 1px solid var(--kit-border);
+  }
+  .lobby-create-rules > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 44px;
+    color: var(--kit-muted-foreground);
+    font: 500 13px / 1.5 var(--kit-font);
+    cursor: pointer;
+    list-style: none;
+  }
+  .lobby-create-rules > summary::-webkit-details-marker { display: none; }
+  .lobby-create-rules > summary:is(:hover, :focus-visible),
+  .lobby-create-rules[open] > summary { color: var(--kit-foreground); }
+  .lobby-create-rules[open] > summary > svg { transform: rotate(180deg); }
+  .lobby-create-rules > .lobby-form-pair { padding-block: 4px 14px; }
+  #roomForm :is(.lobby-form-pair, .lobby-field, .lobby-form-error)[hidden] {
+    display: none;
+  }
+  #roomForm :is(.lobby-form-note, .lobby-form-error) {
+    margin: 0;
+  }
+  #roomForm #roomCodeInput {
+    height: 54px;
+    font-size: 22px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .16em;
+    text-align: center;
   }
   :is(
       .profile-detail-fields,

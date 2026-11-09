@@ -30,7 +30,9 @@ export interface OptionsPanelProps {
 /** Main index.html354–365 shell; body is the shared SettingsBody, never a copy. */
 export function OptionsPanel({product, coverArtwork, open, closing=false, onBack, children, actions, lobbyHref, embeddedInLobby = false, roomDrawer = false, multiplayerOnline, multiplayerDiagnostics, assetUrl}: OptionsPanelProps) {
   const {t} = useLocale();
-  const panel = useRef<HTMLElement>(null); useOptionsViewport(panel); useOptionsInteractions(panel, open&&!closing, onBack);
+  const panel = useRef<HTMLElement>(null);
+  useOptionsViewport(panel, open && !roomDrawer);
+  useOptionsInteractions(panel, open&&!closing, onBack);
   const panelTarget = useOptionsTarget('panel', panel);
   const inRoomDrawer = roomDrawer && product.multiplayer;
   const [drawerTargets, setDrawerTargets] = useState<{header: HTMLElement; content: HTMLElement} | null>(null);
@@ -45,7 +47,7 @@ export function OptionsPanel({product, coverArtwork, open, closing=false, onBack
   const productLobbyHref = lobbyHref ? lobbyHrefForProduct(lobbyHref, product.id) : undefined;
   const header = <div className="tools-head">
       <img className="options-cover" id="optionsCover" src={coverArtwork ?? product.artwork ?? undefined} hidden={!(coverArtwork ?? product.artwork)} alt="" decoding="async"/>
-      <div className="tools-title"><div className="game-id" id="gameId" data-game={product.gameId}>{product.gameId}{product.multiplayer ? ' | MP' : ''}</div><h3 id="gameTitle" title={product.title}>{product.title}</h3><p className="options-subtitle" id="optionsSubtitle" title={product.subtitle}>{product.subtitle}</p></div>
+      <div className="tools-title"><div className="game-id" id="gameId" data-game={product.gameId}>{product.gameId}{product.multiplayer ? ' | MP' : ''}</div><h3 id="gameTitle" title={product.title}>{product.title}</h3></div>
       <UiButton variant="secondary" size="icon" className="library-back" id="libraryBack" type="button" aria-label={t(roomDrawer || embeddedInLobby ? 'settings.drawerClose' : 'library.back')} onClick={onBack}><X aria-hidden="true"/></UiButton>
     </div>;
   const fold = <section className={inRoomDrawer ? 'mp-settings mp-room-drawer-mounted' : 'mp-settings'} id="mpSettingsFold">{product.multiplayer ? children : null}</section>;

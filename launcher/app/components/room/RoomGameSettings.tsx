@@ -14,7 +14,7 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
   const {t} = useLocale(), {room, ready, owner, config} = roomPresentation(state, t)!;
   const disabled = !ready || !owner || room.phase !== 'lobby';
   return <section className="mp-room-settings room-grouped-settings options-settings" id="mpRoomSettings" hidden={hidden} data-room-panel="game">
-    <section className="room-settings-group"><h3>{t('room.basicSettings')}</h3>
+    <section className="room-settings-group" aria-label={t('room.basicSettings')}>
       <div className="room-basic-fields">
         <label>{t('room.visibility')}<MainSelect id="mpRoomVisibility" aria-label={t('room.visibility')} className="option-select" value={room.visibility || 'public'} disabled={disabled} onChange={event => service.setRoomSettings({visibility: event.target.value as 'public' | 'private'})}>
           <option value="public">{t('room.public')}</option><option value="private">{t('room.private')}</option>
@@ -24,7 +24,7 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
         </MainSelect></label>
       </div>
       <p className="room-setting-description" hidden={room.visibility !== 'private'}>{t('room.privateHint')}</p>
-      {config.inGameSelection ? <p className="room-setting-description">{t('room.inGameSelectionHint')}</p> : <RoomChoiceGroup title={<><span>{t('multiplayer.difficulty')}</span>{room.challengeMode && <span className="room-challenge-on">{t('room.challengeEnabled')}</span>}</>} name="difficulty" valueAttribute="data-mp-difficulty" choices={config.difficulties.map((label, index) => ({value:index,label,selected:room.difficulty === index,disabled}))} onSelect={difficulty => service.setRoomSettings({difficulty})}/>}
+      {config.inGameSelection ? <p className="room-setting-description">{t('room.inGameSelectionHint')}</p> : <RoomChoiceGroup title={<><span>{t('lobby.difficulty')}</span>{room.challengeMode && <span className="room-challenge-on">{t('room.challengeEnabled')}</span>}</>} name="difficulty" valueAttribute="data-mp-difficulty" choices={config.difficulties.map((label, index) => ({value:index,label,selected:room.difficulty === index,disabled}))} onSelect={difficulty => service.setRoomSettings({difficulty})}/>}
     </section>
     <section className="room-settings-group"><h3>{t('room.gameSettingsGroup')}</h3>
       <RoomTiming state={state} service={service}/><RoomTiming state={state} service={service} settings/>
