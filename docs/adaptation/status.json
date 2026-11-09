@@ -6,7 +6,7 @@
       "game": "th05",
       "variant": "multiplayer",
       "directory": "ports/th05-mp",
-      "sourceDigest": "ac8b6e1a6039fb0d7046750136b196bb2df88587665c6ef1ede51a5a90ccd454",
+      "sourceDigest": "2d11802c7153edb38d67c10a9ad46474a6b352a2ddefa98eb669d3a2092a4d05",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 96,
