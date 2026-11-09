@@ -437,3 +437,18 @@
 .account-menu-identity strong,.account-menu-identity small{display:block;overflow-wrap:anywhere}.account-menu-identity small{color:var(--kit-muted-foreground)}
 .profile-avatar>.account-avatar,.profile-draft-avatar>.account-avatar{width:100%;height:100%;border-radius:inherit}
 @media(max-width:380px){.book-masthead .site-brand{width:136px}}
+
+/* Subtle icon feedback on masthead actions. */
+.book-masthead :is(.book-top-faq, .book-top-donation) > svg {
+  transition: transform 300ms cubic-bezier(.22,.7,.2,1);
+  transform-origin: center;
+}
+@media (hover:hover) and (pointer:fine) {
+  .book-masthead .book-top-faq:is(:hover,:focus-visible) > svg {transform: rotate(-10deg) scale(1.08)}
+  .book-masthead .book-top-donation:is(:hover,:focus-visible):not(:disabled) > svg {transform: scale(1.16)}
+}
+.book-masthead :is(.book-top-faq, .book-top-donation):active:not(:disabled) > svg {transform: scale(.9)}
+@media (prefers-reduced-motion:reduce) {
+  .book-masthead :is(.book-top-faq, .book-top-donation) > svg {transition:none;transform:none!important}
+}
+.less-motion .book-masthead :is(.book-top-faq, .book-top-donation) > svg {transition:none;transform:none!important}
