@@ -1,13 +1,13 @@
 import { useMemo, type ComponentProps } from 'react';
 import { useHref, useLocation, Link } from 'react-router';
-import type { Root } from 'fumadocs-core/page-tree';
+import { findNeighbour, type Root } from 'fumadocs-core/page-tree';
 import { RootProvider } from '@fumadocs/base-ui/provider/react-router';
 import { DocsLayout } from '@fumadocs/base-ui/layouts/spacious';
 import { DocsPage, DocsTitle, DocsBody } from '@fumadocs/base-ui/layouts/spacious/page';
 import { StandalonePageShell } from '../standalone-pages';
 import { useLocale, translate } from '../i18n';
 import { withUiLanguage } from '../../src/launcher/i18n.mts';
-import { multiplayerGuideTopic } from '../../lib/multiplayer-guide.mjs';
+import { multiplayerGuidePath, multiplayerGuideTopic } from '../../lib/multiplayer-guide.mjs';
 import { sitePageTitle } from '../navigation/document-locale';
 import documentHistory from 'virtual:document-history';
 import { helpDocuments, helpDocumentAtPath, helpDocumentLocale, type HelpDocument } from '../components/documents/catalog';
@@ -54,7 +54,7 @@ function Documentation({ page, topic }: { page: HelpDocument; topic?: GuideTopic
     if (topic === 'start' || topic === 'th09' || topic === 'th19') return {body:null, toc:[]};
     return prepareMultiplayerRules(t('content.multiplayer'), base, locale, topic, t('guide.specific'));
   }, [page.content, contentLocale, locale, t, base, topic]);
-  const tree: Root = {
+  const helpTree: Root = {
     $id: `help-${locale}`,
     name: t('document.title'),
     children: [
@@ -64,10 +64,17 @@ function Documentation({ page, topic }: { page: HelpDocument; topic?: GuideTopic
         name: t(document.title),
         url: '/' + document.path,
       })),
-      { type: 'separator' as const, name: t('nav.aboutSite') },
+    ],
+  };
+  const tree: Root = {
+    ...helpTree,
+    children: [
+      ...helpTree.children,
+      { type: 'separator', name: t('nav.aboutSite') },
       ...helpDocuments.filter(document => document.id === 'privacy').map(document => ({type: 'page' as const, name: t(document.title), url: '/' + document.path})),
     ],
   };
+  const footer = findNeighbour(helpTree, topic ? multiplayerGuidePath(topic) : '/' + page.path);
   const labels = {
     'On this page(table of contents)': t('document.toc'),
     'Next Page(pagination)': t('document.nextPage'),
@@ -95,6 +102,7 @@ function Documentation({ page, topic }: { page: HelpDocument; topic?: GuideTopic
           className="pt-4"
           toc={toc}
           breadcrumb={{ enabled: false }}
+          footer={{ items: footer }}
           tableOfContent={{ container: { className: 'pt-6' } }}
           tableOfContentPopover={{ trigger: { 'aria-label': t('document.toc'), className: 'documentation-toc-trigger' } }}
         >
