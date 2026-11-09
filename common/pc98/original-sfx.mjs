@@ -3,22 +3,34 @@ import {extractOriginalEffectBank} from './pmd-archives.mjs';
 export class OriginalSfx {
   static async create(game,fat){
     let context;try{context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});}catch{context=new AudioContext();}
-    await context.resume();
-    await context.audioWorklet.addModule(new URL('./sfx-worklet.js',import.meta.url));
-    const node=new AudioWorkletNode(context,'pc98-original-effects',{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[1]});
-    node.connect(context.destination);
-    const worker=new Worker(new URL('./sfx-worker.mjs',import.meta.url),{type:'module'}),instance=new OriginalSfx(context,node,worker,game);
-    const folder={th02:'HUMAROKU',th03:'YUMEZIKU',th04:'GENSO'}[game];
-    const driver=fat.read(fat.find(folder+'/PMD.COM'));
-    const bank=extractOriginalEffectBank(game,fat).bytes;
-    const {sfxDriver:fixture}=await import('./sfx-driver.mjs');
-    const wasm=await(await fetch(new URL('vendor/dosbox-x/wdosbox-x-rollback.wasm',import.meta.url))).arrayBuffer();
-    await new Promise((resolve,reject)=>{
-      worker.onmessage=({data})=>{if(data.type==='ready')resolve();else if(data.type==='audio')node.port.postMessage(data.samples,[data.samples.buffer]);else if(data.type==='error')reject(Error(data.message));};
-      worker.onerror=event=>reject(Error(event.message));
-      worker.postMessage({type:'start',driver,bank,fixture,wasm,sampleRate:context.sampleRate});
-    });
-    return instance;
+    let node,worker;
+    try{
+      // Autoplay policy can leave resume pending until the next user gesture.
+      // Do not block game startup; callers can resume the context later.
+      void context.resume().catch(()=>{});
+      await context.audioWorklet.addModule(new URL('./sfx-worklet.js',import.meta.url));
+      node=new AudioWorkletNode(context,'pc98-original-effects',{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[1]});
+      node.connect(context.destination);
+      worker=new Worker(new URL('./sfx-worker.mjs',import.meta.url),{type:'module'});
+      const instance=new OriginalSfx(context,node,worker,game);
+      const folder={th02:'HUMAROKU',th03:'YUMEZIKU',th04:'GENSO'}[game];
+      const driver=fat.read(fat.find(folder+'/PMD.COM'));
+      const bank=extractOriginalEffectBank(game,fat).bytes;
+      const {sfxDriver:fixture}=await import('./sfx-driver.mjs');
+      const response=await fetch(new URL('vendor/dosbox-x/wdosbox-x-rollback.wasm',import.meta.url));
+      if(!response.ok)throw Error(`音效引擎加载失败 (${response.status})`);
+      const wasm=await response.arrayBuffer();
+      await new Promise((resolve,reject)=>{
+        worker.onmessage=({data})=>{if(data.type==='ready')resolve();else if(data.type==='audio')node.port.postMessage(data.samples,[data.samples.buffer]);else if(data.type==='error')reject(Error(data.message));};
+        worker.onerror=event=>reject(Error(event.message));
+        worker.onmessageerror=()=>reject(Error('原版音效线程通信失败'));
+        worker.postMessage({type:'start',driver,bank,fixture,wasm,sampleRate:context.sampleRate});
+      });
+      return instance;
+    }catch(error){
+      worker?.terminate();node?.disconnect();await context.close().catch(()=>{});
+      throw error;
+    }
   }
   constructor(context,node,worker,game){this.context=context;this.node=node;this.worker=worker;this.game=game;this.lastShot=-Infinity;this.played=0;this.peak=0;this.sequence=0;this.status='原版 FM 音效';
     node.port.onmessage=({data})=>{this.peak=Math.max(this.peak,data.peak);};}
