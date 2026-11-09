@@ -141,6 +141,7 @@ inline bool transition_gate_should_interrupt(u32 frames, bool paused,
 #include "../game/RunScene.hpp"
 #include "../game/RunPause.hpp"
 #include "../game/PlayfieldTargets.hpp"
+#include "../game/RunTransitionEffect.hpp"
 
 #include <chrono>
 #include <memory>
@@ -194,6 +195,13 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // (0042bfa0:0x42bffd/0x42c02e/0x42c061); 004172e0 -> 0046fc30 retires
     // the whole caption tree at stage activation (0042c550:0x42c881/0x42c9fb).
     u32 transition_prayer = 0;
+    // START-01: run-owned tail of the title/replay launch transition.
+    // 0x415650(type 0) creates effect.anm script0 and initializes the
+    // AnmOverlay in the title scene; the handle lives in DAT_004dc86c and is
+    // not owned by TitleScene. label7 is issued at launch, label1 at stage
+    // activation. Normal ANM updates retire the completed overlay; later
+    // activation on its stale handle is a no-op. Returning to title clears it.
+    RunTransitionEffect run_transition{animations};
     // Next-stage STD scenery Load/Initialize is part of the loader gate, not
     // the 0042bfa0 door: Stage 3's scenery ANM scripts read one visual RNG
     // value per primitive at their first tick (st03wl scripts 11-16, 12 index
@@ -393,6 +401,11 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool begin_title(i32 reason);
     // 正常开局/换关由 pending stage / replay_session 设置 replay_active 与恢复状态
     bool begin_run();
+    // 标题/回放启动拍：创建 effect.anm script0 + overlay + label7。
+    bool begin_run_transition();
+    // 关卡激活（0x42c550）：对持久 handle 发 label1（含 0xc 换关）。
+    bool stage_start_run_transition();
+    bool release_run_transition();
     // 回放会话直入：解码 .rpy → 按录像头配置 → begin_run（跳过标题与装载挡板）。
     bool begin_replay_run(const u8* data, size_t size, u32 stage_index);
     // 回放跨关：保留既有 replay_file/session 状态，按录像阶段索引配置新 stage
