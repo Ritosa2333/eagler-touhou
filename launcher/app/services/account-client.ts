@@ -39,7 +39,7 @@ function accountErrorCode(value: unknown) {
   return typeof code === 'string' && /^[A-Z0-9_]+$/.test(code) ? code : 'ACCOUNT_REQUEST_FAILED';
 }
 
-async function accountReady(origin: string, signal?: AbortSignal) {
+async function accountReady(origin: string, signal?: AbortSignal): Promise<{region?: AccountRegion} | null> {
   const controller = new AbortController();
   const abort = () => controller.abort();
   signal?.addEventListener('abort', abort, {once: true});
