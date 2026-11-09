@@ -18,6 +18,15 @@ export default function ProfileImageCropDialog({file,kind,onConfirm,onClose}: {
   useEffect(()=>{const url=URL.createObjectURL(file);setSource(url);return()=>URL.revokeObjectURL(url);},[file]);
   const [crop,setCrop]=useState({x:0,y:0}),[zoom,setZoom]=useState(1),[area,setArea]=useState<Area>(),[failed,setFailed]=useState(false);
   const [cropSize,setCropSize]=useState<{width:number;height:number}>();
+  const [open,setOpen]=useState(true);
+  const pendingClose=useRef<(() => void) | null>(null);
+  const finishClose=()=>{const action=pendingClose.current;pendingClose.current=null;action?.();};
+  const close=(action:()=>void)=>{
+    if(pendingClose.current)return;
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('less-motion')) {action();return;}
+    pendingClose.current=action;setOpen(false);
+  };
+  useEffect(()=>{if(!open){const timer=window.setTimeout(finishClose,300);return()=>window.clearTimeout(timer);}},[open]);
   const media = useRef<RefObject<HTMLImageElement> | null>(null);
   const [preview, setPreview] = useState<{area: Area; image: string}>();
   useEffect(() => {
@@ -33,7 +42,7 @@ export default function ProfileImageCropDialog({file,kind,onConfirm,onClose}: {
   const thumbnailReady = kind === 'cover' || (preview?.area === area && !!preview?.image);
   const thumbnailFailed = kind === 'avatar' && preview && preview.area === area && !preview.image;
   const zoomTo=(value:number)=>setZoom(Math.max(1,Math.min(4,value)));
-  return <Dialog open onOpenChange={open=>{if(!open)onClose();}}><DialogContent className="profile-image-crop-dialog">
+  return <Dialog open={open} onOpenChange={next=>{if(!next)close(onClose);}}><DialogContent className="profile-image-crop-dialog" onAnimationEnd={event=>{if(event.target===event.currentTarget&&!open)finishClose();}}>
     <DialogTitle>{t(kind==='avatar'?'profile.image.cropAvatar':'profile.image.cropCover')}</DialogTitle>
     <DialogDescription>{t('profile.image.cropHint')}</DialogDescription>
     <div className="profile-image-crop-stage" data-kind={kind}>
@@ -58,7 +67,7 @@ export default function ProfileImageCropDialog({file,kind,onConfirm,onClose}: {
         <span>{preview?.image && <img src={preview.image} width={32} height={32} alt=""/>}</span>
         {t('profile.image.roomPreview')}
       </div>}
-      <div className="profile-image-crop-actions"><Button variant="outline" onClick={onClose}>{t('action.cancel')}</Button><Button disabled={failed||!area||!thumbnailReady} onClick={()=>{if(area&&thumbnailReady)onConfirm(area,preview?.image);}}>{t('profile.image.useCrop')}</Button></div>
+      <div className="profile-image-crop-actions"><Button variant="outline" onClick={()=>close(onClose)}>{t('action.cancel')}</Button><Button disabled={failed||!area||!thumbnailReady} onClick={()=>{if(area&&thumbnailReady)close(()=>onConfirm(area,preview?.image));}}>{t('profile.image.useCrop')}</Button></div>
     </div>
   </DialogContent></Dialog>;
 }

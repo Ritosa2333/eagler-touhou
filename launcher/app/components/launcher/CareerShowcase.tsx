@@ -8,6 +8,7 @@ import {blankRecord, cellLabel, DEFAULT_OPTIONS, TRACKER_CELLS, TRACKER_GAMES, v
 import {readBookPreference, writeBookPreference} from './book-preferences';
 import {useLocale, type UiMessageKey} from '../../i18n';
 import {ConfirmationDialog} from '../ConfirmationDialog';
+import {animateSurface} from '../../ui/surface-motion';
 import './career-showcase.css';
 import '../../ui/document-body.css';
 
@@ -76,12 +77,13 @@ export function CareerShowcase({records, onSave, initiallyOpen = false, readOnly
   useEffect(() => {
     if (!open) return;
     const openedDialog = dialog.current; openedDialog?.showModal();
+    const opening = openedDialog && animateSurface(openedDialog, 'enter', {kind:'dialog'});
     const overflow = document.body.style.overflow; document.body.style.overflow = 'hidden';
     if (!fitted.current) fitRef.current();
     const observer = new ResizeObserver(() => {if (!fitted.current) fitRef.current();});
     if (viewport.current) observer.observe(viewport.current);
     const resize = () => fitRef.current(); window.addEventListener('resize', resize);
-    return () => {observer.disconnect(); window.removeEventListener('resize', resize); document.body.style.overflow = overflow; openedDialog?.close(); pointers.current.clear(); returnFocus.current?.focus({preventScroll:true});};
+    return () => {opening?.cancel(); observer.disconnect(); window.removeEventListener('resize', resize); document.body.style.overflow = overflow; openedDialog?.close(); pointers.current.clear(); returnFocus.current?.focus({preventScroll:true});};
   }, [open]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: Refit the current viewport when its requested height changes.
   useEffect(() => {if (open) fitRef.current();}, [height, open]);
@@ -98,7 +100,15 @@ export function CareerShowcase({records, onSave, initiallyOpen = false, readOnly
     return () => area.removeEventListener('wheel', wheel);
   }, [open, zoom]);
   const launch = (edit = false) => {returnFocus.current = document.activeElement as HTMLElement; setOpen(true); setConfirmClose(false); if (edit && !readOnly) {setDraft({...records}); setEditing(true);} };
-  const close = () => {if (dirty) {setConfirmClose(true); return;} setOpen(false); setEditing(false); setSelection(null);};
+  const closing = useRef(false);
+  const finishClose = () => {
+    if (closing.current) return;
+    closing.current = true;
+    const finish = () => {closing.current = false; setOpen(false); setEditing(false); setSelection(null);};
+    const animation = dialog.current && animateSurface(dialog.current, 'exit', {kind:'dialog',fromCurrent:true});
+    if (animation) void animation.finished.then(finish,finish); else finish();
+  };
+  const close = () => {if (dirty) {setConfirmClose(true); return;} finishClose();};
   const update = (key: string, record?: TrackerRecord) => setDraft(current => {const next = {...current}; if (record) next[key] = record; else delete next[key]; return next;});
   const select = (key: string) => {
     setSelection(key);
@@ -187,7 +197,7 @@ export function CareerShowcase({records, onSave, initiallyOpen = false, readOnly
       </aside></div>{message && <div className="career-viewer-status" role="status">{t(message)}</div>}
     {helpOpen && <CareerHelp onClose={() => setHelpOpen(false)}/>}
     </dialog>}
-    {confirmClose && <ConfirmationDialog idPrefix="careerDecision" open title={t('career.cancelEdit')} message={t('career.unsaved')} cancelText={t('career.continue')} confirmText={t('career.discard')} tone="danger" onCancel={() => setConfirmClose(false)} onConfirm={() => {setConfirmClose(false); setEditing(false); setOpen(false); setSelection(null);}}/>}
+    {confirmClose && <ConfirmationDialog idPrefix="careerDecision" open title={t('career.cancelEdit')} message={t('career.unsaved')} cancelText={t('career.continue')} confirmText={t('career.discard')} tone="danger" onCancel={() => setConfirmClose(false)} onConfirm={() => {setConfirmClose(false); finishClose();}}/>}
   </section>;
 }
 
@@ -240,14 +250,22 @@ function CellEditor({record, editing, onApply}: {record: TrackerRecord; editing:
 function CareerHelp({onClose}: {onClose: () => void}) {
   const {t} = useLocale();
   const dialog = useRef<HTMLDialogElement>(null);
+  const closing = useRef(false);
   useEffect(() => {
     const opened = dialog.current;
     const previous = document.activeElement as HTMLElement | null;
     opened?.showModal();
-    return () => {opened?.close(); previous?.focus({preventScroll:true});};
+    const opening = opened && animateSurface(opened, 'enter', {kind:'dialog'});
+    return () => {opening?.cancel(); opened?.close(); previous?.focus({preventScroll:true});};
   }, []);
-  return <dialog ref={dialog} className="career-help-dialog" aria-labelledby="career-help-title" onCancel={event => {event.preventDefault(); event.stopPropagation(); onClose();}}>
-    <header><h2 id="career-help-title">{t('career.helpTitle')}</h2><UiButton className={careerButtonClass} variant="icon" type="button" aria-label={t('career.closeHelp')} onClick={onClose}>×</UiButton></header>
+  const close = () => {
+    if (closing.current) return;
+    closing.current = true;
+    const animation = dialog.current && animateSurface(dialog.current, 'exit', {kind:'dialog',fromCurrent:true});
+    if (animation) void animation.finished.then(onClose,onClose); else onClose();
+  };
+  return <dialog ref={dialog} className="career-help-dialog" aria-labelledby="career-help-title" onCancel={event => {event.preventDefault(); event.stopPropagation(); close();}}>
+    <header><h2 id="career-help-title">{t('career.helpTitle')}</h2><UiButton className={careerButtonClass} variant="icon" type="button" aria-label={t('career.closeHelp')} onClick={close}>×</UiButton></header>
     <div className="career-help-content ui-document prose">
       <section><h3>{t('career.readCell')}</h3><div className="career-help-example"><div className="career-example-cell" role="img" aria-label={t('career.exampleAria')}><span>2</span><span>0</span><span>3</span><b>F</b></div><p>{t('career.cellGuide')}</p></div></section>
       <section><h3>{t('career.difficultyClears')}</h3><dl className="career-help-definitions"><div><dt>E / N / H / L</dt><dd>Easy / Normal / Hard / Lunatic</dd></div><div><dt>X / P</dt><dd>Extra / Phantasm</dd></div><div><dt>1CC</dt><dd>{t('career.oneCreditGuide')}</dd></div><div><dt>NM / NB / NN</dt><dd>{t('career.noMissBombGuide')}</dd></div></dl><p>{t('career.countGuide')}</p></section>

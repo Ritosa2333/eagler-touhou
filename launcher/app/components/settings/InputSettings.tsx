@@ -85,7 +85,6 @@ export function InputSettings({
           </div>
         </Collapsible.Content>
         <Dialog open={editing} onOpenChange={setEditing}>
-          {editing && (
             <DialogContent
               className="input-settings-dialog settings-ui"
               showClose={false}
@@ -169,7 +168,6 @@ export function InputSettings({
                 </Tabs>
               </InputCapture.Provider>
             </DialogContent>
-          )}
         </Dialog>
       </section>
     </Collapsible.Root>

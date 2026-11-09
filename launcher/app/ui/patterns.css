@@ -1,6 +1,21 @@
 @layer components {
-.ui-kit-dialog-overlay{position:fixed;inset:0;z-index:var(--ui-layer-overlay);background:#0008;animation:kit-overlay-in var(--ui-surface-duration) var(--ui-surface-easing)}
-@keyframes kit-overlay-in{from{opacity:0}to{opacity:1}}
+dialog {--ui-surface-distance-dialog:0px}
+.ui-kit-dialog-overlay{position:fixed;inset:0;z-index:var(--ui-layer-overlay);background:#0008}
+@keyframes kit-dialog-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes kit-dialog-fade-out{from{opacity:1}to{opacity:0}}
+.ui-kit-dialog[data-state='open'],.ui-kit-dialog-overlay[data-state='open']{animation:kit-dialog-fade-in var(--ui-surface-duration) var(--ui-surface-easing) both}
+.ui-kit-dialog[data-state='closed'],.ui-kit-dialog-overlay[data-state='closed']{animation:kit-dialog-fade-out var(--ui-surface-duration) var(--ui-surface-easing) both;pointer-events:none}
+@media(prefers-reduced-motion:reduce){.ui-kit-dialog[data-state],.ui-kit-dialog-overlay[data-state]{animation:none}}
+.less-motion .ui-kit-dialog[data-state],.less-motion .ui-kit-dialog-overlay[data-state]{animation:none}
+/* Native dialogs with synchronous close retain their top-layer box for the fade. */
+:is(#roomDialog,.calibration-dialog){opacity:0;transition:opacity var(--ui-surface-duration) var(--ui-surface-easing),display var(--ui-surface-duration) allow-discrete,overlay var(--ui-surface-duration) allow-discrete}
+:is(#roomDialog,.calibration-dialog)[open]{opacity:1;animation:none}
+@starting-style{:is(#roomDialog,.calibration-dialog)[open]{opacity:0}}
+:is(#roomDialog,.calibration-dialog)::backdrop{opacity:0;transition:opacity var(--ui-surface-duration) var(--ui-surface-easing),display var(--ui-surface-duration) allow-discrete,overlay var(--ui-surface-duration) allow-discrete}
+:is(#roomDialog,.calibration-dialog)[open]::backdrop{opacity:1}
+@starting-style{:is(#roomDialog,.calibration-dialog)[open]::backdrop{opacity:0}}
+@media(prefers-reduced-motion:reduce){:is(#roomDialog,.calibration-dialog),:is(#roomDialog,.calibration-dialog)::backdrop{transition:none}}
+.less-motion :is(#roomDialog,.calibration-dialog),.less-motion :is(#roomDialog,.calibration-dialog)::backdrop{transition:none}
 .ui-kit-dialog{position:fixed;top:50%;left:50%;z-index:var(--ui-layer-dialog);width:min(440px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;box-sizing:border-box;transform:translate(-50%,-50%);padding:24px;border:1px solid var(--kit-border);border-radius:10px;background:var(--kit-card);color:var(--kit-foreground);box-shadow:0 16px 48px #0003;font:400 13px/1.6 var(--kit-font)}
 .ui-kit-dialog>h2{margin:0;padding-right:32px;font:600 18px/1.4 var(--kit-font)}
 .ui-kit-dialog>p{margin:8px 0 14px;color:var(--kit-muted-foreground);font-size:12px}
@@ -46,3 +61,5 @@
 @container fields (min-width:440px){.ui-field[data-orientation='responsive']{flex-direction:row;align-items:center;justify-content:space-between}.ui-field[data-orientation='responsive']>.ui-select{width:48%}}
 @media(max-width:780px),(pointer:coarse){.ui-kit-button[data-size='default'],.ui-kit-button[data-size='sm'],.ui-kit-select-trigger{min-height:44px}.ui-kit-button[data-size='icon-sm']{width:44px;height:44px}.ui-field{padding-block:16px}}
 }
+/* Lobby dialogs use the shared lifecycle or native fade rather than legacy motion. */
+dialog.lobby-dialog[open]{animation:none}
