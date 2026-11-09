@@ -7,7 +7,7 @@ import { DocsPage, DocsTitle, DocsBody } from '@fumadocs/base-ui/layouts/spaciou
 import { StandalonePageShell } from '../standalone-pages';
 import { useLocale, translate } from '../i18n';
 import { withUiLanguage } from '../../src/launcher/i18n.mts';
-import { multiplayerGuidePath, multiplayerGuideTopic } from '../../lib/multiplayer-guide.mjs';
+import { multiplayerGuideTopic } from '../../lib/multiplayer-guide.mjs';
 import { sitePageTitle } from '../navigation/document-locale';
 import documentHistory from 'virtual:document-history';
 import { helpDocuments, helpDocumentAtPath, helpDocumentLocale, type HelpDocument } from '../components/documents/catalog';
@@ -46,7 +46,8 @@ function DocumentLink({ href = '', prefetch, ...props }: ComponentProps<'a'> & {
   );
 }
 function Documentation({ page, topic }: { page: HelpDocument; topic?: GuideTopic }) {
-  const { locale, t } = useLocale(),
+  const { pathname } = useLocation(),
+    { locale, t } = useLocale(),
     base = useHref('/'),
     contentLocale = helpDocumentLocale(page, locale);
   const { body, toc } = useMemo(() => {
@@ -74,7 +75,7 @@ function Documentation({ page, topic }: { page: HelpDocument; topic?: GuideTopic
       ...helpDocuments.filter(document => document.id === 'privacy').map(document => ({type: 'page' as const, name: t(document.title), url: '/' + document.path})),
     ],
   };
-  const footer = findNeighbour(helpTree, topic ? multiplayerGuidePath(topic) : '/' + page.path);
+  const footer = findNeighbour(helpTree, pathname.replace(/\/$/, ''));
   const labels = {
     'On this page(table of contents)': t('document.toc'),
     'Next Page(pagination)': t('document.nextPage'),
