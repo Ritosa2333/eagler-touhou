@@ -70,6 +70,7 @@
   "chat_failed": "操作できませんでした。もう一度お試しください。",
   "profile_contentRejected": "プロフィールが審査に通りませんでした。修正してください。",
   "profile_reviewUnavailable": "プロフィールの審査を利用できません。後でもう一度お試しください。",
+  "profile_reviewPending": "保存しました。審査が通り次第表示されます。",
   "document_toc": "このページの内容",
   "document_nextPage": "次のページ",
   "document_previousPage": "前のページ",

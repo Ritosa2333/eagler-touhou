@@ -22,8 +22,8 @@ export function RoomPersonal({state, service, network, assetUrl, th09NetworkOver
   useEffect(() => {if (!moderated || hidden) return; const timer=setInterval(()=>setClock(Date.now()),60000);return()=>clearInterval(timer);},[moderated,hidden]);
   const queued = state.nickname?.status === 'queued';
   const pending = queued || state.nickname?.status === 'reviewing', locked = !!state.nickname && state.nickname.nextChangeAt > clock;
-  const statusKey = state.nickname ? `nickname.${state.nickname.status}` as const : 'nickname.idle';
-  const detail = queued ? t('nickname.queuedHint') : locked ? t('nickname.nextChange',{time:new Date(state.nickname!.nextChangeAt).toLocaleString(undefined,{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}) : state.nickname?.status === 'approved' && state.nickname.name ? t('nickname.firstApproved') : state.nickname?.status === 'idle' ? t('nickname.briefHint') : '';
+  const statusKey = locked && state.nickname?.attemptsLeft === 0 ? 'nickname.exhausted' : state.nickname ? `nickname.${state.nickname.status}` as const : 'nickname.idle';
+  const detail = queued ? t('nickname.queuedHint') : locked ? t('nickname.nextChange',{time:new Date(state.nickname!.nextChangeAt).toLocaleString(undefined,{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}) : state.nickname?.attemptsLeft === 1 ? t('nickname.oneRetry') : state.nickname?.status === 'approved' && state.nickname.name ? t('nickname.firstApproved') : state.nickname?.status === 'idle' ? t('nickname.briefHint') : '';
   const draft = state.nickname?.pendingName || state.displayName;
   const save = useCallback(() => {if (input.current) input.current.value = latest.current.setDisplayName(input.current.value);}, []);
   const commit = useCallback(() => {if (!moderatedRef.current) save();}, [save]);

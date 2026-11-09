@@ -9111,6 +9111,10 @@
     "id": "profile_reviewUnavailable",
     "params": []
   },
+  "profile.reviewPending": {
+    "id": "profile_reviewPending",
+    "params": []
+  },
   "profile.image.sourceTooLarge": {
     "id": "profile_image_sourceTooLarge",
     "params": []
