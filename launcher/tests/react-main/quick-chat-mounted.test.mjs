@@ -1195,7 +1195,6 @@ test('room settings replace a favorite and gameplay uses the same slot', async (
   await act(()=>query('#mpRoomChat .room-quick-chat-trigger').dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true})));
   await act(()=>query('.room-quick-chat-picker [aria-label="Edit favorites"]').click());
   await act(()=>query('.room-quick-chat-picker [data-phrase="request-life"]').click());
-  for (let i=0; i<3; i++) await act(()=>query('.room-quick-chat-picker [aria-label="Next page"]').click());
   await act(()=>query('.room-quick-chat-picker [data-phrase="you-first"]').click());
   assert.equal(model.getSnapshot().slots[1], 'you-first');
   await act(()=>model.update({...context(), inRoom:false}));

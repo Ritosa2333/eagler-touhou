@@ -74,7 +74,7 @@ export function ChatComposer({ model, gameplay = false, openOnClick = false }: {
         </form>
       )}
       {quick}
-      <ChatMuteMenu model={model} compact={gameplay} openOnClick={openOnClick} />
+      {!gameplay && <ChatMuteMenu model={model} compact={false} openOnClick={openOnClick} />}
     </div>
   );
 }
@@ -86,7 +86,6 @@ function RoomQuickPicker({model, enabled, openOnClick, registered, locale}: {
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const [view, setView] = useState<'favorites' | 'all' | 'slots' | 'choose'>('favorites');
   const [slot, setSlot] = useState(0);
-  const [page, setPage] = useState(0);
   const zh = locale === 'zh-CN', ja = locale === 'ja';
   const copy = {
     favorites: zh ? '常用' : ja ? 'お気に入り' : 'Favorites',
@@ -95,9 +94,8 @@ function RoomQuickPicker({model, enabled, openOnClick, registered, locale}: {
     back: zh ? '返回' : ja ? '戻る' : 'Back',
   };
   const text = (phrase: typeof QUICK_CHAT_PHRASES[number]) => locale === 'en' ? phrase.en : phrase.zh;
-  const ids = view === 'favorites' || view === 'slots' ? state.slots : QUICK_CHAT_PHRASES.slice(page * 9, page * 9 + 9).map(phrase => phrase.id);
-  const pageCount = Math.ceil(QUICK_CHAT_PHRASES.length / 9);
-  const switchView = (next: typeof view) => {setView(next); setPage(0);};
+  const ids = view === 'favorites' || view === 'slots' ? state.slots : QUICK_CHAT_PHRASES.map(phrase => phrase.id);
+  const switchView = (next: typeof view) => {setView(next);};
   return <ActionMenu label={t('room.quickChat')} openOnClick={openOnClick} side="top" align="start" minimumWidth={260}
     className="room-action-menu room-quick-chat-picker quick-picker-menu"
     trigger={<Button variant={registered ? 'outline' : 'secondary'} size={registered ? 'default' : 'lg'}
@@ -123,11 +121,7 @@ function RoomQuickPicker({model, enabled, openOnClick, registered, locale}: {
         {(view === 'favorites' || view === 'slots') && <kbd>{index + 1}</kbd>}{text(phrase)}
       </ActionMenuItem>;
     })}
-    {(view === 'all' || view === 'choose') && <div className="quick-picker-pages">
-      <Button type="button" variant="ghost" size="icon-sm" aria-label={zh ? '上一页' : 'Previous page'} disabled={!page} onClick={() => setPage(page - 1)}><ChevronLeft/></Button>
-      <span>{page + 1} / {pageCount}</span>
-      <Button type="button" variant="ghost" size="icon-sm" aria-label={zh ? '下一页' : 'Next page'} disabled={page + 1 >= pageCount} onClick={() => setPage(page + 1)}><ChevronRight/></Button>
-    </div>}
+
   </ActionMenu>;
 }
 
@@ -144,6 +138,7 @@ export function QuickChatPhrases({ enabled, language, numbered, onSelect, model 
       <Button type="button" size="sm" variant={page === 0 ? 'secondary' : 'ghost'} onClick={() => model.setPickerPage(0)}>{language === 'en' ? 'Favorites' : '常用'}</Button>
       <Button type="button" size="sm" variant={page !== 0 ? 'secondary' : 'ghost'} onClick={() => model.setPickerPage(1)}>{language === 'en' ? 'All' : '全部'}</Button>
       {page > 0 && <div className="quick-picker-pages"><Button type="button" size="icon-sm" variant="ghost" disabled={page === 1} aria-label={language === 'en' ? 'Previous page' : '上一页'} onClick={() => model.setPickerPage(page - 1)}><ChevronLeft/></Button><span>{page} / {maxPage}</span><Button type="button" size="icon-sm" variant="ghost" disabled={page === maxPage} aria-label={language === 'en' ? 'Next page' : '下一页'} onClick={() => model.setPickerPage(page + 1)}><ChevronRight/></Button></div>}
+      <ChatMuteMenu model={model} compact openOnClick={false} />
     </div>
     <fieldset className={`chat-phrase-grid m-0 min-w-0 border-0 p-0${numbered ? ' mp-quick-chat-slots' : ''}`} aria-label={t('room.quickChat')}>
       {ids.map((id, index) => {

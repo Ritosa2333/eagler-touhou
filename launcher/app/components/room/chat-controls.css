@@ -157,3 +157,16 @@
 .quick-picker-menu kbd {margin-inline-end:8px;color:var(--kit-muted-foreground);font:inherit}
 .quick-picker-game {min-height:0;display:flex;flex-direction:column;gap:4px;overflow:hidden}
 .quick-picker-game .quick-picker-toolbar {padding:0}
+
+/* Game overlay uses a compact, fixed-height 3 by 3 quick-chat grid. */
+.mp-quick-chat {width:min(360px, calc(100vw - 20px));}
+.mp-quick-chat .mp-quick-chat-picker {position:relative;bottom:auto;max-height:calc(100dvh - 65px);overflow:hidden;flex-direction:column-reverse;gap:4px;padding:8px;background:var(--kit-popover);border-color:var(--kit-border)}
+.mp-quick-chat .chat-phrase-grid {grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:36px;overflow:visible}
+.mp-quick-chat .chat-phrase-grid button {display:flex;align-items:center;min-width:0;min-height:0;height:36px;gap:5px;padding:4px 6px;white-space:nowrap;overflow:hidden}
+.mp-quick-chat .chat-phrase-grid button span {display:block;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-quick-chat .quick-picker-toolbar {position:static;min-height:32px;padding:0;background:transparent}
+.mp-quick-chat .quick-picker-toolbar .room-chat-mute-trigger {margin-inline-start:auto}
+.mp-quick-chat .quick-picker-pages {margin-inline-start:auto}
+.mp-quick-chat .quick-picker-pages + .room-chat-mute-trigger {margin-inline-start:0}
+.mp-quick-chat .room-chat-controls:empty {display:none}
+.quick-picker-menu {overscroll-behavior:contain}
