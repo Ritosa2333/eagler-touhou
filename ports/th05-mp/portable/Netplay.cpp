@@ -18,6 +18,7 @@ namespace th5w { namespace coop {
 namespace {
 Netplay::RollbackCore core;
 Netplay::RollbackJournal journal;
+constexpr int MaxPredictionFrames=8;
 unsigned nextFrame=0,frontier=0,rollbacks=0,resimulated=0,predicted=0,lastBytes=0,worldRevision=0;
 bool active=false,audioOpen=false;
 unsigned audioFrame=0;
@@ -51,9 +52,9 @@ bool Simulate(){
  const auto decision=core.PrepareFrame(nextFrame);if(!decision.canAdvance)return false;
  const bool exact=Confirmed()>=int(nextFrame);
  auto* stage=Stage();bool boundary=!stage||!stage->RollbackPredictable();
- // Menus and their edge actions never run speculatively. An already simulated
- // pause/death that is later corrected can stop replay at this same barrier.
- for(int i=0;i<Run().count;i++)if(decision.inputs[i].buttons&(16|4096|8192|16384|32768))boundary=true;
+ // Menus and scene changes require confirmed input. A Bomb changes journaled
+ // gameplay state and can run on the same frame as the local press.
+ for(int i=0;i<Run().count;i++)if(decision.inputs[i].buttons&(4096|8192|16384|32768))boundary=true;
  if(boundary&&!exact)return false;
  if(!exact){
   if(!journal.BeginFrame(nextFrame))throw std::runtime_error("TH05 rollback history unavailable");
@@ -90,11 +91,14 @@ bool QueueMusicAction(int action,double value){if(!audioOpen)return false;audio[
 extern "C" {
 EMSCRIPTEN_KEEPALIVE int th05_net_reset(int delay,int limit){
  using namespace th5w::coop;
- if(delay<0||delay>9||limit<0||limit>8)return 0;
+ if(delay<0||delay>9||limit<0||limit>MaxPredictionFrames)return 0;
  active=false;audioOpen=false;audio.clear();hashes.clear();nextFrame=frontier=rollbacks=resimulated=predicted=lastBytes=worldRevision=0;
  Netplay::CoreConfig config;config.playerCount=Run().count;config.localPlayer=Run().local;config.inputDelay=delay;
- config.maxRollbackFrames=limit?limit:8;config.allowPrediction=limit!=0;
- config.predictableButtons=15|32|64;config.directionButtons=15;config.maxDirectionPredictionFrames=2;
+ config.maxRollbackFrames=limit?limit:MaxPredictionFrames;config.allowPrediction=limit!=0;
+ // Directions are held input, like shot and focus. Keep the latest direction
+ // through the allowed window so a steady hold does not force a correction
+ // every frame when the peer is more than two frames behind.
+ config.predictableButtons=15|32|64;config.directionButtons=15;config.maxDirectionPredictionFrames=limit;
  config.directTouchIsAbsolute=true;
  Netplay::RollbackJournalConfig storage;storage.maxFrames=10;storage.maxBytesPerFrame=1024*1024;storage.maxBlocksPerFrame=64;storage.coalesceRestore=true;storage.fastBulkCopy=true;
  if(!core.Reset(config)||!journal.Reset(storage))return 0;
@@ -122,7 +126,9 @@ static int Advance(){
  }
  const double start=emscripten_get_now();unsigned replayed=0;
  while(nextFrame<frontier){
-  if(!Netplay::RollbackReplayBudget::CanContinue(replayed,uint64_t((emscripten_get_now()-start)*1000000)))return 0;
+  // A cheap correction can replay the whole prediction window in one slice.
+  // Keep the wall-clock budget on slower devices or busy scenes.
+  if(replayed>=MaxPredictionFrames||(replayed>0&&(emscripten_get_now()-start)*1000000>=Netplay::RollbackReplayBudget::SliceBudgetNs))return 0;
   if(!Simulate()){Commit();return 0;}++replayed;++resimulated;
  }
  Commit();if(!Simulate())return 0;++frontier;Commit();return 1;

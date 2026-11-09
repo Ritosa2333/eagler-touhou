@@ -30,6 +30,7 @@ export class SharedNetplay {
     this.prepared = false;
     this.acknowledged = false;
     this.side = -1;
+    this.matchStart = null;
   }
   info() {
     const at = this.core._th09_network_info() / 4;
@@ -93,7 +94,7 @@ export class SharedNetplay {
     this.spectatorEnded = false; this.spectatorEndSent = false;
     this.spectatorTape = new SpectatorTape();
     this.betweenMatches = this.inGameSelection;
-    this.matchStart = 0; this.matchReportedFrames = 0;
+    this.matchStart = null;
     this.spectatorPending.length = 0;
     this.spectatorHead = 0;
     this.spectatorOutputStopped = false;
@@ -513,10 +514,19 @@ export class SharedNetplay {
     // Publishing may run many times in a single reconciliation callback.
     // Drain only from the transport pump, never once per published frame.
   }
+  startMatchReport(frame) {
+    if (this.spectator || !this.connected) return;
+    this.matchStart = frame;
+    this.matchReportedFrames = 0;
+    if (this.side === 0) this.onMatch({start:frame,frames:0});
+  }
+  finishMatchReport(frame,winner,first,second) {
+    const start = this.matchStart;
+    if (start === null || frame <= start || !this.connected || this.spectator) return;
+    this.matchStart = null;
+    this.onMatch({start,frames:frame-start,winner,characters:[first,second]});
+  }
   beginMatch(frame,state) {
-    if(!this.spectator && this.side===0 && this.connected && [50,78].includes(state.length)){
-      this.matchStart=frame;this.matchReportedFrames=0;this.onMatch({start:frame,frames:0});
-    }
     if(!this.timelineExperiment||this.spectator||!this.connected||this.side!==0||![50,78].includes(state.length))return;
     this.betweenMatches=false;this.spectatorEndSent=false;
     if(this.spectatorOutputStopped)return;
@@ -524,9 +534,7 @@ export class SharedNetplay {
     new DataView(packet.buffer).setUint32(8,frame,true);packet.set(this.buildBytes,12);packet.set(state,24);
     this.spectatorPending.push(packet);
   }
-  endMatch(frame,winner) {
-    if(!this.spectator && this.side===0 && !this.betweenMatches && [0,1].includes(winner))
-      this.onMatch({start:this.matchStart,frames:frame-this.matchStart,winner});
+  endMatch(frame) {
     if(!this.timelineExperiment||this.spectator||!this.connected||this.side!==0||this.betweenMatches)return;
     this.betweenMatches=true;this.spectatorEndSent=true;
     if(this.spectatorOutputStopped)return;
@@ -590,7 +598,7 @@ export class SharedNetplay {
     globalThis.__eaglerNetplayLanFrame = frame;
     const at = this.core._th09_rollback_info() / 4;
     const stats = this.core.HEAPU32.subarray(at, at + 8);
-    if(!this.spectator && this.side===0 && !this.betweenMatches){
+    if(!this.spectator && this.side===0 && this.matchStart !== null){
       const elapsed = Math.max(0, stats[1] - this.matchStart);
       if(stats[1]!==4294967295 && elapsed >= this.matchReportedFrames + 3600){
         this.matchReportedFrames=elapsed;this.onMatch({start:this.matchStart,frames:elapsed});

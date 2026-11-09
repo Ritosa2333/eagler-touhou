@@ -144,7 +144,7 @@ void CMidBossStage5::Phase1Common()
 			m_pStage->m_bPlaySound[8]=true;
 		if (m_curPhaseFrame==20||m_curPhaseFrame==24||m_curPhaseFrame==28)
 			m_curImage++;
-		m_phase1ShootAngle=m_pStage->AimAngle(m_curX,m_curY);
+		m_phase1ShootAngle=m_pStage->AimAngle(m_curX,m_curY,original::BossGeometryEnabled());
 		return;
 	}
 	if (m_curImage<219&&m_curPhaseFrame%4==0)

@@ -2,6 +2,12 @@
 #include <cstdint>
 #include <vector>
 namespace th5w { class CStage; namespace original {
+enum CombatRevision : unsigned int { LegacyCombat, OriginalPlayerShots, OriginalBossGeometry, OriginalMotion, OriginalBombAndRage };
+bool BossGeometryEnabled();
+bool MotionEnabled();
+bool BombAndRageEnabled();
+float PatternOffsetX(float angle,float radius);
+float PatternOffsetY(float angle,float radius);
 // Resident counters and integer arithmetic from th05_maine.asm sub_CA9B.
 struct RunStats {
  uint32_t frames,slowFrames;uint16_t stdFrames,itemsSpawned,itemsCollected,points,maxPoints,enemiesGone,enemiesKilled,graze;
@@ -22,5 +28,9 @@ struct DemoState {
  bool active,extraPart2;int number,index,frames;uint32_t seed;unsigned char ring[256],ringIndex,itemDropIndex,bulletTemplateAngle;std::vector<unsigned char> data;
  DemoState():active(false),extraPart2(false),number(0),index(0),frames(5000),seed(318),ring{},ringIndex(0),itemDropIndex(0),bulletTemplateAngle(0){}
 };
-DemoState& Demo();bool DemoActive();bool StartDemo(bool extra=false);void StopDemo(bool resetSequence=false);bool DemoInput(unsigned short live,unsigned short& input);void DemoDialogueEnded();void ResetDemoSeed();int Random();int IRandom();
+DemoState& Demo();bool DemoActive();bool StartDemo(bool extra=false);void StopDemo(bool resetSequence=false);bool DemoInput(unsigned short live,unsigned short& input);void DemoDialogueEnded();void ResetDemoSeed();int Random();
+#ifdef TH05_BROWSER_TESTS
+void AuditSpecialShot(int kind,int speed);
+#endif
+int IRandom();
 } }

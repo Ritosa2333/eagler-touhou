@@ -361,7 +361,7 @@ struct Frame final:PlayerFrameEnvironment {
     }
     void drop_power(const Vec3& point,i32 kind,float angle) override{
         // Final-death contents stay native; ordinary P drops follow the roster multiplier.
-        world.spawn_item(point,kind,0xffffff,angle,3);
+        world.spawn_item(point,kind,0xffffff,angle,3,true);
     }
     void game_over(bool) override{
         // Native life/power penalties have already run. Keep the native pilot

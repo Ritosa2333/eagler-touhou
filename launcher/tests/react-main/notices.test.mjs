@@ -111,6 +111,8 @@ const firstDefaults=()=>({onOpenRequest(){},edgeGestures:false,storage:storage()
 for(const locale of ['zh-CN','en'])for(const [name,id,extra] of [['FirstUseNotice','firstUseNoticeDialog',()=>firstDefaults()],['MultiplayerGuideDialog','mpGuideDialog',()=>({gameId:'th07'})],['AppleRefreshDialog','appleRefreshDialog',()=>({})],['DonationDialog','donationDialog',()=>({assetUrl:x=>x,onArtworkUnavailable(){}})]])test(`${name}: original DOM and copy in ${locale}`,async()=>{
   await mount(owners[name],extra(),{locale});
   const actual=n('#'+id).cloneNode(true);
+  assert.equal(actual.hasAttribute('data-window-managed'),true);
+  actual.removeAttribute('data-window-managed');
   // React's former iframe document owns this dialog, even in the lobby. Check
   // the explicit ownership metadata, then retain the exact pinned DOM/copy gate.
   if(name==='AppleRefreshDialog'){
@@ -132,7 +134,9 @@ for(const locale of ['zh-CN','en'])for(const [name,id,extra] of [['FirstUseNotic
   const reference=baselineDialog(id,locale);
   if(name!=='DonationDialog'){
     const reading=reference.querySelector(name==='FirstUseNotice'?'#firstUseNoticeText':name==='MultiplayerGuideDialog'?'#mpGuideContent':'.apple-refresh-faq');
-    reading.classList.add('ui-document','prose');
+    reading.classList.add('ui-document');
+    if(name==='FirstUseNotice')reading.classList.add('ui-document--fumadocs');
+    reading.classList.add('prose');
   }
   if(name==='DonationDialog'){
     reference.querySelector('#donationTitle').textContent=owners.translate(locale,'donation.title');
@@ -149,11 +153,15 @@ for(const locale of ['zh-CN','en'])for(const [name,id,extra] of [['FirstUseNotic
   }
   if(name==='FirstUseNotice'){
     const close=actual.querySelector('#firstUseNoticeCloseHint');
-    assert.equal(close.textContent,owners.translate(locale,'action.close'));
-    assert.equal(close.getAttribute('aria-label'),owners.translate(locale,'firstUseNotice.close'));
+    assert.equal(close.textContent,owners.translate(locale,'firstUseNotice.dismiss'));
+    assert.equal(actual.querySelector('.first-use-notice-icon svg').getAttribute('aria-hidden'),'true');
+    actual.querySelector('.first-use-notice-icon').remove();
+    const title=actual.querySelector('#firstUseNoticeTitle');
+    assert.equal(title.tabIndex,-1);
+    title.removeAttribute('tabindex');
     actual.querySelector('footer').remove();reference.querySelector('footer').remove();
   }
-  if(name!=='FirstUseNotice'){
+  {
     const close=actual.querySelector('header button'), previous=reference.querySelector('header button');
     const icon=close.querySelector('svg');
     assert.equal(icon?.getAttribute('aria-hidden'),'true');
@@ -165,11 +173,11 @@ for(const locale of ['zh-CN','en'])for(const [name,id,extra] of [['FirstUseNotic
   }
   assert.deepEqual(normalize(actual),normalize(reference));
 });
-test('First use: original fetch options/sanitizer/cache with intentional concurrent dedup',async()=>{const pending=deferred(),ref=React.createRef(),calls=[];await mount(owners.FirstUseNotice,{...firstDefaults(),ref,fetchImpl:(...args)=>{calls.push(args);return pending.promise;}});const p=ref.current.load(),p2=ref.current.load();assert.equal(calls.length,1);pending.resolve(response(html));await flush();assert.equal((await p).kind,'available');assert.equal((await p2).kind,'available');assert.deepEqual(calls,[['content/FIRST_USE_NOTICE.html',{cache:'no-store'}]]);const expected=env.document.createElement('div');owners.renderContentFragment(expected,html,env.document);assert.equal(n('#firstUseNoticeText').innerHTML,expected.innerHTML);await ref.current.load();assert.equal(calls.length,1);assert.equal(n('#firstUseNoticeDialog').open,false);});
+test('First use: original fetch options/sanitizer/cache with intentional concurrent dedup',async()=>{const pending=deferred(),ref=React.createRef(),calls=[];await mount(owners.FirstUseNotice,{...firstDefaults(),ref,fetchImpl:(...args)=>{calls.push(args);return pending.promise;}});const p=ref.current.load(),p2=ref.current.load();assert.equal(calls.length,1);pending.resolve(response(html));await flush();assert.equal((await p).kind,'available');assert.equal((await p2).kind,'available');assert.deepEqual(calls,[['content/FIRST_USE_NOTICE.html',{cache:'no-store'}]]);const expected=env.document.createElement('div');owners.renderContentFragment(expected,html,env.document);assert.deepEqual([...n('#firstUseNoticeText').childNodes].map(normalize),[...expected.childNodes].map(normalize));await ref.current.load();assert.equal(calls.length,1);assert.equal(n('#firstUseNoticeDialog').open,false);});
 test('First use: auto available opens once and records current seen marker',async()=>{const ref=React.createRef(),store=storage();let opens=0;const m=await mount(owners.FirstUseNotice,{...firstDefaults(),ref,storage:store,onOpenRequest:()=>{opens++;}});await React.act(async()=>assert.equal(await ref.current.maybeShowAutomatically(),true));assert.equal(opens,1);assert.equal(store.getItem(owners.FIRST_USE_NOTICE_SEEN_STORAGE_KEY),'1');assert.equal(await ref.current.maybeShowAutomatically(),false);assert.equal(opens,1);await m.update({open:true});assert.equal(ref.current.isOpen(),true);});
 test('First use: all legacy nonempty markers migrate; current only literal 1 suppresses',async()=>{for(const key of ['eagler-touhou-new-player-notice-seen-v1','eagler-touhou-changelog-seen-v2','eagler-touhou-changelog-seen-20260822-1']){const ref=React.createRef(),store=storage({[key]:'legacy-other'});let calls=0;const m=await mount(owners.FirstUseNotice,{...firstDefaults(),ref,storage:store,fetchImpl:()=>{calls++;throw Error('unexpected');}});assert.equal(await ref.current.maybeShowAutomatically(),false);assert.equal(calls,0);assert.equal(store.getItem(owners.FIRST_USE_NOTICE_SEEN_STORAGE_KEY),'1');await m.unmount();}const ref=React.createRef();await mount(owners.FirstUseNotice,{...firstDefaults(),ref,storage:storage({[owners.FIRST_USE_NOTICE_SEEN_STORAGE_KEY]:'0'})});assert.equal(ref.current.hasSeenNotice(),false);});
-for(const kind of ['empty','error'])test(`First use: ${kind} suppresses auto, manual opens without seen, ${kind==='empty'?'caches':'retries'}`,async()=>{const ref=React.createRef(),store=storage();let calls=0,opens=0;await mount(owners.FirstUseNotice,{...firstDefaults(),ref,storage:store,onOpenRequest:()=>opens++,fetchImpl:async()=>{calls++;return response(kind==='empty'?'  ':'bad',kind==='empty'?200:503);}});assert.equal(await ref.current.maybeShowAutomatically(),false);assert.equal(opens,0);await React.act(async()=>assert.equal((await ref.current.showManual()).kind,kind));assert.equal(opens,1);assert.equal(store.writes.length,0);assert.equal(calls,kind==='empty'?1:2);assert.equal(n('#firstUseNoticeText p').className,`first-use-notice-${kind}`);assert.equal(n('#firstUseNoticeText').textContent,owners.translate('zh-CN',kind==='empty'?'firstUseNotice.empty':'firstUseNotice.readFailed',{reason:'HTTP 503'}));});
-test('First use: transient failure retries and succeeds; storage denial does not block',async()=>{const ref=React.createRef();let calls=0,opens=0;await mount(owners.FirstUseNotice,{...firstDefaults(),ref,storage:{getItem(){throw Error('denied');},setItem(){throw Error('denied');}},onOpenRequest:()=>opens++,fetchImpl:async()=>{if(++calls===1)throw Error('offline');return response('<p>Recovered</p>');}});assert.equal(await ref.current.maybeShowAutomatically(),false);assert.equal(await ref.current.maybeShowAutomatically(),true);assert.equal(opens,1);assert.equal(calls,2);assert.equal(n('#firstUseNoticeText').textContent,'Recovered');});
+for(const kind of ['empty','error'])test(`First use: ${kind} suppresses auto, manual opens without seen, ${kind==='empty'?'caches':'retries'}`,async()=>{const ref=React.createRef(),store=storage();let calls=0,opens=0;await mount(owners.FirstUseNotice,{...firstDefaults(),ref,storage:store,onOpenRequest:()=>opens++,fetchImpl:async()=>{calls++;return response(kind==='empty'?'  ':'bad',kind==='empty'?200:503);}});await React.act(async()=>assert.equal(await ref.current.maybeShowAutomatically(),false));assert.equal(opens,0);await React.act(async()=>assert.equal((await ref.current.showManual()).kind,kind));assert.equal(opens,1);assert.equal(store.writes.length,0);assert.equal(calls,kind==='empty'?1:2);assert.equal(n('#firstUseNoticeText p').className,`first-use-notice-${kind}`);assert.equal(n('#firstUseNoticeText').textContent,owners.translate('zh-CN',kind==='empty'?'firstUseNotice.empty':'firstUseNotice.readFailed',{reason:'HTTP 503'}));});
+test('First use: transient failure retries and succeeds; storage denial does not block',async()=>{const ref=React.createRef();let calls=0,opens=0;await mount(owners.FirstUseNotice,{...firstDefaults(),ref,storage:{getItem(){throw Error('denied');},setItem(){throw Error('denied');}},onOpenRequest:()=>opens++,fetchImpl:async()=>{if(++calls===1)throw Error('offline');return response('<p>Recovered</p>');}});await React.act(async()=>assert.equal(await ref.current.maybeShowAutomatically(),false));await React.act(async()=>assert.equal(await ref.current.maybeShowAutomatically(),true));assert.equal(opens,1);assert.equal(calls,2);assert.equal(n('#firstUseNoticeText').textContent,'Recovered');});
 test('First use: unmounted pending manual cannot open or mark seen',async()=>{const d=deferred(),ref=React.createRef(),store=storage();let opens=0;const m=await mount(owners.FirstUseNotice,{...firstDefaults(),ref,storage:store,onOpenRequest:()=>opens++,fetchImpl:()=>d.promise});const p=ref.current.showManual();await m.unmount();d.resolve(response('<p>Late</p>'));assert.equal((await p).kind,'error');assert.equal(opens,0);assert.equal(store.writes.length,0);});
 test('First use: StrictMode open fetches reject stale result and retain latest content',async()=>{const ds=[],ref=React.createRef(),store=storage();await mount(owners.FirstUseNotice,{...firstDefaults(),ref,open:true,storage:store,fetchImpl:()=>{const d=deferred();ds.push(d);return d.promise;}},{strict:true});assert.equal(ds.length,2);ds[1].resolve(response('<p>Current</p>'));await flush();ds[0].resolve(response('<p>Stale</p>'));await flush();assert.equal(n('#firstUseNoticeText').textContent,'Current');assert.equal(n('#firstUseNoticeDialog').open,true);});
 test('Multiplayer: opens before fetch, sanitizer/builder output matches original pinned controller',async()=>{const d=deferred();let calls=[];await mount(owners.MultiplayerGuideDialog,{open:true,gameId:'th08',fetchImpl:(...a)=>{calls.push(a);return d.promise;}});assert.equal(n('#mpGuideDialog').open,true);assert.equal(n('#mpGuideContent p').className,'multiplayer-guide-loading');d.resolve(response(html));await flush();assert.deepEqual(calls,[['content/MULTIPLAYER.html']]);const baseline=new JSDOM('<!doctype html>'+baselineDialog('mpGuideDialog').outerHTML,{url:'https://launcher.invalid/'});baseline.window.HTMLDialogElement.prototype.showModal=function(){this.open=true;};baseline.window.HTMLDialogElement.prototype.close=function(){this.open=false;};baseline.window.HTMLElement.prototype.scrollIntoView=function(){};const controller=owners.createMultiplayerGuideController({documentObj:baseline.window.document,fetchImpl:async()=>response(html),getGameId:()=> 'th08'});await controller.show();assert.equal(guideSourceMarkup(),guideSourceMarkup(baseline.window.document));baseline.window.close();assert.equal(n('[role=tab][aria-selected=true]').dataset.game,'th08');});
@@ -213,8 +221,8 @@ test('Unmount closes the captured native dialog after React clears its ref witho
 });
 test('First use: stale StrictMode manual load must not emit an open request',async()=>{const ds=[],ref=React.createRef();let opens=0;function EffectOpener(){React.useEffect(()=>{void ref.current.showManual();},[]);return React.createElement(owners.FirstUseNotice,{...firstDefaults(),ref,fetchImpl:()=>{const d=deferred();ds.push(d);return d.promise;},onOpenRequest:()=>opens++});}await mount(EffectOpener,{}, {strict:true});assert.equal(ds.length,2);ds[0].resolve(response('<p>Stale</p>'));await flush();assert.equal(opens,0,'Strict replay superseded the first manual request');ds[1].resolve(response('<p>Current</p>'));await flush();assert.equal(opens,1);});
 for(const [name,id,extra,key] of [['FirstUseNotice','firstUseNoticeText',firstDefaults,'firstUseNotice.loading'],['MultiplayerGuideDialog','mpGuideContent',()=>({gameId:'th07'}),'multiplayerGuide.loading']])test(`${name}: initial loading copy follows a live locale change`,async()=>{const m=await mount(owners[name],extra());await m.setLocale('en');assert.equal(n('#'+id).textContent,owners.translate('en',key));});
-test('First use: cached empty manual re-show uses current locale like original',async()=>{const ref=React.createRef();const m=await mount(owners.FirstUseNotice,{...firstDefaults(),ref,fetchImpl:async()=>response(' ')});await ref.current.showManual();await m.setLocale('en');await ref.current.showManual();assert.equal(n('#firstUseNoticeText').textContent,owners.translate('en','firstUseNotice.empty'));});
-test('Authored first-use document: fetched fragment equals pinned main sanitization',async()=>{const authored=pinned('public/content/FIRST_USE_NOTICE.html'),ref=React.createRef();await mount(owners.FirstUseNotice,{...firstDefaults(),ref,fetchImpl:async()=>response(authored)});await ref.current.load();const expected=env.document.createElement('div');owners.renderContentFragment(expected,authored.trim(),env.document);assert.equal(n('#firstUseNoticeText').innerHTML,expected.innerHTML);});
+test('First use: cached empty manual re-show uses current locale like original',async()=>{const ref=React.createRef();const m=await mount(owners.FirstUseNotice,{...firstDefaults(),ref,fetchImpl:async()=>response(' ')});await React.act(async()=>ref.current.showManual());await m.setLocale('en');await ref.current.showManual();assert.equal(n('#firstUseNoticeText').textContent,owners.translate('en','firstUseNotice.empty'));});
+test('Authored first-use document: fetched fragment equals pinned main sanitization',async()=>{const authored=pinned('public/content/FIRST_USE_NOTICE.html'),ref=React.createRef();await mount(owners.FirstUseNotice,{...firstDefaults(),ref,fetchImpl:async()=>response(authored)});await React.act(async()=>ref.current.load());const expected=env.document.createElement('div');owners.renderContentFragment(expected,authored.trim(),env.document);assert.equal(n('#firstUseNoticeText').innerHTML,expected.innerHTML);});
 test('Authored multiplayer document: all seven game renderings equal the pinned controller plus TH09 catalog entry',async()=>{const authored=pinned('public/content/MULTIPLAYER.html');for(const gameId of ['th06','th07','th08','th09','th10','th11','th15']){const m=await mount(owners.MultiplayerGuideDialog,{open:true,gameId,fetchImpl:async()=>response(authored)});await flush();const baseline=new JSDOM('<!doctype html>'+baselineDialog('mpGuideDialog').outerHTML,{url:'https://launcher.invalid/'});baseline.window.HTMLDialogElement.prototype.showModal=function(){this.open=true;};baseline.window.HTMLDialogElement.prototype.close=function(){this.open=false;};baseline.window.HTMLElement.prototype.scrollIntoView=function(){};await owners.createMultiplayerGuideController({documentObj:baseline.window.document,fetchImpl:async()=>response(authored),getGameId:()=>gameId}).show();assert.equal(guideSourceMarkup(),guideSourceMarkup(baseline.window.document),gameId);baseline.window.close();await m.unmount();m.container.remove();}});
 test('Donation: original lobby closes immediately without library exit animation',async()=>{reduce=false;let closes=0;await mount(owners.DonationDialog,{open:true,closeDurationMs:0,assetUrl:x=>x,onArtworkUnavailable(){},onCloseRequest:()=>closes++});const c=fakeClock();await click('#donationClose');assert.equal(n('#donationDialog').open,false);assert.equal(n('#donationDialog').classList.contains('closing'),false);assert.equal(c.timers.size,0);assert.equal(closes,1);});
 
@@ -243,7 +251,7 @@ for (const locale of ['zh-CN', 'en']) test(`First use ${locale}: failed explicit
     const expectedError = n('#firstUseNoticeText', originalDom.window.document).innerHTML;
     assert.equal(n('#firstUseNoticeText').innerHTML, expectedError);
     assert.equal(ref.current.isOpen(), original.isOpen());
-    const authored = pinned('public/content/FIRST_USE_NOTICE.html');
+    const authored = owners.translate('zh-CN', 'content.firstUse');
     originalSuccess.resolve(response(authored)); reactSuccess.resolve(response(authored)); await flush();
     assert.equal(n('#firstUseNoticeText').innerHTML, expectedError, 'An unrequested queued success cannot overwrite the original error view');
     original.close(); await React.act(async () => ref.current.close());
@@ -253,7 +261,28 @@ for (const locale of ['zh-CN', 'en']) test(`First use ${locale}: failed explicit
     assert.deepEqual(counts, {main: 2, react: 2}, 'A later explicit reopen retries exactly once');
     const expectedContent = env.document.createElement('div');
     owners.renderContentFragment(expectedContent, owners.translate(locale, 'content.firstUse'), env.document);
-    assert.equal(n('#firstUseNoticeText').innerHTML, expectedContent.innerHTML, 'available authored content follows the selected interface language');
+    for (const link of expectedContent.querySelectorAll('a[href]')) {
+      const url = new URL(link.href);
+      if (url.origin !== env.window.location.origin) continue;
+      url.searchParams.set('lang', locale);
+      link.href = url.href;
+    }
+    const actualContent = n('#firstUseNoticeText');
+    const notes = [...actualContent.querySelectorAll('[role="note"]')];
+    const authoredNotes = [...expectedContent.querySelectorAll('blockquote p')];
+    assert.equal(notes.length, 2);
+    assert.equal(authoredNotes.length, notes.length);
+    for (const [index, note] of notes.entries()) {
+      assert.ok(note.querySelector('svg.lucide-info'));
+      assert.equal(note.style.getPropertyValue('--callout-color'), 'var(--color-fd-info, var(--color-fd-muted))');
+      assert.equal(note.querySelector('p').textContent, authoredNotes[index].textContent.replace(/^\[!NOTE\]\n/, ''));
+    }
+    assert.equal(actualContent.lang, locale);
+    assert.deepEqual(
+      [...actualContent.querySelectorAll('h2,a')].map(normalize),
+      [...expectedContent.querySelectorAll('h2,a')].map(normalize),
+      'available authored headings and links follow the selected interface language',
+    );
     assert.equal(ref.current.isOpen(), original.isOpen());
   } finally {originalDom.window.close();}
 });
@@ -289,7 +318,7 @@ for(const [name,id,closeId,extra] of [
   await click('#'+closeId);await m.update({open:false});await m.update({open:true});await c.advance(1000);
   assert.equal(dialog.open,true);assert.equal(requests,0);assert.equal(closed,0);
   await click('#'+closeId);const timing=activeMotion(dialog).options;
-  assert.equal(timing.duration,180);assert.equal(timing.easing,'cubic-bezier(0.2, 0, 0, 1)');assert.equal(timing.fill,'both');
+  assert.equal(timing.duration,150);assert.equal(timing.easing,`cubic-bezier(${1 / 3}, 0, ${2 / 3}, 0)`);assert.equal(timing.fill,'both');
   const event=new env.window.Event('animationend',{bubbles:true});Object.defineProperty(event,'animationName',{value:'replay-window-out'});
   await React.act(async()=>article.dispatchEvent(event));assert.equal(dialog.open,true);await finishMotion(dialog);
   assert.equal(requests,1);assert.equal(closed,1);assert.equal(c.timers.size,0);assert.equal(m.nativeParent.open,true);
@@ -301,8 +330,8 @@ for(const [name,id,closeId,extra] of [
   ['MultiplayerGuideDialog','mpGuideDialog','mpGuideClose',()=>({gameId:'th07',fetchImpl:async()=>response(html)})],
 ])test(`${name}: surface timing tokens control the shared motion without a mirrored timer`,async()=>{
   reduce=false;let closes=0;await mount(owners[name],{...extra(),open:true,onCloseRequest:()=>closes++});
-  const dialog=n('#'+id),c=fakeClock();assert.equal(activeMotion(dialog).options.duration,180);
-  dialog.style.setProperty('--ui-surface-duration','90ms');
+  const dialog=n('#'+id),c=fakeClock();assert.equal(activeMotion(dialog).options.duration,245);
+  dialog.style.setProperty('--ui-window-exit-duration','90ms');
   await click('#'+closeId);assert.equal(activeMotion(dialog).options.duration,90);assert.equal(c.timers.size,0);assert.equal(dialog.classList.contains('closing'),true);
   await c.advance(10000);assert.equal(dialog.open,true);assert.equal(closes,0);
   await finishMotion(dialog);assert.equal(dialog.open,false);assert.equal(closes,1);assert.equal(c.timers.size,0);

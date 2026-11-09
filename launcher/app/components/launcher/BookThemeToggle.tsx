@@ -1,9 +1,11 @@
 import {Button as UiButton} from '../../ui/button';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {useLocale} from '../../i18n';
 import {BOOK_PREFERENCES_EVENT, readBookPreference, writeBookPreference} from './book-preferences';
 import {NavigationIcon} from './NavigationIcon';
 import {impressTheme} from './ink-feedback';
+import {MastheadTooltip} from './MastheadTooltip';
+import {BackgroundSettings} from './CustomBackground';
 
 let themeTransitionTimer: number | undefined;
 let pendingTheme: 'light' | 'dark' | undefined;
@@ -43,9 +45,11 @@ function applyTheme(value: 'light' | 'dark', animate: boolean) {
   }, 180);
 }
 
-export function BookThemeToggle({interactive = true}: {interactive?: boolean}) {
-  const {t} = useLocale();
+export function BookThemeToggle({interactive = true, row = false, tooltip = false}: {interactive?: boolean; row?: boolean; tooltip?: boolean}) {
+  const {locale} = useLocale();
   const [dark, setDark] = useState(true);
+  const [open, setOpen] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
   const [ready, setReady] = useState(false);
   useEffect(() => {
     let initialized = false;
@@ -56,9 +60,10 @@ export function BookThemeToggle({interactive = true}: {interactive?: boolean}) {
     refresh(); window.addEventListener('storage', refresh); window.addEventListener(BOOK_PREFERENCES_EVENT, refresh);
     return () => {window.removeEventListener('storage', refresh); window.removeEventListener(BOOK_PREFERENCES_EVENT, refresh);};
   }, []);
-  return <UiButton type="button" variant="ghost" size="icon" className="masthead-action book-theme-toggle [&_svg]:size-5" disabled={!interactive || !ready} aria-pressed={dark}
-    aria-label={t('theme.dark')} onClick={(event) => {
-      impressTheme(event.currentTarget);
-      const next = !dark; setDark(next); applyTheme(next ? 'dark' : 'light', true); writeBookPreference('theme', next ? 'dark' : 'light');
-    }} title={t('theme.toggle')}><NavigationIcon name={dark ? 'moon' : 'sun'}/></UiButton>;
+  const label = locale === 'zh-CN' ? '主题设置' : locale === 'ja' ? 'テーマ設定' : 'Theme settings';
+  const button = <UiButton ref={trigger} type="button" variant="ghost" size={row ? "row" : "icon"} className={row ? "masthead-overview-theme" : "masthead-action book-theme-toggle [&_svg]:size-5"} disabled={!interactive || !ready}
+    aria-label={label} aria-haspopup="dialog" onClick={() => setOpen(true)} title={tooltip ? undefined : label}><NavigationIcon name={dark ? 'moon' : 'sun'}/>{row && <span>{label}</span>}</UiButton>;
+  return <>{tooltip ? <MastheadTooltip label={label}>{button}</MastheadTooltip> : button}
+    <BackgroundSettings open={open} onOpenChange={setOpen} dark={dark} onThemeChange={value=>{if ((value==='dark')===dark) return; setDark(value==='dark');applyTheme(value,true);writeBookPreference('theme',value);if(trigger.current)impressTheme(trigger.current);}}/>
+  </>;
 }

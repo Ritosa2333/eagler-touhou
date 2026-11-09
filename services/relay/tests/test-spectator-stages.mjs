@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import {COOPERATIVE_SPECTATOR_MARKERS, SPECTATOR_STAGE_LIMITS, parseSpectatorStageEvent, SpectatorStageRelay} from '../src/spectator-stages.mjs';
 import {isSpectatorFrameForRoom} from '../src/spectator-frame.mjs';
 
-function event(marker, count, {kind = 1, frame = 600, stage = 4, serial = 1, checkpoint = 1, node = 2, slots = 1} = {}) {
+function event(marker, count, {kind = 1, frame = 600, stage = 4, serial = 1, checkpoint = 1, node = 2, slots = 1, schema = 7} = {}) {
   const b = Buffer.alloc(kind === 1 ? 44 : kind === 2 ? 40 : 32);
   b.set([69, marker, 83, 86, 2, kind, count, 0]);
   b.writeBigUInt64LE(0x123456789abcdef0n, 8); b.writeUInt32LE(0x10203040, 16);
   b.writeUInt32LE(frame, 20); b.writeUInt32LE(stage, 24); b.writeUInt32LE(serial, 28);
-  if (kind === 1) { b.writeUInt32LE(7, 32); b.writeUInt32LE(4, 36); b.set([4, 10, 3, 2], 40); }
+  if (kind === 1) { b.writeUInt32LE(schema, 32); b.writeUInt32LE(4, 36); b.set([4, 10, 3, 2], 40); }
   if (kind === 2) { b.writeUInt32LE(checkpoint, 32); b[36] = node; b[37] = slots; }
   return b;
 }
@@ -71,6 +71,23 @@ test('history limits fail before evicting a still-needed input prefix', () => {
   stream.accept(event(55, 2)); stream.accept(input(55, 2, 600));
   assert.throws(() => stream.accept(input(55, 2, 601)), /frame limit/);
   assert.equal(stream.history.length, 2); assert.equal(stream.next, 601);
+});
+test('TH17 continuous spectators keep earlier confirmed inputs through stage changes', () => {
+  const marker = COOPERATIVE_SPECTATOR_MARKERS.th17mp;
+  const stream = new SpectatorStageRelay(marker, 3, {historyBytes: 512, historyFrames: 2});
+  stream.accept(event(marker, 3, {schema: 3, stage: 1}));
+  const tape = stream.history;
+  stream.accept(input(marker, 3, 600));
+  const stageTwo = {stage: 2, frame: 601, serial: 2};
+  assert.throws(() => stream.accept(event(marker, 3, stageTwo)), /restore mode/);
+  assert.equal(stream.accept(event(marker, 3, {...stageTwo, schema: 3})), 'stage-bookmark');
+  assert.equal(stream.history, tape, 'a downloading viewer continues on the same tape');
+  stream.accept(input(marker, 3, 601));
+  stream.accept(event(marker, 3, {kind: 2, stage: 2, frame: 602, serial: 3, checkpoint: 2}));
+  assert.deepEqual(tape.map(row => row[5]), [1, 3, 1, 3, 2]);
+  assert.equal(stream.bootstrap().readUInt32LE(20), 602);
+  assert.equal(stream.bootstrap().readUInt32LE(24), 2);
+  assert.throws(() => stream.accept(input(marker, 3, 602)), /frame limit/);
 });
 test('native Replay stage headers fit inside the bounded relay envelope',()=>{
   const header=event(70,3),large=Buffer.alloc(40+SPECTATOR_STAGE_LIMITS.stateBytes);

@@ -44,7 +44,7 @@ const float* test_state(){
 }
 const uint32_t* test_blend(uint32_t beforeFlags,int operandC,float rotation){
   program={};bullet={};world={};world.animation.flags=beforeFlags;world.animation.rotation=rotation;
-  set(program,0,false,0x10000000,operandC,0,0,0);bullet.program=program;
+  set(program,0,false,0x10000000,operandC,0,0,0);bullet.programStorage=std::make_shared<const Program>(program);
   start(bullet,world);
   blendOutput[0]=world.animation.flags;blendOutput[1]=bullet.cursor;blendOutput[2]=bullet.active;
   blendOutput[3]=bullet.rotateToMotion;blendOutput[4]=th12::anm_logic::asWord(world.animation.rotation);

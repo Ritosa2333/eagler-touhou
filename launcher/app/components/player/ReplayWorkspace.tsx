@@ -1,7 +1,7 @@
 import {Input} from '../../ui/input';
 import {Button as UiButton} from '../../ui/controls';
-import {ArrowLeft, Upload, Folder, FileText, MoreHorizontal, Play, Pause, RotateCcw} from 'lucide-react';
-import {useContext, useEffect, useRef, useState, useSyncExternalStore} from 'react';
+import {ArrowLeft, ChevronDown, Upload, Folder, FileText, MoreHorizontal, Play, Pause, RotateCcw} from 'lucide-react';
+import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';
 import type {BrowserSession} from '../../session/browser-session';
 import {useSurfaceNavigation} from '../../navigation/surface-navigation';
@@ -9,15 +9,17 @@ import {useSurfaceLayerState} from '../../navigation/surface-layer';
 import {groupReplayFolders} from '../../models/replays';
 import {isTh09ReplayDirectory} from '../../../src/launcher/th09-replay-match.mts';
 import {isReplayImportFileName} from '../../../src/launcher/replay-files.mts';
+import {th09CharacterLoadout} from '../../../src/launcher/th09-room-stats.mjs';
 import {FullscreenIcons} from './utility-icons';
 import {MainSelect} from '../launcher/MainSelect';
+import {BookProductMenu} from '../launcher/BookDirectoryGames';
 import {PlayerStage} from './PlayerSurface';
 import {ReplayFileMenu} from './ReplayFileMenu';
 import {ReplayTransport, type ReplayTransportState} from './ReplayTransport';
 import {ReplayFileRow} from './ReplayFileRow';
 import {useLocale} from '../../i18n';
 import {errorText} from '../../services/error-text';
-import {gameIdForProduct, PRODUCT_GAMES} from '../../../src/contracts/product-catalog.mts';
+import {gameIdForProduct, isMultiplayerProductId, PRODUCT_GAMES, type ProductId} from '../../../src/contracts/product-catalog.mts';
 import type {ReplayDescription} from '../../../src/launcher/replay-description.mts';
 import type {UiMessageKey} from '../../../src/launcher/i18n.mts';
 import './replay-workspace.css';
@@ -28,10 +30,10 @@ export interface ReplayPlaybackState extends ReplayTransportState {
 }
 
 /** Composes around the permanent game iframe. File selection never remounts it. */
-export function ReplayWorkspace({session}: {session: BrowserSession}) {
+export function ReplayWorkspace({session, products = []}: {session: BrowserSession; products?: readonly ProductId[]}) {
   const {t} = useLocale();
   const characterName = (id: number, side: number) => {
-    const loadout = PRODUCT_GAMES.th09.multiplayer.loadouts.find(item => item.character === id);
+    const loadout = th09CharacterLoadout(id);
     return loadout ? t(loadout.labelKey as UiMessageKey) : `P${side + 1}`;
   };
   const model = session.getReplays()!, navigation = useSurfaceNavigation();
@@ -42,20 +44,35 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
   const open = navigation.infoDialogOpen('replayDialog') && files.open;
   const game = files.productId ? gameIdForProduct(files.productId) : 'th09', versus = game === 'th09';
   const fileOnly = game === 'hsob';
-  const [expanded, setExpanded] = useSurfaceLayerState<string | null>('replay-details', null);
-  const [folder, setFolder] = useSurfaceLayerState<string | null>('replay-folder', null);
-  const [moving, setMoving] = useSurfaceLayerState<string | null>('replay-move', null);
+  const title = PRODUCT_GAMES[game].title;
+  const multiplayer = files.productId !== null && isMultiplayerProductId(files.productId);
+  const choices = useMemo(() => products.filter(product => isMultiplayerProductId(product) === multiplayer), [products, multiplayer]);
+  const assetUrl = useCallback((path: string) => new URL(path, session.baseUrl).href, [session.baseUrl]);
+  const [expanded, setExpanded] = useSurfaceLayerState<string | null>(`replay-details:${files.productId}`, null);
+  const [requestedFolder, setFolder] = useSurfaceLayerState<string | null>(`replay-folder:${files.productId}`, null);
+  const [moving, setMoving] = useSurfaceLayerState<string | null>(`replay-move:${files.productId}`, null);
   const [destination, setDestination] = useState('replay'), [newFolder, setNewFolder] = useState(''), [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const closing = useRef(false);
+  const list = useRef<HTMLDivElement>(null), scrollPositions = useRef(new Map<string, number>());
   const playback = app.runtime?.runtimeInfo.playback as ReplayPlaybackState | undefined;
-  const folders = groupReplayFolders(files.rows), rows = files.rows.filter(row => row.path.slice(0, row.path.lastIndexOf('/')) === (folder ?? 'replay'));
-  // biome-ignore lint/correctness/useExhaustiveDependencies: File navigation state resets when switching the manager's product.
-  useEffect(() => {setExpanded(null); if (folder) setFolder(null); else setMoving(null); setError('');}, [files.productId]);
-  const folderExists = !folder || folders.some(item => item.key === folder);
+  const folders = useMemo(() => groupReplayFolders(files.rows), [files.rows]);
+  const folderExists = files.phase !== 'ready' || !requestedFolder || folders.some(item => item.key === requestedFolder);
+  const folder = folderExists ? requestedFolder : null;
+  const directory = folder ?? 'replay', scrollKey = `${files.productId}:${directory}`;
+  const rows = useMemo(() => files.rows.filter(row => row.path.slice(0, row.path.lastIndexOf('/')) === directory), [files.rows, directory]);
   useEffect(() => {if (!folderExists) setFolder(null);}, [folderExists, setFolder]);
+  useLayoutEffect(() => {
+    if (open && files.phase === 'ready' && list.current) list.current.scrollTop = scrollPositions.current.get(scrollKey) ?? 0;
+  }, [open, files.phase, scrollKey]);
   if (!open) return null;
   const report = (error: unknown) => {setError(error instanceof Error ? error.message : String(error));};
+  async function switchProduct(product: ProductId) {
+    setBusy(true); setError('');
+    try {await session.switchReplayProduct(product);}
+    catch (error) {report(error);}
+    finally {setBusy(false);}
+  }
   async function control(action: 'pause'|'play'|'seek'|'rate', value?: number) {
     setError(''); try {await session.getRuntime()!.send('playback', {action, ...(value !== undefined ? {value} : {})});} catch (error) {report(error);}
   }
@@ -84,7 +101,13 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
   return <>
     <header className="replay-workspace-header" data-replay-versus={versus}>
       <UiButton variant="icon" type="button" className="replay-back replay-button" aria-label={t('replay.ui.back')} disabled={busy} onClick={() => {void close();}}>{icon('replay-arrow-left')}</UiButton>
-      <h1>{t('replay.manager')}</h1>
+      <div className="workspace-product-heading">
+        <h1 title={title}>{title}</h1>
+        {choices.length > 1 && <BookProductMenu products={choices} value={files.productId ?? ''}
+          assetUrl={assetUrl} onChange={product => {void switchProduct(product);}}
+          trigger={<UiButton id="replayProductSelect" type="button" variant="unstyled" className="workspace-product-trigger"
+            disabled={busy} aria-label={t('lobby.game')} title={t('lobby.game')}><ChevronDown aria-hidden="true"/></UiButton>}/>}
+      </div>
     </header>
     {!fileOnly && stage && !playback && stage.querySelector('.game-viewport') && createPortal(<div className="replay-workspace-idle" data-ui-surface="game">{icon('player-play')}<p>{versus ? t('replay.ui.choosePlay') : t('replay.ui.chooseStage')}</p><small>{t('replay.ui.browseWhileLoading')}</small></div>, stage.querySelector('.game-viewport')!)}
     {!fileOnly && viewport && createPortal(<UiButton variant="icon" type="button" className="replay-fullscreen replay-fullscreen-exit replay-button" aria-label={t('replay.ui.exitFullscreen')} onClick={() => {void session.togglePlayerFullscreen();}} data-fullscreen="true"><FullscreenIcons/></UiButton>, viewport)}
@@ -104,7 +127,8 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
         {destination === 'new' && <Input aria-label={t('replay.ui.folderName')} maxLength={128} value={newFolder} onChange={event => setNewFolder(event.target.value)}/>}
         <div><UiButton type="button" className="replay-button" onClick={() => setMoving(null)}>{t('replay.ui.cancel')}</UiButton><UiButton variant="primary" type="submit" className="replay-button" disabled={busy || !isTh09ReplayDirectory(destination === 'new' ? `replay/${newFolder.trim()}` : destination)}>{t('replay.ui.move')}</UiButton></div>
       </form>}
-      <div className="replay-workspace-files" key={folder ?? 'replay'} aria-busy={files.phase === 'loading' || busy}>
+      <div className="replay-workspace-files" ref={list} aria-busy={files.phase === 'loading' || busy}
+        onScroll={event => {if (files.phase === 'ready') scrollPositions.current.set(scrollKey, event.currentTarget.scrollTop);}}>
         {files.phase === 'loading' ? <p className="replay-workspace-empty">{t('replay.ui.loading')}</p> : files.phase === 'error' ? <div className="replay-workspace-empty"><p>{t('replay.ui.failed')}</p><UiButton type="button" onClick={() => {void model.refresh().catch(report);}}>{t('replay.ui.retry')}</UiButton></div> : <>
           {!folder && folders.map(item => <div className="replay-workspace-file replay-workspace-folder" key={item.key}><UiButton variant="unstyled" type="button" data-replay-folder={item.key} onClick={() => {setFolder(item.key);}}>{icon('replay-folder')}<strong title={item.name}>{item.name}</strong><small>{t('replay.ui.count',{count:item.rows.length})}</small></UiButton><ReplayFileMenu disabled={busy} label={t('replay.ui.manageFolder',{name:item.name})} actions={[{label: t('replay.ui.download'), run: () => {void model.downloadFolder(item.key);}}]}/></div>)}
           {rows.map(row => <ReplayFileRow key={row.path} path={row.path} name={row.name} size={row.size} versus={versus} selected={playback?.path === row.path} expanded={expanded === row.path} busy={busy}

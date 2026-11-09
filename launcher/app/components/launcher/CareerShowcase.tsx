@@ -8,6 +8,7 @@ import {blankRecord, cellLabel, DEFAULT_OPTIONS, TRACKER_CELLS, TRACKER_GAMES, v
 import {readBookPreference, writeBookPreference} from './book-preferences';
 import {useLocale, type UiMessageKey} from '../../i18n';
 import {ConfirmationDialog} from '../ConfirmationDialog';
+import {useMainDialog} from '../notices/use-main-dialog';
 import './career-showcase.css';
 import '../../ui/document-body.css';
 
@@ -59,7 +60,10 @@ export function CareerShowcase({records, onSave, initiallyOpen = false, readOnly
   const [selection, setSelection] = useState<string | null>(null), [brush, setBrush] = useState('details');
   const [cells, setCells] = useState<Cell[]>([]), [view, setView] = useState<View>({scale: 1, x: 0, y: 0});
   const [confirmClose, setConfirmClose] = useState(false), [message, setMessage] = useState<UiMessageKey | null>(null);
-  const dialog = useRef<HTMLDialogElement>(null), viewport = useRef<HTMLDivElement>(null);
+  const viewer = useMainDialog({open, onCloseRequest() {
+    setOpen(false); setEditing(false); setSelection(null); setHelpOpen(false);
+  }});
+  const viewport = useRef<HTMLDivElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null), input = useRef<HTMLInputElement>(null), fitted = useRef(false);
   const pointers = useRef(new Map<number, {x: number; y: number}>()), gesture = useRef({moved: false, startX: 0, startY: 0});
   const shown = editing ? draft : records;
@@ -75,13 +79,12 @@ export function CareerShowcase({records, onSave, initiallyOpen = false, readOnly
   const fitRef = useRef(fitMap); fitRef.current = fitMap;
   useEffect(() => {
     if (!open) return;
-    const openedDialog = dialog.current; openedDialog?.showModal();
     const overflow = document.body.style.overflow; document.body.style.overflow = 'hidden';
     if (!fitted.current) fitRef.current();
     const observer = new ResizeObserver(() => {if (!fitted.current) fitRef.current();});
     if (viewport.current) observer.observe(viewport.current);
     const resize = () => fitRef.current(); window.addEventListener('resize', resize);
-    return () => {observer.disconnect(); window.removeEventListener('resize', resize); document.body.style.overflow = overflow; openedDialog?.close(); pointers.current.clear(); returnFocus.current?.focus({preventScroll:true});};
+    return () => {observer.disconnect(); window.removeEventListener('resize', resize); document.body.style.overflow = overflow; pointers.current.clear(); returnFocus.current?.focus({preventScroll:true});};
   }, [open]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: Refit the current viewport when its requested height changes.
   useEffect(() => {if (open) fitRef.current();}, [height, open]);
@@ -98,7 +101,7 @@ export function CareerShowcase({records, onSave, initiallyOpen = false, readOnly
     return () => area.removeEventListener('wheel', wheel);
   }, [open, zoom]);
   const launch = (edit = false) => {returnFocus.current = document.activeElement as HTMLElement; setOpen(true); setConfirmClose(false); if (edit && !readOnly) {setDraft({...records}); setEditing(true);} };
-  const close = () => {if (dirty) {setConfirmClose(true); return;} setOpen(false); setEditing(false); setSelection(null);};
+  const close = () => {if (dirty) {setConfirmClose(true); return;} viewer.requestClose();};
   const update = (key: string, record?: TrackerRecord) => setDraft(current => {const next = {...current}; if (record) next[key] = record; else delete next[key]; return next;});
   const select = (key: string) => {
     setSelection(key);
@@ -151,7 +154,8 @@ export function CareerShowcase({records, onSave, initiallyOpen = false, readOnly
     <UiButton variant="unstyled" type="button" className="career-thumbnail" onClick={() => launch()} aria-label={t('career.fullscreen')}><Chart records={records} options={options}/></UiButton>
     <div className="career-card-footer"><div>{!readOnly && <UiButton className={careerButtonClass} type="button" onClick={() => launch(true)}>{t('career.edit')}</UiButton>}<UiButton className={careerButtonClass} type="button" onClick={exportPng}>{t('career.exportPng')}</UiButton></div></div>
 
-    {open && <dialog ref={dialog} className="career-viewer" aria-labelledby="career-viewer-title" onCancel={event => {event.preventDefault(); close();}}>
+    <dialog ref={viewer.ref} className="career-viewer" aria-labelledby="career-viewer-title" onCancel={event => {event.preventDefault(); close();}}>
+      {open && <>
       <header className="career-viewer-header"><div><h2 id="career-viewer-title">{editing ? t('career.editing') : t('career.title')}</h2><span className="career-viewer-count">{completed(shown)} / {TRACKER_CELLS.length}</span></div><div className="career-viewer-actions">
         {editing ? <><UiButton className={careerButtonClass} type="button" onClick={() => {if (dirty) setConfirmClose(true); else {setEditing(false); setSelection(null);}}}>{t('career.cancelEdit')}</UiButton><UiButton variant="primary" type="button" className={careerButtonClass} onClick={() => {if (!writable.current) return; onSave(draft); setEditing(false); setSelection(null); setConfirmClose(false); setMessage('career.saved');}}>{t('career.save')}</UiButton></> : !readOnly && <UiButton className={careerButtonClass} type="button" onClick={() => {setDraft({...records}); setEditing(true);}}>{t('career.edit')}</UiButton>}
         <UiButton type="button" className={`${careerButtonClass} career-help-trigger`} onClick={() => setHelpOpen(true)}><span aria-hidden="true">?</span>{t('career.help')}</UiButton><UiButton className={careerButtonClass} type="button" onClick={exportPng}>{t('career.exportPng')}</UiButton><UiButton className={careerButtonClass} variant="icon" type="button" aria-label={t('career.close')} onClick={close}>×</UiButton></div></header>
@@ -186,8 +190,9 @@ export function CareerShowcase({records, onSave, initiallyOpen = false, readOnly
         }}/>}{!readOnly && <p>{t('career.importHint')}</p>}</section>
       </aside></div>{message && <div className="career-viewer-status" role="status">{t(message)}</div>}
     {helpOpen && <CareerHelp onClose={() => setHelpOpen(false)}/>}
-    </dialog>}
-    {confirmClose && <ConfirmationDialog idPrefix="careerDecision" open title={t('career.cancelEdit')} message={t('career.unsaved')} cancelText={t('career.continue')} confirmText={t('career.discard')} tone="danger" onCancel={() => setConfirmClose(false)} onConfirm={() => {setConfirmClose(false); setEditing(false); setOpen(false); setSelection(null);}}/>}
+      </>}
+    </dialog>
+    {confirmClose && <ConfirmationDialog idPrefix="careerDecision" open title={t('career.cancelEdit')} message={t('career.unsaved')} cancelText={t('career.continue')} confirmText={t('career.discard')} tone="danger" onCancel={() => setConfirmClose(false)} onConfirm={() => {setConfirmClose(false); viewer.requestClose();}}/>}
   </section>;
 }
 
@@ -239,15 +244,9 @@ function CellEditor({record, editing, onApply}: {record: TrackerRecord; editing:
 
 function CareerHelp({onClose}: {onClose: () => void}) {
   const {t} = useLocale();
-  const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const opened = dialog.current;
-    const previous = document.activeElement as HTMLElement | null;
-    opened?.showModal();
-    return () => {opened?.close(); previous?.focus({preventScroll:true});};
-  }, []);
-  return <dialog ref={dialog} className="career-help-dialog" aria-labelledby="career-help-title" onCancel={event => {event.preventDefault(); event.stopPropagation(); onClose();}}>
-    <header><h2 id="career-help-title">{t('career.helpTitle')}</h2><UiButton className={careerButtonClass} variant="icon" type="button" aria-label={t('career.closeHelp')} onClick={onClose}>×</UiButton></header>
+  const dialog = useMainDialog({open: true, onCloseRequest: onClose});
+  return <dialog ref={dialog.ref} className="career-help-dialog" aria-labelledby="career-help-title" onCancel={event => {event.stopPropagation(); dialog.onCancel(event);}}>
+    <header><h2 id="career-help-title">{t('career.helpTitle')}</h2><UiButton className={careerButtonClass} variant="icon" type="button" aria-label={t('career.closeHelp')} onClick={dialog.requestClose}>×</UiButton></header>
     <div className="career-help-content ui-document prose">
       <section><h3>{t('career.readCell')}</h3><div className="career-help-example"><div className="career-example-cell" role="img" aria-label={t('career.exampleAria')}><span>2</span><span>0</span><span>3</span><b>F</b></div><p>{t('career.cellGuide')}</p></div></section>
       <section><h3>{t('career.difficultyClears')}</h3><dl className="career-help-definitions"><div><dt>E / N / H / L</dt><dd>Easy / Normal / Hard / Lunatic</dd></div><div><dt>X / P</dt><dd>Extra / Phantasm</dd></div><div><dt>1CC</dt><dd>{t('career.oneCreditGuide')}</dd></div><div><dt>NM / NB / NN</dt><dd>{t('career.noMissBombGuide')}</dd></div></dl><p>{t('career.countGuide')}</p></section>

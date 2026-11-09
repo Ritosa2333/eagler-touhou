@@ -20,11 +20,11 @@ protected:
 	int m_phase4ShootEnd;
 	int m_phase4ShootKnifeInterval;
 	bool m_phase4CrazyMode;
-	float m_phase4ShootAngle[2];
+	float m_phase4ShootAngle[2]{};
 	int m_phase7ShootEnd;
 	int m_phase7ShootKnifeInterval;
 	bool m_phase7CrazyMode;
-	float m_phase7ShootAngle[2];
+	float m_phase7ShootAngle[2]{};
 	float m_phase8KnifeY;
 	bool m_phase8KnifeLeft;
 	bool m_phase8KnifePart;

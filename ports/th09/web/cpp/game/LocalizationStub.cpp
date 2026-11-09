@@ -29,6 +29,7 @@ const char* Localization::AsciiString(const char* fallback){return fallback;}
 const char* Localization::AsciiStringById(const char*,const char* fallback){return fallback;}
 const char* Localization::StringById(const char*,const char* fallback){return fallback;}
 const char* Localization::FormatStringById(const char*,const char* fallback){return fallback;}
+const char* Localization::Utf8(const char* text){return text;}
 void Localization::CopyCodepointChunk(char* destination,std::size_t capacity,const char* source,std::size_t first,std::size_t maximum)
 {
     if(!destination||capacity==0)return;destination[0]='\0';if(!source)return;

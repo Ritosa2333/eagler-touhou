@@ -127,7 +127,7 @@ int CCharaMarisa::GetBombDamage(float ctrX,float ctrY,float halfWidth,float half
 		totalDmg+=4;
 	if (m_bombTimer>=16&&m_bombTimer<80&&m_bombTimer%4==0)
 	{
-		if (m_curX>=ctrX-halfWidth&&m_curX<=ctrX+halfWidth&&m_curY>=(original::DemoActive()?ctrY-halfHeight:ctrY))
+		if (m_curX>=ctrX-halfWidth&&m_curX<=ctrX+halfWidth&&m_curY>=(original::BombAndRageEnabled()?ctrY-halfHeight:ctrY))
 			totalDmg+=22;
 	}
 	return totalDmg;

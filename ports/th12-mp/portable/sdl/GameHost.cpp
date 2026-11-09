@@ -7,6 +7,7 @@
 #include <cstdint>
 #ifdef TH12_MULTIPLAYER
 #include "game/Multiplayer.hpp"
+#include "multiplayer/Session.hpp"
 #endif
 namespace th12host {
 std::vector<MusicTrackInfo> prepared_music_comments(){
@@ -29,7 +30,11 @@ const double* Game::host_state_values(){
         ||mp_replay
 #endif
         ;
-    const char* kind=!(playing||network_game)?"menu":replaying?"replay":th12::messageVM.active&&(th12::messageVM.flags&1||th12::messageVM.wait>0)?"dialogue":"game";
+    const char* kind=
+#ifdef TH12_MULTIPLAYER
+        ending&&mp_playing&&!mp_replay&&!th12::multiplayer::session.network.ReadOnly()?"ending":
+#endif
+        !(playing||network_game)?"menu":replaying?"replay":th12::messageVM.active&&(th12::messageVM.flags&1||th12::messageVM.wait>0)?"dialogue":"game";
     float player_x=h[1],player_y=h[2];
 #ifdef TH12_MULTIPLAYER
     if(mp_playing&&mp_local>=0&&mp_local<int(th12::multiplayer::options.count)){

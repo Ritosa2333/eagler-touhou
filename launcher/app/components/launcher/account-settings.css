@@ -351,3 +351,15 @@
   }
 }
 @layer components{.settings-save-profile{min-width:104px}}
+
+/* Account settings are reading surfaces when a custom background is active. */
+html[data-custom-background] body:not(.mp-room-active) .account-settings :is(.account-settings-nav,.account-settings-content) {
+  box-sizing: border-box;
+  padding: 20px;
+  border: 1px solid var(--kit-border);
+  border-radius: 10px;
+  background-color: color-mix(in srgb, var(--book-surface) var(--custom-panel-opacity, 88%), transparent);
+}
+@media (max-width: 700px), (orientation: portrait) and (max-width: 900px) {
+  html[data-custom-background] body:not(.mp-room-active) .account-settings :is(.account-settings-nav,.account-settings-content) {padding:16px}
+}

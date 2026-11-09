@@ -81,4 +81,13 @@ npm run ports:check -- --game=th05 --variant=normal
 
 浏览器检查使用真实 Wasm、DATA、PR 音频与语言包，默认读取本目录 `artifacts/content/`、`artifacts/languages/`。`TH05_TEST_CONTENT` 和 `TH05_TEST_FONT` 可指定 DATA 与字体，`TH05_TEST_RUNTIME` 和 `TH05_TEST_ASSETS` 可指定构建与资源根目录。原生矩阵构建与运行均设置 `TH05_BROWSER_TESTS=1`。
 
+可用本地持有的日版 PC-98 `MAIN.EXE` 和原版 DAT 逐帧核对弹幕。以下命令需要 Unicorn 2.1.4 和上述浏览器测试构建，原版执行文件与生成的逐帧数据仅在本地使用：
+
+```sh
+python ports/th05/scripts/Verify-OriginalPatterns.py --exe /path/to/MAIN.EXE --resources /path/to/DAT --output ports/th05/artifacts/pc98-patterns
+node ports/th05/tests/browser.mjs --pc98-patterns ports/th05/artifacts/pc98-patterns
+```
+
+默认比较 Lunatic 与 Extra 的七关杂鱼、道中 Boss、关底 Boss 和四面双子两个单独存活分支；可用 `--difficulty 1 --rank 36` 改测 Normal。检查每帧新增弹数、各弹的初始速度，以及道中滚动量。测试固定玩家位置与 Rank、隔离普通弹存量，并对齐 Boss 每帧开火前的随机游标；不替代完整实战录像和弹道生命周期验证。
+
 来源父链见 [迁移登记](../../../docs/migration/th05-eagler-20261101.json)，上游工作区改动清单见 [source-import.json](../source-import.json)。

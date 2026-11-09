@@ -70,7 +70,7 @@ function App(){
 }
 createRoot(document.getElementById('root')).render(<App/>);
 `;
-const result = await build({absWorkingDir: project, stdin: {contents: entry, loader: 'tsx', resolveDir: project}, bundle: true, format: 'esm', jsx: 'automatic', write: false, outdir: out, external: ['/assets/*'], plugins: [
+const result = await build({absWorkingDir: project, stdin: {contents: entry, loader: 'tsx', resolveDir: project}, bundle: true, format: 'esm', jsx: 'automatic', write: false, outdir: out, external: ['/assets/*'], loader: {'.webp':'dataurl'}, plugins: [
   {name: 'fixture-navigation', setup(ctx) {
     ctx.onResolve({filter: /navigation\/surface-navigation$/}, () => ({path: 'navigation', namespace: 'fixture'}));
     ctx.onLoad({filter: /.*/, namespace: 'fixture'}, () => ({contents: 'const navigation={infoDialogOpen:()=>true}; export const useSurfaceNavigation=()=>navigation;'}));
@@ -319,7 +319,7 @@ try {
   await page.keyboard.press('Escape');
   await page.waitForSelector('.room-quick-chat-picker', {hidden:true});
   await page.click('#roomWorkspaceTab-game');
-  assert(await page.$eval('#roomWorkspacePanel-game', node => node.getAnimations().some(animation => animation.animationName === 'room-panel-enter')), 'room tab panel animates');
+  assert(await page.$eval('#roomWorkspacePanel-game', node => node.getAnimations().some(animation => animation.animationName === 'workspace-panel-enter')), 'room tab panel animates');
   await page.click('#roomWorkspaceTab-chat');
   await page.click('#mpReady');
   await page.waitForSelector('[data-mp-seat="0"][data-card-state="ready"]');

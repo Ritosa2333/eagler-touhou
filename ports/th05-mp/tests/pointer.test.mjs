@@ -17,6 +17,21 @@ test('hosted touch fractions map through portrait and landscape letterboxing',()
   assert.ok(Math.abs(move.x-360)<1e-8);assert.ok(Math.abs(move.y-220)<1e-8);
  }
 });
+test('menu gestures survive simulation ticks that skip drawing',()=>{
+ const keys=[],touch=createTouchInput({send:(...key)=>keys.push(key),position:()=>({x:200,y:300}),options:()=>({touchEnabled:true,touchMovementMode:'touch',touchSensitivity:100}),move(){},scene:()=>3});
+ const point=(type,id)=>touch.pointer({type,id,x:100+id*20,y:200});
+ for(const fingers of [1,2]){
+  for(let id=1;id<=fingers;id++)point('down',id);
+  for(let id=1;id<=fingers;id++)point('up',id);
+  const before=keys.length;
+  touch.tick(false);touch.tick(false);
+  assert.equal(keys.length,before);
+  touch.tick(true);touch.tick(false);
+  assert.deepEqual(keys.slice(before),[[fingers===1?'KeyZ':'Escape',true]]);
+  touch.tick(true);
+  assert.deepEqual(keys.at(-1),[fingers===1?'KeyZ':'Escape',false]);
+ }
+});
 test('native panels own touches; passive panel swipes replay their original down',()=>{
  const events=[];let route=1,cancelled=0;
  const router=createPointerRouter({_th05_pointer:()=>route,_th05_pointer_cancel:()=>cancelled++},{pointer:event=>events.push(event)});

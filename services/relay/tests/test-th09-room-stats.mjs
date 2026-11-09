@@ -72,7 +72,7 @@ test('account history needs the same final report from both admitted seats, in e
   accept(room,run,'spectator',result,record);
   assert.deepEqual(recorded,[]);
   accept(room,run,'guest',result,record);
-  assert.deepEqual(recorded,[{duelId:run.th09Duel.id,roundId:'1:0',startedAt:run.th09Duel.startedAt,players,winner:0}]);
+  assert.deepEqual(recorded,[{duelId:run.th09Duel.id,roundId:'1:0',startedAt:run.th09Duel.startedAt,players,winner:0,frames:4000}]);
   accept(room,run,'guest',result,record);
   accept(room,run,'host',result,record);
   const second = {...result,start:5000,winner:1};

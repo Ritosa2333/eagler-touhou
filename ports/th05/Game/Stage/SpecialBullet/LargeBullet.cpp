@@ -24,6 +24,10 @@ void CLargeBullet::AddBullet(float origX,float origY,int imgIdx,float angle, flo
 	for (int i=0;i<LARGE_BULLET_N_RECORD;i++)
 		if (m_bullet[i].flag==0)
 		{
+
+#ifdef TH05_BROWSER_TESTS
+	original::AuditSpecialShot(2,int(speed1));
+#endif
 			m_bullet[i].flag=1;
 			m_bullet[i].curX=origX;
 			m_bullet[i].curY=origY;

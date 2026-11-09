@@ -81,7 +81,7 @@
     .book-lobby-picker-trigger {flex:none;width:48px;height:48px}
     .book-directory .lobby-room-tools {display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:6px}
     .book-directory .lobby-actions {display:flex;justify-content:flex-end;flex-wrap:nowrap;gap:6px;width:auto}
-    .book-directory .lobby-actions .lobby-button {width:100%;padding-inline:4px;font-size:12px}
+    .book-directory .lobby-actions .lobby-button {flex:1 1 0;width:auto;padding-inline:4px;font-size:12px}
     .book-directory .lobby-actions .lobby-refresh {width:44px;flex:0 0 44px}
   }
   @media(max-width:360px) {

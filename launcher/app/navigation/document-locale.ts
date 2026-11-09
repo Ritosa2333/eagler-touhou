@@ -2,6 +2,10 @@ import {useSyncExternalStore} from 'react';
 import {useLocation} from 'react-router';
 import {isUiLocale, localeFromPath, type UiLocale} from '../../src/launcher/i18n.mts';
 
+export function sitePageTitle(label: string) {
+  return `${label} - TouhouOnline`;
+}
+
 function subscribeLocale(listener: () => void) {
   window.addEventListener('eagler-ui-locale-change', listener);
   return () => window.removeEventListener('eagler-ui-locale-change', listener);

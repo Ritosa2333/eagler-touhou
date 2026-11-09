@@ -32,6 +32,7 @@ import {
   type MultiplayerRuntimeOptions,
 } from '../../src/launcher/multiplayer-runtime-options.mts';
 import { recommendMultiplayerInputTiming } from '../../src/launcher/multiplayer-input-timing.mts';
+import {th09CharacterLoadout} from '../../src/launcher/th09-room-stats.mjs';
 import {
   parseMeasuredNetplayTiming,
   resolveAdonisPredictionReserve,
@@ -1688,12 +1689,15 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         return;
       const match = value as Record<string, unknown>;
       if (product === 'th09mp' && state.seat === 1 && match.winner !== 0 && match.winner !== 1) return;
+      const characters = product === 'th09mp' && Array.isArray(match.characters) && match.characters.length === 2 &&
+        match.characters.every(id => !!th09CharacterLoadout(id)) ? match.characters : undefined;
       send({
         type: 'th09-match',
         serial: state.startSerial,
         start: match.start,
         frames: match.frames,
         ...(match.winner !== undefined ? { winner: match.winner } : {}),
+        ...(characters ? { characters } : {}),
       });
     },
     noteActivity,

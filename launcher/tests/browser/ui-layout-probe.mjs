@@ -34,7 +34,7 @@ export function layoutDifferences(before,after,tolerance=.5) {
 
 /** Shared surface presentation must not also run delayed CSS transitions. */
 export function inspectSurfaceMotion(source=window) {
-  const errors=[],properties=['opacity','translate','transform'];let checks=0;
+  const errors=[],properties=['opacity','translate','scale','transform'];let checks=0;
   const seconds=value=>{const number=Number.parseFloat(value);return Number.isFinite(number)?number/(value.trim().endsWith('ms')?1000:1):0;};
   const selectors='.tools,.library-backdrop,.settings-room-backdrop,.mp-settings-room-drawer,.informational-dialog,.first-use-notice-dialog,.replay-dialog,.game-data-import-window,.game-data-link-window,.mp-room-panel,.toast';
   for(const element of source.document.querySelectorAll(selectors)) {
@@ -95,7 +95,7 @@ export function captureSurfaceMotion({selector='.tools',duration=1000,waitForInp
       const visible=!!element&&!element.hidden&&style.visibility!=='hidden'&&style.display!=='none'&&rect.width>0&&rect.height>0;
       const closing=element&&(element.classList.contains('closing')||element.hasAttribute('inert')||element.matches('.tools')&&doc.body.classList.contains('library-tools-closing'));
       const animations=(element?.getAnimations?.()??[]).flatMap(animation=>{
-        const properties=['opacity','translate','transform'].filter(property=>animation.effect?.getKeyframes().some(frame=>property in frame));
+        const properties=['opacity','translate','scale','transform'].filter(property=>animation.effect?.getKeyframes().some(frame=>property in frame));
         return properties.length?[{type:animation.constructor.name,state:animation.playState,properties}]:[];
       });
       return {time:source.performance.now()-startTime,phase:visible?closing?'exit':'enter':'closed',visible,opacity:element?+style.opacity:0,animations};

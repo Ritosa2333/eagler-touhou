@@ -48,16 +48,17 @@ void verify(bool reference){
   UfoEffects source,target;anm_logic::Scene a,b;fill(source,a,4);fill(target,b,8);
   const auto owned=ids(source,a);require(owned.size()>4,"summon callbacks create trail states");
   const auto targetIds=ids(target,b);const auto* pointer=target.state(owned.front());
-  const auto rng=th12::random;target=source;
+  const auto rng=th12::random;auto compact=source.snapshot();target.restore(compact);
   require(state(target,a)==state(source,a),"copied effect scalars and rendered meshes agree");
   for(auto id:targetIds)require(target.owns(id)==source.owns(id),"copy retires absent effect IDs");
   require(th12::random.seed==rng.seed&&th12::random.calls==rng.calls,"copy consumes no game random numbers");
   if(!reference)require(target.state(owned.front())==pointer,"same ID reuses its independent payload");
-  const auto expected=state(target,a);auto retained=source;source.reset();
+  const auto expected=state(target,a);auto retained=source;const auto retainedCompact=compact;source.reset();
   require(state(target,a)==expected&&state(retained,a)==expected,"copies retain independent state after source reset");
   retained=retained;require(state(retained,a)==expected,"self assignment retains effect graph");
-  source=retained;target.reset();target=source;require(state(target,a)==expected,"copy into empty target restores all states");
-  UfoEffects empty;target=empty;for(auto id:owned)require(!target.owns(id),"copy empty source removes every old payload");
+  source=retained;target.reset();target.restore(retainedCompact);require(state(target,a)==expected,"compact snapshot restores all states after source reset");
+  UfoEffects empty;empty.snapshot(compact);target.restore(compact);for(auto id:owned)require(!target.owns(id),"empty compact snapshot removes every old payload");
+  target.restore(retainedCompact);require(state(target,a)==expected,"reused compact snapshot leaves retained payloads unchanged");
   for(unsigned seats:{2u,3u}){
     selectStage(1);multiplayer::Options options;options.count=seats;options.selections={0,3,5};
     require(multiplayer::begin(options),"start synthetic multiplayer world");load(animationScene);
@@ -95,5 +96,10 @@ int main(int argc,char** argv){
   const double elapsed=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-begin).count();counting=false;
   require(state(source,scene)==state(target,scene),"steady copy preserves every rendered effect");
   if(!reference)require(!allocations,"steady effect checkpoint copy has no allocations");
-  std::printf("{\"copies\":1000,\"effects\":%zu,\"allocations\":%zu,\"elapsedMs\":%.3f,\"outputHash\":\"%016llx\"}\n",count,allocations,elapsed,(unsigned long long)digest);
+  const auto assignmentAllocations=allocations;
+  auto compact=source.snapshot();allocations=0;counting=true;
+  for(int i=0;i<1000;++i)source.snapshot(compact);
+  counting=false;require(!allocations,"steady compact effect capture reuses its contiguous buffer");
+  target.reset();target.restore(compact);require(state(source,scene)==state(target,scene),"compact capture retains every rendered effect");
+  std::printf("{\"copies\":1000,\"effects\":%zu,\"allocations\":%zu,\"compactCaptureAllocations\":%zu,\"elapsedMs\":%.3f,\"outputHash\":\"%016llx\"}\n",count,assignmentAllocations,allocations,elapsed,(unsigned long long)digest);
 }

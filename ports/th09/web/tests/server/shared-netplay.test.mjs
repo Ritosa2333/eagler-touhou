@@ -215,20 +215,30 @@ test('launcher and in-game entries share the TH09 room through the common peer t
 test('stopping optional spectators keeps match statistics and repeated Retry bounded', async () => {
   const box=harness(true);let pair;
   try {
-    pair=await connectPair(box);const {left,leftCore}=pair,reports=[];
+    pair=await connectPair(box);const {left,right,leftCore}=pair,reports=[],peerReports=[];
     left.onMatch=value=>reports.push(value);
+    right.onMatch=value=>peerReports.push(value);
+    left.startMatchReport(0);right.startMatchReport(0);
     left.stopSpectators('optional stream stopped');
     const at=leftCore._th09_rollback_info()/4;
     leftCore.HEAPU32[at+1]=3600;left.frame();
-    assert.deepEqual(reports,[{start:0,frames:3600}]);
-    left.endMatch(3700,1);left.endMatch(3700,1);
-    assert.deepEqual(reports[1],{start:0,frames:3700,winner:1});
+    assert.deepEqual(reports,[{start:0,frames:0},{start:0,frames:3600}]);
+    left.finishMatchReport(3700,1,3,10);right.finishMatchReport(3700,1,3,10);
+    left.finishMatchReport(3700,1,3,10);
+    const result={start:0,frames:3700,winner:1,characters:[3,10]};
+    assert.deepEqual(reports[2],result);
+    assert.deepEqual(peerReports,[result]);
+    leftCore.HEAPU32[at+1]=8000;left.frame();
+    assert.equal(reports.length,3,'the clock stops at the deciding frame');
+    left.endMatch(3750);
     for(let n=1;n<=1000;n++){
+      left.startMatchReport(n*4000);
       left.beginMatch(n*4000,new Uint8Array(50));
-      left.endMatch(n*4000+3700,n%2);
+      left.finishMatchReport(n*4000+3700,n%2,0,1);
+      left.endMatch(n*4000+3800);
     }
-    assert.equal(reports.length,2002);
-    assert.deepEqual(reports[2],{start:4000,frames:0},'new match immediately resets its clock');
+    assert.equal(reports.length,2003);
+    assert.deepEqual(reports[3],{start:4000,frames:0},'new match immediately resets its clock');
     assert.equal(left.spectatorPending.length,0,'stopped stream must retain no new start/end packets');
     assert.equal(left.connected,true);assert.equal(left.active,true);
   } finally {pair?.left.close();pair?.right.close();box.restore();}

@@ -1,26 +1,32 @@
 import { useMemo, type ComponentProps } from 'react';
 import { useHref, useLocation, Link } from 'react-router';
-import { RootProvider } from 'fumadocs-ui/provider/react-router';
-import { DocsLayout } from 'fumadocs-ui/layouts/docs';
-import { DocsPage, DocsTitle, DocsBody } from 'fumadocs-ui/layouts/docs/page';
+import { findNeighbour, type Root } from 'fumadocs-core/page-tree';
+import { RootProvider } from '@fumadocs/base-ui/provider/react-router';
+import { DocsLayout } from '@fumadocs/base-ui/layouts/spacious';
+import { DocsPage, DocsTitle, DocsBody } from '@fumadocs/base-ui/layouts/spacious/page';
 import { StandalonePageShell } from '../standalone-pages';
 import { useLocale, translate } from '../i18n';
-import { withUiLanguage, localeHome } from '../../src/launcher/i18n.mts';
-import { NavigationIcon } from '../components/launcher/NavigationIcon';
+import { withUiLanguage } from '../../src/launcher/i18n.mts';
+import { multiplayerGuideTopic } from '../../lib/multiplayer-guide.mjs';
+import { sitePageTitle } from '../navigation/document-locale';
 import documentHistory from 'virtual:document-history';
 import { helpDocuments, helpDocumentAtPath, helpDocumentLocale, type HelpDocument } from '../components/documents/catalog';
-import { prepareHelpDocument } from '../components/documents/content';
+import { prepareHelpDocument, prepareMultiplayerRules } from '../components/documents/content';
+import { guideTitle, multiplayerGuideTree, MultiplayerExceptions, MultiplayerGuidePicker, MultiplayerOverviewTable, MultiplayerScope, MultiplayerStart, type GuideTopic } from '../components/documents/multiplayer';
 import '../components/documents/documents.css';
 
-export const meta = ({ location }: { location: { pathname: string } }) => [
-  { title: `${translate('zh-CN', (helpDocumentAtPath(location.pathname) ?? helpDocuments[1]).title)} | EAGLER TOUHOU` },
-];
+export const meta = ({ location }: { location: { pathname: string } }) => {
+  const topic = multiplayerGuideTopic(location.pathname);
+  const title = topic ? guideTitle(topic) : (helpDocumentAtPath(location.pathname) ?? helpDocuments[1]).title;
+  return [{ title: sitePageTitle(translate('zh-CN', title)) }];
+};
 export default function HelpRoute() {
   const { pathname } = useLocation(),
-    page = helpDocumentAtPath(pathname) ?? helpDocuments[1];
+    page = helpDocumentAtPath(pathname) ?? helpDocuments[1],
+    topic = multiplayerGuideTopic(pathname), title = topic ? guideTitle(topic) : page.title;
   return (
-    <StandalonePageShell titleKey={page.title} mainClassName="documentation-shell">
-      <Documentation page={page} />
+    <StandalonePageShell titleKey={title} mainClassName="documentation-shell">
+      <Documentation page={page} topic={topic} />
     </StandalonePageShell>
   );
 }
@@ -39,23 +45,37 @@ function DocumentLink({ href = '', prefetch, ...props }: ComponentProps<'a'> & {
     <a {...props} href={href.startsWith('/') ? withUiLanguage(href, locale) : href} />
   );
 }
-function Documentation({ page }: { page: HelpDocument }) {
-  const { locale, t } = useLocale(),
+function Documentation({ page, topic }: { page: HelpDocument; topic?: GuideTopic }) {
+  const { pathname } = useLocation(),
+    { locale, t } = useLocale(),
     base = useHref('/'),
     contentLocale = helpDocumentLocale(page, locale);
-  const { body, toc } = useMemo(
-    () => prepareHelpDocument(translate(contentLocale, page.content), base, locale),
-    [contentLocale, page.content, locale, base],
-  );
-  const tree = {
+  const { body, toc } = useMemo(() => {
+    if (!topic) return prepareHelpDocument(translate(contentLocale, page.content), base, locale);
+    if (topic === 'start' || topic === 'th09' || topic === 'th19') return {body:null, toc:[]};
+    return prepareMultiplayerRules(t('content.multiplayer'), base, locale, topic, t('guide.specific'));
+  }, [page.content, contentLocale, locale, t, base, topic]);
+  const helpTree: Root = {
     $id: `help-${locale}`,
-    name: t('nav.help'),
-    children: helpDocuments.map((document) => ({
-      type: 'page' as const,
-      name: t(document.title),
-      url: '/' + document.path,
-    })),
+    name: t('document.title'),
+    children: [
+      { type: 'separator' as const, name: t('nav.help') },
+      ...helpDocuments.filter(document => document.id !== 'about' && document.id !== 'privacy').map((document) => document.id === 'multiplayer' ? multiplayerGuideTree(t) : ({
+        type: 'page' as const,
+        name: t(document.title),
+        url: '/' + document.path,
+      })),
+    ],
   };
+  const tree: Root = {
+    ...helpTree,
+    children: [
+      ...helpTree.children,
+      { type: 'separator', name: t('nav.aboutSite') },
+      ...helpDocuments.filter(document => document.id === 'privacy').map(document => ({type: 'page' as const, name: t(document.title), url: '/' + document.path})),
+    ],
+  };
+  const footer = findNeighbour(helpTree, pathname.replace(/\/$/, ''));
   const labels = {
     'On this page(table of contents)': t('document.toc'),
     'Next Page(pagination)': t('document.nextPage'),
@@ -73,24 +93,34 @@ function Documentation({ page }: { page: HelpDocument }) {
     >
       <DocsLayout
         tree={tree}
-        nav={{ title: t('nav.help'), url: '/faq.html', enabled: false }}
+        nav={{ title: tree.name, url: '/faq.html' }}
         themeSwitch={{ enabled: false }}
         searchToggle={{ enabled: false }}
-        sidebar={{ collapsible: false }}
         tabs={false}
       >
         <DocsPage
-          key={page.id + locale}
+          key={(topic ?? page.id) + locale}
+          className="pt-4"
           toc={toc}
           breadcrumb={{ enabled: false }}
-          tableOfContent={{ style: 'normal' }}
-          tableOfContentPopover={{
-            header: <MobileDocumentNavigation />,
-            trigger: { 'aria-label': `${t('nav.help')} | ${t(page.title)}` },
-          }}
+          footer={{ items: footer }}
+          tableOfContent={{ container: { className: 'pt-6' } }}
+          tableOfContentPopover={{ trigger: { 'aria-label': t('document.toc'), className: 'documentation-toc-trigger' } }}
         >
-          <DocsTitle>{t(page.title)}</DocsTitle>
-          <DocsBody data-help-page={page.id} lang={contentLocale}>{body}</DocsBody>
+          {topic ? <div className="documentation-guide-heading">
+            <DocsTitle>{t(guideTitle(topic))}</DocsTitle><MultiplayerGuidePicker topic={topic} />
+          </div> : <DocsTitle>{t(page.title)}</DocsTitle>}
+          <DocsBody data-help-page={page.id} data-guide-topic={topic} lang={contentLocale}>
+            {topic === 'start' && <MultiplayerStart />}
+            {topic === 'coop' && <>
+              <MultiplayerOverviewTable />
+              <p>{t('document.multiplayer.tableNote')}</p>
+            </>}
+            {topic && topic !== 'start' && topic !== 'coop' && (body?.length || topic === 'th09' || topic === 'th19'
+              ? <MultiplayerScope topic={topic} /> : <p>{t('guide.none')}</p>)}
+            {body}
+            {topic === 'coop' && <MultiplayerExceptions />}
+          </DocsBody>
           <DocumentRevision page={page} />
         </DocsPage>
       </DocsLayout>
@@ -123,30 +153,5 @@ function DocumentRevision({ page }: { page: HelpDocument }) {
         }).format(new Date(revision.date))}
       </time>
     </p>
-  );
-}
-function MobileDocumentNavigation() {
-  const { locale, t } = useLocale(),
-    base = useHref('/');
-  return (
-    <div className="documentation-mobile-links">
-      <nav className="documentation-site-links" aria-label={t('nav.main')}>
-        <DocumentLink href={base + localeHome(locale)}>
-          <NavigationIcon name="single" />
-          {t('nav.single')}
-        </DocumentLink>
-        <DocumentLink href={base + 'lobby.html'}>
-          <NavigationIcon name="multiplayer" />
-          {t('nav.lobby')}
-        </DocumentLink>
-      </nav>
-      <nav className="documentation-page-links" aria-label={t('nav.help')}>
-        {helpDocuments.map((page) => (
-          <DocumentLink key={page.id} href={base + page.path}>
-            {t(page.title)}
-          </DocumentLink>
-        ))}
-      </nav>
-    </div>
   );
 }

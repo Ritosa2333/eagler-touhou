@@ -1,6 +1,6 @@
 # 文档总表
 
-共 564 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 566 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -96,6 +96,7 @@
 | 作品源码文档 | [ports/th09/docs/DEVELOPMENT.md](../ports/th09/docs/DEVELOPMENT.md) | th09 开发指南 |
 | 作品源码文档 | [ports/th09/docs/NETPLAY-STOPS.md](../ports/th09/docs/NETPLAY-STOPS.md) | th09 联机技能停顿 |
 | 作品源码文档 | [ports/th09/docs/records/2026-10-26-room-options.md](../ports/th09/docs/records/2026-10-26-room-options.md) | 房间原生选项操作 |
+| 作品源码文档 | [ports/th09/web/cpp/third_party/miniz/README.md](../ports/th09/web/cpp/third_party/miniz/README.md) | miniz README |
 | 作品源码文档 | [ports/th09/web/reference/MIT-TH08-codec.txt](../ports/th09/web/reference/MIT-TH08-codec.txt) | MIT License |
 | 作品源码文档 | [ports/th10-mp/docs/DEVELOPMENT.md](../ports/th10-mp/docs/DEVELOPMENT.md) | TH10 多人版开发指南 |
 | 作品源码文档 | [ports/th10/docs/DEVELOPMENT.md](../ports/th10/docs/DEVELOPMENT.md) | TH10 开发指南 |
@@ -494,6 +495,7 @@
 | 许可证与声明 | [ports/th09/portable/sdl/third_party/miniaudio.LICENSE](../ports/th09/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th09/web/THIRD-PARTY-NOTICES.txt](../ports/th09/web/THIRD-PARTY-NOTICES.txt) | TH09 C++ / SDL3 browser reconstruction |
 | 许可证与声明 | [ports/th09/web/cpp/licenses/th08-reference-MIT.txt](../ports/th09/web/cpp/licenses/th08-reference-MIT.txt) | MIT License |
+| 许可证与声明 | [ports/th09/web/cpp/third_party/miniz/LICENSE](../ports/th09/web/cpp/third_party/miniz/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th09/web/licenses/Emscripten.txt](../ports/th09/web/licenses/Emscripten.txt) | Emscripten is available under 2 licenses, the MIT license and the |
 | 许可证与声明 | [ports/th09/web/licenses/FreeType.txt](../ports/th09/web/licenses/FreeType.txt) | The FreeType Project LICENSE |
 | 许可证与声明 | [ports/th09/web/licenses/SDL3.txt](../ports/th09/web/licenses/SDL3.txt) | SDL3 |

@@ -18,6 +18,7 @@ class CStage;
 
 class CShinkiBullet
 {
+friend struct PracticeTests;
 protected:
 	SHINKI_BULLET m_bullet[SHINKI_BULLET_N_RECORD];
 

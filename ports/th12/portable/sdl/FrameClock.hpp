@@ -5,6 +5,7 @@ namespace th12host {
 // The same clock drives SDL callbacks on desktop and requestAnimationFrame on Web.
 class FrameClock {
     double previous=-1,debt=0,last_present=-1;
+    static constexpr double early_tolerance=.001;
 public:
     static constexpr double interval=1./60.;
     void reset(){previous=-1;debt=0;last_present=-1;}
@@ -13,13 +14,18 @@ public:
         if(previous<0){previous=now;return 0;}
         const double elapsed=std::clamp(now-previous,0.,4*interval);
         debt+=pace?pace(elapsed):elapsed;previous=now;
-        const unsigned count=std::min(256u,unsigned(std::floor((debt+1e-9)/period)));
+        // A tick may start on a slightly early callback. Carry that small
+        // advance as negative debt so the clock still runs at its target rate.
+        const double available=std::max(0.,debt+std::min(early_tolerance,period/16));
+        const unsigned count=std::min(256u,unsigned(std::floor(available/period)));
         debt-=count*period;return count;
     }
     float alpha(double period=interval)const{return float(std::clamp(debt/period,0.,1.));}
     bool present(double now,bool limited){
         const double elapsed=now-last_present;
-        if(limited&&last_present>=0&&elapsed<interval-1e-6)return false;
+        // A display callback can arrive just ahead of its target deadline.
+        // Keep the ideal phase so this tolerance doesn't accumulate.
+        if(limited&&last_present>=0&&elapsed<interval-early_tolerance)return false;
         last_present=limited&&last_present>=0&&elapsed<2*interval?last_present+interval:now;
         return true;
     }

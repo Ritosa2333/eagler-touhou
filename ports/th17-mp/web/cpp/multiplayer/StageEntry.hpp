@@ -8,8 +8,9 @@ namespace th17::sdl {struct ApplicationState;}
 namespace th17::multiplayer {
 // Captured at a newly constructed stage, before its first input or ECL tick.
 struct StageEntry {
-    static constexpr u32 schema=2;
-    static constexpr bool supports(u32 version){return version==1||version==schema;}
+    // Version 3 retains the confirmed run from the first checkpoint.
+    static constexpr u32 schema=3;
+    static constexpr bool supports(u32 version){return version>=1&&version<=schema;}
     SessionSetup setup;
     ReplayStageState stage;
     std::array<PlayerLifeSession,3> pilots{};

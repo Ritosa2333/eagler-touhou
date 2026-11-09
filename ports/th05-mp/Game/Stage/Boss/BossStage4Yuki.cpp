@@ -108,7 +108,7 @@ void CBossStage4Yuki::Phase3ShootType1()
 		m_pStage->m_pEnemyBullet->Shoot(&si,true);
 		m_pStage->m_bPlaySound[3]=true;
 		if (m_curPhaseFrame%16==0)
-			m_phase3ShootType1Angle+=m_phase3ShootType1DeltaAngle*16;
+			m_phase3ShootType1Angle+=m_phase3ShootType1DeltaAngle*(original::BossGeometryEnabled()?12:16);
 	}
 	if (m_curPhaseFrame==160)
 		m_phase3ShootType1DeltaAngle=-m_phase3ShootType1DeltaAngle;
@@ -139,12 +139,13 @@ void CBossStage4Yuki::Phase3ShootType2()
 		si.bulletBornType=18;
 		si.shootType=EST02_NWAY;
 		si.bulletImg=48;
-		si.nWay=original::Random()%8;
+		si.bulletSpeed=float(8+(original::Random()&31));
+		si.nWay=original::Random()&7;
 		si.nWayUnitAngle=6;
-		si.bulletSpeed=(float)(8+original::Random()%32);
 		si.shootAngle=(float)(128+(m_curPhaseFrame-10)/2*6);
 		m_pStage->m_pEnemyBullet->TuneEnemyShootInfo(&si);
-		m_pStage->m_pEnemyBullet->Shoot(&si,true);
+		if (!si.nWay)si.nWay=1;
+		m_pStage->m_pEnemyBullet->Shoot(&si);
 		m_pStage->m_bPlaySound[3]=true;
 	}
 	if (m_curPhaseFrame==256)
@@ -317,7 +318,7 @@ void CBossStage4Yuki::Phase6()
 
 void CBossStage4Yuki::Phase7Shoot()
 {
-	if (m_curPhaseFrame<=8)
+	if (m_curPhaseFrame<8)
 		return;
 	if (m_curPhaseFrame==8)
 	{
@@ -326,7 +327,7 @@ void CBossStage4Yuki::Phase7Shoot()
 	}
 	if (m_curPhaseFrame%4==0)
 	{
-		ENEMY_SHOOT_INFO si;
+		ENEMY_SHOOT_INFO si{};
 		si.shootOrigX=m_curX;
 		si.shootOrigY=m_curY;
 		si.bulletBornType=16;
@@ -336,7 +337,6 @@ void CBossStage4Yuki::Phase7Shoot()
 		si.nWay=4+CGame::GVar().m_playDifficulty*2;
 		si.bulletSpeed=32;
 		si.specialMoveVar=1;
-		m_pStage->m_pEnemyBullet->TuneEnemyShootInfo(&si);
 		m_pStage->m_pEnemyBullet->Shoot(&si,true);
 	}
 	if (m_curPhaseFrame>=128)
@@ -630,16 +630,14 @@ namespace th5w {
 practice::PhaseTimeout CBossStage4Yuki::GetPhaseTimeout() const {
  switch(m_curPhase){
  case 3:{
-  const int ymove=practice::PhaseTimeout::MoveAxisFrames(m_curY,96.f*16.f);
-  const int currentY=practice::PhaseTimeout::MoveAxisFrames(m_curY,m_moveTarY);
+  const int ymove=practice::PhaseTimeout::MoveAxisFrames(m_curY,96.f*16.f,2);
+  const int currentY=practice::PhaseTimeout::MoveAxisFrames(m_curY,m_moveTarY,2);
   const int currentX=practice::PhaseTimeout::MoveAxisFrames(m_curX,m_moveTarX);const int currentMove=currentX>currentY?currentX:currentY;
   return practice::PhaseTimeout::Timeline(12,m_nModeChange,m_curMode,m_curMode?m_curPhaseFrame:0,[](int){return 256;},[&](int n){return n==m_nModeChange&&!m_curMode?currentMove:ymove;},true);
  }
  case 5:{
-  const int ymove=practice::PhaseTimeout::MoveAxisFrames(m_curY,96.f*16.f);
-  const int currentY=practice::PhaseTimeout::MoveAxisFrames(m_curY,96.f*16.f);
-  const int currentX=1;const int currentMove=currentX>currentY?currentX:currentY;
-  return practice::PhaseTimeout::Timeline(24,m_nModeChange,m_curMode,m_curMode?m_curPhaseFrame:0,[](int){return 160;},[&](int n){return n==m_nModeChange&&!m_curMode?currentMove:ymove;},true);
+  const int ymove=practice::PhaseTimeout::MoveAxisFrames(m_curY,96.f*16.f,2);
+  return practice::PhaseTimeout::Timeline(24,m_nModeChange,m_curMode,m_curMode?m_curPhaseFrame:0,[](int){return 160;},[&](int){return ymove;},true);
  }
  case 7:return practice::PhaseTimeout::Frames(2000,m_curPhaseFrame);
  case 9:return practice::PhaseTimeout::Timeline(36,m_nModeChange,m_curMode,m_curPhaseFrame,[](int){return 64;},[](int){return 8;});

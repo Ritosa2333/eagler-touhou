@@ -1,8 +1,10 @@
 import {Button as UiButton} from '../../ui/controls';
+import {BookOpen, X} from 'lucide-react';
 import '../../ui/document-body.css';
+import './informational-dialog.css';
 import {legacyFirstUseNoticeSeen} from '../../../src/contracts/compat/first-use-notice.mts';
-import {useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, type Ref} from 'react';
-import {renderLocalizedContent} from '../../../src/launcher/localized-content.mts';
+import {useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type Ref} from 'react';
+import {resolveLocalizedContent} from '../../../src/launcher/localized-content.mts';
 import {createEdgeDrawerGesture} from '../../../src/launcher/edge-drawer-gesture.mts';
 import {useLocale} from '../../i18n';
 import {useMainDialog, type MainDialogProps} from './use-main-dialog';
@@ -11,6 +13,10 @@ import {useMainDialog, type MainDialogProps} from './use-main-dialog';
 export const FIRST_USE_NOTICE_FILE = 'content/FIRST_USE_NOTICE.html';
 export const FIRST_USE_NOTICE_SEEN_STORAGE_KEY = 'eagler-touhou-first-use-notice-seen-v1';
 export type NoticeLoadResult = {kind: 'available'} | {kind: 'empty'} | {kind: 'error'; error: unknown};
+type NoticeView =
+  | {kind: 'loading' | 'empty'}
+  | {kind: 'available'; html: string; render: typeof import('../documents/content').renderHelpContent}
+  | {kind: 'error'; text: string};
 export interface FirstUseNoticeHandle {
   load(): Promise<NoticeLoadResult>;
   showManual(): Promise<NoticeLoadResult>;
@@ -29,18 +35,21 @@ export interface FirstUseNoticeProps extends MainDialogProps {
   ref?: Ref<FirstUseNoticeHandle>;
 }
 function defaultStorage() {try {return globalThis.localStorage ?? null;} catch {return null;}}
-/** Main first-use-notice.mts load/seen contract and index.html758–776 markup.
- * Sanitized content is the only imperative subtree; React owns its container.
- */
+/** Preserve the notice's load and seen-marker contract across both presentations. */
 export function FirstUseNotice({open, onCloseRequest, onOpenRequest, contentUrl = FIRST_USE_NOTICE_FILE, storage, fetchImpl = fetch, edgeGestures = true, ref}: FirstUseNoticeProps) {
-  const {t, locale} = useLocale(), dialog = useMainDialog({open, onCloseRequest}, {motion: 'panel'});
+  const {t, locale} = useLocale(), dialog = useMainDialog({open, onCloseRequest});
   const drawerRef = dialog.ref;
-  const content = useRef<HTMLDivElement>(null);
-  const sourceHtml = useRef('');
+  const title = useRef<HTMLHeadingElement>(null);
+  const [view, setView] = useState<NoticeView>({kind: 'loading'});
+  const content = useMemo(() => {
+    if (view.kind !== 'available') return null;
+    const source = resolveLocalizedContent('firstUse', locale, view.html);
+    return {lang: source.locale, body: view.render(source.html, new URL(document.baseURI), locale)};
+  }, [view, locale]);
   const cached = useRef<NoticeLoadResult | null>(null), pending = useRef<Promise<NoticeLoadResult> | null>(null);
   const active = useRef(false), generation = useRef(0);
   const failedManualOpen = useRef(false);
-  const latest = useRef({t, locale, onOpenRequest, storage, fetchImpl, contentUrl}); latest.current = {t, locale, onOpenRequest, storage, fetchImpl, contentUrl};
+  const latest = useRef({t, onOpenRequest, storage, fetchImpl, contentUrl}); latest.current = {t, onOpenRequest, storage, fetchImpl, contentUrl};
   const getStorage = useCallback(() => latest.current.storage === undefined ? defaultStorage() : latest.current.storage, []);
   function hasSeenNotice() {
     try {
@@ -51,12 +60,6 @@ export function FirstUseNotice({open, onCloseRequest, onOpenRequest, contentUrl 
     return false;
   }
   const markSeen = useCallback(() => {try {getStorage()?.setItem(FIRST_USE_NOTICE_SEEN_STORAGE_KEY, '1');} catch {}}, [getStorage]);
-  const status = useCallback((text: string, className: string) => {
-    const target = content.current;
-    if (!active.current || !target) return;
-    const paragraph = target.ownerDocument.createElement('p'); paragraph.className = className; paragraph.textContent = text;
-    target.replaceChildren(paragraph);
-  }, []);
   const load = useCallback(async (): Promise<NoticeLoadResult> => {
     if (cached.current?.kind === 'available' || cached.current?.kind === 'empty') return cached.current;
     if (pending.current) return pending.current;
@@ -67,27 +70,31 @@ export function FirstUseNotice({open, onCloseRequest, onOpenRequest, contentUrl 
         const response = await fetchImpl(contentUrl, {cache: 'no-store'});
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const html = String(await response.text()).trim();
+        const render = html && (await import('../documents/content')).renderHelpContent;
         if (!active.current || token !== generation.current) return {kind: 'error', error: new Error('Notice unmounted')};
-        if (!html) {cached.current = {kind: 'empty'}; status(latest.current.t('firstUseNotice.empty'), 'first-use-notice-empty');}
-        else {
-          sourceHtml.current = html;
-          if (content.current) renderLocalizedContent(content.current, 'firstUse', latest.current.locale, html);
+        if (render) {
+          setView({kind: 'available', html, render});
           cached.current = {kind: 'available'};
+        } else {
+          setView({kind: 'empty'});
+          cached.current = {kind: 'empty'};
         }
         return cached.current;
       } catch (error) {
-        if (active.current && token === generation.current) status(latest.current.t('firstUseNotice.readFailed', {reason: error instanceof Error ? error.message : String(error)}), 'first-use-notice-error');
+        if (active.current && token === generation.current) {
+          const text = latest.current.t('firstUseNotice.readFailed', {reason: error instanceof Error ? error.message : String(error)});
+          setView({kind: 'error', text});
+        }
         return {kind: 'error', error};
       }
     })();
     pending.current = request;
     try {return await request;} finally {if (pending.current === request) pending.current = null;}
-  }, [status]);
+  }, []);
   async function showManual() {
     const token = generation.current;
     const result = await load();
     if (active.current && token === generation.current) {
-      if (result.kind === 'empty') status(latest.current.t('firstUseNotice.empty'), 'first-use-notice-empty');
       // Main opens a failed manual load as-is; that open transition must not
       // automatically retry and replace its error before another user request.
       failedManualOpen.current = result.kind === 'error';
@@ -105,18 +112,15 @@ export function FirstUseNotice({open, onCloseRequest, onOpenRequest, contentUrl 
   useImperativeHandle(ref, () => ({load, showManual, maybeShowAutomatically, hasSeenNotice, isOpen: () => !!dialog.ref.current?.open, close: dialog.requestClose}));
   useLayoutEffect(() => {
     active.current = true;
-    if (!content.current?.childNodes.length) status(latest.current.t('firstUseNotice.loading'), 'first-use-notice-loading');
     return () => {active.current = false; generation.current++; pending.current = null; failedManualOpen.current = false;};
-  }, [status]);
-  useLayoutEffect(() => {
-    if (content.current?.firstElementChild?.className === 'first-use-notice-loading') status(t('firstUseNotice.loading'), 'first-use-notice-loading');
-    else if (content.current && cached.current?.kind === 'available') renderLocalizedContent(content.current, 'firstUse', locale, sourceHtml.current);
-    else if (cached.current?.kind === 'empty') status(t('firstUseNotice.empty'), 'first-use-notice-empty');
-  }, [t, locale, status]);
+  }, []);
   useEffect(() => {
     const alreadyFailed = failedManualOpen.current; failedManualOpen.current = false;
     if (open && !alreadyFailed) void load().then(result => {if (active.current && result.kind === 'available') markSeen();});
   }, [open, load, markSeen]);
+  useLayoutEffect(() => {
+    if (open && drawerRef.current?.open) title.current?.focus({preventScroll: true});
+  }, [open, drawerRef]);
   const operations = useRef({showManual, close: dialog.requestClose}); operations.current = {showManual, close: dialog.requestClose};
   useEffect(() => {
     const node = drawerRef.current;
@@ -127,9 +131,18 @@ export function FirstUseNotice({open, onCloseRequest, onOpenRequest, contentUrl 
   }, [edgeGestures, drawerRef]);
   // biome-ignore lint/a11y/useKeyWithClickEvents: Native cancel and labelled close buttons provide keyboard dismissal of this backdrop.
   return <dialog ref={dialog.ref} className="first-use-notice-dialog" id="firstUseNoticeDialog" aria-labelledby="firstUseNoticeTitle" onCancel={dialog.onCancel} onClick={dialog.onClick}>
-    <article className="first-use-notice-window"><header><h1 id="firstUseNoticeTitle">{t('firstUseNotice.title')}</h1><UiButton variant="icon" id="firstUseNoticeClose" type="button" aria-label={t('firstUseNotice.close')} onClick={dialog.requestClose}>×</UiButton></header>
-      <div ref={content} className="first-use-notice-text ui-document prose" id="firstUseNoticeText"/>
-      <footer><UiButton size="lg" id="firstUseNoticeCloseHint" type="button" aria-label={t('firstUseNotice.close')} onClick={dialog.requestClose}>{t('action.close')}</UiButton></footer>
+    <article className="first-use-notice-window">
+      <header>
+        <span className="first-use-notice-icon"><BookOpen aria-hidden="true"/></span>
+        <h1 ref={title} id="firstUseNoticeTitle" tabIndex={-1}>{t('firstUseNotice.title')}</h1>
+        <UiButton variant="icon" id="firstUseNoticeClose" aria-label={t('firstUseNotice.close')} onClick={dialog.requestClose}><X aria-hidden="true"/></UiButton>
+      </header>
+      <div className="first-use-notice-text ui-document ui-document--fumadocs prose" id="firstUseNoticeText" lang={content?.lang}>
+        {content?.body ?? <p className={`first-use-notice-${view.kind}`}>
+          {view.kind === 'error' ? view.text : view.kind === 'empty' ? t('firstUseNotice.empty') : t('firstUseNotice.loading')}
+        </p>}
+      </div>
+      <footer><UiButton id="firstUseNoticeCloseHint" onClick={dialog.requestClose}>{t('firstUseNotice.dismiss')}</UiButton></footer>
     </article>
   </dialog>;
 }

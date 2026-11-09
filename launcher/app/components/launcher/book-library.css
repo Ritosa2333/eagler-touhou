@@ -223,6 +223,9 @@
       transform 480ms cubic-bezier(.2,.65,.25,1),
       box-shadow 480ms cubic-bezier(.2,.65,.25,1);
   }
+  @media (pointer: coarse) {
+    :is(.book-game-link, .book-recent-link) { -webkit-tap-highlight-color: transparent; }
+  }
   .book-game-link {
     display: flex;
     flex-direction: column;

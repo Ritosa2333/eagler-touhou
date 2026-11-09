@@ -76,18 +76,46 @@ void CCharaBullet::AddBullet(float bulletX, float bulletY, unsigned char imgIdx,
 		}
 }
 
+bool CCharaBullet::UsesOriginalShots() const
+{
+ if(original::DemoActive())return true;
+ if(m_pStage->Cooperative())return coop::Run().combatRevision>=original::OriginalPlayerShots;
+ const auto& game=CGame::GVar();
+ return !game.m_bReplayMode||game.m_replay.m_combatRevision>=original::OriginalPlayerShots;
+}
+
 void CCharaBullet::ShootOriginal(int character,int level,int timer,float x,float y)
 {
- using namespace original::shots;shot_time=timer;originX=int(x);originY=int(y);
- for(int i=0;i<64;i++){auto& src=m_bullets[i];auto& dst=slots[i];dst.flag=src.flag;}
- slots[64].flag=0;
+ using namespace original::shots;
+ // The final scratch slot preserves the original allocator's final RNG
+ // draw. It lies outside the visible shot pool and is never copied back.
+ slotLimit=m_pStage->Cooperative()?CHARA_BULLET_N_RECORD:64;
+ shot_time=timer;
+ originX=int(x);
+ originY=int(y);
+ for(int i=0;i<slotLimit;i++)slots[i].flag=m_bullets[i].flag;
+ slots[slotLimit].flag=0;
  Run(character,level);
- for(int i=0;i<64;i++){auto& src=slots[i];auto& dst=m_bullets[i];if(!src.flag||dst.flag)continue;
- dst.flag=1;dst.age=src.age;dst.curX=dst.lastX=float(src.pos.cur.x.v);dst.curY=dst.lastY=float(src.pos.cur.y.v);dst.velX=float(src.pos.velocity.x.v);dst.velY=float(src.pos.velocity.y.v);dst.imgIdx=src.patnum_base;dst.bulletType=src.type;dst.damage=src.damage;dst.moveAngle=float(src.angle);}
+ for(int i=0;i<slotLimit;i++){
+  const auto& src=slots[i];
+  auto& dst=m_bullets[i];
+  if(!src.flag||dst.flag)continue;
+  dst.flag=1;
+  dst.age=src.age;
+  dst.curX=dst.lastX=float(src.pos.cur.x.v);
+  dst.curY=dst.lastY=float(src.pos.cur.y.v);
+  dst.velX=float(src.pos.velocity.x.v);
+  dst.velY=float(src.pos.velocity.y.v);
+  dst.imgIdx=src.patnum_base;
+  dst.bulletType=src.type;
+  dst.damage=src.damage;
+  dst.moveAngle=float(src.angle);
+ }
 }
 
 void CCharaBullet::StepBullets()
 {
+	const bool originalShots=UsesOriginalShots();
 	for (int i=0,capacity=Capacity();i<capacity;i++)
 	{
 		if (m_bullets[i].flag%2==0)
@@ -103,12 +131,19 @@ void CCharaBullet::StepBullets()
 					m_bullets[i].bulletType=CHARA_BULLET_TYPE_NORMAL;
 				if (m_pStage->m_bHomingEnemyExist==false)
 					break;
-				if(original::DemoActive()){
-      auto& b=m_bullets[i];const int desired=original::math::Angle(int(m_pStage->m_homingEnemyY-b.curY),int(m_pStage->m_homingEnemyX-b.curX));
-      const int diff=(int(b.moveAngle)-desired)&255;int angle=int(b.moveAngle);
-      if(diff>=128){int step=(256-diff)/4;angle=step<3?desired:angle+step;}else{int step=diff/4;angle=step<3?desired:angle-step;}
-      b.moveAngle=float(angle&255);b.velX=float(original::math::X(angle,192));b.velY=float(original::math::Y(angle,192));break;
-     }
+				if(originalShots){
+					auto& shot=m_bullets[i];
+					const int dx=int(m_pStage->m_homingEnemyX)-int(shot.curX);
+					const int dy=int(m_pStage->m_homingEnemyY)-int(shot.curY);
+					const int desired=original::math::Angle(dy,dx);
+					const int difference=(int(shot.moveAngle)-desired)&255;
+					const int turn=difference>=128?(256-difference)/4:-difference/4;
+					const int angle=(std::abs(turn)<3?desired:int(shot.moveAngle)+turn)&255;
+					shot.moveAngle=float(angle);
+					shot.velX=float(original::math::X(angle,192));
+					shot.velY=float(original::math::Y(angle,192));
+					break;
+				}
      float desiredAngle=atan2(m_pStage->m_homingEnemyY-m_bullets[i].curY,m_pStage->m_homingEnemyX-m_bullets[i].curX);
 				desiredAngle=(float)(desiredAngle/2.0/PI*256);
 				float deltaAngle=desiredAngle-m_bullets[i].moveAngle;

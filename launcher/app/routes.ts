@@ -1,5 +1,6 @@
 import {index, route, type RouteConfig} from '@react-router/dev/routes';
 import {UI_REVIEW_DOCUMENT, uiReviewEnabled} from '../lib/frontend-static-manifest.mjs';
+import {MULTIPLAYER_GUIDE_PATH} from '../lib/multiplayer-guide.mjs';
 /** Original launcher document addresses only. Assets and Runtime URLs are not
  * application fallbacks and must retain the existing publication routing. */
 export default [
@@ -10,6 +11,8 @@ export default [
   route('about.html', 'routes/help.tsx', {id:'help-about'}),
   route('guide.html', 'routes/help.tsx', {id:'help-guide'}),
   route('multiplayer.html', 'routes/help.tsx', {id:'help-multiplayer'}),
+  route(MULTIPLAYER_GUIDE_PATH.slice(1), 'routes/help.tsx', {id:'multiplayer-guide'}),
+  route(`${MULTIPLAYER_GUIDE_PATH.slice(1)}/:topic`, 'routes/help.tsx', {id:'multiplayer-guide-topic'}),
   route('uptime', 'routes/uptime.tsx', {id: 'uptime'}),
   route('uptime/index.html', 'routes/uptime.tsx', {id: 'uptime-index'}),
   route('index.html', 'routes/surface.tsx', {id: 'library-html'}),

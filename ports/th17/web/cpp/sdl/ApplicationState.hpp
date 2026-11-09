@@ -6,6 +6,7 @@
 #include "FontDevice.hpp"
 #include "AudioDevice.hpp"
 #include "FileStore.hpp"
+#include "TrophyNotice.hpp"
 #include "../game/Archive.hpp"
 #include "../game/TitleScene.hpp"
 #include "../game/EndingScene.hpp"
@@ -23,6 +24,7 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  GraphicsDevice graphics;FontDevice fonts{graphics};AudioDevice audio_device;FileStore files;
  Rng visual;AnmEnvironment environment;AnmManager animations{visual,environment};AnmRenderer renderer{graphics};ScreenViews views{renderer,environment};AsciiText captions{animations,environment};FrameScheduler scheduler;
  GameConfig config;GameRun progress;GameSelection selection;PlayerLifeSession selection_player;ItemScoreState selection_score;RecordStore records;TitleSelectionSettings choices;TitleAudioSettings volumes;TitleControllerSettings controller;LocalizationTable spell_names;MusicComments comments;TrophyCatalog trophy_catalog;TitleSpellMemory spell_memory;TitleKeyboard keyboard_state;
+ TrophyNotice trophy_notice{graphics,fonts,audio_device,trophy_catalog,*this};
  ApplicationFlow flow{progress,*this};std::unordered_map<std::string,i32> shared;
  std::unique_ptr<AnmSceneEffects> scene_effects;std::unique_ptr<AnmDrawSchedule> global_layers;std::unique_ptr<AsciiDrawSchedule> global_letters;
  struct PracticeState {

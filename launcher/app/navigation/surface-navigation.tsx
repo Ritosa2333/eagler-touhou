@@ -11,8 +11,9 @@ import {resolveRoomInvite, normalizeRoomCode, clearRoomUrlParams, roomRouteHisto
 import {encodeRoomInvite, ROOM_INVITE_KEY} from '../../src/launcher/room-invite.mts';
 import {localeHome, uiLocaleSearch, type UiLocale} from '../../src/launcher/i18n.mts';
 import {updateSearchParameters} from '../../src/launcher/url-query.mts';
-import {SurfaceLayersContext, type LayerEntry, type LayerValue} from './surface-layer';
+import {navigateSurfaceLayer, SurfaceLayersContext, type LayerEntry, type LayerValue} from './surface-layer';
 import {UnsavedChangesContext, type UnsavedChangesGuard} from './unsaved-changes';
+import {isCompactNavigation} from './navigation-motion';
 const noDecisionSubscription = () => () => {};
 const noDecisionSnapshot = () => null;
 let dialogSessionSequence = 0;
@@ -130,6 +131,7 @@ interface SurfaceNavigation extends SurfaceAddress {
   infoDialogOpen(id: InformationDialogId): boolean;
   openInfoDialog(id: InformationDialogId, options?: {replace?: boolean}): void;
   closeInfoDialog(id?: InformationDialogId): void;
+  closeReplayFileLayers(): void;
 }
 const NavigationContext = createContext<SurfaceNavigation | null>(null);
 export function useSurfaceNavigation(): SurfaceNavigation {
@@ -665,10 +667,12 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   const surfaceOpenIssuedKey = useRef<string | null>(null);
   const roomRestoreIssuedKey = useRef<string | null>(null);
   const completedRuntimeCloseKey = useRef<string | null>(null);
+  const layerWrite = useRef<{key: string; id: string; value: LayerValue} | null>(null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: Each new Router entry starts a fresh set of navigation intents.
   useEffect(() => {
     closeIssuedKey.current = null; infoOpenIssuedKey.current = null; surfaceOpenIssuedKey.current = null;
     pendingLocaleAddress.current = null;
+    layerWrite.current = null;
   }, [location.key]);
   useEffect(() => {
     if (blocker.state !== 'blocked') { pendingKey.current = null; return; }
@@ -699,28 +703,22 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     const search = params.toString();
     return {pathname: location.pathname, search: search ? `?${search}` : '', hash: location.hash};
   }
-  const layerWrite = useRef<{key: string; id: string; value: LayerValue} | null>(null);
   function setSurfaceLayer(id: string, value: LayerValue) {
     if (blocker.state !== 'unblocked') return;
     const prior = localValues[id];
     if ((prior?.value ?? null) === value) return;
     if (layerWrite.current?.key === location.key && layerWrite.current.id === id && layerWrite.current.value === value) return;
     layerWrite.current = {key: location.key, id, value};
-    if (value === null && prior && pageHistory && prior.parentPosition < pageHistory.position) {
-      void navigate(prior.parentPosition - pageHistory.position);
-      return;
-    }
-    const values = {...localValues};
-    if (value === null) delete values[id];
-    else values[id] = {value, parentPosition: prior?.parentPosition ?? pageHistory?.position ?? 0};
-    const state = plainState(location.state);
-    if (Object.keys(values).length) state[LOCAL_LAYERS_KEY] = {session: dialogSession, href: href(location), values};
-    else delete state[LOCAL_LAYERS_KEY];
-    void navigate({pathname: location.pathname, search: location.search, hash: location.hash},
-      {replace: !!prior, preventScrollReset: true, state});
+    navigateSurfaceLayer(location, navigate, dialogSession, localValues, id, value);
   }
   function infoDialogOpen(id: InformationDialogId) {
     return validInfo && infoVisible[id] === true;
+  }
+  function closeReplayFileLayers() {
+    if (!infoDialogOpen('replayDialog')) return;
+    const first = Object.entries(localValues).filter(([id]) => id.startsWith('replay-'))
+      .sort((a, b) => a[1].parentPosition - b[1].parentPosition)[0];
+    if (first) setSurfaceLayer(first[0], null);
   }
   function openInfoDialog(id: InformationDialogId, options?: {replace?: boolean}) {
     if (!INFORMATION_DIALOG_IDS.includes(id) || infoDialogOpen(id) || blocker.state !== 'unblocked' ||
@@ -825,7 +823,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     const destination = new URL('lobby.html', new URL(href(location), 'https://launcher.invalid'));
     destination.searchParams.set('game', productId);
     void navigate({pathname: destination.pathname, search: destination.search, hash: destination.hash},
-      {state: {}, preventScrollReset: false, viewTransition: true});
+      {state: {}, preventScrollReset: false, viewTransition: !isCompactNavigation()});
   }
   function openPlayer(productId: ProductId, options?: {dismissInfo?: boolean}) {
     if (playerOpen || typeof gameEntry.position === 'number' && gameEntry.position === pageHistory?.position) return;
@@ -1093,7 +1091,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     }
     void navigate(target(params), {replace: true, preventScrollReset: true, state: withoutEntry(location.state)});
   }
-  return <NavigationContext.Provider value={{...address, navigateAddress: address => {void navigate(address);}, hasSelection, routedProductId: baseAddress.productId, applyHostSelection, syncSelectionFromRoute, filterProductId: urlAddress.context === 'lobby' ? urlAddress.productId : null, openOptions, selectLobbyProduct, openDirectory, setLocaleAddress, restoreRoomRoute, enterRoomRoute, switchRoomProduct, settleRoomInvite, leaveTitleRoomRoute, leaveRoomRoute, roomPanel, roomNetworkPeer: validPanel && typeof panelEntry.peer === 'string' ? panelEntry.peer : undefined, openRoomPanel, closeRoomPanel, roomSettingsOpen, openRoomSettings, closeRoomSettings, directoryFormMode, directoryFormParentKey: validForm && typeof formEntry.parentKey === 'string' && formEntry.parentKey !== location.key ? formEntry.parentKey : null, openDirectoryForm, closeDirectoryForm, openTouchLayout, playerOpen, openPlayer, openRoomFullscreen, closeRoomFullscreen, closeSurface, completeRuntimeClose, infoDialogOpen, openInfoDialog, closeInfoDialog}}>
+  return <NavigationContext.Provider value={{...address, navigateAddress: address => {void navigate(address);}, hasSelection, routedProductId: baseAddress.productId, applyHostSelection, syncSelectionFromRoute, filterProductId: urlAddress.context === 'lobby' ? urlAddress.productId : null, openOptions, selectLobbyProduct, openDirectory, setLocaleAddress, restoreRoomRoute, enterRoomRoute, switchRoomProduct, settleRoomInvite, leaveTitleRoomRoute, leaveRoomRoute, roomPanel, roomNetworkPeer: validPanel && typeof panelEntry.peer === 'string' ? panelEntry.peer : undefined, openRoomPanel, closeRoomPanel, roomSettingsOpen, openRoomSettings, closeRoomSettings, directoryFormMode, directoryFormParentKey: validForm && typeof formEntry.parentKey === 'string' && formEntry.parentKey !== location.key ? formEntry.parentKey : null, openDirectoryForm, closeDirectoryForm, openTouchLayout, playerOpen, openPlayer, openRoomFullscreen, closeRoomFullscreen, closeSurface, completeRuntimeClose, infoDialogOpen, openInfoDialog, closeInfoDialog, closeReplayFileLayers}}>
     <UnsavedChangesContext.Provider value={{register: registerUnsavedGuard, confirmDiscard}}><SurfaceLayersContext.Provider value={{values: localValues, set: setSurfaceLayer}}>{children}</SurfaceLayersContext.Provider></UnsavedChangesContext.Provider>
     <FullscreenTransient><ConfirmationDialog key={applicationDecision ? `application:${applicationDecision.requestId}` : 'navigation'}
       open={applicationDecision !== null || (blocker.state === 'blocked' && (pendingBlockKind.current === 'touch' || pendingBlockKind.current === 'unsaved'))}

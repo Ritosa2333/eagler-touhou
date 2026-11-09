@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {exportReplayName,importReplayName,validateChargeReplay} from '../../sdl-runtime/motion-replay.mjs';
+import {exportReplayName,importReplayName,validateChargeReplay,validateMotionReplay} from '../../sdl-runtime/motion-replay.mjs';
 
 // Envelope validation is JS-owned. Native ChargeReplayTrack tests separately
 // decode the compressed rows and validate their game-state semantics.
@@ -31,8 +31,24 @@ test('charge and touch extensions coexist and malformed charge envelopes are rej
   }
 });
 
+test('compact touch combines with charge and rejects malformed entries after a valid checksum',()=>{
+  const payload=new Uint8Array(82);payload[0]=2;
+  const replay=new Uint8Array([...charge(),...extension('THMOTION',9,3,payload)]);
+  assert.equal(validateMotionReplay(replay,9),true);
+  assert.equal(validateChargeReplay(replay,9),true);
+  assert.equal(importReplayName('th9_01.rpyx',replay,9),'th9_01.rpy');
+  for(const control of [5,4]){
+    payload[81]=control;
+    assert.throws(()=>validateMotionReplay(extension('THMOTION',9,3,payload),9),/录像数据损坏/);
+  }
+});
+
 test('compact charge version is accepted and unknown versions rejected',()=>{
  const bytes=charge(),view=new DataView(bytes.buffer);view.setUint32(bytes.length-12,2,true);
  assert.equal(validateChargeReplay(bytes,9),true);
- view.setUint32(bytes.length-12,3,true);assert.throws(()=>validateChargeReplay(bytes,9),/录像数据损坏/);
+ view.setUint32(bytes.length-12,4,true);assert.throws(()=>validateChargeReplay(bytes,9),/录像数据损坏/);
+ const payload=Uint8Array.of(40,0,0,0,40,0,0,0,1);
+ assert.equal(validateChargeReplay(extension('T9CHARGE',9,3,payload),9),true);
+ payload[4]=39;
+ assert.throws(()=>validateChargeReplay(extension('T9CHARGE',9,3,payload),9),/录像数据损坏/);
 });

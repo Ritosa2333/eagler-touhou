@@ -19,9 +19,13 @@ void CCurvingBullet::Initialize()
 
 void CCurvingBullet::AddBullet(float origX,float origY,float angle, float speed, unsigned char colorIdx)
 {
-	for (int i=0;i<(original::DemoActive()?7:CURVING_BULLET_N_RECORD);i++)
+	for (int i=0;i<CURVING_BULLET_N_RECORD;i++)
 		if (m_bullet[i].flag==0)
 		{
+
+#ifdef TH05_BROWSER_TESTS
+	original::AuditSpecialShot(4,int(speed));
+#endif
 			m_bullet[i].flag=1;
 			m_bullet[i].angle=angle;
 			m_bullet[i].speed=speed;
@@ -35,7 +39,7 @@ void CCurvingBullet::AddBullet(float origX,float origY,float angle, float speed,
 				m_bullet[i].nodeX[j]=origX;
 				m_bullet[i].nodeY[j]=origY;
 			}
-   if(original::DemoActive()){
+   if(original::BombAndRageEnabled()){
     auto& b=m_bullet[i];b.angle=float(uint8_t(int(angle)));b.speed=float(uint8_t(int(speed)));
     b.demoHeadX=int(origX);b.demoHeadY=int(origY);
     b.velX=float(original::math::X(int(b.angle),int(b.speed)));
@@ -48,7 +52,7 @@ void CCurvingBullet::AddBullet(float origX,float origY,float angle, float speed,
 
 void CCurvingBullet::Step()
 {
- if(original::DemoActive()){
+ if(original::BombAndRageEnabled()){
   for(int i=0;i<7;i++){
    auto& b=m_bullet[i];if(!b.flag)continue;b.age=uint16_t(b.age+1);
    const int px=int(m_pStage->m_pChara->GetCurX()),py=int(m_pStage->m_pChara->GetCurY());

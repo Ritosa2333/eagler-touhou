@@ -51,15 +51,15 @@ for(const href of ['lobby.html','lobby.html?game=th06mp&test=1#rooms'])test(`Opt
  await click('#optionsLobbyLink');assert.equal(n('#address').textContent,href.includes('test=1')?'/lobby.html?game=th07mp&test=1#rooms':'/lobby.html?game=th07mp');
 });
 test('Original preselection MP diagnostics subtree exists hidden and retains one owner across SP/MP changes',async()=>{
- const products=owners.createLibraryProducts(['th06','th07mp'],x=>x,id=>'?game='+id);let select,guides=0;
+ const products=owners.createLibraryProducts(['th06','th07mp'],x=>x,id=>'?game='+id);let select;
  function Surface(){const[index,setIndex]=React.useState(0);select=setIndex;return el(owners.OptionsPanel,{product:products[index],open:false,onBack(){},assetUrl:x=>x,
-  multiplayerDiagnostics:el(owners.MultiplayerDiagnostics,{getRelayUrl:()=>'',onGuide(){guides++;}})},el('section',{id:'active-settings-body'},'Synthetic active settings slot'));}
+  multiplayerDiagnostics:el(owners.MultiplayerDiagnostics,{getRelayUrl:()=>'',guideHref:'/docs/multiplayer/th07'})},el('section',{id:'active-settings-body'},'Synthetic active settings slot'));}
  await mount(el(Surface));const shell=n('#mpShell'),fold=n('#mpSettingsFold'),diagnostics=n('#mpNetworkDiagnostics'),check=n('#mpNetworkCheck'),results=n('#mpNetworkResults');
  assert.equal(shell.hidden,true);assert.equal(fold.children.length,0);assert.equal(n('#active-settings-body').parentElement.className,'options-scroll');
  // Exact original th07mp-ui48–50 order assertion, before MP selection.
  assert.ok(check.compareDocumentPosition(results)&env.window.Node.DOCUMENT_POSITION_FOLLOWING);
  for(const index of [1,0,1]){await React.act(async()=>select(index));assert.equal(n('#mpShell'),shell);assert.equal(n('#mpSettingsFold'),fold);assert.equal(n('#mpNetworkDiagnostics'),diagnostics);assert.equal(n('#mpNetworkCheck'),check);assert.equal(n('#mpNetworkResults'),results);assert.equal(shell.hidden,index===0);assert.equal(env.document.querySelectorAll('#active-settings-body').length,1);assert.equal(env.document.querySelectorAll('#mpNetworkResults').length,1);}
- await click('#mpGuideOpen');assert.equal(guides,1);assert.equal(results.hidden,true,'Mounting retained probe presentation does not start a probe');
+ assert.equal(n('#mpGuideOpen').getAttribute('href'),'/docs/multiplayer/th07');assert.equal(results.hidden,true,'Mounting retained probe presentation does not start a probe');
 });
 test('Original hidden legacy online fold preserves readiness, retained normalized input and required action ports',async()=>{
  let update,creates=0,invalid=0;const joins=[];
@@ -104,12 +104,11 @@ test('language list returns to its entry before Escape closes the menu',async()=
  await React.act(async()=>n('.masthead-language-trigger').dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true})));
  assert.equal(n('#mastheadMenuToggle').getAttribute('aria-expanded'),'false');
 });
-test('privacy policy follows developer options at the bottom of the menu',async()=>{
- await mount(el(Masthead));await openMasthead();const items=[...n('#mastheadMenuPanel').querySelectorAll('.ui-menu-item')];
- assert.equal(items.at(-4).textContent,'GitHub');assert.ok(items.at(-3).classList.contains('book-menu-donation'));
- assert.equal(items.at(-2).textContent,owners.translate('en','developer.options'));
- assert.equal(items.at(-1).textContent,owners.translate('en','nav.privacyPolicy'));
- assert.equal(items.at(-1).getAttribute('href'),'privacy.html?lang=en');
+test('developer options follows language within settings',async()=>{
+ await mount(el(Masthead));await openMasthead();
+ const items=[...n('#mastheadMenuPanel [aria-label="Settings"]').querySelectorAll('.ui-menu-item')];
+ assert.equal(items.at(-2),n('.masthead-language-trigger'));
+ assert.equal(items.at(-1).textContent,owners.translate('en','developer.options'));
 });
 
 test('developer options contains diagnostics and beta mode and returns with Escape',async()=>{
@@ -171,16 +170,26 @@ test('production hides account routes by default and supports account-only opt-i
 });
 
 
-test('settings and help groups omit the retired handbook and keep account actions separate',async()=>{
+test('the masthead groups help, site actions, settings and information',async()=>{
  await mount(el(Masthead));await openMasthead();
  assert.equal(n('#mastheadMenuPanel').querySelector('[role="group"][aria-label="'+owners.translate('en','nav.account')+'"]'),null);
- for(const key of ['nav.settings','nav.help'])assert.ok(n('#mastheadMenuPanel').querySelector('[role="group"][aria-label="'+owners.translate('en',key)+'"]'));
- assert.equal(env.document.querySelector('#mastheadMenuPanel a[href*="ui-review.html"]'),null);
+ for(const key of ['nav.help','nav.site','nav.settings','nav.aboutSite'])assert.ok(n('#mastheadMenuPanel').querySelector('[role="group"][aria-label="'+owners.translate('en',key)+'"]'));
+ const link=n('#mastheadMenuPanel a[href="ui-review.html?lang=en"]');
+ assert.equal(link.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.help'));
+ assert.equal(link.getAttribute('target'),'_blank');assert.equal(link.getAttribute('rel'),'noopener noreferrer');
+ const privacy=n('#mastheadMenuPanel a[href="privacy.html?lang=en"]');
+ assert.equal(privacy.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.aboutSite'));
+ assert.equal(privacy.textContent.trim(),owners.translate('en','nav.privacyPolicy'));
  const status=n('#mastheadMenuPanel a[href="uptime/?lang=en"]');
  assert.equal(status.textContent,owners.translate('en','nav.serviceStatus'));
- assert.equal(status.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.help'));
+ assert.equal(status.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.site'));
+ assert.equal(n('.book-menu-donation').closest('[role="group"]'),status.closest('[role="group"]'));
  assert.equal(n('.masthead-language-trigger').closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.settings'));
- assert.deepEqual([...n('#mastheadMenuPanel').querySelectorAll('.masthead-menu-heading')].map(x=>x.textContent),['Settings','Site information']);
+ assert.equal(n('.masthead-developer-trigger').closest('[role="group"]'),n('.masthead-language-trigger').closest('[role="group"]'));
+ assert.deepEqual([...n('#mastheadMenuPanel').querySelectorAll('.masthead-menu-heading')].map(x=>x.textContent),['Help','Site','Settings','About this site']);
+ const icons=[...link.closest('[role="group"]').querySelectorAll('svg')];
+ assert.equal(icons.length,4);
+ assert.equal(new Set(icons.map(icon=>icon.innerHTML)).size,icons.length);
 });
 
 test('scroll visibility handles nested panes independently and releases its timers on unmount',async()=>{
@@ -202,16 +211,27 @@ test('scroll visibility handles nested panes independently and releases its time
  }finally{vi.useRealTimers();}
 });
 
-test('allowed migration appears in Help when narrow layouts hide the top link',async()=>{
+test('allowed migration appears in About this site when narrow layouts hide the top link',async()=>{
  await mount(el(Masthead,{migrationHref:'migrate.html?from=old',migrationPolicyKnown:true}));
  await openMasthead();
  const link=n('#mastheadMenuPanel a[href="migrate.html?from=old"]');
- assert.equal(link.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.help'));
+ assert.equal(link.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.aboutSite'));
  assert.equal(link.getAttribute('data-policy'),'host-manifest-origin-migration-policy/1');
 });
 
-test('Help does not advertise migration when the host provides no allowed address',async()=>{
+test('the masthead menu omits migration when the host provides no allowed address',async()=>{
  await mount(el(Masthead));await openMasthead();
  assert.equal(n('#originMigrationOpen').hidden,true);
  assert.equal(env.document.querySelector('#mastheadMenuPanel a[href^="migrate.html"]'),null);
+});
+
+test('the UI review route can be published independently of beta features', () => {
+  const hidden = owners.resolveReleaseFeatures({DEV: false, VITE_PREVIEW_FEATURES: 'true', VITE_UI_REVIEW_ENABLED: 'false'});
+  assert.equal(hidden.previewFeaturesEnabled, true);
+  assert.equal(hidden.uiReviewEnabled, false);
+  assert.equal(hidden.isPreviewOnlyPage('/ui-review.html'), true);
+  const shown = owners.resolveReleaseFeatures({DEV: false, VITE_PREVIEW_FEATURES: 'false', VITE_UI_REVIEW_ENABLED: 'true'});
+  assert.equal(shown.previewFeaturesEnabled, false);
+  assert.equal(shown.uiReviewEnabled, true);
+  assert.equal(shown.isPreviewOnlyPage('/ui-review.html'), false);
 });

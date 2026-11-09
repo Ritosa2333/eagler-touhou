@@ -66,7 +66,7 @@ try {
   send(host, {type: 'start',adonisMode:timing.rollback?0:1,predictionLimit:timing.predictionLimit});
   await wait(() => host.json.some(message => message.type === 'start' && message.serial === 1), 'room started');
 
-  send(viewer, {type: 'quick-chat', serial: 1, phrase: 'thanks'});
+  send(viewer, {type: 'quick-chat', serial: 1, phrase: 'you-first'});
   for (const socket of [host, guest, viewer]) {
     await wait(() => socket.json.some(message => message.type === 'quick-chat' &&
       message.clientId === viewerId && message.seat === -1 && message.spectator === true),
@@ -75,7 +75,7 @@ try {
   const spectatorMessage = host.json.findLast(message => message.type === 'quick-chat' && message.clientId === viewerId);
   assert.deepEqual({room: spectatorMessage.room, serial: spectatorMessage.serial, seat: spectatorMessage.seat,
     spectator: spectatorMessage.spectator, phrase: spectatorMessage.phrase},
-  {room, serial: 1, seat: -1, spectator: true, phrase: 'thanks'});
+  {room, serial: 1, seat: -1, spectator: true, phrase: 'you-first'});
 
   send(host, {type: 'quick-chat', serial: 1, phrase: 'follow-me'});
   await wait(() => viewer.json.some(message => message.type === 'quick-chat' &&

@@ -65,7 +65,7 @@ u32 mp_commit_frame=0,mp_replay_until=0;
 multiplayer::PredictionBoundary mp_boundary;
 u32 mp_corrections=0,mp_replayed_frames=0,mp_last_depth=0,mp_peak_depth=0;
 #if TH15_DEVELOPMENT_HARNESS
-double mp_profile_capture_ms=0,mp_profile_restore_ms=0;unsigned mp_profile_captures=0;
+double mp_profile_capture_ms=0,mp_profile_restore_ms=0;unsigned mp_profile_captures=0;bool mp_profile_dense_room=false;
 #endif
 void mp_clear_frames(){mp_cancel_work();reset_presentation_clock();multiplayer::FrameFence::tentative=multiplayer::FrameFence::blocked=false;for(auto& f:mp_frames){f.state.discard();f.effects.clear();f.publication={};f.valid=f.captured=false;f.frame=Netplay::INVALID_FRAME;}mp_commit_frame=mp_replay_until=0;mp_boundary.clear();}
 bool mp_commit_frames(){
@@ -121,6 +121,8 @@ bool mp_tick(u32 held,bool physical=true,bool forward=true){
   if(!network.Pump(false)){last_error=network.Error();return false;}
   if(!network.Retired()){if(!network.Finish(false,true)&&*network.Error()){last_error=network.Error();return false;}return true;}
   if(app->exiting||!physical)return true;mp_menu.update(held);
+  // The ending now belongs to this browser; fast-forward can differ per player.
+  if(app->ending)app->ending->script.run.first_seen_flags=0;
   if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return false;}return true;
  }
  if(!network.Pump(true)){last_error=network.Error();return false;}
@@ -192,6 +194,13 @@ bool mp_tick(u32 held,bool physical=true,bool forward=true){
   if(journal.spectator){auto& spectator=journal.publication;spectator.frame=frame;spectator.stage=mp_spectator_stage;spectator.inputs=decision.inputs;spectator.hasInputs=true;}
   const auto replay_activation=app->replay?app->replay->activation_count():0;
   if(app->scene()){mp_stage=unsigned(app->progress.stage);app->scene()->battle.mp_input(lanes);}journal.stage=mp_stage;
+#if TH15_DEVELOPMENT_HARNESS
+  if(mp_profile_dense_room&&frame==240&&app->scene()){
+   th15::BulletShooter shot;shot.count=1536;shot.rows=1;shot.speed=.16f;
+   shot.angle_step=6.283185307179586f/1536;shot.position={0,130,0};shot.pattern=2;
+   if(!app->scene()->battle.bullet_scene->manager.emit(shot,0)){last_error="Dense room fixture injection failed";return false;}
+  }
+#endif
   bool advanced=false,blocked=false;{
    multiplayer::FrameFence::Scope fence(tentative);app->frame_effects=&journal.effects;app->resimulating=replaying;app->graphics.logical_drawing=replaying&&(forward||frame+1<mp_replay_until);
    advanced=app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false);blocked=multiplayer::FrameFence::blocked;
@@ -317,7 +326,13 @@ void clear_inputs(bool preserve_keyboard=false){
 }
 void initialize_controller(){if(controller){SDL_CloseJoystick(controller);controller=nullptr;}SDL_InitSubSystem(SDL_INIT_JOYSTICK);int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;i++)add_controller(ids[i]);SDL_free(ids);}
 touhou::input::TouchState touch_state(){
- touhou::input::TouchState value;if(!app||!app->scene()||!app->session)return value;
+ touhou::input::TouchState value;if(app&&app->ending){
+#if TH15_MULTIPLAYER
+  if(network.ReadOnly()){value.context=3;return value;}
+#endif
+  value.context=2;return value;
+ }
+ if(!app||!app->scene()||!app->session)return value;
  if(app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive)return value;
  if(app->progress.replay
 #if TH15_MULTIPLAYER

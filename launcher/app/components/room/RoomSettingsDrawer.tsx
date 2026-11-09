@@ -5,6 +5,7 @@ import {cycleFocus} from '../cycle-focus';
 import {useLocale} from '../../i18n';
 import {useOptionsViewport} from '../launcher/use-options-viewport';
 import {useSurfaceMotion} from '../../ui/use-surface-motion';
+import {useCompactNavigation} from '../../navigation/navigation-motion';
 export interface RoomSettingsDrawerProps {
   roomOpen: boolean;
   open: boolean;
@@ -16,8 +17,9 @@ export interface RoomSettingsDrawerProps {
 /** The shared OptionsPanel renders its header and fold into these outlets. */
 export function RoomSettingsDrawer({roomOpen, open, foregroundActive = false, onCloseRequest, onClosingChange}: RoomSettingsDrawerProps) {
   const {t} = useLocale(), drawer = useRef<HTMLElement>(null), backdrop = useRef<HTMLButtonElement>(null), generation = useRef(0);
-  useOptionsViewport(drawer);
+  const compact = useCompactNavigation();
   const [presence, setPresence] = useState({hidden: true, closing: false});
+  useOptionsViewport(drawer, !presence.hidden && !foregroundActive);
   const suspendedFocus = useRef<HTMLElement | null>(null);
   const pendingReturnFocus = useRef(false);
   const closingFocus = useRef(false);
@@ -40,13 +42,13 @@ export function RoomSettingsDrawer({roomOpen, open, foregroundActive = false, on
     return () => {generation.current++;};
   }, [roomOpen, open, foregroundActive]);
   const phase = presence.hidden || foregroundActive ? null : presence.closing ? 'exit' : 'enter';
-  useSurfaceMotion(drawer, phase, {onComplete() {
+  useSurfaceMotion(drawer, phase, {kind: compact ? 'panel' : 'dialog', onComplete() {
     if (!presence.closing) return;
     pendingReturnFocus.current = closingFocus.current && latest.current.roomOpen && !latest.current.foregroundActive;
     closingFocus.current = false;
     setPresence({hidden: true, closing: false});
   }});
-  useSurfaceMotion(backdrop, phase, {kind: 'backdrop'});
+  useSurfaceMotion(backdrop, phase, {kind: compact ? 'panel' : 'backdrop'});
   useLayoutEffect(() => {
     onClosingChange?.(presence.closing);
     if (presence.hidden && pendingReturnFocus.current) {

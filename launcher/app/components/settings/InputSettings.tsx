@@ -85,91 +85,89 @@ export function InputSettings({
           </div>
         </Collapsible.Content>
         <Dialog open={editing} onOpenChange={setEditing}>
-          {editing && (
-            <DialogContent
-              className="input-settings-dialog settings-ui"
-              showClose={false}
-              portalAnchor={trigger.current}
-              aria-labelledby={id + '-title'}
-              aria-describedby={undefined}
-              onEscapeKeyDown={(event) => {
-                if (capture.current) {
-                  event.preventDefault();
-                  capture.current();
-                }
-              }}
-              onCloseAutoFocus={(event) => {
+          <DialogContent
+            className="input-settings-dialog settings-ui"
+            showClose={false}
+            portalAnchor={trigger.current}
+            aria-labelledby={id + '-title'}
+            aria-describedby={undefined}
+            onEscapeKeyDown={(event) => {
+              if (capture.current) {
                 event.preventDefault();
-                trigger.current?.focus({ preventScroll: true });
-              }}
-            >
-              <InputCapture.Provider value={capture}>
-                <Tabs value={device} onValueChange={(value) => setDevice(value as 'keyboard' | 'gamepad')} asChild>
-                  <div className="input-settings-body">
-                    <header>
-                      <DialogTitle id={id + '-title'}>{title}</DialogTitle>
-                      <DialogClose asChild>
-                        <UiButton
-                          variant="ghost"
-                          size="icon"
-                          type="button"
-                          className="input-dialog-close"
-                          aria-label={t('input.text.close_input_settings')}
-                        >
-                          <X aria-hidden="true" />
-                        </UiButton>
-                      </DialogClose>
-                    </header>
-                    {th09Local && gamepad && (
-                      <div className="input-context-toolbar">
-                        <label htmlFor={id + '-scope'}>{t('input.text.control_context')}</label>
-                        <MainSelect
-                          id={id + '-scope'}
-                          aria-label={t('input.text.control_context')}
-                          className="option-select"
-                          value={scope}
-                          onChange={(e) => setScope(e.target.value === 'local' ? 'local' : 'general')}
-                        >
-                          <option value="general">{t('input.text.single_player_online')}</option>
-                          <option value="local">{t('input.text.local_two_player')}</option>
-                        </MainSelect>
-                      </div>
-                    )}
-                    {scope === 'general' && (
-                      <TabsList className="input-device-tabs" aria-label={t('input.text.input_device')}>
-                        {choices.map((value) => (
-                          <TabsTrigger id={id + '-' + value} value={value} key={value}>
-                            {label(value)}
-                          </TabsTrigger>
-                        ))}
-                      </TabsList>
-                    )}
-                    <div ref={scroll} className="input-dialog-scroll">
-                      <TabsContent
-                        value={device}
-                        id={id + '-panel'}
-                        aria-labelledby={scope === 'general' ? id + '-' + device : undefined}
-                        asChild
+                capture.current();
+              }
+            }}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              trigger.current?.focus({ preventScroll: true });
+            }}
+          >
+            <InputCapture.Provider value={capture}>
+              <Tabs value={device} onValueChange={(value) => setDevice(value as 'keyboard' | 'gamepad')} asChild>
+                <div className="input-settings-body">
+                  <header>
+                    <DialogTitle id={id + '-title'}>{title}</DialogTitle>
+                    <DialogClose asChild>
+                      <UiButton
+                        variant="ghost"
+                        size="icon"
+                        type="button"
+                        className="input-dialog-close"
+                        aria-label={t('input.text.close_input_settings')}
                       >
-                        <div className="input-device-panel" key={scope + device}>
-                          {scope === 'local' && th09Local && gamepad ? (
-                            <Th09LocalInputSettings model={th09Local} gamepad={gamepad} active={editing} />
-                          ) : (
-                            <>
-                              {device === 'keyboard' && keyboard && (
-                                <KeyboardSettings model={keyboard} active={editing} th19={th19} />
-                              )}
-                              {device === 'gamepad' && gamepad && <GamepadSettings model={gamepad} active={editing} th19={th19} />}
-                            </>
-                          )}
-                        </div>
-                      </TabsContent>
+                        <X aria-hidden="true" />
+                      </UiButton>
+                    </DialogClose>
+                  </header>
+                  {th09Local && gamepad && (
+                    <div className="input-context-toolbar">
+                      <label htmlFor={id + '-scope'}>{t('input.text.control_context')}</label>
+                      <MainSelect
+                        id={id + '-scope'}
+                        aria-label={t('input.text.control_context')}
+                        className="option-select"
+                        value={scope}
+                        onChange={(e) => setScope(e.target.value === 'local' ? 'local' : 'general')}
+                      >
+                        <option value="general">{t('input.text.single_player_online')}</option>
+                        <option value="local">{t('input.text.local_two_player')}</option>
+                      </MainSelect>
                     </div>
+                  )}
+                  {scope === 'general' && (
+                    <TabsList className="input-device-tabs" aria-label={t('input.text.input_device')}>
+                      {choices.map((value) => (
+                        <TabsTrigger id={id + '-' + value} value={value} key={value}>
+                          {label(value)}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  )}
+                  <div ref={scroll} className="input-dialog-scroll">
+                    <TabsContent
+                      value={device}
+                      id={id + '-panel'}
+                      aria-labelledby={scope === 'general' ? id + '-' + device : undefined}
+                      asChild
+                    >
+                      <div className="input-device-panel" key={scope + device}>
+                        {scope === 'local' && th09Local && gamepad ? (
+                          <Th09LocalInputSettings model={th09Local} gamepad={gamepad} active={editing} />
+                        ) : (
+                          <>
+                            {device === 'keyboard' && keyboard && (
+                              <KeyboardSettings model={keyboard} active={editing} th19={th19} />
+                            )}
+                            {device === 'gamepad' && gamepad && <GamepadSettings model={gamepad} active={editing} th19={th19} />}
+                          </>
+                        )}
+                      </div>
+                    </TabsContent>
                   </div>
-                </Tabs>
-              </InputCapture.Provider>
-            </DialogContent>
-          )}
+                </div>
+              </Tabs>
+            </InputCapture.Provider>
+          </DialogContent>
         </Dialog>
       </section>
     </Collapsible.Root>
