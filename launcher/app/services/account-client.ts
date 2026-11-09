@@ -1,6 +1,18 @@
 import { accountsEnabled } from '../release-features';
 
-const transientStatuses = new Set([502, 503, 504]);
+const transientStatuses = new Set([502, 503, 504, 520, 521, 522, 523, 524, 525, 526, 527]);
+const edgeOrigin = import.meta.env?.VITE_ACCOUNT_EDGE_ORIGIN;
+const directOrigin = import.meta.env?.VITE_ACCOUNT_DIRECT_ORIGIN;
+type AccountRegion = 'direct' | 'edge';
+let accountRegion: AccountRegion | undefined;
+
+function configuredAccountOrigins() {
+  const site = globalThis.location?.origin;
+  if (!site?.startsWith('https://')) return null;
+  const domain = site.slice('https://'.length);
+  return edgeOrigin === `https://api.${domain}` && directOrigin === `https://direct-api.${domain}`
+    ? {edge: edgeOrigin, direct: directOrigin} : null;
+}
 type RequestOptions = {signal?: AbortSignal; responseType?: 'json' | 'blob'; timeoutMs?: number};
 const activeRequests = new Set<AbortController>();
 
@@ -27,23 +39,63 @@ function accountErrorCode(value: unknown) {
   return typeof code === 'string' && /^[A-Z0-9_]+$/.test(code) ? code : 'ACCOUNT_REQUEST_FAILED';
 }
 
-async function accountReady(signal?: AbortSignal) {
+async function accountReady(origin: string, signal?: AbortSignal) {
   const controller = new AbortController();
   const abort = () => controller.abort();
   signal?.addEventListener('abort', abort, {once: true});
   if (signal?.aborted) controller.abort();
   const timeout = setTimeout(abort, 3500);
   try {
-    const response = await fetch('/api/ready', {
+    const response = await fetch(`${origin}/api/ready`, {
       credentials: 'include', cache: 'no-store', signal: controller.signal,
     });
-    return response.ok && (await response.json()).ready === true;
+    if (!response.ok || (await response.json()).ready !== true) return null;
+    const region = response.headers.get('X-Eagler-Account-Route');
+    return {region: region === 'direct' || region === 'edge' ? region : undefined};
   } catch {
-    return false;
+    return null;
   } finally {
     clearTimeout(timeout);
     signal?.removeEventListener('abort', abort);
   }
+}
+
+async function selectAccountOrigin(signal?: AbortSignal) {
+  const origins = configuredAccountOrigins();
+  if (!origins) return await accountReady('', signal) ? '' : null;
+  const {edge, direct} = origins;
+  let siteReady: ReturnType<typeof accountReady> | undefined;
+  if (accountRegion === 'direct') {
+    siteReady = accountReady('', signal);
+    if ((await siteReady)?.region === 'direct') return '';
+  }
+  if (accountRegion === 'edge') {
+    const ready = await accountReady(edge, signal);
+    if (ready?.region === 'direct') {
+      accountRegion = 'direct';
+      return await accountReady('', signal) ? '' : null;
+    }
+    if (ready) return edge;
+    const fallback = await accountReady(direct, signal);
+    if (fallback?.region === 'direct') {
+      accountRegion = 'direct';
+      return await accountReady('', signal) ? '' : null;
+    }
+    return fallback ? direct : null;
+  }
+
+  // The overseas site itself may be served by Cloudflare and have no same-origin API.
+  siteReady ??= accountReady('', signal);
+  const edgeReady = accountReady(edge, signal);
+  const first = await Promise.any([siteReady, edgeReady].map(async probe => {
+    const ready = await probe;
+    if (!ready) throw new Error('Account ingress unavailable');
+    return ready;
+  })).catch(() => null);
+  accountRegion = first?.region;
+  if (accountRegion === 'direct') return await siteReady ? '' : null;
+  if (await edgeReady) return edge;
+  return await accountReady(direct, signal) ? direct : null;
 }
 
 export async function accountRequest<T = unknown>(path: string, body?: Record<string, unknown> | FormData, options: RequestOptions = {}): Promise<T> {
@@ -71,16 +123,29 @@ async function sendAccountRequest<T>(path: string, body: Record<string, unknown>
     segments.some((segment) => !segment || segment === '.' || segment === '..')
   )
     throw new AccountRequestError('ACCOUNT_REQUEST_FAILED');
-  const hasBody = body !== undefined;
-  const ready = await accountReady(options.signal);
+  const origin = await selectAccountOrigin(options.signal);
   if (options.signal?.aborted) throw new DOMException('Request cancelled', 'AbortError');
-  if (!ready) throw new AccountRequestError('ACCOUNT_API_UNAVAILABLE');
+  if (origin === null) throw new AccountRequestError('ACCOUNT_API_UNAVAILABLE');
+  try {
+    return await fetchAccount<T>(origin, path, body, options);
+  } catch (error) {
+    const origins = configuredAccountOrigins();
+    // A write can reach the server even when the client never sees the response.
+    if (!origins || origin !== origins.edge || body !== undefined || !(error instanceof AccountRequestError)
+      || error.code !== 'ACCOUNT_API_UNAVAILABLE' || !await accountReady(origins.direct, options.signal)) throw error;
+    return fetchAccount<T>(origins.direct, path, body, options);
+  }
+}
+
+async function fetchAccount<T>(origin: string, path: string, body: Record<string, unknown> | FormData | undefined, options: RequestOptions): Promise<T> {
+  const hasBody = body !== undefined;
   const controller = new AbortController(), abort = () => controller.abort();
   options.signal?.addEventListener('abort', abort, {once: true});
+  if (options.signal?.aborted) controller.abort();
   const timeout = setTimeout(abort, options.timeoutMs ?? 20000);
   try {
     const multipart = body instanceof FormData;
-    const response = await fetch(`/api/${path}`, {
+    const response = await fetch(`${origin}/api/${path}`, {
       credentials: 'include',
       cache: 'no-store',
       method: hasBody ? 'POST' : 'GET',
