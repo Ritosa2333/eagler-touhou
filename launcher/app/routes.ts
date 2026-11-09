@@ -5,6 +5,7 @@ import {UI_REVIEW_DOCUMENT, uiReviewEnabled} from '../lib/frontend-static-manife
 export default [
   index('routes/surface.tsx', {id: 'library'}),
   ...(uiReviewEnabled() ? [route(UI_REVIEW_DOCUMENT.path.slice(1), 'routes/ui-review.tsx')] : []),
+  route('privacy.html', 'routes/help.tsx', {id:'help-privacy'}),
   route('faq.html', 'routes/help.tsx', {id:'help-faq'}),
   route('about.html', 'routes/help.tsx', {id:'help-about'}),
   route('guide.html', 'routes/help.tsx', {id:'help-guide'}),

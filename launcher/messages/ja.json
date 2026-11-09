@@ -2332,5 +2332,8 @@
   "network_relayNoReply": "ロビーからルーム一覧の応答がありません",
   "network_manifestUnavailable": "サイトのマルチプレイ設定を読み込めません",
   "network_relayClosed": "リレー接続が切断されました（コード {code}）",
-  "network_relayHandshake": "リレーに接続できませんでした"
+  "network_relayHandshake": "リレーに接続できませんでした",
+  "document_privacy": "プライバシーポリシー",
+  "content_privacy": "プライバシーポリシーは簡体字中国語で公開しています。",
+  "nav_privacyPolicy": "プライバシーポリシー"
 }

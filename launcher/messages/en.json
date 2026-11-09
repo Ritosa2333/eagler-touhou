@@ -2332,5 +2332,8 @@
   "network_relayNoReply": "The lobby did not return a room list",
   "network_manifestUnavailable": "Could not load the site’s multiplayer configuration",
   "network_relayClosed": "Relay connection closed (code {code})",
-  "network_relayHandshake": "Could not connect to the relay"
+  "network_relayHandshake": "Could not connect to the relay",
+  "document_privacy": "Privacy Policy",
+  "content_privacy": "The privacy policy is published in Simplified Chinese.",
+  "nav_privacyPolicy": "Privacy Policy"
 }

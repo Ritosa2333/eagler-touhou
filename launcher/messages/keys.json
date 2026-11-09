@@ -9819,5 +9819,17 @@
   "network.relayHandshake": {
     "id": "network_relayHandshake",
     "params": []
+  },
+  "document.privacy": {
+    "id": "document_privacy",
+    "params": []
+  },
+  "content.privacy": {
+    "id": "content_privacy",
+    "params": []
+  },
+  "nav.privacyPolicy": {
+    "id": "nav_privacyPolicy",
+    "params": []
   }
 }
