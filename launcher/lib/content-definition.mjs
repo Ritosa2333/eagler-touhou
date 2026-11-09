@@ -368,6 +368,14 @@ export const PRODUCT_CONTENT = Object.freeze({
         textures: Object.freeze(["title/title_bk00.png", "title/title_ch00.png", "title/title_logo.png"])})}),
       preparedContent: Object.freeze({directory: "assets-ogg", markerFiles: Object.freeze(["th17.data", "music/th17_01.ogg"]), script: "scripts/prepare-th17-content.mjs", baseline: "host/ogg-baselines/th17.json"}),
       ogg: Object.freeze({kind: "prepared-content"}), dataAssets: Object.freeze({kind: "prepared-content"}),
+      languagePack: Object.freeze({
+        kind: "thcrap-runtime-compiler",
+        inputMode: "archive",
+        archive: "th17.dat",
+        developmentEnv: "EAGLER_TH17_ARCHIVES",
+        developmentFiles: Object.freeze(["th17.dat", "assets-ogg/th17.data"]),
+        preparedArchive: "assets-ogg/th17.data",
+      }),
     }),
   }),
     th19: Object.freeze({

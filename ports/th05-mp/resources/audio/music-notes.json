@@ -1,0 +1,10 @@
+{
+  "schema": "eagler-touhou/th05-music-notes/1",
+  "source": "original MUSIC.DAT / PMDWin getpartwork and getopenwork",
+  "sourceSha256": "891a34f7680b0854c3d13c34d2a8456bae9e207364f9ca3d110d48db9b0caca0",
+  "tracks": 107,
+  "bytes": 1852346,
+  "sha256": "e40fbcfa3731a797ab814cf5a670cd3a9459a696233cd28f3d327346b60862ad",
+  "encoding": "gzip",
+  "decodedBytes": 5945283
+}

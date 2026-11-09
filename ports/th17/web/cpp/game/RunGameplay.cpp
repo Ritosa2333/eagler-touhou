@@ -3,13 +3,22 @@ namespace th17 {
 RunGameplay::RunGameplay(AssetSource& f,AnmManager& a,AnmEnvironment& e,Rng& g,Rng& v,GameRun& r,GameRecords& data,SpellRecords& sp,StageGameplayServices& h,const std::unordered_map<std::string,i32>* retained):files(f),animations(a),environment(e),game(g),visual(v),run(r),records(data),spells(sp),host(h),shared(retained){}
 RunGameplay::~RunGameplay(){active.gameplay.reset();previous.gameplay.reset();objects.reset();active.assets.reset();previous.assets.reset();common.reset();animations.collect_resources();}
 bool RunGameplay::fail(const std::string& reason){if(error.empty())error=reason.empty()?"Run stage construction failed":reason;return false;}
-bool RunGameplay::load(i32 stage,const StageCamera& camera,const ReplayStageState* replay){
+bool RunGameplay::load(i32 stage,const StageCamera& camera,const ReplayStageState* replay,const PracticePatch& practice,bool defer_start){
     if(common||!error.empty())return fail("Run already constructed");
     common=std::make_unique<StageAssets>(files,animations,nullptr,shared);if(!common->load(stage,run.character,run.animal))return fail(common->error);
+    if(practice&&(practice.stage!=stage||!patch_practice_ecl(common->scripts,practice,run.difficulty,run.spell_id,error)))return fail("TH17 practice stage mismatch");
     run.stage=stage;run.screen=0;active.stage=stage;
     active.gameplay=std::make_unique<StageGameplay>(*common,animations,environment,game,visual,run,records,spells,host);
     objects=active.gameplay->take_run_objects();
-    return active.gameplay->prepare(camera,replay)||fail(active.gameplay->error);
+    return active.gameplay->prepare(camera,replay,nullptr,defer_start)||fail(active.gameplay->error);
+}
+bool RunGameplay::add_coop_player(i32 character,i32 animal){
+    if(!common||!objects||!active.gameplay||active.gameplay->active()||run.practice_record)
+        return fail("TH17 partners require a new story run");
+    ShtResource shots;
+    i32 bank=-1;
+    if(!common->load_pilot(character,animal,shots,bank))return fail(common->error);
+    return objects->battle.add_coop_player(shots,character,animal,bank)||fail(objects->battle.error);
 }
 bool RunGameplay::next(i32 stage,const StageCamera& camera,const ReplayStageState* replay){
     if(!active.gameplay||!objects||!error.empty())return fail("Run unavailable at next stage");

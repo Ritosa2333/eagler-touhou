@@ -148,6 +148,6 @@ bool BattleFrameState::restore(GameBattle& battle)const{
     if(!s.callbacks.restore(*battle.active_schedule)){error=s.callbacks.error;return false;}
     AnmVm::presentation_counter=s.presentation_counter;return true;
 }
-void BattleFrameState::discard()noexcept{if(saved_){saved_->enemies.discard();saved_->lasers.discard();saved_->items.discard();saved_->resources.clear();saved_->ready=false;}}
+void BattleFrameState::discard()noexcept{if(saved_){saved_->enemies.discard();saved_->lasers.discard();saved_->items.discard();saved_->animations.discard();saved_->resources.clear();saved_->ready=false;}}
 }
 #endif

@@ -8,6 +8,9 @@ import pathlib
 import re
 import shutil
 import subprocess
+import sys
+from concurrent.futures import ThreadPoolExecutor
+from time import perf_counter
 
 
 SHA = re.compile(r"[0-9a-f]{40}\Z")
@@ -79,7 +82,7 @@ def verify_join(repo, head, directory, join, split):
         raise RuntimeError(f"{directory}: join {join} has a different source tree")
 
 
-def verify_subtree(repo, head, record, workspace):
+def verify_subtree(repo, head, record, workspace, *, export_tree):
     directory = record["destination"]
     if not DIRECTORY.fullmatch(directory) or directory not in workspace.values():
         raise RuntimeError(f"Unregistered subtree directory: {directory}")
@@ -91,7 +94,14 @@ def verify_subtree(repo, head, record, workspace):
     joins = record["subtree"]
     verify_join(repo, head, directory, joins["initialJoin"], joins["initialSplit"])
     verify_join(repo, head, directory, joins["latestJoin"], joins["currentSplit"])
+    if repo.git("cat-file", "-t", f"{head}:{directory}") != "tree":
+        raise RuntimeError(f"{directory}: current source is not a directory")
+    if not export_tree:
+        return None
+    started = perf_counter()
+    print(f"{directory}: exporting Git subtree", file=sys.stderr, flush=True)
     split = repo.git("subtree", "split", f"--prefix={directory}", "--quiet", head)
+    print(f"{directory}: exported in {perf_counter() - started:.1f}s", file=sys.stderr, flush=True)
     if not repo.ancestor(upstream, split):
         raise RuntimeError(f"{directory}: original upstream {upstream} is not an ancestor of exported history")
     if not repo.ancestor(joins["currentSplit"], split):
@@ -166,7 +176,7 @@ def delivery_snapshots(repo, head, workspace):
     return records
 
 
-def verify(repo, head="HEAD", base=None):
+def verify(repo, head="HEAD", base=None, jobs=1, *, changed_only=False, subtree=None):
     head = repo.git("rev-parse", "--verify", f"{head}^{{commit}}")
     workspace = repo.document(head, "launcher/config/workspace.json")["repositories"]
     imports = repo.document(head, "docs/migration/import-sources.json")["imports"]
@@ -185,11 +195,11 @@ def verify(repo, head="HEAD", base=None):
 
     records = subtree_records(repo, head)
     snapshots = delivery_snapshots(repo, head, workspace)
-    splits = {}
-    for record in records:
-        directory = record["destination"]
-        splits[directory] = verify_subtree(repo, head, record, workspace)
-
+    exports = {record["destination"] for record in records}
+    if subtree is not None:
+        if subtree not in exports:
+            raise RuntimeError(f"Unregistered Git subtree: {subtree}")
+        exports = {subtree}
     if base and set(base) != {"0"}:
         base = repo.git("rev-parse", "--verify", f"{base}^{{commit}}")
         base_imports = repo.document(base, "docs/migration/import-sources.json")["imports"]
@@ -199,9 +209,22 @@ def verify(repo, head="HEAD", base=None):
             current = repo.document(head, path)[field]
             if any(entry not in current for entry in original):
                 raise RuntimeError(f"Retained source records changed: {path}")
-        existing_subtrees = {original_identity(record) for record in subtree_records(repo, base)}
+        previous = {record["destination"]: record for record in subtree_records(repo, base)}
+        existing_subtrees = {original_identity(record) for record in previous.values()}
         if not existing_subtrees.issubset({original_identity(record) for record in records}):
             raise RuntimeError("Retained Git subtree source records changed")
+        if changed_only:
+            exports.clear()
+            for record in records:
+                directory = record["destination"]
+                old = previous.get(directory)
+                if old is None or any(record["subtree"][key] != old["subtree"][key]
+                                      for key in ("latestJoin", "currentSplit")):
+                    exports.add(directory)
+            # A new join can affect the export before its source record is updated.
+            trailers = repo.git("log", "--format=%B", "--grep=^git-subtree-dir:", f"{base}..{head}", "--")
+            exports.update(line.removeprefix("git-subtree-dir: ").strip()
+                           for line in trailers.splitlines() if line.startswith("git-subtree-dir: "))
         added = repo.directories(head) - repo.directories(base)
         known = {entry["target"].replace("runtimes/", "ports/", 1)
                  for entry in base_imports if entry["target"] != "launcher"}
@@ -214,6 +237,18 @@ def verify(repo, head="HEAD", base=None):
         missing = sorted(added - known)
         if missing:
             raise RuntimeError("New port directories need retained source history: " + ", ".join(missing))
+
+    def check_subtree(record):
+        directory = record["destination"]
+        return directory, verify_subtree(repo, head, record, workspace, export_tree=directory in exports)
+
+    if jobs > 1 and len(records) > 1:
+        # Each standard Git split owns its own process-specific subtree cache.
+        with ThreadPoolExecutor(max_workers=min(jobs, len(records))) as workers:
+            splits = dict(workers.map(check_subtree, records))
+    else:
+        splits = dict(map(check_subtree, records))
+
     return {"sourceAnchors": len(imports) - sum(row["target"] == "launcher" for row in imports),
             "subtrees": splits, "deliverySnapshots": [row["destination"] for row in snapshots]}
 
@@ -223,8 +258,27 @@ def main():
     parser.add_argument("--repo", default=pathlib.Path(__file__).resolve().parents[2])
     parser.add_argument("--head", default="HEAD")
     parser.add_argument("--base")
+    parser.add_argument("--jobs", type=int, default=1, help="Maximum number of parallel subtree exports")
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("--changed-subtrees", action="store_true",
+                           help="Export only new subtrees or changed source connections relative to --base")
+    selection.add_argument("--subtree", metavar="DIRECTORY", help="Export and verify one registered subtree")
+    parser.add_argument("--push", nargs=2, metavar=("REMOTE", "BRANCH"),
+                        help="Push the verified export to a standalone branch, without forcing")
     args = parser.parse_args()
-    print(json.dumps(verify(Repository(args.repo), args.head, args.base), ensure_ascii=False, sort_keys=True))
+    if args.jobs < 1:
+        parser.error("--jobs must be positive")
+    if args.push and not args.subtree:
+        parser.error("--push requires --subtree")
+    repo = Repository(args.repo)
+    result = verify(repo, args.head, args.base, args.jobs,
+                    changed_only=args.changed_subtrees, subtree=args.subtree)
+    if args.push:
+        remote, branch = args.push
+        destination = f"refs/heads/{branch}"
+        repo.git("check-ref-format", destination)
+        repo.git("push", "--", remote, f"{result['subtrees'][args.subtree]}:{destination}")
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
 
 
 if __name__ == "__main__":

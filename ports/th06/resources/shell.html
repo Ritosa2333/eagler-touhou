@@ -1080,7 +1080,9 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
           switch (message.command) {
           case "configure":
             await installShared(message);
-            await installRuntime(message);
+            // The native room preview already owns the local language pack.
+            // Start and return only refresh options on that same instance.
+            if (!Module.eaglerRoomPreview) await installRuntime(message);
             await installMusic(message);
             reply(message.request, true);
             break;

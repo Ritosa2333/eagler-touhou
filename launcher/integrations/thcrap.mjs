@@ -164,7 +164,7 @@ export function createThcrapClient({
       // stringdefs.js is different: it is the data table consumed by
       // thcrap's strings/ascii hooks, so keep it for deterministic compilation
       // into the native/Web runtime localization pack.
-      if (isGameAsset && /\.js$/i.test(rawPath) &&
+      if (isGameAsset && /\.js$/i.test(rawPath) && !(gameId === "th17" && rawPath === "th17/trophy.js") &&
           !new RegExp(`^${gameId}/(?:spells|stages|musiccmt|spellcomments|stringdefs|${gameId})\\.js$`, "i").test(rawPath)) continue;
       const path = isGameAsset ? assertPatchPath(rawPath, gameId) : assertAssetPath(rawPath);
       if (!Number.isInteger(crc) || crc < 0 || crc > 0xffffffff) continue;

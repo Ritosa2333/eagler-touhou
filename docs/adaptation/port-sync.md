@@ -1,12 +1,12 @@
 # 普通版与多人版同步
 
-每对独立源码目录拥有自己的同步基线和历史。普通版持续演进，多人版通过三方合并吸收对应修改，并保留联机专属实现。同步关系来自 `launcher/config/workspace.json`，th08、th10、th11、th12、th15 和 th075 分别管理。
+每对独立源码目录拥有自己的同步基线和历史。普通版持续演进，多人版通过三方合并吸收对应修改，并保留联机专属实现。同步关系来自 `launcher/config/workspace.json`，th05、th08、th10、th11、th12、th15、th17 和 th075 分别管理。
 
 ## 下一次提交与同步
 
 monorepo 的 `main` 集成各作品的普通版与多人版，日常提交按源码目录维护。向独立作品源仓库回推时，将普通版目录历史推入其普通版分支（包括名为 `main` 的普通版分支），将多人专属实现、测试和接收记录推入对应多人分支。目录投影保留各自源码归属与原仓库祖先。
 
-以下 Git 历史流程适用于 th08、th10、th11、th12、th15。日常贡献者维护原目录，同步维护者接收普通版历史。
+以下 Git 历史流程适用于 th05、th08、th10、th11、th12、th15、th17。日常贡献者维护原目录，同步维护者接收普通版历史。
 
 1. **提交日常代码。** 在 monorepo 开发分支修改对应 `ports/<作品>/` 或 `ports/<作品>-mp/`，提交代码和文档。普通版修改默认进入 MP 接收范围。
 2. **刷新并查看历史。** 运行 `python tools/ports/project-history.py --repo . --game th10 --write-refs --track-normal`（将 th10 换成目标作品），用 `git log --oneline port-history/th10mp..port-history/th10` 查看待接收提交。历史分支和上游配置在新克隆中按下文重建。
@@ -33,7 +33,7 @@ git branch -vv --list 'port-history/*'
 git log --oneline port-history/th08mp..port-history/th08
 ```
 
-`--game` 支持已保留独立导入来源的 th08、th10、th11、th12、th15。每次刷新读取选定提交，相关目录的新修改进入对应分支，跨目录大修分别进入各自历史。`git branch -vv` 中 MP 的 `ahead` 表示 MP 独有提交，`behind` 表示普通版独有提交。已有上游配置与目标不同的分支由工具提示核对。
+`--game` 支持已保留独立导入来源的 th05、th08、th10、th11、th12、th15、th17。每次刷新读取选定提交，相关目录的新修改进入对应分支，跨目录大修分别进入各自历史。`git branch -vv` 中 MP 的 `ahead` 表示 MP 独有提交，`behind` 表示普通版独有提交。已有上游配置与目标不同的分支由工具提示核对。
 
 本地八个 `port-history/` 分支构成四组 MP→普通版跟踪关系，本轮身份见[接收记录](../history/port-sync-20261023.md)，下文验证表保留同步前快照。分支位于总仓库，维护者进入源码目录后可直接运行上述 Git 查询。源码目录继续沿用 monorepo 布局；刷新读取已提交快照，工作区修改随正常提交进入下一轮历史。
 

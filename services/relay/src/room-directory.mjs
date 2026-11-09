@@ -6,14 +6,16 @@ export function publicControlMode(seat) {
   if (seat.touchEnabled === false) return 'normal';
   if (seat.touchEnabled !== true) return null;
   if (seat.movementMode === 'touch-unlimited') return 'cheat';
-  if (seat.movementMode === 'touch') return 'touch';
-  return ['joystick', 'joystick-free'].includes(seat.movementMode) ? 'normal' : null;
+  if (seat.movementMode === 'touch' || seat.movementMode === 'joystick-free') return 'touch';
+  return seat.movementMode === 'joystick' ? 'normal' : null;
 }
 
 // Discovery never joins a room. Membership is anonymous and browser-scoped;
 // it prevents accidental multi-tab seats, not multiple accounts/devices.
 export function createRoomDirectory({
   publicNames = false,
+  publicTrack,
+  publicProfile,
   rooms,
   clearSeat,
   invalidateReady,
@@ -70,6 +72,7 @@ export function createRoomDirectory({
     return {
       ...(publicNames ? {publicNames:true} : {}),
       product: match[1],
+      listeningTrack: publicTrack?.(room),
       code: match[2],
       phase: room.lobby.phase,
       capacity: room.lobby.playerCount,
@@ -92,7 +95,8 @@ export function createRoomDirectory({
               initial: initial(seat.name),
               loadout: seat.loadout,
               ...(publicNames ? {name:seat.name || ''} : {}),
-              ...(match[1] === 'th09mp'
+              profile: publicProfile?.(room, seat.clientId),
+              ...(['th09mp', 'th19mp'].includes(match[1])
                 ? {
                     ...(!publicNames && typeof seat.machineSign === 'string' && seat.machineSign.trim()
                       ? {
@@ -166,6 +170,7 @@ export function createRoomDirectory({
       type: 'directory',
       version: 1,
       membershipRecovery: true,
+      globalRoomCodes: true,
       product,
       rooms: page.rooms,
       total: page.total,
@@ -375,6 +380,13 @@ export function createRoomDirectory({
     const entry = clients.get(clientId);
     return entry?.roomId === roomId ? entry.memberId : undefined;
   };
+  function moveMembers(from, to, clientIds) {
+    for (const clientId of clientIds) {
+      const entry = clients.get(clientId);
+      if (entry?.roomId === from) entry.roomId = to;
+    }
+    changed();
+  }
   return {
     admit,
     connect,
@@ -384,6 +396,7 @@ export function createRoomDirectory({
     evict,
     track,
     memberIdFor,
+    moveMembers,
     memberLocation: memberId => members.get(memberId),
     close() {
       clearInterval(maintenance);

@@ -116,7 +116,9 @@ void GameplayScene::synchronize(){
     if(auto* boss=globals.boss_slots[0]){gui_context.familiar_count=boss->familiar_count();gui_context.familiar_multiplier=boss->remaining_seconds;}else gui_context.familiar_count=gui_context.familiar_multiplier=0;
     environment.camera=background.camera;environment.player=p.motion.movement.position;environment.boss_present=globals.boss_slots[0]!=nullptr;environment.any_boss=0;for(auto* boss:globals.boss_slots)if(boss)environment.any_boss=1;
     if(auto* boss=globals.boss_slots[0]){environment.boss=boss->resolved_position;environment.boss_active=bool(boss->flags&1);}else{environment.boss={};environment.boss_active=0;}
-    environment.dialogue=dialogue.present();environment.transition=bool(globals.game_flags&0x60);environment.tint.d3dColor=i32(globals.spell_panel_color);
+    environment.dialogue=dialogue.present();environment.transition=bool(globals.game_flags&0x60);
+    // The stage tint ANM (original 0x4e4a64) colors the background fireflies.
+    environment.tint=background.tint_vm.color1;
     effect_system.paused=bool(globals.game_flags&1024);
     screen.context.timing=player.timing;screen.context.frozen=bool(globals.game_flags&1024);screen.context.paused=paused;screen.context.retry=retrying;
     ascii_context.player=p.motion.movement.position;ascii_context.gauge=n.gauge;ascii_context.point_value=n.point_value;ascii_context.human_limit=limits.minimum;ascii_context.youkai_limit=limits.maximum;ascii_context.human_effects=limits.human_bonus;ascii_context.youkai_effects=limits.youkai_bonus;ascii_context.human_tint=limits.human;ascii_context.youkai_tint=limits.youkai;ascii_context.paused=paused;ascii_context.retry=retrying;ascii_context.freeze_popups=bool(globals.game_flags&1024);ascii_context.effects=effect_pool.base_animation;ascii_context.demo=bool(globals.game_flags&2);ascii_context.arcade_origin=m.arcade_origin;ascii_context.arcade_size=m.arcade_size;

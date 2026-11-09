@@ -7,7 +7,7 @@
 // Prerecorded effects bypass the mixed music queue without a second sequencer.
 EM_JS(double, eagler_web_sfx_command,
       (int op, unsigned id, const void* pcm, unsigned frames, unsigned channels,
-       unsigned rate, int format, double value), {
+       unsigned rate, int format, double value, double balance), {
     // BEGIN_WEB_SFX_JS
     const ctx = Module['SDL3'] && Module['SDL3'].audioContext;
     if (op === 10) Module['eaglerSfxPaused'] = !!value;
@@ -27,15 +27,15 @@ EM_JS(double, eagler_web_sfx_command,
         const releaseOutput = v => {
             if (v.outputConnected) { v.merge.disconnect();v.outputConnected = false; }
         };
-        const stop = v => {
-            v.offset = cursor(v);
+        const stop = (v, restarting = false) => {
+            v.offset = restarting ? 0 : cursor(v);
             if (v.node) {
                 v.node.onended = null;
                 v.node.stop();
                 v.node.disconnect();
                 v.node = null;
             }
-            releaseOutput(v);
+            if (!restarting || Module['eaglerSfxPaused']) releaseOutput(v);
             v.playing = false;
         };
         const gains = v => {
@@ -116,6 +116,10 @@ EM_JS(double, eagler_web_sfx_command,
     case 8: return pool.cursor(v)*v.buffer.sampleRate;
     case 9: return +v.playing;
     case 11: return 1;
+    case 13:
+        pool.stop(v,true);
+        v.volume=Math.max(0,value);v.pan=Math.max(-1,Math.min(1,balance));v.loop=!!format;
+        pool.gains(v);pool.start(v);break;
     }
     return 1;
     // END_WEB_SFX_JS
@@ -125,9 +129,9 @@ EM_JS(double, eagler_web_sfx_command,
 namespace eagler::audio::web_sfx {
 inline unsigned key(const void* voice) { return static_cast<unsigned>(reinterpret_cast<std::uintptr_t>(voice)); }
 inline double command(int op, unsigned id=0, const void* pcm=nullptr, unsigned frames=0,
-                      unsigned channels=0, unsigned rate=0, int format=0, double value=0) {
+                      unsigned channels=0, unsigned rate=0, int format=0, double value=0, double balance=0) {
 #ifdef __EMSCRIPTEN__
-    return eagler_web_sfx_command(op,id,pcm,frames,channels,rate,format,value);
+    return eagler_web_sfx_command(op,id,pcm,frames,channels,rate,format,value,balance);
 #else
     return 0;
 #endif
@@ -138,6 +142,9 @@ inline bool upload(const void* voice,const void* pcm,unsigned frames,unsigned ch
 inline bool contains(const void* voice) { return command(11,key(voice))!=0; }
 inline void erase(const void* voice) { command(1,key(voice)); }
 inline bool play(const void* voice,bool loop=false) { return command(2,key(voice),nullptr,0,0,0,0,loop)!=0; }
+inline bool restart(const void* voice,float gain,float balance,bool loop) {
+    return command(13,key(voice),nullptr,0,0,0,loop,gain,balance)!=0;
+}
 inline void stop(const void* voice) { command(3,key(voice)); }
 inline void seek(const void* voice,unsigned frame,unsigned rate) { command(4,key(voice),nullptr,0,0,rate,0,frame); }
 inline void volume(const void* voice,float gain) { command(5,key(voice),nullptr,0,0,0,0,gain); }

@@ -142,7 +142,7 @@ async function main(args) {
   const previous = readStatusReport(root);
   const games = [...new Set(selected.map(target=>target.game))];
   const shared = sharedPlan.gates.filter(gate=>selected.some(target=>
-    (!gate.games || gate.games.includes(target.game)) && (!gate.variants || gate.variants.includes(target.variant))))
+    !gate.excludeGames?.includes(target.game) && (!gate.games || gate.games.includes(target.game)) && (!gate.variants || gate.variants.includes(target.variant))))
     .map(gate => ({...gate, ...commandCheck(gate, options.output, games)}));
   const records = [];
   for (const target of selected) {
@@ -159,7 +159,7 @@ async function main(args) {
       const gates = [{id:'source-inputs', status:issues.length ? 'failed':'passed', level:'source-inputs', complete:true,
         checks:['BUILD-01'], files:[target.directory], ...(issues.length ? {error:issues.join('\n')}: {})},
         ...checkRuntimeSource({...target, product:PRODUCT_GAMES[target.game], nativeFiles, root}),
-        ...shared.filter(gate => (!gate.games || gate.games.includes(target.game)) &&
+        ...shared.filter(gate => !gate.excludeGames?.includes(target.game) && (!gate.games || gate.games.includes(target.game)) &&
           (!gate.variants || gate.variants.includes(target.variant)))];
       const identity = sourceIdentity(files,{game:target.game,variant:target.variant,
         features:target.definition.features,selection:input.selection,dependencies,

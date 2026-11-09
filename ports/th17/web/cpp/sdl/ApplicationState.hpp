@@ -1,5 +1,7 @@
 #pragma once
 #include "Application.hpp"
+#include <eagler/thprac/PracticeSpeed.hpp>
+#include <eagler/thprac/PracticeInput.hpp>
 #include "SceneDisplay.hpp"
 #include "FontDevice.hpp"
 #include "AudioDevice.hpp"
@@ -13,23 +15,70 @@
 #include "../game/RunPause.hpp"
 #include "../game/ScreenFade.hpp"
 #include "../game/FramePerformance.hpp"
+namespace th17::multiplayer {struct StageEntry;}
 namespace th17::sdl {
 // Each game scene owns its callback schedule. Title/ending share the global
 // ANM draw schedule; stage gameplay owns the complete battle/compositor schedule.
 struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGameplayServices,RunPausePlatform,StageDrawServices,AssetSource,ApplicationFlowServices,RunInputServices {
  GraphicsDevice graphics;FontDevice fonts{graphics};AudioDevice audio_device;FileStore files;
  Rng visual;AnmEnvironment environment;AnmManager animations{visual,environment};AnmRenderer renderer{graphics};ScreenViews views{renderer,environment};AsciiText captions{animations,environment};FrameScheduler scheduler;
- GameConfig config;GameRun progress;GameSelection selection;PlayerLifeSession selection_player;ItemScoreState selection_score;RecordStore records;TitleSelectionSettings choices;TitleAudioSettings volumes;TitleControllerSettings controller;MusicComments comments;TrophyCatalog trophy_catalog;TitleSpellMemory spell_memory;TitleKeyboard keyboard_state;
+ GameConfig config;GameRun progress;GameSelection selection;PlayerLifeSession selection_player;ItemScoreState selection_score;RecordStore records;TitleSelectionSettings choices;TitleAudioSettings volumes;TitleControllerSettings controller;LocalizationTable spell_names;MusicComments comments;TrophyCatalog trophy_catalog;TitleSpellMemory spell_memory;TitleKeyboard keyboard_state;
  ApplicationFlow flow{progress,*this};std::unordered_map<std::string,i32> shared;
  std::unique_ptr<AnmSceneEffects> scene_effects;std::unique_ptr<AnmDrawSchedule> global_layers;std::unique_ptr<AsciiDrawSchedule> global_letters;
+ struct PracticeState {
+  bool enabled=false, menu=false, confirmed=false, cancelled=false, accepted=false, advanced=false, information=false;
+  bool purple=true;
+  i32 spell=-1;
+  u32 tools=0;
+  bool everlasting_bgm=false,keyboard_monitor=false,life_until_continue=false,show_lock_timer=false,hide_master=false;
+  bool lower_boss=false,no_spirits=false,uncap_score=false,all_clear_bonus=false;
+  bool repair_roaring_replay=false;
+  float boss_range=.5f;
+  PracticeSettings settings;
+  PracticePatch active;
+  eagler::thprac::PracticeSpeed speed;
+  eagler::thprac::PracticeInput input;
+  u32 active_tools(i32 continues)const noexcept{
+   u32 value=tools;
+   if(life_until_continue&&continues)value&=~PracticeInfiniteLives;
+   if(no_spirits)value|=PracticeNoSpirits;
+   if(uncap_score)value|=PracticeUncapScore;
+   if(all_clear_bonus)value|=PracticeAllClearBonus;
+   if(lower_boss)value|=u32(boss_range*practice_boss_range_steps+.5f)<<practice_boss_range_shift;
+   return value;
+  }
+ } practice;
  std::unique_ptr<TitleScene> title;std::unique_ptr<EndingScene> ending;std::unique_ptr<RunGameplay> run;std::unique_ptr<RunInput> run_input;std::unique_ptr<RunPause> pause;std::unique_ptr<SceneDisplay> display;
  std::shared_ptr<Replay> selected_replay;std::unique_ptr<ReplayRecording> recording;std::array<u8,0xa0> live_description{};
  std::vector<std::unique_ptr<ScreenFade>> fades;std::unique_ptr<Manual> pause_manual;FrameCallback manual_callback;std::array<FrameCallback,4> global_callbacks;
- std::unordered_map<std::string,std::vector<u8>> resource_cache;Archive archive;std::vector<u8> archive_bytes;std::unordered_map<std::string,u32> archive_names;
+ std::unordered_map<std::string,std::vector<u8>> resource_cache;
+ std::unique_ptr<SDL_IOStream,decltype(&SDL_CloseIO)> archive_file{nullptr,SDL_CloseIO};
+ Archive archive;std::unordered_map<std::string,u32> archive_names;
  StageCamera camera;PlayerTouch touch;GameInput physical_input,retained_input;FramePerformance performance;u32 controller_buttons=0,frames=0,manual_pressed=0,manual_repeated=0,transition_overlay=0,loading_handle=0;u16 stage_seed=0;
  std::vector<u8> pending_png,pending_animation;i32 pending_page=-1,pending_bank=-1,frame_skip=0,preview_index=-1;
  i32 title_demo_idle=0,title_demo_index=0,title_saved_difficulty=0,title_saved_replay_selection=0;
- bool initialized=false,exiting=false,completed_recording=false;std::array<i32,16> projected{};std::string failure;
+ bool initialized=false,exiting=false,completed_recording=false,has_language_pack=false;std::array<i32,16> projected{};std::string failure;
+#if TH17_MULTIPLAYER
+ struct RoomSound {i32 id;float pan;PlayerShots::SoundAction action;bool queued;};
+ std::vector<RoomSound>* room_sounds=nullptr;
+ bool room_speculative=false,room_barrier=false;
+ bool room_silent=false;
+ std::array<std::array<i32,2>,3> room_loadouts{};
+ std::array<CoopPlayerInput,2> room_partners{};
+ u32 room_seats=0;
+ u32 room_stage_generation=0;
+ Rng room_stage_game,room_stage_visual;
+ bool room_preview=false;
+ std::function<bool(i32,const std::array<char,9>&,bool)> room_replay_save;
+ std::unique_ptr<ReplayRecording> room_description;
+ bool begin_room(u16 seed,i32 difficulty,u32 seats,const std::array<std::array<i32,2>,3>& loadouts);
+ bool restore_room_stage(const multiplayer::StageEntry&);
+ bool can_rollback() const;
+ bool save_rollback(multiplayer::FrameImage&);
+ bool rollback_boundary() override;
+#else
+ bool rollback_boundary() override{return true;}
+#endif
  AppScene loading_destination=AppScene::Uninitialized;u32 loading_frames=0,loading_duration=0;Rng loading_visual,loading_game;
  void remember_title()noexcept;bool fail(const std::string&);bool initialize(bool);~ApplicationState();bool step(u32,u32,u32,float,bool);const i32* projection();
  FrameScheduler& active_scheduler()noexcept{return scene()?scene()->frame_scheduler():scheduler;}
@@ -37,12 +86,14 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  bool save_settings();bool preload_run();bool bind_display(StageGameplay* previous=nullptr);bool draw_global();bool screen_fade(i32,i32,i32,bool,bool,u32=0);void reset_graphics();
  bool advance_flow();bool step_loading();bool draw_loading();
  bool read(const std::string&,std::vector<u8>&)override;
+ bool localized_message(const std::string&)const override;
  bool begin_loading(bool&)override;bool shutdown()override;bool shutdown_delay(i32)override;bool release_game()override;bool release_title()override;bool release_ending()override;bool begin_game(bool)override;bool begin_title()override;bool begin_ending()override;
+ const std::string* localized_spell(i32 id)const override{return spell_names.spell_name(id);}
  bool sound(i32)override;bool text(AnmVm&,const TextureText&)override;bool hud_text(const HudTextDraw&)override;bool keyboard(TitleKeyboard&)override;bool calendar(i64,ReplayCalendar&)override;bool capture_score_details(PauseScoreDetails&)override;bool seconds(double&)override;
  // TitleScene dispatches its named menu controllers before reaching the platform.
  bool update_title_menu(TitleScreen,const TitleFrameInput&)override{return true;}bool draw_title_menu(TitleScreen)override{return true;}
  bool music(const std::string&)override;bool music(const std::string&,i32)override;bool music_command(i32)override;bool start_title_music()override;bool volume(i32,i32,i32)override;bool save(const TitleControllerSettings&)override;
- bool fade_menu_music()override;bool show_loading_indicator()override;bool begin_transition(u32&)override;bool start_game(i32)override;i32 checkpoint_key()const override;bool fade_music(float)override;bool transition_size(float,float)override;
+ bool fade_menu_music()override;bool show_loading_indicator()override;bool begin_transition(u32&)override;bool start_game(i32)override;PracticeMenuResult configure_practice(i32,i32,bool=true)override;i32 checkpoint_key()const override;bool fade_music(float)override;bool transition_size(float,float)override;
  bool request_catalog()override;bool release_catalog()override;bool start_replay(const ReplayStartRequest&)override;bool clear_page()override;bool request_page(i32)override;bool upload_page(i32)override;
  bool read_slot(i32,std::shared_ptr<Replay>&)override;bool prepare_live_replay(bool)override;bool save_slot(i32,const std::array<char,9>&)override;bool release_live_replay()override;
  bool release_transient_animations()override;bool clear_title_overlay()override;bool read_demo(i32,std::shared_ptr<Replay>&)override;bool begin_demo(const DemoRequest&)override;bool queue_title_music(i32,i32,const std::string&)override;bool clear_current_wave()override;bool unlock_title_music()override;bool selection_return_transition()override;bool title_exit(i32)override;bool fade_out_title_music()override;

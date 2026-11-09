@@ -15,8 +15,8 @@ export type ReplayControlAction = 'pause' | 'play' | 'seek' | 'rate';
 const rates = [.5, 1, 2, 4, 8, 0];
 
 /** Presentation shared by the runtime workspace and its interactive handbook example. */
-export function ReplayTransport({playback, busy = false, fullscreen = false, speedId, onControl, onToggleFullscreen}: {
-  playback?: ReplayTransportState; busy?: boolean; fullscreen?: boolean; speedId?: string;
+export function ReplayTransport({playback, fps = 60, busy = false, fullscreen = false, speedId, onControl, onToggleFullscreen}: {
+  playback?: ReplayTransportState; busy?: boolean; fps?: number; fullscreen?: boolean; speedId?: string;
   onControl(action: ReplayControlAction, value?: number): void;
   onToggleFullscreen(): void;
 }) {
@@ -32,8 +32,8 @@ export function ReplayTransport({playback, busy = false, fullscreen = false, spe
         {rates.map(rate => <option key={rate} value={rate}>{rate ? `${rate}×` : t('replay.ui.fullSpeed')}</option>)}
       </MainSelect></div>
     </div>
-    <ReplaySeekBar key={`${playback?.path ?? ''}:${start}`} frame={Math.max(0, (playback?.frame ?? 0) - start)} total={Math.max(0, (playback?.total ?? 0) - start)} roundStarts={playback?.roundStarts} disabled={busy || !playback} onSeek={target => onControl('seek', target + start)}/>
+    <ReplaySeekBar key={`${playback?.path ?? ''}:${start}`} frame={Math.max(0, (playback?.frame ?? 0) - start)} total={Math.max(0, (playback?.total ?? 0) - start)} fps={fps} roundStarts={playback?.roundStarts} disabled={busy || !playback} onSeek={target => onControl('seek', target + start)}/>
     <UiButton variant="icon" type="button" className="replay-fullscreen replay-button" aria-label={t('replay.ui.fullscreen')} onClick={onToggleFullscreen} data-fullscreen={fullscreen}><FullscreenIcons/></UiButton>
-    <span className="replay-seek-status" role="status">{playback?.seeking ? t('replay.ui.seek', {time:replayClock(Math.max(0, (playback.target ?? 0) - start))}) : playback?.ended ? t('replay.ui.ended') : ''}</span>
+    <span className="replay-seek-status" role="status">{playback?.seeking ? t('replay.ui.seek', {time:replayClock(Math.max(0, (playback.target ?? 0) - start), fps)}) : playback?.ended ? t('replay.ui.ended') : ''}</span>
   </section>;
 }

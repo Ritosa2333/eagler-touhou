@@ -12,6 +12,7 @@ public:
     static bool expand_alpha(TextureImage&,u32 rows);
     static bool bleed(TextureImage&,u32 rows);
     bool rasterize(const std::string&,const TextStyle&);
+    bool copy(TextureImage&,const TextRect&,const TextStyle&);
     bool write(TextureImage&,const TextRect&,const std::string&,const TextStyle&);
 };
 }

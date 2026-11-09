@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { createThcrapClient, downloadThcrapPack, crc32 } from "../integrations/thcrap.mjs";
-import { ThcrapRuntimeCompiler } from "../server/thcrap-compiler.mjs";
+import { parseThcrapJson, ThcrapRuntimeCompiler } from "../server/thcrap-compiler.mjs";
 import { ThtkRunner } from "../server/thtk-runner.mjs";
 import { createStaticThcrapPack } from "../server/thcrap-static-pack.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
@@ -190,9 +190,21 @@ function collectStrings(value, output) {
 async function applyFontOverride(input) {
   if (!fontFile) return input;
   const characters = new Set(Array.from({ length: 95 }, (_, index) => String.fromCodePoint(0x20 + index)));
+  if (game === "th17") characters.add("♪");
   for (const resource of downloaded.resources) {
     if (resource.kind !== "jdiff" && resource.kind !== "table") continue;
-    try { collectStrings(JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(resource.bytes)), characters); } catch {}
+    if (game === "th17") {
+      const parsed = parseThcrapJson(resource);
+      if (resource.path === "themes.js") {
+        collectStrings(Object.entries(parsed).filter(([key]) => key.startsWith("th17_")).map(([, value]) => value), characters);
+      } else if (resource.sourceRole === "stringdefs") {
+        collectStrings(Object.entries(parsed).filter(([key]) => key.startsWith("th10 Music Room spoiler ")).map(([, value]) => value), characters);
+      } else {
+        collectStrings(parsed, characters);
+      }
+    } else {
+      try { collectStrings(JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(resource.bytes)), characters); } catch {}
+    }
   }
   const extension = extname(fontFile).toLowerCase();
   if (!new Set([".otf", ".ttf"]).has(extension)) throw new Error(`unsupported font format: ${fontFile}`);

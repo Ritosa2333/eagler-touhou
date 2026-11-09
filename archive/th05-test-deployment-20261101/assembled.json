@@ -1,0 +1,12 @@
+{
+  "siteUrl": "https://test.touhou.vip/",
+  "previous": "/var/www/eagler-touhou-test/releases/latest-d2493feb4-20261031",
+  "candidate": "/var/www/eagler-touhou-test/releases/th05-native-20261101-922cb60d4048",
+  "releaseId": "sha256-f820a8725d3e5526f13c04819c63122add14a0ae8c5086f03d371b3f1a0e2fca",
+  "buildId": "4ccbe8c0147b731dcd10",
+  "generation": "811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509",
+  "packageRevision": "a39e0610d1bb1480",
+  "files": 7517,
+  "preserved": 7330,
+  "sourceExceptions": []
+}

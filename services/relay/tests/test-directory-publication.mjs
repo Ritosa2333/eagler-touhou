@@ -19,7 +19,7 @@ test('directory shares public work but not membership, and refreshes each public
     lobby: {
       visibility: 'public', playerCount: 2, phase: 'lobby', startSerial: 0,
       spectators: new Map(),
-      get seats() { visits++; return [{ clientId, name: clientId }, null]; },
+      get seats() { visits++; return [{ clientId, name: clientId, movementMode: 'joystick-free', touchEnabled: true }, null]; },
     },
     lobbyClients: new Map([[clientId, new Socket()]]), lobbyDisconnectTimers: new Map(),
     clients: new Map(), runs: new Map(),
@@ -50,6 +50,7 @@ test('directory shares public work but not membership, and refreshes each public
     assert.equal(visits, 2, 'summarize each room once for every publication');
     assert.equal(a.messages.at(-1).mine.code, '1111');
     assert.equal(b.messages.at(-1).mine.code, '2222');
+    assert.equal(a.messages.at(-1).rooms.find(row => row.code === '1111').seats[0].controlMode, 'touch');
     assert.notEqual(a.messages.at(-1).mine.recoveryToken, b.messages.at(-1).mine.recoveryToken);
     assert.equal(anonymous.messages.at(-1).mine, null);
     assert.deepEqual(filtered.messages.at(-1).rooms.map(row => row.code), ['2222']);

@@ -1,0 +1,14 @@
+{
+  "sourceHead": "183e03039fe1623c3500407ff2b03757ac8d9693",
+  "game": "th17",
+  "target": "ports/th17-mp",
+  "merged": "92379400abc037c18882e72187c8145fa2f095f1",
+  "tree": "3ca57b69ae0d5809b7efd149661830eb3e2d3e47",
+  "parents": [
+    "183e03039fe1623c3500407ff2b03757ac8d9693",
+    "92379400abc037c18882e72187c8145fa2f095f1"
+  ],
+  "message": "保留 TH17 触控输入同步的两侧目录历史\n\ngit-subtree-dir: ports/th17-mp\ngit-subtree-mainline: 183e03039fe1623c3500407ff2b03757ac8d9693\ngit-subtree-split: 92379400abc037c18882e72187c8145fa2f095f1\nPort-History-Writeback: 1\n",
+  "changed": [],
+  "candidateCommit": "694c78e986c4ba9533f83a289aa23640affca5b8"
+}

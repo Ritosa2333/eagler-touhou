@@ -1,0 +1,26 @@
+{
+  "siteUrl": "https://test.touhou.vip/",
+  "previous": "/var/www/eagler-touhou-test/releases/th05-native-multiplayer-20261101-3e04e05dab36",
+  "candidate": "/var/www/eagler-touhou-test/releases/th05-independent-mp-20261101-e9c06bed866a",
+  "releaseId": "sha256-a7706bb0b9bcb142103f9ca8744500b1aa24cd9b8e14d9823eab705d47e2d08c",
+  "buildId": "df2cedb2a9ddbc36f234",
+  "generation": "7939a3cee41237fc895d6f034757c7500e4586d2533469093b75e09d0579d5d7",
+  "multiplayerGeneration": "8c065e79693368f540b1f15c3e8b2dea904a8f9068d97d4f1cb1d51ed7f7adbc",
+  "packageRevision": "c2bdca7b5b842835",
+  "files": 7811,
+  "preserved": 7645,
+  "sourceExceptions": [],
+  "publishedAt": "2026-11-01T15:23:33Z",
+  "nginxBefore": "e373e635293c7076ee129067ae30e51ba72eeff5d65a3d1bebea15c653727ead",
+  "nginxAfter": "e373e635293c7076ee129067ae30e51ba72eeff5d65a3d1bebea15c653727ead",
+  "protected": {
+    "eagler-touhou": {
+      "target": "/var/www/eagler-touhou/releases/mandatory-migration-20261031-01",
+      "deployment": "bb9cdb5261e517b3e604ec798967991ebe575ac5041d13cee90a3a08fff46764"
+    },
+    "eagler-touhou-beta": {
+      "target": "/var/www/eagler-touhou-beta/releases/relay-session-d48252551-20261028",
+      "deployment": "34c5ab9d5ca4b8e9c3921087fae0941af50909334029e60a9ad6b3c45e6e0d46"
+    }
+  }
+}

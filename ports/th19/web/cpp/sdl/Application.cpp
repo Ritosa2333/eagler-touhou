@@ -1,3 +1,4 @@
+#include "GlobalRank.hpp"
 #include "ReplayInput.hpp"
 #include "WorldCheckpoint.hpp"
 #include "ResourceCrypt.hpp"
@@ -156,6 +157,8 @@ static bool g_touch_keys[512]{};
 static touhou::input::TouchController g_touch_input;
 static int g_touch_side=0;
 static bool g_network_active=false,g_network_finished=false;
+static int g_network_selection=0;
+static u32 g_network_selection_previous[2]{};
 static u32 g_network_frame=0;
 static bool g_network_unlimited[2]{};
 static float g_network_motion_x[2]{},g_network_motion_y[2]{};
@@ -651,8 +654,9 @@ th19::ReflectionRng g_spirit_rng;
 int g_spirit_clock=0,g_spirit_arrivals=0,g_spirit_overflow=0;
 // Passive modifier flag writers are still under audit; do not invent a character mapping.
 bool g_spirit_enhanced[2][3]{},g_spirit_suppressed[2][3]{};
-// Global rank source is still unconnected; keep its unenhanced value explicit.
+// Shared native attack-controller rank (EXE 0x51afe0).
 int g_reflection_rank=0,g_reflection_rank_cap=0;
+th19::GlobalRank g_global_rank;
 struct ChiyariSkillVisual {int frame=-1;th19::AnmVm vm;float x=0,y=0;};
 
 
@@ -1023,7 +1027,7 @@ void save_web_progress(){
  FILE*f=fopen(web_progress_path().c_str(),"wb");if(f){size_t n=fwrite(b.data(),1,b.size(),f);fclose(f);if(n==b.size())++g_save_revision;}
 }
 bool g_story_available[19]={true},g_vs_available[19]={true,true,true,true,true,true,true,true,true,true};
-bool character_available(int ch){return ch>=0&&ch<19&&(g_vs_mode?g_vs_available[ch]:g_story_available[ch]);}
+bool character_available(int ch){return ch>=0&&ch<19&&(g_network_selection>0||(g_vs_mode?g_vs_available[ch]:g_story_available[ch]));}
 // Use one decoder for startup and website imports; reject invalid saves before replacing progress.
 bool decode_native_score(const std::vector<u8>&raw,std::vector<u8>&plain,const u8*&status){
  if(raw.size()<24||raw.size()>16*1024*1024)return false;
@@ -1345,6 +1349,7 @@ void emit_quad(i32 layer, const TextureAllocation& alloc, const th19::AnmSprite&
 // background layer 25 (priority 63), before foreground layer 26 (priority 70).
 // Its @R texture contains only the background pass, never text or portraits.
 void draw_title_wave() {
+    if(g_skip_present)return;
     if(!g_title_wave_capture.handle){
         std::vector<u8> pixels(1280*960*4);
         g_title_wave_capture=gfx.create_raw(1280,960,pixels.data());
@@ -1352,6 +1357,7 @@ void draw_title_wave() {
     DrawCmd cmd{};cmd.layer=26;cmd.handle=g_title_wave_capture.handle;
     cmd.world_capture=true;cmd.additive=true;cmd.mesh_fog_enabled=false;
     cmd.address_u=cmd.address_v=3;
+    cmd.mesh.reserve((th19::TitleWave::columns-1)*(th19::TitleWave::rows-1)*6);
     std::array<SpriteVertex,th19::TitleWave::columns*th19::TitleWave::rows> grid;
     for(int x=0;x<th19::TitleWave::columns;++x)for(int y=0;y<th19::TitleWave::rows;++y){
         const auto v=g_title_wave.vertex(x,y);
@@ -3578,12 +3584,15 @@ void load_ecl_engine() {
     for(int side=0;side<2;++side){g_bombs[side]={};g_bomb_area[side]={};g_bomb_back[side]={};g_bomb_visual_tail[side]=0;for(auto&v:g_bomb_extra[side])v={};}
     g_battle_report_frame=-1;g_stage_deaths[0]=g_stage_deaths[1]=0;for(auto&counts:g_vs_attack_counts)counts[0]=counts[1]=0;
     ++g_ecl_generation;g_attack_warning={};g_attack_warning_vm={};
+    g_global_rank.begin(g_story_difficulty,g_vs_mode,g_story_session.stage_index()+1);
+    g_reflection_rank=g_global_rank.value;g_reflection_rank_cap=g_global_rank.cap;
     for(int side=0;side<2;++side){
         auto& field=g_ecl_fields[side];
         field.vm=th19::EclVm{};field.world=th19::GameWorld{};
         field.programs.clear();field.loaded.clear();
         // Development seed, not a reconstruction of the native shared RNG stream.
         field.world.wave_schedule.seed(g_game_seed);field.world.extra_rng.state=g_game_seed?g_game_seed:1;
+        field.world.spirit_rank=g_global_rank.value;field.world.spirit_rank_cap=g_global_rank.cap;
         field.world.difficulty=g_story_difficulty;field.world.bullet_scripts=&g_bullet_scripts;field.world.bullet_sprite_sizes=&g_bullet_sprite_sizes;
         // Native 0x558419 initializes story progress to 1; 0x553c47 increments
         // it between stages. 0x51d4e0 uses this one-based value for rewards.
@@ -4604,6 +4613,7 @@ void tick_player_shots(bool firing,bool focused){
             if(b.update==13){
                 if(b.age==b.transition_frame){b.speed=0;b.vm.interrupt_all(2);play_sfx(27);}
                 else {const float step=th19::enokoChargeStep(b.age,b.transition_frame);b.x+=std::cos(b.angle)*step;b.y+=std::sin(b.angle)*step;}
+                if(th19::enokoChargeCancels(b.age,b.transition_frame))g_ecl_fields[side].world.cancel_enoko_trap(b.x,b.y,b.angle);
             }
             if(!b.ending&&(b.update==3||b.update==12||b.update==14)){th19::advanceSpecialShot(b.update,b.angle,b.speed);b.vx=std::cos(b.angle)*b.speed;b.vy=std::sin(b.angle)*b.speed;}
             // Native 0x54d... adds SHT +0x18/+0x20 after the callback.
@@ -4699,7 +4709,19 @@ void tick_player_shots(bool firing,bool focused){
         if(d.init==17){b.angle=-1.57079632679f+(side?g_opp_direction:g_p1_dir)*3.14159265359f/30;b.vx=std::cos(b.angle)*b.speed;b.vy=std::sin(b.angle)*b.speed;b.length=16;}
         if(d.init==14||d.init==16||d.init==20||d.init==22){b.angle=th19::initializeSpecialShot(d.init,b.angle,th19::AnmVm::rand_unit());b.vx=std::cos(b.angle)*b.speed;b.vy=std::sin(b.angle)*b.speed;}
         // 0x54aca0 sets +0x114, which 0x54fba0 checks before hit removal.
-        b.piercing=d.init==11||d.init==16||d.init==21;b.hit_script=d.hit_script;b.hit_callback=d.hit;b.hit_growth=d.hit_growth;b.damage=d.damage;b.hit_width=d.hit_width;b.hit_height=d.hit_height;b.option=d.option;b.type=d.type;b.update=d.update;b.laser_id=d.laser_id;b.offset_x=d.x;b.offset_y=d.y;
+        // Native SHT rows use the persistent-hit path for the full-screen
+        // Sun Meitian C2 rods as well.  The EXE's pl14 group 11 rows are
+        // uniquely identified by callback 19, option 6 and a 448x16 hitbox;
+        // keep this scoped to that exact character/charge group so callback
+        // 19 cannot change unrelated shots.
+        const int character=side?g_opp_sel:g_char_sel;
+        // pl14.sht is the only original table containing init=19 rods. The
+        // charge group may be remapped by skill variants, so do not depend on
+        // the runtime group number here.
+        const bool sunMeitianC2Rod=character==14&&d.init==19&&d.option==6&&d.hit_width>=448.f&&d.hit_height==16.f;
+        // EXE init table 0x5a0440[19] -> 0x54ad90 sets object +0x114,
+        // the persistent-hit flag. pl14's C2 rods are the only init=19 rows.
+        b.piercing=d.init==11||d.init==16||d.init==19||d.init==21||sunMeitianC2Rod;b.hit_script=d.hit_script;b.hit_callback=d.hit;b.hit_growth=d.hit_growth;b.damage=d.damage;b.hit_width=d.hit_width;b.hit_height=d.hit_height;b.option=d.option;b.type=d.type;b.update=d.update;b.laser_id=d.laser_id;b.offset_x=d.x;b.offset_y=d.y;
         b.table_turn=d.angular_velocity;b.table_acceleration=d.acceleration;b.lifetime=d.lifetime;b.laser_duration=d.laser_duration;b.transition_frame=d.transition_frame;b.charged=charged;
         play_sfx(d.sound);
         if(d.init==2||d.init==12||d.init==18)play_sfx(20);
@@ -4878,6 +4900,10 @@ bool start_player_bomb(int side){
     if(!scripts.count(area)||!scripts.count(back))return false;
     auto&stock=side?g_p2_bombs:g_p1_bombs;
     if(!b.start(ch,g_charge[side].energy,stock,side?g_p2_x:g_p1_x,side?g_p2_y:g_p1_y,side?g_opp_direction:g_p1_dir))return false;
+    // The retail player update clears charge before BombInf takes control;
+    // a Bomb cannot hold X or lock spirits/animal spirits.
+    g_charge[side].charge=0;g_charge[side].held=false;g_charge[side].last_release=0;
+    stop_sfx(84);stop_sfx(88);
     if(th19::ownsCard(player_cards(side),12)){
         b.duration=b.duration*150/100;if(ch==0)b.duration=b.duration*150/100;
     }
@@ -5081,7 +5107,11 @@ void draw_combat_items(){
             v.vm.bind_entry(it->second.stream,it->second.len,&ghostScripts);v.vm.tick();
             auto&i=v.vm.ip_scale;i.active=true;i.dur=c.duration;i.mode=5;i.v0=i.v1=1;i.t0=i.t1=c.target;
             rb_draw_combat_items_chainVisuals.push_back(std::move(v));}w.death_chain_visuals.clear();
-        for(const auto&e:w.deaths){Visual v;v.x=e.x;v.y=e.y;v.side=side;v.script=e.script;auto it=g_focus_scripts.find(e.script);if(e.file==1&&it!=g_focus_scripts.end()){v.vm.bind_entry(it->second.stream,it->second.len,&g_focus_scripts);v.vm.rot_z=e.angle;rb_draw_combat_items_deaths.push_back(std::move(v));}play_sfx(e.sound);}w.deaths.clear();
+        for(const auto&e:w.deaths){Visual v;v.x=e.x;v.y=e.y;v.side=side;v.script=e.script;v.effect=e.file==1;
+            // 0x50d380: file 0 is bullet.anm, file 1 is effect.anm.
+            // Orin's BossGirl uses ECL323(0,262) for its death flash.
+            auto&bank=v.effect?g_focus_scripts:itemScripts;auto it=bank.find(e.script);
+            if((e.file==0||e.file==1)&&it!=bank.end()){v.vm.bind_entry(it->second.stream,it->second.len,&bank);v.vm.rot_z=e.angle;rb_draw_combat_items_deaths.push_back(std::move(v));}play_sfx(e.sound);}w.deaths.clear();
         for(const auto&e:w.bullet_cancels){auto it=itemScripts.find(e.script);Visual v;v.x=e.x;v.y=e.y;v.side=side;
             if(it!=itemScripts.end())v.vm.bind_entry(it->second.stream,it->second.len,&itemScripts);
             // 0x4eeb30 creates only the descriptor's bullet.anm script.
@@ -5089,8 +5119,19 @@ void draw_combat_items(){
             if(v.vm.stream)rb_draw_combat_items_cancels.push_back(std::move(v));}
         w.bullet_cancels.clear();
         std::unordered_map<u32,bool> live;
-        for(const auto&p:w.pickups){live[p.id]=true;auto&v=rb_draw_combat_items_items[side][p.id];if(!v.vm.stream){auto it=itemScripts.find(114+p.type);if(it==itemScripts.end())continue;v.vm.bind_entry(it->second.stream,it->second.len,&itemScripts);}
-            if(!g_paused&&v.frame!=g_frame){v.vm.tick();v.frame=g_frame;}draw(draw,v.vm,p.x,p.y,side,false,1,1);}
+        for(const auto&p:w.pickups){live[p.id]=true;auto&v=rb_draw_combat_items_items[side][p.id];
+            if(!v.vm.stream){auto it=itemScripts.find(114+p.type);if(it!=itemScripts.end()){v.vm.bind_entry(it->second.stream,it->second.len,&itemScripts);}}
+            if(v.vm.stream){if(!g_paused&&v.frame!=g_frame){v.vm.tick();v.frame=g_frame;}draw(draw,v.vm,p.x,p.y,side,false,1,1);}
+            else {
+                // bullet.anm script 123 (type 9) starts with ANM300 sprite
+                // 0x205. Use that native sprite when the VM has not exposed
+                // its first frame yet; never substitute a generated shape.
+                auto si=g_bullet_sprites.find(0x205u);
+                if(si!=g_bullet_sprites.end()){auto ti=g_bullet_tex.find(si->second.first);if(ti!=g_bullet_tex.end()){
+                    emit_quad(33,ti->second,g_bullet[si->second.first].sprites[si->second.second],(side?GAME_F2_CX:GAME_F1_CX)+GAME_SCALE*p.x,GAME_FY0+GAME_SCALE*p.y,.5f,.5f,1,1,0xffffe080u,0,false,0);
+                }}
+            }
+        }
         for(auto it=rb_draw_combat_items_items[side].begin();it!=rb_draw_combat_items_items[side].end();)if(!live.count(it->first))it=rb_draw_combat_items_items[side].erase(it);else ++it;
     }
     for(auto&v:rb_draw_combat_items_chainVisuals){g_actor_clip=v.side;
@@ -5101,7 +5142,7 @@ void draw_combat_items(){
         draw_procedural_node(v.vm,v.side,v.x,v.y);}
     rb_draw_combat_items_chainVisuals.erase(std::remove_if(rb_draw_combat_items_chainVisuals.begin(),rb_draw_combat_items_chainVisuals.end(),[](const auto&v){return !v.vm.visible;}),rb_draw_combat_items_chainVisuals.end());
     for(auto&v:rb_draw_combat_items_deaths){g_actor_clip=v.side;if(!g_paused&&v.frame!=g_frame){v.vm.tick();v.frame=g_frame;}
-        if(v.script==21||v.script==22||v.script==25){
+        if(v.effect&&(v.script==21||v.script==22||v.script==25)){
             // Player hit/death roots 22/21 use default child transforms.
             // 0x4d0770: +564 is the root anchor, +568 the immediate parent.
             // 0x404050: offsets do NOT inherit scale without flag 0x40000.
@@ -5119,7 +5160,7 @@ void draw_combat_items(){
                 draw_procedural_node(n,v.side,x-(n.x+n.child_x)*sx,y-(n.y+n.child_y)*sy,sx,sy,34,false);
                 for(const auto&c:n.children)self(self,c,false);
             };visit(visit,v.vm,true);
-        }else{draw(draw,v.vm,v.x,v.y,v.side,true,1,1);draw_procedural_node(v.vm,v.side,v.x,v.y);}
+        }else{draw(draw,v.vm,v.x,v.y,v.side,v.effect,1,1);draw_procedural_node(v.vm,v.side,v.x,v.y);}
     }
     for(auto&v:rb_draw_combat_items_cancels){g_actor_clip=v.side;if(!g_paused&&v.frame!=g_frame){v.vm.tick();v.frame=g_frame;}draw(draw,v.vm,v.x,v.y,v.side,v.effect,1,1);}
     rb_draw_combat_items_cancels.erase(std::remove_if(rb_draw_combat_items_cancels.begin(),rb_draw_combat_items_cancels.end(),[](const auto&v){return !v.vm.visible;}),rb_draw_combat_items_cancels.end());
@@ -5274,6 +5315,9 @@ void draw_game() {
 }
 
 void render() {
+    // Menu ANM clocks advance in game_tick. Catch-up/rollback frames need
+    // their state updates, but no title mesh, card lookup or portrait geometry.
+    if(g_skip_present&&g_screen==SCR_CHARSEL)return;
     if(!g_skip_present)gfx.clear(0xff000000);
     g_draw.clear();
     // 进入游戏加载页：少女祈祷中（LoadingInf），短暂显示后进游戏场
@@ -5448,6 +5492,7 @@ void frame() {
     }
     // 556340 state4: confirmation animation, screen switch at10, battle at40.
     if(g_vs_match_confirm>=0&&++g_vs_match_confirm==(g_vs_random_reveal?70:10)){
+        if(g_network_selection){g_network_selection=2;g_vs_match_confirm=-1;return;}
         g_vs_match_confirm=-1;g_story_switch.vs_match=g_vs_mode;g_story_switch.story_start=!g_vs_mode;
         if(bind_story_switch(3))g_story_switch.phase=1;
         else if(g_vs_mode)start_vs_match();else start_dialogue();
@@ -5476,7 +5521,7 @@ void frame() {
         return;
     }
     // 游戏场内 tick 玩家 idle 动画（其余转场逻辑照常走）
-    if (g_screen == SCR_GAME || g_screen == SCR_DIALOG) { g_player_vm.tick(); g_opp_vm.tick(); tick_player_options(pressed(SDL_SCANCODE_LSHIFT)||pressed(SDL_SCANCODE_RSHIFT)); ++g_bg_scroll; tick_world(); if (g_screen == SCR_GAME && g_big_sprite < 0 && g_ecl_ready) { ++g_played_frames; for(int side=0;side<2;++side){auto& field=g_ecl_fields[side];field.world.player_x=side?g_p2_x:g_p1_x;field.world.player_y=side?g_p2_y:g_p1_y;field.world.opponent_x=side?g_p1_x:g_p2_x;field.world.opponent_y=side?g_p1_y:g_p2_y;field.world.opponent_controls=side?((pressed(SDL_SCANCODE_LEFT)?64:0)|(pressed(SDL_SCANCODE_RIGHT)?128:0)|g_cpu_left_bits):g_opponent_controls;field.world.incoming_extra_level=g_charge[1-side].ex_level;field.world.incoming_boss_level=g_charge[1-side].boss_level;field.vm.step();field.world.tick_wave();for(const auto&request:field.world.screen_shake_events)g_screen_shake.start(request);field.world.screen_shake_events.clear();for(int sound:field.world.sound_events)play_sfx(sound);field.world.sound_events.clear();} } }
+    if (g_screen == SCR_GAME || g_screen == SCR_DIALOG) { g_player_vm.tick(); g_opp_vm.tick(); tick_player_options(pressed(SDL_SCANCODE_LSHIFT)||pressed(SDL_SCANCODE_RSHIFT)); ++g_bg_scroll; tick_world(); if (g_screen == SCR_GAME && g_big_sprite < 0 && g_ecl_ready) { ++g_played_frames; g_global_rank.tick();g_reflection_rank=g_global_rank.value;g_reflection_rank_cap=g_global_rank.cap; for(int side=0;side<2;++side){auto& field=g_ecl_fields[side];field.world.spirit_rank=g_global_rank.value;field.world.spirit_rank_cap=g_global_rank.cap;field.world.player_x=side?g_p2_x:g_p1_x;field.world.player_y=side?g_p2_y:g_p1_y;field.world.opponent_x=side?g_p1_x:g_p2_x;field.world.opponent_y=side?g_p1_y:g_p2_y;field.world.opponent_controls=side?((pressed(SDL_SCANCODE_LEFT)?64:0)|(pressed(SDL_SCANCODE_RIGHT)?128:0)|g_cpu_left_bits):g_opponent_controls;field.world.incoming_extra_level=g_charge[1-side].ex_level;field.world.incoming_boss_level=g_charge[1-side].boss_level;field.vm.step();field.world.tick_wave();for(const auto&request:field.world.screen_shake_events)g_screen_shake.start(request);field.world.screen_shake_events.clear();for(int sound:field.world.sound_events)play_sfx(sound);field.world.sound_events.clear();} } }
     if (g_screen == SCR_CHARSEL) {
         // Native state2 begins selection highlights only after its 30-frame entrance.
         if(g_charsel_frame==30&&!g_sub_vms.empty()){
@@ -5792,6 +5837,27 @@ void game_tick() {
                 if(g_ending_group+1>=END_GROUP_OFFSETS[g_ending_id+1])g_ending_tail=0;
                 else {++g_ending_group;g_ending_line=END_GROUPS[g_ending_group].last;g_ending_reveal_frame=g_frame;}
             }
+        } else if(g_network_selection && g_screen==SCR_CHARSEL && g_charsel_frame>=31){
+            for(int side=0;side<2;++side){
+                const int codes[2][7]={{SDL_SCANCODE_UP,SDL_SCANCODE_DOWN,SDL_SCANCODE_LEFT,SDL_SCANCODE_RIGHT,SDL_SCANCODE_Z,SDL_SCANCODE_X,SDL_SCANCODE_LSHIFT},{SDL_SCANCODE_W,SDL_SCANCODE_S,SDL_SCANCODE_A,SDL_SCANCODE_D,SDL_SCANCODE_J,SDL_SCANCODE_K,SDL_SCANCODE_LCTRL}};
+                u32 bits=0;for(int i=0;i<7;++i)if(g_injected_keys[codes[side][i]])bits|=1u<<i;
+                const u32 edge=bits&~g_network_selection_previous[side];g_network_selection_previous[side]=bits;
+                bool&confirmed=side?g_vs_second_confirmed:g_vs_first_confirmed;
+                int&choice=side?g_opp_sel:g_char_sel;
+                if(edge&32){if(confirmed){confirmed=false;g_vs_match_confirm=-1;g_vs_cursor_vm[side].interrupt(3);play_sfx(9);}continue;}
+                if(confirmed)continue;
+                int dir=-1;for(int i=0;i<4;++i)if(edge&(1u<<i)){dir=i;break;}
+                if((bits&64)&&dir>=2&&g_vs_rules[2]>=2){move_vs_card(side,dir==2?-1:1);play_sfx(0);dir=-1;}
+                if(dir>=0){const int old=choice;choice=VS_CHAR_NAV[choice][dir];if(choice!=old){
+                    if(!g_sub_vms.empty()){auto&grid=g_sub_vms.front();if(old!=(side?g_char_sel:g_opp_sel))grid.interrupt_all(old+37);grid.interrupt_all(choice+7);}
+                    g_char_switch_frame=0;init_vs_cards(side);auto&vm=g_vs_portrait_vm[side];vm.interrupt_all(3);vm.tick();vm.interrupt_all(choice+7);play_sfx(10);
+                }}
+                if(edge&16){confirmed=true;g_vs_cursor_vm[side].interrupt(6);play_sfx(7);}
+            }
+            if(g_vs_first_confirmed&&g_vs_second_confirmed&&g_vs_match_confirm<0){
+                for(int side=0;side<2;++side){int&choice=side?g_opp_sel:g_char_sel;if(choice==19){choice=int(th19::AnmVm::rand_integer()%19);init_vs_cards(side);g_vs_random_reveal=true;auto&vm=g_vs_portrait_vm[side];vm.interrupt_all(3);vm.tick();vm.interrupt_all(choice+7);}}
+                g_vs_match_confirm=0;
+            }
         } else if (g_screen == SCR_CHARSEL && g_charsel_frame>=31) {
             // 556340: CPU entries share input, choosing side 1 then side 2.
             const bool second=g_vs_mode&&g_vs_first_confirmed;
@@ -5894,8 +5960,8 @@ void game_tick() {
                 }else tick_cpu_opponent();
                 if(!cpuLeft&&c&&!rb_game_tick_prev_c)start_player_bomb(0);
                 tick_player_bombs();
-                tick_charge_release(0,cpuLeft?(g_cpu_left_bits&2)!=0:keys[SDL_SCANCODE_X]||g_injected_keys[SDL_SCANCODE_X],slow);
-                tick_charge_release(1,(g_opponent_controls&2)!=0,(g_opponent_controls&8)!=0);
+                tick_charge_release(0,!g_bombs[0].occupied()&&(cpuLeft?(g_cpu_left_bits&2)!=0:keys[SDL_SCANCODE_X]||g_injected_keys[SDL_SCANCODE_X]),slow);
+                tick_charge_release(1,!g_bombs[1].occupied()&&(g_opponent_controls&2)!=0,(g_opponent_controls&8)!=0);
                 tick_player_shots((cpuLeft?(g_cpu_left_bits&1)!=0:z)&&g_player_damage[0].controllable(),slow);
                 tick_spirit_transits();
                 for(auto&field:g_ecl_fields){field.world.finish_hit_feedback(field.world.spell.active?1u:0u);
@@ -5930,6 +5996,9 @@ void game_tick() {
             }
             if(g_big_sprite<0)for(int side=0;side<2;++side){auto&w=g_ecl_fields[side].world;auto&r=w.charge_region;float px=side?g_p2_x:g_p1_x,py=side?g_p2_y:g_p1_y;
                 r.tick(side?g_opp_sel:g_char_sel,g_charge[side].held,px,py,th19::ownsCard(player_cards(side),10)?125.f:100.f);
+                // Chiyari's held-X aura creates an independent one-frame damage
+                // circle (0x42b305..0x42b318), consumed by the shared area path.
+                if(r.damage_pulse())g_attacks[side].skill_damage_circles.push_back({r.x,r.y,r.radius,0,1,4});
                 if(r.character==5){const auto target=w.nazrin_seek_target(r.x,r.y,px,py);r.seek(target.x,target.y);}
                 if(r.character==13)for(int i=1;i<3;++i){const auto&o=g_player_options[side];r.centers[i]=i<=int(o.size())?th19::ChargeRegion::Point{o[i-1].x,o[i-1].y}:th19::ChargeRegion::Point{px,py};}
             }
@@ -6110,7 +6179,7 @@ __attribute__((export_name("th19_network_set_rules"))) u32 th19_network_set_rule
 __attribute__((export_name("th19_network_begin"))) u32 th19_network_begin(u32 seed,i32 difficulty,i32 left,i32 right){
     if(g_network_active||difficulty<0||difficulty>3||left<0||left>=19||right<0||right>=19)return 0;
     g_replay_input.playing=g_replay_input.recording=false;g_played_frames=0;
-    g_network_active=true;g_network_finished=false;g_network_frame=0;
+    g_network_active=true;g_network_finished=false;g_network_frame=0;g_network_selection=0;
     g_game_seed=seed?seed:1;g_vs_scene_rng.state=g_game_seed;
     th19::AnmVm::seed_random(g_game_seed);
     g_frame=0;g_phase=PHASE_TITLE;g_screen=SCR_GAME;g_trans=TRANS_NONE;
@@ -6127,6 +6196,17 @@ __attribute__((export_name("th19_network_begin"))) u32 th19_network_begin(u32 se
     g_touch_unlimited=false;g_touch_motion_x=g_touch_motion_y=0;
     start_vs_match();g_cpu_automatic=false;g_player_collision_enabled=true;
     g_loop_paused=true;return 1;
+}
+__attribute__((export_name("th19_network_select_begin"))) u32 th19_network_select_begin(u32 seed,i32 difficulty,i32 left,i32 right){
+    if(!th19_network_begin(seed,difficulty,left,right))return 0;
+    g_network_selection=1;g_network_selection_previous[0]=g_network_selection_previous[1]=0;
+    g_screen=SCR_CHARSEL;g_trans=TRANS_NONE;g_fade=1;g_big_sprite=-1;
+    g_story_switch={};g_charsel_frame=0;g_cursor_select=0;g_char_switch_frame=0;
+    g_cursor_cx=CH_CX[g_char_sel];g_cursor_cy=CH_CY[g_char_sel];
+    start_sub_screen(SCR_CHARSEL);start_title_music();g_story_music=-1;render();return 1;
+}
+__attribute__((export_name("th19_network_select_info"))) u32 th19_network_select_info(){
+    static i32 v[5];v[0]=g_network_selection;v[1]=g_char_sel;v[2]=g_opp_sel;v[3]=g_vs_cards[0].index;v[4]=g_vs_cards[1].index;return u32(v);
 }
 __attribute__((export_name("th19_network_step"))) u32 th19_network_step(u32 frame,u32 left,u32 right,
     float leftX,float leftY,float rightX,float rightY,u32 leftDirect,u32 rightDirect,u32 present){
@@ -6151,12 +6231,13 @@ __attribute__((export_name("th19_network_step"))) u32 th19_network_step(u32 fram
     g_touch_unlimited=leftDirect;g_touch_motion_x=leftX;g_touch_motion_y=leftY;
     g_skip_present=present==0;g_loop_paused=false;game_tick();
     g_loop_paused=true;g_skip_present=false;++g_network_frame;
-    if(g_screen==SCR_CHARSEL||g_screen==SCR_TITLE)g_network_finished=true;
+    if(g_network_selection==2)return 3;
+    if(!g_network_selection&&(g_screen==SCR_CHARSEL||g_screen==SCR_TITLE))g_network_finished=true;
     return g_network_finished?2:1;
 }
 __attribute__((export_name("th19_network_end"))) void th19_network_end(){
     rb_checkpoints.clear();rb_checkpoint_pool.clear();rb_collect_effects=false;rb_effects.clear();
-    g_network_active=false;g_network_finished=false;g_loop_paused=true;
+    g_network_active=false;g_network_finished=false;g_network_selection=0;g_loop_paused=true;
     std::fill(std::begin(g_injected_keys),std::end(g_injected_keys),0);
     g_touch_unlimited=false;g_touch_motion_x=g_touch_motion_y=0;
 }
@@ -6166,6 +6247,7 @@ __attribute__((export_name("th19_network_hash"))) u32 th19_network_hash(){
     auto number=[&](float value){u32 bits;std::memcpy(&bits,&value,4);integer(bits);};
     integer(g_network_frame);integer(g_screen);integer(g_vs_match.round);integer(g_story_difficulty);for(int rule:g_vs_rules)integer(rule);for(int side=0;side<2;++side){integer(player_cards(side).size());for(int id:player_cards(side))integer(id);}
     integer(g_vs_match.wins[0]);integer(g_vs_match.wins[1]);integer(g_vs_match.remaining);
+    integer(g_global_rank.value);integer(g_global_rank.cap);integer(g_global_rank.interval);integer(g_global_rank.clock);
     integer(g_paused);integer(g_battle_report_frame);integer(g_battle_winner);
     number(g_p1_x);number(g_p1_y);number(g_p2_x);number(g_p2_y);
     integer(g_p1_lives);integer(g_p2_lives);integer(g_p1_bombs);integer(g_p2_bombs);
@@ -6195,6 +6277,12 @@ __attribute__((export_name("th19_room_title"))) u32 th19_room_title(){
     g_vs_entry_transition=g_battle_report_frame=g_final_exit=-1;
     g_sub_vms.clear();g_retiring_menu.clear();g_big_sprite=-1;
     start_animation();start_title_music();g_loop_paused=false;render();return 1;
+}
+// A completed match is distinct from quitting or a single round win.
+__attribute__((export_name("th19_network_winner"))) i32 th19_network_winner(){
+    if(g_vs_match.wins[0]>=g_vs_match.target)return 0;
+    if(g_vs_match.wins[1]>=g_vs_match.target)return 1;
+    return -1;
 }
 __attribute__((export_name("th19_network_info"))) u32 th19_network_info(){
     static i32 state[32];state[0]=g_network_active;state[1]=g_network_frame;state[2]=g_network_finished;
@@ -6280,7 +6368,7 @@ __attribute__((export_name("th19_touch_side"))) void th19_touch_side(u32 side){g
 __attribute__((export_name("th19_touch_sample"))) u32 th19_touch_sample(u32 side){
     static struct {u32 keys,direct;float x,y;} out{};out={};
     const auto s=touch_state(side==1?1:0);
-    const auto sample=g_touch_input.sample(s,std::uint64_t(emscripten_get_now()),false,false);
+    const auto sample=g_touch_input.sample_network(s,std::uint64_t(emscripten_get_now()));
     out.keys=(sample.keys[90]?1u:0u)|(sample.keys[88]?4u:0u)|(sample.keys[16]?8u:0u)|(sample.keys[38]?16u:0u)|(sample.keys[40]?32u:0u)|(sample.keys[37]?64u:0u)|(sample.keys[39]?128u:0u)|(sample.keys[27]?1024u:0u);
     if(sample.motion){out.direct=1;out.x=sample.x-s.x;out.y=sample.y-s.y;
       if(sample.motion==1){const float speed=sample.keys[16]?s.slow:s.fast,length=std::hypot(out.x,out.y);if(length>speed&&length>0){out.x*=speed/length;out.y*=speed/length;}}
@@ -6326,7 +6414,7 @@ __attribute__((export_name("th19_test_vs_rules"))) u32 th19_test_vs_rules(i32 ac
     if(action==0){g_vs_entry=0;g_vs_rules[0]=1;g_vs_rules[1]=1;g_vs_rules[3]=1;g_vs_rules[4]=2;g_vs_rules[5]=2;g_vs_rules[6]=3;g_char_sel=0;g_opp_sel=1;start_vs_match();}
     if(action==1){g_vs_match.remaining=std::max(1,value);g_big_sprite=-1;}
     if(action==2)resolve_story_battle(value==0);
-    if(action==3){g_stage_deaths[0]=value;g_stage_deaths[1]=0;for(auto&counts:g_vs_attack_counts)counts[0]=counts[1]=0;g_charge[0].ex_level=g_charge[1].ex_level=0;g_charge[0].boss_level=g_charge[1].boss_level=0;g_charge[0].energy=g_charge[1].energy=500;}
+    if(action==3){g_stage_deaths[0]=value;g_stage_deaths[1]=0;for(auto&counts:g_vs_attack_counts)counts[0]=counts[1]=0;g_charge[0].ex_level=g_charge[1].ex_level=0;g_charge[0].boss_level=g_charge[1].boss_level=0;g_charge[0].energy=std::clamp(g_charge[0].thresholds[0],0,2500);g_charge[1].energy=std::clamp(g_charge[1].thresholds[0],0,2500);}
     static i32 out[16];out[0]=g_vs_match.round;out[1]=g_vs_match.wins[0];out[2]=g_vs_match.wins[1];out[3]=g_vs_match.remaining;out[4]=g_battle_winner;out[5]=g_battle_report_frame;out[6]=g_p1_lives;out[7]=g_p2_lives;out[8]=g_barrier[0].recovery;out[9]=g_barrier[1].recovery;out[10]=g_screen;out[11]=g_vs_match.target;out[12]=g_battle_timeout;out[13]=g_cpu_automatic;out[14]=g_cpu_left_bits;out[15]=g_opponent_controls;return (u32)out;
 }
 __attribute__((export_name("th19_overlay_status"))) u32 th19_overlay_status(){
@@ -6372,7 +6460,8 @@ __attribute__((export_name("th19_test_wave"))) i32 th19_test_wave(i32 wave){
     if(!g_ecl_ready||wave<1||wave>22)return 0;
     ++g_ecl_generation;
     for(auto&field:g_ecl_fields){
-        field.world=th19::GameWorld{};field.world.difficulty=g_story_difficulty;field.world.bullet_scripts=&g_bullet_scripts;field.world.bullet_sprite_sizes=&g_bullet_sprite_sizes;
+        field.world=th19::GameWorld{};field.world.spirit_rank=g_global_rank.value;field.world.spirit_rank_cap=g_global_rank.cap;
+        field.world.difficulty=g_story_difficulty;field.world.bullet_scripts=&g_bullet_scripts;field.world.bullet_sprite_sizes=&g_bullet_sprite_sizes;
         for(const auto&p:field.programs)field.world.attach_program(*p);
         field.vm.start("DebugSkipFunc");
         char name[32];std::snprintf(name,sizeof name,"Wave%02d%s",(wave+1)/2,wave%2?"":"f");
@@ -6381,6 +6470,26 @@ __attribute__((export_name("th19_test_wave"))) i32 th19_test_wave(i32 wave){
     return 1;
 }
 __attribute__((export_name("th19_test_attack_rank"))) void th19_test_attack_rank(i32 rank){g_charge[0].boss_level=std::clamp(rank,0,7);g_charge[0].energy=2500;}
+// Original spell audit: deliver lethal damage through the gameplay path;
+// never substitute animation scripts or force the boss revival signal.
+__attribute__((export_name("th19_test_orin_revival"))) u32 th19_test_orin_revival(i32 action){
+    auto&w=g_ecl_fields[1].world;static i32 out[16];std::fill(std::begin(out),std::end(out),0);
+    if(action==1){
+        for(auto&e:w.enemies)if(e.active&&e.death_callback=="BossGirlDead"&&!(e.flags&3))w.damage_enemy(e,e.life+1);
+        w.finish_hit_feedback(0);
+    }
+    for(const auto&e:w.enemies)if(e.active){
+        if(e.id==w.boss_slots[0])out[0]=e.ecl_ints[1];
+        if(e.directional_base==46||e.sprite==45){
+            ++out[1];if(e.sprite==45)++out[2];if(!(e.flags&3))++out[3];
+            out[4]=e.id;out[5]=e.life;out[6]=e.sprite;out[7]=e.flags;
+            out[8]=e.animations[2].script;out[9]=int(e.x*1000);out[10]=int(e.y*1000);
+        }
+        if(e.vm&&e.vm->error())++out[11];
+    }
+    out[12]=w.field_ints[0];out[13]=w.defeated;out[14]=int(w.unhandled_opcodes.size());
+    return u32(out);
+}
 __attribute__((export_name("th19_opponent_attack_status"))) u32 th19_opponent_attack_status(){
     static i32 out[14];std::fill(std::begin(out),std::end(out),0);const auto&w=g_ecl_fields[1].world;
     out[0]=w.boss_occupied();out[1]=int(w.bullets.size());out[2]=int(w.lasers.size());out[3]=int(w.unhandled_opcodes.size());
@@ -6469,6 +6578,14 @@ __attribute__((export_name("th19_test_cpu_runtime"))) u32 th19_test_cpu_runtime(
  for(int i=0;i<5;++i)out[10+i]=g_cpu_releases[i];out[15]=g_attacks[1].charge_attack.emitted;
  out[16]=g_attacks[1].charge_area.frame;out[17]=int(g_attacks[1].reimu_skills.size());out[18]=int(g_attacks[1].marisa_skills.size());out[19]=g_attacks[1].ran_skill.remaining;
  out[20]=g_attacks[1].chiyari_skill_spawns;out[21]=g_ecl_fields[0].world.story_boss_phase;out[22]=g_ecl_fields[0].world.story_final_boss;out[23]=g_charge[1].thresholds[1];return (u32)out;
+}
+__attribute__((export_name("th19_test_charge_region_graze"))) u32 th19_test_charge_region_graze(i32 setup){
+    static i32 out[8];auto&w=g_ecl_fields[0].world;
+    if(setup){g_player_collision_enabled=false;g_ecl_fields[0].vm.start("DebugSkipFunc");w.enemies.clear();w.bullets.clear();w.pickups.clear();w.pending_energy=0;
+        g_charge[0].energy=500;g_charge[0].charge=0;g_charge[0].held=true;w.charge_region={};w.charge_region.character=0;w.charge_region.held=true;w.charge_region.age=30;w.charge_region.x=g_p1_x;w.charge_region.y=g_p1_y;w.charge_region.radius=64;
+        auto&b=w.spawn_bullet();b.x=g_p1_x+60;b.y=g_p1_y;b.kind=0;b.state=1;b.vx=b.vy=0;}
+    w.tick_bullet_graze(g_p1_x,g_p1_y);out[0]=w.grazed_bullets;out[1]=w.pending_energy;out[2]=int(w.pickups.size());out[3]=w.bullets.empty()?0:w.bullets.front().graze.stock;out[4]=w.bullets.empty()?0:w.bullets.front().graze.contactFrames;out[5]=g_charge[0].energy;
+    if(w.pending_energy){g_charge[0].energy=std::clamp(g_charge[0].energy+w.pending_energy,0,2500);w.pending_energy=0;}out[6]=g_charge[0].energy;out[7]=int(w.bullets.size());return u32(out);
 }
 __attribute__((export_name("th19_test_cpu_input"))) u32 th19_test_cpu_input(i32 bits){
     if(bits==-2){g_player_projectiles.clear();g_player_hit_effects.clear();for(auto&field:g_ecl_fields){auto&w=field.world;w.enemies.clear();
@@ -6617,6 +6734,58 @@ __attribute__((export_name("th19_test_shot_impact"))) u32 th19_test_shot_impact(
     for(const auto&b:g_player_projectiles)if(b.side==0){++r[1];if(b.ending){++r[2];r[3]+=b.damage;r[4]+=b.vm.visible;r[5]+=int(b.vm.children.size());r[6]|=1<<b.hit_callback;}if(b.piercing)++r[7];}
     r[8]=int(g_player_hit_effects.size());for(const auto&b:g_player_hit_effects)if(b.effect_bank){++r[9];r[10]=b.vm.r;r[11]=b.vm.g;r[12]=b.vm.b;r[13]=b.vm.alpha;}
     return (u32)r;
+}
+// Observe held-X aura damage independently of ordinary shots and release skills.
+__attribute__((export_name("th19_test_biten_contact"))) u32 th19_test_biten_contact(i32 side,i32 setup){
+    side=std::clamp(side,0,1);auto&w=g_ecl_fields[side].world;static i32 out[1+32*12];
+    if(setup){g_player_collision_enabled=false;g_cpu_automatic=false;g_opponent_controls=0;
+        for(auto&f:g_ecl_fields){f.vm.start("DebugSkipFunc");f.world.enemies.clear();f.world.bullets.clear();}
+        g_player_projectiles.clear();std::vector<const th19::EclProgram*> source;
+        for(const auto&p:g_ecl_fields[1-side].programs)source.push_back(p.get());
+        w.receive_charge_attack(3,0,128,source);
+    }
+    out[0]=0;
+    for(const auto&e:w.enemies){const auto&a=e.animations[0];
+        if(a.file<2||a.file-2>=int(e.animation_files.size())||e.animation_files[a.file-2]!="pl14b.anm"||(a.script!=13&&a.script!=15)||out[0]>=32)continue;
+        auto*r=out+1+12*out[0]++;const float heading=std::atan2(e.vy,e.vx),c=std::cos(heading),s=std::sin(heading);
+        r[0]=e.age;r[1]=e.flags;r[2]=int(e.x*1000);r[3]=int(e.y*1000);r[4]=int(e.contact_angle*1000000);r[5]=int(heading*1000000);
+        r[6]=int(e.contact_w);r[7]=int(e.contact_h);
+        r[8]=th19::nativeEnemyRectangleContact(12*c,12*s,e.contact_angle,e.contact_w,e.contact_h,3);
+        r[9]=th19::nativeEnemyRectangleContact(-12*s,12*c,e.contact_angle,e.contact_w,e.contact_h,3);
+        r[10]=th19::nativeEnemyRectangleContact(20*c,20*s,e.contact_angle,e.contact_w,e.contact_h,3);r[11]=a.script;
+    }
+    return u32(out);
+}
+__attribute__((export_name("th19_test_aura_damage"))) u32 th19_test_aura_damage(i32 side,i32 setup){
+    static i32 out[8];side=std::clamp(side,0,1);auto&w=g_ecl_fields[side].world;
+    if(setup){g_player_collision_enabled=false;g_cpu_automatic=false;g_opponent_controls=0;
+        g_ecl_fields[side].vm.start("DebugSkipFunc");w.enemies.clear();w.bullets.clear();
+        g_player_projectiles.clear();g_player_hit_effects.clear();g_attacks[side]={};w.charge_region={};
+        auto&q=g_charge[side];q.energy=2500;q.charge=0;q.held=false;q.cooldown=0;
+        const float px=side?g_p2_x:g_p1_x,py=side?g_p2_y:g_p1_y;
+        for(float dx:{0.f,55.f,60.f}){auto&e=w.spawn_enemy("",px+dx,py,100000,0,0);
+            e.sprite=0;e.hitbox_w=e.hitbox_h=2;e.vm.reset();}
+    }
+    for(int i=0;i<3;++i)out[i]=i<int(w.enemies.size())?w.enemies[i].life:-1;
+    out[3]=w.charge_region.age;out[4]=w.charge_region.held;out[5]=int(w.charge_region.radius*1000);
+    out[6]=int(g_player_projectiles.size());out[7]=int(g_attacks[side].skill_damage_circles.size());return u32(out);
+}
+// Place stationary probes at a real SHT trap; production update handles cancellation.
+__attribute__((export_name("th19_test_enoko_cancel"))) u32 th19_test_enoko_cancel(i32 setup){
+    auto&w=g_ecl_fields[0].world;static i32 out[8];std::fill(std::begin(out),std::end(out),0);
+    if(setup){g_player_collision_enabled=false;w.bullets.clear();w.cancelled_bullets=0;
+        for(const auto&t:g_player_projectiles)if(t.init_callback==21&&t.age==t.transition_frame+10){
+            // The update's ten-tick advance is complete; these share its bite area.
+            for(int lock=0;lock<2;++lock){auto&b=w.spawn_bullet();b.state=1;b.kind=0;b.color=lock?1:3;b.hit_width=2;
+                b.x=t.x+(lock?6:-6);b.y=t.y;b.cancel_lock=lock?10000:0;b.vx=b.vy=0;}
+            auto&b=w.spawn_bullet();b.state=1;b.kind=0;b.color=3;b.hit_width=2;b.x=t.x+80;b.y=t.y;b.vx=b.vy=0;
+            break;
+        }
+    }
+    for(const auto&b:w.bullets)if(b.state==1||b.state==2){++out[0];if(b.cancel_lock)++out[1];}
+    out[2]=w.cancelled_bullets;
+    for(const auto&t:g_player_projectiles)if(t.init_callback==21){++out[3];out[4]=t.age;out[5]=t.transition_frame;}
+    render();return u32(out);
 }
 // Deterministic laser occlusion fixture: actual input/shots, two durable targets.
 __attribute__((export_name("th19_test_laser_targets"))) u32 th19_test_laser_targets(i32 reset){

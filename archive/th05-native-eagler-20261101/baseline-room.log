@@ -1,0 +1,29 @@
+✖ actual BrowserLauncher: th06 Return to room preserves the ended game and reuses it for the next start (3499.4117ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6719.6902
+
+✖ failing tests:
+
+test at artifacts\th05-baseline\launcher\tests\react-main\browser-session-mounted.test.mjs:2673:71
+✖ actual BrowserLauncher: th06 Return to room preserves the ended game and reuses it for the next start (3499.4117ms)
+  AssertionError [ERR_ASSERTION]: Actual node missing: .room-workspace-fullscreen
+      at node (file:///C:/Users/w3051/Desktop/eagler/eagler-touhou/artifacts/th05-baseline/launcher/tests/react-main/browser-session-mounted.test.mjs:283:85)
+      at file:///C:/Users/w3051/Desktop/eagler/eagler-touhou/artifacts/th05-baseline/launcher/tests/react-main/browser-session-mounted.test.mjs:289:62
+      at process.env.NODE_ENV.exports.act (C:\Users\w3051\Desktop\eagler\eagler-touhou\node_modules\react\cjs\react.development.js:890:22)
+      at click (file:///C:/Users/w3051/Desktop/eagler/eagler-touhou/artifacts/th05-baseline/launcher/tests/react-main/browser-session-mounted.test.mjs:289:45)
+      at TestContext.<anonymous> (file:///C:/Users/w3051/Desktop/eagler/eagler-touhou/artifacts/th05-baseline/launcher/tests/react-main/browser-session-mounted.test.mjs:2693:8)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

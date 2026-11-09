@@ -9,6 +9,7 @@ struct StageGameplay::Services final:BattleWorldServices,DialogueServices,GameFr
     bool life_hud(i32 count,i32 pieces)override{return !g.battle.hud||g.battle.hud->lives(count,pieces);}
     bool bomb_hud(i32 count,i32 pieces)override{return !g.battle.hud||g.battle.hud->bombs(count,pieces);}
     bool game_over()override{return g.platform.game_over();}
+    bool rollback_boundary()override{return g.platform.rollback_boundary();}
     bool notice(i32 kind)override{return g.battle.hud&&g.battle.hud->result(0,kind);}
     bool popup(const Vec3& p,i32 amount,u32 color)override{g.popups.number(p,amount,color);return g.platform.popup(p,amount,color);}
     bool trophy(i32 id)override{return g.platform.trophy(id);}
@@ -45,8 +46,8 @@ struct StageGameplay::Services final:BattleWorldServices,DialogueServices,GameFr
     bool flush_audio()override{return g.platform.flush_audio();}
     bool resume_environment(double seconds)override{return g.platform.resume_environment(seconds);}
     bool advance_scene_animations()override{for(auto* vm:g.scene_animations)if(vm&&g.animations.tick_instance(*vm)<0)return g.fail(g.animations.error);return true;}
-    bool finish_player_options()override{return g.battle.player->finish_stage_options();}
-    bool stop_bomb()override{return g.battle.bomb&&g.battle.bomb->stop();}
+    bool finish_player_options()override{return g.battle.finish_player_options();}
+    bool stop_bomb()override{return g.battle.stop_bombs();}
     bool record_play_time()override{return g.platform.record_play_time();}
     bool finish_practice()override{return g.platform.finish_practice();}
     bool begin_deformation(i32 mode,i32)override{return g.deformation.begin(mode)||g.fail(g.deformation.error);}
@@ -67,6 +68,7 @@ bool StageGameplay::prepare(const StageCamera& camera,const ReplayStageState* re
     if(prepared)return fail("Stage gameplay already prepared");if(!assets.ready())return fail(assets.error);
     const bool fresh=!retained&&!objects.ready();
     if(!assets.definition||run.stage!=assets.definition->stage||run.character!=assets.character||run.animal!=assets.animal||u32(run.difficulty)>4)return fail("Stage resources differ from run selection");
+    battle.enhanced_practice=run.enhanced_practice;
     battle.stage=run.stage;battle.score.difficulty=run.difficulty;battle.session.animal=run.animal;
     battle.enemy_world.mode_flags=run.scoring.mode_flags;battle.enemy_world.spell_id=run.spell_id;battle.enemy_world.script_value_101=run.demo_slot;battle.session.replay_state=(run.scoring.mode_flags&2)?1:0;
     if(retained){
@@ -113,7 +115,7 @@ ReplayRunState StageGameplay::capture_run()const noexcept{
 bool StageGameplay::reset_world(){
     const Vec2 previous_bounds=battle.bullet_scene->manager.context.reflection_bounds;
     battle.bullet_scene->reset();if(run.historical_web_replay)battle.bullet_scene->manager.context.reflection_bounds=previous_bounds;
-    if(!battle.player->reset_for_stage())return fail(battle.player->error);
+    if(!battle.reset_players())return fail(battle.error);
     if(!battle.items->items.reset())return fail(battle.items->items.error);
     if(!battle.enemies->clear()||!battle.laser_scene->manager.clear())return fail("Stage pool reset failed");
     controller->counters={};return true;
@@ -123,7 +125,8 @@ bool StageGameplay::activate_world(){
     if(replay_entry){replay_entry->restore_player(battle.player->motion);if(!battle.player->configure_options())return fail(battle.player->options.error);}
     if(!platform.stage_input_ready(*this))return fail("Stage input activation failed");
     EnemySpawnRequest main;main.routine="main";if(!battle.spawn(main))return fail(battle.error);
-    if(!battle.hud->initialize(hud_context()))return fail(battle.hud->error);
+    if(!battle.hud->initialize(hud_context(),battle.pilot_count()))return fail(battle.hud->error);
+    if(!battle.initialize_partner_hud())return fail(battle.error);
     if(!battle.player->configure_options())return fail(battle.player->options.error);
     if(!battle.items->roaring.enter_stage())return fail(battle.items->roaring.error);started=true;battle.world_active(true);return true;
 }

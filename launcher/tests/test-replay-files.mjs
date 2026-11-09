@@ -12,8 +12,31 @@ import {
   planReplayArchiveImport,
   ReplayArchiveScanError,
   replayImportAccept,
+  replayImportAcceptFor,
   selectReplayExportPaths,
 } from "../.cache/build/browser/assets/launcher/replay-files.mjs";
+
+test("HSoB uses native DAT paths and preserves occupied Replay slots", () => {
+  const prefix = "Main_replay";
+  const native = "Main_replay01.dat";
+  const backup = "Package_common_SaveData.dat";
+  assert.equal(replayImportAcceptFor("hsob"), ".zip,.dat");
+  assert.equal(isReplayImportFileName(native, "hsob"), true);
+  assert.equal(isReplayImportFileName(backup, "hsob"), false);
+  assert.equal(isReplayImportFileName(native, "th06"), false);
+  assert.equal(isReplayFilePath("replay/" + native), true);
+  assert.equal(isReplayFilePath("replay/backup/" + native), false);
+  assert.equal(allocateReplayName(prefix, [], native.toUpperCase()), native);
+  const paths = ["replay/" + native];
+  const guard = createReplayArchiveExtractionGuard({prefix, maxFileBytes: 1024, maxExpandedBytes: 2048});
+  assert.equal(guard.filter({name: native, originalSize: 500}), true);
+  assert.equal(guard.filter({name: backup, originalSize: 500}), false);
+  assert.deepEqual(planReplayArchiveImport(prefix, guard.paths, paths), {
+    ok: true,
+    entries: [{sourcePath: native, targetPath: "replay/Main_replayud0000.dat", kind: "replay"}],
+  });
+  assert.deepEqual(selectReplayExportPaths([...paths, backup]), paths);
+});
 
 test("replay files", async () => {
 assert.equal(replayImportAccept, ".zip,.rpy,.rpyx,.rep");

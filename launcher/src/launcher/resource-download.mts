@@ -2,6 +2,19 @@ type Progress = (loaded: number, total: number, url: string) => void;
 type Fetch = typeof globalThis.fetch;
 type Routes = {sources: string[]; bytes?: number};
 type Policy = {unsupported: Set<string>; preferred: Map<string, string>; failed: Map<string, number>};
+export type DownloadAttempt = {stage: 'routes' | 'download'; host: string; reason: string};
+export class ResourceDownloadError extends Error {
+  readonly attempts: readonly DownloadAttempt[];
+  constructor(attempts: readonly DownloadAttempt[], cause?: unknown) {
+    super(attempts.map(({stage, host, reason}) => `${stage}: ${host} (${reason})`).join(' | '), {cause});
+    this.name = 'ResourceDownloadError';
+    this.attempts = attempts;
+  }
+}
+const failureReason = (error: unknown) => error instanceof Error
+  ? /^HTTP \d{3}$/.test(error.message) ? error.message : error.name === 'TimeoutError' ? 'timeout'
+    : error instanceof TypeError ? 'connection' : 'invalid-response'
+  : 'connection';
 const policies = new WeakMap<Fetch, Policy>();
 const aborted = (signal: AbortSignal) => signal.reason ?? new DOMException('Aborted', 'AbortError');
 const timeout = (message: string) => new DOMException(message, 'TimeoutError');
@@ -18,7 +31,7 @@ function cancellable<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
   });
 }
 
-export const resourcePath = (url: URL) => /^\/(?:games|shared|language|language-updates)\//.test(url.pathname);
+export const resourcePath = (url: URL) => /^\/(?:games|shared|language)\//.test(url.pathname);
 
 /** Routes identify byte-identical locations. The Package installer still owns
  * complete-file integrity and publication. Policy is shared by a session's fetch. */
@@ -31,53 +44,103 @@ export function createResourceDownloader({fetchImpl = globalThis.fetch, idleMs =
   if (!policy) {policy = {unsupported: new Set(), preferred: new Map(), failed: new Map()}; policies.set(fetchImpl, policy);}
   const {unsupported, preferred, failed} = policy;
 
-  async function routes(url: URL, signal?: AbortSignal | null): Promise<Routes> {
-    if (unsupported.has(url.origin)) return {sources: []};
-    const query = new URL('/_eagler/resource-routes', url); query.searchParams.set('path', url.pathname + url.search);
-    const controller = new AbortController(), cancel = () => controller.abort(signal?.reason);
-    const timer = setTimeout(() => controller.abort(timeout('Resource route discovery timed out')), routeTimeoutMs);
-    signal?.addEventListener('abort', cancel, {once: true});
-    if (signal?.aborted) cancel();
-    let response: Response | undefined;
+  async function readRoutes(query: URL, url: URL, signal: AbortSignal): Promise<Routes> {
+    const response = await cancellable(fetchImpl(query, {
+      cache: 'no-store', redirect: 'error', credentials: query.origin === url.origin ? 'same-origin' : 'omit', signal,
+    }), signal);
     try {
-      response = await cancellable(fetchImpl(query, {cache: 'no-store', redirect: 'error', signal: controller.signal}), controller.signal);
-      if (!response.ok || !/^application\/json\b/i.test(response.headers.get('content-type') || '')) {
-        if (response.status === 404 || response.status === 405 || response.ok) unsupported.add(url.origin);
-        return {sources: []};
-      }
-      const text = await cancellable(response.text(), controller.signal);
-      if (text.length > 65_536) return {sources: []};
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      if (!/^application\/json\b/i.test(response.headers.get('content-type') || '')) throw new Error('Not a routing endpoint');
+      const text = await cancellable(response.text(), signal);
+      if (text.length > 65_536) throw new Error('Route response too large');
       const value = JSON.parse(text);
       if (value.schema !== 'eagler-touhou/resource-routes/1' || value.path !== url.pathname ||
           !Number.isSafeInteger(value.bytes) || value.bytes < 0 || !/^[a-f0-9]{64}$/.test(value.sha256) ||
-          !Array.isArray(value.sources) || value.sources.length > 8) return {sources: []};
+          !Array.isArray(value.sources) || !value.sources.length || value.sources.length > 8) throw new Error('Invalid resource routes');
       const sources: string[] = [];
       for (const source of value.sources) {
         const next = new URL(source);
         if ((next.protocol !== 'https:' && next.origin !== url.origin) || next.username || next.password ||
-            next.hash || next.pathname !== url.pathname || next.searchParams.toString() !== url.searchParams.toString()) return {sources: []};
+            next.hash || next.pathname !== url.pathname || next.searchParams.toString() !== url.searchParams.toString()) throw new Error('Invalid resource node');
         if (!sources.includes(next.href)) sources.push(next.href);
       }
       return {bytes: value.bytes, sources};
-    } catch {return {sources: []};}
-    finally {
-      clearTimeout(timer); signal?.removeEventListener('abort', cancel); controller.abort();
-      if (response?.body && !response.body.locked) void response.body.cancel().catch(() => {});
+    } finally {
+      if (response.body && !response.body.locked) void response.body.cancel().catch(() => {});
+    }
+  }
+
+  async function routes(url: URL, attempts: DownloadAttempt[], signal?: AbortSignal | null): Promise<Routes> {
+    if (unsupported.has(url.origin)) return {sources: []};
+    const discover = (base: string) => {
+      const query = new URL('/_eagler/resource-routes', base);
+      query.searchParams.set('path', url.pathname + url.search);
+      return query;
+    };
+    async function bounded<T>(read: (requestSignal: AbortSignal) => Promise<T>) {
+      const controller = new AbortController(), cancel = () => controller.abort(signal?.reason);
+      const timer = setTimeout(() => controller.abort(timeout('Resource route discovery timed out')), routeTimeoutMs);
+      signal?.addEventListener('abort', cancel, {once: true});
+      if (signal?.aborted) cancel();
+      try {return await read(controller.signal);}
+      finally {clearTimeout(timer); signal?.removeEventListener('abort', cancel); controller.abort();}
+    }
+    async function lookup(query: URL, requestSignal: AbortSignal) {
+      try {return await readRoutes(query, url, requestSignal);}
+      catch (error) {
+        if (!signal?.aborted) attempts.push({stage: 'routes', host: query.host, reason: failureReason(error)});
+        throw error;
+      }
+    }
+    try {return await bounded(s => lookup(discover(url.origin), s));}
+    catch (error) {
+      if (signal?.aborted) throw aborted(signal);
+      const message = error instanceof Error ? error.message : '';
+      if (message === 'HTTP 401' || message === 'HTTP 403') throw new ResourceDownloadError(attempts, error);
+      if (['HTTP 404', 'HTTP 405', 'Not a routing endpoint'].includes(message)) {
+        unsupported.add(url.origin);
+        attempts.length = 0;
+        return {sources: []};
+      }
+    }
+    try {
+      return await bounded(async s => {
+        const response = await cancellable(fetchImpl(new URL('/site-network.json', url), {signal: s}), s);
+        if (!response.ok) return {sources: []};
+        const text = await cancellable(response.text(), s);
+        if (text.length > 16384) return {sources: []};
+        const config = JSON.parse(text);
+        if (config?.schema !== 'eagler-touhou/site-network/1' ||
+            !Array.isArray(config.mirrors) || config.mirrors.length > 3) return {sources: []};
+        const mirrors = [...new Set<unknown>(config.mirrors)].flatMap(raw => {
+          if (typeof raw !== 'string') return [];
+          let base: URL;
+          try {base = new URL(raw);} catch {return [];}
+          return base.protocol === 'https:' && base.origin !== url.origin && !base.username && !base.password &&
+            !base.search && !base.hash && base.pathname.endsWith('/') ? [discover(base.href)] : [];
+        });
+        return await Promise.any(mirrors.map(query => lookup(query, s)));
+      });
+    } catch {
+      if (signal?.aborted) throw aborted(signal);
+      return {sources: []};
     }
   }
 
   return async (url: URL, init: RequestInit = {}, progress: Progress = () => {}) => {
     const signal = init.signal, check = () => {if (signal?.aborted) throw aborted(signal);};
     check();
-    const route = await routes(url, signal); check();
+    const attempts: DownloadAttempt[] = [];
+    const route = await routes(url, attempts, signal); check();
     const explicitRange = new Headers(init.headers).has('Range');
     const resumable = route.bytes !== undefined && route.sources.length > 0 && !explicitRange;
     const sources = route.sources.length ? route.sources : [url.href];
     const exhausted = new Set<string>(), compared = new Set<string>();
     const origin = (source: string) => new URL(source).origin;
-    const fail = (source: string, reason: unknown) => {
+    const fail = (source: string, reason: unknown, actual = source) => {
       if (!exhausted.has(source)) console.warn('[EAGLER|下载节点异常]', {node:origin(source), path:url.pathname,
         reason:reason instanceof Error ? reason.name : String(reason)});
+      attempts.push({stage: 'download', host: new URL(actual).host, reason: failureReason(reason)});
       exhausted.add(source); failed.set(origin(source), Date.now() + cooldownMs);
       if (preferred.get(url.origin) === origin(source)) preferred.delete(url.origin);
     };
@@ -239,7 +302,10 @@ export function createResourceDownloader({fetchImpl = globalThis.fetch, idleMs =
               }
               measured = true;
             } catch (error) {
-              if (controller.signal.reason === sampleEnd) {measured = !!probe?.received; if (!measured) fail(source, 'sampling-timeout');}
+              if (controller.signal.reason === sampleEnd) {
+                measured = !!probe?.received;
+                if (!measured) failed.set(origin(source), Date.now() + cooldownMs);
+              }
               else if (!signal?.aborted && (controller.signal.reason?.name !== 'AbortError' || error !== controller.signal.reason)) fail(source, error);
             } finally {clearTimeout(deadline);}
             try {
@@ -290,7 +356,7 @@ export function createResourceDownloader({fetchImpl = globalThis.fetch, idleMs =
       } catch (error) {
         if (signal?.aborted) {nextTransfer?.close(); throw aborted(signal);}
         lastError = error;
-        if (active) fail(active.source, replacement ? 'slow-download' : error);
+        if (active) fail(active.source, replacement ? 'slow-download' : error, active.response.url || active.source);
         if (replacement) forced = replacement;
         if (!resumable) {chunks = []; loaded = 0;}
       } finally {
@@ -299,6 +365,6 @@ export function createResourceDownloader({fetchImpl = globalThis.fetch, idleMs =
       }
     }
     nextTransfer?.close();
-    throw lastError;
+    throw new ResourceDownloadError(attempts, lastError);
   };
 }

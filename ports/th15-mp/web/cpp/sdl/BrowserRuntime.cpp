@@ -259,8 +259,14 @@ touhou::sdl::VisibleFrameRate visible_fps;float presentation_fps=0;
 FrameCallback fps_drawing;
 #if TH15_MULTIPLAYER
 std::unique_ptr<AsciiText> live_fps_text;
+int live_fps_displayed=-1;
 #endif
-void reset_presentation_clock(){visible_fps.reset();presentation_fps=0;}
+void reset_presentation_clock(){
+ visible_fps.reset();presentation_fps=0;
+#if TH15_MULTIPLAYER
+ live_fps_displayed=-1;
+#endif
+}
 i32 draw_frame_rate(void*){
  if(!app||app->title||app->ending||!app->run)return 1;
 #if TH15_MULTIPLAYER
@@ -274,13 +280,19 @@ i32 draw_frame_rate(void*){
 #if TH15_MULTIPLAYER
 bool draw_live_fps(){
  if(!mp_started||!app||!app->run||app->title||app->ending)return true;
+ const auto displayed=int(std::lround(presentation_fps*10.f));
+ // A network wait or an idle high-refresh callback can leave the screen
+ // intact. Only copy and present it again when the FPS label changes.
+ if(!app->graphics.frame_drawn&&displayed==live_fps_displayed)return true;
  const auto identity=AnmVm::presentation_counter;
  if(!live_fps_text){auto at=app->shared.find("ascii.anm");if(at==app->shared.end())return true;live_fps_text=std::make_unique<AsciiText>(app->animations,app->environment);const bool ok=live_fps_text->initialize(at->second);AnmVm::presentation_counter=identity;if(!ok){last_error=live_fps_text->error;return false;}}
  if(!app->graphics.fps_backdrop(app->graphics.frame_drawn))return true;
  live_fps_text->update();HudTextStyle style;style.font=1;style.color=presentation_fps<30?0xff5050ff:presentation_fps<40?0xffa0a0ff:0xffffffff;
  char text[32];std::snprintf(text,sizeof text,"%2.1ffps",double(presentation_fps));
  app->renderer.flush();app->graphics.select_target(nullptr,0);app->views.camera(DrawCamera::Fullscreen,false);app->renderer.invalidate();
- const bool ok=live_fps_text->enqueue({{588,470,0},style,text})&&live_fps_text->draw(0,app->renderer);if(ok)app->graphics.present();return ok;
+ const bool ok=live_fps_text->enqueue({{588,470,0},style,text})&&live_fps_text->draw(0,app->renderer);
+ if(ok){live_fps_displayed=displayed;app->graphics.present();}
+ return ok;
 }
 #endif
 void add_controller(SDL_JoystickID id){if(!controller)controller=SDL_OpenJoystick(id);}
@@ -406,7 +418,12 @@ void commit_browser_frame(double begin,double time,unsigned completed,bool ok,bo
 }
 #if TH15_MULTIPLAYER
 bool mp_live(){return mp_started&&!mp_local_results&&!network.ReadOnly();}
+bool mp_pause_active(){return app->pause&&app->pause->state.screen!=PauseScreen::Inactive;}
 unsigned mp_run_due(double elapsed,double begin,bool& ok){
+ // A paused menu still advances on confirmed input. Keep at most one extra
+ // tick of elapsed time when a packet wait overlaps a display callback.
+ const bool paused=mp_pause_active();
+ if(paused&&cadence.retry_pending())cadence.debt=std::min(cadence.period,cadence.debt+elapsed);
  const auto ticks=cadence.advance(elapsed,true);unsigned completed=0;
  const auto corrections=mp_corrections;
  if(!ticks&&(network.HasCorrection()||network.NextFrame()<mp_replay_until))ok=mp_tick(0,false,false);
@@ -426,7 +443,10 @@ unsigned mp_run_due(double elapsed,double begin,bool& ok){
    // A completed history tail may still owe its first fresh input. Return
    // that credit for a continuation instead of counting replay as forward.
    if(network.NextFrame()>=before&&network.NeedsCapture()){cadence.complete();break;}
-   cadence.blocked(true);return completed;
+   const auto debt=cadence.debt+(ticks-i-1)*cadence.period;
+   cadence.blocked(true);
+   if(paused)cadence.debt=std::min(cadence.period,debt);
+   return completed;
   }
  }
  cadence.debt=std::min(.1,cadence.debt+(ticks-completed)*cadence.period);
@@ -629,7 +649,12 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
   bool fast=false,slow=false,debug=false;for(const auto& key:keyboard_map)if(key.hosted){fast|=key.vk==17||key.vk==162||key.vk==163;slow|=key.vk==16||key.vk==160||key.vk==161;debug|=key.vk==32;}
   const double period=app->practice.enabled?app->practice.speed.interval(app->practice.replay,fast,slow,debug):1./60.;if(period!=cadence.period){cadence.period=period;cadence.reset();app->graphics.presentation.reset();}
   const bool interpolate=std::abs(period-1./60.)<1e-12;
-  if(!limit_presentation_60&&interpolate)presentation.advance(delta);else presentation.reset();app->graphics.presentation.enabled=presentation.high_refresh&&!limit_presentation_60&&interpolate;
+  if(!limit_presentation_60&&interpolate)presentation.advance(delta);else presentation.reset();
+  bool interpolate_frame=presentation.high_refresh&&!limit_presentation_60&&interpolate;
+#if TH15_MULTIPLAYER
+  if(mp_live()&&mp_pause_active())interpolate_frame=false;
+#endif
+  app->graphics.presentation.enabled=interpolate_frame;
 #if TH15_PRESENTATION_LAB
   // Keep independent original Draw endpoints even on a 60Hz display; extra
   // presentation remains governed by the real cadence and the 60Hz limiter.
@@ -640,7 +665,7 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
   bool ok=true;app->graphics.frame_drawn=false;app->graphics.backend.defer=true;
   unsigned completed=0;
 #if TH15_MULTIPLAYER
-  if(mp_live())completed=mp_run_due(cadence.retry_pending()?0:network.PacedElapsed(delta),begin,ok);
+  if(mp_live())completed=mp_run_due(cadence.retry_pending()&&!mp_pause_active()?0:network.PacedElapsed(delta),begin,ok);
   else
 #endif
   {
@@ -665,8 +690,14 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
    if(i+1<ticks&&emscripten_get_now()-begin>=1000./60.){cadence.debt=std::min(.1,cadence.debt+(ticks-i-1)*cadence.period);break;}
   }
   }
-  if(ok&&presentation.high_refresh&&!limit_presentation_60&&interpolate&&!app->pending_load&&!app->exiting){const bool frozen=app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive;const float alpha=float(std::clamp(cadence.debt/cadence.period,0.,1.));if(app->graphics.presentation.present(app->graphics.backend,alpha,frozen))ThpracUi::render(*app);}
-  commit_browser_frame(begin,time,completed,ok,presentation.high_refresh&&!limit_presentation_60&&interpolate);
+#if TH15_MULTIPLAYER
+  if(mp_live()&&mp_pause_active())interpolate_frame=false;
+#endif
+  if(ok&&interpolate_frame&&!app->pending_load&&!app->exiting){const bool frozen=app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive;const float alpha=float(std::clamp(cadence.debt/cadence.period,0.,1.));if(app->graphics.presentation.present(app->graphics.backend,alpha,frozen)){
+   app->graphics.frame_drawn=true;
+   ThpracUi::render(*app);
+  }}
+  commit_browser_frame(begin,time,completed,ok,interpolate_frame);
 #if TH15_MULTIPLAYER
   if(!cadence.retry_pending())mp_queue_work();
 #endif

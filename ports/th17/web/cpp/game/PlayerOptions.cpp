@@ -27,7 +27,7 @@ bool PlayerOptions::configure(i32 power,i32 power_step,i32 max_power){
     if(power<max_power){for(u32 i=0;i<4;i++){auto& handle=visuals.option_handles[i][1];if(!animations.interrupt(handle,1)){error=animations.error;return false;}handle=0;}}
     else for(i32 i=0;i<count;i++){
         auto& handle=visuals.option_handles[u32(i)][1];if(!animations.retire(handle)){error=animations.error;return false;}
-        constexpr i32 scripts[]={16,18,18};handle=animations.create(resource,scripts[character],-1,2);auto* vm=animations.registry.find(handle);if(!vm){error=animations.error;return false;}vm->visual.translation.y=-32.f;
+        constexpr i32 scripts[]={16,18,18};handle=animations.create(resource,scripts[character],-1,2,{},0,0,visuals.presentation_seat);auto* vm=animations.registry.find(handle);if(!vm){error=animations.error;return false;}vm->visual.translation.y=-32.f;
     }
     if(motion.option_count==count)return true;
     const i32 first=count*(count-1)/2;constexpr i32 scripts[]={15,17,16};
@@ -35,7 +35,7 @@ bool PlayerOptions::configure(i32 power,i32 power_step,i32 max_power){
         auto& option=motion.options[u32(i)];auto& handle=visuals.option_handles[u32(i)][0];option.position=motion.position_fixed;
         if(!animations.retire(handle)){error=animations.error;return false;}option.index=i;option.normal_offset=offset(first+i,false);option.focus_offset=offset(first+i,true);
         const auto& delta=motion.focus?option.focus_offset:option.normal_offset;option.target={wrapping_add(motion.position_fixed.x,delta.x),wrapping_add(motion.position_fixed.y,delta.y)};option.position=option.target;
-        handle=animations.create(resource,scripts[character],14,0);auto* vm=animations.registry.find(handle);if(!vm){error=animations.error;return false;}vm->visual.translation.y=-32.f;option.active=2;
+        handle=animations.create(resource,scripts[character],14,0,{},0,0,visuals.presentation_seat);auto* vm=animations.registry.find(handle);if(!vm){error=animations.error;return false;}vm->visual.translation.y=-32.f;option.active=2;
         if(character==2)option.movement_callback=[this](PlayerOption& p){return follow_history(p);};
     }
     for(i32 i=count;i<4;i++){motion.options[u32(i)].active=0;if(!animations.interrupt(visuals.option_handles[u32(i)][0],1)){error=animations.error;return false;}}

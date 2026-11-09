@@ -4,16 +4,21 @@ import {mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
-let directory, createResourceDownloader;
+let directory, createResourceDownloader, resourcePath;
 before(async () => {
   directory = await mkdtemp(resolve(import.meta.dirname, '../../.cache/resource-download-test-'));
   const file = resolve(directory, 'download.mjs');
   await build({entryPoints: [resolve(import.meta.dirname, '../../src/launcher/resource-download.mts')], outfile: file,
     bundle: true, platform: 'node', format: 'esm', logLevel: 'silent'});
-  ({createResourceDownloader} = await import(pathToFileURL(file)));
+  ({createResourceDownloader,resourcePath} = await import(pathToFileURL(file)));
 });
 after(async () => {await rm(directory, {recursive: true, force: true});});
 const source = new URL('https://play.example/games/th07/th07.data?v=abc');
+test('resource paths use the established content directories',()=>{
+  assert.equal(resourcePath(new URL('https://play.example/games/th075/language/lang_en.zip')),true);
+  assert.equal(resourcePath(new URL('https://play.example/language/th075/en.zip')),true);
+  assert.equal(resourcePath(new URL('https://play.example/language-updates/th075/en.zip')),false);
+});
 const nodes = ['https://a.example', 'https://b.example'];
 const route = (bytes = 4, overrides = {}) => Response.json({schema: 'eagler-touhou/resource-routes/1',
   path: source.pathname, bytes, sha256: 'a'.repeat(64), sources: nodes.map(origin => origin + source.pathname + source.search), ...overrides});
@@ -71,7 +76,7 @@ for (const bad of [{path: '/different'}, {sources: ['https://a.example/different
       const url = new URL(input); if (url.pathname === '/_eagler/resource-routes') return route(4, bad);
       visited.push(url.href); return new Response('game');
     }});
-    assert.equal(await (await download(source)).text(), 'game'); assert.deepEqual(visited, [source.href]);
+    assert.equal(await (await download(source)).text(), 'game'); assert.deepEqual(visited, [source.origin + '/site-network.json', source.href]);
   });
 }
 
@@ -203,7 +208,7 @@ test('all unresponsive nodes and a stuck route body have bounded deadlines', asy
   await assert.rejects(createResourceDownloader({...downloadOptions, idleMs: 25, fetchImpl: async input => {
     if (new URL(input).pathname === '/_eagler/resource-routes') return route(payload.length);
     return new Promise(() => {});
-  }})(source), {name: 'TimeoutError'});
+  }})(source), error => error.name === 'ResourceDownloadError' && error.cause?.name === 'TimeoutError');
   assert.ok(performance.now() - began < 500);
   const direct = [];
   const download = createResourceDownloader({...downloadOptions, routeTimeoutMs: 25, fetchImpl: async input => {
@@ -211,7 +216,7 @@ test('all unresponsive nodes and a stuck route body have bounded deadlines', asy
     direct.push(String(input)); return new Response(payload);
   }});
   assert.deepEqual(new Uint8Array(await (await download(source)).arrayBuffer()), payload);
-  assert.deepEqual(direct, [source.href]);
+  assert.deepEqual(direct, [source.origin + '/site-network.json', source.href]);
 });
 
 test('an explicit partial response is checked against its own range length', async () => {
@@ -297,4 +302,49 @@ test('two timed-out nodes progress to a third node with no more than two active 
   }});
   assert.deepEqual(new Uint8Array(await (await download(source)).arrayBuffer()), payload);
   assert.equal(maximum, 2); assert.equal(concurrent, 0);
+});
+
+
+test('a stalled route lookup can download from the second node in a mirror’s verified list', async () => {
+  const mirror = 'https://mirror.example';
+  const requests = [];
+  const download = createResourceDownloader({routeTimeoutMs: 15, fetchImpl: async (input, init) => {
+    const url = new URL(input);
+    if (url.pathname === '/site-network.json') return Response.json({schema: 'eagler-touhou/site-network/1', mirrors: [mirror + '/']});
+    if (url.origin === source.origin) {
+      assert.equal(url.pathname, '/_eagler/resource-routes');
+      return new Promise(() => {});
+    }
+    if (url.origin === mirror) {
+      assert.equal(init.credentials, 'omit');
+      assert.equal(url.searchParams.get('path'), source.pathname + source.search);
+      return route();
+    }
+    requests.push(url.origin);
+    return url.origin === nodes[0] ? new Response(null, {status: 503}) : new Response('game');
+  }});
+  const response = await download(source, {headers: {Range: 'bytes=0-3'}});
+  assert.equal(await response.text(), 'game');
+  assert.deepEqual(requests, nodes);
+});
+
+test('discovery timeout queries the deployment mirror and preserves both node failures', async () => {
+  const mirror = 'https://mirror.example';
+  const download = createResourceDownloader({routeTimeoutMs: 15, fetchImpl: async (input, init) => {
+    const url = new URL(input);
+    if (url.pathname === '/site-network.json') return Response.json({schema: 'eagler-touhou/site-network/1', mirrors: [mirror + '/']});
+    if (url.origin === source.origin) return new Promise(() => {});
+    if (url.origin === mirror) {
+      assert.equal(init.credentials, 'omit');
+      assert.equal(url.searchParams.get('path'), source.pathname + source.search);
+      return route();
+    }
+    return new Response(null, {status: url.origin === nodes[0] ? 503 : 504});
+  }});
+  await assert.rejects(download(source), error => {
+    assert.equal(error.name, 'ResourceDownloadError');
+    assert.deepEqual(error.attempts.map(({host, reason}) => [host, reason]).sort(),
+      [['a.example','HTTP 503'],['b.example','HTTP 504'],['play.example','timeout']]);
+    return true;
+  });
 });

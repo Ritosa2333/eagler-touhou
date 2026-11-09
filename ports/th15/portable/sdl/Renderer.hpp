@@ -18,7 +18,7 @@ using u32=uint32_t;using i32=int32_t;using u8=uint8_t;
 using namespace touhou::graphics;
 struct Surface {u32 handle=0,width=0,height=0;PixelFormat format=PixelFormat::Bgra8;u32 pitch=0;u8* data=nullptr;u32 size=0,version=0,renderScale=1;};
 struct Viewport {u32 x=0,y=0,width=640,height=480;float min=0,max=1;};
-struct Statistics {u32 calls=0,batches=0,uploadBytes=0,readBytes=0,frames=0,presentations=0,bufferReplacements=0,bufferSubUpdates=0,vertexUploadBytes=0,directBytes=0,copiedBytes=0,layoutSetups=0,textureBinds=0,framebufferBinds=0,programCompiles=0,genericBatches=0,resamples=0;};
+struct Statistics {u32 calls=0,batches=0,uploadBytes=0,readBytes=0,frames=0,presentations=0,bufferReplacements=0,bufferSubUpdates=0,vertexUploadBytes=0,directBytes=0,copiedBytes=0,layoutSetups=0,textureBinds=0,framebufferBinds=0,programCompiles=0,genericBatches=0,resamples=0,captureCopies=0;};
 struct State {
     PipelineState pipeline{};
     std::array<std::array<float,16>,4> matrix{};
@@ -65,6 +65,7 @@ private:
     std::vector<u8> batchBytes,batchScratch,quad,worlds,pixels;Topology batchTopology=Topology::Triangles;bool batching=false,instancing=false;
     u32 batchCount=0,pending=0;std::string failure;
     GPU& surface(u32);GPU& target(u32,u32);void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32);
+    bool copy_capture(const State&,Topology,u32,const void*,u32);
     void bind_texture(GLuint);void bind_framebuffer(GLenum,GLuint);
     void select(const State&);void uniform(int,int,const float*);void integer(int,int);
     u32 upload(Stream&,GLenum,const void*,u32,u32);

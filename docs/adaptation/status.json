@@ -3,10 +3,557 @@
   "identityAlgorithm": "sha256/canonical-source-text",
   "targets": [
     {
+      "game": "th05",
+      "variant": "multiplayer",
+      "directory": "ports/th05-mp",
+      "sourceDigest": "2fc8d96fcd87f13ea11712fd23e1a0a08ea1500924b72d29d3b604e4a7434db6",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 96,
+      "features": {
+        "thcrap": true,
+        "thprac": false
+      },
+      "command": [
+        "node",
+        "scripts/build-eagler.mjs",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th05-mp"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "practice-toggle",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "PRACTICE-01"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "../../common/src/netplay/NetplayCore.cpp",
+            "../../common/src/netplay/NetplayProtocol.cpp",
+            "../../common/src/netplay/RollbackJournal.cpp",
+            "Game/Coop/Coop.cpp",
+            "Game/Coop/WorldRollback.cpp",
+            "Game/ED/Ending.cpp",
+            "Game/GlobalVariableAndStatistics.cpp",
+            "Game/HighScoreScreen/HighScoreScreen.cpp",
+            "Game/MusicRoom/MusicRoom.cpp",
+            "Game/OP/OpParticle.cpp",
+            "Game/OP/Opening.cpp",
+            "Game/Original/OriginalFeatures.cpp",
+            "Game/Original/OriginalScenes.cpp",
+            "Game/Practice/KeyMonitor.cpp",
+            "Game/Practice/Practice.cpp",
+            "Game/Practice/PracticeAdvanced.cpp",
+            "Game/Practice/PracticeSetup.cpp",
+            "Game/Replay.cpp",
+            "Game/Scheme.cpp",
+            "Game/SchemeSwitcher.cpp",
+            "Game/SelectCharaScreen/SelectCharaScreen.cpp",
+            "Game/SelectReplayScreen/SelectReplayScreen.cpp",
+            "Game/Stage/Background/Background.cpp",
+            "Game/Stage/Boss/Boss.cpp",
+            "Game/Stage/Boss/BossStage1.cpp",
+            "Game/Stage/Boss/BossStage2.cpp",
+            "Game/Stage/Boss/BossStage3.cpp",
+            "Game/Stage/Boss/BossStage4.cpp",
+            "Game/Stage/Boss/BossStage4Mai.cpp",
+            "Game/Stage/Boss/BossStage4Yuki.cpp",
+            "Game/Stage/Boss/BossStage5.cpp",
+            "Game/Stage/Boss/BossStage6.cpp",
+            "Game/Stage/Boss/BossStageEx.cpp",
+            "Game/Stage/Chara/Chara.cpp",
+            "Game/Stage/Chara/CharaMarisa.cpp",
+            "Game/Stage/Chara/CharaMima.cpp",
+            "Game/Stage/Chara/CharaReimu.cpp",
+            "Game/Stage/Chara/CharaYuka.cpp",
+            "Game/Stage/CharaBullet/CharaBullet.cpp",
+            "Game/Stage/Circle/Circle.cpp",
+            "Game/Stage/Dialogue/Dialogue.cpp",
+            "Game/Stage/Enemy/Enemy.cpp",
+            "Game/Stage/EnemyBullet/EnemyBullet.cpp",
+            "Game/Stage/FloatingText/FloatingText.cpp",
+            "Game/Stage/GatherEffect/GatherEffect.cpp",
+            "Game/Stage/Item/Item.cpp",
+            "Game/Stage/Laser/Laser.cpp",
+            "Game/Stage/MidBoss/MidBoss.cpp",
+            "Game/Stage/MidBoss/MidBossStage1.cpp",
+            "Game/Stage/MidBoss/MidBossStage2.cpp",
+            "Game/Stage/MidBoss/MidBossStage3.cpp",
+            "Game/Stage/MidBoss/MidBossStage4.cpp",
+            "Game/Stage/MidBoss/MidBossStage5.cpp",
+            "Game/Stage/MidBoss/MidBossStageEx.cpp",
+            "Game/Stage/PopupNumber/PopupNumber.cpp",
+            "Game/Stage/SparkEffect/SparkEffect.cpp",
+            "Game/Stage/SpecialBullet/CurvingBullet.cpp",
+            "Game/Stage/SpecialBullet/KnifeBullet.cpp",
+            "Game/Stage/SpecialBullet/LargeBullet.cpp",
+            "Game/Stage/SpecialBullet/ShinkiBullet.cpp",
+            "Game/Stage/Stage.cpp",
+            "Game/Stage/Stage2BG/Stage2BG.cpp",
+            "Game/Stage/StageBossHud.cpp",
+            "Game/Stage/StagePracticeInfo.cpp",
+            "Game/Stage/StageResource.cpp",
+            "Game/Stage/Summary/Summary.cpp",
+            "Game/Stage/TextOverlay/TextOverlay.cpp",
+            "Game/TitleScreen/TitleRollingTama.cpp",
+            "Game/TitleScreen/TitleScreen.cpp",
+            "gameLib/CommonFunction/CommonFunctionGraphic.cpp",
+            "gameLib/CommonFunction/CommonFunctionInput.cpp",
+            "gameLib/CommonFunction/CommonFunctionMusicSE.cpp",
+            "gameLib/Graphic/2DImage.cpp",
+            "gameLib/Graphic/2DImageArray.cpp",
+            "gameLib/Graphic/Th5ExtFont.cpp",
+            "gameLib/Misc/md5.cpp",
+            "gameLib/Misc/sha1.cpp",
+            "gameLib/th5DatFile/BB/BBFile.cpp",
+            "gameLib/th5DatFile/BFT/BFTFile.cpp",
+            "gameLib/th5DatFile/CD2CDG/CD2CDGFile.cpp",
+            "gameLib/th5DatFile/MPN/MPNFile.cpp",
+            "gameLib/th5DatFile/PI/PIFile.cpp",
+            "gameLib/th5DatFile/STD/STDFile.cpp",
+            "gameLib/th5DatFile/th5DatFile.cpp",
+            "portable/Game.cpp",
+            "portable/Graphics.cpp",
+            "portable/Netplay.cpp",
+            "portable/Platform.cpp",
+            "portable/Pointer.cpp",
+            "portable/Spectator.cpp",
+            "portable/Text.cpp",
+            "portable/UI.cpp",
+            "third_party/imgui/imgui.cpp",
+            "third_party/imgui/imgui_draw.cpp",
+            "third_party/imgui/imgui_tables.cpp",
+            "third_party/imgui/imgui_widgets.cpp"
+          ],
+          "complete": true
+        },
+        {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "runner": "vitest",
+          "project": "repository",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "game": "th05",
+      "variant": "normal",
+      "directory": "ports/th05",
+      "sourceDigest": "25975e8d52f5a1a0dcb23dae50aa1f1e59928f83ff19f06f937bd09c30e721f2",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 89,
+      "features": {
+        "thcrap": true,
+        "thprac": true
+      },
+      "command": [
+        "node",
+        "scripts/build-eagler.mjs",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th05"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "practice-toggle",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "PRACTICE-01"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "Game/ED/Ending.cpp",
+            "Game/GlobalVariableAndStatistics.cpp",
+            "Game/HighScoreScreen/HighScoreScreen.cpp",
+            "Game/MusicRoom/MusicRoom.cpp",
+            "Game/OP/OpParticle.cpp",
+            "Game/OP/Opening.cpp",
+            "Game/Original/OriginalFeatures.cpp",
+            "Game/Original/OriginalScenes.cpp",
+            "Game/Practice/KeyMonitor.cpp",
+            "Game/Practice/Practice.cpp",
+            "Game/Practice/PracticeAdvanced.cpp",
+            "Game/Practice/PracticeSetup.cpp",
+            "Game/Replay.cpp",
+            "Game/Scheme.cpp",
+            "Game/SchemeSwitcher.cpp",
+            "Game/SelectCharaScreen/SelectCharaScreen.cpp",
+            "Game/SelectReplayScreen/SelectReplayScreen.cpp",
+            "Game/Stage/Background/Background.cpp",
+            "Game/Stage/Boss/Boss.cpp",
+            "Game/Stage/Boss/BossStage1.cpp",
+            "Game/Stage/Boss/BossStage2.cpp",
+            "Game/Stage/Boss/BossStage3.cpp",
+            "Game/Stage/Boss/BossStage4.cpp",
+            "Game/Stage/Boss/BossStage4Mai.cpp",
+            "Game/Stage/Boss/BossStage4Yuki.cpp",
+            "Game/Stage/Boss/BossStage5.cpp",
+            "Game/Stage/Boss/BossStage6.cpp",
+            "Game/Stage/Boss/BossStageEx.cpp",
+            "Game/Stage/Chara/Chara.cpp",
+            "Game/Stage/Chara/CharaMarisa.cpp",
+            "Game/Stage/Chara/CharaMima.cpp",
+            "Game/Stage/Chara/CharaReimu.cpp",
+            "Game/Stage/Chara/CharaYuka.cpp",
+            "Game/Stage/CharaBullet/CharaBullet.cpp",
+            "Game/Stage/Circle/Circle.cpp",
+            "Game/Stage/Dialogue/Dialogue.cpp",
+            "Game/Stage/Enemy/Enemy.cpp",
+            "Game/Stage/EnemyBullet/EnemyBullet.cpp",
+            "Game/Stage/FloatingText/FloatingText.cpp",
+            "Game/Stage/GatherEffect/GatherEffect.cpp",
+            "Game/Stage/Item/Item.cpp",
+            "Game/Stage/Laser/Laser.cpp",
+            "Game/Stage/MidBoss/MidBoss.cpp",
+            "Game/Stage/MidBoss/MidBossStage1.cpp",
+            "Game/Stage/MidBoss/MidBossStage2.cpp",
+            "Game/Stage/MidBoss/MidBossStage3.cpp",
+            "Game/Stage/MidBoss/MidBossStage4.cpp",
+            "Game/Stage/MidBoss/MidBossStage5.cpp",
+            "Game/Stage/MidBoss/MidBossStageEx.cpp",
+            "Game/Stage/PopupNumber/PopupNumber.cpp",
+            "Game/Stage/SparkEffect/SparkEffect.cpp",
+            "Game/Stage/SpecialBullet/CurvingBullet.cpp",
+            "Game/Stage/SpecialBullet/KnifeBullet.cpp",
+            "Game/Stage/SpecialBullet/LargeBullet.cpp",
+            "Game/Stage/SpecialBullet/ShinkiBullet.cpp",
+            "Game/Stage/Stage.cpp",
+            "Game/Stage/Stage2BG/Stage2BG.cpp",
+            "Game/Stage/StageBossHud.cpp",
+            "Game/Stage/StagePracticeInfo.cpp",
+            "Game/Stage/StageResource.cpp",
+            "Game/Stage/Summary/Summary.cpp",
+            "Game/Stage/TextOverlay/TextOverlay.cpp",
+            "Game/TitleScreen/TitleRollingTama.cpp",
+            "Game/TitleScreen/TitleScreen.cpp",
+            "gameLib/CommonFunction/CommonFunctionGraphic.cpp",
+            "gameLib/CommonFunction/CommonFunctionInput.cpp",
+            "gameLib/CommonFunction/CommonFunctionMusicSE.cpp",
+            "gameLib/Graphic/2DImage.cpp",
+            "gameLib/Graphic/2DImageArray.cpp",
+            "gameLib/Graphic/Th5ExtFont.cpp",
+            "gameLib/Misc/md5.cpp",
+            "gameLib/Misc/sha1.cpp",
+            "gameLib/th5DatFile/BB/BBFile.cpp",
+            "gameLib/th5DatFile/BFT/BFTFile.cpp",
+            "gameLib/th5DatFile/CD2CDG/CD2CDGFile.cpp",
+            "gameLib/th5DatFile/MPN/MPNFile.cpp",
+            "gameLib/th5DatFile/PI/PIFile.cpp",
+            "gameLib/th5DatFile/STD/STDFile.cpp",
+            "gameLib/th5DatFile/th5DatFile.cpp",
+            "portable/Game.cpp",
+            "portable/Graphics.cpp",
+            "portable/Platform.cpp",
+            "portable/Pointer.cpp",
+            "portable/Text.cpp",
+            "portable/UI.cpp",
+            "third_party/imgui/imgui.cpp",
+            "third_party/imgui/imgui_draw.cpp",
+            "third_party/imgui/imgui_tables.cpp",
+            "third_party/imgui/imgui_widgets.cpp"
+          ],
+          "complete": true
+        },
+        {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "runner": "vitest",
+          "project": "repository",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "th05-normal-presentation",
+          "level": "module",
+          "games": [
+            "th05"
+          ],
+          "variants": [
+            "normal"
+          ],
+          "checks": [
+            "DISPLAY-01",
+            "DISPLAY-02",
+            "DISPLAY-03"
+          ],
+          "files": [
+            "ports/th05/tests/presentation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
       "game": "th06",
       "variant": "multiplayer",
       "directory": "ports/th06",
-      "sourceDigest": "f9af2b05676f79c3c5e1ec879e153d217e45c2aae7d69791d0f874677c0d2105",
+      "sourceDigest": "c21a87b7ae002c8132d9afa8f65a50cd2b20483070667f7bb1fa7815f2de2be4",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -195,7 +742,7 @@
       "game": "th06",
       "variant": "normal",
       "directory": "ports/th06",
-      "sourceDigest": "a2fc6984f4033320f8c646cd3692e858c8a75816fb441b464376105e5fc60246",
+      "sourceDigest": "0fcf7a76547b9395940e7fb3ae1a3f6076c1a41551fd23db38cae4e0beab7b70",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -356,6 +903,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -405,7 +955,7 @@
       "game": "th07",
       "variant": "multiplayer",
       "directory": "ports/th07",
-      "sourceDigest": "842de898f1b38ba0c122fc7e4a00957202ce1a333ad53193b61444319843f8e1",
+      "sourceDigest": "0d488cbfa30c00724d6d4583e12f0e725b5d7f107f7e8758b745774b997a9310",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -594,7 +1144,7 @@
       "game": "th07",
       "variant": "normal",
       "directory": "ports/th07",
-      "sourceDigest": "cce6e2a1515b3cdd14edeefe8111fd48a24d441d2961edd59ba0eb7a7c8d1e5e",
+      "sourceDigest": "db41438a4ab2b92f254d4926d0498b72451230371d3dc31b6dc25161aeec5ad5",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -755,6 +1305,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -804,7 +1357,7 @@
       "game": "th075",
       "variant": "multiplayer",
       "directory": "ports/th075-mp",
-      "sourceDigest": "329444c525aca41e67e1700e83773dd1a7e493daba850e06942b5142a488d0e3",
+      "sourceDigest": "ce8c9d521ae60727a9c6c02c056fd9ef31201b86baf94723895a39bbb76b2fb6",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 207,
@@ -958,7 +1511,7 @@
       "game": "th075",
       "variant": "normal",
       "directory": "ports/th075",
-      "sourceDigest": "04c622a6f46a9f290b3971762085f4966e17cf76ca3b0a2309d64324d49a62bf",
+      "sourceDigest": "9c756df00ceb73fb1267298cd4bd24186d4a702dd1a9d9c90d215f492b98b9eb",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 200,
@@ -1107,6 +1660,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -1132,7 +1688,7 @@
       "game": "th08",
       "variant": "multiplayer",
       "directory": "ports/th08-mp",
-      "sourceDigest": "bd6895ec68e83d1d1cedc7ed607a750ab1e71f894b5266f98ea4620b2bbe351b",
+      "sourceDigest": "fbb68a782342adc41a66e3d6d192aa94eba796fabb09c9fddeaee61238db9a99",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 225,
@@ -1287,7 +1843,7 @@
       "game": "th08",
       "variant": "normal",
       "directory": "ports/th08",
-      "sourceDigest": "b85c35eace698fae8ed9ab719768a4a079f848ed9a8a3c526232561a24199e4d",
+      "sourceDigest": "cd48bc6d27bb38df7ee69c1e70e16dc1a34360c787886caddea2464d000fa902",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 196,
@@ -1437,6 +1993,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -1462,7 +2021,7 @@
       "game": "th09",
       "variant": "multiplayer",
       "directory": "ports/th09",
-      "sourceDigest": "16bcbb3d606a6256053481a84fda49c1d65c5add0de153e1a478296ba063bd71",
+      "sourceDigest": "88c19348aba3feda9d56862df41d3dff5886cd0a5aa12b31cfe72ab86995db06",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 116,
@@ -1614,7 +2173,7 @@
       "game": "th09",
       "variant": "normal",
       "directory": "ports/th09",
-      "sourceDigest": "3cd161525862d80db81ee0ff8dfea6257bc7d7b8339e73f550e69ee1151366f3",
+      "sourceDigest": "686918a50c22243fe692ed5e31fa29394f726d709d7af4f222c25ab2a7bef3aa",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 116,
@@ -1762,6 +2321,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -1787,7 +2349,7 @@
       "game": "th10",
       "variant": "multiplayer",
       "directory": "ports/th10-mp",
-      "sourceDigest": "167ce37dab7d1d646325d1cc4e153e61ada8c41194dee80f9d5b2f88a324e255",
+      "sourceDigest": "7c3eacb33d4823f6c54e4d34814830686013ad782d4a9a6aa97546abf3e08b25",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 277,
@@ -1941,7 +2503,7 @@
       "game": "th10",
       "variant": "normal",
       "directory": "ports/th10",
-      "sourceDigest": "94d400a345df946823ef9091395780f67573c8bef60040583718635e0c6461bd",
+      "sourceDigest": "639ae2ebb5b95075548af618a5a3e3f1121a0cf65318b0a34f51d8aa55aa0969",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 249,
@@ -2091,6 +2653,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -2116,7 +2681,7 @@
       "game": "th11",
       "variant": "multiplayer",
       "directory": "ports/th11-mp",
-      "sourceDigest": "35337af7466ad8f73c56e33130fc0d2ff81e87d77940726c08aed3d6efd982a6",
+      "sourceDigest": "9b345a0b2849e81cc4e15694db1dc285a44bcaf21e51e7f4b4f2b3177ca0c1ce",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 139,
@@ -2270,7 +2835,7 @@
       "game": "th11",
       "variant": "normal",
       "directory": "ports/th11",
-      "sourceDigest": "1bff06c176c5f48edd48f51ea1da97ae6efa36afbdc0ccb33dcd174c4d8c98b1",
+      "sourceDigest": "11f993f947e3b1112c4587ae72d45385c867682e9113e461e7d9af800694b063",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 115,
@@ -2420,6 +2985,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -2445,7 +3013,7 @@
       "game": "th12",
       "variant": "multiplayer",
       "directory": "ports/th12-mp",
-      "sourceDigest": "e92e168ea1fd04834121d8eafc7b79d8e43bcae397a5f934ade8bf01c7ca6e43",
+      "sourceDigest": "c389a93e421c14f8285d7b1ec4efaef6aa9646cca5a8c54a110a1e7566faf87d",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 95,
@@ -2605,7 +3173,7 @@
       "game": "th12",
       "variant": "normal",
       "directory": "ports/th12",
-      "sourceDigest": "4697adf794e3d1b4984b0665dbed5372eab7026cb5ee25b1dc277c00beeaea4c",
+      "sourceDigest": "caa8aba44a2faab498ff9a610436a27fc0f08456900d33d8d3a98a704202fb9e",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 81,
@@ -2761,6 +3329,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -2964,7 +3535,7 @@
       "game": "th15",
       "variant": "multiplayer",
       "directory": "ports/th15-mp",
-      "sourceDigest": "70ef32590e39201868536fab336fb3f2440178c132d97f6ee46ffa2392ffb436",
+      "sourceDigest": "c6dd0021df00433fcd338852511d662e11e18cd7618a11a7edd5ad72af9bc721",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 271,
@@ -3117,7 +3688,7 @@
       "game": "th15",
       "variant": "normal",
       "directory": "ports/th15",
-      "sourceDigest": "26c2bc6d1f05db3300297416f879b6c3ab1a23bc51f1790e54028f0d0141538c",
+      "sourceDigest": "596a94d9f560b83cde2c1690de82996964f5610535ba4088b193c12e3b62e606",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 253,
@@ -3266,6 +3837,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -3289,20 +3863,186 @@
     },
     {
       "game": "th17",
-      "variant": "normal",
-      "directory": "ports/th17",
-      "sourceDigest": "b1201727121bc63b413d373352a6e7ae61aa7e371e6c38c6d3ae65f7dbfaf425",
+      "variant": "multiplayer",
+      "directory": "ports/th17-mp",
+      "sourceDigest": "8c080fd8e6480c637ac503973afea4222ad2d63737f060ccd79e4d2884d00090",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
-      "translationUnits": 211,
+      "translationUnits": 233,
       "features": {
-        "thcrap": false,
+        "thcrap": true,
         "thprac": false
       },
       "command": [
         "node",
         "web/scripts/build-sdl-application.mjs",
         "--release",
+        "--multiplayer",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th17-mp"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "web/cpp/sdl/BrowserRuntime.cpp"
+          ],
+          "complete": true
+        },
+        {
+          "id": "always-hitbox-abi",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-06"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": false
+        },
+        {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "runner": "vitest",
+          "project": "repository",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "game": "th17",
+      "variant": "normal",
+      "directory": "ports/th17",
+      "sourceDigest": "a5922a53f964ed93e4f0621a0e5ed0ad52ce6891be9a4aca031a9265f22941fd",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 221,
+      "features": {
+        "thcrap": true,
+        "thprac": true
+      },
+      "command": [
+        "node",
+        "web/scripts/build-sdl-application.mjs",
+        "--release",
+        "--thprac",
         "--print-inputs"
       ],
       "gates": [
@@ -3451,6 +4191,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -3476,7 +4219,7 @@
       "game": "th19",
       "variant": "multiplayer",
       "directory": "ports/th19",
-      "sourceDigest": "6a6455958123d51a7f8a03ad892c25f47a97106b58bbc52d36256072971afc1e",
+      "sourceDigest": "78dc397bf34c361b8ca21975ae8f42cad51aa005938729301b7ec1fce146f5a7",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 14,
@@ -3628,7 +4371,7 @@
       "game": "th19",
       "variant": "normal",
       "directory": "ports/th19",
-      "sourceDigest": "0ed30ab05c40dfc3e94b1ab89a0e7ade02a5393e8273b33c8bb03688a15cf25e",
+      "sourceDigest": "325d0816ebddd1f730d9e10ceeaec67bfccb2f54e1acaf860d87b5bfc74d0e1d",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 14,
@@ -3775,6 +4518,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",
@@ -3800,7 +4546,7 @@
       "game": "th20",
       "variant": "normal",
       "directory": "ports/th20",
-      "sourceDigest": "469bea17163a5e7d8f0584a0d268266c460f22ace84a2aff4ded7e4a2fe7d255",
+      "sourceDigest": "4df8d050bfa379fd58b4c3fc04b41aa6306b98d8c9cd845a65a9fa72ae6e2cd8",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 478,
@@ -3949,6 +4695,9 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
           "runner": "vitest",
           "project": "workspace",

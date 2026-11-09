@@ -1,0 +1,78 @@
+PASS: 17-byte header, 4 matchup layouts, exact fixture roundtrip, 512 input mappings, native RNG reference sequence
+✔ work\eagler-touhou\ports\th19\tests\junowen-format.test.mjs (20076.502ms)
+✔ timer model matches 120 original x86 instruction results (2.8748ms)
+✔ RNG model matches 156 original x86 instruction results (3.3054ms)
+✔ fractional clock may retain or skip integer indices; a network tick is not a native frame (0.3574ms)
+{ rtt: 40, frames: 358, fps: 59.666666666666664, lead: [ 1, 1 ] }
+{ rtt: 100, frames: 356, fps: 59.333333333333336, lead: [ 3, 3 ] }
+{ rtt: 200, frames: 353, fps: 58.833333333333336, lead: [ 6, 6 ] }
+✔ confirmed UI input pipeline at 40ms RTT (23.7124ms)
+✔ confirmed UI input pipeline at 100ms RTT (10.1988ms)
+✔ confirmed UI input pipeline at 200ms RTT (744.023ms)
+✔ configured input delay remains contiguous (32.4742ms)
+▶ server ICE servers replace Launcher fallback for both offer and peer-join answer
+  ✔ offer side (33.9917ms)
+  ✔ answer side waits for peer-join (1.1706ms)
+✔ server ICE servers replace Launcher fallback for both offer and peer-join answer (37.0717ms)
+✔ an empty server ICE list overrides Launcher fallback (0.8918ms)
+▶ missing or invalid server ICE data preserves Launcher fallback
+  ✔ missing on offer side (0.4257ms)
+  ✔ invalid on peer-join answer side (0.4909ms)
+✔ missing or invalid server ICE data preserves Launcher fallback (1.4382ms)
+✔ RTC must pass the shared route barrier before delivering game input (1.7826ms)
+✔ a server-selected Relay cannot silently bypass the client fallback preference (0.6316ms)
+✔ explicit fallback opens both streams before the server route barrier (0.6543ms)
+✔ launcher peer exposes the live TH19 RTC connection across the route barrier (22.344ms)
+✔ standalone Runtime and Relay decode the exact same recording protocol (5.3696ms)
+✔ portable versus file validates CRC, sequence, result and metadata (3.5124ms)
+✔ new files reject single-player and unplayed sessions (0.4283ms)
+✔ only contiguous committed frames are saved once, transport failure leaves players connected (1.6533ms)
+✔ spectator never sends input and drains only verified ordered frames (29.1966ms)
+✔ Launcher sync updates one file and leaves the match recorder live (3.2667ms)
+✔ versus initialization and countdown without actual gameplay never save a recording (1.8979ms)
+✔ native edge tuples preserve press, hold, release for both seats (1.6583ms)
+✔ pending save and rematch never mix headers, paths or inputs (1.4545ms)
+✔ shared runner restarts seed on rewind and stops at first mismatch (0.9655ms)
+✔ paused observer saves received confirmed input once, independent of its cursor (1.357ms)
+✔ disconnect retains observer history and finalizes a partial recording (0.7447ms)
+✔ timeline rejects duplicate, missing and post-result input without advancing (0.3668ms)
+✔ native header has no auto-detect signature; explicit inspection preserves settings (3.0531ms)
+✔ CPU recorder/reader layout disagreement and unmapped flags are reported (0.8041ms)
+✔ web v2 identifies exact barriers without substituting guessed seeds or dropping pointer input (2.4674ms)
+✔ local viewer serves only token-scoped resources, verifies recording build, and never launches a game (192.2237ms)
+✔ viewer uses existing replay commands, isolates game input, and preserves version rejection (20.2524ms)
+✔ late remote input restores the native checkpoint and commits corrected frames once (3.3083ms)
+✔ prediction does not repeat a Bomb, pause edge or direct displacement (0.7546ms)
+✔ conflicting input and nonfinite touch data are rejected (2.3219ms)
+✔ unconfirmed resource transitions do not advance simulation (0.3346ms)
+{
+  rtt: 40,
+  fps: 59.666666666666664,
+  draws: [ 358, 358 ],
+  lead: [ 1, 1 ]
+}
+{
+  rtt: 100,
+  fps: 59.333333333333336,
+  draws: [ 356, 356 ],
+  lead: [ 3, 3 ]
+}
+{
+  rtt: 200,
+  fps: 58.833333333333336,
+  draws: [ 353, 353 ],
+  lead: [ 6, 6 ]
+}
+{ ticks: 4, draws: 1 }
+✔ selection scheduling at 40ms RTT (11.1476ms)
+✔ selection scheduling at 100ms RTT (4.3985ms)
+✔ selection scheduling at 200ms RTT (4.0255ms)
+✔ selection catch-up presents only its final available frame (0.9365ms)
+ℹ tests 45
+ℹ suites 0
+ℹ pass 45
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 38189.0451

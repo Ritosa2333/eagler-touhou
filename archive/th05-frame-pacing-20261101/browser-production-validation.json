@@ -1,0 +1,84 @@
+{
+  "runtime": {
+    "wasmSha256": "206c010d333e371e198ca6005b95c8af7cd2b93b527d09dc978ff6ef9d04d0e5",
+    "builtAt": "2026-11-01T09:09:55.019Z",
+    "diagnostic": false
+  },
+  "vanilla": {
+    "enabled": 0,
+    "scene": 1,
+    "ticks": 1
+  },
+  "gameplay": {
+    "scene": 4,
+    "x": 224,
+    "y": 376,
+    "ticks": 649
+  },
+  "pauseRestart": true,
+  "gamepad": true,
+  "touchReplayFrames": 24,
+  "replayDurability": true,
+  "thprac": true,
+  "languages": [
+    "ja",
+    "lang_zh-hans"
+  ],
+  "practiceLanguages": [
+    "ja-JP",
+    "en-US",
+    "zh-CN"
+  ],
+  "replayWorkspace": {
+    "inspect": true,
+    "seek": true,
+    "ended": true
+  },
+  "audio": [
+    {
+      "mode": "none",
+      "source": "original",
+      "prIdentity": true,
+      "sfx": "uth05win-original-se",
+      "loopStart": 0,
+      "loopEnd": 0
+    },
+    {
+      "mode": "stream",
+      "source": "original",
+      "prIdentity": true,
+      "sfx": "uth05win-original-se",
+      "loopStart": 0.018,
+      "loopEnd": 82.099
+    },
+    {
+      "mode": "full",
+      "source": "original",
+      "prIdentity": true,
+      "sfx": "uth05win-original-se",
+      "loopStart": 0.018,
+      "loopEnd": 82.099
+    },
+    {
+      "mode": "stream",
+      "source": "akyu",
+      "prIdentity": true,
+      "sfx": "uth05win-original-se",
+      "loopStart": 0,
+      "loopEnd": 180.9265
+    }
+  ],
+  "logs": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "events": [
+    "ready",
+    "transfer",
+    "runtime-info",
+    "first-frame",
+    "transfer"
+  ],
+  "protocol": "eagler-touhou/1"
+}

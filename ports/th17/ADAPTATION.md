@@ -115,20 +115,20 @@
 
 | 编号 | 检查项 | normal | 记录 |
 | --- | --- | --- | --- |
-| PRACTICE-01 | [发布包中的练习能力](../../docs/adaptation/localization.md#practice-01) | 不适用 | normal：该构建未提供 thprac |
-| PRACTICE-02 | [开局前启用与语言](../../docs/adaptation/localization.md#practice-02) | 不适用 | normal：该构建未提供 thprac |
-| PRACTICE-03 | [游戏内练习状态](../../docs/adaptation/localization.md#practice-03) | 不适用 | normal：该构建未提供 thprac |
-| PRACTICE-04 | [关卡与资源参数](../../docs/adaptation/localization.md#practice-04) | 不适用 | normal：该构建未提供 thprac |
-| PRACTICE-05 | [练习 Replay 元数据](../../docs/adaptation/localization.md#practice-05) | 不适用 | normal：该构建未提供 thprac |
-| PRACTICE-06 | [触控功能键与指针](../../docs/adaptation/localization.md#practice-06) | 不适用 | normal：该构建未提供 thprac |
-| PRACTICE-07 | [练习语言跟随设置](../../docs/adaptation/localization.md#practice-07) | 不适用 | normal：该构建未提供 thprac |
-| PRACTICE-08 | [练习界面的可用功能](../../docs/adaptation/localization.md#practice-08) | 不适用 | normal：该构建未提供 thprac |
+| PRACTICE-01 | [发布包中的练习能力](../../docs/adaptation/localization.md#practice-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PRACTICE-02 | [开局前启用与语言](../../docs/adaptation/localization.md#practice-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PRACTICE-03 | [游戏内练习状态](../../docs/adaptation/localization.md#practice-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PRACTICE-04 | [关卡与资源参数](../../docs/adaptation/localization.md#practice-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PRACTICE-05 | [练习 Replay 元数据](../../docs/adaptation/localization.md#practice-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PRACTICE-06 | [触控功能键与指针](../../docs/adaptation/localization.md#practice-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PRACTICE-07 | [练习语言跟随设置](../../docs/adaptation/localization.md#practice-07) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PRACTICE-08 | [练习界面的可用功能](../../docs/adaptation/localization.md#practice-08) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | LANG-01 | [内置日语原文](../../docs/adaptation/localization.md#lang-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| LANG-02 | [语言包身份与发布清单](../../docs/adaptation/localization.md#lang-02) | 不适用 | normal：本作使用内置原文 |
-| LANG-03 | [开局前挂载翻译与字体](../../docs/adaptation/localization.md#lang-03) | 不适用 | normal：本作使用内置原文 |
-| LANG-04 | [语言包失败时回到原文](../../docs/adaptation/localization.md#lang-04) | 不适用 | normal：本作使用内置原文 |
-| LANG-05 | [字体字符覆盖](../../docs/adaptation/localization.md#lang-05) | 不适用 | normal：本作使用内置原文 |
-| LANG-06 | [缺译资源使用原文](../../docs/adaptation/localization.md#lang-06) | 不适用 | normal：本作使用内置原文 |
+| LANG-02 | [语言包身份与发布清单](../../docs/adaptation/localization.md#lang-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| LANG-03 | [开局前挂载翻译与字体](../../docs/adaptation/localization.md#lang-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| LANG-04 | [语言包失败时回到原文](../../docs/adaptation/localization.md#lang-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| LANG-05 | [字体字符覆盖](../../docs/adaptation/localization.md#lang-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| LANG-06 | [缺译资源使用原文](../../docs/adaptation/localization.md#lang-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 
 ## 多人接入与规则
 
@@ -175,3 +175,12 @@
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。
 
 - 2026-10-30，normal：[迁移与接入验证](../../archive/th17-development-20261030/migration-validation.md)。生产 Wasm 在桌面 Chromium 完成 OGG／无音乐、命令会话隔离、输入清除、原生退出、用户文件恢复及指定原版演示文件启动。随机数、演示输入解码与触控录像往返使用原生模块独立核对，范围与构建 SHA-256 见记录。
+- 2026-11-06，multiplayer：[双人和三人房间验证](../../archive/th17-multiplayer-room-20261106/room-validation.md)。生产 Wasm 使用本地 Relay 同步开局，对照确认输入模式的一面战斗状态及席位资源。
+- 2026-11-06，multiplayer：[战斗回滚验证](../../archive/th17-combat-rollback-20261106/room-validation.md)。生产 Wasm 在双人和三人 WebRTC 房间注入迟到输入，对照重演后的确认帧。
+- 2026-11-06，multiplayer：[回滚分帧压测](../../archive/th17-combat-rollback-20261106/performance-validation.md)。生产 Wasm 在 Chromium CPU 限速和 WebRTC 输入抖动下测量纠错回调耗时，逐帧比对双人和三人房的确认状态。
+- 2026-11-06，multiplayer：[Extra 密集弹幕压测](../../archive/th17-extra-dense-20261106/README.md)。生产 Wasm 在真实 Extra 房比对确认帧，并测量敌弹密集区段的活跃堆和纠错耗时。
+- 2026-11-06，multiplayer：[Extra Boss 三人回滚压测](../../archive/th17-extra-boss-20261106/README.md)。独立诊断包在高延迟三人 WebRTC 房核对关底非符和符卡，并分项测量快照、逻辑绘制与纠错耗时。
+- 2026-11-06，multiplayer：[Extra 关底全程回滚压测](../../archive/th17-extra-finale-20261106/README.md)。独立诊断包在高延迟三人 WebRTC 房跑完整个关底，并配对比较密集帧的活跃堆与快照容量。
+- 2026-11-06，multiplayer：[双人和三人 HUD 验证](../../archive/th17-multiplayer-hud-20261106/README.md)。正式多人包在 Extra 房显示分席资源和共享计数，原生测试核对图标层、席位高亮和碎片显示。
+- 2026-11-06，multiplayer：[HUD 行距和原版擦弹贴图](../../archive/th17-hud-spacing-20261106/README.md)。正式多人包在 Extra 房使用 TH15 的席位行距，并由 TH17 原生 ANM 绘制共享擦弹行。
+- 2026-11-06，multiplayer：[三人 HUD 碎片提示](../../archive/th17-3p-hud-fragments-20261106/README.md)。三人房为每席显示两种碎片计数，共享 PIV 和擦弹放在右栏底部。

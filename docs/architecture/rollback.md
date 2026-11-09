@@ -18,6 +18,8 @@
 
 常见标题侧所有者：
 
+- TH05：[`Netplay.cpp`](../../ports/th05-mp/portable/Netplay.cpp) 协调公共输入核心、8 帧世界日志和确认音频；[`WorldRollback.cpp`](../../ports/th05-mp/Game/Coop/WorldRollback.cpp) 捕获原生固定对象，场景与资源工厂经过完整确认边界。
+
 - TH08：[`RollbackDriver`](../../ports/th08-mp/web/cpp/multiplayer/RollbackDriver.cpp) 协调帧和输出；[`WorldJournal`](../../ports/th08-mp/web/cpp/multiplayer/WorldJournal.cpp) 组合主状态、敌人池、对象池与资源日志；`PoolsJournal`、`EnemyJournal`、`TextureJournal` 负责各自区域。
 - TH09：[`RollbackSession`](../../ports/th09/web/cpp/multiplayer/RollbackSession.cpp) 管理输入帧；[`Application.cpp`](../../ports/th09/web/cpp/sdl/Application.cpp) 的 `checkpoint`、`rollback_tick` 及 SDL 帧循环接管标题世界、恢复和重模拟。
 - TH10：[`RollbackState`](../../ports/th10-mp/web/cpp/multiplayer/RollbackState.cpp) 通过稀疏池捕获器和 `RollbackJournal` 接线各领域状态；`NetplayRuntime` 只提供网络和输入决策。

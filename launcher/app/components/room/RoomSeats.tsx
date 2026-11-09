@@ -3,11 +3,13 @@ import {OverflowText} from '../../ui/overflow-text';
 import {Ellipsis, Plus} from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { multiplayerDisplayInitial } from '../../../src/launcher/multiplayer-identity.mts';
-import { touchMovementUsesJoystick } from '../../../src/launcher/game-preferences.mts';
+import { formatTh09WinRate } from '../../../src/launcher/th09-room-stats.mts';
 import type { MultiplayerRoomService, RoomOwnerSnapshot } from '../../services/multiplayer-room';
 import { useLocale } from '../../i18n';
+import {accountsEnabled} from '../../release-features';
 import { networkMessage, roomPresentation } from './presentation';
 import {RoomActionMenu} from './RoomActionMenu';
+import {ParticipantAvatar} from './ParticipantAvatar';
 import {animateSurface, animateUiFrames, type SurfaceAnimation} from '../../ui/surface-motion';
 import type { RoomNetworkPresentation, RoomPanelKind, RoomViewContext } from './types';
 export interface RoomSeatsProps {
@@ -38,7 +40,7 @@ function RoomSeat({
   openPanel,
   index,
 }: RoomSeatsProps & { index: number }) {
-  const { t } = useLocale(),
+  const { t, locale } = useLocale(),
     presentation = roomPresentation(state, t)!;
   const { room, ready, owner, label } = presentation;
   const node = useRef<HTMLElement>(null), watermark = useRef<HTMLSpanElement>(null),
@@ -79,20 +81,13 @@ function RoomSeat({
   const seatLabel = label(seat ? seat.loadout : state.preferredLoadout);
   const control =
     state.seat === index
-      ? !context.touchEnabled || touchMovementUsesJoystick(context.touchMovementMode)
+      ? !context.touchEnabled || context.touchMovementMode === 'joystick'
         ? 'normal'
         : context.touchMovementMode === 'touch-unlimited'
           ? 'cheat'
           : 'touch'
       : seat?.controlMode;
-  const controlLabel = control
-    ? t(state.nickname && control === 'normal' ? 'multiplayer.control.keysOrStick' : `multiplayer.control.${control}`)
-    : '';
-  const controlCaption = (
-    <span className="mp-seat-control" hidden={!occupied || !control} data-mode={control || ''} title={state.nickname ? controlLabel : undefined}>
-      {controlLabel}
-    </span>
-  );
+  const controlLabel = control ? t(`multiplayer.control.${control}`) : '';
   const message = networkMessage(state, context, t),
     local = seat?.clientId === state.localClientId;
   const diagnostics = (['direct', 'turn'] as const).map((lane) => {
@@ -134,6 +129,12 @@ function RoomSeat({
                 ? t('room.preparingResources')
                 : t('room.peerDownloading', { percent: resource.percent });
   const resourceStopped = resource?.status === 'failed' || resource?.status === 'cancelled';
+  const duel = state.product === 'th09mp';
+  const record = duel && accountsEnabled ? seat?.profile?.th09 : undefined;
+  const mainCaption = duel
+    ? record ? t('th09.accountCard', {games:record.games,rate:formatTh09WinRate(record, locale) ?? '—'}) : ''
+    : seatLabel;
+  const caption = resourceStopped ? resourceLabel : [mainCaption, controlLabel && `(${controlLabel})`].filter(Boolean).join(' ');
   const resourceReady = !resourceStopped && (resource?.status === 'ready' || seat?.ready === true);
   const canManage = index > 0 && ready && owner && room.phase === 'lobby' && !!seat;
   const base = resourceStopped ? 0 : resourceReady || resource?.stage === 'runtime' ? 100 : resource?.basePercent ?? resource?.percent;
@@ -174,7 +175,8 @@ function RoomSeat({
       {occupied && <span className="room-seat-decoration" aria-hidden="true">
         <span ref={watermark} className="room-seat-watermark">{appearance.toUpperCase()}</span>
       </span>}
-      <div className="mp-seat-face" style={occupied ? {'--base-angle': `${degrees(base)}deg`, '--loading-angle': `${degrees(loading)}deg`} as CSSProperties : undefined}>
+      <div className="mp-seat-face" data-profile-link={accountsEnabled && !!seat?.profile || undefined}
+        style={occupied ? {'--base-angle': `${degrees(base)}deg`, '--loading-angle': `${degrees(loading)}deg`} as CSSProperties : undefined}>
         {occupied && <span className="room-seat-player-tag">P{index + 1}</span>}
         {occupied && (resourceStopped ? (
           <span className={ringClass} aria-hidden="true" />
@@ -198,12 +200,13 @@ function RoomSeat({
             <Plus className="size-4 shrink-0" aria-hidden="true"/>{t('multiplayer.join')} P{index + 1}
           </UiButton>
         </div>
-        <span className="mp-seat-glyph" data-mp-seat-glyph={index} hidden={!occupied}>
+        <ParticipantAvatar className="mp-seat-glyph" data-mp-seat-glyph={index} hidden={!occupied}
+          profile={seat?.profile} name={seat?.name || ''}>
           {multiplayerDisplayInitial(
             seat?.name ?? (state.seat === index ? state.displayName : ''),
             '?',
           )}
-        </span>
+        </ParticipantAvatar>
         {index === 0 && (
           <span className="mp-seat-owner-mark" role="img" aria-label={t('multiplayer.host')}>
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -223,11 +226,10 @@ function RoomSeat({
         <div className="mp-seat-identity">
           {name}
           <span className="mp-seat-details">
-            <span className="mp-seat-loadout" hidden={resourceStopped} title={seatLabel}>
-              {seatLabel}
+            <span className="mp-seat-loadout" hidden={!caption} title={caption} role={resourceStopped ? 'status' : undefined}>
+              {caption}
             </span>
-            {controlCaption}
-            <span className={resourceStopped ? 'mp-seat-loadout' : 'sr-only'} title={resourceStopped ? resourceLabel : undefined} role="status">{status}</span>
+            {!resourceStopped && <span className="sr-only" role="status">{status}</span>}
           </span>
           {connection}
         </div>
@@ -250,7 +252,6 @@ function RoomSeat({
       <span className="mp-seat-me" data-mp-seat-me={index} hidden={state.seat !== index}>
         {t('multiplayer.you')}
       </span>
-      {!occupied && controlCaption}
       <UiButton variant="unstyled"
         className="mp-seat-edit"
         type="button"

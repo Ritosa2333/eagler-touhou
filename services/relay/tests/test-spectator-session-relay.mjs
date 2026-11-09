@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {WebSocket} from 'ws';
+import {multiplayerConfigForProduct} from '../../../common/contracts/product-catalog.mjs';
 import {COOPERATIVE_SPECTATOR_MARKERS} from '../src/spectator-stages.mjs';
 const child=spawn(process.execPath,[fileURLToPath(new URL('../src/netplay-relay.mjs',import.meta.url))],{windowsHide:true,stdio:['ignore','pipe','pipe'],
  env:{...process.env,EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK:'1',EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_CONNECTIONS_PER_MINUTE:'240',EAGLER_NETPLAY_MAX_ROOMS_PER_IP:String(Object.keys(COOPERATIVE_SPECTATOR_MARKERS).length)}});
@@ -31,7 +32,7 @@ try{await wait(()=>port,'startup');let index=0;
    assert.equal(viewer.closed,false);
    // The retired generation cannot terminate the new stream over signaling.
    if(generation)send(s0,{type:'spectator-stop',generation:generation-1});
-   p0.ws.send(Buffer.from([0xe7,1,generation,42]));await wait(()=>p1.binary.some(b=>b.equals(Buffer.from([generation,42]))),'players continue');assert.equal(viewer.closed,false);
+   p0.ws.send(Buffer.from([0xe7,1,generation,42]));await wait(()=>p1.binary.some(b=>b.equals(Buffer.from([...(multiplayerConfigForProduct(product).relaySourceEnvelope?[0xe6,0]:[]),generation,42]))),'players continue');assert.equal(viewer.closed,false);
   }
   viewer.ws.terminate();await wait(()=>viewer.closed,'actual receiver socket loss');await new Promise(r=>setTimeout(r,80));
   const recovered=await open(base+'&spectator='+prefix+'viewer&member='+prefix+'member_viewer');await wait(()=>recovered.binary.length===3,'same-admission history replay');

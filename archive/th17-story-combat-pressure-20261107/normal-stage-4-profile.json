@@ -1,0 +1,191 @@
+{
+  "sha256": "933f695ac647211508e38fd6e96e88b234c033a076fd69d8a197bdffb50de533",
+  "durationSeconds": 17.345593,
+  "samples": 11481,
+  "samplingIntervalUs": 1000,
+  "inclusiveWeightedMs": {
+    "gameLoop": 6330.85,
+    "capture": 0.0,
+    "animationCheckpoint": 0.0,
+    "draw": 0.0,
+    "drawSubmission": 928.977,
+    "audioPump": 216.132,
+    "animationOpen": 14.183,
+    "stageLoad": 180.746
+  },
+  "insideGameLoopWeightedMs": {
+    "gameLoop": 6330.85,
+    "capture": 0.0,
+    "animationCheckpoint": 0.0,
+    "draw": 0.0,
+    "drawSubmission": 928.977,
+    "audioPump": 216.132,
+    "animationOpen": 14.183,
+    "stageLoad": 180.746
+  },
+  "selfTop": [
+    {
+      "name": "(idle)",
+      "weightedMs": 9088.662
+    },
+    {
+      "name": "(program)",
+      "weightedMs": 1706.064
+    },
+    {
+      "name": "th17::AnmRenderer::draw(th17::AnmVm&)",
+      "weightedMs": 447.573
+    },
+    {
+      "name": "th17::AnmVm::tick(th17::Rng&, float)",
+      "weightedMs": 393.768
+    },
+    {
+      "name": "createBufferSource",
+      "weightedMs": 280.499
+    },
+    {
+      "name": "th17::GameDraw::GameDraw(th17::StageGameplay&, th17::GameRun&, th17::GameRecords&, th17::SpellRecords&, th17::AnmManager&, th17::AnmRenderer&, th17::ZunGraphics&, th17::ScreenViews&, th17::AsciiText&, th17::StageDrawServices&)::$_0::__invoke(void*)",
+      "weightedMs": 243.724
+    },
+    {
+      "name": "th17::AnmManager::update(bool)",
+      "weightedMs": 220.529
+    },
+    {
+      "name": "th17::AnmVm::advance(float)",
+      "weightedMs": 190.987
+    },
+    {
+      "name": "bufferData",
+      "weightedMs": 182.635
+    },
+    {
+      "name": "th17::GameBattle::GameBattle(th17::AnmManager&, th17::AnmEnvironment&, th17::Rng&, th17::Rng&, th17::BattleWorldServices&, th17::EclProgram&, th17::ShtResource const&, int, th17::BattleResources)::$_6::__invoke(void*)",
+      "weightedMs": 170.483
+    },
+    {
+      "name": "start",
+      "weightedMs": 153.963
+    },
+    {
+      "name": "touhou::sdl::Renderer::issue(touhou::sdl::State const&, touhou::graphics::Topology, unsigned int, void const*, unsigned int, void const*, touhou::graphics::IndexType, void const*, unsigned int, bool)",
+      "weightedMs": 149.165
+    },
+    {
+      "name": "th17::anm_quad_positions(th17::AnmVm&, th17::Vec3 (&) [4])",
+      "weightedMs": 137.279
+    },
+    {
+      "name": "th17::Lzss::decode(unsigned char const*, unsigned int, unsigned char*, unsigned int, unsigned int&)",
+      "weightedMs": 137.106
+    },
+    {
+      "name": "th17::AnmRenderer::pack_quad(th17::AnmVm&, th17::Vec3 (&) [4], bool, unsigned int const*)",
+      "weightedMs": 120.197
+    },
+    {
+      "name": "connect",
+      "weightedMs": 119.261
+    },
+    {
+      "name": "wasm-to-js",
+      "weightedMs": 112.724
+    },
+    {
+      "name": "th17::BulletState::activate(th17::Vec3 const&, th17::Rng&, th17::BulletSoundHost*, th17::BulletAnimationHost*, std::__2::basic_string<char, std::__2::char_traits<char>, std::__2::allocator<char>>&)",
+      "weightedMs": 101.186
+    },
+    {
+      "name": "touhou::sdl::Renderer::surface(unsigned int)",
+      "weightedMs": 94.402
+    },
+    {
+      "name": "vorbis_decode_packet(stb_vorbis*, int*, int*, int*)",
+      "weightedMs": 86.44
+    }
+  ],
+  "inclusiveTop": [
+    {
+      "name": "(root)",
+      "weightedMs": 17344.645
+    },
+    {
+      "name": "(idle)",
+      "weightedMs": 9088.662
+    },
+    {
+      "name": "tick",
+      "weightedMs": 6404.952
+    },
+    {
+      "name": "th17_loop_start::$_0::__invoke(double, void*)",
+      "weightedMs": 6330.85
+    },
+    {
+      "name": "js-to-wasm:ii:i",
+      "weightedMs": 6318.783
+    },
+    {
+      "name": "th17::FrameScheduler::execute(th17::FramePass)",
+      "weightedMs": 4637.486
+    },
+    {
+      "name": "wasm-to-js",
+      "weightedMs": 1902.893
+    },
+    {
+      "name": "(program)",
+      "weightedMs": 1706.064
+    },
+    {
+      "name": "th17::AnmRenderer::draw(th17::AnmVm&)",
+      "weightedMs": 1382.017
+    },
+    {
+      "name": "th17::AnmDrawSchedule::AnmDrawSchedule(th17::FrameScheduler&, th17::AnmManager&, th17::AnmRenderer&, th17::ZunGraphics&, th17::AnmDrawServices&)::$_0::__invoke(void*)",
+      "weightedMs": 1127.189
+    },
+    {
+      "name": "touhou::sdl::Renderer::drain()",
+      "weightedMs": 992.975
+    },
+    {
+      "name": "touhou::sdl::Renderer::issue(touhou::sdl::State const&, touhou::graphics::Topology, unsigned int, void const*, unsigned int, void const*, touhou::graphics::IndexType, void const*, unsigned int, bool)",
+      "weightedMs": 928.977
+    },
+    {
+      "name": "th17::ScreenCompositor::ScreenCompositor(th17::FrameScheduler&, th17::AnmManager&, th17::AnmEnvironment&, th17::AnmRenderer&, th17::ZunGraphics&, th17::ScreenViews&)::$_0::__invoke(void*)",
+      "weightedMs": 846.056
+    },
+    {
+      "name": "th17::SoundEffects::process()",
+      "weightedMs": 763.208
+    },
+    {
+      "name": "th17::AnmVm::tick(th17::Rng&, float)",
+      "weightedMs": 733.932
+    },
+    {
+      "name": "eagler_web_sfx_command",
+      "weightedMs": 727.942
+    },
+    {
+      "name": "th17::AnmManager::update(bool)",
+      "weightedMs": 720.08
+    },
+    {
+      "name": "th17::GameBattle::GameBattle(th17::AnmManager&, th17::AnmEnvironment&, th17::Rng&, th17::Rng&, th17::BattleWorldServices&, th17::EclProgram&, th17::ShtResource const&, int, th17::BattleResources)::$_9::__invoke(void*)",
+      "weightedMs": 709.485
+    },
+    {
+      "name": "th17::AnmRenderer::quad(th17::AnmVm&, bool)",
+      "weightedMs": 703.275
+    },
+    {
+      "name": "th17::sdl::GraphicsDevice::select_target(th17::AnmResource const*, unsigned int)",
+      "weightedMs": 695.854
+    }
+  ],
+  "animationCheckpointSelfTop": []
+}

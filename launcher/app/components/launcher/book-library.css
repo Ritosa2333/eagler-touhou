@@ -239,6 +239,7 @@
     container: book-cover / inline-size;
   }
   .book-art img {
+    position: relative;
     display: block;
     width: 100%;
     height: 100%;
@@ -403,11 +404,6 @@
   .book-view-list .book-favorite::before {
     display: none;
   }
-  html[data-ui-home] .site-footer {
-    margin-top: 32px;
-    padding: 22px 0 24px;
-    border-top: 1px solid var(--kit-border);
-  }
   html[data-ui-home] .server-status-note {
     position: static;
     inset: auto;
@@ -515,10 +511,6 @@
     }
     .book-identity strong {
       font-size: 13px;
-    }
-    html[data-ui-home] .site-footer {
-      margin-top: 26px;
-      padding-bottom: max(24px, env(safe-area-inset-bottom));
     }
   }
   @media (min-width: 781px) and (pointer: coarse) {

@@ -1,0 +1,14 @@
+{
+  "sourceHead": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
+  "game": "th05",
+  "target": "ports/th05-mp",
+  "merged": "42da9f705b7c1dd479a01ce9a553abeb371d820e",
+  "tree": "60f1b1630f2a377149eb2a17aec3912697910786",
+  "parents": [
+    "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
+    "42da9f705b7c1dd479a01ce9a553abeb371d820e"
+  ],
+  "message": "sync(th05-mp): retain normal pen input ancestry\n\ngit-subtree-dir: ports/th05-mp\ngit-subtree-mainline: 6c649942fda74f7a2f04a51741bcae4de8f4dbb1\ngit-subtree-split: 42da9f705b7c1dd479a01ce9a553abeb371d820e\nPort-History-Writeback: 1\n",
+  "changed": [],
+  "candidateCommit": "baf5f6703f2237ecb8f4e4d60cb7d9852ae8e4f9"
+}

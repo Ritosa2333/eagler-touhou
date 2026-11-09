@@ -50,7 +50,10 @@ bool TextRaster::rasterize(const std::string& text,const TextStyle& input){
     return invert_alpha(scratch,rows)&&expand_alpha(scratch,rows)&&bleed(scratch,rows);
 }
 bool TextRaster::write(TextureImage& image,const TextRect& rect,const std::string& text,const TextStyle& style){
-    if(style.height>0&&style.height<=8)return true;if(!rasterize(text,style))return false;
+    if(style.height>0&&style.height<=8)return true;
+    return rasterize(text,style)&&copy(image,rect,style);
+}
+bool TextRaster::copy(TextureImage& image,const TextRect& rect,const TextStyle& style){
     if(image.format!=scratch.format||rect.left<0||rect.top<0||rect.right<=rect.left||rect.bottom<=rect.top||rect.right>i32(image.width)||rect.bottom>i32(image.height)||image.pitch<image.width*2||image.pixels.size()<u64(image.pitch)*image.height)return false;
     const u32 width=rect.right-rect.left,height=rect.bottom-rect.top,sourceWidth=std::min(1024u,width),offset=style.fallback&&style.font!=2&&style.font!=6?6:0;if(height+offset>scratch.height)return false;
     // Point sampling uses the original source rectangle, not a smooth downscale.

@@ -4,7 +4,7 @@
 #include "GameBattle.hpp"
 #include <unordered_map>
 namespace th17 {
-struct AssetSource {virtual ~AssetSource()=default;virtual bool read(const std::string&,std::vector<u8>&)=0;};
+struct AssetSource {virtual ~AssetSource()=default;virtual bool read(const std::string&,std::vector<u8>&)=0;virtual bool localized_message(const std::string&)const{return false;}};
 // Assets are prepared before activating game callbacks. Resource identifiers
 // belong to the portable manager and never refer to executable addresses.
 class StageAssets final:private EclResourceProvider {
@@ -20,6 +20,7 @@ public:
     StageAssets(AssetSource& s,AnmManager& a,const StageAssets* common=nullptr,const std::unordered_map<std::string,i32>* shared=nullptr):source(s),animations(a),common(common),shared(shared){}
     ~StageAssets();StageAssets(const StageAssets&)=delete;StageAssets& operator=(const StageAssets&)=delete;
     bool load(i32 stage,i32 character,i32 animal,const std::string& ascii_name="ascii.anm");
+    bool load_pilot(i32 character,i32 animal,ShtResource&,i32& bank);
     const std::unordered_map<std::string,i32>& loaded_animations()const noexcept{return loaded;}
     BattleResources battle_resources()const noexcept;
     DialogueResources dialogue_resources()const noexcept;

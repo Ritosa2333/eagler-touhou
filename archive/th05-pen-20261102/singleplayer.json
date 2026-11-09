@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "input": "Chromium CDP pen PointerEvents",
+  "start": 224,
+  "after": 269,
+  "hoverStable": true,
+  "mouseUnchanged": true,
+  "physicalTabletTested": false
+}

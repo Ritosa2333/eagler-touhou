@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import { parse } from "acorn";
 import { canonicalPackagePayload, validatePackageDescriptor } from "../package/package-descriptor.mjs";
-import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { PRODUCT_GAMES, productRequiresImport } from "../lib/contracts/product-catalog.mjs";
 import { runtimeFileNames } from "../lib/runtime-release.mjs";
 import { RELEASE_CATALOG_FILE, releaseCatalogEntryUrl, validateReleaseCatalog } from "../lib/contracts/release-catalog.mjs";
 import { SITE_MANIFEST_FILE, validateSiteManifest } from "../lib/contracts/site-manifest.mjs";
@@ -297,7 +297,7 @@ if (resourceMode === RESOURCE_MODE_HOSTED) {
     }
   }
   if (publishedPayloads.some(path => !siteLanguagePacks.has(path))) throw new Error("external deployment must not bundle game/shared payloads");
-  if (Object.keys(releaseCatalog.games).sort().join(",") !== [...gameIds].sort().join(",")) {
+  if (Object.keys(releaseCatalog.games).sort().join(",") !== gameIds.filter(game => !productRequiresImport(game)).sort().join(",")) {
     throw new Error("external deployment must publish every selected Package Descriptor");
   }
 }
@@ -503,7 +503,7 @@ for (const game of preloadGames) {
 }
 
 if (resourceMode === RESOURCE_MODE_EXTERNAL) {
-  for (const game of gameIds) {
+  for (const game of gameIds.filter(game => !productRequiresImport(game))) {
     const entry = games.games[game];
     const published = releaseCatalog.games[game];
     if (!published || !entry.package || entry.package.revision !== published.revision ||

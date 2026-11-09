@@ -1,0 +1,333 @@
+#pragma once
+#include "../Original/OriginalMath.h"
+#include "../Original/OriginalFeatures.h"
+#include "../Practice/BossBar.h"
+#include "../Practice/PhaseTimeout.h"
+#include "../scheme.h"
+#include "../../gameLib/Graphic/2DImageArray.h"
+#include "../../gameLib/CommonFunction/CommonFunctionGraphic.h"
+#include "../../gameLib/CommonFunction/CommonFunctionMusicSE.h"
+#include "../../gameLib/CommonFunction/CommonFunctionInput.h"
+#include "../../gameLib/th5DatFile/bb/BBFile.h"
+#include "../../gameLib/th5DatFile/mpn/MPNFile.h"
+#include "../../gameLib/th5DatFile/std/STDFile.h"
+#include "StageResource.h"
+
+#include <math.h>
+
+#ifdef PI
+#undef PI
+#endif
+#define PI 3.1415926535897932384626433832795
+
+#define STAGE_END_CLEAR 1
+#define STAGE_END_PLAYER_QUIT 2
+#define STAGE_END_ALL_MISSED 3
+#define STAGE_END_REPLAY_END 4
+#define STAGE_END_SAVE_EXIT 5
+#define STAGE_END_RESTART 6
+
+namespace th5w{
+class CChara;
+class CCharaReimu;
+class CCharaMarisa;
+class CCharaMima;
+class CCharaYuka;
+class CCharaBullet;
+class CEnemyBullet;
+class CGatherEffect;
+class CSparkEffect;
+class CPopupNumber;
+class CCircle;
+class CItem;
+class CFloatingText;
+class CBackground;
+class CEnemy;
+class CTextOverlay;
+class CDialogue;
+class CMidBoss;
+class CMidBossStage1;
+class CMidBossStage2;
+class CMidBossStage3;
+class CMidBossStage4;
+class CMidBossStage5;
+class CMidBossStageEx;
+class CBoss;
+class CBossStage1;
+class CBossStage2;
+class CBossStage3;
+class CBossStage4;
+class CBossStage4Mai;
+class CBossStage4Yuki;
+class CBossStage5;
+class CBossStage6;
+class CBossStageEx;
+class CLaser;
+class CSummary;
+class CStage2BG;
+class CCurvingBullet;
+class CLargeBullet;
+class CKnifeBullet;
+class CShinkiBullet;
+class CStageResource;
+
+class CStage : public CScheme
+{
+friend struct PracticeTests;
+	int StepFrame(unsigned short liveInput);
+ bool m_practiceDialoguePending=false;
+ int m_practiceSeekDamage=0;
+ void ApplyPracticeSection();
+ int m_lockTimer,m_lockPhase,m_lockKind,m_fastRetryCountdown;
+ void TickLockTimer();
+ mutable const void* m_timeoutOwner=nullptr;
+ mutable int m_timeoutPhase=-1,m_timeoutKind=0;
+ mutable unsigned int m_timeoutRevision=0;
+ mutable practice::PhaseTimeout m_timeoutSnapshot;
+ practice::BossBarAnimation m_bossBar;
+ practice::BossRingAnimation m_bossRings[2];
+ practice::BossBarData GetBossBarData() const;
+ void TickBossBar();void DrawBossBar();
+ practice::BossRingData GetBossRingData(int slot) const;void DrawBossRings();
+friend class CChara;
+friend class CCharaReimu;
+friend class CCharaMarisa;
+friend class CCharaMima;
+friend class CCharaYuka;
+friend class CCharaBullet;
+friend class CEnemyBullet;
+friend class CGatherEffect;
+friend class CSparkEffect;
+friend class CPopupNumber;
+friend class CCircle;
+friend class CItem;
+friend class CFloatingText;
+friend class CBackground;
+friend class CEnemy;
+friend class CTextOverlay;
+friend class CDialogue;
+friend class CMidBoss;
+friend class CMidBossStage1;
+friend class CMidBossStage2;
+friend class CMidBossStage3;
+friend class CMidBossStage4;
+friend class CMidBossStage5;
+friend class CMidBossStageEx;
+friend class CBoss;
+friend class CBossStage1;
+friend class CBossStage2;
+friend class CBossStage3;
+friend class CBossStage4;
+friend class CBossStage4Mai;
+friend class CBossStage4Yuki;
+friend class CBossStage5;
+friend class CBossStage6;
+friend class CBossStageEx;
+friend class CLaser;
+friend class CSummary;
+friend class CStage2BG;
+friend class CCurvingBullet;
+friend class CLargeBullet;
+friend class CKnifeBullet;
+friend class CShinkiBullet;
+
+friend class CStageResource;
+
+protected:
+	bool m_bInBossBattle;
+	bool m_bInCharaBomb;
+	bool m_bInCharaBombForItem;		//used by PC98 ver as flag of inBomb, mostly with item functions
+
+//common component that lives along with stage
+
+protected:
+	CChara *m_pChara;
+	CCharaBullet *m_pCharaBullet;
+	CEnemyBullet *m_pEnemyBullet;
+	CGatherEffect *m_pGatherEffect;
+	CSparkEffect *m_pSparkEffect;
+	CPopupNumber *m_pPopupNumber;
+	CCircle *m_pCircle;
+	CItem *m_pItem;
+	CFloatingText *m_pFloatingText;
+	CBackground *m_pBackground;
+	CEnemy *m_pEnemy;
+	CTextOverlay *m_pTextOverlay;
+	CDialogue *m_pDialogue;
+	CLaser *m_pLaser;
+	CSummary *m_pSummary;
+	CStage2BG *m_pStage2BG;
+
+//component that are created when needed
+protected:
+	CMidBoss *m_pMidBoss;
+	void CheckMidBoss();
+
+	CBoss *m_pBoss;
+	void CheckBoss();
+
+protected:
+	CStageResource *m_pStageRes;
+	__forceinline CStageResource* GetRes() {return m_pStageRes;}
+
+public:
+	bool m_bPlaySound[16];
+
+protected:
+	bool m_bLogo;
+	int m_logoFrame;
+	int StepLogo();
+	void DrawLogo();
+
+protected:
+	bool m_bCanPause;
+	bool m_bPaused;
+	int m_pauseCursorPos;
+	bool Pause();
+	void StepPause();
+	void DrawPause();
+
+protected:
+	bool m_bContinueScr;
+	bool m_bContinued;
+	int m_continueCursorPos;
+	int m_continueScrTimer;
+	int m_continueScrCurPart;
+	int m_continueStrX;
+	void EnableContinueScreen();
+	void StepContinue();
+	void DrawContinue();
+
+//stage statistics
+protected:
+	//changeable
+	int m_nCurLife;
+	int m_nCurBomb;
+	int m_powerOverflowLevel;
+	int m_curDream;
+	int m_curScore;
+	int m_highScore;
+	int m_curNPointItem;
+	int m_totalNPointItem;
+	int m_curNGraze;
+	int m_playerPerformance;
+	int m_nContinueUsed;
+
+	//constant during game
+	int m_nContinueLimit;
+	int m_pointItemMaxScore;
+	int m_grazeBonus;
+	int m_playerPerformanceLowerBound;
+	int m_playerPerformanceUpperBound;
+	int m_nLifeOnContinue;
+	int m_nBombOnMiss;
+
+	//local var
+	int m_nMiss;
+	int m_nBomb;
+
+protected:
+	int m_drawScore;
+	int m_drawScoreDelta;
+	int m_drawHighScore;
+
+protected:
+	int m_curFrame;
+
+public:
+	__forceinline int GetCurFrameCount(){return m_curFrame;}
+
+protected:
+	unsigned short m_lastMenuKeyState;
+	unsigned short m_curMenuKeyState;
+	unsigned short m_lastGameKeyState;
+	unsigned short m_curGameKeyState;
+	int m_curScrFade;
+
+protected:
+	int m_playAreaUpperLeftX,m_playAreaUpperLeftY;
+
+public:
+	__forceinline unsigned short GetCurKeyState() {return m_curGameKeyState;}
+	__forceinline unsigned short GetLastKeyState() {return m_lastGameKeyState;}
+
+public:
+	practice::PhaseTimeout GetPhaseTimeout() const;
+ void DrawPracticeInfo();
+ int LockTimerFrames() const {return m_lockTimer;}
+ void RequestFastRetry();
+ void PracticeResume() { m_bPaused=false; }
+	void PracticeExit(int action) { SetQuit(action==3 ? STAGE_END_RESTART : action==1 ? STAGE_END_SAVE_EXIT : STAGE_END_PLAYER_QUIT); m_bPaused=false; }
+	void Initialize();
+ CChara* BrowserPlayer() const {return m_pChara;}
+ bool BrowserMenu() const {return m_bPaused||m_bContinueScr;}
+ bool BrowserDialogue() const;
+protected:
+	void DownloadVarFromGlobal();
+	void UploadVarToGlobal();
+	void InitChara();
+ void ApplyPracticeWarp();
+
+protected:
+	bool m_bHomingEnemyExist;
+	float m_homingEnemyX,m_homingEnemyY;
+
+public:
+	__forceinline void ChangePlayerPerformance(int deltaPerformance)
+	{
+		m_playerPerformance+=deltaPerformance;
+		if (m_playerPerformance>m_playerPerformanceUpperBound)
+			m_playerPerformance=m_playerPerformanceUpperBound;
+		if (m_playerPerformance<m_playerPerformanceLowerBound)
+			m_playerPerformance=m_playerPerformanceLowerBound;
+	}
+
+protected:
+	int AdjustDamageFromChara(int origDmg, bool isBoss);
+	__forceinline float AdjustSpeedBasedOnPlayerPerformance(float origSpeed)
+	{
+		if(original::DemoActive())return float(original::math::Speed(int(origSpeed),m_playerPerformance));
+		float ret=origSpeed*(0.5f+(float)m_playerPerformance/64.0f);
+		if (ret>128) ret=128;
+		if (ret<8) ret=8;
+		return ret;
+	}
+public:
+	int GetDamageFromChara(float ctrX,float ctrY,float halfWidth,float halfHeight,bool isBoss);
+
+public:
+	__forceinline int GetDream() {return m_curDream;}
+	void SetDream(int newDream);
+public:
+	__forceinline void AddScore(int deltaScore)
+	{
+		if (m_curScore<m_highScore&&m_curScore+deltaScore>m_highScore)
+		{
+			//add floating text type 0
+		}
+		m_curScore+=deltaScore;
+		if (m_highScore<m_curScore)
+			m_highScore=m_curScore;
+	}
+protected:
+	void StepScore();
+
+public:
+	int Step();
+	void Draw();
+protected:
+	void DrawStatistics();
+	void PlayAreaFade(float fadeScale);
+
+protected:
+	bool m_bQuit;
+	int m_quitCode;
+	int m_nQuitFrameLeft;
+	void SetQuit(int quitCode);
+
+public:
+	CStage(void);
+	~CStage(void);
+};
+
+}

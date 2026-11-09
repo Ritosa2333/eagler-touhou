@@ -8,7 +8,7 @@ import { useLocale, translate } from '../i18n';
 import { withUiLanguage, localeHome } from '../../src/launcher/i18n.mts';
 import { NavigationIcon } from '../components/launcher/NavigationIcon';
 import documentHistory from 'virtual:document-history';
-import { helpDocuments, helpDocumentAtPath, type HelpDocument } from '../components/documents/catalog';
+import { helpDocuments, helpDocumentAtPath, helpDocumentLocale, type HelpDocument } from '../components/documents/catalog';
 import { prepareHelpDocument } from '../components/documents/content';
 import '../components/documents/documents.css';
 
@@ -41,10 +41,11 @@ function DocumentLink({ href = '', prefetch, ...props }: ComponentProps<'a'> & {
 }
 function Documentation({ page }: { page: HelpDocument }) {
   const { locale, t } = useLocale(),
-    base = useHref('/');
+    base = useHref('/'),
+    contentLocale = helpDocumentLocale(page, locale);
   const { body, toc } = useMemo(
-    () => prepareHelpDocument(t(page.content), base, locale),
-    [page.content, locale, t, base],
+    () => prepareHelpDocument(translate(contentLocale, page.content), base, locale),
+    [contentLocale, page.content, locale, base],
   );
   const tree = {
     $id: `help-${locale}`,
@@ -89,7 +90,7 @@ function Documentation({ page }: { page: HelpDocument }) {
           }}
         >
           <DocsTitle>{t(page.title)}</DocsTitle>
-          <DocsBody data-help-page={page.id}>{body}</DocsBody>
+          <DocsBody data-help-page={page.id} lang={contentLocale}>{body}</DocsBody>
           <DocumentRevision page={page} />
         </DocsPage>
       </DocsLayout>
@@ -98,7 +99,7 @@ function Documentation({ page }: { page: HelpDocument }) {
 }
 function DocumentRevision({ page }: { page: HelpDocument }) {
   const { locale, t } = useLocale(),
-    revision = documentHistory[locale]?.[page.id];
+    revision = documentHistory[helpDocumentLocale(page, locale)]?.[page.id];
   if (!revision) return null;
   if (revision.pending) return <p className="documentation-revision">{t('document.uncommitted')}</p>;
   if (!revision.commit || !revision.date || !revision.author) return null;

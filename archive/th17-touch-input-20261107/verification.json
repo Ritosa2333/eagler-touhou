@@ -1,0 +1,13 @@
+{
+  "normalAdapterBrowser": "passed",
+  "directInputBridgeTests": 3,
+  "multiplayerRoom": "passed",
+  "normalSource": "d2f09129a7434199864cc8110c541053335ee71d",
+  "multiplayerSource": "183e03039fe1623c3500407ff2b03757ac8d9693",
+  "multiplayerSubtree": {
+    "split": "07a91934447ce92d98918aada1a22242d324c5be",
+    "tree": "564f6ae0d2601d9eb4240f55bc7eed91a31a6831",
+    "sourceAncestor": true,
+    "treeMatches": true
+  }
+}

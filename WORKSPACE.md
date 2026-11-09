@@ -6,6 +6,7 @@
 
 | 游戏 | 普通版源码 | MP 源码 | 构建方式 |
 | --- | --- | --- | --- |
+| th05 | `ports/th05` | `ports/th05-mp` | 原生 C++／GLES2，原版与 thprac 共用 Wasm |
 | th06 | `ports/th06` | `ports/th06` | 共用源码，分别构建 normal 与 multiplayer |
 | th07 | `ports/th07` | `ports/th07` | 共用源码，分别构建 normal 与 multiplayer |
 | th075 | `ports/th075` | `ports/th075-mp` | 分目录、分模式构建 |

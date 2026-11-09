@@ -1,3 +1,5 @@
+import {relayFailureDetail} from './network-failure';
+import {accountRequest} from './account-client';
 import {TH19_VERSUS_RULES,validTh19VersusRules} from '../../src/launcher/th19-versus-rules.mts';
 import {normalizePublicNickname, parsePublicNicknameState, type PublicNicknameState} from '../../src/contracts/public-nickname.mts';
 import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from '../../src/launcher/th05-initial-stock.mts';
@@ -41,6 +43,7 @@ import type { DecisionStore } from '../models/decisions';
 import type { DirectorySocket } from './lobby-directory';
 import { errorText } from './error-text';
 import {isAbortError} from './abort-signals';
+import type {RoomActionSound} from './room-action-audio';
 
 export type RoomSocket = DirectorySocket & {
   addEventListener(type: 'open', listener: () => void): void;
@@ -64,8 +67,11 @@ export interface RoomOwnerSnapshot {
   epoch: number;
   fromDirectory: boolean;
   connected: boolean;
+  connectionDetail?: string;
   directorySupported: boolean;
   controlModesSupported: boolean;
+  globalRoomCodes?: boolean;
+  listenTogetherSupported?: boolean;
   seat: number | null;
   ready: boolean;
   spectatorRequested: boolean;
@@ -82,6 +88,7 @@ export interface RoomOwnerSnapshot {
   rollbackEnabled: boolean;
   preferTurn: boolean;
   canStart: boolean;
+  canNudge?: boolean;
   localClientId: string;
 }
 export interface RoomOperationContext {
@@ -107,6 +114,7 @@ export interface MultiplayerRoomPorts {
   decisions: DecisionStore;
   translate(key: UiMessageKey, params?: UiMessageParams): string;
   notify(message: string, duration?: number): void;
+  onActionSound?(sound: RoomActionSound): void;
   /** Main's real install-only/worker-aware preparation. Never reports synthetic ready. */
   prepareResources(
     context: RoomOperationContext,
@@ -133,6 +141,7 @@ export interface MultiplayerRoomPorts {
     restore(input: { product: MultiplayerProductId; code: string; fromDirectory: boolean }): void;
     enter(input: { product: MultiplayerProductId; code: string; created: boolean }): void;
     settleInvite(): void;
+    switchProduct?(input: {product: MultiplayerProductId; code: string; fromDirectory: boolean; spectator: boolean}): void;
     leave(input: { product: MultiplayerProductId; fromDirectory: boolean; message?: string }): void;
   };
   network: {
@@ -142,6 +151,7 @@ export interface MultiplayerRoomPorts {
     suspend?(): void;
   };
   quickChat?: { receive(message: Record<string, unknown>): void };
+  music?: {receive(message: Record<string, unknown>): void};
   online?(): boolean;
   visible?(): boolean;
   now?(): number;
@@ -165,6 +175,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   let socket: RoomSocket | null = null,
     socketRoom = '',
     clientId = '';
+  let registeredName = false;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null,
     reconnectAttempt = 0;
   let stopped = false,
@@ -204,8 +215,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   const state = {
     fromDirectory: false,
     connected: false,
+    connectionDetail: undefined as string | undefined,
     directorySupported: false,
     controlModesSupported: false,
+    globalRoomCodes: false,
+    listenTogetherSupported: false,
+    roomActionsSupported: false,
     seat: null as number | null,
     ready: false,
     spectatorRequested: false,
@@ -268,6 +283,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       localClientId: clientId,
       room: room ? Object.freeze({ ...room }) : null,
       canStart: !!canStart,
+      canNudge: !!(state.roomActionsSupported && state.connected && state.ready && room?.synced && room.phase === 'lobby' &&
+        state.seat != null && state.seat > 0 && room.seats?.some(seat => seat && seat.clientId !== clientId && !seat.offline)),
       preparation: state.preparation ? Object.freeze({ ...state.preparation }) : null,
     });
     if (!disposed) {
@@ -383,6 +400,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     socket = null;
     socketRoom = '';
     state.connected = false;
+    state.listenTogetherSupported = false;
+    state.roomActionsSupported = false;
     if (previous && previous.readyState < 2) {
       try {
         previous.close(1000, 'leave room');
@@ -518,6 +537,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const previous = socket;
     socket = null;
     state.connected = false;
+    state.listenTogetherSupported = false;
+    state.roomActionsSupported = false;
     if (previous && previous.readyState < 2) {
       try {
         previous.close(1000, 'replace lobby socket');
@@ -526,8 +547,10 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const next = ports.createSocket(relay.url);
     state.directorySupported = false;
     state.controlModesSupported = false;
+    state.globalRoomCodes = false;
     runtimeVersionsSupported = false;
     ports.network.reset(reconnecting);
+    registeredName = false;
     socket = next;
     socketRoom = relay.roomId;
     room.connection = reconnecting ? 'reconnecting' : 'connecting';
@@ -535,6 +558,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     next.addEventListener('open', () => {
       if (socket !== next || !current(ownedEpoch)) return;
       state.connected = true;
+      state.connectionDetail = undefined;
       reconnectAttempt = 0;
       ownedRoom.connection = ownedRoom.synced ? 'connected' : 'syncing';
       if (state.seat != null) {
@@ -557,6 +581,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       } else if (state.spectatorRequested) send({ type: 'spectate', name: state.displayName });
       publish();
     });
+    let accountIdentityRequested = false;
     next.addEventListener('message', (event) => {
       if (socket !== next || !current(ownedEpoch)) return;
       let message: Record<string, unknown> | null;
@@ -569,11 +594,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       if (message.type === 'nickname-status') {
         const profile = parsePublicNicknameState(message);
         if (!profile) return;
+        registeredName = message.registered === true;
         const migrateDraft = !state.nickname && profile.status === 'idle' && !!state.displayName;
         state.nickname = Object.freeze(profile);
         if (profile.name) {
           state.displayName = profile.name;
-          ports.identity.updateDisplayName(profile.name, profile.name);
+          if (!registeredName) ports.identity.updateDisplayName(profile.name, profile.name);
         }
         publish();
         if (migrateDraft) setDisplayName(state.displayName);
@@ -583,12 +609,52 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         void ports.network.receive(message);
         return;
       }
-      if (message.type === 'quick-chat') {
+      if (message.type === 'listen-together') {
+        ports.music?.receive(message);
+        return;
+      }
+      if (message.type === 'room-action') {
+        if (!state.roomActionsSupported || room?.phase !== 'lobby') return;
+        if (message.action === 'seat' || message.action === 'ready') ports.onActionSound?.(message.action);
+        else if (message.action === 'nudge-limited') ports.notify(ports.translate('room.nudgeCooldown'));
+        else if (message.action === 'nudge' && typeof message.fromSeat === 'number' &&
+          Number.isInteger(message.fromSeat) && message.fromSeat > 0 && message.fromSeat < room.playerCount) {
+          ports.onActionSound?.('nudge');
+          ports.notify(message.outgoing === true
+            ? ports.translate('room.nudgeSent')
+            : ports.translate('room.nudgeReceived', {seat: message.fromSeat + 1}));
+        }
+        return;
+      }
+      if (['quick-chat','free-chat','chat-history','chat-retract','chat-status','chat-result'].includes(String(message.type))) {
         ports.quickChat?.receive(message);
         return;
       }
+      if (message.type === 'room-product' && ports.routes.switchProduct && room &&
+          message.code === room.code && typeof message.product === 'string' &&
+          isMultiplayerProductId(message.product) && message.product !== product) {
+        ports.identity.retainLobbyClientId(message.product, clientId);
+        preparation?.controller.abort();
+        ports.releasePreparedResources?.();
+        socket = null;
+        stopped = true;
+        state.connected = false;
+        publish();
+        ports.routes.switchProduct({product: message.product, code: room.code, fromDirectory: state.fromDirectory, spectator: message.spectator === true});
+        return;
+      }
       if (message.type === 'state') {
+        if (!accountIdentityRequested && typeof message.accountChallenge === 'string') {
+          accountIdentityRequested = true;
+          void accountRequest<{ticket?: string}>('v1/me/room-nickname', {challenge:message.accountChallenge}).then(result => {
+            if (result?.ticket && socket === next && next.readyState === 1)
+              next.send(JSON.stringify({type:'account-nickname',ticket:result.ticket}));
+          }).catch(() => { /* Guest nicknames are provided by the relay. */ });
+        }
+        if (message.listenTogether === 2) state.listenTogetherSupported = true;
+        if (message.roomActions === 1) state.roomActionsSupported = true;
         if (record(message.roomDirectory)?.version === 1) state.directorySupported = true;
+        if (record(message.roomDirectory)?.globalRoomCodes === true) state.globalRoomCodes = true;
         if (record(message.roomDirectory)?.controlModes === true)
           state.controlModesSupported = true;
         if (record(message.roomDirectory)?.runtimeVersions === true) runtimeVersionsSupported = true;
@@ -649,9 +715,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     });
     next.addEventListener('close', (event) => {
       if (socket !== next || !current(ownedEpoch)) return;
+      const wasConnected = state.connected;
       ports.network.reset(true);
       socket = null;
       state.connected = false;
+      state.listenTogetherSupported = false;
       if ([4004, 4007, 4008, 4009, 4010].includes(event.code)) {
         stopped = true;
         const message = ports.translate(
@@ -681,6 +749,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       }
       if (room?.code === ownedRoom.code) {
         room.connection = 'reconnecting';
+        state.connectionDetail = wasConnected ? ports.translate('network.relayClosed', {code: event.code})
+          : relayFailureDetail(ports.translate, next.failedAttempts, event.code);
         scheduleReconnect(ownedRoom.code);
       }
       publish();
@@ -689,6 +759,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     next.addEventListener('error', () => {});
   }
   function resetRoom() {
+    state.connectionDetail = undefined;
     settingsReloadPending = false;
     ownerController.abort();
     ownerController = new AbortController();
@@ -931,6 +1002,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     });
   }
   function setDisplayName(value: string) {
+    if (registeredName) return state.displayName;
     if (state.nickname) {
       const name = normalizePublicNickname(value);
       if (!name || !state.connected || ['reviewing','queued'].includes(state.nickname.status)) return state.nickname.pendingName || state.displayName;
@@ -1213,6 +1285,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         spectatorTimeline: room.spectatorTimeline === true,
         ...(product === 'th09mp' ? {
           disableLocalChargePriority:room.disableLocalChargePriority === true,
+        } : {}),
+        ...(['th09mp','th19mp'].includes(product!) ? {
           replayAutoSave: ports.settings().replayAutoSave ?? ports.preferences.replayAutoSave(product),
           replayNames: [0, 1].map(side => room!.seats?.[side]?.name || `P${side + 1}`),
         } : {}),
@@ -1552,6 +1626,14 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     setDisplayName,
     changeLoadout,
     toggleReady,
+    nudge() {
+      if (snapshot.canNudge) send({type: 'room-nudge'});
+    },
+    switchProduct(nextProduct: MultiplayerProductId) {
+      if (state.globalRoomCodes && state.seat === 0 && room?.synced && room.phase === 'lobby' &&
+          !state.launchBusy && !state.checkBusy && nextProduct !== product && isMultiplayerProductId(nextProduct))
+        send({type: 'switch-product', product: nextProduct});
+    },
     setRoomSettings,
     setPreferTurn(enabled: boolean) {
       if (!room?.synced || !state.connected || room.phase !== 'lobby' || state.seat == null ||
@@ -1595,8 +1677,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     acceptMeasuredTiming,
     acceptTh09Match(value: unknown) {
       if (
-        product !== 'th09mp' ||
-        state.seat !== 0 ||
+        !['th09mp', 'th19mp'].includes(product!) ||
+        (state.seat !== 0 && state.seat !== 1) ||
         state.spectatorRequested ||
         !state.connected ||
         !ports.isLaunched() ||
@@ -1605,6 +1687,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       )
         return;
       const match = value as Record<string, unknown>;
+      if (product === 'th09mp' && state.seat === 1 && match.winner !== 0 && match.winner !== 1) return;
       send({
         type: 'th09-match',
         serial: state.startSerial,
@@ -1628,6 +1711,13 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         reconnect();
         publish();
       }
+    },
+    refreshAccount() {
+      if (!room || stopped || disposed) return;
+      ports.quickChat?.receive({type:'chat-status',registered:false});
+      // Replace only the lobby identity connection, using its existing seat recovery.
+      socketRoom = '';
+      connect(true);
     },
     dispose() {
       if (disposed) return;

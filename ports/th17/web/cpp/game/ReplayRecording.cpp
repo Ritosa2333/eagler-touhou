@@ -32,6 +32,12 @@ bool ReplayRecording::tick(ReplayInput input,float fps,bool suspended,PlayerTouc
  if(!touch.valid())return fail("Invalid recording touch target");
  if(!suspended){auto& s=stages[current];if(s.inputs.size()>=2*1024*1024)return fail("Replay recording exceeds input limit");
   if(touch.mode)s.touches.push_back({u32(s.inputs.size()),touch});
+  if(practice_patch&&practice_patch.stage==current&&input.practice_tools!=(s.practice_changes.empty()?0:s.practice_changes.back().tools))
+   s.practice_changes.push_back({u32(s.inputs.size()),input.practice_tools});
+  if(input.spirit){
+   if(!practice_patch||practice_patch.stage!=current||!input.spirit.valid())return fail("Invalid practice spirit recording");
+   s.practice_spirits.push_back({u32(s.inputs.size()),input.spirit});
+  }
   if(clock%30==0){const float rounded=fps+0.5f;i32 value=std::numeric_limits<i32>::min();
    if(rounded>=256)s.frame_rates.push_back(255);
    else {if(std::isfinite(rounded)&&double(rounded)>=-2147483648.0&&double(rounded)<2147483648.0)value=i32(rounded);s.frame_rates.push_back(u8(value));}
@@ -42,6 +48,12 @@ void ReplayRecording::finish(i64 timestamp,i32 number,bool cleared){put(metadata
 bool ReplayRecording::write(const char* name,const ReplayExportDetails& details,bool terminate){
  if(!failure.empty())return false;if(!name||std::strlen(name)>8)return fail("Replay name exceeds eight bytes");
  if(dword(metadata.data()+0x88)>2||dword(metadata.data()+0x8c)>2||dword(metadata.data()+0x90)>4)return fail("Invalid recording selection");
+ if(practice_patch){
+  const i32 rank=signed_bits(dword(metadata.data()+0x90));
+  const i32 spell=(metadata[10]&2)?signed_bits(dword(metadata.data()+0x9c)):-1;
+  if(!practice_patch.valid(rank,spell)||!stage(practice_patch.stage)||!(metadata[10]&3))
+   return fail("Invalid practice recording selection");
+ }
  bool any=false;for(u32 i=1;i<8;i++)any|=stages[i].present;if(!any)return fail("No replay stages to export");
  if(!sealed&&terminate&&current)stages[current].inputs.push_back({65535,65535,65535});
  if(!serialize(name,details))return false;sealed=true;return true;
@@ -67,7 +79,7 @@ bool ReplayRecording::serialize(const char* name,const ReplayExportDetails& deta
  if(signed_bits(dword(metadata.data()+0x94))>7)info+=first==7?"Extra Stage Clear\r\n":"Stage All Clear\r\n";
  else if(first==last){if(first==7)info+="Extra Stage\r\n";else{std::snprintf(formatted,sizeof formatted,"Stage %d\r\n",first);info+=formatted;}}
  else {std::snprintf(formatted,sizeof formatted,"Stage %d \x81\x60 %d\r\n",first,last);info+=formatted;}
- std::snprintf(formatted,sizeof formatted,"Score %d\r\nSlow Rate %2.2f\r\n",details.score,double(slow));info+=formatted;
+ std::snprintf(formatted,sizeof formatted,"Score %u\r\nSlow Rate %2.2f\r\n",u32(details.score),double(slow));info+=formatted;
  user_block(file,0,info);user_block(file,1,"\x83\x52\x83\x81\x83\x93\x83\x67\x82\xf0\x8f\x91\x82\xaf\x82\xdc\x82\xb7");
  u64 count_touches=0;for(const auto& s:stages)count_touches+=s.touches.size();
  if(count_touches){if(count_touches>(64*1024*1024-32)/16||file.size()+32+count_touches*16>128*1024*1024)return fail("Replay touch data exceeds file limit");const u32 start=file.size(),length=32+u32(count_touches)*16;file.resize(start+length,0);auto* out=file.data()+start;
@@ -75,6 +87,38 @@ bool ReplayRecording::serialize(const char* name,const ReplayExportDetails& deta
   for(u32 stage=1;stage<8;stage++)for(const auto& t:stages[stage].touches){put(out,u16(stage));put(out+2,u16(t.motion.mode));put(out+4,t.frame);put(out+8,t.motion.x);put(out+12,t.motion.y);out+=16;}
  }
  if(web_rules){const u32 start=file.size();file.resize(start+24,0);auto* out=file.data()+start;put(out,u32(0x52455355));put(out+4,u32(24));put(out+8,u32(0x18));put(out+12,u32(0x52373154));put(out+16,u32(1));put(out+20,web_rules);}
+ if(practice_patch){
+  const auto& p=practice_patch;
+  const u32 start=file.size();file.resize(start+68,0);auto* out=file.data()+start;
+  const u32 header[]{0x52455355,68,0x19,0x50373154,1};
+  std::memcpy(out,header,sizeof header);out+=sizeof header;
+  put(out,p.stage);put(out+4,p.section);put(out+8,p.phase);
+  put(out+12,u32(p.dialogue)|(u32(p.keep_drops)<<1));
+  for(u32 i=0;i<3;++i)put(out+16+4*i,p.keiki_offsets[i]);
+  for(u32 i=0;i<5;++i)put(out+28+4*i,p.spirits[i]);
+  const auto& changes=stages[p.stage].practice_changes;
+  if(!changes.empty()){
+   const u32 length=20+u32(changes.size())*8,at=file.size();
+   file.resize(at+length,0);
+   out=file.data()+at;
+   const u32 tools_header[]{0x52455355,length,0x1a,0x43373154,1};
+   std::memcpy(out,tools_header,sizeof tools_header);out+=sizeof tools_header;
+   for(const auto& event:changes){put(out,event.frame);put(out+4,event.tools);out+=8;}
+  }
+  const auto& spirits=stages[p.stage].practice_spirits;
+  if(!spirits.empty()){
+   const u32 length=20+u32(spirits.size())*24,at=file.size();
+   if(u64(at)+length>128*1024*1024)return fail("Replay spirit data exceeds file limit");
+   const u32 spirit_header[]{0x52455355,length,0x1b,0x53373154,1};
+   file.resize(at+length,0);out=file.data()+at;
+   std::memcpy(out,spirit_header,sizeof spirit_header);out+=sizeof spirit_header;
+   for(const auto& event:spirits){
+    const auto& s=event.spawn;
+    put(out,event.frame);put(out+4,s.kind);put(out+8,s.x);put(out+12,s.y);put(out+16,s.angle);
+    put(out+20,u32(s.force)|(u32(s.random)<<1));out+=24;
+   }
+  }
+ }
  return true;
 }
 bool ReplayRecording::spell_timing(u32 number,u32 sequence,i32 value){

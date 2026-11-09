@@ -17,7 +17,10 @@ struct PlayerShotContext {
     PlayerMotion& player;std::array<float,12> option_angles{};std::array<i32,13> laser_power{};
     std::vector<PlayerShotTarget*> targets;
     i32 power=0,power_step=100,shoot_frame=0,player_state=1,roaring_kind=0;u32 roaring_flags=0;
-    bool enemy_scene=true,bomb_active=false;Vec2 screen_origin{};Vec3 background_delta{};
+    bool enemy_scene=true,bomb_active=false,cooperative=false;Vec2 screen_origin{};Vec3 background_delta{};
+    i32 laser_mode()const noexcept{
+        return (roaring_flags&6)==2&&(roaring_kind==1||roaring_kind==3)?roaring_kind:0;
+    }
 };
 class PlayerShots {
     const ShtResource& resource;PlayerShotContext& context;DamageSources& damage;AnmManager& animations;Rng& random;Rng& visual_random;
@@ -31,10 +34,12 @@ class PlayerShots {
     i32 laser_hit(PlayerShot&,const DamageQuery&,bool shorten);
     bool slash(PlayerShot&,bool reverse);
     bool laser_update(PlayerShot&,const ShotSpec&,bool focus_turn);
+    bool retire_laser(PlayerShot&,const ShotSpec&);
     Vec3 option_origin(i32)const;
 public:
     enum class SoundAction:i32 {play,stop,pan};
     std::array<PlayerShot,256> shots{};std::string error;float rate=1;
+    u8 presentation_seat=0;
     std::function<bool(i32,float,SoundAction)> sound;
     std::function<bool(i32,const Vec3&,float,float)> item;
     std::function<void(u32)> track_effect;
@@ -45,6 +50,8 @@ public:
     const ShotSpec* specification(u32 id)const;
     void set_rate(float value){rate=value;animations.rate=value;}
     bool fire(i32 shot_frame,i32 sound_frame);
+    bool synchronize_roaring(u32 flags,i32 kind);
+    bool clear_lasers();
     bool update();
     i32 spawn(u32 id,const Vec3&);
 };

@@ -24,7 +24,7 @@ try{
  const tape=await page.evaluate(async({frames,difficulty})=>{
   const w=window.__TH19_HARNESS.frame.contentWindow,c=w.Module;c._th19_loop_stop();
   const manifest=await(await fetch(new URL('../runtime/manifest.json',location.href))).json();
-  const config={rules:[0,1,1,4,4,1,1,0,0],protocol:1,build:manifest.buildId,seed:(190001^Math.imul(1,0x9e3779b9))>>>0,difficulty,characters:[0,1],delay:0,rollback:true};
+  const config={rules:[0,1,1,4,4,1,1,3,5],protocol:1,build:manifest.buildId,seed:(190001^Math.imul(1,0x9e3779b9))>>>0,difficulty,characters:[15,7],delay:0,rollback:true};
   c._th19_network_set_rules(...config.rules);c._th19_network_begin(config.seed,config.difficulty,...config.characters);
   const {th19StreamFrame}=await import(new URL('../runtime/th19-recording.mjs',location.href)),rows=[];
   for(let frame=0;frame<frames;frame++){const a={keys:frame%360<270?3:1,direct:+(frame%60===0),x:frame%120===0?1:-1,y:0},b={keys:frame%240<120?1:5,direct:0,x:0,y:0};

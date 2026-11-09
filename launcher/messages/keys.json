@@ -747,6 +747,24 @@
     "id": "room_cancelReady",
     "params": []
   },
+  "room.nudge": {
+    "id": "room_nudge",
+    "params": []
+  },
+  "room.nudgeSent": {
+    "id": "room_nudgeSent",
+    "params": []
+  },
+  "room.nudgeReceived": {
+    "id": "room_nudgeReceived",
+    "params": [
+      "seat"
+    ]
+  },
+  "room.nudgeCooldown": {
+    "id": "room_nudgeCooldown",
+    "params": []
+  },
   "room.gameSettingsGroup": {
     "id": "room_gameSettingsGroup",
     "params": []
@@ -969,6 +987,14 @@
   },
   "spectator.realtimeReserved": {
     "id": "spectator_realtimeReserved",
+    "params": []
+  },
+  "player.exitGame": {
+    "id": "player_exitGame",
+    "params": []
+  },
+  "player.leaveRoom": {
+    "id": "player_leaveRoom",
     "params": []
   },
   "player.exitPlayback": {
@@ -1459,10 +1485,6 @@
   },
   "lobby.publicRoom": {
     "id": "lobby_publicRoom",
-    "params": []
-  },
-  "lobby.codeHint": {
-    "id": "lobby_codeHint",
     "params": []
   },
   "lobby.mine": {
@@ -2134,22 +2156,6 @@
     "id": "preload_aria",
     "params": []
   },
-  "notice.aria": {
-    "id": "notice_aria",
-    "params": []
-  },
-  "notice.label": {
-    "id": "notice_label",
-    "params": []
-  },
-  "notice.close": {
-    "id": "notice_close",
-    "params": []
-  },
-  "notice.dismissForever": {
-    "id": "notice_dismissForever",
-    "params": []
-  },
   "diagnostics.toggle": {
     "id": "diagnostics_toggle",
     "params": []
@@ -2252,6 +2258,86 @@
   },
   "multiplayer.loadout.th15_reisen": {
     "id": "multiplayer_loadout_th15_reisen",
+    "params": []
+  },
+  "game.title.th17mp": {
+    "id": "game_title_th17mp",
+    "params": []
+  },
+  "multiplayer.character": {
+    "id": "multiplayer_character",
+    "params": []
+  },
+  "multiplayer.firstSpell": {
+    "id": "multiplayer_firstSpell",
+    "params": []
+  },
+  "multiplayer.secondSpell": {
+    "id": "multiplayer_secondSpell",
+    "params": []
+  },
+  "multiplayer.animalSpirit": {
+    "id": "multiplayer_animalSpirit",
+    "params": []
+  },
+  "multiplayer.character.th17_reimu": {
+    "id": "multiplayer_character_th17_reimu",
+    "params": []
+  },
+  "multiplayer.character.th17_marisa": {
+    "id": "multiplayer_character_th17_marisa",
+    "params": []
+  },
+  "multiplayer.character.th17_youmu": {
+    "id": "multiplayer_character_th17_youmu",
+    "params": []
+  },
+  "multiplayer.spirit.th17_wolf": {
+    "id": "multiplayer_spirit_th17_wolf",
+    "params": []
+  },
+  "multiplayer.spirit.th17_otter": {
+    "id": "multiplayer_spirit_th17_otter",
+    "params": []
+  },
+  "multiplayer.spirit.th17_eagle": {
+    "id": "multiplayer_spirit_th17_eagle",
+    "params": []
+  },
+  "multiplayer.loadout.th17_reimu_wolf": {
+    "id": "multiplayer_loadout_th17_reimu_wolf",
+    "params": []
+  },
+  "multiplayer.loadout.th17_reimu_otter": {
+    "id": "multiplayer_loadout_th17_reimu_otter",
+    "params": []
+  },
+  "multiplayer.loadout.th17_reimu_eagle": {
+    "id": "multiplayer_loadout_th17_reimu_eagle",
+    "params": []
+  },
+  "multiplayer.loadout.th17_marisa_wolf": {
+    "id": "multiplayer_loadout_th17_marisa_wolf",
+    "params": []
+  },
+  "multiplayer.loadout.th17_marisa_otter": {
+    "id": "multiplayer_loadout_th17_marisa_otter",
+    "params": []
+  },
+  "multiplayer.loadout.th17_marisa_eagle": {
+    "id": "multiplayer_loadout_th17_marisa_eagle",
+    "params": []
+  },
+  "multiplayer.loadout.th17_youmu_wolf": {
+    "id": "multiplayer_loadout_th17_youmu_wolf",
+    "params": []
+  },
+  "multiplayer.loadout.th17_youmu_otter": {
+    "id": "multiplayer_loadout_th17_youmu_otter",
+    "params": []
+  },
+  "multiplayer.loadout.th17_youmu_eagle": {
+    "id": "multiplayer_loadout_th17_youmu_eagle",
     "params": []
   },
   "game.title.th12mp": {
@@ -2382,6 +2468,18 @@
     "id": "settings_music",
     "params": []
   },
+  "options.volume": {
+    "id": "options_volume",
+    "params": []
+  },
+  "settings.bgmVolume": {
+    "id": "settings_bgmVolume",
+    "params": []
+  },
+  "settings.sfxVolume": {
+    "id": "settings_sfxVolume",
+    "params": []
+  },
   "gameLanguage.ja": {
     "id": "gameLanguage_ja",
     "params": []
@@ -2482,12 +2580,28 @@
     "id": "settings_appleNotice",
     "params": []
   },
+  "settings.renderResolution": {
+    "id": "settings_renderResolution",
+    "params": []
+  },
+  "settings.renderResolutionHint": {
+    "id": "settings_renderResolutionHint",
+    "params": []
+  },
   "settings.localPlayerVisibility": {
     "id": "settings_localPlayerVisibility",
     "params": []
   },
   "settings.localPlayerVisibilityHint": {
     "id": "settings_localPlayerVisibilityHint",
+    "params": []
+  },
+  "settings.th075NativeResolution": {
+    "id": "settings_th075NativeResolution",
+    "params": []
+  },
+  "settings.th075NativeResolutionHint": {
+    "id": "settings_th075NativeResolutionHint",
     "params": []
   },
   "options.touch": {
@@ -4057,10 +4171,6 @@
       "music"
     ]
   },
-  "notice.restoreHint": {
-    "id": "notice_restoreHint",
-    "params": []
-  },
   "package.objectNotPersisted": {
     "id": "package_objectNotPersisted",
     "params": []
@@ -5626,22 +5736,6 @@
     "id": "chat_spectator",
     "params": []
   },
-  "footer.license": {
-    "id": "footer_license",
-    "params": []
-  },
-  "footer.repository": {
-    "id": "footer_repository",
-    "params": []
-  },
-  "footer.group": {
-    "id": "footer_group",
-    "params": []
-  },
-  "footer.donate": {
-    "id": "footer_donate",
-    "params": []
-  },
   "game.name.th06": {
     "id": "game_name_th06",
     "params": []
@@ -6249,6 +6343,14 @@
   },
   "replay.ui.empty": {
     "id": "replay_ui_empty",
+    "params": []
+  },
+  "replay.hsobImport": {
+    "id": "replay_hsobImport",
+    "params": []
+  },
+  "replay.hsobPlayback": {
+    "id": "replay_hsobPlayback",
     "params": []
   },
   "replay.ui.drop": {
@@ -7324,6 +7426,34 @@
     "id": "profile_following",
     "params": []
   },
+  "profile.followAction": {
+    "id": "profile_follow_action",
+    "params": []
+  },
+  "profile.followed": {
+    "id": "profile_followed",
+    "params": []
+  },
+  "profile.unfollowAction": {
+    "id": "profile_unfollow_action",
+    "params": []
+  },
+  "profile.followSignIn": {
+    "id": "profile_follow_sign_in",
+    "params": []
+  },
+  "profile.socialPrivate": {
+    "id": "profile_social_private",
+    "params": []
+  },
+  "profile.social.loadFailed": {
+    "id": "profile_social_load_failed",
+    "params": []
+  },
+  "profile.social.updateFailed": {
+    "id": "profile_social_update_failed",
+    "params": []
+  },
   "profile.clearChart": {
     "id": "profile_clear_chart",
     "params": []
@@ -7438,6 +7568,18 @@
   },
   "profile.display.save": {
     "id": "profile_display_save",
+    "params": []
+  },
+  "profile.friendsVisibility": {
+    "id": "profile_friends_visibility",
+    "params": []
+  },
+  "profile.personalSettings": {
+    "id": "profile_personal_settings",
+    "params": []
+  },
+  "profile.upcoming": {
+    "id": "profile_upcoming",
     "params": []
   },
   "profile.editHeading": {
@@ -7612,26 +7754,6 @@
     "id": "profile_social_heading",
     "params": []
   },
-  "profile.online.notifications": {
-    "id": "profile_online_notifications",
-    "params": []
-  },
-  "profile.online.demoFriend": {
-    "id": "profile_online_demo_friend",
-    "params": []
-  },
-  "profile.online": {
-    "id": "profile_online",
-    "params": []
-  },
-  "profile.online.simulated": {
-    "id": "profile_online_simulated",
-    "params": []
-  },
-  "profile.online.stopDemo": {
-    "id": "profile_online_stop_demo",
-    "params": []
-  },
   "profile.friends.empty": {
     "id": "profile_friends_empty",
     "params": []
@@ -7642,38 +7764,6 @@
   },
   "profile.social.emptyHint": {
     "id": "profile_social_empty_hint",
-    "params": []
-  },
-  "profile.online.preview": {
-    "id": "profile_online_preview",
-    "params": []
-  },
-  "profile.online.disabledPreview": {
-    "id": "profile_online_disabled_preview",
-    "params": []
-  },
-  "profile.online.simulate": {
-    "id": "profile_online_simulate",
-    "params": []
-  },
-  "profile.online.title": {
-    "id": "profile_online_title",
-    "params": []
-  },
-  "profile.online.justNow": {
-    "id": "profile_online_just_now",
-    "params": []
-  },
-  "profile.online.now": {
-    "id": "profile_online_now",
-    "params": []
-  },
-  "profile.online.view": {
-    "id": "profile_online_view",
-    "params": []
-  },
-  "profile.online.close": {
-    "id": "profile_online_close",
     "params": []
   },
   "profile.security.preview": {
@@ -8335,20 +8425,24 @@
     "id": "account_emailInvalid",
     "params": []
   },
-  "account.demoCode": {
-    "id": "account_demoCode",
+  "account.codeExpired": {
+    "id": "account_codeExpired",
     "params": []
   },
-  "account.identityRequired": {
-    "id": "account_identityRequired",
+  "account.codeInvalid": {
+    "id": "account_codeInvalid",
     "params": []
   },
-  "account.passwordRequired": {
-    "id": "account_passwordRequired",
+  "account.credentialsInvalid": {
+    "id": "account_credentialsInvalid",
     "params": []
   },
-  "account.loginDemo": {
-    "id": "account_loginDemo",
+  "account.editDetails": {
+    "id": "account_editDetails",
+    "params": []
+  },
+  "account.emailInUse": {
+    "id": "account_emailInUse",
     "params": []
   },
   "account.usernameRequired": {
@@ -8363,16 +8457,40 @@
     "id": "account_passwordMismatch",
     "params": []
   },
+  "profile.notFound": {
+    "id": "profile_not_found",
+    "params": []
+  },
+  "profile.backToTop": {
+    "id": "profile_back_to_top",
+    "params": []
+  },
+  "profile.region": {
+    "id": "profile_region",
+    "params": []
+  },
+  "account.signOut": {
+    "id": "account_signOut",
+    "params": []
+  },
+  "account.codeSent": {
+    "id": "account_codeSent",
+    "params": []
+  },
   "account.codeRequired": {
     "id": "account_codeRequired",
     "params": []
   },
-  "account.captchaRequired": {
-    "id": "account_captchaRequired",
+  "account.requestFailed": {
+    "id": "account_requestFailed",
     "params": []
   },
-  "account.registerDemo": {
-    "id": "account_registerDemo",
+  "account.tooManyRequests": {
+    "id": "account_tooManyRequests",
+    "params": []
+  },
+  "account.usernameInUse": {
+    "id": "account_usernameInUse",
     "params": []
   },
   "account.actions": {
@@ -8449,26 +8567,6 @@
   },
   "account.confirmationPlaceholder": {
     "id": "account_confirmationPlaceholder",
-    "params": []
-  },
-  "account.verification": {
-    "id": "account_verification",
-    "params": []
-  },
-  "account.or": {
-    "id": "account_or",
-    "params": []
-  },
-  "account.discordPending": {
-    "id": "account_discordPending",
-    "params": []
-  },
-  "account.discord": {
-    "id": "account_discord",
-    "params": []
-  },
-  "account.preview": {
-    "id": "account_preview",
     "params": []
   },
   "account.documentTitle": {
@@ -8707,6 +8805,328 @@
     "id": "developer_betaFeatures",
     "params": []
   },
+  "chat.title": {
+    "id": "chat_title",
+    "params": []
+  },
+  "chat.historyScroll": {
+    "id": "chat_historyScroll",
+    "params": []
+  },
+  "chat.noMessages": {
+    "id": "chat_noMessages",
+    "params": []
+  },
+  "chat.keyboardHint": {
+    "id": "chat_keyboardHint",
+    "params": []
+  },
+  "chat.message": {
+    "id": "chat_message",
+    "params": []
+  },
+  "chat.freeInputHint": {
+    "id": "chat_freeInputHint",
+    "params": []
+  },
+  "chat.send": {
+    "id": "chat_send",
+    "params": []
+  },
+  "chat.report": {
+    "id": "chat_report",
+    "params": []
+  },
+  "chat.messageActions": {
+    "id": "chat_messageActions",
+    "params": []
+  },
+  "chat.reported": {
+    "id": "chat_reported",
+    "params": []
+  },
+  "chat.reportRateLimited": {
+    "id": "chat_reportRateLimited",
+    "params": []
+  },
+  "chat.reportInProgress": {
+    "id": "chat_reportInProgress",
+    "params": []
+  },
+  "chat.banned": {
+    "id": "chat_banned",
+    "params": []
+  },
+  "chat.permanentlyBanned": {
+    "id": "chat_permanentlyBanned",
+    "params": []
+  },
+  "chat.bannedUntil": {
+    "id": "chat_bannedUntil",
+    "params": [
+      "time"
+    ]
+  },
+  "chat.sendRateLimited": {
+    "id": "chat_sendRateLimited",
+    "params": []
+  },
+  "chat.signInRequired": {
+    "id": "chat_signInRequired",
+    "params": []
+  },
+  "chat.reviewUnavailable": {
+    "id": "chat_reviewUnavailable",
+    "params": []
+  },
+  "chat.failed": {
+    "id": "chat_failed",
+    "params": []
+  },
+  "profile.contentRejected": {
+    "id": "profile_contentRejected",
+    "params": []
+  },
+  "profile.reviewUnavailable": {
+    "id": "profile_reviewUnavailable",
+    "params": []
+  },
+  "profile.image.sourceTooLarge": {
+    "id": "profile_image_sourceTooLarge",
+    "params": []
+  },
+  "profile.image.processing": {
+    "id": "profile_image_processing",
+    "params": []
+  },
+  "profile.unsaved.title": {
+    "id": "profile_unsaved_title",
+    "params": []
+  },
+  "profile.unsaved.message": {
+    "id": "profile_unsaved_message",
+    "params": []
+  },
+  "account.usernameFormat": {
+    "id": "account_usernameFormat",
+    "params": []
+  },
+  "account.nicknameLength": {
+    "id": "account_nicknameLength",
+    "params": []
+  },
+  "profile.image.cropAvatar": {
+    "id": "profile_image_cropAvatar",
+    "params": []
+  },
+  "profile.image.cropCover": {
+    "id": "profile_image_cropCover",
+    "params": []
+  },
+  "profile.image.cropHint": {
+    "id": "profile_image_cropHint",
+    "params": []
+  },
+  "profile.image.roomPreview": {
+    "id": "profile_image_roomPreview",
+    "params": []
+  },
+  "profile.image.zoom": {
+    "id": "profile_image_zoom",
+    "params": []
+  },
+  "profile.image.zoomIn": {
+    "id": "profile_image_zoomIn",
+    "params": []
+  },
+  "profile.image.zoomOut": {
+    "id": "profile_image_zoomOut",
+    "params": []
+  },
+  "profile.image.resetCrop": {
+    "id": "profile_image_resetCrop",
+    "params": []
+  },
+  "profile.image.useCrop": {
+    "id": "profile_image_useCrop",
+    "params": []
+  },
+  "profile.image.coverSafeArea": {
+    "id": "profile_image_coverSafeArea",
+    "params": []
+  },
+  "profile.careerVisibility": {
+    "id": "profile_careerVisibility",
+    "params": []
+  },
+  "profile.recordsVisibility": {
+    "id": "profile_recordsVisibility",
+    "params": []
+  },
+  "cloudSave.title": {
+    "id": "cloudSave_title",
+    "params": []
+  },
+  "cloudSave.refresh": {
+    "id": "cloudSave_refresh",
+    "params": []
+  },
+  "cloudSave.latest": {
+    "id": "cloudSave_latest",
+    "params": []
+  },
+  "cloudSave.choose": {
+    "id": "cloudSave_choose",
+    "params": []
+  },
+  "cloudSave.upload": {
+    "id": "cloudSave_upload",
+    "params": []
+  },
+  "cloudSave.download": {
+    "id": "cloudSave_download",
+    "params": []
+  },
+  "cloudSave.delete": {
+    "id": "cloudSave_delete",
+    "params": []
+  },
+  "cloudSave.deleteConfirm": {
+    "id": "cloudSave_deleteConfirm",
+    "params": []
+  },
+  "cloudSave.requiredFiles": {
+    "id": "cloudSave_requiredFiles",
+    "params": [
+      "files"
+    ]
+  },
+  "cloudSave.uploaded": {
+    "id": "cloudSave_uploaded",
+    "params": []
+  },
+  "cloudSave.deleted": {
+    "id": "cloudSave_deleted",
+    "params": []
+  },
+  "cloudSave.conflict": {
+    "id": "cloudSave_conflict",
+    "params": []
+  },
+  "cloudSave.busy": {
+    "id": "cloudSave_busy",
+    "params": []
+  },
+  "cloudSave.quota": {
+    "id": "cloudSave_quota",
+    "params": []
+  },
+  "cloudSave.tooLarge": {
+    "id": "cloudSave_tooLarge",
+    "params": []
+  },
+  "cloudSave.invalid": {
+    "id": "cloudSave_invalid",
+    "params": []
+  },
+  "cloudSave.unsupportedVersion": {
+    "id": "cloudSave_unsupportedVersion",
+    "params": []
+  },
+  "cloudSave.statisticsFailed": {
+    "id": "cloudSave_statisticsFailed",
+    "params": []
+  },
+  "profile.flightTime": {
+    "id": "profile_flightTime",
+    "params": []
+  },
+  "profile.playCount": {
+    "id": "profile_playCount",
+    "params": [
+      "count"
+    ]
+  },
+  "profile.clear.oneCredit": {
+    "id": "profile_clear_oneCredit",
+    "params": []
+  },
+  "profile.clear.cleared": {
+    "id": "profile_clear_cleared",
+    "params": []
+  },
+  "profile.clear.uncleared": {
+    "id": "profile_clear_uncleared",
+    "params": []
+  },
+  "profile.clear.unread": {
+    "id": "profile_clear_unread",
+    "params": []
+  },
+  "profile.clear.allGames": {
+    "id": "profile_clear_allGames",
+    "params": []
+  },
+  "profile.clear.openGame": {
+    "id": "profile_clear_openGame",
+    "params": [
+      "game"
+    ]
+  },
+  "profile.loadoutNumber": {
+    "id": "profile_loadoutNumber",
+    "params": [
+      "number"
+    ]
+  },
+  "profile.team.barrier": {
+    "id": "profile_team_barrier",
+    "params": []
+  },
+  "profile.team.magic": {
+    "id": "profile_team_magic",
+    "params": []
+  },
+  "profile.team.scarlet": {
+    "id": "profile_team_scarlet",
+    "params": []
+  },
+  "profile.team.ghost": {
+    "id": "profile_team_ghost",
+    "params": []
+  },
+  "profile.mode.legacy": {
+    "id": "profile_mode_legacy",
+    "params": []
+  },
+  "profile.mode.pointdevice": {
+    "id": "profile_mode_pointdevice",
+    "params": []
+  },
+  "profile.clear.unavailable": {
+    "id": "profile_clear_unavailable",
+    "params": []
+  },
+  "cloudSave.chooseLocal": {
+    "id": "cloudSave_chooseLocal",
+    "params": []
+  },
+  "cloudSave.noLocalSave": {
+    "id": "cloudSave_noLocalSave",
+    "params": []
+  },
+  "cloudSave.th06TimeHint": {
+    "id": "cloudSave_th06TimeHint",
+    "params": []
+  },
+  "cloudSave.th05ClearHint": {
+    "id": "cloudSave_th05ClearHint",
+    "params": []
+  },
+  "cloudSave.backupUsed": {
+    "id": "cloudSave_backupUsed",
+    "params": []
+  },
   "game.name.th19": {
     "id": "game_name_th19",
     "params": []
@@ -8891,6 +9311,525 @@
   },
   "th19.charge": {
     "id": "th19_charge",
+    "params": []
+  },
+  "account.forgotPassword": {
+    "id": "account_forgotPassword",
+    "params": []
+  },
+  "account.resetPassword": {
+    "id": "account_resetPassword",
+    "params": []
+  },
+  "account.backToLogin": {
+    "id": "account_backToLogin",
+    "params": []
+  },
+  "account.newPassword": {
+    "id": "account_newPassword",
+    "params": []
+  },
+  "account.resetCodeSent": {
+    "id": "account_resetCodeSent",
+    "params": []
+  },
+  "account.passwordResetDone": {
+    "id": "account_passwordResetDone",
+    "params": []
+  },
+  "cloudSave.autoHint": {
+    "id": "cloudSave_autoHint",
+    "params": []
+  },
+  "cloudSave.autoSync": {
+    "id": "cloudSave_autoSync",
+    "params": []
+  },
+  "cloudSave.pausedHint": {
+    "id": "cloudSave_pausedHint",
+    "params": []
+  },
+  "cloudSave.preferenceFailed": {
+    "id": "cloudSave_preferenceFailed",
+    "params": []
+  },
+  "cloudSave.noSave": {
+    "id": "cloudSave_noSave",
+    "params": []
+  },
+  "cloudSave.addSave": {
+    "id": "cloudSave_addSave",
+    "params": []
+  },
+  "cloudSave.versionConflict": {
+    "id": "cloudSave_versionConflict",
+    "params": []
+  },
+  "cloudSave.pendingHere": {
+    "id": "cloudSave_pendingHere",
+    "params": []
+  },
+  "cloudSave.syncConflict": {
+    "id": "cloudSave_syncConflict",
+    "params": []
+  },
+  "cloudSave.syncPending": {
+    "id": "cloudSave_syncPending",
+    "params": []
+  },
+  "cloudSave.otherAccountPending": {
+    "id": "cloudSave_otherAccountPending",
+    "params": []
+  },
+  "cloudSave.syncUnavailable": {
+    "id": "cloudSave_syncUnavailable",
+    "params": []
+  },
+  "cloudSave.sameBrowserActive": {
+    "id": "cloudSave_sameBrowserActive",
+    "params": []
+  },
+  "cloudSave.review": {
+    "id": "cloudSave_review",
+    "params": []
+  },
+  "cloudSave.useCloud": {
+    "id": "cloudSave_useCloud",
+    "params": []
+  },
+  "cloudSave.useLocal": {
+    "id": "cloudSave_useLocal",
+    "params": []
+  },
+  "cloudSave.continueLocal": {
+    "id": "cloudSave_continueLocal",
+    "params": []
+  },
+  "cloudSave.claimLocal": {
+    "id": "cloudSave_claimLocal",
+    "params": []
+  },
+  "room.viewProfile": {
+    "id": "room_viewProfile",
+    "params": [
+      "name"
+    ]
+  },
+  "room.editAccountNickname": {
+    "id": "room_editAccountNickname",
+    "params": []
+  },
+  "music.title": {
+    "id": "music_title",
+    "params": []
+  },
+  "music.join": {
+    "id": "music_join",
+    "params": []
+  },
+  "music.leave": {
+    "id": "music_leave",
+    "params": []
+  },
+  "music.idle": {
+    "id": "music_idle",
+    "params": []
+  },
+  "music.loading": {
+    "id": "music_loading",
+    "params": []
+  },
+  "music.playing": {
+    "id": "music_playing",
+    "params": []
+  },
+  "music.ended": {
+    "id": "music_ended",
+    "params": []
+  },
+  "music.disabled": {
+    "id": "music_disabled",
+    "params": []
+  },
+  "music.seatedOnly": {
+    "id": "music_seatedOnly",
+    "params": []
+  },
+  "music.volume": {
+    "id": "music_volume",
+    "params": []
+  },
+  "music.retry": {
+    "id": "music_retry",
+    "params": []
+  },
+  "music.history": {
+    "id": "music_history",
+    "params": []
+  },
+  "music.select": {
+    "id": "music_select",
+    "params": []
+  },
+  "music.platform": {
+    "id": "music_platform",
+    "params": []
+  },
+  "music.netease": {
+    "id": "music_netease",
+    "params": []
+  },
+  "music.qq": {
+    "id": "music_qq",
+    "params": []
+  },
+  "music.source": {
+    "id": "music_source",
+    "params": []
+  },
+  "music.search": {
+    "id": "music_search",
+    "params": []
+  },
+  "music.playlist": {
+    "id": "music_playlist",
+    "params": []
+  },
+  "music.keyword": {
+    "id": "music_keyword",
+    "params": []
+  },
+  "music.playlistInput": {
+    "id": "music_playlistInput",
+    "params": []
+  },
+  "music.empty": {
+    "id": "music_empty",
+    "params": []
+  },
+  "music.more": {
+    "id": "music_more",
+    "params": []
+  },
+  "music.unavailable": {
+    "id": "music_unavailable",
+    "params": []
+  },
+  "music.trial": {
+    "id": "music_trial",
+    "params": []
+  },
+  "music.blocked": {
+    "id": "music_blocked",
+    "params": []
+  },
+  "music.conflict": {
+    "id": "music_conflict",
+    "params": []
+  },
+  "music.rateLimited": {
+    "id": "music_rateLimited",
+    "params": []
+  },
+  "music.invalidPlaylist": {
+    "id": "music_invalidPlaylist",
+    "params": []
+  },
+  "music.play": {
+    "id": "music_play",
+    "params": []
+  },
+  "music.pause": {
+    "id": "music_pause",
+    "params": []
+  },
+  "music.paused": {
+    "id": "music_paused",
+    "params": []
+  },
+  "music.choose": {
+    "id": "music_choose",
+    "params": []
+  },
+  "music.queue": {
+    "id": "music_queue",
+    "params": []
+  },
+  "music.queueEmpty": {
+    "id": "music_queueEmpty",
+    "params": []
+  },
+  "music.options": {
+    "id": "music_options",
+    "params": []
+  },
+  "music.progress": {
+    "id": "music_progress",
+    "params": []
+  },
+  "music.previous": {
+    "id": "music_previous",
+    "params": []
+  },
+  "music.next": {
+    "id": "music_next",
+    "params": []
+  },
+  "music.shuffle": {
+    "id": "music_shuffle",
+    "params": []
+  },
+  "music.repeat.off": {
+    "id": "music_repeat_off",
+    "params": []
+  },
+  "music.repeat.all": {
+    "id": "music_repeat_all",
+    "params": []
+  },
+  "music.repeat.one": {
+    "id": "music_repeat_one",
+    "params": []
+  },
+  "music.addQueue": {
+    "id": "music_addQueue",
+    "params": []
+  },
+  "music.remove": {
+    "id": "music_remove",
+    "params": []
+  },
+  "music.playPlaylist": {
+    "id": "music_playPlaylist",
+    "params": []
+  },
+  "music.queueFull": {
+    "id": "music_queueFull",
+    "params": []
+  },
+  "music.browse": {
+    "id": "music_browse",
+    "params": []
+  },
+  "music.songs": {
+    "id": "music_songs",
+    "params": []
+  },
+  "music.queued": {
+    "id": "music_queued",
+    "params": []
+  },
+  "music.offer": {
+    "id": "music_offer",
+    "params": []
+  },
+  "music.invitePrompt": {
+    "id": "music_invitePrompt",
+    "params": []
+  },
+  "th09.accountRecord": {
+    "id": "th09_accountRecord",
+    "params": []
+  },
+  "th09.totalGames": {
+    "id": "th09_totalGames",
+    "params": []
+  },
+  "th09.totalWins": {
+    "id": "th09_totalWins",
+    "params": []
+  },
+  "th09.winRate": {
+    "id": "th09_winRate",
+    "params": []
+  },
+  "th09.duelHistory": {
+    "id": "th09_duelHistory",
+    "params": []
+  },
+  "th09.guestOpponent": {
+    "id": "th09_guestOpponent",
+    "params": []
+  },
+  "th09.noDuels": {
+    "id": "th09_noDuels",
+    "params": []
+  },
+  "th09.moreDuels": {
+    "id": "th09_moreDuels",
+    "params": []
+  },
+  "th09.accountCard": {
+    "id": "th09_accountCard",
+    "params": [
+      "games",
+      "rate"
+    ]
+  },
+  "cloudSave.browserVersion": {
+    "id": "cloudSave_browserVersion",
+    "params": []
+  },
+  "cloudSave.accountVersion": {
+    "id": "cloudSave_accountVersion",
+    "params": []
+  },
+  "cloudSave.unknownValue": {
+    "id": "cloudSave_unknownValue",
+    "params": []
+  },
+  "cloudSave.noVersion": {
+    "id": "cloudSave_noVersion",
+    "params": []
+  },
+  "cloudSave.playCount": {
+    "id": "cloudSave_playCount",
+    "params": []
+  },
+  "cloudSave.clearDifficulties": {
+    "id": "cloudSave_clearDifficulties",
+    "params": []
+  },
+  "cloudSave.bestScore": {
+    "id": "cloudSave_bestScore",
+    "params": []
+  },
+  "cloudSave.files": {
+    "id": "cloudSave_files",
+    "params": []
+  },
+  "cloudSave.replaceBrowser": {
+    "id": "cloudSave_replaceBrowser",
+    "params": []
+  },
+  "cloudSave.replaceCloud": {
+    "id": "cloudSave_replaceCloud",
+    "params": []
+  },
+  "cloudSave.startBrowserSync": {
+    "id": "cloudSave_startBrowserSync",
+    "params": []
+  },
+  "cloudSave.playBrowserOnly": {
+    "id": "cloudSave_playBrowserOnly",
+    "params": []
+  },
+  "cloudSave.restoreFailed": {
+    "id": "cloudSave_restoreFailed",
+    "params": []
+  },
+  "cloudSave.comparing": {
+    "id": "cloudSave_comparing",
+    "params": []
+  },
+  "cloudSave.duration": {
+    "id": "cloudSave_duration",
+    "params": []
+  },
+  "cloudSave.localModified": {
+    "id": "cloudSave_localModified",
+    "params": []
+  },
+  "cloudSave.cloudUploaded": {
+    "id": "cloudSave_cloudUploaded",
+    "params": []
+  },
+  "cloudSave.newer": {
+    "id": "cloudSave_newer",
+    "params": []
+  },
+  "cloudSave.changed": {
+    "id": "cloudSave_changed",
+    "params": []
+  },
+  "cloudSave.chooseVersion": {
+    "id": "cloudSave_chooseVersion",
+    "params": []
+  },
+  "cloudSave.startCloud": {
+    "id": "cloudSave_startCloud",
+    "params": []
+  },
+  "cloudSave.syncDeferred": {
+    "id": "cloudSave_syncDeferred",
+    "params": []
+  },
+  "cloudSave.otherPlayUnfinished": {
+    "id": "cloudSave_otherPlayUnfinished",
+    "params": []
+  },
+  "cloudSave.otherPlayTitle": {
+    "id": "cloudSave_otherPlayTitle",
+    "params": []
+  },
+  "cloudSave.stopAndCheck": {
+    "id": "cloudSave_stopAndCheck",
+    "params": []
+  },
+  "cloudSave.continueAndOverwrite": {
+    "id": "cloudSave_continueAndOverwrite",
+    "params": []
+  },
+  "cloudSave.tabHandoffFailed": {
+    "id": "cloudSave_tabHandoffFailed",
+    "params": []
+  },
+  "cloudSave.localReadFailed": {
+    "id": "cloudSave_localReadFailed",
+    "params": []
+  },
+  "network.routeLookup": {
+    "id": "network_routeLookup",
+    "params": [
+      "host"
+    ]
+  },
+  "network.transfer": {
+    "id": "network_transfer",
+    "params": [
+      "host"
+    ]
+  },
+  "network.timeout": {
+    "id": "network_timeout",
+    "params": []
+  },
+  "network.connectFailed": {
+    "id": "network_connectFailed",
+    "params": []
+  },
+  "network.badResponse": {
+    "id": "network_badResponse",
+    "params": []
+  },
+  "network.relayNoReply": {
+    "id": "network_relayNoReply",
+    "params": []
+  },
+  "network.manifestUnavailable": {
+    "id": "network_manifestUnavailable",
+    "params": []
+  },
+  "network.relayClosed": {
+    "id": "network_relayClosed",
+    "params": [
+      "code"
+    ]
+  },
+  "network.relayHandshake": {
+    "id": "network_relayHandshake",
+    "params": []
+  },
+  "document.privacy": {
+    "id": "document_privacy",
+    "params": []
+  },
+  "content.privacy": {
+    "id": "content_privacy",
+    "params": []
+  },
+  "nav.privacyPolicy": {
+    "id": "nav_privacyPolicy",
     "params": []
   }
 }

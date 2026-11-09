@@ -1,13 +1,13 @@
 import {Button as UiButton} from '../../ui/button';
 import {X, Users, ChevronRight, Info} from 'lucide-react';
-import {useRef, type ReactNode} from 'react';
+import {useLayoutEffect, useRef, useState, type ReactNode} from 'react';
+import {createPortal} from 'react-dom';
 import {useOptionsViewport} from './use-options-viewport';
 import {useOptionsInteractions} from './use-options-interactions';
 import {useOptionsTarget} from './options-ownership';
 import {useLocale} from '../../i18n';
 import type {LibraryProduct} from './products';
 import {AppLink} from './AppLink';
-import {useRoomSettingsRelocation} from './use-room-settings-relocation';
 
 export interface OptionsPanelProps {
   product: LibraryProduct;
@@ -32,28 +32,37 @@ export function OptionsPanel({product, coverArtwork, open, closing=false, onBack
   const {t} = useLocale();
   const panel = useRef<HTMLElement>(null); useOptionsViewport(panel); useOptionsInteractions(panel, open&&!closing, onBack);
   const panelTarget = useOptionsTarget('panel', panel);
-  useRoomSettingsRelocation(panel, roomDrawer && product.multiplayer, product.id);
+  const inRoomDrawer = roomDrawer && product.multiplayer;
+  const [drawerTargets, setDrawerTargets] = useState<{header: HTMLElement; content: HTMLElement} | null>(null);
+  useLayoutEffect(() => {
+    if (!inRoomDrawer) return;
+    const header = document.getElementById('mpSettingsRoomDrawerHeader');
+    const content = document.getElementById('mpSettingsRoomDrawerContent');
+    if (header && content) setDrawerTargets({header, content});
+  }, [inRoomDrawer]);
   const credit = product.credit ?? {name: t('gameNotice.credit'), url: 'https://b23.tv/WOQhahY'};
   // Main app.mts4626–4634 carries this product into the directory filter.
   const productLobbyHref = lobbyHref ? lobbyHrefForProduct(lobbyHref, product.id) : undefined;
-  return <aside ref={panelTarget} data-options-panel data-state={open&&!closing?'open':'closed'} className={`tools${open ? ' is-open' : ''}${product.multiplayer ? ' mp-mode' : ''}`} role="dialog" aria-labelledby="gameTitle" aria-modal={open&&!closing || undefined} inert={!open||closing}>
-    <div className="tools-head">
+  const header = <div className="tools-head">
       <img className="options-cover" id="optionsCover" src={coverArtwork ?? product.artwork ?? undefined} hidden={!(coverArtwork ?? product.artwork)} alt="" decoding="async"/>
       <div className="tools-title"><div className="game-id" id="gameId" data-game={product.gameId}>{product.gameId}{product.multiplayer ? ' | MP' : ''}</div><h3 id="gameTitle" title={product.title}>{product.title}</h3><p className="options-subtitle" id="optionsSubtitle" title={product.subtitle}>{product.subtitle}</p></div>
       <UiButton variant="secondary" size="icon" className="library-back" id="libraryBack" type="button" aria-label={t(roomDrawer || embeddedInLobby ? 'settings.drawerClose' : 'library.back')} onClick={onBack}><X aria-hidden="true"/></UiButton>
-    </div>
+    </div>;
+  const fold = <section className={inRoomDrawer ? 'mp-settings mp-room-drawer-mounted' : 'mp-settings'} id="mpSettingsFold">{product.multiplayer ? children : null}</section>;
+  return <aside ref={panelTarget} data-options-panel data-state={open&&!closing?'open':'closed'} className={`tools${open ? ' is-open' : ''}${product.multiplayer ? ' mp-mode' : ''}`} role="dialog" aria-labelledby="gameTitle" aria-modal={open&&!closing || undefined} inert={!open||closing}>
+    {inRoomDrawer ? drawerTargets && createPortal(header, drawerTargets.header) : header}
     <div className="options-scroll">
       {product.multiplayer && !embeddedInLobby && productLobbyHref && <AppLink className="options-lobby-link" id="optionsLobbyLink" href={productLobbyHref} aria-label={`${product.title} | ${t('lobby.title')}`}><Users aria-hidden="true"/><span>{t('lobby.title')}</span><ChevronRight aria-hidden="true"/></AppLink>}
       {!product.multiplayer && product.adaptationNotice && <details className="tools-callout" id="gameNoticeCallout" aria-labelledby="gameNoticeCalloutTitle">
         <summary className="tools-callout-title" id="gameNoticeCalloutTitle"><Info aria-hidden="true"/><span>{t('options.adaptation')}</span></summary>
         <p>{t('gameNotice.earlyTest')}</p>
-        <p className="tools-callout-line"><span>{t('gameNotice.creditBefore')}</span><a className="site-notice-brand" id="gameNoticeCredit" href={credit.url} target="_blank" rel="noopener noreferrer"><span className="site-notice-brand-icon"><img src={assetUrl('assets/notice-bilibili.svg')} alt="" decoding="async"/></span><span id="gameNoticeCreditName">{credit.name}</span></a><span>{t('gameNotice.creditAfter')}</span></p>
-        <p className="tools-callout-line"><a className="site-notice-brand" id="gameNoticeRepo" href={product.sourceRepository} target="_blank" rel="noopener noreferrer"><span className="site-notice-brand-icon"><img src={assetUrl('assets/notice-github.svg')} alt="" decoding="async"/></span><span>{t('gameNotice.repo')}</span></a></p>
+        <p className="tools-callout-line"><span>{t('gameNotice.creditBefore')}</span><a className="game-source-link" id="gameNoticeCredit" href={credit.url} target="_blank" rel="noopener noreferrer"><span className="game-source-link-icon"><img src={assetUrl('assets/notice-bilibili.svg')} alt="" decoding="async"/></span><span id="gameNoticeCreditName">{credit.name}</span></a><span>{t('gameNotice.creditAfter')}</span></p>
+        <p className="tools-callout-line"><a className="game-source-link" id="gameNoticeRepo" href={product.sourceRepository} target="_blank" rel="noopener noreferrer"><span className="game-source-link-icon"><img src={assetUrl('assets/notice-github.svg')} alt="" decoding="async"/></span><span>{t('gameNotice.repo')}</span></a></p>
       </details>}
       {/* Main's MP shell/diagnostics exist before selection, hidden by product
           mode. Keep that DOM contract and one probe presentation owner while
           the one active shared settings body changes its product context. */}
-      <section className="mp-shell" id="mpShell" hidden={!product.multiplayer}>{multiplayerOnline}<section className="mp-settings" id="mpSettingsFold">{product.multiplayer ? children : null}</section>{multiplayerDiagnostics}</section>
+      <section className="mp-shell" id="mpShell" hidden={!product.multiplayer}>{multiplayerOnline}{inRoomDrawer ? drawerTargets && createPortal(fold, drawerTargets.content) : fold}{multiplayerDiagnostics}</section>
       {!product.multiplayer && children}
     </div>
     {actions}

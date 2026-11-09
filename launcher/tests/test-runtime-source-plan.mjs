@@ -75,7 +75,7 @@ try {
       plans.push(plan);
     }
   }
-  assert.equal(plans.length, 23);
+  assert.equal(plans.length, 26);
   const th13 = plans.find(plan => plan.game === 'th13');
   assert.equal(th13.variant, 'normal');
   assert.equal(th13.source, layout.path('th13'));
@@ -94,6 +94,10 @@ try {
   const th15 = plans.find(plan => plan.game === "th15" && plan.variant === "multiplayer");
   assert.equal(th15.source, layout.path("th15mp"));
   assert(th15.steps[0].args.includes("--multiplayer"));
+  const th17 = plans.filter(plan => plan.game === "th17");
+  assert.equal(th17.find(plan => plan.variant === "normal").source, layout.path("th17"));
+  assert.equal(th17.find(plan => plan.variant === "multiplayer").source, layout.path("th17mp"));
+  assert.notEqual(th17[0].source, th17[1].source);
   assert.equal(th15.environment.EAGLER_COMMON_NETPLAY_ROOT, layout.path("common"));
   const th20 = plans.find(plan => plan.game === "th20");
   assert.equal(th20.features.thcrap, false);
@@ -128,5 +132,5 @@ try {
   assert.equal(dirname(root), resolve(tmpdir()));
   await rm(root, { recursive: true, force: true });
 }
-console.log("Runtime source plans: PASS (23 variants, shared dependencies, explicit tools, invalid inputs)");
+console.log("Runtime source plans: PASS (26 variants, shared dependencies, explicit tools, invalid inputs)");
 });

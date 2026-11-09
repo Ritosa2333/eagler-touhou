@@ -41,6 +41,8 @@ def runtime_source(workspace, target):
         return "const launched=true,protocol='eagler-touhou/1',game='" + game + "',epoch=1;window.Module={eaglerControls:{},eaglerOptions:{}};" + source[start:end] + "\nwindow.clearRuntime=clearBrowserKeyboard;window.getKeys=()=>({bits:Module.eaglerControls.keyboardBits||0,pulse:Module.eaglerControls.keyboardPulseBits||0});"
     if game == "th12":
         return managed_runtime_fixture(repo)
+    receiver = (workspace / "common/browser/directory-keyboard.mjs" if game == "th05"
+                else repo / "web/sdl-runtime/directory-keyboard.mjs")
     contents = """
       import {createBrowserKeyboard} from 'KEYBOARD';
       const held=new Set();window.fixtureProfile='standard';
@@ -52,7 +54,7 @@ def runtime_source(workspace, target):
         keyboard.event(e,type==='keydown');
       },true);
       window.clearRuntime=()=>keyboard.clear();window.getKeys=()=>({keys:[...held].sort()});
-    """.replace("GAME", game).replace("KEYBOARD", (repo / "web/sdl-runtime/directory-keyboard.mjs").as_posix())
+    """.replace("GAME", game).replace("KEYBOARD", receiver.as_posix())
     return bundle_runtime_fixture(contents)
 
 

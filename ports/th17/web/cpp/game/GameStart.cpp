@@ -4,7 +4,7 @@ bool GameStart::check(bool ok,const char* message){if(!ok&&error.empty())error=m
 bool GameStart::begin(bool fresh){
     if(u32(run.character)>=3||u32(run.animal)>=3||u32(run.difficulty)>=5||run.stage<1||run.stage>7)return check(false,"Invalid run selection");
     const u32 loadout=u32(run.character*3+run.animal);
-    if(!run.practice_record)records.title.stage_available[loadout][run.difficulty][run.stage-1]=1;
+    if(!run.practice_record&&!run.enhanced_practice)records.title.stage_available[loadout][run.difficulty][run.stage-1]=1;
     if(!fresh){if(u32(score.score)>u32(run.scoring.high_score))run.scoring.high_score=score.score;return true;}
     if(run.stage==7&&run.difficulty<4)run.difficulty=4;score.difficulty=run.difficulty;
     const u32 mode=run.scoring.mode_flags>>4&3;
@@ -30,7 +30,7 @@ bool GameStart::begin(bool fresh){
     else player.power=full<=score.max_power?std::max(full,player.power_step):score.max_power;
     if(!check(host.configure_player(),"Initial player options failed"))return false;
     run.scoring.mode_flags&=~4u;
-    if(!run.practice_record&&run.demo_slot<0&&records.starts[loadout]<9999999)records.starts[loadout]=wrapping_add(records.starts[loadout],1);
+    if(!run.practice_record&&!run.enhanced_practice&&run.demo_slot<0&&records.starts[loadout]<9999999)records.starts[loadout]=wrapping_add(records.starts[loadout],1);
     return true;
 }
 }

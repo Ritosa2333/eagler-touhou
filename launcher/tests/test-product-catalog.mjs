@@ -40,7 +40,7 @@ assert.deepEqual(
   ["ja", "lang_zh-hans", "lang_zh-hant", "lang_en", "lang_de", "lang_ru"],
 );
 
-assert.deepEqual(PRODUCT_IDS, ["th05", "th06", "th07", "th075", "th08", "th09", "th10", "th11", "th12", "th13", "th15", "th17", "th19", "th20", "th05mp", "th06mp", "th07mp", "th075mp", "th08mp", "th09mp", "th10mp", "th11mp", "th12mp", "th15mp", "th19mp"]);
+assert.deepEqual(PRODUCT_IDS, ["th05", "th06", "th07", "th075", "th08", "th09", "th10", "th11", "th12", "th13", "th15", "th17", "th19", "th20", "th05mp", "th06mp", "th07mp", "th075mp", "th08mp", "th09mp", "th10mp", "th11mp", "th12mp", "th15mp", "th17mp", "th19mp"]);
 assert.equal(DEFAULT_PRODUCT_ID, "th06");
 assert.ok(PRODUCT_IDS.includes(DEFAULT_PRODUCT_ID));
 assert.equal(DEFAULT_MULTIPLAYER_PRODUCT_ID, "th07mp");
@@ -297,7 +297,7 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
 console.log("Product catalog policy: PASS");
 
 for (const id of PRODUCT_IDS) {
-  const visible = !["th075", "th075mp", "th13", "th17", "th19", "th19mp", "th20"].includes(id);
+  const visible = !["th075", "th075mp", "th13", "th17", "th17mp", "th19", "th19mp", "th20"].includes(id);
   assert.equal(productEnabledForBuild(id), visible);
   assert.equal(productEnabledForBuild(id, false), visible);
   assert.equal(productEnabledForBuild(id, true), true, "Test builds include every registered product");

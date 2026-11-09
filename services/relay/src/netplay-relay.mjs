@@ -3,6 +3,7 @@ import {Th19SpectatorHistory} from './th19-spectator.mjs';
 import {createNicknameService} from './nickname-service.mjs';
 import {createNicknameRequestGuard} from './nickname-request-guard.mjs';
 import {normalizePublicNickname} from '../../../common/contracts/public-nickname.mjs';
+import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from '../../../common/contracts/th05-initial-stock.mjs';
 import {
   validTh15ChapterThreshold,
   defaultTh15ChapterThreshold,
@@ -27,6 +28,7 @@ import {
   createRelayMessageGate,
   acceptRelayMessage,
   createBoundedRelaySender,
+  relayGameplayPayload,
   normalizeRelaySignal,
   clearSpectatorHistory,
   stopSpectatorStream,
@@ -42,7 +44,8 @@ import {
 import { isSpectatorFrameForRoom } from './spectator-frame.mjs';
 import { COOPERATIVE_SPECTATOR_MARKERS, SpectatorStageRelay } from './spectator-stages.mjs';
 import {SpectatorReplayTransfer} from './spectator-replay.mjs';
-import { th09PlayerStats, acceptTh09MatchStats } from './th09-room-stats.mjs';
+import { th09PlayerStats, acceptTh09MatchStats, bindTh09Duel, reconcileTh09Duel } from './th09-room-stats.mjs';
+import { acceptTh19MatchStats } from './th19-room-stats.mjs';
 import {
   parseMeasuredNetplayTiming,
   resolveAdonisPredictionReserve,
@@ -277,6 +280,12 @@ if ((turnUsername && !turnCredential) || (!turnUsername && turnCredential)) {
   );
 }
 const rooms = new Map();
+// User-facing numbers are global. Runtime and signaling URLs still carry the product.
+const roomCodes = new Map();
+function numericRoomCode(id) {
+  const code = id.slice(id.indexOf('-') + 1);
+  return /^[0-9]{4,8}$/.test(code) && multiplayerPolicyForRoomId(id) ? code : '';
+}
 const roomStatusServer = process.env.EAGLER_NETPLAY_STATUS_PORT
   ? startRoomStatus(rooms, Number(process.env.EAGLER_NETPLAY_STATUS_PORT)) : null;
 roomStatusServer?.on('error', error => {
@@ -287,6 +296,15 @@ const abuseConfig = relayAbuseConfig();
 const abuseGuard = createRelayAbuseGuard(abuseConfig);
 const targetedEnvelopeMarker = 0xe7;
 const sendBounded = createBoundedRelaySender();
+const listenTogether = process.env.EAGLER_NETPLAY_LISTEN_TOGETHER === '1'
+  ? (await import('./listen-together.mjs')).createListenTogether({
+      onPublicTrackChange: () => roomDirectory.changed(),
+      send(socket, message) {
+        if (socket?.readyState === WebSocket.OPEN)
+          sendBounded(socket, message);
+      },
+    })
+  : null;
 const lobbyBroadcaster = createRoomBroadcaster({
   snapshot: room => ({ type: 'state', room: lobbySnapshot(room) }),
   send: sendRoomMessage,
@@ -298,19 +316,16 @@ function iceServersFor(roomId, runId, player) {
   const servers = [];
   if (stunUrls.length) servers.push({ urls: stunUrls });
   const activeTurn = readTurnConfig();
-  if (!activeTurn.urls.length) return servers;
-  if (activeTurn.sharedSecret) {
-    // coturn TURN REST API style ephemeral credentials. The shared secret
-    // stays server-side; only the short-lived username/credential is sent to
-    // the browser during signaling.
-    const expires = Math.floor(Date.now() / 1000) + turnTtlSeconds;
-    const username = `${expires}:${roomId}-${runId}-p${player}`;
-    const credential = createHmac('sha1', activeTurn.sharedSecret).update(username).digest('base64');
-    servers.push({ urls: activeTurn.urls, username, credential });
-  } else if (turnUsername && turnCredential) {
-    // Static credentials are supported for local testing only; production
-    // deployments should prefer EAGLER_NETPLAY_TURN_SHARED_SECRET.
-    servers.push({ urls: activeTurn.urls, username: turnUsername, credential: turnCredential });
+  const expires = Math.floor(Date.now() / 1000) + turnTtlSeconds;
+  const username = `${expires}:${roomId}-${runId}-p${player}`;
+  for (const node of [activeTurn, ...(activeTurn.backups ?? [])]) {
+    if (!node.urls.length) continue;
+    if (node.sharedSecret) {
+      const credential = createHmac('sha1', node.sharedSecret).update(username).digest('base64');
+      servers.push({urls: node.urls, username, credential});
+    } else if (turnUsername && turnCredential) {
+      servers.push({urls: node.urls, username: turnUsername, credential: turnCredential});
+    }
   }
   return servers;
 }
@@ -363,57 +378,61 @@ function rejectRoomCreation(socket) {
   socket.close(4008, 'room creation limit');
 }
 
+function newRoom(id) {
+  const multiplayer = multiplayerPolicyForRoomId(id);
+  return {
+    id,
+    th15: id.startsWith("th15mp-"),
+    createdAt: Date.now(),
+    lastActivityAt: Date.now(),
+    multiplayer,
+    clients: new Map(),
+    lobbyClients: new Map(),
+    lobbyDisconnectTimers: new Map(),
+    runs: new Map(),
+    lobby: {
+      playerCount: defaultPlayerCount(multiplayer),
+      difficulty: 1,
+      ...(id.startsWith('th19mp-')?{th19Rules:[...TH19_VERSUS_RULES]}:{}),
+      visibility: 'public',
+      disableCheatMovement: false,
+      ...(id.startsWith('th05mp-') ? { initialSpares: TH05_INITIAL_STOCK.spares, initialBombs: TH05_INITIAL_STOCK.bombs } : {}),
+      ...(id.startsWith('th09mp-') ? {disableLocalChargePriority:false} : {}),
+      ...(id.startsWith("th15mp-")
+        ? {
+            chapterThreshold: defaultTh15ChapterThreshold(
+              defaultPlayerCount(multiplayer),
+            ),
+          }
+        : {}),
+      challengeMode: false,
+      prankMode: false,
+      inputDelay: 0,
+      timingChoice: 'auto',
+      startedAt: 0,
+      adonisMode: multiplayerInputTimingPolicy(multiplayer).rollback ? 0 : 1,
+      inputDelayAuto: false,
+      predictionReserve: 2,
+      timing: null,
+      predictionLimit: multiplayerInputTimingPolicy(multiplayer).predictionLimit,
+      settingsVersion: 1,
+      phase: 'lobby',
+      seats: [null, null, null],
+      spectators: new Map(),
+      startSerial: 0,
+    },
+  };
+}
+
 function getRoom(id, socket) {
-  let room = rooms.get(id);
-  if (!room) {
-    if (!abuseGuard.createRoom(id, socket.relayAddress)) {
-      rejectRoomCreation(socket);
-      return null;
-    }
-    const multiplayer = multiplayerPolicyForRoomId(id);
-    room = {
-      id,
-      th15: id.startsWith("th15mp-"),
-      createdAt: Date.now(),
-      lastActivityAt: Date.now(),
-      multiplayer,
-      clients: new Map(),
-      lobbyClients: new Map(),
-      lobbyDisconnectTimers: new Map(),
-      runs: new Map(),
-      lobby: {
-        playerCount: defaultPlayerCount(multiplayer),
-        difficulty: 1,
-        ...(id.startsWith('th19mp-')?{th19Rules:[...TH19_VERSUS_RULES]}:{}),
-        visibility: 'public',
-        disableCheatMovement: false,
-        ...(id.startsWith('th09mp-') ? {disableLocalChargePriority:false} : {}),
-        ...(id.startsWith("th15mp-")
-          ? {
-              chapterThreshold: defaultTh15ChapterThreshold(
-                defaultPlayerCount(multiplayer),
-              ),
-            }
-          : {}),
-        challengeMode: false,
-        prankMode: false,
-        inputDelay: 0,
-        timingChoice: 'auto',
-        startedAt: 0,
-        adonisMode: multiplayerInputTimingPolicy(multiplayer).rollback ? 0 : 1,
-        inputDelayAuto: false,
-        predictionReserve: 2,
-        timing: null,
-        predictionLimit: multiplayerInputTimingPolicy(multiplayer).predictionLimit,
-        settingsVersion: 1,
-        phase: 'lobby',
-        seats: [null, null, null],
-        spectators: new Map(),
-        startSerial: 0,
-      },
-    };
-    rooms.set(id, room);
+  const existing = rooms.get(id);
+  if (existing) return existing;
+  if (!abuseGuard.createRoom(id, socket.relayAddress)) {
+    rejectRoomCreation(socket);
+    return null;
   }
+  const room = newRoom(id);
+  rooms.set(id, room);
   return room;
 }
 
@@ -637,7 +656,10 @@ function maybeDeleteRoom(roomId, room) {
     rooms.get(roomId) === room
   ) {
     lobbyBroadcaster.clear(room);
+    listenTogether?.close(room);
     rooms.delete(roomId);
+    const code = numericRoomCode(roomId);
+    if (roomCodes.get(code) === roomId) roomCodes.delete(code);
     abuseGuard.releaseRoom(roomId);
   }
 }
@@ -698,6 +720,10 @@ function chooseRoute(roomId, runId, room, run, route) {
   }
   if (String(room.lobby.startSerial) === String(runId) && room.lobby.phase === 'starting') {
     room.lobby.phase = 'running';
+    if (roomId.startsWith('th19mp-') && run.lobbyClientIds?.length === 2) {
+      // Lobby reports can arrive after the gameplay sockets have closed.
+      room.th19StatsRun = {serial:room.lobby.startSerial,clientIds:[...run.lobbyClientIds],reports:[null,null]};
+    }
     broadcastLobby(room);
   }
   console.log(`ROUTE room=${roomId} run=${runId} mode=${route}`);
@@ -748,7 +774,7 @@ function maybeStartRouteTimer(roomId, runId, room, run) {
 function maybeResolveRoute(roomId, runId, room, run) {
   if (run.route || run.playerCount < 2) return;
   if (run.rtcFailed) {
-    if (!allowGameplayRelayFallback) {
+    if (!allowGameplayRelayFallback && !roomId.startsWith('th05mp-')) {
       failRoute(roomId, runId, run, 'WebRTC connection unavailable');
       return;
     }
@@ -903,6 +929,7 @@ function lobbySnapshot(room) {
     difficulty: room.lobby.difficulty,
     visibility: room.lobby.visibility,
     disableCheatMovement: room.lobby.disableCheatMovement,
+    ...(room.id.startsWith('th05mp-')?{initialSpares:room.lobby.initialSpares,initialBombs:room.lobby.initialBombs}:{}),
     ...(room.id.startsWith('th09mp-') ? {disableLocalChargePriority:room.lobby.disableLocalChargePriority} : {}),
     ...(room.id.startsWith('th19mp-')?{th19Rules:[...room.lobby.th19Rules]}:{}),
     ...(room.th15 ? { chapterThreshold: room.lobby.chapterThreshold } : {}),
@@ -932,11 +959,12 @@ function lobbySnapshot(room) {
         ? {
             clientId: seat.clientId,
             name: seat.name || '',
-            ...(room.id.startsWith('th09mp-')
+            ...(/^th(?:09|19)mp-/.test(room.id)
               ? { stats: th09PlayerStats(room, seat.clientId) }
               : {}),
             loadout: seat.loadout,
             controlMode: publicControlMode(seat),
+            ...(typeof seat.touchEnabled === 'boolean' ? { touchEnabled: seat.touchEnabled } : {}),
             mobileDevice: seat.mobileDevice === true,
             resource: seat.resource || null,
             ready: !!seat.ready && seat.readyVersion === room.lobby.settingsVersion,
@@ -958,6 +986,7 @@ function sendRoomMessage(room, message) {
 }
 
 function broadcastLobby(room, payload = null) {
+  reconcileTh09Duel(room);
   lobbyBroadcaster.publish(room, payload);
 }
 
@@ -1012,7 +1041,88 @@ function resetLobbyAfterRun(room) {
   broadcastLobby(room);
 }
 
+function sendRoomProduct(socket, roomId, code, spectator = false) {
+  sendLobby(socket, {type: 'room-product', product: roomId.split('-')[0], code, spectator});
+  socket.close(4007, 'room product changed');
+}
+
+function reserveRoomRole(room, clientId) {
+  const timer = setTimeout(() => {
+    if (room.lobbyDisconnectTimers.get(clientId) !== timer) return;
+    room.lobbyDisconnectTimers.delete(clientId);
+    if (!room.lobbyClients.has(clientId)) {
+      const seatChanged = clearLobbySeat(room, clientId);
+      const spectatorChanged = room.lobby.spectators.delete(clientId);
+      if (seatChanged) invalidateLobbyReady(room);
+      if (seatChanged || spectatorChanged) broadcastLobby(room);
+    }
+    maybeDeleteRoom(room.id, room);
+  }, lobbyReconnectGraceMs);
+  room.lobbyDisconnectTimers.set(clientId, timer);
+}
+
+function switchLobbyProduct(room, product) {
+  const code = numericRoomCode(room.id);
+  if (!code || typeof product !== 'string' || !multiplayerConfigForProduct(product)) return false;
+  const targetId = `${product}-${code}`;
+  if (rooms.has(targetId) || !abuseGuard.moveRoom(room.id, targetId)) return false;
+  const next = newRoom(targetId);
+  const previous = room.lobby;
+  next.lobby.visibility = previous.visibility;
+  next.lobby.disableCheatMovement = previous.disableCheatMovement;
+  next.lobby.challengeMode = previous.challengeMode && next.multiplayer.gameplay === 'cooperative';
+  next.lobby.startSerial = previous.startSerial;
+  if (validPlayerCount(next.multiplayer, previous.playerCount)) next.lobby.playerCount = previous.playerCount;
+  if (next.th15) next.lobby.chapterThreshold = defaultTh15ChapterThreshold(next.lobby.playerCount);
+  next.lobby.difficulty = Math.min(previous.difficulty, Math.max(0, next.multiplayer.difficulties.length - 1));
+  next.removedMembers = room.removedMembers;
+  next.removedClients = room.removedClients;
+  next.lobby.spectators = new Map(previous.spectators);
+  previous.seats.forEach((seat, index) => {
+    if (!seat) return;
+    if (index >= next.lobby.playerCount) next.lobby.spectators.set(seat.clientId, seat.name);
+    else next.lobby.seats[index] = {...seat, loadout: 0, ready: false, readyVersion: 0, resource: null, runtimeGeneration: undefined};
+  });
+
+  const peers = [...room.lobbyClients];
+  const clientIds = new Set([...room.lobbyClients.keys(), ...room.lobbyDisconnectTimers.keys()]);
+  // Publish the new route and reserve each role before closing the old sockets.
+  rooms.set(targetId, next);
+  roomCodes.set(code, targetId);
+  roomDirectory.moveMembers(room.id, targetId, clientIds);
+  for (const id of clientIds) reserveRoomRole(next, id);
+  for (const timer of room.lobbyDisconnectTimers.values()) clearTimeout(timer);
+  room.lobbyDisconnectTimers.clear();
+  room.lobbyClients.clear();
+  previous.seats.fill(null);
+  previous.spectators.clear();
+  for (const [id, peer] of peers) sendRoomProduct(peer, targetId, code, next.lobby.spectators.has(id));
+  for (const run of room.runs.values()) {
+    if (run.routeTimer) clearTimeout(run.routeTimer);
+    if (run.spectatorGraceTimer) clearTimeout(run.spectatorGraceTimer);
+    clearSpectatorHistory(run);
+    for (const peers of [run.clients, run.signalClients, run.spectatorClients])
+      for (const peer of peers.values()) peer.close(1001, 'room product changed');
+  }
+  room.runs.clear();
+  maybeDeleteRoom(room.id, room);
+  return true;
+}
+
 function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initialPolicy) {
+  const code = numericRoomCode(roomId);
+  const current = roomCodes.get(code);
+  if (current && current !== roomId) {
+    if (intent === 'create') {
+      sendLobby(socket, {type: 'error', error: '房间号已被使用，请重新创建。'});
+      socket.close(4007, 'room unavailable');
+    } else {
+      const spectator = roomDirectory.memberIdFor(current, clientId) === memberId &&
+        rooms.get(current)?.lobby.spectators.has(clientId);
+      sendRoomProduct(socket, current, code, spectator);
+    }
+    return;
+  }
   if (
     initialPolicy?.chapterThreshold !== undefined &&
     (!roomId.startsWith("th15mp-") ||
@@ -1049,6 +1159,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
   if (nicknameService) void nicknameService.current(memberId).then(profile=>publishNickname(memberId,nicknameRequests.has(memberId) ? {...profile,status:'reviewing'} : profile)).catch(()=>sendLobby(socket,{type:'nickname-status',...nicknameProfile(memberId),status:'unavailable'}));
   const room = getRoom(roomId, socket);
   if (!room) return;
+  if (code) roomCodes.set(code, roomId);
   if (!existing && intent === 'create') {
     if(room.id.startsWith('th19mp-'))room.lobby.th19Rules=[...(initialPolicy?.th19Rules??TH19_VERSUS_RULES)];
     room.lobby.visibility = initialPolicy?.visibility === 'private' ? 'private' : 'public';
@@ -1080,9 +1191,12 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
   sendLobby(socket, {
     type: 'state',
     room: lobbySnapshot(room),
-    roomDirectory: { version: 1, controlModes: true, runtimeVersions: true },
+    roomDirectory: { version: 1, controlModes: true, runtimeVersions: true, globalRoomCodes: !!code },
+    roomActions: 1,
+    ...(listenTogether ? { listenTogether: 2 } : {}),
     roomProbe: { iceServers: iceServersFor(roomId, 'lobby-probe', 0) },
   });
+  listenTogether?.sync(room, clientId);
   if (pendingDisconnect) broadcastLobby(room);
   let probeBudget = 0,
     probeWindow = Date.now();
@@ -1108,6 +1222,10 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     }
     if (!validRelayControlMessage(message)) {
       socket.close(1008, 'invalid lobby message');
+      return;
+    }
+    if (listenTogether && message.type === 'listen-together') {
+      listenTogether.handle(room, clientId, socket, message);
       return;
     }
     if (message.type === 'activity') {
@@ -1217,6 +1335,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         resource: previousEntry?.resource || null,
       };
       broadcastLobby(room);
+      if (previousSeat !== seat) sendRoomMessage(room, JSON.stringify({type: 'room-action', action: 'seat'}));
       return;
     }
 
@@ -1289,6 +1408,29 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     }
 
     const seat = lobbySeatOf(room, clientId);
+    if (message.type === 'switch-product') {
+      if (seat !== 0 || room.lobby.phase !== 'lobby') return;
+      if (!switchLobbyProduct(room, message.product))
+        sendLobby(socket, {type: 'error', error: '暂时无法更换作品，请稍后再试。'});
+      return;
+    }
+    if (message.type === 'room-nudge') {
+      if (seat <= 0 || room.lobby.phase !== 'lobby' || !room.lobby.seats[seat]?.ready) return;
+      const peers = room.lobby.seats
+        .filter(entry => entry && entry.clientId !== clientId)
+        .map(entry => room.lobbyClients.get(entry.clientId))
+        .filter(peer => peer?.readyState === WebSocket.OPEN);
+      if (!peers.length) return;
+      const now = Date.now();
+      if (now < (room.lobby.nextNudgeAt ?? 0)) {
+        sendLobby(socket, {type: 'room-action', action: 'nudge-limited'});
+        return;
+      }
+      room.lobby.nextNudgeAt = now + 5000;
+      sendLobby(socket, {type: 'room-action', action: 'nudge', fromSeat: seat, outgoing: true});
+      for (const peer of peers) sendLobby(peer, {type: 'room-action', action: 'nudge', fromSeat: seat});
+      return;
+    }
     if (message.type === 'quick-chat') {
       const spectator = seat < 0 && room.lobby.spectators.has(clientId);
       if (
@@ -1344,12 +1486,11 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       return;
     }
     if (message.type === 'th09-match') {
-      if (
-        seat === 0 &&
-        room.lobby.phase === 'running' &&
-        acceptTh09MatchStats(room, room.runs.get(String(message.serial)), clientId, message)
-      )
-        broadcastLobby(room);
+      const changed = room.id.startsWith('th19mp-')
+        ? acceptTh19MatchStats(room, clientId, message)
+        : room.lobby.phase === 'running' &&
+          acceptTh09MatchStats(room, room.runs.get(String(message.serial)), clientId, message);
+      if (changed) broadcastLobby(room);
       return;
     }
 
@@ -1504,10 +1645,12 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       occupant.touchEnabled =
         typeof message.touchEnabled === 'boolean' ? message.touchEnabled : undefined;
       occupant.mobileDevice = message.mobileDevice === true;
+      const wasReady = occupant.ready && occupant.readyVersion === room.lobby.settingsVersion;
       occupant.ready = !!message.ready;
       if (message.ready) occupant.runtimeGeneration = generation;
       occupant.readyVersion = occupant.ready ? room.lobby.settingsVersion : 0;
       broadcastLobby(room);
+      if (occupant.ready && !wasReady) sendRoomMessage(room, JSON.stringify({type: 'room-action', action: 'ready'}));
       return;
     }
     if (message.type === 'settings') {
@@ -1528,6 +1671,8 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       }
       const difficultyMax = Math.max(0, (room.multiplayer?.difficulties?.length ?? 6) - 1);
       const difficulty = Math.max(0, Math.min(difficultyMax, Number(message.difficulty) || 0));
+      if(message.initialSpares!==undefined&&(!room.id.startsWith('th05mp-')||!validTh05InitialSpares(message.initialSpares))||message.initialBombs!==undefined&&(!room.id.startsWith('th05mp-')||!validTh05InitialBombs(message.initialBombs))){sendLobby(socket,{type:'error',error:'invalid TH05 initial stocks'});return;}
+      const initialSpares=message.initialSpares??room.lobby.initialSpares,initialBombs=message.initialBombs??room.lobby.initialBombs;
       if (
         message.chapterThreshold !== undefined &&
         (!room.th15 || !validTh15ChapterThreshold(message.chapterThreshold))
@@ -1574,6 +1719,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.disableLocalChargePriority !== disableLocalChargePriority ||
         room.lobby.challengeMode !== challengeMode ||
         room.lobby.prankMode !== prankMode ||
+        room.lobby.initialSpares !== initialSpares || room.lobby.initialBombs !== initialBombs ||
         (room.th15 && room.lobby.chapterThreshold !== chapterThreshold)
       ) {
         invalidateLobbyReady(room);
@@ -1582,6 +1728,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=disableLocalChargePriority;
         room.lobby.challengeMode = challengeMode;
         room.lobby.prankMode = prankMode;
+        if(room.id.startsWith('th05mp-')){room.lobby.initialSpares=initialSpares;room.lobby.initialBombs=initialBombs;}
         if (room.th15) room.lobby.chapterThreshold = chapterThreshold;
         room.lobby.playerCount = playerCount;
         room.lobby.difficulty = difficulty;
@@ -1698,7 +1845,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         inputDelay > timingPolicy.manualDelayLimit ||
         (configurablePredictionLimit != null &&
           (!Number.isInteger(predictionLimit) ||
-            predictionLimit < 1 ||
+            predictionLimit < (timingPolicy.rollback ? 1 : 0) ||
             predictionLimit > configurablePredictionLimit))
       ) {
         sendLobby(socket, { type: 'error', error: 'invalid input timing' });
@@ -1717,6 +1864,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       room.lobby.startSerial++;
       const run = getRun(room, String(room.lobby.startSerial));
       run.lobbyClientIds = activeSeats.map((entry) => entry.clientId);
+      bindTh09Duel(room, run);
       const seatedClients = new Set(activeSeats.map((entry) => entry.clientId));
       run.playerCount = room.lobby.playerCount;
       run.runtimeGeneration = runtimeGeneration;
@@ -1745,6 +1893,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
   socket.on('close', (code, reason) => {
     if (room.lobbyClients.get(clientId) === socket) {
       room.lobbyClients.delete(clientId);
+      listenTogether?.disconnect(room, clientId);
       const spectatorChanged = room.lobby.spectators.delete(clientId);
       const deliberateLeave = code === 1000 && String(reason || '') === 'leave room';
       if (deliberateLeave) {
@@ -1753,16 +1902,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         if (seatChanged) invalidateLobbyReady(room);
         if (seatChanged || spectatorChanged) broadcastLobby(room);
       } else if (lobbySeatOf(room, clientId) >= 0) {
-        const timer = setTimeout(() => {
-          if (room.lobbyDisconnectTimers.get(clientId) !== timer) return;
-          room.lobbyDisconnectTimers.delete(clientId);
-          if (!room.lobbyClients.has(clientId) && clearLobbySeat(room, clientId)) {
-            invalidateLobbyReady(room);
-            broadcastLobby(room);
-          }
-          maybeDeleteRoom(roomId, room);
-        }, lobbyReconnectGraceMs);
-        room.lobbyDisconnectTimers.set(clientId, timer);
+        reserveRoomRole(room, clientId);
         // Keep the seat visible during a short network transition. Clients can
         // show it as reconnecting instead of presenting an empty room.
         broadcastLobby(room);
@@ -1906,6 +2046,7 @@ const abuseMaintenance = setInterval(() => abuseGuard.sweep(), 60_000);
 abuseMaintenance.unref();
 const roomDirectory = createRoomDirectory({
   publicNames: !!nicknameService,
+  publicTrack: listenTogether?.publicTrack,
   rooms,
   clearSeat: clearLobbySeat,
   invalidateReady: invalidateLobbyReady,
@@ -1917,7 +2058,10 @@ server.on('close', () => {
   void nicknameService?.close();
   roomDirectory.close();
   clearInterval(abuseMaintenance);
-  for (const room of rooms.values()) lobbyBroadcaster.clear(room);
+  for (const room of rooms.values()) {
+    lobbyBroadcaster.clear(room);
+    listenTogether?.close(room);
+  }
 });
 
 server.on('connection', (socket, request) => {
@@ -1938,8 +2082,9 @@ server.on('connection', (socket, request) => {
     return;
   }
   const roomId = url.searchParams.get('room') || '';
+  const roomCode = numericRoomCode(roomId);
   if (/^[A-Za-z0-9_-]{1,64}$/.test(roomId) &&
-      !abuseGuard.allowRoomLookup(socket.relayAddress, roomId)) {
+      !abuseGuard.allowRoomLookup(socket.relayAddress, roomCode || roomId)) {
     sendLobby(socket, { type: 'error', code: 'rate-limited', error: '房间查询过于频繁，请稍后再试。' });
     socket.close(1008, 'room lookup rate exceeded');
     return;
@@ -1966,6 +2111,10 @@ server.on('connection', (socket, request) => {
         ? Number(url.searchParams.get('difficulty'))
         : undefined,
     });
+    return;
+  }
+  if (roomCodes.has(roomCode) && roomCodes.get(roomCode) !== roomId) {
+    socket.close(1008, 'room product changed');
     return;
   }
   const existingRoom = rooms.get(roomId);
@@ -2209,7 +2358,7 @@ server.on('connection', (socket, request) => {
         }
       return;
     }
-    if (!allowGameplayRelayFallback) return;
+    if (!allowGameplayRelayFallback && !roomId.startsWith('th05mp-')) return;
     let requestedPeer = null;
     let forwardedPayload = incoming;
     if (incoming.length >= 2 && incoming[0] === targetedEnvelopeMarker) {
@@ -2259,7 +2408,7 @@ server.on('connection', (socket, request) => {
       if (dropEvery > 0 && sequence % dropEvery === 0) continue;
       const spread = jitterMs > 0 ? ((sequence * 17) % (jitterMs * 2 + 1)) - jitterMs : 0;
       const wait = Math.max(0, delayMs + spread);
-      sendBounded(target, forwardedPayload, { binary: true, delayMs: wait });
+      sendBounded(target, relayGameplayPayload(multiplayer,player,forwardedPayload), { binary: true, delayMs: wait });
     }
   });
 

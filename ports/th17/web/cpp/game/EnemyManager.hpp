@@ -9,8 +9,8 @@ struct EnemyManagerHost:EnemyRuntimeHost,EnemyAttributeHost,EnemySceneHost {
 class EnemyManager final:public EnemySpawnHost {
     friend class EnemyCheckpoint;
     EclProgram& program;EnemyWorldState& world;Rng& random;Rng& visual_random;EnemyManagerHost& host;
-    std::list<std::unique_ptr<EnemyRuntime>> active;
-    bool erase(std::list<std::unique_ptr<EnemyRuntime>>::iterator);
+    std::list<std::shared_ptr<EnemyRuntime>> active;
+    bool erase(std::list<std::shared_ptr<EnemyRuntime>>::iterator);
 public:
     Timer timer;u32 next_identifier=1;float rate=1;Vec3 background_delta{};
     std::string error;
@@ -25,5 +25,6 @@ public:
     EnemyRuntime* find(u32 identifier)noexcept;
     EnemyRuntime* at(u32 index)noexcept;
     u32 count()const noexcept{return active.size();}
+    void save_rollback(multiplayer::FrameImage&);
 };
 }
