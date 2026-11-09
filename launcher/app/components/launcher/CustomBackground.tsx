@@ -10,19 +10,19 @@ const settingsEvent = 'eagler-background-settings-change';
 const imageEvent = 'eagler-background-image-change';
 const settingsKey = 'eagler.background.settings';
 const imageRevisionKey = 'eagler.background.image-revision';
-const backgroundModes = ['plain','image','dots','grid','waves'] as const;
+const backgroundModes = ['plain','image','dots','grid'] as const;
 type BackgroundMode = typeof backgroundModes[number];
 const defaults = {mode:'image' as BackgroundMode, shade: 45, panel: 88, navigation: 88, category: 88, card: 88, fit: 'cover' as 'cover'|'contain'};
 const text = {
-  'zh-CN': {title:'主题设置', base:'主题基底', light:'亮色', dark:'暗色', background:'背景', presets:'内置背景', plain:'空白', image:'自定义图片', dots:'星点', grid:'方格', waves:'波纹', choose:'选择图片', change:'更换图片', remove:'移除图片', shade:'背景遮罩', panel:'内容面板不透明度', navigation:'顶部栏不透明度', category:'分类条不透明度', card:'作品卡片不透明度', fit:'图片铺放', cover:'铺满', contain:'完整显示', note:'图片只保存在此浏览器中。', error:'无法保存图片，请选择不超过 10 MB 的有效图片。'},
-  en: {title:'Theme settings', base:'Base theme', light:'Light', dark:'Dark', background:'Background', presets:'Built-in backgrounds', plain:'Plain', image:'Custom image', dots:'Dots', grid:'Grid', waves:'Waves', choose:'Choose image', change:'Change image', remove:'Remove image', shade:'Background overlay', panel:'Content panel opacity', navigation:'Navigation opacity', category:'Category opacity', card:'Game card opacity', fit:'Image fit', cover:'Cover', contain:'Contain', note:'The image is stored only in this browser.', error:'Could not save the image. Choose a valid image up to 10 MB.'},
-  ja: {title:'テーマ設定', base:'基本テーマ', light:'ライト', dark:'ダーク', background:'背景', presets:'背景のプリセット', plain:'なし', image:'カスタム画像', dots:'星点', grid:'格子', waves:'波紋', choose:'画像を選択', change:'画像を変更', remove:'画像を削除', shade:'背景の覆い', panel:'コンテンツの不透明度', navigation:'ナビの不透明度', category:'カテゴリーの不透明度', card:'作品カードの不透明度', fit:'画像の表示', cover:'画面を埋める', contain:'画像全体', note:'画像はこのブラウザーにのみ保存されます。', error:'画像を保存できません。10 MB 以下の画像を選択してください。'},
+  'zh-CN': {title:'主题设置', base:'主题基底', light:'亮色', dark:'暗色', background:'背景', presets:'内置背景', plain:'空白', image:'自定义图片', dots:'星点', grid:'方格', choose:'选择图片', change:'更换图片', remove:'移除图片', shade:'背景遮罩', panel:'内容面板不透明度', navigation:'顶部栏不透明度', category:'分类条不透明度', card:'作品卡片不透明度', fit:'图片铺放', cover:'铺满', contain:'完整显示', note:'图片只保存在此浏览器中。', error:'无法保存图片，请选择不超过 10 MB 的有效图片。'},
+  en: {title:'Theme settings', base:'Base theme', light:'Light', dark:'Dark', background:'Background', presets:'Built-in backgrounds', plain:'Plain', image:'Custom image', dots:'Dots', grid:'Grid', choose:'Choose image', change:'Change image', remove:'Remove image', shade:'Background overlay', panel:'Content panel opacity', navigation:'Navigation opacity', category:'Category opacity', card:'Game card opacity', fit:'Image fit', cover:'Cover', contain:'Contain', note:'The image is stored only in this browser.', error:'Could not save the image. Choose a valid image up to 10 MB.'},
+  ja: {title:'テーマ設定', base:'基本テーマ', light:'ライト', dark:'ダーク', background:'背景', presets:'背景のプリセット', plain:'なし', image:'カスタム画像', dots:'星点', grid:'格子', choose:'画像を選択', change:'画像を変更', remove:'画像を削除', shade:'背景の覆い', panel:'コンテンツの不透明度', navigation:'ナビの不透明度', category:'カテゴリーの不透明度', card:'作品カードの不透明度', fit:'画像の表示', cover:'画面を埋める', contain:'画像全体', note:'画像はこのブラウザーにのみ保存されます。', error:'画像を保存できません。10 MB 以下の画像を選択してください。'},
 };
 function settings(): typeof defaults {
   try {
     const value=JSON.parse(localStorage.getItem(settingsKey) || '{}');
     const number=(key:'shade'|'panel'|'navigation'|'category'|'card') => Math.max(0,Math.min(100,Number.isFinite(value[key])?value[key]:defaults[key]));
-    return {mode:backgroundModes.includes(value.mode)?value.mode:'image',shade:number('shade'),panel:number('panel'),navigation:number('navigation'),category:number('category'),card:number('card'),fit:value.fit==='contain'?'contain':'cover'};
+    return {mode:backgroundModes.includes(value.mode)?value.mode:value.mode==='waves'?'plain':'image',shade:number('shade'),panel:number('panel'),navigation:number('navigation'),category:number('category'),card:number('card'),fit:value.fit==='contain'?'contain':'cover'};
   } catch {return defaults;}
 }
 function db(): Promise<IDBDatabase> {

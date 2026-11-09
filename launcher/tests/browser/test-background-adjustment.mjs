@@ -24,7 +24,7 @@ try {
   await (await page.$('.custom-background-dialog input[type=file]')).uploadFile(image);
   await page.waitForFunction(() => document.documentElement.hasAttribute('data-custom-background'));
   const imageUrl = await page.evaluate(() => document.documentElement.style.getPropertyValue('--custom-background-image'));
-  for (const mode of ['dots', 'grid', 'waves']) {
+  for (const mode of ['dots', 'grid']) {
     await page.click(`.background-preset[data-preset="${mode}"]`);
     assert.equal(await page.evaluate(() => document.documentElement.dataset.backgroundMode), mode);
     assert.equal(await page.$eval(`.background-preset[data-preset="${mode}"]`, node => node.getAttribute('aria-pressed')), 'true');
@@ -59,11 +59,11 @@ try {
     return {left:box.left, right:box.right, width:innerWidth};
   });
   assert.ok(mobile.left >= 0 && mobile.right <= mobile.width, 'mobile settings fit within the viewport');
-  await page.click('.background-preset[data-preset="waves"]');
+  await page.click('.background-preset[data-preset="grid"]');
   await page.keyboard.press('Escape');
   await page.waitForSelector('.custom-background-dialog', {hidden:true});
   await page.reload({waitUntil:'networkidle2'});
-  await page.waitForFunction(() => document.documentElement.dataset.backgroundMode === 'waves');
+  await page.waitForFunction(() => document.documentElement.dataset.backgroundMode === 'grid');
   assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-custom-background')), true, 'built-in background persists');
   console.log('PASS: continuous background adjustment and persistence');
 } finally {
