@@ -32,3 +32,18 @@ for(const game of ['02','04'])test(`TH${game} restores the checkpoint before nat
   assert.deepEqual([...file.contents],Array(8).fill(7));
   assert.deepEqual(marked,[[4096,1]],'heap-backed JS file writes mark native pages');
 });
+
+for(const game of ['02','04'])test(`TH${game} restores filesystem node and stream metadata from independent snapshots`,async()=>{
+  const {createDosboxSnapshots}=await import(`../../ports/th${game}/web/dosbox-snapshots.js`);
+  const file={mode:1,contents:new Uint8Array([1,2]),name:'original',labels:['a']};
+  const root={mode:2,contents:{file}},shared={flags:['read']},stream={node:file,position:2,shared};
+  const fs={root,streams:[stream],nameTable:[file],nextInode:3,currentPath:'/',isDir:mode=>mode===2};
+  const heap=new Uint8Array(8192),globals=Object.fromEntries(Array.from({length:4},(_,i)=>['__rollback_g'+i,new WebAssembly.Global({value:'i32',mutable:true},0)]));
+  const module={HEAPU8:heap,FS:fs,nativeExports:()=>globals,captureContinuation:()=>null,restoreContinuation(){},MEMFS:{stream_ops:{write(s,b,o,n,p){s.node.contents.set(b.subarray(o,o+n),p);}},ops_table:{file:{stream:{}}}}};
+  const snapshots=createDosboxSnapshots({module,tick:0,keys:new Set(),ci:{keyMatrix:{}}});snapshots.capture(0);
+  file.name='changed';file.labels.push('b');root.contents.extra={mode:1};stream.position=9;shared.flags.push('write');fs.nameTable.push(root);fs.nextInode=8;fs.currentPath='/new';
+  module.MEMFS.stream_ops.write(stream,new Uint8Array([8]),0,1,0);snapshots.restore(0);
+  assert.equal(file.name,'original');assert.deepEqual(file.labels,['a']);assert.deepEqual([...file.contents],[1,2]);
+  assert.deepEqual(Object.keys(root.contents),['file']);assert.equal(stream.position,2);assert.deepEqual(shared.flags,['read']);
+  assert.deepEqual(fs.nameTable,[file]);assert.equal(fs.nextInode,3);assert.equal(fs.currentPath,'/');
+});

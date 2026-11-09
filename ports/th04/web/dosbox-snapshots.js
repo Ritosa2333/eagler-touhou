@@ -1,6 +1,12 @@
 // Suspend at an Asyncify boundary; capture native memory/globals, the saved
 // continuation, and the host filesystem. Audio reaches output on confirmation.
-const copyBag=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k,Array.isArray(v)?v.slice():v]));
+function copyBag(o){
+  const bag={};
+  // Snapshot arrays independently without creating entry and pair arrays for
+  // every filesystem node on each speculative checkpoint.
+  for(const key of Object.keys(o)){const value=o[key],copy=Array.isArray(value)?value.slice():value;if(key==='__proto__')Object.defineProperty(bag,key,{value:copy,writable:true,enumerable:true,configurable:true});else bag[key]=copy;}
+  return bag;
+}
 function restoreBag(o,bag){for(const k of Object.keys(o))if(!Object.hasOwn(bag,k))delete o[k];Object.assign(o,bag);}
 export function createDosboxSnapshots(emulator){
   const m=emulator.module,fs=m.FS,frames=new Map(),pool=[],diff=m.memoryDiff;
