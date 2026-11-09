@@ -29,7 +29,7 @@ export function useNavigationPageMotion(pathname: string, reduced: boolean) {
     previousPath.current = pathname;
     const node = surface.current;
     if (!changed || !compact || !node?.animate || !motionAllowed(reduced)) return;
-    const animation = animate(node, {opacity:[.78, 1]}, {duration:.11, ease:easeOutQuart});
+    const animation = animate(node, {opacity:[0, 1]}, {duration:.42, ease:easeOutQuart});
     return () => {animation.cancel(); node.style.removeProperty('opacity');};
   }, [compact, pathname, reduced]);
   return surface;

@@ -12,10 +12,6 @@ body:not(.mp-room-active):has(.book-masthead) :is(.sheet,.book-directory) {posit
 html[data-ui-route-transition],html[data-ui-route-transition] .book-masthead,
 html[data-ui-route-transition="inline"] .launcher-page-surface {view-transition-name:none}
 html[data-ui-route-transition]::view-transition {pointer-events:none}
-@media (max-width: 780px) {
-  /* A desktop history entry can still ask the Router for a snapshot after resizing. */
-  html[data-ui-route-transition] .launcher-page-surface {view-transition-name:none}
-}
 ::view-transition-group(launcher-masthead) {animation:none}
 ::view-transition-old(launcher-masthead) {animation:none;visibility:hidden}
 ::view-transition-new(launcher-masthead) {animation:none;opacity:1}

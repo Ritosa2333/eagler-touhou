@@ -1,6 +1,6 @@
 .replay-loading{min-height:132px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#aaa;font:11px/1.2 var(--ui-font);letter-spacing:.08em}.replay-loading i{display:block;width:24px;height:24px;box-sizing:border-box;border:2px solid #555;border-top-color:#eee;border-radius:50%;animation:replay-loading-spin .72s linear infinite}.replay-load-error{color:#ef777d}@keyframes replay-loading-spin{to{transform:rotate(360deg)}}
 /* Route transitions belong to one shared surface for library, lobby and profile. */
-:root{--launcher-route-duration:160ms;--launcher-route-easing:cubic-bezier(.22,.7,.2,1)}
+:root{--launcher-route-duration:420ms;--launcher-route-easing:cubic-bezier(.22,.7,.2,1)}
 @view-transition{navigation:auto}
 html:has(.book-masthead)::view-transition-group(root),html:has(.book-masthead)::view-transition-old(root),html:has(.book-masthead)::view-transition-new(root){animation:none}
 html:has(.book-masthead)::view-transition-old(root){visibility:hidden}
