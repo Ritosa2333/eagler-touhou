@@ -980,12 +980,42 @@ void CStage::StepPause()
 {
  m_lastMenuKeyState=m_curMenuKeyState;
  m_curMenuKeyState=CCommonFunctionInput::GetAllKeyState();
- // Pause-menu input is handled by the thprac ImGui adapter.
+ if(practice::Available())return;
+#ifdef __EMSCRIPTEN__
+ // The launcher's existing restart shortcut is independent of the menu rows.
+ if(CGame::s_pCurGame->m_input.GetKeyState(DIK_R))m_curMenuKeyState|=0x8000;
+ if((m_curMenuKeyState&~m_lastMenuKeyState&0x8000)!=0){PracticeExit(3);return;}
+#endif
+ const bool confirm=CCommonFunctionInput::ZPressed(m_curMenuKeyState,m_lastMenuKeyState)||
+  CCommonFunctionInput::EnterPressed(m_curMenuKeyState,m_lastMenuKeyState);
+ if(CCommonFunctionInput::ESCPressed(m_curMenuKeyState,m_lastMenuKeyState)||(confirm&&m_pauseCursorPos==0)){
+  m_bPaused=false;
+  return;
+ }
+ if(CCommonFunctionInput::QPressed(m_curMenuKeyState,m_lastMenuKeyState)||(confirm&&m_pauseCursorPos==1)){
+  SetQuit(CGame::GVar().m_bReplayMode?STAGE_END_REPLAY_END:STAGE_END_PLAYER_QUIT);
+  m_bPaused=false;
+  return;
+ }
+ if(CCommonFunctionInput::UpPressed(m_curMenuKeyState,m_lastMenuKeyState)||
+  CCommonFunctionInput::DownPressed(m_curMenuKeyState,m_lastMenuKeyState))m_pauseCursorPos=1-m_pauseCursorPos;
 }
 
 void CStage::DrawPause()
 {
- if (m_bPaused) practice::DrawPause(*this);
+ if (!m_bPaused)return;
+ if (practice::Available()){practice::DrawPause(*this);return;}
+ const unsigned char extPause[]={0xf0,0xf1,0};
+ const unsigned char extResume[]={0xf2,0xf3,0};
+ const unsigned char extExit[]={0xf4,0xf5,0};
+ const int x=m_playAreaUpperLeftX+0x1a*8-32;
+ const int y=m_playAreaUpperLeftY-16;
+ CTh5ExtFont::DrawExtString(extPause,100,x,y+0xc*16,1,1,0);
+ CTh5ExtFont::DrawExtString(extResume,100,x,y+0xe*16,1,1,m_pauseCursorPos==0);
+ CTh5ExtFont::DrawExtString(extExit,100,x,y+0xf*16,1,1,m_pauseCursorPos==1);
+ const float lineX=float(m_playAreaUpperLeftX+212-32);
+ const float lineY=float(y+239+m_pauseCursorPos*16);
+ CCommonFunctionGraphic::DrawRectangle(lineX,lineY,lineX+31,lineY,1,1,1);
 }
 
 bool CStage::Pause()
@@ -993,7 +1023,10 @@ bool CStage::Pause()
 	if (m_bCanPause)
 	{
 		m_bPaused=true;
-		practice::FocusPause();
+		if(practice::Available())practice::FocusPause();
+#ifdef __EMSCRIPTEN__
+		else if(CGame::s_pCurGame->m_input.GetKeyState(DIK_R))m_curMenuKeyState|=0x8000;
+#endif
 		m_pauseCursorPos=0;
 		return true;
 	}
