@@ -4,6 +4,7 @@
 #include "../game/GameState.hpp"
 #include "../game/StageFlow.hpp"
 #include "../game/Practice.hpp"
+#include <chrono>
 #include <ctime>
 namespace th12::multiplayer {
 Session session;
@@ -139,6 +140,10 @@ bool Session::spectatorStep(){
   if(!playback.Ready())return true;
   const auto* segment=playback.History().Locate(playback.Seeking()?playback.Target():playback.Position());
   if(segment&&segment->checkpoint.stage!=unsigned(stageNumber)){pendingStage_=segment->checkpoint.stage;return true;}
+  // Match TH15: explicit timeline seeks can replay multiple confirmed inputs
+  // within a callback. Ordinary viewing continues at one tick per step.
+  const bool fastForwarding=playback.FastForwarding();
+  const auto deadline=std::chrono::steady_clock::now()+std::chrono::milliseconds(4);
   return playback.Step([&](const Netplay::SpectatorStageEvent& event){
     StageEntry entry;
     // A restarted source carries a new room seed. Native private player RNG
@@ -150,7 +155,8 @@ bool Session::spectatorStep(){
     if(!InputLanes::Decode(packet.inputs.data(),options.count,decoded)||!update(decoded))return false;
     if(!historical){const auto sounds=sound_system::queue.events();audio_.insert(audio_.end(),sounds.begin(),sounds.end());}
     return true;
-  },[]{return true;},1)||fail("TH12 spectator playback failed");
+  },[&]{return std::chrono::steady_clock::now()>=deadline;},fastForwarding?240:1)||
+    fail("TH12 spectator playback failed");
 }
 bool Session::loadReplay(const uint8_t* bytes,size_t count,const uint32_t* build){
   ReplayArchive archive;

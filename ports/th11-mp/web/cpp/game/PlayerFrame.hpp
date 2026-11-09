@@ -29,6 +29,9 @@ struct PlayerFrameWorld:ShotWorld {
     virtual bool cancel_lasers(const Vec3*,float,bool,bool){return false;}
     virtual bool start_bomb(){return false;}
     virtual bool spawn_item(i32,Vec3,u32,float,float){return false;}
+#ifdef TH11_MULTIPLAYER
+    virtual bool spawn_death_power(i32 type,Vec3 p,u32 color,float angle,float speed){return spawn_item(type,p,color,angle,speed);}
+#endif
     virtual bool display_lives(i32,i32){return false;}
     virtual bool record_death(){return false;}
     virtual bool enemy_death(){return false;}

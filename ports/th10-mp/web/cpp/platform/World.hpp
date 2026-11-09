@@ -98,7 +98,7 @@ struct World final:HudActions,CallbackReceiver {
     void update_cooperation();
     bool spawn_life_transfer(u32 donor,u32 recipient);
     bool spawn_power_transfer(u32 donor,u32 recipient);
-    i32 spawn_single_item(const Vec3&,i32,u32,float,float);
+    i32 spawn_single_item(const Vec3&,i32,u32,float,float,bool death_drop=false);
     bool spawn_directed_power(u32 donor,u32 recipient,i32 amount);
     u32 boss_participant_count()const;
     void spectator_boss_registered(i32 slot){if(slot>=0&&slot<8)spectator_boss_registration_mask|=u8(1u<<slot);}
@@ -172,7 +172,12 @@ struct World final:HudActions,CallbackReceiver {
     i32 cancel_lasers(i32);i32 cancel_laser_circle(const Vec3&,float,i32);i32 cancel_laser_rectangle(const Vec3&,const Vec3&,i32);
     void destroy_laser(EnemyLaser&);
     bool create_items();void destroy_items(ItemManager*);i32 update_items();i32 draw_items();
-    i32 spawn_item(const Vec3&,i32,u32,float,float);i32 convert_power();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    i32 spawn_item(const Vec3&,i32,u32,float,float,bool death_drop=false);
+#else
+    i32 spawn_item(const Vec3&,i32,u32,float,float);
+#endif
+    i32 convert_power();
     bool create_bomb();void destroy_bomb(Bomb*);i32 start_bomb();i32 update_bomb();i32 bomb_damage(const Vec3&);
     bool create_effects();void destroy_effects(GameEffects*);
     bool create_enemies();void destroy_enemies(EnemyManager*);void clear_enemies(bool all);i32 update_enemies();

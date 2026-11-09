@@ -127,7 +127,13 @@ bool PlayerFrame::death_frame(){
         else if(power>=step*4){for(i32 i:{1,2,4,5})types[i]=4;}
         else if(power>=step*3||economy.lives<3){for(i32 i:{1,3,5})types[i]=4;}
         else types[2]=types[4]=4;
-        for(i32 i=0;i<7;++i){const float a=float(double(i)*3.1415927410125732/28+angle-0.39269909262657166);if(!world.spawn_item(types[i],p,0xffffff,a,3))return false;}
+        for(i32 i=0;i<7;++i){const float a=float(double(i)*3.1415927410125732/28+angle-0.39269909262657166);
+#ifdef TH11_MULTIPLAYER
+            if(!world.spawn_death_power(types[i],p,0xffffff,a,3))return false;
+#else
+            if(!world.spawn_item(types[i],p,0xffffff,a,3))return false;
+#endif
+        }
         if(!rebuild_options())return false;
     }
     if(state.state_timer.current>=30){

@@ -72,7 +72,10 @@ bool Session::begin(const SessionSetup& setup, std::uint64_t now_ms) {
     // Bomb and pause still require actual input.
     input.predictableButtons = 0x2f9;
     input.directionButtons = 0xf0;
-    input.maxDirectionPredictionFrames = 2;
+    // In a three-player room two held directions can both fall out of the
+    // prediction window while their samples are in flight. Keep them for
+    // four frames, then fall back to neutral if neither sample has arrived.
+    input.maxDirectionPredictionFrames = setup.seats == 3 ? 4 : 2;
     input.directTouchIsAbsolute = true;
     Netplay::SessionChannelConfig channel;
     channel.inputResendMs = 16;
@@ -109,8 +112,8 @@ void Session::capture_phase(bool confirmed, std::uint64_t now_us) {
     const bool waiting = repair_pending() || next_frame() - next_commit_ >= rollback_frames;
     const auto lead = !setup_.rollback ? 0u :
         confirmed ? Netplay::ConfirmedInputClock::MaxLead : replay_end_ ? 3u : waiting ? 2u : 0u;
-    // A combat repair continues the sampling clock set by the last capture.
-    if (confirmed && lead && !capture_lead_) capture_clock_.BeginPhase(now_us);
+    // Keep the sampling deadline established by the last physical input.
+    // Entering an exact-input phase must not postpone an already due sample.
     capture_lead_ = lead;
     capture_now_us_ = now_us;
 }

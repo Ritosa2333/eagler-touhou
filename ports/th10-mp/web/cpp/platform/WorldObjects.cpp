@@ -103,6 +103,7 @@ i32 World::update_items(){for(u32 i=0;i<150;++i){const auto& v=actors.items->reg
     for(u32 seat=0;seat<player_count;++seat){
         const auto& pilot=pilots[seat];const auto& p=*pilot.player;auto& c=candidates[seat];
         c.eligible=cooperation.seats[seat].lifeState==multiplayer::LifeState::Alive&&p.state!=2&&p.state!=4;
+        c.recovering=p.state==2&&pilot.game.lives>=0;
         c.power=pilot.game.power;c.position=p.position;c.auto_collect=pilot.bomb&&pilot.bomb->active;c.focused=(pilot.input_keys&4)!=0;
         c.pickup=*reinterpret_cast<const ItemRegion*>(&p.pickup_bounds);c.slow=*reinterpret_cast<const ItemRegion*>(&p.slow_pickup_bounds);c.fast=*reinterpret_cast<const ItemRegion*>(&p.fast_pickup_bounds);
     }
@@ -111,9 +112,15 @@ i32 World::update_items(){for(u32 i=0;i<150;++i){const auto& v=actors.items->reg
         if(!item.state){owner={};return;}
         const auto previous_claim=owner.homing;
         const int seat=multiplayer::select_item_collector(owner,item,candidates,player_count,engine.speed);
+        // A death drop routed to a pilot who is still respawning waits in place.
+        if(seat>=0&&!candidates[seat].eligible){++actors.items->active_count;return;}
         if((item.state==3||item.state==4)&&(seat<0||(previous_claim>=0&&owner.homing<0))){item.state=1;item.velocity={};}
         Items env(*this,seat);const auto result=item.update(env);
-        if(!item.state)owner={};else if((item.state==3||item.state==4)&&seat>=0)owner.homing=std::int8_t(seat);
+        if(!item.state){
+            owner={};
+            // Earlier slots may fill a pilot during this same item pass.
+            if(seat>=0)candidates[seat].power=pilots[seat].game.power;
+        }else if((item.state==3||item.state==4)&&seat>=0)owner.homing=std::int8_t(seat);
         if(result==ItemUpdate::Active)++actors.items->active_count;
     };
     for(u32 i=0;i<150;++i)update(actors.items->regular[i],regular_item_owners[i]);
@@ -126,7 +133,7 @@ i32 World::update_items(){for(u32 i=0;i<150;++i){const auto& v=actors.items->reg
 }
 i32 World::draw_items(){Items env(*this);return actors.items->draw(env);}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-i32 World::spawn_item(const Vec3& p,i32 kind,u32 color,float angle,float speed){
+i32 World::spawn_item(const Vec3& p,i32 kind,u32 color,float angle,float speed,bool death_drop){
     const bool resource=kind==1||kind==4||kind==10||kind==11||kind==7;
     const u32 copies=resource&&player_count>=3?2:1;
     const float center=copies>1?std::clamp(p.x,-183.f,183.f):p.x;
@@ -134,11 +141,11 @@ i32 World::spawn_item(const Vec3& p,i32 kind,u32 color,float angle,float speed){
     for(u32 copy=0;copy<copies;++copy){
         Vec3 origin=p;origin.x=Scalar::add(center,18.f*(float(copy)-float(copies-1)*.5f));
         const float fan=copies>1?angle+.35f*(float(copy)-.5f):angle;
-        result=spawn_single_item(origin,kind,color,fan,speed);
+        result=spawn_single_item(origin,kind,color,fan,speed,death_drop);
     }
     return result;
 }
-i32 World::spawn_single_item(const Vec3& p,i32 kind,u32 color,float angle,float speed){Items env(*this);
+i32 World::spawn_single_item(const Vec3& p,i32 kind,u32 color,float angle,float speed,bool death_drop){Items env(*this);
 #else
 i32 World::spawn_item(const Vec3& p,i32 kind,u32 color,float angle,float speed){Items env(*this);
 #endif
@@ -155,7 +162,7 @@ i32 World::spawn_item(const Vec3& p,i32 kind,u32 color,float angle,float speed){
     else for(u32 i=0;i<150;++i)if(!actors.items->regular[i].state){
         auto& item=actors.items->regular[i];
         if(engine.rollback_state&&!engine.rollback_state->Touch(&item,sizeof(item))){fail();return 0;}
-        regular_item_owners[i]={};break;
+        regular_item_owners[i]={};regular_item_owners[i].death_drop=death_drop&&minimum_power<100;break;
     }
 #endif
     return actors.items->spawn(p,kind,color,angle,speed,env);
