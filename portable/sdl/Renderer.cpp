@@ -22,7 +22,9 @@ Renderer* active=nullptr;
 // One SDL GL context is active per Wasm module. Cache only states owned here;
 // clear() also updates the write masks so a later draw restores them correctly.
 struct DrawStateCache {
- PipelineState pipeline{};Viewport viewport{};bool valid=false,has_viewport=false;
+ // rounded records the actual RGB source factor (ONE vs pipeline source)
+ // selected for the last batch; target format participates in that decision.
+ PipelineState pipeline{};Viewport viewport{};bool valid=false,has_viewport=false,rounded=false;
 } drawState;
 constexpr u32 instanceStride=68;
 constexpr std::array<float,16> identity{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
@@ -43,6 +45,7 @@ Renderer* current(){return active;}void set_current(Renderer* r){active=r;}
 State::State(){for(auto& m:matrix)m=identity;}
 Renderer::Renderer(int v,Resolve r,void* p):version(v),resolve(r),owner(p){}
 bool Renderer::initialize(){
+ if(initialized)return false;
  lastProgram=nullptr;lastLayout=nullptr;
  if(!SDL_Init(SDL_INIT_VIDEO|SDL_INIT_EVENTS)){failure=SDL_GetError();return false;}
  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,SDL_GL_CONTEXT_PROFILE_ES);SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3);SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,0);
@@ -65,7 +68,7 @@ bool Renderer::initialize(){
  glAttachShader(resampleProgram,rv);glAttachShader(resampleProgram,rf);glLinkProgram(resampleProgram);glDeleteShader(rv);glDeleteShader(rf);
  GLint linked=0;glGetProgramiv(resampleProgram,GL_LINK_STATUS,&linked);if(!linked){failure="Resample program link failed";return false;}
  glGenVertexArrays(1,&resampleVao);glGenTextures(1,&weightTexture);
- warming=false;set_current(this);return true;
+ warming=false;initialized=true;set_current(this);return true;
 }
 Renderer::~Renderer(){discard();if(context){SDL_GL_MakeCurrent(window,context);for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);SDL_GL_DestroyContext(context);}if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
 void Renderer::bind_texture(GLuint id){if(boundTexture!=id){glBindTexture(GL_TEXTURE_2D,id);boundTexture=id;++stats.textureBinds;}}
@@ -94,14 +97,19 @@ void Renderer::select(const State& s){
  if(it==programs.end()){
   ++stats.programCompiles;
   static const char* constants[]{"hasTexture","alphaTest","fogEnabled","colorOp","alphaOp","colorArg1","colorArg2","alphaArg1","alphaArg2","alphaFunc"};
-  std::string source=fragmentSource,defs;if(!buildingGeneric){replace(source,"uniform bool hasTexture,alphaTest,fogEnabled;","");replace(source,"uniform int colorOp,alphaOp,colorArg1,colorArg2,alphaArg1,alphaArg2,alphaFunc;","");
+  std::string source=fragmentSource,defs;
+  if(unorm_blend_profile==UnormBlendProfile::SeparateRgbTerms){
+   replace(source,"uniform bool depth16;","uniform bool depth16;\nuniform bool separateRgbTerms;");
+   replace(source,"outColor=c;",std::string(separateRgbTermsShader)+"outColor=c;");
+  }
+  if(!buildingGeneric){replace(source,"uniform bool hasTexture,alphaTest,fogEnabled;","");replace(source,"uniform int colorOp,alphaOp,colorArg1,colorArg2,alphaArg1,alphaArg2,alphaFunc;","");
   for(int i=0;i<10;i++)defs+="const "+std::string(i<3?"bool ":"int ")+constants[i]+"="+(i<3?(key[i]?"true":"false"):std::to_string(i==9?key[i]&255:key[i]))+";\n";
   replace(source,"precision highp float;","precision highp float;\n"+defs);}
   if(!buildingGeneric&&!(key[9]&256))replace(source,"gl_FragDepth=depth16?(floor(scaled)+floor(fract(scaled)-gl_FragCoord.z+0.5))/65535.0:gl_FragCoord.z;","");
   if(version==8){replace(source,"float a=c.a*255.0","float a=floor(c.a*255.0+.5)");replace(source,"gl_FragDepth=depth16?(floor(scaled)+floor(fract(scaled)-gl_FragCoord.z+0.5))/65535.0:gl_FragCoord.z;","");}
   Program p;p.id=glCreateProgram();GLuint fs=shader(GL_FRAGMENT_SHADER,source);glAttachShader(p.id,vertex);glAttachShader(p.id,fs);glLinkProgram(p.id);glDeleteShader(fs);GLint linked=0;glGetProgramiv(p.id,GL_LINK_STATUS,&linked);if(!linked){char log[2048];glGetProgramInfoLog(p.id,sizeof(log),nullptr,log);std::fprintf(stderr,"SDL program: %s\n",log);std::abort();}
-  const char* names[]{"viewport","transformed","textureTransform","instanced","world","view","projection","textureMatrix","fogEnabled","rangeFog","fogMode","fogParams","fogColor","hasTexture","factor","colorOp","colorArg1","colorArg2","alphaOp","alphaArg1","alphaArg2","alphaTest","alphaRef","alphaFunc","depth16","tex"};
-  for(int i=0;i<26;i++)p.uniforms[i].location=glGetUniformLocation(p.id,names[i]);it=programs.emplace(key,p).first;
+  const char* names[]{"viewport","transformed","textureTransform","instanced","world","view","projection","textureMatrix","fogEnabled","rangeFog","fogMode","fogParams","fogColor","hasTexture","factor","colorOp","colorArg1","colorArg2","alphaOp","alphaArg1","alphaArg2","alphaTest","alphaRef","alphaFunc","depth16","tex","separateRgbTerms"};
+  for(int i=0;i<27;i++)p.uniforms[i].location=glGetUniformLocation(p.id,names[i]);it=programs.emplace(key,p).first;
  }
  program=&it->second;if(!warming){lastProgramKey=key;lastProgram=program;}if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}
 }
@@ -186,7 +194,10 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  stats.batches++;const auto& p=d.pipeline;auto& cached=drawState.pipeline;const bool all=!drawState.valid;
  if(all||cached.dither!=p.dither)p.dither?glEnable(GL_DITHER):glDisable(GL_DITHER);
  GPU* texture=d.texture?&surface(d.texture):nullptr;auto& g=target(d.target,d.depth);const auto& v=d.viewport;
- const auto scale=resolve(owner,d.target).renderScale;const Viewport physical{v.x*scale,v.y*scale,v.width*scale,v.height*scale,v.min,v.max};
+ const auto targetSurface=resolve(owner,d.target);
+ const auto scale=targetSurface.renderScale;
+ const auto targetFormat=targetSurface.format;
+ const Viewport physical{v.x*scale,v.y*scale,v.width*scale,v.height*scale,v.min,v.max};
  if(!drawState.has_viewport||std::memcmp(&drawState.viewport,&physical,sizeof(physical))){glViewport(physical.x,physical.y,physical.width,physical.height);glDepthRangef(v.min,v.max);drawState.viewport=physical;drawState.has_viewport=true;}select(d);
  float vp[]{float(v.x),float(v.y),float(v.width),float(v.height)};uniform(0,4,vp);const bool transformed=d.layout.screen;
  integer(1,transformed);integer(2,p.textureTransform);integer(3,!!instance);for(int i=0;i<4;i++)uniform(4+i,16,d.matrix[i].data());
@@ -207,7 +218,10 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  // Set blend parameters even while blending is disabled, so the cache always
  // describes actual GL state when a subsequent batch enables it.
  constexpr GLenum blend[]{GL_ZERO,GL_ONE,GL_SRC_COLOR,GL_ONE_MINUS_SRC_COLOR,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_DST_ALPHA,GL_ONE_MINUS_DST_ALPHA,GL_DST_COLOR,GL_ONE_MINUS_DST_COLOR,GL_SRC_ALPHA_SATURATE};
- if(all||cached.sourceBlend!=p.sourceBlend||cached.destinationBlend!=p.destinationBlend||cached.separateAlphaBlend!=p.separateAlphaBlend||(p.separateAlphaBlend&&(cached.sourceAlphaBlend!=p.sourceAlphaBlend||cached.destinationAlphaBlend!=p.destinationAlphaBlend)))glBlendFuncSeparate(blend[u32(p.sourceBlend)],blend[u32(p.destinationBlend)],blend[u32(p.separateAlphaBlend?p.sourceAlphaBlend:p.sourceBlend)],blend[u32(p.separateAlphaBlend?p.destinationAlphaBlend:p.destinationBlend)]);
+ const bool rounded=d.target==unorm_blend_target&&separate_rgb_terms(unorm_blend_profile,p,targetFormat);
+ if(all||rounded!=drawState.rounded||cached.sourceBlend!=p.sourceBlend||cached.destinationBlend!=p.destinationBlend||cached.separateAlphaBlend!=p.separateAlphaBlend||(p.separateAlphaBlend&&(cached.sourceAlphaBlend!=p.sourceAlphaBlend||cached.destinationAlphaBlend!=p.destinationAlphaBlend)))glBlendFuncSeparate(blend[u32(rounded?BlendFactor::One:p.sourceBlend)],blend[u32(p.destinationBlend)],blend[u32(p.separateAlphaBlend?p.sourceAlphaBlend:p.sourceBlend)],blend[u32(p.separateAlphaBlend?p.destinationAlphaBlend:p.destinationBlend)]);
+ drawState.rounded=rounded;
+ integer(26,rounded);
  constexpr GLenum equation[]{GL_FUNC_ADD,GL_FUNC_SUBTRACT,GL_FUNC_REVERSE_SUBTRACT,GL_MIN,GL_MAX};
  if(all||cached.blendEquation!=p.blendEquation||cached.separateAlphaBlend!=p.separateAlphaBlend||(p.separateAlphaBlend&&cached.alphaBlendEquation!=p.alphaBlendEquation))glBlendEquationSeparate(equation[u32(p.blendEquation)],equation[u32(p.separateAlphaBlend?p.alphaBlendEquation:p.blendEquation)]);
  if(all||cached.cull!=p.cull){if(p.cull!=Cull::None){glEnable(GL_CULL_FACE);glFrontFace(GL_CW);glCullFace(p.cull==Cull::Back?GL_BACK:GL_FRONT);}else glDisable(GL_CULL_FACE);}

@@ -118,14 +118,15 @@ AnmVm* AnmManager::spawn_detached(AnmVm& source,i32 script){
     if(!initial_tick(*vm))return nullptr;if(anm_random_observer)anm_random_observer(*vm,-1,0,0,0,0,0,0,false);vm->ordering=0;if(!registry.submit(*vm)){error=registry.error;registry.destroy_tree(*vm);return nullptr;}return vm;
 }
 bool AnmManager::spawn_effect(AnmVm& vm,i32 script){if(effect)return effect(vm,script);if(script==0){
- // 402ff0 copies four effect templates and the astral template into its
- // embedded VMs. Resolve the astral bank by its declared resource name.
+ // 402ff0 copies four effect templates; the fifth astral panel is conditional
+ // on [0x4c2164] (AstralInf), which is null at the title launch. Resolve the
+ // astral bank by name and pass it through as optional.
  AnmResource* astral=nullptr;
  for(const auto& item:resource_names)if(item.second=="astral.anm"){astral=resource(item.first);break;}
- if(!vm.resource||!astral){error="Scene effect 0 requires effect and astral animation banks";return false;}
+ if(!vm.resource){error="Scene effect 0 requires the effect animation bank";return false;}
  vm.geometry.clear();vm.geometry.overlay=std::make_unique<AnmOverlay>();
  vm.geometry.allocation_bytes=0x1c3c;vm.visual.layer=0;
- if(!vm.geometry.overlay->initialize(*vm.resource,*astral,vm,random)){
+ if(!vm.geometry.overlay->initialize(*vm.resource,astral,vm,random)){
   error="Scene effect 0 overlay initialization failed";return false;
  }
  return true;

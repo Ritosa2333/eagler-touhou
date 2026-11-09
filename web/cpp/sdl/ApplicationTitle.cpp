@@ -70,8 +70,13 @@ bool ApplicationState::fade_out_title_music() {
 }
 
 bool ApplicationState::begin_transition(u32& animation) {
-    animation = animations.create(8, 0, -1, 0);  // effect bank 转场特效
-    return animation != 0;
+    // 0x451bc8/0x451bd7/0x452043/0x452a43/0x45786f: title/practice/spell
+    // launch creates effect.anm script0 via 0x415650(type 0), initializes the
+    // AnmOverlay and applies label7. 0x417370 at the same sites is the
+    // ascii.anm script17 loading prayer, not this effect.
+    if (!begin_run_transition()) return false;
+    animation = run_transition.handle();
+    return true;
 }
 
 bool ApplicationState::start_game(i32 stage) {

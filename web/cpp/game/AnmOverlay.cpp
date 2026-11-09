@@ -2,11 +2,22 @@
 namespace th13 {
 AnmOverlay::AnmOverlay(const AnmOverlay& source):mode(source.mode),frames(source.frames){for(u32 i=0;i<panels.size();i++)if(source.panels[i])panels[i]=std::make_unique<AnmVm>(*source.panels[i]);}
 bool AnmOverlay::initialize(AnmResource& effect,AnmResource& astral,AnmVm& owner,GameRandom& random){
- for(u32 i=0;i<5;++i){
+ return initialize(effect,&astral,owner,random);
+}
+bool AnmOverlay::initialize(AnmResource& effect,AnmResource* astral,AnmVm& owner,GameRandom& random){
+ for(u32 i=0;i<4;++i){
   panels[i]=std::make_unique<AnmVm>();auto& vm=*panels[i];
   vm.environment=owner.environment;vm.object_host=owner.object_host;
-  if(!vm.bind(i<4?effect:astral,i<4?i+3:0)||vm.tick(random,1)<0)return false;
-  if(i<4)vm.visual.translation={320,240,0};
+  if(!vm.bind(effect,i+3)||vm.tick(random,1)<0)return false;
+  vm.visual.translation={320,240,0};
+ }
+ // The fifth slot always exists inside the native 0x1c3c block; without
+ // AstralInf it stays unbound, and draw() skips it via its default flags.
+ panels[4]=std::make_unique<AnmVm>();
+ panels[4]->environment=owner.environment;panels[4]->object_host=owner.object_host;
+ if(astral){
+  auto& vm=*panels[4];
+  if(!vm.bind(*astral,0)||vm.tick(random,1)<0)return false;
  }
  return true;
 }
@@ -17,7 +28,7 @@ i32 AnmOverlay::tick(GameRandom& random,float rate){
   const i32 result=panels[i]->tick(random,rate);if(result<0)return -1;finished+=result!=0;
  }
  if(finished==4)return 1;
- if(panels[4]->tick(random,rate)<0)return -1;
+ if(panels[4]&&panels[4]->resource&&panels[4]->tick(random,rate)<0)return -1;
  ++frames;return 0;
 }
 bool AnmOverlay::interrupt(i32 label,GameRandom& random,float rate){
