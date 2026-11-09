@@ -44,6 +44,18 @@ export declare const PRODUCT_GAMES: Readonly<{
             musicSourceDirectories: Readonly<{ogg: "music"}>; musicMounts: Readonly<{ogg: "/music"}>}>;
         replay: Readonly<{prefix: "th05"; slotPrefix: "replay"; slots: 100; extensions: readonly ["rpy"]}>; features: Readonly<{thprac: true; languages: true; focusHitbox: true}>;
     }>;
+    hsob: Readonly<{
+        testOnly: true; importOnly: true; number: "HSOB"; title: "東方真珠島"; subtitle: "Hollow Song of Birds"; cardArtwork: "hsob-card.webp";
+        storage: Readonly<{saveRoot: "/savehsob"; scoreFile: "Package_common_SaveData.dat"; configFiles: readonly string[]}>;
+        runtime: "./runtime/hsob/hsob.html"; runtimeFileLayout: "directory"; dataProvider: "retail-memory"; runtimeResourceTransport: "resources";
+        requiredShared: readonly string[]; runtimeAssets: readonly string[];
+        musicCapabilities: Readonly<{midi: false}>; musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"}>;
+        touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;
+        support: Readonly<{highRefreshRate: false; sourceRepository: "https://github.com/Ritosa2333/ph3-modern"; adaptationNotice: "early-test"}>;
+        package: Readonly<{dataFileId: "game-data"; dataTarget: "/hsob.data"; musicSourceDirectories: Readonly<{ogg: "music"}>; musicMounts: Readonly<{ogg: "/game/script/th_hsob/music"}>}>;
+        replay: Readonly<{prefix: "Main_replay"; extensions: readonly ["dat"]}>;
+        features: Readonly<{thprac: false; languages: false; focusHitbox: false}>;
+    }>;
     th06: Readonly<{
         cardArtwork: "th06-card.webp";
         number: "06";
@@ -1016,6 +1028,7 @@ export declare const PRODUCT_IDS: readonly ProductId[];
 export declare const DEFAULT_PRODUCT_ID: ProductId;
 export declare const DEFAULT_MULTIPLAYER_PRODUCT_ID: MultiplayerProductId;
 export declare function isGameId(value: string): value is GameId;
+export declare function productRequiresImport(gameId: GameId): boolean;
 export declare function productEnabledForBuild(productId: string, testBuild?: boolean): boolean;
 export declare function isProductId(value: string): value is ProductId;
 export declare function isMultiplayerProductId(productId: string): productId is MultiplayerProductId;

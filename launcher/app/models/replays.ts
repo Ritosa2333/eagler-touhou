@@ -92,7 +92,7 @@ export function createReplayModel(options: ReplayModelOptions) {
     return preparation.promise;
   }
   function preloadViewer(product: ProductId, token: number): void {
-    if (!options.storage || !options.prepareViewer) return;
+    if (product === 'hsob' || !options.storage || !options.prepareViewer) return;
     // Listing and downloads stay independent of the eagerly prepared player.
     void prepareViewer(product).then(async () => {
       if (!options.inspect || gameIdForProduct(product) === 'th09') return;

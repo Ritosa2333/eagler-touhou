@@ -41,6 +41,8 @@
 .replay-current p{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0;color:var(--kit-muted-foreground);font-size:12px;line-height:1.6}
 .replay-current .replay-workspace-error{color:var(--kit-destructive);overflow-wrap:anywhere}
 .replay-file-browser{grid-column:2;grid-row:2;display:flex;flex-direction:column;min-width:0;min-height:300px;background:var(--kit-card);border:1px solid var(--kit-border);border-radius:10px;overflow:hidden}
+#player.replay-workspace:has(.replay-file-browser[data-file-only=true]) .player-stage{display:none}
+#player.replay-workspace .replay-file-browser[data-file-only=true]{grid-column:1/-1}
 .replay-file-browser>header{display:flex;align-items:center;justify-content:space-between;flex:none;padding:16px;gap:10px}
 .replay-file-browser h2{margin:0;font:600 16px/1.4 var(--kit-font)}
 .replay-breadcrumb{display:flex;align-items:center;flex:none;gap:6px;padding:8px 0;margin:0 16px;min-width:0;color:var(--kit-muted-foreground);border-block:1px solid var(--kit-border)}

@@ -6,6 +6,7 @@ import {
   isGameId,
   type GameId,
   type HostRuntimeFeatures,
+  productRequiresImport,
 } from "./product-catalog.mjs";
 import {
   RESOURCE_MODE_EXTERNAL,
@@ -189,7 +190,7 @@ function validLanguageCatalogs(value: UnknownRecord): boolean {
 }
 
 function validOfflineCompatibility(item: UnknownRecord, resourceMode: ResourceMode, gameId: GameId): boolean {
-  if (resourceMode !== RESOURCE_MODE_IMPORT) return true;
+  if (resourceMode !== RESOURCE_MODE_IMPORT && !productRequiresImport(gameId)) return true;
   const compatibility = item.offlineCompatibility;
   const gameData = item.gameData;
   if (!isRecord(compatibility) || !isRecord(gameData)) return false;
@@ -234,7 +235,7 @@ function validGame(gameId: string, value: unknown, resourceMode: ResourceMode): 
       !split.path.endsWith("/" + split.sha256 + ".json"))) return false;
   const expectedDataPath = product.package.dataTarget.slice(1);
   const packagePointer = value.package;
-  const validExternalPackage = resourceMode !== RESOURCE_MODE_EXTERNAL ||
+  const validExternalPackage = resourceMode !== RESOURCE_MODE_EXTERNAL || productRequiresImport(gameId) ||
     (isRecord(packagePointer) && typeof packagePointer.revision === "string" && /^[a-f0-9]{16}$/i.test(packagePointer.revision) &&
       typeof packagePointer.descriptor === "string" && /^[A-Za-z0-9][A-Za-z0-9._-]*\.package\.json$/i.test(packagePointer.descriptor));
   return typeof gameData.version === "string" && SHA256_VERSION.test(gameData.version) &&

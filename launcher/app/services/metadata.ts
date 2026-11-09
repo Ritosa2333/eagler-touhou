@@ -2,7 +2,7 @@ import {loadGameVersion, descriptorGameVersion} from "../../package/game-version
 import {loadRemoteMetadata} from '../../src/launcher/remote-metadata.mts';
 import {createLocalProductManifest, PRODUCT_IDS, PRODUCT_GAMES, gameIdForProduct,
   isMultiplayerProductId, productEnabledForBuild, languagePriority,
-  type GameId, type ProductId} from '../../src/contracts/product-catalog.mts';
+  productRequiresImport, type GameId, type ProductId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import type {ReleaseCatalog} from '../../src/contracts/release-catalog.mts';
 import type {InstalledPackageGeneration} from '../../src/contracts/package-read-models.mts';
@@ -153,7 +153,7 @@ export function createMetadataService(options: MetadataServiceOptions) {
       musicAvailability: {
         audio: options.webAudioAvailable,
         midiAvailable: PRODUCT_GAMES[gameId].musicCapabilities.midi && music?.midi?.supported !== false,
-        importServer: snapshot.siteManifest?.shared.resourceMode === 'import',
+        importServer: productRequiresImport(gameId) || snapshot.siteManifest?.shared.resourceMode === 'import',
         publishedOggCapable: Boolean(music?.ogg || music?.wav),
         remoteOggAdvertised: Boolean(music?.ogg),
         remoteRevision: snapshot.releaseCatalog?.games?.[gameId]?.revision ?? null,

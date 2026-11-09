@@ -3,7 +3,7 @@ import {UI_LOCALES, UI_LOCALE_LABELS, isUiLocale, localeHome, withUiLanguage} fr
 import {lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';
 import {useLocation} from 'react-router';
-import {gameIdForProduct, isMultiplayerProductId, PRODUCT_IDS} from '../src/contracts/product-catalog.mts';
+import {gameIdForProduct, isMultiplayerProductId, PRODUCT_IDS, productRequiresImport} from '../src/contracts/product-catalog.mts';
 import {buildMultiplayerDiagnosticRelayUrl} from '../src/launcher/multiplayer-relay-url.mts';
 import {generateMultiplayerRoomCode} from '../src/launcher/multiplayer-identity.mts';
 import {readReactAppShellDeployment} from './services/app-shell-deployment';
@@ -223,7 +223,7 @@ function SessionLaunchActions({session}: {session: BrowserSession}) {
   const settings = useSyncExternalStore(session.settings.subscribe, session.settings.getSnapshot, session.settings.getSnapshot);
   if (!settings || settings.multiplayer || navigation.context === 'lobby') return null;
   return <LaunchActions primary={{id: 'launch', textId: 'launchText',
-    label: t(session.metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import' && !session.metadata.getSnapshot().installed.has(settings.gameId) ? 'action.importGameData' : settings.multiplayer ? 'action.startMultiplayer' : 'action.start'),
+    label: t((productRequiresImport(settings.gameId) || session.metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import') && !session.metadata.getSnapshot().installed.has(settings.gameId) ? 'action.importGameData' : settings.multiplayer ? 'action.startMultiplayer' : 'action.start'),
     onClick: () => {if (navigation.productId) void session.launch(navigation.productId).catch(session.reportError);}}}
     secondary={{id: 'gamePackageImport', label: t('action.import'), onClick: session.gameData.openManual}}/>;
 }

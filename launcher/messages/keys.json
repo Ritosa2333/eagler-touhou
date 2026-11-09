@@ -6345,6 +6345,14 @@
     "id": "replay_ui_empty",
     "params": []
   },
+  "replay.hsobImport": {
+    "id": "replay_hsobImport",
+    "params": []
+  },
+  "replay.hsobPlayback": {
+    "id": "replay_hsobPlayback",
+    "params": []
+  },
   "replay.ui.drop": {
     "id": "replay_ui_drop",
     "params": []

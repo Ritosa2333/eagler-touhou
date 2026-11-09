@@ -1512,6 +1512,8 @@
   "replay_ui_parsing": "リプレイを解析中…",
   "replay_ui_parseFailed": "リプレイを解析できません",
   "replay_ui_empty": "リプレイはありません",
+  "replay_hsobImport": "Main_replay*.dat ファイル、またはリプレイ ZIP を選択してください",
+  "replay_hsobPlayback": "インポートしたリプレイはゲームのタイトルメニューの Replay から再生できます。",
   "replay_ui_drop": "リプレイをインポートするか、ここにドロップしてください",
   "replay_ui_download": "ダウンロード",
   "replay_ui_rename": "名前を変更",

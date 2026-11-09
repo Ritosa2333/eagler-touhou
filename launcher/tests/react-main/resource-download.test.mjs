@@ -4,16 +4,21 @@ import {mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
-let directory, createResourceDownloader;
+let directory, createResourceDownloader, resourcePath;
 before(async () => {
   directory = await mkdtemp(resolve(import.meta.dirname, '../../.cache/resource-download-test-'));
   const file = resolve(directory, 'download.mjs');
   await build({entryPoints: [resolve(import.meta.dirname, '../../src/launcher/resource-download.mts')], outfile: file,
     bundle: true, platform: 'node', format: 'esm', logLevel: 'silent'});
-  ({createResourceDownloader} = await import(pathToFileURL(file)));
+  ({createResourceDownloader,resourcePath} = await import(pathToFileURL(file)));
 });
 after(async () => {await rm(directory, {recursive: true, force: true});});
 const source = new URL('https://play.example/games/th07/th07.data?v=abc');
+test('resource paths use the established content directories',()=>{
+  assert.equal(resourcePath(new URL('https://play.example/games/th075/language/lang_en.zip')),true);
+  assert.equal(resourcePath(new URL('https://play.example/language/th075/en.zip')),true);
+  assert.equal(resourcePath(new URL('https://play.example/language-updates/th075/en.zip')),false);
+});
 const nodes = ['https://a.example', 'https://b.example'];
 const route = (bytes = 4, overrides = {}) => Response.json({schema: 'eagler-touhou/resource-routes/1',
   path: source.pathname, bytes, sha256: 'a'.repeat(64), sources: nodes.map(origin => origin + source.pathname + source.search), ...overrides});

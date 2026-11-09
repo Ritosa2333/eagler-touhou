@@ -1512,6 +1512,8 @@
   "replay_ui_parsing": "正在解析录像…",
   "replay_ui_parseFailed": "无法解析录像",
   "replay_ui_empty": "暂无录像",
+  "replay_hsobImport": "请选择 Main_replay*.dat 录像或录像 ZIP",
+  "replay_hsobPlayback": "导入的录像可在游戏标题菜单的 Replay 中播放。",
   "replay_ui_drop": "导入录像，或将文件拖到这里",
   "replay_ui_download": "下载",
   "replay_ui_rename": "重命名",
