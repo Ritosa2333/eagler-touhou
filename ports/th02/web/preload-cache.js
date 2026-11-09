@@ -2,7 +2,9 @@
 // including LAN HTTP where Cache Storage / SubtleCrypto may be unavailable.
 import {sha256} from './netplay/sha256.js';
 const pending=new Map(),memory=new Map();let memoryBytes=0,database;
-const LIMIT=24*1024*1024;
+const cacheLimit=()=> (globalThis.__eaglerPC98Content?64:24)*1024*1024;
+// Move only verified disk/core bytes into the single match worker.
+export function takeManagedStartupAssets(){const assets=[];for(const [key,bytes] of memory)if(/\/(?:th02-local(?:-jp|-cn)?|th04-coop(?:-jp)?)\.hdi\.gz\||\/wdosbox-x-rollback(?:-tracked)?\.wasm\|/.test(key)&&/\|[a-f0-9]{64}\|/.test(key)){memory.delete(key);memoryBytes-=bytes.byteLength;assets.push([key,bytes]);}return assets;}
 function openCache(){
   return database??=new Promise(resolve=>{
     if(!globalThis.indexedDB){resolve(null);return;}
@@ -37,8 +39,12 @@ export async function assetBytes(url,{hash,size,gzip=false,signal}={}){
   if(!task){
     task=(async()=>{
       const saved=memory.get(key);if(saved)return saved;
-      let bytes=await stored(key);
-      if(!(bytes instanceof Uint8Array)||!await valid(bytes,hash,size)){
+      let bytes;
+      const shared=globalThis.__eaglerPC98StartupAssets;
+      if(shared instanceof Map){if(shared.has(key)){bytes=shared.get(key);shared.delete(key);}for(const candidate of shared.keys())if(candidate.startsWith(identity+'|'))shared.delete(candidate);}
+      let verified=bytes instanceof Uint8Array&&await valid(bytes,hash,size);
+      if(!verified){bytes=await stored(key);verified=bytes instanceof Uint8Array&&await valid(bytes,hash,size);}
+      if(!verified){
         const response=await fetch(address,{cache:'no-cache',signal:AbortSignal.timeout(120000)});
         if(!response.ok)throw Error('资源下载失败：'+new URL(address).pathname+' ('+response.status+')');
         const body=gzip?new Response(response.body.pipeThrough(new DecompressionStream('gzip'))):response;
@@ -46,8 +52,9 @@ export async function assetBytes(url,{hash,size,gzip=false,signal}={}){
         if(!await valid(bytes,hash,size))throw Error('资源校验失败：'+new URL(address).pathname);
         await stored(key,{key,identity,bytes});
       }
-      if(bytes.byteLength<=LIMIT){
-        while(memoryBytes+bytes.byteLength>LIMIT&&memory.size){const [old,value]=memory.entries().next().value;memory.delete(old);memoryBytes-=value.byteLength;}
+      const limit=cacheLimit();
+      if(bytes.byteLength<=limit){
+        while(memoryBytes+bytes.byteLength>limit&&memory.size){const [old,value]=memory.entries().next().value;memory.delete(old);memoryBytes-=value.byteLength;}
         memory.set(key,bytes);memoryBytes+=bytes.byteLength;
       }
       return bytes;

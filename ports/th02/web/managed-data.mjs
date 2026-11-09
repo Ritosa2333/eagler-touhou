@@ -1,3 +1,4 @@
+import {takeManagedStartupAssets} from './preload-cache.js';
 export const DATA_SCHEMA = 'eagler-touhou/pc98-content/1';
 export const DATA_MAGIC = 'EPC98PK1';
 export const DATA_LAYOUT_SPEC = Object.freeze({schema: DATA_SCHEMA, magic: DATA_MAGIC, header: 'magic8+manifestBytesLE32+utf8JSON', files: 'relative-path+offset+bytes+sha256'});
@@ -79,7 +80,9 @@ export function installManagedWorkers(environment, content, base) {
     constructor(url, options = {}) {
       if (options.type !== 'module') throw Error('接入运行时需要模块 Worker');
       super(bootstrap, {...options, type: 'module'});
-      super.postMessage({type: 'eagler-content-init', url: new URL(url, environment.location.href).href, base, game: content.game, blob: content.blob, entries: [...content.files]});
+      const target=new URL(url, environment.location.href).href;
+      const startupAssets=/\/netplay\/runtime-worker\.js(?:[?#]|$)/.test(target)?takeManagedStartupAssets():[];
+      super.postMessage({type: 'eagler-content-init', url: target, base, game: content.game, blob: content.blob, entries: [...content.files], startupAssets}, startupAssets.map(([,bytes])=>bytes.buffer));
     }
   };
 }
