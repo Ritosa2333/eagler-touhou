@@ -4,6 +4,7 @@ import {isReplayFilePath} from '../../src/launcher/replay-files.mts';
 import {isTh09ReplayDirectory, parseTh09ReplayMatch, type Th09ReplayMatch} from '../../src/launcher/th09-replay-match.mts';
 import {motionReplayName} from '../../src/launcher/replay-motion.mts';
 import {replayStorageLocation} from '../../src/launcher/replay-storage-policy.mts';
+import {exportReplayName as th09ReplayName} from '../../../ports/th09/web/sdl-runtime/motion-replay.mjs';
 
 export interface StoredReplay {path: string; size: number; bytes: Uint8Array; modifiedAt?: number; replayMatch?: Th09ReplayMatch}
 export interface ReplayStorageSelection {path?: string; directory?: string; language?: string}
@@ -13,6 +14,7 @@ export interface ReplayStorageReader {read(product: ProductId, selection?: Repla
 export function createReplayStorageReader(environment: () => {indexedDB: IDBFactory; keyRange: typeof IDBKeyRange}): ReplayStorageReader {
   return {async read(product, selection = {}) {
     const {game, database: databaseName, root, validName, sharedExtensionSlot} = replayStorageLocation(product, selection.language);
+    const extendedReplayName = game === 'th09' ? th09ReplayName : motionReplayName;
     const validPath = (path: string) => isReplayFilePath(path) && validName(path.slice(path.lastIndexOf('/') + 1));
     if (selection.path && !validPath(selection.path)) throw new Error('录像路径无效');
     if (selection.directory && !isTh09ReplayDirectory(selection.directory)) throw new Error('录像文件夹无效');
@@ -43,7 +45,7 @@ export function createReplayStorageReader(environment: () => {indexedDB: IDBFact
               if (!storedPath.startsWith(root + '/replay/') || !validPath(relative) || (entry.mode & 0xf000) !== 0x8000) continue;
               const bytes = idbfsBytes(entry.contents);
               if (!bytes || bytes.length > 64 * 1024 * 1024) throw new Error('本地录像内容无效');
-              const path = product === 'th10mp' && relative.endsWith('.rpy') ? relative + 'x' : sharedExtensionSlot ? motionReplayName(relative, bytes, Number(game.slice(2))) : relative;
+              const path = product === 'th10mp' && relative.endsWith('.rpy') ? relative + 'x' : sharedExtensionSlot ? extendedReplayName(relative, bytes, Number(game.slice(2))) : relative;
               if (selection.path && path !== selection.path || selection.directory && path.slice(0, path.lastIndexOf('/')) !== selection.directory) continue;
               let match: Th09ReplayMatch | null = null;
               const sidecar = idbfsBytes(records.get(storedPath.replace(/\.rpyx?$/i, '.json'))?.contents);
