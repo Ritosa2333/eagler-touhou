@@ -27,7 +27,7 @@ const char* pauseLabels[] = {th5w::locale::Text(u8"\u7ee7\u7eed\u6e38\u620f"), t
 bool Replay() { return CGame::s_pCurGame && (CGame::GVar().m_bReplayMode||original::DemoActive()); }
 }
 bool Available(){return available;}
-void Configure(bool value){available=value;if(!value){memset(tools,0,sizeof(tools));overlayOpen=infoOpen=assisted=false;SetAdvancedOpen(false);++timeoutLockRevision;}}
+void Configure(bool value){available=value;if(!value){memset(tools,0,sizeof(tools));overlayOpen=infoOpen=assisted=false;if(initialized)SetAdvancedOpen(false);++timeoutLockRevision;}}
 void PreparingSection(bool value){preparingSection=value;}
 bool Enabled(Tool tool) { return available && tools[tool] && !Replay() && !preparingSection; }
 void Toggle(Tool tool) { if (available && !Replay()) { tools[tool] = !tools[tool]; if(tool==LockTimeout)++timeoutLockRevision; if (tools[tool]) MarkAssisted(); } }
@@ -43,6 +43,7 @@ unsigned int TimeoutLockRevision(){return timeoutLockRevision;}
 bool AllowTimeout(bool expired) { return expired && !Enabled(LockTimeout); }
 bool BeforeTimeout(bool beforeDeadline) { return beforeDeadline || Enabled(LockTimeout); }
 bool Initialize(HWND window) {
+ if (!available||initialized) return true;
  IMGUI_CHECKVERSION(); ImGui::CreateContext();
  ImGuiIO& io = ImGui::GetIO(); io.IniFilename = NULL; io.LogFilename = NULL;
  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -54,7 +55,23 @@ bool Initialize(HWND window) {
  strcat_s(font,"\\Fonts\\msyh.ttc");
 #endif
  static ImVector<ImWchar> glyphRanges;ImFontGlyphRangesBuilder ranges;
- ranges.AddRanges(io.Fonts->GetGlyphRangesChineseSimplifiedCommon());ranges.AddRanges(io.Fonts->GetGlyphRangesJapanese());ranges.AddText(th5w::locale::Text(u8"\u5e27\u9636\u6bb5\u4ece\u5173\u5361\u8d77\u59cb\u5904\u5f00\u59cb\uff08\u6ca1\u6709\u9053\u4e2d\uff09"));ranges.AddText(th5w::locale::Text(u8"\u66f4\u591a\u6e38\u620f\u4fe1\u606f\u7075\u68a6\u9b54\u7406\u6c99\u9b45\u5e7d\u9999"));ranges.AddText(AdvancedGlyphs());ranges.AddText(SectionGlyphs());ranges.AddText(th5w::locale::Text(u8"\u5bf9\u8bdd"));ranges.BuildRanges(&glyphRanges);
+ ranges.AddRanges(io.Fonts->GetGlyphRangesChineseSimplifiedCommon());ranges.AddRanges(io.Fonts->GetGlyphRangesJapanese());ranges.AddText(th5w::locale::Text(u8"\u5e27\u9636\u6bb5\u4ece\u5173\u5361\u8d77\u59cb\u5904\u5f00\u59cb\uff08\u6ca1\u6709\u9053\u4e2d\uff09"));ranges.AddText(th5w::locale::Text(u8"\u66f4\u591a\u6e38\u620f\u4fe1\u606f\u7075\u68a6\u9b54\u7406\u6c99\u9b45\u5e7d\u9999"));ranges.AddText(AdvancedGlyphs());ranges.AddText(SectionGlyphs());
+ for(int stage=0;stage<7;stage++){
+  for(int warp=1;warp<=2;warp++){
+   int count=0;
+   const auto* sections=Sections(stage,warp,count);
+   for(int index=0;index<count;index++){
+    const auto& section=sections[index];
+    ranges.AddText(section.name);
+    const auto hint=AttackHint(stage,warp,section);
+    if(hint.text)ranges.AddText(hint.text);
+    if(const auto* hint=BombHint(stage,warp,section.phase))ranges.AddText(hint);
+   }
+  }
+ }
+ for(int difficulty=1;difficulty<=3;difficulty++)ranges.AddText(YumekoShotHint(difficulty));
+ for(int rage=1;rage<=2;rage++)ranges.AddText(ShinkiRageName(rage));
+ ranges.AddText(th5w::locale::Text(u8"\u5bf9\u8bdd"));ranges.BuildRanges(&glyphRanges);
  if (GetFileAttributesA(font)==INVALID_FILE_ATTRIBUTES || !io.Fonts->AddFontFromFileTTF(font,16,NULL,glyphRanges.Data)) io.Fonts->AddFontDefault();
 #ifdef __EMSCRIPTEN__
  web::InitializeUI();
@@ -73,14 +90,14 @@ void Shutdown() { if (!initialized) return; SaveAdvancedOptions();
  ImGui_ImplOpenGL2_Shutdown(); ImGui_ImplWin32_Shutdown();
 #endif
  ImGui::DestroyContext(); initialized=false; }
-void BeginFrame() { if (!initialized) return;
+void BeginFrame() { if (!available||!initialized) return;
 #ifdef __EMSCRIPTEN__
  web::BeginUI();
 #else
  ImGui_ImplOpenGL2_NewFrame(); ImGui_ImplWin32_NewFrame();
 #endif
  ImGui::NewFrame(); ImGui::GetIO().MouseDrawCursor=false; }
-void EndFrame(bool render) { if (!initialized) return; ImGui::Render();
+void EndFrame(bool render) { if (!available||!initialized) return; ImGui::Render();
 #ifdef __EMSCRIPTEN__
  if(render)web::EndUI();
 #else
@@ -111,7 +128,7 @@ void WindowMessage(HWND window,UINT message,WPARAM key,LPARAM data) {
 // Only the renderer/backend and game-state actions are adapted for uth05win.
 void FocusPause() { focusPause=true; pauseAge=0; pauseAlpha=0; pauseAction=-1; actionAge=0; }
 void DrawPause(CStage& stage) {
- if (!initialized||AdvancedOpen()) return;
+ if (!available||!initialized||AdvancedOpen()) return;
  ImGuiIO& io=ImGui::GetIO(); io.MouseDrawCursor=true;
  ++pauseAge;
  if (pauseAction<0) pauseAlpha=ImMin(.8f,pauseAlpha+.1f);

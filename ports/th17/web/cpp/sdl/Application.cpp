@@ -133,7 +133,7 @@ bool ApplicationState::preload_run(){
 }
 bool ApplicationState::bind_display(StageGameplay* previous){
  if(!scene()||!assets()||!run_input)return fail("Run display requires active scene/input");pause=std::make_unique<RunPause>(*scene(),progress,records,animations,*this,frame_skip,assets()->front);if(!pause->prepare())return fail(pause->error);
- display=std::make_unique<SceneDisplay>(*scene(),animations,environment,graphics,renderer);if(!display->initialize(progress,records.game,records.spells,*this,assets()->text,assets()->ascii,previous))return fail(display->error);
+ display=std::make_unique<SceneDisplay>(*scene(),animations,environment,graphics,renderer,trophy_notice);if(!display->initialize(progress,records.game,records.spells,*this,assets()->text,assets()->ascii,previous))return fail(display->error);
  display->pause(&pause->visuals,this,&live_description);return true;
 }
 bool ApplicationState::begin_game(bool playback){
@@ -198,7 +198,9 @@ bool ApplicationState::begin_game(bool playback){
 bool ApplicationState::begin_ending(){ending=std::make_unique<EndingScene>(animations,records,*this,scheduler,6);const i32 index=preview_index;preview_index=-1;return ending->initialize(progress,index)||fail(ending->error);}
 bool ApplicationState::draw_global(){
  if(!graphics.select_target(nullptr,0))return fail(graphics.error);graphics.clear(0xff000000);graphics.set_fog(false);views.camera(DrawCamera::Fullscreen,false);
- if(scheduler.draw()<0)return fail(title&&!title->error.empty()?title->error:global_layers->error.empty()?global_letters->error:global_layers->error);renderer.flush();graphics.present();return graphics.error.empty()||fail(graphics.error);
+ if(scheduler.draw()<0)return fail(title&&!title->error.empty()?title->error:global_layers->error.empty()?global_letters->error:global_layers->error);
+ if(!trophy_notice.draw(renderer,views,environment))return fail(trophy_notice.error);
+ renderer.flush();graphics.present();return graphics.error.empty()||fail(graphics.error);
 }
 bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool lost_focus){
  if(!initialized||exiting||!failure.empty())return false;if(loading_destination!=AppScene::Uninitialized)return step_loading();manual_pressed=pressed;manual_repeated=repeated;physical_input.update(held);

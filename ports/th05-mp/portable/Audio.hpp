@@ -15,8 +15,8 @@ public:
  static void Finalize(){web::MusicAction(0);}
  static void SetFrequency(int hz){web::MusicAction(4,hz/44100.);}
  static void SetVolume(float volume){web::MusicAction(5,volume/100.);}
- static void OnDeactivate(){web::MusicAction(2);}
- static void OnActivate(){web::MusicAction(3);}
+ static void OnDeactivate(){EM_ASM({Module.eaglerAudio?.focus(false);});}
+ static void OnActivate(){EM_ASM({Module.eaglerAudio?.focus(true);});}
  static void SetPlayThreadPriority(int){}
  static bool FillSoftwareBuffer(int){return true;}
 };

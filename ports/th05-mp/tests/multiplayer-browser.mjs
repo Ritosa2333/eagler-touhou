@@ -30,6 +30,7 @@ try{
  const launch=await page.evaluate(count=>Promise.all(Array.from({length:count},(_,seat)=>command(seat,'launch',{launchSerial:1}))),count);assert.ok(launch.every(r=>r.ok),JSON.stringify(launch));
  await page.waitForFunction(count=>[...document.querySelectorAll('iframe')].every(f=>f.contentWindow.__eaglerNetplayLanFrame>250),count,{timeout:30000});
  report.running=await page.evaluate(()=>[...document.querySelectorAll('iframe')].map(f=>({frame:f.contentWindow.__eaglerNetplayLanFrame,route:f.contentWindow.__eaglerNetplayTransport,inputDelay:f.contentWindow.__eaglerNetplayInputDelay,saveRoot:f.contentWindow.Module.FS.readlink('/savesth05')})));
+ if(mode===0)assert.ok(report.running.every(player=>player.inputDelay===0),'Pure rollback negotiates zero buffered frames');
  if(process.env.TH05_MP_CRASH==='1'){
   const started=Date.now();
   await page.evaluate(()=>{

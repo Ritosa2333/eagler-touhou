@@ -84,12 +84,12 @@ protected:
 	int Phase5Effect();
 	void Phase6_7();
 	void Phase6Shoot();
-	void Phase7Shoot();
+	void Phase7Shoot(float originY);
 	void Phase8();
 	int Phase8Effect();
 	void Phase9_10();
-	void Phase9Shoot();
-	void Phase10Shoot();
+	void Phase9Shoot(float originY);
+	void Phase10Shoot(float originY);
 	void Phase11();
 	void Phase12();
 	void Phase12Shoot();

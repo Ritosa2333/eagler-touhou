@@ -3,8 +3,8 @@
 #include <vector>
 namespace th5w { namespace practice {
 struct AdvancedOptions {
- int fps;bool freeFPS,noContinue,disableX,disableShift,disableZ,forceShift,showKeys,lockTimer,fastRetry,showHitbox,alwaysHitbox,numericDream,numericPower,phaseTimeout,phaseTimeoutAsTime,hpPhaseMarkers,eosdBar,phaseStars,ringBar;
- AdvancedOptions():fps(56),freeFPS(false),noContinue(false),disableX(false),disableShift(false),disableZ(false),forceShift(false),showKeys(false),lockTimer(false),fastRetry(false),showHitbox(false),alwaysHitbox(false),numericDream(false),numericPower(false),phaseTimeout(false),phaseTimeoutAsTime(false),hpPhaseMarkers(false),eosdBar(false),phaseStars(false),ringBar(false){}
+ int fps;bool freeFPS,noContinue,disableX,disableShift,disableZ,forceShift,showKeys,lockTimer,fastRetry,showHitbox,alwaysHitbox,numericDream,numericPower,phaseTimeout,phaseTimeoutAsTime,phaseTimeoutAsFrames,hpPhaseMarkers,eosdBar,phaseStars,ringBar;
+ AdvancedOptions():fps(56),freeFPS(false),noContinue(false),disableX(false),disableShift(false),disableZ(false),forceShift(false),showKeys(false),lockTimer(false),fastRetry(false),showHitbox(false),alwaysHitbox(false),numericDream(false),numericPower(false),phaseTimeout(false),phaseTimeoutAsTime(false),phaseTimeoutAsFrames(false),hpPhaseMarkers(false),eosdBar(false),phaseStars(false),ringBar(false){}
 };
 AdvancedOptions& Options();
 void LoadAdvancedOptions();void SaveAdvancedOptions();

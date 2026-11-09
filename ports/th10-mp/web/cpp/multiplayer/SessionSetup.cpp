@@ -42,8 +42,8 @@ std::uint32_t gameplay_contract(const SessionSetup& setup,std::uint32_t version)
 }
 }
 std::uint32_t GameplayContract(const SessionSetup& setup) noexcept {
-    // Nearest unfinished Power ownership is shared by peers and recordings.
-    return gameplay_contract(setup,0x1000000eu);
+    // Death Power overflow and recovery reservations are deterministic rules.
+    return gameplay_contract(setup,0x1000000fu);
 }
 std::uint32_t LegacyGameplayContractV4(const SessionSetup& setup) noexcept {
     return gameplay_contract(setup,0x10000004u);

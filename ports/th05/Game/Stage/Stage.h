@@ -211,6 +211,7 @@ protected:
 	int m_totalNPointItem;
 	int m_curNGraze;
 	int m_playerPerformance;
+ int m_itemRankProgress;
 	int m_nContinueUsed;
 
 	//constant during game
@@ -286,11 +287,7 @@ protected:
 	int AdjustDamageFromChara(int origDmg, bool isBoss);
 	__forceinline float AdjustSpeedBasedOnPlayerPerformance(float origSpeed)
 	{
-		if(original::DemoActive())return float(original::math::Speed(int(origSpeed),m_playerPerformance));
-		float ret=origSpeed*(0.5f+(float)m_playerPerformance/64.0f);
-		if (ret>128) ret=128;
-		if (ret<8) ret=8;
-		return ret;
+		return float(original::math::Speed(int(origSpeed),m_playerPerformance));
 	}
 public:
 	int GetDamageFromChara(float ctrX,float ctrY,float halfWidth,float halfHeight,bool isBoss);

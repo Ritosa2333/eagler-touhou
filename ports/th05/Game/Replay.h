@@ -36,6 +36,9 @@ public:
 	int m_playChara;
 	bool m_bPracticeMode;
  bool m_turboMode;
+ unsigned int m_combatRevision;
+ static constexpr unsigned int CurrentPracticeVersion=4;
+ unsigned int m_practiceVersion;
  practice::Config m_practiceConfig;
 
 public:
@@ -48,6 +51,7 @@ public:
 	int m_curScore[7];
 	int m_totalNPointItem[7];
 	int m_playerPerformance[7];
+ unsigned char m_itemRankProgress[7];
 	int m_stageScore[7];
 	int m_randSeed[7];
 	vector<unsigned short> m_keyState[7];

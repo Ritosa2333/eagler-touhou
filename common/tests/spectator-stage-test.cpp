@@ -67,6 +67,45 @@ int main() {
     std::vector<std::uint8_t> wire = {9};
     assert(!EncodeSpectatorStageEvent(excluded, &wire) && wire == std::vector<std::uint8_t>{9});
     {
+        SpectatorStagePlayback playback{SpectatorStagePlayback::RestoreMode::Run};
+        playback.Clear();
+        SpectatorStageEvent first;
+        first.game = 'G'; first.playerCount = 2; first.frame = 0;
+        first.sessionId = first.gameplayAbi = first.serial = 1;
+        first.schema = 3; first.stage = 1; first.state = {1};
+        assert(playback.Receive(first));
+        auto second = first;
+        second.stage = 2; second.frame = 100; second.serial = 2;
+        second.state = {2};
+        SpectatorFramePacket input;
+        input.sessionId = input.gameplayAbi = 1; input.playerCount = 2;
+        for (unsigned frame = 0; frame < 250; ++frame) {
+            if (frame == 100) assert(playback.Receive(second));
+            input.frame = frame;
+            assert(playback.Receive(input));
+        }
+        auto bootstrap = second;
+        bootstrap.kind = SpectatorEventKind::Bootstrap;
+        bootstrap.frame = 250; bootstrap.state.clear();
+        assert(playback.Receive(bootstrap) && playback.Target() == 100 && playback.FastForwarding());
+        unsigned next = 0, restores = 0;
+        const auto restore = [&](const auto& checkpoint) {
+            assert(checkpoint.serial == first.serial);
+            next = checkpoint.frame;
+            ++restores;
+            return true;
+        };
+        const auto tick = [&](const auto& packet, bool) {assert(packet.frame == next++); return true;};
+        const auto yield = [] {return false;};
+        assert(playback.Step(restore, tick, yield, 200));
+        assert(restores == 1 && playback.Position() == 100);
+        assert(playback.Step(restore, tick, yield, 60));
+        assert(restores == 1 && playback.Position() == 160);
+        assert(playback.Control(SpectatorStagePlayback::Action::Seek, 110));
+        assert(playback.Step(restore, tick, yield, 200));
+        assert(restores == 2 && playback.Position() == 110);
+    }
+    {
         SpectatorStagePlayback playback;
         SpectatorStageEvent initial; initial.game = '6'; initial.playerCount = 2;
         initial.sessionId = initial.gameplayAbi = initial.schema = initial.serial = 1;

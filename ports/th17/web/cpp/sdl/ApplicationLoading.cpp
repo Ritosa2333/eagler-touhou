@@ -36,10 +36,10 @@ bool ApplicationState::draw_loading(){
  renderer.invalidate();graphics.configure_game(1);graphics.clear(0xff000000);graphics.set_fog(false);
  environment.render_target_has_alpha=true;views.configure(environment);views.camera(DrawCamera::Fullscreen,false);renderer.offset={};
  if(auto* vm=animations.registry.find(transition_overlay))if(renderer.draw(*vm)==-2)return fail(renderer.error);
- // Only the original loading ANMs draw here. No outgoing title, pause menu,
- // stage counters, capture callbacks or replay input advance during loading.
+ // Loading retains the achievement overlay while the outgoing scene is idle.
  for(auto* vm:animations.registry.layer(42))if(vm->resource==animations.resource(0)&&vm->source_script>=14&&vm->source_script<=17)
   if(renderer.draw(*vm)==-2)return fail(renderer.error);
+ if(!trophy_notice.draw(renderer,views,environment))return fail(trophy_notice.error);
  renderer.flush();graphics.present();return graphics.error.empty()||fail(graphics.error);
 }
 bool ApplicationState::step_loading(){

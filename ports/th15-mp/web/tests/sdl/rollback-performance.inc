@@ -56,6 +56,28 @@ EMSCRIPTEN_KEEPALIVE int th15_probe_rollback_prepare(unsigned players,unsigned s
  for(auto& pilot:app->scene()->battle.pilots)if(pilot)pilot->player->life.invulnerability.set(30000);
  return 1;
 }
+// Real room fixture. Select the retail stage before the first network tick.
+EMSCRIPTEN_KEEPALIVE int th15_probe_dense_room(unsigned stage){
+ using namespace th15::sdl;
+ if(!app||running||!mp_started||network.NextFrame()!=0||(stage!=6&&stage!=7))return 0;
+ if(stage!=mp_stage){
+  app->selected_stage=stage;app->mp_options.stage=stage;
+  if(!app->begin_run())return 0;
+  mp_stage=stage;
+ }
+ if(app->loading_waiting()&&!app->complete_loading())return 0;
+ auto& battle=app->scene()->battle;
+ for(auto& pilot:battle.pilots)if(pilot)pilot->player->life.invulnerability.set(30000);
+ mp_profile_dense_room=true;
+ return 1;
+}
+EMSCRIPTEN_KEEPALIVE const double* th15_probe_dense_room_cost(){
+ using namespace th15::sdl;
+ static std::array<double,5> result{};
+ result={mp_profile_capture_ms,mp_profile_restore_ms,double(mp_profile_captures),
+         double(mp_replayed_frames),double(emscripten_get_heap_size())};
+ return result.data();
+}
 EMSCRIPTEN_KEEPALIVE const unsigned* th15_probe_memory_status(){
  using namespace th15::sdl;static std::array<unsigned,8> value{};
  const auto memory=mallinfo();

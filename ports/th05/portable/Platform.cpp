@@ -50,9 +50,15 @@ void SampleUIKeys(){if(!ImGui::GetCurrentContext())return;BYTE keys[256];ReadKey
  io.KeyAlt=io.KeySuper=false;
 }
 void SampleKeys(BYTE* scans){BYTE keys[256];ReadKeys(keys);
- memset(scans,0,256);scans[DIK_UP]=keys[VK_UP];scans[DIK_DOWN]=keys[VK_DOWN];scans[DIK_LEFT]=keys[VK_LEFT];scans[DIK_RIGHT]=keys[VK_RIGHT];scans[DIK_Z]=keys['Z'];scans[DIK_X]=keys['X'];scans[DIK_LSHIFT]=keys[VK_SHIFT]|keys[VK_LSHIFT]|keys[VK_RSHIFT];scans[DIK_LCONTROL]=keys[VK_CONTROL]|keys[VK_LCONTROL]|keys[VK_RCONTROL];scans[DIK_ESCAPE]=keys[VK_ESCAPE];scans[DIK_RETURN]=keys[VK_RETURN];scans[DIK_Q]=keys['Q'];
+ memset(scans,0,256);scans[DIK_UP]=keys[VK_UP];scans[DIK_DOWN]=keys[VK_DOWN];scans[DIK_LEFT]=keys[VK_LEFT];scans[DIK_RIGHT]=keys[VK_RIGHT];scans[DIK_Z]=keys['Z'];scans[DIK_X]=keys['X'];scans[DIK_LSHIFT]=keys[VK_SHIFT]|keys[VK_LSHIFT]|keys[VK_RSHIFT];scans[DIK_LCONTROL]=keys[VK_CONTROL]|keys[VK_LCONTROL]|keys[VK_RCONTROL];scans[DIK_ESCAPE]=keys[VK_ESCAPE];scans[DIK_RETURN]=keys[VK_RETURN];scans[DIK_Q]=keys['Q'];scans[DIK_R]=keys['R'];
 }
 void MusicTrack(const char* name){EM_ASM({Module.eaglerAudio?.select(UTF8ToString($0));},name);}
+void MusicRoomTrack(const char* name,const char* label){
+ EM_ASM({
+  const title=new TextDecoder('shift_jis').decode(HEAPU8.subarray($1,$1+$2));
+  Module.eaglerAudio?.select(UTF8ToString($0),title);
+ },name,label,strlen(label));
+}
 void MusicAction(int action,double value){EM_ASM({Module.eaglerAudio?.action($0,$1);},action,value);}
 void PlaySound(int index){EM_ASM({Module.eaglerAudio?.sound($0);},index);}
 void ReportError(const char* text){EM_ASM({Module.eaglerError?.(UTF8ToString($0));},text);}

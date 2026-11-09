@@ -102,7 +102,7 @@ function frame(time){raf=0;if(closed||!launched)return;
   }
   if(options.replayViewer&&!playback.advancing())clock.reset();
   else if(playback.active()&&playback.rate()===0){for(let n=0;n<32&&playback.advancing();n++){playback.tick();audio.pump();steps++;}}
-  else while(clock.consume((multiplayer?1/56:module._th05_frame_seconds())/(playback.active()?playback.rate():1))){if(playback.active()){if(!playback.advancing())break;playback.tick();}else{touch.tick();if(!module._th05_tick(+!clock.due(module._th05_frame_seconds())))throw Error('TH05 game frame failed');}audio.pump();steps++;}
+  else while(clock.consume((multiplayer?1/56:module._th05_frame_seconds())/(playback.active()?playback.rate():1))){if(playback.active()){if(!playback.advancing())break;playback.tick();}else{const render=!clock.due(module._th05_frame_seconds());touch.tick(render);if(!module._th05_tick(+render))throw Error('TH05 game frame failed');}audio.pump();steps++;}
   if(multiplayer&&steps)module._th05_coop_draw();
   playback.update(time);
   if(!module._th05_alive()){void finish();return;}

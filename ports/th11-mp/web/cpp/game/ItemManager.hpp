@@ -69,10 +69,11 @@ public:
     i32 multiplayer_current_target=-1;
     bool multiplayer_spawning_transfer=false;
     std::array<u8,ordinary_capacity> multiplayer_fan{};
+    std::array<bool,ordinary_capacity> multiplayer_death_drops{};
     bool spawn_transfer(i32,Vec3,unsigned);
 #endif
     // 0 success/full pool, -2 unavailable resource or world dependency.
-    i32 spawn(i32 type,Vec3 position,u32 color=0xffffffff,float angle=-1.5707963705062866f,float speed=2.2f);
+    i32 spawn(i32 type,Vec3 position,u32 color=0xffffffff,float angle=-1.5707963705062866f,float speed=2.2f,bool death_drop=false);
     bool update();
     void reset()noexcept;
     bool draw(AnmRenderer&);
@@ -101,7 +102,7 @@ private:
     }
     std::unique_ptr<ItemState[]> storage;
     AnmResource& resource;AnmEnvironment& animations;ItemWorld& world;u16 file_id;
-    i32 spawn_single(i32,Vec3,u32,float,float,ItemState** out=nullptr);
+    i32 spawn_single(i32,Vec3,u32,float,float,ItemState** out=nullptr,bool death_drop=false);
     bool bind(ItemState&,i32 script);
     void move(ItemState&);
     void home(ItemState&);

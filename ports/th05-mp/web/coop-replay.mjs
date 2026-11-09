@@ -1,6 +1,10 @@
 const MAGIC = 0x35504d52; // RMP5
 const VERSION = 1;
-const STATE_BYTES = 360;
+const LEGACY_STATE_BYTES = 360;
+const RANK_STATE_MAGIC = 0x35535634;
+const CURRENT_STATE_MAGIC = 0x35535635;
+const hasRankState = magic => magic >= RANK_STATE_MAGIC && magic <= CURRENT_STATE_MAGIC;
+const checkpointSize = magic => hasRankState(magic) ? LEGACY_STATE_BYTES + 4 : LEGACY_STATE_BYTES;
 const INPUT_BYTES = 12;
 const LIMIT = 32 * 1024 * 1024;
 
@@ -8,15 +12,18 @@ const viewOf = bytes => new DataView(bytes.buffer, bytes.byteOffset, bytes.byteL
 const inRange = (n, min, max) => Number.isInteger(n) && n >= min && n <= max;
 
 function checkpointInfo(state) {
-  if (state.length !== STATE_BYTES) throw Error('Invalid TH05 replay checkpoint size');
+  if (state.length < LEGACY_STATE_BYTES) throw Error('Invalid TH05 replay checkpoint size');
   const view = viewOf(state);
   const count = view.getInt32(4, true), stage = view.getInt32(8, true);
   const difficulty = view.getInt32(16, true);
   const characters = Array.from({length: 3}, (_, seat) => view.getInt32(28 + seat * 4, true));
-  if (view.getUint32(0, true) !== 0x35535631 || ![2, 3].includes(count) ||
+  const stageMagic = view.getUint32(0, true);
+  if (state.length !== checkpointSize(stageMagic) ||
+      (hasRankState(stageMagic) && !inRange(view.getInt32(LEGACY_STATE_BYTES, true), 0, 31)) ||
+      !inRange(stageMagic, 0x35535631, CURRENT_STATE_MAGIC) || ![2, 3].includes(count) ||
       !inRange(stage, 0, 6) || !inRange(difficulty, 0, 4) || (stage === 6) !== (difficulty === 4) ||
       !characters.every(character => inRange(character, 0, 3))) throw Error('Invalid TH05 replay checkpoint');
-  return {count, stage, difficulty, characters: characters.slice(0, count)};
+  return {count, stage, difficulty, stageMagic, characters: characters.slice(0, count)};
 }
 
 export function inspectCoopReplay(bytes) {
@@ -28,15 +35,17 @@ export function inspectCoopReplay(bytes) {
   const stages = [];
   let offset = 12, run;
   for (let index = 0; index < count; index++) {
-    if (offset + 4 + STATE_BYTES > bytes.length) throw Error('Truncated TH05 replay checkpoint');
+    if (offset + 8 > bytes.length) throw Error('Truncated TH05 replay checkpoint');
     const frames = view.getUint32(offset, true);
-    const state = bytes.subarray(offset + 4, offset + 4 + STATE_BYTES);
+    const lengthOfState = checkpointSize(view.getUint32(offset + 4, true));
+    if (offset + 4 + lengthOfState > bytes.length) throw Error('Truncated TH05 replay checkpoint');
+    const state = bytes.subarray(offset + 4, offset + 4 + lengthOfState);
     const info = checkpointInfo(state);
     const id = info.stage + 1;
-    if (run && (id <= stages.at(-1).id || info.count !== run.count || info.difficulty !== run.difficulty ||
+    if (run && (id <= stages.at(-1).id || info.count !== run.count || info.difficulty !== run.difficulty || info.stageMagic !== run.stageMagic ||
         info.characters.some((character, seat) => character !== run.characters[seat]))) throw Error('Inconsistent TH05 replay stages');
     run ??= info;
-    offset += 4 + STATE_BYTES;
+    offset += 4 + lengthOfState;
     const length = frames * run.count * INPUT_BYTES;
     if (!frames || offset + length > bytes.length) throw Error('Invalid TH05 replay input length');
     const inputs = bytes.subarray(offset, offset + length);
@@ -65,22 +74,22 @@ export function createCoopRecorder({module, rows, count, save}) {
 
   function checkpoint() {
     const length = module._th05_spectator_size();
-    if (length !== STATE_BYTES) throw Error('TH05 replay checkpoint unavailable');
+    if (length < LEGACY_STATE_BYTES) throw Error('TH05 replay checkpoint unavailable');
     const pointer = module._th05_spectator_state();
     const state = module.HEAPU8.slice(pointer, pointer + length);
     const info = checkpointInfo(state);
     if (stage && info.stage <= stage.id) finishSegment();
-    if (size + 4 + STATE_BYTES >= LIMIT) { stop(); return; }
+    if (size + 4 + length >= LIMIT) { stop(); return; }
     stage = {id: info.stage, state, frames: 0, inputs: new Uint8Array(stride * 512)};
     stages.push(stage);
-    size += 4 + STATE_BYTES;
+    size += 4 + length;
     serial = module._th05_spectator_serial();
   }
 
   function finishSegment() {
     const complete = stages.filter(item => item.frames > 0);
     if (complete.length) {
-      const length = complete.reduce((total, item) => total + 4 + STATE_BYTES + item.frames * stride, 12);
+      const length = complete.reduce((total, item) => total + 4 + item.state.length + item.frames * stride, 12);
       const bytes = new Uint8Array(length), view = viewOf(bytes);
       view.setUint32(0, MAGIC, true);
       view.setUint32(4, VERSION, true);
@@ -89,7 +98,7 @@ export function createCoopRecorder({module, rows, count, save}) {
       for (const item of complete) {
         view.setUint32(offset, item.frames, true);
         bytes.set(item.state, offset + 4);
-        offset += 4 + STATE_BYTES;
+        offset += 4 + item.state.length;
         bytes.set(item.inputs.subarray(0, item.frames * stride), offset);
         offset += item.frames * stride;
       }
@@ -151,11 +160,11 @@ export function createCoopReplayDriver(module, read, applyDisplay) {
       const next = refresh || path !== file ? inspectCoopReplay(read(file)) : recording;
       const section = next?.stages.find(item => item.id === stage + 1);
       if (!section) return false;
-      const pointer = module._malloc(STATE_BYTES);
+      const pointer = module._malloc(section.state.length);
       if (!pointer) return false;
       try {
         module.HEAPU8.set(section.state, pointer);
-        if (!module._th05_spectator_load(pointer, STATE_BYTES)) return false;
+        if (!module._th05_spectator_load(pointer, section.state.length)) return false;
       } finally { module._free(pointer); }
       recording = next;
       path = file;

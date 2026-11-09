@@ -4,12 +4,13 @@
 #include "../game/AsciiDrawSchedule.hpp"
 #include "../game/ScreenTargets.hpp"
 #include "SceneCaptureDevice.hpp"
+#include "TrophyNotice.hpp"
 namespace th17::sdl {
 // All game drawings use the same semantic renderer and the original TH17
 // callback ordering. Offscreen captures remain game-owned ANM resources.
 class SceneDisplay {
     StageGameplay& scene;AnmManager& animations;AnmEnvironment& environment;GraphicsDevice& graphics;AnmRenderer& renderer;
-    ScreenViews views;AsciiText captions;
+    ScreenViews views;AsciiText captions;TrophyNotice& trophy_notice;
     SceneCaptureDevice capture_device;std::unique_ptr<SceneCapture> screenshots;
     std::unique_ptr<AnmDrawSchedule> layers;std::unique_ptr<AsciiDrawSchedule> letters;
     std::unique_ptr<ScreenCompositor> compositor;std::unique_ptr<GameDraw> game;std::unique_ptr<ScreenTargets> targets;
@@ -19,7 +20,7 @@ class SceneDisplay {
     bool fail(const std::string&);
 public:
     std::string error;float presentation_fps=60;
-    SceneDisplay(StageGameplay&,AnmManager&,AnmEnvironment&,GraphicsDevice&,AnmRenderer&);
+    SceneDisplay(StageGameplay&,AnmManager&,AnmEnvironment&,GraphicsDevice&,AnmRenderer&,TrophyNotice&);
     ~SceneDisplay();
     bool initialize(GameRun&,GameRecords&,SpellRecords&,StageDrawServices&,i32 text_bank,i32 ascii_bank,StageGameplay* previous=nullptr);
     void release_previous(){outgoing_background.reset();}

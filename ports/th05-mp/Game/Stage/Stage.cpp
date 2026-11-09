@@ -1,3 +1,4 @@
+#include "../Original/CombatThresholds.h"
 #include ".\stage.h"
 #include "../Game.h"
 #include "../Practice/Practice.h"
@@ -116,6 +117,7 @@ void CStage::UploadVarToGlobal()
 	CGame::GVar().m_curHighScore=m_highScore;
 	CGame::GVar().m_totalNPointItem=m_totalNPointItem;
 	CGame::GVar().m_playerPerformance=m_playerPerformance;
+ CGame::GVar().m_itemRankProgress=m_itemRankProgress;
 	CGame::GVar().m_nContinueUsed=m_nContinueUsed;
 	CGame::GVar().m_curPower=m_pChara->GetPower();
 }
@@ -142,6 +144,7 @@ void CStage::DownloadVarFromGlobal()
 	m_totalNPointItem=CGame::GVar().m_totalNPointItem;
 	m_curNGraze=CGame::GVar().m_practiceConfig.mode?CGame::GVar().m_practiceConfig.graze:0;
 	m_playerPerformance=CGame::GVar().m_playerPerformance;
+ m_itemRankProgress=CGame::GVar().m_itemRankProgress;
 	m_nContinueUsed=CGame::GVar().m_nContinueUsed;
 
 	m_nContinueLimit=CGame::GVar().m_nContinueLimit;
@@ -283,6 +286,7 @@ void CStage::Initialize()
  GetPhaseTimeout();
  CGame::GVar().OnStageEnter();
  InitCoop();
+ TickBossBar();
 }
 
 void CStage::ApplyPracticeWarp()
@@ -326,7 +330,9 @@ void CStage::ApplyPracticeWarp()
 
 void CStage::ApplyPracticeSection()
 {
- const auto& p=CGame::GVar().m_practiceConfig;
+ const auto& game=CGame::GVar();
+ const auto& p=game.m_practiceConfig;
+ const bool updatedStart=!game.m_bReplayMode||game.m_replay.m_practiceVersion>=CReplay::CurrentPracticeVersion;
  const auto* selected=practice::SelectedSection(p.stage,p.warp,p.section);
  if(!selected)return;
  // Only initialization calls this path. It never records synthetic key frames.
@@ -338,11 +344,12 @@ void CStage::ApplyPracticeSection()
  const auto actualReady=[&](){return p.warp==1?m_pMidBoss&&m_pMidBoss->m_curPhase==selected->phase:m_pBoss&&variant()==selected->variant&&m_pBoss->m_curPhase==selected->phase;};
  const auto branchDialogue=[&](){return p.dialogue&&selected->variant&&variant()==0&&m_pDialogue->IsRunning();};
  const auto ready=[&](){return actualReady()||branchDialogue();};
+ bool advancePracticeLasers=false;
  const auto step=[&](){
   ++m_curFrame;
   if(m_pDialogue->IsRunning()){m_curGameKeyState=128;m_pDialogue->Step();m_curGameKeyState=0;return;}
   if(p.warp==1){if(!m_pMidBoss||m_pMidBoss->Step())throw std::runtime_error("Practice midboss phase ended before destination");}
-  else {if(!m_pBoss)throw std::runtime_error("Practice boss is missing");m_pBoss->Step();}
+  else {if(!m_pBoss)throw std::runtime_error("Practice boss is missing");if(advancePracticeLasers)m_pLaser->Step();m_pBoss->Step();}
  };
  m_practiceSeekDamage=p.warp==1&&p.stage==1&&selected->phase==2&&p.trigger?2:1;
  int ticks=0;while(!ready()&&ticks++<20000)step();
@@ -357,26 +364,28 @@ void CStage::ApplyPracticeSection()
  if(!m_practiceDialoguePending){
  int hp=selected->startHP;
  if(p.warp==1&&p.stage==1&&selected->phase==2&&p.trigger)hp=1400;
- if(p.startHP>=0&&selected->continuous)hp=p.startHP;
  if(p.rage){
   if(p.warp==1){hp=p.stage==0?200:p.stage==1?(p.rage==1?800:600):999;}
-  else if(p.stage==3)hp=p.rage==1?2750:1125;
-  else if(p.stage==4)hp=selected->endHP+(selected->phase==4?599:499);
-  else if(p.stage==5&&!p.trigger)hp=p.rage==1?5600:3800;
+  else if(p.stage==3)hp=(p.rage==1?original::TwinFirstRageHP:original::TwinSecondRageHP)/2;
+  else if(p.stage==4)hp=selected->endHP+(selected->phase==4?original::YumekoRedRageMargin:original::YumekoBlueRageMargin)-1;
+  else if(p.stage==5&&!p.trigger)hp=p.rage==1?original::ShinkiLaserHP:original::ShinkiFastHP;
  }
  if(p.startHP>=0&&selected->continuous)hp=p.startHP;
  if(p.warp==1)m_pMidBoss->m_curHP=hp;
  else {
   m_pBoss->m_curHP=hp;m_pBoss->m_curPhaseEndHP=selected->endHP;
-  if(p.stage==3&&selected->variant==0)static_cast<CBossStage4*>(m_pBoss)->m_2curHP=hp;
+  if(p.stage==3&&selected->variant==0){
+   // The retail trigger is strictly below the combined HP boundary.
+   static_cast<CBossStage4*>(m_pBoss)->m_2curHP=hp-(updatedStart&&p.rage?1:0);
+  }
  }
- // Yumeko initializes both aimed-shot angles at frame 64. Do not lower HP
- // until that native initialization has run, or early rage reads stale angles.
- if(p.warp==2&&p.stage==4&&p.rage){
+ // Older recordings began after the first aimed volley.
+ if(!updatedStart&&p.warp==2&&p.stage==4&&p.rage){
   m_pBoss->m_curHP=selected->startHP;
   while(m_pBoss->m_curPhaseFrame<64)step();
   m_pBoss->m_curHP=hp;
  }
+ advancePracticeLasers=updatedStart&&p.warp==2&&p.stage==5&&selected->phase==10&&p.rage;
  const auto rageReady=[&](){
   if(!p.rage)return true;
   if(p.warp==1)return p.stage!=6||static_cast<CMidBossStageEx*>(m_pMidBoss)->m_phase1CurSubphase==1;
@@ -395,7 +404,12 @@ void CStage::ApplyPracticeSection()
  if(auto* boss=dynamic_cast<CBossStage4*>(m_pBoss))boss->m_curvingBullet.Initialize();
  if(auto* boss=dynamic_cast<CBossStage4Mai*>(m_pBoss))boss->m_largeBullet.Initialize();
  if(auto* boss=dynamic_cast<CBossStage4Yuki*>(m_pBoss))boss->m_largeBullet.Initialize();
- if(auto* boss=dynamic_cast<CBossStage5*>(m_pBoss))boss->m_knifeBullet.Initialize();
+ if(auto* boss=dynamic_cast<CBossStage5*>(m_pBoss)){
+  boss->m_knifeBullet.Initialize();
+  // Seeking the blue volley's rage state runs its earlier laser spawn.
+  // Practice starts at the selected attack without those synthetic lasers.
+  if(p.rage&&selected->phase==7&&original::BossGeometryEnabled())m_pLaser->Initialize();
+ }
  if(auto* boss=dynamic_cast<CBossStage6*>(m_pBoss)){boss->m_curvingBullet.Initialize();boss->m_shinkiBullet.Initialize();}
  if(auto* boss=dynamic_cast<CBossStageEx*>(m_pBoss))boss->m_curvingBullet.Initialize();
  m_pItem->Initialize();m_pPopupNumber->Initialize();m_pGatherEffect->Initialize();m_pSparkEffect->Initialize();m_pCircle->Initialize();
@@ -700,7 +714,7 @@ int CStage::StepFrame(unsigned short liveInput)
 	if (m_pStage2BG)
 		m_pStage2BG->Step();
 	if(Cooperative())StepPlayerBomb();else if(m_bInCharaBomb)m_pChara->StepBomb();
- m_pLaser->FinishDemoFrame();
+ m_pLaser->FinishFrame();
 	m_pTextOverlay->Step();
 	m_pFloatingText->Step();
  if(practice::Options().showKeys)practice::RecordKey(5,m_curGameKeyState);
@@ -980,12 +994,42 @@ void CStage::StepPause()
  if(Cooperative()){StepCoopMenu();return;}
  m_lastMenuKeyState=m_curMenuKeyState;
  m_curMenuKeyState=CCommonFunctionInput::GetAllKeyState();
- // Pause-menu input is handled by the thprac ImGui adapter.
+ if(practice::Available())return;
+#ifdef __EMSCRIPTEN__
+ // The launcher's existing restart shortcut is independent of the menu rows.
+ if(CGame::s_pCurGame->m_input.GetKeyState(DIK_R))m_curMenuKeyState|=0x8000;
+ if((m_curMenuKeyState&~m_lastMenuKeyState&0x8000)!=0){PracticeExit(3);return;}
+#endif
+ const bool confirm=CCommonFunctionInput::ZPressed(m_curMenuKeyState,m_lastMenuKeyState)||
+  CCommonFunctionInput::EnterPressed(m_curMenuKeyState,m_lastMenuKeyState);
+ if(CCommonFunctionInput::ESCPressed(m_curMenuKeyState,m_lastMenuKeyState)||(confirm&&m_pauseCursorPos==0)){
+  m_bPaused=false;
+  return;
+ }
+ if(CCommonFunctionInput::QPressed(m_curMenuKeyState,m_lastMenuKeyState)||(confirm&&m_pauseCursorPos==1)){
+  SetQuit(CGame::GVar().m_bReplayMode?STAGE_END_REPLAY_END:STAGE_END_PLAYER_QUIT);
+  m_bPaused=false;
+  return;
+ }
+ if(CCommonFunctionInput::UpPressed(m_curMenuKeyState,m_lastMenuKeyState)||
+  CCommonFunctionInput::DownPressed(m_curMenuKeyState,m_lastMenuKeyState))m_pauseCursorPos=1-m_pauseCursorPos;
 }
 
 void CStage::DrawPause()
 {
- if (m_bPaused&&!Cooperative()) practice::DrawPause(*this);
+ if (!m_bPaused||Cooperative())return;
+ if (practice::Available()){practice::DrawPause(*this);return;}
+ const unsigned char extPause[]={0xf0,0xf1,0};
+ const unsigned char extResume[]={0xf2,0xf3,0};
+ const unsigned char extExit[]={0xf4,0xf5,0};
+ const int x=m_playAreaUpperLeftX+0x1a*8-32;
+ const int y=m_playAreaUpperLeftY-16;
+ CTh5ExtFont::DrawExtString(extPause,100,x,y+0xc*16,1,1,0);
+ CTh5ExtFont::DrawExtString(extResume,100,x,y+0xe*16,1,1,m_pauseCursorPos==0);
+ CTh5ExtFont::DrawExtString(extExit,100,x,y+0xf*16,1,1,m_pauseCursorPos==1);
+ const float lineX=float(m_playAreaUpperLeftX+212-32);
+ const float lineY=float(y+239+m_pauseCursorPos*16);
+ CCommonFunctionGraphic::DrawRectangle(lineX,lineY,lineX+31,lineY,1,1,1);
 }
 
 bool CStage::Pause()
@@ -994,7 +1038,10 @@ bool CStage::Pause()
 	{
 		m_bPaused=true;
   if(Cooperative()){m_pauseSelection=0;for(int i=0;i<m_seatCount;i++)m_pauseHeld[i]=coop::Run().input[i].buttons;}
-		practice::FocusPause();
+		if(practice::Available())practice::FocusPause();
+#ifdef __EMSCRIPTEN__
+		else if(CGame::s_pCurGame->m_input.GetKeyState(DIK_R))m_curMenuKeyState|=0x8000;
+#endif
 		m_pauseCursorPos=0;
 		return true;
 	}
@@ -1026,14 +1073,14 @@ practice::PhaseTimeout CStage::GetPhaseTimeout() const {
   if(m_pBoss)timer=m_pBoss->GetPhaseTimeout();
   else if(m_pMidBoss)timer=m_pMidBoss->GetPhaseTimeout();
  }
- if(!practice::Enabled(practice::LockTimeout)||timer.unit==practice::PhaseTimeout::None){m_timeoutOwner=nullptr;return timer.ForDisplay(practice::Options().phaseTimeoutAsTime);}
+ if(!practice::Enabled(practice::LockTimeout)||timer.unit==practice::PhaseTimeout::None){m_timeoutOwner=nullptr;return timer.ForDisplay(practice::Options().phaseTimeoutAsTime,practice::Options().phaseTimeoutAsFrames);}
  // Lock the complete display projection, not the actor's attack frame/RNG.
  // Each new stage, actor, phase or F6 activation gets its own snapshot.
  const unsigned int revision=practice::TimeoutLockRevision();
  if(owner!=m_timeoutOwner||kind!=m_timeoutKind||phase!=m_timeoutPhase||revision!=m_timeoutRevision){
   m_timeoutOwner=owner;m_timeoutKind=kind;m_timeoutPhase=phase;m_timeoutRevision=revision;m_timeoutSnapshot=timer;
  }
- return m_timeoutSnapshot.ForDisplay(practice::Options().phaseTimeoutAsTime);
+ return m_timeoutSnapshot.ForDisplay(practice::Options().phaseTimeoutAsTime,practice::Options().phaseTimeoutAsFrames);
 }
 
 void CStage::DrawStatistics()
@@ -1044,12 +1091,16 @@ void CStage::DrawStatistics()
   if(timer.unit!=practice::PhaseTimeout::None){
    const int right=m_playAreaUpperLeftX+384-8;
    const int y=m_playAreaUpperLeftY+8;
-   const int suffix=timer.unit==practice::PhaseTimeout::Turns?80:0;
-   const bool warning=timer.value<=(suffix?5:10);
+   const bool turns=timer.unit==practice::PhaseTimeout::Turns;
+   const bool frames=timer.unit==practice::PhaseTimeout::Ticks;
+   const int suffix=turns?80:frames?16:0;
+   const int digits=frames?5:3;
+   const bool warning=timer.value<=(turns?5:frames?560:10);
    const float tint=warning?.65f:1.f;
-   m_pStageRes->DrawNumber(right-suffix-48,y,timer.value,3,false,true,1,tint,tint);
-   if(timer.estimated)CPC98Font::DrawString("~",1,right-64,y,1,tint,tint);
-   if(suffix){const unsigned char turn[]={0xbd,0xbe,0xbb,0xb7,0};CTh5ExtFont::DrawExtString(turn,4,right-64,y,1,tint,tint);}
+   m_pStageRes->DrawNumber(right-suffix-digits*16,y,timer.value,digits,false,true,1,tint,tint);
+   if(timer.estimated)CPC98Font::DrawString("~",1,right-suffix-(digits+1)*16,y,1,tint,tint);
+   if(frames)CPC98Font::DrawString("F",1,right-16,y,1,tint,tint);
+   if(turns){const unsigned char turn[]={0xbd,0xbe,0xbb,0xb7,0};CTh5ExtFont::DrawExtString(turn,4,right-64,y,1,tint,tint);}
   }
  }
 	//draw score and highscore

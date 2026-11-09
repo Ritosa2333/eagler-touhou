@@ -1,5 +1,15 @@
 [
   [
+    "开始",
+    "Start",
+    "開始"
+  ],
+  [
+    "返回",
+    "Back",
+    "戻る"
+  ],
+  [
     "无敌",
     "Invincibility",
     "無敵"
@@ -485,9 +495,9 @@
     "低速固定が優先されます。キー設定はプレイ操作に適用し、メニューとリプレイは維持します。"
   ],
   [
-    "攻击循环可选择轮数或时间；时间按原速56帧每秒换算，随机移动阶段的预计时间用~标记。",
-    "Show attack cycles or time at 56 fps. ~ marks an estimate for random movement.",
-    "攻撃ループを回数・時間で表示。56 fps 換算、ランダム移動の推定値は ~ で表示。"
+    "剩余秒数按原速 56 帧每秒换算。循环攻击也可显示轮数。受随机移动或跳帧影响的估算时间以 ~ 标记。",
+    "Seconds use the original 56 fps. Repeating attacks can show cycles. A tilde marks estimates affected by movement or phase clock skips.",
+    "残り秒数は原作の毎秒56フレームで換算します。繰り返す攻撃は残り回数も表示できます。移動や攻撃時間の短縮で変動する見積もりには ~ を付けます。"
   ],
   [
     "界面与行为参考：Ack 的紫版 thprac，基于 touhouworldcup/thprac。原生游戏：uth05win；原版流程参考：ReC98。",
@@ -918,5 +928,210 @@
     "炸弹",
     "Bombs",
     "ボム"
+  ],
+  [
+    "1 · 走位曲射",
+    "1 · Moving barrages",
+    "1・移動弾幕"
+  ],
+  [
+    "3 · 激光与散弹",
+    "3 · Lasers and scatter",
+    "3・レーザーとばら撒き弾"
+  ],
+  [
+    "1 · 走位与叠弹",
+    "1 · Moving stacks",
+    "1・移動と連弾"
+  ],
+  [
+    "3 · 激光与环弹",
+    "3 · Lasers and rings",
+    "3・レーザーと全方位弾"
+  ],
+  [
+    "3 · 三向激光",
+    "3 · Three-way lasers",
+    "3・三方向レーザー"
+  ],
+  [
+    "4 · 三向激光与散弹",
+    "4 · Lasers and scatter",
+    "4・三方向レーザーとばら撒き弾"
+  ],
+  [
+    "舞 1 · 散射与转向弹",
+    "Mai 1 · Spread and turns",
+    "舞 1・扇状弾と屈折弾"
+  ],
+  [
+    "舞 2 · 环形激光与大玉",
+    "Mai 2 · Laser ring and orbs",
+    "舞 2・全方位レーザーと大玉"
+  ],
+  [
+    "舞 4 · 激光与大玉",
+    "Mai 4 · Lasers and orbs",
+    "舞 4・レーザーと大玉"
+  ],
+  [
+    "雪 1 · 随机连射",
+    "Yuki 1 · Random volleys",
+    "雪 1・ランダム連射"
+  ],
+  [
+    "雪 2 · 大玉散射",
+    "Yuki 2 · Orb spreads",
+    "雪 2・大玉の扇状弾"
+  ],
+  [
+    "雪 3 · 加速散弹",
+    "Yuki 3 · Accelerating shots",
+    "雪 3・加速ばら撒き弾"
+  ],
+  [
+    "1 · 回旋飞刀与环弹",
+    "1 · Knives and rings",
+    "1・旋回ナイフと全方位弾"
+  ],
+  [
+    "2 · 红弹与飞刀",
+    "2 · Red shots and knives",
+    "2・赤弾とナイフ"
+  ],
+  [
+    "4 · 蓝弹、激光与飞刀",
+    "4 · Blue shots and lasers",
+    "4・青弾、レーザー、ナイフ"
+  ],
+  [
+    "5 · 横向刀阵",
+    "5 · Crossfield knives",
+    "5・横切るナイフ"
+  ],
+  [
+    "6 · 转向环弹",
+    "6 · Turning rings",
+    "6・屈折する全方位弾"
+  ],
+  [
+    "3 · 大玉与散弹",
+    "3 · Orbs and spreads",
+    "3・大玉と扇状弾"
+  ],
+  [
+    "4 · 拖尾弹与散弹",
+    "4 · Trails and spreads",
+    "4・追尾弾と扇状弾"
+  ],
+  [
+    "7 · 旋转大玉与环弹",
+    "7 · Orbs and rings",
+    "7・回転大玉と全方位弾"
+  ],
+  [
+    "5 · 激光与移动射击",
+    "5 · Moving shots and lasers",
+    "5・レーザーと移動射撃"
+  ],
+  [
+    "6 · 三向移动激光",
+    "6 · Three-way lasers",
+    "6・三方向の移動レーザー"
+  ],
+  [
+    "7 · 拖尾弹与散射",
+    "7 · Trail bullets and spreads",
+    "7・追尾弾と扇状弾"
+  ],
+  [
+    "1 · 回旋叠弹与散弹",
+    "1 · Stacks and scatter",
+    "1・回転連弾とばら撒き弾"
+  ],
+  [
+    "2 · 密集叠弹",
+    "2 · Rapid stacks",
+    "2・高速連弾"
+  ],
+  [
+    "1 · 扇形与多层环弹",
+    "1 · Stacked rings",
+    "1・扇状弾と多重全方位弾"
+  ],
+  [
+    "每侧单发（Easy / Normal）",
+    "One shot per side (Easy / Normal)",
+    "左右から単発（Easy / Normal）"
+  ],
+  [
+    "每侧双叠弹（Hard）",
+    "Two stacked shots per side (Hard)",
+    "左右から2連弾（Hard）"
+  ],
+  [
+    "每侧三路弹（Lunatic）",
+    "Three-way spread per side (Lunatic)",
+    "左右から3方向弾（Lunatic）"
+  ],
+  [
+    "合计 HP < %d / %d 时切换狂暴。",
+    "Rage changes below %d / %d combined HP.",
+    "合計 HP が %d / %d 未満で発狂。"
+  ],
+  [
+    "HP < %d 时进入狂暴。",
+    "Rage starts below %d HP.",
+    "HP が %d 未満で発狂。"
+  ],
+  [
+    "Bomb 期间每帧扣 1 HP，阶段继续至计时结束或 Bomb 后击破。",
+    "Bombs reduce HP by 1 per frame. The phase lasts until timeout or a defeat after the bomb.",
+    "ボム中は毎フレーム HP が 1 減少。時間切れかボム後の撃破で終了。"
+  ],
+  [
+    "激光：HP ≤ %d 或第 %d 帧起。加速：HP ≤ %d 或第 %d 帧起。",
+    "Lasers: HP ≤ %d or from frame %d. Faster shots: HP ≤ %d or from frame %d.",
+    "レーザー：HP ≤ %d または %d フレーム以降。高速化：HP ≤ %d または %d フレーム以降。"
+  ],
+  [
+    "弹速随 HP 降低而提高。",
+    "Shots speed up as HP falls.",
+    "HP が減るほど弾速が上がる。"
+  ],
+  [
+    "Bomb 期间及之后 %d 帧免伤。",
+    "Immune during bombs and for %d frames afterward.",
+    "ボム中と終了後 %d フレームはダメージ無効。"
+  ],
+  [
+    "激光展开",
+    "Lasers",
+    "レーザー展開"
+  ],
+  [
+    "发弹加速",
+    "Faster shots",
+    "弾の発射間隔短縮"
+  ],
+  [
+    "计时单位",
+    "Countdown units",
+    "表示単位"
+  ],
+  [
+    "原速秒数",
+    "Native seconds",
+    "原速の秒数"
+  ],
+  [
+    "原速帧数",
+    "Native frames",
+    "原速のフレーム数"
+  ],
+  [
+    "秒数按原速 56 帧每秒换算。轮数模式下，固定计时的阶段显示秒数。F6 冻结剩余量和时间触发的狂暴，血量仍可触发狂暴。估算值带 ~。",
+    "Seconds use the original 56 fps. In rounds mode, timed phases display seconds. F6 freezes the countdown and timed rage triggers. HP triggers stay active. Estimates carry a ~.",
+    "秒数は原速 56 fps で換算。ラウンド表示でも時間制の段階は秒数を表示。F6 で残り時間と時間による発狂を固定し、HP による発狂は有効。推定値には ~ を表示。"
   ]
 ]

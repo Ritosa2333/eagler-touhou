@@ -15,7 +15,11 @@ public:
     static constexpr u32 ordinary_count=600,cancel_count=4096,pool_size=ordinary_count+cancel_count;
 private:
     AnmManager& animations;EffectManager& effects;i32 resource;
-    std::array<Slot,pool_size> slots;std::array<std::vector<u32>,2> free_slots;
+    std::array<Slot,pool_size> slots;
+    // The untouched part of each free list is a contiguous index range.
+    // Released slots remain a stack above that range, in release order.
+    std::array<u32,2> unused_free{ordinary_count,cancel_count};
+    std::array<std::vector<u32>,2> recycled;
     std::array<u32,(pool_size+31)/32> used{};
     struct CachedVisual {
         std::weak_ptr<const AnmVm> idle;
@@ -39,7 +43,10 @@ public:
     bool release(u32 id);bool falling(u32 id);
     bool update(ItemFrameContext&,const std::array<ItemFrameContext*,2>& partners={});
     bool draw(AnmRenderer&);
-    u32 free_head(bool cancel)const noexcept{return free_slots[cancel].empty()?0:free_slots[cancel].back()+1;}
+    u32 free_head(bool cancel)const noexcept{
+        if(!recycled[cancel].empty())return recycled[cancel].back()+1;
+        return unused_free[cancel]?(cancel?ordinary_count:0)+unused_free[cancel]:0;
+    }
     void save_rollback(multiplayer::FrameImage&);
 };
 }

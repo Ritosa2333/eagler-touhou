@@ -62,7 +62,7 @@ void CLaser::AddLaserShootOut(float srcX,float srcY,float color[3],float angle,i
 			m_laser[i].angle=angle;
 			m_laser[i].srcX=(float)(srcX+cos(angle/256.0f*2*PI)*16.0f*8.0f);
 			m_laser[i].srcY=(float)(srcY+sin(angle/256.0f*2*PI)*16.0f*8.0f);
-   if(original::DemoActive()){
+   if(original::MotionEnabled()){
     m_laser[i].angle=float(int(angle)&255);
     m_laser[i].srcX=srcX+float(original::math::X(int(angle),128));
     m_laser[i].srcY=srcY+float(original::math::Y(int(angle),128));
@@ -105,13 +105,20 @@ void CLaser::RemoveLaser(int laserIdx)
 
 void CLaser::TestCrash(int laserIdx)
 {
- if(original::DemoActive()){
-  const auto& laser=m_laser[laserIdx];const int x=int(m_pStage->m_pChara->GetCurX()),y=int(m_pStage->m_pChara->GetCurY());
+ if(original::MotionEnabled()){
+  const auto& laser=m_laser[laserIdx];
+  const int x=int(m_pStage->m_pChara->GetCurX()),y=int(m_pStage->m_pChara->GetCurY());
+  const bool cooperative=m_pStage->Cooperative();
   int length=int(laser.lenUpper);
   do{
    const int testX=int(laser.srcX)+original::math::X(int(laser.angle),length);
    const int testY=int(laser.srcY)+original::math::Y(int(laser.angle),length);
-   if(testX>=x-96&&testX<x+96&&testY>=y-96&&testY<y+96){m_pStage->MarkPlayerMiss();return;}
+   if(cooperative){
+    if(m_pStage->TestPlayerCrash(testX,testY,96,96))m_pStage->MarkPlayerMiss();
+   }else if(testX>=x-96&&testX<x+96&&testY>=y-96&&testY<y+96){
+    m_pStage->MarkPlayerMiss();
+    return;
+   }
    length-=256;
   }while(length>=int(laser.lenLower));
   return;
@@ -139,7 +146,7 @@ void CLaser::Step()
 				if (m_laser[i].mode==LASER_MODE_SHOOT_OUT)
 				{
 					m_laser[i].mode=LASER_MODE_SHOOT_OUT_END;
-					m_laser[i].speed=original::DemoActive()?float(int(m_laser[i].speed)/2):m_laser[i].speed/2.0f;
+					m_laser[i].speed=original::MotionEnabled()?float(int(m_laser[i].speed)/2):m_laser[i].speed/2.0f;
 				}
 			}
 			switch(m_laser[i].mode)
@@ -195,16 +202,16 @@ void CLaser::Step()
 			    break;
 			}
 			m_laser[i].age++;
-			if (!original::DemoActive()&&m_laser[i].lenLower>=550.0f*16.0f)
+			if (!original::MotionEnabled()&&m_laser[i].lenLower>=550.0f*16.0f)
 				m_laser[i].mode=LASER_MODE_NONE;
 		}
 }
 
 // Native rendering frees a ray after clipping its inner polygon. Keep this
-// state change in the simulation so skipped rendering cannot change Demo slots.
-void CLaser::FinishDemoFrame()
+// state change in the simulation so skipped rendering cannot change which slots are free.
+void CLaser::FinishFrame()
 {
- if(!original::DemoActive())return;
+ if(!original::MotionEnabled())return;
  struct Point{int x,y;};
  for(auto& laser:m_laser){
   if(!laser.mode||laser.mode==LASER_MODE_SHOOT_OUT_END)continue;

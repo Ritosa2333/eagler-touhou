@@ -70,7 +70,7 @@ EMSCRIPTEN_KEEPALIVE int th05_replay_frame(){return game?game->m_globalVar.m_rep
 EMSCRIPTEN_KEEPALIVE int th05_replay_stage(){return game?game->m_globalVar.m_replay.ReadStage():-1;}
 }
 
-extern "C" EMSCRIPTEN_KEEPALIVE void th05_practice_configure(int enabled){th5w::practice::Configure(enabled!=0);}
+extern "C" EMSCRIPTEN_KEEPALIVE void th05_practice_configure(int enabled){th5w::practice::Configure(enabled!=0);if(game&&enabled)Guard([]{th5w::practice::Initialize(nullptr);});}
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_practice_enabled(){return th5w::practice::Available();}
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_practice_tool(int tool){return tool>=0&&tool<th5w::practice::ToolCount?th5w::practice::Enabled(th5w::practice::Tool(tool)):0;}
 

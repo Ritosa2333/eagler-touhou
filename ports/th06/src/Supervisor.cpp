@@ -337,6 +337,15 @@ ChainCallbackResult Supervisor::OnUpdate(Supervisor *s)
                     g_GameManager.currentStage = 0;
                 else
                     g_GameManager.currentStage--;
+                // RegisterChain snapshots these counts for respawns and
+                // continues. Restore the starting stock before it reads them.
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                if (!MultiplayerGameplay::IsMultiplayer())
+#endif
+                {
+                    g_GameManager.livesRemaining = s->defaultConfig.lifeCount;
+                    g_GameManager.bombsRemaining = s->defaultConfig.bombCount;
+                }
                 ReplayManager::SaveReplay(NULL, NULL);
                 if (GameManager::RegisterChain() != ZUN_SUCCESS)
                 {

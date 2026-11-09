@@ -1,10 +1,10 @@
 #include "WorldState.hpp"
+#include "ItemFrameState.hpp"
 #include "../game/GameState.hpp"
 #include "../game/StageFlow.hpp"
 #include "../game/CameraEffects.hpp"
 #include "../game/EnemyCallbacks.hpp"
 #include "../game/HostilePool.hpp"
-#include "../game/FriendlyPool.hpp"
 #include "../game/LaserWorld.hpp"
 #include "../game/ItemPresentation.hpp"
 #include "../game/UfoEffects.hpp"
@@ -18,7 +18,9 @@ auto stateReferences() {
   return std::tie(pilots, active, paused, finished, restartRequested,returnRequested,saveRequested,menuConfirm,
     menuSelection,menuAction,menuReadySeats,menuAge,menuHoldAge,menuInput,storyInput,currentSeat, tickNumber, wipeFrames, lifeFragments,
     bombFragments, teamRank, damageRemainders, bulletGrazeMasks, random, displayRandom,
-    nextDetachedAnimation, bullets, itemManager, ufoManager, messageVM, spellState,
+    nextDetachedAnimation, itemManager.nextId, itemManager.tokenSideCounter, itemManager.smallPointCursor,
+    itemManager.smallPointSpawns, itemManager.poolMisses, itemManager.unsupportedTypes,
+    itemManager.events, itemManager.onSpawnSound, ufoManager, messageVM, spellState,
     spellAnimationKeys, messageAnimationKeys, messageAnimationOwners, messageEvents,
     unsupported, animationUnsupported, referenceFaults, runtimeFaults, globals, phasePlayerCounters,
     frame, difficulty, stageNumber, backgroundFrame, gameSpeed, backgroundVisible, stageState, score,
@@ -47,9 +49,13 @@ struct WorldState::Data {
   static std::shared_ptr<Pool> pool();
   decltype(copyValues(stateReferences())) values = copyValues(stateReferences());
   anm_logic::Scene::Snapshot scene = animationScene.snapshot();
-  laser::Manager lasers = laserManager;
-  UfoEffects effects = ufoEffects;
+  laser::Manager::Snapshot lasers = laserManager.snapshot();
+  UfoEffects::Snapshot effects = ufoEffects.snapshot();
+  // Snapshots copy and traverse projectiles in order. Keep the live deque for
+  // synchronous births, which rely on stable references during nested emits.
+  std::vector<Projectile> bullets{th12::bullets.begin(), th12::bullets.end()};
   std::vector<Enemy> enemies;
+  ItemFrameState items;
   size_t enemyCount = 0;
   explicit Data(Pool& storage);
   void capture(Pool& storage);
@@ -60,9 +66,10 @@ struct WorldState::Data::Pool {
   std::vector<std::unique_ptr<Data>> unused;
   std::vector<std::unique_ptr<Enemy>> retiredEnemies;
   std::list<Context> spareContexts;
+  ItemFrameState::Cache itemPages;
   Pool() { unused.reserve(Capacity); retiredEnemies.reserve(256); }
 };
-WorldState::Data::Data(Pool& storage) { captureEnemies(storage); }
+WorldState::Data::Data(Pool& storage) { items.capture(itemManager, storage.itemPages); captureEnemies(storage); }
 void WorldState::Data::captureEnemies(Pool& storage) {
   enemyCount = th12::enemies.size();
   if (enemies.size() < enemyCount) enemies.resize(enemyCount);
@@ -74,7 +81,9 @@ void WorldState::Data::captureEnemies(Pool& storage) {
 }
 void WorldState::Data::capture(Pool& storage) {
   values = stateReferences();
-  animationScene.snapshot(scene); lasers = laserManager; effects = ufoEffects;
+  items.capture(itemManager, storage.itemPages);
+  bullets.assign(th12::bullets.begin(), th12::bullets.end());
+  animationScene.snapshot(scene); laserManager.snapshot(lasers); ufoEffects.snapshot(effects);
   captureEnemies(storage);
 }
 std::shared_ptr<WorldState::Data::Pool> WorldState::Data::pool() {
@@ -98,10 +107,13 @@ WorldState::WorldState() {
 void WorldState::clearPool() {
   auto storage = Data::pool();
   storage->unused.clear(); storage->retiredEnemies.clear(); storage->spareContexts.clear();
+  storage->itemPages = {};
 }
 void WorldState::restore() const {
   stateReferences() = data_->values;
-  animationScene.restore(data_->scene); laserManager = data_->lasers; ufoEffects = data_->effects;
+  data_->items.restore(itemManager);
+  th12::bullets.assign(data_->bullets.begin(), data_->bullets.end());
+  animationScene.restore(data_->scene); laserManager.restore(data_->lasers); ufoEffects.restore(data_->effects);
   auto storage = Data::pool();
   while (th12::enemies.size() > data_->enemyCount) {
     if (storage->retiredEnemies.size() < 256)
@@ -116,6 +128,6 @@ void WorldState::restore() const {
   }
   for (size_t i = 0; i < data_->enemyCount; ++i)
     copyEnemy(*th12::enemies[i], data_->enemies[i], storage->spareContexts);
-  refreshHostilePointers(); refreshFriendlyPointers();
+  refreshProjectilePointers();
 }
 }

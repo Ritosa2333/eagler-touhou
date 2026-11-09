@@ -3,13 +3,21 @@
 namespace th5w { namespace practice {
 // Read-only projection: native cycle counts and 56-fps simulation seconds.
 struct PhaseTimeout {
- enum Unit { None, Seconds, Turns };
- Unit unit; int value; bool estimated; int cycles=-1;
+ enum Unit { None, Seconds, Turns, Ticks };
+ Unit unit; int value; bool estimated; int cycles=-1, frames=-1;
  PhaseTimeout():unit(None),value(0),estimated(false){}
  PhaseTimeout(Unit u,int n,bool estimate=false):unit(u),value(n>0?n:0),estimated(estimate){}
  static PhaseTimeout WithCycles(PhaseTimeout timer,int remaining){timer.cycles=remaining>0?remaining:0;return timer;}
- PhaseTimeout ForDisplay(bool asTime) const {return !asTime&&cycles>=0?PhaseTimeout(Turns,cycles):*this;}
- static PhaseTimeout Frames(int deadline,int elapsed,bool estimate=false){int n=deadline-elapsed;return PhaseTimeout(Seconds,n>0?(n+55)/56:0,estimate);}
+ PhaseTimeout ForDisplay(bool asTime,bool asFrames=false) const {
+  if(asFrames&&frames>=0)return PhaseTimeout(Ticks,frames,estimated);
+  return !asTime&&cycles>=0?PhaseTimeout(Turns,cycles):*this;
+ }
+ static PhaseTimeout Frames(int deadline,int elapsed,bool estimate=false){
+  const int remaining=deadline>elapsed?deadline-elapsed:0;
+  PhaseTimeout timer(Seconds,(remaining+55)/56,estimate);
+  timer.frames=remaining;
+  return timer;
+ }
  // A loop counter advances after movement. Attack and movement reset their
  // local frame separately, so sum their native durations before rounding.
  template<class Attack,class Move>
@@ -21,10 +29,18 @@ struct PhaseTimeout {
   return WithCycles(Frames(n,0,estimate),limit-completed);
  }
  // Same convergence as CBoss::MoveTo, without changing the real position.
- static int MoveAxisFrames(float position,float target){
-  int n=0;
-  while(position!=target&&n<256){float delta=target-position;float distance=std::fabs(delta);position+=distance>=16?delta/16:distance>=4?delta/4:delta;++n;}
-  return n+1; // MoveTo reports completion on the following call.
+ static int MoveAxisFrames(float position,float target,int nearDivisor=4){
+  int remaining=int(target-position);
+  int frames=1;
+  int step=remaining/16;
+  if(!step)step=remaining/nearDivisor;
+  while(step){
+   remaining-=step;
+   ++frames;
+   step=remaining/16;
+   if(!step)step=remaining/nearDivisor;
+  }
+  return frames;
  }
 };
 } }

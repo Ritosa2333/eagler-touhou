@@ -25,14 +25,23 @@ struct UfoEffectState {
 class UfoEffects {
   uint64_t serial_ = 1;
   std::unordered_map<uint32_t, std::shared_ptr<UfoEffectState>> states_;
+  std::vector<uint32_t> restoreIds_;
   anm_logic::Node* bind(anm_logic::Scene&, std::shared_ptr<UfoEffectState>);
   void trail(anm_logic::Scene&, const std::array<float, 3>& screenPosition);
   bool tick(anm_logic::Scene&, UfoEffectState&);
 
 public:
+  class Snapshot {
+    friend class UfoEffects;
+    uint64_t serial = 1;
+    std::vector<UfoEffectState> states;
+  };
   UfoEffects() = default;
   UfoEffects(const UfoEffects&);
   UfoEffects& operator=(const UfoEffects&);
+  Snapshot snapshot() const;
+  void snapshot(Snapshot&) const;
+  void restore(const Snapshot&);
   // Reset after the owning Scene is reset, so no old callbacks remain alive.
   void reset();
   void summon(anm_logic::Scene&, float worldX, float worldY, float worldZ = 0);

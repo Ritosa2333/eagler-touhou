@@ -13,6 +13,8 @@ CBoss::CBoss(void)
 	m_curMode=0;
 	m_nModeChange=0;
 	m_curPhaseFrame=0;
+	m_curHP=0;
+	m_curPhaseEndHP=0;
 	m_velX=0;
 	m_velY=0;
 	m_bHitThisFrame=false;
@@ -115,109 +117,53 @@ void CBoss::AddDefeatScoreAndPopupNumbers(int n1000)
 
 int CBoss::RandomWalk(int frameIdx)
 {
- if(original::DemoActive()){
-  if(frameIdx<0)return 0;
-  if(frameIdx==0){
-   int angle=m_curX<144*16?original::Random()%96-48:m_curX>240*16?(original::Random()&0x60)+0x30:original::Random();
-   angle&=255;if((m_forceGoUpOrDown==1&&angle<128)||(m_forceGoUpOrDown==2&&angle>=128))angle=(-angle)&255;
-   m_randomWalkMovingAngle=float(angle);m_forceGoUpOrDown=0;
-  }
-  m_velX=float(original::math::X(int(m_randomWalkMovingAngle),64-frameIdx*2));
-  m_velY=float(original::math::Y(int(m_randomWalkMovingAngle),64-frameIdx*2));
-  m_curX+=m_velX;m_curY+=m_velY;m_curImage=m_velX<0?m_imgGoLeft:m_imgGoRight;
-  if(m_curY<m_yLowerBound){m_curY=m_yLowerBound;m_forceGoUpOrDown=2;}
-  else if(m_curY>m_yUpperBound){m_curY=m_yUpperBound;m_forceGoUpOrDown=1;}
-  if(m_curX<m_xLowerBound)m_curX=m_xLowerBound;else if(m_curX>m_xUpperBound)m_curX=m_xUpperBound;
-  if(frameIdx<28)return 0;m_curImage=m_imgStay;return 1;
- }
 	if (frameIdx<0)
 		return 0;
-
 	if (frameIdx==0)
 	{
-		if (m_curX<144.0f*16.0f)
-			m_randomWalkMovingAngle=(float)(original::Random()%96-48);
-		else
-			if (m_curX>240.0f*16.0f)
-				m_randomWalkMovingAngle=(float)(original::Random()%96+80);	//PC98 ver chooses randomly from 48/80/112/144, seems bug
-			else
-				m_randomWalkMovingAngle=(float)(original::Random()%256);
-		while (m_randomWalkMovingAngle>=256.0f)
-			m_randomWalkMovingAngle-=256.0f;
-		while (m_randomWalkMovingAngle<0.0f)
-			m_randomWalkMovingAngle+=256.0f;
-		if (m_forceGoUpOrDown==1&&m_randomWalkMovingAngle<128.0f)
-			m_randomWalkMovingAngle=256.0f-m_randomWalkMovingAngle;
-		if (m_forceGoUpOrDown==2&&m_randomWalkMovingAngle>128.0f)
-			m_randomWalkMovingAngle=256.0f-m_randomWalkMovingAngle;
+		const int random=original::Random();
+		int angle=m_curX<144*16?random%96-48:m_curX>240*16?(random&0x60)+0x30:random;
+		angle&=255;
+		if ((m_forceGoUpOrDown==1&&angle<128)||(m_forceGoUpOrDown==2&&angle>=128))
+			angle=(-angle)&255;
+		m_randomWalkMovingAngle=float(angle);
 		m_forceGoUpOrDown=0;
 	}
-	m_velX=(float)cos(m_randomWalkMovingAngle/256.0f*2*PI)*(64-frameIdx*2);
-	m_velY=(float)sin(m_randomWalkMovingAngle/256.0f*2*PI)*(64-frameIdx*2);
+	m_velX=float(original::math::X(int(m_randomWalkMovingAngle),64-frameIdx*2));
+	m_velY=float(original::math::Y(int(m_randomWalkMovingAngle),64-frameIdx*2));
 	m_curX+=m_velX;
 	m_curY+=m_velY;
-	if (m_velX<0)
-		m_curImage=m_imgGoLeft;
-	else
-		m_curImage=m_imgGoRight;
+	m_curImage=m_velX<0?m_imgGoLeft:m_imgGoRight;
 	if (m_curY<m_yLowerBound)
 	{
 		m_curY=m_yLowerBound;
 		m_forceGoUpOrDown=2;
 	}
-	if (m_curY>m_yUpperBound)
+	else if (m_curY>m_yUpperBound)
 	{
 		m_curY=m_yUpperBound;
 		m_forceGoUpOrDown=1;
 	}
-	if (m_curX<m_xLowerBound)
-		m_curX=m_xLowerBound;
-	if (m_curX>m_xUpperBound)
-		m_curX=m_xUpperBound;
-	if (frameIdx<28)
-		return 0;
+	if (m_curX<m_xLowerBound)m_curX=m_xLowerBound;
+	else if (m_curX>m_xUpperBound)m_curX=m_xUpperBound;
+	if (frameIdx<28)return 0;
 	m_curImage=m_imgStay;
 	return 1;
 }
 
 int CBoss::MoveTo(float tarX,float tarY)
 {
- if(original::DemoActive()){
-  int reached=0;const int dx=int(tarX-m_curX),dy=int(tarY-m_curY);
-  if(dx/16)m_curX+=float(dx/16);else if(dx/4)m_curX+=float(dx/4);else{m_curX=tarX;++reached;}
-  m_curImage=dx<0?m_imgGoLeft:m_imgGoRight;
-  if(dy/16)m_curY+=float(dy/16);else if(dy/2)m_curY+=float(dy/2);else{m_curY=tarY;++reached;}
-  if(reached!=2)return 0;m_curImage=m_imgStay;return 1;
- }
-	if (m_curX!=tarX||m_curY!=tarY)
-	{
-		float deltaX=(tarX-m_curX);
-		if (fabs(deltaX)>=16.0f)
-			m_curX+=deltaX/16.0f;
-		else
-			if (fabs(deltaX)>=4.0f)
-				m_curX+=deltaX/4.0f;
-			else
-				m_curX=tarX;
-		float deltaY=(tarY-m_curY);
-		if (fabs(deltaY)>=16.0f)
-			m_curY+=deltaY/16.0f;
-		else
-			if (fabs(deltaY)>=4.0f)
-				m_curY+=deltaY/4.0f;
-			else
-				m_curY=tarY;
-		if (deltaX>=0)
-			m_curImage=m_imgGoRight;
-		else
-			m_curImage=m_imgGoLeft;
-		return 0;
-	}
-	else
+	const int dx=int(tarX-m_curX),dy=int(tarY-m_curY);
+	const int stepX=dx/16?dx/16:dx/4;
+	const int stepY=dy/16?dy/16:dy/2;
+	m_curX=stepX?m_curX+stepX:tarX;
+	m_curY=stepY?m_curY+stepY:tarY;
+	if (!stepX&&!stepY)
 	{
 		m_curImage=m_imgStay;
 		return 1;
 	}
+	m_curImage=dx<0?m_imgGoLeft:m_imgGoRight;
 	return 0;
 }
 

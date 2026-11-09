@@ -23,7 +23,7 @@ mkdirSync(objects,{recursive:true});
 await run(python,[resolve(root,'scripts/generate-locales.py'),'--check']);
 await run(process.execPath,[resolve(root,'scripts/generate-audio-layout.mjs'),'--check']);
 await run(python,[resolve(root,'scripts/prepare-web-source.py'),'--out',stage]);
-const flags=['-O2','-g0','-std=c++17','-fexceptions','-fno-strict-aliasing','-ffp-contract=off','-Wno-writable-strings','-Wno-nontrivial-memcall','-Wno-microsoft-extra-qualification','-DIMGUI_DISABLE_WIN32_FUNCTIONS','-DIMGUI_DISABLE_WIN32_DEFAULT_IME_FUNCTIONS','-I'+stage,'-I'+resolve(stage,'portable/shims'),'-I'+resolve(stage,'third_party/imgui'),'-I'+resolve(common,'include'),'-include',resolve(stage,'portable/Platform.hpp')];
+const flags=[...(testBuild?['-DTH05_BROWSER_TESTS']:[]),'-O2','-g0','-std=c++17','-fexceptions','-fno-strict-aliasing','-ffp-contract=off','-Wno-writable-strings','-Wno-nontrivial-memcall','-Wno-microsoft-extra-qualification','-DIMGUI_DISABLE_WIN32_FUNCTIONS','-DIMGUI_DISABLE_WIN32_DEFAULT_IME_FUNCTIONS','-I'+stage,'-I'+resolve(stage,'portable/shims'),'-I'+resolve(stage,'third_party/imgui'),'-I'+resolve(common,'include'),'-include',resolve(stage,'portable/Platform.hpp')];
 const hash=data=>createHash('sha256').update(data).digest('hex');
 const sharedHeaders=[resolve(common,'include/eagler/input/BrowserGamepad.hpp'),resolve(common,'browser/browser-gamepad-input.hpp'),resolve(common,'include/eagler/thprac/PracticeMobilePanels.hpp'),resolve(common,'include/eagler/thprac/PracticePointer.hpp')];
 const headers=[...walk(stage).filter(p=>/\.(h|hpp|inc)$/.test(p)),...sharedHeaders];const identity=hash(JSON.stringify(flags)+hash(readFileSync(compiler))+headers.map(p=>hash(readFileSync(p))).join(''));

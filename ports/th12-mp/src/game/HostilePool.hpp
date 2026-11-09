@@ -7,5 +7,5 @@ extern std::array<Projectile*, bullet_pool::Slots::capacity> hostileSlots;
 void resetHostilePool();
 void attachHostileSlot(Projectile&);
 void releaseHostileBullet(u32 id);
-void refreshHostilePointers();
+void refreshProjectilePointers();
 } // namespace th12
