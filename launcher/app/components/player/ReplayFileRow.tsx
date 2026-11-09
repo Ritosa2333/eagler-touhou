@@ -9,11 +9,11 @@ import {ReplayFileMenu, type ReplayFileAction} from './ReplayFileMenu';
 export function ReplayFileRow({path, name, size, selected, versus = false, expanded, busy, metadata, actions, onOpen, children}: {
   path: string; name: string; size: number; selected?: boolean; versus?: boolean;
   expanded?: boolean; busy?: boolean; metadata: ReactNode; actions: ReplayFileAction[];
-  onOpen(): void; children?: ReactNode;
+  onOpen?(): void; children?: ReactNode;
 }) {
   const {t} = useLocale();
   return <div className={`replay-workspace-file${!versus ? ' replay-workspace-recording' : ''}${selected ? ' selected' : ''}`} data-replay-file={path}>
-    <UiButton variant="unstyled" type="button" data-replay-watch={path} aria-expanded={versus ? undefined : expanded} disabled={busy} onClick={onOpen}>
+    <UiButton variant="unstyled" type="button" data-replay-watch={onOpen ? path : undefined} aria-expanded={versus ? undefined : expanded} disabled={busy || !onOpen} onClick={onOpen}>
       {versus && <>{selected && <span className="replay-file-selected"><Play aria-hidden="true"/></span>}<FileText aria-hidden="true"/></>}
       <span className="replay-file-description"><span className="replay-file-heading"><strong title={name}>{name}</strong>{!versus && <small>{formatReplayBytes(size)}</small>}</span>{metadata}</span>
       {versus && <small>{formatReplayBytes(size)}</small>}

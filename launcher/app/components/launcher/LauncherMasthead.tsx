@@ -13,6 +13,7 @@ import {
   PlaySquare,
   Code,
   FlaskConical,
+  ShieldCheck,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { uiPortalHost } from '../../ui/portal';
@@ -334,18 +335,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                         </a>
                       </DropdownMenu.Item>
                     )}
-                    {previewFeaturesEnabled && (
-                      <DropdownMenu.Item asChild>
-                        <a
-                          className="ui-menu-item"
-                          href={withUiLanguage(props.assetUrl('ui-review.html'), locale)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {t('nav.uiHandbook')}
-                        </a>
-                      </DropdownMenu.Item>
-                    )}
                     <DropdownMenu.Item className="ui-menu-item" id="firstUseNoticeOpen" onSelect={props.onFirstUse}>
                       <ReaderIcon />
                       {t('nav.firstUseNotice')}
@@ -391,6 +380,12 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                     onSelect={event=>{event.preventDefault();setDeveloperOpen(true);}}
                     onKeyDown={event=>{if(event.key==='ArrowRight'){event.preventDefault();setDeveloperOpen(true);}}}>
                     <Code aria-hidden="true"/>{t('developer.options')}<ChevronRight aria-hidden="true"/>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item asChild>
+                    <a className="ui-menu-item" href={withUiLanguage(props.assetUrl('privacy.html'), locale)}>
+                      <ShieldCheck aria-hidden="true" />
+                      {t('nav.privacyPolicy')}
+                    </a>
                   </DropdownMenu.Item>
                 </>
               )}

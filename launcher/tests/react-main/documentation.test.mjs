@@ -49,10 +49,11 @@ test('document history follows content provenance and detects uncommitted edits'
 
 test('all documentation languages render their authored headings and preserve About contact links',()=>{
   for(const locale of ['zh-CN','en','ja'])for(const page of api.helpDocuments){
-    const source=api.translateUi(locale,page.content),{body,toc}=api.prepareHelpDocument(source,'/app/',locale),html=markup(body);
+    const source=api.translateUi(api.helpDocumentLocale(page,locale),page.content),{body,toc}=api.prepareHelpDocument(source,'/app/',locale),html=markup(body);
     assert.ok(html.length>100,`${locale} ${page.id}`);assert.ok(toc.length>0);
     for(const heading of toc)assert.ok(html.includes(`id="${heading.url.slice(1)}"`));
     assert.ok(!html.includes('<h1'),'Page title is provided by DocsTitle');
+    if(page.id==='privacy')assert.equal(toc[0].title,'信息收集与使用');
     if(page.id==='about')assert.ok(html.includes('mailto:ayanews@outlook.com'));
   }
 });

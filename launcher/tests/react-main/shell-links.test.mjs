@@ -104,10 +104,12 @@ test('language list returns to its entry before Escape closes the menu',async()=
  await React.act(async()=>n('.masthead-language-trigger').dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true})));
  assert.equal(n('#mastheadMenuToggle').getAttribute('aria-expanded'),'false');
 });
-test('developer options follows GitHub and donation at the bottom of the menu',async()=>{
+test('privacy policy follows developer options at the bottom of the menu',async()=>{
  await mount(el(Masthead));await openMasthead();const items=[...n('#mastheadMenuPanel').querySelectorAll('.ui-menu-item')];
- assert.equal(items.at(-3).textContent,'GitHub');assert.ok(items.at(-2).classList.contains('book-menu-donation'));
- assert.equal(items.at(-1).textContent,owners.translate('en','developer.options'));
+ assert.equal(items.at(-4).textContent,'GitHub');assert.ok(items.at(-3).classList.contains('book-menu-donation'));
+ assert.equal(items.at(-2).textContent,owners.translate('en','developer.options'));
+ assert.equal(items.at(-1).textContent,owners.translate('en','nav.privacyPolicy'));
+ assert.equal(items.at(-1).getAttribute('href'),'privacy.html?lang=en');
 });
 
 test('developer options contains diagnostics and beta mode and returns with Escape',async()=>{
@@ -169,13 +171,11 @@ test('production hides account routes by default and supports account-only opt-i
 });
 
 
-test('settings and help groups expose the handbook while account actions have a separate menu',async()=>{
+test('settings and help groups omit the retired handbook and keep account actions separate',async()=>{
  await mount(el(Masthead));await openMasthead();
  assert.equal(n('#mastheadMenuPanel').querySelector('[role="group"][aria-label="'+owners.translate('en','nav.account')+'"]'),null);
  for(const key of ['nav.settings','nav.help'])assert.ok(n('#mastheadMenuPanel').querySelector('[role="group"][aria-label="'+owners.translate('en',key)+'"]'));
- const link=n('#mastheadMenuPanel a[href="ui-review.html?lang=en"]');
- assert.equal(link.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.help'));
- assert.equal(link.getAttribute('target'),'_blank');assert.equal(link.getAttribute('rel'),'noopener noreferrer');
+ assert.equal(env.document.querySelector('#mastheadMenuPanel a[href*="ui-review.html"]'),null);
  const status=n('#mastheadMenuPanel a[href="uptime/?lang=en"]');
  assert.equal(status.textContent,owners.translate('en','nav.serviceStatus'));
  assert.equal(status.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.help'));

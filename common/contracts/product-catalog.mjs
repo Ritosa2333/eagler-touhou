@@ -119,6 +119,49 @@ export const PRODUCT_GAMES = Object.freeze({
     // support.highRefreshRate describes currently implemented presentation for
     // Launcher UI. False keeps unfinished adapters honest; it does not waive
     // the required presentation-cadence acceptance gate.
+    hsob: Object.freeze({
+        testOnly: true,
+        importOnly: true,
+        runtimeResourceTransport: "resources",
+        cardArtwork: "hsob-card.webp",
+        number: "HSOB",
+        title: "東方真珠島",
+        subtitle: "Hollow Song of Birds",
+        storage: Object.freeze({
+            saveRoot: "/savehsob",
+            scoreFile: "Package_common_SaveData.dat",
+            configFiles: Object.freeze(["config.dat", "Package_common_Config.dat"]),
+        }),
+        runtime: "./runtime/hsob/hsob.html",
+        musicCapabilities: Object.freeze({ midi: false }),
+        musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
+        touchFire: TOGGLE_TOUCH_FIRE,
+        support: Object.freeze({
+            highRefreshRate: false,
+            sourceRepository: "https://github.com/Ritosa2333/ph3-modern",
+            adaptationNotice: "early-test",
+        }),
+        runtimeFileLayout: "directory",
+        requiredShared: Object.freeze(["/msgothic.ttc"]),
+        runtimeAssets: Object.freeze([
+            "hsob.html",
+            "shell.mjs",
+            "eagler-host.mjs",
+            "manifest.json",
+            "ph3-open.mjs",
+            "ph3-open.wasm",
+            "build.json",
+        ]),
+        dataProvider: "retail-memory",
+        package: Object.freeze({
+            dataFileId: "game-data",
+            dataTarget: "/hsob.data",
+            musicSourceDirectories: Object.freeze({ ogg: "music" }),
+            musicMounts: Object.freeze({ ogg: "/game/script/th_hsob/music" }),
+        }),
+        replay: Object.freeze({ prefix: "Main_replay", extensions: Object.freeze(["dat"]) }),
+        features: Object.freeze({ thprac: false, languages: false, focusHitbox: false }),
+    }),
     th06: Object.freeze({
         cardArtwork: "th06-card.webp",
         number: "06",
@@ -715,6 +758,10 @@ export const DEFAULT_MULTIPLAYER_PRODUCT_ID = "th07mp";
 export function isGameId(value) {
     return Object.hasOwn(PRODUCT_GAMES, value);
 }
+export function productRequiresImport(gameId) {
+    return "importOnly" in PRODUCT_GAMES[gameId];
+}
+
 export function productEnabledForBuild(productId, testBuild = false) {
     if (!isProductId(productId))
         return false;
