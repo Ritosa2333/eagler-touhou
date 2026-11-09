@@ -12,7 +12,7 @@ import type { MultiplayerQuickChatModel, QuickChatEntry } from '../../../src/lau
 import { useLocale } from '../../i18n';
 import type { DecisionStore } from '../../models/decisions';
 import { animateUiFrames, type SurfaceAnimation } from '../../ui/surface-motion';
-import { ChatComposer, ChatMessageContent, QuickChatPhrases, useChatReportConfirmation } from '../room/ChatControls';
+import { ChatAvatar, ChatComposer, ChatMessageContent, QuickChatPhrases, useChatReportConfirmation } from '../room/ChatControls';
 import { shallowEqual, useStoreSelector } from '../../shared/react-store';
 
 const chatPresentation = (state: ReturnType<MultiplayerQuickChatModel['getSnapshot']>) => ({
@@ -29,7 +29,7 @@ const isolate = (event: SyntheticEvent) => event.stopPropagation();
 export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
   model: MultiplayerQuickChatModel;
   iconUrl: string;
-  decisions: Pick<DecisionStore, 'askConfirmation'>;
+  decisions: Pick<DecisionStore, 'askText'>;
 }) {
   const { t } = useLocale();
   const root = useRef<HTMLElement>(null),
@@ -199,7 +199,7 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
       </UiButton>
       <div ref={picker} className="mp-quick-chat-picker" tabIndex={-1} hidden={!state.pickerOpen}>
         <ChatComposer model={model} gameplay />
-        {!state.editingText && <QuickChatPhrases enabled={enabled} language={context?.language ?? ''} numbered onSelect={model.sendPhrase}/>}
+        {!state.editingText && <QuickChatPhrases model={model} enabled={enabled} language={context?.language ?? ''} numbered onSelect={model.sendPhrase}/>}
       </div>
       <div ref={log} className="mp-quick-chat-log" role="log" aria-live="polite">
         {state.entries.map((entry) => (
@@ -247,8 +247,9 @@ function ChatRow({
   const { t } = useLocale();
   const sender = `${entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`}${entry.name ? `(${entry.name})` : ''}`;
   return (
-    <p ref={ref} hidden={!visible} title={`${sender}: ${label}`} className="room-chat-entry">
-      <ChatMessageContent entry={entry} model={model} label={label} confirmReport={confirmReport} />
+    <p ref={ref} hidden={!visible} title={`${sender}: ${label}`} className="room-chat-entry" data-speaker={entry.spectator?'spectator':'player'}>
+      <ChatAvatar entry={entry} model={model}/>
+      <ChatMessageContent entry={entry} model={model} label={label} confirmReport={confirmReport} directReport />
     </p>
   );
 }

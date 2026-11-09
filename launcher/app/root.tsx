@@ -25,6 +25,7 @@ import './components/launcher/options-sheet.css';
 import './components/settings/settings-ui.css';
 import './ui/scrollbars.css';
 import { UiTheme } from './ui/theme';
+import { BackgroundController } from './components/launcher/CustomBackground';
 import { UiScrollbars } from './ui/scrollbars';
 import { isLauncherHomePath } from './navigation/addresses';
 import UptimeRoute from './routes/uptime';
@@ -77,6 +78,7 @@ export function Layout({ children }: { children: ReactNode }) {
       </head>
       <InitialDocumentBody lobby={lobby}>
         <UiTheme />
+        <BackgroundController />
         <UiScrollbars />
         {!review && <OriginalPreloads />}
         {children}

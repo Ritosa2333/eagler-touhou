@@ -22,6 +22,7 @@ const forbiddenExtensions = new Set([".dat", ".data", ".wav", ".ogg", ".mid", ".
 const quickChatVoiceClipAssets = new Set([
   "1", "request-life", "request-power", "share-resources", "follow-me", "spread-out",
   "stop-fire", "bomb-me", "bomb-you", "leaving", "last-game", "last", "thanks", "xxzj",
+  "wait", "sorry", "continue", "lagging", "no-worries", "laugh", "retry", "no-no", "yes-yes", "ah", "move-right", "move-left", "busy", "you-first", "nice", "amazing", "great-opportunity", "feels-good",
 ].map(id => `assets/quick-chat/${id}.wav`));
 const publicAssets = new Set([
   'assets/site-brand.mjs', 'assets/brand/LICENSE.txt', 'assets/brand/portrait.png',
