@@ -10,9 +10,9 @@ try {
   await page.goto(new URL('lobby.html', process.argv[2] || 'http://127.0.0.1:5173/'), {waitUntil:'networkidle2'});
   await page.click('.book-theme-toggle');
   await page.waitForSelector('.custom-background-dialog');
-  await page.click('input[name="base-theme"]:first-of-type');
+  await page.click('.custom-theme-switch [data-theme-value="light"]');
   await page.waitForFunction(() => document.documentElement.dataset.bookTheme === 'light');
-  await page.click('.custom-theme-base label:last-child input');
+  await page.click('.custom-theme-switch [data-theme-value="dark"]');
   await page.waitForFunction(() => document.documentElement.dataset.bookTheme === 'dark');
   await (await page.$('.custom-background-dialog input[type=file]')).uploadFile(image);
   await page.waitForFunction(() => document.documentElement.hasAttribute('data-custom-background'));

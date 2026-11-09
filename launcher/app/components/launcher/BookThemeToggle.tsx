@@ -1,5 +1,5 @@
 import {Button as UiButton} from '../../ui/button';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {useLocale} from '../../i18n';
 import {BOOK_PREFERENCES_EVENT, readBookPreference, writeBookPreference} from './book-preferences';
 import {NavigationIcon} from './NavigationIcon';
@@ -48,6 +48,7 @@ export function BookThemeToggle({interactive = true}: {interactive?: boolean}) {
   const {locale} = useLocale();
   const [dark, setDark] = useState(true);
   const [open, setOpen] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
   const [ready, setReady] = useState(false);
   useEffect(() => {
     let initialized = false;
@@ -59,8 +60,8 @@ export function BookThemeToggle({interactive = true}: {interactive?: boolean}) {
     return () => {window.removeEventListener('storage', refresh); window.removeEventListener(BOOK_PREFERENCES_EVENT, refresh);};
   }, []);
   const label = locale === 'zh-CN' ? '主题设置' : locale === 'ja' ? 'テーマ設定' : 'Theme settings';
-  return <><UiButton type="button" variant="ghost" size="icon" className="masthead-action book-theme-toggle [&_svg]:size-5" disabled={!interactive || !ready}
-    aria-label={label} aria-haspopup="dialog" onClick={(event) => {impressTheme(event.currentTarget);setOpen(true);}} title={label}><NavigationIcon name={dark ? 'moon' : 'sun'}/></UiButton>
-    <BackgroundSettings open={open} onOpenChange={setOpen} dark={dark} onThemeChange={value=>{setDark(value==='dark');applyTheme(value,true);writeBookPreference('theme',value);}}/>
+  return <><UiButton ref={trigger} type="button" variant="ghost" size="icon" className="masthead-action book-theme-toggle [&_svg]:size-5" disabled={!interactive || !ready}
+    aria-label={label} aria-haspopup="dialog" onClick={() => setOpen(true)} title={label}><NavigationIcon name={dark ? 'moon' : 'sun'}/></UiButton>
+    <BackgroundSettings open={open} onOpenChange={setOpen} dark={dark} onThemeChange={value=>{if ((value==='dark')===dark) return; setDark(value==='dark');applyTheme(value,true);writeBookPreference('theme',value);if(trigger.current)impressTheme(trigger.current);}}/>
   </>;
 }

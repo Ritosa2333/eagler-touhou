@@ -20,7 +20,7 @@ try {
       await page.click('.book-theme-toggle');
       await page.waitForSelector('.custom-theme-base');
       const theme = await page.evaluate(() => document.documentElement.dataset.bookTheme);
-      await page.click(theme === 'dark' ? '.custom-theme-base label:first-of-type input' : '.custom-theme-base label:last-of-type input');
+      await page.click(theme === 'dark' ? '.custom-theme-switch [data-theme-value="light"]' : '.custom-theme-switch [data-theme-value="dark"]');
       assert.deepEqual(await geometry(), before, `${width}/${route}: geometry during theme change`);
       await page.evaluate(() => Promise.all(document.getAnimations().filter(a => a.effect?.getTiming().iterations !== Infinity).map(a => a.finished.catch(() => {}))));
       assert.deepEqual(await geometry(), before, `${width}/${route}: geometry after theme change`);
