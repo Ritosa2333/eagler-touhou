@@ -1,3 +1,4 @@
+#include "../../Original/CombatThresholds.h"
 #include "../../Practice/Practice.h"
 #include ".\bossstageex.h"
 #include "../Stage.h"
@@ -45,7 +46,7 @@ void CBossStageEx::Initialize()
 int CBossStageEx::GetDmgVerStageEx()
 {
 	if (m_pStage->m_bInCharaBomb)
-		m_invulnerableTimeLeft=39;
+		m_invulnerableTimeLeft=original::ExtraAliceBombTimer;
 	if (m_invulnerableTimeLeft==0)
 		return GetDmgOnAndCrashChara();
 	return 0;
@@ -179,7 +180,7 @@ int CBossStageEx::Phase2ShootType1()
 	si.shootOrigY=m_curY;
 	si.bulletBornType=16;
 	si.bulletSpeed=(float)(40+original::Random()%32);
-	si.shootAngle=(float)(original::DemoActive()?(original::Random()&0x78)-64:original::Random()%16*8-64);
+	si.shootAngle=(float)(original::BossGeometryEnabled()?(original::Random()&0x78)-64:original::Random()%16*8-64);
 	si.shootType=EST03_NWAY_TO_CHARA;
 	si.bulletImg=84;
 	si.nWay=5;
@@ -194,7 +195,7 @@ int CBossStageEx::Phase2ShootType1()
 int CBossStageEx::Phase2ShootType2()
 {
 	if (m_curPhaseFrame==64){
-  if(original::DemoActive())m_demoPatternState=static_cast<unsigned char>(1-m_demoPatternState);
+  if(original::BossGeometryEnabled())m_demoPatternState=static_cast<unsigned char>(1-m_demoPatternState);
   else m_phase2Type2Angle=(float)(original::Random()%256);
  }
 	if (m_curPhaseFrame%4==0)
@@ -209,7 +210,7 @@ int CBossStageEx::Phase2ShootType2()
 			m_phase2Type2Angle+=2;
 		else
 			m_phase2Type2Angle-=2;
-  if(original::DemoActive())si.shootAngle=float((original::Demo().bulletTemplateAngle+(m_demoPatternState?2:-2))&255);
+  if(original::BossGeometryEnabled())si.shootAngle=float((m_pStage->m_pEnemyBullet->TemplateAngle()+(m_demoPatternState?2:-2))&255);
 		si.shootType=EST04_NWAY_ALLAROUND;
 		si.bulletMoveType=EBMT01_SLOW_DOWN_THEN_TURN_TO_CHARA;
 		si.specialMoveVar=1;
@@ -271,9 +272,9 @@ int CBossStageEx::Phase6ShootType2()
 {
 	if (m_curPhaseFrame==64)
 	{
-  if(original::DemoActive())m_demoPatternState=static_cast<unsigned char>(1-m_demoPatternState);
+  if(original::BossGeometryEnabled())m_demoPatternState=static_cast<unsigned char>(1-m_demoPatternState);
   else m_bPhase6Type2AngleInc=!m_bPhase6Type2AngleInc;
-		if(!original::DemoActive())m_phase6Type2Angle=(float)(original::Random()%256);
+		if(!original::BossGeometryEnabled())m_phase6Type2Angle=(float)(original::Random()%256);
 	}
 	if (m_curPhaseFrame%8==0)
 	{
@@ -282,8 +283,8 @@ int CBossStageEx::Phase6ShootType2()
 		si.shootOrigY=m_curY;
 		si.bulletBornType=19;
 		si.bulletSpeed=88;
-  if(original::DemoActive())m_phase6Type2Angle=float(original::Demo().bulletTemplateAngle);
-		if (original::DemoActive()?m_demoPatternState!=0:m_bPhase6Type2AngleInc)
+  if(original::BossGeometryEnabled())m_phase6Type2Angle=float(m_pStage->m_pEnemyBullet->TemplateAngle());
+		if (original::BossGeometryEnabled()?m_demoPatternState!=0:m_bPhase6Type2AngleInc)
 			m_phase6Type2Angle+=3;
 		else
 			m_phase6Type2Angle-=3;
@@ -304,7 +305,7 @@ int CBossStageEx::Phase10ShootType1()
 	{
 		float c[]={m_pStage->m_pStageRes->m_palette[3*3]/255.0f,m_pStage->m_pStageRes->m_palette[3*3+1]/255.0f,
 				   m_pStage->m_pStageRes->m_palette[3*3+2]/255.0f};
-		float angle=m_pStage->AimAngle(m_curX,m_curY);
+		float angle=m_pStage->AimAngle(m_curX,m_curY,original::BombAndRageEnabled());
 		if (m_curPhaseFrame%16==0)
 		{
 			m_pStage->m_pLaser->AddLaserFixed((m_curPhaseFrame-64)/8,m_curX,m_curY,c,8,angle+48,47,80);
@@ -371,7 +372,7 @@ int CBossStageEx::Phase14ShootType1()
 		m_pStage->m_pEnemyBullet->Shoot(&si);
 		if (m_curPhaseFrame%64==0)
 		{
-			float angle=m_pStage->AimAngle(m_curX,m_curY);
+			float angle=m_pStage->AimAngle(m_curX,m_curY,original::BombAndRageEnabled());
 			if (m_curPhaseFrame%128==0)
 				angle+=32;
 			else
@@ -387,7 +388,7 @@ int CBossStageEx::Phase14ShootType2()
 {
 	if (m_curPhaseFrame%8==0)
 	{
-		float angle=m_pStage->AimAngle(m_curX,m_curY);
+		float angle=m_pStage->AimAngle(m_curX,m_curY,original::BombAndRageEnabled());
 		if (m_curPhaseFrame%16==0)
 			angle+=64;
 		else
@@ -442,8 +443,8 @@ int CBossStageEx::Phase4Shoot()
 			{
 				m_phase4AimX=m_curX+(float)(original::Random()%(96*16)-48*16);
 				m_phase4AimY=m_curY+(float)(original::Random()%(64*16)-32*16);
-				m_phase4AimAngle=m_pStage->AimAngle(m_phase4AimX,m_phase4AimY);
-    if(original::DemoActive())m_demoPatternState=static_cast<unsigned char>(int(m_phase4AimAngle));
+				m_phase4AimAngle=m_pStage->AimAngle(m_phase4AimX,m_phase4AimY,original::BombAndRageEnabled());
+    if(original::BombAndRageEnabled())m_demoPatternState=static_cast<unsigned char>(int(m_phase4AimAngle));
 			}
 		}
 		si.shootOrigX=m_phase4AimX;
@@ -457,7 +458,7 @@ int CBossStageEx::Phase4Shoot()
 	}
 	if (m_curPhaseFrame%128==0)
 	{
-		if ((m_curPhaseFrame%256==0)!=original::DemoActive())
+		if (m_curPhaseFrame%256!=0)
 		{
 			if (m_bFireWave[0]==false)
 			{
@@ -483,7 +484,7 @@ int CBossStageEx::Phase4Shoot()
 
 int CBossStageEx::Phase8Shoot()
 {
-	if (m_curPhaseFrame==64&&!original::DemoActive())
+	if (m_curPhaseFrame==64&&!original::BombAndRageEnabled())
 		m_phase8Angle=(float)(original::Random()%256);
 	if (m_curPhaseFrame%16==0)
 	{
@@ -495,11 +496,12 @@ int CBossStageEx::Phase8Shoot()
 		si.bulletSpeed=32;
 		si.shootType=EST04_NWAY_ALLAROUND;
 		si.bulletMoveType=EBMT08_BOUNCE_X_YTOP;
-		si.nWay=(original::DemoActive()?8:6)+m_curPhaseFrame/128;
+		si.nWay=8+m_curPhaseFrame/128;
 		if (si.nWay>14)
 			si.nWay=14;
 		si.specialMoveVar=1;
-  if(original::DemoActive())m_phase8Angle=float(original::Demo().bulletTemplateAngle);
+  if(original::BombAndRageEnabled())
+			m_phase8Angle=float(m_pStage->m_pEnemyBullet->TemplateAngle());
 		m_phase8Angle+=2;
 		si.shootAngle=m_phase8Angle;
 		m_pStage->m_pEnemyBullet->Shoot(&si,true);
@@ -540,8 +542,8 @@ int CBossStageEx::Phase12Shoot()
 		if (m_curPhaseFrame>=512&&m_curPhaseFrame%16==0)
 		{
 			ENEMY_SHOOT_INFO si;
-			si.shootOrigX=original::DemoActive()?shootX:m_curX;
-			si.shootOrigY=original::DemoActive()?shootY:m_curY;
+			si.shootOrigX=shootX;
+			si.shootOrigY=shootY;
 			si.bulletBornType=16;
 			si.shootType=EST05_NWAY_ALLAROUND_TO_CHARA;
 			si.shootAngle=0;
@@ -794,7 +796,7 @@ void CBossStageEx::Phase17Shoot()
 		m_curImage=181;
 		m_pStage->m_bPlaySound[8]=true;
 		m_phase17ShootAngle=(float)(original::Random()%256);
-  if(original::DemoActive()){m_velX=0;m_demoPatternState=0;}
+  if(original::BombAndRageEnabled()){m_velX=0;m_demoPatternState=0;}
 	}
 	if (m_curPhaseFrame>=128)
 	{
@@ -808,7 +810,10 @@ void CBossStageEx::Phase17Shoot()
 			si.shootType=EST02_NWAY;
 			si.nWay=5;
 			si.nWayUnitAngle=21;
-			si.bulletSpeed=40.0f+64.0f*(float)(3400-m_curHP)/3400.0f;
+			// The original divides in subpixels before adding the base speed.
+			si.bulletSpeed=original::BombAndRageEnabled()
+				? float(40+(3400-m_curHP)*64/3400)
+				: 40.0f+64.0f*(float)(3400-m_curHP)/3400.0f;
 			si.shootAngle=m_phase17ShootAngle;
 			m_pStage->m_pEnemyBullet->Shoot(&si);
 			si.shootAngle+=128.0f;
@@ -817,7 +822,7 @@ void CBossStageEx::Phase17Shoot()
 			m_pStage->m_bPlaySound[9]=true;
 		}
 		float angle=(float)((m_curPhaseFrame-128)*2);
-  if(original::DemoActive()){
+  if(original::BombAndRageEnabled()){
    m_curX=float(3072+original::math::Y(m_demoPatternState,int(m_velX)));
    m_demoPatternState=static_cast<unsigned char>(m_demoPatternState+2);
    m_velX=float(((3400-m_curHP)*1024)/3400);
@@ -971,7 +976,7 @@ void CBossStageEx::StepFireWave()
 		if (m_bFireWave[i])
 		{
 			m_fireWaveY[i]+=4;
-			if (m_fireWaveY[i]>=(original::DemoActive()?592:604))
+			if (m_fireWaveY[i]>=592)
 				m_bFireWave[i]=false;
 		}
  if(original::DemoActive()){

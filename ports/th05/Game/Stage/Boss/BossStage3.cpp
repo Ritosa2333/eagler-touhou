@@ -211,7 +211,7 @@ void CBossStage3::StepPuppet()
 	for (int i=0;i<2;i++)
 	{
 		if (m_puppet[i].flag==0)
-			return;
+			continue;
 		if (m_puppet[i].flag!=1)
 		{
 			if (m_puppet[i].flag%4==0)
@@ -235,22 +235,12 @@ void CBossStage3::StepPuppet()
 		}
 		if (m_puppet[i].curX!=m_puppet[i].tarX||m_puppet[i].curY!=m_puppet[i].tarY)
 		{
-			float deltaX=(m_puppet[i].tarX-m_puppet[i].curX);
-            if (fabs(deltaX)>=32.0f)
-				m_puppet[i].curX+=deltaX/32.0f;
-			else
-				if (fabs(deltaX)>=4.0f)
-					m_puppet[i].curX+=deltaX/4.0f;
-				else
-					m_puppet[i].curX=m_puppet[i].tarX;
-			float deltaY=(m_puppet[i].tarY-m_puppet[i].curY);
-			if (fabs(deltaY)>=32.0f)
-				m_puppet[i].curY+=deltaY/32.0f;
-			else
-				if (fabs(deltaY)>=4.0f)
-					m_puppet[i].curY+=deltaY/4.0f;
-				else
-					m_puppet[i].curY=m_puppet[i].tarY;
+			auto& puppet=m_puppet[i];
+			const int dx=int(puppet.tarX-puppet.curX),dy=int(puppet.tarY-puppet.curY);
+			const int stepX=dx/32?dx/32:dx/4;
+			const int stepY=dy/32?dy/32:dy/4;
+			puppet.curX=stepX?puppet.curX+stepX:puppet.tarX;
+			puppet.curY=stepY?puppet.curY+stepY:puppet.tarY;
 			m_puppet[i].image=192;
 		}
 		else
@@ -363,6 +353,8 @@ void CBossStage3::Phase2Shoot()
 		shootInfo.bulletBornType=2;
 		shootInfo.shootType=EST13_RANDOM_BASE_SPEED_32;
 		shootInfo.nWay=2;
+		if (original::BossGeometryEnabled())
+			shootInfo.shootAngle=m_pStage->m_pEnemyBullet->TemplateAngle();
 		m_pStage->m_pEnemyBullet->TuneEnemyShootInfo(&shootInfo);
 		for (int i=0;i<32;i++)
 		{
@@ -538,7 +530,7 @@ void CBossStage3::Phase9ShootType2_12_1()
 	}
 	if (m_curPhaseFrame==64)
 	{
-		float angle=m_pStage->m_pChara->AngleToChara(m_curX,m_curY-8.0f*16.0f);
+		float angle=m_pStage->m_pChara->AngleToChara(m_curX,m_curY-8.0f*16.0f,original::BossGeometryEnabled());
 		float c[3]={m_pStage->m_pStageRes->m_palette[6*3]/255.0f,m_pStage->m_pStageRes->m_palette[6*3+1]/255.0f,
 					m_pStage->m_pStageRes->m_palette[6*3+2]/255.0f};
 		m_pStage->m_pLaser->AddLaserShootOut(m_curX,m_curY-8.0f*16.0f,c,angle,40,80);
@@ -827,12 +819,14 @@ void CBossStage3::Phase14()
 	m_puppet[0].mode=4;
 	m_puppet[1].mode=4;
 	Phase14Shoot();
-	if (practice::AllowTimeout(m_curPhaseFrame>=1000))
-		m_bSuccessDefeat=false;
-	if (GetDmgOnAndCrashChara()==0)
-		return;
-	else
+	if (practice::BeforeTimeout(m_curPhaseFrame<1000))
+	{
+		if (GetDmgOnAndCrashChara()==0)
+			return;
 		m_bSuccessDefeat=true;
+	}
+	else
+		m_bSuccessDefeat=false;
 	m_curPhaseFrame=0;
 	m_curPhase=0xfd;
 	m_puppet[0].flag=2;

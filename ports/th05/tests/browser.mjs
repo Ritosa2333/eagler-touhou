@@ -24,6 +24,23 @@ try{
  async function launch(enabled,locale='ja-JP',language='ja',audioMode='none',source='original',viewer=false){await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>events.some(e=>e.event==='ready'),null,{timeout:30000});
   const config=await page.evaluate(async({enabled,locale,language,audioMode,source,viewer})=>{const pack=language==='lang_zh-hans'?await (await fetch('/language.json')).json():null;if(pack)for(const file of pack.files)file.bytes=new Uint8Array(file.bytes);return command('configure',{music:audioMode==='none'?'none':'ogg',language,...(pack?{runtimePack:pack}:{}),sharedResources:[{path:'/data/gothic.ttf',url:'/font.ttf'}],options:{replayViewer:viewer,musicSource:source,oggDecodeMode:audioMode==='full'?'full':'stream',thpracEnabled:enabled,thpracLocale:locale,alwaysHitbox:true,touchEnabled:true,touchSensitivity:150,touchMovementMode:'touch-unlimited'}});},{enabled,locale,language,audioMode,source,viewer});assert.equal(config.ok,true,JSON.stringify(config));
   const result=await page.evaluate(()=>command('launch'));assert.equal(result.ok,true,JSON.stringify(result));await page.waitForFunction(()=>events.some(e=>e.event==='first-frame'),null,{timeout:15000});return page.frames().find(f=>f.url().includes('/runtime/'));}
+ if(process.argv[2]==='--pc98-patterns'){
+  assert.ok(process.argv[3],'Pass the directory from Verify-OriginalPatterns.py');
+  const {comparePatterns}=await import('./pc98-patterns.mjs');
+  await comparePatterns(await launch(false),resolve(process.argv[3]),{requireGeometry:process.argv.includes("--require-geometry"),requireAppearance:process.argv.includes("--require-appearance"),hpSweep:process.argv.includes("--hp-sweep")});
+ }else if(process.argv[2]==='--pc98-combat'){
+  assert.ok(process.argv[3],'Pass the capture from Verify-OriginalCombat.py');
+  const {compareCombat}=await import('./pc98-combat.mjs');
+  await compareCombat(await launch(false),resolve(process.argv[3]));
+ }else if(process.argv[2]==='--pc98-motion'){
+  assert.ok(process.argv[3],'Pass the capture from Verify-OriginalMotion.py');
+  const {compareMotion}=await import('./pc98-motion.mjs');
+  await compareMotion(await launch(false),resolve(process.argv[3]));
+ }else if(process.argv[2]==='--pc98-player-shots'){
+  assert.ok(process.argv[3],'Pass the capture from Verify-OriginalPlayerShots.py');
+  const {comparePlayerShots}=await import('./pc98-player-shots.mjs');
+  await comparePlayerShots(await launch(false),resolve(process.argv[3]));
+ }else{
  let frame=await launch(false);
  report.vanilla=await frame.evaluate(()=>({enabled:Module._th05_practice_enabled(),scene:Module._th05_scene(),ticks:Module._th05_ticks()}));assert.equal(report.vanilla.enabled,0);
  await frame.evaluate(()=>{Module._th05_key(112,1);Module._th05_step();Module._th05_key(112,0);});assert.equal(await frame.evaluate(()=>Module._th05_practice_tool(0)),0);
@@ -31,15 +48,73 @@ try{
  await frame.evaluate(()=>{for(let i=0;i<220&&Module._th05_scene()===1;i++)Module._th05_step();for(let i=0;i<250;i++)Module._th05_step();});
  await page.screenshot({path:resolve(root,'artifacts/title-vanilla.png')});
  const press=async(key,frames=2)=>frame.evaluate(({key,frames})=>{Module._th05_key(key,1);for(let i=0;i<frames;i++)Module._th05_step();Module._th05_key(key,0);Module._th05_step();},{key,frames});
+ // A fresh vanilla save can browse the original selector but cannot start a locked stage.
+ const advance=frames=>frame.evaluate(frames=>{for(let i=0;i<frames;i++)Module._th05_step();},frames);
+ const scene=()=>frame.evaluate(()=>Module._th05_scene());
+ await press(40);await press(90);await advance(90);
+ assert.equal(await scene(),3);
+ await press(90);await advance(40);
+ assert.equal(await frame.evaluate(()=>Module._th05_pointer(1,99,390,230,1)),0,'Vanilla practice must not capture touches with ImGui');
+ await press(90);await advance(35);
+ assert.equal(await scene(),3,'The original selector still locks unreached stages');
+ await press(27);await advance(12);await press(27);await advance(90);
+ assert.equal(await scene(),2,'Esc closes the stage popup, then returns to the title');
+ report.nativePractice=true;
+ await press(38);
  await press(90);await frame.evaluate(()=>{for(let i=0;i<90;i++)Module._th05_step();});await press(90);await frame.evaluate(()=>{for(let i=0;i<110;i++)Module._th05_step();});
  report.gameplay=await frame.evaluate(()=>({scene:Module._th05_scene(),x:Module._th05_player_x(),y:Module._th05_player_y(),ticks:Module._th05_ticks()}));assert.equal(report.gameplay.scene,4,JSON.stringify(report.gameplay));
  await frame.evaluate(()=>{for(let i=0;i<500&&Module._th05_replay_frame()<30;i++)Module._th05_step();});
- await press(27);await frame.evaluate(()=>{for(let i=0;i<20;i++)Module._th05_step();});assert.equal(await frame.evaluate(()=>Module._th05_input_scene()),0);await press(82);await frame.evaluate(()=>{for(let i=0;i<100;i++)Module._th05_step();});assert.equal(await frame.evaluate(()=>Module._th05_scene()),4);assert.equal(await frame.evaluate(()=>Module._th05_input_scene()),4);report.pauseRestart=true;
+ const inputScene=()=>frame.evaluate(()=>Module._th05_input_scene());
+ await press(27);await advance(20);assert.equal(await inputScene(),0);
+ assert.equal(await frame.evaluate(()=>Module._th05_pointer(1,99,215,235,1)),0,'Vanilla pause must not capture touches with ImGui');
+ await press(90);assert.equal(await inputScene(),4,'Confirm resumes from the original pause menu');
+ await press(27);assert.equal(await inputScene(),0);
+ await press(82);await frame.evaluate(()=>{for(let i=0;i<100;i++)Module._th05_step();});assert.equal(await frame.evaluate(()=>Module._th05_scene()),4);assert.equal(await frame.evaluate(()=>Module._th05_input_scene()),4);report.pauseRestart=true;
  await frame.evaluate(()=>{for(let i=0;i<500&&Module._th05_replay_frame()<30;i++)Module._th05_step();});const before=await frame.evaluate(()=>Module._th05_player_x());await frame.evaluate(()=>{Module._th05_touch_motion(20,0,1);Module._th05_step();});assert.ok(await frame.evaluate(()=>Module._th05_player_x())>before+10);
 
  const gamepad=await frame.evaluate(()=>{const x=Module._th05_player_x();globalThis.__eaglerGamepadInputBridge={owned:()=>true,sample:()=>128};Module._th05_step();const moved=Module._th05_player_x();globalThis.__eaglerGamepadInputBridge.sample=()=>0;Module._th05_step();delete globalThis.__eaglerGamepadInputBridge;return {x,moved};});assert.ok(gamepad.moved>gamepad.x);report.gamepad=true;
  const recorded=await frame.evaluate(()=>{const history=[];for(let n=0;n<24;n++){Module._th05_touch_motion(n%2?1:-2,-.5,1);Module._th05_step();history.push({frame:Module._th05_replay_frame(),x:Module._th05_player_x(),y:Module._th05_player_y()});}const text=new TextEncoder().encode('/savesth05/replay/replay00.rpy'+String.fromCharCode(0)),ptr=Module._malloc(text.length);Module.HEAPU8.set(text,ptr);if(!Module._th05_replay_save(ptr))throw Error('Replay save failed');const bytes=Array.from(Module.FS.readFile('/savesth05/replay/replay00.rpy'));if(!Module._th05_replay_open(ptr,0))throw Error('Replay open failed');Module._free(ptr);const actual=[];for(let n=0;n<2000;n++){Module._th05_step();const index=Module._th05_replay_frame();if(history.some(h=>h.frame===index))actual.push({frame:index,x:Module._th05_player_x(),y:Module._th05_player_y()});if(index>=history.at(-1).frame)break;}return {history,actual,bytes};});
- assert.deepEqual(recorded.actual,recorded.history);assert.equal(inspectReplay(new Uint8Array(recorded.bytes)).touch,true);report.touchReplayFrames=recorded.actual.length;
+ assert.deepEqual(recorded.actual,recorded.history);
+ if(process.env.TH05_BROWSER_TESTS==='1'){
+  const rules=await frame.evaluate(bytes=>{
+   const m=Module;
+   const tag=String.fromCharCode(...bytes.slice(0,4));
+   if(tag!=='RPY ')throw Error('Unexpected replay format');
+   const view=new DataView(Uint8Array.from(bytes).buffer);
+   let at=340;
+   for(let stage=0;stage<7;stage++){
+    if(bytes[53+stage])at+=4+2*view.getUint32(at,true);
+   }
+   if(String.fromCharCode(...bytes.slice(at,at+4))!=='TSH5')throw Error('Shot rules were not saved');
+   const readRules=()=>[m._th05_native_shot_rules(),m._th05_native_boss_rules(),m._th05_native_motion_rules(),m._th05_native_bomb_rage_rules()];
+   const current=readRules();
+   const name='/savesth05/replay/legacy.rpy';
+   const path=new TextEncoder().encode(name+String.fromCharCode(0)),ptr=m._malloc(path.length);
+   try{
+    m.HEAPU8.set(path,ptr);
+    const oldTrailer=Uint8Array.from([...bytes.slice(0,at+8),...bytes.slice(at+15)]);
+    const header=new DataView(oldTrailer.buffer);
+    const open=fixture=>{
+     m.FS.writeFile(name,fixture);
+     if(!m._th05_replay_open(ptr,0))throw Error('Legacy replay did not open');
+     return readRules();
+    };
+    const earlier=[2,1].map(revision=>{
+     header.setUint32(at+4,revision,true);
+     return open(oldTrailer);
+    });
+    const motionTrailer=Uint8Array.from(bytes);
+    new DataView(motionTrailer.buffer).setUint32(at+4,3,true);
+    return [current,open(motionTrailer),...earlier,open(Uint8Array.from([...bytes.slice(0,at),...bytes.slice(at+15)]))];
+   }finally{
+    m._free(ptr);
+    m.FS.unlink(name);
+   }
+  },recorded.bytes);
+  assert.deepEqual(rules,[[1,1,1,1],[1,1,1,0],[1,1,0,0],[1,0,0,0],[0,0,0,0]]);
+  report.shotReplayRules=true;
+ }
+ assert.equal(inspectReplay(new Uint8Array(recorded.bytes)).touch,true);report.touchReplayFrames=recorded.actual.length;
  await press(90,60);await page.screenshot({path:resolve(root,'artifacts/gameplay-vanilla.png')});
  const list=await page.evaluate(()=>command('list'));assert.equal(list.ok,true);assert.ok(list.files.some(f=>f.path==='game.cfg'));
  frame=await launch(true,'en-US');const persisted=await page.evaluate(()=>command('read',{path:'replay/replay00.rpy'}));assert.equal(persisted.ok,true);assert.deepEqual(persisted.bytes,recorded.bytes);report.replayDurability=true;assert.equal(await frame.evaluate(()=>Module._th05_practice_enabled()),1);await frame.evaluate(()=>{Module._th05_key(112,1);Module._th05_step();Module._th05_key(112,0);});assert.equal(await frame.evaluate(()=>Module._th05_practice_tool(0)),1);report.thprac=true;
@@ -68,9 +143,22 @@ try{
   report.audio.push({mode,source,prIdentity:true,sfx:health.sfx.backend,loopStart:health.loopStart,loopEnd:health.loopEnd});
  }
  const invalid=await page.evaluate(()=>command('read',{path:'../score.dat'}));assert.equal(invalid.ok,false);
- if(process.env.TH05_BROWSER_TESTS==='1'){report.nativeStageCases=await frame.evaluate(()=>Module._th05_native_stage_matrix());assert.equal(report.nativeStageCases,84);}
+ if(process.env.TH05_BROWSER_TESTS==='1'){
+  report.nativeStageCases=await frame.evaluate(()=>{
+   const onError=Module.eaglerError;
+   let failure;
+   Module.eaglerError=message=>{failure=message;onError?.(message);};
+   try{
+    const cases=Module._th05_native_stage_matrix();
+    if(failure)throw Error(failure);
+    return cases;
+   }finally{Module.eaglerError=onError;}
+  });
+  assert.equal(report.nativeStageCases,84);
+ }
  const runtimeErrors=await page.evaluate(()=>events.filter(e=>e.event==='error'||e.event==='music-error'));assert.deepEqual(runtimeErrors,[]);
  assert.deepEqual(logs.filter(e=>!e.includes('404')&&!e.includes('GL Driver Message')),[]);
  report.logs=logs;report.events=await page.evaluate(()=>events.map(e=>e.event).filter(Boolean));report.protocol='eagler-touhou/1';console.log(JSON.stringify(report,null,2));
  await mkdir(resolve(root,'artifacts'),{recursive:true});const {writeFile}=await import('node:fs/promises');await writeFile(resolve(root,'artifacts/browser-validation.json'),JSON.stringify(report,null,2)+'\n');await writeFile(resolve(root,'artifacts/browser-'+(process.env.TH05_BROWSER_TESTS==='1'?'native':'production')+'-validation.json'),JSON.stringify(report,null,2)+'\n');
+ }
 }catch(error){console.error('Browser logs:',logs);console.error('Report:',report);throw error;}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}

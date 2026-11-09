@@ -2,7 +2,7 @@
 
 namespace th5w{
 
-#define CURVING_BULLET_N_RECORD 8
+#define CURVING_BULLET_N_RECORD 7
 
 typedef struct strCURVING_BULLET{
 	unsigned char flag;

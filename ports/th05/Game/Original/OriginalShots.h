@@ -1,19 +1,39 @@
 #pragma once
 // TH05 shot patterns transcribed from ReC98 b6ba5b0 (th05/p_*.cpp).
-// Keep emission order and the original skipping allocator for recorded demos.
+// Keep the retail emission order and skipping allocator.
 namespace th5w { namespace original { namespace shots {
 struct Scalar { int v; void set(float f){v=int(f*16);} Scalar& operator+=(float f){v+=int(f*16);return *this;} Scalar& operator-=(float f){v-=int(f*16);return *this;} };
 struct Point {Scalar x,y;};
 struct Shot {struct {Point cur,velocity;} pos; unsigned char flag,age,patnum_base,type,damage,angle;
  void from_option_l(float offset=0){pos.cur.x-=24+offset;} void from_option_r(float offset=0){pos.cur.x+=24+offset;}
  void set_option_sprite(){patnum_base=22;} void set_option_sprite_and_damage(char d){set_option_sprite();damage=d;}
+ void SetVelocity(unsigned char direction) {
+  angle=direction;
+  pos.velocity.x.v=math::X(angle,192);
+  pos.velocity.y.v=math::Y(angle,192);
+ }
  void set_random_angle_forwards(unsigned char min=0xb8,unsigned char max=0xc8);
 };
-static Shot slots[65];static int cursor,shot_time,originX,originY;
+static Shot slots[CHARA_BULLET_N_RECORD+1];
+static int slotLimit,cursor,shot_time,originX,originY;
 static unsigned char randring1_next8_ge_lt(unsigned char min,unsigned char max){return (min+(original::Random()&(static_cast<unsigned char>(max-min)-1)))&255;}
-static void shot_velocity_set(Point* p,unsigned char angle){p->x.v=math::X(angle,192);p->y.v=math::Y(angle,192);for(int i=0;i<65;i++)if(p==&slots[i].pos.velocity){slots[i].angle=angle;break;}}
-inline void Shot::set_random_angle_forwards(unsigned char min,unsigned char max){shot_velocity_set(&pos.velocity,randring1_next8_ge_lt(min,max));}
-static Shot* shots_add(){while(cursor<64){int i=++cursor;if(slots[i].flag)continue;Shot& s=slots[i];s.flag=1;s.age=0;s.pos.cur.x.v=originX;s.pos.cur.y.v=originY;s.pos.velocity.x.v=0;s.pos.velocity.y.v=-192;s.patnum_base=20;s.type=0;s.angle=192;cursor=i+1;return &s;}return nullptr;}
+inline void Shot::set_random_angle_forwards(unsigned char min,unsigned char max){SetVelocity(randring1_next8_ge_lt(min,max));}
+static Shot* shots_add(){
+ while(cursor<slotLimit){
+  Shot& shot=slots[++cursor];
+  if(shot.flag)continue;
+  shot={};
+  shot.flag=1;
+  shot.pos.cur.x.v=originX;
+  shot.pos.cur.y.v=originY;
+  shot.pos.velocity.y.v=-192;
+  shot.patnum_base=20;
+  shot.angle=192;
+  ++cursor;
+  return &shot;
+ }
+ return nullptr;
+}
 static unsigned char shot_cycle_init(){cursor=0;switch(shot_time){case 18:return 15;case 15:return 4;case 12:return 5;case 9:return 6;case 6:return 5;case 3:return 4;default:return 0;}}
 #define ST_HOMING 1
 #define ST_MISSILE_LEFT 2
@@ -102,8 +122,7 @@ static void shot_l1(void)
 	}
 	Shot *shot;
 	if(( shot = shots_add() ) != nullptr) {
-		shot_velocity_set(
-			&shot->pos.velocity, randring1_next8_ge_lt(-0x44, -0x3C)
+		shot->SetVelocity(randring1_next8_ge_lt(-0x44, -0x3C)
 		);
 		shot->damage = 10;
 	}
@@ -159,7 +178,7 @@ static void shot_reimu_l2(void)
 			shot->damage = 10;
 		} else {
 			reimu_sub_spread_constant(shot, sai, 3);
-			shot_velocity_set(&shot->pos.velocity, sai.angle);
+			shot->SetVelocity(sai.angle);
 			set_homing(shot, 4);
 		}
 		if(sai.next() <= 0) {
@@ -179,7 +198,7 @@ static void shot_reimu_l3(void)
 			shot->damage = 9;
 		} else {
 			reimu_sub_spread_constant(shot, sai, 4);
-			shot_velocity_set(&shot->pos.velocity, sai.angle);
+			shot->SetVelocity(sai.angle);
 			set_homing(shot, 4);
 		}
 		if(sai.next() <= 0) {
@@ -199,7 +218,7 @@ static void shot_reimu_l4(void)
 			reimu_sub_spread_constant(shot, sai, 5);
 			set_homing(shot, 3);
 		}
-		shot_velocity_set(&shot->pos.velocity, sai.angle);
+		shot->SetVelocity(sai.angle);
 		if(sai.next() <= 0) {
 			break;
 		}
@@ -222,7 +241,7 @@ static void shot_reimu_l4(void)
 			shot->set_option_sprite_and_damage(3); \
 			shot->type = ST_HOMING; \
 		} \
-		shot_velocity_set(&shot->pos.velocity, sai.angle); \
+		shot->SetVelocity(sai.angle); \
 		if(sai.next() <= 0) { \
 			break; \
 		} \
@@ -250,7 +269,7 @@ static void shot_reimu_l7(void)
 			reimu_sub_spread_random(shot, sai, 7);
 			set_homing(shot, 3);
 		}
-		shot_velocity_set(&shot->pos.velocity, sai.angle);
+		shot->SetVelocity(sai.angle);
 		if(sai.next() <= 0) {
 			break;
 		}
@@ -275,7 +294,7 @@ static void shot_reimu_l8(void)
 			}
 			set_homing(shot, 3);
 		}
-		shot_velocity_set(&shot->pos.velocity, sai.angle);
+		shot->SetVelocity(sai.angle);
 		if(sai.next() <= 0) {
 			break;
 		}
@@ -307,7 +326,7 @@ static void shot_reimu_l9(void)
 			}
 			set_homing(shot, 2);
 		}
-		shot_velocity_set(&shot->pos.velocity, sai.angle);
+		shot->SetVelocity(sai.angle);
 		if(sai.next() <= 0) {
 			break;
 		}
@@ -397,7 +416,7 @@ static void shot_marisa_l4(void)
 			}
 			shot->damage = 6;
 			sai.angle += 0x06;
-			shot_velocity_set(&shot->pos.velocity, sai.angle);
+			shot->SetVelocity(sai.angle);
 		} else {
 			switch(sai.i - 4u) {
 			case 0: OPT_L;	MISSILE_L;	VELOCITY_XY(-1.375f, 2.25f);	break;
@@ -427,7 +446,7 @@ static void shot_marisa_l5(void)
 				sai.angle = -0x4E;
 			}
 			sai.angle += 0x07;
-			shot_velocity_set(&shot->pos.velocity, sai.angle);
+			shot->SetVelocity(sai.angle);
 		} else {
 			switch(sai.i - 4u) {
 			case 0: OPT_L;	MISSILE_L;	VELOCITY_XY(-1.375f, 2.25f);	break;
@@ -644,7 +663,7 @@ static void shot_mima_l5(void)
 			shot->pos.velocity.y.set(-20.0f);
 			shot->set_option_sprite_and_damage(4);
 		} else {
-			shot_velocity_set(&shot->pos.velocity, sai.angle);
+			shot->SetVelocity(sai.angle);
 			sai.angle += 0x06;
 			shot->damage = 7;
 		}
@@ -669,7 +688,7 @@ static void shot_mima_l6(void)
 			shot->pos.velocity.y.set(-20.0f);
 			shot->set_option_sprite_and_damage(4);
 		} else {
-			shot_velocity_set(&shot->pos.velocity, sai.angle);
+			shot->SetVelocity(sai.angle);
 			sai.angle += 0x06;
 			shot->damage = 7;
 		}
@@ -697,7 +716,7 @@ static void shot_mima_l7(void)
 			shot->pos.velocity.y.set(-20.0f);
 			shot->set_option_sprite_and_damage(4);
 		} else {
-			shot_velocity_set(&shot->pos.velocity, sai.angle);
+			shot->SetVelocity(sai.angle);
 			sai.angle += 0x06;
 			shot->damage = 7;
 		}
@@ -726,7 +745,7 @@ static void shot_mima_l8(void)
 			shot->pos.velocity.y.set(-20.0f);
 			shot->set_option_sprite_and_damage(4);
 		} else {
-			shot_velocity_set(&shot->pos.velocity, sai.angle);
+			shot->SetVelocity(sai.angle);
 			sai.angle += 0x06;
 			shot->damage = 7;
 		}
@@ -758,7 +777,7 @@ static void shot_mima_l9(void)
 			case 2:	sai.angle = -0x40;	shot->pos.cur.x += 8.0f;	break;
 			case 3:	sai.angle = -0x38;	                         	break;
 			}
-			shot_velocity_set(&shot->pos.velocity, sai.angle);
+			shot->SetVelocity(sai.angle);
 			shot->damage = 7;
 		}
 		if(sai.next() <= 0) {
@@ -813,7 +832,7 @@ static void shot_yuuka_l2(void)
 			else/*i == 2*/ { shot->from_option_r(); sai.angle = -0x38; }
 			shot->set_option_sprite_and_damage(6);
 		}
-		shot_velocity_set(&shot->pos.velocity, sai.angle);
+		shot->SetVelocity(sai.angle);
 		if(sai.next() <= 0) {
 			break;
 		}
@@ -842,7 +861,7 @@ static void shot_yuuka_l3(void)
 				}
 			}
 			shot->set_option_sprite_and_damage(6);
-			shot_velocity_set(&shot->pos.velocity, sai.angle);
+			shot->SetVelocity(sai.angle);
 		}
 		if(sai.next() <= 0) {
 			break;
@@ -876,7 +895,7 @@ static void shot_yuuka_l4(void)
 			shot->pos.velocity.y.set(2.0f);
 			shot->set_option_sprite_and_damage(6);
 		}
-		shot_velocity_set(&shot->pos.velocity, sai.angle);
+		shot->SetVelocity(sai.angle);
 		if(sai.next() <= 0) {
 			break;
 		}
@@ -908,7 +927,7 @@ static void shot_yuuka_l5(void)
 			}
 			shot->set_option_sprite_and_damage(6);
 		}
-		shot_velocity_set(&shot->pos.velocity, sai.angle);
+		shot->SetVelocity(sai.angle);
 		if(sai.next() <= 0) {
 			break;
 		}
@@ -936,7 +955,7 @@ static void shot_yuuka_l6(void)
 			}
 			shot->set_option_sprite_and_damage(6);
 		}
-		shot_velocity_set(&shot->pos.velocity, sai.angle);
+		shot->SetVelocity(sai.angle);
 		if(sai.next() <= 0) {
 			break;
 		}
@@ -966,7 +985,7 @@ static void shot_yuuka_l7(void)
 			}
 			shot->set_option_sprite_and_damage(6);
 		}
-		shot_velocity_set(&shot->pos.velocity, sai.angle);
+		shot->SetVelocity(sai.angle);
 		if(sai.next() <= 0) {
 			break;
 		}
@@ -996,7 +1015,7 @@ static void shot_yuuka_l8(void)
 			}
 			shot->set_option_sprite_and_damage(6);
 		}
-		shot_velocity_set(&shot->pos.velocity, sai.angle);
+		shot->SetVelocity(sai.angle);
 		if(sai.next() <= 0) {
 			break;
 		}
@@ -1028,7 +1047,7 @@ static void shot_yuuka_l9(void)
 			}
 			shot->set_option_sprite_and_damage(6);
 		}
-		shot_velocity_set(&shot->pos.velocity, sai.angle);
+		shot->SetVelocity(sai.angle);
 		if(sai.next() <= 0) {
 			break;
 		}

@@ -1,6 +1,8 @@
 #include "Platform.hpp"
 #include "PracticeMobile.hpp"
 #include "../Game/Practice/Practice.h"
+#include "../Game/Game.h"
+#include "../Game/Stage/Stage.h"
 #include "../third_party/imgui/imgui_internal.h"
 #include <eagler/thprac/PracticePointer.hpp>
 #include <deque>
@@ -8,6 +10,16 @@ namespace {
 eagler::thprac::PracticePointer pointers;
 struct MouseEdge {float x,y;bool down;};
 std::deque<MouseEdge> edges;
+int coopMenuPointer=0,coopMenuRow=-1;
+int CoopMenuRow(double x,double y){
+ using namespace th5w;
+ const auto* game=CGame::s_pCurGame;
+ if(!game||game->m_curSchemeID!=4||!game->m_pCurScheme)return -1;
+ const auto* stage=static_cast<const CStage*>(game->m_pCurScheme);
+ if(!stage->Cooperative()||!stage->BrowserMenu()||x<coop::MenuLeft||x>=coop::MenuLeft+coop::MenuWidth||y<coop::MenuTop)return -1;
+ const int dy=int(y-coop::MenuTop),row=dy/coop::MenuRowStep;
+ return row<coop::MenuRows&&dy%coop::MenuRowStep<coop::MenuRowHeight?row:-1;
+}
 bool Hit(float x,float y) {
  if(!ImGui::GetCurrentContext())return false;
  for(auto* window:ImGui::GetCurrentContext()->Windows)
@@ -21,9 +33,19 @@ void BeginPointerFrame(){if(edges.empty()||!ImGui::GetCurrentContext())return;co
 }
 extern "C" {
 EMSCRIPTEN_KEEPALIVE int th05_mobile_state(){using namespace eagler::thprac::mobile;poll();return int(enabled)|(int(visible)<<1)|(int(expanded[Cheats])<<2)|(int(expanded[Advanced])<<3)|(int(expanded[Information])<<4);}
-EMSCRIPTEN_KEEPALIVE void th05_pointer_cancel(){pointers.reset();edges.clear();if(ImGui::GetCurrentContext())ImGui::GetIO().MouseDown[0]=false;}
+EMSCRIPTEN_KEEPALIVE void th05_pointer_cancel(){pointers.reset();edges.clear();coopMenuRow=-1;if(ImGui::GetCurrentContext())ImGui::GetIO().MouseDown[0]=false;}
 EMSCRIPTEN_KEEPALIVE int th05_pointer(int type,int id,double x,double y,int mouse){
- if(!ImGui::GetCurrentContext()||type<0||type>2)return 0;
+ if(type<0||type>2)return 0;
+ const int row=CoopMenuRow(x,y);
+ if(type==0&&row>=0){coopMenuPointer=id;coopMenuRow=row;return 1;}
+ if(type!=0&&coopMenuRow>=0&&id==coopMenuPointer){
+  if(type==2){
+   if(row==coopMenuRow)EM_ASM({Module.eaglerCoopAction?.($0);},row);
+   coopMenuRow=-1;
+  }
+  return 1;
+ }
+ if(!th5w::practice::Available()||!ImGui::GetCurrentContext())return 0;
  if(mouse){auto& io=ImGui::GetIO();io.MousePos={float(x),float(y)};if(type!=1)Queue(x,y,type==0);return Hit(x,y);}
  const bool passive=th5w::practice::Available()&&eagler::thprac::mobile::passive_pointer(x,y);
  const auto decision=pointers.route_touch(type,id,Hit(x,y),passive,x,y);

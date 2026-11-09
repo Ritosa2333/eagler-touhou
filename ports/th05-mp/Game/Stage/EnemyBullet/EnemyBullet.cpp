@@ -30,6 +30,8 @@ void CEnemyBullet::Initialize()
 	memset(m_bullets,0,sizeof(m_bullets));
  m_dotEnd=0;m_imageEnd=ENEMY_BULLET_N_RECORD_DOT;
 	m_noEnemyBullet=false;
+	m_templateSpreadAngle=0;
+	m_templateAngle=0;
 	m_clearEnemyBulletTimeLeft=0;
 
 	m_clipXLow=-128;
@@ -47,8 +49,18 @@ void CEnemyBullet::Initialize()
 	m_bDropPointItemOnBonus=false;
 }
 
+void CEnemyBullet::RememberSpreadAngle(const ENEMY_SHOOT_INFO& info)
+{
+	// Stage script shots copy the entire PC-98 template; boss scripts
+	// usually write the spread angle only when setting up a spread.
+	if (info.fromStageScript||info.shootType==EST02_NWAY||info.shootType==EST03_NWAY_TO_CHARA||
+		info.shootType==EST08_NWAY_MULTI||info.shootType==EST09_NWAY_MULTI_TO_CHARA)
+		m_templateSpreadAngle=static_cast<unsigned char>(int(info.nWayUnitAngle));
+}
+
 void CEnemyBullet::TuneEnemyShootInfo(ENEMY_SHOOT_INFO *pInfo)
 {
+	RememberSpreadAngle(*pInfo);
 	if (pInfo->shootType==EST06_MULTI||pInfo->shootType==EST07_MULTI_TO_CHARA)
 	{
 		if (m_pStage->m_playerPerformance>=38)
@@ -78,8 +90,9 @@ void CEnemyBullet::TuneEnemyShootInfo(ENEMY_SHOOT_INFO *pInfo)
 			break;
 		case EST06_MULTI:
 		case EST07_MULTI_TO_CHARA:
-			pInfo->deltaSpeed-=pInfo->deltaSpeed/4;
-			if (pInfo->nMulti>=2)	//PC98 ver uses "if pInfo->nWayUnitAngle", which doen't make sense. should be bug
+			pInfo->deltaSpeed-=static_cast<int>(pInfo->deltaSpeed)/4;
+			// The original Easy stack rule checks the stored spread angle.
+			if (m_templateSpreadAngle>=2&&pInfo->nMulti>=2)
 				pInfo->nMulti--;
 		    break;
 		}
@@ -103,7 +116,7 @@ void CEnemyBullet::TuneEnemyShootInfo(ENEMY_SHOOT_INFO *pInfo)
 		case EST07_MULTI_TO_CHARA:
 		case EST08_NWAY_MULTI:
 		case EST09_NWAY_MULTI_TO_CHARA:
-			pInfo->deltaSpeed+=pInfo->deltaSpeed/2;
+			pInfo->deltaSpeed+=static_cast<int>(pInfo->deltaSpeed)/2;
 		    break;
 		case EST12_RANDOM:
 		case EST13_RANDOM_BASE_SPEED_32:
@@ -134,7 +147,7 @@ void CEnemyBullet::TuneEnemyShootInfo(ENEMY_SHOOT_INFO *pInfo)
 			break;
 		case EST06_MULTI:
 		case EST07_MULTI_TO_CHARA:
-			pInfo->deltaSpeed+=pInfo->deltaSpeed/2;
+			pInfo->deltaSpeed+=static_cast<int>(pInfo->deltaSpeed)/2;
 			pInfo->nMulti++;
 		    break;
 		case EST12_RANDOM:
@@ -179,11 +192,10 @@ int CEnemyBullet::GetNRecordNeeded(ENEMY_SHOOT_INFO *shootInfo)
 	return 0;
 }
 
-int CEnemyBullet::FindFreeRecord(int *retIdxArray,int startIdx,int nIdx,int nNeeded)
+int CEnemyBullet::FindFreeRecord(int *retIdxArray,int startIdx,int nIdx,int nNeeded,bool originalPool)
 {
 	int nFound=0;
- if(original::DemoActive()){
-  nIdx=startIdx==0?180:220;
+ if(originalPool){
   for(int i=startIdx+nIdx-1;i>=startIdx;i--)if(!m_bullets[i].flag){retIdxArray[nFound++]=i;if(nFound==nNeeded)return nNeeded;}
   retIdxArray[nFound]=-1;return nFound;
  }
@@ -200,11 +212,11 @@ int CEnemyBullet::FindFreeRecord(int *retIdxArray,int startIdx,int nIdx,int nNee
 	return nFound;
 }
 
-void CEnemyBullet::FillRecordSpeedAndAngle(int *freeRecIdx,ENEMY_SHOOT_INFO *shootInfo)
+void CEnemyBullet::FillRecordSpeedAndAngle(int *freeRecIdx,ENEMY_SHOOT_INFO *shootInfo,bool originalPattern)
 {
-	float angleToChara=m_pStage->AimAngle(shootInfo->shootOrigX,shootInfo->shootOrigY);
- if(original::DemoActive()){
-  const int type=shootInfo->shootType;int way=1,stack=1;
+	float angleToChara=m_pStage->AimAngle(shootInfo->shootOrigX,shootInfo->shootOrigY,originalPattern);
+ if(originalPattern){
+  const int type=shootInfo->shootType<=EST15_DEFAULT_SINGLE_TO_CHARA?shootInfo->shootType:EST14_DEFAULT_SINGLE;int way=1,stack=1;
   if((type>=2&&type<=5)||(type>=8&&type<=13))way=shootInfo->nWay?shootInfo->nWay:1;
   if(type>=6&&type<=11)stack=shootInfo->nMulti?shootInfo->nMulti:1;
   const bool spread=type==2||type==3||type==8||type==9,ring=type==4||type==5||type==10||type==11;
@@ -277,16 +289,18 @@ void CEnemyBullet::FillRecordSpeedAndAngle(int *freeRecIdx,ENEMY_SHOOT_INFO *sho
 		{
 			if (freeRecIdx[i]==-1)
 				return;
-			m_bullets[freeRecIdx[i]].curAngle=(float)(original::Random()%256);
-			m_bullets[freeRecIdx[i]].curSpeed=shootInfo->bulletSpeed+(bRandSpeed?(float)(original::Random()%32):0);
+			const int speedOffset=bRandSpeed?(original::Random()&31):0;
+			m_bullets[freeRecIdx[i]].curAngle=float(original::Random()&255);
+			m_bullets[freeRecIdx[i]].curSpeed=shootInfo->bulletSpeed+speedOffset;
 		}
 		return;
 	}
 
 	baseAngle+=shootInfo->shootAngle;
 	int curIdx=0;
-	for (int i=0;i<nWay;i++)
-		for (int j=0;j<nMulti;j++)
+	// Finish each speed layer before allocating the next one.
+	for (int j=0;j<nMulti;j++)
+		for (int i=0;i<nWay;i++)
 		{
 			if (freeRecIdx[curIdx]==-1)
 				return;
@@ -325,9 +339,16 @@ unsigned char CEnemyBullet::AdjustBulletImageBasedOnAngle(unsigned char curImgId
 	return baseIdx+discreteAngle/8;
 }
 
+unsigned char CEnemyBullet::TemplateAngle() const
+{
+	return original::DemoActive()?original::Demo().bulletTemplateAngle:m_templateAngle;
+}
+
 void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bAdjustSpeed)
 {
- if(original::DemoActive())original::Demo().bulletTemplateAngle=static_cast<unsigned char>(int(shootInfo->shootAngle));
+	RememberSpreadAngle(*shootInfo);
+ if(original::BossGeometryEnabled())m_templateAngle=static_cast<unsigned char>(int(shootInfo->shootAngle));
+ if(original::DemoActive())original::Demo().bulletTemplateAngle=m_templateAngle;
 	if (m_noEnemyBullet==true)
 		return;
 
@@ -362,7 +383,7 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 	{
 		m_pStage->MarkPlayerMiss();
 	}
-	//adjust speed
+	const bool originalPattern=shootInfo->fromStageScript||original::BossGeometryEnabled();
 	if (bAdjustSpeed)
 		shootInfo->bulletSpeed=m_pStage->AdjustSpeedBasedOnPlayerPerformance(shootInfo->bulletSpeed);
 
@@ -371,12 +392,12 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 	if (shootInfo->bulletImg!=0)
 	{
 		startRec=ENEMY_BULLET_N_RECORD_DOT;
-		nRec=ENEMY_BULLET_N_RECORD_IMAGED;
+		nRec=220; // Retail sprite-bullet pool.
 	}
 	else
 	{
 		startRec=0;
-		nRec=ENEMY_BULLET_N_RECORD_DOT;
+		nRec=180; // Retail pellet pool.
 	}
 
 	unsigned char bornStage=0;
@@ -391,8 +412,31 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 				speedFadeIn=0;
 
 	int nRecordNeeded=GetNRecordNeeded(shootInfo);
+	if (nRecordNeeded==0)
+	{
+		if (!originalPattern)
+		{
+			shootInfo->bulletSpeed=bulletSpeedBackup;
+			return;
+		}
+		nRecordNeeded=1;
+	}
+	if (!originalPattern &&
+	    (shootInfo->shootType==EST06_MULTI || shootInfo->shootType==EST07_MULTI_TO_CHARA))
+	{
+		// The first shot at or above 10 pixels/frame ends a plain stack.
+		for (int i=0;i<nRecordNeeded-1;i++)
+		{
+			if (shootInfo->bulletSpeed+i*shootInfo->deltaSpeed>=160)
+			{
+				nRecordNeeded=i+1;
+				break;
+			}
+		}
+	}
 	int freeRecIdx[ENEMY_BULLET_N_RECORD];
-	FindFreeRecord(freeRecIdx,startRec,nRec,nRecordNeeded);
+	const int found=FindFreeRecord(freeRecIdx,startRec,nRec,nRecordNeeded,originalPattern);
+	freeRecIdx[found]=-1;
 
 	for (int i=0;i<nRecordNeeded;i++)
 	{
@@ -402,12 +446,12 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
   int& end=freeRecIdx[i]<ENEMY_BULLET_N_RECORD_DOT?m_dotEnd:m_imageEnd;if(end<=freeRecIdx[i])end=freeRecIdx[i]+1;
   m_bullets[freeRecIdx[i]].coopGrazeMask=0;
 		m_bullets[freeRecIdx[i]].bornStageAndGrazeFlag=bornStage;
-		m_bullets[freeRecIdx[i]].curX=shootInfo->shootOrigX;
-		m_bullets[freeRecIdx[i]].curY=shootInfo->shootOrigY;
+		m_bullets[freeRecIdx[i]].curX=originalPattern?float(int(shootInfo->shootOrigX)):shootInfo->shootOrigX;
+		m_bullets[freeRecIdx[i]].curY=originalPattern?float(int(shootInfo->shootOrigY)):shootInfo->shootOrigY;
 		if (bSpecialBullet)
 		{
-			m_bullets[freeRecIdx[i]].origX=shootInfo->shootOrigX;
-			m_bullets[freeRecIdx[i]].origY=shootInfo->shootOrigY;
+			m_bullets[freeRecIdx[i]].origX=m_bullets[freeRecIdx[i]].curX;
+			m_bullets[freeRecIdx[i]].origY=m_bullets[freeRecIdx[i]].curY;
 			m_bullets[freeRecIdx[i]].dieStageAndMoveType=1;
 			m_bullets[freeRecIdx[i]].totalDistanceTravelled=0;
 			m_bullets[freeRecIdx[i]].accumulator=0;
@@ -423,10 +467,11 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 		}
 		m_bullets[freeRecIdx[i]].age=0;
 		m_bullets[freeRecIdx[i]].bulletType=shootInfo->shootType;
+		m_bullets[freeRecIdx[i]].fixedPoint=originalPattern;
 	}
 
 	//calculate speed and angle of all bullets that are shot
-	FillRecordSpeedAndAngle(freeRecIdx,shootInfo);
+	FillRecordSpeedAndAngle(freeRecIdx,shootInfo,originalPattern);
 
 	//update velX,velY and image based on speed and angle
 	for (int i=0;i<nRecordNeeded;i++)
@@ -446,6 +491,7 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 void CEnemyBullet::SpecialMove(int recordIdx)
 {
 	ENEMY_BULLET &pBul=m_bullets[recordIdx];
+	const bool nativeMotion=original::BossGeometryEnabled();
 
 	bool bTurnToChara=false;
 	bool bBounceXLow=false,bBounceYLow=false,bBounceXHigh=false,bBounceYHigh=false;
@@ -458,7 +504,7 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 		{
 			pBul.accumulator++;
 			if (bTurnToChara)
-				pBul.curAngle=m_pStage->AimAngle(pBul.curX,pBul.curY);
+				pBul.curAngle=m_pStage->AimAngle(pBul.curX,pBul.curY,nativeMotion);
 			else
 				pBul.curAngle+=pBul.delta;
 			pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
@@ -474,7 +520,7 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 		}
 		return;
 	case EBMT03_SPEED_UP:
-		if(original::DemoActive()){
+		if(nativeMotion){
    UpdateVelXYFromSpeedAngle(recordIdx);pBul.curSpeed=float((int(pBul.curSpeed)+pBul.specialMoveVar)&255);
   }else{pBul.curSpeed+=pBul.specialMoveVar;UpdateVelXYFromSpeedAngle(recordIdx);}
 		return;
@@ -485,12 +531,12 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 			pBul.curSpeed=pBul.origSpeed;
 			pBul.dieStageAndMoveType=2;
 			UpdateVelXYFromSpeedAngle(recordIdx);
-			pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
+			if(!original::MotionEnabled())pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
 		}
 		else
 		{
 			UpdateVelXYFromSpeedAngle(recordIdx);
-			pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
+			if(!original::MotionEnabled())pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
 			pBul.curSpeed-=2;
 			if (pBul.curSpeed<0) pBul.curSpeed=0;
 			if (pBul.curSpeed<32)
@@ -498,7 +544,7 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 				float deltaAngle=pBul.delta-pBul.curAngle;
 				while(deltaAngle>128) deltaAngle-=256;
 				while(deltaAngle<-128) deltaAngle+=256;
-				if(original::DemoActive())pBul.curAngle=float((int(pBul.curAngle)+int(int8_t(int(pBul.delta)-int(pBul.curAngle)))/4)&255);
+				if(nativeMotion)pBul.curAngle=float((int(pBul.curAngle)+int(int8_t(int(pBul.delta)-int(pBul.curAngle)))/4)&255);
     else pBul.curAngle+=deltaAngle/4;
 			}
 		}
@@ -516,7 +562,7 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 		bBounceXLow=bBounceXHigh=bBounceYLow=true;
 	    break;
 	case EBMT09_SPEED_UP_VERTICAL:
-  if(original::DemoActive()){
+  if(nativeMotion){
    if(m_pStage->m_curFrame&1)pBul.velY=float(int16_t(int(pBul.velY)+pBul.specialMoveVar));
    return;
   }
@@ -528,7 +574,7 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 		}
 	    return;
 	case EBMT10_STRAIGHT:
-  if(original::DemoActive()){
+  if(nativeMotion){
    // Native BSM_EXACT_LINEAR recomputes the point from total distance.
    // Repeatedly adding a quantized velocity follows a different trajectory.
    const int distance=int16_t(int(pBul.totalDistanceTravelled)+int(pBul.curSpeed));
@@ -560,6 +606,7 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 
 void CEnemyBullet::Step()
 {
+ const bool nativeMotion=original::MotionEnabled();
  const bool demo=original::DemoActive();
  const int dotEnd=demo?ENEMY_BULLET_N_RECORD_DOT:m_dotEnd;
  const int count=demo?ENEMY_BULLET_N_RECORD:dotEnd+m_imageEnd-ENEMY_BULLET_N_RECORD_DOT;
@@ -569,7 +616,8 @@ void CEnemyBullet::Step()
 	{
 		for (int iteration=0;iteration<count;iteration++)
 		{
-   const int i=demo?ENEMY_BULLET_N_RECORD-1-iteration:(iteration<dotEnd?iteration:ENEMY_BULLET_N_RECORD_DOT+iteration-dotEnd);
+   const int index=nativeMotion?count-1-iteration:iteration;
+   const int i=index<dotEnd?index:ENEMY_BULLET_N_RECORD_DOT+index-dotEnd;
 			if (m_bullets[i].flag==0||m_bullets[i].flag==2)
 			{
 				m_bullets[i].flag=0;
@@ -608,7 +656,7 @@ void CEnemyBullet::Step()
 					m_pStage->AddScore(removeBulletScore);
 				}
 			}
-			if(demo)++m_bullets[i].age;
+			if(nativeMotion)++m_bullets[i].age;
 			if (m_bullets[i].bornStageAndGrazeFlag==2)	//set grazed flag to false for bullets just ended born stage
 				m_bullets[i].bornStageAndGrazeFlag=0;
 			if (m_bullets[i].bornStageAndGrazeFlag>2)	//bullets still in born stage
@@ -634,14 +682,14 @@ void CEnemyBullet::Step()
 					{
 						m_bullets[i].lastX=m_bullets[i].curX;		//move forward with 1/3x speed
 						m_bullets[i].lastY=m_bullets[i].curY;
-						m_bullets[i].curX+=(demo?float(int(m_bullets[i].velX)/3):m_bullets[i].velX/3);
-						m_bullets[i].curY+=(demo?float(int(m_bullets[i].velY)/3):m_bullets[i].velY/3);
+						m_bullets[i].curX+=((m_bullets[i].fixedPoint||original::DemoActive())?float(int(m_bullets[i].velX)/3):m_bullets[i].velX/3);
+						m_bullets[i].curY+=((m_bullets[i].fixedPoint||original::DemoActive())?float(int(m_bullets[i].velY)/3):m_bullets[i].velY/3);
 						m_bullets[i].bornStageAndGrazeFlag++;
 					}
 				if (m_bullets[i].bornStageAndGrazeFlag>=20)			//born stage end, change to normal mode
 				{
-					if (m_bullets[i].curX<=m_clipXLow||m_bullets[i].curX>=m_clipXHigh||
-						m_bullets[i].curY<=m_clipYLow||m_bullets[i].curY>=m_clipYHigh)
+					if ((nativeMotion?m_bullets[i].curX<m_clipXLow:m_bullets[i].curX<=m_clipXLow)||m_bullets[i].curX>=m_clipXHigh||
+						(nativeMotion?m_bullets[i].curY<m_clipYLow:m_bullets[i].curY<=m_clipYLow)||m_bullets[i].curY>=m_clipYHigh)
 						m_bullets[i].flag=2;						//outside play area, remove
 					else
 						m_bullets[i].bornStageAndGrazeFlag=2;		//2 for just ended born stage
@@ -657,7 +705,7 @@ void CEnemyBullet::Step()
 					{
 						m_bullets[i].accumulator--;
 						//speed transit from 72 to origSpeed linearly within 32 frames
-						m_bullets[i].curSpeed=m_bullets[i].origSpeed+(demo?float((int(m_bullets[i].delta)*m_bullets[i].accumulator)/32):m_bullets[i].delta*m_bullets[i].accumulator/32.0f);
+						m_bullets[i].curSpeed=m_bullets[i].origSpeed+((m_bullets[i].fixedPoint||original::DemoActive())?float((int(m_bullets[i].delta)*m_bullets[i].accumulator)/32):m_bullets[i].delta*m_bullets[i].accumulator/32.0f);
 						if (m_bullets[i].accumulator==0)			//end of fade in frames
 						{
 							m_bullets[i].curSpeed=m_bullets[i].origSpeed;
@@ -677,7 +725,7 @@ void CEnemyBullet::Step()
 					m_bullets[i].flag=2;						//outside play area, remove
 					continue;
 				}
-				if (m_clearEnemyBulletTimeLeft>0 || (demo&&m_pStage->m_pChara->m_invulnerableTimeLeft!=0))
+				if (m_clearEnemyBulletTimeLeft>0 || (nativeMotion&&!m_pStage->Cooperative()&&m_pStage->m_pChara->m_invulnerableTimeLeft!=0))
 					continue;
  if(m_pStage->Cooperative()) {
   m_pStage->GrazePlayers(m_bullets[i].curX,m_bullets[i].curY,m_bullets[i].coopGrazeMask);
@@ -690,8 +738,8 @@ void CEnemyBullet::Step()
 				{
 					//the graze area inf PC98 ver is very strange: left 16, right 20, up/down 22
 					//we rotate it 90 degrees clockwise here: up 16, down 20, left/right 22
-					if (demo?(m_bullets[i].curX>=charaX-256&&m_bullets[i].curX<=charaX+320):(m_bullets[i].curX>=charaX-352&&m_bullets[i].curX<=charaX+352))
-						if (demo?(m_bullets[i].curY>=charaY-352&&m_bullets[i].curY<=charaY+352):(m_bullets[i].curY>=charaY-256&&m_bullets[i].curY<=charaY+320))
+					if (nativeMotion?(m_bullets[i].curX>=charaX-256&&m_bullets[i].curX<=charaX+320):(m_bullets[i].curX>=charaX-352&&m_bullets[i].curX<=charaX+352))
+						if (nativeMotion?(m_bullets[i].curY>=charaY-352&&m_bullets[i].curY<=charaY+352):(m_bullets[i].curY>=charaY-256&&m_bullets[i].curY<=charaY+320))
 						{
 							m_pStage->m_pSparkEffect->AddEffect(m_bullets[i].curX,m_bullets[i].curY,32,2,false);
 							m_bullets[i].bornStageAndGrazeFlag=1;
@@ -724,7 +772,8 @@ void CEnemyBullet::Step()
 		int maxSingleBonus=bonusLimit[CGame::GVar().m_playDifficulty];
 		for (int iteration=0;iteration<count;iteration++)
 		{
-   const int i=demo?ENEMY_BULLET_N_RECORD-1-iteration:(iteration<dotEnd?iteration:ENEMY_BULLET_N_RECORD_DOT+iteration-dotEnd);
+   const int index=nativeMotion?count-1-iteration:iteration;
+   const int i=index<dotEnd?index:ENEMY_BULLET_N_RECORD_DOT+index-dotEnd;
 			if (m_bullets[i].flag==1)
 			{
 				m_bullets[i].velX=m_bullets[i].velY=0;

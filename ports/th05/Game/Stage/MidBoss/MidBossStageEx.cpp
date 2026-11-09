@@ -32,7 +32,7 @@ int CMidBossStageEx::ShootType1()
 	if (m_curPhaseFrame==94)
 	{
 		m_shootType1DeltaAngle=(float)(original::Random()%2*2-1);
-		if(!original::DemoActive())m_shootType1Angle=(float)(original::Random()%256);
+		if(!original::BossGeometryEnabled())m_shootType1Angle=(float)(original::Random()%256);
 	}
 	if (m_curPhaseFrame<=114)
 	{
@@ -47,9 +47,9 @@ int CMidBossStageEx::ShootType1()
 		shootInfo.shootType=EST04_NWAY_ALLAROUND;
 		shootInfo.bulletSpeed=8;
 		shootInfo.bulletImg=47;
-		if(original::DemoActive())m_shootType1Angle=float((int(m_shootType1Angle)+int(m_shootType1DeltaAngle))&255);
+		if(original::BossGeometryEnabled())m_shootType1Angle=float((int(m_shootType1Angle)+int(m_shootType1DeltaAngle))&255);
 		shootInfo.shootAngle=m_shootType1Angle;
-		if(!original::DemoActive())m_shootType1Angle+=m_shootType1DeltaAngle;
+		if(!original::BossGeometryEnabled())m_shootType1Angle+=m_shootType1DeltaAngle;
 		m_pStage->m_pEnemyBullet->Shoot(&shootInfo,true);
 	}
 	if (m_curPhaseFrame>=128)
@@ -59,7 +59,7 @@ int CMidBossStageEx::ShootType1()
 
 int CMidBossStageEx::ShootType2()
 {
-	if (m_pStage->m_curFrame%2==(original::DemoActive()?0:1))
+	if (m_pStage->m_curFrame%2==0)
 	{
 		ENEMY_SHOOT_INFO shootInfo;
 		shootInfo.shootOrigX=m_curX;
@@ -68,7 +68,7 @@ int CMidBossStageEx::ShootType2()
 		shootInfo.shootType=EST13_RANDOM_BASE_SPEED_32;
 		shootInfo.bulletSpeed=16;
 		shootInfo.nWay=12;
-		if(original::DemoActive())shootInfo.shootAngle=m_shootType1Angle;
+		if(original::BossGeometryEnabled())shootInfo.shootAngle=m_shootType1Angle;
 		shootInfo.nWayUnitAngle=10;				//no need to set here, kept just to follow PC98 ver
 		shootInfo.bulletImg=0;
 		m_pStage->m_pEnemyBullet->Shoot(&shootInfo);
@@ -99,7 +99,7 @@ int CMidBossStageEx::ShootType3_4()
 		shootInfo.specialBulletDelta=-56;
 		m_pStage->m_pEnemyBullet->Shoot(&shootInfo,true);
 		shootInfo.shootAngle=0;
-		if(original::DemoActive())m_shootType1Angle=0;
+		if(original::BossGeometryEnabled())m_shootType1Angle=0;
 		shootInfo.specialBulletDelta=56;
 		m_pStage->m_pEnemyBullet->Shoot(&shootInfo,true);
 		m_pStage->m_bPlaySound[3]=true;
@@ -141,7 +141,7 @@ int CMidBossStageEx::Move(int frameIdx)
 			m_pStage->m_bPlaySound[8]=true;
 		m_velX=(float)cos(m_movingAngle/256.0f*2*PI)*(64-frameIdx*2);
 		m_velY=(float)sin(m_movingAngle/256.0f*2*PI)*(64-frameIdx*2);
-		if(original::DemoActive()){m_velX=float(original::math::X(int(m_movingAngle),64-frameIdx*2));m_velY=float(original::math::Y(int(m_movingAngle),64-frameIdx*2));}
+		if(original::BossGeometryEnabled()){m_velX=float(original::math::X(int(m_movingAngle),64-frameIdx*2));m_velY=float(original::math::Y(int(m_movingAngle),64-frameIdx*2));}
 		m_lastX=m_curX;
 		m_lastY=m_curY;
 		m_curX+=m_velX;
