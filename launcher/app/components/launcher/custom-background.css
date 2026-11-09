@@ -51,6 +51,7 @@
    must override those utilities while the custom background is active. */
 html[data-custom-background] body:not(.mp-room-active) .book-sidebar [data-book-category] {background-color:color-mix(in srgb,var(--book-surface) var(--custom-category-opacity),transparent)}
 html[data-custom-background] body:not(.mp-room-active) .book-sidebar [data-book-category]:is([data-state="on"],:hover,:focus-visible) {background-color:color-mix(in srgb,var(--kit-accent) var(--custom-category-opacity),transparent)}
+.book-directory .book-lobby-item[data-selected="true"] {border-color:transparent}
 
 /* The room workspace covers the launcher, so it paints the same background itself. */
 @layer foundation {
@@ -64,6 +65,4 @@ html[data-custom-background] #player.room-workspace {
 html[data-background-mode="dots"] #player.room-workspace {background:radial-gradient(circle,color-mix(in srgb,var(--kit-foreground) 18%,transparent) 1px,transparent 1.5px) 0 0/28px 28px repeat,var(--kit-background)!important}
 html[data-background-mode="grid"] #player.room-workspace {background:linear-gradient(color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px,transparent 1px) 0 0/36px 36px repeat,linear-gradient(90deg,color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px,transparent 1px) 0 0/36px 36px repeat,var(--kit-background)!important}
 html[data-custom-background] #player.room-workspace :is(.room-workspace-sidebar,.room-workspace-spectators) {background-color:color-mix(in srgb,var(--kit-card) var(--custom-panel-opacity),transparent)}
-html[data-custom-background] #player.room-workspace .room-workspace-roster .mp-seat {background:color-mix(in srgb,var(--seat-background,var(--kit-card)) var(--custom-card-opacity),transparent)!important}
-html[data-custom-background] #player.room-workspace .room-workspace-roster .mp-seat[data-card-state="empty"] {background:color-mix(in srgb,var(--kit-muted) var(--custom-card-opacity),transparent)!important}
 }
