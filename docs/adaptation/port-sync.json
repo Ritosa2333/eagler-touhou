@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "333d6ca5d285218ab4f651f8ac48636e06912f56",
+      "base": "7271fa77b14f3a2f04219136d06ee26119ee9ea7",
       "history": [
         {
           "kind": "manual",
@@ -382,6 +382,23 @@
             "ports/th05-mp/web/shell.mjs"
           ],
           "note": "同步练习页面的手机确认与返回、菜单补帧输入以及 thprac 关卡开放规则；正式多人房间沿用原有的 thprac 限制。"
+        },
+        {
+          "kind": "manual",
+          "base": "333d6ca5d285218ab4f651f8ac48636e06912f56",
+          "source": "7271fa77b14f3a2f04219136d06ee26119ee9ea7",
+          "targetHead": "f6870a83196e36c83d5efc6cc07f70428f6bb87c",
+          "paths": [
+            "ports/th05-mp/Game/Practice/Practice.cpp",
+            "ports/th05-mp/Game/SelectCharaScreen/SelectCharaScreen.cpp",
+            "ports/th05-mp/Game/Stage/Stage.cpp",
+            "ports/th05-mp/portable/Game.cpp",
+            "ports/th05-mp/portable/Input.hpp",
+            "ports/th05-mp/portable/Platform.cpp",
+            "ports/th05-mp/portable/Pointer.cpp",
+            "ports/th05-mp/tests/browser.mjs"
+          ],
+          "note": "关闭 thprac 时恢复原生练习与暂停，并停止 ImGui 帧和触控捕获；多人保留继续、重开和返回房间的同步操作，改用游戏内绘制和点击。"
         }
       ]
     },
