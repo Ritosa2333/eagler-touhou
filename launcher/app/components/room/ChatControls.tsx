@@ -1,13 +1,11 @@
-import { memo, useCallback, useSyncExternalStore } from 'react';
-import { ChevronUp, Ellipsis, Flag, Send, VolumeX, Zap } from 'lucide-react';
+import { memo, useCallback, useState, useSyncExternalStore } from 'react';
+import { ArrowLeft, ChevronLeft, ChevronRight, ChevronUp, Ellipsis, Flag, Send, Settings, VolumeX, Zap } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Button as UiButton } from '../../ui/controls';
 import { InputGroup, InputGroupInput } from '../../ui/input-group';
 import { ActionMenu, ActionMenuCheckboxItem, ActionMenuItem } from '../../ui/action-menu';
-import { RoomActionMenu } from './RoomActionMenu';
-import { QUICK_CHAT_PHRASES } from '../../../src/contracts/multiplayer-quick-chat.mts';
+import { QUICK_CHAT_PHRASES, quickChatPhrase } from '../../../src/contracts/multiplayer-quick-chat.mts';
 import {
-  QUICK_CHAT_SLOT_COUNT,
   type MultiplayerQuickChatModel,
   type QuickChatContext,
   type QuickChatEntry,
@@ -41,30 +39,7 @@ export function ChatComposer({ model, gameplay = false, openOnClick = false }: {
             }).format(state.bannedUntil),
           })
         : t(gameplay ? 'chat.freeInputHint' : 'chat.message');
-  const quick = !gameplay && (
-    <RoomActionMenu
-      enabled={enabled}
-      openOnClick={openOnClick}
-      label={t('room.quickChat')}
-      triggerContent={
-        state.registered ? (
-          <Zap aria-hidden="true" />
-        ) : (
-          <>
-            {t('room.quickChat')}
-            <ChevronUp className="room-quick-chat-chevron" aria-hidden="true" />
-          </>
-        )
-      }
-      triggerKind={state.registered ? 'action' : 'quick-chat'}
-      menuClassName="room-quick-chat-picker"
-      items={QUICK_CHAT_PHRASES.map((phrase) => ({
-        id: phrase.id,
-        label: locale === 'en' ? phrase.en : phrase.zh,
-        select: () => model.sendPhrase(phrase.id),
-      }))}
-    />
-  );
+  const quick = !gameplay && <RoomQuickPicker model={model} enabled={enabled} openOnClick={openOnClick} registered={state.registered} locale={locale} />;
   return (
     <div className="room-chat-controls" data-member={state.registered}>
       {state.registered && (
@@ -104,30 +79,86 @@ export function ChatComposer({ model, gameplay = false, openOnClick = false }: {
   );
 }
 
-export function QuickChatPhrases({ enabled, language, numbered, onSelect }: {
-  enabled: boolean;
-  language: string;
-  numbered?: boolean;
-  onSelect(phraseId: string): void;
+function RoomQuickPicker({model, enabled, openOnClick, registered, locale}: {
+  model: MultiplayerQuickChatModel; enabled: boolean; openOnClick: boolean; registered: boolean; locale: string;
+}) {
+  const {t} = useLocale();
+  const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
+  const [view, setView] = useState<'favorites' | 'all' | 'slots' | 'choose'>('favorites');
+  const [slot, setSlot] = useState(0);
+  const [page, setPage] = useState(0);
+  const zh = locale === 'zh-CN', ja = locale === 'ja';
+  const copy = {
+    favorites: zh ? '常用' : ja ? 'お気に入り' : 'Favorites',
+    all: zh ? '全部' : ja ? 'すべて' : 'All',
+    settings: zh ? '设置常用发言' : ja ? 'お気に入りを設定' : 'Edit favorites',
+    back: zh ? '返回' : ja ? '戻る' : 'Back',
+  };
+  const text = (phrase: typeof QUICK_CHAT_PHRASES[number]) => locale === 'en' ? phrase.en : phrase.zh;
+  const ids = view === 'favorites' || view === 'slots' ? state.slots : QUICK_CHAT_PHRASES.slice(page * 9, page * 9 + 9).map(phrase => phrase.id);
+  const pageCount = Math.ceil(QUICK_CHAT_PHRASES.length / 9);
+  const switchView = (next: typeof view) => {setView(next); setPage(0);};
+  return <ActionMenu label={t('room.quickChat')} openOnClick={openOnClick} side="top" align="start" minimumWidth={260}
+    className="room-action-menu room-quick-chat-picker quick-picker-menu"
+    trigger={<Button variant={registered ? 'outline' : 'secondary'} size={registered ? 'default' : 'lg'}
+      className={registered ? undefined : 'room-quick-chat-trigger h-12 w-full justify-between gap-3 data-[state=open]:bg-accent'}
+      title={t('room.quickChat')} aria-label={t('room.quickChat')} disabled={!enabled}>
+      {registered ? <Zap aria-hidden="true"/> : <>{t('room.quickChat')}<ChevronUp className="room-quick-chat-chevron" aria-hidden="true"/></>}
+    </Button>}>
+    <div className="quick-picker-toolbar">
+      {(view === 'slots' || view === 'choose') ? <Button type="button" size="icon-sm" variant="ghost" aria-label={copy.back} title={copy.back} onClick={() => switchView(view === 'choose' ? 'slots' : 'favorites')}><ArrowLeft/></Button> : <>
+        <Button type="button" size="sm" variant={view === 'favorites' ? 'secondary' : 'ghost'} onClick={() => switchView('favorites')}>{copy.favorites}</Button>
+        <Button type="button" size="sm" variant={view === 'all' ? 'secondary' : 'ghost'} onClick={() => switchView('all')}>{copy.all}</Button>
+        <Button type="button" size="icon-sm" variant="ghost" className="quick-picker-settings" aria-label={copy.settings} title={copy.settings} onClick={() => switchView('slots')}><Settings/></Button>
+      </>}
+      {(view === 'slots' || view === 'choose') && <span>{view === 'choose' ? `${copy.settings} · ${slot + 1}` : copy.settings}</span>}
+    </div>
+    {ids.map((id, index) => {
+      const phrase = quickChatPhrase(id);
+      if (!phrase) return null;
+      return <ActionMenuItem key={`${id}-${index}`} data-phrase={id} onSelect={event => {
+        if (view === 'slots') {event.preventDefault(); setSlot(index); switchView('choose');}
+        else if (view === 'choose') {event.preventDefault(); model.setSlot(slot, id); switchView('slots');}
+      }} onAction={view === 'favorites' || view === 'all' ? () => {model.sendPhrase(id); switchView('favorites');} : undefined}>
+        {(view === 'favorites' || view === 'slots') && <kbd>{index + 1}</kbd>}{text(phrase)}
+      </ActionMenuItem>;
+    })}
+    {(view === 'all' || view === 'choose') && <div className="quick-picker-pages">
+      <Button type="button" variant="ghost" size="icon-sm" aria-label={zh ? '上一页' : 'Previous page'} disabled={!page} onClick={() => setPage(page - 1)}><ChevronLeft/></Button>
+      <span>{page + 1} / {pageCount}</span>
+      <Button type="button" variant="ghost" size="icon-sm" aria-label={zh ? '下一页' : 'Next page'} disabled={page + 1 >= pageCount} onClick={() => setPage(page + 1)}><ChevronRight/></Button>
+    </div>}
+  </ActionMenu>;
+}
+
+export function QuickChatPhrases({ enabled, language, numbered, onSelect, model }: {
+  enabled: boolean; language: string; numbered?: boolean; onSelect(phraseId: string): void; model: MultiplayerQuickChatModel;
 }) {
   const { t } = useLocale();
-  return (
+  const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
+  const page = state.pickerPage;
+  const ids = page === 0 ? state.slots : QUICK_CHAT_PHRASES.slice((page - 1) * 9, page * 9).map(phrase => phrase.id);
+  const maxPage = Math.ceil(QUICK_CHAT_PHRASES.length / 9);
+  return <div className="quick-picker-game">
+    <div className="quick-picker-toolbar">
+      <Button type="button" size="sm" variant={page === 0 ? 'secondary' : 'ghost'} onClick={() => model.setPickerPage(0)}>{language === 'en' ? 'Favorites' : '常用'}</Button>
+      <Button type="button" size="sm" variant={page !== 0 ? 'secondary' : 'ghost'} onClick={() => model.setPickerPage(1)}>{language === 'en' ? 'All' : '全部'}</Button>
+      {page > 0 && <div className="quick-picker-pages"><Button type="button" size="icon-sm" variant="ghost" disabled={page === 1} aria-label={language === 'en' ? 'Previous page' : '上一页'} onClick={() => model.setPickerPage(page - 1)}><ChevronLeft/></Button><span>{page} / {maxPage}</span><Button type="button" size="icon-sm" variant="ghost" disabled={page === maxPage} aria-label={language === 'en' ? 'Next page' : '下一页'} onClick={() => model.setPickerPage(page + 1)}><ChevronRight/></Button></div>}
+    </div>
     <fieldset className={`chat-phrase-grid m-0 min-w-0 border-0 p-0${numbered ? ' mp-quick-chat-slots' : ''}`} aria-label={t('room.quickChat')}>
-      {QUICK_CHAT_PHRASES.map((phrase, index) => {
-        const key = numbered && index < QUICK_CHAT_SLOT_COUNT ? String(index + 1) : undefined;
+      {ids.map((id, index) => {
+        const phrase = quickChatPhrase(id);
+        if (!phrase) return null;
+        const key = numbered ? String(index + 1) : undefined;
         const text = language === 'en' ? phrase.en : phrase.zh;
-        return (
-          <Button key={phrase.id} type="button" variant="outline" size="row"
-            className="min-h-9 min-w-0 items-center gap-1.5 py-1.5 pointer-coarse:min-h-10 max-[780px]:min-h-10"
-            disabled={!enabled} data-phrase={phrase.id} title={text} aria-label={text} aria-keyshortcuts={key}
-            onClick={() => onSelect(phrase.id)}>
-            {key && <kbd>{key}</kbd>}
-            <span className="min-w-0 truncate">{text}</span>
-          </Button>
-        );
+        return <Button key={`${id}-${index}`} type="button" variant="outline" size="row"
+          className="min-h-9 min-w-0 items-center gap-1.5 py-1.5 pointer-coarse:min-h-10 max-[780px]:min-h-10"
+          disabled={!enabled} data-phrase={id} title={text} aria-label={text} aria-keyshortcuts={key} onClick={() => onSelect(id)}>
+          {key && <kbd>{key}</kbd>}<span className="min-w-0 truncate">{text}</span>
+        </Button>;
       })}
     </fieldset>
-  );
+  </div>;
 }
 
 export function useChatReportConfirmation(model: MultiplayerQuickChatModel, decisions?: Pick<DecisionStore, 'askText'>) {

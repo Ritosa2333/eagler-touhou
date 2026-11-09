@@ -852,3 +852,26 @@ test('dispose clears scheduled expiry and late presenter completion cannot notif
   assert.equal(notifications, afterDispose);
   model.dispose();
 });
+
+test('custom slots persist and keyboard sends the displayed page', (t) => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  const data = new Map();
+  Object.defineProperty(globalThis, 'localStorage', {configurable: true, value: {
+    getItem: key => data.get(key) ?? null,
+    setItem: (key, value) => data.set(key, value),
+  }});
+  t.onTestFinished(() => previous ? Object.defineProperty(globalThis, 'localStorage', previous) : delete globalThis.localStorage);
+  const {model, sends} = fixture(t);
+  model.setSlot(1, 'you-first');
+  model.openComposer();
+  model.sendSlot(2);
+  assert.equal(sends.at(-1).phrase, 'you-first');
+  const other = fixture(t);
+  assert.equal(other.model.getSnapshot().slots[1], 'you-first');
+  other.model.openComposer();
+  other.model.setPickerPage(2);
+  other.model.sendSlot(1);
+  assert.equal(other.sends.at(-1).phrase, phrases[9].id);
+  other.model.openComposer();
+  assert.equal(other.model.getSnapshot().pickerPage, 0);
+});

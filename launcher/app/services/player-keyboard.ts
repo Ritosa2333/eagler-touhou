@@ -1,3 +1,4 @@
+import { QUICK_CHAT_PHRASES } from '../../src/contracts/multiplayer-quick-chat.mts';
 import { HostedKeyboard } from '../../src/launcher/hosted-keyboard.mts';
 import {
   KeyboardMapping,
@@ -29,7 +30,7 @@ export interface PlayerKeyboardOptions {
   isPlayerFullscreen(): boolean;
   android: boolean;
   shortcutsOnly?: boolean;
-  chat?: Pick<MultiplayerQuickChatModel, 'getSnapshot' | 'subscribe' | 'openComposer' | 'dismiss' | 'sendSlot'>;
+  chat?: Pick<MultiplayerQuickChatModel, 'getSnapshot' | 'subscribe' | 'openComposer' | 'dismiss' | 'sendSlot' | 'setPickerPage'>;
   chatOwnsTarget?(target: EventTarget | null): boolean;
   chatTextTarget?(target: EventTarget | null): boolean;
   preferences?: KeyboardPreferences;
@@ -157,6 +158,14 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
       !state.editingText &&
       !options.chatTextTarget?.(event.target ?? null)
     ) {
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        const page = state.pickerPage;
+        const lastPage = Math.ceil(QUICK_CHAT_PHRASES.length / QUICK_CHAT_SLOT_COUNT);
+        const next = event.key === 'ArrowRight' ? Math.min(lastPage, page + 1) : Math.max(0, page - 1);
+        suppressed.add(code);
+        if (!event.repeat) options.chat?.setPickerPage(next);
+        return true;
+      }
       const slot = Number(event.key);
       if (event.key.length === 1 && slot >= 1 && slot <= QUICK_CHAT_SLOT_COUNT) {
         suppressed.add(code);

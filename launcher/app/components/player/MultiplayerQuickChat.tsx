@@ -199,7 +199,7 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
       </UiButton>
       <div ref={picker} className="mp-quick-chat-picker" tabIndex={-1} hidden={!state.pickerOpen}>
         <ChatComposer model={model} gameplay />
-        {!state.editingText && <QuickChatPhrases enabled={enabled} language={context?.language ?? ''} numbered onSelect={model.sendPhrase}/>}
+        {!state.editingText && <QuickChatPhrases model={model} enabled={enabled} language={context?.language ?? ''} numbered onSelect={model.sendPhrase}/>}
       </div>
       <div ref={log} className="mp-quick-chat-log" role="log" aria-live="polite">
         {state.entries.map((entry) => (

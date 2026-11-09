@@ -1073,6 +1073,7 @@ test('non-TH09 spectator quick chat mounts, sends through the shared model, and 
   const quickTrigger=query('.mp-quick-chat-prompt');
   assert.equal(quickTrigger.disabled,false);
   await act(()=>quickTrigger.click());
+  await act(()=>model.setPickerPage(2));
   await React.act(async()=>{
     query('.mp-quick-chat-slots [data-phrase="thanks"]').click();
     await vi.waitFor(()=>assert.deepEqual(calls.at(-1),['send',{type:'quick-chat',phrase:'thanks',serial:7}]),{timeout:1000,interval:1});
@@ -1185,4 +1186,22 @@ test('presentation remount cancels an active fade but preserves another entry an
   } finally {
     native.restore();
   }
+});
+
+test('room settings replace a favorite and gameplay uses the same slot', async () => {
+  const {model, calls} = fixture();
+  model.update({...context(), inRoom:true});
+  await mount(model, {room:true});
+  await act(()=>query('#mpRoomChat .room-quick-chat-trigger').dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true})));
+  await act(()=>query('.room-quick-chat-picker [aria-label="Edit favorites"]').click());
+  await act(()=>query('.room-quick-chat-picker [data-phrase="request-life"]').click());
+  for (let i=0; i<3; i++) await act(()=>query('.room-quick-chat-picker [aria-label="Next page"]').click());
+  await act(()=>query('.room-quick-chat-picker [data-phrase="you-first"]').click());
+  assert.equal(model.getSnapshot().slots[1], 'you-first');
+  await act(()=>model.update({...context(), inRoom:false}));
+  await act(()=>model.openComposer());
+  assert.ok(query('.mp-quick-chat-slots [data-phrase="you-first"]'));
+  await act(()=>model.sendSlot(2));
+  assert.equal(calls.at(-1)[1].phrase, 'you-first');
+  env.window.localStorage.removeItem('eagler.quick-chat.slots.v1');
 });

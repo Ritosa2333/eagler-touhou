@@ -11,6 +11,22 @@ export const QUICK_CHAT_ROWS = Object.freeze([
     [{ id: "leaving", zh: "退了", en: "I'm leaving" }],
     [{ id: "last-game", zh: "最后一局吧", en: "One last game?" }, { id: "last", zh: "last", en: "last" }],
     [{ id: "thanks", zh: "谢谢指教", en: "Thanks for the games" }, { id: "xxzj", zh: "xxzj", en: "xxzj" }],
+    [{ id: "wait", zh: "等一下", en: "Wait a moment" }],
+    [{ id: "sorry", zh: "非常抱歉", en: "I am so sorry" }],
+    [{ id: "continue", zh: "继续吧", en: "Let’s continue" }],
+    [{ id: "lagging", zh: "卡了卡了", en: "I am lagging" }],
+    [{ id: "no-worries", zh: "没事没事", en: "No worries" }],
+    [{ id: "laugh", zh: "笑死", en: "That’s hilarious" }],
+    [{ id: "retry", zh: "重新来吗", en: "Try again?" }],
+    [{ id: "no-no", zh: "No no no no", en: "No no no no" }],
+    [{ id: "yes-yes", zh: "Yes yes", en: "Yes yes" }],
+    [{ id: "ah", zh: "あぁー", en: "Ah" }],
+    [{ id: "move-right", zh: "向右微移", en: "Move slightly right" }],
+    [{ id: "move-left", zh: "向左微移", en: "Move slightly left" }],
+    [{ id: "busy", zh: "有点事情", en: "Something came up" }],
+    [{ id: "you-first", zh: "你先选", en: "You choose first" }],
+    [{ id: "nice", zh: "nice", en: "Nice" }],
+    [{ id: "amazing", zh: "好厉害", en: "Amazing" }],
 ]);
 export const QUICK_CHAT_PHRASES = Object.freeze(QUICK_CHAT_ROWS.flat());
 export function quickChatPhrase(id) {

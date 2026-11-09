@@ -2,6 +2,15 @@ import { QUICK_CHAT_PHRASES, quickChatPhrase, type QuickChatPhrase } from '../co
 import type {RoomAccountProfile} from './room-account-profile.mjs';
 
 export const QUICK_CHAT_SLOT_COUNT = 9;
+const QUICK_CHAT_SLOTS_KEY = 'eagler.quick-chat.slots.v1';
+const defaultSlots = () => QUICK_CHAT_PHRASES.slice(0, QUICK_CHAT_SLOT_COUNT).map(phrase => phrase.id);
+function loadSlots(): string[] {
+  try {
+    const value: unknown = JSON.parse(globalThis.localStorage?.getItem(QUICK_CHAT_SLOTS_KEY) ?? 'null');
+    if (Array.isArray(value) && value.length === QUICK_CHAT_SLOT_COUNT && value.every(id => quickChatPhrase(id))) return value;
+  } catch { /* Storage can be unavailable or contain an obsolete value. */ }
+  return defaultSlots();
+}
 
 export interface QuickChatSeat {
   clientId: string;
@@ -37,6 +46,8 @@ export interface QuickChatSnapshot {
   readonly entries: readonly QuickChatEntry[];
   readonly muted: readonly string[];
   readonly pickerOpen: boolean;
+  readonly slots: readonly string[];
+  readonly pickerPage: number;
   readonly editingText: boolean;
   readonly registered: boolean;
   readonly authorId: string;
@@ -63,6 +74,8 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
     entries: [],
     muted: [],
     pickerOpen: false,
+    slots: loadSlots(),
+    pickerPage: 0,
     editingText: false,
     registered: false,
     authorId: '',
@@ -367,10 +380,10 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
         ports.send({ type: 'chat-report', messageId, reason: reason.trim() });
     },
     openComposer() {
-      if (!disposed && !snapshot.pickerOpen) publish({ ...snapshot, pickerOpen: true, editingText: false });
+      if (!disposed && !snapshot.pickerOpen) publish({ ...snapshot, pickerOpen: true, pickerPage: 0, editingText: false });
     },
     togglePicker() {
-      if (!disposed) publish({ ...snapshot, pickerOpen: !snapshot.pickerOpen, editingText: false });
+      if (!disposed) publish({ ...snapshot, pickerOpen: !snapshot.pickerOpen, pickerPage: 0, editingText: false });
     },
     toggleMember(clientId: string) {
       if (!disposed)
@@ -384,10 +397,21 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
     dismiss() {
       if (!disposed && snapshot.pickerOpen) publish({ ...snapshot, pickerOpen: false, editingText: false });
     },
+    setSlot(index: number, id: string) {
+      if (disposed || !Number.isInteger(index) || index < 0 || index >= QUICK_CHAT_SLOT_COUNT || !quickChatPhrase(id)) return;
+      const slots = [...snapshot.slots];
+      slots[index] = id;
+      try { globalThis.localStorage?.setItem(QUICK_CHAT_SLOTS_KEY, JSON.stringify(slots)); } catch { /* Keep the current session usable. */ }
+      publish({ ...snapshot, slots });
+    },
+    setPickerPage(page: number) {
+      if (!disposed && Number.isInteger(page) && page >= 0 && page <= Math.ceil(QUICK_CHAT_PHRASES.length / QUICK_CHAT_SLOT_COUNT))
+        publish({ ...snapshot, pickerPage: page });
+    },
     sendPhrase,
     sendSlot(slot: number) {
       if (snapshot.pickerOpen && !snapshot.editingText && slot >= 1 && slot <= QUICK_CHAT_SLOT_COUNT)
-        sendPhrase(QUICK_CHAT_PHRASES[slot - 1]?.id);
+        sendPhrase(snapshot.pickerPage === 0 ? snapshot.slots[slot - 1] : QUICK_CHAT_PHRASES[(snapshot.pickerPage - 1) * QUICK_CHAT_SLOT_COUNT + slot - 1]?.id);
     },
     setExpiryPresenter(next: ExpiryPresenter) {
       presenter = next;
