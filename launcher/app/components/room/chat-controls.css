@@ -146,3 +146,5 @@
   min-height: 0;
   padding: 0;
 }
+/* Reserve the height of five standard two-line avatar/name/message entries. */
+.mp-quick-chat .mp-quick-chat-log {line-height:1.5;max-height:min(calc(7.5em + 120px),calc(100dvh - var(--mp-chat-lift,10px) - 70px))}
