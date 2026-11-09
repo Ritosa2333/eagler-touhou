@@ -48,10 +48,28 @@ try{
  await frame.evaluate(()=>{for(let i=0;i<220&&Module._th05_scene()===1;i++)Module._th05_step();for(let i=0;i<250;i++)Module._th05_step();});
  await page.screenshot({path:resolve(root,'artifacts/title-vanilla.png')});
  const press=async(key,frames=2)=>frame.evaluate(({key,frames})=>{Module._th05_key(key,1);for(let i=0;i<frames;i++)Module._th05_step();Module._th05_key(key,0);Module._th05_step();},{key,frames});
+ // A fresh vanilla save can browse the original selector but cannot start a locked stage.
+ const advance=frames=>frame.evaluate(frames=>{for(let i=0;i<frames;i++)Module._th05_step();},frames);
+ const scene=()=>frame.evaluate(()=>Module._th05_scene());
+ await press(40);await press(90);await advance(90);
+ assert.equal(await scene(),3);
+ await press(90);await advance(40);
+ assert.equal(await frame.evaluate(()=>Module._th05_pointer(1,99,390,230,1)),0,'Vanilla practice must not capture touches with ImGui');
+ await press(90);await advance(35);
+ assert.equal(await scene(),3,'The original selector still locks unreached stages');
+ await press(27);await advance(12);await press(27);await advance(90);
+ assert.equal(await scene(),2,'Esc closes the stage popup, then returns to the title');
+ report.nativePractice=true;
+ await press(38);
  await press(90);await frame.evaluate(()=>{for(let i=0;i<90;i++)Module._th05_step();});await press(90);await frame.evaluate(()=>{for(let i=0;i<110;i++)Module._th05_step();});
  report.gameplay=await frame.evaluate(()=>({scene:Module._th05_scene(),x:Module._th05_player_x(),y:Module._th05_player_y(),ticks:Module._th05_ticks()}));assert.equal(report.gameplay.scene,4,JSON.stringify(report.gameplay));
  await frame.evaluate(()=>{for(let i=0;i<500&&Module._th05_replay_frame()<30;i++)Module._th05_step();});
- await press(27);await frame.evaluate(()=>{for(let i=0;i<20;i++)Module._th05_step();});assert.equal(await frame.evaluate(()=>Module._th05_input_scene()),0);await press(82);await frame.evaluate(()=>{for(let i=0;i<100;i++)Module._th05_step();});assert.equal(await frame.evaluate(()=>Module._th05_scene()),4);assert.equal(await frame.evaluate(()=>Module._th05_input_scene()),4);report.pauseRestart=true;
+ const inputScene=()=>frame.evaluate(()=>Module._th05_input_scene());
+ await press(27);await advance(20);assert.equal(await inputScene(),0);
+ assert.equal(await frame.evaluate(()=>Module._th05_pointer(1,99,215,235,1)),0,'Vanilla pause must not capture touches with ImGui');
+ await press(90);assert.equal(await inputScene(),4,'Confirm resumes from the original pause menu');
+ await press(27);assert.equal(await inputScene(),0);
+ await press(82);await frame.evaluate(()=>{for(let i=0;i<100;i++)Module._th05_step();});assert.equal(await frame.evaluate(()=>Module._th05_scene()),4);assert.equal(await frame.evaluate(()=>Module._th05_input_scene()),4);report.pauseRestart=true;
  await frame.evaluate(()=>{for(let i=0;i<500&&Module._th05_replay_frame()<30;i++)Module._th05_step();});const before=await frame.evaluate(()=>Module._th05_player_x());await frame.evaluate(()=>{Module._th05_touch_motion(20,0,1);Module._th05_step();});assert.ok(await frame.evaluate(()=>Module._th05_player_x())>before+10);
 
  const gamepad=await frame.evaluate(()=>{const x=Module._th05_player_x();globalThis.__eaglerGamepadInputBridge={owned:()=>true,sample:()=>128};Module._th05_step();const moved=Module._th05_player_x();globalThis.__eaglerGamepadInputBridge.sample=()=>0;Module._th05_step();delete globalThis.__eaglerGamepadInputBridge;return {x,moved};});assert.ok(gamepad.moved>gamepad.x);report.gamepad=true;
