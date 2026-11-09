@@ -57,7 +57,7 @@
   .book-directory .lobby-seats[data-duel='true'] .lobby-public-player:first-child {grid-column:1;grid-row:var(--duel-score-row)}
   .book-directory .lobby-seats[data-duel='true'] .lobby-public-player:last-child {grid-column:3;grid-row:var(--duel-score-row)}
   .book-directory .lobby-public-player {display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center;column-gap:7px;min-width:0;max-width:none}
-  .book-directory .lobby-seat {position:relative;display:grid;place-items:center;grid-column:1;grid-row:1;flex:none;width:32px;height:32px;border-radius:5px;border-color:var(--book-border);background:var(--book-raised);color:var(--book-ink);font-size:12px}
+  .book-directory .lobby-seat {position:relative;display:grid;place-items:center;grid-column:1;grid-row:1;flex:none;width:32px;height:32px;border-radius:50%;border-color:var(--book-border);background:var(--book-raised);color:var(--book-ink);font-size:12px}
   .book-directory .lobby-seat[data-ready='true']::after {background:var(--kit-success);box-shadow:0 0 0 2px var(--book-surface)}
   .book-directory .lobby-seat-text {display:flex;flex-direction:column;grid-column:2;grid-row:1;gap:1px;min-width:0}
   .book-directory .lobby-seat-name {color:var(--book-ink);font:600 12px/1.5 var(--ui-font)}

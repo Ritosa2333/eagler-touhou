@@ -3,7 +3,7 @@ import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {parse, type DefaultTreeAdapterMap} from 'parse5';
 import {buildAppShell} from '../../lib/app-shell-build.mjs';
-import {STATIC_APP_SHELL_FILES, HOST_SITE_ARTWORK_FILES, UI_REVIEW_DOCUMENT, hasUiReviewEntry} from '../../lib/frontend-static-manifest.mjs';
+import {STATIC_APP_SHELL_FILES, HOST_SITE_ARTWORK_FILES, REACT_DOCUMENT_FILES, UI_REVIEW_DOCUMENT, hasUiReviewEntry} from '../../lib/frontend-static-manifest.mjs';
 import {buildRuntimeGenerationWorkerSource} from '../../lib/frontend-assets.mjs';
 import * as runtimeContract from '../../src/contracts/runtime-generations.mts';
 import {writeFileAtomic} from '../../lib/atomic-file.mjs';
@@ -64,7 +64,7 @@ export async function buildReactAppShell({clientDirectory, mountPath, appShell, 
   if (!hasModule || ['index.html', 'en.html', 'ja.html', 'lobby.html', 'profile.html', 'login.html', 'about.html', 'faq.html', 'styles.css'].some(path => !shellFiles.includes(path))) throw new Error('Incomplete React App Shell graph');
   for (const path of shellFiles) {
     if (!/^[A-Za-z0-9_.\/-]+$/.test(path) || path.split('/').some(part => !part || part.startsWith('.')) || path.startsWith('/') ||
-      /^(?:runtime\/|legacy\/|docs\/|src\/|app\/|tests\/|tools\/|package\/|assets\/(?:launcher|contracts)\/)/.test(path) ||
+      (/^(?:runtime\/|legacy\/|docs\/|src\/|app\/|tests\/|tools\/|package\/|assets\/(?:launcher|contracts)\/)/.test(path) && !REACT_DOCUMENT_FILES.includes(path)) ||
       ['app.js', 'migrate.html', 'legacy-mount-retirement-sw.js', 'app-shell-sw.js', 'runtime-manifest.json'].includes(path)) throw new Error(`Forbidden React App Shell file: ${path}`);
     const info = await stat(resolve(clientDirectory, path));
     if (!info.isFile() || info.size === 0) throw new Error(`React App Shell input is empty or missing: ${path}`);

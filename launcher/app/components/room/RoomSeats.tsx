@@ -1,6 +1,6 @@
 import {Button as UiButton} from '../../ui/controls';
 import {OverflowText} from '../../ui/overflow-text';
-import {Ellipsis, Plus} from 'lucide-react';
+import {Ellipsis, Plus, UserRound} from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { multiplayerDisplayInitial } from '../../../src/launcher/multiplayer-identity.mts';
 import { formatTh09WinRate } from '../../../src/launcher/th09-room-stats.mts';
@@ -207,6 +207,7 @@ function RoomSeat({
             '?',
           )}
         </ParticipantAvatar>
+        {occupied && index > 0 && <span className="room-seat-member-mark" aria-hidden="true"><UserRound/></span>}
         {index === 0 && (
           <span className="mp-seat-owner-mark" role="img" aria-label={t('multiplayer.host')}>
             <svg viewBox="0 0 24 24" aria-hidden="true">

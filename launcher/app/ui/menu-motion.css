@@ -6,6 +6,7 @@
 @media(prefers-reduced-motion:reduce) {.ui-dropdown-motion[data-state],.ui-select-exit-motion[data-state='closed'] {animation:none}}
 .less-motion .ui-dropdown-motion[data-state],.less-motion .ui-select-exit-motion[data-state='closed'] {animation:none}
 
+.ui-list-popup-item:any-link {color:inherit;text-decoration:none}
 .ui-menu-item,.ui-select-item,.ui-list-popup-item {transition:background-color 320ms cubic-bezier(.22,.7,.2,1),color 320ms cubic-bezier(.22,.7,.2,1),translate 380ms cubic-bezier(.22,.7,.2,1)}
 :is(.ui-menu-item,.ui-select-item,.ui-list-popup-item)[data-highlighted]:not([data-disabled]) {translate:3px 0}
 @media(prefers-reduced-motion:reduce) {:is(.ui-menu-item,.ui-select-item,.ui-list-popup-item) {transition:none;translate:none!important}}

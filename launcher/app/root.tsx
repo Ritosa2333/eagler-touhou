@@ -1,6 +1,6 @@
 import { useDocumentUiLocale } from './navigation/document-locale';
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation, useNavigate } from 'react-router';
-import { useEffect, useRef, lazy, Suspense, type ReactNode } from 'react';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, UNSAFE_ViewTransitionContext, useLocation, useNavigate } from 'react-router';
+import { useContext, useEffect, useRef, lazy, Suspense, type ReactNode } from 'react';
 import { BrowserLauncher } from './BrowserLauncher';
 import {
   LauncherNavigationTransitionOptIn,
@@ -25,6 +25,7 @@ import './components/launcher/options-sheet.css';
 import './components/settings/settings-ui.css';
 import './ui/scrollbars.css';
 import { UiTheme } from './ui/theme';
+import { BackgroundController } from './components/launcher/CustomBackground';
 import { UiScrollbars } from './ui/scrollbars';
 import { isLauncherHomePath } from './navigation/addresses';
 import UptimeRoute from './routes/uptime';
@@ -39,6 +40,9 @@ const pageScrollKey = (location: { pathname: string; key: string }) =>
 
 export function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
+  const transition = useContext(UNSAFE_ViewTransitionContext);
+  // The Router may replay a page transition on Back even when only the overlay URL changed.
+  const samePageTransition = transition.isTransitioning && transition.currentLocation.pathname === transition.nextLocation.pathname;
   const previewOnly = isPreviewOnlyPage(pathname);
   const review = !previewOnly && (/\/ui-review\.html\/?$/.test(pathname) || isStandalonePage(pathname));
   const home = previewOnly || isLauncherHomePath(pathname);
@@ -53,6 +57,7 @@ export function Layout({ children }: { children: ReactNode }) {
       lang={locale}
       data-ui-locale={locale}
       data-ui-home={home ? '' : undefined}
+      data-ui-route-transition={transition.isTransitioning ? (samePageTransition ? 'inline' : 'page') : undefined}
       className="dark"
       data-book-theme="dark"
       data-original-entry={initialLobby ? 'lobby' : 'library'}
@@ -73,6 +78,7 @@ export function Layout({ children }: { children: ReactNode }) {
       </head>
       <InitialDocumentBody lobby={lobby}>
         <UiTheme />
+        <BackgroundController />
         <UiScrollbars />
         {!review && <OriginalPreloads />}
         {children}

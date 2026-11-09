@@ -4,6 +4,7 @@
 @import './tokens.css';
 @import './patterns.css';
 @import './windows.css';
+@import './window-motion.css';
 @source './';
 @source '../components/';
 

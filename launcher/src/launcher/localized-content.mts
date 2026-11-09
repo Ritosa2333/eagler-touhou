@@ -16,17 +16,23 @@ export function localizeHelpLinks(target: HTMLElement, locale: UiLocale): void {
     if (/\/compatibility(?:\.(?:en|ja))?\.html$/.test(href.pathname)) {
       href.pathname = href.pathname.replace(/compatibility(?:\.(?:en|ja))?\.html$/, `compatibility${locale === 'zh-CN' ? '' : '.' + locale}.html`);
       link.href = href.href;
-    } else if (/\/(?:faq|about|lobby|profile|login)\.html$/.test(href.pathname)) link.href = withUiLanguage(href.href, locale);
+    } else if (/\/(?:faq|about|guide|multiplayer|lobby|profile|login)\.html$/.test(href.pathname)) link.href = withUiLanguage(href.href, locale);
   }
 }
 
-/** Only the matching authored source selects a translation. Operator edits keep
- * their actual fetched copy and pass through the same sanitizer. */
-export function renderLocalizedContent(target: HTMLElement, kind: AuthoredContent, locale: UiLocale, sourceHtml?: string): UiLocale {
+/** Only the matching authored source selects a translation. */
+export function resolveLocalizedContent(kind: AuthoredContent, locale: UiLocale, sourceHtml?: string) {
   const key = `content.${kind}` as const;
-  const known = sourceHtml === undefined || normalize(sourceHtml) === normalize(translateUi('zh-CN', key));
-  renderContentFragment(target, known ? translateUi(locale, key) : sourceHtml!, target.ownerDocument);
-  target.lang = known ? locale : 'zh-CN';
+  if (sourceHtml !== undefined && normalize(sourceHtml) !== normalize(translateUi('zh-CN', key))) {
+    return {html: sourceHtml, locale: 'zh-CN' as const};
+  }
+  return {html: translateUi(locale, key), locale};
+}
+
+export function renderLocalizedContent(target: HTMLElement, kind: AuthoredContent, locale: UiLocale, sourceHtml?: string): UiLocale {
+  const content = resolveLocalizedContent(kind, locale, sourceHtml);
+  renderContentFragment(target, content.html, target.ownerDocument);
+  target.lang = content.locale;
   localizeHelpLinks(target, locale);
-  return known ? locale : 'zh-CN';
+  return content.locale;
 }

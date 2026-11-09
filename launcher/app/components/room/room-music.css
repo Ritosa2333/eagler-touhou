@@ -254,3 +254,11 @@
   border-radius: 50%;
   background: var(--kit-ring);
 }
+
+/* Keep the cover-derived tint while the panel follows the custom theme. */
+html[data-custom-background] .room-music-strip {
+  background: linear-gradient(115deg,
+    color-mix(in srgb, color-mix(in srgb, var(--kit-card) 78%, var(--music-tint-a)) var(--custom-panel-opacity, 88%), transparent),
+    color-mix(in srgb, var(--kit-card) var(--custom-panel-opacity, 88%), transparent) 53%,
+    color-mix(in srgb, color-mix(in srgb, var(--kit-card) 78%, var(--music-tint-b)) var(--custom-panel-opacity, 88%), transparent));
+}

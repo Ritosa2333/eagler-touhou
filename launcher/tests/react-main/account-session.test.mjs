@@ -25,6 +25,7 @@ beforeAll(async()=>{
     export {AccountMenu} from './app/components/launcher/AccountMenu.tsx';
     export {LocaleProvider} from './app/i18n.tsx';
     export {MemoryRouter} from 'react-router';
+    export {Tooltip} from 'radix-ui';
   `},bundle:true,platform:'node',format:'esm',jsx:'automatic',packages:'external',
     define:{'import.meta.env':JSON.stringify({VITE_ACCOUNTS_ENABLED:'true'})},
     outfile:resolve(work,'owners.mjs'),plugins:[{name:'account-request-fixture',setup(context){
@@ -66,9 +67,9 @@ function SessionProbe({name}){
 async function mount(){
   const container=env.document.createElement('div');env.document.body.append(container);root=createRoot(container);
   await React.act(async()=>root.render(React.createElement(owners.MemoryRouter,{initialEntries:['/']},
-    React.createElement(owners.LocaleProvider,{locale:'en'},React.createElement(React.Fragment,null,
+    React.createElement(owners.LocaleProvider,{locale:'en'},React.createElement(owners.Tooltip.Provider,null,React.createElement(React.Fragment,null,
       React.createElement(SessionProbe,{name:'masthead'}),React.createElement(SessionProbe,{name:'page'}),
-      React.createElement(owners.AccountMenu,{interactive:true}))))));
+      React.createElement(owners.AccountMenu,{interactive:true})))))));
   return container;
 }
 async function waitFor(predicate,message){
@@ -106,8 +107,10 @@ test('same-page and cross-tab identity changes are shared, and late account data
   await React.act(async()=>sessions[1].resolve({user:{username:'alice',name:'Alice late'}}));
   assert.equal(probe('masthead'),'bob:Bob');
   assert.equal(probe('page'),'bob:Bob');
-  assert.match(page.querySelector('.masthead-account-entry')?.textContent??'',/Bobby/);
-  assert.doesNotMatch(page.querySelector('.masthead-account-entry')?.textContent??'',/Alice/);
+  const account=page.querySelector('.masthead-account-entry');
+  assert.match(account?.getAttribute('aria-label')??'',/Bobby/);
+  assert.doesNotMatch(account?.getAttribute('aria-label')??'',/Alice/);
+  assert.equal(account.textContent,'');
 
   const oldUrl=env.window.location.href;
   await React.act(async()=>env.window.dispatchEvent(new env.window.StorageEvent('storage',{key:'account-session-changed',newValue:'other-tab'})));
@@ -119,6 +122,23 @@ test('same-page and cross-tab identity changes are shared, and late account data
   assert.equal(page.querySelector('button.masthead-account-entry'),null);
   assert.ok(page.querySelector('.account-login-link'));
   assert.doesNotMatch(page.textContent,/Bobby|Alice stale/);
+});
+
+test('an unavailable session keeps the account icon and can be retried',async()=>{
+  let attempts=0;
+  globalThis.__accountRequest=async path=>{
+    assert.equal(path,'auth/get-session');
+    if(++attempts===1)throw Error('account service unavailable');
+    return {user:null};
+  };
+  const page=await mount();
+  await waitFor(()=>probe('masthead')==='error','initial connection failure is visible');
+  const retry=page.querySelector('button[aria-label="Log in | Retry"]');
+  assert.equal(retry?.dataset.variant,'ghost');
+  const icon=retry.querySelector('svg.book-navigation-icon').innerHTML;
+  await React.act(async()=>retry.click());
+  await waitFor(()=>probe('masthead')==='guest','retry recovers the guest session');
+  assert.equal(page.querySelector('.account-login-link svg.book-navigation-icon').innerHTML,icon);
 });
 
 test('a failed sign-out leaves the account menu open with its error',async()=>{

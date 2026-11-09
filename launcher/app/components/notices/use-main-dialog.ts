@@ -78,6 +78,7 @@ export function useMainDialog({open, suspended = false, onCloseRequest, onClosed
   useLayoutEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
+    dialog.toggleAttribute('data-window-managed', motion !== false);
     if (suspended) {
       if (open) lifetimeOpen.current = true;
       else if (lifetimeOpen.current) {lifetimeOpen.current = false; callback.current.onClosed?.();}

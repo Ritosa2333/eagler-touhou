@@ -157,7 +157,7 @@ const query = (selector) => {
   assert.ok(value, selector);
   return value;
 };
-async function mount(model, { strict = false, dispose, room = false, decisions = {askConfirmation:async()=>false} } = {}) {
+async function mount(model, { strict = false, dispose, room = false, decisions = {askText:async()=> 'test reason'} } = {}) {
   const host = env.document.createElement('div');
   env.document.body.append(host);
   const root = createRoot(host);
@@ -176,9 +176,9 @@ async function mount(model, { strict = false, dispose, room = false, decisions =
       React.createElement(React.Fragment, null,
         React.createElement(owner.MultiplayerQuickChat, {model,iconUrl:'/assets/player-chat.svg',decisions}),
         room === 'split' ? React.createElement(React.Fragment, null,
-          React.createElement('div', {id:'roomUpperSpace'}, React.createElement(owner.RoomQuickChat, {model,part:'log'})),
+          React.createElement('div', {id:'roomUpperSpace'}, React.createElement(owner.RoomQuickChat, {model,part:'log',decisions})),
           React.createElement('div', {id:'roomBottomControls'}, React.createElement(owner.RoomQuickChat, {model,part:'actions'})))
-          : room ? React.createElement(owner.RoomQuickChat, {model}) : null),
+          : room ? React.createElement(owner.RoomQuickChat, {model,decisions}) : null),
     ),
   );
   mounted = {
@@ -226,12 +226,25 @@ test('pregame room chat is independent and shares safe text, send and ten-second
   await chooseRoomPhrase(calls);
   assert.equal(calls.at(-1)[0],'send');
   await act(()=>model.receive(message()));
-  assert.equal(query('#mpRoomChat .mp-room-chat-log strong').textContent,'P2(<img src=x onerror=alert(1)>)');
+  assert.equal(query('#mpRoomChat .mp-room-chat-log strong').textContent,'<img src=x onerror=alert(1)>');
   assert.equal(query('#mpRoomChat').querySelector('img'),null);
   await act(()=>clock.tick(9999));
   assert.equal(query('#mpRoomChat .mp-room-chat-log').children.length,1);
   await act(()=>clock.tick(1));
   assert.equal(query('#mpRoomChat .mp-room-chat-log').children.length,0);
+});
+test('chat uses and updates the matching participant profile avatar', async () => {
+  const {model}=fixture();
+  const original=owner; owner=ownerAccounts;
+  try {await mount(model,{room:true});} finally {owner=original;}
+  await act(()=>model.receive(message()));
+  const current=context();
+  current.seats[1].profile={username:'marisa',avatar:'1234567890abcdef'};
+  await act(()=>model.update(current));
+  assert.match(query('#mpRoomChat .chat-avatar img').getAttribute('src'), /\/api\/v1\/profiles\/marisa\/avatar\/1234567890abcdef$/);
+  const changed=context(); changed.seats[1].profile={username:'marisa',avatar:'abcdef1234567890'};
+  await act(()=>model.update(changed));
+  assert.match(query('#mpRoomChat .chat-avatar img').getAttribute('src'), /abcdef1234567890$/);
 });
 test('room messages stay above the controls and sending closes the upward picker', async () => {
   const {model,clock,calls}=fixture();model.update({...context(),inRoom:true});
@@ -256,8 +269,9 @@ test('guest room UI keeps quick chat and shared history; registered chat can sen
   const free=(messageId,authorId,clientId,seat,name,text)=>({type:'free-chat',room:'th06mp-1234',serial:7,
     messageId,authorId,clientId,seat,spectator:seat===-1,name,text});
   await act(()=>model.receive(free(30,'account-2','b',1,'Marisa','Hello room')));
-  assert.equal(query('#mpRoomChat .room-chat-message').textContent,'P2(Marisa): Hello room');
-  assert.equal(query('.mp-quick-chat-log .room-chat-message').textContent,'P2(Marisa): Hello room',
+  assert.equal(query('#mpRoomChat .room-chat-message').textContent,'MarisaP2Hello room');
+  assert.equal(query('#mpRoomChat .chat-avatar').textContent,'M');
+  assert.equal(query('.mp-quick-chat-log .room-chat-message').textContent,'MarisaP2Hello room',
     'the gameplay and room views render the same model entry');
   assert.equal(calls.filter(([kind])=>kind==='voice').length,0,'free chat never plays quick-chat voice');
 
@@ -280,7 +294,7 @@ test('guest room UI keeps quick chat and shared history; registered chat can sen
     await vi.waitFor(()=>assert.deepEqual(model.getSnapshot().muted,[]),{timeout:1000,interval:1});
   });
   assert.deepEqual(model.getSnapshot().muted,[],'the shared checkbox menu can unmute without closing');
-  assert.equal(query('#mpRoomChat .room-chat-entry').textContent,'P2(Marisa): Hello room');
+  assert.equal(query('#mpRoomChat .room-chat-entry .room-chat-message').textContent,'MarisaP2Hello room');
 
   await act(()=>model.receive({type:'chat-status',registered:true,authorId:'account-1',bannedUntil:0}));
   const input=query('#mpRoomChat input[aria-label="Message"]');
@@ -313,7 +327,7 @@ test('guest room UI keeps quick chat and shared history; registered chat can sen
   assert.equal(report.textContent.includes('Report'),true);
   await React.act(async()=>{
     report.click();
-    await vi.waitFor(()=>assert.deepEqual(calls.at(-1),['send',{type:'chat-report',messageId:30}]),{timeout:1000,interval:1});
+    await vi.waitFor(()=>assert.deepEqual(calls.at(-1),['send',{type:'chat-report',messageId:30,reason:'test reason'}]),{timeout:1000,interval:1});
   });
   await act(()=>model.receive({type:'chat-result',action:'chat-report',ok:false,code:'report-rate-limited'}));
   assert.deepEqual(notifications,['report-rate-limited']);
@@ -334,7 +348,7 @@ test('guest gameplay chat opens numbered quick phrases and keeps the shared mute
   assert.equal(query('.mp-quick-chat-log .room-chat-entry').querySelector('button'),null);
   assert.equal(query('.mp-quick-chat-log .room-chat-entry').hidden,false);
   assert.equal(query('.mp-quick-chat-log').querySelector('img'),null);
-  assert.equal(query('.mp-quick-chat-log strong').textContent,'P2(<img src=x onerror=alert(1)>)');
+  assert.equal(query('.mp-quick-chat-log strong').textContent,'<img src=x onerror=alert(1)>');
   const retainedRow=query('.mp-quick-chat-log .room-chat-entry');
   assert.equal(env.document.activeElement,phrase);
 
@@ -469,8 +483,8 @@ test('tapping another player’s free chat opens a report confirmation and sends
   await act(()=>decisions.resolve('cancel'));
   assert.deepEqual(calls,[]);
   await act(()=>trigger.click());
-  await act(()=>decisions.resolve('confirm'));
-  assert.deepEqual(calls,[['send',{type:'chat-report',messageId:30}]]);
+  await act(()=>decisions.resolve('confirm','test reason'));
+  assert.deepEqual(calls,[['send',{type:'chat-report',messageId:30,reason:'test reason'}]]);
 });
 test('openComposer focuses the quick panel and typing hides slots while Enter and Escape still work', async () => {
   const {model,calls}=fixture();
@@ -815,7 +829,7 @@ test('actual RoomSession routes valid socket chat into React and UI sends throug
       phrase: 'thanks',
     })));
     assert.equal(query('.mp-quick-chat-log').children.length, 2);
-    assert.match(query('.mp-quick-chat-log').children[1].textContent, /Spectator\(Viewer\).*Thanks for the games/);
+    assert.match(query('.mp-quick-chat-log').children[1].textContent, /ViewerSpectator.*Thanks for the games/);
     assert.equal(voices.length, 1, 'players see spectator messages without playing spectator voice');
     const quickTrigger=query('#mpRoomChat .room-quick-chat-trigger');
     await act(()=>quickTrigger.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true})));
@@ -845,7 +859,7 @@ test('actual RoomSession routes valid socket chat into React and UI sends throug
     const voiceCount=voices.length;
     await act(()=>socket.message(free(51,'account-2','remote123456',1,'B','from socket')));
     assert.equal(session.quickChat.getSnapshot().entries.at(-1).messageId,51);
-    assert.ok([...env.document.querySelectorAll('#mpRoomChat .room-chat-message')].some(entry=>entry.textContent==='P2(B): from socket'));
+    assert.ok([...env.document.querySelectorAll('#mpRoomChat .room-chat-message')].some(entry=>entry.textContent==='BP2from socket'));
     assert.equal(voices.length,voiceCount,'free messages route without quick-chat voice');
     await act(()=>socket.message({type:'chat-history',throughId:52,entries:[free(51,'account-2','remote123456',1,'B','duplicate'),free(52,'account-2','remote123456',1,'B','history')]}));
     assert.deepEqual(session.quickChat.getSnapshot().entries.filter(entry=>entry.messageId).map(entry=>entry.messageId),[51,52]);
@@ -856,7 +870,7 @@ test('actual RoomSession routes valid socket chat into React and UI sends throug
     assert.ok(reportItem);
     await React.act(async()=>{
       reportItem.click();
-      await vi.waitFor(()=>assert.deepEqual(socket.sent.at(-1),{type:'chat-report',messageId:51}),{timeout:1000,interval:1});
+      await vi.waitFor(()=>assert.deepEqual(socket.sent.at(-1),{type:'chat-report',messageId:51,reason:'test reason'}),{timeout:1000,interval:1});
     });
     await act(()=>socket.message({type:'chat-result',action:'chat-report',ok:false,code:'report-rate-limited'}));
     assert.deepEqual(notifications,['chat.sendRateLimited','chat.reportRateLimited']);
@@ -1059,6 +1073,7 @@ test('non-TH09 spectator quick chat mounts, sends through the shared model, and 
   const quickTrigger=query('.mp-quick-chat-prompt');
   assert.equal(quickTrigger.disabled,false);
   await act(()=>quickTrigger.click());
+  await act(()=>model.setPickerPage(2));
   await React.act(async()=>{
     query('.mp-quick-chat-slots [data-phrase="thanks"]').click();
     await vi.waitFor(()=>assert.deepEqual(calls.at(-1),['send',{type:'quick-chat',phrase:'thanks',serial:7}]),{timeout:1000,interval:1});
@@ -1068,7 +1083,7 @@ test('non-TH09 spectator quick chat mounts, sends through the shared model, and 
     type: 'quick-chat', room: 'th07mp-5678', serial: 7, seat: -1,
     spectator: true, clientId: 'viewer654321', phrase: 'thanks',
   }));
-  assert.match(query('.mp-quick-chat-log').textContent, /Spectator\(Remote viewer\).*谢谢指教/);
+  assert.match(query('.mp-quick-chat-log').textContent, /Remote viewerSpectator.*谢谢指教/);
 });
 
 test('model disposal while React remains mounted cancels active fade and leaves no rows or timers', async () => {
@@ -1171,4 +1186,21 @@ test('presentation remount cancels an active fade but preserves another entry an
   } finally {
     native.restore();
   }
+});
+
+test('room settings replace a favorite and gameplay uses the same slot', async () => {
+  const {model, calls} = fixture();
+  model.update({...context(), inRoom:true});
+  await mount(model, {room:true});
+  await act(()=>query('#mpRoomChat .room-quick-chat-trigger').dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true})));
+  await act(()=>query('.room-quick-chat-picker [aria-label="Edit favorites"]').click());
+  await act(()=>query('.room-quick-chat-picker [data-phrase="request-life"]').click());
+  await act(()=>query('.room-quick-chat-picker [data-phrase="you-first"]').click());
+  assert.equal(model.getSnapshot().slots[1], 'you-first');
+  await act(()=>model.update({...context(), inRoom:false}));
+  await act(()=>model.openComposer());
+  assert.ok(query('.mp-quick-chat-slots [data-phrase="you-first"]'));
+  await act(()=>model.sendSlot(2));
+  assert.equal(calls.at(-1)[1].phrase, 'you-first');
+  env.window.localStorage.removeItem('eagler.quick-chat.slots.v1');
 });

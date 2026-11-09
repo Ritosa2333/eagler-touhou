@@ -98,7 +98,7 @@ export function RoomMusicInvite({ model, panelOpen }: { model: RoomMusic; panelO
   const session = invite?.session;
   const track = invite?.queue?.[invite.queueIndex ?? 0]?.name;
   const open = !!session;
-  const anchor = open && panelOpen ? document.getElementById('mpRoomPanel') : null;
+  const anchor = panelOpen ? document.getElementById('mpRoomPanel') : null;
 
   return (
     <Dialog open={open} onOpenChange={next => { if (!next) model.declineInvitation(); }}>

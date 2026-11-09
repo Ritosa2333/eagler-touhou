@@ -1,13 +1,13 @@
 import {Checkbox} from 'radix-ui';
 import {Check,LayoutGrid,List,Star} from 'lucide-react';
-import {useEffect,useState,type ReactElement} from 'react';
+import {useEffect,useMemo,useState,type ReactElement} from 'react';
 import {ActionMenu,ActionMenuItem,ActionMenuCheckboxItem,ActionMenuGroup,ActionMenuLabel,ActionMenuRadioGroup,ActionMenuRadioItem} from '../../ui/action-menu';
 import {useLocale} from '../../i18n';
 import {BookButton} from './BookButton';
 import {impressFavorite} from './ink-feedback';
 import {beginFavoriteReorder,beginFilterReorder,useFavoriteReorder} from './favorite-reorder';
 import {createLibraryProducts,multiplayerGroup,type LibraryProduct,type MultiplayerGroup} from './products';
-import {isMultiplayerProductId,type MultiplayerProductId} from '../../../src/contracts/product-catalog.mts';
+import type {ProductId} from '../../../src/contracts/product-catalog.mts';
 import {bookArtwork} from './book-artwork';
 import {BOOK_PREFERENCES_EVENT,readBookPreference,writeBookPreference,stringArray} from './book-preferences';
 import './directory-page.css';
@@ -35,21 +35,22 @@ function ProductCopy({product}:{product:LibraryProduct}) {
   </span>;
 }
 
-export function BookRoomProductMenu({products,value,assetUrl,onChange,trigger}:{
-  products:readonly MultiplayerProductId[];
-  value:MultiplayerProductId | '';
+export function BookProductMenu<Product extends ProductId>({products,value,assetUrl,onChange,trigger}:{
+  products:readonly Product[];
+  value:Product | '';
   assetUrl(path:string):string;
-  onChange(product:MultiplayerProductId):void;
+  onChange(product:Product):void;
   trigger:ReactElement;
 }) {
   const {t}=useLocale();
   const label=t('lobby.game');
-  const entries=createLibraryProducts(products,assetUrl,id=>`?game=${id}`).sort((a,b)=>Number(a.number)-Number(b.number));
+  const groups=useMemo(()=>groupGames(createLibraryProducts(products,assetUrl,id=>`?game=${id}`)
+    .sort((a,b)=>Number(a.number)-Number(b.number))),[products,assetUrl]);
   return <ActionMenu variant="selection" label={label} align="start" minimumWidth={280} className="book-lobby-picker" trigger={trigger}>
-    <ActionMenuRadioGroup value={value} onValueChange={next=>{if(isMultiplayerProductId(next))onChange(next);}}>
-      {groupGames(entries).map(group=><ActionMenuGroup key={group.id} aria-label={t(groupLabelKey(group.id))} data-lobby-category={group.id}>
+    <ActionMenuRadioGroup value={value} onValueChange={next=>{const product=products.find(id=>id===next);if(product)onChange(product);}}>
+      {groups.map(group=><ActionMenuGroup key={group.id} aria-label={t(groupLabelKey(group.id))} data-lobby-category={group.id}>
         <ActionMenuLabel className="px-2 pt-3 pb-1 text-xs font-medium text-muted-foreground">{t(groupLabelKey(group.id))}</ActionMenuLabel>
-        {group.products.map(product=><ActionMenuRadioItem key={product.id} value={product.id} data-room-product={product.id}
+        {group.products.map(product=><ActionMenuRadioItem key={product.id} value={product.id} data-product-choice={product.id}
           className="book-lobby-menu-choice h-12">
           <ProductCover product={product}/><ProductCopy product={product}/>
         </ActionMenuRadioItem>)}

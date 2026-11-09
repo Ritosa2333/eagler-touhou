@@ -1,0 +1,115 @@
+@layer components {
+  :root {
+    --ui-window-enter-duration: 245ms;
+    --ui-window-exit-duration: 150ms;
+    /* Quartic ease-out and cubic ease-in, shared with Motion-managed windows. */
+    --ui-window-enter-easing: cubic-bezier(.258, 1, .491, 1);
+    --ui-window-exit-easing: cubic-bezier(.333333, 0, .666667, 0);
+    --ui-window-offset: 6px;
+    --ui-window-scale: .965;
+    --ui-window-shadow: 0 4px 16px rgb(0 0 0 / .08);
+    --ui-window-scrim: rgb(0 0 0 / .24);
+  }
+  :root[data-ui-home] {
+    --ui-window-scrim-exit-easing: cubic-bezier(.42, 0, .58, 1);
+  }
+
+  :where(dialog, [data-window-transition], [data-window-frame], .ui-kit-dialog, .tools[data-options-panel], .mp-settings-room-drawer, .game-data-import-window, .game-data-link-window) {
+    transform-origin: 50% 55%;
+  }
+
+  :where(dialog:not(.lobby-options-host, [data-window-managed]), [data-window-transition]) {
+    opacity: 0;
+    transition: opacity, translate, scale, display allow-discrete, overlay allow-discrete;
+    transition-duration: var(--ui-window-exit-duration);
+    transition-timing-function: var(--ui-window-exit-easing);
+  }
+  :where(dialog:not(.lobby-options-host, [data-window-managed]), [data-window-transition]:not([data-window-transition="overlay"]), [data-window-frame]) {
+    translate: 0 var(--ui-window-offset);
+    scale: var(--ui-window-scale);
+  }
+  :where([data-window-frame]) {
+    transition: translate, scale;
+    transition-duration: inherit;
+    transition-timing-function: inherit;
+  }
+  :where(dialog[open]:not(.lobby-options-host, [data-window-managed]), [data-window-transition]:not([hidden])) {
+    opacity: 1;
+    transition-duration: var(--ui-window-enter-duration);
+    transition-timing-function: var(--ui-window-enter-easing);
+  }
+  :where(dialog[open]:not(.lobby-options-host, [data-window-managed]), [data-window-transition]:not([hidden]), [data-window-transition]:not([hidden]) > [data-window-frame]) {
+    translate: none;
+    scale: none;
+  }
+  :where(dialog:not([open]), [data-window-transition][hidden]) { pointer-events: none; }
+
+  dialog:where(:not(.lobby-options-host))::backdrop {
+    background: var(--ui-window-scrim);
+    opacity: 0;
+    transition: opacity, display allow-discrete, overlay allow-discrete;
+    transition-duration: var(--ui-window-exit-duration);
+    transition-timing-function: var(--ui-window-scrim-exit-easing, var(--ui-window-exit-easing));
+  }
+  dialog:where([open]:not(.lobby-options-host, .closing))::backdrop {
+    opacity: 1;
+    transition-duration: var(--ui-window-enter-duration);
+    transition-timing-function: var(--ui-window-enter-easing);
+  }
+  dialog:where(:not([open]))::backdrop { pointer-events: none; }
+
+  .ui-kit-dialog[data-state],
+  .ui-kit-dialog-overlay[data-state] {
+    opacity: 0;
+    transition: opacity, transform;
+    transition-duration: var(--ui-window-exit-duration);
+    transition-timing-function: var(--ui-window-exit-easing);
+  }
+  .ui-kit-dialog[data-state="closed"] {
+    transform: var(--ui-window-placement) translateY(var(--ui-window-offset)) scale(var(--ui-window-scale));
+    pointer-events: none;
+  }
+  .ui-kit-dialog-overlay[data-state="closed"] {
+    transition-timing-function: var(--ui-window-scrim-exit-easing, var(--ui-window-exit-easing));
+  }
+  .ui-kit-dialog[data-state="open"],
+  .ui-kit-dialog-overlay[data-state="open"] {
+    opacity: 1;
+    transition-duration: var(--ui-window-enter-duration);
+    transition-timing-function: var(--ui-window-enter-easing);
+  }
+  /* Radix Presence waits for animationend. The transitions own the visual properties. */
+  :is(.ui-kit-dialog, .ui-kit-dialog-overlay)[data-state="closed"] {
+    animation: ui-window-retain var(--ui-window-exit-duration) linear;
+  }
+  @keyframes ui-window-retain {from {--ui-window-present: 1} to {--ui-window-present: 0}}
+
+  @starting-style {
+    :where(dialog[open]:not(.lobby-options-host, [data-window-managed]), [data-window-transition]:not([hidden])) {
+      opacity: 0;
+    }
+    :where(dialog[open]:not(.lobby-options-host, [data-window-managed]), [data-window-transition]:not([hidden], [data-window-transition="overlay"]), [data-window-transition]:not([hidden]) > [data-window-frame]) {
+      translate: 0 var(--ui-window-offset);
+      scale: var(--ui-window-scale);
+    }
+    dialog:where([open]:not(.lobby-options-host, .closing))::backdrop,
+    .ui-kit-dialog-overlay[data-state="open"] { opacity: 0; }
+    .ui-kit-dialog[data-state="open"] {
+      opacity: 0;
+      transform: var(--ui-window-placement) translateY(var(--ui-window-offset)) scale(var(--ui-window-scale));
+    }
+  }
+
+  .less-motion :is(dialog, [data-window-transition], [data-window-frame], .ui-kit-dialog[data-state], .ui-kit-dialog-overlay[data-state]),
+  .less-motion dialog::backdrop {
+    animation: none;
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :is(dialog, [data-window-transition], [data-window-frame], .ui-kit-dialog[data-state], .ui-kit-dialog-overlay[data-state]),
+    dialog::backdrop {
+      animation: none;
+      transition: none;
+    }
+  }
+}

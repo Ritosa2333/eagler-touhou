@@ -125,7 +125,7 @@ async function mount(Component, initial, {locale = 'en', strict = false} = {}) {
 async function mountRoom(f, extra = {}, options = {}) {
   const host=env.document.createElement('section'),stage=env.document.createElement('div'),viewport=env.document.createElement('div');viewport.className='game-viewport';stage.append(viewport);host.append(stage);env.document.body.append(host);
   const intents = []; const m = await mount(owners.RoomView, {service: f.service, network: f.network, context: defaultContext, workspaceHost:host, workspaceStage:stage, assetUrl: path => path,
-    onLeave: () => {intents.push(['leave']); f.service.leave();}, onCopyRoomCode: code => intents.push(['copy', code]), onGuide: () => intents.push(['guide']),
+    onLeave: () => {intents.push(['leave']); f.service.leave();}, onCopyRoomCode: code => intents.push(['copy', code]), guideHref: '/docs/multiplayer/th07',
     onOpenSettings: () => intents.push(['settings']), settingsOpen: false, panel: null, onOpenPanel: (...args) => intents.push(['panel', ...args]), onClosePanel: () => intents.push(['close']), ...extra}, {locale: f.locale, ...options}); return {m, intents};
 }
 const click = (selector, scope) => act(() => {
@@ -303,9 +303,11 @@ for (const locale of ['zh-CN', 'en']) test(`Original ${locale} preparation rende
 test('Room header and panel triggers reach required host edges with original code and peer identity', async () => {
   const f = await fixture().live({seats: null}); await f.receive({seats: [{clientId: f.id, name: 'A', loadout: 0}, {clientId: 'peer12345', name: 'B', loadout: 2}]});
   const {m, intents} = await mountRoom(f);
-  await click('#mpCopyRoomCode'); await click('#mpRoomGuideOpen'); await click('#mpSettingsRoomDrawerToggle'); await click('#roomWorkspaceTab-game'); await click('.room-spectator-preview-trigger');
+  await click('#mpCopyRoomCode'); await click('#mpSettingsRoomDrawerToggle'); await click('#roomWorkspaceTab-game'); await click('.room-spectator-preview-trigger');
+  assert.equal(n('#mpRoomGuideOpen').getAttribute('href'), '/docs/multiplayer/th07');
+  assert.equal(n('#mpRoomGuideOpen').target, '_blank');
   await click('[data-mp-seat="0"] .mp-seat-edit'); await click('[data-mp-seat="1"] .mp-seat-latency');
-  assert.deepEqual(intents, [['copy', '1234'], ['guide'], ['settings'], ['panel', 'spectators', undefined], ['panel', 'personal', undefined], ['panel', 'network', 'peer12345']]);
+  assert.deepEqual(intents, [['copy', '1234'], ['settings'], ['panel', 'spectators', undefined], ['panel', 'personal', undefined], ['panel', 'network', 'peer12345']]);
   await m.update({settingsOpen: true}); assert.equal(n('#mpRoomView').hasAttribute('inert'), true); assert.equal(n('#mpSettingsRoomDrawerToggle').hidden, false);
   await m.update({settingsOpen: false, settingsClosing: true}); assert.equal(n('#mpRoomView').hasAttribute('inert'), false); assert.equal(n('#mpSettingsRoomDrawerToggle').hidden, false);
   await m.update({settingsClosing: false}); assert.equal(n('#mpSettingsRoomDrawerToggle').hidden, false);
@@ -643,8 +645,9 @@ test('Native modal Escape/backdrop request close; shared completion restores the
     await act(()=>h.node.dispatchEvent(new env.window.MouseEvent('click',{bubbles:true,clientX,clientY})));assert.equal(h.requests,expected);
   }
   await h.m.update({open:false});assert.equal(h.node.open,true);assert.equal(h.closures,0);
-  const effects=nativeEffects(h.node);assert.equal(effects.length,2);assert.ok(effects.every(effect=>effect.options.duration===180));
+  const effects=nativeEffects(h.node);assert.equal(effects.length,3);assert.ok(effects.every(effect=>effect.options.duration===150));
   assert.deepEqual(effects.find(effect=>effect.keyframes.opacity).keyframes.opacity,['1','0']);
+  assert.deepEqual(effects.find(effect=>effect.keyframes.scale).keyframes.scale,['1','.965']);
   assert.ok(effects.every(effect=>!effect.keyframes.transform));
   await finishNative(h.node);assert.equal(h.node.open,false);assert.equal(h.closures,1);assert.equal(env.document.activeElement,h.trigger);
 });
@@ -758,7 +761,7 @@ async function sharedDrawer(f, {strict = false, roomOpen = true, open = true} = 
   function Fixture({product = f.product, roomOpen, open, foregroundActive = false}) {
     const [closing, setClosing] = React.useState(false), requestClose = () => events.push(['close']);
     return React.createElement(MemoryRouter, null,
-      React.createElement(owners.RoomView, {service: f.service, network: f.network, context: defaultContext, workspaceHost:host, workspaceStage:stage, assetUrl: path => path, onLeave: () => {}, onCopyRoomCode: () => {}, onGuide: () => {}, onOpenSettings: () => {}, settingsOpen: open && !foregroundActive, settingsClosing: closing, panel: null, onOpenPanel: () => {}, onClosePanel: () => {}}),
+      React.createElement(owners.RoomView, {service: f.service, network: f.network, context: defaultContext, workspaceHost:host, workspaceStage:stage, assetUrl: path => path, onLeave: () => {}, onCopyRoomCode: () => {}, guideHref: '/docs/multiplayer/th07', onOpenSettings: () => {}, settingsOpen: open && !foregroundActive, settingsClosing: closing, panel: null, onOpenPanel: () => {}, onClosePanel: () => {}}),
       React.createElement(owners.RoomSettingsDrawer, {roomOpen, open, foregroundActive, onCloseRequest: requestClose, onClosingChange: setClosing}),
       React.createElement(owners.OptionsPanel, {product: owners.createLibraryProducts([product], path => path, id => `/?game=${id}`)[0], open: !roomOpen, roomDrawer: roomOpen, onBack: requestClose, assetUrl: path => path, lobbyHref: '/lobby.html',
         multiplayerDiagnostics: React.createElement('section', {id: 'mpNetworkDiagnostics'}, 'Synthetic diagnostics slot'), actions: React.createElement('div', {className: 'launch-wrap launch-actions', id: 'ordinary-launch-actions'}, 'Synthetic ordinary launch slot')},
@@ -845,28 +848,28 @@ test('TH11 ready host can choose rollback and pure delay', async()=>{
  await m.unmount();
 });
 
-test('public nickname editor waits for review and locks changes until the server deadline',async()=>{
+test('public nickname drafts stay editable during review and only submission waits for the server deadline',async()=>{
  const f=await fixture({product:'th09mp'}).live(),{m}=await mountRoom(f);
  const status=value=>f.socket.emit('message',{data:JSON.stringify({type:'nickname-status',nextChangeAt:0,retryAt:0,...value})});
  await act(()=>status({name:'Alice',status:'approved'}));
  assert.equal(n('#mpNicknameSave').disabled,false);
  assert.match(n('#mpNicknameStatus').textContent,/once more now/);
-  await act(()=>status({name:'Alice',status:'rejected',attemptsLeft:1}));
-  assert.equal(n('#mpNicknameSave').disabled,false);assert.match(n('#mpNicknameStatus').textContent,/One retry remaining/);
-  await act(()=>status({name:'Alice',status:'unavailable',attemptsLeft:1}));
+  await act(()=>status({name:'Alice',status:'rejected'}));
+  assert.equal(n('#mpNicknameSave').disabled,false);assert.match(n('#mpNicknameStatus').textContent,/Declined/);
+  await act(()=>status({name:'Alice',status:'unavailable'}));
   assert.equal(n('#mpNicknameSave').disabled,false);assert.match(n('#mpNicknameStatus').textContent,/Unable to submit/);
-  assert.match(n('#mpNicknameStatus').textContent,/One retry remaining/);assert.doesNotMatch(n('#mpNicknameStatus').textContent,/24-hour cooldown/);
+  assert.doesNotMatch(n('#mpNicknameStatus').textContent,/24-hour cooldown/);
   await act(()=>status({name:'',status:'unavailable'}));
   assert.equal(n('#mpNicknameSave').disabled,false);assert.match(n('#mpNicknameStatus').textContent,/Unable to submit/);
   assert.doesNotMatch(n('#mpNicknameStatus').textContent,/unchanged|24-hour cooldown/);
   await act(()=>status({name:'',status:'reviewing'}));
-  assert.equal(n('#mpDisplayName').disabled,true);assert.equal(n('#mpNicknameSave').disabled,true);
+  assert.equal(n('#mpDisplayName').disabled,false);assert.equal(n('#mpNicknameSave').disabled,true);
   await act(()=>status({name:'Alice',status:'queued',pendingName:'待审昵称'}));
   assert.equal(n('#mpDisplayName').value,'待审昵称');assert.equal(n('#mpNicknameSave').disabled,true);
   assert.match(n('#mpNicknameStatus').textContent,/Pending review.*Saved.*close this window/);
   assert.equal(f.service.getSnapshot().displayName,'Alice');
  await act(()=>status({name:'Alice',status:'approved',nextChangeAt:Date.now()+86400000}));
- assert.equal(n('#mpDisplayName').value,'Alice');assert.equal(n('#mpDisplayName').disabled,true);
+ assert.equal(n('#mpDisplayName').value,'Alice');assert.equal(n('#mpDisplayName').disabled,false);
  assert.match(n('#mpNicknameStatus').textContent,/Next change|下次可修改/);
  await f.receive({seats:[{clientId:f.id,name:'Alice',loadout:0,ready:false},{clientId:'peer123456',name:'完整公开昵称',loadout:1,ready:false}],spectators:[{clientId:'watch123456',name:'完整观众昵称'}]});
  assert.equal(n('[data-mp-seat-name="1"]').textContent,'完整公开昵称');
@@ -874,8 +877,8 @@ test('public nickname editor waits for review and locks changes until the server
  assert.equal(n('[data-mp-seat="0"] .mp-seat-loadout').textContent,`(${t('en','multiplayer.control.normal')})`);
  await m.update({panel:{kind:'spectators'}});
  assert.match(n('#mpSpectatorList').textContent,/完整观众昵称/);
- await act(()=>status({name:'Alice',status:'cooldown',attemptsLeft:0,nextChangeAt:Date.now()+86400000}));
- assert.equal(n('#mpNicknameSave').disabled,true);assert.match(n('#mpNicknameStatus').textContent,/No retries remaining/);
+ await act(()=>status({name:'Alice',status:'cooldown',nextChangeAt:Date.now()+86400000}));
+ assert.equal(n('#mpNicknameSave').disabled,true);assert.match(n('#mpNicknameStatus').textContent,/Changes unavailable/);
  await m.unmount();
 });
 

@@ -1,7 +1,7 @@
 import {RoomMusicStrip,RoomMusicPanel,RoomMusicToggle,type MusicPanelTab} from './RoomMusic';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '../../ui/tabs';
 import {Button as UiButton} from '../../ui/controls';
-import {BookRoomProductMenu} from '../launcher/BookDirectoryGames';
+import {BookProductMenu} from '../launcher/BookDirectoryGames';
 import {ChevronDown} from 'lucide-react';
 import {useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';
@@ -80,11 +80,11 @@ export function RoomWorkspace(props: RoomViewProps) {
       <header className="mp-room-head room-workspace-header">
         <UiButton variant="icon" className="mp-room-back mp-room-top-action" id="mpLeaveRoom" type="button" aria-label={t('action.back')} onClick={()=>{void props.onLeave();}}>{icon('room-caret-left')}</UiButton>
         <div className="room-workspace-heading">
-          <div className="room-product-heading">
+          <div className="workspace-product-heading">
             <h2 id="mpRoomTitle">{game.title}</h2>
-            {canChangeProduct && state.product && <BookRoomProductMenu products={props.products} value={state.product}
+            {canChangeProduct && state.product && <BookProductMenu products={props.products} value={state.product}
               assetUrl={assetUrl} onChange={service.switchProduct}
-              trigger={<UiButton id="roomProductSelect" variant="unstyled" className="room-product-trigger"
+              trigger={<UiButton id="roomProductSelect" variant="unstyled" className="workspace-product-trigger"
                 disabled={locked || !state.connected || state.checkBusy} aria-label={t('lobby.game')} title={t('lobby.game')}>
                 <ChevronDown aria-hidden="true"/>
               </UiButton>}/>}
@@ -107,7 +107,7 @@ export function RoomWorkspace(props: RoomViewProps) {
             </>}
           </div>
         </TabsContent>
-        <TabsContent value="game" forceMount asChild><div id="roomWorkspacePanel-game" role="tabpanel" aria-labelledby="roomWorkspaceTab-game" hidden={tab!=='game'}><fieldset disabled={locked}><RoomGameSettings state={state} service={service} hidden={false}/></fieldset><UiButton variant="quiet" size="sm" id="mpRoomGuideOpen" type="button" onClick={props.onGuide}>{t('multiplayerGuide.action')}</UiButton></div></TabsContent>
+        <TabsContent value="game" forceMount asChild><div id="roomWorkspacePanel-game" role="tabpanel" aria-labelledby="roomWorkspaceTab-game" hidden={tab!=='game'}><fieldset disabled={locked}><RoomGameSettings state={state} service={service} hidden={false}/></fieldset><UiButton variant="quiet" size="sm" id="mpRoomGuideOpen" asChild><a href={props.guideHref} target="_blank" rel="noopener noreferrer">{t('multiplayerGuide.action')}</a></UiButton></div></TabsContent>
       </div></aside></Tabs>
       <div className="room-workspace-playback-host" ref={setPlaybackHost}/>
       {props.music && musicOpen && <RoomMusicStrip model={props.music} open={props.panel?.kind==='music'} onOpen={(element,tab,keyboard)=>{

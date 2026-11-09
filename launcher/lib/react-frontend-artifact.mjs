@@ -96,7 +96,9 @@ export async function readReactFrontendArtifact({directory, metadata = null, exp
     if (new Set(graph.shellFiles).size !== graph.shellFiles.length) throw new Error("Duplicate previous React shell path");
     for (const path of graph.shellFiles) {
       artifactPath(path);
-      if (!publication.has(path) || path.includes('/') && !/^(?:assets|vendor|uptime)\//.test(path) && !/^content\/[A-Za-z0-9_-]+\.html$/.test(path)) throw new Error(`Previous React shell file is outside its frontend publication: ${path}`);
+      const frontendPath = !path.includes('/') || /^(?:assets|vendor|uptime)\//.test(path)
+        || /^content\/[A-Za-z0-9_-]+\.html$/.test(path) || /^docs\/(?:[A-Za-z0-9_-]+\/)+index\.html$/.test(path);
+      if (!publication.has(path) || !frontendPath) throw new Error(`Previous React shell file is outside its frontend publication: ${path}`);
     }
     for (const path of ['index.html', 'en.html', 'lobby.html']) if (!graph.shellFiles.includes(path)) throw new Error(`Previous React shell is missing its entry: ${path}`);
   }

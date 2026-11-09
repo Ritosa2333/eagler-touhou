@@ -1,6 +1,6 @@
 import type {CloudSaveSync} from '../../services/cloud-save-sync';
 import {AccountRequestError, accountRequest} from '../../services/account-client';
-import {useAccountSession} from '../../services/account-session';
+import {notifyRoomProfileChange, useAccountSession} from '../../services/account-session';
 
 import backgroundUrl from '../../../public/assets/launcher-background.webp?url';
 import {AccountAvatar} from './AccountAvatar';
@@ -39,7 +39,8 @@ const validDisplay = (value: unknown): value is ProfileDisplay => {
 const blankProfile: Profile = {name: '', bio: '', avatar: '', cover: '', links: []};
 const imageData = (value: string) => /^data:image\/(png|jpeg|webp);base64,/i.test(value);
 const safeUrl = (value: string) => {try {const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url : null;} catch {return null;}};
-type RemoteProfile = {username: string; nickname: string; joinedAt: string; countryCode?:string | null; regionCode?:string | null; roomAvatarReady?:boolean; details: (Profile & {display:ProfileDisplay}) | null};
+export type ProfileReview = Partial<Record<'name' | 'bio' | 'avatar' | 'cover' | 'links', 'pending' | 'rejected'>>;
+type RemoteProfile = {username: string; nickname: string; joinedAt: string; countryCode?:string | null; regionCode?:string | null; roomAvatarReady?:boolean; reviewPending?:boolean; details: (Profile & {display:ProfileDisplay}) | null};
 export function ProfilePage({readLocalSaves,cloudSync}:{readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null}={}) {
   const {pathname} = useLocation();
   const {state,retry} = useAccountSession();
@@ -63,8 +64,19 @@ function AccountProfile({pathname,viewer,readLocalSaves,cloudSync}: {pathname:st
   // biome-ignore lint/correctness/useExhaustiveDependencies: The retry counter starts a new request for the same profile.
   useEffect(() => {
     const controller = new AbortController();
+    let generation = 0, poll: ReturnType<typeof setTimeout> | undefined, latest: RemoteProfile | undefined;
     setState({});
+    const refresh = () => {if (latest?.reviewPending !== undefined) void load().catch(schedule);};
+    const schedule = () => {
+      clearTimeout(poll);
+      if (controller.signal.aborted || !latest?.reviewPending) return;
+      poll = setTimeout(() => {
+        if (document.visibilityState === 'visible') refresh();
+        else schedule();
+      }, 10_000);
+    };
     async function load() {
+      const request = ++generation;
       const name = pathname.startsWith('/u/') ? decodeURIComponent(pathname.slice(3).replace(/\/$/, '')) : viewer;
       if (!name) {
         if (!signInHref) throw new AccountRequestError('PROFILE_NOT_FOUND',404);
@@ -76,10 +88,21 @@ function AccountProfile({pathname,viewer,readLocalSaves,cloudSync}: {pathname:st
         return;
       }
       const profile = await accountRequest<RemoteProfile>(`v1/profiles/${encodeURIComponent(name)}`,undefined,{signal:controller.signal});
-      if (!controller.signal.aborted) setState({profile,owner:viewer === profile.username});
+      if (controller.signal.aborted || request !== generation) return;
+      const previous = latest;
+      latest = profile;
+      const owner = viewer === profile.username;
+      setState({profile,owner});
+      schedule();
+      if (owner && previous?.reviewPending && (previous.nickname !== profile.nickname ||
+        previous.details?.avatar !== profile.details?.avatar || previous.roomAvatarReady !== profile.roomAvatarReady)) {
+        window.dispatchEvent(new Event('account-profile-change'));
+        notifyRoomProfileChange();
+      }
     }
     load().catch(error => {if (!controller.signal.aborted) setState({error:error instanceof AccountRequestError && error.status === 404 ? 'profile.notFound' : 'account.requestFailed'});});
-    return () => controller.abort();
+    window.addEventListener('account-profile-change',refresh);
+    return () => {controller.abort();clearTimeout(poll);window.removeEventListener('account-profile-change',refresh);};
   }, [pathname,viewer,aliasSearch,aliasHash,signInHref,navigate,attempt]);
   if (state.profile) return <ProfileBody panel={panel} remote={state.profile} owner={!!state.owner} readLocalSaves={readLocalSaves} cloudSync={cloudSync}/>;
   return <main className="player-profile"><div className="profile-wrap" aria-busy={!state.error}>
@@ -91,9 +114,11 @@ function ProfileBody({remote,owner,panel,readLocalSaves,cloudSync}: {remote:Remo
   const location=useLocation(),navigate=useNavigate();
   const anchor=location.hash.replace(/^#profile-/,''),tab:ProfileTab=Object.hasOwn(tabLabels,anchor)?anchor as ProfileTab:'overview';
   const sectionAddress=(key:ProfileTab)=>({pathname:location.pathname,search:location.search,hash:`#profile-${key}`});
-  const [profile, setProfile] = useState<Profile>({...blankProfile,...remote.details,name:remote.nickname,roomAvatarReady:remote.roomAvatarReady});
+  const [legacySaved, setLegacySaved] = useState<{source:RemoteProfile;profile:Profile;display:ProfileDisplay}>();
+  const local = legacySaved?.source === remote ? legacySaved : undefined;
+  const profile = local?.profile ?? {...blankProfile,...remote.details,name:remote.nickname,roomAvatarReady:remote.roomAvatarReady};
   const settings = owner && !!panel;
-  const [display,setDisplay] = useState(validDisplay(remote.details?.display) ? remote.details.display : defaultDisplay);
+  const display = local?.display ?? (validDisplay(remote.details?.display) ? remote.details.display : defaultDisplay);
   const [statistics,setStatistics]=useState<ProfileStatistics>(),[statisticsError,setStatisticsError]=useState(false);
   useEffect(()=>{
     let current:AbortController|undefined;
@@ -114,8 +139,9 @@ function ProfileBody({remote,owner,panel,readLocalSaves,cloudSync}: {remote:Remo
       return <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer"><Icon aria-hidden="true"/><span>{link.label}</span><ArrowUpRight aria-hidden="true"/></a>;
     })}</div>}</>;
   const navigation = visibleTabs.map(item => <Link key={item} to={sectionAddress(item)} aria-current={tab===item ? 'location' : undefined}>{t(tabLabels[item])}</Link>);
-  if (settings) return <AccountSettings initialProfile={profile} initialDisplay={display} panel={panel} readLocalSaves={readLocalSaves} cloudSync={cloudSync}
-    onSave={(next,visibility) => {setProfile(next);setDisplay(visibility);}}/>;
+  if (settings) return <AccountSettings initialProfile={profile} initialDisplay={display} reviewPending={remote.reviewPending}
+    panel={panel} readLocalSaves={readLocalSaves} cloudSync={cloudSync}
+    onSave={(next,visibility) => {if (remote.reviewPending === undefined) setLegacySaved({source:remote,profile:next,display:visibility});}}/>;
   return <SocialProvider key={remote.username} username={remote.username}><main className="player-profile profile-page" aria-labelledby="profile-name"><div className="profile-wrap">
       <section id="profile-overview" className="profile-hero profile-public-section">
         <div className="profile-cover"><img src={imageData(profile.cover) ? profile.cover : backgroundUrl} alt=""/></div>

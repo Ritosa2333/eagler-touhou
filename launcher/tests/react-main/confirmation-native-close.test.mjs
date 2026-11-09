@@ -126,10 +126,10 @@ test('all decision variants use the shared native timeline and clear interrupted
   ]) {
     f.focus.focus(); const before = f.settled.length;
     const {result, dialog} = await ask(options), entrance = animations.at(-1);
-    assert.equal(entrance.node, dialog); assert.equal(entrance.options.duration, 180);
+    assert.equal(entrance.node, dialog); assert.equal(entrance.options.duration, 245);
     assert.equal(env.document.querySelectorAll('#decisionDialog').length, 1);
     assert.equal(env.document.activeElement, n(options.hideCancel ? '#decisionConfirm' : '#decisionCancel'));
-    dialog.style.setProperty('--ui-surface-duration', '321ms');
+    dialog.style.setProperty('--ui-window-exit-duration', '321ms');
     const cancel = new env.window.Event('cancel', {cancelable: true});
     await React.act(async () => dialog.dispatchEvent(cancel));
     assert.equal(cancel.defaultPrevented, true); assert.equal(dialog.open, true);

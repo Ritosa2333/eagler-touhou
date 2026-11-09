@@ -218,7 +218,7 @@ def check_populated_directory(page, base, cases):
     game_picker = dialog.locator('#gameSelect-trigger')
     game_picker.press('Enter')
     product_menu = dialog.get_by_role('menu', name='作品')
-    choice = product_menu.locator('[data-room-product="th09mp"]')
+    choice = product_menu.locator('[data-product-choice="th09mp"]')
     assert choice.locator('.book-lobby-cover').is_visible()
     assert choice.locator('.book-lobby-subtitle').is_visible()
     product_menu.press('Escape')

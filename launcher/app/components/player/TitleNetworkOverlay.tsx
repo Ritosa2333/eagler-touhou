@@ -9,8 +9,8 @@ export function TitleNetworkOverlay({model}: {model: TitleNetworkModel}) {
   const create = useRef<HTMLButtonElement>(null);
   const focusEntry = useEffectEvent(() => {if (state.open && !state.room) create.current?.focus();});
   useLayoutEffect(() => {if (state.focusRequest) focusEntry();}, [state.focusRequest]);
-  return <section className="th09-network-dialog" id="th09NetworkDialog" role="dialog" aria-modal="true" aria-label={t('multiplayer.th09DialogTitle')} hidden={!state.open || state.room}>
-    <div className="th09-network-window">
+  return <section className="th09-network-dialog" data-window-transition="overlay" id="th09NetworkDialog" role="dialog" aria-modal="true" aria-label={t('multiplayer.th09DialogTitle')} hidden={!state.open || state.room} inert={!state.open || !!state.room}>
+    <div className="th09-network-window" data-window-frame="">
       <div id="th09NetworkEntry" hidden={state.room}>
         <header><strong>{t('multiplayer.th09DialogTitle')}</strong><UiButton variant="icon" type="button" id="th09NetworkClose" aria-label={t('action.close')} onClick={() => model.close(true)}>×</UiButton></header>
         <p>{t('multiplayer.th09DialogHint')}</p>

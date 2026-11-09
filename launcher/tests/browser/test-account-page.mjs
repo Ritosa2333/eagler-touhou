@@ -100,6 +100,30 @@ try {
   const goto = async address => {
     await page.goto(address,{waitUntil:'networkidle2'});
   };
+  await page.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1'));
+  for (const width of [1440, 390]) {
+    await page.setViewport({width, height:900});
+    await page.goto(base, {waitUntil:'domcontentloaded'});
+    await page.waitForSelector('.account-login-link', {visible:true});
+    if (width > 780) await page.addStyleTag({content:'html[data-ui-route-transition="page"] {--launcher-route-duration: 2s !important}'});
+    await page.evaluate(() => {
+      window.loginHeader = document.querySelector('.book-masthead');
+      window.loginSnapshots = 0;
+      const start = document.startViewTransition.bind(document);
+      document.startViewTransition = (...args) => {window.loginSnapshots++; return start(...args);};
+    });
+    await page.click('.account-login-link');
+    await page.waitForSelector('.account-art');
+    const {sameHeader, headerHeight, artClip, snapshots} = await page.evaluate(() => {
+      const header = document.querySelector('.book-masthead');
+      return {sameHeader: header === window.loginHeader, headerHeight: header.getBoundingClientRect().height,
+        artClip: getComputedStyle(document.querySelector('.account-art')).clipPath, snapshots:window.loginSnapshots};
+    });
+    assert.ok(sameHeader && headerHeight > 0, `${width}px: the live masthead stays mounted`);
+    if (width > 780) assert.equal(parseFloat(artClip.match(/^inset\(([^\s)]+)/)?.[1]), headerHeight, 'artwork snapshot starts below the masthead');
+    else assert.equal(snapshots, 0, 'mobile sign-in navigates without a page snapshot');
+  }
+  await page.setViewport({width:1440, height:1000});
   await goto(screenshotAddress.href);
   await page.evaluate(() => document.fonts.ready);
   const layoutRecords = [];
@@ -402,7 +426,12 @@ try {
   await page.waitForSelector('.profile-page');
   await page.waitForFunction(() => document.querySelector('.masthead-account-entry .account-avatar img')?.naturalWidth > 0);
   assert.equal(await page.$eval('.profile-avatar img', image => image.naturalWidth > 0), true, 'uploaded avatar appears on the profile');
-  assert.equal(await page.$eval('.masthead-account-entry .account-handle', el => el.textContent), '博丽灵梦', 'header shows the member name');
+  const memberTrigger = await page.$eval('.masthead-account-entry', el => ({
+    label: el.getAttribute('aria-label'), text: el.textContent.trim(), avatarWidth: el.querySelector('.account-avatar').getBoundingClientRect().width,
+  }));
+  assert.match(memberTrigger.label, /博丽灵梦/, 'the member avatar has the account name as its accessible label');
+  assert.equal(memberTrigger.text, '', 'the masthead shows only the member avatar');
+  assert.equal(memberTrigger.avatarWidth, 28);
   assert.equal(await page.$('.profile-section-nav a[href*="profile-content"]'), null, 'removed profile content tab stays hidden');
   await page.setViewport({width:320,height:640});
   const compactMenuTrigger = await page.$eval('.masthead-account-entry',element=>{
@@ -427,6 +456,7 @@ try {
   await page.click('.masthead-account-entry');
   await page.waitForSelector('.account-menu-panel');
   assert.equal(await page.$eval('.account-menu-identity img', image => image.naturalWidth > 0), true, 'uploaded avatar appears in the account menu');
+  assert.equal(await page.$eval('.account-menu-identity strong', el => el.textContent), '博丽灵梦', 'the menu shows the member name');
   const profileLink = await page.$eval('.account-menu-panel a', link => link.getAttribute('href'));
   assert.match(profileLink, /\/u\/reimu/);
   await page.click('.account-menu-panel a[href$="#edit"]');
@@ -450,28 +480,36 @@ try {
   sessionUser = null;
   await page.waitForSelector('.account-login-link');
   await page.setViewport({width: 1440, height: 900});
-  assert.ok(await page.$('.account-login-link .book-navigation-icon'), 'guest header uses the navigation icon');
-  assert.ok(await page.$('.account-login-link .account-guest-label'), 'desktop login link has a label');
+  assert.ok(await page.$('.account-login-link > .book-navigation-icon'), 'guest header uses the navigation icon');
+  assert.ok(await page.$eval('.account-login-link', link => link.textContent.trim() === link.getAttribute('aria-label')), 'desktop login entry displays its label');
   assert.equal(await page.$('.masthead-links a[href*="mode=register"]'), null);
   await page.setViewport({width: 320, height: 720});
   const compactHeader = await page.evaluate(() => {
     const brand = document.querySelector('.book-brand'), login = document.querySelector('.account-login-link');
-    const theme = document.querySelector('.book-theme-toggle'), loginRect = login.getBoundingClientRect(), themeRect = theme.getBoundingClientRect();
-    const loginIcon = login.querySelector('.book-navigation-icon'), themeIcon = theme.querySelector('.book-navigation-icon');
+    const drawer = document.querySelector('#mastheadMenuToggle'), loginRect = login.getBoundingClientRect(), drawerRect = drawer.getBoundingClientRect();
+    const loginIcon = login.querySelector('.book-navigation-icon'), drawerIcon = drawer.querySelector('.book-navigation-icon');
+    const actions = [...document.querySelectorAll('.masthead-links > .masthead-action')].filter(node => node.getClientRects().length);
     return {overflow: document.documentElement.scrollWidth > innerWidth, brandRight: brand.getBoundingClientRect().right,
-      themeLeft: themeRect.left, accountLeft: loginRect.left, loginLabel: login.getAttribute('aria-label'),
-      loginIconMatches: getComputedStyle(loginIcon).width === getComputedStyle(themeIcon).width &&
-        getComputedStyle(loginIcon).strokeWidth === getComputedStyle(themeIcon).strokeWidth,
-      loginTextHidden: getComputedStyle(login.querySelector('.account-guest-label')).display === 'none',
-      loginTargetSize: loginRect.width === themeRect.width && loginRect.height === themeRect.height && loginRect.width >= 44};
+      accountLeft: loginRect.left, loginLabel: login.querySelector('span').getBoundingClientRect().width > 0 && login.textContent.trim(), actions: actions.length,
+      loginIconLarger: loginIcon.getBoundingClientRect().width > drawerIcon.getBoundingClientRect().width &&
+        getComputedStyle(loginIcon).strokeWidth === getComputedStyle(drawerIcon).strokeWidth,
+      loginTargetSize: loginRect.height === drawerRect.height && loginRect.width >= 44};
   });
   assert.equal(compactHeader.overflow, false, '320px header has no horizontal overflow');
-  assert.ok(compactHeader.accountLeft >= compactHeader.brandRight, `320px brand and account controls do not overlap: ${JSON.stringify(compactHeader)}`);
-  assert.ok(compactHeader.themeLeft >= compactHeader.brandRight + 2, `320px brand and theme control remain separated: ${JSON.stringify(compactHeader)}`);
-  assert.ok(compactHeader.loginLabel, 'the narrow login link retains its accessible name');
-  assert.equal(compactHeader.loginIconMatches, true, 'the login icon matches the adjacent theme control');
-  assert.equal(compactHeader.loginTextHidden, true, 'narrow account link hides its visible label');
+  assert.ok(compactHeader.accountLeft - compactHeader.brandRight >= 8, `320px brand and account controls have a gutter: ${JSON.stringify(compactHeader)}`);
+  assert.equal(compactHeader.actions, 2, 'the narrow masthead shows the account and overview triggers');
+  assert.ok(compactHeader.loginLabel, 'the narrow login link displays its label');
+  assert.equal(compactHeader.loginIconLarger, true, 'the guest icon is slightly larger and shares the drawer icon stroke weight');
   assert.equal(compactHeader.loginTargetSize, true, 'narrow account icon keeps a 44px target');
+  await page.click('#mastheadMenuToggle');
+  await page.waitForSelector('#mastheadMenuPanel[role="dialog"][data-state="open"]');
+  await page.waitForFunction(() => Math.abs(document.querySelector('#mastheadMenuPanel').getBoundingClientRect().right - innerWidth) < 0.5);
+  const theme = await page.$eval('html', node => node.dataset.bookTheme);
+  await page.click('.masthead-overview-theme');
+  await page.waitForFunction(previous => document.documentElement.dataset.bookTheme !== previous, {}, theme);
+  assert.ok(await page.$('#mastheadMenuPanel a[href*="faq.html"]'), 'help is available inside the overview');
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('#mastheadMenuPanel', {hidden: true});
   assert.deepEqual(errors, []);
   console.log('PASS: aligned viewport layout, stable artwork, immutable OTP challenge, expiry recovery, localized login errors, profile navigation and no credential persistence');
 } finally {await browser.close();}

@@ -10,8 +10,8 @@ import 'react-easy-crop/react-easy-crop.css';
 import './profile-image-crop.css';
 const Cropper=lazy(()=>import('react-easy-crop'));
 
-export default function ProfileImageCropDialog({file,kind,onConfirm,onClose}: {
-  file:File;kind:ProfileImageKind;onConfirm(crop:ProfileImageCrop, thumbnail?:string):void;onClose():void;
+export default function ProfileImageCropDialog({open,file,kind,onConfirm,onClose,onClosed}: {
+  open:boolean;file:File;kind:ProfileImageKind;onConfirm(crop:ProfileImageCrop, thumbnail?:string):void;onClose():void;onClosed():void;
 }) {
   const {t}=useLocale();
   const [source,setSource]=useState('');
@@ -33,7 +33,7 @@ export default function ProfileImageCropDialog({file,kind,onConfirm,onClose}: {
   const thumbnailReady = kind === 'cover' || (preview?.area === area && !!preview?.image);
   const thumbnailFailed = kind === 'avatar' && preview && preview.area === area && !preview.image;
   const zoomTo=(value:number)=>setZoom(Math.max(1,Math.min(4,value)));
-  return <Dialog open onOpenChange={open=>{if(!open)onClose();}}><DialogContent className="profile-image-crop-dialog">
+  return <Dialog open={open} onOpenChange={next=>{if(!next)onClose();}}><DialogContent className="profile-image-crop-dialog" onCloseAutoFocus={()=>{if(!open)onClosed();}}>
     <DialogTitle>{t(kind==='avatar'?'profile.image.cropAvatar':'profile.image.cropCover')}</DialogTitle>
     <DialogDescription>{t('profile.image.cropHint')}</DialogDescription>
     <div className="profile-image-crop-stage" data-kind={kind}>

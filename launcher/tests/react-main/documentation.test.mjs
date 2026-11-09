@@ -55,5 +55,14 @@ test('all documentation languages render their authored headings and preserve Ab
     assert.ok(!html.includes('<h1'),'Page title is provided by DocsTitle');
     if(page.id==='privacy')assert.equal(toc[0].title,'信息收集与使用');
     if(page.id==='about')assert.ok(html.includes('mailto:ayanews@outlook.com'));
+    if(page.id==='firstUse'){
+      assert.equal([...html.matchAll(/role="note"/g)].length,2,locale);
+      assert.doesNotMatch(html,/\[!NOTE\]/);
+    }
+    if(page.id==='faq'){
+      assert.equal([...html.matchAll(/role="note"/g)].length,2,locale);
+      assert.match(html,/--callout-color:var\(--color-fd-warning/);
+      assert.doesNotMatch(html,/\[!(?:NOTE|WARNING)\]/);
+    }
   }
 });

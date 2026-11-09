@@ -99,7 +99,7 @@ function InitialSurface({ lobby, profile, account }: { lobby: boolean; profile: 
       interactive={false}
       onSelect={inactive}
       onActivate={inactive}
-      onGuide={inactive}
+      guideHref={null}
       onNetwork={inactive}
       roomTools={<LobbyRoomTools disabled />}
       roomList={null}

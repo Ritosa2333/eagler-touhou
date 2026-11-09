@@ -79,6 +79,7 @@ export function ConfirmationDialog({
     };
     dialog.addEventListener('close', closed);
     dialog.returnValue = 'cancel';
+    dialog.setAttribute('data-window-managed', '');
     dialog.showModal();
     animation.current = animateSurface(dialog, 'enter', { kind: 'dialog' });
     (inputRef.current ?? (hideCancel ? confirmRef.current : cancelRef.current))?.focus({ preventScroll: true });

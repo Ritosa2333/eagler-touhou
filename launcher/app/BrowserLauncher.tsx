@@ -3,7 +3,8 @@ import {UI_LOCALES, UI_LOCALE_LABELS, isUiLocale, localeHome, withUiLanguage} fr
 import {lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';
 import {useLocation} from 'react-router';
-import {gameIdForProduct, isMultiplayerProductId, PRODUCT_IDS, productRequiresImport} from '../src/contracts/product-catalog.mts';
+import {gameIdForProduct, isMultiplayerProductId, PRODUCT_IDS, productRequiresImport, type ProductId} from '../src/contracts/product-catalog.mts';
+import {multiplayerGuidePath} from '../lib/multiplayer-guide.mjs';
 import {buildMultiplayerDiagnosticRelayUrl} from '../src/launcher/multiplayer-relay-url.mts';
 import {generateMultiplayerRoomCode} from '../src/launcher/multiplayer-identity.mts';
 import {readReactAppShellDeployment} from './services/app-shell-deployment';
@@ -17,7 +18,7 @@ import {LauncherMasthead, MainSelect, createLibraryProducts} from './components/
 import {LobbyDirectoryView} from './components/directory/LobbyDirectoryView';
 import {NetworkDiagnosticsDialog, type NetworkDiagnosticsHandle} from './components/directory/NetworkDiagnosticsDialog';
 import {DirectoryRoomDialog} from './components/directory/DirectoryRoomDialog';
-import {FirstUseNotice, DonationDialog, AppleRefreshDialog, MultiplayerGuideDialog,
+import {FirstUseNotice, DonationDialog, AppleRefreshDialog,
   type FirstUseNoticeHandle} from './components/notices';
 import {GameDataImportWindows} from './components/player/GameDataImportWindows';
 import {MultiplayerQuickChat} from './components/player/MultiplayerQuickChat';
@@ -84,10 +85,10 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
     optionsActions: <SessionLaunchActions session={session}/>, multiplayerControls: <RoomSettingsControls session={session}/>, multiplayerDiagnostics: <InlineMultiplayerDiagnostics session={session}/>, multiplayerOnline: <LegacyMultiplayerOnline session={session}/>,
     roomSurface: <RoomComposition session={session} settingsClosing={settingsClosing} workspaceVisible={roomWorkspace}/>,
     roomDrawer: <RoomDrawer session={session} onClosingChange={setSettingsClosing}/>,
-    runtimeControls: <><PlayerControls session={session} replayWorkspace={replayWorkspace} roomWorkspace={roomWorkspace}/>{replayModel && <ReplayWorkspaceHost session={session}/>}<MultiplayerQuickChat model={session.room.quickChat} iconUrl={assetUrl('assets/player-chat.svg')} decisions={session.decisions}/></>,
+    runtimeControls: <><PlayerControls session={session} replayWorkspace={replayWorkspace} roomWorkspace={roomWorkspace}/>{replayModel && <ReplayWorkspaceHost session={session} products={metadataProducts}/>}<MultiplayerQuickChat model={session.room.quickChat} iconUrl={assetUrl('assets/player-chat.svg')} decisions={session.decisions}/></>,
     // The real directory renderer derives these slots from the live service;
     // this structural value is never rendered by BrowserWorkspace.
-    lobby: {masthead, onGuide: null, onNetwork: null, roomTools: null, roomList: null, hasRooms: false, loading: true, emptyState: null, roomCount: ''},
+    lobby: {masthead, guideHref: null, onNetwork: null, roomTools: null, roomList: null, hasRooms: false, loading: true, emptyState: null, roomCount: ''},
     renderLobby: props => <Directory session={session} {...props} network={network} networkRunning={networkRunning}/>,
     overlays: <SessionOverlays session={session} firstUse={firstUse} assetUrl={assetUrl} onDonationUnavailable={() => setDonationAvailable(false)} network={network} onNetworkRunning={setNetworkRunning}/>,
   };
@@ -106,7 +107,7 @@ const emptySubscribe = () => () => {};
 const noDiagnostics = () => null;
 
 /** History stays active before the large replay view is requested or ready. */
-export function ReplayWorkspaceHost({session}: {session: BrowserSession}) {
+export function ReplayWorkspaceHost({session, products}: {session: BrowserSession; products?: readonly ProductId[]}) {
   const navigation = useSurfaceNavigation(), model = session.getReplays()!;
   const files = useSyncExternalStore(model.subscribe,model.getSnapshot,model.getSnapshot);
   const routeOpen = navigation.infoDialogOpen('replayDialog'), routeVisible = useRef(false);
@@ -121,13 +122,15 @@ export function ReplayWorkspaceHost({session}: {session: BrowserSession}) {
     }
   },[routeOpen,model,files.open,files.productId,session.reportError]);
   // Once requested, the view keeps its layer IDs for nested Back/Forward entries.
-  return requested || routeOpen ? <Suspense><ReplayWorkspace session={session}/></Suspense> : null;
+  return requested || routeOpen ? <Suspense><ReplayWorkspace session={session} products={products}/></Suspense> : null;
 }
 
 function InlineMultiplayerDiagnostics({session}: {session: BrowserSession}) {
   const navigation = useSurfaceNavigation();
+  const {locale} = useLocale();
   if (navigation.context === 'lobby') return null;
-  return <MultiplayerDiagnostics model={session.networkDiagnostics} onGuide={() => navigation.openInfoDialog('mpGuideDialog')}
+  const path = multiplayerGuidePath(navigation.productId && gameIdForProduct(navigation.productId));
+  return <MultiplayerDiagnostics model={session.networkDiagnostics} guideHref={withUiLanguage(new URL(path.slice(1), session.baseUrl).href, locale)}
     getRelayUrl={() => {const relay = session.metadata.getSnapshot().siteManifest?.shared.netplayRelay; return relay ? buildMultiplayerDiagnosticRelayUrl(relay) : '';}}/>;
 }
 function LegacyMultiplayerOnline({session}: {session: BrowserSession}) {
@@ -179,6 +182,7 @@ function ServerStatusNote({session}: {session: BrowserSession}) {
 }
 function Directory({session, network, ...props}: LobbySurfaceProps & {session: BrowserSession; network: React.RefObject<NetworkDiagnosticsHandle | null>}) {
   const navigation = useSurfaceNavigation();
+  const {locale} = useLocale();
   const location = useLocation();
   const routeViewingProduct = useMemo(() => {
     const product = new URLSearchParams(location.search).get('game') || '';
@@ -214,7 +218,7 @@ function Directory({session, network, ...props}: LobbySurfaceProps & {session: B
       if (ids.length) next.searchParams.set('games', ids.join(','));
       navigation.navigateAddress(routerDestination(next.href, session.baseUrl));
     }}
-    assetUrl={path => new URL(path, session.baseUrl).href} onGuide={() => navigation.openInfoDialog('mpGuideDialog')}
+    assetUrl={path => new URL(path, session.baseUrl).href} guideHref={withUiLanguage(new URL(multiplayerGuidePath().slice(1), session.baseUrl).href, locale)}
     onNetwork={() => {navigation.openInfoDialog('lobbyNetworkDialog'); void network.current?.run();}}
     onOpenForm={mode => {if (session.directory.prepareForm(mode)) navigation.openDirectoryForm(mode);}}/>;
 }
@@ -234,10 +238,6 @@ function SessionOverlays({session, firstUse, assetUrl, onDonationUnavailable, ne
   const navigation = useSurfaceNavigation(), location = useLocation();
   const libraryDocument = isLauncherHomePath(location.pathname);
   const playerOpen = useStoreSelector(session, value => value.playerOpen);
-  const directory = useSyncExternalStore(session.directory.subscribe, session.directory.getSnapshot, session.directory.getSnapshot);
-  // Main lobby.mts113 uses the directory filter; its shared Launcher settings
-  // selection may belong to another product or a late Host fallback.
-  const guideProduct = navigation.context === 'lobby' ? directory.selectedProduct : navigation.productId;
   const releaseNavigation = useRef<(() => void) | null>(null);
   useLayoutEffect(() => {
     // A child dialog completes its close in the same layout phase. Keep the
@@ -276,7 +276,6 @@ function SessionOverlays({session, firstUse, assetUrl, onDonationUnavailable, ne
     <FirstUseNotice ref={firstUse} open={navigation.infoDialogOpen('firstUseNoticeDialog')} onCloseRequest={() => navigation.closeInfoDialog('firstUseNoticeDialog')} onOpenRequest={() => navigation.openInfoDialog('firstUseNoticeDialog')} storage={session.storage} contentUrl={assetUrl('content/FIRST_USE_NOTICE.html')} edgeGestures={libraryDocument}/>
     <DonationDialog open={navigation.infoDialogOpen('donationDialog')} onCloseRequest={() => navigation.closeInfoDialog('donationDialog')} closeDurationMs={navigation.context === 'lobby' ? 0 : 220} assetUrl={assetUrl} onArtworkUnavailable={onDonationUnavailable}/>
     <AppleRefreshDialog open={navigation.infoDialogOpen('appleRefreshDialog')} onCloseRequest={() => navigation.closeInfoDialog('appleRefreshDialog')}/>
-    <MultiplayerGuideDialog open={navigation.infoDialogOpen('mpGuideDialog')} onCloseRequest={() => navigation.closeInfoDialog('mpGuideDialog')} gameId={guideProduct ? gameIdForProduct(guideProduct) : 'th06'} contentUrl={assetUrl('content/MULTIPLAYER.html')}/>
 
   </>;
 }

@@ -1,4 +1,5 @@
-.ui-kit-dialog.profile-image-crop-dialog{width:min(620px,calc(100vw - 24px));padding:20px;overflow:auto}
+/* react-easy-crop measures the rendered bounds when the image loads. */
+.ui-kit-dialog.profile-image-crop-dialog{--ui-window-scale:1;width:min(620px,calc(100vw - 24px));padding:20px;overflow:auto}
 .profile-image-crop-stage{position:relative;height:min(46dvh,360px);min-height:160px;border-radius:7px;overflow:hidden;background:#161719}
 .profile-image-crop-stage>p{display:grid;place-items:center;height:100%;margin:0;color:#fff}
 .profile-image-crop-loading{display:flex;align-items:center;justify-content:center;gap:8px;height:100%;color:#fff;font-size:12px}.profile-image-crop-loading svg{width:16px;height:16px}

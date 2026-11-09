@@ -3,6 +3,7 @@ import { closeMainSelectMenus } from './MainSelect';
 import type { OptionsTargets } from './options-ownership';
 import type { LibraryProduct } from './products';
 import { useSurfaceMotion } from '../../ui/use-surface-motion';
+import { useCompactNavigation } from '../../navigation/navigation-motion';
 
 export interface LibraryOptionsPresenceInput {
   /** The Router has already committed this state; this hook never navigates. */
@@ -37,6 +38,7 @@ export function useLibraryOptionsPresence({
   concealed = false,
   focusActive = true,
 }: LibraryOptionsPresenceInput): LibraryOptionsPresence {
+  const compact = useCompactNavigation();
   const [presence, setPresence] = useState<Presence>(() => ({ open, closing: false, product }));
   const targets = useRef<OptionsTargets>({ selectedCard: null, panel: null, backdrop: null });
   const panel = useRef<HTMLElement>(null),
@@ -102,6 +104,7 @@ export function useLibraryOptionsPresence({
   });
   const phase = presence.open && !concealed ? (presence.closing ? 'exit' : 'enter') : null;
   useSurfaceMotion(panel, phase, {
+    kind: compact ? 'panel' : 'dialog',
     reduced: lessMotion,
     onComplete() {
       if (!presence.closing) return;
@@ -110,7 +113,7 @@ export function useLibraryOptionsPresence({
       setPresence((current) => ({ ...current, open: false, closing: false }));
     },
   });
-  useSurfaceMotion(backdrop, phase, { kind: 'backdrop', reduced: lessMotion });
+  useSurfaceMotion(backdrop, phase, { kind: compact ? 'panel' : 'backdrop', reduced: lessMotion });
   useLayoutEffect(() => {
     if (!presence.open || !presence.product?.id || concealed || !focusActive) return;
     restoreFocus();

@@ -137,3 +137,48 @@ it('cancels a write during readiness and allows a new account request afterward'
     '/api/ready', '/api/ready', '/api/auth/get-session',
   ]);
 });
+
+const edge = 'https://api.touhouonline.com';
+const direct = 'https://direct-api.touhouonline.com';
+const readyOn = route => Response.json({ready: true}, {headers: {'X-Eagler-Account-Route': route}});
+
+it.each([
+  ['direct', true, ''],
+  ['edge', true, edge],
+  ['edge', false, direct],
+])('routes account writes by region %s and edge availability %s', async (route, edgeAvailable, expected) => {
+  vi.stubEnv('VITE_ACCOUNT_EDGE_ORIGIN', edge);
+  vi.stubEnv('VITE_ACCOUNT_DIRECT_ORIGIN', direct);
+  const writes = [];
+  const {accountRequest} = await loadAccountClient(vi.fn(async (url, init) => {
+    if (url === '/api/ready') return route === 'direct' ? readyOn(route) : new Response(null, {status: 404});
+    if (url === direct + '/api/ready') return readyOn('edge');
+    if (url === edge + '/api/ready') {
+      if (edgeAvailable) return readyOn(route);
+      throw new TypeError('network error');
+    }
+    writes.push([url, init.method]);
+    return Response.json({user: {username: 'reimu'}});
+  }));
+  await expect(accountRequest('auth/sign-in/email', {email: 'player@example.com'})).resolves.toMatchObject({user: {username: 'reimu'}});
+  expect(writes).toEqual([[expected + '/api/auth/sign-in/email', 'POST']]);
+});
+
+it('retries a read on direct after an edge failure without replaying an already sent write', async () => {
+  vi.stubEnv('VITE_ACCOUNT_EDGE_ORIGIN', edge);
+  vi.stubEnv('VITE_ACCOUNT_DIRECT_ORIGIN', direct);
+  const calls = [];
+  const {accountRequest} = await loadAccountClient(vi.fn(async (url, init) => {
+    if (url.endsWith('/api/ready')) return readyOn('edge');
+    calls.push([url, init.method]);
+    if (url.startsWith(edge)) return new Response(null, {status: 522});
+    return Response.json({user: {username: 'reimu'}});
+  }));
+  await expect(accountRequest('auth/get-session')).resolves.toMatchObject({user: {username: 'reimu'}});
+  await expect(accountRequest('auth/sign-in/email', {email: 'player@example.com'})).rejects.toMatchObject({status: 522});
+  expect(calls).toEqual([
+    [edge + '/api/auth/get-session', 'GET'],
+    [direct + '/api/auth/get-session', 'GET'],
+    [edge + '/api/auth/sign-in/email', 'POST'],
+  ]);
+});

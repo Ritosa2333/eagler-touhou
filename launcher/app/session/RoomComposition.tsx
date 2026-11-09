@@ -1,5 +1,7 @@
 import { useLayoutEffect, useState, useSyncExternalStore } from 'react';
-import { isMultiplayerProductId } from '../../src/contracts/product-catalog.mts';
+import { gameIdForProduct, isMultiplayerProductId } from '../../src/contracts/product-catalog.mts';
+import { multiplayerGuidePath } from '../../lib/multiplayer-guide.mjs';
+import { withUiLanguage } from '../../src/launcher/i18n.mts';
 import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
 import { RoomView } from '../components/room';
 import { RoomMusicInvite } from '../components/room/RoomMusic';
@@ -21,7 +23,8 @@ export function RoomComposition({
   workspaceVisible: boolean;
 }) {
   const navigation = useSurfaceNavigation();
-  const {t} = useLocale();
+  const {t, locale} = useLocale();
+  const guidePath = multiplayerGuidePath(navigation.productId && gameIdForProduct(navigation.productId));
   const transfer = useSyncExternalStore(
     session.transfer.subscribe,
     session.transfer.getSnapshot,
@@ -73,7 +76,7 @@ export function RoomComposition({
       assetUrl={(path) => new URL(path, session.baseUrl).href}
       onLeave={session.leaveRoom}
       onCopyRoomCode={session.copyRoomCode}
-      onGuide={() => navigation.openInfoDialog('mpGuideDialog')}
+      guideHref={withUiLanguage(new URL(guidePath.slice(1), session.baseUrl).href, locale)}
       onOpenSettings={navigation.openRoomSettings}
       settingsOpen={navigation.roomSettingsOpen}
       settingsClosing={settingsClosing}

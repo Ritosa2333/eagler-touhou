@@ -10,9 +10,9 @@ const MenuAction = createContext<((action: () => void) => void) | null>(null);
 const MenuVariant=createContext<'action'|'selection'>('action');
 
 /** Menus share placement, keyboard navigation, theme scope and focus return. */
-export function ActionMenu({label, trigger, children, className, minimumWidth = 200, side = 'bottom', align = 'end',variant='action',openOnClick=false}: {
+export function ActionMenu({label, trigger, children, className, minimumWidth = 200, side = 'bottom', align = 'end', sideOffset = 6,variant='action',openOnClick=false}: {
   label: string; trigger: ReactElement; children: ReactNode; className?: string; minimumWidth?: number;
-  side?: 'top' | 'right' | 'bottom' | 'left'; align?: 'start' | 'center' | 'end';
+  side?: 'top' | 'right' | 'bottom' | 'left'; align?: 'start' | 'center' | 'end'; sideOffset?: number;
   variant?: 'action'|'selection'; openOnClick?: boolean;
 }) {
   const anchor = useRef<HTMLButtonElement>(null);
@@ -34,7 +34,7 @@ export function ActionMenu({label, trigger, children, className, minimumWidth = 
       onPointerDownCapture={openOnClick ? event => event.stopPropagation() : undefined}
       onClick={openOnClick ? () => changeOpen(!open) : undefined}>{trigger}</DropdownMenu.Trigger>
     <DropdownMenu.Portal container={host}><DropdownMenu.Content className={cn(variant==='selection'?`${listPopupPanelClass} overflow-y-auto`:'ui-menu', 'ui-dropdown-motion', className)} aria-label={label} data-ui-surface={surface}
-      side={side} align={align} sideOffset={6} collisionPadding={padding} style={{minWidth:`min(${minimumWidth}px, var(--radix-dropdown-menu-content-available-width, calc(100vw - 24px)))`,...(variant==='selection'?{maxHeight:'min(440px,var(--radix-dropdown-menu-content-available-height))'}:{})}} onCloseAutoFocus={event=>{
+      side={side} align={align} sideOffset={sideOffset} collisionPadding={padding} style={{minWidth:`min(${minimumWidth}px, var(--radix-dropdown-menu-content-available-width, calc(100vw - 24px)))`,...(variant==='selection'?{maxHeight:'min(440px,var(--radix-dropdown-menu-content-available-height))'}:{})}} onCloseAutoFocus={event=>{
         const action=afterClose.current;afterClose.current=null;
         if(action){event.preventDefault();anchor.current?.focus({preventScroll:true});action();}
       }}>{children}</DropdownMenu.Content></DropdownMenu.Portal>

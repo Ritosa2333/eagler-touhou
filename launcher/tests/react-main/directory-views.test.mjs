@@ -66,7 +66,14 @@ function manifest({games = ['th06', 'th07', 'th08', 'th09', 'th10'], relay = tru
   return {schema: 'eagler-touhou/site-manifest/1', protocol: 'eagler-touhou/1', profile: 'synthetic-directory-views',
     shared: {resourceMode: 'hosted', testBuild: true, vanillaFont: 'font.ttf', unicodeFont: 'font.otf', ...(relay ? {netplayRelay: 'wss://relay.invalid/netplay'} : {})},
     games: Object.fromEntries(games.map(id => [id, {runtime: `runtime/${id}.html`, ...('multiplayerRuntime' in owners.PRODUCT_GAMES[id] ? {multiplayerRuntime: `runtime/${id}-mp.html`} : {}),
-      gameData: {path: owners.PRODUCT_GAMES[id].package.dataTarget.slice(1), bytes: 1, sha256: hash, version: `sha256-${hash}`, layout: `sha256-${hash}`}, music: {midi: {files: []}}}]))};
+      gameData: {path: owners.PRODUCT_GAMES[id].package.dataTarget.slice(1), bytes: 1, sha256: hash, version: `sha256-${hash}`, layout: `sha256-${hash}`}, music: {midi: {files: []}},
+      ...(owners.PRODUCT_GAMES[id].importOnly ? {offlineCompatibility: {
+        schema: 'eagler-touhou/offline-game-pack/1',
+        runtimeCompatibility: {protocol: 'eagler-touhou/1', dataLayout: `sha256-${hash}`, versionSource: 'offline-pack'},
+        requiredShared: owners.PRODUCT_GAMES[id].requiredShared,
+        languages: {source: 'offline-pack', baseline: ['ja']},
+      }} : {}),
+    }]))};
 }
 class Socket {
   readyState = 1; listeners = new Map(); sent = []; closes = [];
@@ -111,7 +118,7 @@ async function mount(Component, initial, {locale = 'en', strict = false} = {}) {
 }
 async function mountLobby(f, extra = {}, options = {}) {
   const opens = []; const m = await mount(owners.LobbyDirectoryView, {service: f.service, assetUrl,
-    masthead: null, products: [], onSelect: () => {}, onActivate: () => {}, onGuide: () => {}, onNetwork: () => {},
+    masthead: null, products: [], onSelect: () => {}, onActivate: () => {}, guideHref: '/docs/multiplayer', onNetwork: () => {},
     onOpenForm: mode => opens.push(mode), ...extra}, options); return {m, opens};
 }
 async function mountDialog(f, mode = 'create', extra = {}, options = {}) {
@@ -151,10 +158,21 @@ function expectedDialog(f, locale) {
   const rank = n('#difficultySelect', doc); rank.className = 'difficulty-label'; rank.dataset.difficulty = (policy.difficulties[form.difficulty] || '').toLowerCase();
   rank.replaceChildren(...policy.difficulties.map((name, index) => {const node = option(index, name); node.className = 'difficulty-label'; node.dataset.difficulty = name.toLowerCase(); return node;}));
   n('#dialogTitle', doc).textContent = t(locale, create ? 'lobby.create' : 'lobby.byCode');
+  n('#roomDialog', doc).dataset.mode = form.mode;
+  n('#closeDialog', doc).setAttribute('aria-label', t(locale, 'lobby.cancel'));
+  n('#closeDialog', doc).replaceChildren();
   n('#submitRoom', doc).textContent = t(locale, create ? 'lobby.create' : 'lobby.joinRoom');
   n('#createFields', doc).hidden = n('#policyFields', doc).hidden = !create; n('#codeField', doc).hidden = create;
+  const rules = doc.createElement('details'), summary = doc.createElement('summary');
+  rules.className = 'lobby-create-rules';
+  rules.hidden = !create;
+  summary.textContent = t(locale, 'room.ruleSettings');
+  const fields = n('#policyFields', doc);
+  fields.before(rules);
+  rules.append(summary, fields);
   n('#roomCodeInput', doc).required = !create;
-  if (create) n('#formNote', doc).textContent = t(locale, form.visibility === 'private' ? 'room.privateHint' : 'lobby.publicRoom');
+  n('#codeField span', doc).className = 'sr-only';
+  if (create && form.visibility === 'private') n('#formNote', doc).textContent = t(locale, 'room.privateHint');
   else n('#formNote', doc).remove();
   for (const [id, key] of [['gameSelect','lobby.game'], ['capacitySelect','lobby.capacity'], ['difficultySelect','lobby.difficulty'], ['visibilitySelect','room.visibility'], ['cheatSelect','room.cheatMovement']]) n('#'+id, doc).setAttribute('aria-label', t(locale,key));
   return n('#roomDialog', doc);
@@ -285,6 +303,11 @@ for (const locale of ['zh-CN', 'en']) test(`Lobby real loading/live/empty/list c
     intro.querySelector('.lobby-survey-link')?.remove();
     assert.equal(intro.querySelector('h1').className,'visually-hidden');
     intro.querySelector('h1').removeAttribute('class');
+    const guide = n('#lobbyGuideOpen', intro);
+    assert.equal(guide.localName, 'a');
+    assert.equal(guide.getAttribute('href'), '/docs/multiplayer');
+    guide.remove();
+    n('#lobbyGuideOpen', doc).remove();
     assert.deepEqual(normalize(intro), normalize(n(selector, doc)), `Pinned DOM: ${selector}`);
   }
   assert.ok(n('.lobby-support-links .lobby-survey-link').textContent.includes(t(locale,'lobby.surveyAction')));
@@ -426,7 +449,13 @@ test('Lobby membership token/offline/leaving gates are service-driven and the re
 
 for (const locale of ['zh-CN', 'en']) for (const mode of ['create', 'join']) test(`Dialog exact original DOM, labels, native selects, focus: ${locale}/${mode}`, async () => {
   const f = await fixture({locale}).live(); await mountDialog(f, mode, {}, {locale});
-  assert.deepEqual(normalize(n('#roomDialog')), normalize(expectedDialog(f, locale)));
+  const dialog = n('#roomDialog').cloneNode(true);
+  assert.ok(n('#closeDialog svg[aria-hidden="true"]', dialog));
+  n('#closeDialog', dialog).replaceChildren();
+  assert.equal(n('.lobby-create-rules', dialog).open, false);
+  assert.ok(n('.lobby-create-rules summary svg[aria-hidden="true"]', dialog));
+  n('.lobby-create-rules summary', dialog).textContent = t(locale, 'room.ruleSettings');
+  assert.deepEqual(normalize(dialog), normalize(expectedDialog(f, locale)));
   assert.equal(n('#roomDialog').open, true); assert.equal(n('#roomDialog').getAttribute('aria-labelledby'), 'dialogTitle');
   assert.deepEqual(all('#roomDialog select.custom-select-native').map(s => s.id), ['gameSelect', 'capacitySelect', 'difficultySelect', 'visibilitySelect', 'cheatSelect']);
   assert.equal(all('#roomDialog [role="combobox"]').length, mode === 'create' ? 4 : 5);

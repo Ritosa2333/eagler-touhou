@@ -1,5 +1,5 @@
 /** Mounted production profile. Checks section ownership and stored visibility, not CSS pixels. */
-import {test, beforeAll, afterAll, afterEach, beforeEach} from 'vitest';
+import {test, beforeAll, afterAll, afterEach, beforeEach, vi} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -63,6 +63,36 @@ function HistoryProbe(){moveHistory=owners.useNavigate();return null;}
 async function mount(Component=owners.ProfilePage,props={},initialEntries=['/profile.html?lang=en']){const container=env.document.createElement('div');env.document.body.append(container);root=createRoot(container);await React.act(async()=>root.render(React.createElement(owners.MemoryRouter,{initialEntries},React.createElement(owners.LocaleProvider,{locale:'en'},React.createElement(Component,props),React.createElement(HistoryProbe)))));}
 async function mountCloudSync(initialEntries=['/u/player?lang=en']){const container=env.document.createElement('div');env.document.body.append(container);root=createRoot(container);await React.act(async()=>root.render(React.createElement(owners.MemoryRouter,{initialEntries},React.createElement(owners.LocaleProvider,{locale:'en'},React.createElement(React.Fragment,null,React.createElement(owners.ProfilePage),React.createElement(owners.CloudSaves)),React.createElement(HistoryProbe)))));}
 async function waitForProfile(predicate){await React.act(async()=>{for(let attempt=0;attempt<80&&!predicate();attempt++)await new Promise(resolve=>setTimeout(resolve,2));});assert.ok(predicate(),'profile requests did not settle');}
+
+test('the editor keeps the saved draft while the public profile waits for approval',async()=>{
+  const fixture=globalThis.__profileAccountRequest;
+  let approved=false, submitted;
+  const draft={...profileDetails,name:'Reimu',bio:'Private draft'};
+  globalThis.__profileAccountRequest=async (path,body)=>{
+    if(path==='v1/me/profile'){
+      if(body){submitted=body;return {saved:true,review:{bio:'pending'}};}
+      return {draft,review:{bio:'pending'}};
+    }
+    if(path==='v1/profiles/player') return {...remoteProfile('player'),reviewPending:!approved,
+      details:{...profileDetails,bio:approved?draft.bio:''}};
+    return fixture(path,body);
+  };
+  const realTimeout=globalThis.setTimeout;
+  const timers=vi.spyOn(globalThis,'setTimeout').mockImplementation((callback,delay,...args)=>
+    realTimeout(callback,delay===10000?10:delay,...args));
+  try {
+    await mount(owners.ProfilePage,{},['/u/player?lang=en#edit']);
+    await waitForProfile(()=>!!env.document.querySelector('#settings-bio'));
+    assert.equal(env.document.querySelector('#settings-bio').value,draft.bio);
+    await React.act(async()=>env.document.querySelector('.settings-save-profile').click());
+    assert.equal(submitted.bio,draft.bio);
+    await React.act(async()=>moveHistory('/u/player?lang=en'));
+    const publicBio=()=>env.document.querySelector('.profile-header-details .profile-bio')?.textContent;
+    assert.equal(publicBio(),owners.translate('en','profile.bio.missing'));
+    approved=true;
+    await waitForProfile(()=>publicBio()===draft.bio);
+  } finally {timers.mockRestore();}
+});
 
 test('public navigation locates sections already present on the page',async()=>{
   await mount();

@@ -17,12 +17,15 @@ import {useSurfaceLayerState} from '../../navigation/surface-layer';
 import {CloudSaves} from './CloudSaves';
 import type {LocalSaveReader} from '../../services/local-save-storage';
 import ProfileImageCropDialog from './ProfileImageCropDialog';
-import type {Profile, ProfileDisplay} from './ProfilePreview';
+import type {Profile, ProfileDisplay, ProfileReview} from './ProfilePreview';
 import './account-settings.css';
 
-export function AccountSettings({initialProfile, initialDisplay, panel, onSave,readLocalSaves,cloudSync}: {
+type SaveProfile = (profile:Profile, display:ProfileDisplay, review?:ProfileReview) => void;
+type ProfileDraft = {draft:Profile & {display:ProfileDisplay}; review:ProfileReview};
+
+export function AccountSettings({initialProfile, initialDisplay, reviewPending, panel, onSave,readLocalSaves,cloudSync}: {
   initialProfile:Profile; initialDisplay:ProfileDisplay; panel:string;
-  onSave(profile:Profile, display:ProfileDisplay):void;
+  reviewPending?:boolean; onSave:SaveProfile;
   readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null;
 }) {
   const {t} = useLocale();
@@ -51,13 +54,44 @@ export function AccountSettings({initialProfile, initialDisplay, panel, onSave,r
     </aside>
     <div className="account-settings-content" ref={content}>
       <Link className="account-settings-back" to={address('#settings')}><ChevronLeft aria-hidden="true"/>{t('profile.settings')}</Link>
-      {editing ? <ProfileSettings initialProfile={initialProfile} initialDisplay={initialDisplay} onSave={onSave}/> : gameSettings ? <CloudSaves readLocalSaves={readLocalSaves} sync={cloudSync}/> : <SecuritySettings/>}
+      {editing ? reviewPending === undefined
+        ? <ProfileSettings initialProfile={initialProfile} initialDisplay={initialDisplay} onSave={onSave}/>
+        : <ProfileDraftSettings pending={reviewPending} onSave={onSave}/>
+        : gameSettings ? <CloudSaves readLocalSaves={readLocalSaves} sync={cloudSync}/> : <SecuritySettings/>}
     </div>
   </main>;
 }
 
-function ProfileSettings({initialProfile,initialDisplay,onSave}: {
-  initialProfile:Profile;initialDisplay:ProfileDisplay;onSave(profile:Profile,display:ProfileDisplay):void;
+function ProfileDraftSettings({pending,onSave}:{pending:boolean;onSave:SaveProfile}) {
+  const {t} = useLocale();
+  const [draft,setDraft] = useState<ProfileDraft>();
+  const [failed,setFailed] = useState(false);
+  const [attempt,setAttempt] = useState(0);
+  const loaded = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Retry reloads the private draft for this editor.
+  useEffect(() => {
+    if (pending && loaded.current) return;
+    const controller = new AbortController();
+    setFailed(false);
+    void accountRequest<ProfileDraft>('v1/me/profile',undefined,{signal:controller.signal}).then(next => {
+      if (controller.signal.aborted) return;
+      loaded.current = true;
+      setDraft(current => current ? {...current,review:next.review} : next);
+    }).catch(() => {if (!controller.signal.aborted) setFailed(true);});
+    return () => controller.abort();
+  }, [pending,attempt]);
+  if (!draft) return <section aria-busy={!failed}>{failed && <p role="alert">{t('account.requestFailed')}{' '}
+    <Button type="button" variant="outline" onClick={() => setAttempt(value=>value+1)}>{t('action.retry')}</Button></p>}</section>;
+  const {display,...profile} = draft.draft;
+  return <ProfileSettings initialProfile={profile} initialDisplay={display} review={draft.review}
+    onSave={(next,visibility,review) => {
+      setDraft({draft:{...next,display:visibility},review:review ?? {}});
+      onSave(next,visibility,review);
+    }}/>;
+}
+
+function ProfileSettings({initialProfile,initialDisplay,review,onSave}: {
+  initialProfile:Profile;initialDisplay:ProfileDisplay;review?:ProfileReview;onSave:SaveProfile;
 }) {
   const {t} = useLocale();
   const [profile,setProfile] = useState(initialProfile);
@@ -68,8 +102,6 @@ function ProfileSettings({initialProfile,initialDisplay,onSave}: {
   const uploadTasks = useRef<Partial<Record<ProfileImageKind,AbortController>>>({});
   const [cropRequest,setCropRequest]=useState<{file:File;kind:ProfileImageKind}>();
   const [cropOpen,setCropOpen]=useSurfaceLayerState<boolean>('profile-image-crop',false);
-  const wasCropping=useRef(false);
-  useEffect(()=>{if(wasCropping.current&&!cropOpen)setCropRequest(undefined);wasCropping.current=cropOpen;},[cropOpen]);
   const processingImages = !!processing.avatar || !!processing.cover;
   const [error,setError] = useState<UiMessageKey>();
   const [saved,setSaved] = useState(false);
@@ -90,7 +122,7 @@ function ProfileSettings({initialProfile,initialDisplay,onSave}: {
     setProfile(initialProfile);setRoomThumbnail(undefined);setVisible(initialDisplay.visible);setSaved(false);setCropOpen(false);setCropRequest(undefined);
     setLinkIds(initialProfile.links.map(() => nextId.current++));
   });
-  const change = (next:Profile) => {setProfile(next);setSaved(false);};
+  const change = (next:Profile) => {setProfile(next);setSaved(false);setError(undefined);};
   const chooseImage = (file:File|undefined,key:ProfileImageKind) => {
     if(!file)return;
     try {validateProfileImage(file);} catch(error) {setError(error instanceof ProfileImageError?`profile.image.${error.code}`:'profile.image.readFailed');return;}
@@ -140,27 +172,32 @@ function ProfileSettings({initialProfile,initialDisplay,onSave}: {
         ? await prepareStoredAvatarThumbnail(next.avatar).catch(() => undefined)
         : undefined);
       const saveDetails = {...next,display};
+      let result: {review?:ProfileReview} | undefined;
       try {
-        await accountRequest('v1/me/profile',{...saveDetails,avatarThumbnail},{timeoutMs:60_000});
+        result = await accountRequest<typeof result>('v1/me/profile',{...saveDetails,avatarThumbnail});
       } catch (error) {
         if (roomThumbnail || !avatarThumbnail || !(error instanceof AccountRequestError && error.code === 'SAVE_QUOTA_EXCEEDED')) throw error;
         avatarThumbnail = undefined;
-        await accountRequest('v1/me/profile',saveDetails,{timeoutMs:60_000});
+        result = await accountRequest<typeof result>('v1/me/profile',saveDetails);
       }
       const savedProfile = {...next,roomAvatarReady:!!next.avatar && (!!avatarThumbnail || !!roomAvatarReady)};
       setProfile(current => current === profile ? savedProfile : current);
       setRoomThumbnail(undefined);
-      onSave(savedProfile,display);setSaved(true);
+      onSave(savedProfile,display,result?.review);setSaved(true);
       window.dispatchEvent(new Event('account-profile-change'));
       if (next.name !== initialProfile.name || next.avatar !== initialProfile.avatar || avatarThumbnail ||
           visible.records !== initialDisplay.visible.records) notifyRoomProfileChange();
     } catch(error) {setError(error instanceof AccountRequestError && error.code==='CONTENT_REJECTED'?'profile.contentRejected':error instanceof AccountRequestError && error.code==='REVIEW_UNAVAILABLE'?'profile.reviewUnavailable':error instanceof AccountRequestError && error.code==='SAVE_QUOTA_EXCEEDED'?'cloudSave.quota':'account.requestFailed');}
     finally {setBusy(false);}
   }
+  const reviewStates = Object.values(review ?? {});
+  const reviewMessage = reviewStates.includes('rejected') ? 'profile.contentRejected'
+    : reviewStates.includes('pending') ? 'profile.reviewPending' : undefined;
   return <section aria-labelledby="profile-settings-title">
-    {cropOpen&&cropRequest&&<ProfileImageCropDialog file={cropRequest.file} kind={cropRequest.kind}
-      onClose={()=>{setCropOpen(false);setCropRequest(undefined);}}
-      onConfirm={(crop,thumbnail)=>{const request=cropRequest;setCropOpen(false);setCropRequest(undefined);void stageImage(request.file,request.kind,crop,thumbnail);}}/>}
+    {cropRequest&&<ProfileImageCropDialog open={cropOpen} file={cropRequest.file} kind={cropRequest.kind}
+      onClose={()=>setCropOpen(false)}
+      onClosed={()=>setCropRequest(current=>current===cropRequest?undefined:current)}
+      onConfirm={(crop,thumbnail)=>{setCropOpen(false);void stageImage(cropRequest.file,cropRequest.kind,crop,thumbnail);}}/>}
     <header className="account-settings-heading"><h2 id="profile-settings-title">{t('profile.personalSettings')}</h2></header>
     <form onSubmit={save}>
       <div className="profile-settings-editor">
@@ -217,7 +254,8 @@ function ProfileSettings({initialProfile,initialDisplay,onSave}: {
         </div>
       </div>
       <div className="settings-form-actions settings-profile-actions">
-        {error && <span role="alert">{t(error)}</span>}{saved && !dirty && <span role="status">{t('profile.saved')}</span>}
+        {error && <span role="alert">{t(error)}</span>}
+        {!error && (reviewMessage || saved && !dirty) && <span role="status">{t(reviewMessage ?? 'profile.saved')}</span>}
         <Button type="submit" className="settings-save-profile" aria-busy={busy} disabled={busy || processingImages}>{busy?<LoaderCircle className="animate-spin motion-reduce:animate-none" aria-hidden="true"/>:<Save aria-hidden="true"/>}{t('profile.save')}</Button>
       </div>
     </form>
