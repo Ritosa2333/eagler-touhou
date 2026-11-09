@@ -83,18 +83,20 @@ int CSelectCharaScreen::Step()
 	}
 
  if(m_bThpracSetup){
+  const auto state=CCommonFunctionInput::GetAllKeyState();
   if(m_stageSelectClosing){
    if(--m_stageSelectAge<=0){m_bThpracSetup=m_bStageSelect=m_stageSelectClosing=false;}
-   m_lastKeyState=CCommonFunctionInput::GetAllKeyState();return 0;
+   m_lastKeyState=state;return 0;
   }
   ++m_stageSelectAge;
-  if(m_setupAction==2){m_stageSelectClosing=true;m_stageSelectAge=8;m_setupAction=0;}
+  // The browser two-finger gesture sends Esc, like the original menu.
+  if(m_setupAction==2||(m_stageSelectAge>=10&&CCommonFunctionInput::ESCPressed(state,m_lastKeyState))){m_stageSelectClosing=true;m_stageSelectAge=8;m_setupAction=0;}
   else if(m_setupAction==1&&practice::StartSetup()){
    m_bThpracSetup=m_bStageSelect=false;
    m_bQuit=true;m_quitCode=SELECTCHARASCREEN_END_SELECTED_CHARA;
    CGame::s_pCurGame->m_soundEffect.PlaySound(11);
   }
-  m_lastKeyState=CCommonFunctionInput::GetAllKeyState();return 0;
+  m_lastKeyState=state;return 0;
  }
 	if (m_bStageSelect && m_stageSelectClosing) {
         if (--m_stageSelectAge<=0) { m_bStageSelect=false; m_stageSelectClosing=false; }
