@@ -1,0 +1,313 @@
+{
+  "schema": "th13/color01-gl-fixture/v1",
+  "pass": true,
+  "renderer": "WebKit WebGL",
+  "lateConfigureRejected": true,
+  "tests": [
+    {
+      "name": "blend_off_source",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "blend_on_inverse_source_alpha",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "problem_pixel_592_102_alpha187",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": 187,
+      "expected": [
+        12,
+        2,
+        12
+      ],
+      "actual": [
+        12,
+        2,
+        12
+      ]
+    },
+    {
+      "name": "blend_on_one",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "blend_on_zero",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "cache_off_to_on_step1_off",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "cache_off_to_on_step2_on",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "cache_on_same_state",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "cache_on_to_off",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "cache_off_to_on_again",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "separate_alpha_safe_factors_use_lowering",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "separate_alpha_source_color_falls_back",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "target_format_bgra8_before_bgrx8",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "target_format_bgrx8_keeps_gles_path",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "target_format_bgra8_after_bgrx8",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "default_late_configure_rejected",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "default_blend_off_source",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "default_blend_on_full_alpha",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": -1,
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "default_problem_pixel_pr_head_baseline",
+      "pass": true,
+      "mismatches": 0,
+      "firstX": 187,
+      "expected": [
+        12,
+        1,
+        12
+      ],
+      "actual": [
+        12,
+        1,
+        12
+      ]
+    }
+  ],
+  "pageErrors": []
+}
