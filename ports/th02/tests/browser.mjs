@@ -59,17 +59,17 @@ try{
     await wait(async()=>{const result=await page.evaluate(count=>({ready:events.filter(e=>e.event==='ready').length===count,errors:events.filter(e=>e.event==='error')}),count);if(result.errors.length)throw Error(JSON.stringify(result.errors));return result.ready;},'Runtime ready');
     if(split)await page.evaluate(async({count,resources})=>{for(let seat=0;seat<count;seat++)for(let i=0;i<resources.length;i++){const f=resources[i],blob=await(await fetch('/split/'+i)).blob(),url=URL.createObjectURL(blob);try{await rpc(seat,'resources',{resources:[{url,path:f.target,bytes:f.bytes,sha256:f.sha256}]});}finally{URL.revokeObjectURL(url);}}},{count,resources:split.resources});
   };
-  const installTouch=async()=>page.evaluate(async()=>{
+  const installTouch=async(seat=0)=>page.evaluate(async seat=>{
     document.getElementById('testTouchSurface')?.remove();
-    const frame=document.getElementById('p0'),r=frame.getBoundingClientRect();
+    const frame=document.getElementById('p'+seat),r=frame.getBoundingClientRect();
     const surface=document.createElement('div');surface.id='testTouchSurface';
     Object.assign(surface.style,{position:'absolute',left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px',zIndex:'999',touchAction:'none'});document.body.append(surface);
     const {bindPlayerDirectTouch}=await import('/touch-driver.js');
-    bindPlayerDirectTouch({surface,frame,ios:false,allowed:()=>true,zoom:{isActive:()=>false},context:()=>({target:frame.contentWindow,targetOrigin:location.origin,protocol:'eagler-touhou/1',game:'th02',epoch:1,launched:true,ready:true,spectator:false})});
+    bindPlayerDirectTouch({surface,frame,ios:false,allowed:()=>true,zoom:{isActive:()=>false},context:()=>({target:frame.contentWindow,targetOrigin:location.origin,protocol:'eagler-touhou/1',game:'th02',epoch:seat+1,launched:true,ready:true,spectator:false})});
     frame.contentWindow.focus();
-  });
-  const dragTouch=async(startX,endX)=>{
-    await installTouch();const cdp=await page.createCDPSession();
+  },seat);
+  const dragTouch=async(startX,endX,seat=0)=>{
+    await installTouch(seat);const cdp=await page.createCDPSession();
     const send=(type,x)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x,y:240,id:1}]});
     await send('touchStart',startX);
     // A real change of focus across the iframe must not cancel hosted touch.
@@ -147,11 +147,24 @@ try{
       console.log('INPUT RESPONSE TH02 (RPC to observed native position, ms)',JSON.stringify(samples));
     }
     if(process.env.PC98_TEST_TOUCH==='1'){
-      const position=async()=>{const s=await frames()[0].evaluate(async()=>(await import('./netplay/room.js')).managedAPI.sampleGame());return s?.players?.[0]?.x;};
-      await wait(async()=>Number.isFinite(await position()),'native player state',30000);const before=await position();
-      await dragTouch(384,288);
-      await wait(async()=>(await position())<before,'launcher touch drag moves multiplayer player',15000);
-      console.log('PASS TH02 multiplayer short swipe');
+      for(let seat=0;seat<count;seat++){
+        const position=async(frame=0)=>{const s=await frames()[frame].evaluate(async()=>(await import('./netplay/room.js')).managedAPI.sampleGame());return s?.players?.[seat]?.x;};
+        await wait(async()=>Number.isFinite(await position()),'native player state',30000);
+        const before=await position(),direction=before>200?-1:1,offset=seat*640;
+        await dragTouch(offset+320,offset+320+direction*96,seat);
+        await wait(async()=>direction*((await position())-before)>0,'launcher touch moves multiplayer P'+(seat+1),15000);
+        const moved=await position();
+        await wait(async()=>{const values=await Promise.all(Array.from({length:count},(_,i)=>position(i)));return values.every(value=>Math.abs(value-moved)<32);},'touch position reaches all peers',15000);
+        const quickBefore=await position(),quickDirection=quickBefore>200?-1:1;
+        await frames()[seat].evaluate(({seat,quickDirection})=>{
+          const b=globalThis.__eaglerDirectInputBridge,base={protocol:'eagler-touhou/1',game:'th02',epoch:seat+1,command:'direct-touch',y:.5};
+          for(const [type,id,x] of [['down',7,.5],['move',7,.5+quickDirection*.04],['up',7,.5+quickDirection*.04],['down',8,.5],['up',8,.5]])
+            if(!b.submit({...base,type,id,x}))throw Error('touch bridge rejected gesture');
+        },{seat,quickDirection});
+        try {await wait(async()=>quickDirection*((await position())-quickBefore)>0,'consecutive quick touch moves multiplayer P'+(seat+1),15000);}
+        catch(error){console.log('Touch diagnostic',seat,quickBefore,await position(),await frames()[seat].evaluate(async()=>({game:await (await import('./netplay/room.js')).managedAPI.sampleGame(),health:(await import('./netplay/room.js')).managedAPI.health()})));throw error;}
+        console.log('PASS TH02 multiplayer touch P'+(seat+1));
+      }
     }
     const states=await health();await page.screenshot({path:resolve(out,'multiplayer.png')});
     const route=process.env.PC98_TEST_RELAY==='1'?'relay':'rtc';

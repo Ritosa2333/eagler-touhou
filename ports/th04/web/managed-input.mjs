@@ -38,7 +38,7 @@ export function managedInput({game, epoch, active, options}) {
       try {
       if (message.type === 'down' && point) { secondary.add(message.id); point.menuMoved=true; return; }
       if (message.type === 'up' && secondary.delete(message.id)) { menuPulse |= 128; return; }
-      if (message.type === 'down') { point = {...message, startX:message.x, startY:message.y, menuMoved:false}; motion = {x:0,y:0,active:true,begin:true}; }
+      if (message.type === 'down') { point = {...message, startX:message.x, startY:message.y, menuMoved:false}; motion = motion.releaseSamples ? {...motion, active:true, begin:true, releaseSamples:0} : {x:0,y:0,active:true,begin:true}; }
       else if (point?.id === message.id && message.type === 'move') {
         const scale = 16 * (options().touchSensitivity ?? 150) / 100;
         motion.x += (message.x - point.x) * 640 * scale; motion.y += (message.y - point.y) * 400 * scale;

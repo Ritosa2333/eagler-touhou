@@ -7,13 +7,14 @@ const require=createRequire(new URL('../../../launcher/package.json',import.meta
 const base=process.env.PC98_LAUNCHER_URL||'http://127.0.0.1:18340/';
 const out=resolve(import.meta.dirname,'../.cache/launcher-room');await mkdir(out,{recursive:true});
 const browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
-const pages=[],errors=[],events=[[],[]];
+const pages=[],errors=[],events=[[],[]],touchTest=process.env.PC98_TEST_TOUCH==='1';
 async function navigate(page,url){
   await page.goto(url);await page.waitForFunction(()=>/lobby\.html/.test(location.pathname)?!document.documentElement.hasAttribute('data-lobby-boot'):window.__eaglerBoot?.done===true,{timeout:45000});
   await page.evaluate(()=>document.querySelector('#firstUseNoticeDialog')?.close());
 }
 async function open(seat,url){
-  const context=await browser.createBrowserContext(),page=await context.newPage();pages.push(page);await page.setViewport({width:1400,height:900});
+  const context=await browser.createBrowserContext(),page=await context.newPage();pages.push(page);await page.setViewport(touchTest?{width:960,height:600,hasTouch:true,isMobile:true}:{width:1400,height:900});
+  if(touchTest)await page.evaluateOnNewDocument(game=>{localStorage.setItem('eagler-touch-help-seen-v8','1');localStorage.setItem('eagler-touhou-game-options-v1-'+game,JSON.stringify({options:{touchEnabled:true,touchMovementMode:'touch'}}));HTMLElement.prototype.requestFullscreen=()=>Promise.reject(new Error('Fullscreen requires a user gesture'));},'th04');
   page.on('pageerror',e=>errors.push(e.message));
   await page.exposeFunction('recordRuntimeEvent',m=>events[seat].push(m));
   await page.evaluateOnNewDocument(()=>{addEventListener('message',e=>{if(e.data?.protocol==='eagler-touhou/1')window.recordRuntimeEvent(e.data);});});
@@ -59,10 +60,26 @@ try{
   const frames=pages.map(page=>page.frames().find(f=>/th04.html.*runtimeEpoch=/.test(f.url())));
   for(const frame of frames)assert(await frame.evaluate(()=>!!document.querySelector('canvas')&&!document.querySelector('.masthead,.mode-nav')),'managed room uses the launcher game surface');
   await wait(async()=>{const states=await Promise.all(frames.map(frame=>frame.evaluate(async()=>{const m=await import('./netplay/room.js');return m.managedAPI.health();})));return states.every(s=>s.confirmed>=120&&s.frames>0);},'main room confirmed gameplay');
-  await wait(async()=>(await Promise.all(pages.map(page=>page.evaluate(()=>document.querySelector('.room-workspace-preparation')?.hidden===true)))).every(Boolean),'main room loading cover must close',10000);
+  await wait(async()=>(await Promise.all(pages.map(page=>page.evaluate(()=>{const e=document.querySelector('.room-workspace-preparation');return !e||e.hidden})))).every(Boolean),'main room loading cover must close',10000);
   await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(async()=>{const m=await import('./netplay/room.js');const music=m.managedAPI.health().music;if(music?.error)throw Error(music.error);return music?.status?.startsWith('原版 FM：');})))).every(Boolean),'both players hear original music',30000);
   for(const [seat,page] of pages.entries())await page.screenshot({path:resolve(out,'player-'+seat+'.png')});
   for(const frame of frames)assert(await frame.$('#pc98-game-fps'),'game FPS counter appears during multiplayer');
+  if(touchTest && round==='match-1'){
+    for(const [seat,page] of pages.entries()){
+      await page.bringToFront();
+      const position=async()=>{const state=await frames[seat].evaluate(async()=>(await import('./netplay/room.js')).managedAPI.sampleGame());return state?.players?.[seat]?.[0];};
+      await wait(async()=>Number.isFinite(await position()),'touch player state');
+      const before=await position(),surface=await page.$('#touchDirectSurface');
+      assert(surface && await surface.isVisible(),'room touch surface must remain visible when fullscreen is rejected');
+      const box=await surface.boundingBox(),cdp=await page.createCDPSession(),y=box.y+box.height*.5,start=box.x+box.width*.6;
+      const send=(type,x)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x,y,id:1}]});
+      await send('touchStart',start);for(let i=1;i<=8;i++){await send('touchMove',start-box.width*.015*i);await new Promise(r=>setTimeout(r,100));}await send('touchEnd',start-box.width*.12);await cdp.detach();
+      await wait(async()=>(await position())<before,'launcher touch moves P'+(seat+1),15000);
+      console.log('PASS real Launcher touch P'+(seat+1));
+    }
+    console.log('PASS mobile room touch');break;
+  }
+
   assert.deepEqual(errors,[]);console.log('PASS main Launcher create/join/seat/preload/ready/start and native multiplayer');
   if(round==='match-1'){
     await host.bringToFront();
