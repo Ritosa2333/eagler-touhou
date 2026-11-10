@@ -5,7 +5,7 @@
 ## 1. 取前端和 TH10
 
 ```sh
-git clone --filter=blob:none --sparse https://github.com/YomotsuHisami/eagler-touhou.git
+git clone --filter=blob:none --sparse https://github.com/Ritosa2333/eagler-touhou.git
 cd eagler-touhou
 git sparse-checkout set launcher common tools docs ports/th10
 bun install --cwd launcher --frozen-lockfile --ignore-scripts
