@@ -270,10 +270,27 @@ test('artifact and document share the unchanged isolated origin/mount policy', a
   }, {appShell});
 });
 
+test('on-demand encoder is published without App Shell precaching', async () => {
+  await fixture(async ({directory, metadata, put}) => {
+    const wasm = 'assets/ffmpeg-core-aBc12_fG.wasm';
+    metadata.manifest.encoder = {file: wasm, src: 'ffmpeg-core.wasm'};
+    await put(wasm, 'wasm fixture');
+    await put('.vite/manifest.json', JSON.stringify(metadata.manifest));
+    const artifact = await readReactFrontendArtifact({directory});
+    assert.ok(artifact.packageFiles.includes(wasm));
+    assert.ok(!artifact.shellFiles.includes(wasm));
+    const publication = [...artifact.shellFiles, wasm];
+    const published = await readReactFrontendArtifact({directory, metadata, publicationFiles: publication});
+    assert.ok(published.packageFiles.includes(wasm));
+    await assert.rejects(readReactFrontendArtifact({directory, metadata, publicationFiles: artifact.shellFiles}),
+      /Previous Vite output is absent from its publication graph/);
+  });
+});
+
 test('packaged artifact reader uses operator parsers without compiler or React dependencies', async () => {
   await fixture(async ({work, directory}) => {
     const operator = resolve(work, 'operator');
-    for (const file of ['react-frontend-artifact.mjs', 'browser-module-graph.mjs', 'frontend-static-manifest.mjs', 'site-brand.mjs', 'react-app-shell-deployment.mjs']) {
+    for (const file of ['react-frontend-artifact.mjs', 'browser-module-graph.mjs', 'frontend-static-manifest.mjs', 'multiplayer-guide.mjs', 'site-brand.mjs', 'react-app-shell-deployment.mjs']) {
       await mkdir(resolve(operator, 'lib'), {recursive: true}); await cp(resolve('lib', file), resolve(operator, 'lib', file));
     }
     await mkdir(resolve(operator, 'node_modules'), {recursive: true});
@@ -291,7 +308,7 @@ test('packaged artifact reader uses operator parsers without compiler or React d
 test('operator selector loads before any npm dependencies are installed', async () => {
   await fixture(async ({work}) => {
     const operator = resolve(work, 'before-install'); await mkdir(resolve(operator, 'lib'), {recursive: true});
-    for (const file of ['react-frontend-artifact.mjs', 'frontend-static-manifest.mjs', 'site-brand.mjs', 'react-app-shell-deployment.mjs']) await cp(resolve('lib', file), resolve(operator, 'lib', file));
+    for (const file of ['react-frontend-artifact.mjs', 'frontend-static-manifest.mjs', 'multiplayer-guide.mjs', 'site-brand.mjs', 'react-app-shell-deployment.mjs']) await cp(resolve('lib', file), resolve(operator, 'lib', file));
     const script = `import {reactFrontendArtifactDirectory} from './lib/react-frontend-artifact.mjs'; console.log(JSON.stringify({selection:"react", root:reactFrontendArtifactDirectory({project:process.cwd(),environment:{}})}));`;
     const result = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], {cwd: operator, encoding: 'utf8'}));
     assert.deepEqual(result, {selection: 'react', root: operator});
