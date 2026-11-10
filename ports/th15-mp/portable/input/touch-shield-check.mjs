@@ -1,20 +1,19 @@
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
-import {existsSync,readFileSync,mkdirSync} from 'node:fs';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {WASI} from 'node:wasi';
-const root=resolve(import.meta.dirname,'../..'),out=resolve(root,'web/artifacts/touch-shield');
-mkdirSync(out,{recursive:true});const temp=resolve(out,'temp');mkdirSync(temp,{recursive:true});
-const sdk=process.env.TH15_EMSDK??resolve(root,'../../th08/tools/emsdk');
-const emcc=['install','upstream'].map(p=>resolve(sdk,p,'emscripten/emcc.py')).find(existsSync);assert(emcc,'Set TH15_EMSDK');
-const result=spawnSync('python',[emcc,'-O2','-std=c++17','-sDEFAULT_TO_CXX=1','--no-entry','-sSTANDALONE_WASM=1',resolve(import.meta.dirname,'touch-shield-check.cpp'),'-o',resolve(out,'verify.wasm')],{env:{...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),TEMP:temp,TMP:temp},encoding:'utf8',windowsHide:true});
-if(result.error||result.status)throw result.error??Error(result.stdout+result.stderr);
-const wasi=new WASI({version:'preview1'}),{instance}=await WebAssembly.instantiate(readFileSync(resolve(out,'verify.wasm')),{wasi_snapshot_preview1:wasi.wasiImport});wasi.initialize(instance);assert.equal(instance.exports.verify(),0);
-// The touch adapter must select all owners from the same local multiplayer
-// seat, including guests whose character differs from the host.
-const source=readFileSync(resolve(root,'web/cpp/sdl/BrowserRuntime.cpp'),'utf8');
-assert(source.includes('const auto& local=*stage.battle.pilots[network.Setup().local_player]'));
-assert(source.includes('pilot=local.player;character=local.character;bomb=local.bomb;session=&local.session;'));
-assert(source.includes('||mp_playback||network.Spectator()'));
-assert(source.includes('character==3&&player.life.state==4&&session->bomb_state==1&&bomb'));
-console.log('PASS: three shield layers, death/release/pause cancellation, local-seat owner and spectator guards (no device/netplay parity claim)');
+const root=resolve(import.meta.dirname,'../..'),common=resolve(root,'../../common');
+const compiler=process.env.EAGLER_WASI_CXX;assert(compiler,'Set EAGLER_WASI_CXX to WASI clang++');
+for(const variant of ['th15','th15-mp']){
+ const title=resolve(root,'..',variant),out=resolve(title,'artifacts/touch-shield');mkdirSync(out,{recursive:true});
+ for(const fixture of ['touch-shield-check','touch-bomb-check','verify']){
+  const wasm=resolve(out,fixture+'.wasm');
+  const r=spawnSync(compiler,['--target=wasm32-wasip1','-O2','-std=c++17','-ffp-contract=off','-fno-exceptions','-fno-rtti','-mexec-model=reactor','-Wl,--no-entry','-I'+resolve(common,'include'),resolve(title,'portable/input',fixture+'.cpp'),'-o',wasm],{encoding:'utf8',windowsHide:true});
+  assert.equal(r.status,0,r.error?.message||r.stdout+r.stderr);
+  const wasi=new WASI({version:'preview1',args:[],env:{}}),{instance}=await WebAssembly.instantiate(readFileSync(wasm),{wasi_snapshot_preview1:wasi.wasiImport});wasi.initialize(instance);assert.equal(instance.exports.verify(),0,variant+'/'+fixture);console.log('PASS',variant,fixture);
+ }
+ const source=readFileSync(resolve(title,'web/cpp/sdl/BrowserRuntime.cpp'),'utf8');
+ assert(!source.includes('retain_motion'));
+ writeFileSync(resolve(out,'report.json'),JSON.stringify({passed:true,variant,checks:['three shield layers','death preserves held gesture','release and pause cancel gesture','dialogue','deathbomb','motion representation'],physicalDevice:'not run'},null,2)+'\n');
+}

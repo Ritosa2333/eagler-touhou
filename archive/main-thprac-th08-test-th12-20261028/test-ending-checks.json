@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "tests": 7,
+  "failed": 0,
+  "scope": "Candidate deployed TitleScenes and game.mjs; story ending, score ranking, 25-slot Replay save, Game Over and Extra",
+  "runtimeGeneration": "62669af64dc7c92d58694accec7f81e5dfacd42ba52ae431772e3849b140a6e9"
+}

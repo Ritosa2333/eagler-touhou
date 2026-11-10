@@ -1,83 +1,510 @@
-import {useEffect, useSyncExternalStore, type ReactNode} from 'react';
-import {PRODUCT_GAMES, productFeatureAvailable} from '../../../src/contracts/product-catalog.mts';
-import {isMusicMode} from '../../../src/launcher/game-preferences.mts';
-import {resolveMusicAvailability} from '../../../src/launcher/music-availability.mts';
-import type {GameSettingsModel} from '../../models/game-settings';
-import {useLocale} from '../../i18n';
-import {MainSelect} from '../launcher/MainSelect';
-import {OptionsGroup} from './OptionsGroup';
-import {InputSettings} from './InputSettings';
-import {OptionRow} from './OptionRow';
-import {OptionSwitch} from './TouchSettingsFields';
-import type {SettingsActions, SettingsFileAction} from './types';
-
-const downloadPath = 'M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M12 3v11m-4-4 4 4 4-4';
-const uploadPath = 'M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M12 14V3m-4 4 4-4 4 4';
-const deletePath = 'M3 6h18M9 6V3h6v3M5 6l1 14h12l1-14M10 10v6m4-6v6';
+import { Button as UiButton } from '../../ui/button';
+import { ButtonGroup } from '../../ui/button-group';
+import { Field, FieldContent, FieldGroup } from '../../ui/field';
+import { Download, Upload, FolderOpen, Trash2, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
+import { PRODUCT_GAMES, productFeatureAvailable } from '../../../src/contracts/product-catalog.mts';
+import { isMusicMode } from '../../../src/launcher/game-preferences.mts';
+import { resolveMusicAvailability } from '../../../src/launcher/music-availability.mts';
+import type { GameSettingsModel } from '../../models/game-settings';
+import { useLocale } from '../../i18n';
+import { OptionsGroup, OptionsGroupHeading } from './OptionsGroup';
+import { InputSettings } from './InputSettings';
+import { GameAudioFields } from './GameAudioControls';
+import { OptionRow } from './OptionRow';
+import { OptionSwitch } from './TouchSettingsFields';
+import { SettingsSelect } from './SettingsSelect';
+import type { SettingsActions, SettingsFileAction } from './types';
 
 /** Both library and lobby mount this exact component against the same model.
  * Room timing/launch rows are composed by their existing domain owner. */
-export function SettingsBody({model, actions, onOpenTouchLayout, multiplayerControls}: {
-  model: GameSettingsModel; actions: SettingsActions; onOpenTouchLayout(): void; multiplayerControls?: ReactNode;
+export function SettingsBody({
+  model,
+  actions,
+  onOpenTouchLayout,
+  multiplayerControls,
+}: {
+  model: GameSettingsModel;
+  actions: SettingsActions;
+  onOpenTouchLayout(): void;
+  multiplayerControls?: ReactNode;
 }) {
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
-  const midi = useSyncExternalStore(actions.externalMidi.subscribe, actions.externalMidi.getSnapshot, actions.externalMidi.getSnapshot);
-  const {t} = useLocale();
+  const midi = useSyncExternalStore(
+    actions.externalMidi.subscribe,
+    actions.externalMidi.getSnapshot,
+    actions.externalMidi.getSnapshot,
+  );
+  const { t } = useLocale();
   const midiVisible = !!state && PRODUCT_GAMES[state.gameId].musicCapabilities.midi && state.music === 'midi';
   useEffect(() => {
     if (!midiVisible && midi.enabled) void actions.externalMidi.setEnabled(false).catch(actions.reportError);
   }, [midiVisible, midi.enabled, actions]);
   if (!state) return null;
-  const {context, options, multiplayer} = state, mobileOpen = state.disclosure.touch, product = PRODUCT_GAMES[state.gameId];
+  const { context, options, multiplayer } = state,
+    mobileOpen = state.disclosure.touch,
+    product = PRODUCT_GAMES[state.gameId];
   const availability = resolveMusicAvailability(context.musicAvailability);
-  const id = (name: string) => multiplayer ? `mp${name[0].toUpperCase()}${name.slice(1)}` : name;
+  const id = (name: string) => (multiplayer ? `mp${name[0].toUpperCase()}${name.slice(1)}` : name);
   const item = (extra: string) => `item ${extra}`;
   const hasFaith = 'display' in product && product.display.faithBar;
   const hasHints = 'hintFiles' in product.storage && product.storage.hintFiles.length > 0;
-  const switchOption = (name: 'alwaysHitbox' | 'magnifierEnabled' | 'focusHitboxEnabled' | 'faithBarEnabled' | 'thpracEnabled' | 'multiplayerLocalPlayerVisibility' | 'pixelPerfectEnabled') => () => model.setOption(name, !options[name]);
-  function actionButton(action: SettingsFileAction, title: string, path: string) {
-    return <button type="button" data-action={action} onClick={() => {void actions.file(action, context.productId).catch(actions.reportError);}}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={path}/></svg><span>{title}</span></button>;
+  const th05Display = options.th05MultiplayerDisplay;
+  const setTh05Display = (patch: Partial<typeof th05Display>) =>
+    model.setOption('th05MultiplayerDisplay', {...th05Display, ...patch});
+  const switchOption =
+    (
+      name:
+        | 'alwaysHitbox'
+        | 'magnifierEnabled'
+        | 'focusHitboxEnabled'
+        | 'faithBarEnabled'
+        | 'thpracEnabled'
+        | 'multiplayerLocalPlayerVisibility'
+        | 'th075NativeResolution'
+        | 'pixelPerfectEnabled',
+    ) =>
+    () =>
+      model.setOption(name, !options[name]);
+  function actionButton(action: SettingsFileAction, title: string) {
+    const Icon =
+      action === 'manage-replay'
+        ? FolderOpen
+        : action === 'delete-hint'
+          ? Trash2
+          : action.startsWith('export')
+            ? Download
+            : Upload;
+    return (
+      <UiButton
+        variant={action === 'delete-hint' ? 'destructive' : 'outline'}
+        size="sm"
+        type="button"
+        data-action={action}
+        onClick={() => {
+          void actions.file(action, context.productId).catch(actions.reportError);
+        }}
+      >
+        <Icon aria-hidden="true" />
+        <span>{title}</span>
+      </UiButton>
+    );
   }
-  const pack = context.languages.find(entry => entry.id === state.language);
+  const pack = context.languages.find((entry) => entry.id === state.language);
   const selectedPack = pack?.offlinePack || pack?.pack;
-  const packBytes = Number((selectedPack as {bytes?: number} | undefined)?.bytes) || 0;
-  const packSize = selectedPack ? (packBytes < 1024 * 1024 ? `${(packBytes / 1024).toFixed(1)} KiB` : `${(packBytes / 1024 / 1024).toFixed(2)} MiB`) : t('settings.builtin');
+  const packBytes = Number((selectedPack as { bytes?: number } | undefined)?.bytes) || 0;
+  const packSize = selectedPack
+    ? packBytes < 1024 * 1024
+      ? `${(packBytes / 1024).toFixed(1)} KiB`
+      : `${(packBytes / 1024 / 1024).toFixed(2)} MiB`
+    : t('settings.builtin');
   // Main reorders this one section for mobile, rather than rebuilding it.
   // Its stable sibling key lets React move the same controls across the file,
   // display and advanced groups while preserving focus and local owners.
-  const touch = (<section key="touch-options" className={`item mobile-options options-group${mobileOpen ? ' open' : ''}`} id={id('mobileOptions')}>
-      <button className="mobile-options-head" id={id('mobileOptionsToggle')} type="button" aria-expanded={mobileOpen} aria-controls={id('mobileOptionsBody')} onClick={() => model.setDisclosure('touch', !mobileOpen)}><span>{t('options.touch')}</span><i aria-hidden="true">⌄</i></button>
-      <div className="mobile-options-body" id={id('mobileOptionsBody')} inert={!mobileOpen}>
-        <div className="mobile-option"><span>{t('settings.touchEnabled')}</span><OptionSwitch id={id('touchToggle')} label={t('settings.touchEnabled')} checked={options.touchEnabled} onChange={() => model.setOption('touchEnabled', !options.touchEnabled)}/></div>
-        <div className="mobile-option touch-layout-option"><span><span>{t('settings.touchLayout')}</span><small className="visually-hidden" id={id('touchLayoutDescription')}>{t('settings.touchLayoutShared')}</small></span><button className="option-action" id={id('touchLayoutEdit')} aria-describedby={id('touchLayoutDescription')} type="button" aria-label={t('settings.touchLayout')} onClick={onOpenTouchLayout}><span aria-hidden="true">›</span></button></div>
-        <div className="mobile-option"><span>{t('settings.alwaysHitbox')}</span><OptionSwitch id={id('alwaysHitboxToggle')} label={t('settings.alwaysHitbox')} checked={options.alwaysHitbox} onChange={switchOption('alwaysHitbox')}/></div>
-        <div className="mobile-option" id={id('magnifierOption')}><span><span>{t('settings.magnifier')}</span><small className="visually-hidden" id={id('magnifierHint')}>{t('settings.magnifierHint')}</small></span><OptionSwitch id={id('magnifierToggle')} describedBy={id('magnifierHint')} label={t('settings.magnifier')} checked={options.magnifierEnabled} onChange={switchOption('magnifierEnabled')}/></div>
-      </div>
-    </section>);
-  return <div className={multiplayer ? 'mp-settings-body options-settings' : 'options-singleplayer options-settings'}>
-    {multiplayer && <><OptionRow className={item('option-frame-limit mp-shared-settings')} label={t('settings.shareSingleplayer')} hint={t('settings.shareSingleplayerHint')} control={<OptionSwitch id="mpShareSettingsToggle" checked={state.shareSingleplayerSettings} label={t('settings.shareSingleplayer')} onChange={() => {model.setShareSingleplayerSettings(!state.shareSingleplayerSettings);}}/>}/>{multiplayerControls}</>}
-    {context.mobile && touch}
-    <OptionsGroup id={id('fileOptions')} title={t('options.files')} open={state.disclosure.files} onOpenChange={open => model.setDisclosure('files', open)} bodyClassName="file-tools-grid">
-      <section className={item('file-tool-item')} id={id('saveFileTool')}><div className="itemtop"><span>{t('settings.save')}</span></div><div className="mini">{actionButton('export-save', t('settings.download'), downloadPath)}{actionButton('import-save', t('settings.import'), uploadPath)}</div></section>
-      <section className={item('file-tool-item')} id={id('replayFileTool')}><div className="itemtop"><span>{t('settings.replay')}</span></div><div className="mini">{actionButton('export-replay', t('settings.download'), downloadPath)}{actionButton('manage-replay', t('settings.manage'), uploadPath)}</div></section>
-      <section className={item('file-tool-item')} id={id('hintFileTool')} hidden={!hasHints}><div className="itemtop"><span>{t('settings.hint')}</span></div><div className="mini">{actionButton('import-hint', t('settings.import'), uploadPath)}{actionButton('delete-hint', t('action.delete'), deletePath)}</div></section>
-    </OptionsGroup>
-    <OptionsGroup id={id('displayOptions')} title={t('options.display')} open={state.disclosure.display} onOpenChange={open => model.setDisclosure('display', open)} bodyClassName="options-advanced-body">
-      <OptionRow className={item('option-frame-limit')} hidden={!product.support.highRefreshRate} label={t('settings.frameLimit')} hint={<><span id={id('frameLimitHintText')}>{t('settings.frameLimitHint')}</span> <button className="frame-limit-apple-note" id={id('frameLimitAppleNote')} type="button" onClick={actions.showAppleNotice}>{t('settings.appleNotice')}</button></>} hintId={id('frameLimitHint')} control={<OptionSwitch id={id('frameLimitToggle')} label={t('settings.frameLimit')} checked={product.support.highRefreshRate && !options.frameLimit60Enabled} disabled={!product.support.highRefreshRate} onChange={() => model.setOption('frameLimit60Enabled', !options.frameLimit60Enabled)}/>}/>
-      <section className={item('feature-section feature-language')} id={id('languageOption')} hidden={!multiplayer && context.languages.length <= 1}><div className="itemtop"><span>{t('settings.language')}</span>{!multiplayer && <small id="languagePackSize">{packSize}</small>}</div><MainSelect className="option-select" id={id('languageSelect')} aria-label={t('settings.gameLanguage')} value={state.language} onChange={event => model.setLanguage(event.target.value)}>{context.languages.map(entry => <option key={entry.id} value={entry.id}>{entry.title || entry.id}</option>)}</MainSelect></section>
-      <OptionRow className={item('option-pixel-perfect')} label={t('settings.pixelPerfect')} control={<OptionSwitch id={id('pixelPerfectToggle')} label={t('settings.pixelPerfect')} checked={options.pixelPerfectEnabled} onChange={switchOption('pixelPerfectEnabled')}/>}/>
-      <OptionRow className={item('option-focus-hitbox')} id={id('focusHitboxOption')} hidden={!productFeatureAvailable(state.gameId, 'focusHitbox', context.hostFeatures)} label={t('settings.focusHitbox')} control={<OptionSwitch id={id('focusHitboxToggle')} label={t('settings.focusHitbox')} checked={options.focusHitboxEnabled} onChange={switchOption('focusHitboxEnabled')}/>}/>
-      <OptionRow className={item('option-focus-hitbox')} id={id('faithBarOption')} hidden={!hasFaith} label={t('settings.faithBar')} control={<OptionSwitch id={id('faithBarToggle')} label={t('settings.faithBar')} checked={options.faithBarEnabled} onChange={switchOption('faithBarEnabled')}/>}/>
-    </OptionsGroup>
-    {(actions.keyboard || actions.gamepad) && <InputSettings keyboard={actions.keyboard} gamepad={actions.gamepad} th09Local={state.gameId==='th09'&&!multiplayer?actions.th09Local:undefined}/>}
-    <OptionsGroup id={id('advancedOptions')} title={t('options.advanced')} open={state.disclosure.advanced} onOpenChange={open => model.setDisclosure('advanced', open)} bodyClassName="options-advanced-body">
-      <section className={item('feature-section feature-language')} id={id('gameVersionOption')}><div className="itemtop"><span>{t('settings.gameVersion')}</span><small>{t('settings.version.hint')}</small></div><MainSelect className="option-select" id={id('gameVersionSelect')} aria-label={t('settings.gameVersion')} value={state.gameVersion} onChange={event => {if (event.target.value === 'original' || event.target.value === 'beauty') model.setGameVersion(event.target.value);}}><option value="original">{t('settings.version.original')}</option>{state.gameId !== 'th075' && <option value="beauty" disabled={context.beautyInstalled === false}>{t('settings.version.beauty')}</option>}</MainSelect></section>
-      <section className={item('feature-section feature-language feature-music')} id={id('musicOption')} hidden={!multiplayer && !availability.ogg}><div className="itemtop"><span>{t('settings.music')}</span></div><MainSelect className="option-select" id={id('musicSelect')} aria-label={multiplayer ? undefined : '音乐模式'} title={availability.audio ? '' : t('settings.webAudioUnavailable')} value={state.music} onChange={event => {if (isMusicMode(event.target.value)) model.setMusic(event.target.value);}}><option value="ogg-stream" disabled={!availability.ogg}>{t('settings.music.oggStream')}</option><option value="ogg-full" disabled={!availability.ogg}>{t('settings.music.oggFull')}</option><option value="midi" disabled={!availability.midi}>midi</option><option value="none">{t('settings.music.none')}</option></MainSelect></section>
-      <OptionRow className="item feature-section" id={id('thpracOption')} hidden={!productFeatureAvailable(state.gameId, 'thprac', context.hostFeatures)} label={'thprac'} hint={t(multiplayer ? 'settings.thpracMultiplayerDisabled' : 'settings.thpracHint')} inlineLabel control={<OptionSwitch id={id('thpracToggle')} label="thprac" disabled={multiplayer} checked={!multiplayer && options.thpracEnabled} onChange={switchOption('thpracEnabled')}/>}/>
-      {multiplayer && <OptionRow className={item('option-frame-limit')} label={t('settings.localPlayerVisibility')} hint={t('settings.localPlayerVisibilityHint')} control={<OptionSwitch id="mpLocalPlayerVisibilityToggle" label={t('settings.localPlayerVisibility')} checked={options.multiplayerLocalPlayerVisibility} onChange={switchOption('multiplayerLocalPlayerVisibility')}/>}/>}
-      <OptionRow className={item('option-frame-limit option-external-midi')} id={id('externalMidiOption')} hidden={!midiVisible} label={t('settings.externalMidi')} hint={midi.hint} hintId={id('externalMidiHint')} control={<OptionSwitch id={id('externalMidiToggle')} label={t('settings.externalMidi')} describedBy={id('externalMidiHint')} checked={midiVisible && midi.enabled} disabled={!midiVisible || !midi.supported} title={midiVisible && !midi.supported ? t('settings.externalMidiUnsupported') : ''} onChange={() => {void actions.externalMidi.setEnabled(!midi.enabled).catch(actions.reportError);}}/>}/>
-      <section className={item('feature-section feature-language')} id={id('externalMidiDeviceOption')} hidden={!midiVisible || !midi.enabled || !midi.granted}><div className="itemtop"><span>{t('settings.externalMidiDevice')}</span></div><MainSelect className="option-select" id={id('externalMidiDeviceSelect')} aria-label={t('settings.externalMidiDevice')} value={midi.selectedId} disabled={!midi.outputs.length} onChange={event => {const value = event.target.value; void actions.externalMidi.selectOutput(value).catch(actions.reportError);}}>{midi.outputs.length ? midi.outputs.map(output => <option key={output.id} value={output.id}>{output.name}</option>) : <option value="" disabled>{t('settings.externalMidiNoDeviceOption')}</option>}</MainSelect></section>
-    </OptionsGroup>
-    {!context.mobile && touch}
-  </div>;
+  const touch = (
+    <section
+      key="touch-options"
+      className={`item mobile-options options-group${mobileOpen ? ' open' : ''}`}
+      id={id('mobileOptions')}
+    >
+      <OptionsGroupHeading
+        className="mobile-options-head"
+        id={id('mobileOptionsToggle')}
+        aria-expanded={mobileOpen}
+        aria-controls={id('mobileOptionsBody')}
+        onClick={() => model.setDisclosure('touch', !mobileOpen)}
+      >
+        {t('options.touch')}
+      </OptionsGroupHeading>
+      <FieldGroup className="mobile-options-body" id={id('mobileOptionsBody')} hidden={!mobileOpen} inert={!mobileOpen}>
+        <OptionRow
+          className="mobile-option"
+          label={t('settings.touchEnabled')}
+          control={
+            <OptionSwitch
+              id={id('touchToggle')}
+              label={t('settings.touchEnabled')}
+              checked={options.touchEnabled}
+              onChange={() => model.setOption('touchEnabled', !options.touchEnabled)}
+            />
+          }
+        />
+        <OptionRow
+          className="mobile-option"
+          label={t('settings.alwaysHitbox')}
+          control={
+            <OptionSwitch
+              id={id('alwaysHitboxToggle')}
+              label={t('settings.alwaysHitbox')}
+              checked={options.alwaysHitbox}
+              onChange={switchOption('alwaysHitbox')}
+            />
+          }
+        />
+        <OptionRow
+          className="mobile-option"
+          id={id('magnifierOption')}
+          label={t('settings.magnifier')}
+          hint={t('settings.magnifierHint')}
+          hintId={id('magnifierHint')}
+          control={
+            <OptionSwitch
+              id={id('magnifierToggle')}
+              describedBy={id('magnifierHint')}
+              label={t('settings.magnifier')}
+              checked={options.magnifierEnabled}
+              onChange={switchOption('magnifierEnabled')}
+            />
+          }
+        />
+        <UiButton
+          variant="outline"
+          size="row"
+          className="settings-entry touch-layout-option"
+          id={id('touchLayoutEdit')}
+          type="button"
+          onClick={onOpenTouchLayout}
+        >
+          <SlidersHorizontal aria-hidden="true" />
+          <span className="min-w-0 flex-1">{t('settings.touchLayout')}</span>
+          <ChevronRight aria-hidden="true" />
+        </UiButton>
+      </FieldGroup>
+    </section>
+  );
+  return (
+    <div className={multiplayer ? 'mp-settings-body options-settings' : 'options-singleplayer options-settings'}>
+      {multiplayer && multiplayerControls}
+      {context.mobile && touch}
+      <OptionsGroup
+        id={id('fileOptions')}
+        title={t('options.files')}
+        open={state.disclosure.files}
+        onOpenChange={(open) => model.setDisclosure('files', open)}
+        bodyClassName="file-tools-grid"
+      >
+        <Field className="file-tool-item" id={id('saveFileTool')} orientation="horizontal">
+          <FieldContent>
+            <span className="ui-field-label">{t('settings.save')}</span>
+          </FieldContent>
+          <ButtonGroup aria-label={t('settings.save')}>
+            {actionButton('export-save', t('settings.download'))}
+            {actionButton('import-save', t('settings.import'))}
+          </ButtonGroup>
+        </Field>
+        <Field className="file-tool-item" id={id('replayFileTool')} orientation="horizontal">
+          <FieldContent>
+            <span className="ui-field-label">{t('settings.replay')}</span>
+          </FieldContent>
+          <ButtonGroup aria-label={t('settings.replay')}>
+            {actionButton('export-replay', t('settings.download'))}
+            {actionButton('manage-replay', t('settings.manage'))}
+          </ButtonGroup>
+        </Field>
+        <Field className="file-tool-item" id={id('hintFileTool')} hidden={!hasHints} orientation="horizontal">
+          <FieldContent>
+            <span className="ui-field-label">{t('settings.hint')}</span>
+          </FieldContent>
+          <ButtonGroup aria-label={t('settings.hint')}>
+            {actionButton('import-hint', t('settings.import'))}
+            {actionButton('delete-hint', t('action.delete'))}
+          </ButtonGroup>
+        </Field>
+      </OptionsGroup>
+      <OptionsGroup
+        id={id('displayOptions')}
+        title={t('options.display')}
+        open={state.disclosure.display}
+        onOpenChange={(open) => model.setDisclosure('display', open)}
+        bodyClassName="options-advanced-body"
+      >
+        <OptionRow
+          className={item('option-frame-limit')}
+          hidden={!product.support.highRefreshRate}
+          label={t('settings.frameLimit')}
+          hint={
+            <>
+              <span id={id('frameLimitHintText')}>{t('settings.frameLimitHint')}</span>{' '}
+              <UiButton
+                variant="link"
+                size="sm"
+                className="frame-limit-apple-note"
+                id={id('frameLimitAppleNote')}
+                type="button"
+                onClick={actions.showAppleNotice}
+              >
+                {t('settings.appleNotice')}
+              </UiButton>
+            </>
+          }
+          hintId={id('frameLimitHint')}
+          control={
+            <OptionSwitch
+              id={id('frameLimitToggle')}
+              describedBy={id('frameLimitHint')}
+              label={t('settings.frameLimit')}
+              checked={product.support.highRefreshRate && !options.frameLimit60Enabled}
+              disabled={!product.support.highRefreshRate}
+              onChange={() => model.setOption('frameLimit60Enabled', !options.frameLimit60Enabled)}
+            />
+          }
+        />
+        {'renderScales' in product && (
+          <SettingsSelect
+            id={id('renderResolution')}
+            label={t('settings.renderResolution')}
+            description={t('settings.renderResolutionHint')}
+            value={String(options.renderScale ?? product.renderScales[0])}
+            onChange={(event) => model.setOption('renderScale', event.target.value === '1' ? 1 : 2)}
+          >
+            {product.renderScales.map(scale => (
+              <option key={scale} value={scale}>{640 * scale}×{480 * scale}</option>
+            ))}
+          </SettingsSelect>
+        )}
+        {context.productId === 'th075mp' && (
+          <OptionRow
+            className={item('option-frame-limit')}
+            label={t('settings.th075NativeResolution')}
+            hint={t('settings.th075NativeResolutionHint')}
+            hintId={id('nativeResolutionHint')}
+            control={
+              <OptionSwitch
+                id={id('nativeResolutionToggle')}
+                describedBy={id('nativeResolutionHint')}
+                label={t('settings.th075NativeResolution')}
+                checked={options.th075NativeResolution}
+                onChange={switchOption('th075NativeResolution')}
+              />
+            }
+          />
+        )}
+        <div id={id('languageOption')} hidden={!multiplayer && context.languages.length <= 1}>
+          <SettingsSelect
+            id={id('languageSelect')}
+            label={
+              <>
+                {t('settings.language')}
+                {!multiplayer && <small id="languagePackSize">{packSize}</small>}
+              </>
+            }
+            aria-label={t('settings.gameLanguage')}
+            value={state.language}
+            onChange={(event) => model.setLanguage(event.target.value)}
+          >
+            {context.languages.map((entry) => (
+              <option key={entry.id} value={entry.id}>
+                {entry.title || entry.id}
+              </option>
+            ))}
+          </SettingsSelect>
+        </div>
+        <OptionRow
+          className={item('option-pixel-perfect')}
+          label={t('settings.pixelPerfect')}
+          control={
+            <OptionSwitch
+              id={id('pixelPerfectToggle')}
+              label={t('settings.pixelPerfect')}
+              checked={options.pixelPerfectEnabled}
+              onChange={switchOption('pixelPerfectEnabled')}
+            />
+          }
+        />
+        <OptionRow
+          className={item('option-focus-hitbox')}
+          id={id('focusHitboxOption')}
+          hidden={!productFeatureAvailable(state.gameId, 'focusHitbox', context.hostFeatures)}
+          label={t('settings.focusHitbox')}
+          control={
+            <OptionSwitch
+              id={id('focusHitboxToggle')}
+              label={t('settings.focusHitbox')}
+              checked={options.focusHitboxEnabled}
+              onChange={switchOption('focusHitboxEnabled')}
+            />
+          }
+        />
+        <OptionRow
+          className={item('option-focus-hitbox')}
+          id={id('faithBarOption')}
+          hidden={!hasFaith}
+          label={t('settings.faithBar')}
+          control={
+            <OptionSwitch
+              id={id('faithBarToggle')}
+              label={t('settings.faithBar')}
+              checked={options.faithBarEnabled}
+              onChange={switchOption('faithBarEnabled')}
+            />
+          }
+        />
+        {state.gameId === 'th05' && multiplayer && <>
+          <SettingsSelect id="mpTh05BossBarSelect" label={t('settings.th05.bossBar')} value={th05Display.bossBar}
+            onChange={event => {
+              const bossBar = event.target.value;
+              if (bossBar === 'native' || bossBar === 'eosd' || bossBar === 'ring') setTh05Display({bossBar});
+            }}>
+            {(['native', 'eosd', 'ring'] as const).map(style => <option key={style} value={style}>{t(`settings.th05.bar.${style}`)}</option>)}
+          </SettingsSelect>
+          {(['phaseMarkers', 'phaseStars', 'phaseTimeout', 'timeoutAsTime', 'numericDream', 'numericPower'] as const).map(key =>
+            <OptionRow key={key} className="item" label={t(`settings.th05.${key}`)} control={
+              <OptionSwitch id={`mpTh05${key[0].toUpperCase()}${key.slice(1)}Toggle`} label={t(`settings.th05.${key}`)} checked={th05Display[key]}
+                disabled={key === 'phaseMarkers' && th05Display.bossBar !== 'native' || key === 'phaseStars' && th05Display.bossBar !== 'eosd'
+                  || key === 'phaseTimeout' && th05Display.bossBar !== 'native' || key === 'timeoutAsTime' && !th05Display.phaseTimeout}
+                onChange={() => setTh05Display({[key]: !th05Display[key]})}/>
+            }/>)}
+        </>}
+      </OptionsGroup>
+      {(actions.keyboard || actions.gamepad) && (
+        <InputSettings
+          keyboard={state.gameId === 'th19' ? actions.th19Keyboard : actions.keyboard}
+          gamepad={state.gameId === 'th19' ? actions.th19Gamepad : actions.gamepad}
+          th19={state.gameId === 'th19'}
+          th09Local={state.gameId === 'th09' && !multiplayer ? actions.th09Local : undefined}
+        />
+      )}
+      <OptionsGroup
+        id={id('audioOptions')}
+        title={t('options.volume')}
+        open={state.disclosure.audio}
+        onOpenChange={(open) => model.setDisclosure('audio', open)}
+        bodyClassName="options-advanced-body"
+      >
+        <GameAudioFields model={model} />
+      </OptionsGroup>
+      <OptionsGroup
+        id={id('advancedOptions')}
+        title={t('options.advanced')}
+        open={state.disclosure.advanced}
+        onOpenChange={(open) => model.setDisclosure('advanced', open)}
+        bodyClassName="options-advanced-body"
+      >
+        <div id={id('gameVersionOption')}>
+          <SettingsSelect
+            id={id('gameVersionSelect')}
+            label={t('settings.gameVersion')}
+            description={t('settings.version.hint')}
+            aria-label={t('settings.gameVersion')}
+            value={state.gameVersion}
+            onChange={(event) => {
+              if (event.target.value === 'original' || event.target.value === 'beauty')
+                model.setGameVersion(event.target.value);
+            }}
+          >
+            <option value="original">{t('settings.version.original')}</option>
+            {state.gameId !== 'th075' && (
+              <option value="beauty" disabled={context.beautyInstalled === false}>
+                {t('settings.version.beauty')}
+              </option>
+            )}
+          </SettingsSelect>
+        </div>
+        <div id={id('musicOption')} hidden={!multiplayer && !availability.ogg}>
+          <SettingsSelect
+            id={id('musicSelect')}
+            label={t('settings.music')}
+            aria-label={t('settings.music')}
+            title={availability.audio ? '' : t('settings.webAudioUnavailable')}
+            value={state.music}
+            onChange={(event) => {
+              if (isMusicMode(event.target.value)) model.setMusic(event.target.value);
+            }}
+          >
+            <option value="ogg-stream" disabled={!availability.ogg}>
+              {t('settings.music.oggStream')}
+            </option>
+            <option value="ogg-full" disabled={!availability.ogg}>
+              {t('settings.music.oggFull')}
+            </option>
+            {'sources' in product.musicRuntime && product.musicRuntime.sources.includes('akyu') && (
+              <option value="ogg-akyu" disabled={!availability.ogg}>{t('settings.music.akyu')}</option>
+            )}
+            <option value="midi" disabled={!availability.midi}>
+              midi
+            </option>
+            <option value="none">{t('settings.music.none')}</option>
+          </SettingsSelect>
+        </div>
+        <OptionRow
+          className="item feature-section"
+          id={id('thpracOption')}
+          hidden={!productFeatureAvailable(state.gameId, 'thprac', context.hostFeatures)}
+          label={'thprac'}
+          hint={t(multiplayer ? 'settings.thpracMultiplayerDisabled' : 'settings.thpracHint')}
+          control={
+            <OptionSwitch
+              id={id('thpracToggle')}
+              label="thprac"
+              disabled={multiplayer}
+              checked={!multiplayer && options.thpracEnabled}
+              onChange={switchOption('thpracEnabled')}
+            />
+          }
+        />
+        {multiplayer && (
+          <OptionRow
+            className={item('option-frame-limit')}
+            label={t('settings.localPlayerVisibility')}
+            hint={t('settings.localPlayerVisibilityHint')}
+            control={
+              <OptionSwitch
+                id="mpLocalPlayerVisibilityToggle"
+                label={t('settings.localPlayerVisibility')}
+                checked={options.multiplayerLocalPlayerVisibility}
+                onChange={switchOption('multiplayerLocalPlayerVisibility')}
+              />
+            }
+          />
+        )}
+        <OptionRow
+          className={item('option-frame-limit option-external-midi')}
+          id={id('externalMidiOption')}
+          hidden={!midiVisible}
+          label={t('settings.externalMidi')}
+          hint={midi.hint}
+          hintId={id('externalMidiHint')}
+          control={
+            <OptionSwitch
+              id={id('externalMidiToggle')}
+              label={t('settings.externalMidi')}
+              describedBy={id('externalMidiHint')}
+              checked={midiVisible && midi.enabled}
+              disabled={!midiVisible || !midi.supported}
+              title={midiVisible && !midi.supported ? t('settings.externalMidiUnsupported') : ''}
+              onChange={() => {
+                void actions.externalMidi.setEnabled(!midi.enabled).catch(actions.reportError);
+              }}
+            />
+          }
+        />
+        <div id={id('externalMidiDeviceOption')} hidden={!midiVisible || !midi.enabled || !midi.granted}>
+          <SettingsSelect
+            id={id('externalMidiDeviceSelect')}
+            label={t('settings.externalMidiDevice')}
+            aria-label={t('settings.externalMidiDevice')}
+            value={midi.selectedId}
+            disabled={!midi.outputs.length}
+            onChange={(event) => {
+              const value = event.target.value;
+              void actions.externalMidi.selectOutput(value).catch(actions.reportError);
+            }}
+          >
+            {midi.outputs.length ? (
+              midi.outputs.map((output) => (
+                <option key={output.id} value={output.id}>
+                  {output.name}
+                </option>
+              ))
+            ) : (
+              <option value="" disabled>
+                {t('settings.externalMidiNoDeviceOption')}
+              </option>
+            )}
+          </SettingsSelect>
+        </div>
+      </OptionsGroup>
+      {!context.mobile && touch}
+    </div>
+  );
 }

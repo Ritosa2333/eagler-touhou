@@ -3,10 +3,557 @@
   "identityAlgorithm": "sha256/canonical-source-text",
   "targets": [
     {
+      "game": "th05",
+      "variant": "multiplayer",
+      "directory": "ports/th05-mp",
+      "sourceDigest": "7e5023125a7b6ccf6ebf4e9e650222a7d986dc86d18e20b41bd251cf702c7c50",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 96,
+      "features": {
+        "thcrap": true,
+        "thprac": false
+      },
+      "command": [
+        "node",
+        "scripts/build-eagler.mjs",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th05-mp"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "practice-toggle",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "PRACTICE-01"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "../../common/src/netplay/NetplayCore.cpp",
+            "../../common/src/netplay/NetplayProtocol.cpp",
+            "../../common/src/netplay/RollbackJournal.cpp",
+            "Game/Coop/Coop.cpp",
+            "Game/Coop/WorldRollback.cpp",
+            "Game/ED/Ending.cpp",
+            "Game/GlobalVariableAndStatistics.cpp",
+            "Game/HighScoreScreen/HighScoreScreen.cpp",
+            "Game/MusicRoom/MusicRoom.cpp",
+            "Game/OP/OpParticle.cpp",
+            "Game/OP/Opening.cpp",
+            "Game/Original/OriginalFeatures.cpp",
+            "Game/Original/OriginalScenes.cpp",
+            "Game/Practice/KeyMonitor.cpp",
+            "Game/Practice/Practice.cpp",
+            "Game/Practice/PracticeAdvanced.cpp",
+            "Game/Practice/PracticeSetup.cpp",
+            "Game/Replay.cpp",
+            "Game/Scheme.cpp",
+            "Game/SchemeSwitcher.cpp",
+            "Game/SelectCharaScreen/SelectCharaScreen.cpp",
+            "Game/SelectReplayScreen/SelectReplayScreen.cpp",
+            "Game/Stage/Background/Background.cpp",
+            "Game/Stage/Boss/Boss.cpp",
+            "Game/Stage/Boss/BossStage1.cpp",
+            "Game/Stage/Boss/BossStage2.cpp",
+            "Game/Stage/Boss/BossStage3.cpp",
+            "Game/Stage/Boss/BossStage4.cpp",
+            "Game/Stage/Boss/BossStage4Mai.cpp",
+            "Game/Stage/Boss/BossStage4Yuki.cpp",
+            "Game/Stage/Boss/BossStage5.cpp",
+            "Game/Stage/Boss/BossStage6.cpp",
+            "Game/Stage/Boss/BossStageEx.cpp",
+            "Game/Stage/Chara/Chara.cpp",
+            "Game/Stage/Chara/CharaMarisa.cpp",
+            "Game/Stage/Chara/CharaMima.cpp",
+            "Game/Stage/Chara/CharaReimu.cpp",
+            "Game/Stage/Chara/CharaYuka.cpp",
+            "Game/Stage/CharaBullet/CharaBullet.cpp",
+            "Game/Stage/Circle/Circle.cpp",
+            "Game/Stage/Dialogue/Dialogue.cpp",
+            "Game/Stage/Enemy/Enemy.cpp",
+            "Game/Stage/EnemyBullet/EnemyBullet.cpp",
+            "Game/Stage/FloatingText/FloatingText.cpp",
+            "Game/Stage/GatherEffect/GatherEffect.cpp",
+            "Game/Stage/Item/Item.cpp",
+            "Game/Stage/Laser/Laser.cpp",
+            "Game/Stage/MidBoss/MidBoss.cpp",
+            "Game/Stage/MidBoss/MidBossStage1.cpp",
+            "Game/Stage/MidBoss/MidBossStage2.cpp",
+            "Game/Stage/MidBoss/MidBossStage3.cpp",
+            "Game/Stage/MidBoss/MidBossStage4.cpp",
+            "Game/Stage/MidBoss/MidBossStage5.cpp",
+            "Game/Stage/MidBoss/MidBossStageEx.cpp",
+            "Game/Stage/PopupNumber/PopupNumber.cpp",
+            "Game/Stage/SparkEffect/SparkEffect.cpp",
+            "Game/Stage/SpecialBullet/CurvingBullet.cpp",
+            "Game/Stage/SpecialBullet/KnifeBullet.cpp",
+            "Game/Stage/SpecialBullet/LargeBullet.cpp",
+            "Game/Stage/SpecialBullet/ShinkiBullet.cpp",
+            "Game/Stage/Stage.cpp",
+            "Game/Stage/Stage2BG/Stage2BG.cpp",
+            "Game/Stage/StageBossHud.cpp",
+            "Game/Stage/StagePracticeInfo.cpp",
+            "Game/Stage/StageResource.cpp",
+            "Game/Stage/Summary/Summary.cpp",
+            "Game/Stage/TextOverlay/TextOverlay.cpp",
+            "Game/TitleScreen/TitleRollingTama.cpp",
+            "Game/TitleScreen/TitleScreen.cpp",
+            "gameLib/CommonFunction/CommonFunctionGraphic.cpp",
+            "gameLib/CommonFunction/CommonFunctionInput.cpp",
+            "gameLib/CommonFunction/CommonFunctionMusicSE.cpp",
+            "gameLib/Graphic/2DImage.cpp",
+            "gameLib/Graphic/2DImageArray.cpp",
+            "gameLib/Graphic/Th5ExtFont.cpp",
+            "gameLib/Misc/md5.cpp",
+            "gameLib/Misc/sha1.cpp",
+            "gameLib/th5DatFile/BB/BBFile.cpp",
+            "gameLib/th5DatFile/BFT/BFTFile.cpp",
+            "gameLib/th5DatFile/CD2CDG/CD2CDGFile.cpp",
+            "gameLib/th5DatFile/MPN/MPNFile.cpp",
+            "gameLib/th5DatFile/PI/PIFile.cpp",
+            "gameLib/th5DatFile/STD/STDFile.cpp",
+            "gameLib/th5DatFile/th5DatFile.cpp",
+            "portable/Game.cpp",
+            "portable/Graphics.cpp",
+            "portable/Netplay.cpp",
+            "portable/Platform.cpp",
+            "portable/Pointer.cpp",
+            "portable/Spectator.cpp",
+            "portable/Text.cpp",
+            "portable/UI.cpp",
+            "third_party/imgui/imgui.cpp",
+            "third_party/imgui/imgui_draw.cpp",
+            "third_party/imgui/imgui_tables.cpp",
+            "third_party/imgui/imgui_widgets.cpp"
+          ],
+          "complete": true
+        },
+        {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "runner": "vitest",
+          "project": "repository",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "game": "th05",
+      "variant": "normal",
+      "directory": "ports/th05",
+      "sourceDigest": "94a555629c1cb7ed585efa88ea54b87d5704ab4bcf53c7d98c67c074e30e096d",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 89,
+      "features": {
+        "thcrap": true,
+        "thprac": true
+      },
+      "command": [
+        "node",
+        "scripts/build-eagler.mjs",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th05"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "practice-toggle",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "PRACTICE-01"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "Game/ED/Ending.cpp",
+            "Game/GlobalVariableAndStatistics.cpp",
+            "Game/HighScoreScreen/HighScoreScreen.cpp",
+            "Game/MusicRoom/MusicRoom.cpp",
+            "Game/OP/OpParticle.cpp",
+            "Game/OP/Opening.cpp",
+            "Game/Original/OriginalFeatures.cpp",
+            "Game/Original/OriginalScenes.cpp",
+            "Game/Practice/KeyMonitor.cpp",
+            "Game/Practice/Practice.cpp",
+            "Game/Practice/PracticeAdvanced.cpp",
+            "Game/Practice/PracticeSetup.cpp",
+            "Game/Replay.cpp",
+            "Game/Scheme.cpp",
+            "Game/SchemeSwitcher.cpp",
+            "Game/SelectCharaScreen/SelectCharaScreen.cpp",
+            "Game/SelectReplayScreen/SelectReplayScreen.cpp",
+            "Game/Stage/Background/Background.cpp",
+            "Game/Stage/Boss/Boss.cpp",
+            "Game/Stage/Boss/BossStage1.cpp",
+            "Game/Stage/Boss/BossStage2.cpp",
+            "Game/Stage/Boss/BossStage3.cpp",
+            "Game/Stage/Boss/BossStage4.cpp",
+            "Game/Stage/Boss/BossStage4Mai.cpp",
+            "Game/Stage/Boss/BossStage4Yuki.cpp",
+            "Game/Stage/Boss/BossStage5.cpp",
+            "Game/Stage/Boss/BossStage6.cpp",
+            "Game/Stage/Boss/BossStageEx.cpp",
+            "Game/Stage/Chara/Chara.cpp",
+            "Game/Stage/Chara/CharaMarisa.cpp",
+            "Game/Stage/Chara/CharaMima.cpp",
+            "Game/Stage/Chara/CharaReimu.cpp",
+            "Game/Stage/Chara/CharaYuka.cpp",
+            "Game/Stage/CharaBullet/CharaBullet.cpp",
+            "Game/Stage/Circle/Circle.cpp",
+            "Game/Stage/Dialogue/Dialogue.cpp",
+            "Game/Stage/Enemy/Enemy.cpp",
+            "Game/Stage/EnemyBullet/EnemyBullet.cpp",
+            "Game/Stage/FloatingText/FloatingText.cpp",
+            "Game/Stage/GatherEffect/GatherEffect.cpp",
+            "Game/Stage/Item/Item.cpp",
+            "Game/Stage/Laser/Laser.cpp",
+            "Game/Stage/MidBoss/MidBoss.cpp",
+            "Game/Stage/MidBoss/MidBossStage1.cpp",
+            "Game/Stage/MidBoss/MidBossStage2.cpp",
+            "Game/Stage/MidBoss/MidBossStage3.cpp",
+            "Game/Stage/MidBoss/MidBossStage4.cpp",
+            "Game/Stage/MidBoss/MidBossStage5.cpp",
+            "Game/Stage/MidBoss/MidBossStageEx.cpp",
+            "Game/Stage/PopupNumber/PopupNumber.cpp",
+            "Game/Stage/SparkEffect/SparkEffect.cpp",
+            "Game/Stage/SpecialBullet/CurvingBullet.cpp",
+            "Game/Stage/SpecialBullet/KnifeBullet.cpp",
+            "Game/Stage/SpecialBullet/LargeBullet.cpp",
+            "Game/Stage/SpecialBullet/ShinkiBullet.cpp",
+            "Game/Stage/Stage.cpp",
+            "Game/Stage/Stage2BG/Stage2BG.cpp",
+            "Game/Stage/StageBossHud.cpp",
+            "Game/Stage/StagePracticeInfo.cpp",
+            "Game/Stage/StageResource.cpp",
+            "Game/Stage/Summary/Summary.cpp",
+            "Game/Stage/TextOverlay/TextOverlay.cpp",
+            "Game/TitleScreen/TitleRollingTama.cpp",
+            "Game/TitleScreen/TitleScreen.cpp",
+            "gameLib/CommonFunction/CommonFunctionGraphic.cpp",
+            "gameLib/CommonFunction/CommonFunctionInput.cpp",
+            "gameLib/CommonFunction/CommonFunctionMusicSE.cpp",
+            "gameLib/Graphic/2DImage.cpp",
+            "gameLib/Graphic/2DImageArray.cpp",
+            "gameLib/Graphic/Th5ExtFont.cpp",
+            "gameLib/Misc/md5.cpp",
+            "gameLib/Misc/sha1.cpp",
+            "gameLib/th5DatFile/BB/BBFile.cpp",
+            "gameLib/th5DatFile/BFT/BFTFile.cpp",
+            "gameLib/th5DatFile/CD2CDG/CD2CDGFile.cpp",
+            "gameLib/th5DatFile/MPN/MPNFile.cpp",
+            "gameLib/th5DatFile/PI/PIFile.cpp",
+            "gameLib/th5DatFile/STD/STDFile.cpp",
+            "gameLib/th5DatFile/th5DatFile.cpp",
+            "portable/Game.cpp",
+            "portable/Graphics.cpp",
+            "portable/Platform.cpp",
+            "portable/Pointer.cpp",
+            "portable/Text.cpp",
+            "portable/UI.cpp",
+            "third_party/imgui/imgui.cpp",
+            "third_party/imgui/imgui_draw.cpp",
+            "third_party/imgui/imgui_tables.cpp",
+            "third_party/imgui/imgui_widgets.cpp"
+          ],
+          "complete": true
+        },
+        {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "runner": "vitest",
+          "project": "repository",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "th05-normal-presentation",
+          "level": "module",
+          "games": [
+            "th05"
+          ],
+          "variants": [
+            "normal"
+          ],
+          "checks": [
+            "DISPLAY-01",
+            "DISPLAY-02",
+            "DISPLAY-03"
+          ],
+          "files": [
+            "ports/th05/tests/presentation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
       "game": "th06",
       "variant": "multiplayer",
       "directory": "ports/th06",
-      "sourceDigest": "25dd4c7fce248e4ba2f5f53144114ddfcfe3340eba4853d5b347e7d12e97b920",
+      "sourceDigest": "c21a87b7ae002c8132d9afa8f65a50cd2b20483070667f7bb1fa7815f2de2be4",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -85,8 +632,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -105,6 +678,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -122,6 +697,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -138,6 +715,8 @@
         {
           "id": "preload-replay-storage",
           "level": "module",
+          "runner": "vitest",
+          "project": "workspace",
           "games": [
             "th06",
             "th07"
@@ -163,7 +742,7 @@
       "game": "th06",
       "variant": "normal",
       "directory": "ports/th06",
-      "sourceDigest": "d52e52820065dddda6d54b4203d2fc55b9e08ec4e6a3ea07684f14c8c323e367",
+      "sourceDigest": "0fcf7a76547b9395940e7fb3ae1a3f6076c1a41551fd23db38cae4e0beab7b70",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -242,8 +821,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -262,6 +867,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -279,6 +886,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -294,7 +903,12 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -314,6 +928,8 @@
         {
           "id": "preload-replay-storage",
           "level": "module",
+          "runner": "vitest",
+          "project": "workspace",
           "games": [
             "th06",
             "th07"
@@ -339,7 +955,7 @@
       "game": "th07",
       "variant": "multiplayer",
       "directory": "ports/th07",
-      "sourceDigest": "35f3b5a3e406c94ee4a32f94b9112f199793210c65e77e6e1b37c40c9cb15421",
+      "sourceDigest": "0d488cbfa30c00724d6d4583e12f0e725b5d7f107f7e8758b745774b997a9310",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -418,8 +1034,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -438,6 +1080,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -455,6 +1099,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -471,6 +1117,8 @@
         {
           "id": "preload-replay-storage",
           "level": "module",
+          "runner": "vitest",
+          "project": "workspace",
           "games": [
             "th06",
             "th07"
@@ -496,7 +1144,7 @@
       "game": "th07",
       "variant": "normal",
       "directory": "ports/th07",
-      "sourceDigest": "e9ef97df6d9f428266c67de4fc0cf21d879e6fd9c2076bd2caf08f083446a436",
+      "sourceDigest": "db41438a4ab2b92f254d4926d0498b72451230371d3dc31b6dc25161aeec5ad5",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -575,8 +1223,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -595,6 +1269,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -612,6 +1288,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -627,7 +1305,12 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -647,6 +1330,8 @@
         {
           "id": "preload-replay-storage",
           "level": "module",
+          "runner": "vitest",
+          "project": "workspace",
           "games": [
             "th06",
             "th07"
@@ -672,7 +1357,7 @@
       "game": "th075",
       "variant": "multiplayer",
       "directory": "ports/th075-mp",
-      "sourceDigest": "dcfde95b2e4fa2f2c7e6007732633883343afa4190d2016cb773fc1bec553fff",
+      "sourceDigest": "ce8c9d521ae60727a9c6c02c056fd9ef31201b86baf94723895a39bbb76b2fb6",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 207,
@@ -740,8 +1425,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -760,6 +1471,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -777,6 +1490,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -796,7 +1511,7 @@
       "game": "th075",
       "variant": "normal",
       "directory": "ports/th075",
-      "sourceDigest": "383bb43e9884c20b199185fd9b263504f2b424ac13431b20acf4efc802a8ebd9",
+      "sourceDigest": "9c756df00ceb73fb1267298cd4bd24186d4a702dd1a9d9c90d215f492b98b9eb",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 200,
@@ -863,8 +1578,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -883,6 +1624,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -900,6 +1643,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -915,7 +1660,12 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -938,7 +1688,7 @@
       "game": "th08",
       "variant": "multiplayer",
       "directory": "ports/th08-mp",
-      "sourceDigest": "08aa1c52cb809a2d2ca1b0d1d6a25087643006704191f67033e25c1af42248ae",
+      "sourceDigest": "fbb68a782342adc41a66e3d6d192aa94eba796fabb09c9fddeaee61238db9a99",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 225,
@@ -1007,8 +1757,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -1027,6 +1803,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -1044,6 +1822,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -1063,7 +1843,7 @@
       "game": "th08",
       "variant": "normal",
       "directory": "ports/th08",
-      "sourceDigest": "24ed7105118937fd91fe7a53756e3c3982a15e98eda362ceac14d9684bd4008d",
+      "sourceDigest": "cd48bc6d27bb38df7ee69c1e70e16dc1a34360c787886caddea2464d000fa902",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 196,
@@ -1131,8 +1911,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -1151,6 +1957,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -1168,6 +1976,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -1183,7 +1993,12 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -1206,7 +2021,7 @@
       "game": "th09",
       "variant": "multiplayer",
       "directory": "ports/th09",
-      "sourceDigest": "66e40552a2ad663516010fb93e803d9e072777e7bcf1986da1e25b65ddff6950",
+      "sourceDigest": "88c19348aba3feda9d56862df41d3dff5886cd0a5aa12b31cfe72ab86995db06",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 116,
@@ -1272,8 +2087,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -1292,6 +2133,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -1309,6 +2152,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -1328,7 +2173,7 @@
       "game": "th09",
       "variant": "normal",
       "directory": "ports/th09",
-      "sourceDigest": "52a32635bd83c3fba685fb25cfbba2ec0fd5c33d0b919337f7a990c9a70d822a",
+      "sourceDigest": "686918a50c22243fe692ed5e31fa29394f726d709d7af4f222c25ab2a7bef3aa",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 116,
@@ -1394,8 +2239,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -1414,6 +2285,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -1431,6 +2304,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -1446,7 +2321,12 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -1469,7 +2349,7 @@
       "game": "th10",
       "variant": "multiplayer",
       "directory": "ports/th10-mp",
-      "sourceDigest": "e4d881460ebe02db4088682e36a73fa4d9de358752fa06a22388b76947874146",
+      "sourceDigest": "7c3eacb33d4823f6c54e4d34814830686013ad782d4a9a6aa97546abf3e08b25",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 277,
@@ -1537,8 +2417,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -1557,6 +2463,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -1574,6 +2482,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -1593,7 +2503,7 @@
       "game": "th10",
       "variant": "normal",
       "directory": "ports/th10",
-      "sourceDigest": "fa0ff203a6ab09bc47d57cf25a4a07d97280c9b65596334e3d823c839ce551ea",
+      "sourceDigest": "639ae2ebb5b95075548af618a5a3e3f1121a0cf65318b0a34f51d8aa55aa0969",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 249,
@@ -1661,8 +2571,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -1681,6 +2617,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -1698,6 +2636,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -1713,7 +2653,12 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -1736,10 +2681,10 @@
       "game": "th11",
       "variant": "multiplayer",
       "directory": "ports/th11-mp",
-      "sourceDigest": "024c0696cb1b656997a5fb67375197871b911581eddd0b19b53efe8800902006",
+      "sourceDigest": "9b345a0b2849e81cc4e15694db1dc285a44bcaf21e51e7f4b4f2b3177ca0c1ce",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
-      "translationUnits": 137,
+      "translationUnits": 139,
       "features": {
         "thcrap": true,
         "thprac": false
@@ -1804,8 +2749,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -1824,6 +2795,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -1841,6 +2814,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -1860,10 +2835,10 @@
       "game": "th11",
       "variant": "normal",
       "directory": "ports/th11",
-      "sourceDigest": "5ae3023371b53ea2bdbc2d177b49c5ad44076d27775ea00e2df73229b23643f1",
+      "sourceDigest": "11f993f947e3b1112c4587ae72d45385c867682e9113e461e7d9af800694b063",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
-      "translationUnits": 113,
+      "translationUnits": 115,
       "features": {
         "thcrap": true,
         "thprac": true
@@ -1928,8 +2903,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -1948,6 +2949,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -1965,6 +2968,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -1980,7 +2985,356 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
+          "variants": [
+            "normal"
+          ],
+          "checks": [
+            "DISPLAY-01",
+            "DISPLAY-02",
+            "DISPLAY-03"
+          ],
+          "files": [
+            "launcher/tests/test-native-frame-pacing.mjs",
+            "launcher/tests/test-mobile-frame-pacing.mjs",
+            "launcher/tests/test-presentation-contract-coverage.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "game": "th12",
+      "variant": "multiplayer",
+      "directory": "ports/th12-mp",
+      "sourceDigest": "c389a93e421c14f8285d7b1ec4efaef6aa9646cca5a8c54a110a1e7566faf87d",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 95,
+      "features": {
+        "thcrap": true,
+        "thprac": false
+      },
+      "command": [
+        "node",
+        "scripts/build-eagler.mjs",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th12-mp"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "src/managed-shell.mjs",
+            "src/managed-input.mjs",
+            "site/game-sdl.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "src/managed-shell.mjs",
+            "src/managed-input.mjs",
+            "site/game-sdl.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "src/managed-shell.mjs",
+            "src/managed-input.mjs",
+            "site/game-sdl.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "runner": "vitest",
+          "project": "repository",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "game": "th12",
+      "variant": "normal",
+      "directory": "ports/th12",
+      "sourceDigest": "caa8aba44a2faab498ff9a610436a27fc0f08456900d33d8d3a98a704202fb9e",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 81,
+      "features": {
+        "thcrap": true,
+        "thprac": true
+      },
+      "command": [
+        "node",
+        "scripts/build-eagler.mjs",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th12"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "src/managed-shell.mjs",
+            "src/managed-input.mjs",
+            "site/game-sdl.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "src/managed-shell.mjs",
+            "src/managed-input.mjs",
+            "site/game-sdl.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "src/managed-shell.mjs",
+            "src/managed-input.mjs",
+            "site/game-sdl.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "runner": "vitest",
+          "project": "repository",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
+          "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -2003,10 +3357,10 @@
       "game": "th15",
       "variant": "multiplayer",
       "directory": "ports/th15-mp",
-      "sourceDigest": "e86f103abec7620e78c4267dc361c0aeb68f48c5c9c586542f49da6375bf1d1d",
+      "sourceDigest": "c6dd0021df00433fcd338852511d662e11e18cd7618a11a7edd5ad72af9bc721",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
-      "translationUnits": 264,
+      "translationUnits": 271,
       "features": {
         "thcrap": true,
         "thprac": false
@@ -2070,8 +3424,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -2090,6 +3470,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -2107,6 +3489,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -2126,7 +3510,7 @@
       "game": "th15",
       "variant": "normal",
       "directory": "ports/th15",
-      "sourceDigest": "81faf0e06f4901e78ca0c11d3ce6876aa970a33085dd455ebf1814aa3715cf8e",
+      "sourceDigest": "596a94d9f560b83cde2c1690de82996964f5610535ba4088b193c12e3b62e606",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 253,
@@ -2193,8 +3577,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -2213,6 +3623,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -2230,6 +3642,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -2245,7 +3659,693 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
+          "variants": [
+            "normal"
+          ],
+          "checks": [
+            "DISPLAY-01",
+            "DISPLAY-02",
+            "DISPLAY-03"
+          ],
+          "files": [
+            "launcher/tests/test-native-frame-pacing.mjs",
+            "launcher/tests/test-mobile-frame-pacing.mjs",
+            "launcher/tests/test-presentation-contract-coverage.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "game": "th17",
+      "variant": "multiplayer",
+      "directory": "ports/th17-mp",
+      "sourceDigest": "8c080fd8e6480c637ac503973afea4222ad2d63737f060ccd79e4d2884d00090",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 233,
+      "features": {
+        "thcrap": true,
+        "thprac": false
+      },
+      "command": [
+        "node",
+        "web/scripts/build-sdl-application.mjs",
+        "--release",
+        "--multiplayer",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th17-mp"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "web/cpp/sdl/BrowserRuntime.cpp"
+          ],
+          "complete": true
+        },
+        {
+          "id": "always-hitbox-abi",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-06"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": false
+        },
+        {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "runner": "vitest",
+          "project": "repository",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "game": "th17",
+      "variant": "normal",
+      "directory": "ports/th17",
+      "sourceDigest": "a5922a53f964ed93e4f0621a0e5ed0ad52ce6891be9a4aca031a9265f22941fd",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 221,
+      "features": {
+        "thcrap": true,
+        "thprac": true
+      },
+      "command": [
+        "node",
+        "web/scripts/build-sdl-application.mjs",
+        "--release",
+        "--thprac",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th17"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "web/cpp/sdl/BrowserRuntime.cpp"
+          ],
+          "complete": true
+        },
+        {
+          "id": "always-hitbox-abi",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-06"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": false
+        },
+        {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "runner": "vitest",
+          "project": "repository",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
+          "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
+          "variants": [
+            "normal"
+          ],
+          "checks": [
+            "DISPLAY-01",
+            "DISPLAY-02",
+            "DISPLAY-03"
+          ],
+          "files": [
+            "launcher/tests/test-native-frame-pacing.mjs",
+            "launcher/tests/test-mobile-frame-pacing.mjs",
+            "launcher/tests/test-presentation-contract-coverage.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "game": "th19",
+      "variant": "multiplayer",
+      "directory": "ports/th19",
+      "sourceDigest": "78dc397bf34c361b8ca21975ae8f42cad51aa005938729301b7ec1fce146f5a7",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 14,
+      "features": {
+        "thcrap": false,
+        "thprac": false
+      },
+      "command": [
+        "node",
+        "scripts/build-eagler.mjs",
+        "--multiplayer",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th19"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "web/cpp/sdl/Application.cpp"
+          ],
+          "complete": true
+        },
+        {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "runner": "vitest",
+          "project": "repository",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "game": "th19",
+      "variant": "normal",
+      "directory": "ports/th19",
+      "sourceDigest": "325d0816ebddd1f730d9e10ceeaec67bfccb2f54e1acaf860d87b5bfc74d0e1d",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 14,
+      "features": {
+        "thcrap": false,
+        "thprac": false
+      },
+      "command": [
+        "node",
+        "scripts/build-eagler.mjs",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th19"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "web/cpp/sdl/Application.cpp"
+          ],
+          "complete": true
+        },
+        {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "runner": "vitest",
+          "project": "repository",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
+          "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -2268,7 +4368,7 @@
       "game": "th20",
       "variant": "normal",
       "directory": "ports/th20",
-      "sourceDigest": "bb0884f7a2fe5fb7ef28dcbfb1adaec195454f8d4b4949e67d44cadfb07ab063",
+      "sourceDigest": "4df8d050bfa379fd58b4c3fc04b41aa6306b98d8c9cd845a65a9fa72ae6e2cd8",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 478,
@@ -2335,8 +4435,34 @@
           "complete": true
         },
         {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -2355,6 +4481,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -2372,6 +4500,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -2387,7 +4517,12 @@
         },
         {
           "id": "normal-presentation",
+          "excludeGames": [
+            "th05"
+          ],
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],

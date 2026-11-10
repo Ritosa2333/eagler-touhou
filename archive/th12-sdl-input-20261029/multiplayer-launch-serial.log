@@ -1,0 +1,41 @@
+BROWSER TH12 SDL3: data /game; saves /savesth12
+BROWSER th12.exe: prepared TH12 1.00b ()
+BROWSER graphics: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))
+BROWSER text fonts: /game/unifont.otf
+BROWSER audio: using per-track OGG files
+BROWSER TH12 SDL3: data /game; saves /savesth12
+BROWSER th12.exe: prepared TH12 1.00b ()
+BROWSER graphics: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))
+BROWSER text fonts: /game/unifont.otf
+BROWSER audio: using per-track OGG files
+BROWSER TH12 SDL3: data /game; saves /savesth12
+BROWSER th12.exe: prepared TH12 1.00b ()
+BROWSER graphics: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))
+BROWSER text fonts: /game/unifont.otf
+BROWSER audio: using per-track OGG files
+ROOM_IDLE_TITLE_PASS [
+  { scene: 'title', age: 607, ready: true, selection: 0 },
+  { scene: 'title', age: 393, ready: true, selection: 0 }
+]
+ROOM_PRESS Escape
+ROOM_PRESS Escape
+ROOM_PRESS Enter
+ROOM_PRESS KeyZ
+ROOM_PRESS ArrowDown
+ROOM_OPTIONS_ENTERED
+ROOM_OPTIONS_NAVIGATION_PASS
+LAUNCHED { count: 2, mode: 0, delay: 0, automatic: false }
+FRONTIERS [{"status":[1,1,0,0,4294967295,2,0,0,12,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"scene":"playing","world":0},{"status":[1,1,0,0,4294967295,2,1,0,12,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"scene":"playing","world":0}]
+PASS {
+  count: 2,
+  mode: 0,
+  delay: 0,
+  automatic: false,
+  difficulty: 1,
+  restores: [ 20, 18 ],
+  slowPresentation: false,
+  frames: 399,
+  exactMatches: 0,
+  hash: -1581788087,
+  spectatorVerified: true
+}

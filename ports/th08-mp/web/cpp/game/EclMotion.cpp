@@ -25,7 +25,7 @@ bool EclVm::execute_motion(const EclInstruction& instruction){
     const auto n=[&](u32 i){return operand_int(instruction,i);};
     const auto set_duration=[&](i32 duration){movement_duration=duration;movement_time.set(duration);};
     const auto mode=[&](u32 value){flags=(flags&~0x3000u)|value<<12;};
-    const auto aimed=[&](){const Vec3 player=environment?environment->player:Vec3{};const Vec3 delta=subtract(player,position);return delta.x==0&&delta.y==0?half_pi:angle(delta.x,delta.y);};
+    const auto aimed=[&](){const Vec3 delta=subtract(aimed_player(),position);return delta.x==0&&delta.y==0?half_pi:angle(delta.x,delta.y);};
     const auto setup_velocity=[&](float direction,u32 speed_arg,bool mirror){
         const float sx=f(speed_arg);const i32 tx=n(0);target.x=(cosine(direction)*number(sx)*Extended::from_int(tx)).to_float();
         const float sy=f(speed_arg);const i32 ty=n(0);target.y=(sine(direction)*number(sy)*Extended::from_int(ty)).to_float();target.z=0;
@@ -52,7 +52,7 @@ bool EclVm::execute_motion(const EclInstruction& instruction){
     case 75:for(u32 i=0;i<4;++i)bounds[i]=f(i);flags|=0x80000;break;
     case 76:flags&=~0x80000u;break;
     case 67:case 178:{
-        if(!random){invalid=true;return false;}const float px=environment?environment->player.x:0;float direction;
+        if(!random){invalid=true;return false;}const float px=aimed_player().x;float direction;
         if(op==178){
             if(random->bounded32(4)==0)direction=random->signed_range(pi).to_float();
             else if(position.x<=px){

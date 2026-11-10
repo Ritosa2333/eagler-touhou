@@ -1,9 +1,33 @@
-import {useEffect, useRef} from 'react';
-import {useLocale} from '../i18n';
-import {closeMainSelectMenus} from './launcher/MainSelect';
+import { Button as UiButton } from '../ui/controls';
+import { InputGroup, InputGroupInput } from '../ui/input-group';
+import { TriangleAlert } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useLocale } from '../i18n';
+import { closeMainSelectMenus } from './launcher/MainSelect';
+import type { DecisionInput, DecisionComparison } from '../models/decisions';
+import { animateSurface, type SurfaceAnimation } from '../ui/surface-motion';
+
+const decisionActionClass = 'h-auto min-h-9 whitespace-normal px-3 py-1.5 pointer-coarse:min-h-11 max-[780px]:min-h-11';
 
 /** Main's decision-dialog structure, focus and discard/cancel behavior. No history owner. */
-export function ConfirmationDialog({open, title, message, confirmText, cancelText, tone = 'normal', secondaryText = '', variant = '', hideCancel = false, confirmOnEnter = false, onConfirm, onCancel, onSecondary}: {
+export function ConfirmationDialog({
+  open,
+  title,
+  message,
+  confirmText,
+  cancelText,
+  tone = 'normal',
+  secondaryText = '',
+  variant = '',
+  hideCancel = false,
+  confirmOnEnter = false,
+  input,
+  comparison,
+  onConfirm,
+  onCancel,
+  onSecondary,
+  idPrefix = 'decision',
+}: {
   open: boolean;
   title: string;
   message: string;
@@ -14,21 +38,27 @@ export function ConfirmationDialog({open, title, message, confirmText, cancelTex
   variant?: string;
   hideCancel?: boolean;
   confirmOnEnter?: boolean;
-  onConfirm(): void;
+  input?: DecisionInput;
+  comparison?: DecisionComparison;
+  onConfirm(value?: string): void;
   onCancel(): void;
   onSecondary?(): void;
+  idPrefix?: string;
 }) {
-  const {t} = useLocale();
+  const { t } = useLocale();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [inputError, setInputError] = useState('');
+  const animation = useRef<SurfaceAnimation | null>(null);
   const finishRef = useRef<(() => void) | null>(null);
-  const callbacks = useRef({onConfirm, onCancel, onSecondary});
-  callbacks.current = {onConfirm, onCancel, onSecondary};
+  const callbacks = useRef({ onConfirm, onCancel, onSecondary });
+  callbacks.current = { onConfirm, onCancel, onSecondary };
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog || !open) return;
+    setInputError('');
     closeMainSelectMenus();
     const focusReturn = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     let settled = false;
@@ -37,76 +67,192 @@ export function ConfirmationDialog({open, title, message, confirmText, cancelTex
       // A queued close from an effect replay cannot settle a reopened dialog.
       if (dialog.open || settled) return;
       settled = true;
-      if (timer.current !== null) clearTimeout(timer.current);
-      timer.current = null; finishRef.current = null;
+      animation.current?.cancel();
+      animation.current = null;
+      finishRef.current = null;
       dialog.classList.remove('closing');
       const choice = dialog.returnValue;
-      if (choice === 'confirm') callbacks.current.onConfirm();
+      if (choice === 'confirm') callbacks.current.onConfirm(inputRef.current?.value);
       else if (choice === 'secondary') callbacks.current.onSecondary?.();
       else callbacks.current.onCancel();
-      if (focusReturn?.isConnected) focusReturn.focus({preventScroll: true});
+      if (focusReturn?.isConnected) focusReturn.focus({ preventScroll: true });
     };
     dialog.addEventListener('close', closed);
     dialog.returnValue = 'cancel';
+    dialog.setAttribute('data-window-managed', '');
     dialog.showModal();
-    (hideCancel ? confirmRef.current : cancelRef.current)?.focus({preventScroll: true});
+    animation.current = animateSurface(dialog, 'enter', { kind: 'dialog' });
+    (inputRef.current ?? (hideCancel ? confirmRef.current : cancelRef.current))?.focus({ preventScroll: true });
+    inputRef.current?.select();
     return () => {
-      if (timer.current !== null) clearTimeout(timer.current);
-      timer.current = null;
+      animation.current?.cancel();
+      animation.current = null;
       finishRef.current = null;
       dialog.classList.remove('closing');
       dialog.removeEventListener('close', closed);
       if (dialog.open) dialog.close();
-      if (!settled && focusReturn?.isConnected) focusReturn.focus({preventScroll: true});
+      if (!settled && focusReturn?.isConnected) focusReturn.focus({ preventScroll: true });
     };
   }, [open, hideCancel]);
   function close(choice: 'confirm' | 'cancel' | 'secondary') {
     const dialog = dialogRef.current;
     if (!dialog?.open || finishRef.current) return;
+    if (choice === 'confirm' && input) {
+      const error = input.validate?.(inputRef.current?.value ?? input.defaultValue);
+      setInputError(error ?? '');
+      if (error) {
+        inputRef.current?.focus({ preventScroll: true });
+        return;
+      }
+    }
     dialog.returnValue = choice;
     const finish = () => {
       if (finishRef.current !== finish) return;
       finishRef.current = null;
-      if (timer.current !== null) clearTimeout(timer.current);
-      timer.current = null;
+      const previous = animation.current;
+      animation.current = null;
       dialog.classList.remove('closing');
       if (dialog.open) dialog.close(choice);
+      previous?.cancel();
     };
     finishRef.current = finish;
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) finish();
-    else {
-      dialog.classList.add('closing');
-      timer.current = setTimeout(finish, 220);
-    }
+    dialog.classList.add('closing');
+    const next = animateSurface(dialog, 'exit', { kind: 'dialog', fromCurrent: true });
+    animation.current = next;
+    if (next) void next.finished.then(finish, finish);
+    else finish();
   }
-  return <dialog ref={dialogRef} className="decision-dialog" id="decisionDialog"
-    aria-labelledby="decisionTitle" aria-describedby="decisionMessage" data-tone={tone} data-options={secondaryText && !hideCancel ? "3" : "2"} data-variant={variant}
-    data-confirm-on-enter={String(confirmOnEnter)} onCancel={event => {event.preventDefault(); close('cancel');}}
-    onAnimationEnd={event => {if (event.animationName === 'decision-card-out') finishRef.current?.();}}
-    onKeyDown={event => {
-      if (event.key !== 'Enter' || event.defaultPrevented || event.target instanceof HTMLButtonElement) return;
-      event.preventDefault();
-      if (confirmOnEnter) confirmRef.current?.click();
-    }}>
-    <form method="dialog" className="decision-window" onSubmit={event => {
-      event.preventDefault();
-      const submitter = (event.nativeEvent as SubmitEvent).submitter;
-      const value = submitter instanceof HTMLButtonElement ? submitter.value : 'cancel';
-      close(value === 'confirm' || value === 'secondary' ? value : 'cancel');
-    }}>
-      <div className="decision-body">
-        <div className="decision-mark" aria-hidden="true">
-          <svg className="decision-mark-normal" viewBox="0 0 24 24" focusable="false"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm0-14a4 4 0 0 0-4 4h2a2 2 0 1 1 4 0c0 .9-.52 1.33-1.28 1.96C11.8 12.72 11 13.57 11 15h2c0-.52.29-.84 1-1.43 1-.82 2-1.65 2-3.57a4 4 0 0 0-4-4Zm-1 11h2v2h-2v-2Z"/></svg>
-          <svg className="decision-mark-danger" viewBox="0 0 24 24" focusable="false"><path d="M1 21h22L12 2 1 21Zm12-3h-2v2h2v-2Zm0-2h-2v-4h2v4Z"/></svg>
+  return (
+    <dialog
+      ref={dialogRef}
+      className="decision-dialog"
+      id={`${idPrefix}Dialog`}
+      aria-labelledby={`${idPrefix}Title`}
+      aria-describedby={message ? `${idPrefix}Message` : undefined}
+      data-tone={tone}
+      data-options={String(Number(!hideCancel) + Number(!!secondaryText) + 1)}
+      data-variant={variant}
+      data-confirm-on-enter={String(confirmOnEnter)}
+      data-input={input ? '' : undefined}
+      onCancel={(event) => {
+        event.preventDefault();
+        close('cancel');
+      }}
+      onKeyDown={(event) => {
+        if (
+          event.key !== 'Enter' ||
+          event.defaultPrevented ||
+          event.target instanceof HTMLButtonElement ||
+          (event.nativeEvent as KeyboardEvent).isComposing
+        )
+          return;
+        event.preventDefault();
+        if (confirmOnEnter) confirmRef.current?.click();
+      }}
+    >
+      <form
+        method="dialog"
+        className="decision-window"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const submitter = (event.nativeEvent as SubmitEvent).submitter;
+          const value = submitter instanceof HTMLButtonElement ? submitter.value : 'cancel';
+          close(value === 'confirm' || value === 'secondary' ? value : 'cancel');
+        }}
+      >
+        <div className="decision-body">
+          {!input && (tone === 'danger' || variant === 'browser-warning') && (
+            <div className="decision-mark" aria-hidden="true">
+              <TriangleAlert />
+            </div>
+          )}
+          <header>
+            <strong id={`${idPrefix}Title`}>{title}</strong>
+          </header>
+          {(message || input) && <p className="decision-message" id={`${idPrefix}Message`}>{message}</p>}
+          {comparison && <SaveComparisonCards value={comparison}/>}
+          {input && (
+            <div className="decision-input">
+              <label htmlFor={`${idPrefix}Input`}>{input.label}</label>
+              <InputGroup>
+                <InputGroupInput
+                  ref={inputRef}
+                  id={`${idPrefix}Input`}
+                  defaultValue={input.defaultValue}
+                  autoComplete="off"
+                  spellCheck={false}
+                  aria-invalid={inputError ? true : undefined}
+                  aria-describedby={inputError || input.description ? `${idPrefix}InputHelp` : undefined}
+                  onChange={() => setInputError('')}
+                />
+              </InputGroup>
+              {(input.description || inputError) && (
+                <p
+                  id={`${idPrefix}InputHelp`}
+                  className="decision-input-help"
+                  role={inputError ? 'alert' : undefined}
+                  data-error={!!inputError}
+                >
+                  {inputError || input.description}
+                </p>
+              )}
+            </div>
+          )}
         </div>
-        <header><strong id="decisionTitle">{title}</strong></header>
-        <p id="decisionMessage">{message}</p>
-      </div>
-      <footer>
-        <button ref={cancelRef} className="decision-cancel" id="decisionCancel" value="cancel" hidden={hideCancel}>{cancelText}</button>
-        <button className="decision-secondary" id="decisionSecondary" value="secondary" hidden={!secondaryText}>{secondaryText || t('action.backgroundDownload')}</button>
-        <button ref={confirmRef} className="decision-confirm" id="decisionConfirm" value="confirm">{confirmText}</button>
-      </footer>
-    </form>
-  </dialog>;
+        <footer>
+          <UiButton
+            type="submit"
+            ref={cancelRef}
+            className={`decision-cancel ${decisionActionClass}`}
+            id={`${idPrefix}Cancel`}
+            value="cancel"
+            hidden={hideCancel}
+          >
+            {cancelText}
+          </UiButton>
+          <UiButton
+            variant={variant === 'browser-warning' ? 'primary' : 'action'}
+            type="submit"
+            className={`decision-secondary ${decisionActionClass}`}
+            id={`${idPrefix}Secondary`}
+            value="secondary"
+            hidden={!secondaryText}
+          >
+            {secondaryText || t('action.backgroundDownload')}
+          </UiButton>
+          <UiButton
+            variant={variant === 'browser-warning' ? 'action' : tone === 'danger' ? 'danger' : 'primary'}
+            type="submit"
+            ref={confirmRef}
+            className={`decision-confirm ${decisionActionClass}${tone === 'danger' ? ' bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}`}
+            id={`${idPrefix}Confirm`}
+            value="confirm"
+          >
+            {confirmText}
+          </UiButton>
+        </footer>
+      </form>
+    </dialog>
+  );
+}
+
+export function SaveComparisonCards({value}: {value: DecisionComparison}) {
+  return <div className="decision-comparison">
+    <div className="decision-versions">
+      {value.versions.map(version => <section className="decision-version" data-mark={version.mark?.tone} key={version.title}>
+        <header>
+          <h3>{version.title}</h3>
+          {version.mark && <span className="decision-version-mark">{version.mark.label}</span>}
+        </header>
+        {version.empty ? <p className="decision-version-empty">{version.empty}</p> : <>
+          <p className="decision-version-date"><span>{version.timestamp?.label}</span>{version.timestamp?.value}</p>
+          <dl>{version.rows.map(row => <div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>)}</dl>
+        </>}
+        {!!version.files.length && <details>
+          <summary>{value.filesLabel} <span>{version.files.length}</span></summary>
+          <ul>{version.files.map(file => <li key={file.name}><span>{file.name}</span><small>{file.size}</small></li>)}</ul>
+        </details>}
+      </section>)}
+    </div>
+  </div>;
 }

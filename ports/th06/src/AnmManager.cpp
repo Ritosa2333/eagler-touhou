@@ -3022,7 +3022,10 @@ ZunResult AnmManager::LoadSurface(i32 surfaceIdx, const char *path)
         {
             entry->surface = LoadToSurfaceWithFormat(path, SDL_PIXELFORMAT_RGB24, NULL);
             if (entry->surface == nullptr)
+            {
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: surface load failed: %s: %s", path, SDL_GetError());
                 return ZUN_ERROR;
+            }
         }
 
         ReleaseSurface(surfaceIdx);
@@ -3041,6 +3044,7 @@ ZunResult AnmManager::LoadSurface(i32 surfaceIdx, const char *path)
 
     if (this->surfaces[surfaceIdx] == NULL)
     {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: surface load failed: %s: %s", path, SDL_GetError());
         return ZUN_ERROR;
     }
 

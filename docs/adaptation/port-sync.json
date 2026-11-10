@@ -1,16 +1,480 @@
 {
   "schema": "eagler-touhou/port-sync/1",
   "pairs": {
+    "th05": {
+      "normal": "ports/th05",
+      "multiplayer": "ports/th05-mp",
+      "base": "b0bba4888e4eecbe282454b2d75655f3789336ff",
+      "history": [
+        {
+          "kind": "manual",
+          "source": "0ef3a2c187a7b88c51facc155a453111e76c9499",
+          "targetHead": "69aac738aa2e61d191adfcaa4d35093d70096234",
+          "integration": "committed",
+          "note": "独立 MP 在 uth05win 子树上接收当前普通版的移动触控、字体、音频与性能修复；合作规则、同步输入、多人侧栏和启动器显示配置由 th05-mp 独立维护。"
+        },
+        {
+          "kind": "git-merge",
+          "source": "69aac738aa2e61d191adfcaa4d35093d70096234",
+          "targetHead": "ad4898df32d757de232d30d86afa19b42b025c9a",
+          "normalHistory": "315e7a92dc06dc6bed6bfd59b21258578429d043",
+          "multiplayerHistory": "809747ec0e53c76942343fc21ac074b45ab99b0d",
+          "integration": "committed",
+          "note": "普通版完整目录历史已合入独立 MP，人工迁入的普通版修复得到真实合并祖先。合并树与已验证多人源码完全相同。"
+        },
+        {
+          "kind": "manual",
+          "base": "69aac738aa2e61d191adfcaa4d35093d70096234",
+          "source": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
+          "targetHead": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
+          "paths": [
+            "ports/th05-mp/web/shell.mjs"
+          ],
+          "note": "单人和独立多人均将数位笔接触交给原生触控；保留多人会话，CDP 数位笔和手机路径验证通过"
+        },
+        {
+          "kind": "manual",
+          "base": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
+          "source": "625c8de0b57c6b71becb7c6297721c74e0284d71",
+          "targetHead": "0d01535ee8965b8f9c070b2c751061c4870cd481",
+          "paths": [
+            "ports/th05-mp/tests/pen-browser.mjs"
+          ],
+          "note": "普通版数位笔测试使用单人初始化；多人保留自己的双端数位笔与触控验收，不迁入单人测试夹具"
+        },
+        {
+          "kind": "manual",
+          "base": "625c8de0b57c6b71becb7c6297721c74e0284d71",
+          "source": "194f57e4a93025b3a215fb10407297acb9738ae7",
+          "targetHead": "fcf0ae6c6700989d8c92dc885351c4f0e00a7f19",
+          "paths": [
+            "ports/th05-mp/Game/Stage/Chara/Chara.cpp"
+          ],
+          "note": "Merged the normal port's centered 2x2 display indicator through projected history; MP keeps its local-seat rendering and rollback ownership."
+        },
+        {
+          "kind": "manual",
+          "base": "194f57e4a93025b3a215fb10407297acb9738ae7",
+          "source": "f4136acc296873ca51bc04b5f3b358be3aff0266",
+          "targetHead": "415f1648f20f489b2ed2f396e5628b51d5a45b88",
+          "paths": [
+            "ports/th05-mp/portable/Platform.cpp",
+            "ports/th05-mp/portable/Platform.hpp",
+            "ports/th05-mp/portable/UI.cpp",
+            "ports/th05-mp/tests/pen-browser.mjs",
+            "ports/th05-mp/tests/presentation.mjs",
+            "ports/th05-mp/web/shell.mjs"
+          ],
+          "note": "普通版与多人版在 BeginUI 固定修饰键快照，游戏逻辑采样不再改写 ImGui IO；两侧补齐 Wasm abort 清理，多人增加认证中继错误通知。多人保留独立回滚、观战与房间流程，以原生三端测试替代普通版 pen 夹具；接收现有键位映射与 node:test presentation 适配。目录历史合并 eca74877ca3a12d179aac9d291fe32439535e3bf 已按多人验证树写回。"
+        },
+        {
+          "kind": "manual",
+          "base": "f4136acc296873ca51bc04b5f3b358be3aff0266",
+          "source": "ceeec35a3981957a46d792518e3fa754cb76628b",
+          "targetHead": "a223717026faf884d931e8748c4ceb79acc13d98",
+          "paths": [
+            "ports/th05-mp/web/shell.mjs"
+          ],
+          "note": "两侧 Runtime 拦截 native abort 后的按键、触控、暂停菜单与清理消息；MP 三端实测通知原因和退出状态，晚到输入不再访问 Wasm。普通版历史通过 bf8078f3f06f8fa4207428fd051033ca9d6653ff 合入 MP 验证树。"
+        },
+        {
+          "kind": "manual",
+          "base": "ceeec35a3981957a46d792518e3fa754cb76628b",
+          "source": "21385b86267abbe616c6c6193fe4f0d55f03c534",
+          "targetHead": "9454d94498b20bbfcc8678c283915e6acdb12704",
+          "paths": [
+            "ports/th05-mp/portable/Platform.cpp"
+          ],
+          "note": "两侧 SetKey 保留练习快捷键使用的即时 KeysDown 边沿；Shift/Ctrl 修饰标志继续只在 BeginUI 发布，避免帧内不一致。多人保留相同输入处理，目录合并 2993bfb84 已按验证树写回。"
+        },
+        {
+          "kind": "manual",
+          "base": "21385b86267abbe616c6c6193fe4f0d55f03c534",
+          "source": "7bbf59b24b769072e80f4ee028b08ff855f49288",
+          "targetHead": "20fba5194723d875c8fded400cfd0779cfbad6b0",
+          "paths": [
+            "ports/th05-mp/Game/Stage/Boss/BossStage5.cpp",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp"
+          ],
+          "note": "按 ReC98 b6ba5b0 的梦子红蓝弹阶段恢复难度调节；多人保留联机瞄准，浏览器测试覆盖两色、四难度及高低 Rank。"
+        },
+        {
+          "kind": "manual",
+          "base": "7bbf59b24b769072e80f4ee028b08ff855f49288",
+          "source": "b4e6dbc1124de14098951d44ecc2516e75418962",
+          "targetHead": "0b9e1aed2626106f78a35b931a875de2ee4b6429",
+          "paths": [
+            "ports/th05-mp/Game/Stage/Boss/BossStage1.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage2.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4Yuki.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage5.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage6.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStageEx.cpp",
+            "ports/th05-mp/Game/Stage/EnemyBullet/EnemyBullet.cpp",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStage4.cpp",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStageEx.cpp",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp"
+          ],
+          "note": "按 ReC98 修正首领与道中首领的弹组、发射时序及火墙；多人保留联机瞄准与各玩家碰撞。"
+        },
+        {
+          "kind": "manual",
+          "base": "b4e6dbc1124de14098951d44ecc2516e75418962",
+          "source": "2f7694a01177aabf128fbc7ec3434bb1e71276f0",
+          "targetHead": "c1940c733fc1404fe87c35d65f9ffe436488b984",
+          "paths": [
+            "ports/th05-mp/Game/Stage/Chara/Chara.h",
+            "ports/th05-mp/Game/Stage/Enemy/Enemy.cpp",
+            "ports/th05-mp/Game/Stage/Enemy/Enemy.h",
+            "ports/th05-mp/Game/Stage/EnemyBullet/EnemyBullet.cpp",
+            "ports/th05-mp/Game/Stage/EnemyBullet/EnemyBullet.h",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp",
+            "ports/th05-mp/tests/browser.mjs"
+          ],
+          "note": "按 ReC98 核对七关 STD，恢复三面瞄准叠弹、脚本运动与自动射击规则。单人和多人实跑所有刷怪批次，多人保留目标选择与回滚。"
+        },
+        {
+          "kind": "manual",
+          "base": "2f7694a01177aabf128fbc7ec3434bb1e71276f0",
+          "source": "84716d27fa7471a74089d692a002550a87212459",
+          "targetHead": "09fb3a5378d276652f0f25731d196e2cb1e94aa3",
+          "paths": [
+            "ports/th05-mp/Game/Original/OriginalFeatures.cpp",
+            "ports/th05-mp/Game/Original/OriginalFeatures.h",
+            "ports/th05-mp/Game/Stage/Background/Background.cpp",
+            "ports/th05-mp/Game/Stage/Boss/Boss.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage1.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage2.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage3.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4Yuki.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage5.cpp",
+            "ports/th05-mp/Game/Stage/EnemyBullet/EnemyBullet.cpp",
+            "ports/th05-mp/Game/Stage/EnemyBullet/EnemyBullet.h",
+            "ports/th05-mp/Game/Stage/Laser/Laser.cpp",
+            "ports/th05-mp/Game/Stage/SpecialBullet/CurvingBullet.cpp",
+            "ports/th05-mp/Game/Stage/SpecialBullet/CurvingBullet.h",
+            "ports/th05-mp/Game/Stage/SpecialBullet/KnifeBullet.cpp",
+            "ports/th05-mp/Game/Stage/SpecialBullet/LargeBullet.cpp",
+            "ports/th05-mp/Game/Stage/SpecialBullet/ShinkiBullet.cpp",
+            "ports/th05-mp/Game/Stage/Stage.h",
+            "ports/th05-mp/docs/DEVELOPMENT.md",
+            "ports/th05-mp/scripts/Verify-OriginalDemos.py",
+            "ports/th05-mp/scripts/Verify-OriginalPatterns.py",
+            "ports/th05-mp/scripts/build-eagler.mjs",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp",
+            "ports/th05-mp/tests/browser.mjs",
+            "ports/th05-mp/tests/pc98-patterns.mjs"
+          ],
+          "note": "Synchronize PC-98 firing frames, speeds, and pool limits; retain multiplayer targeting and rollback; keep the retail capture harness in the normal port."
+        },
+        {
+          "kind": "manual",
+          "base": "84716d27fa7471a74089d692a002550a87212459",
+          "source": "1081974f95f9e1103f7a21e3bb0166d21eb203fc",
+          "targetHead": "89c913eb0ebc377ca04dec8beca5e92b896ab414",
+          "paths": [
+            "ports/th05-mp/Game/Practice/PhaseTimeout.h",
+            "ports/th05-mp/Game/Practice/Practice.cpp",
+            "ports/th05-mp/Game/Practice/PracticeAdvanced.cpp",
+            "ports/th05-mp/Game/Practice/PracticeSections.h",
+            "ports/th05-mp/Game/Practice/PracticeSetup.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage2.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage3.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4Mai.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4Yuki.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage5.cpp",
+            "ports/th05-mp/portable/LocalizationTable.inc",
+            "ports/th05-mp/portable/locales.json",
+            "ports/th05-mp/tests/PracticeTests.cpp"
+          ],
+          "note": "Synchronize localized practice phase labels, inherited difficulty hints, native timeout schedules, and the Alice final deadline."
+        },
+        {
+          "kind": "manual",
+          "base": "1081974f95f9e1103f7a21e3bb0166d21eb203fc",
+          "source": "196ad997987cf01a560f8334679d6eaf47333993",
+          "targetHead": "94fc8160d00ebce90bdd8e3d9f06bf3820c75d98",
+          "paths": [
+            "ports/th05-mp/Game/Original/OriginalShots.h",
+            "ports/th05-mp/Game/Replay.cpp",
+            "ports/th05-mp/Game/Replay.h",
+            "ports/th05-mp/Game/Stage/Chara/Chara.cpp",
+            "ports/th05-mp/Game/Stage/CharaBullet/CharaBullet.cpp",
+            "ports/th05-mp/Game/Stage/CharaBullet/CharaBullet.h",
+            "ports/th05-mp/scripts/Verify-OriginalPlayerShots.py",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp",
+            "ports/th05-mp/tests/browser.mjs",
+            "ports/th05-mp/tests/pc98-player-shots.mjs",
+            "ports/th05-mp/web/replay.mjs"
+          ],
+          "note": "Use audited PC-98 shot patterns in both ports, retaining multiplayer seat pools and old replay rules; keep the retail trace harness in the normal port."
+        },
+        {
+          "kind": "manual",
+          "base": "196ad997987cf01a560f8334679d6eaf47333993",
+          "source": "86ea87dceb9054417e453f16a77719f479e4bab3",
+          "targetHead": "df0b3a8914b64d4fc2031342d465dc464f8bafe2",
+          "paths": [
+            "ports/th05-mp/Game/Original/OriginalFeatures.cpp",
+            "ports/th05-mp/Game/Original/OriginalFeatures.h",
+            "ports/th05-mp/Game/Replay.cpp",
+            "ports/th05-mp/Game/Replay.h",
+            "ports/th05-mp/Game/Stage/Boss/BossStage1.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage1.h",
+            "ports/th05-mp/Game/Stage/Boss/BossStage3.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4Yuki.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage5.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage6.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage6.h",
+            "ports/th05-mp/Game/Stage/Boss/BossStageEx.cpp",
+            "ports/th05-mp/Game/Stage/CharaBullet/CharaBullet.cpp",
+            "ports/th05-mp/Game/Stage/EnemyBullet/EnemyBullet.cpp",
+            "ports/th05-mp/Game/Stage/EnemyBullet/EnemyBullet.h",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStage1.cpp",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStage2.cpp",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStage4.cpp",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStage5.cpp",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStageEx.cpp",
+            "ports/th05-mp/Game/Stage/Stage.cpp",
+            "ports/th05-mp/scripts/Verify-OriginalPatterns.py",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp",
+            "ports/th05-mp/tests/browser.mjs",
+            "ports/th05-mp/tests/pc98-patterns.mjs",
+            "ports/th05-mp/web/replay.mjs"
+          ],
+          "note": "对照 PC-98 逐帧核对弹幕发射点、速度向量与特殊移动，多人沿用联机目标选择并保留历史录像规则。"
+        },
+        {
+          "kind": "manual",
+          "base": "86ea87dceb9054417e453f16a77719f479e4bab3",
+          "source": "3b2e191be83b880c615f32d522cb6fdefefecdf0",
+          "targetHead": "e26530e0dbf72c34a3d65b312e94ea81e9d075ed",
+          "paths": [
+            "ports/th05-mp/Game/GlobalVariableAndStatistics.cpp",
+            "ports/th05-mp/Game/GlobalVariableAndStatistics.h",
+            "ports/th05-mp/Game/Original/OriginalFeatures.cpp",
+            "ports/th05-mp/Game/Original/OriginalFeatures.h",
+            "ports/th05-mp/Game/Practice/PracticeConfig.h",
+            "ports/th05-mp/Game/Replay.cpp",
+            "ports/th05-mp/Game/Replay.h",
+            "ports/th05-mp/Game/Stage/Boss/BossStage2.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4.cpp",
+            "ports/th05-mp/Game/Stage/Chara/Chara.cpp",
+            "ports/th05-mp/Game/Stage/EnemyBullet/EnemyBullet.cpp",
+            "ports/th05-mp/Game/Stage/Laser/Laser.cpp",
+            "ports/th05-mp/Game/Stage/Laser/Laser.h",
+            "ports/th05-mp/Game/Stage/Stage.cpp",
+            "ports/th05-mp/Game/Stage/Stage.h",
+            "ports/th05-mp/Game/Stage/Summary/Summary.cpp",
+            "ports/th05-mp/scripts/Verify-OriginalMotion.py",
+            "ports/th05-mp/scripts/Verify-OriginalPatterns.py",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp",
+            "ports/th05-mp/tests/browser.mjs",
+            "ports/th05-mp/tests/pc98-motion.mjs",
+            "ports/th05-mp/tests/pc98-patterns.mjs",
+            "ports/th05-mp/web/replay.mjs"
+          ],
+          "note": "按 PC-98 核对方向键与低速、敌弹生命周期、激光和 Rank。多人共用道具 Rank 计数，随回滚、关卡与录像恢复。"
+        },
+        {
+          "kind": "manual",
+          "base": "3b2e191be83b880c615f32d522cb6fdefefecdf0",
+          "source": "dda93f9339cc8d1d8441d97a1d4c3919d6baee6b",
+          "targetHead": "6d984bd81b9403382d628831b37b578cd556a01a",
+          "paths": [
+            "ports/th05-mp/Game/Original/OriginalFeatures.cpp",
+            "ports/th05-mp/Game/Original/OriginalFeatures.h",
+            "ports/th05-mp/Game/Replay.cpp",
+            "ports/th05-mp/Game/Stage/Boss/Boss.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage5.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage5.h",
+            "ports/th05-mp/Game/Stage/Boss/BossStage6.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStageEx.cpp",
+            "ports/th05-mp/Game/Stage/Chara/Chara.cpp",
+            "ports/th05-mp/Game/Stage/Chara/CharaMarisa.cpp",
+            "ports/th05-mp/Game/Stage/Chara/CharaMima.cpp",
+            "ports/th05-mp/Game/Stage/MidBoss/MidBossStage1.cpp",
+            "ports/th05-mp/Game/Stage/SpecialBullet/CurvingBullet.cpp",
+            "ports/th05-mp/Game/Stage/SpecialBullet/KnifeBullet.cpp",
+            "ports/th05-mp/Game/Stage/SpecialBullet/KnifeBullet.h",
+            "ports/th05-mp/Game/Stage/SpecialBullet/ShinkiBullet.cpp",
+            "ports/th05-mp/Game/Stage/SpecialBullet/ShinkiBullet.h",
+            "ports/th05-mp/scripts/Verify-OriginalCombat.py",
+            "ports/th05-mp/scripts/Verify-OriginalPatterns.py",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp",
+            "ports/th05-mp/tests/browser.mjs",
+            "ports/th05-mp/tests/pc98-combat.mjs",
+            "ports/th05-mp/tests/pc98-patterns.mjs",
+            "ports/th05-mp/web/replay.mjs"
+          ],
+          "note": "同步原版 Bomb、Boss 免伤、低血量狂暴与特殊弹消退。多人保留队伍保护、目标分配和旧录像规则。"
+        },
+        {
+          "kind": "manual",
+          "base": "dda93f9339cc8d1d8441d97a1d4c3919d6baee6b",
+          "source": "38bc525eb99f96edd104e280bdab91ec368d91cd",
+          "targetHead": "e3345111359cc57fcb8e92a7aa35b713ff25f1bc",
+          "paths": [
+            "ports/th05-mp/scripts/Verify-OriginalCombat.py",
+            "ports/th05-mp/tests/pc98-combat.mjs"
+          ],
+          "note": "普通版对照脚本的文件末尾格式修整。"
+        },
+        {
+          "kind": "manual",
+          "base": "38bc525eb99f96edd104e280bdab91ec368d91cd",
+          "source": "22eb32d0febe43f1d85bbbb4d8dd47429a58b611",
+          "targetHead": "bdcbfc1231f5714f420d06c1717169ce6c996df3",
+          "paths": [
+            "ports/th05-mp/Game/Original/CombatThresholds.h",
+            "ports/th05-mp/Game/Practice/PhaseTimeout.h",
+            "ports/th05-mp/Game/Practice/Practice.cpp",
+            "ports/th05-mp/Game/Practice/PracticeAdvanced.cpp",
+            "ports/th05-mp/Game/Practice/PracticeAdvanced.h",
+            "ports/th05-mp/Game/Practice/PracticeSections.h",
+            "ports/th05-mp/Game/Practice/PracticeSetup.cpp",
+            "ports/th05-mp/Game/Replay.cpp",
+            "ports/th05-mp/Game/Replay.h",
+            "ports/th05-mp/Game/Stage/Boss/BossStage4.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage5.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStage6.cpp",
+            "ports/th05-mp/Game/Stage/Boss/BossStageEx.cpp",
+            "ports/th05-mp/Game/Stage/Stage.cpp",
+            "ports/th05-mp/Game/Stage/StageBossHud.cpp",
+            "ports/th05-mp/PRACTICE.md",
+            "ports/th05-mp/portable/LocalizationTable.inc",
+            "ports/th05-mp/portable/PracticeMobile.hpp",
+            "ports/th05-mp/portable/locales.json",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp",
+            "ports/th05-mp/tests/PracticeTests.cpp",
+            "ports/th05-mp/web/replay.mjs"
+          ],
+          "note": "同步新版狂暴练习入口、Bomb 抗性说明、F12 原速帧数与旧练习录像兼容。"
+        },
+        {
+          "kind": "manual",
+          "base": "22eb32d0febe43f1d85bbbb4d8dd47429a58b611",
+          "source": "df8e381502b44a760ee3d38d8faed6a2513bde35",
+          "targetHead": "beeaec42c25578fd2b013376b9ddf0695ac53e27",
+          "paths": [
+            "ports/th05-mp/Game/Stage/Stage.cpp",
+            "ports/th05-mp/Game/Stage/StageBossHud.cpp",
+            "ports/th05-mp/PRACTICE.md",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp"
+          ],
+          "note": "同步练习攻击入口的红魔乡式与环形血条，并为横条旁的帧数计时预留空间。"
+        },
+        {
+          "kind": "manual",
+          "base": "df8e381502b44a760ee3d38d8faed6a2513bde35",
+          "source": "333d6ca5d285218ab4f651f8ac48636e06912f56",
+          "targetHead": "c7831669ba375664b9af989eb83186cd1b7536f2",
+          "paths": [
+            "ports/th05-mp/Game/Practice/PracticeSetup.cpp",
+            "ports/th05-mp/Game/SelectCharaScreen/SelectCharaScreen.cpp",
+            "ports/th05-mp/portable/LocalizationTable.inc",
+            "ports/th05-mp/portable/locales.json",
+            "ports/th05-mp/tests/pointer.test.mjs",
+            "ports/th05-mp/web/input.mjs",
+            "ports/th05-mp/web/shell.mjs"
+          ],
+          "note": "同步练习页面的手机确认与返回、菜单补帧输入以及 thprac 关卡开放规则；正式多人房间沿用原有的 thprac 限制。"
+        },
+        {
+          "kind": "manual",
+          "base": "333d6ca5d285218ab4f651f8ac48636e06912f56",
+          "source": "7271fa77b14f3a2f04219136d06ee26119ee9ea7",
+          "targetHead": "f6870a83196e36c83d5efc6cc07f70428f6bb87c",
+          "paths": [
+            "ports/th05-mp/Game/Practice/Practice.cpp",
+            "ports/th05-mp/Game/SelectCharaScreen/SelectCharaScreen.cpp",
+            "ports/th05-mp/Game/Stage/Stage.cpp",
+            "ports/th05-mp/portable/Game.cpp",
+            "ports/th05-mp/portable/Input.hpp",
+            "ports/th05-mp/portable/Platform.cpp",
+            "ports/th05-mp/portable/Pointer.cpp",
+            "ports/th05-mp/tests/browser.mjs"
+          ],
+          "note": "关闭 thprac 时恢复原生练习与暂停，并停止 ImGui 帧和触控捕获；多人保留继续、重开和返回房间的同步操作，改用游戏内绘制和点击。"
+        },
+        {
+          "kind": "manual",
+          "base": "21385b86267abbe616c6c6193fe4f0d55f03c534",
+          "source": "4aa46984b12be42709a7907cb6c65ab317842fd5",
+          "targetHead": "98f97dc8b2227e1ccd1f32f07b2c89d752d92285",
+          "paths": [
+            "ports/th05-mp/Game/MusicRoom/MusicRoom.cpp",
+            "ports/th05-mp/portable/Audio.hpp",
+            "ports/th05-mp/portable/Platform.cpp",
+            "ports/th05-mp/portable/Platform.hpp",
+            "ports/th05-mp/web/audio.mjs"
+          ],
+          "note": "两种模式均启用音乐室后台播放和系统媒体控制，多人版保留联机音频队列。"
+        },
+        {
+          "kind": "manual",
+          "base": "7271fa77b14f3a2f04219136d06ee26119ee9ea7",
+          "source": "0a25d695676a42b5f6523c7fd6fe5264d6c022f6",
+          "targetHead": "3e5af0c4a5ebae303977dec1f957fb0553d446ef",
+          "paths": [
+            "ports/th05-mp/Game/MusicRoom/MusicRoom.cpp",
+            "ports/th05-mp/portable/Audio.hpp",
+            "ports/th05-mp/portable/Platform.cpp",
+            "ports/th05-mp/portable/Platform.hpp",
+            "ports/th05-mp/web/audio.mjs"
+          ],
+          "note": "合并 #213 的原作弹幕、移动、Rank 和菜单校准与音乐室后台播放。两种模式保留各自的输入和会话逻辑。"
+        },
+        {
+          "kind": "manual",
+          "base": "0a25d695676a42b5f6523c7fd6fe5264d6c022f6",
+          "source": "b0bba4888e4eecbe282454b2d75655f3789336ff",
+          "targetHead": "eb935514f4231dbfffc4db485c39d9501d5da067",
+          "paths": [
+            "ports/th05-mp/Game/Original/OriginalScenes.cpp",
+            "ports/th05-mp/Game/Original/OriginalScenes.h",
+            "ports/th05-mp/PRACTICE.md",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp"
+          ],
+          "note": "同步 Extra All Cast 跨音乐循环的节拍推进、无音乐回退及翻页与退出按键；两侧使用相同结局规则。"
+        }
+      ]
+    },
     "th075": {
       "normal": "ports/th075",
       "multiplayer": "ports/th075-mp",
       "base": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
-      "history": []
+      "history": [],
+      "watches": {
+        "audio-output": {
+          "paths": [
+            "web/cpp/sdl/AudioDevice.cpp",
+            "web/scripts/build-sdl.mjs"
+          ],
+          "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "history": [
+            {
+              "kind": "manual",
+              "base": "50084901cd28ab2342d295874afcef8abb6cd82e",
+              "source": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+              "targetHead": "d1023c99c529dab2b5742b88436880c3dcf4220a",
+              "paths": [
+                "ports/th075-mp/web/cpp/sdl/AudioDevice.cpp",
+                "ports/th075-mp/web/scripts/build-sdl.mjs"
+              ],
+              "note": "音效预解码、WebSfx 输出、暂停销毁与头文件编译输入已对应迁入并完成两版编译。MP 网络与音频补缓冲块数保持各自策略。th075 使用目录同步记录，当前投影工具未提供该作导入锚点。"
+            }
+          ]
+        }
+      }
     },
     "th08": {
       "normal": "ports/th08",
       "multiplayer": "ports/th08-mp",
-      "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+      "base": "0b53caf56004cd2dd53695d8e9097fc73f9b5064",
       "history": [
         {
           "kind": "manual",
@@ -27,6 +491,64 @@
           "normalHistory": "f363ffa54301b9437d2dd1bfcbc2e1f23cfe207b",
           "multiplayerHistory": "c552a75020cc3839645e71eaa7f34f101030a79b",
           "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
+        },
+        {
+          "kind": "manual",
+          "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+          "source": "e0789f75d0a96ec69cad60ed11d2ab4256a00cf7",
+          "targetHead": "e0789f75d0a96ec69cad60ed11d2ab4256a00cf7",
+          "paths": [
+            "ports/th08-mp/web/cpp/game/EclNative.cpp",
+            "ports/th08-mp/web/cpp/sdl/GameHost.cpp",
+            "ports/th08-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th08-mp/web/cpp/sdl/ThpracUi.hpp"
+          ],
+          "note": "普通版复活公告接入已同步到多人；既有 THPrac 触控修复保留。全队雷保护、Last Spell 死亡窗口与共享暂停清理为多人专属，普通版规则保持。原生伤害、生命、普通与挑战规则及 52 组 ECL 生命周期检查通过。"
+        },
+        {
+          "kind": "manual",
+          "base": "e0789f75d0a96ec69cad60ed11d2ab4256a00cf7",
+          "source": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "targetHead": "d1023c99c529dab2b5742b88436880c3dcf4220a",
+          "paths": [
+            "ports/th08-mp/ADAPTATION.md",
+            "ports/th08-mp/portable/build.mjs"
+          ],
+          "note": "WebSfx 编译输入与分项记录已对应迁入。投影合并已写回，MP 源码树与审核快照一致，构建选项按各自模式处理。"
+        },
+        {
+          "kind": "manual",
+          "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "source": "4c6e16d301ba57271c30f0ed55563dbd5f6e5b17",
+          "targetHead": "c89e3d15721a4d19f2a22dd442abda3f225f6180",
+          "paths": [
+            "ports/th08-mp/portable/check-keyboard-browser.mjs",
+            "ports/th08-mp/web/sdl-runtime/directory-keyboard.mjs",
+            "ports/th08-mp/web/sdl-runtime/shell.mjs"
+          ],
+          "note": "单人和多人接入相同键盘所有权修复；两侧生产 shell 与 C++ 键表浏览器回归通过，公共夹具保留在两侧。源历史合并与完整目录核验保留于本地验证分支，交付提交从最新主线继续。"
+        },
+        {
+          "kind": "manual",
+          "base": "4c6e16d301ba57271c30f0ed55563dbd5f6e5b17",
+          "source": "fd90fbd845ecd627fab3c051c455df9cc936489f",
+          "targetHead": "6787a76717a3e91ae9a9ba7c6553ca2097d94f70",
+          "paths": [
+            "ports/th08-mp/portable/check-keyboard-browser.mjs",
+            "ports/th08-mp/web/sdl-runtime/directory-keyboard.mjs"
+          ],
+          "note": "已将映射接入、撤下、失效和替换时的旧按键释放同步到多人版；同一映射保留长按。41 项测试、正常/多人生产输入链及源码检查通过。源码祖先在本地验证分支核对，交付分支保留当前主线上的独立修改。"
+        },
+        {
+          "kind": "manual",
+          "base": "fd90fbd845ecd627fab3c051c455df9cc936489f",
+          "source": "0b53caf56004cd2dd53695d8e9097fc73f9b5064",
+          "targetHead": "1e5aed4a49d3e2790e16381aed45aeb96b57dcc8",
+          "paths": [
+            "ports/th08-mp/docs/DEVELOPMENT.md",
+            "ports/th08-mp/web/cpp/game/GameplayScene.cpp"
+          ],
+          "note": "普通版和多人版都使用关卡背景动画的色值为萤火虫着色。多人版构建指南已采用 Bun 安装和构建命令，保留该模式的启动说明。"
         }
       ],
       "origin": {
@@ -40,7 +562,7 @@
     "th10": {
       "normal": "ports/th10",
       "multiplayer": "ports/th10-mp",
-      "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+      "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
       "history": [
         {
           "kind": "manual",
@@ -64,6 +586,32 @@
           "normalHistory": "d71bd3fac1f652ecd763ee5c5720dbe3a0662245",
           "multiplayerHistory": "680850bc56daf6f5b8c2eefaa3ce8b065e21da06",
           "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
+        },
+        {
+          "kind": "manual",
+          "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+          "source": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "targetHead": "d1023c99c529dab2b5742b88436880c3dcf4220a",
+          "paths": [
+            "ports/th10-mp/ADAPTATION.md",
+            "ports/th10-mp/portable/build.mjs",
+            "ports/th10-mp/web/cpp/sdl/GameHost.cpp",
+            "ports/th10-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th10-mp/web/cpp/sdl/ThpracUi.hpp"
+          ],
+          "note": "WebSfx 编译输入与分项记录已对应迁入，投影合并写回保持审核树。此前普通版的 THPrac 被动面板触控交接由 practice、passive-touch 两项原基线监控继续登记。"
+        },
+        {
+          "kind": "manual",
+          "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "source": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+          "targetHead": "0dcd0b207179fdf38300388c2bb48acf818f5b0c",
+          "paths": [
+            "ports/th10-mp/ADAPTATION.md",
+            "ports/th10-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th10-mp/web/sdl-runtime/startup-branding.mjs"
+          ],
+          "note": "同步练习页面左右直接调整与公共启动署名；保留多人产品THPrac关闭和各作独立验收说明。真实ImGui导航与正式Web构建通过，隔离投影合并的完整多人内容树与已审阅源码一致。"
         }
       ],
       "origin": {
@@ -108,13 +656,21 @@
               "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
             }
           ]
+        },
+        "passive-touch": {
+          "paths": [
+            "web/cpp/sdl/GameHost.cpp",
+            "web/cpp/sdl/ThpracUi.hpp"
+          ],
+          "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+          "history": []
         }
       }
     },
     "th11": {
       "normal": "ports/th11",
       "multiplayer": "ports/th11-mp",
-      "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+      "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
       "history": [
         {
           "kind": "manual",
@@ -131,6 +687,109 @@
           "normalHistory": "6836906c528d25d95a725b7f912bc29ad4829b49",
           "multiplayerHistory": "aef010e29507271de89512a2b2b32609c7857b36",
           "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
+        },
+        {
+          "kind": "git-merge",
+          "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+          "source": "13c8bd9faad1f622bb2fcf9afd43ffbad91db6ec",
+          "targetHead": "13d0efbf333ec7911c4fc9ba4dcf13313f534e80",
+          "paths": [
+            "ports/th11-mp/ADAPTATION.md",
+            "ports/th11-mp/docs/records/2026-10-24-display-high-refresh.md",
+            "ports/th11-mp/portable/build.mjs",
+            "ports/th11-mp/portable/cadence-check.cpp",
+            "ports/th11-mp/portable/camera-check.cpp",
+            "ports/th11-mp/portable/check-build-modes.mjs",
+            "ports/th11-mp/portable/check-high-refresh-contract.mjs",
+            "ports/th11-mp/portable/check-presentation-lab.mjs",
+            "ports/th11-mp/portable/check-presentation-purity.mjs",
+            "ports/th11-mp/portable/check-presentation.mjs",
+            "ports/th11-mp/portable/package-eagler.mjs",
+            "ports/th11-mp/portable/presentation-audit-check.cpp",
+            "ports/th11-mp/portable/presentation-check.cpp",
+            "ports/th11-mp/portable/presentation-lab/CAMPAIGN.md",
+            "ports/th11-mp/portable/presentation-lab/README.md",
+            "ports/th11-mp/portable/presentation-lab/adapter.mjs",
+            "ports/th11-mp/portable/presentation-lab/browser-config.mjs",
+            "ports/th11-mp/portable/presentation-lab/campaign.mjs",
+            "ports/th11-mp/portable/presentation-lab/controller.mjs",
+            "ports/th11-mp/portable/presentation-lab/flicker.mjs",
+            "ports/th11-mp/portable/presentation-lab/flicker.test.mjs",
+            "ports/th11-mp/portable/presentation-lab/lab.config.mjs",
+            "ports/th11-mp/portable/presentation-lab/native-abi.mjs",
+            "ports/th11-mp/portable/presentation-lab/owners.mjs",
+            "ports/th11-mp/portable/presentation-lab/serve.mjs",
+            "ports/th11-mp/portable/presentation-lab/start-lab.ps1",
+            "ports/th11-mp/portable/production-build.mjs",
+            "ports/th11-mp/portable/production-build.test.mjs",
+            "ports/th11-mp/portable/sdl/FrameCadence.hpp",
+            "ports/th11-mp/portable/sdl/PresentationCadence.hpp",
+            "ports/th11-mp/web/cpp/game/AnmInterpreter.cpp",
+            "ports/th11-mp/web/cpp/game/AnmManager.cpp",
+            "ports/th11-mp/web/cpp/game/AnmManager.hpp",
+            "ports/th11-mp/web/cpp/game/AnmPresentation.cpp",
+            "ports/th11-mp/web/cpp/game/AnmPresentation.hpp",
+            "ports/th11-mp/web/cpp/game/AnmRenderer.cpp",
+            "ports/th11-mp/web/cpp/game/AnmRenderer.hpp",
+            "ports/th11-mp/web/cpp/game/AnmVm.cpp",
+            "ports/th11-mp/web/cpp/game/AnmVm.hpp",
+            "ports/th11-mp/web/cpp/game/EnemyAnimations.cpp",
+            "ports/th11-mp/web/cpp/game/FrameStatistics.cpp",
+            "ports/th11-mp/web/cpp/game/FrameStatistics.hpp",
+            "ports/th11-mp/web/cpp/game/GameBattle.cpp",
+            "ports/th11-mp/web/cpp/game/GameSession.cpp",
+            "ports/th11-mp/web/cpp/game/GameSession.hpp",
+            "ports/th11-mp/web/cpp/game/HighRefresh.hpp",
+            "ports/th11-mp/web/cpp/game/PlayerMotion.cpp",
+            "ports/th11-mp/web/cpp/game/PresentationAudit.cpp",
+            "ports/th11-mp/web/cpp/game/PresentationAudit.hpp",
+            "ports/th11-mp/web/cpp/game/SceneCamera.cpp",
+            "ports/th11-mp/web/cpp/game/SceneCamera.hpp",
+            "ports/th11-mp/web/cpp/game/SceneCompositor.cpp",
+            "ports/th11-mp/web/cpp/game/SceneCompositor.hpp",
+            "ports/th11-mp/web/cpp/game/ShotManager.cpp",
+            "ports/th11-mp/web/cpp/game/Stage.cpp",
+            "ports/th11-mp/web/cpp/game/Stage.hpp",
+            "ports/th11-mp/web/cpp/game/StageDraw.cpp",
+            "ports/th11-mp/web/cpp/game/StageScript.cpp",
+            "ports/th11-mp/web/cpp/sdl/Application.cpp"
+          ],
+          "note": "接收高刷共享源码、Lab、编译与打包回归。MP 保留独立 SimulationCadence 和权威前沿，关闭联机插值缓存，保留原仓库与本地修复父链。",
+          "integration": "committed",
+          "normalHistory": "71eaa8e7680a0e01822fbb91083f9d3955eec9b7",
+          "multiplayerHistory": "d63961279fbbc18ceb75fe1b9d2466a83619aa9a"
+        },
+        {
+          "kind": "manual",
+          "base": "13c8bd9faad1f622bb2fcf9afd43ffbad91db6ec",
+          "source": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "targetHead": "d1023c99c529dab2b5742b88436880c3dcf4220a",
+          "paths": [
+            "ports/th11-mp/ADAPTATION.md",
+            "ports/th11-mp/portable/presentation-check.cpp",
+            "ports/th11-mp/portable/presentation-lab/campaign.mjs",
+            "ports/th11-mp/web/cpp/game/AnmManager.cpp",
+            "ports/th11-mp/web/cpp/game/AnmPresentation.cpp",
+            "ports/th11-mp/web/cpp/game/AnmPresentation.hpp",
+            "ports/th11-mp/web/cpp/game/GameSession.cpp",
+            "ports/th11-mp/web/cpp/game/HighRefresh.hpp",
+            "ports/th11-mp/web/cpp/sdl/Application.cpp",
+            "ports/th11-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th11-mp/web/cpp/sdl/ThpracUi.hpp"
+          ],
+          "note": "普通版已有 WebSfx 编译输入，本轮补齐 MP 并更新分项记录。投影合并已写回，源码树与审核快照一致。此前普通版高刷绘制与 THPrac 交接分别由 high-refresh、practice-pointer 原基线监控登记。"
+        },
+        {
+          "kind": "manual",
+          "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "source": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+          "targetHead": "0dcd0b207179fdf38300388c2bb48acf818f5b0c",
+          "paths": [
+            "ports/th11-mp/ADAPTATION.md",
+            "ports/th11-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th11-mp/web/sdl-runtime/startup-branding.mjs"
+          ],
+          "note": "同步练习页面左右直接调整与公共启动署名；保留多人产品THPrac关闭和各作独立验收说明。真实ImGui导航与正式Web构建通过，隔离投影合并的完整多人内容树与已审阅源码一致。"
         }
       ],
       "origin": {
@@ -139,12 +798,36 @@
         "mergeBases": [
           "79f22cb628446ac323f76ece84f4a42cb0150201"
         ]
+      },
+      "watches": {
+        "high-refresh": {
+          "paths": [
+            "portable/presentation-check.cpp",
+            "portable/presentation-lab/campaign.mjs",
+            "web/cpp/game/AnmManager.cpp",
+            "web/cpp/game/AnmPresentation.cpp",
+            "web/cpp/game/AnmPresentation.hpp",
+            "web/cpp/game/GameSession.cpp",
+            "web/cpp/game/HighRefresh.hpp",
+            "web/cpp/sdl/Application.cpp"
+          ],
+          "base": "13c8bd9faad1f622bb2fcf9afd43ffbad91db6ec",
+          "history": []
+        },
+        "practice-pointer": {
+          "paths": [
+            "web/cpp/sdl/ThpracUi.cpp",
+            "web/cpp/sdl/ThpracUi.hpp"
+          ],
+          "base": "13c8bd9faad1f622bb2fcf9afd43ffbad91db6ec",
+          "history": []
+        }
       }
     },
     "th15": {
       "normal": "ports/th15",
       "multiplayer": "ports/th15-mp",
-      "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+      "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
       "history": [
         {
           "kind": "manual",
@@ -161,6 +844,68 @@
           "normalHistory": "838da509cc579e59092ee73f7e87e225932b1d19",
           "multiplayerHistory": "f99749bb17540df82f5e6ac6a4d2a9fe617c9025",
           "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
+        },
+        {
+          "kind": "git-merge",
+          "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+          "source": "38612dd9cc19e5bff3aea85ecf1e35165af92788",
+          "targetHead": "83acf723f8bb2713b941a1ebdba1fec7859a67cb",
+          "integration": "committed",
+          "normalHistory": "346eb6ab8824d398a58d14ae984ff236ec9586e7",
+          "multiplayerHistory": "046095739e5bc1ae295d2642daba9414a1fc5c93",
+          "paths": [
+            "ports/th15-mp/ADAPTATION.md",
+            "ports/th15-mp/web/cpp/game/AnmCheckpoint.cpp",
+            "ports/th15-mp/web/cpp/game/StageGameplay.cpp",
+            "ports/th15-mp/web/cpp/sdl/Application.cpp",
+            "ports/th15-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th15-mp/web/tests/cpp/anm-checkpoint-wide-tree.test.mjs",
+            "ports/th15-mp/web/tests/sdl/checkpoint-persistence-browser.test.mjs"
+          ],
+          "note": "PR #126 两侧已实现关卡交接，保留 MP 旧录像时序、房间预览与联机输入所有权。目录合并接收普通版历史，并补入检查点宽树与持久化测试。"
+        },
+        {
+          "kind": "git-merge",
+          "base": "38612dd9cc19e5bff3aea85ecf1e35165af92788",
+          "source": "8179eb1e870dd62333c6d8352146b10bf10bbca8",
+          "targetHead": "e5285cbe868f82c99bb0f3cf3a441aebd7dff6fc",
+          "integration": "committed",
+          "normalHistory": "8d01b6e1886e53c240a56777574f74a617294c5d",
+          "multiplayerHistory": "fc6a8c2f9b75949c450e4c460cdac1893bb79c2a",
+          "paths": [
+            "ports/th15-mp/ADAPTATION.md",
+            "ports/th15-mp/web/tests/sdl/render-loading-lifecycle-browser.test.mjs"
+          ],
+          "note": "双侧换关夹具和文档同时更新。合并后 MP 文件树不变，保留普通版来源与 MP 接收父链。"
+        },
+        {
+          "kind": "manual",
+          "base": "8179eb1e870dd62333c6d8352146b10bf10bbca8",
+          "source": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "targetHead": "d1023c99c529dab2b5742b88436880c3dcf4220a",
+          "paths": [
+            "ports/th15-mp/ADAPTATION.md",
+            "ports/th15-mp/portable/input/TouchController.hpp",
+            "ports/th15-mp/portable/input/touch-bomb-check.cpp",
+            "ports/th15-mp/portable/input/touch-shield-check.cpp",
+            "ports/th15-mp/portable/input/touch-shield-check.mjs",
+            "ports/th15-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th15-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th15-mp/web/cpp/sdl/ThpracUi.hpp"
+          ],
+          "note": "两版暂时禁移保留触点替代护盾专属例外，决死 Bomb 仍逐帧消费脉冲。投影合并已写回，MP 本地席位选择与审核快照一致。此前 THPrac 交接由 practice-ui、passive-touch 原基线监控继续登记。"
+        },
+        {
+          "kind": "manual",
+          "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "source": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+          "targetHead": "0dcd0b207179fdf38300388c2bb48acf818f5b0c",
+          "paths": [
+            "ports/th15-mp/ADAPTATION.md",
+            "ports/th15-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th15-mp/web/sdl-runtime/startup-branding.mjs"
+          ],
+          "note": "同步练习页面左右直接调整与公共启动署名；保留多人产品THPrac关闭和各作独立验收说明。真实ImGui导航与正式Web构建通过，隔离投影合并的完整多人内容树与已审阅源码一致。"
         }
       ],
       "origin": {
@@ -194,8 +939,909 @@
               "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
             }
           ]
+        },
+        "passive-touch": {
+          "paths": [
+            "web/cpp/sdl/BrowserRuntime.cpp",
+            "web/cpp/sdl/ThpracUi.hpp"
+          ],
+          "base": "8179eb1e870dd62333c6d8352146b10bf10bbca8",
+          "history": []
+        },
+        "tablet-output": {
+          "paths": [
+            "web/cpp/sdl/BrowserRuntime.cpp",
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "base": "0173889788ff35464fc105beb0728c98f444cede",
+          "history": [
+            {
+              "kind": "manual",
+              "base": "8ee5ac9570f97cce0edfeeab657da1c9ca41eca7",
+              "source": "0173889788ff35464fc105beb0728c98f444cede",
+              "targetHead": "2464f4317532fdad05d5bf2ce5e2d8ddd936d4ea",
+              "paths": [
+                "ports/th15-mp/web/cpp/sdl/BrowserRuntime.cpp",
+                "ports/th15-mp/web/sdl-runtime/shell.mjs"
+              ],
+              "note": "普通版与多人版对应接入平板默认渲染倍率和绘制前音频补充；保留两侧联机调度与呈现边界。"
+            }
+          ]
         }
       }
+    },
+    "th12": {
+      "normal": "ports/th12",
+      "multiplayer": "ports/th12-mp",
+      "base": "1c4f2c11bc3bae77d627f098d6336673448d6f4f",
+      "origin": {
+        "normalCommit": "5e5081a1d2a434b2f8d785ebbd6b965f1058d828",
+        "multiplayerCommit": "02e3a62a7ff38ca5ec1f3ad2007c117534e9ba26",
+        "mergeBases": [
+          "5e5081a1d2a434b2f8d785ebbd6b965f1058d828"
+        ]
+      },
+      "history": [
+        {
+          "kind": "git-merge",
+          "base": "855bb3930cdd180573c079666add44f0bae29ad9",
+          "source": "f5847433324d7f3298ef736cf6928b10cc975c4e",
+          "targetHead": "733c0b706e8067b228589cbb0f9bb9c41b23227e",
+          "paths": [],
+          "normalHistory": "f9ea7e4257e68279f5fcc17bfdef7edb2a1b0111",
+          "multiplayerHistory": "b3e59c47be3a1c4c58d512ed77728e75e5e7933d",
+          "integration": "committed",
+          "note": "沿重建后的普通版与多人版父链完成完整目录历史合并。普通版新增内容为说明文档，MP 保留自己的合作规则说明。重建前的四条接收记录保存在 archive/th12-multiplayer-20261028/port-sync-before-rebuild.json。"
+        },
+        {
+          "kind": "git-merge",
+          "base": "733c0b706e8067b228589cbb0f9bb9c41b23227e",
+          "source": "60d01c1f2919f31d75d132a6cad1a464f77f19d3",
+          "targetHead": "6289bfcf4d5f258833e70a6f3f3d32cfe709c01e",
+          "normalHistory": "fd7a59af58a9d27630e4b3c10dcd2c7ac526548c",
+          "multiplayerHistory": "5dc35be24a34df543e7093d3464521f79f6bdb73",
+          "paths": [
+            "ports/th12-mp/docs/BUILD.md",
+            "ports/th12-mp/integration/common-dependency.json"
+          ],
+          "integration": "committed",
+          "note": "普通版与多人版接收相同的构建依赖摘要及维护约定，保留多人独立存储与录像接口。两侧完整目录合并后内容树保持一致，普通版待接收历史归零。"
+        },
+        {
+          "kind": "manual",
+          "base": "6289bfcf4d5f258833e70a6f3f3d32cfe709c01e",
+          "source": "a54397f9e31ff71043fe22a77058a675c1ff05de",
+          "targetHead": "5df2794449d4b80a62b070cf18c548fbcc968c1e",
+          "paths": [
+            "ports/th12-mp/.gitignore",
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/CMakeLists.txt",
+            "ports/th12-mp/README.md",
+            "ports/th12-mp/docs/BUILD.md",
+            "ports/th12-mp/docs/LAUNCHER_INTEGRATION.md",
+            "ports/th12-mp/package.json",
+            "ports/th12-mp/portable/sdl/Animation.cpp",
+            "ports/th12-mp/portable/sdl/Animation.hpp",
+            "ports/th12-mp/portable/sdl/Anm.cpp",
+            "ports/th12-mp/portable/sdl/Anm.hpp",
+            "ports/th12-mp/portable/sdl/Application.cpp",
+            "ports/th12-mp/portable/sdl/Archive.cpp",
+            "ports/th12-mp/portable/sdl/Archive.hpp",
+            "ports/th12-mp/portable/sdl/Audio.cpp",
+            "ports/th12-mp/portable/sdl/Audio.hpp",
+            "ports/th12-mp/portable/sdl/BgmStream.cpp",
+            "ports/th12-mp/portable/sdl/BgmStream.hpp",
+            "ports/th12-mp/portable/sdl/BinaryReader.hpp",
+            "ports/th12-mp/portable/sdl/Ending.cpp",
+            "ports/th12-mp/portable/sdl/Ending.hpp",
+            "ports/th12-mp/portable/sdl/ExeTables.cpp",
+            "ports/th12-mp/portable/sdl/ExeTables.hpp",
+            "ports/th12-mp/portable/sdl/FrameClock.hpp",
+            "ports/th12-mp/portable/sdl/Game.cpp",
+            "ports/th12-mp/portable/sdl/Game.hpp",
+            "ports/th12-mp/portable/sdl/GameHost.cpp",
+            "ports/th12-mp/portable/sdl/GraphicsApi.cpp",
+            "ports/th12-mp/portable/sdl/GraphicsApi.hpp",
+            "ports/th12-mp/portable/sdl/Host.cmake",
+            "ports/th12-mp/portable/sdl/LICENSES.md",
+            "ports/th12-mp/portable/sdl/Localization.cpp",
+            "ports/th12-mp/portable/sdl/Memory.cpp",
+            "ports/th12-mp/portable/sdl/MiniaudioConfig.hpp",
+            "ports/th12-mp/portable/sdl/Platform.cpp",
+            "ports/th12-mp/portable/sdl/Platform.hpp",
+            "ports/th12-mp/portable/sdl/PracticeOverlay.cpp",
+            "ports/th12-mp/portable/sdl/PracticeOverlay.hpp",
+            "ports/th12-mp/portable/sdl/Profile.cpp",
+            "ports/th12-mp/portable/sdl/Profile.hpp",
+            "ports/th12-mp/portable/sdl/README.md",
+            "ports/th12-mp/portable/sdl/Renderer.cpp",
+            "ports/th12-mp/portable/sdl/Renderer.hpp",
+            "ports/th12-mp/portable/sdl/Replay.cpp",
+            "ports/th12-mp/portable/sdl/Replay.hpp",
+            "ports/th12-mp/portable/sdl/ResourceImages.cpp",
+            "ports/th12-mp/portable/sdl/ResourceImages.hpp",
+            "ports/th12-mp/portable/sdl/RuntimeOptions.hpp",
+            "ports/th12-mp/portable/sdl/Scene.cpp",
+            "ports/th12-mp/portable/sdl/Scene.hpp",
+            "ports/th12-mp/portable/sdl/TextRaster.cpp",
+            "ports/th12-mp/portable/sdl/TextRaster.hpp",
+            "ports/th12-mp/portable/sdl/TitlePresentation.cpp",
+            "ports/th12-mp/portable/sdl/TitlePresentation.hpp",
+            "ports/th12-mp/portable/sdl/TitleScenes.cpp",
+            "ports/th12-mp/portable/sdl/TitleScenes.hpp",
+            "ports/th12-mp/portable/sdl/licenses/CC0-1.0.txt",
+            "ports/th12-mp/portable/sdl/licenses/TH12-MIT.txt",
+            "ports/th12-mp/portable/sdl/main.cpp",
+            "ports/th12-mp/portable/sdl/scripts/gen-cp932.py",
+            "ports/th12-mp/portable/sdl/source.json",
+            "ports/th12-mp/portable/sdl/third_party/khronos/GLES3/gl3.h",
+            "ports/th12-mp/portable/sdl/third_party/khronos/GLES3/gl3platform.h",
+            "ports/th12-mp/portable/sdl/third_party/khronos/KHR/khrplatform.h",
+            "ports/th12-mp/portable/sdl/third_party/miniaudio.LICENSE",
+            "ports/th12-mp/portable/sdl/third_party/miniaudio.h",
+            "ports/th12-mp/portable/sdl/third_party/stb_image.LICENSE",
+            "ports/th12-mp/portable/sdl/third_party/stb_image.h",
+            "ports/th12-mp/scripts/build-eagler.mjs",
+            "ports/th12-mp/scripts/build-legacy-eagler.mjs",
+            "ports/th12-mp/scripts/build-sdl.mjs",
+            "ports/th12-mp/scripts/package-eagler.mjs",
+            "ports/th12-mp/scripts/package-launcher.mjs",
+            "ports/th12-mp/scripts/package-legacy-eagler.mjs",
+            "ports/th12-mp/scripts/package-sdl.mjs",
+            "ports/th12-mp/scripts/prepare-menu-assets.py",
+            "ports/th12-mp/scripts/serve.mjs",
+            "ports/th12-mp/site/adapter-preview.mjs",
+            "ports/th12-mp/site/game-sdl.mjs",
+            "ports/th12-mp/site/sdl.html",
+            "ports/th12-mp/src/renderer.mjs",
+            "ports/th12-mp/src/sdl-content.mjs",
+            "ports/th12-mp/src/wasm/PracticeUi.cpp",
+            "ports/th12-mp/tests/green-ufo-warning.test.mjs",
+            "ports/th12-mp/tests/native-quad.test.mjs",
+            "ports/th12-mp/tests/text-outline.test.mjs"
+          ],
+          "note": "SDL3资源、绘制、设备与练习平台代码同步到两侧；MP保留pilot访问和网络宿主，普通版Web桥接、标准构建和预览脚本不覆盖MP专用实现。历史中绿UFO预告线与文字描边修复已存在于MP渲染器，MP构建文档沿自身模式保留。标题分块采样修复两侧共用，已保留合并祖先。"
+        },
+        {
+          "kind": "manual",
+          "base": "a54397f9e31ff71043fe22a77058a675c1ff05de",
+          "source": "9eb7fe4a817d7126f5ba36601d3d680fa3398744",
+          "targetHead": "941425e1a880aa0e21f9400636ffdf8e102c19ef",
+          "paths": [
+            "ports/th12-mp/docs/LAUNCHER_INTEGRATION.md",
+            "ports/th12-mp/portable/sdl/PracticeOverlay.cpp",
+            "ports/th12-mp/portable/sdl/Scene.cpp",
+            "ports/th12-mp/portable/sdl/Scene.hpp",
+            "ports/th12-mp/portable/sdl/TextRaster.cpp",
+            "ports/th12-mp/portable/sdl/TextRaster.hpp",
+            "ports/th12-mp/scripts/package-launcher.mjs",
+            "ports/th12-mp/site/adapter-preview.html",
+            "ports/th12-mp/site/adapter-preview.mjs",
+            "ports/th12-mp/site/game-sdl.mjs"
+          ],
+          "note": "两侧接收共用符卡排版、文字栅格与 THPrac 颜色修复并保留合并祖先；语言包及启动桥接修改归普通版，MP 保留自己的合作启动接口。"
+        },
+        {
+          "kind": "manual",
+          "base": "9eb7fe4a817d7126f5ba36601d3d680fa3398744",
+          "source": "1020941a6fcb0f1f544a7519fba505235d0b82c9",
+          "targetHead": "f0eb09734315feb6be722454f55a96c596a37daf",
+          "paths": [
+            "ports/th12-mp/src/wasm/PracticeUi.cpp"
+          ],
+          "note": "两侧同步练习菜单方向键增减、选择循环及鼠标和键盘焦点切换，MP 保留 pilot() 身份读取，完整目录历史已合并。"
+        },
+        {
+          "kind": "manual",
+          "base": "1020941a6fcb0f1f544a7519fba505235d0b82c9",
+          "source": "0649221333cf7728a63200c72ef8a4b62349aeda",
+          "targetHead": "986ac9049e25b7d5f318cf86ee9eab4e02aa599e",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/README.md",
+            "ports/th12-mp/docs/DEVELOPMENT.md",
+            "ports/th12-mp/portable/sdl/Application.cpp",
+            "ports/th12-mp/portable/sdl/Audio.cpp",
+            "ports/th12-mp/portable/sdl/Game.cpp",
+            "ports/th12-mp/portable/sdl/Game.hpp",
+            "ports/th12-mp/portable/sdl/GameHost.cpp",
+            "ports/th12-mp/portable/sdl/Host.cmake",
+            "ports/th12-mp/portable/sdl/README.md",
+            "ports/th12-mp/portable/sdl/Replay.cpp",
+            "ports/th12-mp/portable/sdl/Replay.hpp",
+            "ports/th12-mp/portable/sdl/ReplayExtension.cpp",
+            "ports/th12-mp/portable/sdl/ReplayExtension.hpp",
+            "ports/th12-mp/portable/sdl/ReplayJson.hpp",
+            "ports/th12-mp/portable/sdl/RuntimeOptions.hpp",
+            "ports/th12-mp/portable/sdl/Scene.cpp",
+            "ports/th12-mp/portable/sdl/Scene.hpp",
+            "ports/th12-mp/portable/sdl/TitleScenes.cpp",
+            "ports/th12-mp/portable/sdl/TitleScenes.hpp",
+            "ports/th12-mp/scripts/package-sdl.mjs",
+            "ports/th12-mp/site/game-sdl.mjs"
+          ],
+          "note": "两侧同步 SDL 扩展录像编解码、练习开局与跨关伤害源、整曲音乐、触控按下信号和帧率显示；普通版浏览器桥接与代码包沿自身入口，MP 保留现有房间、回滚及多人录像宿主和模式专属文档。目录历史已合并，写回代码树保持已编译身份。"
+        },
+        {
+          "kind": "manual",
+          "base": "0649221333cf7728a63200c72ef8a4b62349aeda",
+          "source": "73394e8fcf16878f08cc5f10b01e6139779ec7a1",
+          "targetHead": "c1d2a7abb641e38baf8263eb4ef961286fa5c98b",
+          "paths": [
+            "ports/th12-mp/package.json",
+            "ports/th12-mp/src/animation.mjs",
+            "ports/th12-mp/src/draw-scheduler.mjs",
+            "ports/th12-mp/src/renderer.mjs",
+            "ports/th12-mp/tests/draw-scheduler.test.mjs",
+            "ports/th12-mp/tests/presentation.test.mjs",
+            "ports/th12-mp/tests/renderer-layering.test.mjs",
+            "ports/th12-mp/tests/settled-animation.test.mjs"
+          ],
+          "note": "接收上游 main 的渲染捕获分配与 HUD 动画采样优化，普通版和 MP 的对应源码均已合入。目录历史合并保留 MP 回滚采样缓存、多人透明度、符卡实时间和专属 HUD；SDL 代码保持现有身份。"
+        },
+        {
+          "kind": "manual",
+          "base": "73394e8fcf16878f08cc5f10b01e6139779ec7a1",
+          "source": "de7385d78436a7a428b5ce545ee585cca361fbbe",
+          "targetHead": "de7385d78436a7a428b5ce545ee585cca361fbbe",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/README.md",
+            "ports/th12-mp/docs/DEVELOPMENT.md",
+            "ports/th12-mp/package.json",
+            "ports/th12-mp/portable/sdl/Application.cpp",
+            "ports/th12-mp/portable/sdl/FrameClock.hpp",
+            "ports/th12-mp/portable/sdl/Game.cpp",
+            "ports/th12-mp/portable/sdl/Game.hpp",
+            "ports/th12-mp/portable/sdl/GameHost.cpp",
+            "ports/th12-mp/portable/sdl/Host.cmake",
+            "ports/th12-mp/portable/sdl/PracticeOverlay.cpp",
+            "ports/th12-mp/portable/sdl/PracticeOverlay.hpp",
+            "ports/th12-mp/portable/sdl/README.md",
+            "ports/th12-mp/portable/sdl/Replay.cpp",
+            "ports/th12-mp/portable/sdl/Scene.cpp",
+            "ports/th12-mp/portable/sdl/Scene.hpp",
+            "ports/th12-mp/portable/sdl/TitleScenes.cpp",
+            "ports/th12-mp/portable/sdl/TitleScenes.hpp",
+            "ports/th12-mp/scripts/build-eagler.mjs",
+            "ports/th12-mp/scripts/check-sdl-browser.mjs",
+            "ports/th12-mp/scripts/package-sdl.mjs",
+            "ports/th12-mp/scripts/serve.mjs",
+            "ports/th12-mp/site/game-sdl.mjs",
+            "ports/th12-mp/site/sdl.html",
+            "ports/th12-mp/tests/sdl-clock.test.mjs"
+          ],
+          "note": "两侧正式入口均迁为 SDL3/GLES，沿用各自核心；多人新增 C++ 场景与 HUD、确认/回滚桥接、观战与已确认录像，THPrac 保持多人关闭。高刷外推、真实画面 FPS、只读触控交接与报告器同步；键盘跨界残留修复仅归属多人目录。"
+        },
+        {
+          "kind": "manual",
+          "base": "de7385d78436a7a428b5ce545ee585cca361fbbe",
+          "source": "7ad310d8c19162aea255c0de1cc904c836feb6e5",
+          "targetHead": "7ad310d8c19162aea255c0de1cc904c836feb6e5",
+          "paths": [
+            "ports/th12-mp/docs/DEVELOPMENT.md",
+            "ports/th12-mp/portable/sdl/Animation.cpp",
+            "ports/th12-mp/portable/sdl/Animation.hpp",
+            "ports/th12-mp/portable/sdl/Scene.cpp",
+            "ports/th12-mp/tests/native/sdl-animation-performance.cpp",
+            "ports/th12-mp/tests/native/sdl-background-performance.cpp",
+            "ports/th12-mp/tests/sdl-animation.test.mjs"
+          ],
+          "note": "两侧同步 SDL 呈现热路径优化：轨道缓存内登记帧代次，静止轨道在速度、插值和子节点全部结束后推进年龄，背景裁剪复用临时缓冲。沿用多人 Session 与回滚协议；33 个原版 ANM 和七关背景输出哈希与基线一致，双人/三人延迟网络及录像回归通过。"
+        },
+        {
+          "kind": "manual",
+          "base": "7ad310d8c19162aea255c0de1cc904c836feb6e5",
+          "source": "e5517fab11ec3b67b7f559575c035b5b96868d9c",
+          "targetHead": "e5517fab11ec3b67b7f559575c035b5b96868d9c",
+          "paths": [
+            "ports/th12-mp/portable/sdl/Animation.cpp",
+            "ports/th12-mp/tests/native/sdl-animation-performance.cpp"
+          ],
+          "note": "静止轨道年龄快进同时等待 UV 回绕归一化完成；两侧保持一致，新增超范围 UV 回归，原版脚本逐帧输出与显示 RNG 核对通过。"
+        },
+        {
+          "kind": "manual",
+          "base": "e5517fab11ec3b67b7f559575c035b5b96868d9c",
+          "source": "918ee331791401021658125acfb3da5b2ec01016",
+          "targetHead": "918ee331791401021658125acfb3da5b2ec01016",
+          "paths": [
+            "ports/th12-mp/scripts/package-sdl.mjs"
+          ],
+          "note": "SDL 正式打包同步包含 crash-code-identities.json，报告器引用纳入不可变代码闭包；两侧 WASM 与上一轮性能验证一致。发布目录契约允许精确命名的共享错误报告脚本，拒绝任意新增 JS 文件。"
+        },
+        {
+          "kind": "manual",
+          "base": "918ee331791401021658125acfb3da5b2ec01016",
+          "source": "1a5b7400d95bbe9e158921e08427b0c10b82956e",
+          "targetHead": "1a5b7400d95bbe9e158921e08427b0c10b82956e",
+          "paths": [
+            "ports/th12-mp/docs/DEVELOPMENT.md",
+            "ports/th12-mp/portable/sdl/Application.cpp",
+            "ports/th12-mp/portable/sdl/Game.cpp",
+            "ports/th12-mp/portable/sdl/GameHost.cpp",
+            "ports/th12-mp/portable/sdl/PracticeOverlay.cpp",
+            "ports/th12-mp/portable/sdl/PracticeOverlay.hpp",
+            "ports/th12-mp/portable/sdl/Renderer.cpp",
+            "ports/th12-mp/scripts/check-sdl-browser.mjs",
+            "ports/th12-mp/scripts/package-sdl.mjs",
+            "ports/th12-mp/site/game-sdl.mjs",
+            "ports/th12-mp/src/sdl-input.mjs",
+            "ports/th12-mp/src/sdl-lifecycle.mjs",
+            "ports/th12-mp/tests/sdl-input.test.mjs",
+            "ports/th12-mp/tests/sdl-lifecycle.test.mjs"
+          ],
+          "note": "两侧同步SDL触控Esc、iframe与CSS像素坐标、ImGui裁剪、退出诊断、640x480 Web离屏目标和背景复制缓存；房间标题只确认设置及launchSerial修复归多人目录。单人触控与THPrac、多人回滚/观战及确认录像回归通过。"
+        },
+        {
+          "kind": "manual",
+          "base": "1a5b7400d95bbe9e158921e08427b0c10b82956e",
+          "source": "b4719ea488d5f4d89a45e57df91c8396af9893a7",
+          "targetHead": "b4719ea488d5f4d89a45e57df91c8396af9893a7",
+          "paths": [
+            "ports/th12-mp/docs/DEVELOPMENT.md",
+            "ports/th12-mp/portable/sdl/Animation.hpp",
+            "ports/th12-mp/portable/sdl/Game.cpp",
+            "ports/th12-mp/portable/sdl/Game.hpp",
+            "ports/th12-mp/portable/sdl/GameHost.cpp",
+            "ports/th12-mp/portable/sdl/PresentationOrder.hpp",
+            "ports/th12-mp/portable/sdl/Scene.cpp",
+            "ports/th12-mp/portable/sdl/Scene.hpp",
+            "ports/th12-mp/portable/sdl/TitlePresentation.cpp",
+            "ports/th12-mp/portable/sdl/TitlePresentation.hpp",
+            "ports/th12-mp/tests/native/sdl-animation-performance.cpp",
+            "ports/th12-mp/tests/native/sdl-order-performance.cpp",
+            "ports/th12-mp/tests/native/sdl-presentation-order.cpp",
+            "ports/th12-mp/tests/presentation-order.test.mjs",
+            "ports/th12-mp/tests/sdl-animation.test.mjs"
+          ],
+          "note": "两侧同步SDL优先级分桶和帧代次查找、背景及菜单缓冲复用、短中断内联存储；多人单独复用暂停、等待与高刷额外帧捕获，按世界帧/关卡/恢复序号失效。原版动画、七关顶点和排序哈希一致，单人触控/THPrac/录像及双人回滚、三人同步、观战回归通过。"
+        },
+        {
+          "kind": "manual",
+          "base": "b4719ea488d5f4d89a45e57df91c8396af9893a7",
+          "source": "728d440a82f0e840d95fb7340477037c99a86579",
+          "targetHead": "6478db87e828f6dfb8c5613098ec850572263e6f",
+          "paths": [
+            "ports/th12-mp/portable/sdl/Replay.cpp",
+            "ports/th12-mp/site/game-sdl.mjs",
+            "ports/th12-mp/tests/native/sdl-replay.cpp",
+            "ports/th12-mp/tests/sdl-replay.test.mjs"
+          ],
+          "note": "普通版与 MP 同步 SDL 模块诊断入口、原版录像边界与 FPS 游标修复；多人专属故障冻结和回房恢复保留在 MP。独立目录已合并双亲历史，完整 MP 树与已验证源码一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "728d440a82f0e840d95fb7340477037c99a86579",
+          "source": "48d941d5e2db5f87291bd485e02bd38a701147d7",
+          "targetHead": "4c09680c9f407564688ae0abb0dedb1b868227a1",
+          "paths": [
+            "ports/th12-mp/portable/sdl/Animation.cpp",
+            "ports/th12-mp/portable/sdl/Animation.hpp",
+            "ports/th12-mp/portable/sdl/README.md",
+            "ports/th12-mp/site/game-sdl.mjs",
+            "ports/th12-mp/tests/native/sdl-animation-performance.cpp",
+            "ports/th12-mp/tests/sdl-animation.test.mjs",
+            "ports/th12-mp/tests/sdl-hot-path.test.mjs"
+          ],
+          "note": "普通版与多人版同步定长插值、子动画显示树复用、音乐路径缓存和输入采样；保留多人故障门控与房间入口。15项适配检查、6项原生检查、19项边界检查通过，原作ANM哈希一致，双人和三人回滚及录像重建通过。目录历史合并保留两侧父链，完整MP树与验证代码一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "48d941d5e2db5f87291bd485e02bd38a701147d7",
+          "source": "c0042b6605ed25270496798b955dbaf0b859e9e1",
+          "targetHead": "8621034654f7548afa85580e60bd8edafead5205",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/README.md",
+            "ports/th12-mp/docs/BUILD.md",
+            "ports/th12-mp/docs/DEVELOPMENT.md",
+            "ports/th12-mp/docs/FULL_GAME_FLOW.md",
+            "ports/th12-mp/docs/LAUNCHER_INTEGRATION.md",
+            "ports/th12-mp/docs/WEB_ADAPTATION.md",
+            "ports/th12-mp/package.json",
+            "ports/th12-mp/portable/sdl/Application.cpp",
+            "ports/th12-mp/portable/sdl/Audio.cpp",
+            "ports/th12-mp/portable/sdl/FrameClock.hpp",
+            "ports/th12-mp/portable/sdl/Game.cpp",
+            "ports/th12-mp/portable/sdl/Game.hpp",
+            "ports/th12-mp/portable/sdl/README.md",
+            "ports/th12-mp/scripts/build-eagler.mjs",
+            "ports/th12-mp/scripts/build-sdl.mjs",
+            "ports/th12-mp/scripts/check-sdl-browser.mjs",
+            "ports/th12-mp/scripts/package-sdl.mjs",
+            "ports/th12-mp/scripts/sdl-build-inputs.mjs",
+            "ports/th12-mp/site/game-sdl.mjs",
+            "ports/th12-mp/src/managed-input.mjs",
+            "ports/th12-mp/src/managed-shell.mjs",
+            "ports/th12-mp/src/practice/DAMAGE-SOURCES.md",
+            "ports/th12-mp/src/practice/INTEGRATION.md",
+            "ports/th12-mp/tests/managed-adapter.test.mjs",
+            "ports/th12-mp/tests/native/sdl-audio.cpp",
+            "ports/th12-mp/tests/sdl-audio.test.mjs",
+            "ports/th12-mp/tests/sdl-build.test.mjs",
+            "ports/th12-mp/tests/sdl-clock.test.mjs",
+            "ports/th12-mp/tests/sdl-hot-path.test.mjs"
+          ],
+          "note": "同步 SDL 时钟、音频、输入归属、编译输入身份与正式入口测试，旧前端文档去重归档。多人使用独立产品路径、房间启动和按键调度、旁观及录像保存，保留对应指南与测试。普通版修改已同步到两侧，目录历史经真实合并写回，内容树与验证后的 MP 一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "c0042b6605ed25270496798b955dbaf0b859e9e1",
+          "source": "74b842f80c7a6cfad02eb871d23068cb6894943d",
+          "targetHead": "b58daac14bb91df873ee4649ca26d5e4a94c4d70",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/portable/sdl/Audio.cpp",
+            "ports/th12-mp/portable/sdl/Audio.hpp",
+            "ports/th12-mp/scripts/check-sdl-browser.mjs",
+            "ports/th12-mp/site/game-sdl.mjs",
+            "ports/th12-mp/tests/native/sdl-audio.cpp",
+            "ports/th12-mp/tests/sdl-boundary.test.mjs"
+          ],
+          "note": "普通版与 MP 同步页面隐藏时的键盘和触点清理、音频挂起恢复、原生音乐失败事件及替换重试。共用原生和浏览器回归已在两侧验证；MP 沿多人入口验收，普通版浏览器脚本继续归属普通版。共有新规则登记为逐作待验收。"
+        },
+        {
+          "kind": "manual",
+          "base": "74b842f80c7a6cfad02eb871d23068cb6894943d",
+          "source": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "targetHead": "d1023c99c529dab2b5742b88436880c3dcf4220a",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/portable/sdl/Audio.cpp",
+            "ports/th12-mp/portable/sdl/Host.cmake",
+            "ports/th12-mp/scripts/check-sdl-browser.mjs",
+            "ports/th12-mp/site/game.mjs",
+            "ports/th12-mp/src/touch-input.mjs",
+            "ports/th12-mp/tests/sdl-audio.test.mjs",
+            "ports/th12-mp/tests/touch-respawn.test.mjs"
+          ],
+          "note": "两版音效独立输出、暂停与销毁已对应迁入。普通版采用 MP 已有的手势作用域连续性实现；MP 使用自己的真实房间浏览器驱动。投影合并写回后 MP 源码树与审核快照一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "source": "f07bf527b605af3829b7fa7908d3721533600f91",
+          "targetHead": "164679cff8cab9c2822096cc0125650c7e35f4ff",
+          "paths": [
+            "ports/th12-mp/portable/sdl/Scene.cpp",
+            "ports/th12-mp/portable/sdl/Scene.hpp",
+            "ports/th12-mp/tests/native/sdl-background-performance.cpp"
+          ],
+          "note": "基于最新主线，普通版背景图元旋转复用已进入多人版，完整源码树与 Windows、Web 和双人三人回滚浏览器验收版本一致；多人保留自身输入、观战和录像验证入口。"
+        },
+        {
+          "kind": "manual",
+          "base": "48d941d5e2db5f87291bd485e02bd38a701147d7",
+          "source": "97df3629c0247a1a56f637d1e1e7f6d99d90db0e",
+          "targetHead": "6ebabcd9c021662383e24a65afa5db83322eb20b",
+          "paths": [
+            "ports/th12-mp/portable/sdl/Application.cpp",
+            "ports/th12-mp/portable/sdl/Game.hpp",
+            "ports/th12-mp/portable/sdl/GameHost.cpp",
+            "ports/th12-mp/portable/sdl/Host.cmake",
+            "ports/th12-mp/portable/sdl/README.md",
+            "ports/th12-mp/site/game-sdl.mjs",
+            "ports/th12-mp/src/sdl-host-state.mjs",
+            "ports/th12-mp/tests/native/sdl-host-state.cpp",
+            "ports/th12-mp/tests/sdl-host-state.test.mjs",
+            "ports/th12-mp/tests/sdl-hot-path.test.mjs"
+          ],
+          "note": "普通版与多人版同步27项数值host-state接口、JSON兼容入口及内存增长读取；多人另合并自动保存调度、按确认/提交进度去重和停止前强制保存。40项边界检查、两侧无窗口原生夹具、两侧Web构建与打包、19目标适配检查通过。目录历史保留双亲，写回完整MP树与已验证源码相同。"
+        },
+        {
+          "kind": "manual",
+          "base": "f07bf527b605af3829b7fa7908d3721533600f91",
+          "source": "f15127ecaddc8157aa1920da501515f9b77718ae",
+          "targetHead": "2a2598da7a477106e7dc729ab42a83da27d01906",
+          "paths": [
+            "ports/th12-mp/portable/sdl/Application.cpp",
+            "ports/th12-mp/portable/sdl/Game.hpp",
+            "ports/th12-mp/portable/sdl/GameHost.cpp",
+            "ports/th12-mp/portable/sdl/Host.cmake",
+            "ports/th12-mp/portable/sdl/README.md",
+            "ports/th12-mp/site/game-sdl.mjs",
+            "ports/th12-mp/src/sdl-host-state.mjs",
+            "ports/th12-mp/tests/native/sdl-host-state.cpp",
+            "ports/th12-mp/tests/sdl-boundary.test.mjs",
+            "ports/th12-mp/tests/sdl-host-state.test.mjs",
+            "ports/th12-mp/tests/sdl-hot-path.test.mjs"
+          ],
+          "note": "合并自动保存调度、数值状态接口与背景旋转复用；保留最新房间返回、启动取消与输入释放边界，多人保留独立回滚存储复用。普通版与多人版来源投影已实际合并，写回树与已验收的完整多人源码树一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "f15127ecaddc8157aa1920da501515f9b77718ae",
+          "source": "fa819c6993e47b7e3ad27610d8acf36ac0ce09fa",
+          "targetHead": "5de18a81d24debfcb7758e16ff223eb59f32fcb2",
+          "paths": [
+            "ports/th12-mp/CMakeLists.txt",
+            "ports/th12-mp/src/game/HostilePool.cpp",
+            "ports/th12-mp/tests/native/hostile-pool-storage.cpp"
+          ],
+          "note": "普通版和多人版同步弹幕索引节点复用及完整重建对照夹具；UFO 深复制仅属于多人回滚入口，保留多人世界、激光、UFO 和菜单专属测试。隔离三方合并保留两侧父链，写回完整 MP 树与已验证源码一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "fa819c6993e47b7e3ad27610d8acf36ac0ce09fa",
+          "source": "c6f1b6639c7c5b479e13eac74373ea02544c627d",
+          "targetHead": "fabfabb8fe756cf085296fdf547eacf1a1ac7d4f",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/portable/sdl/Application.cpp",
+            "ports/th12-mp/portable/sdl/README.md",
+            "ports/th12-mp/site/game.mjs",
+            "ports/th12-mp/src/preview-input.mjs",
+            "ports/th12-mp/tests/sdl-gamepad.test.mjs"
+          ],
+          "note": "普通版与多人版同步每轴50%的方形摇杆死区、SDL和旧网页入口及边界回归；保留启动器映射与自定义阈值。两侧Web构建、60项SDL回归和19项适配检查通过；隔离合并写回的完整多人树与修复提交一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "c6f1b6639c7c5b479e13eac74373ea02544c627d",
+          "source": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+          "targetHead": "0dcd0b207179fdf38300388c2bb48acf818f5b0c",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/portable/sdl/Game.cpp",
+            "ports/th12-mp/portable/sdl/Game.hpp",
+            "ports/th12-mp/site/game-sdl.mjs",
+            "ports/th12-mp/site/startup-branding.mjs"
+          ],
+          "note": "同步练习页面左右直接调整与公共启动署名；保留多人产品THPrac关闭和各作独立验收说明。真实ImGui导航与正式Web构建通过，隔离投影合并的完整多人内容树与已审阅源码一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+          "source": "ad6851d8a1da7a5e5956f9a6cc7d460559fc5f6e",
+          "targetHead": "ee41b203b1978eb7355075c6e533c669270090ef",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/CMakeLists.txt",
+            "ports/th12-mp/src/game/EclInterpreter.cpp",
+            "ports/th12-mp/src/game/EnemyManager.cpp",
+            "ports/th12-mp/src/game/GameState.hpp",
+            "ports/th12-mp/src/game/GameTypes.hpp",
+            "ports/th12-mp/src/game/Movement.cpp",
+            "ports/th12-mp/tests/fixtures/enemy-movement-animation-original.json",
+            "ports/th12-mp/tests/native/enemy-movement-animation.cpp"
+          ],
+          "note": "普通版与多人版同步原版262/276移动动画启停、横向位移和五态过渡；269/274保留独立移动动画基址。实际原版414048至4141b9的27组指令对照、八素材库原生回归及双方Web构建通过。多人快照保留新增Enemy动画字段；隔离合并写回的完整多人树与已审阅代码一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "ad6851d8a1da7a5e5956f9a6cc7d460559fc5f6e",
+          "source": "5123bb2235990418919564368d042ae6b873257e",
+          "targetHead": "18aef055af5d773713b1e00f1e028e44de0688f1",
+          "paths": [
+            "ports/th12-mp/package.json",
+            "ports/th12-mp/portable/sdl/BinaryReader.hpp",
+            "ports/th12-mp/portable/sdl/Localization.cpp",
+            "ports/th12-mp/portable/sdl/Scene.cpp",
+            "ports/th12-mp/portable/sdl/Scene.hpp",
+            "ports/th12-mp/portable/sdl/TextRaster.cpp",
+            "ports/th12-mp/site/game.mjs",
+            "ports/th12-mp/src/practice/imgui-renderer.mjs",
+            "ports/th12-mp/src/practice/overlay.mjs",
+            "ports/th12-mp/src/presentation-interpolation.mjs",
+            "ports/th12-mp/src/renderer.mjs",
+            "ports/th12-mp/src/sdl-content.mjs",
+            "ports/th12-mp/tests/managed-adapter.test.mjs",
+            "ports/th12-mp/tests/native/sdl-text-performance.cpp",
+            "ports/th12-mp/tests/presentation-continuity.test.mjs",
+            "ports/th12-mp/tests/replay-transition-regressions.test.mjs",
+            "ports/th12-mp/tests/sdl-localization.test.mjs",
+            "ports/th12-mp/tests/transition-performance.test.mjs"
+          ],
+          "note": "PR 168 汇总普通版与多人版对话本地化、字形缓存、高刷外推、视口及换面呈现优化；多人版保留现有回滚存储并补齐挑战规则与 Miss。"
+        },
+        {
+          "kind": "manual",
+          "base": "5123bb2235990418919564368d042ae6b873257e",
+          "source": "b03980c588dc083006e3974c83b7f4620c5fe055",
+          "targetHead": "2464f4317532fdad05d5bf2ce5e2d8ddd936d4ea",
+          "paths": [
+            "ports/th12-mp/portable/sdl/Game.cpp",
+            "ports/th12-mp/portable/sdl/Game.hpp",
+            "ports/th12-mp/portable/sdl/Scene.cpp",
+            "ports/th12-mp/portable/sdl/Scene.hpp",
+            "ports/th12-mp/scripts/check-sdl-browser.mjs"
+          ],
+          "note": "完整符卡收率显示为普通版 THPrac 选项；多人版不启用 THPrac，本次显示层级与刷新修改不适用于 MP。"
+        },
+        {
+          "kind": "manual",
+          "base": "b03980c588dc083006e3974c83b7f4620c5fe055",
+          "source": "1c4f2c11bc3bae77d627f098d6336673448d6f4f",
+          "targetHead": "98f97dc8b2227e1ccd1f32f07b2c89d752d92285",
+          "paths": [
+            "ports/th12-mp/portable/sdl/Application.cpp",
+            "ports/th12-mp/portable/sdl/FrameClock.hpp",
+            "ports/th12-mp/portable/sdl/Platform.cpp",
+            "ports/th12-mp/portable/sdl/PracticeOverlay.cpp",
+            "ports/th12-mp/portable/sdl/PracticeOverlay.hpp",
+            "ports/th12-mp/portable/sdl/Renderer.cpp",
+            "ports/th12-mp/portable/sdl/Renderer.hpp",
+            "ports/th12-mp/portable/sdl/Scene.cpp",
+            "ports/th12-mp/portable/sdl/Scene.hpp",
+            "ports/th12-mp/portable/sdl/TextRaster.cpp",
+            "ports/th12-mp/portable/sdl/TextRaster.hpp",
+            "ports/th12-mp/scripts/check-sdl-browser.mjs",
+            "ports/th12-mp/site/game-sdl.mjs",
+            "ports/th12-mp/src/game/AnmScene.cpp",
+            "ports/th12-mp/src/game/AnmScene.hpp",
+            "ports/th12-mp/src/game/CustomGeometry.cpp",
+            "ports/th12-mp/src/game/CustomGeometry.hpp",
+            "ports/th12-mp/src/game/ItemPresentation.cpp",
+            "ports/th12-mp/src/game/ItemPresentation.hpp",
+            "ports/th12-mp/src/game/Laser.cpp",
+            "ports/th12-mp/src/game/LaserCollision.cpp",
+            "ports/th12-mp/src/game/PresentationGeometry.cpp",
+            "ports/th12-mp/src/game/UfoEffects.cpp",
+            "ports/th12-mp/tests/sdl-clock.test.mjs"
+          ],
+          "note": "共享的绘制、激光和道具优化已在两种模式中处理，多人版采用观战时钟与回滚专用路径，练习筛选由普通版维护。"
+        }
+      ],
+      "watches": {
+        "sdl-text-and-frame-work": {
+          "paths": [
+            "portable/sdl/Application.cpp",
+            "portable/sdl/Platform.cpp",
+            "portable/sdl/Renderer.cpp",
+            "portable/sdl/Scene.cpp",
+            "portable/sdl/Scene.hpp",
+            "portable/sdl/TextRaster.cpp",
+            "portable/sdl/TextRaster.hpp",
+            "site/game-sdl.mjs"
+          ],
+          "base": "53df5dfb8f60ebf5b61c5b0f09771b605d7bb987",
+          "history": [
+            {
+              "kind": "manual",
+              "base": "eb7e343e73b9ac8a2931c983e0641bc6fee5ac90",
+              "source": "53df5dfb8f60ebf5b61c5b0f09771b605d7bb987",
+              "targetHead": "53df5dfb8f60ebf5b61c5b0f09771b605d7bb987",
+              "paths": [
+                "ports/th12-mp/portable/sdl/Application.cpp",
+                "ports/th12-mp/portable/sdl/Platform.cpp",
+                "ports/th12-mp/portable/sdl/Renderer.cpp",
+                "ports/th12-mp/portable/sdl/Scene.cpp",
+                "ports/th12-mp/portable/sdl/Scene.hpp",
+                "ports/th12-mp/portable/sdl/TextRaster.cpp",
+                "ports/th12-mp/portable/sdl/TextRaster.hpp",
+                "ports/th12-mp/site/game-sdl.mjs"
+              ],
+              "note": "普通版与多人版同步字形描边、Web 输出缓冲、顶点缓冲、背景裁剪和增量存档。普通版浏览器回归检查自动保存，多人版保留显式联机录像导出流程。"
+            }
+          ]
+        },
+        "sdl-stage-backdrops": {
+          "paths": [
+            "portable/sdl/Scene.cpp",
+            "portable/sdl/Scene.hpp"
+          ],
+          "base": "eace4a7fcea19f712edb4705266fc5db2ea5568b",
+          "history": [
+            {
+              "kind": "manual",
+              "base": "7d18ec5c6e9322517dc217a76736e4de55e00e7e",
+              "source": "eace4a7fcea19f712edb4705266fc5db2ea5568b",
+              "targetHead": "eace4a7fcea19f712edb4705266fc5db2ea5568b",
+              "paths": [
+                "ports/th12-mp/portable/sdl/Scene.cpp",
+                "ports/th12-mp/portable/sdl/Scene.hpp"
+              ],
+              "note": "单人与多人同步原版背景动画绘制顺序；录像落盘与槽位刷新属于多人版。"
+            }
+          ]
+        },
+        "sdl-window-buffer": {
+          "paths": [
+            "portable/sdl/Application.cpp"
+          ],
+          "base": "d0047e4db91bc1de27ea613fb755211a058a3894",
+          "history": [
+            {
+              "kind": "manual",
+              "base": "a90652f89b7b0d13bad1b1f5118bc40e7055ee58",
+              "source": "d0047e4db91bc1de27ea613fb755211a058a3894",
+              "targetHead": "d0047e4db91bc1de27ea613fb755211a058a3894",
+              "paths": [
+                "ports/th12-mp/portable/sdl/Application.cpp"
+              ],
+              "note": "单人和多人同步窗口缓冲尺寸固定与退出全屏恢复。单人浏览器回归覆盖窗口尺寸调整。"
+            }
+          ]
+        }
+      }
+    },
+    "th17": {
+      "normal": "ports/th17",
+      "multiplayer": "ports/th17-mp",
+      "base": "2dc8e0603d8fef1ed85ba485a18ce88f889e9c1c",
+      "history": [
+        {
+          "kind": "manual",
+          "base": "6e63fdc7ea62fe1a4dec7bbf18d70dd91f2d7e6e",
+          "source": "6e63fdc7ea62fe1a4dec7bbf18d70dd91f2d7e6e",
+          "targetHead": "ce244c8b68e54e698d379ea4b71d7846223cc57f",
+          "paths": [],
+          "note": "普通版按独立目录移除联机源码和测试并固定普通构建入口；MP 保留独立会话、回滚、旁观与录像及对应构建入口。通用战斗、渲染、字体与音频源码完整保留。已在临时克隆合并双方投影并通过完整 MP 子树和两个父提交写回。"
+        },
+        {
+          "kind": "manual",
+          "base": "6e63fdc7ea62fe1a4dec7bbf18d70dd91f2d7e6e",
+          "source": "8619b754e288c7f38b71eb2f5879222091dca927",
+          "targetHead": "72c046509f143302f978c9cf7336fca4ce74cb01",
+          "paths": [
+            "ports/th17-mp/ADAPTATION.md"
+          ],
+          "note": "两侧适配表分别接收普通版 11 项、MP 10 项检查结果，保留各自模式与验证范围；已合并普通版投影并保留双父链写回。"
+        },
+        {
+          "kind": "manual",
+          "base": "8619b754e288c7f38b71eb2f5879222091dca927",
+          "source": "5b0195aa47a124c7f0b6f0669d1ddcfc371afe36",
+          "targetHead": "dc68e9c3ea7c7c23fc449841427db19fd84f6b10",
+          "paths": [
+            "ports/th17-mp/portable/input/TouchController.hpp",
+            "ports/th17-mp/web/cpp/game/TitleMainMenu.cpp",
+            "ports/th17-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th17-mp/web/sdl-runtime/shell.mjs",
+            "ports/th17-mp/web/tests/adapter-browser.test.mjs"
+          ],
+          "note": "同步标题点按、捕获取消与确认脉冲的处理，保留多人房间标题流程并接收浏览器回归。"
+        },
+        {
+          "kind": "manual",
+          "base": "5b0195aa47a124c7f0b6f0669d1ddcfc371afe36",
+          "source": "235ab562c539e81f43b94d109b44527d3a7a6573",
+          "targetHead": "bf79550822cb6e18563d88ea6228a2d718a9c97c",
+          "paths": [
+            "ports/th17-mp/web/cpp/game/AnmRegistry.cpp",
+            "ports/th17-mp/web/cpp/game/AnmRegistry.hpp"
+          ],
+          "note": "两侧接收有序页地址查找和最近页缓存，多人回滚保持地址索引有效并恢复原动画队列顺序。"
+        },
+        {
+          "kind": "manual",
+          "base": "235ab562c539e81f43b94d109b44527d3a7a6573",
+          "source": "e230de27135e855645105092fcd2ff660b0831d1",
+          "targetHead": "e230de27135e855645105092fcd2ff660b0831d1",
+          "paths": [
+            "ports/th17-mp/portable/input/KeyboardMap.inc",
+            "ports/th17-mp/portable/sdl/Renderer.cpp",
+            "ports/th17-mp/web/cpp/game/PauseMenu.cpp",
+            "ports/th17-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th17-mp/web/cpp/sdl/SceneDisplay.cpp",
+            "ports/th17-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th17-mp/web/tests/single-player-browser.mjs"
+          ],
+          "note": "接收单人键盘 Tab/Backspace、R 重开、结算换面等待、桌面快捷键与触控面板共存，以及实例 VAO 属性初始化。通用源码在 MP 完整保留，联机运行包继续关闭练习器；single-player-browser.mjs 属于单人 thprac 浏览器回归，MP 沿独立房间回归维护。已在临时克隆合并双方投影，核对完整 MP 内容树并通过双父提交写回。"
+        },
+        {
+          "kind": "manual",
+          "base": "e230de27135e855645105092fcd2ff660b0831d1",
+          "source": "cd0b9fc7f299b2b76e6c84e9cfa6964e955351af",
+          "targetHead": "cd0b9fc7f299b2b76e6c84e9cfa6964e955351af",
+          "paths": [
+            "ports/th17-mp/web/tests/single-player-browser.mjs"
+          ],
+          "note": "单人浏览器回归核对实际 1280×960 并支持单独诊断模块；测试入口按单人目录保留，MP 继续使用双人三人房间回归。投影合并与完整 MP 内容树写回已核验。"
+        },
+        {
+          "kind": "manual",
+          "base": "cd0b9fc7f299b2b76e6c84e9cfa6964e955351af",
+          "source": "d2f09129a7434199864cc8110c541053335ee71d",
+          "targetHead": "694c78e986c4ba9533f83a289aa23640affca5b8",
+          "paths": [
+            "ports/th17-mp/portable/package-eagler.mjs",
+            "ports/th17-mp/web/sdl-runtime/shell.mjs",
+            "ports/th17-mp/web/tests/adapter-browser.test.mjs",
+            "ports/th17-mp/web/tests/direct-input-browser.mjs"
+          ],
+          "note": "多人版同步触控通道、手势几何缓存和运行包资源；复用浏览器输入回归，在多人房间验证，普通版适配器继续验证原版录像。"
+        },
+        {
+          "kind": "manual",
+          "base": "d2f09129a7434199864cc8110c541053335ee71d",
+          "source": "3aa413997220673db16d8b319d4226857c61bf7a",
+          "targetHead": "fa9349b0cda2cd860ea070ad79a9caa0cc5b66cd",
+          "paths": [
+            "ports/th17-mp/web/cpp/game/AnmResource.cpp",
+            "ports/th17-mp/web/cpp/game/Lzss.cpp"
+          ],
+          "note": "普通版和多人版同步优化 LZSS 回拷与 ANM 透明边界扫描，多人长帧记录归属多人目录。"
+        },
+        {
+          "kind": "manual",
+          "base": "3aa413997220673db16d8b319d4226857c61bf7a",
+          "source": "66e117e10191fc6e04b0bccfde60a30d6173fe8b",
+          "targetHead": "36735292fc1870b8fbb1e42b9dfc9b9c59fb3f3d",
+          "paths": [
+            "ports/th17-mp/portable/sdl/Renderer.cpp",
+            "ports/th17-mp/web/cpp/game/AnmRenderer.cpp",
+            "ports/th17-mp/web/cpp/game/SoundEffects.cpp",
+            "ports/th17-mp/web/cpp/game/SoundEffects.hpp",
+            "ports/th17-mp/web/cpp/sdl/AudioDevice.cpp",
+            "ports/th17-mp/web/cpp/sdl/AudioDevice.hpp",
+            "ports/th17-mp/web/tests/story-render-browser.mjs"
+          ],
+          "note": "两版复用相同的 ANM 材质与音效重播优化。多人版已有短绘制批次优化，普通版本轮接收。单人录像采样与多人房测各自维护。"
+        },
+        {
+          "kind": "manual",
+          "base": "66e117e10191fc6e04b0bccfde60a30d6173fe8b",
+          "source": "933600b5b44a1adecacf3002446c0109c32097e8",
+          "targetHead": "839b161450480f6b225669421488f904ff0a997c",
+          "paths": [
+            "ports/th17-mp/web/cpp/game/DamageSources.cpp"
+          ],
+          "note": "多人版同步自机弹判定的按角度复用。缓存随单次查询销毁，判定顺序与战斗状态沿用普通版。"
+        },
+        {
+          "kind": "manual",
+          "base": "933600b5b44a1adecacf3002446c0109c32097e8",
+          "source": "fb134fde8978d267f319a67dc4e563947413cdec",
+          "targetHead": "5897e1ffa5b784360a0ac19c19eaf4dbe0acaea5",
+          "paths": [
+            "ports/th17-mp/portable/sdl/Renderer.cpp",
+            "ports/th17-mp/portable/sdl/Renderer.hpp",
+            "ports/th17-mp/web/cpp/game/AnmCoordinates.cpp",
+            "ports/th17-mp/web/cpp/game/AnmRenderer.cpp",
+            "ports/th17-mp/web/cpp/game/AnmStrip.cpp",
+            "ports/th17-mp/web/cpp/game/AnmStrip.hpp",
+            "ports/th17-mp/web/cpp/game/AnmUpdate.cpp",
+            "ports/th17-mp/web/tests/cpp/BulletRuntimeFixture.hpp"
+          ],
+          "note": "同步 ANM 等待更新、条带和精灵几何、WebGL 着色器选择及原版对照夹具。MP 保留队友射击淡化，按双人实战测量出画与确认帧。"
+        },
+        {
+          "kind": "manual",
+          "base": "fb134fde8978d267f319a67dc4e563947413cdec",
+          "source": "97e7dcb809b7834f6b1c3e8b89e09538a5092626",
+          "targetHead": "6c56932132f6f9077924cb3bf19e30846932617d",
+          "paths": [
+            "ports/th17-mp/portable/sdl/Renderer.cpp"
+          ],
+          "note": "顶点着色器保留 fogEnabled。四面与六面 54 个战斗画面采样和优化前一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "97e7dcb809b7834f6b1c3e8b89e09538a5092626",
+          "source": "55f808d311cdfbb2458e15824e26214772223467",
+          "targetHead": "79b79caca715f334bbc0ed5dfefadf39624fc81e",
+          "paths": [
+            "ports/th17-mp/ADAPTATION.md",
+            "ports/th17-mp/web/cpp/game/TextLayout.cpp",
+            "ports/th17-mp/web/cpp/game/TextRaster.cpp",
+            "ports/th17-mp/web/cpp/sdl/Application.cpp",
+            "ports/th17-mp/web/cpp/sdl/ApplicationGame.cpp",
+            "ports/th17-mp/web/cpp/sdl/ApplicationLoading.cpp",
+            "ports/th17-mp/web/cpp/sdl/ApplicationState.hpp",
+            "ports/th17-mp/web/cpp/sdl/FontDevice.hpp",
+            "ports/th17-mp/web/cpp/sdl/FontLocalization.cpp",
+            "ports/th17-mp/web/cpp/sdl/SceneDisplay.cpp",
+            "ports/th17-mp/web/cpp/sdl/SceneDisplay.hpp",
+            "ports/th17-mp/web/cpp/sdl/TrophyNotice.cpp",
+            "ports/th17-mp/web/cpp/sdl/TrophyNotice.hpp"
+          ],
+          "note": "成就解锁弹窗、字体和提示音属于 TH17 单机版。多人版保留原有成就呈现与适配文档。"
+        },
+        {
+          "kind": "manual",
+          "base": "55f808d311cdfbb2458e15824e26214772223467",
+          "source": "2dc8e0603d8fef1ed85ba485a18ce88f889e9c1c",
+          "targetHead": "98f97dc8b2227e1ccd1f32f07b2c89d752d92285",
+          "paths": [
+            "ports/th17-mp/portable/sdl/ImguiRenderer.inc",
+            "ports/th17-mp/portable/sdl/Renderer.cpp",
+            "ports/th17-mp/portable/sdl/Renderer.hpp"
+          ],
+          "note": "普通版与多人版都接收 #208 的绘制绑定优化，成就提示属于单机版。"
+        }
+      ]
     }
   }
 }

@@ -1,9 +1,11 @@
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {parseMeasuredNetplayTiming,resolveAdonisPredictionReserve} from '../lib/contracts/netplay-timing.mjs';
 import {buildMultiplayerRuntimeOptions} from '../.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs';
 import {normalizeMultiplayerLobbySnapshot} from '../.cache/build/browser/assets/launcher/multiplayer-lobby-snapshot.mjs';
 import {isSpectatorFrameForRoom} from '../../services/relay/src/spectator-frame.mjs';
 
+test("netplay measured timing", async () => {
 const timing={phase:'ready',automatic:true,adonisMode:2,inputDelay:1,fullDelay:3,
   predictionReserve:2,rttP95Us:90000,samples:117,lost:5,route:'rtc'};
 assert.deepEqual(parseMeasuredNetplayTiming(timing),timing);
@@ -27,7 +29,11 @@ for(const adonisMode of [1,2])for(const predictionReserve of [1,2]){
   if(adonisMode===1){assert.equal(o.netplayInputDelayAuto,true);assert.equal(o.netplayPredictionReserve,predictionReserve);}
   else {assert.equal(o.netplayInputDelayAuto,undefined);assert.equal(o.netplayPredictionReserve,undefined);}
 }
-for(const inputDelay of [0,1,9])assert.equal(buildMultiplayerRuntimeOptions({...base,inputDelay,inputDelayAuto:false},constraints).netplayInputDelay,inputDelay);
+for(const adonisMode of [1,2])for(const inputDelay of [0,1,9]){
+  const options=buildMultiplayerRuntimeOptions({...base,adonisMode,inputDelay,inputDelayAuto:false},constraints);
+  assert.equal(options.netplayInputDelay,adonisMode===1?inputDelay:0,
+    'Manual delay applies to delay mode; rollback always starts with zero input delay');
+}
 for(const mutation of [{inputDelayAuto:'true'},{predictionReserve:0},{predictionReserve:3},{adonisMode:0},
   {url:base.url.replace('th09mp','th07mp')}])assert.throws(()=>buildMultiplayerRuntimeOptions({...base,...mutation},constraints));
 for(const game of ['th08mp','th10mp']){
@@ -68,3 +74,4 @@ for(const [game,code] of [['th08mp',56],['th10mp',65]])for(const count of [2,3])
   assert.equal(isSpectatorFrameForRoom((game==='th08mp'?'th10mp':'th08mp')+'-1234',bytes,count),false);
   bytes[6]=7;assert.equal(isSpectatorFrameForRoom(game+'-1234',bytes,count),false);
 }
+});

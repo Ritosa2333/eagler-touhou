@@ -1,0 +1,172 @@
+@layer components {
+  .room-chat-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .room-chat-controls form {
+    flex: 1;
+    min-width: 0;
+  }
+  .room-chat-controls .ui-kit-input-group {
+    gap: 4px;
+    padding-inline: 10px 4px;
+  }
+  .room-chat-controls .ui-kit-input {
+    min-width: 0;
+    font-size: 14px;
+  }
+  .room-chat-controls > .room-quick-chat-trigger {
+    flex: 1;
+    width: auto;
+  }
+  .room-chat-entry {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .chat-avatar {position:relative;display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:50%;background:var(--kit-secondary);color:var(--kit-foreground);font:600 13px/1 var(--kit-font);text-decoration:none}
+  .chat-sender {display:flex;align-items:center;gap:6px;min-width:0;font-size:12px;color:var(--kit-muted-foreground)}
+  .chat-sender strong {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit}
+  .chat-role {flex:none;font-size:10px;line-height:1.3;padding:1px 4px;border-radius:4px;background:var(--kit-muted);color:var(--kit-muted-foreground)}
+  .chat-body {display:block;white-space:pre-wrap;overflow-wrap:anywhere}
+  .room-chat-message {
+    min-width: 0;
+    flex: 1;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .room-chat-message[data-actions] {
+    padding-inline-end: 24px;
+  }
+  .mp-quick-chat {
+    width: 360px;
+    max-width: calc(100% - 20px);
+    max-height: calc(100% - max(20px, env(safe-area-inset-bottom)) - 10px);
+    gap: 6px;
+  }
+  .mp-quick-chat .mp-quick-chat-picker {
+    position: relative;
+    inset: auto;
+    flex-direction: column-reverse;
+    min-height: 0;
+    max-height: min(48dvh, 380px);
+    padding: 8px;
+    gap: 8px;
+    overflow: hidden;
+    color: var(--kit-foreground);
+    background: var(--kit-popover);
+    border-color: var(--kit-border);
+    box-shadow: 0 6px 20px #0003;
+  }
+  .mp-quick-chat-picker:focus {
+    outline: none;
+  }
+  .mp-quick-chat-picker .room-chat-controls {
+    flex: none;
+  }
+  .mp-quick-chat-picker .room-chat-controls[data-member="false"] {
+    justify-content: flex-end;
+  }
+  .chat-phrase-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: max-content;
+    gap: 4px;
+  }
+  .mp-quick-chat-slots {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    scrollbar-width: thin;
+  }
+  .mp-quick-chat-slots kbd {
+    flex: none;
+    padding-inline: 4px;
+    border-radius: 4px;
+    background: var(--kit-muted);
+    color: var(--kit-muted-foreground);
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+  }
+  .mp-quick-chat-log {
+    z-index: 33;
+    align-self: stretch;
+    min-height: 0;
+    margin-bottom: 0;
+  }
+  .mp-quick-chat[data-composer-open="true"] .mp-quick-chat-log:not(:empty) {
+    pointer-events: auto;
+    touch-action: pan-y;
+  }
+  .chat-report-trigger {
+    background: transparent;
+    border: 0;
+    padding: 2px 4px;
+    flex: 0 1 auto;
+    max-width: 100%;
+    text-align: start;
+    text-shadow: inherit;
+    white-space: pre-wrap;
+    display:block;
+  }
+  .mp-quick-chat-log .chat-sender {color:#fff;text-shadow:0 1px 3px #000,0 0 2px #000}
+  .mp-quick-chat-log .chat-role {background:#202126d9;color:#fff;text-shadow:none}
+  .mp-quick-chat-log .chat-body {color:#fff;text-shadow:0 1px 3px #000,0 0 2px #000}
+  .mp-quick-chat-log .room-chat-entry[data-speaker="player"] .chat-body {color:#efc08a;-webkit-text-stroke:.25px #fff8;paint-order:stroke fill;text-shadow:0 1px 3px #000,0 0 2px #000}
+  .chat-report-trigger:is(:hover, :focus-visible) {
+    background: var(--kit-accent);
+  }
+  .mp-quick-chat-shortcut {
+    margin-inline-start: 6px;
+    font: inherit;
+    font-size: 11px;
+    opacity: 0.65;
+  }
+  @media (max-width: 780px) {
+    .mp-quick-chat .room-chat-controls .ui-kit-input {
+      font-size: 16px;
+    }
+  }
+  @media (pointer: coarse) {
+    .chat-report-trigger {
+      min-height: 32px;
+    }
+  }
+}
+.room-chat-entry > .room-chat-message-action {
+  position: absolute;
+  inset-inline-end: 0;
+  top: 0;
+  width: 20px;
+  height: 1.4em;
+  min-height: 0;
+  padding: 0;
+}
+/* Reserve the height of five standard two-line avatar/name/message entries. */
+.mp-quick-chat .mp-quick-chat-log {line-height:1.5;max-height:min(calc(7.5em + 120px),calc(100dvh - var(--mp-chat-lift,10px) - 70px))}
+
+.quick-picker-menu {max-height:min(520px, var(--radix-dropdown-menu-content-available-height));overflow-y:auto;overscroll-behavior:contain}
+.quick-picker-toolbar,.quick-picker-pages {display:flex;align-items:center;gap:4px}
+.quick-picker-toolbar {padding:4px;position:sticky;top:0;z-index:1;background:var(--kit-popover)}
+.quick-picker-settings,.quick-picker-pages {margin-inline-start:auto}
+.quick-picker-pages {justify-content:center;font-size:12px;color:var(--kit-muted-foreground)}
+.quick-picker-menu kbd {margin-inline-end:8px;color:var(--kit-muted-foreground);font:inherit}
+.quick-picker-game {min-height:0;display:flex;flex-direction:column;gap:4px;overflow:hidden}
+.quick-picker-game .quick-picker-toolbar {padding:0}
+
+/* Game overlay uses a compact, fixed-height 3 by 3 quick-chat grid. */
+.mp-quick-chat {width:min(360px, calc(100vw - 20px));}
+.mp-quick-chat .mp-quick-chat-picker {position:relative;bottom:auto;max-height:calc(100dvh - 65px);overflow:hidden;flex-direction:column-reverse;gap:4px;padding:8px;background:var(--kit-popover);border-color:var(--kit-border)}
+.mp-quick-chat .chat-phrase-grid {grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:36px;overflow:visible}
+.mp-quick-chat .chat-phrase-grid button {display:flex;align-items:center;min-width:0;min-height:0;height:36px;gap:5px;padding:4px 6px;white-space:nowrap;overflow:hidden}
+.mp-quick-chat .chat-phrase-grid button span {display:block;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-quick-chat .quick-picker-toolbar {position:static;min-height:32px;padding:0;background:transparent}
+.mp-quick-chat .quick-picker-toolbar .room-chat-mute-trigger {margin-inline-start:auto}
+.mp-quick-chat .quick-picker-pages {margin-inline-start:auto}
+.mp-quick-chat .quick-picker-pages + .room-chat-mute-trigger {margin-inline-start:0}
+.mp-quick-chat .room-chat-controls:empty {display:none}
+.quick-picker-menu {overscroll-behavior:contain}

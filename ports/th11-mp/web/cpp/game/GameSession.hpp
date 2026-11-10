@@ -8,6 +8,9 @@
 #include "SceneCompositor.hpp"
 #include "ReplayRecorder.hpp"
 #include "GameInput.hpp"
+#ifdef TH11_MULTIPLAYER
+#include <eagler/netplay/CooperativeMenuInput.hpp>
+#endif
 #include "ScoreFile.hpp"
 #include "GameConfig.hpp"
 #include "TitleMenu.hpp"
@@ -90,6 +93,7 @@ public:
     MultiplayerOptions multiplayer_options{};
     u32 multiplayer_frame=0;
     std::array<bool,3> multiplayer_pause_held{};
+    Netplay::CooperativeMenuInput<u32> multiplayer_menu_input;
     bool begin_multiplayer(GameResources&,const MultiplayerOptions&,const std::array<ReplayStageState,3>* stream=nullptr);
     bool update_multiplayer(const std::array<MultiplayerInput,3>&,const std::function<void()>& replay_entry={});
     MultiplayerSeatView multiplayer_seat(unsigned)const noexcept;
@@ -104,6 +108,9 @@ public:
                i32 subtype=0, i32 difficulty=1, bool demo=false, bool replay=false,bool practice=false,const PracticeConfig* parameters=nullptr);
     bool open_title(GameResources&,bool first=false,TitleScreen screen=TitleScreen::Main);
     bool begin_replay(GameResources&,const u8*,u32,u32 stage=0,bool demo=false);
+    // Diagnostic entry point: start one of the archive demos without the title
+    // menu. Used by the Presentation Lab campaign runner.
+    bool load_demo(u32 index);
     bool save_replay(const char* name,std::vector<u8>& output,bool terminal=true,float slowdown=0);
     bool load_scores(const u8*,u32);
     bool save_scores(std::vector<u8>&);

@@ -6,14 +6,23 @@
 #include "PlayerBounds.hpp"
 #include "AnmRenderer.hpp"
 namespace th15 {
+namespace multiplayer {class ItemFrameState;}
 struct ItemFrameContext {PlayerMotion& player;const PlayerBounds& bounds;ItemScoreState& score;ItemCollection& collection;Rng& visual_random;i32 player_state=1,character=0,bomb_state=0,bomb_frame=0;bool hud_collect=false;u32 held=0;float attraction_speed=5,rate=1;bool directed_item=false;};
 class ItemManager {
     friend class ItemCheckpoint;
+    friend class multiplayer::ItemFrameState;
 public:
-    struct Slot {ItemState state;std::unique_ptr<AnmVm> body,arrow;bool arrow_ended=false;};
+    struct Slot {ItemState state;std::shared_ptr<AnmVm> body,arrow;bool arrow_ended=false;};
     static constexpr u32 ordinary_count=600,cancel_count=4096,pool_size=ordinary_count+cancel_count;
 private:
     AnmManager& animations;EffectManager& effects;i32 resource;std::array<Slot,pool_size> slots;std::array<std::vector<u32>,2> free_slots;
+    // Inactive slots only change at pool transitions. Escaped slots are always copied.
+    inline static u64 snapshot_serial=0;
+    static constexpr u32 snapshot_page_size=64,snapshot_pages=(pool_size+snapshot_page_size-1)/snapshot_page_size;
+    std::array<u64,snapshot_pages> snapshot_versions{},snapshot_active{},snapshot_exposed{};
+    void changed(u32 index){snapshot_versions[index/snapshot_page_size]=++snapshot_serial;}
+    void active(u32 index,bool value){auto& page=snapshot_active[index/snapshot_page_size];const u64 bit=u64(1)<<(index%snapshot_page_size);if(value)page|=bit;else page&=~bit;}
+    Slot* owned_slot(u32 id){return id>0&&id<=pool_size?&slots[id-1]:nullptr;}
     bool appearance(Slot&,i32 kind);bool piece_effect(const ItemState&);
 public:
     i32 requests=0,cancel_density=0,cancel_stamp=0,alternating_pieces=0,active_count=0;float motion_scale=1;std::string error;
@@ -23,7 +32,8 @@ public:
     ItemManager(AnmManager&,EffectManager&,i32 resource);
     ~ItemManager();
     bool reset();
-    Slot* find(u32 id){return id>0&&id<=pool_size?&slots[id-1]:nullptr;}
+    Slot* find(u32 id){auto* slot=owned_slot(id);if(slot)snapshot_exposed[(id-1)/snapshot_page_size]|=u64(1)<<((id-1)%snapshot_page_size);return slot;}
+    const Slot* find(u32 id)const{return id>0&&id<=pool_size?&slots[id-1]:nullptr;}
     u32 spawn(i32 kind,const Vec3&,float angle,float speed);
     bool release(u32 id);bool falling(u32 id);
     std::function<ItemFrameContext*(u32,const ItemState&)> multiplayer_context;

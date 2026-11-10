@@ -25,6 +25,23 @@ export function runtimeStem(game) {
   return game;
 }
 
+// Directory ports declare the features of the actual code build in their
+// packaged manifest. Both direct site packaging and Runtime Release packaging
+// must consume the same declaration instead of assuming a particular C++ adapter.
+export async function directoryFeatureAttestation(game, build) {
+  const manifest = JSON.parse(await readFile(resolve(build, "manifest.json"), "utf8"));
+  if (manifest.game !== game || manifest.protocol !== "eagler-touhou/1") {
+    throw new Error(`${game}: invalid directory Runtime manifest`);
+  }
+  return Object.fromEntries(["thprac", "languages", "focusHitbox"].map(feature => {
+    const value = manifest.features?.[feature];
+    if (value != null && typeof value !== "boolean") {
+      throw new Error(`${game}: invalid directory Runtime feature attestation: ${feature}`);
+    }
+    return [feature, value === true];
+  }));
+}
+
 // A directory runtime remains a closed, hash-identified code/resource set. It does
 // not relax the old Emscripten contract or allow original EXE/DAT/DLL content.
 export function runtimeFileNames(game, files) {
@@ -39,7 +56,7 @@ export function runtimeFileNames(game, files) {
   if (names.length > 2048 || product.runtimeAssets.some(name => !Object.hasOwn(files, name))) throw new Error(`${game}: incomplete directory Runtime`);
   for (const name of names) {
     if (!isCanonicalRelativePath(name) || !(
-      name === `${stem}.html` || name === "manifest.json" ||
+      name === `${stem}.html` || name === "manifest.json" || name === "runtime-crash-reporter.js" ||
       /^[a-z0-9._-]+\.mjs$/i.test(name) ||
       /^[a-z0-9._-]+\.css$/i.test(name) ||
       /^[a-z0-9._-]+\.wasm$/i.test(name) ||
@@ -54,7 +71,7 @@ export function validateRuntimeReleaseManifest(manifest) {
   if (!manifest || ![RUNTIME_RELEASE_SCHEMA, LEGACY_RUNTIME_RELEASE_SCHEMA].includes(manifest.schema) || manifest.protocol !== "eagler-touhou/1") {
     throw new Error("invalid Runtime Release manifest");
   }
-  const registered = Object.keys(PRODUCT_GAMES);
+  const registered = Object.keys(PRODUCT_GAMES).filter(game => !PRODUCT_GAMES[game].buildOptIn || Object.hasOwn(manifest.games ?? {}, game));
   if (!manifest.games || JSON.stringify(Object.keys(manifest.games)) !== JSON.stringify(registered)) {
     throw new Error("Runtime Release must contain every registered game in canonical order");
   }

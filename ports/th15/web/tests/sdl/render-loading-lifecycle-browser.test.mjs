@@ -1,15 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {readFile,readdir,mkdir,writeFile} from 'node:fs/promises';
+import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {launchBrowser} from '../../../../../tools/browser/launch.mjs';
 const root=fileURLToPath(new URL('../../',import.meta.url));
+const runtime=resolve(process.env.TH15_OUTPUT||resolve(root,'artifacts/sdl-application'));
+const fontRoot=process.env.TH15_FONT_ROOT||resolve(root,'assets/sdl-native/fonts');
 test('Original assets: 2x raster, visible loading and movable Stage Clear', {timeout:600000}, async()=>{
  assert.ok(process.env.TH15_ORIGINAL_DAT,'Set TH15_ORIGINAL_DAT to the private original th15.dat');
- const fonts=(await readdir(resolve(root,'assets/sdl-native/fonts'))).filter(n=>n.endsWith('.bin'));
- const files=new Map([['/module.mjs',resolve(root,'artifacts/sdl-application/th15-application.mjs')],['/th15-application.wasm',resolve(root,'artifacts/sdl-application/th15-application.wasm')],['/th15.dat',process.env.TH15_ORIGINAL_DAT],...fonts.map(n=>['/fonts/'+n,resolve(root,'assets/sdl-native/fonts',n)])]);
+ assert.ok(process.env.TH15_SHARED_FONT_ROOT,'Set TH15_SHARED_FONT_ROOT to the shared Gothic and Unifont directory');
+ const fonts=['cp932.bin','msgothic.ttc','unifont.otf'];
+ const files=new Map([['/module.mjs',resolve(runtime,'th15-application.mjs')],['/th15-application.wasm',resolve(runtime,'th15-application.wasm')],['/th15.dat',process.env.TH15_ORIGINAL_DAT],...fonts.map(n=>['/fonts/'+n,resolve(n==='cp932.bin'?fontRoot:process.env.TH15_SHARED_FONT_ROOT,n)])]);
  const server=createServer(async(req,res)=>{try{const path=new URL(req.url,'http://localhost').pathname;res.setHeader('Cross-Origin-Opener-Policy','same-origin');res.setHeader('Cross-Origin-Embedder-Policy','require-corp');if(path==='/'){res.setHeader('Content-Type','text/html');res.end('<canvas id="canvas" width="1280" height="960"></canvas><script type="module">import create from "/module.mjs";window.fixture=await create({canvas:document.querySelector("canvas")});'+(process.env.TH15_PRESENTATION_TEST==='1'?'fixture._application_test_presentation_enable(1);':'')+'</script>');return;}const file=files.get(path);if(!file){res.writeHead(404).end();return;}res.setHeader('Content-Type',path.endsWith('.mjs')?'text/javascript':path.endsWith('.wasm')?'application/wasm':'application/octet-stream');res.end(await readFile(file));}catch(e){res.writeHead(500).end(String(e));}});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;const errors=[];const output=resolve(root,'artifacts/cpp/verification');await mkdir(output,{recursive:true});
  try{
@@ -27,9 +30,12 @@ test('Original assets: 2x raster, visible loading and movable Stage Clear', {tim
  await page.locator('canvas').screenshot({path:resolve(output,'loading-game.png')});
  await page.evaluate(()=>{step();if(state()[0]!==1)throw Error('Game entry failed');fixture._application_test_protection(100000);frames(245);});
  await page.locator('canvas').screenshot({path:resolve(output,'game-2x.png')});
- const transition=await page.evaluate(()=>{if(!fixture._application_complete_stage())throw Error(decode(fixture._application_error()));const samples=[];for(let n=0;n<125;n++){const before=life();const s=step(n<20?128:0,n===0?128:0);samples.push({n,stage:s[2],x:life()[0],before:before[0],age:life()[3],pending:life()[4]});if(life()[4]===2)return samples;}throw Error('No stage loading frame');});
- assert.ok(transition.slice(0,20).every(s=>s.pending===0));assert.ok(transition.slice(0,20).every(s=>s.x>s.before),'Stage Clear must continue to update player motion');assert.ok(transition.at(-1).n>=118,'Outgoing clear waits for its own HUD timer');
- await page.locator('canvas').screenshot({path:resolve(output,'loading-next-stage.png')});
+ const transition=await page.evaluate(()=>{if(!fixture._application_complete_stage())throw Error(decode(fixture._application_error()));const samples=[];for(let n=0;n<125;n++){const before=life();const s=step(n<20?128:0,n===0?128:0);samples.push({n,stage:s[2],x:life()[0],before:before[0],age:life()[3],pending:life()[4]});}return samples;});
+ assert.equal(transition[0].pending,2,'Completion publishes the next-stage load immediately');assert.ok(transition.slice(1).every(s=>s.pending===0&&s.stage===2),'The next frame consumes the stage load');
+ assert.ok(transition.slice(0,20).every(s=>s.x>s.before),'Stage Clear must continue to update player motion');
+ assert.ok(transition.slice(20).every(s=>s.x===transition[19].x),'Release stops movement and activation preserves the retained player position');
+ assert.equal(transition[119].age,120);assert.equal(transition[120].age,0,'Stage Clear has one shared timer across the handoff');
+ await page.locator('canvas').screenshot({path:resolve(output,'stage2-entry-2x.png')});
  const after=await page.evaluate(()=>{step();return state();});assert.equal(after[2],2);assert.equal(after[0],1);assert.deepEqual(errors,[]);
  await writeFile(resolve(output,'render-loading-lifecycle.json'),JSON.stringify({passed:true,loading,transition,after,scope:'Chromium, original archive, measured fonts, 1280x960 rendering, controlled stage completion; music disabled. Desktop execution does not establish mobile 60 FPS.'},null,2));
  }finally{await browser?.close();await new Promise(r=>server.close(r));}

@@ -5,59 +5,170 @@
   "originMigration": "http-to-https",
   "netplayRelay": "absent",
   "games": {
-    "th06": {
-      "languages": ["ja", "lang_zh-hans", "lang_en"],
-      "music": ["midi", "ogg"],
+    "th05": {
+      "languages": [
+        "ja",
+        "lang_zh-hans"
+      ],
+      "music": [
+        "ogg"
+      ],
       "thprac": true,
-      "runtimeVariants": ["normal", "multiplayer"]
+      "runtimeVariants": [
+        "normal",
+        "multiplayer"
+      ]
+    },
+    "th06": {
+      "languages": [
+        "ja",
+        "lang_zh-hans",
+        "lang_en"
+      ],
+      "music": [
+        "midi",
+        "ogg"
+      ],
+      "thprac": true,
+      "runtimeVariants": [
+        "normal",
+        "multiplayer"
+      ]
     },
     "th07": {
-      "languages": ["ja", "lang_zh-hans", "lang_en"],
-      "music": ["midi", "ogg"],
+      "languages": [
+        "ja",
+        "lang_zh-hans",
+        "lang_en"
+      ],
+      "music": [
+        "midi",
+        "ogg"
+      ],
       "thprac": true,
-      "runtimeVariants": ["normal", "multiplayer"]
+      "runtimeVariants": [
+        "normal",
+        "multiplayer"
+      ]
     },
     "th075": {
-      "languages": ["ja", "lang_zh-hans", "lang_en"],
-      "music": ["ogg"],
+      "languages": [
+        "ja",
+        "lang_zh-hans",
+        "lang_en"
+      ],
+      "music": [
+        "ogg"
+      ],
       "thprac": false,
-      "runtimeVariants": ["normal", "multiplayer"]
+      "runtimeVariants": [
+        "normal",
+        "multiplayer"
+      ]
     },
     "th08": {
-      "languages": ["ja"],
-      "music": ["midi", "ogg"],
+      "languages": [
+        "ja"
+      ],
+      "music": [
+        "midi",
+        "ogg"
+      ],
       "thprac": false,
-      "runtimeVariants": ["normal"]
+      "runtimeVariants": [
+        "normal"
+      ]
     },
     "th09": {
-      "languages": ["ja"],
-      "music": ["ogg"],
+      "languages": [
+        "ja"
+      ],
+      "music": [
+        "ogg"
+      ],
       "thprac": false,
-      "runtimeVariants": ["normal", "multiplayer"]
+      "runtimeVariants": [
+        "normal",
+        "multiplayer"
+      ]
     },
     "th10": {
-      "languages": ["ja"],
-      "music": ["midi"],
+      "languages": [
+        "ja"
+      ],
+      "music": [
+        "midi"
+      ],
       "thprac": false,
-      "runtimeVariants": ["normal"]
+      "runtimeVariants": [
+        "normal"
+      ]
     },
     "th11": {
-      "languages": ["ja"],
-      "music": ["midi"],
+      "languages": [
+        "ja"
+      ],
+      "music": [
+        "midi"
+      ],
       "thprac": false,
-      "runtimeVariants": ["normal"]
+      "runtimeVariants": [
+        "normal"
+      ]
+    },
+    "th12": {
+      "languages": [
+        "ja"
+      ],
+      "music": [
+        "ogg"
+      ],
+      "thprac": false,
+      "runtimeVariants": [
+        "normal"
+      ]
     },
     "th15": {
+      "languages": [
+        "ja"
+      ],
+      "music": [
+        "ogg"
+      ],
+      "thprac": false,
+      "runtimeVariants": [
+        "normal"
+      ]
+    },
+    "th17": {
+      "languages": [
+        "ja"
+      ],
+      "music": [
+        "ogg"
+      ],
+      "thprac": false,
+      "runtimeVariants": [
+        "normal"
+      ]
+    },
+    "th19": {
       "languages": ["ja"],
       "music": ["ogg"],
       "thprac": false,
       "runtimeVariants": ["normal"]
     },
     "th20": {
-      "languages": ["ja"],
-      "music": ["midi"],
+      "languages": [
+        "ja"
+      ],
+      "music": [
+        "midi"
+      ],
       "thprac": false,
-      "runtimeVariants": ["normal"]
+      "runtimeVariants": [
+        "normal"
+      ]
     }
   }
 }

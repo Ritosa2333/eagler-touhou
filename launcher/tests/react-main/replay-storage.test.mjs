@@ -1,21 +1,29 @@
-import test,{before,after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
 import {IDBFactory,IDBKeyRange} from 'fake-indexeddb';
+import {openStore as openTh12Store} from '../../../ports/th12/src/storage.mjs';
+import {openStore as openTh12MultiplayerStore} from '../../../ports/th12-mp/src/storage.mjs';
 const root=fileURLToPath(new URL('../../',import.meta.url));let work,createReplayStorageReader;
 before(async()=>{await mkdir(resolve(root,'.cache'),{recursive:true});work=await mkdtemp(resolve(root,'.cache/replay-storage-'));const out=resolve(work,'reader.mjs');await build({entryPoints:[resolve(root,'app/services/replay-storage.ts')],outfile:out,bundle:true,platform:'node',format:'esm',logLevel:'silent'});({createReplayStorageReader}=await import(pathToFileURL(out).href));});
 after(async()=>{if(work)await rm(work,{recursive:true,force:true});});
 const match={schema:'eagler-touhou/th09-match-replay/1',names:['甲','乙'],startedAt:1000,frames:600,winner:1,roundStarts:[0,160,400]};
 async function seed(factory,name,entries,version=21){const db=await new Promise((ok,no)=>{const r=factory.open(name,version);r.onupgradeneeded=()=>r.result.createObjectStore('FILE_DATA');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);});await new Promise((ok,no)=>{const tx=db.transaction('FILE_DATA','readwrite');for(const [path,contents]of entries)tx.objectStore('FILE_DATA').put({contents,mode:0o100666,timestamp:new Date(2000)},name+'/'+path);tx.oncomplete=ok;tx.onabort=()=>no(tx.error);});db.close();}
 function signedBytes(bytes){const buffer=new ArrayBuffer(bytes.length+8);new Uint8Array(buffer,3,bytes.length).set(bytes);return new Int8Array(buffer,3,bytes.length);}
-function motionReplay(){
-  const bytes=new Uint8Array(4+92+24),view=new DataView(bytes.buffer),end=bytes.length-24;
-  bytes.set([128,255,84,57]);view.setUint32(4,1,true);view.setUint32(84,31,true);view.setFloat32(88,12.5,true);view.setFloat32(92,-6.25,true);
-  bytes.set(new TextEncoder().encode('THMOTION'),end);view.setUint32(end+8,9,true);view.setUint32(end+12,2,true);view.setUint32(end+16,92,true);
+function extendedReplay(magic,version,payload){
+  const bytes=new Uint8Array(4+payload.length+24),view=new DataView(bytes.buffer),end=bytes.length-24;
+  bytes.set([128,255,84,57]);bytes.set(payload,4);
+  bytes.set(new TextEncoder().encode(magic),end);view.setUint32(end+8,9,true);view.setUint32(end+12,version,true);view.setUint32(end+16,payload.length,true);
   let hash=2166136261;for(let offset=4;offset<end;offset++)hash=Math.imul(hash^bytes[offset],16777619)>>>0;view.setUint32(end+20,hash,true);return bytes;
+}
+function motionReplay(version){
+  const payload=new Uint8Array(version===2?92:81),view=new DataView(payload.buffer);
+  payload[0]=1;
+  if(version===2){view.setUint32(80,31,true);view.setFloat32(84,12.5,true);view.setFloat32(88,-6.25,true);}
+  return extendedReplay('THMOTION',version,payload);
 }
 test('readonly IDBFS snapshot isolates roots, exposes file time, keeps matching sidecars and original bytes',async()=>{
   const factory=new IDBFactory(),read=createReplayStorageReader(()=>({indexedDB:factory,keyRange:IDBKeyRange}));
@@ -29,8 +37,8 @@ test('readonly IDBFS snapshot isolates roots, exposes file time, keeps matching 
   assert.deepEqual([...(await read.read('th09mp',{path:'replay/A/th9_ud0000.rpy'}))[0].bytes],[1,2,3],'download mutation cannot alter persisted bytes');
   assert.equal((await read.read('th09'))[0].path,'replay/th9_01.rpy');
 });
-test('native signed IDBFS byte views preserve offsets, motion exports and MP sidecars',async()=>{
-  const factory=new IDBFactory(),read=createReplayStorageReader(()=>({indexedDB:factory,keyRange:IDBKeyRange})),bytes=motionReplay();
+test.each([motionReplay(2),motionReplay(3),extendedReplay('T9CHARGE',2,Uint8Array.of(40,0,0,0,1,0,0,0,0))])('native signed IDBFS byte views preserve offsets, rpyx exports and MP sidecars %#',async(bytes)=>{
+  const factory=new IDBFactory(),read=createReplayStorageReader(()=>({indexedDB:factory,keyRange:IDBKeyRange}));
   await seed(factory,'/savesth09mp',[
     ['replay/A/th9_ud0000.rpy',signedBytes(bytes)],
     ['replay/A/th9_ud0000.json',signedBytes(new TextEncoder().encode(JSON.stringify(match)))],
@@ -69,4 +77,39 @@ test('every title and variant reads its real native namespace, with TH10 languag
     const japanese=await read.read(product,{language:'ja'}),chinese=await read.read(product,{language:'lang_zh-hans'});assert.deepEqual([...japanese[0].bytes],[1]);assert.deepEqual([...chinese[0].bytes],[2]);
     if(product==='th10mp'){assert.equal(japanese[0].path,'replay/th10_01.rpyx');assert.deepEqual([...(await read.read(product,{path:japanese[0].path}))[0].bytes],[1]);}
   }
+});
+
+
+test('th12 multiplayer persists in its own database and the Launcher reads its native paths',async()=>{
+  const factory=new IDBFactory(),previous=globalThis.indexedDB;globalThis.indexedDB=factory;
+  try{
+    const normal=await openTh12Store(),mp=await openTh12MultiplayerStore();
+    await normal.write('/savesth12/th12.cfg',new Uint8Array([11]));
+    assert.equal(await mp.read('/savesth12/th12.cfg'),undefined);
+    await mp.write('/savesth12/th12.cfg',new Uint8Array([22]));
+    assert.deepEqual([...await normal.read('/savesth12/th12.cfg')],[11]);
+    await mp.write('/savesth12/replay/th12_mp_01.rpy',new Uint8Array([33]));
+    const read=createReplayStorageReader(()=>({indexedDB:factory,keyRange:IDBKeyRange}));
+    const rows=await read.read('th12mp');assert.equal(rows.length,1);assert.deepEqual([...rows[0].bytes],[33]);
+    assert.equal((await read.read('th12')).length,0);
+    assert.deepEqual((await factory.databases()).map(d=>d.name).sort(),['/savesth12','/savesth12mp']);
+  }finally{globalThis.indexedDB=previous;}
+});
+
+test('th12 multiplayer recovers only its former shared replays and does not resurrect removed files',async()=>{
+  const factory=new IDBFactory(),previous=globalThis.indexedDB;globalThis.indexedDB=factory;
+  try{
+    const normal=await openTh12Store();
+    await normal.write('/savesth12/scoreth12.dat',new Uint8Array([11]));
+    await normal.write('/savesth12/replay/th12_01.rpy',new Uint8Array([22]));
+    await normal.write('/savesth12/replay/th12_mp_01.rpy',new Uint8Array([33]));
+    const mp=await openTh12MultiplayerStore();
+    assert.equal(await mp.read('/savesth12/scoreth12.dat'),undefined);
+    assert.equal(await mp.read('/savesth12/replay/th12_01.rpy'),undefined);
+    assert.deepEqual([...await mp.read('/savesth12/replay/th12_mp_01.rpy')],[33]);
+    assert.deepEqual([...await normal.read('/savesth12/replay/th12_mp_01.rpy')],[33]);
+    await mp.remove('/savesth12/replay/th12_mp_01.rpy');
+    const reopened=await openTh12MultiplayerStore();
+    assert.equal(await reopened.read('/savesth12/replay/th12_mp_01.rpy'),undefined);
+  }finally{globalThis.indexedDB=previous;}
 });

@@ -1,0 +1,15 @@
+@layer foundation {
+/* Bridge existing room owners to the shared application theme. */
+body.mp-room-active {
+  --room-bg:var(--book-bg)!important;--room-surface:var(--book-surface)!important;
+  --room-raised:var(--book-raised)!important;--room-tonal:var(--book-accent-soft)!important;
+  --room-text:var(--book-ink)!important;--room-muted:var(--book-muted)!important;
+  --room-line:var(--book-border)!important;--room-accent:var(--book-accent)!important;
+  --ink:var(--book-bg);--paper:var(--book-ink);--panel:var(--book-surface);--muted:var(--book-muted);--line:var(--book-border);--red:var(--book-accent);--red-bright:var(--book-accent);
+  color-scheme:inherit;
+}
+html[data-book-theme='light'] #mpRoomView .room-icon,
+html[data-book-theme='light'] #player.room-workspace .room-spectator-preview-trigger .room-icon{filter:brightness(0) opacity(.72)}
+#mpRoomView .room-challenge-on{color:var(--kit-warning)}
+#mpRoomView .mp-resource-row[data-resource-stage=package] .mp-room-resource-track>span{background:var(--kit-success)!important}
+}

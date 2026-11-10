@@ -1,4 +1,4 @@
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {englishScriptQuotes} from '../server/th075-english-static.mjs';
 import {cryptTh075} from '../server/th075-thcrap-compiler.mjs';

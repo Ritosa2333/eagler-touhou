@@ -1,0 +1,167 @@
+[
+  {
+    "path": "Game/GlobalVariableAndStatistics.cpp",
+    "sourceSha256": "e9de06170fa5fbbe811672d19f013dd40d76d5ea2cd6b3eb359f3de27c88f9e3",
+    "portedSha256": "5ad20ee2a8957284a5c0df63de64568d3f5eeb25f089c5c4db9353ad3f1c4364"
+  },
+  {
+    "path": "Game/GlobalVariableAndStatistics.h",
+    "sourceSha256": "9220287b0ec88fbf7817b0471854662e8d3cacab295afdf588f20dd64261343f",
+    "portedSha256": "2a79b8e4d13ad88d822860d17d349c3e777ced67b3becdc8d9448114a12d121e"
+  },
+  {
+    "path": "Game/MusicRoom/MusicRoom.cpp",
+    "sourceSha256": "4e005a07d5b5e8e3583fb458a1da48759cf9e6ed5b986c07f71a46a9a7ba925a",
+    "portedSha256": "43d07e9e5b70784aa7620288589a7328e13aa7aaefdaf81beade1a475d399dbe"
+  },
+  {
+    "path": "Game/Original/OriginalScenes.cpp",
+    "sourceSha256": "4259265f9c0510cea065aebfeed86f96297801c1996c61bba38315b116636c37",
+    "portedSha256": "d3fc092c14ed9649f1b91825a3ec1c1f34461b9c839328942a6fac49d3b1bc29"
+  },
+  {
+    "path": "Game/Original/OriginalShots.h",
+    "sourceSha256": "12e72003169ef092feae09f12f4f4b9a6bfae869b8a32df3dfd49e61de350d7d",
+    "portedSha256": "212bb4d01b815387583f929d38003640bf7908e3c6fb049a6529004198d040a1"
+  },
+  {
+    "path": "Game/Practice/KeyMonitor.cpp",
+    "sourceSha256": "49a027f9131a371a7c4a99fdc9dcae0b19f1b757723a785079d03bce2209b527",
+    "portedSha256": "a48140ba065855fedca2eee60e113e6efbd43c6d4b3c149a5bfde0e8f29ea798"
+  },
+  {
+    "path": "Game/Practice/Practice.cpp",
+    "sourceSha256": "705154c0645a8e981cb708f71eb3014df820b82f28f2a06248528ba59459d8b8",
+    "portedSha256": "495c25ccf112d0839a3985d802f2e60bff4362346e1d20425384f4af8567e258"
+  },
+  {
+    "path": "Game/Practice/Practice.h",
+    "sourceSha256": "0d69ef51c879ffb2d0444c8d3e885fffcb2ae33b5b5cf181a1ddc35243e9e1a4",
+    "portedSha256": "9d62436d6651242e6add7074fd2833da51af746f6c03f9e53a21ef38f6dc4d39"
+  },
+  {
+    "path": "Game/Practice/PracticeAdvanced.cpp",
+    "sourceSha256": "07f2e495e053e5657914b5bafb94aa94caca7ea0d1e704e0b012e14ecfee431b",
+    "portedSha256": "e83d0c1631d1801686ef839ee320662e489323e4e0810bf6e70d2acb1882673c"
+  },
+  {
+    "path": "Game/Practice/PracticeSections.h",
+    "sourceSha256": "8e8927baccf47a4fed8ee8952804dde89358db760fbb3f1004174d23f0af5bf5",
+    "portedSha256": "c76755981625f1d4b76fab976164238122decd3887914094fa1be1388ca83758"
+  },
+  {
+    "path": "Game/Practice/PracticeSetup.cpp",
+    "sourceSha256": "e4ef49fae0639f0a699fc916c89226e334db5b4947668402b83a2b63a913b8c2",
+    "portedSha256": "c4aa688ac829ad69164ffadfdc6c6fd4a527f83426c3d17e48b0ef17c7de4790"
+  },
+  {
+    "path": "Game/Replay.cpp",
+    "sourceSha256": "e32bc064324e904c0aa8e76f82ea90cdae03ab8e2d2c6e37c580a8fecbf1c6c9",
+    "portedSha256": "8fae7e4ef40c0644775725dcb3284c62c33f5f51456519cc6e4b8252196144b1"
+  },
+  {
+    "path": "Game/Replay.h",
+    "sourceSha256": "f744138bb87600700e6797e3e99fdfbe99b21dea925df80e4e52ce18439025b4",
+    "portedSha256": "a2ffaf9fb50250afc3681eaf392f546cd365512b81c3685c0da956120f97d28f"
+  },
+  {
+    "path": "Game/SelectReplayScreen/SelectReplayScreen.cpp",
+    "sourceSha256": "31d96f3d83347ce7961c5fe7248f6cdc7fe5f6e6c98f611add6f408fe20cfbad",
+    "portedSha256": "af1e16b89acb9d5f646b30e1047b2bbf55e55c49f13683d0f244f1897067ed28"
+  },
+  {
+    "path": "Game/Stage/Chara/Chara.cpp",
+    "sourceSha256": "3686b9cfda9c298200e2467208f9429c511c7d77cec7e31eccfb647c4ed7dda4",
+    "portedSha256": "5a0d85f869b35e900921cadfe14f4c749c159e178bb0e59b659a249cbbdb362e"
+  },
+  {
+    "path": "Game/Stage/Stage.cpp",
+    "sourceSha256": "3629990344734b5929b0ff607584355a528f73806f814a6f72f73e207b42f5a9",
+    "portedSha256": "e305c1b1f046f3065bd06007c0338018567c73b5bbdacc05c93e62f132006598"
+  },
+  {
+    "path": "Game/Stage/Stage.h",
+    "sourceSha256": "198a95b20f12311e83ff6ea3e9d86599c233158aaa10788a9a527e1a1b9bef45",
+    "portedSha256": "a6f7ed206dbb8fd8e5a3ef969b398e4070c9315d99e0c1ada3a6d000a79eb924"
+  },
+  {
+    "path": "Game/Stage/StagePracticeInfo.cpp",
+    "sourceSha256": "fb249471a68d511b9ae1f8c78e0439f74b7be3957e7a96368e4c90416067687f",
+    "portedSha256": "3b44eea7e55a87e804444b5acc4ac6f193906013ccebf29360e5946e91c35477"
+  },
+  {
+    "path": "Game/TitleScreen/TitleScreen.cpp",
+    "sourceSha256": "60233442592d83722a5de73745fd082d1d15598baaaf15eb2d08b71b9b2acd6e",
+    "portedSha256": "bea1974f5b374f597e06a155628cfea3828e29eb42240980913ae680d28f73fd"
+  },
+  {
+    "path": "gameLib/CommonFunction/CommonFunctionGraphic.cpp",
+    "sourceSha256": "0eaea65223438ff47d6111fa27cec5b6204e3bed83319bcc5d0802a0b87ba2f4",
+    "portedSha256": "1217ff5c155d495c624fb8244f234528da967a6f180e28dc62a35656b8450f4c"
+  },
+  {
+    "path": "gameLib/Graphic/2DImage.cpp",
+    "sourceSha256": "4b3cb236db7809b9af34db048e59e63cc42c60ff05148ee579e7931405938d77",
+    "portedSha256": "00b6115e7e9266eb5e2960803570419ce5956ca4877e98fef4ffcdf96e7f2e52"
+  },
+  {
+    "path": "gameLib/Graphic/2DImage.h",
+    "sourceSha256": "1e8752e7b7c60b93382d4760f4d473c146f882b1db4dc85959761f55f938de71",
+    "portedSha256": "92254451081438a8d05d8707a9180ff32a39fefd40e6eed1a4eb522336f90205"
+  },
+  {
+    "path": "gameLib/Graphic/GLContext.h",
+    "sourceSha256": "3fa91499348f32443db54c5d6a706eff4797814c7fcfc0e0e4e8023ba8baa017",
+    "portedSha256": "33e49449ae00d8b3893a59b3f656a841a4d12487b4df475f49568465c8068681"
+  },
+  {
+    "path": "gameLib/Graphic/mygl.h",
+    "sourceSha256": "4617c378b5c091545350763fe65d7e07af034e173d21a73ac03c609c0828c814",
+    "portedSha256": "8e96da60803ad7a08766cc41001bba7add33915b548833745b6fc20e1fc2b817"
+  },
+  {
+    "path": "gameLib/Graphic/PC98Font.h",
+    "sourceSha256": "96be8e6b25cec67a5da91ce9f7d1bee3a5a55b8c5af3f3c4532e944a9ec5bd83",
+    "portedSha256": "6b292d49ee04ee5b988b5c661f6850f27cc62212266c628b600ad89c8ba21f99"
+  },
+  {
+    "path": "gameLib/Graphic/Th5ExtFont.cpp",
+    "sourceSha256": "a376850f8dcab4109e0335a687f5b4ee03ca3d2d05516fccba72a644a2d3cb7a",
+    "portedSha256": "51f5d807431fb2480e11ea4b8a6aed01d5fef5f5443038466663f89714339a37"
+  },
+  {
+    "path": "gameLib/Graphic/Th5ExtFont.h",
+    "sourceSha256": "a4216ece880f528c06ddff4c88f7d89f229f6128c0ad464aaac2826a7a13f02f",
+    "portedSha256": "90a56c0327f1146c09a9d299b89a2205e928866d039349b7e3b81ed0b0581f7f"
+  },
+  {
+    "path": "gameLib/Input/KeyInputDI.h",
+    "sourceSha256": "689ee34c6e10b195be75e7c625df542799c054b5892a9fbb4055cdb7468daad5",
+    "portedSha256": "4ddd237e7b2e46907384b0e30ec8002f5c71dfd764f74b40b82b48f24a5f0022"
+  },
+  {
+    "path": "gameLib/Misc/sha1.cpp",
+    "sourceSha256": "7ec2c978dcd9d11b85e3d60a852d34fa8d7500eaed656c63f04fda9d047c869b",
+    "portedSha256": "57634c36fbcd7120ff420338ee4b857820635788f448a5b80a8d7a39a3ecf477"
+  },
+  {
+    "path": "gameLib/PMDPlayer/PMDPlayer.h",
+    "sourceSha256": "06a7ca34f701e287b5348b92df2aed95b5717600c4c01b8817fadf3f9cce557b",
+    "portedSha256": "eeb3007c8fcb3fd34aa787d304aee443a3b841c61dca8d67af2fa8f28fa0855f"
+  },
+  {
+    "path": "gameLib/SE/SoundEffect.h",
+    "sourceSha256": "ec1148cd5647c21e1817602c09043f316474c1513ec17d36753c12d499f51e5d",
+    "portedSha256": "ecfeefdcc186388073adf3d206f3bc8fb3897a54bea684b89029980942d49081"
+  },
+  {
+    "path": "gameLib/th5DatFile/th5DatFile.cpp",
+    "sourceSha256": "8611c0e1b49296591f0b92a15ac117a4788658799b7dc45fa68426359e64bc5f",
+    "portedSha256": "c805916bb6e8332171bd4bd203a8fdeff919a9eb2dae51999c55f599d7eea101"
+  },
+  {
+    "path": "gameLib/Window/GameWindow.h",
+    "sourceSha256": "3f613546d50539a9d6b02fa54b2abb9675fd093028150b260dc2887348e218a7",
+    "portedSha256": "aedf2a5e447bfdd24feffc79c45a6eb920c4d5c01f4653d535bbfbb4e1a47047"
+  }
+]

@@ -1,0 +1,1055 @@
+{
+  "sourceRevision": "129d5af41dd9bb1c78f8e0fbe36fb53ec4de2d69",
+  "snapshotRevision": "5b8442df80e021c75880e0086052ca4ed989507b",
+  "runtime": {
+    "before": "a705fa701748e8db652d7fdaf042e8c3aff579351c3a5f0e53b17ec507c44193",
+    "normal": "9636f3daadb616484fb0ad81f17938da70b1ae13e6d19085045f45100364e25d",
+    "multiplayer": "6e7a9a98ec4be05e82961b0c439c3deb509ac68304dc5812e42b4ee0b68b4bb1"
+  },
+  "nativeTestsPassed": 2,
+  "normalAdapterTestsPassed": 1,
+  "browser": {
+    "engine": "Chromium",
+    "resolution": [
+      1280,
+      960
+    ],
+    "cpuSlowdownFactor": 2,
+    "hardwareRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "softwareRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "guestInputDelayMs": 110,
+    "independentContexts": {
+      "normalBefore": [
+        {
+          "seats": 2,
+          "matchingConfirmedFrames": 1053,
+          "enemyBulletPeak": 20,
+          "players": [
+            {
+              "windowFps": 59.663,
+              "simulationFps": 59.552,
+              "presentationIntervalP95Ms": 19.67,
+              "captureMeanMs": 1.033,
+              "corrections": 78,
+              "resimulated": 274
+            },
+            {
+              "windowFps": 59.885,
+              "simulationFps": 59.884,
+              "presentationIntervalP95Ms": 18.745,
+              "captureMeanMs": 1.087,
+              "corrections": 15,
+              "resimulated": 54
+            }
+          ]
+        },
+        {
+          "seats": 3,
+          "matchingConfirmedFrames": 1052,
+          "enemyBulletPeak": 18,
+          "players": [
+            {
+              "windowFps": 59.603,
+              "simulationFps": 59.603,
+              "presentationIntervalP95Ms": 20.255,
+              "captureMeanMs": 1.41,
+              "corrections": 76,
+              "resimulated": 227
+            },
+            {
+              "windowFps": 59.605,
+              "simulationFps": 59.825,
+              "presentationIntervalP95Ms": 19.11,
+              "captureMeanMs": 1.472,
+              "corrections": 20,
+              "resimulated": 81
+            },
+            {
+              "windowFps": 59.602,
+              "simulationFps": 59.602,
+              "presentationIntervalP95Ms": 19.95,
+              "captureMeanMs": 1.427,
+              "corrections": 73,
+              "resimulated": 214
+            }
+          ]
+        }
+      ],
+      "normal": [
+        {
+          "seats": 2,
+          "matchingConfirmedFrames": 1051,
+          "enemyBulletPeak": 20,
+          "players": [
+            {
+              "windowFps": 59.611,
+              "simulationFps": 59.667,
+              "presentationIntervalP95Ms": 19.365,
+              "captureMeanMs": 0.769,
+              "corrections": 76,
+              "resimulated": 269
+            },
+            {
+              "windowFps": 59.89,
+              "simulationFps": 59.945,
+              "presentationIntervalP95Ms": 18.155,
+              "captureMeanMs": 0.805,
+              "corrections": 15,
+              "resimulated": 57
+            }
+          ]
+        },
+        {
+          "seats": 3,
+          "matchingConfirmedFrames": 1050,
+          "enemyBulletPeak": 18,
+          "players": [
+            {
+              "windowFps": 59.663,
+              "simulationFps": 59.663,
+              "presentationIntervalP95Ms": 19.47,
+              "captureMeanMs": 0.875,
+              "corrections": 80,
+              "resimulated": 283
+            },
+            {
+              "windowFps": 59.833,
+              "simulationFps": 59.888,
+              "presentationIntervalP95Ms": 18.18,
+              "captureMeanMs": 0.904,
+              "corrections": 19,
+              "resimulated": 72
+            },
+            {
+              "windowFps": 59.722,
+              "simulationFps": 59.611,
+              "presentationIntervalP95Ms": 19.49,
+              "captureMeanMs": 0.87,
+              "corrections": 82,
+              "resimulated": 288
+            }
+          ]
+        }
+      ],
+      "extraBefore": [
+        {
+          "seats": 2,
+          "matchingConfirmedFrames": 1053,
+          "enemyBulletPeak": 206,
+          "players": [
+            {
+              "windowFps": 59.661,
+              "simulationFps": 59.495,
+              "presentationIntervalP95Ms": 19.16,
+              "captureMeanMs": 1.45,
+              "corrections": 46,
+              "resimulated": 135
+            },
+            {
+              "windowFps": 59.881,
+              "simulationFps": 59.881,
+              "presentationIntervalP95Ms": 18.69,
+              "captureMeanMs": 1.478,
+              "corrections": 15,
+              "resimulated": 59
+            }
+          ]
+        },
+        {
+          "seats": 3,
+          "matchingConfirmedFrames": 1050,
+          "enemyBulletPeak": 241,
+          "players": [
+            {
+              "windowFps": 59.502,
+              "simulationFps": 59.172,
+              "presentationIntervalP95Ms": 19.19,
+              "captureMeanMs": 1.808,
+              "corrections": 53,
+              "resimulated": 127
+            },
+            {
+              "windowFps": 59.778,
+              "simulationFps": 59.448,
+              "presentationIntervalP95Ms": 18.775,
+              "captureMeanMs": 1.809,
+              "corrections": 17,
+              "resimulated": 62
+            },
+            {
+              "windowFps": 59.562,
+              "simulationFps": 59.122,
+              "presentationIntervalP95Ms": 19.325,
+              "captureMeanMs": 1.819,
+              "corrections": 55,
+              "resimulated": 134
+            }
+          ]
+        }
+      ],
+      "extra": [
+        {
+          "seats": 2,
+          "matchingConfirmedFrames": 1052,
+          "enemyBulletPeak": 206,
+          "players": [
+            {
+              "windowFps": 59.61,
+              "simulationFps": 59.555,
+              "presentationIntervalP95Ms": 19.02,
+              "captureMeanMs": 0.98,
+              "corrections": 63,
+              "resimulated": 200
+            },
+            {
+              "windowFps": 59.778,
+              "simulationFps": 59.778,
+              "presentationIntervalP95Ms": 18.195,
+              "captureMeanMs": 0.969,
+              "corrections": 16,
+              "resimulated": 67
+            }
+          ]
+        },
+        {
+          "seats": 3,
+          "matchingConfirmedFrames": 1052,
+          "enemyBulletPeak": 241,
+          "players": [
+            {
+              "windowFps": 59.615,
+              "simulationFps": 59.45,
+              "presentationIntervalP95Ms": 19.35,
+              "captureMeanMs": 1.297,
+              "corrections": 59,
+              "resimulated": 158
+            },
+            {
+              "windowFps": 59.778,
+              "simulationFps": 59.779,
+              "presentationIntervalP95Ms": 18.465,
+              "captureMeanMs": 1.308,
+              "corrections": 18,
+              "resimulated": 72
+            },
+            {
+              "windowFps": 59.616,
+              "simulationFps": 59.45,
+              "presentationIntervalP95Ms": 19.2,
+              "captureMeanMs": 1.309,
+              "corrections": 61,
+              "resimulated": 162
+            }
+          ]
+        }
+      ]
+    },
+    "sharedPageSoftware": {
+      "normal": [
+        {
+          "seats": 2,
+          "matchingConfirmedFrames": 1050,
+          "enemyBulletPeak": 20,
+          "players": [
+            {
+              "windowFps": 21.291,
+              "simulationFps": 39.598,
+              "presentationIntervalP95Ms": 83.88,
+              "captureMeanMs": 0.827,
+              "corrections": 66,
+              "resimulated": 417
+            },
+            {
+              "windowFps": 24.18,
+              "simulationFps": 39.56,
+              "presentationIntervalP95Ms": 55.94,
+              "captureMeanMs": 0.856,
+              "corrections": 3,
+              "resimulated": 8
+            }
+          ]
+        },
+        {
+          "seats": 3,
+          "matchingConfirmedFrames": 1051,
+          "enemyBulletPeak": 18,
+          "players": [
+            {
+              "windowFps": 14.236,
+              "simulationFps": 16.475,
+              "presentationIntervalP95Ms": 92.445,
+              "captureMeanMs": 1.035,
+              "corrections": 71,
+              "resimulated": 314
+            },
+            {
+              "windowFps": 14.686,
+              "simulationFps": 16.403,
+              "presentationIntervalP95Ms": 87.04,
+              "captureMeanMs": 1.03,
+              "corrections": 14,
+              "resimulated": 67
+            },
+            {
+              "windowFps": 14.785,
+              "simulationFps": 16.374,
+              "presentationIntervalP95Ms": 86.145,
+              "captureMeanMs": 0.939,
+              "corrections": 1,
+              "resimulated": 1
+            }
+          ]
+        }
+      ],
+      "extra": [
+        {
+          "seats": 2,
+          "matchingConfirmedFrames": 1051,
+          "enemyBulletPeak": 230,
+          "players": [
+            {
+              "windowFps": 20.713,
+              "simulationFps": 34.225,
+              "presentationIntervalP95Ms": 84.31,
+              "captureMeanMs": 1.132,
+              "corrections": 59,
+              "resimulated": 381
+            },
+            {
+              "windowFps": 23.307,
+              "simulationFps": 34.084,
+              "presentationIntervalP95Ms": 59.645,
+              "captureMeanMs": 0.996,
+              "corrections": 9,
+              "resimulated": 24
+            }
+          ]
+        },
+        {
+          "seats": 3,
+          "matchingConfirmedFrames": 1050,
+          "enemyBulletPeak": 241,
+          "players": [
+            {
+              "windowFps": 13.846,
+              "simulationFps": 15.506,
+              "presentationIntervalP95Ms": 98.305,
+              "captureMeanMs": 1.303,
+              "corrections": 67,
+              "resimulated": 297
+            },
+            {
+              "windowFps": 14.384,
+              "simulationFps": 15.407,
+              "presentationIntervalP95Ms": 89.96,
+              "captureMeanMs": 1.3,
+              "corrections": 13,
+              "resimulated": 75
+            },
+            {
+              "windowFps": 14.507,
+              "simulationFps": 15.378,
+              "presentationIntervalP95Ms": 89.66,
+              "captureMeanMs": 1.322,
+              "corrections": 1,
+              "resimulated": 1
+            }
+          ]
+        }
+      ]
+    },
+    "storyTransition": {
+      "wasm": "385585f74fd3627ea9e3c673a00fe968a4fbbff4bb2acbb3e7b27557b8d67014",
+      "cpuSlowdownFactor": 1,
+      "matchingConfirmedFrames": 11060,
+      "stageTwoFrames": 244,
+      "bossNonspellFrames": 2506,
+      "activeSpellFrames": 2048,
+      "players": [
+        {
+          "windowFps": 59.545,
+          "simulationFps": 59.571,
+          "presentationIntervalP95Ms": 18.255,
+          "captureMeanMs": 0.709,
+          "corrections": 245,
+          "resimulated": 931
+        },
+        {
+          "windowFps": 59.672,
+          "simulationFps": 59.598,
+          "presentationIntervalP95Ms": 18.625,
+          "captureMeanMs": 0.447,
+          "corrections": 7930,
+          "resimulated": 28585
+        }
+      ]
+    },
+    "extraFinale": {
+      "guestInputDelayMs": 145,
+      "guestInputJitterMs": [
+        0,
+        20
+      ],
+      "cpuThrottleStartsAt": 9000,
+      "denseStartsAtEnemyBullets": 256,
+      "sameBossPatterns": true,
+      "sameEndpoint": true,
+      "before": {
+        "wasm": "2a9645a56c2df41a8d0cd23cb8e9bfbec4ac2c2fae6ae7f14166dfde77111039",
+        "matchingConfirmedFrames": 34847,
+        "enemyBulletPeak": 1945,
+        "laserPeak": 121,
+        "finalSpellEnd": 34967,
+        "bossPatterns": [
+          {
+            "boss": 195,
+            "spell": 88,
+            "routine": 135,
+            "first": 4530,
+            "last": 5090,
+            "peak": 878,
+            "lasers": 0,
+            "peakFrame": 5090,
+            "peakClock": 5044
+          },
+          {
+            "boss": 195,
+            "spell": -1,
+            "routine": 133,
+            "first": 5091,
+            "last": 5270,
+            "peak": 876,
+            "lasers": 0,
+            "peakFrame": 5091,
+            "peakClock": 5045
+          },
+          {
+            "boss": 195,
+            "spell": 89,
+            "routine": 137,
+            "first": 5271,
+            "last": 5889,
+            "peak": 471,
+            "lasers": 6,
+            "peakFrame": 5788,
+            "peakClock": 5742
+          },
+          {
+            "boss": 195,
+            "spell": -1,
+            "routine": 134,
+            "first": 5890,
+            "last": 6069,
+            "peak": 335,
+            "lasers": 0,
+            "peakFrame": 5890,
+            "peakClock": 5844
+          },
+          {
+            "boss": 195,
+            "spell": 90,
+            "routine": 140,
+            "first": 6070,
+            "last": 6657,
+            "peak": 130,
+            "lasers": 0,
+            "peakFrame": 6640,
+            "peakClock": 6594
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 1,
+            "first": 11238,
+            "last": 11867,
+            "peak": 238,
+            "lasers": 0,
+            "peakFrame": 11706,
+            "peakClock": 11660
+          },
+          {
+            "boss": 532,
+            "spell": 91,
+            "routine": 28,
+            "first": 11872,
+            "last": 12656,
+            "peak": 1064,
+            "lasers": 0,
+            "peakFrame": 12624,
+            "peakClock": 12578
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 4,
+            "first": 12657,
+            "last": 13628,
+            "peak": 1063,
+            "lasers": 0,
+            "peakFrame": 12657,
+            "peakClock": 12611
+          },
+          {
+            "boss": 532,
+            "spell": 92,
+            "routine": 41,
+            "first": 13629,
+            "last": 14665,
+            "peak": 268,
+            "lasers": 121,
+            "peakFrame": 13629,
+            "peakClock": 13583
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 6,
+            "first": 14666,
+            "last": 15624,
+            "peak": 178,
+            "lasers": 0,
+            "peakFrame": 15031,
+            "peakClock": 14985
+          },
+          {
+            "boss": 532,
+            "spell": 93,
+            "routine": 43,
+            "first": 15625,
+            "last": 16502,
+            "peak": 281,
+            "lasers": 0,
+            "peakFrame": 16489,
+            "peakClock": 16443
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 8,
+            "first": 16503,
+            "last": 17199,
+            "peak": 311,
+            "lasers": 0,
+            "peakFrame": 17025,
+            "peakClock": 16979
+          },
+          {
+            "boss": 532,
+            "spell": 94,
+            "routine": 46,
+            "first": 17200,
+            "last": 18045,
+            "peak": 307,
+            "lasers": 0,
+            "peakFrame": 17200,
+            "peakClock": 17154
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 10,
+            "first": 18046,
+            "last": 18775,
+            "peak": 234,
+            "lasers": 0,
+            "peakFrame": 18645,
+            "peakClock": 18599
+          },
+          {
+            "boss": 532,
+            "spell": 95,
+            "routine": 48,
+            "first": 18776,
+            "last": 19840,
+            "peak": 285,
+            "lasers": 0,
+            "peakFrame": 19628,
+            "peakClock": 19582
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 12,
+            "first": 19841,
+            "last": 20541,
+            "peak": 419,
+            "lasers": 0,
+            "peakFrame": 20240,
+            "peakClock": 20194
+          },
+          {
+            "boss": 532,
+            "spell": 96,
+            "routine": 52,
+            "first": 20542,
+            "last": 21608,
+            "peak": 391,
+            "lasers": 44,
+            "peakFrame": 20542,
+            "peakClock": 20496
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 14,
+            "first": 21609,
+            "last": 22637,
+            "peak": 203,
+            "lasers": 0,
+            "peakFrame": 22526,
+            "peakClock": 22480
+          },
+          {
+            "boss": 532,
+            "spell": 97,
+            "routine": 56,
+            "first": 22638,
+            "last": 23567,
+            "peak": 848,
+            "lasers": 0,
+            "peakFrame": 23517,
+            "peakClock": 23471
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 16,
+            "first": 23568,
+            "last": 24503,
+            "peak": 844,
+            "lasers": 0,
+            "peakFrame": 23568,
+            "peakClock": 23522
+          },
+          {
+            "boss": 532,
+            "spell": 98,
+            "routine": 58,
+            "first": 24504,
+            "last": 26507,
+            "peak": 528,
+            "lasers": 0,
+            "peakFrame": 24504,
+            "peakClock": 24458
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 18,
+            "first": 26508,
+            "last": 26687,
+            "peak": 24,
+            "lasers": 0,
+            "peakFrame": 26508,
+            "peakClock": 26462
+          },
+          {
+            "boss": 532,
+            "spell": 99,
+            "routine": 61,
+            "first": 26688,
+            "last": 32567,
+            "peak": 1945,
+            "lasers": 0,
+            "peakFrame": 32442,
+            "peakClock": 32396
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 2,
+            "first": 32568,
+            "last": 32747,
+            "peak": 673,
+            "lasers": 0,
+            "peakFrame": 32568,
+            "peakClock": 32522
+          },
+          {
+            "boss": 532,
+            "spell": 100,
+            "routine": 29,
+            "first": 32748,
+            "last": 34966,
+            "peak": 765,
+            "lasers": 0,
+            "peakFrame": 34843,
+            "peakClock": 34797
+          }
+        ],
+        "players": [
+          {
+            "windowFps": 50.345,
+            "simulationFps": 50.165,
+            "presentationIntervalP95Ms": 37.33,
+            "captureMeanMs": 4.078,
+            "corrections": 2776,
+            "resimulated": 15296,
+            "denseWindowFps": null,
+            "densePresentationIntervalP95Ms": 36.24,
+            "denseCaptureMeanMs": 4.545,
+            "densePhysicalDrawMeanMs": 2.134,
+            "denseLogicalDrawMeanMs": 0.915,
+            "denseRepairP95Ms": 17.25
+          },
+          {
+            "windowFps": 51.604,
+            "simulationFps": 50.02,
+            "presentationIntervalP95Ms": 29.15,
+            "captureMeanMs": 4.738,
+            "corrections": 7620,
+            "resimulated": 15766,
+            "denseWindowFps": null,
+            "densePresentationIntervalP95Ms": 25.765,
+            "denseCaptureMeanMs": 5.283,
+            "densePhysicalDrawMeanMs": 2.087,
+            "denseLogicalDrawMeanMs": 0.933,
+            "denseRepairP95Ms": 17.345
+          },
+          {
+            "windowFps": 51.849,
+            "simulationFps": 50.147,
+            "presentationIntervalP95Ms": 35.795,
+            "captureMeanMs": 4.035,
+            "corrections": 5150,
+            "resimulated": 16315,
+            "denseWindowFps": null,
+            "densePresentationIntervalP95Ms": 34.505,
+            "denseCaptureMeanMs": 4.54,
+            "densePhysicalDrawMeanMs": 2.141,
+            "denseLogicalDrawMeanMs": 0.913,
+            "denseRepairP95Ms": 17.455
+          }
+        ]
+      },
+      "after": {
+        "wasm": "df3a173c4b18baae73927abca6b189222695f3d860ecaebb6945588781943b91",
+        "matchingConfirmedFrames": 34847,
+        "enemyBulletPeak": 1945,
+        "laserPeak": 121,
+        "finalSpellEnd": 34967,
+        "bossPatterns": [
+          {
+            "boss": 195,
+            "spell": 88,
+            "routine": 135,
+            "first": 4530,
+            "last": 5090,
+            "peak": 878,
+            "lasers": 0,
+            "peakFrame": 5090,
+            "peakClock": 5044
+          },
+          {
+            "boss": 195,
+            "spell": -1,
+            "routine": 133,
+            "first": 5091,
+            "last": 5270,
+            "peak": 876,
+            "lasers": 0,
+            "peakFrame": 5091,
+            "peakClock": 5045
+          },
+          {
+            "boss": 195,
+            "spell": 89,
+            "routine": 137,
+            "first": 5271,
+            "last": 5889,
+            "peak": 471,
+            "lasers": 6,
+            "peakFrame": 5788,
+            "peakClock": 5742
+          },
+          {
+            "boss": 195,
+            "spell": -1,
+            "routine": 134,
+            "first": 5890,
+            "last": 6069,
+            "peak": 335,
+            "lasers": 0,
+            "peakFrame": 5890,
+            "peakClock": 5844
+          },
+          {
+            "boss": 195,
+            "spell": 90,
+            "routine": 140,
+            "first": 6070,
+            "last": 6657,
+            "peak": 130,
+            "lasers": 0,
+            "peakFrame": 6640,
+            "peakClock": 6594
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 1,
+            "first": 11238,
+            "last": 11867,
+            "peak": 238,
+            "lasers": 0,
+            "peakFrame": 11706,
+            "peakClock": 11660
+          },
+          {
+            "boss": 532,
+            "spell": 91,
+            "routine": 28,
+            "first": 11872,
+            "last": 12656,
+            "peak": 1064,
+            "lasers": 0,
+            "peakFrame": 12624,
+            "peakClock": 12578
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 4,
+            "first": 12657,
+            "last": 13628,
+            "peak": 1063,
+            "lasers": 0,
+            "peakFrame": 12657,
+            "peakClock": 12611
+          },
+          {
+            "boss": 532,
+            "spell": 92,
+            "routine": 41,
+            "first": 13629,
+            "last": 14665,
+            "peak": 268,
+            "lasers": 121,
+            "peakFrame": 13629,
+            "peakClock": 13583
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 6,
+            "first": 14666,
+            "last": 15624,
+            "peak": 178,
+            "lasers": 0,
+            "peakFrame": 15031,
+            "peakClock": 14985
+          },
+          {
+            "boss": 532,
+            "spell": 93,
+            "routine": 43,
+            "first": 15625,
+            "last": 16502,
+            "peak": 281,
+            "lasers": 0,
+            "peakFrame": 16489,
+            "peakClock": 16443
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 8,
+            "first": 16503,
+            "last": 17199,
+            "peak": 311,
+            "lasers": 0,
+            "peakFrame": 17025,
+            "peakClock": 16979
+          },
+          {
+            "boss": 532,
+            "spell": 94,
+            "routine": 46,
+            "first": 17200,
+            "last": 18045,
+            "peak": 307,
+            "lasers": 0,
+            "peakFrame": 17200,
+            "peakClock": 17154
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 10,
+            "first": 18046,
+            "last": 18775,
+            "peak": 234,
+            "lasers": 0,
+            "peakFrame": 18645,
+            "peakClock": 18599
+          },
+          {
+            "boss": 532,
+            "spell": 95,
+            "routine": 48,
+            "first": 18776,
+            "last": 19840,
+            "peak": 285,
+            "lasers": 0,
+            "peakFrame": 19628,
+            "peakClock": 19582
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 12,
+            "first": 19841,
+            "last": 20541,
+            "peak": 419,
+            "lasers": 0,
+            "peakFrame": 20240,
+            "peakClock": 20194
+          },
+          {
+            "boss": 532,
+            "spell": 96,
+            "routine": 52,
+            "first": 20542,
+            "last": 21608,
+            "peak": 391,
+            "lasers": 44,
+            "peakFrame": 20542,
+            "peakClock": 20496
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 14,
+            "first": 21609,
+            "last": 22637,
+            "peak": 203,
+            "lasers": 0,
+            "peakFrame": 22526,
+            "peakClock": 22480
+          },
+          {
+            "boss": 532,
+            "spell": 97,
+            "routine": 56,
+            "first": 22638,
+            "last": 23567,
+            "peak": 848,
+            "lasers": 0,
+            "peakFrame": 23517,
+            "peakClock": 23471
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 16,
+            "first": 23568,
+            "last": 24503,
+            "peak": 844,
+            "lasers": 0,
+            "peakFrame": 23568,
+            "peakClock": 23522
+          },
+          {
+            "boss": 532,
+            "spell": 98,
+            "routine": 58,
+            "first": 24504,
+            "last": 26507,
+            "peak": 528,
+            "lasers": 0,
+            "peakFrame": 24504,
+            "peakClock": 24458
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 18,
+            "first": 26508,
+            "last": 26687,
+            "peak": 24,
+            "lasers": 0,
+            "peakFrame": 26508,
+            "peakClock": 26462
+          },
+          {
+            "boss": 532,
+            "spell": 99,
+            "routine": 61,
+            "first": 26688,
+            "last": 32567,
+            "peak": 1945,
+            "lasers": 0,
+            "peakFrame": 32442,
+            "peakClock": 32396
+          },
+          {
+            "boss": 532,
+            "spell": -1,
+            "routine": 2,
+            "first": 32568,
+            "last": 32747,
+            "peak": 673,
+            "lasers": 0,
+            "peakFrame": 32568,
+            "peakClock": 32522
+          },
+          {
+            "boss": 532,
+            "spell": 100,
+            "routine": 29,
+            "first": 32748,
+            "last": 34966,
+            "peak": 765,
+            "lasers": 0,
+            "peakFrame": 34843,
+            "peakClock": 34797
+          }
+        ],
+        "players": [
+          {
+            "windowFps": 54.988,
+            "simulationFps": 54.175,
+            "presentationIntervalP95Ms": 31.23,
+            "captureMeanMs": 3.596,
+            "corrections": 2232,
+            "resimulated": 7147,
+            "denseWindowFps": 49.7,
+            "densePresentationIntervalP95Ms": 41.2,
+            "denseCaptureMeanMs": 3.987,
+            "densePhysicalDrawMeanMs": 1.935,
+            "denseLogicalDrawMeanMs": 0.714,
+            "denseRepairP95Ms": 23.835
+          },
+          {
+            "windowFps": 53.965,
+            "simulationFps": 54.037,
+            "presentationIntervalP95Ms": 25.21,
+            "captureMeanMs": 2.937,
+            "corrections": 850,
+            "resimulated": 6105,
+            "denseWindowFps": 48.704,
+            "densePresentationIntervalP95Ms": 43.865,
+            "denseCaptureMeanMs": 3.254,
+            "densePhysicalDrawMeanMs": 1.973,
+            "denseLogicalDrawMeanMs": 0.674,
+            "denseRepairP95Ms": 23.825
+          },
+          {
+            "windowFps": 55.059,
+            "simulationFps": 54.145,
+            "presentationIntervalP95Ms": 30.81,
+            "captureMeanMs": 3.644,
+            "corrections": 2479,
+            "resimulated": 7386,
+            "denseWindowFps": 50.009,
+            "densePresentationIntervalP95Ms": 39.59,
+            "denseCaptureMeanMs": 4.052,
+            "densePhysicalDrawMeanMs": 1.956,
+            "denseLogicalDrawMeanMs": 0.724,
+            "denseRepairP95Ms": 29.035
+          }
+        ]
+      }
+    }
+  }
+}

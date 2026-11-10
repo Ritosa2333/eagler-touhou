@@ -7,6 +7,7 @@ const affected = new Set(JSON.parse(process.env.EAGLER_CI_AFFECTED || '[]'));
 let checked = 0;
 for (const [game, entry] of Object.entries(builds.games)) for (const [variant, definition] of Object.entries(entry.variants)) {
   if (!['normal', 'multiplayer'].includes(variant)) continue;
+  if (entry.builder === 'prebuilt' && entry.sourceBuild == null && definition.sourceBuild == null) continue;
   const directory = workspace.repositories[definition.workspaceRepository ?? entry.workspaceRepository];
   if (!affected.has(directory)) continue;
   const recipe = {...entry.sourceBuild, ...definition.sourceBuild};

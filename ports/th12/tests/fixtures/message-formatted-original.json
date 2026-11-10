@@ -1,0 +1,942 @@
+{
+  "schema": "th12-original-message-text-branch-samples/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "provider": "Original41fcc0 text branches,420e40 decryption,atoi/strchr; ANM handle/interrupt and GDI draw callbacks recorded",
+  "fixtureCallbacks": [
+    "461c50 handle lookup",
+    "461920 handle lookup",
+    "461dd0 position callback",
+    "460760 record text draw",
+    "461970 record interrupt",
+    "453d90 sound ignored"
+  ],
+  "wholeGameDeterminism": false,
+  "wholePresentationOracle": false,
+  "gpuExecuted": false,
+  "records": [
+    {
+      "name": "plain-pair",
+      "commands": [
+        [
+          17,
+          "Alpha"
+        ],
+        [
+          17,
+          "Beta"
+        ],
+        [
+          17,
+          "Gamma"
+        ]
+      ],
+      "frames": [
+        {
+          "tick": 0,
+          "clock": 1,
+          "line": 1,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [
+            {
+              "slot": 0,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            },
+            {
+              "slot": 1,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            },
+            {
+              "slot": 2,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 1,
+              "style": 0
+            },
+            {
+              "slot": 3,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 1,
+              "style": 0
+            },
+            {
+              "slot": 0,
+              "text": "Alpha",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            }
+          ],
+          "interrupts": [
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              3,
+              3
+            ],
+            [
+              0,
+              2
+            ]
+          ]
+        },
+        {
+          "tick": 1,
+          "clock": 2,
+          "line": 1,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [],
+          "interrupts": []
+        },
+        {
+          "tick": 2,
+          "clock": 3,
+          "line": 0,
+          "initialized": 0,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [
+            {
+              "slot": 1,
+              "text": "Beta",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            }
+          ],
+          "interrupts": [
+            [
+              1,
+              2
+            ]
+          ]
+        },
+        {
+          "tick": 3,
+          "clock": 4,
+          "line": 0,
+          "initialized": 0,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [],
+          "interrupts": []
+        },
+        {
+          "tick": 4,
+          "clock": 5,
+          "line": 1,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [
+            {
+              "slot": 0,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            },
+            {
+              "slot": 1,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            },
+            {
+              "slot": 2,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 1,
+              "style": 0
+            },
+            {
+              "slot": 3,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 1,
+              "style": 0
+            },
+            {
+              "slot": 0,
+              "text": "Gamma",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            }
+          ],
+          "interrupts": [
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              3,
+              3
+            ],
+            [
+              0,
+              2
+            ]
+          ]
+        },
+        {
+          "tick": 5,
+          "clock": 6,
+          "line": 1,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [],
+          "interrupts": []
+        }
+      ]
+    },
+    {
+      "name": "formatted-first",
+      "commands": [
+        [
+          17,
+          "|7,20,Alpha"
+        ],
+        [
+          17,
+          "Beta"
+        ],
+        [
+          17,
+          "Gamma"
+        ]
+      ],
+      "frames": [
+        {
+          "tick": 0,
+          "clock": 1,
+          "line": 0,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [
+            {
+              "slot": 0,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            },
+            {
+              "slot": 1,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            },
+            {
+              "slot": 2,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 1,
+              "style": 0
+            },
+            {
+              "slot": 3,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 1,
+              "style": 0
+            },
+            {
+              "slot": 2,
+              "text": "Alpha",
+              "color": 16314511,
+              "offset": 7,
+              "spacing": 20,
+              "style": 2
+            }
+          ],
+          "interrupts": [
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              3,
+              3
+            ],
+            [
+              2,
+              2
+            ]
+          ]
+        },
+        {
+          "tick": 1,
+          "clock": 2,
+          "line": 0,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [],
+          "interrupts": []
+        },
+        {
+          "tick": 2,
+          "clock": 3,
+          "line": 1,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [
+            {
+              "slot": 0,
+              "text": "Beta",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            }
+          ],
+          "interrupts": [
+            [
+              0,
+              2
+            ]
+          ]
+        },
+        {
+          "tick": 3,
+          "clock": 4,
+          "line": 1,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [],
+          "interrupts": []
+        },
+        {
+          "tick": 4,
+          "clock": 5,
+          "line": 0,
+          "initialized": 0,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [
+            {
+              "slot": 1,
+              "text": "Gamma",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            }
+          ],
+          "interrupts": [
+            [
+              1,
+              2
+            ]
+          ]
+        },
+        {
+          "tick": 5,
+          "clock": 6,
+          "line": 0,
+          "initialized": 0,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [],
+          "interrupts": []
+        }
+      ]
+    },
+    {
+      "name": "formatted-second",
+      "commands": [
+        [
+          17,
+          "Alpha"
+        ],
+        [
+          17,
+          "|9,18,Beta"
+        ],
+        [
+          17,
+          "Gamma"
+        ]
+      ],
+      "frames": [
+        {
+          "tick": 0,
+          "clock": 1,
+          "line": 1,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [
+            {
+              "slot": 0,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            },
+            {
+              "slot": 1,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            },
+            {
+              "slot": 2,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 1,
+              "style": 0
+            },
+            {
+              "slot": 3,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 1,
+              "style": 0
+            },
+            {
+              "slot": 0,
+              "text": "Alpha",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            }
+          ],
+          "interrupts": [
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              3,
+              3
+            ],
+            [
+              0,
+              2
+            ]
+          ]
+        },
+        {
+          "tick": 1,
+          "clock": 2,
+          "line": 1,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [],
+          "interrupts": []
+        },
+        {
+          "tick": 2,
+          "clock": 3,
+          "line": 1,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [
+            {
+              "slot": 3,
+              "text": "Beta",
+              "color": 16314511,
+              "offset": 9,
+              "spacing": 18,
+              "style": 2
+            }
+          ],
+          "interrupts": [
+            [
+              3,
+              2
+            ]
+          ]
+        },
+        {
+          "tick": 3,
+          "clock": 4,
+          "line": 1,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [],
+          "interrupts": []
+        },
+        {
+          "tick": 4,
+          "clock": 5,
+          "line": 0,
+          "initialized": 0,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [
+            {
+              "slot": 1,
+              "text": "Gamma",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            }
+          ],
+          "interrupts": [
+            [
+              1,
+              2
+            ]
+          ]
+        },
+        {
+          "tick": 5,
+          "clock": 6,
+          "line": 0,
+          "initialized": 0,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [],
+          "interrupts": []
+        }
+      ]
+    },
+    {
+      "name": "formatted-repeat",
+      "commands": [
+        [
+          17,
+          "|7,20,Alpha"
+        ],
+        [
+          17,
+          "|9,18,Beta"
+        ]
+      ],
+      "frames": [
+        {
+          "tick": 0,
+          "clock": 1,
+          "line": 0,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [
+            {
+              "slot": 0,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            },
+            {
+              "slot": 1,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            },
+            {
+              "slot": 2,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 1,
+              "style": 0
+            },
+            {
+              "slot": 3,
+              "text": " ",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 1,
+              "style": 0
+            },
+            {
+              "slot": 2,
+              "text": "Alpha",
+              "color": 16314511,
+              "offset": 7,
+              "spacing": 20,
+              "style": 2
+            }
+          ],
+          "interrupts": [
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              3,
+              3
+            ],
+            [
+              2,
+              2
+            ]
+          ]
+        },
+        {
+          "tick": 1,
+          "clock": 2,
+          "line": 0,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [],
+          "interrupts": []
+        },
+        {
+          "tick": 2,
+          "clock": 3,
+          "line": 0,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [
+            {
+              "slot": 2,
+              "text": "Beta",
+              "color": 16314511,
+              "offset": 9,
+              "spacing": 18,
+              "style": 2
+            }
+          ],
+          "interrupts": [
+            [
+              2,
+              2
+            ]
+          ]
+        },
+        {
+          "tick": 3,
+          "clock": 4,
+          "line": 0,
+          "initialized": 1,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [],
+          "interrupts": []
+        }
+      ]
+    },
+    {
+      "name": "serif-speaker",
+      "commands": [
+        [
+          9,
+          ""
+        ],
+        [
+          17,
+          "Alpha"
+        ],
+        [
+          17,
+          "|2,10,Beta"
+        ]
+      ],
+      "frames": [
+        {
+          "tick": 0,
+          "clock": 1,
+          "line": 0,
+          "initialized": 0,
+          "speaker": 2,
+          "flags": 2,
+          "draws": [],
+          "interrupts": []
+        },
+        {
+          "tick": 1,
+          "clock": 2,
+          "line": 0,
+          "initialized": 0,
+          "speaker": 2,
+          "flags": 2,
+          "draws": [],
+          "interrupts": []
+        },
+        {
+          "tick": 2,
+          "clock": 3,
+          "line": 1,
+          "initialized": 1,
+          "speaker": 2,
+          "flags": 2,
+          "draws": [
+            {
+              "slot": 0,
+              "text": " ",
+              "color": 14211288,
+              "offset": 0,
+              "spacing": 0,
+              "style": 1
+            },
+            {
+              "slot": 1,
+              "text": " ",
+              "color": 14211288,
+              "offset": 0,
+              "spacing": 0,
+              "style": 1
+            },
+            {
+              "slot": 2,
+              "text": " ",
+              "color": 14211288,
+              "offset": 0,
+              "spacing": 1,
+              "style": 1
+            },
+            {
+              "slot": 3,
+              "text": " ",
+              "color": 14211288,
+              "offset": 0,
+              "spacing": 1,
+              "style": 1
+            },
+            {
+              "slot": 0,
+              "text": "Alpha",
+              "color": 14211288,
+              "offset": 0,
+              "spacing": 0,
+              "style": 1
+            }
+          ],
+          "interrupts": [
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              3,
+              3
+            ],
+            [
+              0,
+              2
+            ]
+          ]
+        },
+        {
+          "tick": 3,
+          "clock": 4,
+          "line": 1,
+          "initialized": 1,
+          "speaker": 2,
+          "flags": 2,
+          "draws": [],
+          "interrupts": []
+        },
+        {
+          "tick": 4,
+          "clock": 5,
+          "line": 1,
+          "initialized": 1,
+          "speaker": 2,
+          "flags": 2,
+          "draws": [
+            {
+              "slot": 3,
+              "text": "Beta",
+              "color": 14211288,
+              "offset": 2,
+              "spacing": 10,
+              "style": 2
+            }
+          ],
+          "interrupts": [
+            [
+              3,
+              2
+            ]
+          ]
+        },
+        {
+          "tick": 5,
+          "clock": 6,
+          "line": 1,
+          "initialized": 1,
+          "speaker": 2,
+          "flags": 2,
+          "draws": [],
+          "interrupts": []
+        }
+      ]
+    },
+    {
+      "name": "legacy-lines",
+      "commands": [
+        [
+          15,
+          "Alpha"
+        ],
+        [
+          16,
+          "Beta"
+        ]
+      ],
+      "frames": [
+        {
+          "tick": 0,
+          "clock": 1,
+          "line": 0,
+          "initialized": 0,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [
+            {
+              "slot": 0,
+              "text": "Alpha",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            }
+          ],
+          "interrupts": [
+            [
+              0,
+              2
+            ]
+          ]
+        },
+        {
+          "tick": 1,
+          "clock": 2,
+          "line": 0,
+          "initialized": 0,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [],
+          "interrupts": []
+        },
+        {
+          "tick": 2,
+          "clock": 3,
+          "line": 0,
+          "initialized": 0,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [
+            {
+              "slot": 1,
+              "text": "Beta",
+              "color": 16314511,
+              "offset": 0,
+              "spacing": 0,
+              "style": 0
+            }
+          ],
+          "interrupts": [
+            [
+              1,
+              2
+            ]
+          ]
+        },
+        {
+          "tick": 3,
+          "clock": 4,
+          "line": 0,
+          "initialized": 0,
+          "speaker": 0,
+          "flags": 0,
+          "draws": [],
+          "interrupts": []
+        }
+      ]
+    }
+  ]
+}

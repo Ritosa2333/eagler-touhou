@@ -1,0 +1,106 @@
+{
+  "date": "2026-10-27",
+  "target": {
+    "game": "th17",
+    "version": "1.00b",
+    "language": "Japanese",
+    "executable": "../[th17] 东方鬼形兽（汉化版+日文版）/th17.exe",
+    "sha256": "85cb011e2e43b316c8fa42a3c402565ecdf2f4379f3bab66d86bcb7beef8255f",
+    "imageBase": 4194304,
+    "completeGame": true
+  },
+  "coreSha256": "ec846c746343b491fa10c77f7f95908a547febfa693439094729466acd5ca480",
+  "passed": true,
+  "origin": "http://127.0.0.1:55148",
+  "manifestVersion": "e739d874c55154719609b0cd",
+  "wasmSha256": "ae61c83300005b642defc96ee7f3bac5d61f4586e593b4a8e384ab18c454a1a3",
+  "observations": [
+    {
+      "mobile": false,
+      "canvas": [
+        1280,
+        960
+      ],
+      "gameAudio": [
+        1,
+        778,
+        796672,
+        0,
+        2048,
+        1,
+        0,
+        1000000,
+        0,
+        258048,
+        18
+      ],
+      "returnedAudio": [
+        1,
+        1362,
+        1394688,
+        0,
+        2048,
+        0,
+        0,
+        1000000,
+        0,
+        69632,
+        18
+      ],
+      "files": [
+        {
+          "path": "scoreth17.dat",
+          "size": 26654
+        },
+        {
+          "path": "th17.cfg",
+          "size": 100
+        }
+      ]
+    },
+    {
+      "mobile": true,
+      "canvas": [
+        1280,
+        960
+      ],
+      "gameAudio": [
+        1,
+        714,
+        731136,
+        0,
+        6144,
+        1,
+        0,
+        1000000,
+        0,
+        258048,
+        18
+      ],
+      "returnedAudio": [
+        1,
+        1368,
+        1400832,
+        0,
+        6144,
+        0,
+        0,
+        1000000,
+        0,
+        77824,
+        18
+      ],
+      "files": [
+        {
+          "path": "scoreth17.dat",
+          "size": 26657
+        },
+        {
+          "path": "th17.cfg",
+          "size": 100
+        }
+      ]
+    }
+  ],
+  "scope": "Actual accepted production Wasm, final launcher and allowlisted HTTP server with CSP. Real RAF, desktop/mobile viewport start/selection/gameplay, SDL PCM queue, pause/resume, Q return, title BGM restoration and player-file persistence. Public mode uses the HTTPS tunnel and mobile viewport. Developer probes are absent. Chromium software rendering does not measure phone GPU performance."
+}

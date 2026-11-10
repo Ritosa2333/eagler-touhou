@@ -4,7 +4,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
  * Main authorities: app:1395–1490,1924–1936,1988–1998,4299–4317;
  * original test-remote-metadata and test-language-catalog assertions stay intact.
  */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after, vi} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -105,14 +105,15 @@ for (const fail of ['host', 'catalog', 'both']) test(`metadata: ${fail} failure 
 });
 
 test('metadata: 12-second deadline aborts both requests and reports original localized timeout key', async t => {
-  t.mock.timers.enable({apis: ['setTimeout']});
+  vi.useFakeTimers({toFake: ['setTimeout']});
+  t.onTestFinished(() => vi.useRealTimers());
   const calls = [];
   const service = fixture({fetch: (url, init) => new Promise((_resolve, reject) => {
     calls.push({url, init}); init.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
   })}, {locale: () => 'en'});
-  const pending = service.initialize(); t.mock.timers.tick(11999); await flush();
+  const pending = service.initialize(); vi.advanceTimersByTime(11999); await flush();
   assert.equal(service.getSnapshot().phase, 'loading'); assert.ok(calls.every(call => !call.init.signal.aborted));
-  t.mock.timers.tick(1); await pending;
+  vi.advanceTimersByTime(1); await pending;
   assert.equal(service.getSnapshot().metadataErrors.length, 2); assert.ok(calls.every(call => call.init.signal.aborted));
   for (const error of service.getSnapshot().metadataErrors) assert.match(error.message, /^en:runtime.requestTimeoutDetail:.*"seconds":12/);
   service.dispose();
@@ -165,6 +166,28 @@ test('metadata: host publication, test-only product and multiplayer-runtime filt
   const hostTest = fixture(network({...published, shared: {...published.shared, testBuild: true}})); await hostTest.initialize();
   for (const product of testProducts) assert.ok(hostTest.getSnapshot().products.includes(product));
   hostTest.dispose();
+});
+
+test('visibility mode shows test products while metadata and Runtime identities stay on the same publication', async () => {
+  const published = host({th06: hostGame('th06'), th075: hostGame('th075', {multiplayerRuntime: 'runtime/th075/mp.html'}),
+    th20: hostGame('th20')});
+  const snapshots = [];
+  for (const testBuild of [false, true]) {
+    const net = network(published), service = fixture(net, {testBuild});
+    await service.initialize();
+    snapshots.push(service.getSnapshot());
+    assert.deepEqual(net.calls.map(call => new URL(call.url).pathname).sort(), [
+      '/deploy/release-catalog.json', '/deploy/site-manifest.json',
+    ]);
+    assert.ok(net.calls.every(call => !new URL(call.url).pathname.includes('/beta/')));
+    assert.equal(service.getSnapshot().releaseCatalog.games.th06.descriptor, 'th06.package.json');
+    assert.equal(service.getSnapshot().siteManifest.games.th06.runtime, 'runtime/th06/th06.html');
+    assert.equal(service.getSnapshot().products.includes('th20'), testBuild);
+    assert.equal(service.getSnapshot().products.includes('th075mp'), testBuild);
+    service.dispose();
+  }
+  assert.deepEqual(snapshots[0].siteManifest, snapshots[1].siteManifest);
+  assert.deepEqual(snapshots[0].releaseCatalog, snapshots[1].releaseCatalog);
 });
 
 test('metadata: original language overlays and music context use current package hints', async () => {

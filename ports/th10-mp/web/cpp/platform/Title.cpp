@@ -17,6 +17,7 @@ template<class Base> MenuMain<Base>::MenuMain(Title& title):owner(title){
 }
 template<class Base> u32 MenuMain<Base>::create(AnmFile& file,i32 script){return owner.create(file,script);}
 template<class Base> void MenuMain<Base>::sound(i32 sound){owner.sound(sound);}
+template<class Base> bool MenuMain<Base>::room_preview()const{return owner.room_preview;}
 template<class Base> void MenuMain<Base>::interrupt_immediately(u32 id,i32 label){this->registry->interrupt_and_update(id,static_cast<std::int16_t>(label),owner.engine);}
 template<class Base> MenuSelection<Base>::MenuSelection(Title& owner):MenuMain<Base>(owner){
     this->scores=&owner.scores.data;this->effects=&owner.common.value->effects;this->stage_table=owner.data.stages;this->current_stage=&owner.state.current_stage;

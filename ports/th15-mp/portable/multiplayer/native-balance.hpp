@@ -61,12 +61,12 @@ void balance_rules(RetailAssets& files){
   require(b.spell_card.abort(),b.spell_card.error);
   if(primary==3){
    b.session.bomb_state=0;require(boss->commands.host->begin_spell(spell)&&!(b.spell.flags&32),"Shield-free spell started protected");b.bomb_enemies.available=true;
-   require(b.pilots[0]->begin_bomb()&&bool(b.spell.flags&32),"Reisen activation inside the first 60 frames must retain retail protection");
-   require(b.step(frame)&&bool(b.spell.flags&32),"New Reisen startup shield protection cleared prematurely");b.session.bomb_state=0;
+   require(b.pilots[0]->begin_bomb()&&!(b.spell.flags&32),"Reisen activation must not protect the Boss during spell startup");
+   require(b.step(frame)&&!(b.spell.flags&32),"Reisen shield enabled spell startup damage protection");b.session.bomb_state=0;
    require(b.step(frame)&&!(b.spell.flags&32),"Reisen startup protection did not end with its own shield");require(b.spell_card.abort(),b.spell_card.error);
    b.session.bomb_state=1;
   }
-  if(primary==3){require(b.mp_bomb_active()&&!b.mp_bomb_active(true),"Reisen's personal shield was treated as a damaging Bomb");require(boss->commands.host->begin_spell(spell)&&!(b.spell.flags&32),"Reisen-only shield must preserve the native spell startup rule");b.player->hit();require(b.step(frame)&&bool(b.spell.flags&32),"Reisen shield hit during startup must preserve retail protection");b.player->life.state=1;b.session.bomb_state=0;require(b.step(frame)&&!(b.spell.flags&32),"Shield-hit startup protection outlived its owner");require(b.spell_card.abort(),b.spell_card.error);}
+  if(primary==3){require(b.mp_bomb_active()&&!b.mp_bomb_active(true),"Reisen's personal shield was treated as a damaging Bomb");require(boss->commands.host->begin_spell(spell)&&!(b.spell.flags&32),"Reisen-only shield must not protect spell startup");b.player->hit();require(b.step(frame)&&!(b.spell.flags&32),"Reisen shield hit must not protect the Boss");b.player->life.state=1;b.session.bomb_state=0;require(b.step(frame)&&!(b.spell.flags&32),"Shield-hit startup protection outlived its owner");require(b.spell_card.abort(),b.spell_card.error);}
  }
  {
   World w(files,3,0,{0,1,3});auto& b=*w.battle;BulletShooter shot;shot.position={100,300,0};shot.count=shot.rows=1;shot.speed=2;

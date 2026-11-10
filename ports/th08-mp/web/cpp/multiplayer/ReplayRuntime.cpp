@@ -55,14 +55,16 @@ bool BrowserRuntime::request_multiplayer_replay(const char* name,u32 stage){
     replay_request=p;replay_requested_stage=stage;return true;
 }
 bool BrowserRuntime::save_multiplayer_replay(i32 slot,const char* name){
-    if(app.session.netplay.ReadOnly())return true;
+    if(app.session.netplay.ReadOnly()&&!(app.session.netplay.Spectator()&&app.session.netplay.Retired()))return true;
+    if(app.session.netplay.Retired())return save_confirmed_multiplayer_replay(slot,name);
     if(!replay_archive.Recording()||!multiplayer_driver||!multiplayer_driver->FrameOpen())return false;
     char date[6]{},stamp[20]{};calendar(date,stamp);
     return replay_archive.RequestSave(app.session.netplay.NextFrame(),slot,name,date);
 }
 bool BrowserRuntime::save_confirmed_multiplayer_replay(i32 slot,const char* name){
-    if(replay_viewer||app.session.netplay.ReadOnly()||slot<1||slot>15||!name||!multiplayer_driver||
-       multiplayer_driver->FrameOpen()||!multiplayer_driver->Reconcile()||!replay_archive.Recording())return false;
+    const bool spectator_result=app.session.netplay.Spectator()&&app.session.netplay.Retired();
+    if(replay_viewer||(app.session.netplay.ReadOnly()&&!spectator_result)||slot<1||slot>15||!name||!multiplayer_driver||
+       multiplayer_driver->FrameOpen()||!multiplayer_driver->Reconcile()||(!replay_archive.Recording()&&!spectator_result))return false;
     auto d=replay_archive.Description();std::memset(d.name,0,8);
     for(u32 i=0;i<8&&name[i];++i)d.name[i]=name[i];char stamp[20]{};calendar(d.date,stamp);
     std::vector<u8> bytes;if(!replay_archive.Encode(bytes,&d))return false;

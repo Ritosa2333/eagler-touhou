@@ -1,7 +1,7 @@
 import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Pinned-main differential behavior + real React shelf lifecycles in synthetic
  * DOM only. Native layout, touch physics, artwork and browser QA remain separate. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';

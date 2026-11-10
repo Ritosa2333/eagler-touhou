@@ -23,6 +23,7 @@ from touhou_formats import extract_pbg3_entry, extract_pbg4_entry, extract_pbgz_
 
 
 ARTWORK_BY_GAME = {
+    "th05": ("th05-card.webp",),
     "th06": (
         "th06-card.webp",
         "favicon.ico",
@@ -44,6 +45,9 @@ ARTWORK_BY_GAME = {
     "th11": ("th11-card.webp",),
     # TH15's title is layered artwork in the retail title.anm, not a screenshot.
     "th15": ("th15-card.webp",),
+    "th12": ("th12-card.webp",),
+    "th17": ("th17-card.webp",),
+    "th19": (),
 }
 # Launcher cards are presentation derivatives, not archival copies of the
 # original title artwork.  The UI darkens/crops them heavily and Lighthouse's
@@ -107,7 +111,7 @@ def _encode_site_icon(source: bytes, name: str) -> tuple[bytes, tuple[int, int]]
             image.load()
             normalized = image.convert("RGBA")
             target_size = max(1, round(size * scale))
-            resized = normalized.resize((target_size, target_size), Image.Resampling.NEAREST)
+            resized = normalized.resize((target_size, target_size), Image.Resampling.LANCZOS)
             canvas = Image.new("RGBA", (size, size), background or (0, 0, 0, 0))
             offset = ((size - target_size) // 2, (size - target_size) // 2)
             canvas.alpha_composite(resized, offset)
@@ -180,6 +184,33 @@ def _extract_th15_title(root: Path, thdat: str, thanm: str) -> bytes:
         return output.getvalue()
 
 
+def _extract_th17_title(root: Path, thdat: str, thanm: str) -> bytes:
+    archive = (root / "th17.dat").resolve()
+    textures = ["title/title_bk00.png", "title/title_ch00.png", "title/title_logo.png"]
+    with tempfile.TemporaryDirectory(prefix="eagler-th17-artwork-") as directory:
+        # thtk's Windows archive reader needs an ASCII path; Python copies the
+        # user's original from Unicode directories without changing its bytes.
+        staged_archive = Path(directory) / "th17.dat"
+        shutil.copyfile(archive, staged_archive)
+        for arguments in ([thdat, "-x", "17", str(staged_archive), "title.anm"],
+                          [thanm, "-x", "title.anm", *textures]):
+            result = subprocess.run(arguments, cwd=directory, capture_output=True,
+                                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            if result.returncode:
+                raise ValueError(result.stderr.decode("utf-8", errors="replace"))
+        with Image.open(Path(directory) / textures[0]) as background, \
+             Image.open(Path(directory) / textures[1]) as character, \
+             Image.open(Path(directory) / textures[2]) as logo:
+            if background.size != (1280, 960) or character.size != background.size or logo.size != (496, 400):
+                raise ValueError("Unexpected TH17 title texture dimensions")
+            combined = background.convert("RGBA")
+            combined.alpha_composite(character.convert("RGBA"))
+            combined.alpha_composite(logo.convert("RGBA"), (736, 96))
+            output = BytesIO()
+            combined.convert("RGB").save(output, format="PNG")
+            return output.getvalue()
+
+
 def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = "thdat", thanm: str = "thanm") -> bytes:
     if name == "favicon.ico":
         return (Path(__file__).resolve().parent.parent / "favicon.ico").read_bytes()
@@ -205,6 +236,8 @@ def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = 
         raise FileNotFoundError("Supply the TH075 development card or an artwork override")
     if name == "th15-card.webp":
         return _extract_th15_title(root, thdat, thanm)
+    if name == "th17-card.webp":
+        return _extract_th17_title(root, thdat, thanm)
     if name in ("th11-card.webp", "th20-card.webp"):
         raise FileNotFoundError(f"{game}: supply {name} through --override-dir; no retail artwork reader is available")
     raise AssertionError(name)
@@ -230,6 +263,7 @@ def prepare_host_artwork(
     override_dir: Path | None = None,
     thdat: str = "thdat",
     thanm: str = "thanm",
+    prepared_artwork_dirs: dict[str, Path] | None = None,
 ) -> dict[str, object]:
     output = output.resolve()
     if output.exists():
@@ -272,22 +306,30 @@ def prepare_host_artwork(
                 icon_override = override_dir / "favicon.ico" if override_dir else None
                 if icon_override is not None and icon_override.is_file():
                     raw = icon_override.read_bytes()
+                    _validate_artwork("favicon.ico", raw)
                     source = "override-derived"
                 else:
-                    raw = _default_artwork("th06", "favicon.ico", roots, thdat, thanm)
+                    raw = (Path(__file__).resolve().parent.parent / "public/assets/brand/portrait.png").read_bytes()
+                    _validate_artwork("portrait.png", raw)
                     source = "site-brand-derived"
-                _validate_artwork("favicon.ico", raw)
                 data, dimensions = _encode_site_icon(raw, name)
                 source_bytes = len(raw)
             else:
                 try:
-                    raw = _default_artwork(game, name, roots, thdat, thanm)
-                    if name.endswith(".webp"):
+                    prepared_root = (prepared_artwork_dirs or {}).get(game)
+                    raw = (prepared_root / name).read_bytes() if prepared_root is not None else _default_artwork(game, name, roots, thdat, thanm)
+                    if prepared_root is not None and name.endswith(".webp"):
+                        _validate_artwork(name, raw)
+                        with Image.open(BytesIO(raw)) as image:
+                            image.load()
+                            dimensions = image.size
+                        data = raw
+                    elif name.endswith(".webp"):
                         data, dimensions = _encode_webp(raw, f"{game}-title00")
                     else:
                         data = raw
                         _validate_artwork(name, data)
-                    source = "site-brand" if name == "favicon.ico" else "original-extraction"
+                    source = "prepared-content" if prepared_root is not None else "site-brand" if name == "favicon.ico" else "original-extraction"
                     source_bytes = len(raw)
                 except (FileNotFoundError, ValueError, EOFError, OSError) as error:
                     entries.append({
@@ -330,6 +372,7 @@ def _main() -> None:
         help="original game directory; repeat once per selected game",
     )
     parser.add_argument("--override-dir", type=Path)
+    parser.add_argument("--prepared-artwork-dir", action="append", default=[], metavar="GAME=DIR")
     parser.add_argument("--thdat", default="thdat")
     parser.add_argument("--thanm", default="thanm")
     args = parser.parse_args()
@@ -359,6 +402,15 @@ def _main() -> None:
         roots[game] = Path(directory).resolve()
     if args.override_dir is not None and not args.override_dir.is_dir():
         parser.error(f"override directory not found: {args.override_dir}")
+    prepared_artwork_dirs: dict[str, Path] = {}
+    for value in args.prepared_artwork_dir:
+        game, separator, directory = value.partition("=")
+        if not separator or game not in games or game in prepared_artwork_dirs or not directory.strip():
+            parser.error(f"invalid or duplicate --prepared-artwork-dir: {value}")
+        location = Path(directory).resolve()
+        if not location.is_dir():
+            parser.error(f"prepared artwork directory not found: {location}")
+        prepared_artwork_dirs[game] = location
     report = prepare_host_artwork(
         args.output,
         games,
@@ -366,6 +418,7 @@ def _main() -> None:
         args.override_dir.resolve() if args.override_dir else None,
         args.thdat,
         args.thanm,
+        prepared_artwork_dirs,
     )
     print(json.dumps(report, ensure_ascii=False))
 

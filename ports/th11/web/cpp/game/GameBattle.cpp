@@ -1,4 +1,5 @@
 #include "GameBattle.hpp"
+#include "AnmPresentation.hpp"
 #include "Localization.hpp"
 #include "GameSession.hpp"
 #include <algorithm>
@@ -282,8 +283,12 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
 }
 bool GameBattle::draw_hitbox(AnmRenderer& renderer,const PlayerFrame& player){
     if(player.state.life_state!=1||player.motion.focus_animation)return true;
-    const auto p=player.motion.state.position;
-    if(auto* marker=hitbox_presentation.find(hitbox_marker))for(auto* n=&marker->child;n;n=n->next){auto vm=*n->value;vm.position={p.x+224,p.y+16,0};if(renderer.draw(vm)==-2)return false;}
+    auto p=player.motion.state.position;
+    Vec3 drawn{float(double(p.x)+224),float(double(p.y)+16),0};
+    // Follow the player's final presentation position, not the authoritative
+    // endpoint, so the marker cannot drift from the interpolated body.
+    presentation::present_position(player.motion.body,drawn);
+    if(auto* marker=hitbox_presentation.find(hitbox_marker))for(auto* n=&marker->child;n;n=n->next){auto vm=*n->value;vm.position=drawn;if(renderer.draw(vm)==-2)return false;}
     return true;
 }
 bool GameBattle::draw(AnmRenderer& renderer,SceneDrawKind kind) {

@@ -1,0 +1,174 @@
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@import "@fumadocs/base-ui/css/generated/spacious.css";
+@import "@fumadocs/base-ui/css/neutral.css";
+@import "@fumadocs/base-ui/css/preset.css";
+@reference "../../ui/tailwind.css";
+
+/* Fumadocs expects Tailwind's reset. Limit its base rules to the docs shell. */
+@layer base {
+  :where(.documentation-shell *) {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0 solid var(--color-fd-border);
+  }
+  :where(.documentation-shell a) {
+    color: inherit;
+    text-decoration: inherit;
+  }
+  :where(.documentation-shell h1, .documentation-shell h2, .documentation-shell h3, .documentation-shell h4) {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+  :where(.documentation-shell button, .documentation-shell input) {
+    font: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    background: transparent;
+  }
+  :where(.documentation-shell ul, .documentation-shell ol) {
+    list-style: none;
+  }
+  :where(.documentation-shell svg, .documentation-shell img) {
+    display: block;
+    vertical-align: middle;
+  }
+  :where(.documentation-shell img) {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+.documentation-shell {
+  --fd-banner-height: var(--site-header-height, 61px);
+  font: 400 16px / 1.5 var(--kit-font);
+  color: var(--color-fd-foreground);
+}
+
+.documentation-shell #fd-spacious-layout {
+  --fd-header-height: 40px;
+}
+
+.documentation-shell #nd-sidebar [role="presentation"]:has(> [data-id$="-viewport"]) {
+  margin-block-start: 0;
+}
+
+.documentation-shell [data-help-page] {
+  --documentation-heading-offset: calc(var(--fd-header-height) + 12px);
+}
+
+.documentation-shell [data-help-page] :is(h2, h3, h4, h5, h6)[id] {
+  scroll-margin-block-start: var(--documentation-heading-offset);
+  text-wrap: balance;
+}
+
+.documentation-shell [data-help-page] li > p {
+  margin-block: 0;
+}
+
+.documentation-shell [data-help-page] li > p + p {
+  margin-block-start: .5em;
+}
+
+.documentation-guide-picker {
+  display: none;
+}
+
+.documentation-guide-steps {
+  margin-block: 12px;
+}
+
+.documentation-shell .documentation-mechanisms th[scope="row"] {
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.documentation-shell .documentation-mechanisms ul {
+  margin-block: 0;
+  padding-inline-start: 1.15em;
+  list-style-type: "- ";
+}
+
+.documentation-shell .documentation-mechanisms li > a {
+  font-weight: 700;
+  text-decoration-color: var(--color-fd-muted-foreground);
+  text-underline-offset: .2em;
+}
+
+.documentation-shell .documentation-mechanisms li > a:hover {
+  text-decoration-color: currentColor;
+}
+
+.documentation-shell .documentation-mechanisms li > span {
+  margin-inline-start: .65em;
+  color: var(--color-fd-muted-foreground);
+  font-weight: 400;
+}
+
+.documentation-shell .documentation-mechanisms rt {
+  color: var(--color-fd-muted-foreground);
+  font-size: .65em;
+}
+
+/* Keep an inline TOC while the article still has room beside a compact rail. */
+@container (42rem <= width < 64rem) {
+  .documentation-shell #nd-toc {
+    --fd-toc-width: clamp(12rem, 28cqi, 17rem);
+    width: var(--fd-toc-width);
+    padding-inline-start: 24px;
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .documentation-shell #nd-page-panel > header .documentation-toc-trigger {
+    display: none;
+  }
+}
+
+@media (max-width: 780px) {
+  .documentation-shell {
+    --fd-banner-height: var(--site-header-height, 105px);
+  }
+}
+
+@media (width < 768px) {
+  .documentation-shell .documentation-mechanisms li > span {
+    display: block;
+    margin-inline-start: 0;
+  }
+
+  .documentation-guide-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .documentation-guide-picker {
+    display: block;
+    flex: none;
+  }
+
+  .documentation-guide-picker button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .documentation-shell #fd-spacious-layout {
+    --fd-header-height: 44px;
+  }
+
+  .documentation-shell [data-help-page] {
+    --documentation-heading-offset: calc(var(--fd-docs-row-3) + 12px);
+  }
+}
+
+.documentation-revision {
+  margin-top: 24px;
+  color: var(--color-fd-muted-foreground);
+  font-size: 12px;
+}
+
+.documentation-revision a:hover {
+  text-decoration: underline;
+}

@@ -46,6 +46,22 @@ function bitmapRecords(bytes) {
   }
   return records;
 }
+// Replay listing/save uses the patched bank, while score entry uses the base
+// bank. Reuse translated pixels only when every replaced slot has identical
+// geometry; each edition still gets its own size/CRC binding.
+export function th075ImageVariant(patch, source) {
+  if(patch.length<20||patch.subarray(0,4).toString()!=='E75I'||patch.readUInt32LE(4)!==2)throw Error('Invalid TH075 image patch');
+  const records=bitmapRecords(source),count=patch.readUInt32LE(16),seen=new Set();let at=20;
+  if(count>65536)throw Error('Invalid TH075 image count');
+  for(let i=0;i<count;i++){
+    if(at+20>patch.length)throw Error('Truncated TH075 image patch');
+    const index=patch.readUInt32LE(at),width=patch.readUInt32LE(at+4),height=patch.readUInt32LE(at+8),packed=patch.readUInt32LE(at+12),size=patch.readUInt32LE(at+16);
+    if(seen.has(index)||records[index]?.width!==width||records[index]?.height!==height||(packed?packed!==size||size%8:width*height*4!==size)||at+20+size>patch.length)throw Error('TH075 edition image geometry mismatch');
+    seen.add(index);at+=20+size;
+  }
+  if(at!==patch.length)throw Error('Trailing TH075 image patch data');
+  const result=Buffer.from(patch);result.writeUInt32LE(crc32(source),8);result.writeUInt32LE(source.length,12);return result;
+}
 export class Th075BaseResources {
   constructor(paths){this.paths=paths;this.editions=new Map();this.ready=null;}
   async initialize(){
@@ -62,8 +78,9 @@ export class Th075BaseResources {
       }
     }})();
   }
-  async read(path){
+  async read(path,edition){
     await this.initialize();
+    if(edition!==undefined){if(!['base','patched'].includes(edition))throw Error('Invalid TH075 resource edition');const get=this.editions.get(edition+'/'+path)||(edition==='patched'&&this.editions.get('base/'+path));if(!get)throw Error('Missing TH075 original resource: '+edition+'/'+path);return get();}
     // Follow CharacterFactory and Application's actual resource editions.
     // A base-only bank must not accidentally bind to a newer patch-bank CRC.
     const sprite=/^data\/character\/(\d{2})(2)?\.dat$/.exec(path);
@@ -148,6 +165,8 @@ export class Th075ThcrapCompiler {
       await run(this.python,[resolve(import.meta.dirname,'../scripts/th075-language-assets.py'),resolve(temporary,'job.json')],{maxBuffer:4*1024*1024,windowsHide:true});
       const result=[],emit=(path,bytes,format)=>result.push({game:'th075',path,targetPath:'/thcrap/th075/'+path,bytes,format});
       for(const [path,bank]of images){const records=[];for(const job of jobs.filter(j=>j.path===path)){const data=await readFile(resolve(temporary,job.output)),width=data.readUInt32LE(0),height=data.readUInt32LE(4),expected=bank.records[job.index];if(width!==expected.width||height!==expected.height)throw Error(`${path}#${job.index}: localized image dimensions differ (${width}x${height}, expected ${expected.width}x${expected.height})`);const encoded=encodeTh075Pixels(data.subarray(8));records.push(Buffer.concat([u32(job.index),u32(width),u32(height),u32(encoded.packed),u32(encoded.bytes.length),encoded.bytes]));}emit('images/'+path+'.bin',Buffer.concat([Buffer.from('E75I'),u32(2),u32(crc32(bank.base)),u32(bank.base.length),u32(records.length),...records]),'th075-image-replacements/2');}
+      const replay=result.find(r=>r.path==='images/data/system/replay.dat.bin');
+      if(replay){const base=await this.base.read('data/system/replay.dat','base');if(replay.bytes.readUInt32LE(8)!==crc32(base)||replay.bytes.readUInt32LE(12)!==base.length)emit('images/base/data/system/replay.dat.bin',th075ImageVariant(replay.bytes,base),'th075-image-replacements/2');}
       for(const [path,item]of text){const entries=[...item.entries].sort(([a],[b])=>a-b).map(([index,bytes])=>Buffer.concat([u32(index),u32(bytes.length),bytes]));emit('text/'+path+'.bin',Buffer.concat([Buffer.from('E75T'),u32(1),u32(crc32(item.base)),u32(item.base.length),u32(entries.length),...entries]),'th075-text-replacements/1');}
       emit('fonts/localized-glyphs.bin',await readFile(resolve(temporary,'glyphs.bin')),'th075-glyphs/1');
       let license;if(this.fontLicense)license=await readFile(this.fontLicense);else{try{license=await readFile(new URL('../public/assets/fonts/OFL-Unifont.txt',import.meta.url));}catch{license=await readFile(new URL('../assets/fonts/OFL-Unifont.txt',import.meta.url));}}

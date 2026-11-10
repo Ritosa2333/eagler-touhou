@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 const port=await new Promise(resolve=>{const server=net.createServer();server.listen(0,'127.0.0.1',()=>{const port=server.address().port;server.close(()=>resolve(port));});});
 // Test an exact deployed/candidate bundle without rebuilding unrelated services.
 const child=spawn(process.execPath,[process.env.EAGLER_TEST_RELAY_ENTRY || fileURLToPath(new URL('../src/netplay-relay.mjs',import.meta.url))],{windowsHide:true,
-  env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE:'1',EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe']});
+  env:{...process.env,EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK:'1',EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE:'1',EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe']});
 let log='';child.stdout.on('data',bytes=>log+=bytes);child.stderr.on('data',bytes=>log+=bytes);
 const sockets=[];
 async function wait(test,label){const deadline=Date.now()+5000;while(!test()){if(Date.now()>deadline)throw Error(label+' timeout\n'+log);await new Promise(resolve=>setTimeout(resolve,5));}}

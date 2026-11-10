@@ -1,0 +1,207 @@
+# th12 适配检查
+
+[开发入口](README.md) · [检查方法](../../docs/adaptation/README.md) · [全部作品](../README.md)
+
+源码目录：`ports/th12`。构建模式：`normal`。
+
+实现情况与实际验收分别记录。源码接口和模块检查通过后记为“已实现”；完成对应操作并附执行记录后记为“已验证”。
+
+状态：`待核对`、`进行中`、`待验证`、`已实现`、`已验证`、`检查失败`、`不适用`。
+
+[自动检查结果与源码身份](../../docs/adaptation/status.json) · `npm run ports:check -- --game=th12 --variant=both`
+
+## 源码与构建
+
+| 编号 | 检查项 | normal | 记录 |
+| --- | --- | --- | --- |
+| BUILD-01 | [源码目录与普通版／MP归属](../../docs/adaptation/build.md#build-01) | 已验证 | normal：[source-inputs](../../docs/adaptation/status.json) |
+| BUILD-02 | [工具链与外部依赖](../../docs/adaptation/build.md#build-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| BUILD-03 | [对应模式独立构建](../../docs/adaptation/build.md#build-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| BUILD-04 | [Runtime 文件与来源记录](../../docs/adaptation/build.md#build-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| BUILD-05 | [前端搭配单个游戏运行](../../docs/adaptation/build.md#build-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| BUILD-06 | [源码与素材来源](../../docs/adaptation/build.md#build-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+
+## 启动与资源
+
+| 编号 | 检查项 | normal | 记录 |
+| --- | --- | --- | --- |
+| RUNTIME-01 | [协议身份与会话代次](../../docs/adaptation/runtime.md#runtime-01) | 已实现 | normal：[runtime-protocol](../../docs/adaptation/status.json) |
+| RUNTIME-02 | [就绪、配置、启动、首帧](../../docs/adaptation/runtime.md#runtime-02) | 已实现 | normal：[runtime-protocol](../../docs/adaptation/status.json) |
+| RUNTIME-03 | [命令响应与错误信息](../../docs/adaptation/runtime.md#runtime-03) | 已实现 | normal：[runtime-protocol](../../docs/adaptation/status.json) |
+| RUNTIME-04 | [后台、恢复与退出清理](../../docs/adaptation/runtime.md#runtime-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| RUNTIME-05 | [Runtime 与资源管理分工](../../docs/adaptation/runtime.md#runtime-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PACKAGE-01 | [共用游戏包存储](../../docs/adaptation/runtime.md#package-01) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
+| PACKAGE-02 | [DATA 身份与挂载目标](../../docs/adaptation/runtime.md#package-02) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
+| PACKAGE-03 | [完整更新后切换版本](../../docs/adaptation/runtime.md#package-03) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
+| PACKAGE-04 | [本地导入与在线安装一致](../../docs/adaptation/runtime.md#package-04) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
+| PACKAGE-05 | [已安装游戏离线启动](../../docs/adaptation/runtime.md#package-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PACKAGE-06 | [统一安装和更新入口](../../docs/adaptation/runtime.md#package-06) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
+
+## 键盘、手柄与触控
+
+| 编号 | 检查项 | normal | 记录 |
+| --- | --- | --- | --- |
+| INPUT-01 | [键盘逻辑输入](../../docs/adaptation/input.md#input-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| INPUT-02 | [启动器键盘改键](../../docs/adaptation/input.md#input-02) | 已实现 | normal：[launcher-input-owners](../../docs/adaptation/status.json) |
+| INPUT-03 | [启动器手柄映射](../../docs/adaptation/input.md#input-03) | 已实现 | normal：[launcher-input-owners](../../docs/adaptation/status.json) |
+| INPUT-04 | [手柄方向与按钮](../../docs/adaptation/input.md#input-04) | 已实现 | normal：[native-gamepad](../../docs/adaptation/status.json) |
+| INPUT-05 | [多种输入独立持有](../../docs/adaptation/input.md#input-05) | 已实现 | normal：[launcher-input-owners](../../docs/adaptation/status.json) |
+| INPUT-06 | [失焦与断开释放](../../docs/adaptation/input.md#input-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| INPUT-07 | [原作菜单与对话输入](../../docs/adaptation/input.md#input-07) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-01 | [限速滑动移动](../../docs/adaptation/input.md#touch-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-02 | [无限速滑动移动](../../docs/adaptation/input.md#touch-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-03 | [方向式虚拟摇杆](../../docs/adaptation/input.md#touch-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-04 | [自由方向虚拟摇杆](../../docs/adaptation/input.md#touch-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-05 | [按住低速](../../docs/adaptation/input.md#touch-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-06 | [切换低速](../../docs/adaptation/input.md#touch-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-07 | [双指低速](../../docs/adaptation/input.md#touch-07) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-08 | [射击、Bomb 与暂停](../../docs/adaptation/input.md#touch-08) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-09 | [暂时禁移与触点连续性](../../docs/adaptation/input.md#touch-09) | 待核对 | normal：[held-touch-continuity](../../docs/adaptation/status.json) |
+| TOUCH-10 | [无限速移动落率记录](../../docs/adaptation/input.md#touch-10) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-11 | [双击 Bomb](../../docs/adaptation/input.md#touch-11) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-12 | [菜单与对话手势](../../docs/adaptation/input.md#touch-12) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-13 | [确认键的新按下边沿](../../docs/adaptation/input.md#touch-13) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-14 | [100–300% 灵敏度](../../docs/adaptation/input.md#touch-14) | 已实现 | normal：[touch-sensitivity](../../docs/adaptation/status.json) |
+| TOUCH-15 | [触控与其他输入隔离](../../docs/adaptation/input.md#touch-15) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-16 | [触控取消与生命周期](../../docs/adaptation/input.md#touch-16) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-17 | [共用布局编辑器](../../docs/adaptation/input.md#touch-17) | 已实现 | normal：[shared-touch-controls](../../docs/adaptation/status.json) |
+| TOUCH-18 | [共用重开按钮](../../docs/adaptation/input.md#touch-18) | 已实现 | normal：[shared-touch-controls](../../docs/adaptation/status.json) |
+| TOUCH-19 | [共用双指放大镜](../../docs/adaptation/input.md#touch-19) | 已实现 | normal：[shared-touch-controls](../../docs/adaptation/status.json) |
+
+## 画面与声音
+
+| 编号 | 检查项 | normal | 记录 |
+| --- | --- | --- | --- |
+| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
+| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
+| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
+| DISPLAY-04 | [连续视觉字段插值](../../docs/adaptation/presentation.md#display-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-05 | [出生、销毁和瞬移](../../docs/adaptation/presentation.md#display-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-06 | [暂停画面的表现](../../docs/adaptation/presentation.md#display-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-07 | [实际呈现后报告首帧](../../docs/adaptation/presentation.md#display-07) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-08 | [限制到 60 Hz](../../docs/adaptation/presentation.md#display-08) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| AUDIO-01 | [正常 OGG 音乐](../../docs/adaptation/presentation.md#audio-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| AUDIO-02 | [无 BGM 模式](../../docs/adaptation/presentation.md#audio-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| AUDIO-03 | [切曲、渐变、暂停、停止](../../docs/adaptation/presentation.md#audio-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| AUDIO-04 | [返回前台后恢复声音](../../docs/adaptation/presentation.md#audio-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| AUDIO-05 | [音乐资源错误信息](../../docs/adaptation/presentation.md#audio-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| AUDIO-06 | [高刷新与音频事件分开](../../docs/adaptation/presentation.md#audio-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| AUDIO-07 | [音效即时输出](../../docs/adaptation/presentation.md#audio-07) | 待核对 | normal：[immediate-sfx-routing](../../docs/adaptation/status.json) |
+| MIDI-01 | [声明 MIDI 选项](../../docs/adaptation/presentation.md#midi-01) | 不适用 | normal：本作使用 OGG 音乐 |
+| MIDI-02 | [可听到的 MIDI 输出](../../docs/adaptation/presentation.md#midi-02) | 不适用 | normal：本作使用 OGG 音乐 |
+| MIDI-03 | [MIDI 生命周期](../../docs/adaptation/presentation.md#midi-03) | 不适用 | normal：本作使用 OGG 音乐 |
+| MIDI-04 | [MIDI 与 OGG 分开](../../docs/adaptation/presentation.md#midi-04) | 不适用 | normal：本作使用 OGG 音乐 |
+
+## 存档与 Replay
+
+| 编号 | 检查项 | normal | 记录 |
+| --- | --- | --- | --- |
+| REPLAY-01 | [导入原版 Replay](../../docs/adaptation/storage.md#replay-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| REPLAY-02 | [按原版格式导出可表达输入](../../docs/adaptation/storage.md#replay-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| REPLAY-03 | [记录实际生效输入](../../docs/adaptation/storage.md#replay-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| REPLAY-04 | [扩展格式与版本](../../docs/adaptation/storage.md#replay-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| REPLAY-05 | [Replay 文件管理](../../docs/adaptation/storage.md#replay-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| REPLAY-06 | [回放与实时输入隔离](../../docs/adaptation/storage.md#replay-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| REPLAY-07 | [回放独立于显示刷新率](../../docs/adaptation/storage.md#replay-07) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| SAVE-01 | [已声明的存储根](../../docs/adaptation/storage.md#save-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| SAVE-02 | [用户文件允许范围](../../docs/adaptation/storage.md#save-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| SAVE-03 | [明确持久化时机](../../docs/adaptation/storage.md#save-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| SAVE-04 | [退出重开后数据保留](../../docs/adaptation/storage.md#save-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| SAVE-05 | [离线读取已有数据](../../docs/adaptation/storage.md#save-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| SAVE-06 | [游戏包与用户数据分开](../../docs/adaptation/storage.md#save-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+
+## 语言与练习
+
+| 编号 | 检查项 | normal | 记录 |
+| --- | --- | --- | --- |
+| PRACTICE-01 | [发布包中的练习能力](../../docs/adaptation/localization.md#practice-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PRACTICE-02 | [开局前启用与语言](../../docs/adaptation/localization.md#practice-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PRACTICE-03 | [游戏内练习状态](../../docs/adaptation/localization.md#practice-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PRACTICE-04 | [关卡与资源参数](../../docs/adaptation/localization.md#practice-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PRACTICE-05 | [练习 Replay 元数据](../../docs/adaptation/localization.md#practice-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PRACTICE-06 | [触控功能键与指针](../../docs/adaptation/localization.md#practice-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PRACTICE-07 | [练习语言跟随设置](../../docs/adaptation/localization.md#practice-07) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| PRACTICE-08 | [练习界面的可用功能](../../docs/adaptation/localization.md#practice-08) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| LANG-01 | [内置日语原文](../../docs/adaptation/localization.md#lang-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| LANG-02 | [语言包身份与发布清单](../../docs/adaptation/localization.md#lang-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| LANG-03 | [开局前挂载翻译与字体](../../docs/adaptation/localization.md#lang-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| LANG-04 | [语言包失败时回到原文](../../docs/adaptation/localization.md#lang-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| LANG-05 | [字体字符覆盖](../../docs/adaptation/localization.md#lang-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| LANG-06 | [缺译资源使用原文](../../docs/adaptation/localization.md#lang-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+
+## 多人接入与规则
+
+| 编号 | 检查项 | normal | 记录 |
+| --- | --- | --- | --- |
+| MP-RULE-01 | [死亡、幽灵与救援](../../docs/adaptation/multiplayer.md#mp-rule-01) | 不适用 | normal：单人模式 |
+| MP-RULE-02 | [个人资源与团队资源](../../docs/adaptation/multiplayer.md#mp-rule-02) | 不适用 | normal：单人模式 |
+| MP-RULE-03 | [给予资源与反馈](../../docs/adaptation/multiplayer.md#mp-rule-03) | 不适用 | normal：单人模式 |
+| MP-RULE-04 | [对话、结算与全灭](../../docs/adaptation/multiplayer.md#mp-rule-04) | 不适用 | normal：单人模式 |
+| MP-RULE-05 | [自机可见性与多人HUD](../../docs/adaptation/multiplayer.md#mp-rule-05) | 不适用 | normal：单人模式 |
+| MP-01 | [独立 MP 产品变体](../../docs/adaptation/multiplayer.md#mp-01) | 不适用 | normal：单人模式 |
+| MP-02 | [房间人数、难度与机体](../../docs/adaptation/multiplayer.md#mp-02) | 不适用 | normal：单人模式 |
+| MP-03 | [所有席位准备并同步开局](../../docs/adaptation/multiplayer.md#mp-03) | 不适用 | normal：单人模式 |
+| MP-04 | [确定性输入与状态检查](../../docs/adaptation/multiplayer.md#mp-04) | 不适用 | normal：单人模式 |
+| MP-05 | [各席位输入归属](../../docs/adaptation/multiplayer.md#mp-05) | 不适用 | normal：单人模式 |
+| MP-06 | [旁观加入与输入隔离](../../docs/adaptation/multiplayer.md#mp-06) | 不适用 | normal：单人模式 |
+| MP-07 | [旁观只读取连续已确认历史](../../docs/adaptation/multiplayer.md#mp-07) | 不适用 | normal：单人模式 |
+| MP-08 | [慢旁观者与玩家隔离](../../docs/adaptation/multiplayer.md#mp-08) | 不适用 | normal：单人模式 |
+| MP-09 | [旁观尾帧与结束时机](../../docs/adaptation/multiplayer.md#mp-09) | 不适用 | normal：单人模式 |
+| MP-10 | [联机暂停与重开](../../docs/adaptation/multiplayer.md#mp-10) | 不适用 | normal：单人模式 |
+| MP-11 | [多人 Replay](../../docs/adaptation/multiplayer.md#mp-11) | 不适用 | normal：单人模式 |
+| MP-12 | [WebRTC 与 Relay 路径](../../docs/adaptation/multiplayer.md#mp-12) | 不适用 | normal：单人模式 |
+| MP-13 | [本地玩家可见性](../../docs/adaptation/multiplayer.md#mp-13) | 不适用 | normal：单人模式 |
+| MP-14 | [联机与回滚诊断](../../docs/adaptation/multiplayer.md#mp-14) | 不适用 | normal：单人模式 |
+| MP-15 | [游戏结束返回房间](../../docs/adaptation/multiplayer.md#mp-15) | 不适用 | normal：单人模式 |
+
+## 验证与交付
+
+| 编号 | 检查项 | normal | 记录 |
+| --- | --- | --- | --- |
+| VERIFY-01 | [全部内置 Demo 对照](../../docs/adaptation/validation.md#verify-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| VERIFY-02 | [长 Replay 样本](../../docs/adaptation/validation.md#verify-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| VERIFY-03 | [原版基准与内容哈希](../../docs/adaptation/validation.md#verify-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| VERIFY-04 | [读取固定基准](../../docs/adaptation/validation.md#verify-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| VERIFY-05 | [单独维护原版基准](../../docs/adaptation/validation.md#verify-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| VERIFY-06 | [逐逻辑帧比较](../../docs/adaptation/validation.md#verify-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| VERIFY-07 | [诊断构建与正常构建](../../docs/adaptation/validation.md#verify-07) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| VERIFY-08 | [本作状态映射与结束条件](../../docs/adaptation/validation.md#verify-08) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+
+<!-- manual-verification -->
+
+Boss 位移动画执行原版 ECL262／276 的启停规则，依横向位移选择左右移动与停下过渡，保留原 VM 的局部位置和素材库。27 组原版指令边界对照覆盖换向与 ±0.03 像素阈值；原生回归入口为 `th12_enemy_movement_animation`。
+
+SDL 启动画面在原作社团署名下方叠加公共 `EAGLER ☯ TOUHOU Developers` 图案，随原版启动淡入淡出；普通关卡加载继续使用原作画面。图案由浏览器入口生成并交给 GLES 绘制，保持原作素材与署名。
+
+手柄左摇杆的本作输入默认使用每轴 50% 的方形死区，普通版与多人版、SDL 原生入口与旧网页入口保持一致。边界、斜向、十字键和启动器映射所有权由 `tests/sdl-gamepad.test.mjs` 检查；主站输入继续采用启动器的手柄配置。
+
+## 运行验收记录
+
+当前正式构建入口为 SDL3／GLES 普通版，代码包沿用 `th12.html`、目录 Runtime 协议和 `/savesth12`。初版构建身份保留在 [#161 构建记录](../../archive/th12-sdl-completion-20261029/README.md)。当前正式清单登记完整 SDL 入口，浏览器实测与构建证据见 [完整迁移验证](../../archive/th12-complete-sdl-20261029/README.md)。
+
+既有 JavaScript 前端的运行记录已归入 [历史验收](../../archive/th12-web-acceptance-20261022/README.md)，覆盖当时的开局、菜单、关卡衔接、语言、触控和录像。该记录不作为新 SDL 程序的运行通过记录。
+
+当前人工确认入口：主站选择星莲船，或作品预览的 `adapter-preview.html?runtime=sdl`。优先检查：练习选择与左右键、自定义分段保存并重播、触控录制重播、整曲／流式音乐的暂停与切曲、录像定位后声音，以及退出重开后的存档。
+
+## SDL3 共用应用
+
+桌面与 Web 的资源、流程、绘制、练习、普通录像及 Web 扩展录像统一由 [SDL3 运行层](portable/sdl/README.md) 管理。普通版主站构建使用该应用层；多人版同样使用 SDL 应用，继续链接现有 C++ 确认与回滚会话。音乐提供流式与整曲解码，触控与练习录像沿用版本化扩展。
+
+SDL 入口已接上重开与常显判定点、触控位移录制及确认按下信号、练习元数据与伤害源恢复、录像定位音频处理、普通倍速录像插值和录制帧率显示。实现对应 [平台代码](portable/sdl/README.md)、[浏览器边界](site/game-sdl.mjs) 与 [开发指南](docs/DEVELOPMENT.md)。上表的状态由检查报告生成；本段源码范围与本次构建清单共同供人工验收使用。
+
+## SDL 入口审核记录
+
+[2026-10-30 验证记录](../../archive/th12-sdl-review-20261030/README.md)登记本轮正式 Runtime 身份和检查范围。
+
+| 编号 | 本轮操作与结果 |
+| --- | --- |
+| RUNTIME-01、RUNTIME-02、RUNTIME-03 | 共用真实 Runtime 驱动检查协议、首帧及命令；异步取消和错误字段由浏览器边界夹具验证。 |
+| RUNTIME-04、RUNTIME-06 | 检查退出重进、暂停与重开；实际设备后台恢复和判定点视觉按专项验收。 |
+| INPUT、TOUCH、THPRAC | 正式 Wasm 下检查虚拟手柄、触控移动、练习界面与原生 Replay；两侧改键浏览器检查通过。 |
+| AUDIO、DISPLAY | 流式与整曲 OGG 均采集实际 PCM，Replay 暂停及定位输出为静音；60 Hz 呈现限制使用原生时钟回归。 |
+| STORE、REPLAY | 共用驱动检查用户文件及重新启动，作品浏览器检查原生录像保存与播放控制。 |
+
+RUNTIME-04、INPUT-06、TOUCH-16 与 AUDIO-05 的页面隐藏清理、损坏音乐提示和替换恢复见[SDL 输入与音乐错误验证](../../archive/th12-sdl-invariants-20261030/README.md)。
+
+TOUCH-09、AUDIO-07 的组件与接线结果见[全作核对记录](../../archive/shared-input-audio-20261030/README.md)。按作品、模式读取检查范围及实际 Runtime 结果。

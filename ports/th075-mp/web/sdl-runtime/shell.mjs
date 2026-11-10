@@ -11,6 +11,7 @@ const canvas=document.querySelector('canvas'),$=s=>document.querySelector(s);
 const build=/*TH075_EAGLER_BUILD*/{version:'development',completeGame:false};
 let net,replayPrompt,showReplaySavePrompt,replayBaseline=new Set();
 let core,bundle,launched=false,stopping=false,busy=false,loopId=0,options={},music='none',commands=Promise.resolve(),roomPreview=false;
+const splitIndex=query.get('th075Assets'),splitHash=query.get('th075AssetsHash');
 let escapeSerial=0,stick={x:0,y:0},direct=null,actionButtons=0;
 const keyboard=createBrowserKeyboard({accept:code=>!!scanCodes[code],send:(code,down)=>core?._th075_key(scanCodes[code],+down)});
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
@@ -21,6 +22,7 @@ const error=()=>core.UTF8ToString(core._th075_error());
 const call=(name,types=[],args=[])=>core.ccall('th075_'+name,'number',types,args,{async:true});
 const sync=createSaveSync(()=>core);
 function clearKeyboard(){keyboard.clear();core?._th075_keys_clear();}
+function runtimeInputActive(){return (launched||roomPreview&&options.netplayMode!=='lan')&&!document.hidden&&!stopping;}
 function cancelTouch(){direct=null;stick={x:0,y:0};actionButtons=0;core?._th075_touch_cancel();}
 function inputKey(event,down,source){
   if(replayPrompt)return false;
@@ -126,17 +128,17 @@ function loop(){
 
 // Share one input owner across the same-origin fast path and postMessage fallback.
 function dispatchInput(m){if(net?.spectator&&['keyboard','keyboard-clear','touch-controls','touch-cancel','direct-touch'].includes(m.command))return true;switch(m.command){
-  case 'keyboard':if(launched&&!document.hidden&&!stopping)inputKey(m,!!m.down,'hosted');return true;
+  case 'keyboard':if(runtimeInputActive())inputKey(m,!!m.down,'hosted');return true;
   case 'keyboard-clear':clearKeyboard();return true;
-  case 'touch-controls':if(launched&&!document.hidden&&!stopping)touch(m);return true;
+  case 'touch-controls':if(runtimeInputActive())touch(m);return true;
   case 'touch-cancel':cancelTouch();return true;
-  case 'direct-touch':if(launched&&!document.hidden&&!stopping)directTouch(m);return true;
+  case 'direct-touch':if(runtimeInputActive())directTouch(m);return true;
   default:return false;
 }}
 if(validEpoch)Object.defineProperty(window,'__eaglerDirectInputBridge',{configurable:true,value:Object.freeze({
   schema:'eagler-touhou/direct-input/1',protocol,game,epoch,origin:location.origin,
   submit(m){
-    if(!core||!launched||stopping||!m||m.protocol!==protocol||m.game!==game||m.epoch!==epoch||m.request!=null)return false;
+    if(!core||!runtimeInputActive()||!m||m.protocol!==protocol||m.game!==game||m.epoch!==epoch||m.request!=null)return false;
     return dispatchInput(m);
   },
 })});
@@ -149,13 +151,18 @@ async function command(m){if(dispatchInput(m))return {};switch(m.command){
       if(!manifest||manifest.schema!=='eagler-touhou/thcrap-static-pack/1'||manifest.game!==game||manifest.language!==pack.language||!/^lang_[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(pack.language)||!Array.isArray(pack.files)||pack.files.length>256||manifest.files.length!==pack.files.length)throw Error('Invalid TH075 language pack');
       const expected=new Map(manifest.files.map(f=>[f.path,f.bytes])),staged=new Map();
       for(const f of pack.files){
-        if(!/^\/thcrap\/th075\/(?:(?:images|text)\/(?:data\/(?:system|character)\/[a-zA-Z0-9_/]+\.(?:dat|sce)|musicroom\.dat)\.bin|fonts\/(?:localized-glyphs\.bin|LICENSE\.txt)|localization\/options\.json)$/.test(f.path)||f.path.includes('..')||staged.has(f.path))throw Error('Unsupported TH075 language path');
+        if(!/^\/thcrap\/th075\/(?:(?:images|text)\/(?:data\/(?:system|character)\/[a-zA-Z0-9_/]+\.(?:dat|sce)|musicroom\.dat)\.bin|images\/base\/data\/system\/replay\.dat\.bin|fonts\/(?:localized-glyphs\.bin|LICENSE\.txt)|localization\/options\.json)$/.test(f.path)||f.path.includes('..')||staged.has(f.path))throw Error('Unsupported TH075 language path');
         const bytes=new Uint8Array(f.bytes);if(!bytes.length||bytes.length>128*1024*1024||expected.get(f.path)!==bytes.length)throw Error('Invalid TH075 language file size');staged.set(f.path,bytes);
       }
       if(!staged.has('/thcrap/th075/fonts/localized-glyphs.bin')||!staged.has('/thcrap/th075/localization/options.json'))throw Error('Incomplete TH075 language pack');
       for(const [path,bytes]of staged){core.FS.mkdirTree(path.slice(0,path.lastIndexOf('/')));core.FS.writeFile(path,bytes);}
       core.th075Language=pack.language;
-    }else{if(m.language&&m.language!=='ja')throw Error('Missing selected TH075 language pack');core.th075Language=null;}
+    }else if(!m.language||m.language==='ja'){
+      core.th075Language=null;
+    }else if(m.language!==core.th075Language){
+      // Binding a prepared room sends new options without resending its language pack.
+      throw Error('Missing selected TH075 language pack');
+    }
     options={...(m.options||{})};music=m.music;core.gameLanguage='ja';
     for(const r of [...(m.sharedResources||[]),...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);
     core._th075_music_enabled(+(music==='ogg'));cancelTouch();clearKeyboard();updateDisplay();return {};
@@ -198,7 +205,7 @@ window.addEventListener('message',event=>{
   if(event.source!==parent||event.origin!==location.origin||m?.protocol!==protocol||m.game!==game||!validEpoch||m.epoch!==epoch||typeof m.command!=='string')return;
   commands=commands.then(async()=>{if(await initialized===false)return;try{const result=await command(m);if(typeof m.request==='string')emit(undefined,{request:m.request,ok:true,...result});}catch(e){if(typeof m.request==='string')emit(undefined,{request:m.request,ok:false,error:String(e),errno:e?.errno});else fatal(e);}}).catch(fatal);
 });
-for(const type of ['keydown','keyup'])window.addEventListener(type,event=>{if(!launched||event.altKey||event.metaKey||document.hidden)return;if(inputKey(event,type==='keydown','native')){event.preventDefault();event.stopPropagation();}},{capture:true});
+for(const type of ['keydown','keyup'])window.addEventListener(type,event=>{if(!runtimeInputActive()||event.altKey||event.metaKey)return;if(inputKey(event,type==='keydown','native')){event.preventDefault();event.stopPropagation();}},{capture:true});
 window.addEventListener('blur',()=>{clearKeyboard();cancelTouch();});
 document.addEventListener('visibilitychange',()=>{clearKeyboard();cancelTouch();if(launched){core._th075_loop_pause(+document.hidden);if(document.hidden)void save().catch(fatal);}});
 window.addEventListener('pagehide',()=>{++loopId;clearKeyboard();cancelTouch();core?._th075_loop_pause(1);if(core)void save().catch(()=>{});});
@@ -206,12 +213,21 @@ for(const type of ['pointerdown','keydown'])window.addEventListener(type,()=>cor
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();fatal(Error('WebGL context lost; restart the game.'));});
 setInterval(()=>{if(launched&&!busy&&!document.hidden)void save().catch(fatal);},30000);
 const initialized=(async()=>{
-  if(!validEpoch||query.get('managedData')!=='1'||parent===window||typeof parent.__eaglerPrepareManagedRuntimeDataV1!=='function')throw Error('Launch TH075 through eagler-touhou');
-  const {buffer}=await parent.__eaglerPrepareManagedRuntimeDataV1({game,generation:query.get('gameGeneration'),epoch});
-  bundle=parseContentBundle(buffer);
-  core=await createModule({canvas,resourceFiles:new Set([...bundle.paths.map(path=>path.slice(1))]),
-    async readAsset(path){if(path.startsWith('/music/')&&path.endsWith('.ogg')){try{return core.FS.readFile(path).buffer;}catch{throw Error('Music must be installed through Package Store');}}return (await bundle.read(path)).buffer;},
-    printErr:console.error,onAssetLoading(path,on){$('#loading').textContent=on?'正在准备场景…':'';}});
+  if(!validEpoch||parent===window||parent.location.origin!==location.origin)throw Error('Launch TH075 through eagler-touhou');
+  if(splitIndex){
+    const url=new URL(splitIndex,location.href);
+    if(!build.multiplayer||url.origin!==location.origin)throw Error('Invalid TH075 multiplayer asset origin');
+    const {openSplitContent}=await import('./split-content.mjs');
+    bundle=await openSplitContent(url,splitHash);
+  }else{
+    if(query.get('managedData')!=='1'||typeof parent.__eaglerPrepareManagedRuntimeDataV1!=='function')throw Error('Launch TH075 through eagler-touhou');
+    const {buffer}=await parent.__eaglerPrepareManagedRuntimeDataV1({game,generation:query.get('gameGeneration'),epoch});
+    bundle=parseContentBundle(buffer);
+  }
+  core=await createModule({canvas,th075OnDemandAssets:!!splitIndex,resourceFiles:new Set(bundle.paths.map(path=>path.slice(1))),
+    async readAsset(path){if(!splitIndex&&path.startsWith('/music/')&&path.endsWith('.ogg')){try{return core.FS.readFile(path).buffer;}catch{throw Error('Music must be installed through Package Store');}}return (await bundle.read(path)).buffer;},
+    printErr:console.error,onAssetLoading(path,on){$('#loading').textContent=on?'正在准备场景…':'';},
+    onAssetError(path,message){if(splitIndex)console.error('TH075 asset read failed',path,message);}});
   core.th075ContentIdentity=bundle.identity;
   core.SDL3=core.SDL3||{};if(parent.__touhouAudioContext)core.SDL3.audioContext=parent.__touhouAudioContext;
   window.Module=core;window.FS=core.FS;core.resetBrowserKeyboard=()=>keyboard.clear();

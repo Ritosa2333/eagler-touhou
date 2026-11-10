@@ -68,17 +68,25 @@ export function createRoomPreparation(options: RoomPreparationOptions) {
     context.signal.addEventListener('abort', finish, {once: true});
     try {
       const gameVersion = acquisition.getGameVersion(game);
-      let installed = await acquisition.readCurrent(game, {gameVersion});
+      if (context.product === 'th075mp' && !acquisition.getMetadata().siteManifest) {
+        try {await options.metadataReady();} catch {}
+      }
+      const split = context.product === 'th075mp' && !!acquisition.getMetadata().siteManifest?.games.th075?.th075MultiplayerAssets;
+      let installed = split ? null : await acquisition.readCurrent(game, {gameVersion});
       if (!context.isCurrent()) return;
-      if (!installed.generation) {
+      if (!split && !installed?.generation) {
         if (!acquisition.getMetadata().releaseCatalog) {try {await options.metadataReady();} catch {}}
         if (!context.isCurrent()) return;
-        const {catalog, catalogUrl} = await acquisition.getPublication(gameVersion, context.signal);
-        if (!catalog?.games[game]) throw new Error(t('package.releaseNotReadyNoLocal', {game: game.toUpperCase()}));
         try {
-          await acquisition.installPublished(game, {catalog, catalogUrl, gameVersion, addComponents: [],
-            fetchImpl: (input, init) => tracker.resourceFetch(input, init, packageNetworkMetadata(game, input, options.baseUrl, t)),
-            signal: context.signal});
+          if (gameVersion === 'original' && acquisition.getMetadata().siteManifest?.profile === 'web-development') {
+            await acquisition.acquire({productId: context.product, gameVersion, music: 'none', language: 'ja', signal: context.signal});
+          } else {
+            const {catalog, catalogUrl} = await acquisition.getPublication(gameVersion, context.signal);
+            if (!catalog?.games[game]) throw new Error(t('package.releaseNotReadyNoLocal', {game: game}));
+            await acquisition.installPublished(game, {catalog, catalogUrl, gameVersion, addComponents: [],
+              fetchImpl: (input, init) => tracker.resourceFetch(input, init, packageNetworkMetadata(game, input, options.baseUrl, t)),
+              signal: context.signal});
+          }
         } catch (error) {
           if (context.signal.aborted || (error !== null && typeof error === 'object' && 'name' in error && error.name === 'AbortError') || /已取消下载/.test(preparationErrorText(error))) throw error;
           throw new GameDataAcquisitionError(preparationErrorText(error), {cause: error});
@@ -88,7 +96,7 @@ export function createRoomPreparation(options: RoomPreparationOptions) {
       }
       if (!context.isCurrent()) return;
       // Publication is a hint read; canonical committed generation stays authority.
-      void acquisition.refreshInstalled(game).catch(() => {});
+      if (!split) void acquisition.refreshInstalled(game).catch(() => {});
       stage = 'runtime';
       report({status: 'preparing', stage, percent: null, error: '', title: t('room.preparingRuntime')});
       if (!acquisition.getMetadata().siteManifest) {try {await options.metadataReady();} catch {}}

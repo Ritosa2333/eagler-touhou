@@ -1,6 +1,6 @@
 import {authoredSourcesPlugin} from './authored-sources.mjs';
 /** Actual main native-global/path contracts through fake ports, not live RTC. */
-import test,{before,after} from 'node:test';import assert from 'node:assert/strict';import {build} from 'esbuild';import {mkdtemp,rm} from 'node:fs/promises';import {resolve} from 'node:path';import {pathToFileURL} from 'node:url';
+import {test, beforeAll as before, afterAll as after} from 'vitest';import assert from 'node:assert/strict';import {build} from 'esbuild';import {mkdtemp,rm} from 'node:fs/promises';import {resolve} from 'node:path';import {pathToFileURL} from 'node:url';
 let dir,createGameplayNetwork;
 before(async()=>{dir=await mkdtemp(resolve('.cache/gameplay-network-'));const outfile=resolve(dir,'model.mjs');await build({entryPoints:['app/models/gameplay-network.ts'],outfile,bundle:true,format:'esm',platform:'node',logLevel:'silent',plugins: [authoredSourcesPlugin(resolve())]});({createGameplayNetwork}=await import(pathToFileURL(outfile).href));});after(async()=>{if(dir)await rm(dir,{recursive:true,force:true});});
 function fixture(){
@@ -12,6 +12,13 @@ function fixture(){
  const runtime={getSnapshot:()=>state,getMidiEventContext:()=>({epoch:state.epoch,document:doc,target}),subscribe(fn){updates.add(fn);return()=>updates.delete(fn);}};
  const model=createGameplayNetwork({runtime,context:()=>context,english:()=>true,translate:(key,p)=>`${key}:${JSON.stringify(p??{})}`,now:()=>time,timers:{setTimeout(fn,ms){const id=++serial;timeouts.set(id,{fn,ms});return id;},clearTimeout(id){timeouts.delete(id);},setInterval(fn,ms){const id=++serial;intervals.set(id,{fn,ms});return id;},clearInterval(id){intervals.delete(id);}}});
  return{model,state,target,context,transport,peer,timeouts,intervals,advance(ms){time+=ms;},poll(){for(const[id,{fn}]of[...timeouts]){timeouts.delete(id);fn();}},replace(){doc={};for(const fn of updates)fn();}};
+}
+function rtcStats({rttSeconds=.077,localType='host',remoteType='srflx',candidates=true}={}){
+ const pairId=`pair-${localType}-${remoteType}`,pair={type:'candidate-pair',id:pairId,localCandidateId:'local',remoteCandidateId:'remote'};
+ if(rttSeconds!=='missing')pair.currentRoundTripTime=rttSeconds;
+ const reports=[['transport',{type:'transport',selectedCandidatePairId:pairId}],[pairId,pair]];
+ if(candidates)reports.push(['local',{type:'local-candidate',candidateType:localType,protocol:'udp',address:'192.0.2.1'}],['remote',{type:'remote-candidate',candidateType:remoteType,protocol:'udp',address:'198.51.100.2'}]);
+ return new Map(reports);
 }
 test('room/native transport connection is not ready until all actual input and control channels open',async()=>{const f=fixture();let done=false;const waiting=f.model.waitForGameplayPath({isCurrent:()=>true}).then(()=>done=true);await Promise.resolve();assert.equal(done,false);assert.equal([...f.timeouts.values()][0].ms,250);f.peer.inputOpen=true;f.poll();await Promise.resolve();assert.equal(done,false);f.peer.controlOpen=true;f.poll();await waiting;assert.equal(done,true);f.model.dispose();});
 const playback={version:1,run:'run_1',revision:1,min:0,position:600,received:1200,edge:1190,target:900,paused:false,seeking:true,following:false,ended:false,nodes:[]};
@@ -33,9 +40,34 @@ test('failed path rejects original failure, timeout is120s and room/document rep
  const c=fixture();const old=c.model.waitForGameplayPath({isCurrent:()=>true});c.replace();c.poll();await assert.rejects(old,{name:'AbortError',message:'EAGLER_RUNTIME_SESSION_SUPERSEDED'});c.model.dispose();
 });
 test('readiness disconnect overlay uses original connectedOnce and exact channel state',()=>{const f=fixture();f.peer.inputOpen=f.peer.controlOpen=true;f.model.refresh();assert.equal(f.model.getSnapshot().connection.hidden,true);f.peer.inputOpen=false;f.model.refresh();assert.equal(f.model.getSnapshot().connection.reconnecting,true);assert.equal(f.model.getSnapshot().returnToRoom,true);f.context.replayViewer=true;f.model.refresh();assert.equal(f.model.getSnapshot().connection,null);assert.equal(f.model.getSnapshot().playerStatusVisible,false);f.model.dispose();});
-test('quality uses actual selected RTC pair and late stats cannot affect a replacement document',async()=>{const f=fixture();f.peer.pc.getStats=async()=>new Map([['transport',{type:'transport',selectedCandidatePairId:'pair'}],['pair',{currentRoundTripTime:.077}]]);await f.model.sampleQuality();f.model.refresh();assert.equal(f.model.getSnapshot().playerStatus[0].text,'P2 direct 77ms');assert.equal(f.model.getSnapshot().playerStatus[0].variationMs,null);assert.match(f.model.getSnapshot().diagnostics.runtimeNetplayQualityDiag,/77ms/);
+test('quality follows the selected RTC pair and does not show stale RTT on relay',async()=>{
+ const f=fixture();let stats=rtcStats();f.peer.pc.getStats=async()=>stats;
+ await f.model.sampleQuality();f.model.refresh();assert.equal(f.model.getSnapshot().playerStatus[0].text,'P2 direct 77ms');assert.equal(f.model.getSnapshot().playerStatus[0].variationMs,null);assert.match(f.model.getSnapshot().diagnostics.runtimeNetplayQualityDiag,/77ms/);
  await f.model.sampleQuality();await f.model.sampleQuality();f.model.refresh();assert.equal(f.model.getSnapshot().playerStatus[0].variationMs,0,'zero variation is displayed only after sufficient real samples');
- let resolveStats;f.peer.pc.getStats=()=>new Promise(r=>resolveStats=r);const stale=f.model.sampleQuality();f.replace();resolveStats(new Map([['pair',{type:'candidate-pair',nominated:true,state:'succeeded',currentRoundTripTime:9}]]));await stale;f.model.refresh();assert.doesNotMatch(f.model.getSnapshot().diagnostics.runtimeNetplayQualityDiag,/9000ms/);f.model.dispose();});
+ for(const [next,route,rttMs] of [[rtcStats({localType:'relay',remoteType:'host',rttSeconds:.088}),'turn',88],[rtcStats({localType:'srflx',remoteType:'relay',rttSeconds:.099}),'turn',99],[rtcStats({localType:'host',remoteType:'srflx',rttSeconds:.1}),'direct',100]]){
+  stats=next;await f.model.sampleQuality();f.model.refresh();const snapshot=f.model.getSnapshot();assert.equal(snapshot.playerStatus[0].route,route);assert.equal(snapshot.playerStatus[0].rttMs,rttMs);assert.match(snapshot.diagnostics.runtimeNetplayRouteDiag, new RegExp(`"route":"${route}"`),'diagnostics and the HUD use the selected pair route');assert.equal(f.target.__eaglerNetplayPath,'direct','the selected pair overrides the unchanged global path');
+ }
+ for(const rttSeconds of [null,'missing']){
+  stats=rtcStats({rttSeconds});await f.model.sampleQuality();f.model.refresh();
+  const snapshot=f.model.getSnapshot(),status=snapshot.playerStatus[0];assert.equal(status.route,'direct');assert.equal(status.rttMs,null);assert.equal(status.variationMs,null);assert.equal(status.text,'P2 direct --ms');assert.doesNotMatch(status.text,/0ms/);assert.match(snapshot.diagnostics.runtimeNetplayQualityDiag,/"rtt":"--"/);
+ }
+ stats=rtcStats({rttSeconds:.045,localType:'unknown',remoteType:'unknown',candidates:false});await f.model.sampleQuality();f.model.refresh();
+ const unknown=f.model.getSnapshot();assert.equal(unknown.playerStatus[0].route,'rtc','missing candidates use the unknown RTC route');assert.equal(unknown.playerStatus[0].rttMs,45);assert.match(unknown.diagnostics.runtimeNetplayRouteDiag,/"route":"rtc"/);
+ f.target.__eaglerNetplayTransport='relay';f.transport.relay.readyState=1;f.model.refresh();
+ const relay=f.model.getSnapshot();assert.equal(relay.playerStatus[0].route,'relay');assert.equal(relay.playerStatus[0].rttMs,null);assert.equal(relay.playerStatus[0].text,'P2 relay --ms');assert.match(relay.diagnostics.runtimeNetplayRouteDiag,/"route":"relay"/);assert.doesNotMatch(relay.diagnostics.runtimeNetplayQualityDiag||'',/45ms|100ms|77ms/,'switching to relay clears the previous RTC RTT');f.model.dispose();
+});
+test('quality ignores a late report from a replaced peer connection on the same transport',async()=>{
+ const f=fixture(),oldPc=f.peer.pc;oldPc.getStats=async()=>rtcStats({rttSeconds:.05});await f.model.sampleQuality();f.model.refresh();assert.equal(f.model.getSnapshot().playerStatus[0].text,'P2 direct 50ms');
+ let resolveStats;oldPc.getStats=()=>new Promise(resolve=>resolveStats=resolve);const stale=f.model.sampleQuality();
+ const replacement={connectionState:'connected',iceConnectionState:'connected',getStats:async()=>rtcStats({rttSeconds:.044})};f.peer.pc=replacement;
+ resolveStats(rtcStats({rttSeconds:9,localType:'relay',remoteType:'relay'}));await stale;f.model.refresh();assert.equal(f.model.getSnapshot().playerStatus[0].route,'direct');assert.equal(f.model.getSnapshot().playerStatus[0].rttMs,null);assert.doesNotMatch(f.model.getSnapshot().diagnostics.runtimeNetplayQualityDiag||'',/9000ms/);
+ await f.model.sampleQuality();f.model.refresh();assert.equal(f.model.getSnapshot().playerStatus[0].route,'direct');assert.equal(f.model.getSnapshot().playerStatus[0].rttMs,44);f.model.dispose();
+});
+test('quality ignores a late report after the runtime document is replaced',async()=>{
+ const f=fixture();let resolveStats;f.peer.pc.getStats=()=>new Promise(resolve=>resolveStats=resolve);const stale=f.model.sampleQuality();f.replace();
+ resolveStats(rtcStats({rttSeconds:9,localType:'relay',remoteType:'relay'}));await stale;f.model.refresh();
+ const status=f.model.getSnapshot().playerStatus[0];assert.equal(status.rttMs,null);assert.doesNotMatch(f.model.getSnapshot().diagnostics.runtimeNetplayQualityDiag||'',/9000ms/);f.model.dispose();
+});
 test('disposal rejects pending wait and retires both original250ms/1000ms intervals',async()=>{const f=fixture();assert.deepEqual([...f.intervals.values()].map(x=>x.ms),[250,1000]);const wait=f.model.waitForGameplayPath({isCurrent:()=>true});f.model.dispose();await assert.rejects(wait,{name:'AbortError',message:'EAGLER_RUNTIME_SESSION_SUPERSEDED'});assert.equal(f.timeouts.size,0);assert.equal(f.intervals.size,0);});
 
 test('native peer/path records preserve original array rejection and entry limits',()=>{const f=fixture();f.target.__eaglerNetplayRtcPaths=[[],{peer:1,path:'direct'},{peer:2,path:'turn'},{peer:3,path:'other'}];f.target.__eaglerNetplayLanPeers=[[],{player:0},{player:1},{player:2},{player:3}];const net=f.model.readNativeSnapshot();assert.deepEqual(net.rtcPaths.map(x=>x.peer),[1,2]);assert.deepEqual(net.lanPeers.map(x=>x.player),[0,1,2]);f.model.dispose();});

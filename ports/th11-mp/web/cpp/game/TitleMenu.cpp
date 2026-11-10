@@ -63,11 +63,11 @@ void TitleMenu::main(u32 pressed,u32 repeat){
     case 2:
         move(pressed|repeat,16,32);
         if(cursor.previous!=cursor.selected){sounds.push_back(12);highlight(0);disable_extra();}
-        if(pressed&0x102){
+        if((pressed&0x102)&&!room_preview){
             if(cursor.selected==7){sounds.push_back(11);step(4);return;}
             sounds.push_back(11);cursor.select(7);highlight(0);disable_extra();
         }
-        if(pressed&0x80001){
+        if((pressed&0x80001)&&(!room_preview||cursor.selected==6)){
             family(0,6);
             if(cursor.selected<=5){sounds.push_back(10);close(83);close(84);family(238,1);step(4);if(cursor.selected==5)sounds.push_back(10);}
             else {sounds.push_back(cursor.selected==7?11:10);step(4);}

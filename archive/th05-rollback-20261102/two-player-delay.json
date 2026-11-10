@@ -1,0 +1,58 @@
+{
+  "count": 2,
+  "route": "rtc",
+  "mode": 1,
+  "jitter": true,
+  "running": [
+    {
+      "frame": 251,
+      "route": "rtc",
+      "inputDelay": 2,
+      "saveRoot": "/savesth05mp"
+    },
+    {
+      "frame": 251,
+      "route": "rtc",
+      "inputDelay": 2,
+      "saveRoot": "/savesth05mp"
+    }
+  ],
+  "rollback": [
+    {
+      "corrections": 0,
+      "replayed": 0,
+      "delayed": 502,
+      "confirmed": 751,
+      "frame": 752
+    },
+    {
+      "corrections": 0,
+      "replayed": 0,
+      "delayed": 501,
+      "confirmed": 750,
+      "frame": 751
+    }
+  ],
+  "positions": [
+    [
+      1496,
+      4160
+    ],
+    [
+      1496,
+      4160
+    ]
+  ],
+  "touchPause": true,
+  "touchMovement": {
+    "touchBefore": 1496,
+    "touchAfter": 2264
+  },
+  "returned": true,
+  "errors": [],
+  "runtimeErrors": [],
+  "secondStart": [
+    1,
+    1
+  ]
+}

@@ -1,3 +1,6 @@
+// Browser-facing Request semantics, independent of the server runtime's defaults.
+import {Request} from 'undici/index.js';
+import {test} from 'vitest';
 import { readFile } from "node:fs/promises";
 import { webcrypto } from "node:crypto";
 import vm from "node:vm";
@@ -6,6 +9,7 @@ import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { RUNTIME_CONFIGURE_LEGACY_MUSIC_MODES } from "../lib/contracts/runtime-protocol.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 
+test("shell protocol", async () => {
 const cases = [
   { game: "th06", shell: process.env.EAGLER_TEST_TH06_SHELL || workspacePath("th06", "resources", "shell.html"), packs: {
     wav: [{ url: "http://test.local/music.wav", path: "/bgm/th06_01.wav" }],
@@ -123,6 +127,16 @@ for (const test of cases) {
   if (!replies.some(reply => reply.event === "exit" && reply.status === "success")) {
     throw new Error(`${test.game}: successful game exit was not forwarded`);
   }
+  context.__eaglerNetplayFailed = true;
+  context.__eaglerNetplayError = "spectator stream stopped; players continue";
+  await context.EaglerTouhouGameExited(1);
+  assert.equal(replies.at(-1).event, "exit");
+  assert.equal(replies.at(-1).status, "failure", "native failure overrides normal application return");
+  assert.equal(replies.at(-1).error, context.__eaglerNetplayError, "exit preserves the native failure reason");
+  context.__eaglerNetplayError = "";
+  await context.EaglerTouhouGameExited(1);
+  assert.equal(replies.at(-1).error, "Multiplayer connection failed");
+  context.__eaglerNetplayFailed = false;
   if (typeof context.EaglerTouhouFirstFrame !== "function") throw new Error(`${test.game}: first-frame bridge missing`);
   context.EaglerTouhouFirstFrame();
   if (!replies.some(reply => reply.event === "first-frame")) {
@@ -513,3 +527,4 @@ for (const test of cases) {
 }
 
 console.log(JSON.stringify({ shells: cases.length, configure: ["midi", "ogg-stream", "ogg-full", "none"], legacyConfigureMusic: RUNTIME_CONFIGURE_LEGACY_MUSIC_MODES, letterbox: "full-touch", touchReleaseSafety: "canvas+lostcapture+visibility", protocol: "eagler-touhou/1" }));
+});

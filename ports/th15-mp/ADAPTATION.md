@@ -30,7 +30,7 @@
 | RUNTIME-03 | [命令响应与错误信息](../../docs/adaptation/runtime.md#runtime-03) | 已实现 | multiplayer：[runtime-protocol](../../docs/adaptation/status.json) |
 | RUNTIME-04 | [后台、恢复与退出清理](../../docs/adaptation/runtime.md#runtime-04) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | RUNTIME-05 | [Runtime 与资源管理分工](../../docs/adaptation/runtime.md#runtime-05) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
-| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 不适用 | multiplayer：本作未声明判定点显示 |
+| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | PACKAGE-01 | [共用游戏包存储](../../docs/adaptation/runtime.md#package-01) | 已实现 | multiplayer：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-02 | [DATA 身份与挂载目标](../../docs/adaptation/runtime.md#package-02) | 已实现 | multiplayer：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-03 | [完整更新后切换版本](../../docs/adaptation/runtime.md#package-03) | 已实现 | multiplayer：[package-store](../../docs/adaptation/status.json) |
@@ -57,7 +57,7 @@
 | TOUCH-06 | [切换低速](../../docs/adaptation/input.md#touch-06) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-07 | [双指低速](../../docs/adaptation/input.md#touch-07) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-08 | [射击、Bomb 与暂停](../../docs/adaptation/input.md#touch-08) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
-| TOUCH-09 | [Deathbomb 与移动保持](../../docs/adaptation/input.md#touch-09) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
+| TOUCH-09 | [暂时禁移与触点连续性](../../docs/adaptation/input.md#touch-09) | 待核对 | multiplayer：[held-touch-continuity](../../docs/adaptation/status.json) |
 | TOUCH-10 | [无限速移动落率记录](../../docs/adaptation/input.md#touch-10) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-11 | [双击 Bomb](../../docs/adaptation/input.md#touch-11) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-12 | [菜单与对话手势](../../docs/adaptation/input.md#touch-12) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
@@ -87,6 +87,7 @@
 | AUDIO-04 | [返回前台后恢复声音](../../docs/adaptation/presentation.md#audio-04) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | AUDIO-05 | [音乐资源错误信息](../../docs/adaptation/presentation.md#audio-05) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | AUDIO-06 | [高刷新与音频事件分开](../../docs/adaptation/presentation.md#audio-06) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
+| AUDIO-07 | [音效即时输出](../../docs/adaptation/presentation.md#audio-07) | 待核对 | multiplayer：[immediate-sfx-routing](../../docs/adaptation/status.json) |
 | MIDI-01 | [声明 MIDI 选项](../../docs/adaptation/presentation.md#midi-01) | 不适用 | multiplayer：本作使用 OGG 音乐 |
 | MIDI-02 | [可听到的 MIDI 输出](../../docs/adaptation/presentation.md#midi-02) | 不适用 | multiplayer：本作使用 OGG 音乐 |
 | MIDI-03 | [MIDI 生命周期](../../docs/adaptation/presentation.md#midi-03) | 不适用 | multiplayer：本作使用 OGG 音乐 |
@@ -169,8 +170,56 @@
 
 <!-- manual-verification -->
 
+继承的普通版练习页面复用公共 `PracticeNavigation.hpp`：上下选行、左右直接调整，Shift 加大数值步长；鼠标拖动、文本编辑与弹出列表保留控件输入所有权，确认键由练习开始流程处理。真实 ImGui 导航回归登记在 `common/tests/thprac-navigation-test.cpp`。正式多人构建维持 THPrac 关闭，练习入口由普通版提供。
+
 ## 运行验收记录
+
+2026-10-25 multiplayer：共同菜单、局末本地结算、旁观原生保存与三人挑战恢复通过，见[多人生命周期记录](../../docs/adaptation/multiplayer-lifecycle-20261025.md)。
+
+### 2026-10-24 | 关卡交接与录像准入
+
+MP 规则版本 21 接入普通版关卡交接，并统一存活席位的换关重置。版本 20 使用[登记构建与原时序](../../docs/adaptation/multiplayer.md#mp-11)播放。
+
+使用 Emscripten 6.0.9 完整构建通过。`portable/multiplayer/network-test.mjs` 验证 2P／3P、延迟 0／2／9、版本 20 构建准入、版本 21 精确构建匹配及录像编码往返，CI 在 th15 MP 源码构建后执行同一检查。`native-test.mjs --ghost-stage-only` 使用原版素材验证全部席位换关后连续 720 帧幽灵漂移一致。两个检查入口均支持 `TH15_OUTPUT` 选择对应构建目录。
+
+双侧换关夹具使用相同的即时加载、持续移动、松键停移与共享计时断言，入口为 `web/tests/sdl/render-loading-lifecycle-browser.test.mjs`。普通版 Chromium 运行结果见对应[验收记录](../th15/ADAPTATION.md#运行验收记录)。
+
+### 2026-10-20：检查点树与存档备份
+
+同步普通版检查点的显式栈读写；共用文件服务导出 score 与现有 autosave。验证范围见[Issue #113 运行记录](../../docs/adaptation/th15-pointdevice-issue113-20261020.md)，六面原生冷启动验证针对普通版。
 
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。
 
 本轮桌面协议、输入、文件持久化与实际 MP 房间结果见[逐作运行记录](../../docs/adaptation/desktop-20261018.md)。按作品、模式和分项读取通过、失败及待复验结果，原始报告身份见同页机器记录。
+
+### 2026-10-28 | 回滚换面输入节奏
+
+多人回滚在换面、关卡启动等暂不能保存快照的阶段，使用每秒 60 次、最多领先 8 帧的确认输入队列。恢复可回滚战斗后先消耗已有队列，再采样新输入。
+
+`portable/multiplayer/network-protocol.cpp` 使用实际 `NetplayRuntime` 验证 2P／3P、回滚／混合模式、单向 2／4／6 帧网络延迟：稳定窗口内推进 180／180 个确认逻辑帧，输入逐席位一致，队列有界且返回战斗后完全排空。原先逐帧等待的负对照在相同窗口推进 60／36／26 帧。该检查衡量网络推进节奏，画面耗时由实际设备决定。
+
+原版资源的 Chromium 换面夹具调用实际 `sample_and_tick()`，记录 2P／3P 从一面进入二面的 180 帧确认阶段，其中保留旧背景 149 帧；新队列覆盖全部确认阶段，进入可回滚战斗后关闭。完整多人 WASM 构建、wasm32 协议／Replay 回归及正式包诊断导出隔离通过，见[换面节奏验收](../../archive/th15-stage-transition-rollback-20261028/README.md)。
+
+### 2026-10-28 | 放雷回滚快照内存峰值
+
+动画节点与未注册根的 VM 快照改为分块增长，13 帧窗口保留原有数据和生命周期映射。放雷消弹带来的动画峰值直接增加小块存储，避免整块 VM 数组扩容时的新旧副本重叠。
+
+WASM 的 8193 根／13 份快照夹具保留数据由 322279282 降到 162981026 字节，最大单次分配由 24510464 降到 131072 字节。原生与 wasm32 战斗还原各通过 432 次逐帧重演，包括双苗机 Extra 的移动、放雷与 12 帧错误未来回退。详见[放雷快照验收](../../archive/th15-bomb-snapshot-memory-20261028/README.md)。
+
+TOUCH-09、AUDIO-07 的组件与接线结果见[全作核对记录](../../archive/shared-input-audio-20261030/README.md)。按作品、模式读取检查范围及实际 Runtime 结果。
+
+### 2026-11-05 | 回滚性能与键盘时序
+
+双人和三人分组验收覆盖一面、Extra 与人工密集场景，每组 600 帧。4x 日志 P95 为 14.1ms，2x 五帧强回滚为 16.4ms。补包可在两次显示回调之间推进已到期的帧。正式包通过联机、旁观、确认录像与离线回放回归。[验证记录](../../archive/th15-input-latency-20261105/README.md)
+
+### 2026-11-05 | 长局快照内存
+
+确认帧释放动画 VM 负载，相邻回滚帧共享未变化的平面 VM。四面双人／三人各 6000 帧的已分配内存峰值由约 749–750 MiB 降至 538–541 MiB；四至六面六组的战斗指纹一致。wasm32 动画、敌机、激光、432 次战斗重演及实际应用五帧强回滚对照通过。该改动维护 MP 逐帧快照路径，普通版检查点按原有路径运行。[构建与验证范围](../../archive/th15-mp-memory-20261105/README.md)
+
+子弹回滚快照按需保存动画程序，在同一版本的帧之间共享程序与未启动的叠加动画。逐帧运动仍单独保存，变化频繁的程序可复用当前帧槽独占的存储。嵌套面板由其所有者的快照保存一次。[子弹快照对照](../../archive/th15-mp-memory-20261105/README.md#子弹快照与帧耗时)
+
+### 2026-11-05 | 多人高延迟帧节奏
+
+回滚使用 0 帧输入延迟。暂停等待确认输入时保留一帧补偿，画面按菜单更新提交。确认后的独占平面 VM 快照可复用。历史帧重演保留动画变换和颜色继承，省去临时顶点及材质提交。双人一面固定八帧重演的 P95 由 7.9–8.6 ms 降至 5.8–6.2 ms。[战斗与暂停采样](../../archive/th15-mp-rtt-pause-20261105/README.md)
+
+动画池快照保存已分配范围和回收栈。回滚恢复回收顺序，并按原编号重建尚未分配的连续槽位。动画图成员稳定时，快照缓存可跳过逐项清理。

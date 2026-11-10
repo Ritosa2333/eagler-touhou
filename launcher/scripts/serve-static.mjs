@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import { createReadStream } from "node:fs";
 import { createHash } from "node:crypto";
-import { stat } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import { resolve, sep } from "node:path";
 import { pipeline } from "node:stream/promises";
+import { isDeepStrictEqual } from "node:util";
 import { constants as zlibConstants, createBrotliCompress, createGzip } from "node:zlib";
 import {
   staticContentCacheControl,
@@ -21,7 +22,7 @@ if (!rootInfo.isDirectory()) throw new Error(`site root is not a directory: ${ro
 
 const etag = info => `\"${createHash("sha1").update(`${info.size}:${info.mtimeMs}`).digest("base64url")}\"`;
 
-createServer(async (request, response) => {
+const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url || "/", `http://${host}:${port}`);
     if (url.pathname === "/eagler-touhou" || url.pathname === "/eagler-touhou/") {
@@ -82,7 +83,28 @@ createServer(async (request, response) => {
     if (!response.headersSent) response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
     if (!response.writableEnded) response.end("Not found");
   }
-}).listen(port, host, () => {
+});
+server.once("error", async error => {
+  const address = `http://${host}:${port}/`;
+  if (error.code === "EADDRINUSE") {
+    try {
+      const expected = JSON.parse(await readFile(resolve(root, "site-manifest.json"), "utf8"));
+      const response = await fetch(new URL("site-manifest.json", address), {
+        signal: AbortSignal.timeout(2000), redirect: "error", cache: "no-store",
+      });
+      if (response.ok && expected.protocol === "eagler-touhou/1" && isDeepStrictEqual(expected, await response.json())) {
+        console.log(`This Eagler Touhou site is already running: ${address}`);
+        console.log("Use the existing page; no second server is needed.");
+        return;
+      }
+    } catch {}
+    console.error(`Port ${port} is already in use. Close the previous server or choose another port.`);
+  } else {
+    console.error(`Could not start the site: ${error.message}`);
+  }
+  process.exitCode = 1;
+});
+server.listen(port, host, () => {
   console.log(`Eagler Touhou host: http://${host}:${port}/`);
   console.log(`Serving immutable site directory: ${root}`);
 });

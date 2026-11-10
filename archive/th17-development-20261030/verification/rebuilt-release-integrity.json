@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "checkedAt": "2026-10-27T01:38:35.752Z",
+  "webVersion": "1.0.14",
+  "manifestVersion": "4ad14d774081900ad14d3354",
+  "wasmSha256": "b463de314af8780b432b3a29157d5cf8ecb9898dad5066101a1787e0fbc9ee01",
+  "sourceHashes": true,
+  "sharedArchitecture": true,
+  "files": 117,
+  "bytes": 203102422,
+  "productionExports": true,
+  "http": {
+    "startup": true,
+    "range": true,
+    "etag": true,
+    "isolation": true,
+    "privatePaths404": true,
+    "readOnly": true
+  }
+}

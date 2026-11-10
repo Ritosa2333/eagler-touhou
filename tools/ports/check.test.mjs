@@ -3,9 +3,54 @@ import {test} from 'node:test';
 import {selectedPortGames} from '../../launcher/tests/support/port-selection.mjs';
 import {STATUS_SCHEMA,checkStates,retainedVerification,validateStatusReport} from './status.mjs';
 import {targets,dependencyRevision,sourceIdentity,inspectInputs} from './inputs.mjs';
-import {mkdtempSync,writeFileSync,rmSync} from 'node:fs';
+import {mkdtempSync,writeFileSync,rmSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {resolve,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {sharedCheckInvocation} from './check.mjs';
+
+const repoRoot=fileURLToPath(new URL('../../',import.meta.url));
+
+test('shared port checks use their declared Vitest project or native Node runner',()=>{
+  const gates=JSON.parse(readFileSync(resolve(repoRoot,'tools/ports/shared-checks.json'),'utf8')).gates;
+  for(const gate of gates){
+    const imports=gate.files.map(file=>readFileSync(resolve(repoRoot,file),'utf8'));
+    const vitest=imports.map(source=>/from\s+['"]vitest['"]/.test(source));
+    if(vitest.some(Boolean)){
+      assert.ok(vitest.every(Boolean),`${gate.id} mixes test runners`);
+      assert.equal(gate.runner,'vitest',`${gate.id} must declare its Vitest runner`);
+      assert.ok(['repository','unit','workspace'].includes(gate.project),`${gate.id} must declare a test project`);
+      const command=sharedCheckInvocation(gate,{bunExecutable:'bun-test'});
+      assert.equal(command.executable,'bun-test');
+      const prefix=gate.project==='workspace'
+        ? ['--bun','run','vitest','run','--config','vitest.workspace.config.ts','--project','workspace']
+        : ['--bun','run','vitest','run','--project',gate.project];
+      assert.deepEqual(command.args.slice(0,prefix.length),prefix);
+      assert.deepEqual(command.args.slice(prefix.length),gate.files.map(file=>file.slice('launcher/'.length)));
+    }else{
+      assert.ok(imports.every(source=>/from\s+['"]node:test['"]/.test(source)),`${gate.id} is not a native node:test gate`);
+      assert.equal(gate.runner,undefined,`${gate.id} should continue using Node`);
+      const command=sharedCheckInvocation(gate);
+      assert.equal(command.executable,process.execPath);
+      assert.deepEqual(command.args,gate.files.map(file=>resolve(repoRoot,file)));
+    }
+  }
+});
+
+test('TH05 declares source checks for both Runtime variants',()=>{
+  const all=targets();
+  assert.equal(all.length,25,'all existing native source targets remain in --all');
+  assert.deepEqual(all.filter(target=>target.game==='th17').map(target=>target.variant).sort(),['multiplayer','normal']);
+  assert.deepEqual(all.filter(target=>target.game==='th19').map(target=>target.variant).sort(),['multiplayer','normal']);
+  assert.ok(all.some(target=>target.game==='th06'&&target.variant==='normal'));
+  assert.ok(all.some(target=>target.game==='th20'&&target.variant==='normal'));
+  for(const [variant,directory] of [['normal','ports/th05'],['multiplayer','ports/th05-mp']]){
+    const [target]=targets({game:'th05',variant});
+    assert.equal(target.directory,directory);
+    assert.equal(target.recipe.kind,'node');
+    assert.deepEqual(target.recipe.build,['scripts/build-eagler.mjs']);
+  }
+});
 
 test('th20 compiler include precedence uses the same module order on every platform',()=>{
   const input=inspectInputs(targets({game:'th20',variant:'normal'})[0]);
@@ -27,7 +72,7 @@ test('source identity normalizes line endings and preserves non-UTF-8 source byt
     assert.equal(dirname(directory),resolve(tmpdir()));rmSync(directory,{recursive:true,force:true});
   }
 });
-import {adaptationMarkdown,preserveManualEvidence,MANUAL_EVIDENCE} from '../docs/new-adaptation.mjs';
+import {adaptationMarkdown,preserveManualEvidence,MANUAL_EVIDENCE,notApplicable} from '../docs/new-adaptation.mjs';
 
 test('regenerating source status preserves hand-written runtime acceptance records',()=>{
   const generated=adaptationMarkdown({game:'th20',directory:'ports/th20',variants:['normal']});
@@ -83,4 +128,16 @@ test('reports reject invented targets, duplicate gates and nonexistent acceptanc
   assert.ok(check([{...target,gates:[...target.gates,...target.gates]}]).some(issue=>issue.includes('重复')));
   assert.ok(check([{...target,gates:[{...target.gates[0],checks:['INPUT-99']}]}]).some(issue=>issue.includes('未登记适配')));
   assert.ok(check([{...target,sourceDigest:null}]).some(issue=>issue.includes('源码身份')));
+});
+
+test('th12 optional focus enhancement does not exempt required restart and always-hitbox behavior',()=>{
+  for(const variant of ['normal','multiplayer'])assert.equal(notApplicable({id:'RUNTIME-06'},'th12',variant),null);
+});
+
+test('th12 source identity includes the shipped SDL browser boundary in both variants',()=>{
+  for(const target of targets({game:'th12',variant:'both'})){
+    const input=inspectInputs(target),suffixes=input.inputFiles.map(file=>file.replaceAll('\\','/'));
+    for(const suffix of ['/site/game-sdl.mjs','/site/sdl.html','/src/managed-input.mjs'])assert.ok(suffixes.some(file=>file.endsWith(suffix)),suffix);
+    assert.ok(input.translationUnits.includes('portable/sdl/Application.cpp'));
+  }
 });

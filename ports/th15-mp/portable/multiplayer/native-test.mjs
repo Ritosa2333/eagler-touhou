@@ -6,7 +6,7 @@ const root=resolve(import.meta.dirname,'../..');
 const sdk=resolve(process.env.TH15_EMSDK||resolve(root,'tools/emsdk'));
 const compiler=['install','upstream'].map(p=>resolve(sdk,p,'emscripten/emcc.py')).find(existsSync);
 if(!compiler)throw Error('Set TH15_EMSDK');
-const out=resolve(root,'web/artifacts/sdl-multiplayer');
+const out=resolve(root,process.env.TH15_OUTPUT||'web/artifacts/sdl-multiplayer');
 const build=JSON.parse(readFileSync(resolve(out,'build.json')));
 const run=(program,args)=>{const r=spawnSync(program,args,{cwd:root,env:{...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),TEMP:out,TMP:out},encoding:'utf8',windowsHide:true,maxBuffer:4*1024*1024});if(r.error)throw r.error;if(r.status)throw Error(r.stdout+r.stderr);if(r.stdout)process.stdout.write(r.stdout);return r;};
 const flags=['-O2','-std=c++17','-DTH_NATIVE_PLATFORM=1','-DTH15_MULTIPLAYER=1','-DTH_ENABLE_THPRAC=0','-I'+commonInclude,'-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti'];

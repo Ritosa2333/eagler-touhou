@@ -14,6 +14,7 @@ void mouse(int type,float x,float y);
 void cancel_pointer();
 void render(Application&,touhou::sdl::Renderer&);
 bool captures_game_input();
+bool passive_pointer(float,float);
 bool captures_pointer(float x,float y);
 double simulation_interval(Application&);
 }

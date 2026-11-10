@@ -2,9 +2,27 @@ import { TOUCH_SENSITIVITY_MAX, TOUCH_SENSITIVITY_MIN } from "../contracts/runti
 
 export type TouchMovementMode = "touch" | "touch-unlimited" | "joystick" | "joystick-free";
 export type TouchFocusMode = "two-finger" | "hold-button" | "toggle-button";
-export type MusicMode = "ogg-stream" | "ogg-full" | "midi" | "none";
+export type MusicMode = "ogg-stream" | "ogg-full" | "ogg-akyu" | "midi" | "none";
+
+export type {Th05MultiplayerDisplay} from "../contracts/runtime-protocol.mts";
+import type {Th05MultiplayerDisplay} from "../contracts/runtime-protocol.mts";
+export const DEFAULT_TH05_MULTIPLAYER_DISPLAY: Readonly<Th05MultiplayerDisplay> = Object.freeze({
+  bossBar: "native", phaseMarkers: false, phaseStars: false, phaseTimeout: false,
+  timeoutAsTime: false, numericDream: false, numericPower: false,
+});
+export function normalizeTh05MultiplayerDisplay(value: unknown): Readonly<Th05MultiplayerDisplay> {
+  const saved = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  const bossBar = saved.bossBar === "eosd" || saved.bossBar === "ring" ? saved.bossBar : "native";
+  const flag = (key: string) => saved[key] === true;
+  return Object.freeze({bossBar, phaseMarkers: bossBar === "native" && flag("phaseMarkers"),
+    phaseStars: bossBar === "eosd" && flag("phaseStars"), phaseTimeout: bossBar !== "native" || flag("phaseTimeout"),
+    timeoutAsTime: flag("timeoutAsTime"), numericDream: flag("numericDream"), numericPower: flag("numericPower")});
+}
 
 export interface GameOptions {
+  th05MultiplayerDisplay: Readonly<Th05MultiplayerDisplay>;
+  renderScale: 1 | 2 | null;
+  th075NativeResolution: boolean;
   thpracEnabled: boolean;
   thpracTouchControlsEnabled: boolean;
   magnifierEnabled: boolean;
@@ -12,6 +30,8 @@ export interface GameOptions {
   faithBarEnabled: boolean;
   frameLimit60Enabled: boolean;
   pixelPerfectEnabled: boolean;
+  bgmVolume: number;
+  sfxVolume: number;
   touchEnabled: boolean;
   touchMovementMode: TouchMovementMode;
   touchSensitivity: number;
@@ -29,6 +49,9 @@ export interface GameOptions {
 }
 
 export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
+  th05MultiplayerDisplay: DEFAULT_TH05_MULTIPLAYER_DISPLAY,
+  renderScale: null,
+  th075NativeResolution: false,
   thpracEnabled: false,
   thpracTouchControlsEnabled: false,
   magnifierEnabled: false,
@@ -36,6 +59,8 @@ export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
   faithBarEnabled: false,
   frameLimit60Enabled: true,
   pixelPerfectEnabled: false,
+  bgmVolume: 100,
+  sfxVolume: 100,
   touchEnabled: false,
   touchMovementMode: "touch-unlimited",
   touchSensitivity: 150,
@@ -51,13 +76,17 @@ export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
 export const TOUCH_MOVEMENT_MODES = new Set<TouchMovementMode>([
   "touch", "touch-unlimited", "joystick", "joystick-free",
 ]);
+
+export function normalizeGameVolume(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? Math.round(Math.max(0, Math.min(100, value))) : 100;
+}
 export const TOUCH_FOCUS_MODES = new Set<TouchFocusMode>([
   "two-finger", "hold-button", "toggle-button",
 ]);
-export const MUSIC_MODES = new Set<MusicMode>(["ogg-stream", "ogg-full", "midi", "none"]);
+export const MUSIC_MODES = new Set<MusicMode>(["ogg-stream", "ogg-full", "ogg-akyu", "midi", "none"]);
 
 export function isMusicMode(value: string): value is MusicMode {
-  return value === "ogg-stream" || value === "ogg-full" || value === "midi" || value === "none";
+  return value === "ogg-stream" || value === "ogg-full" || value === "ogg-akyu" || value === "midi" || value === "none";
 }
 
 export function isTouchMovementMode(value: string): value is TouchMovementMode {
@@ -193,19 +222,19 @@ export function normalizeStoredGamePreferences(
   if (saved && savedOptions) {
     const sanitizedOptions = { ...savedOptions };
     let changed = false;
-    if (Object.prototype.hasOwnProperty.call(sanitizedOptions, "limitPresentationTo60")) {
+    if (Object.hasOwn(sanitizedOptions, "limitPresentationTo60")) {
       delete sanitizedOptions.limitPresentationTo60;
       changed = true;
     }
-    if (Object.prototype.hasOwnProperty.call(sanitizedOptions, "th06FocusHitbox")) {
-      if (!Object.prototype.hasOwnProperty.call(sanitizedOptions, "focusHitboxEnabled")) {
+    if (Object.hasOwn(sanitizedOptions, "th06FocusHitbox")) {
+      if (!Object.hasOwn(sanitizedOptions, "focusHitboxEnabled")) {
         sanitizedOptions.focusHitboxEnabled = sanitizedOptions.th06FocusHitbox;
       }
       delete sanitizedOptions.th06FocusHitbox;
       changed = true;
     }
-    if (Object.prototype.hasOwnProperty.call(sanitizedOptions, "enhanceLocalPlayerVisibility")) {
-      if (!Object.prototype.hasOwnProperty.call(sanitizedOptions, "multiplayerLocalPlayerVisibility")) {
+    if (Object.hasOwn(sanitizedOptions, "enhanceLocalPlayerVisibility")) {
+      if (!Object.hasOwn(sanitizedOptions, "multiplayerLocalPlayerVisibility")) {
         sanitizedOptions.multiplayerLocalPlayerVisibility = sanitizedOptions.enhanceLocalPlayerVisibility;
       }
       delete sanitizedOptions.enhanceLocalPlayerVisibility;
@@ -238,13 +267,18 @@ export function normalizeStoredGamePreferences(
     : DEFAULT_GAME_OPTIONS.touchSensitivity;
 
   const options: GameOptions = {
+    th05MultiplayerDisplay: normalizeTh05MultiplayerDisplay(rawOptions?.th05MultiplayerDisplay),
+    renderScale: rawOptions?.renderScale === 1 || rawOptions?.renderScale === 2 ? rawOptions.renderScale : null,
     thpracEnabled: context.thpracAvailable && booleanOption(rawOptions, "thpracEnabled", /^zh(?:-|$)/i.test(context.uiLocale || "") || DEFAULT_GAME_OPTIONS.thpracEnabled),
     thpracTouchControlsEnabled: booleanOption(rawOptions, "thpracTouchControlsEnabled", DEFAULT_GAME_OPTIONS.thpracTouchControlsEnabled),
     magnifierEnabled: booleanOption(rawOptions, "magnifierEnabled", DEFAULT_GAME_OPTIONS.magnifierEnabled),
     focusHitboxEnabled: booleanOption(rawOptions, "focusHitboxEnabled", DEFAULT_GAME_OPTIONS.focusHitboxEnabled),
     faithBarEnabled: booleanOption(rawOptions, "faithBarEnabled", DEFAULT_GAME_OPTIONS.faithBarEnabled),
     frameLimit60Enabled: booleanOption(rawOptions, "frameLimit60Enabled", DEFAULT_GAME_OPTIONS.frameLimit60Enabled),
+    th075NativeResolution: booleanOption(rawOptions, "th075NativeResolution", DEFAULT_GAME_OPTIONS.th075NativeResolution),
     pixelPerfectEnabled: booleanOption(rawOptions, "pixelPerfectEnabled", DEFAULT_GAME_OPTIONS.pixelPerfectEnabled),
+    bgmVolume: normalizeGameVolume(rawOptions?.bgmVolume),
+    sfxVolume: normalizeGameVolume(rawOptions?.sfxVolume),
     touchEnabled: booleanOption(rawOptions, "touchEnabled", DEFAULT_GAME_OPTIONS.touchEnabled),
     touchMovementMode: migratedMovement,
     touchSensitivity,
@@ -317,8 +351,15 @@ export function loadStoredGamePreferences({
   if (!saved && fallbackPreferenceId) {
     saved = readStoredJson(storage, gamePreferenceStorageKey(fallbackPreferenceId));
   }
+  const previous = record(saved);
+  const initializeHighRefresh = (preferenceId === 'th11' || preferenceId === 'th11mp')
+    && previous !== null && previous.highRefreshPreferenceVersion !== 1;
+  if (initializeHighRefresh) {
+    saved = {...previous, highRefreshPreferenceVersion: 1,
+      options: {...record(previous.options), frameLimit60Enabled: true}};
+  }
   const normalized = normalizeStoredGamePreferences(saved, context);
-  if (normalized.storageRewriteRequired && storage) {
+  if ((normalized.storageRewriteRequired || initializeHighRefresh) && storage) {
     try {
       storage.setItem(gamePreferenceStorageKey(preferenceId), JSON.stringify(normalized.sanitizedRecord));
     } catch {}
@@ -355,7 +396,9 @@ export function persistStoredGamePreferences({
 }): void {
   if (!storage) return;
   try {
-    storage.setItem(gamePreferenceStorageKey(preferenceId), JSON.stringify(serializeGamePreferences(preferences)));
+    const saved = serializeGamePreferences(preferences);
+    if (preferenceId === 'th11' || preferenceId === 'th11mp') saved.highRefreshPreferenceVersion = 1;
+    storage.setItem(gamePreferenceStorageKey(preferenceId), JSON.stringify(saved));
   } catch {}
   try { storage.setItem(languagePreferenceStorageKey(preferenceId), language); } catch {}
 }

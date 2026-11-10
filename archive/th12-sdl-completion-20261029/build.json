@@ -1,0 +1,157 @@
+{
+  "schema": "th12-sdl-build-receipt/1",
+  "date": "2026-10-29",
+  "scope": "compilation, packaging and file identity; gameplay acceptance is manual",
+  "applicationExecuted": false,
+  "testsExecuted": false,
+  "sourceSha256": "334e1916f26b1535500423523499481207acb4092a89f6accbc73778a8838553",
+  "sharedPlatformSourcesIdentical": true,
+  "dependencies": {
+    "sdl3": "683181b47cfabd293e3ea409f838915b8297a4fd",
+    "freetype": "526ec5c47b9ebccc4754c85ac0c0cdf7c85a5e9b",
+    "emscripten": "4.0.22"
+  },
+  "builds": [
+    {
+      "platform": "web",
+      "target": "touhou12",
+      "status": "compiled",
+      "outputs": {
+        "touhou12.mjs": {
+          "bytes": 227175,
+          "sha256": "7e493b704e8f21ddb6dca2ad76ebb52a9e73e4291b97add0f01d4f2c3e72d219"
+        },
+        "touhou12.wasm": {
+          "bytes": 3241124,
+          "sha256": "83b77f1f260db71c28d4d412218308cac781ca005d12c27e4e6a9de64b1d0c2f"
+        }
+      }
+    },
+    {
+      "platform": "windows",
+      "target": "touhou12",
+      "status": "compiled",
+      "outputs": {
+        "touhou12.exe": {
+          "bytes": 13163473,
+          "sha256": "3b58dacef73c0e2c0816f97db8fbd35a4419a71a1c6131cf151e490fcf427f0e"
+        }
+      }
+    },
+    {
+      "platform": "multiplayer-platform",
+      "target": "th12_sdl_host",
+      "status": "compiled",
+      "outputs": {
+        "libth12_sdl_host.a": {
+          "bytes": 2506442,
+          "sha256": "f9f05bacaef273f350516626cc6beb0e4682915d13daa5cd921d48451e6c1df0"
+        }
+      }
+    }
+  ],
+  "runtime": {
+    "manifest": {
+      "game": "th12",
+      "protocol": "eagler-touhou/1",
+      "adapter": "cpp-sdl3-gles",
+      "version": "0.5.0-sdl",
+      "profile": "sdl-manual-acceptance-pending",
+      "completeAdapter": false,
+      "features": {
+        "thprac": true,
+        "languages": true,
+        "focusHitbox": false
+      },
+      "music": [
+        "ogg-stream",
+        "ogg-full",
+        "none"
+      ],
+      "touchReplay": true,
+      "sourceSha256": "334e1916f26b1535500423523499481207acb4092a89f6accbc73778a8838553"
+    },
+    "files": {
+      "bridge.mjs": {
+        "bytes": 5656,
+        "sha256": "a363d50846d72c7a95575736fd929e26011ad991e6fdca3e9d350ff88bf4d97a"
+      },
+      "core.mjs": {
+        "bytes": 227174,
+        "sha256": "c6085d74e3e4dee204861bf85335f2e076b440bd3af009f4ac580fd43a7a87df"
+      },
+      "core.wasm": {
+        "bytes": 3241124,
+        "sha256": "83b77f1f260db71c28d4d412218308cac781ca005d12c27e4e6a9de64b1d0c2f"
+      },
+      "damage-sources.mjs": {
+        "bytes": 5197,
+        "sha256": "dd045d77cedef3983fe11a0579426b84487a87b7d9862fef3b354ad158e0c5a7"
+      },
+      "game.css": {
+        "bytes": 1395,
+        "sha256": "daef392a0e650fe522d9710c6b0365f14958c290bea2cd4d19221ac3507cb5b8"
+      },
+      "game.mjs": {
+        "bytes": 14794,
+        "sha256": "12a296ad52890e8cacc479f15a1fad0f547f9a9e27f596e1113e15e925fa47e5"
+      },
+      "loader.mjs": {
+        "bytes": 21089,
+        "sha256": "26635c7fa3febc565712e13c121248244ab2f31e827ced907c59c9d5121aac7b"
+      },
+      "managed-data.mjs": {
+        "bytes": 7874,
+        "sha256": "0f2922baa092b8940cedbd284ba6aa717c5ae07940fee9c67ce1358fa572f964"
+      },
+      "managed-input.mjs": {
+        "bytes": 3077,
+        "sha256": "bc20ecd233bcb9f2426edbb3a7d4cf71fd20ae0760896af9c0f47639685ced5e"
+      },
+      "managed-shell.mjs": {
+        "bytes": 9464,
+        "sha256": "420b2ef6a2336075e0d29542223cf1197f68ed1aeb94d9cbbbc45f0ed46c6396"
+      },
+      "manifest.json": {
+        "bytes": 445,
+        "sha256": "88c5d945443b5ea8f302b7f01ba3aa097990f46e9d3fb080f1a0d2021e31e52c"
+      },
+      "native-profile.mjs": {
+        "bytes": 21393,
+        "sha256": "bdfc1c5e802cbc90c947c99160ed80abd0f7beef37662af8daebda5978243422"
+      },
+      "replay-motion.mjs": {
+        "bytes": 3421,
+        "sha256": "1d6714f9b08e79757e0e817d4ac7b484545d6af7cdd6b04c416d3e8b8d63cc15"
+      },
+      "replay.mjs": {
+        "bytes": 5475,
+        "sha256": "cd543763ed2a915a450da7a524f8dd92b636d9e1d36cd81f6387fb8e772de192"
+      },
+      "sdl-content.mjs": {
+        "bytes": 9727,
+        "sha256": "d099fa1db6d13333242290c009c6410f9b95bf20462b39d324820baa1b637eb6"
+      },
+      "sections.mjs": {
+        "bytes": 49037,
+        "sha256": "88fc5d060a8c309638c101b73eed1d2257c6aa08a53bfb25fccc8a9aa841f8f2"
+      },
+      "storage.mjs": {
+        "bytes": 8436,
+        "sha256": "81292b29d0c30d6d0686a4c3b9bd29f763167aa4df7fbc8fdd181329118e2331"
+      },
+      "th12.html": {
+        "bytes": 739,
+        "sha256": "ded777428e42a211ba339c459cdbc9bb21adf7bda3d2a970fcc468e0a8a43d4e"
+      },
+      "touch-input.mjs": {
+        "bytes": 7478,
+        "sha256": "d05c3b2546cee408df803db30229a12499072ab3196d4b738050fa4cdb3220b7"
+      }
+    }
+  },
+  "preview": {
+    "url": "http://127.0.0.1:8118/?game=th12",
+    "generation": "5ae9a8dd03df687c6b1e29eb5c57bb9ee2cc563eb7e78a3f3c489b055a31eefa"
+  }
+}

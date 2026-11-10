@@ -56,3 +56,5 @@ C++ 共享库使用 [MIT License](LICENSE)。`contracts/` 沿用其 [`GPL-3.0-or
 ## thprac 数值键盘
 
 `PracticeKeyboard.hpp` 为练习菜单、暂停页和高级工具提供统一的数值与编辑键输入，SDL 接入使用 `PracticeSdlKeyboard.hpp`。作品按既有规则提供反应测试输入：th07 在键盘更新后写入游戏逻辑按键，保留手柄与触屏操作。可选 thprac 的 SDL／ImGui 引用位于功能条件编译块内，普通构建沿用自身依赖。
+
+跨作键盘契约覆盖各作品的原生菜单源码。CI 稀疏检出 common 时，检查从当前 Git 提交读取未展开的作品文件，保持与完整工作区相同的覆盖范围。

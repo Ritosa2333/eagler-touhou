@@ -1,0 +1,22 @@
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+@import '@fumadocs/base-ui/css/lib/default-colors.css';
+@reference './tailwind.css';
+@reference '@fumadocs/base-ui/css/lib/base.css';
+@plugin '@fumadocs/tailwind/typography';
+@source inline('prose');
+@source '../../node_modules/@fumadocs/base-ui/dist/components/callout.js';
+
+/* Embedded guides use the same Fumadocs prose recipe as full documentation. */
+.ui-document{font:400 16px/1.75 var(--kit-font);overflow-wrap:anywhere}
+.ui-document:not(.ui-document--fumadocs){--color-fd-foreground:var(--kit-foreground);--color-fd-muted-foreground:var(--kit-muted-foreground);--color-fd-border:var(--kit-border);--color-fd-card:var(--kit-card);--color-fd-muted:var(--kit-muted);--color-fd-primary:var(--kit-primary)}
+.ui-document.prose{max-width:none}
+.ui-document.prose :where(h1,h2,h3,h4){text-wrap:balance}
+.ui-document.prose :where(section,article,div)>:where(h1,h2,h3,h4):first-child{margin-top:0}
+.ui-document.prose :where(section,article,div)>:where(p,ul,ol,blockquote):last-child{margin-bottom:0}
+.ui-document :focus-visible{outline:2px solid var(--kit-ring);outline-offset:3px}
+@layer base {
+  :where(.ui-document--fumadocs *){border-color:var(--color-fd-border,currentColor)}
+  :where(.ui-document p,.ui-document h1,.ui-document h2,.ui-document h3,.ui-document h4,.ui-document ul,.ui-document ol,.ui-document blockquote){margin:0;padding:0}
+  :where(.ui-document ul,.ui-document ol){list-style:none}
+  :where(.ui-document a){color:inherit;text-decoration:inherit}
+}

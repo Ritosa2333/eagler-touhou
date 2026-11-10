@@ -1,22 +1,65 @@
+import {SITE_BRAND_FACES,SITE_BRAND_DEFAULT} from './site-brand.mjs';
+import {MULTIPLAYER_GUIDE_TOPICS, multiplayerGuidePath} from './multiplayer-guide.mjs';
+
+// Published with the UI, but fetched only when the selected files need conversion or extraction.
+export function isOnDemandFrontendAsset(path) {
+  return /^assets\/(?:ogg|ffmpeg-core|unrar|7zz)-[A-Za-z0-9_-]+\.wasm$/.test(path);
+}
+/** Router addresses and their mount-local publication files have one inventory. */
+export function uiReviewEnabled(environment = globalThis.process?.env ?? {}) {
+  const review = environment.VITE_UI_REVIEW_ENABLED;
+  if (review === 'false' || review === 'true') return review === 'true';
+  const preview = environment.VITE_PREVIEW_FEATURES;
+  return preview === 'true' || (preview !== 'false' && environment.NODE_ENV === 'development');
+}
+
+export const UI_REVIEW_DOCUMENT = Object.freeze({path: '/ui-review.html', file: 'ui-review.html', source: 'app/routes/ui-review.tsx'});
+
+/** @param {Record<string, {src?: string, isEntry?: boolean}>} manifest */
+export function hasUiReviewEntry(manifest) {
+  return Object.values(manifest).some(entry => entry?.isEntry && entry.src?.split('?')[0] === UI_REVIEW_DOCUMENT.source);
+}
+
+export const REACT_DOCUMENTS = Object.freeze([
+  {path: '/', file: 'index.html'},
+  {path: '/en.html', file: 'en.html'},
+  {path: '/ja.html', file: 'ja.html'},
+  {path: '/lobby.html', file: 'lobby.html'},
+  {path: '/profile.html', file: 'profile.html'},
+  {path: '/login.html', file: 'login.html'},
+  {path: '/u/account-profile-template', file: 'profile-entry.html'},
+  {path: '/privacy.html', file: 'privacy.html'},
+  {path: '/faq.html', file: 'faq.html'},
+  {path: '/about.html', file: 'about.html'},
+  {path: '/guide.html', file: 'guide.html'},
+  {path: '/multiplayer.html', file: 'multiplayer.html'},
+  ...[multiplayerGuidePath(), ...MULTIPLAYER_GUIDE_TOPICS.map(multiplayerGuidePath)].map(path => ({
+    path, file: `${path.slice(1)}/index.html`,
+  })),
+  {path: '/uptime/', file: 'uptime/index.html'},
+].map(document => Object.freeze(document)));
+export const REACT_DOCUMENT_FILES = Object.freeze(REACT_DOCUMENTS.map(document => document.file));
+export const REACT_PRERENDER_PATHS = Object.freeze(REACT_DOCUMENTS.filter(document => document.path !== '/').map(document => document.path));
 // Repository-owned non-module frontend delivery manifest. Original-game-
 // derived artwork is intentionally absent: host assembly supplies it later.
 /** @type {Array<[string, boolean]>} */
 const entries = [
-  ['index.html', true],
-  ['en.html', true],
-  ['lobby.html', true],
+  ...REACT_DOCUMENT_FILES.map(file => /** @type {[string, boolean]} */([file, true])),
   ['lobby.css', true],
   ['site.webmanifest', true],
   ['favicon.ico', true],
   ['assets/favicon.ico', true],
+  ['assets/favicon.png', true],
+  ['assets/site-brand.mjs', true],
+  ['assets/brand/LICENSE.txt', false],
+  ['assets/brand/portrait.png', false],
+  ...SITE_BRAND_FACES.map(face=>/** @type {[string,boolean]} */([`assets/brand/${face}.svg`,face===SITE_BRAND_DEFAULT])),
   ['robots.txt', true],
   ['sitemap.xml', false],
   ['styles.css', true],
   ['features.css', true],
   ['ui-fonts.css', false],
   ['ui-fonts-deferred.css', false],
-  ['touch-guide.css', true],
-  ['about.css', true],
   // Origin migration must always use the current network document. Caching it
   // in the App Shell could leave either side of a cutover on stale protocol
   // code even when the server correctly marks the page for revalidation.
@@ -29,14 +72,20 @@ const entries = [
   ['legacy/legacy-game-pack.mjs', false],
   ['legacy/legacy-import-storage.mjs', false],
   ['legacy/legacy-package-adapter.mjs', false],
-  ['about.html', true],
-  ['faq.html', true],
   // Deliberately standalone ES5/CSS2-friendly help page: unsupported browsers
   // must be able to read it without loading the modern Launcher or its fonts.
   ['compatibility.html', true],
+  ['compatibility.en.html', true],
+  ['compatibility.ja.html', true],
   ['vendor/fflate.min.js', true],
   ['vendor/webaudio-tinysynth.min.js', true],
+  ['vendor/browser-image-compression.min.js', false],
+  ['vendor/browser-image-compression.LICENSE', false],
+  ['vendor/react-easy-crop.LICENSE', false],
+  ['vendor/normalize-wheel.LICENSE', false],
+  ['vendor/uzip.LICENSE', false],
   ['vendor/fflate.LICENSE', false],
+  ['vendor/country-flag-icons.LICENSE', false],
   ['vendor/webaudio-tinysynth.LICENSE', false],
   ['assets/touch-rotate-landscape.webp', true],
   ['assets/launcher-background.webp', true],
@@ -77,9 +126,7 @@ const entries = [
   ['assets/quick-chat/thanks.wav', true],
   ['assets/quick-chat/xxzj.wav', true],
   ['assets/notice-bilibili.svg', true],
-  ['assets/notice-touhou-cloud.png', true],
   ['assets/notice-github.svg', true],
-  ['assets/notice-qq.svg', true],
   ['assets/fonts/touhou98.woff2', true],
   ['assets/fonts/unifont-site.woff2', true],
   ['assets/fonts/yatra-one-latin.woff2', true],
@@ -93,7 +140,6 @@ const entries = [
   ['assets/fonts/OFL-Unifont.txt', false],
   ['assets/fonts/OFL-YatraOne.txt', false],
   ['assets/fonts/OFL-ChillRoundGothic.txt', false],
-  ['NOTICE.txt', false],
   ['content/FIRST_USE_NOTICE.html', true],
   ['content/MULTIPLAYER.html', true],
   ['README.md', false],

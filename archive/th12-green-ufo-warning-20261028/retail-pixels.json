@@ -1,0 +1,25 @@
+{
+  "schema": "th12-green-ufo-warning-raster/1",
+  "texture": "stgenm07-17.png",
+  "sprite": 51,
+  "dimensions": [
+    512,
+    32
+  ],
+  "scale": [
+    1,
+    0.032
+  ],
+  "rows": [
+    {
+      "off": -0.5,
+      "max": 6,
+      "sum": 1227
+    },
+    {
+      "off": 0,
+      "max": 254,
+      "sum": 33632
+    }
+  ]
+}

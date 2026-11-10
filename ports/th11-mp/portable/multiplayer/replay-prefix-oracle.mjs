@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 import {installFramebufferProof,comparePlayfield} from './framebuffer-proof.mjs';
 
 const fields=game=>[...game.slice(1,5),...game.slice(8)];
-export async function replayPrefixOracle({browser,livePage,origin,expected,out,seat,runtimePath='/runtime/',pixels=false}){
+export async function replayPrefixOracle({browser,livePage,origin,expected,out,seat,runtimePath='/runtime/',pixels=false,sharedResources=[]}){
   const captured=await livePage.evaluate(pixels=>{
     const w=document.querySelector('iframe').contentWindow,c=w.core;
     const bytes=c.th11_mp_replay_size();
@@ -28,7 +28,7 @@ export async function replayPrefixOracle({browser,livePage,origin,expected,out,s
     await cdp.send('Emulation.setCPUThrottlingRate',{rate:1});
     await page.goto(origin);await page.evaluate(path=>host.open(path),runtimePath);
     await page.waitForFunction(()=>host.ready(),null,{timeout:60000});
-    await page.evaluate(async()=>{await host.configure({replayViewer:true});await host.launch();});
+    await page.evaluate(async resources=>{await host.configure({replayViewer:true},resources);await host.launch();},sharedResources);
     if(pixels)await page.evaluate(installFramebufferProof);
     await page.evaluate(({base64,frame})=>{
       const w=document.querySelector('iframe').contentWindow,c=w.core;

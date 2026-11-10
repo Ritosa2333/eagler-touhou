@@ -277,6 +277,9 @@ ChainCallbackResult AsciiManager::OnUpdate(AsciiManager *mgr)
 
 ChainCallbackResult AsciiManager::OnDrawMenus(AsciiManager *mgr)
 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(MultiplayerGameplay::GetState().spectator){mgr->DrawStrings();return CHAIN_CALLBACK_RESULT_CONTINUE;}
+#endif
     if (PracticeRuntime::Active() && PracticeRuntime::GetConfig().mode != 0 &&
         g_GameManager.isInGameMenu && !g_GameManager.isInReplay)
     {

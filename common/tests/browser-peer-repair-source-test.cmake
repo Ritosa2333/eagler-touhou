@@ -5,7 +5,9 @@ foreach(REQUIRED IN ITEMS
     "state.route !== 'rtc'"
     "const channel = state.peers.get(peerId)?.controlDc;"
     "channel.bufferedAmount > 32768"
-    "channel.send(HEAPU8.slice(data, data + size));"
+    "const peer = state.peers.get(peerId), payload = HEAPU8.slice(data, data + size);"
+    "if (peer.adaptive) { if (!peer.adaptive.send(payload, true)) return 0; }"
+    "else channel.send(payload);"
     "state.inputRepairSent = (state.inputRepairSent || 0) + 1;"
     "return eagler_peer_send_repair_to(peer, data, static_cast<int>(size)) != 0;"
 )

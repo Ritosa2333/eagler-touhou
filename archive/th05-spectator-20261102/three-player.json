@@ -1,0 +1,91 @@
+{
+  "count": 3,
+  "route": "relay",
+  "mode": 1,
+  "jitter": false,
+  "running": [
+    {
+      "frame": 253,
+      "route": "relay",
+      "inputDelay": 2,
+      "saveRoot": "/savesth05mp"
+    },
+    {
+      "frame": 253,
+      "route": "relay",
+      "inputDelay": 2,
+      "saveRoot": "/savesth05mp"
+    },
+    {
+      "frame": 251,
+      "route": "relay",
+      "inputDelay": 2,
+      "saveRoot": "/savesth05mp"
+    }
+  ],
+  "spectator": {
+    "frame": 361,
+    "hostFrame": 364,
+    "checkedFrame": 240,
+    "hostHash": 292452835,
+    "viewerHash": 292452835,
+    "stock": [
+      3,
+      3,
+      3
+    ]
+  },
+  "timeline": {
+    "paused": 361,
+    "receivedWhilePaused": 375,
+    "seek": 240,
+    "restart": 0,
+    "live": {
+      "version": 1,
+      "run": "s7301ecaba6f98f4a_0",
+      "revision": 20,
+      "min": 0,
+      "position": 410,
+      "received": 413,
+      "edge": 413,
+      "target": 413,
+      "paused": false,
+      "seeking": false,
+      "following": true,
+      "ended": false,
+      "nodes": [
+        {
+          "id": 1,
+          "kind": "stage",
+          "frame": 0,
+          "stage": 1,
+          "bossSlots": 0
+        }
+      ]
+    },
+    "readOnly": true
+  },
+  "boundaries": [
+    {
+      "stage": 1,
+      "transitionTicks": 1,
+      "bytes": 360,
+      "checksum": -1351562152
+    },
+    {
+      "stage": 2,
+      "transitionTicks": 1,
+      "bytes": 360,
+      "checksum": 665258185
+    },
+    {
+      "stage": 3,
+      "transitionTicks": 1,
+      "bytes": 360,
+      "checksum": 1249364712
+    }
+  ],
+  "errors": [],
+  "runtimeErrors": [],
+  "passed": true
+}

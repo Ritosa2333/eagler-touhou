@@ -16,4 +16,9 @@ struct SceneCamera {
     void screen();
 };
 static_assert(sizeof(SceneCamera)==0x118);
+// Presentation-only blend of two fixed-tick camera endpoints.
+SceneCamera blend_camera(const SceneCamera&,const SceneCamera&,float);
+// Authored discontinuity gate: a large position step or a view-direction cut
+// must snap presentation instead of interpolating across scene rebases.
+bool camera_discontinuous(const SceneCamera&,const SceneCamera&,float position_limit=64.f,float direction_dot=.9f);
 }

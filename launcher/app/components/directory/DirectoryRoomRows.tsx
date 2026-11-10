@@ -1,4 +1,8 @@
+import {BookButton} from '../launcher/BookButton';
 import { Fragment, useRef, useState } from 'react';
+import {Music2, UsersRound} from 'lucide-react';
+import {OverflowText} from '../../ui/overflow-text';
+import {formatTh09WinRate} from '../../../src/launcher/th09-room-stats.mjs';
 import {
   PRODUCT_GAMES,
   gameIdForProduct,
@@ -13,8 +17,11 @@ import {
   type LobbyDirectoryService,
 } from '../../services/lobby-directory';
 import { useLocale } from '../../i18n';
-import { Th09RoomCard } from './Th09RoomCard';
+import {accountsEnabled} from '../../release-features';
 import { RoomElapsed } from '../room/RoomElapsed';
+import {ParticipantAvatar} from '../room/ParticipantAvatar';
+import {bookGameArtwork} from '../launcher/book-artwork';
+import './directory-room-list.css';
 
 export interface DirectoryRoomRowsProps {
   snapshot: DirectorySnapshot;
@@ -22,6 +29,8 @@ export interface DirectoryRoomRowsProps {
   assetUrl(path: string): string;
   /** Rows created during main's first visual gate permanently skip arrival motion. */
   initialRows?: boolean;
+  arrivals?: ReadonlySet<string>;
+  exiting?: ReadonlySet<string>;
 }
 /** Original public/lobby.html165–177 row template + lobby.mts260–347 renderer. */
 export function DirectoryRoomRows({
@@ -29,6 +38,8 @@ export function DirectoryRoomRows({
   service,
   assetUrl,
   initialRows = false,
+  arrivals,
+  exiting,
 }: DirectoryRoomRowsProps) {
   return (
     <>
@@ -40,6 +51,8 @@ export function DirectoryRoomRows({
           service={service}
           assetUrl={assetUrl}
           initial={initialRows}
+          arriving={arrivals?.has(`${room.product}-${room.code}`) ?? false}
+          exiting={exiting?.has(`${room.product}-${room.code}`) ?? false}
         />
       ))}
     </>
@@ -51,92 +64,120 @@ function RoomRow({
   service,
   assetUrl,
   initial,
+  arriving,
+  exiting,
 }: {
   room: DirectoryRoom;
   snapshot: DirectorySnapshot;
   service: LobbyDirectoryService;
   assetUrl(path: string): string;
   initial: boolean;
+  arriving: boolean;
+  exiting: boolean;
 }) {
-  const { locale, t } = useLocale(),
+  const { t, locale } = useLocale(),
     initiallyHiddenMotion = useRef(initial).current;
   const [coverFailed, setCoverFailed] = useState(false);
   const meta = PRODUCT_GAMES[gameIdForProduct(room.product)];
-  const artwork = 'cardArtwork' in meta ? meta.cardArtwork : null;
-  const title = locale === 'en' ? meta.subtitle : meta.title;
+  const artwork = bookGameArtwork(gameIdForProduct(room.product)) ?? ('cardArtwork' in meta && meta.cardArtwork ? assetUrl(`assets/${meta.cardArtwork}`) : undefined);
+  const title = meta.title;
   const policy = multiplayerConfigForProduct(room.product)!;
+  const duel = room.product === 'th09mp' || room.product === 'th19mp';
+  const firstWins = room.seats[0]?.stats?.wins ?? 0;
+  const secondWins = room.seats[1]?.stats?.wins ?? 0;
+  const hasDuelPair = duel && !!room.seats[0] && !!room.seats[1];
+  const score = hasDuelPair ? `${firstWins} : ${secondWins}` : 'VS';
+  const largestScore = Math.max(firstWins, secondWins);
+  const compactScore = hasDuelPair && largestScore >= 1000;
+  let compactNumbers: Intl.NumberFormat | undefined;
+  const abbreviate = (value: number) => {
+    compactNumbers ??= new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 0 });
+    return compactNumbers.format(value);
+  };
+  const scoreNumber = (value: number) => {
+    if (!compactScore) return value;
+    const compact = abbreviate(value);
+    return compact.length <= 4 ? compact : value.toExponential(0).replace('e+', 'e');
+  };
+  const duelRecords = room.product === 'th09mp' && accountsEnabled ? room.seats.slice(0, 2).map((seat, side) => {
+    const record = seat?.profile?.th09;
+    const rate = record && formatTh09WinRate(record, locale);
+    const games = record && rate ? record.games : '?';
+    const label = t('th09.accountCard', {games, rate: rate ?? '?'});
+    const caption = typeof games === 'number' && games >= 1000000
+      ? t('th09.accountCard', {games: abbreviate(games), rate: rate ?? '?'}) : label;
+    return <span key={side === 0 ? "left" : "right"} className="book-room-duel-summary" data-side={side} title={label}><span>{caption}</span></span>;
+  }) : [];
+  const minutes = Math.max(...room.seats.map(seat => seat?.stats?.minutes ?? 0), 0);
   const difficulty = policy.inGameSelection ? '' : policy.difficulties[room.difficulty];
   const state = directoryRoomState(room);
+  const statusLabel = t(`lobby.${state}`);
   const spectating = directoryRoomSpectatorEntry(room);
   const count = t('lobby.count', { players: room.players, capacity: room.capacity });
   const disabled =
+    snapshot.loading ||
     snapshot.connection !== 'live' ||
     !!snapshot.mine ||
     snapshot.leaving ||
     !directoryRoomCanEnter(room);
-  if (room.product === 'th09mp')
-    return (
-      <Th09RoomCard
-        room={room}
-        difficulty={difficulty}
-        state={state}
-        spectating={spectating}
-        disabled={disabled}
-        initial={initiallyHiddenMotion}
-        assetUrl={assetUrl}
-        conflict={!!snapshot.mine}
-        onJoin={() => service.joinRoom(room.product, room.code)}
-      />
-    );
   return (
-    <article
-      className={`lobby-room-row${initiallyHiddenMotion ? ' lobby-room-initial' : ''}`}
-      role="listitem"
+    <li
+      className={`lobby-room-row directory-room-grid${initiallyHiddenMotion ? ' lobby-room-initial' : ''}${arriving && !exiting ? ' lobby-room-arriving' : ''}${exiting ? ' lobby-room-exiting' : ''}`}
+      inert={exiting || undefined}
+      aria-hidden={exiting || undefined}
       data-key={`${room.product}-${room.code}`}
+      data-state={state}
+      data-listening={room.listeningTrack ? '' : undefined}
     >
       <div className="lobby-room-identity">
         <span className="lobby-cover" aria-hidden="true">
           <img
-            src={artwork ? assetUrl(`assets/${artwork}`) : undefined}
+            src={artwork}
             alt=""
             loading="lazy"
             decoding="async"
             hidden={!artwork || coverFailed}
             onError={() => setCoverFailed(true)}
           />
-          <span className="lobby-cover-number">{meta.number}</span>
+          {(!artwork || coverFailed) && <span className="lobby-cover-number">{meta.number}</span>}
         </span>
         <div className="lobby-room-title">
-          <span className="lobby-room-code">#{room.code}</span>
-          <h2>{title}</h2>
-          <span className="lobby-room-subtitle">{meta.subtitle}</span>
-          <span className="lobby-mobile-difficulty" hidden={!difficulty}>{difficulty}</span>
-          <span className="lobby-movement-rule" hidden={!room.disableCheatMovement}>
-            {t('lobby.noCheat')}
-          </span>
-          <span className="lobby-movement-rule lobby-challengeMode" hidden={!room.challengeMode}>
-            {t('room.challengeMode')}
-          </span>
-          <div className="lobby-room-facts">
-            <span className="lobby-room-watchers" aria-label={t('th09.spectatorCount', {count: room.spectators})}
-              title={t('th09.spectatorCount', {count: room.spectators})}>
-              <img src={assetUrl('assets/room-users.svg')} alt=""/>{t('th09.spectatorCount', {count: room.spectators})}
+          <h2><span className="lobby-work-name" title={title}>{title}</span>{difficulty && <span className="lobby-difficulty" data-difficulty={difficulty.toLowerCase()}>{difficulty}</span>}</h2>
+          <div className="lobby-room-meta">
+            <span className="lobby-room-code">#{room.code}</span>
+            <span className="lobby-room-state" data-state={state} title={statusLabel}>
+              <span>{statusLabel}</span>
             </span>
-            {room.phase !== 'lobby' && !!room.startedAt && <>
+          </div>
+          <div className="lobby-room-facts">
+            <span className="lobby-room-watchers" role="img" aria-label={t('th09.spectatorCount', {count: room.spectators})}
+              title={t('th09.spectatorCount', {count: room.spectators})}>
+              <UsersRound aria-hidden="true"/>{t('th09.spectatorCount', {count: room.spectators})}
+            </span>
+            {room.phase !== 'lobby' && (duel || !!room.startedAt) && <span className="lobby-room-duration">
               <span className="lobby-room-fact-divider" aria-hidden="true">|</span>
-              <RoomElapsed phase={room.phase} startedAt={room.startedAt}/>
-            </>}
+              <RoomElapsed phase={room.phase} startedAt={duel ? undefined : room.startedAt} elapsedMinutes={duel ? minutes : undefined}/>
+            </span>}
+            {room.listeningTrack && <span className="lobby-room-music">
+              <Music2 aria-hidden="true"/>
+              <OverflowText autoScroll>{[room.listeningTrack.name, room.listeningTrack.artist].filter(Boolean).join(' - ')}</OverflowText>
+            </span>}
           </div>
         </div>
       </div>
-      <span className="lobby-difficulty" hidden={!difficulty}>{difficulty}</span>
-      <div className="lobby-party" aria-label={count}>
-        <span className="lobby-occupancy">{count}</span>
+      <div className="lobby-room-rules">
+        {!room.disableCheatMovement && !room.challengeMode ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
+          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
+      </div>
+      <fieldset className="lobby-party" aria-label={count}>
         <div
           className={`lobby-seats${room.seats.some((seat) => !!seat?.controlMode) ? ' has-controls' : ''}`}
+          data-duel={duel ? 'true' : undefined}
+          data-duel-records={duelRecords.length ? '' : undefined}
+          data-capacity={room.capacity}
         >
           {room.seats.map((seat, index) => {
-            const control = seat?.controlMode ? t(seat.name !== undefined && seat.controlMode === 'normal' ? 'multiplayer.control.keysOrStick' : `multiplayer.control.${seat.controlMode}`) : '';
+            const control = seat?.controlMode ? t(`multiplayer.control.${seat.controlMode}`) : '';
             const label =
               t(
                 !seat
@@ -154,8 +195,10 @@ function RoomRow({
               </span>
             );
             const avatar = (
-              <span
+              <ParticipantAvatar
                 className="lobby-seat"
+                profile={seat?.profile}
+                name={seat?.name || seat?.initial || ''}
                 data-empty={String(!seat)}
                 data-ready={String(!!seat?.ready)}
                 data-offline={String(!!seat && !seat.online)}
@@ -164,22 +207,38 @@ function RoomRow({
                 role="img"
               >
                 {seat?.initial || ''}
-                {seat?.name === undefined && controlCaption}
-              </span>
+              </ParticipantAvatar>
             );
-            return seat?.name !== undefined ? <span key={index} className="lobby-public-player">
-              {avatar}{controlCaption}<strong className="lobby-seat-name" title={seat.name || `P${index+1}`}>{seat.name || `P${index+1}`}</strong>
-            </span> : <Fragment key={index}>{avatar}</Fragment>;
+            // An approved public name may literally be P1/P2. Legacy duel
+            // labels only apply when the relay did not publish a name field.
+            const name = !seat ? t('th09.waitingPlayer')
+              : (seat.name !== undefined ? seat.name : duel ? seat.machineSign || seat.initial : '') || `P${index + 1}`;
+            // biome-ignore lint/suspicious/noArrayIndexKey: A numbered seat is the slot identity even when its occupant changes.
+            return <Fragment key={index}>
+              {duel && index === 1 && <>
+                {duelRecords[0]}
+                <strong className="book-room-score" role="img" aria-label={`${t('th09.score')} ${score}`} title={score}
+                  data-wide={hasDuelPair && largestScore >= 10 ? '' : undefined} data-compact={compactScore ? '' : undefined}>
+                  <span className="book-room-score-value">{hasDuelPair ? <>
+                    <span className="book-room-score-number">{scoreNumber(firstWins)}</span>
+                    <span className="book-room-score-separator"> : </span>
+                    <span className="book-room-score-number">{scoreNumber(secondWins)}</span>
+                  </> : score}</span>
+                </strong>
+                {duelRecords[1]}
+              </>}
+              <span className="lobby-public-player" data-empty={String(!seat)}>
+                {avatar}
+                <span className="lobby-seat-text">
+                  {seat ? <OverflowText className="lobby-seat-name">{name}</OverflowText> : <span className="lobby-seat-name">{name}</span>}
+                  {controlCaption}
+                </span>
+              </span>
+            </Fragment>;
           })}
         </div>
-      </div>
-      <span className="lobby-player-count" aria-label={count}>
-        {room.players} / {room.capacity}
-      </span>
-      <span className="lobby-room-state" data-state={state}>
-        {t(`lobby.${state}`)}
-      </span>
-      <button
+      </fieldset>
+      <BookButton variant="primary"
         className="lobby-button lobby-join"
         type="button"
         disabled={disabled}
@@ -194,7 +253,7 @@ function RoomRow({
               ? 'lobby.join'
               : `lobby.${state}`,
         )}
-      </button>
-    </article>
+      </BookButton>
+    </li>
   );
 }

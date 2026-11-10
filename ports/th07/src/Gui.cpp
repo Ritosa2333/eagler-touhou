@@ -2196,6 +2196,16 @@ void Gui::DrawStageElements()
     {
         g_AnmManager->DrawInterp(&this->impl->stageTextVm[i]);
     }
+    if (this->impl->bombSpellcardPortrait.visible
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        && !MultiplayerGameplay::IsMultiplayer()
+#endif
+    )
+    {
+        g_AnmManager->DrawInterpNoRotation(&this->impl->bombSpellcardPortrait);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->bombSpellcardDecorLeft);
+        g_AnmManager->DrawInterp(&this->impl->bombSpellcardDecorRight);
+    }
     if (this->impl->enemySpellcardPortrait.visible
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         && !MultiplayerGameplay::IsMultiplayer()

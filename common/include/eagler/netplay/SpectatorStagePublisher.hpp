@@ -28,6 +28,10 @@ public:
         BossNodeEncode,
         BossNodeSend,
     };
+    static bool Retryable(PublishFailure failure) {
+        return failure == PublishFailure::CheckpointSend || failure == PublishFailure::InputSend ||
+            failure == PublishFailure::BossNodeSend;
+    }
     static const char* FailureName(PublishFailure failure) {
         switch (failure) {
             case PublishFailure::None: return "none";

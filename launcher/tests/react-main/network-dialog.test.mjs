@@ -1,7 +1,8 @@
+import {uiContractAttributes} from './mounted-dom-environment.mjs';
 import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
 /** Pinned-main network dialog parity: synthetic DOM/MemoryRouter and fake IO.
  * No browser, server, live WebSocket/ICE/TURN, native top-layer or pixel claim. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -38,8 +39,8 @@ before(async () => {
   // These are the executed owners, not copies of their probe/translation logic.
   const original = pinned('src/launcher/network-diagnostics.mts');
   const current = readFileSync(resolve(project, 'src/launcher/network-diagnostics.mts'), 'utf8').replaceAll('\r\n', '\n');
-  // Shared-state extraction deliberately changes presentation ownership. Every
-  // probe/helper and the actual per-run orchestration remain pinned bytes.
+  // Presentation stays comparable with pinned main; transport behavior uses
+  // the current authored implementation.
   originalHTML = pinned('public/lobby.html');
   work = await mkdtemp(resolve(project, 'tests/react-main/network-dialog-build-'));
   const outfile = resolve(work, 'actual.mjs');
@@ -114,8 +115,15 @@ function transport() {
     createDataChannel(name) {const channel = new Channel(); channel.label = name; this.channels.push(channel); return channel;}
     async createOffer() {return {type: 'offer', sdp: 'v=0\r\n'};}
     async createAnswer() {return {type: 'answer', sdp: 'v=0\r\n'};}
-    async setLocalDescription(value) {this.localDescription = value; this.iceGatheringState = 'gathering';}
+    async setLocalDescription(value) {
+      this.localDescription = value; this.iceGatheringState = 'gathering';
+      if (f.earlyCandidate) this.emit('icecandidate', {candidate: f.earlyCandidate});
+    }
     async setRemoteDescription(value) {this.remoteDescription = value;}
+    async addIceCandidate(value) {
+      assert.ok(this.remoteDescription, 'Candidates wait for the remote description');
+      (this.receivedCandidates ??= []).push(value);
+    }
     async getStats() {
       this.statsCalls++;
       return new Map([['transport', {type: 'transport', selectedCandidatePairId: 'pair'}],
@@ -215,7 +223,7 @@ async function mount(initial = {}, {locale = 'en', strict = false} = {}) {
   mounts.add(m); await render(); return m;
 }
 function normalized(node) {
-  const attrs = [...node.attributes].filter(attr => !attr.name.startsWith('data-i18n') && attr.name !== 'open')
+  const attrs = uiContractAttributes(node).filter(attr => !attr.name.startsWith('data-i18n') && attr.name !== 'open')
     .map(attr => [attr.name, attr.value]).sort(([a], [b]) => a.localeCompare(b));
   const children = []; let text = '';
   const flush = () => {const value = text.replace(/\s+/g, ' ').trim(); if (value) children.push(value); text = '';};
@@ -243,15 +251,17 @@ for (const locale of ['zh-CN', 'en']) test(`original dialog copy/classes/IDs/ARI
 
 for (const locale of ['zh-CN', 'en']) test(`original inline MP diagnostics reuses one real probe owner and exact controls (${locale})`, async () => {
   const f = transport(), ref = React.createRef(), container = env.document.createElement('div');
-  env.document.body.append(container); const root = createRoot(container); mounts.add({root}); let guides = 0;
+  env.document.body.append(container); const root = createRoot(container); mounts.add({root});
   await step(() => root.render(React.createElement(React.StrictMode, null, React.createElement(api.LocaleProvider, {locale},
-    React.createElement(api.MultiplayerDiagnostics, {ref, getRelayUrl: () => relayUrl, onGuide: () => guides++})))));
+    React.createElement(api.MultiplayerDiagnostics, {ref, getRelayUrl: () => relayUrl, guideHref: '/docs/multiplayer/th07'})))));
   const original = new env.window.DOMParser().parseFromString(pinned('public/index.html'), 'text/html');
   const expected = n('#mpNetworkDiagnostics', original);
   for (const node of expected.querySelectorAll('[data-i18n]')) node.textContent = t(locale, node.dataset.i18n);
-  assert.deepEqual(normalized(n('#mpNetworkDiagnostics')), normalized(expected));
+  const actual = n('#mpNetworkDiagnostics').cloneNode(true);
+  actual.querySelector('#mpGuideOpen').remove(); expected.querySelector('#mpGuideOpen').remove();
+  assert.deepEqual(normalized(actual), normalized(expected));
   assert.equal(env.document.querySelectorAll('#mpNetworkResults').length, 1); assert.equal(f.sockets.length, 0);
-  await step(() => n('#mpGuideOpen').click()); assert.equal(guides, 1); assert.equal(f.sockets.length, 0);
+  assert.equal(n('#mpGuideOpen').getAttribute('href'), '/docs/multiplayer/th07');
   await step(() => {n('#mpNetworkCheck').click(); n('#mpNetworkCheck').click();});
   assert.equal(f.sockets.length, 1); assert.equal(ref.current.isRunning(), true);
   assert.equal(n('#mpNetworkCheck').classList.contains('running'), true); assert.equal(n('#mpNetworkCheck').getAttribute('aria-disabled'), 'true');
@@ -265,7 +275,7 @@ test('document-lived borrowed probe model retains pending/results across inline,
   const f = transport(), {model} = modelFixture('en'), container = env.document.createElement('div'), ref = React.createRef();
   env.document.body.append(container); const root = createRoot(container); const mounted = {root}; mounts.add(mounted);
   await step(() => root.render(React.createElement(React.StrictMode, null, React.createElement(api.LocaleProvider, {locale: 'en'},
-    React.createElement(api.MultiplayerDiagnostics, {model, ref, getRelayUrl: () => relayUrl, onGuide() {}})))));
+    React.createElement(api.MultiplayerDiagnostics, {model, ref, getRelayUrl: () => relayUrl, guideHref: '/docs/multiplayer/th07'})))));
   await step(() => n('#mpNetworkCheck').click()); assert.equal(model.getSnapshot().running, true); assert.equal(f.sockets.length, 1);
   await step(() => root.unmount()); mounts.delete(mounted);
   const modal = await mount({model}, {strict: true});
@@ -351,15 +361,62 @@ test('TURN payload timeout is a failed probe, not unavailable, and closes both o
   assert.equal(channel.closed, 1); assert.equal(f.peers[1].closed, 1); assert.equal(f.peers[2].closed, 1);
 });
 
-for (const phase of ['ICE allocation', 'data-channel opening']) test(`original TURN ${phase} timeout closes both peers and publishes failure`, async () => {
+for (const phase of ['ICE allocation', 'data-channel opening']) test(`TURN ${phase} deadline closes both peers and publishes failure`, async () => {
   const f = transport(), {model} = modelFixture(); let run; await step(() => {run = operation(() => model.run());});
   await f.ready(); await step(() => f.peers[0].gather(directCandidates()));
   if (phase === 'data-channel opening') {
     await step(() => f.peers[1].gather([], {relay: true})); await step(() => f.peers[2].gather([], {relay: true}));
   }
-  await f.timeout(12000); complete(run);
+  await f.timeout(36000); complete(run);
   assert.deepEqual(model.getSnapshot().rows.turn, {state: 'bad', value: 'Connection failed'});
   assert.equal(f.peers[1].channels[0].closed, 1); assert.equal(f.peers[1].closed, 1); assert.equal(f.peers[2].closed, 1);
+});
+
+test('TURN measures a working relay pair while other ports are still gathering', async () => {
+  const f = transport(), {model} = modelFixture(); let run;
+  await step(() => {run = operation(() => model.run());});
+  await f.ready(); await step(() => f.peers[0].gather(directCandidates()));
+  const [left, right] = f.peers.slice(1);
+  assert.ok(left.localDescription && right.localDescription, 'Both peers gather concurrently');
+  assert.equal(left.iceGatheringState, 'gathering');
+  assert.equal(right.iceGatheringState, 'gathering');
+  const relay = candidate('203.0.113.9', {type: 'relay'});
+  await step(() => {left.emit('icecandidate', {candidate: relay}); right.emit('icecandidate', {candidate: relay});});
+  assert.deepEqual(left.receivedCandidates, [relay]);
+  assert.deepEqual(right.receivedCandidates, [relay]);
+  const channel = left.channels[0];
+  await step(() => channel.open());
+  for (let index = 0; index < 3; index++)
+    await step(() => channel.emit('message', {data: channel.sent[index]}));
+  complete(run);
+  assert.equal(left.iceGatheringState, 'gathering');
+  assert.equal(right.iceGatheringState, 'gathering');
+  assert.equal(model.getSnapshot().rows.turn.state, 'good');
+  assert.equal(left.closed, 1); assert.equal(right.closed, 1);
+  assert.equal(left.listeners.get('icecandidate').size, 0);
+  assert.equal(right.listeners.get('icecandidate').size, 0);
+});
+
+test('an open channel without a relay pair cannot report successful TURN latency', async () => {
+  const f = transport(), {model} = modelFixture(); let run;
+  await step(() => {run = operation(() => model.run());});
+  await f.ready(); await step(() => f.peers[0].gather(directCandidates()));
+  f.peers[1].getStats = async () => new Map();
+  await step(() => f.peers[1].channels[0].open());
+  complete(run);
+  assert.equal(model.getSnapshot().rows.turn.state, 'bad');
+  assert.equal(f.peers[1].closed, 1); assert.equal(f.peers[2].closed, 1);
+});
+
+test('TURN queues early candidates until the other peer has its remote description', async () => {
+  const f = transport(), {model} = modelFixture(); let run;
+  f.earlyCandidate = candidate('203.0.113.9', {type: 'relay'});
+  await step(() => {run = operation(() => model.run());});
+  await f.ready(); await step(() => f.peers[0].gather(directCandidates()));
+  assert.deepEqual(f.peers[1].receivedCandidates, [f.earlyCandidate]);
+  assert.deepEqual(f.peers[2].receivedCandidates, [f.earlyCandidate]);
+  await f.turn(f.peers[1], f.peers[2]); complete(run);
+  assert.equal(model.getSnapshot().rows.turn.state, 'good');
 });
 
 for (const intent of ['button', 'cancel', 'backdrop']) test(`${intent} dismissal issues one central request; controlled Back never issues another`, async () => {

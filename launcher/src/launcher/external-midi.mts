@@ -272,7 +272,7 @@ function collectOutputs(access: MidiAccessLike | null): MidiOutputPort[] {
     if (!ports.includes(port)) ports.push(port);
   };
   const outputs = access.outputs;
-  if (typeof outputs.forEach === "function") outputs.forEach(port => push(port));
+  if (typeof outputs.forEach === "function") outputs.forEach(port => {push(port);});
   else if (typeof outputs.values === "function") for (const port of outputs.values()) push(port);
   return ports;
 }

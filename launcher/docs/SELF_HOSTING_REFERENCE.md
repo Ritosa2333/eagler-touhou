@@ -6,6 +6,8 @@
 
 Host 读取 `runtime-release/`、Product Catalog 中每个注册游戏的 `games/<game-id>/`、可选 `shared/` 字体和可选 `eagler-touhou.config.json`。Runtime Release 必须匹配当前 Launcher Catalog。Host 构建包含所有注册游戏；单作开发使用 workspace 开发服务器。
 
+th05 使用已有的普通版与多人 Runtime Release，以及 `games/th05/assets-eagler/` 中的完整预制内容。该目录须包含 `th05.data`、全部声明的 `music/` 文件和 `artwork/th05-card.webp`。当前前端接入不包含 th05 的原生编译器与原始音源制作链；更新界面时沿用已发布的 Runtime 和内容。
+
 配置 schema 为 `eagler-touhou/host-config/1`：
 
 ```json
@@ -38,6 +40,8 @@ External 部署使用同一 Hosted 版本构建的站点配对。重定向、COR
 将文件发布到站点配置的挂载路径。服务器返回正确的 JavaScript、WebAssembly 和 Web App Manifest 内容类型，保留请求查询参数，并支持站点缓存策略。HTML、JSON 清单和 App Shell worker 需要重新验证；带版本的 Runtime 与 Package 资源可设为 immutable 缓存。`npm run verify:server -- dist/site` 检查本地目录；`npm run verify:deployed -- https://example.com/` 检查公开部署。
 
 External 模式中，玩家站将 `/games/**` 和 `/shared/**` 重定向到资源源站；资源源站允许玩家站 HTTPS Origin 并保留字节范围响应。公开站点验证器会按 External 模式检查这些路径。
+
+th075 的站点语言 ZIP 可由玩家站直接发布。验证器按站点语言清单核对 `games/th075/language/` 下每个 ZIP 的路径、长度与完整 SHA-256，其余游戏数据和共享资源继续按 External 模式分发。
 
 离线使用要求 HTTPS 或浏览器信任的 loopback 源站。玩家需先安装 Launcher Shell、所选 Runtime 和游戏 Package，该游戏才可离线运行。Relay 是独立 WebSocket 服务；完整检出可在 `launcher/` 运行 `npm run relay`。自托管包提供 Host 工作流，Relay 需单独部署和启动。
 

@@ -1,7 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
-const read=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
+import {existsSync,readFileSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+const root=fileURLToPath(new URL('../..',import.meta.url));
+const read=path=>{
+  const file=new URL('../../'+path,import.meta.url);
+  if(existsSync(file))return readFileSync(file,'utf8');
+  return execFileSync('git',['show',`HEAD:${path}`],{cwd:root,encoding:'utf8'});
+};
 
 test('every native thprac renderer feeds numeric editing before NewFrame',()=>{
   for(const title of ['th06','th07','th08','th08-mp','th10','th10-mp','th11','th11-mp','th15','th15-mp']){
@@ -41,4 +48,16 @@ test('TH07 retains logical reaction keys after physical keyboard sampling',()=>{
   const source=read('ports/th07/src/ThpracImGui.cpp');
   const frame=source.slice(source.indexOf('void BeginFrame('),source.indexOf('bool IsFrameOpen('));
   assert.ok(frame.indexOf('sdl_keyboard_frame(io)')<frame.indexOf('ApplyGameInput()'));
+});
+
+test('TH10, TH11 and TH15 wire direct row adjustment into both practice renderers',()=>{
+  for(const title of ['th10','th10-mp','th11','th11-mp','th15','th15-mp']){
+    const source=read(`ports/${title}/web/cpp/sdl/ThpracUi.cpp`);
+    assert.ok(source.includes('#include <eagler/thprac/PracticeNavigation.hpp>'),title);
+    const feed=source.indexOf('PracticeNav::prepare(');
+    assert.ok(feed>=0&&source.indexOf('ImGui::NewFrame();',feed)>feed,title);
+    assert.ok(source.includes('PracticeNav::focus('),title);
+    assert.ok(source.includes('PracticeNav::Combo(')&&source.includes('PracticeNav::SliderInt('),title);
+    assert.ok(source.includes('text_editing||PracticeNav::busy()'),`${title}: popup confirmation stays inside its widget`);
+  }
 });

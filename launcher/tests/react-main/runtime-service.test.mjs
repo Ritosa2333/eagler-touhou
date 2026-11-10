@@ -3,7 +3,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
  * first rendered pixel claim. Main app:4241–4289,5948–5983 and unchanged
  * runtime-session/generation-lease/preparation tests supply the expectations.
  */
-import test, {before, after, afterEach} from 'node:test';
+import {test, vi, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -16,7 +16,7 @@ before(async () => {
   await mkdir(resolve(project, '.cache'), {recursive: true}); work = await mkdtemp(resolve(project, '.cache/react-main-runtime-'));
   const outfile = resolve(work, 'actual-service.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
-    export {createRuntimeService} from './app/services/runtime.ts';
+    export {createRuntimeService, RuntimeWaitTimeoutError} from './app/services/runtime.ts';
     export {readManagedRuntimeData} from './src/launcher/runtime-preparation.mts';
     export {RUNTIME_EPOCH_QUERY_PARAMETER} from './src/contracts/runtime-protocol.mts';
     export {PRODUCT_GAMES} from './src/contracts/product-catalog.mts';
@@ -27,6 +27,20 @@ before(async () => {
 afterEach(async () => {for (const fixture of fixtures.splice(0)) {await fixture.service.close({discardUnsaved: true}); fixture.service.dispose(); assert.equal(fixture.timers.pending.size, 0);}});
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 const flush = async () => {for (let i = 0; i < 30; i++) await Promise.resolve();};
+
+test('spectator gameplay rejects input and its authenticated native result menu owns local input',async()=>{
+  const f=fixture();await f.prepare(managedPlan('th11',{netplayMode:'lan',netplaySpectator:true}));
+  const launch=f.service.launch();f.ack('launch');await launch;
+  assert.equal(f.service.getInputContext().spectator,true);
+  assert.equal(f.service.postInput('keyboard',{code:'KeyZ',down:true}),false);
+  f.event('runtime-info',{spectatorMenu:true});
+  assert.equal(f.service.getInputContext().spectator,false);
+  assert.equal(f.service.getSnapshot().spectator,true,'local menus retain their observer role');
+  assert.equal(f.service.postInput('keyboard',{code:'KeyZ',down:true}),true);
+  f.event('runtime-info',{spectatorMenu:false});
+  assert.equal(f.service.getInputContext().spectator,true);
+  assert.equal(f.service.postInput('keyboard',{code:'KeyZ',down:true}),false);
+});
 function deterministicTimers() {
   let now = 0, serial = 0; const pending = new Map();
   const add = (callback, ms, interval = false) => {const id = ++serial; pending.set(id, {callback, at: now + ms, ms, interval}); return id;};
@@ -57,7 +71,7 @@ function managedPlan(game = 'th10', options = {}) {
       base: {files: ['data']}, components: {}}, files: {data: {objectId: `obj-${game}-data`, revision: 'data-r1'}}},
     configure: {music: 'none', options}};
 }
-function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, ...overrides} = {}) {
+function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, serviceOptions, ...overrides} = {}) {
   const messageListeners = new Set(), loadListeners = new Set(), eventContexts = [], outbound = [], navigations = [], retained = [], released = [], codeCalls = [], dataReads = [];
   const timers = deterministicTimers();
   const host = {location: {origin, href: `${baseUrl}?game=th06`},
@@ -67,8 +81,6 @@ function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, ...ove
     postMessage(data, target) {assert.equal(target, origin); outbound.push(data);},
     addEventListener() {}, removeEventListener() {}};
   const frame = {contentWindow: runtime, isConnected: true,
-    setAttribute(name, value) {assert.equal(name, 'src'); runtime.location.replace(value);},
-    removeAttribute(name) {assert.equal(name, 'src'); runtime.location.replace('about:blank');},
     addEventListener(type, listener) {assert.equal(type, 'load'); loadListeners.add(listener);}, removeEventListener(_type, listener) {loadListeners.delete(listener);}};
   const service = owners.createRuntimeService({translate: key => key, frame, hostWindow: host, baseUrl, timers,
     onFrameRetired, onUpdateReady, onNetworkChange, worker,
@@ -82,7 +94,7 @@ function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, ...ove
       async readResource() {throw new Error('Unexpected resource in lifecycle fixture');},
       async retainGeneration(game, generation, options) {retained.push({game, generation, options});},
       async releaseGeneration(id) {released.push(id);}, ...overrides,
-    }});
+    }, ...serviceOptions});
   const emit = (data, envelope = {}) => {for (const listener of messageListeners) listener({origin, source: runtime, data, ...envelope});};
   const event = (type, extra = {}, envelope = {}) => emit({protocol: 'eagler-touhou/1', game: service.getSnapshot().game,
     epoch: service.getSnapshot().epoch, event: type, ...extra}, envelope);
@@ -96,6 +108,44 @@ function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, ...ove
   const result = {service, host, frame, runtime, timers, eventContexts, outbound, navigations, retained, released, codeCalls, dataReads, emit, event, ack, prepare, loadListeners};
   fixtures.push(result); return result;
 }
+
+test('Runtime uses the ordinary Host entry and shared Runtime generation URL', async () => {
+  const codeRequests = [];
+  const f = fixture({async prepareCode(entry, options) {
+    codeRequests.push({entry, options});
+    return {url: `${baseUrl}runtime/th10/${hash}/th10.html`, generation: hash};
+  }});
+  const preparing = f.service.prepare(managedPlan());
+  await vi.waitFor(() => assert.ok(f.navigations.some(url => url.startsWith(baseUrl))));
+  assert.deepEqual(codeRequests.map(request => request.entry), [baseUrl + 'runtime/th10/th10.html']);
+  const navigation = f.navigations.find(url => url !== 'about:blank');
+  assert.ok(navigation.startsWith(baseUrl));
+  assert.equal(new URL(navigation).pathname.includes('/beta/'), false);
+  f.event('ready'); await flush(); f.ack('configure'); await preparing;
+  assert.equal(f.service.getSnapshot().source, navigation);
+});
+
+for (const cleanupFails of [false, true]) test(`game check preserves its original failure${cleanupFails ? ' together with failed frame retirement' : ''} and releases its owner`, async () => {
+  const f=fixture(), plan=managedPlan(); plan.runtimeVariant='multiplayer';
+  const primary=new Error('check callback failed'), replace=f.runtime.location.replace;
+  const check=f.service.checkMultiplayer(plan,new AbortController().signal,()=>{
+    if(cleanupFails) f.runtime.location.replace=url=>{if(url==='about:blank')throw new Error('blocked check cleanup');replace(url);};
+    throw primary;
+  });
+  const rejected=assert.rejects(check,error=>{
+    if(!cleanupFails){assert.equal(error,primary);return true;}
+    assert.equal(error.name,'AggregateError');assert.equal(error.cause,primary);assert.equal(error.errors[0],primary);
+    assert.match(error.errors[1].message,/blocked check cleanup/);assert.match(error.message,/check callback failed.*blocked check cleanup/);return true;
+  });
+  try {
+    await flush(); f.event('ready'); await flush(); f.ack('configure'); await rejected;
+    if(cleanupFails) assert.match(f.service.getSnapshot().closeError,/blocked check cleanup/);
+  } finally {f.runtime.location.replace=replace;}
+  await f.service.close({discardUnsaved:true});
+  const retry=f.service.checkMultiplayer(plan,new AbortController().signal,()=>{throw primary;});
+  const retried=assert.rejects(retry,error=>error===primary);
+  await flush();f.event('ready');await flush();f.ack('configure');await retried;
+});
 
 test('runtime: worker downloads share document network accounting and cannot survive cancellation', async () => {
   const states=[];let report,release;
@@ -113,6 +163,21 @@ test('runtime: worker downloads share document network accounting and cannot sur
   report({path:'runtime/th10/'+hash+'/game.wasm',phase:'receiving',loaded:4,total:5});
   assert.equal(states.at(-1).count,0,'late progress cannot revive the retired Runtime');
   release();await assert.rejects(preparing,/SUPERSEDED/);
+});
+
+test('TH12: fonts use acknowledged resource messages before configure without global Module/FS',async()=>{
+  const bytes=new Uint8Array([4,5,6]).buffer;
+  const f=fixture({async readResource(){return {buffer:bytes,path:'/unifont.otf'};}}),plan=managedPlan('th12');
+  plan.generation.descriptor.files.font={source:'shared/unifont.otf',target:'/unifont.otf',bytes:3,revision:'font-r1'};
+  plan.generation.files.font={objectId:'font-object',revision:'font-r1'};plan.resourceFileIds=['font'];
+  const pending=f.service.prepare(plan);await flush();f.event('ready');await flush();
+  assert.equal(f.outbound.some(message=>message.command==='configure'),false);
+  const resource=f.outbound.find(message=>message.command==='resources');assert.ok(resource);
+  const url=resource.resources[0].url;assert.equal(await (await fetch(url)).arrayBuffer().then(value=>new Uint8Array(value).join(',')),'4,5,6');
+  assert.equal(f.runtime.FS,undefined);assert.equal(f.runtime.Module,undefined);
+  f.ack('resources');await flush();assert.equal(f.outbound.at(-1).command,'configure');
+  f.ack('configure');await pending;await assert.rejects(fetch(url));
+  assert.equal(f.service.getSnapshot().phase,'prepared');
 });
 
 test('room preload: binding a run reuses the epoch/DATA and retains the prepared resource payload', async () => {
@@ -136,18 +201,27 @@ test('room preload: binding a run reuses the epoch/DATA and retains the prepared
 
 test('room return keeps the same engine, synchronizes first and rejects first frames from an older launch', async () => {
   const f=fixture(), plan=managedPlan();plan.runtimeVariant='multiplayer';
+  plan.configure.language='lang_zh-hans';
   await f.prepare(plan,{roomReturn:true});
   const epoch=f.service.getSnapshot().epoch,document=f.runtime.document,navigations=f.navigations.length,reads=f.dataReads.length;
   let previousSerial=0;
   for(let attempt=0;attempt<3;attempt++){
     const configuring=f.service.configurePreparedRoom(epoch,{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?run=7',netplaySpectator:true});
-    await flush();f.ack('configure');await configuring;
+    await flush();assert.equal(f.ack('configure').language,'lang_zh-hans');await configuring;
     const launching=f.service.launch({awaitFirstFrame:true});await flush();const launched=f.ack('launch');
     if(previousSerial){const events=f.eventContexts.length;f.event('first-frame',{launchSerial:previousSerial});f.event('room-menu',{launchSerial:previousSerial});assert.equal(f.service.getSnapshot().firstFrame,false);assert.equal(f.eventContexts.length,events,'old launch events never reach presentation owners');}
     f.event('first-frame',{launchSerial:launched.launchSerial});await launching;previousSerial=launched.launchSerial;
     const returning=f.service.returnToRoom();await flush();
     assert.equal(f.outbound.filter(m=>m.command==='return-room').length,attempt,'native menu waits for save sync');
-    f.ack('sync');await flush();f.ack('return-room',{presented:true});await returning;
+    f.ack('sync');await flush();f.ack('return-room',{presented:true});await flush();
+    assert.equal(f.service.getSnapshot().phase,'configuring');
+    assert.equal(f.service.getInputContext().launched,false,'menu input waits for Runtime option restoration');
+    const restored=f.ack('configure');
+    assert.equal(restored.language,'lang_zh-hans');assert.equal(restored.runtimePack,undefined);
+    assert.equal(restored.options.netplayMode,undefined,'the actual Runtime receives local menu options');
+    assert.equal(restored.options.netplaySpectator,undefined);
+    assert.deepEqual(restored.resources,[]);assert.deepEqual(restored.runtimeResources,[]);assert.deepEqual(restored.sharedResources,[]);
+    await returning;
     const current=f.service.getSnapshot();assert.equal(current.phase,'prepared');assert.equal(current.roomPreview,true);
     assert.equal(current.launched,false);assert.equal(current.spectator,false);assert.equal(current.epoch,epoch);
     assert.equal(f.runtime.document,document);assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
@@ -156,11 +230,16 @@ test('room return keeps the same engine, synchronizes first and rejects first fr
 });
 
 test('native menu return cancels an unfinished first-frame wait without retiring the loaded engine',async()=>{
-  const f=fixture(),plan=managedPlan();plan.runtimeVariant='multiplayer';await f.prepare(plan,{roomReturn:true});
+  const f=fixture(),plan=managedPlan('th11',{netplayMode:'lan',netplaySpectator:true,netplayPlayer:1,netplayUrl:'wss://relay.invalid/',alwaysHitbox:true});plan.runtimeVariant='multiplayer';await f.prepare(plan,{roomReturn:true});
   const document=f.runtime.document,epoch=f.service.getSnapshot().epoch;
   const launching=f.service.launch({awaitFirstFrame:true}),cancelled=assert.rejects(launching,/SUPERSEDED/);
   await flush();const message=f.ack('launch');await flush();
   f.event('room-menu',{launchSerial:message.launchSerial});await cancelled;
+  await flush();assert.equal(f.service.getSnapshot().phase,'configuring');
+  assert.equal(f.eventContexts.some(e=>e.message.event==='room-menu'),false,'room event waits for acknowledged local options');
+  const restored=f.ack('configure');await flush();
+  assert.equal(restored.options.netplayMode,undefined);assert.equal(restored.options.netplaySpectator,undefined);
+  assert.equal(restored.options.netplayPlayer,undefined);assert.equal(restored.options.alwaysHitbox,true);
   assert.equal(f.service.getSnapshot().phase,'prepared');assert.equal(f.service.getSnapshot().roomPreview,true);
   assert.equal(f.service.getSnapshot().epoch,epoch);assert.equal(f.runtime.document,document);
   const next=f.service.launch();await flush();f.ack('launch');await next;
@@ -185,6 +264,7 @@ test('room preload: a stale run cannot configure a replacement engine', async ()
 
 test('room preview is prelaunch, native-acknowledged, and binds the same engine without remounting resources', async () => {
   const f=fixture(), plan=managedPlan();plan.runtimeVariant='multiplayer';
+  plan.configure.language='lang_zh-hans';
   const preparing=f.service.prepare(plan);await flush();f.event('ready',{roomPreview:true});await flush();f.ack('configure');await preparing;
   const epoch=f.service.getSnapshot().epoch,navigations=f.navigations.length;
   const preview=f.service.prepareRoomPreview(epoch);await flush();
@@ -192,9 +272,13 @@ test('room preview is prelaunch, native-acknowledged, and binds the same engine 
   f.ack('prepare-room',{presented:true});assert.equal(await preview,true);
   assert.equal(f.service.getSnapshot().roomPreview,true);
   assert.equal(f.service.getSnapshot().launched,false);
-  assert.equal(f.service.getInputContext().launched,false);
+  assert.equal(f.service.getInputContext().launched,true);
+  assert.equal(f.service.postInput('keyboard',{code:'ArrowDown',down:true}),true);
   const binding=f.service.configurePreparedRoom(epoch,{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?run=1'});
-  await flush();const wire=f.ack('configure');await binding;
+  await flush();assert.equal(f.service.getInputContext().launched,false);
+  assert.equal(f.service.postInput('keyboard',{code:'KeyZ',down:true}),false);
+  const wire=f.ack('configure');await binding;
+  assert.equal(wire.language,'lang_zh-hans');
   assert.deepEqual(wire.resources,[]);assert.deepEqual(wire.runtimeResources,[]);assert.equal(wire.runtimePack,undefined);
   const launch=f.service.launch();await flush();f.ack('launch');await launch;
   assert.equal(f.service.getSnapshot().roomPreview,false);
@@ -250,15 +334,14 @@ test('runtime: save consent precedes native presentation cleanup, which precedes
   assert.equal(f.navigations.at(-1), 'about:blank');
 });
 
-test('runtime: the validated iframe src owner launches and removes the source without Window history replacement', async () => {
+test('runtime: launch and retirement replace the active child history entry', async () => {
   const f = fixture(), navigate = f.runtime.location.replace.bind(f.runtime.location), calls = [];
-  f.frame.setAttribute = (name, value) => {calls.push(['set', name, value]); navigate(value);};
-  f.frame.removeAttribute = name => {calls.push(['remove', name]); navigate('about:blank');};
-  f.runtime.location.replace = () => {assert.fail('Player must use the original iframe navigation owner');};
+  f.runtime.location.replace = value => {calls.push(value); navigate(value);};
   await f.prepare(directPlan());
-  assert.equal(calls.length, 1); assert.deepEqual(calls[0].slice(0, 2), ['set', 'src']);
+  const launchedSource = f.service.getSnapshot().source;
+  assert.deepEqual(calls, [launchedSource]);
   assert.equal(await f.service.close({discardUnsaved: true}), true);
-  assert.deepEqual(calls.at(-1), ['remove', 'src']);
+  assert.deepEqual(calls, [launchedSource, 'about:blank']);
 });
 
 test('runtime: Stay after failed save keeps fullscreen and iframe intact', async () => {
@@ -283,6 +366,25 @@ test('runtime: child browsing context is retired only after accepted close and b
   assert.equal(await closed, true); assert.equal(retired, 1);
 });
 
+test('Replay mutation keeps playback path handoff inside the same exclusive file owner', async () => {
+  const f = fixture(); await f.prepare(directPlan());
+  const launch = f.service.launch(); f.ack('launch'); await launch;
+  let retained;
+  const operation = f.service.withFileSession('th06', async access => {
+    retained = access;
+    await assert.rejects(f.service.send('playback', {action: 'pause'}), /already in progress/);
+    const handoff = access.playback({action: 'relocate', path: 'replay/th6_01.rpy', target: 'replay/th6_02.rpy'});
+    assert.equal(f.outbound.at(-1).command, 'playback');
+    assert.equal(f.outbound.at(-1).action, 'relocate');
+    f.ack('playback'); await handoff;
+  }, {replayMutation: true});
+  await flush(); await operation;
+  await assert.rejects(retained.playback({action: 'pause'}), {name: 'AbortError'});
+  await f.service.withFileSession('th06', async access => {
+    await assert.rejects(access.playback({action: 'pause'}), /active Replay mutation/);
+  }, {readOnly: true});
+});
+
 test('runtime: Player retirement waits for the blank child document to commit before resolving close', async () => {
   const f = fixture(); await f.prepare(directPlan());
   const starting = f.service.launch(); f.ack('launch'); await starting;
@@ -305,7 +407,10 @@ test('runtime: Player retirement waits for the blank child document to commit be
 test('runtime: optional first-frame wait remains pending after ACK; 14-second failure keeps acknowledged runtime alive', async () => {
   const f = fixture(); await f.prepare(directPlan());
   let settled = false; const launch = f.service.launch({awaitFirstFrame: true}).finally(() => {settled = true;});
-  const rejected = assert.rejects(launch, /runtime\.firstFrameLate/); f.ack('launch'); await flush();
+  const rejected = assert.rejects(launch, error => {
+    assert.ok(error instanceof owners.RuntimeWaitTimeoutError); assert.equal(error.waitKind, 'first-frame');
+    assert.equal(error.message, 'runtime.firstFrameLate'); return true;
+  }); f.ack('launch'); await flush();
   assert.equal(settled, false); assert.equal(f.service.getSnapshot().launched, true);
   f.timers.advance(13999); await flush(); assert.equal(settled, false);
   f.timers.advance(1); await rejected;
@@ -530,7 +635,10 @@ test('runtime: original readiness, RPC timeout and response fallback keys remain
   const f = fixture();
   await assert.rejects(f.service.sync(), {message: 'runtime.notReady'});
   const preparing = f.service.prepare(directPlan());
-  const readyFailure = assert.rejects(preparing, {message: 'runtime.gameLoadTimeout'});
+  const readyFailure = assert.rejects(preparing, error => {
+    assert.ok(error instanceof owners.RuntimeWaitTimeoutError); assert.equal(error.waitKind, 'ready');
+    assert.equal(error.message, 'runtime.gameLoadTimeout'); return true;
+  });
   await flush(); f.timers.advance(120000); await readyFailure;
   await f.prepare(directPlan());
   const syncing = f.service.sync(), timeout = assert.rejects(syncing, {message: 'runtime.operationTimeout'});

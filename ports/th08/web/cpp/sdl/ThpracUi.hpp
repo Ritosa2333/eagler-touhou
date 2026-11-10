@@ -12,6 +12,7 @@ void process_event(const SDL_Event&);
 void update_input(BrowserRuntime&);
 void mouse(int type,float x,float y);
 void cancel_pointer();
+bool passive_pointer(float,float);
 bool captures_pointer(float x,float y);
 void render(BrowserRuntime&,touhou::sdl::Renderer&);
 bool captures_game_input();

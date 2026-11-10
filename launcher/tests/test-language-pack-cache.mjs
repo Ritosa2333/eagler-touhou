@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -6,6 +7,7 @@ import { basename, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
+test("language pack cache", async () => {
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const temporary = await mkdtemp(resolve(tmpdir(), "eagler-language-cache-test-"));
 
@@ -28,8 +30,12 @@ try {
     resolve(project, "scripts/subset-font.py"),
     resolve(project, "integrations/thcrap.mjs"),
     resolve(project, "server/thcrap-compiler.mjs"),
+    resolve(project, "server/th12-thcrap-compiler.mjs"),
+    resolve(project, "scripts/th12-language-textures.py"),
     resolve(project, "server/th075-thcrap-compiler.mjs"),
     resolve(project, "server/th075-menu-text.mjs"),
+    resolve(project, "server/th075-chinese-static.mjs"),
+    resolve(project, "scripts/th075-simplify-story.py"),
     resolve(project, "scripts/th075-language-assets.py"),
     resolve(project, "server/thcrap-ascii-contract.mjs"),
     resolve(project, "server/thcrap-string-contract.mjs"),
@@ -46,6 +52,7 @@ try {
     schema: "eagler-touhou/language-pack-cache-input/1",
     game: "th06",
     language: "lang_en",
+    storyScripts: [],
     repository: null,
     fontName: "Unifont",
     archives: [{ name: basename(archive), bytes: fileInfo.size, mtimeMs: Math.trunc(fileInfo.mtimeMs) }],
@@ -86,3 +93,4 @@ try {
 } finally {
   await rm(temporary, { recursive: true, force: true });
 }
+});

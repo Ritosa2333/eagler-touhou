@@ -1,11 +1,16 @@
 import { useLayoutEffect, useState, useSyncExternalStore } from 'react';
-import { isMultiplayerProductId } from '../../src/contracts/product-catalog.mts';
+import { gameIdForProduct, isMultiplayerProductId } from '../../src/contracts/product-catalog.mts';
+import { multiplayerGuidePath } from '../../lib/multiplayer-guide.mjs';
+import { withUiLanguage } from '../../src/launcher/i18n.mts';
 import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
 import { RoomView } from '../components/room';
+import { RoomMusicInvite } from '../components/room/RoomMusic';
 import type { BrowserSession } from './browser-session';
+import { useLocale } from '../i18n';
 import { useSurfaceNavigation } from '../navigation/surface-navigation';
 import {SpectatorPlayback} from '../components/player/SpectatorPlayback';
 import {SpectatorMatchScore} from '../components/player/SpectatorMatchScore';
+import {GameSettingsPopover} from '../components/settings/GameAudioControls';
 
 /** Room chrome and fullscreen share one permanent Player and room owner. */
 export function RoomComposition({
@@ -18,6 +23,8 @@ export function RoomComposition({
   workspaceVisible: boolean;
 }) {
   const navigation = useSurfaceNavigation();
+  const {t, locale} = useLocale();
+  const guidePath = multiplayerGuidePath(navigation.productId && gameIdForProduct(navigation.productId));
   const transfer = useSyncExternalStore(
     session.transfer.subscribe,
     session.transfer.getSnapshot,
@@ -36,6 +43,7 @@ export function RoomComposition({
   );
   const [workspace, setWorkspace] = useState<{host:HTMLElement;stage:HTMLElement} | null>(null);
   const workspaceVisible = roomWorkspace && navigation.surface !== 'touch';
+  const canReturnToRoom = state.runtime?.runtimeVariant === 'multiplayer' && state.runtime.roomReturnSupported;
   const playback = state.runtime?.launched && state.runtime.spectator
     ? state.runtime.game !== 'th09' ? <SpectatorPlayback session={session}/>
       : room.room?.spectatorTimeline ? <SpectatorMatchScore
@@ -47,11 +55,14 @@ export function RoomComposition({
     const host = document.getElementById('player'), stage = host?.querySelector<HTMLElement>('.player-stage');
     if (host && stage) setWorkspace({host,stage});
   }, []);
-  return (
+  return <>
     <RoomView
       visible={workspaceVisible && !!navigation.productId && isMultiplayerProductId(navigation.productId)}
       service={session.room.service}
       quickChat={session.room.quickChat}
+      decisions={session.decisions}
+      products={session.metadata.getSnapshot().products.filter(isMultiplayerProductId)}
+      music={session.room.music}
       network={session.room.network}
       context={{
         transfer,
@@ -65,13 +76,21 @@ export function RoomComposition({
       assetUrl={(path) => new URL(path, session.baseUrl).href}
       onLeave={session.leaveRoom}
       onCopyRoomCode={session.copyRoomCode}
-      onGuide={() => navigation.openInfoDialog('mpGuideDialog')}
+      guideHref={withUiLanguage(new URL(guidePath.slice(1), session.baseUrl).href, locale)}
       onOpenSettings={navigation.openRoomSettings}
       settingsOpen={navigation.roomSettingsOpen}
       settingsClosing={settingsClosing}
       workspaceHost={workspace?.host}
       workspaceStage={workspace?.stage}
       playbackControls={playback}
+      playerSettings={state.runtime?.ready && (
+        <GameSettingsPopover model={session.settings}
+          exit={state.playerOpen && state.runtime.launched
+            ? {label: t(canReturnToRoom ? state.runtime.spectator ? 'player.exitSpectating' : 'netplay.return' : 'player.leaveRoom'),
+              onSelect: canReturnToRoom ? navigation.closeSurface : session.requestRoomLeave}
+            : undefined}
+        />
+      )}
       onFullscreen={()=>{void session.togglePlayerFullscreen();}}
       reloadPending={state.roomReloadPending}
       onReloadResources={session.reloadRoomResources}
@@ -84,5 +103,7 @@ export function RoomComposition({
       onOpenPanel={navigation.openRoomPanel}
       onClosePanel={navigation.closeRoomPanel}
     />
-  );
+    {room.room && session.room.music && navigation.surface !== 'touch' &&
+      <RoomMusicInvite model={session.room.music} panelOpen={!!navigation.roomPanel} />}
+  </>;
 }

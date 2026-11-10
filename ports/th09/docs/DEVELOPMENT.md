@@ -6,10 +6,10 @@
 
 ## 构建并在 Launcher 启动
 
-需要 Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9、`ffmpeg` 和 `ffprobe`。原版目录需含日文 th09 1.50a 的 `th09.exe`、`th09.dat`、`thbgm.dat`。准备独立字体目录，包含 `blend.bin`（131072 字节）、`msgothic.ttc`，以及 `cp932.bin`（131072 字节）或 `codepages.bin`（262144 字节）。`msgothic.ttc` 可从 Windows 字体目录复制，其余私有字体资源来自已有字体资源包。
+需要 Bun 1.4.4、Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9、`ffmpeg` 和 `ffprobe`。原版目录需含日文 th09 1.50a 的 `th09.exe`、`th09.dat`、`thbgm.dat`。准备独立字体目录，包含 `blend.bin`（131072 字节）、`msgothic.ttc`，以及 `cp932.bin`（131072 字节）或 `codepages.bin`（262144 字节）。`msgothic.ttc` 可从 Windows 字体目录复制，其余私有字体资源来自已有字体资源包。
 
 ```powershell
-npm --prefix launcher ci --ignore-scripts # 仅首次安装
+bun --bun run --cwd launcher install:locked # 仅首次安装
 node ports/th09/web/scripts/prepare-retail-assets.mjs --help
 node ports/th09/web/scripts/prepare-retail-assets.mjs 'C:\Games\TH09' --font-root 'C:\local-content\th09-fonts'
 node launcher/scripts/prepare-th09-content.mjs --original='C:\Games\TH09' --output='ports/th09/assets-ogg'
@@ -22,7 +22,7 @@ $env:EAGLER_TOUHOU_NETPLAY_RELAY='ws://127.0.0.1:18142/'
 node launcher/scripts/build-runtime.mjs --game=th09 --variant=normal --emsdk='C:\tools\emsdk'
 node ports/th09/web/scripts/build-eagler.mjs
 node ports/th09/web/scripts/build-eagler.mjs --multiplayer
-npm --prefix launcher run build
+bun --bun run --cwd launcher build
 npm --prefix launcher run dev:workspace
 ```
 
@@ -43,6 +43,10 @@ npm --prefix launcher run dev:workspace
 
 ## 房间菜单返回
 
+房间开局前可使用本地键盘、手柄和触控进入原生 Options 与按键设置。预览持续运行原生标题和输入采样，开始对局由房间统一接管。`launcher/tests/browser/test-room-options.mjs` 检查真实菜单操作，输入配置通过 `ROOM_OPTIONS_INPUTS` 指定各作的 Runtime 与 DATA；结果包含标题、选项、调整后和返回时的画面及原生菜单状态。
+
+八作菜单检查与调整设置后的双端开局见[房间原生选项操作](records/2026-10-26-room-options.md)。`ROOM_PREVIEW_OPTIONS=1 node tests/browser/test-room-title-preload.mjs th09 0` 从 `launcher/` 运行，比较不同本地选项与标题等待时长下的同帧对局状态，并检查开局复用已加载实例。
+
 联机诊断同时展示 RTT、波动、输入停顿、当前缺少的远端输入帧与累计修复发送数。输入缺帧和修复活动帮助识别延迟平稳时的输入交付问题，回滚及重模拟计数展示本地恢复工作量。
 
 旁观按当前局保留 Replay 输入，进入下一局后释放已播放的旧局。20 分钟对局与暂停、回放共享同一完整前缀，原生队列可容纳 131072 帧输入。返回房间后，选角同步校验只包含当前菜单状态，蓄力释放队列在进入实际对局后参与校验。
@@ -52,6 +56,10 @@ npm --prefix launcher run dev:workspace
 正式 Runtime 导出 `th09_room_return`，结束当前对局、清理旁观状态与待退出标记，回到原生标题菜单。Launcher 保留同一 iframe、Module 和已加载资源，菜单呈现后完成 `return-room` 响应。普通版与多人版共用该生产接口，构建时核对导出存在；连续旁观往返核对菜单持续刷新与再次开局。
 
 ## 回滚蓄力与 Replay
+
+`charge-history` 组件测试比较蓄力录像的逐帧数据，并测量 20 分钟合成记录的大小。
+
+触控在宣言、场地时停和死亡期间丢弃拖动位移，恢复时以人物当前位置重新建立目标。手指可持续按住，也可在死亡期间按下；`touch-controller` 组件测试覆盖恢复后的连续拖动。`web/tests/multiplayer/touch-stop-browser.mjs` 使用真实游戏和原生输入采样，检查连续三次宣言恢复时没有积压位移。
 
 ### 房间开关与启动参数
 
@@ -72,7 +80,21 @@ Runtime 在 HELLO 前完成配置，并将蓄力规则和批次协议纳入 game
 
 恢复重算到原显示帧时，立即提交该帧的完整画面。技能停顿和等待输入期间，已到达的输入可以及时更新人物、弹幕和 HUD 的显示。端点绘制复用最后一次历史 tick 的 Draw，逻辑时钟、物理输入采样和音效保持各自原有节奏；跨回调的中间恢复状态继续保留上一张完整画面。
 
+网络包到达时也可触发同帧纠正，合并到已有的恢复任务中。即使下一次逻辑更新尚未到期，画面也能使用新收到的输入；只有已经到期的等待帧才可由网络唤醒继续推进。
+
+方向预测在 8 帧历史窗口内延续最近收到的方向键，与 Higan 的按键保持方式一致，让持续移动连贯地跨过技能切入与场地时停。收到实际松键或转向后，按对应帧纠正轨迹。炸弹和菜单操作使用真实输入，历史窗口继续限制预测距离。
+
 `AUDIT_RECOVERY_REFRESH=1` 在恢复计时器前后读取画面提交数、人物状态和实际 canvas，核对同帧刷新、采样前沿及最终 Replay。`EXPECT_STALE_RECOVERY=1` 使用保留基线验证旧画面复现场景。
+
+技能回归按每次显示机会的最后一次完整提交统计人物位置，分别报告全局切入、场地时停与恢复沿的误差样本和像素偏差。宣言标志在人物、弹幕更新之后清除，`display.declarationRecovery` 因此继续检查随后 8 个逻辑帧，覆盖真正恢复移动时的方向预测和纠正。`CHARACTERS=0,0` 选择双方灵梦，默认 `2,2` 覆盖双方咲夜。输入组件回归覆盖八方向持续移动、延迟松键、反向和历史窗口耗尽。
+
+`AUDIT_DECLARATION=1` 按宣言开始、中段、末段、标志清除和随后 8 帧分别核对实际 canvas 与完整输入画面，报告 `declarationAudit`。测试为回读保留已提交的绘图缓冲，取样直接读取该次提交。完整输入对照从全新游戏实例启动，使用与玩家相同的初始动画资源。人物位置指标与整幅画面指标分别保留，覆盖弹幕、背景和宣言动画；进入宣言 16 帧后的 `settled` 样本要求整幅画面精确一致。
+
+2026-10-24 的双方灵梦回归采用 2,400 帧、单程 3–4 帧交付延迟、本地优先蓄力和两次 rAF 之间收包。WASM `daf985b001e235e377fecd7f8541138ada52bd4b00f15eba48ca0d0051ef2d76` 的 101 个宣言中、末段整幅画面样本与完整输入一致，183 次宣言期间收包纠正均提交完整恢复画面。恢复后的 160 个显示机会中，方向保持将位置差异样本从保留基线的 62 个降至 12 个。报告入口为 `web/artifacts/multiplayer-tests/declaration-verified-20261024/report.json`，参数见报告 `parameters`，源码身份见 `identity`。
+
+单程 5–7 帧交付延迟的连续宣言对照覆盖 2 组双方连发，37 个宣言中、末段整幅画面样本与完整输入一致，85 次宣言期间收包纠正提交完整恢复画面；最终双方世界与完整输入回放一致。该场景报告为 `web/artifacts/multiplayer-tests/declaration-chain-verified-20261024/report.json`。
+
+`ARRIVAL_RECOVERY=1` 在两次 rAF 之间经正式收包、唤醒入口投递输入，验证停顿画面即时纠正、同帧提交及采样前沿。`EXPECT_MISSING_ARRIVAL=1` 可用保留构建核对等待下一次 rAF 的基线。
 
 调度参考 HiganRTool 的 [input_point 与 post_present](https://github.com/Mako-th/HiganRTool/blob/33d02817d07f48b57954dd160cdfce292aeabf1e/src/core/src/rollback.rs) 和 [tick 边界判定](https://github.com/Mako-th/HiganRTool/blob/33d02817d07f48b57954dd160cdfce292aeabf1e/src/dll/src/rollback_play.rs)。技能停顿继续运行网络输入与回滚时钟；全局切入和咲夜场地时停由世界自身控制对象更新。预测画面差异单独记录，已确认世界与最终回放保持精确核对。`EXPECT_CONTINUOUS=1` 验证固定延迟场景逐次画面推进，`AUDIT_PREDICTION=0` 可复查旧版逐帧确认屏障的表现。
 
@@ -94,9 +116,9 @@ Runtime 在 HELLO 前完成配置，并将蓄力规则和批次协议纳入 game
 
 ### 录像格式与兼容
 
-本地优先 Replay 使用 `T9CHARGE/1` 尾部扩展，保存十个关卡计数和按原生录像输入帧索引排列的蓄力记录，经 LZSS 压缩并校验，导出文件名为 `.rpyx`。
+本地优先 Replay 将蓄力记录写入 `T9CHARGE/3`。各字段的位差按列写成变长整数，再用 DEFLATE 压缩。读取兼容版本 1、2。
 
-关闭本地优先后，游戏逻辑和蓄力输入按原版方式记录。不含触控扩展的录像以原版 `.rpy` 导出，含触控轨道的录像以 `.rpyx` 导出。蓄力轨道与触控轨道共存时，`THMOTION` 保持在文件末尾。
+含蓄力或触控轨道的录像导出为 `.rpyx`，纯原生录像导出为 `.rpy`。`T9X1` 用 DEFLATE 压缩 `.rpyx` 的原生输入段，尾部扩展沿用独立轨道。文件末尾的触控轨道择小写入 `THMOTION/2` 至 `/5`。版本 4 压缩帧号和坐标的差分，版本 5 用字典索引保存重复的精确坐标。
 
 原版 `.rpy` 和已有触控 `.rpyx` 按文件中的记录播放，房间蓄力开关不改变回放规则。
 

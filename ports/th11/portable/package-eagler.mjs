@@ -5,6 +5,7 @@
 import {readFileSync,writeFileSync,mkdirSync,existsSync,readdirSync,rmSync} from 'node:fs';
 import {resolve,dirname,relative,sep} from 'node:path';
 import {createHash} from 'node:crypto';
+import {validateProductionBuild} from './production-build.mjs';
 const root=resolve(import.meta.dirname,'..');
 const game='th11';
 const out=process.env.EAGLER_RUNTIME_OUTPUT?resolve(process.env.EAGLER_RUNTIME_OUTPUT):resolve(root,'build-eagler');
@@ -13,6 +14,8 @@ const fonts=process.env.EAGLER_FONT_ROOT;
 if(!fonts)throw Error('Set EAGLER_FONT_ROOT to the private directory containing cp932.bin');
 const hash=b=>createHash('sha256').update(b).digest('hex');
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json'),'utf8'));
+const binary=readFileSync(resolve(buildRoot,game+'-sdl.wasm'));
+validateProductionBuild(build,binary);
 if(!Number.isFinite(Date.parse(build.builtAt)))throw Error('Rebuild Runtime with build timestamp');
 if(build.game!==game)throw Error('Build report is not TH11');
 if(build.features?.thprac===true){

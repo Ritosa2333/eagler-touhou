@@ -1,0 +1,579 @@
+{
+  "method": "Direct IPv4 curl from each domestic server with environment proxies bypassed. Three fresh HTML transfers per entry and three discovered JavaScript files. HTTPS hostname verification retained. CF is the existing ritosa.cyou entry. HK resolves the same original hostname to 103.73.161.228. Times measure HTTP transfers, not browser rendering.",
+  "nanjing": {
+    "checkedAt": "2026-10-27T17:49:24Z",
+    "samples": [
+      {
+        "route": "hk",
+        "url": "https://touhouonline.com/",
+        "round": "1",
+        "exit": 0,
+        "status": 200,
+        "dnsSec": 1.5e-05,
+        "connectSec": 0.034242,
+        "tlsSec": 0.110524,
+        "firstByteSec": 0.179062,
+        "totalSec": 0.247301,
+        "bytes": 50839,
+        "transferBytes": 13503,
+        "remoteIp": "103.73.161.228",
+        "headers": {
+          "server": "nginx/1.22.1",
+          "content-type": "text/html",
+          "content-encoding": "gzip"
+        },
+        "error": "",
+        "sha256": "48531b77b02e13e2de0f9238d74545113fbad4fbd145e4dc595bfb1501f8f360"
+      },
+      {
+        "route": "cf",
+        "url": "https://ritosa.cyou/",
+        "round": "1",
+        "exit": 0,
+        "status": 200,
+        "dnsSec": 0.232558,
+        "connectSec": 0.440401,
+        "tlsSec": 0.660398,
+        "firstByteSec": 0.959807,
+        "totalSec": 0.967131,
+        "bytes": 50839,
+        "transferBytes": 12511,
+        "remoteIp": "104.21.19.135",
+        "headers": {
+          "content-type": "text/html",
+          "cf-cache-status": "HIT",
+          "content-encoding": "zstd",
+          "server": "cloudflare",
+          "cf-ray": "a513896e68be6625-AMS"
+        },
+        "error": "",
+        "sha256": "48531b77b02e13e2de0f9238d74545113fbad4fbd145e4dc595bfb1501f8f360"
+      },
+      {
+        "route": "hk",
+        "url": "https://touhouonline.com/",
+        "round": "2",
+        "exit": 0,
+        "status": 200,
+        "dnsSec": 1.1e-05,
+        "connectSec": 0.035034,
+        "tlsSec": 0.106179,
+        "firstByteSec": 0.170652,
+        "totalSec": 0.235968,
+        "bytes": 50839,
+        "transferBytes": 13503,
+        "remoteIp": "103.73.161.228",
+        "headers": {
+          "server": "nginx/1.22.1",
+          "content-type": "text/html",
+          "content-encoding": "gzip"
+        },
+        "error": "",
+        "sha256": "48531b77b02e13e2de0f9238d74545113fbad4fbd145e4dc595bfb1501f8f360"
+      },
+      {
+        "route": "cf",
+        "url": "https://ritosa.cyou/",
+        "round": "2",
+        "exit": 0,
+        "status": 200,
+        "dnsSec": 0.231794,
+        "connectSec": 0.444024,
+        "tlsSec": 0.66705,
+        "firstByteSec": 0.971498,
+        "totalSec": 0.980464,
+        "bytes": 50839,
+        "transferBytes": 12512,
+        "remoteIp": "172.67.186.107",
+        "headers": {
+          "content-type": "text/html",
+          "cf-cache-status": "HIT",
+          "content-encoding": "zstd",
+          "server": "cloudflare",
+          "cf-ray": "a513897488fc9ff7-AMS"
+        },
+        "error": "",
+        "sha256": "48531b77b02e13e2de0f9238d74545113fbad4fbd145e4dc595bfb1501f8f360"
+      },
+      {
+        "route": "hk",
+        "url": "https://touhouonline.com/",
+        "round": "3",
+        "exit": 0,
+        "status": 200,
+        "dnsSec": 1e-05,
+        "connectSec": 0.038397,
+        "tlsSec": 0.115275,
+        "firstByteSec": 0.188744,
+        "totalSec": 0.262588,
+        "bytes": 50839,
+        "transferBytes": 13503,
+        "remoteIp": "103.73.161.228",
+        "headers": {
+          "server": "nginx/1.22.1",
+          "content-type": "text/html",
+          "content-encoding": "gzip"
+        },
+        "error": "",
+        "sha256": "48531b77b02e13e2de0f9238d74545113fbad4fbd145e4dc595bfb1501f8f360"
+      },
+      {
+        "route": "cf",
+        "url": "https://ritosa.cyou/",
+        "round": "3",
+        "exit": 0,
+        "status": 200,
+        "dnsSec": 0.239421,
+        "connectSec": 0.49335,
+        "tlsSec": 0.76419,
+        "firstByteSec": 1.132759,
+        "totalSec": 1.143654,
+        "bytes": 50839,
+        "transferBytes": 12512,
+        "remoteIp": "104.21.19.135",
+        "headers": {
+          "content-type": "text/html",
+          "cf-cache-status": "HIT",
+          "content-encoding": "zstd",
+          "server": "cloudflare",
+          "cf-ray": "a513897b7bb094ab-LHR"
+        },
+        "error": "",
+        "sha256": "48531b77b02e13e2de0f9238d74545113fbad4fbd145e4dc595bfb1501f8f360"
+      },
+      {
+        "route": "hk",
+        "url": "https://touhouonline.com/assets/manifest-92e5c918.js",
+        "round": "asset-0",
+        "exit": 0,
+        "status": 200,
+        "dnsSec": 1.1e-05,
+        "connectSec": 0.039475,
+        "tlsSec": 0.117355,
+        "firstByteSec": 0.183371,
+        "totalSec": 0.183694,
+        "bytes": 2238,
+        "transferBytes": 477,
+        "remoteIp": "103.73.161.228",
+        "headers": {
+          "server": "nginx/1.22.1",
+          "content-type": "application/javascript",
+          "content-encoding": "gzip"
+        },
+        "error": "",
+        "sha256": "5a7b35e909be87c0093582da409f1bed51536e3578c238837789fe4c062fb233"
+      },
+      {
+        "route": "hk",
+        "url": "https://touhouonline.com/assets/entry.client-DbcLqyPP.js",
+        "round": "asset-1",
+        "exit": 0,
+        "status": 200,
+        "dnsSec": 1.2e-05,
+        "connectSec": 0.03763,
+        "tlsSec": 0.117443,
+        "firstByteSec": 0.185368,
+        "totalSec": 0.332402,
+        "bytes": 210921,
+        "transferBytes": 77139,
+        "remoteIp": "103.73.161.228",
+        "headers": {
+          "server": "nginx/1.22.1",
+          "content-type": "application/javascript",
+          "content-encoding": "gzip"
+        },
+        "error": "",
+        "sha256": "c58b1209fd843d4e69dddc7e1ffd20de423b97347c5f606ffa21d8dd8a0f9932"
+      },
+      {
+        "route": "hk",
+        "url": "https://touhouonline.com/assets/components-DCXasuDn.js",
+        "round": "asset-2",
+        "exit": 0,
+        "status": 200,
+        "dnsSec": 1.3e-05,
+        "connectSec": 0.03828,
+        "tlsSec": 0.11367,
+        "firstByteSec": 0.179318,
+        "totalSec": 0.260032,
+        "bytes": 87567,
+        "transferBytes": 33555,
+        "remoteIp": "103.73.161.228",
+        "headers": {
+          "server": "nginx/1.22.1",
+          "content-type": "application/javascript",
+          "content-encoding": "gzip"
+        },
+        "error": "",
+        "sha256": "88ce05f032c13b78e413e87ac584ae2600147671f10b3972e858ade079908e1c"
+      },
+      {
+        "route": "cf",
+        "url": "https://ritosa.cyou/assets/manifest-92e5c918.js",
+        "round": "asset-3",
+        "exit": 0,
+        "status": 200,
+        "dnsSec": 0.003168,
+        "connectSec": 0.19695,
+        "tlsSec": 0.401163,
+        "firstByteSec": 0.65284,
+        "totalSec": 0.653069,
+        "bytes": 2238,
+        "transferBytes": 466,
+        "remoteIp": "172.67.186.107",
+        "headers": {
+          "content-type": "application/javascript",
+          "cf-cache-status": "HIT",
+          "content-encoding": "zstd",
+          "server": "cloudflare",
+          "cf-ray": "a51389802ee6e754-AMS"
+        },
+        "error": "",
+        "sha256": "5a7b35e909be87c0093582da409f1bed51536e3578c238837789fe4c062fb233"
+      },
+      {
+        "route": "cf",
+        "url": "https://ritosa.cyou/assets/entry.client-DbcLqyPP.js",
+        "round": "asset-4",
+        "exit": 0,
+        "status": 200,
+        "dnsSec": 0.001651,
+        "connectSec": 0.220625,
+        "tlsSec": 0.443706,
+        "firstByteSec": 0.739493,
+        "totalSec": 0.962323,
+        "bytes": 210921,
+        "transferBytes": 67949,
+        "remoteIp": "172.67.186.107",
+        "headers": {
+          "content-type": "application/javascript",
+          "cf-cache-status": "HIT",
+          "content-encoding": "zstd",
+          "server": "cloudflare",
+          "cf-ray": "a5138981fabcfeaf-AMS"
+        },
+        "error": "",
+        "sha256": "c58b1209fd843d4e69dddc7e1ffd20de423b97347c5f606ffa21d8dd8a0f9932"
+      },
+      {
+        "route": "cf",
+        "url": "https://ritosa.cyou/assets/components-DCXasuDn.js",
+        "round": "asset-5",
+        "exit": 0,
+        "status": 200,
+        "dnsSec": 0.001761,
+        "connectSec": 0.1988,
+        "tlsSec": 0.405047,
+        "firstByteSec": 0.678265,
+        "totalSec": 0.70316,
+        "bytes": 87567,
+        "transferBytes": 29857,
+        "remoteIp": "172.67.186.107",
+        "headers": {
+          "content-type": "application/javascript",
+          "cf-cache-status": "HIT",
+          "content-encoding": "zstd",
+          "server": "cloudflare",
+          "cf-ray": "a5138981efc455af-AMS"
+        },
+        "error": "",
+        "sha256": "88ce05f032c13b78e413e87ac584ae2600147671f10b3972e858ade079908e1c"
+      }
+    ]
+  },
+  "beijing": {
+    "cf": {
+      "samples": [
+        {
+          "route": "cf",
+          "url": "https://ritosa.cyou/",
+          "round": "1",
+          "exit": 28,
+          "status": 200,
+          "dnsSec": 0.374619,
+          "connectSec": 0.374857,
+          "tlsSec": 3.592147,
+          "firstByteSec": 3.962694,
+          "totalSec": 12.00193,
+          "bytes": 0,
+          "transferBytes": 1360,
+          "remoteIp": "172.67.186.107",
+          "headers": {
+            "content-type": "text/html",
+            "cf-cache-status": "HIT",
+            "content-encoding": "zstd",
+            "server": "cloudflare",
+            "cf-ray": "a51389876fb1c65b-LAX"
+          },
+          "error": "curl: (28) Operation timed out after 12001 milliseconds with 1360 bytes received",
+          "sha256": null
+        },
+        {
+          "route": "cf",
+          "url": "https://ritosa.cyou/",
+          "round": "2",
+          "exit": 0,
+          "status": 200,
+          "dnsSec": 0.001997,
+          "connectSec": 0.002315,
+          "tlsSec": 0.542965,
+          "firstByteSec": 1.91844,
+          "totalSec": 1.919238,
+          "bytes": 50839,
+          "transferBytes": 12511,
+          "remoteIp": "172.67.186.107",
+          "headers": {
+            "content-type": "text/html",
+            "cf-cache-status": "HIT",
+            "content-encoding": "zstd",
+            "server": "cloudflare",
+            "cf-ray": "a51389bf6b9cc47e-LAX"
+          },
+          "error": "",
+          "sha256": "48531b77b02e13e2de0f9238d74545113fbad4fbd145e4dc595bfb1501f8f360"
+        },
+        {
+          "route": "cf",
+          "url": "https://ritosa.cyou/",
+          "round": "3",
+          "exit": 28,
+          "status": 200,
+          "dnsSec": 0.001721,
+          "connectSec": 0.001993,
+          "tlsSec": 0.516811,
+          "firstByteSec": 2.240552,
+          "totalSec": 12.002131,
+          "bytes": 0,
+          "transferBytes": 1360,
+          "remoteIp": "172.67.186.107",
+          "headers": {
+            "content-type": "text/html",
+            "cf-cache-status": "HIT",
+            "content-encoding": "zstd",
+            "server": "cloudflare",
+            "cf-ray": "a51389cb589851f0-LAX"
+          },
+          "error": "curl: (28) Operation timed out after 12002 milliseconds with 1360 bytes received",
+          "sha256": null
+        },
+        {
+          "route": "cf",
+          "url": "https://ritosa.cyou/assets/manifest-92e5c918.js",
+          "round": "asset-0",
+          "exit": 28,
+          "status": 0,
+          "dnsSec": 0.003007,
+          "connectSec": 0.003425,
+          "tlsSec": 3.842552,
+          "firstByteSec": 0.0,
+          "totalSec": 12.002019,
+          "bytes": 0,
+          "transferBytes": 0,
+          "remoteIp": "172.67.186.107",
+          "headers": {},
+          "error": "curl: (28) Operation timed out after 12002 milliseconds with 0 bytes received",
+          "sha256": null
+        },
+        {
+          "route": "cf",
+          "url": "https://ritosa.cyou/assets/entry.client-DbcLqyPP.js",
+          "round": "asset-1",
+          "exit": 28,
+          "status": 200,
+          "dnsSec": 0.003017,
+          "connectSec": 0.003549,
+          "tlsSec": 0.545684,
+          "firstByteSec": 1.212713,
+          "totalSec": 12.002216,
+          "bytes": 122546,
+          "transferBytes": 60408,
+          "remoteIp": "172.67.186.107",
+          "headers": {
+            "content-type": "application/javascript",
+            "cf-cache-status": "HIT",
+            "content-encoding": "zstd",
+            "server": "cloudflare",
+            "cf-ray": "a5138a16ca5b2a9e-LAX"
+          },
+          "error": "curl: (28) Operation timed out after 12002 milliseconds with 60408 bytes received",
+          "sha256": "c2393a952b698a00894f22bf1360c5a0e6e3ab546f8049e7bc0950456824491f"
+        },
+        {
+          "route": "cf",
+          "url": "https://ritosa.cyou/assets/components-DCXasuDn.js",
+          "round": "asset-2",
+          "exit": 28,
+          "status": 200,
+          "dnsSec": 0.001626,
+          "connectSec": 0.002328,
+          "tlsSec": 4.785352,
+          "firstByteSec": 6.194174,
+          "totalSec": 12.001408,
+          "bytes": 24243,
+          "transferBytes": 16401,
+          "remoteIp": "104.21.19.135",
+          "headers": {
+            "content-type": "application/javascript",
+            "cf-cache-status": "HIT",
+            "content-encoding": "zstd",
+            "server": "cloudflare",
+            "cf-ray": "a5138a315df3a652-LAX"
+          },
+          "error": "curl: (28) Operation timed out after 12001 milliseconds with 16401 bytes received",
+          "sha256": "af92f8bb7f90a072afd9f7325f3303970f274cb5a4bb89d027f439b25cf87b25"
+        }
+      ]
+    },
+    "hkAfterVerifiedCountryCorrection": {
+      "checkedAt": "2026-10-27T17:53:55Z",
+      "samples": [
+        {
+          "route": "hk",
+          "url": "https://touhouonline.com/",
+          "round": "1",
+          "exit": 0,
+          "status": 200,
+          "dnsSec": 2.1e-05,
+          "connectSec": 0.000394,
+          "tlsSec": 0.142365,
+          "firstByteSec": 0.225861,
+          "totalSec": 0.308376,
+          "bytes": 50839,
+          "transferBytes": 13503,
+          "remoteIp": "103.73.161.228",
+          "headers": {
+            "server": "nginx/1.22.1",
+            "content-type": "text/html",
+            "content-encoding": "gzip"
+          },
+          "error": "",
+          "sha256": "48531b77b02e13e2de0f9238d74545113fbad4fbd145e4dc595bfb1501f8f360"
+        },
+        {
+          "route": "hk",
+          "url": "https://touhouonline.com/",
+          "round": "2",
+          "exit": 0,
+          "status": 200,
+          "dnsSec": 3.4e-05,
+          "connectSec": 0.000273,
+          "tlsSec": 0.135834,
+          "firstByteSec": 0.216686,
+          "totalSec": 0.297073,
+          "bytes": 50839,
+          "transferBytes": 13503,
+          "remoteIp": "103.73.161.228",
+          "headers": {
+            "server": "nginx/1.22.1",
+            "content-type": "text/html",
+            "content-encoding": "gzip"
+          },
+          "error": "",
+          "sha256": "48531b77b02e13e2de0f9238d74545113fbad4fbd145e4dc595bfb1501f8f360"
+        },
+        {
+          "route": "hk",
+          "url": "https://touhouonline.com/",
+          "round": "3",
+          "exit": 0,
+          "status": 200,
+          "dnsSec": 2.1e-05,
+          "connectSec": 0.000402,
+          "tlsSec": 0.132719,
+          "firstByteSec": 0.211806,
+          "totalSec": 0.290284,
+          "bytes": 50839,
+          "transferBytes": 13503,
+          "remoteIp": "103.73.161.228",
+          "headers": {
+            "server": "nginx/1.22.1",
+            "content-type": "text/html",
+            "content-encoding": "gzip"
+          },
+          "error": "",
+          "sha256": "48531b77b02e13e2de0f9238d74545113fbad4fbd145e4dc595bfb1501f8f360"
+        },
+        {
+          "route": "hk",
+          "url": "https://touhouonline.com/assets/manifest-92e5c918.js",
+          "round": "asset-0",
+          "exit": 0,
+          "status": 200,
+          "dnsSec": 5.1e-05,
+          "connectSec": 0.000933,
+          "tlsSec": 0.143135,
+          "firstByteSec": 0.226601,
+          "totalSec": 0.227224,
+          "bytes": 2238,
+          "transferBytes": 477,
+          "remoteIp": "103.73.161.228",
+          "headers": {
+            "server": "nginx/1.22.1",
+            "content-type": "application/javascript",
+            "content-encoding": "gzip"
+          },
+          "error": "",
+          "sha256": "5a7b35e909be87c0093582da409f1bed51536e3578c238837789fe4c062fb233"
+        },
+        {
+          "route": "hk",
+          "url": "https://touhouonline.com/assets/entry.client-DbcLqyPP.js",
+          "round": "asset-1",
+          "exit": 0,
+          "status": 200,
+          "dnsSec": 3.9e-05,
+          "connectSec": 0.002236,
+          "tlsSec": 0.144771,
+          "firstByteSec": 0.227509,
+          "totalSec": 0.404216,
+          "bytes": 210921,
+          "transferBytes": 77139,
+          "remoteIp": "103.73.161.228",
+          "headers": {
+            "server": "nginx/1.22.1",
+            "content-type": "application/javascript",
+            "content-encoding": "gzip"
+          },
+          "error": "",
+          "sha256": "c58b1209fd843d4e69dddc7e1ffd20de423b97347c5f606ffa21d8dd8a0f9932"
+        },
+        {
+          "route": "hk",
+          "url": "https://touhouonline.com/assets/components-DCXasuDn.js",
+          "round": "asset-2",
+          "exit": 0,
+          "status": 200,
+          "dnsSec": 7e-05,
+          "connectSec": 0.002096,
+          "tlsSec": 0.141549,
+          "firstByteSec": 0.220771,
+          "totalSec": 0.308822,
+          "bytes": 87567,
+          "transferBytes": 33555,
+          "remoteIp": "103.73.161.228",
+          "headers": {
+            "server": "nginx/1.22.1",
+            "content-type": "application/javascript",
+            "content-encoding": "gzip"
+          },
+          "error": "",
+          "sha256": "88ce05f032c13b78e413e87ac584ae2600147671f10b3972e858ade079908e1c"
+        }
+      ]
+    }
+  },
+  "countryCorrection": {
+    "clientIp": "8.130.105.151",
+    "country": "CN",
+    "servers": [
+      "103.73.161.228",
+      "74.82.198.36"
+    ],
+    "dailyRefreshRetainsVerifiedAddress": true
+  },
+  "relay": {
+    "code": 0,
+    "stdout": "[{\"host\":\"relay.touhouonline.com\",\"opened\":true,\"types\":[\"directory\"],\"elapsedMs\":515},{\"host\":\"cn-relay.touhouonline.com:8443\",\"opened\":true,\"types\":[\"directory\"],\"elapsedMs\":264}]\n",
+    "stderr": ""
+  }
+}

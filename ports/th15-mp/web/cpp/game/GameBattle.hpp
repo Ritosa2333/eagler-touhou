@@ -16,6 +16,7 @@
 #include "MultiplayerPilot.hpp"
 #endif
 namespace th15 {
+namespace multiplayer {class BattleFrameState;}
 struct BattleSceneBindings;
 class RecordStore;
 struct BattleResources {i32 player=10,bullet=7,effect=8;};
@@ -55,6 +56,7 @@ struct BattleWorldServices:SpellCardServices {
     virtual bool stage_logo(){return false;}
 };
 class GameBattle {
+    friend class multiplayer::BattleFrameState;
     friend struct MultiplayerPilot;
     friend class MultiplayerHud;
     struct Services;std::unique_ptr<Services> services;

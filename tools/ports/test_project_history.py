@@ -92,6 +92,25 @@ class ProjectionTests(unittest.TestCase):
         self.assertNotEqual(a["head"], b["head"])
         self.assertEqual(self.project()["results"], first["results"])
 
+    def test_projection_does_not_copy_monorepo_subtree_control_records(self):
+        self.files["ports/th10/value.txt"] = "a later source change\n"
+        message = ("同步th12子树\n\ngit-subtree-dir: ports/th12\n"
+                   "git-subtree-mainline: " + self.migration + "\n"
+                   "git-subtree-split: " + self.normal + "\n\n"
+                   "Monorepo-Source: " + self.base + "\nSource-Prefix: ports/old\n")
+        tagged = self.commit(self.files, [self.global_change], message)
+        report = self.project(tagged)
+        projected = report["results"]["th10"]["head"]
+        body = self.run_git("show", "-s", "--format=%B", projected).decode()
+        self.assertNotIn("git-subtree-", body)
+        self.assertNotIn(self.base, body)
+        self.assertEqual(body.count("Monorepo-Source:"), 1)
+        self.assertIn("Monorepo-Source: " + tagged, body)
+        self.assertIn("Source-Prefix: ports/th10", body)
+        self.assertTrue(self.reader.ancestor(self.normal, projected))
+        self.assertEqual(self.run_git("rev-parse", projected + "^{tree}"),
+                         self.run_git("rev-parse", tagged + ":ports/th10"))
+
     def test_native_merge_writeback_and_next_update(self):
         report = self.project(write=True)
         a, b = (report["results"][title]["head"] for title in ("th10", "th10mp"))
@@ -112,9 +131,14 @@ class ProjectionTests(unittest.TestCase):
         self.assertTrue(all(path.startswith("ports/th10-mp/") for path in prepared["changed"]))
         prepared = module.prepare_writeback(self.reader, report, merged, create_commit=True)
         written = prepared["candidateCommit"]
+        # Standard git subtree also checks the on-disk prefix. Materialize the
+        # fixture's HEAD before testing an export of the candidate revision.
         self.run_git("read-tree", "HEAD")
         self.run_git("checkout-index", "--all")
         self.run_git("update-index", "--refresh")
+        split = self.run_git("subtree", "split", "--prefix=ports/th10-mp", "--quiet", written).decode().strip()
+        self.assertTrue(self.reader.ancestor(merged, split))
+        self.assertEqual(self.reader.commit(split)[0], merged_tree)
         self.run_git("merge", "--ff-only", written)
         after = self.project(write=True)
         self.assertEqual(after["results"]["th10"]["head"], a)
@@ -149,6 +173,45 @@ class ProjectionTests(unittest.TestCase):
             self.project(self.migration, write=True)
         for result in before["results"].values():
             self.assertEqual(self.run_git("rev-parse", result["ref"]).decode().strip(), result["head"])
+
+    def test_new_subtree_fork_retains_source_and_merge_roundtrip(self):
+        normal_files = {**self.base_files, "normal.txt": "normal feature\n"}
+        mp_files = {**normal_files, "mp.txt": "multiplayer\n"}
+        fork = self.commit(mp_files, [self.normal], "independent MP source")
+        files = {"ports/th12/" + path: value for path, value in normal_files.items()}
+        normal_join = self.commit(files, [self.launcher, self.normal],
+            "join normal\n\ngit-subtree-dir: ports/th12\ngit-subtree-split: " + self.normal)
+        files.update({"ports/th12-mp/" + path: value for path, value in normal_files.items()})
+        copied = self.commit(files, [normal_join], "stage independent source directory")
+        files.update({"ports/th12-mp/" + path: value for path, value in mp_files.items()})
+        implemented = self.commit(files, [copied], "implement multiplayer before source join")
+        mp_join = self.commit(files, [implemented, fork],
+            "join MP\n\ngit-subtree-dir: ports/th12-mp\ngit-subtree-split: " + fork)
+        files["docs/migration/import-sources.json"] = json.dumps({"imports": []})
+        files["docs/migration/move-sources-20261018.json"] = json.dumps({"sources": []})
+        files["launcher/config/workspace.json"] = json.dumps({"repositories": {"th12": "ports/th12", "th12mp": "ports/th12-mp"}})
+        for title, prefix, split, join in (("th12", "ports/th12", self.normal, normal_join), ("th12mp", "ports/th12-mp", fork, mp_join)):
+            files["docs/migration/" + title + "-eagler-20261024.json"] = json.dumps({
+                "destination": prefix, "currentMode": "git-subtree", "subtree": {
+                    "upstreamCommit": self.base, "initialSplit": split, "currentSplit": split,
+                    "initialJoin": join, "latestJoin": join}})
+        head = self.commit(files, [mp_join], "record sources")
+        report = module.project(self.reader, head, "th12")
+        self.assertEqual(report["results"]["th12"]["head"], self.normal)
+        self.assertEqual(report["results"]["th12mp"]["head"], fork)
+        self.assertEqual(report["mergeBases"], [self.normal])
+        merged_tree = self.run_git("merge-tree", "--write-tree", fork, self.normal).decode().splitlines()[0]
+        self.assertEqual(merged_tree, self.tree(mp_files))
+        prepared = module.prepare_writeback(self.reader, report, fork, create_commit=True)
+        # A writeback with the same content still has to carry the upstream
+        # ancestors through a standard export, not just through our projector.
+        self.run_git("read-tree", prepared["candidateCommit"])
+        self.run_git("checkout-index", "--all")
+        split = self.run_git("subtree", "split", "--prefix=ports/th12-mp", "--quiet", prepared["candidateCommit"]).decode().strip()
+        self.assertTrue(self.reader.ancestor(fork, split))
+        self.assertEqual(self.reader.commit(split)[0], self.tree(mp_files))
+        after = module.project(self.reader, prepared["candidateCommit"], "th12")
+        self.assertEqual(after["results"]["th12mp"]["head"], fork)
 
 
 if __name__ == "__main__":

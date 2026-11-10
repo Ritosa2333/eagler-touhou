@@ -1,6 +1,6 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-
 import { APP_SHELL_FILES, FRONTEND_PACKAGE_FILES, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
 import { PRODUCT_GAMES, PRODUCT_IDS } from "../product-catalog.mjs";
 import { replayStorageLocation } from "../.cache/build/browser/assets/launcher/replay-storage-policy.mjs";
@@ -30,6 +30,7 @@ import {
   legacyLocalAssetKey,
 } from "../compat/legacy-import-storage.mjs";
 
+test("origin migration", async () => {
 const html = await readFile(resolveFrontendPackageSource("migrate.html"), "utf8");
 const indexHtml = await readFile(resolveFrontendPackageSource("index.html"), "utf8");
 const app = (await Promise.all(["app/components/launcher/LauncherMasthead.tsx","app/session/browser-session.ts","app/services/language-pack.ts","app/models/site-preferences.ts","src/launcher/game-preferences.mts"].map(file=>readFile(new URL("../"+file,import.meta.url),"utf8")))).join("\n");
@@ -52,6 +53,9 @@ for (const product of PRODUCT_IDS) {
   const {database} = replayStorageLocation(product);
   assert.ok(databaseOwners.includes(database), `origin migration does not cover ${product}: ${database}`);
 }
+assert.ok(databaseOwners.every(name => !name.startsWith('beta:')),
+  'origin migration must cover only the shared Runtime and player-data stores');
+assert.doesNotMatch(html, /beta:/, 'the migration page must not expose retired beta storage namespaces');
 for (const database of ["eagler-touhou-package-store-v1", "EM_PRELOAD_CACHE", "eagler-touhou-local-assets-v1"]) {
   assert.ok(databaseOwners.includes(database), `origin migration lost persistent database owner: ${database}`);
 }
@@ -60,9 +64,9 @@ assert.deepEqual(cacheOwners, ["eagler-touhou-game-data-v1", "eagler-touhou-lang
   "origin migration Cache Storage owners changed without an explicit data-ownership decision");
 assert.ok(!cacheOwners.some(name => name.startsWith("eagler-touhou-app-shell-")),
   "deployment/App Shell caches must never migrate as player data");
-assert.match(html, /const LEGACY_LOCAL_STORAGE_KEYS = new Set\(\["eagler\.mpSpectatorRail\.mobilePosition\.v1"\]\);/,
-  "the one published pre-canonical spectator-rail key must remain explicitly migratable");
-assert.match(html, /!key\.startsWith\("eagler-touhou-origin-migration-"\)[\s\S]*key\.startsWith\("eagler-"\)[\s\S]*LEGACY_LOCAL_STORAGE_KEYS\.has\(key\)/,
+assert.match(html, /const EXPLICIT_LOCAL_STORAGE_KEYS = new Set\(\["eagler\.mpSpectatorRail\.mobilePosition\.v1", "th13\.save"\]\);/,
+  "legacy spectator-rail and TH13 save keys must be explicitly migratable");
+assert.match(html, /!key\.startsWith\("eagler-touhou-origin-migration-"\)[\s\S]*key\.startsWith\("eagler-"\)[\s\S]*EXPLICIT_LOCAL_STORAGE_KEYS\.has\(key\)/,
   "migration authorization state must never migrate as player data");
 
 assert.match(html, /target\.protocol = "https:";/);
@@ -173,3 +177,4 @@ console.log(JSON.stringify({
   exactLegacyLocalStorageKeys: 1,
   serverUpload: false,
 }));
+});

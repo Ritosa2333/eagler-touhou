@@ -52,7 +52,7 @@ export async function configureMultiplayer(core,app,options,{crypto=globalThis.c
  if(!Array.isArray(runtimeBuildWords)||runtimeBuildWords.length!==4||
     runtimeBuildWords.some(value=>!Number.isInteger(value)||value<0||value>0xffffffff)||
     !runtimeBuildWords.some(Boolean))throw Error('TH08 multiplayer Runtime build identity is missing');
- const identity=new TextEncoder().encode(`th08mp:${o.url.origin}${o.url.pathname}:${o.room}:${o.run}`);
+ const identity=new TextEncoder().encode(`th08mp:${o.room}:${o.run}`);
  const digest=new DataView(await crypto.subtle.digest('SHA-256',identity));
  const challenge=options.netplayChallengeMode===true;
  const words=[challenge?7:o.adonisMode?6:4,o.count,o.seat,o.difficulty,o.seed,digest.getUint32(0,true),digest.getUint32(4,true)||1,...runtimeBuildWords];

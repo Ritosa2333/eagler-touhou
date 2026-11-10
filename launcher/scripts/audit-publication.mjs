@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { readdir, stat, readFile } from "node:fs/promises";
 import { extname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {SITE_BRAND_FACES} from '../lib/site-brand.mjs';
 
 const args = process.argv.slice(2);
 const directoryArgument = args.find(value => value.startsWith("--directory="));
@@ -21,15 +22,18 @@ const forbiddenExtensions = new Set([".dat", ".data", ".wav", ".ogg", ".mid", ".
 const quickChatVoiceClipAssets = new Set([
   "1", "request-life", "request-power", "share-resources", "follow-me", "spread-out",
   "stop-fire", "bomb-me", "bomb-you", "leaving", "last-game", "last", "thanks", "xxzj",
+  "wait", "sorry", "continue", "lagging", "no-worries", "laugh", "retry", "no-no", "yes-yes", "ah", "move-right", "move-left", "busy", "you-first", "nice", "amazing", "great-opportunity", "feels-good",
 ].map(id => `assets/quick-chat/${id}.wav`));
 const publicAssets = new Set([
+  'assets/site-brand.mjs', 'assets/brand/LICENSE.txt', 'assets/brand/portrait.png',
+  'assets/favicon.png',
+  ...SITE_BRAND_FACES.map(face=>`assets/brand/${face}.svg`),
   "assets/launcher-background.webp",
   ...quickChatVoiceClipAssets,
   "assets/donation.webp",
   "assets/touch-rotate-landscape.webp",
   "assets/notice-bilibili.svg",
-  "assets/notice-touhou-cloud.png",
-  "assets/notice-github.svg", "assets/notice-qq.svg",
+  "assets/notice-github.svg",
   // Repository-owned Phosphor room controls; the MIT notice ships with them.
   "assets/room-caret-left.svg", "assets/room-caret-right.svg",
   "assets/room-chart-bar.svg", "assets/room-copy.svg",
@@ -40,6 +44,7 @@ const publicAssets = new Set([
   "assets/player-live.svg", "assets/player-chat.svg", "assets/replay-arrow-left.svg",
   "assets/replay-arrow-counter-clockwise.svg", "assets/replay-file-text.svg",
   "assets/replay-folder.svg", "assets/replay-upload-simple.svg", "assets/replay-dots-three.svg",
+  "assets/site-menu.svg", "assets/site-menu-close.svg",
   "assets/LICENSE-Phosphor.txt", "assets/phosphor-ui-icons.json",
   "assets/fonts/touhou98.woff2",
   "assets/fonts/unifont-site.woff2",
@@ -76,17 +81,17 @@ function isGitWorkingTree(root) {
   } catch { return false; }
 }
 if (workspaceAudit) {
-  const {loadSourceLayout,projectConfigurationPath}=await import('../lib/source-layout.mjs');
+  const {loadSourceLayout}=await import('../lib/source-layout.mjs');
+  const {builds:config,targets:sourceTargets}=await import('../../tools/ports/inputs.mjs');
   const {loadReviewedPublicationAssets}=await import('../lib/reviewed-publication-assets.mjs');
   const layout=loadSourceLayout(project),root=layout.root;
   const WORKSPACE_REPOSITORIES=layout.repositories,workspacePath=(...args)=>layout.path(...args);
   const reviewed=await loadReviewedPublicationAssets(root,resolve(root,'launcher/config/reviewed-source-assets.json'));
   // Source publication must also run in a clean checkout before contracts or
   // frontend dependencies have been generated.
-  const config=JSON.parse(await readFile(projectConfigurationPath('runtime-builds.json',project),'utf8'));
   if(config.schema!=='eagler-touhou/runtime-builds/1'||!config.games)throw Error('Invalid Runtime build ownership');
-  const gameOwners = [...new Set(Object.values(config.games).flatMap(entry =>
-    Object.values(entry.variants).map(variant => variant.workspaceRepository ?? entry.workspaceRepository)))];
+  const gameOwners = [...new Set(sourceTargets().map(target =>
+    target.definition.workspaceRepository ?? config.games[target.game].workspaceRepository))];
   gameOwners.push('common');
   gameOwners.push(...['relay','turn','telemetry'].filter(owner=>WORKSPACE_REPOSITORIES[owner]));
   workspaceChecked = [

@@ -44,9 +44,18 @@ int main() {
     assert(state.seats[0].raw == frame[0].buttons);
     assert(state.seats[1].raw == frame[1].buttons);
 
-    // P2 movement/fire is isolated from P1. The menu raw lane stays host raw.
-    assert(HostControls(state).raw == frame[0].buttons);
-    assert((HostControls(state).raw & 0x100u) == 0);
+    // Player lanes stay independent; every seat participates in shared UI.
+    assert(HostControls(state).raw == (frame[0].buttons|frame[1].buttons|frame[2].buttons));
+    assert((HostControls(state).raw & 0x100u) != 0);
+    State confirm{};
+    Netplay::FrameInput held_shoot[]{input(kShoot),input(0),input(0)};
+    assert(Commit(confirm,held_shoot,3));
+    assert(Commit(confirm,held_shoot,3));
+    assert((HostControls(confirm).pressed&kShoot)==0);
+    held_shoot[1].buttons=kShoot;
+    assert(Commit(confirm,held_shoot,3));
+    assert((HostControls(confirm).pressed&kShoot)!=0);
+    assert(confirm.seats[0].pressed==0&&confirm.seats[1].pressed==kShoot);
 
     const State before_invalid = state;
     frame[1].analogMode = static_cast<Netplay::AnalogMode>(5);

@@ -19,6 +19,9 @@ void MatchScene::end_round(i32 side){
         services.set_sprite(animations[11+side],44);services.set_sprite(animations[12-side],45);
     }winner=side;phase=1;ending_frames=retry=0;
 }
+i32 MatchScene::decided_winner()const{
+    return rules.mode==GameMode::versus&&services.wins[winner]>=services.wins_required?winner:-1;
+}
 void MatchScene::show_results(){
     services.start_animation(animations[13],OverlayResource::front,63);services.start_animation(animations[16],OverlayResource::front,66);phase=2;ending_frames=0;
     const auto& p=services.players[winner];result[0]=product(p.health,100000);result[1]=p.best_combo<1000?product(p.best_combo,10000):9999990;

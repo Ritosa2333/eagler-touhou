@@ -4,6 +4,16 @@
 #include <cmath>
 namespace th11 {
 void Stage::stage_camera_position_interpolated(){
+#ifdef TH11_MULTIPLAYER
+    // THPrac 404663 corrects both clocks after STD opcode 3. MP chapter
+    // restore uses the recorded clock, including transition/loading cadence.
+    if(state.stage_number==6&&!state.script_timer.current&&multiplayer_replay_background_frame!=INT32_MIN){
+        const i32 offset=multiplayer_replay_background_frame;
+        state.script_timer.current=state.position_interpolation.timer.current=offset;
+        state.script_timer.fractional=state.position_interpolation.timer.fractional=float(offset);
+        return;
+    }
+#endif
 #ifdef TH_ENABLE_THPRAC
     // THPrac 404663, immediately after STD opcode 3. The portable battle
     // increments frame at the end of its tick; native priority-10 control
@@ -26,7 +36,7 @@ bool Stage::initialize(const StageResource& file,i32 number,const SceneCamera& c
     if(!rollback_structure_mutable())return false;
 #endif
     if(!object_animations.empty()||file.instructions.empty())return false;
-    resource=file;std::memset(&state,0,sizeof state);state.flags=2;state.stage_number=number;state.camera=camera;
+    resource=file;std::memset(&state,0,sizeof state);camera_discontinuity=false;camera_valid=false;state.flags=2;state.stage_number=number;state.camera=camera;
     state.camera.position={0,0,-600};state.camera.direction={0,300,600};state.camera.up={0,1,0};state.camera.eye_offset={};
     state.draw_distance_squared=9610000;state.draw_flags=1;state.script_timer.set(0,&manager.rate);
     return !start||start_objects();
@@ -65,6 +75,7 @@ bool Stage::update_objects(){
     }return true;
 }
 bool Stage::update(){
+    camera_discontinuity=false;
     if((state.draw_flags&8)||((state.draw_flags&4)&&state.fade_timer.current>=60))return true;
     state.camera.offset={};state.camera.animation_delta={};state.camera.reserved24=GraphicsMath::normalize(state.camera.direction);state.tint=0x00808080;
     if(!(state.draw_flags&4)||state.fade_timer.current<30){
@@ -108,7 +119,14 @@ bool Stage::update_deformation(){
             phase_x=normalize_angle(float(double(phase_x)+pi*.5));phase_y=normalize_angle(float(double(phase_y)-.6981317400932312));
         }
         state.phase_x=normalize_angle(float(double(state.phase_x)+.04908738657832146));
-        const float delta=float(double(manager.script_rng.unit())*pi/40+.039269909262657166);
+        // Stage Replay entries rebuild the background on its native clock.
+        // Its deformation must not advance the battle's ECL/bullet RNG.
+#ifdef TH11_MULTIPLAYER
+        auto& deformation_random=manager.visual_rng;
+#else
+        auto& deformation_random=manager.script_rng;
+#endif
+        const float delta=float(double(deformation_random.unit())*pi/40+.039269909262657166);
         state.phase_y=normalize_angle(float(double(state.phase_y)+delta));
     }return true;
 }

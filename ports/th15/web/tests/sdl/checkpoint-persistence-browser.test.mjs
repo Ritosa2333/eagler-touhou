@@ -1,17 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {readFile,writeFile,readdir} from 'node:fs/promises';
+import {readFile,writeFile,readdir,mkdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {launchBrowser} from '../../../../../tools/browser/launch.mjs';
 import {fileURLToPath} from 'node:url';import {createHash} from 'node:crypto';
 const root=fileURLToPath(new URL('../../',import.meta.url)),sha=b=>createHash('sha256').update(b).digest('hex'),report=async(name,data)=>writeFile(resolve(root,'artifacts/'+name+'.json'),JSON.stringify(data,null,2));
 const assets=[];
 const fonts=(await readdir(resolve(root,'assets/sdl-native/fonts'))).filter(n=>/^(font[0-7]|cp932|blend4444)\.bin$/.test(n));
+const shared=process.env.TH15_SHARED_FONT_ROOT;
+if(!shared)throw Error('Set TH15_SHARED_FONT_ROOT to the shared msgothic.ttc and unifont.otf directory');
+fonts.push('msgothic.ttc','unifont.otf');
 const songs=[];
 
 test('Pointdevice all six stages survive actual persistent checkpoint cold starts',{timeout:1200000},async()=>{
- const files=new Map([['/th15.dat',process.env.TH15_ORIGINAL_DAT],['/module.mjs',resolve(root,'artifacts/sdl-application/th15-application.mjs')],['/th15-application.wasm',resolve(root,'artifacts/sdl-application/th15-application.wasm')],...assets.map(n=>['/assets/'+n,resolve(root,'reference/assets',n)]),...fonts.map(n=>['/fonts/'+n,resolve(root,'assets/sdl-native/fonts',n)]),...songs.map(n=>['/music/'+n,resolve(root,'assets/music',n)])]);
+ await mkdir(resolve(root,'artifacts/cpp/verification'),{recursive:true});
+ const files=new Map([['/th15.dat',process.env.TH15_ORIGINAL_DAT],['/module.mjs',resolve(root,'artifacts/sdl-application/th15-application.mjs')],['/th15-application.wasm',resolve(root,'artifacts/sdl-application/th15-application.wasm')],...assets.map(n=>['/assets/'+n,resolve(root,'reference/assets',n)]),...fonts.map(n=>['/fonts/'+n,resolve(/\.(ttc|otf)$/.test(n)?shared:resolve(root,'assets/sdl-native/fonts'),n)]),...songs.map(n=>['/music/'+n,resolve(root,'assets/music',n)])]);
  const html='<!doctype html><title>TH15 application integration development</title><canvas id="canvas" width="640" height="480"></canvas><script type="module">import create from "/module.mjs";window.fixture=await create({canvas:document.querySelector("canvas")});'+(process.env.TH15_PRESENTATION_TEST==='1'?'fixture._application_test_presentation_enable(1);':'')+'</script>';
  const server=createServer(async(req,res)=>{try{const path=new URL(req.url,'http://localhost').pathname;res.setHeader('Cross-Origin-Opener-Policy','same-origin');res.setHeader('Cross-Origin-Embedder-Policy','require-corp');if(path==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}const file=files.get(path);if(!file){res.writeHead(404).end();return;}res.setHeader('Content-Type',path.endsWith('.mjs')?'text/javascript':path.endsWith('.wasm')?'application/wasm':'application/octet-stream');res.end(await readFile(file));}catch(e){res.writeHead(500).end(String(e));}});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;const errors=[],observations=[];

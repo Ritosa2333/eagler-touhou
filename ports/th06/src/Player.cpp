@@ -40,6 +40,23 @@
 #include "netplay/NetplaySideEffects.hpp"
 #endif
 
+namespace
+{
+void EmitMissFeedback(Player *player)
+{
+#ifdef TH_ENABLE_NETPLAY
+    Netplay::SideEffects::MissScope missScope;
+#endif
+    if (!PracticeRuntime::OverlayInvincible())
+        g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_12, &player->positionCenter, 1, COLOR_NEONBLUE);
+    g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_6, &player->positionCenter, 16, COLOR_WHITE);
+#ifdef TH_ENABLE_NETPLAY
+    if (Netplay::SideEffects::RecordCommittedMiss(player->initParam)) return;
+#endif
+    g_SoundPlayer.PlaySoundByIdx(SOUND_PICHUN);
+}
+}
+
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 Player g_Players[TH06_MULTI_MAX_PLAYERS];
 bool g_PlayerActive[TH06_MULTI_MAX_PLAYERS] = {false, false, false};
@@ -134,6 +151,7 @@ ZunVec3 PresentRemotePlayer(Player *player, const ZunVec3 &target)
 
 void DrawLocalPlayerLocator(const Player *player, const ZunVec3 &drawPlayerPos)
 {
+    if(MultiplayerGameplay::GetState().spectator)return;
     if (!player || !MultiplayerGameplay::IsMultiplayer() ||
         !EaglerOptions::EnhanceLocalPlayerVisibility() ||
         player->initParam != MultiplayerGameplay::GetLocalPlayerSlot() ||
@@ -155,6 +173,7 @@ void DrawLocalPlayerLocator(const Player *player, const ZunVec3 &drawPlayerPos)
 
 u8 GetPlayerOverlapAlpha(const Player *player)
 {
+    if (MultiplayerGameplay::GetState().spectator) return 255;
     if (!player || !MultiplayerGameplay::IsMultiplayer() ||
         player->initParam >= TH06_MULTI_MAX_PLAYERS ||
         player->initParam == MultiplayerGameplay::GetLocalPlayerSlot() ||
@@ -1282,6 +1301,14 @@ ChainCallbackResult Player::OnUpdate(Player *p)
                 g_CurFrameInput = TH_BUTTON_BOMB;
             if (p->respawnTimer == 0)
             {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                if (multiplayer)
+                {
+                    EmitMissFeedback(p);
+                    auto &misses = g_MultiplayerContributionStats[p->initParam].challengeDeaths;
+                    if (MultiplayerGameplay::IsChallengeMode() && misses != 0xffffffffu) ++misses;
+                }
+#endif
                 g_GameManager.powerItemCountForScore = 0;
                 if (canRespawn)
                 {
@@ -1422,10 +1449,6 @@ ChainCallbackResult Player::OnUpdate(Player *p)
                     // th06_track_miss is immediately before the stock
                     // decrement, after the deathbomb window has expired.
                     PracticeRuntime::RecordTrackerMiss();
-#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-                    if (MultiplayerGameplay::IsChallengeMode())
-                        ++g_MultiplayerContributionStats[p->initParam].challengeDeaths;
-#endif
                     if (
 #ifdef TH_ENABLE_THPRAC
                         !PracticeRuntime::Purple::PreserveLifeStock(livesRemaining)
@@ -3047,9 +3070,10 @@ void Player::Die()
     // Upstream Muteki replaces the first death-particle call with stack
     // cleanup and changes the state immediate from DEAD(2) to
     // INVULNERABLE(3); the remaining hit feedback/sound/death counter stays.
-    if (!PracticeRuntime::OverlayInvincible())
-        g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_12, &this->positionCenter, 1, COLOR_NEONBLUE);
-    g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_6, &this->positionCenter, 16, COLOR_WHITE);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (!MultiplayerGameplay::IsMultiplayer())
+#endif
+        EmitMissFeedback(this);
     this->playerState = PracticeRuntime::OverlayInvincible() ? PLAYER_STATE_INVULNERABLE : PLAYER_STATE_DEAD;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     this->respawnTimer = (MultiplayerGameplay::IsMultiplayer() ? eagler::cooperative::DeathbombFrames(6) : 6) + (PlayerUsedTouch(this) ? Touch::DEATHBOMB_TOLERANCE : 0);
@@ -3057,7 +3081,6 @@ void Player::Die()
     this->respawnTimer = 6 + (Touch::WasUsedThisRun() ? Touch::DEATHBOMB_TOLERANCE : 0);
 #endif
     this->invulnerabilityTimer.InitializeForPopup();
-    g_SoundPlayer.PlaySoundByIdx(SOUND_PICHUN);
     g_GameManager.deaths++;
     for (curLaserTimerIdx = 0; curLaserTimerIdx < ARRAY_SIZE_SIGNED(this->laserTimer); curLaserTimerIdx++)
     {

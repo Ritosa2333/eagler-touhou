@@ -3,11 +3,13 @@
 
 #include <cassert>
 #include <cstdio>
+#include <initializer_list>
 
 GameManager g_GameManager;
 Supervisor g_Supervisor;
 GameManager::GameManager() = default;
-i32 GetActivePlayerCount() { return 1; }
+i32 activePlayerCount = 1;
+i32 GetActivePlayerCount() { return activePlayerCount; }
 namespace MultiplayerGameplay
 {
 bool multiplayerTest = false;
@@ -18,6 +20,16 @@ bool IsChallengeMode() { return multiplayerTest && challengeTest; }
 
 int main()
 {
+    for (i32 count : {1, 2, 3})
+    {
+        activePlayerCount = count;
+        assert(GetMultiplayerRankPenalty(1600) == 1600 / count);
+        assert(GetMultiplayerRankPenalty(200) == 200 / count);
+        // Two simultaneous Misses share the team's one-player penalty budget.
+        if (count == 2) assert(2 * GetMultiplayerRankPenalty(1600) == 1600);
+        if (count == 3) assert(3 * GetMultiplayerRankPenalty(1600) == 1599);
+    }
+    activePlayerCount = 1;
     g_GameManager.livesRemaining = 2;
     g_GameManager.bombsRemaining = 3;
     g_GameManager.currentPower = 64;

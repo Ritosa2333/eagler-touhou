@@ -45,12 +45,20 @@ int AnmRenderer::shape(AnmVm& vm){
     const auto& v=vm.visual;const u32 mode=v.draw_mode();float width=float(v.sprite_size.x*v.scale.x),height=float(v.sprite_size.y*v.scale.y),angle=vm.variables.rotation.z;Vec3 center;if(!anm_position(vm,center)){error="Primitive animation position unavailable";return -2;}
     if(vm.creation_parent&&!(v.render_flags&0x10000)){const auto& parent=*vm.creation_parent;width=float(parent.visual.scale.x*width);height=float(parent.visual.scale.y*height);angle=float(parent.variables.rotation.z+angle);}
     const u32 resolution=v.render_flags>>20&7;if(resolution==1||resolution==2){if(!vm.environment){error="Primitive animation scene scale unavailable";return -2;}const float factor=resolution==1?vm.environment->resolution_scale:float(vm.environment->resolution_scale*.5f);width=float(factor*width);height=float(factor*height);}
+    const bool rectangle_mode=mode==16||mode>=20;
+    const u32 ax=v.flags>>21&3,ay=v.flags>>23&3;
+    const i32 count=vm.variables.integers[0];
+    if(rectangle_mode){
+        if(ax>2||ay>2){error="Primitive animation anchor outside range";return -2;}
+    }else if(count<1||count>0x100000){error="Primitive animation segment count invalid";return -2;}
+    // The tessellation scratch has no owner in the rollback snapshot.
+    if(graphics.logical_frame())return 0;
     flush();if(!material(vm,false))return -2;auto& state=graphics.pipeline();state.textureTransform=false;state.color.operation=state.alpha.operation=ColorOperation::First;state.color.first=state.alpha.first={ArgumentSource::Diffuse};graphics.set_layout(VertexLayout::ScreenColor);
-    if(mode==16||mode>=20){const u32 ax=v.flags>>21&3,ay=v.flags>>23&3;if(ax>2||ay>2){error="Primitive animation anchor outside range";return -2;}constexpr float xs[3][2]={{-.5f,.5f},{0,1},{-1,0}},ys[3][2]={{-.5f,.5f},{0,1},{-1,0}};const float sine=float(std::sin(double(angle))),cosine=float(std::cos(double(angle)));const u32 primary=v.color,secondary=mode==20||mode==22?v.secondary_color:v.color;
+    if(rectangle_mode){constexpr float xs[3][2]={{-.5f,.5f},{0,1},{-1,0}},ys[3][2]={{-.5f,.5f},{0,1},{-1,0}};const float sine=float(std::sin(double(angle))),cosine=float(std::cos(double(angle)));const u32 primary=v.color,secondary=mode==20||mode==22?v.secondary_color:v.color;
         const auto rectangle=[&](float w,float h,u32 a,u32 b){ColorVertex data[4];for(u32 i=0;i<4;i++){const float x=float(xs[ax][i&1]*w),y=float(ys[ay][i>>1]*h);data[i]={{float(float(float(x*cosine)-float(y*sine))+center.x),float(float(float(y*cosine)+float(x*sine))+center.y),0},1,i&1?b:a};}submit(vm,Topology::Strip,2,data,sizeof(ColorVertex));};
         if(mode==21||mode==22)rectangle(float(width+1),float(height+1),((primary>>1)&0x7f000000)|(primary&0xffffff),((secondary>>1)&0x7f000000)|(secondary&0xffffff));rectangle(width,height,primary,secondary);return 0;
     }
-    const i32 count=vm.variables.integers[0];if(count<1||count>0x100000){error="Primitive animation segment count invalid";return -2;}shapes.clear();const float step=float(6.283185482025146484375f/float(count));if(mode==17)shapes.push_back({{center.x,center.y,0},1,v.color});
+    shapes.clear();const float step=float(6.283185482025146484375f/float(count));if(mode==17)shapes.push_back({{center.x,center.y,0},1,v.color});
     for(i32 i=0;i<=count;i++){const auto point=[&](float radius){return Vec3{float(float(std::cos(double(angle))*double(radius))+center.x),float(float(std::sin(double(angle))*double(radius))+center.y),0};};if(mode==19){shapes.push_back({point(float(width-float(height*.5f))),1,v.color});shapes.push_back({point(float(float(height*.5f)+width)),1,v.color});}else shapes.push_back({point(width),1,mode==17?v.secondary_color:v.color});angle=normalize_angle(float(angle+step));}
     if(mode==17){state.cull=Cull::None;submit(vm,Topology::Fan,count,shapes.data(),sizeof(ColorVertex));}else if(mode==18)submit(vm,Topology::LineStrip,count,shapes.data(),sizeof(ColorVertex));else submit(vm,Topology::Strip,count*2,shapes.data(),sizeof(ColorVertex));return 0;
 }
@@ -70,7 +78,19 @@ int AnmRenderer::pack_quad(AnmVm& vm,Vec3 (&p)[4],bool pixel,const u32* supplied
     if(pixel&&(vm.presentation_motion||vm.interpolators.position.duration>0))for(auto& point:p){point.x-=.5f;point.y-=.5f;}
     std::copy(std::begin(p),std::end(p),vm.visual.quad.begin());float left=p[0].x,right=left,top=p[0].y,bottom=top;for(u32 i=1;i<4;i++){left=std::min(left,p[i].x);right=std::max(right,p[i].x);top=std::min(top,p[i].y);bottom=std::max(bottom,p[i].y);}
     if(right<float(viewport.x)||bottom<float(viewport.y)||left>float(viewport.x+viewport.width)||top>float(viewport.y+viewport.height))return 0;
-    auto& v=vm.visual;const u32 color_mode=v.flags>>17&3;u32 colors[4];if(supplied)std::copy(supplied,supplied+4,colors);else if(color_mode<2){u32 color=color_mode?v.secondary_color:v.color;if((v.render_flags&0x2000000)&&vm.creation_parent)color=multiply_color(color,vm.creation_parent->visual.inherited_color);v.inherited_color=color;for(auto& c:colors)c=tint_color(color);}else{const u32 a=tint_color(v.color),b=tint_color(v.secondary_color);colors[0]=a;colors[3]=b;colors[1]=color_mode==2?b:a;colors[2]=color_mode==2?a:b;}
+    auto& v=vm.visual;const u32 color_mode=v.flags>>17&3;
+    if(!supplied&&color_mode<2){
+        u32 color=color_mode?v.secondary_color:v.color;
+        if((v.render_flags&0x2000000)&&vm.creation_parent)color=multiply_color(color,vm.creation_parent->visual.inherited_color);
+        v.inherited_color=color;
+    }
+    // Historical Draw still updates quad geometry and inherited colour. The
+    // texture lookup, UV packing and vertex arena belong to the displayed frame.
+    if(graphics.logical_frame())return 0;
+    u32 colors[4];
+    if(supplied)std::copy(supplied,supplied+4,colors);
+    else if(color_mode<2)std::fill(std::begin(colors),std::end(colors),tint_color(v.inherited_color));
+    else{const u32 a=tint_color(v.color),b=tint_color(v.secondary_color);colors[0]=a;colors[3]=b;colors[1]=color_mode==2?b:a;colors[2]=color_mode==2?a:b;}
     if(!material(vm))return -2;Vec2 uv[4];uv[0]={float(v.uv_offset.x+v.uv[0].x),float(v.uv[0].y+v.uv_offset.y)};uv[1]={float(float(float(v.uv[1].x-v.uv[0].x)*v.uv_scale.x)+v.uv_offset.x)+v.uv[0].x,float(v.uv_offset.y+v.uv[1].y)};uv[2]={float(v.uv_offset.x+v.uv[2].x),float(float(float(v.uv[2].y-v.uv[0].y)*v.uv_scale.y)+v.uv_offset.y)+v.uv[0].y};uv[3]={float(float(float(v.uv[3].x-v.uv[2].x)*v.uv_scale.x)+v.uv_offset.x)+v.uv[2].x,float(float(float(v.uv[3].y-v.uv[1].y)*v.uv_scale.y)+v.uv_offset.y)+v.uv[1].y};
     graphics.presentation_offset(offset);graphics.presentation_range(vm,vertices.size(),6,presentation_instance);
     for(u32 index:{0u,1u,2u,1u,2u,3u})vertices.push_back({p[index],1,colors[index],uv[index]});if(vertices.size()>=6144)flush();return 0;
@@ -88,6 +108,8 @@ int AnmRenderer::world_quad(AnmVm& vm){
     // texture matrices carry the actual geometry and atlas selection.
     const auto& v=vm.visual;if(!(v.color>>24))return 0;Matrix4 world;if(!anm_world_quad_transform(vm,world)){error="World animation transform unavailable";return -2;}
     const u32 ax=v.flags>>21&3,ay=v.flags>>23&3;if(ax>2||ay>2){error="World animation anchor outside range";return -2;}
+    // The transform updates the VM. Texture and backend state are display work.
+    if(graphics.logical_frame())return 0;
     flush();if(!material(vm))return -2;auto& state=graphics.pipeline();state.depthWrite=!(v.flags&0x2000);state.textureTransform=true;state.color.second=state.alpha.second={ArgumentSource::Factor};state.textureFactor=tint_color(v.flags&0x60000?v.secondary_color:v.color);
     graphics.set_matrix(MatrixKind::World,world);graphics.set_matrix(MatrixKind::Texture,anm_texture_transform(vm));graphics.set_layout(VertexLayout::WorldUv);
     struct Vertex {Vec3 position;Vec2 uv;};constexpr float xs[3][2]={{-128,128},{0,256},{-256,0}},ys[3][2]={{-128,128},{0,256},{-256,0}};
@@ -96,18 +118,23 @@ int AnmRenderer::world_quad(AnmVm& vm){
 }
 int AnmRenderer::mesh(AnmVm& vm){
     const i32 count=vm.variables.integers[0];if(count<1||u32(count)>vm.geometry.world_vertices.size()/2){error="World animation mesh buffer unavailable";return -2;}Matrix4 world;if(!anm_mesh_transform(vm,world)){error="World animation mesh transform unavailable";return -2;}
+    if(graphics.logical_frame())return 0;
     flush();if(!material(vm))return -2;auto& state=graphics.pipeline();state.depthWrite=!(vm.visual.flags&0x2000);state.textureTransform=true;
     graphics.set_matrix(MatrixKind::World,world);graphics.set_matrix(MatrixKind::Texture,anm_texture_transform(vm));graphics.set_layout(VertexLayout::WorldColorUv);submit(vm,Topology::Strip,u32(count)*2-2,vm.geometry.world_vertices.data(),sizeof(AnmWorldVertex));return 0;
 }
 int AnmRenderer::trail(AnmVm& vm){
     auto& data=*vm.geometry.trail;const i32 count=data.age.current;if(count<1||count>64){error="Particle trail vertex count outside range";return -2;}const auto& v=vm.visual;const auto& p=vm.variables.position;Vec3 center{float(float(v.child_anchor.x+v.translation.x)+p.x),float(float(v.child_anchor.y+p.y)+v.translation.y),float(float(v.child_anchor.z+p.z)+v.translation.z)};if(!anm_adjust_position(vm,center)){error="Particle trail position unavailable";return -2;}
+    if(graphics.logical_frame())return 0;
     flush();if(!material(vm,false))return -2;graphics.set_depth_mask(false);auto& state=graphics.pipeline();state.color.operation=state.alpha.operation=ColorOperation::First;state.color.first=state.alpha.first={ArgumentSource::Diffuse};shapes.clear();for(i32 i=0;i<count;i++)shapes.push_back({{float(center.x+data.points[u32(i)].x),float(center.y+data.points[u32(i)].y),0},1,data.colors[u32(i)]});graphics.set_layout(VertexLayout::ScreenColor);submit(vm,Topology::LineStrip,u32(count-1),shapes.data(),sizeof(ColorVertex));return 0;
 }
 int AnmRenderer::draw(AnmVm& vm){
 #if TH15_MULTIPLAYER
+    if(std::find(multiplayer_hidden_pause.begin(),multiplayer_hidden_pause.end(),&vm)!=multiplayer_hidden_pause.end())return 0;
     if(std::find(multiplayer_hidden_hud.begin(),multiplayer_hidden_hud.end(),&vm)!=multiplayer_hidden_hud.end())return 0;
     if(std::find(multiplayer_hidden_hitboxes.begin(),multiplayer_hidden_hitboxes.end(),&vm)!=multiplayer_hidden_hitboxes.end())return 0;
     if(const auto found=multiplayer_player_opacity.find(&vm);found!=multiplayer_player_opacity.end()){
+        // Opacity draws a private copy, leaving the authoritative VM intact.
+        if(graphics.logical_frame())return 0;
         auto copy=vm;const auto alpha=found->second;
         const auto fade=[&](u32 color){return (color&0xffffffu)|(((color>>24)*alpha/255)<<24);};
         copy.visual.color=fade(copy.visual.color);copy.visual.secondary_color=fade(copy.visual.secondary_color);
@@ -133,7 +160,9 @@ int AnmRenderer::draw(AnmVm& vm){
 }
 bool AnmRenderer::draw_layer(const std::vector<AnmVm*>& layer){for(auto* vm:layer)if(draw(*vm)==-2)return false;return true;}
 int AnmRenderer::draw_screen_strip(AnmVm& vm,const AnmGeometryVertex* data,u32 count){
-    if((vm.visual.flags&3)!=3||!vm.sprite)return -1;if(count<3)return 0;if(!data||count>0x200000){error="Screen strip vertex range invalid";return -2;}if(!material(vm))return -2;
+    if((vm.visual.flags&3)!=3||!vm.sprite)return -1;if(count<3)return 0;if(!data||count>0x200000){error="Screen strip vertex range invalid";return -2;}
+    if(graphics.logical_frame())return 0;
+    if(!material(vm))return -2;
     if(count<18){if(vertices.size()+(count-2)*3>6144)flush();graphics.presentation_offset({});graphics.presentation_range(vm,vertices.size(),(count-2)*3,presentation_instance);for(u32 i=0;i+2<count;i++){const u32 order[3]={i+(i&1),i+((i&1)^1u),i+2};for(u32 j:order)vertices.push_back(data[j]);if(vertices.size()>=6144)flush();}return 0;}
     // Curved lasers already own their complete strip. Submit it to the shared
     // renderer, which copies/joins it safely, instead of expanding it into

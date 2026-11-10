@@ -8,10 +8,10 @@
 
 namespace th15::multiplayer {
 struct SessionSetup {
-    static constexpr std::uint32_t Version=6, Words=23, GameplayVersion=20;
+    static constexpr std::uint32_t Version=6, Words=23, GameplayVersion=23;
     std::uint64_t session_id=0;
     std::uint32_t player_count=2,local_player=0,difficulty=1,seed=1;
-    std::uint32_t requested_delay=0,input_delay=0,prediction_reserve=2;
+    std::uint32_t requested_delay=0,input_delay=0,prediction_reserve=2,mode=1;
     bool automatic=true,challenge=false;
     std::uint32_t chapter_threshold=0;
     std::array<std::uint32_t,3> selections{};
@@ -22,4 +22,6 @@ struct SessionSetup {
 bool DecodeSessionSetup(SessionSetup&,const std::uint32_t*,std::size_t);
 std::array<std::uint32_t,SessionSetup::Words> EncodeSessionSetup(const SessionSetup&);
 std::uint32_t GameplayAbi(const SessionSetup&);
+// Replay admission only. Live sessions always use GameplayAbi.
+std::uint32_t ReplayAbiBeforeStageFlowFix(const SessionSetup&);
 }

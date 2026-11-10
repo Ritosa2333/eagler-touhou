@@ -1690,7 +1690,11 @@ void Gui::DrawGameScene()
             vm = &this->impl->vms[16];
             if (MultiplayerGameplay::IsChallengeMode())
             {
-                ZunVec3 countPos(532.0f + multiplayerHudOffsetX, blockY, 0.49f);
+                ZunVec3 countPos(532.0f + multiplayerHudOffsetX, blockY, 0.0f);
+                g_AsciiManager.scale = ZunVec2(0.70f, 0.70f);
+                g_AsciiManager.color = COLOR_WHITE;
+                g_AsciiManager.isGui = 0;
+                g_AsciiManager.isSelected = false;
                 g_AsciiManager.AddFormatText(&countPos, "%u", g_MultiplayerContributionStats[playerId].challengeDeaths);
                 continue;
             }
@@ -1998,11 +2002,7 @@ void Gui::DrawStageElements() const
     {
         g_AnmManager->DrawInterpNoRotation(&this->impl->playerSpellcardPortrait);
     }
-    if (this->impl->enemySpellcardPortrait.flags.isVisible
-#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        && !MultiplayerGameplay::IsMultiplayer()
-#endif
-    )
+    if (this->impl->enemySpellcardPortrait.flags.isVisible)
     {
         g_AnmManager->DrawInterpNoRotation(&this->impl->enemySpellcardPortrait);
     }

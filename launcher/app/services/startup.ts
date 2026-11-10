@@ -1,4 +1,5 @@
 import {roomCodeFromUrl} from '../../src/launcher/route-state.mts';
+import {isLauncherHomePath} from '../navigation/addresses';
 
 export interface StartupBootPort {
   ready(): void;
@@ -17,7 +18,6 @@ export interface StartupPorts {
   warnDiscouragedBrowser(isCurrent: () => boolean): Promise<boolean>;
   /** The shared content owner must recheck this before opening/marking seen. */
   showFirstUseAutomatically(isCurrent: () => boolean): Promise<boolean>;
-  loadSiteNotice(): Promise<unknown>;
   onError(error: unknown): void;
 }
 export interface StartupOptions {
@@ -41,15 +41,12 @@ export function createStartupController(options: StartupOptions) {
   let active: {id: number; ports: StartupPorts} | null = null;
   const timeouts = new Set<number>(), rafs = new Set<number>();
   let removeFontTriggers: (() => void) | null = null;
-  let routePreload: HTMLElement | null = null, routePreloadStarted = 0;
-  const now = () => win.performance?.now() ?? Date.now();
   const decodeImage = options.decodeImage ?? ((source: string) => {
     const image = doc.createElement('img'); image.src = source;
     if (typeof image.decode === 'function') return image.decode().catch(() => {});
     return new Promise<void>(resolve => {image.onload = () => resolve(); image.onerror = () => resolve();});
   });
   function clearScheduled() {
-    routePreload?.remove(); routePreload = null;
     removeFontTriggers?.(); removeFontTriggers = null;
     for (const timer of timeouts) win.clearTimeout(timer); timeouts.clear();
     for (const raf of rafs) win.cancelAnimationFrame(raf); rafs.clear();
@@ -77,33 +74,18 @@ export function createStartupController(options: StartupOptions) {
     return [doc.fonts.load('400 16px "ET Yatra"', '0123456789 Normal Multiplayer'),
       ...[400, 700, 900].map(weight => doc.fonts.load(`${weight} 16px "ET Chill Round"`, '联机大厅東方紅魔郷妖々夢永夜抄花映塚風神録'))];
   }
-  function showRoutePreload(context: StartupPorts['context']) {
-    const template = doc.querySelector<HTMLTemplateElement>(`template[data-surface-preload="${context}"]`);
-    const source = template?.content.firstElementChild;
-    if (!source) return;
-    const node = source.cloneNode(true) as HTMLElement;
-    node.dataset.routePreload = context;
-    if (options.preloadLabel) node.setAttribute('aria-label', options.preloadLabel(context));
-    const previous = doc.getElementById(node.id);
-    if (previous) previous.replaceWith(node);
-    else doc.querySelector('[data-surface-preload-host]')?.append(node);
-    routePreload = node; routePreloadStarted = now();
-  }
   function finishReveal(id: number, context: StartupPorts['context'], reveal: () => void) {
     const finish = () => {
       if (!current(id)) return;
       frame(() => {if (current(id)) frame(() => {
         if (!current(id)) return;
         reveal();
-        const preload = routePreload ?? (context === 'lobby' ? doc.getElementById('lobbyPreload') : null);
+        const preload = context === 'lobby' ? doc.getElementById('lobbyPreload') : null;
         preload?.classList.add('is-done'); preload?.setAttribute('aria-hidden', 'true');
-        delay(() => {if (current(id)) {preload?.remove(); if (routePreload === preload) routePreload = null;}}, context === 'lobby' ? 200 : 240);
+        delay(() => {if (current(id)) {preload?.remove();}}, context === 'lobby' ? 200 : 240);
       });});
     };
-    // A warm route should read as one brief page entrance, not a one-frame
-    // spinner flash. Slow preparation owns its real wait, bounded below.
-    const remaining = routePreload ? Math.max(0, 160 - (now() - routePreloadStarted)) : 0;
-    if (remaining) delay(finish, remaining); else finish();
+    finish();
   }
   async function waitForVisuals(id: number, visuals: Promise<unknown>) {
     let deadline = 0;
@@ -111,13 +93,14 @@ export function createStartupController(options: StartupOptions) {
     win.clearTimeout(deadline); timeouts.delete(deadline);
     return current(id);
   }
-  async function revealLibrary(id: number) {
+  async function revealLibrary(id: number, ports: StartupPorts) {
     const covers = Array.from(doc.querySelectorAll<HTMLImageElement>('.game-library img')).filter(image => {
       const rect = image.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0 && rect.top < win.innerHeight + 80 && rect.bottom > 0 && rect.left < win.innerWidth + 80 && rect.right > 0;
     });
-    const visuals = Promise.allSettled([decodeImage(new URL('assets/launcher-background.webp', options.baseUrl).href),
-      ...fonts(), ...covers.map(image => decodeImage(image.currentSrc || image.src))]);
+    const modernHome = doc.documentElement.hasAttribute('data-ui-app') && isLauncherHomePath(new URL(ports.url).pathname);
+    const background = modernHome ? [] : [decodeImage(new URL('assets/launcher-background.webp', options.baseUrl).href)];
+    const visuals = Promise.allSettled([...background, ...fonts(), ...covers.map(image => decodeImage(image.currentSrc || image.src))]);
     if (await waitForVisuals(id, visuals)) finishReveal(id, 'library', () => {});
   }
   async function revealLobby(id: number, ports: StartupPorts) {
@@ -146,17 +129,20 @@ export function createStartupController(options: StartupOptions) {
       if (!current(id) || !continueVisit) return;
     }
     if (!current(id) || roomCodeFromUrl(ports.url)) return;
-    if (debug || preview) {await ports.loadSiteNotice(); return;}
-    const shown = await ports.showFirstUseAutomatically(() => current(id));
-    if (current(id) && !shown) await ports.loadSiteNotice();
+    if (!debug && !preview) await ports.showFirstUseAutomatically(() => current(id));
   }
   function attach(ports: StartupPorts): () => void {
     if (disposed) return () => {};
     const id = ++generation; active = {id, ports}; clearScheduled();
     const hotEntry = ports.context === 'library' ? libraryReady || doc.documentElement.getAttribute('data-original-entry') === 'lobby'
       : lobbyRevealed || doc.documentElement.getAttribute('data-original-entry') !== 'lobby';
-    if (hotEntry) showRoutePreload(ports.context);
-    if (ports.context === 'lobby') {
+    // Same-document navigation is immediate; only a cold entry owns a boot gate.
+    if (hotEntry) {
+      doc.getElementById('lobbyPreload')?.remove();
+      doc.documentElement.removeAttribute('data-lobby-boot');
+      const main = doc.querySelector<HTMLElement>('.lobby-main'); if (main) main.inert = false;
+    }
+    if (ports.context === 'lobby' && !hotEntry) {
       doc.documentElement.setAttribute('data-lobby-boot', 'loading');
       const main = doc.querySelector<HTMLElement>('.lobby-main'); if (main) main.inert = true;
     }
@@ -169,9 +155,10 @@ export function createStartupController(options: StartupOptions) {
         // to the library does not install or restart the library watchdog.
         if (doc.documentElement.getAttribute('data-original-entry') !== 'lobby') ports.boot.ready();
       }
-      if (ports.context === 'library' && hotEntry) void revealLibrary(id).catch(error => {if (current(id)) ports.onError(error);});
-      else if (ports.context === 'lobby') void revealLobby(id, ports).catch(error => {if (current(id)) ports.onError(error);});
-      if (!noticesCompleted.has(ports.context)) void notices(id, ports).then(() => {if (current(id)) noticesCompleted.add(ports.context);}).catch(error => {if (current(id)) ports.onError(error);});
+      if (ports.context === 'library' && hotEntry) void revealLibrary(id, ports).catch(error => {if (current(id)) ports.onError(error);});
+      else if (ports.context === 'lobby' && !hotEntry) void revealLobby(id, ports).catch(error => {if (current(id)) ports.onError(error);});
+      const accountDocument = /\/(?:profile|login)\.html\/?$/.test(new URL(ports.url).pathname);
+      if (!accountDocument && !noticesCompleted.has(ports.context)) void notices(id, ports).then(() => {if (current(id)) noticesCompleted.add(ports.context);}).catch(error => {if (current(id)) ports.onError(error);});
     });
     return () => {if (active?.id === id) {active = null; generation++; clearScheduled();}};
   }

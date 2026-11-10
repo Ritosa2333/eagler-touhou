@@ -1,0 +1,90 @@
+{
+  "schema": "th12-original-message-text-call-samples/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "provider": "Original460760->4606b0 call-site values immediately before44e660 GDI wrapper",
+  "fixtureCallbacks": {
+    "46cad8": "copy literal fixture line; CRT formatting/locale startup excluded",
+    "44e660": "capture arguments and return; GDI/D3D excluded"
+  },
+  "wholeGameDeterminism": false,
+  "wholePresentationOracle": false,
+  "gdiExecuted": false,
+  "gpuExecuted": false,
+  "records": [
+    {
+      "input": {
+        "style": 0,
+        "offset": 0,
+        "spacing": 0,
+        "color": 16314511
+      },
+      "calls": [
+        {
+          "style": 0,
+          "textHex": "90af98409144",
+          "offset": 0,
+          "sourceRect": [
+            0,
+            0,
+            384,
+            24
+          ],
+          "fontHeight": 16,
+          "foregroundColor": 16314511,
+          "outlineColor": 0,
+          "spacing": 0
+        }
+      ]
+    },
+    {
+      "input": {
+        "style": 1,
+        "offset": 0,
+        "spacing": 0,
+        "color": 8423679
+      },
+      "calls": [
+        {
+          "style": 1,
+          "textHex": "90af98409144",
+          "offset": 0,
+          "sourceRect": [
+            0,
+            0,
+            384,
+            24
+          ],
+          "fontHeight": 16,
+          "foregroundColor": 8423679,
+          "outlineColor": 0,
+          "spacing": 0
+        }
+      ]
+    },
+    {
+      "input": {
+        "style": 0,
+        "offset": 7,
+        "spacing": 20,
+        "color": 14211288
+      },
+      "calls": [
+        {
+          "style": 0,
+          "textHex": "90af98409144",
+          "offset": 7,
+          "sourceRect": [
+            0,
+            0,
+            384,
+            24
+          ],
+          "fontHeight": 16,
+          "foregroundColor": 14211288,
+          "outlineColor": 0,
+          "spacing": 20
+        }
+      ]
+    }
+  ]
+}

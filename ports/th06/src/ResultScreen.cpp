@@ -1121,7 +1121,7 @@ i32 ResultScreen::HandleReplaySaveKeyboard()
             g_SoundPlayer.PlaySoundByIdx(SOUND_SELECT);
             this->replayNumber = this->cursor;
             this->frameTimer = 0;
-            sprintf(this->defaultReplay.date, "%02i/%02i/%02i", tm->tm_mon, tm->tm_mday, tm->tm_year % 100);
+            sprintf(this->defaultReplay.date, "%02i/%02i/%02i", tm->tm_mon + 1, tm->tm_mday, tm->tm_year % 100);
             (this->defaultReplay).score = g_GameManager.score;
             if (*(i32 *)&this->replays[this->cursor].magic != *(i32 *)&"T6RP" ||
                 this->replays[this->cursor].version != GAME_VERSION)
@@ -2415,7 +2415,9 @@ ZunResult ResultScreen::AddedCallback(ResultScreen *resultScreen)
 
     if (resultScreen->resultScreenState != RESULT_SCREEN_STATE_EXIT)
     {
-
+        // Replay-based spectators can reach results without loading Title.
+        if (g_Supervisor.LoadPbg3(TL_PBG3_INDEX, TH_TL_DAT_FILE) != ZUN_SUCCESS)
+            return ZUN_ERROR;
         if (g_AnmManager->LoadSurface(0, "data/result/result.jpg") != ZUN_SUCCESS)
         {
             return ZUN_ERROR;

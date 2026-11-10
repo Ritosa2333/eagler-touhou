@@ -1,4 +1,4 @@
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -25,10 +25,10 @@ before(async () => {
       export * from './app/components/directory/DirectoryRoomRows.tsx';
       export * from './app/i18n.tsx';
       export * from './src/contracts/product-catalog.mts';
-    `}, bundle:true, platform:'node', format:'esm', jsx:'automatic',
+    `}, bundle:true, platform:'node', format:'esm', jsx:'automatic',loader:{'.webp':'dataurl'},
     outfile:resolve(work,'components.mjs'), logLevel:'silent',
     plugins:[{name:'installed-dependencies',setup(ctx){
-      ctx.onResolve({filter:/^[^./]/},args=>({path:pathToFileURL(require.resolve(args.path)).href,external:true}));
+      ctx.onResolve({filter:/^[^./]/},args=>({path:args.path,external:true}));
       ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{
         const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');
         if(existsSync(path))return {path};
@@ -56,11 +56,13 @@ for(const locale of ['zh-CN','en']) for(const product of ['th09mp','th06mp']) {
       await React.act(async()=>root.render(h(owners.LocaleProvider,{locale},h(React.Fragment,null,
         h(owners.RoomPersonal,{state,service,assetUrl:x=>x,hidden:false,th09NetworkOverlayOpen:false}),
         h(owners.RoomGameSettings,{state,service,hidden:false}),
-        h(owners.DirectoryRoomDialog,{service:directory,open:true,onCloseRequest(){}}),
+        h(owners.DirectoryRoomDialog,{service:directory,assetUrl:x=>x,open:true,onCloseRequest(){}}),
         h(owners.DirectoryRoomRows,{snapshot,service:directory,assetUrl:x=>x}),
       ))));
       const q=selector=>{const node=container.querySelector(selector);assert.ok(node,selector);return node;};
       assert.equal(container.querySelectorAll('#mpLoadoutPrevSeat, #mpLoadoutNextSeat, #mpLoadoutPrev, #mpLoadoutNext').length,native?0:4);
+      assert.equal(container.querySelectorAll('[data-mp-difficulty]').length,native?0:5);
+      assert.equal(container.querySelector('#mpRoomDifficulty'),null);
       assert.deepEqual([...container.querySelectorAll('[data-mp-difficulty]')].map(node=>node.textContent),
         native?[]:owners.multiplayerConfigForProduct(product).difficulties);
       assert.equal(q('#difficultySelect').disabled,native);
@@ -68,7 +70,7 @@ for(const locale of ['zh-CN','en']) for(const product of ['th09mp','th06mp']) {
       if(native){
         const label='';
         assert.equal(q('#mpLocalRoleLabel').textContent,label);
-        assert.equal(q('.lobby-difficulty').textContent,label);
+        assert.equal(container.querySelector('.lobby-difficulty'),null,'Native selection does not publish an unchosen difficulty');
         assert.match(q('#mpRoomSettings').textContent,locale==='zh-CN'?/双方/:/Both players/);
         assert.match(q('#roomForm').textContent,locale==='zh-CN'?/双方/:/Both players/);
         assert.deepEqual(calls,[]);

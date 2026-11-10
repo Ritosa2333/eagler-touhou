@@ -1,0 +1,472 @@
+{
+  "version": 2,
+  "game": "TH05",
+  "source": "original MUSIC.DAT / PMD",
+  "codec": "opus",
+  "bitrate": 64000,
+  "headerBytes": 25,
+  "headers": {
+    "1951223778": "ed00-m26",
+    "105824425": "ed00-m86",
+    "701195926": "ed01-m26",
+    "283201194": "ed01-m86",
+    "3257020802": "name-m26",
+    "1382599947": "name-m86",
+    "2272122246": "op-m26",
+    "2793115048": "op-m86",
+    "2302683389": "st00-m26",
+    "2807103919": "st00-m86",
+    "801262574": "st00b-m26",
+    "4034949316": "st00b-m86",
+    "3127702589": "st01-m26",
+    "2541137998": "st01-m86",
+    "3892293885": "st01b-m26",
+    "3159500557": "st01b-m86",
+    "1647284744": "st02-m26",
+    "1456120305": "st02-m86",
+    "932598914": "st02b-m26",
+    "2017370397": "st02b-m86",
+    "1659541243": "st03-m26",
+    "507075676": "st03-m86",
+    "2207239521": "st03b-m26",
+    "3189390870": "st03b-m86",
+    "375903553": "st03c-m26",
+    "98676695": "st03c-m86",
+    "3442597851": "st03d-m26",
+    "1459087114": "st03d-m86",
+    "1408684896": "st04-m26",
+    "1838175966": "st04-m86",
+    "1522805911": "st04b-m26",
+    "1030219229": "st04b-m86",
+    "1393863814": "st05-m26",
+    "1787092044": "st05-m86",
+    "1474733603": "st05b-m26",
+    "1270210818": "st05b-m86",
+    "4237450176": "st06-m26",
+    "4262700566": "st06-m86",
+    "2393137063": "st06b-m26",
+    "2456727892": "st06b-m86",
+    "1215570584": "staff-m26",
+    "4241827365": "staff-m86",
+    "316386495": "exed-m86",
+    "632065113": "exed-m26",
+    "3146849812": "ed02-m26",
+    "2426361802": "ed02-m86"
+  },
+  "tracks": {
+    "ed00-m26": {
+      "url": "ed00-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.018,
+      "loopEnd": 81.102,
+      "sha256": "37b85fdb13ba39caf47b422fa7499330ab8d882a694e9c322e6b695f59b8778e",
+      "audioSha256": "c12dcb5908f0d056585d8626ffbb8edc2a00418ac5f667fd8d6533209369c561",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 659556
+    },
+    "ed00-m86": {
+      "url": "ed00-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.018,
+      "loopEnd": 81.102,
+      "sha256": "5fac32002a817fa0e5b243ce49c23ba4197cee8446af257d1cac79fb9b6e7f7a",
+      "audioSha256": "69e87c0c25c17b3a5bc68b6302635fc4c6b36e18deb647a4b29d5283a45eb274",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 659540
+    },
+    "ed01-m26": {
+      "url": "ed01-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.018,
+      "loopEnd": 69.139,
+      "sha256": "582434185cb30e0dec09a1081e393ee8e03e7a9aa2b8f035c69f7ff4bfd83fa3",
+      "audioSha256": "5df7a1f62972e2767bfa670fe87b47685c0294a4c0a0f4e5a7e5e783a78fea8c",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 562112
+    },
+    "ed01-m86": {
+      "url": "ed01-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.019,
+      "loopEnd": 68.696,
+      "sha256": "9bda1761ea3d82964600670e81fc15ad565870861a748defdf321f211edd8fa1",
+      "audioSha256": "54f0ae64c865e53d81764074fa835bd329d5216cb7509870740986e6ac6b7fbf",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 558496
+    },
+    "name-m26": {
+      "url": "name-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.332,
+      "loopEnd": 67.902,
+      "sha256": "151ee4c4c5031f12246214450e573d1aa24347a2556c235c3e4439845e6dd119",
+      "audioSha256": "8241ef0f833003630eea5c533b14ae8b848ff2e333a57e17807378e90d7cbccd",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 552167
+    },
+    "name-m86": {
+      "url": "name-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.332,
+      "loopEnd": 67.902,
+      "sha256": "f9975584b51fe83c90e407a96426b346559e95f50c40339575c91b559342374f",
+      "audioSha256": "d142ac499555b376d40940bd39a416c70094336e2a47d998ae4d981953d295ad",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 552187
+    },
+    "op-m26": {
+      "url": "op-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.018,
+      "loopEnd": 82.099,
+      "sha256": "f17abaa2231230fc09cf858b5ef51d583e1876e6e7160805856659c71f7f83ff",
+      "audioSha256": "97d2c9b5aa383ad4eaed1ba64040f4850f50abdce6dc1c54e2c5c81918201ea4",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 667435
+    },
+    "op-m86": {
+      "url": "op-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.018,
+      "loopEnd": 82.099,
+      "sha256": "2d12cca02d136a770d35a0bd06ecf54e70ee5a596c025ab5e1c61189222fa67b",
+      "audioSha256": "6a3cc8782ad7b51fe325527d311bf8e4222bbb95705a7a523867abcfecb5301e",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 667480
+    },
+    "st00-m26": {
+      "url": "st00-m26-opus64-single-loop-v2.opus",
+      "loopStart": 11.981,
+      "loopEnd": 158.161,
+      "sha256": "76d007479480737ad6deee51cac786c10eacd776c280c446c13ab215878e76f0",
+      "audioSha256": "65c927a9926ab10066722f451692e6e262addda11fdd3e060e7c02b40a99e1ca",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1285800
+    },
+    "st00-m86": {
+      "url": "st00-m86-opus64-single-loop-v2.opus",
+      "loopStart": 11.981,
+      "loopEnd": 158.161,
+      "sha256": "7e0e398a72a5c95beb964de8861f03326498369f9e435dc98bd68c3b4e523b97",
+      "audioSha256": "36fcb31140de708e45a71dade03e4ae86a70c61af4de54bfa72fba85bf910867",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1285774
+    },
+    "st00b-m26": {
+      "url": "st00b-m26-opus64-single-loop-v2.opus",
+      "loopStart": 6.091,
+      "loopEnd": 125.373,
+      "sha256": "27d9880b232d6dfea88be232fe5718282fafa64182308d384bede2a7031241e7",
+      "audioSha256": "7acd006a33a21985e821cef2c3b18c97b0c89b91500487255470e067c9bd2684",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1012033
+    },
+    "st00b-m86": {
+      "url": "st00b-m86-opus64-single-loop-v2.opus",
+      "loopStart": 6.13,
+      "loopEnd": 125.429,
+      "sha256": "6896f49bb1badba29235d458efc415768261554fd255bc561077cbf1bf4aabb6",
+      "audioSha256": "9abb11e8327abe44cc7b92c2a1d2b1651e4d72bd465135688ef0a55b2225ebb0",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1016150
+    },
+    "st01-m26": {
+      "url": "st01-m26-opus64-single-loop-v2.opus",
+      "loopStart": 3.025,
+      "loopEnd": 81.581,
+      "sha256": "3bb003de880a29b0cdfe63274edff510714baf5c624206b62e3b6d9ea205e9e7",
+      "audioSha256": "b5d6fe8ed881bf3709d3f3c1b7832fd4a234e9f26e494bbb698106c30a45700b",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 663281
+    },
+    "st01-m86": {
+      "url": "st01-m86-opus64-single-loop-v2.opus",
+      "loopStart": 3.025,
+      "loopEnd": 81.581,
+      "sha256": "beddc9cc4016de4fae0c1c0c913396bedadba00ddbbb7f0d56cf911fc8be715f",
+      "audioSha256": "27a33f047183b84ed078335fb3093cd377200cab713c59c825d0eb82185797d1",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 663294
+    },
+    "st01b-m26": {
+      "url": "st01b-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.018,
+      "loopEnd": 93.619,
+      "sha256": "cc5c727cc90de82dd99613e8145a856c8bc5079b37d48da1e2da8bce0fa86ed9",
+      "audioSha256": "535fcab687228d3c71d1a9bb5f038f0f68f53aba4bdf29f3b07e06c7db61c5ed",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 761257
+    },
+    "st01b-m86": {
+      "url": "st01b-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.018,
+      "loopEnd": 93.619,
+      "sha256": "45f1e66f43ae0689a0dbfe88d927a76e39ed258aaeff66b8ad68d2478b3cd3b9",
+      "audioSha256": "c01c762622bb061728f3b06a17aadbcf56d45ce7b7ad2c8c47bc93d564e6a0b4",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 761350
+    },
+    "st02-m26": {
+      "url": "st02-m26-opus64-single-loop-v2.opus",
+      "loopStart": 12.016,
+      "loopEnd": 152.473,
+      "sha256": "696d8fbe94008b4fcf81109e1681fc3032d59a7ac379461f032808acf8e7401b",
+      "audioSha256": "571e00d088fef2c54a209bb2a138c36e0a1da900c4df8482dee46c8c62def130",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1239463
+    },
+    "st02-m86": {
+      "url": "st02-m86-opus64-single-loop-v2.opus",
+      "loopStart": 12.11,
+      "loopEnd": 152.567,
+      "sha256": "caf1a6f54faccfc21176bfc40892d163ea71e089abae533b62c9a2887ae7cfee",
+      "audioSha256": "e3ae1ac13e6e5c69ef0948d277ae8e5097922fe7401306a7bdf6186696652d09",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1240315
+    },
+    "st02b-m26": {
+      "url": "st02b-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.387,
+      "loopEnd": 98.308,
+      "sha256": "97f9258093be444f2eae5268ccffb885bda09c9d1cf563fac68291aa858bcc69",
+      "audioSha256": "629f1ead658f3b1a8f54c290c79db72587f7660b5051578163ad909eef938009",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 799252
+    },
+    "st02b-m86": {
+      "url": "st02b-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.406,
+      "loopEnd": 98.327,
+      "sha256": "6fb63bc74bbc30442b8114e18610c77e6ea6f2cd18b78b675130117843a665cf",
+      "audioSha256": "d5c6fb5776cb7200329b8d00fd877b318b38d93044e88eb3d9682699cddd394b",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 799447
+    },
+    "st03-m26": {
+      "url": "st03-m26-opus64-single-loop-v2.opus",
+      "loopStart": 6.221,
+      "loopEnd": 99.379,
+      "sha256": "a02cf0b0494467937bf5fc00e169c3280c56deea09f933082fc9b74db9321fa9",
+      "audioSha256": "fbf1731b4c1618852415b563fc28e036e7d09ed33173a463500be1419260c6a9",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 808068
+    },
+    "st03-m86": {
+      "url": "st03-m86-opus64-single-loop-v2.opus",
+      "loopStart": 6.221,
+      "loopEnd": 99.379,
+      "sha256": "2dd85daf9227f9ebaa1f2e3573ed1e36371826e38df352cead94ee5c291f0771",
+      "audioSha256": "d38ca4b86225594ed600d9eb0a11d4596fa70b95ac373711a82f4e991c48e262",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 808135
+    },
+    "st03b-m26": {
+      "url": "st03b-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.019,
+      "loopEnd": 95.724,
+      "sha256": "9ef6d14ba6d5322feac47e0fff8be9a28f92376f5cb769ff06b99559820f99b7",
+      "audioSha256": "8337e8c58e832a29772454fa3e4084dccdf0c3960b0b48c116a84b4fbbcf6059",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 778321
+    },
+    "st03b-m86": {
+      "url": "st03b-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.019,
+      "loopEnd": 95.724,
+      "sha256": "410b3fbd0f1f0769c90d1ef013543836889abb9fa2fd230e1737bc94f3498aa3",
+      "audioSha256": "ad49af5feeb72f8b4c6e6de8f780f43d85def9e217931735a2265bb450474131",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 778332
+    },
+    "st03c-m26": {
+      "url": "st03c-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.037,
+      "loopEnd": 126.389,
+      "sha256": "13ad3067169b8c9e75d4a9d617c528e378cecea980e5905787f785d5af372ef4",
+      "audioSha256": "ebcb21def1e066362c2572ece8c1728226c114df96852326bfeac05c72c19ae1",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1027491
+    },
+    "st03c-m86": {
+      "url": "st03c-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.037,
+      "loopEnd": 126.389,
+      "sha256": "d9f0e27290868e6cf2ec7feb754ea3c39b9e6219c9a5c45a9723d910eca88c93",
+      "audioSha256": "31f451e279ef2ad3b8edeb58abd82419a0d18668e1ff3919c4caa5199f1f2593",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1027511
+    },
+    "st03d-m26": {
+      "url": "st03d-m26-opus64-single-loop-v2.opus",
+      "loopStart": 6.018,
+      "loopEnd": 78.536,
+      "sha256": "3c75cfd4566c28bed3af161ab4e5853108af632b77e2eddda2c0c5896a5d64d1",
+      "audioSha256": "0a4537f394cbcfd86951a264ddd56697a30eea2c8bf063fb29a807688316e41b",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 638724
+    },
+    "st03d-m86": {
+      "url": "st03d-m86-opus64-single-loop-v2.opus",
+      "loopStart": 6.018,
+      "loopEnd": 78.536,
+      "sha256": "5c92a3fa1b46c846d13bfc330962319cd063ce33515e37e0568f68b289041170",
+      "audioSha256": "fa0d0f7ada1247999a93d3ecd656da45fd04ea036cefe5b78a3b9bac8e2fd2b9",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 638764
+    },
+    "st04-m26": {
+      "url": "st04-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.019,
+      "loopEnd": 121.866,
+      "sha256": "170a935a73d460f7654332e2ccf1e6f707123362c81f96a84d74c2ca12f42efa",
+      "audioSha256": "8c06d64b258e08a2fda187f2e70a9a38e7adeb66b5caefc8bba23560e907581d",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 990736
+    },
+    "st04-m86": {
+      "url": "st04-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.019,
+      "loopEnd": 121.866,
+      "sha256": "25088af6900cf1e1c72c7240fefe0247eba0fa96c0b276a07cb894045f76e265",
+      "audioSha256": "dd32bf88a5238411fa1b6ca20643356f2e73c6e87665481e42a3d4850a30ecd1",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 990737
+    },
+    "st04b-m26": {
+      "url": "st04b-m26-opus64-single-loop-v2.opus",
+      "loopStart": 12.0,
+      "loopEnd": 109.515,
+      "sha256": "966deee81de81c017171f5a4cf9fe59f0f588254eb9219a05081efeaeebd08be",
+      "audioSha256": "2bb9f3f7d0eb18f5acd2eadfca9f17d17be8a4669f1fbaee49ab2b5ddf3d2425",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 890469
+    },
+    "st04b-m86": {
+      "url": "st04b-m86-opus64-single-loop-v2.opus",
+      "loopStart": 12.0,
+      "loopEnd": 109.515,
+      "sha256": "cbe7a57e730bd76a32043d12c683904d417ca3cab7922c8a2b91bb73e4b1aecf",
+      "audioSha256": "2056b9307e0f52f5e2b11ae1c9d764da7eb616f31680c7d4776b12c43f8a7ab4",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 890451
+    },
+    "st05-m26": {
+      "url": "st05-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.018,
+      "loopEnd": 43.883,
+      "sha256": "704263e358bb30ee844a8be7faed4bf0a97bf6210737539d5aa1498ffb987f43",
+      "audioSha256": "4768fd9f094f967bb4abd2d7dba97ef7ee4bd42626d0c32b6ca9652105a62f29",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 356988
+    },
+    "st05-m86": {
+      "url": "st05-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.018,
+      "loopEnd": 43.883,
+      "sha256": "9a925d1e48e6135f0cf8bcc75cbbab57d9e0434c41b603b6ba32a3da1d860c97",
+      "audioSha256": "67724f53630caf98a3e654470f2c8b63269f373408a3e73b2c5e8c30d7918623",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 356981
+    },
+    "st05b-m26": {
+      "url": "st05b-m26-opus64-single-loop-v2.opus",
+      "loopStart": 24.185,
+      "loopEnd": 148.303,
+      "sha256": "f5a5a9a7a493ba0ae7e589b8d177d6fe8389c2f02863a82bc721ced171c98eb7",
+      "audioSha256": "fca48fd97f08395fdf06adf516bea062413c55967d27410f10629674109bf955",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1205522
+    },
+    "st05b-m86": {
+      "url": "st05b-m86-opus64-single-loop-v2.opus",
+      "loopStart": 24.185,
+      "loopEnd": 148.303,
+      "sha256": "d85f593668fba3a19313a807d4a98c77812c5d5132723ae5954313ea617c5c68",
+      "audioSha256": "2c2b9f466aff5fba9fdcb976dd4c56b5ca8e27f3e85642f6e5e4cb9005d3aeeb",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1205523
+    },
+    "st06-m26": {
+      "url": "st06-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.017,
+      "loopEnd": 190.469,
+      "sha256": "72ce6a4eb7397126fefa063b9457de61899fa153c79a9761fa01d53438f974fa",
+      "audioSha256": "29ac9575b96ffc0dfda7046741efadb7cf10867d973abb40298fe6c5fdfd3227",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1548150
+    },
+    "st06-m86": {
+      "url": "st06-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.017,
+      "loopEnd": 190.469,
+      "sha256": "21b6dafa63605955f4192afe811434b2b04d72b63fcdc64b777dbedcf534c0b8",
+      "audioSha256": "db2309c38948a852e90f676a4c28b3b544fc2559fc8004493a40d9c82b6d0d2d",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1548121
+    },
+    "st06b-m26": {
+      "url": "st06b-m26-opus64-single-loop-v2.opus",
+      "loopStart": 5.999,
+      "loopEnd": 90.628,
+      "sha256": "4f5f33f750128f1233bcac2dd2763471d60a15f8a762d262dd0a4fb50e5a2b4e",
+      "audioSha256": "f2a859f14949148689f614fca9121f5323fa187a9a5f687aa8d1a47551d4b56a",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 736880
+    },
+    "st06b-m86": {
+      "url": "st06b-m86-opus64-single-loop-v2.opus",
+      "loopStart": 5.999,
+      "loopEnd": 90.628,
+      "sha256": "59a4025582c7fd0573cc101af8aecfb1aa575e64e936af3b22b6c15416db6d00",
+      "audioSha256": "d793e5058debeb99697a08f33c83844f03d2ed6d0f7004cb0af468e3c6052dad",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 736917
+    },
+    "staff-m26": {
+      "url": "staff-m26-opus64-single-loop-v2.opus",
+      "loopStart": 102.37,
+      "loopEnd": 155.54,
+      "sha256": "89fd5975f146988b485fd1c2310377aa1c807b7416fa068821fe766fc3386e14",
+      "audioSha256": "6beb6230cc3a8be6d6e87455ab1d25cdd0a959a0637f42724d3117cad1d04ea3",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1264558
+    },
+    "staff-m86": {
+      "url": "staff-m86-opus64-single-loop-v2.opus",
+      "loopStart": 102.37,
+      "loopEnd": 155.54,
+      "sha256": "b29f54c147b9c5da1983d4210e29af7059d784c098e31c9d44180c082d506846",
+      "audioSha256": "fa0bb4b0b8ffa22af6d198c6fe5b84d02d13bd75fec16c1eb79ee536f49c8243",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1264505
+    },
+    "exed-m86": {
+      "url": "exed-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.849,
+      "loopEnd": 93.01,
+      "sha256": "f7ec0fdb7511bc8423cfb4f405256f963d76405d0c6b65ac61a2dcf81cbd6e46",
+      "audioSha256": "7f51b3695f856231427b495908a5f81e4090887c583c26c39cc7f3178a35bbcf",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 756045
+    },
+    "exed-m26": {
+      "url": "exed-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.775,
+      "loopEnd": 92.936,
+      "sha256": "60384410fd3523044bbe50878e1dc223a5ecf5dc3de350345164301893dde4ea",
+      "audioSha256": "2a50ef588691d3a67c01a4553349b796e4f197707f3b832b28ed27dc78bab583",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 752691
+    },
+    "ed02-m26": {
+      "url": "ed02-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.0,
+      "loopEnd": 67.57,
+      "sha256": "232841654d3d6535a826f3aac17158cf480ad743e0a81b7a40b8a9e9a2755d66",
+      "audioSha256": "0382ca194d992b39c811978f2a2d5c9376ec884d2a1181a2198f5c9ae902e265",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 549492
+    },
+    "ed02-m86": {
+      "url": "ed02-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.019,
+      "loopEnd": 68.53,
+      "sha256": "193e6d62c6f4cfdf0c6359ff97e58ae1e6e4a58bb6247df289c68df5d7aa9ddb",
+      "audioSha256": "00aab55f37f17604bcb0565b2832158de30831ef562534e91ffe5c6a46a3fa1a",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 557293
+    }
+  }
+}

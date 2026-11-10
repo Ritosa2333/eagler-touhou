@@ -1,3 +1,5 @@
+import type {createRelayEntryRouting} from './relay-entry-routing.mts';
+type RelaySocketFactory = ReturnType<typeof createRelayEntryRouting>['createSocket'];
 export type NetworkDiagnosticKind = "ws" | "turn" | "nat" | "ipv6";
 
 export interface NetworkDiagnosticResult {
@@ -8,6 +10,7 @@ export interface NetworkDiagnosticResult {
 
 export interface NetworkDiagnosticsStateOptions {
   getRelayUrl: () => string;
+  createRelaySocket?: RelaySocketFactory;
   getFallbackIceServers: () => RTCIceServer[];
   translate: (key: NetworkDiagnosticMessageKey, params?: Record<string, string | number>) => string;
 }
@@ -89,8 +92,8 @@ function validIceServers(value: unknown): RTCIceServer[] {
   }) as RTCIceServer[];
 }
 
-async function probeDiagnosticRelay(url: string, timeoutMs: number): Promise<RelayProbe> {
-  const socket = new WebSocket(url);
+async function probeDiagnosticRelay(url: string, timeoutMs: number, createSocket: RelaySocketFactory): Promise<RelayProbe> {
+  const socket = createSocket(url);
   const pongWaiters = new Map<string, (receivedAt: number) => void>();
   let readyResolve: ((value: { iceServers: RTCIceServer[] }) => void) | null = null;
   let readyReject: ((reason: unknown) => void) | null = null;
@@ -154,10 +157,10 @@ export function legacyDiagnosticRelayUrl(value: string, nonce: string): string {
   return url.href;
 }
 
-async function probeLegacyRelay(url: string, timeoutMs: number): Promise<RelayProbe> {
+async function probeLegacyRelay(url: string, timeoutMs: number, createSocket: RelaySocketFactory): Promise<RelayProbe> {
   const nonce = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   const startedAt = performance.now();
-  const socket = new WebSocket(legacyDiagnosticRelayUrl(url, nonce));
+  const socket = createSocket(legacyDiagnosticRelayUrl(url, nonce));
   let readyResolve: ((value: RelayProbe) => void) | null = null;
   let readyReject: ((reason: unknown) => void) | null = null;
   const ready = new Promise<RelayProbe>((resolve, reject) => {
@@ -183,14 +186,14 @@ async function probeLegacyRelay(url: string, timeoutMs: number): Promise<RelayPr
   }
 }
 
-export async function probeRelay(url: string, timeoutMs = 6000): Promise<RelayProbe> {
+export async function probeRelay(url: string, timeoutMs = 6000, createSocket: RelaySocketFactory = url => new WebSocket(url)): Promise<RelayProbe> {
   try {
-    return await probeDiagnosticRelay(url, Math.min(timeoutMs, 3000));
+    return await probeDiagnosticRelay(url, Math.min(timeoutMs, 3000), createSocket);
   } catch {
     // Relays deployed before the dedicated diagnostic endpoint still expose
     // their real ICE configuration through the normal signaling handshake.
     // A unique room/run keeps this compatibility probe isolated from users.
-    return probeLegacyRelay(url, timeoutMs);
+    return probeLegacyRelay(url, timeoutMs, createSocket);
   }
 }
 
@@ -329,20 +332,43 @@ async function probeTurnLatency(servers: RTCIceServer[]): Promise<number> {
   const configuration: RTCConfiguration = { iceServers: relayServers, iceTransportPolicy: "relay" };
   const left = new RTCPeerConnection(configuration);
   const right = new RTCPeerConnection(configuration);
+  // Trickle candidates while both peers gather, including candidates that arrive
+  // before the other peer has installed its remote description.
+  const forwardCandidates = (source: RTCPeerConnection, target: RTCPeerConnection) => {
+    let ready = false;
+    const pending: RTCIceCandidateInit[] = [];
+    const add = (candidate: RTCIceCandidateInit) => {
+      // One unusable candidate must not discard other working TURN routes.
+      void target.addIceCandidate(candidate).catch(() => {});
+    };
+    const receive = (event: RTCPeerConnectionIceEvent) => {
+      if (!event.candidate) return;
+      if (ready) add(event.candidate); else pending.push(event.candidate);
+    };
+    source.addEventListener("icecandidate", receive);
+    return {
+      ready() { ready = true; for (const candidate of pending.splice(0)) add(candidate); },
+      dispose() { source.removeEventListener("icecandidate", receive); pending.length = 0; },
+    };
+  };
+  const toRight = forwardCandidates(left, right);
+  const toLeft = forwardCandidates(right, left);
   const channel = left.createDataChannel("network-check");
   right.addEventListener("datachannel", event => {
     event.channel.addEventListener("message", message => event.channel.send(message.data));
   });
   try {
-    await left.setLocalDescription(await left.createOffer());
-    await waitForIceGathering(left, 12000);
-    if (!/\styp relay\s/i.test(left.localDescription?.sdp || "")) throw new Error("TURN allocation failed");
-    await right.setRemoteDescription(left.localDescription as RTCSessionDescription);
-    await right.setLocalDescription(await right.createAnswer());
-    await waitForIceGathering(right, 12000);
-    if (!/\styp relay\s/i.test(right.localDescription?.sdp || "")) throw new Error("TURN allocation failed");
-    await left.setRemoteDescription(right.localDescription as RTCSessionDescription);
-    await waitForDataChannel(channel);
+    const offer = await left.createOffer();
+    await left.setLocalDescription(offer);
+    await right.setRemoteDescription(offer);
+    toRight.ready();
+    const answer = await right.createAnswer();
+    await right.setLocalDescription(answer);
+    await left.setRemoteDescription(answer);
+    toLeft.ready();
+    // Retain the previous combined allocation/opening budget (12 + 12 + 12 s),
+    // while a usable pair can open immediately without waiting for other ports.
+    await waitForDataChannel(channel, 36000);
     if (!await selectedPairUsesTurn(left)) throw new Error("TURN route was not selected");
     const samples: number[] = [];
     for (let index = 0; index < 3; index++) {
@@ -364,6 +390,8 @@ async function probeTurnLatency(servers: RTCIceServer[]): Promise<number> {
     }
     return turnServerLatencyFromLoopback(median(samples));
   } finally {
+    toRight.dispose();
+    toLeft.dispose();
     try { channel.close(); } catch {}
     left.close();
     right.close();
@@ -379,8 +407,7 @@ export function turnServerLatencyFromLoopback(peerRoundTripMs: number): number {
   return Math.max(1, Math.round(Math.max(0, peerRoundTripMs) / 2));
 }
 
-/** Shared probe state. It owns no DOM and starts IO only on run(). Probe
- * algorithms, run ordering and native timeout/finally cleanup remain main's. */
+/** Shared probe state. It owns no DOM and starts IO only on run(). */
 export function createNetworkDiagnosticsState(options: NetworkDiagnosticsStateOptions) {
   let running = false;
   let snapshot = initialNetworkDiagnosticsSnapshot;
@@ -411,7 +438,7 @@ export function createNetworkDiagnosticsState(options: NetworkDiagnosticsStateOp
       const candidatesPromise = gatherCandidates(fallbackIceServers);
       let relay: RelayProbe | null = null;
       try {
-        relay = await probeRelay(relayUrl);
+        relay = await probeRelay(relayUrl, 6000, options.createRelaySocket);
         settle({ kind: "ws", good: relay.latencyMs < 180, value: options.translate("networkCheck.wsLatency", { latency: relay.latencyMs }) });
       } catch {
         settle({ kind: "ws", good: false, value: options.translate("networkCheck.failed") });

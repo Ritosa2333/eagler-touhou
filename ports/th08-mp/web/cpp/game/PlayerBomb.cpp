@@ -11,7 +11,16 @@ PlayerBombKind player_bomb_kind(u8 character,i32 type)noexcept{
 }
 bool update_player_bomb(PlayerBombState& s,PlayerBombContext& input,PlayerLifeState& life,PlayerLifeContext& context,PlayerMovementState& movement,AnmVm& animation,const ShotProfile& profile,const FrameTiming& timing,PlayerBombActions& actions){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(context.challenge_mode){context.bombs=0;s.active=0;s.triggered=0;life.auto_bomb=0;return true;}
+    // A deathbomb window may already be open when ECL enters a Last Spell.
+    // It now belongs to automatic cancellation, even with no stock/challenge.
+    if((context.game_flags&0x180)&&life.state==2&&life.predead_count>0)life.auto_bomb=1;
+    if(context.challenge_mode){
+        context.bombs=0;
+        // Automatic Last Spell cancellation is a stage transition, not a
+        // player bomb. Let it start and finish even when manual bombs are off.
+        const bool last_word=(life.auto_bomb&&(context.game_flags&0x180))||(s.active&&s.type==4);
+        if(!last_word){s.active=0;s.triggered=0;life.auto_bomb=0;return true;}
+    }
 #endif
     const bool automatic=life.auto_bomb&&life.predead_count==1;
     if(!automatic){
@@ -35,7 +44,15 @@ bool update_player_bomb(PlayerBombState& s,PlayerBombContext& input,PlayerLifeSt
         if(!life.deathbomb){++input.regular_bombs;if(!(input.cheats&4))actions.add_bombs(-1);}
         else {s.type=wrapping_add(s.type,2);if(automatic||context.bombs<2){s.consumed=context.bombs;if(!(input.cheats&4))actions.set_bombs(0);}else{s.consumed=2;if(!(input.cheats&4))actions.add_bombs(-2);}++input.last_spells;}
         actions.count_bomb(1);
-    }else s.type=4;
+    }else {
+        s.type=4;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        // The preceding spell's deathbomb window pauses the shared ECL with
+        // bit 0x400. Automatic cancellation must release that same pause.
+        context.game_flags&=~0x400u;actions.reset_screen_color();animation.flag17=0;
+        if(life.predead_effect){life.predead_effect->active=0;life.predead_effect=nullptr;}
+#endif
+    }
     life.deathbomb=0;context.hud_flags=(context.hud_flags&~12u)|8;s.active=1;s.triggered=1;s.timer.set(0);s.duration=999;
     const auto kind=player_bomb_kind(context.character,s.type);if(kind==PlayerBombKind::Invalid)return false;
     actions.update(kind);s.timer.tick(timing);actions.subtract_rank(200);actions.fail_spell_with_bomb();life.predead_count=wrapping_add(life.predead_count,6);if(life.predead_count>profile.deathbomb_limit)life.predead_count=profile.deathbomb_limit;

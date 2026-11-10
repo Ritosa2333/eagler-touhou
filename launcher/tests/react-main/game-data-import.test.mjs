@@ -3,7 +3,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
  * Main authorities: app1588–1605,3318–3488,9538–9605,9643–9740 and unchanged
  * test-launcher-lifecycle continuation assertions. No browser file picker,
  * download, native engine or durable Package Store behavior is established. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -35,7 +35,7 @@ function timersFixture() {
       if (!next) break; now = next[1].at; pending.delete(next[0]); next[1].fn();
     } now = end;}};
 }
-function fixture({context: patch = {}, importPackage, portOverrides = {}} = {}) {
+function fixture({context: patch = {}, importPackage, portOverrides = {}, acquisitionOverrides = {}} = {}) {
   const context = {product: 'th06', roomCode: null, replayViewer: false, runtimeEpoch: null, runtimeReady: false, launched: false,
     playerOpen: false, importServer: false, fallback: null, ...patch};
   const calls = [], statuses = [], playerStatuses = [], toasts = [], timers = timersFixture();
@@ -56,7 +56,7 @@ function fixture({context: patch = {}, importPackage, portOverrides = {}} = {}) 
     }, ...portOverrides,
   };
   const model = api.createGameDataImportModel({translate: t, getContext: () => context, timers, ports,
-    acquisition: {importPackage: async input => {calls.push(['install', input.game]); return importPackage ? importPackage(input) : installed;}}});
+    acquisition: {importPackage: async input => {calls.push(['install', input.game]); return importPackage ? importPackage(input) : installed;}, ...acquisitionOverrides}});
   const result = {model, timers, context, calls, statuses, playerStatuses, toasts, installed, pick(value) {picked = value;}};
   fixtures.push(result); return result;
 }
@@ -68,6 +68,35 @@ test('main manual import is install-only; success closes the window without prep
   await f.model.importFile(file());
   assert.deepEqual(f.calls, [['install', 'th06']]); assert.equal(f.model.getSnapshot().attempt, null);
   assert.deepEqual(f.statuses, [t('package.importedReady')]); assert.deepEqual(f.toasts, [t('package.imported', {count: 2})]);
+});
+
+test('protected archive retries without reopening the picker and releases its selection on other errors', async () => {
+  const archive = new File(['synthetic package'], 'game.7z'), attempts = [];
+  let picked = 0;
+  const f = fixture({portOverrides: {pickFiles: async () => {picked++; return [archive];}},
+    acquisitionOverrides: {
+      originalFileNames: () => ['th06.dat'],
+      importFiles: async (game, files, {archivePassword}) => {
+        assert.equal(game, 'th06');
+        assert.deepEqual(files, [archive]);
+        attempts.push(archivePassword);
+        if (archivePassword !== 'correct') throw Object.assign(new Error('Password required'), {name: 'RetailArchivePasswordError'});
+        throw new Error('Missing DAT');
+      },
+    },
+  });
+  f.model.openManual();
+  await f.model.chooseFile();
+  assert.equal(f.model.getSnapshot().passwordRequired, true);
+  await f.model.chooseFile('wrong');
+  assert.equal(f.model.getSnapshot().reason, t('package.archiveWrongPassword'));
+  await f.model.chooseFile('correct');
+  assert.equal(f.model.getSnapshot().passwordRequired, false);
+  assert.equal(f.model.getSnapshot().reason, t('package.originalInvalid', {reason: 'Missing DAT'}));
+  assert.deepEqual(attempts, [undefined, 'wrong', 'correct']);
+  assert.equal(picked, 1);
+  await f.model.chooseFile();
+  assert.equal(picked, 2);
 });
 
 test('import-required installs resources without automatically launching', async () => {
@@ -129,8 +158,8 @@ test('main DATA errors have separate hosted/import-server recovery; engine/OGG e
   const hosted = fixture();
   assert.equal(await hosted.model.handleLaunchFailure(new Error('OGG decoder failed')), false); assert.equal(hosted.model.getSnapshot().attempt, null);
   assert.equal(await hosted.model.handleLaunchFailure(new api.GameDataAcquisitionError('missing data')), true);
-  assert.equal(hosted.model.getSnapshot().reason, t('package.resourceFailureLocal')); assert.equal(hosted.model.getSnapshot().attempt.continuation.kind, 'launch');
-  assert.deepEqual(hosted.statuses, [t('package.resourceFailureStatus')]);
+  assert.equal(hosted.model.getSnapshot().reason, `${t('package.resourceFailureLocal')}\n\nmissing data`); assert.equal(hosted.model.getSnapshot().attempt.continuation.kind, 'launch');
+  assert.deepEqual(hosted.statuses, [`${t('package.resourceFailureStatus')} | missing data`]);
   const imported = fixture({context: {importServer: true}});
   await imported.model.handleLaunchFailure(new api.GameDataAcquisitionError('missing data'));
   assert.equal(imported.model.getSnapshot().reason, t('package.importServerOnly', {reason: 'missing data'}));

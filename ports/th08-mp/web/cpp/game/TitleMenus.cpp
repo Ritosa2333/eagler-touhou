@@ -318,7 +318,7 @@ i32 TitleMenus::OnUpdateStartMenu()
             break;
         }
 
-        if (WAS_PRESSED(TH_BUTTON_SHOOT | TH_BUTTON_ENTER))
+        if ((!room_preview || state.cursor==TITLE_MENU_ITEM_START_OPTION) && WAS_PRESSED(TH_BUTTON_SHOOT | TH_BUTTON_ENTER))
         {
             actions.sound(SOUND_SELECT, 0);
             actions.process_sounds();

@@ -34,7 +34,7 @@ PracticeCadence cadence;
 touhou::sdl::PresentationCadence presentation;bool limit_presentation_60=false;
 GameInput controls;
 SDL_Joystick* controller=nullptr;
-bool loading_held=false;
+bool loading_held=false,loading_preserve_keyboard=false;
 bool running=false,suspended=false,lost_focus=false,music_enabled=true;u32 render_scale=1;
 u32 loop_epoch=0;
 #if TH15_PRESENTATION_LAB
@@ -57,7 +57,22 @@ i32 draw_frame_rate(void*){
  return app->captions.enqueue({{588,470,0},style,text})?1:5;
 }
 void add_controller(SDL_JoystickID id){if(!controller)controller=SDL_OpenJoystick(id);}
-void clear_inputs(){practice_pointers.reset();th15_browser_keyboard_reset();ThpracUi::reset_input();EM_ASM({if(Module.eaglerControls)Module.eaglerControls.thpracKeyboardBits=0;});for(auto& key:keyboard_map)key.hosted=false;SDL_ResetKeyboard();gestures.reset();controls={};if(app){app->practice.input.reset();app->keyboard_state={};app->touch={};if(app->scene())app->scene()->battle.player->motion.touch={};}}
+// Stage loads retain physical holds and their edge history.
+void clear_inputs(bool preserve_keyboard=false){
+ practice_pointers.reset();gestures.reset();
+ if(!preserve_keyboard){
+  th15_browser_keyboard_reset();ThpracUi::reset_input();
+  for(auto& key:keyboard_map)key.hosted=false;
+  controls={};
+ }else ThpracUi::cancel_pointer();
+ EM_ASM({if(Module.eaglerControls)Module.eaglerControls.thpracKeyboardBits=0;});
+ SDL_ResetKeyboard();
+ if(app){
+  if(!preserve_keyboard)app->practice.input.reset();
+  app->keyboard_state={};app->touch={};
+  if(app->scene())app->scene()->battle.player->motion.touch={};
+ }
+}
 void initialize_controller(){if(controller){SDL_CloseJoystick(controller);controller=nullptr;}SDL_InitSubSystem(SDL_INIT_JOYSTICK);int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;i++)add_controller(ids[i]);SDL_free(ids);}
 touhou::input::TouchState touch_state(){
  touhou::input::TouchState value;if(!app||!app->scene()||!app->session)return value;
@@ -66,10 +81,6 @@ touhou::input::TouchState touch_state(){
  auto& stage=*app->scene();
  auto& player=*stage.battle.player;auto& motion=player.motion;
  value.context=stage.messages.active()?2:1;value.instance=app->progress.stage;value.ready=player.life.state==1&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000));
- // A shield hit temporarily blocks movement before cancelling death.
- // Preserve the held finger for every absorbed layer, including the last.
- if(app->progress.character==3&&player.life.state==4&&stage.battle.session.bomb_state==1&&stage.battle.bomb&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000)))
-  value.retain_motion=static_cast<BombReisen*>(stage.battle.bomb.get())->charges>0;
  value.x=motion.position.x;value.y=motion.position.y;value.fast=float(motion.normal_speed)/128;value.slow=float(motion.focus_speed)/128;
  value.min_x=-184;value.max_x=184;value.min_y=32;value.max_y=432;return value;
 }
@@ -148,18 +159,18 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
  // The shared shell already rendered its two-second startup animation while
  // initialization ran. Do not add another native loading hold after it.
  if(app->loading_frames>=120){app->loading_startup=false;app->loading_debt=0;}
- if(!ThpracUi::initialize(*app)){app->fail("THPrac shared font unavailable: /unifont.otf");th15_browser_frame(0,0,0);return;}app->graphics.release_startup_branding();running=true;suspended=false;previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();app->audio_device.suspend(false);
+ if(!ThpracUi::initialize(*app)){app->fail("THPrac shared font unavailable: /unifont.otf");th15_browser_frame(0,0,0);return;}app->graphics.release_startup_branding();running=true;suspended=false;loading_held=loading_preserve_keyboard=false;previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();app->audio_device.suspend(false);
  emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
   if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
   if(suspended){cadence.reset();presentation.reset();app->graphics.presentation.reset();return EM_TRUE;}
   // Startup retains native 180 loading frames; subsequent loads wait for
   // resource completion. Neither path accumulates gameplay simulation debt.
   if(app->loading_waiting()){
-   if(!loading_held)clear_inputs();loading_held=true;cadence.reset();presentation.reset();app->graphics.presentation.reset();
+   if(!loading_held){loading_preserve_keyboard=app->pending_load==2;clear_inputs(loading_preserve_keyboard);}loading_held=true;cadence.reset();presentation.reset();app->graphics.presentation.reset();
    if(!(app->loading_startup?app->advance_loading(delta):app->complete_loading())){running=false;th15_browser_frame(0,emscripten_get_now()-begin,0);return EM_FALSE;}
    app->audio_device.pump();return EM_TRUE;
   }
-  if(loading_held){loading_held=false;clear_inputs();cadence.reset();window_start=0;window_ticks=0;measured_fps=60;reset_presentation_clock();return EM_TRUE;}
+  if(loading_held){loading_held=false;clear_inputs(loading_preserve_keyboard);loading_preserve_keyboard=false;cadence.reset();window_start=0;window_ticks=0;measured_fps=60;reset_presentation_clock();return EM_TRUE;}
 #if TH15_PRESENTATION_LAB
   // Resource readiness uses its isolated loading clock, never game/replay ticks.
   // A freeze requested during startup must not strand the loading barrier.
@@ -175,6 +186,8 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
   // presentation remains governed by the real cadence and the 60Hz limiter.
   app->graphics.presentation.enabled=true;
 #endif
+  // Refill before simulation/drawing can consume a slow frame's budget.
+  app->audio_device.pump();
   const auto ticks=cadence.advance(delta);bool ok=true;app->graphics.backend.defer=true;
   unsigned completed=0;
   for(unsigned i=0;i<ticks&&ok;i++){ok=sample_and_tick();++completed;if(app->exiting||app->pending_load)break;
@@ -188,7 +201,18 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
   if(completed||presented)th15_browser_frame(ok?1:0,emscripten_get_now()-begin,completed);if(!ok)running=false;return running?EM_TRUE:EM_FALSE;
  },reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
-EMSCRIPTEN_KEEPALIVE void th15_touch(unsigned type,int id,float x,float y){using namespace th15::sdl;if(type>2||!std::isfinite(x)||!std::isfinite(y))return;const float px=x*640,py=y*480;if(type==0&&practice_pointers.route(1,id,false))ThpracUi::cancel_pointer();if(practice_pointers.route(type,id,type==0&&ThpracUi::captures_pointer(px,py))){ThpracUi::mouse(type==0?1:type==2?2:0,px,py);return;}if(app&&app->practice.enabled&&app->practice.flip_screen_y)y=1-y;gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);}
+EMSCRIPTEN_KEEPALIVE void th15_touch(unsigned type,int id,float x,float y){
+ using namespace th15::sdl;if(type>2||!std::isfinite(x)||!std::isfinite(y))return;
+ const float px=x*640,py=y*480;using Route=eagler::thprac::PracticePointer::TouchRoute;
+ if(type==0&&practice_pointers.route(1,id,false))ThpracUi::cancel_pointer();
+ const auto decision=practice_pointers.route_touch(type,id,type==0&&ThpracUi::captures_pointer(px,py),type==0&&ThpracUi::passive_pointer(px,py),px,py);
+ if(decision.route==Route::Pending)return;
+ if(decision.route==Route::Tap){ThpracUi::mouse(1,decision.x,decision.y);ThpracUi::mouse(2,px,py);return;}
+ if(decision.route==Route::Ui){ThpracUi::mouse(type==0?1:type==2?2:0,px,py);return;}
+ const bool flip=app&&app->practice.enabled&&app->practice.flip_screen_y;const auto state=touch_state();const auto now=SDL_GetTicks();
+ if(decision.route==Route::BeginGame)gestures.pointer(0,id,decision.x/640,flip?1-decision.y/480:decision.y/480,now,state,false);
+ gestures.pointer(type,id,x,flip?1-y:y,now,state,false);
+}
 EMSCRIPTEN_KEEPALIVE void th15_thprac_mouse(int type,float x,float y){th15::sdl::ThpracUi::mouse(type,x,y);}
 EMSCRIPTEN_KEEPALIVE void th15_always_hitbox(unsigned on){th15::presentation::always_hitbox=on!=0;}
 EMSCRIPTEN_KEEPALIVE void th15_touch_cancel(){using namespace th15::sdl;practice_pointers.reset();gestures.cancel();ThpracUi::cancel_pointer();if(app){app->touch={};if(app->scene())app->scene()->battle.player->motion.touch={};}}

@@ -1,0 +1,16 @@
+{
+  "current": "/var/www/eagler-touhou/releases/web-9d5156ca39cd-g3eedgwt",
+  "releaseId": "sha256-6a99ff46e58a102a3fee39751397c95d588546279f89925e535b68ea91f43afc",
+  "buildId": "b304e351e0057509cfc9",
+  "siteNetwork": {
+    "schema": "eagler-touhou/site-network/1",
+    "mirrors": [
+      "https://jp-site.touhouonline.com/",
+      "https://cn-site.touhouonline.com:8443/"
+    ]
+  },
+  "services": {
+    "eagler-hk-export.timer": "active",
+    "eagler-edge-sync-online.timer": "active"
+  }
+}

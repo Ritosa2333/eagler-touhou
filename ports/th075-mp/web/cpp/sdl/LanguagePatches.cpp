@@ -70,6 +70,16 @@ bool apply_language_patch(const std::string& path,std::vector<u8>& bytes,std::st
   // Missing localized resources deliberately keep the Japanese resource.
   if(!EM_ASM_INT({return FS.analyzePath(UTF8ToString($0)).exists;},file.c_str()))continue;
   std::vector<u8> patch,output;if(!read_patch(file,patch)){error="Invalid TH075 language replacement";return false;}
+  const auto originalCrc=u32(crc32(0,bytes.data(),uInt(bytes.size())));
+  // Score registration reads the base replay bank; replay menus read patched.
+  // Select an explicitly compiled variant, never bypass original CRC checking.
+  if(picture&&path=="data/system/replay.dat"&&patch.size()>=20&&
+     (ByteReader(patch.data()+8,8).dword()!=originalCrc||
+      ByteReader(patch.data()+12,4).dword()!=bytes.size())){
+   const std::string baseFile="/thcrap/th075/images/base/"+path+".bin";
+   std::vector<u8> variant;
+   if(read_patch(baseFile,variant))patch=std::move(variant);
+  }
   ByteReader in(patch.data(),patch.size());const auto* magic=in.take(4);const auto version=in.dword(),crc=in.dword(),size=in.dword(),count=in.dword();
   const bool valid=magic&&!std::memcmp(magic,picture?"E75I":"E75T",4)&&version==(picture?2u:1u)&&size==bytes.size()&&crc==u32(crc32(0,bytes.data(),uInt(bytes.size())))&&count<=65536;
   if(!valid||!(picture?images(bytes,in,count,output):text(bytes,in,count,path=="musicroom.dat",output))){error="TH075 language replacement does not match original resource: "+path;return false;}

@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { cp, mkdtemp, mkdir, readFile, rm, stat } from "node:fs/promises";
@@ -9,7 +10,10 @@ import {
   SELF_HOST_BUNDLE_NODE_DEPENDENCIES,
 } from "../lib/self-host-bundle.mjs";
 import { FRONTEND_PACKAGE_FILES, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
+import {PRODUCT_CONTENT} from '../lib/content-definition.mjs';
+import {workspacePath} from '../lib/workspace-layout.mjs';
 
+test("self host bundle", async () => {
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const targets = new Map(SELF_HOST_BUNDLE_COPY_RULES.map(rule => [rule.target, rule.source]));
 assert.equal(targets.size, SELF_HOST_BUNDLE_COPY_RULES.length, "self-host bundle targets must be unique");
@@ -45,8 +49,12 @@ function moduleSpecifiers(source, path) {
   return specifiers;
 }
 
+const preparationSources=new Map(Object.values(PRODUCT_CONTENT).flatMap(content=>Object.values(content.hostPreparation??{})
+  .flatMap(preparation=>preparation?.buildSources??[])).map(source=>[
+    relative(project,workspacePath(source.repository,source.source)).replaceAll('\\','/'),source.target]));
 for (const rule of SELF_HOST_BUNDLE_COPY_RULES) {
-  assertCanonicalRelativePath(rule.source, "unsafe self-host bundle source");
+  if(preparationSources.has(rule.source))assert.equal(rule.target,preparationSources.get(rule.source),'workspace source must use its declared preparation target');
+  else assertCanonicalRelativePath(rule.source, "unsafe self-host bundle source");
   assertCanonicalRelativePath(rule.target, "unsafe self-host bundle target");
   const info = await stat(resolve(project, rule.source));
   assert.equal(info.isFile(), true, `self-host bundle source is not a file: ${rule.source}`);
@@ -61,7 +69,7 @@ for (const file of ["assets/notice-github.svg", "vendor/fflate.min.js"]) {
     `authored browser source must be copied from public/ without changing its self-host target: ${file}`);
 }
 for (const file of ["index.html", "en.html", "styles.css"]) {
-  assert.match(targets.get(file), /^\.cache\/build\/ui-rewrite\/client\//,
+  assert.match(targets.get(file), /^\.cache\/build\/[^/]+\/client\//,
     `optimized browser output must be used for ${file}`);
 }
 assert.ok([...targets.keys()].every(target => !target.startsWith("public/")),
@@ -71,6 +79,7 @@ for (const required of [
   "host/build.mjs",
   "host/build-import.mjs",
   "host/lib/site-builder.mjs",
+  "compat/runtime-generation-reader.js",
   "scripts/package-external-site.mjs",
   "scripts/package-server.mjs",
   "scripts/verify-deployed-site.mjs",
@@ -86,7 +95,7 @@ for (const required of [
 assert.ok(!SELF_HOST_BUNDLE_NODE_DEPENDENCIES.includes("typescript"), "self-host bundle must consume compiled Launcher output, not TypeScript");
 assert.deepEqual(
   [...targets.keys()].filter(target => target.startsWith("src/")),
-  ["src/app-shell-sw.js", "src/runtime-cache-sw.js", "src/runtime-program-sw.js"],
+  ["src/app-shell-sw.js", "src/runtime-cache-sw.js", "src/runtime-program-sw.js", "src/site-mirror-sw.js"],
   "self-host bundle may ship only the owned classic Service Worker build inputs from src/",
 );
 assert.ok([...targets.keys()].every(target => !target.toLowerCase().endsWith(".mts")),
@@ -96,9 +105,12 @@ assert.ok([...targets.keys()].every(target => !target.toLowerCase().endsWith(".p
 assert.ok([...targets.keys()].every(target => !target.startsWith("tools/maintainer/")),
   "self-host bundle must not ship maintainer tooling");
 
+const publicDocumentTargets = new Set(["profile-entry.html"]);
+assert.ok(targets.has("profile-entry.html"), "self-host bundle must publish the documented public profile entry");
 for (const target of targets.keys()) {
   const segments = target.toLowerCase().split("/");
-  const maintainerOnly = segments.some(segment =>
+  // This public profile document shares a filename prefix with maintainer tools.
+  const maintainerOnly = !publicDocumentTargets.has(target) && segments.some(segment =>
     ["test-", "test_", "test.", "run-", "audit-", "profile-", "playwright", "webkit"]
       .some(prefix => segment.startsWith(prefix)));
   assert.equal(maintainerOnly, false, `maintainer/test file leaked into self-host bundle: ${target}`);
@@ -112,6 +124,8 @@ for (const target of targets.keys()) {
 // launcher-build module incorrectly treated this as a source checkout and
 // failed with "Application TypeScript source tree is empty".
 const smokeRoot = await mkdtemp(resolve(project, ".cache", "self-host-bundle-smoke-"));
+const inheritedReactBuildDirectory = process.env.EAGLER_REACT_BUILD_DIRECTORY;
+delete process.env.EAGLER_REACT_BUILD_DIRECTORY;
 try {
   for (const rule of SELF_HOST_BUNDLE_COPY_RULES) {
     const source = resolve(project, rule.source);
@@ -139,6 +153,17 @@ try {
     "self-host bundle must preserve split Launcher chunks for offline feature loading");
   assert.ok(packagedManifest.APP_SHELL_FILES.includes("features.css"));
 
+  const packagedAppShell = await import(pathToFileURL(resolve(smokeRoot, "lib/app-shell-build.mjs")).href);
+  const appShellOutput = resolve(smokeRoot, ".cache", "app-shell-sw.js");
+  const appShell = await packagedAppShell.buildAppShell({
+    quiet: true,
+    globDirectory: smokeRoot,
+    swDest: appShellOutput,
+    shellFiles: packagedManifest.APP_SHELL_FILES,
+  });
+  assert.match(appShell.buildId, /^[a-f0-9]{20}$/, "packaged App Shell build must consume its private migration reader");
+  assert.match(await readFile(appShellOutput, "utf8"), /App Shell integrity mismatch/);
+
   // A fresh bundle has no node_modules yet. Doctor must still reach its own
   // environment/input diagnostics instead of failing during module loading.
   const doctor = spawnSync(process.execPath, [
@@ -164,6 +189,8 @@ try {
     "packaged External entrypoint must load its complete module closure and reach argument validation");
 } finally {
   await rm(smokeRoot, { recursive: true, force: true });
+  if (inheritedReactBuildDirectory === undefined) delete process.env.EAGLER_REACT_BUILD_DIRECTORY;
+  else process.env.EAGLER_REACT_BUILD_DIRECTORY = inheritedReactBuildDirectory;
 }
 
 const allowedBareImports = new Set(SELF_HOST_BUNDLE_NODE_DEPENDENCIES);
@@ -202,3 +229,4 @@ console.log(JSON.stringify({
   files: SELF_HOST_BUNDLE_COPY_RULES.length,
   nodeDependencies: SELF_HOST_BUNDLE_NODE_DEPENDENCIES,
 }));
+});

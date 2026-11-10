@@ -2,7 +2,14 @@
 namespace th11 {
 void AnmVm::initialize() noexcept {
     const auto keep_position=position;const auto keep_layer=layer;
+#ifdef TH_PRESENTATION_AUDIT
+    const u32 keep_identity=reserved_420[0],next_generation=reserved_420[1]+1;
+#endif
     std::memset(this,0,sizeof(*this));position=keep_position;layer=keep_layer;
+#ifdef TH_PRESENTATION_AUDIT
+    reserved_420[0]=keep_identity?keep_identity:next_audit_identity++;
+    reserved_420[1]=next_generation;
+#endif
     scale={1,1};color=0xffffffff;sprite_matrix.identity();flags=7;
     timer.previous=-999999;registry.value=child.value=this;
 }

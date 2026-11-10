@@ -22,6 +22,8 @@ public:
     void release_geometry(AnmVm& vm);
     AnmVm* layer_first(u32 layer)const noexcept {return layer<layers.size()?layers[layer]:nullptr;}
     u32 active_count()const noexcept {return active.size();}
+    // Authoritative VM fingerprint for the Presentation Lab state evidence.
+    u32 fingerprint()const noexcept;
     u32 last_error=0;
 private:
     std::vector<std::unique_ptr<AnmVm>> storage;

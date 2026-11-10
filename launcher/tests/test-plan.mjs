@@ -6,6 +6,25 @@
 // source-shape/change-detector tests are not grandfathered, and a correct
 // refactor should rewrite/delete a brittle test rather than preserve the old
 // implementation solely to keep this list green.
+export const FRONTEND_TEST_PATTERNS = Object.freeze({
+  unit: Object.freeze(['tests/react-main/*.test.mjs']),
+  support: Object.freeze(['tests/support/*.test.mjs']),
+});
+
+export const FRONTEND_BUILD_TESTS = Object.freeze([
+  'tests/react-main/app-shell-build.test.mjs',
+  'tests/react-main/contracts-build.test.mjs',
+  'tests/react-main/content-build.test.mjs',
+  'tests/react-main/development-server.test.mjs',
+  'tests/react-main/external-frontend-artifact.test.mjs',
+  'tests/react-main/frontend-artifact.test.mjs',
+  'tests/react-main/host-frontend-selection.test.mjs',
+  'tests/react-main/i18n-build.test.mjs',
+  'tests/react-main/initial-presentation.test.mjs',
+  'tests/react-main/refresh-react-artifact.test.mjs',
+  'tests/react-main/server-react-artifact.test.mjs',
+]);
+
 export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-integrations.mjs",
   "tests/test-app-shell-host-artwork.mjs",
@@ -25,7 +44,9 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-build-profile.mjs",
   "tests/test-runtime-build-profiles.mjs",
   "tests/test-runtime-source-plan.mjs",
+  "tests/test-peer-runtime-update.mjs",
   "tests/test-host-workspace.mjs",
+  "tests/test-th05-prepared-host-content.mjs",
   "tests/test-host-artwork-adapter-coverage.mjs",
   "tests/test-format-adapter-coverage.mjs",
   "tests/test-th10-ogg-production-baseline.mjs",
@@ -81,6 +102,7 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-multiplayer-relay-url.mjs",
   "tests/test-netplay-measured-timing.mjs",
   "tests/test-room-network.mjs",
+  "tests/test-room-packet-loss.mjs",
   "tests/test-multiplayer-runtime-options.mjs",
   "tests/test-th11-multiplayer-policy.mjs",
   "tests/test-th15-multiplayer-policy.mjs",
@@ -93,7 +115,6 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-sha256.mjs",
   "tests/test-route-state.mjs",
   "tests/test-netplay-telemetry.mjs",
-  "tests/test-site-notice.mjs",
   "tests/test-touch-layout-editor-state.mjs",
   "tests/test-touch-layout-model.mjs",
   "tests/test-touch-function-key.mjs",
@@ -115,6 +136,8 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-package-generation.mjs",
   "tests/test-package-launcher.mjs",
   "tests/test-raw-data-import-policy.mjs",
+  "tests/test-retail-package.mjs",
+  "tests/test-retail-vorbis.mjs",
   "tests/test-package-mutation-queue.mjs",
   "tests/test-package-store-contract.mjs",
   "tests/test-package-zip.mjs",
@@ -133,16 +156,19 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
 
 export const REPOSITORY_PYTHON_TESTS = Object.freeze([
   "tests/test_ogg_converter.py",
+  "tests/test-th12-language-textures.py",
 ]);
 
 export const WORKSPACE_PRECHECKS = Object.freeze([]);
 
 export const WORKSPACE_NODE_TESTS = Object.freeze([
+  "tests/test-th05-initial-stock.mjs",
+  "tests/test-multiplayer-session-identity.mjs",
+  "tests/test-th075-language-configure.mjs",
   "tests/test-shared-font-selection-workspace.mjs",
   "tests/test-development-site-manifest-workspace.mjs",
   "tests/test-runtime-protocol-contract.mjs",
   "tests/test-gamepad-contract.mjs",
-  "tests/test-required-gameplay-actions.mjs",
   "tests/test-portable-touch-controller-contract.mjs",
   "tests/test-preload-data-assembler.mjs",
   "tests/test-runtime-storage-contract.mjs",

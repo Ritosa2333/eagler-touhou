@@ -1,0 +1,19 @@
+@layer components {
+  .ui-overflow-text {display:block;min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden;white-space:nowrap;text-overflow:clip;scrollbar-width:none;overscroll-behavior-x:contain}
+  .ui-overflow-text::-webkit-scrollbar {display:none}
+  .ui-overflow-text:focus-visible {outline:2px solid var(--kit-ring);outline-offset:2px;border-radius:2px}
+  .ui-overflow-text-label {display:block;width:max-content;min-width:100%}
+  .ui-overflow-text[data-align='end']>.ui-overflow-text-label {text-align:end}
+  .ui-overflow-text[data-align='center']>.ui-overflow-text-label {text-align:center}
+}
+
+@media (prefers-reduced-motion:no-preference) {
+  .ui-overflow-text[data-auto-scroll='true']:not(:hover,:focus-within)>.ui-overflow-text-label {
+    animation:ui-overflow-text-pan var(--ui-overflow-duration) linear infinite alternate;
+  }
+  .less-motion .ui-overflow-text[data-auto-scroll='true']>.ui-overflow-text-label {animation:none}
+}
+@keyframes ui-overflow-text-pan {
+  0%,12% {transform:translateX(0)}
+  88%,100% {transform:translateX(calc(-1 * var(--ui-overflow-distance)))}
+}

@@ -27,12 +27,20 @@ public:
     std::array<u8,4> multiplayer_opacity{{255,255,255,255}};
     std::vector<const AnmVm*> multiplayer_hidden_hitboxes;
     std::map<u32,unsigned> multiplayer_hitbox_owners;
+    const AnmVm* presentation_copy=nullptr;
+    unsigned presentation_owner=0;
+    unsigned multiplayer_owner(const AnmVm&)const noexcept;
     u32 multiplayer_color(const AnmVm&,u32)const noexcept;
     u32 multiplayer_tint(u32,unsigned)const noexcept;
     void multiplayer_geometry(const AnmVm&,touhou::graphics::Topology,u32,const AnmVertex*);
 #endif
     // Continuous bullet submission preserves fractional positions; other ANM
     // owners retain their authored pixel-aligned presentation by default.
+    // Set by the scene schedule for world-space passes. Combined with an
+    // actual interpolated position, it preserves subpixel presentation.
+    bool continuous=false;
+    // Continuous world sprites may preserve fractional presentation coordinates;
+    // retail pixel-aligned UI and logical screen-UV geometry retain the default.
     int draw(AnmVm& vm,bool preserve_subpixel=false);
     int draw_ascii_sprite(AnmVm& vm);
     int draw_ripple(AnmVm& vm);

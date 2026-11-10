@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "records": [
+    {
+      "phase": "installed",
+      "origin": "https://touhouonline.com",
+      "build": "b304e351e0057509cfc9",
+      "config": {
+        "schema": "eagler-touhou/site-network/1",
+        "mirrors": [
+          "https://jp-site.touhouonline.com/",
+          "https://cn-site.touhouonline.com:8443/"
+        ]
+      },
+      "cards": 14
+    },
+    {
+      "phase": "hk-down",
+      "status": 200,
+      "bytes": 68622,
+      "origin": "https://touhouonline.com",
+      "sha256": "e569c83d8fac3f0ec73bf0adc2e4860d299aeeeb2c760c9d375f4c9d160cda24",
+      "ms": 1147.199999988079
+    },
+    {
+      "phase": "hk-jp-down-after-browser-restart",
+      "status": 200,
+      "bytes": 68622,
+      "origin": "https://touhouonline.com",
+      "sha256": "e569c83d8fac3f0ec73bf0adc2e4860d299aeeeb2c760c9d375f4c9d160cda24",
+      "ms": 1160.300000011921
+    },
+    {
+      "phase": "immutable-th09-file-via-cn",
+      "path": "runtime/th09/465ab8f42b730b74296fe3e02e24b220049d3cfbfd208837ed691a51ff188daa/th09.html",
+      "bytes": 863,
+      "sha256": "3a5184a15944d467737f0ac81716c80f1fbd4336c5fbcea88455f447c32f5317",
+      "expected": "3a5184a15944d467737f0ac81716c80f1fbd4336c5fbcea88455f447c32f5317"
+    },
+    {
+      "phase": "resource-router-via-cn",
+      "status": 200,
+      "schema": "eagler-touhou/resource-routes/1",
+      "path": "/games/th09/th09.data",
+      "sources": [
+        "game.touhou.best"
+      ]
+    },
+    {
+      "phase": "offline-refresh",
+      "cards": 14,
+      "origin": "https://touhouonline.com"
+    }
+  ]
+}

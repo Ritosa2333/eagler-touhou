@@ -1,6 +1,4 @@
-/** L2 artifact contract. Builds a synthetic all-products Runtime Release and
- * proves exact-file-set, hash, path and original-resource leak rejection.
- * Does not prove any Runtime executes in a browser. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -8,8 +6,38 @@ import { join, resolve } from "node:path";
 import { validateRuntimeReleaseManifest, verifyRuntimeRelease } from "../lib/runtime-release.mjs";
 import { writeSyntheticRuntimeRelease } from "../tests/support/runtime-release-fixture.mjs";
 
+test("runtime release", async () => {
+/** L2 artifact contract. Builds a synthetic all-products Runtime Release and
+ * proves exact-file-set, hash, path and original-resource leak rejection.
+ * Does not prove any Runtime executes in a browser. */
+
+
+
+
+
+
+
 const root = await mkdtemp(join(tmpdir(), "eagler-runtime-release-"));
 const manifest = await writeSyntheticRuntimeRelease(root);
+await verifyRuntimeRelease(root);
+
+const wasmName = Object.keys(manifest.games.th08.runtime.files).find(name => name.endsWith('.wasm'));
+assert.ok(wasmName);
+const normalWasm = resolve(root, manifest.games.th08.runtime.root, wasmName);
+const multiplayerWasm = resolve(root, manifest.games.th08.multiplayerRuntime.root, wasmName);
+const normalBytes = await readFile(normalWasm), multiplayerBytes = await readFile(multiplayerWasm);
+try {
+  await rm(normalWasm);
+  await assert.rejects(() => verifyRuntimeRelease(root), error => error.code === 'ENOENT' && resolve(error.path) === normalWasm);
+} finally {await writeFile(normalWasm, normalBytes);}
+try {
+  await writeFile(normalWasm, multiplayerBytes);
+  await writeFile(multiplayerWasm, normalBytes);
+  await assert.rejects(() => verifyRuntimeRelease(root), /generation file mismatch/);
+} finally {
+  await writeFile(normalWasm, normalBytes);
+  await writeFile(multiplayerWasm, multiplayerBytes);
+}
 await verifyRuntimeRelease(root);
 
 const staleShellPath = resolve(root, manifest.games.th08.runtime.root, "shell.mjs");
@@ -36,3 +64,4 @@ await writeFile(resolve(root, "runtime-release.json"), `${JSON.stringify(badLayo
 await assert.rejects(() => verifyRuntimeRelease(root), /DATA layout does not match Runtime JS/);
 
 console.log("Runtime Release closed-set contract: PASS");
+});

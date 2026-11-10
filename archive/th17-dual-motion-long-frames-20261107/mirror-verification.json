@@ -1,0 +1,7 @@
+{
+  "releaseId": "sha256-4f9ce9c4ee572692872a95c3253f97bfa691a747d00fa89da277a1b5d8ce1aee",
+  "multiplayerEntry": "runtime/th17/multiplayer/1d176da579443613d2580fbde3ea7225ae1db018bbb9b014a276aff8ec215908/th17.html?hosted=1",
+  "wasmSha256": "92f0e136e0fec1c6ccc8fe67aeea9027253f8e3d3c0d65129054f65f68d98623",
+  "frontendIndexSha256": "bc6eaeba33c8cfad5ce1a1d4598f36b62e205b48b364eb1466faab181e681873",
+  "verifiedFiles": 15
+}

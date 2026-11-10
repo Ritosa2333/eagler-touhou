@@ -7,7 +7,7 @@
 | 修改游戏 | [游戏目录](../ports/README.md) → 本作开发指南 → 本作适配表 |
 | 适配新游戏 | [适配流程](adaptation/README.md) → 对应分项 → [验证记录](adaptation/record-template.md) |
 | 理解结构 | [启动器架构](../launcher/docs/ARCHITECTURE.md)、[联机](architecture/netplay.md)、[回滚](architecture/rollback.md)、[流式 Replay 旁观](architecture/spectator-replay.md) |
-| 部署站点 | [自托管](../launcher/docs/SELF_HOSTING.md) → [配置参考](../launcher/docs/SELF_HOSTING_REFERENCE.md) |
+| 部署站点 | [自托管](../launcher/docs/SELF_HOSTING.md) → [配置参考](../launcher/docs/SELF_HOSTING_REFERENCE.md) → [网页入口回退](architecture/site-recovery.md) |
 | 找旧结论 | [历史与迁移](history/README.md) → [旧文档去向](history/INDEX.md) |
 
 ## 适配分项

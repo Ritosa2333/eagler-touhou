@@ -1,0 +1,1039 @@
+{
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "samplerSha256": "a01cf0fd15ea7d65464736cb5a2f14c27c309fef7af678283c67052763a928f1",
+  "wholeGameOracle": false,
+  "scope": "Controlled BossDead/Spell and selected original callbacks with resource/heap/audio/text host boundaries. No replay/GPU claim. Live Enemy age/position and scripts79/129/130 clocks only.",
+  "stage": 2,
+  "initial": {
+    "score": 0,
+    "power": 400,
+    "pointValue": 2000000,
+    "lives": 2,
+    "lifeFragments": 0,
+    "bombs": 2,
+    "bombFragments": 0,
+    "ufoColors": [
+      0,
+      0,
+      0
+    ],
+    "rank": 0,
+    "x": 10240,
+    "y": 51200,
+    "nativeGlobals": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "character": 2,
+  "shot": 1,
+  "difficulty": 3,
+  "seed": 1234,
+  "mainBase64": "U0NQVAEAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAARAAAALgAAABtYWluAEJvc3NEZWF0aEZpeHR1cmUAAABFQ0xIAAAAAAAAAAAAAAAAAAAAAJIBFAAAAD8BAAAAAKAAAAAAAAAAAAE8AAAAPwYAAAAAFAAAAEJvc3NEZWF0aEZpeHR1cmUAAAAAAAAAAAAAAEOQMwAAAAAAAAAAAAAAAAAAUwAUAAAAPwEAAAAAoIYBAEVDTEgAAAAAAAAAAAAAAAAAAAAAAgEUAAAAPwEAAAAAAgAAAAAAAAAGARgAAAA/AgAAAAAAAAAAAAAAAAAAAACQARgAAAA/AgAAAAAAAIBCAACAQgAAAACRARgAAAA/AgAAAAAAAIBCAACAQgAAAACbARQAAAA/AQAAAACQMwAAAAAAACwBGAAAAD8CAAAAAAAAAAAAAABDAAAAAKYBKAAAAD8EAAAAABsAAAAgHAAAIKEHAAgAAABmaXh0dXJlAAAAAAALACAAAAA/AQAAAAAMAAAAQm9zc0RlYWQAAAAAAAAAAFMAFAAAAD8BAAAAAKCGAQA=",
+  "rows": [
+    {
+      "tick": -1,
+      "rng": [
+        60134,
+        2
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 0,
+      "serialTicks": 1,
+      "spellFlags": 3
+    },
+    {
+      "tick": 0,
+      "rng": [
+        16628,
+        10
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 1,
+      "serialTicks": 2,
+      "spellFlags": 3,
+      "effects": [
+        [
+          79,
+          2
+        ],
+        [
+          129,
+          2
+        ]
+      ]
+    },
+    {
+      "tick": 1,
+      "rng": [
+        16628,
+        10
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 2,
+      "serialTicks": 3,
+      "spellFlags": 3
+    },
+    {
+      "tick": 2,
+      "rng": [
+        31929,
+        18
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 3,
+      "serialTicks": 4,
+      "spellFlags": 3
+    },
+    {
+      "tick": 3,
+      "rng": [
+        31929,
+        18
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 4,
+      "serialTicks": 5,
+      "spellFlags": 3
+    },
+    {
+      "tick": 4,
+      "rng": [
+        58727,
+        26
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 5,
+      "serialTicks": 6,
+      "spellFlags": 3
+    },
+    {
+      "tick": 5,
+      "rng": [
+        58727,
+        26
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 6,
+      "serialTicks": 7,
+      "spellFlags": 3
+    },
+    {
+      "tick": 6,
+      "rng": [
+        13379,
+        34
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 7,
+      "serialTicks": 8,
+      "spellFlags": 3
+    },
+    {
+      "tick": 7,
+      "rng": [
+        13379,
+        34
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 8,
+      "serialTicks": 9,
+      "spellFlags": 3
+    },
+    {
+      "tick": 8,
+      "rng": [
+        10182,
+        42
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 9,
+      "serialTicks": 10,
+      "spellFlags": 3
+    },
+    {
+      "tick": 9,
+      "rng": [
+        10182,
+        42
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 10,
+      "serialTicks": 11,
+      "spellFlags": 3
+    },
+    {
+      "tick": 10,
+      "rng": [
+        9943,
+        50
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 11,
+      "serialTicks": 12,
+      "spellFlags": 3
+    },
+    {
+      "tick": 11,
+      "rng": [
+        9943,
+        50
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 12,
+      "serialTicks": 13,
+      "spellFlags": 3
+    },
+    {
+      "tick": 12,
+      "rng": [
+        51730,
+        58
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 13,
+      "serialTicks": 14,
+      "spellFlags": 3
+    },
+    {
+      "tick": 13,
+      "rng": [
+        51730,
+        58
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 14,
+      "serialTicks": 15,
+      "spellFlags": 3
+    },
+    {
+      "tick": 14,
+      "rng": [
+        7409,
+        66
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 15,
+      "serialTicks": 16,
+      "spellFlags": 3
+    },
+    {
+      "tick": 15,
+      "rng": [
+        7409,
+        66
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 16,
+      "serialTicks": 17,
+      "spellFlags": 3
+    },
+    {
+      "tick": 16,
+      "rng": [
+        20568,
+        74
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 17,
+      "serialTicks": 18,
+      "spellFlags": 3
+    },
+    {
+      "tick": 17,
+      "rng": [
+        20568,
+        74
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 18,
+      "serialTicks": 19,
+      "spellFlags": 3
+    },
+    {
+      "tick": 18,
+      "rng": [
+        3017,
+        82
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 19,
+      "serialTicks": 20,
+      "spellFlags": 3
+    },
+    {
+      "tick": 19,
+      "rng": [
+        3017,
+        82
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 20,
+      "serialTicks": 21,
+      "spellFlags": 3
+    },
+    {
+      "tick": 20,
+      "rng": [
+        25285,
+        90
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 21,
+      "serialTicks": 22,
+      "spellFlags": 3
+    },
+    {
+      "tick": 21,
+      "rng": [
+        25285,
+        90
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 22,
+      "serialTicks": 23,
+      "spellFlags": 3
+    },
+    {
+      "tick": 22,
+      "rng": [
+        46059,
+        98
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 23,
+      "serialTicks": 24,
+      "spellFlags": 3
+    },
+    {
+      "tick": 23,
+      "rng": [
+        46059,
+        98
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 24,
+      "serialTicks": 25,
+      "spellFlags": 3
+    },
+    {
+      "tick": 24,
+      "rng": [
+        36028,
+        106
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 25,
+      "serialTicks": 26,
+      "spellFlags": 3
+    },
+    {
+      "tick": 25,
+      "rng": [
+        36028,
+        106
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 26,
+      "serialTicks": 27,
+      "spellFlags": 3
+    },
+    {
+      "tick": 26,
+      "rng": [
+        21788,
+        114
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 27,
+      "serialTicks": 28,
+      "spellFlags": 3
+    },
+    {
+      "tick": 27,
+      "rng": [
+        21788,
+        114
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 28,
+      "serialTicks": 29,
+      "spellFlags": 3
+    },
+    {
+      "tick": 28,
+      "rng": [
+        63604,
+        122
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 29,
+      "serialTicks": 30,
+      "spellFlags": 3
+    },
+    {
+      "tick": 29,
+      "rng": [
+        63604,
+        122
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 30,
+      "serialTicks": 31,
+      "spellFlags": 3
+    },
+    {
+      "tick": 30,
+      "rng": [
+        2621,
+        130
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 31,
+      "serialTicks": 32,
+      "spellFlags": 3
+    },
+    {
+      "tick": 31,
+      "rng": [
+        2621,
+        130
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 32,
+      "serialTicks": 33,
+      "spellFlags": 3
+    },
+    {
+      "tick": 32,
+      "rng": [
+        57248,
+        138
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 33,
+      "serialTicks": 34,
+      "spellFlags": 3
+    },
+    {
+      "tick": 33,
+      "rng": [
+        57248,
+        138
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 34,
+      "serialTicks": 35,
+      "spellFlags": 3
+    },
+    {
+      "tick": 34,
+      "rng": [
+        38575,
+        146
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 35,
+      "serialTicks": 36,
+      "spellFlags": 3
+    },
+    {
+      "tick": 35,
+      "rng": [
+        38575,
+        146
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 36,
+      "serialTicks": 37,
+      "spellFlags": 3
+    },
+    {
+      "tick": 36,
+      "rng": [
+        33642,
+        154
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 37,
+      "serialTicks": 38,
+      "spellFlags": 3
+    },
+    {
+      "tick": 37,
+      "rng": [
+        33642,
+        154
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 38,
+      "serialTicks": 39,
+      "spellFlags": 3
+    },
+    {
+      "tick": 38,
+      "rng": [
+        43383,
+        162
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 39,
+      "serialTicks": 40,
+      "spellFlags": 3
+    },
+    {
+      "tick": 39,
+      "rng": [
+        43383,
+        162
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 40,
+      "serialTicks": 41,
+      "spellFlags": 3
+    },
+    {
+      "tick": 40,
+      "rng": [
+        18865,
+        170
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 41,
+      "serialTicks": 42,
+      "spellFlags": 3
+    },
+    {
+      "tick": 41,
+      "rng": [
+        18865,
+        170
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 42,
+      "serialTicks": 43,
+      "spellFlags": 3
+    },
+    {
+      "tick": 42,
+      "rng": [
+        61851,
+        178
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 43,
+      "serialTicks": 44,
+      "spellFlags": 3
+    },
+    {
+      "tick": 43,
+      "rng": [
+        61851,
+        178
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 44,
+      "serialTicks": 45,
+      "spellFlags": 3
+    },
+    {
+      "tick": 44,
+      "rng": [
+        26687,
+        186
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 45,
+      "serialTicks": 46,
+      "spellFlags": 3
+    },
+    {
+      "tick": 45,
+      "rng": [
+        26687,
+        186
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 46,
+      "serialTicks": 47,
+      "spellFlags": 3
+    },
+    {
+      "tick": 46,
+      "rng": [
+        33498,
+        194
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 47,
+      "serialTicks": 48,
+      "spellFlags": 3
+    },
+    {
+      "tick": 47,
+      "rng": [
+        33498,
+        194
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 48,
+      "serialTicks": 49,
+      "spellFlags": 3
+    },
+    {
+      "tick": 48,
+      "rng": [
+        24134,
+        202
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 49,
+      "serialTicks": 50,
+      "spellFlags": 3
+    },
+    {
+      "tick": 49,
+      "rng": [
+        24134,
+        202
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 50,
+      "serialTicks": 51,
+      "spellFlags": 3
+    },
+    {
+      "tick": 50,
+      "rng": [
+        43866,
+        210
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 51,
+      "serialTicks": 52,
+      "spellFlags": 3
+    },
+    {
+      "tick": 51,
+      "rng": [
+        43866,
+        210
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 52,
+      "serialTicks": 53,
+      "spellFlags": 3
+    },
+    {
+      "tick": 52,
+      "rng": [
+        39489,
+        218
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 53,
+      "serialTicks": 54,
+      "spellFlags": 3
+    },
+    {
+      "tick": 53,
+      "rng": [
+        39489,
+        218
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 54,
+      "serialTicks": 55,
+      "spellFlags": 3
+    },
+    {
+      "tick": 54,
+      "rng": [
+        52428,
+        226
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 55,
+      "serialTicks": 56,
+      "spellFlags": 3
+    },
+    {
+      "tick": 55,
+      "rng": [
+        52428,
+        226
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 56,
+      "serialTicks": 57,
+      "spellFlags": 3
+    },
+    {
+      "tick": 56,
+      "rng": [
+        8211,
+        234
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 57,
+      "serialTicks": 58,
+      "spellFlags": 3
+    },
+    {
+      "tick": 57,
+      "rng": [
+        8211,
+        234
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 58,
+      "serialTicks": 59,
+      "spellFlags": 3
+    },
+    {
+      "tick": 58,
+      "rng": [
+        51574,
+        242
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 59,
+      "serialTicks": 60,
+      "spellFlags": 3
+    },
+    {
+      "tick": 59,
+      "rng": [
+        51574,
+        242
+      ],
+      "rate": 1.0,
+      "score": 0,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 3,
+      "effects": [
+        [
+          129,
+          3
+        ]
+      ]
+    },
+    {
+      "tick": 60,
+      "rng": [
+        40873,
+        844
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2,
+      "effects": [
+        [
+          79,
+          2
+        ],
+        [
+          129,
+          4
+        ],
+        [
+          130,
+          2
+        ]
+      ]
+    },
+    {
+      "tick": 61,
+      "rng": [
+        1071,
+        848
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 62,
+      "rng": [
+        54948,
+        852
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 63,
+      "rng": [
+        1770,
+        856
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 64,
+      "rng": [
+        17208,
+        860
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 65,
+      "rng": [
+        54519,
+        864
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 66,
+      "rng": [
+        37844,
+        868
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 67,
+      "rng": [
+        31024,
+        872
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 68,
+      "rng": [
+        27929,
+        876
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 69,
+      "rng": [
+        46108,
+        880
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 70,
+      "rng": [
+        49415,
+        884
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 71,
+      "rng": [
+        58752,
+        888
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 72,
+      "rng": [
+        64920,
+        892
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 73,
+      "rng": [
+        13714,
+        896
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 74,
+      "rng": [
+        19337,
+        900
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 75,
+      "rng": [
+        25672,
+        904
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 76,
+      "rng": [
+        9488,
+        908
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 77,
+      "rng": [
+        52549,
+        912
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 78,
+      "rng": [
+        10113,
+        916
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    },
+    {
+      "tick": 79,
+      "rng": [
+        64598,
+        920
+      ],
+      "rate": 1.0,
+      "score": 1000000,
+      "spellAge": 60,
+      "serialTicks": 61,
+      "spellFlags": 2
+    }
+  ]
+}

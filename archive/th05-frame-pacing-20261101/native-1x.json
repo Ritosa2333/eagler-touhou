@@ -1,0 +1,277 @@
+{
+  "backgrounds": [
+    {
+      "stage": 1,
+      "age": 0,
+      "differences": 0,
+      "oldDraws": 85,
+      "newDraws": 2
+    },
+    {
+      "stage": 1,
+      "age": 280,
+      "differences": 0,
+      "oldDraws": 86,
+      "newDraws": 2
+    },
+    {
+      "stage": 1,
+      "age": 840,
+      "differences": 0,
+      "oldDraws": 92,
+      "newDraws": 2
+    },
+    {
+      "stage": 2,
+      "age": 0,
+      "differences": 0,
+      "oldDraws": 182,
+      "newDraws": 2
+    },
+    {
+      "stage": 2,
+      "age": 280,
+      "differences": 0,
+      "oldDraws": 182,
+      "newDraws": 2
+    },
+    {
+      "stage": 2,
+      "age": 840,
+      "differences": 0,
+      "oldDraws": 1,
+      "newDraws": 1
+    },
+    {
+      "stage": 3,
+      "age": 0,
+      "differences": 0,
+      "oldDraws": 381,
+      "newDraws": 2
+    },
+    {
+      "stage": 3,
+      "age": 280,
+      "differences": 0,
+      "oldDraws": 387,
+      "newDraws": 2
+    },
+    {
+      "stage": 3,
+      "age": 840,
+      "differences": 0,
+      "oldDraws": 326,
+      "newDraws": 2
+    },
+    {
+      "stage": 4,
+      "age": 0,
+      "differences": 0,
+      "oldDraws": 597,
+      "newDraws": 2
+    },
+    {
+      "stage": 4,
+      "age": 280,
+      "differences": 0,
+      "oldDraws": 601,
+      "newDraws": 2
+    },
+    {
+      "stage": 4,
+      "age": 840,
+      "differences": 0,
+      "oldDraws": 601,
+      "newDraws": 2
+    },
+    {
+      "stage": 5,
+      "age": 0,
+      "differences": 0,
+      "oldDraws": 90,
+      "newDraws": 2
+    },
+    {
+      "stage": 5,
+      "age": 280,
+      "differences": 0,
+      "oldDraws": 95,
+      "newDraws": 2
+    },
+    {
+      "stage": 5,
+      "age": 840,
+      "differences": 0,
+      "oldDraws": 85,
+      "newDraws": 2
+    },
+    {
+      "stage": 7,
+      "age": 0,
+      "differences": 0,
+      "oldDraws": 131,
+      "newDraws": 2
+    },
+    {
+      "stage": 7,
+      "age": 280,
+      "differences": 0,
+      "oldDraws": 136,
+      "newDraws": 2
+    },
+    {
+      "stage": 7,
+      "age": 840,
+      "differences": 0,
+      "oldDraws": 134,
+      "newDraws": 2
+    }
+  ],
+  "stages": [
+    {
+      "stage": 1,
+      "segment": 0,
+      "mean": 0.13571428560784884,
+      "p95": 0.20000001788139343,
+      "max": 0.30000001192092896,
+      "draws": 13.946428571428571
+    },
+    {
+      "stage": 1,
+      "segment": 1,
+      "mean": 0.139285714498588,
+      "p95": 0.20000001788139343,
+      "max": 0.30000001192092896,
+      "draws": 21.428571428571427
+    },
+    {
+      "stage": 1,
+      "segment": 2,
+      "mean": 0.13749999978712626,
+      "p95": 0.20000001788139343,
+      "max": 0.30000001192092896,
+      "draws": 26.660714285714285
+    },
+    {
+      "stage": 1,
+      "segment": 3,
+      "mean": 0.11607142857142858,
+      "p95": 0.20000001788139343,
+      "max": 0.4000000059604645,
+      "draws": 15.535714285714286
+    },
+    {
+      "stage": 3,
+      "segment": 0,
+      "mean": 0.12857142889073916,
+      "p95": 0.20000001788139343,
+      "max": 0.699999988079071,
+      "draws": 13.214285714285714
+    },
+    {
+      "stage": 3,
+      "segment": 1,
+      "mean": 0.16071428571428573,
+      "p95": 0.30000001192092896,
+      "max": 0.30000001192092896,
+      "draws": 40.732142857142854
+    },
+    {
+      "stage": 3,
+      "segment": 2,
+      "mean": 0.180357142750706,
+      "p95": 0.30000001192092896,
+      "max": 0.3999999761581421,
+      "draws": 53.839285714285715
+    },
+    {
+      "stage": 3,
+      "segment": 3,
+      "mean": 0.278571428997176,
+      "p95": 0.4000000059604645,
+      "max": 0.5,
+      "draws": 129.19642857142858
+    },
+    {
+      "stage": 4,
+      "segment": 0,
+      "mean": 0.11607142857142858,
+      "p95": 0.20000001788139343,
+      "max": 0.30000001192092896,
+      "draws": 11.910714285714286
+    },
+    {
+      "stage": 4,
+      "segment": 1,
+      "mean": 0.18571428582072258,
+      "p95": 0.30000001192092896,
+      "max": 0.30000001192092896,
+      "draws": 56.714285714285715
+    },
+    {
+      "stage": 4,
+      "segment": 2,
+      "mean": 0.25892857142857145,
+      "p95": 0.4000000059604645,
+      "max": 0.4000000059604645,
+      "draws": 108.82142857142857
+    },
+    {
+      "stage": 4,
+      "segment": 3,
+      "mean": 0.3946428575686046,
+      "p95": 0.7000000178813934,
+      "max": 0.8999999761581421,
+      "draws": 188.21428571428572
+    }
+  ],
+  "laser": {
+    "horizontal": {
+      "body": 9,
+      "white": 5
+    },
+    "vertical": {
+      "body": 9,
+      "white": 5
+    }
+  },
+  "slowUi": {
+    "expanded": 7,
+    "before": 1,
+    "after": 0,
+    "paused": 1,
+    "resumed": true
+  },
+  "cpuRate": 1,
+  "cadence": {
+    "ticks": 673,
+    "renders": 673,
+    "presents": 673,
+    "elapsed": 12001.200000017881,
+    "fps": 55.619485998597014,
+    "audio": {
+      "backend": "uth05-browser-audio",
+      "robust": true,
+      "mode": "ogg",
+      "decodeMode": "stream",
+      "musicSource": "original",
+      "track": "ST02.M2",
+      "path": "/music/st02-m86-opus64-single-loop-v2.ogg",
+      "playing": true,
+      "loopStart": 12.11,
+      "loopEnd": 152.567,
+      "queuedMs": 0,
+      "underruns": 0,
+      "sfx": {
+        "backend": "uth05win-original-se",
+        "played": 1193,
+        "restarted": 1182,
+        "active": [
+          2
+        ]
+      }
+    }
+  },
+  "errors": [],
+  "passed": true
+}

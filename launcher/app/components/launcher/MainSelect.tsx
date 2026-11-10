@@ -1,100 +1,106 @@
-import {createContext, forwardRef, Fragment, useCallback, useContext, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode, type SelectHTMLAttributes} from 'react';
-import {createPortal, flushSync} from 'react-dom';
-import {createCustomSelectState, type CustomSelectState} from '../../../src/launcher/custom-select-state.mts';
-import {useLocale, type Translate} from '../../i18n';
-import {createMainSelectController} from './main-select-controller';
+import { createContext, forwardRef, useContext, useLayoutEffect, useRef, useState, useCallback, type ReactNode, type Ref, type SelectHTMLAttributes } from 'react';
+import { useLocale } from '../../i18n';
+import { usePopupPadding } from '../../ui/use-popup-padding';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, closeSelectMenus } from '../../ui/select';
 
-type Controller = ReturnType<typeof createMainSelectController>;
-let shared: {controller: Controller; owners: number} | null = null;
-function acquire(t: Translate) {
-  if (!shared) shared = {controller: createMainSelectController({translate: t, getHost(select) {
-    const dialog = select?.closest<HTMLDialogElement>('dialog[open]');
-    if (dialog) return dialog;
-    const fullscreen = document.fullscreenElement || (document as Document & {webkitFullscreenElement?: Element | null}).webkitFullscreenElement;
-    const player = document.getElementById('player');
-    return player && fullscreen instanceof HTMLElement && player.contains(fullscreen) ? fullscreen : document.body;
-  }}), owners: 0};
-  const entry = shared; entry.owners++; entry.controller.setTranslate(t);
-  return {controller: entry.controller, release() {
-    entry.owners--;
-    if (!entry.owners) {entry.controller.dispose(); if (shared === entry) shared = null;}
-  }};
-}
-export type MainSelectProps = SelectHTMLAttributes<HTMLSelectElement> & {'data-trigger-i18n'?: string};
-const TriggerPrefix = createContext<ReactNode>(null);
-/** No layout wrapper: the original language SVG stays a direct trigger child. */
-export function MainSelectPrefix({children, prefix}: {children: ReactNode; prefix: ReactNode}) {
-  return <TriggerPrefix value={prefix}>{children}</TriggerPrefix>;
-}
-export function closeMainSelectMenus() {shared?.controller.closeOtherCustomSelects();}
+export type MainSelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
+  'data-trigger-i18n'?: string;
+  renderPicker?(change: (value: string) => void, ref: Ref<HTMLButtonElement>): ReactNode;
+};
+const Prefix = createContext<ReactNode>(null);
+const emptyValue = '__eagler_empty_selection__';
 
-/** The native select is still the public value/change/ref owner. It is passed
- * as a stable child to the subscribed presentation, so committing a closed menu
- * cannot restore a controlled value before the original change event fires. */
-export const MainSelect = forwardRef<HTMLSelectElement, MainSelectProps>(function MainSelect(props, forwardedRef) {
-  const {t} = useLocale(), prefix = useContext(TriggerPrefix);
-  const node = useRef<HTMLSelectElement | null>(null), root = useRef<HTMLDivElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null), value = useRef<HTMLSpanElement>(null), menu = useRef<HTMLDivElement | null>(null);
-  const [state] = useState(createCustomSelectState), [carrier] = useState(() => document.createDocumentFragment());
-  const owner = useRef<ReturnType<typeof acquire> | null>(null);
-  const nativeRef = useCallback((element: HTMLSelectElement | null) => {
-    node.current = element;
-    if (typeof forwardedRef === 'function') forwardedRef(element);
-    else if (forwardedRef) forwardedRef.current = element;
-  }, [forwardedRef]);
-  const menuRef = useCallback((element: HTMLDivElement | null) => {
-    menu.current = element;
-    if (!element) return;
-    // React's portal parent is stable while the same menu moves among native
-    // top-layer hosts. Return it before React reconciles/removes the portal.
-    return () => {if (element.parentNode !== carrier) carrier.append(element); menu.current = null;};
-  }, [carrier]);
+export function MainSelectPrefix({ children, prefix }: { children: ReactNode; prefix: ReactNode }) {
+  return <Prefix.Provider value={prefix}>{children}</Prefix.Provider>;
+}
+
+export const closeMainSelectMenus = closeSelectMenus;
+
+/** The native element owns forms, refs and change events; shared Select owns the popup. */
+export const MainSelect = forwardRef<HTMLSelectElement, MainSelectProps>(function MainSelect({renderPicker, ...props}, ref) {
+  const { t } = useLocale();
+  const native = useRef<HTMLSelectElement | null>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const prefix = useContext(Prefix);
+  const [open, setOpen] = useState(false);
+  const padding = usePopupPadding(open);
+  const [value, setValue] = useState(String(props.value ?? props.defaultValue ?? ''));
+  const [options, setOptions] = useState<{ value: string; label: string; disabled: boolean }[]>([]);
+  const attach = useCallback((element: HTMLSelectElement | null) => {
+    native.current = element;
+    if (typeof ref === 'function') ref(element);
+    else if (ref) ref.current = element;
+  }, [ref]);
+
   useLayoutEffect(() => {
-    const select = node.current;
-    if (!select || !root.current || !trigger.current || !value.current || !menu.current) return;
-    const current = acquire(t); owner.current = current;
-    current.controller.installCustomSelect(select, {root: root.current, trigger: trigger.current, value: value.current, menu: menu.current, state, commit: flushSync});
-    let active = true;
-    const afterChange = () => queueMicrotask(() => {
-      if (active && owner.current === current) current.controller.syncCustomSelect(select);
-    });
-    select.addEventListener('change', afterChange);
-    return () => {
-      active = false; select.removeEventListener('change', afterChange);
-      current.controller.uninstallCustomSelect(select); current.release();
-      if (owner.current === current) owner.current = null;
-    };
-  }, [props.id, state]);
-  useLayoutEffect(() => {
-    if (node.current && owner.current) {
-      owner.current.controller.setTranslate(t);
-      owner.current.controller.syncCustomSelect(node.current);
-    }
+    if (!native.current) return;
+    const next = [...native.current.options]
+      .filter((option) => !option.hidden)
+      .map((option) => ({ value: option.value, label: option.text, disabled: option.disabled }));
+    setOptions((previous) => (JSON.stringify(previous) === JSON.stringify(next) ? previous : next));
+    setValue(native.current.value);
   });
-  const position = useCallback(() => {
-    if (node.current && owner.current) owner.current.controller.positionCustomSelectMenu(node.current);
-  }, []);
-  const native = <select {...props} className={[props.className, 'custom-select-native'].filter(Boolean).join(' ')} tabIndex={-1} aria-hidden="true" ref={nativeRef}/>;
-  return <SelectPresentation state={state} native={native} prefix={prefix} carrier={carrier} root={root} trigger={trigger} value={value} menuRef={menuRef} position={position}/>;
-});
 
-function SelectPresentation({state, native, prefix, carrier, root, trigger, value, menuRef, position}: {
-  state: CustomSelectState; native: ReactNode; prefix: ReactNode; carrier: DocumentFragment;
-  root: React.RefObject<HTMLDivElement | null>; trigger: React.RefObject<HTMLButtonElement | null>; value: React.RefObject<HTMLSpanElement | null>;
-  menuRef: React.RefCallback<HTMLDivElement>; position(): void;
-}) {
-  const snapshot = useSyncExternalStore(state.subscribe, state.getSnapshot, state.getSnapshot), description = snapshot.description;
-  // Native dimensions are read after React commits updated option content.
-  useLayoutEffect(position, [snapshot, position]);
-  return <div ref={root} className={`mizuki-select${snapshot.open ? ' open' : ''}`}>
-    <button ref={trigger} type="button" className="mizuki-select-trigger" aria-haspopup="listbox" aria-expanded={snapshot.open} aria-label={description?.ariaLabel} disabled={description?.disabled} aria-disabled={description?.disabled ?? false}>
-      {prefix}<span ref={value} className="mizuki-select-value">{description?.label ?? ''}</span><i className="mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i>
-    </button>
-    {native}
-    {createPortal(<div ref={menuRef} className="mizuki-select-menu" role="listbox" aria-label={description?.ariaLabel} hidden={!snapshot.open}>
-      <Fragment key={description?.signature ?? ''}>{description?.options.map(option => <button key={option.index} type="button" className={`mizuki-select-item${option.value === description.value ? ' selected' : ''}`} data-value={option.value} data-index={option.index} role="option" disabled={option.disabled} aria-selected={option.value === description.value}>
-        <span>{option.text}</span><i aria-hidden="true">✓</i>
-      </button>)}</Fragment>
-    </div>, carrier)}
-  </div>;
-}
+  const change = (next: string) => {
+    const select = native.current;
+    if (!select) return;
+    select.value = next === emptyValue ? '' : next;
+    setValue(select.value);
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+
+  return (
+    <div className="ui-select mizuki-select">
+      <select
+        {...props}
+        ref={attach}
+        className={`${props.className ?? ''} custom-select-native`}
+        tabIndex={-1}
+        aria-hidden="true"
+        onFocus={(event) => {
+          props.onFocus?.(event);
+          trigger.current?.focus();
+        }}
+      >
+        {props.children}
+      </select>
+      {renderPicker ? renderPicker(change, trigger) : <Select
+        value={value || emptyValue}
+        onValueChange={change}
+        open={open}
+        onOpenChange={setOpen}
+        disabled={props.disabled}
+        required={props.required}
+      >
+        <SelectTrigger
+          ref={trigger}
+          id={props.id ? `${props.id}-trigger` : undefined}
+          className="mizuki-select-trigger"
+          aria-label={props['aria-label'] || (props['aria-labelledby'] ? undefined : t('common.selectOption'))}
+          aria-labelledby={props['aria-labelledby']}
+          aria-describedby={props['aria-describedby']}
+          title={props.title}
+        >
+          {prefix}
+          <SelectValue>{options.find((option) => option.value === value)?.label ?? ''}</SelectValue>
+        </SelectTrigger>
+        <SelectContent
+          sideOffset={5}
+          collisionPadding={padding}
+          data-launcher-document={native.current?.closest('[data-launcher-document]') ? '' : undefined}
+        >
+          {options.map((option) => (
+            <SelectItem
+              key={option.value || emptyValue}
+              value={option.value || emptyValue}
+              disabled={option.disabled}
+              data-value={option.value}
+            >
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>}
+    </div>
+  );
+});

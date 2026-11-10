@@ -3,6 +3,7 @@
 #include "InputLanes.hpp"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #else
@@ -48,7 +49,7 @@ bool NetplayRuntime::Configure(const SessionSetup& setup,unsigned delay,bool rea
     core.predictableButtons=0xf9;core.directionButtons=0xf0;core.maxDirectionPredictionFrames=3;
     core.directTouchIsAbsolute=true;
     if(!gate_.Reset(gate)||!core_.Reset(core))return Fail("TH11 input core rejected setup");
-    setup_=setup;configured_=true;retired_=world_ready_=false;
+    setup_=setup;configured_=true;retired_=world_ready_=local_results_=false;
     next_=next_capture_=0;correction_end_=commit_limit_=Netplay::INVALID_FRAME;
     capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;
     network_interval_scale_=1;network_pace_ms_=now_ms_;pacing_statistics_={{1,8,0,0,0,1,1,0}};return true;
@@ -57,11 +58,11 @@ void NetplayRuntime::Clear(){
     capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;
     transport_.Close();channel_.Clear();calibration_.Clear();gate_.Clear();core_.Clear();
     configured_=network_=playback_=spectator_=retired_=false;timing_ready_=timing_sent_=publish_failed_=spectator_publisher_started_=false;
-    setup_={};base_session_=now_ms_=initial_wait_=spectator_deadline_=publish_deadline_=0;generation_=publish_frame_=receive_frame_=0;
-    phase_debt_ms_=0;error_.clear();spectator_frames_.clear();publish_tail_.clear();status_.fill(0);
+    setup_={};base_session_=now_ms_=initial_wait_=spectator_deadline_=0;generation_=publish_frame_=receive_frame_=0;
+    phase_debt_ms_=0;error_.clear();spectator_frames_.clear();publish_tail_.Clear();status_.fill(0);
     spectator_stage_playback_.Clear();spectator_stage_view_.Clear();spectator_stage_publisher_={};
     spectator_recorded_frames_={};
-    world_ready_=false;next_=next_capture_=0;correction_end_=commit_limit_=Netplay::INVALID_FRAME;
+    world_ready_=local_results_=false;next_=next_capture_=0;correction_end_=commit_limit_=Netplay::INVALID_FRAME;
     network_interval_scale_=1;network_pace_ms_=0;
 }
 bool NetplayRuntime::Reset(const SessionSetup& setup){Clear();base_session_=setup.session_id;return Configure(setup,setup.input_delay);}
@@ -72,6 +73,7 @@ bool NetplayRuntime::Connect(const char* url){
     // initialized lazily from the first fully constructed stage world.
     spectator_stage_publisher_={};spectator_publisher_started_=false;publish_failed_=false;
     if(!transport_.Connect(url,std::uint8_t(setup_.local_player),std::uint8_t(setup_.player_count),true))return Fail("TH11 transport could not connect");
+    transport_.BeginSpectatorSession(setup_.session_id,setup_.seed);
     now_ms_=clock_us()/1000;network_=true;
     if(setup_.mode==0){
         if(!channel_.BeginSession(gate_.Config(),now_ms_,channel_policy(0)))return Fail("TH11 direct session bootstrap failed");
@@ -103,8 +105,18 @@ bool NetplayRuntime::InitialInputsReady()const{
 }
 bool NetplayRuntime::Pump(bool ready,bool capture_follows){
     if(!network_)return error_.empty();now_ms_=clock_us()/1000;
-    if(spectator_)return retired_||DrainSpectator();
+    if(spectator_&&!local_results_)return DrainSpectator();
     DrainPublicationTail();
+    if(local_results_){
+        // Final gameplay is already exact. Keep delivering its reliable tail
+        // without making local endings depend on a peer staying connected.
+        if(!transport_.Failed()&&!transport_.Disconnected()){
+            channel_.Pump(gate_,core_,now_ms_,false);
+            const auto last=core_.LastSimulatedFrame();
+            if(channel_.CanRetire(core_,last))channel_.Retire(core_,last,now_ms_);
+        }
+        return true;
+    }
     if(retired_&&(transport_.Failed()||transport_.Disconnected()))return true;
     if(transport_.Disconnected())return Fail(transport_.LastError().empty()?"TH11 input connection ended":transport_.LastError().c_str());
     if(calibration_.Waiting()&&channel_.Retiring()&&!channel_.Active()&&!channel_.PumpRetirement(now_ms_))return Fail(channel_.ErrorText());
@@ -219,6 +231,13 @@ bool NetplayRuntime::Feed(std::uint32_t frame,const Netplay::FrameInput* inputs,
 }
 bool NetplayRuntime::FeedPlayback(std::uint32_t f,const Netplay::FrameInput* inputs,unsigned count){return playback_&&Feed(f,inputs,count);}
 bool NetplayRuntime::DrainSpectator(){
+    std::uint64_t session;std::uint32_t seed;
+    if(transport_.TakeSpectatorSession(&session,&seed)){
+        auto setup=setup_;setup.session_id=session;setup.seed=seed;
+        if(!Configure(setup,0,true))return false;
+        spectator_frames_.clear();spectator_stage_playback_.Clear();
+        receive_frame_=0;timing_ready_=setup_.mode==0;spectator_deadline_=now_ms_+45'000;
+    }
     std::vector<std::uint8_t> bytes;
     for(unsigned n=0;n<128&&transport_.Poll(&bytes);++n){
         if(Netplay::IsSpectatorStageEvent(bytes.data(),bytes.size())){
@@ -281,7 +300,7 @@ bool NetplayRuntime::SpectatorCheckpointRequired(std::uint32_t frame,std::uint32
 bool NetplayRuntime::RecordSpectatorFrame(std::uint32_t frame,std::uint32_t stage,
         const std::vector<std::uint8_t>& initializer,
         const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs){
-    if(!network_||spectator_||playback_||generation_||setup_.local_player)return true;
+    if(!network_||spectator_||playback_||setup_.local_player)return true;
     if(!spectator_publisher_started_){
         // Before the first stable checkpoint the title may still be creating
         // the stage's native graph. Those frames are deliberately outside the
@@ -303,7 +322,7 @@ bool NetplayRuntime::RecordSpectatorFrame(std::uint32_t frame,std::uint32_t stag
     spectator_recorded_frames_[frame%spectator_recorded_frames_.size()]={frame,stage};return true;
 }
 void NetplayRuntime::PublishConfirmedSpectatorFrames(){
-    if(!network_||ReadOnly()||generation_||setup_.local_player||!spectator_publisher_started_||publish_failed_||
+    if(!network_||ReadOnly()||retired_||setup_.local_player||!spectator_publisher_started_||publish_failed_||
        Correcting()||core_.HasRollbackRequest())return;
     const auto confirmed=core_.ConfirmedThroughAllRemotes(),last=core_.LastSimulatedFrame();
     if(confirmed==Netplay::INVALID_FRAME||last==Netplay::INVALID_FRAME)return;
@@ -315,60 +334,50 @@ void NetplayRuntime::PublishConfirmedSpectatorFrames(){
         if(!transport_.SendSpectator(timing.data(),timing.size()))return;timing_sent_=true;
     }
     const auto publish_through=std::min(through,spectator_stage_publisher_.Published()+31);
+    Netplay::SpectatorStagePublisher::PublishFailure failure{};
     const bool ok=spectator_stage_publisher_.Publish(publish_through,last,
         [&](std::uint32_t frame,std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs){return ConfirmedInputs(frame,inputs);},
-        [&](const std::vector<std::uint8_t>& bytes){return transport_.SendSpectator(bytes.data(),bytes.size());});
-    if(!ok){publish_failed_=true;transport_.StopSpectators();return;}
+        [&](const std::vector<std::uint8_t>& bytes){return transport_.SendSpectator(bytes.data(),bytes.size());},&failure);
+    if(!ok&&(!Netplay::SpectatorStagePublisher::Retryable(failure)||transport_.SpectatorState()<0)){
+        std::fprintf(stderr,"th11 spectator stopped: %s frame=%u\n",Netplay::SpectatorStagePublisher::FailureName(failure),spectator_stage_publisher_.Published());
+        publish_failed_=true;transport_.StopSpectators();return;
+    }
     publish_frame_=spectator_stage_publisher_.Published();
 }
-void NetplayRuntime::FreezePublicationTail(){
-    if(ReadOnly()||generation_||setup_.local_player||publish_failed_||!transport_.HasSpectators())return;
-    const auto through=commit_limit_;if(through==Netplay::INVALID_FRAME||Correcting()||core_.HasRollbackRequest())return;
-    const auto fail=[&](){publish_failed_=true;publish_tail_.clear();publish_deadline_=0;transport_.StopSpectators();};
-    if(through>=publish_frame_&&through-publish_frame_>=Netplay::INPUT_HISTORY_SIZE){fail();return;}
+void NetplayRuntime::FreezePublicationTail(bool restarting){
+    if(ReadOnly()||setup_.local_player||publish_failed_||!spectator_publisher_started_)return;
+    std::vector<std::uint8_t> timing;
     if(setup_.mode&&!timing_sent_){
-        auto timing=Netplay::MakeAdonisSpectatorTiming(calibration_.Startup(),gate_.Config(),setup_.automatic).Encode();
-        if(timing.empty()){fail();return;}publish_tail_.push_back(std::move(timing));timing_sent_=true;
+        timing=Netplay::MakeAdonisSpectatorTiming(calibration_.Startup(),gate_.Config(),setup_.automatic).Encode();
+        if(timing.empty()){publish_failed_=true;transport_.StopSpectators();return;}
     }
-    for(;publish_frame_<=through;++publish_frame_){
-        Netplay::SpectatorFramePacket packet;packet.sessionId=setup_.session_id;packet.frame=publish_frame_;
-        packet.gameplayAbi=GameplayAbi(setup_);packet.playerCount=std::uint8_t(setup_.player_count);
-        std::vector<std::uint8_t> bytes;
-        if(!ConfirmedInputs(publish_frame_,packet.inputs)||!Netplay::EncodeSpectatorFramePacket(packet,&bytes)){fail();return;}
-        publish_tail_.push_back(std::move(bytes));
+    if(!publish_tail_.Freeze(spectator_stage_publisher_,core_.ConfirmedThroughAllRemotes(),core_.LastSimulatedFrame(),
+        [&](std::uint32_t frame,std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs){return ConfirmedInputs(frame,inputs);},now_ms_,timing,!restarting)){
+        std::fprintf(stderr,"th11 spectator stopped: retirement-tail frame=%u\n",spectator_stage_publisher_.Published());
+        publish_failed_=true;transport_.StopSpectators();return;
     }
-    // This bounded confirmed-input tail is independent of the next world's
-    // input ring and never delays a player's retirement or generation reset.
-    publish_deadline_=now_ms_+15'000;DrainPublicationTail();
+    if(setup_.mode)timing_sent_=true;
+    publish_frame_=spectator_stage_publisher_.Published();DrainPublicationTail();
 }
 void NetplayRuntime::DrainPublicationTail(){
-    if(!publish_deadline_)return;
-    if(now_ms_>=publish_deadline_||transport_.SpectatorState()<0){
-        publish_failed_=true;publish_tail_.clear();publish_deadline_=0;transport_.StopSpectators();return;
-    }
-    const auto begin=clock_us();
-    for(unsigned n=0;!publish_tail_.empty()&&n<32;++n){
-        if(n&&clock_us()-begin>=2000)break;
-        const auto& bytes=publish_tail_.front();if(!transport_.SendSpectator(bytes.data(),bytes.size()))return;
-        publish_tail_.pop_front();
-    }
-    if(publish_tail_.empty()){transport_.StopSpectators(true);publish_deadline_=0;}
+    using Result=Netplay::SpectatorPublicationTail::Result;
+    const auto result=publish_tail_.Drain(now_ms_,transport_.SpectatorState()<0,
+        [&](const auto& bytes){return transport_.SendSpectator(bytes.data(),bytes.size());},clock_us);
+    if(result==Result::Complete)transport_.StopSpectators(true);
+    if(result==Result::Failed){publish_failed_=true;transport_.StopSpectators();}
 }
-bool NetplayRuntime::Finish(){
+bool NetplayRuntime::Finish(bool restarting,bool local_results){
     if(retired_)return true;const auto last=core_.LastSimulatedFrame();if(last==Netplay::INVALID_FRAME)return false;
     if(Correcting()||core_.HasRollbackRequest()||!InputsReconciledBeforeNext()||commit_limit_!=last)return false;
     if(ReadOnly()){retired_=true;return true;}
     if(network_){if(!channel_.FlushRetirementFence(core_,last,now_ms_))return Fail("TH11 retirement input flush failed");
-        if(!channel_.CanRetire(core_,last))return false;
-        if(!channel_.Retire(core_,last,now_ms_))return Fail("TH11 retirement failed");}
+        if(!local_results){
+            if(!channel_.CanRetire(core_,last))return false;
+            if(!channel_.Retire(core_,last,now_ms_))return Fail("TH11 retirement failed");
+        }}
     PublishConfirmedSpectatorFrames();
-    if(!ReadOnly()&&!generation_&&!setup_.local_player&&!publish_failed_&&spectator_stage_publisher_.Published()==last+1){
-        if(!spectator_stage_publisher_.Finish(last+1,[&](const std::vector<std::uint8_t>& bytes){
-            return transport_.SendSpectator(bytes.data(),bytes.size());})){
-            publish_failed_=true;transport_.StopSpectators();
-        }else transport_.StopSpectators(true);
-    }
-    retired_=true;return true;
+    FreezePublicationTail(restarting);
+    local_results_=local_results;retired_=true;return true;
 }
 bool NetplayRuntime::BeginNextRun(std::uint32_t seed){
     if(!retired_||ReadOnly()||seed>65535||generation_==0xffffffffu)return Fail("Invalid TH11 next generation");
@@ -379,6 +388,8 @@ bool NetplayRuntime::BeginNextRun(std::uint32_t seed){
     // from the previous run before the new native world is initialized.
     spectator_stage_publisher_={};spectator_publisher_started_=false;spectator_stage_playback_.Clear();spectator_stage_view_.Clear();
     spectator_recorded_frames_={};spectator_frames_.clear();
+    publish_tail_.Clear();publish_failed_=false;
+    transport_.BeginSpectatorSession(setup_.session_id,setup_.seed);
     if(network_){
         if(!setup_.mode){if(!channel_.BeginSession(gate_.Config(),now_ms_,channel_policy(0)))return Fail("TH11 next direct session failed");timing_ready_=true;}
         else calibration_.Prepare(gate_.Config(),Mode(),setup.automatic,setup.requested_delay,setup.prediction_reserve,&previous);
@@ -410,7 +421,7 @@ double NetplayRuntime::PacedElapsed(double elapsed){
 const std::uint32_t* NetplayRuntime::Status(){
     status_.fill(0);status_[0]=1;status_[1]=configured_;status_[2]=CanStart();status_[3]=NextFrame();status_[4]=Confirmed();
     status_[5]=setup_.player_count;status_[6]=setup_.local_player;status_[7]=setup_.input_delay;status_[8]=PredictionLimit();status_[9]=network_;
-    status_[10]=spectator_;status_[11]=playback_;status_[12]=generation_;status_[13]=retired_;status_[14]=unsigned(spectator_?spectator_frames_.size():publish_tail_.size());
+    status_[10]=spectator_;status_[11]=playback_;status_[12]=generation_;status_[13]=retired_;status_[14]=unsigned(spectator_?spectator_frames_.size():publish_tail_.Size());
     status_[15]=channel_.PacketsSent();status_[16]=channel_.PacketsReceived();status_[17]=channel_.RepairsSent();status_[18]=channel_.PacketsIgnored();
     status_[19]=transport_.IsOpen();const std::string mode=transport_.Mode();status_[20]=mode=="rtc"?1:mode=="relay"?2:spectator_?3:0;
     status_[21]=InitialInputsReady();status_[22]=publish_failed_;status_[23]=*Error()!=0;return status_.data();

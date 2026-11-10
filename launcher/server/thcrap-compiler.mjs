@@ -1,9 +1,10 @@
 import { extname } from "node:path";
 import {Th075ThcrapCompiler} from "./th075-thcrap-compiler.mjs";
+import {Th12ThcrapCompiler} from "./th12-thcrap-compiler.mjs";
 import { legacyAsciiPrintfSignature, validateAsciiContract } from "./thcrap-ascii-contract.mjs";
 import { validateStringContract } from "./thcrap-string-contract.mjs";
 
-const GAME_VERSION = Object.freeze({ th06: 6, th07: 7, th08: 8, th09: 9, th10: 10, th11: 11, th15: 15 });
+const GAME_VERSION = Object.freeze({ th06: 6, th07: 7, th08: 8, th09: 9, th10: 10, th11: 11, th12: 12, th15: 15, th17: 17 });
 export const THCRAP_RUNTIME_COMPILER_GAMES = Object.freeze([...Object.keys(GAME_VERSION), "th075"]);
 const GAME_PATTERN = `(?:${THCRAP_RUNTIME_COMPILER_GAMES.join("|")})`;
 const MESSAGE_DIFF = new RegExp(`^${GAME_PATTERN}\\/(msg[1-8][a-z]{0,2}\\.dat)\\.jdiff$`, "i");
@@ -14,9 +15,9 @@ const TH10_ENDING_DIFF = /^th10\/(e\d+\.msg)\.jdiff$/i;
 // TH11 uses MSG_TH11 (auto line 17) and END_TH10, as defined by thcrap_tsa.
 const TH11_DIALOGUE_DIFF = /^th11\/(st\d{2}_\d{2}[a-c]\.msg)\.jdiff$/i;
 const TH11_ENDING_DIFF = /^th11\/(e\d{2}\.msg)\.jdiff$/i;
-// THCRAP th06_msg.cpp selects MSG_TH14 for TH15; END_TH10 is shared.
-const TH15_DIALOGUE_DIFF = /^th15\/(st\d{2}[a-d]\.msg)\.jdiff$/i;
-const TH15_ENDING_DIFF = /^th15\/(e\d{2}\.msg)\.jdiff$/i;
+// Both releases use thcrap's MSG_TH14 and END_TH10 formats.
+const LATE_DIALOGUE_DIFF = /^(th15|th17)\/(st\d{2}([a-i])\.msg)\.jdiff$/i;
+const LATE_ENDING_DIFF = /^(th15|th17)\/(e\d{2}\.msg)\.jdiff$/i;
 // TH09 uses the same encrypted MSG_TH09 command format for both story and
 // versus scripts. Ending scripts are the older .end format handled below.
 const TH09_DIALOGUE_DIFF = /^th09\/(pl\d{2}(?:_match)?\.msg)\.jdiff$/i;
@@ -354,7 +355,7 @@ const ENDING_LINE_FORMAT = Object.freeze({
 });
 
 function msgLineFormat(version) {
-  if (version === 15) return MSG_LINE_FORMAT[15];
+  if (version === 15 || version === 17) return MSG_LINE_FORMAT[15];
   if (version === 11) return MSG_LINE_FORMAT[11];
   if (version === 10) return MSG_LINE_FORMAT[10];
   if (version === 9) return MSG_LINE_FORMAT[9];
@@ -364,7 +365,7 @@ function msgLineFormat(version) {
 }
 
 function endingLineFormat(version) {
-  if (version === 15) return ENDING_LINE_FORMAT[15];
+  if (version === 15 || version === 17) return ENDING_LINE_FORMAT[15];
   if (version === 11) return ENDING_LINE_FORMAT[11];
   if (version === 10) return ENDING_LINE_FORMAT[10];
   throw new TypeError(`unsupported ending version: ${version}`);
@@ -501,7 +502,7 @@ export function patchThmsgDump(source, diff, version = 6, { ending = false } = {
   for (let index = 0; index < lines.length; index++) {
     // MSG_TH11 marks opcode 25 as OP_DELETE: thcrap_tsa/process_op omits
     // it from the patched output even when this message has no text diff.
-    if (!ending && (version === 11 || version === 15) && /^\t25;/.test(lines[index].toString("latin1", 0, 8))) continue;
+    if (!ending && (version === 11 || version === 15 || version === 17) && /^\t25;/.test(lines[index].toString("latin1", 0, 8))) continue;
     if (replacements.has(index)) {
       const replacement = replacements.get(index);
       if (replacement) output.push(replacement);
@@ -675,6 +676,7 @@ export function encodeSpellCommentsTable(parsed, { game } = {}) {
 
 export class ThcrapRuntimeCompiler {
   constructor({ runner, archives = {}, fontFile, fontPython, fontLicense } = {}) {
+    this.th12Compiler = archives.th12 ? new Th12ThcrapCompiler({runner, archives:Array.isArray(archives.th12)?archives.th12:[archives.th12], python:fontPython, parseJson:parseThcrapJson}) : null;
     this.th075Compiler = archives.th075 ? new Th075ThcrapCompiler({archives: Array.isArray(archives.th075)?archives.th075:[archives.th075],fontFile,fontLicense,python:fontPython,parseJson:parseThcrapJson}) : null;
     if ((!runner || typeof runner.extractArchiveEntry !== "function" || typeof runner.dumpMessage !== "function" ||
         typeof runner.compileMessage !== "function") && !(this.th075Compiler && Object.keys(archives).every(game=>game==="th075"))) throw new TypeError("thtk runner is required");
@@ -745,6 +747,25 @@ export class ThcrapRuntimeCompiler {
         targetPath: `/thcrap/${game.toLowerCase()}/localization/${table.toLowerCase()}.etl`
       };
     }
+    if (resource.path === "th17/trophy.js") {
+      const records = [];
+      for (const [rawKey, value] of Object.entries(parsed)) {
+        const match = /^(\d+)(?:_([01]))?$/.exec(rawKey);
+        if (!match || value === null) continue;
+        const id = Number(match[1]);
+        const firstRow = match[2] === undefined ? 0 : 1 + 3 * Number(match[2]);
+        const rows = Array.isArray(value) ? value : [value];
+        for (let i = 0; i < Math.min(rows.length, firstRow ? 3 : 1); i++) {
+          if (rows[i] !== null) pushLocalizationRecord(records, id, firstRow + i, rows[i], "trophy." + rawKey);
+        }
+      }
+      return {
+        bytes: serializeLocalizationRecords(records),
+        extension: ".etl",
+        format: "eagler-localization-table/1",
+        targetPath: "/thcrap/th17/localization/trophy.etl"
+      };
+    }
     const spellComments = SPELL_COMMENTS_TABLE.exec(resource.path);
     if (spellComments) {
       const game = spellComments[1].toLowerCase();
@@ -765,11 +786,13 @@ export class ThcrapRuntimeCompiler {
       };
     }
     const th10Dialogue = TH10_DIALOGUE_DIFF.exec(resource.path);
-    const th15Dialogue = TH15_DIALOGUE_DIFF.exec(resource.path);
-    if (th15Dialogue) {
-      const base = await this.readBaseFile("th15", th15Dialogue[1]);
-      const dumped = await this.runner.dumpMessage(base, 15);
-      const bytes = await this.runner.compileMessage(patchThmsgDump(dumped, parsed, 15), 15);
+    const lateDialogue = LATE_DIALOGUE_DIFF.exec(resource.path);
+    if (lateDialogue && (lateDialogue[1].toLowerCase() === "th17" || /^[a-d]$/i.test(lateDialogue[3]))) {
+      const [, gameId, entry] = lateDialogue;
+      const game = gameId.toLowerCase(), version = GAME_VERSION[game];
+      const base = await this.readBaseFile(game, entry);
+      const dumped = await this.runner.dumpMessage(base, version);
+      const bytes = await this.runner.compileMessage(patchThmsgDump(dumped, parsed, version), version);
       return { bytes, extension: ".msg", format: "touhou-message/1", targetPath: resource.mountPath.replace(/\.jdiff$/i, "") };
     }
     const th11Dialogue = TH11_DIALOGUE_DIFF.exec(resource.path);
@@ -810,11 +833,13 @@ export class ThcrapRuntimeCompiler {
       };
     }
     const th10Ending = TH10_ENDING_DIFF.exec(resource.path);
-    const th15Ending = TH15_ENDING_DIFF.exec(resource.path);
-    if (th15Ending) {
-      const base = await this.readBaseFile("th15", th15Ending[1]);
-      const dumped = await this.runner.dumpEnding(base, 15);
-      const bytes = await this.runner.compileEnding(patchThmsgDump(dumped, parsed, 15, { ending: true }), 15);
+    const lateEnding = LATE_ENDING_DIFF.exec(resource.path);
+    if (lateEnding) {
+      const [, gameId, entry] = lateEnding;
+      const game = gameId.toLowerCase(), version = GAME_VERSION[game];
+      const base = await this.readBaseFile(game, entry);
+      const dumped = await this.runner.dumpEnding(base, version);
+      const bytes = await this.runner.compileEnding(patchThmsgDump(dumped, parsed, version, { ending: true }), version);
       return { bytes, extension: ".msg", format: "touhou-ending/1", targetPath: resource.mountPath.replace(/\.jdiff$/i, "") };
     }
     const th11Ending = TH11_ENDING_DIFF.exec(resource.path);
@@ -870,6 +895,10 @@ export class ThcrapRuntimeCompiler {
 
   async processPack(resources, context = {}) {
     if (!Array.isArray(resources)) throw new TypeError("thcrap resources must be an array");
+    if(resources.some(resource=>resource.game==='th12')){
+      if(!this.th12Compiler||resources.some(resource=>resource.game!=='th12'))throw Error('TH12 requires its own configured source lane');
+      return this.th12Compiler.processPack(resources,context);
+    }
     if(resources.some(resource=>resource.game==="th075")){if(!this.th075Compiler||resources.some(resource=>resource.game!=="th075"))throw Error("TH075 requires its own configured source lane");return this.th075Compiler.processPack(resources,context);}
     const stringdefsSources = resources.filter(resource => resource?.sourceRole === "stringdefs");
     const normalResources = resources.filter(resource => resource?.sourceRole !== "stringdefs");
@@ -883,6 +912,22 @@ export class ThcrapRuntimeCompiler {
       if (games.size !== 1) throw new TypeError("stringdefs merge sources must belong to one game");
       const game = [...games][0];
       const merged = mergeStringdefsResources(stringdefsSources);
+      if (game === "th17") {
+        const lines = [1, 3, 4, 6, 7];
+        const warning = lines.flatMap((row, index) => {
+          const value = merged['th10 Music Room spoiler ' + (index + 1)];
+          return typeof value === "string" ? [[row, value.replace(/^<c\$(.*)\$>$/, "$1")]] : [];
+        });
+        const records = [];
+        for (const [row, value] of warning) pushLocalizationRecord(records, 0, row, value, "music warning");
+        const targetPath = "/thcrap/th17/localization/music-warning.etl";
+        processed.push({
+          game, path: "stringdefs.js", mountPath: targetPath, targetPath,
+          kind: "table", format: "eagler-localization-table/1", extension: ".etl",
+          bytes: serializeLocalizationRecords(records)
+        });
+        return processed;
+      }
       const bytes = encodeAsciiLocalizationTable(merged, { game });
       processed.push({
         game,

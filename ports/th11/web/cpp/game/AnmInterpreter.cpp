@@ -1,4 +1,5 @@
 #include "AnmVm.hpp"
+#include "AnmPresentation.hpp"
 #include <cmath>
 namespace th11 {
 namespace {
@@ -58,6 +59,9 @@ double calculate(double a,double b,u32 op){switch(op){case 0:return b;case 1:ret
 // 0x44b4b0. The instruction set shares older opcodes but has TH11-specific
 // scrolling interpolation, screen UVs, child spawning and partial-ring modes.
 int AnmVm::update(AnmEnvironment& env){
+    // Publish the pre-update visual endpoint once per fixed tick. This is a
+    // sidecar; the 0x434-byte native AnmVm layout is unchanged.
+    presentation::capture(*this);
     if(!instruction)return 1;if(flags&0x20000)return 0;
     struct RateScope{float& value;float previous;~RateScope(){value=previous;}} guard{env.rate,env.rate};
     if(flags&0x20000000)env.rate=1;

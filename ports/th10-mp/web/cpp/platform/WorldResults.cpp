@@ -67,5 +67,10 @@ bool World::create_results(){Resources env(*this);return ResultsResources::creat
 void World::destroy_results(Results* results){Resources env(*this);ResultsResources{*results,env}.shutdown();std::free(results);}
 void World::show_results(bool clear){actors.results->show_result(clear,results_services());}
 i32 World::update_results(){return actors.results->update(results_services());}
-i32 World::draw_results(){Draw env(*this);return actors.results->draw(env);}
+i32 World::draw_results(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(state.netplay_runtime.Spectator()&&!state.netplay_runtime.Retired())return 1;
+#endif
+    Draw env(*this);return actors.results->draw(env);
+}
 }

@@ -141,11 +141,13 @@ i32 UiMenus::update_retry(){
     for(i32 i=0;i<4;++i)executor.execute(vm[i]);if(c.lockable_backbuffer)executor.execute(s.background);s.frames=wrapping_add(s.frames,1);return 0;
 }
 void UiMenus::draw_pause(){
+    if(context.spectator)return;
     auto& s=ascii.pause;if(!context.pause_state)return;viewport();
     if(context.lockable_backbuffer&&s.state!=0)draw_presented(s.background,pause_background,pause_presentation_valid,true);
     for(size_t i=0;i<10;++i)if(s.sprites[i].visible)draw_presented(s.sprites[i],pause_previous[i],pause_presentation_valid);
 }
 void UiMenus::draw_retry(){
+    if(context.spectator)return;
     auto& s=ascii.retry;if(!context.show_retry)return;viewport();
     if(context.lockable_backbuffer&&(s.state!=0||s.frames>2))draw_presented(s.background,retry_background,retry_presentation_valid);
     const i32 count=!context.spell_practice()&&context.difficulty<4?4:3;for(i32 i=0;i<count;++i)if(s.sprites[i].visible)draw_presented(s.sprites[i],retry_previous[i],retry_presentation_valid);

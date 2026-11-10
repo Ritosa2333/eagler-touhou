@@ -5,6 +5,9 @@
 | 第一次运行 | [启动器入口](../README.md) |
 | 前端与单个游戏联调 | [开发指南](DEVELOPMENT.md) |
 | 目录、依赖与数据流 | [架构](ARCHITECTURE.md) |
+| UI 源码参考与扩展设计 | [组件、组合与验收](ui-controls.md) |
+| 界面语言与消息编译 | [三语指南](paraglide-i18n.md) |
+| 前端工具、测试分组与安装校验 | [检查与测试](frontend-tooling.md) |
 | 新游戏适配 | [适配流程](../../docs/adaptation/README.md) |
 | Runtime 消息与能力 | [接口](GAME_ADAPTER_CONTRACT.md)、[能力分类](ADAPTER_CAPABILITIES.md)、[交互行为](ADAPTER_BEHAVIOR_INVARIANTS.md) |
 | 语言和练习 | [集成接口](../integrations/RUNTIME_CONTRACT.md) |

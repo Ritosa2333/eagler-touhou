@@ -1,6 +1,7 @@
 #include "EclNative.hpp"
 #include "AsciiManager.hpp"
 #include "GameMath.hpp"
+#include "Localization.hpp"
 #include <cmath>
 namespace th08 {
 bool configure_ecl_native(EclVm& vm,const EclInstruction& ins){
@@ -62,7 +63,7 @@ bool execute_ecl_native(EclVm& vm,i32 id,const EclInstruction& ins){
     case 26:globals.paused=u8(raw(1));actions->background_interrupt(globals.paused?2:1);break;
     case 22:{
         static constexpr char name[]={char(129),char(117),char(131),char(138),char(131),char(85),char(131),char(140),char(131),char(78),char(131),char(86),char(131),char(135),char(131),char(147),char(129),char(118),0};
-        globals.spell_flags=(globals.spell_flags|1024)&~17u;if(!actions->spell_announcement(-1,name,1))vm.invalid=true;break;
+        globals.spell_flags=(globals.spell_flags|1024)&~17u;if(!actions->spell_announcement(-1,Localization::StringById("th08 Spell Resurrection",name),1))vm.invalid=true;break;
     }
     case 31:actions->item(vm.position,actions->bomb_active()?3:5,0);break;
     default:vm.invalid=true;vm.failure=EclVm::Failure::UnsupportedNativeCallback;return false;

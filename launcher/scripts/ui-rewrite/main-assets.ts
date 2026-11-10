@@ -1,15 +1,15 @@
 import {readFileSync, cpSync, existsSync, mkdirSync} from 'node:fs';
 import {resolve} from 'node:path';
-import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import type {Plugin} from 'vite';
 import {launcherStyleSources, buildLauncherStyleOutputs, buildRuntimeProgramWorkerSource} from '../../lib/frontend-assets.mjs';
 import {writeFileAtomic} from '../../lib/atomic-file.mjs';
-import {STATIC_FRONTEND_PACKAGE_FILES} from '../../lib/frontend-static-manifest.mjs';
+import {STATIC_FRONTEND_PACKAGE_FILES, REACT_DOCUMENT_FILES} from '../../lib/frontend-static-manifest.mjs';
 import {resolvePublicOrRepositorySource} from '../../lib/public-source.mjs';
 import {authoredSourcesPlugin} from '../../lib/authored-source-resolution.mjs';
 import {build} from 'esbuild';
 import {reactDeploymentConfig} from './deployment-config.ts';
+import {buildAuthoredContent} from '../../lib/content-build.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 // Original lobby selectors stopped at the launcher iframe's document. Settings,
 // Player and their detached overlays now retain that ownership explicitly. The
@@ -23,6 +23,22 @@ export function mainAssets(): Plugin {
   return {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
+        const pathname = req.url?.split('?')[0];
+        const asset = pathname?.startsWith(deployment.mountPath) ? pathname.slice(deployment.mountPath.length) : '';
+        // publicDir is disabled: serve the same explicit static asset inventory
+        // in development that closeBundle copies into the production artifact.
+        if (['migrate.html', 'compatibility.html', 'compatibility.en.html', 'compatibility.ja.html'].includes(asset)) {
+          res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','no-cache');res.end(readFileSync(resolve(root,'public',asset)));return;
+        }
+        if ((asset.startsWith('assets/') || asset.startsWith('content/')) && STATIC_FRONTEND_PACKAGE_FILES.includes(asset)) {
+          try {
+            const source = resolvePublicOrRepositorySource(asset);
+            res.setHeader('Content-Type', asset.endsWith('.html') ? 'text/html; charset=utf-8' : asset.endsWith('.mjs') ? 'application/javascript' : asset.endsWith('.svg') ? 'image/svg+xml' : asset.endsWith('.png') ? 'image/png' : asset.endsWith('.webp') ? 'image/webp' : asset.endsWith('.ico') ? 'image/x-icon' : 'application/octet-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.end(readFileSync(source));
+          } catch (error) {next(error);}
+          return;
+        }
         if (req.url?.split('?')[0] !== deployment.mountPath + 'runtime-program-sw.js') {next();return;}
         try {res.setHeader('Content-Type', 'application/javascript');res.setHeader('Cache-Control', 'no-cache');
           res.end(await buildRuntimeProgramWorkerSource({project:root}));}
@@ -48,10 +64,10 @@ export function mainAssets(): Plugin {
         .replace('.lobby-page.less-motion *{', `.lobby-page.less-motion *${outsideLauncherDocument}{`)
         .replace('.lobby-page *{', `.lobby-page *${outsideLauncherDocument}{`);
     },
-    buildStart() {
+    async buildStart() {
       if (this.environment.config.consumer !== 'client') return;
       // Use main's compiler so Markdown-only edits cannot publish stale copy.
-      execFileSync(process.execPath, [resolve(root, 'scripts/build-content-pages.mjs'), '--quiet'], {cwd: root, stdio: 'pipe'});
+      await buildAuthoredContent(root);
     },
     writeBundle(_options, bundle) {
       if (this.environment.config.consumer !== 'client') return;
@@ -67,7 +83,7 @@ export function mainAssets(): Plugin {
       mkdirSync(output, {recursive: true});
       // Consume the same public-file contract as main. Route documents and
       // generated CSS belong to their respective builders, not raw copying.
-      const generated = new Set(['index.html', 'en.html', 'lobby.html', 'styles.css', 'features.css', 'touch-guide.css', 'runtime-program-sw.js']);
+      const generated = new Set([...REACT_DOCUMENT_FILES, 'styles.css', 'features.css', 'runtime-program-sw.js']);
       for (const path of STATIC_FRONTEND_PACKAGE_FILES) {
         if (generated.has(path) || path.startsWith('legacy/')) continue;
         const source = resolvePublicOrRepositorySource(path);

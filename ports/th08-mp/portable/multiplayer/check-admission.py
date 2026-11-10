@@ -47,11 +47,20 @@ with sync_playwright() as p:
                 for frame in range(360):
                     for seat,page in enumerate(pages):
                         buttons=(1|(64 if seat%2 else 128)) if frame>=240 else 0
-                        assert call(page,'v=>multiplayerSmoke.capture(...v)',[frame,buttons])
+                        if frame==0 and seat==0:
+                            assert call(page,'v=>multiplayerSmoke.captureInput(...v)',[frame,buttons,2,8188,-8192,0])
+                        else:
+                            assert call(page,'v=>multiplayerSmoke.capture(...v)',[frame,buttons])
                     for seat,page in enumerate(pages):
                         for target,receiver in enumerate(pages):
                             if target!=seat:apply(receiver,call(page,'v=>multiplayerSmoke.inputPacket(...v)',[target,frame,frame+1]))
                     for page in pages:call(page,'multiplayerSmoke.ticks(1)')
+                    if frame>=240:
+                        expected=[1|(64 if seat%2 else 128) for seat in range(count)]
+                        for page in pages:
+                            state=call(page,'multiplayerSmoke.status()')
+                            consumed=[state[18+seat*12] for seat in range(count)]
+                            assert consumed==expected,('Gameplay input crossed seats',count,frame,consumed,expected)
                     if frame in (0,119,239,359):
                         states=[call(page,'multiplayerSmoke.status()') for page in pages]
                         assert all(s[:2]+s[3:]==states[0][:2]+states[0][3:] for s in states),states

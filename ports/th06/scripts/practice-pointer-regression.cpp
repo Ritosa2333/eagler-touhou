@@ -16,6 +16,11 @@ static void frame(){
         mobile::begin(mobile::Cheats,"Cheats###test",ImGuiWindowFlags_NoMove|ImGuiWindowFlags_AlwaysAutoResize,1);
         ImGui::End();
     }
+    if(mobile::show(mobile::Information,false)){
+        ImGui::SetNextWindowPos({450,220},ImGuiCond_Always);
+        if(mobile::begin(mobile::Information,"Info###test-information",ImGuiWindowFlags_AlwaysAutoResize,1))ImGui::Dummy({150,100});
+        ImGui::End();
+    }
     ImGui::Render();
 }
 int main(){
@@ -40,6 +45,29 @@ int main(){
     assert(!ThpracImGui::RouteTouchPointer(0,2,.99f,.99f,true));
     assert(!ThpracImGui::RouteTouchPointer(1,2,20.f/640,20.f/480,true));
     assert(!ThpracImGui::RouteTouchPointer(2,2,20.f/640,20.f/480,true));
+    // The black Information window keeps a tap, but forwards the original
+    // pointer-down to gameplay when the same gesture becomes a drag.
+    assert(ThpracImGui::RouteTouchPointer(0,id,470.f/640,230.f/480,true));
+    assert(ThpracImGui::RouteTouchPointer(2,id,470.f/640,230.f/480,true));
+    frame();frame();frame();frame();frame();assert(mobile::expanded[mobile::Information]);
+    float startX=-1,startY=-1;
+    assert(ThpracImGui::RouteTouchPointer(0,id,470.f/640,270.f/480,true));
+    assert(!ThpracImGui::RouteTouchPointer(1,id,495.f/640,280.f/480,true,&startX,&startY));
+    assert(std::abs(startX-470.f/640)<.00001f&&std::abs(startY-270.f/480)<.00001f);
+    assert(!ThpracImGui::RouteTouchPointer(2,id,495.f/640,280.f/480,true));
+    // Coalesced input can first exceed the drag threshold on release.
+    assert(ThpracImGui::RouteTouchPointer(0,id,470.f/640,270.f/480,true));
+    startX=startY=-1;
+    assert(!ThpracImGui::RouteTouchPointer(2,id,495.f/640,280.f/480,true,&startX,&startY));
+    assert(std::abs(startX-470.f/640)<.00001f&&std::abs(startY-270.f/480)<.00001f);
+    // Native SDL window-normalized input retains its own coordinate space.
+    assert(ThpracImGui::RouteTouchPointer(0,id,940.f/1280,540.f/960,false));
+    assert(!ThpracImGui::RouteTouchPointer(1,id,990.f/1280,560.f/960,false,&startX,&startY));
+    assert(std::abs(startX-940.f/1280)<.00001f&&std::abs(startY-540.f/960)<.00001f);
+    assert(!ThpracImGui::RouteTouchPointer(2,id,990.f/1280,560.f/960,false));
+    assert(ThpracImGui::RouteTouchPointer(0,id,470.f/640,270.f/480,true));
+    assert(ThpracImGui::RouteTouchPointer(3,id,470.f/640,270.f/480,true));
+    assert(!ThpracImGui::RouteTouchPointer(1,id,495.f/640,280.f/480,true));
     // Native SDL normalized window coordinates map through the render scale.
     assert(ThpracImGui::RouteTouchPointer(0,id,40.f/1280,40.f/960,false));
     assert(!ThpracImGui::RouteTouchPointer(0,3,.99f,.99f,true));

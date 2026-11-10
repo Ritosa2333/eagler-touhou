@@ -4,7 +4,7 @@ import {createServer} from 'node:net';
 import {setTimeout as sleep} from 'node:timers/promises';
 import {randomUUID} from 'node:crypto';
 import {resolve} from 'node:path';
-import test from 'node:test';
+import {test, onTestFinished} from 'vitest';
 import {WebSocket} from 'ws';
 
 const root=resolve(import.meta.dirname,'..');
@@ -12,14 +12,14 @@ async function until(check,message){
   const deadline=Date.now()+5000;
   while(!check()){assert(Date.now()<deadline,message);await sleep(10);}
 }
-async function service(t){
+async function service(t,{relayFallback=false}={}){
   const port=await new Promise((done,reject)=>{const p=createServer();p.once('error',reject);
     p.listen(0,'127.0.0.1',()=>{const value=p.address().port;p.close(error=>error?reject(error):done(value));});});
   const child=spawn(process.execPath,['../services/relay/src/netplay-relay.mjs'],{cwd:root,windowsHide:true,
-    env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_RTC_TIMEOUT_MS:'1000'},
+    env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_RTC_TIMEOUT_MS:'1000',EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK:relayFallback?'1':'0'},
     stdio:['ignore','pipe','pipe']});
   let log='';child.stdout.on('data',b=>{log+=b;});child.stderr.on('data',b=>{log+=b;});
-  const sockets=[];t.after(()=>{for(const value of sockets)value.socket.close();child.kill();});
+  const sockets=[];onTestFinished(()=>{for(const value of sockets)value.socket.close();child.kill();});
   await until(()=>{assert.equal(child.exitCode,null,log);return log.includes('relay listening');},'relay failed to listen');
   async function open(query){
     const socket=new WebSocket('ws://127.0.0.1:'+port+'/?'+new URLSearchParams(query));
@@ -39,7 +39,7 @@ const send=(client,message)=>client.socket.send(JSON.stringify(message));
 const roomOf=client=>client.messages.filter(message=>message.room).at(-1)?.room;
 
 test('relay endpoint exit closes the gameplay run, preserves seats/lobby and permits a new run',async t=>{
-  const {open}=await service(t),room='th07mp-lifecycle-'+randomUUID().slice(0,8);
+  const {open}=await service(t,{relayFallback:true}),room='th07mp-lifecycle-'+randomUUID().slice(0,8);
   const lobby=[await open({room,lobby:'lifecycle_client_0',member:'m_lifecycle_client_0'}),await open({room,lobby:'lifecycle_client_1',member:'m_lifecycle_client_1'})];
   for(let seat=0;seat<2;++seat){
     send(lobby[seat],{type:'take-seat',seat,loadout:0,ready:false});
@@ -80,8 +80,8 @@ test('RTC selection can retire unused relay sockets without killing signaling or
   assert(signals.every(peer=>peer.socket.readyState===WebSocket.OPEN));
 });
 
-test('all-signaling-unavailable rooms still resolve the relay barrier and reject mixed player counts',async t=>{
-  const {open}=await service(t),room='relay-only-'+randomUUID().slice(0,8);
+test('explicit WebSocket fallback resolves the relay barrier without signaling and rejects mixed player counts',async t=>{
+  const {open}=await service(t,{relayFallback:true}),room='relay-only-'+randomUUID().slice(0,8);
   const peers=[await open({room,run:'1',player:0,players:2}),await open({room,run:'1',player:1,players:2})];
   await until(()=>peers.every(peer=>peer.messages.some(message=>message.type==='route'&&message.mode==='relay')),'relay-only barrier depended on signaling');
   const invalid=await open({room,run:'1',player:2,players:3});

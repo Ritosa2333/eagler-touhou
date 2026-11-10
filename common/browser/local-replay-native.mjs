@@ -16,7 +16,7 @@ export function listLocalReplayFiles(fs,root,validate,describe=(path)=>({path}))
   return files;
 }
 // Adapt the small native ABI without teaching the host any Replay file format.
-export function createNativeLocalReplay({core: getCore,module: getModule,physical,openReplay,stepReplay,replayState,stopLoop,pauseAudio,resumeAudio,onState,onError}) {
+export function createNativeLocalReplay({core: getCore,module: getModule,physical,openReplay,stepReplay,replayState,stopLoop,pauseAudio,resumeAudio,onState,onError,waitForAudio=true,deferPresentation}) {
   const api=key=>{const c=getCore();return c[key]??c['_'+key];};
   let audioPaused=true,outputPaused=null,wasSeeking=false,resuming=null;
   function discardTransientSounds(){const pool=getModule()?.eaglerSfxOutput;if(pool)for(const voice of pool.voices.values())if(!voice.loop)pool.stop(voice);}
@@ -35,7 +35,7 @@ export function createNativeLocalReplay({core: getCore,module: getModule,physica
       try{Promise.resolve(resumeAudio?resumeAudio():context?.resume()).catch(()=>{}).finally(()=>{if(resuming===pending)resuming=null;});}
       catch{resuming=null;}
     }
-    return !gated||audioPaused;
+    return !waitForAudio||!gated||audioPaused;
   }
   const heap=()=>getModule().HEAPU8??new Uint8Array(getCore().memory.buffer);
   const text=p=>{if(!p)throw Error('录像无法解析');const b=heap(),end=b.indexOf(0,p);if(end<0||end-p>65536)throw Error('录像信息无效');return new TextDecoder().decode(b.subarray(p,end));};
@@ -48,6 +48,10 @@ export function createNativeLocalReplay({core: getCore,module: getModule,physica
     try{heap().set(bytes,p);return fn(p,bytes.length);}finally{free(p);}
   }
   const bridge=createLocalReplay({
+    canRelocate:()=>typeof api('eagler_replay_relocate')==='function',
+    relocate(from,to){return bytesCall(cbytes(physical(from)),source=>bytesCall(cbytes(physical(to)),target=>{
+      if(api('eagler_replay_relocate')(source,target)!==1)throw Error('Native replay path relocation failed');
+    }));},
     async prepare(){const ready=api('eagler_replay_ready');if(!ready)return;const deadline=performance.now()+30000;
       while(!ready()){if(performance.now()>deadline)throw Error('录像播放器初始化超时');await new Promise(requestAnimationFrame);}},
     inspect(path){const p=physical(path),fn=api('eagler_replay_inspect');if(!fn)throw Error('此 Runtime 需要更新后才能解析录像');
@@ -60,7 +64,7 @@ export function createNativeLocalReplay({core: getCore,module: getModule,physica
       if(!ok&&api('eagler_replay_error'))throw Error(text(api('eagler_replay_error')()));
       (api('eagler_replay_audio_pump')??api('sdl_audio_pump'))?.();return ok;},
     present(){api('eagler_replay_present')?.();},
-    deferPresentation(){return typeof api('eagler_replay_present')==='function';},
+    deferPresentation(){return deferPresentation??(typeof api('eagler_replay_present')==='function');},
     state(){const preparing=api('eagler_replay_preparing'),extra=preparing?{preparing:!!preparing()}:{};
       if(replayState)return {...replayState(),...extra};const p=api('eagler_replay_state')(),v=Array.from(new Uint32Array(heap().buffer,p,5));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],...extra};},
     stopLoop,...(pauseAudio?{audioState}:{}),onState,onError,

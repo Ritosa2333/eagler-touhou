@@ -1,0 +1,892 @@
+#include <stdio.h>
+#include ".\enemybullet.h"
+#include "../Stage.h"
+#include "../Chara/Chara.h"
+#include "../FloatingText/FloatingText.h"
+#include "../GatherEffect/GatherEffect.h"
+#include "../SparkEffect/SparkEffect.h"
+#include "../PopupNumber/PopupNumber.h"
+#include "../Item/Item.h"
+#include <math.h>
+#include "../../Game.h"
+#ifndef PI
+#define PI 3.1415926535897932384626433832795
+#endif
+
+namespace th5w{
+
+CEnemyBullet::CEnemyBullet(CStage *pStage)
+{
+	m_pStage=pStage;
+	Initialize();
+}
+
+CEnemyBullet::~CEnemyBullet(void)
+{
+}
+
+void CEnemyBullet::Initialize()
+{
+	memset(m_bullets,0,sizeof(m_bullets));
+	m_noEnemyBullet=false;
+	m_templateSpreadAngle=0;
+	m_templateAngle=0;
+	m_clearEnemyBulletTimeLeft=0;
+
+	m_clipXLow=-128;
+	m_clipXHigh=6272;
+	m_clipYLow=-128;
+	m_clipYHigh=6016;
+	m_bounceXLow=0;
+	m_bounceXHigh=6144;
+	m_bounceYLow=0;
+	m_bounceYHigh=5888;
+	m_dotBulletShadowColor[0]=m_pStage->m_pStageRes->m_palette[9*3]/255.0f;
+	m_dotBulletShadowColor[1]=m_pStage->m_pStageRes->m_palette[9*3+1]/255.0f;
+	m_dotBulletShadowColor[2]=m_pStage->m_pStageRes->m_palette[9*3+2]/255.0f;
+
+	m_bDropPointItemOnBonus=false;
+}
+
+void CEnemyBullet::RememberSpreadAngle(const ENEMY_SHOOT_INFO& info)
+{
+	// Stage script shots copy the entire PC-98 template; boss scripts
+	// usually write the spread angle only when setting up a spread.
+	if (info.fromStageScript||info.shootType==EST02_NWAY||info.shootType==EST03_NWAY_TO_CHARA||
+		info.shootType==EST08_NWAY_MULTI||info.shootType==EST09_NWAY_MULTI_TO_CHARA)
+		m_templateSpreadAngle=static_cast<unsigned char>(int(info.nWayUnitAngle));
+}
+
+void CEnemyBullet::TuneEnemyShootInfo(ENEMY_SHOOT_INFO *pInfo)
+{
+	RememberSpreadAngle(*pInfo);
+	if (pInfo->shootType==EST06_MULTI||pInfo->shootType==EST07_MULTI_TO_CHARA)
+	{
+		if (m_pStage->m_playerPerformance>=38)
+			pInfo->nMulti++;
+		if (m_pStage->m_playerPerformance<=24&&pInfo->nMulti>=2)
+			pInfo->nMulti--;
+	}
+	switch(CGame::GVar().m_playDifficulty)
+	{
+	case 0:								//easy
+		switch(pInfo->shootType)
+		{
+		case EST02_NWAY:
+		case EST03_NWAY_TO_CHARA:
+		case EST08_NWAY_MULTI:
+		case EST09_NWAY_MULTI_TO_CHARA:
+			if (pInfo->nWay>=3)
+				pInfo->nWay-=2;
+			break;
+		case EST04_NWAY_ALLAROUND:
+		case EST05_NWAY_ALLAROUND_TO_CHARA:
+		case EST10_NWAY_ALLAROUND_MULTI:
+		case EST11_NWAY_ALLAROUND_MULTI_TO_CHARA:
+		case EST12_RANDOM:
+		case EST13_RANDOM_BASE_SPEED_32:
+			pInfo->nWay/=2;
+			break;
+		case EST06_MULTI:
+		case EST07_MULTI_TO_CHARA:
+			pInfo->deltaSpeed-=static_cast<int>(pInfo->deltaSpeed)/4;
+			// The original Easy stack rule checks the stored spread angle.
+			if (m_templateSpreadAngle>=2&&pInfo->nMulti>=2)
+				pInfo->nMulti--;
+		    break;
+		}
+		break;
+	case 2:								//hard
+		switch(pInfo->shootType)
+		{
+		case EST00_SINGLE:
+		case EST01_SINGLE_TO_CHARA:
+			pInfo->shootType+=6;					//becomes EST06_MULTI or EST07_MULTI_TO_CHARA
+			pInfo->nMulti=2;
+			pInfo->deltaSpeed=6;
+			break;
+		case EST04_NWAY_ALLAROUND:
+		case EST05_NWAY_ALLAROUND_TO_CHARA:
+		case EST10_NWAY_ALLAROUND_MULTI:
+		case EST11_NWAY_ALLAROUND_MULTI_TO_CHARA:
+			pInfo->nWay+=(pInfo->nWay/4>6)?6:(pInfo->nWay/4);
+			break;
+		case EST06_MULTI:
+		case EST07_MULTI_TO_CHARA:
+		case EST08_NWAY_MULTI:
+		case EST09_NWAY_MULTI_TO_CHARA:
+			pInfo->deltaSpeed+=static_cast<int>(pInfo->deltaSpeed)/2;
+		    break;
+		case EST12_RANDOM:
+		case EST13_RANDOM_BASE_SPEED_32:
+			pInfo->nWay+=pInfo->nWay/2;
+		    break;
+		}
+		break;
+	case 3:								//lunatic
+		switch(pInfo->shootType)
+		{
+		case EST00_SINGLE:
+		case EST01_SINGLE_TO_CHARA:
+			pInfo->shootType+=2;					//becomes EST02_NWAY or EST03_NWAY_TO_CHARA
+			pInfo->nWay=3;
+			pInfo->nWayUnitAngle=6;
+			break;
+		case EST02_NWAY:
+		case EST03_NWAY_TO_CHARA:
+		case EST08_NWAY_MULTI:
+		case EST09_NWAY_MULTI_TO_CHARA:
+			pInfo->nWay+=2;
+			break;
+		case EST04_NWAY_ALLAROUND:
+		case EST05_NWAY_ALLAROUND_TO_CHARA:
+		case EST10_NWAY_ALLAROUND_MULTI:
+		case EST11_NWAY_ALLAROUND_MULTI_TO_CHARA:
+			pInfo->nWay+=(pInfo->nWay/3>12)?12:(pInfo->nWay/3);
+			break;
+		case EST06_MULTI:
+		case EST07_MULTI_TO_CHARA:
+			pInfo->deltaSpeed+=static_cast<int>(pInfo->deltaSpeed)/2;
+			pInfo->nMulti++;
+		    break;
+		case EST12_RANDOM:
+		case EST13_RANDOM_BASE_SPEED_32:
+			pInfo->nWay*=2;
+		    break;
+		}
+	    break;
+	}
+}
+
+int CEnemyBullet::GetNRecordNeeded(ENEMY_SHOOT_INFO *shootInfo)
+{
+	switch(shootInfo->shootType)
+	{
+	case EST00_SINGLE:
+	case EST01_SINGLE_TO_CHARA:
+	case EST14_DEFAULT_SINGLE:
+	case EST15_DEFAULT_SINGLE_TO_CHARA:
+		return 1;
+		break;
+	case EST02_NWAY:
+	case EST03_NWAY_TO_CHARA:
+	case EST04_NWAY_ALLAROUND:
+	case EST05_NWAY_ALLAROUND_TO_CHARA:
+	case EST12_RANDOM:
+	case EST13_RANDOM_BASE_SPEED_32:
+		return shootInfo->nWay;
+		break;
+	case EST06_MULTI:
+	case EST07_MULTI_TO_CHARA:
+		return shootInfo->nMulti;
+	    break;
+	case EST08_NWAY_MULTI:
+	case EST09_NWAY_MULTI_TO_CHARA:
+	case EST10_NWAY_ALLAROUND_MULTI:
+	case EST11_NWAY_ALLAROUND_MULTI_TO_CHARA:
+		return shootInfo->nWay*shootInfo->nMulti;
+	    break;
+	}
+
+	return 0;
+}
+
+int CEnemyBullet::FindFreeRecord(int *retIdxArray,int startIdx,int nIdx,int nNeeded,bool originalPool)
+{
+	int nFound=0;
+ if(originalPool){
+  for(int i=startIdx+nIdx-1;i>=startIdx;i--)if(!m_bullets[i].flag){retIdxArray[nFound++]=i;if(nFound==nNeeded)return nNeeded;}
+  retIdxArray[nFound]=-1;return nFound;
+ }
+	for (int i=startIdx;i<startIdx+nIdx;i++)
+		if (m_bullets[i].flag==0)
+		{
+			retIdxArray[nFound++]=i;
+			if (nFound==nNeeded)
+				return nNeeded;
+		}
+
+	retIdxArray[nFound]=-1;
+
+	return nFound;
+}
+
+void CEnemyBullet::FillRecordSpeedAndAngle(int *freeRecIdx,ENEMY_SHOOT_INFO *shootInfo,bool originalPattern)
+{
+	float angleToChara=m_pStage->m_pChara->AngleToChara(shootInfo->shootOrigX,shootInfo->shootOrigY,originalPattern);
+ if(originalPattern){
+  const int type=shootInfo->shootType<=EST15_DEFAULT_SINGLE_TO_CHARA?shootInfo->shootType:EST14_DEFAULT_SINGLE;int way=1,stack=1;
+  if((type>=2&&type<=5)||(type>=8&&type<=13))way=shootInfo->nWay?shootInfo->nWay:1;
+  if(type>=6&&type<=11)stack=shootInfo->nMulti?shootInfo->nMulti:1;
+  const bool spread=type==2||type==3||type==8||type==9,ring=type==4||type==5||type==10||type==11;
+  for(int i=0;i<way*stack;i++){
+   if(freeRecIdx[i]<0)return;int angle=0,speed=int(shootInfo->bulletSpeed);
+   if(type==13)speed=(speed+(original::Random()&31))&255;
+   if(type==12||type==13)angle=original::Random()&255;
+   else if(ring)angle=(i%way)*256/way;
+   else if(spread){int n=i%way,d=int(shootInfo->nWayUnitAngle);if(way&1)angle=n?((n&1)?((n+1)/2)*d:-(n/2)*d):0;else angle=(n&1)?-(d/2+(n/2)*d):(d/2+(n/2)*d);}
+   if(type>=6&&type<=11)speed=(speed+(i/way)*int(shootInfo->deltaSpeed))&255;
+   if((type&1)&&type!=13)angle+=int(angleToChara);
+   auto& b=m_bullets[freeRecIdx[i]];b.curAngle=float((angle+int(shootInfo->shootAngle))&255);b.curSpeed=float(speed);
+   if((type==6||type==7)&&speed>=160){for(int j=i+1;j<way*stack&&freeRecIdx[j]>=0;j++){m_bullets[freeRecIdx[j]].flag=0;}freeRecIdx[i+1]=-1;return;}
+  }
+  return;
+ }
+
+	bool bRandSpeed=false;
+
+	float baseAngle=0.0f;
+	float deltaAngle=0.0f;
+	int nWay=1;
+	int nMulti=1;
+
+	switch(shootInfo->shootType)
+	{
+	case EST01_SINGLE_TO_CHARA:
+	case EST15_DEFAULT_SINGLE_TO_CHARA:
+		baseAngle=angleToChara;
+	case EST00_SINGLE:
+	case EST14_DEFAULT_SINGLE:
+		break;
+	case EST03_NWAY_TO_CHARA:
+		baseAngle=angleToChara;
+	case EST02_NWAY:
+		baseAngle-=(shootInfo->nWay-1)/2.0f*shootInfo->nWayUnitAngle;
+		deltaAngle=shootInfo->nWayUnitAngle;
+		nWay=shootInfo->nWay;
+		break;
+	case EST05_NWAY_ALLAROUND_TO_CHARA:
+		baseAngle=angleToChara;
+	case EST04_NWAY_ALLAROUND:
+		deltaAngle=256.0f/shootInfo->nWay;
+		nWay=shootInfo->nWay;
+		break;
+	case EST07_MULTI_TO_CHARA:
+		baseAngle=angleToChara;
+	case EST06_MULTI:
+		nMulti=shootInfo->nMulti;
+		break;
+	case EST09_NWAY_MULTI_TO_CHARA:
+		baseAngle=angleToChara;
+	case EST08_NWAY_MULTI:
+		baseAngle-=(shootInfo->nWay-1)/2.0f*shootInfo->nWayUnitAngle;
+		deltaAngle=shootInfo->nWayUnitAngle;
+		nWay=shootInfo->nWay;
+		nMulti=shootInfo->nMulti;
+		break;
+	case EST11_NWAY_ALLAROUND_MULTI_TO_CHARA:
+		baseAngle=angleToChara;
+	case EST10_NWAY_ALLAROUND_MULTI:
+		deltaAngle=256.0f/shootInfo->nWay;
+		nWay=shootInfo->nWay;
+		nMulti=shootInfo->nMulti;
+		break;
+	case EST13_RANDOM_BASE_SPEED_32:
+		bRandSpeed=true;
+	case EST12_RANDOM:
+		for (int i=0;i<shootInfo->nWay;i++)
+		{
+			if (freeRecIdx[i]==-1)
+				return;
+			const int speedOffset=bRandSpeed?(original::Random()&31):0;
+			m_bullets[freeRecIdx[i]].curAngle=float(original::Random()&255);
+			m_bullets[freeRecIdx[i]].curSpeed=shootInfo->bulletSpeed+speedOffset;
+		}
+		return;
+	}
+
+	baseAngle+=shootInfo->shootAngle;
+	int curIdx=0;
+	// Finish each speed layer before allocating the next one.
+	for (int j=0;j<nMulti;j++)
+		for (int i=0;i<nWay;i++)
+		{
+			if (freeRecIdx[curIdx]==-1)
+				return;
+			m_bullets[freeRecIdx[curIdx]].curAngle=baseAngle+deltaAngle*i;
+			// Unstacked shots do not define deltaSpeed; even NaN * 0 is NaN.
+			m_bullets[freeRecIdx[curIdx]].curSpeed=shootInfo->bulletSpeed;
+			if (j!=0)
+				m_bullets[freeRecIdx[curIdx]].curSpeed+=shootInfo->deltaSpeed*j;
+			curIdx++;
+		}
+}
+
+unsigned char CEnemyBullet::AdjustBulletImageBasedOnAngle(unsigned char curImgIdx, float angle)
+{
+	if (curImgIdx<52)
+		return curImgIdx;
+
+	unsigned char baseIdx;
+	if (curImgIdx<68)
+		baseIdx=52;
+	else
+		if (curImgIdx<84)
+			baseIdx=68;
+		else
+			if (curImgIdx<116)
+				baseIdx=84;
+			else
+				baseIdx=116;
+	if (curImgIdx>=180)
+		baseIdx=curImgIdx;
+    int discreteAngle=(((int)(angle+4-0.001))%256+256)%256;		//PC98 ver uses (angle+3)
+																//as we use float here, 4-inf is preferred
+																//4 or 4+inf will cause a different result with PC98 ver
+	if (baseIdx<84)
+		discreteAngle%=128;
+	return baseIdx+discreteAngle/8;
+}
+
+unsigned char CEnemyBullet::TemplateAngle() const
+{
+	return original::DemoActive()?original::Demo().bulletTemplateAngle:m_templateAngle;
+}
+
+void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bAdjustSpeed)
+{
+	RememberSpreadAngle(*shootInfo);
+ if(original::BossGeometryEnabled())m_templateAngle=static_cast<unsigned char>(int(shootInfo->shootAngle));
+ if(original::DemoActive())original::Demo().bulletTemplateAngle=m_templateAngle;
+	if (m_noEnemyBullet==true)
+		return;
+
+	if (shootInfo->bulletBornType%16==1)
+	{
+		unsigned char bulletBornType=shootInfo->bulletBornType;
+		shootInfo->bulletBornType--;
+		if (bSpecialBullet)
+			shootInfo->bulletBornType=0xfe;		//special value for special bullet type
+		m_pStage->m_pGatherEffect->AddEffect(shootInfo->shootOrigX,shootInfo->shootOrigY,1024,2,
+											 m_pStage->m_pStageRes->m_palette[9*3]/255.0f,
+											 m_pStage->m_pStageRes->m_palette[9*3+1]/255.0f,
+											 m_pStage->m_pStageRes->m_palette[9*3+2]/255.0f,
+											 8,shootInfo);
+		shootInfo->bulletBornType=bulletBornType;
+		return;
+	}
+
+	//backup incoming bullet speed to restore its value when return
+	//the original code in PC98 ver also backup shootAngle but as we pass these value as
+	//function parameters when adding single bullets, hence only bulletSpeed will be changed when adjusting speed
+	//during precheck
+	float bulletSpeedBackup=shootInfo->bulletSpeed;
+
+	//pre shoot check
+	if (m_clearEnemyBulletTimeLeft<17&&m_clearEnemyBulletTimeLeft!=0)
+		return;
+	if (shootInfo->shootOrigX<=m_clipXLow||shootInfo->shootOrigX>=m_clipXHigh||
+		shootInfo->shootOrigY<=m_clipYLow||shootInfo->shootOrigY>=m_clipYHigh)
+		return;
+	if (m_pStage->m_pChara->TestCrash(shootInfo->shootOrigX,shootInfo->shootOrigY,4.0f*16.0f,4.0f*16.0f))
+	{
+		m_pStage->m_pChara->m_bMiss=true;
+	}
+	const bool originalPattern=shootInfo->fromStageScript||original::BossGeometryEnabled();
+	if (bAdjustSpeed)
+		shootInfo->bulletSpeed=m_pStage->AdjustSpeedBasedOnPlayerPerformance(shootInfo->bulletSpeed);
+
+	//dot bullets and imaged bullets are put in different ranges
+	int startRec,nRec;
+	if (shootInfo->bulletImg!=0)
+	{
+		startRec=ENEMY_BULLET_N_RECORD_DOT;
+		nRec=220; // Retail sprite-bullet pool.
+	}
+	else
+	{
+		startRec=0;
+		nRec=180; // Retail pellet pool.
+	}
+
+	unsigned char bornStage=0;
+	if (shootInfo->bulletBornType%16==3)
+		bornStage=3;
+	if (shootInfo->bulletBornType%16==2)
+		bornStage=4;
+	unsigned char speedFadeIn=2;
+	if (bSpecialBullet==false)
+		if (shootInfo->bulletSpeed<64||m_clearEnemyBulletTimeLeft!=0)
+			if (shootInfo->bulletBornType/16==0)
+				speedFadeIn=0;
+
+	int nRecordNeeded=GetNRecordNeeded(shootInfo);
+	if (nRecordNeeded==0)
+	{
+		if (!originalPattern)
+		{
+			shootInfo->bulletSpeed=bulletSpeedBackup;
+			return;
+		}
+		nRecordNeeded=1;
+	}
+	if (!originalPattern &&
+	    (shootInfo->shootType==EST06_MULTI || shootInfo->shootType==EST07_MULTI_TO_CHARA))
+	{
+		// The first shot at or above 10 pixels/frame ends a plain stack.
+		for (int i=0;i<nRecordNeeded-1;i++)
+		{
+			if (shootInfo->bulletSpeed+i*shootInfo->deltaSpeed>=160)
+			{
+				nRecordNeeded=i+1;
+				break;
+			}
+		}
+	}
+	int freeRecIdx[ENEMY_BULLET_N_RECORD];
+	const int found=FindFreeRecord(freeRecIdx,startRec,nRec,nRecordNeeded,originalPattern);
+	freeRecIdx[found]=-1;
+
+	for (int i=0;i<nRecordNeeded;i++)
+	{
+		if (freeRecIdx[i]==-1)
+			break;
+		m_bullets[freeRecIdx[i]].flag=1;
+		m_bullets[freeRecIdx[i]].bornStageAndGrazeFlag=bornStage;
+		m_bullets[freeRecIdx[i]].curX=originalPattern?float(int(shootInfo->shootOrigX)):shootInfo->shootOrigX;
+		m_bullets[freeRecIdx[i]].curY=originalPattern?float(int(shootInfo->shootOrigY)):shootInfo->shootOrigY;
+		if (bSpecialBullet)
+		{
+			m_bullets[freeRecIdx[i]].origX=m_bullets[freeRecIdx[i]].curX;
+			m_bullets[freeRecIdx[i]].origY=m_bullets[freeRecIdx[i]].curY;
+			m_bullets[freeRecIdx[i]].dieStageAndMoveType=1;
+			m_bullets[freeRecIdx[i]].totalDistanceTravelled=0;
+			m_bullets[freeRecIdx[i]].accumulator=0;
+			m_bullets[freeRecIdx[i]].delta=shootInfo->specialBulletDelta;
+			m_bullets[freeRecIdx[i]].specialMoveType=shootInfo->bulletMoveType;
+			m_bullets[freeRecIdx[i]].specialMoveVar=shootInfo->specialMoveVar;
+		}
+		else
+		{
+			m_bullets[freeRecIdx[i]].dieStageAndMoveType=speedFadeIn;
+			m_bullets[freeRecIdx[i]].accumulator=32;
+			m_bullets[freeRecIdx[i]].delta=72.0f-shootInfo->bulletSpeed;
+		}
+		m_bullets[freeRecIdx[i]].age=0;
+		m_bullets[freeRecIdx[i]].bulletType=shootInfo->shootType;
+		m_bullets[freeRecIdx[i]].fixedPoint=originalPattern;
+	}
+
+	//calculate speed and angle of all bullets that are shot
+	FillRecordSpeedAndAngle(freeRecIdx,shootInfo,originalPattern);
+
+	//update velX,velY and image based on speed and angle
+	for (int i=0;i<nRecordNeeded;i++)
+	{
+		if (freeRecIdx[i]==-1)
+			break;
+		m_bullets[freeRecIdx[i]].origSpeed=m_bullets[freeRecIdx[i]].curSpeed;
+		UpdateVelXYFromSpeedAngle(freeRecIdx[i]);
+		m_bullets[freeRecIdx[i]].imgIdx=shootInfo->bulletImg;
+		if (m_bullets[freeRecIdx[i]].imgIdx>=52)
+			m_bullets[freeRecIdx[i]].imgIdx=AdjustBulletImageBasedOnAngle(m_bullets[freeRecIdx[i]].imgIdx,m_bullets[freeRecIdx[i]].curAngle);
+	}
+
+	shootInfo->bulletSpeed=bulletSpeedBackup;
+}
+
+void CEnemyBullet::SpecialMove(int recordIdx)
+{
+	ENEMY_BULLET &pBul=m_bullets[recordIdx];
+	const bool nativeMotion=original::BossGeometryEnabled();
+
+	bool bTurnToChara=false;
+	bool bBounceXLow=false,bBounceYLow=false,bBounceXHigh=false,bBounceYHigh=false;
+	switch(pBul.specialMoveType)
+	{
+	case EBMT01_SLOW_DOWN_THEN_TURN_TO_CHARA:
+		bTurnToChara=true;
+	case EBMT02_SLOW_DOWN_THEN_TURN:
+		if (pBul.curSpeed<=0)
+		{
+			pBul.accumulator++;
+			if (bTurnToChara)
+				pBul.curAngle=m_pStage->m_pChara->AngleToChara(pBul.curX,pBul.curY,nativeMotion);
+			else
+				pBul.curAngle+=pBul.delta;
+			pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
+			pBul.curSpeed=pBul.origSpeed;
+			if (pBul.accumulator>=pBul.specialMoveVar)
+				pBul.dieStageAndMoveType=2;
+			UpdateVelXYFromSpeedAngle(recordIdx);
+		}
+		else
+		{
+			UpdateVelXYFromSpeedAngle(recordIdx);
+			pBul.curSpeed-=1;
+		}
+		return;
+	case EBMT03_SPEED_UP:
+		if(nativeMotion){
+   UpdateVelXYFromSpeedAngle(recordIdx);pBul.curSpeed=float((int(pBul.curSpeed)+pBul.specialMoveVar)&255);
+  }else{pBul.curSpeed+=pBul.specialMoveVar;UpdateVelXYFromSpeedAngle(recordIdx);}
+		return;
+	case EBMT04_SLOW_DOWN_AND_TURN:
+		if (pBul.curSpeed<=0)
+		{
+			pBul.curAngle=pBul.delta;
+			pBul.curSpeed=pBul.origSpeed;
+			pBul.dieStageAndMoveType=2;
+			UpdateVelXYFromSpeedAngle(recordIdx);
+			if(!original::MotionEnabled())pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
+		}
+		else
+		{
+			UpdateVelXYFromSpeedAngle(recordIdx);
+			if(!original::MotionEnabled())pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
+			pBul.curSpeed-=2;
+			if (pBul.curSpeed<0) pBul.curSpeed=0;
+			if (pBul.curSpeed<32)
+			{
+				float deltaAngle=pBul.delta-pBul.curAngle;
+				while(deltaAngle>128) deltaAngle-=256;
+				while(deltaAngle<-128) deltaAngle+=256;
+				if(nativeMotion)pBul.curAngle=float((int(pBul.curAngle)+int(int8_t(int(pBul.delta)-int(pBul.curAngle)))/4)&255);
+    else pBul.curAngle+=deltaAngle/4;
+			}
+		}
+		return;
+	case EBMT05_BOUNCE_X:
+		bBounceXLow=bBounceXHigh=true;
+	    break;
+	case EBMT06_BOUNCE_Y:
+		bBounceYLow=bBounceYHigh=true;
+		break;
+	case EBMT07_BOUNCE_X_Y:
+		bBounceXLow=bBounceXHigh=bBounceYLow=bBounceYHigh=true;
+		break;
+	case EBMT08_BOUNCE_X_YTOP:
+		bBounceXLow=bBounceXHigh=bBounceYLow=true;
+	    break;
+	case EBMT09_SPEED_UP_VERTICAL:
+  if(nativeMotion){
+   if(m_pStage->m_curFrame&1)pBul.velY=float(int16_t(int(pBul.velY)+pBul.specialMoveVar));
+   return;
+  }
+		if (m_pStage->m_curFrame%2==0)
+		{
+			pBul.velY+=pBul.specialMoveVar;
+			pBul.curAngle=(float)(atan2(pBul.velY,pBul.velX)/2.0/PI*256);
+			pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
+		}
+	    return;
+	case EBMT10_STRAIGHT:
+  if(nativeMotion){
+   // Native BSM_EXACT_LINEAR recomputes the point from total distance.
+   // Repeatedly adding a quantized velocity follows a different trajectory.
+   const int distance=int16_t(int(pBul.totalDistanceTravelled)+int(pBul.curSpeed));
+   pBul.totalDistanceTravelled=float(distance);
+   pBul.velX=float(int16_t(int(pBul.origX)+original::math::X(int(pBul.curAngle),distance))-int(pBul.curX));
+   pBul.velY=float(int16_t(int(pBul.origY)+original::math::Y(int(pBul.curAngle),distance))-int(pBul.curY));
+  }
+	    return;
+	}
+	if ((pBul.curX<=m_bounceXLow&&bBounceXLow==true)||(pBul.curX>=m_bounceXHigh&&bBounceXHigh==true))
+	{
+		pBul.curAngle=128.0f-pBul.curAngle;
+		pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
+		UpdateVelXYFromSpeedAngle(recordIdx);
+		pBul.accumulator++;
+		if (pBul.accumulator>=pBul.specialMoveVar)
+			pBul.dieStageAndMoveType=2;
+	}
+	if ((pBul.curY<=m_bounceYLow&&bBounceYLow==true)||(pBul.curY>=m_bounceYHigh&&bBounceYHigh==true))
+	{
+		pBul.curAngle=-pBul.curAngle;
+		pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
+		UpdateVelXYFromSpeedAngle(recordIdx);
+		pBul.accumulator++;
+		if (pBul.accumulator>=pBul.specialMoveVar)
+			pBul.dieStageAndMoveType=2;
+	}
+}
+
+void CEnemyBullet::Step()
+{
+ const bool nativeMotion=original::MotionEnabled();
+	int nAvailBullet=0;
+
+	if (m_noEnemyBullet==false)
+	{
+		for (int iteration=0;iteration<ENEMY_BULLET_N_RECORD;iteration++)
+		{
+   const int i=nativeMotion?ENEMY_BULLET_N_RECORD-1-iteration:iteration;
+			if (m_bullets[i].flag==0||m_bullets[i].flag==2)
+			{
+				m_bullets[i].flag=0;
+				continue;
+			}
+			nAvailBullet++;
+			if (m_clearEnemyBulletTimeLeft!=0)						//is clearing all bullets
+			{
+				if (m_bullets[i].dieStageAndMoveType>=4)			//bullet in die stage
+				{
+					m_bullets[i].dieStageAndMoveType++;
+					if (m_bullets[i].dieStageAndMoveType>=20)		//when reach 20 ,remove this bullet
+					{
+						m_bullets[i].lastX=m_bullets[i].curX;
+						m_bullets[i].lastY=m_bullets[i].curY;
+						m_bullets[i].curX+=m_bullets[i].velX;
+						m_bullets[i].curY+=m_bullets[i].velY;
+						m_bullets[i].flag=2;
+						continue;
+					}
+					if (m_bullets[i].dieStageAndMoveType%4==0)		//imageIdx increase 1 every 4 frames
+						m_bullets[i].imgIdx++;
+				}
+				else
+				{
+					m_bullets[i].dieStageAndMoveType=4;				//enter die stage
+					if (i<ENEMY_BULLET_N_RECORD_DOT)				//change img based on bullet image type
+						m_bullets[i].imgIdx=156;					//dot bullet death image
+					else
+						m_bullets[i].imgIdx=160;					//image bullet death image
+					int removeBulletScore;
+					if (m_bullets[i].age==0)						//remove bullet image also differ based on bullet age
+						removeBulletScore=10;
+					else
+						removeBulletScore=100;
+					m_pStage->AddScore(removeBulletScore);
+				}
+			}
+			if(nativeMotion)++m_bullets[i].age;
+			if (m_bullets[i].bornStageAndGrazeFlag==2)	//set grazed flag to false for bullets just ended born stage
+				m_bullets[i].bornStageAndGrazeFlag=0;
+			if (m_bullets[i].bornStageAndGrazeFlag>2)	//bullets still in born stage
+			{
+				if (m_bullets[i].bornStageAndGrazeFlag==3)		//first move backward and then forward
+				{
+					m_bullets[i].lastX=m_bullets[i].curX;		//move backward with 8x speed
+					m_bullets[i].lastY=m_bullets[i].curY;
+					m_bullets[i].curX-=m_bullets[i].velX*8;
+					m_bullets[i].curY-=m_bullets[i].velY*8;
+					m_bullets[i].bornStageAndGrazeFlag=5;		//change to born stage 5
+				}
+				else
+					if (m_bullets[i].bornStageAndGrazeFlag==4)		//move forward
+					{
+						m_bullets[i].lastX=m_bullets[i].curX;		//move forward with 1x speed
+						m_bullets[i].lastY=m_bullets[i].curY;
+						m_bullets[i].curX+=m_bullets[i].velX;
+						m_bullets[i].curY+=m_bullets[i].velY;
+						m_bullets[i].bornStageAndGrazeFlag=5;		//change to born stage 5
+					}
+					else		//bornStageAndGrazeFlag between 5 and 20
+					{
+						m_bullets[i].lastX=m_bullets[i].curX;		//move forward with 1/3x speed
+						m_bullets[i].lastY=m_bullets[i].curY;
+						m_bullets[i].curX+=((m_bullets[i].fixedPoint||original::DemoActive())?float(int(m_bullets[i].velX)/3):m_bullets[i].velX/3);
+						m_bullets[i].curY+=((m_bullets[i].fixedPoint||original::DemoActive())?float(int(m_bullets[i].velY)/3):m_bullets[i].velY/3);
+						m_bullets[i].bornStageAndGrazeFlag++;
+					}
+				if (m_bullets[i].bornStageAndGrazeFlag>=20)			//born stage end, change to normal mode
+				{
+					if ((nativeMotion?m_bullets[i].curX<m_clipXLow:m_bullets[i].curX<=m_clipXLow)||m_bullets[i].curX>=m_clipXHigh||
+						(nativeMotion?m_bullets[i].curY<m_clipYLow:m_bullets[i].curY<=m_clipYLow)||m_bullets[i].curY>=m_clipYHigh)
+						m_bullets[i].flag=2;						//outside play area, remove
+					else
+						m_bullets[i].bornStageAndGrazeFlag=2;		//2 for just ended born stage
+				}
+			}
+			else
+			{
+				if (m_bullets[i].dieStageAndMoveType==1)			//bullet with special move type
+					SpecialMove(i);
+				else
+				{
+					if (m_bullets[i].dieStageAndMoveType==0)		//bullet that has speed fade in
+					{
+						m_bullets[i].accumulator--;
+						//speed transit from 72 to origSpeed linearly within 32 frames
+						m_bullets[i].curSpeed=m_bullets[i].origSpeed+((m_bullets[i].fixedPoint||original::DemoActive())?float((int(m_bullets[i].delta)*m_bullets[i].accumulator)/32):m_bullets[i].delta*m_bullets[i].accumulator/32.0f);
+						if (m_bullets[i].accumulator==0)			//end of fade in frames
+						{
+							m_bullets[i].curSpeed=m_bullets[i].origSpeed;
+							m_bullets[i].dieStageAndMoveType=2;		//change to normal move type
+						}
+						//update velX, velY from curSpeed, curAngle
+						UpdateVelXYFromSpeedAngle(i);
+					}
+				}
+				m_bullets[i].lastX=m_bullets[i].curX;
+				m_bullets[i].lastY=m_bullets[i].curY;
+				m_bullets[i].curX+=m_bullets[i].velX;
+				m_bullets[i].curY+=m_bullets[i].velY;
+				if (m_bullets[i].curX<=m_clipXLow||m_bullets[i].curX>=m_clipXHigh||
+					m_bullets[i].curY<=m_clipYLow||m_bullets[i].curY>=m_clipYHigh)
+				{
+					m_bullets[i].flag=2;						//outside play area, remove
+					continue;
+				}
+				if (m_clearEnemyBulletTimeLeft>0 || (nativeMotion&&m_pStage->m_pChara->m_invulnerableTimeLeft!=0))
+					continue;
+				float charaX=m_pStage->m_pChara->GetCurX();
+				float charaY=m_pStage->m_pChara->GetCurY();
+				if (m_bullets[i].bornStageAndGrazeFlag==0)		//test graze first
+				{
+					//the graze area inf PC98 ver is very strange: left 16, right 20, up/down 22
+					//we rotate it 90 degrees clockwise here: up 16, down 20, left/right 22
+					if (nativeMotion?(m_bullets[i].curX>=charaX-256&&m_bullets[i].curX<=charaX+320):(m_bullets[i].curX>=charaX-352&&m_bullets[i].curX<=charaX+352))
+						if (nativeMotion?(m_bullets[i].curY>=charaY-352&&m_bullets[i].curY<=charaY+352):(m_bullets[i].curY>=charaY-256&&m_bullets[i].curY<=charaY+320))
+						{
+							m_pStage->m_pSparkEffect->AddEffect(m_bullets[i].curX,m_bullets[i].curY,32,2,false);
+							m_bullets[i].bornStageAndGrazeFlag=1;
+							if (m_pStage->m_curNGraze<999)
+							{
+								m_pStage->m_curNGraze++;
+								m_pStage->AddScore(m_pStage->m_grazeBonus);
+							}
+						}
+				}
+				else
+				{
+					//test crash with chara, the PC98 ver assumes only grazed bullets can crash chara
+					if (m_pStage->m_pChara->TestCrash(m_bullets[i].curX,m_bullets[i].curY,4.0f*16.0f,4.0f*16.0f))
+					{
+						m_bullets[i].flag=2;
+						m_pStage->m_pChara->m_bMiss=true;
+					}
+
+				}
+			}
+		}
+  original::BulletSlowdown(nAvailBullet,m_pStage->m_curFrame,CGame::GVar().m_playDifficulty);
+	}
+	else
+	{
+		int totalBonus=0;
+		int nAvailBullet=0;
+		int bonusLimit[]={960,1280,1280,1280,1600};
+		int maxSingleBonus=bonusLimit[CGame::GVar().m_playDifficulty];
+		for (int iteration=0;iteration<ENEMY_BULLET_N_RECORD;iteration++)
+		{
+   const int i=nativeMotion?ENEMY_BULLET_N_RECORD-1-iteration:iteration;
+			if (m_bullets[i].flag==1)
+			{
+				m_bullets[i].velX=m_bullets[i].velY=0;
+				m_bullets[i].lastX=m_bullets[i].curX;
+				m_bullets[i].lastY=m_bullets[i].curY;
+				int curBonus=(3*nAvailBullet*nAvailBullet-nAvailBullet)/2+1;
+				if (curBonus>maxSingleBonus) curBonus=maxSingleBonus;
+				m_pStage->m_pPopupNumber->AddNumber(m_bullets[i].curX,m_bullets[i].curY,curBonus*10,
+													m_pStage->m_pStageRes->m_palette[15*3]/255.0f,
+													m_pStage->m_pStageRes->m_palette[15*3+1]/255.0f,
+													m_pStage->m_pStageRes->m_palette[15*3+2]/255.0f);
+				totalBonus+=curBonus;
+				m_bullets[i].flag=2;
+				if (nAvailBullet%4==0&&m_bDropPointItemOnBonus)
+					m_pStage->m_pItem->AddItem(m_bullets[i].curX,m_bullets[i].curY,ITEM_POINT,0,-48);
+				nAvailBullet++;
+			}
+		}
+		if (totalBonus>0)
+			m_pStage->m_pFloatingText->SetTextType(FLOATING_TEXT_BONUS,totalBonus*10);
+		m_pStage->AddScore(totalBonus);
+		m_noEnemyBullet=false;
+	}
+
+	if (m_clearEnemyBulletTimeLeft>0)
+		m_clearEnemyBulletTimeLeft--;
+}
+
+void CEnemyBullet::Draw()
+{
+	//draw imaged bullets
+	for (int i=ENEMY_BULLET_N_RECORD_DOT;i<ENEMY_BULLET_N_RECORD;i++)
+	{
+		if (m_bullets[i].flag!=1)
+			continue;
+		//PC98 ver classify born stage and normal stage by if bornStageAndGrazeFlag>3 or not
+		//if >3, it draws corresponding image from born sequence, otherwise use imgIdx of the bullet
+		//This seems to be a bug:
+		//1. if bornStageAndGrazeFlag==3, bullet is obviously in born stage. (see Step())
+		//2. actually, bullets with bornStageAndGrazeFlag 3 should not be drawn.
+		//   because this value only exists for just-added bullets, which may have a position jump
+		//   after the first Step() call (i.e. pos-=vel*8, see Step() for detail)
+		if (m_bullets[i].bornStageAndGrazeFlag==3)
+			continue;
+		if (m_bullets[i].bornStageAndGrazeFlag>3)
+		{
+			unsigned char imgIdx;
+			if (m_bullets[i].imgIdx<48)
+				imgIdx=11;
+			else
+				if (m_bullets[i].imgIdx<52)
+					imgIdx=15;
+				else
+					if (m_bullets[i].imgIdx<68)
+						imgIdx=11;
+					else
+						if (m_bullets[i].imgIdx<116)
+							imgIdx=15;
+						else
+							if (m_bullets[i].imgIdx<152)
+								imgIdx=11;
+							else
+								imgIdx=15;
+			imgIdx+=m_bullets[i].bornStageAndGrazeFlag/4;
+			m_pStage->m_pStageRes->DrawStageObjectImage(m_pStage->m_pStageRes->m_patternArray.GetImagePtr(imgIdx),
+										   m_bullets[i].curX,m_bullets[i].curY);
+		}
+		else
+		{
+			m_pStage->m_pStageRes->DrawStageObjectImage(m_pStage->m_pStageRes->m_patternArray.GetImagePtr(m_bullets[i].imgIdx),
+										   m_bullets[i].curX,m_bullets[i].curY);
+		}
+	}
+
+	if (m_noEnemyBullet||m_clearEnemyBulletTimeLeft!=0)
+	{
+		for (int i=0;i<ENEMY_BULLET_N_RECORD_DOT;i++)
+			if (m_bullets[i].flag==1)
+				if (m_bullets[i].dieStageAndMoveType>=4)
+					m_pStage->m_pStageRes->DrawStageObjectImage(m_pStage->m_pStageRes->m_patternArray.GetImagePtr(m_bullets[i].imgIdx),
+												   m_bullets[i].curX,m_bullets[i].curY);
+
+	}
+	else
+	{
+		for (int i=0;i<ENEMY_BULLET_N_RECORD_DOT;i++)
+		{
+			if (m_bullets[i].flag!=1)
+				continue;
+			if (m_bullets[i].bornStageAndGrazeFlag<=2)
+			{
+				m_pStage->m_pStageRes->DrawStageObjectImage(m_pStage->m_pStageRes->m_pImgDotBullet,m_bullets[i].curX,m_bullets[i].curY);
+				m_pStage->m_pStageRes->DrawStageObjectImageColorScaled(m_pStage->m_pStageRes->m_pImgDotBulletShadow,m_bullets[i].curX,
+														  m_bullets[i].curY,m_dotBulletShadowColor[0],
+														  m_dotBulletShadowColor[1],m_dotBulletShadowColor[2]);
+			}
+			else
+				if (m_bullets[i].bornStageAndGrazeFlag>=4)
+				{
+					unsigned char imgIdx=147+m_bullets[i].bornStageAndGrazeFlag/4;
+					m_pStage->m_pStageRes->DrawStageObjectImage(m_pStage->m_pStageRes->m_patternArray.GetImagePtr(imgIdx),
+												   m_bullets[i].curX,m_bullets[i].curY);
+				}
+		}
+	}
+}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

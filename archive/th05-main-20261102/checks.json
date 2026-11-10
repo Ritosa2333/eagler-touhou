@@ -1,0 +1,32 @@
+{
+  "preparationAndRuntimeTests": {
+    "passed": true,
+    "tests": 112,
+    "scope": "minimal production source overlay"
+  },
+  "typecheck": {
+    "passed": true,
+    "scope": "minimal production frontend"
+  },
+  "frontendBuild": {
+    "passed": true,
+    "baseline": "370cd01f19c0a916fa425f2d1820fa479e3b07cf",
+    "retainedFullscreen": "cb19ff2c764707c4b758dbdb67a7470ccb27a493",
+    "changedFrontendFiles": 9
+  },
+  "publicProductCatalog": {
+    "passed": true
+  },
+  "legacyShelf": {
+    "passed": true,
+    "tests": 1
+  },
+  "relayFlowControl": {
+    "passed": true
+  },
+  "runtimeAndPackageReuse": {
+    "normal": "7939a3cee41237fc895d6f034757c7500e4586d2533469093b75e09d0579d5d7",
+    "multiplayer": "e263c94d16676c1d21736a1cd9fbcc36edec069e0280f69c823e3c99d64d298d",
+    "package": "c2bdca7b5b842835"
+  }
+}

@@ -20,7 +20,7 @@ i32 Stage::update_script(StageEnvironment& environment){
         case 0:goto interpolate;
         case 1:set_timer(script_timer,script_timer_flags,environment.rate,command.argument<i32>(1));instruction=reinterpret_cast<StageInstruction*>(reinterpret_cast<u8*>(script_begin)+instruction->argument<i32>(0));continue;
         case 2:{const auto previous=camera.position;camera.position=vector(command,0);camera.animation_delta={Scalar::sub(camera.position.x,previous.x),Scalar::sub(camera.position.y,previous.y),Scalar::sub(camera.position.z,previous.z)};break;}
-        case 3:vector_interpolation(position_interpolation,camera.position,command,environment.rate,false);break;
+        case 3:vector_interpolation(position_interpolation,camera.position,command,environment.rate,false);environment.camera_position_interpolated(*this);break;
         case 4:camera.target_offset=vector(command,0);break;
         case 5:vector_interpolation(target_interpolation,camera.target_offset,command,environment.rate,false);break;
         case 6:camera.up=vector(command,0);break;

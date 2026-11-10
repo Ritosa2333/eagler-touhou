@@ -687,8 +687,9 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
                     if (playerLaserDuringBomb && itemDropState == 0)
                         itemDropState = GetItemAutoCollectStateForPlayer(playerId);
                     scoreDamage += playerDamage[playerId];
-                    if (playerDamage[playerId] != 0 &&
-                        g_Players[playerId].positionOfLastEnemyHit.y < curEnemy->position.y)
+                    // Homing acquires an interactable enemy before any shot
+                    // hits it, using the same target priority as ordinary play.
+                    if (g_Players[playerId].positionOfLastEnemyHit.y < curEnemy->position.y)
                         g_Players[playerId].positionOfLastEnemyHit = curEnemy->position;
 
                     if (mgr->spellcardInfo.isActive != 0)

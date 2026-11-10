@@ -1,0 +1,402 @@
+{
+  "rollback": true,
+  "extended": true,
+  "difficulty": 1,
+  "version": "1.0.14-eagler-eeed3989800a",
+  "wasm": "eeed3989800aab4aced400effae0c18ce5301c14f0db8123ceaaa31271f36967",
+  "throughStageTwo": true,
+  "denseExtra": false,
+  "extraBoss": false,
+  "extraFinale": false,
+  "independent": true,
+  "renderScale": 2,
+  "music": "ogg",
+  "cpuProfile": false,
+  "glTrace": false,
+  "injectedDelayMs": 145,
+  "jitterMs": 0,
+  "cpuThrottle": 4,
+  "cpuWarmupThrough": 0,
+  "reports": [
+    {
+      "room": "th17mp-room-test-3",
+      "seats": 3,
+      "comparedFrames": 9020,
+      "maxEnemyBullets": 185,
+      "maxLasers": 0,
+      "activeSpellFrames": 866,
+      "dialogueFrames": 268,
+      "bossNonspellFrames": 1603,
+      "stageTwoFrames": 243,
+      "denseWindows": [],
+      "bossPatterns": [],
+      "settledPeaks": [],
+      "diagnostics": [
+        {
+          "corrections": 252,
+          "resimulated": 787,
+          "maxPrediction": 12,
+          "combatCorrections": 127,
+          "spellCorrections": 18,
+          "lastConfirmed": 9273,
+          "phase": 1,
+          "measuredFrom": 8194.380000002682,
+          "measuredThrough": 164174.91000000387,
+          "presentations": 9142,
+          "simulationTicks": 9171,
+          "presentationStart": 8194.385000005364,
+          "presentationEnd": 164174.91000000387,
+          "actualPresentations": 9162,
+          "lastPresent": 164174.91000000387,
+          "peakLinearMemory": 278396928,
+          "stageTwoFrames": 376,
+          "liveHeapBytes": 251601216,
+          "captures": 9322,
+          "captureUs": 12102701,
+          "replaySlices": 60,
+          "logicalDraws": 788,
+          "stageCorrections": 214,
+          "bossCorrections": 20,
+          "bossCosts": [],
+          "canvas": [
+            1280,
+            960
+          ],
+          "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "presentIntervals": {
+            "count": 9161,
+            "p50": 16.695000000298023,
+            "p95": 19.844999998807907,
+            "max": 571.1449999958277
+          },
+          "storyPresentIntervals": {
+            "1/route": {
+              "count": 6026,
+              "p50": 16.695000000298023,
+              "p95": 19.844999998807907,
+              "max": 163.17000000178814,
+              "fps": 59.24207307931468
+            },
+            "1/nonspell": {
+              "count": 1598,
+              "p50": 16.725000001490116,
+              "p95": 19.400000005960464,
+              "max": 155.625,
+              "fps": 58.99549282557365
+            },
+            "1/dialogue": {
+              "count": 266,
+              "p50": 16.679999999701977,
+              "p95": 33.64000000059605,
+              "max": 168.4399999976158,
+              "fps": 51.86403433950736
+            },
+            "1/spell": {
+              "count": 886,
+              "p50": 16.655000001192093,
+              "p95": 19.00500000268221,
+              "max": 21.719999998807907,
+              "fps": 60.01921156702276
+            },
+            "2/entry": {
+              "count": 243,
+              "p50": 16.674999997019768,
+              "p95": 32.42499999701977,
+              "max": 48.78999999910593,
+              "fps": 57.15569281282399
+            },
+            "2/route": {
+              "count": 133,
+              "p50": 17.059999994933605,
+              "p95": 27.67500000447035,
+              "max": 571.1449999958277,
+              "fps": 46.11930335573849
+            }
+          },
+          "densePresentIntervals": {
+            "count": 0,
+            "fps": null
+          },
+          "updates": {
+            "count": 8931,
+            "p50": 3.875,
+            "p95": 7.244999997317791,
+            "max": 153.2149999961257
+          },
+          "repairs": {
+            "count": 291,
+            "p50": 6.909999996423721,
+            "p95": 10.16499999910593,
+            "max": 27.03999999910593
+          },
+          "denseUpdates": {
+            "count": 0
+          },
+          "denseRepairs": {
+            "count": 0
+          }
+        },
+        {
+          "corrections": 214,
+          "resimulated": 716,
+          "maxPrediction": 12,
+          "combatCorrections": 84,
+          "spellCorrections": 30,
+          "lastConfirmed": 9284,
+          "phase": 1,
+          "measuredFrom": 7643.2750000059605,
+          "measuredThrough": 163627.59500000626,
+          "presentations": 9149,
+          "simulationTicks": 9173,
+          "presentationStart": 7643.280000001192,
+          "presentationEnd": 163627.59500000626,
+          "actualPresentations": 9180,
+          "lastPresent": 163627.59500000626,
+          "peakLinearMemory": 278396928,
+          "stageTwoFrames": 387,
+          "liveHeapBytes": 238291568,
+          "captures": 9282,
+          "captureUs": 12264439,
+          "replaySlices": 63,
+          "logicalDraws": 700,
+          "stageCorrections": 156,
+          "bossCorrections": 28,
+          "bossCosts": [],
+          "canvas": [
+            1280,
+            960
+          ],
+          "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "presentIntervals": {
+            "count": 9179,
+            "p50": 16.695000000298023,
+            "p95": 19.74499999731779,
+            "max": 601.375
+          },
+          "storyPresentIntervals": {
+            "1/route": {
+              "count": 6047,
+              "p50": 16.690000005066395,
+              "p95": 19.5,
+              "max": 89.38500000536442,
+              "fps": 59.45325422750503
+            },
+            "1/nonspell": {
+              "count": 1609,
+              "p50": 16.70499999821186,
+              "p95": 19.71000000089407,
+              "max": 84.54500000178814,
+              "fps": 59.21122842139289
+            },
+            "1/dialogue": {
+              "count": 266,
+              "p50": 16.820000000298023,
+              "p95": 34.07000000029802,
+              "max": 162.1899999976158,
+              "fps": 52.251735504050686
+            },
+            "1/spell": {
+              "count": 873,
+              "p50": 16.66999999433756,
+              "p95": 18.95499999821186,
+              "max": 65.74499999731779,
+              "fps": 59.625893620033025
+            },
+            "2/entry": {
+              "count": 241,
+              "p50": 16.66499999910593,
+              "p95": 21.530000001192093,
+              "max": 152.49000000208616,
+              "fps": 55.54307180841494
+            },
+            "2/route": {
+              "count": 142,
+              "p50": 16.515000000596046,
+              "p95": 25.05000000447035,
+              "max": 601.375,
+              "fps": 47.23092095302463
+            }
+          },
+          "densePresentIntervals": {
+            "count": 0,
+            "fps": null
+          },
+          "delayedPackets": 36912,
+          "updates": {
+            "count": 8969,
+            "p50": 3.8549999967217445,
+            "p95": 7.030000001192093,
+            "max": 148.44999999552965
+          },
+          "repairs": {
+            "count": 274,
+            "p50": 7.949999995529652,
+            "p95": 11.479999996721745,
+            "max": 20.695000000298023
+          },
+          "denseUpdates": {
+            "count": 0
+          },
+          "denseRepairs": {
+            "count": 0
+          }
+        },
+        {
+          "corrections": 323,
+          "resimulated": 843,
+          "maxPrediction": 12,
+          "combatCorrections": 165,
+          "spellCorrections": 25,
+          "lastConfirmed": 9273,
+          "phase": 1,
+          "measuredFrom": 7059.109999999404,
+          "measuredThrough": 163057.31500000507,
+          "presentations": 9146,
+          "simulationTicks": 9171,
+          "presentationStart": 7059.125,
+          "presentationEnd": 163057.31500000507,
+          "actualPresentations": 9164,
+          "lastPresent": 163057.31500000507,
+          "peakLinearMemory": 278396928,
+          "stageTwoFrames": 376,
+          "liveHeapBytes": 251605360,
+          "captures": 9375,
+          "captureUs": 12118878,
+          "replaySlices": 64,
+          "logicalDraws": 839,
+          "stageCorrections": 255,
+          "bossCorrections": 43,
+          "bossCosts": [],
+          "canvas": [
+            1280,
+            960
+          ],
+          "renderer": "ANGLE (Intel, Intel(R) Graphics (0x00007D67) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "presentIntervals": {
+            "count": 9163,
+            "p50": 16.685000002384186,
+            "p95": 19.78999999910593,
+            "max": 570.4499999955297
+          },
+          "storyPresentIntervals": {
+            "1/route": {
+              "count": 6027,
+              "p50": 16.685000002384186,
+              "p95": 19.719999998807907,
+              "max": 164.46500000357628,
+              "fps": 59.25144106494841
+            },
+            "1/nonspell": {
+              "count": 1599,
+              "p50": 16.685000002384186,
+              "p95": 19.62000000476837,
+              "max": 138.51000000536442,
+              "fps": 59.02152717003032
+            },
+            "1/dialogue": {
+              "count": 266,
+              "p50": 16.71500000357628,
+              "p95": 33.875,
+              "max": 174.77000000327826,
+              "fps": 51.81796310595776
+            },
+            "1/spell": {
+              "count": 885,
+              "p50": 16.674999997019768,
+              "p95": 18.96500000357628,
+              "max": 41.854999996721745,
+              "fps": 59.976294115590946
+            },
+            "2/entry": {
+              "count": 241,
+              "p50": 16.674999997019768,
+              "p95": 31.685000002384186,
+              "max": 62.72000000625849,
+              "fps": 56.7322461614714
+            },
+            "2/route": {
+              "count": 136,
+              "p50": 16.600000001490116,
+              "p95": 26.240000002086163,
+              "max": 570.4499999955297,
+              "fps": 47.16163262470418
+            }
+          },
+          "densePresentIntervals": {
+            "count": 0,
+            "fps": null
+          },
+          "updates": {
+            "count": 8863,
+            "p50": 3.844999998807907,
+            "p95": 7.079999998211861,
+            "max": 157.57999999821186
+          },
+          "repairs": {
+            "count": 365,
+            "p50": 6.5200000032782555,
+            "p95": 9.82999999821186,
+            "max": 16.05000000447035
+          },
+          "denseUpdates": {
+            "count": 0
+          },
+          "denseRepairs": {
+            "count": 0
+          }
+        }
+      ],
+      "initialPower": [
+        100,
+        100,
+        100
+      ],
+      "initialLives": [
+        2,
+        2,
+        2
+      ],
+      "last": [
+        9140,
+        3,
+        0,
+        2,
+        92,
+        1,
+        0,
+        4370,
+        1546,
+        2,
+        0,
+        287302,
+        0,
+        51200,
+        1,
+        2,
+        0,
+        51200,
+        0,
+        2,
+        0,
+        51200,
+        1,
+        1,
+        398,
+        296,
+        320,
+        1,
+        0,
+        0,
+        0,
+        212122,
+        2032167972,
+        0,
+        1024,
+        0,
+        1065353216,
+        49478,
+        0
+      ]
+    }
+  ]
+}

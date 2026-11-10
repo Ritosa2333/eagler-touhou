@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
@@ -7,7 +8,9 @@ import { createDevelopmentSiteManifestFromContent } from "../lib/development-sit
 import { DEVELOPMENT_CONTENT } from "../lib/development-content.mjs";
 import { SITE_MANIFEST_SCHEMA, validateSiteManifest } from "../lib/contracts/site-manifest.mjs";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { DEFAULT_BUILD_GAMES } from "../lib/product-selection.mjs";
 
+test("development site manifest", async () => {
 const root = await mkdtemp(join(resolve(import.meta.dirname, "../.."), "eagler-development-manifest-"));
 const project = fileURLToPath(new URL("..", import.meta.url));
 const fixtureData = Buffer.from([1, 2, 3, 4]);
@@ -36,7 +39,7 @@ assert.equal(manifest.schema, SITE_MANIFEST_SCHEMA);
 assert.equal(manifest.profile, "web-development");
 assert.equal(manifest.shared.testBuild, true);
 assert.equal(manifest.shared.resourceMode, "hosted");
-assert.deepEqual(Object.keys(manifest.games), Object.keys(PRODUCT_GAMES));
+assert.deepEqual(Object.keys(manifest.games), DEFAULT_BUILD_GAMES);
 assert.doesNotThrow(() => validateSiteManifest(manifest));
 assert.equal(manifest.shared.netplayRelay, undefined);
 const th09Only = await createManifest({ games: ["th09"] });
@@ -61,6 +64,7 @@ for (const [game, entry] of Object.entries(manifest.games)) {
   assert.match(entry.gameData.layout, /^sha256-[a-f0-9]{64}$/i);
 }
 const multiplayerRuntimeOwners = {
+  th05: "../ports/th05-mp/artifacts/runtime/th05.html",
   th06: "../ports/th06/build/web/multiplayer/th06.html",
   th07: "../ports/th07/build/web/multiplayer/th07.html",
   th075: "../ports/th075-mp/build-eagler-multiplayer/th075.html",
@@ -68,7 +72,10 @@ const multiplayerRuntimeOwners = {
   th09: "../ports/th09/web/build-eagler-multiplayer/th09.html",
   th10: "../ports/th10-mp/build-eagler-multiplayer/th10.html",
   th11: "../ports/th11-mp/build-eagler-multiplayer/th11.html",
+  th12: "../ports/th12-mp/build-eagler-multiplayer/th12.html",
   th15: "../ports/th15-mp/build-eagler-multiplayer/th15.html",
+  th17: "../ports/th17-mp/build-eagler-multiplayer/th17.html",
+  th19: "../ports/th19/build-eagler-multiplayer/th19.html",
 };
 const multiplayerGames = Object.keys(PRODUCT_GAMES).filter(game => PRODUCT_GAMES[game].multiplayerRuntime);
 assert.deepEqual(multiplayerGames, Object.keys(multiplayerRuntimeOwners), "every catalogued multiplayer game has a development Runtime owner");
@@ -137,3 +144,4 @@ for (const game of ["th06", "th07", "th09", "th10", "th11", "th15", "th20"]) {
 }
 await rm(root, { recursive: true, force: true });
 console.log(JSON.stringify({ developmentHostManifest: "PASS", games: Object.keys(manifest.games) }));
+});

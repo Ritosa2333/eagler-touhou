@@ -148,7 +148,7 @@ void World::activate_replay(){
     // every transition input in the preceding stage's continuous history.
     auto& runtime=state.netplay_runtime;
     if(!runtime.Spectator()&&!runtime.Playback()&&runtime.NetworkEnabled()&&
-       runtime.Generation()==0&&previousActiveStage>0&&
+       previousActiveStage>0&&
        previousActiveStage!=state.replay->active_stage){
         multiplayer::SpectatorStageState saved;
         const u32 frame=replay_checkpoint_precommit_frame-state.multiplayer_replay.Base();
@@ -205,11 +205,11 @@ void World::save_replay(const char* file,const char* name){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     // A spectator replays the players' menu inputs but owns no external
     // recording or save decision.
-    if(state.netplay_runtime.Spectator())return;
+    if(state.netplay_runtime.Spectator()&&!state.netplay_runtime.Retired())return;
     auto& archive=state.multiplayer_replay;
     // Replaying the recorded save-menu choice is gameplay input, not consent
     // to repeat the original user's external file write.
-    if(archive.Playing())return;
+    if(archive.Playing()&&!(state.netplay_runtime.Spectator()&&state.netplay_runtime.Retired()))return;
     if(!file||std::strlen(file)>240){fail();return;}
     char path[256];std::memcpy(path,"replay/",7);std::strcpy(path+7,file);
     const i32 stage=state.replay&&state.replay->info?
@@ -297,6 +297,7 @@ bool World::restore_replay_checkpoint_bootstrap(){
         pilots[seat].game.reserved_power=checkpoint->reservedPower[seat];
         pilots[seat].game.pilot.challenge_deaths=checkpoint->challengeDeaths[seat];
     }
+    backgrounds.replay_stage4_entry=(checkpoint->label&255u)==4&&checkpoint->firstFrame!=0;
     engine.script_random=checkpoint->scriptRandom;
     engine.visual_random=checkpoint->visualRandom;
     state.input_lanes={};
@@ -415,6 +416,7 @@ bool World::prepare_spectator_checkpoint(const multiplayer::SpectatorStageState&
         actors.session->elapsed.current==-1&&state.current_stage&&backgrounds.current;
     if(actors.session&&!reuseFreshStage)stop_session();
     spectator_checkpoint_pending=saved;spectator_checkpoint_restore_pending=true;
+    backgrounds.replay_stage4_entry=stage==4&&checkpoint.firstFrame!=0;
     state.game.difficulty=state.multiplayer_session.difficulty;
     state.game.stage=i32(stage);state.game.reserved_040=i32(checkpoint.reservedStage);
     state.game.flags=checkpoint.pilots[0].flags&~0xbu;

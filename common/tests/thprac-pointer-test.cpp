@@ -59,6 +59,10 @@ int main() {
     assert(pointers.route_touch(0,22,true,true,450,260).route==Route::Pending);
     assert(pointers.route_touch(0,22,true,false,10,10).route==Route::Ui);
     assert(pointers.route_touch(2,22,false,false,20,20).route==Route::Ui);
+    assert(pointers.route_touch(0,23,true,true,450,260).route==Route::Pending);
+    assert(pointers.cancel(23));assert(!pointers.cancel(23));
+    assert(pointers.route_touch(1,23,true,true,451,260).route==Route::Game);
+    assert(pointers.route_touch(2,23,true,true,451,260).route==Route::Game);
     pointers.reset();
     std::puts("PASS trainer pointer ownership: game crossing, UI release, passive swipe/tap, 64-bit identity, replacement down, reset");
 }

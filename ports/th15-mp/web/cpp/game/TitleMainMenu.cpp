@@ -45,11 +45,11 @@ bool TitleMainMenu::update(u32 pressed,u32 repeated,bool extra_available){
         if((pressed|repeated)&32)state.menu.move(1);
         if(!state.menu.error.empty())return fail(state.menu.error);
         if(state.menu.previous!=state.menu.cursor&&(!sound(10)||!select_animation(extra_available)))return false;
-        if(pressed&0x102){
+        if((pressed&0x102)&&!state.room_preview){
             if(state.menu.cursor==8){if(!sound(9))return false;state.change_substate(4);return true;}
             if(!sound(9))return false;state.menu.select(8);if(!select_animation(extra_available))return false;
         }
-        if(pressed&0x80001){
+        if((pressed&0x80001)&&(!state.room_preview||state.menu.cursor==6)){
             if(!interrupt(0,6,false))return false;
             const i32 selected=state.menu.cursor;
             if(selected>=0&&selected<=8){

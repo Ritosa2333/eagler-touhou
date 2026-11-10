@@ -106,6 +106,7 @@ bool CanSampleRawTouchForPlayer(const Player *player)
 void DrawLocalPlayerLocator(const Player *player, const ZunVec3 &drawPlayerPos)
 {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(MultiplayerGameplay::GetState().spectator)return;
     if (!player || !MultiplayerGameplay::IsMultiplayer() ||
         !EaglerOptions::EnhanceLocalPlayerVisibility() ||
         player->initParam != MultiplayerGameplay::GetLocalPlayerSlot() ||
@@ -701,6 +702,7 @@ void UpdateSpiritState(Player *player)
 
 bool IsProximityFadeTarget(const Player *player)
 {
+    if (MultiplayerGameplay::GetState().spectator) return false;
     if (!player || GetActivePlayerCount() < 2 ||
         !IsPlayerSlotActive(player->initParam))
         return false;

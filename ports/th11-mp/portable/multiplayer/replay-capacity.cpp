@@ -1,4 +1,5 @@
 #include "../../web/cpp/multiplayer/ReplayArchive.hpp"
+#include "../../web/cpp/multiplayer/ReplayStageSeek.hpp"
 #include "../../web/cpp/multiplayer/ReplayStorage.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -11,6 +12,15 @@ __attribute__((export_name("capacity_free"))) void capacity_free(void* p){std::f
 __attribute__((export_name("capacity_validate"))) int capacity_validate(const unsigned char* bytes,unsigned size){return ReplayArchive::Validate(bytes,size);}
 }
 int main(int argc,char** argv){
+    CHECK(ReplayStageSeeking(99,100,1000,6,5,true));
+    CHECK(ReplayStageSeeking(100,100,1000,6,6,false));
+    CHECK(ReplayStageSeeking(129,100,1000,6,6,false));
+    CHECK(!ReplayStageSeeking(130,100,1000,6,6,true));
+    CHECK(!ReplayStageSeeking(100,100,1000,0,6,false));
+    CHECK(!ReplayStageSeeking(1000,100,1000,6,6,false));
+    CHECK(!ReplayStageSeeking(130,100,1000,6,7,true));
+    CHECK(!ReplayStageSeeking(0,0,1000,1,1,true));
+    std::puts("PASS saved Replay chapter: loading label waits for native activation; exact frame seek and terminal bounds retained");
     static_assert(ReplayArchive::MaxFrames==250000,"Browser metadata capacity must match pinned native storage");
     std::unordered_set<std::string> existing;
     auto exists=[&](const char* path){return existing.count(path)!=0;};

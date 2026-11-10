@@ -1,0 +1,45 @@
+import {printRuntimeInputs,headerInputs} from '../../../tools/build/runtime-inputs.mjs';
+import {spawn} from 'node:child_process';
+import {existsSync,readFileSync,writeFileSync,readdirSync,mkdirSync,copyFileSync} from 'node:fs';
+import {resolve,relative,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'),repo=resolve(root,'../..');
+const common=resolve(process.env.EAGLER_COMMON_ROOT??resolve(repo,'common'));
+const testBuild=process.env.TH05_BROWSER_TESTS==='1';
+const out=resolve(root,process.env.TH05_OUTPUT??(testBuild?'artifacts/test-runtime':'artifacts/runtime')),stage=resolve(out,'source'),objects=resolve(out,'objects');
+const walk=path=>readdirSync(path,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(resolve(path,e.name)):[resolve(path,e.name)]);
+const excluded=new Set(['Game/Game.cpp','gameLib/Window/GameWindow.cpp','gameLib/Graphic/GLContext.cpp','gameLib/Input/KeyInputDI.cpp','gameLib/PMDPlayer/PMDPlayer.cpp','gameLib/SE/SoundEffect.cpp','gameLib/Graphic/PC98Font.cpp','gameLib/CommonFunction/CommonFunctionSystem.cpp']);
+const sources=['Game','gameLib','portable'].flatMap(p=>walk(resolve(root,p))).filter(p=>p.endsWith('.cpp')&&!excluded.has(relative(root,p).replaceAll('\\','/')));
+if(testBuild)sources.push(resolve(root,'tests/BrowserNativeTests.cpp'));
+sources.push(...['imgui.cpp','imgui_draw.cpp','imgui_tables.cpp','imgui_widgets.cpp'].map(p=>resolve(root,'third_party/imgui',p)));
+if(process.argv.includes('--print-inputs'))await printRuntimeInputs({workspace:root,root,sources,headers:[...headerInputs(resolve(root,'Game'),resolve(root,'gameLib'),resolve(root,'portable'),resolve(root,'third_party/imgui')),resolve(common,'include/eagler/input/BrowserGamepad.hpp'),resolve(common,'browser/browser-gamepad-input.hpp'),resolve(common,'include/eagler/thprac/PracticeMobilePanels.hpp'),resolve(common,'include/eagler/thprac/PracticePointer.hpp')],flags:['-O2','-std=c++17','-ffp-contract=off','-DIMGUI_DISABLE_WIN32_FUNCTIONS']});
+const sdk=process.env.EMSDK??resolve(repo,'../th08/tools/emsdk');
+const compiler=['upstream/emscripten/emcc.py','install/emscripten/emcc.py'].map(p=>resolve(sdk,p)).find(existsSync);
+if(!compiler)throw Error('Set EMSDK to an installed Emscripten SDK');
+const python=process.env.TH_PYTHON??'python',env={...process.env,EM_CONFIG:process.env.EM_CONFIG??resolve(sdk,'.emscripten'),EMSDK:sdk};
+const run=(command,args)=>new Promise((done,reject)=>{const child=spawn(command,args,{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']});let log='';for(const stream of [child.stdout,child.stderr])stream.on('data',b=>{log+=b;process.stdout.write(b);});child.on('error',reject);child.on('exit',code=>code?reject(Error(`${command} failed (${code})\n${log}`)):done());});
+mkdirSync(objects,{recursive:true});
+await run(python,[resolve(root,'scripts/generate-locales.py'),'--check']);
+await run(process.execPath,[resolve(root,'scripts/generate-audio-layout.mjs'),'--check']);
+await run(python,[resolve(root,'scripts/prepare-web-source.py'),'--out',stage]);
+const flags=[...(testBuild?['-DTH05_BROWSER_TESTS']:[]),'-O2','-g0','-std=c++17','-fexceptions','-fno-strict-aliasing','-ffp-contract=off','-Wno-writable-strings','-Wno-nontrivial-memcall','-Wno-microsoft-extra-qualification','-DIMGUI_DISABLE_WIN32_FUNCTIONS','-DIMGUI_DISABLE_WIN32_DEFAULT_IME_FUNCTIONS','-I'+stage,'-I'+resolve(stage,'portable/shims'),'-I'+resolve(stage,'third_party/imgui'),'-I'+resolve(common,'include'),'-include',resolve(stage,'portable/Platform.hpp')];
+const hash=data=>createHash('sha256').update(data).digest('hex');
+const sharedHeaders=[resolve(common,'include/eagler/input/BrowserGamepad.hpp'),resolve(common,'browser/browser-gamepad-input.hpp'),resolve(common,'include/eagler/thprac/PracticeMobilePanels.hpp'),resolve(common,'include/eagler/thprac/PracticePointer.hpp')];
+const headers=[...walk(stage).filter(p=>/\.(h|hpp|inc)$/.test(p)),...sharedHeaders];const identity=hash(JSON.stringify(flags)+hash(readFileSync(compiler))+headers.map(p=>hash(readFileSync(p))).join(''));
+const inputs=[...sources,...sharedHeaders,...['Game','gameLib','portable','third_party/imgui'].flatMap(p=>walk(resolve(root,p))).filter(p=>/\.(h|hpp|inc)$/.test(p)),...walk(resolve(root,'web')),...walk(resolve(root,'resources')),...walk(resolve(root,'scripts')).filter(p=>/\.(mjs|py)$/.test(p))];
+if(process.argv.includes('--print-inputs-json')){console.log(JSON.stringify({sources:sources.map(p=>relative(root,p).replaceAll('\\','/')),headers:headers.map(p=>relative(root,p).replaceAll('\\','/')),flags}));process.exit(0);}
+const built=[];let cursor=0,complete=0;
+await Promise.all(Array.from({length:Math.max(1,Math.min(12,Number(process.env.TH_BUILD_JOBS)||4))},async()=>{while(cursor<sources.length){let i=cursor++;const rel=relative(root,sources[i]),source=resolve(stage,rel),object=resolve(objects,rel.replaceAll(/[\\/.]/g,'_')+'.o'),key=hash(identity+readFileSync(source));built[i]=object;
+if(!existsSync(object+'.key')||readFileSync(object+'.key','utf8')!==key){await run(python,[compiler,...flags,'-c',source,'-o',object]);writeFileSync(object+'.key',key);}if(++complete%25===0)console.log(`TH05: ${complete}/${sources.length} compiled`);}}));
+const exports=[...(testBuild?['th05_native_stage_matrix','th05_native_laser_probe','th05_native_stage_start','th05_native_background_probe','th05_native_pause_state','th05_native_draw_probe','th05_native_effect_probe','th05_native_demo_start','th05_native_demo_info']:[]),'malloc','free','th05_pointer','th05_pointer_cancel','th05_mobile_state','th05_tick','th05_display_fps','th05_graphics_stat','th05_initialize','th05_present','th05_replay_save','th05_replay_validate','th05_viewer','th05_input_scene','th05_draw','th05_language_configure','th05_codepage','th05_practice_label','th05_practice_configure','th05_practice_enabled','th05_practice_tool','th05_player_x','th05_player_y','th05_touch_motion','th05_replay_open','th05_replay_frame','th05_replay_stage','th05_step','th05_frame_seconds','th05_alive','th05_scene','th05_ticks','th05_key','th05_clear','th05_focus','th05_options','th05_mouse','th05_shutdown','th05_save'];
+await run(python,[compiler,...flags,...built,'--no-entry','-sDEFAULT_TO_CXX=1','-sDISABLE_EXCEPTION_CATCHING=0','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web','-sALLOW_MEMORY_GROWTH=1','-sINITIAL_MEMORY=67108864','-sSTACK_SIZE=2097152','-sMAX_WEBGL_VERSION=1','-sFILESYSTEM=1','-lidbfs.js','-sEXPORTED_FUNCTIONS='+exports.map(n=>'_'+n).join(','),'-sEXPORTED_RUNTIME_METHODS=FS,IDBFS,HEAPU8','-sASSERTIONS=1','-sEXIT_RUNTIME=0','-o',resolve(out,'th05.mjs')]);
+for(const path of walk(resolve(root,'web'))){const dest=resolve(out,relative(resolve(root,'web'),path));mkdirSync(dirname(dest),{recursive:true});copyFileSync(path,dest);}
+for(const name of ['directory-keyboard.mjs','keyboard-owners.mjs','keyboard-input-bridge.mjs','direct-input-bridge.mjs'])copyFileSync(resolve(common,'browser',name),resolve(out,name));
+const inventory=Object.fromEntries(inputs.map(p=>[relative(root,p).replaceAll('\\','/'),hash(readFileSync(p))]));
+writeFileSync(resolve(out,'build.json'),JSON.stringify({game:'th05',kind:'uth05win-cpp-gles2',protocol:'eagler-touhou/1',builtAt:new Date().toISOString(),diagnostic:testBuild,features:{thprac:true,languages:true,focusHitbox:true},sources:sources.map(p=>relative(root,p).replaceAll('\\','/')),sourceFiles:inventory,sha256:hash(readFileSync(resolve(out,'th05.wasm')))},null,2)+'\n');
+console.log('Built '+resolve(out,'th05.html'));
+
+const runtimeNames=[...walk(resolve(root,'web')).map(p=>relative(resolve(root,'web'),p).replaceAll('\\','/')),'th05.mjs','th05.wasm','directory-keyboard.mjs','keyboard-owners.mjs','keyboard-input-bridge.mjs','direct-input-bridge.mjs','manifest.json'];
+writeFileSync(resolve(out,'manifest.json'),JSON.stringify({game:'th05',protocol:'eagler-touhou/1',version:'1.0.0',architecture:'uth05win-native-cpp',features:{thprac:true,languages:true,focusHitbox:true}},null,2)+'\n');
+writeFileSync(resolve(out,'runtime-files.json'),JSON.stringify({schema:'eagler-touhou/runtime-directory/1',files:Object.fromEntries(runtimeNames.map(name=>{const b=readFileSync(resolve(out,name));return [name,{bytes:b.length,sha256:hash(b)}];}))},null,2)+'\n');

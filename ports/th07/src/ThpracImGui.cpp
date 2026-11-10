@@ -1,5 +1,6 @@
 #include "ThpracImGui.hpp"
 #include <eagler/thprac/PracticePointer.hpp>
+#include <eagler/thprac/PracticeMobilePanels.hpp>
 #include <imgui_internal.h>
 #include <deque>
 #include <cmath>
@@ -638,11 +639,11 @@ void CancelLogicalPointers()
     g_MousePositionValid = false;
 }
 
-bool RouteTouchPointer(unsigned type, std::int64_t id, float x, float y, bool logical)
+bool RouteTouchPointer(unsigned type, std::int64_t id, float x, float y, bool logical, float* gameDownX, float* gameDownY)
 {
     if (!g_Initialized || type > 3) return false;
     if (type == 3) {
-        const bool owned = g_PracticePointers.route(2,id,false);
+        const bool owned = g_PracticePointers.cancel(id);
         if (owned && g_PrimaryTouchActive && id == g_PrimaryTouchId) {
             g_PrimaryTouchActive = false;
             g_PointerEdges.clear();
@@ -669,7 +670,16 @@ bool RouteTouchPointer(unsigned type, std::int64_t id, float x, float y, bool lo
             CancelLogicalPointers();
         }
     }
-    if (!g_PracticePointers.route(type,id,hit)) return false;
+    using Route=eagler::thprac::PracticePointer::TouchRoute;
+    const auto decision=g_PracticePointers.route_touch(type,id,hit,type==0&&eagler::thprac::mobile::passive_pointer(x,y),x,y);
+    if(decision.route==Route::Pending)return true;
+    if(decision.route==Route::Tap){ProcessLogicalPointer(1,decision.x,decision.y);ProcessLogicalPointer(2,x,y);return true;}
+    if(decision.route==Route::BeginGame){
+        float nx=decision.x/640.f,ny=decision.y/480.f;
+        if(!logical){int width=0,height=0;SDL_GetWindowSize(g_GameWindow.window,&width,&height);const float scale=std::min(float(width)/640.f,float(height)/480.f);if(width>0&&height>0){nx=(decision.x*scale+(width-640.f*scale)*.5f)/width;ny=(decision.y*scale+(height-480.f*scale)*.5f)/height;}}
+        if(gameDownX)*gameDownX=nx;if(gameDownY)*gameDownY=ny;return false;
+    }
+    if(decision.route==Route::Game)return false;
     if (type == 0 && !g_PrimaryTouchActive) { g_PrimaryTouchActive=true; g_PrimaryTouchId=id; }
     if (g_PrimaryTouchActive && id == g_PrimaryTouchId) {
         ProcessLogicalPointer(type==0?1:type==2?2:0,x,y);

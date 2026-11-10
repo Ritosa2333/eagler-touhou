@@ -1,7 +1,7 @@
 /** Deterministic state/timer tests and a pinned-original differential oracle.
  * Synthetic DOM only: no browser, layout, audio playback or deployment claim.
  */
-import test, { before, after } from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
@@ -72,6 +72,9 @@ function fakeClock() {
     deadlines() {
       return [...jobs.values()].map((job) => job.due - now).sort((a, b) => a - b);
     },
+    now() {
+      return now;
+    },
   };
 }
 function context(overrides = {}) {
@@ -116,9 +119,11 @@ function fixture(t, initial = context()) {
   const clock = fakeClock(),
     sends = [],
     voices = [],
+    notifications = [],
     effects = [];
   const model = createMultiplayerQuickChatModel({
     timers: clock,
+    now: clock.now,
     send(value) {
       sends.push(value);
       effects.push(['send', value]);
@@ -127,14 +132,18 @@ function fixture(t, initial = context()) {
       voices.push(id);
       effects.push(['voice', id]);
     },
+    notify(code) {
+      notifications.push(code);
+    },
   });
-  t.after(() => model.dispose());
+  t.onTestFinished(() => model.dispose());
   if (initial) model.update(initial);
   return {
     model,
     clock,
     sends,
     voices,
+    notifications,
     effects,
   };
 }
@@ -336,31 +345,35 @@ test('receive uses authoritative seat names and ignores connection, spectator an
   assert.equal(typeof entry.id, 'number');
   assert.deepEqual(voices, ['thanks']);
 });
-test('picker, mute/back and dismiss preserve the original transition table', (t) => {
+test('picker toggle, openComposer and dismiss preserve the picker transition table', (t) => {
   const { model } = fixture(t);
-  const expect = (pickerOpen, muteOpen) => {
-    assert.equal(model.getSnapshot().pickerOpen, pickerOpen);
-    assert.equal(model.getSnapshot().muteOpen, muteOpen);
-  };
-  expect(false, false);
+  const expect = pickerOpen => assert.equal(model.getSnapshot().pickerOpen, pickerOpen);
+  expect(false);
   model.togglePicker();
-  expect(true, false);
+  expect(true);
   model.togglePicker();
-  expect(false, false);
-  model.toggleMute();
-  expect(false, true);
-  model.toggleMute();
-  expect(true, false);
-  model.toggleMute();
-  expect(false, true);
+  expect(false);
+  model.openComposer();
+  expect(true);
   model.togglePicker();
-  expect(false, false);
+  expect(false);
   model.togglePicker();
+  expect(true);
   model.dismiss();
-  expect(false, false);
+  expect(false);
   const dismissed = model.getSnapshot();
   model.dismiss();
   assert.deepEqual(model.getSnapshot(), dismissed);
+});
+test('openComposer idempotently opens the picker', (t) => {
+  const {model}=fixture(t);
+  model.openComposer();
+  assert.equal(model.getSnapshot().pickerOpen,true);
+  const opened=model.getSnapshot();
+  model.openComposer();
+  assert.deepEqual(model.getSnapshot(),opened);
+  model.dismiss();
+  assert.equal(model.getSnapshot().pickerOpen,false);
 });
 test('outbound voice precedes the exact relay payload, closes picker and has no local throttle or optimistic echo', (t) => {
   const { model, effects, sends, voices, clock } = fixture(t);
@@ -430,6 +443,199 @@ test('outbound invalid phrase, disconnected and spectator guards do not emit voi
   model.sendPhrase('thanks');
   assert.equal(sends.length, 1);
 });
+test('guest sees free chat beside quick chat but cannot send free text', (t) => {
+  const {model, sends, voices, clock} = fixture(t, context({localClientId:'local'}));
+  model.receive({type:'chat-status',registered:false,authorId:'',bannedUntil:0});
+  model.setDraft('guest text');
+  model.sendText();
+  model.receive({type:'free-chat',room:'ROOM',serial:7,seat:1,clientId:'peer',authorId:'account-2',messageId:4,name:'Marisa',text:'hello room'});
+  model.receive(message());
+
+  assert.equal(model.getSnapshot().entries.length,2);
+  assert.equal(model.getSnapshot().entries[0].phrase.en,'hello room');
+  assert.equal(model.getSnapshot().entries[0].messageId,4);
+  assert.equal(model.getSnapshot().registered,false);
+  assert.deepEqual(sends,[]);
+  assert.deepEqual(voices,['thanks']);
+  assert.equal(clock.jobs.size,1,'only quick chat uses the ten-second expiry');
+  model.sendPhrase('thanks');
+  assert.deepEqual(sends,[{type:'quick-chat',phrase:'thanks',serial:7}]);
+});
+test('guest mute is local and suppresses another member’s incoming voice', (t) => {
+  const {model,sends,voices}=fixture(t,context({localClientId:'local'}));
+  model.receive({type:'chat-status',registered:false,authorId:'',bannedUntil:0});
+  model.toggleMember('peer');
+  assert.deepEqual(model.getSnapshot().muted,['peer']);
+  model.receive(message());
+  assert.equal(model.getSnapshot().entries.length,1,'muted chat stays in history for the presenter to hide');
+  assert.deepEqual(voices,[]);
+  assert.deepEqual(sends,[],'local mute does not call an account or relay endpoint');
+  model.toggleMember('peer');
+  model.receive(message({phrase:'follow-me'}));
+  assert.deepEqual(model.getSnapshot().muted,[]);
+  assert.deepEqual(voices,['follow-me'],'unmuting restores incoming voice');
+  assert.deepEqual(sends,[]);
+});
+test('free chat uses the shared entry list, accepts history once and never plays or expires', (t) => {
+  const {model,voices,clock}=fixture(t);
+  const free=(messageId,text)=>({type:'free-chat',room:'ROOM',serial:7,seat:1,clientId:'peer',authorId:'account-2',messageId,name:'Marisa',text});
+  model.receive(free(10,'first'));
+  model.receive({type:'chat-history',throughId:11,entries:[free(10,'duplicate'),free(11,'history')]});
+
+  assert.deepEqual(model.getSnapshot().entries.map(entry=>[entry.messageId,entry.phrase.en]),[[10,'duplicate'],[11,'history']]);
+  assert.deepEqual(voices,[]);
+  assert.deepEqual(clock.deadlines(),[],'free chat did not create an expiry timer');
+  clock.advance(10000);
+  assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.messageId),[10,11]);
+  assert.deepEqual(clock.deadlines(),[]);
+});
+test('free chat history merges in message order when a newer live message arrives first', (t) => {
+  const {model}=fixture(t);
+  const free=messageId=>({type:'free-chat',room:'ROOM',serial:7,seat:1,clientId:'peer',authorId:'account-2',messageId,name:'Marisa',text:`message ${messageId}`});
+  model.receive(free(51));
+  model.receive({type:'chat-history',throughId:50,entries:Array.from({length:50},(_,index)=>free(index+1))});
+
+  assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.messageId),Array.from({length:50},(_,index)=>index+2));
+  assert.equal(model.getSnapshot().entries.at(-1).phrase.en,'message 51');
+});
+test('free chat shares the existing fifty-entry cap without creating quick-chat timers', (t) => {
+  const {model,voices,clock}=fixture(t);
+  for(let messageId=1;messageId<=55;messageId++)model.receive({type:'free-chat',room:'ROOM',serial:7,seat:1,
+    clientId:'peer',authorId:'account-2',messageId,name:'Marisa',text:`message ${messageId}`});
+  assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.messageId),Array.from({length:50},(_,index)=>index+6));
+  assert.deepEqual(voices,[]);
+  assert.equal(clock.jobs.size,0);
+});
+test('free chat accepts a labeled spectator and rejects mismatched seat and spectator roles', (t) => {
+  const {model,voices}=fixture(t,context({spectators:[{clientId:'viewer',name:'Observer'}]}));
+  const base={type:'free-chat',room:'ROOM',serial:7,clientId:'viewer',authorId:'account-3',messageId:1,name:'Observer',text:'watching'};
+  model.receive({...base,seat:-1,spectator:true});
+  assert.deepEqual(model.getSnapshot().entries.map(entry=>[entry.seat,entry.spectator,entry.name]),[[-1,true,'Observer']]);
+  model.receive({...base,messageId:2,seat:-1,spectator:false});
+  model.receive({...base,messageId:3,seat:0,spectator:true});
+  model.receive({...base,messageId:4,seat:3,spectator:false});
+  assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.messageId),[1]);
+  assert.deepEqual(voices,[]);
+});
+test('legacy history still loads while retracted messages stay suppressed', (t) => {
+  const {model}=fixture(t);
+  const free=(messageId,text)=>({type:'free-chat',room:'ROOM',serial:7,seat:1,clientId:'peer',
+    authorId:'account-2',messageId,name:'Marisa',text});
+  model.receive(free(4,'old live message'));
+  model.receive(free(6,'new live message'));
+  model.receive({type:'chat-retract',authorId:'account-2',throughId:4,bannedUntil:0});
+  model.receive({type:'chat-history',throughId:5,entries:[free(4,'retracted from old history'),free(5,'legacy history')]});
+
+  assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.messageId).sort((a,b)=>a-b),[5,6]);
+  assert.ok(model.getSnapshot().entries.every(entry=>entry.phrase.en!=='retracted from old history'));
+});
+test('older history watermarks cannot replace newer history or erase later live messages', (t) => {
+  const {model}=fixture(t);
+  const free=(messageId,text)=>({type:'free-chat',room:'ROOM',serial:7,seat:1,clientId:'peer',
+    authorId:'account-2',messageId,name:'Marisa',text});
+  model.receive({type:'chat-history',throughId:10,entries:[free(9,'snapshot nine'),free(10,'snapshot ten')]});
+  model.receive(free(11,'live eleven'));
+  model.receive({type:'chat-history',throughId:9,entries:[free(9,'stale snapshot nine')]});
+
+  assert.deepEqual(model.getSnapshot().entries.map(entry=>[entry.messageId,entry.phrase.en]),[
+    [9,'snapshot nine'],[10,'snapshot ten'],[11,'live eleven'],
+  ]);
+});
+test('verified member sends trimmed text and waits for server results before enabling another send', (t) => {
+  const {model,sends,notifications}=fixture(t,context({localClientId:'local'}));
+  model.receive({type:'chat-status',registered:true,authorId:'account-1',bannedUntil:0});
+  model.setDraft('  hello everyone  ');
+  model.sendText();
+  model.sendText();
+  assert.deepEqual(sends,[{type:'free-chat',text:'hello everyone',serial:7}]);
+  assert.equal(model.getSnapshot().sending,true);
+
+  model.setDraft('typed while sending');
+  model.receive({type:'chat-result',action:'free-chat',ok:true});
+  assert.equal(model.getSnapshot().sending,false);
+  assert.equal(model.getSnapshot().draft,'typed while sending');
+  model.sendText();
+  assert.deepEqual(sends.at(-1),{type:'free-chat',text:'typed while sending',serial:7});
+  model.receive({type:'chat-result',action:'free-chat',ok:false,code:'send-rate-limited'});
+  assert.equal(model.getSnapshot().sending,false);
+  assert.equal(model.getSnapshot().draft,'typed while sending');
+  assert.deepEqual(notifications,['send-rate-limited']);
+  model.receive({type:'chat-result',action:'free-chat',ok:false,code:'sign-in-required'});
+  assert.equal(model.getSnapshot().registered,false);
+  assert.deepEqual(notifications,['send-rate-limited','sign-in-required']);
+});
+test('send timeout releases pending state, then disconnect clears verification and its timer', (t) => {
+  const {model,clock,sends,notifications}=fixture(t,context({localClientId:'local'}));
+  model.receive({type:'chat-status',registered:true,authorId:'account-1',bannedUntil:0});
+  model.setDraft('keep this text');
+  model.sendText();
+  assert.equal(model.getSnapshot().sending,true);
+  clock.advance(11999);
+  assert.equal(model.getSnapshot().sending,true);
+  clock.advance(1);
+  assert.equal(model.getSnapshot().sending,false);
+  assert.equal(model.getSnapshot().draft,'keep this text');
+  assert.deepEqual(notifications,['service-unavailable']);
+
+  model.sendText();
+  assert.equal(clock.jobs.size,1);
+  model.update(context({localClientId:'local',connected:false}));
+  assert.equal(model.getSnapshot().registered,false);
+  assert.equal(model.getSnapshot().authorId,'');
+  assert.equal(model.getSnapshot().sending,false);
+  assert.equal(clock.jobs.size,0);
+  assert.equal(sends.length,2);
+});
+test('server ban blocks free text until its deadline and clears through the room clock', (t) => {
+  const {model,clock,sends,notifications}=fixture(t,context({localClientId:'local'}));
+  model.receive({type:'chat-status',registered:true,authorId:'account-1',bannedUntil:0});
+  model.receive({type:'chat-retract',authorId:'account-1',throughId:9,bannedUntil:5000});
+  assert.equal(model.getSnapshot().bannedUntil,5000);
+  model.setDraft('still banned');
+  model.sendText();
+  assert.deepEqual(sends,[]);
+  assert.deepEqual(notifications,['chat-banned']);
+  clock.advance(5000);
+  assert.equal(model.getSnapshot().bannedUntil,0);
+  model.sendText();
+  assert.deepEqual(sends,[{type:'free-chat',text:'still banned',serial:7}]);
+});
+test('room participants including guests can report other authors by message id', (t) => {
+  const {model,sends,notifications}=fixture(t,context({localClientId:'local'}));
+  model.receive({type:'chat-status',registered:true,authorId:'account-1',bannedUntil:0});
+  const free=(messageId,authorId)=>({type:'free-chat',room:'ROOM',serial:7,seat:1,clientId:'peer',authorId,messageId,name:'Marisa',text:'hello'});
+  model.receive(free(20,'account-2'));
+  model.receive(free(21,'account-1'));
+  model.reportMessage(20, '   ');
+  model.reportMessage(20, 'x'.repeat(501));
+  assert.deepEqual(sends,[]);
+  model.reportMessage(20, 'test reason');
+  model.reportMessage(21, 'test reason');
+  assert.deepEqual(sends,[{type:'chat-report',messageId:20,reason:'test reason'}]);
+  model.receive({type:'chat-result',action:'chat-report',ok:true});
+  model.receive({type:'chat-result',action:'chat-report',ok:false,code:'report-rate-limited'});
+  assert.deepEqual(notifications,['reported','report-rate-limited']);
+  model.receive({type:'chat-status',registered:false,authorId:'',bannedUntil:0});
+  model.reportMessage(20, 'test reason');
+  assert.deepEqual(sends,[{type:'chat-report',messageId:20,reason:'test reason'},{type:'chat-report',messageId:20,reason:'test reason'}]);
+});
+test('retraction removes an author prefix, preserves quick chat and drops delayed free messages', (t) => {
+  const {model,clock}=fixture(t);
+  const free=(messageId,authorId)=>({type:'free-chat',room:'ROOM',serial:7,seat:1,clientId:'peer',authorId,messageId,name:'Marisa',text:`message ${messageId}`});
+  model.receive(message({phrase:'thanks'}));
+  model.receive(free(5,'account-2'));
+  model.receive(free(6,'account-2'));
+  model.receive(free(7,'account-3'));
+  model.receive({type:'chat-retract',authorId:'account-2',throughId:5,bannedUntil:0});
+
+  assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.messageId??entry.phrase.id),['thanks',6,7]);
+  model.receive(free(5,'account-2'));
+  model.receive(free(4,'account-2'));
+  assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.messageId??entry.phrase.id),['thanks',6,7]);
+  model.receive(free(8,'account-2'));
+  assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.messageId??entry.phrase.id),['thanks',6,7,8]);
+  assert.equal(clock.jobs.size,1,'retract does not cancel the retained quick-chat expiry');
+});
 test('muted messages are retained with timers, suppress only inbound voice and remain available when unmuted', (t) => {
   const { model, voices, clock } = fixture(t);
   model.receive(message());
@@ -458,7 +664,6 @@ test('visibility, connection, language, seat changes and motion preserve entries
   const { model, clock } = fixture(t);
   model.receive(message());
   model.toggleMember('peer');
-  model.toggleMute();
   const entry = model.getSnapshot().entries[0];
   for (const patch of [
     {
@@ -490,7 +695,6 @@ test('visibility, connection, language, seat changes and motion preserve entries
     const snapshot = model.getSnapshot();
     assert.deepEqual(snapshot.entries, [entry]);
     assert.deepEqual(snapshot.muted, ['peer']);
-    assert.equal(snapshot.muteOpen, true);
     assert.equal(clock.jobs.size, 1);
   }
   model.update(
@@ -500,7 +704,6 @@ test('visibility, connection, language, seat changes and motion preserve entries
   );
   assert.deepEqual(model.getSnapshot().entries, []);
   assert.deepEqual(model.getSnapshot().muted, []);
-  assert.equal(model.getSnapshot().muteOpen, false);
   assert.equal(model.getSnapshot().pickerOpen, false);
   assert.equal(clock.jobs.size, 0);
   model.receive(
@@ -648,4 +851,27 @@ test('dispose clears scheduled expiry and late presenter completion cannot notif
   clock.advance(10000);
   assert.equal(notifications, afterDispose);
   model.dispose();
+});
+
+test('custom slots persist and keyboard sends the displayed page', (t) => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  const data = new Map();
+  Object.defineProperty(globalThis, 'localStorage', {configurable: true, value: {
+    getItem: key => data.get(key) ?? null,
+    setItem: (key, value) => data.set(key, value),
+  }});
+  t.onTestFinished(() => previous ? Object.defineProperty(globalThis, 'localStorage', previous) : delete globalThis.localStorage);
+  const {model, sends} = fixture(t);
+  model.setSlot(1, 'you-first');
+  model.openComposer();
+  model.sendSlot(2);
+  assert.equal(sends.at(-1).phrase, 'you-first');
+  const other = fixture(t);
+  assert.equal(other.model.getSnapshot().slots[1], 'you-first');
+  other.model.openComposer();
+  other.model.setPickerPage(2);
+  other.model.sendSlot(1);
+  assert.equal(other.sends.at(-1).phrase, phrases[9].id);
+  other.model.openComposer();
+  assert.equal(other.model.getSnapshot().pickerPage, 0);
 });

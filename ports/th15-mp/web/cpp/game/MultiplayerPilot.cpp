@@ -1,3 +1,4 @@
+#include "../multiplayer/FrameFence.hpp"
 #include <eagler/gameplay/CooperativeRules.hpp>
 #if TH15_MULTIPLAYER
 #include "GameBattle.hpp"
@@ -26,7 +27,7 @@ bool MultiplayerPilot::initialize(const ShtResource& sht,int bank){
     player->motion.position={x,400,0};player->motion.position_fixed={i32(x*128),51200};player->motion.snap_options();
     return true;
 }
-bool MultiplayerPilot::rebuild_bomb(){
+bool MultiplayerPilot::rebuild_bomb(){if(!multiplayer::FrameFence::allow())return false;
     if(!seat){bomb=world.bomb.get();return true;}
     if(bomb){if(!bomb->stop())return world.fail(bomb->error);auto retire=[&](u32 h){return world.animations.retire(h)||world.fail(world.animations.error);};
       switch(character){case 0:if(!retire(static_cast<BombReimu&>(*bomb).aura))return false;break;
@@ -96,12 +97,15 @@ bool MultiplayerPilot::reset_stage(){
     session.bomb_state=0;spell_startup_bomb=false;keys={};input={};life_hold=power_taps=power_gap=0;life_latched=false;
     if(!rebuild_bomb())return false;
     if(ghost)return revive(false);
-    return player->reset_for_stage()||world.fail(player->error);
+    if(world.mp_options.replay_legacy_stage_flow)return player->reset_for_stage()||world.fail(player->error);
+    // Retained live players reset through RunSession at scene activation.
+    return true;
 }
 bool MultiplayerPilot::allow_bomb(){return !ghost&&!world.mp_options.challenge&&bomb&&bomb->allowed();}
 bool MultiplayerPilot::begin_bomb(){
     if(!allow_bomb()||!bomb->begin())return false;
-    spell_startup_bomb=(world.spell.flags&1)&&world.spell.frame<60;
+    spell_startup_bomb=(character!=3||world.mp_options.replay_legacy_stage_flow)&&(world.spell.flags&1)&&world.spell.frame<60;
+    if(!world.mp_options.replay_legacy_stage_flow&&character==3&&!world.mp_spell_startup_active())world.spell.flags&=~32u;
     world.enemy_world.counters[1]=world.bomb_enemies.uses;world.enemy_world.counters[2]=world.bomb_enemies.chain;
     protect_teammates(multiplayer_bomb_start_protection(character));
     return true;
@@ -238,9 +242,8 @@ bool GameBattle::mp_prepare_spell_startup(){
     bool active=false;for(unsigned s=0;s<mp_options.seat_count;++s){auto& p=*pilots[s];p.spell_startup_bomb=!p.ghost&&p.session.bomb_state==1&&p.character!=3;active|=p.spell_startup_bomb;}return active;
 }
 bool GameBattle::mp_spell_startup_active(){
-    bool active=false;for(unsigned s=0;s<mp_options.seat_count;++s){auto& p=*pilots[s];if(p.ghost||p.session.bomb_state!=1){p.spell_startup_bomb=false;continue;}
-        // Retail Reisen startup hits can set flag 32 even for an older shield.
-        if(p.character==3&&p.player->life.state==4&&spell.frame<60&&(spell.flags&32))p.spell_startup_bomb=true;
+    bool active=false;for(unsigned s=0;s<mp_options.seat_count;++s){auto& p=*pilots[s];if(p.ghost||p.session.bomb_state!=1||(p.character==3&&!mp_options.replay_legacy_stage_flow)){p.spell_startup_bomb=false;continue;}
+        if(mp_options.replay_legacy_stage_flow&&p.character==3&&p.player->life.state==4&&spell.frame<60&&(spell.flags&32))p.spell_startup_bomb=true;
         active|=p.spell_startup_bomb;}return active;
 }
 i32 GameBattle::mp_boss_damage(EnemyState& enemy,i32 amount){
@@ -259,7 +262,7 @@ void GameBattle::mp_prepare_presentation(AnmRenderer& r){
     const auto local_position=pilots[mp_options.local_seat]->player->motion.position;
     for(unsigned s=0;s<mp_options.seat_count;++s){auto& pilot=*pilots[s];const auto position=pilot.player->motion.position;
         const double dx=double(local_position.x)-position.x,dy=double(local_position.y)-position.y;
-        const u8 opacity=multiplayer_player_opacity(s==mp_options.local_seat,pilot.ghost,dx*dx+dy*dy);
+        const u8 opacity=multiplayer_player_opacity(mp_options.spectator||s==mp_options.local_seat,pilot.ghost,mp_options.spectator?1e20:dx*dx+dy*dy);
         auto& visuals=pilot.player->visuals;
         // Keep ownership until the generation-tagged VM is actually retired,
         // including fade-out and subsequent changes of the selected viewpoint.
@@ -277,7 +280,7 @@ void GameBattle::mp_prepare_presentation(AnmRenderer& r){
         for(const auto& pair:visuals.option_handles)for(auto handle:pair)tag(tag,animations.registry.find(handle));
         for(const auto& shot:pilot.player->shots.shots)if(shot.state)tag(tag,animations.registry.find(shot.animation));
     }
-    for(const auto& entry:r.multiplayer_hitbox_owners)if(entry.second!=mp_options.local_seat)
+    for(const auto& entry:r.multiplayer_hitbox_owners)if(!mp_options.spectator&&entry.second!=mp_options.local_seat)
         if(auto* vm=animations.registry.find(entry.first))r.multiplayer_hidden_hitboxes.push_back(vm);
 }
 bool GameBattle::mp_draw(AnmRenderer& r){
@@ -288,7 +291,7 @@ bool GameBattle::mp_draw(AnmRenderer& r){
         // independently of native death hiding and invulnerability flashing.
         auto body=pilot.player->visuals.root;body.visual.flags=(body.visual.flags|3u)&~0x60000u;
         body.visual.render_flags=(body.visual.render_flags&~0x80060u)|0x40000u;
-        const unsigned base_alpha=s==mp_options.local_seat?112u:88u;unsigned alpha=base_alpha;
+        const unsigned base_alpha=mp_options.spectator||s==mp_options.local_seat?112u:88u;unsigned alpha=base_alpha;
         // TH11 rescue feedback: the recipient becomes opaque as the donor's
         // confirmed 90-tick hold progresses. No authoritative ANM mutation.
         for(unsigned giver=0;giver<mp_options.seat_count;++giver){const auto& donor=*pilots[giver];

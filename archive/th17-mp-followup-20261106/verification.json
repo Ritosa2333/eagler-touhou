@@ -1,0 +1,118 @@
+{
+  "sourceRevision": "9d1f94456",
+  "localChecks": {
+    "nativeTests": 2,
+    "retailAssets": [
+      "st06.ecl / ECir00",
+      "enemyb.anm",
+      "beast.anm"
+    ],
+    "sharedReplayBridgeTests": 14,
+    "browser": {
+      "engine": "Chromium",
+      "seatsInOnePage": true,
+      "cpuSlowdownFactor": 2,
+      "guestInputDelayMs": 110,
+      "previous": {
+        "wasmSha256": "56c637aa06c3264fc6019c4ea33c8dafee9ad772a8d69bc0337610d86c04fea8",
+        "renderScale": 2,
+        "rooms": [
+          {
+            "seats": 2,
+            "stage": 1,
+            "matchingConfirmedFrames": 1057,
+            "hostPresentationsWithSimulationPerSecond": 13.85,
+            "hostSimulatedTicksPerSecond": 24.33,
+            "rollbackCorrections": [
+              53,
+              6
+            ]
+          },
+          {
+            "seats": 3,
+            "stage": 1,
+            "matchingConfirmedFrames": 1051,
+            "hostPresentationsWithSimulationPerSecond": 11.78,
+            "hostSimulatedTicksPerSecond": 14.22,
+            "rollbackCorrections": [
+              87,
+              10,
+              7
+            ]
+          }
+        ]
+      },
+      "candidate": {
+        "wasmSha256": "9c9c7267c4a2bec16a36b09fd037cb17130a4299d2ae2032a6755bc90352aa65",
+        "renderScale": 1,
+        "rooms": [
+          {
+            "seats": 2,
+            "stage": 1,
+            "matchingConfirmedFrames": 1053,
+            "hostPresentationsWithSimulationPerSecond": 30.85,
+            "hostSimulatedTicksPerSecond": 53.73,
+            "rollbackCorrections": [
+              64,
+              10
+            ],
+            "replay": {
+              "playedThrough": 240,
+              "seekTarget": 150,
+              "canvasAdvanced": true
+            }
+          },
+          {
+            "seats": 3,
+            "stage": 1,
+            "matchingConfirmedFrames": 1052,
+            "hostPresentationsWithSimulationPerSecond": 26.93,
+            "hostSimulatedTicksPerSecond": 31.08,
+            "rollbackCorrections": [
+              80,
+              15,
+              8
+            ],
+            "replay": {
+              "playedThrough": 240,
+              "seekTarget": 150,
+              "canvasAdvanced": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  "publishedAt": "2026-11-06T10:06:50.959748+00:00",
+  "entry": "https://touhouonline.com/",
+  "betaOptInRequired": true,
+  "releaseId": "sha256-e1e21f5bdd426508bc704e4ced613a44a93360ff46d3cfcba3868b05ec0366e0",
+  "previousRelease": "sha256-828b1c4f8901c36b9d7a1e667e6077e8e7ac074edb94da1059f2c219321db071",
+  "relayRestarted": false,
+  "runtime": {
+    "multiplayer": {
+      "prefix": "runtime/th17/multiplayer/dc32fa32c8e3010a64bd5f0a69b8a1dc3e81de26cdb096d0f328500f6ec6aed1/",
+      "wasmSha256": "9c9c7267c4a2bec16a36b09fd037cb17130a4299d2ae2032a6755bc90352aa65",
+      "httpFilesVerified": 14
+    },
+    "normal": {
+      "prefix": "runtime/th17/0720db5948747cd23cbd00678531385c31297893941f274c71841c37f3308340/",
+      "wasmSha256": "c3ecf9b8b5b1e02b979b2f5eca891e5ba6e3f7aac6f8ab250e584c582887203b",
+      "httpFilesVerified": 14
+    }
+  },
+  "maintenanceChecks": {
+    "projection": "TH17 normal and multiplayer share the same source directory",
+    "portChecker": "Windows launcher build output denied writes. Runtime release builds, package hashes and HTTP validation ran independently."
+  },
+  "mirrors": [
+    {
+      "url": "https://jp-site.touhouonline.com/",
+      "wasmSha256": "9c9c7267c4a2bec16a36b09fd037cb17130a4299d2ae2032a6755bc90352aa65"
+    },
+    {
+      "url": "https://cn-site.touhouonline.com:8443/",
+      "wasmSha256": "9c9c7267c4a2bec16a36b09fd037cb17130a4299d2ae2032a6755bc90352aa65"
+    }
+  ]
+}

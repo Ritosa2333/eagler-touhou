@@ -31,7 +31,7 @@
     "th075_web/cpp/game/BattleOverlay.cpp": "7a9615ffc719078c8a009e9ed694b0389e60ae6a36a56d6d1016819a100ef4d0",
     "th075_web/cpp/game/BattlePortraits.cpp": "0a5aaceaa0e47e557f73de6bf4e911f172b280d10ad00bbdd77872e64c200c98",
     "th075_web/cpp/game/BattleProgress.cpp": "b463e35705181c0dc9125f615dbf6182ce81bc2fcd97a354dd45752cbae4dccf",
-    "th075_web/cpp/game/BattleRenderer.cpp": "df4b242b379bfef42589fed077a95bd6c926d3724a2dffe514be11f3a0e3ace6",
+    "th075_web/cpp/game/BattleRenderer.cpp": "e8ef0a2d64253852aa81170a0594eb6da5d949f82f03ea6ce9232446e169b7c9",
     "th075_web/cpp/game/BattleRenderOrder.cpp": "de291e5e87061ee4c407be0429f8ebebb1fd7b2b5d429b89715664613ca3daef",
     "th075_web/cpp/game/BattleScene.cpp": "88dc00d633b785ed396e0d705ef3f532c3daa685df6b5fd282d9ef0da56fc854",
     "th075_web/cpp/game/BattleSimulation.cpp": "a5f0c5bea2858bdf19cc1c30228559bbbb05f88a41a11ba39525fed1a8107954",

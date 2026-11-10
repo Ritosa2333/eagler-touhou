@@ -16,9 +16,37 @@ Adonis 在实际游戏输入通道上测量 RTT，协商输入延迟 `D` 与预�
 
 Launcher 房间回报和 UI 状态展示测量结果；Native Runtime 在本地同一输入通道上验证、协商和固定运行参数。Replay/观战流收到的已确认逻辑帧按其协议时序播放，不重复应用玩家输入延迟。
 
+房间分别按 `rollbackLimit`、`measuredStartup` 显示回滚开关和开局延迟测量选项。启用回滚后，房间收起手动延迟设置。
+
 大厅网络检测中的 TURN 延迟是单个客户端到 TURN 服务的往返估计，通过同浏览器双端中转回环的实际 DataChannel 回显折算。游戏右下角延迟读取当前玩家间 ICE 候选对的完整往返时间；双方经同一 TURN 节点中转时，完整往返约为双方到节点的往返时间之和。
 
+TURN 检测两端并行收集中继候选，通过 Trickle ICE 及时交换地址，在可用候选对打开 DataChannel 后立即测量。部分端口响应较慢时，已打通的路径即可给出结果。检测验证所选候选对两端均为 relay，并以实际回显计时；建立阶段共用 36 秒上限，结束后释放候选监听、通道和两端连接。该检测适用于全部多人作品。
+
+## 区域入口与代理联机
+
+主站按实际出口的地理位置识别中国大陆、香港、澳门、台湾，使用包含运营商 Geofeed 的 IPv4、IPv6 地址表。中国地区使用 VPS 页面与 TURN，国际文档导航交由 CF 节点执行地区策略。站点清单、Service Worker 和资源发现接口保留本站地址，使已经打开的页面在网络切换后继续读取同源配置。
+
+日本来源的在线 HTTP 与大厅 WebSocket 在入口拒绝。Service Worker 保留本地离线页面，在线大厅准入由实际网络请求和 WebSocket 握手决定。
+
+VPS TURN 同时提供原有 UDP、TCP 候选和 `turns:relay.touhouonline.com:8443?transport=tcp` 加密备用入口。TLS 入口把连接转交既有 TURN，复用短期身份、配额和中继分配；代理线路可通过实际 relay 候选对完成大厅检测。证书更新后自动 reload TLS 入口，原 TURN 与 Relay 持续运行。中国地区的这条备用路径使用 VPS，CF TURN 的预算与停用监控独立执行。
+
+TURN 节点由既有质量与容量监控统一选择。选择结果通过受限 SSH 只读导出，独立于网页发布同步到 TLS 入口和实际承载房间的 Relay；两段同步各每 15 秒检查一次。TLS 上游先完成 reload，再发布对应节点的短期凭据配置，Relay 在新连接读取配置时生效。已有连接继续使用已经建立的中继分配。
+
+同步校验节点白名单、配置时效和 TLS 上游对应关系，原子更新私有配置，并记录所选节点、评估时间与最近成功时间。失效或不一致的发布保留当前配置并使同步任务报错。整站镜像不再写入 TURN 配置。部署与隔离切换检查见 [TURN 选择同步记录](../../archive/turn-fallback-20261028/README.md)，其验证范围为选择发布链、双端浏览器实际中继和服务进程连续性，适用于全部多人作品。
+
+旧站的站点清单与 Host 清单统一使用 `relay.touhouonline.com`，旧 WebSocket 地址也转发至同一 Relay，兼容已有缓存的客户端。旧代理覆盖客户端 IP 请求头，新入口只信任该旧代理的精确地址，再向内部 Relay 覆盖转发真实地址。两个入口共用房间与按客户端 IP 划分的配额，离开房间后释放对应配额。
+
+同一 Relay 的多个入口共用对局身份。th08、th10、th11、th12、th15 按作品、房间和开局局次计算原生会话 ID，玩家与旁观者即使选择不同域名、端口或代理路径，也能进入同一局。连接继续使用各自选定的入口，种子、席位、玩法和运行包版本分别执行原有准入校验。
+
+### 信令与对局的连接生命周期
+
+已经建立的 WebRTC 输入与控制通道独立传输，直连与 TURN 均采用这一边界。信令 WebSocket 关闭时，`BrowserPeerTransport` 保留现有 RTC 通道并重连信令；用于旁观上传的 WebSocket 关闭也不结束已经选定的 RTC 对局。
+
+房间服务保存大厅、席位、开局与旁观状态。进程替换需要重新建立这些连接，正在建连的会话按新状态重试；旁观历史由所属进程管理。发布房间服务时，分别核对已连接对局、开局、返回房间和旁观，TURN 进程沿自己的生命周期运行。
+
 ## 房间手动丢包测试
+
+运行期公共传输通过当前路径和 TURN 备用路径的端到端回显比较质量，保留游戏会话并协调双方换路。测量启动阶段沿用同一实际通道，开局后启用质量选路。组件、消息边界、成本与验证入口见[联机自适应选路](netplay-routing.md)。
 
 在房间中点击自己的玩家卡片，打开个人状态面板后选择「测试丢包率」。一次操作分别测量与房内其他玩家的直连和 TURN 路径，展示「你 → 对方」和「对方 → 你」的本次消息丢失比例，适用于全部多人作品。
 
@@ -32,7 +60,7 @@ Launcher 房间回报和 UI 状态展示测量结果；Native Runtime 在本地�
 
 同一个人面板提供「优先使用 TURN」开关。选择按本机保存，所有多人作品共用，默认关闭；下一次开局建立连接时生效。每名玩家独立选择，任一方启用即可让与其相连的游戏链路经过 TURN。
 
-Launcher 将本机偏好通过 `netplayPreferTurn` 传给 Runtime。公共 `BrowserPeerTransport` 在启用时使用 `iceTransportPolicy: 'relay'`，让游戏输入与可靠控制通道共同走 TURN；连接恢复继续沿用这项策略。TURN 无法连接时使用既有 WebSocket 服务器中转兜底。关闭后由浏览器在直连与 TURN 候选中选择路径。
+Launcher 将本机偏好通过 `netplayPreferTurn` 传给 Runtime。公共 `BrowserPeerTransport` 在启用时使用 `iceTransportPolicy: 'relay'`，让游戏输入与可靠控制通道共同走 TURN；连接恢复继续沿用这项策略。游戏 WebSocket 回退由产品和服务端的显式开关共同控制，默认使用 RTC。关闭本机 TURN 偏好后，由浏览器在直连与 TURN 候选中选择路径。
 
 丢包测试持续分别测量直连和 TURN，方便按实际结果选择游戏链路。该设置属于本机传输偏好，房间规则与 Replay 玩法身份沿用各自配置。
 
@@ -94,7 +122,7 @@ B = max(1, ceil(floor(worst_p95_RTT_us / 2) * 60 / 1_000_000))
 
 接线分别位于 [`SessionChannel::Pump()`](../../common/src/netplay/SessionChannel.cpp) 的阶段样本收发和标题外层帧日程：TH08 `NetworkFrameSchedule`、TH09 `RollbackSession::PacedElapsedMs()`、TH10 `NetplayRuntime::PacedElapsedSeconds()`、TH11 `NetplayRuntime::PacedElapsed()`。标题选择何时消费建议值；`SessionChannel` 不模拟游戏帧。
 
-TH08/09/10/11 的混合/纯延迟模式可交换 AdonisPhase 信息；TH15 配置 `adonisPhase=true` 且 prediction allowance 为 0。TH15 按每席位真实输入推进，`maxRollbackFrames=12` 用于保存公共输入与 ACK 历史。
+th08/09/10/11 的混合/纯延迟模式可交换 AdonisPhase 信息；th15 在纯延迟和混合模式启用 AdonisPhase，混合模式采用协商的预测量。直接回滚使用零帧输入延迟与十二帧预测窗口。
 
 ## 输入捕获与帧零
 
@@ -103,6 +131,7 @@ TH08/09/10/11 的混合/纯延迟模式可交换 AdonisPhase 信息；TH15 配�
 - Hybrid 的 P 是对网络输入前沿的允许距离，不会缩短标题的最大回滚历史。动作边沿仍按标题 `predictableButtons` 策略决定是否预测。
 - 帧零的会话/世界启动输入要求真实一致。Adonis 不预测世界初始化数据；每个 Runtime 在测量提交前保持逻辑模拟关闭。
 - 网络传输泵、ACK、重传和音频泵独立于逻辑帧推进。输入帧因确认等待而阻塞时，只重试已到期的那个逻辑帧。
+- th15 使用公共 `PendingFrameSchedule` 保存到期更新。收包可以唤醒重试和历史纠正；呈现后的续算只消费已经积累的时钟额度。历史纠正复用已采样输入，最后一帧提交完整画面。
 - 玩家输入延迟只应用于玩家实时采样。Replay 和观战数据已经是确认后的逻辑帧；播放端以其帧号推进，不再额外排入 D。
 - 音频、文件写入和观战发布按帧确认顺序提交，状态恢复由独立模块管理。纯延迟模式也采用这一提交顺序。
 
@@ -116,13 +145,13 @@ TH08/09/10/11 的混合/纯延迟模式可交换 AdonisPhase 信息；TH15 配�
 | TH09MP | `rollbackLimit=8`、实测启动、手动延迟到 9；2 人 | `RollbackSession::History=8`；Rollback、Delay、Hybrid 共用标题输入核心 | 自有 `Application.cpp` 恢复/Present 调度和菜单生命周期输入边界。 |
 | TH10MP | `rollbackLimit=12`、实测启动；目录未显式设置 `sendPredictionLimit` | `NetplayRuntime.cpp` 设置 `CoreConfig::maxRollbackFrames=12` | 公共策略读取缺省发送预测上限 8；标题 C++ 状态窗为 12，两者字段含义和 owner 不同。 |
 | TH11MP | `rollbackLimit=12`、`sendPredictionLimit=12`、实测启动、手动延迟到 9 | `SessionSetup::MaxRollbackFrames=12`；Mode 0/2 可预测，Mode 1 精确输入 | 定时启动支持 2–3 人；直接回滚 Mode 0 可不运行测量，Mode 1/2 使用校准。 |
-| TH15MP | `rollbackLimit=0`、实测启动、手动延迟到 9 | 只允许 Adonis Delay；`CoreConfig::allowPrediction=false` | 校准之后严格等待每席位的真实帧输入；保留的 12 帧 core 槽位只用于输入和 ACK。 |
+| th15 MP | `rollbackLimit=12`、`sendPredictionLimit=12`、实测启动、手动延迟到 9 | 默认直接回滚；Mode 0/2 允许预测，Mode 1 使用精确输入 | 零帧输入延迟、收包唤醒与呈现后续算；暂停、对话和场景工厂使用真实输入边界。 |
 
 产品时序声明见 [`product-catalog.mjs`](../../common/contracts/product-catalog.mjs)；统一解释函数 `multiplayerInputTimingPolicy()` 的缺省预测上限为 8。TH10 当前目录未显式写 `sendPredictionLimit`，但标题 C++ `CoreConfig.maxRollbackFrames` 设为 12。审阅具体调度上限时要分别追踪 UI/Relay 产品值与 Native Runtime frame admission 字段。
 
 TH06/TH07 使用各自的时序策略。默认 UI 配方读取实际房间配置中的所选值，产品上限用于选项校验。
 
-测量启动只接受 Adonis Delay `mode=1` 或 Hybrid `mode=2`。TH08/09/10 可选择不启用 Adonis 的直接回滚路径；TH11 Mode 0 直接启动回滚，Mode 1/2 走 measured startup；TH15 仅使用 Mode 1 纯延迟。
+测量启动只接受 Adonis Delay `mode=1` 或 Hybrid `mode=2`。th08/09/10 可选择不启用 Adonis 的直接回滚路径；th11、th15 的 Mode 0 直接启动回滚，Mode 1/2 使用实测启动。
 
 ## 调试启动问题
 
@@ -155,6 +184,30 @@ TH08 的历史 Update 基准中，Bullet job 占约 88–91%，活动区域索�
 TH09 复用公共 `AdonisStartup` 和 `SessionChannel`，由标题 `RollbackSession::BeginMeasured()` 与 `PumpStartup()` 管理提交后切入。普通网络等待记录一个待重试的到期帧；下一显示机会只重试该帧，墙钟欠账不随等待增长。恢复复用已到期的帧，新本地输入保持原采样节奏。
 
 TH09 的恢复与输出调度：恢复放在 Present 后分批执行；`RecoverySchedule` ticket 和 loop epoch 让暂停/停止取消旧回调；输入在 `Capture()` 一次采样并由重模拟复用；确认音频、Replay 和观战帧由独立发布前沿保留。报告中的旧浏览器/网络条件记录保存在 [固定基线回滚 Playbook](https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md#th09-input-scheduling-and-post-present-recovery-2026-10-16)。
+
+## Relay 入口自动切换
+
+站点通过 `shared.netplayRelay` 指定首选入口，通过
+`shared.netplayRelayFallbacks` 提供最多三个有序备用入口。所有入口反代到同一个
+Relay 进程，共享房间、玩家席位和运行会话。网页在连接失败或建立连接超时后
+依次尝试备用入口，并在当前页面生命周期内复用成功入口。
+
+大厅目录、房间连接与连接检测共用选路状态。游戏启动时读取已选择的入口，
+房间号、运行编号和玩家身份通过原查询参数传递。连接超时预算为每个入口
+2 秒，用于限制无响应入口的等待时间；它不是线路质量评分。
+
+已建立连接的关闭事件交给原有房间重连流程处理，不重放已发送消息。
+应用层拒绝沿用原关闭原因。入口代理统一执行地域访问策略，并覆盖真实客户端
+地址。备用入口负责绕过客户端到首选入口的网络故障，房间服务仍由同一个
+Relay 进程承载。
+
+网站镜像复用同一发布代。镜像节点按文件摘要验证上游发布，完成后原子切换
+站点目录；Runtime、Service Worker 与资源清单随同发布。公开首页采用单一
+DNS 入口，镜像同步与客户端选路分别配置，房间始终由一个 Relay 承载。
+首页首次连接的备用路径由 DNS 或边缘入口承接；页面内的 WS 备用入口在页面
+加载后生效。迁移时，新入口先转发既有房间，
+待正在进行的对局结束后再切换房间进程，并保留原入口的转发能力。
+各层代理只信任精确上游地址，继续覆盖客户端地址和执行地域准入。
 
 ## 故障定位
 

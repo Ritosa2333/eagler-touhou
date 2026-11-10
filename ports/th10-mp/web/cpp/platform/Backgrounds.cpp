@@ -3,6 +3,7 @@
 #include "../game/HighRefresh.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/RollbackState.hpp"
+#include "../multiplayer/ReplayBackground.hpp"
 #endif
 #include <cstdlib>
 #include <vector>
@@ -11,6 +12,14 @@ BackgroundScript::BackgroundScript(Backgrounds& o):owner(o){rate=&o.engine.speed
 i32 BackgroundScript::update_animation(AnmVm& vm){return owner.engine.update(vm);}
 void BackgroundScript::initialize_animation(AnmFile& file,AnmVm& vm,i32 id){initialize_embedded_animation(file,vm,id,owner.engine,owner.engine.manager.started_scripts);}
 void BackgroundScript::normalize(Vec3& output,const Vec3& input){GraphicsMath::normalize(output,input);}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+void BackgroundScript::camera_position_interpolated(Stage& stage){
+    // THPrac 4040cd: a story stage-four chapter omits 29 transition ticks.
+    // Run after STD opcode 3 so its camera timer is not reset afterwards.
+    multiplayer::AlignStage4ReplayCamera(stage,owner.replay_stage4_entry&&
+        owner.state.netplay_runtime.ReadOnly() && &stage==owner.current&&!owner.previous);
+}
+#endif
 BackgroundDraw::BackgroundDraw(Backgrounds& o):owner(o),renderer(o.engine.renderer()),graphics_camera(renderer){world=&o.engine.world;active=&o.engine.active;screen_space=&o.engine.screen_space;fog_enabled=&o.engine.fog_enabled;rate=&o.engine.speed;camera=&graphics_camera;}
 void BackgroundDraw::translation(Matrix4& matrix,const Vec3& position){GraphicsMath::translation(matrix,position);}
 void BackgroundDraw::project_points(Vec3* output,const Vec3* input,u32 count,const Camera& camera,const Matrix4& world){

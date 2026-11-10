@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -6,6 +7,7 @@ import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { HOST_WORKSPACE_GAMES, inspectHostWorkspace, hostWorkspacePaths } from "../lib/host-workspace.mjs";
 import { writeSyntheticRuntimeRelease } from "../tests/support/runtime-release-fixture.mjs";
 
+test("host workspace", async () => {
 const root = await mkdtemp(join(tmpdir(), "eagler-host-workspace-"));
 try {
 const layout = hostWorkspacePaths(root);
@@ -41,9 +43,19 @@ for (const marker of alternative.markerFiles) await put(join(layout.games.th10, 
 // prepared content markers satisfy the self-host workspace declaration.
 const th11Alternative = PRODUCT_CONTENT.th11.original.preparedAlternative;
 for (const marker of th11Alternative.markerFiles) await put(join(layout.games.th11, th11Alternative.directory, marker));
+await assert.rejects(() => inspectHostWorkspace(root), /TH12 OGG source thbgm\.dat not found/);
+const th12Alternative = PRODUCT_CONTENT.th12.original.preparedAlternative;
+for (const marker of th12Alternative.markerFiles) await put(join(layout.games.th12, th12Alternative.directory, marker));
 await assert.rejects(() => inspectHostWorkspace(root), /TH15 OGG source thbgm\.dat not found/);
 const th15Alternative = PRODUCT_CONTENT.th15.original.preparedAlternative;
 for (const marker of th15Alternative.markerFiles) await put(join(layout.games.th15, th15Alternative.directory, marker));
+await assert.rejects(() => inspectHostWorkspace(root), /TH17 OGG source thbgm\.dat not found/);
+const th17Alternative = PRODUCT_CONTENT.th17.original.preparedAlternative;
+for (const marker of th17Alternative.markerFiles) await put(join(layout.games.th17, th17Alternative.directory, marker));
+// TH05 is prepared-only: the Host workspace consumes complete DATA, OGG, and
+// artwork inputs because its native source producer is not part of this repo.
+const th05Prepared = PRODUCT_CONTENT.th05.original.preparedAlternative;
+for (const marker of th05Prepared.markerFiles) await put(join(layout.games.th05, th05Prepared.directory, marker));
 // TH20 streams retail thbgm.dat directly; the self-host workspace still requires
 // the declared BGM source input.
 for (const name of PRODUCT_CONTENT.th20.original.oggSourceFiles) await put(join(layout.games.th20, name));
@@ -67,3 +79,4 @@ console.log(JSON.stringify({ hostWorkspace: "PASS", games: Object.keys(full.game
 } finally {
   await rm(root, { recursive: true, force: true });
 }
+});

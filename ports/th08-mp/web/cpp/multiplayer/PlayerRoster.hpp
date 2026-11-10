@@ -20,10 +20,11 @@ struct PlayerRoster {
         if(seat<3)seats[seat]={&p,&r,&v,&g,true};
     }
     bool eligible(u32 seat)const{return seat<count&&seats[seat].player&&seats[seat].available;}
-    u32 ordered(const Vec3& origin,u32 (&indices)[3])const{
+    u32 ordered(const Vec3& origin,u32 (&indices)[3],bool aiming=false)const{
         float distances[3]{};u32 used=0;
         for(u32 seat=0;seat<count;++seat){
             if(!eligible(seat))continue;
+            if(aiming&&seats[seat].player->status().life.state==2)continue;
             const auto& position=seats[seat].player->status().motion.movement.position;
             const float x=Scalar::sub(position.x,origin.x),y=Scalar::sub(position.y,origin.y);
             const float distance=Scalar::add(Scalar::mul(x,x),Scalar::mul(y,y));
@@ -33,7 +34,7 @@ struct PlayerRoster {
         return used;
     }
     Vec3 target(const Vec3& origin)const{
-        u32 indices[3];return ordered(origin,indices)?seats[indices[0]].player->status().motion.movement.position:Vec3{192,384,0};
+        u32 indices[3];return ordered(origin,indices,true)?seats[indices[0]].player->status().motion.movement.position:Vec3{192,384,0};
     }
 };
 }

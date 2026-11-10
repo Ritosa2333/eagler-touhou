@@ -1,6 +1,7 @@
 #include "SceneCompositor.hpp"
 namespace th11 {
 void SceneCompositor::reset_cameras(bool restricted){
+    camera_valid=false;presenting=false;
     full_camera={};full_camera.mode=1;play_camera={};play_camera.position.z=1000;world_camera=play_camera;
     play_camera.viewport=restricted?GraphicsViewport{32,16,384,448,0,1}:GraphicsViewport{};
     region=restricted?GraphicsViewport{13,0,422,480,0,1}:GraphicsViewport{0,0,512,512,0,1};world_camera.viewport=region;
@@ -36,5 +37,19 @@ bool SceneCompositor::draw(AnmRenderer& renderer,SceneDrawKind kind){
     case SceneDrawKind::CompositeScreen:{const int result=renderer.draw(copies[2]);copies[2].color=0xffffffff;renderer.flush();return result!=-2;}
     default:return false;
     }
+}
+
+void SceneCompositor::begin_presentation(float alpha){
+    if(!camera_valid){presenting=false;return;}
+    saved_full=full_camera;saved_play=play_camera;saved_world=world_camera;
+    full_camera=blend_camera(previous_full,full_camera,alpha);
+    play_camera=blend_camera(previous_play,play_camera,alpha);
+    world_camera=blend_camera(previous_world,world_camera,alpha);
+    presenting=true;
+}
+void SceneCompositor::end_presentation(){
+    if(!presenting)return;
+    full_camera=saved_full;play_camera=saved_play;world_camera=saved_world;
+    presenting=false;
 }
 }

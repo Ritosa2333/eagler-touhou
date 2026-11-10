@@ -1,3 +1,4 @@
+import {acceptTh09MatchStats, bindTh09Duel} from '../src/th09-room-stats.mjs';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import net from 'node:net';
@@ -5,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 const listener=net.createServer();await new Promise(r=>listener.listen(0,'127.0.0.1',r));
 const port=listener.address().port;await new Promise(r=>listener.close(r));
 const child=spawn(process.execPath,[fileURLToPath(new URL('../src/netplay-relay.mjs',import.meta.url))],{
-  env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE:'1'},
+  env:{...process.env,EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK:'1',EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE:'1'},
   stdio:['ignore','pipe','pipe'],windowsHide:true});
 let log='';child.stdout.on('data',b=>log+=b);child.stderr.on('data',b=>log+=b);
 const sockets=[];
@@ -84,5 +85,53 @@ try{
   second.h.ws.send(Buffer.from([0xe8,0x53,0x54,0x4f,0x50,1]));
   await wait(()=>directoryRoom()?.spectatable===false,'stopped spectator stream withdraws directory entry');
   assert.equal(second.h.closed,false);assert.equal(second.g.closed,false);
+  for(const s of [second.h,second.g,second.hs,second.gs])s.ws.close();
+  await wait(()=>latest(host)?.phase==='lobby','second run returned to lobby');
+  send(guest,{type:'stand-up'});
+  await wait(()=>!directoryRoom()?.seats[1]&&directoryRoom()?.seats[0]?.stats?.wins===0,'departing opponent clears current pair score');
+  const replacement=await open(`room=${room}&lobby=timeline_replacement&member=timeline_member_replacement`);
+  send(replacement,{type:'take-seat',seat:1,loadout:1});
+  await wait(()=>directoryRoom()?.seats[1]?.stats?.wins===0,'replacement starts a fresh scoreboard');
+  assert.deepEqual(latest(host).seats[0].stats,{wins:0,losses:0,minutes:0});
   console.log('TH09 experimental spectator: late admission, ordered history/live handoff, same-connection match initializer and history pruning, logical ends, persistent lobby and isolated next-run prefix PASS');
 }finally{for(const ws of sockets)ws.close();child.kill();await new Promise(r=>child.once('exit',r));}
+
+{
+  const room = {id:'th09mp-1234', lobby:{startSerial:1, seats:[{clientId:'left'},{clientId:'right'}]}};
+  const run = {lobbyClientIds:['left','right']};
+  const records = [], record = result => records.push(result);
+  bindTh09Duel(room, run, ['left-account','right-account']);
+  const report = {serial:1, start:10, frames:3600, winner:0, characters:[0,15]};
+  acceptTh09MatchStats(room, run, 'left', report, record);
+  assert.equal(records.length, 0);
+  acceptTh09MatchStats(room, run, 'right', {...report, characters:[1,15]}, record);
+  assert.equal(records.length, 0);
+
+  const next = {...report, start:4000, winner:1};
+  acceptTh09MatchStats(room, run, 'right', next, record);
+  const retired = {...run, ended:true};
+  room.lobby.seats[1] = null;
+  acceptTh09MatchStats(room, retired, 'left', {...next, start:8000}, record);
+  acceptTh09MatchStats(room, retired, 'outsider', next, record);
+  assert.equal(records.length, 0);
+  acceptTh09MatchStats(room, retired, 'left', next, record);
+  acceptTh09MatchStats(room, retired, 'left', next, record);
+  assert.deepEqual(records.map(({roundId,winner,frames,characters})=>({roundId,winner,frames,characters})),
+    [{roundId:'1:4000',winner:1,frames:3600,characters:[0,15]}]);
+}
+
+{
+  const room = {id:'th09mp-1234', lobby:{startSerial:1, seats:[{clientId:'left'},{clientId:'right'}]}};
+  const run = {lobbyClientIds:['left','right']};
+  const records = [], record = result => records.push(result);
+  bindTh09Duel(room, run, ['left-account',null]);
+  const progress = {serial:1, start:100, frames:600};
+  acceptTh09MatchStats(room, run, 'left', progress, record);
+  acceptTh09MatchStats(room, run, 'right', progress, record);
+  assert.equal(records.length, 0);
+  const final = {...progress,frames:850,winner:1};
+  acceptTh09MatchStats(room, run, 'left', final, record);
+  acceptTh09MatchStats(room, run, 'right', final, record);
+  assert.deepEqual(records.map(({frames,winner,characters})=>({frames,winner,characters})),
+    [{frames:850,winner:1,characters:undefined}]);
+}

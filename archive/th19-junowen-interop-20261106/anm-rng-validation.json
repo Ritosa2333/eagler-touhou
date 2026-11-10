@@ -1,0 +1,23 @@
+{
+  "gameLaunched": false,
+  "githubChanged": false,
+  "deployedToDesktop": false,
+  "javascriptTests": 20,
+  "timerVectors": 120,
+  "integerRngVectors": 156,
+  "floatRngVectors": 234,
+  "cppAnmComparison": "passed",
+  "worldCheckpointBothStreams": "passed",
+  "builds": {
+    "th19-replay-rng-runtime": {
+      "manifestVerified": true,
+      "buildId": "306a8928a97629cc5c81743bfd44862d4be7553812ba2693093f710d85ad8b26",
+      "wasmSha256": "c7f7c61a7a9b50d60cb724e4696da2eff4e2c36dbc892f557ac61522a400fd63"
+    },
+    "th19-replay-rng-runtime-multiplayer": {
+      "manifestVerified": true,
+      "buildId": "306a8928a97629cc5c81743bfd44862d4be7553812ba2693093f710d85ad8b26",
+      "wasmSha256": "c7f7c61a7a9b50d60cb724e4696da2eff4e2c36dbc892f557ac61522a400fd63"
+    }
+  }
+}

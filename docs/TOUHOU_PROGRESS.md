@@ -1,5 +1,7 @@
 # 东方作品进度
 
+表中按阶段记录进度，署名链接指向对应项目或维护者。各作功能验收见 [适配检查](adaptation/README.md)。
+
 ## Windows 正作
 
 |  |  | 还原 | 移植 | Web 适配 | 多人联机 |
@@ -12,12 +14,12 @@
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th11.jpg" width="40" height="40" alt="东方地灵殿"> | **[th11] 東方地霊殿 v1.00a** | [SteinsGateON](https://github.com/Ritosa2333/th11/tree/main)<br>![Done][done] | [SteinsGateON](https://github.com/Ritosa2333/th11/tree/main)<br>![Done][done] | [Ritosa2333](https://github.com/Ritosa2333/th11/tree/eagler)<br>[![In Progress][in-progress-detail]](#th11-web-适配) | [Ritosa2333](https://github.com/Ritosa2333/th11/tree/eagler)<br>[![In Progress][in-progress-detail]](#th11-多人联机) |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th12.jpg" width="40" height="40" alt="东方星莲船"> | **[th12] 東方星蓮船 v1.00b** | [Tweet-META](https://github.com/Tweet-META/th12/tree/main)<br>![Done][done] | [Tweet-META](https://github.com/Goan114/eagler-touhou/tree/main/ports/th12)<br>![Done][done] | [Tweet-META](../ports/th12/README.md)<br>[![In Progress][in-progress-detail]](../ports/th12/ADAPTATION.md) | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th13.jpg" width="40" height="40" alt="东方神灵庙"> | **[th13] 東方神霊廟 v1.00c** | [AgentMystia](https://github.com/AgentMystia)<br>![In Progress][in-progress] | - | - | - |
-| <img src="../launcher/docs/assets/game-covers/thumbnails/th14.jpg" width="40" height="40" alt="东方辉针城"> | **[th14] 東方輝針城 v1.00b** | [AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | [AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | [AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | - |
-| <img src="../launcher/docs/assets/game-covers/thumbnails/th15.jpg" width="40" height="40" alt="东方绀珠传"> | **[th15] 東方紺珠伝 v1.00b** | [SteinsGateON](https://github.com/Ritosa2333/th15/tree/main)<br>![Done][done] | [SteinsGateON](https://github.com/Ritosa2333/th15/tree/main)<br>![Done][done] | [Ritosa2333](https://github.com/Ritosa2333/th15/tree/eagler)<br>![Done][done] | ![In Progress][in-progress] |
+| <img src="../launcher/docs/assets/game-covers/thumbnails/th14.jpg" width="40" height="40" alt="东方辉针城"> | **[th14] 東方輝針城 v1.00b** | [AdingApkgg](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | [AdingApkgg](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | [AdingApkgg](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | - |
+| <img src="../launcher/docs/assets/game-covers/thumbnails/th15.jpg" width="40" height="40" alt="东方绀珠传"> | **[th15] 東方紺珠伝 v1.00b** | [SteinsGateON](https://github.com/Ritosa2333/th15/tree/main)<br>![Done][done] | [SteinsGateON](https://github.com/Ritosa2333/th15/tree/main)<br>![Done][done] | [Ritosa2333](https://github.com/Ritosa2333/th15/tree/eagler)<br>![Done][done] | [Goan114](../ports/th15-mp/ADAPTATION.md)<br>[![In Progress][in-progress-detail]](#th15-多人联机) |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th16.jpg" width="40" height="40" alt="东方天空璋"> | **[th16] 東方天空璋 v1.00a** | ![Unassigned][unassigned] | - | - | - |
-| <img src="../launcher/docs/assets/game-covers/thumbnails/th17.jpg" width="40" height="40" alt="东方鬼形兽"> | **[th17] 東方鬼形獣 v1.00b** | SteinsGateON<br>![In Progress][in-progress] | [源码与构建](../ports/th17/README.md)<br>![In Progress][in-progress] | [共用启动器适配](../ports/th17/ADAPTATION.md)<br>![In Progress][in-progress] | - |
+| <img src="../launcher/docs/assets/game-covers/thumbnails/th17.jpg" width="40" height="40" alt="东方鬼形兽"> | **[th17] 東方鬼形獣 v1.00b** | SteinsGateON<br>![In Progress][in-progress] | [Goan114](../ports/th17/README.md)<br>![In Progress][in-progress] | [Goan114](../ports/th17/ADAPTATION.md)<br>![In Progress][in-progress] | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th18.jpg" width="40" height="40" alt="东方虹龙洞"> | **[th18] 東方虹龍洞 v1.00a** | [owo-aya](https://github.com/owo-aya)<br>![In Progress][in-progress] | - | - | - |
-| <img src="../launcher/docs/assets/game-covers/thumbnails/th19.jpg" width="40" height="40" alt="东方兽王园"> | **[th19] 東方獣王園 v1.10c** | [Idle](https://github.com/Idle233333)<br>![In Progress][in-progress] | - | - | - |
+| <img src="../launcher/docs/assets/game-covers/thumbnails/th19.jpg" width="40" height="40" alt="东方兽王园"> | **[th19] 東方獣王園 v1.10c** | [Idle](https://github.com/Idle233333)<br>![In Progress][in-progress] | [Idle](https://github.com/Idle233333)<br>![In Progress][in-progress] | [Idle](https://github.com/Idle233333)<br>![In Progress][in-progress] | [Idle](https://github.com/Idle233333)<br>![In Progress][in-progress] |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th20.jpg" width="40" height="40" alt="东方锦上京"> | **[th20] 東方錦上京 v1.00c** | [Oracatt](https://github.com/Oracatt/Touhou20/tree/main)<br>![Done][done] | [Ritosa2333](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th20)<br>![Done][done] | 搁置 | - |
 
 ## 旧作（PC-98）
@@ -34,7 +36,7 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th02.jpg" width="32" height="40" alt="东方封魔录"> | **[th02] 東方封魔録** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th02)<br>![In Progress][in-progress] | - | [IxinorTyan](https://github.com/IxinorTyan/th02-coop-lab)<br>![Done][done] | [IxinorTyan](https://github.com/IxinorTyan/th02-coop-lab)<br>![In Progress][in-progress] |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th03.jpg" width="28" height="40" alt="东方梦时空"> | **[th03] 東方夢時空** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th03)<br>![In Progress][in-progress] | - | [IxinorTyan](https://github.com/IxinorTyan/th03-netplay-lab)<br>![Done][done] | [IxinorTyan](https://github.com/IxinorTyan/th03-netplay-lab)<br>![In Progress][in-progress] |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th04.jpg" width="60" height="40" alt="东方幻想乡"> | **[th04] 東方幻想郷** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th04)<br>![In Progress][in-progress] | - | [IxinorTyan](https://github.com/IxinorTyan/th04-coop-lab)<br>![Done][done] | [IxinorTyan](https://github.com/IxinorTyan/th04-coop-lab)<br>![In Progress][in-progress] |
-| <img src="../launcher/docs/assets/game-covers/thumbnails/th05.jpg" width="55" height="40" alt="东方怪绮谈"> | **[th05] 東方怪綺談** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th05)<br>![In Progress][in-progress] | - | [IxinorTyan](https://github.com/IxinorTyan/th05-coop-lab)<br>![Done][done] | [IxinorTyan](https://github.com/IxinorTyan/th05-coop-lab)<br>![In Progress][in-progress] |
+| <img src="../launcher/docs/assets/game-covers/thumbnails/th05.jpg" width="55" height="40" alt="东方怪绮谈"> | **[th05] 東方怪綺談** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th05)<br>![In Progress][in-progress] | [Goan114](https://github.com/Goan114/uth05win-vibe)<br>![Done][done] | [Goan114](../ports/th05/README.md)<br>![In Progress][in-progress] | [IxinorTyan](https://github.com/IxinorTyan/th05-coop-lab)<br>![In Progress][in-progress] |
 
 ## 小数点作
 
@@ -47,7 +49,7 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th125.jpg" width="40" height="40" alt="东方文花帖DS"> | **[th125] ダブルスポイラー** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th128.jpg" width="40" height="40" alt="妖精大战争"> | **[th128] 妖精大戦争** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th135.jpg" width="40" height="40" alt="东方心绮楼"> | **[th135] 東方心綺楼** | ![Unassigned][unassigned] | - | - | - |
-| <img src="../launcher/docs/assets/game-covers/thumbnails/th143.jpg" width="40" height="40" alt="弹幕天邪鬼"> | **[th143] 弾幕アマノジャク** | ![Unassigned][unassigned] | - | - | - |
+| <img src="../launcher/docs/assets/game-covers/thumbnails/th143.jpg" width="40" height="40" alt="弹幕天邪鬼"> | **[th143] 弾幕アマノジャク** | [Idle](https://github.com/Idle233333)<br>![In Progress][in-progress] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th145.jpg" width="40" height="40" alt="东方深秘录"> | **[th145] 東方深秘録** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th155.jpg" width="40" height="40" alt="东方凭依华"> | **[th155] 東方憑依華** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th165.jpg" width="40" height="40" alt="秘封噩梦日记"> | **[th165] 秘封ナイトメアダイアリー** | ![Unassigned][unassigned] | - | - | - |
@@ -79,6 +81,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 | ✅ | ❌ | ✅ | ✅ | ✅ |
 
 ## [th14] 東方輝針城 v1.00b
+
+2026-11-11 关卡资源顺序已更新。[实现与构建](https://github.com/AdingApkgg/thp/blob/b21fdcd206a49d52b2751e39fe1cbcb757127937/docs/porting/TH14_STAGE_WORKER_ORDER_NOV11.md)包含主 ECL、动画交接、引用脚本的读取顺序修复。七关资源回归与取消、复用、失败重试检查通过，首关七项读取顺序与原版实际记录一致。六种 Normal 自机各已观察射击；当前源码全量编译的静音浏览器可运行演示。灵梦 B Normal 首帧仍有 24 次脚本 RNG 调用差与 197,624 个像素差，整作继续标为进行中。
+
 
 2026-11-05 [Worker 直接读取共享 Wasm 相机](https://github.com/AdingApkgg/thp/blob/3d62e22de251df57670c81027ae8106e4789c7a2/docs/porting/TH14_SHARED_SCENE_NOV05.md)：Scene 阶段读取提供方接入实际 Worker，从活动 C++ 相机按原顺序读 75 字，私有结果完整后才初始化并发布 incoming Stage，无逐字 ACK／原版值／帧或 VM 目标。141 玩法和 146 浏览器单元分别全量重编，实际 shared memory 类型及旧 unshared 反例验证。并发组件 75 字来自一次阻塞 C++ 调用期间的发布；8 例通道、9 项语法、33 HTTP／140 路由通过。实际六关 122,005 回调自然结束，五次相机捕获 375 字、五次四步 RNG／全局复制、10 线程终结。严格仍失败：主参考前 14,067 回调一致，二面 14,068 首差；额外完整原版唯一帧配对有 90 处弹数差异，不能称修复。RNG 实际状态写入仍在主线程；原版调度、全模式、普通浏览器跨关／取消、GPU／PCM 和整作 1:1 继续，通过数不增加。
 

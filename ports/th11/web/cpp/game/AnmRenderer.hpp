@@ -15,6 +15,9 @@ public:
     // camera endpoint. Keep those values and its reference origin explicit.
     Vec3 fog_origin{},fog_channels{160,160,160};float fog_start=1000;
     bool tint_enabled=false;u32 tint=0x80808080;
+    // Set by the scene schedule for world-space passes. Combined with an
+    // actual interpolated position, it preserves subpixel presentation.
+    bool continuous=false;
     // Continuous world sprites may preserve fractional presentation coordinates;
     // retail pixel-aligned UI and logical screen-UV geometry retain the default.
     int draw(AnmVm& vm,bool preserve_subpixel=false);

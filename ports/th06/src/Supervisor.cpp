@@ -22,6 +22,7 @@
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "multiplayer/GameplaySession.hpp"
 #include <eagler/netplay/NetplayInput.hpp>
+#include <eagler/netplay/CooperativeMenuInput.hpp>
 #endif
 #ifdef TH_ENABLE_NETPLAY
 #include "netplay/NetplaySideEffects.hpp"
@@ -179,6 +180,9 @@ ChainCallbackResult Supervisor::OnUpdate(Supervisor *s)
     g_LastFrameInput = g_CurFrameInput;
     g_CurFrameInput = Controller::GetInput();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (Netplay::Input::PlayerButtonOverridesActive())
+        g_LastFrameInput &= ~Netplay::CooperativePressedButtons(
+            g_CurFrameGameInputs, g_LastFrameGameInputs, TH06_MULTI_MAX_PLAYERS);
     // A multiplayer-capable binary must still behave exactly like ordinary
     // TH06 before a room/driver installs synchronized logical lanes. Once
     // NetplayInput owns the lanes it performs this current/previous handoff
@@ -306,7 +310,12 @@ ChainCallbackResult Supervisor::OnUpdate(Supervisor *s)
                 // recorder here, after GameManager has stopped recording and
                 // before RegisterChain can reuse stale stage/input pointers.
                 if (PracticeRuntime::ConsumeReplayResetOnReinit())
+                {
                     ReplayManager::SaveReplay(NULL, NULL);
+                    g_GameManager.deaths = 0;
+                    g_GameManager.bombsUsed = 0;
+                    g_GameManager.spellcardsCaptured = 0;
+                }
                 if (GameManager::RegisterChain() != ZUN_SUCCESS)
                 {
                     return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
@@ -328,6 +337,15 @@ ChainCallbackResult Supervisor::OnUpdate(Supervisor *s)
                     g_GameManager.currentStage = 0;
                 else
                     g_GameManager.currentStage--;
+                // RegisterChain snapshots these counts for respawns and
+                // continues. Restore the starting stock before it reads them.
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                if (!MultiplayerGameplay::IsMultiplayer())
+#endif
+                {
+                    g_GameManager.livesRemaining = s->defaultConfig.lifeCount;
+                    g_GameManager.bombsRemaining = s->defaultConfig.bombCount;
+                }
                 ReplayManager::SaveReplay(NULL, NULL);
                 if (GameManager::RegisterChain() != ZUN_SUCCESS)
                 {

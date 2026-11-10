@@ -1,0 +1,29 @@
+PASS dialogue
+PASS stage-logo
+PASS stage-fade
+PASS midboss-create
+PASS midboss-retire
+PASS mai-branch
+PASS yuki-branch
+PASS mai-explosion
+PASS yuki-explosion
+PASS next-stage
+PASS next-stage5
+PASS ghost-stage5-0
+PASS ghost-stage5-1
+PASS ghost-stage5-2
+PASS ghost-heap-stage5-0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.evaluate: Error: ghost-heap-stage5-1: confirmed checksum differs at 720
+    at check (eval at evaluate (:311:30), <anonymous>:3:42)
+    at eval (eval at evaluate (:311:30), <anonymous>:43:6)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+    at C:\Users\w3051\Desktop\eagler\worktrees\th05-test-20261101\ports\th05-mp\tests\rollback-boundaries.mjs:16:27 {
+  log: []
+}
+
+Node.js v26.7.0

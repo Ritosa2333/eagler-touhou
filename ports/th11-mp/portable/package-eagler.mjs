@@ -4,6 +4,7 @@ import {readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync} from 'n
 import {resolve, dirname, relative, sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
+import {validateProductionBuild} from './production-build.mjs';
 
 const GAME = 'th11';
 const SHA256 = /^[a-f0-9]{64}$/i;
@@ -26,7 +27,7 @@ export function resolvePackagePlan(root, args = []) {
     game: GAME, multiplayer, profile: multiplayer ? 'multiplayer' : 'sdl3',
     variant: multiplayer ? 'multiplayer' : 'normal',
     out: process.env.EAGLER_RUNTIME_OUTPUT ? resolve(process.env.EAGLER_RUNTIME_OUTPUT) : resolve(root, multiplayer ? 'build-eagler-multiplayer' : 'build-eagler'),
-    buildRoot: resolve(root, 'web/artifacts', multiplayer ? 'multiplayer' : 'sdl3'),
+    buildRoot: resolve(root, 'web', process.env.TH11_OUTPUT || ('artifacts/'+(multiplayer?'multiplayer':'sdl3'))),
   };
 }
 
@@ -54,10 +55,7 @@ export function validateBuildManifest(build, plan) {
 }
 
 export function validateNativeCapabilities(module, build, plan) {
-  const exported = new Set(WebAssembly.Module.exports(module).map(entry => entry.name));
-  const declared = new Set((build.exports || []).map(entry => entry.name));
-  if (exported.size !== declared.size || [...exported].some(name => !declared.has(name)))
-    throw Error('Build export attestation does not match the actual WASM.');
+  const exported=validateProductionBuild(build,module,plan.profile);
   for (const name of exported) {
     if (/^(presentation_lab_|audit_|th11_probe_|mp_fixture_|native_mp_test_)/.test(name))
       throw Error('Production binary contains a diagnostic export: ' + name);

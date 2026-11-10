@@ -176,6 +176,17 @@ void GameApplication::leave_game(){
     session.numbers.score=std::min(session.numbers.score,999999999u);session.numbers.display_score=session.numbers.score;timing={1,false};
 }
 bool GameApplication::enter_results(bool from_game){title.detach();music.detach();auto context=from_game?last_game:result_context();context.supervisor_state=from_game?6:5;return results.attach(chain,from_game?RESULT_SCREEN_ACTION_GAME_RESULTS:RESULT_SCREEN_ACTION_TITLESCREEN,context);}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool GameApplication::enter_spectator_results(){
+    clear_spectator_playback_input();supervisor.input={};
+    supervisor.state.target=i32(Scene::GameResults);
+    if(game_attached)leave_game();
+    ending.detach();results.detach();
+    last_game.flags&=~8u;
+    supervisor.state.active=supervisor.state.target=i32(Scene::GameResults);
+    return enter_results(true);
+}
+#endif
 bool GameApplication::enter_music(){title.detach();music.context={};music.context.text=library.get(0);music.context.preload=session.display_config.options&8192;music.context.software_texturing=ascii_context.software_texturing;music.context.supervisor_state=8;return music.attach(chain);}
 bool GameApplication::enter_ending(){title.detach();if(!load_animation(24,"staff01.anm"))return false;return ending.attach(chain,session,game.globals.shot,game.globals.difficulty,game.globals.stage,game.globals.game_flags);}
 void GameApplication::publish_scene(){
@@ -266,7 +277,7 @@ std::vector<u8> GameApplication::ResultIo::read_replay(i32 slot){const auto path
 void GameApplication::save_replay(i32 slot,const char* name){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if(session.multiplayer_session.configured){
-        if(!session.netplay.ReadOnly())failed|=!platform.save_multiplayer_replay(slot,name);
+        if(!session.netplay.ReadOnly()||(session.netplay.Spectator()&&session.netplay.Retired()))failed|=!platform.save_multiplayer_replay(slot,name);
         return;
     }
 #endif

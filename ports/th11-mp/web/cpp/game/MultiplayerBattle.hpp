@@ -35,7 +35,7 @@ struct MultiplayerPilot final:PlayerFrameWorld,BombWorld,ItemRewardEffects {
     bool cancel_bullets(const Vec3*,float,bool)override;
     bool cancel_lasers(const Vec3*,float,bool,bool)override;
     bool start_bomb()override;
-    bool spawn_item(i32,Vec3,u32,float,float)override;
+    bool spawn_death_power(i32,Vec3,u32,float,float)override;
     bool display_lives(i32,i32)override;
     bool record_death()override;
     bool enemy_death()override;

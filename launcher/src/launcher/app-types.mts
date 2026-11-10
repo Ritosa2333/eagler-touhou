@@ -39,6 +39,9 @@ export interface LauncherNetplayState {
   spectatorCount: number;
   challengeMode?: boolean;
   chapterThreshold?: number;
+  th19Rules?: number[];
+  initialSpares?: number;
+  initialBombs?: number;
   prankMode?: boolean;
 }
 
@@ -65,6 +68,9 @@ export interface LauncherState {
 }
 
 export interface MultiplayerRoomState {
+  th19Rules?: number[];
+  initialSpares?: number;
+  initialBombs?: number;
   runtimeGeneration?: string;
   visibility?: 'public' | 'private';
   disableCheatMovement?: boolean;
@@ -133,6 +139,7 @@ export interface BootWatchdog {
 export interface MidiSynth {
   send(bytes: readonly number[]): void;
   reset(): void;
+  setMasterVol?(volume: number): void;
   getAudioContext(): AudioContext;
 }
 

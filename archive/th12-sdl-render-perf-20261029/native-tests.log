@@ -1,0 +1,44 @@
+Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64
+��Ȩ����(C) Microsoft Corporation����������Ȩ����
+
+cl: ������ warning D9035 :��o��ѡ���ѷ���������ڽ����İ汾���Ƴ�
+cl: ������ warning D9002 :����δ֪ѡ�-std=c++17��
+✔ SDL draw ordering preserves ties, priority fallback and frame-local identity reuse (1459.8571ms)
+Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64
+��Ȩ����(C) Microsoft Corporation����������Ȩ����
+
+cl: ������ warning D9035 :��o��ѡ���ѷ���������ڽ����İ汾���Ƴ�
+cl: ������ warning D9002 :����δ֪ѡ�-std=c++17��
+✔ SDL sampler preserves sparse/rewind output, moving stopped VMs and allocation-free steady tracks (2874.5342ms)
+Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64
+��Ȩ����(C) Microsoft Corporation����������Ȩ����
+
+cl: ������ warning D9035 :��o��ѡ���ѷ���������ڽ����İ汾���Ƴ�
+cl: ������ warning D9002 :����δ֪ѡ�-std=c++17��
+✔ SDL clock keeps 60 logical ticks under 144 Hz presentation and rebases fullscreen (540.2568ms)
+Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64
+��Ȩ����(C) Microsoft Corporation����������Ȩ����
+
+cl: ������ warning D9035 :��o��ѡ���ѷ���������ڽ����İ汾���Ƴ�
+cl: ������ warning D9002 :����δ֪ѡ�-std=c++17��
+✔ SDL draw ordering preserves ties, priority fallback and frame-local identity reuse (1286.5636ms)
+Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64
+��Ȩ����(C) Microsoft Corporation����������Ȩ����
+
+cl: ������ warning D9035 :��o��ѡ���ѷ���������ڽ����İ汾���Ƴ�
+cl: ������ warning D9002 :����δ֪ѡ�-std=c++17��
+✔ SDL sampler preserves sparse/rewind output, moving stopped VMs and allocation-free steady tracks (2930.003ms)
+Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64
+��Ȩ����(C) Microsoft Corporation����������Ȩ����
+
+cl: ������ warning D9035 :��o��ѡ���ѷ���������ڽ����İ汾���Ƴ�
+cl: ������ warning D9002 :����δ֪ѡ�-std=c++17��
+✔ SDL clock keeps 60 logical ticks under 144 Hz presentation and rebases fullscreen (634.9729ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10275.9028

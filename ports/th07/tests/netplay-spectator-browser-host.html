@@ -74,7 +74,8 @@
           netplayTestFrames: 12000,
           netplaySeed: 19005,
           netplaySpectatorSizeProbeFrame: 1800,
-          netplayDifficulty: 1,
+          netplayDifficulty: Number(params.get("difficulty") || 1),
+          netplayChallengeMode: params.get("challenge") === "1",
           netplayIceServers: [],
           netplayLoadouts: [
             { character: 0, shot: 0 },

@@ -1,3 +1,5 @@
+import {TH19_VERSUS_RULES,validTh19VersusRules} from './th19-versus-rules.mjs';
+import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
 import {
   validTh15ChapterThreshold,
   defaultTh15ChapterThreshold,
@@ -22,6 +24,9 @@ export interface MultiplayerRuntimeOptionConstraints {
 }
 
 export interface MultiplayerRuntimeOptionInput {
+  th19Rules?: number[];
+  initialSpares?: number;
+  initialBombs?: number;
   url: string;
   player: number | null;
   playerCount: number;
@@ -43,10 +48,14 @@ export interface MultiplayerRuntimeOptionInput {
   chapterThreshold?: number;
   iceServers: unknown;
   preferTurn?: boolean;
+  allowWebsocketFallback?: boolean;
   loadouts: MultiplayerRuntimeLoadout[];
 }
 
 export interface MultiplayerRuntimeOptions {
+  netplayTh19Rules?: number[];
+  netplayInitialSpares?: number;
+  netplayInitialBombs?: number;
   netplayMode: 'lan';
   netplayUrl: string;
   netplayPlayer: number | null;
@@ -70,6 +79,7 @@ export interface MultiplayerRuntimeOptions {
   netplayChapterThreshold?: number;
   netplayIceServers: unknown[];
   netplayPreferTurn?: boolean;
+  netplayAllowWebsocketFallback?: boolean;
   netplayLoadouts: MultiplayerRuntimeLoadout[];
 }
 
@@ -88,6 +98,10 @@ export function buildMultiplayerRuntimeOptions(
   }
 
   const roomProduct = (url.searchParams.get('room') || '').split('-')[0];
+  if(input.th19Rules!==undefined&&(roomProduct!=='th19mp'||!validTh19VersusRules(input.th19Rules)))throw new Error('TH19 versus rules are invalid');
+  if(input.initialSpares!==undefined&&(roomProduct!=='th05mp'||!validTh05InitialSpares(input.initialSpares))||input.initialBombs!==undefined&&(roomProduct!=='th05mp'||!validTh05InitialBombs(input.initialBombs)))throw new Error('TH05 initial stocks are invalid');
+  if (input.allowWebsocketFallback !== undefined && typeof input.allowWebsocketFallback !== 'boolean')
+    throw new Error('WebSocket 回退开关必须为布尔值');
   if (input.preferTurn !== undefined && typeof input.preferTurn !== 'boolean')
     throw new Error('TURN 偏好必须为布尔值');
   const product = multiplayerConfigForProduct(roomProduct) ?? constraints;
@@ -144,20 +158,21 @@ export function buildMultiplayerRuntimeOptions(
   });
   if (loadouts.length !== playerCount) throw new Error('LAN 机体配置数量不足');
 
-  const th11 = product === multiplayerConfigForProduct('th11mp');
+  const fixedRollbackTitle = product === multiplayerConfigForProduct('th11mp') || product === multiplayerConfigForProduct('th12mp') || roomProduct === 'th17mp';
   const th075 = roomProduct === 'th075mp';
-  const requestedMode = input.adonisMode ?? (th11 || th075 ? 1 : 0);
+  const th15 = roomProduct === 'th15mp';
+  const requestedMode = input.adonisMode ?? (roomProduct === 'th11mp' || product.inputTiming?.rollbackDefault === false ? 1 : 0);
   const timingPolicy = multiplayerInputTimingPolicy(product);
   const rollback = timingPolicy.rollback && [0, 2].includes(requestedMode);
   const adonisMode = rollback ? 0 : requestedMode;
   const measuredTitle = timingPolicy.measuredStartup;
   if (
-    th11 &&
+    (fixedRollbackTitle || roomProduct === "th15mp") &&
     input.predictionLimit !== undefined &&
     input.predictionLimit !== timingPolicy.predictionLimit &&
     !(adonisMode === 1 && input.predictionLimit === 0)
   )
-    throw new Error('TH11 直接回滚固定使用 12 帧预测上限');
+    throw new Error(`${roomProduct} 直接回滚固定使用 12 帧预测上限`);
   if (
     (input.inputDelayAuto !== undefined && typeof input.inputDelayAuto !== 'boolean') ||
     (input.inputDelayAuto && (!measuredTitle || !requestedMode)) ||
@@ -172,7 +187,8 @@ export function buildMultiplayerRuntimeOptions(
     !Number.isInteger(requestedMode) ||
     requestedMode < 0 ||
     requestedMode > 2 ||
-    (requestedMode !== 0 && !measuredTitle)
+    (requestedMode === 1 && !product.inputTiming) ||
+    (requestedMode === 2 && !measuredTitle)
   )
     throw new Error('该多人 Runtime 不支持 Adonis 时序');
   if (
@@ -181,7 +197,7 @@ export function buildMultiplayerRuntimeOptions(
   )
     throw new Error('该多人 Runtime 仅支持纯延迟时序，不能启用预测或回滚');
   if (
-    (requestedMode || timingPolicy.manualRollbackDelay && input.inputDelay !== undefined) &&
+    (requestedMode || input.inputDelay !== undefined) &&
     (!Number.isInteger(input.inputDelay) ||
       input.inputDelay! < 0 ||
       input.inputDelay! > timingPolicy.manualDelayLimit)
@@ -189,6 +205,8 @@ export function buildMultiplayerRuntimeOptions(
     throw new Error(`Adonis 输入延迟必须为 0–${timingPolicy.manualDelayLimit} 帧`);
   return {
     netplayMode: 'lan',
+    ...(roomProduct==='th19mp'?{netplayTh19Rules:[...(input.th19Rules??TH19_VERSUS_RULES)]}:{}),
+    ...(roomProduct==='th05mp'?{netplayInitialSpares:input.initialSpares??TH05_INITIAL_STOCK.spares,netplayInitialBombs:input.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
     ...(product.inGameSelection ? { netplayInGameSelection: true } : {}),
     ...(roomProduct === "th15mp"
       ? {
@@ -205,28 +223,28 @@ export function buildMultiplayerRuntimeOptions(
     ...(rollback || input.inputDelay !== undefined
       ? {
           netplayInputDelay:
-            rollback && !timingPolicy.manualRollbackDelay || input.inputDelayAuto
+            rollback || input.inputDelayAuto
               ? 0
               : typeof input.inputDelay === 'number' &&
                   Number.isInteger(input.inputDelay) &&
                   input.inputDelay >= 0 &&
-                  input.inputDelay <= (adonisMode || timingPolicy.manualRollbackDelay ? timingPolicy.manualDelayLimit : 8)
+                  input.inputDelay <= (adonisMode ? timingPolicy.manualDelayLimit : 8)
                 ? input.inputDelay
                 : 0,
         }
       : {}),
-    ...(input.adonisMode !== undefined || th11 || th075 ? { netplayAdonisMode: adonisMode } : {}),
-    ...((th11 && rollback) || th075 ? { netplayInputDelayAuto: false } : {}),
+    ...(input.adonisMode !== undefined || fixedRollbackTitle || th075 || th15 ? { netplayAdonisMode: adonisMode } : {}),
+    ...(((fixedRollbackTitle || th15) && rollback) || th075 ? { netplayInputDelayAuto: false } : {}),
     ...(measuredTitle && adonisMode
       ? {
           netplayInputDelayAuto: input.inputDelayAuto ?? false,
           netplayPredictionReserve: input.predictionReserve ?? 2,
         }
       : {}),
-    ...(!timingPolicy.rollback || input.predictionLimit !== undefined || th11 || th075
+    ...(!timingPolicy.rollback || input.predictionLimit !== undefined || fixedRollbackTitle || th075 || th15
       ? {
           netplayPredictionLimit:
-            !timingPolicy.rollback || ((th11 || th075) && adonisMode === 1)
+            !timingPolicy.rollback || ((fixedRollbackTitle || th075 || th15) && adonisMode === 1)
               ? 0
               : typeof input.predictionLimit === 'number' &&
                   Number.isInteger(input.predictionLimit) &&
@@ -240,12 +258,13 @@ export function buildMultiplayerRuntimeOptions(
     netplaySpectatorId: spectator ? input.spectatorId : '',
     netplaySpectatorCount: Math.max(0, Number(input.spectatorCount) || 0),
     ...(input.spectatorTimeline === true ? { netplaySpectatorTimeline: true } : {}),
-    ...(roomProduct === 'th09mp' && !spectator ? {
+    ...(['th09mp','th19mp'].includes(roomProduct) && !spectator ? {
       netplayReplayAutoSave: input.replayAutoSave !== false,
       netplayReplayNames: [0, 1].map(side => String(input.replayNames?.[side] || `P${side + 1}`).slice(0, 64)),
     } : {}),
     netplayIceServers: Array.isArray(input.iceServers) ? input.iceServers : [],
     ...(input.preferTurn === true ? { netplayPreferTurn: true } : {}),
+    ...(input.allowWebsocketFallback === true ? {netplayAllowWebsocketFallback: true} : {}),
     netplayLoadouts: loadouts,
   };
 }

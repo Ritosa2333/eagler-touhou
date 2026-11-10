@@ -1,0 +1,50 @@
+{
+  "count": 2,
+  "route": "rtc",
+  "mode": 1,
+  "jitter": false,
+  "running": [
+    {
+      "frame": 251,
+      "route": "rtc",
+      "inputDelay": 2,
+      "saveRoot": "/savesth05mp"
+    },
+    {
+      "frame": 251,
+      "route": "rtc",
+      "inputDelay": 2,
+      "saveRoot": "/savesth05mp"
+    }
+  ],
+  "pen": {
+    "penX": 2560,
+    "penAfter": [
+      3280,
+      3280
+    ],
+    "penHover": 3280
+  },
+  "positions": [
+    [
+      3280,
+      2624
+    ],
+    [
+      3280,
+      2624
+    ]
+  ],
+  "touchPause": true,
+  "touchMovement": {
+    "touchBefore": 3280,
+    "touchAfter": 4048
+  },
+  "returned": true,
+  "errors": [],
+  "runtimeErrors": [],
+  "secondStart": [
+    1,
+    1
+  ]
+}

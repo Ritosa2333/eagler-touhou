@@ -2,6 +2,7 @@ import { FRONTEND_PACKAGE_FILES, REACT_FRONTEND_ARTIFACT, resolveFrontendPackage
 import { localModuleClosure } from "./browser-module-graph.mjs";
 import { isMappedBrowserPublicationPath, resolveBrowserPublicationSource } from "./client-services-build.mjs";
 import { PRODUCT_CONTENT } from "./content-definition.mjs";
+import { workspacePath } from "./workspace-layout.mjs";
 import { relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ensureContractsBuild } from "./contracts-build.mjs";
@@ -20,10 +21,15 @@ const verifiedOggBaselineFiles = Object.entries(PRODUCT_CONTENT)
 const preparedContentScripts = Object.values(PRODUCT_CONTENT)
   .map(content => content.hostPreparation?.preparedContent?.script)
   .filter(Boolean);
-const languagePreparationScripts = Object.values(PRODUCT_CONTENT)
-  .some(content => content.hostPreparation?.languagePack?.kind === "thcrap-runtime-compiler")
-    ? ["scripts/prepare-th06-language-pack.mjs"]
-    : [];
+const languagePreparationScripts = [...new Set(Object.values(PRODUCT_CONTENT)
+  .map(content => {
+    const preparation = content.hostPreparation?.languagePack;
+    return preparation?.script ?? (preparation?.kind === "thcrap-runtime-compiler"
+      ? "scripts/prepare-th06-language-pack.mjs" : null);
+  }).filter(Boolean))];
+const hostPreparationBuildSources = Object.values(PRODUCT_CONTENT)
+  .flatMap(content => Object.values(content.hostPreparation ?? {})
+    .flatMap(preparation => preparation?.buildSources ?? []));
 
 // The self-host bundle is a distributable product, not a trimmed source checkout.
 // Every repository-owned file that can reach `npm run host` / `npm run import`
@@ -31,9 +37,11 @@ const languagePreparationScripts = Object.values(PRODUCT_CONTENT)
 // relay operations stay outside this boundary.
 const hostRuntimeRoots = [
   "src/app-shell-sw.js",
+  "src/site-mirror-sw.js",
   "src/runtime-cache-sw.js",
   "src/runtime-program-sw.js",
   "legacy/runtime-generation-reader.js",
+  "compat/runtime-generation-reader.js",
   "assets/contracts/runtime-generations-worker.js",
   "assets/contracts/runtime-generations.mjs",
   "config/runtime-builds.json",
@@ -41,6 +49,7 @@ const hostRuntimeRoots = [
   "host/build.mjs",
   "host/build-import.mjs",
   "host/lib/node-environment.mjs",
+  "host/lib/bun-environment.mjs",
   "host/lib/process.mjs",
   "host/lib/python-environment.mjs",
   "host/lib/site-builder.mjs",
@@ -57,6 +66,8 @@ const hostRuntimeRoots = [
   "lib/frontend-manifest.mjs",
   "lib/host-config.mjs",
   "lib/client-services-build.mjs",
+  "lib/build-lock-host.mjs",
+  "lib/node-runtime.mjs",
   "lib/preload-data-assembler.mjs",
   "lib/product-selection.mjs",
   "lib/publication-host-seed.mjs",
@@ -81,15 +92,18 @@ const hostRuntimeRoots = [
   "scripts/refresh-deployment-app-shell.mjs",
   "scripts/subset-font.py",
   "scripts/th075-language-assets.py",
+  "scripts/th12-language-textures.py",
   "scripts/prepare-th075-english-static.mjs",
   "scripts/touhou_formats.py",
   "scripts/verify-offline-game-package.mjs",
   "scripts/verify-deployed-site.mjs",
+  "scripts/verify-frontend-game-catalog.mjs",
   "scripts/verify-runtime-release.mjs",
   "scripts/verify-server-build.mjs",
   "server/static-content-policy.mjs",
   "server/thcrap-ascii-contract.mjs",
   "server/thcrap-compiler.mjs",
+  "server/th12-thcrap-compiler.mjs",
   "server/th075-thcrap-compiler.mjs",
   "server/th075-menu-text.mjs",
   "server/th075-english-static.mjs",
@@ -117,6 +131,8 @@ const mappedFiles = [
   ["config/eagler-touhou.config.example.json", "eagler-touhou.config.json"],
   ["host/bundle/package.json", "package.json"],
   ["host/bundle/package-lock.json", "package-lock.json"],
+  ["host/bundle/bun.lock", "bun.lock"],
+  [".bun-version", ".bun-version"],
   ["docs/SELF_HOSTING.md", "SELF-HOSTING.md"],
   ["docs/SELF_HOSTING_REFERENCE.md", "SELF-HOSTING-REFERENCE.md"],
   ["docs/EXTERNAL_RESOURCE_MODE.md", "EXTERNAL_RESOURCE_MODE.md"],
@@ -141,12 +157,19 @@ export const SELF_HOST_BUNDLE_COPY_RULES = Object.freeze([
       relative(project, resolveHostBuildSource(source)).replaceAll("\\", "/"),
       source,
     )),
+  // Only declared preparation source/metadata enter the private build tools.
+  // Retail installations and generated resources are never copied here.
+  ...hostPreparationBuildSources.map(source => copyRule(
+    relative(project, workspacePath(source.repository, source.source)).replaceAll("\\", "/"),
+    source.target,
+  )),
   ...mappedFiles.map(([source, target]) => copyRule(source, target)),
 ]);
 
 export const SELF_HOST_BUNDLE_NODE_DEPENDENCIES = Object.freeze([
   "acorn",
   "fflate",
+  "fs-native-extensions",
   "parse5",
   "workbox-build",
 ]);

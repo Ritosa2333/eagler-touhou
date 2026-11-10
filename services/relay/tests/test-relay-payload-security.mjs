@@ -8,7 +8,7 @@ import { RELAY_LIMITS } from '../src/relay-flow-control.mjs';
 
 const relay = spawn(process.execPath, ['src/netplay-relay.mjs'], {
   windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
-  env: { ...process.env, EAGLER_NETPLAY_RELAY_HOST: '127.0.0.1', EAGLER_NETPLAY_RELAY_PORT: '0',
+  env: { ...process.env, EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK: '1', EAGLER_NETPLAY_RELAY_HOST: '127.0.0.1', EAGLER_NETPLAY_RELAY_PORT: '0',
     EAGLER_NETPLAY_STUN_URLS: '', EAGLER_NETPLAY_MAX_ROOMS_PER_IP: '10' },
 });
 let log = ''; const clients = [];

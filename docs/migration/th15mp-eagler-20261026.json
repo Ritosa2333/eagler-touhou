@@ -1,0 +1,17 @@
+{
+  "schema": "eagler-touhou/source-import/1",
+  "repository": "D:\\workspace\\eagler\\th15-eagler",
+  "branch": "eagler-mp",
+  "commit": "a5cc4652d59d55f2559622da28e21cbbf52b75d3",
+  "destination": "ports/th15-mp",
+  "sourceImport": "import-sources.json:runtimes/th15-mp",
+  "mode": "source-history-connection",
+  "currentMode": "git-subtree",
+  "subtree": {
+    "upstreamCommit": "a5cc4652d59d55f2559622da28e21cbbf52b75d3",
+    "initialJoin": "f008e9c848af4a7c9c4bb5f5c131ac325b0e5894",
+    "initialSplit": "e02e0266c453054d53d055d29d141eb83d736fdf",
+    "latestJoin": "f008e9c848af4a7c9c4bb5f5c131ac325b0e5894",
+    "currentSplit": "e02e0266c453054d53d055d29d141eb83d736fdf"
+  }
+}

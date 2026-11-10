@@ -1,12 +1,6 @@
+import {test} from 'vitest';
+import {nativeNodeExecutable} from './support/node-runtime.mjs';
 import {selectedPortGames} from './support/port-selection.mjs';
-/**
- * Required presentation-cadence coverage gate.
- *
- * The implementation is intentionally allowed to differ by Runtime family,
- * but every formal game must be registered in one verification lane. Adding a
- * Product Catalog entry without presentation verification makes this test fail
- * immediately instead of silently leaving the new adapter untested.
- */
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
@@ -14,8 +8,27 @@ import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 import { WORKSPACE_NODE_TESTS } from "./test-plan.mjs";
 import { runNativeCpp } from "./support/native-cpp.mjs";
+import { targets as sourceTargets } from "../../tools/ports/inputs.mjs";
+
+test("presentation contract coverage", async () => {
+/**
+ * Required presentation-cadence coverage gate.
+ *
+ * The implementation is intentionally allowed to differ by Runtime family,
+ * but every checked-in source Runtime owner must be registered in one lane.
+ * Prebuilt-only products are verified against their published Runtime in the
+ * final browser matrix; they do not claim native source coverage here.
+ */
+
+
+
+
+
+
+
 
 const verification = Object.freeze({
+  th05: {kind: "runtime", scripts: ["tests/presentation.mjs"]},
   th06: Object.freeze({ kind: "shared-preload", tests: Object.freeze([
     "tests/test-mobile-frame-pacing.mjs",
     "tests/test-native-frame-pacing.mjs",
@@ -35,12 +48,16 @@ const verification = Object.freeze({
   th09: {kind:'native-clock', source:'web/cpp/sdl/Application.cpp'},
   th075: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
   th11: {kind:'native-clock', source:'web/cpp/sdl/Application.cpp'},
+  th12: {kind:'runtime', source:'portable/sdl/Application.cpp', scripts:['tests/sdl-clock.test.mjs']},
   th15: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
+  th17: {kind:'runtime', scripts:['portable/check-frame-cadence.mjs']},
+  th19: {kind:'runtime', scripts:['portable/check-frame-cadence.mjs']},
   th20: {kind:'native-clock', source:'web/cpp/sdl/ApplicationHost.cpp'},
 });
 
-assert.deepEqual(Object.keys(verification).sort(), Object.keys(PRODUCT_GAMES).sort(),
-  "required presentation verification must be registered for every formal game adapter");
+const sourceGames = [...new Set(sourceTargets().map(target => target.game))].sort();
+assert.deepEqual(Object.keys(verification).sort(), sourceGames,
+  "required presentation verification must cover every checked-in source Runtime owner");
 
 const scheduledWorkspaceTests = new Set(WORKSPACE_NODE_TESTS);
 const selectedGames = selectedPortGames(Object.keys(verification));
@@ -98,10 +115,15 @@ int main(){for(unsigned hz:{60u,75u,90u,120u,144u,165u,240u}){
 
   assert.equal(product.runtimeFileLayout, "directory",
     `${game}: Runtime-owned presentation lane is expected for directory Runtimes`);
+  if(lane.source){
+    const host=await readFile(workspacePath(game,lane.source),'utf8');
+    assert.match(host,/clock\.advance\(/,`${game}: the application consumes its native clock`);
+    assert.match(host,/clock\.reset\(/,`${game}: lifecycle changes clear accumulated time`);
+  }
   for (const script of lane.scripts) {
     const path = workspacePath(game, ...script.split("/"));
     await access(path);
-    const result = spawnSync(process.execPath, [path], {
+    const result = spawnSync(nativeNodeExecutable(), [path], {
       cwd: workspacePath(game),
       encoding: "utf8",
       windowsHide: true,
@@ -113,7 +135,8 @@ int main(){for(unsigned hz:{60u,75u,90u,120u,144u,165u,240u}){
 
 console.log(JSON.stringify({
   presentationContractCoverage: "PASS",
-  scope: "source wiring and actual native clock components; no rendered-browser or physical-display claim",
+  scope: "checked-in source Runtime wiring and actual native clock components; prebuilt Runtime presentation requires browser acceptance",
   games: selectedGames,
   lanes: Object.fromEntries(Object.entries(verification).map(([game, lane]) => [game, lane.kind])),
 }));
+});

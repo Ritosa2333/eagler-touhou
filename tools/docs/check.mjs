@@ -552,6 +552,10 @@ export function checkDocumentLinks({ docPath, content, root = PROJECT_ROOT, know
   // plain-text license files are indexed verbatim and have no Markdown links.
   if (!DOCUMENT_EXTENSIONS.has(ext) && !siteContent) return issues;
   const linkBase = siteContent ? 'launcher/public/index.html' : docPath;
+  const appRoutes = siteContent
+    ? readDocument('launcher/app/routes.ts', root, knownPaths, readIndexedFile)
+    : null;
+  const appRoutePaths = appRoutes ? reactRouterPathSet(appRoutes) : new Set();
   const links = extractDocumentLinks(content, ext);
   for (const link of links) {
     const target = link.target;
@@ -594,7 +598,9 @@ export function checkDocumentLinks({ docPath, content, root = PROJECT_ROOT, know
       continue;
     }
     const indexedDirectory = [...knownPaths].some(path => path.startsWith(`${destination.replace(/\/$/, '')}/`));
-    const exists = existsSync(absolute) || knownPaths.has(destination) || indexedDirectory;
+    const routePath = siteContent ? posix.relative('launcher/public', destination) : '';
+    const isAppRoute = routePath && routePath !== '..' && !routePath.startsWith('../') && appRoutePaths.has(routePath);
+    const exists = existsSync(absolute) || knownPaths.has(destination) || indexedDirectory || isAppRoute;
     if (!exists) {
       issues.push(`${docPath}:${link.line} 链接目标不存在：${target}`);
       continue;
@@ -609,6 +615,11 @@ export function checkDocumentLinks({ docPath, content, root = PROJECT_ROOT, know
     }
   }
   return issues;
+}
+
+function reactRouterPathSet(source) {
+  const uncommented = removeJavaScriptComments(source);
+  return new Set([...uncommented.matchAll(/\broute\s*\(\s*(['"])([^'"\r\n]+)\1\s*,/g)].map(match => match[2]));
 }
 
 function readDocument(path, root, knownPaths, readIndexedFile) {
@@ -657,7 +668,7 @@ export function documentCategory(path) {
   if (/^CHANGELOG\.txt$/i.test(name)) return '历史记录';
   if (path === INDEX_PATH) return '文档总表';
   if (path.startsWith('docs/adaptation/')) return '适配指南';
-  if (path.startsWith('docs/history/')) return '历史记录';
+  if (path.startsWith('docs/history/') || path.startsWith('archive/')) return '历史记录';
   if (path.startsWith('docs/migration/')) return '迁移记录';
   if (path.startsWith('docs/architecture/')) return '架构说明';
   if (path.startsWith('ports/') && name.toUpperCase() === 'ADAPTATION.MD') return '作品适配表';

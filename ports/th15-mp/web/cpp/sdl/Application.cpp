@@ -1,3 +1,4 @@
+#include "../multiplayer/FrameFence.hpp"
 #include "ApplicationState.hpp"
 #include <SDL3/SDL.h>
 #include <algorithm>
@@ -20,7 +21,7 @@ bool Application::step(u32 held,u32 pressed,u32 repeated,float fps,bool focus){r
 const std::string& Application::error()const{return state->failure;}
 const i32* Application::projection()const{return state->projection();}
 bool ApplicationState::fail(const std::string& why){if(failure.empty())failure=why.empty()?"Application operation failed":why;return false;}
-bool ApplicationState::read(const std::string& name,std::vector<u8>& bytes){
+bool ApplicationState::read(const std::string& name,std::vector<u8>& bytes){if(!multiplayer::FrameFence::allow())return false;
  const auto at=name.find_last_of("/\\");const auto base=name.substr(at==std::string::npos?0:at+1);
  if(base.empty()||base=="."||base=="..")return fail("Invalid game asset name");
  const auto found=resource_cache.find(base);if(found!=resource_cache.end()){bytes=found->second;return true;}
@@ -190,9 +191,14 @@ bool ApplicationState::begin_ending(){
 #endif
  return true;
 }
-bool ApplicationState::apply_destination(){
+bool ApplicationState::apply_destination(){if(pending_destination>=0&&!multiplayer::FrameFence::allow())return false;
  if(pending_destination<0)return true;
 #if TH15_MULTIPLAYER
+ if(multiplayer&&(pending_destination==10||pending_destination==11)){
+  // Keep the native retry intent until both players retire their input fence.
+  // BrowserRuntime rebuilds the new run after the shared generation changes.
+  exiting=true;completed_recording=false;return true;
+ }
  if(multiplayer&&pending_destination!=13&&pending_destination!=15&&pending_destination!=16){completed_recording=pending_destination==15||pending_destination==16;pending_destination=-1;exiting=true;return save_settings();}
 #endif
  const auto next=pending_destination;pending_destination=-1;
@@ -234,8 +240,9 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
   if(display->game)input.scene.background=display->game->background.update_frame();if(display->previous_background){display->previous_background->rate=progress.rate;input.background_finished=(display->previous_background->state.flags&8)!=0;}
   if(!session->step(input))return fail(session->error.empty()?scene()->error:session->error);
  }else return fail("Application has no active scene");
+ if(multiplayer::FrameFence::blocked)return false;
  PROFILE_AT(0);
- audio_device.update();if(!audio_device.error.empty())return fail(audio_device.error);
+ if(!resimulating)audio_device.update();if(!audio_device.error.empty())return fail(audio_device.error);
  PROFILE_AT(1);
  if(!display->draw())return fail(display->error);
  PROFILE_AT(2);
@@ -258,15 +265,19 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
    }
   }
  }
- audio_device.pump();frames++;
+ if(!resimulating)audio_device.pump();frames++;
  if(!pump_checkpoint())return false;
  // Inter-stage flow retains the departing STD for the native transition.
  // Keep the completed composite visible while preparing the next scene;
  // the startup-only loading panel would clear it to a black frame here.
- if(flow&&flow->pending()&&(!(scene()->hud.flags&0x100)||scene()->hud.intro_age.current>=120)){graphics.presentation.reset();pending_load=2;return true;}
+ if(flow&&flow->pending()&&(!multiplayer||!mp_options.replay_legacy_stage_flow||!(scene()->hud.flags&0x100)||scene()->hud.intro_age.current>=120)){graphics.presentation.reset();pending_load=2;return true;}
  fades.erase(std::remove_if(fades.begin(),fades.end(),[](const auto& value){return !value->active;}),fades.end());motion.erase(std::remove_if(motion.begin(),motion.end(),[](const auto& value){return !value->active;}),motion.end());animations.collect_resources();
  if(pending_bank>=0||pending_page>=0){if(!draw_loading(false))return false;pending_load=3;return true;}
- if(pending_destination==13||pending_destination==10||pending_destination==11||pending_destination==15){if(!draw_loading(false))return false;pending_load=1;return true;}
+ if(pending_destination==13||pending_destination==10||pending_destination==11||pending_destination==15){
+#if TH15_MULTIPLAYER
+  if(multiplayer&&mp_options.spectator&&pending_destination==15){pending_load=1;return true;}
+#endif
+  if(!draw_loading(false))return false;pending_load=1;return true;}
  const bool result=apply_destination()&&(graphics.error.empty()||fail(graphics.error));
  PROFILE_AT(3);
 #if TH15_DEVELOPMENT_HARNESS

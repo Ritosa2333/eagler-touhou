@@ -33,10 +33,11 @@ import { buildAppShell } from "../lib/app-shell-build.mjs";
 import { writeAppShellRetirementWorker } from "../lib/app-shell-retirement.mjs";
 import { deploymentAppShellPatterns, runtimeAppShellPaths } from "../lib/app-shell-policy.mjs";
 import { sourceIdentity, verifyReleaseManifest, writeReleaseManifest, fileSetIdentity } from "../lib/release-manifest.mjs";
-import { verifyRuntimeRelease, runtimeFileNames, runtimeStem } from "../lib/runtime-release.mjs";
+import { verifyRuntimeRelease, runtimeFileNames, runtimeStem, directoryFeatureAttestation } from "../lib/runtime-release.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { WORKSPACE_REPOSITORIES, workspacePath, workspaceRoot } from "../lib/workspace-layout.mjs";
 import { FRONTEND_PACKAGE_FILES, REACT_FRONTEND_ARTIFACT, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
+import { assertReactFrontendGameCoverage } from "../lib/react-frontend-artifact.mjs";
 import { resolveRuntimeGenerationWorkerSource } from "../lib/contracts-build.mjs";
 import { normalizeSiteUrl, writeSiteMetadata } from "../lib/site-metadata.mjs";
 import { PRIVATE_FRONTEND_ASSETS, privateFrontendAssetSource } from "../lib/private-frontend-assets.mjs";
@@ -54,10 +55,11 @@ const required = name => {
 };
 const output = required("output");
 const siteUrl = normalizeSiteUrl(args["site-url"]);
+if (args["beta-mode"] !== undefined) throw Error("--beta-mode is retired. Publish one site and use the frontend beta-features toggle.");
 // React remains an explicit artifact selection. A build's isolated worker
 // permission is never widened to another public origin or mount by packaging.
 if (REACT_FRONTEND_ARTIFACT) {
-  const selectedSite = siteUrl ? new URL(siteUrl) : null;
+  const selectedSite = siteUrl ? new URL("./", siteUrl) : null;
   if (selectedSite && selectedSite.pathname !== REACT_FRONTEND_ARTIFACT.mountPath) {
     throw new Error("site URL does not match the React frontend artifact mount");
   }
@@ -95,6 +97,7 @@ const buildAuthority = classifyBuildProfile(buildProfile);
 if (!buildAuthority || buildProfile === "web-development") throw new Error("packaging requires an explicit web-validation-* or web-release-* --profile=NAME");
 const publicationBuild = buildAuthority === BUILD_AUTHORITY_PUBLICATION;
 const gameIds = normalizeProductSelection(args.games);
+assertReactFrontendGameCoverage(REACT_FRONTEND_ARTIFACT, gameIds);
 const languageGames = gameIds.filter(game => PRODUCT_GAMES[game].features.languages);
 const thpracGames = gameIds.filter(game => PRODUCT_GAMES[game].features.thprac);
 const serverFeatureGames = gameIds.filter(game =>
@@ -296,6 +299,11 @@ for (const game of languageGames) {
 for (const game of thpracGames) {
   if (!hostedResources || !serverFeatures[game].thprac) continue;
   if (runtimeRelease) continue;
+  if (PRODUCT_GAMES[game].runtimeFileLayout === "directory") {
+    const features = await directoryFeatureAttestation(game, builds[game]);
+    if (!features.thprac) throw new Error(`${game.toUpperCase()} directory Runtime does not attest thprac capability`);
+    continue;
+  }
   const compileCommandsPath = resolve(builds[game], "compile_commands.json");
   let compileCommands;
   try {
@@ -921,7 +929,7 @@ validateSiteManifest(manifest);
 await writeFile(resolve(staging, SITE_MANIFEST_FILE), `${JSON.stringify(manifest, null, 2)}\n`);
 await writeLegacySiteManifestAlias(staging, manifest);
 await writeFile(resolve(staging, RELEASE_CATALOG_FILE), `${JSON.stringify(releaseCatalog, null, 2)}\n`);
-const appShellBuild = REACT_FRONTEND_ARTIFACT && !REACT_FRONTEND_ARTIFACT.appShell ? null : await buildAppShell({
+const appShellBuild = !REACT_FRONTEND_ARTIFACT.appShell ? null : await buildAppShell({
   quiet: true,
   globDirectory: staging,
   swDest: resolve(staging, "app-shell-sw.js"),
@@ -954,20 +962,20 @@ const deployment = {
   generatedAt: new Date().toISOString(),
   resourceMode: serverResourceMode,
   appShell: appShellBuild?.contract ?? null,
-  ...(REACT_FRONTEND_ARTIFACT ? { frontend: {
+  frontend: {
     kind: "react",
     mountPath: REACT_FRONTEND_ARTIFACT.mountPath,
     // Validation inputs are covered by Release Manifest's deployment hash,
     // rather than served as public .vite build metadata.
     validationMetadata: REACT_FRONTEND_ARTIFACT.metadata,
-  } } : {}),
+  },
   music: serverResourceMode === RESOURCE_MODE_HOSTED ? [...modes].sort() : [],
   files: inventory,
 };
 await writeFile(resolve(staging, "deployment.json"), `${JSON.stringify(deployment, null, 2)}\n`);
 const sources = {};
 const sourceOwners = runtimeRelease ? ["launcher"] : ["launcher", ...gameIds];
-if (!runtimeRelease && languageGames.some(game => serverFeatures[game]?.thprac)) sourceOwners.push("thprac");
+if (!runtimeRelease && thpracGames.some(game => serverFeatures[game]?.thprac && PRODUCT_GAMES[game].runtimeFileLayout !== "directory")) sourceOwners.push("thprac");
 let packagedLauncherSource = null;
 if (runtimeRelease) {
   try {
@@ -993,7 +1001,7 @@ await writeReleaseManifest(staging, {
   sources,
   parameters: { authority: buildAuthority, resourceMode: serverResourceMode, music: deployment.music,
     runtimeBuildProvenance: runtimeRelease ? "verified-runtime-release" : "not-verified-by-packager",
-    ...(REACT_FRONTEND_ARTIFACT ? { frontend: { kind: "react", mountPath: REACT_FRONTEND_ARTIFACT.mountPath } } : {}),
+    frontend: {kind: "react", mountPath: REACT_FRONTEND_ARTIFACT.mountPath},
     ...(externalRecoveryProvenance ? { externalRecovery: externalRecoveryProvenance } : {}) },
 });
 await rm(output, { recursive: true, force: true });

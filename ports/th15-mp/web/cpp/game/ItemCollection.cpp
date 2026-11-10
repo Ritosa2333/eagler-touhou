@@ -24,6 +24,9 @@ bool ItemCollection::bomb(){player.bombs=wrapping_add(player.bombs,1);if(player.
 bool ItemCollection::bomb_piece(){if(player.bombs>7){player.bomb_pieces=0;return true;}player.bomb_pieces=wrapping_add(player.bomb_pieces,1);if(player.bomb_pieces>4){player.bombs=wrapping_add(player.bombs,1);player.bomb_pieces=0;if(player.bombs<9){if(!world.sound(46,true))return false;}else player.bombs=8;if(!world.bomb_hud(player.bombs,player.bomb_pieces))return false;}return world.bomb_hud(player.bombs,player.bomb_pieces);}
 bool ItemCollection::life_piece(){
     if(shared_life_piece)return shared_life_piece();
+    return award_life_piece();
+}
+bool ItemCollection::award_life_piece(){
     if(player.extra_lives>=8){if(!bomb_piece())return false;player.life_pieces=0;return true;}if(life_piece_tier<0||(score.difficulty==4&&life_piece_tier>5)){error="Life-piece tier outside verified threshold table";return false;}player.life_pieces=wrapping_add(player.life_pieces,1);const i32 threshold=score.difficulty==4?(life_piece_tier<5?5:99999999):3;
     while(player.life_pieces>=threshold){player.life_pieces=wrapping_sub(player.life_pieces,threshold);if(player.extra_lives<8){player.extra_lives=wrapping_add(player.extra_lives,1);if(player.extra_lives>8)player.extra_lives=8;if(!world.life_hud(player.extra_lives,player.life_pieces)||!world.sound(17,true)||!world.notice(4))return false;}life_piece_tier=wrapping_add(life_piece_tier,1);}return world.life_hud(player.extra_lives,player.life_pieces);
 }

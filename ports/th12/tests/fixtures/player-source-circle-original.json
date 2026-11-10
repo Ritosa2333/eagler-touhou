@@ -1,0 +1,159 @@
+{
+  "schema": "th12-original-player-source-circle/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "boundary": "Actual4390f0 birth and complete439ed0 query including inactive406de0 Bomb; all256 friendly slots inactive,128 sources with only slot0 active. Read-only hook43a3c4 captures the float distance store; no game instruction substitutions.",
+  "rows": [
+    {
+      "source": [
+        -6.520016193389893,
+        120.230712890625
+      ],
+      "target": [
+        13.696134567260742,
+        100.93021392822266
+      ],
+      "radius": 27.94999122619629,
+      "distanceSquared": 781.2020263671875,
+      "damage": 0,
+      "accumulated": 0,
+      "scoreStored": 0
+    },
+    {
+      "source": [
+        -14.597220420837402,
+        115.62703704833984
+      ],
+      "target": [
+        4.8580780029296875,
+        108.17620849609375
+      ],
+      "radius": 20.83323097229004,
+      "distanceSquared": 434.0234680175781,
+      "damage": 4,
+      "accumulated": 4,
+      "scoreStored": 1
+    },
+    {
+      "source": [
+        -18.39908218383789,
+        130.953857421875
+      ],
+      "target": [
+        19.352602005004883,
+        149.9247589111328
+      ],
+      "radius": 42.25026321411133,
+      "distanceSquared": 1785.084716796875,
+      "damage": 4,
+      "accumulated": 4,
+      "scoreStored": 1
+    },
+    {
+      "source": [
+        11.56931209564209,
+        129.0081787109375
+      ],
+      "target": [
+        -6.1008758544921875,
+        118.42350769042969
+      ],
+      "radius": 20.597835540771484,
+      "distanceSquared": 424.27081298828125,
+      "damage": 4,
+      "accumulated": 4,
+      "scoreStored": 1
+    },
+    {
+      "source": [
+        18.841623306274414,
+        126.1375503540039
+      ],
+      "target": [
+        -17.883052825927734,
+        141.769775390625
+      ],
+      "radius": 39.91326141357422,
+      "distanceSquared": 1593.0682373046875,
+      "damage": 4,
+      "accumulated": 4,
+      "scoreStored": 1
+    },
+    {
+      "source": [
+        13.561982154846191,
+        106.46549987792969
+      ],
+      "target": [
+        -17.504558563232422,
+        105.40715789794922
+      ],
+      "radius": 31.084562301635742,
+      "distanceSquared": 966.2500610351562,
+      "damage": 0,
+      "accumulated": 0,
+      "scoreStored": 0
+    },
+    {
+      "source": [
+        4.977455139160156,
+        126.79623413085938
+      ],
+      "target": [
+        -5.533365726470947,
+        111.5255126953125
+      ],
+      "radius": 18.538400650024414,
+      "distanceSquared": 343.67230224609375,
+      "damage": 0,
+      "accumulated": 0,
+      "scoreStored": 0
+    },
+    {
+      "source": [
+        -4.586094379425049,
+        130.61993408203125
+      ],
+      "target": [
+        -14.926565170288086,
+        127.0465316772461
+      ],
+      "radius": 10.940500259399414,
+      "distanceSquared": 119.69454193115234,
+      "damage": 4,
+      "accumulated": 4,
+      "scoreStored": 1
+    },
+    {
+      "source": [
+        0.0,
+        120.0
+      ],
+      "target": [
+        12.0,
+        120.0
+      ],
+      "radius": 12.0,
+      "distanceSquared": 144.0,
+      "damage": 4,
+      "accumulated": 4,
+      "scoreStored": 1
+    },
+    {
+      "source": [
+        0.0,
+        120.0
+      ],
+      "target": [
+        12.000000953674316,
+        120.0
+      ],
+      "radius": 12.0,
+      "distanceSquared": 144.00003051757812,
+      "damage": 0,
+      "accumulated": 0,
+      "scoreStored": 0
+    }
+  ]
+}

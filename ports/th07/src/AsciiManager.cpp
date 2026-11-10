@@ -289,6 +289,9 @@ u32 AsciiManager::OnUpdate(AsciiManager *arg)
 
 u32 AsciiManager::OnDrawMenus(AsciiManager *arg)
 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(MultiplayerGameplay::GetState().spectator){arg->DrawStrings();arg->numStrings=0;return CHAIN_CALLBACK_RESULT_CONTINUE;}
+#endif
     arg->DrawStrings();
     arg->numStrings = 0;
     arg->pauseMenu.OnDraw();

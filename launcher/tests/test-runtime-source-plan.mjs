@@ -1,5 +1,4 @@
-// Local build-plan acceptance with synthetic source/SDK markers. No compiler or
-// game data is executed. Covers all registered normal/multiplayer source owners.
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, rm, writeFile, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -8,6 +7,18 @@ import { loadRuntimeBuildConfig } from "../lib/runtime-build-profiles.mjs";
 import { WORKSPACE_REPOSITORIES } from "../lib/workspace-layout.mjs";
 import { loadSourceLayout } from "../lib/source-layout.mjs";
 import { planRuntimeSourceBuild } from "../lib/runtime-source-plan.mjs";
+
+test("runtime source plan", async () => {
+// Local build-plan acceptance with synthetic source/SDK markers. No compiler or
+// game data is executed. Covers all registered normal/multiplayer source owners.
+
+
+
+
+
+
+
+
 
 const root = await mkdtemp(resolve(tmpdir(), "eagler-runtime-plans-"));
 async function put(path, text = "fixture") {
@@ -28,6 +39,7 @@ try {
   await put(resolve(layout.path("common"), "include/eagler/audio/WebSfx.hpp"));
   await put(resolve(layout.path("common"), "include/eagler/netplay/SessionChannel.hpp"));
   await put(resolve(layout.path("common"), "include/eagler/text/RuntimeFontRaster.hpp"));
+  await put(resolve(layout.path("common"), "include/eagler/thprac/PracticeSpeed.hpp"));
   await put(resolve(layout.path("dependencies"), "unifont-15.1.05/unifont-15.1.05.otf"));
   const context = { layout, config, environment: {} };
   const plans = [];
@@ -43,6 +55,8 @@ try {
         continue;
       }
       await put(resolve(source, recipe.kind === "cmake" ? "CMakeLists.txt" : recipe.build[0]));
+      for(const input of recipe.commonInputs??[])await put(resolve(layout.path("common"),input));
+      if(recipe.commonMarker)await put(resolve(layout.path("common"),recipe.commonMarker));
       const before = await readdir(source);
       const plan = await planRuntimeSourceBuild({ game, variant, emsdk: sdk }, context);
       assert.deepEqual(await readdir(source), before, "planning must not create build output");
@@ -61,12 +75,24 @@ try {
       plans.push(plan);
     }
   }
-  assert.equal(plans.length, 17);
+  assert.equal(plans.length, 25);
+  const th19 = plans.filter(plan => plan.game === "th19");
+  assert.deepEqual(th19.map(plan => plan.variant), ["normal", "multiplayer"]);
+  assert(th19.every(plan => plan.source === layout.path("th19")));
+  assert(th19[1].steps[0].args.includes("--multiplayer"));
+  const th12mp = plans.find(plan => plan.game === 'th12' && plan.variant === 'multiplayer');
+  assert.equal(th12mp.source, layout.path('th12mp'));
+  assert.equal(th12mp.features.thprac, false);
+  assert.equal(plans.find(plan=>plan.game==='th12').source,layout.path('th12'));
   assert.equal(plans.find(plan => plan.game === "th10" && plan.variant === "multiplayer").source, layout.path("th10mp"));
   assert(plans.find(plan => plan.game === "th11" && plan.variant === "multiplayer").steps[0].args.includes("--multiplayer"));
   const th15 = plans.find(plan => plan.game === "th15" && plan.variant === "multiplayer");
   assert.equal(th15.source, layout.path("th15mp"));
   assert(th15.steps[0].args.includes("--multiplayer"));
+  const th17 = plans.filter(plan => plan.game === "th17");
+  assert.equal(th17.find(plan => plan.variant === "normal").source, layout.path("th17"));
+  assert.equal(th17.find(plan => plan.variant === "multiplayer").source, layout.path("th17mp"));
+  assert.notEqual(th17[0].source, th17[1].source);
   assert.equal(th15.environment.EAGLER_COMMON_NETPLAY_ROOT, layout.path("common"));
   const th20 = plans.find(plan => plan.game === "th20");
   assert.equal(th20.features.thcrap, false);
@@ -99,4 +125,5 @@ try {
   assert.equal(dirname(root), resolve(tmpdir()));
   await rm(root, { recursive: true, force: true });
 }
-console.log("Runtime source plans: PASS (17 variants, shared dependencies, explicit tools, invalid inputs)");
+console.log("Runtime source plans: PASS (23 variants, shared dependencies, explicit tools, invalid inputs)");
+});

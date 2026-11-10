@@ -101,7 +101,9 @@ struct ReplayManager
     static u32 OnUpdateRng(ReplayManager *arg);
 
     static void RecordEventFlags(u16 flags);
-    static void SaveReplay(const char *filename, char *replayName);
+    static void SaveReplay(const char *filename, char *replayName,bool keepRecording=false);
+    static void ShareSpectatorReplay();
+    static bool SetSpectatorReplay(const u8* bytes,unsigned size);
     static void SaveReplay2(const char *filename);
     static void StopRecording();
     static ReplayFile *ValidateReplayData(ReplayFile *data, i32 size);

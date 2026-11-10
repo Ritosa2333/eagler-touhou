@@ -4,7 +4,7 @@ import { cp, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
-import { RUNTIME_RELEASE_SCHEMA, runtimeStem, runtimeFileNames, validateRuntimeReleaseManifest, verifyRuntimeRelease } from "../lib/runtime-release.mjs";
+import { RUNTIME_RELEASE_SCHEMA, runtimeStem, runtimeFileNames, validateRuntimeReleaseManifest, verifyRuntimeRelease, directoryFeatureAttestation } from "../lib/runtime-release.mjs";
 import { extractGameDataLayout } from "../lib/runtime-data-layout.mjs";
 import { assertRuntimeDataShell } from "../lib/runtime-data-provider.mjs";
 
@@ -21,9 +21,10 @@ const required = name => {
 const output = required("output");
 const temporaryRoot = resolve(dirname(output), ".tmp");
 const staging = resolve(temporaryRoot, `${basename(output)}.staging-${randomUUID()}`);
-const builds = Object.fromEntries(Object.entries(PRODUCT_GAMES).flatMap(([game, product]) => [
+const selectedGames = Object.keys(PRODUCT_GAMES).filter(game => !PRODUCT_GAMES[game].buildOptIn || args[`${game}-build`] !== undefined);
+const builds = Object.fromEntries(selectedGames.flatMap(game => [
   [game, required(`${game}-build`)],
-  ...(product.multiplayerRuntime ? [[`${game}Multiplayer`, required(`${game}-multiplayer-build`)]] : []),
+  ...(PRODUCT_GAMES[game].multiplayerRuntime ? [[`${game}Multiplayer`, required(`${game}-multiplayer-build`)]] : []),
 ]));
 
 async function identity(path) {
@@ -37,20 +38,6 @@ async function compileAttestation(build) {
   } catch {
     return "";
   }
-}
-
-async function directoryFeatureAttestation(game, build) {
-  const manifest = JSON.parse(await readFile(resolve(build, "manifest.json"), "utf8"));
-  if (manifest.game !== game || manifest.protocol !== "eagler-touhou/1") {
-    throw new Error(`${game}: invalid directory Runtime manifest`);
-  }
-  return Object.fromEntries(["thprac", "languages", "focusHitbox"].map(feature => {
-    const value = manifest.features?.[feature];
-    if (value != null && typeof value !== "boolean") {
-      throw new Error(`${game}: invalid directory Runtime feature attestation: ${feature}`);
-    }
-    return [feature, value === true];
-  }));
 }
 
 async function copyVariant(game, build, root, variant) {
@@ -100,7 +87,7 @@ await rm(staging, { recursive: true, force: true });
 await mkdir(staging, { recursive: true });
 try {
 const games = {};
-for (const game of Object.keys(PRODUCT_GAMES)) {
+for (const game of selectedGames) {
   const product = PRODUCT_GAMES[game];
   const normalBuild = builds[game];
   const normalRoot = `runtime/${game}`;

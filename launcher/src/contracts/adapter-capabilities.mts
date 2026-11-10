@@ -30,7 +30,7 @@ export const REQUIRED_ADAPTER_CAPABILITIES = Object.freeze([
     verification: ["repository:tests/test-touch-runtime-protocol.mjs", "workspace:tests/test-runtime-protocol-contract.mjs", "workspace:tests/test-portable-touch-controller-contract.mjs", "runtime:per-game touch/deathbomb/outside-touch gates"],
     summary: "touch controls, direct touch, cancellation and the shared sensitivity contract; touch resolves to the same authoritative input/Replay semantics as keyboard/controller" },
   { id: "restart-action", class: "required", owner: "launcher-runtime",
-    verification: ["workspace:tests/test-required-gameplay-actions.mjs"],
+    verification: ["repository:tests/test-touch-runtime-protocol.mjs", "browser:../tools/ports/mp-browser.mjs", "runtime:per-game pause/restart acceptance"],
     summary: "the shared Restart control maps R to the title's restart-current-run action while the pause UI owns input" },
   { id: "always-hitbox", class: "required", owner: "launcher-runtime",
     verification: ["workspace:tests/test-always-hitbox-contract.mjs", "runtime:per-game visual regression"],
@@ -113,7 +113,7 @@ export const REQUIRED_TOUCH_BEHAVIORS = Object.freeze([
   { id: "focus-toggle", owner: "launcher-runtime", summary: "toggle-button focus produces the same logical focus state without changing game mechanics" },
   { id: "focus-two-finger", owner: "launcher-runtime", summary: "two-finger focus changes only the input source; normal low-speed/focus gameplay remains authoritative" },
   { id: "fire-bomb-pause", owner: "launcher-runtime", summary: "Fire, Bomb and Escape/Pause resolve to the title's normal logical inputs" },
-  { id: "deathbomb-preservation", owner: "launcher-runtime", summary: "touch Bomb preserves the title's original deathbomb window and must not cancel held movement merely because Bomb was consumed" },
+  { id: "deathbomb-preservation", owner: "launcher-runtime", summary: "touch movement ownership survives temporary gameplay movement blocks, including death/respawn and deathbomb; the same held pointer resumes movement when the player can move again, with targets rebased to the current player position and the title's original deathbomb window preserved" },
   { id: "unlimited-cheat-processing-rate", owner: "launcher-runtime", summary: "only actual non-zero unlimited direct movement marks the run as cheat movement; once used, Result/high-score and saved-Replay processing-drop metadata use the product-defined 100 percent value" },
   { id: "double-tap-bomb", owner: "launcher-runtime", summary: "the shared optional double-tap gesture, when enabled by the user, resolves to the same Bomb input path" },
   { id: "menu-dialogue-navigation", owner: "launcher-runtime", summary: "touch menu/dialogue gestures resolve to ordinary direction/confirm/cancel/skip inputs rather than bypassing menu state machines" },
@@ -184,6 +184,7 @@ export const REQUIRED_MUSIC_BEHAVIORS = Object.freeze([
   { id: "foreground-audio-recovery", summary: "background/foreground recovery restores the browser output path without restarting the track, corrupting queued output, or replacing the title's loop/fade/playback state" },
   { id: "music-failure-surfacing", summary: "missing/corrupt/failed required music resources are surfaced through the shared error/health model instead of hanging configure/launch silently" },
   { id: "presentation-audio-independence", summary: "display-rate presentation frames never duplicate authoritative music/sound events or advance audio event state" },
+  { id: "immediate-sound-effects", summary: "sound effects reach the output promptly even while music is loading, decoding or queued; music preparation and buffering must not serialize or delay effect playback" },
 ] satisfies readonly RequiredCoreBehavior[]);
 
 export const REQUIRED_PACKAGE_BEHAVIORS = Object.freeze([
@@ -261,6 +262,9 @@ export interface GameOptionClassification {
 // This closes a common ambiguity where a Launcher switch existed before anyone
 // decided whether the next Runtime had to implement it.
 export const GAME_OPTION_CLASSIFICATION = Object.freeze({
+  th05MultiplayerDisplay: {capability: "multiplayer", class: "optional", owner: "product"},
+  renderScale: {capability: "render-resolution", class: "optional", owner: "product"},
+  th075NativeResolution: {capability: "multiplayer", class: "optional", owner: "product"},
   thpracEnabled: { capability: "thprac", class: "optional", owner: "product" },
   thpracTouchControlsEnabled: { capability: "thprac-touch-bridge", class: "profile-required", owner: "launcher-runtime" },
   magnifierEnabled: { capability: "magnifier", class: "inherited", owner: "launcher" },
@@ -268,6 +272,8 @@ export const GAME_OPTION_CLASSIFICATION = Object.freeze({
   focusHitboxEnabled: { capability: "focus-hitbox", class: "optional", owner: "product" },
   faithBarEnabled: { capability: "faith-bar", class: "optional", owner: "product" },
   frameLimit60Enabled: { capability: "frame-limit-control", class: "inherited", owner: "launcher" },
+  bgmVolume: { capability: "game-volume-control", class: "inherited", owner: "launcher" },
+  sfxVolume: { capability: "game-volume-control", class: "inherited", owner: "launcher" },
   touchEnabled: { capability: "touch-controls", class: "required", owner: "launcher-runtime" },
   touchMovementMode: { capability: "touch-controls", class: "required", owner: "launcher-runtime", note: "all four movement modes belong to REQUIRED_TOUCH_BEHAVIORS" },
   touchSensitivity: { capability: "touch-controls", class: "required", owner: "launcher-runtime", note: "100–300 percent protocol range" },
@@ -294,8 +300,9 @@ export const INHERITED_LAUNCHER_CAPABILITIES = Object.freeze([
   { id: "package-manager-ui", class: "inherited", owner: "launcher", summary: "Package Store install/update/import and transfer UI" },
   { id: "launcher-localization", class: "inherited", owner: "launcher", summary: "Launcher interface localization; distinct from optional in-game language packages" },
   { id: "pwa-app-shell", class: "inherited", owner: "launcher", summary: "Service Worker/App Shell lifecycle for Launcher-owned files" },
-  { id: "site-information", class: "inherited", owner: "launcher", summary: "FAQ, first-use notice, site notice and support surfaces" },
+  { id: "site-information", class: "inherited", owner: "launcher", summary: "FAQ, first-use notice and support surfaces" },
   { id: "frame-limit-control", class: "inherited", owner: "launcher", summary: "shared 60 Hz presentation-limit UI; the Runtime obligation is the required presentation-cadence contract" },
+  { id: "game-volume-control", class: "inherited", owner: "launcher", summary: "shared live volume settings for game music and sound effects, with temporary music muting during room playback" },
 ] satisfies readonly AdapterCapabilityDefinition[]);
 
 // A profile-required capability becomes mandatory when its parent optional
@@ -319,6 +326,9 @@ export const PROFILE_REQUIRED_CAPABILITIES = Object.freeze([
 // their declarations; a new adapter is not incomplete merely because one is
 // false or absent.
 export const OPTIONAL_PRODUCT_CAPABILITIES = Object.freeze([
+  { id: "music-source-selection", class: "optional", owner: "product", declaration: "musicRuntime.sources",
+    verification: ["unit:tests/react-main/game-preparation.test.mjs"],
+    summary: "select a declared OGG music source while keeping preference, acquired files and Runtime configuration aligned" },
   { id: "midi-music", class: "optional", owner: "product", declaration: "musicCapabilities.midi",
     verification: ["workspace:tests/test-midi-capability-contract.mjs", "browser:tests/browser/test-music-selection.py"],
     summary: "MIDI playback in addition to normal OGG music" },
@@ -337,6 +347,9 @@ export const OPTIONAL_PRODUCT_CAPABILITIES = Object.freeze([
   { id: "faith-bar", class: "optional", owner: "product", declaration: "display.faithBar",
     verification: ["repository:tests/test-product-catalog.mjs", "repository:tests/test-game-preferences.mjs", "browser:tests/test-th10-original-options-browser.mjs"],
     summary: "original player overhead faith gauge controlled through the title's custom configuration" },
+  { id: "render-resolution", class: "optional", owner: "product", declaration: "renderScales",
+    verification: ["unit:tests/react-main/game-preparation.test.mjs", "unit:tests/react-main/settings-primitives.test.mjs"],
+    summary: "local drawing buffer scale applied during runtime initialization" },
   { id: "hint-files", class: "optional", owner: "product", declaration: "storage.hintFiles",
     verification: ["repository:tests/test-product-catalog.mjs", "browser:tests/test-th10-original-options-browser.mjs"],
     summary: "original stage Hint text files in mutable save storage" },

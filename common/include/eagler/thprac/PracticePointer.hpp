@@ -14,6 +14,12 @@ public:
     enum class TouchRoute { Game, Ui, Pending, BeginGame, Tap };
     struct TouchDecision { TouchRoute route; float x,y; };
     void reset() { for (auto& slot : ui_) slot.active = false; for(auto& slot:pending_)slot.active=false; }
+    bool cancel(std::int64_t id) {
+        bool owned=false;
+        for(auto& slot:ui_)if(slot.active&&slot.id==id){slot.active=false;owned=true;}
+        for(auto& slot:pending_)if(slot.active&&slot.id==id){slot.active=false;owned=true;}
+        return owned;
+    }
     // Read-only panels retain taps, but a swipe starting there belongs to the
     // game. Replay its original down before the first move, never jump from
     // the threshold position. Coordinates are logical game pixels.

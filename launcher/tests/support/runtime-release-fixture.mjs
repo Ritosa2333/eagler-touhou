@@ -22,7 +22,7 @@ function preloadFixture(game) {
 }
 
 function flatRuntimeShellFixture(game, variant, provider) {
-  return `<script>
+  return `<!doctype html><html><head></head><body><script>
 const protocol="eagler-touhou/1",game="${game}";
 const epoch=Number(new URLSearchParams(location.search).get("runtimeEpoch"));
 window.addEventListener("message",event=>{const message=event.data||{};if(message.epoch!==epoch)return;});
@@ -30,7 +30,7 @@ window.parent.postMessage({protocol,game,epoch,event:"ready"},location.origin);
 const prepare=window.parent.__eaglerPrepareManagedRuntimeDataV1;
 prepare({game,generation:"fixture",epoch});
 ${provider === "emscripten-preload" ? "Module.getPreloadedPackage;" : ""}
-</script>${variant}`;
+</script>${variant}</body></html>`;
 }
 
 function directoryProtocolFixture(game) {
@@ -73,15 +73,15 @@ export async function writeSyntheticRuntimeRelease(root, {preloadBuilds = {}} = 
       const target = resolve(root, runtimeRoot);
       await mkdir(target, { recursive: true });
       const html = Buffer.from(product.runtimeFileLayout === "directory"
-        ? `<meta name="eagler-data-provider" content="${product.dataProvider}">${variant}`
+        ? `<!doctype html><html><head><meta name="eagler-data-provider" content="${product.dataProvider}"></head><body>${variant}</body></html>`
         : flatRuntimeShellFixture(game, variant, product.dataProvider));
       const js = Buffer.from(preload?.script || `globalThis.__fixture=${JSON.stringify(game)};`);
       const wasm = Buffer.from(`${game}:${variant}:wasm`);
       const payloads = product.runtimeFileLayout === "directory"
         ? Object.fromEntries(product.runtimeAssets.map(name => [name,
           name === `${stem}.html` ? html :
-          name === "shell.mjs" ? Buffer.from(directoryProtocolFixture(game)) :
-          name === "eagler-host.mjs" ? Buffer.from(directoryManagedDataFixture()) :
+          ["shell.mjs", "managed-shell.mjs"].includes(name) ? Buffer.from(directoryProtocolFixture(game)) :
+          ["eagler-host.mjs", "managed-data.mjs"].includes(name) ? Buffer.from(directoryManagedDataFixture()) :
           Buffer.from(name.endsWith(".mjs") || name.endsWith(".js") ? `// ${game}:${variant}:${name}\n` : `${game}:${variant}:${name}`)]))
         : {
             [`${stem}.html`]: html,

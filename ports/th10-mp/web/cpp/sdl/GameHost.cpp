@@ -1,3 +1,4 @@
+#include <eagler/thprac/PracticePointer.hpp>
 #include <eagler/input/BrowserGamepad.hpp>
 #include "../platform/Application.hpp"
 #include "ThpracUi.hpp"
@@ -70,7 +71,7 @@ struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_S
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
 #ifdef TH_ENABLE_THPRAC
-std::set<int> practice_pointers;
+eagler::thprac::PracticePointer practice_pointers;
 #endif
 touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!session||!session->app)return s;u32 raw[8];application_touch_state(session->app,raw);float values[5];std::memcpy(values,raw+3,20);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -85,20 +86,28 @@ touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!session|
 World* touch_world(){return session&&session->app?session->app->world:nullptr;}
 void cancel(){if(auto* world=touch_world()){world->motion.touch_cancel(world->state.game.stage);world->motion.target(0,0,0);}gestures.cancel_transient();
 #ifdef TH_ENABLE_THPRAC
-    practice_pointers.clear();
+    practice_pointers.reset();
     ThpracUi::cancel_pointer();
 #endif
 }
 void key(InputSnapshot& s,u32 scan,u32 vk){s.scan_keys[scan]=128;s.virtual_keys[vk]=128;if(vk>=160&&vk<=165)s.virtual_keys[16+(vk-160)/2]=128;}
 void sync_touch_context(const touhou::input::TouchState& state){const int previous=gestures.current_context();if(previous!=state.context&&(previous==1||previous==2)&&state.context!=1&&state.context!=2)if(auto* world=touch_world())world->motion.touch_cancel(world->state.game.stage);}
 void touch(int type,int id,float x,float y){
+    bool begin=false;float begin_x=0,begin_y=0;
 #ifdef TH_ENABLE_THPRAC
-    if(type==0&&ThpracUi::captures_pointer(x*640.f,y*480.f))practice_pointers.insert(id);
-    if(practice_pointers.count(id)){ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);if(type==2)practice_pointers.erase(id);return;}
-    if(session&&session->state&&session->state->practice.enabled&&session->state->practice.flip_screen_y)y=1-y;
+    using Route=eagler::thprac::PracticePointer::TouchRoute;
+    if(type==0&&practice_pointers.route(1,id,false))ThpracUi::cancel_pointer();
+    const auto decision=practice_pointers.route_touch(unsigned(type),id,type==0&&ThpracUi::captures_pointer(x*640.f,y*480.f),type==0&&ThpracUi::passive_pointer(x*640.f,y*480.f),x*640.f,y*480.f);
+    if(decision.route==Route::Pending)return;
+    if(decision.route==Route::Tap){ThpracUi::mouse(1,decision.x,decision.y);ThpracUi::mouse(2,x*640.f,y*480.f);return;}
+    if(decision.route==Route::Ui){ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);return;}
+    const bool flip=session&&session->state&&session->state->practice.enabled&&session->state->practice.flip_screen_y;
+    begin=decision.route==Route::BeginGame;begin_x=decision.x/640.f;begin_y=flip?1-decision.y/480.f:decision.y/480.f;if(flip)y=1-y;
 #endif
-    const auto state=touch_state();sync_touch_context(state);if((state.context==1||state.context==2))if(auto* world=touch_world())world->motion.touch_event(world->state.game.stage,type,id,x,y);gestures.pointer(type,id,x,y,SDL_GetTicks(),state,session&&session->input&&session->input->snapshot.virtual_keys[16]);}
-
+    const auto state=touch_state();sync_touch_context(state);const auto now=SDL_GetTicks();
+    const auto forward=[&](int kind,float nx,float ny){if((state.context==1||state.context==2))if(auto* world=touch_world())world->motion.touch_event(world->state.game.stage,kind,id,nx,ny);gestures.pointer(kind,id,nx,ny,now,state,session&&session->input&&session->input->snapshot.virtual_keys[16]);};
+    if(begin)forward(0,begin_x,begin_y);forward(type,x,y);
+}
 }
 extern "C" {
 __attribute__((export_name("sdl_native_input"))) void sdl_native_input(Application* app){
@@ -114,8 +123,8 @@ __attribute__((export_name("sdl_native_input"))) void sdl_native_input(Applicati
     }
     auto& snapshot=app->input.snapshot;std::memset(&snapshot,0,sizeof(snapshot));snapshot.focused=1;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    // A room owns an animated title, not an input-enabled standalone game.
-    if(app->room_preview){app->state.inactive_frames=0;return;}
+    if(app->room_preview)app->state.inactive_frames=0;
+    if(app->title)app->title->room_preview=app->room_preview;
 #endif
     const bool* physical=th10_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
     for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native]))key(snapshot,k.scan,k.vk);
@@ -252,7 +261,12 @@ EXPORT("sdl_touch_gestures") void sdl_touch_gestures(u32 two,u32 taps){gestures.
 EXPORT("sdl_touch_mode") void sdl_touch_mode(u32 mode){if(gestures.set_mode(static_cast<int>(mode))&&session&&session->app&&session->app->world)session->app->world->motion.target(0,0,0);}
 EXPORT("sdl_touch_controls") void sdl_touch_controls(u32 shoot,u32 slow,u32 bomb,u32 escape,float x,float y){gestures.controls(shoot,slow,bomb,escape,x,y);}
 EXPORT("sdl_resource_stats") const u32* sdl_resource_stats(){static u32 out[4]{};if(session&&session->files){auto& f=*session->files;out[0]=f.cache_bytes;out[1]=f.cache_hits;out[2]=f.cache_misses;out[3]=f.decoded.size();}return out;}
-EXPORT("sdl_game_status") const i32* sdl_game_status(){static i32 result[10]{};if(session&&session->app){auto& a=*session->app;result[0]=a.value.screen;result[1]=a.state.game.stage;result[2]=a.error;result[3]=a.state.game.lives;result[4]=a.state.game.power;result[5]=gestures.current_context();result[6]=gestures.active();result[7]=gestures.fire;result[8]=gestures.focus;result[9]=a.input.player_profiles[0].input.raw;}return result;}
+EXPORT("sdl_game_status") const i32* sdl_game_status(){
+    static i32 result[14]{};std::fill(result+10,result+14,-1);
+    if(session&&session->app){auto& a=*session->app;result[0]=a.value.screen;result[1]=a.state.game.stage;result[2]=a.error;result[3]=a.state.game.lives;result[4]=a.state.game.power;result[5]=gestures.current_context();result[6]=gestures.active();result[7]=gestures.fire;result[8]=gestures.focus;result[9]=a.input.player_profiles[0].input.raw;
+        if(a.world&&a.world->actors.results){const auto& menu=*a.world->actors.results;result[10]=menu.state;result[11]=menu.menu.selected;result[12]=menu.keyboard.selected;result[13]=menu.name_length;}
+    }return result;
+}
 }
 
 #include "LocalReplay.inc"

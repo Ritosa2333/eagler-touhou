@@ -578,7 +578,17 @@ void RemoveAlternateSave(const char *savedPath)
     std::remove(actual.c_str());
 }
 
-bool AppendRecording(const char *path)
+static bool AppendInputEvents(const char *path,
+    const decltype(g_RecordInputs)& g_RecordInputs,
+    const decltype(g_RecordDirectTouch)& g_RecordDirectTouch,
+    const decltype(g_RecordTouchEvents)& g_RecordTouchEvents,
+    const decltype(g_RecordMultiplayerInputs)& g_RecordMultiplayerInputs,
+    const decltype(g_RecordMultiplayerStageResources)& g_RecordMultiplayerStageResources,
+    const decltype(g_RecordMultiplayerStageResourceMask)& g_RecordMultiplayerStageResourceMask,
+    const decltype(g_RecordMultiplayerStageContributions)& g_RecordMultiplayerStageContributions,
+    const decltype(g_RecordMultiplayerStageContributionMask)& g_RecordMultiplayerStageContributionMask,
+    const MultiplayerReplayConfig& g_RecordMultiplayerConfig,
+    bool g_RecordUsesExtension,bool g_RecordHasTouchState,bool g_RecordHasMultiplayer)
 {
     if (!g_RecordUsesExtension)
         return true;
@@ -777,6 +787,14 @@ bool AppendRecording(const char *path)
 
     WriteLe32(bytes.data() + offsetof(ReplayHeader, checksum), ReplayChecksumForRawBytes(bytes));
     return FileSystem::WriteDataToFile(path, bytes.data(), bytes.size()) == 0;
+}
+
+bool AppendRecording(const char* path){
+    return AppendInputEvents(path,g_RecordInputs,g_RecordDirectTouch,g_RecordTouchEvents,g_RecordMultiplayerInputs,g_RecordMultiplayerStageResources,g_RecordMultiplayerStageResourceMask,g_RecordMultiplayerStageContributions,g_RecordMultiplayerStageContributionMask,g_RecordMultiplayerConfig,g_RecordUsesExtension,g_RecordHasTouchState,g_RecordHasMultiplayer);
+}
+bool AppendPlayback(const char* path){
+    if(!g_PlaybackVersion)return true;if(g_PlaybackVersion!=VERSION)return false;
+    return AppendInputEvents(path,g_PlaybackInputs,g_PlaybackDirectTouch,g_PlaybackTouchEvents,g_PlaybackMultiplayerInputs,g_PlaybackMultiplayerStageResources,g_PlaybackMultiplayerStageResourceMask,g_PlaybackMultiplayerStageContributions,g_PlaybackMultiplayerStageContributionMask,g_PlaybackMultiplayerConfig,true,(g_PlaybackFlags&FLAG_TOUCH_STATE)!=0,(g_PlaybackFlags&FLAG_MULTIPLAYER_INPUT)!=0);
 }
 
 void ClearPlayback()

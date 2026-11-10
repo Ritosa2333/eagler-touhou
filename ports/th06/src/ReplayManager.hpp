@@ -16,7 +16,9 @@ struct ReplayManager
     static ZunResult AddedCallbackDemo(ReplayManager *mgr);
     static ZunResult DeletedCallback(ReplayManager *mgr);
     static void StopRecording();
-    static void SaveReplay(const char *replay_path, char *param_2);
+    static void SaveReplay(const char *replay_path, char *param_2, bool keepRecording=false);
+    static void ShareSpectatorReplay();
+    static bool SetSpectatorReplay(const u8* bytes,unsigned size);
     static ZunResult ValidateReplayData(ReplayHeader *data, i32 fileSize);
 
     ReplayManager()

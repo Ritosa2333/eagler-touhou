@@ -7,6 +7,7 @@ import { getManifest, injectManifest } from "workbox-build";
 import {hostArtworkFiles} from "./host-artwork.mjs";
 import {PRODUCT_GAMES} from "./contracts/product-catalog.mjs";
 import { APP_SHELL_SOURCE_FILE, createAppShellContract } from "./app-shell-contract.mjs";
+import vm from "node:vm";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const defaultSourcePath = resolve(project, APP_SHELL_SOURCE_FILE);
@@ -56,6 +57,31 @@ export async function buildAppShell({
     throw new Error("Invalid App Shell publication file graph");
   }
   const resolvedGlobDirectory = resolve(globDirectory);
+  // Optional operator configuration participates in the shell's byte identity.
+  // Cached deployment metadata lets an installed shell boot without its origin.
+  const mirrorSource = await readFile(resolve(project, "src/site-mirror-sw.js"), "utf8");
+  try {
+    const network = JSON.parse(await readFile(resolve(resolvedGlobDirectory, "site-network.json"), "utf8"));
+    vm.runInNewContext(mirrorSource + "\nvalidateSiteNetwork(value);", {URL, value: network});
+    shellFiles = [...new Set([...shellFiles, "site-network.json"])];
+    for (const path of ["site-manifest.json", "host-manifest.json", "release-catalog.json"]) {
+      try { await stat(resolve(resolvedGlobDirectory, path)); shellFiles = [...shellFiles, path]; }
+      catch (error) { if (error.code !== "ENOENT") throw error; }
+    }
+    try {
+      const catalog = JSON.parse(await readFile(resolve(resolvedGlobDirectory, "release-catalog.json"), "utf8"));
+      for (const entry of Object.values(catalog.games || {})) {
+        const path = entry.descriptor;
+        if (typeof path !== "string" || !/^[a-zA-Z0-9_./-]+\.package\.json$/.test(path) ||
+            path.startsWith("/") || path.split("/").some(part => !part || part === "." || part === "..")) {
+          throw new Error("Invalid mirrored Package Descriptor path");
+        }
+        try { await stat(resolve(resolvedGlobDirectory, path)); }
+        catch (cause) { throw new Error(`Missing mirrored Package Descriptor: ${path}`, {cause}); }
+        shellFiles = [...shellFiles, path];
+      }
+    } catch (error) { if (error.code !== "ENOENT") throw error; }
+  } catch (error) { if (error.code !== "ENOENT") throw error; }
   // Host assembly supplies artwork after the frontend graph is sealed. Every
   // builder entrypoint must cache present catalog-owned covers and site icons,
   // even when a caller supplies only the static/Vite graph. Never scan DATA or
@@ -108,7 +134,7 @@ export async function buildAppShell({
   const shellSource = await readFile(sourcePath, "utf8");
   const workerContract = workerContractSource ?? await readFile((await import("./client-services-build.mjs")).resolveBrowserPublicationSource("assets/contracts/runtime-generations-worker.js"), "utf8");
   const legacyReader = await readFile(resolve(project, "compat/runtime-generation-reader.js"), "utf8");
-  const source = `${workerContract}\n${legacyReader}\n${runtimeSource}\n${shellSource}`;
+  const source = `${workerContract}\n${legacyReader}\n${mirrorSource}\n${runtimeSource}\n${shellSource}`;
   if (!source.includes("__APP_SHELL_BUILD_ID__") || !source.includes("__APP_SHELL_DEFERRED_PATHS__") || !source.includes("self.__WB_MANIFEST")) {
     throw new Error("App Shell Service Worker source is missing Workbox build placeholders");
   }

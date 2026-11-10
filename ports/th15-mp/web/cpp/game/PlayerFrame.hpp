@@ -5,9 +5,11 @@
 #include "PlayerShots.hpp"
 #include "PlayerCollision.hpp"
 namespace th15 {
+namespace multiplayer {class BattleFrameState;}
 struct PlayerFrameContext {u32 held=0,pressed=0,game_flags=0;bool focus_allowed=false,enemy_present=false,hud_available=false,hud_bomb_active=false;Vec3 background_delta{};EnemyWorldState* enemies=nullptr;};
 struct PlayerFrameHost:PlayerLifeServices {virtual bool stop_sound(i32)=0;virtual bool refresh(PlayerFrameContext&)=0;};
 class PlayerFrame final:private PlayerLifecycleHost {
+    friend class multiplayer::BattleFrameState;
     PlayerMotion& motion;PlayerAnmHost& visuals;AnmManager& animations;PlayerLife& life;DamageSources& damage;PlayerShots& shots;PlayerShotContext& shot_context;PlayerFrameHost& world;
     PlayerFrameContext context;float* active_rate=nullptr;
     bool allow_bomb()override{return world.allow_bomb();}bool begin_bomb()override{return world.begin_bomb();}

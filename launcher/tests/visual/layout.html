@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>弹层布局稳定性检查</title>
+  <style>@layer properties,foundation,theme,base,components,utilities;</style>
+  <style>
+    html,body{margin:0;width:100%;height:100%;font:12px system-ui}
+    iframe{display:block;width:100%;height:100%;border:0}
+    aside{position:fixed;bottom:0;left:0;right:0;z-index:2;display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:6px 10px;background:#fff;color:#18181b;border-top:1px solid #ddd}
+    button,select{font:inherit;padding:5px 10px}output{margin-left:auto}
+    pre{position:fixed;z-index:3;bottom:42px;left:10px;right:10px;max-height:40vh;overflow:auto;margin:0;padding:10px;background:#fff;color:#18181b;border:1px solid #ddd}pre[hidden]{display:none}
+  </style>
+</head>
+<body>
+  <iframe id="application" title="实际启动器" src="/"></iframe>
+  <aside>
+    <button id="start" type="button">开始记录</button>
+    <button id="stop" type="button" disabled>结束记录</button>
+    <select id="motionTarget" aria-label="动效目标">
+      <option value=".tools">选项栏</option>
+      <option value=".input-settings-dialog">输入设置</option>
+    </select>
+    <button id="motion" type="button">记录下一次动效</button>
+    <select id="motionEnd" aria-label="预期状态">
+      <option value="open">打开或重开</option><option value="closed">关闭</option>
+      <option value="reduced-open">减弱动效 | 打开</option><option value="reduced-closed">减弱动效 | 关闭</option>
+    </select>
+    <button id="details" type="button">查看记录</button>
+    <output id="summary">就绪</output>
+  </aside>
+  <pre id="layoutResult" hidden></pre>
+  <script type="module" src="./layout-scenario.mjs"></script>
+</body>
+</html>

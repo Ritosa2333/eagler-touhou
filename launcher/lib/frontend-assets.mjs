@@ -11,10 +11,10 @@ const FEATURE_STYLE_STARTS = Object.freeze([
   line => line === "/* R is an ordinary cross-game control: below ESC and before the optional thprac group. */",
 ]);
 const FEATURE_STYLE_ENDS = Object.freeze([
+  line => line === "/* First-use notice drawer. */",
   line => line === "/* Top bar and rounded surfaces; preserve the existing neutral palette. */",
   line => line === "/* Desktop reduced motion follows the mobile lightweight selection cue. */",
   line => line === "/* Shared Multiplayer product surface. It deliberately inherits the launcher's",
-  line => line === "/* Edge drawers: First-use Notice owns the right edge; Site Notice owns the left. */",
   line => line === "/* Shared Multiplayer mobile-first room shell. */",
   line => line === "/* Persistent game category dock; reserve space so it never covers the tools. */",
 ]);
@@ -67,9 +67,6 @@ export async function buildLauncherStyleOutputs({ project, outputDirectory }) {
     });
     outputs.push(...result.outputFiles);
   }
-  const touch = await build({ entryPoints: [resolve(project, "public/touch-guide.css")], outfile: resolve(outputDirectory, "touch-guide.css"),
-    bundle: true, minify: true, write: false, external: ["*.woff2", "*.webp", "*.png", "*.svg", "*.jpg"], logLevel: "warning" });
-  outputs.push(...touch.outputFiles);
   return outputs;
 }
 

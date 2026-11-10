@@ -13,7 +13,7 @@
 | `launcher/host/` | 按输入装配可部署的站点 |
 | `launcher/integrations/` | 字体、汉化及外部资源格式 |
 | `launcher/server/`、`launcher/scripts/serve.mjs` | 本地 HTTP 与 THCRAP 服务 |
-| `launcher/lib/` | Node 构建、策略和产物模块 |
+| `launcher/lib/` | 构建、策略和产物模块 |
 | `launcher/scripts/` | 命令行入口 |
 | `launcher/public/` | 浏览器静态资源 |
 | `ports/<owner>/` | 各作游戏源码及 Runtime 构建、打包 |
@@ -34,13 +34,21 @@
 
 批量发布 Runtime 使用 `scripts/package-runtime-release.mjs`；装配部署站点使用 `host/build.mjs`。本地开发需要前端构建、所选 Runtime 和本地游戏包，作品由 `EAGLER_DEVELOPMENT_GAMES` 选择。
 
-作品目录以 `testOnly` 统一控制默认入口。th075 普通版和多人版、th20 普通版在常规游戏列表与大厅中隐藏，通过页面 `?test` 或站点 `shared.testBuild: true` 显示。测试模式同时覆盖大厅筛选与创建房间表单，构建和资源能力继续由同一作品目录声明。
+作品目录以 `testOnly` 控制抢先体验内容的默认可见性。设置中的“测试版功能”、页面 `?test` 或站点 `shared.testBuild: true` 可显示这些作品，覆盖主页、大厅筛选和创建房间表单。开关只改变界面可见性，作品共用发布清单、Runtime、Relay、存档和联机身份。新增测试作品随常规发布提供资源，开启后即可体验。
 
 隔离部署的 App Shell 按 origin 与挂载目录核对 Service Worker 身份，将已发布的字体修复别名纳入同一应用的迁移入口。后续安装统一使用 `app-shell-sw.js`，更新等待正在运行的游戏和交互完成。
 
 单机启动优先使用已完整校验的本地程序，旧格式的完整程序缓存也在本地迁移后直接启动。新版程序在游戏启动后后台下载，通过加载面板显示进度，完整下载并校验后提供更新提醒。当前游戏继续使用启动时选定的版本。
 
 “关于”页面提供贡献方式、联系邮箱和 QQ 群入口。页脚集中提供项目仓库、许可证、QQ群、服务器捐赠与备案信息。
+
+## 帮助与服务状态
+
+导航使用共用 Radix 菜单，帮助分组包含常见问题、关于、服务状态与首次使用须知。页面沿用统一的主题、徽标、图标与三语消息。静态帮助正文仍由内容构建生成，并通过同一语言入口互相链接。
+
+`/uptime/` 由现有 React Router 构建和预渲染，单独呈现共用顶栏，不创建游戏会话。页面按主站、下载、联机与 TURN 分组，提供 24 小时、7 天和 90 天历史。切换范围保留列表，后台读取有超时、取消和隐藏页暂停。响应经过有界字段校验，过期数据标为未知；下载分组是否公开由服务配置决定。
+
+服务接口和部署配置见[状态服务](../../services/telemetry/README.md)。页面与 API 分别发布；没有配置 API 时显示读取失败并重试。
 
 ## 房间与共用播放器
 
@@ -101,11 +109,11 @@
 
 | 命令（从 `launcher/` 运行） | 结果 |
 | --- | --- |
-| `npm run dev` | 启动带热更新的 React 开发服务器 |
-| `npm run build` | 准备锁定版本的浏览器库，构建内容页面、客户端模块和 React 产物 |
-| `npm run typecheck`、`npm test` | 检查前端类型与行为 |
-| `npm run check` | 检查启动器核心模块 |
-| `npm run check:workspace` | 检查跨作品 Runtime 集成 |
+| `bun run dev` | 启动带热更新的 React 开发服务器 |
+| `bun run build` | 准备锁定版本的浏览器库，构建内容页面、客户端模块和 React 产物 |
+| `bun run typecheck`、`bun run test` | 检查前端类型与行为 |
+| `bun run check` | 检查启动器核心模块 |
+| `bun run check:workspace` | 检查跨作品 Runtime 集成 |
 
 具体输入和步骤见[本地联调](DEVELOPMENT.md)与[测试入口](../tests/README.md)。脚本职责见[命令目录](../scripts/README.md)。
 

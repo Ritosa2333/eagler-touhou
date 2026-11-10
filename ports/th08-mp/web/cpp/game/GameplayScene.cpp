@@ -1,6 +1,7 @@
 #include <eagler/gameplay/CooperativeRules.hpp>
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/CooperativeResources.hpp"
+#include <eagler/netplay/CooperativeMenuInput.hpp>
 #endif
 #include "GameplayScene.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -61,7 +62,7 @@ GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,An
     effect_system.player_effect_visible=[](void* owner,const EffectState& effect,i32 seat)->bool{
         auto& scene=*static_cast<GameplayScene*>(owner);
         // Native focus kind 22 retains its fixed-pool owner during fade-out.
-        return effect.kind!=22||seat<0||seat==i32(scene.session.local_player);
+        return scene.session.netplay.ReadOnly()||effect.kind!=22||seat<0||seat==i32(scene.session.local_player);
     };
     effect_system.player_view_alpha=[](void* owner,i32 seat)->u8{
         auto& scene=*static_cast<GameplayScene*>(owner);const auto local=scene.session.local_player;
@@ -206,6 +207,9 @@ void GameplayScene::publish_dialogue(){
 void GameplayScene::message(i32 entry){synchronize();failed|=!dialogue.read(entry);publish_dialogue();}
 void GameplayScene::synchronize(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    menus.context.spectator=session.netplay.Spectator()&&!session.netplay.Retired();
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     for(u32 seat=0;seat<session.player_count;++seat)if(roster.seats[seat].player&&roster.seats[seat].player->status().unlimited_movement_used)
         session.multiplayer_cheat_movement_used=true;
 #endif
@@ -244,7 +248,9 @@ void GameplayScene::synchronize(){
     if(auto* boss=globals.boss_slots[0]){gui_context.familiar_count=boss->familiar_count();gui_context.familiar_multiplier=boss->remaining_seconds;}else gui_context.familiar_count=gui_context.familiar_multiplier=0;
     environment.camera=background.camera;environment.player=p.motion.movement.position;environment.boss_present=globals.boss_slots[0]!=nullptr;environment.any_boss=0;for(auto* boss:globals.boss_slots)if(boss)environment.any_boss=1;
     if(auto* boss=globals.boss_slots[0]){environment.boss=boss->resolved_position;environment.boss_active=bool(boss->flags&1);}else{environment.boss={};environment.boss_active=0;}
-    environment.dialogue=dialogue.present();environment.transition=bool(globals.game_flags&0x60);environment.tint.d3dColor=i32(globals.spell_panel_color);
+    environment.dialogue=dialogue.present();environment.transition=bool(globals.game_flags&0x60);
+    // The stage tint ANM (original 0x4e4a64) colors the background fireflies.
+    environment.tint=background.tint_vm.color1;
     effect_system.paused=bool(globals.game_flags&1024);
     screen.context.timing=player.timing;screen.context.frozen=bool(globals.game_flags&1024);screen.context.paused=paused;screen.context.retry=retrying;
     ascii_context.player=p.motion.movement.position;ascii_context.gauge=n.gauge;ascii_context.point_value=n.point_value;ascii_context.human_limit=limits.minimum;ascii_context.youkai_limit=limits.maximum;ascii_context.human_effects=limits.human_bonus;ascii_context.youkai_effects=limits.youkai_bonus;ascii_context.human_tint=limits.human;ascii_context.youkai_tint=limits.youkai;ascii_context.paused=paused;ascii_context.retry=retrying;ascii_context.freeze_popups=bool(globals.game_flags&1024);ascii_context.effects=effect_pool.base_animation;ascii_context.demo=bool(globals.game_flags&2);ascii_context.arcade_origin=m.arcade_origin;ascii_context.arcade_size=m.arcade_size;
@@ -344,7 +350,16 @@ JobResult GameplayScene::update_replay(){
     synchronize();return JobResult::Continue;
 }
 void GameplayScene::publish_input(const ReplayInputState& input){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // prepare_frame already installed each seat's committed gameplay input.
+    // The native recorder receives shared menu keys, which must stay outside
+    // the primary pilot's movement, shooting and previous-button state.
+    if(session.player_count<2){
+        player_state.input.buttons=input.current;player_state.bomb_input.previous_buttons=input.previous;
+    }
+#else
     player_state.input.buttons=input.current;player_state.bomb_input.previous_buttons=input.previous;
+#endif
     dialogue_context.input=input.current;dialogue_context.previous_input=input.previous;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     // Dialogue is shared. The replay recorder updates input.current later in
@@ -356,6 +371,9 @@ void GameplayScene::publish_input(const ReplayInputState& input){
         dialogue_context.input|=committed_buttons[seat]&(InputButton::Shoot|InputButton::Skip);
         dialogue_context.previous_input|=pilot(seat).status().bomb_input.previous_buttons&(InputButton::Shoot|InputButton::Skip);
     }
+    u16 pressed=0;
+    for(u32 seat=0;seat<session.player_count;++seat)pressed|=committed_buttons[seat]&~pilot(seat).status().bomb_input.previous_buttons;
+    dialogue_context.previous_input&=~pressed;
 #endif
 }
 JobResult GameplayScene::update_recording(){recording.input.flags=globals.game_flags;recording.input.slow_mode=session.config.slow_mode;recording.update();publish_input(recording.input);return JobResult::Continue;}
@@ -557,6 +575,8 @@ bool GameplayScene::prepare_frame(u16 buttons,float rate,bool force_unit){
     bullets.snapshot_presentation();
     player.timing={rate,force_unit};player_state.input.buttons=buttons;player_state.bomb_input.previous_buttons=previous_input;dialogue_context.previous_input=previous_input;dialogue_context.input=buttons;menus.context.keys=buttons;menus.context.previous_keys=previous_input;previous_input=buttons;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const auto menu_pressed=Netplay::CooperativePressedButtons(committed_buttons,previous_buttons,session.player_count);
+    menus.context.previous_keys&=~menu_pressed;
     for(u32 seat=0;seat<session.player_count;++seat){
         auto& simulation=pilot(seat);auto& state=simulation.status();simulation.timing=player.timing;
         state.input.buttons=committed_buttons[seat];state.bomb_input.previous_buttons=previous_buttons[seat];previous_buttons[seat]=committed_buttons[seat];

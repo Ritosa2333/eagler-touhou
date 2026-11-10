@@ -1,6 +1,7 @@
 #include "WorldRollback.hpp"
 #ifdef TH11_MULTIPLAYER
 #include "RollbackCapture.hpp"
+#include "AnmPresentation.hpp"
 namespace th11 {
 namespace {
 bool economy_values(Netplay::RollbackJournal& journal,GameEconomy& value,bool shared_score){
@@ -57,7 +58,7 @@ bool WorldRollback::BeginRollbackFrame(Netplay::RollbackJournal& journal,WorldRo
     active_=&frame;s.multiplayer_rollback_boundary_requested=false;b.mp_rollback_boundary_requested=false;
     bool ok=true;
     const auto capture=[&](auto&... values){if(!rollback_capture_contiguous_values(journal,values...))ok=false;};
-    capture(s.state,s.multiplayer_frame,s.multiplayer_pause_held,s.game_input,
+    capture(s.state,s.multiplayer_frame,s.multiplayer_pause_held,s.multiplayer_menu_input,s.game_input,
         s.battle_attached,s.last_held,s.last_pause,s.paused_rate,s.menu_input,
         s.spell_records,s.clear_records);
     if(!economy_values(journal,s.economy,true))ok=false;
@@ -170,6 +171,11 @@ bool WorldRollback::RestoreRollbackFrame(const WorldRollbackFrame& frame,u32 res
     s.error=frame.session_error_;b.error=frame.battle_error_;
     if(b.dialogue)b.dialogue->error=frame.dialogue_error_;
     s.multiplayer_rollback_boundary_requested=false;b.mp_rollback_boundary_requested=false;
+    // Sidecars are derived visual state, not checkpoint owners. Rebuild them
+    // from corrected fixed ticks instead of blending a discarded future.
+    presentation::reset();s.compositor.camera_valid=false;
+    b.stage->camera_valid=false;
+    if(b.outgoing_stage)b.outgoing_stage->camera_valid=false;
     return true;
 }
 }

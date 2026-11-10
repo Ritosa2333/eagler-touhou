@@ -1,0 +1,56 @@
+@layer components {
+.launcher-page-surface[data-page="account"]{max-width:none}
+.account-page{position:relative;z-index:1;display:flex;justify-content:flex-end;width:100%;min-height:calc(100dvh - 61px);margin:0;padding:0;color:var(--book-ink);font:14px/1.5 var(--ui-font)}
+.account-page *{box-sizing:border-box}
+.account-page :is(button,input){font:inherit}
+.account-shell{display:flex;justify-content:center;align-items:flex-start;width:clamp(480px,44%,720px);min-height:inherit;border-left:1px solid var(--book-border);background:var(--book-surface)}
+.account-art{position:fixed;inset:0;z-index:-1;pointer-events:none;background:var(--book-surface);overflow:hidden}
+/* The page snapshot paints above the live masthead, including fixed artwork overflow. */
+html[data-ui-route-transition="page"] .account-art{clip-path:inset(var(--site-header-height,0px) 0 0)}
+.account-art::after{content:"";position:absolute;inset:0;background:color-mix(in srgb,var(--book-surface) 28%,transparent)}
+.account-art-image{width:100%;height:100%;object-fit:cover;object-position:center 42%}
+.account-content{width:100%;max-width:536px;min-width:0;padding:clamp(36px,7vh,72px) 48px 48px}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+ .account-shell{background:color-mix(in srgb,var(--book-surface) 80%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+}
+.account-mode-content{animation:account-mode-enter var(--ui-surface-duration) var(--ui-surface-easing) both}
+@keyframes account-mode-enter{from{opacity:0}to{opacity:1}}
+.account-content .account-tabs{margin:0 0 24px}
+.account-content h1{margin:0 0 24px;font-size:24px;line-height:1.25;font-weight:650;letter-spacing:-.025em}
+.account-content form{display:grid;gap:14px}
+.account-content label{display:grid;gap:6px;min-width:0;font-size:13px;font-weight:500;color:var(--book-ink)}
+.account-content input{display:block;width:100%;min-width:0;min-height:44px;font-weight:400}
+.account-page button{cursor:pointer}
+.account-page :is(button,a):focus-visible{outline:2px solid var(--book-accent);outline-offset:3px}
+.account-password{position:relative;display:block}
+.account-page .account-password-toggle{position:absolute;right:0;top:0;display:grid;place-items:center;width:44px;height:44px;min-height:44px;color:var(--book-muted)}
+.account-password-toggle svg{width:18px;height:18px}
+.account-code{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.account-code button{height:auto;min-height:44px;padding-inline:12px}
+.account-submit{width:100%;min-height:44px;margin-top:6px;gap:10px}
+.account-submit svg{width:16px;height:16px}
+.account-feedback{margin:0;padding:10px 12px;border:1px solid var(--book-border);border-radius:7px;background:var(--book-raised);color:var(--book-muted);font-size:12px;overflow-wrap:anywhere}
+.account-feedback.is-error,.account-field-error{color:var(--kit-destructive)}
+.account-field-error{font-size:12px}
+.account-forgot{justify-self:end;margin-top:-8px;padding-inline:0;color:var(--book-muted);font-size:12px}
+.account-back{margin:0 0 24px;padding-inline:0;color:var(--book-muted)}
+.account-back svg{width:16px;height:16px}
+.account-reset-success{display:grid;gap:18px}
+.account-reset-success p{margin:0;color:var(--book-muted)}
+@media(max-width:959px){
+ .account-content input{font-size:16px}
+}
+@media(max-width:780px){
+ .account-page{min-height:calc(100dvh - 105px)}
+ .account-shell{width:100%;border-left:0}
+ .account-content{padding:36px 32px}
+}
+@media(max-width:540px){
+ .account-content{padding:28px 24px 32px}
+ .account-content h1{font-size:22px;margin-bottom:22px}
+ .account-content .account-tabs{margin-bottom:22px}
+}
+@media(prefers-reduced-transparency:reduce){.account-shell{background:var(--book-surface);backdrop-filter:none;-webkit-backdrop-filter:none}}
+@media(prefers-reduced-motion:reduce){.account-mode-content{animation:none}}
+html:has(body.less-motion) .account-mode-content{animation:none}
+}

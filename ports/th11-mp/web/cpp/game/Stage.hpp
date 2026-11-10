@@ -49,6 +49,9 @@ struct StageScriptWorld {
     virtual bool stage_deformation(i32)=0;
     virtual void stage_color(u32)=0;
     virtual void stage_camera_position_interpolated(){}
+    // Authored hard camera set (STD opcode 2). Presentation must snap instead
+    // of blending across the discontinuity.
+    virtual void stage_camera_jump(){}
 };
 bool stage_script(StageState&,const StageResource&,const float*,StageScriptWorld&);
 bool stage_interrupt(StageState&,const StageResource&,i32,const float*);
@@ -72,10 +75,17 @@ public:
     const u32* practice_game_frame=nullptr;
     bool practice_replay_has_stage5=false;
 #ifdef TH11_MULTIPLAYER
+    // Native stage-entry clock, captured before the first chapter input.
+    i32 multiplayer_replay_background_frame=INT32_MIN;
     bool multiplayer_frozen_draw=false;
     unsigned multiplayer_tint_owner=0;
     u32 multiplayer_tint_source=0;
 #endif
+    // Draw-only camera endpoint pair; StageState keeps its native layout.
+    SceneCamera previous_camera;
+    bool camera_valid=false,camera_discontinuity=false;
+    void snapshot_camera(){previous_camera=state.camera;camera_valid=true;}
+    SceneCamera display_camera(float) const;
     std::string error;
     Stage(AnmManager& m,AnmResource& a,AnmResource& t,u32& color,u16 id):manager(m),animations(a),text(t),
 #ifdef TH11_MULTIPLAYER
@@ -111,6 +121,7 @@ public:
     bool stage_deformation(i32)override;
     void stage_color(u32 color)override{background_color=color;}
     void stage_camera_position_interpolated()override;
+    void stage_camera_jump()override{camera_discontinuity=true;}
 private:
     bool update_deformation();
 #ifdef TH11_MULTIPLAYER

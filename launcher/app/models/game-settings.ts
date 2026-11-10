@@ -3,7 +3,7 @@ import type {GameVersion} from "../../src/contracts/package-read-models.mts";
 import {
   gamePreferenceStorageKey, applySharedTouchPreferences, loadOrInitializeSharedTouchPreferences,
   loadStoredGamePreferences, loadStoredLanguagePreference, persistSharedTouchPreferences,
-  persistStoredGamePreferences, touchMovementUsesJoystick,
+  persistStoredGamePreferences, touchMovementUsesJoystick, normalizeTh05MultiplayerDisplay, normalizeGameVolume,
   type GameOptions, type GamePreferenceStorage, type MusicMode,
 } from '../../src/launcher/game-preferences.mts';
 import {gameIdForProduct, isMultiplayerProductId, PRODUCT_GAMES, productFeatureAvailable,
@@ -25,7 +25,11 @@ export interface SettingsContext {
   forbidUnlimitedMovement?: boolean;
   beautyInstalled?: boolean;
 }
-export interface SettingsDisclosureState {touch: boolean; files: boolean; display: boolean; advanced: boolean}
+function musicAvailabilityForContext(context: SettingsContext): MusicAvailabilityInput & {musicSources: readonly string[]} {
+  const policy = PRODUCT_GAMES[gameIdForProduct(context.productId)].musicRuntime;
+  return {...context.musicAvailability, musicSources: 'sources' in policy ? policy.sources : []};
+}
+export interface SettingsDisclosureState {touch: boolean; files: boolean; display: boolean; audio: boolean; advanced: boolean}
 export interface SettingsSnapshot {
   context: SettingsContext;
   gameId: GameId;
@@ -66,6 +70,7 @@ export function settingsChangeResetsRuntime({previous, current, reason}: Setting
     case 'option': return (Object.keys(current.options) as (keyof GameOptions)[]).some(name =>
       previous.options[name] !== current.options[name]
       && name !== 'touchSensitivity' && name !== 'touchControlOpacity'
+      && name !== 'bgmVolume' && name !== 'sfxVolume'
       && !(current.multiplayer && name === 'frameLimit60Enabled'));
     case 'host-restore': case 'locale-restore': case 'context': case 'preview': case 'presentation': case 'replay-auto-save': return false;
   }
@@ -84,6 +89,7 @@ export interface GameSettingsModel {
   setMovementRestriction(forbidden: boolean): void;
   setTouchSettingsPriority(mobile: boolean): void;
   setOption<K extends keyof GameOptions>(name: K, value: GameOptions[K]): void;
+  previewVolume(name: 'bgmVolume' | 'sfxVolume', value: number): void;
   previewSensitivity(value: number): void;
   commitPreferences(): void;
   restoreRoomSettings(saved: SettingsSnapshot): void;
@@ -106,6 +112,7 @@ export function createGameSettingsModel({storage, onChange}: {
   let snapshot: SettingsSnapshot | null = null;
   let revision = 0;
   const disclosures: Partial<Record<'singleplayer' | 'multiplayer', SettingsDisclosureState>> = {};
+  const practicePreferences = new Map<string, boolean>();
   function publish(next: Omit<SettingsSnapshot, 'revision'>, reason: SettingsChange['reason']) {
     const previous = snapshot;
     snapshot = Object.freeze({...next, options: Object.freeze({...next.options}), revision: ++revision});
@@ -120,14 +127,16 @@ export function createGameSettingsModel({storage, onChange}: {
     const state = required();
     persistSharedTouchPreferences(storage, {...state.options});
     persistStoredGamePreferences({storage, preferenceId: state.preferenceId,
-      preferences: {...state, options: {...state.options}}, language: state.language});
+      preferences: {...state, options: {...state.options, thpracEnabled: state.multiplayer ? practicePreferences.get(state.gameId) ?? false : state.options.thpracEnabled}}, language: state.language});
+    if (!state.multiplayer) practicePreferences.set(state.gameId, state.options.thpracEnabled);
   }
-  function read(context: SettingsContext, reason: SettingsChange['reason'], sharing?: boolean) {
+  function read(context: SettingsContext, reason: SettingsChange['reason']) {
     const gameId = gameIdForProduct(context.productId), multiplayer = isMultiplayerProductId(context.productId);
-    const shareSingleplayerSettings = sharing ?? multiplayerPreferences.load({product: context.productId, multiplayer, maxLoadout: 0}).shareSingleplayerSettings;
-    const preferenceId = multiplayer && !shareSingleplayerSettings ? context.productId : gameId;
+    const shareSingleplayerSettings = true;
+    const preferenceId = gameId;
     const disclosureKey = multiplayer ? 'multiplayer' : 'singleplayer';
-    const disclosure = disclosures[disclosureKey] ??= {touch: context.mobile, files: true, display: true, advanced: false};
+    const disclosure = disclosures[disclosureKey] ?? {touch: context.mobile, files: true, display: true, audio: false, advanced: false};
+    disclosures[disclosureKey] = disclosure;
     const normalized = loadStoredGamePreferences({storage, preferenceId,
       fallbackPreferenceId: multiplayer ? gameId : null,
       context: {uiLocale: context.uiLocale, thpracAvailable: productFeatureAvailable(gameId, 'thprac', context.hostFeatures),
@@ -140,11 +149,12 @@ export function createGameSettingsModel({storage, onChange}: {
       options.touchFocusMode='hold-button';
       try{if(!storage?.getItem(gamePreferenceStorageKey(preferenceId)))options.touchEnabled=context.mobile;}catch{}
     }
+    practicePreferences.set(gameId, options.thpracEnabled);
     if (multiplayer) options.thpracEnabled = false;
     const savedLanguage = loadStoredLanguagePreference({storage, preferenceId, fallbackPreferenceId: multiplayer ? gameId : null});
     publish({context, gameId, preferenceId, multiplayer, shareSingleplayerSettings, disclosure: {...disclosure}, options,
-      ...(context.productId === 'th09mp' ? {replayAutoSave: multiplayerPreferences.replayAutoSave(context.productId)} : {}),
-      music: resolveEffectiveMusicMode({...context.musicAvailability, requested: normalized.musicPreference, explicit: normalized.musicPreferenceExplicit}),
+      ...(['th09mp','th19mp'].includes(context.productId) ? {replayAutoSave: multiplayerPreferences.replayAutoSave(context.productId)} : {}),
+      music: resolveEffectiveMusicMode({...musicAvailabilityForContext(context), requested: normalized.musicPreference, explicit: normalized.musicPreferenceExplicit}),
       musicPreference: normalized.musicPreference, musicPreferenceExplicit: normalized.musicPreferenceExplicit,
       gameVersion: gameId === 'th075' ? 'original' : loadGameVersion(storage, gameId),
       language: resolvePreferredGameLanguage(context.languages, savedLanguage, context.uiLocale)}, reason);
@@ -185,7 +195,7 @@ export function createGameSettingsModel({storage, onChange}: {
       // choices, including language and disconnected MIDI output, stay in memory.
       if (state.multiplayer || !productFeatureAvailable(state.gameId, 'thprac', context.hostFeatures)) options.thpracEnabled = false;
       publish({...state, context, options,
-        music: resolveEffectiveMusicMode({...context.musicAvailability, requested: state.musicPreference, explicit: state.musicPreferenceExplicit})}, 'context');
+        music: resolveEffectiveMusicMode({...musicAvailabilityForContext(context), requested: state.musicPreference, explicit: state.musicPreferenceExplicit})}, 'context');
     },
     setMovementRestriction(forbidden: boolean) {
       const state = required();
@@ -208,32 +218,39 @@ export function createGameSettingsModel({storage, onChange}: {
       if (name === 'thpracEnabled' && (state.multiplayer || !productFeatureAvailable(state.gameId, 'thprac', state.context.hostFeatures))) return;
       if (state.options[name] === value) return;
       const options = {...state.options, [name]: value};
+      if (name === 'th05MultiplayerDisplay') options.th05MultiplayerDisplay = normalizeTh05MultiplayerDisplay(value);
       if (name === 'touchMovementMode' && touchMovementUsesJoystick(value) && options.touchFocusMode === 'two-finger') options.touchFocusMode = 'hold-button';
       if (name === 'touchSensitivity') options.touchSensitivity = Math.max(100, Math.min(300, Math.round(Number(value) || 100)));
       if (name === 'touchControlOpacity') options.touchControlOpacity = Math.max(20, Math.min(100, Math.round(Number(value) / 5) * 5 || 20));
+      if (name === 'bgmVolume') options.bgmVolume = normalizeGameVolume(value);
+      if (name === 'sfxVolume') options.sfxVolume = normalizeGameVolume(value);
       publish({...state, options}, 'option'); commitPreferences();
     },
     previewSensitivity(value: number) {
       const state = required();
       publish({...state, options: {...state.options, touchSensitivity: Math.max(100, Math.min(300, Math.round(value) || 100))}}, 'preview');
     },
+    previewVolume(name: 'bgmVolume' | 'sfxVolume', value: number) {
+      const state = required(), volume = normalizeGameVolume(value);
+      if (state.options[name] !== volume) publish({...state, options: {...state.options, [name]: volume}}, 'preview');
+    },
     commitPreferences,
     restoreRoomSettings(saved: SettingsSnapshot) {
       const state = required();
       if (saved.context.productId !== state.context.productId) return;
-      multiplayerPreferences.persistShareSingleplayerSettings(state.context.productId, saved.shareSingleplayerSettings);
       persistGameVersion(storage, state.gameId, saved.gameVersion);
       // Keep current metadata and drawer presentation; restore the configuration
       // as one transaction rather than emitting one reload per option.
-      publish({...state, preferenceId: saved.preferenceId,
-        shareSingleplayerSettings: saved.shareSingleplayerSettings,
-        options: {...saved.options}, music: saved.music,
+      publish({...state, preferenceId: state.gameId,
+        shareSingleplayerSettings: true,
+        options: {...saved.options, bgmVolume: state.options.bgmVolume, sfxVolume: state.options.sfxVolume}, music: saved.music,
         musicPreference: saved.musicPreference, musicPreferenceExplicit: saved.musicPreferenceExplicit,
         language: saved.language, gameVersion: saved.gameVersion}, 'host-restore');
       commitPreferences();
     },
     setMusic(value: MusicMode) {
       const state = required(), availability = resolveMusicAvailability(state.context.musicAvailability);
+      if (value === 'ogg-akyu' && !musicAvailabilityForContext(state.context).musicSources.includes('akyu')) return;
       if (value === 'midi' && !availability.midi || value.startsWith('ogg-') && !availability.ogg) return;
       publish({...state, music: value, musicPreference: value, musicPreferenceExplicit: true}, 'music'); commitPreferences();
     },
@@ -257,15 +274,13 @@ export function createGameSettingsModel({storage, onChange}: {
       disclosures[state.multiplayer ? 'multiplayer' : 'singleplayer'] = disclosure;
       publish({...state, disclosure}, 'presentation');
     },
-    setShareSingleplayerSettings(enabled: boolean) {
-      const state = required();
-      if (!state.multiplayer || state.shareSingleplayerSettings === enabled) return;
-      multiplayerPreferences.persistShareSingleplayerSettings(state.context.productId, enabled);
-      read(state.context, 'sharing', enabled);
+    setShareSingleplayerSettings(_enabled: boolean) {
+      // Common game settings always use the original game's preference record.
+      // Retain this port for older callers without allowing them to split it.
     },
     setReplayAutoSave(enabled: boolean) {
       const state = required();
-      if (state.context.productId !== 'th09mp' || state.replayAutoSave === enabled) return;
+      if (!['th09mp','th19mp'].includes(state.context.productId) || state.replayAutoSave === enabled) return;
       multiplayerPreferences.persistReplayAutoSave(state.context.productId, enabled);
       publish({...state, replayAutoSave: enabled}, 'replay-auto-save');
     },

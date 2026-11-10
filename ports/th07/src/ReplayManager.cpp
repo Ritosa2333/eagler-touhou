@@ -2,6 +2,7 @@
 #include "ReplayStageStart.hpp"
 #ifdef TH_ENABLE_NETPLAY
 #include <eagler/netplay/NetplayInput.hpp>
+#include <eagler/netplay/BrowserPeerTransport.hpp>
 #include "netplay/NetplaySideEffects.hpp"
 #include "netplay/Th07DeterminismProbe.hpp"
 #endif
@@ -25,6 +26,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdio>
+#include <filesystem>
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "multiplayer/GameplaySession.hpp"
 #endif
@@ -926,8 +928,44 @@ void ReplayManager::StopRecording()
     }
 }
 
-void ReplayManager::SaveReplay(const char *filename, char *replayName)
+namespace {
+std::vector<u8> spectatorReplay;
+bool savingSpectatorReplay=false;
+}
+bool ReplayManager::SetSpectatorReplay(const u8* bytes,unsigned size){
+    if(!bytes||!size){spectatorReplay.clear();return true;}
+    if(size>8u*1024u*1024u)return false;
+    auto* raw=static_cast<ReplayFile*>(std::malloc(size));if(!raw)return false;std::memcpy(raw,bytes,size);
+    auto* decoded=ValidateReplayData(raw,size);if(!decoded)return false;FreeReplay(decoded);
+    if(!ReplayExtension::LoadPlayback(bytes,size))return false;
+    spectatorReplay.assign(bytes,bytes+size);return true;
+}
+static bool SaveSpectatorReplay(const char* path,char* name){
+    if(spectatorReplay.empty())return false;
+    if(!ReplayExtension::LoadPlayback(spectatorReplay.data(),spectatorReplay.size()))return true;
+    auto* raw=static_cast<ReplayFile*>(std::malloc(spectatorReplay.size()));if(!raw)return true;
+    std::memcpy(raw,spectatorReplay.data(),spectatorReplay.size());
+    auto* data=ReplayManager::ValidateReplayData(raw,int(spectatorReplay.size()));if(!data)return true;
+    ReplayManager temporary{};temporary.isDemo=false;temporary.data=data;
+    for(unsigned i=0;i<REPLAY_STAGE_COUNT;++i){
+        const auto end_of=[&](u32 offset){u32 end=data->head.replaySize;
+            for(auto next:data->head.stageReplayDataOffsets)if(next>offset)end=std::min(end,next);
+            for(auto next:data->head.stageEndDataOffsets)if(next>offset)end=std::min(end,next);
+            return reinterpret_cast<u8*>(data->rawData)+end;};
+        if(data->stageReplayData[i])temporary.replayInputsByStage[i]=reinterpret_cast<ReplayDataInput*>(end_of(data->head.stageReplayDataOffsets[i]));
+        if(data->stageEndData[i])temporary.replayDataEndPointers[i]=reinterpret_cast<uintptr_t>(end_of(data->head.stageEndDataOffsets[i]));
+    }
+    std::string target(path);const auto dot=target.rfind('.');if(dot!=std::string::npos)target.resize(dot);target+=".rpyx";
+    auto* original=g_ReplayManager;g_ReplayManager=&temporary;savingSpectatorReplay=true;
+    ReplayManager::SaveReplay(target.c_str(),name,true);
+    savingSpectatorReplay=false;g_ReplayManager=original;
+    ReplayManager::FreeReplay(data);
+    return true;
+}
+
+void ReplayManager::SaveReplay(const char *filename, char *replayName,bool keepRecording)
 {
+    if(!keepRecording){if(filename&&replayName&&SaveSpectatorReplay(filename,replayName))return;if(!filename)spectatorReplay.clear();}
     u8 *curByte;
     u8 obfOffset;
     u8 *csumPtr;
@@ -948,7 +986,7 @@ void ReplayManager::SaveReplay(const char *filename, char *replayName)
         mgr = g_ReplayManager;
         if (!mgr->IsDemo())
         {
-            if (!g_GameManager.practice && g_GameManager.difficulty < 4 &&
+            if (!savingSpectatorReplay && !g_GameManager.practice && g_GameManager.difficulty < 4 &&
                 memcmp(&g_Supervisor.cfg, &mgr->data->data.cfg, sizeof(g_Supervisor.cfg)) != 0)
             {
                 goto SKIP_WRITE;
@@ -959,11 +997,11 @@ void ReplayManager::SaveReplay(const char *filename, char *replayName)
             }
             if (filename)
             {
-                const std::string actualFilename = ReplayExtension::ResolveSavePath(filename);
+                const std::string actualFilename = savingSpectatorReplay?std::string(filename):ReplayExtension::ResolveSavePath(filename);
                 Supervisor::DebugPrint("info : Replay File write %s\n", actualFilename.c_str());
                 replayData = (u8 *)malloc(0x100000);
                 replayCopy = *mgr->data;
-                StopRecording();
+                if(!savingSpectatorReplay)StopRecording();
                 i = g_GameManager.currentStage - 1;
                 if (i >= REPLAY_STAGE_COUNT) // PHANTASMSTAGE
                 {
@@ -1057,12 +1095,12 @@ void ReplayManager::SaveReplay(const char *filename, char *replayName)
                     SDL_WriteIO(file, &replayCopy, sizeof(ReplayHeader));
                     SDL_WriteIO(file, lpBuffer, compressedSize);
                     SDL_CloseIO(file);
-                    PracticeRuntime::SaveReplayMetadata(actualFilename.c_str());
-                    if (ReplayExtension::AppendRecording(actualFilename.c_str()))
+                    if(!keepRecording)PracticeRuntime::SaveReplayMetadata(actualFilename.c_str());
+                    if (savingSpectatorReplay?ReplayExtension::AppendPlayback(actualFilename.c_str()):ReplayExtension::AppendRecording(actualFilename.c_str()))
                     {
                         ReplayExtension::RemoveAlternateSave(actualFilename.c_str());
 #if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
-                        EM_ASM({
+                        if(!keepRecording)EM_ASM({
                             if (Module.eaglerOptions?.netplayMode !== "lan")
                                 return;
                                 globalThis.__eaglerNetplayReplaySaved = true;
@@ -1077,6 +1115,7 @@ void ReplayManager::SaveReplay(const char *filename, char *replayName)
                 }
             }
         SKIP_WRITE:
+            if(keepRecording)return;
             for (i = 0; i < REPLAY_STAGE_COUNT; i++)
             {
                 SAFE_FREE(g_ReplayManager->data->stageReplayData[i]);
@@ -1085,6 +1124,24 @@ void ReplayManager::SaveReplay(const char *filename, char *replayName)
         }
         g_Chain.Cut(g_ReplayManager->calcChain);
     }
+}
+
+void ReplayManager::ShareSpectatorReplay(){
+#if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(TH_ENABLE_NETPLAY)
+    auto* manager=g_ReplayManager;if(!manager||manager->IsDemo()||!manager->data||MultiplayerGameplay::GetLocalPlayerSlot()!=0)return;
+    std::filesystem::create_directories(FileSystem::GetPrefPath("replay"));
+    const auto saved=*manager;const auto file=*manager->data;const auto random=g_Rng;
+    std::array<std::vector<u8>,REPLAY_STAGE_COUNT> stages;
+    for(unsigned i=0;i<REPLAY_STAGE_COUNT;++i)if(auto* stage=manager->data->stageReplayData[i])stages[i].assign(reinterpret_cast<u8*>(stage),reinterpret_cast<u8*>(stage)+sizeof(StageReplayData));
+    const auto path=FileSystem::GetPrefPath("replay")+"/th7_stream.rpyx";char name[]="PLAYER";
+    const auto actual=ReplayExtension::ResolveSavePath(path.c_str());SDL_RemovePath(actual.c_str());
+    SaveReplay(path.c_str(),name,true);
+    *manager=saved;*manager->data=file;g_Rng=random;
+    for(unsigned i=0;i<REPLAY_STAGE_COUNT;++i)if(!stages[i].empty())std::memcpy(manager->data->stageReplayData[i],stages[i].data(),stages[i].size());
+    size_t size=0;
+    if(auto* bytes=static_cast<u8*>(SDL_LoadFile(actual.c_str(),&size))){Netplay::BrowserPeerTransport::ShareSpectatorReplay(bytes,size,true);SDL_free(bytes);}
+    SDL_RemovePath(actual.c_str());
+#endif
 }
 
 void ReplayManager::SaveReplay2(const char *filename)

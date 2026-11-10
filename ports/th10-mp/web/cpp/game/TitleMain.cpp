@@ -31,7 +31,8 @@ i32 TitleMenu::update_main(TitleMainEnvironment& env){
     case 2:
         menu.reserved=menu.selected;if((*env.pressed|*env.repeated)&0x10)menu.move(-1);if((*env.pressed|*env.repeated)&0x20)menu.move(1);
         if(menu.reserved!=menu.selected){env.sound(12);env.interrupt_immediately(animation_ids[0],3);signal_script(0,static_cast<u16>(menu.selected+7),env);}
-        if(*env.pressed&10){if(menu.selected==7){env.sound(11);set_phase(4,env.rate);return 1;}env.sound(11);menu.select(7);env.interrupt_immediately(animation_ids[0],3);signal_script(0,static_cast<u16>(menu.selected+7),env);}
+        if((*env.pressed&10)&&!env.room_preview()){if(menu.selected==7){env.sound(11);set_phase(4,env.rate);return 1;}env.sound(11);menu.select(7);env.interrupt_immediately(animation_ids[0],3);signal_script(0,static_cast<u16>(menu.selected+7),env);}
+        if(env.room_preview()&&menu.selected!=6)break;
         if(*env.pressed&0x1001){signal_script(0,6,env);switch(menu.selected){
             case 0:case 1:case 2:case 3:case 4:case 5:env.sound(10);signal_script(90,7,env);signal_script(91,7,env);set_phase(4,env.rate);if(menu.selected==5)env.sound(10);return 1;
             case 6:env.sound(10);set_phase(4,env.rate);env.interrupt_immediately(animation_ids[90],3);env.interrupt_immediately(animation_ids[91],3);return 1;

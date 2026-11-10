@@ -8,6 +8,7 @@
 #include <eagler/netplay/AdonisSpectatorTiming.hpp>
 #include <eagler/netplay/SessionChannel.hpp>
 #include <eagler/netplay/SpectatorStagePublisher.hpp>
+#include <eagler/netplay/SpectatorPublicationTail.hpp>
 #include <eagler/netplay/SpectatorStagePlayback.hpp>
 #include <eagler/netplay/SpectatorStageView.hpp>
 #include <deque>
@@ -36,7 +37,7 @@ public:
     bool FeedPlayback(std::uint32_t,const Netplay::FrameInput*,unsigned);
     bool FeedSpectator(std::uint32_t);
     bool StagePlaybackReady()const{return spectator_&&spectator_stage_playback_.Ready();}
-    bool SpectatorPublisherOwner()const{return network_&&!spectator_&&!playback_&&!generation_&&setup_.local_player==0;}
+    bool SpectatorPublisherOwner()const{return network_&&!spectator_&&!playback_&&setup_.local_player==0;}
     Netplay::SpectatorStagePlayback& StagePlayback(){return spectator_stage_playback_;}
     const Netplay::SpectatorStagePlayback& StagePlayback()const{return spectator_stage_playback_;}
     const char* SpectatorPlaybackState(){return spectator_stage_view_.State(spectator_stage_playback_);}
@@ -98,7 +99,8 @@ public:
     bool CommittedPrefixInputs(std::uint32_t,std::array<Netplay::FrameInput,3>&)const;
     bool CanReplayConfirmed()const;
     std::uint32_t CommittedThrough()const{return commit_limit_;}
-    bool Finish();
+    bool Finish(bool restarting = false, bool local_results = false);
+    bool EnterSpectatorResults(){const auto& p=spectator_stage_playback_;if(!spectator_||!p.History().Ended()||p.Paused()||p.Seeking()||p.Position()<p.History().Received())return false;retired_=local_results_=true;return true;}
     bool BeginNextRun(std::uint32_t seed);
     double PacedElapsed(double);
     const SessionSetup& Setup()const{return setup_;}
@@ -132,7 +134,7 @@ private:
     void Publish();
     void PublishConfirmedSpectatorFrames();
     bool ReceiveSpectatorWire(const std::uint8_t*,std::size_t);
-    void FreezePublicationTail();
+    void FreezePublicationTail(bool restarting);
     void DrainPublicationTail();
     bool Fail(const char*);
     SessionSetup setup_;
@@ -144,10 +146,10 @@ private:
     Netplay::BrowserPeerTransport transport_;
     Netplay::AdonisConnection calibration_{transport_};
     Netplay::SessionChannel channel_{calibration_};
-    std::uint64_t base_session_=0,now_ms_=0,initial_wait_=0,spectator_deadline_=0,publish_deadline_=0;
+    std::uint64_t base_session_=0,now_ms_=0,initial_wait_=0,spectator_deadline_=0;
     bool configured_=false,network_=false,playback_=false,spectator_=false,retired_=false;
     bool timing_ready_=false,timing_sent_=false,publish_failed_=false,spectator_publisher_started_=false;
-    bool world_ready_=false;
+    bool world_ready_=false,local_results_=false;
     std::uint32_t generation_=0,publish_frame_=0,receive_frame_=0;
     std::uint32_t next_=0,next_capture_=0,correction_end_=Netplay::INVALID_FRAME,commit_limit_=Netplay::INVALID_FRAME;
     double phase_debt_ms_=0;
@@ -164,7 +166,7 @@ private:
     Netplay::SpectatorStagePublisher spectator_stage_publisher_{};
     Netplay::SpectatorStagePlayback spectator_stage_playback_{};
     Netplay::SpectatorStageView spectator_stage_view_{};
-    std::deque<std::vector<std::uint8_t>> publish_tail_;
+    Netplay::SpectatorPublicationTail publish_tail_;
     std::array<std::uint32_t,24> status_{};
 };
 }

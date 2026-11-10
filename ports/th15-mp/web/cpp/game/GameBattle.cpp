@@ -4,6 +4,7 @@
 #include "BattleFramePolicy.hpp"
 #include "EnemyCallbacks.hpp"
 #include "RecordStore.hpp"
+#include "BulletArea.hpp"
 #include <algorithm>
 namespace th15 {
 struct GameBattle::Services {
@@ -39,6 +40,15 @@ struct GameBattle::Services {
     } player;
     struct Projectiles final:LaserSceneHost {
         GameBattle& g;explicit Projectiles(GameBattle& g):g(g){}
+#if TH15_MULTIPLAYER
+        mutable BulletContactBounds contacts;mutable bool contacts_ready=false;bool contact_scope=false;
+        void contact_frame(unsigned players)override{contact_scope=players>1;contacts_ready=false;}
+#endif
+        void invalidate_contacts()const noexcept{
+#if TH15_MULTIPLAYER
+            contacts_ready=false;
+#endif
+        }
         const PlayerCollision& player_collision()const noexcept override{
 #if TH15_MULTIPLAYER
             if(g.mp_enabled)return g.mp_collision(g.mp_contact_seat);
@@ -48,6 +58,18 @@ struct GameBattle::Services {
         unsigned player_count()const noexcept override{return g.mp_enabled?g.mp_options.seat_count:1;}
         unsigned local_player()const noexcept override{return g.mp_enabled?g.mp_options.local_seat:0;}
         void select_player(unsigned seat)override{g.mp_contact_seat=seat;}
+        const PlayerCollision* contact_player(unsigned seat)noexcept override{
+            if(g.mp_enabled){if(!g.pilots[seat]->alive())return nullptr;g.mp_contact_seat=seat;return &g.mp_collision(seat);}
+            return &g.player_collision();
+        }
+        BulletContactCandidates contact_candidates(const BulletState& bullet)const noexcept override{
+            if(!g.mp_enabled)return {};
+            const auto build=[&](){BulletContactBounds result;for(unsigned seat=0;seat<g.mp_options.seat_count;++seat){const auto& pilot=*g.pilots[seat];if(!pilot.alive())continue;
+                const auto& p=*pilot.player;auto geometry=p.frame.collision;geometry.position={p.motion.position.x,p.motion.position.y};geometry.radius=p.resource.header.hitbox;geometry.enlarged=p.motion.behavior_flags&16;geometry.size_multiplier=p.motion.enlargement;result.include(seat,geometry);
+            }return result;};
+            if(!contact_scope){const auto current=build();return {current.active,current.may_contact(bullet),current.last};}
+            if(!contacts_ready){contacts=build();contacts_ready=true;}return {contacts.active,contacts.may_contact(bullet),contacts.last};
+        }
         bool player_active(unsigned seat)const noexcept override{
 #if TH15_MULTIPLAYER
             if(g.mp_enabled)return g.pilots[seat]->alive();
@@ -56,20 +78,21 @@ struct GameBattle::Services {
         }
 #endif
         void hit()override{
+            invalidate_contacts();
 #if TH15_MULTIPLAYER
             if(g.mp_enabled){auto& p=*g.pilots[g.mp_contact_seat]->player;p.hit();if(!p.error.empty())g.fail(p.error);return;}
 #endif
             g.player->hit();if(!g.player->error.empty())g.fail(g.player->error);}
-        void sound(i32 id)override{g.sound(id,0,PlayerShots::SoundAction::play);}
-        void laser_sound(i32 id,bool queued)override{g.sound(id,0,PlayerShots::SoundAction::play,queued);}
-        void cancellation_effect(i32 script,const Vec3& p,const Vec3& velocity)override{g.check(g.presentation.cancellation_effect(script,p,velocity),"Cancellation effect failed");}
-        void graze_spark(const Vec3& p)override{g.record_graze(p);}
-        void graze()override{g.graze_flash();}
-        void graze_resonance(float value)override{g.graze_resonance(value);}
-        void item(i32 kind,const Vec3& p,float a,float s)override{g.spawn_item(kind,p,a,s);}
-        bool spawn_enemy(const EnemySpawnRequest& request)override{return g.spawn(request);}
-        bool create_laser(const MovingLaserRequest& request)override{const auto id=g.laser_scene->create_moving(request);return id||g.laser_scene->error.empty()||g.fail(g.laser_scene->error);}
-        bool create_laser(const StationaryLaserRequest& request)override{const auto id=g.laser_scene->create_stationary(request);return id||g.laser_scene->error.empty()||g.fail(g.laser_scene->error);}
+        void sound(i32 id)override{invalidate_contacts();g.sound(id,0,PlayerShots::SoundAction::play);}
+        void laser_sound(i32 id,bool queued)override{invalidate_contacts();g.sound(id,0,PlayerShots::SoundAction::play,queued);}
+        void cancellation_effect(i32 script,const Vec3& p,const Vec3& velocity)override{invalidate_contacts();g.check(g.presentation.cancellation_effect(script,p,velocity),"Cancellation effect failed");}
+        void graze_spark(const Vec3& p)override{invalidate_contacts();g.record_graze(p);}
+        void graze()override{invalidate_contacts();g.graze_flash();}
+        void graze_resonance(float value)override{invalidate_contacts();g.graze_resonance(value);}
+        void item(i32 kind,const Vec3& p,float a,float s)override{invalidate_contacts();g.spawn_item(kind,p,a,s);}
+        bool spawn_enemy(const EnemySpawnRequest& request)override{invalidate_contacts();return g.spawn(request);}
+        bool create_laser(const MovingLaserRequest& request)override{invalidate_contacts();const auto id=g.laser_scene->create_moving(request);return id||g.laser_scene->error.empty()||g.fail(g.laser_scene->error);}
+        bool create_laser(const StationaryLaserRequest& request)override{invalidate_contacts();const auto id=g.laser_scene->create_stationary(request);return id||g.laser_scene->error.empty()||g.fail(g.laser_scene->error);}
         const Vec3* stationary_laser_anchor()const noexcept override{const auto* boss=g.enemy_world.boss_at(0);return boss?&boss->motion.position:nullptr;}
     } projectiles;
     struct Items final:ItemCollectionHost {
@@ -260,7 +283,11 @@ bool GameBattle::refresh_world(){
 #endif
     enemy_world.player_position=player->motion.position;enemy_world.player_damage_state=player->life.state;enemy_world.game_state=session.bomb_state;
 #if TH15_MULTIPLAYER
-    if(mp_enabled){enemy_world.player_position=mp_target(enemy_world.boss?enemy_world.boss->motion.position:Vec3{});enemy_world.player_damage_state=1;enemy_world.game_state=mp_bomb_active()?1:0;i32 deaths=0;for(unsigned s=0;s<mp_options.seat_count;++s)deaths=wrapping_add(deaths,pilots[s]->session.deaths);enemy_world.counter3=std::min(deaths,999999);}
+    if(mp_enabled){enemy_world.player_position=mp_target(enemy_world.boss?enemy_world.boss->motion.position:Vec3{});enemy_world.player_damage_state=1;enemy_world.game_state=mp_bomb_active(!mp_options.replay_legacy_stage_flow)?1:0;
+        // Personal Reisen shields must not activate enemy Bomb immunity or
+        // retain startup damage protection after a shield hit.
+        if(!mp_options.replay_legacy_stage_flow&&(spell.flags&32)&&!mp_spell_startup_active())spell.flags&=~32u;
+        i32 deaths=0;for(unsigned s=0;s<mp_options.seat_count;++s)deaths=wrapping_add(deaths,pilots[s]->session.deaths);enemy_world.counter3=std::min(deaths,999999);}
 #endif
     // ECL, player deaths and Bomb activation share the native manager counters.
     session.enemy_deaths=enemy_world.counters[0];session.enemy_chain=enemy_world.counters[2];

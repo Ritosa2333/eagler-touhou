@@ -1,0 +1,687 @@
+{
+  "schema": "eagler-touhou/source-build/1",
+  "game": "th19",
+  "variant": "normal",
+  "owner": "th19",
+  "source": "<workspace>\\ports\\th19",
+  "common": "<workspace>\\common",
+  "features": {
+    "thcrap": false,
+    "thprac": false
+  },
+  "toolchain": {
+    "root": "<home>\\Desktop\\th08-main\\tools\\emsdk",
+    "compiler": "<home>\\Desktop\\th08-main\\tools\\emsdk\\install\\emscripten\\emcc.py",
+    "version": "6.0.9-git",
+    "metadata": {
+      "version": "6.0.9",
+      "url": "https://storage.googleapis.com/webassembly/emscripten-releases-builds/win/f04ea239d533260dd1db760dd2d668d5f9a88d6b/wasm-binaries.zip",
+      "size": 654169912,
+      "md5": "8cfb4f89c1349d4aed4acb91dde898e5"
+    }
+  },
+  "environment": {
+    "EMSDK": "<home>\\Desktop\\th08-main\\tools\\emsdk",
+    "TH09_EMSDK": "<home>\\Desktop\\th08-main\\tools\\emsdk",
+    "TH15_EMSDK": "<home>\\Desktop\\th08-main\\tools\\emsdk",
+    "EM_CONFIG": "<home>\\Desktop\\th08-main\\tools\\emsdk\\.emscripten",
+    "PYTHON": "python",
+    "TH_PYTHON": "python",
+    "EMCC_CORES": "4",
+    "TH_BUILD_JOBS": "4",
+    "EAGLER_COMMON_ROOT": "<workspace>\\common",
+    "EAGLER_COMMON_NETPLAY_ROOT": "<workspace>\\common",
+    "TH_ENABLE_THCRAP": "0",
+    "TH_ENABLE_THPRAC": "0"
+  },
+  "steps": [
+    {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "<workspace>\\ports\\th19\\scripts\\build-eagler.mjs"
+      ],
+      "cwd": "<workspace>\\ports\\th19"
+    }
+  ],
+  "sources": {
+    "source": {
+      "revision": "c2e94c5506c436f09a9f5854f634fe02b82b1f98",
+      "sourcePath": "ports/th19",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked": [
+        {
+          "path": ".gitattributes",
+          "sha256": "f030cfcbd29980cbe3e6fe149ba59eb702ca8015a777911dd68e6b44d8b2703e"
+        },
+        {
+          "path": ".gitignore",
+          "sha256": "0a655c53067163937ea83c378effaa9bc9fb99ebfc9cd94fee07a2ae90e129ef"
+        },
+        {
+          "path": "ADAPTATION.md",
+          "sha256": "74480cc42cb15e5c56e4f90a54490dc007dad288f32100a79793eb1982b90072"
+        },
+        {
+          "path": "README.md",
+          "sha256": "d0fe269d5553cc9e61c9fc300db97b4432b48082423201c2569a09859e5bea35"
+        },
+        {
+          "path": "docs/DEVELOPMENT.md",
+          "sha256": "2638341e8a45a5f753bbacf1f1c23f08997e2f3c0b001c55f4423e6712ea951e"
+        },
+        {
+          "path": "game-resources.json",
+          "sha256": "890fd3ff667551610f1a60159c54df0912862694ca24597457c9edcdc5791cb1"
+        },
+        {
+          "path": "index.html",
+          "sha256": "de6c15bda41d07e3a5ec9c0445dd01b7cc7205734476067ed594dc1aafa5bdbc"
+        },
+        {
+          "path": "package.json",
+          "sha256": "a9a44fc1d83d0b701901b37c131a350128f5d770328749bb729d3608d24e96e8"
+        },
+        {
+          "path": "portable/check-frame-cadence.cpp",
+          "sha256": "993b7c3bcaa2811e105ed238acc39b2ca4d2e891af5dac9504a5f96491dd4415"
+        },
+        {
+          "path": "portable/check-frame-cadence.mjs",
+          "sha256": "cb7d44e41534bdd949b9ed97a605f38bd93c99f2c588c8fc17043e3221edbfe1"
+        },
+        {
+          "path": "portable/compat/eagler/audio/WebSfx.hpp",
+          "sha256": "5e158990722104df1377e576424ba4a1d1fb75769d77af9be78809b8580a05f6"
+        },
+        {
+          "path": "portable/compat/eagler/input/BrowserGamepad.hpp",
+          "sha256": "9595f84d0c9601778a8de84ae5bbfade1a17eb66c68a4e2beb2ec2d9e0d406f2"
+        },
+        {
+          "path": "portable/compat/eagler/input/DialogueGesture.hpp",
+          "sha256": "df890d20be54aeb92652eadfa4ce1be0028086a2fe056fe87b2abd88f1daed2f"
+        },
+        {
+          "path": "portable/input/TouchController.hpp",
+          "sha256": "1f3dffb5d7034210ab6f4896064c10ad4678edceb0bbf206face18bfbf5e1a8c"
+        },
+        {
+          "path": "portable/package-eagler.mjs",
+          "sha256": "d2700467ba197531c0e882a5e950d6a921d81788e7442b7a10e387c54262d8e2"
+        },
+        {
+          "path": "portable/sdl/AssetPixelFormat.hpp",
+          "sha256": "5653937bc3857013326a95420effa3d1200469a48a65303cb2915772086cb894"
+        },
+        {
+          "path": "portable/sdl/FrameCadence.hpp",
+          "sha256": "1b2a610ac172de2089b4cd6551e88b04d36fb4030da93526a4442cefa8cdbed8"
+        },
+        {
+          "path": "portable/sdl/GraphicsState.hpp",
+          "sha256": "8464e416b0153224f60e34dd6645b7960770335c359eeea53c1ec4f4acaa1d31"
+        },
+        {
+          "path": "portable/sdl/LegacyGraphics.hpp",
+          "sha256": "1063442d4db5d48ca263d7cc002be079d06c0eb60d7c030a9964ff46ef48ded0"
+        },
+        {
+          "path": "portable/sdl/RenderCommands.hpp",
+          "sha256": "b24e9b186442cca6f15bbc1f4869ead79ed4c675cb728030096369b272969f8e"
+        },
+        {
+          "path": "portable/sdl/Renderer.cpp",
+          "sha256": "ee74246bba53e1f0e9c347f64254108af29dbdc690f9e19e909448ac690f248a"
+        },
+        {
+          "path": "portable/sdl/Renderer.hpp",
+          "sha256": "1908ff0fdd705b9952da9722b4dfd43c2e4ac1a085bc88808262daea177d5980"
+        },
+        {
+          "path": "portable/sdl/ResampleShader.hpp",
+          "sha256": "3fe7fc8885fe3b569ecef7d95a6c98c3fdfa78260b8f49819c93f2eeef5d9134"
+        },
+        {
+          "path": "portable/sdl/Shaders.hpp",
+          "sha256": "78f7648c27aa762c30493e6bf784baabdabdac63e2f683b2ed33470dca5aa252"
+        },
+        {
+          "path": "portable/sdl/third_party/miniaudio.LICENSE",
+          "sha256": "bde09ed161fef45da2194cba70601aab33ca6fdfe6eed2e3d95efd15b48561f9"
+        },
+        {
+          "path": "portable/sdl/third_party/miniaudio.h",
+          "sha256": "9397e68c8f316b3341afa24ed2141d848695e1d392b0a4fd142361670d62293c"
+        },
+        {
+          "path": "portable/sdl/third_party/stb_image.h",
+          "sha256": "3e08556d97b2e07881df61b72aceb1e89d8c43f70354155749da4c37bde62a6a"
+        },
+        {
+          "path": "portable/sdl/third_party/stb_truetype.h",
+          "sha256": "ecd30b05e0dd4fea3a13c26810dd9e1992dc379049482c393d5a19e6b5090aab"
+        },
+        {
+          "path": "portable/sdl/third_party/stb_vorbis.h",
+          "sha256": "4c7cb2ff1f7011e9d67950446b7eb9ca044f2e464d76bfbb0b84dd2e23e65636"
+        },
+        {
+          "path": "scripts/build-eagler.mjs",
+          "sha256": "3e09dc8766c934be088237a524ec6976f1992ecf603dc7f2e01d630ad353869e"
+        },
+        {
+          "path": "scripts/build-runtime.mjs",
+          "sha256": "b9ddd68f741414f02b3fc7a8e9a9811067d8c5da63999c3dea24c5addd52e0b4"
+        },
+        {
+          "path": "scripts/check-project.mjs",
+          "sha256": "eed79bf51d665a1beb8a86c89720adfe097a904c3e93ac9b4f5079ceb604ebd4"
+        },
+        {
+          "path": "scripts/static-server.mjs",
+          "sha256": "3cd1dc29aa3547e93b13b6f3e20f5704fe6ba210a9f0f83cd59a2c7156052d7b"
+        },
+        {
+          "path": "serve.mjs",
+          "sha256": "40c59db495229fcb37dc52df0ee16738bf4fd196a9809c0137a9f01d6be9d9b5"
+        },
+        {
+          "path": "standalone.mjs",
+          "sha256": "88e285572511fd45e1c9c508b7847d0d5b05ea8d0368aed2bbcb9ffa8870197b"
+        },
+        {
+          "path": "tests/browser-smoke.mjs",
+          "sha256": "90887e87c54bccee17fa147046020a2407e6ab5a97da49353ee206d3e516b11e"
+        },
+        {
+          "path": "tests/harness.html",
+          "sha256": "6fa7a37d222604d794ec977981143d9770cd334689c380e3090c55b27222f4e2"
+        },
+        {
+          "path": "tests/peer-socket.test.mjs",
+          "sha256": "4e243797d1d844e6b48f24b07a5d6f1afba454fc98e184cbfa8fba6d561ac27a"
+        },
+        {
+          "path": "tests/rollback-session.test.mjs",
+          "sha256": "d701cee30967b9df3aefdf14d97562bc7075bab6c6688932ed2ac59c76da78c1"
+        },
+        {
+          "path": "web/cpp/game/AnmGeometry.hpp",
+          "sha256": "60ce69c2dc4a7e8ca4f2ee90b63446f833620634712aecac0510d266c679529d"
+        },
+        {
+          "path": "web/cpp/game/AnmResource.cpp",
+          "sha256": "2796c2283331a2a19f708f0b59ac3c8046b397e14c615b270c51b7a382d379c6"
+        },
+        {
+          "path": "web/cpp/game/AnmResource.hpp",
+          "sha256": "8d003b069112dbf8cf74f651d3c10f495de32c00afbac006aae201e10c8e3736"
+        },
+        {
+          "path": "web/cpp/game/AnmVm.cpp",
+          "sha256": "f7715112adcf3cc3037c1ee6307d04b940f5c28fa6f5adb938ace694e7af1896"
+        },
+        {
+          "path": "web/cpp/game/AnmVm.hpp",
+          "sha256": "aeb977f0e447f01f711f48a09826187b1b19288f1c8f6d3ea6351d07a486abe4"
+        },
+        {
+          "path": "web/cpp/game/Archive.cpp",
+          "sha256": "4d5293af02862f2a92e59c62cc38a726560cdb9929c4ae0bab04d28cbe118ddc"
+        },
+        {
+          "path": "web/cpp/game/Archive.hpp",
+          "sha256": "f2aee1b5e8df7acce28610ea5917345fd247c2d15bb66b5104de41ff1d4291d0"
+        },
+        {
+          "path": "web/cpp/game/AttackWarning.hpp",
+          "sha256": "1b00647c698e4547544f1061536b0c72114eeee58fdda57498857804b7ea8e2c"
+        },
+        {
+          "path": "web/cpp/game/AutoBarrier.hpp",
+          "sha256": "6d00e7a24054721967be8957925dbd30ea1b2b48f4763b3fad2d907cac4b51dd"
+        },
+        {
+          "path": "web/cpp/game/Battle.cpp",
+          "sha256": "2a664ac04b0efff9ae2c31f6273910ca5bb9f1e7b08efb4db1fb145d61804030"
+        },
+        {
+          "path": "web/cpp/game/Battle.hpp",
+          "sha256": "be0ce9a767e2f5a8e5e526250d4f0f25f3480444bcb3ccf4385aa9b49b9b9c58"
+        },
+        {
+          "path": "web/cpp/game/BombHud.hpp",
+          "sha256": "d66e861ca5a435264a1fa267cecb51b91262fa8b935e9481de318073c931add5"
+        },
+        {
+          "path": "web/cpp/game/BossMovement.hpp",
+          "sha256": "4f356f7c2fcb09e3f0a18ec8278b5e9f935bcd917f9540c37ef8fa4e3cb8b319"
+        },
+        {
+          "path": "web/cpp/game/BossPhase.hpp",
+          "sha256": "d41f1031ed97eb76ae7f5a87195a3201dd2070af922a794436ff03c7c9bcd1c7"
+        },
+        {
+          "path": "web/cpp/game/BulletChanges.hpp",
+          "sha256": "cabdc48b69f9a575442a90e5af29e85d9c664fa0c34e671f779182ce03c3d872"
+        },
+        {
+          "path": "web/cpp/game/BulletGraze.hpp",
+          "sha256": "0fae8acead05840f2dd712341254fc2f5a2d0af641bf61ebe963917afd0ff2dd"
+        },
+        {
+          "path": "web/cpp/game/BulletPattern.hpp",
+          "sha256": "a673eb125eb1e0f2fd691c5526b9232c2d82252329ae472008ec5076c7e838b5"
+        },
+        {
+          "path": "web/cpp/game/BulletSprites.hpp",
+          "sha256": "7afc1b9645f97ceac7575e0e569c442f454aab1c3796102c8b1707f7210eba4f"
+        },
+        {
+          "path": "web/cpp/game/BulletVisual.hpp",
+          "sha256": "af320681b65ed8f11c53fe679e71f44c54cba5910c36f1a67e03f2def69a0a6a"
+        },
+        {
+          "path": "web/cpp/game/CardEffects.hpp",
+          "sha256": "c0f8102f9e5938c931b8d4f35b29931e8c5dcf625198481d30ebf2261d2f3173"
+        },
+        {
+          "path": "web/cpp/game/ChargeAttack.hpp",
+          "sha256": "04e44ff3ac54bbede51f0b29a81054240f0cde8694e913e7517f97c1ef92c257"
+        },
+        {
+          "path": "web/cpp/game/ChargeGauge.hpp",
+          "sha256": "f7afc94a228fa42a57758810f3b958064d9d5042fd6ff21215e37e006413dc90"
+        },
+        {
+          "path": "web/cpp/game/ChargePoint.hpp",
+          "sha256": "63010227d02b0dbdf7837e9ff54f1b8cea4aab5759e9e1eb22d71f8b402a3233"
+        },
+        {
+          "path": "web/cpp/game/ChargeRegion.hpp",
+          "sha256": "898de3ce17f315db0b3cd9e4fb27a71ce66dbe298bfecf956d5f5263d6bb5f6d"
+        },
+        {
+          "path": "web/cpp/game/CpuAvoidance.hpp",
+          "sha256": "f5e573276fb10a760757a3826f9dc0581c5911a6da37043768d4450a10481b72"
+        },
+        {
+          "path": "web/cpp/game/CpuCharge.hpp",
+          "sha256": "3b290cd0584e2111b462e707f95e190c522d6379d70f69aa3c1bdf25bbff831c"
+        },
+        {
+          "path": "web/cpp/game/CpuControl.hpp",
+          "sha256": "c829f38f505964fa90424902f680038b6e2ada96976424b4d9c787aede5aec4b"
+        },
+        {
+          "path": "web/cpp/game/CpuObstacle.hpp",
+          "sha256": "c7cfc710c0a92850dc72e3a028ecc8ff0183ae5537f7130600ded62144064ecb"
+        },
+        {
+          "path": "web/cpp/game/CpuStory.hpp",
+          "sha256": "5529bedb3293bf0bc1c38ec7d43eb85fe6c04f85c06c2007d89f0503385980c2"
+        },
+        {
+          "path": "web/cpp/game/CpuTarget.hpp",
+          "sha256": "188fc5b7c60a49a2bb732304498d759bb5b76ded0fdf7966197f60a253525b07"
+        },
+        {
+          "path": "web/cpp/game/CurveLaserPath.hpp",
+          "sha256": "ed82a1c44d29e219b4db88efa85a17ea27a3883fb9a5351bb413f604353b9179"
+        },
+        {
+          "path": "web/cpp/game/DeathRewards.hpp",
+          "sha256": "1191e441c3cab1a3e5e0d5cf29e134f3f4c15e3f9891e6df181c8d8509378bc5"
+        },
+        {
+          "path": "web/cpp/game/DialogueBubble.hpp",
+          "sha256": "a18e09d9500028bff552d35f10d068dceb142e369af1ab70d945df22847f67b0"
+        },
+        {
+          "path": "web/cpp/game/EclProgram.cpp",
+          "sha256": "687bb1694034829471f127f4eca43860ef488ba95b45e470f474aec795da254e"
+        },
+        {
+          "path": "web/cpp/game/EclProgram.hpp",
+          "sha256": "8839581cc1490e0c9324d2af8aa1c3bfdd3b8641b55c7aeb8f38ecc083747d07"
+        },
+        {
+          "path": "web/cpp/game/EclVm.cpp",
+          "sha256": "e751de89962a876e01bd0e2d91631ed07549c69c0162f124d6aca3cc4c17035a"
+        },
+        {
+          "path": "web/cpp/game/EclVm.hpp",
+          "sha256": "6dc76349ad28c6185bbf0bf9544d0fab70c0fc6031959c219d8da13d3da0c3d1"
+        },
+        {
+          "path": "web/cpp/game/EnemyDeath.hpp",
+          "sha256": "12dc4683f57eae796e5a575d7dde39c403e3cbf8549b14e26c75b98371cc36cc"
+        },
+        {
+          "path": "web/cpp/game/EnemyVisual.hpp",
+          "sha256": "509bd26d955249a7b72a54177b4c7e05b88f2f15e92c6310ffbc3d9c20a723f5"
+        },
+        {
+          "path": "web/cpp/game/FixedStep.hpp",
+          "sha256": "b50d1ef53363aecf75ed0b62bb8bdd2f9d9c8268df4ba450ba63f37597271910"
+        },
+        {
+          "path": "web/cpp/game/FrameRate.hpp",
+          "sha256": "52b3a32ee1182d6d62a9e5adf89030449b4addd26785e4419b6a57679002684c"
+        },
+        {
+          "path": "web/cpp/game/GameObject.cpp",
+          "sha256": "6cf52c94b4f55fde9daecc6a9ef76f4a9af4caa02f8573baf1733cc3bf7632a8"
+        },
+        {
+          "path": "web/cpp/game/GameWorld.cpp",
+          "sha256": "1ca672ca8ba5744e68d1426ba3698113b2ba64514096a79e0cc80656ba3f28f0"
+        },
+        {
+          "path": "web/cpp/game/GameWorld.hpp",
+          "sha256": "37173d2d9eec7b74683012a8ec7cdd7f8f626c9cfbb0322f82c486f4f3a5f388"
+        },
+        {
+          "path": "web/cpp/game/GrazeParticle.hpp",
+          "sha256": "d7dbb5e3dcf77aea38277d4c2d111a7142c5b02b0dc0f03be6fb6bfcaf8b09ef"
+        },
+        {
+          "path": "web/cpp/game/Interpolation.hpp",
+          "sha256": "eaf6a3161e0ec138c8dcfdbaf987ef6932ab3ee03bcdd82493b63d1065b21075"
+        },
+        {
+          "path": "web/cpp/game/LaserVisual.hpp",
+          "sha256": "f1719cd07f7102f701ed0ce2b9e7f00bae1dd42efa61ca25ee9d7ccda14804e8"
+        },
+        {
+          "path": "web/cpp/game/Lzss.cpp",
+          "sha256": "c507986352b5968939369137e3f56f3b6be483a3927f0265b453cc366980eaef"
+        },
+        {
+          "path": "web/cpp/game/Lzss.hpp",
+          "sha256": "f7c329058866b166956321dcad72e591301fe8b4a4ebf948fd314c576b665dab"
+        },
+        {
+          "path": "web/cpp/game/MarisaSkill.hpp",
+          "sha256": "8e7e90b8dd4c3edcb04ecd4bb8cfd71bee5eb9db03928abba72cd0eae91f706a"
+        },
+        {
+          "path": "web/cpp/game/PauseAnimation.hpp",
+          "sha256": "80de7305b9b8bc6f814e6dbf6d9c1c4606263c38c43db085424b49c9ca11acd7"
+        },
+        {
+          "path": "web/cpp/game/PlayerBomb.hpp",
+          "sha256": "6422fb505065cfbf7840f40b205badfdaa7239e5c6e9ef25b8572527bd9172cb"
+        },
+        {
+          "path": "web/cpp/game/PlayerDamage.hpp",
+          "sha256": "7a3b59e8e81b67685f45eb8f8acb1c80064fcbecf841120cc9640810d3c72d4d"
+        },
+        {
+          "path": "web/cpp/game/PlayerShotTable.hpp",
+          "sha256": "cfb98260828ffef251d72b7d8e2af9866897bff08fea43d36932e2b3c84c31a3"
+        },
+        {
+          "path": "web/cpp/game/PolygonContact.hpp",
+          "sha256": "3e915549053a6f17d42c526f8ed88a5f76d822eeb5877e21ae3fd61925b5f5e9"
+        },
+        {
+          "path": "web/cpp/game/ReflectedBullet.hpp",
+          "sha256": "7a77fc9f88bfdc648565abf509aafa4c73c1eda1310860661c5ef583616a2a90"
+        },
+        {
+          "path": "web/cpp/game/ReimuSkill.hpp",
+          "sha256": "1813b58a4e16ecc51e1a5d1aadc200a723d246547c3c5b8143cc6ef7739859e2"
+        },
+        {
+          "path": "web/cpp/game/ResourceCrypt.cpp",
+          "sha256": "2983d123e11d3d6aac6c565bcea916429bd86ee54eaff25bd1537a81139e30a8"
+        },
+        {
+          "path": "web/cpp/game/ResourceCrypt.hpp",
+          "sha256": "2ab4c6e776a39cdb542ab908006d8c5fc252818ee8e7137ad72e3234dea6594d"
+        },
+        {
+          "path": "web/cpp/game/ScreenShake.hpp",
+          "sha256": "c613722d8de7110da7604b1ddc1373f72b398f58bd93aa6d0382af518ff45a80"
+        },
+        {
+          "path": "web/cpp/game/ShotCollision.hpp",
+          "sha256": "2097b59496e938b00ce0343c321341c87bf85ab8977231fc432312fab29dd382"
+        },
+        {
+          "path": "web/cpp/game/ShotResource.cpp",
+          "sha256": "1d26a8901d50aaf42defb6f7fdd4985756d00073631585a73deaec09a47731d4"
+        },
+        {
+          "path": "web/cpp/game/ShotResource.hpp",
+          "sha256": "704a2d3a11d8ab2b477c1375ce3c338ad2694aaff2d3a5adc4f98516e7b6c839"
+        },
+        {
+          "path": "web/cpp/game/SoundTable.hpp",
+          "sha256": "e09fac33898edbfcb386924e7733e79543123916eb9c50a9827291900e06ea65"
+        },
+        {
+          "path": "web/cpp/game/SpiritMeter.hpp",
+          "sha256": "e4528e3343daef11913a87eaef1fc74d626a607730776b6b79e702c456fbd225"
+        },
+        {
+          "path": "web/cpp/game/SpiritRouting.hpp",
+          "sha256": "9460d10f7cee667181a1e5f2265fb27369d51244a514c5b1f7789ee21916b5dc"
+        },
+        {
+          "path": "web/cpp/game/StdScene.hpp",
+          "sha256": "894735210223894a220dda4889cd00a1e600ee27ee345bdccb092e2933f6d173"
+        },
+        {
+          "path": "web/cpp/game/StoryData.hpp",
+          "sha256": "2050fa93f36fe1fc36ebf89351c23ac7639b054e4ac3e3ca8bd473a4a6500b7c"
+        },
+        {
+          "path": "web/cpp/game/StoryPlayback.hpp",
+          "sha256": "def920bcb86ce837744fb09feef06db1afd1738a99badfd1374806a264052a53"
+        },
+        {
+          "path": "web/cpp/game/StorySession.hpp",
+          "sha256": "e3b42086ae6896e67527c3db6ce7b5d1416b936be8ebeda16f0e53950f930d61"
+        },
+        {
+          "path": "web/cpp/game/StraightLaserChanges.hpp",
+          "sha256": "b7e71a8f0e9d53576f43386cf55048d14d35f710420432f70a0d7d75ada2e2df"
+        },
+        {
+          "path": "web/cpp/game/TitleWave.hpp",
+          "sha256": "54f77ca80f47938b6bf031ec824e26b60ba4078bacaea5d86004d20c56250a5d"
+        },
+        {
+          "path": "web/cpp/game/Types.hpp",
+          "sha256": "424e96bb9068c0b80a804385922326b4303082bbfc6963a2ccefec043a552f0b"
+        },
+        {
+          "path": "web/cpp/game/VsCardSelection.hpp",
+          "sha256": "eee33d4e097a2bbbe147560cb03ad8886ec9204d52aec16ab6b6e57891ecebf8"
+        },
+        {
+          "path": "web/cpp/game/VsMatch.hpp",
+          "sha256": "d7a8cfa03ed90ba82546273b6add4f8f21721bbc8d65b940e01e2f98137b77c3"
+        },
+        {
+          "path": "web/cpp/game/VsRuleData.hpp",
+          "sha256": "7d55a41ed81a390dd133c3a60e7dc0630dc1555838e792a52f94b6edb7308bc8"
+        },
+        {
+          "path": "web/cpp/game/VsScene.hpp",
+          "sha256": "988abbd6dff620c61ee1c461b1494c985b8fe971972aa654cc782554d2207a54"
+        },
+        {
+          "path": "web/cpp/game/VsStoryData.hpp",
+          "sha256": "5b1d7c594f6408f8dd7123eee102b274eead63c43c0968dd6a81f740e4479687"
+        },
+        {
+          "path": "web/cpp/game/WaveSchedule.hpp",
+          "sha256": "c1bb35e8b07f9f79f245139c4b1125882878d9cea6ef10f223f0a7219c66d49b"
+        },
+        {
+          "path": "web/cpp/game/WorldCheckpoint.hpp",
+          "sha256": "716de503d2981836b0c5b23e5b2063cbe66d2c2d60bc0b47de4774d1dbb51efd"
+        },
+        {
+          "path": "web/cpp/game/WorldStrip.hpp",
+          "sha256": "7dc696e760a9b1b8468bcd2928769f280ac6649f6f6b2e213400c2446a39c48b"
+        },
+        {
+          "path": "web/cpp/sdl/Application.cpp",
+          "sha256": "f4ffa4a472d496887dd7c67176b44b6df9fef44a9af8338e98421b267ed5799c"
+        },
+        {
+          "path": "web/cpp/sdl/ApplicationCheckpoint.inc",
+          "sha256": "4489c2f11b1c1c91e4250fc7587c1093f865566a177f7f90843707f47d69b36e"
+        },
+        {
+          "path": "web/cpp/sdl/FieldClip.hpp",
+          "sha256": "3209cde6eeb48a196d2f5f4a5fc879793e7495c972d109bbf6aafafc9280dfe5"
+        },
+        {
+          "path": "web/cpp/sdl/GraphicsDevice.cpp",
+          "sha256": "c7ca5d04863ebdc658b12c9d2041127955b5dbd0e514e8cc2cc57283a6e34772"
+        },
+        {
+          "path": "web/cpp/sdl/GraphicsDevice.hpp",
+          "sha256": "01bf45498eb3b5ec3bb1310010fb5dd17efbd58a787c73e9eaa35d2b06bd7d86"
+        },
+        {
+          "path": "web/cpp/sdl/RouteNotices.hpp",
+          "sha256": "5d87980492c51b2cbc1aa22e27e82bd2809b14e7f0dcb356683badd0dc63e5aa"
+        },
+        {
+          "path": "web/cpp/sdl/ability_names.h",
+          "sha256": "e16a470968aa779322c7346edff3848db1228af1bacebfcfe36a628349febbf6"
+        },
+        {
+          "path": "web/cpp/sdl/ability_text.h",
+          "sha256": "d4b7fbf202dc2caa52feac2d85cec8db6da28edd47f7709513348c42ab936947"
+        },
+        {
+          "path": "web/cpp/sdl/dialogue_text.h",
+          "sha256": "7209ad97e76e3b44101a005e59d291aeff53fe2e4e3349f14eec60bbd107881b"
+        },
+        {
+          "path": "web/cpp/sdl/ending.h",
+          "sha256": "a14426e9fc3b761b47a3852d07e655ca123f2daa5ad2a640ae09a4774e2e96d2"
+        },
+        {
+          "path": "web/cpp/sdl/ending_events.h",
+          "sha256": "3f2119cbc2cb59770156997b46366eb31862fae178c8fe2ee283e69a7645074d"
+        },
+        {
+          "path": "web/cpp/sdl/ending_text.h",
+          "sha256": "3a7e5a9446943c7985723c8924261f1b6b72e44bba291c7cd08f04b43c3191c2"
+        },
+        {
+          "path": "web/cpp/sdl/music_names.h",
+          "sha256": "44a1705faa58525308b6be147eda78435672942ff9656186bc6f200af5edc2ff"
+        },
+        {
+          "path": "web/cpp/sdl/native_music_text.h",
+          "sha256": "bd04879e407d4bc4ea06ecf65d55991d95ad0d89fe54e50838454f2fd4217415"
+        },
+        {
+          "path": "web/cpp/sdl/native_spell_text.h",
+          "sha256": "1078dae74ff9fdcb070009e2ac4f417ca1e5b2348ca0614ebc1463896777b644"
+        },
+        {
+          "path": "web/cpp/sdl/notice_text.h",
+          "sha256": "ddd253db5cc6d21f9c52b04c97743f2c9e9275635ab0a3ee8a406f1dc00a15a0"
+        },
+        {
+          "path": "web/cpp/sdl/spellcard_names.h",
+          "sha256": "bb3666f76d0653bb9074fb767932ccca46d847efa7267295a8fd4ae0e994373a"
+        },
+        {
+          "path": "web/cpp/sdl/staff_events.h",
+          "sha256": "55fca53545e7cdeee32188dfae8e34473000d6e2565e16859e5589fa47e3fd6b"
+        },
+        {
+          "path": "web/cpp/sdl/trophy.h",
+          "sha256": "18fa018f482e72dfe4ca4870bd28f6c4767578e24f527fd5551b8a09971949c6"
+        },
+        {
+          "path": "web/cpp/sdl/trophy_text.h",
+          "sha256": "7947b0f753d205eade8258be437fcf2181808e97c2388a288f38d0660a6e8b18"
+        },
+        {
+          "path": "web/sdl-runtime/directory-keyboard.mjs",
+          "sha256": "c53c2026b9c42d5ca55f663612c283e80ca2ba958c854b2837dbb3b09162a68d"
+        },
+        {
+          "path": "web/sdl-runtime/keyboard-input-bridge.mjs",
+          "sha256": "f5f5d1015b56381b811b43bac00ecca5d6d7f03ab971b6e0fcffa79ef515bb34"
+        },
+        {
+          "path": "web/sdl-runtime/keyboard-owners.mjs",
+          "sha256": "b8d75f6aac5e493a09b69de0c5aef57aa4b2e91f5a46e91709aab29395afcfb3"
+        },
+        {
+          "path": "web/sdl-runtime/keyboard.mjs",
+          "sha256": "f2183ee4d67b27f7c0bc3e50c784d57756bf36277799bb0958514e5b3760b498"
+        },
+        {
+          "path": "web/sdl-runtime/managed.css",
+          "sha256": "4602ffec5875d1ed94cfd0f19e5933e6a13131345f23c4d2d290fc97cfd0a3ea"
+        },
+        {
+          "path": "web/sdl-runtime/managed.html",
+          "sha256": "1e91a125cabe6cc0a711df14212273ec925dfa629e6b44208902f8a737be268f"
+        },
+        {
+          "path": "web/sdl-runtime/native-adapter.mjs",
+          "sha256": "7dba8eb3d5484eb7397b269807a935dac95602ee763fdca683b2794c3e0f2ccf"
+        },
+        {
+          "path": "web/sdl-runtime/netplay.mjs",
+          "sha256": "21f630b26fb1cd8f33f202fb3c5c5e3f605729eb0415d2cc438f3ba9113763b8"
+        },
+        {
+          "path": "web/sdl-runtime/peer-socket.mjs",
+          "sha256": "eab6ad8b76a3bc46493d6e32f0f51c901f4c3bc579c1c36860f9e0752d5406e5"
+        },
+        {
+          "path": "web/sdl-runtime/rollback-session.mjs",
+          "sha256": "d1577340542dc639192307a9d04c37f2849f378ecbfa6c35f3759179a82b567a"
+        },
+        {
+          "path": "web/sdl-runtime/shell.mjs",
+          "sha256": "62d302f663b15072e00a0e1f750b9b076bac2b1e07bda5a64c6b4a789e7206e5"
+        },
+        {
+          "path": "启动兽王园.bat",
+          "sha256": "8ac07513a9d8082d907d2464c9f8210dcb8d3f6facd5c9ddb975cd08406d453e"
+        }
+      ],
+      "submodules": [],
+      "dirty": true,
+      "sha256": "5416903a63c5ed585ab3b21f22b660d6a86053bd2e70f1d36c46c92296067b10"
+    },
+    "common": {
+      "revision": "c2e94c5506c436f09a9f5854f634fe02b82b1f98",
+      "sourcePath": "common",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "1a81c0cbfe5e8f65e48f4585e1e5a458250a31608de84e3fec84007a5c08399f",
+      "untracked": [],
+      "submodules": [],
+      "dirty": true,
+      "sha256": "a4e6563b3cb2034ef6a42704383ae11cd907e5e2c3b60eb1a7d76d7b7c338a4e"
+    },
+    "netplayCommon": {
+      "revision": "c2e94c5506c436f09a9f5854f634fe02b82b1f98",
+      "sourcePath": "common",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "1a81c0cbfe5e8f65e48f4585e1e5a458250a31608de84e3fec84007a5c08399f",
+      "untracked": [],
+      "submodules": [],
+      "dirty": true,
+      "sha256": "a4e6563b3cb2034ef6a42704383ae11cd907e5e2c3b60eb1a7d76d7b7c338a4e"
+    }
+  }
+}

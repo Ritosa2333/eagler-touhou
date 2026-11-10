@@ -1,0 +1,119 @@
+{
+  "baseCommit": "5a1feae00a84ed0fb4107cf9c18a67d896f6bc0a",
+  "publicRuntime": {
+    "generation": "e992b671cb4d2c4f9cdc42a32f2c954ee085274ded16fc45423a32850dd5068b",
+    "wasmSha256": "e02e44fcb6aa3bd66548fd79d8a37f1cba7bc7f24c0e012a5e3a4e97be95a74a",
+    "dataSha256": "9d7edf43b8ddd347cbb641836f6b5050745dd936f688daebbf9382ca557043bb"
+  },
+  "baseline": {
+    "sameEntry": {
+      "passed": true,
+      "matchingFrames": 34
+    },
+    "mixedEntry": {
+      "passed": false,
+      "timeoutSeconds": 90,
+      "nativeFrames": [
+        -1,
+        -1
+      ],
+      "pageErrors": []
+    }
+  },
+  "fixed": {
+    "rollback": {
+      "game": "th08",
+      "mode": 0,
+      "wasmSha256": "e02e44fcb6aa3bd66548fd79d8a37f1cba7bc7f24c0e012a5e3a4e97be95a74a",
+      "before": [
+        {
+          "phase": 1,
+          "frame": 1092
+        },
+        {
+          "phase": 1,
+          "frame": 20
+        }
+      ],
+      "after": [
+        {
+          "phase": 1,
+          "frame": 2445
+        },
+        {
+          "phase": 1,
+          "frame": 1371
+        }
+      ],
+      "roomOptions": [],
+      "matches": 40,
+      "scope": "Production native Runtime, original local DATA, two local peers; not physical mobile/WAN acceptance"
+    },
+    "delay": {
+      "game": "th08",
+      "mode": 1,
+      "wasmSha256": "e02e44fcb6aa3bd66548fd79d8a37f1cba7bc7f24c0e012a5e3a4e97be95a74a",
+      "before": [
+        {
+          "phase": 1,
+          "frame": 980
+        },
+        {
+          "phase": 1,
+          "frame": 18
+        }
+      ],
+      "after": [
+        {
+          "phase": 1,
+          "frame": 2330
+        },
+        {
+          "phase": 1,
+          "frame": 1366
+        }
+      ],
+      "roomOptions": [],
+      "matches": 101,
+      "scope": "Production native Runtime, original local DATA, two local peers; not physical mobile/WAN acceptance"
+    }
+  },
+  "admissionChecks": {
+    "passed": true,
+    "games": [
+      "th08",
+      "th10",
+      "th11",
+      "th12",
+      "th15"
+    ],
+    "cases": [
+      "different entry same session",
+      "spectator same session",
+      "different room isolated",
+      "different run isolated"
+    ]
+  },
+  "sourceFiles": [
+    {
+      "path": "ports/th08-mp/web/sdl-runtime/multiplayer-host.mjs",
+      "sha256": "2f7b65736a37aeae4246b07dabe1be54c77c8317eff839e475a87937f4aa608b"
+    },
+    {
+      "path": "ports/th10-mp/web/sdl-runtime/shell.mjs",
+      "sha256": "75b071fbc45cf1eb29b202c8ed422228e552fc148030d3f471024d997ec145ed"
+    },
+    {
+      "path": "ports/th11-mp/web/sdl-runtime/multiplayer.mjs",
+      "sha256": "a509d870e56519c8bc748c68e3a90114d1e2b534fb0c9d29f1d380f04bc7186f"
+    },
+    {
+      "path": "ports/th12-mp/src/multiplayer.mjs",
+      "sha256": "c6d288155b4e5981547d262a41c632c7664fd38d42bc3397d2a5b97bbef3f9cb"
+    },
+    {
+      "path": "ports/th15-mp/web/sdl-runtime/multiplayer.mjs",
+      "sha256": "256e0467ee40ca4759aa5952c8080bf3c9dbbaed2ffea4627cd091bb73d31fff"
+    }
+  ]
+}

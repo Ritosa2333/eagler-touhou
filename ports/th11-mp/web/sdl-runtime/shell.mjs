@@ -13,11 +13,16 @@ import {bindOutsideTouches,normalizeOptions,applyTouchOptions,touchControls,susp
 // Native playback owns every cursor and restore. The shell only transports
 // authenticated Launcher commands and publishes native reports.
 function createSpectatorPlaybackBridge({active,memory,state,control,allocate,deallocate,emit,
+  replay=()=>globalThis.__eaglerPeerTransport?.spectatorReplay,
+  complete,
   schedule=globalThis.setInterval,cancel=globalThis.clearInterval}) {
-  let timer=null,last=null;
+  let timer=null,last=null,menuSession=null;
   const clear=()=>{if(last){last=null;emit('runtime-info',{spectatorPlayback:null});}};
+  const closeMenu=()=>{if(menuSession){menuSession=null;globalThis.__eaglerSpectatorMenu=false;emit('runtime-info',{spectatorMenu:false});}};
   function poll() {
-    if(!active()){clear();return null;}
+    if(!active()){closeMenu();clear();return null;}
+    const file=replay();
+    if(menuSession){clear();return null;}
     try {
       const pointer=state();
       if(!pointer){clear();return null;}
@@ -31,6 +36,15 @@ function createSpectatorPlaybackBridge({active,memory,state,control,allocate,dea
       if(report?.version!==1||typeof report.run!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(report.run)||
          !Number.isInteger(report.revision)||report.revision<1||report.revision>0xfffffffe||
          !Array.isArray(report.nodes)||report.nodes.length>512)throw Error('Invalid native spectator report');
+      if(complete&&!menuSession&&report.ended&&!report.paused&&!report.seeking&&report.position>=report.received&&
+         report.run.startsWith('s'+file?.session+'_')&&file?.bytes instanceof Uint8Array){
+        const pointer=allocate(file.bytes.length);
+        if(!Number.isInteger(pointer)||pointer<1)throw Error('Spectator result allocation failed');
+        try{const heap=memory();if(pointer>heap.length-file.bytes.length)throw Error('Invalid spectator result allocation');heap.set(file.bytes,pointer);
+          if(complete(pointer,file.bytes.length)){menuSession=file.session;globalThis.__eaglerSpectatorMenu=true;emit('runtime-info',{spectatorMenu:true});}
+        }finally{deallocate(pointer);}
+        if(menuSession){clear();return null;}
+      }
       if(last?.run===report.run&&(report.revision<=last.revision||report.received<last.received))return last;
       last=report;emit('runtime-info',{spectatorPlayback:report});return report;
     } catch(error) {
@@ -65,7 +79,7 @@ function createSpectatorPlaybackBridge({active,memory,state,control,allocate,dea
   }
   return Object.freeze({poll,command,
     start(){if(timer===null)timer=schedule(poll,250);poll();},
-    stop(){if(timer!==null)cancel(timer);timer=null;clear();},
+    stop(){if(timer!==null)cancel(timer);timer=null;closeMenu();clear();},
   });
 }
 // END GENERATED SPECTATOR PLAYBACK
@@ -231,6 +245,7 @@ const spectatorPlayback=createSpectatorPlaybackBridge({
  active:()=>multiplayerRuntime&&launched&&options.netplaySpectator===true&&!stopping,memory:()=>new Uint8Array(core.memory.buffer),
  state:()=>core?.th11_mp_spectator_state?.()||0,control:(run,action,frame)=>core?.th11_mp_spectator_control?.(run,action,frame)||0,
  allocate:size=>core.malloc(size),deallocate:pointer=>core.free(pointer),emit,
+ complete:(pointer,size)=>core.th11_mp_spectator_result(pointer,size),
 });
 const $=s=>document.querySelector(s);
 let Module,core,app=0,multiplayer=null,runtimeManifest=null,launched=false,first=false,stopping=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true,musicMode='none';
@@ -246,8 +261,8 @@ function ownsTouchDocument(){
  catch{return false;}
 }
 function touchReady(){
- return initializedReady&&!!core&&launched&&launchSettled&&!stopping&&!touchRetired&&!touchPageSuspended&&!document.hidden&&
-  !!options.touchEnabled&&!options.netplaySpectator&&(!multiplayerRuntime||!!multiplayer?.acceptInput())&&ownsTouchDocument();
+ return initializedReady&&!!core&&(launched&&launchSettled||roomPreview&&options.netplayMode!=='lan')&&!stopping&&!touchRetired&&!touchPageSuspended&&!document.hidden&&
+  !!options.touchEnabled&&(!options.netplaySpectator||globalThis.__eaglerSpectatorMenu===true)&&(!multiplayerRuntime||roomPreview||!!multiplayer?.acceptInput())&&ownsTouchDocument();
 }
 function cancelTouchInput(){
  const delivered=touchReady();cancelTouches();
@@ -311,9 +326,10 @@ function apply(){Module.eaglerOptions=options;core.th11_always_hitbox(+(options.
 let thpracKeyboardBits=0;
 function thpracKey(code,down){const bit=code==='Backspace'?1:code==='Tab'?1<<8:code==='F12'?1<<9:code==='KeyU'?1<<10:/^F[1-7]$/.test(code)?1<<Number(code.slice(1)):0;if(!bit||!options.thpracEnabled)return false;if(down)thpracKeyboardBits|=bit;else thpracKeyboardBits&=~bit;(Module.eaglerControls??={}).thpracKeyboardBits=thpracKeyboardBits;return true;}
 function clearPracticeKeys(){thpracKeyboardBits=0;if(Module)(Module.eaglerControls??={}).thpracKeyboardBits=0;}
-const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!options.netplaySpectator&&!stopping,reset:clearKeyboard,},
+function runtimeInputActive(){return (launched||roomPreview&&options.netplayMode!=='lan')&&!document.hidden&&!stopping;}
+const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>runtimeInputActive()&&(!options.netplaySpectator||globalThis.__eaglerSpectatorMenu===true),reset:clearKeyboard,},
  accept:code=>!!scanCodes[code],
- send(code,down){if(!core||(multiplayerRuntime&&!multiplayer?.acceptInput()))return;if(thpracKey(code,down))return;core.th11_key(scanCodes[code],+down);},
+ send(code,down){if(!core||(multiplayerRuntime&&!roomPreview&&!multiplayer?.acceptInput()))return;if(thpracKey(code,down))return;core.th11_key(scanCodes[code],+down);},
  onClear:clearPracticeKeys
 });
 function clearKeyboard(){keyboard.clear();core?.th11_keys_clear();}
@@ -363,7 +379,7 @@ async function launch(receivedTouchLifetime=touchLifetime){
 // Both carriers use this synchronous input-only dispatch. It never steps the
 // world, polls the network, pumps audio, or starts asynchronous lifecycle work.
 function dispatchInput(m){switch(m.command){
- case 'keyboard':if(launched&&!document.hidden&&!stopping){if(!multiplayer?.keyboard(m,!!m.down)&&(!multiplayerRuntime||multiplayer.acceptInput()))keyboard.event(m,!!m.down,'hosted');}return true;
+ case 'keyboard':if(runtimeInputActive()){if(!multiplayer?.keyboard(m,!!m.down)&&(!multiplayerRuntime||roomPreview||multiplayer.acceptInput()))keyboard.event(m,!!m.down,'hosted');}return true;
  case 'keyboard-clear':clearKeyboard();return true;
  case 'touch-cancel':if(!ownsTouchDocument()){if(!touchRetired)invalidateTouches(true);}else cancelTouchInput();return true;
  case 'direct-touch':if(acceptsTouch())directTouch(core,canvas,m,{width:innerWidth,height:innerHeight});return true;
@@ -445,8 +461,8 @@ window.addEventListener('pageshow',event=>{
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearKeyboard();core?.sdl_loop_pause(1);error('图形环境已失效，请退出后重新开始。');});
 for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});
 for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
- if(!core||!launched||stopping||document.hidden)return;
- if(multiplayerRuntime){if(multiplayer.keyboard(event,name==='keydown')){event.preventDefault();return;}if(!multiplayer.acceptInput())return;}
+ if(!core||!runtimeInputActive())return;
+ if(multiplayerRuntime&&!roomPreview){if(multiplayer.keyboard(event,name==='keydown')){event.preventDefault();return;}if(!multiplayer.acceptInput())return;}
  if(keyboard.mapNative(event,name==='keydown')){event.preventDefault();event.stopImmediatePropagation();return;}
  if(keyboard.event(event,name==='keydown'))event.preventDefault();
 },{capture:true});

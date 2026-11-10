@@ -1,4 +1,5 @@
 #include "ShotManager.hpp"
+#include "AnmPresentation.hpp"
 #include <algorithm>
 #include <cmath>
 namespace th11 {
@@ -59,7 +60,7 @@ i32 ShotManager::spawn(const ShotSpec& spec,i32 firing_frame,const Vec3& origin)
     if(vm->flags&0x8000000){vm->rotation.z=spec.angle;vm->flags|=4;}
     s.extra_animation=0;if(!on_spawn(s,firing_frame)){last_error=3;return -2;}
     if(spec.sound>=0&&!world.sound(spec.sound,s.movement.position.x)){last_error=4;return -2;}
-    vm->position=screen(s.movement.position);return i32(index);
+    vm->position=screen(s.movement.position);presentation::snap(*vm);return i32(index);
 }
 i32 ShotManager::spawn_converted_laser(Vec3 origin,float angle){
     converted_laser_spec.angle=angle;
@@ -139,8 +140,8 @@ bool ShotManager::update(){
             const float width=float(double(a->sprite->width)*a->scale.x),height=float(double(a->sprite->height)*a->scale.y);const auto p=s.movement.position;
             if(outside(p,width,height)&&!(s.spec->type==2&&p.x>-224&&p.x<224&&p.y>=-32)){erase(s.animation);s.animation=0;deactivate(i);continue;}
         }
-        a->position=screen(s.movement.position);
-        if(s.extra_animation){auto* extra=animations.find(s.extra_animation);if(extra)extra->position=a->position;else s.extra_animation=0;}
+        presentation::capture(*a);a->position=screen(s.movement.position);
+        if(s.extra_animation){auto* extra=animations.find(s.extra_animation);if(extra){presentation::capture(*extra);extra->position=a->position;}else s.extra_animation=0;}
         if(a->flags&0x8000000){a->rotation.z=s.movement.angle;a->flags|=4;}
         s.timer.tick();
     }return true;
@@ -165,7 +166,7 @@ bool ShotManager::damage(const Vec3& p,const Vec2& size,bool frame_advanced,Game
             auto* a=animations.create(animation_resource,i32(spec.hit_animation)+(boosted?6:5),file_id,22);
             if(!a){last_error=2;return false;}s.animation=a->id;
             if(boosted)result=wrapping_add(result,s.damage/3);
-            a->flags|=4;a->rotation.z=rotation;s.movement.position.z=.1f;s.state=2;s.movement.speed=float(double(s.movement.speed)*.125);a->position=screen(s.movement.position);
+            a->flags|=4;a->rotation.z=rotation;s.movement.position.z=.1f;s.state=2;s.movement.speed=float(double(s.movement.speed)*.125);presentation::capture(*a);a->position=screen(s.movement.position);
         }
         if(spec.type==1&&s.damage>1)s.damage=std::max(s.damage/10,1);
         else if(spec.type==2){if(!world.sound(50,s.movement.position.x)){last_error=4;return false;}}

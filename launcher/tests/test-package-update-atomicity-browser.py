@@ -37,7 +37,7 @@ def wait_http(url: str, timeout: float = 10.0) -> None:
 
 def main() -> int:
     http_port = free_port()
-    url = f"http://127.0.0.1:{http_port}/faq.html"
+    url = f"http://127.0.0.1:{http_port}/compatibility.html"
     http = subprocess.Popen(
         package_module_server_command(PROJECT, http_port, ["node", str(PROJECT / "scripts" / "serve.mjs"), str(http_port), str(WORKSPACE)]),
         cwd=PROJECT,
@@ -512,6 +512,63 @@ def main() -> int:
             },
           });
           const afterCrossGameInstall = await store.readCurrentPackageGeneration('th07');
+
+          const repairDescriptor = makeDescriptor('r14-repair', 'music-r1');
+          repairDescriptor.files.data = fullHashRevision.files.data;
+          await installer.installPackageFromAcquisition({
+            descriptor: repairDescriptor, desiredFileIds: ['data', 'music'], source: 'local',
+            acquire: async () => new Uint8Array([5, 6, 7]),
+          });
+          const damaged = await store.readCurrentPackageGeneration('th06');
+          const damagedObjectId = damaged.generation.files.data.objectId;
+          const damagedObject = await store.readPackageObject(damagedObjectId);
+          await new Promise((resolve, reject) => {
+            const request = indexedDB.open(store.PACKAGE_STORE_DB);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+              const db = request.result;
+              const tx = db.transaction(store.PACKAGE_OBJECTS, 'readwrite');
+              const {blob, ...record} = damagedObject;
+              tx.objectStore(store.PACKAGE_OBJECTS).put({...record, data: new Uint8Array(4).buffer}, damagedObjectId);
+              tx.oncomplete = () => { db.close(); resolve(); };
+              tx.onabort = () => { db.close(); reject(tx.error); };
+            };
+          });
+          const repairRequests = [];
+          const repairOptions = {
+            getPublication: async () => ({
+              catalog: {schema: 'eagler-touhou/release-catalog/1',
+                games: {th06: {revision: repairDescriptor.revision, descriptor: './th06.package.json'}}},
+              catalogUrl: new URL('./release-catalog.json', location.href).href,
+            }),
+            fetchImpl: async url => {
+              const path = new URL(url).pathname;
+              repairRequests.push(path);
+              if (path === '/th06.package.json') return Response.json(repairDescriptor);
+              if (path === '/game/data.bin') return new Response(sharedBytes);
+              throw new Error('Unexpected repair download ' + path);
+            },
+          };
+          try {
+            await launcher.repairInstalledPackage(damaged, {...repairOptions,
+              fetchImpl: url => new URL(url).pathname === '/game/data.bin'
+                ? new Response(new Uint8Array(4)) : repairOptions.fetchImpl(url)});
+            throw new Error('Corrupt replacement unexpectedly accepted');
+          } catch (error) {
+            if (!String(error).includes('SHA-256 mismatch')) throw error;
+          }
+          if ((await store.readCurrentPackageGeneration('th06')).generation.id !== damaged.generation.id)
+            throw new Error('Failed repair changed current');
+          repairRequests.length = 0;
+          const repaired = await launcher.repairInstalledPackage(damaged, repairOptions);
+          if (JSON.stringify(repairRequests) !== JSON.stringify(['/th06.package.json', '/game/data.bin']) ||
+              repaired.files.music.objectId !== damaged.generation.files.music.objectId ||
+              repaired.files.data.objectId === damagedObjectId ||
+              (await store.readCurrentPackageGeneration('th10')).generation.id !== refreshRecovered.generation.id)
+            throw new Error('Repair changed unrelated storage or downloaded the wrong files');
+          repairRequests.length = 0;
+          await launcher.repairInstalledPackage(await store.readCurrentPackageGeneration('th06'), repairOptions);
+          if (repairRequests.length) throw new Error('Healthy package unexpectedly used the network');
 
           return {
             packageDb: store.PACKAGE_STORE_DB,

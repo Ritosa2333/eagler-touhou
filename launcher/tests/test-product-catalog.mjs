@@ -1,5 +1,4 @@
-/** L3/module. Preconditions: static product policy only. Mutations: none.
- * Proves: stable product registry invariants, product-id mapping and language ordering. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   HOST_RUNTIME_FEATURE_IDS,
@@ -20,6 +19,13 @@ import {
 } from "../lib/contracts/product-catalog.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 
+test("product catalog", async () => {
+/** L3/module. Preconditions: static product policy only. Mutations: none.
+ * Proves: stable product registry invariants, product-id mapping and language ordering. */
+
+
+
+
 assert.deepEqual(PRODUCT_FEATURE_IDS, ["thprac", "languages", "focusHitbox"]);
 assert.deepEqual(HOST_RUNTIME_FEATURE_IDS, ["thprac", "focusHitbox"]);
 assert.equal(PRODUCT_FEATURE_POLICY.languages.runtimeRelease, true);
@@ -34,7 +40,7 @@ assert.deepEqual(
   ["ja", "lang_zh-hans", "lang_zh-hant", "lang_en", "lang_de", "lang_ru"],
 );
 
-assert.deepEqual(PRODUCT_IDS, ["th06", "th07", "th075", "th08", "th09", "th10", "th11", "th15", "th20", "th06mp", "th07mp", "th075mp", "th08mp", "th09mp", "th10mp", "th11mp", "th15mp"]);
+assert.deepEqual(PRODUCT_IDS, ["th05", "th06", "th07", "th075", "th08", "th09", "th10", "th11", "th12", "th13", "th15", "th17", "th19", "th20", "th05mp", "th06mp", "th07mp", "th075mp", "th08mp", "th09mp", "th10mp", "th11mp", "th12mp", "th15mp", "th17mp", "th19mp"]);
 assert.equal(DEFAULT_PRODUCT_ID, "th06");
 assert.ok(PRODUCT_IDS.includes(DEFAULT_PRODUCT_ID));
 assert.equal(DEFAULT_MULTIPLAYER_PRODUCT_ID, "th07mp");
@@ -156,18 +162,37 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
   // Language-capable products either declare the thcrap host compiler or state
   // that language support is runtime-only (static packs installed by the shell).
   if (content.hostPreparation?.languagePack) {
-    assert.equal(content.hostPreparation.languagePack.kind, "thcrap-runtime-compiler",
+    const preparation = content.hostPreparation.languagePack;
+    assert.ok(["thcrap-runtime-compiler", "retail-overlay-compiler"].includes(preparation.kind),
       `${game}: unknown language preparation kind`);
-    assert.ok(["archive", "archives"].includes(content.hostPreparation.languagePack.inputMode));
-    assert.match(content.hostPreparation.languagePack.developmentEnv, /^EAGLER_[A-Z0-9_]+$/);
-    assert.ok(Array.isArray(content.hostPreparation.languagePack.developmentFiles) &&
-      content.hostPreparation.languagePack.developmentFiles.length > 0);
+    if (preparation.kind === "thcrap-runtime-compiler") {
+      assert.ok(["archive", "archives"].includes(preparation.inputMode));
+      assert.match(preparation.developmentEnv, /^EAGLER_[A-Z0-9_]+$/);
+      assert.ok(Array.isArray(preparation.developmentFiles) && preparation.developmentFiles.length > 0);
+    } else {
+      assert.equal(game, "th05", "retail-overlay-compiler is currently owned by TH05");
+      assert.match(preparation.script, /^scripts\/[A-Za-z0-9][A-Za-z0-9._/-]*$/);
+      assert.equal(preparation.optional, true);
+      assert.deepEqual(preparation.languages, ["lang_zh-hans"]);
+    }
   }
   if (content.hostPreparation?.preparedContent) {
     const prepared = content.hostPreparation.preparedContent;
     assert.match(prepared.directory, /^[A-Za-z0-9][A-Za-z0-9._/-]*$/);
     assert.ok(Array.isArray(prepared.markerFiles) && prepared.markerFiles.length > 0);
-    assert.match(prepared.script, /^scripts\/[A-Za-z0-9][A-Za-z0-9._/-]*$/);
+    if (prepared.script) {
+      assert.match(prepared.script, /^scripts\/[A-Za-z0-9][A-Za-z0-9._/-]*$/);
+    } else {
+      assert.equal(game, "th05", `${game}: prepared-only content needs an explicit complete input contract`);
+      const music = content.music.ogg;
+      const expectedMarkers = [
+        product.package.dataTarget.replace(/^\/+/, ""),
+        ...music.files.map(file => `${music.mount.replace(/^\/+|\/+$/g, "")}/${file}`),
+        `${content.hostPreparation.artwork.directory}/${product.cardArtwork}`,
+      ];
+      assert.deepEqual(prepared.markerFiles, expectedMarkers,
+        `${game}: prepared-only content must cover DATA, every OGG track, and artwork`);
+    }
   }
   if (content.hostPreparation?.dataAssets?.kind === "legacy-preload-with-focus-hitbox") {
     const focus = content.hostPreparation.dataAssets.focusHitbox;
@@ -181,7 +206,7 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
     if (dataPreparation.kind === "original-file") {
       assert.ok(content.original.files.includes(dataPreparation.source),
         `${game}: original DATA source must be part of the declared original content`);
-    } else {
+    } else if (!product.buildOptIn) {
       assert.ok(content.hostPreparation.preparedContent,
         `${game}: prepared DATA path needs preparedContent metadata`);
     }
@@ -259,24 +284,31 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
     assert.ok(Array.isArray(product.runtimeAssets) && product.runtimeAssets.length > 0);
     assert.ok(Array.isArray(product.requiredShared));
     assert.ok(product.runtimeAssets.includes(`${game}.html`));
-    assert.ok(product.runtimeAssets.includes("directory-keyboard.mjs"),
-      `${game}: directory Runtime must publish the shared browser keyboard owner`);
+    assert.ok(product.runtimeAssets.includes("directory-keyboard.mjs") ||
+      (product.runtimeAssets.includes("managed-shell.mjs") && product.runtimeResourceTransport === "resources"),
+      `${game}: directory Runtime must publish a declared keyboard owner`);
     assert.equal(new Set(product.runtimeAssets).size, product.runtimeAssets.length);
   }
-  assert.equal(typeof PRODUCT_CONTENT[game].hostPreparation?.artwork?.kind, "string",
-    `${game}: host artwork preparation must be declared as a format recipe`);
+  if (!product.buildOptIn) {
+    assert.equal(typeof PRODUCT_CONTENT[game].hostPreparation?.artwork?.kind, "string",
+      `${game}: host artwork preparation must be declared as a format recipe`);
+  }
 }
 console.log("Product catalog policy: PASS");
 
 for (const id of PRODUCT_IDS) {
-  const visible = !["th075", "th075mp", "th20"].includes(id);
+  const visible = !["th075", "th075mp", "th13", "th17", "th17mp", "th19", "th19mp", "th20"].includes(id);
   assert.equal(productEnabledForBuild(id), visible);
   assert.equal(productEnabledForBuild(id, false), visible);
   assert.equal(productEnabledForBuild(id, true), true, "Test builds include every registered product");
 }
+assert.equal(PRODUCT_GAMES.th17.testOnly, true);
+assert.equal(PRODUCT_GAMES.th19.testOnly, true);
+assert.equal(PRODUCT_GAMES.th19.support.adaptationNotice, "early-test");
 assert.equal(productEnabledForBuild("th99", true), false);
 
-assert.deepEqual(Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([id, product]) => [id, product.support.highRefreshRate])), {th06: true, th07: true, th075: false, th08: true, th09: false, th10: true, th11: false, th15: true, th20: false}, "high-refresh UI must follow the catalog capability");
+assert.deepEqual(Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([id, product]) => [id, product.support.highRefreshRate])), {th05: false, th06: true, th07: true, th075: false, th08: true, th09: false, th10: true, th11: true, th12: true, th13: false, th15: true, th17: false, th19: false, th20: false}, "high-refresh UI must follow the catalog capability");
 assert.equal(PRODUCT_GAMES.th15.features.languages,true);
 assert.equal(PRODUCT_GAMES.th15.features.thprac,true);
 assert.ok(PRODUCT_GAMES.th15.requiredShared.includes('/unifont.otf'));
+});

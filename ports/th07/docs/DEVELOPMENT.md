@@ -4,18 +4,18 @@
 
 ## 构建并在 Launcher 启动
 
-需要 Node.js 22.18 以上、Python 3、CMake 3.20 以上、Ninja 和 Emscripten SDK 6.0.9（示例路径为 `C:\tools\emsdk`，命令中的 `--emsdk` 指向 SDK 根目录）。首次使用先初始化 SDL 子模块，并安装 Launcher 依赖。`--assets` 指向含本机 `th07.dat` 的目录；档案会编入 `.data`。默认音乐配置为 `BASE`，Host 音乐另行提供。
+需要 Bun 1.4.4、Node.js 22.18 以上、Python 3、CMake 3.20 以上、Ninja 和 Emscripten SDK 6.0.9（示例路径为 `C:\tools\emsdk`，命令中的 `--emsdk` 指向 SDK 根目录）。首次使用先初始化 SDL 子模块，并安装 Launcher 依赖。`--assets` 指向含本机 `th07.dat` 的目录；档案会编入 `.data`。默认音乐配置为 `BASE`，Host 音乐另行提供。
 
 ```powershell
 git -C ports/th07 submodule update --init --recursive
-npm --prefix launcher ci --ignore-scripts # 仅首次安装
+bun --bun run --cwd launcher install:locked # 仅首次安装
 $env:EAGLER_DEVELOPMENT_VANILLA_FONT='C:\Windows\Fonts\msgothic.ttc'
 $env:EAGLER_DEVELOPMENT_UNICODE_FONT='C:\local-content\fonts\unifont-15.1.05.otf'
 $env:EAGLER_DEVELOPMENT_GAMES='th07'
 $env:EAGLER_TOUHOU_NETPLAY_RELAY='ws://127.0.0.1:18142/'
 node launcher/scripts/build-runtime.mjs --game=th07 --variant=normal --emsdk='C:\tools\emsdk' --assets='C:\Games\TH07'
 node launcher/scripts/build-runtime.mjs --game=th07 --variant=multiplayer --emsdk='C:\tools\emsdk' --assets='C:\Games\TH07'
-npm --prefix launcher run build
+bun --bun run --cwd launcher build
 npm --prefix launcher run dev:workspace
 ```
 
@@ -27,4 +27,6 @@ npm --prefix launcher run dev:workspace
 
 红点使用最近未满 Power 优先的原生吸引。直接拾取、上线收点、满 Power 转樱点及双人局席位范围由 `tests/item-collection-browser.py` 驱动真实游戏验证。为独立的 Web 多人测试构建启用 `-DTH_ITEM_COLLECTION_FIXTURES=ON`，再运行 `python ports/th07/tests/item-collection-browser.py --runtime-directory=<测试构建目录> --font=<msgothic.ttc> --output=<结果.json>`；驱动覆盖梦 A／梦 B 的双人局与三人局。正式 Runtime 使用默认关闭的测试选项。
 
-旁观以普通 Replay 节奏播放，进度积压由时间线操作定位。原生关卡与 Boss 音乐在重建中跟随场景切换。跨作持续播放检查位于 `ports/th07/tests/netplay-spectator-natural-browser.py`，传入作品、`--runtime-directory`、`--music-directory`、`--font`、`--relay` 和 `--output`；`--physical-input` 覆盖射击、方向、低速和 Bomb 输入。
+旁观以普通 Replay 节奏播放，进度积压由时间线操作定位。原生关卡与 Boss 音乐在重建中跟随场景切换。跨作持续播放检查位于 `ports/th07/tests/netplay-spectator-natural-browser.py`，传入作品、`--runtime-directory`、`--music-directory`、`--font`、`--relay` 和 `--output`；`--physical-input` 覆盖射击、方向、低速和 Bomb 输入，`--difficulty=4` 从原生 Extra 入口检查持续播放与定位后的状态一致性。`--join-frame=1800` 覆盖中途加入，`--join-stage=5` 在来源端切入第五关后开始计数。`--frames` 指定当前关头之后的检查长度，`--challenge` 使用原生挑战规则持续演算。`--until-end` 核对普通局尾帧消费与原生结果菜单，`--music=none` 运行独立的游戏状态场景。旁观游标直接读取原生报告，结算后的本机菜单状态单独记录。
+
+私有观测构建通过 `private-spectator.json` 登记原生起始关、受保护席位、来源对象和 WASM 身份。驱动按实际接收关头选择音乐与比较范围，并记录各席位的死亡、复活和幽灵状态。

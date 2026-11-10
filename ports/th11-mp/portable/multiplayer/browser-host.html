@@ -116,7 +116,7 @@ window.host={
     target.searchParams.set('member','member_'+id);
     target.searchParams.set('players',String(count));target.searchParams.set('difficulty','1');
     const socket=new WebSocket(target);const state={socket,id,messages:[],room:null};
-    socket.addEventListener('message',e=>{const m=JSON.parse(String(e.data));state.messages.push(m);if(m.room)state.room=m.room;});
+    socket.addEventListener('message',e=>{const m=JSON.parse(String(e.data));state.messages.push(m);if(m.room)state.room=m.room;if(m.type==='error')state.error=m.error||'Lobby rejected test operation';});
     socket.addEventListener('error',()=>state.error='Lobby connection failed');
     socket.addEventListener('close',e=>state.error='Lobby closed '+e.code+' '+e.reason);
     this.lobbyState=state;
@@ -136,7 +136,7 @@ window.host={
   async startLobby(automatic=false){
     const state=this.lobbyState;await state.until(()=>state.room.seats.filter(Boolean).every(s=>s.ready));
     state.socket.send(JSON.stringify({type:'start',adonisMode:1,inputDelayAuto:automatic,inputDelay:automatic?0:2,
-      predictionReserve:2,predictionLimit:0,challengeMode:false}));
+      predictionReserve:2,challengeMode:false}));
     await state.until(()=>state.messages.some(m=>m.type==='start'));
   },
 };

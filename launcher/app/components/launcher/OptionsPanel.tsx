@@ -1,15 +1,19 @@
-import {useRef, type ReactNode} from 'react';
+import {Button as UiButton} from '../../ui/button';
+import {X, Users, ChevronRight, Info} from 'lucide-react';
+import {useLayoutEffect, useRef, useState, type ReactNode} from 'react';
+import {createPortal} from 'react-dom';
 import {useOptionsViewport} from './use-options-viewport';
 import {useOptionsInteractions} from './use-options-interactions';
 import {useOptionsTarget} from './options-ownership';
 import {useLocale} from '../../i18n';
 import type {LibraryProduct} from './products';
 import {AppLink} from './AppLink';
-import {useRoomSettingsRelocation} from './use-room-settings-relocation';
 
 export interface OptionsPanelProps {
   product: LibraryProduct;
+  coverArtwork?: string | null;
   open: boolean;
+  closing?: boolean;
   onBack: () => void;
   children: ReactNode;
   /** Original .launch-wrap.launch-actions is a direct aside child, not scroll content. */
@@ -24,32 +28,43 @@ export interface OptionsPanelProps {
   assetUrl: (path: string) => string;
 }
 /** Main index.html354–365 shell; body is the shared SettingsBody, never a copy. */
-export function OptionsPanel({product, open, onBack, children, actions, lobbyHref, embeddedInLobby = false, roomDrawer = false, multiplayerOnline, multiplayerDiagnostics, assetUrl}: OptionsPanelProps) {
+export function OptionsPanel({product, coverArtwork, open, closing=false, onBack, children, actions, lobbyHref, embeddedInLobby = false, roomDrawer = false, multiplayerOnline, multiplayerDiagnostics, assetUrl}: OptionsPanelProps) {
   const {t} = useLocale();
-  const panel = useRef<HTMLElement>(null); useOptionsViewport(panel); useOptionsInteractions(panel, open, onBack);
+  const panel = useRef<HTMLElement>(null);
+  useOptionsViewport(panel, open && !roomDrawer);
+  useOptionsInteractions(panel, open&&!closing, onBack);
   const panelTarget = useOptionsTarget('panel', panel);
-  useRoomSettingsRelocation(panel, roomDrawer && product.multiplayer, product.id);
+  const inRoomDrawer = roomDrawer && product.multiplayer;
+  const [drawerTargets, setDrawerTargets] = useState<{header: HTMLElement; content: HTMLElement} | null>(null);
+  useLayoutEffect(() => {
+    if (!inRoomDrawer) return;
+    const header = document.getElementById('mpSettingsRoomDrawerHeader');
+    const content = document.getElementById('mpSettingsRoomDrawerContent');
+    if (header && content) setDrawerTargets({header, content});
+  }, [inRoomDrawer]);
   const credit = product.credit ?? {name: t('gameNotice.credit'), url: 'https://b23.tv/WOQhahY'};
   // Main app.mts4626–4634 carries this product into the directory filter.
   const productLobbyHref = lobbyHref ? lobbyHrefForProduct(lobbyHref, product.id) : undefined;
-  return <aside ref={panelTarget} className={`tools${open ? ' is-open' : ''}${product.multiplayer ? ' mp-mode' : ''}`} role={open ? "dialog" : "complementary"} aria-labelledby="gameTitle" aria-modal={open} aria-hidden={!open}>
-    <div className="tools-head">
-      <img className="options-cover" id="optionsCover" src={product.artwork ?? undefined} hidden={!product.artwork} alt="" decoding="async"/>
-      <button className="library-back" id="libraryBack" type="button" aria-label={t(roomDrawer || embeddedInLobby ? 'settings.drawerClose' : 'library.back')} onClick={onBack}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 5-7 7 7 7M3 12h18"/></svg></button>
-      <div className="tools-title"><div className="game-id visually-hidden" id="gameId" data-game={product.gameId}>{product.gameId.toUpperCase()}{product.multiplayer ? ' MP' : ''}</div><h3 className="visually-hidden" id="gameTitle">{product.title}</h3><span className="options-number" id="optionsNumber" aria-hidden="true">{product.number}</span><div className="options-subtitle-line"><span className="options-subtitle" id="optionsSubtitle">{product.subtitle}</span><span className="mp-title-badge" id="mpTitleBadge" hidden={!product.multiplayer}>MULTIPLAYER</span></div></div>
-    </div>
+  const header = <div className="tools-head">
+      <img className="options-cover" id="optionsCover" src={coverArtwork ?? product.artwork ?? undefined} hidden={!(coverArtwork ?? product.artwork)} alt="" decoding="async"/>
+      <div className="tools-title"><div className="game-id" id="gameId" data-game={product.gameId}>{product.gameId}{product.multiplayer ? ' | MP' : ''}</div><h3 id="gameTitle" title={product.title}>{product.title}</h3></div>
+      <UiButton variant="secondary" size="icon" className="library-back" id="libraryBack" type="button" aria-label={t(roomDrawer || embeddedInLobby ? 'settings.drawerClose' : 'library.back')} onClick={onBack}><X aria-hidden="true"/></UiButton>
+    </div>;
+  const fold = <section className={inRoomDrawer ? 'mp-settings mp-room-drawer-mounted' : 'mp-settings'} id="mpSettingsFold">{product.multiplayer ? children : null}</section>;
+  return <aside ref={panelTarget} data-options-panel data-state={open&&!closing?'open':'closed'} className={`tools${open ? ' is-open' : ''}${product.multiplayer ? ' mp-mode' : ''}`} role="dialog" aria-labelledby="gameTitle" aria-modal={open&&!closing || undefined} inert={!open||closing}>
+    {inRoomDrawer ? drawerTargets && createPortal(header, drawerTargets.header) : header}
     <div className="options-scroll">
-      {product.multiplayer && !embeddedInLobby && productLobbyHref && <AppLink className="options-lobby-link" id="optionsLobbyLink" href={productLobbyHref} aria-label={`${product.title} · ${t('lobby.title')}`}><img src={assetUrl('assets/room-users.svg')} alt="" width="20" height="20"/><span>{t('lobby.title')}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></AppLink>}
+      {product.multiplayer && !embeddedInLobby && productLobbyHref && <AppLink className="options-lobby-link" id="optionsLobbyLink" href={productLobbyHref} aria-label={`${product.title} | ${t('lobby.title')}`}><Users aria-hidden="true"/><span>{t('lobby.title')}</span><ChevronRight aria-hidden="true"/></AppLink>}
       {!product.multiplayer && product.adaptationNotice && <details className="tools-callout" id="gameNoticeCallout" aria-labelledby="gameNoticeCalloutTitle">
-        <summary className="tools-callout-title" id="gameNoticeCalloutTitle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg><span>{t('options.adaptation')}</span></summary>
+        <summary className="tools-callout-title" id="gameNoticeCalloutTitle"><Info aria-hidden="true"/><span>{t('options.adaptation')}</span></summary>
         <p>{t('gameNotice.earlyTest')}</p>
-        <p className="tools-callout-line"><span>{t('gameNotice.creditBefore')}</span><a className="site-notice-brand" id="gameNoticeCredit" href={credit.url} target="_blank" rel="noopener noreferrer"><span className="site-notice-brand-icon"><img src={assetUrl('assets/notice-bilibili.svg')} alt="" decoding="async"/></span><span id="gameNoticeCreditName">{credit.name}</span></a><span>{t('gameNotice.creditAfter')}</span></p>
-        <p className="tools-callout-line"><a className="site-notice-brand" id="gameNoticeRepo" href={product.sourceRepository} target="_blank" rel="noopener noreferrer"><span className="site-notice-brand-icon"><img src={assetUrl('assets/notice-github.svg')} alt="" decoding="async"/></span><span>{t('gameNotice.repo')}</span></a></p>
+        <p className="tools-callout-line"><span>{t('gameNotice.creditBefore')}</span><a className="game-source-link" id="gameNoticeCredit" href={credit.url} target="_blank" rel="noopener noreferrer"><span className="game-source-link-icon"><img src={assetUrl('assets/notice-bilibili.svg')} alt="" decoding="async"/></span><span id="gameNoticeCreditName">{credit.name}</span></a><span>{t('gameNotice.creditAfter')}</span></p>
+        <p className="tools-callout-line"><a className="game-source-link" id="gameNoticeRepo" href={product.sourceRepository} target="_blank" rel="noopener noreferrer"><span className="game-source-link-icon"><img src={assetUrl('assets/notice-github.svg')} alt="" decoding="async"/></span><span>{t('gameNotice.repo')}</span></a></p>
       </details>}
       {/* Main's MP shell/diagnostics exist before selection, hidden by product
           mode. Keep that DOM contract and one probe presentation owner while
           the one active shared settings body changes its product context. */}
-      <section className="mp-shell" id="mpShell" hidden={!product.multiplayer}>{multiplayerOnline}<section className="mp-settings" id="mpSettingsFold">{product.multiplayer ? children : null}</section>{multiplayerDiagnostics}</section>
+      <section className="mp-shell" id="mpShell" hidden={!product.multiplayer}>{multiplayerOnline}{inRoomDrawer ? drawerTargets && createPortal(fold, drawerTargets.content) : fold}{multiplayerDiagnostics}</section>
       {!product.multiplayer && children}
     </div>
     {actions}

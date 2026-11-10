@@ -107,7 +107,7 @@ public:
     bool save_multiplayer_replay(i32,const char*)override;
     bool save_confirmed_multiplayer_replay(i32,const char*);
     bool export_multiplayer_replay(std::vector<u8>& out){return replay_archive.Encode(out);}
-    bool logical_frame_advanced()const{return !app.session.netplay.Configured()||app.session.network_frame_open;}
+    bool logical_frame_advanced()const{return !app.session.netplay.Configured()||app.session.netplay.Retired()||app.session.network_frame_open;}
     bool finish_network_frame();
     bool connect_network(const char* relay);
     bool connect_spectator(const char* relay,const char* id);

@@ -24,7 +24,7 @@ function ownsDocument(){
  catch{return false;}
 }
 function neutralTouch(enabled=!!options.touchEnabled&&!configApplying&&!stopPending&&!retired&&!options.netplaySpectator&&!netplay?.spectator){
- if(!initializedReady||!core||!launched)return;
+ if(!initializedReady||!core||!(launched||roomPreview))return;
  core._th09_touch_cancel();
  // controls already clears both stick axes; unchanged mapped serials retain
  // accepted pulses and cannot create a bomb/escape while neutralizing focus.
@@ -36,7 +36,7 @@ function revokeLifetime(terminal=false){
 }
 function acceptsTouch(){
  if(!ownsDocument()){if(!retired)revokeLifetime(true);return false;}
- return initializedReady&&!!core&&launched&&launchSettled&&!stopPending&&!stopping&&!retired&&!configApplying&&!document.hidden&&!networkOverlayPending&&!!options.touchEnabled&&!options.netplaySpectator&&!netplay?.spectator&&!options.replayViewer;
+ return initializedReady&&!!core&&(launched&&launchSettled||roomPreview&&options.netplayMode!=='lan')&&!stopPending&&!stopping&&!retired&&!configApplying&&!document.hidden&&!networkOverlayPending&&!!options.touchEnabled&&!options.netplaySpectator&&!netplay?.spectator&&!options.replayViewer;
 }
 function receiveLifetime(){return stopPending||stopping||retired||!ownsDocument()?-1:lifetime;}
 function assertLifetime(value,owner=core){
@@ -49,12 +49,18 @@ function touchPolicy(value){
 }
 let launchSerial=0,roomOwned=false;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...((event==='first-frame'||event==='room-menu')?{launchSerial}:{}),...fields},location.origin);
+function replayBoundary(frame,winner){
+ if(winner<0){
+  netplay?.startMatchReport(frame);
+  autoReplay?.begin(frame);
+ }else autoReplay?.end(frame,winner);
+}
 const values=(fn,n)=>Array.from(core.HEAP32.subarray(fn()/4,fn()/4+n));
 const status=()=>({title:values(core._th09_title_status,8),session:values(core._th09_session_status,8),touch:values(core._th09_touch_state,4)});
 const err=()=>{const a=core.HEAPU8.subarray(core._th09_error());return new TextDecoder().decode(a.subarray(0,a.indexOf(0)));};
 const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>acceptsKeyboard(),reset:clearKeyboard,profile:()=>{const n=core?._th09_keyboard_profile?.()??2;return n===5?'th09-local':n===3?'th09-left':n===4?'th09-right':'standard';},},accept:code=>!!scanCodes[code],send:(code,down)=>core?._th09_key(scanCodes[code],+down)});
 function clearKeyboard(){keyboard.clear();core?._th09_keys_clear();}
-function acceptsKeyboard(){return launched&&!stopping&&!stopPending&&!retired&&!document.hidden&&!networkOverlayPending&&!options.netplaySpectator&&!netplay?.spectator&&!options.replayViewer;}
+function acceptsKeyboard(){return (launched||roomPreview&&options.netplayMode!=='lan')&&!stopping&&!stopPending&&!retired&&!document.hidden&&!networkOverlayPending&&!options.netplaySpectator&&!netplay?.spectator&&!options.replayViewer;}
 const fatal=e=>{revokeLifetime(true);const message=e?.message||String(e);$('#error').textContent=message;clearKeyboard();core?._th09_loop_pause(1);emit('error',{error:message});};
 const sync=(populate=false)=>{const current=chain.then(()=>new Promise((r,j)=>core.FS.syncfs(populate,e=>e?j(e):r())));chain=current.catch(()=>{});return current;};
 function path(value){
@@ -253,7 +259,7 @@ for(const [event,down] of [['keydown',1],['keyup',0]])window.addEventListener(ev
  if(keyboard.mapNative(e,down)){e.preventDefault();e.stopImmediatePropagation();return;}
  keyboard.event(e,down);
 },{capture:true});
-document.addEventListener('visibilitychange',()=>{if(launched){clearKeyboard();neutralTouch();core._th09_loop_pause(+(document.hidden||networkOverlayPending||(options.netplayMode==='lan'&&(netplay?.recovering||netplay?.disconnected||(!netplay?.active&&!netplay?.finished)))));if(document.hidden)void save().catch(fatal);}});
+document.addEventListener('visibilitychange',()=>{if(launched||roomPreview){clearKeyboard();neutralTouch();core._th09_loop_pause(+(document.hidden||networkOverlayPending||(!roomPreview&&options.netplayMode==='lan'&&(netplay?.recovering||netplay?.disconnected||(!netplay?.active&&!netplay?.finished)))));if(document.hidden)void save().catch(fatal);}});
 window.addEventListener('blur',()=>{clearKeyboard();neutralTouch();});
 // Ordinary Android/iOS Launcher touch uses the parent owner. Retain this
 // document's pointer path for its existing direct-input carrier as well.
@@ -264,7 +270,7 @@ for(const [name,type] of [['pointerdown',0],['pointermove',1],['pointerup',2],['
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();clearKeyboard();fatal(Error('图形环境失效，请退出后重新开始。'));});window.addEventListener('pagehide',()=>{revokeLifetime(true);replayPlayer?.close();clearKeyboard();if(launched){netplay?.close();core._th09_loop_pause(1);void save();}});
 const initialized=(async()=>{
  const initializingLifetime=lifetime;let last=performance.now(),lastFrames=0;
-  core=await createModule({canvas,resetBrowserKeyboard:()=>keyboard.clear(),printErr:console.error,onNetworkRequest:openNetwork,onNetworkReplayBoundary:(frame,winner)=>winner<0?autoReplay?.begin(frame):autoReplay?.end(frame,winner),onNetworkResult:()=>netplay?.result(),onNetworkInput:(...args)=>netplay?.input(...args),onNetworkSpectatorBegin:(...args)=>netplay?.beginMatch(...args),onNetworkSpectatorEnd:(...args)=>netplay?.endMatch(...args),onNetworkSpectatorRound:(frame,round,replayFrame)=>{autoReplay?.roundStart(replayFrame);netplay?.roundStart(frame,round);},onNetworkSpectatorFrame:(...args)=>netplay?.publish(...args),onGameFrame(ok,ms){if(!ok){fatal(Error(err()));return;}netplay?.frame();if(!first){first=true;emit('first-frame');}const current=core._th09_storage_revision();if(current!==revision){revision=current;void sync().catch(fatal);}const now=performance.now(),frames=status().title[0];if(now-last>=1000){emit('frame-health',{fps:(frames-lastFrames)*1000/(now-last),maxGapMs:ms});emit('audio-health',{backend:'script',robust:core.SDL3?.audioContext?.state==='running'});last=now;lastFrames=frames;}const title=status().title;if(title[7]===0||(netplay?.finished&&title[1]&&title[2]===1)||(netplay?.spectator&&!netplay.timelineExperiment&&title[1]&&(title[2]===14||title[2]===1)))void stop().catch(fatal);}});
+  core=await createModule({canvas,resetBrowserKeyboard:()=>keyboard.clear(),printErr:console.error,onNetworkRequest:openNetwork,onNetworkReplayBoundary:replayBoundary,onNetworkMatchDecided:(...args)=>netplay?.finishMatchReport(...args),onNetworkResult:()=>netplay?.result(),onNetworkInput:(...args)=>netplay?.input(...args),onNetworkSpectatorBegin:(...args)=>netplay?.beginMatch(...args),onNetworkSpectatorEnd:frame=>netplay?.endMatch(frame),onNetworkSpectatorRound:(frame,round,replayFrame)=>{autoReplay?.roundStart(replayFrame);netplay?.roundStart(frame,round);},onNetworkSpectatorFrame:(...args)=>netplay?.publish(...args),onGameFrame(ok,ms){if(!ok){fatal(Error(err()));return;}netplay?.frame();if(!first){first=true;emit('first-frame');}const current=core._th09_storage_revision();if(current!==revision){revision=current;void sync().catch(fatal);}const now=performance.now(),frames=status().title[0];if(now-last>=1000){emit('frame-health',{fps:(frames-lastFrames)*1000/(now-last),maxGapMs:ms});emit('audio-health',{backend:'script',robust:core.SDL3?.audioContext?.state==='running'});last=now;lastFrames=frames;}const title=status().title;if(title[7]===0||(netplay?.finished&&title[1]&&title[2]===1)||(netplay?.spectator&&!netplay.timelineExperiment&&title[1]&&(title[2]===14||title[2]===1)))void stop().catch(fatal);}});
  assertLifetime(initializingLifetime,core);
  window.Module=core;window.FS=core.FS;core.SDL3=core.SDL3||{};if(parent!==window&&parent.__touhouAudioContext)core.SDL3.audioContext=parent.__touhouAudioContext;
  core.FS.mkdirTree(saveRoot);core.FS.mount(core.IDBFS,{},saveRoot);await sync(true);assertLifetime(initializingLifetime,core);core.FS.mkdirTree(saveRoot+'/replay');core.FS.symlink(saveRoot,'/save');

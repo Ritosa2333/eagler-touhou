@@ -1,7 +1,7 @@
 import {isReplayFilePath} from '../../src/launcher/replay-files.mts';
 import {componentFileIds} from '../../package/package-generation.mjs';
 import {PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, languagePriority, productFeatureAvailable,
-  type ProductId} from '../../src/contracts/product-catalog.mts';
+  productRequiresImport, type ProductId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import type {InstalledPackageGeneration} from '../../src/contracts/package-read-models.mts';
 import type {RuntimeConfigureOptions} from '../../src/contracts/runtime-protocol.mts';
@@ -15,7 +15,7 @@ import type {SettingsSnapshot} from '../models/game-settings';
 import {prepareLanguagePack, type PreparedLanguagePack} from './language-pack';
 import {checkPreparationAbort, preparationErrorText, type AcquisitionRequest, type PackageAcquisition,
   type PackageAcquisitionResult, type PreparationProgress} from './package-acquisition';
-import {ensureOggStartup, ensureRequiredSharedResources, musicTransport, oggMusic, packageResourceIds, remoteMusicResources,
+import {ensureOggStartup, ensureRequiredSharedResources, musicTransport, musicModeLabel, oggMusic, packageResourceIds, remoteMusicResources,
   remoteRuntimeResources, sharedResources} from './game-resources';
 import {startPreparedGameBackground} from './game-preparation-background';
 import type {RuntimePlan, RuntimeService, RuntimeSnapshot} from './runtime';
@@ -96,7 +96,7 @@ function identityPlan(input: FilePreparationInput, acquired: PackageAcquisitionR
   if (host && !hosted) throw new Error(input.translate('runtime.hostManifestMissingGame', {game}));
   const entry = runtimeVariant === 'normal' ? hosted?.runtime ?? product.runtime
     : hosted ? hosted.multiplayerRuntime : 'multiplayerRuntime' in product ? product.multiplayerRuntime : undefined;
-  if (!entry) throw new Error(input.translate('runtime.multiplayerRuntimeMissing', {game: game.toUpperCase()}));
+  if (!entry) throw new Error(input.translate('runtime.multiplayerRuntimeMissing', {game: game}));
   const publishedRuntime = !!host?.shared.runtimeManifest;
   return {game, runtimeVariant, generation: acquired.generation, entry, publishedRuntime,
     ...(!host ? {localCatalogRuntime: true} : !publishedRuntime ? {runtimeHost: host} : {}), configure: {music: 'none'}};
@@ -109,11 +109,21 @@ async function initialGamePlan(input: GamePreparationInput, acquired: PackageAcq
   checkPreparationAbort(input.signal);
   return plan;
 }
-function effectiveMusic(input: GamePreparationInput, generation: InstalledPackageGeneration | null, host: SiteManifest | null) {
+function th075RoomAssetPlan(input: GamePreparationInput): RuntimePlan | null {
+  if (input.productId !== 'th075mp' || (input.multiplayer?.kind !== 'room' && input.multiplayer?.kind !== 'room-preload')) return null;
+  const host = input.acquisition.getMetadata().siteManifest, game = host?.games.th075;
+  if (!host || !game?.multiplayerRuntime || !game.th075MultiplayerAssets) return null;
+  return {game: 'th075', runtimeVariant: 'multiplayer', entry: game.multiplayerRuntime,
+    generation: null, th075SplitAssets: true, runtimeHost: host, publishedRuntime: !!host.shared.runtimeManifest,
+    configure: {music: 'none'}};
+}
+function effectiveMusic(input: GamePreparationInput, generation: InstalledPackageGeneration | null, host: SiteManifest | null, splitAssets = false) {
   const {settings, acquisition} = input, hosted = host?.games[settings.gameId];
+  const policy = PRODUCT_GAMES[settings.gameId].musicRuntime;
   return resolveEffectiveMusicMode({audio: settings.context.musicAvailability.audio,
+    musicSources: 'sources' in policy ? policy.sources : [],
     midiAvailable: PRODUCT_GAMES[settings.gameId].musicCapabilities.midi && hosted?.music.midi.supported !== false,
-    importServer: host?.shared.resourceMode === 'import', remoteOggAdvertised: !!hosted?.music.ogg,
+    importServer: productRequiresImport(settings.gameId) || host?.shared.resourceMode === 'import', remoteOggAdvertised: !!hosted?.music.ogg || splitAssets,
     remoteRevision: acquisition.getMetadata().releaseCatalog?.games[settings.gameId]?.revision ?? null,
     installed: generation ? {revision: generation.descriptor.revision, oggFileIds: componentFileIds(generation.descriptor, 'ogg'), files: generation.files} : null,
     requested: settings.musicPreference, explicit: settings.musicPreferenceExplicit});
@@ -130,10 +140,14 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
     touchEnabled: options.touchEnabled, touchMovementMode: options.touchMovementMode, touchSensitivity: options.touchSensitivity,
     touchFocusMode: options.touchFocusMode, doubleTapBombEnabled: options.doubleTapBombEnabled, alwaysHitbox: options.alwaysHitbox,
     oggDecodeMode: music === 'ogg-full' ? 'full' : 'stream',
+    ...('sources' in product.musicRuntime ? {musicSource: music === 'ogg-akyu' ? 'akyu' as const : 'original' as const} : {}),
     ...(!isMultiplayer && productFeatureAvailable(game, 'thprac', features)
       ? {thpracEnabled: options.thpracEnabled, thpracLocale: thpracLocaleForLanguage(language)} : {}),
     ...(productFeatureAvailable(game, 'focusHitbox', features) ? {focusHitboxEnabled: options.focusHitboxEnabled} : {}),
     ...('display' in product && product.display.faithBar ? {faithBarEnabled: options.faithBarEnabled} : {}),
+    ...(game === 'th05' && isMultiplayer ? {th05MultiplayerDisplay: options.th05MultiplayerDisplay} : {}),
+    ...('renderScales' in product && options.renderScale != null ? {renderScale: options.renderScale} : {}),
+    ...(input.productId === 'th075mp' && options.th075NativeResolution ? {renderScale: 1 as const} : {}),
     ...(isMultiplayer ? {multiplayerLocalPlayerVisibility: options.multiplayerLocalPlayerVisibility,
       ...(multiplayer?.kind === 'replay' ? {replayViewer: true} : {}),
       ...(multiplayer?.kind === 'preflight' && 'multiplayer' in product && 'preflightWithoutRoom' in product.multiplayer ? {multiplayerPreflight: true} : {}),
@@ -144,7 +158,7 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
 }
 async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, guard: () => void): Promise<PreparedGamePlan> {
   const {settings, acquisition, translate: t} = input, metadata = acquisition.getMetadata(), host = metadata.siteManifest;
-  let generation = initial.generation, music = effectiveMusic(input, generation, host), language = settings.language;
+  let generation = initial.generation, music = effectiveMusic(input, generation, host, initial.th075SplitAssets), language = settings.language;
   const catalog = buildLanguageCatalog({languageOptions: host?.games[settings.gameId]?.languageOptions,
     legacyLanguages: host?.games[settings.gameId]?.languages, offlineEntries: settings.context.languages,
     generation, translate: t, priority: languagePriority});
@@ -176,15 +190,15 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
   const shared = sharedResources({game: settings.gameId, generation, host, language,
     thprac: settings.options.thpracEnabled, baseUrl: input.baseUrl, translate: t});
   const plan: RuntimePlan = {...initial, ...(generation && generation !== initial.generation ? {resourceGeneration: generation} : {}),
-    configure: {music: musicTransport(music), resources: ids.length ? [] : remoteMusicResources(settings.gameId, music, host, input.baseUrl, t),
-      runtimeResources: remoteRuntimeResources(generation, host, metadata.releaseCatalog, acquisition.catalogUrl, t), runtimePack, sharedResources: shared, options},
+    configure: {language, music: musicTransport(music), resources: initial.th075SplitAssets || ids.length ? [] : remoteMusicResources(settings.gameId, music, host, input.baseUrl, t),
+      runtimeResources: initial.th075SplitAssets ? [] : remoteRuntimeResources(generation, host, metadata.releaseCatalog, acquisition.catalogUrl, t), runtimePack, sharedResources: shared, options},
     ...(generation ? {resourceFileIds: packageResourceIds(generation)} : {}),
-    ...(ids.length ? {localOgg: {fileIds: completeOgg ? ids : ids.slice(0, 2), fallbackToMidi: true}} : {}),
+    ...(ids.length ? {localOgg: {fileIds: completeOgg ? ids : ids.slice(0, 2), fallbackToMidi: PRODUCT_GAMES[settings.gameId].musicCapabilities?.midi === true}} : {}),
     launcherControls: {restartButtonEnabled: settings.options.restartButtonEnabled,
       thpracTouchControlsEnabled: settings.options.thpracTouchControlsEnabled, magnifierEnabled: settings.options.magnifierEnabled,
       touchControlOpacity: settings.options.touchControlOpacity, touchLayout: input.touchLayout ? structuredClone(input.touchLayout) : null}};
   const resource = runtimePack ? `${entry?.title || entry?.id || t('language.fallbackName')} ${t('settings.language')}`
-    : `${music === 'ogg-stream' ? t('settings.music.oggStream') : music === 'ogg-full' ? t('settings.music.oggFull') : music === 'none' ? t('settings.music.none') : 'midi'} ${t('settings.music')}`;
+    : `${musicModeLabel(music, t)} ${t('settings.music')}`;
   input.onStatus?.(t('runtime.preparingResources', {resource}));
   return {plan, language, music};
 }
@@ -199,9 +213,10 @@ export async function prepareFilePlan(input: FilePreparationInput): Promise<Runt
  * multiplayer resources without navigating or writing into that native epoch. */
 export async function prepareRoomResourcePlan(input: GamePreparationInput): Promise<PreparedGamePlan> {
   if (input.multiplayer?.kind !== 'room-preload') throw new Error('Room resource preparation requires a room-entry intent');
-  const acquired = await input.acquisition.acquire(requestFor(input, true));
+  const request = requestFor(input, true), split = th075RoomAssetPlan(input);
+  const acquired = split ? null : await input.acquisition.acquire(request);
   const guard = () => checkPreparationAbort(input.signal);
-  guard(); return finishPlan(input, identityPlan(input, acquired), guard);
+  guard(); return finishPlan(input, split ?? identityPlan(input, acquired!), guard);
 }
 function applyNativeMusicResult(result: PreparedGamePlan, snapshot: RuntimeSnapshot, input: GamePreparationInput) {
   if (snapshot.musicWarning) {input.onTransferHide?.(); input.onWarning?.(snapshot.musicWarning);}
@@ -246,8 +261,10 @@ export async function prepareGameCheck(input: GamePreparationInput & {
 export async function prepareGame(input: GamePreparationInput & {runtime: RuntimeService}): Promise<PreparedGame> {
   if (!input.runtime.prepareWithReady) throw new Error('Game preparation requires the native-ready Runtime continuation');
   if (input.multiplayer?.kind === 'preflight') throw new Error('Use the exclusive Runtime game-check owner for preflight');
-  const acquired = await input.acquisition.acquire(requestFor(input, true)); checkPreparationAbort(input.signal);
-  const initial = await initialGamePlan(input, acquired);
+  const request = requestFor(input, true), split = th075RoomAssetPlan(input);
+  const acquired = split ? null : await input.acquisition.acquire(request);
+  checkPreparationAbort(input.signal);
+  const initial = split ?? await initialGamePlan(input, acquired!);
   if (input.multiplayer?.kind === 'room') initial.multiplayerProgram = {
     generation: new URL(input.multiplayer.options.netplayUrl).searchParams.get('runtimeGeneration') ?? undefined,
   };
@@ -268,7 +285,7 @@ export async function prepareGame(input: GamePreparationInput & {runtime: Runtim
     const snapshot = input.runtime.getSnapshot();
     if (snapshot.epoch !== runtimeSnapshot.epoch || !snapshot.launched) return Promise.reject(new Error('Launch this prepared Runtime before starting background resources'));
     background = startPreparedGameBackground({input, prepared: result, epoch: runtimeSnapshot.epoch!,
-      deferredUpdate: acquired.kind === 'managed' && input.multiplayer?.kind !== 'room' && input.multiplayer?.kind !== 'room-preload' ? acquired.deferredUpdate : null});
+      deferredUpdate: acquired?.kind === 'managed' && input.multiplayer?.kind !== 'room' && input.multiplayer?.kind !== 'room-preload' ? acquired.deferredUpdate : null});
     return background;
   }};
 }

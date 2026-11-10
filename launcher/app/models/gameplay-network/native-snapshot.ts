@@ -1,4 +1,5 @@
 import {multiplayerConfigForProduct, isMultiplayerProductId, type ProductId} from '../../../src/contracts/product-catalog.mts';
+import type {RtcPathSummary} from '../../../src/launcher/runtime-diagnostics-model.mts';
 // Read-only extraction of main app2313–2391/2437–2509.
 type UnknownRecord = Record<string, unknown>;
 const record = (value: unknown): UnknownRecord | null => value !== null && typeof value === 'object' && !Array.isArray(value) ? value as UnknownRecord : null;
@@ -64,7 +65,9 @@ export interface RuntimeNetplaySnapshot {
   peerState: RuntimePeerTransport | null;
 }
 
-export interface RuntimePeerQuality {
+export interface RuntimePeerQuality extends RtcPathSummary {
+  pc: RTCPeerConnection;
+  pairId: string;
   samples: number[];
   rttMs: number | null;
   variationMs: number | null;

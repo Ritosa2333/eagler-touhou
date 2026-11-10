@@ -1,53 +1,96 @@
-import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
-import {RoomActionMenu} from './RoomActionMenu';
-import { QUICK_CHAT_ROWS } from '../../../src/contracts/multiplayer-quick-chat.mts';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { Slider } from '../../ui/slider';
+import { ChatAvatar, ChatComposer, ChatMessageContent, useChatReportConfirmation } from './ChatControls';
 import type { MultiplayerQuickChatModel } from '../../../src/launcher/multiplayer-quick-chat-model.mts';
+import type { DecisionStore } from '../../models/decisions';
 import { useLocale } from '../../i18n';
+import { shallowEqual, useStoreSelector } from '../../shared/react-store';
 
-/** Room presentation shares the session's message/timer owner with gameplay. */
-export function RoomQuickChat({ model, part = 'all' }: { model: MultiplayerQuickChatModel; part?: 'all' | 'log' | 'actions' }) {
-  const { locale, t } = useLocale();
-  const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
+const chatLog = (state: ReturnType<MultiplayerQuickChatModel['getSnapshot']>) => ({
+  entries: state.entries,
+  muted: state.muted,
+});
+
+function RoomChatLog({model, mobile, decisions}: {
+  model: MultiplayerQuickChatModel;
+  mobile: boolean;
+  decisions?: Pick<DecisionStore, 'askText'>;
+}) {
+  const {locale, t} = useLocale();
+  const {entries, muted} = useStoreSelector(model, chatLog, shallowEqual);
   const log = useRef<HTMLDivElement>(null);
-  const actions = useRef<HTMLDetailsElement>(null);
+  const rows = useRef<HTMLDivElement>(null);
+  const position = useRef({max: 0, offset: 0});
+  const [scroll, setScroll] = useState(position.current);
+  const confirmReport = useChatReportConfirmation(model, decisions);
+  function readScroll(element: HTMLDivElement) {
+    const max = Math.max(0, element.scrollHeight - element.clientHeight);
+    const offset = Math.min(max, Math.max(0, Math.round(element.scrollTop)));
+    if (max === position.current.max && offset === position.current.offset) return;
+    position.current = {max, offset};
+    setScroll(position.current);
+  }
+  // biome-ignore lint/correctness/useExhaustiveDependencies: New or newly unmuted messages change the measured height.
   useLayoutEffect(() => {
-    if (log.current) log.current.scrollTop = log.current.scrollHeight;
-  }, [state.entries]);
-  const context = state.context;
-  const enabled = context?.connected && (context.localSeat != null || context.localSpectator);
-  const messages = <div ref={log} className="mp-room-chat-log" role="log" aria-live="polite" aria-label={t('chat.players')}>
-        {state.entries.filter(entry => !state.muted.includes(entry.clientId)).map(entry => (
-          <p key={entry.id}>
-            <strong>{`${entry.spectator ? (locale === 'en' ? 'Spectator' : '观众') : `P${entry.seat + 1}`}${entry.name ? `(${entry.name})` : ''}`}</strong>
-            {`: ${locale === 'en' ? entry.phrase.en : entry.phrase.zh}`}
-          </p>
-        ))}
-      </div>;
-  if (part === 'log') return messages;
-  if (part === 'actions') return <FloatingRoomChat enabled={!!enabled} label={t('room.quickChat')} locale={locale} send={id => model.sendPhrase(id)}/>;
-  return (
-    <section id="mpRoomChat" className="mp-room-quick-chat" aria-label={t('chat.players')}>
-      {part === 'all' && messages}
-      <details ref={actions} className="mp-room-chat-actions">
-        <summary>{t('room.quickChat')}</summary>
-        <div className="mp-room-chat-phrases">
-          {QUICK_CHAT_ROWS.flat().map(phrase => (
-            <button key={phrase.id} type="button" data-phrase={phrase.id}
-              disabled={!enabled} onClick={() => {model.sendPhrase(phrase.id); if (actions.current) actions.current.open = false;}}>
-              {locale === 'en' ? phrase.en : phrase.zh}
-            </button>
-          ))}
-        </div>
-      </details>
-    </section>
-  );
+    const element = log.current;
+    if (!element) return;
+    if (!mobile) {
+      element.scrollTop = element.scrollHeight;
+      return;
+    }
+    const update = () => {
+      if (!element.clientHeight) return;
+      const {max, offset} = position.current;
+      element.scrollTop = max - offset <= 2 ? element.scrollHeight : offset;
+      readScroll(element);
+    };
+    update();
+    if (typeof ResizeObserver === 'undefined' || !rows.current) return;
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    observer.observe(rows.current);
+    return () => observer.disconnect();
+  }, [entries, muted, mobile]);
+  const messages = entries.filter(entry => !muted.includes(entry.clientId)).map(entry => (
+    <p key={entry.id} className="room-chat-entry" data-speaker={entry.spectator?'spectator':'player'}>
+      <ChatAvatar entry={entry} model={model}/>
+      <ChatMessageContent entry={entry} model={model} label={locale === 'en' ? entry.phrase.en : entry.phrase.zh}
+        confirmReport={decisions ? confirmReport : undefined} directReport={mobile}/>
+    </p>
+  ));
+  if (!mobile) return <div className="mp-room-chat-log" ref={log} role="log" aria-live="polite" aria-label={t('chat.players')}>{messages}</div>;
+
+  return <div className="room-chat-history">
+    <div className="room-chat-history-viewport" ref={log} role="log" aria-live="polite" aria-label={t('chat.players')}
+      onScroll={event => {if (event.currentTarget.clientHeight) readScroll(event.currentTarget);}}>
+      <div className="room-chat-history-rows" ref={rows}>
+        {messages.length ? messages : <p className="room-chat-history-empty">{t('chat.noMessages')}</p>}
+      </div>
+    </div>
+    <Slider orientation="vertical" inverted className="room-chat-history-slider" disabled={!scroll.max}
+      aria-label={t('chat.historyScroll')} value={scroll.offset} max={Math.max(1, scroll.max)}
+      onValueChange={offset => {
+        if (!log.current) return;
+        log.current.scrollTop = offset;
+        readScroll(log.current);
+      }}/>
+  </div>;
 }
 
-/** Room menus share focus, clipping boundaries and motion. */
-function FloatingRoomChat({enabled, label, locale, send}: {enabled:boolean;label:string;locale:string;send(id:string):void}) {
-  return <section id="mpRoomChat" className="mp-room-quick-chat" aria-label={label}>
-    <RoomActionMenu enabled={enabled} label={label} triggerContent={<>{label}<span aria-hidden="true">⌃</span></>}
-      triggerClassName="room-quick-chat-trigger" menuClassName="room-quick-chat-picker"
-      items={QUICK_CHAT_ROWS.flat().map(phrase=>({id:phrase.id,label:locale==='en'?phrase.en:phrase.zh,select:()=>send(phrase.id)}))}/>
-  </section>;
+/** Room presentation shares the session's message and timer owner with gameplay. */
+export function RoomQuickChat({model, part = 'all', mobile = false, decisions}: {
+  model: MultiplayerQuickChatModel;
+  part?: 'all' | 'log' | 'actions';
+  mobile?: boolean;
+  decisions?: Pick<DecisionStore, 'askText'>;
+}) {
+  const {t} = useLocale();
+  const log = <RoomChatLog model={model} mobile={mobile} decisions={decisions}/>;
+  if (part === 'log') return log;
+  return (
+    <section id="mpRoomChat" className="mp-room-quick-chat" aria-label={t('chat.players')}>
+      {part === 'all' && log}
+      <ChatComposer model={model} openOnClick={mobile}/>
+    </section>
+  );
 }

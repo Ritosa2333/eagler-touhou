@@ -1,0 +1,106 @@
+{
+  "sourceHead": "2a2598da7a477106e7dc729ab42a83da27d01906",
+  "preservedHeads": {
+    "pr164": "9922ae303cf23b7bfc07221ba3418a86744d4f39",
+    "pr165": "fde687c7113c4f7bf924463874f2b8bdad5cada7"
+  },
+  "sdlTests": {
+    "passed": 64,
+    "total": 64
+  },
+  "adaptation": {
+    "normal": {
+      "passed": 10,
+      "total": 10
+    },
+    "multiplayer": {
+      "passed": 9,
+      "total": 9
+    }
+  },
+  "standardSubtree": {
+    "normal": {
+      "split": "6a1d2beb99b9349bce054bbc7d80d6b00d84bf1a",
+      "tree": "f97e86e1d070b2af593b91bd52b1e38562fcbbfa",
+      "upstreamAncestor": true,
+      "recordedSplitAncestor": true,
+      "sourceTreeMatches": true
+    },
+    "multiplayer": {
+      "split": "c0c163041c420965d846f96ffe83aea5728edaed",
+      "tree": "247dda71c005ef2ed6c02bc7f6b750bbe5d82728",
+      "upstreamAncestor": true,
+      "recordedSplitAncestor": true,
+      "sourceTreeMatches": true
+    }
+  },
+  "productionWeb": {
+    "normal": {
+      "entry": "f8aaa69efa9f094ab640d9df3b6b1281707ce9f79c2ce21301bb8b475c1a33c2",
+      "program": "a2262febfaa9995ae5a8ed6c0116cf05695f540eaf67283d4b426a2dfc135124",
+      "module": "5b3c838edb47e881f52d8cb429b1d5efe84c5fd6b40abea801669891281ad068",
+      "wasm": "5c1086572b4fb7db22563e462f3491a58968cba6068aeab64b833da3e9d20439"
+    },
+    "multiplayer": {
+      "entry": "f8aaa69efa9f094ab640d9df3b6b1281707ce9f79c2ce21301bb8b475c1a33c2",
+      "program": "dbd36809bb1acdcc296063f44b23c1a1fb4495941ecd88524dfbce88f501257a",
+      "module": "19a6db66a8c5a9cfd8232054f81e3f2e90d86a56ab9beadf29bfb2f42e82e185",
+      "wasm": "0b52e17ca8807c7227f327d3b7a7af1896b8ccd35e2931fdd97ac11a0ffc6bb9"
+    }
+  },
+  "browser": {
+    "normal": [
+      "touch",
+      "fullscreen",
+      "THPrac",
+      "save and replay",
+      "immediate audio effects"
+    ],
+    "multiplayer": {
+      "inputLatencyMs": 25,
+      "reports": [
+        {
+          "count": 2,
+          "mode": 0,
+          "delay": 0,
+          "automatic": false,
+          "difficulty": 1,
+          "restores": [
+            19,
+            22
+          ],
+          "slowPresentation": false,
+          "frames": 445,
+          "exactMatches": 0,
+          "hash": 86434842,
+          "spectatorVerified": true
+        },
+        {
+          "count": 3,
+          "mode": 0,
+          "delay": 0,
+          "automatic": false,
+          "difficulty": 1,
+          "restores": [
+            21,
+            25,
+            39
+          ],
+          "slowPresentation": false,
+          "frames": 483,
+          "exactMatches": 0,
+          "hash": 814573636,
+          "spectatorVerified": false
+        }
+      ],
+      "checks": [
+        "real RTC rollback",
+        "confirmed pause hash equality",
+        "confirmed replay reconstruction",
+        "2P spectator seeks",
+        "room returns",
+        "pagehide input release"
+      ]
+    }
+  }
+}

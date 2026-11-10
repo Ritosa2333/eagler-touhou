@@ -17,14 +17,17 @@ const simdExperiment=process.argv.includes('--simd-experiment');
 const printPlan = (process.argv.includes('--print-plan')||printingRuntimeInputs);
 // Local validation of shared work in progress must never produce a release
 // attestation or overwrite the normal/multiplayer build directory.
-const diagnostic = process.argv.includes('--diagnostic');
+const lab=process.env.TH11_PRESENTATION_LAB==='1'||process.argv.includes('--presentation-lab');
+const presentationDiagnostics=process.env.TH11_DIAGNOSTICS==='1'||process.argv.includes('--diagnostics');
+const diagnostic = lab||presentationDiagnostics||process.argv.includes('--diagnostic');
 const thprac = process.env.TH_ENABLE_THPRAC === '1' || process.argv.includes('--thprac');
+if(multiplayer&&lab)throw Error('Presentation Lab uses the ordinary diagnostic driver');
 if (multiplayer && thprac) throw Error('TH11 multiplayer and THPrac are separate runtime variants.');
-const profile = multiplayer ? 'multiplayer' : 'sdl3';
+const profile = lab?'presentation-lab':multiplayer?'multiplayer':presentationDiagnostics?'sdl3-diagnostics':'sdl3';
 const variant = multiplayer ? 'multiplayer' : 'normal';
 const out = process.env.TH11_OUTPUT
   ? resolve(root, process.env.TH11_OUTPUT)
-  : resolve(root, 'artifacts', profile + (diagnostic ? '-diagnostic' : ''));
+  : resolve(root, lab?'artifacts/presentation-lab':presentationDiagnostics?'artifacts/presentation-diagnostics':'artifacts/'+profile+(diagnostic?'-diagnostic':''));
 
 const netplayRoot = resolve(process.env.EAGLER_COMMON_ROOT || resolve(workspace, '../../common'));
 const sdk = process.env.EMSDK || [
@@ -43,6 +46,8 @@ const flags = [
   '-DTH11_DEVELOPMENT_HARNESS=0', '-DIMGUI_DISABLE_WIN32_FUNCTIONS',
   '-I' + imgui, '-I' + resolve(root, 'cpp'),
   ...(thprac ? ['-DTH_ENABLE_THPRAC=1'] : []),
+  ...(presentationDiagnostics?['-DTH11_PRESENTATION_DIAGNOSTICS=1']:[]),
+  ...(lab?['-DTH_PRESENTATION_AUDIT=1']:[]),
   '--use-port=sdl3', '--use-port=sdl3_ttf',
 ];
 if (multiplayer) flags.push('-DTH11_MULTIPLAYER=1', '-I' + resolve(root, 'cpp/multiplayer'),
@@ -78,7 +83,7 @@ const linkFlags = multiplayer ? ['-lwebsocket'] : [];
 // export names stable when it is linked. Do not set private compiler options
 // or use DECLARE_ASM_MODULE_EXPORTS=0 (which changes module scoping).
 if(lto)linkFlags.push('-lexports.js');
-await printRuntimeInputs({workspace,root,sources:source,headers:headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/input')),flags});
+await printRuntimeInputs({workspace,root,sources:source,headers:[resolve(imgui,'../../include/eagler/audio/WebSfx.hpp'),...headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/input'))],flags});
 if (printPlan) {
   console.log(JSON.stringify({game: 'th11', profile, variant, outputDirectory: out,
     packageDirectory: resolve(workspace, multiplayer ? 'build-eagler-multiplayer' : 'build-eagler'),
