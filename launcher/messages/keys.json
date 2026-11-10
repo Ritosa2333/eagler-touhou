@@ -3200,6 +3200,74 @@
       "reason"
     ]
   },
+  "package.originalTitle": {
+    "id": "package_originalTitle",
+    "params": []
+  },
+  "package.originalPrivacy": {
+    "id": "package_originalPrivacy",
+    "params": []
+  },
+  "package.originalRequired": {
+    "id": "package_originalRequired",
+    "params": [
+      "files"
+    ]
+  },
+  "package.originalExtras": {
+    "id": "package_originalExtras",
+    "params": []
+  },
+  "package.originalFonts": {
+    "id": "package_originalFonts",
+    "params": []
+  },
+  "package.originalPick": {
+    "id": "package_originalPick",
+    "params": []
+  },
+  "package.originalFolder": {
+    "id": "package_originalFolder",
+    "params": []
+  },
+  "package.originalMusic": {
+    "id": "package_originalMusic",
+    "params": []
+  },
+  "package.originalSelected": {
+    "id": "package_originalSelected",
+    "params": [
+      "count"
+    ]
+  },
+  "package.originalImport": {
+    "id": "package_originalImport",
+    "params": []
+  },
+  "package.originalExport": {
+    "id": "package_originalExport",
+    "params": []
+  },
+  "package.originalSave": {
+    "id": "package_originalSave",
+    "params": []
+  },
+  "package.originalUnavailable": {
+    "id": "package_originalUnavailable",
+    "params": []
+  },
+  "package.originalConverting": {
+    "id": "package_originalConverting",
+    "params": []
+  },
+  "package.originalEncoding": {
+    "id": "package_originalEncoding",
+    "params": [
+      "completed",
+      "name",
+      "total"
+    ]
+  },
   "package.manualImportIntro": {
     "id": "package_manualImportIntro",
     "params": []

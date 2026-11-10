@@ -14,16 +14,35 @@ const CRC32_TABLE = (() => {
   return table;
 })();
 
-async function inflateRaw(blobPart) {
-  const stream = blobPart.stream().pipeThrough(new DecompressionStream("deflate-raw"));
+async function deflateStream(part) {
+  try {return part.stream().pipeThrough(new DecompressionStream('deflate-raw'));}
+  catch {
+    const {Inflate} = await import('fflate');
+    let inflater;
+    return part.stream().pipeThrough(new TransformStream({
+      start(controller) {inflater = new Inflate(chunk => controller.enqueue(chunk));},
+      transform(chunk) {inflater.push(chunk);},
+      flush() {inflater.push(new Uint8Array(), true);},
+    }));
+  }
+}
+
+async function inflateRaw(blobPart, maxBytes) {
+  const stream = await deflateStream(blobPart);
   const reader = stream.getReader();
   const chunks = [];
   let total = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    total += value.length;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.length;
+      if (total > maxBytes) throw new Error('ZIP entry size mismatch');
+      chunks.push(value);
+    }
+  } finally {
+    await reader.cancel().catch(() => {});
+    reader.releaseLock();
   }
   const bytes = new Uint8Array(total);
   let offset = 0;
@@ -40,7 +59,7 @@ export async function readStoredZipEntry(blob, entry) {
     throw new Error("invalid stored ZIP entry verification request");
   }
   const part = blob.slice(entry.dataOffset, entry.dataOffset + entry.compressedSize);
-  const bytes = entry.method === 8 ? await inflateRaw(part) : new Uint8Array(await part.arrayBuffer());
+  const bytes = entry.method === 8 ? await inflateRaw(part, entry.uncompressedSize) : new Uint8Array(await part.arrayBuffer());
   if (bytes.length !== entry.uncompressedSize) throw new Error(`${entry.name}: ZIP entry size mismatch`);
   let crc = 0xffffffff;
   for (const byte of bytes) crc = CRC32_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
@@ -52,6 +71,27 @@ export async function readStoredZipEntry(blob, entry) {
 export async function verifyStoredZipEntry(blob, entry) {
   await readStoredZipEntry(blob, entry);
   return true;
+}
+
+export async function readOriginalZipEntry(blob, entry, signal) {
+  const part = blob.slice(entry.dataOffset, entry.dataOffset + entry.compressedSize);
+  const stream = entry.method === 8 ? await deflateStream(part) : part.stream();
+  let total = 0, crc = 0xffffffff;
+  const checked = stream.pipeThrough(new TransformStream({
+    transform(chunk, controller) {
+      total += chunk.length;
+      if (total > entry.uncompressedSize) throw Error(`${entry.name}: ZIP entry exceeds declared size`);
+      for (const value of chunk) crc = CRC32_TABLE[(crc ^ value) & 0xff] ^ (crc >>> 8);
+      if (entry.method === 8) controller.enqueue(chunk);
+    },
+    flush() {
+      if (total !== entry.uncompressedSize) throw Error(`${entry.name}: ZIP entry size mismatch`);
+      if (((crc ^ 0xffffffff) >>> 0) !== entry.crc32) throw Error(`${entry.name}: ZIP CRC32 mismatch`);
+    },
+  }), {signal});
+  // Blob storage keeps hundreds of megabytes of BGM out of JS byte arrays.
+  const inflated = await new Response(checked).blob();
+  return entry.method === 8 ? inflated : part;
 }
 
 export function isSafeStoredZipName(name) {
@@ -93,8 +133,9 @@ async function locateEocd(blob) {
   throw new Error("ZIP end-of-central-directory record not found");
 }
 
-export async function parseStoredZip(blob, { allowDeflate = true } = {}) {
+export async function parseStoredZip(blob, { allowDeflate = true, originalGame = false } = {}) {
   const eocd = await locateEocd(blob);
+  if (originalGame && eocd.centralSize > 8 * 1024 * 1024) throw new Error('ZIP directory is too large');
   const centralBytes = new Uint8Array(await blob.slice(eocd.centralOffset, eocd.centralOffset + eocd.centralSize).arrayBuffer());
   const view = new DataView(centralBytes.buffer, centralBytes.byteOffset, centralBytes.byteLength);
   const entries = new Map();
@@ -117,7 +158,17 @@ export async function parseStoredZip(blob, { allowDeflate = true } = {}) {
     }
     const next = offset + 46 + nameLength + extraLength + commentLength;
     if (next > centralBytes.byteLength) throw new Error("ZIP central directory entry is truncated");
-    const name = textDecoder.decode(centralBytes.subarray(offset + 46, offset + 46 + nameLength));
+    const rawName = centralBytes.subarray(offset + 46, offset + 46 + nameLength);
+    let name;
+    try { name = textDecoder.decode(rawName); }
+    catch (error) {
+      if (!originalGame || (flags & 0x800)) throw error;
+      name = new TextDecoder('shift_jis', { fatal: true }).decode(rawName);
+    }
+    if (originalGame && name.endsWith('/') && !uncompressedSize && isSafeStoredZipName(name.slice(0, -1))) {
+      offset = next;
+      continue;
+    }
     if (!isSafeStoredZipName(name)) throw new Error(`unsafe ZIP entry name: ${name}`);
     if (entries.has(name)) throw new Error(`duplicate ZIP entry: ${name}`);
     const entry = { name, flags, method, crc32, compressedSize, uncompressedSize, localOffset };
@@ -138,4 +189,49 @@ export async function parseStoredZip(blob, { allowDeflate = true } = {}) {
   }
   if (offset > centralBytes.byteLength) throw new Error("invalid ZIP central directory length");
   return entries;
+}
+
+// Build a STORE ZIP from Blob slices so a large soundtrack isn't copied into
+// one JavaScript byte array before the download begins.
+export async function buildStoredZip(entries, signal) {
+  const parts = [], directory = [];
+  const text = new TextEncoder();
+  let offset = 0, directoryBytes = 0;
+  for (const [name, blob] of entries) {
+    signal?.throwIfAborted();
+    const filename = text.encode(name);
+    if (!isSafeStoredZipName(name) || filename.length > 65535 || !(blob instanceof Blob) || blob.size >= 0xffffffff)
+      throw Error(`Invalid ZIP output entry: ${name}`);
+    let crc = 0xffffffff;
+    for await (const chunk of blob.stream()) {
+      signal?.throwIfAborted();
+      for (const value of chunk) crc = CRC32_TABLE[(crc ^ value) & 0xff] ^ (crc >>> 8);
+    }
+    crc = (crc ^ 0xffffffff) >>> 0;
+    const local = new DataView(new ArrayBuffer(30)), central = new DataView(new ArrayBuffer(46));
+    local.setUint32(0, LOCAL_SIGNATURE, true);
+    local.setUint16(4, 20, true);
+    local.setUint16(6, 0x800, true);
+    local.setUint16(12, 0x21, true);
+    local.setUint32(14, crc, true);
+    local.setUint32(18, blob.size, true);
+    local.setUint32(22, blob.size, true);
+    local.setUint16(26, filename.length, true);
+    central.setUint32(0, CENTRAL_SIGNATURE, true);
+    central.setUint16(4, 20, true);
+    new Uint8Array(central.buffer, 6, 26).set(new Uint8Array(local.buffer, 4, 26));
+    central.setUint32(42, offset, true);
+    parts.push(local.buffer, filename, blob);
+    directory.push(central.buffer, filename);
+    offset += 30 + filename.length + blob.size;
+    directoryBytes += 46 + filename.length;
+    if (offset + directoryBytes >= 0xffffffff || directory.length / 2 >= 65535) throw Error('ZIP output exceeds the supported size');
+  }
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, EOCD_SIGNATURE, true);
+  end.setUint16(8, directory.length / 2, true);
+  end.setUint16(10, directory.length / 2, true);
+  end.setUint32(12, directoryBytes, true);
+  end.setUint32(16, offset, true);
+  return new Blob([...parts, ...directory, end.buffer], {type: 'application/zip'});
 }

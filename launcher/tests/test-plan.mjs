@@ -136,6 +136,7 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-package-generation.mjs",
   "tests/test-package-launcher.mjs",
   "tests/test-raw-data-import-policy.mjs",
+  "tests/test-retail-package.mjs",
   "tests/test-package-mutation-queue.mjs",
   "tests/test-package-store-contract.mjs",
   "tests/test-package-zip.mjs",
