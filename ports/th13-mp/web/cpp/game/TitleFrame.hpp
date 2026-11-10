@@ -25,6 +25,9 @@ struct TitleFramePlatform {
 struct TitleFrameServices : TitleFramePlatform {
     virtual bool update_title_menu(TitleScreen, const TitleFrameInput&) = 0;
     virtual bool restore_practice_selection() { return false; }
+    // 符卡练习对局返回（DAT_004bb4c4>=0 级联，0x4561bf）：恢复上次所选卡
+    // 直入难度层。默认 false = 宿主未接，返回分支不臆造状态。
+    virtual bool restore_spell_practice_selection() { return false; }
     // [R3-M] Replay 屏动态文字的绘制回调入队（0x452c30 ASCII 队列等价通道；
     // 仅 Replay 屏被调用，false = 入队失败帧错误）。
     virtual bool draw_title_replay_texts() { return true; }

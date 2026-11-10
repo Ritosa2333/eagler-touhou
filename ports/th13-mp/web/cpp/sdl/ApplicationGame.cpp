@@ -37,18 +37,19 @@ namespace th13::sdl {
 
 bool ApplicationState::record_spell_event(const SpellEvent& event) {
     // 00413270/00413a60 exclude replay sessions, for both columns and aggregate.
+    // M1/T4：捕获拍只做纯判定（replay_active/事件快照/run_mode_flags，与拆分
+    // 前 Update 拍同源）并入队；files 变更+save 延至 commit 冲账（帧失败档，
+    // 失败消息见 commit_pending_file_events——与原 :50-51 逐字相同）。
     if (replay_active || !event.emitted()) return true;
-    const bool practice = (progress.run_mode_flags & 0x30u) == 0x20u;
-    bool changed = false;
-    if (event.kind == SpellEventKind::Begin)
-        changed = files.record_spell_attempt(progress.character, event.state.id,
-                                               event.state.name, practice);
-    else if (event.captured())
-        changed = files.record_spell_capture(progress.character, event.state.id, practice);
-    else
-        return true;
-    return (changed && files.save()) || fail(files.error.empty() ?
-                                                "Invalid spell record event" : files.error);
+    if (event.kind != SpellEventKind::Begin && !event.captured()) return true;
+    PendingFileEvent entry;
+    entry.kind = PendingFileEvent::Kind::SpellEvent;
+    entry.capture_frame = recorder.capture_frame;
+    entry.spell_event = event;
+    entry.spell_practice = (progress.run_mode_flags & 0x30u) == 0x20u;
+    entry.character = progress.character;
+    pending_file_events_.push_back(entry);
+    return true;
 }
 
 void ApplicationState::update_spell_time(bool active) {
@@ -97,20 +98,32 @@ void ApplicationState::update_spell_time(bool active) {
 }
 
 bool ApplicationState::record_spell_practice_score(i32 score) {
+    // M1/T4：捕获拍纯判定+入队；变更+save 延至 commit 冲账（帧失败档）。
     if (replay_active) return true;
-    return (files.record_spell_practice_score(progress.character, progress.selected_spell_id,
-                                               score) && files.save()) || fail(files.error);
+    PendingFileEvent entry;
+    entry.kind = PendingFileEvent::Kind::SpellPracticeScore;
+    entry.capture_frame = recorder.capture_frame;
+    entry.character = progress.character;
+    entry.spell_id = progress.selected_spell_id;
+    entry.score = score;
+    pending_file_events_.push_back(entry);
+    return true;
 }
 
 bool ApplicationState::record_stage_clear() {
     // 0042cd40 only increments ordinary all-clear counters on stage6/Extra.
+    // M1/T4：捕获拍纯判定+入队；record_run_clear+save 延至 commit 冲账
+    // （帧失败档；ordinary_records_dirty 清位随冲账成功拍，序同原帧内）。
     if (replay_active || progress.practice_mode != 0 ||
         (progress.run_mode_flags & 0x30u) != 0 ||
         (progress.stage != 6 && progress.stage != 7)) return true;
-    if (!files.record_run_clear(progress.character, progress.difficulty,
-                                 progress.continues == 0) || !files.save())
-        return fail(files.error.empty() ? "Invalid clear record" : files.error);
-    ordinary_records_dirty = false;
+    PendingFileEvent entry;
+    entry.kind = PendingFileEvent::Kind::StageClear;
+    entry.capture_frame = recorder.capture_frame;
+    entry.character = progress.character;
+    entry.difficulty = progress.difficulty;
+    entry.no_continue = progress.continues == 0;
+    pending_file_events_.push_back(entry);
     return true;
 }
 
@@ -242,7 +255,20 @@ bool ApplicationState::request_player_game_over() {
 bool ApplicationState::hud_sound(i32 id) { return sound(id); }
 bool ApplicationState::hud_sound(i32 id, float x) { return audio_device.enqueue(id, x) || fail(audio_device.error); }
 bool ApplicationState::stop_sound(i32 id) { return audio_device.stop(id) || fail(audio_device.error); }
-bool ApplicationState::set_voice_pan(i32 id, float x) { return audio_device.set_voice_pan(id, x) || fail(audio_device.error); }
+bool ApplicationState::set_voice_pan(i32 id, float x) {
+    // M1/T4 F3：捕获期走观察+校验入口——观察（request_observer Kind::Pan）
+    // 在捕获拍单次发射、校验同步（失败返回值被 StageBattle.cpp:690-694 消费，
+    // 语义与原 set_voice_pan 逐位一致，含 error set-if-empty）；设备触达
+    // （buffer_pan+web_sfx::pan）延至 commit 段 apply-only 冲账（无观察器
+    // 发射，同帧终值不变）。
+    if (!audio_device.observe_voice_pan(id, x)) return fail(audio_device.error);
+    // P3.1 defer 模式：Pan 观察随 Record 走，确认后由 Session audio_out_
+    // 经 apply_request 冲账——不能再进本地挂起队（否则预测帧即触达且
+    // 确认后重复应用）。单人路径保持 M1/T4 的 commit 冲账序不变。
+    if (!audio_device.defer_output)
+        pending_voice_pans_.push_back({recorder.capture_frame, id, x});
+    return true;
+}
 
 // 0x42a430 = jmp [eax*4+0x42abd4] 分发器：case2（0x42ee28 小P /
 // 0x43d23e 大P 满灵力）→ front61；case4（0x43d3a6，FUN_0043d330 碎片
@@ -461,14 +487,22 @@ i32 ApplicationState::pause_option_value(i32 row) const {
     return row == 0 ? files.bgm_volume : files.effect_volume;
 }
 bool ApplicationState::change_pause_option(i32 row, i32 delta) {
+    // M1/T4：无效行原样 false（不 fail、不入队）；有效行捕获拍只入队——
+    // 音量钳制读改写 + apply_volumes（设备音量写）+ save 全部延至 commit
+    // 冲账（帧失败档），update-only 段 files 字段与设备音量字段不变。
     if (row < 0 || row > 1) return false;
-    i32& value = row == 0 ? files.bgm_volume : files.effect_volume;
-    value = std::max(0,std::min(100,value+delta));
-    apply_volumes(files.bgm_volume,files.effect_volume);
-    return files.save() || fail(files.error);
+    PendingFileEvent entry;
+    entry.kind = PendingFileEvent::Kind::PauseOption;
+    entry.capture_frame = recorder.capture_frame;
+    entry.row = row;
+    entry.delta = delta;
+    pending_file_events_.push_back(entry);
+    return true;
 }
 
 bool ApplicationState::record_result_entry(const std::string& name, i32 stage) {
+    // M1/T4：捕获拍构建结算行（时间戳/slowdown 为捕获拍实时量，同原 update
+    // 拍语义）并入队；record_high_score+save_score 延至 commit 冲账（帧失败档）。
     if (replay_active || progress.practice_mode != 0) return true;
     TitlePlayerDataScore result;
     result.score=selection_score.score; result.stage=stage;
@@ -480,8 +514,14 @@ bool ApplicationState::record_result_entry(const std::string& name, i32 stage) {
     // 字段语义，预览=落盘）。
     result.progress_percent = result_slowdown_percent(slow_actual_, slow_budget_);
     result.available=true;
-    files.record_high_score(progress.character, progress.difficulty, result);
-    return files.save_score() || fail(files.error);
+    PendingFileEvent entry;
+    entry.kind = PendingFileEvent::Kind::ResultEntry;
+    entry.capture_frame = recorder.capture_frame;
+    entry.character = progress.character;
+    entry.difficulty = progress.difficulty;
+    entry.result = result;
+    pending_file_events_.push_back(entry);
+    return true;
 }
 
 bool ApplicationState::record_result_name(const std::string& name) {

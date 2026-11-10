@@ -77,6 +77,15 @@ bool GraphicsDevice::initialize() {
         if (id == screen) image.pixels.resize(image.pitch * image.height);
     }
     SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, "#canvas");
+    // COLOR-01: match the independently measured original Wine/Mesa UNORM8
+    // source-term rounding for the original X8 opaque display only. Render
+    // textures (whose alpha can be consumed) and other games retain GLES.
+    // Initialize-only: Renderer bakes this choice into its shader programs.
+    if (!backend.configure_unorm_blend_profile(
+            touhou::sdl::UnormBlendProfile::SeparateRgbTerms, screen)) {
+        error = "unorm blend profile must be configured before renderer initialization";
+        return false;
+    }
     if (!backend.initialize()) {
         error = backend.error();
         return false;

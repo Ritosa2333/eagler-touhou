@@ -6,6 +6,7 @@
 #include "game/TitleFrame.hpp"
 #include "game/VisualBootstrap.hpp"
 #include "game/ReplayFastForward.hpp"
+#include "multiplayer/Session.hpp"  // M7：联机会话接缝（playback_input 延迟窗）
 
 #include <SDL3/SDL.h>
 
@@ -35,6 +36,25 @@ constexpr i32 kFrontBank = 3;
 constexpr i32 kStageBank = 4, kBulletBank = 5, kPlayerBank = 6, kSceneryBank = 7;
 constexpr i32 kSpiritBank = 25; // 00405530: astral.anm.
 constexpr i32 kStageLogoBank = 27;
+
+// P3.3：确认帧门同步（Session::SetPredictionBarrier）。只在 MP 会话 Active
+// 时写门（非 Active 保持 Configure/Stop 的清零值）。门源取实际参与模拟
+// 推进的两个权威位：
+//   - MSG 对话激活：RunScene::dialog_active()（MsgPlayer::active 的只读面，
+//     与 P3.2 对话快照域同一权威位）；
+//   - 换关过渡：stage_transition_loading（present 尾 apply_destination(
+//     NextStage) 置位 → 下一次 update 的 prepare_next_stage 消费）与
+//     stage_transition_active（装载门 start_transition → activate_next_stage，
+//     update_scene_pass 的推进门）。两者合起来覆盖门首 bank 拆卸帧到新关
+//     激活的整窗。
+// run_transition.active() 只表示 effect overlay 的 VM 句柄存活：标题启动
+// 转场同样命中，且可在装载门期间提前退休，与模拟推进不同拍，不作判据。
+void sync_mp_prediction_barrier(ApplicationState& app) {
+    if (!multiplayer::session.Active()) return;
+    const bool transition = app.stage_transition_loading || app.stage_transition_active;
+    const bool dialog = app.run && app.run->dialog_active();
+    multiplayer::session.SetPredictionBarrier(dialog || transition);
+}
 }  // namespace
 
 Application::Application() : state(std::make_unique<ApplicationState>()) {}
@@ -132,6 +152,11 @@ bool ApplicationState::start_replay(i32 file_index, i32 stage_index) {
         !replay_slots[u32(file_index)].decoded)
         return fail("Replay start on empty slot: " + std::to_string(file_index));
     if (stage_index < 0) return fail("Replay start with negative stage index");
+    // 0x452a43/0x452a55: the replay launch creates the effect.anm script0
+    // overlay and applies label7 while still in the title scene; 0x42c550's
+    // label1 later rebinds it for the first stage. Queue only after the
+    // run-owned owner exists.
+    if (!begin_run_transition()) return false;
     pending_replay_file = file_index;
     replay_catalog_index = file_index;
     pending_replay_stage_slot = stage_index;
@@ -269,7 +294,7 @@ bool ApplicationState::advance_loading_caption() {
     return true;
 }
 
-bool ApplicationState::draw_loading_battle() {
+bool ApplicationState::commit_loading_battle_caption() {
     if (!run || !loading_prayer) return true;
     if (!loading_animations.registry.find(loading_prayer)) return true;
     // progress.stage_frame is sampled after this frame's update: battle frame
@@ -296,9 +321,26 @@ bool ApplicationState::draw_loading_battle() {
     // 每帧整链 tick。旧实现在 f0 整链 tick：script16 的 world 矩阵前进到
     // 原生 f1 且之后冻结（draw 门 boot 首差）。script14/15/16 无 random
     // opcode，不耗 RNG。
+    // M1/T2 解耦(a)：此 tick/retire 原在 Draw72 回调内联（随 present 次数
+    // 变化相位）；门控键是模拟计数 progress.stage_frame，故移入 commit 段尾
+    // ——每逻辑帧恰一次、与 present 次数无关。commit 与 Draw72 之间
+    // （pause overlay + 场景绘制回调）无 loading_animations 消费者，隔离
+    // 管理器（独立 AnmEnvironment/registry），tick 流序不变。
     if (battle_frame >= 1) {
         if (!loading_animations.update(true)) return fail(loading_animations.error);
     }
+    return true;
+}
+
+bool ApplicationState::draw_loading_battle() {
+    if (!run || !loading_prayer) return true;
+    if (!loading_animations.registry.find(loading_prayer)) return true;
+    // M1/T2 解耦(a)：tick/retire 已移至 commit_loading_battle_caption()；
+    // 本 Draw72 回调只剩 battle f0..9 的 alpha 覆写(save/restore)+layer31
+    // 提交。帧内序保持 tick(commit 段) → alpha 覆写 → 绘制 → 恢复，与原
+    // Draw72 内联「tick 先于 alpha 覆写」同拍序。
+    const i32 battle_frame = progress.stage_frame - 1;
+    if (battle_frame < 0 || battle_frame > 9) return true;
     // 原生 0x4172e0 在 battle f0 以 0x46fc30(label1) 中断装载树；三个 layer31
     // 子体的绘制 alpha 由各自脚本给出（round-opening-20261031/ascii-loading/
     // summary.json + vm-draws.jsonl 实证）：
@@ -556,6 +598,7 @@ bool ApplicationState::initialize(bool device) {
 
 ApplicationState::~ApplicationState() {
     clear_ending_windows();
+    (void)release_run_transition();
     title.reset();
     if (ending) {
         ending->teardown();
@@ -571,6 +614,10 @@ ApplicationState::~ApplicationState() {
 }
 
 void ApplicationState::release_run(bool preserve_hud) {
+    // 0x415650/0x402ff0 的 overlay root 是 run-owned：它必须跨 title.reset()
+    // 与 0xa/0xb Retry 存活，只在 begin_title/析构退役。故这里不释放它，
+    // 并保留它引用的 effect(8)/astral(25) bank。
+    const bool transition_alive = run_transition.active();
     // 0x44a373（ThreadInf 声音对象销毁）：or eax,-1 → 0x460d40(-1) 停全部
     // SE voice。原版场景退出销毁声音线程对象时 loop 声（se_lazer00.wav id55、
     // se_lazer02.wav id20）随之终止；web 的 voices 与 BGM 流分离，stop(-1)
@@ -588,10 +635,13 @@ void ApplicationState::release_run(bool preserve_hud) {
     // 对局 bank 卸载（unload 从 banks 摘除并落 retired 队列，供重开再装载）；
     // 常驻 bank（text/ascii/effect）只 retire 活动 VM，资源本体跨场景常驻。
     for (const auto bank : {kFrontBank, kStageBank, kBulletBank, kPlayerBank, kSceneryBank, 26, kStageLogoBank,
-                            kSpiritBank})
-        if (!preserve_hud || bank != kFrontBank) animations.unload(bank);
+                            kSpiritBank}) {
+        if (preserve_hud && bank == kFrontBank) continue;
+        animations.unload(bank);
+    }
     if (!preserve_hud)
-        for (const auto bank : {0, 2, 8}) animations.retire_resource(bank);
+        for (const auto bank : {0, 2, 8})
+            if (!(transition_alive && bank == 8)) animations.retire_resource(bank);
     // 004172e0's caption slot must not outlive the run. preserve_hud keeps
     // bank 2 loaded, so retire the tree explicitly instead of dropping the
     // handle (an abandoned transition would otherwise keep spawning script16
@@ -633,6 +683,7 @@ bool ApplicationState::preload_scenery_animation(i32 bank, const std::string& na
 }
 
 bool ApplicationState::begin_title(i32 reason) {
+    if (!release_run_transition()) return false;
     // 0042bfa0 saves before destroying a battle, including Replay. Ending
     // teardown alone (43c1c0 case 10) is not a score save point.
     if (run || ordinary_records_dirty) {
@@ -645,6 +696,11 @@ bool ApplicationState::begin_title(i32 reason) {
     // Only a real Practice quit/reselect gets original dc670==4 semantics.
     // Capture replay status before release_run; never repurpose a replay return.
     if (returns_to_practice_selection(progress, reason, replay_active)) reason = 4;
+    // Spell-practice runs return through the DAT_004bb4c4/c8/cc cascade
+    // (0x4561bf/0x45673a) straight to the difficulty level with the launch
+    // selection restored — original dc670 stays 5 there, never 4.
+    else if (returns_to_spell_practice_selection(progress, reason, replay_active))
+        reason = 5;
     if (ending) {
         // Ending 场景兜底拆卸（正常路径在 apply_destination 0x10 已做）。
         ending->teardown();
@@ -672,6 +728,40 @@ bool ApplicationState::begin_title(i32 reason) {
     return title->error.empty() || fail(title->error);
 }
 
+bool ApplicationState::begin_run_transition() {
+    // 0x415650(effect type 0) creates effect.anm script0 in the title scene;
+    // 0x402ff0 initializes its AnmOverlay (panels 3..6 + astral), and
+    // 0x46fc30(handle, 7) applies label7 (0x403630: layer 26/mode 0).
+    // The handle is DAT_004dc86c, owned by the run, not by TitleScene.
+    // 00417370 is unrelated: it creates ascii.anm script17 (the loading
+    // prayer) and is modeled separately by transition_prayer/loading_prayer.
+    if (!animations.resource(8))
+        return fail("Run transition effect bank unavailable");
+    // Native title launch has no astral bank yet (AstralInf is created during
+    // battle load), so 0x402ff0 builds four effect panels only.
+    if (!run_transition.create())
+        return fail(run_transition.error.empty() ? "Run transition effect create failed"
+                                                 : run_transition.error);
+    return true;
+}
+
+bool ApplicationState::stage_start_run_transition() {
+    // 0x42c550:0x42c86a..0x42c88c sends label1 on every activation. A live
+    // launch overlay rebinds its panels to scripts 7..10; after its natural
+    // completion the stale handle is a no-op, also on 0xc continuation.
+    if (!run_transition.stage_start())
+        return fail(run_transition.error.empty() ? "Run transition stage start failed"
+                                                 : run_transition.error);
+    return true;
+}
+
+bool ApplicationState::release_run_transition() {
+    if (!run_transition.release())
+        return fail(run_transition.error.empty() ? "Run transition effect retire failed"
+                                                 : run_transition.error);
+    return true;
+}
+
 bool ApplicationState::begin_run() {
     const bool new_run = progress.new_run;  // 关终 0xc 换关为延续对局（非新开）
     const bool preserve_hud = run && !new_run;
@@ -686,6 +776,16 @@ bool ApplicationState::begin_run() {
     if (run) {
         if (!files.save_score()) return fail(files.error);
         ordinary_records_dirty = false;
+    }
+    // TitleScene stores the 0x415650 handle in its own state only until the
+    // launch frame; native DAT_004dc86c outlives the title manager. Transfer
+    // ownership before title.reset() so ~TitleScene does not retire it.
+    if (title) {
+        const u32 title_effect = title->state.start_effect;
+        title->state.start_effect = 0;
+        if (!run_transition.adopt(title_effect))
+            return fail(run_transition.error.empty() ? "Run transition adopt failed"
+                                                      : run_transition.error);
     }
     title.reset();
     if (continuing) {
@@ -832,6 +932,29 @@ bool ApplicationState::begin_run() {
         if (!begin_record_stage()) return false;
     }
     if (!run->initialize(HudEntryContext{0, new_run, title_flow_ran})) return fail(run->error);
+    // M2：多人会话席位启用（宿主在对局前 configure_multiplayer；单席
+    // mp_seat_count==0 时零变化）。
+    if (mp_seat_count >= 2 && !run->enable_multiplayer(mp_seat_count, mp_characters))
+        return fail(run->error.empty() ? "Multiplayer seat enable failed" : run->error);
+    // M7：本地席位接线（battle.step 的 effective_input 写入目标席）。
+    run->battle.mp_local_seat = mp_local_seat;
+    // M7：联机会话接缝——本地席位输入走 Runtime 延迟窗（与回放
+    // playback_input 同接缝；远端席位由 Session::CanSimulate 每帧注入
+    // seat_inputs）。非联机 MP（本地多席测试/单席）零变化——session 不
+    // Active 时 playback_input 保持原值（回放或物理输入）。
+    if (mp_seat_count >= 2 && multiplayer::session.Active()) {
+        // P3.2：宿主域接线——RunScene（震动/对话/STD 快照面）+ 转场句柄
+        //（run_transition 的 handle_ 读写面；句柄值快照/回写经 Session 的
+        // transition_handle_ 指针，VM 本体在 AnmRegistry 域内恢复）。
+        multiplayer::session.BindWorld(&run->battle, &visual, run->presentation.get(),
+                                       run.get(), &mp_transition_handle_);
+        run->playback_input = []() -> const GameInput* {
+            return multiplayer::session.LocalDelayedInput();
+        };
+        // P3.1：音频观察器链 + defer 冲账（幂等；Configure 后补接线共用
+        // wire_multiplayer_audio 的同一安装点）。
+        wire_multiplayer_audio();
+    }
     // 0042c550's activation branch (0x42c881 / 0x42c9fb) -> 004172e0 ->
     // 0046fc30 retires the loading caption tree (root plus spawned
     // script14/15/16 children). The script's label1 is a 10-frame fade, not
@@ -840,21 +963,26 @@ bool ApplicationState::begin_run() {
         if (!animations.retire(transition_prayer))
             return fail("Next-stage loading caption release: " + animations.error);
     }
+    // 0x42c550:0x42c886..0x42c88c: after the prayer caption is retired, the
+    // persistent DAT_004dc86c overlay receives label1. This is the only path
+    // that rebinds panels 3..6 to effect scripts 7..10; it must run on every
+    // stage activation, first launch and 0xc continuation alike.
+    if (!stage_start_run_transition()) return false;
     if (!replay_session) run->record_input = [this](const GameInput& input) {
         // 录像 slow 事件字节（0x4484d0；回放 FPS 显示直读该流）：取最近
         // 1s 采样窗的整数 fps，正常 60 → 恒 60 字节（slow rate 0%）。
+        // M1/T3：捕获拍采样并随槽携带——源=上一 fps 窗 slow_window_fps_
+        // （该窗只在 commit 段结算，本拍读值与拆分前 Update 20 同源同拍；
+        // 移到 commit 重算会漂移）。
         const u8 slow = u8(std::min(255.0f, std::max(0.0f, slow_window_fps_ + 0.5f)));
         // D-fix（0x448ec0 关首输入沿复位）：关内首帧按复位语义落盘
         // （pressed = 全量 held、released = 0），与真机五处关界实录一致。
-        if (record_edge_reset_pending_) {
-            record_edge_reset_pending_ = false;
-            GameInput reset = input;
-            reset.pressed = u32(reset.held);
-            reset.released = 0;
-            if (!recorder.record(reset, slow)) fail("Replay input recording failed");
-            return;
-        }
-        if (!recorder.record(input, slow)) fail("Replay input recording failed");
+        // M1/T3：复位决定在捕获拍消费一次并随槽（edge 标志），commit 冲账
+        // 拍应用变换后落 recorder——每 Update 20 恰一条捕获，冲账幂等。
+        const bool edge_reset = record_edge_reset_pending_;
+        record_edge_reset_pending_ = false;
+        if (!recorder.capture_input(input, slow, edge_reset))
+            fail("Replay input recording failed");
     };
     if (replay_session) {
         int restore_player_first = 1;
@@ -1332,19 +1460,19 @@ bool ApplicationState::update_scene_pass(const GameInput& input) {
         if (scheduler.update() < 0)
             return fail(run->error.empty() ? animations.error : run->error);
         // 0042c550: every active non-Replay simulation tick, any play mode.
-        if (!replay_active && progress.stage_frame != previous_stage_frame) {
-            if (!files.record_play_frame(progress.character))
-                return fail("Invalid play time record");
-            ordinary_records_dirty = true;
-        }
+        // M1/T3：改置待冲账播放帧计数（保留 !replay_active && stage_frame
+        // 推进条件）——FileStore::total_frames 内存计数镜像在 commit 头部按
+        // 计数冲账（update-only 段镜像不变；同帧双 commit 幂等）。
+        if (!replay_active && progress.stage_frame != previous_stage_frame)
+            ++pending_play_frames_;
     } else if (ending) {
         // Ending runs at original Update 31; its return-6 cadence restarts
         // the pass before the late ANM chain, rather than skipping just text.
         if (scheduler.update() < 0)
             return fail(ending->error.empty() ? animations.error : ending->error);
-        if (!graphics.select_target(nullptr, 0) ||
-            !graphics.clear_target(0xff000000, nullptr))
-            return fail(graphics.error);
+        // M1/T2 解耦(b)：本分支的 select_target/clear_target（原 :1345-1347）
+        // 移至 present 段头（display->draw() 之前）——设备渲染目标操作不属
+        // 模拟段；restart 循环的中途 clear 无像素消费者，设备可见帧序不变。
     } else {
         return fail("Application has no active scene");
     }
@@ -1361,14 +1489,42 @@ bool ApplicationState::update_scene_pass(const GameInput& input) {
     return true;
 }
 
-bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) {
+// ---- M1/T2 帧体三段拆分（update → commit → present；step 复合逐操作同序）----
+
+// update：一次权威模拟推进。initialized/exiting/failure 守卫 → complete_loading
+// （屏障 b：pending_load=1 的 destination 消费）→ 暂停入口（唯一读 lost_focus
+// 处）→ physical_input 挂接 → do/while update_scene_pass（Replay 快进 restart
+// 仍在本段内循环）→ physical_input 摘除 + ending_fades 清理。
+// 不读 fps/墙钟/设备；M8 重算（回滚）只调本段。
+bool ApplicationState::update(const GameInput& input, bool lost_focus) {
     if (!initialized || exiting || !failure.empty()) return false;
+    // P3.2：转场句柄同步（Session 快照面读到的恒为当前帧值；restore 的
+    // 回写在 CanSimulate 放行前由 ExecuteRollback 写入本字段，随后本行
+    // 在重放首帧把它 adopt 回 run_transition——句柄失效时 adopt 无作用，
+    // 与原版「后续关卡向旧句柄发 label1 无作用」语义一致）。
+    if (multiplayer::session.Active() && mp_transition_handle_ != run_transition.handle()) {
+        if (!run_transition.adopt(mp_transition_handle_))
+            return fail(run_transition.error.empty() ? "Run transition adopt failed"
+                                                     : run_transition.error);
+    }
+    mp_transition_handle_ = run_transition.handle();
+    // M1/T3：挂起槽逻辑帧身份（frames 在 commit 段 frames++ 前即本帧身份；
+    // 全程单调不重置）。本段全部捕获（record_input 输入沿 / update_spell_time
+    // 钟值 / 播放帧计数）以该值盖章，commit 冲账幂等以之为据。
+    recorder.capture_frame = frames;
     if (!complete_loading()) return false;
     // Physical menu edges are sampled once per presented frame, not again
     // when Replay/Ending asks to restart the simulation Update pass.
+    // M1/T6 失焦策略（运行时 flag，不引 ifdef）：失焦自动暂停经
+    // focus_pause_enabled 门控——SP 默认 true（原 :1369-1372 语义逐位不变）；
+    // MP 会话由 M7 Runtime 置位 false（置位点声明见 ApplicationState.hpp
+    // focus_pause_enabled），单端失焦不开 PauseEntrance::Pause、也不入
+    // pause->controls（转发同门）。显式 Esc（pressed&0x100）暂停不受该门
+    // 影响；PauseFrame 只消费 pressed/repeated，SP 下同门转发零行为变化。
+    const bool focus_pause = lost_focus && focus_pause_enabled;
     if (run && pause) {
-        if (pause->active()) pause->controls({input.pressed, input.repeated, lost_focus});
-        else if ((input.pressed & 0x100u) || lost_focus)
+        if (pause->active()) pause->controls({input.pressed, input.repeated, focus_pause});
+        else if ((input.pressed & 0x100u) || focus_pause)
             if (!pause->open(PauseEntrance::Pause)) return fail(pause->error);
     }
     physical_input = &input;
@@ -1384,15 +1540,226 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
     physical_input = nullptr;
     ending_fades.erase(std::remove_if(ending_fades.begin(), ending_fades.end(),
         [this](const auto& fade) { return !scheduler.contains(fade->update); }), ending_fades.end());
+    return true;
+}
+
+// M1/T3 录制槽冲账：update 段捕获（record_input 输入沿 + update_spell_time
+// 符卡钟值）按捕获序幂等落 recorder.stream——冲账即清槽，同帧双 commit 不
+// 双记；条目帧身份（capture_frame 盖章）随槽登记，供 M6 快照台账 / M8 确认
+// 栅栏消费。D-fix 关首输入沿复位在冲账拍应用；slow 字节为捕获拍随槽值；
+// 符卡钟值为捕获拍随槽值（commit 不重算）。冲账校验与捕获拍一致（begin_
+// stage 只在屏障点改流，帧内不交错），失败消息与原调用点逐字相同；fail
+// 终态下无后续消费（encode/save_replay_slot 不可达，M1-plan F4 备案）。
+bool ApplicationState::commit_pending_replay_records() {
+    while (!recorder.pending_inputs.empty()) {
+        const PendingReplayRecorder::PendingInput pending =
+            recorder.pending_inputs.front();
+        recorder.pending_inputs.erase(recorder.pending_inputs.begin());
+        GameInput record = pending.input;
+        if (pending.edge_reset) {
+            record.pressed = record.held;
+            record.released = 0;
+        }
+        if (!recorder.stream.record(record, pending.slow))
+            return fail("Replay input recording failed");
+    }
+    while (!recorder.pending_spell_times.empty()) {
+        const PendingReplayRecorder::PendingSpellTime pending =
+            recorder.pending_spell_times.front();
+        recorder.pending_spell_times.erase(recorder.pending_spell_times.begin());
+        if (!recorder.stream.record_spell_time(pending.index, pending.packed))
+            return fail("Replay spell time array unavailable");
+    }
+    return true;
+}
+
+// M1/T4 存档事件冲账：update 段捕获的八处 save 点按捕获序逐条应用（变更+
+// save）。save 失败语义三档逐点保真（F1/F1′，禁止统一）：
+//   帧失败档六处：冲账失败即 fail——终止于 failure 帧（step 短路 present），
+//   与原 Update 期调用点 `|| fail` 终态同路径；失败消息与原调用点逐字相同
+//   （原实现 ApplicationState::fail set-if-empty 先于 RunScene/RunPause 的
+//   包装错误生效，failure 文案即本处文案）。
+//   吞错档 mark_heard：save 失败仅落 files.error（write_save 自置 error）、
+//   静默继续，帧不失败——原 `(void)files.save()` 终态逐位保持。
+//   菜单错误档 persist_options：save 失败经 TitleScene::option_menu() 非常
+//   量访问器（F1″ 微改）对 public 的 option.error set-if-empty 补记（逐位
+//   复刻 TitleOptionsMenu.cpp:113 fail 语义），帧不失败。title 在同帧内存续
+//   （场景拆卸只发生在 present 尾/次帧头屏障点），捕获与冲账同帧。
+// update-only 段 files 字段/存储镜像/设备音量均不变；同帧双 commit 幂等
+// （冲账即清槽）。
+bool ApplicationState::commit_pending_file_events() {
+    while (!pending_file_events_.empty()) {
+        const PendingFileEvent entry = pending_file_events_.front();
+        pending_file_events_.erase(pending_file_events_.begin());
+        switch (entry.kind) {
+        case PendingFileEvent::Kind::SpellEvent: {
+            // 原 record_spell_event 变更+save 表达式原样迁移（消息 :50-51）。
+            bool changed = false;
+            if (entry.spell_event.kind == SpellEventKind::Begin)
+                changed = files.record_spell_attempt(entry.character,
+                                                     entry.spell_event.state.id,
+                                                     entry.spell_event.state.name,
+                                                     entry.spell_practice);
+            else
+                changed = files.record_spell_capture(entry.character,
+                                                     entry.spell_event.state.id,
+                                                     entry.spell_practice);
+            if (!(changed && files.save()))
+                return fail(files.error.empty() ? "Invalid spell record event" : files.error);
+            break;
+        }
+        case PendingFileEvent::Kind::SpellPracticeScore:
+            // 原 :101-102 表达式原样迁移（fail(files.error)，空文案走
+            // "Application operation failed" 同原语义）。
+            if (!(files.record_spell_practice_score(entry.character, entry.spell_id,
+                                                    entry.score) && files.save()))
+                return fail(files.error);
+            break;
+        case PendingFileEvent::Kind::StageClear:
+            // 原 :110-114 表达式原样迁移；成功清 ordinary_records_dirty 同原。
+            if (!files.record_run_clear(entry.character, entry.difficulty,
+                                        entry.no_continue) || !files.save())
+                return fail(files.error.empty() ? "Invalid clear record" : files.error);
+            ordinary_records_dirty = false;
+            break;
+        case PendingFileEvent::Kind::PauseOption: {
+            // 原 :463-469 表达式原样迁移：钳制读改写 + apply_volumes（设备
+            // 音量写随冲账）+ save；失败 fail(files.error)。
+            i32& value = entry.row == 0 ? files.bgm_volume : files.effect_volume;
+            value = std::max(0, std::min(100, value + entry.delta));
+            apply_volumes(files.bgm_volume, files.effect_volume);
+            if (!files.save()) return fail(files.error);
+            break;
+        }
+        case PendingFileEvent::Kind::ResultEntry:
+            // 原 :483-484 表达式原样迁移（result 行已在捕获拍构建）。
+            files.record_high_score(entry.character, entry.difficulty, entry.result);
+            if (!files.save_score()) return fail(files.error);
+            break;
+        case PendingFileEvent::Kind::MusicUnlocked:
+            // 原 record_music_unlocked（Application.cpp）set_music_heard+save
+            // 原样迁移；失败 fail(files.error)。
+            files.set_music_heard(entry.track);
+            if (!files.save()) return fail(files.error);
+            break;
+        case PendingFileEvent::Kind::MarkHeard:
+            // 吞错档：save 失败仅落 files.error，静默继续，帧不失败。
+            files.set_music_heard(entry.track);
+            (void)files.save();
+            break;
+        case PendingFileEvent::Kind::PersistOptions: {
+            // 菜单错误档：帧不失败；失败补记经 F1″ 非常量访问器 set-if-empty。
+            files.bgm_volume = entry.bgm;
+            files.effect_volume = entry.effect;
+            if (!files.save() && title) {
+                TitleOptionsMenu& menu = title->option_menu();
+                if (menu.error.empty()) menu.error = "Title option persistence unavailable";
+            }
+            break;
+        }
+        }
+    }
+    return true;
+}
+
+// P3.1：MP 音频接线（幂等）。defer_output=true 时 AudioDevice 的请求入口
+// 只发观察器 + 同步校验；Session 观察器把模拟帧请求记进当前 Record，非
+// 模拟期请求经 apply_request 原地冲账（同单人立即触达）。单席/会话未
+// Active 不接线——SP 路径零变化。
+void ApplicationState::wire_multiplayer_audio() {
+    if (mp_audio_wired_ || mp_seat_count < 2 || !multiplayer::session.Active()) return;
+    mp_audio_wired_ = true;
+    audio_device.defer_output = true;
+    // 链式保留调试观察器（th13_debug_audio_observe 的槽位不被吞）。
+    audio_debug_observer_ = audio_device.request_observer;
+    audio_device.request_observer = [this](const AudioDevice::RequestObservation& event) {
+        // 模拟帧（放行→落账之间）走 Session 账本；非模拟期（菜单/标题/
+        // 关界/暂停等）直接冲账——同单人立即触达，defer 不吞这些音频。
+        if (multiplayer::session.RecordingAudio())
+            multiplayer::session.ObserveAudio(event);
+        else
+            audio_device.apply_request(event);
+        if (audio_debug_observer_) audio_debug_observer_(event);
+    };
+}
+
+// P3.1：MP 音频冲账（commit 固定序中 audio_device.update() 之前）：
+//   audio_out_（已确认退役 Record 的 Stop/Pan/Music）→ apply_request；
+//   voice_out_（本帧首播 Voice）→ apply_request（同帧出声，不延迟）；
+// 全部条目回填 Session::NoteApplied（只读日志 + 守恒计数）。apply 失败
+// （设备 error）即帧失败——语义同原 queue_voice/stop/queue_music 的 fail。
+// 非模拟期请求不在此列（宿主观察器直接 apply_request，同单人立即触达）。
+bool ApplicationState::commit_pending_multiplayer_audio() {
+    if (!audio_device.defer_output) return true;
+    auto& session = multiplayer::session;
+    const auto apply = [this, &session](
+                           const std::vector<multiplayer::Session::AudioRequest>& requests) {
+        std::size_t applied = 0;
+        for (; applied < requests.size(); ++applied) {
+            const auto& request = requests[applied];
+            if (!audio_device.apply_request(request.observation)) break;
+            session.NoteApplied(request.frame, request.observation);
+        }
+        return applied;
+    };
+    const std::size_t deferred = apply(session.AudioOut());
+    session.ConsumeAudioOut(deferred);
+    if (!audio_device.error.empty()) return false;
+    const std::size_t voices = apply(session.VoiceOut());
+    session.ConsumeVoiceOut(voices);
+    return audio_device.error.empty();
+}
+
+// M1/T4 pan 挂起队冲账：捕获拍 observe_voice_pan 已同步校验（失败不入队），
+// 此处只做设备触达（buffer_pan + web_sfx::pan），无观察器发射——Pan tap
+// 恰一次落在捕获拍；无失败路径（原 set_voice_pan 校验后恒成功）。
+void ApplicationState::commit_pending_voice_pans() {
+    while (!pending_voice_pans_.empty()) {
+        const PendingVoicePan pending = pending_voice_pans_.front();
+        pending_voice_pans_.erase(pending_voice_pans_.begin());
+        audio_device.apply_voice_pan(pending.id, pending.pan);
+    }
+}
+
+// M1/T3 播放帧冲账：0042c550 每 active 非 Replay 模拟 tick 一帧的
+// FileStore::total_frames 内存计数镜像（FileStore.cpp record_play_frame）。
+// update 段只累计 pending 计数（镜像不变），commit 头部按计数冲账并置
+// ordinary_records_dirty——文件写仍由 files.save 既有调用点承担（屏障/
+// 确认拍原位不变）。计数清零先于冲账，失败即帧失败（原调用点同语义）。
+bool ApplicationState::commit_pending_play_frames() {
+    if (pending_play_frames_ == 0) return true;
+    const u32 count = pending_play_frames_;
+    pending_play_frames_ = 0;
+    for (u32 i = 0; i < count; ++i)
+        if (!files.record_play_frame(progress.character))
+            return fail("Invalid play time record");
+    ordinary_records_dirty = true;
+    return true;
+}
+
+// commit：待确认副作用提交（固定序，见 ApplicationState.hpp 分类表）：
+// 录制槽（T3）→ 存档事件队列(T4) → pan 挂起队(T4) → 播放帧（T3）→
+// audio_device.update() 排空（失败即 fail，同原 step :1388）→ frames++ →
+// fps 慢速率窗（fps 只进呈现统计与 save 元数据，不进模拟）→ 装载 caption
+// tick/retire（T2 解耦(a)：从 Draw72 移入，门控/序同原 :279-301，每逻辑帧
+// 恰一次、与 present 次数无关）。存档队列/pan 队在播放帧之前＝旧帧内序
+// （场景 Update 期 save 点先于帧尾 record_play_frame 镜像）。
+bool ApplicationState::commit(float presentation_fps) {
+    if (!commit_pending_replay_records()) return false;
+    if (!commit_pending_file_events()) return false;
+    commit_pending_voice_pans();
+    if (!commit_pending_play_frames()) return false;
+    // P3.1：MP 会话冲账（defer_output=false 时空转——单人 commit 序不变）。
+    if (!commit_pending_multiplayer_audio()) return fail(audio_device.error);
     audio_device.update();
     if (!audio_device.error.empty()) return fail(audio_device.error);
     frames++;
     if (run) {
-        last_fps_ = fps;
+        last_fps_ = presentation_fps;
         // 0x424990 慢速率窗：每 tick 计帧，≥1s 结算一次；游戏态有效
         //（未暂停/无覆盖层/非装载，原生 0x4c2194+0x60&0x14 门）才计入
         // 分母 60.0 与分子（fps≤57 计实际值，否则 60.0）。
-        if (fps > 0.0f) slow_window_time_ += 1.0 / fps;
+        if (presentation_fps > 0.0f) slow_window_time_ += 1.0 / presentation_fps;
         ++slow_window_frames_;
         if (slow_window_time_ >= 1.0) {
             const float window_fps =
@@ -1411,6 +1778,23 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
             slow_window_frames_ = 0;
         }
     }
+    // P3.3：本帧 update 已结算对话/换关过渡权威位——下一次 CanSimulate 前
+    // 同步确认帧门（commit 在每个模拟帧后、下一次放行前运行）。
+    sync_mp_prediction_barrier(*this);
+    return commit_loading_battle_caption();
+}
+
+// present：一次呈现 + 确认屏障尾（原 step 帧尾 :1414-1421 零重排）。
+// T2 解耦(b)：ending 分支的 select_target/clear_target 从 update_scene_pass
+// （原 :1345-1347）移到这里、display->draw() 之前——设备渲染目标操作属呈现
+// 段；restart 循环可多次触发 update_scene_pass，中途 clear 无任何像素消费者
+// （绘制只在帧尾一次），设备可见帧序不变。
+bool ApplicationState::present() {
+    if (ending) {
+        if (!graphics.select_target(nullptr, 0) ||
+            !graphics.clear_target(0xff000000, nullptr))
+            return fail(graphics.error);
+    }
     if (pause && !pause->draw_overlay(static_cast<RunSceneServices&>(*this))) return fail(pause->error);
     if (!display->draw()) return fail(display->error);
     if (pending_destination == i32(Destination::Run) || pending_destination == i32(Destination::Ending)) {
@@ -1418,7 +1802,18 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
         pending_load = 1;
         return true;
     }
-    return apply_destination() && (graphics.error.empty() || fail(graphics.error));
+    const bool applied = apply_destination();
+    // P3.3：apply_destination(NextStage) 在呈现尾置 stage_transition_loading，
+    // 而下一 tick 的首个 CanSimulate 在 update/commit 之前——门必须在此
+    // 同步（commit 早于 present，看不到本次置位）。
+    sync_mp_prediction_barrier(*this);
+    return applied && (graphics.error.empty() || fail(graphics.error));
+}
+
+// 单席兼容复合入口：逐操作同序 = update && commit && present（短路与原 step
+// 的失败早退一致——任一段失败则后续段不执行）。
+bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) {
+    return update(input, lost_focus) && commit(fps) && present();
 }
 
 const i32* ApplicationState::projection() {
@@ -1464,9 +1859,15 @@ bool ApplicationState::fade_out_music(i32 frames) {
 }
 
 bool ApplicationState::record_music_unlocked(i32 index) {
+    // M1/T4：索引校验留捕获拍（原调用点 Ending update 期同步 fail 语义），
+    // set_music_heard+save 延至 commit 冲账（帧失败档）。
     if (index < 0 || index >= 32) return fail("Ending music index out of range");
-    files.set_music_heard(index);
-    return files.save() || fail(files.error);
+    PendingFileEvent entry;
+    entry.kind = PendingFileEvent::Kind::MusicUnlocked;
+    entry.capture_frame = recorder.capture_frame;
+    entry.track = index;
+    pending_file_events_.push_back(entry);
+    return true;
 }
 
 bool ApplicationState::advance_sound() {

@@ -24,6 +24,10 @@
 
 namespace th13 {
 
+class AnmRegistry;
+
+namespace multiplayer { class WorldState; struct StageEntry; }
+
 // 诊断开关（不参与逻辑）：由 th13_debug_damage_probe() 打开，
 // 打印 0x446870/0x419a90 的每次注册项伤害贡献。打印窗口默认 7970..7985
 // （round-16 S5 判例帧），可由 th13_debug_damage_probe_window() 覆盖
@@ -109,6 +113,8 @@ struct PlayerShot {
     // only on transitions into or out of enemy contact.
     bool beam_contact = false, beam_contact_seen = false;
     i32 beam_interrupt = 0;
+    // M2：发射席位（射击事件归属；单席 = 0）。发射时取当前活动席。
+    i32 owner_seat = 0;
 };
 
 // 4457e0/446870 registration record.  The retail player object reserves 256
@@ -133,6 +139,9 @@ struct DamageRegistration {
     i32 accumulated_damage = 0;
     i32 threshold = 999999;
     u32 generation = 0;
+    // M2：owner 席位（伤害/表现事件归属；单席 = 0）。注册时取当前
+    // 活动席，席位交换随 StagePlayerState 整体携带。
+    i32 owner_seat = 0;
 };
 
 // Presentation-owned ANM geometry snapshot. StagePresentation computes these
@@ -198,12 +207,25 @@ struct ShtShotRecord {
 
 // DAT_004c22c4 survives destination0xc (0042bfa0). Stage-local ECL,
 // bullet and item storage can be replaced without constructing a new player.
+//
+// M2（一套世界、多席自机）：本结构是**每席玩家的完整战斗面**。原 StageBattle
+// 的散装玩家域（Bomb/respawn/YoumuBomb/输入/touch/SHT 参数/角色/灵界个人
+// 侧标志）全部迁入此处，使席位切换 = 一次 StagePlayerState 交换；StageBattle
+// 的引用别名（player_x/shots/damage_registrations/…）始终绑定本结构的同一
+// 存储实例，交换内容即切换席位，单席路径字节级不变（M2 门：单席等价）。
+// 共享世界（StageSim/ItemManager/SpellState/双 RNG/团队灵界槽）不在本结构。
 struct StagePlayerState {
     enum class Phase : i32 { Entering = 0, Active = 1, Dying = 2, Deathbomb = 4 };
     bool initialized = false;
     float x = 0, y = 400;
     i32 fixed_x = 0, fixed_y = 51200;
     bool focus = false, dead = false;
+    // M5/R-I8：幽灵位（死亡后待救援席）。幽灵不操作/射击/擦弹/拾取/
+    // 被瞄准；可获得团队账面奖励但不因此复活。救援（送残 5 点按）/
+    // 过关复活清除本位。单席恒 false（SP 无幽灵语义）。
+    bool ghost = false;
+    // M5/R-I9：送残/送 P 计数（AdvanceLifeTransfer 状态字节：taps*32+剩余窗）。
+    u8 life_transfer_state = 0;
     Phase phase = Phase::Active;
     i32 phase_frame = 0, invulnerable = 0;
     // 上一帧的 phase_frame（0x443240 蓝帧判据的 pre-increment 快照）：
@@ -225,6 +247,57 @@ struct StagePlayerState {
     std::array<std::array<i32, 2>, 33> movement_history{};
     i32 option_power = -1;
     bool option_reset_pending = false, option_movement_tick = false;
+    // ---- M2 迁入的每席域（原 StageBattle 成员，语义/注释原样保留）----
+    // 0x443240 case2 死亡重建标志：表现层 sync 消费的一次性边沿。
+    bool death_option_rebuild = false;
+    // 复活伤害区（player+644/0x4457e0 复活注册的运行时镜像）。
+    struct RespawnDamage {
+        Vec3 center{};
+        float radius = 0;
+        Timer remaining;
+        bool active = false;
+        i32 registration_slot = -1;
+    } respawn_damage;
+    Vec3 respawn_origin{};  // player+644：入场激光清除用的死亡位置快照
+    // Bomb 域（0x40a270 上下文；四角色共享布局，逐席独立库存/相位）。
+    i32 bomb_timer = 0;          // 炸弹作用剩余帧
+    i32 bomb_age = -1;           // ctx+0x1c；未施放=-1
+    // 0040a270:292 `add esi,0x18` → 00401400 的 +0x20 浮点累加器。
+    float bomb_age_accumulator = 0;
+    u32 bomb_generation = 0;
+    struct BombRay {
+        Vec3 origin{}, center{};
+        float angle = 0;
+    };
+    std::array<BombRay, 5> bomb_rays{};   // 0040c2c0: ANM 原点与伤害中心
+    std::array<PlayerBombOrb, 8> bomb_orbs{};
+    float bomb_angle = -1.5707964f;
+    float bomb_center_x = 0, bomb_center_y = 0;
+    float bomb_rotation_speed = 0;
+    float bomb_visual_angle = 0;
+    i32 bomb_duration = 0;
+    // 妖梦斩击池（每席独立 cursor/槽位；VM 回填经 StageBattle 回调）。
+    YoumuBomb youmu_bomb;
+    // 当帧输入快照（player 事件/移动判定用；每席独立）。
+    u32 input_state = 0;
+    // Browser touch target（每席独立触控面；M7 设备席位隔离的权威侧）。
+    struct TouchMotion {
+        int mode = 0;
+        float x = 0, y = 0;
+    } touch;
+    // SHT 定标（移速/卫星偏移/弹型域；prepare_player 按角色装载，逐席）。
+    i32 speed_orth = 576, speed_diag = 407;          // 非聚焦（pl02a.sht ×128）
+    i32 speed_orth_focus = 256, speed_diag_focus = 181;
+    std::array<std::array<std::array<i32, 2>, 10>, 2> option_offsets{};
+    std::array<std::vector<ShtShotRecord>, 11> sht_shots;
+    bool sht_shots_loaded = false;
+    // 每席角色（0x441dd0 按 be7b8 表取判定尺寸；MP 允许重复角色）。
+    i32 character = 0;
+    // 0x660+4：0x441dd0 按 kPlayerHitSize[character] 写入的判定尺寸。
+    float hit_size = 2.0f;
+    // 灵界个人侧：死亡保护标志（团队槽/mode/owner 在 SessionState/团队态，
+    // M4 落地；本字段随席位交换，保护期归属该席 owner）。
+    bool trance_protection = false;
 };
 
 class StageBattle {
@@ -245,15 +318,13 @@ public:
     // 道具/神霊管理器（0x42f020/0x438ec0/0x42e380/0x438730）；load 时注入
     // sim.items（StageItemHost），每帧经 update_item_side 步进。
     ItemManager item_manager;
-    // 妖梦 Bomb 斩击池（0x40cb50 战斗侧，r4/bomb 模块）：step_bomb 内 step
-    // 生成、bomb_damage/clears 消费；set_vm 由表现层（pl03 VM 持有者）在
-    // ANM tick 后回填——每帧序 = battle 生成支路（1 次 signed_unit 抽）→
-    // VM tick（ins_119 抽）→ set_vm → 命中/消弹查询（原版帧序）。
-    YoumuBomb youmu_bomb_;
     // 本帧斩击生成事件（slot/script/y；slot=-1 仅视觉）：step_bomb 产出，
-    // 表现层（Items/pl03 VM）读后建 VM；每帧 step 开头清空。
+    // 表现层（Items/pl03 VM）读后建 VM；每帧 step 开头清空。跨席位聚合
+    //（StepBattle::step_mp 在每席 step_bomb 后收集，同帧按席位序表现）。
     std::vector<YoumuBomb::Spawn> youmu_slash_spawns_;
     // 自机对外浮点位置（= 定点 × 0.0078125，无损）；game 坐标 x∈[-192,192]。
+    // M2：以下别名全部绑定 player_state_（每席 StagePlayerState 的同一存储
+    // 实例）；席位切换经 swap_player_context 交换内容，别名地址不变。
     float& player_x = player_state_.x;
     float& player_y = player_state_.y;
     bool& focus = player_state_.focus;
@@ -267,29 +338,19 @@ public:
         return !player_dead && player_phase != PlayerPhase::Dying;
     }
     i32& invulnerable = player_state_.invulnerable;
-    struct RespawnDamage {
-        Vec3 center{};
-        float radius=0;
-        Timer remaining;
-        bool active=false;
-        i32 registration_slot=-1;
-    } respawn_damage;
-    Vec3 respawn_origin{}; // player+644: unrounded saved death position for entry laser clear
-    i32 bomb_timer = 0;     // 炸弹作用剩余帧
-    i32 bomb_age = -1;      // 0040a270 ctx+0x1c；未施放=-1
-    // 0040a270:292 `add esi,0x18` → 00401400 的 +0x20 浮点累加器。Bomb 年龄
-    // 不是每帧 +1：rate∈(0.99,1.01) 时 age+=1 且累加器+=1.0；否则累加器
-    // +=rate、age=(int)累加器（004971f0 真机 SSE2 走 cvttsd2si 截断）。
-    float bomb_age_accumulator_ = 0;
-    u32 bomb_generation = 0;
-    struct BombRay {
-        Vec3 origin{}, center{};
-        float angle=0;
-    };
-    std::array<BombRay,5> bomb_rays{}; // 0040c2c0: ANM origins and damage centers.
-    Vec3 bomb_center()const noexcept{return {bomb_center_x_,bomb_center_y_,0};}
-    float bomb_visual_angle()const noexcept{return bomb_visual_angle_;}
-    std::array<PlayerBombOrb, 8> bomb_orbs{};
+    // M2：Bomb/respawn/妖梦斩击池/输入/touch/SHT 域随席位交换（原 StageBattle
+    // 成员迁移至 StagePlayerState，引用别名保持全部既有访问面不变）。
+    StagePlayerState::RespawnDamage& respawn_damage = player_state_.respawn_damage;
+    Vec3& respawn_origin = player_state_.respawn_origin;
+    i32& bomb_timer = player_state_.bomb_timer;
+    i32& bomb_age = player_state_.bomb_age;
+    float& bomb_age_accumulator_ = player_state_.bomb_age_accumulator;
+    u32& bomb_generation = player_state_.bomb_generation;
+    using BombRay = StagePlayerState::BombRay;
+    std::array<BombRay, 5>& bomb_rays = player_state_.bomb_rays;
+    Vec3 bomb_center() const noexcept { return {bomb_center_x_, bomb_center_y_, 0}; }
+    float bomb_visual_angle() const noexcept { return bomb_visual_angle_; }
+    std::array<PlayerBombOrb, 8>& bomb_orbs = player_state_.bomb_orbs;
     std::array<PlayerOption, 8>& options = player_state_.options;
     i32& option_count = player_state_.option_count;
     i32 player_character() const noexcept { return character_; }
@@ -310,10 +371,15 @@ public:
     // 再调 0x444df0 重建 option 树；0x444a10 已把 0x146c4 置 0。表现层
     // 在 battle.step 之后的 sync 消费此标志（此时 option_count 已按新
     // power 更新），重建语义见 sync_player_options 的 Dying 分支。
-    bool death_option_rebuild = false;
+    bool& death_option_rebuild = player_state_.death_option_rebuild;
     // 445c40 initializes the shot VM before its first4464d0 update; the
     // later ANM manager pass is a separate tick, including on the birth frame.
     std::function<bool(PlayerShot&, u32)> player_shot_birth;
+    // M6：ANM registry 注入点（Web 生产由 RunScene 接 animations.registry；
+    // 无头测试不注入 = WorldState 的 ANM 面跳过 capture/restore，其余域
+    // 照常——敌机槽位句柄在无头路径恒 0，恢复空 registry 与快照一致）。
+    AnmRegistry* mp_registry_hook = nullptr;
+    AnmRegistry* mp_registry() { return mp_registry_hook; }
     // 40cb50 creates/reads slash VMs before registering their hitboxes.
     std::function<bool(StageBattle&)> youmu_bomb_update;
     // 4460d0's charge VM is created/retired synchronously during player update.
@@ -343,12 +409,19 @@ public:
     }
     // 448ec0 ->447850: recorded fixed position and initial focus, before input0.
     void restore_replay_player(i32 x,i32 y,bool initial_focus);
-    i32 speed_orth = 576, speed_diag = 407;      // 非聚焦（pl02a.sht ×128）
-    i32 speed_orth_focus = 256, speed_diag_focus = 181;
+    i32& speed_orth = player_state_.speed_orth;
+    i32& speed_diag = player_state_.speed_diag;
+    i32& speed_orth_focus = player_state_.speed_orth_focus;
+    i32& speed_diag_focus = player_state_.speed_diag_focus;
     // Browser touch target in player coordinates; mode 0 disables it, 1 limits
     // movement to the current speed, 2 moves directly to the clamped target.
-    struct TouchMotion { int mode = 0; float x = 0, y = 0; } touch;
-    u32 input_state = 0;                         // 当帧回放输入（player 事件用）
+    StagePlayerState::TouchMotion& touch = player_state_.touch;
+    u32& input_state = player_state_.input_state;  // 当帧回放输入（player 事件用）
+    // 妖梦 Bomb 斩击池（0x40cb50 战斗侧）：每席独立 cursor/槽位；set_vm 由
+    // 表现层（pl03 VM 持有者）在 ANM tick 后回填——每帧序 = battle 生成支路
+    //（1 次 signed_unit 抽）→ VM tick（ins_119 抽）→ set_vm → 命中/消弹查询
+    //（原版帧序）。
+    YoumuBomb& youmu_bomb_ = player_state_.youmu_bomb;
 
     // 定标常量（.sht 弹型域以外的域：碰撞/无敌等，§7.2【待校准】）。
     // kFireInterval/kShotDamage/kShotOffset* 仅无 .sht 回退路径使用；
@@ -403,6 +476,8 @@ public:
     bool defer_item_side = false;
     void update_items_phase();    // 0x42e380 道具更新 + 道具事件
     void update_spirits_phase();  // 0x438730 神霊更新 + 神霊事件
+    // M3：多席收集面（R-I7：每件/每只按最近合格席；单席 = 单元素）。
+    std::array<ItemCollector, 3> make_seat_collectors();
     bool continue_player();
     void on_bomb_key();  // X 边沿（经 step 内部处理，这里供测试直调）
     bool end_trance(); // 405b80: depletion or428820 dialogue entry.
@@ -417,14 +492,140 @@ public:
                                   const std::array<Vec3, 4>& quad);
 
     // .sht 弹型域：5 能量档非聚焦（块 0-4）+ 5 能量档聚焦（块 5-9）+
-    // 特殊块 10（类别 2，未接入）。
+    // 特殊块 10（类别 2，未接入）。M2：逐席域（每角色独立弹型表），经
+    // 引用别名跟随当前活动席。
     static constexpr u32 kShtBlocks = 11;
-    std::array<std::vector<ShtShotRecord>, kShtBlocks> sht_shots;
-    bool sht_shots_loaded = false;
+    std::array<std::vector<ShtShotRecord>, kShtBlocks>& sht_shots =
+        player_state_.sht_shots;
+    bool& sht_shots_loaded = player_state_.sht_shots_loaded;
+
+    // ---- M2：多席自机（一套共享世界 + 2..3 席独立玩家面） ----
+    // 席位数（RULES R-X：2–3 席）。0 = 单席（SP 兼容，全部既有路径不变）。
+    // 启用后 step_mp 按固定席位序 0..seat_count-1 推进各席玩家面，世界面
+    // （StageSim/ItemManager/SpellState/团队灵界）每逻辑帧只推进一次。
+    i32 seat_count = 0;
+    // 当前活动席（别名/回调归属）。单席恒 0。
+    i32 active_seat = 0;
+    // 每席玩家面存储（M2 权威槽位）。enable_seats 时把当前 player_state_
+    // 窗口内容移入 seats[0]（SP 兼容席），此后窗口只是活动席暂存。
+    std::array<StagePlayerState, 3> seats{};
+    // 每席 HUD 资源（残机/Bomb/Power/deaths；RULES R-A「每席独立」）。
+    // 单席模式 seat 0 由宿主注入的 player_ 提供（load/prepare_player 绑定）。
+    std::array<HudPlayerState, 3> seat_huds{};
+    // 每席角色（RULES R-X：允许重复角色）。单席 = progress.character。
+    std::array<i32, 3> seat_characters{};
+    // MP 输入沿：每席独立 GameInput（held/previous/pressed/repeat/duration）。
+    std::array<GameInput, 3> seat_inputs{};
+    // ---- M4：团队灵界状态机（RULES R-T1..T10） ----
+    // backing 仍是 SessionState.run_mode_flags bit0x100 + ending_points
+    //（共享槽，全场一份）。本状态机只记录 MP 侧归属：mode/owner/generation。
+    // 单席（seat_count==0）不改变任何 SP 语义——查询三分类：
+    //   team_trance_active()  团队全场查询（神霊/BGM/HUD/槽显示/槽消耗）；
+    //   seat_trance_active()  可操作席位的灵界射击/伤害/三类免疫查询；
+    //   seat_bomb_allowed()   个人 Bomb 许可（R-T2：owner 拒、队友可用）。
+    enum class TranceMode : i32 { Idle = 0, Manual = 1, DeathProtection = 2 };
+    TranceMode trance_mode = TranceMode::Idle;
+    i32 trance_owner_seat = 0;   // 发动者（仲裁序与死亡责任归属）
+    u32 trance_generation = 0;   // 代数（R-T9：owner 死亡重生只清当前代）
+    // 进入死亡演出时记录的灵界代数：重生第 30 帧清槽（0x443240:158）
+    // 仅当期间未开启新代灵界——owner 保护灵界耗尽死亡的演出期间队友
+    // 开启的新代不得被旧重生路径清掉（R-T9 的 generation 守卫）。
+    u32 death_trance_generation = 0;
+    // 团队全场查询（= SP trance_active；MP 下同式）。
+    bool team_trance_active() const {
+        return progress_ && trance_active(*progress_);
+    }
+    // 可操作席位的灵界射击查询：灵界期间全体可操作席（R-T2）。
+    bool seat_trance_active() const { return team_trance_active(); }
+    // 个人 Bomb 许可（R-T2/R-T8）：owner 遵 SP 灵界拒 Bomb；队友可用。
+    bool seat_bomb_allowed(i32 seat) const {
+        return !(team_trance_active() && seat == trance_owner_seat);
+    }
+    // 把 seats[seat] 的内容换入 player_state_ 窗口（当前窗口内容先写回
+    // 其权威槽位）。引用别名自动跟随；席位切换不触碰共享世界/RNG。
+    void swap_player_context(i32 seat);
+    // 席位循环收尾：窗口写回 seats[active_seat]，恢复调用方活动席。
+    void restore_seat_context(i32 restore_seat);
+    // 启用多席（2..3；RULES R-X）。调用点 = RunScene/宿主在 battle.load
+    // 与 prepare_player 之后：把当前单席玩家面收编为 seat 0，逐席绑定
+    // seat_huds/seat_characters/输入沿。characters 为每席角色（允许重复）。
+    // 每席按角色装载 plXXa.sht 定标域（移速/卫星偏移/弹型表——provider
+    // 供 .sht 读取；缺文件即失败，不静默降级）。hud 模板 = SP 起飞资源
+    //（R-B：每席备用残机 2、Bomb 2、碎片 0、power 按开局档位）。
+    bool enable_seats(EclResourceProvider& provider, i32 count,
+                      const std::array<i32, 3>& characters);
+    // M7：本地席位号（宿主接线——联机会话的 LocalSeat）。step 的
+    // effective_input（playback_input/物理输入接缝）写入本席的输入沿；
+    // 默认 0 = 单席/本地多席测试零变化。远端席位由 Session::CanSimulate
+    // 逐帧注入。双端对称性依赖此值与 SessionSetup.local_player 一致。
+    i32 mp_local_seat = 0;
+    // MP 一帧：固定席位序推进所有席位的玩家面（每席 update_player/
+    // options/firing/shots/bomb），世界面（sim.step_frame）在席位循环后
+    // 只推进一次。输入取 seat_inputs；单席路径（seat_count==0）不经过本入口。
+    bool step_mp();
+    // M4/R-T8：MP 灵界团队帧（Manual 请求逐席仲裁 + 槽消耗一次）。
+    bool update_trance_mp();
+    // ---- M5：幽灵与团队生命周期 ----
+    // 幽灵席数（R-I8）。0 = 全员可操作。
+    i32 ghost_count() const {
+        i32 count = 0;
+        for (i32 seat = 0; seat < seat_count; ++seat)
+            if (seats[size_t(seat)].ghost) ++count;
+        return count;
+    }
+    // 团队全灭（全员幽灵；R-G 180 逻辑帧全灭等待由宿主层计时）。
+    bool team_wiped() const { return seat_count >= 2 && ghost_count() == seat_count; }
+    // 救援（R-I9 定向事务）：donor 扣 1 命、recipient 清幽灵位并按 SP
+    // 重生语义复位（复活 Bomb = SP 初始 2）。跨席事务：不走拾取广播。
+    bool rescue_seat(i32 donor, i32 recipient) {
+        if (seat_count < 2 || donor == recipient) return false;
+        if (donor < 0 || donor >= seat_count || recipient < 0 || recipient >= seat_count)
+            return false;
+        auto& donor_hud = seat_huds[size_t(donor)];
+        auto& recipient_hud = seat_huds[size_t(recipient)];
+        if (!seats[size_t(recipient)].ghost) return false;   // 非幽灵不可救
+        if (donor_hud.extra_lives <= 0) return false;         // 无命可送
+        --donor_hud.extra_lives;
+        seats[size_t(recipient)].ghost = false;
+        seats[size_t(recipient)].dead = false;
+        // SP 重生资源（R-G：救援数值用本作 SP 上限与初始 Bomb）。
+        recipient_hud.bombs = 2;
+        recipient_hud.bomb_pieces = 0;
+        // 位置/相位复位（Entering 重生态由 update_player 的重生序接管）。
+        seats[size_t(recipient)].phase = StagePlayerState::Phase::Active;
+        seats[size_t(recipient)].phase_frame = 0;
+        seats[size_t(recipient)].invulnerable = 120;
+        return true;
+    }
+    // 过关复活（R-G）：stage 切换时清全部幽灵位（过关复活=全员可操作）。
+    void revive_all_on_stage_clear() {
+        for (i32 seat = 0; seat < seat_count; ++seat) {
+            if (!seats[size_t(seat)].ghost) continue;
+            seats[size_t(seat)].ghost = false;
+            seats[size_t(seat)].dead = false;
+            seat_huds[size_t(seat)].bombs = 2;
+            seat_huds[size_t(seat)].bomb_pieces = 0;
+            seats[size_t(seat)].phase = StagePlayerState::Phase::Active;
+            seats[size_t(seat)].phase_frame = 0;
+            seats[size_t(seat)].invulnerable = 120;
+        }
+    }
+    // 单席观察面（seat_count==0 时 seats[] 未收编，宿主读窗口玩家态）。
+    const StagePlayerState& player_state() const { return player_state_; }
+    const HudPlayerState* seat_hud(i32 seat) const {
+        return seat >= 0 && seat < i32(seat_huds.size()) ? &seat_huds[size_t(seat)] : nullptr;
+    }
 
 private:
     bool player_prepared_ = false;
     void rebuild_options_for_power();
+    // M3：单席弹-玩家碰撞体（collide_player_bullet 的 MP 分派按席位循环
+    // 调用；seat = 判定席号，擦弹 mask 用）。
+    void collide_player_bullet_seat(StageBullet& bullet, i32 seat);
+    // M2：按角色装载 .sht 定标域到当前窗口席（enable_seats 逐席调用；
+    // 与 prepare_player 的 SHT 段同源语义：移速/卫星偏移/弹型表，缺文件
+    // 或布局异常即失败，不静默降级）。
+    bool load_seat_sht(EclResourceProvider& provider, i32 character);
     // bomb_slow = 本帧开始前 Bomb 已在运行（0x40a860 写的 0xa2b4 乘数），
     // 不含本帧按键刚启动的 Bomb：00443240 在 00442960 之后才复位 1.0。
     void move_player(u32 held, bool bomb_slow);
@@ -464,26 +665,34 @@ private:
     HudScoreState* score_ = nullptr;
     Timer& player_phase_clock_ = player_state_.phase_clock;
     Timer& fire_clock_ = player_state_.fire_clock;
-    std::array<std::array<std::array<i32, 2>, 10>, 2> option_offsets_{};
+    std::array<std::array<std::array<i32, 2>, 10>, 2>& option_offsets_ =
+        player_state_.option_offsets;
     std::array<std::array<i32, 2>, 8>& option_fixed_ = player_state_.option_fixed;
     std::array<std::array<i32, 2>, 33>& movement_history_ = player_state_.movement_history;
     i32& option_power_ = player_state_.option_power;
     bool& option_reset_pending_ = player_state_.option_reset_pending;
     bool& option_movement_tick_ = player_state_.option_movement_tick;
-    float bomb_angle_ = -1.5707964f;
-    float bomb_center_x_ = 0, bomb_center_y_ = 0;
-    float bomb_rotation_speed_ = 0;
-    float bomb_visual_angle_ = 0;
-    i32 bomb_duration_ = 0;
-    i32 character_ = 0;
+    float& bomb_angle_ = player_state_.bomb_angle;
+    float& bomb_center_x_ = player_state_.bomb_center_x;
+    float& bomb_center_y_ = player_state_.bomb_center_y;
+    float& bomb_rotation_speed_ = player_state_.bomb_rotation_speed;
+    float& bomb_visual_angle_ = player_state_.bomb_visual_angle;
+    i32& bomb_duration_ = player_state_.bomb_duration;
+    i32& character_ = player_state_.character;
     bool life_probe_ = false;  // TH13_LIFE_PROBE=1：敌机生命轨迹对拍探针
     bool events_ = false;  // 事件落盘（回放对拍）
     bool sink_open_ = false;  // open_event_sink 已启（load 不清 events_ 的幂等位）
-    float player_hit_size_ = 2.0f;  // 0x660+4：0x441dd0 按 kPlayerHitSize 写入
-    // 灵界（trance）状态（0x4057f0 任务对象 + 0x405a20/0x405b80 写点）：
-    bool trance_protection_ = false;  // 0x405a20 param_1=1：死亡保护灵界
-    i32 trance_task_frame_ = 0;       // 任务计时（+0x20，rate 1.0 每帧 +1）
+    float& player_hit_size_ = player_state_.hit_size;  // 0x660+4：0x441dd0 写入
+    // 灵界（trance）状态：团队槽在 SessionState.ending_points（共享）；
+    // 个人死亡保护标志逐席（StagePlayerState.trance_protection 引用别名）。
+    bool& trance_protection_ = player_state_.trance_protection;
+    i32 trance_task_frame_ = 0;  // 任务计时（+0x20，rate 1.0 每帧 +1；共享）
     std::string error_;
+    // M6：结构化快照访问面（web/cpp/multiplayer/WorldState 专用——
+    // 灵界任务计时是权威模拟量，随 WorldState 快照走）。
+    friend class multiplayer::WorldState;
+    // M9：关头延续快照（StageEntry 的 Capture/Restore 同用本访问面）。
+    friend struct multiplayer::StageEntry;
     std::vector<PlayerShotGeometrySnapshot>& shot_geometry_ = player_state_.shot_geometry;
     u32& shot_generation_ = player_state_.shot_generation;
 };

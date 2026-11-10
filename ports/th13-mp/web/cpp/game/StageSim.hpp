@@ -17,6 +17,7 @@
 #include "EnemyFog.hpp"
 #include "Types.hpp"
 
+#include <array>
 #include <functional>
 #include <memory>
 #include <string>
@@ -26,6 +27,7 @@ namespace th13 {
 
 struct SessionState;
 class AnmVm;
+namespace multiplayer { class WorldState; }
 
 // 极坐标插值通道（0x4234b0/0x423900 步进）。
 struct StagePolarItp {
@@ -321,6 +323,14 @@ struct StageEnemy {
     // add $0x11ec,%eax 后进入）以 [+0x278]+7 建层 ⟹ 默认层 8
     // （trace 实测窗口敌机该字段 = 1）。
     i32 mirror_script_base = 1;
+
+    // ---- M6：值域快照面（web/cpp/multiplayer/WorldState 专用）----
+    // StageEnemy 因 unique_ptr（threads/fog）不可整体拷贝；快照按值域逐
+    // 字段走（threads/fog 由 WorldState 单独经 EclThreadsSnapshot/值拷贝
+    // 处理）。新增值域字段时必须同步登记（编译器会强制——missing field
+    // 在 restore 侧漏拷即静默漂移，故 restore_fields 用显示全量赋值）。
+    void capture_fields(StageEnemy& out) const;
+    void restore_fields(const StageEnemy& source);
 };
 
 // 交互模式的弹体实体（fire_et 事件同源；无头路径不产实体）。
@@ -354,6 +364,9 @@ struct StageBullet {
     float hit_scale = 1.0f;  // +0x1324（出生 1.0；bit6 分支乘弹体尺寸）
     bool alive = true;
     bool grazed = false;  // +0x20 bit2：0x40db10:229-231 的每弹一次擦弹位
+    // M3/R-G：擦弹席位 mask（一弹可为多席各计一次；bit s = 席 s 已擦）。
+    // grazed 单弹位保留（单席/SP 语义 + 首擦聚合标记）。
+    u8 grazed_seats = 0;
     // ---- etEx 行为状态机（0x40f030 / 0x40db10）----
     StageEt::Ex ex[18];          // +0xBD8 起 0xc6 int 出生拷贝
     i32 ex_cursor = 0;           // +0xBD0：当前消费项（出生 = 种子项，st01 恒 0）
@@ -482,6 +495,8 @@ public:
 
 private:
     std::vector<std::pair<i32, i32>> writable_ints_;  // -9949/-9948 等可写全局
+    // M6：WorldState 快照访问面（可写全局是权威模拟量）。
+    friend class multiplayer::WorldState;
 };
 
 // 游戏指令（0x41b260 分发器行为子集）。
@@ -571,6 +586,34 @@ public:
     StageEnemy* current = nullptr;  // 正在步进的敌机（gvars/commands 用）
     u32 frame = 0;
     float player_x = 192.0f, player_y = 420.0f;  // 契约常量（交互模式每帧覆写）
+    // ---- M3：多席目标面（R-G「最近合格玩家」） ----
+    // 每席位置/合格位（step_mp 帧尾由 StageBattle 写入；单席 seat_count==0
+    // 时仅 seat 0 = player_x/y，全部查询退化为现行语义——零行为变化）。
+    // 合格 = 可操作席（非死亡/非幽灵；幽灵位由 StageBattle 维护，M5 落地
+    // 前默认全合格）。
+    i32 seat_count = 0;
+    std::array<float, 3> seat_x{}, seat_y{};
+    std::array<bool, 3> seat_eligible{true, true, true};
+    // R-G：最近合格玩家（平距平方最小；平局取较小席位）。无合格席回退
+    // seat 0（与单席退化一致）。消费点在各自原生查询时点调用，不缓存。
+    void nearest_player(float from_x, float from_y, float& out_x, float& out_y) const {
+        i32 best = -1;
+        float best_d2 = 0;
+        const i32 count = seat_count > 0 ? seat_count : 1;
+        for (i32 seat = 0; seat < count && seat < i32(seat_eligible.size()); ++seat) {
+            if (!seat_eligible[size_t(seat)]) continue;
+            const float dx = seat_x[size_t(seat)] - from_x;
+            const float dy = seat_y[size_t(seat)] - from_y;
+            const float d2 = dx * dx + dy * dy;
+            if (best < 0 || d2 < best_d2) {  // 严格 <：平局保留较小席位
+                best = seat;
+                best_d2 = d2;
+            }
+        }
+        if (best < 0) best = 0;  // 全席不合格：回退 seat 0（单席退化语义）
+        out_x = seat_count > 0 ? seat_x[size_t(best)] : player_x;
+        out_y = seat_count > 0 ? seat_y[size_t(best)] : player_y;
+    }
     i32 boss_slot[3] = {-1, -1, -1};             // mgr+0x5C 起 3 槽（script_id 寻址）
     i32 boss_timer_seconds=-1,boss_timer_centiseconds=0; // stage+1a0/+1a4, 4218f0
     bool boss_leaving=false; // enemy manager+7c bit0, 631 / 417ef0
@@ -776,6 +819,14 @@ private:
     std::vector<i32> bullet_free_slots_;
     std::vector<size_t> bullet_pool_order() const;
     void release_bullet_slot(StageBullet& bullet);
+
+    // ---- M6：结构化快照访问面（web/cpp/multiplayer/WorldState 专用）----
+    // friend 而非 public：快照是回滚基建，不进入游戏公共 API；敌机序号/
+    // 弹代/空闲槽表是池分配顺序的一部分（恢复分配顺序 = 红线）。
+    friend class multiplayer::WorldState;
+    u32& mp_next_serial() { return next_serial_; }
+    u32& mp_next_bullet_generation() { return next_bullet_generation_; }
+    std::vector<i32>& mp_bullet_free_slots() { return bullet_free_slots_; }
 };
 
 }  // namespace th13
