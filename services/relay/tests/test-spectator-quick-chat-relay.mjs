@@ -12,7 +12,9 @@ const port = listener.address().port;
 await new Promise((resolve, reject) => listener.close(error => error ? reject(error) : resolve()));
 const child = spawn(process.execPath, [fileURLToPath(new URL('../src/netplay-relay.mjs', import.meta.url))], {
   env: {...process.env, EAGLER_NETPLAY_RELAY_HOST: '127.0.0.1', EAGLER_NETPLAY_RELAY_PORT: String(port),
-    EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',EAGLER_NETPLAY_MAX_ROOMS_PER_IP:'16',
+    EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',
+    EAGLER_NETPLAY_MAX_ROOMS_PER_IP:String(spectatorGames.length),
+    EAGLER_NETPLAY_ROOM_LOOKUPS_PER_MINUTE:String(spectatorGames.length),
     EAGLER_NETPLAY_MAX_CONNECTIONS_PER_IP:'160',EAGLER_NETPLAY_CONNECTIONS_PER_MINUTE:'120'},
   stdio: ['ignore', 'pipe', 'pipe'],
   windowsHide: true,
