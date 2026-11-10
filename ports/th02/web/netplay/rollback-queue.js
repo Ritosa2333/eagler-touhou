@@ -5,7 +5,7 @@ export const BOOT_DELAY=2;
 export const MAX_ROLLBACK=12;
 export const MAX_INPUT_DELAY=12;
 export const MAX_ROLLBACK_INPUT_DELAY=6;
-export const POLICY_SCHEMA=4;
+export const POLICY_SCHEMA=5;
 export const HYBRID_RESERVE=8,PREDICTION_JITTER_STEPS=4;
 export function rollbackRttForSamples(samples){
   if(!Array.isArray(samples)||samples.length!==3||samples.some(n=>!Number.isFinite(n)||n<0||n>30000))throw Error('无效开局延迟采样');
@@ -17,7 +17,7 @@ export function rollbackPolicyForRtt(rtt,rollbackEnabled=true,players=2){
   if(!Number.isFinite(rtt)||rtt<0||rtt>30000||typeof rollbackEnabled!=='boolean'||![2,3].includes(players))throw Error('无效网络延迟');
   const rttMs=Math.ceil(rtt),transitSteps=rollbackEnabled&&rttMs>20?Math.ceil(rttMs/2/TICK_MS):0;
   // Use the same transit split for two and three players.
-  const predictionSteps=Math.min(HYBRID_RESERVE,Math.max(0,transitSteps-1));
+  const predictionSteps=Math.min(HYBRID_RESERVE,transitSteps);
   const inputDelay=Math.min(MAX_ROLLBACK_INPUT_DELAY,transitSteps-predictionSteps);
   const predictionLead=rollbackEnabled?Math.min(MAX_ROLLBACK,predictionSteps+PREDICTION_JITTER_STEPS):0;
   return {schema:POLICY_SCHEMA,rollbackEnabled,rttMs,transitSteps,inputDelay,predictionSteps,predictionLead};
