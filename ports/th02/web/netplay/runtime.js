@@ -1,4 +1,5 @@
 import {installChallengeHud} from '../pc98-challenge-hud-install.mjs';
+import {installRescueSound} from '../managed-rescue-sound.mjs';
 import {createChallengeStocks} from '../pc98-challenge-stocks.mjs';
 import {challengeStockLayout,writeChallengeHud} from '../pc98-challenge-layouts.mjs';
 import {DOSBoxPC98,supportsWriteJournal} from '../dosbox-adapter.js';
@@ -138,7 +139,7 @@ async function boot(settings){
  }
  for(const edit of soundPolicy.edits)exe.set(edit.replacement.match(/../g).map(n=>parseInt(n,16)),patch.headerSize+edit.imageOffset);
  const at=patch.headerSize+patch.codeSegment*16+patch.entries.run_config;
- exe[at]=config.p2;exe[at+1]=config.p3;exe[at+2]=players;exe=installNetPause(exe,overlay);patch.dataSegment+=overlay.bytes/16;if(challenge){const hud=installChallengeHud(exe,'02',patch);exe=hud.bytes;patch.challengeHudOffset=hud.countsOffset;}fat.replace(main,exe);
+ exe[at]=config.p2;exe[at+1]=config.p3;exe[at+2]=players;exe=installNetPause(exe,overlay);patch.dataSegment+=overlay.bytes/16;if(challenge){const hud=installChallengeHud(exe,'02',patch);exe=hud.bytes;patch.challengeHudOffset=hud.countsOffset;}exe=installRescueSound(exe,patch,overlay);patch.dataSegment+=2;fat.replace(main,exe);
  const core=config.rollback&&supportsWriteJournal()?'tracked':'plain',coreEntry=version.cores[core];
  await progress('下载并校验本局 WASM 核心',4);
  if(!/^[a-f0-9]{64}$/.test(coreEntry?.sha256))throw Error('WASM 核心清单无效');

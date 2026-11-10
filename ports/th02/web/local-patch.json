@@ -1027,6 +1027,8 @@
     "schema": 1,
     "game": "TH02",
     "file": "assets/th02-player-art.bin",
+    "dimFile": "assets/th02-player-art-dim.bin",
+    "dimSha256": "49581734f66bf21ef9594038f9843fde59a2cf2a71ddd4365a94116c900f8b8b",
     "sha256": "b7c89902236db00efb8c37dc1d5289985a762508e91ed9df21bb507c8b9ae65b",
     "bytes": 240256,
     "variants": [

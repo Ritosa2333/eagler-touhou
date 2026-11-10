@@ -1,4 +1,4 @@
-import {mkdir,readFile,copyFile} from 'node:fs/promises';
+import {mkdir,readFile,copyFile,cp} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
@@ -23,4 +23,5 @@ for(const file of manifest.files){
 if(base+end!==bytes.length)throw Error('Invalid TH04 DATA length');
 await mkdir(output,{recursive:true});await copyFile(resolve(prepared,'th04.data'),resolve(output,'th04.data'));
 if(existsSync(resolve(prepared,'source.json')))await copyFile(resolve(prepared,'source.json'),resolve(output,'source.json'));
+if(existsSync(resolve(prepared,'disks.json'))){await copyFile(resolve(prepared,'disks.json'),resolve(output,'disks.json'));await cp(resolve(prepared,'disk-blocks'),resolve(output,'disk-blocks'),{recursive:true});}
 console.log('Prepared verified TH04 content: '+output);

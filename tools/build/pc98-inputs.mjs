@@ -23,6 +23,7 @@ export async function printPC98Inputs({port, game}) {
   if(game!=='th01'){
     await visit(resolve(port,'../../common/pc98'),'../../common/pc98');
     inputs.push('../../tools/build/pc98-pmd.mjs');
+    if (game !== 'th05') inputs.push('../../tools/build/pc98-disks.mjs','../../launcher/lib/pc98-disk-blocks.mjs');
   }
   inputs.push('../../tools/build/pc98-inputs.mjs','../../tools/build/runtime-inputs.mjs');
   const baseline = JSON.parse(await readFile(resolve(port,'source-import.json'),'utf8'));

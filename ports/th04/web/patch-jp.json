@@ -72,6 +72,12 @@
   },
   "projectileArt": {
     "file": "assets/projectiles-rgb.bin",
+    "bodyFile": "assets/player-body-dim.bin",
+    "bodySha256": "7c4ec42cf86a48f20d7e45d1ba9254dd525cab1044378db86ffeeb97bba3648e",
+    "dimFile": "assets/projectiles-rgb-dim.bin",
+    "dimSha256": "8abba65a05ee53508832587c2cfcf402ac7b1f1f3d165bad685642db797d406d",
+    "originalDimFile": "assets/projectiles-original-dim.bin",
+    "originalDimSha256": "2a1b7d3306fe8d2cbefaac57c292f3170e9b2d77f1c9272f868fb46e865930cf",
     "sha256": "d477bef6b82fae1f04e0b6fdbc4e458ce526b8437d8f78e75f57ec28720916f3",
     "bytes": 262144,
     "context_cs_offset": 39470

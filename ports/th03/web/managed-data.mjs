@@ -30,7 +30,7 @@ export class ManagedContent {
   async addResources(resources) {
     if(!Array.isArray(resources))throw Error('音乐资源无效');
     for(const item of resources){
-      if(!item||!/^\/bgm\/akyu\/\d{2}\.ogg$/.test(item.path)||typeof item.url!=='string'||!item.url.startsWith('blob:')||!Number.isSafeInteger(item.bytes)||item.bytes<=0||!/^[a-f0-9]{64}$/i.test(item.sha256||''))throw Error('音乐资源无效');
+      if(!item||!(/^\/bgm\/akyu\/\d{2}\.ogg$/.test(item.path)||/^\/pc98\/(?:disks\.json|disk-blocks\/[a-f0-9]{64}\.gz)$/.test(item.path))||typeof item.url!=='string'||!item.url.startsWith('blob:')||!Number.isSafeInteger(item.bytes)||item.bytes<=0||!/^[a-f0-9]{64}$/i.test(item.sha256||''))throw Error('音乐资源无效');
       const response=await fetch(item.url);if(!response.ok)throw Error('音乐资源读取失败');
       const blob=await response.blob();if(blob.size!==item.bytes||await digest(blob)!==item.sha256.toLowerCase())throw Error('音乐资源校验失败');
       this.optional.set(item.path.slice(1),blob);
@@ -63,6 +63,12 @@ export class ManagedContent {
           const signal = init?.signal ?? input.signal; signal?.throwIfAborted();
           const response = await content.fetch(path); signal?.throwIfAborted(); return response;
         }
+        if (/\.hdi\.gz$/i.test(path) && content.optional.has('pc98/disks.json')) {
+          if ((init?.method ?? input.method ?? 'GET').toUpperCase() !== 'GET') throw Error('游戏资源为只读');
+          const {restoreManagedDisk} = await import('./pc98-disk-blocks.mjs');
+          const disk = await restoreManagedDisk(content.optional, path, content.game);
+          if (disk) return new Response(disk, {headers:{'Content-Type':'application/octet-stream'}});
+        }
         // Never fall back to a server copy of missing game data.
         if (/\.(?:hdi|gz|exe|com|dat|bin|bmp|png|svg|woff2?|ogg|opus|wav|mid)$/i.test(path)) return new Response('Resource is not installed', {status: 404});
       }
@@ -79,7 +85,7 @@ export function installManagedWorkers(environment, content, base) {
     constructor(url, options = {}) {
       if (options.type !== 'module') throw Error('接入运行时需要模块 Worker');
       super(bootstrap, {...options, type: 'module'});
-      super.postMessage({type: 'eagler-content-init', url: new URL(url, environment.location.href).href, base, game: content.game, blob: content.blob, entries: [...content.files]});
+      super.postMessage({type: 'eagler-content-init', url: new URL(url, environment.location.href).href, base, game: content.game, blob: content.blob, entries: [...content.files], optional: [...content.optional]});
     }
   };
 }

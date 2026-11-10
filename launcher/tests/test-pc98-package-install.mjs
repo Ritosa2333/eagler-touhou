@@ -1,0 +1,63 @@
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {createRequire} from 'node:module';
+import {mkdir,mkdtemp,readFile,rm,writeFile} from 'node:fs/promises';
+import {resolve,join} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {gzipSync} from 'node:zlib';
+import {test} from 'node:test';
+import {authoredSourcesPlugin} from './react-main/authored-sources.mjs';
+import {exportPC98Disks} from '../../tools/build/pc98-disks.mjs';
+import {publishPC98Blocks} from '../lib/pc98-static-publication.mjs';
+
+test('package installation fetches only selected blocks and reuses them on restart', async () => {
+  const project=resolve(import.meta.dirname,'..'),require=createRequire(resolve(project,'package.json'));
+  const {indexedDB,IDBKeyRange}=require('fake-indexeddb');globalThis.indexedDB=indexedDB;globalThis.IDBKeyRange=IDBKeyRange;
+  await mkdir(resolve(project,'.cache'),{recursive:true});
+  const root=await mkdtemp(resolve(project,'.cache/pc98-install-'));
+  try {
+    const {build}=require('esbuild'),outfile=join(root,'owners.mjs');
+    await build({absWorkingDir:project,stdin:{resolveDir:project,loader:'ts',contents:`export {ensurePC98Disks} from './app/services/game-resources.ts';export {installPackageFromRemote} from './package/package-installer.mjs';`},outfile,bundle:true,platform:'node',format:'esm',packages:'external',plugins:[authoredSourcesPlugin(project)],logLevel:'silent'});
+    const {ensurePC98Disks,installPackageFromRemote}=await import(pathToFileURL(outfile).href);
+    const paths=['disks/3-cn.hdi.gz','disks/3-jp.hdi.gz','common.bin'];
+    const payload=paths.map((path,i)=>i<2?gzipSync(Buffer.from(path)):Buffer.from(path));let offset=0;
+    const entries=paths.map((path,i)=>{const bytes=payload[i],entry={path,offset,bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};offset+=bytes.length;return entry;});
+    const index=Buffer.from(JSON.stringify({schema:'eagler-touhou/pc98-content/1',game:'th03',files:entries})),header=Buffer.alloc(12);
+    header.write('EPC98PK1');header.writeUInt32LE(index.length,8);
+    const data=join(root,'source.data');await writeFile(data,Buffer.concat([header,index,...payload]));
+    await exportPC98Disks({game:'th03',output:root,entries,payload});
+    const stage=join(root,'site'),files={},components={};
+    const descriptorFile=async(source,target)=>{const b=await readFile(join(stage,source)),sha256=createHash('sha256').update(b).digest('hex');return{source,target,bytes:b.length,sha256,revision:sha256.slice(0,16)};};
+    await publishPC98Blocks({game:'th03',source:root,data,staging:stage,descriptorFile,packageFiles:files,components});
+    files.data=await descriptorFile('games/th03/th03.data','/th03.data');
+    const descriptor={schema:'eagler-touhou/package/1',game:'th03',revision:'test',files,components,
+      runtimeRequirement:{protocol:'eagler-touhou/1',target:'th03',dataFile:'data'},base:{files:['data']}};
+    const requested=[],fetchImpl=async url=>{const path=new URL(url).pathname.slice(1);requested.push(path);
+      if(path==='th03.package.json')return Response.json(descriptor);
+      try{return new Response(await readFile(join(stage,path)));}catch{return new Response('',{status:404});}};
+    const descriptorUrl='https://test.invalid/th03.package.json';
+    const installed=await installPackageFromRemote(descriptor,{descriptorUrl,fetchImpl,desiredFileIds:descriptor.base.files});
+    assert.deepEqual(requested,['games/th03/th03.data']);requested.length=0;
+    const catalog={schema:'eagler-touhou/release-catalog/1',games:{th03:{revision:'test',descriptor:'th03.package.json'}}};
+    const acquisition={fetchImpl,getPublication:async()=>({catalog,catalogUrl:'https://test.invalid/release-catalog.json'}),getPackageFetch:()=>fetchImpl,refreshInstalled:async()=>{}};
+    const ready=await ensurePC98Disks(installed.generation,acquisition,'ja',false);
+    assert.equal(requested.filter(p=>p.endsWith('.gz')).length,1);
+    assert(!ready.files[components['pc98-disk:disks:3-cn.hdi.gz'].files[0]]?.objectId);
+    requested.length=0;assert.equal(await ensurePC98Disks(ready,acquisition,'ja',false),ready);assert.deepEqual(requested,[]);
+    const next=await ensurePC98Disks(ready,acquisition,'lang_zh-hans',false);
+    assert(next.files[components['pc98-disk:disks:3-cn.hdi.gz'].files[0]]?.objectId);
+    assert.equal(requested.filter(p=>p.endsWith('.gz')).length,1);
+    const cnBlock=components['pc98-disk:disks:3-cn.hdi.gz'].files[0], objectId=next.files[cnBlock].objectId;
+    const db=await new Promise((yes,no)=>{const request=indexedDB.open('eagler-touhou-package-store-v1');request.onsuccess=()=>yes(request.result);request.onerror=()=>no(request.error);});
+    await new Promise((yes,no)=>{const tx=db.transaction('objects','readwrite');tx.objectStore('objects').delete(objectId);tx.oncomplete=yes;tx.onerror=()=>no(tx.error);});db.close();
+    requested.length=0;const repaired=await ensurePC98Disks(next,acquisition,'lang_zh-hans',false);
+    assert(repaired.files[cnBlock]?.objectId);assert.equal(requested.filter(p=>p.endsWith('.gz')).length,1);
+    const {zipSync,strToU8}=require('fflate'), zipEntries={'package.json':strToU8(JSON.stringify(descriptor))};
+    for(const file of Object.values(files))zipEntries[file.source]=new Uint8Array(await readFile(join(stage,file.source)));
+    const {installParsedPackageZip}=await import('../package/package-installer.mjs');
+    const {parsePackageZip}=await import('../package/package-zip.mjs');
+    const imported=await installParsedPackageZip(await parsePackageZip(new Blob([zipSync(zipEntries)])));
+    const offline={fetchImpl:async()=>{throw Error('network unavailable');},getPublication:async()=>{throw Error('network unavailable');}};
+    assert.equal(await ensurePC98Disks(imported.generation,offline,'ja',true),imported.generation);
+  } finally {await rm(root,{recursive:true,force:true});}
+});

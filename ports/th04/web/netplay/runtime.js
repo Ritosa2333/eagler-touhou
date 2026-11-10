@@ -1,4 +1,5 @@
 import {installChallengeHud} from '../pc98-challenge-hud-install.mjs';
+import {installDimBody} from '../managed-dim-body.mjs';
 import {createChallengeStocks} from '../pc98-challenge-stocks.mjs';
 import {challengeStockLayout,writeChallengeHud} from '../pc98-challenge-layouts.mjs';
 import {gameVersion} from '../game-version.js';
@@ -163,7 +164,7 @@ async function boot(config){
     }
   }
   for(const edit of sound.edits)edit.targets.forEach((at,i)=>{disk[at]=edit.values[i];});
-  let patchedMain=installNetPause(fat.read(main),overlay);if(challenge){const hud=installChallengeHud(patchedMain,'04',patch);patchedMain=hud.bytes;patch.challengeHudOffset=hud.countsOffset;patch.data_segment+=hud.addedParagraphs;}fat.replace(main,patchedMain);
+  let patchedMain=installNetPause(fat.read(main),overlay);if(challenge){const hud=installChallengeHud(patchedMain,'04',patch);patchedMain=hud.bytes;patch.challengeHudOffset=hud.countsOffset;patch.data_segment+=hud.addedParagraphs;}patchedMain=installDimBody(patchedMain,patch,!!challenge);patch.data_segment+=12;fat.replace(main,patchedMain);
   await bootProgress('下载、编译并初始化 DOSBox-X WASM 与音频设备',5);
   emulator=await NP21.create({canvas:nativeCanvas,artPatch:patch,wasmBinary,lockstep:true,externalEffects:true,
     ...(workerHost?{workerRuntime:true,audioContext:workerHost.audioContext}:{}),rollbackEnabled:config.rollback!==false,lockstepEpoch:version.epoch,
@@ -172,6 +173,7 @@ async function boot(config){
     onError:error=>reportRuntimeFailure('emulator-error',Error('模拟器异常：'+String(error?.message||error))),
     onExit:()=>reportRuntimeFailure('emulator-exit',Error('游戏模拟器已经退出'))});
   emulator.module.projectileArt.view(localSlot);
+  emulator.module.projectileArt.configureBody([config.p1,config.p2,config.p3].slice(0,playerCount),localSlot);
   if(workerHost){
     emulator.module.getPersonalHud=()=>presentationHud;
     emulator.module.getHitPoints=()=>presentationHud?.points||[];

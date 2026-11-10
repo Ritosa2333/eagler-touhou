@@ -1,4 +1,5 @@
 import {printPC98Inputs} from '../../../tools/build/pc98-inputs.mjs';
+import {exportPC98Disks} from '../../../tools/build/pc98-disks.mjs';
 import {createHash} from 'node:crypto';
 import {readFile,writeFile,mkdir,readdir,copyFile,stat,mkdtemp,rename,rm} from 'node:fs/promises';
 import {resolve,relative,dirname} from 'node:path';
@@ -97,6 +98,7 @@ function replaceOnce(text,from,to,label) { if(text.split(from).length!==2) throw
 const patch=async(name,edit)=>{const path=resolve(output,name);await writeFile(path,edit((await readFile(path,'utf8')).replaceAll('\r\n','\n')));};
 const {adaptRuntime}=await import('./adapt-runtime.mjs');
 await adaptRuntime({patch,replaceOnce,output,port,web,runtime,repo,files,readInput});
+await copyFile(resolve(repo,'launcher/lib/pc98-disk-blocks.mjs'),resolve(output,'pc98-disk-blocks.mjs'));runtime.push('pc98-disk-blocks.mjs');
 await patch('bgm/akyu/manifest.json',text=>text.replace(/\.opus/g,'.ogg'));
 // Adapted sources have their own verified identity; keep upstream asset checks active.
 for(const manifestPath of ['netplay/runtime.json','lockstep-runtime.json']) {
@@ -113,6 +115,7 @@ for(const name of ['vendor/dosbox-x/NOTICE.md','vendor/dosbox-x/LICENSE','room-u
 await writeFile(resolve(output,'NOTICE.html'),notices+'<h2>PMD player</h2><p><a href="pmd-player.UPSTREAM.txt">Source</a> · <a href="pmd-player.NOTICE.txt">Notice</a> · <a href="pmd-player.LICENSE.txt">License</a></p></body></html>');runtime.push('NOTICE.html');
 const manifestBytes=Buffer.from(JSON.stringify({schema:DATA_SCHEMA,game:'th03',files:entries})),header=Buffer.alloc(12);header.write(DATA_MAGIC);header.writeUInt32LE(manifestBytes.length,8);
 await writeFile(resolve(content,'th03.data'),Buffer.concat([header,manifestBytes,...payload]));
+await exportPC98Disks({game:'th03',output:content,entries,payload});
 const sources=new Map();for(const name of [...new Set(runtime)].sort())sources.set(name,await readFile(resolve(output,name)));assertPortableRuntimeSources(sources);
 const identities={};for(const name of [...new Set(runtime)].sort()){const bytes=await readFile(resolve(output,name));identities[name]={bytes:bytes.length,sha256:sha(bytes)};}
 await writeFile(resolve(output,'manifest.json'),JSON.stringify({game:'th03',protocol:'eagler-touhou/1',features:{thprac:false,languages:false,focusHitbox:false},files:identities},null,2)+'\n');

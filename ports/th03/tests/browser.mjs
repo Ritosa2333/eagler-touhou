@@ -10,7 +10,8 @@ const {build}=require('esbuild');
 const touchDriver=(await build({entryPoints:[resolve(import.meta.dirname,'../../../launcher/app/services/player-direct-touch.ts')],bundle:true,format:'esm',platform:'browser',write:false})).outputFiles[0].contents;
 const root=resolve(import.meta.dirname,'../../..'),portRoot=resolve(import.meta.dirname,'..'),runtime=resolve(portRoot,'build-eagler'),out=resolve(portRoot,'.cache/browser');
 await mkdir(out,{recursive:true});
-const data=await readFile(resolve(portRoot,'content/th03.data'));
+const split=process.env.PC98_TEST_SPLIT==='1'?await(await import('../../../tools/ports/pc98-split-harness.mjs')).pc98SplitFixture(portRoot,'th03'):null;
+const data=split?.data??await readFile(resolve(portRoot,'content/th03.data'));
 let browser,relay,page,log='';const sockets=[],errors=[],requests=[],failures=[],results=[];
 const wait=async(check,label,ms=90000)=>{const end=Date.now()+ms;while(Date.now()<end){if(await check())return;await new Promise(r=>setTimeout(r,100));}throw Error(label+' timeout events='+JSON.stringify(await page.evaluate(()=>events))+'\n'+log);};
 const html=`<!doctype html><style>body{margin:0;background:#111}iframe{width:640px;height:480px;border:0}</style><script>
@@ -23,6 +24,7 @@ const server=createServer(async(req,res)=>{try{
   if(path==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}
   if(path==='/touch-driver.js'){res.setHeader('Content-Type','text/javascript');res.end(touchDriver);return;}
   if(path==='/data'){res.end(data);return;}
+  if(split&&path.startsWith('/split/')){const index=Number(path.slice(7));if(!Number.isInteger(index)||!split.buffers[index])throw Error('invalid split resource');res.end(split.buffers[index]);return;}
   if(/^\/music\/\d{2}\.ogg$/.test(path)){res.setHeader('Content-Type','audio/ogg');res.end(await readFile(resolve(portRoot,'content',path.slice(1))));return;}
   if(!path.startsWith('/runtime/')){res.writeHead(404).end();return;}
   const file=resolve(runtime,decodeURIComponent(path.slice(9)));if(!file.startsWith(runtime+sep))throw Error('path');
@@ -64,6 +66,7 @@ try{
     await page.goto('http://127.0.0.1:'+server.address().port);
     await page.evaluate(({count,mp})=>{for(let i=0;i<count;i++)addRuntime(i,mp);},{count,mp});
     await wait(async()=>{const result=await page.evaluate(count=>({ready:events.filter(e=>e.event==='ready').length===count,errors:events.filter(e=>e.event==='error')}),count);if(result.errors.length)throw Error(JSON.stringify(result.errors));return result.ready;},'Runtime ready');
+    if(split)await page.evaluate(async({count,resources})=>{for(let seat=0;seat<count;seat++)for(let i=0;i<resources.length;i++){const f=resources[i],blob=await(await fetch('/split/'+i)).blob(),url=URL.createObjectURL(blob);try{await rpc(seat,'resources',{resources:[{url,path:f.target,bytes:f.bytes,sha256:f.sha256}]});}finally{URL.revokeObjectURL(url);}}},{count,resources:split.resources});
   };
   const verifyTouch=async()=>{
     const frame=page.frames().find(f=>f.url().includes('runtimeEpoch=1'));

@@ -1,4 +1,5 @@
 import {normalizeSiteManifestArguments, readCompatibleSiteManifest, writeLegacySiteManifestAlias} from '../compat/site-manifest.mjs';
+import {publishPC98Blocks} from '../lib/pc98-static-publication.mjs';
 import {reactAppShellMatchesSite} from '../lib/react-app-shell-deployment.mjs';
 import { freezeHostRuntimes } from "../lib/runtime-generations.mjs";
 import { createHash, randomUUID } from "node:crypto";
@@ -684,9 +685,13 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
     const target = `games/${game}/${dataPath}`;
     await mkdir(dirname(resolve(staging, target)), { recursive: true });
     await cp(retailDataSource(game), resolve(staging, target));
+    const packageFiles = {};
+    const components = {};
+    await publishPC98Blocks({game, source: dirname(retailDataSource(game)), data: retailDataSource(game), staging,
+      descriptorFile, packageFiles, components});
     const identity = await fileIdentity(resolve(staging, target));
     entry.gameData = { path: dataPath, ...identity, version: `sha256-${identity.sha256}`, layout: PRODUCT_CONTENT[game].dataLayout };
-    const packageFiles = { [dataFileId]: await descriptorFile(target, dataTarget) };
+    packageFiles[dataFileId] = await descriptorFile(target, dataTarget);
     const baseFiles = [dataFileId];
     for (const sharedTarget of product.requiredShared || []) {
       if (sharedTarget === "/msgothic.ttc") {
@@ -699,7 +704,6 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
         throw new Error(`${game}: unsupported shared Runtime resource ${sharedTarget}`);
       }
     }
-    const components = {};
     if (modes.has("ogg")) {
       const pack = entry.music?.ogg;
       if (!pack?.files?.length) throw new Error(`${game}: OGG content declaration is missing`);

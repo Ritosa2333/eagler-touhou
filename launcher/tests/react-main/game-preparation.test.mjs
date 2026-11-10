@@ -250,6 +250,21 @@ for(const game of ['th01','th02','th03','th04']) test(`${game} original mode nev
   assert.equal(f.calls.some(call=>call.startsWith('install')),false);
 });
 
+test('background update follows the generation committed during ready preparation', async () => {
+  const initial=generation(), newer=added(initial,['track-1'],'ready-resources');let seen;
+  const fixture=acquisitionFixture({current:initial});
+  const acquisition={...fixture.acquisition,acquire:async()=>({kind:'managed',generation:initial,
+    deferredUpdate:{generation:initial,installation:{source:'remote'}}}),
+    startBackgroundUpdate:async value=>{seen=value;}};
+  const runtime={getSnapshot:()=>({epoch:1,launched:true,game:'th06',music:'none'}),
+    prepareWithReady:async(plan,onReady)=>{await onReady(1);return {epoch:1};}};
+  const input=gameInput({...fixture,acquisition},settingsFixture({music:'none'}),{runtime});
+  const prepared=await api.prepareGame(input);
+  prepared.plan.resourceGeneration=newer;
+  await prepared.startBackground();
+  assert.equal(seen.generation.id,'ready-resources');
+});
+
 for (const game of ['th01','th02','th03','th04']) test(`${game} album files are acquired only when selected`,async()=>{
   const declared=host().games.th06;
   const development=api.validateSiteManifest({...host(),profile:'web-development',shared:{...host().shared,testBuild:true},games:{[game]:{

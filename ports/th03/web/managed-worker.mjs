@@ -9,6 +9,7 @@ const receive = async event => {
   started = true;
   try {
     const content = new ManagedContent(data.blob, data.entries, data.game);
+    content.optional = new Map(data.optional ?? []);
     content.install(globalThis, data.base);
     installManagedWorkers(globalThis, content, data.base);
     await import(data.url);
