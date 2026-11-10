@@ -122,11 +122,34 @@ bool TitleSpellPracticeView::update(const TitleSpellPracticeMenu& menu,
     }
     if (level != level_) {
         if (level == SpellPracticeLevel::Stage) {
-            interrupt(cards_, 1); cards_ = 0;
+            // 00456650 case4：取消退场对 names(+0x694×5)/103 徽章/188 卡表/187
+            // 关卡表发 label1 并清后三者句柄；0x4560a0 case0 以 0046fb90 判 187
+            // 句柄失效后整表重建，case1 再发 label3+label(7+cursor)。对已
+            // label6 锁定的旧 187 VM 重发 select 不会恢复列表——这正是
+            // 「退回 STAGE SELECT 后列表只剩选中行」的成因。
             for (u32& handle : names_) { interrupt(handle, 1); handle = 0; }
             for (u32& handle : ranks_) { interrupt(handle, 1); handle = 0; }
+            interrupt(badge_, 1); badge_ = 0;
+            interrupt(cards_, 1); cards_ = 0;
+            interrupt(stage_, 1); stage_ = 0;
+            // 0x4560a0 case0 重建 187 与 109 徽章；选中 label 由下方光标
+            // 跟踪器（case1 时序）发给新 VM。
+            if (!create(stage_, 187) || !create(badge_, 109)) return false;
+        } else if (level == SpellPracticeLevel::Difficulty &&
+                   level_ == SpellPracticeLevel::Stage) {
+            // [H-SP2] 对局返回级联（0x4561bf→0x45673a）：0x11 重建 187 后
+            // label3/label(7+stage)/label6 立即锁定；0x12 建 188 并
+            // label3/label(7+slot)/label6 立即（0x456204-0x456249、
+            // 0x456774-0x4567a2 全 0x46fca0），直达难度层。
             interrupt(badge_, 1);
-            if (!create(badge_, 109) || !select(stage_, menu.cursor())) return false;
+            if (!create(badge_, 103) || !create(cards_, 188)) return false;
+            const i32 count = platform.spell_count(menu.selected_stage());
+            for (i32 absent = 0; absent < 13 - count; ++absent)
+                if (!interrupt(cards_, 39 - absent, true)) return false;
+            if (!select(stage_, menu.selected_stage() - 1) ||
+                !interrupt(stage_, 6, true) ||
+                !select(cards_, menu.selected_slot()) ||
+                !interrupt(cards_, 6, true)) return false;
         } else if (level == SpellPracticeLevel::Spell) {
             if (level_ == SpellPracticeLevel::Stage) {
                 interrupt(badge_, 1);

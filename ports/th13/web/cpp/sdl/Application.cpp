@@ -659,6 +659,11 @@ bool ApplicationState::begin_title(i32 reason) {
     // Only a real Practice quit/reselect gets original dc670==4 semantics.
     // Capture replay status before release_run; never repurpose a replay return.
     if (returns_to_practice_selection(progress, reason, replay_active)) reason = 4;
+    // Spell-practice runs return through the DAT_004bb4c4/c8/cc cascade
+    // (0x4561bf/0x45673a) straight to the difficulty level with the launch
+    // selection restored — original dc670 stays 5 there, never 4.
+    else if (returns_to_spell_practice_selection(progress, reason, replay_active))
+        reason = 5;
     if (ending) {
         // Ending 场景兜底拆卸（正常路径在 apply_destination 0x10 已做）。
         ending->teardown();

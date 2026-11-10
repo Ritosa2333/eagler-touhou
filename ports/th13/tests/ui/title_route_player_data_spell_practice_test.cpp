@@ -305,4 +305,58 @@ TEST(spell_practice_empty_catalog_is_not_a_frame_error) {
     CHECK_EQ(harness.scene->state.menu.cursor, i32(TitleMainEntry::SpellPractice));
 }
 
+// [H-SP2] 符卡练习对局返回（Application 以 returns_to_spell_practice_selection 置
+// return_reason=5；原版 0x4561bf DAT_004bb4c4>=0 级联）：首帧直入屏 17 难度层，
+// 恢复启动保存的 stage/slot/difficulty 光标与角色；逐级 Esc 退场；Stage 级
+// Cancel 回 Main 且光标栈同构。
+TEST(spell_practice_run_return_cascades_to_difficulty_level) {
+    RouteHarness harness;
+    harness.progress.character = 2;
+    harness.progress.stage = harness.progress.starting_stage = 1;
+    harness.progress.selected_spell_id = 103;  // spell_id(1,0,3)
+    harness.progress.run_mode_flags =
+        (harness.progress.run_mode_flags & ~0x70u) | 0x20u;
+    harness.progress.practice_mode = 0;
+    harness.scene->state.return_reason = 5;
+    harness.frame();
+    CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::SpellPractice));
+    CHECK_EQ(harness.scene->state.menu.depth, 1);
+    const auto* menu = harness.scene->spell_practice_menu();
+    CHECK(menu != nullptr);
+    CHECK_EQ(i32(menu->level()), i32(SpellPracticeLevel::Difficulty));
+    CHECK_EQ(menu->selected_stage(), 1);
+    CHECK_EQ(menu->cursor(), 3);
+    CHECK_EQ(menu->character(), 2);  // DAT_004be7b8 恢复
+    CHECK(harness.scene->error.empty());
+    // 输入门（case1 age>10，spell_menu_delay_=11）后逐级退场。
+    harness.advance(12);
+    harness.frame(0x100);  // Difficulty → Spell（光标=启动槽位 0）
+    CHECK_EQ(i32(harness.scene->spell_practice_menu()->level()),
+             i32(SpellPracticeLevel::Spell));
+    CHECK_EQ(harness.scene->spell_practice_menu()->cursor(), 0);
+    harness.frame(0x100);  // Spell → Stage（光标=启动关卡 0）
+    CHECK_EQ(i32(harness.scene->spell_practice_menu()->level()),
+             i32(SpellPracticeLevel::Stage));
+    CHECK_EQ(harness.scene->spell_practice_menu()->cursor(), 0);
+    harness.frame(0x100);  // Stage Cancel → Main，光标栈 pop
+    CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Main));
+    CHECK_EQ(harness.scene->state.menu.depth, 0);
+    CHECK_EQ(harness.scene->state.menu.cursor, i32(TitleMainEntry::SpellPractice));
+    CHECK(harness.scene->spell_practice_menu() == nullptr);
+}
+
+// spell_id 已不在目录（存档被改）：restore 如实失败成帧错误，不臆造状态。
+TEST(spell_practice_run_return_unknown_spell_is_explicit_failure) {
+    RouteHarness harness;
+    harness.progress.character = 0;
+    harness.progress.stage = harness.progress.starting_stage = 1;
+    harness.progress.selected_spell_id = 999;  // 目录内无此 id
+    harness.progress.run_mode_flags =
+        (harness.progress.run_mode_flags & ~0x70u) | 0x20u;
+    harness.scene->state.return_reason = 5;
+    harness.scene->controls({0, 0, 0, 0});
+    CHECK(harness.scheduler.update() < 0);  // 帧错误显式传播（不经 frame() 吞掉）
+    CHECK(!harness.scene->error.empty());
+}
+
 int main() { return th13test::run_all("PlayerData/SpellPractice 路由接线"); }
