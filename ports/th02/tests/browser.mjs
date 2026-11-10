@@ -41,6 +41,10 @@ try{
   page.on('pageerror',e=>{errors.push(e.message);console.error('PAGE',e.message);});
   page.on('request',r=>requests.push(r.url()));page.on('requestfailed',r=>failures.push({url:r.url(),error:r.failure()?.errorText}));
   page.on('response',r=>{if(r.status()>=400)failures.push({url:r.url(),status:r.status()});});
+  if(process.env.PC98_TEST_SIGNAL_DROP==='1')await page.evaluateOnNewDocument(()=>{
+    const Native=window.WebSocket;window.__pc98SignalSockets=[];
+    window.WebSocket=class extends Native {constructor(url,...args){super(url,...args);if(new URL(url,location.href).searchParams.get('signal')==='1')window.__pc98SignalSockets.push(this);}};
+  });
   if(process.env.PC98_TEST_RELAY==='1')await page.evaluateOnNewDocument(()=>{delete window.RTCPeerConnection;});
   if(process.env.PC98_TEST_AUDIO_RATE_FALLBACK==='1')await page.evaluateOnNewDocument(()=>{
     const NativeAudioContext=window.AudioContext;
@@ -123,6 +127,13 @@ try{
     const health=()=>Promise.all(frames().map(f=>f.evaluate(async()=>{const {managedAPI}=await import('./netplay/room.js');return managedAPI.health();})));
     await wait(async()=>{const errors=await page.evaluate(()=>events.filter(e=>e.event==='error'));if(errors.length)throw Error(JSON.stringify(errors));const states=await health();return states.length===count&&states.every(s=>s.running&&s.confirmed>=120&&s.frames>0);},'MP confirmed gameplay',120000);
     if(process.env.PC98_TEST_FOCUS_SYNC==='1')await page.evaluate(()=>rpc(0,'keyboard',{code:'ShiftLeft',down:true}));
+    if(process.env.PC98_TEST_SIGNAL_DROP==='1'){
+      const before=(await health())[0].confirmed;
+      await frames()[1].evaluate(()=>{if(!window.__pc98SignalSockets?.length)throw Error('signaling socket not found');window.__pc98SignalSockets[0].close();});
+      await wait(async()=>{const states=await health();return states.every(s=>s.running&&!s.stopped&&s.confirmed>=before+180);},'gameplay survives signaling disconnect',20000);
+      await wait(()=>frames()[1].evaluate(()=>window.__pc98SignalSockets.length>=2&&window.__pc98SignalSockets.at(-1).readyState===WebSocket.OPEN),'signaling reconnect',10000);
+      console.log('PASS gameplay continues after signaling socket closes');
+    }
     await page.evaluate(async count=>{for(let s=0;s<count;s++)await rpc(s,'keyboard',{code:s%2?'ArrowLeft':'ArrowRight',down:true});},count);
     const before=(await health())[0].confirmed;
     await wait(async()=>(await health()).every(s=>s.confirmed>=before+360),'moving players remain synchronized',30000);
