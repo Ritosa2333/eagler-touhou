@@ -48,7 +48,8 @@ public:
     bool begin(const SessionSetup&, std::uint64_t now_ms);
     bool pump(std::uint64_t now_ms, bool capture_follows = false);
     bool flush_inputs(std::uint64_t now_ms);
-    void capture_phase(bool confirmed, std::uint64_t now_us);
+    void capture_phase(bool confirmed, std::uint64_t now_us, bool continuous_touch = false);
+    bool can_capture_early() const;
     bool needs_input() const;
     bool capture_input(const Netplay::FrameInput&, std::uint64_t now_ms);
     bool retire(std::uint64_t now_ms);
@@ -61,10 +62,12 @@ public:
     std::uint32_t confirmed_frames() const { return next_commit_; }
     std::uint32_t corrections() const { return corrections_; }
     std::uint32_t resimulated_frames() const { return resimulated_; }
+    std::array<unsigned, 7> input_frontiers() const;
     const char* error() const;
 
 private:
     bool fail(const char*);
+    bool behind_peer() const;
     bool commit(World&);
     Tick simulate(World&);
     SessionSetup setup_;

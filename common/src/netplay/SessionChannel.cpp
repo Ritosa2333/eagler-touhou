@@ -349,8 +349,7 @@ bool SessionChannel::Receive(SessionGate &gate, RollbackCore &core, std::uint64_
                 (localConfirmed == INVALID_FRAME || packet.ackFrame > localConfirmed))
                 return Fail(Failure::MalformedPacket);
             const auto before = core.ConfirmedThrough(packet.senderPlayer);
-            RemoteInputResult result{};
-            if (!core.ApplyInputPacket(packet, &result)) return Fail(Failure::InputConflict);
+            if (!core.ApplyInputPacket(packet)) return Fail(Failure::InputConflict);
             if (policy_.adonisPhase)
                 for (unsigned i=0;i<packet.inputCount;++i)
                     adonis_.ObserveArrival(packet.senderPlayer, packet.firstInputFrame+i, nowMs*1000);
