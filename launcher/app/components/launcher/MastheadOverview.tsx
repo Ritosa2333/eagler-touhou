@@ -5,7 +5,6 @@ import {useLocale} from '../../i18n';
 import {Button} from '../../ui/button';
 import {Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger} from '../../ui/dialog';
 import {reloadTestFeatures} from '../../../src/launcher/test-features.mts';
-import {previewFeaturesEnabled} from '../../release-features';
 import {AppLink} from './AppLink';
 import {BookThemeToggle} from './BookThemeToggle';
 import {MastheadTooltip} from './MastheadTooltip';
@@ -127,9 +126,9 @@ export function MastheadOverview({host, open, onOpenChange, trigger, lobbyHref, 
               <Button variant="ghost" size="row" id="runtimeDiagnosticsToggle" aria-pressed={host.diagnosticsEnabled} onClick={host.onToggleDiagnostics}>
                 <Activity aria-hidden="true"/><span>{t('diagnostics.toggle')}</span>{host.diagnosticsEnabled && <Check aria-hidden="true"/>}
               </Button>
-              {previewFeaturesEnabled && <Button variant="ghost" size="row" id="betaFeaturesToggle" aria-pressed={testFeatures} onClick={() => reloadTestFeatures(window, !testFeatures)}>
+              <Button variant="ghost" size="row" id="betaFeaturesToggle" aria-pressed={testFeatures} onClick={() => reloadTestFeatures(window, !testFeatures)}>
                 <FlaskConical aria-hidden="true"/><span>{t('developer.betaFeatures')}</span>{testFeatures && <Check aria-hidden="true"/>}
-              </Button>}
+              </Button>
             </Collapsible.Content>
           </Collapsible.Root>
         </section>
