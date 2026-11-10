@@ -7,7 +7,7 @@ const hooks=[
 export function installDimBody(source,patch,challenge){
   const v=new DataView(source.buffer,source.byteOffset,source.byteLength);
   const headerBytes=v.getUint16(8,true)*16,cs=patch.code_segment,offset=0xb920+(challenge?160:0);
-  const at=cs*16+offset,gap=192,table=v.getUint16(24,true),count=v.getUint16(6,true);
+  const at=cs*16+offset,gap=224,table=v.getUint16(24,true),count=v.getUint16(6,true);
   const image=source.slice(headerBytes),iv=new DataView(image.buffer),rel=[];
   for(let i=0;i<count;i++){
     const pos=table+i*4,loc=v.getUint16(pos,true)+v.getUint16(pos+2,true)*16;
@@ -19,6 +19,11 @@ export function installDimBody(source,patch,challenge){
   rel.forEach((loc,i)=>{hv.setUint16(table+i*4,loc%16,true);hv.setUint16(table+i*4+2,Math.floor(loc/16),true);});
   hv.setUint16(2,result.length%512,true);hv.setUint16(4,Math.ceil(result.length/512),true);
   result.set(header);result.set(image.subarray(0,at),headerBytes);result.set(hooks[challenge?1:0],headerBytes+at);result.set(image.subarray(at),headerBytes+at+gap);
+  // A nearby living teammate must not interrupt rescue of a ghost.
+  const priority=Uint8Array.from('2e807c060075066605000000012e663b06869ec3'.match(/../g),v=>parseInt(v,16));
+  result.set(priority,headerBytes+cs*16+offset+192);
+  const rescue=headerBytes+cs*16+0xa004;
+  result[rescue]=0xe8;new DataView(result.buffer).setUint16(rescue+1,(offset+192-0xa007)&65535,true);result.fill(0x90,rescue+3,rescue+6);
   const call=headerBytes+cs*16+0x9bd4;
   if(result[call]!==0xe8||result[call+1]!==0x36||result[call+2]!==0xc5)throw Error('TH04 人物绘制入口不匹配');
   new DataView(result.buffer).setUint16(call+1,(offset-0x9bd7)&65535,true);

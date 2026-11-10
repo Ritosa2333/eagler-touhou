@@ -164,7 +164,7 @@ async function boot(config){
     }
   }
   for(const edit of sound.edits)edit.targets.forEach((at,i)=>{disk[at]=edit.values[i];});
-  let patchedMain=installNetPause(fat.read(main),overlay);if(challenge){const hud=installChallengeHud(patchedMain,'04',patch);patchedMain=hud.bytes;patch.challengeHudOffset=hud.countsOffset;patch.data_segment+=hud.addedParagraphs;}patchedMain=installDimBody(patchedMain,patch,!!challenge);patch.data_segment+=12;fat.replace(main,patchedMain);
+  let patchedMain=installNetPause(fat.read(main),overlay);if(challenge){const hud=installChallengeHud(patchedMain,'04',patch);patchedMain=hud.bytes;patch.challengeHudOffset=hud.countsOffset;patch.data_segment+=hud.addedParagraphs;}patchedMain=installDimBody(patchedMain,patch,!!challenge);patch.data_segment+=14;fat.replace(main,patchedMain);
   await bootProgress('下载、编译并初始化 DOSBox-X WASM 与音频设备',5);
   emulator=await NP21.create({canvas:nativeCanvas,artPatch:patch,wasmBinary,lockstep:true,externalEffects:true,
     ...(workerHost?{workerRuntime:true,audioContext:workerHost.audioContext}:{}),rollbackEnabled:config.rollback!==false,lockstepEpoch:version.epoch,

@@ -2,7 +2,7 @@
 const code=Uint8Array.from('2ec6869c5e016a082eff1e9c8083c402c3'.match(/../g),x=>parseInt(x,16));
 export function installRescueSound(source,patch,overlay){
   const v=new DataView(source.buffer,source.byteOffset,source.byteLength),hs=v.getUint16(8,true)*16;
-  const at=overlay.insert+overlay.bytes,gap=32,table=v.getUint16(24,true),count=v.getUint16(6,true);
+  const at=overlay.insert+overlay.bytes,gap=96,table=v.getUint16(24,true),count=v.getUint16(6,true);
   const image=source.slice(hs),iv=new DataView(image.buffer),rel=[];
   for(let i=0;i<count;i++){
     const pos=table+i*4,loc=v.getUint16(pos,true)+v.getUint16(pos+2,true)*16,segment=iv.getUint16(loc,true);
@@ -17,8 +17,17 @@ export function installRescueSound(source,patch,overlay){
   const call=hs+patch.codeSegment*16+0x6108,expected=[0x2e,0xc6,0x86,0x9c,0x5e,0x01];
   if(!expected.every((b,i)=>result[call+i]===b))throw Error('TH02 借命入口不匹配');
   result[call]=0xe8;new DataView(result.buffer).setUint16(call+1,(at-patch.codeSegment*16-0x610b)&65535,true);result.fill(0x90,call+3,call+6);
+  // The added code sits after the pause overlay, outside the challenge HUD.
+  const cs=hs+patch.codeSegment*16,codeOffset=at-patch.codeSegment*16,aim=codeOffset+32,rescue=codeOffset+56;
+  // P1-only aim falls back to the nearest live player when P1 is a ghost.
+  const fromHex=hex=>Uint8Array.from(hex.match(/../g),x=>parseInt(x,16));
+  result.set(fromHex('2e803e348600750b2e803e2a85007503e994e6e999e6'),cs+aim);
+  // Bias the distance key so a ghost wins over a living recipient.
+  result.set(fromHex('2e80bf2a850075066605000001002e663b06b55ec3'),cs+rescue);
+  const jump=(site,target,length)=>{result[cs+site]=0xe9;new DataView(result.buffer).setUint16(cs+site+1,(target-site-3)&65535,true);result.fill(0x90,cs+site+3,cs+site+length);};
+  jump(0x75df,aim,8);
+  result[cs+0x6042]=0xe8;new DataView(result.buffer).setUint16(cs+0x6043,(rescue-0x6045)&65535,true);result.fill(0x90,cs+0x6045,cs+0x6048);
   // The score award stores a reserve for ghosts; a later rescue keeps it.
-  const cs=hs+patch.codeSegment*16;
   result.set([0xeb,0x1d],cs+0x8067);
   result.fill(0x90,cs+0x60db,cs+0x60e0);
   result.fill(0x90,cs+0x7f40,cs+0x7f45);
