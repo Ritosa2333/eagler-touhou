@@ -31,7 +31,7 @@ import { NavigationIcon } from './NavigationIcon';
 import { SiteBrand } from './SiteBrand';
 import { UI_LOCALES, UI_LOCALE_LABELS, withUiLanguage } from '../../../src/launcher/i18n.mts';
 import { MULTIPLAYER_GUIDE_PATH } from '../../../lib/multiplayer-guide.mjs';
-import { accountsEnabled, previewFeaturesEnabled, uiReviewEnabled } from '../../release-features';
+import { accountsEnabled, uiReviewEnabled } from '../../release-features';
 import '../../ui/menu-motion.css';
 import {testFeaturesEnabled,reloadTestFeatures} from '../../../src/launcher/test-features.mts';
 
@@ -269,12 +269,10 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                   checked={props.diagnosticsEnabled} onCheckedChange={props.onToggleDiagnostics}>
                   <ActivityLogIcon/>{t('diagnostics.toggle')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator>
                 </DropdownMenu.CheckboxItem>
-                {previewFeaturesEnabled && (
-                  <DropdownMenu.CheckboxItem className="ui-menu-item" id="betaFeaturesToggle" checked={testFeatures}
-                    onCheckedChange={enabled=>reloadTestFeatures(window,enabled===true)}>
-                    <FlaskConical/>{t('developer.betaFeatures')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator>
-                  </DropdownMenu.CheckboxItem>
-                )}
+                <DropdownMenu.CheckboxItem className="ui-menu-item" id="betaFeaturesToggle" checked={testFeatures}
+                  onCheckedChange={enabled=>reloadTestFeatures(window,enabled===true)}>
+                  <FlaskConical/>{t('developer.betaFeatures')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator>
+                </DropdownMenu.CheckboxItem>
               </> : languagesOpen ? (
                 <>
                   <DropdownMenu.Item

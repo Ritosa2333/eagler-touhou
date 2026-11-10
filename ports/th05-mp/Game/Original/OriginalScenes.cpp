@@ -49,8 +49,20 @@ bool COriginalEnd::Initialize(){
 }
 int COriginalEnd::Step(){CGame::s_pCurGame->m_fpsLimit=56;CGame::s_pCurGame->SetVSYNC(false);if(!m_ready)return 1;Tick(CCommonFunctionInput::GetAllKeyState());if(m_fadeOut>0){const int duration=m_mode==Staff?100:m_mode==AllCast?64:32;if(++m_fadeOut>duration){if(m_mode==Staff){CPMDPlayer::Pause();CPMDPlayer::SetVolume(100);}return 1;}if(m_mode==Staff)CPMDPlayer::SetVolume(100.f*(duration-m_fadeOut)/duration);}return 0;}
 void COriginalEnd::Tick(unsigned short keys){
- ++m_age;int music=CPMDPlayer::Measure();m_measure=m_testMeasure>=0?m_testMeasure:music<0?m_age/(m_mode==AllCast?44:22):music;
- if(!m_fadeOut){if(m_mode==Staff)StaffTick(keys);else if(m_mode==AllCast)CastTick();else{if(!keys)m_released=true;if(m_age>=128&&m_released&&keys&&!m_lastKey)m_fadeOut=1;}}
+ ++m_age;
+ if(!m_fadeOut){
+  if(m_mode==Staff){
+   const int music=CPMDPlayer::Measure();
+   m_measure=m_testMeasure>=0?m_testMeasure:music<0?m_age/22:music;
+   StaffTick(keys);
+  }else if(m_mode==AllCast){
+   CastClock(CPMDPlayer::Measure());
+   CastTick(keys);
+  }else{
+   if(!keys)m_released=true;
+   if(m_age>=128&&m_released&&keys&&!m_lastKey)m_fadeOut=1;
+  }
+ }
  m_lastKey=keys;
 }
 void COriginalEnd::Text(const char* text,int x,int y,int color,bool bold,bool translated){
@@ -199,7 +211,35 @@ void COriginalEnd::DrawStaff(){
  if(m_phase==6){DrawCard(10,m_cardAge,m_cardOut,176,368);if(m_phaseAge>=256){Clip(0,40,320,352);DrawVerdict(32,16-m_scroll,13,m_phaseAge>=320);if(m_scroll)DrawScores(32,16+352-m_scroll,13);Unclip();}}
 }
 void COriginalEnd::LoadCastPicture(){if(m_background){m_background->Destroy();m_background=NULL;}char name[16];sprintf_s(name,"EXED%02d.PI",CastFiles[CGame::GVar().m_playChara][m_castScreen]);auto* p=CGame::s_pCurGame->FindResource(name);if(p)CCommonFunctionGraphic::LoadPIFromDat(&m_background,m_palette,p,name);}
-void COriginalEnd::CastTick(){
+void COriginalEnd::CastClock(int music){
+ if(m_testMeasure>=0){m_measure=m_testMeasure;return;}
+ if(music>=0&&music!=m_castMusicSample){
+  const int delta=m_castMusicSample<0?music:music-m_castMusicSample;
+  // The browser samples a looped recording. Re-anchor on a wrap or a
+  // discontinuity in the note table instead of rewinding or jumping ahead.
+  if(delta>0&&delta<=4){
+   const int next=m_castMusicAnchor+delta;
+   if(next>m_measure){m_measure=next;m_castClockTick=m_age;}
+  }
+  m_castMusicSample=music;
+  m_castMusicAnchor=m_measure;
+ }
+ // The original fallback advances once per 44 game frames. Keep that
+ // cadence when music is absent, buffering or has stopped reporting beats.
+ if(m_age-m_castClockTick>=44){++m_measure;m_castClockTick=m_age;}
+}
+void COriginalEnd::CastTick(unsigned short keys){
+ constexpr unsigned short confirm=32|8192,cancel=16|4096;
+ if(!(keys&(confirm|cancel)))m_released=true;
+ const unsigned short pressed=m_released?keys&~m_lastKey:0;
+ if(pressed&cancel){m_fadeOut=1;return;}
+ if((pressed&confirm)&&m_castState>=2){
+  if(m_castScreen==6){m_fadeOut=1;return;}
+  m_castLine=CastCount[m_castScreen];
+  m_castTarget=m_measure;
+  m_castState=1;m_castAnim=0;
+  return;
+ }
  if(m_age%2)return;++m_castAnim;
  switch(m_castState){
  case 0:if(m_measure>=m_castTarget){m_castState=1;m_castAnim=0;}break;

@@ -51,7 +51,6 @@ test('room music defaults on independently of previews and can be disabled', () 
   assert.equal(hasUiReviewEntry({other: {src: 'app/routes/ui-review.tsx'}}), false);
   assert.equal(hasUiReviewEntry({review: {src: 'app/routes/ui-review.tsx?route', isEntry: true}}), true);
   const features = resolveReleaseFeatures({...prod, VITE_ACCOUNTS_ENABLED: 'true'});
-  assert.equal(features.previewFeaturesEnabled, false);
   assert.equal(features.accountsEnabled, true);
   assert.equal(features.listenTogetherEnabled, true);
   assert.equal(resolveReleaseFeatures({...prod, VITE_PREVIEW_FEATURES: 'true', VITE_LISTEN_TOGETHER_ENABLED: 'false'}).listenTogetherEnabled, false);

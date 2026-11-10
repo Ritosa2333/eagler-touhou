@@ -6,10 +6,41 @@ import {tmpdir} from 'node:os';
 import {join, basename} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
+import {createServer} from 'node:http';
 import {CONTENT_SCHEMA} from '../../portable/content-bundle.mjs';
 import {openSplitContent} from '../../portable/split-content.mjs';
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+
+test('TH075 verifies redirected download blobs and rejects redirected indexes', async t => {
+  const font = '/fonts/original-glyphs.bin';
+  const catalog = '/music/catalog.bin';
+  const payload = Buffer.from('font');
+  const files = [{path: font, bytes: payload.length, sha256: hash(payload)},
+    {path: catalog, bytes: 1, sha256: hash('x')}];
+  const index = JSON.stringify({schema: 'eagler-touhou/th075-multiplayer-assets/1', files});
+  const indexHash = hash(index), indexPath = '/' + indexHash + '.json';
+  let corrupt = false, redirectIndex = false;
+  async function serve(handler) {
+    const server = createServer(handler);
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    t.after(() => new Promise(resolve => server.close(resolve)));
+    return 'http://127.0.0.1:' + server.address().port;
+  }
+  const downloads = await serve((req, res) => {
+    res.end(req.url === indexPath ? index : corrupt ? 'fake' : payload);
+  });
+  const launcher = await serve((req, res) => {
+    if (req.url === indexPath && !redirectIndex) return res.end(index);
+    res.writeHead(307, {Location: downloads + req.url}).end();
+  });
+  const content = await openSplitContent(launcher + indexPath, indexHash);
+  assert.deepEqual(Buffer.from(await content.read(font)), payload);
+  corrupt = true;
+  await assert.rejects(content.read(font), /Corrupt TH075 multiplayer asset/);
+  redirectIndex = true;
+  await assert.rejects(openSplitContent(launcher + indexPath, indexHash), TypeError);
+});
 
 test('TH075 multiplayer downloads only resources requested by the Runtime', async () => {
   const root = await mkdtemp(join(tmpdir(), 'th075-split-'));

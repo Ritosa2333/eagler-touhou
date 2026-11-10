@@ -116,7 +116,6 @@ before(async () => {
       ` : args.path === 'cloud-sync-release-features' ? `
         import {cloudSaveEnabled} from 'captured-cloud-save-sync';
         export {cloudSaveEnabled as accountsEnabled};
-        export const previewFeaturesEnabled = true;
       ` : `
         import {readCurrentPackageGeneration as readCurrent} from './package/package-store.mjs';
         let gate; export function setPackageReadGate(value) {gate = value;}

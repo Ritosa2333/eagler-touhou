@@ -7,7 +7,7 @@ import {componentFileIds} from '../../package/package-generation.mjs';
 import {installPublishedPackage, repairInstalledPackage} from '../../package/package-launcher.mjs';
 import {installPackageFromAcquisition, installParsedPackageZip} from '../../package/package-installer.mjs';
 import {parsePackageZip} from '../../package/package-zip.mjs';
-import {readCurrentPackageGeneration} from '../../package/package-store.mjs';
+import {readCurrentPackageGeneration, readPackageObject} from '../../package/package-store.mjs';
 import {adaptLegacyGamePackToPackage} from '../../compat/legacy-package-adapter.mjs';
 import {parseStoredGameDataPack} from '../../compat/legacy-game-pack.mjs';
 import {HOST_PROTOCOL, PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, productEnabledForBuild, productFeatureAvailable,
@@ -18,6 +18,8 @@ import type {CurrentPackageGeneration, InstalledPackageGeneration, PackageDescri
 import type {MusicMode} from '../../src/launcher/game-preferences.mts';
 import type {TransferPresentation} from '../../src/launcher/app-types.mts';
 import {createRawDataImportPackageDescriptor, rawDataImportHashMatches, rawDataImportMatchesFileName, rawDataImportSizeMatches} from '../../src/launcher/raw-data-import.mts';
+import {retailRequiredFiles} from '../../src/launcher/retail-package.mjs';
+import type {RetailInput} from './retail-package';
 import {sha256Hex} from '../../src/launcher/sha256.mts';
 import type {Translate} from '../i18n';
 import {GameDataAcquisitionError} from './game-data-acquisition';
@@ -280,6 +282,72 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       throw new GameDataAcquisitionError(downloadFailureDetail(failure, t) || preparationErrorText(failure), {cause: failure});
     } finally {if (active) request.onAcquisitionActivity?.(false);}
   }
+  function originalFileNames(game: GameId): readonly string[] {
+    return getGameVersion(game) === 'original' ? retailRequiredFiles(game) : [];
+  }
+  async function convertOriginal(game: GameId, inputs: readonly RetailInput[], archivePassword: string | undefined, signal?: AbortSignal, onProgress?: AcquisitionRequest['onProgress']) {
+    if (!originalFileNames(game).length) throw Error(t('package.originalUnavailable'));
+    const host = metadata.getSnapshot().siteManifest;
+    const expected = host?.games[game]?.gameData;
+    const fontTargets = [...new Set([...requiredShared(game), '/msgothic.ttc', '/unifont.otf'])];
+    async function loadFont(target: string) {
+      checkPreparationAbort(signal);
+      const shared = metadata.getSnapshot().siteManifest?.shared;
+      const path = target === '/msgothic.ttc' ? shared?.vanillaFont : shared?.unicodeFont;
+      try {
+        const response = await fetchImpl(new URL(path ?? 'shared' + target, baseUrl), {signal, cache: 'force-cache'});
+        if (response.ok) {
+          const font = await response.blob();
+          if (font.size <= 64 * 1024 * 1024) {
+            const header = await font.slice(0, 4).text();
+            if (['ttcf', 'OTTO', '\0\x01\0\0', 'true'].includes(header)) return font;
+          }
+        }
+      } catch {checkPreparationAbort(signal);}
+      // Keep existing installations usable if the font server is offline.
+      if (indexedDBAvailable()) {
+        const candidates = Object.keys(PRODUCT_GAMES).filter(id => id !== game) as GameId[];
+        for (const candidate of [game, ...candidates]) {
+          checkPreparationAbort(signal);
+          const current = await deps.readCurrent(candidate).catch(() => null);
+          const generation = current?.generation;
+          const id = generation?.descriptor.base.files.find(id => generation.descriptor.files[id]?.target === target);
+          const reference = id ? generation?.files[id]?.objectId : undefined;
+          if (!reference) continue;
+          const stored = await readPackageObject(reference).catch(() => null);
+          if (stored?.blob?.size) return stored.blob;
+          if (stored?.data?.byteLength) return new Blob([stored.data]);
+        }
+      }
+      return null;
+    }
+    checkPreparationAbort(signal);
+    const {convertRetailPackage} = await import('./retail-package');
+    return convertRetailPackage({game, expected, inputs, archivePassword, fontTargets, loadFont, signal,
+      onTrack: ({name, completed, total}) => progress({onProgress}, 'package.originalEncoding', {name, completed: completed + 1, total})});
+  }
+  async function importOriginal(game: GameId, inputs: readonly RetailInput[], {signal, onProgress, archivePassword}: Pick<AcquisitionRequest, 'signal' | 'onProgress'> & {archivePassword?: string} = {}) {
+    if (!indexedDBAvailable()) throw Error(t('package.indexedDbUnavailable'));
+    const {descriptor, payloads} = await convertOriginal(game, inputs, archivePassword, signal, onProgress);
+    const result = await deps.installAcquired({descriptor, desiredFileIds: [...payloads.keys()], source: 'local', reuseCurrent: false, signal,
+      acquire: async id => payloads.get(id) ?? null,
+      onProgress: value => progress({onProgress}, 'package.importingProgress', {...value})});
+    await installedChanged(game);
+    try {void requestPersistence?.().catch(() => {});} catch {}
+    return result.generation;
+  }
+  async function importFiles(game: GameId, files: readonly (Blob & {name?: string})[],
+    options: Pick<AcquisitionRequest, 'signal' | 'onProgress'> & {archivePassword?: string} = {}) {
+    if (originalFileNames(game).length) {
+      const {isOriginalGameSelection} = await import('./retail-input-archive');
+      if (await isOriginalGameSelection(files)) {
+        if (!files.every(file => typeof file.name === 'string')) throw Error(t('package.originalUnavailable'));
+        return importOriginal(game, files as readonly RetailInput[], options);
+      }
+    }
+    if (files.length !== 1) throw Error(t('package.importOnePackage'));
+    return importPackage({game, file: files[0], ...options});
+  }
   async function importPackage({game, file, signal, onProgress, gameVersion}: {
     gameVersion?: GameVersion; game: GameId; file: Blob & {name?: string}; signal?: AbortSignal; onProgress?: AcquisitionRequest['onProgress'];
   }): Promise<InstalledPackageGeneration> {
@@ -402,7 +470,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       .finally(() => {if (background.get(game) === task) background.delete(game);});
     background.set(game, task); return task;
   }
-  return Object.freeze({acquire, importPackage, startBackgroundUpdate, catalogUrl, fetchImpl, getPackageFetch, languageNetwork: network, installPublished,
+  return Object.freeze({acquire, importPackage, importFiles, originalFileNames, startBackgroundUpdate, catalogUrl, fetchImpl, getPackageFetch, languageNetwork: network, installPublished,
     readCurrent, getGameVersion, getPublication, getCatalogUrl, getMetadata: () => metadata.getSnapshot(), refreshInstalled: installedChanged});
 }
 export type PackageAcquisition = ReturnType<typeof createPackageAcquisition>;
