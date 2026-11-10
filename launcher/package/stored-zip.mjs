@@ -14,16 +14,35 @@ const CRC32_TABLE = (() => {
   return table;
 })();
 
-async function inflateRaw(blobPart) {
-  const stream = blobPart.stream().pipeThrough(new DecompressionStream("deflate-raw"));
+async function deflateStream(part) {
+  try {return part.stream().pipeThrough(new DecompressionStream('deflate-raw'));}
+  catch {
+    const {Inflate} = await import('fflate');
+    let inflater;
+    return part.stream().pipeThrough(new TransformStream({
+      start(controller) {inflater = new Inflate(chunk => controller.enqueue(chunk));},
+      transform(chunk) {inflater.push(chunk);},
+      flush() {inflater.push(new Uint8Array(), true);},
+    }));
+  }
+}
+
+async function inflateRaw(blobPart, maxBytes) {
+  const stream = await deflateStream(blobPart);
   const reader = stream.getReader();
   const chunks = [];
   let total = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    total += value.length;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.length;
+      if (total > maxBytes) throw new Error('ZIP entry size mismatch');
+      chunks.push(value);
+    }
+  } finally {
+    await reader.cancel().catch(() => {});
+    reader.releaseLock();
   }
   const bytes = new Uint8Array(total);
   let offset = 0;
@@ -40,7 +59,7 @@ export async function readStoredZipEntry(blob, entry) {
     throw new Error("invalid stored ZIP entry verification request");
   }
   const part = blob.slice(entry.dataOffset, entry.dataOffset + entry.compressedSize);
-  const bytes = entry.method === 8 ? await inflateRaw(part) : new Uint8Array(await part.arrayBuffer());
+  const bytes = entry.method === 8 ? await inflateRaw(part, entry.uncompressedSize) : new Uint8Array(await part.arrayBuffer());
   if (bytes.length !== entry.uncompressedSize) throw new Error(`${entry.name}: ZIP entry size mismatch`);
   let crc = 0xffffffff;
   for (const byte of bytes) crc = CRC32_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
@@ -54,13 +73,36 @@ export async function verifyStoredZipEntry(blob, entry) {
   return true;
 }
 
+export async function readOriginalZipEntry(blob, entry, signal) {
+  const part = blob.slice(entry.dataOffset, entry.dataOffset + entry.compressedSize);
+  const stream = entry.method === 8 ? await deflateStream(part) : part.stream();
+  let total = 0, crc = 0xffffffff;
+  const checked = stream.pipeThrough(new TransformStream({
+    transform(chunk, controller) {
+      total += chunk.length;
+      if (total > entry.uncompressedSize) throw Error(`${entry.name}: ZIP entry exceeds declared size`);
+      for (const value of chunk) crc = CRC32_TABLE[(crc ^ value) & 0xff] ^ (crc >>> 8);
+      if (entry.method === 8) controller.enqueue(chunk);
+    },
+    flush() {
+      if (total !== entry.uncompressedSize) throw Error(`${entry.name}: ZIP entry size mismatch`);
+      if (((crc ^ 0xffffffff) >>> 0) !== entry.crc32) throw Error(`${entry.name}: ZIP CRC32 mismatch`);
+    },
+  }), {signal});
+  // Blob storage keeps hundreds of megabytes of BGM out of JS byte arrays.
+  const inflated = await new Response(checked).blob();
+  return entry.method === 8 ? inflated : part;
+}
+
 export function isSafeStoredZipName(name) {
   if (typeof name !== "string" || !name || name.includes("\\") || name.startsWith("/") || name.includes("\0")) return false;
   return !name.split("/").some(part => !part || part === "." || part === "..");
 }
 
+export class EncryptedZipError extends Error {}
+
 function assertStoredEntry(entry, allowDeflate) {
-  if (entry.flags & 0x0001) throw new Error(`${entry.name}: encrypted ZIP entries are not supported`);
+  if (entry.flags & 0x0001) throw new EncryptedZipError(`${entry.name}: encrypted ZIP entry`);
   if (entry.method !== 0 && !(allowDeflate && entry.method === 8)) {
     throw new Error(`${entry.name}: ZIP entry must use STORE (method 0)${allowDeflate ? " or DEFLATE (method 8)" : ""}, not compression method ${entry.method}`);
   }
@@ -93,8 +135,9 @@ async function locateEocd(blob) {
   throw new Error("ZIP end-of-central-directory record not found");
 }
 
-export async function parseStoredZip(blob, { allowDeflate = true } = {}) {
+export async function parseStoredZip(blob, { allowDeflate = true, originalGame = false } = {}) {
   const eocd = await locateEocd(blob);
+  if (originalGame && eocd.centralSize > 8 * 1024 * 1024) throw new Error('ZIP directory is too large');
   const centralBytes = new Uint8Array(await blob.slice(eocd.centralOffset, eocd.centralOffset + eocd.centralSize).arrayBuffer());
   const view = new DataView(centralBytes.buffer, centralBytes.byteOffset, centralBytes.byteLength);
   const entries = new Map();
@@ -117,7 +160,19 @@ export async function parseStoredZip(blob, { allowDeflate = true } = {}) {
     }
     const next = offset + 46 + nameLength + extraLength + commentLength;
     if (next > centralBytes.byteLength) throw new Error("ZIP central directory entry is truncated");
-    const name = textDecoder.decode(centralBytes.subarray(offset + 46, offset + 46 + nameLength));
+    const rawName = centralBytes.subarray(offset + 46, offset + 46 + nameLength);
+    let name;
+    try { name = textDecoder.decode(rawName); }
+    catch (error) {
+      if (!originalGame || (flags & 0x800)) throw error;
+      // Legacy game ZIPs can contain Japanese or Chinese paths.
+      try {name = new TextDecoder('shift_jis', {fatal: true}).decode(rawName);}
+      catch {name = new TextDecoder('gb18030').decode(rawName);}
+    }
+    if (originalGame && name.endsWith('/') && !uncompressedSize && isSafeStoredZipName(name.slice(0, -1))) {
+      offset = next;
+      continue;
+    }
     if (!isSafeStoredZipName(name)) throw new Error(`unsafe ZIP entry name: ${name}`);
     if (entries.has(name)) throw new Error(`duplicate ZIP entry: ${name}`);
     const entry = { name, flags, method, crc32, compressedSize, uncompressedSize, localOffset };

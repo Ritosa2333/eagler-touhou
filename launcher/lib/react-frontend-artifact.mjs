@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { resolve, sep } from "node:path";
-import { STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES, UI_REVIEW_DOCUMENT, hasUiReviewEntry } from "./frontend-static-manifest.mjs";
+import { STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES, UI_REVIEW_DOCUMENT, hasUiReviewEntry, isOnDemandFrontendAsset } from "./frontend-static-manifest.mjs";
 import { REACT_APP_SHELL_META, normalizeReactMountPath, validateReactAppShellDeployment } from "./react-app-shell-deployment.mjs";
 
 export const REACT_ARTIFACT_METADATA_FILES = Object.freeze([".vite/manifest.json", ".vite/react-app-shell-graph.json"]);
@@ -162,16 +162,17 @@ export async function readReactFrontendArtifact({directory, metadata = null, exp
     if (!referencedEntry) throw new Error(`React document has no browser entrypoint: ${path}`);
   }
   const shellFiles = publication ? [...graph.shellFiles].sort()
-    : [...new Set([...STATIC_APP_SHELL_FILES.filter(path => !retiredEntryStyles.has(path)), ...previewFiles, ...generated])].sort();
+    : [...new Set([...STATIC_APP_SHELL_FILES.filter(path => !retiredEntryStyles.has(path)), ...previewFiles, ...[...generated].filter(path => !isOnDemandFrontendAsset(path))])].sort();
   if (graph.shellFiles.length !== shellFiles.length || [...graph.shellFiles].sort().some((path, index) => path !== shellFiles[index])) throw new Error("React App Shell graph differs from its canonical static/Vite publication ownership");
-  if (publication) for (const path of generated) if (!publication.has(path) || !shellFiles.includes(path)) throw new Error(`Previous Vite output is absent from its publication graph: ${path}`);
+  if (publication) for (const path of generated) if (!publication.has(path) || (!isOnDemandFrontendAsset(path) && !shellFiles.includes(path))) throw new Error(`Previous Vite output is absent from its publication graph: ${path}`);
   // Vite owns dynamic-expression imports used by React Router; every concrete
   // emitted module import must still stay inside that declared output graph.
   const generatedModules = await browserModuleClosure({root, entries: [...generated].filter(path => /\.m?js$/.test(path)), resolveFile, allowDynamicImports: true});
   if (generatedModules.some(path => !generated.has(path))) throw new Error("React browser module import is absent from the Vite publication graph");
   const compatibility = publication ? [] : await browserModuleClosure({root, entries: compatibilityEntries, resolveFile});
   if (compatibility.some(path => !path.startsWith("legacy/"))) throw new Error("React compatibility module escapes its bounded legacy publication");
-  const packageFiles = publication ? shellFiles : [...new Set([...STATIC_FRONTEND_PACKAGE_FILES, ...previewFiles, ...generated, ...compatibility])].sort();
+  const packageFiles = publication ? [...new Set([...shellFiles, ...[...generated].filter(isOnDemandFrontendAsset)])].sort()
+    : [...new Set([...STATIC_FRONTEND_PACKAGE_FILES, ...previewFiles, ...generated, ...compatibility])].sort();
   for (const path of packageFiles) resolveFile(artifactPath(path));
   const browserModules = [...new Set([...generatedModules, ...compatibility])].sort();
   const owned = new Set(packageFiles);

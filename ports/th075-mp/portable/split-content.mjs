@@ -11,7 +11,11 @@ export async function openSplitContent(indexUrl, indexHash, fetchAsset = fetch) 
       !/^[a-f0-9]{64}$/.test(indexHash) || !url.pathname.endsWith('/' + indexHash + '.json'))
     throw Error('Invalid TH075 multiplayer asset index');
   async function fetchVerified(location, hash, limit, expected) {
-    const response = await fetchAsset(location, {cache: 'force-cache', redirect: 'error'});
+    // Keep the authorized index at its exact URL. Public, content-addressed
+    // blobs may be redirected to a download host; verify their bytes either way.
+    const response = await fetchAsset(location, {
+      cache: 'force-cache', credentials: 'omit', redirect: expected === undefined ? 'error' : 'follow',
+    });
     if (!response.ok) throw Error('TH075 asset HTTP ' + response.status);
     if (Number(response.headers.get('Content-Length')) > limit) throw Error('Invalid TH075 asset size');
     const bytes = await response.arrayBuffer();
