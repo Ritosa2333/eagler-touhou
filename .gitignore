@@ -18,3 +18,4 @@
 *.obj
 *.pdb
 *.dmp
+ports/th13-mp/build-eagler-multiplayer/
