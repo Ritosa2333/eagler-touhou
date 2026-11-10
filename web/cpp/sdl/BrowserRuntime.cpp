@@ -97,6 +97,9 @@ struct RoomRuntime final : multiplayer::World {
  std::uint64_t now_ms=0;
  u32 capture_count=0,capture_us=0,replay_slices=0,logical_draws=0;
  unsigned pending_releases=0;
+ uintptr_t early_capture_token=0;
+ double early_capture_until=0;
+ u32 early_capture_head=0;
  bool released_confirmed=false;
  std::array<u32,3> phase_corrections{};
  u32 barrier=Netplay::INVALID_FRAME;
@@ -343,7 +346,7 @@ struct RoomRuntime final : multiplayer::World {
   now_ms=std::uint64_t(now);
   // Input cadence follows the refresh clock. Use the live clock for the
   // transport so callback jitter does not change packet and retry timings.
-  session.capture_phase(entered&&!can_predict(),std::uint64_t((input_time>=0?input_time:now)*1000));
+  session.capture_phase(entered&&!can_predict(),std::uint64_t((input_time>=0?input_time:now)*1000),app->touch.mode==2);
   replay_deadline=now+8;
   if(spectator)return receive_spectator();
   if(playing_replay)return true;
@@ -526,7 +529,7 @@ u32 sample_controller(u32& buttons){
  const auto hat=SDL_GetNumJoystickHats(controller)>0?SDL_GetJoystickHat(controller,0):0;
  if(hat&SDL_HAT_UP)keys|=0x10;if(hat&SDL_HAT_DOWN)keys|=0x20;if(hat&SDL_HAT_LEFT)keys|=0x40;if(hat&SDL_HAT_RIGHT)keys|=0x80;return keys;
 }
-bool sample_and_tick(double input_time=-1){
+bool sample_and_tick(double input_time=-1,bool capture_only=false){
  if(!app)return false;SDL_Event event;while(SDL_PollEvent(&event)){
   ThpracUi::process_event(event,float(render_scale));
   if(event.type==SDL_EVENT_WINDOW_FOCUS_LOST){clear_inputs();lost_focus=!th17_host_has_focus();}
@@ -539,7 +542,7 @@ bool sample_and_tick(double input_time=-1){
   if(!room->local_results){
    if(room->spectator||room->playing_replay)return room->update();
    if(room->terminal)return room->update(false);
-   if(!room->session.needs_input())return room->update();
+   if(!room->session.needs_input())return capture_only?room->session.flush_inputs(room->now_ms):room->update();
   }
  }
 #endif
@@ -574,7 +577,7 @@ bool sample_and_tick(double input_time=-1){
  if(ThpracUi::captures_game_input(*app)){held=buttons=0;app->touch={};}
 #if TH17_MULTIPLAYER
  if(room&&!room->local_results){
-  if(room->capture_physical(held,app->touch))return room->update();
+  if(room->capture_physical(held,app->touch))return capture_only?room->session.flush_inputs(room->now_ms):room->update();
   room->session.flush_inputs(room->now_ms);
   return false;
  }
@@ -586,6 +589,31 @@ bool sample_and_tick(double input_time=-1){
  if(ok){window_ticks++;const double duration=now-window_start;if(duration>=1){measured_fps=float(window_ticks/duration);window_ticks=0;window_start=now;}}
  return ok;
 }
+#if TH17_MULTIPLAYER
+// A slow lane still samples only one real input for each immutable slot.
+// Use a timer because a 60 Hz page has no intervening rAF to send that slot.
+void queue_early_room_capture(double next_tick){
+ if(!room||room->spectator||room->playing_replay||room->local_results||room->terminal||
+    app->touch.mode!=2||!room->can_predict()||!room->session.can_capture_early())return;
+ const double now=emscripten_get_now();
+ if(next_tick-now<4)return;
+ static uintptr_t token=0;
+ room->early_capture_token=++token;
+ room->early_capture_head=room->session.prediction_head();
+ room->early_capture_until=next_tick-1;
+ emscripten_async_call([](void* cookie){
+  const double capture_time=emscripten_get_now();
+  if(!running||suspended||!room||room->early_capture_token!=uintptr_t(cookie)||
+     capture_time>room->early_capture_until||room->session.prediction_head()!=room->early_capture_head||
+     room->terminal||room->local_results||!room->can_predict()||
+     room->session.repair_pending()||!room->session.can_capture_early())return;
+  if(!sample_and_tick(capture_time,true)){
+   running=false;
+   th17_browser_frame(0,0,0,0);
+  }
+ },reinterpret_cast<void*>(token),int(std::max(1.,next_tick-now-8.)));
+}
+#endif
 }
 }
 extern "C" {
@@ -725,6 +753,12 @@ EMSCRIPTEN_KEEPALIVE unsigned th17_room_wait_state(){
         (room->barrier==room->session.next_frame()?2u:0u)|
         (!app->can_rollback()?4u:0u)|
         (scene&&scene->battle.dialogue_present()?8u:0u);
+}
+EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_input_frontiers(){
+ using namespace th17::sdl;
+ static std::array<unsigned,7> value{};
+ value=room?room->session.input_frontiers():std::array<unsigned,7>{};
+ return value.data();
 }
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_performance(){
  using namespace th17::sdl;
@@ -876,6 +910,7 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
   }
 #if TH17_MULTIPLAYER
   if(room)room->release_retired(deadline);
+  if(ok&&completed)queue_early_room_capture(time+(period-cadence.debt)*1000);
 #endif
   if(ok&&presented)++presentation_frames;const double elapsed=time-presentation_start;if(elapsed>=1000){presentation_fps=float(presentation_frames*1000./elapsed);presentation_start=time;presentation_frames=0;}
   if(work||presented||elapsed>=1000)th17_browser_frame(ok?1:0,emscripten_get_now()-begin,completed,presented);
