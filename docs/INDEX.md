@@ -72,7 +72,7 @@
 | 作品适配表 | [ports/th11/ADAPTATION.md](../ports/th11/ADAPTATION.md) | th11 适配检查 |
 | 作品适配表 | [ports/th12-mp/ADAPTATION.md](../ports/th12-mp/ADAPTATION.md) | th12 MP 适配检查 |
 | 作品适配表 | [ports/th12/ADAPTATION.md](../ports/th12/ADAPTATION.md) | th12 适配检查 |
-| 作品适配表 | [ports/th13-mp/ADAPTATION.md](../ports/th13-mp/ADAPTATION.md) | th13-mp 适配检查 |
+| 作品适配表 | [ports/th13-mp/ADAPTATION.md](../ports/th13-mp/ADAPTATION.md) | th13 MP 适配检查 |
 | 作品适配表 | [ports/th13/ADAPTATION.md](../ports/th13/ADAPTATION.md) | th13 适配检查 |
 | 作品适配表 | [ports/th15-mp/ADAPTATION.md](../ports/th15-mp/ADAPTATION.md) | th15 MP 适配检查 |
 | 作品适配表 | [ports/th15/ADAPTATION.md](../ports/th15/ADAPTATION.md) | th15 适配检查 |
@@ -155,8 +155,9 @@
 | 作品源码文档 | [ports/th13-mp/docs/ASSETS.md](../ports/th13-mp/docs/ASSETS.md) | th13 资源格式清单 |
 | 作品源码文档 | [ports/th13-mp/docs/DECOMP.md](../ports/th13-mp/docs/DECOMP.md) | th13 反编译函数地图 |
 | 作品源码文档 | [ports/th13-mp/docs/DEVELOPMENT.md](../ports/th13-mp/docs/DEVELOPMENT.md) | th13 开发指南 |
+| 作品源码文档 | [ports/th13-mp/docs/M9-CANDIDATE.md](../ports/th13-mp/docs/M9-CANDIDATE.md) | TH13 MP M9 候选交接（M9-CANDIDATE） |
 | 作品源码文档 | [ports/th13-mp/docs/MP-DEVELOPMENT.md](../ports/th13-mp/docs/MP-DEVELOPMENT.md) | TH13 MP 开发指南（M0 骨架 → M10 交付） |
-| 作品源码文档 | [ports/th13-mp/docs/RULES.md](../ports/th13-mp/docs/RULES.md) | TH13 MP 规则契约（v1，2026-11-08） |
+| 作品源码文档 | [ports/th13-mp/docs/RULES.md](../ports/th13-mp/docs/RULES.md) | TH13 MP 规则契约（v2，2026-11-08） |
 | 作品源码文档 | [ports/th13-mp/docs/feedback-fast-forward-20261107.md](../ports/th13-mp/docs/feedback-fast-forward-20261107.md) | 2026-11-07 Replay / result / staff feedback fixes |
 | 作品源码文档 | [ports/th13-mp/docs/plans/anm-pipeline.md](../ports/th13-mp/docs/plans/anm-pipeline.md) | TH13 ANM（v8）管线行为规格与移植方案 |
 | 作品源码文档 | [ports/th13-mp/docs/plans/coverage-matrix.md](../ports/th13-mp/docs/plans/coverage-matrix.md) | 场景覆盖矩阵（coverage matrix） |
