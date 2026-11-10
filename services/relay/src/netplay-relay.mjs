@@ -957,6 +957,10 @@ function lobbySnapshot(room) {
     timing: room.lobby.timing,
     predictionLimit: room.lobby.predictionLimit,
     settingsVersion: room.lobby.settingsVersion,
+    // Server truth for the optional runtime capability "netplayAllowWebsocketFallback":
+    // a relay route can only be selected when this deployment actually enables the
+    // gameplay relay fallback. Clients mirror it so the launcher can opt the run in.
+    gameplayRelayFallback: allowGameplayRelayFallback,
     phase: room.lobby.phase,
     ...(room.lobby.phase !== 'lobby' && room.runs.get(String(room.lobby.startSerial))?.runtimeGeneration
       ? {runtimeGeneration: room.runs.get(String(room.lobby.startSerial)).runtimeGeneration} : {}),

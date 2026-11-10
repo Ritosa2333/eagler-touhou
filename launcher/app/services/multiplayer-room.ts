@@ -1300,6 +1300,10 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         iceServers: ports.settings().iceServers,
         preferTurn: state.preferTurn,
         loadouts,
+        // Relay-decided runs may only fall back to the WebSocket gameplay
+        // relay when this deployment advertised the capability in its lobby
+        // snapshot; the transport rejects a relay route otherwise.
+        allowWebsocketFallback: room.gameplayRelayFallback === true,
       },
       config,
     );
