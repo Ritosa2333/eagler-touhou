@@ -430,4 +430,46 @@ MsgPlayer::Flow MsgPlayer::execute(u8 opcode, const u8* args, u32 arg_bytes,
     }
 }
 
+// ---- M6/P3.2 快照面：值域全量（cursor 存 file 内偏移；接线指针不快照）。
+MsgPlayer::Snapshot MsgPlayer::capture() const {
+    Snapshot out;
+    if (cursor_ && file_) {
+        // 指令流游标在 MsgFile 的字节镜像内（open 置位，此后 file_ 不换）。
+        const u8* base = file_->bytes();
+        out.cursor_offset = u32(cursor_ - base);
+    }
+    out.state = state_;
+    out.clock = clock_;
+    out.line_index = line_index_;
+    out.block_open = block_open_;
+    out.wait_timeout = wait_timeout_;
+    out.command_delay = command_delay_;
+    out.pending_ruby = pending_ruby_;
+    out.pending_ruby_x = pending_ruby_x_;
+    out.pending_ruby_spacing = pending_ruby_spacing_;
+    out.pending_ruby_cp932 = pending_ruby_cp932_;
+    out.pending_ruby_utf8 = pending_ruby_utf8_;
+    return out;
+}
+
+void MsgPlayer::restore(const Snapshot& source) {
+    // 对话未开（kNoCursor）或镜像缺失时游标置空——active 位由 state_ 决定，
+    // 与 open 前的「无对话」态一致。file_/host_ 接线指针原值保留。
+    cursor_ = nullptr;
+    if (file_ && source.cursor_offset != Snapshot::kNoCursor &&
+        source.cursor_offset < file_->size())
+        cursor_ = file_->bytes() + source.cursor_offset;
+    state_ = source.state;
+    clock_ = source.clock;
+    line_index_ = source.line_index;
+    block_open_ = source.block_open;
+    wait_timeout_ = source.wait_timeout;
+    command_delay_ = source.command_delay;
+    pending_ruby_ = source.pending_ruby;
+    pending_ruby_x_ = source.pending_ruby_x;
+    pending_ruby_spacing_ = source.pending_ruby_spacing;
+    pending_ruby_cp932_ = source.pending_ruby_cp932;
+    pending_ruby_utf8_ = source.pending_ruby_utf8;
+}
+
 }  // namespace th13

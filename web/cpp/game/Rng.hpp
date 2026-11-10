@@ -105,6 +105,8 @@ public:
 
     uint32_t index() const { return index_; }
     uint16_t seed() const { return seed_; }
+    // M6 快照恢复：写回 seed/index（快照对的逆操作；不推进状态）。
+    void set_index(uint32_t value) { index_ = value; }
 
 private:
     uint16_t seed_;

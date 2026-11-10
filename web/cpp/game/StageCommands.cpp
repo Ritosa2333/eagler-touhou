@@ -631,7 +631,10 @@ int StageCommands::execute(EclContext& c, u16 op) {
             const float quarter = float(float(sim.random.signed_unit() * pi) * 0.25);
             GameRandom::tag(8);
             const bool third = (u32(sim.random.step16()) % 3u) == 0;
-            const bool left_of_player = sim.player_x > e.position[0];
+            // M3：最近合格玩家（R-G）。
+            float side_x, side_y;
+            sim.nearest_player(e.position[0], e.position[1], side_x, side_y);
+            const bool left_of_player = side_x > e.position[0];
             angle = (left_of_player ? third : !third) ? float(quarter + pi) : quarter;
         }
         if (e.position[1] < cy - qy) {
@@ -1856,8 +1859,11 @@ int StageCommands::fire_et(EclContext& c, StageEnemy& e) {
     et.spawn[1] = spawn[1];
     et.spawn[2] = et.absolute[2] <= 0.9f ? spawn[2] : 0.0f;
     // 瞄准角（0x443f60：出生点 → 玩家，重合取 π/2）；0x40ffe0 在循环外算一次。
-    const float dy = sim.player_y - spawn[1];
-    const float dx = sim.player_x - spawn[0];
+    // M3：最近合格玩家（R-G；发弹时点求值，不缓存）。
+    float aim_px, aim_py;
+    sim.nearest_player(spawn[0], spawn[1], aim_px, aim_py);
+    const float dy = aim_py - spawn[1];
+    const float dx = aim_px - spawn[0];
     const float aim = (dy == 0.0f && dx == 0.0f)
                           ? 1.5707964f
                           : float(std::atan2(static_cast<double>(dy), static_cast<double>(dx)));

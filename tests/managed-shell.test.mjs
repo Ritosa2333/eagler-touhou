@@ -124,7 +124,12 @@ test('managed frame callback reports the actual SDL audio queue', () => {
   const context = {core: {th13Audio: {device: true, failed: false, mixedFrames: 44100,
     queuedFrames: 4410, sampleRate: 44100, track: 2, musicCursor: 100, suspended: false},
     _th13_phase: () => 1}, music: true, ticks: 0, presents: 0, maxFrameMs: 0,
-    first: true, last: 0, performance: {now: () => 1000}, emit: (event, fields) => emitted.push([event, fields])};
+    first: true, last: 0, performance: {now: () => 1000},
+    // P5 后 onGameFrame 泵多人桥帧（生产 shell 的模块级 let multiplayerBridge
+    // = null——沙箱同型提供绑定，可选链对 null 无操作）。
+    multiplayerBridge: {frame() { calls2.push('frame'); }},
+    emit: (event, fields) => emitted.push([event, fields])};
+  const calls2 = [];
   runInNewContext('const onGameFrame = function' + source.slice(callback.start, callback.end) +
     ';onGameFrame(true, 4, 1);', context);
   const audio = emitted.find(([event]) => event === 'audio-health')?.[1];

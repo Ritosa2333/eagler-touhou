@@ -206,6 +206,9 @@ public:
     // 自机弹精灵（plXX.anm 内 16×16 御札帧；.sht 弹型表接入前的可玩化近似）。
     static constexpr i32 kPlayerShotSprite = 31;
     GameHud& hud;
+    // M9 观测面：团队分数 backing（StageEntry.Capture/Restore 的 score 参
+    // 数——begin_run 装配时传入的 selection_score 引用）。
+    HudScoreState& score_view() const { return score_state; }
     // 共享 game RNG 注入（0x4dc324 位）：ECL/弹幕/自机弹出膛/道具掉落同源；
     // 缺省空 = StageBattle 自持（tests 无头路径不变）。
     StageBattle battle;
@@ -240,6 +243,23 @@ public:
     std::function<bool()> restore_after_player_prepare;
     bool initialize(const HudEntryContext& = {});
     bool update();
+    // M2：多人会话席位启用（2..3；R-X 允许重复角色）。宿主（M7 Runtime/
+    // 浏览器会话）在 initialize 完成后、首帧 update 前调用；此后
+    // battle.step 走 step_mp（每席玩家面 + 一次世界面），HUD/表现层在 M5
+    // 逐席化前读 seat 0 观察面。单席（不调用）路径零变化。
+    bool enable_multiplayer(i32 seat_count, const std::array<i32, 3>& characters) {
+        if (error.empty() && !battle.error().empty()) error = battle.error();
+        // provider 与 initialize 内同构（RunSceneAssets：host/read_asset 面）。
+        RunSceneAssets provider;
+        provider.host = &host;
+        provider.sim = &battle.sim;
+        provider.anim_list = &battle.sim.anim_list;
+        if (!battle.enable_seats(provider, seat_count, characters)) {
+            if (error.empty()) error = battle.error();
+            return false;
+        }
+        return true;
+    }
     // 0x43e3f0/0x43e700（Esc 暂停激活/恢复）：对话立绘/名牌槽 VM+0x18 bit1
     // 清/置（0x429d00/0x429f10 面；正文/气泡由宿主 DialogueText 侧覆盖）。
     bool set_dialogue_visible(bool visible) {
@@ -260,9 +280,70 @@ public:
         return !spell_presentation ||
                spell_presentation->show_spirit_notice(level, x, y, z);
     }
+    // ---- P3.2 测试/快照窄接口（不暴露内部成员对象）----
+    // 震动注入：battle.bomb_screen_shake 同款值域（快照等价 case 用）。
+    bool inject_shake(ScreenShake effect) { return start_shake(effect); }
+    // 对话观测：MsgPlayer 只读面（clock/active——快照等价 case 的对拍点）。
+    u32 dialog_clock() const { return dialog.clock(); }
     bool draw();
     bool draw_stage(u32 pass);  // 战斗直绘（initialize 注册的 4 个 Draw 回调）
     bool draw_scenery(u32 pass);  // STD 背景（层 0-7 背景组 / 8-11 前景组）
+    // ---- M6/P3.2 快照面（WorldState 的震动/对话/STD 域经此窄接口取值）。
+    // 震动列表：值快照（ScreenShake 纯值）。restore 复用 start_shake 重建
+    // 回调（注册序/priority 16 与生产一致）；先清空 live 列表（scheduler
+    // remove）再重建。envelope 型消费 game RNG、非 envelope 消费 visual
+    // RNG（ScreenShake.hpp 注释）——跨震动帧回滚缺列表即 RNG 漂移根因。
+    void capture_shakes(std::vector<ScreenShake>& out) const {
+        out.clear();
+        out.reserve(shakes.size());
+        for (const auto& shake : shakes) out.push_back(shake->effect);
+    }
+    bool restore_shakes(const std::vector<ScreenShake>& source) {
+        for (auto& shake : shakes) scheduler.remove(shake->callback);
+        shakes.clear();
+        for (const ScreenShake& effect : source)
+            if (!start_shake(effect)) return false;
+        return true;
+    }
+    // MSG 对话域：MsgPlayer 值快照 + 宿主侧推进状态（dialog_ready 与
+    // 锁存输入沿——Update 20 锁存/Update 28 消费的跨帧状态）。
+    struct DialogSnapshot {
+        MsgPlayer::Snapshot player;
+        MsgAdvance advance{};
+        bool ready = false;
+    };
+    DialogSnapshot capture_dialog() const {
+        DialogSnapshot out;
+        out.player = dialog.capture();
+        out.advance = dialogue_advance_;
+        out.ready = dialog_ready;
+        return out;
+    }
+    void restore_dialog(const DialogSnapshot& source) {
+        dialog.restore(source.player);
+        // dialogue_advance_ 是宿主锁存的输入沿快照，随对话域一起回滚。
+        // dialogue_update_pending_/rows_ 是帧内瞬态，update 开头重置，不快照。
+        dialogue_advance_ = source.advance;
+        dialog_ready = source.ready;
+    }
+    // STD 域：scenery 可能缺席（无 STD 场景/装配期）——has=false 时 restore
+    // 跳过。script.state 是 public 成员，由 WorldState 直接值拷贝。
+    bool capture_scenery(StageScenery::ExtraSnapshot& extra,
+                         StageScriptState& script_state, bool& has) const {
+        has = scenery != nullptr;
+        if (!has) return true;
+        extra = scenery->capture_extra();
+        script_state = scenery->script.state;
+        return true;
+    }
+    bool restore_scenery(const StageScenery::ExtraSnapshot& extra,
+                         const StageScriptState& script_state, bool has) {
+        if (!has) return true;  // 快照时无场景：不制造场景（装配期语义）
+        if (!scenery) return false;  // 快照有场景而当前无：装配序错配
+        scenery->restore_extra(extra);
+        scenery->script.state = script_state;
+        return true;
+    }
     void request_pause() { host.request_pause(); }
     void request_game_over() { host.request_game_over(); }
     void open_dialog(i32 entry) override;

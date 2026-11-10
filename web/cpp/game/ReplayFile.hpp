@@ -111,6 +111,16 @@ public:
         return result;
     }
     u8 current_slow_rate() const { return stage_ ? stage_->slow_rate(index_) : 0; }
+    // M6 快照面：游标位置/EOF 位（stage_ 指针由宿主持有不回滚——同一
+    // 回放会话内 Stage 对象身份不变）。
+    void capture_cursor(u32& out_index, bool& out_eof) const {
+        out_index = index_;
+        out_eof = eof_reached_;
+    }
+    void restore_cursor(u32 index, bool eof) {
+        index_ = index;
+        eof_reached_ = eof;
+    }
 
 private:
     const ReplayStage* stage_ = nullptr;

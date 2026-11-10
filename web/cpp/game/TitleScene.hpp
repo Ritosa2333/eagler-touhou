@@ -98,6 +98,10 @@ private:
     SpellPracticeInput delayed_spell_input_;
     std::string spell_practice_launch_status_;  // Host rejection keeps the selection available.
     SpellPracticeCommand pending_spell_;
+    // [H-SP2] 对局返回级联暂存：restore_spell_practice_selection 反查槽位后
+    // 由 update_spell_practice 建表时消费（DAT_004bb4c4/c8/cc 对应物）。
+    SpellPracticeCommand spell_restore_{};
+    bool spell_restore_pending_ = false;
     i32 spell_launch_age_ = -1;
     bool check(bool, const std::string&);
     // TitleFrameServices
@@ -110,6 +114,7 @@ private:
     bool update_player_data(const TitleFrameInput&);
     bool update_spell_practice(const TitleFrameInput&);
     bool restore_practice_selection() override;
+    bool restore_spell_practice_selection() override;
     bool draw_title_replay_texts() override;
     bool draw_title_music_room_texts() override;
     // TitleMenuServices
@@ -123,6 +128,13 @@ private:
 public:
     // Option 屏观测（row/volumes/error 采样；接线与测试用，不提供可变访问）。
     const TitleOptionsMenu& option_menu() const noexcept { return option; }
+    // M1/T4 F1″：commit 期 persist_options 存档失败补记通道。原访问链三处
+    // 封闭——option private（本类）、上访问器 const、TitleOptionsMenu::fail
+    // private——ApplicationState::commit_pending_file_events 须经本 header-only
+    // 非常量访问器才能对 public 的 error 做 set-if-empty（逐位复刻
+    // TitleOptionsMenu.cpp:113 fail 的 `if (error.empty()) error = reason`
+    // 语义）。零行为变化：只是放开一条只写 error 的通路。
+    TitleOptionsMenu& option_menu() noexcept { return option; }
     // キー配置屏观测（row/bindings/error 采样）。
     const TitleKeyConfigMenu& key_config_menu() const noexcept { return key_config; }
     // 宿主接线（ApplicationState::open_key_config）：手柄存在/原始位图/当前

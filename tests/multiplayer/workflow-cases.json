@@ -1,0 +1,1006 @@
+{
+  "schema": "th13/mp-workflow-case-map/v1",
+  "comment": "MP 工作流 case→测试映射（唯一真值）。files 以 PORT=ports/th13-mp/ 为基（gate:121-123 (PORT/f).resolve()+is_relative_to(PORT)+is_file()；带 ports/th13-mp/ 前缀会前缀加倍判非法）。layer=native 条目由 tests/multiplayer/run-native.sh 消费；layer=browser 条目由 tests/multiplayer/acceptance.mjs 消费。可选 tests 数组 = 共享套件二进制的 TEST 块归属（runner 经 TH13_CASE_FILTER 过滤并校验逐块执行）。同一 id 允许跨层并存（如 m1.draw_purity_rng 同时有 native/browser 条目，gate:117 先按 layer 过滤再键 id）——两个 runner 均按层内键控，同层重复 id 非零拒绝；平铺按 id 键控会让后读条目覆盖前读条目（M1 fast 曾因此把固定 native case 误报 missing，见 artifacts/workflow/negctl-d.sh）。",
+  "cases": [
+    {
+      "id": "m1.unit_native_harness",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/harness_probe_test.cpp"
+      ],
+      "tests": [
+        "native_rng_reseed_restore",
+        "native_rng_step16_next32",
+        "native_game_input_edges"
+      ]
+    },
+    {
+      "id": "m1.unit_frame_split_signature",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/frame_split_signature_test.cpp"
+      ],
+      "tests": [
+        "split_segments_update_failure_short_circuit",
+        "caption_commit_phase_replay_window",
+        "caption_window_three_arms_replay_digest_equal",
+        "caption_window_three_arms_live_digest_equal",
+        "present_twice_destination_free_digest_unchanged"
+      ]
+    },
+    {
+      "id": "m1.unit_frame_split_order_probes",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/frame_split_order_probes_test.cpp"
+      ],
+      "tests": [
+        "destination_barrier_probe_sequence"
+      ]
+    },
+    {
+      "id": "m1.unit_frame_split_equivalence",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/frame_split_equivalence_test.cpp"
+      ],
+      "tests": [
+        "equivalence_replay_boot_three_arms_full_digest",
+        "equivalence_live_run_caption_window_three_arms"
+      ]
+    },
+    {
+      "id": "m1.unit_side_effect_record_once",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/side_effect_record_test.cpp"
+      ],
+      "tests": [
+        "side_effect_record_300_frame_mirror_record_once",
+        "side_effect_record_replay_session_no_mirror_no_record"
+      ]
+    },
+    {
+      "id": "m1.unit_commit_audio_boundary",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/commit_audio_boundary_test.cpp"
+      ],
+      "tests": [
+        "commit_audio_boundary_update_only_queue_commit_drain",
+        "commit_audio_boundary_double_commit_single_beat",
+        "commit_audio_boundary_split_step_tap_sequence_identical",
+        "commit_audio_boundary_commit_order_truncation_play_frames",
+        "commit_audio_boundary_commit_order_truncation_recorder_flush"
+      ]
+    },
+    {
+      "id": "m1.unit_recorder_pending_once",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/recorder_pending_test.cpp"
+      ],
+      "tests": [
+        "recorder_pending_dfix_first_frame_slot",
+        "recorder_pending_split_step_byte_identity",
+        "recorder_pending_slow_source_capture_window",
+        "recorder_pending_spell_time_slot_captured_once",
+        "recorder_pending_capture_gate_sync_semantics"
+      ]
+    },
+    {
+      "id": "m1.unit_file_event_commit",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/file_event_commit_test.cpp"
+      ],
+      "tests": [
+        "file_event_commit_mark_heard_swallow_tier",
+        "file_event_commit_persist_options_menu_driven_capture_commit",
+        "file_event_commit_spell_event_capture_defer_frame_fail",
+        "file_event_commit_spell_practice_score_capture_defer_frame_fail",
+        "file_event_commit_stage_clear_gate_capture_defer_frame_fail",
+        "file_event_commit_pause_option_capture_defer_frame_fail",
+        "file_event_commit_result_entry_capture_defer_and_commit_truncation",
+        "file_event_commit_music_unlocked_capture_validate_frame_fail",
+        "file_event_commit_capture_order_truncation",
+        "file_event_commit_save_replay_slot_confirmed_tier_in_place"
+      ]
+    },
+    {
+      "id": "m1.unit_audio_pan_boundary",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/audio_pan_boundary_test.cpp"
+      ],
+      "tests": [
+        "audio_pan_boundary_observe_apply_split_device_semantics",
+        "audio_pan_boundary_host_capture_sync_and_commit_apply",
+        "audio_pan_boundary_live_run_charge_pan_capture_not_commit",
+        "audio_pan_boundary_natural_queue_statistics_pinned"
+      ]
+    },
+    {
+      "id": "m1.unit_draw_purity_probes",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/draw_purity_probes_test.cpp"
+      ],
+      "tests": [
+        "draw_purity_present_x0_x1_x3_observer_zero",
+        "draw_purity_update_present_rng_streams_frame_equal",
+        "draw_purity_caption_alpha_save_restore_visual_bits"
+      ]
+    },
+    {
+      "id": "m1.unit_scheduler_order_probes",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/scheduler_order_probes_test.cpp"
+      ],
+      "tests": [
+        "scheduler_order_bracket_monotonic_replay",
+        "scheduler_order_bomb_shake_bracket16_live",
+        "scheduler_order_replay_fast_forward_cut_30"
+      ]
+    },
+    {
+      "id": "m1.unit_geometry_backfill_timing",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/geometry_backfill_test.cpp"
+      ],
+      "tests": [
+        "geometry_backfill_probe_19_21"
+      ]
+    },
+    {
+      "id": "m1.unit_focus_policy_sp",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/focus_policy_test.cpp"
+      ],
+      "tests": [
+        "focus_policy_sp"
+      ]
+    },
+    {
+      "id": "m1.unit_focus_policy_mp",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/focus_policy_test.cpp"
+      ],
+      "tests": [
+        "focus_policy_mp"
+      ]
+    },
+    {
+      "id": "m1.update_present_equivalence",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/update_present_equivalence_test.cpp"
+      ],
+      "tests": [
+        "update_present_equivalence_caption_window_f0_10",
+        "update_present_equivalence_run_baffle_and_caption_live",
+        "update_present_equivalence_transition_gate",
+        "update_present_equivalence_transition_gate_present_coupling",
+        "update_present_equivalence_pause_open_close",
+        "update_present_equivalence_long_windows_600_1200"
+      ]
+    },
+    {
+      "id": "m1.draw_purity_rng",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/draw_purity_rng_test.cpp"
+      ],
+      "tests": [
+        "draw_purity_rng_observer_windows_300_600_1200",
+        "draw_purity_rng_streams_cross_instance_present_x3_300"
+      ]
+    },
+    {
+      "id": "m1.scheduler_order",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/scheduler_order_test.cpp"
+      ],
+      "tests": [
+        "scheduler_order_pause_frames_bracket_stable",
+        "scheduler_order_replay_fastforward_restart_loop",
+        "scheduler_order_fastforward_gate_paused_single_pass"
+      ]
+    },
+    {
+      "id": "m1.side_effect_boundary",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/side_effect_boundary_test.cpp"
+      ],
+      "tests": [
+        "side_effect_transition_probes_five_paths",
+        "side_effect_ending_clear_migration_trace",
+        "side_effect_reconcile_record_once",
+        "side_effect_file_event_queue_full"
+      ]
+    },
+    {
+      "id": "m1.focus_sync",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/focus_sync_test.cpp"
+      ],
+      "tests": [
+        "focus_sync_three_states_replay",
+        "focus_sync_unfocused_edges_sampled_once_live",
+        "focus_sync_edge_single_sample_under_restart"
+      ]
+    },
+    {
+      "id": "m1.draw_purity_rng",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m1_draw_purity.mjs"
+      ]
+    },
+    {
+      "id": "m1.side_effect_boundary",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m1_side_effect_boundary.mjs"
+      ]
+    },
+    {
+      "id": "m2.world_tick_once",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m2_multi_seat_test.cpp"
+      ],
+      "tests": [
+        "world_tick_once"
+      ]
+    },
+    {
+      "id": "m2.independent_inputs_2_3",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m2_multi_seat_test.cpp"
+      ],
+      "tests": [
+        "independent_inputs_2_3"
+      ]
+    },
+    {
+      "id": "m2.four_characters_duplicates",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m2_multi_seat_test.cpp"
+      ],
+      "tests": [
+        "four_characters_duplicates"
+      ]
+    },
+    {
+      "id": "m2.damage_owner_ids",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m2_multi_seat_test.cpp"
+      ],
+      "tests": [
+        "damage_owner_ids"
+      ]
+    },
+    {
+      "id": "m2.single_seat_sp_equivalence",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m2_multi_seat_test.cpp"
+      ],
+      "tests": [
+        "single_seat_sp_equivalence"
+      ]
+    },
+    {
+      "id": "m2.independent_inputs_2_3",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m2_multi_seat.mjs"
+      ]
+    },
+    {
+      "id": "m2.four_characters_duplicates",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m2_multi_seat.mjs"
+      ]
+    },
+    {
+      "id": "m3.target_all_consumers_ties",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m3_targeting_test.cpp"
+      ],
+      "tests": [
+        "target_all_consumers_ties"
+      ]
+    },
+    {
+      "id": "m3.drop_rng_unchanged",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m3_targeting_test.cpp"
+      ],
+      "tests": [
+        "drop_rng_unchanged"
+      ]
+    },
+    {
+      "id": "m3.shared_pickup_once",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m3_items_test.cpp"
+      ],
+      "tests": [
+        "shared_pickup_once"
+      ]
+    },
+    {
+      "id": "m3.resource_all_types_caps",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m3_items_test.cpp"
+      ],
+      "tests": [
+        "resource_all_types_caps"
+      ]
+    },
+    {
+      "id": "m3.spirit_role_and_trance_grant",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m3_items_test.cpp"
+      ],
+      "tests": [
+        "spirit_role_and_trance_grant"
+      ]
+    },
+    {
+      "id": "m3.graze_owner_generation",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m3_items_test.cpp"
+      ],
+      "tests": [
+        "graze_owner_generation"
+      ]
+    },
+    {
+      "id": "m3.boss_damage_remainders",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m3_items_test.cpp"
+      ],
+      "tests": [
+        "boss_damage_remainders"
+      ]
+    },
+    {
+      "id": "m3.gift_not_broadcast",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m3_items_test.cpp"
+      ],
+      "tests": [
+        "gift_not_broadcast"
+      ]
+    },
+    {
+      "id": "m3.shared_pickup_once",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m3_world_resources.mjs"
+      ]
+    },
+    {
+      "id": "m3.target_all_consumers_ties",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m3_world_resources.mjs"
+      ]
+    },
+    {
+      "id": "m4.team_trance_shooting_four_roles",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m4_trance_test.cpp"
+      ],
+      "tests": [
+        "team_trance_shooting_four_roles"
+      ]
+    },
+    {
+      "id": "m4.protection_owner_only_death",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m4_trance_test.cpp"
+      ],
+      "tests": [
+        "protection_owner_only_death"
+      ]
+    },
+    {
+      "id": "m4.gauge_once_thresholds",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m4_trance_test.cpp"
+      ],
+      "tests": [
+        "gauge_once_thresholds"
+      ]
+    },
+    {
+      "id": "m4.all_collision_invulnerability",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m4_trance_test.cpp"
+      ],
+      "tests": [
+        "all_collision_invulnerability"
+      ]
+    },
+    {
+      "id": "m4.simultaneous_requests",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m4_trance_test.cpp"
+      ],
+      "tests": [
+        "simultaneous_requests"
+      ]
+    },
+    {
+      "id": "m4.deathbomb_manual_c",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m4_trance_test.cpp"
+      ],
+      "tests": [
+        "deathbomb_manual_c"
+      ]
+    },
+    {
+      "id": "m4.generation_respawn_pause_stage",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m4_trance_test.cpp"
+      ],
+      "tests": [
+        "generation_respawn_pause_stage"
+      ]
+    },
+    {
+      "id": "m4.peer_bomb_policy",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m4_trance_test.cpp"
+      ],
+      "tests": [
+        "peer_bomb_policy"
+      ]
+    },
+    {
+      "id": "m5.ghost_rescue_resources",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m5_lifecycle_test.cpp"
+      ],
+      "tests": [
+        "ghost_rescue_resources"
+      ]
+    },
+    {
+      "id": "m5.team_wipe_180",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m5_lifecycle_test.cpp"
+      ],
+      "tests": [
+        "team_wipe_180"
+      ]
+    },
+    {
+      "id": "m5.menu_edges_pause_dialogue",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m5_lifecycle_test.cpp"
+      ],
+      "tests": [
+        "menu_edges_pause_dialogue"
+      ]
+    },
+    {
+      "id": "m5.hud_world_owner_visibility",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m5_lifecycle_test.cpp"
+      ],
+      "tests": [
+        "hud_world_owner_visibility"
+      ]
+    },
+    {
+      "id": "m5.no_sp_save_writes",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m5_lifecycle_test.cpp"
+      ],
+      "tests": [
+        "no_sp_save_writes"
+      ]
+    },
+    {
+      "id": "m5.stage_revive",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m5_lifecycle_test.cpp"
+      ],
+      "tests": [
+        "stage_revive"
+      ]
+    },
+    {
+      "id": "m4.team_trance_shooting_four_roles",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m4_m5_team.mjs"
+      ]
+    },
+    {
+      "id": "m4.protection_owner_only_death",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m4_m5_team.mjs"
+      ]
+    },
+    {
+      "id": "m5.hud_world_owner_visibility",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m4_m5_team.mjs"
+      ]
+    },
+    {
+      "id": "m5.menu_edges_pause_dialogue",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m4_m5_team.mjs"
+      ]
+    },
+    {
+      "id": "m5.no_sp_save_writes",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m4_m5_team.mjs"
+      ]
+    },
+    {
+      "id": "m6.full_state_restore_replay",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m6_worldstate_test.cpp"
+      ],
+      "tests": [
+        "full_state_restore_replay"
+      ]
+    },
+    {
+      "id": "m6.snapshot_mutation_sensitivity",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m6_worldstate_test.cpp"
+      ],
+      "tests": [
+        "snapshot_mutation_sensitivity"
+      ]
+    },
+    {
+      "id": "m6.pools_ids_free_order",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m6_worldstate_test.cpp"
+      ],
+      "tests": [
+        "pools_ids_free_order"
+      ]
+    },
+    {
+      "id": "m6.anm_borrowed_parent_chains",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m6_worldstate_test.cpp"
+      ],
+      "tests": [
+        "anm_borrowed_parent_chains"
+      ]
+    },
+    {
+      "id": "m6.scheduler_callback_rebind",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m6_worldstate_test.cpp"
+      ],
+      "tests": [
+        "scheduler_callback_rebind"
+      ]
+    },
+    {
+      "id": "m6.dual_rng_events_transition",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m6_worldstate_test.cpp"
+      ],
+      "tests": [
+        "dual_rng_events_transition"
+      ]
+    },
+    {
+      "id": "m6.full_state_restore_replay",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m6_worldstate.mjs"
+      ]
+    },
+    {
+      "id": "m6.anm_borrowed_parent_chains",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m6_worldstate.mjs"
+      ]
+    },
+    {
+      "id": "m7.contract_asset_mismatch",
+      "layer": "native",
+      "tests": [
+        "contract_asset_mismatch"
+      ],
+      "files": [
+        "tests/multiplayer/native/m7_netplay_test.cpp"
+      ]
+    },
+    {
+      "id": "m7.frame_zero_load_barrier",
+      "layer": "native",
+      "tests": [
+        "frame_zero_load_barrier"
+      ],
+      "files": [
+        "tests/multiplayer/native/m7_netplay_test.cpp"
+      ]
+    },
+    {
+      "id": "m7.device_seat_isolation",
+      "layer": "native",
+      "tests": [
+        "device_seat_isolation"
+      ],
+      "files": [
+        "tests/multiplayer/native/m7_netplay_test.cpp"
+      ]
+    },
+    {
+      "id": "m7.confirmed_hash_lockstep",
+      "layer": "native",
+      "tests": [
+        "confirmed_hash_lockstep"
+      ],
+      "files": [
+        "tests/multiplayer/native/m7_netplay_test.cpp"
+      ]
+    },
+    {
+      "id": "m7.rtc_two_three_clients",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m7_netplay.mjs"
+      ]
+    },
+    {
+      "id": "m7.relay_fallback_path",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m7_netplay.mjs"
+      ]
+    },
+    {
+      "id": "m7.confirmed_hash_lockstep",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m7_netplay.mjs"
+      ]
+    },
+    {
+      "id": "m7.frame_zero_load_barrier",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m7_netplay.mjs"
+      ]
+    },
+    {
+      "id": "m7.device_seat_isolation",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m7_netplay.mjs"
+      ]
+    },
+    {
+      "id": "m8.rollback_one_three_twelve",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m8_rollback_test.cpp"
+      ],
+      "tests": [
+        "rollback_one_three_twelve"
+      ]
+    },
+    {
+      "id": "m8.audio_bgm_once",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m8_rollback_test.cpp"
+      ],
+      "tests": [
+        "audio_bgm_once"
+      ]
+    },
+    {
+      "id": "m8.trance_death_resimulation",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m8_rollback_test.cpp"
+      ],
+      "tests": [
+        "trance_death_resimulation"
+      ]
+    },
+    {
+      "id": "m8.resim_budget_new_progress",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m8_rollback_test.cpp"
+      ],
+      "tests": [
+        "resim_budget_new_progress"
+      ]
+    },
+    {
+      "id": "m8.delay_zero_two_nine",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m8_rollback_test.cpp"
+      ],
+      "tests": [
+        "delay_zero_two_nine"
+      ]
+    },
+    {
+      "id": "m8.jitter_loss_reorder_duplicate",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m8_rollback_test.cpp"
+      ],
+      "tests": [
+        "jitter_loss_reorder_duplicate"
+      ]
+    },
+    {
+      "id": "m8.window_stall_conflict",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m8_rollback_test.cpp"
+      ],
+      "tests": [
+        "window_stall_conflict"
+      ]
+    },
+    {
+      "id": "m8.session_driven_rollback_equivalence",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m8_rollback_test.cpp"
+      ],
+      "tests": [
+        "session_driven_rollback_equivalence"
+      ]
+    },
+    {
+      "id": "m8.rollback_one_three_twelve",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m8_rollback.mjs"
+      ]
+    },
+    {
+      "id": "m8.audio_bgm_once",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m8_rollback.mjs"
+      ]
+    },
+    {
+      "id": "m8.trance_death_resimulation",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m8_rollback.mjs"
+      ]
+    },
+    {
+      "id": "m8.production_draw_pixels",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m8_rollback.mjs"
+      ]
+    },
+    {
+      "id": "m8.jitter_loss_reorder_duplicate",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m8_rollback.mjs"
+      ]
+    },
+    {
+      "id": "m8.resim_budget_new_progress",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m8_rollback.mjs"
+      ]
+    },
+    {
+      "id": "m9.replay_roundtrip_seek",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m9_replay_lifecycle_test.cpp"
+      ],
+      "tests": [
+        "replay_roundtrip_seek"
+      ]
+    },
+    {
+      "id": "m9.spectator_confirmed_latejoin",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m9_replay_lifecycle_test.cpp"
+      ],
+      "tests": [
+        "spectator_confirmed_latejoin"
+      ]
+    },
+    {
+      "id": "m9.slow_spectator_isolation",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m9_replay_lifecycle_test.cpp"
+      ],
+      "tests": [
+        "slow_spectator_isolation"
+      ]
+    },
+    {
+      "id": "m9.stage_entry_carry",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m9_replay_lifecycle_test.cpp"
+      ],
+      "tests": [
+        "stage_entry_carry"
+      ]
+    },
+    {
+      "id": "m9.run_generation_isolation",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m9_replay_lifecycle_test.cpp"
+      ],
+      "tests": [
+        "run_generation_isolation"
+      ]
+    },
+    {
+      "id": "m9.terminal_local_save",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m9_replay_lifecycle_test.cpp"
+      ],
+      "tests": [
+        "terminal_local_save"
+      ]
+    },
+    {
+      "id": "m9.disconnect_confirmed_save_return",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m9_replay_lifecycle_test.cpp"
+      ],
+      "tests": [
+        "disconnect_confirmed_save_return"
+      ]
+    },
+    {
+      "id": "m9.three_reentries_identity_swap",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m9_lifecycle.mjs"
+      ]
+    },
+    {
+      "id": "m9.scene_coverage_matrix",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m9_lifecycle.mjs"
+      ]
+    },
+    {
+      "id": "m9.replay_roundtrip_seek",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m9_lifecycle.mjs"
+      ]
+    },
+    {
+      "id": "m9.spectator_confirmed_latejoin",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m9_lifecycle.mjs"
+      ]
+    },
+    {
+      "id": "m9.slow_spectator_isolation",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m9_lifecycle.mjs"
+      ]
+    },
+    {
+      "id": "m9.stage_entry_carry",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m9_lifecycle.mjs"
+      ]
+    },
+    {
+      "id": "m9.run_generation_isolation",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m9_lifecycle.mjs"
+      ]
+    },
+    {
+      "id": "m9.terminal_local_save",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m9_lifecycle.mjs"
+      ]
+    },
+    {
+      "id": "m9.disconnect_confirmed_save_return",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m9_lifecycle.mjs"
+      ]
+    },
+    {
+      "id": "m8.rollback_full_window_raf",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m8_rollback.mjs"
+      ]
+    },
+    {
+      "id": "m9.runtime_page_soak",
+      "layer": "browser",
+      "files": [
+        "tests/multiplayer/browser/m9_lifecycle.mjs"
+      ]
+    }
+  ]
+}

@@ -7,7 +7,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
+#include <unordered_map>
 
 namespace th13 {
 
@@ -287,6 +289,252 @@ void StagePresentation::release_stage() {
     for (u32& handle : spirit_handles_) { if (handle) animations.retire(handle); handle = 0; }
     spirit_serials_.fill(0); spirit_scripts_.fill(0);
     stage_file_offsets_.clear(); stage_offsets_source_ = nullptr;
+}
+
+// M6 快照：手账 capture（头文件 SnapshotData 注释即契约）。自有 VM 按
+// 值拷贝（AnmVm 值语义，registry 快照同款）；unordered_set（shot_faded_
+// generations_）排序为 vector 钉死顺序（同状态同字节序）。
+bool StagePresentation::capture_presentation(SnapshotData& out) const {
+    out.enemies.clear();
+    out.enemies.reserve(enemies_.size());
+    for (const auto& enemy : enemies_) {
+        SnapshotData::EnemyVisualData data;
+        data.serial = enemy.serial;
+        data.script = enemy.script;
+        data.has_vm = enemy.vm != nullptr;
+        if (enemy.vm) data.vm = *enemy.vm;
+        out.enemies.push_back(std::move(data));
+    }
+    out.bullets.clear();
+    for (const auto& slot : bullets_) {
+        SnapshotData::BulletSlotData data;
+        data.has_vm = slot.vm != nullptr;
+        if (slot.vm) data.vm = *slot.vm;
+        data.script = slot.script;
+        data.color = slot.color;
+        data.source_type = slot.source.type;
+        data.source_color = slot.source.color;
+        data.generation = slot.generation;
+        data.active = slot.active;
+        out.bullets.push_back(std::move(data));
+    }
+    out.shot_handles = shot_handles_;
+    out.shots.clear();
+    out.shots.reserve(shots_.size());
+    for (const auto& shot : shots_) out.shots.push_back(shot ? *shot : AnmVm{});
+    out.shot_generations = shot_generations_;
+    out.shot_fades.clear();
+    out.shot_fades.reserve(shot_fades_.size());
+    for (const auto& fade : shot_fades_) {
+        SnapshotData::ShotFadeData data;
+        data.handle = fade.handle;
+        data.generation = fade.generation;
+        data.x = fade.x; data.y = fade.y; data.angle = fade.angle;
+        data.drift = fade.drift; data.sine_moving = fade.sine_moving;
+        data.age = fade.age;
+        out.shot_fades.push_back(data);
+    }
+    out.shot_faded_generations.assign(shot_faded_generations_.begin(),
+                                      shot_faded_generations_.end());
+    std::sort(out.shot_faded_generations.begin(), out.shot_faded_generations.end());
+    out.has_player = player_ != nullptr;
+    if (player_) out.player = *player_;
+    out.player_script = player_script_;
+    out.player_tilt = player_tilt_;
+    out.spirit_handles = spirit_handles_;
+    out.spirit_serials = spirit_serials_;
+    out.spirit_scripts = spirit_scripts_;
+    out.item_vms.clear();
+    out.item_side_vms.clear();
+    for (size_t i = 0; i < item_vms_.size(); ++i) {
+        out.item_vm_present[i] = item_vms_[i] != nullptr;
+        if (item_vms_[i]) out.item_vms.push_back(*item_vms_[i]);
+    }
+    for (size_t i = 0; i < item_side_vms_.size(); ++i) {
+        out.item_side_vm_present[i] = item_side_vms_[i] != nullptr;
+        if (item_side_vms_[i]) out.item_side_vms.push_back(*item_side_vms_[i]);
+    }
+    out.youmu_slash_handles = youmu_slash_handles_;
+    out.youmu_slash_extra = youmu_slash_extra_;
+    out.option_handles = option_handles_;
+    out.full_option_handles = full_option_handles_;
+    out.bomb_orb_handles = bomb_orb_handles_;
+    out.bomb_orb_exploding = bomb_orb_exploding_;
+    out.bomb_ray_handles = bomb_ray_handles_;
+    out.trance_handle = trance_handle_;
+    out.trance_was_active = trance_was_active_;
+    out.bullet_cancel_handles = bullet_cancel_handles_;
+    out.focus_handle = focus_handle_;
+    out.youmu_charge_handle = youmu_charge_handle_;
+    out.fog_handles = fog_handles_;
+    out.option_character = option_character_;
+    out.option_count = option_count_;
+    out.option_anchor_deferred = option_anchor_deferred_;
+    out.option_rebuild_pending = option_rebuild_pending_;
+    out.options_hidden = options_hidden_;
+    out.death_options_queued = death_options_queued_;
+    out.full_options = full_options_;
+    out.frame_synced = frame_synced_;
+    out.bomb_generation = bomb_generation_;
+    out.bomb_background = bomb_background_;
+    out.bomb_beam = bomb_beam_;
+    out.player_effect_handles = player_effect_handles_;
+    return true;
+}
+
+// M6 快照：手账 restore。自有 VM 重建后重绑宿主指针：environment/
+// object_host 指向 animations（快照存活期身份不变），bullets_ 槽 VM 的
+// sprite_source 指回**槽自身**的 Source（值拷贝后原指针悬垂——槽在
+// deque 尾部追加可能整体搬移）。registry 句柄原值写回（registry 已按
+// 同 generation 恢复，句柄值语义有效）。
+bool StagePresentation::restore_presentation(const SnapshotData& source) {
+    enemies_.clear();
+    enemies_.reserve(source.enemies.size());
+    for (const auto& data : source.enemies) {
+        EnemyVisual visual;
+        visual.serial = data.serial;
+        visual.script = data.script;
+        if (data.has_vm) {
+            visual.vm = std::make_unique<AnmVm>(data.vm);
+            visual.vm->environment = &animations.scene_environment();
+            visual.vm->object_host = &animations;
+        }
+        enemies_.push_back(std::move(visual));
+    }
+    bullets_.clear();
+    for (const auto& data : source.bullets) {
+        BulletSlot slot;
+        if (data.has_vm) {
+            slot.vm = std::make_unique<AnmVm>(data.vm);
+            slot.vm->environment = &animations.scene_environment();
+            slot.vm->object_host = &animations;
+        }
+        slot.script = data.script;
+        slot.color = data.color;
+        slot.source.type = data.source_type;
+        slot.source.color = data.source_color;
+        slot.generation = data.generation;
+        slot.active = data.active;
+        if (slot.vm) slot.vm->sprite_source = &slot.source;
+        bullets_.push_back(std::move(slot));
+    }
+    shot_handles_ = source.shot_handles;
+    shots_.clear();
+    shots_.reserve(source.shots.size());
+    for (const auto& shot : source.shots) {
+        auto vm = std::make_unique<AnmVm>(shot);
+        vm->environment = &animations.scene_environment();
+        vm->object_host = &animations;
+        shots_.push_back(std::move(vm));
+    }
+    shot_generations_ = source.shot_generations;
+    shot_fades_.clear();
+    shot_fades_.reserve(source.shot_fades.size());
+    for (const auto& data : source.shot_fades) {
+        ShotFade fade;
+        fade.handle = data.handle;
+        fade.generation = data.generation;
+        fade.x = data.x; fade.y = data.y; fade.angle = data.angle;
+        fade.drift = data.drift; fade.sine_moving = data.sine_moving;
+        fade.age = data.age;
+        shot_fades_.push_back(fade);
+    }
+    shot_faded_generations_.clear();
+    shot_faded_generations_.insert(source.shot_faded_generations.begin(),
+                                    source.shot_faded_generations.end());
+    player_.reset();
+    if (source.has_player) {
+        player_ = std::make_unique<AnmVm>(source.player);
+        player_->environment = &animations.scene_environment();
+        player_->object_host = &animations;
+    }
+    player_script_ = source.player_script;
+    player_tilt_ = source.player_tilt;
+    spirit_handles_ = source.spirit_handles;
+    spirit_serials_ = source.spirit_serials;
+    spirit_scripts_ = source.spirit_scripts;
+    for (size_t i = 0; i < item_vms_.size(); ++i) {
+        item_vms_[i].reset();
+        item_side_vms_[i].reset();
+    }
+    size_t body_cursor = 0, side_cursor = 0;
+    for (size_t i = 0; i < item_vms_.size(); ++i) {
+        if (source.item_vm_present[i]) {
+            item_vms_[i] = std::make_unique<AnmVm>(source.item_vms[body_cursor++]);
+            item_vms_[i]->environment = &animations.scene_environment();
+            item_vms_[i]->object_host = &animations;
+        }
+        if (source.item_side_vm_present[i]) {
+            item_side_vms_[i] = std::make_unique<AnmVm>(source.item_side_vms[side_cursor++]);
+            item_side_vms_[i]->environment = &animations.scene_environment();
+            item_side_vms_[i]->object_host = &animations;
+        }
+    }
+    youmu_slash_handles_ = source.youmu_slash_handles;
+    youmu_slash_extra_ = source.youmu_slash_extra;
+    option_handles_ = source.option_handles;
+    full_option_handles_ = source.full_option_handles;
+    bomb_orb_handles_ = source.bomb_orb_handles;
+    bomb_orb_exploding_ = source.bomb_orb_exploding;
+    bomb_ray_handles_ = source.bomb_ray_handles;
+    trance_handle_ = source.trance_handle;
+    trance_was_active_ = source.trance_was_active;
+    bullet_cancel_handles_ = source.bullet_cancel_handles;
+    focus_handle_ = source.focus_handle;
+    youmu_charge_handle_ = source.youmu_charge_handle;
+    fog_handles_ = source.fog_handles;
+    option_character_ = source.option_character;
+    option_count_ = source.option_count;
+    option_anchor_deferred_ = source.option_anchor_deferred;
+    option_rebuild_pending_ = source.option_rebuild_pending;
+    options_hidden_ = source.options_hidden;
+    death_options_queued_ = source.death_options_queued;
+    full_options_ = source.full_options;
+    frame_synced_ = source.frame_synced;
+    bomb_generation_ = source.bomb_generation;
+    bomb_background_ = source.bomb_background;
+    bomb_beam_ = source.bomb_beam;
+    player_effect_handles_ = source.player_effect_handles;
+    return true;
+}
+
+// M6 快照恢复的手账重置（头文件注释即契约）。只清「权威态 → 表现层」
+// 的派生缓存；registry 的 VM 池由 WorldState::restore 恢复（句柄 generation
+// 一致），重置只丢弃指向发散期的悬空映射——下一帧 sync 全量重建。
+void StagePresentation::reset_snapshot_caches() {
+    for (auto& enemy : enemies_)
+        if (enemy.vm) enemy.vm.reset();
+    enemies_.clear();
+    for (auto& bullet : bullets_)
+        if (bullet.vm) bullet.vm.reset();
+    bullets_.clear();
+    // 自机弹句柄池：registry 已恢复，句柄本身在恢复后的池里仍有效——
+    // 但 generation 匹配面（shot_generations_）与权威弹的对应在发散期
+    // 错位，保留会误退休权威弹（M6 实证）。清空后 sync 重建。
+    shot_handles_.clear();
+    shot_generations_.clear();
+    for (auto& shot : shots_) shot.reset();
+    shots_.clear();
+    shot_fades_.clear();
+    shot_faded_generations_.clear();
+    for (auto& vm : item_vms_) vm.reset();
+    for (auto& vm : item_side_vms_) vm.reset();
+    for (u32& handle : spirit_handles_) handle = 0;
+    spirit_serials_.fill(0);
+    spirit_scripts_.fill(0);
+    for (u32& handle : youmu_slash_handles_) handle = 0;
+    youmu_slash_extra_.clear();
+    for (u32& handle : bomb_orb_handles_) handle = 0;
+    bomb_orb_exploding_.fill(false);
+    for (u32& handle : bomb_ray_handles_) handle = 0;
+    for (u32& handle : option_handles_) handle = 0;
+    for (u32& handle : full_option_handles_) handle = 0;
+    option_character_ = -1;
+    option_count_ = -1;
+    focus_handle_ = 0;
+    youmu_charge_handle_ = 0;
+    bullet_cancel_handles_.clear();
+    frame_synced_ = false;
 }
 
 void StagePresentation::release() {
@@ -1211,11 +1459,15 @@ bool StagePresentation::create_ecl_effect(i32 file, i32 script, const Vec3& posi
     // 动物镜像变体）的 op308 是 toggle 翻转，二次执行抵消镜像 = EX 动物
     // 弹幕贴图方向反（0x46f820 类创建才有时间重置语义）。
     const auto target = resolve_script_target(file, script);
-    if (target.script < 0) return false;
+    if (target.script < 0)
+        return fail("Effect animation target unresolved: file=" +
+                    std::to_string(file) + " script=" + std::to_string(script));
     const u32 effect_handle =
         animations.create_preserve_ip(target.bank, target.script, -1, 2, position, 0, false);
     if (!effect_handle)
-        return fail("Effect animation creation failed: " + animations.error);
+        return fail("Effect animation creation failed: file=" + std::to_string(file) +
+                    " script=" + std::to_string(script) + " bank=" +
+                    std::to_string(target.bank) + " manager=" + animations.error);
     if (anm_random_observer)
         if (auto* vm = animations.registry.find(effect_handle))
             anm_random_observer(*vm, -12, file, script, i32(target.bank), 0, 0, 0, false);

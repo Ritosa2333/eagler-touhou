@@ -856,7 +856,10 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
             if (target <= -990.0f) target = bullet.angle;
             else if (target >= 990.0f) {
                 // 0x443f60(弹体位置)：出生点→玩家（此处弹体即出生位置）。
-                const float dy = player_y - bullet.y, dx = player_x - bullet.x;
+                // M3：最近合格玩家（R-G；单席退化 = player_x/y）。
+                float aim_x, aim_y;
+                nearest_player(bullet.x, bullet.y, aim_x, aim_y);
+                const float dy = aim_y - bullet.y, dx = aim_x - bullet.x;
                 target = (dy == 0.0f && dx == 0.0f)
                              ? 1.5707964f
                              : float(std::atan2(static_cast<double>(dy),
@@ -886,7 +889,9 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
             case 0: {
                 float target = f0;
                 if (target <= -990.0f || target >= 990.0f) {
-                    const float dy = player_y - bullet.y, dx = player_x - bullet.x;
+                    float aim_x, aim_y;  // M3：最近合格玩家
+                    nearest_player(bullet.x, bullet.y, aim_x, aim_y);
+                    const float dy = aim_y - bullet.y, dx = aim_x - bullet.x;
                     target = (dy == 0.0f && dx == 0.0f)
                                  ? 1.5707964f
                                  : float(std::atan2(static_cast<double>(dy),
@@ -900,8 +905,10 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
                 bullet.ex10_angle = f0;
                 break;
             case 2: {  // 0x800000 快照位置 → 玩家向（st01 未用 0x800000，快照恒 0）
-                const float dy = player_y - bullet.saved_pos[1];
-                const float dx = player_x - bullet.saved_pos[0];
+                float aim_x, aim_y;  // M3：最近合格玩家
+                nearest_player(bullet.saved_pos[0], bullet.saved_pos[1], aim_x, aim_y);
+                const float dy = aim_y - bullet.saved_pos[1];
+                const float dx = aim_x - bullet.saved_pos[0];
                 const float base = (dy == 0.0f && dx == 0.0f)
                                        ? 1.5707964f
                                        : float(std::atan2(static_cast<double>(dy),
@@ -920,11 +927,13 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
                 const float unit = random.signed_unit();
                 float value;
                 if (f0 > -990.0f) {
+                    float aim_x, aim_y;  // M3：最近合格玩家
+                    nearest_player(bullet.x, bullet.y, aim_x, aim_y);
                     value = f0 < 990.0f ? unit * f0
                                         : unit * f0 +
                                               float(std::atan2(
-                                                  static_cast<double>(player_y - bullet.y),
-                                                  static_cast<double>(player_x - bullet.x)));
+                                                  static_cast<double>(aim_y - bullet.y),
+                                                  static_cast<double>(aim_x - bullet.x)));
                 } else {
                     value = bullet.angle + unit * f0;
                 }
@@ -1070,7 +1079,9 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
             if(args[1]>-990.f) {
                 angle=args[1];
                 if(angle>=990.f) {
-                    const float dx=player_x-bullet.x,dy=player_y-bullet.y;
+                    float aim_x, aim_y;  // M3：最近合格玩家
+                    nearest_player(bullet.x, bullet.y, aim_x, aim_y);
+                    const float dx=aim_x-bullet.x,dy=aim_y-bullet.y;
                     angle=dx==0&&dy==0?1.5707964f:float(std::atan2(double(dy),double(dx)));
                 }
                 angle=wrap_angle(angle);
@@ -1226,7 +1237,9 @@ void StageSim::step_bullet_behaviors(StageBullet& bullet) {
                 break;
             case 1:
             case 6: {
-                const float dy = player_y - bullet.y, dx = player_x - bullet.x;
+                float aim_x, aim_y;  // M3：最近合格玩家
+                nearest_player(bullet.x, bullet.y, aim_x, aim_y);
+                const float dy = aim_y - bullet.y, dx = aim_x - bullet.x;
                 target = (dy == 0.0f && dx == 0.0f)
                              ? 1.5707964f + bullet.ex10_angle
                              : float(std::atan2(static_cast<double>(dy),
@@ -1235,8 +1248,10 @@ void StageSim::step_bullet_behaviors(StageBullet& bullet) {
                 break;
             }
             case 2: {
-                const float dy = player_y - bullet.saved_pos[1];
-                const float dx = player_x - bullet.saved_pos[0];
+                float aim_x, aim_y;  // M3：最近合格玩家
+                nearest_player(bullet.saved_pos[0], bullet.saved_pos[1], aim_x, aim_y);
+                const float dy = aim_y - bullet.saved_pos[1];
+                const float dx = aim_x - bullet.saved_pos[0];
                 target = (dy == 0.0f && dx == 0.0f)
                              ? 1.5707964f + bullet.ex10_angle
                              : float(std::atan2(static_cast<double>(dy),
@@ -1929,7 +1944,9 @@ void StageSim::emit_et(const StageEt& et, u32 enemy_serial, u32 slot, const floa
             // 40e840 checks the final radial spawn after angle/RNG generation,
             // before sprite initialization and queue execution. Boundary survives.
             if(active_bullet_protect_radius2>0) {
-                const double dx=double(x)-player_x,dy=double(y)-player_y;
+                float protect_x, protect_y;  // M3：保护圈围绕最近合格玩家
+                nearest_player(float(x), float(y), protect_x, protect_y);
+                const double dx=double(x)-double(protect_x),dy=double(y)-double(protect_y);
                 const float distance2=float(dx*dx+dy*dy); // 40eca0 f32 store before compare
                 if(distance2<active_bullet_protect_radius2) {
                     if (pool_slot >= 0) bullet_free_slots_.push_back(pool_slot);
@@ -2180,5 +2197,99 @@ std::string StageSim::debug_bullet_queue() const {
     return out;
 }
 
+
+// ---- M6：StageEnemy 值域快照（WorldState 专用；threads/fog 由快照层
+// 单独处理——见 StageSim.hpp capture_fields 注释）----
+void StageEnemy::capture_fields(StageEnemy& out) const {
+    // 拷贝构造 + unique_ptr 置空：值域全量保留，指针域由调用方接管。
+    out = StageEnemy{};
+    out.native_function = native_function;
+    out.native_function_mode = native_function_mode;
+    out.serial = serial;
+    out.script_id = script_id;
+    out.trace_id = trace_id;
+    out.routine = routine;
+    out.life = life;
+    out.spawn_score = spawn_score;
+    out.bullet_protect_radius2 = bullet_protect_radius2;
+    out.vel = vel;
+    out.pos = pos;
+    out.position[0] = position[0]; out.position[1] = position[1]; out.position[2] = position[2];
+    out.last_hit_position[0] = last_hit_position[0];
+    out.last_hit_position[1] = last_hit_position[1];
+    out.motion_delta[0] = motion_delta[0];
+    out.motion_delta[1] = motion_delta[1];
+    out.motion_delta[2] = motion_delta[2];
+    out.death_sound = death_sound;
+    out.death_effect = death_effect;
+    out.death_effect_file = death_effect_file;
+    out.age = age;
+    out.flags = flags;
+    out.hurtbox[0] = hurtbox[0]; out.hurtbox[1] = hurtbox[1];
+    out.hitbox[0] = hitbox[0]; out.hitbox[1] = hitbox[1];
+    out.body_angle = body_angle;
+    out.limit_center[0] = limit_center[0]; out.limit_center[1] = limit_center[1];
+    out.limit_half[0] = limit_half[0]; out.limit_half[1] = limit_half[1];
+    for (size_t et_index = 0; et_index < 8; ++et_index) out.et[et_index] = et[et_index];
+    for (size_t slot = 0; slot < 4; ++slot) out.i_slots[slot] = i_slots[slot];
+    for (size_t slot = 0; slot < 8; ++slot) out.f_slots[slot] = f_slots[slot];
+    out.dead = dead;
+    out.tick_gate = tick_gate;
+    out.interrupt_label = interrupt_label;
+    out.interrupts = interrupts;
+    out.invulnerable = invulnerable;
+    out.invulnerable_clock = invulnerable_clock;
+    out.body_invulnerable = body_invulnerable;
+    out.body_invulnerable_clock = body_invulnerable_clock;
+    out.damage_function = damage_function;
+    out.pending_damage = pending_damage;
+    out.spell_active = spell_active;
+    out.spell_base_life = spell_base_life;
+    out.spell_life = spell_life;
+    out.spell_id = spell_id;
+    out.spell_name = spell_name;
+    out.phase_life_remaining = phase_life_remaining;
+    out.phase_life_threshold = phase_life_threshold;
+    out.phase_timed_out = phase_timed_out;
+    out.drop_main = drop_main;
+    for (size_t slot = 0; slot < 14; ++slot) out.drop_extra[slot] = drop_extra[slot];
+    out.drop_area[0] = drop_area[0]; out.drop_area[1] = drop_area[1];
+    out.spirit_accum = spirit_accum;
+    out.spirit_threshold = spirit_threshold;
+    out.hit_anim_timer = hit_anim_timer;
+    out.hit_feedback_cooldown = hit_feedback_cooldown;
+    out.hit_sound = hit_sound;
+    out.periodic_flash = periodic_flash;
+    out.death_spirit_limit = death_spirit_limit;
+    out.death_spirit_count = death_spirit_count;
+    out.damage_spirits_disabled = damage_spirits_disabled;
+    out.death_routine = death_routine;
+    out.anm_file = anm_file;
+    out.anm_base_script = anm_base_script;
+    out.anm_slot0_bank = anm_slot0_bank;
+    out.anm_slot0_script_offset = anm_slot0_script_offset;
+    for (size_t slot = 0; slot < kAnimationSlots; ++slot) {
+        out.anm_script[slot] = anm_script[slot];
+        out.anm_slot_handle[slot] = anm_slot_handle[slot];
+        out.anm_slot_offset[slot] = anm_slot_offset[slot];
+    }
+    out.anm_size_a[0] = anm_size_a[0]; out.anm_size_a[1] = anm_size_a[1];
+    out.anm_size_b[0] = anm_size_b[0]; out.anm_size_b[1] = anm_size_b[1];
+    out.mirror_dir = mirror_dir;
+    out.mirror_velocity_x = mirror_velocity_x;
+    out.mirror_ready = mirror_ready;
+    out.mirror_prev_x = mirror_prev_x;
+    out.mirror_script_base = mirror_script_base;
+}
+void StageEnemy::restore_fields(const StageEnemy& source) {
+    StageEnemy staging;
+    source.capture_fields(staging);
+    // 保留本对象的 unique_ptr 域身份（threads/fog 对象不动，值域整体替换）。
+    std::unique_ptr<EclThreads> saved_threads = std::move(threads);
+    std::unique_ptr<EnemyFog> saved_fog = std::move(fog);
+    *this = std::move(staging);
+    threads = std::move(saved_threads);
+    fog = std::move(saved_fog);
+}
 
 }  // namespace th13

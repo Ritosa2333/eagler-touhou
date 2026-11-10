@@ -179,6 +179,23 @@ public:
     bool ecl_wait_released() const { return !active() || command_delay_ != 0; }
     const MsgDialogState& state() const { return state_; }
 
+    // ---- M6/P3.2 快照面（WorldState 的 MSG 对话域）----
+    // 值域全量（cursor 存 file 内偏移而非指针——restore 时 file_ 身份不变、
+    // bytes 镜像只读，重算指针）。file_/host_ 是接线指针不快照。ruby 的
+    // cp932/utf8 两份都逐字节快照（utf8 是解密派生，不重转避免 U+FFFD 差异）。
+    struct Snapshot {
+        static constexpr u32 kNoCursor = 0xFFFFFFFFu;
+        u32 cursor_offset = kNoCursor;
+        MsgDialogState state;
+        u32 clock = 0;
+        i32 line_index = 0, block_open = 0, wait_timeout = 0, command_delay = 0;
+        bool pending_ruby = false;
+        i32 pending_ruby_x = 0, pending_ruby_spacing = 0;
+        std::string pending_ruby_cp932, pending_ruby_utf8;
+    };
+    Snapshot capture() const;
+    void restore(const Snapshot& source);
+
 private:
     enum class Flow { Advance, Blocked, Finished };
     Flow execute(u8 opcode, const u8* args, u32 arg_bytes, const MsgAdvance& input);

@@ -1,6 +1,7 @@
 #include "AnmRegistry.hpp"
 #include "AnmOverlay.hpp"
 #include <algorithm>
+#include <unordered_map>
 namespace th13 {
 ChainEntryObserver chain_entry_observer = nullptr;
 // 卸载资源时把绑定它的 VM 标待回收（0x46fea0 语义：render_flags |= 0x20）。
@@ -13,12 +14,24 @@ bool AnmRegistry::references_resource(const AnmResource* resource)const noexcept
 AnmRegistry::AnmRegistry(){free_slots.reserve(pool.size());for(u32 i=pool.size();i>0;i--)free_slots.push_back(i-1);}
 AnmRegistry::Node* AnmRegistry::node(AnmVm& vm)const noexcept{const auto it=nodes.find(&vm);if(it!=nodes.end())return it->second;const auto borrowed=external.find(&vm);return borrowed==external.end()?nullptr:borrowed->second.get();}
 AnmVm* AnmRegistry::allocate(){
-    Node* entry=nullptr;if(!free_slots.empty()){const u32 slot=free_slots.back();free_slots.pop_back();if(!pool[slot]){pool[slot]=std::make_unique<Node>();pool[slot]->slot=slot;nodes.emplace(&pool[slot]->vm,pool[slot].get());}entry=pool[slot].get();}
-    else{auto extra=std::make_unique<Node>();entry=extra.get();nodes.emplace(&entry->vm,entry);overflow.emplace(entry,std::move(extra));}
+    // 池复用路径的键注册必须幂等（operator[]）：回滚 restore 会
+    // nodes.clear() 后只按快照 entries 重建键——发散期新分配的槽
+    // Node 残留在 pool 且仍在快照 free_slots 里，后续 allocate 复用
+    // 该槽时 pool[slot] 非空、旧实现跳过 emplace → 悬空键 → submit
+    // "no registry node"（M8 回滚重放实证）。operator[] 对已有键幂等。
+    Node* entry=nullptr;if(!free_slots.empty()){const u32 slot=free_slots.back();free_slots.pop_back();if(!pool[slot]){pool[slot]=std::make_unique<Node>();pool[slot]->slot=slot;}entry=pool[slot].get();nodes[&entry->vm]=entry;}
+    else{auto extra=std::make_unique<Node>();entry=extra.get();nodes[&entry->vm]=entry;overflow.emplace(entry,std::move(extra));}
     entry->active=true;entry->queued_deletion=false;entry->registered=false;entry->handle=0;entry->parent=nullptr;entry->children.clear();entry->vm.rotation_parent=entry->vm.creation_parent=nullptr;active_count++;return &entry->vm;
 }
 u32 AnmRegistry::submit(AnmVm& vm,u32 ordering){
-    auto* entry=node(vm);if(!entry||entry->borrowed||!entry->active||entry->registered){error="Animation instance cannot be registered";return 0;}
+    auto* entry=node(vm);
+    if(!entry||entry->borrowed||!entry->active||entry->registered){
+        // 拒绝原因细分（M8 回滚重放诊断：池残留状态定位）。
+        error=entry?"Animation instance cannot be registered ("+
+            std::string(!entry->active?"inactive":entry->registered?"registered":"borrowed")+")"
+            :"Animation instance has no registry node";
+        return 0;
+    }
     // 句柄 = generation<<13 | slot（0x46f3f0：低 13 位槽、高 19 位代，代跳 0）。
     generation=(generation+1)&0x7ffff;if(!generation)generation=1;entry->handle=(generation<<13)|(entry->slot&0x1fff);entry->alternate=ordering&4;
     auto& list=groups[entry->alternate];if(ordering&2)entry->position=list.insert(list.begin(),entry);else entry->position=list.insert(list.end(),entry);entry->registered=true;
@@ -127,4 +140,165 @@ AnmVm* AnmRegistry::find_child_script(AnmVm& vm,i32 script,i32 occurrence)const 
 u32 AnmRegistry::slot(const AnmVm& vm)const noexcept{auto* entry=node(const_cast<AnmVm&>(vm));return entry?entry->slot:0x1fff;}
 u32 AnmRegistry::ordered_handle(bool alternate,u32 index)const noexcept{for(auto* entry:groups[alternate])if(index--==0)return entry->handle;return 0;}
 void AnmRegistry::append_draw(AnmVm& vm){i32 layer=vm.visual.layer;if(layer<0||layer>30)return;layers[u32(layer)].push_back(&vm);}
+
+// ---- M6：回滚快照面（capture/restore 专用实现）----
+u32 AnmRegistry::pool_slot(const AnmVm& vm) const noexcept {
+    // node() 查 nodes/external 两表；池内节点回 slot，池外（overflow/borrowed）
+    // 返回 0x1fff 与 slot() 同义。
+    return slot(const_cast<AnmVm&>(vm));
+}
+bool AnmRegistry::capture(SnapshotData& out) const {
+    // 全节点序遍历：池内（pool 下标序）+ overflow（unordered_map 遍历序
+    // 不稳定——按节点指针升序排序钉死顺序，保证同状态同快照字节序）+
+    // external（borrowed 根，同序规则）。快照内序号 = entries 下标。
+    out.entries.clear();
+    out.free_slots = free_slots;
+    out.generation = generation;
+    out.active_count = active_count;
+    out.borrowed_roots.clear();
+    // 收集全部 Node*（池内 + overflow + external borrowed）。
+    std::vector<const Node*> ordered;
+    for (const auto& slot_node : pool)
+        if (slot_node) ordered.push_back(slot_node.get());
+    std::vector<const Node*> overflow_nodes;
+    for (const auto& entry : overflow) overflow_nodes.push_back(entry.second.get());
+    std::sort(overflow_nodes.begin(), overflow_nodes.end());
+    ordered.insert(ordered.end(), overflow_nodes.begin(), overflow_nodes.end());
+    std::vector<const Node*> external_nodes;
+    for (const auto& entry : external) external_nodes.push_back(entry.second.get());
+    std::sort(external_nodes.begin(), external_nodes.end());
+    ordered.insert(ordered.end(), external_nodes.begin(), external_nodes.end());
+    // 节点 → 快照序号映射（指针比较，仅本函数内使用，不落盘）。
+    std::unordered_map<const Node*, u32> index_of;
+    index_of.reserve(ordered.size());
+    for (u32 i = 0; i < ordered.size(); ++i) index_of[ordered[i]] = i;
+    for (const Node* node : ordered) {
+        SnapshotData::Entry entry;
+        entry.vm = node->vm;
+        entry.slot = node->slot;
+        entry.handle = node->handle;
+        entry.active = node->active;
+        entry.registered = node->registered;
+        entry.alternate = node->alternate;
+        entry.borrowed = node->borrowed;
+        entry.frozen_root = node->frozen_root;
+        entry.queued_deletion = node->queued_deletion;
+        entry.in_overflow = node->slot >= pool.size();
+        if (node->parent) {
+            const auto it = index_of.find(node->parent);
+            entry.parent = it != index_of.end() ? it->second : 0xFFFFFFFFu;
+        }
+        for (const Node* child : node->children) {
+            const auto it = index_of.find(child);
+            if (it != index_of.end()) entry.children.push_back(it->second);
+        }
+        // 链序号：groups[alternate] 的列表位置（restore 按序重插）。
+        for (u32 chain = 0; chain < 2; ++chain) {
+            u32 position = 0;
+            for (const Node* member : groups[chain]) {
+                if (member == node) { entry.chain_index[chain] = position; break; }
+                ++position;
+            }
+        }
+        if (node->borrowed) out.borrowed_roots.push_back(node->borrowed);
+        out.entries.push_back(std::move(entry));
+    }
+    return true;
+}
+bool AnmRegistry::restore(const SnapshotData& source) {
+    // 前置：清空当前全部节点（直毁语义，无 0x20 延迟——快照恢复是确认
+    // 栅栏后的整场替换，不走帧内回收路径）。
+    for (const auto& slot_node : pool) if (slot_node) { slot_node->active=false; slot_node->registered=false; slot_node->handle=0; slot_node->parent=nullptr; slot_node->children.clear(); slot_node->vm=AnmVm{}; }
+    nodes.clear();
+    overflow.clear();
+    external.clear();
+    pending_deletion.clear();
+    for (auto& bucket : layers) bucket.clear();
+    for (auto& group : groups) group.clear();
+    free_slots.clear();
+    generation = source.generation;
+    active_count = 0;
+    // 第一遍：按快照重建节点存储（池内复用同槽位——分配顺序一致；
+    // 池外节点进 overflow；borrowed 根按指针身份回 external）。
+    std::vector<Node*> restored(source.entries.size(), nullptr);
+    // borrowed 根按 capture 时的宿主指针序（borrowed_roots 与 entries 中
+    // borrowed=true 的条目按序对应）回 external 表——宿主对象由外层持有，
+    // 快照存活期不卸载（红线）。
+    {
+        u32 borrowed_index = 0;
+        for (u32 i = 0; i < source.entries.size(); ++i) {
+            const SnapshotData::Entry& entry = source.entries[i];
+            if (!entry.borrowed) continue;
+            if (borrowed_index >= source.borrowed_roots.size()) {
+                error = "Animation snapshot borrowed root missing";
+                return false;
+            }
+            auto node = std::make_unique<Node>();
+            node->borrowed = source.borrowed_roots[borrowed_index++];
+            node->slot = 0x1fff;
+            node->handle = entry.handle;
+            node->active = entry.active;
+            node->registered = entry.registered;
+            node->alternate = entry.alternate;
+            node->frozen_root = entry.frozen_root;
+            node->queued_deletion = entry.queued_deletion;
+            Node* raw = node.get();
+            external.emplace(node->borrowed, std::move(node));
+            restored[i] = raw;
+        }
+    }
+    for (u32 i = 0; i < source.entries.size(); ++i) {
+        const SnapshotData::Entry& entry = source.entries[i];
+        if (entry.borrowed) continue;
+        Node* node = nullptr;
+        if (!entry.in_overflow && entry.slot < pool.size()) {
+            if (!pool[entry.slot]) pool[entry.slot] = std::make_unique<Node>();
+            node = pool[entry.slot].get();
+            node->slot = entry.slot;
+            nodes[&node->vm] = node;
+        } else {
+            auto extra = std::make_unique<Node>();
+            node = extra.get();
+            node->slot = 0x1fff;
+            nodes.emplace(&node->vm, node);
+            overflow.emplace(node, std::move(extra));
+        }
+        node->vm = entry.vm;
+        node->handle = entry.handle;
+        node->active = entry.active;
+        node->registered = entry.registered;
+        node->alternate = entry.alternate;
+        node->frozen_root = entry.frozen_root;
+        node->queued_deletion = entry.queued_deletion;
+        if (node->active) ++active_count;
+        restored[i] = node;
+    }
+    // 第二遍：父子链（快照内序号 → 节点指针）。
+    for (u32 i = 0; i < source.entries.size(); ++i) {
+        const SnapshotData::Entry& entry = source.entries[i];
+        Node* node = restored[i];
+        if (!node) continue;
+        if (entry.parent != 0xFFFFFFFFu && entry.parent < restored.size())
+            node->parent = restored[entry.parent];
+        for (const u32 child : entry.children)
+            if (child < restored.size() && restored[child]) node->children.push_back(restored[child]);
+    }
+    // 第三遍：链表（按快照链序号重插；position 迭代器语义：insert(end)）。
+    for (u32 chain = 0; chain < 2; ++chain) {
+        // 收集该链的全部节点并按 chain_index 排序（0xFFFFFFFF = 不在该链）。
+        std::vector<std::pair<u32, Node*>> members;
+        for (u32 i = 0; i < source.entries.size(); ++i) {
+            if (source.entries[i].chain_index[chain] == 0xFFFFFFFFu) continue;
+            if (!restored[i]) continue;
+            members.emplace_back(source.entries[i].chain_index[chain], restored[i]);
+        }
+        std::sort(members.begin(), members.end(),
+                  [](const auto& a, const auto& b) { return a.first < b.first; });
+        for (auto& [position, node] : members) {
+            node->position = groups[chain].insert(groups[chain].end(), node);
+        }
+    }
+    free_slots = source.free_slots;
+    return true;
+}
 }
