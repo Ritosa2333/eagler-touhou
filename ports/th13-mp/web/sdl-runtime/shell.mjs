@@ -9,6 +9,10 @@ const game = 'th13', protocol = 'eagler-touhou/1', query = new URLSearchParams(l
 const epoch = Number(query.get('runtimeEpoch'));
 const validEpoch = Number.isSafeInteger(epoch) && epoch > 0;
 let core, launched = false, first = false, stopping = false, options = {}, music = true, queue = Promise.resolve();
+let multiplayerBridge = null;
+// 房间预览（launcher prepare-room）：正式多人页在房间内先呈现标题面，
+// launch 时停掉预览泵再交给桥进局（th15 shell 同型）。
+let roomPreview = false;
 const emit = (event, fields = {}) => parent.postMessage({protocol, game, epoch, event, ...fields}, location.origin);
 // 触摸坐标换算的 canvas 包围盒缓存：resize/视口变化时失效，避免每次
 // pointermove 消息都强制布局（getBoundingClientRect）。
@@ -34,7 +38,9 @@ function clearKeyboard() {
   core?._th13_keys_clear();
 }
 const err = () => {
-  const p = core._th13_error();
+  let p = runtimeBuild.multiplayer && typeof core._th13_mp_error === 'function'
+    ? core._th13_mp_error() : core._th13_error();
+  if (runtimeBuild.multiplayer && !core.HEAPU8[p]) p = core._th13_error();
   const end = core.HEAPU8.indexOf(0, p);
   return new TextDecoder().decode(core.HEAPU8.subarray(p, end < 0 ? p + 256 : end));
 };
@@ -84,8 +90,15 @@ function writeSaveBytes(bytes) {
 // base64；name 恒为小写（sanitizePath 已归一）。护栏：单条 >1MiB 拒收；
 // 索引总量（base64 账面）超 5MiB 先逐出最旧条目，配额溢出再逐出重试——
 // 正在写入的条目绝不逐出，全部失败返回 false 由调用方报错（不静默丢档）。
-const replayIndexKey = 'th13.replays', replayBlobPrefix = 'th13.replay.';
-const replayNamePattern = /^th13_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?$/;
+// 多人 Replay 使用独立命名空间（th13mp_XX.rpy）与独立 localStorage 键，
+// 避免与单人 Replay/成绩互相覆盖（MP-DEVELOPMENT 的存储根约定）。
+const replayStem = runtimeBuild.multiplayer ? 'th13mp' : 'th13';
+const replayIndexKey = replayStem + '.replays', replayBlobPrefix = replayStem + '.replay.';
+// launcher 的 replayFilePolicy 目前仍按 th13_ 命名（th15mp 才有 mp 前缀特例）；
+// 正式页同时接受 th13mp_（原生约定）与 th13_（launcher 导入分配）两种名字。
+const replayNamePattern = runtimeBuild.multiplayer
+  ? /^th13(?:mp)?_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?$/
+  : /^th13_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?$/;
 const replaySingleMax = 1024 * 1024, replayTotalMax = 5 * 1024 * 1024;
 function replayIndex() {
   try {
@@ -194,11 +207,13 @@ function closeAudio() {
     if (borrowed) s.audioContext = context;
   }
 }
+const save = () => { multiplayerBridge?.save(); };
 async function stop() {
   if (stopping) return;
   stopping = true;
   try {
     core._th13_loop_stop();
+    try { await save(); } finally { multiplayerBridge?.close(); }
     closeAudio();
     launched = false;
     emit('exit', {code: 0, status: 'success'});
@@ -208,8 +223,10 @@ async function stop() {
 }
 
 function sanitizePath(value) {
-  const name = String(value).replaceAll('\\', '/').toLowerCase().replace(/^\/savesth13\//, '').replace(/^\//, '');
-  if (!/^(?:scoreth13\.dat|th13\.cfg|replay\/th13_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(name)) throw Error('存档路径无效');
+  const name = String(value).replaceAll('\\', '/').toLowerCase().replace(/^\/savesth13(?:mp)?\//, '').replace(/^\//, '');
+  const replay = 'replay\\/' + (runtimeBuild.multiplayer ? 'th13(?:mp)?' : 'th13') +
+    '_(?:\\d{2}|ud[a-z0-9]{4})\\.rpyx?';
+  if (!new RegExp('^(?:scoreth13\\.dat|th13\\.cfg|' + replay + ')$').test(name)) throw Error('存档路径无效');
   return name;
 }
 
@@ -240,8 +257,52 @@ async function resource(r) {
   emit('transfer', {mode: 'runtime', loaded: bytes.length, total: bytes.length, path: r.path});
 }
 
+async function initializeTitle() {
+  let builtAt = new Date().toISOString();
+  try {
+    const resp = await fetch('./manifest.json');
+    if (resp.ok) builtAt = (await resp.json()).builtAt || builtAt;
+  } catch {}
+  await installStartupBranding(core, {game, builtAt});
+  let scaleOption = query.get('renderScale');
+  if (!scaleOption) {
+    try { scaleOption = new URLSearchParams(parent.location.search).get('renderScale'); } catch {}
+  }
+  const requested = Number(scaleOption);
+  // 移动端默认 renderScale=1（= 原版原生 640×480 分辨率）：粗指针/小屏
+  // 默认降档保 60fps；显式 options/URL 指定优先。桌面与无头捕获不受影响。
+  const mobileDefault = matchMedia('(pointer: coarse)').matches ||
+      Math.min(screen.width || 9999, screen.height || 9999) < 640 ? 1 : 2;
+  core._th13_render_scale(options.renderScale === 1 ? 1 : options.renderScale === 2 ? 2
+    : requested === 1 ? 1 : requested === 2 ? 2 : mobileDefault);
+  if (!core._th13_prepare_loading()) throw Error(err());
+  $('#loading').textContent = '';
+  const startupImageAt = performance.now();
+  performance.mark('eagler-startup-image');
+  await new Promise(requestAnimationFrame);
+  await new Promise(requestAnimationFrame);
+  if (!core._th13_initialize()) throw Error(err());
+  apply();
+  await finishStartupAnimation(startupImageAt, frames => core._th13_draw_startup(frames));
+  performance.mark('eagler-startup-menu-ready');
+  first = false;
+  $('#loading').textContent = '';
+}
+
 async function command(m) {
   switch (m.command) {
+    case 'prepare-room':
+      // 正式房间预载：呈现原生标题面后才允许 READY（launcher 以
+      // response.presented===true 作为 ACK）。
+      if (!runtimeBuild.multiplayer || launched || options.netplayMode === 'lan' ||
+          options.replayViewer) throw Error('房间预览需要未启动的多人标题页');
+      if (!roomPreview) {
+        await initializeTitle();
+        roomPreview = true;
+        core._th13_loop_start();
+        await new Promise(requestAnimationFrame);
+      }
+      return {presented: true};
     case 'configure':
       if (launched) throw Error('不能配置正在运行的游戏');
       if (!['ogg', 'none'].includes(m.music)) throw Error('不支持的音乐模式');
@@ -285,45 +346,51 @@ async function command(m) {
     }
     case 'launch':
       if (!launched) {
-        let builtAt = new Date().toISOString();
-        try {
-          const resp = await fetch('./manifest.json');
-          if (resp.ok) builtAt = (await resp.json()).builtAt || builtAt;
-        } catch {}
-        await installStartupBranding(core, {game, builtAt});
-        let scaleOption = query.get('renderScale');
-        if (!scaleOption) {
-          try { scaleOption = new URLSearchParams(parent.location.search).get('renderScale'); } catch {}
-        }
-        const requested = Number(scaleOption);
-        // 移动端默认 renderScale=1（= 原版原生 640×480 分辨率）：粗指针/小屏
-        // 默认降档保 60fps；显式 options/URL 指定优先。桌面与无头捕获不受影响。
-        const mobileDefault = matchMedia('(pointer: coarse)').matches ||
-            Math.min(screen.width || 9999, screen.height || 9999) < 640 ? 1 : 2;
-        core._th13_render_scale(options.renderScale === 1 ? 1 : options.renderScale === 2 ? 2
-          : requested === 1 ? 1 : requested === 2 ? 2 : mobileDefault);
-        if (!core._th13_prepare_loading()) throw Error(err());
-        $('#loading').textContent = '';
-        const startupImageAt = performance.now();
-        performance.mark('eagler-startup-image');
-        await new Promise(requestAnimationFrame);
-        await new Promise(requestAnimationFrame);
-        if (!core._th13_initialize()) throw Error(err());
-        apply();
-        await finishStartupAnimation(startupImageAt, frames => core._th13_draw_startup(frames));
-        performance.mark('eagler-startup-menu-ready');
+        if (roomPreview) core._th13_loop_stop();
+        else await initializeTitle();
         launched = true;
+        roomPreview = false;
         apply();
         first = false;
         $('#loading').textContent = '';
-        core._th13_loop_start();
+        // 多人：configure → connect → start 由桥完成，成功后才启动 rAF 泵；
+        // 缺省（非多人）保持单席原有顺序。录像启动不建立玩家连接，桥返回
+        // false 时交给 playback 命令/宿主回放器接管。
+        let loopStarted = !runtimeBuild.multiplayer;
+        if (runtimeBuild.multiplayer) {
+          if (options.replayViewer === true && typeof options.replayPath === 'string' && options.replayPath) {
+            await multiplayerBridge.openReplay(options.replayPath, options.replayStage);
+            loopStarted = true;
+          } else if (await multiplayerBridge.launch()) loopStarted = true;
+        }
+        if (loopStarted) core._th13_loop_start();
+        if (runtimeBuild.multiplayer && options.replayViewer === true && !loopStarted) {
+          first = true;
+          emit('first-frame');
+        }
         // 持久化录像回灌 catalog（launcher 工作台经 write 写入的、以及上次
         // 会话游戏内保存的）：晚于 loop_start，与 th13.html 内置预装同一拍。
-        restoreReplaysToCatalog();
+        // 多人 Replay 使用独立命名空间，不回灌单席 catalog。
+        if (!runtimeBuild.multiplayer) restoreReplaysToCatalog();
         emit('runtime-info', {renderer: 'SDL3 / WebGL2 / C++', architecture: protocol, ...runtimeBuild});
       }
       return {};
+    case 'playback': {
+      // TH13 正式页目前只接「打开多人录像」：播放器本体（inspect/pause/
+      // seek/rate）依赖尚未导出的 MP Replay 观测面，按 M9 缺口如实拒绝。
+      if (!runtimeBuild.multiplayer) throw Error('此 Runtime 不支持录像回放控制');
+      if (!launched || options.replayViewer !== true) throw Error('请先打开录像管理器');
+      if (m.action !== 'open') throw Error('TH13 多人录像的解析与播放控制尚未接入');
+      const target = sanitizePath(m.path);
+      if (!target.startsWith('replay/')) throw Error('录像路径无效');
+      const name = target.slice(7), bytes = readReplayFile(name);
+      if (!bytes) throw Error('文件不存在');
+      await multiplayerBridge.openReplay(name, m.stage, bytes);
+      core._th13_loop_start();
+      return {};
+    }
     case 'sync':
+      await save();
       return {};
     case 'list': {
       const files = [];
@@ -393,6 +460,7 @@ window.addEventListener('message', e => {
       const result = await command(m);
       if (typeof m.request === 'string') parent.postMessage({protocol, game, epoch, request: m.request, ok: true, ...result}, location.origin);
     } catch (e) {
+      console.error('[th13-runtime] command failed:', m.command, e);
       if (typeof m.request === 'string') parent.postMessage({protocol, game, epoch, request: m.request, ok: false, error: String(e), errno: e?.errno}, location.origin);
       else fatal(e);
     }
@@ -403,7 +471,8 @@ document.addEventListener('visibilitychange', () => {
   if (launched) {
     clearKeyboard();
     core?._th13_touch_cancel();
-    core?._th13_loop_pause(+document.hidden);
+    // M1：多人失焦不得单端暂停；单席保持原有隐藏暂停语义。
+    if (!runtimeBuild.multiplayer) core._th13_loop_pause(+document.hidden);
   }
 });
 window.addEventListener('blur', () => {
@@ -458,6 +527,7 @@ const initialized = (async () => {
       ticks += count;
       presents++;
       maxFrameMs = Math.max(maxFrameMs, ms);
+      multiplayerBridge?.frame();
       if (!first) {
         first = true;
         last = performance.now();
@@ -566,6 +636,14 @@ const initialized = (async () => {
     }
     const font = await fetch('assets/msgothic.ttc').catch(() => null);
     if (font && font.ok) core.FS.writeFile('/msgothic.ttc', new Uint8Array(await font.arrayBuffer()));
+  }
+
+  // 多人变体由打包器写入 runtimeBuild.multiplayer=true；桥只在正式多人页加载。
+  if (runtimeBuild.multiplayer) {
+    const {createMultiplayerBridge} = await import('./multiplayer.mjs');
+    const manifest = await (await fetch('./manifest.json')).json();
+    multiplayerBridge = createMultiplayerBridge({core, getOptions: () => options, manifest,
+      emit, onError: fatal, onExit: stop});
   }
 
   emit('ready');

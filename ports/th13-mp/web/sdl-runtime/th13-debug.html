@@ -105,6 +105,16 @@ try {
   if (!mod._th13_prepare_loading()) throw new Error(runtime_error());
   mod._th13_draw_startup(90);
   if (!mod._th13_initialize()) throw new Error(runtime_error());
+  // M2 多席会话（测试接口）：?mp=<2|3>&mpc=<c0>,<c1>,<c2> 在对局建立前
+  // 配置席位（begin_run 的 enable_multiplayer 消费）。缺省不配置 = 单席。
+  const mpCount = Number(params.get('mp') ?? '0');
+  if (mpCount) {
+    const mpc = (params.get('mpc') ?? '0,0,0').split(',').map(Number);
+    const mpLocalSeat = Number(params.get('mplocalseat') ?? '0');
+    if (!mod._th13_debug_mp_seats(mpCount, mpc[0] ?? 0, mpc[1] ?? 0, mpc[2] ?? 0, mpLocalSeat))
+      throw new Error('多席配置被拒绝：mp=' + mpCount);
+    status('多席会话配置：' + mpCount + ' 席 角色 [' + mpc.join(',') + ']');
+  }
   // 回放会话直入：解码录像、按录像头配置对局；rAF 主循环不启动。
   const name_ptr = mod.allocateUTF8(replayName);
   const total = mod._th13_debug_replay(name_ptr, stageIndex);

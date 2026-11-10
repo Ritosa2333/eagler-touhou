@@ -822,6 +822,28 @@ export declare const PRODUCT_GAMES: Readonly<{
         replay: Readonly<{
             prefix: "th13";
         }>;
+        multiplayerRuntime: "./runtime/th13/multiplayer/th13.html";
+        multiplayer: Readonly<{
+            titleKey: "game.title.th13mp";
+            gameplay: "cooperative";
+            inputTiming: Readonly<{
+                rollbackLimit: 12;
+                sendPredictionLimit: 12;
+                measuredStartup: true;
+                manualDelayLimit: 9;
+            }>;
+            playerCounts: readonly [2, 3];
+            difficulties: readonly ["Easy", "Normal", "Hard", "Lunatic", "Extra"];
+            loadouts: readonly {
+                labelKey: string;
+                glyph: string;
+                character: number;
+                shot: number;
+            }[];
+            peerTransportGlobal: "__th13PeerTransport";
+            spectator: true;
+            titleRoomEntry: false;
+        }>;
         features: Readonly<{
             thprac: false;
             languages: false;
