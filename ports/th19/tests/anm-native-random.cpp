@@ -42,5 +42,11 @@ int main(){
     for(int id:{10010,10011,10012,10030,10031,10032,10038})assert(vm.read_var_i(id)==id);
     assert(vm.read_var_f(10038)==10038.f);
     assert(AnmVm::random_checkpoint()==123&&AnmVm::random_checkpoint(true)==456);
+    const u8 randomSprite[]={45,1,16,0,0,0,0,0,90,0,0,0,8,0,0,0};
+    vm.bind(randomSprite,sizeof(randomSprite));
+    AnmVm::restore_random(502632068);
+    vm.tick();
+    assert(vm.sprite==96&&AnmVm::random_checkpoint()==282310622);
+    assert(AnmVm::random_checkpoint(true)==456);
     std::cout<<"PASS: 234 native float bit patterns through RNG and ANM; rollback and bounded draws\n";
 }

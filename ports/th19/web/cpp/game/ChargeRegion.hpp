@@ -14,6 +14,7 @@ struct ChargeRegion {
     float x=0,y=0,radius=0,release_radius=0;
     float minor=0,angle=0,last_px=0,speed=1;
     int count=1;
+    Point origin;
     std::array<Point,3> centers{};
     static bool supported(int ch){return ch>=0&&ch<19;}
     // 0x42b260: Aura+8 starts at zero; emit before increment, every 7 ticks.
@@ -25,7 +26,7 @@ struct ChargeRegion {
         last_px=px;
         if(character!=ch){held=false;age=0;angle=0;}
         character=ch;down=down&&supported(ch);bool begin=down&&!held;
-        if(begin){age=0;release=0;x=px;y=py;last_px=px;speed=1;angle=0;}
+        if(begin){age=0;release=0;x=px;y=py;origin={px,py};last_px=px;speed=1;angle=0;}
         if(!down&&held){release=20;release_radius=radius;}
         held=down;
         if(down){

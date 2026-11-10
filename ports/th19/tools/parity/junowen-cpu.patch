@@ -37,7 +37,17 @@
 +windows = { version = "0.51.1", features = ["Win32_Foundation", "Win32_System_Console", "Win32_System_SystemServices"] }
 --- a/archives/th19replayplayer/src/lib.rs
 +++ b/archives/th19replayplayer/src/lib.rs
-@@ -169,6 +169,23 @@
+@@ -135,7 +135,8 @@
+
+ fn init_interprecess(tx: mpsc::Sender<ReplayFile>) {
++    let name = std::env::var_os("TH19_CAPTURE_PIPE").unwrap_or_else(|| "th19replayplayer".into());
+     let pipe = PipeListenerOptions::new()
+-        .name(OsStr::new("th19replayplayer"))
++        .name(OsStr::new(&name))
+         .mode(PipeMode::Bytes)
+         .create()
+         .unwrap();
+@@ -169,6 +170,25 @@
  fn init_battle(th19: &mut Th19, replay_file: &ReplayFile) {
      th19.set_rand_seed1(replay_file.rand_seed1).unwrap();
      th19.set_rand_seed2(replay_file.rand_seed2).unwrap();
@@ -49,19 +59,21 @@
 +    if std::env::var_os("TH19_CAPTURE_CPU").is_some() {
 +        let selection = th19.selection();
 +        let identity = format!(
-+            "{{\"mode\":{},\"matchup\":{},\"difficulty\":{},\"characters\":[{},{}]}}\n",
++            "{{\"mode\":{},\"matchup\":{},\"difficulty\":{},\"characters\":[{},{}],\"cards\":[{},{}]}}\n",
 +            selection.game_mode as u32,
 +            selection.player_matchup as u32,
 +            selection.difficulty as u32,
 +            selection.p1().character,
 +            selection.p2().character,
++            selection.p1().card,
++            selection.p2().card,
 +        );
 +        std::fs::write("cpu-selection.json", identity).unwrap();
 +    }
  }
 
  fn tick_battle(
-@@ -176,6 +193,9 @@
+@@ -176,6 +196,9 @@
      round_frame: &RoundFrame,
      replay_file: &ReplayFile,
  ) -> bool {

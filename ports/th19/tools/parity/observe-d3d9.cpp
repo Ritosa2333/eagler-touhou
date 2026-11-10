@@ -29,15 +29,22 @@ void* originalRng;
 DWORD captureThread;
 FILE* rngTrace;
 unsigned rngCallCount, rngCallsFlushed;
+unsigned traceFirst, traceLast;
+bool hasTraceWindow;
 volatile LONG skippedRngThreads;
 struct RngCall {
     unsigned present, frame, flags, object, before, caller, bp, si, di;
     unsigned stack[8], frameWords[12], instructionWords[6];
     unsigned subIndex, ip, subContext[6];
     unsigned animation[8];
+    unsigned counterManagerIndex, counterSlot, counterSlotFlags;
     char subName[64];
 };
 RngCall rngCalls[8192];
+
+bool detailedFrame(unsigned frame,unsigned first,unsigned last) {
+    return hasTraceWindow ? frame>=traceFirst && frame<=traceLast : frame>=first && frame<=last;
+}
 
 template<class Fn> bool patch(void** slot, Fn replacement, Fn& original) {
     DWORD oldProtection, ignored;
@@ -63,7 +70,9 @@ void __cdecl recordRngCall(unsigned object, const unsigned* stack, unsigned bp, 
     const auto owner = read<unsigned>(gameBase + 0x1d1a54);
     if (!owner) return;
     const auto frame = read<unsigned>(owner + 0x14);
-    if (frame > 10 && (frame < 80 || frame > 90) && (frame < 110 || frame > 114) && (frame < 122 || frame > 130)) return;
+    if (hasTraceWindow) {
+        if (!detailedFrame(frame,0,0)) return;
+    } else if (frame > 10 && (frame < 80 || frame > 90) && (frame < 110 || frame > 114) && (frame < 122 || frame > 130)) return;
     if (rngCallCount >= _countof(rngCalls)) return;
     auto& sample = rngCalls[rngCallCount++];
     sample.present = presentIndex + 1;
@@ -75,10 +84,23 @@ void __cdecl recordRngCall(unsigned object, const unsigned* stack, unsigned bp, 
     sample.bp = bp;
     sample.si = si;
     sample.di = di;
+    if (sample.caller == 0x11be8e) {
+        // 0x51c042 selects the receiving manager. 0x4f3925 takes its first free slot.
+        const auto get=[](unsigned address){
+            unsigned value=0;
+            ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<const void*>(address),&value,sizeof(value),nullptr);
+            return value;
+        };
+        sample.counterManagerIndex=get(di+0x6e4);
+        const auto manager=sample.counterManagerIndex<2
+            ? get(gameBase+0x1d1a9c-sample.counterManagerIndex*60) : 0;
+        sample.counterSlot=get(get(manager+0x8156b0));
+        if(sample.counterSlot)sample.counterSlotFlags=get(sample.counterSlot+0x10);
+    }
     const auto top = __readfsdword(4);
     for (unsigned i = 0; i < _countof(sample.stack) && unsigned(stack + 1 + i) < top; ++i)
         sample.stack[i] = stack[1 + i];
-    if (frame>=110 && frame<=130 && (sample.caller==0x4be1||sample.caller==0x4ca1)) {
+    if (detailedFrame(frame,110,130) && (sample.caller==0x4be1||sample.caller==0x4ca1)) {
         const auto vm=sample.stack[0];
         auto get=[](unsigned address){
             unsigned value=0;
@@ -153,40 +175,51 @@ struct ShotGate {
 };
 ShotGate shotGateSamples[512];
 unsigned shotGateCount, shotGateFlushed;
+struct PlayerSample {unsigned owner, timer, x, y, controls, bulletManager;};
+PlayerSample playerSamples[2];
+bool captureBulletPositions;
 struct ProjectileSample {unsigned timer,seat,projectile,vm,age,x,y,angle,speed,kind;};
 ProjectileSample projectileSamples[4096];
 unsigned projectileCount,projectileFlushed;
-struct EnemySample {unsigned timer,id,x,y,flags,status;};
+struct EnemySample {unsigned timer,id,x,y,flags,status;int hp;};
 EnemySample enemySamples[1024];
 unsigned enemyCount,enemyFlushed;
 
 void __cdecl recordShotGate(unsigned shot) {
-    if (GetCurrentThreadId()!=captureThread || shotGateCount>=_countof(shotGateSamples)) return;
+    if (GetCurrentThreadId()!=captureThread) return;
     const auto game=read<unsigned>(gameBase+0x1d1a54);
     if(!game) return;
     const auto timer=read<unsigned>(game+0x14);
-    if(timer>130) return;
-    auto& sample=shotGateSamples[shotGateCount++];
     const auto ctx=read<unsigned>(shot+0x1293c);
     const auto status=ctx?read<unsigned>(ctx+4):0;
+    const auto seat=read<unsigned>(shot+0x12938);
+    // The shot manager receives the player's field position after movement.
+    if(status&&seat<2){
+        const auto input=read<unsigned>(gameBase+0x1d19a0+4*seat);
+        playerSamples[seat]={game,timer,read<unsigned>(status+0x68c),read<unsigned>(status+0x690),
+            input?read<unsigned>(input+0x29c)&0xffu:0x100u,read<unsigned>(ctx)};
+    }
+    if(shotGateCount>=_countof(shotGateSamples)||!detailedFrame(timer,0,130)) return;
+    auto& sample=shotGateSamples[shotGateCount++];
     const auto stage=read<unsigned>(gameBase+0x1d1a68);
     const auto director=read<unsigned>(gameBase+0x1d1a50);
-    sample={timer,read<unsigned>(shot+0x12938),read<unsigned>(shot+0x1282c),
+    sample={timer,seat,read<unsigned>(shot+0x1282c),
         read<unsigned>(shot+0x12804),status?read<unsigned>(status+0x14):0,
         read<unsigned>(game+0x140),stage?read<unsigned>(stage+0x4b78):0,
         director?read<unsigned>(director+0x310):0};
-    if(timer>=84&&timer<=130&&sample.seat==0&&ctx){
+    if(detailedFrame(timer,84,130)&&sample.seat==0&&ctx){
         auto manager=read<unsigned>(ctx+8);
         auto node=manager?read<unsigned>(manager+0x4b50):0;
         for(unsigned i=0;node&&i<24&&enemyCount<_countof(enemySamples);++i){
             const auto enemy=read<unsigned>(node);
             if(!enemy)break;
+            // 0x509e68 subtracts damage from the +0x1230 subobject at +0x5008.
             enemySamples[enemyCount++]={timer,read<unsigned>(enemy+0x6858),read<unsigned>(enemy+0x1278),
-                read<unsigned>(enemy+0x127c),read<unsigned>(enemy+0x639c),read<unsigned>(enemy+0x63a0)};
+                read<unsigned>(enemy+0x127c),read<unsigned>(enemy+0x639c),read<unsigned>(enemy+0x63a0),read<int>(enemy+0x6238)};
             node=read<unsigned>(node+4);
         }
     }
-    if(timer>=86&&timer<=130&&sample.seat==0) {
+    if(detailedFrame(timer,86,130)&&sample.seat==0) {
         auto node=read<unsigned>(shot+0x12840);
         for(unsigned i=0;node&&i<96&&projectileCount<_countof(projectileSamples);++i) {
             const auto projectile=read<unsigned>(node);
@@ -246,7 +279,7 @@ void __cdecl recordImpact(unsigned shot) {
     const auto game=read<unsigned>(gameBase+0x1d1a54);
     if(!game)return;
     const auto frame=read<unsigned>(game+0x14);
-    if(frame<100||frame>130)return;
+    if(!detailedFrame(frame,100,130))return;
     impactSamples[impactCount++]={frame,read<unsigned>(shot+0x11c),read<unsigned>(shot+0x14),
         read<unsigned>(shot+0x54),read<unsigned>(shot+0x58),read<unsigned>(shot+0x9c),
         read<unsigned>(shot+0x114)};
@@ -291,16 +324,16 @@ bool installImpactObserver() {
 }
 void* originalRect;
 struct RectSample {unsigned timer,area,flags;float x,y,w,h,angle,ex,ey,ew,eh,ea;};
-RectSample rectSamples[1024];
+RectSample rectSamples[16384];
 unsigned rectCount,rectFlushed;
 void __cdecl recordRect(unsigned area,const unsigned* stack,float enemyAngle) {
     if(GetCurrentThreadId()!=captureThread||rectCount>=_countof(rectSamples))return;
     const auto game=read<unsigned>(gameBase+0x1d1a54);
     if(!game)return;
     const auto frame=read<unsigned>(game+0x14);
-    if(frame<111||frame>130||!stack[1])return;
+    if(!detailedFrame(frame,111,130)||!stack[1])return;
     const float x=read<float>(area+0x34),y=read<float>(area+0x38);
-    if(x>-70.f||x<-145.f||y<235.f||y>335.f)return;
+    if(!hasTraceWindow&&(x>-70.f||x<-145.f||y<235.f||y>335.f))return;
     rectSamples[rectCount++]={frame,area,read<unsigned>(area+0x14),x,y,read<float>(area+0x2c),read<float>(area+0x30),
         read<float>(area+0x24),read<float>(stack[1]),read<float>(stack[1]+4),stack[2]?read<float>(stack[2]):0.f,stack[2]?read<float>(stack[2]+4):read<float>(reinterpret_cast<unsigned>(stack+3)),enemyAngle};
 }
@@ -347,6 +380,13 @@ bool installRectObserver() {
     return true;
 }
 bool installRngObserver() {
+    const char* first=std::getenv("TH19_CAPTURE_TRACE_FIRST");
+    const char* last=std::getenv("TH19_CAPTURE_TRACE_LAST");
+    if (first && last) {
+        traceFirst=std::strtoul(first,nullptr,10);
+        traceLast=std::strtoul(last,nullptr,10);
+        hasTraceWindow=traceFirst<=traceLast;
+    }
     const unsigned char signature[] = {0x55,0x8b,0xec,0x83,0xec,0x24,0x53,0x56,0x57,0x8b,0xf1};
     auto* entry = reinterpret_cast<unsigned char*>(gameBase + 0x2540);
     if (std::memcmp(entry, signature, sizeof(signature)) != 0) return false;
@@ -404,7 +444,11 @@ void flushRngCalls() {
             for(unsigned i=0;i<_countof(sample.animation);++i)
                 std::fprintf(rngTrace,"%s%u",i?",":"",sample.animation[i]);
         }
-        std::fputs("]}\n", rngTrace);
+        std::fputc(']', rngTrace);
+        if(sample.counterSlot)
+            std::fprintf(rngTrace,",\"counterSlot\":{\"managerIndex\":%u,\"address\":%u,\"flags\":%u}",
+                sample.counterManagerIndex,sample.counterSlot,sample.counterSlotFlags);
+        std::fputs("}\n", rngTrace);
     }
     std::fflush(rngTrace);
 }
@@ -461,6 +505,22 @@ bool saveBackbuffer(IDirect3DDevice9* device, const char* path) {
     return success;
 }
 
+void writeBulletPositions(FILE* output, unsigned manager) {
+    // 0x40e0fb starts the active list and 0x40e0b3 advances it.
+    auto bullet = read<unsigned>(manager+0x8156d8);
+    std::fputc('[', output);
+    bool first = true;
+    for (unsigned i=0; bullet && i<2000; ++i, bullet=read<unsigned>(bullet+4)) {
+        const auto state = read<unsigned>(bullet+0x1044);
+        if (state!=1 && state!=2) continue; // 0x4ee3e9 selects live bullets.
+        std::fprintf(output,"%s[%u,%u,%u,%u]",first?"":",",
+            unsigned(read<unsigned short>(bullet+0x1078)),unsigned(read<unsigned short>(bullet+0x107a)),
+            read<unsigned>(bullet+0x650),read<unsigned>(bullet+0x654));
+        first = false;
+    }
+    std::fputc(']', output);
+}
+
 void capture(IDirect3DDevice9* device) {
     const unsigned present = ++presentIndex;
     if (!trace) return;
@@ -503,6 +563,20 @@ void capture(IDirect3DDevice9* device) {
             std::fprintf(trace, "%s%u", j ? "," : "", read<unsigned>(gameBase + 0x22b674 + j * 4));
         std::fputc(']', trace);
     }
+    const auto& left=playerSamples[0];
+    const auto& right=playerSamples[1];
+    if(rngTrace&&left.owner==owner&&right.owner==owner&&left.timer==frame&&right.timer==frame){
+        std::fprintf(trace,",\"playerPositionBits\":[%u,%u,%u,%u]",left.x,left.y,right.x,right.y);
+        if(left.controls<=0xffu&&right.controls<=0xffu)
+            std::fprintf(trace,",\"playerControls\":[%u,%u]",left.controls,right.controls);
+        if(captureBulletPositions&&left.bulletManager&&right.bulletManager){
+            std::fputs(",\"bulletPositions\":[",trace);
+            writeBulletPositions(trace,left.bulletManager);
+            std::fputc(',',trace);
+            writeBulletPositions(trace,right.bulletManager);
+            std::fputc(']',trace);
+        }
+    }
     if (rngTrace && shotGateFlushed < shotGateCount) {
         std::fputs(",\"shotContexts\":[",trace);
         bool first=true;
@@ -530,7 +604,7 @@ void capture(IDirect3DDevice9* device) {
         bool first=true;
         for(;enemyFlushed<enemyCount;++enemyFlushed){
             const auto& g=enemySamples[enemyFlushed];
-            std::fprintf(trace,"%s[%u,%u,%u,%u,%u,%u]",first?"":",",g.timer,g.id,g.x,g.y,g.flags,g.status);
+            std::fprintf(trace,"%s[%u,%u,%u,%u,%u,%u,%d]",first?"":",",g.timer,g.id,g.x,g.y,g.flags,g.status,g.hp);
             first=false;
         }
         std::fputc(']',trace);
@@ -576,9 +650,47 @@ void capture(IDirect3DDevice9* device) {
     std::fflush(trace);
 }
 
+bool enableFastStateCapture() {
+    // Bypass the wall-clock wait while leaving the simulation step intact.
+    auto* begin=reinterpret_cast<unsigned char*>(gameBase+0xb5cf2);
+    auto* second=reinterpret_cast<unsigned char*>(gameBase+0xb5ee5);
+    auto* third=reinterpret_cast<unsigned char*>(gameBase+0xb605e);
+    auto* gate=reinterpret_cast<unsigned char*>(gameBase+0xb6078);
+    const unsigned char waitGate[]={0x0f,0x86,0xac,0x01,0x00,0x00};
+    for(const auto* site:{begin,second,third}){
+        if(site[0]!=0xff||site[1]!=0x15||read<unsigned>(unsigned(site+2))!=gameBase+0x17b0e0)
+            return false;
+    }
+    if(std::memcmp(gate,waitGate,sizeof(waitGate)))return false;
+    const SIZE_T size=gate+sizeof(waitGate)-begin;
+    DWORD old,ignored;
+    if(!VirtualProtect(begin,size,PAGE_EXECUTE_READWRITE,&old))return false;
+    const unsigned char skipSleep[]={0x83,0xc4,0x04,0x90,0x90,0x90};
+    for(auto* site:{begin,second,third})std::memcpy(site,skipSleep,sizeof(skipSleep));
+    // 0x4b60b9 enters the update path and skips catch-up against wall time.
+    const unsigned char skipGate[]={0xe9,0x3c,0x00,0x00,0x00,0x90};
+    std::memcpy(gate,skipGate,sizeof(skipGate));
+    FlushInstructionCache(GetCurrentProcess(),begin,size);
+    VirtualProtect(begin,size,old,&ignored);
+    return true;
+}
+
 HRESULT STDMETHODCALLTYPE observePresent(IDirect3DDevice9* self, const RECT* source, const RECT* dest,
                                           HWND window, const RGNDATA* dirty) {
     capture(self);
+    static const bool requested=GetEnvironmentVariableA("TH19_CAPTURE_FAST_STATE",nullptr,0)>0;
+    if(requested){
+        const auto owner=read<unsigned>(gameBase+0x1d1a54);
+        if(owner&&(read<unsigned>(owner+0x140)&0x4000000u)){
+            static const bool active=[](){
+                const bool result=enableFastStateCapture();
+                std::fprintf(trace,"{\"fastStateActive\":%s}\n",result?"true":"false");
+                std::fflush(trace);
+                return result;
+            }();
+            if(active&&read<unsigned>(owner+0x14)%60!=0)return D3D_OK;
+        }
+    }
     return originalPresent(self, source, dest, window, dirty);
 }
 
@@ -625,6 +737,7 @@ extern "C" IDirect3D9* WINAPI observeCreate9(UINT sdkVersion) {
         if (rngTrace) std::fprintf(trace,"{\"rectObserverInstalled\":%s}\n",installRectObserver()?"true":"false");
         if (rngTrace) std::fprintf(trace,"{\"impactObserverInstalled\":%s}\n",installImpactObserver()?"true":"false");
         if (rngTrace) std::fprintf(trace,"{\"shotObserverInstalled\":%s}\n",installShotObserver()?"true":"false");
+        captureBulletPositions=GetEnvironmentVariableA("TH19_CAPTURE_BULLET_POSITIONS",nullptr,0)>0;
         std::fflush(trace);
     }
     return d3d;

@@ -23,6 +23,31 @@ inline float laserContactDistance(float x,float y,float angle,float length,float
   float a=(-r-p)/v,b=(r-p)/v;if(a>b)std::swap(a,b);lo=std::max(lo,a);hi=std::min(hi,b);return lo<=hi;};
  return axis(x-ex,c,rx)&&axis(y-ey,s,ry)?lo:-1.f;
 }
+// 0x54ce3e uses the snapped shot origin for the ray, after the area was
+// registered at its unsnapped center. A missed ray writes zero before the +8.
+inline float nativeOptionBeamCircleLength(float x,float y,float angle,float ex,float ey,float radius){
+    const float dx=ex-std::floor(x*100.f)/100.f;
+    const float dy=ey-std::floor(y*100.f)/100.f;
+    const float c=std::cos(angle),s=std::sin(angle);
+    const float along=dx*c+dy*s,across=dy*c-dx*s;
+    if(std::abs(across)>radius||along<-radius||
+       (along<0&&along*along+across*across>radius*radius))return 8.f;
+    const float offset=across/radius;
+    return std::max(0.f,along-std::sqrt(1.f-offset*offset)*radius+8.f);
+}
+// 0x51e6de -> 0x4d2c30 tests the two current oriented rectangles.
+inline bool shotRectanglesOverlap(float dx,float dy,float angle,float width,float height,
+                                  float otherAngle,float otherWidth,float otherHeight){
+    const float c=std::abs(std::cos(otherAngle-angle));
+    const float s=std::abs(std::sin(otherAngle-angle));
+    const auto overlaps=[&](float axisAngle,float w,float h,float ow,float oh){
+        const float along=dx*std::cos(axisAngle)+dy*std::sin(axisAngle);
+        const float across=dy*std::cos(axisAngle)-dx*std::sin(axisAngle);
+        return 2*std::abs(along)<w+c*ow+s*oh && 2*std::abs(across)<h+s*ow+c*oh;
+    };
+    return overlaps(angle,width,height,otherWidth,otherHeight) &&
+           overlaps(otherAngle,otherWidth,otherHeight,width,height);
+}
 // Sweep a shot's oriented hit rectangle against the enemy's hit region.
 // Previous/current centers prevent fast SHT shots from tunnelling through enemies.
 inline bool sweptShotHit(float x0,float y0,float x1,float y1,float angle,float width,float height,

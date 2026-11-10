@@ -9,6 +9,13 @@ inline float nativeEase(unsigned mode,float t){
  case 1:return t*t;case 2:return t*t*t;case 3:return t*t*t*t;
  case 4:return 1-s*s;case 5:return 1-s*s*s;case 6:return 1-s*s*s*s;
  case 9:return t<.5f?2*t*t:1-2*s*s;
+ case 10:{
+  // 0x4d5f7c: cubic ease-in/out over the two halves.
+  const float u=2*t;
+  if(u<1.f)return u*u*u*.5f;
+  const float v=2-u;
+  return (2-v*v*v)*.5f;
+ }
  case 12:return t<.5f?.5f-.5f*(1-2*t)*(1-2*t):.5f+.5f*(2*t-1)*(2*t-1);
  case 28:return t>=1?1:1-((.7f-t)*(.7f-t)-.09f)/.4f;
  // 4d657e: the same native quadratic overshoot family, c=5aa208=.35.

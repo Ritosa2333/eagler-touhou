@@ -1,5 +1,6 @@
 #pragma once
 #include "CpuAvoidance.hpp"
+#include <optional>
 #include <vector>
 namespace th19 {
 // 4f9530 selects an approaching object; 4fa3e0 steers around it before
@@ -8,7 +9,7 @@ struct CpuObstacle {
  struct Object {CpuAvoidance::Hazard shape;float heading=0,speed=0;bool line=false;};
  static constexpr float pi=3.14159265358979323846f;
  static float wrap(float a){return std::remainder(a,2*pi);}
- static int steer(float x,float y,int original,const std::vector<Object>&objects){
+ static std::optional<int> steer(float x,float y,int original,const std::vector<Object>&objects){
   const Object* selected=nullptr;float closestX=0,closestY=0,best=pi/2;
   for(const auto&o:objects){const auto&h=o.shape;float px=h.x,py=h.y;
    if(o.line){float c=std::cos(h.angle),s=std::sin(h.angle);
@@ -32,7 +33,8 @@ struct CpuObstacle {
   float a=std::atan2(y-selected->shape.y,x-selected->shape.x);
   float dx=x-closestX,dy=y-closestY,r=selected->shape.radius;
   if(dx*dx+dy*dy>=r*r+32*32){float delta=wrap(selected->heading-a);
-   if(std::abs(delta)>=pi/9)return 0;
+   // 0x4facab forces neutral and skips the boundary adjustment.
+   if(std::abs(delta)>=pi/9)return std::nullopt;
    a=wrap(a+(delta<=0?pi/2:-pi/2));
   }
   // Native edge rotations, before octant quantization (pi/8 boundaries).

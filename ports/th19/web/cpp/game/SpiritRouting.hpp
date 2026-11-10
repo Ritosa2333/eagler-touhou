@@ -12,16 +12,20 @@ struct SpiritTransit {
     SpiritRequest request;
     float targetX=0,targetY=0;
     int age=-1,duration=60,script=19;
-    // 0x51b480 increments from -1 and arrives strictly AFTER duration.
+    static int flightDuration(unsigned draw){return 60+int((draw&65535u)%120u);}
+    // 0x51b480 advances the current clock before checking the end.
     bool tick(){return ++age>duration;}
 };
-// Explicit RNG inputs keep native geometry testable without pretending that
-// the browser's random stream reproduces the EXE's shared RNG state.
+struct SpiritLaunch {
+    SpiritTransit transit;
+    float startTangentX=0,endTangentX=0;
+};
+// 0x51b6c0 selects an animation and adjusts the initial target by species.
 inline SpiritTransit prepareSpiritTransit(SpiritRequest request,unsigned delayDraw,
-    float targetXDraw,float targetYDraw,float signedDraw1,float signedDraw2,
+    float targetX,float targetY,float signedDraw1,float signedDraw2,
     unsigned signDraw,float opponentX){
-    SpiritTransit t;t.request=request;t.duration=60+(delayDraw&65535u)%120;
-    t.targetX=targetXDraw*296.f-148.f;t.targetY=(targetYDraw-1.f)*64.f;
+    SpiritTransit t;t.request=request;t.duration=SpiritTransit::flightDuration(delayDraw);
+    t.targetX=targetX;t.targetY=targetY;
     if(request.kind==2){t.script=22;t.targetX=std::clamp(opponentX+signedDraw1*48.f,-140.f,140.f);}
     else if(request.kind==3){t.script=25;t.targetY=signedDraw1*128.f+144.f;
         t.targetX=signedDraw2*64.f-148.f;if(!(signDraw&1))t.targetX=-t.targetX;

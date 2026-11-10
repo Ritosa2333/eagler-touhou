@@ -3,6 +3,7 @@
 #include "CurveLaserPath.hpp"
 #include "BossPhase.hpp"
 #pragma once
+#include <optional>
 #include "SpiritMeter.hpp"
 #include "DeathRewards.hpp"
 #include "Types.hpp"
@@ -40,9 +41,15 @@ struct LaserShooter {
 struct InfiniteLaser {
     u32 id=0;float x=0,y=0,angle=0,length=0,width=2;
     bool curved=false;CurveLaserPath curve;std::string curve_file;
-    bool straight=false;float straight_target=0;int offscreen_grace=30,straight_bounds_grace=3,change_sounds=0;StraightLaserChanges straight_changes;
+    bool straight=false,aura_slowed=false;float straight_target=0;int offscreen_grace=30,straight_bounds_grace=3,change_sounds=0;StraightLaserChanges straight_changes;
     bool fragment=false;float travelled=0,travel_cap=0;int cancel_lock=0;
     LaserShooter source;int phase=3,clock=0,age=0;bool active=true;
+    unsigned graze_clock=0;
+    struct ContactSpan {float x,y,length;};
+    std::optional<ContactSpan> cut_contact;
+    ContactSpan contact_span()const{return cut_contact.value_or(ContactSpan{x,y,length});}
+    int motion_frame=-1;
+    bool fixed()const{return !straight&&!curved&&!fragment;}
     // 0x52b0e0 supplies the native hit rectangle only in phases 4 and 2.
     float collisionWidth()const{return width>=32?width-(width+16)/(straight?2.f:3.f):width*.5f;}
     bool hitsPoint(float px,float py)const{
@@ -56,10 +63,11 @@ struct InfiniteLaser {
     // Side strips include equality; corner-circle boundaries are strict.
     bool hitsPlayer(float px,float py,float radius=3)const{
         if(curved)return active&&curve.hits(px,py,radius,width,source.type,angle);
-        if(!active||(phase!=4&&phase!=2)||length<=16||width<=(straight?3.f:0.f))return false;
-        float dx=px-x,dy=py-y,c=std::cos(angle),s=std::sin(angle);
-        float a=std::abs(dx*c+dy*s-length*.5f),b=std::abs(-dx*s+dy*c);
-        float hx=length*(straight?.8f:.95f)*.5f,hy=collisionWidth()*.5f;
+        const auto span=contact_span();
+        if(!active||(phase!=4&&phase!=2)||span.length<=16||width<=(straight?3.f:0.f))return false;
+        float dx=px-span.x,dy=py-span.y,c=std::cos(angle),s=std::sin(angle);
+        float a=std::abs(dx*c+dy*s-span.length*.5f),b=std::abs(-dx*s+dy*c);
+        float hx=span.length*(straight?.8f:.95f)*.5f,hy=collisionWidth()*.5f;
         if((a<=hx+radius&&b<=hy)||(a<=hx&&b<=hy+radius))return true;
         return (a-hx)*(a-hx)+(b-hy)*(b-hy)<radius*radius;
     }
@@ -87,6 +95,7 @@ struct InfiniteLaser {
     }
     void tick(float player_x=0,float player_y=400,std::vector<InfiniteLaser>* reflected=nullptr){
         ++age;
+        cut_contact.reset();
         if(curved){active=curve.tick(width,player_x,player_y);if(curve.dynamic&&!curve.nodes.empty())angle=curve.nodes.front().angle;return;}
         if(straight){ // 0x52e0c0: grow to target, then move; optional reach cap.
             change_sounds+=straight_changes.tick(source.changes,source.speed,angle,straight_bounds_grace,cancel_lock,[&]{
@@ -94,10 +103,13 @@ struct InfiniteLaser {
                 if(reflected)for(auto&child:children)reflected->push_back(std::move(child));
                 return !straight_changes.reflecting;
             });
+            const float speed_factor=aura_slowed?.75f:1.f;
             if(length>=straight_target){
-                travelled+=source.speed;x+=straight_changes.vx;y+=straight_changes.vy;
+                travelled+=source.speed*speed_factor;
+                x+=straight_changes.vx*speed_factor;
+                y+=straight_changes.vy*speed_factor;
                 if(travel_cap>0&&travelled+length>travel_cap){length=travel_cap-travelled;straight_target=length;if(length<=0){active=false;return;}}
-            }else length=std::min(straight_target,length+source.speed);
+            }else length=std::min(straight_target,length+source.speed*speed_factor);
             if(offscreen_grace<=0&&straight_bounds_grace<=0){auto outside=[&](float px,float py){return px+width<=-148||px-width>=148||py+width<=0||py-width>=448;};
                 if(outside(x,y)&&outside(x+std::cos(angle)*length,y+std::sin(angle)*length))active=false;}
             if(offscreen_grace>0)--offscreen_grace;
@@ -112,13 +124,13 @@ struct InfiniteLaser {
         // 52b550 grows only while below the target. Longer initial beams keep their length.
         if(length<source.max_length)length=std::min(source.max_length,length+source.speed);
         // Original 0x52b550: separate timer reset at each phase transition.
+        ++clock;
         if(phase==3&&clock>=source.warning){phase=4;clock=0;}
         else if(phase==4){if(clock<source.grow)width=source.width*clock/std::max(1,source.grow);
             else{phase=2;clock=0;width=source.width;}}
         if(phase==2&&clock>=source.hold){phase=5;clock=0;}
         if(phase==5){if(clock>=source.shrink)active=false;
             else width=source.width*(1-float(clock)/std::max(1,source.shrink));}
-        ++clock;
     }
 };
 
@@ -130,20 +142,38 @@ struct Enemy {
     i32 sub=-1;                 // index into the shared enemy ECL program
     float x=0,y=0;
     float vx=0,vy=0,angle=0,speed=0;
+    float previous_x=0,previous_y=0;
     bool mirrored=false,polar=false;
     // ECL 408: angle/speed become orbital phase/angular speed; +0x20/+0x24
     // in the native movement record hold radius/radial speed.
     bool orbit=false;
     bool relative_ellipse=false;
+    float absolute_base_x=0,absolute_base_y=0;
     float relative_phase=0,relative_omega=0,relative_radius=0,relative_radial=0;
     float relative_rotation=0,relative_ratio=1,relative_x=0,relative_y=0,relative_center_x=0,relative_center_y=0;
+    float absolute_x() const{return absolute_base_x;}
+    float absolute_y() const{return absolute_base_y;}
+    void set_absolute_position(float px,float py){
+        absolute_base_x=px;absolute_base_y=py;
+        x=px;y=py;
+        if(relative_ellipse){
+            x+=relative_x;y+=relative_y;
+        }
+    }
     bool ellipse=false;
     float ellipse_angle=0,ellipse_ratio=1;
     float orbit_x=0,orbit_y=0,radius=0,radial_speed=0;
-    struct Motion {int duration=0,elapsed=0,mode=0;float from=0,to=0;} turn,accelerate;
+    struct Motion {
+        int duration=0;
+        float elapsed=0;
+        int mode=0;
+        float from=0,to=0;
+        void advance(float& value,float step=1.f);
+    } turn,accelerate;
     Motion move_x,move_y,scale_x,scale_y;
     float sx=1,sy=1;
     float bound_x=0,bound_y=0,bound_w=0,bound_h=0;
+    float body_half_width=0,body_half_height=0;
     int native_update_callback=0;
     // Set by the retail 0x509030 aura-disable dispatch.  This is kept
     // separately because pure spirits use several different kind bits.
@@ -168,6 +198,7 @@ struct Enemy {
         float dx=playerX-x,dy=playerY-y,d=std::hypot(dx,dy);
         if(d>=.01f){dx/=d;dy/=d;}
         x-=dx;y-=dy;
+        absolute_base_x-=dx;absolute_base_y-=dy;
     }
     bool directional=false;
     int directional_base=0; // Enemy+280: written by ECL306, independent from ECL303 current pose (+27c).
@@ -196,6 +227,7 @@ struct Enemy {
     int boss_slot=0; // EnemyInf +0x5180; valid while status_flags bit 0x80 is set.
     i32 age=0;
     float invulnerability_time=0; // ECL515 native timer +0x5128; integer value truncates float clock.
+    float contact_protection_time=0; // ECL535 native timer +0x513c.
     int cpu_target_cooldown=0;
     int card_damage_frame=-1,card_damage_sum=0;
     int damage_budget_frame=-1,damage_budget_used=0;
@@ -208,7 +240,12 @@ struct Enemy {
     i32 life_reset_4=0,life_reset_8=0,life_reset_c=0; // native HP record +4/+8/+c
     i32 combo_frames=20;        // EnemyInf +0x5120, ECL 1032; native 0x50ac4a
     bool script_initialized_this_tick=false;
+    enum class ArrivalMotion : u8 { Normal, FirstUpdate, Hold, HoldScriptUpdated };
+    ArrivalMotion arrival_motion=ArrivalMotion::Normal;
+    bool arrival_slow_motion=false;
     u8 spawn_hold=0;
+    enum class AttackEntry : u8 { None, StepScript, RetireController };
+    AttackEntry attack_entry=AttackEntry::None;
     i32 sprite=-1,kind=0;        // sprite = main sprite (slot 0); kind from ins_1027
     u32 flags=0;                // enemy flags: ins_502 sets (bitmask), ins_503 clears
     u32 status_flags=0;         // EnemyInf+0x5170, distinct from +0x516c above
@@ -227,10 +264,12 @@ struct Enemy {
     EclInstance vm;  // the sub's VM (owns host_id=id)
 };
 struct Bullet {
+    static constexpr int Canceling=3;
     u32 id=0;
     float x=0,y=0,vx=0,vy=0;
+    float launch_speed=0;
     i32 sprite=0,kind=0;
-    int color=0;bool reflected=false,scripted=false;
+    int color=0;bool reflected=false,scripted=false,motion_advanced=false;
     int age=0;u32 last_tsukasa_id=0; // Bullet+104c / +1070; preserved across morphs.
     BulletChanges changes;int change_sound=-1;
     BulletGraze graze;float graze_x=0,graze_y=0;u32 graze_tint=0;
@@ -244,11 +283,23 @@ struct Spirit {
     i32 type=0;                 // animal-spirit appearance (10/20/30/32/80...)
     bool active=false;
 };
-struct Pickup {u32 id=0;float x=0,y=0,vx=0,vy=-2.f,speed=0;int type=9,state=1;bool active=true;};
-struct DeathChain {float x=0,y=0,target=32,radius=1;int age=0,duration=30,damage=10,type=0;};
-struct ChainBulletTransit {float x=0,y=0,speed=0;int kind=0,color=0,frame=0;};
-struct BulletCancel {float x=0,y=0;int script=-1;};
-struct EnemyDeath {float x=0,y=0,angle=0;int script=37,sound=3,file=1;};
+struct Pickup {u32 id=0;float x=0,y=0,vx=0,vy=-2.f,speed=0;int type=9,state=1,delay=0;bool active=true;};
+struct DeathChain {
+    float x=0,y=0,target=32,radius=1;
+    float area_x=0,area_y=0;
+    int age=0,duration=30,damage=10,type=0;
+};
+struct ChainBulletTransit {
+    float x=0,y=0,speed=0;
+    int kind=0,color=0,frame=0;
+    float targetX=0,targetY=0,startTangentX=0,endTangentX=0;
+    int duration=0;
+};
+struct BulletCancel {float x=0,y=0;int script=-1;AnmVm animation;};
+struct EnemyDeath {
+    float x=0,y=0,angle=0;int script=37,sound=3,file=1;
+    bool initialize_animation=false;
+};
 
 class GameWorld {
 public:
@@ -267,7 +318,11 @@ public:
     static constexpr size_t bullet_capacity=2000;
     u32 dropped_bullets=0;
     Bullet& spawn_bullet();
-    void tick_bullet_graze(float px,float py,float player_radius=3);
+    void retire_bullet(Bullet& bullet);
+    void discard_retired_bullets();
+    void clear_bullets();
+    const std::vector<bool>& reusable_bullet_motion() const {return reusable_bullet_motion_;}
+    void tick_graze(float px,float py,float player_radius=3,bool defer_rewards=false);
     struct ExtraFlight {
         u32 id=0;int character=-1,age=0,duration=0,life=200,script=-1;
         float x=0,y=0,source_x=0,source_y=0,tangent_start=0,tangent_end=0;
@@ -282,11 +337,16 @@ public:
     int counted_spirits() const;
     ChargeRegion::Point nazrin_seek_target(float x,float y,float fallback_x,float fallback_y) const;
     std::vector<SpiritRequest> spirit_requests;
+    std::vector<SpiritLaunch> spirit_launches;
+    int spirit_flight_limit=40,spirit_launch_overflows=0;
     std::vector<ChainBulletTransit> chain_bullet_transits;
     SpiritMeter pure_spirit_meter;
     struct CounterBulletRequest {float x,y;};
     std::vector<CounterBulletRequest> counter_bullet_requests;
     int spirit_rank=0,spirit_rank_cap=0; // shared native rank source still pending
+    int field_rank=0,opponent_field_rank=0;
+    void increase_field_rank(){field_rank=std::min(field_rank+1,200);}
+    void tick_combo_timer();
     // Explicit native configuration; unknown (-1) retains only verified
     // mode-independent rewards rather than guessing story progression.
     int reward_mode=-1,reward_stage=0,battle_frame=0;
@@ -294,7 +354,7 @@ public:
     float attack_credit_x=0,attack_credit_y=0;
     std::vector<int> native_extra_reservations;
     unsigned native_extra_sequence=0; // Sanae 53df80 alternates left/right arrivals.
-    int send_native_extra_credit(GameWorld& target,const std::vector<const EclProgram*>& source,int character=5);
+    int send_native_extra_credit(GameWorld& target,const std::vector<const EclProgram*>& source,int character=5,int versus_frame=0);
     int pending_story_credit=0,story_boss_phase=0,story_final_boss=0;
     int boss_escape_result=0; // ECL1020 / native player enemy-manager +0x4acc
     bool opponent_defeat_requested=false; // ECL1036, consumed by player lifecycle
@@ -308,7 +368,8 @@ public:
     std::vector<Spirit> spirits;
     std::vector<Pickup> pickups;
     std::vector<EnemyDeath> deaths;
-    int defeated=0,collected=0,combo=0,combo_timer=0,combo_peak=0,pickup_rate=100,pickup_fraction=0,graze_fraction=0;
+    unsigned pickup_serial=0;
+    int defeated=0,collected=0,combo=0,combo_timer=0,combo_peak=0,pickup_rate=100,pickup_fraction=0;
     float pickup_speed=5,pickup_range=70;
     int combo_display=0,combo_display_timer=0;
     ComboAttack combo_attack;
@@ -316,6 +377,7 @@ public:
     // Native manager +0x54..+0x90: enemy IDs, not a count or phase variable.
     std::array<u32,16> boss_slots{};
     u32 boss_control_flags=0; // manager +0x94; ECL512 clears only bit 0.
+    int boss_timer_remaining=-1;
     bool boss_occupied() const {for(u32 id:boss_slots)if(id)return true;return false;}
     bool register_boss(Enemy& enemy,int slot);
     float player_x=0,player_y=400,opponent_x=0,opponent_y=400;
@@ -326,7 +388,11 @@ public:
     i64 earned_score=0;
     bool card_near_damage=false;
     int player_damage_cap=0; // SHT+0x28; zero for worlds without a player SHT.
-    bool damage_enemy(Enemy& enemy,int damage,bool forced=false);
+    bool damage_enemy(Enemy& enemy,int damage,bool forced=false){
+        return damage_enemy(enemy,damage,forced,battle_frame);
+    }
+    bool damage_enemy(Enemy& enemy,int damage,bool forced,u32 damage_frame);
+    void launch_animal_spirit(const Enemy& enemy);
     void finish_enemy_deaths();
     void finish_hit_feedback(u32 native_mode_flags=0);
     int cancel_bullets_circle(float x,float y,float radius,int limit=99999,bool respect_lock=true);
@@ -336,16 +402,24 @@ public:
     int cancel_bullets_shape(const std::function<bool(float,float,float)>& contact);
     int cancel_bullets_polygon(float x,float y,float radius,float angle,int sides);
     int cancel_bullets_rect(float x,float y,float width,float height,float angle=0);
+    int cancel_lasers_rect(float x,float y,float width,float height,float angle);
     int cancel_lasers_circle(float x,float y,float radius,bool respect_lock=true);
     void tick_death_chains();
+    void tick_vs_death_chain_cancels();
+    void cancel_death_chain_bullets(const DeathChain& chain,float radius,int frame);
+    void finish_laser_graze(bool player_contacts,float player_radius);
+    void finish_bullet_graze(bool player_contacts,float player_radius);
     std::vector<DeathChain> death_chains,death_chain_visuals; // one-shot ANM creation events
     std::vector<BulletCancel> bullet_cancels;
     int cancelled_bullets=0;
     int grazed_bullets=0;
-    std::vector<GrazeParticle> graze_particles;ReflectionRng graze_rng;
+    std::vector<GrazeParticle> graze_particles;
     int purify_orin(float x,float y,float radius);
     int convert_zanmu(float x,float y,float radius,int& ordinary_count);
-    void tick_pickups(float player_x,float player_y);
+    void spawn_pickup(int type,float x,float y,float vx,float vy);
+    void scatter_charge_pickup(float x,float y);
+    void tick_pickups(float player_x,float player_y,bool bomb_collect=false);
+    void advance_vs_projectiles();
     ReflectionRng bullet_rng; // Native algorithm; shared replay seed is not wired yet.
     u32 next_id=1;
     u32 last_spawned_id=0;
@@ -368,9 +442,30 @@ public:
     ChargeRegion charge_region;
     void strengthen_tsukasa_bullets(const Enemy& e);
     void apply_bullet_changes(Bullet& bullet);
-    void tick_wave();  // advance enemy VMs + their children
+    void tick_wave(bool tickSpiritMeter=true,
+        const std::function<int(Enemy&)>& collect_shot_damage={});
+    void tick_spirit_meter();
+    void advance_guarded_enemy_scripts();
+    void resolve_marisa_extra_arrivals();
+    void register_marisa_extra_arrival(const std::string& sub,float x,float y,int life,
+                                       const std::vector<const EclProgram*>& source);
 
 private:
+    enum class LaserPass { BeforeCpu, Remaining, NewStraight };
+    void advance_lasers(LaserPass pass,int motion_frame);
+    void advance_bullet(Bullet& bullet);
+    void advance_canceling_bullet(Bullet& bullet);
+    void cancel_bullet(Bullet& bullet,bool inlineAnimation);
+    void record_bullet_cancel(Bullet& bullet,float x,float y,bool initialize);
+    void cull_vs_bullet(Bullet& bullet);
+    void step_enemy_script(Enemy& enemy);
+    std::vector<bool> reusable_bullet_motion_;
+    struct GrazeReward {float x,y;u32 color;};
+    std::vector<GrazeReward> laser_graze_rewards_;
+    bool bullet_graze_pending_=false;
+    void tick_bullet_graze(Bullet& bullet,float px,float py,float player_radius);
+    void award_graze(float x,float y,u32 color);
+    void tick_graze_particles();
     std::vector<const EclProgram*> programs_;   // full program set (root + includes)
     const EclProgram* enemy_prog_=nullptr;
 };

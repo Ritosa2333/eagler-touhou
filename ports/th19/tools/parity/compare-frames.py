@@ -22,13 +22,13 @@ def compare(original, candidate):
         "bounds": bounds,
     }
 
-if len(sys.argv) != 4:
-    raise SystemExit("Usage: compare-frames.py <Web capture> <native capture> <output directory>")
+require_same_size = sys.argv[4:] == ["--require-same-size"]
+if len(sys.argv) != 4 and not require_same_size:
+    raise SystemExit("Usage: compare-frames.py <Web capture> <native capture> <output directory> [--require-same-size]")
 run = Path(sys.argv[1])
 original = Path(sys.argv[2])
 output = Path(sys.argv[3])
 output.mkdir(parents=True, exist_ok=True)
-size = (960, 720)
 
 
 def native_image(frame):
@@ -49,13 +49,16 @@ for frame in frames:
         before = source.convert("RGB")
     with Image.open(run / f"web-step-{frame}.png") as source:
         after = source.convert("RGB")
-    assert before.size == size
     input_size = after.size
-    after = after.resize(size, Image.Resampling.BOX)
+    resized = input_size != before.size
+    if resized:
+        if require_same_size:
+            raise ValueError(f"Frame {frame} has different sizes: original {before.size}, Web {input_size}")
+        after = after.resize(before.size, Image.Resampling.BOX)
     difference, stats = compare(np.asarray(before, dtype=np.int16), np.asarray(after, dtype=np.int16))
     diff = Image.fromarray(difference)
     diff.save(output / f"pixel-diff-{frame}.png")
-    metrics[frame] = {"webCaptureSize": list(input_size), **stats}
+    metrics[frame] = {"webCaptureSize": list(input_size), "webResized": resized, **stats}
     if frame in panel_frames:
         y = 0 if frame == panel_frames[0] else 387
         for x, image, title in zip((0,480,960), (before, after, diff), ("Original", "Web", "Absolute RGB difference")):
@@ -63,7 +66,7 @@ for frame in frames:
             preview.paste(image.resize((480,360),Image.Resampling.BOX), (x,y+27))
 preview.save(output / "opening-visual-comparison.png")
 (output / "pixel-diff.json").write_text(json.dumps({
-    "normalization": "Original 960x720, web resized to 960x720 using BOX",
+    "normalization": "BOX to original size" if any(row["webResized"] for row in metrics.values()) else "none",
     "frames": metrics
 }, indent=2) + "\n", encoding="utf-8")
 for frame, stats in metrics.items():

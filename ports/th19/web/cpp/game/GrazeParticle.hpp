@@ -1,22 +1,24 @@
 #pragma once
-#include "ReflectedBullet.hpp"
+#include "AnmVm.hpp"
 #include <array>
 namespace th19 {
 // 4dc010/4dc250/4dc440: twenty-vertex colored line strip, not a sprite.
 struct GrazeParticle {
  struct Point {float x=0,y=0;};
- float x=0,y=0,angle=0;int count=1;bool active=true;
+ float x=0,y=0,angle=0;int count=1,delay=0;bool active=true;
  std::array<Point,20> points{};std::array<uint32_t,20> colors{};
- void start(float px,float py,uint32_t color,ReflectionRng&rng){
-  x=px;y=py;angle=rng.signedUnit()*3.141592741f;count=1;active=true;points={};
+ void start(float px,float py,uint32_t color,int startDelay){
+  x=px;y=py;delay=startDelay;count=1;active=true;points={};
   for(int i=0;i<20;++i)colors[i]=(color&0xffffffu)|uint32_t(i<10?255:255-24*(i-10))<<24;
  }
- void tick(ReflectionRng&rng){
+ void tick(){
+  if(delay>0){--delay;return;}
+  if(count==1)angle=AnmVm::rand_signed_unit(3.141592741f);
   if(count>=20){active=false;return;}
   for(int i=0;i<count;++i){const int alpha=colors[i]>>24;colors[i]=(colors[i]&0xffffffu)|uint32_t(std::max(0,alpha-16))<<24;}
-  const float distance=(rng.unit()-1)*8+1;
+  const float distance=1+AnmVm::rand_unit()*8;
   points[count]={points[count-1].x+std::cos(angle)*distance,points[count-1].y+std::sin(angle)*distance};
-  angle=std::remainder(angle+rng.signedUnit()*3.141592741f,6.283185482f);++count;
+  angle=std::remainder(angle+AnmVm::rand_signed_unit(3.141592741f),6.283185482f);++count;
  }
 };
 inline uint32_t nativeGrazeColor(int type,int color){

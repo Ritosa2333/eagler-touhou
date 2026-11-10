@@ -32,7 +32,13 @@ struct ChargeAttack {
     int secondary_clock()const{return character>=11?frame:0;}
     // Orin 0x41d1b0: both branches reset when the release clock exceeds 10.
     int end_frame()const{return group==11?(character==7?11:skill_fire_frames(character)+11):end_frames[character];}
-    void tick(){if(frame>=0&&++frame>=end_frame())frame=-1;}
+    bool delayed_versus_beam(bool versus)const{return versus&&character==1&&group==10;}
+    // Marisa updates the controller after ordinary fire checks 0x417210.
+    // The charge manager sees the idle controller on that final update.
+    bool busy_for_charge(bool versus)const{
+        return frame>=0&&!(delayed_versus_beam(versus)&&frame==end_frame());
+    }
+    void tick(bool versus=false){if(frame>=0&&++frame>=end_frame()+int(delayed_versus_beam(versus)))frame=-1;}
 };
 // Ran 0x419ae0 / 0x419c00: timed power state, independent of shot clock.
 struct RanSkill {

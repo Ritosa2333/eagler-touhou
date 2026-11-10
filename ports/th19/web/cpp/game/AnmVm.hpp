@@ -74,7 +74,7 @@ struct AnmVm {
     } ip_pos, ip_rgb, ip_alpha, ip_scale, ip_rot, ip_rgb2, ip_alpha2, ip_secondary_scale;
 
     u32 return_ip=0; i32 return_time=0; bool return_halted=false,has_return=false;
-    void tick(const AnmVm* parent=nullptr);
+    void tick(const AnmVm* parent=nullptr,bool advance_children=true);
     void bind(const u8* s,u32 len){stream=s;stream_len=len;ip=0;time=0;deleted=false;}
     void bind_entry(const u8* s,u32 len,const std::unordered_map<i32,AnmScriptLoc>* table){
         bind(s,len);global_scripts=table;
@@ -90,14 +90,14 @@ struct AnmVm {
     void  write_var_i(i32 id, i32 v);
     static float rand_unit(bool primary = false);
     static float rand_signed_unit(float scale, bool primary = false);
-    static u32 rand_integer();
+    static u32 rand_integer(bool primary=false);
     static void seed_random(u32 seed);
     static u32 random_checkpoint(bool primary=false);
     static void restore_random(u32 state,bool primary=false);
 private:
     const AnmVm* execution_parent_=nullptr; // valid only while tick() executes; never retained across moves
     bool creation_registers_=false;
-    void run_instruction(u16 op,u32 instr_start);
+    void run_instruction(u16 op,u32 instr_start,i16 instruction_time);
     void jump_to(i32 offset,i32 new_time);
     void advance_interp();
     u32 next_u16();i32 next_i16();u32 next_u32();float next_f32();

@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include "NativeRandom.hpp"
 namespace th19 {
 // 0x51c8c0: deliberately independent of ordinary cancellation locks/width.
 inline bool tsukasaReflects(int state,unsigned kind,float bx,float by,float x,float y,float radius){
@@ -47,12 +48,21 @@ struct ReflectedBulletFlight {
                 a*from.y+b*to.y+c*start_tangent.y+d*end_tangent.y};
     }
     bool arrived()const{return frame>=duration;}
-    // 0x51be95..0x51bf5e, 0x404c90: sides aim inward with unit draws.
     static float arrivalAngle(float x,float unit_draw){
         constexpr float pi=3.1415927410125732f;
         if(x<=-64)return pi*.5f-unit_draw*pi/6;
         if(x>=64)return pi*.5f+unit_draw*pi/6;
         return pi*.5f+(2*unit_draw-1)*pi/6;
+    }
+    // 0x51bed1 normalizes a signed draw directly in the middle of the field.
+    // The edges use 0x404c90's unsigned draw and point inwards.
+    static float nativeArrivalAngle(float x,uint32_t draw){
+        constexpr float halfTurn=3.1415927410125732f;
+        constexpr float forward=halfTurn/2.f, spread=halfTurn/6.f;
+        constexpr float range=NativeRandom::range;
+        if(std::abs(x)<64.f)return forward+(float(draw)/(range/2.f-1.f)-1.f)*spread;
+        const float offset=(float(draw)/(range-1.f))*spread;
+        return x<0.f?forward-offset:forward+offset;
     }
     // 0x51bff1: random draw is nonnegative, NOT signed jitter.
     float arrivalSpeed(float unit_draw,int rank,int rank_cap)const{

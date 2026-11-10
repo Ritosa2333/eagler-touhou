@@ -13,6 +13,7 @@ struct ApplicationCheckpoint {
  decltype(g_network_motion_y) saved_g_network_motion_y;
  decltype(g_injected_keys) saved_g_injected_keys;
  decltype(g_frame) saved_g_frame;
+ decltype(g_played_frames) saved_g_played_frames;
  decltype(g_sfx_tick) saved_g_sfx_tick;
  decltype(g_sfx_played) saved_g_sfx_played;
  decltype(g_paused) saved_g_paused;
@@ -85,8 +86,6 @@ struct ApplicationCheckpoint {
  decltype(g_spirit_enhanced) saved_g_spirit_enhanced;
  decltype(g_spirit_suppressed) saved_g_spirit_suppressed;
  decltype(g_global_rank) saved_g_global_rank;
- decltype(g_reflection_rank) saved_g_reflection_rank;
- decltype(g_reflection_rank_cap) saved_g_reflection_rank_cap;
  decltype(g_attacks) saved_g_attacks;
  decltype(g_player_projectiles) saved_g_player_projectiles;
  decltype(g_player_hit_effects) saved_g_player_hit_effects;
@@ -202,6 +201,7 @@ struct ApplicationCheckpoint {
   rb_assign(saved_g_network_motion_y,g_network_motion_y);
   rb_assign(saved_g_injected_keys,g_injected_keys);
   rb_assign(saved_g_frame,g_frame);
+  rb_assign(saved_g_played_frames,g_played_frames);
   rb_assign(saved_g_sfx_tick,g_sfx_tick);
   rb_assign(saved_g_sfx_played,g_sfx_played);
   rb_assign(saved_g_paused,g_paused);
@@ -274,8 +274,6 @@ struct ApplicationCheckpoint {
   rb_assign(saved_g_spirit_enhanced,g_spirit_enhanced);
   rb_assign(saved_g_spirit_suppressed,g_spirit_suppressed);
   rb_assign(saved_g_global_rank,g_global_rank);
-  rb_assign(saved_g_reflection_rank,g_reflection_rank);
-  rb_assign(saved_g_reflection_rank_cap,g_reflection_rank_cap);
   rb_assign(saved_g_attacks,g_attacks);
   rb_assign(saved_g_player_projectiles,g_player_projectiles);
   rb_assign(saved_g_player_hit_effects,g_player_hit_effects);
@@ -391,6 +389,7 @@ struct ApplicationCheckpoint {
   rb_assign(g_network_motion_y,saved_g_network_motion_y);
   rb_assign(g_injected_keys,saved_g_injected_keys);
   rb_assign(g_frame,saved_g_frame);
+  rb_assign(g_played_frames,saved_g_played_frames);
   rb_assign(g_sfx_tick,saved_g_sfx_tick);
   rb_assign(g_sfx_played,saved_g_sfx_played);
   rb_assign(g_paused,saved_g_paused);
@@ -463,8 +462,6 @@ struct ApplicationCheckpoint {
   rb_assign(g_spirit_enhanced,saved_g_spirit_enhanced);
   rb_assign(g_spirit_suppressed,saved_g_spirit_suppressed);
   rb_assign(g_global_rank,saved_g_global_rank);
-  rb_assign(g_reflection_rank,saved_g_reflection_rank);
-  rb_assign(g_reflection_rank_cap,saved_g_reflection_rank_cap);
   rb_assign(g_attacks,saved_g_attacks);
   rb_assign(g_player_projectiles,saved_g_player_projectiles);
   rb_assign(g_player_hit_effects,saved_g_player_hit_effects);

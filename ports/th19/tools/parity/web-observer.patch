@@ -24,8 +24,8 @@
  // The web match still supplies one seed; native replay import must provide both
  // original object states separately and align other gameplay consumers.
  void AnmVm::seed_random(u32 seed){animation_random.state=primary_animation_random.state=seed;}
--u32 AnmVm::rand_integer(){return animation_random.next();}
-+u32 AnmVm::rand_integer(){traceOpeningDraw(1);return animation_random.next();}
+-u32 AnmVm::rand_integer(bool primary){return (primary?primary_animation_random:animation_random).next();}
++u32 AnmVm::rand_integer(bool primary){traceOpeningDraw(1,nullptr,primary);return (primary?primary_animation_random:animation_random).next();}
  float AnmVm::rand_unit(bool primary){
 -    return (primary?primary_animation_random:animation_random).unit();
 +    traceOpeningDraw(2,nullptr,primary); return (primary?primary_animation_random:animation_random).unit();
@@ -50,13 +50,45 @@
          case 10009: return extra_ivar[1];
 --- a/ports/th19/web/cpp/sdl/Application.cpp
 +++ b/ports/th19/web/cpp/sdl/Application.cpp
-@@ -7247,3 +7247,69 @@
+@@ -4669,6 +4669,13 @@
+     return g_vs_mode&&bomb.character==1&&bomb.frame>0&&bomb.frame<=bomb.duration;
+ }
+
++// Diagnostic contacts are read from the same simulation path as damage.
++struct CapturedHomingContact {u32 side;float x,y;};
++static struct {
++    u32 count;
++    CapturedHomingContact rows[256];
++} capturedHomingContacts;
++
+ // Keep the registered beam centers when hit callbacks shorten their visible lengths.
+ struct DeferredShotContacts {
+     struct BeamArea { PlayerProjectile* shot; float x,y; bool wasHitting; };
+@@ -4756,6 +4763,8 @@
+                                               enemy.contact_angle,enemy.hitbox_w,enemy.hitbox_h)
+                 : th19::nativeEnemyRectangleContact(dx,dy,shot->angle,shot->hit_width,shot->hit_height,enemy.hitbox_w*.5f);
+             if(hit){
++                if(capturedHomingContacts.count<std::size(capturedHomingContacts.rows))
++                    capturedHomingContacts.rows[capturedHomingContacts.count++]={u32(side),shot->x,shot->y};
+                 damage+=shot->damage;
+                 shot->speed/=8.f;
+                 end_player_shot_on_impact(*shot);
+@@ -7748,3 +7757,117 @@
      return gfx.error();
  }
  }
 +
 +#ifdef __EMSCRIPTEN__
 +// Temporary exports for fixed-step parity diagnostics.
++__attribute__((export_name("th19_capture_step")))
++void th19_capture_step(bool present){
++    const bool paused=g_loop_paused;
++    g_loop_paused=false;
++    g_skip_present=!present;
++    game_tick();
++    g_skip_present=false;
++    g_loop_paused=paused;
++}
 +namespace th19 {extern bool traceOpeningRng; extern u32 openingRngRows[256][7], openingRngCount;}
 +__attribute__((export_name("th19_capture_rng_trace")))
 +u32 th19_capture_rng_trace(int action) {
@@ -64,10 +96,26 @@
 +    if (action==2) {th19::traceOpeningRng=false;return th19::openingRngCount;}
 +    return u32(th19::openingRngRows);
 +}
++__attribute__((export_name("th19_capture_homing_contacts")))
++u32 th19_capture_homing_contacts(bool clear){
++    if(clear)capturedHomingContacts.count=0;
++    return u32(&capturedHomingContacts);
++}
++__attribute__((export_name("th19_capture_checkpoint")))
++u32 th19_capture_checkpoint(int action) {
++    static std::unique_ptr<ApplicationCheckpoint> saved;
++    if(action==1){saved=std::make_unique<ApplicationCheckpoint>();return 1;}
++    if(action==2&&saved){
++        const bool restored=saved->restore();saved.reset();return restored;
++    }
++    saved.reset();return 0;
++}
 +__attribute__((export_name("th19_capture_cpu_begin")))
-+u32 th19_capture_cpu_begin(u32 seed, u32 secondSeed, i32 difficulty, i32 left, i32 right, i32 lives, i32 timeRule) {
++u32 th19_capture_cpu_begin(u32 seed, u32 secondSeed, i32 difficulty, i32 left, i32 right, i32 lives, i32 timeRule,
++                           i32 cardMode,i32 leftCard,i32 rightCard) {
 +    if (!seed || difficulty < 0 || difficulty > 3 || left < 0 || left >= 19 ||
-+        right < 0 || right >= 19 || lives < 1 || lives > 5 || timeRule < 0 || timeRule >= 7) return 0;
++        right < 0 || right >= 19 || lives < 1 || lives > 5 || timeRule < 0 || timeRule >= 7 ||
++        (cardMode!=0&&cardMode!=3) || leftCard<0 || leftCard>38 || rightCard<0 || rightCard>38) return 0;
 +    g_game_seed = seed;
 +    g_vs_scene_rng.state = seed;
 +    th19::AnmVm::seed_random(seed);
@@ -77,8 +125,9 @@
 +    g_story_difficulty = difficulty;
 +    g_char_sel = left;
 +    g_opp_sel = right;
-+    g_vs_rules[2] = 0;
-+    g_vs_rules[3] = lives - 1;
++    g_vs_rules[2] = cardMode;
++    g_vs_cards[0].reset(leftCard);g_vs_cards[1].reset(rightCard);
++    g_vs_rules[3] = g_vs_rules[4] = lives - 1;
 +    g_local_vs_time = timeRule;
 +    start_vs_match();
 +    render();
@@ -87,7 +136,7 @@
 +
 +__attribute__((export_name("th19_capture_cpu_state")))
 +u32 th19_capture_cpu_state() {
-+    static u32 state[30];
++    static u32 state[36];
 +    state[0] = g_played_frames;
 +    state[1] = g_vs_match.round;
 +    state[2] = g_p1_lives;
@@ -117,8 +166,30 @@
 +    state[27]=std::count_if(g_player_projectiles.begin(),g_player_projectiles.end(),[](const auto& p){return p.side==0;});
 +    state[28]=std::count_if(g_player_projectiles.begin(),g_player_projectiles.end(),[](const auto& p){return p.side==1;});
 +    state[29]=g_vs_match.elapsed;
++    state[30]=g_owned_cards.empty()?0:g_owned_cards.front();
++    state[31]=g_opponent_cards.empty()?0:g_opponent_cards.front();
++    const float positions[]={g_p1_x,g_p1_y,g_p2_x,g_p2_y};
++    static_assert(sizeof(positions)==4*sizeof(state[0]));
++    std::memcpy(state+32,positions,sizeof(positions));
++
 +    return (u32)state;
 +}
++
++__attribute__((export_name("th19_capture_bullet_positions")))
++u32 th19_capture_bullet_positions(int side, bool refresh) {
++    static std::vector<std::array<u32,4>> rows;
++    if(!refresh)return u32(rows.data());
++    rows.clear();
++    for(const auto& bullet:g_ecl_fields[side].world.bullets){
++        if(bullet.state!=1&&bullet.state!=2)continue;
++        std::array<u32,4> row{u32(bullet.kind),u32(bullet.color),0,0};
++        std::memcpy(&row[2],&bullet.x,sizeof(float));
++        std::memcpy(&row[3],&bullet.y,sizeof(float));
++        rows.push_back(row);
++    }
++    return u32(rows.size());
++}
++
 +#endif
 --- a/ports/th19/web/sdl-runtime/shell.mjs
 +++ b/ports/th19/web/sdl-runtime/shell.mjs

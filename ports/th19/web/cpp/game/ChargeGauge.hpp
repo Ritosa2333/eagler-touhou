@@ -9,10 +9,15 @@ namespace th19 {
 struct ChargeGauge {
     std::array<i32,4> thresholds{500,1000,1700,2500};
     i32 energy=500, charge=0, ex_level=0, boss_level=0, last_release=0;
-    bool held=false;
-    int cooldown=0,charge_speed_percent=100;
+    bool held=false,cooling_this_tick=false,input_primed=false;
+    int cooldown=0,charge_speed_percent=100,held_frames=0;
     float move_speed=4.5f, slow_speed=2.f;
     float diagonal_speed=3.1819805f, slow_diagonal_speed=1.4142136f;
+    // 0x42fce0 adds movement in fixed-point units of 1/128 pixel.
+    int movement_units(bool diagonal,bool slow) const {
+        const float speed=diagonal?(slow?slow_diagonal_speed:diagonal_speed):(slow?slow_speed:move_speed);
+        return int(speed*128.f);
+    }
     bool load(const std::vector<u8>& bytes){
         if(bytes.size()<0x3c)return false;
         auto integer=[&](size_t at){i32 n;std::memcpy(&n,bytes.data()+at,4);return n;};
@@ -36,15 +41,21 @@ struct ChargeGauge {
         ex_level = boss_level = side == 1 ? opponentRanks[std::clamp(difficulty, 0, 3)] : 0;
     }
     int level() const {int n=0;for(int v:thresholds)if(charge>=v)++n;return n;}
-    void tick(bool down,bool attack_busy=false){
+    void tick(bool down,bool attack_busy=false,bool versus=false){
         energy=std::clamp(energy,0,2500);
         // 0x4e79e0 gates on the attack controller's +8 virtual method.
         // Release sets the native timer to -10, then advances it that tick.
-        if(cooldown>0||attack_busy){if(cooldown>0)--cooldown;charge=0;held=false;return;}
+        cooling_this_tick=cooldown>0;
+        if(cooling_this_tick||attack_busy){if(cooling_this_tick)--cooldown;charge=0;held=false;held_frames=0;return;}
+        // 0x4e7a7b requires an armed input timer. A tap leaves it armed
+        // until 0x4e85f8 clears it after an active charge is released.
+        if(versus&&down&&!input_primed&&!held){input_primed=true;return;}
         if(down)charge=std::min(energy,charge+10*std::clamp(charge_speed_percent,0,200)/100); // 4e79e0, PlayerStat+88.
-        else {if(held){last_release=level();cooldown=9;}charge=0;}
+        else {if(held){last_release=level();cooldown=9;input_primed=false;}charge=0;}
+        held_frames=down?(held?std::min(3,held_frames+1):1):0;
         held=down;
     }
+    bool suppress_ordinary_shot() const {return cooling_this_tick||cooldown>0||(held&&held_frames>=2);}
     // 0x4e811d / 0x40b3e0: higher releases retain the C1 threshold.
     void spend_attack(int tier){
         if(tier!=3&&tier!=4)return;

@@ -148,6 +148,7 @@ float EclVm::var_float(i32 addr) const {
     // opposite-field player are live values, not per-VM copied globals.
     if(world_){
         if(addr==-9960)return float(std::clamp(world_->spirit_rank,0,std::max(0,world_->spirit_rank_cap)))/200.f;
+        if(addr==-9888)return float(world_->opponent_field_rank)/200.f; // 0x4fd1e3
         if(addr==-9991||addr==-9965)return world_->player_x;
         if(addr==-9990||addr==-9964)return world_->player_y;
         if(addr==-9884)return world_->opponent_x;
@@ -157,6 +158,8 @@ float EclVm::var_float(i32 addr) const {
             // EXE 4fcb70: context+12dc = enemy+ac, absolute-motion angle.
             // ECL404 passes enemy+90 to 40fdf0, which writes offset+1c.
             if(addr==-9971)return std::remainder(e.angle,6.28318530717958647692f);
+            // 0x4fcb9c takes the heading of the last combined displacement.
+            if(addr==-9958)return float(std::atan2(double(e.y-e.previous_y),double(e.x-e.previous_x)));
             // 4fc530 case d928 is the real distance, including Chiyari.
             if(addr==-9944)return std::hypot(world_->player_x-e.x,world_->player_y-e.y);
             if(addr==-9989)return std::atan2(world_->player_y-e.y,world_->player_x-e.x);
