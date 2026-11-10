@@ -28,6 +28,8 @@ cd ..
 
 TH02–TH04 构建还会生成 `content/disks.json` 和 `content/disk-blocks/`。Host 组装使用这份清单发布按内容校验的静态块，启动器按所选语言与模式安装并缓存所需块，运行时在浏览器内还原磁盘。发布前 Host 会验证块还原的磁盘与 `.data` 中的原始磁盘一致。准备和迁移构建输入时，请将这两个路径与 `.data` 一起保留；没有静态块的旧输入仍使用完整 `.data` 发布。
 
+Host 组装时会为 TH02–TH04 的联机 WASM 生成并校验 gzip 副本，保存于站点的 `_pc98-wasm-gzip/`。内置静态服务器在浏览器接受 gzip 时发送该副本，并以原 WASM 地址、`application/wasm` 和 `Content-Encoding: gzip` 响应；不支持时仍使用原文件。原始 WASM 与运行时清单继续保留，打包上传时仍要考虑原始文件的大小。使用外部静态服务器或 CDN 时，需要另行启用 WASM 的 gzip 或 Brotli，并检查线上实际响应；这些 gzip 副本不会被外部服务器自动选用。
+
 本地测试可在两个终端分别运行 Relay 和开发服务器：
 
 ```sh

@@ -2,6 +2,7 @@ import {normalizeSiteManifestArguments, readCompatibleSiteManifest, writeLegacyS
 import {publishPC98Blocks} from '../lib/pc98-static-publication.mjs';
 import {reactAppShellMatchesSite} from '../lib/react-app-shell-deployment.mjs';
 import { freezeHostRuntimes } from "../lib/runtime-generations.mjs";
+import { preparePc98WasmGzip } from "../lib/pc98-wasm-compression.mjs";
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
@@ -927,6 +928,7 @@ const releaseCatalog = validateReleaseCatalog({
 // Freeze only final program bytes after DATA assembly; game/package identities
 // are unchanged. Preserve older immutable directories when replacing a site.
 await freezeHostRuntimes(staging, manifest, { previousSite: args["previous-site"] ? resolve(args["previous-site"]) : output });
+await preparePc98WasmGzip(staging);
 validateSiteManifest(manifest);
 await writeFile(resolve(staging, SITE_MANIFEST_FILE), `${JSON.stringify(manifest, null, 2)}\n`);
 await writeLegacySiteManifestAlias(staging, manifest);

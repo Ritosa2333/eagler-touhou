@@ -7,6 +7,7 @@ import { resolve, sep } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { isDeepStrictEqual } from "node:util";
 import { constants as zlibConstants, createBrotliCompress, createGzip } from "node:zlib";
+import {acceptsGzip,pc98CompressedPath} from '../lib/pc98-wasm-compression.mjs';
 import {
   staticContentCacheControl,
   staticContentCompressible,
@@ -64,15 +65,19 @@ const server = createServer(async (request, response) => {
     }
     const accepted = request.headers["accept-encoding"] || "";
     const compress = staticContentCompressible(file, info.size);
-    const encoding = compress && /\bbr\b/.test(accepted) ? "br"
-      : compress && /\bgzip\b/.test(accepted) ? "gzip" : "";
+    const candidate=compress&&acceptsGzip(accepted)?pc98CompressedPath(root,pathname):null;
+    let packed=null;if(candidate){try{const p=await stat(candidate);if(p.isFile())packed=p;}catch(error){if(error.code!=='ENOENT')throw error;}}
+    const encoding = packed ? 'gzip' : compress && /\bbr\b/.test(accepted) ? "br"
+      : compress && acceptsGzip(accepted) ? "gzip" : "";
     const headers = { ...commonHeaders };
     if (encoding) headers["Content-Encoding"] = encoding;
     else headers["Content-Length"] = info.size;
+    if(packed)headers['Content-Length']=packed.size;
     response.writeHead(200, headers);
     if (request.method === "HEAD") { response.end(); return; }
-    const source = createReadStream(file);
-    if (encoding === "br") {
+    const source = createReadStream(packed?candidate:file);
+    if(packed){await pipeline(source,response);
+    } else if (encoding === "br") {
       await pipeline(source, createBrotliCompress({ params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 5 } }), response);
     } else if (encoding === "gzip") {
       await pipeline(source, createGzip({ level: 6 }), response);
