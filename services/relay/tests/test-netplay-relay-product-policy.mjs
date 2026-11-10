@@ -150,7 +150,8 @@ async function verifyModes(port, product) {
   const host = await openLobby(port, room, `${product}_modes_host`, 'intent=create&prankMode=1'), guest = await openLobby(port, room, `${product}_modes_guest`);
   try {
     await sendAndMatch(host, {type:'take-seat',seat:0,loadout:0}, r => r.room?.seats[0]);
-    await sendAndMatch(guest, {type:'take-seat',seat:1,loadout:1}, r => r.room?.seats[1]);
+    const guestLoadout = Math.min(1, capability.loadouts.length - 1);
+    await sendAndMatch(guest, {type:'take-seat',seat:1,loadout:guestLoadout}, r => r.room?.seats[1]);
     await sendAndMatch(host, {type:'set-ready',ready:true}, r => r.room?.seats[0]?.ready);
     await sendAndMatch(guest, {type:'set-ready',ready:true}, r => r.room?.seats[1]?.ready);
     await sendAndMatch(guest, {type:'settings',challengeMode:true,prankMode:true}, r => r.type==='error');

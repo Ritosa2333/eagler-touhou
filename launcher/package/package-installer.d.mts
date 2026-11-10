@@ -20,6 +20,7 @@ export function installPackageFromAcquisition(options: {
   acquire(fileId: string, declaration: PackageFileDeclaration): Promise<ArrayBuffer | ArrayBufferView | Blob | null>;
   reuseCurrent?: boolean;
   expectedGenerationId?: string | null;
+  signal?: AbortSignal | null;
   onProgress?: ((progress: PackageInstallProgress) => void) | null;
 }): Promise<InstalledPackageResult>;
 

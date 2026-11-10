@@ -253,6 +253,18 @@
   .game-data-import-actions .transfer-download {
     order: 1;
   }
+  .game-data-archive-password {
+    display: grid;
+    gap: 6px;
+    padding: 6px 20px;
+  }
+  .game-data-archive-password input {
+    padding: 6px 8px;
+    border: 1px solid var(--kit-border);
+    border-radius: 6px;
+    background: var(--kit-background);
+    color: var(--kit-foreground);
+  }
   .game-data-link-row {
     display: grid;
     grid-template-columns: 72px minmax(0, 1fr);

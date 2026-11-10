@@ -59,6 +59,14 @@ npm run host -- --no-open
 
 ## 发布
 
+打包、刷新启动器和 `npm run verify:server` 会核对前端构建产物是否支持站点清单中的每部作品。单独替换启动器时，使用目标站点保留的 `site-manifest.json` 检查待上线的前端产物，再切换站点：
+
+```sh
+node scripts/verify-frontend-game-catalog.mjs .cache/build/ui-rewrite/client path/to/site-manifest.json
+```
+
+检查失败时按报错补齐作品目录并重新构建。清单中的测试作品（如 TH01–TH04）也参与检查。
+
 将 `dist/site/` 内容复制到静态网站、对象存储或 CDN 的文档根目录，并通过 HTTPS 提供服务以启用浏览器 Service Worker 存储。然后验证公开地址：
 
 ```sh

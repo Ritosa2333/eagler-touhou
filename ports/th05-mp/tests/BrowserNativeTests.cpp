@@ -2,6 +2,7 @@
 // Compiled only into TH05_BROWSER_TESTS builds. Exercise the production game
 // classes with actual DAT resources without rendering thousands of frames.
 #include "../Game/Game.h"
+#include "../Game/Original/OriginalScenes.h"
 #include "../Game/Stage/Stage.h"
 #include "../Game/Stage/Chara/Chara.h"
 #include "../Game/Stage/CharaBullet/CharaBullet.h"
@@ -37,6 +38,23 @@ extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_rollback_checkpoint(int restore)
 }
 namespace th5w {
 struct PracticeTests {
+ static int AllCast(int field){
+  auto* game=CGame::s_pCurGame;if(!game)return -1;
+  if(field<0){
+   if(field<-4)return -1;
+   auto& g=CGame::GVar();g.m_playStage=6;g.m_playChara=-field-1;
+   CScheme* next=nullptr;int id=0;
+   if(!CSchemeSwitcher::SwitchScheme(&next,&id,5,1)||id!=10)return -1;
+   delete game->m_pCurScheme;game->m_pCurScheme=next;game->m_curSchemeID=id;
+   return static_cast<COriginalEnd*>(next)->m_ready?1:0;
+  }
+  if(game->m_curSchemeID!=10)return -1;
+  const auto* cast=static_cast<const COriginalEnd*>(game->m_pCurScheme);
+  if(field==0)return cast->m_castScreen;
+  if(field==1)return cast->m_castState;
+  if(field==2)return cast->m_measure;
+  return cast->m_age;
+ }
  inline static int stagePoison=-1;
  static int CoopProbe(int op,int seat,int value){
   auto* game=CGame::s_pCurGame;if(!game||game->m_curSchemeID!=4)return 0;
@@ -631,3 +649,4 @@ extern "C" EMSCRIPTEN_KEEPALIVE unsigned th05_net_world_hash(){
  } sink;
  static_cast<th5w::CStage*>(game->m_pCurScheme)->CaptureRollback(sink);return sink.value;
 }
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_allcast(int field){return th5w::PracticeTests::AllCast(field);}

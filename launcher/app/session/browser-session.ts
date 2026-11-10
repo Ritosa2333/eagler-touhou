@@ -1,5 +1,5 @@
 import {collectLocalSaveFiles} from '../services/local-save-storage';
-import {accountsEnabled, previewFeaturesEnabled} from '../release-features';
+import {accountsEnabled} from '../release-features';
 import type {CloudSaveSync} from '../services/cloud-save-sync';
 import {createRelayEntryRouting} from '../../src/launcher/relay-entry-routing.mts';
 import {loadGameVersion} from "../../package/game-version.mjs";
@@ -119,7 +119,7 @@ export interface BrowserSessionSnapshot {
 export function createBrowserSession({document, window, baseUrl: configuredBaseUrl, appShellDeployment}: {document: Document; window: Window; baseUrl?: string; appShellDeployment?: AppShellOptions['deployment']}) {
   const baseUrl = configuredBaseUrl ?? launcherBaseUrl(window.location.href);
   const entryUrl = new URL(window.location.href);
-  const testBuild = previewFeaturesEnabled && (testFeaturesEnabled(window) || entryUrl.searchParams.has('test'));
+  const testBuild = testFeaturesEnabled(window) || entryUrl.searchParams.has('test');
   let storage: Storage | null = null;
   try {storage = window.localStorage;} catch {}
   const gamepad = createGamepadMappingModel({storage,getGamepads:typeof window.navigator.getGamepads==='function'?()=>window.navigator.getGamepads():undefined});
@@ -538,7 +538,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       return context.isCurrent();
     } catch(error) {reportError(error);return false;}
   }
-  const gameData = createGameDataImportModel({acquisition, translate: t,
+  const gameData = createGameDataImportModel({acquisition: testBuild ? acquisition : {importPackage: acquisition.importPackage}, translate: t,
     getContext: () => ({product: settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID,
       roomCode: roomCodeFromUrl(window.location.href) || null, replayViewer: snapshot.replayViewer,
       runtimeEpoch: runtime?.getSnapshot().epoch ?? null,
@@ -546,7 +546,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       playerOpen: snapshot.playerOpen, importServer: productRequiresImport(gameIdForProduct(settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID)) || metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import',
       fallback: metadata.getSnapshot().siteManifest?.shared.gameDataFallback ?? null}),
     ports: {
-      pickFile: ({accept}) => ports.pickFile(accept), feedback, showGameDataTransfer: transfer.revealGameData,
+      pickFile: ({accept}) => ports.pickFile(accept), pickFiles: ({accept}) => ports.pickFiles(accept), feedback, showGameDataTransfer: transfer.revealGameData,
       packageInstalled(context) {
         const room = roomSession?.service.getSnapshot();
         if (room && room.product === context.product && room.room?.code === context.roomCode && room.preparation?.status === 'ready')
