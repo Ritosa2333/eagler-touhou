@@ -1,0 +1,9 @@
+@layer components {
+  .th09-rating-number {font-variant-numeric:tabular-nums;font-weight:650}
+  .th09-rating-number[data-strength="higher"] {--rating-tone:var(--kit-destructive)}
+  .th09-rating-number[data-strength="lower"] {--rating-tone:var(--rating-green)}
+  .th09-rating-number[data-strength] {color:color-mix(in srgb, currentColor, var(--rating-tone) var(--rating-tint))}
+  .mp-seat .th09-rating-number[data-strength="higher"] {--rating-tone:#ffabb1}
+  .mp-seat .th09-rating-number[data-strength="lower"] {--rating-tone:#a0f3b4}
+  .mp-seat .th09-rating-number[data-strength] {-webkit-text-stroke:1.3px #211a20;paint-order:stroke fill}
+}

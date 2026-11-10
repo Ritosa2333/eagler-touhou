@@ -137,7 +137,7 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
     for (const animation of moves.current.values()) animation.cancel();
     moves.current.clear();
     for (const [id, animation] of fades.current)
-      if (!state.entries.some((entry) => entry.id === id)) {
+      if (!state.entries.some((entry) => entry.id === id && !entry.expiredInGame)) {
         animation.cancel();
         fades.current.delete(id);
       }
@@ -210,7 +210,7 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
             confirmReport={confirmReport}
             label={label(entry.phrase)}
             rows={rows.current}
-            visible={!state.muted.includes(entry.clientId)}
+            visible={!entry.expiredInGame && !state.muted.includes(entry.clientId)}
           />
         ))}
       </div>
@@ -247,7 +247,7 @@ function ChatRow({
   const { t } = useLocale();
   const sender = `${entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`}${entry.name ? `(${entry.name})` : ''}`;
   return (
-    <p ref={ref} hidden={!visible} title={`${sender}: ${label}`} className="room-chat-entry" data-speaker={entry.spectator?'spectator':'player'}>
+    <p ref={ref} hidden={!visible} title={entry.rating ? undefined : `${sender}: ${label}`} className="room-chat-entry" data-speaker={entry.rating ? 'rating' : entry.spectator?'spectator':'player'}>
       <ChatAvatar entry={entry} model={model}/>
       <ChatMessageContent entry={entry} model={model} label={label} confirmReport={confirmReport} directReport />
     </p>

@@ -31,6 +31,19 @@ bun run dev
 
 `tests/visual/layout.html` 的“记录下一次动效”从真实操作开始逐帧检查透明度、状态和动画清理。浏览器回归使用 `npm run test:ui-motion:browser -- <开发地址>`，分别验证正常动效、站内减弱动效和系统减弱动效，覆盖亮暗与横竖屏。结果保存实际资源地址和逐帧记录；静态截图的减弱动效设置不代替正常动效验收。
 
+### th09mp 评分原型
+
+准备一份本地 JSON 快照。`as_of` 是快照时间，`games` 的每项是 `[玩家编号, 对手编号, 对局时间, 胜方座位]`，末尾可再加双方机体编号，缺失的机体用 `null`。时间用毫秒时间戳，胜方用 `0` 或 `1`，每条已确认的双账号对局录入一次。
+
+`profiles` 按玩家编号提供 `username`、`nickname` 和可选的公开头像缩略图 `avatar`。只导出允许公开战绩的资料。提供 `profiles` 时，榜单只列其中的玩家。
+
+```sh
+python -m pip install numpy
+python launcher/tools/th09-ratings.py snapshot.json
+```
+
+启动前端开发服务器，打开 `/ui-review.html?preview=th09-ratings`。最少局数默认 10，和交手组、定级状态一起决定榜单范围。搜索可在当前榜单中定位玩家，保留其名次。常用机体按有记录的对局次数列出前三个。窄屏默认显示名次、玩家和评分，展开一行查看完整战绩。原型入口只在开发服务器启用。
+
 ## 3. 构建并打包 TH10
 
 先按 [TH10 开发指南](../../ports/th10/docs/DEVELOPMENT.md)准备 SDK 和字体目录，再编译普通版：
