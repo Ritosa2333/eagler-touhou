@@ -2403,5 +2403,13 @@
   "network_relayHandshake": "リレーに接続できませんでした",
   "document_privacy": "プライバシーポリシー",
   "content_privacy": "プライバシーポリシーは簡体字中国語で公開しています。",
-  "nav_privacyPolicy": "プライバシーポリシー"
+  "nav_privacyPolicy": "プライバシーポリシー",
+  "game_title_th01mp": "東方靈異伝 マルチプレイ",
+  "game_title_th02mp": "東方封魔録 マルチプレイ",
+  "game_title_th03mp": "東方夢時空 マルチプレイ",
+  "game_title_th04mp": "東方幻想郷 マルチプレイ",
+  "multiplayer_loadout_th01_reimu": "霊夢",
+  "multiplayer_loadout_th02_fast": "高速型",
+  "multiplayer_loadout_th02_balanced": "バランス型",
+  "multiplayer_loadout_th02_slow": "低速型"
 }

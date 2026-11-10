@@ -7,7 +7,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { copyFile, cp, lstat, mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { reactFrontendArtifactDirectory, readReactFrontendArtifact } from "../lib/react-frontend-artifact.mjs";
+import { assertReactFrontendGameCoverage, reactFrontendArtifactDirectory, readReactFrontendArtifact } from "../lib/react-frontend-artifact.mjs";
 import { resolveRuntimeGenerationWorkerSource } from "../lib/contracts-build.mjs";
 import { run } from "../host/lib/process.mjs";
 import { isDeepStrictEqual } from "node:util";
@@ -56,7 +56,6 @@ const { runtimeAppShellPaths } = await import("../lib/app-shell-validation.mjs")
 const { hostArtworkFiles } = await import("../lib/host-artwork.mjs");
 const { RUNTIME_GENERATION_FILE, RUNTIME_MANIFEST_FILE, parseRuntimeGenerationPath } = await import("../lib/contracts/runtime-generations.mjs");
 const { SITE_MANIFEST_FILE, validateSiteManifest } = await import("../lib/contracts/site-manifest.mjs");
-const { WORKSPACE_REPOSITORIES } = await import("../lib/workspace-layout.mjs");
 const hostManifest = validateSiteManifest(JSON.parse(await readFile(resolve(root, SITE_MANIFEST_FILE), "utf8")));
 const siteUrl = normalizeSiteUrl(siteUrlOption?.slice("--site-url=".length) || deployment.siteUrl);
 let previousArtifact = null, selectedArtifact = null, frontend = null;
@@ -68,6 +67,7 @@ if (reactTarget) {
   selectedArtifact = refreshFrontend ? await readReactFrontendArtifact({
     directory: reactFrontendArtifactDirectory({project}), expectedMountPath: previousArtifact.mountPath,
   }) : previousArtifact;
+  assertReactFrontendGameCoverage(selectedArtifact, Object.keys(hostManifest.games));
   if (enableAppShell && (previousArtifact.appShell !== null || selectedArtifact.appShell === null)) throw new Error("--enable-app-shell requires a disabled deployment and an enabled selected artifact");
   if (!enableAppShell && !isDeepStrictEqual(selectedArtifact.appShell, previousArtifact.appShell)) {
     throw new Error("React refresh must preserve the deployment's App Shell permission and isolated origin/mount");
@@ -265,6 +265,7 @@ try {
   await writeFile(deploymentPath, `${JSON.stringify(deployment, null, 2)}\n`);
 
   if (deployment.releaseManifest === "release-manifest.json") {
+    const { WORKSPACE_REPOSITORIES } = await import("../lib/workspace-layout.mjs");
     const previous = previousRelease || JSON.parse(await readFile(resolve(root, "release-manifest.json"), "utf8"));
     let launcherSource;
     try {

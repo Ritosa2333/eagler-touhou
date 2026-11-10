@@ -6,7 +6,7 @@ import {execFileSync} from 'node:child_process';
 import {cp, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {dirname, resolve} from 'node:path';
-import {pathToFileURL} from 'node:url';
+import {fileURLToPath, pathToFileURL} from 'node:url';
 import {STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES} from '../../lib/frontend-static-manifest.mjs';
 import {readReactFrontendArtifact, reactFrontendArtifactDirectory} from '../../lib/react-frontend-artifact.mjs';
 import {SITE_BRAND_DEFAULT, SITE_BRAND_FACES} from '../../lib/site-brand.mjs';
@@ -62,6 +62,40 @@ async function previousFixture(run, {mountPath = '/review/'} = {}) {
     await run({work, directory, metadata: previousMetadata, publicationFiles, put, html, shellFiles});
   }, {mountPath});
 }
+
+test('launcher refresh blocks a candidate without the published PC-98 catalog', async () => {
+  await fixture(async ({work, directory, metadata, put}) => {
+    const site = resolve(work, 'site');
+    await cp(directory, site, {recursive: true});
+    const ids = ['th01', 'th02', 'th03', 'th04'];
+    const digest = 'a'.repeat(64);
+    const siteManifest = JSON.stringify({
+      schema: 'eagler-touhou/site-manifest/1',
+      protocol: 'eagler-touhou/1',
+      profile: 'web-validation-catalog',
+      shared: {resourceMode: 'hosted', vanillaFont: 'shared/msgothic.ttc', unicodeFont: 'shared/unifont.otf'},
+      games: Object.fromEntries(ids.map(id => [id, {
+        runtime: `runtime/${id}/${id}.html`,
+        gameData: {path: `${id}.data`, bytes: 1, sha256: digest, version: 'sha256-' + digest, layout: 'sha256-' + digest},
+        music: {midi: {files: []}},
+      }])),
+    });
+    const deployment = JSON.stringify({
+      format: 'eagler-touhou-deployment/1', appShell: null,
+      frontend: {kind: 'react', mountPath: metadata.graph.mountPath, validationMetadata: metadata},
+      files: metadata.graph.shellFiles.map(path => ({path})),
+    });
+    await writeFile(resolve(site, 'site-manifest.json'), siteManifest);
+    await writeFile(resolve(site, 'deployment.json'), deployment);
+    const script = fileURLToPath(new URL('../../scripts/refresh-deployment-app-shell.mjs', import.meta.url));
+    await put('.vite/react-app-shell-graph.json', JSON.stringify({...metadata.graph, gameIds: ['th06']}));
+    assert.throws(() => execFileSync(process.execPath, [script, site, '--frontend'], {
+      env: {...process.env, EAGLER_REACT_BUILD_DIRECTORY: work}, stdio: 'pipe',
+    }), /React frontend catalog is missing Site Manifest games: th01, th02, th03, th04/);
+    assert.equal(await readFile(resolve(site, 'site-manifest.json'), 'utf8'), siteManifest);
+    assert.equal(await readFile(resolve(site, 'deployment.json'), 'utf8'), deployment);
+  });
+});
 
 test('frontend selection is explicit and never coerces invalid values to main', () => {
   assert.doesNotThrow(()=>assertReactFrontendEnvironment({}));
