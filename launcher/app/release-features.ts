@@ -11,7 +11,6 @@ export type ReleaseFeatureEnvironment = {
 
 export function resolveReleaseFeatures(environment: ReleaseFeatureEnvironment) {
   const previewSetting = environment.VITE_PREVIEW_FEATURES;
-  const previewFeaturesEnabled = previewSetting === 'true' || (previewSetting !== 'false' && (environment.DEV ?? true));
   const uiReviewEnabled = resolveUiReviewEnabled({
     VITE_UI_REVIEW_ENABLED: environment.VITE_UI_REVIEW_ENABLED,
     VITE_PREVIEW_FEATURES: previewSetting,
@@ -19,7 +18,6 @@ export function resolveReleaseFeatures(environment: ReleaseFeatureEnvironment) {
   });
   const accountsEnabled = environment.VITE_ACCOUNTS_ENABLED === 'true';
   return {
-    previewFeaturesEnabled,
     uiReviewEnabled,
     accountsEnabled,
     listenTogetherEnabled: environment.VITE_LISTEN_TOGETHER_ENABLED !== 'false',
@@ -32,7 +30,6 @@ export function resolveReleaseFeatures(environment: ReleaseFeatureEnvironment) {
 }
 
 const releaseFeatures = resolveReleaseFeatures(import.meta.env ?? {});
-export const previewFeaturesEnabled = releaseFeatures.previewFeaturesEnabled;
 export const uiReviewEnabled = releaseFeatures.uiReviewEnabled;
 export const accountsEnabled = releaseFeatures.accountsEnabled;
 export const listenTogetherEnabled = releaseFeatures.listenTogetherEnabled;

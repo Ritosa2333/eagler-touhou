@@ -792,6 +792,14 @@ function maybeResolveRoute(roomId, runId, room, run) {
   maybeStartRouteTimer(roomId, runId, room, run);
 }
 
+function acceptTh09PlayerReport(room, run, runId, player, message) {
+  const clientId = run.lobbyClientIds?.[player];
+  if (message.winner !== undefined && message.characters !== undefined &&
+      run.memberIds?.has(clientId) && !run.releasedPlayers?.has(player) &&
+      acceptTh09MatchStats(room, run, clientId, {...message, serial:Number(runId)}))
+    broadcastLobby(room);
+}
+
 function handleSignalConnection(socket, roomId, runId, player, playerCount) {
   const room = getRoom(roomId, socket);
   if (!room) return;
@@ -819,6 +827,7 @@ function handleSignalConnection(socket, roomId, runId, player, playerCount) {
     peers: existingPeers,
     route: run.route,
     iceServers: iceServersFor(roomId, runId, player),
+    ...(roomId.startsWith('th09mp-') && run.memberIds ? {th09MatchReport:true} : {}),
   });
   for (const [peer, target] of run.signalClients) {
     if (peer !== player) sendSignal(target, { type: 'peer-join', player });
@@ -848,6 +857,10 @@ function handleSignalConnection(socket, roomId, runId, player, playerCount) {
     }
     if (!validRelayControlMessage(message)) {
       socket.close(1008, 'invalid signaling message');
+      return;
+    }
+    if (roomId.startsWith('th09mp-') && message.type === 'th09-match') {
+      if (run.signalClients.get(player) === socket) acceptTh09PlayerReport(room, run, runId, player, message);
       return;
     }
     if (message.type === 'spectator-stop') {
@@ -2203,6 +2216,8 @@ server.on('connection', (socket, request) => {
   // Relay fallback must establish its own stream size without signaling.
   run.playerCount = playerCount;
   run.clients.set(player, socket);
+  if (roomId.startsWith('th09mp-') && run.memberIds && url.searchParams.get('th09MatchReport') === '1')
+    sendSignal(socket, {type:'th09-match-report'});
   console.log(`JOIN room=${roomId} run=${runId} player=${player} peers=${run.clients.size}`);
   maybeResolveRoute(roomId, runId, room, run);
 
@@ -2236,6 +2251,10 @@ server.on('connection', (socket, request) => {
     if (!acceptRelayMessage(socket, data, stageInitializer ? acceptStageInitializer : acceptGameplay)) return;
     if (!isBinary) {
       let message; try { message = JSON.parse(String(data)); } catch {}
+      if (roomId.startsWith('th09mp-') && message?.type === 'th09-match') {
+        if (run.clients.get(player) === socket) acceptTh09PlayerReport(room, run, runId, player, message);
+        return;
+      }
       if (player === 0 && run.clients.get(player) === socket && message?.type === 'spectator-session' &&
           beginCooperativeSpectatorSession(roomId, runId, room, run, message)) return;
       socket.close(1003, 'binary frames only');
