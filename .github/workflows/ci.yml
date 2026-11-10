@@ -80,6 +80,8 @@ jobs:
         tests/react-main/player-keyboard.test.mjs
         tests/react-main/cloud-save-sync.test.mjs
         tests/react-main/quick-chat-model.test.mjs
+        tests/react-main/shell-links.test.mjs
+        tests/react-main/static-entrypoints.test.mjs
     defaults:
       run:
         working-directory: launcher
