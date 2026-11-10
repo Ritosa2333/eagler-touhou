@@ -1,5 +1,5 @@
 import {collectLocalSaveFiles} from '../services/local-save-storage';
-import {accountsEnabled, previewFeaturesEnabled} from '../release-features';
+import {accountsEnabled} from '../release-features';
 import type {CloudSaveSync} from '../services/cloud-save-sync';
 import {createRelayEntryRouting} from '../../src/launcher/relay-entry-routing.mts';
 import {loadGameVersion} from "../../package/game-version.mjs";
@@ -119,7 +119,7 @@ export interface BrowserSessionSnapshot {
 export function createBrowserSession({document, window, baseUrl: configuredBaseUrl, appShellDeployment}: {document: Document; window: Window; baseUrl?: string; appShellDeployment?: AppShellOptions['deployment']}) {
   const baseUrl = configuredBaseUrl ?? launcherBaseUrl(window.location.href);
   const entryUrl = new URL(window.location.href);
-  const testBuild = previewFeaturesEnabled && (testFeaturesEnabled(window) || entryUrl.searchParams.has('test'));
+  const testBuild = testFeaturesEnabled(window) || entryUrl.searchParams.has('test');
   let storage: Storage | null = null;
   try {storage = window.localStorage;} catch {}
   const gamepad = createGamepadMappingModel({storage,getGamepads:typeof window.navigator.getGamepads==='function'?()=>window.navigator.getGamepads():undefined});
