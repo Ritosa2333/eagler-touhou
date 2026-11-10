@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "0a25d695676a42b5f6523c7fd6fe5264d6c022f6",
+      "base": "b0bba4888e4eecbe282454b2d75655f3789336ff",
       "history": [
         {
           "kind": "manual",
@@ -427,6 +427,19 @@
             "ports/th05-mp/web/audio.mjs"
           ],
           "note": "合并 #213 的原作弹幕、移动、Rank 和菜单校准与音乐室后台播放。两种模式保留各自的输入和会话逻辑。"
+        },
+        {
+          "kind": "manual",
+          "base": "0a25d695676a42b5f6523c7fd6fe5264d6c022f6",
+          "source": "b0bba4888e4eecbe282454b2d75655f3789336ff",
+          "targetHead": "eb935514f4231dbfffc4db485c39d9501d5da067",
+          "paths": [
+            "ports/th05-mp/Game/Original/OriginalScenes.cpp",
+            "ports/th05-mp/Game/Original/OriginalScenes.h",
+            "ports/th05-mp/PRACTICE.md",
+            "ports/th05-mp/tests/BrowserNativeTests.cpp"
+          ],
+          "note": "同步 Extra All Cast 跨音乐循环的节拍推进、无音乐回退及翻页与退出按键；两侧使用相同结局规则。"
         }
       ]
     },
