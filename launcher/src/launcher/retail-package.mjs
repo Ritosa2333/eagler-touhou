@@ -122,7 +122,7 @@ export async function createRetailPackage({game, expected, inputs, fontTargets =
   for (const name of required) {
     const blob = await read(name, limits[name.toLowerCase()]);
     directory = await readRetailArchive(blob, game);
-    if (game !== 'th06' && !directory.some(entry => new RegExp(`(?:^|/)${game}_\\d{4}[a-z]\\.ver$`).test(entry.name)))
+    if (game !== 'th06' && !directory.some(entry => new RegExp(`(?:^|/)${game}_\\d{3,4}[a-z]\\.ver$`).test(entry.name)))
       throw Error(`${name}: game version marker does not match ${game.toUpperCase()}`);
     archives.set(name, blob);
   }

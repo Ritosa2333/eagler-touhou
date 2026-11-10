@@ -11,12 +11,12 @@ function literals(data) {
   const bits = Array.from(data, value => `1${value.toString(2).padStart(8, '0')}`).join('');
   return Uint8Array.from(bits.match(/.{1,8}/g), value => parseInt(value.padEnd(8, '0'), 2));
 }
-function th07() {
+function th07(marker = 'th07_0100b.ver') {
   const fmt = new Uint8Array(52), index = new DataView(fmt.buffer);
   fmt.set(new TextEncoder().encode('th07_01.wav'));
   for (const [at, value] of [[16, 16], [24, 4], [28, 8], [32, 0x20001], [36, 44100]]) index.setUint32(at, value, true);
   const packed = literals(fmt), version = literals(Uint8Array.of(1));
-  const entries = [['thbgm.fmt', 16, fmt.length], ['th07_0100b.ver', 16 + packed.length, 1]].flatMap(([name, start, size]) => {
+  const entries = [['thbgm.fmt', 16, fmt.length], [marker, 16 + packed.length, 1]].flatMap(([name, start, size]) => {
     const label = new TextEncoder().encode(`${name}\0`), fields = new Uint8Array(12), view = new DataView(fields.buffer);
     view.setUint32(0, start, true); view.setUint32(4, size, true);
     return [...label, ...fields];
@@ -54,6 +54,12 @@ test('original DAT and separate BGM installable payload preserves DATA and conve
   assert.ok(descriptor.base.files.some(id => descriptor.files[id].target === '/unifont.otf'));
   await assert.rejects(createRetailPackage({game, expected, inputs: [archive, new File([header], 'thbgm.dat')]}), /Invalid thbgm\.fmt track/);
   await assert.rejects(createRetailPackage({game, expected, inputs: [archive, new File(['invalid'], 'thbgm.dat')]}), /Invalid thbgm\.dat header/);
+});
+
+test('three-digit retail version markers are valid for the selected game', async () => {
+  const game = 'th07';
+  assert.ok((await createRetailPackage({game, inputs: [th07('th07_100a.ver')]})).descriptor.files['game-data']);
+  await assert.rejects(createRetailPackage({game, inputs: [th07('th19_100a.ver')]}), /game version marker does not match TH07/);
 });
 
 test('a Deflate ZIP is detected by its header and extracts only selected game resources', async () => {
