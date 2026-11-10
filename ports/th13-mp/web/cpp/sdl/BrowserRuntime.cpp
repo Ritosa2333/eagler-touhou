@@ -6,6 +6,11 @@
 #include "../game/GameInput.hpp"
 #include "../game/GameKeyboard.hpp"
 #include "../game/ReplayEntityState.hpp"
+#include "../multiplayer/ReplayArchive.hpp"  // M9：多人 Replay 归档面
+#include "../multiplayer/Session.hpp"  // M7：联机会话驱动面
+#include "../multiplayer/SpectatorJournal.hpp"  // M9：旁观接缝
+#include "../multiplayer/StageEntry.hpp"  // M9：关头延续
+#include "../multiplayer/WorldState.hpp"
 #include "../../../portable/sdl/FrameCadence.hpp"
 #include "../../../portable/input/TouchController.hpp"
 #include <eagler/input/BrowserGamepad.hpp>
@@ -16,7 +21,10 @@
 #include <emscripten/html5.h>
 
 #include <algorithm>
+#include <array>
+#include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 #include <memory>
 #include <vector>
@@ -171,8 +179,17 @@ void clear_inputs() {
     controls = {};
 }
 
-bool sample_and_tick(float fps = 60.f) {
-    if (!app) return false;
+// P2：输入采样与模拟推进拆开——mp 每 tick 只采样一次，重模拟帧复用
+// 同一份 controls（controls 是沿状态机，重复 update 会推进 duration/清
+// pressed）。非 MP 路径仍按原三段复合调用。
+struct SampledFrame {
+    u32 held = 0;
+    bool focus = false;
+    bool skip = false;  // app->exiting：本 tick 不推进（原 sample_and_tick 语义）
+};
+
+SampledFrame sample_input() {
+    SampledFrame sampled;
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST) {
@@ -191,7 +208,10 @@ bool sample_and_tick(float fps = 60.f) {
     }
     // A successful SDL quit has already saved and ended the application.
     // step() returns false once exiting, which is not a runtime failure.
-    if (app->exiting) return true;
+    if (app->exiting) {
+        sampled.skip = true;
+        return sampled;
+    }
     bool keys[256]{};
     const auto* physical = SDL_GetKeyboardState(nullptr);
     for (const auto& key : keyboard_map) {
@@ -218,14 +238,99 @@ bool sample_and_tick(float fps = 60.f) {
     // a priority-11 pause callback can resume before the priority-20 tick.
     controls.update(held);
     // 回放不受失焦暂停（无头驱动的窗口焦点不参与回放时间线）。
-    const bool focus = app->replay_active ? false : lost_focus;
+    sampled.held = held;
+    sampled.focus = app->replay_active ? false : lost_focus;
     lost_focus = false;
-    // Physical held/edge/repeat state drives the application and its menus.
-    // For replay gameplay RunScene selects the frozen recorded history.
-    return app->step(controls, fps, focus);
+    return sampled;
 }
 
-// 单帧驱动（rAF 回调与 th13_frame_tick 手动泵共用）：装载挡板 → 帧钟 → 提交。
+bool sample_and_tick(float fps = 60.f) {
+    if (!app) return false;
+    const SampledFrame sampled = sample_input();
+    if (sampled.skip) return true;
+    // Physical held/edge/repeat state drives the application and its menus.
+    // For replay gameplay RunScene selects the frozen recorded history.
+    // M1/T2：帧体三段拆分后的第一处生产接线（M7 Runtime 宿主侧驱动接口），
+    // 逐操作同序 = ApplicationState::step 复合（update→commit→present）。
+    return app->update(controls, sampled.focus) && app->commit(fps) && app->present();
+}
+
+// ---- P2：生产帧循环（同 tick 重模拟 + 时间同步）----
+// 每 tick：Pump → 一次输入采样 → 纠正期重模拟（不采集/不 present）→
+// 新进度（CaptureFrame()==SimFrame() 时采集一次）→ 恰一次 present。
+// 停等/纠正追赶都复用本 tick 的 controls；网络帧号只由 OnFrameSimulated
+// 推进（宿主不维护 sim 帧号）。
+constexpr double kTickSeconds = 1.0 / 60.0;
+double mp_accumulator = 0;  // 秒；Configure 清零
+
+// 单个逻辑 tick（production rAF / 手动帧泵共用）。返回 false = 硬失败。
+// simulated = 本 tick 实际 update+commit 的帧数（追帧 + 新进度；READY/
+// 菜单等待期 1 帧，停等 0）。
+bool mp_tick(float fps, unsigned& simulated) {
+    if (!app) return false;
+    const std::uint64_t now_ms = static_cast<std::uint64_t>(emscripten_get_now());
+    if (!multiplayer::session.Pump(now_ms)) return false;
+    const SampledFrame sampled = sample_input();
+    if (sampled.skip) return true;
+    if (!multiplayer::session.Simulating()) {
+        // frame0 屏障/READY 等待：菜单与装载后的等待照常推进，不推进
+        // 网络模拟帧（与 drive_one_frame 原路径逐操作同序）。
+        if (!(app->update(controls, sampled.focus) && app->commit(fps))) return false;
+        ++simulated;
+        return app->present();
+    }
+    // 1) 追帧：Pump 已消化回滚请求；重模拟到纠正终点（不采集、不 present）。
+    // 预算守卫（10ms）把余下重放留给后续 tick，避免一次 rAF 超时。
+    const auto correction_started = std::chrono::steady_clock::now();
+    while (multiplayer::session.Correcting()) {
+        // 放行有副作用（远端注入/Record/checkpoint）；停等时本 tick 不再
+        // 推进，留待下一 tick（纠正输入不足——罕见）。
+        if (!multiplayer::session.CanSimulate()) break;
+        const std::uint32_t before = multiplayer::session.SimFrame();
+        if (!app->update(controls, sampled.focus) || !app->commit(fps)) return false;
+        multiplayer::session.OnFrameSimulated();
+        if (multiplayer::session.SimFrame() == before) return false;  // 落账被拒
+        ++simulated;
+        if (app->exiting) break;
+        const double elapsed_ms = std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - correction_started).count();
+        if (elapsed_ms > 10.0) break;
+    }
+    // 2) 新进度（时间同步）：acc 按墙钟建议缩放；无样本/Adonis 恒 1.0。
+    // steps < 2：正常每 tick 1 帧；轻微落后补 1 帧；大追赶由纠正分支承担。
+    const double interval_scale = multiplayer::session.IntervalScale();
+    mp_accumulator += kTickSeconds /
+        (std::isfinite(interval_scale) && interval_scale > 0.0 ? interval_scale : 1.0);
+    unsigned steps = 0;
+    while (mp_accumulator >= kTickSeconds - 1.e-9 && steps < 2 &&
+           !multiplayer::session.Correcting() && !app->exiting) {
+        // 采集条件：相位 == 模拟帧 = 本帧需要物理输入。纠正期相位在前
+        // （不重复采集）；停等后相位已超前（不漏拍）。
+        if (multiplayer::session.CaptureFrame() == multiplayer::session.SimFrame()) {
+            if (!multiplayer::session.CaptureLocal(sampled.held, now_ms)) return false;
+            multiplayer::session.AdvanceCapturePhase();
+        }
+        if (!multiplayer::session.CanSimulate()) {
+            mp_accumulator = std::min(mp_accumulator, kTickSeconds);  // 停等不积债
+            break;
+        }
+        const std::uint32_t before = multiplayer::session.SimFrame();
+        if (!app->update(controls, sampled.focus) || !app->commit(fps)) return false;
+        multiplayer::session.OnFrameSimulated();
+        if (multiplayer::session.SimFrame() == before) return false;  // 落账被拒
+        mp_accumulator -= kTickSeconds;
+        ++steps;
+        ++simulated;
+    }
+    // 3) 每 tick 恰一次 present（重模拟帧不 present）。
+    return app->present();
+}
+
+}  // namespace
+
+// 单帧驱动（rAF 回调、th13_frame_tick 手动泵与 th13_mp_run_frame 共用）：
+// 装载挡板 → 帧钟 → 每 tick 分发（MP 会话 Active 走 mp_tick（同 tick
+// 重模拟 + 时间同步），否则原 sample_and_tick 路径）。
 bool drive_one_frame(double delta) {
     const double begin = emscripten_get_now();
     if (suspended) {
@@ -250,20 +355,82 @@ bool drive_one_frame(double delta) {
         presentation_count = 0;
     }
     bool ok = true;
+    unsigned simulated = 0;
+    const bool mp_active = multiplayer::session.Active();
     app->graphics.backend.defer = true;
     for (unsigned i = 0; i < ticks && ok; i++) {
-        ok = sample_and_tick(presentation_fps);
+        ok = mp_active ? mp_tick(presentation_fps, simulated)
+                       : sample_and_tick(presentation_fps);
         if (app->exiting || app->pending_load) break;
     }
     if (app->graphics.backend.commit()) ++presentation_count;
     app->graphics.backend.defer = false;
     app->audio_device.pump();
-    th13_browser_frame(ok ? 1 : 0, emscripten_get_now() - begin, ticks);
+    // MP：ticks 参数 = 本帧实际模拟帧数（追帧 + 新进度）；非 MP 保持原值
+    //（cadence 逻辑 tick 数）。
+    th13_browser_frame(ok ? 1 : 0, emscripten_get_now() - begin,
+                       mp_active ? simulated : ticks);
     if (!ok || app->exiting) running = false;
     return running;
 }
-}  // namespace
+
+// MP 导出入口（MultiplayerExports.cpp 的 th13_mp_run_frame 转发）：页面以
+// 毫秒墙钟驱动同一帧体。running/app 未就绪返回 0（th13_frame_tick 同门）。
+int mp_run_frame(double delta_ms) {
+    if (!running || !app) return 0;
+    if (!std::isfinite(delta_ms) || delta_ms < 0.0) return 0;
+    return drive_one_frame(delta_ms / 1000.0) ? 1 : 0;
+}
+
+// Configure/Stop 清零时间同步累积（Session::Configure 成功路径调用）。
+void reset_mp_accumulator() { mp_accumulator = 0; }
 }  // namespace th13::sdl
+
+namespace th13::multiplayer::detail {
+// base64 桥（页侧 ↔ wasm 的档/wire 传输；M9 导出面专用——C++ 链接，
+// extern "C" 块内的导出函数经此桥接页侧字符串）。
+// base64 桥（页侧 ↔ wasm 的档/wire 传输）。
+std::string mp_base64_encode(const std::uint8_t* data, std::size_t size) {
+    static const char kDigits[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    std::string out;
+    out.reserve((size + 2) / 3 * 4);
+    for (std::size_t at = 0; at < size; at += 3) {
+        const std::uint32_t b0 = data[at];
+        const std::uint32_t b1 = at + 1 < size ? data[at + 1] : 0;
+        const std::uint32_t b2 = at + 2 < size ? data[at + 2] : 0;
+        out.push_back(kDigits[b0 >> 2]);
+        out.push_back(kDigits[(b0 & 3) << 4 | b1 >> 4]);
+        out.push_back(at + 1 < size ? kDigits[(b1 & 15) << 2 | b2 >> 6] : '=');
+        out.push_back(at + 2 < size ? kDigits[b2 & 63] : '=');
+    }
+    return out;
+}
+std::vector<std::uint8_t> mp_base64_decode(const char* text) {
+    static const auto value = [](char c) -> int {
+        if (c >= 'A' && c <= 'Z') return c - 'A';
+        if (c >= 'a' && c <= 'z') return c - 'a' + 26;
+        if (c >= '0' && c <= '9') return c - '0' + 52;
+        if (c == '+') return 62;
+        if (c == '/') return 63;
+        return -1;
+    };
+    std::vector<std::uint8_t> out;
+    if (!text) return out;
+    int buffer = 0, bits = 0;
+    for (const char* p = text; *p; ++p) {
+        if (*p == '=' || *p == '\n' || *p == '\r') continue;
+        const int digit = value(*p);
+        if (digit < 0) { out.clear(); return out; }
+        buffer = buffer << 6 | digit;
+        bits += 6;
+        if (bits >= 8) {
+            bits -= 8;
+            out.push_back(std::uint8_t(buffer >> bits));
+        }
+    }
+    return out;
+}
+}  // namespace th13::multiplayer::detail
 
 extern "C" {
 
@@ -366,6 +533,1043 @@ EMSCRIPTEN_KEEPALIVE void th13_key(unsigned scan, unsigned down) {
     for (auto& key : th13::sdl::keyboard_map)
         if (key.scan == scan) key.hosted = down != 0;
 }
+
+// ---- M2：多人席位调试面（th13-debug.html 浏览器层 case 驱动）----
+// th13_debug_mp_seats：对局建立前配置席位（2..3，角色 0..3 允许重复）。
+// 返回 1 = 已受理（begin_run 时生效）；0 = 参数非法或应用未就绪。
+// th13_debug_mp_seat_input：对局中按席位注入按键位掩码（seat 0 的输入经
+// th13_key/物理采样路径——单一 GameInput 语义；seat>=1 走本接口）。
+// th13_debug_mp_seat_state：读席位玩家面（x/y/phase/invulnerable/bombs/
+// lives/power），供浏览器 case 断言逐席独立性。
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_seats(int count, int c0, int c1, int c2,
+                                            int local_seat) {
+    using namespace th13::sdl;
+    if (!app || !app->initialized) return 0;
+    if (count != 0 && (count < 2 || count > 3)) return 0;
+    const int characters[3] = {c0, c1, c2};
+    for (int i = 0; i < count; ++i)
+        if (characters[i] < 0 || characters[i] > 3) return 0;
+    if (!app->configure_multiplayer(count, {c0, c1, c2}, local_seat)) return 0;
+    return 1;
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_seat_input(int seat, unsigned held) {
+    using namespace th13::sdl;
+    if (!app || !app->run || seat <= 0 || seat >= int(app->run->battle.seat_inputs.size()))
+        return 0;
+    app->run->battle.seat_inputs[size_t(seat)].update(held);
+    return 1;
+}
+
+// M4/M5 浏览器层 case 驱动：读/写团队灵界槽（ending_points；R-T 阈值
+// case 的注入口——生产语义不变，仅测试接口）。
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_trance_slot(int value) {
+    using namespace th13::sdl;
+    if (!app || !app->run) return -1;
+    auto& progress = app->run->battle.sim.session ? *app->run->battle.sim.session
+                                                  : app->progress;
+    if (value >= 0) progress.ending_points = value;
+    return progress.ending_points;
+}
+
+// M4/M5 浏览器层 case 观察：团队灵界状态机（mode/owner/generation/槽）。
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_trance_state() {
+    using namespace th13::sdl;
+    static std::string report;
+    if (!app || !app->run) {
+        report = "{}";
+        return report.c_str();
+    }
+    auto& battle = app->run->battle;
+    char buffer[192];
+    std::snprintf(buffer, sizeof buffer,
+                  "{\"mode\":%d,\"owner\":%d,\"generation\":%u,\"slot\":%d,"
+                  "\"active\":%d,\"seat_count\":%d,\"ghosts\":%d}",
+                  int(battle.trance_mode), battle.trance_owner_seat,
+                  battle.trance_generation,
+                  battle.sim.session ? battle.sim.session->ending_points : 0,
+                  battle.team_trance_active() ? 1 : 0, battle.seat_count,
+                  battle.ghost_count());
+    report = buffer;
+    return report.c_str();
+}
+
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_seat_state(int seat) {
+    using namespace th13::sdl;
+    static std::string report;
+    if (!app || !app->run || seat < 0 || seat >= int(app->run->battle.seats.size())) {
+        report = "{}";
+        return report.c_str();
+    }
+    auto& battle = app->run->battle;
+    // 单席（seat_count==0）：权威面在 player_state_ 窗口（seats[] 未收编），
+    // 读窗口别名 = 单席真实玩家面。
+    const bool window_seat = battle.seat_count == 0 && seat == 0;
+    const auto& state = window_seat ? battle.player_state() : battle.seats[size_t(seat)];
+    // 单席 HUD 资源在宿主 player（RunScene selection_player），不在
+    // seat_huds——报 -1 标记不可用；多席报 seat_huds 真值。
+    const auto* hud = window_seat ? nullptr : &battle.seat_huds[size_t(seat)];
+    char buffer[256];
+    std::snprintf(buffer, sizeof buffer,
+                  "{\"seat\":%d,\"x\":%.6f,\"y\":%.6f,\"phase\":%d,\"phase_frame\":%d,"
+                  "\"invulnerable\":%d,\"dead\":%d,\"shots\":%zu,\"bombs\":%d,"
+                  "\"extra_lives\":%d,\"power\":%d,\"character\":%d,\"seat_count\":%d}",
+                  seat, state.x, state.y, int(state.phase), state.phase_frame,
+                  state.invulnerable, int(state.dead), state.shots.size(),
+                  hud ? hud->bombs : -1, hud ? hud->extra_lives : -1,
+                  hud ? hud->power : -1, state.character,
+                  battle.seat_count);
+    report = buffer;
+    return report.c_str();
+}
+
+// ---- M7：联机会话驱动面（web/cpp/multiplayer/Session 的浏览器观测）----
+// 真实生产调用链：Session（驱动）→ NetplayRuntime（RollbackCore/Gate/
+// Channel）→ BrowserPeerTransport（RTC mesh vs WebSocket relay 竞速）。
+// 测试经这些接口驱动真实会话（无网络模拟器旁路）：
+//   th13_debug_mp_net_configure：<json words 数组>（SessionSetup 22 词）
+//   th13_debug_mp_net_connect：<relay ws url>
+//   th13_debug_mp_net_pump：帧泵（now_ms 毫秒墙钟）
+//   th13_debug_mp_net_ready：本地 READY（frame0 屏障）
+//   th13_debug_mp_net_capture：<held>（本地席位输入采集）
+//   th13_debug_mp_net_can_simulate：本帧全员输入确认？（1/0）
+//   th13_debug_mp_net_on_simulated：落账 MarkSimulated
+//   th13_debug_mp_net_state：JSON 观测面（sim_frame/confirmed/local_seat/
+//     active/can_start/hello/ready/error）
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_net_configure(const char* words_json) {
+    using namespace th13::sdl;
+    if (!words_json) return 0;
+    // 解析 JSON 数组 [w0..w21]（22 词，uint32）。
+    std::vector<unsigned> words;
+    // 简式解析：逗号分隔的十进制数（测试侧生成；非生产面）。
+    const char* p = words_json;
+    while (*p) {
+        while (*p == ' ' || *p == ',' || *p == '[' || *p == ']') ++p;
+        if (!*p) break;
+        char* end = nullptr;
+        const unsigned long value = std::strtoul(p, &end, 10);
+        if (end == p) return 0;
+        words.push_back(unsigned(value));
+        p = end;
+    }
+    if (!th13::multiplayer::session.Configure(words.data(), words.size()))
+        return 0;
+    // P2：新会话从零开始时间同步累积（Stop 由 Session 内部清零；此处覆盖
+    // 会话间 Configure 的边界）。
+    th13::sdl::reset_mp_accumulator();
+    // begin_run 先于 configure 的时序（debug 页直入对局 → handshake 里
+    // configure）：Configure 成功后补 begin_run 的 M7/M8 接线（当时
+    // Active() 门未过——BindWorld/playback_input/音频观察器全缺）。
+    if (app && app->run && app->mp_seat_count >= 2) {
+        th13::multiplayer::session.TryBindWorld(&app->run->battle, &app->visual,
+                                                app->run->presentation.get(),
+                                                app->run.get(),
+                                                &app->mp_transition_handle_);
+        app->run->playback_input = []() -> const th13::GameInput* {
+            return th13::multiplayer::session.LocalDelayedInput();
+        };
+        // P3.1：与 begin_run 同一安装点（观察器链 + defer_output；幂等）。
+        app->wire_multiplayer_audio();
+    }
+    return 1;
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_net_connect(const char* relay_url) {
+    using namespace th13::sdl;
+    if (!relay_url) return 0;
+    return th13::multiplayer::session.Connect(relay_url) ? 1 : 0;
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_net_pump(double now_ms) {
+    using namespace th13::sdl;
+    return th13::multiplayer::session.Pump(std::uint64_t(now_ms)) ? 1 : 0;
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_net_ready() {
+    using namespace th13::sdl;
+    th13::multiplayer::session.MarkLocalReady();
+    // frame0 屏障闭合即启动（模拟放行——simulating_ 置位；采集相位保持
+    // 0，首帧 capture 0）；未闭合返回 0（宿主重复调用——READY 等待循环）。
+    return th13::multiplayer::session.Start() ? 1 : 0;
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_net_capture(unsigned held, double now_ms) {
+    using namespace th13::sdl;
+    if (!th13::multiplayer::session.CaptureLocal(held, std::uint64_t(now_ms)))
+        return 0;
+    // 采集相位推进：本帧已采集，下一游戏帧采下一帧输入（Start 启动后
+    // 每游戏帧恰一次——与回放 replay_take_input 的逐帧消费同拍）。
+    th13::multiplayer::session.AdvanceCapturePhase();
+    return 1;
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_net_can_simulate() {
+    using namespace th13::sdl;
+    return th13::multiplayer::session.CanSimulate() ? 1 : 0;
+}
+
+EMSCRIPTEN_KEEPALIVE void th13_debug_mp_net_on_simulated() {
+    using namespace th13::sdl;
+    th13::multiplayer::session.OnFrameSimulated();
+}
+
+// M8：回滚观测面——restores/resimulated/checkpoints/committed/rollback。
+// P0：追加只读计时/计数（微秒；Configure/Stop 清零）。
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_net_rollback() {
+    using namespace th13::sdl;
+    static std::string report;
+    const auto& session = th13::multiplayer::session;
+    // P3.4：线上 digest 统计（最近构造的 NetplayRuntime 实例；生产唯一
+    // 实例 = Session::runtime_ 的只读镜像——本文件不直连 runtime_）。
+    const auto digest_stats = th13::multiplayer::NetplayRuntime::DebugDigestStats();
+    char buffer[1400];
+    std::snprintf(buffer, sizeof buffer,
+                  "{\"restores\":%u,\"resimulated\":%u,\"checkpoints\":%u,"
+                  "\"committed\":%u,\"maxDistance\":%u,\"rollback_pending\":%d,"
+                  "\"records\":%zu,\"audio_pending\":%zu,\"last_error\":%d,"
+                  "\"sfx_suppressed\":%llu,\"music_deferred\":%llu,"
+                  "\"music_dropped\":%llu,\"voice_captured\":%llu,"
+                  "\"music_captured\":%llu,\"voice_applied\":%llu,"
+                  "\"music_applied\":%llu,"
+                  "\"desync_detected\":%llu,\"digests_sent\":%llu,"
+                  "\"digests_received\":%llu,"
+                  "\"capture_us_max\":%llu,\"capture_us_sum\":%llu,"
+                  "\"capture_us_count\":%llu,"
+                  "\"restore_us_max\":%llu,\"restore_us_sum\":%llu,"
+                  "\"update_us_max\":%llu,\"update_us_sum\":%llu,"
+                  "\"update_us_count\":%llu,\"resim_us_sum\":%llu,"
+                  "\"rollback_distance_sum\":%llu,\"stall_frames\":%llu}",
+                  session.Restores(), session.Resimulated(), session.Checkpoints(),
+                  session.Committed(), session.MaxRollbackDistance(),
+                  session.HasRollbackRequest() ? 1 : 0,
+                  session.RecordCount(), session.AudioOut().size(),
+                  session.LastRollbackFailed() ? 1 : 0,
+                  static_cast<unsigned long long>(session.SfxSuppressed()),
+                  static_cast<unsigned long long>(session.MusicDeferred()),
+                  static_cast<unsigned long long>(session.MusicDropped()),
+                  static_cast<unsigned long long>(session.VoiceCaptured()),
+                  static_cast<unsigned long long>(session.MusicCaptured()),
+                  static_cast<unsigned long long>(session.VoiceApplied()),
+                  static_cast<unsigned long long>(session.MusicApplied()),
+                  static_cast<unsigned long long>(digest_stats.desync),
+                  static_cast<unsigned long long>(digest_stats.sent),
+                  static_cast<unsigned long long>(digest_stats.received),
+                  static_cast<unsigned long long>(session.CaptureUsMax()),
+                  static_cast<unsigned long long>(session.CaptureUsSum()),
+                  static_cast<unsigned long long>(session.CaptureUsCount()),
+                  static_cast<unsigned long long>(session.RestoreUsMax()),
+                  static_cast<unsigned long long>(session.RestoreUsSum()),
+                  static_cast<unsigned long long>(session.UpdateUsMax()),
+                  static_cast<unsigned long long>(session.UpdateUsSum()),
+                  static_cast<unsigned long long>(session.UpdateUsCount()),
+                  static_cast<unsigned long long>(session.ResimUsSum()),
+                  static_cast<unsigned long long>(session.RollbackDistanceSum()),
+                  static_cast<unsigned long long>(session.StallFrames()));
+    report = buffer;
+    return report.c_str();
+}
+
+// M8：音频出队面——commit 边界放行的音频请求（宿主泵每帧取走喂
+// audio_device；测试断言「恰播一次」：请求序列在 commit 后不重复）。
+// P3.1：条目带来源帧号；audio_out_ 只含确认后/非帧类（Voice 走首播
+// 同帧冲账，正常每帧已被宿主 commit 排空，本面通常为空）。
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_net_audio() {
+    using namespace th13::sdl;
+    static std::string report;
+    report = "[";
+    const auto& audio = th13::multiplayer::session.AudioOut();
+    for (size_t index = 0; index < audio.size(); ++index) {
+        const auto& event = audio[index].observation;
+        const char* kind = event.kind == AudioDevice::RequestObservation::Kind::Voice ? "voice"
+                         : event.kind == AudioDevice::RequestObservation::Kind::Stop ? "stop"
+                         : event.kind == AudioDevice::RequestObservation::Kind::Pan ? "pan" : "music";
+        if (index) report += ",";
+        report += "{\"kind\":\"" + std::string(kind) + "\",\"id\":" +
+                  std::to_string(event.id) + ",\"frame\":" +
+                  std::to_string(audio[index].frame) + "}";
+    }
+    report += "]";
+    return report.c_str();
+}
+
+EMSCRIPTEN_KEEPALIVE void th13_debug_mp_net_audio_clear() {
+    using namespace th13::sdl;
+    th13::multiplayer::session.ClearAudioOut();
+}
+
+// P3.1：apply_request 实际触达日志（宿主 commit 冲账拍回填；有界环形）。
+// 测试断言「恰播一次/不早于确认帧」与「回滚臂 == 连续基线」的分帧分组面。
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_net_audio_applied() {
+    using namespace th13::sdl;
+    static std::string report;
+    report = "[";
+    const auto& applied = th13::multiplayer::session.AppliedAudio();
+    bool first = true;
+    for (const auto& item : applied) {
+        const auto& event = item.observation;
+        const char* kind = event.kind == AudioDevice::RequestObservation::Kind::Voice ? "voice"
+                         : event.kind == AudioDevice::RequestObservation::Kind::Stop ? "stop"
+                         : event.kind == AudioDevice::RequestObservation::Kind::Pan ? "pan" : "music";
+        if (!first) report += ",";
+        first = false;
+        report += "{\"frame\":" + std::to_string(item.frame) +
+                  ",\"confirmed\":" + std::to_string(item.confirmed) +
+                  ",\"kind\":\"" + std::string(kind) + "\",\"id\":" +
+                  std::to_string(event.id) + ",\"value\":" +
+                  std::to_string(event.value) + ",\"positional\":" +
+                  (event.positional ? "true" : "false") + ",\"x\":" +
+                  std::to_string(event.x) + ",\"text\":\"" + event.text + "\"}";
+    }
+    report += "]";
+    return report.c_str();
+}
+
+EMSCRIPTEN_KEEPALIVE void th13_debug_mp_net_audio_applied_clear() {
+    using namespace th13::sdl;
+    th13::multiplayer::session.ClearAppliedAudio();
+}
+
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_net_state() {
+    using namespace th13::sdl;
+    static std::string report;
+    const auto& session = th13::multiplayer::session;
+    char buffer[512];
+    std::snprintf(buffer, sizeof buffer,
+                  "{\"active\":%d,\"sim_frame\":%u,\"confirmed\":%u,"
+                  "\"local_seat\":%u,\"players\":%u,\"can_start\":%d,"
+                  "\"connected\":%d,\"simulating\":%d,\"capture_frame\":%u,"
+                  "\"error\":\"%s\"}",
+                  session.Active() ? 1 : 0, session.SimFrame(),
+                  session.ConfirmedThrough(), unsigned(session.LocalSeat()),
+                  session.PlayerCount(), session.CanStart() ? 1 : 0,
+                  session.Connected() ? 1 : 0, session.Simulating() ? 1 : 0,
+                  session.CaptureFrame(), session.Error());
+    report = buffer;
+    return report.c_str();
+}
+
+// ---- M6：结构化快照驱动面（web/cpp/multiplayer/WorldState 的浏览器观测）----
+// th13_debug_mp_snapshot_capture：capture 当前权威态（对局中）。回放会话
+// 连同输入游标一起快照（replay_consumed/cursor——restore 后喂同帧输入）。
+// 返回 JSON {ok, digest, retained}；失败时 {ok:0, error}。
+// th13_debug_mp_snapshot_restore：restore 最近一次 capture。返回
+// {ok, digest}——digest 与 capture 时相等即「S→前进→restore(S) 全等」。
+// th13_debug_mp_snapshot_digest：只读当前权威态 digest（不 capture）。
+// th13_debug_mp_snapshot_drop：丢弃快照（释放内存）。
+namespace {
+std::unique_ptr<th13::multiplayer::WorldState> mp_world_snapshot;
+// 回放游标快照（capture 时带游标的会话在 restore 同步回滚）。
+th13::multiplayer::WorldState::ReplayView mp_replay_view;
+bool mp_replay_captured = false;
+}
+
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_snapshot_capture() {
+    using namespace th13::sdl;
+    static std::string report;
+    if (!app || !app->run) {
+        report = "{\"ok\":0,\"error\":\"run absent\"}";
+        return report.c_str();
+    }
+    if (!mp_world_snapshot) mp_world_snapshot = std::make_unique<th13::multiplayer::WorldState>();
+    // 回放会话：输入游标随快照走（live run 无游标——不传）。
+    th13::multiplayer::WorldState::ReplayView replay;
+    const bool is_replay = app->replay_active && app->replay_cursor;
+    if (is_replay) {
+        replay.consumed = app->replay_consumed;
+        replay.cursor_eof = false;
+        app->replay_cursor->capture_cursor(replay.cursor_index, replay.cursor_eof);
+        replay.finished = app->replay_finished;
+        replay.input = app->replay_input;  // 输入沿状态机随游标一起回滚
+    }
+    if (!mp_world_snapshot->capture(app->run->battle, app->visual,
+                                     is_replay ? &replay : nullptr,
+                                     app->run->presentation.get())) {
+        report = "{\"ok\":0,\"error\":\"capture failed\"}";
+        return report.c_str();
+    }
+    if (is_replay) {
+        mp_replay_view = replay;
+        mp_replay_captured = true;
+    } else {
+        mp_replay_captured = false;
+    }
+    char buffer[96];
+    std::snprintf(buffer, sizeof buffer,
+                  "{\"ok\":1,\"digest\":\"%llx\",\"retained\":%zu}",
+                  (unsigned long long)mp_world_snapshot->digest(),
+                  mp_world_snapshot->retained_bytes());
+    report = buffer;
+    return report.c_str();
+}
+
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_snapshot_restore() {
+    using namespace th13::sdl;
+    static std::string report;
+    if (!app || !app->run || !mp_world_snapshot || !mp_world_snapshot->ready()) {
+        report = "{\"ok\":0,\"error\":\"snapshot absent\"}";
+        return report.c_str();
+    }
+    // 回放游标先回滚（与权威帧同步——restore 后下一帧喂 capture 时的
+    // 下一输入帧，而不是发散后的输入帧）。
+    if (mp_replay_captured && app->replay_active && app->replay_cursor) {
+        app->replay_consumed = mp_replay_view.consumed;
+        app->replay_cursor->restore_cursor(mp_replay_view.cursor_index,
+                                            mp_replay_view.cursor_eof);
+        app->replay_finished = mp_replay_view.finished;
+        app->replay_input = mp_replay_view.input;  // 沿状态机与游标同帧回滚
+    }
+    if (!mp_world_snapshot->restore(app->run->battle, app->visual,
+                                     mp_replay_captured ? &mp_replay_view : nullptr,
+                                     app->run->presentation.get())) {
+        report = "{\"ok\":0,\"error\":\"restore failed\"}";
+        return report.c_str();
+    }
+    // 表现层手账已随快照恢复（capture_presentation/restore_presentation：
+    // 句柄映射与自有 VM 值整场替换，sync 走复用路径）——不再 reset 重建：
+    // 全清重建会令恢复的 registry VM 成孤儿滞留池（digest 含 registry →
+    // 首帧即分歧），且新建 VM 的 age/RNG 消耗与连续基线不同源（M6 实证）。
+    // 自证修复（M6 审查判例）：旧实现返回快照自身的 digest——restore
+    // 不改快照成员，该值恒等于 capture 时值，无法证明 restore 写入。
+    // 这里重新 capture 实时权威态取 live digest；verified=1 且与 capture
+    // 报告的 digest 相等才是「restore(S) 全等」的真实证据。
+    th13::multiplayer::WorldState verify;
+    const bool live_ok = verify.capture(app->run->battle, app->visual, nullptr,
+                                        app->run->presentation.get());
+    char buffer[96];
+    std::snprintf(buffer, sizeof buffer, "{\"ok\":1,\"digest\":\"%llx\",\"verified\":%d}",
+                  live_ok ? (unsigned long long)verify.digest() : 0ull,
+                  live_ok ? 1 : 0);
+    report = buffer;
+    return report.c_str();
+}
+
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_snapshot_digest() {
+    using namespace th13::sdl;
+    static std::string report;
+    if (!app || !app->run || !mp_world_snapshot || !mp_world_snapshot->ready()) {
+        report = "{\"ok\":0,\"error\":\"snapshot absent\"}";
+        return report.c_str();
+    }
+    char buffer[96];
+    std::snprintf(buffer, sizeof buffer, "{\"ok\":1,\"digest\":\"%llx\"}",
+                  (unsigned long long)mp_world_snapshot->digest());
+    report = buffer;
+    return report.c_str();
+}
+
+// 权威模拟面 digest（不含 anm registry 表现层 VM 池）：续推对照
+//（restore 分支 vs 独立连续基线）专用——特效粒子流在 restore 分支被
+// 回滚丢弃视觉历史，与连续基线天然不同批（回滚语义，非缺陷）。
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_snapshot_digest_core() {
+    using namespace th13::sdl;
+    static std::string report;
+    if (!app || !app->run || !mp_world_snapshot || !mp_world_snapshot->ready()) {
+        report = "{\"ok\":0,\"error\":\"snapshot absent\"}";
+        return report.c_str();
+    }
+    char buffer[96];
+    std::snprintf(buffer, sizeof buffer, "{\"ok\":1,\"digest\":\"%llx\"}",
+                  (unsigned long long)mp_world_snapshot->digest_core());
+    report = buffer;
+    return report.c_str();
+}
+
+// 分域 digest（诊断面）：core 各域独立摘要（首差域定位）。
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_snapshot_digest_domains() {
+    using namespace th13::sdl;
+    static std::string report;
+    if (!app || !app->run || !mp_world_snapshot || !mp_world_snapshot->ready()) {
+        report = "{\"ok\":0,\"error\":\"snapshot absent\"}";
+        return report.c_str();
+    }
+    char buffer[256];
+    buffer[0] = 0;
+    mp_world_snapshot->digest_domains(buffer, sizeof buffer);
+    report = std::string("{\"ok\":1,\"domains\":\"") + buffer + "\"}";
+    return report.c_str();
+}
+
+EMSCRIPTEN_KEEPALIVE void th13_debug_mp_snapshot_drop() {
+    if (mp_world_snapshot) mp_world_snapshot->discard();
+}
+
+// ---- M9：多人 Replay / 关头延续 / 旁观驱动面 ----
+// th13_debug_mp_replay_begin：录制启动（会话身份 = 当前 configure 的
+// Setup；无会话时用默认双席身份）。返回 1/0。
+// th13_debug_mp_replay_append：追加确认帧（frame/stage + 双席 held 位）。
+// th13_debug_mp_replay_stage_entry：登记关头 StageEntry（从当前权威面捕获）。
+// th13_debug_mp_replay_encode：终局编码（name/score/completed）→ 返回
+// base64（页侧保存/重载）。
+// th13_debug_mp_replay_load：载入 base64 档 → 返回 JSON {ok, frames,
+//   chapters, completed, score, session}。
+// th13_debug_mp_replay_frame：回放面——frame 的双席 held（JS 位组）。
+// th13_debug_mp_stage_entry_capture / restore：关头延续快照/重建（当前
+//   权威面 ↔ mp_stage_entry）。
+// th13_debug_mp_spectator_begin_publish / record / publish / receive_wire /
+//   bootstrap / state：旁观发布-接收全链（wire 字节经 base64 过 JS 桥）。
+namespace {
+std::unique_ptr<th13::multiplayer::ReplayArchive> mp_replay_archive;
+std::unique_ptr<th13::multiplayer::ReplayArchive> mp_replay_loaded;
+th13::multiplayer::StageEntry mp_stage_entry;
+bool mp_stage_entry_valid = false;
+th13::multiplayer::SpectatorJournal mp_spectator;
+std::vector<std::uint8_t> mp_spectator_wire;
+bool mp_spectator_publish_ready = false;
+std::string mp_report;
+}  // namespace
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_replay_begin(double timestamp) {
+    using namespace th13::sdl;
+    if (!app) return 0;
+    if (!mp_replay_archive) mp_replay_archive = std::make_unique<th13::multiplayer::ReplayArchive>();
+    th13::multiplayer::SessionSetup setup;
+    if (th13::multiplayer::session.Active()) {
+        setup = th13::multiplayer::session.Setup();
+    } else {
+        setup.version = th13::multiplayer::SessionSetup::Version;
+        setup.mode = 2;
+        setup.session_id = 0x9001'0000'0000'0001ull;
+        setup.player_count = 2;
+        setup.local_player = 0;
+        setup.difficulty = 2;
+        setup.seed = 47932;
+        setup.automatic = false;
+        setup.requested_delay = setup.input_delay = 2;
+        setup.selections = {0, 0, 0};
+        setup.build = {1, 2, 3, 4};
+    }
+    return mp_replay_archive->Begin(setup, std::uint64_t(timestamp)) ? 1 : 0;
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_replay_append(unsigned frame, unsigned stage,
+                                                      unsigned held0, unsigned held1,
+                                                      unsigned held2) {
+    using namespace th13;
+    if (!mp_replay_archive) return 0;
+    Netplay::FrameInput inputs[3];
+    const unsigned held[3] = {held0, held1, held2};
+    const unsigned count = mp_replay_archive->Setup().player_count;
+    if (count < 2 || count > 3) return 0;
+    for (unsigned seat = 0; seat < count; ++seat)
+        if (!multiplayer::InputLanes::Capture(held[seat], false, inputs[seat])) return 0;
+    // stage 直接作章节 label（1..7）。
+    return mp_replay_archive->Append(frame, stage, inputs, count) ? 1 : 0;
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_replay_stage_entry(unsigned stage) {
+    using namespace th13::sdl;
+    if (!app || !app->run || !mp_replay_archive) return 0;
+    th13::multiplayer::StageEntry entry;
+    entry.Capture(app->run->battle, app->progress, app->run->score_view(),
+                  app->game_random.seed(), app->game_random.index(),
+                  app->visual.seed(), app->visual.index());
+    return mp_replay_archive->AppendStageEntry(stage, entry.Encode()) ? 1 : 0;
+}
+
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_replay_encode(const char* name,
+                                                              unsigned score,
+                                                              unsigned completed) {
+    using namespace th13::sdl;
+    if (!mp_replay_archive) { mp_report = "{\"ok\":0}"; return mp_report.c_str(); }
+    std::vector<std::uint8_t> wire;
+    if (!mp_replay_archive->Encode(wire, name ? name : "mp", score, completed != 0)) {
+        mp_report = "{\"ok\":0}";
+        return mp_report.c_str();
+    }
+    mp_report = "{\"ok\":1,\"b64\":\"" + th13::multiplayer::detail::mp_base64_encode(wire.data(), wire.size()) +
+                "\",\"frames\":" + std::to_string(mp_replay_archive->FrameCount()) + "}";
+    return mp_report.c_str();
+}
+
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_replay_load(const char* b64) {
+    using namespace th13;
+    const auto wire = th13::multiplayer::detail::mp_base64_decode(b64);
+    if (!mp_replay_loaded) mp_replay_loaded = std::make_unique<multiplayer::ReplayArchive>();
+    if (wire.empty() || !mp_replay_loaded->Load(wire.data(), wire.size())) {
+        mp_report = "{\"ok\":0}";
+        return mp_report.c_str();
+    }
+    const auto& setup = mp_replay_loaded->Setup();
+    mp_report = "{\"ok\":1,\"frames\":" + std::to_string(mp_replay_loaded->FrameCount()) +
+                ",\"chapters\":" + std::to_string(mp_replay_loaded->ChapterCount()) +
+                ",\"completed\":" + (mp_replay_loaded->Completed() ? "1" : "0") +
+                ",\"score\":" + std::to_string(mp_replay_loaded->Score()) +
+                ",\"session\":" + std::to_string(setup.session_id) + "}";
+    return mp_report.c_str();
+}
+
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_replay_frame(unsigned frame) {
+    using namespace th13;
+    if (!mp_replay_loaded) { mp_report = "{\"ok\":0}"; return mp_report.c_str(); }
+    const auto* decoded = mp_replay_loaded->FrameAt(frame);
+    if (!decoded) { mp_report = "{\"ok\":0}"; return mp_report.c_str(); }
+    mp_report = "{\"ok\":1,\"held\":[" + std::to_string(decoded->at(0).buttons) + "," +
+                std::to_string(decoded->at(1).buttons) + "," +
+                std::to_string(decoded->at(2).buttons) + "]}";
+    return mp_report.c_str();
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_stage_entry_capture() {
+    using namespace th13::sdl;
+    if (!app || !app->run) return 0;
+    mp_stage_entry.Capture(app->run->battle, app->progress, app->run->score_view(),
+                           app->game_random.seed(), app->game_random.index(),
+                           app->visual.seed(), app->visual.index());
+    mp_stage_entry_valid = true;
+    return 1;
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_stage_entry_restore() {
+    using namespace th13::sdl;
+    if (!app || !app->run || !mp_stage_entry_valid) return 0;
+    std::uint16_t gameSeed = 0, visualSeed = 0;
+    std::uint32_t gameIndex = 0, visualIndex = 0;
+    mp_stage_entry.Restore(app->run->battle, app->progress, app->run->score_view(),
+                           gameSeed, gameIndex, visualSeed, visualIndex);
+    app->game_random.reseed_restore(gameSeed);
+    app->game_random.set_index(gameIndex);
+    app->visual.reseed_restore(visualSeed);
+    app->visual.set_index(visualIndex);
+    return 1;
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_spectator_begin_publish() {
+    using namespace th13::sdl;
+    if (!app) return 0;
+    th13::multiplayer::SessionSetup setup;
+    if (th13::multiplayer::session.Active()) {
+        setup = th13::multiplayer::session.Setup();
+    } else {
+        setup.version = th13::multiplayer::SessionSetup::Version;
+        setup.mode = 2;
+        setup.session_id = 0x9001'0000'0000'0002ull;
+        setup.player_count = 2;
+        setup.local_player = 0;
+        setup.difficulty = 2;
+        setup.seed = 47932;
+        setup.automatic = false;
+        setup.requested_delay = setup.input_delay = 2;
+        setup.selections = {0, 0, 0};
+        setup.build = {1, 2, 3, 4};
+    }
+    return mp_spectator.BeginPublish(setup) ? 1 : 0;
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_spectator_begin_viewing() {
+    using namespace th13::sdl;
+    if (!app) return 0;
+    th13::multiplayer::SessionSetup setup;
+    if (th13::multiplayer::session.Active()) {
+        setup = th13::multiplayer::session.Setup();
+    } else {
+        setup.version = th13::multiplayer::SessionSetup::Version;
+        setup.mode = 2;
+        setup.session_id = 0x9001'0000'0000'0002ull;
+        setup.player_count = 2;
+        setup.local_player = 1;  // 观众端不占玩家席
+        setup.difficulty = 2;
+        setup.seed = 47932;
+        setup.automatic = false;
+        setup.requested_delay = setup.input_delay = 2;
+        setup.selections = {0, 0, 0};
+        setup.build = {1, 2, 3, 4};
+    }
+    return mp_spectator.BeginViewing(setup) ? 1 : 0;
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_spectator_record(unsigned frame, unsigned stage,
+                                                        unsigned held0, unsigned held1,
+                                                        int with_entry) {
+    using namespace th13::sdl;
+    if (!app || !app->run) return 0;
+    Netplay::FrameInput inputs[3];
+    const unsigned held[3] = {held0, held1, 0};
+    const unsigned count = 2;
+    for (unsigned seat = 0; seat < 2; ++seat)
+        if (!th13::multiplayer::InputLanes::Capture(held[seat], false, inputs[seat])) return 0;
+    const std::vector<std::uint8_t>* entry = nullptr;
+    if (with_entry) {
+        th13::multiplayer::StageEntry capture;
+        capture.Capture(app->run->battle, app->progress, app->run->score_view(),
+                        app->game_random.seed(), app->game_random.index(),
+                        app->visual.seed(), app->visual.index());
+        static std::vector<std::uint8_t> entryBytes;
+        entryBytes = capture.Encode();
+        entry = &entryBytes;
+    }
+    return mp_spectator.RecordFrame(frame, stage, inputs, count, entry) ? 1 : 0;
+}
+
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_spectator_publish(unsigned confirmed,
+                                                                  unsigned simulated) {
+    using namespace th13;
+    mp_spectator_wire.clear();
+    const auto send = [&](const std::vector<std::uint8_t>& packet) {
+        // 长度前缀（4B LE）：事件包含任意二进制（StageEntry 编码有 0 字节），
+        // 不能用 0 分隔。
+        const std::uint32_t length = std::uint32_t(packet.size());
+        mp_spectator_wire.push_back(std::uint8_t(length));
+        mp_spectator_wire.push_back(std::uint8_t(length >> 8));
+        mp_spectator_wire.push_back(std::uint8_t(length >> 16));
+        mp_spectator_wire.push_back(std::uint8_t(length >> 24));
+        mp_spectator_wire.insert(mp_spectator_wire.end(), packet.begin(), packet.end());
+        return true;
+    };
+    const auto inputsAt = [&](std::uint32_t frame,
+                              std::array<Netplay::FrameInput, 3>& out) {
+        // 发布端供数：从录制面取（RecordFrame 已带输入——hasInputs 路径）。
+        return true;
+    };
+    const bool ok = mp_spectator.Publish(confirmed, simulated, inputsAt, send);
+    mp_report = "{\"ok\":" + std::string(ok ? "1" : "0") +
+                ",\"published\":" + std::to_string(mp_spectator.Published()) +
+                ",\"failure\":\"" + mp_spectator.PublishFailureName() + "\"" +
+                ",\"b64\":\"" + th13::multiplayer::detail::mp_base64_encode(mp_spectator_wire.data(),
+                                                 mp_spectator_wire.size()) + "\"}";
+    return mp_report.c_str();
+}
+
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_spectator_receive(const char* b64) {
+    using namespace th13;
+    const auto wire = th13::multiplayer::detail::mp_base64_decode(b64);
+    if (wire.empty()) { mp_report = "{\"ok\":0}"; return mp_report.c_str(); }
+    unsigned received = 0, events = 0;
+    std::size_t at = 0;
+    while (at + 4 <= wire.size()) {
+        const std::uint32_t length = std::uint32_t(wire[at]) |
+            std::uint32_t(wire[at + 1]) << 8 | std::uint32_t(wire[at + 2]) << 16 |
+            std::uint32_t(wire[at + 3]) << 24;
+        at += 4;
+        if (!length || at + length > wire.size()) break;
+        if (Netplay::IsSpectatorStageEvent(wire.data() + at, length)) {
+            Netplay::SpectatorStageEvent event;
+            if (Netplay::DecodeSpectatorStageEvent(wire.data() + at, length, &event) &&
+                mp_spectator.ReceiveEvent(event)) ++events;
+        } else {
+            Netplay::SpectatorFramePacket packet;
+            if (Netplay::DecodeSpectatorFramePacket(wire.data() + at, length, &packet) &&
+                mp_spectator.ReceiveFrame(packet)) ++received;
+        }
+        at += length;
+    }
+    mp_report = "{\"ok\":1,\"events\":" + std::to_string(events) +
+                ",\"frames\":" + std::to_string(received) +
+                ",\"received\":" + std::to_string(mp_spectator.Received()) + "}";
+    return mp_report.c_str();
+}
+
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_spectator_state() {
+    using namespace th13;
+    mp_report = "{\"publishing\":" + std::string(mp_spectator.Publishing() ? "1" : "0") +
+                ",\"viewing\":" + std::string(mp_spectator.Viewing() ? "1" : "0") +
+                ",\"published\":" + std::to_string(mp_spectator.Publishing() ? mp_spectator.Published() : 0) +
+                ",\"received\":" + std::to_string(mp_spectator.Received()) +
+                ",\"position\":" + std::to_string(mp_spectator.Position()) +
+                ",\"seeking\":" + std::string(mp_spectator.Seeking() ? "1" : "0") +
+                ",\"paused\":" + std::string(mp_spectator.Paused() ? "1" : "0") +
+                ",\"ended\":" + std::string(mp_spectator.HistoryEnded() ? "1" : "0") + "}";
+    return mp_report.c_str();
+}
+
+// ---- P5：正式 Runtime 页的 _th13_mp_* 生产导出面 ----
+// 语义对齐 web/sdl-runtime/multiplayer.mjs（桥是调用序/状态字下标的真值）：
+//   configure(22 词) → connect → start（内部 Pump + MarkLocalReady；CanStart
+//   未闭合返回 0——桥轮询）→ rAF 泵走 th13_mp_run_frame → status/rollback_status
+//   供诊断面板 → close。
+// start 的进局职责照 th15_mp_start 样板（BrowserRuntime.cpp:488-501）：progress
+// 预置 + frames=0 + 双 RNG 按 setup.seed 重置（标题 RNG 不入对局）+ begin_run。
+namespace {
+bool mp_started = false;
+bool mp_playback_pending = false;
+bool mp_spectator_mode = false;
+bool mp_recording = false;
+std::uint32_t mp_recorded_through = 0;
+
+// 宿主持久化钩子：与 SP replay 保存同款（shell.mjs 注册 Module.onReplaySaved
+// → replay 索引/localStorage）。MP 用 th13mp_XX.rpy 独立命名空间。
+#ifdef __EMSCRIPTEN__
+EM_JS(bool, th13_mp_persist_replay, (const unsigned char* bytes, int size,
+                                    const char* name), {
+    try {
+        const data = HEAPU8.slice(bytes, bytes + size);
+        Module.onReplaySaved?.(UTF8ToString(name), data);
+        return true;
+    } catch (_) { return false; }
+});
+#endif
+}  // namespace
+
+// 22 词线格式 → Session::Configure（与 th13_debug_mp_net_configure 同一
+// 下游；生产面直接收 u32 数组，不做 JSON 解析）。
+EMSCRIPTEN_KEEPALIVE int th13_mp_configure(const unsigned* words, unsigned count) {
+    using namespace th13::sdl;
+    if (!app || !words || !count) return 0;
+    if (!th13::multiplayer::session.Configure(words, count)) return 0;
+    reset_mp_accumulator();
+    mp_started = mp_playback_pending = mp_spectator_mode = mp_recording = false;
+    mp_recorded_through = 0;
+    last_error.clear();
+    return 1;
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_mp_connect(const char* relay_url) {
+    if (!relay_url) return 0;
+    return th13::multiplayer::session.Connect(relay_url) ? 1 : 0;
+}
+
+// 旁观：只接连接面。TH13 的旁观发布/接收（SpectatorJournal）是调试/测试
+// 导出面，尚未接生产 Session 的 world 驱动——start 在旁观模式明确失败，
+// 不以「进标题」冒充可玩旁观（缺口见 P5 报告）。
+EMSCRIPTEN_KEEPALIVE int th13_mp_spectator_connect(const char* relay_url, const char* id) {
+    if (!relay_url || !id || !*id) return 0;
+    mp_spectator_mode = true;
+    return th13::multiplayer::session.Connect(relay_url) ? 1 : 0;
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_mp_pump(double now_ms) {
+    if (!std::isfinite(now_ms) || now_ms < 0) return 0;
+    return th13::multiplayer::session.Pump(std::uint64_t(now_ms)) ? 1 : 0;
+}
+
+// start 返回 0 = 未就绪（桥轮询）；错误经 th13_mp_error 读。
+EMSCRIPTEN_KEEPALIVE int th13_mp_start() {
+    using namespace th13::sdl;
+    if (!app || !app->initialized || running) return 0;
+    auto& session = th13::multiplayer::session;
+    if (!session.Active()) {
+        last_error = "TH13 multiplayer session is not configured";
+        return 0;
+    }
+    if (mp_started) return 1;
+    if (mp_playback_pending) {
+        last_error = "TH13 multiplayer replay playback runtime is not implemented";
+        return 0;
+    }
+    if (mp_spectator_mode) {
+        last_error = "TH13 multiplayer spectator runtime is not implemented";
+        return 0;
+    }
+    if (!session.Pump(std::uint64_t(emscripten_get_now()))) {
+        last_error = session.Error();
+        return 0;
+    }
+    session.MarkLocalReady();
+    if (!session.CanStart()) return 0;  // frame0 屏障未闭合：桥轮询
+    if (!session.Start()) return 0;
+    const auto& setup = session.Setup();
+    const std::array<th13::i32, 3> characters = {
+        th13::i32(setup.selections[0]), th13::i32(setup.selections[1]),
+        th13::i32(setup.selections[2])};
+    if (!app->configure_multiplayer(th13::i32(setup.player_count), characters,
+                                    th13::i32(setup.local_player))) {
+        last_error = "TH13 multiplayer seat configuration rejected";
+        return 0;
+    }
+    // 新局状态：清练习/符卡残位（start_game 的 mode 分支读 run_mode_flags）。
+    app->progress.run_mode_flags = 0;
+    app->progress.practice_mode = 0;
+    app->progress.selected_spell_id = -1;
+    if (!app->start_game(1)) {
+        last_error = app->failure;
+        return 0;
+    }
+    // start_game 会排队 Destination::Run；直驱 begin_run 时消费掉，避免下一
+    // 帧 apply_destination 再建一次 run（会话接线随旧 run 失效）。
+    app->pending_destination = -1;
+    app->progress.character = th13::i32(setup.selections[0]);
+    app->progress.difficulty = th13::i32(setup.difficulty);
+    app->progress.stage = app->progress.starting_stage = 1;
+    app->selected_stage = 1;
+    app->frames = 0;
+    // 标题动画在各客户端的时长/RNG 消耗不同：入局前用会话 seed 重置双流，
+    // 保证两端从同一 RNG 相位推进（th15_mp_start 同语义）。
+    app->game_random.reseed_restore(static_cast<std::uint16_t>(setup.seed));
+    app->visual.reseed_restore(static_cast<std::uint16_t>(setup.seed));
+    if (!app->begin_run()) {
+        last_error = app->failure.empty() ? "TH13 multiplayer begin_run failed" : app->failure;
+        return 0;
+    }
+    // P5 MP Replay 录制：frame0 前冻结会话身份；Commit 退役确认帧时追加。
+    if (!mp_replay_archive) mp_replay_archive = std::make_unique<th13::multiplayer::ReplayArchive>();
+    mp_replay_archive->Clear();
+    if (!mp_replay_archive->Begin(setup, std::uint64_t(emscripten_get_now()))) {
+        last_error = "TH13 multiplayer replay begin failed";
+        return 0;
+    }
+    mp_recorded_through = 0;
+    mp_recording = true;
+    session.confirmed_sink = [](std::uint32_t frame,
+                                const std::array<Netplay::FrameInput, 3>& inputs) {
+        if (!mp_recording || !mp_replay_archive) return;
+        if (frame <= mp_recorded_through) return;  // 重放/重复落账不重写
+        const std::uint32_t stage = th13::sdl::app
+            ? std::uint32_t(std::max(1, th13::sdl::app->progress.stage)) : 1u;
+        if (!mp_replay_archive->Append(frame, stage, inputs.data(),
+                                       mp_replay_archive->Setup().player_count))
+            return;
+        mp_recorded_through = frame;
+    };
+    mp_started = true;
+    return 1;
+}
+
+// 24 词状态面（下标语义与 th15 NetplayRuntime::Status 一致；桥读
+// [3]frame/[4]confirmed/[7]delay/[8]prediction/[12]generation/[15..17]/
+// [22]publisher-failed）。
+EMSCRIPTEN_KEEPALIVE const unsigned* th13_mp_status() {
+    static std::array<unsigned, 24> status{};
+    status.fill(0);
+    const auto& session = th13::multiplayer::session;
+    const auto& setup = session.Setup();
+    status[0] = 1;                                   // version/valid
+    status[1] = session.Active() ? 1u : 0u;          // configured
+    status[2] = session.CanStart() ? 1u : 0u;        // frame0 barrier ready
+    status[3] = session.SimFrame();                  // 桥：frame
+    status[4] = session.ConfirmedThrough();          // 桥：confirmed
+    status[5] = session.PlayerCount();
+    status[6] = session.LocalSeat();
+    status[7] = setup.input_delay;                   // 桥：inputDelay
+    status[8] = setup.prediction_limit;              // 桥：prediction
+    status[9] = session.Connected() ? 1u : 0u;
+    status[10] = 0;                                  // spectator（未接）
+    status[11] = 0;                                  // playback（未接）
+    status[12] = 0;                                  // generation（th13 无代）
+    status[13] = 0;                                  // retired（th13 无代）
+    status[14] = 0;                                  // backlog（th13 无发布队列）
+    status[15] = session.PacketsSent();
+    status[16] = session.PacketsReceived();
+    status[17] = session.RepairsSent();
+    status[18] = session.PacketsIgnored();
+    status[19] = session.TransportOpen() ? 1u : 0u;
+    status[20] = session.RouteCode();                // 1=rtc 2=relay 0=未选
+    status[21] = 0;                                  // initial inputs ready（无此门）
+    status[22] = 0;                                  // spectator publisher failed
+    {
+        const char* error = session.Error();
+        status[23] = error && *error ? 1u : 0u;
+    }
+    return status.data();
+}
+
+// 9 词回滚面（桥读 r[1]enabled/[2]corrections/[3]resimulated/[4]lastDepth/
+// [5]peakDepth/[6]pending/[7]barrier/[8]presentation fps×100）。
+EMSCRIPTEN_KEEPALIVE const unsigned* th13_mp_rollback_status() {
+    using namespace th13::sdl;
+    static std::array<unsigned, 9> out{};
+    const auto& session = th13::multiplayer::session;
+    const auto& setup = session.Setup();
+    out[0] = 1;
+    out[1] = setup.mode == 2 ? 1u : 0u;
+    out[2] = session.Restores();
+    out[3] = session.Resimulated();
+    out[4] = session.LastRollbackDistance();
+    out[5] = session.MaxRollbackDistance();
+    out[6] = session.HasRollbackRequest() ? 1u : 0u;
+    out[7] = session.Correcting() ? session.CorrectionEnd() : 0u;
+    out[8] = unsigned(std::lround(presentation_fps * 100.f));
+    return out.data();
+}
+
+EMSCRIPTEN_KEEPALIVE const char* th13_mp_error() {
+    const char* error = th13::multiplayer::session.Error();
+    if (error && *error) return error;
+    if (th13::sdl::app && !th13::sdl::app->failure.empty())
+        return th13::sdl::app->failure.c_str();
+    if (!th13::sdl::last_error.empty()) return th13::sdl::last_error.c_str();
+    return error ? error : "";
+}
+
+EMSCRIPTEN_KEEPALIVE void th13_mp_close() {
+    using namespace th13::sdl;
+    th13::multiplayer::session.confirmed_sink = nullptr;
+    th13::multiplayer::session.Stop();
+    if (app) {
+        app->mp_seat_count = 0;
+        app->mp_characters = {0, 0, 0};
+        app->mp_local_seat = 0;
+    }
+    mp_started = mp_playback_pending = mp_spectator_mode = mp_recording = false;
+    mp_recorded_through = 0;
+    last_error.clear();
+}
+
+// 生产 MP Replay 保存：仅确认帧入档（Session::Commit 的 confirmed_sink），
+// 槽位扫描序与 th15_mp_replay_save 一致（01 起首个空槽；满则覆盖 01）。
+EMSCRIPTEN_KEEPALIVE int th13_mp_replay_save() {
+    using namespace th13::sdl;
+    if (!mp_replay_archive || !mp_replay_archive->FrameCount()) return 1;  // 无录制 = 无操作
+    std::vector<std::uint8_t> bytes;
+    std::uint32_t score = 0;
+    if (app) score = std::uint32_t(app->run ? app->run->score_view().score
+                                            : app->selection_score.score);
+    const bool completed = app && (app->ending || app->pending_destination == 15);
+    const std::string name = mp_replay_archive->Name().empty() ? "PLAYER"
+                                                               : mp_replay_archive->Name();
+    if (!mp_replay_archive->Encode(bytes, name.c_str(), score, completed)) return 0;
+    SDL_CreateDirectory("/save");
+    SDL_CreateDirectory("/save/replay");
+    char path[64]{}, file_name[32]{};
+    for (unsigned slot = 1; slot <= 99; ++slot) {
+        std::snprintf(file_name, sizeof file_name, "th13mp_%02u.rpy", slot);
+        std::snprintf(path, sizeof path, "/save/replay/%s", file_name);
+        SDL_IOStream* existing = SDL_IOFromFile(path, "rb");
+        if (!existing) break;
+        SDL_CloseIO(existing);
+        path[0] = 0;
+    }
+    if (!path[0]) {
+        std::snprintf(file_name, sizeof file_name, "th13mp_01.rpy");
+        std::snprintf(path, sizeof path, "/save/replay/%s", file_name);
+    }
+    SDL_IOStream* file = SDL_IOFromFile(path, "wb");
+    if (!file) return 0;
+    const bool written = SDL_WriteIO(file, bytes.data(), bytes.size()) == bytes.size();
+    const bool closed = SDL_CloseIO(file);
+    if (!written || !closed) return 0;
+#ifdef __EMSCRIPTEN__
+    const bool persisted = th13_mp_persist_replay(
+        bytes.data(), int(bytes.size()), file_name);
+    return persisted ? 1 : 0;
+#else
+    return 1;
+#endif
+}
+
+// Replay 载入：整档校验 + 构建身份（build[4]）比对，再按录像身份配置本地
+// 会话。回放驱动（确认输入 → RunScene）尚未接生产 Session——start 在
+// playback 模式明确失败，不用「播放静态标题」冒充回放（P5 缺口）。
+EMSCRIPTEN_KEEPALIVE int th13_mp_replay_load(const unsigned char* bytes, unsigned size,
+                                             const unsigned* build) {
+    using namespace th13::sdl;
+    if (!app || !bytes || !size || !build) return 0;
+    auto parsed = std::make_unique<th13::multiplayer::ReplayArchive>();
+    if (!parsed->Load(bytes, size)) {
+        last_error = "TH13 multiplayer replay is invalid";
+        return 0;
+    }
+    const auto& setup = parsed->Setup();
+    for (std::size_t index = 0; index < 4; ++index) {
+        if (setup.build[index] != build[index]) {
+            last_error = "TH13 multiplayer replay build mismatch";
+            return 0;
+        }
+    }
+    const auto words = th13::multiplayer::EncodeSessionSetup(setup);
+    if (!th13::multiplayer::session.Configure(words.data(), words.size())) {
+        last_error = "TH13 multiplayer replay session is invalid";
+        return 0;
+    }
+    reset_mp_accumulator();
+    mp_replay_loaded = std::move(parsed);
+    mp_playback_pending = true;
+    mp_started = false;
+    last_error.clear();
+    return 1;
+}
+
+// 桥的收包唤醒钩子：th13 的 mp_tick 由 rAF 自然泵，wake 保留为 no-op
+//（与桥报告 §5.6 的约定一致）。
+EMSCRIPTEN_KEEPALIVE void th13_mp_wake() {}
 
 EMSCRIPTEN_KEEPALIVE void th13_touch_options(unsigned enabled, unsigned mode, float sensitivity,
                                            unsigned two_finger, unsigned double_tap) {

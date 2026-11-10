@@ -67,12 +67,21 @@ bool StageGvars::integer(i32 id, i32& value) {
     case -9935: case -9934: case -9933: case -9932:  // F4-F7, 00420380.
         value = e ? truncate_int(e->f_slots[id + 9939]) : 0;
         return true;
-    case -9965:
-        value = i32(sim.player_x);
+    case -9965: {
+        // M3：最近合格玩家（R-G；查询时点 = ECL 变量求值，敌机位置基准）。
+        float aim_x, aim_y;
+        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
+                           aim_x, aim_y);
+        value = i32(aim_x);
         return true;
-    case -9964:
-        value = i32(sim.player_y);
+    }
+    case -9964: {
+        float aim_x, aim_y;
+        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
+                           aim_x, aim_y);
+        value = i32(aim_y);
         return true;
+    }
     case -9944: {  // 00420669: player distance, rounded to f32 before ftol.
         float distance = 0.0f;
         floating(id, distance);
@@ -190,16 +199,27 @@ bool StageGvars::floating(i32 id, float& value) {
         value = 0.0f;
         return true;
     case -9965:
-    case -9991:
-        value = sim.player_x;
+    case -9991: {
+        float aim_x, aim_y;  // M3：最近合格玩家
+        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
+                           aim_x, aim_y);
+        value = aim_x;
         return true;
+    }
     case -9964:
-    case -9990:
-        value = sim.player_y;
+    case -9990: {
+        float aim_x, aim_y;
+        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
+                           aim_x, aim_y);
+        value = aim_y;
         return true;
+    }
     case -9989: {  // ANGLE_PLAYER（0x443f60：自机位置指向玩家）
-        const float dy = sim.player_y - (e ? e->position[1] : 0.0f);
-        const float dx = sim.player_x - (e ? e->position[0] : 0.0f);
+        float aim_x, aim_y;  // M3：最近合格玩家
+        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
+                           aim_x, aim_y);
+        const float dy = aim_y - (e ? e->position[1] : 0.0f);
+        const float dx = aim_x - (e ? e->position[0] : 0.0f);
         if (dy == 0.0f && dx == 0.0f) {
             value = 1.5707964f;
         } else {
@@ -251,8 +271,11 @@ bool StageGvars::floating(i32 id, float& value) {
         value = e ? float(std::atan2(double(e->motion_delta[1]), double(e->motion_delta[0]))) : 0.f;
         return true;
     case -9944: {  // 00421367 -> 00423e20: current enemy to player distance.
-        const double dx = double(e ? e->position[0] : 0.0f) - double(sim.player_x);
-        const double dy = double(e ? e->position[1] : 0.0f) - double(sim.player_y);
+        float aim_x, aim_y;  // M3：最近合格玩家
+        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
+                           aim_x, aim_y);
+        const double dx = double(e ? e->position[0] : 0.0f) - double(aim_x);
+        const double dy = double(e ? e->position[1] : 0.0f) - double(aim_y);
         // x87 keeps the differences/products wide, then stores the squared
         // distance as f32 before sqrt; the returned distance is also f32.
         const float squared = float(dx * dx + dy * dy);

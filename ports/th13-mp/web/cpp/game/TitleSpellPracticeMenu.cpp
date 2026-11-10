@@ -200,6 +200,24 @@ bool TitleSpellPracticeMenu::confirm() {
     return true;
 }
 
+bool TitleSpellPracticeMenu::restore_selection(i32 stage, i32 slot, i32 difficulty) {
+    blocked.clear();
+    if (stage < 1 || stage > kSpellPracticeStages || slot < 0 ||
+        slot >= kSpellPracticeSlots[stage - 1] || difficulty < 0 ||
+        difficulty >= kSpellPracticeDifficulties)
+        return false;
+    selected_stage_ = stage;
+    selected_slot_ = slot;
+    level_ = SpellPracticeLevel::Spell;
+    cursor_ = slot;
+    rebuild_spells();
+    rebuild_difficulties();
+    // rebuild_difficulties 会把不可用行上的光标挪走；返回 insists 启动变体。
+    cursor_ = difficulty;
+    level_ = SpellPracticeLevel::Difficulty;
+    return difficulty_rows_[size_t(difficulty)].spell_id >= 0;
+}
+
 bool TitleSpellPracticeMenu::cancel() {
     if (level_ == SpellPracticeLevel::Difficulty) {
         level_ = SpellPracticeLevel::Spell;

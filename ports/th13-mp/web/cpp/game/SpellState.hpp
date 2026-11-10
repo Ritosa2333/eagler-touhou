@@ -60,7 +60,11 @@ public:
     // Caller invokes only while Trance is active; it shares the hit/bomb gate.
     void trance_active(bool bomb_active);
     void reset(); // unload/retry: discard, never award a capture
+    // M6 快照恢复：整值写回（0x42cd40 的符卡终局/奖励路径只在 Begin/End
+    // 事件点消费，restore 后无 pending 事件——事件已在上一次 update 冲账）。
+    void restore(const SpellSnapshot& snapshot) noexcept { state_ = snapshot; }
     std::string error;
+
 
 private:
     SpellSnapshot state_;

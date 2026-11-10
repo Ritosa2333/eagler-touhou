@@ -115,6 +115,71 @@ public:
     bool draw(u32 pass);
     void release_stage();
     void release();  // 场景卸载：销毁敌机子树（外部 VM 归还 registry 外部表）
+    // M6 快照：表现层手账的值快照（与 AnmRegistry::SnapshotData 同批次
+    // 消费）。手账是「权威态 → 表现层」的句柄映射与自有 VM 值：
+    //   * registry 句柄（shot_handles_/spirit_handles_/option 树/特效/
+    //     fog_handles_ 等）——restore 后 registry 已按同句柄 generation
+    //     重建池，句柄值语义不变；
+    //   * 自有 VM（enemies_/bullets_/item_vms_/player_/shots_ 的
+    //     unique_ptr<AnmVm>）——值拷贝，restore 后重绑槽内指针
+    //     （sprite_source 指向槽自身的 Source；environment/object_host
+    //     指向 animations 宿主——快照存活期对象身份不变，红线）；
+    //   * 派生标量（script/color/generation/active/age 等手账字段）。
+    // 快照不覆盖：error_（终态诊断）、stage_file_offsets_（资源派生，
+    // stage_offsets_source_ 判定后惰性重建）。
+    // 不快照手账的替代路线（reset_snapshot_caches 全清重建）已实证不可
+    // 行：sync 重建走 fresh allocate 路径，restore 恢复的 registry VM 成
+    // 孤儿滞留池（digest 含 registry → restore 后首帧即分歧），且新建
+    // VM 的 age/RNG 消耗与连续基线不同源（M6 浏览器探针：302 vs 253）。
+    struct SnapshotData {
+        struct EnemyVisualData { u32 serial = 0; i32 script = -1; bool has_vm = false; AnmVm vm; };
+        struct BulletSlotData { bool has_vm = false; AnmVm vm; i32 script = -1, color = -1, source_type = 0, source_color = 0; u32 generation = 0; bool active = false; };
+        struct ShotFadeData { u32 handle = 0, generation = 0; float x = 0, y = 0, angle = 0, drift = 0; bool sine_moving = false; i32 age = 0; };
+        std::vector<EnemyVisualData> enemies;
+        std::deque<BulletSlotData> bullets;
+        std::vector<u32> shot_handles;
+        std::vector<AnmVm> shots;          // 回退精灵直贴 VM（script<0）
+        std::vector<u32> shot_generations;
+        std::vector<ShotFadeData> shot_fades;
+        std::vector<u32> shot_faded_generations;  // unordered_set → 排序值
+        bool has_player = false;
+        AnmVm player;
+        i32 player_script = -1, player_tilt = 0;
+        std::array<u32, ItemManager::kSpiritCapacity> spirit_handles{}, spirit_serials{};
+        std::array<i32, ItemManager::kSpiritCapacity> spirit_scripts{};
+        std::array<bool, ItemManager::kItemCapacity> item_vm_present{}, item_side_vm_present{};
+        std::vector<AnmVm> item_vms, item_side_vms;   // 按 present 下标序
+        std::array<u32, YoumuBomb::kSlots> youmu_slash_handles{};
+        std::vector<u32> youmu_slash_extra;
+        std::array<u32, 8> option_handles{}, full_option_handles{}, bomb_orb_handles{};
+        std::array<bool, 8> bomb_orb_exploding{};
+        std::array<u32, 5> bomb_ray_handles{};
+        u32 trance_handle = 0;
+        bool trance_was_active = false;
+        std::vector<u32> bullet_cancel_handles;
+        u32 focus_handle = 0, youmu_charge_handle = 0;
+        std::unordered_map<u32, std::array<u32, 16>> fog_handles;
+        i32 option_character = -1, option_count = -1;
+        bool option_anchor_deferred = false, option_rebuild_pending = false;
+        bool options_hidden = false, death_options_queued = false;
+        bool full_options = false, frame_synced = false;
+        u32 bomb_generation = 0, bomb_background = 0, bomb_beam = 0;
+        std::vector<u32> player_effect_handles;
+    };
+    bool capture_presentation(SnapshotData& out) const;
+    // restore_presentation：手账整场替换。前置：registry 已 restore（句柄
+    // 值语义恢复），自有 VM 的宿主指针（environment/object_host/资源）
+    // 在快照存活期不变。restore 后 sync 走「句柄/代匹配 → 复用」路径。
+    bool restore_presentation(const SnapshotData& source);
+    // M6 快照恢复：手账缓存重置（WorldState::restore 后由宿主调用）。
+    // 敌机视觉缓存/弹体槽/自机弹句柄池/留尸池是「权威态 → 表现层」的
+    // 派生缓存：restore 恢复权威态与 registry VM 池后，这些句柄映射手账
+    // 可能指向发散期的悬空句柄（registry 已整池重建），继续沿用会令
+    // sync 误判「VM 已回收」→ 权威弹被误退休（M6 实证：shots 计数错位
+    // 且不收敛）。重置后下一帧 sync 按恢复后的权威态全量重建（与换关
+    // 重建同语义）。option 树/自机 VM/玩家特效句柄不重置——restore 恢复
+    // 同句柄 generation，registry find 仍解析到恢复后的 VM。
+    void reset_snapshot_caches();
     // 安装主链收尾钩子并复位跨 RunScene 的 battle_/frame_synced_。构造时调用；
     // 换关时 preserve_presentation_from 把本对象移到新 RunScene 后必须重调，
     // 否则新 RunScene 构造时创建的临时 presentation 析构会清掉钩子，且

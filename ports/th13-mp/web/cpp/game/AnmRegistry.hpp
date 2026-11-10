@@ -70,5 +70,38 @@ public:
     void append_draw(AnmVm& vm);
     u32 ordered_count(bool alternate)const noexcept{return groups[alternate].size();}
     u32& generation_counter()noexcept{return generation;}
+    // ---- M6：回滚快照面（web/cpp/multiplayer/WorldState 专用）----
+    // 快照红线（docs/MP-DEVELOPMENT.md §快照红线）：AnmRegistry 是裸指针/
+    // 迭代器/borrowed/父子链的专用 capture/restore——恢复分配顺序、
+    // 句柄 generation 一致。SnapshotData 是值语义 POD：VM 按值拷贝（资源/
+    // 环境指针指向 bank/宿主，快照存活期不卸载——红线保证），父子链按
+    // 快照内序号重建（不 hash/存地址），borrowed 根（外部内嵌 VM，如
+    // RunPause overlay 面板）按其宿主对象在快照后仍存活的前提只记录
+    // 指针身份（restore 校验仍可 find）。
+    struct SnapshotData {
+        struct Entry {
+            AnmVm vm;            // 值拷贝（含资源指针——bank 存活期稳定）
+            u32 slot = 0x1fff;
+            u32 handle = 0;
+            bool active = false, registered = false, alternate = false;
+            bool borrowed = false, frozen_root = false, queued_deletion = false;
+            u32 parent = 0xFFFFFFFFu;     // 快照内序号（borrowed 父 = 0xFFFFFFFEu 哨兵）
+            std::vector<u32> children;     // 快照内序号
+            bool in_overflow = false;     // 池外节点（restore 重新分配）
+            u32 chain_index[2] = {0xFFFFFFFFu, 0xFFFFFFFFu};  // 主/副链序号
+        };
+        std::vector<Entry> entries;
+        std::vector<u32> free_slots;
+        u32 generation = 0, active_count = 0;
+        // borrowed 根的宿主身份（AnmVm* 原值；restore 时校验 external 键
+        // 仍指向同一宿主对象——外部 VM 由宿主对象持有，快照不拥有）。
+        std::vector<AnmVm*> borrowed_roots;
+    };
+    bool capture(SnapshotData& out) const;
+    // restore 后层桶为空：下一次 update()/update_chain() 重建（每帧开头
+    // clear+归桶，AnmRegistry.cpp tick_chain 语义——快照不含层桶派生缓存）。
+    bool restore(const SnapshotData& source);
+    // 快照辅助：VM 在池内的槽号（池外/未分配 = 0x1fff）。
+    u32 pool_slot(const AnmVm& vm) const noexcept;
 };
 }
