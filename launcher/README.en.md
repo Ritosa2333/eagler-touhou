@@ -28,12 +28,12 @@ While preserving the original game experience, including some original bugs:
 2. Provide multiplayer built primarily around predictive rollback, with input delay as a supplement and strong tolerance for high latency.
 3. Provide an updatable Web App that manages touch layouts, saves, and Replays and keeps working offline.
 4. Provide a multiplayer lobby where players can join or spectate a game with just a few button presses.
-5. Provide accounts, profiles, and cloud saves, so a run can continue on another device.
+5. Provide accounts and cloud saves, so you can keep playing on another device.
 6. Maintain an active development team that updates quickly and welcomes feedback and criticism.
 
-Nine titles are playable right now at [touhouonline.com](https://touhouonline.com/), each in single-player and online multiplayer.
-
 ## Available Titles
+
+These nine titles are playable at [touhouonline.com](https://touhouonline.com/).
 
 | Title | High refresh rate | thprac | Languages | Multiplayer |
 | :--- | :---: | :---: | :---: | :---: |
@@ -47,24 +47,27 @@ Nine titles are playable right now at [touhouonline.com](https://touhouonline.co
 | **th12** Undefined Fantastic Object | ✅ | ✅ | ✅ | Co-op, 2–3 players |
 | **th15** Legacy of Lunatic Kingdom | ✅ | ✅ | ✅ | Co-op, 2–3 players |
 
-All nine support keyboard, gamepad, and touch, come with save and Replay management, and can be spectated online.
+Every title supports keyboard, gamepad, and touch, and can be spectated online.
 
-More titles are being adapted; see the [game progress table](../docs/TOUHOU_PROGRESS.md) for restoration, porting, and adaptation status. Published early-access titles can be enabled under Developer options → Beta features in the top-right menu.
+For other titles, see the [game progress table](../docs/TOUHOU_PROGRESS.md). Enable early-access titles under Developer options → Beta features in the top-right menu.
 
 ## Features
 
 ### The Complete Original Game Experience
 
-![The Eagler Touhou Launcher library with the th06 save, display, and input settings panel](docs/assets/readme/launcher.webp)
+![The Launcher library and game settings panel](docs/assets/readme/launcher.webp)
 
-- Run games in the browser with keyboard, gamepad, and touch controls. See the [game progress table](../docs/TOUHOU_PROGRESS.md) for support by title.
+- Run games in the browser with keyboard, gamepad, and touch controls.
 - Import and export original-format saves and Replays. Inputs supported by the original format remain interoperable; adaptation inputs that it cannot record use extension data.
 - Aims for a polished experience. It fixes numerous issues inherited from the original portable branches, including jittery bullets, uneven bullet movement, flickering, music stutters when switching tracks in single-threaded mode, and poor performance on phones.
-- Supports refresh rates above 60 Hz: frames are interpolated for display while game logic stays at the original 60 Hz. Available in th06, th07, th08, th10, th11, th12, and th15. \[Thanks to [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
-- th06, th07, and th08 offer OGG or MIDI music, and MIDI can be sent to an external MIDI device.
-- th05, a PC-98 title, runs the native C++ game logic of [uth05win](https://github.com/Goan114/uth05win-vibe) directly on WebAssembly and shares the same Launcher, input, Replay, and multiplayer features as the Windows titles.
-- The library offers cover and list views with search, favorites, sorting, and categories. The Replay manager supports folders, renaming, and importing `.rpy`, `.rpyx`, and Replay ZIP files; pick a Replay to play it directly and choose the starting stage.
-- The interface is available in Simplified Chinese, English, and Japanese, with dark and light themes.
+- Supports refresh rates above 60 Hz; game logic stays at the original 60 Hz. \[Thanks to [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
+- th06, th07, and th08 can play OGG or MIDI music.
+- th05 runs on [uth05win](https://github.com/Goan114/uth05win-vibe) and supports Replays and multiplayer too.
+- The library supports search, favorites, sorting, and categories.
+- Replays can be organized in folders; pick one to play it.
+- The interface comes in Simplified Chinese, English, and Japanese, with dark and light themes.
+
+See [Available Titles](#available-titles) for what each title supports.
 
 ### Input Settings
 
@@ -95,9 +98,9 @@ TH09 has a separate Local two-player editor with per-player keyboard/controller 
 
 #### thprac
 
-- Provides [thprac](https://github.com/touhouworldcup/thprac) integration for th05, th06, th07, th08, th10, th11, th12, and th15.
+- Provides [thprac](https://github.com/touhouworldcup/thprac) integration; see [Available Titles](#available-titles) for supported titles.
 - Touch devices can operate practice menus, with virtual buttons for opening the Tab Tracker and cheat menu.
-- thprac practice Replays are saved together with their practice parameters and can be played back from the Launcher.
+- Practice Replays record their practice parameters and can be played back in the Launcher.
 
 #### thcrap Languages
 
@@ -107,37 +110,35 @@ TH09 has a separate Local two-player editor with per-player keyboard/controller 
 
 ### Multiplayer Lobby
 
-![A multiplayer room with player seats, character and difficulty settings, chat, and spectator seats](docs/assets/readme/multiplayer-lobby.webp)
+![A multiplayer room](docs/assets/readme/multiplayer-lobby.webp)
 
-- All nine available titles have a multiplayer version: th05MP, th06MP, th07MP, th08MP, th10MP, th11MP, th12MP, and th15MP are 2–3 player co-op, and th09MP is 2-player versus.
-- th06MP and th07MP are based on the [th07MP rules](https://github.com/sbrik1111/th07_multi_player). The full rules for each title are in the [multiplayer guide](content/MULTIPLAYER.md) (Chinese).
-- Co-op is built around rescuing each other: transfer a life to revive a teammate who has become a ghost, and hand Power to teammates. The deathbomb window is twice the original, and damage dealt to bosses scales with the number of active players.
-- Extra, Phantasm, every character, and every route are selectable online from the start.
-- The host can turn on Challenge mode: Bombs are removed and the life bar counts deaths instead.
-- Predictive rollback can be toggled in the room. With rollback off, Adonis measures the real input channel and negotiates the input delay, or the delay can be set manually.
-- The lobby lists public rooms with their title, difficulty, and state, ready to join or spectate. Create a room by picking a title, then share the 4–8 digit room code or the invite link. Unlisted rooms stay out of the lobby and are joined by code.
-- Players pick a seat, character, and difficulty—including Extra and Phantasm—and the game starts once everyone is ready.
-- Rooms include chat and quick chat. Listen together searches NetEase Cloud Music and QQ Music for songs and public playlists and plays them in sync with everyone in the room.
-- Players connect directly over WebRTC by default and switch adaptively to a TURN backup path within the same session while the game keeps running. Check network in the lobby tests connectivity before a room is opened, and the Service status page shows the site, download, multiplayer, and TURN services.
-- Any player can pause; restart a run by pressing R while paused or by using the restart control.
-- Multiplayer Replays can be saved, by spectators as well once the run ends.
-- Spectators do not occupy player seats and can only watch rather than affect game state.
-- Spectating is built on streaming Replays. In th06, th07, th08, th10, th11, and th15, spectators can join after the game has started, pause on the timeline, jump to stage and boss markers, and return to live with one click.
+- Every available title has a multiplayer version. th09 is 2-player versus; the rest are 2–3 player co-op.
+- th06MP and th07MP are based on the [th07MP rules](https://github.com/sbrik1111/th07_multi_player).
+- In co-op, you can give teammates lives and Power. Giving a life revives a teammate who has become a ghost. Full rules are in the [multiplayer guide](content/MULTIPLAYER.md) (Chinese).
+- Every character and stage is unlocked online.
+- Predictive rollback can be toggled in the room. With it off, input delay is used instead.
+- The lobby lists public rooms, ready to join or spectate.
+- To create a room, pick a title, then send the room code or invite link to your friends. Unlisted rooms do not appear in the lobby.
+- In the room, pick a seat, character, and difficulty. The host starts the game once everyone is ready.
+- Rooms have chat, quick chat, and Listen together for music.
+- Players connect directly over WebRTC and switch to a TURN relay automatically when that fails. If you cannot connect, try Check network in the lobby first.
+- Any player can pause. Press R while paused to restart the run.
+- Multiplayer Replays can be saved, by spectators too.
+- Spectators do not occupy player seats and can only watch.
+- In th06, th07, th08, th10, th11, and th15, spectators can join after the game has started and look back along the timeline.
 - Single-player and multiplayer saves and Replays are isolated. Settings may still be shared.
 
 ### Accounts and Profiles
 
-- Playing and online multiplayer work without signing in. An account adds a profile, friends, and cloud saves.
-- Profiles have overview, career, play history, content, and friends tabs, show the Touhou clear chart, favorite games, and recently launched titles, and let players follow each other.
-- The Touhou clear chart exports to PNG and can be exported and imported as JSON.
-- Cloud saves sync the saves of supported titles across devices. When local and cloud progress differ, the player chooses which version to keep.
-- Profile visibility is configured under Privacy & display.
+- Playing and multiplayer work without signing in.
+- Signing in adds a profile, friends, and cloud saves. The profile shows your clear chart and play history.
+- Cloud saves sync your saves across devices. When local and cloud progress differ, you choose which one to keep.
 
 ### Game Packages and Offline Play
 
 - Install game packages from the site or import a ZIP containing a legally owned copy of the game.
 - Installed packages remain in the browser. Game data, OGG music, fonts, and language packs can be managed independently, while Runtime components are provided by the site.
-- Browsers that support installation can add the Launcher as an app. In secure contexts such as HTTPS or a trusted loopback address, installed games and the Launcher can run offline.
+- The Launcher can be installed as an app. In secure contexts such as HTTPS or a trusted loopback address, installed games and the Launcher can run offline.
 - Original game data imported by the player is never uploaded to the server; it remains in the browser.
 
 Operators can choose among three modes based on their resources and bandwidth:
@@ -146,21 +147,19 @@ Operators can choose among three modes based on their resources and bandwidth:
 - **External**: the user-facing site serves the Launcher and Runtime components, while a separate complete resource site or CDN serves large game files. Players can still install games directly without sending large-file traffic through the frontend server;
 - **Import**: the site serves only the Launcher and Runtime components and does not publish original game data. Players import a ZIP made from their legally owned game copy. This suits operators without a CDN traffic budget or who do not want to host original resources.
 
-All three modes share the same frontend, browser-local game packages, and offline-play support. Self-hosted sites run in guest mode by default with anonymous multiplayer available on its own; connecting a compatible account service enables sign-in, profiles, and cloud saves. See the [self-hosting guide](docs/SELF_HOSTING.md) for complete deployment instructions.
+All three modes share the same frontend, browser-local game packages, and offline-play support. Self-hosted sites run in guest mode by default, and multiplayer works without an account service. See the [self-hosting guide](docs/SELF_HOSTING.md) for complete deployment instructions.
 
 ## Contributing
 
-This repository maintains the Launcher, the games, the shared runtime library, and standalone services together:
-
 | Directory | Contents |
 | :--- | :--- |
-| [`launcher/`](README.en.md) | Launcher frontend: library, file management, multiplayer lobby, accounts and profiles |
-| [`ports/`](../ports/README.md) | Runtime source and Web adaptation for each title, with its multiplayer version |
-| [`common/`](../common/README.md) | Shared runtime library, browser modules, and contracts, including the Product Catalog |
-| `services/` | Relay, TURN, resource router, and telemetry services |
-| [`docs/`](../docs/README.md) | Adaptation workflow, netplay and rollback architecture, and the game progress table |
+| [`launcher/`](README.en.md) | Launcher and multiplayer lobby |
+| [`ports/`](../ports/README.md) | Runtime and multiplayer version of each title |
+| [`common/`](../common/README.md) | Runtime library and contracts shared by all titles |
+| `services/` | Relay, TURN, resource router, and telemetry |
+| [`docs/`](../docs/README.md) | Adaptation workflow, netplay architecture, and game progress |
 
-Start with [CONTRIBUTING.md](../CONTRIBUTING.md), then pick a component in [WORKSPACE.md](../WORKSPACE.md). Every document is listed in the [documentation index](../docs/INDEX.md). (Developer documentation is in Chinese.)
+Start with [CONTRIBUTING.md](../CONTRIBUTING.md), then pick a component in [WORKSPACE.md](../WORKSPACE.md). All documents are in the [documentation index](../docs/INDEX.md). (Developer documentation is in Chinese.)
 
 ## Frequently Asked Questions
 
