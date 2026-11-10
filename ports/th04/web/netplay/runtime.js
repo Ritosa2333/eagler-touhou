@@ -29,7 +29,7 @@ let pointPreferences={focus:true,always:false};
 const signature=new TextEncoder().encode('TH04COOPLABv001!');
 const keyTable=[['ArrowUp','ArrowUp',38,1],['ArrowDown','ArrowDown',40,2],['ArrowLeft','ArrowLeft',37,4],['ArrowRight','ArrowRight',39,8],['KeyX','x',88,16],['KeyZ','z',90,32],['ShiftLeft','Shift',16,64],['Escape','Escape',27,128],['Enter','Enter',13,256]];
 let emulator,patch,soundPolicy,bgm,musicTask,closed=false,bootPromise,oldP1=0,ticks=0,inputListener=()=>{},keys=new Set(),enabled=false,mailbox=-1;
-let guestMemoryBase=-1,residentAddress=-1,gameplaySeen=false,challenge=null;
+let guestMemoryBase=-1,residentAddress=-1,gameplaySeen=false,challenge=null,titleInputReset=false;
 const residentSignature=new TextEncoder().encode('HUMAConfig\0');
 let musicStatus='浏览器音乐：等待游戏开始后加载',musicError=false,lastMusicSequence=null;
 let pendingMusic=[],lastMusicName='',musicSettings,musicReady=false,stoppedMusic=null;
@@ -172,6 +172,14 @@ async function boot(config){
     no_mouse:true,use_menu:false,fontfile:'font.bmp',
     onError:error=>reportRuntimeFailure('emulator-error',Error('模拟器异常：'+String(error?.message||error))),
     onExit:()=>reportRuntimeFailure('emulator-exit',Error('游戏模拟器已经退出'))});
+  // MAINE replaces itself with OP after the ending. Release any controls
+  // carried through the ending before the title menu can consume them.
+  const openGameFile=emulator.module.FS.open;
+  emulator.module.FS.open=function(...args){
+    const stream=openGameFile.apply(this,args);
+    if(gameplaySeen&&mailbox<0&&/\/GENSO\/OP\.EXE$/i.test(stream.path))titleInputReset=true;
+    return stream;
+  };
   emulator.module.projectileArt.view(localSlot);
   emulator.module.projectileArt.configureBody([config.p1,config.p2,config.p3].slice(0,playerCount),localSlot);
   if(workerHost){
@@ -272,7 +280,7 @@ function stepInner(inputs){
   if(result==='exit')return 'exit';
   if(result==='restart'){restartNativeGame();challenge?.reset();}
   if(result==='paused'&&!wasPaused)currentEffect.flushAudio=true;
-  if(result==='resume'||result==='restart')blocked=[...inputs];
+  if(result==='resume'||result==='restart'||titleInputReset){blocked=[...inputs];titleInputReset=false;}
   inputs=inputs.map((value,i)=>{blocked[i]&=value;return value&~blocked[i]&~(128|512|1024|(challenge?16:0));});
   const pauseAt=nativePauseAddress(),active=nativePauseActive();
   if(pauseAt>=0){
@@ -355,7 +363,7 @@ function capture(frame,restored=false){
   const previous=rollbackStates.get(frame-1);
   const nativeFrame=previous?.nativeFrame===frame-1?frame-1:frame;
   if(nativeFrame===frame)emulator.module.netCapture(frame,restored);
-  rollbackStates.set(frame,{nativeFrame,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,blocked:blocked.slice(),challenge:challenge?.snapshot(),
+  rollbackStates.set(frame,{nativeFrame,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,titleInputReset,blocked:blocked.slice(),challenge:challenge?.snapshot(),
     pause:{previous:pauseMenu.previous.slice(),paused:pauseMenu.paused,selection:pauseMenu.selection,exited:pauseMenu.exited}});
 }
 function restore(frame){
@@ -365,7 +373,7 @@ function restore(frame){
   const from=saved.nativeFrame,checkpoint=rollbackStates.get(from);
   if(!checkpoint||(from!==frame&&!checkpoint.execution))throw Error('游戏回滚检查点缺失');
   emulator.module.netRestore(from);
-  ({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen}=checkpoint);blocked=checkpoint.blocked.slice();if(challenge)challenge.restore(checkpoint.challenge);
+  ({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,titleInputReset}=checkpoint);blocked=checkpoint.blocked.slice();if(challenge)challenge.restore(checkpoint.challenge);
   Object.assign(pauseMenu,checkpoint.pause,{previous:checkpoint.pause.previous.slice()});
   for(const key of rollbackStates.keys())if(key>=from)rollbackStates.delete(key);
   for(const key of effects.keys())if(key>=from)effects.delete(key);
@@ -462,7 +470,7 @@ function guestBase(){
 }
 function checksum(){
   let h=0x811c9dc5;
-  for(const value of [...pauseMenu.signature(),...blocked,emulatedTicks,...(challenge?challenge.snapshot():[])])h=Math.imul(h^value,0x01000193);
+  for(const value of [...pauseMenu.signature(),...blocked,emulatedTicks,Number(titleInputReset),...(challenge?challenge.snapshot():[])])h=Math.imul(h^value,0x01000193);
   if(guestMemoryBase<0)return {tick:ticks,hash:(h>>>0).toString(16).padStart(8,'0'),gameFrame:0};
   const heap=emulator.module.HEAPU8,v=new DataView(heap.buffer),base=guestBase();
   const markerAt=mailbox-patch.mailbox_cs_offset+patch.focus_visible_mask_cs_offset,marker=heap[markerAt];if(mailbox>=0)heap[markerAt]=0;
@@ -479,7 +487,7 @@ function portableBoundary(){
 async function replaySave(identity){
  portableBoundary();const {createPortableCheckpoint,encodeCheckpoint}=await import('../replay/portable.js');
  portableReplay??=createPortableCheckpoint(emulator.module,emulator.ci);
- const host={identity,frame:ticks,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,blocked,challenge:challenge?.snapshot(),pause:{previous:pauseMenu.previous,paused:pauseMenu.paused,selection:pauseMenu.selection,exited:pauseMenu.exited},lastMusicSequence,lastMusicName,pendingMusic,seError,musicError,musicStatus,emulator:{tick:emulator.tick,keys:[...emulator.keys],state:emulator.state},audio:workerHost.captureAudioState?.(),proof:sync.replayProof(),check:checksum()};
+ const host={identity,frame:ticks,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,titleInputReset,blocked,challenge:challenge?.snapshot(),pause:{previous:pauseMenu.previous,paused:pauseMenu.paused,selection:pauseMenu.selection,exited:pauseMenu.exited},lastMusicSequence,lastMusicName,pendingMusic,seError,musicError,musicStatus,emulator:{tick:emulator.tick,keys:[...emulator.keys],state:emulator.state},audio:workerHost.captureAudioState?.(),proof:sync.replayProof(),check:checksum()};
  const state=portableReplay.capture(host),bytes=await encodeCheckpoint(state,ticks?portableBase:null);
  if(!ticks)portableBase=state;
  return {frame:ticks,bytes,proof:host.proof,check:host.check};
@@ -489,7 +497,7 @@ async function replayLoad(bytes,baseBytes,identity){
  portableReplay??=createPortableCheckpoint(emulator.module,emulator.ci);
  const base=baseBytes?await decodeCheckpoint(baseBytes):null,state=await decodeCheckpoint(bytes,base),h=state.host;
  if(h?.identity!==identity||!Number.isSafeInteger(h.frame)||h.frame<0||h.frame>216000||h.frame!==h.ticks)throw Error('完整检查点身份或帧号无效');
- portableReplay.restore(state);({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,lastMusicSequence,lastMusicName,pendingMusic,seError,musicError,musicStatus}=h);blocked=h.blocked.slice();Object.assign(pauseMenu,h.pause,{previous:h.pause.previous.slice()});
+ portableReplay.restore(state);({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,titleInputReset,lastMusicSequence,lastMusicName,pendingMusic,seError,musicError,musicStatus}=h);blocked=h.blocked.slice();Object.assign(pauseMenu,h.pause,{previous:h.pause.previous.slice()});
  if(challenge)challenge.restore(h.challenge);emulator.tick=h.emulator.tick;emulator.keys=new Set(h.emulator.keys);emulator.state=h.emulator.state;emulator.outputs.clear();
   confirmedPrefix=ticks;rollbackStates.clear();effects.clear();presentationPending=true;
  if(sync.replayProof()!==h.proof||JSON.stringify(checksum())!==JSON.stringify(h.check))throw Error('完整检查点恢复校验不一致');
@@ -537,7 +545,7 @@ const sync={
   onInput(callback){inputListener=callback;},
   start(){emulator.run();enabled=true;details.textContent='启动进度：全员已同步开局，正在启动 DOS 和游戏。';canvas.focus?.();},
   stop(){stoppedMusic??=musicInfo();enabled=false;closed=true;clearKeys();bgm?.dispose();localSe?.dispose();if(emulator){emulator.module.netFlushAudio();emulator.pause();}},
-  replayProof:()=>JSON.stringify([ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,blocked,pauseMenu.previous,pauseMenu.paused,pauseMenu.selection,pauseMenu.exited,snapshot(),...(challenge?[challenge.snapshot()]:[])]),
+  replayProof:()=>JSON.stringify([ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,blocked,pauseMenu.previous,pauseMenu.paused,pauseMenu.selection,pauseMenu.exited,snapshot(),...(challenge?[challenge.snapshot()]:[]),titleInputReset]),
   replayScene(){
     if(!mailboxOwned(mailbox,guestMemoryBase,residentAddress))return null;
     const stage=emulator.module.HEAPU8[gameDataBase()+0x5394];
