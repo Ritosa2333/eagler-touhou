@@ -546,7 +546,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       playerOpen: snapshot.playerOpen, importServer: productRequiresImport(gameIdForProduct(settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID)) || metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import',
       fallback: metadata.getSnapshot().siteManifest?.shared.gameDataFallback ?? null}),
     ports: {
-      pickFile: ({accept}) => ports.pickFile(accept), feedback, showGameDataTransfer: transfer.revealGameData,
+      pickFile: ({accept}) => ports.pickFile(accept), pickFiles: ({accept}) => ports.pickFiles(accept), feedback, showGameDataTransfer: transfer.revealGameData,
       packageInstalled(context) {
         const room = roomSession?.service.getSnapshot();
         if (room && room.product === context.product && room.room?.code === context.roomCode && room.preparation?.status === 'ready')

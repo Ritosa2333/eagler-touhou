@@ -37,7 +37,6 @@ export function retailArchiveLimits(game) {
     limits[name] = 64 * MiB;
     if (game === 'th06') limits[name.replace(/\.ogg$/, '.wav')] = 64 * MiB;
   }
-  limits['msgothic.ttc'] = limits['unifont.otf'] = 64 * MiB;
   return limits;
 }
 
@@ -146,7 +145,7 @@ export async function createRetailPackage({game, expected, inputs, fontTargets =
   await addFile(product.package.dataTarget, data, base, product.package.dataFileId);
   for (const target of fontTargets) {
     const name = target.slice(1);
-    const blob = await read(name, 64 * MiB) ?? await read(`shared/${name}`, 64 * MiB) ?? await loadFont?.(target);
+    const blob = await loadFont?.(target);
     if (!blob?.size || blob.size > 64 * MiB) throw Error(`Missing shared font: ${name}`);
     const header = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
     const magic = String.fromCharCode(...header);
@@ -168,7 +167,8 @@ export async function createRetailPackage({game, expected, inputs, fontTargets =
     signal?.throwIfAborted();
     const name = track.name;
     const ogg = await read(`bgm-ogg/${name}`, 64 * MiB) ?? await read(`music/${name}`, 64 * MiB) ?? await read(`bgm/${name}`, 64 * MiB) ?? await read(name, 64 * MiB);
-    const wav = !ogg && game === 'th06' ? await read(`bgm/${name.replace(/\.ogg$/, '.wav')}`, 64 * MiB) : null;
+    const wavName = name.replace(/\.ogg$/, '.wav');
+    const wav = !ogg && game === 'th06' ? await read('bgm/' + wavName, 64 * MiB) ?? await read(wavName, 64 * MiB) : null;
     let converted = ogg;
     if (!converted && (wav || bgm)) {
       onTrack?.({name, completed: index, total: tracks.length});

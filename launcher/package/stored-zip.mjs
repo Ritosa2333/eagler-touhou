@@ -99,8 +99,10 @@ export function isSafeStoredZipName(name) {
   return !name.split("/").some(part => !part || part === "." || part === "..");
 }
 
+export class EncryptedZipError extends Error {}
+
 function assertStoredEntry(entry, allowDeflate) {
-  if (entry.flags & 0x0001) throw new Error(`${entry.name}: encrypted ZIP entries are not supported`);
+  if (entry.flags & 0x0001) throw new EncryptedZipError(`${entry.name}: encrypted ZIP entry`);
   if (entry.method !== 0 && !(allowDeflate && entry.method === 8)) {
     throw new Error(`${entry.name}: ZIP entry must use STORE (method 0)${allowDeflate ? " or DEFLATE (method 8)" : ""}, not compression method ${entry.method}`);
   }

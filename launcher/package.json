@@ -215,6 +215,7 @@
     "test:th19-touch-room:browser": "node tests/browser/test-th19-touch-charge-room.mjs"
   },
   "dependencies": {
+    "7z-wasm": "1.2.0",
     "@ffmpeg/core": "0.12.10",
     "@fumadocs/base-ui": "16.17.9",
     "@radix-ui/colors": "3.0.0",

@@ -3200,74 +3200,30 @@
       "reason"
     ]
   },
-  "package.originalTitle": {
-    "id": "package_originalTitle",
-    "params": []
-  },
-  "package.originalPrivacy": {
-    "id": "package_originalPrivacy",
-    "params": []
-  },
-  "package.originalRequired": {
-    "id": "package_originalRequired",
-    "params": [
-      "files"
-    ]
-  },
   "package.originalInvalid": {
     "id": "package_originalInvalid",
     "params": [
       "reason"
     ]
   },
-  "package.importExisting": {
-    "id": "package_importExisting",
+  "package.importShort": {
+    "id": "package_importShort",
     "params": []
   },
-  "package.originalWavMusic": {
-    "id": "package_originalWavMusic",
+  "package.importShortWav": {
+    "id": "package_importShortWav",
     "params": []
   },
-  "package.originalPackedMusic": {
-    "id": "package_originalPackedMusic",
+  "package.archiveWrongPassword": {
+    "id": "package_archiveWrongPassword",
     "params": []
   },
-  "package.originalExtras": {
-    "id": "package_originalExtras",
-    "params": []
-  },
-  "package.originalFonts": {
-    "id": "package_originalFonts",
-    "params": []
-  },
-  "package.originalPick": {
-    "id": "package_originalPick",
-    "params": []
-  },
-  "package.originalFolder": {
-    "id": "package_originalFolder",
-    "params": []
-  },
-  "package.originalMusic": {
-    "id": "package_originalMusic",
+  "package.importOnePackage": {
+    "id": "package_importOnePackage",
     "params": []
   },
   "package.originalPassword": {
     "id": "package_originalPassword",
-    "params": []
-  },
-  "package.originalWrongMusic": {
-    "id": "package_originalWrongMusic",
-    "params": []
-  },
-  "package.originalSelected": {
-    "id": "package_originalSelected",
-    "params": [
-      "count"
-    ]
-  },
-  "package.originalImport": {
-    "id": "package_originalImport",
     "params": []
   },
   "package.originalUnavailable": {

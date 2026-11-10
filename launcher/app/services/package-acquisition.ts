@@ -289,11 +289,22 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     if (!originalFileNames(game).length) throw Error(t('package.originalUnavailable'));
     const host = metadata.getSnapshot().siteManifest;
     const expected = host?.games[game]?.gameData;
-    const fontTargets = game === 'th06' || game === 'th07' ? ['/msgothic.ttc', '/unifont.otf'] : requiredShared(game);
+    const fontTargets = [...new Set([...requiredShared(game), '/msgothic.ttc', '/unifont.otf'])];
     async function loadFont(target: string) {
       checkPreparationAbort(signal);
-      // An external-content site may intentionally have no font URLs. Reuse
-      // an installed copy before looking for Host-provided shared resources.
+      const shared = metadata.getSnapshot().siteManifest?.shared;
+      const path = target === '/msgothic.ttc' ? shared?.vanillaFont : shared?.unicodeFont;
+      try {
+        const response = await fetchImpl(new URL(path ?? 'shared' + target, baseUrl), {signal, cache: 'force-cache'});
+        if (response.ok) {
+          const font = await response.blob();
+          if (font.size <= 64 * 1024 * 1024) {
+            const header = await font.slice(0, 4).text();
+            if (['ttcf', 'OTTO', '\0\x01\0\0', 'true'].includes(header)) return font;
+          }
+        }
+      } catch {checkPreparationAbort(signal);}
+      // Keep existing installations usable if the font server is offline.
       if (indexedDBAvailable()) {
         const candidates = Object.keys(PRODUCT_GAMES).filter(id => id !== game) as GameId[];
         for (const candidate of [game, ...candidates]) {
@@ -308,11 +319,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
           if (stored?.data?.byteLength) return new Blob([stored.data]);
         }
       }
-      const shared = metadata.getSnapshot().siteManifest?.shared;
-      const path = target === '/msgothic.ttc' ? shared?.vanillaFont : target === '/unifont.otf' ? shared?.unicodeFont : undefined;
-      if (!path) return null;
-      const response = await fetchImpl(new URL(path, baseUrl), {signal, cache: 'force-cache'});
-      return response.ok ? response.blob() : null;
+      return null;
     }
     checkPreparationAbort(signal);
     const {convertRetailPackage} = await import('./retail-package');
@@ -328,6 +335,18 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     await installedChanged(game);
     try {void requestPersistence?.().catch(() => {});} catch {}
     return result.generation;
+  }
+  async function importFiles(game: GameId, files: readonly (Blob & {name?: string})[],
+    options: Pick<AcquisitionRequest, 'signal' | 'onProgress'> & {archivePassword?: string} = {}) {
+    if (originalFileNames(game).length) {
+      const {isOriginalGameSelection} = await import('./retail-input-archive');
+      if (await isOriginalGameSelection(files)) {
+        if (!files.every(file => typeof file.name === 'string')) throw Error(t('package.originalUnavailable'));
+        return importOriginal(game, files as readonly RetailInput[], options);
+      }
+    }
+    if (files.length !== 1) throw Error(t('package.importOnePackage'));
+    return importPackage({game, file: files[0], ...options});
   }
   async function importPackage({game, file, signal, onProgress, gameVersion}: {
     gameVersion?: GameVersion; game: GameId; file: Blob & {name?: string}; signal?: AbortSignal; onProgress?: AcquisitionRequest['onProgress'];
@@ -451,7 +470,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       .finally(() => {if (background.get(game) === task) background.delete(game);});
     background.set(game, task); return task;
   }
-  return Object.freeze({acquire, importPackage, importOriginal, originalFileNames, startBackgroundUpdate, catalogUrl, fetchImpl, getPackageFetch, languageNetwork: network, installPublished,
+  return Object.freeze({acquire, importPackage, importFiles, originalFileNames, startBackgroundUpdate, catalogUrl, fetchImpl, getPackageFetch, languageNetwork: network, installPublished,
     readCurrent, getGameVersion, getPublication, getCatalogUrl, getMetadata: () => metadata.getSnapshot(), refreshInstalled: installedChanged});
 }
 export type PackageAcquisition = ReturnType<typeof createPackageAcquisition>;

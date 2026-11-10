@@ -59,7 +59,7 @@ for (const locale of ['zh-CN', 'en']) test(`original import-window structure/cop
   assert.equal(element('transferImport').textContent, f.text('action.import')); assert.equal(element('transferDownload').textContent, f.text('action.openLink'));
   assert.equal(element('transferDownload').disabled, true); assert.equal(element('transferDownload').title, f.text('package.fallbackLinkUnavailableTitle'));
   assert.equal(element('gameDataFallbackUrl').hasAttribute('href'), false); assert.equal(element('gameDataFallbackHint').textContent, f.text('common.none'));
-  assert.equal(element('gameDataImportInput').accept, '.zip,.dat,application/zip'); assert.equal(element('gameDataImportInput').hidden, true);
+  assert.equal(element('gameDataImportInput').accept, '.zip,.rar,.7z,.dat,.data,.wav,.ogg'); assert.equal(element('gameDataImportInput').hidden, true); assert.equal(element('gameDataImportInput').multiple, true);
   await click('transferImport'); assert.deepEqual(f.picked, [{accept: '.zip,.dat,application/zip'}]); assert.equal(element('gameDataImportWindow').hidden, false);
   await click('gameDataImportClose'); assert.equal(element('gameDataImportWindow').hidden, true); assert.equal(f.model.getSnapshot().attempt.dialogDismissed, true);
   assert.deepEqual(f.effects, []);

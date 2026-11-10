@@ -4,7 +4,6 @@ import {createGameDataContinuation, gameDataContinuationMatches, type GameDataCo
 import type {Translate} from '../i18n';
 import {isGameDataAcquisitionFailure} from '../services/game-data-acquisition';
 import {preparationErrorText, type PackageAcquisition} from '../services/package-acquisition';
-import type {RetailInput} from '../services/retail-package';
 
 export interface GameDataImportContext {
   product: ProductId;
@@ -28,12 +27,15 @@ export interface GameDataImportAttempt {
   manual: boolean;
   continuation?: GameDataContinuation;
 }
+type ImportFile = Blob & {name?: string};
+
 export interface GameDataImportSnapshot {
   attempt: Readonly<GameDataImportAttempt> | null;
   importOpen: boolean;
   linkOpen: boolean;
   busy: boolean;
   busyText: string;
+  passwordRequired: boolean;
   reason: string;
   fallback: Readonly<{url: string; hint?: string}> | null;
   /** Main openGameDataImportWindow / transferDownload presentation event. */
@@ -48,7 +50,8 @@ export interface GameDataRoomImportHandle {
   resume(): Promise<void>;
 }
 export interface GameDataImportPorts {
-  pickFile(options: {accept: string}): Promise<(Blob & {name?: string}) | null>;
+  pickFile(options: {accept: string}): Promise<ImportFile | null>;
+  pickFiles?(options: {accept: string}): Promise<readonly ImportFile[]>;
   closePlayer(): Promise<boolean>;
   resetUnlaunchedRuntime(): void | Promise<void>;
   /** Captures the interrupted launch owner before installation waits. */
@@ -82,7 +85,7 @@ export interface BeginManualGameDataImport {
  * no DOM, route mutation, permissions, Runtime transport, or private store. */
 export function createGameDataImportModel({acquisition, translate: t, getContext, ports,
   timers = {setTimeout: globalThis.setTimeout.bind(globalThis), clearTimeout: globalThis.clearTimeout.bind(globalThis)}}: {
-  acquisition: Pick<PackageAcquisition, 'importPackage'> & Partial<Pick<PackageAcquisition, 'originalFileNames' | 'importOriginal'>>;
+  acquisition: Pick<PackageAcquisition, 'importPackage'> & Partial<Pick<PackageAcquisition, 'originalFileNames' | 'importFiles'>>;
   translate: Translate;
   getContext(): GameDataImportContext;
   ports: GameDataImportPorts;
@@ -93,13 +96,15 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
   let startTimer: ReturnType<typeof setTimeout> | null = null, completeTimer: ReturnType<typeof setTimeout> | null = null;
   let blocking: ReturnType<GameDataImportPorts['beginBlockingDownload']> | null = null;
   let conversion: AbortController | null = null;
+  let lockedFiles: readonly ImportFile[] | null = null;
+  const originalFiles = () => acquisition.originalFileNames?.(gameIdForProduct(getContext().product)) ?? [];
   let importOpen = false, linkOpen = false, busy = false, busyText = '', reason = '';
   let snapshot: GameDataImportSnapshot;
   function publish() {
     if (disposed) return;
     const fallback = getContext().fallback;
     snapshot = Object.freeze({attempt: attempt ? Object.freeze({...attempt}) : null,
-      importOpen, linkOpen, busy, busyText, reason, fallback: fallback ? Object.freeze({...fallback}) : null, presentationRevision, revision: ++revision});
+      importOpen, linkOpen, busy, busyText, passwordRequired: lockedFiles !== null, reason, fallback: fallback ? Object.freeze({...fallback}) : null, presentationRevision, revision: ++revision});
     for (const listener of listeners) listener();
     ports.onActivityChange?.();
   }
@@ -111,6 +116,7 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
   function clear() {
     clearTimers(); const owned = blocking; blocking = null; owned?.finish();
     conversion?.abort(); conversion = null;
+    lockedFiles = null;
     attempt = null; importOpen = false; linkOpen = false; busy = false; publish();
   }
   function capture(kind: 'install-only' | 'launch') {return createGameDataContinuation({kind, ...getContext()});}
@@ -180,27 +186,29 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
     }
     publish();
   }
-  async function importFile(file: (Blob & {name?: string}) | null, originals?: readonly RetailInput[], archivePassword?: string) {
-    if ((!file && !originals?.length) || !available() || busy) return;
-    if (originals && !acquisition.importOriginal) return;
+  async function importSelection(files: readonly ImportFile[], archivePassword?: string) {
+    if (!files.length || !available() || busy) return;
+    const automatic = originalFiles().length ? acquisition.importFiles : undefined;
+    if (!automatic && files.length !== 1) return;
+    lockedFiles = null;
     const id = attempt!.id, game = gameIdForProduct(getContext().product);
     const importContext = capture('launch'), runtimeEpoch = getContext().runtimeEpoch;
     const interruptedLoad = !attempt!.importFlow || attempt!.continuation?.kind === 'launch';
     const retireRuntime = ports.captureUnlaunchedRuntimeReset?.() ?? (() => ports.resetUnlaunchedRuntime());
     const roomImport = ports.roomPreparationForImport?.(attempt!.continuation) ?? null;
-    const controller = originals ? new AbortController() : null;
+    const controller = automatic ? new AbortController() : null;
     conversion = controller;
-    busy = true; busyText = t(originals ? 'package.originalConverting' : roomImport ? 'package.importingSimple' : 'package.importing');
+    busy = true; busyText = t(automatic ? 'package.originalConverting' : roomImport ? 'package.importingSimple' : 'package.importing');
     roomImport?.markImporting(); publish();
     try {
       const onProgress: NonNullable<Parameters<PackageAcquisition['importPackage']>[0]['onProgress']> = progress => {
         if (disposed || attempt?.id !== id) return;
-        if (originals) {busyText = progress.message; publish();}
+        if (automatic) {busyText = progress.message; publish();}
         ports.feedback.playerStatus(progress.message);
       };
-      const imported = originals
-        ? await acquisition.importOriginal!(game, originals, {signal: controller?.signal, archivePassword, onProgress})
-        : await acquisition.importPackage({game, file: file!, onProgress});
+      const imported = automatic
+        ? await automatic(game, files, {signal: controller?.signal, archivePassword, onProgress})
+        : await acquisition.importPackage({game, file: files[0], onProgress});
       if (disposed || attempt?.id !== id) return;
       ports.feedback.toast(t('package.imported', {count: Object.keys(imported.files).length}));
       if (disposed || attempt?.id !== id) return;
@@ -232,9 +240,15 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
       // After installation, a Runtime retirement failure is not an invalid ZIP.
       if (disposed || attempt?.id !== id) return;
       roomImport?.cancelIfImporting();
+      if (error instanceof Error && error.name === 'RetailArchivePasswordError') {
+        lockedFiles = files;
+        reason = t(archivePassword ? 'package.archiveWrongPassword' : 'package.originalPassword');
+        openImport();
+        return;
+      }
       const message = preparationErrorText(error); ports.feedback.playerStatus(message);
       const storageFailure = /IndexedDB|存储|写入|配额|quota|浏览器已清理|持久化/i.test(message);
-      const reasonKey = originals
+      const reasonKey = automatic
         ? storageFailure ? 'package.importStorageFailed' : 'package.originalInvalid'
         : getContext().importServer ? 'package.importServerMissing' : storageFailure ? 'package.importStorageFailed' : 'package.importInvalid';
       reason = t(reasonKey, {reason: message});
@@ -264,19 +278,28 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
   return Object.freeze({
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};}, getSnapshot: () => snapshot,
     refresh: publish, clear, finish: clear, beginManual, beginImportRequired, beginDirectDownload, noteTransfer, unlock,
-    openManual() {beginManual({reason: t('package.manualImportIntro')});},
+    openManual() {
+      if (originalFiles().length) beginManual({reason: t(originalFiles().length === 1 ? 'package.importShort' : 'package.importShortWav'), useReasonVerbatim: true});
+      else beginManual({reason: t('package.manualImportIntro')});
+    },
     openImport,
-    dismissImport() {if (busy) return; importOpen = false; linkOpen = false; if (attempt) attempt.dialogDismissed = true; publish();},
+    dismissImport() {if (busy) return; lockedFiles = null; importOpen = false; linkOpen = false; if (attempt) attempt.dialogDismissed = true; publish();},
     openLink() {if (available() && !busy && getContext().fallback) {linkOpen = true; presentationRevision++; publish();}},
     closeLink() {linkOpen = false; publish();},
-    async chooseFile() {
+    async chooseFile(archivePassword?: string) {
       if (!available() || busy) return;
-      const id = attempt!.id, file = await ports.pickFile({accept: '.zip,.dat,application/zip'});
-      if (!disposed && attempt?.id === id) await importFile(file);
+      if (lockedFiles) {
+        if (archivePassword) await importSelection(lockedFiles, archivePassword);
+        return;
+      }
+      const id = attempt!.id;
+      const files = originalFiles().length && ports.pickFiles
+        ? await ports.pickFiles({accept: '.dat,.data,.zip,.rar,.7z,.wav,.ogg,application/zip'})
+        : [await ports.pickFile({accept: '.zip,.dat,application/zip'})].filter((file): file is ImportFile => file !== null);
+      if (!disposed && attempt?.id === id) await importSelection(files);
     },
-    importFile, handleLaunchFailure,
-    originalFileNames() {return acquisition.originalFileNames?.(gameIdForProduct(getContext().product)) ?? [];},
-    importOriginal(inputs: readonly RetailInput[], archivePassword?: string) {return importFile(null, inputs, archivePassword);},
+    importSelection, handleLaunchFailure,
+    importFile(file: ImportFile | null) {return importSelection(file ? [file] : []);},
     async cancelDirectDownload() {await blocking?.cancel();},
     dispose() {if (disposed) return; clear(); disposed = true; listeners.clear();},
   });

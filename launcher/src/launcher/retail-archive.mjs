@@ -65,6 +65,12 @@ async function bytes(blob, start, end) {
   return new Uint8Array(await blob.slice(start, end).arrayBuffer());
 }
 
+export async function hasRetailDatHeader(blob) {
+  const header = await bytes(blob, 0, 16);
+  return header.length === 16 && (['PBG3', 'PBG4', 'PBGZ'].some(tag => magic(header, tag)) ||
+    magic(decrypt(header, 0x1b, 0x37, 16), 'THA1'));
+}
+
 export async function readRetailArchive(blob, game) {
   const header = await bytes(blob, 0, 16);
   if (header.length !== 16) throw Error('Truncated game DAT');

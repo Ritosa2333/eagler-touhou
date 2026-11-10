@@ -39,8 +39,8 @@ test('original DAT and separate BGM installable payload preserves DATA and conve
   const bgm = new File([header, pcm], 'thbgm.dat');
   const archive = th07();
   const font = new File(['OTTO test'], 'unifont.otf');
-  const {descriptor, payloads} = await createRetailPackage({game, expected, inputs: [archive, bgm, font], fontTargets: ['/unifont.otf'],
-    loadFont() {assert.fail('A user-selected font must not request a Host font');},
+  const {descriptor, payloads} = await createRetailPackage({game, expected, inputs: [archive, bgm], fontTargets: ['/unifont.otf'],
+    loadFont(target) {assert.equal(target, '/unifont.otf'); return font;},
     async encodeOgg(input, options) {
       assert.equal(options.pcm, true);
       assert.deepEqual(new Uint8Array(await input.arrayBuffer()), pcm);

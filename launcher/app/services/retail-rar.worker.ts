@@ -29,6 +29,6 @@ self.onmessage = async ({data}: MessageEvent<{input: Blob; limits: Record<string
     self.postMessage({files});
   } catch (error) {
     const passwordError = error instanceof UnrarError && (error.reason === 'ERAR_MISSING_PASSWORD' || error.reason === 'ERAR_BAD_PASSWORD');
-    self.postMessage({error: passwordError ? 'This RAR requires a valid password' : error instanceof Error ? error.message : String(error)});
+    self.postMessage({passwordRequired: passwordError, error: passwordError ? 'This RAR requires a valid password' : error instanceof Error ? error.message : String(error)});
   }
 };

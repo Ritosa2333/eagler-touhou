@@ -253,22 +253,6 @@
   .game-data-import-actions .transfer-download {
     order: 1;
   }
-  .game-data-original-files {
-    border-top: 1px solid var(--kit-border);
-  }
-  .game-data-original-files summary {
-    padding: 12px 20px;
-    cursor: pointer;
-  }
-  .game-data-original-files p {
-    padding-block: 6px;
-    overflow-wrap: anywhere;
-  }
-  .game-data-original-files .game-data-import-actions {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    padding-top: 8px;
-  }
   .game-data-archive-password {
     display: grid;
     gap: 6px;
