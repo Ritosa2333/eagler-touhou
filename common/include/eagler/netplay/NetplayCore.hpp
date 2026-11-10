@@ -9,6 +9,8 @@ namespace Netplay
 {
 constexpr std::size_t INPUT_HISTORY_SIZE = 256;
 
+enum class InputPrediction : std::uint8_t { RecentSample, ConfirmedHold };
+
 struct CoreConfig
 {
     std::uint64_t sessionId = 0;
@@ -20,10 +22,8 @@ struct CoreConfig
     // is missing. Edge actions such as Bomb/Menu must stay released until the
     // exact sample arrives and requests a rollback.
     std::uint16_t predictableButtons = 0xffffu;
-    // Movement is safe to repeat briefly, but a long missing-input burst must
-    // not keep driving a remote ship for the entire rollback window.  This is
-    // independent from maxRollbackFrames: prediction/correction can continue
-    // after movement becomes neutral.
+    // Title-specific digital directions. RecentSample can impose a fixed
+    // cutoff; ConfirmedHold uses this mask to recognize repeated short taps.
     std::uint16_t directionButtons = 0;
     std::uint8_t maxDirectionPredictionFrames = 0xffu;
     // Incremental direct-touch is a per-tick displacement stream. Holding the
@@ -34,10 +34,16 @@ struct CoreConfig
     // When predicting missing input, retain the last target instead of
     // clearing the axes as if they represented once-only displacement.
     bool directTouchIsAbsolute = false;
+    // Optional short extrapolation for a continuous unlimited absolute drag.
+    // Coordinates must use game pixels. Zero keeps the confirmed target.
+    std::uint8_t absoluteTouchForecastFrames = 0;
     // Explicit lockstep policy, not a zero-valued prediction horizon. With
     // prediction disabled every player's contiguous actual input is required;
     // no speculative decision or rewind can be committed.
     bool allowPrediction = true;
+    // HiganR-style contiguous hold. Sustained directions have no synthetic
+    // release; a short release is inferred only from confirmed tap history.
+    InputPrediction prediction = InputPrediction::RecentSample;
 };
 
 struct FrameDecision
@@ -91,7 +97,8 @@ public:
     // The title adapter may call this only after independently proving that
     // replacing the predicted input with the actual input cannot change any
     // already-simulated authoritative gameplay state. The core records the
-    // actual sample and advances confirmation without requesting rollback.
+    // actual sample without undoing its frame. A newly exposed held input
+    // can still change later, unconfirmed frames.
     EquivalentRemoteInputResult SubmitEquivalentRemoteInput(std::uint8_t player,
                                                             std::uint32_t frame,
                                                             const FrameInput &input);
@@ -116,9 +123,9 @@ public:
     // invalid calls leave all state unchanged. Does not restore title memory.
     bool RewindSimulationTo(std::uint32_t firstFrame);
 
-    bool HasRollbackRequest() const { return rollbackFrame_ != INVALID_FRAME; }
-    std::uint32_t RollbackFrame() const { return rollbackFrame_; }
-    void ClearRollbackRequest() { rollbackFrame_ = INVALID_FRAME; }
+    bool HasRollbackRequest() const { return RollbackFrame() != INVALID_FRAME; }
+    std::uint32_t RollbackFrame() const;
+    void ClearRollbackRequest();
 
     std::uint32_t ConfirmedThrough(std::uint8_t player) const;
     // Minimum confirmed input frontier across every remote player. Returns
@@ -158,12 +165,33 @@ private:
         std::uint8_t predictedMask = 0;
     };
 
+    struct DirectionHistory
+    {
+        std::uint32_t start = INVALID_FRAME;
+        std::array<std::uint32_t, 3> taps{INVALID_FRAME, INVALID_FRAME, INVALID_FRAME};
+        std::uint16_t word = 0;
+        void Observe(std::uint32_t frame, const FrameInput &input, std::uint16_t mask);
+        std::uint32_t ReleaseFrame(std::uint32_t confirmed) const;
+    };
+
     InputSlot *GetInputSlot(std::uint8_t player, std::uint32_t frame);
     const InputSlot *FindInputSlot(std::uint8_t player, std::uint32_t frame) const;
     const UsedSlot *FindUsedSlot(std::uint32_t frame) const;
     bool HasConfirmedInputConflict(std::uint8_t player, std::uint32_t frame,
                                    const FrameInput &input) const;
+    RemoteInputResult StoreRemoteInput(std::uint8_t player, std::uint32_t frame,
+                                      const FrameInput &input);
     FrameInput PredictInput(std::uint8_t player, std::uint32_t frame) const;
+    FrameInput HeldConfirmedInput(std::uint8_t player, std::uint32_t confirmed) const;
+    struct TouchVelocity { float x = 0, y = 0; };
+    TouchVelocity ConfirmedTouchVelocity(std::uint8_t player, std::uint32_t frame) const;
+    FrameInput ApplyTouchForecast(std::uint8_t player, FrameInput held, std::uint32_t distance) const;
+    bool NoteForecastChange(std::uint8_t player, std::uint32_t previous,
+                            std::uint32_t previousRelease);
+    void NoteActualInput(std::uint8_t player, std::uint32_t frame);
+    std::uint32_t ForecastRollbackFrame(std::uint8_t player) const;
+    FrameInput ApplyDirectionRelease(FrameInput held, std::uint32_t frame,
+                                     std::uint32_t release) const;
     void AdvanceConfirmedThrough(std::uint8_t player);
     bool FrameIsTooOld(std::uint32_t frame) const;
 
@@ -172,8 +200,15 @@ private:
     std::array<std::array<InputSlot, INPUT_HISTORY_SIZE>, MAX_PLAYERS> inputs_{};
     std::array<UsedSlot, INPUT_HISTORY_SIZE> used_{};
     std::array<std::uint32_t, MAX_PLAYERS> confirmedThrough_{};
+    std::array<DirectionHistory, MAX_PLAYERS> directions_{};
+    std::array<TouchVelocity, MAX_PLAYERS> touchVelocity_{};
     std::array<std::uint32_t, MAX_PLAYERS> peerAckOfLocal_{};
     std::uint32_t lastSimulatedFrame_ = INVALID_FRAME;
+    // Actual mismatches cannot be canceled by another packet. A changed
+    // forecast can be superseded before we use it to request a rewind.
     std::uint32_t rollbackFrame_ = INVALID_FRAME;
+    mutable std::array<std::uint32_t, MAX_PLAYERS> forecastRollback_{
+        INVALID_FRAME, INVALID_FRAME, INVALID_FRAME};
+    mutable std::uint8_t forecastDirty_ = 0;
 };
 } // namespace Netplay

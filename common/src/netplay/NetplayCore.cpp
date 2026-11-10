@@ -57,9 +57,11 @@ void RollbackCore::Clear()
     for (auto &slot : used_)
         slot = UsedSlot{};
     confirmedThrough_.fill(INVALID_FRAME);
+    directions_ = {};
+    touchVelocity_ = {};
     peerAckOfLocal_.fill(INVALID_FRAME);
     lastSimulatedFrame_ = INVALID_FRAME;
-    rollbackFrame_ = INVALID_FRAME;
+    ClearRollbackRequest();
 }
 
 RollbackCore::InputSlot *RollbackCore::GetInputSlot(std::uint8_t player, std::uint32_t frame)
@@ -146,10 +148,21 @@ bool RollbackCore::FrameIsTooOld(std::uint32_t frame) const
 }
 
 RemoteInputResult RollbackCore::SubmitRemoteInput(std::uint8_t player, std::uint32_t frame,
-                                                   const FrameInput &input)
+                                                const FrameInput &input)
 {
     if (!configured_ || player >= config_.playerCount || player == config_.localPlayer)
         return RemoteInputResult::InvalidPlayer;
+    const auto previous = confirmedThrough_[player];
+    const auto release = directions_[player].ReleaseFrame(previous);
+    const auto result = StoreRemoteInput(player, frame, input);
+    return NoteForecastChange(player, previous, release) &&
+        result != RemoteInputResult::RollbackRequired && ForecastRollbackFrame(player) != INVALID_FRAME
+        ? RemoteInputResult::RollbackRequired : result;
+}
+
+RemoteInputResult RollbackCore::StoreRemoteInput(std::uint8_t player, std::uint32_t frame,
+                                               const FrameInput &input)
+{
     if (FrameIsTooOld(frame))
         return RemoteInputResult::TooOld;
     if (HasConfirmedInputConflict(player, frame, input))
@@ -166,20 +179,23 @@ RemoteInputResult RollbackCore::SubmitRemoteInput(std::uint8_t player, std::uint
     slot->input = input;
     slot->present = true;
     AdvanceConfirmedThrough(player);
+    NoteActualInput(player, frame);
 
     const UsedSlot *used = FindUsedSlot(frame);
-    if (!used || lastSimulatedFrame_ == INVALID_FRAME || frame > lastSimulatedFrame_)
-        return RemoteInputResult::Accepted;
-
     const std::uint8_t mask = static_cast<std::uint8_t>(1u << player);
-    if ((used->predictedMask & mask) == 0)
-        return RemoteInputResult::Duplicate;
-    if (used->inputs[player] == input)
-        return RemoteInputResult::PredictionCorrect;
-
-    if (rollbackFrame_ == INVALID_FRAME || frame < rollbackFrame_)
-        rollbackFrame_ = frame;
-    return RemoteInputResult::RollbackRequired;
+    auto result = RemoteInputResult::Accepted;
+    if (used && lastSimulatedFrame_ != INVALID_FRAME && frame <= lastSimulatedFrame_)
+    {
+        if (!(used->predictedMask & mask)) result = RemoteInputResult::Duplicate;
+        else if (used->inputs[player] == input) result = RemoteInputResult::PredictionCorrect;
+        else
+        {
+            if (rollbackFrame_ == INVALID_FRAME || frame < rollbackFrame_)
+                rollbackFrame_ = frame;
+            return RemoteInputResult::RollbackRequired;
+        }
+    }
+    return result;
 }
 
 EquivalentRemoteInputResult RollbackCore::SubmitEquivalentRemoteInput(std::uint8_t player,
@@ -203,9 +219,13 @@ EquivalentRemoteInputResult RollbackCore::SubmitEquivalentRemoteInput(std::uint8
     if ((used->predictedMask & mask) == 0)
         return EquivalentRemoteInputResult::NotPredicted;
 
+    const auto previous = confirmedThrough_[player];
+    const auto previousRelease = directions_[player].ReleaseFrame(previous);
     slot->input = input;
     slot->present = true;
     AdvanceConfirmedThrough(player);
+    NoteActualInput(player, frame);
+    NoteForecastChange(player, previous, previousRelease);
     return EquivalentRemoteInputResult::Confirmed;
 }
 
@@ -247,8 +267,170 @@ std::uint32_t RollbackCore::ConfirmedThroughAllRemotes() const
     return confirmed;
 }
 
+FrameInput RollbackCore::HeldConfirmedInput(std::uint8_t player, std::uint32_t confirmed) const
+{
+    const auto* slot = confirmed != INVALID_FRAME ? FindInputSlot(player, confirmed) : nullptr;
+    if (!slot) return {};
+    auto held = slot->input;
+    held.buttons &= config_.predictableButtons;
+    held.touchBomb = false;
+    if (held.analogMode == AnalogMode::DirectTouchDelta || held.analogMode == AnalogMode::DirectTouchBegin)
+    {
+        // Preserve the simulation's pending gesture remainder, add no new movement.
+        held.analogMode = AnalogMode::DirectTouchDelta;
+        held.x = held.y = 0;
+    }
+    else if (held.analogMode == AnalogMode::DirectTouch && !config_.directTouchIsAbsolute)
+        held.x = held.y = 0;
+    return held;
+}
+
+RollbackCore::TouchVelocity RollbackCore::ConfirmedTouchVelocity(std::uint8_t player, std::uint32_t frame) const
+{
+    if (frame < 4 || frame == INVALID_FRAME) return {};
+    std::array<const InputSlot*, 5> path{};
+    for (unsigned i=0; i<path.size(); ++i)
+    {
+        const auto* slot = FindInputSlot(player, frame-i);
+        if (!slot || slot->input.analogMode != AnalogMode::DirectTouch || !slot->input.unlimited) return {};
+        path[i] = slot;
+    }
+    for (unsigned i=0; i+1<path.size(); ++i)
+    {
+        const auto dx = path[i]->input.x - path[i+1]->input.x;
+        const auto dy = path[i]->input.y - path[i+1]->input.y;
+        if (!(dx*dx + dy*dy <= 64.f)) return {}; // Ignore a jump or new contact.
+    }
+    const auto &a=path[0]->input, &b=path[2]->input, &c=path[4]->input;
+    const auto x=a.x-b.x, y=a.y-b.y, px=b.x-c.x, py=b.y-c.y;
+    if (x*px + y*py <= 0) return {}; // A stop or turn falls back to hold.
+    return {(x+px)*.25f, (y+py)*.25f};
+}
+
+FrameInput RollbackCore::ApplyTouchForecast(std::uint8_t player, FrameInput held, std::uint32_t distance) const
+{
+    const auto velocity = touchVelocity_[player];
+    if (velocity.x == 0 && velocity.y == 0) return held;
+    const auto steps = std::min<unsigned>(distance, config_.absoluteTouchForecastFrames);
+    held.x = std::clamp(held.x + velocity.x*float(steps), -65536.f, 65536.f);
+    held.y = std::clamp(held.y + velocity.y*float(steps), -65536.f, 65536.f);
+    return held;
+}
+
+void RollbackCore::DirectionHistory::Observe(std::uint32_t frame, const FrameInput &input,
+                                             std::uint16_t mask)
+{
+    if (input.analogMode != AnalogMode::None)
+    {
+        *this = {};
+        return;
+    }
+    const auto direction = static_cast<std::uint16_t>(input.buttons & mask);
+    if (direction == word) return;
+    if (word)
+    {
+        if (frame - start <= 3) taps = {taps[1], taps[2], start};
+        else taps.fill(INVALID_FRAME);
+    }
+    word = direction;
+    start = frame;
+}
+
+std::uint32_t RollbackCore::DirectionHistory::ReleaseFrame(std::uint32_t confirmed) const
+{
+    // Three completed one-to-three-frame taps in the last half second.
+    // Hold normally as soon as the new run is confirmed longer than a tap.
+    return word && confirmed != INVALID_FRAME && start < INVALID_FRAME - 3 &&
+        confirmed - start < 3 && taps[0] != INVALID_FRAME && confirmed - taps[0] < 32
+        ? start + 3 : INVALID_FRAME;
+}
+
+FrameInput RollbackCore::ApplyDirectionRelease(FrameInput held, std::uint32_t frame,
+                                               std::uint32_t release) const
+{
+    if (frame >= release)
+        held.buttons &= static_cast<std::uint16_t>(~config_.directionButtons);
+    return held;
+}
+
+bool RollbackCore::NoteForecastChange(std::uint8_t player, std::uint32_t previous,
+                                      std::uint32_t previousRelease)
+{
+    if (config_.prediction != InputPrediction::ConfirmedHold) return false;
+    const auto confirmed = confirmedThrough_[player];
+    if (previous == confirmed || confirmed == INVALID_FRAME || lastSimulatedFrame_ == INVALID_FRAME ||
+        lastSimulatedFrame_ <= confirmed || (rollbackFrame_ != INVALID_FRAME && rollbackFrame_ <= confirmed + 1))
+        return false;
+    const auto held = HeldConfirmedInput(player, confirmed);
+    const auto release = directions_[player].ReleaseFrame(confirmed);
+    if (release == previousRelease && held == HeldConfirmedInput(player, previous))
+    {
+        if (!config_.absoluteTouchForecastFrames || held.analogMode != AnalogMode::DirectTouch || !held.unlimited)
+            return false;
+        const auto before = ConfirmedTouchVelocity(player, previous), after = touchVelocity_[player];
+        if (before.x == 0 && before.y == 0 && after.x == 0 && after.y == 0) return false;
+    }
+    forecastDirty_ |= static_cast<std::uint8_t>(1u << player);
+    return true;
+}
+
+void RollbackCore::NoteActualInput(std::uint8_t player, std::uint32_t frame)
+{
+    if (forecastRollback_[player] == frame)
+        forecastDirty_ |= static_cast<std::uint8_t>(1u << player);
+}
+
+std::uint32_t RollbackCore::ForecastRollbackFrame(std::uint8_t player) const
+{
+    const auto mask = static_cast<std::uint8_t>(1u << player);
+    auto& candidate = forecastRollback_[player];
+    if (!(forecastDirty_ & mask)) return candidate;
+    forecastDirty_ &= static_cast<std::uint8_t>(~mask);
+    candidate = INVALID_FRAME;
+    const auto confirmed = confirmedThrough_[player];
+    if (confirmed == INVALID_FRAME || lastSimulatedFrame_ == INVALID_FRAME || confirmed >= lastSimulatedFrame_)
+        return candidate;
+    const auto held = HeldConfirmedInput(player, confirmed);
+    const auto release = directions_[player].ReleaseFrame(confirmed);
+    // Resolve against the final confirmed prefix at the reconciliation
+    // boundary. A matching exact packet can supersede a stale forecast.
+    for (auto frame = confirmed + 1; frame <= lastSimulatedFrame_ && frame < rollbackFrame_; ++frame)
+        if (const auto* used = FindUsedSlot(frame);
+            used && (used->predictedMask & mask) &&
+            !FindInputSlot(player, frame) &&
+            used->inputs[player] != ApplyTouchForecast(player, ApplyDirectionRelease(held, frame, release), frame-confirmed))
+        {
+            candidate = frame;
+            break;
+        }
+    return candidate;
+}
+
+std::uint32_t RollbackCore::RollbackFrame() const
+{
+    if (forecastDirty_)
+        for (std::uint8_t player = 0; player < config_.playerCount; ++player)
+            if (forecastDirty_ & (1u << player)) ForecastRollbackFrame(player);
+    return std::min(rollbackFrame_, *std::min_element(forecastRollback_.begin(), forecastRollback_.end()));
+}
+
+void RollbackCore::ClearRollbackRequest()
+{
+    rollbackFrame_ = INVALID_FRAME;
+    forecastRollback_.fill(INVALID_FRAME);
+    forecastDirty_ = 0;
+}
+
 FrameInput RollbackCore::PredictInput(std::uint8_t player, std::uint32_t frame) const
 {
+    if (config_.prediction == InputPrediction::ConfirmedHold)
+    {
+        const auto confirmed = confirmedThrough_[player];
+        return ApplyTouchForecast(player,
+            ApplyDirectionRelease(HeldConfirmedInput(player, confirmed), frame,
+                                  directions_[player].ReleaseFrame(confirmed)),
+            confirmed == INVALID_FRAME ? 0 : frame-confirmed);
+    }
     if (frame == 0)
         return {};
     const std::uint32_t search = std::min<std::uint32_t>(frame, INPUT_HISTORY_SIZE);
@@ -354,7 +536,7 @@ bool RollbackCore::RewindSimulationTo(std::uint32_t firstFrame)
     if (!configured_ || !config_.allowPrediction || firstFrame == INVALID_FRAME ||
         lastSimulatedFrame_ == INVALID_FRAME || firstFrame > lastSimulatedFrame_ ||
         lastSimulatedFrame_ - firstFrame >= INPUT_HISTORY_SIZE ||
-        (rollbackFrame_ != INVALID_FRAME && firstFrame > rollbackFrame_))
+        firstFrame > RollbackFrame())
         return false;
     // Validate the complete interval before mutating anything. MarkSimulated
     // is also used by diagnostic adapters, so do not assume they marked a
@@ -366,26 +548,39 @@ bool RollbackCore::RewindSimulationTo(std::uint32_t firstFrame)
         if (frame == lastSimulatedFrame_)
             break;
     }
-    for (auto &slot : used_)
-        if (slot.frame != INVALID_FRAME && slot.frame >= firstFrame)
-            slot = UsedSlot{};
+    // The validated interval is the whole discarded tail. Keep older
+    // decisions and avoid scanning the 256-slot ring on a short rewind.
+    for (std::uint32_t frame = firstFrame; ; ++frame)
+    {
+        used_[frame % INPUT_HISTORY_SIZE] = UsedSlot{};
+        if (frame == lastSimulatedFrame_)
+            break;
+    }
     lastSimulatedFrame_ = firstFrame == 0 ? INVALID_FRAME : firstFrame - 1;
-    rollbackFrame_ = INVALID_FRAME;
+    ClearRollbackRequest();
     return true;
 }
 
 void RollbackCore::AdvanceConfirmedThrough(std::uint8_t player)
 {
+    const auto previous = confirmedThrough_[player];
     std::uint32_t next = confirmedThrough_[player] == INVALID_FRAME
                              ? 0
                              : confirmedThrough_[player] + 1;
-    while (FindInputSlot(player, next))
+    while (const auto* slot = FindInputSlot(player, next))
     {
+        if (config_.allowPrediction && config_.prediction == InputPrediction::ConfirmedHold &&
+            config_.directionButtons && player != config_.localPlayer)
+            directions_[player].Observe(next, slot->input, config_.directionButtons);
         confirmedThrough_[player] = next;
         if (next == INVALID_FRAME - 1)
             break;
         ++next;
     }
+    if (config_.allowPrediction && config_.prediction == InputPrediction::ConfirmedHold &&
+        config_.directTouchIsAbsolute && config_.absoluteTouchForecastFrames &&
+        player != config_.localPlayer && previous != confirmedThrough_[player])
+        touchVelocity_[player] = ConfirmedTouchVelocity(player, confirmedThrough_[player]);
 }
 
 std::uint32_t RollbackCore::ConfirmedThrough(std::uint8_t player) const
@@ -398,7 +593,7 @@ bool RollbackCore::ConfirmedInputs(std::uint32_t frame,
 {
     if (!configured_ || !out || frame == INVALID_FRAME ||
         lastSimulatedFrame_ == INVALID_FRAME || frame > lastSimulatedFrame_ ||
-        (rollbackFrame_ != INVALID_FRAME && rollbackFrame_ <= frame)) return false;
+        RollbackFrame() <= frame) return false;
     const auto *used = FindUsedSlot(frame);
     if (!used) return false;
     std::array<FrameInput, MAX_PLAYERS> candidate{};
@@ -543,9 +738,11 @@ bool RollbackCore::ApplyInputPacket(const InputPacket &packet, RemoteInputResult
     }
 
     RemoteInputResult worst = RemoteInputResult::Duplicate;
+    const auto previous = confirmedThrough_[packet.senderPlayer];
+    const auto release = directions_[packet.senderPlayer].ReleaseFrame(previous);
     for (std::uint8_t i = 0; i < packet.inputCount; ++i)
     {
-        const RemoteInputResult result = SubmitRemoteInput(
+        const RemoteInputResult result = StoreRemoteInput(
             packet.senderPlayer, packet.firstInputFrame + i, packet.inputs[i]);
         if (ResultRank(result) > ResultRank(worst))
             worst = result;
@@ -557,6 +754,11 @@ bool RollbackCore::ApplyInputPacket(const InputPacket &packet, RemoteInputResult
             return false;
         }
     }
+    // Leave forecast-only corrections cancellable across the receive burst.
+    if (NoteForecastChange(packet.senderPlayer, previous, release) && worstResult &&
+        ResultRank(worst) < ResultRank(RemoteInputResult::RollbackRequired) &&
+        ForecastRollbackFrame(packet.senderPlayer) != INVALID_FRAME)
+        worst = RemoteInputResult::RollbackRequired;
     if (worstResult)
         *worstResult = worst;
     return true;
