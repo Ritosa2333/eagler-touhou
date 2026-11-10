@@ -13,6 +13,19 @@ export function reactDocumentAssetUrl(url, tag) {
 const compatibilityEntries = STATIC_FRONTEND_PACKAGE_FILES.filter(path => path.startsWith("legacy/"));
 const retiredEntryStyles = new Set(["lobby.css", "touch-guide.css"]);
 
+// Compare against the selected browser build's catalog, not the publisher's
+// source catalog. Frontend-only refreshes can reuse a different site's manifest.
+export function assertReactFrontendGameCoverage(artifact, gameIds) {
+  const builtIds = artifact.metadata.graph.gameIds;
+  if (!Array.isArray(builtIds) || !builtIds.length || new Set(builtIds).size !== builtIds.length ||
+      builtIds.some(id => typeof id !== "string" || !/^[a-z][a-z0-9-]*$/.test(id))) {
+    throw new Error("React frontend artifact has no valid game catalog; rebuild with npm run build:ui-rewrite");
+  }
+  const built = new Set(builtIds);
+  const missing = [...gameIds].filter(id => !built.has(id)).sort();
+  if (missing.length) throw new Error(`React frontend catalog is missing Site Manifest games: ${missing.join(", ")}`);
+}
+
 // Match main's source/prebuilt boundary: a packaged operator distribution has
 // no maintainer .mts sources, although it retains classic worker build inputs.
 function hasTypeScriptSource(directory) {

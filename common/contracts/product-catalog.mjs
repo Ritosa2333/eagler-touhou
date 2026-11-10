@@ -90,7 +90,82 @@ const CHARGE_TOUCH_FIRE = Object.freeze({
     key: Object.freeze({ code: "KeyZ", key: "z", keyCode: 90 }),
 });
 const TH19_CHARACTERS=Object.freeze(["霊夢", "魔理沙", "早苗", "藍", "あうん", "ナズーリン", "清蘭", "燐", "典", "マミゾウ", "八千慧", "早鬼", "尤魔", "萃香", "美天", "慧ノ子", "ちやり", "日狭美", "残無"]);
+const TH01_REIMU = Object.freeze({ labelKey: 'multiplayer.loadout.th01_reimu', glyph: '霊', character: 0, shot: 0 });
+const TH03_TOUCH_FIRE = Object.freeze({
+    mode: "held-key",
+    labelKey: "touch.actionHold",
+    key: Object.freeze({ code: "KeyZ", key: "z", keyCode: 90 }),
+});
 export const PRODUCT_GAMES = Object.freeze({
+    th01: Object.freeze({
+        testOnly: true, buildOptIn: true, number: '01', title: '東方靈異伝', subtitle: 'Highly Responsive to Prayers', cardArtwork: 'th01-card.webp',
+        storage: Object.freeze({saveRoot:'/savesth01',scoreFile:'scores.dat',configFiles:Object.freeze([])}),
+        runtime:'./runtime/th01/th01.html', runtimeFileLayout:'directory', runtimeFileTree:true,
+        runtimeAssets:Object.freeze(['th01.html','manifest.json','managed-shell.mjs','managed-data.mjs','managed-worker.mjs']), requiredShared:Object.freeze([]),
+        dataProvider:'retail-memory', runtimeResourceTransport:'resources',
+        package:Object.freeze({dataFileId:'game-data',dataTarget:'/th01.data',musicSourceDirectories:Object.freeze({ogg:'music'}),musicMounts:Object.freeze({ogg:'/bgm/akyu'})}),
+        musicCapabilities:Object.freeze({midi:false}),musicRuntime:Object.freeze({localOggConfigureMode:'runtime-selection',embeddedOgg:true,sources:Object.freeze(['original','akyu'])}),touchFire:TH03_TOUCH_FIRE,
+        support:Object.freeze({highRefreshRate:false,sourceRepository:'https://github.com/IxinorTyan/th01-multiorb-lab',adaptationNotice:'early-test'}),
+        replay:Object.freeze({prefix:'th01',extensions:Object.freeze(['th01r']),naming:'filename'}),
+        multiplayerRuntime:'./runtime/th01/multiplayer/th01.html',
+        multiplayer:Object.freeze({titleKey:'game.title.th01mp',gameplay:'cooperative',playerCounts:STANDARD_MULTIPLAYER_PLAYER_COUNTS,difficulties:TH09_MULTIPLAYER_DIFFICULTIES,
+            loadouts:Object.freeze([TH01_REIMU]),peerTransportGlobal:'__th01PeerTransport',relaySourceEnvelope:true,spectator:true,titleRoomEntry:false,preflightWithoutRoom:true,challengeMode:false,
+            inputTiming:Object.freeze({rollbackLimit:8,sendPredictionLimit:8,rollbackDefault:true,runtimeTiming:true})}),
+        features:Object.freeze({thprac:false,languages:false,focusHitbox:false}),
+    }),
+    th02: Object.freeze({
+        practiceUI: 'browser',
+        testOnly: true, buildOptIn: true, number: '02', title: '東方封魔録', subtitle: 'the Story of Eastern Wonderland', cardArtwork: 'th02-card.webp',
+        storage: Object.freeze({saveRoot:'/savesth02',scoreFile:'HUUHI.DAT',configFiles:Object.freeze(["HUUMA.CFG"])}),
+        runtime:'./runtime/th02/th02.html', runtimeFileLayout:'directory', runtimeFileTree:true,
+        runtimeAssets:Object.freeze(['th02.html','manifest.json','managed-shell.mjs','managed-data.mjs','managed-worker.mjs']), requiredShared:Object.freeze([]),
+        dataProvider:'retail-memory', runtimeResourceTransport:'resources',
+        package:Object.freeze({dataFileId:'game-data',dataTarget:'/th02.data',musicSourceDirectories:Object.freeze({ogg:'music'}),musicMounts:Object.freeze({ogg:'/bgm/akyu'})}),
+        musicCapabilities:Object.freeze({midi:false}),musicRuntime:Object.freeze({localOggConfigureMode:'runtime-selection',embeddedOgg:true,sources:Object.freeze(['original','akyu'])}),touchFire:TOGGLE_TOUCH_FIRE,
+        support:Object.freeze({highRefreshRate:false,sourceRepository:'https://github.com/IxinorTyan/th02-coop-lab',adaptationNotice:'early-test'}),
+        replay:Object.freeze({prefix:'th02',extensions:Object.freeze(['th02r']),naming:'filename'}),
+        multiplayerRuntime:'./runtime/th02/multiplayer/th02.html',
+        multiplayer:Object.freeze({titleKey:'game.title.th02mp',gameplay:'cooperative',playerCounts:STANDARD_MULTIPLAYER_PLAYER_COUNTS,difficulties:STANDARD_MULTIPLAYER_DIFFICULTIES,
+            loadouts:Object.freeze(['fast','balanced','slow'].map((name,shot)=>Object.freeze({labelKey:'multiplayer.loadout.th02_'+name,glyph:'霊',character:0,shot}))),peerTransportGlobal:'__th02PeerTransport',relaySourceEnvelope:true,spectator:true,titleRoomEntry:false,preflightWithoutRoom:true,challengeMode:true,
+            inputTiming:Object.freeze({rollbackLimit:12,sendPredictionLimit:6,rollbackDefault:true,runtimeTiming:true})}),
+        features:Object.freeze({thprac:false,languages:false,focusHitbox:false}),
+    }),
+    th03: Object.freeze({
+        testOnly: true, buildOptIn: true, number: '03', title: '東方夢時空', subtitle: 'Phantasmagoria of Dim.Dream', cardArtwork: 'th03-card.webp',
+        storage: Object.freeze({saveRoot:'/savesth03',scoreFile:'YUME.NEM',configFiles:Object.freeze(["YUME.CFG"])}),
+        runtime:'./runtime/th03/th03.html', runtimeFileLayout:'directory', runtimeFileTree:true,
+        runtimeAssets:Object.freeze(['th03.html','manifest.json','managed-shell.mjs','managed-data.mjs','managed-worker.mjs']), requiredShared:Object.freeze([]),
+        dataProvider:'retail-memory', runtimeResourceTransport:'resources',
+        package:Object.freeze({dataFileId:'game-data',dataTarget:'/th03.data',musicSourceDirectories:Object.freeze({ogg:'music'}),musicMounts:Object.freeze({ogg:'/bgm/akyu'})}),
+        musicCapabilities:Object.freeze({midi:false}),musicRuntime:Object.freeze({localOggConfigureMode:'runtime-selection',embeddedOgg:true,sources:Object.freeze(['original','akyu'])}),touchFire:TOGGLE_TOUCH_FIRE,
+        support:Object.freeze({highRefreshRate:false,sourceRepository:'https://github.com/IxinorTyan/th03-netplay-lab',adaptationNotice:'early-test'}),
+        replay:Object.freeze({prefix:'th03',extensions:Object.freeze(['th03r']),naming:'filename'}),
+        multiplayerRuntime:'./runtime/th03/multiplayer/th03.html',
+        multiplayer:Object.freeze({titleKey:'game.title.th03mp',gameplay:'versus',inGameSelection:true,playerCounts:Object.freeze([2]),difficulties:TH09_MULTIPLAYER_DIFFICULTIES,
+            loadouts:Object.freeze([REIMU_A]),peerTransportGlobal:'__th03PeerTransport',relaySourceEnvelope:true,spectator:true,titleRoomEntry:false,preflightWithoutRoom:true,challengeMode:false,
+            inputTiming:Object.freeze({rollbackLimit:12,sendPredictionLimit:6,rollbackDefault:true,runtimeTiming:true})}),
+        features:Object.freeze({thprac:false,languages:false,focusHitbox:false}),
+    }),
+    // support.highRefreshRate describes currently implemented presentation for
+    // Launcher UI. False keeps unfinished adapters honest; it does not waive
+    // the required presentation-cadence acceptance gate.
+    th04: Object.freeze({
+        practiceUI: 'browser',
+        testOnly: true, buildOptIn: true, number: '04', title: '東方幻想郷', subtitle: 'Lotus Land Story', cardArtwork: 'th04-card.webp',
+        storage: Object.freeze({saveRoot:'/savesth04',scoreFile:'GENSOU.SCR',configFiles:Object.freeze(['MIKO.CFG'])}),
+        runtime:'./runtime/th04/th04.html', runtimeFileLayout:'directory', runtimeFileTree:true,
+        runtimeAssets:Object.freeze(['th04.html','manifest.json','managed-shell.mjs','managed-data.mjs','managed-worker.mjs']), requiredShared:Object.freeze([]),
+        dataProvider:'retail-memory', runtimeResourceTransport:'resources',
+        package:Object.freeze({dataFileId:'game-data',dataTarget:'/th04.data',musicSourceDirectories:Object.freeze({ogg:'music'}),musicMounts:Object.freeze({ogg:'/bgm/akyu'})}),
+        musicCapabilities:Object.freeze({midi:false}),musicRuntime:Object.freeze({localOggConfigureMode:'runtime-selection',embeddedOgg:true,sources:Object.freeze(['original','akyu'])}),touchFire:TOGGLE_TOUCH_FIRE,
+        support:Object.freeze({highRefreshRate:false,sourceRepository:'https://github.com/IxinorTyan/th04-coop-lab',adaptationNotice:'early-test'}),
+        replay:Object.freeze({prefix:'th04',extensions:Object.freeze(['th04r']),naming:'filename'}),
+        multiplayerRuntime:'./runtime/th04/multiplayer/th04.html',
+        multiplayer:Object.freeze({titleKey:'game.title.th04mp',gameplay:'cooperative',playerCounts:STANDARD_MULTIPLAYER_PLAYER_COUNTS,difficulties:STANDARD_MULTIPLAYER_DIFFICULTIES,
+            loadouts:TH06_MULTIPLAYER_LOADOUTS,peerTransportGlobal:'__th04PeerTransport',relaySourceEnvelope:true,spectator:true,titleRoomEntry:false,preflightWithoutRoom:true,challengeMode:true,
+            inputTiming:Object.freeze({rollbackLimit:12,sendPredictionLimit:6,rollbackDefault:true,runtimeTiming:true})}),
+        features:Object.freeze({thprac:false,languages:false,focusHitbox:false}),
+    }),
     // support.highRefreshRate describes currently implemented presentation for
     // Launcher UI. False keeps unfinished adapters honest; it does not waive
     // the required presentation-cadence acceptance gate.
