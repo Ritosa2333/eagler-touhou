@@ -1659,8 +1659,54 @@
     "th13": {
       "normal": "ports/th13",
       "multiplayer": "ports/th13-mp",
-      "base": "e1111b4daeb21296a5d0da526e2d512efc449aa2",
-      "history": []
+      "base": "9ee91331fade771479437feabdd8a4b590661c5b",
+      "history": [
+        {
+          "kind": "manual",
+          "base": "e1111b4daeb21296a5d0da526e2d512efc449aa2",
+          "source": "9ee91331fade771479437feabdd8a4b590661c5b",
+          "targetHead": "6d2e41bf08b128fb9524d2aecee3b56bc99a305c",
+          "paths": [
+            "ports/th13-mp/ADAPTATION.md",
+            "ports/th13-mp/portable/sdl/Renderer.cpp",
+            "ports/th13-mp/portable/sdl/Renderer.hpp",
+            "ports/th13-mp/portable/sdl/UnormBlendProfile.hpp",
+            "ports/th13-mp/tests/render/color01-fixture/build.sh",
+            "ports/th13-mp/tests/render/color01-fixture/build/fixture.html",
+            "ports/th13-mp/tests/render/color01-fixture/build/fixture.mjs",
+            "ports/th13-mp/tests/render/color01-fixture/build/result.json",
+            "ports/th13-mp/tests/render/color01-fixture/fixture.cpp",
+            "ports/th13-mp/tests/render/color01-fixture/fixture.html",
+            "ports/th13-mp/tests/render/color01-fixture/run-ci.sh",
+            "ports/th13-mp/tests/render/color01-fixture/run-shot.mjs",
+            "ports/th13-mp/tests/render/color01_expected.hpp",
+            "ports/th13-mp/tests/ui/title_practice_flow_test.cpp",
+            "ports/th13-mp/tests/ui/title_route_player_data_spell_practice_test.cpp",
+            "ports/th13-mp/tests/ui/title_run_transition_test.cpp",
+            "ports/th13-mp/tests/ui/title_spell_practice_menu_test.cpp",
+            "ports/th13-mp/tests/ui/title_spell_practice_view_test.cpp",
+            "ports/th13-mp/tests/ui/unorm_blend_profile_test.cpp",
+            "ports/th13-mp/web/cpp/game/AnmManager.cpp",
+            "ports/th13-mp/web/cpp/game/AnmOverlay.cpp",
+            "ports/th13-mp/web/cpp/game/AnmOverlay.hpp",
+            "ports/th13-mp/web/cpp/game/RunTransitionEffect.hpp",
+            "ports/th13-mp/web/cpp/game/SessionState.hpp",
+            "ports/th13-mp/web/cpp/game/StageBattle.cpp",
+            "ports/th13-mp/web/cpp/game/TitleFrame.cpp",
+            "ports/th13-mp/web/cpp/game/TitleFrame.hpp",
+            "ports/th13-mp/web/cpp/game/TitleScene.cpp",
+            "ports/th13-mp/web/cpp/game/TitleScene.hpp",
+            "ports/th13-mp/web/cpp/game/TitleSpellPracticeMenu.cpp",
+            "ports/th13-mp/web/cpp/game/TitleSpellPracticeMenu.hpp",
+            "ports/th13-mp/web/cpp/game/TitleSpellPracticeView.cpp",
+            "ports/th13-mp/web/cpp/sdl/Application.cpp",
+            "ports/th13-mp/web/cpp/sdl/ApplicationState.hpp",
+            "ports/th13-mp/web/cpp/sdl/ApplicationTitle.cpp",
+            "ports/th13-mp/web/cpp/sdl/GraphicsDevice.cpp"
+          ],
+          "note": "SP 修复同步：符卡练习返回重建/对局返回级联/伤害池逐出 + PR#159 残留（转场/UNORM）；MP 侧同名文件整份镜像，TitleScene/ApplicationTitle 按共同部分外科补丁"
+        }
+      ]
     },
     "th17": {
       "normal": "ports/th17",
