@@ -157,7 +157,12 @@ async function command(m){if(dispatchInput(m))return {};switch(m.command){
       if(!staged.has('/thcrap/th075/fonts/localized-glyphs.bin')||!staged.has('/thcrap/th075/localization/options.json'))throw Error('Incomplete TH075 language pack');
       for(const [path,bytes]of staged){core.FS.mkdirTree(path.slice(0,path.lastIndexOf('/')));core.FS.writeFile(path,bytes);}
       core.th075Language=pack.language;
-    }else{if(m.language&&m.language!=='ja')throw Error('Missing selected TH075 language pack');core.th075Language=null;}
+    }else if(!m.language||m.language==='ja'){
+      core.th075Language=null;
+    }else if(m.language!==core.th075Language){
+      // Binding a prepared room sends new options without resending its language pack.
+      throw Error('Missing selected TH075 language pack');
+    }
     options={...(m.options||{})};music=m.music;core.gameLanguage='ja';
     for(const r of [...(m.sharedResources||[]),...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);
     core._th075_music_enabled(+(music==='ogg'));cancelTouch();clearKeyboard();updateDisplay();return {};
