@@ -38,10 +38,12 @@ private:
  std::array<Particle,8> m_trails;
  Particle m_orb;
  int m_castScreen,m_castLine,m_castTarget,m_castAnim,m_castState;
+ int m_castMusicSample=-1,m_castMusicAnchor=0,m_castClockTick=0;
  int m_testMeasure; // Private clock override used by the production test fixture.
  void Tick(unsigned short keys);
  void StaffTick(unsigned short keys);
- void CastTick();
+ void CastClock(int music);
+ void CastTick(unsigned short keys);
  void LoadCastPicture();
  void StartMusic(const char* name);
  void Text(const char* text,int x,int y,int color,bool bold=true,bool translated=false);
