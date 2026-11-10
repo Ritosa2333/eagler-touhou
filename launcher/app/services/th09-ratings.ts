@@ -21,7 +21,8 @@ export function useTh09Ratings(enabled: boolean) {
     let disposed = false;
     async function refresh() {
       if (pending || document.hidden) return;
-      const controller = pending = new AbortController();
+      const controller = new AbortController();
+      pending = controller;
       try {
         const raw = await accountRequest('v1/th09/ratings', undefined, {signal: controller.signal});
         const result = snapshot.safeParse(raw);

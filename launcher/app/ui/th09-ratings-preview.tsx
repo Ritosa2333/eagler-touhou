@@ -238,7 +238,7 @@ function RatingBoard({snapshot}: {snapshot: Board}) {
       {' | '}正式 {numbers.format(counts.active)} | 暂定 {numbers.format(counts.provisional)} | 不活跃 {numbers.format(counts.inactive)}
     </p>
     {pool.length > 0 && <RatingDistribution rows={pool} matches={search ? found : []} />}
-    {visible.length ? <div className="rating-table-wrap" tabIndex={0} role="region" aria-label="评分榜表格">
+    {visible.length ? <section className="rating-table-wrap" aria-label="评分榜表格">
       <table className="rating-table" aria-label="th09mp 评分榜">
         <thead><tr>{columns.map(item => <th key={item.key} scope="col" data-column={item.key}
           data-compact={item.compact || undefined} data-numeric={item.numeric && item.key !== 'characters'}
@@ -282,7 +282,7 @@ function RatingBoard({snapshot}: {snapshot: Board}) {
           </Fragment>;
         })}</tbody>
       </table>
-    </div> : <div className="rating-empty">
+    </section> : <div className="rating-empty">
       <p>{snapshot.board.length ? '没有符合条件的玩家。' : '暂无战绩。'}</p>
       {snapshot.board.length > 0 && <Button variant="outline" size="sm" onClick={clearFilters}>清除筛选</Button>}
     </div>}
@@ -302,7 +302,7 @@ function PlayerIdentity({row}: {row: Row}) {
 
 function TopCharacters({characters}: {characters: Row['top_characters']}) {
   const {t} = useLocale();
-  if (!characters.length) return <span className="rating-no-characters" aria-label="暂无机体记录">—</span>;
+  if (!characters.length) return <span className="rating-no-characters"><span className="sr-only">暂无机体记录</span><span aria-hidden="true">—</span></span>;
   return <span className="rating-characters">{characters.map(({character, games}, index) => {
     const loadout = th09CharacterLoadout(character);
     const name = loadout ? t(loadout.labelKey as UiMessageKey) : t('profile.loadoutNumber', {number: character + 1});
@@ -319,7 +319,7 @@ function RatingDistribution({rows, matches}: {rows: Row[]; matches: Row[]}) {
   const binFor = (row: Row) => Math.floor(row.rating / binSize);
   const start = binFor(rows[rows.length - 1]);
   const end = binFor(rows[0]);
-  const bins = Array.from({ length: end - start + 1 }, () => ({ count: 0, matches: 0 }));
+  const bins = Array.from({ length: end - start + 1 }, (_, index) => ({rating: (start + index) * binSize, count: 0, matches: 0}));
   for (const row of rows) bins[binFor(row) - start].count += 1;
   for (const row of matches) bins[binFor(row) - start].matches += 1;
   const peak = Math.max(...bins.map(bin => bin.count));
@@ -333,10 +333,10 @@ function RatingDistribution({rows, matches}: {rows: Row[]; matches: Row[]}) {
     <div className="rating-chart" aria-hidden="true">
       <div className="rating-chart-y">{levels.map(value => <span key={value}
         style={{ bottom: `${100 * value / ceiling}%` }}>{value}</span>)}</div>
-      <svg viewBox={`0 0 ${bins.length} ${ceiling}`} preserveAspectRatio="none">
+      <svg aria-hidden="true" viewBox={`0 0 ${bins.length} ${ceiling}`} preserveAspectRatio="none">
         {levels.map(value => <line key={value} x1={0} x2={bins.length} y1={ceiling - value} y2={ceiling - value}
           vectorEffect="non-scaling-stroke" />)}
-        {bins.map((bin, index) => <g key={index}>
+        {bins.map((bin, index) => <g key={bin.rating}>
           <title>{numbers.format((start + index) * binSize)}–{numbers.format((start + index + 1) * binSize - 1)} 分 | {bin.count} 人</title>
           <rect x={index + 0.04} y={ceiling - bin.count} width={0.92} height={bin.count} />
           {bin.matches > 0 && <rect className="rating-chart-match" x={index + 0.04} y={ceiling - bin.matches}
