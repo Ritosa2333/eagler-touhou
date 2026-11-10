@@ -5,6 +5,7 @@
 <div align="center">
   <p>一个旨在<strong>极大降低玩家入门门槛</strong>的，东方 Project 官方游戏、同人游戏及其工具、联机 Mod 的<strong> Web 适配计划</strong>。</p>
   <p>
+    <a href="https://touhouonline.com/"><img src="https://img.shields.io/badge/%E5%9C%A8%E7%BA%BF%E6%B8%B8%E7%8E%A9-touhouonline.com-E5322D?style=flat-square" alt="在线游玩 touhouonline.com"></a>
     <a href="https://qm.qq.com/q/eeUrxIltug?from=tim"><img src="https://img.shields.io/badge/QQ%20Group-1124121427-12B7F5?style=flat-square&amp;logo=tencentqq&amp;logoColor=white" alt="QQ Group 1124121427"></a>
     <img src="https://img.shields.io/badge/Chromium-%E2%89%A5108-4285F4?style=flat-square&amp;logo=googlechrome&amp;logoColor=white" alt="Chromium >=108">
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg?style=flat-square" alt="License: GPL-3.0-or-later"></a>
@@ -13,7 +14,7 @@
 </div>
 
 > [!TIP]
-> 对于游戏支持情况，参见[游戏还原和适配总进度表](https://github.com/YomotsuHisami/eagler-touhou/blob/main/docs/TOUHOU_PROGRESS.md)。<br>
+> 对于游戏支持情况，参见[游戏还原和适配总进度表](https://github.com/Ritosa2333/eagler-touhou/blob/main/docs/TOUHOU_PROGRESS.md)。<br>
 > 如果您已经着手做某作了，直接提交修改表格的 Issue 或 PR 即可。<br>
 > 如果您对原作逆向或原作/东二适配感兴趣，欢迎加入我们的 [QQ 群](https://qm.qq.com/q/eeUrxIltug?from=tim)，我们有个开发者群。
 
@@ -26,24 +27,49 @@
 1. 提供高刷新率、触控适配（直触移动、菜单手势）、STG 社区热门工具（thcrap、thprac）。
 2. 提供以预测回滚为主，输入延迟为辅，高延迟鲁棒性优秀的多人联机实现。
 3. 提供一套能实时更新的，能管理触控布局、存档 & REPLAY 的，设备离线后也能运行的 Web App。
-4. 提供一个完全无门槛，只需点点按钮就可以快速联机的联机大厅。
-5. 有一个更新速度快，维护热情高，广为接受意见和批评的开发组。
+4. 提供一个完全无门槛，只需点点按钮就可以快速联机和旁观的联机大厅。
+5. 提供账号、个人主页和云存档，换一台设备也能接着玩。
+6. 有一个更新速度快，维护热情高，广为接受意见和批评的开发组。
+
+现在打开 [touhouonline.com](https://touhouonline.com/) 就能玩到 9 部作品，每一部都可以单人游玩，也可以联机。
 
 ## 目录
 
+- [已上线作品](#已上线作品)
 - [Runtime 适配](#runtime-适配)
   - [完整的原作体验](#完整的原作体验)
+  - [输入设置](#输入设置)
   - [触控适配](#触控适配)
   - [STG 社区热门工具](#stg-社区热门工具)
   - [多人游戏](#多人游戏)
 - [启动器](#启动器)
   - [游戏与文件管理](#游戏与文件管理)
   - [多人联机大厅](#多人联机大厅)
+  - [账号与个人主页](#账号与个人主页)
   - [游戏包与离线运行](#游戏包与离线运行)
 - [自托管](#自托管)
+- [参与开发](#参与开发)
 - [常见问题](#常见问题)
 - [许可证](#许可证)
 - [星标历史](#星标历史)
+
+## 已上线作品
+
+| 作品 | 高刷新率 | thprac | 多语言 | 多人联机 |
+| :--- | :---: | :---: | :---: | :---: |
+| **th05** 東方怪綺談 | - | ✅ | ✅ | 合作，2～3 人 |
+| **th06** 東方紅魔郷 | ✅ | ✅ | ✅ | 合作，2～3 人 |
+| **th07** 東方妖々夢 | ✅ | ✅ | ✅ | 合作，2～3 人 |
+| **th08** 東方永夜抄 | ✅ | ✅ | ✅ | 合作，2～3 人 |
+| **th09** 東方花映塚 | - | - | ✅ | 对战，2 人 |
+| **th10** 東方風神録 | ✅ | ✅ | ✅ | 合作，2～3 人 |
+| **th11** 東方地霊殿 | ✅ | ✅ | ✅ | 合作，2～3 人 |
+| **th12** 東方星蓮船 | ✅ | ✅ | ✅ | 合作，2～3 人 |
+| **th15** 東方紺珠伝 | ✅ | ✅ | ✅ | 合作，2～3 人 |
+
+9 部作品全部支持键盘、手柄和触控，全部提供存档与 Replay 管理，联机时全部可以旁观。
+
+更多作品正在适配，各作的还原、移植和适配进度见[作品进度表](../docs/TOUHOU_PROGRESS.md)。已发布的抢先体验作品可以在右上角菜单的「开发人员选项 → 测试版功能」中开启。
 
 ## Runtime 适配
 
@@ -52,9 +78,11 @@
 - 在浏览器中运行游戏，支持键盘、手柄和触控操作。
 - 支持原版存档和 Replay 的导入导出。原版格式可以记录的输入保持和原版互通；原版格式无法记录的适配输入使用扩展数据。
 - 力求完美体验。解决了原 portable 分支中出现的 弹幕抖动、弹幕运动不流畅、闪烁、单线程切换音乐卡顿、手机卡顿 等大量问题。
-- 支持高刷新率（>60Hz），th09 除外。\[感谢 [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
+- 支持高刷新率（>60Hz）：画面插帧显示，游戏逻辑保持原作的 60 Hz。th06、th07、th08、th10、th11、th12 和 th15 均可开启。\[感谢 [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
+- th06、th07 和 th08 的音乐可以选择 OGG 或 MIDI，MIDI 还可以输出到外部 MIDI 设备。
+- 旧作 th05 把 [uth05win](https://github.com/Goan114/uth05win-vibe) 的原生 C++ 游戏逻辑直接运行在 WebAssembly 上，和 Windows 正作共用同一套启动器、输入、Replay 和联机能力。
 
-不同作品的适配情况有所不同，见[作品进度表](../docs/TOUHOU_PROGRESS.md)。
+不同作品的适配情况见[已上线作品](#已上线作品)和[作品进度表](../docs/TOUHOU_PROGRESS.md)。
 
 ### 输入设置
 
@@ -85,9 +113,9 @@ WASD 布局保留原键位：方向键 / WASD 移动，Z / K 射击，X / J 使�
 
 #### thprac
 
-- 为 th06、th07、th08 和 th10 适配 [thprac](https://github.com/touhouworldcup/thprac)。
+- 为 th05、th06、th07、th08、th10、th11、th12 和 th15 适配 [thprac](https://github.com/touhouworldcup/thprac)。
 - 支持在触控设备上操作练习菜单，并提供打开 Tab Tracker 和作弊菜单的模拟按键。
-- th09 不提供 thprac。
+- thprac 练习录像会连同练习参数一起保存，可以在启动器里回放。
 
 #### thcrap 多语言
 
@@ -97,31 +125,47 @@ WASD 布局保留原键位：方向键 / WASD 移动，Z / K 射击，X / J 使�
 
 ### 多人游戏
 
-- 提供 th06MP、th07MP、th08MP、th09MP 和 th10MP。
-- th06MP 和 th07MP 均基于 [th07MP 的规则](https://github.com/sbrik1111/th07_multi_player)。
-- th06MP、th07MP、th08MP 和 th10MP 支持 2～3 人，th09MP 支持 2 人。
-- 支持暂停后按 R 或者手动重开本局。
-- 可以保存多人 Replay。
+- 9 部已上线作品全部提供多人版：th05MP、th06MP、th07MP、th08MP、th10MP、th11MP、th12MP 和 th15MP 是 2～3 人合作，th09MP 是 2 人对战。
+- th06MP 和 th07MP 均基于 [th07MP 的规则](https://github.com/sbrik1111/th07_multi_player)。各作的完整规则见[联机玩法介绍](content/MULTIPLAYER.md)。
+- 合作规则围绕「互相救」设计：把残机转移给变成幽灵的队友就能将其复活，Power 也可以送给队友；决死时间是原作的 2 倍；Boss 受到的伤害按在场人数缩放。
+- 联机时可以直接选择 Extra、Phantasm、所有角色和路线。
+- 房主可以开启挑战模式：Bomb 清零，生命栏改为累计死亡次数。
+- 预测回滚可以在房间内开关。关闭后由 Adonis 在实际输入通道上测量并协商输入延迟，也可以手动指定。
+- 任意玩家都可以暂停，暂停后按 R 或者手动重开本局。
+- 可以保存多人 Replay，旁观者看完一局也能保存。
 - 单人和多人的存档和 Replay 相互隔离，不过允许共用设置。
 
 ## 启动器
 
 ### 游戏与文件管理
 
-![Eagler Touhou 启动器与游戏管理界面](docs/assets/readme/launcher.webp)
+![Eagler Touhou 启动器的作品库与 th06 的存档、显示和输入设置面板](docs/assets/readme/launcher.webp)
 
-- 提供统一的游戏入口，可以选择作品并启动对应的 Runtime。
+- 提供统一的游戏入口，可以选择作品并启动对应的 Runtime。作品库有封面和列表两种视图，可以搜索、收藏、排序，并按正作、旧作、小数点和同人分类。
 - 提供导入导出存档、Replay 等文件的界面。
+- 录像管理支持文件夹、重命名，以及导入 `.rpy`、`.rpyx` 和录像 ZIP。选中录像就能直接播放，并可以选择起始关卡。
 - 管理已经安装的游戏包，以及游戏数据、OGG、字体和语言包。
+- 界面提供简体中文、English 和日本語，以及深色和浅色外观。
 
 ### 多人联机大厅
 
-![支持玩家与旁观者的多人联机大厅](docs/assets/readme/multiplayer-lobby.webp)
+![联机房间：玩家座位、角色与难度、聊天和观战席](docs/assets/readme/multiplayer-lobby.webp)
 
-- 提供了一个大厅，支持创建房间后输入房间号加入、选择角色和难度、玩家都准备后再开始、旁观者。
-- 可选角色和难度取决于作品，包括对应作品的 Extra 和 Phantasm。
-- 优先使用 WebRTC，也可以通过 WebSocket Relay 连接。
-- 支持旁观。旁观者不占玩家席位，只能观看，不会参与游戏状态（但不能中途进入旁观）。
+- 大厅列出公开房间的作品、难度和状态，可以直接加入或旁观。
+- 创建房间时先选作品，把 4～8 位房间号或邀请链接发给朋友就能进房。隐藏房间不在大厅展示，凭房间号加入。
+- 房间内选择座位、角色和难度，玩家都准备后再开始。可选角色和难度取决于作品，包括对应作品的 Extra 和 Phantasm。
+- 房间自带聊天和快捷发言。「一起听」可以搜索网易云音乐和 QQ 音乐的歌曲与公开歌单，邀请同房玩家同步播放。
+- 玩家之间默认使用 WebRTC 直连，并在同一会话内自适应切换到 TURN 备用路径，对局照常继续。大厅的「检查网络」可以在开房前检测连接条件，服务器运行状态页显示主站、下载、联机和 TURN 服务的在线情况。
+- 支持旁观。旁观者不占玩家席位，只能观看，不会参与游戏状态。
+- 旁观基于流式 Replay。th06、th07、th08、th10、th11 和 th15 可以在开局后中途进入旁观，并在时间线上暂停、跳转到关卡和 Boss 节点，再一键回到直播。
+
+### 账号与个人主页
+
+- 不登录就可以游玩和联机。登录后获得个人主页、好友和云存档。
+- 个人主页包含概览、生涯、游玩记录、内容和好友，展示东方通关图、收藏的游戏和最近启动的作品，可以关注其他玩家。
+- 东方通关图可以导出为 PNG，也可以用 JSON 导出和导入。
+- 云存档在设备之间同步支持的作品的存档。本机和云端进度不同时，可以选择要保留的版本。
+- 资料的展示范围可以在「隐私与个性化」中设置。
 
 ### 游戏包与离线运行
 
@@ -129,7 +173,7 @@ WASD 布局保留原键位：方向键 / WASD 移动，Z / K 射击，X / J 使�
 - 游戏包安装后保存在浏览器本地，游戏数据、OGG、字体和语言包可以分别管理；运行组件由站点统一提供。
 - 玩家导入的原版游戏数据不会上传服务器，只会保存在浏览器本地。
 
-在 HTTPS 或可信 loopback 等安全上下文条件下，已经安装的游戏和启动器**可以被离线运行**。在玩家离线或服务器宕机时，玩家即使刷新了页面也可以使用本地保存的文件正常进行游戏。
+支持安装的浏览器可以把启动器添加为应用。在 HTTPS 或可信 loopback 等安全上下文条件下，已经安装的游戏和启动器**可以被离线运行**。在玩家离线或服务器宕机时，玩家即使刷新了页面也可以使用本地保存的文件正常进行游戏。
 
 ## 自托管
 
@@ -139,7 +183,21 @@ WASD 布局保留原键位：方向键 / WASD 移动，Z / K 射击，X / J 使�
 - **External**：用户站点提供启动器和运行组件，游戏大文件由单独的完整资源站或 CDN 提供。玩家仍可直接安装，前端服务器无需承担大文件流量。
 - **Import**：站点只提供启动器和运行组件，不发布原版游戏数据。玩家导入自己合法持有的游戏包 ZIP，适合没有 CDN 流量预算或不希望托管原版资源的部署者。
 
-三种模式共用同一套前端、浏览器本地游戏包和离线运行能力。完整部署方法见[自托管指南](docs/SELF_HOSTING.md)。
+三种模式共用同一套前端、浏览器本地游戏包和离线运行能力。自托管站点默认使用游客模式，匿名联机可以独立使用；接入兼容的账号服务后即可开启登录、个人主页和云存档。完整部署方法见[自托管指南](docs/SELF_HOSTING.md)。
+
+## 参与开发
+
+本仓库同时维护启动器、游戏、公共运行库和独立服务：
+
+| 目录 | 内容 |
+| :--- | :--- |
+| [`launcher/`](README.md) | 启动器前端：作品库、文件管理、联机大厅、账号与个人主页 |
+| [`ports/`](../ports/README.md) | 各作 Runtime 的源码与 Web 适配，以及对应的多人版 |
+| [`common/`](../common/README.md) | 各作共用的运行库、浏览器模块和契约（包括 Product Catalog） |
+| `services/` | Relay、TURN、资源路由和遥测服务 |
+| [`docs/`](../docs/README.md) | 适配流程、联机与回滚架构、作品进度表 |
+
+从[参与开发](../CONTRIBUTING.md)开始，再到[工作区](../WORKSPACE.md)选择要修改的组件；全部文档见[文档索引](../docs/INDEX.md)。
 
 ## 常见问题
 
@@ -153,4 +211,4 @@ WASD 布局保留原键位：方向键 / WASD 移动，Z / K 射击，X / J 使�
 
 ## 星标历史
 
-[![Star History Chart](https://api.star-history.com/chart?repos=yomotsuhisami/eagler-touhou&type=date&legend=top-left)](https://www.star-history.com/?repos=yomotsuhisami%2Feagler-touhou&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/chart?repos=Ritosa2333/eagler-touhou&type=date&legend=top-left)](https://www.star-history.com/?repos=Ritosa2333%2Feagler-touhou&type=date&legend=top-left)
