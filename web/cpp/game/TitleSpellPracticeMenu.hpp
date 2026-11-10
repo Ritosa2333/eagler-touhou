@@ -128,6 +128,11 @@ public:
     const SpellPracticeCommand& command() const noexcept { return command_; }
     void clear_command() noexcept { command_ = {}; }
 
+    // 对局返回级联（0x4561bf/0x45673a 读 DAT_004bb4c4/c8）：以启动时保存的
+    // stage/slot/difficulty 光标（0x45792b/c8/cc 写点）直入难度层。槽位/难度
+    // 行由宿主按 spell_id 反查后传入；失败 = 目录已不含该卡，不臆造状态。
+    bool restore_selection(i32 stage, i32 slot, i32 difficulty);
+
     std::string error;
     std::string blocked;  // 最近一次被禁用原因（锁定卡/不可用变体等）
 

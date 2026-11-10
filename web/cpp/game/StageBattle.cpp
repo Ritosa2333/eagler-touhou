@@ -334,28 +334,39 @@ void StageBattle::activate_stage_player() {
 
 i32 StageBattle::reserve_damage_registration() {
     // 4456e0 and 4457e0 use the same 256-record search cursor.
+    i32 slot = -1;
     for (i32 n = 0; n < 256; ++n) {
-        const i32 slot = (damage_registration_cursor + n) & 255;
-        auto& registration = damage_registrations[size_t(slot)];
-        if (registration.active) continue;
-        // 4456e0 leaves rectangle angle/size intact; 4457e0 leaves circle
-        // radius/growth intact. Preserve those words across slot reuse so
-        // snapshots and a later opposite-kind allocation see native storage.
-        const float radius = registration.radius, growth = registration.radius_growth;
-        const float angle = registration.angle, width = registration.width;
-        const float height = registration.height;
-        registration = DamageRegistration{};
-        registration.radius = radius; registration.radius_growth = growth;
-        registration.angle = angle; registration.width = width; registration.height = height;
-        registration.active = true;
-        registration.flags = 1;
-        // Retail advances while searching occupied records, not after finding
-        // one. If this record retires before the next allocation it is reused.
-        damage_registration_cursor = slot;
-        return slot;
+        const i32 candidate = (damage_registration_cursor + n) & 255;
+        if (!damage_registrations[size_t(candidate)].active) {
+            slot = candidate;
+            break;
+        }
     }
-    error_ = "player damage registration pool exhausted";
-    return -1;
+    if (slot < 0) {
+        // 饱和：原版 0x4456e0 全忙时返回数组末尾指针（调用方越界写，1P
+        // 密度不可达）；移植曾把该态升为硬错误，但多席（th13-mp 2-3 人）
+        // 持续齐射可在长程对局中占满单席密度的 256 槽并终止对局。改为
+        // 环形复用扫描起点槽（逐出最旧扫描位）：被逐属主留下 stale 回指针
+        // （retire 可能清掉新占用者——0x446542 原版槽复用同款行为），
+        // sync_damage_registrations 的 generation 匹配把无主记录自动退场。
+        slot = damage_registration_cursor & 255;
+    }
+    auto& registration = damage_registrations[size_t(slot)];
+    // 4456e0 leaves rectangle angle/size intact; 4457e0 leaves circle
+    // radius/growth intact. Preserve those words across slot reuse so
+    // snapshots and a later opposite-kind allocation see native storage.
+    const float radius = registration.radius, growth = registration.radius_growth;
+    const float angle = registration.angle, width = registration.width;
+    const float height = registration.height;
+    registration = DamageRegistration{};
+    registration.radius = radius; registration.radius_growth = growth;
+    registration.angle = angle; registration.width = width; registration.height = height;
+    registration.active = true;
+    registration.flags = 1;
+    // Retail advances while searching occupied records, not after finding
+    // one. If this record retires before the next allocation it is reused.
+    damage_registration_cursor = slot;
+    return slot;
 }
 
 i32 StageBattle::register_circle(Vec3 center, float radius, float growth, i32 lifetime,
