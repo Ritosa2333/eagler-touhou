@@ -4,7 +4,13 @@ import {createHash} from 'node:crypto';
 
 const root = resolve(import.meta.dirname, '..');
 const game = 'th13';
-const out = process.env.EAGLER_RUNTIME_OUTPUT ? resolve(process.env.EAGLER_RUNTIME_OUTPUT) : resolve(root, 'build-eagler');
+// 多人变体（对照 th15-mp package-eagler.mjs 的 multiplayer 分支）：独立输出
+// 目录 + multiplayer.mjs + shell 构建标记；产物 manifest 必须让桥的身份
+// 校验（game/product/variant/features.multiplayer/execution.sha256）通过。
+const multiplayer = process.argv.includes('--multiplayer');
+const out = process.env.EAGLER_RUNTIME_OUTPUT
+  ? resolve(process.env.EAGLER_RUNTIME_OUTPUT)
+  : resolve(root, multiplayer ? 'build-eagler-multiplayer' : 'build-eagler');
 const buildRoot = resolve(root, 'web/artifacts', process.env.TH13_OUTPUT || 'sdl3');
 const fonts = process.env.EAGLER_FONT_ROOT;
 const hash = b => createHash('sha256').update(b).digest('hex');
@@ -30,6 +36,7 @@ const runtimeNames = [
   'keyboard.mjs',
   'directory-keyboard.mjs',
   'runtime-assets.mjs',
+  ...(multiplayer ? ['multiplayer.mjs'] : []),
 ];
 const names = [
   entry,
@@ -69,7 +76,20 @@ const html = rawHtml.includes('eagler-data-provider')
   : rawHtml.replace('<head>', '<head><meta name="eagler-data-provider" content="retail-memory">');
 write(entry, html);
 
-for (const name of runtimeNames) copy(resolve(shellRoot, name), name);
+for (const name of runtimeNames) {
+  if (name === 'shell.mjs') {
+    // 构建标记（对照 th15-mp）：runtimeBuild.multiplayer 是 shell 多人分支
+    // 与桥加载的唯一开关；标记原样保留会让多人页静默退回单席。
+    const marker = "/*TH13_BUILD_INFO*/{version: 'development-incomplete', completeGame: false}";
+    const shell = readFileSync(resolve(shellRoot, 'shell.mjs'), 'utf8');
+    if (!shell.includes(marker)) throw Error('Missing build-info marker');
+    const version = build.version || '0.1.0-sdl3-skeleton';
+    write(name, shell.replace(marker, JSON.stringify(
+      {version, completeGame: false, multiplayer})));
+  } else {
+    copy(resolve(shellRoot, name), name);
+  }
+}
 
 for (const ext of ['mjs', 'wasm']) {
   const bytes = readFileSync(resolve(buildRoot, game + '-sdl.' + ext));
@@ -84,7 +104,7 @@ const resources = fontNames.map(name => {
 });
 write('resources.json', JSON.stringify({schema: 'eagler-sdl-resources/1', game, resources}, null, 2) + '\n');
 
-const features = {thprac: false, languages: false, focusHitbox: false};
+const features = {multiplayer, thprac: false, languages: false, focusHitbox: false};
 write(
   'manifest.json',
   JSON.stringify(
@@ -92,7 +112,9 @@ write(
       game,
       protocol: 'eagler-touhou/1',
       adapter: 'sdl3-eagler',
-      profile: 'integration-in-progress',
+      ...(multiplayer
+        ? {product: 'th13mp', variant: 'multiplayer', profile: 'multiplayer'}
+        : {profile: 'integration-in-progress'}),
       completeAdapter: false,
       builtAt: build.builtAt,
       version: build.version || '0.1.0-sdl3-skeleton',

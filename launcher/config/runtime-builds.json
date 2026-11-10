@@ -33,20 +33,35 @@
     },
     "th06": {
       "builder": "cmake",
-      "sourceBuild": { "kind": "cmake" },
+      "sourceBuild": {
+        "kind": "cmake"
+      },
       "workspaceRepository": "th06",
       "assetRootVariable": "TH06_ASSET_ROOT",
       "variants": {
         "development": {
-          "features": { "thcrap": true, "thprac": false },
-          "cache": { "TH_EXTERNAL_ASSETS": false }
+          "features": {
+            "thcrap": true,
+            "thprac": false
+          },
+          "cache": {
+            "TH_EXTERNAL_ASSETS": false
+          }
         },
         "external": {
-          "features": { "thcrap": true, "thprac": false },
-          "cache": { "TH_EXTERNAL_ASSETS": true }
+          "features": {
+            "thcrap": true,
+            "thprac": false
+          },
+          "cache": {
+            "TH_EXTERNAL_ASSETS": true
+          }
         },
         "normal": {
-          "features": { "thcrap": "configurable", "thprac": "configurable" },
+          "features": {
+            "thcrap": "configurable",
+            "thprac": "configurable"
+          },
           "cache": {
             "TH_ENABLE_NETPLAY": false,
             "TH_ENABLE_MULTIPLAYER_GAMEPLAY": false,
@@ -54,7 +69,10 @@
           }
         },
         "multiplayer": {
-          "features": { "thcrap": "configurable", "thprac": false },
+          "features": {
+            "thcrap": "configurable",
+            "thprac": false
+          },
           "cache": {
             "TH_ENABLE_NETPLAY": true,
             "TH_ENABLE_MULTIPLAYER_GAMEPLAY": true,
@@ -65,20 +83,35 @@
     },
     "th07": {
       "builder": "cmake",
-      "sourceBuild": { "kind": "cmake" },
+      "sourceBuild": {
+        "kind": "cmake"
+      },
       "workspaceRepository": "th07",
       "assetRootVariable": "TH07_ASSET_ROOT",
       "variants": {
         "development": {
-          "features": { "thcrap": true, "thprac": false },
-          "cache": { "TH_EXTERNAL_ASSETS": false }
+          "features": {
+            "thcrap": true,
+            "thprac": false
+          },
+          "cache": {
+            "TH_EXTERNAL_ASSETS": false
+          }
         },
         "external": {
-          "features": { "thcrap": true, "thprac": false },
-          "cache": { "TH_EXTERNAL_ASSETS": true }
+          "features": {
+            "thcrap": true,
+            "thprac": false
+          },
+          "cache": {
+            "TH_EXTERNAL_ASSETS": true
+          }
         },
         "normal": {
-          "features": { "thcrap": "configurable", "thprac": "configurable" },
+          "features": {
+            "thcrap": "configurable",
+            "thprac": "configurable"
+          },
           "cache": {
             "TH_ENABLE_NETPLAY": false,
             "TH_ENABLE_MULTIPLAYER_GAMEPLAY": false,
@@ -86,7 +119,10 @@
           }
         },
         "multiplayer": {
-          "features": { "thcrap": "configurable", "thprac": false },
+          "features": {
+            "thcrap": "configurable",
+            "thprac": false
+          },
           "cache": {
             "TH_ENABLE_NETPLAY": true,
             "TH_ENABLE_MULTIPLAYER_GAMEPLAY": true,
@@ -97,98 +133,313 @@
     },
     "th10": {
       "builder": "prebuilt",
-      "sourceBuild": { "kind": "node", "build": ["portable/build.mjs"], "practiceFlag": "--thprac" },
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "portable/build.mjs"
+        ],
+        "practiceFlag": "--thprac"
+      },
       "workspaceRepository": "th10",
       "variants": {
-        "normal": { "features": { "thcrap": true, "thprac": true }, "cache": {} },
-        "multiplayer": { "workspaceRepository": "th10mp", "sourceBuild": { "build": ["portable/build.mjs", "--multiplayer"] }, "features": { "thcrap": true, "thprac": false }, "cache": {} }
+        "normal": {
+          "features": {
+            "thcrap": true,
+            "thprac": true
+          },
+          "cache": {}
+        },
+        "multiplayer": {
+          "workspaceRepository": "th10mp",
+          "sourceBuild": {
+            "build": [
+              "portable/build.mjs",
+              "--multiplayer"
+            ]
+          },
+          "features": {
+            "thcrap": true,
+            "thprac": false
+          },
+          "cache": {}
+        }
       }
     },
     "th09": {
       "builder": "prebuilt",
-      "sourceBuild": { "kind": "node", "build": ["web/scripts/build-sdl.mjs", "--release"] },
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "web/scripts/build-sdl.mjs",
+          "--release"
+        ]
+      },
       "workspaceRepository": "th09",
       "variants": {
-        "normal": { "features": { "thcrap": true, "thprac": false }, "cache": {} },
-        "multiplayer": { "features": { "thcrap": true, "thprac": false }, "cache": {} }
+        "normal": {
+          "features": {
+            "thcrap": true,
+            "thprac": false
+          },
+          "cache": {}
+        },
+        "multiplayer": {
+          "features": {
+            "thcrap": true,
+            "thprac": false
+          },
+          "cache": {}
+        }
       }
     },
     "th075": {
-      "builder": "prebuilt", "workspaceRepository": "th075",
-      "sourceBuild": { "kind": "node", "build": ["web/scripts/build-sdl.mjs", "--release", "--eagler"] },
+      "builder": "prebuilt",
+      "workspaceRepository": "th075",
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "web/scripts/build-sdl.mjs",
+          "--release",
+          "--eagler"
+        ]
+      },
       "variants": {
-        "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} },
-        "multiplayer": { "workspaceRepository": "th075mp", "sourceBuild": { "build": ["web/scripts/build-sdl.mjs", "--release", "--eagler", "--multiplayer"] }, "features": { "thcrap": false, "thprac": false }, "cache": {} }
+        "normal": {
+          "features": {
+            "thcrap": false,
+            "thprac": false
+          },
+          "cache": {}
+        },
+        "multiplayer": {
+          "workspaceRepository": "th075mp",
+          "sourceBuild": {
+            "build": [
+              "web/scripts/build-sdl.mjs",
+              "--release",
+              "--eagler",
+              "--multiplayer"
+            ]
+          },
+          "features": {
+            "thcrap": false,
+            "thprac": false
+          },
+          "cache": {}
+        }
       }
     },
     "th08": {
       "builder": "prebuilt",
-      "sourceBuild": { "kind": "node", "build": ["portable/build.mjs", "--th08"] },
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "portable/build.mjs",
+          "--th08"
+        ]
+      },
       "workspaceRepository": "th08",
       "variants": {
         "normal": {
-          "features": { "thcrap": true, "thprac": true },
+          "features": {
+            "thcrap": true,
+            "thprac": true
+          },
           "cache": {}
         },
         "multiplayer": {
           "workspaceRepository": "th08mp",
-          "sourceBuild": { "build": ["portable/build.mjs", "--th08", "--multiplayer"] },
-          "features": { "thcrap": true, "thprac": true },
+          "sourceBuild": {
+            "build": [
+              "portable/build.mjs",
+              "--th08",
+              "--multiplayer"
+            ]
+          },
+          "features": {
+            "thcrap": true,
+            "thprac": true
+          },
           "cache": {}
         }
       }
     },
     "th11": {
       "builder": "prebuilt",
-      "sourceBuild": { "kind": "node", "build": ["portable/build.mjs"], "practiceFlag": "--thprac" },
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "portable/build.mjs"
+        ],
+        "practiceFlag": "--thprac"
+      },
       "workspaceRepository": "th11",
       "variants": {
-        "normal": { "sourceBuild": { "commonInputs": ["include/eagler/text/RuntimeFontRaster.hpp"] }, "features": { "thcrap": true, "thprac": true }, "cache": {} },
+        "normal": {
+          "sourceBuild": {
+            "commonInputs": [
+              "include/eagler/text/RuntimeFontRaster.hpp"
+            ]
+          },
+          "features": {
+            "thcrap": true,
+            "thprac": true
+          },
+          "cache": {}
+        },
         "multiplayer": {
           "workspaceRepository": "th11mp",
-          "sourceBuild": { "build": ["portable/build.mjs", "--multiplayer"] },
-          "features": { "thcrap": true, "thprac": false },
+          "sourceBuild": {
+            "build": [
+              "portable/build.mjs",
+              "--multiplayer"
+            ]
+          },
+          "features": {
+            "thcrap": true,
+            "thprac": false
+          },
           "cache": {}
         }
       }
     },
     "th15": {
       "builder": "prebuilt",
-      "sourceBuild": { "kind": "node", "build": ["web/scripts/build-sdl-application.mjs", "--release"], "practiceFlag": "--thprac", "commonInputs": ["include/eagler/text/RuntimeFontRaster.hpp"] },
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "web/scripts/build-sdl-application.mjs",
+          "--release"
+        ],
+        "practiceFlag": "--thprac",
+        "commonInputs": [
+          "include/eagler/text/RuntimeFontRaster.hpp"
+        ]
+      },
       "workspaceRepository": "th15",
       "variants": {
-        "normal": { "features": { "thcrap": true, "thprac": true }, "cache": {} },
+        "normal": {
+          "features": {
+            "thcrap": true,
+            "thprac": true
+          },
+          "cache": {}
+        },
         "multiplayer": {
           "workspaceRepository": "th15mp",
-          "sourceBuild": { "build": ["web/scripts/build-sdl-application.mjs", "--release", "--multiplayer"] },
-          "features": { "thcrap": true, "thprac": false },
+          "sourceBuild": {
+            "build": [
+              "web/scripts/build-sdl-application.mjs",
+              "--release",
+              "--multiplayer"
+            ]
+          },
+          "features": {
+            "thcrap": true,
+            "thprac": false
+          },
           "cache": {}
         }
       }
     },
     "th20": {
       "builder": "prebuilt",
-      "sourceBuild": { "kind": "node", "build": ["portable/build.mjs"], "commonMarker": "include/eagler/audio/WebSfx.hpp" },
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "portable/build.mjs"
+        ],
+        "commonMarker": "include/eagler/audio/WebSfx.hpp"
+      },
       "workspaceRepository": "th20",
       "variants": {
-        "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} }
+        "normal": {
+          "features": {
+            "thcrap": false,
+            "thprac": false
+          },
+          "cache": {}
+        }
       }
     },
     "th12": {
       "builder": "prebuilt",
-      "sourceBuild": { "kind": "node", "build": ["scripts/build-eagler.mjs"], "commonInputs": ["include/eagler/thprac/PracticeSpeed.hpp","include/eagler/thprac/PracticeInput.hpp","include/eagler/thprac/PracticeKeyMonitor.hpp","include/eagler/thprac/PracticeMobilePanels.hpp","include/eagler/thprac/PracticePointer.hpp"] },
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "scripts/build-eagler.mjs"
+        ],
+        "commonInputs": [
+          "include/eagler/thprac/PracticeSpeed.hpp",
+          "include/eagler/thprac/PracticeInput.hpp",
+          "include/eagler/thprac/PracticeKeyMonitor.hpp",
+          "include/eagler/thprac/PracticeMobilePanels.hpp",
+          "include/eagler/thprac/PracticePointer.hpp"
+        ]
+      },
       "workspaceRepository": "th12",
       "variants": {
-        "normal": { "features": { "thcrap": true, "thprac": true }, "cache": {} },
-        "multiplayer": { "workspaceRepository": "th12mp", "features": { "thcrap": true, "thprac": false }, "sourceBuild": { "kind": "node", "build": ["scripts/build-eagler.mjs"] }, "cache": {} }
+        "normal": {
+          "features": {
+            "thcrap": true,
+            "thprac": true
+          },
+          "cache": {}
+        },
+        "multiplayer": {
+          "workspaceRepository": "th12mp",
+          "features": {
+            "thcrap": true,
+            "thprac": false
+          },
+          "sourceBuild": {
+            "kind": "node",
+            "build": [
+              "scripts/build-eagler.mjs"
+            ]
+          },
+          "cache": {}
+        }
       }
     },
     "th13": {
       "builder": "prebuilt",
-      "sourceBuild": { "kind": "node", "build": ["portable/build-eagler.mjs"], "commonInputs": ["include/eagler/text/RuntimeFontRaster.hpp", "include/eagler/input/DialogueGesture.hpp", "include/eagler/input/BrowserGamepad.hpp", "browser/browser-gamepad-input.hpp"] },
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "portable/build-eagler.mjs"
+        ],
+        "commonInputs": [
+          "include/eagler/text/RuntimeFontRaster.hpp",
+          "include/eagler/input/DialogueGesture.hpp",
+          "include/eagler/input/BrowserGamepad.hpp",
+          "browser/browser-gamepad-input.hpp"
+        ]
+      },
       "workspaceRepository": "th13",
       "variants": {
-        "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} }
+        "normal": {
+          "features": {
+            "thcrap": false,
+            "thprac": false
+          },
+          "cache": {}
+        },
+        "multiplayer": {
+          "workspaceRepository": "th13mp",
+          "features": {
+            "thcrap": false,
+            "thprac": false
+          },
+          "sourceBuild": {
+            "kind": "node",
+            "build": [
+              "portable/build-eagler.mjs",
+              "--multiplayer"
+            ]
+          },
+          "cache": {}
+        }
       }
     },
     "th17": {
@@ -219,6 +470,38 @@
         }
       }
     },
-    "th19": {"builder":"prebuilt","workspaceRepository":"th19","sourceBuild":{"kind":"node","build":["scripts/build-eagler.mjs"],"commonMarker":"include/eagler/input/BrowserGamepad.hpp"},"variants":{"normal":{"features":{"thcrap":false,"thprac":false},"cache":{}},"multiplayer":{"sourceBuild":{"build":["scripts/build-eagler.mjs","--multiplayer"]},"features":{"thcrap":false,"thprac":false},"cache":{}}}}
+    "th19": {
+      "builder": "prebuilt",
+      "workspaceRepository": "th19",
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "scripts/build-eagler.mjs"
+        ],
+        "commonMarker": "include/eagler/input/BrowserGamepad.hpp"
+      },
+      "variants": {
+        "normal": {
+          "features": {
+            "thcrap": false,
+            "thprac": false
+          },
+          "cache": {}
+        },
+        "multiplayer": {
+          "sourceBuild": {
+            "build": [
+              "scripts/build-eagler.mjs",
+              "--multiplayer"
+            ]
+          },
+          "features": {
+            "thcrap": false,
+            "thprac": false
+          },
+          "cache": {}
+        }
+      }
+    }
   }
 }
