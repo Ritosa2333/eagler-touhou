@@ -246,6 +246,7 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
         openImport();
         return;
       }
+      lockedFiles = null;
       const message = preparationErrorText(error); ports.feedback.playerStatus(message);
       const storageFailure = /IndexedDB|存储|写入|配额|quota|浏览器已清理|持久化/i.test(message);
       const reasonKey = automatic
