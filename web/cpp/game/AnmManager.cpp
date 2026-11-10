@@ -102,7 +102,12 @@ u32 AnmManager::create_preserve_ip(i32 id,i32 script,i32 layer,u32 ordering,cons
     vm->visual.translation=translation;
     if(game_coordinates){vm->visual.translation.x=float(vm->visual.translation.x+320.f);vm->visual.translation.y=float(vm->visual.translation.y+16.f);}
     vm->variables.rotation.z=anm_arg;
-    if(!initial_tick(*vm))return 0;if(anm_random_observer)anm_random_observer(*vm,-1,0,0,0,0,0,0,false);vm->ordering=ordering;return registry.submit(*vm,ordering);
+    if(!initial_tick(*vm))return 0;if(anm_random_observer)anm_random_observer(*vm,-1,0,0,0,0,0,0,false);vm->ordering=ordering;
+    // submit 失败的 registry 文案必须冒泡到 manager.error（调用方的
+    // fail 链读 manager.error——M8 回滚重放实证曾静默丢失该文案）。
+    const u32 handle=registry.submit(*vm,ordering);
+    if(!handle){if(error.empty())error=registry.error.empty()?"Animation registry rejected the instance":registry.error;registry.destroy_tree(*vm);}
+    return handle;
 }
 AnmVm* AnmManager::spawn_child(AnmVm& source,i32 script,u32 ordering){
     if(!source.resource){error="Child animation source has no resource";return nullptr;}auto* vm=instantiate(*source.resource,source.local_script_index(script));if(!vm)return nullptr;
@@ -118,14 +123,15 @@ AnmVm* AnmManager::spawn_detached(AnmVm& source,i32 script){
     if(!initial_tick(*vm))return nullptr;if(anm_random_observer)anm_random_observer(*vm,-1,0,0,0,0,0,0,false);vm->ordering=0;if(!registry.submit(*vm)){error=registry.error;registry.destroy_tree(*vm);return nullptr;}return vm;
 }
 bool AnmManager::spawn_effect(AnmVm& vm,i32 script){if(effect)return effect(vm,script);if(script==0){
- // 402ff0 copies four effect templates and the astral template into its
- // embedded VMs. Resolve the astral bank by its declared resource name.
+ // 402ff0 copies four effect templates; the fifth astral panel is conditional
+ // on [0x4c2164] (AstralInf), which is null at the title launch. Resolve the
+ // astral bank by name and pass it through as optional.
  AnmResource* astral=nullptr;
  for(const auto& item:resource_names)if(item.second=="astral.anm"){astral=resource(item.first);break;}
- if(!vm.resource||!astral){error="Scene effect 0 requires effect and astral animation banks";return false;}
+ if(!vm.resource){error="Scene effect 0 requires the effect animation bank";return false;}
  vm.geometry.clear();vm.geometry.overlay=std::make_unique<AnmOverlay>();
  vm.geometry.allocation_bytes=0x1c3c;vm.visual.layer=0;
- if(!vm.geometry.overlay->initialize(*vm.resource,*astral,vm,random)){
+ if(!vm.geometry.overlay->initialize(*vm.resource,astral,vm,random)){
   error="Scene effect 0 overlay initialization failed";return false;
  }
  return true;

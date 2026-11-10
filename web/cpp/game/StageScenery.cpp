@@ -338,4 +338,37 @@ bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphi
     graphics.set_depth_mask(false);
     return true;
 }
+
+// ---- M6/P3.2 快照面：值域全量拷贝（file/接线回调不快照，见头文件注释）。
+StageScenery::ExtraSnapshot StageScenery::capture_extra() const {
+    ExtraSnapshot out;
+    out.primitives = primitives;
+    out.background_slots = background_slots;
+    out.object_flags = object_flags;
+    out.instance_flags = instance_flags;
+    out.lifecycle_flags = lifecycle_flags;
+    out.lifecycle_timer = lifecycle_timer;
+    out.fade_in_pending = fade_in_pending;
+    out.transition_color = transition_color;
+    out.rate = rate;
+    out.view_direction = view_direction;
+    out.frames = frames;
+    return out;
+}
+
+void StageScenery::restore_extra(const ExtraSnapshot& source) {
+    // 前提：本对象已 initialize（回滚不跨装配期）。VM 池按值整场替换；
+    // 标志数组尺寸随 file 的对象/实例数（只读资源，两侧一致）。
+    primitives = source.primitives;
+    background_slots = source.background_slots;
+    object_flags = source.object_flags;
+    instance_flags = source.instance_flags;
+    lifecycle_flags = source.lifecycle_flags;
+    lifecycle_timer = source.lifecycle_timer;
+    fade_in_pending = source.fade_in_pending;
+    transition_color = source.transition_color;
+    rate = source.rate;
+    view_direction = source.view_direction;
+    frames = source.frames;
+}
 }  // namespace th13

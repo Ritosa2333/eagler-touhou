@@ -237,14 +237,48 @@ void ItemManager::on_et_clear(float x, float y, float z) {
 //   5 待转（type9）：sprite 每帧 -1，<0 → state2（重挂 ANM 属表现层）。
 //   随后 LAB_0042e7f7 收集尾（见 collect_check：收集盒 → 吸附盒）。
 void ItemManager::update(const ItemCollector& player) {
-    last_player_ = player;
-    const float rate = player.progress ? player.progress->rate : 1.f;
+    update_seats(&player, 1);
+}
+
+// M3：最近合格席（R-I7）。平距平方严格小于比较——平局保留较小席位。
+const ItemCollector& ItemManager::pick_collector(const ItemCollector* seats, i32 seat_count,
+                                                  float x, float y,
+                                                  const ItemCollector& fallback) {
+    const ItemCollector* best = nullptr;
+    float best_d2 = 0;
+    for (i32 i = 0; i < seat_count; ++i) {
+        const ItemCollector& candidate = seats[i];
+        if (!candidate.eligible) continue;  // R-I8：幽灵/排除席不参与
+        const float dx = candidate.x - x, dy = candidate.y - y;
+        const float d2 = dx * dx + dy * dy;
+        if (!best || d2 < best_d2) {
+            best = &candidate;
+            best_d2 = d2;
+        }
+    }
+    return best ? *best : fallback;
+}
+
+// M3：多席道具步进（R-I7：每件道具的确定性接收者 = 最近合格玩家，平距
+// 平局取小席位；R-I8：幽灵/不合格席不参与选择）。单席调用 = 单元素数组，
+// 逐件选择恒返回唯一席——与旧单席路径逐位一致（零行为变化）。
+// magnet/追踪/收集盒全部按选中席求值；结算入选中席的 progress/player/score。
+void ItemManager::update_seats(const ItemCollector* seats, i32 seat_count) {
+    if (!seats || seat_count <= 0) return;
+    const ItemCollector& fallback = seats[0];
+    last_player_ = fallback;
+    const float rate = fallback.progress ? fallback.progress->rate : 1.f;
     cancel_wave_ = 0;  // 0x42e380:74（type9 出场延迟的每帧波数）
-    const bool magnet =
-        !player.dialog && (player.state == 2 || player.state == 4 ||
-                           player.y >= 128.0f);
     for (Item& item : items_) {
         if (!item.alive) continue;
+        // R-I7：按道具当前位置选最近合格席（每件每帧求值，不缓存）。
+        const ItemCollector& player = pick_collector(seats, seat_count, item.x, item.y, fallback);
+        // R-I3：结算宿主跟随选中席（collect_* 经 last_player_ 落 HUD——
+        // 逐席资源：P/残机/Bomb 入选中席；分数经共享 score 指针一份）。
+        last_player_ = player;
+        const bool magnet =
+            !player.dialog && (player.state == 2 || player.state == 4 ||
+                               player.y >= 128.0f);
         switch (item.state) {
         case 1: {
             if (magnet) {
@@ -666,12 +700,26 @@ void ItemManager::set_spirit_trance(bool active) {
 }
 
 void ItemManager::update_spirits(const ItemCollector& player) {
-    last_player_ = player;
-    const float rate = player.progress ? player.progress->rate : 1.f;
-    const i32 character =
-        player.progress ? player.progress->character : 0;  // DAT_004be7b8
+    update_spirits_seats(&player, 1);
+}
+
+// M3：神霊多席步进（R-I7：每只按最近合格席——灵界角色门按实际拾取者
+// 的角色；单元素 = 单席零变化）。
+void ItemManager::update_spirits_seats(const ItemCollector* seats, i32 seat_count) {
+    if (!seats || seat_count <= 0) return;
+    const ItemCollector& fallback = seats[0];
+    last_player_ = fallback;
+    const float rate = fallback.progress ? fallback.progress->rate : 1.f;
     for (Spirit& s : spirits_) {
         if (!s.alive) continue;
+        const ItemCollector& player = pick_collector(seats, seat_count, s.x, s.y, fallback);
+        // R-I3：结算宿主跟随选中席（同道具侧）。
+        last_player_ = player;
+        // R-I5：角色门按实际拾取者的席位角色（-1 = 单席回落
+        // progress->character——DAT_004be7b8 语义）。
+        const i32 character =
+            player.character >= 0 ? player.character
+                                  : (player.progress ? player.progress->character : 0);
         s.anm_frame_prev = s.anm_frame;
         s.anm_time = float(s.anm_time + (rate > .99f && rate < 1.01f ? 1.f : rate));
         s.anm_frame = truncate_int(s.anm_time);
@@ -802,7 +850,8 @@ float ItemManager::angle_to_player(const Spirit& s, const ItemCollector& player)
 //     kind3 → 点值 + score（无 trance）；其余同。
 void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player) {
     SessionState& progress = *player.progress;
-    const i32 character = progress.character;              // DAT_004be7b8
+    // R-I5：角色门按实际拾取者的席位角色（-1 = 单席回落 DAT_004be7b8）。
+    const i32 character = player.character >= 0 ? player.character : progress.character;
     const bool easy_difficulty = progress.difficulty < 5;  // DAT_004be7c4 < 5
     events_.push_back({ItemEvent::Kind::Collected,
                        10 + s.kind, s.x, s.y});

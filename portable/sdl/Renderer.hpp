@@ -1,6 +1,7 @@
 #pragma once
 #include <SDL3/SDL.h>
 #include "GraphicsState.hpp"
+#include "UnormBlendProfile.hpp"
 #include <GLES3/gl3.h>
 #include <array>
 #include <cstdint>
@@ -29,6 +30,14 @@ class Renderer : public StateCommands {
 public:
     using Resolve=Surface(*)(void*,u32);
     Statistics stats{};State state{};bool defer=false,flip_present_y=false;
+    // Initialize-only and limited to the original opaque display target.
+    // Alpha-bearing render textures retain the previous NativeGles behavior.
+    bool configure_unorm_blend_profile(UnormBlendProfile profile,u32 opaque_target) {
+        if (initialized || context || vertex || generic.id || !programs.empty()) return false;
+        if (profile!=UnormBlendProfile::NativeGles&&!opaque_target) return false;
+        unorm_blend_profile=profile;unorm_blend_target=opaque_target;
+        return true;
+    }
     Renderer(int version,Resolve,void*);~Renderer();
     bool initialize();void flush();void discard();bool commit();
 #if TH_ENABLE_THPRAC
@@ -63,7 +72,8 @@ private:
 #if TH_ENABLE_THPRAC
     GLuint imguiProgram=0,imguiVao=0,imguiVbo=0,imguiEbo=0,imguiFontTexture=0;GLint imguiProjMtx=-1,imguiTexture=-1;
 #endif
-    Program generic{};bool warming=true,buildingGeneric=false;Program* program=nullptr;
+    Program generic{};bool warming=true,buildingGeneric=false;bool initialized=false;Program* program=nullptr;
+    UnormBlendProfile unorm_blend_profile=UnormBlendProfile::NativeGles;u32 unorm_blend_target=0;
     Stream vertices{},indices{},instances{};State batchState{};
     std::vector<u8> batchBytes,batchScratch,quad,worlds,pixels;Topology batchTopology=Topology::Triangles;bool batching=false,instancing=false;
     u32 batchCount=0,pending=0;std::string failure;

@@ -34,6 +34,11 @@ public:
     std::string error;
     i32 music_volume = 100;
     bool music_enabled = true;
+    // P3.1：确认后冲账模式（只由 MP 会话开启；单人/SP 路径恒 false）。
+    // true 时 enqueue/stop/queue_music/trance_music 只发射 request_observer
+    // 并做同步校验，不写 12 通道帧表、不触音乐命令队列（听感不变——宿主在
+    // 该帧 commit 段经 apply_request 冲账，见 Session 的确认账本）。
+    bool defer_output = false;
     // Global SE volume = original DAT_004e4770. 0x44ed70 writes it from the
     // config byte DAT_004dc893 every time the options change (0x44dd00), so it
     // is live state, not a startup constant. 0x4613c0 reads it at each voice
@@ -61,6 +66,22 @@ public:
     // 0x446174/0x4461aa directly update the existing buffer pan without
     // restarting the voice or changing the queued start-time pan.
     bool set_voice_pan(i32 id, float pan);
+    // M1/T4 F3 pan 两入口拆分（set_voice_pan = 两者合成，语义不变）：
+    // observe_voice_pan = 捕获点入口：发射 request_observer(Kind::Pan)（观察
+    // 先于校验，同原 :336 先于 :337-343 次序）+ 同步校验（校验条件与 error
+    // 文案逐字同原实现，失败即返回 false），不写 buffer_pan、不触设备、
+    // 不动 statistics。等待确认事件队列在捕获拍调用。
+    bool observe_voice_pan(i32 id, float pan);
+    // apply_voice_pan = commit 冲账入口：buffer_pan + web_sfx::pan 设备触达，
+    // 无观察器发射（Pan tap 恰一次落在捕获拍）、无校验副作用（校验已在
+    // 捕获拍同步完成；越界 id 静默忽略，同 voice_pan() 只读访问器惯例）。
+    void apply_voice_pan(i32 id, float pan);
+    // P3.1 冲账入口（M1 Pan 拆分的同构推广）：按 kind 分派到真正的设备触达
+    // （Voice→queue_voice，entry 由 observation.x/positional 重算；Stop→stop
+    // 体；Music→queue_music 体；Pan→apply_voice_pan）。不发射 request_observer
+    //（恰一次落在捕获拍）。返回 false = 设备拒绝（error set-if-empty 语义
+    // 与对应公开入口一致）。仅 defer_output 模式使用；单人路径不调用。
+    bool apply_request(const RequestObservation& request);
 #ifdef TH13_AUDIO_MIXER_ONLY
     // Loads the original SE table from an explicit directory for PCM-level
     // diagnostics. It intentionally has no music stream or output device.
@@ -88,5 +109,14 @@ public:
     i32 voice_attenuation(i32 id) const;
 private:
     bool queue_voice(i32 id, i32 entry);
+    // P3.1 defer_output 捕获拍的同步校验（不写通道表/不作统计，error 文案
+    // 与 queue_voice/stop/queue_music 的原实现逐字一致）。
+    bool validate_voice(i32 id);
+    bool validate_stop(i32 id);
+    bool validate_music(i32 code, const std::string& text);
+    // 无观察器发射的设备触达体（公开入口与 apply_request 共用；单人路径
+    // 公开入口=观察器 + 本函数，逐字节等价原实现）。
+    bool apply_stop(i32 id);
+    bool apply_music(i32 code, i32 value, const std::string& text);
 };
 }

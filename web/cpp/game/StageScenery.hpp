@@ -39,6 +39,27 @@ public:
               i32 layer_first, i32 layer_last, const GraphicsViewport& viewport, Vec2 cull_extent,
               Vec2 screen_shake = {});
     bool interrupt_objects(i32 label);
+    // ---- M6/P3.2 快照面（WorldState 的 STD 域）----
+    // 值域全量：图元/内嵌槽 VM（visual 面自持池，不在 AnmRegistry）、
+    // 对象/实例标志、生命周期（flags/timer/fade_in/transition_color）、
+    // 帧计数与视线。file（StageResource）与 script.background_command
+    //（接线回调）不快照——资源只读、回调身份稳定。script.state 是 public
+    // 成员，由 WorldState 直接值拷贝。
+    struct ExtraSnapshot {
+        std::vector<AnmVm> primitives;
+        std::array<AnmVm, 8> background_slots{};
+        std::vector<u8> object_flags;
+        std::vector<i16> instance_flags;
+        u32 lifecycle_flags = 1;
+        Timer lifecycle_timer{0, 0, 0, 0, 0};
+        bool fade_in_pending = false;
+        u32 transition_color = 0x00808080u;
+        float rate = 1;
+        Vec3 view_direction{};
+        u32 frames = 0;
+    };
+    ExtraSnapshot capture_extra() const;
+    void restore_extra(const ExtraSnapshot& source);
 private:
     std::vector<AnmVm> primitives;
     std::array<AnmVm, 8> background_slots{};

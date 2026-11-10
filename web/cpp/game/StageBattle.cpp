@@ -138,13 +138,16 @@ bool StageBattle::prepare_player(EclResourceProvider& provider, SessionState& pr
                                  HudPlayerState& player, const char* sht_name, bool cold_entry) {
     progress_ = &progress;
     player_ = &player;
-    character_ = progress.character & 3;
     if (!player_state_.initialized) {
         // 00441dd0 is player construction, not each stage's activation.
         player_state_ = StagePlayerState{};
         invulnerable = 120;
         player_state_.initialized = true;
     }
+    // M2：character_/player_hit_size_ 是 player_state_ 的引用别名，必须在
+    // 00441dd0 构造重置之后写入（重置会清零全部逐席域）。
+    character_ = progress.character & 3;
+    player_state_.character = character_;
     activate_stage_player();
     // StageSim's ECL constructor may query the player before the first
     // gameplay tick (the 0x448ec0 restore is later in the replay path).
@@ -334,28 +337,39 @@ void StageBattle::activate_stage_player() {
 
 i32 StageBattle::reserve_damage_registration() {
     // 4456e0 and 4457e0 use the same 256-record search cursor.
+    i32 slot = -1;
     for (i32 n = 0; n < 256; ++n) {
-        const i32 slot = (damage_registration_cursor + n) & 255;
-        auto& registration = damage_registrations[size_t(slot)];
-        if (registration.active) continue;
-        // 4456e0 leaves rectangle angle/size intact; 4457e0 leaves circle
-        // radius/growth intact. Preserve those words across slot reuse so
-        // snapshots and a later opposite-kind allocation see native storage.
-        const float radius = registration.radius, growth = registration.radius_growth;
-        const float angle = registration.angle, width = registration.width;
-        const float height = registration.height;
-        registration = DamageRegistration{};
-        registration.radius = radius; registration.radius_growth = growth;
-        registration.angle = angle; registration.width = width; registration.height = height;
-        registration.active = true;
-        registration.flags = 1;
-        // Retail advances while searching occupied records, not after finding
-        // one. If this record retires before the next allocation it is reused.
-        damage_registration_cursor = slot;
-        return slot;
+        const i32 candidate = (damage_registration_cursor + n) & 255;
+        if (!damage_registrations[size_t(candidate)].active) {
+            slot = candidate;
+            break;
+        }
     }
-    error_ = "player damage registration pool exhausted";
-    return -1;
+    if (slot < 0) {
+        // 饱和：原版 0x4456e0 全忙时返回数组末尾指针（调用方越界写，1P
+        // 密度不可达）；移植曾把该态升为硬错误，但多席（th13-mp 2-3 人）
+        // 持续齐射可在长程对局中占满单席密度的 256 槽并终止对局。改为
+        // 环形复用扫描起点槽（逐出最旧扫描位）：被逐属主留下 stale 回指针
+        // （retire 可能清掉新占用者——0x446542 原版槽复用同款行为），
+        // sync_damage_registrations 的 generation 匹配把无主记录自动退场。
+        slot = damage_registration_cursor & 255;
+    }
+    auto& registration = damage_registrations[size_t(slot)];
+    // 4456e0 leaves rectangle angle/size intact; 4457e0 leaves circle
+    // radius/growth intact. Preserve those words across slot reuse so
+    // snapshots and a later opposite-kind allocation see native storage.
+    const float radius = registration.radius, growth = registration.radius_growth;
+    const float angle = registration.angle, width = registration.width;
+    const float height = registration.height;
+    registration = DamageRegistration{};
+    registration.radius = radius; registration.radius_growth = growth;
+    registration.angle = angle; registration.width = width; registration.height = height;
+    registration.active = true;
+    registration.flags = 1;
+    // Retail advances while searching occupied records, not after finding
+    // one. If this record retires before the next allocation it is reused.
+    damage_registration_cursor = slot;
+    return slot;
 }
 
 i32 StageBattle::register_circle(Vec3 center, float radius, float growth, i32 lifetime,
@@ -373,6 +387,7 @@ i32 StageBattle::register_circle(Vec3 center, float radius, float growth, i32 li
     registration.interval = interval;
     registration.damage = float(damage);
     registration.threshold = threshold;
+    registration.owner_seat = active_seat;  // M2：注册席位（伤害事件归属）
     return slot;
 }
 
@@ -391,6 +406,7 @@ i32 StageBattle::register_box(Vec3 center, float width, float height, float angl
     registration.angle = angle;
     registration.clock.set(0);
     registration.damage = float(damage);
+    registration.owner_seat = active_seat;  // M2：注册席位
     return slot;
 }
 
@@ -409,6 +425,7 @@ i32 StageBattle::allocate_damage_registration(PlayerShot& shot) {
         registration.damage = shot.damage;
         registration.threshold = 10000000;
         registration.generation = shot.generation;
+        registration.owner_seat = shot.owner_seat;  // M2：随弹归属
         shot.registration_slot = slot;
         return slot;
     }
@@ -741,6 +758,7 @@ void StageBattle::fire_shots(i32 frame) {
         shot.speed = speed;
         shot.behavior = behavior;
         shot.generation = ++shot_generation_;
+        shot.owner_seat = active_seat;  // M2：发射席位（事件归属）
         // 00445de6–00445e09: every shot starts at (offset - initial velocity)
         // + anchor. Keep the anchor separate until this store, as in the x87 code.
         // 004464d0 then performs callback → polar → move in the birth frame.
@@ -975,15 +993,28 @@ void StageBattle::step_shots() {
 }
 
 void StageBattle::begin_player_shot_geometry_snapshot() {
-    for (auto& snapshot : shot_geometry_) snapshot.valid = false;
+    // M2 席位模式：快照权威在席位槽位（set_player_shot_geometry 的落盘
+    // 目标）。begin 清同一存储，防止未被本帧 set 覆盖的陈旧快照被下一帧
+    // consume 误读（generation/script/age 谓词之外的第二道保险）。
+    auto& geometry = seat_count >= 2 ? seats[size_t(active_seat)].shot_geometry
+                                    : shot_geometry_;
+    for (auto& snapshot : geometry) snapshot.valid = false;
 }
 
 void StageBattle::set_player_shot_geometry(i32 slot, i32 age, i32 script, u32 generation,
                                            const std::array<Vec3, 4>& quad) {
     if (slot < 0) return;
-    if (shot_geometry_.size() <= size_t(slot))
-        shot_geometry_.resize(size_t(slot) + 1);
-    auto& snapshot = shot_geometry_[size_t(slot)];
+    // M2 席位模式的快照落盘：post_chain_update（主链 Update 34）晚于
+    // step_mp 的席位 copy-out（Update 20），写窗口会被下一帧 copy-in 用
+    // 权威副本覆盖（MP 会话弹永不出界剔除 → 伤害注册池耗尽）。落盘
+    // 目标改为席位权威槽位：active_seat 此刻 = 帧尾观察席，与表现层
+    // 遍历的 battle_->shots（窗口 = seats[active_seat] 副本）同源，下一帧
+    // copy-in 自然带入窗口供 consume。单席窗口即权威存储，零变化。
+    auto& geometry = seat_count >= 2 ? seats[size_t(active_seat)].shot_geometry
+                                    : shot_geometry_;
+    if (geometry.size() <= size_t(slot))
+        geometry.resize(size_t(slot) + 1);
+    auto& snapshot = geometry[size_t(slot)];
     snapshot.valid = true;
     snapshot.slot = slot;
     snapshot.age = age;
@@ -1632,6 +1663,31 @@ void StageBattle::step_bomb() {
 }
 
 void StageBattle::collide_player_bullet(StageBullet& bullet) {
+    // M3/R-G：多席逐席碰撞（一次回调内按固定席位序判定全部可操作席；
+    // 单席路径零变化）。碰撞回调在 sim.step_frame（共享帧尾）触发，窗口
+    // 席只代表 restore 席——逐席 swap-in 保证每席的判定盒/擦弹带独立。
+    if (seat_count >= 2) {
+        const i32 saved_seat = active_seat;
+        for (i32 seat = 0; seat < seat_count && bullet.alive; ++seat) {
+            if (seats[size_t(seat)].ghost) continue;  // R-I8：幽灵不受击/不擦弹
+            player_state_ = seats[size_t(seat)];      // 纯拷贝入
+            player_ = &seat_huds[size_t(seat)];
+            character_ = seat_characters[size_t(seat)];
+            active_seat = seat;
+            collide_player_bullet_seat(bullet, seat);
+            seats[size_t(seat)] = player_state_;       // 拷回权威
+            if (!error_.empty()) break;
+        }
+        player_ = &seat_huds[size_t(saved_seat)];
+        character_ = seat_characters[size_t(saved_seat)];
+        active_seat = saved_seat;
+        player_state_ = seats[size_t(saved_seat)];
+        return;
+    }
+    collide_player_bullet_seat(bullet, 0);
+}
+
+void StageBattle::collide_player_bullet_seat(StageBullet& bullet, i32 seat) {
     if (player_dead) return;
     // 0x40db10 普通弹态：行为队列 → pos+=vel → 碰撞。
     // 0x40e840:183/188（asm 0x40ed43 or [ebx+0x20],0x10）出生置 bit1|bit4，
@@ -1709,8 +1765,14 @@ void StageBattle::collide_player_bullet(StageBullet& bullet) {
             !sim.cancel_bullet(bullet, bullet.state != 2, false)) error_ = sim.error();
         return;
     }
-    if (result == 2 && !bullet.grazed) {
-        bullet.grazed = true;  // +0x20 bit2
+    if (result == 2) {
+        // R-G：一弹可为多席各计一次（席位 mask；grazed = 首擦聚合位，
+        // 单席/SP 语义不变——单席下 mask bit0 与 grazed 同步置位，行为
+        // 与原 +0x20 bit2 防重复一致）。本席已擦过则跳过结算。
+        const u8 seat_bit = u8(1u) << u32(seat < 8 ? seat : 7);
+        if ((bullet.grazed_seats & seat_bit) != 0) return;
+        bullet.grazed_seats = u8(bullet.grazed_seats | seat_bit);
+        bullet.grazed = true;  // +0x20 bit2（首擦聚合位；防重复由 mask 承担）
         if (progress_) {
             if (progress_->graze < 99999999) progress_->graze++;
             progress_->max_point += 100;
@@ -1853,6 +1915,11 @@ bool StageBattle::commit_death() {
         if (progress_->ending_points < 200) return commit_death_normal();
         trance_protection_ = true;
         trance_begin(*progress_);
+        // M4/R-T5/R-T9：撞弹者成为 DeathProtection 的 owner（死亡责任
+        // 归属；代数 +1 防旧重生路径清掉新灵界）。单席 = seat 0 同式。
+        trance_mode = TranceMode::DeathProtection;
+        trance_owner_seat = active_seat;
+        ++trance_generation;
         item_manager.set_spirit_trance(true);
         if (!(progress_->stage == 6 && progress_->chapter >= 6) && !host_->trance_music(true)) {
             error_ = "Protective Trance music failed"; return false;
@@ -1867,6 +1934,8 @@ bool StageBattle::commit_death() {
 bool StageBattle::commit_death_normal() {
     player_->deaths++;
     --player_->extra_lives;  // -1 是最后一命死亡；不能过早打开 GameOver。
+    // R-T9：记录死亡时的灵界代数——重生清槽只作用于当前代。
+    death_trance_generation = trance_generation;
     player_phase = PlayerPhase::Dying;
     player_phase_frame = 0;
     player_phase_clock_.set(0);
@@ -1914,6 +1983,13 @@ bool StageBattle::update_player(const GameInput& input) {
         item_manager.spawn_value_item(3,player_x,player_y,0,2.f,false);
         if (player_phase_frame >= 30) {
             if (player_->extra_lives < 0) {
+                // M5：MP 最后命死亡 → 转幽灵（R-I8：待救援；不触发单人
+                // GameOver——全队终局由 team_wipe 计数判定，180 逻辑帧
+                // 全灭等待在 RunScene/宿主层）。单席保持 SP GameOver。
+                if (seat_count >= 2) {
+                    player_dead = true;
+                    player_state_.ghost = true;
+                } else {
                 player_dead = true;
                 if (!host_->request_player_game_over()) {
                     error_ = "Player game-over request failed";
@@ -1922,6 +1998,7 @@ bool StageBattle::update_player(const GameInput& input) {
                 // 00443240 continues through the registration/protection
                 // epilogue after opening Replay End or Game Over. The overlay
                 // freezes subsequent updates, not this callback's final tick.
+                }
             } else {
                 if (player_->bombs < 2) {
                     player_->bombs = 2;
@@ -1930,11 +2007,17 @@ bool StageBattle::update_player(const GameInput& input) {
                         return false;
                     }
                 }
-                progress_->ending_points = 0;
-                // 0x443240:158-160：死亡复位灵界计后立刻 0x42b030。
-                if (!host_->trance_gauge_refresh()) {
-                    error_ = "Trance gauge refresh failed";
-                    return false;
+                // R-T9：清槽只限死亡时的灵界代数。owner 保护灵界耗尽
+                // 死亡的演出期间若已开启新代灵界（队友 Manual/新保护），
+                // 本重生路径不得清掉新代的共享槽（SP 0x443240:158 的
+                // MP 代数守卫；单席演出期间无输入，代数不变=SP 语义不变）。
+                if (trance_generation == death_trance_generation) {
+                    progress_->ending_points = 0;
+                    // 0x443240:158-160：死亡复位灵界计后立刻 0x42b030。
+                    if (!host_->trance_gauge_refresh()) {
+                        error_ = "Trance gauge refresh failed";
+                        return false;
+                    }
                 }
                 sim.set_time_rate(1.f);
                 respawn_damage.center={player_x,player_y,0};
@@ -2174,12 +2257,41 @@ void StageBattle::emit_item_events() {
     item_manager.clear_events();
 }
 
+// M3：多席收集面（R-I7/R-I8）。单席（seat_count==0）返回单元素数组
+//（= make_item_collector，逐位一致）；MP 下逐席构造：每席位置/相位/
+// 输入沿/角色定标/HUD 资源，eligible = 非死亡席（幽灵位 M5 落地）。
+std::array<ItemCollector, 3> StageBattle::make_seat_collectors() {
+    std::array<ItemCollector, 3> collectors;
+    if (seat_count < 2) {
+        collectors[0] = make_item_collector();
+        return collectors;
+    }
+    const i32 saved_seat = active_seat;
+    for (i32 seat = 0; seat < seat_count; ++seat) {
+        player_state_ = seats[size_t(seat)];   // 纯拷贝入
+        player_ = &seat_huds[size_t(seat)];
+        character_ = seat_characters[size_t(seat)];
+        active_seat = seat;
+        collectors[size_t(seat)] = make_item_collector();
+        collectors[size_t(seat)].seat = seat;
+        collectors[size_t(seat)].eligible = !seats[size_t(seat)].dead &&
+                                             !seats[size_t(seat)].ghost;
+        // R-I5：神霊角色门按实际拾取者（席位角色，非会话级 character）。
+        collectors[size_t(seat)].character = seat_characters[size_t(seat)];
+    }
+    player_ = &seat_huds[size_t(saved_seat)];
+    character_ = seat_characters[size_t(saved_seat)];
+    active_seat = saved_seat;
+    player_state_ = seats[size_t(saved_seat)];
+    return collectors;
+}
+
 // 0x42efb0 @ Update 24（0x42e380 道具管理器）：生产调度入口。
 void StageBattle::update_items_phase() {
-    ItemCollector collector = make_item_collector();
+    std::array<ItemCollector, 3> collectors = make_seat_collectors();
     if (progress_ && score_)
         item_trace_note("side-begin", progress_->max_point, score_->score);
-    item_manager.update(collector);
+    item_manager.update_seats(collectors.data(), seat_count >= 2 ? seat_count : 1);
     if (progress_ && score_)
         item_trace_note("side-items", progress_->max_point, score_->score);
     emit_item_events();
@@ -2187,8 +2299,8 @@ void StageBattle::update_items_phase() {
 
 // 0x438e70 @ Update 25（0x438660/0x438730 神霊管理器）：生产调度入口。
 void StageBattle::update_spirits_phase() {
-    ItemCollector collector = make_item_collector();
-    item_manager.update_spirits(collector);
+    std::array<ItemCollector, 3> collectors = make_seat_collectors();
+    item_manager.update_spirits_seats(collectors.data(), seat_count >= 2 ? seat_count : 1);
     if (progress_ && score_)
         item_trace_note("side-spirits", progress_->max_point, score_->score);
     emit_item_events();
@@ -2196,13 +2308,13 @@ void StageBattle::update_spirits_phase() {
 
 // 合并路径（harness/单测）：与拆分前完全同序（道具→神霊→统一事件）。
 void StageBattle::update_item_side() {
-    ItemCollector collector = make_item_collector();
+    std::array<ItemCollector, 3> collectors = make_seat_collectors();
     if (progress_ && score_)
         item_trace_note("side-begin", progress_->max_point, score_->score);
-    item_manager.update(collector);
+    item_manager.update_seats(collectors.data(), seat_count >= 2 ? seat_count : 1);
     if (progress_ && score_)
         item_trace_note("side-items", progress_->max_point, score_->score);
-    item_manager.update_spirits(collector);
+    item_manager.update_spirits_seats(collectors.data(), seat_count >= 2 ? seat_count : 1);
     if (progress_ && score_)
         item_trace_note("side-spirits", progress_->max_point, score_->score);
     emit_item_events();
@@ -2215,7 +2327,11 @@ void StageBattle::update_item_side() {
 //   be808 < 1 → 结束：保护灵界走 0x444a10 直接确定死亡，常规 -200。
 bool StageBattle::end_trance() {
     if (!progress_ || !trance_active(*progress_)) return true;
-    const bool protection = trance_protection_;
+    // M4：保护语义读团队状态机（trance_protection_ 是每席域，MP 下
+    // end_trance 的窗口可能不是激活时的席位——保护标志随 team mode 走）。
+    const bool protection = seat_count >= 2
+        ? trance_mode == TranceMode::DeathProtection
+        : trance_protection_;  // 单席保持 SP 域语义
     trance_end(*progress_, protection);
     item_manager.set_spirit_trance(false);
     // 0x405b80:78-84：正常结束（bit1=0）扣 200 后 0x42b030；保护灵界
@@ -2225,6 +2341,18 @@ bool StageBattle::end_trance() {
         return false;
     }
     trance_protection_ = false;
+    // M4/R-T5：保护灵界结束——死亡责任只在 owner 席（换入 owner 执行
+    // SP 0x444a10 死亡序；队友不扣命、不进死亡演出）。Manual 结束无
+    // 死亡（R-T7，SP -200 同式）。单席（seat_count==0）owner=0=窗口。
+    const i32 death_seat = trance_owner_seat;
+    const i32 saved_seat = active_seat;
+    const bool mp_redirect = seat_count >= 2 && death_seat != active_seat;
+    if (mp_redirect) {
+        player_state_ = seats[size_t(death_seat)];   // 纯拷贝入 owner
+        player_ = &seat_huds[size_t(death_seat)];
+        character_ = seat_characters[size_t(death_seat)];
+        active_seat = death_seat;
+    }
     if (protection) {
         // 405b80 ->444a10, gauge0 makes405a20 fail: subtract a life
         // and enter state2 immediately, without another Bomb window.
@@ -2252,6 +2380,15 @@ bool StageBattle::end_trance() {
     // 405b80 always finishes with405440(0x46), including normal exit.
     invulnerable = 70;
     trance_task_frame_ = 0;
+    if (mp_redirect) {
+        // owner 席的死亡终态写回权威槽位，窗口恢复调用方席位。
+        seats[size_t(death_seat)] = player_state_;    // 拷回权威
+        player_ = &seat_huds[size_t(saved_seat)];
+        character_ = seat_characters[size_t(saved_seat)];
+        active_seat = saved_seat;
+        player_state_ = seats[size_t(saved_seat)];
+    }
+    trance_mode = TranceMode::Idle;
     if (!(progress_->stage == 6 && progress_->chapter >= 6) && !host_->trance_music(false)) {
         error_ = "Trance music restore failed"; return false;
     }
@@ -2287,12 +2424,64 @@ bool StageBattle::update_trance(const GameInput& input) {
     // 原生 x=-20.4375 即当帧自机 x（se_boon01 有声像）。
     if (!host_->hud_sound(0x34, player_x)) { error_ = "Trance activation sound failed"; return false; }
     trance_begin(*progress_);
+    // M4/R-T1/R-T8：Manual 激活记录 owner（死亡责任归属）；单席 = seat 0。
+    trance_mode = TranceMode::Manual;
+    trance_owner_seat = active_seat;
+    ++trance_generation;
     item_manager.set_spirit_trance(true);
     if (!(progress_->stage == 6 && progress_->chapter >= 6) && !host_->trance_music(true)) {
         error_ = "Trance music start failed"; return false;
     }
     trance_task_frame_ = 0;
     return true;
+}
+
+// M4/R-T8：MP Manual 请求仲裁——席位升序取第一个满足 SP 门槛的有效请求
+//（满 600 + C 沿 + 任务计时 ≥30 + 该席非 Bomb + 无对话 + 非符卡练习）。
+// 单席（seat_count==0）不经过本入口（update_trance 的 SP 路径不变）。
+bool StageBattle::update_trance_mp() {
+    if (!progress_) return true;
+    if (trance_active(*progress_)) {
+        // 活跃期：槽消耗全场一次（step_mp 每帧只调本函数一次——R-T3）。
+        return update_trance(seat_inputs[0]);
+    }
+    ++trance_task_frame_;
+    if (!trance_ready(*progress_)) return true;
+    if (trance_task_frame_ < kTranceActivateFrame) return true;
+    if (sim.dialog_host && sim.dialog_host->dialog_active()) return true;
+    if ((progress_->run_mode_flags & 0x30) == 0x20) return true;  // 符卡练习
+    // 席位升序仲裁：第一个有效 C 沿。
+    const i32 saved_seat = active_seat;
+    for (i32 seat = 0; seat < seat_count; ++seat) {
+        const GameInput& input = seat_inputs[size_t(seat)];
+        if ((input.pressed & 0x800) == 0) continue;
+        player_state_ = seats[size_t(seat)];   // 纯拷贝入
+        player_ = &seat_huds[size_t(seat)];
+        character_ = seat_characters[size_t(seat)];
+        active_seat = seat;
+        const bool bomb_busy = bomb_timer > 0;  // 窗口 = 该席数据
+        if (bomb_busy) continue;  // 0x4c2170+0x40（该席 Bomb 中无效）
+        if (!host_->hud_sound(0x34, seats[size_t(seat)].x)) {
+            error_ = "Trance activation sound failed";
+            break;
+        }
+        trance_begin(*progress_);
+        trance_mode = TranceMode::Manual;
+        trance_owner_seat = seat;
+        ++trance_generation;
+        item_manager.set_spirit_trance(true);
+        if (!(progress_->stage == 6 && progress_->chapter >= 6) && !host_->trance_music(true)) {
+            error_ = "Trance music start failed";
+            break;
+        }
+        trance_task_frame_ = 0;
+        break;
+    }
+    player_ = &seat_huds[size_t(saved_seat)];
+    character_ = seat_characters[size_t(saved_seat)];
+    active_seat = saved_seat;
+    player_state_ = seats[size_t(saved_seat)];
+    return error_.empty();
 }
 
 bool StageBattle::open_event_sink(const char* path) {
@@ -2323,7 +2512,9 @@ bool StageBattle::open_event_sink(const char* path) {
 void StageBattle::on_bomb_key() {
     // 0x4433dc/0x443525 的 Bomb 分派在扣弹前调用 0x40a540；其 :8 明确要求
     // (DAT_004be830 & 0x100)==0，即灵界激活时拒绝 Bomb（不扣弹、不启动）。
-    if (!player_ || !progress_ || trance_active(*progress_)) return;
+    // M4/R-T2 个人 Bomb 许可与团队灵界是不同查询：owner 遵 SP 灵界拒 Bomb，
+    // 队友在灵界期间仍可用 Bomb（不向队友写永久无敌，不重复放大伤害）。
+    if (!player_ || !progress_ || !seat_bomb_allowed(active_seat)) return;
     // 同一 0040a540 共享门还要求 stagectx+0x198 == 0。对话期间按 X
     // 不扣弹、不启 Bomb，也不以清屏或 HUD 更新消耗这次输入。
     if (sim.dialog_host && sim.dialog_host->dialog_active()) return;
@@ -2394,6 +2585,36 @@ bool StageBattle::continue_player() {
 bool StageBattle::step_transition(const GameInput& input) {
     // 42bfa0 retains player update/draw while enemy/bullet callbacks stop.
     // Input remains the old Replay slot until 448ec0 at startup age 30.
+    // M2：多席分派（与 step 同拍——转场帧每席玩家面都推进，世界面保持
+    // 暂停；单席路径零变化）。M7：本地席写入目标 = mp_local_seat
+    //（联机会话的 LocalSeat——seat 0 硬编码会令 seat1 端席位输入错位）。
+    if (seat_count >= 2) {
+        seat_inputs[size_t(mp_local_seat)] = input;
+        const i32 saved_seat = active_seat;
+        for (i32 seat = 0; seat < seat_count; ++seat) {
+            if (seats[size_t(seat)].ghost) continue;  // R-I8：幽灵不推进
+            player_state_ = seats[size_t(seat)];      // 纯拷贝入
+            player_ = &seat_huds[size_t(seat)];
+            character_ = seat_characters[size_t(seat)];
+            active_seat = seat;
+            const GameInput& seat_input = seat_inputs[size_t(seat)];
+            input_state = seat_input.held;
+            option_movement_tick_ = false;
+            if (!update_player(seat_input)) return false;
+            update_options();
+            update_firing((seat_input.held & 1u) != 0);
+            step_shots();
+            seats[size_t(seat)] = player_state_;       // 拷回权威
+            if (!error_.empty()) return false;
+        }
+        player_ = &seat_huds[size_t(saved_seat)];
+        character_ = seat_characters[size_t(saved_seat)];
+        active_seat = saved_seat;
+        player_state_ = seats[size_t(saved_seat)];
+        sim.player_x = seats[0].x;
+        sim.player_y = seats[0].y;
+        return error_.empty();
+    }
     input_state = input.held;
     option_movement_tick_ = false;
     if (!update_player(input)) return false;
@@ -2402,6 +2623,288 @@ bool StageBattle::step_transition(const GameInput& input) {
     update_firing((input.held & 1u) != 0);
     step_shots();
     return error_.empty();
+}
+
+// M2：席位上下文交换。player_state_（引用别名的绑定存储）被用作「当前
+// 活动席的暂存窗口」：seats[] 是每席权威存储。swap_in(seat) 把目标席
+// 内容换入窗口（窗口旧内容已在上一轮写回其席位）；循环收尾
+// flush_active_seat 把窗口内容写回 seats[active_seat]，再把窗口恢复为
+// 调用方的活动席。全程 std::swap（vector swap = 指针交换），不触碰
+// 共享世界（sim/item/双 RNG/SessionState）。
+void StageBattle::swap_player_context(i32 seat) {
+    if (seat < 0 || seat >= i32(seats.size()) || seat == active_seat) return;
+    // 窗口当前持有 active_seat 的内容：先写回其权威槽位。
+    std::swap(seats[size_t(active_seat)], player_state_);
+    // 换入目标席。
+    std::swap(seats[size_t(seat)], player_state_);
+    // 逐席 HUD/角色随席位切换（MP 模式下 enable_seats 绑定 seat_huds）。
+    if (seat_count > 0) player_ = &seat_huds[size_t(seat)];
+    character_ = seat_characters[size_t(seat)];
+    active_seat = seat;
+}
+
+// 席位循环收尾：窗口（= 最后处理席）写回权威槽位，再恢复调用前活动席。
+void StageBattle::restore_seat_context(i32 restore_seat) {
+    std::swap(seats[size_t(active_seat)], player_state_);
+    if (restore_seat != active_seat) {
+        std::swap(seats[size_t(restore_seat)], player_state_);
+        if (seat_count > 0) player_ = &seat_huds[size_t(restore_seat)];
+        character_ = seat_characters[size_t(restore_seat)];
+        active_seat = restore_seat;
+    }
+}
+
+// M2：多席一帧（seat_count >= 2 时由 step 分派）。帧序对齐单席 step 的
+// retail 调度（42c550/43d4f0 → 4057f0 → 逐席 443240/442960/4460d0/4464d0/
+// 40a270 → 418e00 → 42e380/438730），差异仅在玩家面按固定席位序逐席执行：
+//   共享帧首：sim.frame/chapter_frame/item_trace/事件帧号（一次）；
+//   灵界（0x4057f0）：团队态一次（M4 前保持现单席语义，输入取 seat 0 的
+//   C 键沿；M4 落地 R-T8 全队仲裁后改为逐席请求收集）；
+//   席位循环：swap-in(seat) → input_state → update_player → update_options
+//   → update_firing → step_shots → step_bomb → swap-out。每席的
+//   damage_registrations/shots/options/bomb 域随席位交换，互不串扰；
+//   sim.bomb_active（消弹保护等共享读面）在循环尾聚合 = 任一席 Bomb 活跃；
+//   共享帧尾：sim.player_x/y（M3 目标选择落地前的过渡口径 = seat 0 位置；
+//   M3 起改为按消费者时点选择最近合格玩家）→ sim.step_frame 一次 →
+//   item_side（M3 拆分逐席收集/一份结算，当前保持 seat 0 收集面）。
+bool StageBattle::step_mp() {
+    if (seat_count < 2 || seat_count > 3) {
+        error_ = "Multi-seat step requires 2..3 seats";
+        return false;
+    }
+    // 共享帧首（++sim.frame/chapter_frame/item_trace/事件帧号）已由 step()
+    // 在分派前完成——此处不得重复（重复会令 sim.frame 每步 +2）。
+    // M4/R-T8：灵界团队帧——Manual 请求逐席仲裁（席位升序第一个有效者），
+    // 槽消耗全场一次（step_mp 每帧恰调一次 update_trance_mp）。
+    if (!update_trance_mp()) return false;
+    // ---- 席位循环（固定席位序） ----
+    // 不变式：权威数据永远在 seats[]；窗口（player_state_，引用别名的
+    // 绑定存储）只在单席 update 期间持有该席数据。帧首把窗口内容写回
+    // 其权威槽位（enable 后窗口 = seat 0 观察面；此后每帧帧尾窗口是
+    // saved 席的等值副本，写回幂等无害），逐席对称 swap-in/swap-out，
+    // 帧尾把窗口恢复为 saved 席的**拷贝**（观察面；不用 swap——swap 会
+    // 把空态换入权威槽位，每帧覆盖 seats[saved] 的真实数据）。
+    const i32 saved_seat = active_seat;
+    youmu_slash_spawns_.clear();  // 席位聚合：每帧一次，表现层按序消费
+    for (i32 seat = 0; seat < seat_count; ++seat) {
+        // M5/R-I8：幽灵席不推进玩家面（不操作/不射击/不擦弹）；共享
+        // 世界面照常推进。席位序不变（固定序）。
+        if (seats[size_t(seat)].ghost) continue;
+        // 纯拷贝模式（copy-in/copy-out）：窗口与权威不互换——外部
+        //（宿主/测试）直写权威槽位不会被窗口副本覆盖；update 写窗口
+        // 后拷回权威。enable 后窗口 = seats[0] 观察副本，拷入覆盖之。
+        player_state_ = seats[size_t(seat)];
+        player_ = &seat_huds[size_t(seat)];
+        character_ = seat_characters[size_t(seat)];
+        active_seat = seat;
+        const GameInput& input = seat_inputs[size_t(seat)];
+        input_state = input.held;
+        option_movement_tick_ = false;
+        if (!update_player(input)) return false;
+        if (events_) sim.sink.player(player_x, player_y, input_state);
+        update_options();
+        update_firing((input.held & 0x01) != 0);
+        step_shots();
+        step_bomb();  // youmu_slash_spawns_ 聚合（append，不清）
+        seats[size_t(seat)] = player_state_;
+        if (!error_.empty()) return false;
+    }
+    // 帧尾：窗口 = saved 席观察面（拷贝；权威数据保留在 seats[saved]）。
+    player_ = &seat_huds[size_t(saved_seat)];
+    character_ = seat_characters[size_t(saved_seat)];
+    active_seat = saved_seat;
+    player_state_ = seats[size_t(saved_seat)];
+    // ---- 共享帧尾 ----
+    sim.bomb_active = false;
+    for (i32 seat = 0; seat < seat_count; ++seat)
+        if (seats[size_t(seat)].bomb_timer > 0) sim.bomb_active = true;
+    // M3：ECL 瞄准/追弹/掉灵的目标面——每席位置写入共享读面，消费点按
+    // 原生查询时点取最近合格玩家（R-G）。player_x/y 保持 seat 0（历史
+    // 契约面：回放/事件 sink/单席退化）。
+    sim.seat_count = seat_count;
+    for (i32 seat = 0; seat < seat_count; ++seat) {
+        sim.seat_x[size_t(seat)] = seats[size_t(seat)].x;
+        sim.seat_y[size_t(seat)] = seats[size_t(seat)].y;
+        // 合格位：非死亡、非幽灵席（R-I8 幽灵不被瞄准；死亡演出中的
+        // 席位维持合格——原版死亡帧敌弹仍瞄准原位）。
+        sim.seat_eligible[size_t(seat)] = !seats[size_t(seat)].dead &&
+                                          !seats[size_t(seat)].ghost;
+    }
+    sim.player_x = seats[0].x;
+    sim.player_y = seats[0].y;
+    if (progress_ && score_)
+        item_trace_note("after-shots", progress_->max_point, score_->score);
+    if (!sim.step_frame()) {
+        error_ = sim.error();
+        return false;
+    }
+    if (progress_ && score_)
+        item_trace_note("after-sim", progress_->max_point, score_->score);
+    if (!defer_item_side) update_item_side();
+    return error_.empty();
+}
+
+// M2：启用多席。调用点在 load/prepare_player 完成后（seat 0 的玩家面已
+// 由单席路径初始化：SHT 定标/判定尺寸/起飞资源）。本函数：
+//   1) 把窗口（player_state_）的 seat 0 玩家面移入 seats[0]（权威槽位）；
+//   2) 逐席构造 seats[s]（s>=1）：复制 seat 0 的构造态（00441dd0 同式：
+//      initialized/invulnerable=120/位置 (0,400)/SHT 定标），再按各席角色
+//      重载 SHT 弹型域与判定尺寸（kPlayerHitSize 表）；
+//   3) 逐席绑定 seat_huds（R-B：备用残机 2、Bomb 2、碎片 0、power 按
+//      开局档位——普通第 1 面 1.00；stage>1/符卡练习 4.00）与角色记录。
+// 输入沿清零（首帧由宿主注入）。不触碰共享世界/RNG。
+// M2：按角色装载 .sht 定标域到当前窗口席（prepare_player SHT 段同源）。
+bool StageBattle::load_seat_sht(EclResourceProvider& provider, i32 character) {
+    char name[16];
+    std::snprintf(name, sizeof name, "pl%02da.sht", character);
+    std::vector<u8> sht;
+    if (!provider.read(name, sht) || sht.size() < 0x20) {
+        error_ = std::string("cannot read ") + name;
+        return false;
+    }
+    float fields[4];
+    for (int i = 0; i < 4; ++i)
+        std::memcpy(&fields[i], sht.data() + 0x10 + i * 4, sizeof fields[i]);
+    speed_orth = speed128_from_float(fields[0]);
+    speed_orth_focus = speed128_from_float(fields[1]);
+    speed_diag = speed128_from_float(fields[2]);
+    speed_diag_focus = speed128_from_float(fields[3]);
+    if (sht.size() < 0xc8) {
+        error_ = std::string("missing option table in ") + name;
+        return false;
+    }
+    for (int mode = 0; mode < 2; ++mode)
+        for (int i = 0; i < 10; ++i)
+            for (int axis = 0; axis < 2; ++axis) {
+                float value;
+                std::memcpy(&value, sht.data() + 0x28 + mode * 0x50 + i * 8 + axis * 4, 4);
+                option_offsets_[mode][i][axis] = speed128_from_float(value);
+            }
+    if (!parse_sht_shots(sht.data(), sht.size(), *this)) {
+        error_ = std::string("invalid shot table in ") + name;
+        return false;
+    }
+    if (player_) {
+        // 441dd0: SHT+20 = 100-power 档数（power_step=100，max = 档数×步长）。
+        player_->power_step = 100;
+        player_->max_power = i32(read_u32(sht.data() + 0x20)) * player_->power_step;
+    }
+    return true;
+}
+
+bool StageBattle::enable_seats(EclResourceProvider& provider, i32 count,
+                               const std::array<i32, 3>& characters) {
+    if (count < 2 || count > 3) {
+        error_ = "Multi-seat setup requires 2..3 seats";
+        return false;
+    }
+    for (i32 seat = 0; seat < count; ++seat) {
+        const i32 character = characters[size_t(seat)] & 3;
+        if (character < 0 || character > 3) {
+            error_ = "Multi-seat character out of range";
+            return false;
+        }
+    }
+    seat_count = count;
+    // seat 0 收编：窗口内容移入权威槽位（不丢失单席路径已初始化的状态）。
+    std::swap(seats[0], player_state_);
+    for (i32 seat = 0; seat < count; ++seat) {
+        const i32 character = characters[size_t(seat)] & 3;
+        seat_characters[size_t(seat)] = character;
+        if (seat == 0) {
+            // R-X：seat 0 的角色域也按 characters[0] 重载（收编面保留单席
+            // 已初始化的资源/位置/相位，角色定标域与记录一致）。
+            seats[0].character = character;
+            seats[0].hit_size = kPlayerHitSize[character];
+        }
+        if (seat > 0) {
+            // 00441dd0 构造态复制（角色无关域）+ 按角色重载定标域。
+            auto& state = seats[size_t(seat)];
+            const bool initialized = state.initialized;
+            state = seats[0];
+            state.initialized = initialized;
+            state.character = character;
+            state.hit_size = kPlayerHitSize[character];
+            // 位置/输入沿复位（构造语义，R-B 起飞位 (0,400)/(0,51200)）。
+            state.x = 0;
+            state.y = 400;
+            state.fixed_x = 0;
+            state.fixed_y = 51200;
+            state.focus = false;
+            state.dead = false;
+            state.phase = StagePlayerState::Phase::Active;
+            state.phase_frame = 0;
+            state.invulnerable = 120;
+            state.input_state = 0;
+            state.touch = {};
+            state.shots.clear();
+            state.shot_geometry.clear();
+            state.shot_generation = 0;
+            // Bomb 域复位（未施放）。
+            state.bomb_timer = 0;
+            state.bomb_age = -1;
+            state.bomb_age_accumulator = 0;
+            state.bomb_generation = 0;
+            state.bomb_rays = {};
+            state.bomb_duration = 0;
+            state.bomb_orbs = {};
+            state.bomb_angle = -1.5707964f;
+            state.bomb_visual_angle = state.bomb_angle;
+            state.bomb_rotation_speed = 0;
+            state.bomb_center_x = 0;
+            state.bomb_center_y = 0;
+            state.youmu_bomb.reset();
+            state.death_option_rebuild = false;
+            state.respawn_damage = {};
+            state.respawn_origin = {};
+            state.trance_protection = false;
+            // option 域复位（构造语义）。
+            state.options = {};
+            state.option_count = 0;
+            state.option_fixed = {};
+            state.movement_history = {};
+            for (auto& position : state.movement_history)
+                position = {state.fixed_x, state.fixed_y};
+            state.option_power = -1;
+            state.option_reset_pending = false;
+            state.option_movement_tick = false;
+            state.phase_clock.set(0);
+            state.fire_clock.set(-1);
+            state.startup_clock.set(0);
+            state.charge_clock.set(0);
+            state.charge_origin = {};
+            state.damage_registrations = {};
+            state.damage_registration_cursor = 0;
+        }
+        // 每席 HUD 资源（R-B：起飞资源 = SP 完全一致）。
+        auto& hud = seat_huds[size_t(seat)];
+        hud = HudPlayerState{};
+        hud.extra_lives = std::max(0, progress_ ? progress_->configured_lives - 1 : 2);
+        hud.bombs = 2;
+        hud.bomb_pieces = 0;
+        hud.life_pieces = 0;
+        hud.power_step = 100;
+        hud.max_power = 400;
+        const i32 entry_steps = (progress_ && progress_->stage > 1) ? 4 : 1;
+        hud.power = std::min(entry_steps * hud.power_step, hud.max_power);
+        hud.deaths = 0;
+        seat_inputs[size_t(seat)] = GameInput{};
+        // 每席 SHT 定标域（plXXa.sht 按角色）：swap-in 窗口 → 装载 →
+        // swap-out 写回权威槽位（引用别名跟随窗口）。
+        std::swap(seats[size_t(seat)], player_state_);
+        player_ = &seat_huds[size_t(seat)];
+        character_ = seat_characters[size_t(seat)];
+        const bool loaded = load_seat_sht(provider, seat_characters[size_t(seat)]);
+        std::swap(seats[size_t(seat)], player_state_);
+        if (!loaded) return false;
+    }
+    // 窗口恢复为 seat 0 的观察面（拷贝；权威数据保留在 seats[0]——与
+    // step_mp 帧尾一致的不变式：数据在权威槽位，窗口只是观察副本）。
+    active_seat = 0;
+    player_ = &seat_huds[0];
+    character_ = seat_characters[0];
+    player_state_ = seats[0];
+    return true;
 }
 
 bool StageBattle::step(const GameInput& input) {
@@ -2418,6 +2921,13 @@ bool StageBattle::step(const GameInput& input) {
     frame_damage_total = 0.0f;
     if (events_) sim.sink.set_frame(sim.frame);
     input_state = input.held;
+    // M2：多席分派（seat_count>=2）。单席路径（seat_count==0/1）零变化。
+    // M7：本地席写入目标 = mp_local_seat（联机会话 LocalSeat——
+    // 硬编码 seat 0 会令 seat1 端的本地/远端输入错位，双端席位面发散）。
+    if (seat_count >= 2) {
+        seat_inputs[size_t(mp_local_seat)] = input;  // 本地席输入沿
+        return step_mp();
+    }
     // Retail schedule:42c550/43d4f0 drain ->4057f0 activation ->443240
     // player ->418e00 enemies ->42e380/438660 items/spirits. In particular,
     // existing spirits and this frame's shots must see a new Trance now.

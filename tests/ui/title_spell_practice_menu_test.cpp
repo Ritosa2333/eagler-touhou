@@ -193,4 +193,27 @@ TEST(disabled_stage_blocks_progress_and_original_slot_counts_clamp_host) {
     CHECK_EQ(i32(clamped.spell_rows().size()), 4);  // stage1 table count, not 99
 }
 
+TEST(restore_selection_reenters_at_difficulty_with_launch_selection) {
+    // [H-SP2] DAT_004bb4c4/c8/cc 级联：以启动保存的 stage/slot/difficulty 直入
+    // 难度层；逐级取消沿原光标栈退回。
+    SpellHost host;
+    TitleSpellPracticeMenu menu(host);
+    CHECK(menu.restore_selection(3, 2, 4));
+    CHECK_EQ(i32(menu.level()), i32(SpellPracticeLevel::Difficulty));
+    CHECK_EQ(menu.selected_stage(), 3);
+    CHECK_EQ(menu.cursor(), 4);
+    CHECK(!menu.update(cancel_key()));  // 难度层 → 卡表，光标=启动槽位
+    CHECK_EQ(i32(menu.level()), i32(SpellPracticeLevel::Spell));
+    CHECK_EQ(menu.cursor(), 2);
+    CHECK(!menu.update(cancel_key()));  // 卡表 → 关卡层，光标=启动关卡
+    CHECK_EQ(i32(menu.level()), i32(SpellPracticeLevel::Stage));
+    CHECK_EQ(menu.cursor(), 2);
+
+    TitleSpellPracticeMenu bad(host);
+    CHECK(!bad.restore_selection(8, 0, 0));                    // stage 越界
+    CHECK(!bad.restore_selection(1, kSpellPracticeSlots[0], 0));  // slot 越界
+    CHECK(!bad.restore_selection(1, 0, 5));                    // difficulty 越界
+    CHECK_EQ(i32(bad.level()), i32(SpellPracticeLevel::Stage));
+}
+
 int main() { return th13test::run_all("title_spell_practice_menu_test"); }

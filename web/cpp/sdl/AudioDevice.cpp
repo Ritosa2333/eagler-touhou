@@ -326,13 +326,37 @@ bool AudioDevice::initialize_for_test(const std::string& asset_root,
 #endif
 bool AudioDevice::enqueue(i32 id) {
     if (request_observer) request_observer({RequestObservation::Kind::Voice,id,0,false,0,{}});
+    if (defer_output) return validate_voice(id);
     return queue_voice(id, 0);
 }
 bool AudioDevice::enqueue(i32 id, float pan) {
     if (request_observer) request_observer({RequestObservation::Kind::Voice,id,0,true,pan,{}});
+    if (defer_output) return validate_voice(id);
     return queue_voice(id, pan_entry(pan));
 }
-bool AudioDevice::set_voice_pan(i32 id, float pan) {
+// P3.1 defer_output 捕获拍校验：只复现 queue_voice 的门与 error 文案。
+// 通道表/statistics 留给 apply_request（真实触达拍）——同帧多次请求的
+// 合并语义仍在 commit 拍的 12 通道窗口内完成（单人路径无 defer）。
+bool AudioDevice::validate_voice(i32 id) {
+    auto& a = *impl;
+    if (!a.stats.ready || !error.empty()) {
+        if (error.empty())
+            error = "Invalid or uninitialized TH13 sound request: " + std::to_string(id);
+        return false;
+    }
+    if (id < 0) return true;
+    if (id >= i32(a.definitions.size()) || !a.definitions[u32(id)]) {
+        if (error.empty())
+            error = "Invalid or uninitialized TH13 sound request: " + std::to_string(id);
+        return false;
+    }
+    return true;
+}
+// M1/T4 F3：set_voice_pan 拆观察/应用两入口（原实现 :335-348 逐行对应）。
+// 观察先于校验（原 :336 先于 :337-343）、设备触达（原 :344-346 buffer_pan +
+// web_sfx::pan）只在 apply-only；statistics 不受影响（requests 仅 queue_voice
+// 递增，pan 不触统计）。
+bool AudioDevice::observe_voice_pan(i32 id, float pan) {
     if (request_observer) request_observer({RequestObservation::Kind::Pan,id,0,true,pan,{}});
     auto& a = *impl;
     if (!a.stats.ready || !error.empty() || id < 0 ||
@@ -340,11 +364,38 @@ bool AudioDevice::set_voice_pan(i32 id, float pan) {
         if (error.empty()) error = "Invalid or uninitialized TH13 sound pan: " + std::to_string(id);
         return false;
     }
+    return true;
+}
+void AudioDevice::apply_voice_pan(i32 id, float pan) {
+    auto& a = *impl;
+    // 校验已在捕获拍同步完成；越界 id 静默忽略（只读访问器 voice_pan() 同惯例）。
+    if (id < 0 || id >= i32(a.definitions.size()) || !a.definitions[u32(id)]) return;
     auto& voice = a.voices[u32(id)];
     voice.buffer_pan = pan_entry(pan);
     if (voice.immediate)
         web_sfx::pan(&voice, std::clamp(float(voice.buffer_pan) / 1000.f, -1.f, 1.f));
+}
+bool AudioDevice::set_voice_pan(i32 id, float pan) {
+    if (!observe_voice_pan(id, pan)) return false;
+    apply_voice_pan(id, pan);
     return true;
+}
+// P3.1 冲账分派：观察器不在此发射（tap 恰一次在捕获拍）。Voice 的 entry
+// 由捕获拍 observation 重算（enqueue(id) → 0；enqueue(id,pan) → pan_entry(x)），
+// 与原来两条 enqueue 的 queue_voice 实参逐位一致。
+bool AudioDevice::apply_request(const RequestObservation& request) {
+    switch (request.kind) {
+    case RequestObservation::Kind::Voice:
+        return queue_voice(request.id, request.positional ? pan_entry(request.x) : 0);
+    case RequestObservation::Kind::Stop:
+        return apply_stop(request.id);
+    case RequestObservation::Kind::Pan:
+        apply_voice_pan(request.id, request.x);
+        return true;
+    case RequestObservation::Kind::Music:
+        return apply_music(request.id, request.value, request.text);
+    }
+    return false;
 }
 bool AudioDevice::queue_voice(i32 id, i32 entry) {
     auto& a = *impl;
@@ -390,8 +441,25 @@ bool AudioDevice::queue_voice(i32 id, i32 entry) {
     ++count;
     return true;
 }
+bool AudioDevice::validate_stop(i32 id) {
+    auto& a = *impl;
+    if (!a.stats.ready || !error.empty()) {
+        if (error.empty()) error = "TH13 sound stop before audio initialization";
+        return false;
+    }
+    if (id < 0) return true;
+    if (id >= i32(a.definitions.size()) || !a.definitions[u32(id)]) {
+        error = "Invalid TH13 sound stop request: " + std::to_string(id);
+        return false;
+    }
+    return true;
+}
 bool AudioDevice::stop(i32 id) {
     if (request_observer) request_observer({RequestObservation::Kind::Stop,id,0,false,0,{}});
+    if (defer_output) return validate_stop(id);
+    return apply_stop(id);
+}
+bool AudioDevice::apply_stop(i32 id) {
     auto& a = *impl;
     if (!a.stats.ready || !error.empty()) {
         if (error.empty()) error = "TH13 sound stop before audio initialization";
@@ -430,17 +498,38 @@ bool AudioDevice::stop(i32 id) {
     return true;
 }
 bool AudioDevice::trance_music(bool active) {
-    if (!impl->stats.ready || !error.empty()) {
+    auto& a = *impl;
+    if (!a.stats.ready || !error.empty()) {
         if (error.empty()) error = "Trance music requested before audio initialization";
         return false;
     }
-    const auto& base = impl->base_music;
+    const auto& base = a.base_music;
     const auto dot = base.find('.');
     if (dot == std::string::npos) { error = "Trance music has no current base track"; return false; }
-    return queue_music(9, 0, base.substr(0, dot) + (active ? "b.wav" : ".wav"));
+    const std::string text = base.substr(0, dot) + (active ? "b.wav" : ".wav");
+    // defer 拍：只发射一条 Music 观察（文本按捕获拍的 base_music 定格），
+    // 真实 code9 命令在确认拍 apply_request 冲账——重放帧按同一文本重发。
+    if (defer_output) {
+        if (request_observer) request_observer({RequestObservation::Kind::Music,9,0,false,0,text});
+        return true;
+    }
+    return queue_music(9, 0, text);
+}
+bool AudioDevice::validate_music(i32 code, const std::string& text) {
+    auto& a = *impl;
+    if (!a.stats.ready || !error.empty() || code < 1 || code > 9 ||
+        text.size() >= 256 || a.commands.size() >= 31) {
+        if (error.empty()) error = "Invalid or full TH13 music command queue";
+        return false;
+    }
+    return true;
 }
 bool AudioDevice::queue_music(i32 code, i32 value, const std::string& text) {
     if (request_observer) request_observer({RequestObservation::Kind::Music,code,value,false,0,text});
+    if (defer_output) return validate_music(code, text);
+    return apply_music(code, value, text);
+}
+bool AudioDevice::apply_music(i32 code, i32 value, const std::string& text) {
     auto& a = *impl;
     if (!a.stats.ready || !error.empty() || code < 1 || code > 9 ||
         text.size() >= 256 || a.commands.size() >= 31) {

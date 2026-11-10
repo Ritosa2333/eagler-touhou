@@ -70,8 +70,13 @@ bool ApplicationState::fade_out_title_music() {
 }
 
 bool ApplicationState::begin_transition(u32& animation) {
-    animation = animations.create(8, 0, -1, 0);  // effect bank 转场特效
-    return animation != 0;
+    // 0x451bc8/0x451bd7/0x452043/0x452a43/0x45786f: title/practice/spell
+    // launch creates effect.anm script0 via 0x415650(type 0), initializes the
+    // AnmOverlay and applies label7. 0x417370 at the same sites is the
+    // ascii.anm script17 loading prayer, not this effect.
+    if (!begin_run_transition()) return false;
+    animation = run_transition.handle();
+    return true;
 }
 
 bool ApplicationState::start_game(i32 stage) {
@@ -207,10 +212,19 @@ void ApplicationState::apply_volumes(i32 bgm, i32 effect) {
 
 bool ApplicationState::persist_options(const TitleOptionVolumes& volumes) {
     // 离屏随存档落盘（原版 scoreth13.dat；网页 = FileStore.save()）。
-    // 失败如实 false + error——菜单记录错误、不假成功、不阻断返回主菜单。
-    files.bgm_volume = volumes.bgm;
-    files.effect_volume = volumes.effect;
-    return files.save();
+    // M1/T4 F1′ 菜单错误档：捕获乐观放行（调用点 TitleOptionsMenu.cpp:113
+    // 丢弃 fail() 返回值、:114-121 无条件回 Main）；files 音量变更+save 延至
+    // commit 冲账，失败经 TitleScene::option_menu() 非常量访问器（F1″ 微改）
+    // 对 public 的 option.error set-if-empty 补记（逐位复刻 :113 fail 的
+    // `if (error.empty()) error = reason`，fail 本身 private），帧不失败——
+    // 终态=帧成功+option.error 非空+已回 Main，与拆分前逐位一致。
+    PendingFileEvent entry;
+    entry.kind = PendingFileEvent::Kind::PersistOptions;
+    entry.capture_frame = recorder.capture_frame;
+    entry.bgm = volumes.bgm;
+    entry.effect = volumes.effect;
+    pending_file_events_.push_back(entry);
+    return true;
 }
 
 bool ApplicationState::open_key_config() {
@@ -282,8 +296,14 @@ bool ApplicationState::track_heard(i32 track) const { return files.music_heard(t
 
 void ApplicationState::mark_heard(i32 track) {
     // 0x4554f0 Z 路径落档：置位即存（写失败留 files.error 如实，不吞不假成功）。
-    files.set_music_heard(track);
-    (void)files.save();
+    // M1/T4 F1 吞错档：捕获拍只入队；commit 冲账按原 `(void)files.save()`
+    // 语义——save 失败仅落 files.error、静默继续，帧不失败（禁统一为
+    // commit fail，否则 MusicRoom 由静默继续变帧失败 = SP 行为变更）。
+    PendingFileEvent entry;
+    entry.kind = PendingFileEvent::Kind::MarkHeard;
+    entry.capture_frame = recorder.capture_frame;
+    entry.track = track;
+    pending_file_events_.push_back(entry);
 }
 
 bool ApplicationState::play_track(i32 track) {

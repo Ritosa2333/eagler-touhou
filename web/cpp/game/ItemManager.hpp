@@ -21,6 +21,8 @@
 
 namespace th13 {
 
+namespace multiplayer { class WorldState; }
+
 // 只读诊断（默认关闭）：收集事件的帧内顺序/数值快照，供浏览器探针
 // `th13_debug_item_trace*` 导出；不写任何游戏状态。
 void set_item_trace(bool enabled);
@@ -120,6 +122,16 @@ struct ItemCollector {
     SessionState* progress = nullptr;
     HudPlayerState* player = nullptr;
     HudScoreState* score = nullptr;
+    // ---- M3：多席收集面（R-I7/R-I8） ----
+    // 席位标记（0 = 单席兼容；>=1 = MP 席号-1）。合格位：幽灵/死亡席不
+    // 参与「最近合格玩家」选择（R-I8：幽灵不物理拾取）。state==2/4 的
+    // 死亡演出席仍可被选中（原版死亡帧道具仍飞向玩家）——合格位只由
+    // StageBattle 写入。
+    i32 seat = 0;
+    bool eligible = true;
+    // R-I5：神霊角色门按实际拾取者的席位角色（MP 下每席不同）。-1 =
+    // 未设（单席兼容：回落 progress->character——DAT_004be7b8 语义）。
+    i32 character = -1;
 };
 
 // 收集/得分事件（HUD/表现层消费；原版侧写点见各条注释）。
@@ -224,9 +236,13 @@ public:
     // 收集盒命中 → switch(type)：1→0x42edc0、2→点值公式、3/8→0x43d210、
     // 4→0x43d330、5→0x43d480(+2)、6→0x43d2f0、7→0x43d440、9→score+10/max_point+10。
     void update(const ItemCollector& player);
+    // M3：多席重载（R-I7：每件按最近合格席；单元素 = 单席零变化）。
+    void update_seats(const ItemCollector* seats, i32 seat_count);
 
     // 0x438730 SpiritManager::update（神霊状态机 + 收集）。
     void update_spirits(const ItemCollector& player);
+    // M3：神霊多席重载（同 R-I7）。
+    void update_spirits_seats(const ItemCollector* seats, i32 seat_count);
     void set_spirit_trance(bool active); // 439280/4393a0: convert all live spirits.
 
     // 0x0044ad60 的调用面：收集时产生的弹出/声音/效果事件队列（每帧排空）。
@@ -263,6 +279,12 @@ public:
 private:
     void home_step(Item& item, const ItemCollector& player);
     void collect_check(Item& item, const ItemCollector& player);
+    // M3：最近合格席（平距平方最小，平局取小席位；全不合格回退 fallback
+    // = seats[0]，与旧单席语义一致——死亡演出席仍接收，幽灵席由
+    // eligible=false 排除）。
+    static const ItemCollector& pick_collector(const ItemCollector* seats, i32 seat_count,
+                                               float x, float y,
+                                               const ItemCollector& fallback);
     void push_level_up(const Item& item);
     float angle_to_player(const Spirit& s, const ItemCollector& player);
     void collect_spirit(Spirit& s, const ItemCollector& player);
@@ -292,6 +314,10 @@ private:
     i32 cancel_total_ = 0;
     i32 cancel_wave_ = 0;
     i32 point_items_ = 0;    // 0x4be7d8 点道具收集计数
+
+    // M6：结构化快照访问面（web/cpp/multiplayer/WorldState 专用——池/
+    // 自由槽表/计数域全部是权威模拟量）。
+    friend class multiplayer::WorldState;
 };
 
 }  // namespace th13

@@ -80,26 +80,13 @@ bool TitleScene::fade_out_title_music() { return host.fade_out_title_music(); }
 bool TitleScene::sound(i32 id) { return host.sound(id); }
 
 bool TitleScene::begin_transition(u32& animation) {
-    // 00451450/00451cb0/004576c0 case3 age10 → 00417370(480.0,392.0)。
-    // 反汇编 0x46f820（capstone，/work/artifacts/decomp/jp/functions/0046f820.c
-    // 与 0x46f820 机器码）确认：0x417370 用 **EAX=game_main+0x19194 的独立
-    // effect 管理器** 调 create，栈参 [ebp+0xc]=模板号 0x11(17)、位置
-    // (480,392,0)、layer=-1、flags=0（0x46f3f0 尾插）。该 effect 管理器的
-    // 模板 17 自带 layer 26（模板头 +0x24=0x1a），脚本首段为
-    // ins_501(15)/ins_501(14)/ins_503(16) 三连（fore 链），与 title 管理器
-    // 的 effect.anm script17 不是同一张表——原版模板/脚本映射未解析，
-    // 不能声称「script1 是唯一 4-quad 脚本」（effect.anm script2 也 spawn
-    // 7-10 四个 quad，只是旋转 70/80°，与 oracle 的 110/100° 不符）。
-    // 移植侧取 effect.anm script1：其子体 3-6 的旋转/缩放与 oracle 逐帧
-    // 完全一致（110/-110/100/-100°，384/1536 边长），是当前唯一可复现
-    // 4-quad 的脚本；映射仍属近似（原版模板 17 未解析）。
-    // 坐标：原版 create 位置 (480,392) 经 effect 管理器绘制路径后，oracle
-    // 窗B f719-749 四 quad 中心恒等于移植侧 (480,392) 结果 -(160,152)
-    // （f749 稳定帧逐顶点实证）。effect 管理器的绘制原点变换未反汇编；
-    // 这里按 oracle 顶点把 VM 位置补偿到 (320,240) = 屏幕中心，属绘制侧
-    // 补偿而非原版坐标真值（蓝图登记待 effect 管理器解析后回填）。
-    animation = animations.create(8, 1, 26, 0, {320, 240, 0});
-    return animation != 0;
+    // 00451450/00451cb0/004576c0 case3 age10: 0x415650(type 0) creates
+    // effect.anm script0, 0x402ff0 initializes its AnmOverlay, and
+    // 0x46fc30(handle, 7) applies label7. 0x417370 at the same sites creates
+    // the ascii.anm script17 loading prayer (separate from this effect).
+    // Delegating to the host keeps the overlay run-owned across title
+    // teardown; 0x42c550's label1 is issued later at stage activation.
+    return host.begin_transition(animation);
 }
 
 bool TitleScene::start_game(i32 stage) {
@@ -157,6 +144,37 @@ bool TitleScene::restore_practice_selection() {
     return true;
 }
 
+bool TitleScene::restore_spell_practice_selection() {
+    // 0x4561bf DAT_004bb4c4>=0：启动拍（0x45792b/c8/cc）保存的 stage/slot/
+    // difficulty 光标与角色（DAT_004be7b8）在标题重入时经 0x11→0x12→0x13
+    // 级联直入难度层。槽位/难度行按 spell_id 反查；目录已不含该卡则如实失败。
+    if (!returns_to_spell_practice_selection(progress, 1, false))
+        return check(false, "Invalid Spell Practice return session");
+    const i32 stage = progress.starting_stage;
+    for (i32 slot = 0; slot < kSpellPracticeSlots[stage - 1]; ++slot)
+        for (i32 difficulty = 0; difficulty < kSpellPracticeDifficulties; ++difficulty)
+            if (host.spell_id(stage, slot, difficulty) == progress.selected_spell_id) {
+                spell_restore_ = SpellPracticeCommand{};
+                spell_restore_.stage = stage;
+                spell_restore_.spell_slot = slot;
+                spell_restore_.difficulty = difficulty;
+                spell_restore_.spell_id = progress.selected_spell_id;
+                spell_restore_pending_ = true;
+                settings.preferred_character = progress.character;
+                // 主菜单进符卡练习同构光标栈（TitleMainMenu SpellPractice 分支）。
+                state.flags |= 2u;
+                state.menu.depth = state.menu.disabled_count = 0;
+                state.menu.count = kTitleMainEntries;
+                state.menu.select(i32(TitleMainEntry::SpellPractice));
+                state.menu.push();
+                state.menu.count = kTitleMainEntries;
+                state.menu.select(i32(TitleMainEntry::SpellPractice));
+                state.change_screen(TitleScreen::SpellPractice);
+                return true;
+            }
+    return check(false, "Spell Practice selection no longer in catalog");
+}
+
 // 屏值 10（0x453170）：每次进屏新建对合状态机。宿主未接 = open 如实失败
 // （TitlePlayerDataMenu 默认平台），不以空表/零值冒充记录；成功后 X/Esc 走
 // menu 自身 case2→case3，收面时 close/pop/change_screen(1) 全在菜单内完成。
@@ -206,6 +224,14 @@ bool TitleScene::update_spell_practice(const TitleFrameInput& value) {
     if (!spell_practice) {
         spell_practice = std::make_unique<TitleSpellPracticeMenu>(
             host, settings.preferred_character);
+        if (spell_restore_pending_) {
+            // [H-SP2] DAT_004bb4c4/c8 级联：菜单直入难度层恢复上次所选卡。
+            if (!spell_practice->restore_selection(spell_restore_.stage,
+                                                   spell_restore_.spell_slot,
+                                                   spell_restore_.difficulty))
+                return check(false, "Spell Practice restore rejected by catalog");
+            spell_restore_pending_ = false;
+        }
         spell_practice_launch_status_.clear();
         if (host.record_menu_views()) {
             spell_practice_view = std::make_unique<TitleSpellPracticeView>(animations, resources.title);

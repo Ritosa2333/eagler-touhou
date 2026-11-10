@@ -34,20 +34,27 @@ std::vector<u8> practice_title_fixture() {
 
 struct PracticeHost final : TitleScenePlatform {
     SessionState& progress;
+    AnmManager& animations;
     std::array<u8, 16> played{};
     std::vector<i32> sounds;
     std::vector<HudTextDraw> texts;
     i32 launches = 0, launched_stage = -1, launched_character = -1, launched_rank = -1;
     i32 launched_practice = -1;
     u32 launched_mode = ~0u;
-    explicit PracticeHost(SessionState& p) : progress(p) {}
+    explicit PracticeHost(SessionState& p, AnmManager& m) : progress(p), animations(m) {}
     bool clear_title_overlay() override { return true; }
     bool queue_title_music(i32, i32, const std::string&) override { return true; }
     bool clear_current_wave() override { return true; }
     bool title_exit(i32) override { return true; }
     bool fade_out_title_music() override { return true; }
     bool sound(i32 id) override { sounds.push_back(id); return true; }
-    bool begin_transition(u32&) override { return false; }  // scene owns the effect bank
+    // Native launch sites (0x451cb0/0x452a43/0x45786f → 0x415650 type0) create
+    // the run-owned transition root on the application side; the scene only
+    // delegates. Mirror that contract: the host creates the bank-8 root.
+    bool begin_transition(u32& animation) override {
+        animation = animations.create(8, 0, -1, 0, {});
+        return animation != 0;
+    }
     bool start_game(i32 stage) override {
         ++launches;
         launched_stage = stage;
@@ -71,7 +78,7 @@ struct PracticeHarness {
     SessionState progress;
     TitleSelectionSettings settings;
     FrameScheduler scheduler;
-    PracticeHost host{progress};
+    PracticeHost host{progress, manager};
     std::array<FrameCallback, 2> updates{};
     std::unique_ptr<TitleScene> scene;
     PracticeHarness() {

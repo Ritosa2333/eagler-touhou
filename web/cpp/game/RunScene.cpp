@@ -288,6 +288,7 @@ RunScene::~RunScene() {
     battle.beam_hit_effect = {};
     battle.option_power_changed = {};
     battle.player_shot_birth = {};
+    battle.mp_registry_hook = nullptr;  // M6：registry 随场景析构失效
     battle.youmu_bomb_update = {};
     battle.youmu_charge_effect = {};
     battle.reimu_bomb_orb_birth = {};
@@ -432,6 +433,10 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
     // 逃生开关：sim.ecl_slot_anm=false 回退双绘制旧路径。
     battle.sim.ecl_slot_anm = true;
     presentation->enemies_from_ecl = true;
+    // M6：ANM registry 注入（WorldState capture/restore 的目标——敌机
+    // 槽位/自机弹/特效 VM 的权威池）。RunScene 持有 animations 引用，
+    // 注入后 battle.mp_registry() 恒指向本场景的 registry。
+    battle.mp_registry_hook = &animations.registry;
     battle.sim.retire_sink = [this](u32 serial) {
         presentation->retire_enemy_fog(serial);
         // 0x418e00 销毁支路的 ANM 面：回收该敌机全部槽位 VM
