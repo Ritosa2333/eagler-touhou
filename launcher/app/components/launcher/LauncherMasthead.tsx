@@ -13,7 +13,6 @@ import {
   PlaySquare,
   Code,
   FlaskConical,
-  PackagePlus,
   ShieldCheck,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
@@ -31,7 +30,6 @@ import { MastheadTooltip } from './MastheadTooltip';
 import { NavigationIcon } from './NavigationIcon';
 import { SiteBrand } from './SiteBrand';
 import { UI_LOCALES, UI_LOCALE_LABELS, withUiLanguage } from '../../../src/launcher/i18n.mts';
-import { RETAIL_PACK_DOCUMENT } from '../../../lib/frontend-static-manifest.mjs';
 import { MULTIPLAYER_GUIDE_PATH } from '../../../lib/multiplayer-guide.mjs';
 import { accountsEnabled, previewFeaturesEnabled, uiReviewEnabled } from '../../release-features';
 import '../../ui/menu-motion.css';
@@ -66,9 +64,7 @@ export interface LauncherMastheadProps {
 
 export function LauncherMasthead(props: LauncherMastheadProps) {
   const { t, locale } = useLocale();
-  const {pathname, search} = useLocation();
-  const profileOpen = /^(?:\/(?:profile|login)\.html|\/u\/[^/]+)\/?$/.test(pathname);
-  const testQuery = new URLSearchParams(search).has('test');
+  const profileOpen = /^(?:\/(?:profile|login)\.html|\/u\/[^/]+)\/?$/.test(useLocation().pathname);
   const { variant, menuOpen, onMenuOpenChange, interactive = true } = props;
   const currentPage = profileOpen || props.replayActive || variant === 'help' ? undefined : variant;
   const compact = useCompactNavigation();
@@ -143,11 +139,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
     {href: withUiLanguage(props.assetUrl(MULTIPLAYER_GUIDE_PATH.slice(1)), locale), icon: <NavigationIcon name="multiplayerGuide"/>, label: t('multiplayerGuide.title')},
     ...(uiReviewEnabled ? [{href: withUiLanguage(props.assetUrl('ui-review.html'), locale), icon: <NavigationIcon name="handbook"/>, label: t('nav.uiHandbook'), external: true}] : []),
   ];
-  const packLink: MastheadSiteLink | undefined = previewFeaturesEnabled && (testFeatures || testQuery) ? {
-    href: withUiLanguage(props.assetUrl(RETAIL_PACK_DOCUMENT.file + (testQuery ? '?test=1' : '')), locale),
-    icon: <PackagePlus aria-hidden="true"/>,
-    label: t('package.originalTitle'),
-  } : undefined;
   const statusLink: MastheadSiteLink = {href: withUiLanguage(props.assetUrl('uptime/'), locale), icon: <ActivityLogIcon aria-hidden="true"/>, label: t('nav.serviceStatus')};
   const aboutLinks: MastheadSiteLink[] = [
     {href: props.aboutHref, icon: <InfoCircledIcon/>, label: t('nav.siteInfo')},
@@ -228,7 +219,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
         {!compact && <div hidden ref={language}>
           {props.languageControl}
         </div>}
-        {compact ? <MastheadOverview host={props} open={interactive && overviewOpen} onOpenChange={setOverviewOpen} trigger={menuTrigger} lobbyHref={lobbyHref} currentPage={currentPage} helpLinks={helpLinks} packLink={packLink} statusLink={statusLink} aboutLinks={aboutLinks} testFeatures={testFeatures}/> : <DropdownMenu.Root
+        {compact ? <MastheadOverview host={props} open={interactive && overviewOpen} onOpenChange={setOverviewOpen} trigger={menuTrigger} lobbyHref={lobbyHref} currentPage={currentPage} helpLinks={helpLinks} statusLink={statusLink} aboutLinks={aboutLinks} testFeatures={testFeatures}/> : <DropdownMenu.Root
           modal={false}
           open={interactive && menuOpen}
           onOpenChange={(open) => {
@@ -324,10 +315,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                 <>
                   {variant === 'lobby' && props.onReplay && <>
                     <DropdownMenu.Item className="ui-menu-item" id="watchReplayButton" onSelect={() => {replayAfterClose.current = true;}}><PlaySquare aria-hidden="true"/>{t('lobby.watchReplay')}</DropdownMenu.Item>
-                    <DropdownMenu.Separator className="ui-menu-separator" />
-                  </>}
-                  {packLink && <>
-                    {menuLinks([packLink])}
                     <DropdownMenu.Separator className="ui-menu-separator" />
                   </>}
                   <DropdownMenu.Group aria-label={t('nav.help')}>

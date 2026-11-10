@@ -3204,14 +3204,6 @@
     "id": "package_originalTitle",
     "params": []
   },
-  "package.originalGame": {
-    "id": "package_originalGame",
-    "params": []
-  },
-  "package.originalPreview": {
-    "id": "package_originalPreview",
-    "params": []
-  },
   "package.originalPrivacy": {
     "id": "package_originalPrivacy",
     "params": []
@@ -3221,6 +3213,24 @@
     "params": [
       "files"
     ]
+  },
+  "package.originalInvalid": {
+    "id": "package_originalInvalid",
+    "params": [
+      "reason"
+    ]
+  },
+  "package.importExisting": {
+    "id": "package_importExisting",
+    "params": []
+  },
+  "package.originalWavMusic": {
+    "id": "package_originalWavMusic",
+    "params": []
+  },
+  "package.originalPackedMusic": {
+    "id": "package_originalPackedMusic",
+    "params": []
   },
   "package.originalExtras": {
     "id": "package_originalExtras",
@@ -3242,6 +3252,14 @@
     "id": "package_originalMusic",
     "params": []
   },
+  "package.originalPassword": {
+    "id": "package_originalPassword",
+    "params": []
+  },
+  "package.originalWrongMusic": {
+    "id": "package_originalWrongMusic",
+    "params": []
+  },
   "package.originalSelected": {
     "id": "package_originalSelected",
     "params": [
@@ -3250,10 +3268,6 @@
   },
   "package.originalImport": {
     "id": "package_originalImport",
-    "params": []
-  },
-  "package.originalExport": {
-    "id": "package_originalExport",
     "params": []
   },
   "package.originalUnavailable": {

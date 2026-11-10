@@ -1,5 +1,5 @@
-import {createRetailPackage, type RetailInput, type RetailPackage, type RetailTrack} from '../../src/launcher/retail-package.mjs';
-import {buildStoredZip} from '../../package/stored-zip.mjs';
+import {createRetailPackage, retailArchiveLimits, type RetailInput, type RetailPackage, type RetailTrack} from '../../src/launcher/retail-package.mjs';
+import {expandRetailInputs} from './retail-input-archive';
 import wasmUrl from '@ffmpeg/core/wasm?url';
 import type {GameId} from '../../src/contracts/product-catalog.mts';
 import type {SiteGameData} from '../../src/contracts/site-manifest.mts';
@@ -10,6 +10,7 @@ export async function convertRetailPackage(options: {
   game: GameId;
   expected?: SiteGameData;
   inputs: readonly RetailInput[];
+  archivePassword?: string;
   fontTargets?: readonly string[];
   loadFont?(target: string): Promise<Blob | null>;
   onTrack?(track: RetailTrack): void;
@@ -37,13 +38,9 @@ export async function convertRetailPackage(options: {
       encoder.postMessage({input, pcm, wasmUrl: new URL(wasmUrl, location.href).href});
     });
   }
-  try {return await createRetailPackage({...options, encodeOgg});}
+  try {
+    const inputs = await expandRetailInputs(options.inputs, retailArchiveLimits(options.game), options.archivePassword ?? '', options.signal);
+    return await createRetailPackage({...options, inputs, encodeOgg});
+  }
   finally {worker?.terminate();}
-}
-
-export async function downloadRetailPackage({descriptor, payloads}: RetailPackage, signal?: AbortSignal): Promise<Blob> {
-  const manifest = new Blob([JSON.stringify(descriptor)], {type: 'application/json'});
-  const entries: [string, Blob][] = [['package.json', manifest]];
-  for (const [id, blob] of payloads) entries.push([descriptor.files[id].source, blob]);
-  return buildStoredZip(entries, signal);
 }

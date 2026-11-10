@@ -2,7 +2,6 @@ import {PRODUCT_GAMES, HOST_PROTOCOL} from '../../../common/contracts/product-ca
 import {PRODUCT_CONTENT} from '../../lib/content-definition.mjs';
 import {PACKAGE_DESCRIPTOR_SCHEMA} from '../../package/package-descriptor.mjs';
 import {sha256Hex} from '../../package/package-integrity.mjs';
-import {buildStoredZip, parseStoredZip, readOriginalZipEntry, isSafeStoredZipName} from '../../package/stored-zip.mjs';
 import {parseBgmTracks, readRetailArchive, readRetailBgmIndex} from './retail-archive.mjs';
 
 const MiB = 1024 * 1024;
@@ -25,55 +24,37 @@ export function retailRequiredFiles(game) {
   return game === 'th06' ? PRODUCT_CONTENT.th06.original.files : [`${game}.dat`];
 }
 
-async function indexSources(files, signal) {
-  const sources = new Map(), languagePacks = [];
-  function add(path, size, read) {
-    if (!isSafeStoredZipName(path)) throw Error(`Invalid input path: ${path}`);
-    const key = path.toLowerCase();
-    if (sources.has(key)) throw Error(`Duplicate input file: ${path}`);
-    sources.set(key, {size, read});
+export function retailArchiveLimits(game) {
+  const datLimit = game === 'th19' || game === 'th20' ? 600 * MiB : 128 * MiB;
+  const limits = Object.fromEntries(retailRequiredFiles(game).map(name => [name.toLowerCase(), datLimit]));
+  if (game === 'th06') {
+    for (const suffix of ['cm', 'ed', 'in', 'md', 'st', 'tl']) limits['th06_' + suffix + '.dat'] = datLimit;
+    limits['eagler-hitbox.png'] = 2 * MiB;
+  } else {
+    limits['thbgm.dat'] = 1024 * MiB;
   }
-  for (const file of files) {
-    signal?.throwIfAborted();
-    if (!(file instanceof Blob) || typeof file.name !== 'string') throw Error('Invalid original game file');
-    if (!file.webkitRelativePath && /\.zip$/i.test(file.name)) {
-      if (!file.size || file.size > 1536 * MiB) throw Error('Invalid original game ZIP size');
-      const entries = await parseStoredZip(file, {originalGame: true});
-      const language = await languageManifest(file, entries, signal);
-      if (language) {languagePacks.push({blob: file, manifest: language}); continue;}
-      for (const [path, entry] of entries) {
-        add(path, entry.uncompressedSize, () => readOriginalZipEntry(file, entry, signal));
-      }
-    } else {
-      add(file.webkitRelativePath || file.name, file.size, async () => file);
-    }
+  for (const name of PRODUCT_CONTENT[game].music.ogg.files) {
+    limits[name] = 64 * MiB;
+    if (game === 'th06') limits[name.replace(/\.ogg$/, '.wav')] = 64 * MiB;
   }
-  return {sources, languagePacks};
+  limits['msgothic.ttc'] = limits['unifont.otf'] = 64 * MiB;
+  return limits;
 }
 
-async function languageManifest(blob, entries, signal) {
-  const item = entries.get('manifest.json');
-  if (!item || item.uncompressedSize > MiB) return null;
-  let manifest;
-  const text = await (await readOriginalZipEntry(blob, item, signal)).text();
-  try {manifest = JSON.parse(text);} catch {return null;}
-  if (manifest?.schema !== 'eagler-touhou/thcrap-static-pack/1') return null;
-  if (!/^lang_[a-z0-9]+(?:-[a-z0-9]+)*$/.test(manifest.language) || typeof manifest.runtimeVersion !== 'string' ||
-      !Array.isArray(manifest.files) || !manifest.files.length || manifest.files.length > 256 ||
-      entries.size !== manifest.files.length + 1 || blob.size > 64 * MiB)
-    throw Error('Invalid compiled thcrap language package');
-  let size = 0;
-  const seen = new Set();
-  for (const file of manifest.files) {
-    const path = file?.path;
-    if (typeof path !== 'string' || !path.startsWith(`/thcrap/${manifest.game}/`) || path.includes('..') || seen.has(path) ||
-        !Number.isSafeInteger(file.bytes) || file.bytes < 0 || entries.get(path.slice(1))?.uncompressedSize !== file.bytes)
-      throw Error('Invalid compiled thcrap resource');
-    seen.add(path);
-    size += file.bytes;
+function indexSources(files, game) {
+  const sources = new Map();
+  for (const file of files) {
+    if (!(file instanceof Blob) || typeof file.name !== 'string') throw Error('Invalid original game file');
+    const path = (file.archivePath || file.webkitRelativePath || file.name).toLowerCase();
+    const slash = path.lastIndexOf('/');
+    const name = path.slice(slash + 1);
+    if (!/\.(?:dat|wav|ogg|ttc|otf)$/.test(name) && name !== 'eagler-hitbox.png') continue;
+    const th06Alias = game === 'th06' && /^th06_(cm|ed|in|md|st|tl)\.dat$/.exec(name);
+    const key = th06Alias ? path.slice(0, slash + 1) + `紅魔郷${th06Alias[1]}.dat` : path;
+    if (sources.has(key)) throw Error(`Duplicate input file: ${path}`);
+    sources.set(key, file);
   }
-  if (size > 96 * MiB) throw Error('Compiled thcrap resources exceed the supported size');
-  return manifest;
+  return sources;
 }
 
 function locateGameFolder(sources, required) {
@@ -120,22 +101,27 @@ export async function createRetailPackage({game, expected, inputs, fontTargets =
   if (expected && (expected.layout !== layout || (flat && flat.bytes !== expected.bytes)))
     throw Error('This Runtime uses a different game archive layout');
   signal?.throwIfAborted();
-  const {sources, languagePacks} = await indexSources(inputs, signal);
+  const sources = indexSources(inputs, game);
   const root = locateGameFolder(sources, required);
   async function read(name, max) {
     const key = name.toLowerCase();
-    const entry = sources.get(root + key) ?? sources.get(key);
+    let entry = sources.get(root + key) ?? sources.get(key);
+    if (!entry && key === 'thbgm.dat') {
+      const matches = [...sources].filter(([path]) => path.endsWith('/thbgm.dat'));
+      if (matches.length > 1) throw Error('The selection contains multiple thbgm.dat files');
+      entry = matches[0]?.[1];
+    }
     if (!entry) return null;
     signal?.throwIfAborted();
     if (!entry.size || entry.size > max) throw Error(`${name}: invalid file size`);
-    return entry.read();
+    return entry;
   }
 
   const archives = new Map();
   let directory;
-  const archiveLimit = game === 'th19' || game === 'th20' ? 600 * MiB : 128 * MiB;
+  const limits = retailArchiveLimits(game);
   for (const name of required) {
-    const blob = await read(name, archiveLimit);
+    const blob = await read(name, limits[name.toLowerCase()]);
     directory = await readRetailArchive(blob, game);
     if (game !== 'th06' && !directory.some(entry => new RegExp(`(?:^|/)${game}_\\d{4}[a-z]\\.ver$`).test(entry.name)))
       throw Error(`${name}: game version marker does not match ${game.toUpperCase()}`);
@@ -143,7 +129,7 @@ export async function createRetailPackage({game, expected, inputs, fontTargets =
   }
 
   const product = PRODUCT_GAMES[game];
-  const files = {}, payloads = new Map(), base = [], music = [], language = [];
+  const files = {}, payloads = new Map(), base = [], music = [];
   const targets = new Set();
   async function addFile(target, blob, ids = base, id = `file-${payloads.size}`) {
     signal?.throwIfAborted();
@@ -153,7 +139,7 @@ export async function createRetailPackage({game, expected, inputs, fontTargets =
     files[id] = {source: `files/${id}/${target.split('/').at(-1)}`, target, bytes: blob.size, sha256, revision: `local-${sha256.slice(0, 24)}`};
     targets.add(target);
     payloads.set(id, blob);
-    ids?.push(id);
+    ids.push(id);
   }
   const archive = archives.get(required[0]);
   const data = flat ? await flatGameData(game, archives, addFile, read) : archive;
@@ -169,7 +155,13 @@ export async function createRetailPackage({game, expected, inputs, fontTargets =
   }
 
   const bgm = game === 'th06' ? null : await read('thbgm.dat', 1024 * MiB);
-  const packedTracks = bgm ? parseBgmTracks(await readRetailBgmIndex(archive, game, directory), bgm.size) : [];
+  let packedTracks = [];
+  if (bgm) {
+    const header = await bgm.slice(0, 8).arrayBuffer();
+    if (header.byteLength !== 8 || new TextDecoder().decode(header.slice(0, 4)) !== 'ZWAV' ||
+        new DataView(header).getUint32(4, true) !== 1) throw Error('Invalid thbgm.dat header');
+    packedTracks = parseBgmTracks(await readRetailBgmIndex(archive, game, directory), bgm.size);
+  }
   const tracks = packedTracks.length ? packedTracks : PRODUCT_CONTENT[game].music.ogg.files.map(name => ({name}));
   const mount = product.package.musicMounts.ogg;
   for (const [index, track] of tracks.entries()) {
@@ -189,38 +181,12 @@ export async function createRetailPackage({game, expected, inputs, fontTargets =
     }
   }
 
-  // Import compiled thcrap assets through the launcher's existing selectable
-  // language component so the native runtime activates their lookup paths.
-  const prefix = `${root}thcrap/${game}/`;
-  const overlay = [];
-  let overlayBytes = 0;
-  for (const [path, entry] of sources) {
-    if (!path.startsWith(prefix)) continue;
-    const relative = path.slice(prefix.length);
-    if (!/^(?:[a-z0-9_-]+\/)*[a-z0-9_.-]+\.(?:anm|png|jpe?g|bmp|wav|msg|dat|end|etl|ttf|otf|json)$/i.test(relative) || relative.includes('..')) continue;
-    overlayBytes += entry.size;
-    if (entry.size > 32 * MiB || overlayBytes > 64 * MiB || overlay.length >= 256) throw Error('Compiled thcrap overlay is too large');
-    overlay.push([`thcrap/${game}/${relative}`, await entry.read()]);
-  }
-  if (overlay.length) {
-    const manifest = {schema: 'eagler-touhou/thcrap-static-pack/1', game, language: 'lang_local', title: 'thcrap (local)', runtimeVersion: 'independent',
-      files: overlay.map(([name, blob]) => ({path: `/${name}`, bytes: blob.size}))};
-    const blob = await buildStoredZip([['manifest.json', new Blob([JSON.stringify(manifest)])], ...overlay], signal);
-    languagePacks.push({manifest, blob});
-  }
-  for (const {manifest, blob} of languagePacks) {
-    if (manifest.game !== game) throw Error(`The selected thcrap package is for ${manifest.game}`);
-    const id = manifest.language, file = `language:${id}`;
-    await addFile(`/__eagler/language/${id}.zip`, blob, null, file);
-    language.push({id, title: typeof manifest.title === 'string' ? manifest.title : id, file});
-  }
   const revision = await sha256Hex(encoder.encode(JSON.stringify(Object.values(files).map(({target, sha256}) => [target, sha256]))));
   const descriptor = {
     schema: PACKAGE_DESCRIPTOR_SCHEMA, game, gameVersion: 'original', revision: `retail-${revision.slice(0, 32)}`,
     runtimeRequirement: {protocol: HOST_PROTOCOL, target: game, dataFile: product.package.dataFileId, dataLayout: layout},
     files, base: {files: base}, components: {
       ...(music.length ? {ogg: {type: 'music', files: music}} : {}),
-      ...(language.length ? {language: {type: 'language', entries: language}} : {}),
     },
   };
   return {descriptor, payloads};

@@ -29,11 +29,10 @@ import { BackgroundController } from './components/launcher/CustomBackground';
 import { UiScrollbars } from './ui/scrollbars';
 import { isLauncherHomePath } from './navigation/addresses';
 import UptimeRoute from './routes/uptime';
-import { helpDocumentAtPath, isRetailPackPage, isStandalonePage } from './components/documents/catalog';
+import { helpDocumentAtPath, isStandalonePage } from './components/documents/catalog';
 import { isPreviewOnlyPage } from './release-features';
 import { SITE_BRAND_PREPAINT_SCRIPT } from '../lib/site-brand.mjs';
 const HelpRoute = lazy(() => import('./routes/help'));
-const PackRoute = lazy(() => import('./routes/pack'));
 
 // Overlay history shares page scroll. Profile anchors have separate history entries.
 const pageScrollKey = (location: { pathname: string; key: string }) =>
@@ -97,11 +96,7 @@ export function Layout({ children }: { children: ReactNode }) {
 /** Framework's index.html SPA fallback renders this rather than App. */
 export function HydrateFallback() {
   const pathname = useLocation().pathname;
-  return isRetailPackPage(pathname) ? (
-    <Suspense>
-      <PackRoute />
-    </Suspense>
-  ) : helpDocumentAtPath(pathname) ? (
+  return helpDocumentAtPath(pathname) ? (
     <Suspense>
       <HelpRoute />
     </Suspense>

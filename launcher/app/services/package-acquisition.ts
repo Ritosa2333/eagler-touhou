@@ -285,7 +285,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
   function originalFileNames(game: GameId): readonly string[] {
     return getGameVersion(game) === 'original' ? retailRequiredFiles(game) : [];
   }
-  async function convertOriginal(game: GameId, inputs: readonly RetailInput[], signal?: AbortSignal, onProgress?: AcquisitionRequest['onProgress']) {
+  async function convertOriginal(game: GameId, inputs: readonly RetailInput[], archivePassword: string | undefined, signal?: AbortSignal, onProgress?: AcquisitionRequest['onProgress']) {
     if (!originalFileNames(game).length) throw Error(t('package.originalUnavailable'));
     const host = metadata.getSnapshot().siteManifest;
     const expected = host?.games[game]?.gameData;
@@ -316,23 +316,18 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     }
     checkPreparationAbort(signal);
     const {convertRetailPackage} = await import('./retail-package');
-    return convertRetailPackage({game, expected, inputs, fontTargets, loadFont, signal,
+    return convertRetailPackage({game, expected, inputs, archivePassword, fontTargets, loadFont, signal,
       onTrack: ({name, completed, total}) => progress({onProgress}, 'package.originalEncoding', {name, completed: completed + 1, total})});
   }
-  async function importOriginal(game: GameId, inputs: readonly RetailInput[], {signal, onProgress}: Pick<AcquisitionRequest, 'signal' | 'onProgress'> = {}) {
+  async function importOriginal(game: GameId, inputs: readonly RetailInput[], {signal, onProgress, archivePassword}: Pick<AcquisitionRequest, 'signal' | 'onProgress'> & {archivePassword?: string} = {}) {
     if (!indexedDBAvailable()) throw Error(t('package.indexedDbUnavailable'));
-    const {descriptor, payloads} = await convertOriginal(game, inputs, signal, onProgress);
+    const {descriptor, payloads} = await convertOriginal(game, inputs, archivePassword, signal, onProgress);
     const result = await deps.installAcquired({descriptor, desiredFileIds: [...payloads.keys()], source: 'local', reuseCurrent: false, signal,
       acquire: async id => payloads.get(id) ?? null,
       onProgress: value => progress({onProgress}, 'package.importingProgress', {...value})});
     await installedChanged(game);
     try {void requestPersistence?.().catch(() => {});} catch {}
     return result.generation;
-  }
-  async function exportOriginal(game: GameId, inputs: readonly RetailInput[], {signal, onProgress}: Pick<AcquisitionRequest, 'signal' | 'onProgress'> = {}) {
-    const prepared = await convertOriginal(game, inputs, signal, onProgress);
-    const {downloadRetailPackage} = await import('./retail-package');
-    return downloadRetailPackage(prepared, signal);
   }
   async function importPackage({game, file, signal, onProgress, gameVersion}: {
     gameVersion?: GameVersion; game: GameId; file: Blob & {name?: string}; signal?: AbortSignal; onProgress?: AcquisitionRequest['onProgress'];
@@ -456,7 +451,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       .finally(() => {if (background.get(game) === task) background.delete(game);});
     background.set(game, task); return task;
   }
-  return Object.freeze({acquire, importPackage, importOriginal, exportOriginal, originalFileNames, startBackgroundUpdate, catalogUrl, fetchImpl, getPackageFetch, languageNetwork: network, installPublished,
+  return Object.freeze({acquire, importPackage, importOriginal, originalFileNames, startBackgroundUpdate, catalogUrl, fetchImpl, getPackageFetch, languageNetwork: network, installPublished,
     readCurrent, getGameVersion, getPublication, getCatalogUrl, getMetadata: () => metadata.getSnapshot(), refreshInstalled: installedChanged});
 }
 export type PackageAcquisition = ReturnType<typeof createPackageAcquisition>;

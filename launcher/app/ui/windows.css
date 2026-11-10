@@ -253,6 +253,34 @@
   .game-data-import-actions .transfer-download {
     order: 1;
   }
+  .game-data-original-files {
+    border-top: 1px solid var(--kit-border);
+  }
+  .game-data-original-files summary {
+    padding: 12px 20px;
+    cursor: pointer;
+  }
+  .game-data-original-files p {
+    padding-block: 6px;
+    overflow-wrap: anywhere;
+  }
+  .game-data-original-files .game-data-import-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    padding-top: 8px;
+  }
+  .game-data-archive-password {
+    display: grid;
+    gap: 6px;
+    padding: 6px 20px;
+  }
+  .game-data-archive-password input {
+    padding: 6px 8px;
+    border: 1px solid var(--kit-border);
+    border-radius: 6px;
+    background: var(--kit-background);
+    color: var(--kit-foreground);
+  }
   .game-data-link-row {
     display: grid;
     grid-template-columns: 72px minmax(0, 1fr);

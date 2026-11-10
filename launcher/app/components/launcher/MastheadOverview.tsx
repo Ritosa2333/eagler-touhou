@@ -21,7 +21,7 @@ export interface MastheadSiteLink {
 }
 type OverviewAction = 'onDonation' | 'onFirstUse' | 'onReplay';
 
-export function MastheadOverview({host, open, onOpenChange, trigger, lobbyHref, currentPage, helpLinks, packLink, statusLink, aboutLinks, testFeatures}: {
+export function MastheadOverview({host, open, onOpenChange, trigger, lobbyHref, currentPage, helpLinks, statusLink, aboutLinks, testFeatures}: {
   host: LauncherMastheadProps;
   open: boolean;
   onOpenChange(open: boolean): void;
@@ -29,7 +29,6 @@ export function MastheadOverview({host, open, onOpenChange, trigger, lobbyHref, 
   lobbyHref: string;
   currentPage?: 'library' | 'lobby';
   helpLinks: readonly MastheadSiteLink[];
-  packLink?: MastheadSiteLink;
   statusLink: MastheadSiteLink;
   aboutLinks: readonly MastheadSiteLink[];
   testFeatures: boolean;
@@ -93,7 +92,6 @@ export function MastheadOverview({host, open, onOpenChange, trigger, lobbyHref, 
         <nav className="masthead-overview-group" aria-label={t('nav.main')}>
           {mainLink(host.launcherHref, currentPage === 'library', t('nav.single'), <NavigationIcon name="single"/>)}
           {mainLink(lobbyHref, currentPage === 'lobby', t('nav.lobby'), <NavigationIcon name="multiplayer"/>)}
-          {packLink && overviewLinks([packLink])}
           {replay && <Button variant="ghost" size="row" id="watchReplayButton" onClick={() => closeThen('onReplay')}>
             <PlaySquare aria-hidden="true"/><span>{t('lobby.watchReplay')}</span>
           </Button>}
