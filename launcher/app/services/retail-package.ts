@@ -1,6 +1,6 @@
 import {createRetailPackage, retailArchiveLimits, type RetailInput, type RetailPackage, type RetailTrack} from '../../src/launcher/retail-package.mjs';
 import {expandRetailInputs} from './retail-input-archive';
-import wasmUrl from '@ffmpeg/core/wasm?url';
+import wasmUrl from 'wasm-media-encoders/wasm/ogg.wasm?url';
 import type {GameId} from '../../src/contracts/product-catalog.mts';
 import type {SiteGameData} from '../../src/contracts/site-manifest.mts';
 

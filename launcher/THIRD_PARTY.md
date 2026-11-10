@@ -8,6 +8,7 @@
 | --- | --- | --- | --- |
 | `webaudio-tinysynth@1.1.3` | [g200kg/webaudio-tinysynth](https://github.com/g200kg/webaudio-tinysynth) | Apache-2.0 | MIDI Web 构建中的免采样 General MIDI 合成；随包文件为 `public/vendor/webaudio-tinysynth.min.js`。 |
 | `fflate@0.8.3` | [101arrowz/fflate](https://github.com/101arrowz/fflate) | MIT | 导入、导出保持 `.rpy` 字节不变的原格式 Replay；随包文件为 `public/vendor/fflate.min.js`。 |
+| `wasm-media-encoders@0.7.0` | [arseneyr/wasm-media-encoders](https://github.com/arseneyr/wasm-media-encoders)、[Xiph libvorbis](https://xiph.org/vorbis/) | MIT、Xiph BSD | 浏览器导入时按需加载的 Ogg Vorbis 编码器，用于本地转换原版游戏音乐。 |
 | `7z-wasm@1.2.0` | [7z-wasm 对应源码](https://github.com/use-strict/7z-wasm/tree/521d2cf93f5964f4e77b01049e19f1b29305c454) | LGPL-2.1-or-later，附 unRAR 限制；[上游许可](https://github.com/use-strict/7z-wasm/blob/521d2cf93f5964f4e77b01049e19f1b29305c454/License.txt) | 浏览器按需加载的解压 Worker，读取 7z 和加密 ZIP。unRAR 代码不得用于开发与 RAR（WinRAR）兼容的压缩工具。 |
 | `browser-image-compression@2.0.2`、UZIP.js | [Donaldcwl/browser-image-compression](https://github.com/Donaldcwl/browser-image-compression)、[photopea/UZIP.js](https://github.com/photopea/UZIP.js) | MIT | 头像与封面在浏览器中缩放、压缩，选图时加载同站脚本，Worker 与主线程共用该文件。 |
 | `react-easy-crop@6.2.4`、`normalize-wheel@1.0.1` | [ValentinH/react-easy-crop](https://github.com/ValentinH/react-easy-crop)、[basilfx/normalize-wheel](https://github.com/basilfx/normalize-wheel) | MIT、BSD-3-Clause | 头像和封面的固定比例裁切、拖动与缩放，裁切器按需加载。许可证位于 `public/vendor/`。 |

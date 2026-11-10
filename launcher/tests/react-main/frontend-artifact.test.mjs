@@ -272,8 +272,8 @@ test('artifact and document share the unchanged isolated origin/mount policy', a
 
 test('on-demand encoder is published without App Shell precaching', async () => {
   await fixture(async ({directory, metadata, put}) => {
-    const wasm = 'assets/ffmpeg-core-aBc12_fG.wasm';
-    metadata.manifest.encoder = {file: wasm, src: 'ffmpeg-core.wasm'};
+    const wasm = 'assets/ogg-aBc12_fG.wasm';
+    metadata.manifest.encoder = {file: wasm, src: 'ogg.wasm'};
     await put(wasm, 'wasm fixture');
     await put('.vite/manifest.json', JSON.stringify(metadata.manifest));
     const artifact = await readReactFrontendArtifact({directory});
