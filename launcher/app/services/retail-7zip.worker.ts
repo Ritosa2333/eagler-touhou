@@ -79,6 +79,7 @@ self.onmessage = async ({data}: MessageEvent<{
       path: entry.directory ? '' : entry.path.replaceAll('\\', '/'),
       size: entry.size,
     }));
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: The 7-Zip include list uses a newline to delimit each path.
     if (candidates.some(({entry}) => entry.link || /[\x00-\x1f\x7f]/.test(entry.path))) throw Error('Unsafe game archive entry');
     if (!data.password && candidates.some(({entry}) => entry.encrypted)) throw Error('Password required');
     const files: {path: string; blob: Blob}[] = [];
