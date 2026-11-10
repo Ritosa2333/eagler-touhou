@@ -119,6 +119,20 @@ inline bool returns_to_practice_selection(const SessionState& state, i32 reason,
         state.starting_stage >= 1 && state.starting_stage <= 6;
 }
 
+// 符卡练习对局返回：0x4578ee-0x457931 启动拍把 stage/slot/difficulty 光标存进
+// DAT_004bb4c4/c8/cc（角色存 DAT_004be7b8）；标题重入时 0x4561bf 判
+// DAT_004bb4c4>=0，0x11→0x12→0x13 级联恢复上次所选卡直入难度层（0x45673a
+// 判 DAT_004bb4c8>=0 恢复卡表光标）。与关卡练习（dc670==4）互斥：符卡练习
+// practice_mode==0 且 run_mode_flags 段为 0x20。
+inline bool returns_to_spell_practice_selection(const SessionState& state, i32 reason,
+                                                bool replay) noexcept {
+    return (reason == 1 || reason == 3) && !replay && state.practice_mode == 0 &&
+        (state.run_mode_flags & 0x70u) == 0x20u &&
+        state.character >= 0 && state.character < 4 &&
+        state.starting_stage >= 1 && state.starting_stage <= 7 &&
+        state.selected_spell_id >= 0;
+}
+
 // 0x4bb994 阈值表（EXE .data @0x4bb994 原样）。
 inline constexpr i32 kLifePieceThresholds[8] = {8, 10, 12, 15, 18, 20, 25, 9999999};
 inline i32 life_piece_threshold(i32 index) noexcept {

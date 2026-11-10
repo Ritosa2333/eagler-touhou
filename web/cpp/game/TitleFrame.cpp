@@ -65,6 +65,17 @@ bool TitleFrame::initialize() {
         callbacks[1].enabled = true;
         return menu();
     }
+    if (reason == 5) {
+        // 符卡练习对局返回（0x4561bf DAT_004bb4c4>=0）：0x11→0x12→0x13 级联
+        // 直入难度层，恢复启动时保存的 stage/slot/difficulty 光标与角色。
+        if (!check(host.restore_spell_practice_selection(),
+                   "Spell Practice selection restore failed"))
+            return false;
+        state.flags |= 2u;
+        state.return_reason = 1;
+        callbacks[1].enabled = true;
+        return menu();
+    }
     if (reason == 2) {
         // 44c570 dc670==2 returns to Replay; preserve Main's Replay cursor
         // underneath the list so X/Esc restores that menu entry.

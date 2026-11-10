@@ -144,6 +144,37 @@ bool TitleScene::restore_practice_selection() {
     return true;
 }
 
+bool TitleScene::restore_spell_practice_selection() {
+    // 0x4561bf DAT_004bb4c4>=0：启动拍（0x45792b/c8/cc）保存的 stage/slot/
+    // difficulty 光标与角色（DAT_004be7b8）在标题重入时经 0x11→0x12→0x13
+    // 级联直入难度层。槽位/难度行按 spell_id 反查；目录已不含该卡则如实失败。
+    if (!returns_to_spell_practice_selection(progress, 1, false))
+        return check(false, "Invalid Spell Practice return session");
+    const i32 stage = progress.starting_stage;
+    for (i32 slot = 0; slot < kSpellPracticeSlots[stage - 1]; ++slot)
+        for (i32 difficulty = 0; difficulty < kSpellPracticeDifficulties; ++difficulty)
+            if (host.spell_id(stage, slot, difficulty) == progress.selected_spell_id) {
+                spell_restore_ = SpellPracticeCommand{};
+                spell_restore_.stage = stage;
+                spell_restore_.spell_slot = slot;
+                spell_restore_.difficulty = difficulty;
+                spell_restore_.spell_id = progress.selected_spell_id;
+                spell_restore_pending_ = true;
+                settings.preferred_character = progress.character;
+                // 主菜单进符卡练习同构光标栈（TitleMainMenu SpellPractice 分支）。
+                state.flags |= 2u;
+                state.menu.depth = state.menu.disabled_count = 0;
+                state.menu.count = kTitleMainEntries;
+                state.menu.select(i32(TitleMainEntry::SpellPractice));
+                state.menu.push();
+                state.menu.count = kTitleMainEntries;
+                state.menu.select(i32(TitleMainEntry::SpellPractice));
+                state.change_screen(TitleScreen::SpellPractice);
+                return true;
+            }
+    return check(false, "Spell Practice selection no longer in catalog");
+}
+
 // 屏值 10（0x453170）：每次进屏新建对合状态机。宿主未接 = open 如实失败
 // （TitlePlayerDataMenu 默认平台），不以空表/零值冒充记录；成功后 X/Esc 走
 // menu 自身 case2→case3，收面时 close/pop/change_screen(1) 全在菜单内完成。
@@ -193,6 +224,14 @@ bool TitleScene::update_spell_practice(const TitleFrameInput& value) {
     if (!spell_practice) {
         spell_practice = std::make_unique<TitleSpellPracticeMenu>(
             host, settings.preferred_character);
+        if (spell_restore_pending_) {
+            // [H-SP2] DAT_004bb4c4/c8 级联：菜单直入难度层恢复上次所选卡。
+            if (!spell_practice->restore_selection(spell_restore_.stage,
+                                                   spell_restore_.spell_slot,
+                                                   spell_restore_.difficulty))
+                return check(false, "Spell Practice restore rejected by catalog");
+            spell_restore_pending_ = false;
+        }
         spell_practice_launch_status_.clear();
         if (host.record_menu_views()) {
             spell_practice_view = std::make_unique<TitleSpellPracticeView>(animations, resources.title);
