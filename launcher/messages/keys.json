@@ -3204,6 +3204,14 @@
     "id": "package_originalTitle",
     "params": []
   },
+  "package.originalGame": {
+    "id": "package_originalGame",
+    "params": []
+  },
+  "package.originalPreview": {
+    "id": "package_originalPreview",
+    "params": []
+  },
   "package.originalPrivacy": {
     "id": "package_originalPrivacy",
     "params": []
@@ -3246,10 +3254,6 @@
   },
   "package.originalExport": {
     "id": "package_originalExport",
-    "params": []
-  },
-  "package.originalSave": {
-    "id": "package_originalSave",
     "params": []
   },
   "package.originalUnavailable": {

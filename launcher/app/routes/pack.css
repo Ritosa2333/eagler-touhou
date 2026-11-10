@@ -1,0 +1,54 @@
+.retail-pack-page {
+  width: min(800px, 100%);
+  margin-inline: auto;
+  padding: clamp(20px, 5vw, 48px) clamp(16px, 4vw, 32px);
+}
+
+.retail-pack-page h1 {
+  margin-block: 0 12px;
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 700;
+}
+
+.retail-pack-page p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--kit-muted-foreground);
+}
+
+.retail-pack-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+  padding: clamp(16px, 4vw, 24px);
+  border: 1px solid var(--kit-border);
+  border-radius: 12px;
+  background: var(--kit-card);
+}
+
+.retail-pack-field {
+  display: grid;
+  gap: 8px;
+  max-width: 420px;
+}
+
+.retail-pack-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.retail-pack-submit {
+  border-top: 1px solid var(--kit-border);
+  padding-top: 16px;
+}
+
+.retail-pack-panel [role='alert'] {
+  color: var(--kit-destructive);
+}
+
+.retail-pack-link {
+  justify-self: start;
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}

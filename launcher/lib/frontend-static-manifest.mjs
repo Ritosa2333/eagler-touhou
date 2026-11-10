@@ -20,6 +20,8 @@ export function hasUiReviewEntry(manifest) {
   return Object.values(manifest).some(entry => entry?.isEntry && entry.src?.split('?')[0] === UI_REVIEW_DOCUMENT.source);
 }
 
+export const RETAIL_PACK_DOCUMENT = Object.freeze({path: '/pack.html', file: 'pack.html'});
+
 export const REACT_DOCUMENTS = Object.freeze([
   {path: '/', file: 'index.html'},
   {path: '/en.html', file: 'en.html'},
@@ -28,6 +30,7 @@ export const REACT_DOCUMENTS = Object.freeze([
   {path: '/profile.html', file: 'profile.html'},
   {path: '/login.html', file: 'login.html'},
   {path: '/u/account-profile-template', file: 'profile-entry.html'},
+  RETAIL_PACK_DOCUMENT,
   {path: '/privacy.html', file: 'privacy.html'},
   {path: '/faq.html', file: 'faq.html'},
   {path: '/about.html', file: 'about.html'},
