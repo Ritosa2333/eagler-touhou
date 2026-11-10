@@ -36,6 +36,15 @@ if(fallback)window.RTCPeerConnection=undefined;
     window.notices=[];window.closeEvents=[];window.begins=[];window.ends=[];window.finals=[];window.hashes={};
     window.lobby=new WebSocket(`ws://127.0.0.1:${relayPort}/?room=th09mp-0777&lobby=selectionpeer${index}&member=selectionmember${index}`);
     lobby.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='error')throw Error(m.error);window.room=m.room||window.room;window.roomMessage=m;};
+    window.observeFinal=(match,via)=>finals.push({match,via,phase:core.HEAP32[core._th09_session_status()/4]});
+    const send=WebSocket.prototype.send;
+    WebSocket.prototype.send=function(data){
+      if(this!==lobby&&typeof data==='string'&&data.startsWith('{"type":"th09-match"')){
+        const {type,...match}=JSON.parse(data);
+        if(type==='th09-match')observeFinal(match,'player-socket');
+      }
+      return send.call(this,data);
+    };
   },{index,relayPort,fallback,packetDelay});
   await page.waitForFunction(()=>window.room);return page;
 }
@@ -50,7 +59,7 @@ async function connect(index){await pages[index].evaluate(async({index,relayPort
   const {SharedNetplay}=await import('/app/shared-netplay.mjs');const spectator=index>=2;
   const options={netplayUrl:`ws://127.0.0.1:${relayPort}/?room=th09mp-0777&run=${window.room.startSerial}&players=2&member=selectionmember${index}&${spectator?'spectator=selectionpeer'+index:'player='+index}`,netplayPlayer:spectator?0:index,netplayPlayerCount:2,netplaySeed:12345,netplayDifficulty:3,netplayLoadouts:[{character:0},{character:1}],netplayInGameSelection:true,netplaySpectator:spectator,netplaySpectatorId:spectator?'selectionpeer'+index:'',netplaySpectatorCount:2,netplaySpectatorTimeline:true,netplayIceServers:[],netplayAllowWebsocketFallback:fallback,netplayAdonisMode:mode,netplayInputDelay:mode?2:0,netplayInputDelayAuto:false};
   core.eaglerOptions=options;window.play=new SharedNetplay(core,{onStatus:s=>notices.push(s),onClose:s=>closeEvents.push(s),onResult:()=>{},onMatch:match=>{
-    if(match.winner!==undefined)finals.push({match,phase:core.HEAP32[core._th09_session_status()/4]});
+    if(match.winner!==undefined)observeFinal(match,'lobby');
     lobby.send(JSON.stringify({type:'th09-match',serial:room.startSerial,...match}));
   }});
   const readHash=frame=>{const at=core._th09_confirmed_frame_hash(frame)/4;if(core.HEAPU32[at]===frame)hashes[frame+1]=core.HEAPU32[at+1];};
@@ -93,8 +102,8 @@ try{selectionRun:{
   let selected=await state(pages[0]);assert.deepEqual(selected.selection.slice(5,7),[1,0]);
   await press(1,'KeyZ');await menu(16);await pages[0].screenshot({path:resolve(out,'first-stage-selection.png')});
   const hostStage=(await state(pages[0])).title[4];await press(0,'ArrowDown');assert.notEqual((await state(pages[0])).title[4],hostStage,'P1 can move shared stage cursor');
-  const priorStage=(await state(pages[0])).title[4];await press(1,'ArrowDown');
-  assert.notEqual((await state(pages[0])).title[4],priorStage,'P2 can move shared stage cursor');
+  const priorStage=(await state(pages[0])).title[4];await press(1,'ArrowUp');
+  await waitFor(pages[0],s=>s.title[4]!==priorStage,'P2 can move shared stage cursor');
   if(selectionOnly){
     const states=await Promise.all(pages.slice(0,2).map(state));const confirmed=Math.min(...states.map(s=>s.rollback[1]))-20;
     const hashes=await Promise.all(pages.slice(0,2).map(p=>p.evaluate(f=>window.hashes[f],confirmed)));
@@ -142,7 +151,8 @@ try{selectionRun:{
   const [firstFinal,peerFinal]=await Promise.all(pages.slice(0,2).map(page=>
     waitFor(page,s=>s.finals.length===1,'deciding frame report',240000)));
   assert.deepEqual(firstFinal.finals,peerFinal.finals);
-  const [{match,phase}]=firstFinal.finals;
+  const [{match,phase,via}]=firstFinal.finals;
+  if(process.argv.includes('--direct-report'))assert.equal(via,'player-socket');
   assert.equal(phase,1,'report was emitted while the native match was still running');
   assert.deepEqual(match.characters,[1,2]);
   assert.ok(match.frames>0);
