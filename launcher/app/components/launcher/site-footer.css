@@ -7,6 +7,7 @@
   .site-footer nav {min-width: 0;}
   .site-footer nav :is(a, button) {display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 0; border: 0; background: transparent; color: var(--kit-muted-foreground); font: 400 14px / 20px var(--kit-font); text-decoration: none; text-align: left; overflow-wrap: anywhere; cursor: pointer;}
   .site-footer nav svg {width: 15px; height: 15px; flex: none; stroke-width: 1.7;}
+  .site-footer nav .site-footer-social-icon {fill: currentColor; stroke: none;}
   .site-footer nav .site-footer-external {width: 12px; height: 12px; margin-left: -4px; opacity: .65;}
   .site-footer nav span .site-footer-external {display: inline; margin-left: 0; vertical-align: -1px;}
   .site-footer nav :is(a, button):hover {color: var(--kit-foreground); text-decoration: underline; text-underline-offset: 4px;}
