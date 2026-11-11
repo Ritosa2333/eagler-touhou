@@ -82,6 +82,8 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
+2026-11-11 [基础可玩测试站](https://wth.saop.cc/)已由 Cloudflare Tunnel 接入 TS Arch 的生产静态服务，[网站接入 PR](https://github.com/Ritosa2333/eagler-touhou/pull/233)已提交。TH14 使用独立 C++／SDL3／WebGL2 运行时，原作 DATA、FLAC 音乐与不可变 Runtime generation 分开部署。实际 Arch 服务的手动 Normal 开局、移动射击、道具、暂停和返回标题已观察；公网 HTTPS、Wasm 哈希及 COOP／COEP 响应头已核对。混流音频的双音量归零静音修复与网站契约共 7 项测试通过，两组 TypeScript 检查通过。[运行壳错误读取修复](https://github.com/AdingApkgg/thp/blob/d7c4151ad1cf6de8c5c3b232d662d6818caa7103/docs/porting/TH14_SITE_SHELL_NOV11.md)避免把共享内存直接传给 TextDecoder。公网浏览器工具复验超时，整作 1:1 与模式通过数保持进行中。
+
 2026-11-11 初次自机构造顺序已修复。[实现与验证](https://github.com/AdingApkgg/thp/blob/b5580f47e7a6c7ddda0c1980e6600e2d4e0f6ecf/docs/porting/TH14_PLAYER_CONSTRUCTOR_ORDER_NOV11.md)将 Player 分配放到读取自机动画之前，将弹池和道具池分配移到 HUD 后。六种自机的真实 SHT、ANM 组件分别比较两条构造路径，每组 276 个初始状态字相同；生命周期检查和静音浏览器普通开局通过。当前构建的首帧 RNG 尚待重新与原版对照，整作保持进行中。
 
 
