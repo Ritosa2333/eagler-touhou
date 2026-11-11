@@ -82,7 +82,10 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-**2026-11-11 暂停计时与退出修复**：正常终止帧现走停止、分数保存、IDB 同步及音频断开，实际运行壳与异步队列通过 12 例静音组件检查。暂停开放条件改为原版 Control 计时器；10 个原版指令片段与实际 `GameSession::update` 对照中，旧实现 8 例不同、修正后 0 例不同；TH12/13/16 预处理结果不变。[源码与验证](https://github.com/AdingApkgg/thp/commit/0dca9400812d9c28cb1d2b4c95d410f6e1ffe898)。灵梦 B 新首帧诊断仍有 24 次脚本 RNG 调用差，整帧像素不等；本次不增加完整模式通过数，不标记整作完成。
+**2026-11-11 暂停菜单所有权**：初次加载工作线程现创建私有暂停菜单，主线程在暂停／结果入口取得同一对象，恢复时归还、会话结束时销毁。实际菜单连续 4 次暂停／自然恢复保持一次分配，关闭前未激活、结果入口复用、错误线程和重复准备检查通过；原版入口 8 例确认每次重开清空禁用计数。三个原版构造路径不改变 RNG；TH12/13/16 共 9 个翻译单元预处理不变。[源码及验证](https://github.com/AdingApkgg/thp/commit/7e0d56629999579bd21deba994c7433c1cfe772b)。最新严格首帧仍未通过：SCRIPT 调用差为 48（启动 24、初次关卡加载 24），114 个检查字中其余 112 字与前份样本相同，整帧 197,864 像素不同；旧 24 差样本保留，不增加完整模式通过数。
+
+
+**2026-11-11 暂停计时与退出修复**：正常终止帧现走停止、分数保存、IDB 同步及音频断开，实际运行壳与异步队列通过 12 例静音组件检查。暂停开放条件改为原版 Control 计时器；10 个原版指令片段与实际 `GameSession::update` 对照中，旧实现 8 例不同、修正后 0 例不同；TH12/13/16 预处理结果不变。[源码与验证](https://github.com/AdingApkgg/thp/commit/0dca9400812d9c28cb1d2b4c95d410f6e1ffe898)。灵梦 B 此前首帧诊断仍有 24 次脚本 RNG 调用差，整帧像素不等；本次不增加完整模式通过数，不标记整作完成。
 
 
 2026-11-11 [基础可玩测试站](https://wth.saop.cc/)已由 Cloudflare Tunnel 接入 TS Arch 的生产静态服务，[网站接入 PR](https://github.com/Ritosa2333/eagler-touhou/pull/233)已提交。TH14 使用独立 C++／SDL3／WebGL2 运行时，原作 DATA、FLAC 音乐与不可变 Runtime generation 分开部署。实际 Arch 服务的手动 Normal 开局、移动射击、道具、暂停和返回标题已观察；公网 HTTPS、Wasm 哈希及 COOP／COEP 响应头已核对。混流音频的双音量归零静音修复与网站契约共 7 项测试通过，两组 TypeScript 检查通过。[运行壳错误读取修复](https://github.com/AdingApkgg/thp/blob/d7c4151ad1cf6de8c5c3b232d662d6818caa7103/docs/porting/TH14_SITE_SHELL_NOV11.md)避免把共享内存直接传给 TextDecoder。公网浏览器工具复验超时，整作 1:1 与模式通过数保持进行中。
