@@ -214,14 +214,28 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
     case 18: { // Name entry, up to eight characters.
         if (age <= 9) break;
         constexpr i32 count = 91;
+        const i32 previous_cursor = state.name_cursor;
         if ((pressed | repeated) & 0x10) state.name_cursor=(state.name_cursor+count-13)%count;
         if ((pressed | repeated) & 0x20) state.name_cursor=(state.name_cursor+13)%count;
         if ((pressed | repeated) & 0x40) state.name_cursor=(state.name_cursor+(state.name_cursor%13 == 0 ? 12 : count-1))%count;
         if ((pressed | repeated) & 0x80) state.name_cursor=(state.name_cursor+(state.name_cursor%13 == 12 ? count-12 : 1))%count;
+        // 光标有位移即 sound(10)：0x43fa90 态 0x13（0x4403e3 先存 +0x114 旧值，
+        // 位移才 0x4403f1）/态 0x12（0x44010c）/0x43e780 态 10（0x43f0fb）三路同式。
+        if (state.name_cursor != previous_cursor && !host.sound(10)) return false;
         if (pressed & 0x80001) {
             if (state.name_cursor == 89) {
-                if (!state.replay_name.empty()) state.replay_name.pop_back();
+                // 网格 DEL 非空名：计分命名（态 0x13）走共享尾 0x43ff55 → sound(7)；
+                // 回放保存命名（态 0x12 0x440217 / 0x43e780 态 10 0x43f205）→
+                // sound(9)。空名两路都无操作也无音效（0x4404a3/0x44020a/0x43f1f8）。
+                if (!state.replay_name.empty()) {
+                    state.replay_name.pop_back();
+                    if (!host.sound(state.name_is_result ? 7 : 9)) return false;
+                }
             } else if (state.name_cursor == 90) {
+                // END：计分命名（态 0x13）名字落榜后直接落入 LAB_00440520 建续关
+                // 菜单，无音效；回放保存命名（态 0x12 0x440244 / 0x43e780 态 10
+                // 0x43f231：lea edx,[eax-0x49] = 0x5a-0x49 = 17）保存前 sound(17)。
+                if (!state.name_is_result && !host.sound(17)) return false;
                 if (state.name_is_result) {
                     // LAB_00440520（0x43fa90 态 0x13 END 路径）：录入完成才建
                     // 菜单脚本 142（进榜路径 open() 延迟未建）→ 态 0xf 续关菜单。
@@ -244,12 +258,23 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
                 if (state.replay_name.size() < 8) state.replay_name += ch;
                 else state.replay_name[7]=ch;
                 if (state.replay_name.size() >= 8) state.name_cursor=90;
+                // 字符/空格录入：三路共尾 sound(7)（0x43ff55 / 0x440174 / 0x43f162）。
+                if (!host.sound(7)) return false;
             }
         } else if (pressed & 0x102) {
-            if (!state.replay_name.empty()) state.replay_name.pop_back();
-            // 0x43fa90 态 0x13：空名 Esc 原地不动（rank>=0 无 LAB_00440520 旁路）；
-            // 回放保存名前录入（A 机态 10）才退回选槽。
-            else if (!state.name_is_result) phase(17);
+            // Esc：计分命名（态 0x13 0x4405b7）非空名退格才 sound(9)，空名原地
+            // 不动；回放保存命名（态 0x12 0x44018e / 0x43e780 态 10 0x43f17c）
+            // 先 sound(9)（空名也响），空名退回选槽。
+            if (state.name_is_result) {
+                if (!state.replay_name.empty()) {
+                    state.replay_name.pop_back();
+                    if (!host.sound(9)) return false;
+                }
+            } else {
+                if (!host.sound(9)) return false;
+                if (!state.replay_name.empty()) state.replay_name.pop_back();
+                else phase(17);
+            }
         }
         break;
     }
