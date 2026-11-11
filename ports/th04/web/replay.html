@@ -1,0 +1,9 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>多人旁观</title>
+<style>body{background:#10141f;color:#eee;font:16px system-ui;max-width:1000px;margin:auto;padding:20px}canvas{width:100%;max-width:800px;image-rendering:pixelated;background:#000}button,input,select{font:inherit;margin:6px;padding:6px}#seek{width:70%}a{color:#acd8ff}</style>
+<h1>多人旁观</h1><p><a href="lan.html">返回联机大厅</a></p>
+<canvas id="canvas" width="640" height="400"></canvas>
+<p><button id="pause">暂停</button><button id="live">追到最新</button><button id="cancel">取消定位并暂停</button><button id="stop">停止观战</button><button id="sound">启用声音</button><label>速度 <select id="speed"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select></label></p>
+<p><input id="seek" type="range" min="0" max="0" value="0" aria-label="观战位置"><span id="position">0 / 0</span></p>
+<p><label>场景 <select id="scene"><option value="">选择已确认场景</option></select></label><label>步数 <input id="frame" type="number" min="0" value="0" style="width:8em"></label><button id="jump">跳转</button></p>
+<p id="status" role="status">从联机页面打开观战链接。</p>
+<script type="module" src="replay/player.js"></script></html>

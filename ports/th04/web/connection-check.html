@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TH04 · 双机连接检测</title>
+<link rel="stylesheet" href="site.css">
+<style>
+:root{color-scheme:dark;font:16px system-ui,sans-serif;background:#11141b;color:#e5e9f2}body{max-width:850px;margin:24px auto;padding:0 18px}p{line-height:1.7}button,input{font:inherit;padding:10px;margin:5px 0}input{max-width:160px}pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:14px;background:#1c2837;line-height:1.7}a{color:#9ddaff}
+</style>
+<h1>双机连接检测</h1>
+<p>不加载游戏、NP2 或音频。只使用现有房间服务和浏览器可靠有序数据通道，排查手机与电脑是否能互相发送消息。</p>
+<p>双方都打开本页。一端创建检测房间，另一端输入房间码加入，随后自动检测。可交换手机和电脑的建房顺序做对照。不要与游戏房间混用。请保持两端页面在前台，不锁屏。</p>
+<p><label>检测模式 <select id="mode"><option value="lan">局域网默认：无 STUN/TURN</option><option value="stun">直连对照：仅 STUN，无中继</option></select></label></p>
+<p>双方选择相同模式。先记录默认模式结果，再点击“结束并重新检测”，双方改选仅 STUN 并重建房间。STUN 使用 stun.cloudflare.com:3478 获取候选地址，游戏数据仍走设备间直连，不经 TURN 或 WebSocket 中继。请保留两端完整诊断；mDNS 候选或缺少配对统计本身不能确定故障原因。</p>
+<p><label>本机检测座位 <select id="seat"><option value="auto">自动（房主 P1，客机 P2）</option><option value="0">P1</option><option value="1">P2</option></select></label> 可手动选座对比手机 P1/P2；双方必须选择不同座位。本页只检测连接，不运行角色。</p>
+<button id="create" disabled>创建检测房间</button>
+<input id="room" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="四位数字房间号" aria-label="检测房间码" autocapitalize="characters" autocomplete="off" spellcheck="false">
+<button id="join" disabled>加入检测房间</button>
+<p id="room-info"></p>
+<p id="status" role="status">正在加载检测程序（诊断版 3）…</p>
+<pre id="diagnostics">检测程序尚未初始化；请通过 start-lan.bat 提供的网页地址打开本页。</pre>
+<pre id="page-warning" hidden></pre>
+<button id="reset">结束并重新检测</button>
+<p><a href="lan.html">返回游戏联机页面</a></p>
+<script>
+(function(){
+  var status=document.getElementById('status'),details=document.getElementById('diagnostics');
+  var timer=setTimeout(function(){
+    status.textContent='检测程序加载超过 10 秒，尚未开始联机检测。';
+    details.textContent='请确认正在使用当前项目的局域网地址；若稍后加载成功，按钮将自动启用。';
+  },10000);
+  import('./netplay/connection-check.js').then(function(){clearTimeout(timer);},function(error){
+    clearTimeout(timer);
+    status.textContent='检测程序加载失败，尚未开始联机检测。';
+    details.textContent=String(error&&error.message||error);
+  });
+})();
+</script>
+</html>

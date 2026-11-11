@@ -1,0 +1,243 @@
+{
+  "version": 1,
+  "original_md5": "06d74719b6f72b11014a392fd34d5f57",
+  "original_size": 156258,
+  "patched_size": 158354,
+  "native_crash_fixes": [
+    {
+      "name": "stage-4 Marisa zero-divisor flystep stays still",
+      "image_offset": 93061,
+      "bytes": 128,
+      "original_sha256": "e441622bb8806d953e657d208aabaf4a138a6110bcc9d451f13dae17ea918973",
+      "replacement_sha256": "6cd2afd613df1a32fba5711b4b6fc60bde6f6bdd4f83830162f7547eeb09d8b8",
+      "undefined_durations": [
+        12,
+        13
+      ],
+      "payload_bytes_added": 0
+    },
+    {
+      "name": "shared ring bullet zero-count divide guard",
+      "image_offset": 118986,
+      "bytes": 66,
+      "original_sha256": "fe683d83fb49dd5e153085acf7540c8d9564ba7c7f7ac406b1c08918a2e99243",
+      "replacement_sha256": "3e50d3eb3dcd29c69f9f6ca25f2c1bb7456edaf22c8a1d038e8eea4b5a0aff8e",
+      "undefined_count": 0,
+      "fallback_count": 1,
+      "payload_bytes_added": 0
+    }
+  ],
+  "sha256": "72009d521ba986ae10ca60a4bd12ba027328cc7420e8458ed42276da459aba62",
+  "insert_image_offset": 78048,
+  "insert_size": 2096,
+  "code_segment": 2735,
+  "data_segment": 8631,
+  "mailbox_cs_offset": 34306,
+  "signature": "TH04SOLOINPUTv1!",
+  "entries": [
+    34435,
+    34458,
+    34716,
+    34898,
+    34511,
+    34537,
+    34306,
+    34573,
+    34688
+  ],
+  "hooks": [
+    {
+      "image_offset": 44918,
+      "original": "e85702",
+      "target_cs_offset": 34435,
+      "name": "stage init/status"
+    },
+    {
+      "image_offset": 44001,
+      "original": "e8db5e",
+      "target_cs_offset": 34458,
+      "name": "player status"
+    },
+    {
+      "image_offset": 44056,
+      "original": "e8e25f",
+      "target_cs_offset": 34716,
+      "name": "optional collision point"
+    },
+    {
+      "image_offset": 68469,
+      "original": "e8d8fd",
+      "target_cs_offset": 34898,
+      "name": "touch velocity"
+    },
+    {
+      "image_offset": 43950,
+      "original": "e81e07",
+      "target_cs_offset": 34511,
+      "name": "original pause/status"
+    },
+    {
+      "image_offset": 43886,
+      "original": "e81700",
+      "target_cs_offset": 34537,
+      "name": "world exit/status"
+    },
+    {
+      "image_offset": 44276,
+      "original": "e8cd69",
+      "target_cs_offset": 34573,
+      "name": "solo test command at frame boundary"
+    },
+    {
+      "image_offset": 44779,
+      "original": "803e945300",
+      "target_cs_offset": 34688,
+      "name": "avoid duplicate run assets on stage-one test reload"
+    }
+  ],
+  "performance_hooks": [
+    {
+      "image_offset": 48081,
+      "original": "b90800268b0426890583c65083c750e2f281ef8002",
+      "replacement": "e9ad78909090909090909090909090909090909090",
+      "target_cs_offset": 35217,
+      "name": "fixed eight-row EGC tile copy; original read/write order"
+    },
+    {
+      "image_offset": 50622,
+      "original": "add3c88af022c226890532c674042688450283c750fecd75e7",
+      "replacement": "e92a6f90909090909090909090909090909090909090909090",
+      "target_cs_offset": 35323,
+      "name": "16x16 even four-row blit; equivalent SHRD rotation"
+    },
+    {
+      "image_offset": 50726,
+      "original": "add3c88af022c226880532c686e02689450183c750fecd75e7",
+      "replacement": "e9446f90909090909090909090909090909090909090909090",
+      "target_cs_offset": 35453,
+      "name": "16x16 odd four-row blit; equivalent SHRD rotation"
+    },
+    {
+      "image_offset": 50306,
+      "original": "e8550075fb",
+      "replacement": "e96a719090",
+      "target_cs_offset": 35583,
+      "name": "32x32 even inline cloud rows"
+    },
+    {
+      "image_offset": 50352,
+      "original": "e8590075fb",
+      "replacement": "e971719090",
+      "target_cs_offset": 35636,
+      "name": "32x32 odd inline cloud rows"
+    },
+    {
+      "image_offset": 49728,
+      "original": "ad0ae47405268905eb070ac0740326880583c750e2ea",
+      "replacement": "e91f7490909090909090909090909090909090909090",
+      "target_cs_offset": 35698,
+      "name": "spark four-row blit"
+    },
+    {
+      "image_offset": 51691,
+      "original": "a583c74ee2fa",
+      "replacement": "e9ea6c909090",
+      "target_cs_offset": 35816,
+      "name": "point-bullet full six-row blit"
+    },
+    {
+      "image_offset": 48744,
+      "original": "56578bc8c1f8038bf880e10732e48a878a0fd3c88bdac1e20603fac1ea0203faba00a88ec2c1ee048bce03cb81f9900177068bce33d2eb09b990012bcb8bd62bd10ae4740990ab83c74ee2faeb06aa83c74fe2fa0bd2740881ef007d87caebe15f5ec390",
+      "replacement": "565789c1c1f8039780e10730e48a878a0fd3c889d36bd25001d7ba00a88ec2c1ee04b9900129d989f229ca770489f131d208e4741a49d1e9417207ab83c74e49e313ab2689454e81c79e00e2f5eb06aa83c74fe2fa09d2740881ef007d87d1ebd05f5ec3",
+      "target_cs_offset": 4984,
+      "name": "in-place twin-row Marisa laser body; native row write order",
+      "in_place": true,
+      "payload_bytes_added": 0
+    }
+  ],
+  "near_code_guard": {
+    "image_offset": 78048,
+    "original": "8346fe1a83fe107cdb5f5ec9c3"
+  },
+  "heap_bytes": 320000,
+  "changed_files": [
+    "GENSO/MAIN.EXE"
+  ],
+  "mailbox_size": 40,
+  "test_tools": {
+    "options": 36,
+    "stage_request": 37,
+    "result": 38,
+    "used": 39
+  },
+  "diagnostics": {
+    "turbo": 21408,
+    "rank": 17224,
+    "stage_frame": 21386,
+    "slow_frames": 6240,
+    "total_frames": 6244
+  },
+  "source": {
+    "language": "ja",
+    "file": "4-jp.hdi.gz",
+    "sha256": "63b93b637bd5b17b95b9c9996743b6f397df8ede3848ebadde6198f93d5bae05",
+    "main_md5": "06d74719b6f72b11014a392fd34d5f57"
+  },
+  "disk": {
+    "sha256": "1925ba3270ee00eefa7a3a5b4d0866719db9acea06867da4b2b11e875da626d3",
+    "size": 21415936
+  },
+  "unchanged_files": {
+    "IO.SYS": "d28304f73d0a15b056804f44c6f56a77e7a16148d6697e21939019ff2a933758",
+    "MSDOS.SYS": "89fe84213c38285a638328c1a6465261db6d43c9ef5d8eae1970a4e2ecc596db",
+    "DOS/HIMEM.SYS": "7a93dc579f0db9181ec2204ee0adf9ed967a83b35cd5705bbd08174bb02661b6",
+    "DOS/MENU.COM": "42d1f08b587307c1675930b439a19a3b095d18c3c72193ce272f927cb3366ea3",
+    "GENSO/CANBE.LZH": "674837888c15e9f44c8dd6f673940334c13a8cd2560a139e63aedf74b7c7ce97",
+    "GENSO/GAME.BAT": "5ad3cd94f8f293c650b52610b8236aec99fe25bac2866eb843f74e22a6bde599",
+    "GENSO/GENSOU.SCR": "bdc984e7b0cf88110dff7a2897e62736d2084d4ccd9a982e0243144a3d250ca3",
+    "GENSO/MAINE.EXE": "670de6ba907a2edbc1592de810acd92e5b89541d3dc35b70210171166d1713f8",
+    "GENSO/MIKO.CFG": "1e4e72a92efa7aee50d97fe33f4f1d347665f2c7dc45204b27db603bd5b8b06c",
+    "GENSO/OMAKE.TXT": "7ac5895c904e82af3410f61dcd683f9115b759c15be6b5b86325aecd86f20483",
+    "GENSO/OMAKE2.LZH": "88cee7a34f14c6511596dde2e3365d533829e4d64453e770976afd4805795449",
+    "GENSO/OP.EXE": "8fc3b67fa8470de15b4f2844d5623d0a93d7922fac16d82a25a90a378b516b0f",
+    "GENSO/PMD.COM": "cbbe9bd610aedda586d8bd7f6dd13d21f037a089458a21ddda0b11a53b4b29e4",
+    "GENSO/PMD86.COM": "34b7381d66400b89fca833e08fb30f315b9092eb3883f137538dcf18477fd77f",
+    "GENSO/PMDB2.COM": "dfebbfd6e82916dfc4d8d01f2fcd938e215cc16cbd5ce2f19bce37cdc3841437",
+    "GENSO/README.TXT": "5eb1661e8a5e774cf439bdd3f35832eb875dfdf9f4a07661818cb154e76dbd5f",
+    "GENSO/RESET.BAT": "2ae8491d71a9dc194d668507a4749b48fa8e9641e1b77e5080f1f45fa82dffca",
+    "GENSO/ZUN.COM": "0a12e9a489d3b704a77cf04ca3062ee48f298a9df6d237dc7dad46986e2d116e",
+    "GENSO/幻想郷.TXT": "b38889f0d7871263ca2ebc2fc9be0d8109cdb0ea122e078f15fa4a9e045ad738",
+    "GENSO/幻想郷ED.DAT": "ca787b8ff66f7b3f10c97b3ecc77cd466772767e3e9e8cf5a0c71dd612b1c8d7",
+    "GENSO/東方幻想.郷": "f971298bab7d4418573d55f5f0e8d8c2444e452ab6000ea5cdd185eb609e03f1",
+    "AUTOEXEC.BAT": "6e27a461e800c4047fdc892417a676c017a0b48b20469a09fa9a85f4a05d7f37",
+    "COMMAND.COM": "fb2ccff4ad1531b72657a237a3717ac35d4095e0d2bc566ac6724bd34d58a340",
+    "CONFIG.SYS": "35bb4183d20423395b5dc75f16424db523c1745823c6afa590529f5b3fcd2545",
+    "MENU.MNU": "1e5ac486eff4563da4de4b4a2307939f782f5088318a0cbff3fb4cf69c65f390",
+    "KERNEL.SYS": "2c01352300ef813bae040d720195f944d5ad3c5f3cc95656ac53b0e75636518c",
+    "VEM486.EXE": "4bc719eacf6387a54f2425aefd82050476f922913192f77d0f9e24885820628b",
+    "VEM486.HED": "f6bfca31addf351bc2104d4ba75d4bc3a42decc2ecacc2c97c4dd48470dbf86f",
+    "VEMEMM.SYS": "672f9c9678061fcaad5b453538488b64660fa11b5ef3eea809376b56e558038e",
+    "VEMHSB.SYS": "72c7a2222a994aac5523dfd723544609a07dd6dff9bfb6b43a1b4be6e27a1751",
+    "VEMRSM.SYS": "48ce36a0c8483584239241412707f67d8635648421595cf31f59befaaae1f64b"
+  },
+  "native_boss_hud": {
+    "schema": 1,
+    "implementation": "guest-ems",
+    "module": "A:\\NBHUD.BIN",
+    "moduleSha256": "248765e184ef7068e3468b0b83427251f03b36dbfb1933e72ac3443fce8ae013",
+    "moduleBytes": 3941,
+    "emsPages": 1,
+    "conventionalBytesAdded": 512,
+    "bridge": {
+      "entry": 35872,
+      "cleanup": 35956,
+      "handle": 35981,
+      "status": 35983,
+      "pointer": 35984
+    },
+    "hp": true,
+    "phaseCuts": true,
+    "timer": "native audited deadlines; unavailable deadlines blank",
+    "browserOverlay": false
+  }
+}

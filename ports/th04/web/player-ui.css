@@ -1,0 +1,28 @@
+/* The iframe and local canvas share an 8:5 presentation surface. */
+.th04-player{--player-height:100dvh;box-sizing:border-box;position:relative;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"toolbar" "stage" "note";gap:8px;width:100%;height:min(85dvh,800px);min-height:300px;margin:16px 0;padding:10px;background:#090d14;color:#e5e9f2;border:1px solid #354462;border-radius:10px;overflow:hidden}
+.th04-player *{box-sizing:border-box}
+.player-toolbar{grid-area:toolbar;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.th04-player button{font:14px system-ui;color:inherit;background:#25384e;border:1px solid #56708b;border-radius:8px;padding:9px;min-height:40px;cursor:pointer;touch-action:manipulation}
+.th04-player button:focus-visible{outline:2px solid #91deff}
+.player-label,.player-volume{font-size:13px}.player-volume{display:flex;align-items:center;gap:4px}.player-volume input{width:70px}
+.player-relay-link{color:#a4d9ff;font:13px/1.4 system-ui;padding:6px;border:1px solid #56708b;border-radius:6px}
+.player-stage{grid-area:stage;position:relative;container-type:size;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:black}
+.player-stage iframe{width:100%;height:100%;border:0;margin:0;display:block}
+.player-stage>.screen{width:min(100cqw,160cqh);height:min(62.5cqw,100cqh);aspect-ratio:8/5;flex:none}
+.player-stage canvas{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+.player-note{grid-area:note;font:12px/1.4 system-ui;color:#adc2d9;max-height:3em;overflow:auto}
+.player-diagnostics{position:absolute;z-index:20;left:10px;right:10px;bottom:36px;max-height:55%;margin:0;padding:12px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.6 system-ui;background:#101a28f5;border:1px solid #789abc;color:#e5e9f2;user-select:text}.player-diagnostics[hidden]{display:none}
+.player-movement,.player-actions{display:none}.player-movement{grid-area:movement}
+.has-touch{grid-template-columns:1fr 1fr;grid-template-rows:auto minmax(0,1fr) auto auto;grid-template-areas:"toolbar toolbar" "stage stage" "movement actions" "note note";height:min(95dvh,900px);min-height:470px}
+.has-touch .player-movement{display:flex;flex-direction:column;gap:8px;align-self:center;justify-self:center;width:100%;max-width:160px;font:12px/1.5 system-ui}
+.player-movement label{display:block;width:100%}.player-movement select{width:100%;padding:6px;background:#25384e;color:inherit;border:1px solid #56708b;border-radius:6px}.player-movement input{width:100%;touch-action:pan-x}
+.touch-option{display:flex!important;align-items:center;gap:6px;color:#c4d0dc;font-size:12px}.touch-option input{width:auto!important;accent-color:#fce5ec}
+.player-menu-directions{display:flex;gap:4px}.player-menu-directions button{font-size:12px;padding:6px;touch-action:none}
+.has-touch .player-actions{display:grid}.player-actions{grid-area:actions;grid-template-columns:1fr 1fr;gap:5px;align-content:center;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.player-actions button{padding:8px 4px;touch-action:none;font-size:13px;min-height:38px}.player-actions [data-auto]{grid-column:1/-1}
+.th04-player .pressed,.player-actions [aria-pressed=true]{background:#286b8b;border-color:#92e2ff}
+.touch-surface{position:absolute;inset:0;z-index:2;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}.has-touch .touch-surface{pointer-events:auto}
+.th04-player.immersive,.th04-player:fullscreen{position:fixed;inset:0;z-index:10000;width:100%;height:var(--player-height);min-height:0;max-height:none;margin:0;border:0;border-radius:0;padding:max(6px,env(safe-area-inset-top)) max(6px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left))}
+.th04-player:-webkit-full-screen{position:fixed;inset:0;width:100%;height:100%;margin:0;min-height:0}.th04-immersive{overflow:hidden}
+@media(orientation:landscape){.has-touch{grid-template-columns:140px minmax(0,1fr) 166px;grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"toolbar toolbar toolbar" "movement stage actions" "note note note";min-height:300px}.immersive.has-touch{min-height:0}.player-actions button{min-height:34px;padding:6px 3px}}
+@media(max-height:420px) and (orientation:landscape){.th04-player{gap:4px}.player-toolbar button{min-height:30px;padding:5px 8px}.player-note{max-height:1.5em}.player-actions{gap:3px}.player-actions button{min-height:30px;padding:4px 2px}.player-movement small{display:none}}

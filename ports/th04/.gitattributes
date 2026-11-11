@@ -1,0 +1,9 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Preserve the bytes used by the optimized runtime's SHA-256 manifests.
+/web/dosbox-adapter.js text eol=lf
+/web/netplay/room.js text eol=lf
+/web/vendor/dosbox-x/dosbox-rollback.mjs text eol=lf
+/web/vendor/dosbox-x/dosbox-rollback-tracked.mjs text eol=lf
+/web/vendor/dosbox-x/NOTICE.md text eol=lf
