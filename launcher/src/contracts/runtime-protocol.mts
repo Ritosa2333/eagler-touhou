@@ -178,7 +178,7 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   netplayPlayer: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer player session" }),
   netplayPlayerCount: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
   netplaySeed: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer player session" }),
-  netplayChallengeMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "TH06/TH07/TH08/TH10 multiplayer; fixed before start" }),
+  netplayChallengeMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "Cooperative multiplayer; fixed before start" }),
   netplayDisableLocalChargePriority: Object.freeze({requirement: "profile-required", capability: "multiplayer", when: "TH09 multiplayer; true restores native charge progression and Replay; fixed before HELLO"}),
   netplayTh19Rules: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH19 only; nine native rule and card-selection indices; immutable after start"}),
   netplayChapterThreshold: Object.freeze({requirement: "profile-required", capability: "multiplayer", when: "TH15 multiplayer chapter reward; 500000–5000000 in steps of 250000; immutable after start"}),
