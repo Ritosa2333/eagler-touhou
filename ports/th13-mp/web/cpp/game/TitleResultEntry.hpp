@@ -39,7 +39,7 @@ class TitleResultEntry {
     bool open_slot_screen();                       // 0x4549d0 case0 建面
     void retire_name_visuals();                    // 0x454050 case3 收面
     void retire_slot_visuals();                    // 0x4549d0 case4 收面
-    void return_main();                            // 0x454050 case3 流程 1
+    bool return_main();                            // 0x454050 case3 流程 1（0x454658 重选标题曲）
     bool name_editor(u32 pressed, u32 repeated);   // 0x454050 case2
     bool slot_selector(u32 pressed, u32 repeated); // 0x4549d0 case2
     bool slot_name_editor(u32 pressed, u32 repeated);  // 0x4549d0 case3

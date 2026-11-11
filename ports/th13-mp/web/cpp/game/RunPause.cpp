@@ -88,19 +88,21 @@ bool RunPause::draw_overlay(HudDrawServices& sink) {
         const i32 rank = platform.result_ranking(rows);
         if (state.name_is_result) {
             if (rank < 0) return fail("Result rank unavailable for name entry");
-            // 0x43de80 case 0x13：头部 (48,64) → 名字行 (75,rank*18)+黄 _ →
-            // 榜 10 行 (48,96+18i) 高亮=rank 黄 0xffffff00、余 0xff808180。
+            // 0x43de80 case 0x13：头部 (48,64) → 名字行 (75,96+rank*18)+黄 _ →
+            // 榜 10 行 (48,96+18i) 高亮=rank 黄 0xffffff00、余 0xff808180
+            //（0x43e1bd：y = rank*18.0(0x4aeb30) + 96.0(0x4aecc0)，与榜行同基）。
             if (!put(48, 64, 0xffffffffu, "            Score Ranking!!")) return false;
             for (i32 i = 0; i < 10; ++i)
                 if (!put(48, 96.f + 18.f * i,
                          i == rank ? 0xffffff00u : 0xff808180u,
                          rank_row_text(rows[i], i)))
                     return false;
-            if (!put(75, 18.f * rank, 0xffffffffu, state.replay_name)) return false;
+            const float name_y = 96.f + 18.f * rank;
+            if (!put(75, name_y, 0xffffffffu, state.replay_name)) return false;
             // 0x43dd10：黄 _ 紧随名字（字距 9px=font0 默认 spacing；8 字时 -9 回退）。
             float underscore_x = 75.f + 9.f * float(state.replay_name.size());
             if (state.replay_name.size() >= 8) underscore_x -= 9.f;
-            if (!put(underscore_x, 18.f * rank, 0xffffff00u, "_")) return false;
+            if (!put(underscore_x, name_y, 0xffffff00u, "_")) return false;
         } else {
             // 0x43de80 case 10/0x12/0x1b（回放保存名前录入）：名字行定格
             // (102,224)（原版 age<10 自选中槽行 y=slot*15 滑入，属插值细节）。
