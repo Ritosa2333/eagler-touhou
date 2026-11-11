@@ -82,19 +82,17 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++／SDL3／Wasm 实现进行中，整作 1:1 尚未完成。[当前游戏源码](https://github.com/AdingApkgg/thp/commit/9dd1ae4e2c9a4196c9bcd25f6cead5dddd9e6744)已部署到 [TH14 测试站](https://wth.saop.cc/)，[网站接入 PR #233](https://github.com/Ritosa2333/eagler-touhou/pull/233)待上游合入。原作 DATA、FLAC 音乐与不可变 Runtime 分开提供。
+独立 C++／SDL3／Wasm 实现进行中，整作1:1尚未完成。[当前游戏源码](https://github.com/AdingApkgg/thp/commit/6e8dcbb4ce667718d9af3971080728d7a7739498)已部署到[TH14测试站](https://wth.saop.cc/)，[网站接入PR #233](https://github.com/Ritosa2333/eagler-touhou/pull/233)待上游合入。原作DATA、FLAC音乐与不可变Runtime分开提供。
 
-最新修正文字字距、空格、换行、阴影和数字逗号基线随显示缩放变化。[原版40bf20与当前文本遍历对照](https://github.com/AdingApkgg/thp/blob/9dd1ae4e2c9a4196c9bcd25f6cead5dddd9e6744/docs/porting/TH14_ASCII_DISPLAY_LAYOUT_NOV12.md)覆盖宽度480／640／800／801／960／1280、六种字体、四种字形缩放、阴影开关及空格／标点／换行，共576组、14,256个字形、71,280字；旧版480组失败，修正后全部一致。采用声明的合成图集和渲染观察服务，只证明左／顶部对齐的文字布局，未宣称实际图集绑定、完整文字队列／HUD、其他对齐或像素通过。TH12／13／16 文本对象逐字节不变，本次不新增游戏、GPU或回放运行。
+最新修正文字队列坐标和对齐顺序：先按原版缩放起始XYZ、添加pass1原点，再执行居中／靠右／垂直对齐；HUD分数和奖励文字保留对齐信息到这个阶段。[原版队列40b9b0与文字40bf20串联对照](https://github.com/AdingApkgg/thp/blob/6e8dcbb4ce667718d9af3971080728d7a7739498/docs/porting/TH14_ASCII_QUEUE_LAYOUT_NOV12.md)覆盖六个宽度、六种字体、三种字形缩放、阴影、两段文字、三个通道和五种对齐组合，共6,480组／160,380字形／962,280字完全一致。旧API只支持其中1,296组左／顶部样例，1,152组失败；未把另5,184组计作旧版通过。两条真实HUD文字生产路径另有48组侧栏及144组奖励／时间样例，共4,372字形／21,860字全部相同，旧版160组失败。CRT、图集、几何和GPU仍为声明的服务边界；队列在稳定显示尺寸下延迟转换坐标，不宣称中途换分辨率、真实图集几何或像素通过。
 
-此前修正 type0 过渡效果的实际批次提交：按原版在四个边缘四边形仍排队时关闭独立 Alpha 混合，并在清除 Alpha 后使混合缓存失效。[原版实际入队／刷新指令与 C++ 对照](https://github.com/AdingApkgg/thp/blob/9dd1ae4e2c9a4196c9bcd25f6cead5dddd9e6744/docs/porting/TH14_TYPE0_BATCH_STATE_NOV12.md)覆盖状态0–3、格式21／22、不同更新次数和先前混合缓存，共360组、161,406个比较字、9,558个提交顶点；旧版135组失败，修正后全部逐位相同。设备方法是声明过的记录服务，该组件证明不替代物理 GPU 整帧验收。TH12／13／16 各一对渲染编译产物不变。此前普通精灵及 ASCII 查询后提交各13,824组／165,888坐标字，以及 mode8 两条路线各4,608组矩阵对照，保持各自有限范围。
+TH14文字样式布局改变，因此重新编译全部141个游戏单元、146个浏览器单元和用于Application检查的4个宿主单元。TH12／13／16的文本和HUD对象共六对逐字节不变。一次静音真实Application／GLES检查完成启动、标题、普通Quit和保存：400个宿主帧、0个Player回调；线程、GPU、计时器和时钟全部回收。分数档21,633字节、配置92字节与同输入旧C++样例完全一致；解码149,076字节分数的八条记录校验通过，音乐／音效均为0。这不替代原版同触发Quit、当前浏览器持久化、整局流程或最终PCM验收。
 
-直接父版506b9da9进行一次静音真实 Application／GLES 冷启动，到 stage1 首个 Player Present 共507个宿主帧、1个 Player 回调，线程和 GPU 全部回收。严格对照保留原版仍有281,902个 BGRA 像素、3,036个 Alpha 字节不同，SCRIPT 调用2,588对2,612，过渡计数79对84；前四个内嵌 VM 各303字段一致，第五个仍有6字不同。停止游戏后仅替换背景 UV 的独立诊断仍差4,460像素，恢复及重复帧完全一致；这不进入生产实现，也不视为通过。几何定位将其中3,027个 Alpha 差异覆盖到加载粒子及文字范围，仍有9个 Alpha 差异在外。不同运行的物理加载时长不同，不用旧样本的整帧差异数作改进比例，也不固定补帧或补随机调用。
+此前type0实际批次提交／混合缓存修正的360组／161,406字、普通精灵及ASCII查询后提交各13,824组／165,888坐标字，以及mode8两条路线各4,608组矩阵对照，保留各自有限范围。已有修正还包括初次Control在Overlay8后的发布、工作线程复用暂停菜单、Control／演示时钟及提前返回和正常Quit保存同步。原版分数／配置导入后可由C++正常Quit逐字节保留，原版编解码器也可往返当前新存档；这些不视为完整浏览器持久化通过。
 
-当前运行包只重编译唯一改动的文本单元，重新核验并复用前次全量构建的145个浏览器对象；本次文字组件重编译一个文本对象并复用139个正常游戏对象，渲染提交为声明的观察服务。已有修正包括 Overlay8 后初次 Control 发布、工作线程复用暂停菜单、Control 时钟及提前返回、演示时钟和正常 Quit 保存／同步。原版分数／配置导入后可在 C++ 正常 Quit 逐字节保留，原版编解码器也能逐字节往返当前新保存文件；完整存档路径及当前浏览器持久化仍待分别验收。
+[当前发布记录](https://github.com/AdingApkgg/thp/blob/main/docs/porting/th14-ascii-queue-release-nov12.json)：代次`d9bc19bba2c1423e845dd84f5f59f90f4311d908259868966f59bd3bbb5aad52`，Wasm SHA-256 `2c4061e9aab6f876bb644974ef80d1c9c704859b8dc3286352fdc2de2a5fe04a`。GitHub上367个构建源码文件与本地字节相同；源站39个Runtime文件哈希相符，公网核对新Wasm、加载器、shell、清单和HTML共5个正文及COOP／COEP／no-transform。其余未改公网正文未重复下载，之前完整公网校验保持单独范围。e6b15d27旧版经TS Arch服务SSH转发的浏览器验收覆盖Normal灵梦B开局／射击／Bomb、暂停恢复、标题及Quit；当前Chrome连接仍未附加调试，未取得新浏览器UI验收，未要求用户手动恢复。
 
-[当前发布记录](https://github.com/AdingApkgg/thp/blob/main/docs/porting/th14-ascii-display-release-nov12.json)：代次 `68c177851ed75ca0425d8ee77f401524c635ad27c51faedcebb59171c9097b0d`，Wasm SHA-256 `7e68581101799cfdb6594da7df816d6a67763d55b7b5145c67eb053f79278b9d`。源站39个 Runtime 文件哈希相符；公网核对新 Wasm、加载器、shell、清单和 HTML 共5个正文，COOP／COEP 和 `no-transform` 均保留，其余未改公网正文未重复下载。旧 e6b15d27 版经实际 TS Arch 服务 SSH 转发的浏览器验收覆盖 Normal 灵梦 B 开局／射击／Bomb、暂停恢复、返回标题及正常 Quit，音乐和音效为0；当前版本未取得新浏览器 UI 验收。
-
-灵梦 B Normal 的动画 RNG／弹状态和真实加载交接仍是首要剩余项。相机缓存、全部自机／难度和完整录像、普通完整流程／存档、原版整局图像及最终 PCM 继续验收，状态保持进行中。
+加载／动画RNG仍是首要剩余项。[保留506b9da9实测的交接审计](https://github.com/AdingApkgg/thp/blob/6e8dcbb4ce667718d9af3971080728d7a7739498/docs/porting/th14-loading-enable-boundary-nov12.json)显示47个相同原始root／age／counter节点的SCRIPT种子和次数完全一致；在age79时RNG仍同，C++已启用Control而原版到age84才启用。24次差异在各自首个Player之前已存在，双方之后各消耗20次。三个原版403310轨道检查精确复现端点；这不是实际调用者／抢占轨迹证明，21／20粒子只与一次额外出生相符，物理完成时序仍未接受。该旧实测首帧仍差281,902像素／3,036个Alpha字节；本次没有重跑Player或继承其通过范围，也未固定补帧／随机调用或反馈原版状态。全部自机／难度、完整录像、相机缓存、整局图像、普通完整流程／存档和最终PCM继续验收。
 
 ## [th15] 東方紺珠伝 v1.00b
 
