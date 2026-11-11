@@ -1,0 +1,38 @@
+{
+  "schema": "th13/replay-draws-corpus/v1",
+  "game": "th13",
+  "version": "1.00c",
+  "policy": {
+    "gameplayMutation": "forbidden",
+    "candidate": "current-wasi-harness",
+    "oracle": "unicorn-direct-call",
+    "adjudicator": "outer-repo oracle/draw_compare.py (RESULT first_divergence_frame)",
+    "goldenScope": "sha256 of oracle-side semantic draw manifests; replays and manifests themselves never enter the repo"
+  },
+  "suites": {
+    "quick": ["noinput-st01"],
+    "daily": ["udsr01-st01"]
+  },
+  "cases": [
+    {
+      "id": "noinput-st01",
+      "kind": "noinput",
+      "stage": 1,
+      "frames": 3600,
+      "harnessMode": "draws",
+      "oracleManifest": "st01-draws.jsonl",
+      "note": "无输入窗：st01.ecl 3600 帧语义绘制清单（事件流同窗 10187 事件 none 硬基线）"
+    },
+    {
+      "id": "udsr01-st01",
+      "kind": "replay",
+      "replaySha256": "0162deda1e5781da128d420a1ec43b1a8896e8e2cd7a973eda6213f1590f0edd",
+      "stage": 1,
+      "stageIndex": 0,
+      "harnessMode": "draws-replay",
+      "replaySource": "使用者本地 th13_udSr01.rpy（六关完整录像）",
+      "oracleManifest": "st01-draws-replay.jsonl",
+      "note": "回放窗：th13_udSr01 st01 段 11065 帧（对局窗主工作面：f0 tfactor 残留 + f61 敌机行走位差，见 HANDOFF）"
+    }
+  ]
+}
