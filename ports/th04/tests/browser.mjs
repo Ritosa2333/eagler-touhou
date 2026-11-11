@@ -133,9 +133,18 @@ try{
       await wait(()=>frames()[1].evaluate(()=>window.__pc98SignalSockets.length>=2&&window.__pc98SignalSockets.at(-1).readyState===WebSocket.OPEN),'signaling reconnect',10000);
       console.log('PASS gameplay continues after signaling socket closes');
     }
+    if(process.env.PC98_TEST_LAG==='1')await wait(async()=>(await health()).every(s=>s.confirmed>=320),'rollback activation',45000);
+    if(process.env.PC98_TEST_LAG==='1')await frames()[1].evaluate(()=>{
+      const transport=globalThis.__th04PeerTransport,end=performance.now()+5000;
+      for(const peer of transport.peers.values()){
+        const channel=peer.channel,send=channel.send.bind(channel);
+        channel.send=text=>{const data=JSON.parse(text);if(data.type==='input'&&performance.now()<end)setTimeout(()=>{if(channel.readyState==='open')send(text);},70);else send(text);};
+      }
+    });
     await page.evaluate(async count=>{for(let s=0;s<count;s++)await rpc(s,'keyboard',{code:s%2?'ArrowLeft':'ArrowRight',down:true});},count);
+    if(process.env.PC98_TEST_LAG==='1')for(let i=0;i<8;i++){await new Promise(r=>setTimeout(r,130));await page.evaluate(async i=>{await rpc(1,'keyboard-clear');await rpc(1,'keyboard',{code:i%2?'ArrowLeft':'ArrowRight',down:true});},i);}
     const before=(await health())[0].confirmed;
-    await wait(async()=>(await health()).every(s=>s.confirmed>=before+360),'moving players remain synchronized',30000);
+    try{await wait(async()=>{const failures=await page.evaluate(()=>events.filter(e=>e.event==='error'));if(failures.length)throw Error(JSON.stringify(failures));return (await health()).every(s=>s.confirmed>=before+360);},'moving players remain synchronized',45000);}catch(error){console.log('Synchronization diagnostic',JSON.stringify(await health()),JSON.stringify(await page.evaluate(()=>events.filter(e=>e.event==='error'))));throw error;}
     await page.evaluate(async count=>{for(let s=0;s<count;s++)await rpc(s,'keyboard-clear');},count);
     if(process.env.PC98_TEST_INPUT_LATENCY==='1'){
       const f=frames()[0],position=async()=>(await f.evaluate(async()=>(await import('./netplay/room.js')).managedAPI.sampleGame()))?.players?.[0]?.[0];
@@ -165,6 +174,7 @@ try{
         console.log('PASS TH04 multiplayer touch P'+(seat+1));
       }
     }
+    if(process.env.PC98_TEST_LAG==='1'){const counts=await Promise.all(frames().map(f=>f.evaluate(()=>({rollbacks:globalThis.__eaglerNetplayLanRollback,replayed:globalThis.__eaglerNetplayLanResimulated}))));assert(counts.some(v=>v.rollbacks>0&&v.replayed>0),'late input must trigger native rollback');console.log('PASS delayed input rollback',counts);}
     const states=await health();await page.screenshot({path:resolve(out,'multiplayer.png')});
     const route=process.env.PC98_TEST_RELAY==='1'?'relay':'rtc';
     assert(log.includes('mode='+route),'must exercise the requested '+route+' route: '+log);

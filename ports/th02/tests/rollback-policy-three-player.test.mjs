@@ -1,3 +1,5 @@
+import {readFile} from 'node:fs/promises';
+const coreModule=await WebAssembly.compile(await readFile(new URL('../../../common/pc98/rollback-core.wasm',import.meta.url)));
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {rollbackPolicyForRtt,validRollbackPolicy,MAX_ROLLBACK,RollbackQueue} from '../web/netplay/rollback-queue.js';
@@ -19,7 +21,7 @@ test('TH02 uses the same low-latency rollback policy for two and three players',
 });
 
 test('zero-delay local input remains authoritative through remote corrections',()=>{
-  const policy=rollbackPolicyForRtt(120,true,3),q=new RollbackQueue(0,3,{...policy,directionPrediction:6});
+  const policy=rollbackPolicyForRtt(120,true,3),q=new RollbackQueue(0,3,{...policy,directionPrediction:6,coreModule});
   q.arm(0);
   for(let frame=0;frame<2;frame++)q.commit(q.peek());
   const local=q.capture(8);assert.equal(local.frame,2);

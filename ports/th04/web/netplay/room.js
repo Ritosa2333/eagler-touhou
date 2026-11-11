@@ -1,3 +1,4 @@
+import {loadRollbackCore} from '../../../../common/pc98/rollback-client.mjs';
 import {publishNetworkStatus,mountNetworkStatus} from '../network-status.js';
 import {InputLatch} from './input-latch.js';
 import {createRecorder} from '../replay/recorder.js';
@@ -732,7 +733,7 @@ async function beginGame(){
   const rtcConfiguration=useRelay?null:await loadRtcConfiguration(session);
   if(stopped||ownedEpoch!==runEpoch)return;
   connectionConfigSummary=useRelay?'强制 WebSocket 中继（不需要 STUN/TURN 账号）':describeRtcConfiguration(rtcConfiguration);
-  queue=new RollbackQueue(state.slots[session.role],state.settings.players,inputPolicy);
+  queue=new RollbackQueue(state.slots[session.role],state.settings.players,{...inputPolicy,coreModule:await loadRollbackCore()});
   if(useRelay){
     relay=createRelay({...session,runId:state.runId},state.generation,roles,fail);
     for(const role of activeRoles())if(role!==session.role)makeRelayPeer(role);

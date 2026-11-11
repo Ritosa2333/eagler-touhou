@@ -28,7 +28,9 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
     return text;
   });
   await writeFile(resolve(output,'app.js'),await readFile(resolve(output,'app.js'),'utf8')+'\n'+await readFile(resolve(port,'web/managed-solo-api.js'),'utf8'));
+  await patch('netplay/queue.js',text=>replaceOnce(text,"../../../../common/pc98/rollback-client.mjs","../pc98-rollback-client.mjs",'shared rollback client'));
   await patch('netplay/session.js',text=>{
+    text=replaceOnce(text,"../../../../common/pc98/rollback-client.mjs","../pc98-rollback-client.mjs",'shared rollback client');
     text=replaceOnce(text,"import {createRelay} from './relay.js';","import {createManagedTransport} from '../managed-transport.mjs';\nconst createRelay=(_identity,_generation,roles,fail)=>createManagedTransport(globalThis.__eaglerPC98Options(),roles,fail);",'main transport');
     text=replaceOnce(text,"if(this.identity.role==='host')this.recorder.connectNetwork",'if(false)this.recorder.connectNetwork','standalone replay service');
     text=replaceOnce(text,"if(this.sawGameplay&&nativeState?.menu===1&&this.queue.frame<=this.queue.confirmed){this.fail(Error('已返回标题，本局结束。'),false);return;}","if(this.sawGameplay&&nativeState?.menu===1&&this.queue.frame<=this.queue.confirmed){void globalThis.__eaglerPC98RoomEnd();return;}",'confirmed native room exit');
@@ -49,6 +51,7 @@ ${managedRoomApi}`);
   });
   await patch('netplay/runtime-worker-client.js',text=>replaceOnce(text,"localStorage.setItem('th01-native-net-scores-v1',btoa(String.fromCharCode(...result.scores)));","void globalThis.__eaglerPC98Files.write('scores.dat',new Uint8Array(result.scores));",'managed worker score file'));
   await writeFile(resolve(output,'room-title-worker.js'),`onmessage=async({data})=>{try{const core=(await WebAssembly.instantiate(data.module,{})).exports;core.th_init(1,1,0x12345678,0);core.th_menu_open(1,0);core.th_render();data.canvas.getContext('2d',{alpha:false}).putImageData(new ImageData(new Uint8ClampedArray(core.memory.buffer,core.th_pixels(),640*400*4),640,400),0,0);postMessage({type:'ready'});}catch(error){postMessage({type:'error',message:error.message});}};`);
+  await patch('replay/profile.js',text=>replaceOnce(text,"'../netplay/queue.js'","'../netplay/queue.js','../pc98-rollback-client.mjs','../rollback-core.wasm'",'rollback replay identity'));
   await patch('replay/audio.js',text=>{
     const start=text.indexOf('        context=new AudioContext'),end=text.indexOf('      })();',start);
     if(start<0||end<0)throw Error('TH01 replay audio adapter changed');
@@ -57,6 +60,7 @@ ${managedRoomApi}`);
   await patch('site.css',text=>text.replace("url('assets/launcher-background.webp')",'none'));
   await patch('bgm-version.js',text=>text.replace(/export async function loadMidiTracks\(signal\)\{[\s\S]*?\n\}/,"export async function loadMidiTracks(){return {};}"));
   for(const name of await files(resolve(port,'web')))if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')){await copyFile(resolve(port,'web',name),resolve(output,name));runtime.push(name);}
+  for(const [source,target] of [['rollback-client.mjs','pc98-rollback-client.mjs'],['rollback-core.wasm','rollback-core.wasm']]){await copyFile(resolve(repo,'common/pc98',source),resolve(output,target));runtime.push(target);}
   for(const name of ['pc98-spectator-audio.mjs','pc98-spectator-channel.mjs','pc98-spectator-publisher.mjs','pc98-local-spectator.mjs','pc98-match-index.mjs','pc98-managed-spectator.mjs','directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs']){await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
   const strip=text=>text.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'');
   let html=strip(await readFile(resolve(web,'solo.html'),'utf8'));

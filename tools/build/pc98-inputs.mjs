@@ -20,8 +20,13 @@ export async function printPC98Inputs({port, game}) {
   }
   for (const directory of ['web','scripts','patches','tools']) await visit(resolve(port,directory),directory);
   await visit(resolve(port,'../../common/browser'),'../../common/browser');
+  await visit(resolve(port,'../../common/pc98'),'../../common/pc98');
+  inputs.push('../../common/include/eagler/netplay/NetplayCore.hpp',
+    '../../common/include/eagler/netplay/NetplayProtocol.hpp',
+    '../../common/src/netplay/NetplayCore.cpp', '../../common/src/netplay/NetplayProtocol.cpp',
+    '../../common/tests/fixtures/include/netplay/NetplayProtocolConfig.hpp',
+    '../../tools/build/pc98-rollback.mjs');
   if(game!=='th01'){
-    await visit(resolve(port,'../../common/pc98'),'../../common/pc98');
     inputs.push('../../tools/build/pc98-pmd.mjs');
     if (game !== 'th05') inputs.push('../../tools/build/pc98-disks.mjs','../../launcher/lib/pc98-disk-blocks.mjs');
   }

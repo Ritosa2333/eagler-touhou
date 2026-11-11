@@ -34,6 +34,9 @@ struct CoreConfig
     // When predicting missing input, retain the last target instead of
     // clearing the axes as if they represented once-only displacement.
     bool directTouchIsAbsolute = false;
+    // Some title protocols transmit touch as a one-frame impulse and predict
+    // a completely neutral analog lane until the next real sample arrives.
+    bool predictAnalog = true;
     // Explicit lockstep policy, not a zero-valued prediction horizon. With
     // prediction disabled every player's contiguous actual input is required;
     // no speculative decision or rewind can be committed.
@@ -119,6 +122,12 @@ public:
     bool HasRollbackRequest() const { return rollbackFrame_ != INVALID_FRAME; }
     std::uint32_t RollbackFrame() const { return rollbackFrame_; }
     void ClearRollbackRequest() { rollbackFrame_ = INVALID_FRAME; }
+
+    // A room-agreed departure replaces this remote lane at and after the
+    // boundary with neutral input. Earlier received input remains intact.
+    bool RetireRemoteFrom(std::uint8_t player, std::uint32_t frame);
+    void RefreshPredictions();
+    void DiscardSimulatedBefore(std::uint32_t frame);
 
     std::uint32_t ConfirmedThrough(std::uint8_t player) const;
     // Minimum confirmed input frontier across every remote player. Returns

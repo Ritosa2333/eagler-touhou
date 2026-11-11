@@ -1,4 +1,5 @@
-import {MAX_INPUT} from '../touch-input.js';
+import {Pc98RollbackCore} from '../../../../common/pc98/rollback-client.mjs';
+import {MAX_INPUT,packTouch,unpackTouch} from '../touch-input.js';
 export const PROTOCOL='th02-rollback/6';
 export const TICK_MS=1000/60;
 export const BOOT_DELAY=2;
@@ -40,7 +41,7 @@ const HELD=32|64|2048,DIRECTIONS=15;
 // confirmed is an exclusive contiguous prefix of authoritative inputs, not
 // the largest frame received. Prediction never advances it.
 export class RollbackQueue {
-  constructor(slot,players=2,{inputDelay=0,directionPrediction=3,predictionLead=directionPrediction,rollbackEnabled=true}={}){
+  constructor(slot,players=2,{inputDelay=0,directionPrediction=3,predictionLead=directionPrediction,rollbackEnabled=true,coreModule}={}){
     if(![2,3].includes(players)||!Number.isInteger(slot)||slot<0||slot>=players)throw Error('无效玩家槽位');
     // A longer rollback lead must be negotiated and prefilled before activation.
     if(!Number.isInteger(inputDelay)||inputDelay<0||inputDelay>MAX_ROLLBACK_INPUT_DELAY||
@@ -53,8 +54,11 @@ export class RollbackQueue {
     this.activation=null;this.dirty=null;this.skippedCorrections=0;this.inputs=Array.from({length:players},()=>new Map());
     this.used=new Map();
     this.offline=new Map();
-    for(const lane of this.inputs)for(let n=0;n<BOOT_DELAY;n++)lane.set(n,0);
+    this.core=new Pc98RollbackCore(coreModule,{players,slot,limit:MAX_ROLLBACK,held:HELD|DIRECTIONS,directions:DIRECTIONS,directionFrames:directionPrediction});
+    for(let player=0;player<players;player++)for(let n=0;n<BOOT_DELAY;n++){this.inputs[player].set(n,0);this.core.submit(player,n,this.decode(0));}
   }
+  decode(value){const t=unpackTouch(value);return {buttons:value%4096,mode:t.active?(t.begin?4:3):0,x:t.active?t.x:0,y:t.active?t.y:0,flags:(t.unlimited?1:0)|(Math.floor(value/2**42)%2?2:0)};}
+  encode(value){return packTouch(value.buttons,{x:value.x,y:value.y,active:value.mode!==0,begin:value.mode===4,unlimited:!!(value.flags&1),alwaysPoint:!!(value.flags&2)});}
   get active(){return this.activation!==null&&this.frame>=this.activation;}
   setLockstepDelay(delay){
     if(this.frame!==0||this.activation!==null||!Number.isInteger(delay)||delay<BOOT_DELAY||delay>MAX_INPUT_DELAY||this.inputs[this.slot].size!==BOOT_DELAY)throw Error('无效开局输入缓冲');
@@ -63,7 +67,7 @@ export class RollbackQueue {
     // Preserve their early packets rather than replacing the queue.
     for(const lane of this.inputs)for(let n=BOOT_DELAY;n<delay;n++){
       if(lane.has(n)&&lane.get(n)!==0)throw Error('开局输入缓冲冲突');
-      lane.set(n,0);
+      if(!lane.has(n)){const player=this.inputs.indexOf(lane);lane.set(n,0);this.core.submit(player,n,this.decode(0));}
     }
     this.updateConfirmed();
   }
@@ -91,7 +95,7 @@ export class RollbackQueue {
     if(lane.has(frame))return null;
     if(!Number.isSafeInteger(buttons)||buttons<0||buttons>VALID_INPUT)throw Error('无效本机输入');
     const packet={type:'input',frame,slot:this.slot,buttons};
-    lane.set(frame,packet.buttons);this.updateConfirmed();return packet;
+    lane.set(frame,packet.buttons);this.core.submit(this.slot,frame,this.decode(buttons));this.updateConfirmed();return packet;
   }
   predicted(slot,frame){
     if(this.isOffline(slot,frame))return 0;
@@ -111,28 +115,10 @@ export class RollbackQueue {
     if(frame<Math.min(this.frame,this.confirmed)-32)return;
     if(lane.has(frame)){if(lane.get(frame)!==buttons)throw Error('同一帧收到冲突输入');return;}
     lane.set(frame,buttons);
-    // A new matching input can extend the bounded direction prediction
-    // horizon, so compare subsequent predictions too, not only this frame.
-    for(const [at,pair]of this.used)if(at>=frame&&pair[slot]!==this.predicted(slot,at)){
-      this.dirty=this.dirty===null?at:Math.min(this.dirty,at);break;
-    }
+    this.core.submit(slot,frame,this.decode(buttons));this.dirty=this.core.dirty;
     this.updateConfirmed();
   }
-  refreshCorrection(force=false){
-    if(this.dirty===null&&!force)return null;
-    const correctionPending=this.dirty!==null;
-    // Several packets can change a prediction and then restore the exact
-    // input already simulated. Recheck the complete used history once, just
-    // before restoring native state, rather than replaying a transient gap.
-    this.dirty=null;
-    for(const [at,pair]of this.used){
-      if(pair.some((value,slot)=>value!==this.predicted(slot,at))){
-        this.dirty=this.dirty===null?at:Math.min(this.dirty,at);
-      }
-    }
-    if(this.dirty===null&&correctionPending)this.skippedCorrections++;
-    return this.dirty;
-  }
+  refreshCorrection(force=false){if(this.dirty===null&&!force)return null;const had=this.dirty!==null;this.core.refresh();this.dirty=this.core.dirty;if(had&&this.dirty===null)this.skippedCorrections++;return this.dirty;}
   isOffline(slot,frame){return this.offline.has(slot)&&frame>=this.offline.get(slot);}
   offlineMask(frame=this.frame){let mask=0;for(const [slot,at]of this.offline)if(frame>=at)mask|=1<<slot;return mask;}
   membershipReport(){
@@ -145,7 +131,7 @@ export class RollbackQueue {
       throw Error('无效离线同步边界');
     for(const slot of slots){
       if(!Number.isInteger(slot)||slot<0||slot>=this.players)throw Error('无效离线座位');
-      this.offline.set(slot,frame);
+      this.offline.set(slot,frame);this.core.retire(slot,frame);
       for(const at of this.inputs[slot].keys())if(at>=frame)this.inputs[slot].delete(at);
     }
     for(let slot=0;slot<this.players;slot++)for(const [at,value]of inputs[slot]){
@@ -165,15 +151,21 @@ export class RollbackQueue {
     if(!this.active){this.waitReason='boot';return null;}
     if(!allowPrediction){this.waitReason='prediction-disabled';return null;}
     if(!this.inputs[this.slot].has(this.frame)){this.waitReason='local-input';return null;}
-    return this.inputs.map((_,slot)=>this.predicted(slot,this.frame));
+    for(const [slot,at] of this.offline)if(this.frame>=at&&!this.inputs[slot].has(this.frame)){this.inputs[slot].set(this.frame,0);this.core.submit(slot,this.frame,this.decode(0));}
+    const row=this.core.prepare(this.frame);return row?row.map(value=>this.encode(value)):null;
   }
-  commit(pair){this.used.set(this.frame,pair.slice());this.frame++;}
+  commit(pair){
+    for(const [slot,at] of this.offline)if(this.frame>=at&&!this.inputs[slot].has(this.frame)){this.inputs[slot].set(this.frame,0);this.core.submit(slot,this.frame,this.decode(0));}
+    let mask=0;for(let slot=0;slot<this.players;slot++)if(!this.inputs[slot].has(this.frame)||this.inputs[slot].get(this.frame)!==pair[slot])mask|=1<<slot;
+    this.core.commitInputs(this.frame,pair.map(value=>this.decode(value)),mask);this.dirty=this.core.dirty;this.used.set(this.frame,pair.slice());this.frame++;
+  }
   rewind(frame){
-    this.frame=frame;this.dirty=null;
+    this.core.rewind(frame);this.frame=frame;this.dirty=null;
     for(const at of this.used.keys())if(at>=frame)this.used.delete(at);
   }
   prune(confirmedPrefix=this.confirmed){
     const prefix=Math.min(this.frame,this.confirmed,confirmedPrefix);
+    this.core.discard(prefix);
     for(const at of this.used.keys())if(at<prefix)this.used.delete(at);
     for(const lane of this.inputs)for(const at of lane.keys())if(at<prefix-32)lane.delete(at);
   }

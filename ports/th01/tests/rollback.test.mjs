@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {FrameQueue,MAX_ROLLBACK} from '../web/netplay/queue.js';
+const rollbackModule=await WebAssembly.compile(await readFile(new URL('../../../common/pc98/rollback-core.wasm',import.meta.url)));
 import {NativeSimulation} from '../web/netplay/runtime-core.js';
 import {AUDITED_CORE,replicaBinary} from '../web/replay/native-state.js';
 import {createHash} from 'node:crypto';
@@ -56,7 +57,7 @@ test('both final bosses reach the native ending in multiplayer',async()=>{
 
 test('late remote input triggers bounded repair for two and three players',()=>{
   for(const count of [2,3]){
-    const q=new FrameQueue(0,1,count,{rollback:true});q.capture(0);q.commit(q.peek());
+    const q=new FrameQueue(0,1,count,{rollback:true,coreModule:rollbackModule});q.capture(0);q.commit(q.peek());
     for(let f=1;f<=MAX_ROLLBACK;f++){
       q.capture(f&1);for(let slot=2;slot<count;slot++)q.receive(f,0,slot);
       assert(q.peek());q.commit(q.peek());

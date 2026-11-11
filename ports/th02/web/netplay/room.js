@@ -1,3 +1,4 @@
+import {loadRollbackCore} from '../../../../common/pc98/rollback-client.mjs';
 import {publishNetworkStatus,mountNetworkStatus} from '../network-status.js';
 import {startFrameLoop} from '../frame-limit.js';
 import {createInputChannel,acceptInputChannel} from './input-transport.js';
@@ -644,7 +645,7 @@ async function setupConnections(){
   relay?.close();relay=null;
   runPolicy=null;
   inputPolicy=Object.freeze({inputDelay:0,directionPrediction:6,policySchema:POLICY_SCHEMA,rollbackEnabled:state.settings.rollback});
-  queue=new RollbackQueue(state.slots[session.role],state.settings.players,inputPolicy);
+  queue=new RollbackQueue(state.slots[session.role],state.settings.players,{...inputPolicy,coreModule:await loadRollbackCore()});
   let rtcConfiguration=null;
   if(!relayMode){
     try{
