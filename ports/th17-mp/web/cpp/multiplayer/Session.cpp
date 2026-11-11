@@ -35,6 +35,7 @@ std::uint32_t SessionSetup::gameplay_abi() const {
         word(loadout.animal);
     }
     for (const auto value : build) word(value);
+    if (challenge) word(1);
     return hash ? hash : 1u;
 }
 

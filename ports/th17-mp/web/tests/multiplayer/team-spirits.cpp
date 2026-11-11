@@ -143,6 +143,9 @@ void shared_fragments(unsigned seats, i32 difficulty) {
     pickup(6);
     require(stocks[0].bomb_pieces==1&&stocks[1].bomb_pieces==1,"both pilots receive bomb fragment");
     if(seats==3)require(stocks[2].bomb_pieces==0,"full bomb stock discards its own fragment");
+    for(auto& stock:stocks)stock.enable_challenge();
+    pickup(6);pickup(7);
+    for(const auto& stock:stocks)require(!stock.bombs&&!stock.bomb_pieces,"challenge discards Bomb stock and pieces");
     const i32 initial_power=difficulty==4?350:100;
     for(auto& stock:stocks)stock.power=initial_power;
     pickup(1);
