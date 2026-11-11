@@ -1,6 +1,6 @@
 # TH15 无欠检查点与完整存档导出
 
-对应 [Issue #113](https://github.com/YomotsuHisami/eagler-touhou/issues/113)：无欠模式退出重进时动画树读档报错，以及导出后导入缺少章节进度。
+对应 [Issue #113](https://github.com/Ritosa2333/eagler-touhou/issues/113)：无欠模式退出重进时动画树读档报错，以及导出后导入缺少章节进度。
 
 ## 动画树恢复
 

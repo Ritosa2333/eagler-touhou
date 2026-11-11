@@ -42,7 +42,7 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 |  |  | 还原 | 移植 | Web 适配 | 多人联机 |
 | :---: | :---: | :---: | :---: | :---: | :---: |
-| <img src="../launcher/docs/assets/game-covers/thumbnails/th075.jpg" width="40" height="40" alt="东方萃梦想"> | **[th075] 東方萃夢想** | [SteinsGateON](https://space.bilibili.com/34714121)<br>![Done][done] | [SteinsGateON](https://github.com/YomotsuHisami/eagler-touhou/tree/main/ports/th075)<br>![Done][done] | [Goan114](https://github.com/YomotsuHisami/eagler-touhou/tree/main/ports/th075)<br>![In Progress][in-progress] | [Goan114](https://github.com/YomotsuHisami/eagler-touhou/tree/main/ports/th075-mp)<br>![In Progress][in-progress] |
+| <img src="../launcher/docs/assets/game-covers/thumbnails/th075.jpg" width="40" height="40" alt="东方萃梦想"> | **[th075] 東方萃夢想** | [SteinsGateON](https://space.bilibili.com/34714121)<br>![Done][done] | [SteinsGateON](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th075)<br>![Done][done] | [Goan114](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th075)<br>![In Progress][in-progress] | [Goan114](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th075-mp)<br>![In Progress][in-progress] |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th095.jpg" width="40" height="40" alt="东方文花帖"> | **[th095] 東方文花帖** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th105.jpg" width="40" height="40" alt="东方绯想天"> | **[th105] 東方緋想天** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th123.jpg" width="40" height="40" alt="东方非想天则"> | **[th123] 東方非想天則** | ![Unassigned][unassigned] | - | - | - |
@@ -81,6 +81,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 | ✅ | ❌ | ✅ | ✅ | ✅ |
 
 ## [th14] 東方輝針城 v1.00b
+
+2026-11-11 初次自机构造顺序已修复。[实现与验证](https://github.com/AdingApkgg/thp/blob/b5580f47e7a6c7ddda0c1980e6600e2d4e0f6ecf/docs/porting/TH14_PLAYER_CONSTRUCTOR_ORDER_NOV11.md)将 Player 分配放到读取自机动画之前，将弹池和道具池分配移到 HUD 后。六种自机的真实 SHT、ANM 组件分别比较两条构造路径，每组 276 个初始状态字相同；生命周期检查和静音浏览器普通开局通过。当前构建的首帧 RNG 尚待重新与原版对照，整作保持进行中。
+
 
 2026-11-11 关卡资源顺序已更新。[实现与构建](https://github.com/AdingApkgg/thp/blob/b21fdcd206a49d52b2751e39fe1cbcb757127937/docs/porting/TH14_STAGE_WORKER_ORDER_NOV11.md)包含主 ECL、动画交接、引用脚本的读取顺序修复。七关资源回归与取消、复用、失败重试检查通过，首关七项读取顺序与原版实际记录一致。六种 Normal 自机各已观察射击；当前源码全量编译的静音浏览器可运行演示。灵梦 B Normal 首帧仍有 24 次脚本 RNG 调用差与 197,624 个像素差，整作继续标为进行中。
 

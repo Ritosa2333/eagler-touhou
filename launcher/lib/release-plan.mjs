@@ -21,6 +21,8 @@ const FORBIDDEN_FORMAL_BUILD_INPUTS = Object.freeze([
 
 // Test visibility is a Launcher discovery rule. The bytes must still be in the
 // same publication so ?test=1 can launch a hidden test title on that site.
+// Explicitly opt-in adapters (e.g. th13) are assembled only by a selected
+// validation build and stay out of the default publication set.
 export const FORMAL_RELEASE_GAMES = DEFAULT_BUILD_GAMES;
 
 const legacyGameDirectoryKey = game => `Th${PRODUCT_GAMES[game].number}Directory`;

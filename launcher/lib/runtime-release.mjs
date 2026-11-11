@@ -73,7 +73,7 @@ export function validateRuntimeReleaseManifest(manifest) {
   }
   const registered = Object.keys(PRODUCT_GAMES).filter(game => !PRODUCT_GAMES[game].buildOptIn || Object.hasOwn(manifest.games ?? {}, game));
   if (!manifest.games || JSON.stringify(Object.keys(manifest.games)) !== JSON.stringify(registered)) {
-    throw new Error("Runtime Release must contain every registered game in canonical order");
+    throw new Error("Runtime Release must contain every default game and selected opt-in games in canonical order");
   }
   for (const game of registered) {
     const product = PRODUCT_GAMES[game];
