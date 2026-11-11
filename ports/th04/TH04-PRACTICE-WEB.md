@@ -1,6 +1,6 @@
 # TH04 网页单人练习工具
 
-更新：2026-10-24。当前实现为 `th04-browser-practice/1`，按 [TH02／TH04 交接约定](../TH02-04-PRACTICE-PORTING.md) 接入本作 DOSBox-X 单人入口。本文记录本作实现和实际验证范围；TH05 的验收结果不作为本作证据。
+更新：2026-10-24。当前实现为 `th04-browser-practice/1`，按 TH02／TH04 交接约定（原工作区本地文件 `../TH02-04-PRACTICE-PORTING.md`） 接入本作 DOSBox-X 单人入口。本文记录本作实现和实际验证范围；TH05 的验收结果不作为本作证据。
 
 ## 使用
 

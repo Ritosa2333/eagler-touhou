@@ -1,3 +1,4 @@
+import {printPC98Inputs} from '../../../tools/build/pc98-inputs.mjs';
 import {adaptPC98Practice} from '../../../common/browser/adapt-pc98-practice.mjs';
 import {createHash} from 'node:crypto';
 import {readFile,writeFile,mkdir,readdir,copyFile,stat,mkdtemp,rename,rm} from 'node:fs/promises';
@@ -7,9 +8,16 @@ import {execFileSync} from 'node:child_process';
 import {DATA_SCHEMA,DATA_MAGIC,DATA_LAYOUT_SPEC} from '../web/managed-data.mjs';
 const port = resolve(fileURLToPath(new URL('..', import.meta.url))), repo=resolve(port,'../..');
 const args = Object.fromEntries(process.argv.slice(2).map(arg => { const at=arg.indexOf('='); return [arg.slice(2,at<0?undefined:at),at<0?true:arg.slice(at+1)]; }));
-if (!args.source) throw Error('Specify --source=<complete th04-coop-lab directory>');
-const source = resolve(args.source), web=resolve(source,'web');
-let revision=null;try{revision=execFileSync('git',['-c','safe.directory='+source.replaceAll('\\','/'),'rev-parse','HEAD'],{cwd:source,encoding:'utf8'}).trim();}catch{}
+if(args['print-inputs']) await printPC98Inputs({port,game:'th04'});
+const source = resolve(args.source||port), web=resolve(source,'web');
+const sourceIdentity=args.source?null:JSON.parse(await readFile(resolve(port,'source-import.json'),'utf8'));
+const privateInputs=new Set(sourceIdentity?.resources||[]);
+const assets=resolve(args.assets||resolve(port,'.cache/source-resources'));
+async function readInput(name){
+  try{return await readFile(resolve(privateInputs.has(name)?assets:web,name));}
+  catch(error){if(error.code==='ENOENT'&&privateInputs.has(name))throw Error('Missing private resource '+name+'; specify --assets=<standalone web directory>.');throw error;}
+}
+let revision=sourceIdentity?.commit??null;if(args.source){try{revision=execFileSync('git',['-c','safe.directory='+source.replaceAll('\\','/'),'rev-parse','HEAD'],{cwd:source,encoding:'utf8'}).trim();}catch{}}
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 async function files(directory,prefix='') {
   const result=[];
@@ -20,16 +28,17 @@ async function files(directory,prefix='') {
   }
   return result.sort();
 }
-const names=(await files(web)).filter(name=>name!=='room-title-th05.js'&&!/(?:^|\/)(?:build|reports|baseline|screenshots|backups|tools|test-results|__pycache__)(?:\/|$)/.test(name) && !/\.(?:map|wat|cpuprofile|log|tmp|bak)$/.test(name));
-const input=[]; for(const name of names) { const bytes=await readFile(resolve(web,name)); input.push({path:name,bytes:bytes.length,sha256:sha(bytes)}); }
-if(args['print-inputs']) { console.log(JSON.stringify({game:'th04',kind:'managed-import',inputs:input})); process.exit(0); }
+const retiredInputs=new Set(['local-music-disk.json','local-music-patch.json','netplay/frame-queue.js','netplay/input-wire.js','th04-local-music.hdi.gz']);
+const names=[...new Set([...(await files(web)).filter(name=>!/^managed-[^/]+\.(?:mjs|js)$/.test(name)),...privateInputs])].sort().filter(name=>!retiredInputs.has(name)&&name!=='room-title-th05.js'&&!/(?:^|\/)(?:build|reports|baseline|screenshots|backups|tools|test-results|__pycache__)(?:\/|$)/.test(name) && !/\.(?:map|wat|cpuprofile|log|tmp|bak)$/.test(name));
+const input=[]; for(const name of names) { const bytes=await readInput(name); input.push({path:name,bytes:bytes.length,sha256:sha(bytes)}); }
+if(args['print-package-inputs']) { console.log(JSON.stringify({game:'th04',kind:'managed-import',inputs:input})); process.exit(0); }
 const cache=resolve(port,'.cache');await mkdir(cache,{recursive:true});
 const staging=await mkdtemp(resolve(cache,'build-')),output=resolve(staging,'build-eagler'),content=resolve(staging,'content');
 try {
 await mkdir(output,{recursive:true});await mkdir(content,{recursive:true});
 const runtime=[], payload=[], entries=[];let offset=0;
 for(const item of input) {
-  const bytes=await readFile(resolve(web,item.path));
+  const bytes=await readInput(item.path);
   if(/\.(?:js|mjs|css|html|wasm|json)$/.test(item.path)) {
     const target=resolve(output,item.path);await mkdir(dirname(target),{recursive:true});await writeFile(target,bytes);runtime.push(item.path);
   } else {
@@ -99,7 +108,7 @@ await patch('netplay/runtime.html',text=>replaceOnce(text,'<script>','<script ty
 let roomHtml=await readFile(resolve(web,'lan.html'),'utf8');
 roomHtml=roomHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'');
 await writeFile(resolve(output,'managed-room.html'),roomHtml);runtime.push('managed-room.html');
-for(const name of await files(resolve(port,'web'))) if(!name.endsWith('-api.js')) { await copyFile(resolve(port,'web',name),resolve(output,name)); runtime.push(name); }
+for(const name of await files(resolve(port,'web'))) if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')) { await copyFile(resolve(port,'web',name),resolve(output,name)); runtime.push(name); }
 for(const name of ['directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs','pc98-practice.mjs']) {await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
 let html=await readFile(resolve(web,'solo.html'),'utf8');
 html=html.replace('<head>','<head><meta name="eagler-data-provider" content="retail-memory">');

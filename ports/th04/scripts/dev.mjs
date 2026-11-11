@@ -10,7 +10,7 @@ function run(script,args=[],env={},service=false){
   children.add(child);child.on('exit',code=>{children.delete(child);if(service&&!closing){console.error(script+' exited: '+code);process.exitCode=code||1;stop();}});child.on('error',error=>{console.error(error);stop();process.exitCode=1;});return child;
 }
 function complete(child){return new Promise((yes,no)=>child.once('exit',code=>code===0?yes():no(Error('Build failed: '+code))));}
-await complete(run('ports/th04/scripts/build-eagler.mjs',['--source='+resolve(root,'../th04-coop-lab')]));
+await complete(run('ports/th04/scripts/build-eagler.mjs',['--assets='+(process.env.PC98_ASSETS_DIR||resolve(root,'../th04-coop-lab/web'))]));
 if(!existsSync(resolve(root,'launcher/.cache/build/ui-rewrite/client/index.html')))throw Error('请先执行 npm --prefix launcher run build:ui-rewrite');
 const relayPort=process.env.PC98_RELAY_PORT||'18341',port=process.env.PC98_LAUNCHER_PORT||'18340';
 run('services/relay/src/netplay-relay.mjs',[],{EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:relayPort,EAGLER_NETPLAY_STUN_URLS:''},true);
