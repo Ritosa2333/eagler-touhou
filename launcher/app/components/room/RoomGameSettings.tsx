@@ -28,7 +28,7 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
     </section>
     <section className="room-settings-group"><h3>{t('room.gameSettingsGroup')}</h3>
       <RoomTiming state={state} service={service}/><RoomTiming state={state} service={service} settings/>
-      {state.product === 'th01mp' && <SettingsSelect id="mpTh01BallCount" label={t('room.th01BallCount')} value={room.ballCount ?? 2} disabled={disabled} onChange={event=>service.setRoomSettings({ballCount:Number(event.target.value)})}>{[1,2,3,4,6,8].map(value=><option key={value} value={value}>{value}</option>)}</SettingsSelect>}
+      {state.product === 'th01mp' && <SettingsSelect id="mpTh01BallCount" label={t('room.th01BallCount')} value={room.ballCount ?? 2} disabled={disabled} onChange={event=>service.setRoomSettings({ballCount:Number(event.target.value)})}>{[1,2,3,4,6,8,9].map(value=><option key={value} value={value}>{value}</option>)}</SettingsSelect>}
       {(state.product === 'th02mp' || state.product === 'th04mp') && <fieldset className="room-basic-fields">
         <SettingsSelect id="mpPc98InitialSpares" label={t('room.th05InitialSpares')} value={room.initialSpares ?? 3} disabled={disabled || !!room.challengeMode} onChange={event=>service.setRoomSettings({initialSpares:Number(event.target.value)})}>{[0,1,2,3,4,5].map(value=><option key={value} value={value}>{value}</option>)}</SettingsSelect>
         <SettingsSelect id="mpPc98InitialBombs" label={t('room.th05InitialBombs')} value={room.initialBombs ?? 2} disabled={disabled || !!room.challengeMode} onChange={event=>service.setRoomSettings({initialBombs:Number(event.target.value)})}>{[0,1,2].map(value=><option key={value} value={value}>{value}</option>)}</SettingsSelect>

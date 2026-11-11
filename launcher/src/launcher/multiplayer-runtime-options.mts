@@ -114,7 +114,7 @@ export function buildMultiplayerRuntimeOptions(
     throw new Error('挑战模式参数无效');
   if(input.disableLocalChargePriority !== undefined && (roomProduct !== 'th09mp' || typeof input.disableLocalChargePriority !== 'boolean'))
     throw new Error('蓄力进度参数无效');
-  if(input.ballCount!==undefined && (roomProduct!=='th01mp'||![1,2,3,4,6,8].includes(input.ballCount)))throw new Error('TH01 ball count is invalid');
+  if(input.ballCount!==undefined && (roomProduct!=='th01mp'||![1,2,3,4,6,8,9].includes(input.ballCount)))throw new Error('TH01 ball count is invalid');
   if(input.disableFocus!==undefined&&((roomProduct!=='th02mp'&&roomProduct!=='th03mp')||typeof input.disableFocus!=='boolean'))throw new Error('低速规则参数无效');
   if (
     input.chapterThreshold !== undefined &&

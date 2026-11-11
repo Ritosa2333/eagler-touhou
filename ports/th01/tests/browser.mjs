@@ -93,7 +93,7 @@ try{
       const client=connection('ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,lobby:'pc98-public-'+seat,member:'pc98-private-'+seat,intent:seat?'join':'create',players:String(count),difficulty:'1'}));lobbies.push(client);
       await client.wait(m=>m.type==='state'||m.type==='error');await client.send({type:'take-seat',seat,loadout:0},m=>!!m.room?.seats[seat]||m.type==='error');
     }
-    const ballCount=process.env.PC98_TEST_TOUCH==='1'?2:6;await lobbies[0].send({type:'settings',playerCount:count,difficulty:1,ballCount},m=>m.room?.ballCount===ballCount);
+    const ballCount=Number(process.env.PC98_TEST_BALL_COUNT || (process.env.PC98_TEST_TOUCH==='1'?2:6));await lobbies[0].send({type:'settings',playerCount:count,difficulty:1,ballCount},m=>m.room?.ballCount===ballCount);
     await load(count,true);console.log('MP ready');
     await page.evaluate(async count=>{for(let s=0;s<count;s++)await rpc(s,'configure',{music:'none',options:{multiplayerPreflight:true}});},count);
     const preview=await page.evaluate(()=>rpc(0,'prepare-room'));assert.equal(preview.presented,true);console.log('MP title presented');await page.screenshot({path:resolve(out,'room.png')});
@@ -150,6 +150,14 @@ try{
       await frames()[1].evaluate(()=>{const peer=window.th01Net.session.peers.get('host'),send=peer.channel.send.bind(peer.channel),end=performance.now()+4000;
         peer.channel.send=text=>{const data=JSON.parse(text);if(data.type==='input'&&performance.now()<end)setTimeout(()=>send(text),70);else send(text);};});
     }
+    if(process.env.PC98_TEST_SLIDE==='1'){
+      await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',down:true}));
+      await new Promise(resolve=>setTimeout(resolve,250));await page.evaluate(()=>rpc(0,'keyboard-clear'));
+      await page.evaluate(()=>rpc(0,'keyboard',{code:'ArrowRight',down:true}));
+      await new Promise(resolve=>setTimeout(resolve,120));await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyX',down:true}));
+      await new Promise(resolve=>setTimeout(resolve,100));await page.evaluate(async()=>{await rpc(0,'keyboard-clear');await rpc(0,'keyboard',{code:'ArrowLeft',down:true});});
+      await new Promise(resolve=>setTimeout(resolve,350));await page.evaluate(()=>rpc(0,'keyboard-clear'));
+    }
     await page.evaluate(async count=>{for(let s=0;s<count;s++)await rpc(s,'keyboard',{code:s%2?'ArrowLeft':'ArrowRight',down:true});},count);
     if(process.env.PC98_TEST_LAG==='1')for(let i=0;i<8;i++){
       await new Promise(resolve=>setTimeout(resolve,130));
@@ -165,13 +173,18 @@ try{
         const tape=window.th01Net.session.recorder.snapshot(),{NativeSimulation}=await import('./netplay/runtime-core.js');
         const core=(await WebAssembly.instantiateStreaming(fetch('./game.wasm'),{})).instance.exports;core.th_score_data();
         const simulation=new NativeSimulation(core,tape.header.settings,tape.header.hostSlot);simulation.reset();
+        let slideFrames=0;
         for(const [frame,row] of tape.rows.entries()){
+          const mode=core.th_get(36,0),sprite=core.th_get(39,0),x=core.th_get(30,0),input=row.inputs[0];
           simulation.step(row.inputs);
+          if(mode===2&&sprite<2&&(input&2)||mode===2&&sprite>=2&&sprite<4&&(input&1)){
+            if(core.th_get(36,0)===2){if(sprite<2&&core.th_get(30,0)>x||sprite>=2&&core.th_get(30,0)<x)throw Error('slide reversed at '+frame);slideFrames++;}
+          }
           if(JSON.stringify(simulation.checksum())!==row.proof)throw Error('confirmed replay mismatch at '+frame);
         }
-        return tape.rows.length;
+        return {rows:tape.rows.length,slideFrames};
       });
-      assert(checked>120,'replay verification covers confirmed gameplay');
+      assert(checked.rows>120,'replay verification covers confirmed gameplay');if(process.env.PC98_TEST_SLIDE==='1')assert(checked.slideFrames>0,'replay must include reversing during a slide');
       console.log('MP confirmed replay verified',checked);
     }
 

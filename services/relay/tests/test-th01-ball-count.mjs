@@ -42,6 +42,8 @@ try {
   await send(host,{type:'set-ready',ready:true,runtimeGeneration:A},m=>m.room?.seats[0]?.ready);await send(guest,{type:'set-ready',ready:true,runtimeGeneration:A},m=>m.room?.seats[1]?.ready);
   const changed=await send(host,{type:'settings',playerCount:2,difficulty:1,ballCount:6},m=>m.room?.ballCount===6);
   assert(changed.room.seats.slice(0,2).every(s=>!s.ready));assert(changed.room.settingsVersion>first.room.settingsVersion);await guest.wait(m=>m.room?.ballCount===6);
+  await send(host,{type:'settings',playerCount:2,difficulty:1,ballCount:9},m=>m.room?.ballCount===9);
+  await guest.wait(m=>m.room?.ballCount===9);
   const denied=await send(guest,{type:'settings',playerCount:2,difficulty:1,ballCount:2},m=>m.type==='error');assert(denied.error);
   await send(host,{type:'settings',playerCount:2,difficulty:1,ballCount:5},m=>m.type==='error');
   console.log('TH01 relay ball count, host authority and ready reset PASS');

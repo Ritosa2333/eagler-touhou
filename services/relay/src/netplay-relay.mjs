@@ -1044,7 +1044,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=initialPolicy?.disableLocalChargePriority===true;
     if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=initialPolicy?.disableFocus!==false;
     if(room.id.startsWith('th02mp-'))room.lobby.disableFocus=initialPolicy?.disableFocus===true;
-    if(room.id.startsWith('th01mp-') && [1,2,3,4,6,8].includes(initialPolicy?.ballCount))room.lobby.ballCount=initialPolicy.ballCount;
+    if(room.id.startsWith('th01mp-') && [1,2,3,4,6,8,9].includes(initialPolicy?.ballCount))room.lobby.ballCount=initialPolicy.ballCount;
     if(pc98StockRoom(room.id)&&validPc98InitialSpares(initialPolicy?.initialSpares)&&validPc98InitialBombs(initialPolicy?.initialBombs)){room.lobby.initialSpares=initialPolicy.initialSpares;room.lobby.initialBombs=initialPolicy.initialBombs;}
     const modesSupported = room.multiplayer?.gameplay === 'cooperative' && room.multiplayer.challengeMode !== false;
     room.lobby.challengeMode = modesSupported && initialPolicy?.challengeMode === true;
@@ -1551,7 +1551,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       const disableLocalChargePriority=message.disableLocalChargePriority ?? room.lobby.disableLocalChargePriority;
       if(message.disableFocus!==undefined&&(!(room.id.startsWith('th02mp-')||room.id.startsWith('th03mp-'))||typeof message.disableFocus!=='boolean')){sendLobby(socket,{type:'error',error:'invalid focus rule'});return;}
       const disableFocus=message.disableFocus??room.lobby.disableFocus;
-      if(message.ballCount!==undefined && (!room.id.startsWith('th01mp-') || ![1,2,3,4,6,8].includes(message.ballCount))){sendLobby(socket,{type:'error',error:'invalid ball count'});return;}
+      if(message.ballCount!==undefined && (!room.id.startsWith('th01mp-') || ![1,2,3,4,6,8,9].includes(message.ballCount))){sendLobby(socket,{type:'error',error:'invalid ball count'});return;}
       const ballCount=message.ballCount??room.lobby.ballCount;
       if(pc98StockRoom(room.id)&&(!validPc98InitialSpares(message.initialSpares??room.lobby.initialSpares)||!validPc98InitialBombs(message.initialBombs??room.lobby.initialBombs))){sendLobby(socket,{type:'error',error:'invalid initial stock'});return;}
       const initialSpares=pc98StockRoom(room.id)?(message.initialSpares??room.lobby.initialSpares):room.lobby.initialSpares,initialBombs=pc98StockRoom(room.id)?(message.initialBombs??room.lobby.initialBombs):room.lobby.initialBombs;

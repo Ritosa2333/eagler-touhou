@@ -1027,7 +1027,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     )
       return;
     if(patch.disableLocalChargePriority !== undefined && product !== 'th09mp')return;
-    if(patch.ballCount !== undefined && (product !== 'th01mp' || ![1,2,3,4,6,8].includes(patch.ballCount)))return;
+    if(patch.ballCount !== undefined && (product !== 'th01mp' || ![1,2,3,4,6,8,9].includes(patch.ballCount)))return;
     if(patch.disableFocus !== undefined && ((product !== 'th02mp' && product !== 'th03mp')||typeof patch.disableFocus!=='boolean'))return;
     if(patch.th19Rules!==undefined&&(product!=='th19mp'||room.phase!=='lobby'||!validTh19VersusRules(patch.th19Rules)))return;
     if((patch.initialSpares!==undefined||patch.initialBombs!==undefined)&&(room.phase!=='lobby'||(isPc98StockProduct(product)?(!validPc98InitialSpares(patch.initialSpares??room.initialSpares??3)||!validPc98InitialBombs(patch.initialBombs??room.initialBombs??2)):(product!=='th05mp'||!validTh05InitialSpares(patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares)||!validTh05InitialBombs(patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs)))))return;

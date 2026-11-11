@@ -35,7 +35,7 @@ def settings(value):
     network, ice = value.get('network', 'lan'), value.get('ice', 'all')
     if type(players) is not int or players not in (2, 3): raise ValueError('人数无效')
     if type(rank) is not int or rank not in range(4): raise ValueError('难度无效')
-    if type(count) is not int or count not in (1, 2, 3, 4, 6, 8): raise ValueError('玉数无效')
+    if type(count) is not int or count not in (1, 2, 3, 4, 6, 8, 9): raise ValueError('玉数无效')
     if transport not in ('rtc', 'ws'): raise ValueError('连接方式无效')
     if network not in ('lan', 'public'): raise ValueError('网络模式无效')
     if ice not in ('all', 'relay'): raise ValueError('ICE 策略无效')

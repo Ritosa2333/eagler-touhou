@@ -7,7 +7,7 @@ export const managedAPI={
   const url=new URL(options.netplayUrl),runId=Number(url.searchParams.get('run'));
   if(!url.searchParams.get('room')||!Number.isSafeInteger(runId)||runId<1)throw Error('开局身份无效');
   const ballCount=options.netplayBallCount ?? 2;
-  if(![1,2,3,4,6,8].includes(ballCount))throw Error('球数无效');
+  if(![1,2,3,4,6,8,9].includes(ballCount))throw Error('球数无效');
   if(!Number.isInteger(options.netplayDifficulty)||options.netplayDifficulty<0||options.netplayDifficulty>3)throw Error('难度无效');
   identity={role:roles[slot],room:url.searchParams.get('room'),token:'launcher-owned'};
   room={room:identity.room,runId,generation:[identity.room,runId,url.searchParams.get('runtimeGeneration')].join(':'),transport:'ws',phase:'loading',
