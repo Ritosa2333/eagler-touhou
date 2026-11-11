@@ -57,7 +57,7 @@ struct RoomPhaseTimer {
 };
 struct RoomRuntime final : multiplayer::World {
 #if TH17_ROOM_BENCHMARK
- using Status=std::array<u32,51>;
+ using Status=std::array<u32,54>;
 #else
  using Status=std::array<u32,44>;
 #endif
@@ -256,7 +256,7 @@ struct RoomRuntime final : multiplayer::World {
 #if TH17_ROOM_BENCHMARK
    if(benchmark_story_stage)initial_stage=benchmark_story_stage;
 #endif
-   if(!app->begin_room(setup.seed,setup.difficulty,setup.seats,loadouts,initial_stage))return false;
+   if(!app->begin_room(setup.seed,setup.difficulty,setup.seats,loadouts,initial_stage,setup.challenge))return false;
    app->renderer.hud_viewer=setup.local+1;
    entered=true;
   }
@@ -285,7 +285,7 @@ struct RoomRuntime final : multiplayer::World {
   if(!spectator&&!playing_replay&&!setup.local&&!publisher_failed&&app->scene()&&!app->scene()->active()&&
      entry_stage!=app->room_stage_generation&&app->loading_destination==AppScene::Uninitialized){
    if(multiplayer::capture_stage_entry(*app,setup,menu_before,number,output.publication.initializer)){
-    output.publication.schema=multiplayer::StageEntry::schema;entry_stage=app->room_stage_generation;
+    output.publication.schema=multiplayer::StageEntry::transport_schema;entry_stage=app->room_stage_generation;
    }else {publisher_failed=true;transport.StopSpectators();}
   }
   const auto bosses_before=app->scene()?app->scene()->battle.enemy_world.boss_ids:std::array<u32,3>{};
@@ -420,6 +420,9 @@ RoomRuntime::Status RoomRuntime::status(u32 number)const{
    result[14+seat*4]=u32(pilot.session.extra_lives);result[15+seat*4]=u32(pilot.session.bombs);
    result[24+seat]=u32(pilot.session.power);
    if(battle.pilot_ghost(seat))result[43]|=1u<<seat;
+#if TH17_ROOM_BENCHMARK
+   result[51+seat]=u32(pilot.session.deaths);
+#endif
   }
   result[27]=battle.items->items.active_count;result[28]=battle.items->spirits.count();
   result[29]=battle.laser_scene->manager.count();result[30]=battle.spell.flags;result[31]=app->visual.calls;
@@ -634,7 +637,9 @@ EMSCRIPTEN_KEEPALIVE int th17_room_preview(){
 }
 EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,const char* url,const char* spectator_id){
  using namespace th17::sdl;
- if(!app||!app->title||running||room||!words||count!=19||words[0]!=2||!url||
+ if(!app||!app->title||running||room||!words||!url)return 0;
+ const bool legacy=count==19&&words[0]==2;
+ if((!legacy&&(count!=20||words[0]!=3||words[19]>1))||
     words[1]>3||words[2]>=words[1]||words[3]>4||words[4]>65535||words[7]>9||words[18]>1||
     (words[18]&&words[7]))return 0;
  auto candidate=std::make_unique<RoomRuntime>();
@@ -644,6 +649,7 @@ EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,con
  setup.difficulty=std::uint8_t(words[3]);setup.seed=th17::u16(words[4]);
  setup.room=words[5]|(std::uint64_t(words[6])<<32);
  setup.delay=std::uint8_t(words[7]);setup.rollback=words[18]!=0;
+ setup.challenge=!legacy&&words[19]!=0;
  for(unsigned seat=0;seat<3;++seat){
   if(words[8+seat*2]>2||words[9+seat*2]>2)return 0;
   setup.loadouts[seat]={std::uint8_t(words[8+seat*2]),std::uint8_t(words[9+seat*2])};
@@ -670,7 +676,7 @@ EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,con
 EMSCRIPTEN_KEEPALIVE int th17_room_return(){
  using namespace th17::sdl;
  if(running||!app)return 0;
- room.reset();app->room_replay_save={};app->room_seats=0;app->room_partners={};
+ room.reset();app->room_replay_save={};app->room_seats=0;app->room_challenge=false;app->room_partners={};
  app->flow.pending=th17::AppScene::Title;
  if(!app->release_ending()||!app->release_game()||!app->release_title())return 0;
  app->recording.reset();app->room_description.reset();app->selected_replay.reset();

@@ -16,6 +16,7 @@ struct SessionSetup {
     std::uint8_t seats = 2, local = 0, difficulty = 1;
     std::uint8_t delay = 0;
     bool rollback = true;
+    bool challenge = false;
 
     bool valid() const;
     std::uint32_t gameplay_abi() const;

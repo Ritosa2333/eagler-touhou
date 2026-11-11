@@ -22,8 +22,8 @@ bool ItemCollection::full_power(const ItemState& item){
     if(wrapping_sub(player.power,score.max_power)/player.power_step!=player.power/player.power_step){if(!world.options_changed()||!world.popup(item.position,-1,0xffffff40)||!world.sound(13,false))return false;}return true;
 }
 bool ItemCollection::life(){if(player.extra_lives>=8)return true;player.extra_lives=wrapping_add(player.extra_lives,1);if(player.extra_lives>8)player.extra_lives=8;return world.life_hud(player.extra_lives,player.life_pieces)&&world.sound(17,true)&&world.notice(4);}
-bool ItemCollection::bomb(){player.bombs=wrapping_add(player.bombs,1);if(player.bombs<9){if(!world.sound(46,true))return false;}else player.bombs=8;return world.bomb_hud(player.bombs,player.bomb_pieces);}
-bool ItemCollection::bomb_piece(){if(player.bombs>=8){player.bomb_pieces=0;return true;}player.bomb_pieces=wrapping_add(player.bomb_pieces,1);if(player.bomb_pieces>2){player.bombs=wrapping_add(player.bombs,1);player.bomb_pieces=0;if(player.bombs<9){if(!world.sound(46,true))return false;}else player.bombs=8;if(!world.bomb_hud(player.bombs,player.bomb_pieces))return false;}return world.bomb_hud(player.bombs,player.bomb_pieces);}
+bool ItemCollection::bomb(){if(player.challenge)return true;player.bombs=wrapping_add(player.bombs,1);if(player.bombs<9){if(!world.sound(46,true))return false;}else player.bombs=8;return world.bomb_hud(player.bombs,player.bomb_pieces);}
+bool ItemCollection::bomb_piece(){if(player.challenge)return true;if(player.bombs>=8){player.bomb_pieces=0;return true;}player.bomb_pieces=wrapping_add(player.bomb_pieces,1);if(player.bomb_pieces>2){player.bombs=wrapping_add(player.bombs,1);player.bomb_pieces=0;if(player.bombs<9){if(!world.sound(46,true))return false;}else player.bombs=8;if(!world.bomb_hud(player.bombs,player.bomb_pieces))return false;}return world.bomb_hud(player.bombs,player.bomb_pieces);}
 bool ItemCollection::life_piece(){
     if(player.extra_lives>=8){if(!bomb_piece())return false;player.life_pieces=0;return true;}
     if(life_piece_tier<0||(score.difficulty==4&&life_piece_tier>9)){error="Life-piece tier outside the original threshold table";return false;}
