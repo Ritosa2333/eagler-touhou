@@ -8,7 +8,7 @@
 
 using namespace Netplay;
 int main() {
-    for (const auto game : {'6', '7', '8', 'A', 'B', 'F'}) {
+    for (const auto game : {'6', '7', '8', 'A', 'B', 'C', 'D', 'F', 'G'}) {
         SpectatorStageEvent begin;
         begin.game = game; begin.playerCount = 3; begin.sessionId = 0x123456789abcdef0ull;
         begin.gameplayAbi = 0x10203040; begin.frame = 600; begin.stage = 4; begin.serial = 1;

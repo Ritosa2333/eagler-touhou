@@ -297,7 +297,8 @@ void digest_laser(DigestSink& d, const StageLaser& laser) {
     d.i32(laser.cull_timer); d.i32(laser.graze_timer);
 }
 
-void digest_stage_enemy(DigestSink& d, const StageEnemy& enemy) {
+void digest_stage_enemy(DigestSink& d, const StageEnemy& enemy,
+                        bool include_animation_ids = true) {
     d.tag("enemy");
     d.i32(enemy.native_function); d.i32(enemy.native_function_mode);
     d.boolean(enemy.fog != nullptr);
@@ -419,7 +420,11 @@ void digest_stage_enemy(DigestSink& d, const StageEnemy& enemy) {
     d.i32(enemy.anm_file); d.i32(enemy.anm_base_script);
     d.i32(enemy.anm_slot0_bank); d.i32(enemy.anm_slot0_script_offset);
     for (i32 value : enemy.anm_script) d.i32(value);
-    for (u32 value : enemy.anm_slot_handle) d.u32(value);
+    for (u32 value : enemy.anm_slot_handle) {
+        // Title and loading animations can allocate different local IDs before
+        // the same combat starts. Keep slot occupancy in the wire checksum.
+        d.u32(include_animation_ids ? value : u32(value != 0));
+    }
     for (const Vec3& offset : enemy.anm_slot_offset) {
         d.f32(offset.x); d.f32(offset.y); d.f32(offset.z);
     }
@@ -608,16 +613,12 @@ bool WorldState::restore(StageBattle& battle, GameRandom& visual, ReplayView* re
                          u32* transition_handle_out) {
     if (!ready_) return false;
     StageSim& sim = battle.sim;
-    // ---- ANM registry 先恢复（敌机槽位句柄指向 registry VM；无头空跳过）----
-    if (battle.mp_registry()) {
-        if (!battle.mp_registry()->restore(anm_)) return false;
-    }
-    // ---- 表现层手账恢复（registry 已按同句柄 generation 重建池——手账
-    // 的句柄值语义随之有效；自有 VM 值重建并重绑宿主指针）。capture 无
-    // presentation 时跳过（无头测试路径）。----
-    if (presentation && has_present_) {
-        if (!presentation->restore_presentation(present_)) return false;
-    }
+    // Embedded VMs are recreated by presentation restore. Rebind registry
+    // child chains to those new objects instead of retaining old addresses.
+    std::unordered_map<const AnmVm*, AnmVm*> remapped;
+    if (presentation && has_present_ &&
+        !presentation->restore_presentation(present_, &remapped)) return false;
+    if (battle.mp_registry() && !battle.mp_registry()->restore(anm_, remapped)) return false;
     // ---- P3.2 宿主域恢复（敌机池/RNG 已恢复之后：震动回调的 run 引用
     // scene.battle.sim.random，battle 必须先就位；重建经 start_shake 生产
     // 路径保持注册序。capture 无 scene 时跳过（无头测试路径）。----
@@ -794,26 +795,31 @@ size_t WorldState::retained_bytes() const noexcept {
 
 uint64_t WorldState::digest_core() const {
     DigestSink d;
-    digest_core_sink(d);
+    digest_core_sink(d, false);
     return d.value();
 }
 
 uint64_t WorldState::digest() const {
     DigestSink d;
-    digest_core_sink(d);
+    digest_core_sink(d, true);
     digest_anm_sink(d);
     return d.value();
 }
 // 分域 digest（诊断面）：core 各域独立摘要（首差域定位）。
 void WorldState::digest_domains(char* buffer, size_t capacity) const {
-    struct Domain { const char* name; };
+    bool first = true;
     auto write = [&](const char* name, uint64_t value) {
-        if (buffer && capacity > 0) {
-            int written = std::snprintf(buffer, capacity, "%s%s=%016llx",
-                                        *buffer ? " " : "", name,
-                                        static_cast<unsigned long long>(value));
-            buffer += written; capacity -= size_t(written);
+        if (!buffer || capacity == 0) return;
+        const int written = std::snprintf(buffer, capacity, "%s%s=%016llx",
+                                          first ? "" : " ", name,
+                                          static_cast<unsigned long long>(value));
+        if (written < 0 || size_t(written) >= capacity) {
+            capacity = 0;
+            return;
         }
+        first = false;
+        buffer += written;
+        capacity -= size_t(written);
     };
     {
         DigestSink d; d.tag("battle");
@@ -928,6 +934,20 @@ void WorldState::digest_domains(char* buffer, size_t capacity) const {
         d.u64(sim_.enemies.size());
         for (const EnemySnapshot& enemy : sim_.enemies) digest_stage_enemy(d, enemy.fields);
         write("enemyfields", d.value());
+    }
+    {
+        DigestSink values, handles, feedback;
+        for (const EnemySnapshot& enemy : sim_.enemies) {
+            const auto& fields = enemy.fields;
+            for (u32 handle : fields.anm_slot_handle) handles.u32(handle);
+            digest_stage_enemy(values, fields, false);
+            feedback.i32(fields.hit_anim_timer);
+            feedback.i32(fields.hit_feedback_cooldown);
+            feedback.boolean(fields.periodic_flash);
+        }
+        write("enemyvalues", values.value());
+        write("enemyhandles", handles.value());
+        write("enemyfeedback", feedback.value());
     }
     {
         DigestSink d; d.tag("enemythreads");
@@ -1057,7 +1077,7 @@ void WorldState::digest_domains(char* buffer, size_t capacity) const {
     }
 }
 
-void WorldState::digest_core_sink(DigestSink& d) const {
+void WorldState::digest_core_sink(DigestSink& d, bool include_animation_ids) const {
     d.tag("worldstate");
     d.i32(battle_.seat_count); d.i32(battle_.active_seat);
     for (const StagePlayerState& seat : battle_.seats) digest_player_state(d, seat);
@@ -1073,7 +1093,7 @@ void WorldState::digest_core_sink(DigestSink& d) const {
     d.u32(sim_.next_bullet_generation);
     d.u64(sim_.enemies.size());
     for (const EnemySnapshot& enemy : sim_.enemies) {
-        digest_stage_enemy(d, enemy.fields);
+        digest_stage_enemy(d, enemy.fields, include_animation_ids);
         digest_ecl_threads(d, enemy.threads);
     }
     d.u64(sim_.bullets.size());

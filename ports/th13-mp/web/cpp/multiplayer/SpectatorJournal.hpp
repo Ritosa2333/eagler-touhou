@@ -13,6 +13,7 @@
 
 #include "SessionSetup.hpp"
 #include "StageEntry.hpp"
+#include "netplay/NetplayProtocolConfig.hpp"
 
 #include <eagler/netplay/SpectatorStagePlayback.hpp>
 #include <eagler/netplay/SpectatorStagePublisher.hpp>
@@ -29,7 +30,7 @@ inline constexpr std::uint32_t SpectatorStageSchema = StageEntry::Version;
 
 class SpectatorJournal {
 public:
-    static constexpr std::uint8_t kGame = 'D';  // TH13 旁观线标识（'C' 已归 th12）
+    static constexpr std::uint8_t kGame = Netplay::ProtocolConfig::MagicGame;
 
     // ---- 发布端（本地席 0）----
     // 会话启动（frame0 前）：Reset 发布器。firstFrame 恒 0。

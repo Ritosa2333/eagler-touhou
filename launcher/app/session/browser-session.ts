@@ -464,7 +464,9 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     const currentRoom = roomSession?.service.getSnapshot();
     // A failed native engine can reject room-return while its filesystem still
     // answers sync. Retire it through the ordinary save/close decision below.
-    if (!nativeExit && !leaveRoom && !handoff && !owner.getSnapshot().error && (owner.getSnapshot().launched || owner.getSnapshot().roomPreview) && !snapshot.replayViewer && currentRoom?.room &&
+    const currentRuntime = owner.getSnapshot();
+    const canRetainRoomRuntime = currentRuntime.launched ? currentRuntime.roomReturnSupported : currentRuntime.roomPreview;
+    if (!nativeExit && !leaveRoom && !handoff && !currentRuntime.error && canRetainRoomRuntime && !snapshot.replayViewer && currentRoom?.room &&
         (!snapshot.th09NetworkOverlayOpen || owner.getSnapshot().runtimeVariant === 'multiplayer' && owner.getSnapshot().roomReturnSupported)) {
       try {if (owner.getSnapshot().launched) await owner.returnToRoom();}
       catch (error) {reportError(error); return false;}

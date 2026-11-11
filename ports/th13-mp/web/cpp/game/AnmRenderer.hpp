@@ -33,8 +33,15 @@ class AnmRenderer {
     ZunGraphics& graphics;std::vector<AnmGeometryVertex> vertices;u32 bound_texture=~0u;
     struct ColorVertex {Vec3 position;float reciprocal_w;u32 color;};std::vector<ColorVertex> shapes;
     bool material(AnmVm&,bool textured=true);int quad(AnmVm&,bool pixel);int pack_quad(AnmVm&,Vec3 (&)[4],bool pixel,const u32* colors=nullptr);int projected_quad(AnmVm&,bool fog);int world_quad(AnmVm&);int mesh(AnmVm&);int shape(AnmVm&);int trail(AnmVm&);int circle(AnmVm&);
+    u8 draw_opacity_ = 255;
+    int draw_vm(AnmVm&);
+    u32 apply_draw_opacity(u32) const noexcept;
+    template<class Vertex>
+    void submit_colored(AnmVm& vm, touhou::graphics::Topology kind, u32 count,
+                        const Vertex* data);
     u32 tint_color(u32)const noexcept;int overlay(AnmVm&);
 public:
+    std::array<u8, 4> player_opacity{255, 255, 255, 255};
     u32 presentation_instance=0;
     void submit(AnmVm&,touhou::graphics::Topology,u32,const void*,u32);
     Vec2 offset{};GraphicsViewport viewport;AnmCamera camera;bool tint_enabled=false;u32 tint=0x80808080;
@@ -45,7 +52,9 @@ public:
     AnmCamera scenery_camera;GraphicsViewport scenery_viewport;bool scenery_camera_ready=false;
     std::string error;explicit AnmRenderer(ZunGraphics& graphics):graphics(graphics){vertices.reserve(kSpriteBatchVertices);shapes.reserve(192);}
     void flush();void invalidate();void set_viewport(const GraphicsViewport&);void set_camera(const AnmCamera&);
-    int draw(AnmVm&);int draw_glyph(AnmVm&);bool draw_layer(const std::vector<AnmVm*>&);
+    int draw(AnmVm&);
+    int draw_with_opacity(AnmVm&, u8 opacity);
+    int draw_glyph(AnmVm&);bool draw_layer(const std::vector<AnmVm*>&);
     int draw_screen_strip(AnmVm&,const AnmGeometryVertex*,u32 count);
     const std::vector<AnmGeometryVertex>& pending()const noexcept{return vertices;}
 };

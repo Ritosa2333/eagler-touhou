@@ -2411,5 +2411,10 @@
   "multiplayer_loadout_th01_reimu": "灵梦",
   "multiplayer_loadout_th02_fast": "高速型",
   "multiplayer_loadout_th02_balanced": "平衡型",
-  "multiplayer_loadout_th02_slow": "低速型"
+  "multiplayer_loadout_th02_slow": "低速型",
+  "game_title_th13mp": "东方神灵庙 联机版",
+  "multiplayer_loadout_th13_reimu": "博丽灵梦",
+  "multiplayer_loadout_th13_marisa": "雾雨魔理沙",
+  "multiplayer_loadout_th13_sanae": "东风谷早苗",
+  "multiplayer_loadout_th13_youmu": "魂魄妖梦"
 }

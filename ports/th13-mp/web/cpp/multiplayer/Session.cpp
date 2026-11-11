@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
+#include <sstream>
+#include <locale>
 
 #include "../game/StageBattle.hpp"
 #include "../game/RunScene.hpp"
@@ -75,6 +77,8 @@ bool Session::Configure(const std::uint32_t* words, std::size_t count) {
         return false;
     }
     if (!runtime_.Reset(setup)) return false;
+    diagnostic_input_count_ = 0;
+    diagnostic_samples_ = {};
     record_clear();
     audio_out_.clear();
     voice_out_.clear();
@@ -152,13 +156,20 @@ bool Session::Connect(const char* relay_url) {
     return runtime_.Connect(relay_url);
 }
 
-bool Session::CaptureLocal(std::uint32_t held, std::uint64_t now_ms) {
+bool Session::CaptureLocal(std::uint32_t held, std::uint64_t now_ms,
+                           StagePlayerState::TouchMotion touch) {
     // 采集门：active 且模拟已启动（Start 后）。capture 相位 0 是合法的
     // 首帧采集号——不能再用 NeedsCapture() 的非零门（那会吞掉 capture 0，
     // delay 窗后首帧起对端停等）。
     if (!active_ || !simulating_) return true;  // 未开始采集：静默
     Netplay::FrameInput input;
     if (!InputLanes::Capture(held, false, input)) return false;
+    if (touch.mode) {
+        input.analogMode = Netplay::AnalogMode::DirectTouch;
+        input.x = touch.x;
+        input.y = touch.y;
+        input.unlimited = touch.mode == 2;
+    }
     return runtime_.Capture(runtime_.CaptureFrame(), input, now_ms);
 }
 
@@ -209,10 +220,14 @@ bool Session::CanSimulate() {
         record.frame = sim_frame_;
         record.inputs = decision.inputs;
     }
+    // Capture stage initializers before this frame mutates inputs or the world.
+    record_back().stage = stage_source ? stage_source() : 1u;
+    if (spectator_sink) spectator_sink(sim_frame_, decision.inputs);
     // 远端席位输入注入（本地席位走 LocalDelayedInput/playback_input 接缝）。
     if (battle_) {
         const auto count = PlayerCount();
         for (std::uint32_t seat = 0; seat < count && seat < 3; ++seat) {
+            InputLanes::ApplyTouch(*battle_, seat, decision.inputs[seat]);
             if (seat == LocalSeat()) continue;
             // FrameInput → GameInput.held 的沿状态机：每帧 update。
             battle_->seat_inputs[seat].update(decision.inputs[seat].buttons &
@@ -258,15 +273,6 @@ void Session::OnFrameSimulated() {
     }
     pending_audio_ = nullptr;  // Record 已落账
     pending_audio_frame_ = 0;
-    // M9/P6：观战帧记录（发布端——每执行帧恰一次，含回滚重放帧）。
-    // 决策输入重取（MarkSimulated 已消费本帧决策；Prepare 幂等）。
-    // 关号/关头需求/StageEntry 捕获由宿主回调内完成（宿主持有 app 面）。
-    if (spectator_sink) {
-        const auto decision = runtime_.Prepare(sim_frame_);
-        if (!spectator_sink(sim_frame_, decision.inputs)) {
-            // 记录被拒：发布线退役（宿主回调内已处理）；不阻断模拟。
-        }
-    }
     // update_us：放行 → 落账（近似一帧模拟耗时）；纠正期同时计入 resim_us。
     const std::uint64_t update_elapsed = NowMicros() - frame_granted_us_;
     update_us_sum_ += update_elapsed;
@@ -331,14 +337,78 @@ void Session::Commit() {
         }
         // P3.4：退役帧的线上 digest（输入已全员确认，两端权威态确定；
         // 失配在 NetplayRuntime 内成为终态错误，下一 Pump 返回假）。
-        if (record.has_wire_digest)
-            runtime_.SendDigestControl(
-                record.frame, static_cast<std::uint32_t>(record.wire_digest));
+        auto& input = diagnostic_inputs_[diagnostic_input_count_++ % diagnostic_inputs_.size()];
+        input.frame = record.frame;
+        input.stage = record.stage;
+        for (std::size_t seat = 0; seat < input.buttons.size(); ++seat)
+            input.buttons[seat] = actual[seat].buttons;
+        if (record.has_wire_digest) {
+            auto& sample = diagnostic_samples_[(record.frame / NetplayRuntime::kDigestIntervalFrames)
+                                               % diagnostic_samples_.size()];
+            sample = {};
+            sample.frame = record.frame;
+            sample.stage = record.stage;
+            record.snapshot.digest_domains(sample.domains.data(), sample.domains.size());
+            runtime_.SendDigestControl(record.frame, static_cast<std::uint32_t>(record.wire_digest));
+        }
         // P5：确认帧录制（输入已全员确认且与预测一致——Replay 只收真值）。
-        if (confirmed_sink) confirmed_sink(record.frame, record.inputs);
+        if (confirmed_sink) confirmed_sink(record.frame, record.stage, record.inputs);
         record_pop_front();
         ++committed_;
     }
+}
+
+std::string Session::DiagnosticJson() const {
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    const auto& setup = Setup();
+    out << "{\"localSeat\":" << unsigned(LocalSeat()) + 1
+        << ",\"playerCount\":" << PlayerCount()
+        << ",\"difficulty\":" << setup.difficulty << ",\"seed\":" << setup.seed
+        << ",\"mode\":" << setup.mode << ",\"challenge\":" << (setup.challenge ? "true" : "false")
+        << ",\"nextSimulationFrame\":" << sim_frame_ << ",\"captureFrame\":" << CaptureFrame()
+        << ",\"confirmedThrough\":";
+    if (ConfirmedThrough() == Netplay::INVALID_FRAME) out << "null"; else out << ConfirmedThrough();
+    out << ",\"inputDelay\":" << setup.input_delay << ",\"predictionLimit\":" << setup.prediction_limit
+        << ",\"predictionBarrier\":" << (prediction_barrier_ ? "true" : "false")
+        << ",\"rollback\":{\"restores\":" << restores_ << ",\"resimulated\":" << resimulated_
+        << ",\"lastDepth\":" << last_rollback_distance_ << ",\"maxDepth\":" << max_rollback_distance_
+        << ",\"stalls\":" << stall_frames_ << ",\"checkpoints\":" << checkpoints_ << '}'
+        << ",\"wireDigest\":{\"sent\":" << runtime_.DigestsSent()
+        << ",\"received\":" << runtime_.DigestsReceived();
+    if (runtime_.DigestMismatched()) {
+        const auto& pair = runtime_.MismatchDigests();
+        out << ",\"mismatch\":{\"frame\":" << pair.frame << ",\"local\":\"" << std::hex
+            << pair.local << "\",\"remote\":\"" << pair.remote << "\"}" << std::dec;
+    }
+    out << "},\"checkpointSamples\":[";
+    bool comma = false;
+    for (const auto& sample : diagnostic_samples_) {
+        if (!sample.domains[0]) continue;
+        if (comma) out << ',';
+        comma = true;
+        out << "{\"frame\":" << sample.frame << ",\"stage\":" << sample.stage
+            << ",\"domains\":\"" << sample.domains.data() << "\"}";
+    }
+    out << "],\"confirmedInputs\":[";
+    const auto first = diagnostic_input_count_ - std::min(diagnostic_input_count_, diagnostic_inputs_.size());
+    for (auto i = first; i < diagnostic_input_count_; ++i) {
+        const auto& input = diagnostic_inputs_[i % diagnostic_inputs_.size()];
+        if (i != first) out << ',';
+        out << "{\"frame\":" << input.frame << ",\"stage\":" << input.stage
+            << ",\"buttons\":[" << input.buttons[0] << ',' << input.buttons[1] << ',' << input.buttons[2] << "]}";
+    }
+    out << "],\"pendingInputs\":[";
+    for (std::size_t i = 0; i < record_count_; ++i) {
+        const auto& record = record_at(i);
+        if (i) out << ',';
+        out << "{\"frame\":" << record.frame << ",\"stage\":" << record.stage
+            << ",\"snapshot\":" << (record.has_snapshot ? "true" : "false")
+            << ",\"buttons\":[" << record.inputs[0].buttons << ',' << record.inputs[1].buttons
+            << ',' << record.inputs[2].buttons << "]}";
+    }
+    out << "]}";
+    return out.str();
 }
 
 // 回滚执行：RollbackCore 请求帧的 checkpoint restore + 后续 records 丢弃。

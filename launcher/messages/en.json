@@ -2411,5 +2411,10 @@
   "multiplayer_loadout_th01_reimu": "Reimu",
   "multiplayer_loadout_th02_fast": "Fast",
   "multiplayer_loadout_th02_balanced": "Balanced",
-  "multiplayer_loadout_th02_slow": "Slow"
+  "multiplayer_loadout_th02_slow": "Slow",
+  "game_title_th13mp": "Touhou 13 Multiplayer",
+  "multiplayer_loadout_th13_reimu": "Reimu Hakurei",
+  "multiplayer_loadout_th13_marisa": "Marisa Kirisame",
+  "multiplayer_loadout_th13_sanae": "Sanae Kochiya",
+  "multiplayer_loadout_th13_youmu": "Youmu Konpaku"
 }

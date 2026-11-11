@@ -1,6 +1,6 @@
 // Each run retains its E?SV version while published v1 and v2 clients coexist.
 export const COOPERATIVE_SPECTATOR_MARKERS = Object.freeze({
-  th05mp: 0x35, th06mp: 0x36, th07mp: 0x37, th08mp: 0x38, th10mp: 0x41, th11mp: 0x42, th12mp: 0x43, th13mp: 0x44, th15mp: 0x46, th17mp: 0x47,
+  th05mp: 0x35, th06mp: 0x36, th07mp: 0x37, th08mp: 0x38, th10mp: 0x41, th11mp: 0x42, th12mp: 0x43, th13mp: 0x4d, th15mp: 0x46, th17mp: 0x47,
 });
 const markers = new Set(Object.values(COOPERATIVE_SPECTATOR_MARKERS));
 export const SPECTATOR_STAGE_LIMITS = Object.freeze({ stateBytes: 4 * 1024, historyBytes: 16 * 1024 * 1024, historyFrames: 108000 });

@@ -93,11 +93,10 @@ public:
     //（首帧前）恒 NotRequired——宿主照常记录，RecordSpectatorFrame 首个
     // initializer 到达时建立发布器。
     auto SpectatorCheckpointNeeded(std::uint32_t frame, std::uint32_t stage) const {
-        if (!publish_started_ || publish_failed_) {
-            static constexpr auto kIdle =
-                Netplay::SpectatorStagePublisher::CheckpointRequirement::NotRequired;
-            return kIdle;
-        }
+        using Requirement = Netplay::SpectatorStagePublisher::CheckpointRequirement;
+        if (publish_failed_ || spectator_ || setup_.local_player != 0)
+            return Requirement::NotRequired;
+        if (!publish_started_) return Requirement::Required;
         return stage_publisher_.NeedsCheckpoint(frame, stage);
     }
     // 观众端收流状态（deadline 观测；宿主超时面）。
@@ -207,6 +206,7 @@ public:
     // "TH13 desync at frame N"（error_ 优先级高于 channel/transport 错误）。
     bool DigestMismatched() const { return digest_mismatch_; }
     std::uint32_t DigestMismatchFrame() const { return digest_mismatch_frame_; }
+    const DigestSlot& MismatchDigests() const { return mismatch_digests_; }
     std::uint64_t DigestsSent() const { return digests_sent_; }
     std::uint64_t DigestsReceived() const { return digests_received_; }
     std::uint64_t DesyncDetected() const { return desync_detected_; }
@@ -253,6 +253,7 @@ private:
     DigestWireFilter digest_filter_{transport_};
     Netplay::SessionChannel channel_{digest_filter_};
     std::array<DigestSlot, kDigestSlots> digest_slots_{};
+    DigestSlot mismatch_digests_{};
     bool digest_mismatch_ = false;
     std::uint32_t digest_mismatch_frame_ = 0;
     std::uint64_t digests_sent_ = 0, digests_received_ = 0, desync_detected_ = 0;
