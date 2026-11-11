@@ -148,17 +148,17 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
     battle.sim.graze_effect = [this](const Vec3& pos) {
         return presentation->graze_effect(pos);
     };
-    battle.beam_hit_effect = [this](const Vec3& position, const Vec3& displacement, float angle) {
-        return presentation->beam_hit_effect(position, displacement, angle);
+    battle.beam_hit_effect = [this](const Vec3& position, const Vec3& displacement, float angle, i32 seat) {
+        return presentation->beam_hit_effect(position, displacement, angle, seat);
     };
     battle.player_shot_birth = [this](PlayerShot& shot, u32 index) {
-        return presentation->initialize_player_shot(shot, index);
+        return presentation->initialize_player_shot(shot, index, battle.active_seat);
     };
     battle.youmu_bomb_update = [this](StageBattle& state) {
         return presentation->sync_youmu_slash(state);
     };
     battle.youmu_charge_effect = [this](i32 action, const Vec3& position) {
-        return presentation->youmu_charge_effect(action, position);
+        return presentation->youmu_charge_effect(action, position, battle.active_seat);
     };
     // 303/306/313/316/318 槽位 VM：0x41fe80/0x41b7cc 在 ECL 指令内同步建 VM。
     // 宿主在 StageCommands 每次 push 后立即回调；307/308 特效同样在指令处
@@ -691,7 +691,7 @@ bool RunScene::update() {
     if (record_input) record_input(selected_input);
     if (transition_wait) {
         if (!battle.step_transition(selected_input)) return fail(battle.error());
-        if (!presentation->sync(battle, selected_input.held)) return fail(presentation->error());
+        if (!presentation->sync(battle, battle.seat_count >= 2 ? battle.seat_inputs[0].held : selected_input.held)) return fail(presentation->error());
         hud.tick_stage_clear();
         HudFrameContext frame;
     // 0x4265a0:85-96 灵界槽淡化状态机消费 DAT_004c22c4+0x5b8/+0x5bc 世界位
@@ -719,14 +719,15 @@ bool RunScene::update() {
     hud.tick_stage_clear();
     // 0x4274cc 的 MSG 步进属于 Update 28，不随 battle 在 20 执行。
     // 只锁存推进键面；回放游标与 record_input 仍在本任务消费一次。
-    dialogue_advance_.z_pressed = (input.pressed & 0x01u) != 0;
-    dialogue_advance_.held = input.held;
-    dialogue_advance_.pressed = input.pressed;
-    dialogue_advance_.z_frames = input.duration[0];
-    dialogue_advance_.ctrl_frames = input.duration[9];
+    const GameInput& dialogue_input = battle.seat_count >= 2 ? battle.seat_inputs[0] : input;
+    dialogue_advance_.z_pressed = (dialogue_input.pressed & 0x01u) != 0;
+    dialogue_advance_.held = dialogue_input.held;
+    dialogue_advance_.pressed = dialogue_input.pressed;
+    dialogue_advance_.z_frames = dialogue_input.duration[0];
+    dialogue_advance_.ctrl_frames = dialogue_input.duration[9];
     dialogue_update_pending_ = true;
 
-    if (!presentation->sync(battle, input.held)) return fail(presentation->error());
+    if (!presentation->sync(battle, dialogue_input.held)) return fail(presentation->error());
     // Boss HUD（0x4265a0）已拆出为独立任务 update_boss_hud（Update 0x1c=28，
     // 晚于道具 24/神霊 25，原版 0x424f46/0x424f4b）——视图装配随之迁移。
     HudFrameContext frame;

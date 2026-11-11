@@ -46,6 +46,7 @@ Netplay::CoreConfig NetplayRuntime::CoreConfigFor(const SessionSetup& setup) {
     config.localPlayer = std::uint8_t(setup.local_player);
     config.inputDelay = std::uint8_t(setup.input_delay);
     config.maxRollbackFrames = SessionSetup::MaxRollbackFrames;
+    config.directTouchIsAbsolute = true;
     config.allowPrediction = setup.mode == 2;  // M8：预测模式（v2 线格式）
     if (config.allowPrediction) {
         // 预测安全键（缺远端输入时可重复）：方向（0x0f0）+ 射击（0x001）
@@ -110,6 +111,7 @@ void NetplayRuntime::Clear() {
     correction_end_ = Netplay::INVALID_FRAME;
     // P3.4：digest 槽/终态/统计随会话清零。
     digest_slots_ = {};
+    mismatch_digests_ = {};
     digest_mismatch_ = false;
     digest_mismatch_frame_ = 0;
     digests_sent_ = digests_received_ = desync_detected_ = 0;
@@ -254,8 +256,13 @@ bool NetplayRuntime::DrainSpectator(std::uint64_t now_ms) {
         auto setup = setup_;
         setup.session_id = session;
         setup.seed = seed;
-        if (!Reset(setup)) return false;
-        spectator_ = true;  // Reset/Clear 清位，重接观战身份后恢复
+        if (!setup.valid()) {
+            error_ = "invalid TH13 spectator session";
+            return false;
+        }
+        // This announcement belongs to the open observer transport. Reset()
+        // closes that transport and discards its queued bootstrap packets.
+        setup_ = setup;
         spectator_frames_.clear();
         stage_playback_.Clear();
         stage_view_.Clear();
@@ -344,6 +351,11 @@ bool NetplayRuntime::Pump(bool world_ready, std::uint64_t now_ms) {
     if (digest_mismatch_) return false;
     // 观众端：只收流，不推进玩家信道/门。
     if (spectator_) return DrainSpectator(now_ms);
+    if (!local_simulation_ && !transport_.Recovering() &&
+        (transport_.Disconnected() || transport_.Failed())) {
+        error_ = transport_.Failed() ? "TH13 gameplay transport failed" : "TH13 gameplay transport disconnected";
+        return false;
+    }
     if (!channel_.Active() && transport_.IsOpen()) {
         // PR#225：输入重传周期与 th15 生产配置对齐（16 ms）；其余默认。
         Netplay::SessionChannelConfig policy;
@@ -478,6 +490,7 @@ void NetplayRuntime::MarkDesync(std::uint32_t frame) {
     if (digest_mismatch_) return;  // 只记首次（终态）
     digest_mismatch_ = true;
     digest_mismatch_frame_ = frame;
+    mismatch_digests_ = digest_slots_[(frame / kDigestIntervalFrames) % kDigestSlots];
     ++desync_detected_;
     error_ = "TH13 desync at frame " + std::to_string(frame);
 }

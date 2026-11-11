@@ -10143,5 +10143,25 @@
   "multiplayer.loadout.th02_slow": {
     "id": "multiplayer_loadout_th02_slow",
     "params": []
+  },
+  "game.title.th13mp": {
+    "id": "game_title_th13mp",
+    "params": []
+  },
+  "multiplayer.loadout.th13_reimu": {
+    "id": "multiplayer_loadout_th13_reimu",
+    "params": []
+  },
+  "multiplayer.loadout.th13_marisa": {
+    "id": "multiplayer_loadout_th13_marisa",
+    "params": []
+  },
+  "multiplayer.loadout.th13_sanae": {
+    "id": "multiplayer_loadout_th13_sanae",
+    "params": []
+  },
+  "multiplayer.loadout.th13_youmu": {
+    "id": "multiplayer_loadout_th13_youmu",
+    "params": []
   }
 }

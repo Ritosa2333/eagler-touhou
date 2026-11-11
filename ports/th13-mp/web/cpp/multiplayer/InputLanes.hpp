@@ -17,7 +17,7 @@
 
 namespace th13 {
 
-struct GameInput;
+class StageBattle;
 
 namespace multiplayer {
 
@@ -35,6 +35,7 @@ public:
 
     // 采集：物理 held（32 位）→ FrameInput。非法位/非法模式拒绝。
     static bool Capture(std::uint32_t held, bool pause, Netplay::FrameInput& out);
+    static void ApplyTouch(StageBattle& battle, unsigned seat, const Netplay::FrameInput& input);
     // 解码：FrameInput[seat] → 每席 held（网线路 → GameInput.held 的
     // gameplay 面；灵界位原样回 0x800）。count = 席位数（2..3）。
     static bool Decode(const Netplay::FrameInput* frames, unsigned count,

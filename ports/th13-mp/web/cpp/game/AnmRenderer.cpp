@@ -58,14 +58,34 @@ void AnmRenderer::invalidate(){flush();bound_texture=~0u;}
 // ScreenViews::camera_if_changed（同值不重设）；本全局路径保持无条件 flush。
 void AnmRenderer::set_viewport(const GraphicsViewport& value){flush();viewport=value;graphics.set_viewport(value);}
 void AnmRenderer::set_camera(const AnmCamera& value){flush();graphics.presentation_camera(false);camera=value;graphics.set_matrix(MatrixKind::View,camera.view);graphics.set_matrix(MatrixKind::Projection,camera.projection);}
-u32 AnmRenderer::tint_color(u32 color)const noexcept{return tint_enabled?multiply_color(color,tint):color;}
+u32 AnmRenderer::tint_color(u32 color) const noexcept {
+    return apply_draw_opacity(tint_enabled ? multiply_color(color, tint) : color);
+}
+
+u32 AnmRenderer::apply_draw_opacity(u32 color) const noexcept {
+    if (draw_opacity_ != 255) {
+        const u32 alpha = ((color >> 24) * draw_opacity_ + 127) / 255;
+        color = (color & 0xffffffu) | (alpha << 24);
+    }
+    return color;
+}
+
+int AnmRenderer::draw_with_opacity(AnmVm& vm, u8 opacity) {
+    const u8 saved = draw_opacity_;
+    draw_opacity_ = opacity;
+    const int result = draw_vm(vm);
+    draw_opacity_ = saved;
+    return result;
+}
 bool AnmRenderer::material(AnmVm& vm,bool textured){
     if(textured){auto* source=vm.sprite_resource?vm.sprite_resource:vm.resource;const auto* sprite=vm.texture_sprite();if(!source||!sprite){error="Animation texture source unavailable: script="+std::to_string(vm.source_script)+" sprite="+std::to_string(vm.visual.sprite)+" mode="+std::to_string(vm.visual.draw_mode())+" flags="+std::to_string(vm.visual.flags)+" resource="+(source&&!source->textures.empty()?source->textures[0].name:"none")+" sprites="+std::to_string(source?source->sprites.size():0);return false;}
         // The original material lookup uses the bank and sprite index even before
         // an ANM script has executed sprite selection (chapter root 241 does this).
         // Keep its zero geometry/UVs; selecting a sprite here would change them.
         const u32 texture=graphics.texture(*source,sprite->texture);if(texture!=bound_texture){flush();bound_texture=texture;graphics.bind_texture(texture);}}
-    const auto& v=vm.visual;auto next=graphics.pipeline();const u32 mode=v.blend_mode();next.alphaTest=true;
+    const auto& v=vm.visual;auto next=graphics.pipeline();u32 mode=v.blend_mode();next.alphaTest=true;
+    // Copy, multiply and MIN/MAX blends do not honor source alpha.
+    if (mode >= 3 && vm.shot_effect_owner && draw_opacity_ != 255) mode = 0;
     // [原版机制·黑块根因] 原版 ANM quad 全族以 ALPHABLENDENABLE=TRUE 绘制
     // （oracle title-draws 全窗 blend 三元组实证：mode0=[5,6,1]、mode1=[5,2,1]、
     // mode2=[5,2,3]、mode3=[2,1,1]——D3D SRCALPHA=5/INVSRCALPHA=6/ONE=2/ZERO=1，
@@ -196,13 +216,31 @@ int AnmRenderer::world_quad(AnmVm& vm){
 int AnmRenderer::mesh(AnmVm& vm){
     const i32 count=vm.geometry.wind?32:vm.geometry.ribbon?16:vm.variables.integers[0];if(count<1||(!vm.geometry.wind&&!vm.geometry.ribbon&&u32(count)>vm.geometry.world_vertices.size()/2)){error="World animation mesh buffer unavailable";return -2;}Matrix4 world;if(!anm_mesh_transform(vm,world)){error="World animation mesh transform unavailable";return -2;}
     flush();if(!material(vm))return -2;TH13_DRAW_SPRITE(vm);auto& state=graphics.pipeline();state.depthWrite=!(vm.visual.flags&0x2000);state.textureTransform=true;
-    graphics.set_matrix(MatrixKind::World,world);graphics.set_matrix(MatrixKind::Texture,anm_texture_transform(vm));graphics.set_layout(VertexLayout::WorldColorUv);submit(vm,Topology::Strip,u32(count)*2-2,(vm.geometry.wind?vm.geometry.wind->vertices.data():vm.geometry.ribbon?vm.geometry.ribbon->vertices.data():vm.geometry.world_vertices.data()),sizeof(AnmWorldVertex));return 0;
+    graphics.set_matrix(MatrixKind::World,world);graphics.set_matrix(MatrixKind::Texture,anm_texture_transform(vm));graphics.set_layout(VertexLayout::WorldColorUv);submit_colored(vm,Topology::Strip,u32(count)*2-2,(vm.geometry.wind?vm.geometry.wind->vertices.data():vm.geometry.ribbon?vm.geometry.ribbon->vertices.data():vm.geometry.world_vertices.data()));return 0;
 }
 int AnmRenderer::trail(AnmVm& vm){
     auto& data=*vm.geometry.trail;const i32 count=data.age.current;if(count<1||count>64){error="Particle trail vertex count outside range";return -2;}const auto& v=vm.visual;const auto& p=vm.variables.position;Vec3 center{float(float(v.child_anchor.x+v.translation.x)+p.x),float(float(v.child_anchor.y+p.y)+v.translation.y),float(float(v.child_anchor.z+p.z)+v.translation.z)};if(!anm_adjust_position(vm,center)){error="Particle trail position unavailable";return -2;}
-    flush();if(!material(vm,false))return -2;TH13_DRAW_SPRITE(vm);graphics.set_depth_mask(false);auto& state=graphics.pipeline();state.color.operation=state.alpha.operation=ColorOperation::First;state.color.first=state.alpha.first={ArgumentSource::Diffuse};shapes.clear();for(i32 i=0;i<count;i++)shapes.push_back({{float(center.x+data.points[u32(i)].x),float(center.y+data.points[u32(i)].y),0},1,data.colors[u32(i)]});graphics.set_layout(VertexLayout::ScreenColor);submit(vm,Topology::LineStrip,u32(count-1),shapes.data(),sizeof(ColorVertex));return 0;
+    flush();if(!material(vm,false))return -2;TH13_DRAW_SPRITE(vm);graphics.set_depth_mask(false);auto& state=graphics.pipeline();state.color.operation=state.alpha.operation=ColorOperation::First;state.color.first=state.alpha.first={ArgumentSource::Diffuse};shapes.clear();for(i32 i=0;i<count;i++)shapes.push_back({{float(center.x+data.points[u32(i)].x),float(center.y+data.points[u32(i)].y),0},1,apply_draw_opacity(data.colors[u32(i)])});graphics.set_layout(VertexLayout::ScreenColor);submit(vm,Topology::LineStrip,u32(count-1),shapes.data(),sizeof(ColorVertex));return 0;
 }
-int AnmRenderer::draw(AnmVm& vm){
+int AnmRenderer::draw(AnmVm& vm) {
+    if (!vm.shot_effect_owner) return draw_vm(vm);
+    const u8 opacity = player_opacity[vm.shot_effect_owner];
+    // Match TH17: teammates' shots are subtler than their ships.
+    return draw_with_opacity(vm, opacity == 255 ? 255 : opacity / 4);
+}
+
+template<class Vertex>
+void AnmRenderer::submit_colored(AnmVm& vm, Topology kind, u32 count, const Vertex* data) {
+    if (!vm.shot_effect_owner || draw_opacity_ == 255) {
+        submit(vm, kind, count, data, sizeof(Vertex));
+        return;
+    }
+    std::vector<Vertex> faded(data, data + vertex_count(kind, count));
+    for (auto& vertex : faded) vertex.color = apply_draw_opacity(vertex.color);
+    submit(vm, kind, count, faded.data(), sizeof(Vertex));
+}
+
+int AnmRenderer::draw_vm(AnmVm& vm){
     if(anm_draw_probe.enabled){
         ++anm_draw_probe.calls;
         const auto& v0=vm.visual;
@@ -235,11 +273,11 @@ int AnmRenderer::draw(AnmVm& vm){
         return result;
     }
     if(vm.geometry.ribbon){flush();graphics.set_fog(true);const int result=mesh(vm);flush();graphics.set_fog(false);return result;}
-    const auto& v=vm.visual;if(vm.geometry.distortion){flush();if(!material(vm))return -2;TH13_DRAW_SPRITE(vm);graphics.set_depth_mask(false);graphics.set_layout(VertexLayout::ScreenColorUv);submit(vm,Topology::Fan,31,vm.geometry.distortion->vertices.data(),sizeof(AnmGeometryVertex));}
+    const auto& v=vm.visual;if(vm.geometry.distortion){flush();if(!material(vm))return -2;TH13_DRAW_SPRITE(vm);graphics.set_depth_mask(false);graphics.set_layout(VertexLayout::ScreenColorUv);submit_colored(vm,Topology::Fan,31,vm.geometry.distortion->vertices.data());}
     if((v.flags&3)!=3||(v.render_flags&0x20))return -1;const u32 mode=v.draw_mode();if(mode==8||mode==18){if(!(v.color>>24)&&!(v.secondary_color>>24))return -1;if(mode==18){flush();graphics.set_fog(true);}const int result=world_quad(vm);if(mode==18){flush();graphics.set_fog(false);}return result;}if(mode==24||mode==25)return mesh(vm);
     if(graphics.pipeline().depthWrite){flush();graphics.set_depth_mask(false);}if(mode>=15&&mode<=22)return shape(vm);if(mode<=3){if(!(v.color>>24)&&!(v.secondary_color>>24))return -1;return quad(vm,mode==0);}
     if(mode==4||mode==6){if(!(v.color>>24)&&!(v.secondary_color>>24))return -1;return projected_quad(vm,mode==6);}
-    if(mode==10||mode==23||mode>25)return 0;if(mode==9||mode==11||mode==12||mode==13||mode==14){if(mode!=11&&!(v.color>>24))return -1;const i32 count=vm.variables.integers[0];if(count<2||u32(count)>vm.geometry.screen_vertices.size()/2){error="Animation strip buffer unavailable";return -2;}flush();if(!material(vm))return -2;TH13_DRAW_SPRITE(vm);graphics.set_layout(VertexLayout::ScreenColorUv);submit(vm,mode==11?Topology::Fan:Topology::Strip,u32(count)*2-2,vm.geometry.screen_vertices.data(),sizeof(AnmGeometryVertex));return 0;}
+    if(mode==10||mode==23||mode>25)return 0;if(mode==9||mode==11||mode==12||mode==13||mode==14){if(mode!=11&&!(v.color>>24))return -1;const i32 count=vm.variables.integers[0];if(count<2||u32(count)>vm.geometry.screen_vertices.size()/2){error="Animation strip buffer unavailable";return -2;}flush();if(!material(vm))return -2;TH13_DRAW_SPRITE(vm);graphics.set_layout(VertexLayout::ScreenColorUv);submit_colored(vm,mode==11?Topology::Fan:Topology::Strip,u32(count)*2-2,vm.geometry.screen_vertices.data());return 0;}
     error="Animation drawing mode not yet implemented: "+std::to_string(mode);return -2;
 }
 // UP 批冲批纪律（f349/f61 双窗实证，蓝图 §8.9 诊断清单裁定）：原版 UP 批仅按

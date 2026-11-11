@@ -3,6 +3,20 @@ import assert from 'node:assert/strict';
 import {COOPERATIVE_SPECTATOR_MARKERS, SPECTATOR_STAGE_LIMITS, parseSpectatorStageEvent, SpectatorStageRelay} from '../src/spectator-stages.mjs';
 import {isSpectatorFrameForRoom} from '../src/spectator-frame.mjs';
 
+test('TH13 uses its own protocol for confirmed spectator input and stage headers',()=>{
+  const marker=COOPERATIVE_SPECTATOR_MARKERS.th13mp;
+  assert.equal(marker,0x4d);
+  assert.notEqual(marker,COOPERATIVE_SPECTATOR_MARKERS.th12mp);
+  for(const count of [2,3]){
+    assert.equal(isSpectatorFrameForRoom('th13mp-1234',input(marker,count,0),count),true);
+    assert.equal(isSpectatorFrameForRoom('th13mp-1234',input(COOPERATIVE_SPECTATOR_MARKERS.th12mp,count,0),count),false);
+    const stream=new SpectatorStageRelay(marker,count);
+    assert.equal(stream.accept(event(marker,count,{frame:0,stage:1,schema:1})),'checkpoint');
+    stream.accept(input(marker,count,0));
+    assert.equal(stream.next,1);
+  }
+});
+
 function event(marker, count, {kind = 1, frame = 600, stage = 4, serial = 1, checkpoint = 1, node = 2, slots = 1, schema = 7} = {}) {
   const b = Buffer.alloc(kind === 1 ? 44 : kind === 2 ? 40 : 32);
   b.set([69, marker, 83, 86, 2, kind, count, 0]);

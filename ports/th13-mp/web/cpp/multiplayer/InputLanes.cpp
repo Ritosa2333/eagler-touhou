@@ -1,7 +1,7 @@
 // TH13 MP 输入线路实现（M7）。归一化规则见 InputLanes.hpp 文件头。
 #include "InputLanes.hpp"
 
-#include "../game/GameInput.hpp"
+#include "../game/StageBattle.hpp"
 
 namespace th13::multiplayer {
 
@@ -19,6 +19,14 @@ bool InputLanes::Capture(std::uint32_t held, bool pause, Netplay::FrameInput& ou
     if (!Netplay::IsValidFrameInput(next)) return false;
     out = next;
     return true;
+}
+
+void InputLanes::ApplyTouch(StageBattle& battle, unsigned seat,
+                            const Netplay::FrameInput& input) {
+    auto& touch = battle.seats[seat].touch;
+    touch = {};
+    if (input.analogMode == Netplay::AnalogMode::DirectTouch)
+        touch = {input.unlimited ? 2 : 1, input.x, input.y};
 }
 
 bool InputLanes::Decode(const Netplay::FrameInput* frames, unsigned count,

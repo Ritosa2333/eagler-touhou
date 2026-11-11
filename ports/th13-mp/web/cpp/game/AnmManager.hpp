@@ -90,7 +90,7 @@ public:
     // 0x403800 模板拷贝只重置 time，不重置 IP；道具内嵌 VM 用此包装。
     bool bind_template_preserve_ip(AnmVm&,i32 id,i32 script);
     // game_coordinates：flags bit0 —— 位置从游戏坐标系平移 (+320,+16,0)。
-    u32 create(i32 id,i32 script,i32 layer=-1,u32 ordering=2,const Vec3& translation={},float anm_arg=0,bool game_coordinates=false);
+    u32 create(i32 id,i32 script,i32 layer=-1,u32 ordering=2,const Vec3& translation={},float anm_arg=0,bool game_coordinates=false,u8 shot_effect_owner=0);
     // 0x46f820 同路径，但按 0x403800 原语义保留模板 IP 与插值通道相位
     //（只重置 VM 计时器）。神霊拾取 0x438730 创建点需要此语义：模板预跑
     // 已把 op412 插值推进一拍，重放指令 0 会丢掉该相位。

@@ -992,17 +992,17 @@ void StageBattle::step_shots() {
     shots.resize(keep);
 }
 
-void StageBattle::begin_player_shot_geometry_snapshot() {
+void StageBattle::begin_player_shot_geometry_snapshot(i32 seat) {
     // M2 席位模式：快照权威在席位槽位（set_player_shot_geometry 的落盘
     // 目标）。begin 清同一存储，防止未被本帧 set 覆盖的陈旧快照被下一帧
     // consume 误读（generation/script/age 谓词之外的第二道保险）。
-    auto& geometry = seat_count >= 2 ? seats[size_t(active_seat)].shot_geometry
+    auto& geometry = seat_count >= 2 ? seats[size_t(seat < 0 ? active_seat : seat)].shot_geometry
                                     : shot_geometry_;
     for (auto& snapshot : geometry) snapshot.valid = false;
 }
 
 void StageBattle::set_player_shot_geometry(i32 slot, i32 age, i32 script, u32 generation,
-                                           const std::array<Vec3, 4>& quad) {
+                                           const std::array<Vec3, 4>& quad, i32 seat) {
     if (slot < 0) return;
     // M2 席位模式的快照落盘：post_chain_update（主链 Update 34）晚于
     // step_mp 的席位 copy-out（Update 20），写窗口会被下一帧 copy-in 用
@@ -1010,7 +1010,7 @@ void StageBattle::set_player_shot_geometry(i32 slot, i32 age, i32 script, u32 ge
     // 目标改为席位权威槽位：active_seat 此刻 = 帧尾观察席，与表现层
     // 遍历的 battle_->shots（窗口 = seats[active_seat] 副本）同源，下一帧
     // copy-in 自然带入窗口供 consume。单席窗口即权威存储，零变化。
-    auto& geometry = seat_count >= 2 ? seats[size_t(active_seat)].shot_geometry
+    auto& geometry = seat_count >= 2 ? seats[size_t(seat < 0 ? active_seat : seat)].shot_geometry
                                     : shot_geometry_;
     if (geometry.size() <= size_t(slot))
         geometry.resize(size_t(slot) + 1);
@@ -1158,7 +1158,7 @@ float StageBattle::query_enemy_damage(StageEnemy& state, float width, float heig
                 polar_xy(shot->angle, shortened, tip_x, tip_y);
                 polar_xy(shot->angle, 64.f, travel_x, travel_y);
                 if (!beam_hit_effect({float(shot->x + tip_x), float(shot->y + tip_y), 0},
-                                     {travel_x, travel_y, 0}, shot->angle)) {
+                                     {travel_x, travel_y, 0}, shot->angle, shot->owner_seat)) {
                     error_ = "Player beam hit effect failed";
                     return 0;
                 }
@@ -2820,9 +2820,8 @@ bool StageBattle::enable_seats(EclResourceProvider& provider, i32 count,
         if (seat > 0) {
             // 00441dd0 构造态复制（角色无关域）+ 按角色重载定标域。
             auto& state = seats[size_t(seat)];
-            const bool initialized = state.initialized;
             state = seats[0];
-            state.initialized = initialized;
+            state.initialized = true;
             state.character = character;
             state.hit_size = kPlayerHitSize[character];
             // 位置/输入沿复位（构造语义，R-B 起飞位 (0,400)/(0,51200)）。

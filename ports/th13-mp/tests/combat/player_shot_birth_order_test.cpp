@@ -162,7 +162,7 @@ TEST(marisa_registration_callback_shrinks_beam_and_uses_shot_age) {
     CHECK(fixture.battle.step(fixture.idle)); // advance the player clock gate
     i32 effects = 0;
     Vec3 effect_position{}, effect_displacement{};
-    fixture.battle.beam_hit_effect = [&](const Vec3& pos, const Vec3& move, float) {
+    fixture.battle.beam_hit_effect = [&](const Vec3& pos, const Vec3& move, float, i32) {
         ++effects; effect_position = pos; effect_displacement = move; return true;
     };
     PlayerShot beam;
