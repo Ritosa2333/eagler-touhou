@@ -1,0 +1,8 @@
+# Service and documentation text can use standard Git normalization.
+* text=auto
+*.bat text eol=crlf
+*.py text eol=lf
+
+# Network version manifests hash exact deployed bytes, including JS and JSON.
+/web/** -text
+/build/th01-native.exe -text

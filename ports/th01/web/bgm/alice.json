@@ -1,0 +1,11 @@
+{
+  "url": "alice.opus",
+  "loopStart": 0.013832199546485261,
+  "loopEnd": 97.9747619047619,
+  "sha256": "707cdfd907929a7f0088675861c612c4e199fd565013a6d888a6fd06796503c4",
+  "audioSha256": "8fe66d81dabd1bae2ef1bf5bd8ba2a0c2e2673a75ca364700a7fcd6c6e3f0232",
+  "codec": "opus",
+  "bytes": 796583,
+  "preset": "mdrv2-fmgen-opus64-48k-single-loop-headroom-v2",
+  "fadeSeconds": 2.417884615384615
+}

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>东方灵异传 · UDP 联机</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="netplay/lan.css"><link rel="stylesheet" href="site.css"><link rel="stylesheet" href="site-adapter.css"><link rel="stylesheet" href="room-ui.css"></head>
+<body data-room-game="01" class="shell room-page" data-page="room"><div id="site-header"></div><main>
+<header class="intro"><span class="eyebrow">HIGHLY RESPONSIVE TO PRAYERS / NETWORK</span><h1 id="network-title">局域网联机</h1><p>双人或三人合作，选择设置、加入房间并准备后直接进入游戏。每台设备用 ← →、Z、X、C 操作自己的座位；房主负责菜单和续关。</p></header>
+<section class="panel local-music-settings" aria-label="本机音乐">
+<label class="bgm-version">本机音乐 <select data-bgm-version-control aria-label="本机音乐版本"><option value="old">游戏原版</option><option value="new">幺乐团专辑版</option></select><small data-bgm-restart-note></small></label>
+<p class="small">仅影响自己的音乐，选择会自动保存在本机；游戏中切换会从头播放当前曲目。</p>
+</section>
+<section id="entry" class="panel">
+<h2>创建或加入房间</h2><div class="settings-grid">
+<label>人数<select id="players"><option value="2">双人</option><option value="3">三人</option></select></label>
+<label>难度<select id="rank"><option value="0">Easy</option><option value="1" selected>Normal</option><option value="2">Hard</option><option value="3">Lunatic</option></select></label>
+<label>阴阳玉<select id="count"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>6</option><option>8</option></select></label>
+<label>起始关卡<select id="startStage"><option value="normal">正常流程 · 从第 1 关开始</option></select></label>
+<label>网络<select id="network"><option value="lan">局域网</option><option value="public">公网</option></select></label>
+<label>连接<select id="transport"><option value="rtc">UDP 直连／打洞</option><option value="ws">TCP 服务器转发</option></select></label>
+<label>打洞策略<select id="ice"><option value="all">自动（TURN 可用时兜底）</option><option value="relay">强制 TURN</option></select></label>
+<label>输入缓冲<select id="delay"><option value="0">自动（推荐）</option><option value="1">1 步（低延迟稳定网络）</option><option value="2">2 步</option><option value="3">3 步</option><option value="4">4 步</option><option value="6">6 步</option><option value="9">9 步</option><option value="12">12 步</option></select></label>
+<label class="check"><input id="life-compensation" type="checkbox" checked>多玉生命补偿</label>
+</div><p id="network-help" class="small"></p><p id="balance" class="small"></p>
+<div id="entry-actions" class="room-actions"><button id="create">创建房间</button><input id="code" inputmode="numeric" maxlength="4" placeholder="四位房间号" aria-label="房间号"><button id="join">加入房间</button><button id="watch-room" type="button">观战</button><span id="watch-status" role="status"></span></div>
+<button id="save-settings" hidden>保存房间设置</button>
+</section>
+<section id="lobby" class="panel" hidden>
+<div class="room-heading"><h2 id="room-title"></h2><div>房间号 <strong id="room-code"></strong></div></div>
+<p id="room-settings"></p><p id="resource-status" class="muted" role="status">进入房间后预载核心、音效和音乐。</p><div id="members"></div>
+<div class="room-actions"><button id="swap">轮换座位</button><button id="settings">修改设置</button><button id="ready">准备</button><button id="start" disabled>开始联机</button><button id="leave">离开房间</button></div>
+</section>
+<section id="player" class="panel">
+<div class="toolbar"><span id="status" role="status">创建或加入房间</span><button id="sound">启用声音</button><button id="fullscreen">全屏</button><button id="pause-game">暂停请求 Esc</button><button id="continue-game" hidden>全员续关</button></div>
+<p id="seat-note" class="small"></p><p id="music-status" class="small">声音在本机播放，不影响同步。</p>
+<label class="small">本机音量 <input id="music-volume" type="range" min="0" max="100" value="35"></label>
+<div id="screen"><canvas id="canvas" width="640" height="400" tabindex="0" aria-label="联机游戏画面"></canvas><p id="cover">等待全员准备后由房主开始</p>
+<div class="net-touch" aria-label="触屏操作"><button data-bit="1">←</button><button data-bit="2">→</button><button data-bit="4">射击 Z</button><button data-bit="8">御币 X</button><button data-bit="4096">Bomb C</button></div>
+<div id="menu-touch" class="net-touch" hidden><button data-bit="16">↑</button><button data-bit="32">↓</button><button data-bit="64">确认／保存 Enter</button><button data-bit="128">返回 Esc</button></div></div>
+<p class="small">联机特有规则：幽灵移速减半；X 御币反弹的白弹可以伤害玩家，最多再弹回一次，之后被 X 挡住就消除。</p>
+<p id="menu-note" class="small"></p><div id="coop-hud"></div>
+<div id="fallback" hidden><p>本局已停止。请全员重新建房；打洞失败时可尝试已配置的 TURN 或 TCP 转发。</p><button id="retry">重新建房</button><button id="retry-ws">改用 TCP 转发</button></div>
+</section>
+<details><summary>连接与同步详情</summary><pre id="connection">尚未连接</pre><pre id="runtime"></pre></details>
+<p class="small">普通关均等待任意玩家射击后开球和倒计时。网络断线会停止本局；不支持断线重入、主机迁移或回滚。公网 UDP 使用 HTTPS，所有玩家打开同一个网址。</p>
+<footer class="footer"><a href="index.html">← 返回启动器</a><span>TH01 · HIGHLY RESPONSIVE TO PRAYERS</span></footer></main><script type="module" src="site-ui.js"></script><script type="module" src="netplay/app.js"></script><script type="module" src="bgm-version.js"></script><script type="module" src="replay/room-watch.js"></script><script type="module" src="room-ui.js"></script></body></html>

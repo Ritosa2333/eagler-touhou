@@ -1,0 +1,11 @@
+{
+  "url": "st3.opus",
+  "loopStart": 0.013832199546485261,
+  "loopEnd": 151.54095238095238,
+  "sha256": "42d939ca43ef63fc7deb19e5915fb80703b83d57bdc66e0745b1a012a14033a5",
+  "audioSha256": "4cb31361ae316fabb9c5f68c49cb61d2bca6664a6523d57d208a6fc6a3927fd1",
+  "codec": "opus",
+  "bytes": 1231965,
+  "preset": "mdrv2-fmgen-opus64-48k-single-loop-headroom-v2",
+  "fadeSeconds": 1.905
+}

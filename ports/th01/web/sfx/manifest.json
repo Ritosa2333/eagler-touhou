@@ -1,0 +1,83 @@
+{
+  "sampleRate": 44100,
+  "channels": 2,
+  "timerB": 196,
+  "sounds": [
+    {
+      "id": 1,
+      "frames": 13805,
+      "peak": 2737,
+      "sha256": "c9ff80b4bdc5ac33fc37518dca83ca179efc38c5eca9aae459276a941ab27f87"
+    },
+    {
+      "id": 2,
+      "frames": 18843,
+      "peak": 967,
+      "sha256": "46e7460b574ae4eb824631da8fd75a1a401a6eb1a3cece6471531c1e8c7a86a5"
+    },
+    {
+      "id": 3,
+      "frames": 83493,
+      "peak": 2737,
+      "sha256": "f468c5cfcbc7dbe6b3f5591865eed1a22d0c39c06f670465e8ba829e88d5f3cf"
+    },
+    {
+      "id": 4,
+      "frames": 44031,
+      "peak": 1368,
+      "sha256": "d73013c46913e20bfdfcf230e91ce53b385dc3f3e44f703e65dd56641f44df83"
+    },
+    {
+      "id": 5,
+      "frames": 64182,
+      "peak": 2737,
+      "sha256": "d88688183e6e52160d82f7a13f0b61a9a9954b94284c988e1fc93da7695647d2"
+    },
+    {
+      "id": 8,
+      "frames": 83493,
+      "peak": 1935,
+      "sha256": "4577581af33104d4bd04f8a18ea3cfb8478b7331b7384874fc2b1d76b98f48ac"
+    },
+    {
+      "id": 9,
+      "frames": 18843,
+      "peak": 5474,
+      "sha256": "dab311221617f771c99b10fa831d7dd408ad7da8cc544058e5d333690890f593"
+    },
+    {
+      "id": 11,
+      "frames": 44031,
+      "peak": 967,
+      "sha256": "71d9b21396dbba83e72bab0d8c8e11d248f32b07af3dcb8318be5fb6a8aa1bf9"
+    },
+    {
+      "id": 14,
+      "frames": 23881,
+      "peak": 2737,
+      "sha256": "7695df27f3dc290185087066944f493b084e91350b3285e969183ae78950d4e4"
+    },
+    {
+      "id": 15,
+      "frames": 79295,
+      "peak": 2737,
+      "sha256": "fe612489805b466bf801303bf268b9329d72f79a25eaa3a2fde49086c104a053"
+    },
+    {
+      "id": 16,
+      "frames": 7928,
+      "peak": 2737,
+      "sha256": "64a88a2c6f000f90bf38476795346380c17a26c9e484685a22a88e9533a68188"
+    },
+    {
+      "id": 17,
+      "frames": 83493,
+      "peak": 2737,
+      "sha256": "695de9cd5818ae214b827432e6663a37c14af27c6059b53fc91531a745ac96a3"
+    }
+  ],
+  "driverSha256": "e14f26007f1a71d747f50deeb0f338065466e87ad142268416a1bcbb14b8ae7d",
+  "fmgenDllSha256": "c7eb755d84f866dd5953bd875e65649e749635cb56eed6f8d159274140adaf22",
+  "mdeSha256": "f859ba43f53e17bc917ceb7d860b9455bad471fd5bd4b9f73511c08f832e4027",
+  "renderer": "original MDRV2 ESET/EPLAY/Timer-B, FMGEN OPNA; offline only"
+}

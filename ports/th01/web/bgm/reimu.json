@@ -1,0 +1,11 @@
+{
+  "url": "reimu.opus",
+  "loopStart": 6.3251473922902495,
+  "loopEnd": 101.03392290249433,
+  "sha256": "3569dea86dab503318a1b3884c0933d4a7b5280be08b2e278a789c5de0a735bf",
+  "audioSha256": "4cf992ca8b3ce97d21ed5631ddc16239e6e8e11966d924518ea4a227b062c688",
+  "codec": "opus",
+  "bytes": 821636,
+  "preset": "mdrv2-fmgen-opus64-48k-single-loop-headroom-v2",
+  "fadeSeconds": 2.088173076923077
+}
