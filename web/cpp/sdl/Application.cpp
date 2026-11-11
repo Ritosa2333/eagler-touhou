@@ -682,7 +682,11 @@ bool ApplicationState::begin_title(i32 reason) {
     replay_active = false;
     replay_finished = false;
     replay_cursor.reset();
-    if (!audio_device.queue_music(2, -1, "th13_00.wav")) return fail(audio_device.error);
+    // 0x454050 case0（0x45406f）：结算屏建面即选 Player's Score（th128_08，
+    // 0x4abb2c）。reason==3（通关结算）只有结算屏一条消费路径；其余进标题
+    // 都是主菜单面（th13_00）。
+    if (!audio_device.queue_music(2, -1, reason == 3 ? "th128_08.wav" : "th13_00.wav"))
+        return fail(audio_device.error);
     current_destination = i32(Destination::Title);
     title = std::make_unique<TitleScene>(progress, selection, animations, *this, scheduler,
                                          TitleSceneResources{});

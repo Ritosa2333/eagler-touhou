@@ -78,6 +78,16 @@ try {
       key(s, d) { window.mod._th13_key(s, d); },
       pump(n) { for (let i = 0; i < n; ++i)
         if (!window.mod._th13_debug_frame()) throw new Error(window.__e2e.err()); },
+      audio() {
+        const m = window.mod, a = {...m.th13Audio};
+        const fmt = m.FS.readFile('/assets/thbgm.fmt');
+        const offset = a.track * 52;
+        a.filename = '';
+        if (a.track >= 0 && offset + 16 <= fmt.length)
+          for (let i = offset; i < offset + 16 && fmt[i]; ++i)
+            a.filename += String.fromCharCode(fmt[i]);
+        return a;
+      },
     };
   });
   // 结算覆盖层直入（生产 debug 入口）：Reimu/Normal 无续关通关态。
@@ -109,6 +119,12 @@ try {
     log('progress', JSON.stringify({pumps, probe: r.p}));
     if (pumps > 200000) throw Error('ending did not finish');
   }
+  const scoreAudio = await page.evaluate(() => {
+    window.__e2e.pump(10); return window.__e2e.audio();
+  });
+  mark('result-audio', scoreAudio);
+  if (scoreAudio.filename !== 'th128_08.wav' || scoreAudio.paused || scoreAudio.failed)
+    throw Error('Result screen must play Player\'s Score: ' + JSON.stringify(scoreAudio));
   await page.screenshot({path: join(outDir, 'result-name.png')});
 
   // 结算名屏（debug 态 rank<0 = 锁定）：Z → case3 → 无回放保存 → 回主菜单。
@@ -130,6 +146,12 @@ try {
     if (r.done) { mark('back-to-main', {pumps, probe: r.p}); break; }
     if (pumps > 220000) throw Error('result screen did not return to main');
   }
+  const titleAudio = await page.evaluate(() => {
+    window.__e2e.pump(10); return window.__e2e.audio();
+  });
+  mark('title-audio', titleAudio);
+  if (titleAudio.filename !== 'th13_00.wav' || titleAudio.paused || titleAudio.failed)
+    throw Error('Leaving results must restore title music: ' + JSON.stringify(titleAudio));
   await page.screenshot({path: join(outDir, 'back-to-main.png')});
   await writeFile(join(outDir, 'report.json'),
                   JSON.stringify({timeline}, null, 2) + '\n');
