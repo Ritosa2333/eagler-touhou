@@ -113,8 +113,10 @@ function isRecord(value: unknown): value is UnknownRecord {
 }
 
 function validMusicFileName(value: unknown, extension: "mid" | "ogg"): value is string {
+  // "ogg" is the installed recorded-music component; TH14 keeps lossless FLAC.
+  const suffix = extension === "ogg" ? "(?:ogg|flac)" : extension;
   return typeof value === "string" &&
-    new RegExp(`^[A-Za-z0-9][A-Za-z0-9._-]*\\.${extension}$`, "i").test(value);
+    new RegExp(`^[A-Za-z0-9][A-Za-z0-9._-]*\\.${suffix}$`, "i").test(value);
 }
 
 function validMusicFiles(value: unknown, extension: "mid" | "ogg", allowEmpty: boolean): value is string[] {

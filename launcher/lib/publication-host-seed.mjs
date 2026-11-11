@@ -4,7 +4,7 @@ import { HOST_PROTOCOL, PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
 // Build-time seed only. It intentionally lacks Runtime/content identities and
 // therefore is not yet a Site Manifest. package-server.mjs materializes those
 // identities before validating and publishing site-manifest.json.
-export function createPublicationHostSeed(profile) {
+export function createPublicationHostSeed(profile, games = Object.keys(PRODUCT_CONTENT)) {
   if (typeof profile !== "string" || !profile || profile === "web-development") {
     throw new Error("publication host seed requires a non-development profile");
   }
@@ -12,7 +12,8 @@ export function createPublicationHostSeed(profile) {
     protocol: HOST_PROTOCOL,
     profile,
     shared: {},
-    games: Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game, product]) => {
+    games: Object.fromEntries(games.map(game => {
+      const product = PRODUCT_GAMES[game];
       const content = PRODUCT_CONTENT[game];
       if (!content) throw new Error(`${game}: product content declaration is missing`);
       return [game, {

@@ -21,6 +21,30 @@ class Context {
   createBufferSource() { return new Node(this); }
 }
 
+test('zero music and effects mute a combined SDL stream before and after attachment', () => {
+  const context = new Context();
+  const processor = context.createScriptProcessor();
+  processor.connect(context.destination);
+  const runtime = {AudioContext: Context, Module: {SDL3: {
+    audioContext: context, audio_playback: {scriptProcessorNode: processor},
+  }}};
+  const mix = createRuntimeAudioMix();
+  mix.set(0, 0);
+  mix.attach(runtime, 'th14');
+  const [output] = processor.outputs;
+  expect(output.gain.value).toBe(0);
+  mix.set(1, 1);
+  expect(output.gain.value).toBe(1);
+  mix.set(0, 0);
+  expect(output.gain.value).toBe(0);
+  processor.disconnect();
+  processor.connect(context.destination);
+  mix.refresh();
+  expect([...processor.outputs]).toEqual([output]);
+  expect(output.gain.value).toBe(0);
+  mix.detach();
+});
+
 test('a mixed Runtime stays audible until independent effect output is confirmed', () => {
   const context = new Context();
   const processor = context.createScriptProcessor();

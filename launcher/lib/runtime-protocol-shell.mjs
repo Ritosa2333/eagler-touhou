@@ -14,7 +14,7 @@ export function assertRuntimeNavigationEpochShell(source, game, variant) {
   if (!/\.epoch\s*(?:===|!==)\s*[A-Za-z_$][\w$]*/.test(source)) {
     throw new Error(`${game} ${variant}: Runtime shell is stale: Host command epoch rejection is missing`);
   }
-  if (!/postMessage\s*\(\s*\{[^}]{0,220}\bepoch\b/s.test(source)) {
+  if (!/postMessage\s*\(\s*\{[^}]{0,220}(?:\bepoch\b|\.\.\.navigation\.fields)/s.test(source)) {
     throw new Error(`${game} ${variant}: Runtime shell is stale: Runtime messages do not echo the navigation epoch`);
   }
   return true;
@@ -39,7 +39,8 @@ export function assertRuntimeProtocolSources(sources, game, variant) {
     throw new Error(`${game} ${variant}: Runtime protocol sources are missing`);
   }
   const texts = sources.map(item => typeof item === "string" ? item : item?.source).filter(Boolean);
-  const hasNavigationShell = texts.some(source => {
+  // Directory adapters can share the epoch envelope/guard in a declared module.
+  const hasNavigationShell = [texts.join("\n")].some(source => {
     try { assertRuntimeNavigationEpochShell(source, game, variant); return true; }
     catch { return false; }
   });

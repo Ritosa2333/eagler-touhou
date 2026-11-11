@@ -53,6 +53,7 @@ return parentWindow.__eaglerPrepareManagedRuntimeDataV1({game,generation:"fixtur
 export async function writeSyntheticRuntimeRelease(root, {preloadBuilds = {}} = {}) {
   const games = {};
   for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
+    if (!PRODUCT_CONTENT[game]) continue;
     const stem = runtimeStem(game);
     const preload = product.dataProvider === "emscripten-preload" ? preloadFixture(game) : null;
     const dataLayout = preloadBuilds[game]

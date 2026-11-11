@@ -5,6 +5,18 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { validateRuntimeReleaseManifest, verifyRuntimeRelease } from "../lib/runtime-release.mjs";
 import { writeSyntheticRuntimeRelease } from "../tests/support/runtime-release-fixture.mjs";
+import {assertRuntimeProtocolSources} from '../lib/runtime-protocol-shell.mjs';
+
+test('directory epoch helper stays inside the declared protocol sources', () => {
+  const shell = `const navigation=runtimeEpochContract(game,query.get('runtimeEpoch'));
+parent.postMessage({protocol,game,...navigation.fields,event:'ready'},location.origin);
+window.parent.__eaglerPrepareManagedRuntimeDataV1({game,epoch});`;
+  const helper = `function runtimeEpochContract(game,epoch) {
+return {fields:{epoch},accepts(message){return message.epoch===epoch}};}`;
+  assert.doesNotThrow(() => assertRuntimeProtocolSources([shell, helper], 'th14', 'normal'));
+  assert.throws(() => assertRuntimeProtocolSources([shell], 'th14', 'normal'), /navigation epoch protocol contract is missing/);
+  assert.throws(() => assertRuntimeProtocolSources([helper], 'th14', 'normal'), /navigation epoch protocol contract is missing/);
+});
 
 test("runtime release", async () => {
 /** L2 artifact contract. Builds a synthetic all-products Runtime Release and

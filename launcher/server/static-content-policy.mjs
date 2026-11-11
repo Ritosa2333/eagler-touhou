@@ -16,6 +16,7 @@ const MIME_BY_EXTENSION = new Map([
   [".otf", "font/otf"],
   [".woff2", "font/woff2"],
   [".ogg", "audio/ogg"],
+  [".flac", "audio/flac"],
   [".wav", "audio/wav"],
   [".png", "image/png"],
   [".jpg", "image/jpeg"],

@@ -549,7 +549,7 @@ if (!hostedResources && !hostManifestPath) {
 }
 const manifest = hostManifestPath
   ? validateSiteManifest(readCompatibleSiteManifest(JSON.parse(await readFile(hostManifestPath, "utf8"))))
-  : createPublicationHostSeed(buildProfile);
+  : createPublicationHostSeed(buildProfile, gameIds);
 if (externalResources && manifest.shared.resourceMode !== RESOURCE_MODE_HOSTED) {
   throw new Error("external packaging requires a Site Manifest from a hosted resource publication");
 }
