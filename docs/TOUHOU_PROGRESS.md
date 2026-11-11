@@ -82,17 +82,17 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++／SDL3／Wasm 实现进行中，整作 1:1 尚未完成。当前[游戏源码](https://github.com/AdingApkgg/thp/commit/e6b15d27768ee4da293c81c3c239e3d42880020b)已部署到 [TH14 测试站](https://wth.saop.cc/)，[网站接入 PR #233](https://github.com/Ritosa2333/eagler-touhou/pull/233)待上游合入。原作 DATA、FLAC 音乐与不可变 Runtime 分开提供。
+独立 C++／SDL3／Wasm 实现进行中，整作 1:1 尚未完成。当前[游戏源码](https://github.com/AdingApkgg/thp/commit/33155d334f7c39d9dc433b2b478f846a385a21bc)已部署到 [TH14 测试站](https://wth.saop.cc/)，[网站接入 PR #233](https://github.com/Ritosa2333/eagler-touhou/pull/233)待上游合入。原作 DATA、FLAC 音乐与不可变 Runtime 分开提供。
 
-当前修正包括：Overlay8 后取得初次 Control 发布；工作线程持有并复用暂停菜单；暂停读取速率 Control 时钟；正常 Quit 完成保存／同步；自动演示按 Control 的 3840／3900 时钟渐隐与返回。最新 Control 加载分支写回 `flags | 0x80` 后仅停止自身尾部，`0x10/0x20/0x40` 分支停止后续 Main 回调，普通游戏时长也按原版 Control 计数位置累加。
+最新修正是 mode8 非默认分辨率的显示缩放和两种原点传递。[原版／C++ 对照](https://github.com/AdingApkgg/thp/blob/33155d334f7c39d9dc433b2b478f846a385a21bc/docs/porting/TH14_MODE8_DISPLAY_SPACE_NOV12.md)覆盖六个尺寸、resolution0–7、三种原点分支、dirty／freeze／parent 组合，共 4,608 组声明输入；矩阵函数和实际绘制调用各比较 152,064 个字，均逐位相同，旧实现各有 3,520 组失败。本组旋转输入均为零，尚不代表非默认尺寸 GPU 整帧通过。TH13／TH16 四个相关编译产物与修改前相同；141 个游戏单元及 146 个浏览器单元重新编译。
 
-[最新原版／C++ 对照](https://github.com/AdingApkgg/thp/blob/main/docs/porting/TH14_CONTROL_MAIN_STOP_NOV12.md)覆盖 96 个声明序列、183 次 Control 轮次与 9 次下一 Supervisor 返回检查，旧实现的 360 处比较失败降为零。另有 14 例演示时钟、5 例 Overlay 接入和六次自然演示／23,523 次 Player 回调回归。141 个游戏单元及 146 个浏览器单元全量编译，TH12／13／16 六个预处理翻译单元不变。这些是声明标志／速率及有限流程对照，不增加整作或完整模式通过数。
+已有修正包括 Overlay8 后取得初次 Control 发布、工作线程复用暂停菜单、暂停读取速率 Control 时钟、正常 Quit 保存／同步，以及 Control 提前返回和演示时钟。原版 Control 声明序列／有限流程对照保持各自范围。当前 C++ 正常 Quit 保存的原版分数／配置可逐字节保留，原版编解码器也能逐字节往返当前新保存文件；全存档路径和当前浏览器持久化仍待分别验收。
 
-[当前发布验收](https://github.com/AdingApkgg/thp/blob/main/docs/porting/th14-control-stop-release-nov12.json)：代次 `788ed625e1af84c95d881aa95c4283ef400943712ad384bbcb376acf33151403`，Wasm SHA-256 `3adc82472741fe33fdfbc00fc5d28cb94d7cd91972726c643a5770b1ac6d7c27`。源站与公网全部 39 个 Runtime 文件哈希相符，保留完整性校验及 `no-transform`。实际 TS Arch 服务经 SSH 转发的浏览器入口已观察更新校验后重启、Normal 灵梦 B 开局／射击／Bomb、暂停恢复后再次暂停、返回标题及正常 Quit，音乐与音效均为 0。此轮未采集完整控制台日志；公网源直接浏览器运行及全流程仍需分别验收。
+[当前发布记录](https://github.com/AdingApkgg/thp/blob/main/docs/porting/th14-mode8-display-release-nov12.json)：代次 `ff5314f67f77f15c24f70358f85771dbd6a5e059faf8a59e8d03d3380fddc2f3`，Wasm SHA-256 `ddc22a7aa09a8284da53d40c9db1dfca3198659e890a9a7097a75d89194d9158`，源站与公网全部 39 个 Runtime 文件哈希相符，保留完整性校验、COOP／COEP 及 `no-transform`。此前 e6b15d27 版本经实际 TS Arch 服务 SSH 转发的浏览器验收覆盖 Normal 灵梦 B 开局／射击／Bomb、暂停恢复、返回标题及正常 Quit，音乐与音效为 0。当前版本浏览器接口连接超时，尚未取得新版本 UI 验收；未将旧版本验收继承为当前通过。
 
-首要剩余项仍是灵梦 B Normal 的动画 RNG／弹状态和完整图像。最新一次实际 Application 手动录像首帧为 `[39319,2588,4607,0]`，保留原版为 `[20713,2612,4607,0]`；该样本仍差 24 次 SCRIPT 调用，完整图像 267,510 像素不同。旧 282,468 像素反例及旧长记录失败保留，不能由不同物理加载调度的图像数量变化认定改进。已有弹槽诊断把六处退休差异联系到脚本旋转角及 RNG 相位，不以改动弹位移、裁剪或补随机次数消除差异。
+当前版本一次真实 Application／GLES 冷启动在第一个 Player Present 停止：76 个活动 VM 的完整 303 项快照与修复前默认尺寸样本逐字节相同，两次完整画面有 37 个差异像素，范围落在 FPS 字样。当前画面对保留原版仍有 197,644 个像素不同，SCRIPT 调用仍差 24 次，严格失败。此前原版解释器及实际 GPU 诊断已定位加载背景 UV 的影响，但固定补帧、补随机调用和原版捕获反馈均未进入生产引擎；不同物理加载调度样本的像素数量不作为进度百分比。
 
-完整 VM／原始身份、异步加载及换关读写顺序、全部自机／难度和完整录像、普通完整流程／存档、整局原版图像及最终 PCM 继续逐项验收。加载动画的 397／1,127 快照逻辑组件、已完成的历史模式与其他有限样本均保留各自版本及范围，不继承为当前整作通过。[此前分项记录](https://github.com/AdingApkgg/eagler-touhou/blob/0f0d43a4fe2bdb1df1764a91202c51175465a95f/docs/TOUHOU_PROGRESS.md)保存在固定历史版本，原始游戏资产和运行二进制不进入 Git。
+首要剩余项仍是灵梦 B Normal 动画 RNG／弹状态及真实加载交接；相机缓存、全部自机／难度和完整录像、普通完整流程／存档、原版整局图像及最终 PCM 继续验收。历史模式与逻辑组件不继承为当前整作通过。[此前分项记录](https://github.com/AdingApkgg/eagler-touhou/blob/0f0d43a4fe2bdb1df1764a91202c51175465a95f/docs/TOUHOU_PROGRESS.md)保存在固定版本，原始游戏资产和运行二进制不进入 Git。
 
 ## [th15] 東方紺珠伝 v1.00b
 
