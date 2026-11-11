@@ -122,6 +122,14 @@ public:
     // relay 连接（RTC/relay 竞速在 transport 内收敛）。
     bool Connect(const char* relay_url);
     bool Connected() const { return runtime_.Connected(); }
+    // 观众连接（M9/P6：公共观战——只收流；世界驱动由宿主经
+    // SpectatorStep 消费 playback 历史）。
+    bool ConnectSpectator(const char* relay_url, const char* spectator_id) {
+        if (!active_) return false;
+        return runtime_.ConnectSpectator(relay_url, spectator_id);
+    }
+    bool Spectator() const { return runtime_.Spectator(); }
+    NetplayRuntime& Runtime() { return runtime_; }  // 观战导出面转发
 
     // 帧泵（每浏览器帧）：信道收发 + HELLO/READY 门推进。
     bool Pump(std::uint64_t now_ms);
@@ -343,6 +351,12 @@ public:
     // Record 调用一次（inputs = 已确认的全席输入）。默认空 = 零变化。
     std::function<void(std::uint32_t, const std::array<Netplay::FrameInput, 3>&)>
         confirmed_sink;
+    // M9/P6：观战帧记录观察（发布端）。OnFrameSimulated 每落账一帧调用
+    // 一次（frame + 本帧决策输入）。宿主在回调内查关头需求、捕获
+    // StageEntry 并转发 NetplayRuntime::RecordSpectatorFrame。默认空 =
+    // 零变化。回调返回 false = 记录被拒（发布线退役，不阻断模拟）。
+    std::function<bool(std::uint32_t, const std::array<Netplay::FrameInput, 3>&)>
+        spectator_sink;
 
 private:
     NetplayRuntime runtime_;

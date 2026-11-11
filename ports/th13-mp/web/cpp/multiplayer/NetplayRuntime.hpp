@@ -12,10 +12,15 @@
 #include <eagler/netplay/NetplayCore.hpp>
 #include <eagler/netplay/NetplaySession.hpp>
 #include <eagler/netplay/SessionChannel.hpp>
+#include <eagler/netplay/SpectatorStagePlayback.hpp>
+#include <eagler/netplay/SpectatorStagePublisher.hpp>
+#include <eagler/netplay/SpectatorStageView.hpp>
 
 #include <array>
 #include <cstdint>
+#include <deque>
 #include <string>
+#include <vector>
 
 namespace th13::multiplayer {
 
@@ -51,8 +56,57 @@ public:
     static Netplay::CoreConfig CoreConfigFor(const SessionSetup& setup);
 
     // relay URL（ws(s)://…）：Connect 后 RTC/relay 竞速在 frame0 前收敛。
+    // stageSpectatorHistory=true：席 0 保留观战历史中继线（发布端）。
     bool Connect(const char* relay_url);
     void Close() { transport_.Close(); }
+
+    // ---- M9/P6：公共观战面（对齐 th12 NetplayRuntime 同名接口语义）----
+    // 观众连接（relay 观战 WebSocket；id = 观众身份）。观众端只收不发，
+    // 不参与 HELLO/READY 门；会话身份由 spectator-session 通告携带。
+    bool ConnectSpectator(const char* relay_url, const char* spectator_id);
+    bool Spectator() const { return spectator_; }
+    // 观众端：收流（Pump 内驱动）+ 回放控制。StagePlaybackReady 后
+    // SpectatorState/Control 才有效。
+    bool StagePlaybackReady() const {
+        return spectator_ && stage_received_ && stage_playback_.Ready();
+    }
+    Netplay::SpectatorStagePlayback& StagePlayback() { return stage_playback_; }
+    const char* SpectatorState() {
+        return StagePlaybackReady() ? stage_view_.State(stage_playback_) : nullptr;
+    }
+    bool SpectatorControl(const char* run, const char* action, std::uint32_t frame) {
+        return StagePlaybackReady() &&
+               stage_view_.Control(stage_playback_, run, action, frame);
+    }
+    // 发布端（本地席 0）：每执行帧 Record（initializer = 关头 StageEntry
+    // 编码；同关 NotRequired 时空）；Publish 到 min(confirmed, simulated)。
+    // 返回 false = 记录被拒（发布线退役，调用方 StopSpectators）。
+    bool RecordSpectatorFrame(std::uint32_t frame, std::uint32_t stage,
+                              const Netplay::FrameInput* inputs, unsigned count,
+                              const std::vector<std::uint8_t>* initializer);
+    // 发布冲账（Pump 尾调用；只发确认历史）。
+    bool PublishSpectator(std::uint32_t confirmed, std::uint32_t simulated);
+    // 终局 End 事件（观众端进结果面）。
+    bool FinishSpectator(std::uint32_t end_frame);
+    bool SpectatorPublishFailed() const { return publish_failed_; }
+    // 关头需求查询（发布端宿主决定是否捕获 StageEntry）。发布器未建立
+    //（首帧前）恒 NotRequired——宿主照常记录，RecordSpectatorFrame 首个
+    // initializer 到达时建立发布器。
+    auto SpectatorCheckpointNeeded(std::uint32_t frame, std::uint32_t stage) const {
+        if (!publish_started_ || publish_failed_) {
+            static constexpr auto kIdle =
+                Netplay::SpectatorStagePublisher::CheckpointRequirement::NotRequired;
+            return kIdle;
+        }
+        return stage_publisher_.NeedsCheckpoint(frame, stage);
+    }
+    // 观众端收流状态（deadline 观测；宿主超时面）。
+    std::uint32_t SpectatorBacklog() const {
+        return static_cast<std::uint32_t>(spectator_frames_.size());
+    }
+    bool SpectatorStreamEnded() const {
+        return stage_received_ && stage_playback_.History().Ended();
+    }
 
     // 帧泵：信道收发 + 门推进。world_ready = 宿主世界可用（frame0 后）。
     bool Pump(bool world_ready, std::uint64_t now_ms);
@@ -182,6 +236,9 @@ public:
 
 private:
     void MarkDesync(std::uint32_t frame);
+    // 观众端收流（Pump 的 spectator_ 分支）：transport 收包 → 事件/帧
+    // 解码 → stage_playback_。超时/失配置终态 error_。
+    bool DrainSpectator(std::uint64_t now_ms);
 
     SessionSetup setup_{};
     bool configured_ = false;
@@ -200,6 +257,18 @@ private:
     std::uint32_t digest_mismatch_frame_ = 0;
     std::uint64_t digests_sent_ = 0, digests_received_ = 0, desync_detected_ = 0;
     std::string error_;
+    // ---- M9/P6：观战面 ----
+    bool spectator_ = false;             // 观众端（ConnectSpectator 置位）
+    bool stage_received_ = false;        // 首个 stage 事件已到
+    bool publish_started_ = false;       // 发布器已 Reset（首个 initializer）
+    bool publish_failed_ = false;        // 发布线退役（不可恢复）
+    std::uint64_t spectator_deadline_ms_ = 0;  // bootstrap/活跃超时面
+    std::uint32_t spectator_recorded_ = 0;     // 发布端已 Record 前沿
+    std::uint32_t receive_frame_ = 0;           // 旧输入流帧号（无 stage 事件前）
+    Netplay::SpectatorStagePublisher stage_publisher_{};
+    Netplay::SpectatorStagePlayback stage_playback_{};
+    Netplay::SpectatorStageView stage_view_{};
+    std::deque<Netplay::SpectatorFramePacket> spectator_frames_{};  // 旧输入流缓冲
 };
 
 }  // namespace th13::multiplayer
