@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "signature": "TH03SOLOASSIST1!",
+  "mailboxSize": 44,
+  "url": "native/solo-main.exe",
+  "sha256": "2424c7d484143599d71d1204e23c2aec9ecb3dce4f425688e81e8d2e62fdc219",
+  "bytes": 131554,
+  "originalUrl": "native/original-main.exe",
+  "originalSha256": "f41fde47ea36bf4d985ff9127b67fe93d5ecb58cc36e7cffab86959db7f2ce6b",
+  "insertImageOffset": 59632,
+  "insertSize": 672,
+  "codeSegment": 2414,
+  "dataSegment": 7552,
+  "mailboxCsOffset": 21026,
+  "hooks": [
+    {
+      "imageOffset": 38782,
+      "original": "e8b70c",
+      "target": 21127
+    },
+    {
+      "imageOffset": 38703,
+      "original": "e84600",
+      "target": 21070
+    },
+    {
+      "imageOffset": 56010,
+      "original": "e851fc",
+      "target": 21282
+    },
+    {
+      "imageOffset": 38978,
+      "original": "e8602f",
+      "target": 21236
+    }
+  ],
+  "fields": {
+    "ticks": 16,
+    "ds": 20,
+    "phase": 22,
+    "command": 23,
+    "seat": 24,
+    "ack": 25,
+    "focus": 26,
+    "points": 27,
+    "generation": 28,
+    "alwaysPoint": 31,
+    "touch": 32
+  }
+}

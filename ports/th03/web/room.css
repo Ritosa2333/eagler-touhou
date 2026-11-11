@@ -1,0 +1,40 @@
+body.shell:has(#entry){max-width:1440px;padding-inline:max(28px,env(safe-area-inset-left)) max(28px,env(safe-area-inset-right))}
+body.shell:has(#entry) .intro{display:flex;align-items:end;justify-content:space-between;gap:28px;margin:42px 0 26px}
+body.shell:has(#entry) .intro h1{font-size:clamp(38px,5vw,62px);margin:6px 0 0}
+body.shell:has(#entry) .intro p{font-size:15px;max-width:430px;margin:0 0 5px;text-align:right}
+body.shell:has(#entry) #entry{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:0 0 18px;padding:0;border:0;background:none}
+body.shell:has(#entry) #entry>div{display:flex;flex-direction:column;align-items:flex-start;min-height:188px;padding:26px 28px;border:1px solid #ffffff14;border-radius:20px;background:rgba(32,33,30,.94)}
+body.shell:has(#entry) #entry>div+div{border-left:1px solid #ffffff14;padding-left:28px}
+body.shell:has(#entry) #entry h2{font-size:22px;margin:0 0 5px}
+body.shell:has(#entry) #entry p{margin:0 0 18px;color:var(--muted);font-size:13px}
+body.shell:has(#entry) #entry button{margin-top:auto;min-width:160px;min-height:48px}
+body.shell:has(#entry) #entry .join-row{width:100%;max-width:460px;margin-top:auto}
+body.shell:has(#entry) #entry .join-row input{background:#11120f;border-color:#ffffff20}
+body.shell:has(#entry) #lan-status{margin:0 0 18px;background:#292a26;border-radius:16px;padding:15px 20px;color:#e9e3db;font-size:13px}
+body.shell:has(#entry)>details{border:0;border-radius:0;margin:0 0 22px;padding:0;background:none;color:var(--muted)}
+body.shell:has(#entry)>details>summary{display:inline-flex;min-height:38px;align-items:center;padding:0 14px;border-radius:12px;background:#30312cb8;color:var(--paper);font-size:13px}
+body.shell:has(#entry)>details[open]{padding:16px 20px;border:1px solid #ffffff14;border-radius:16px;background:#20211ebf}
+body.shell:has(#entry) #lobby{margin-top:14px;padding:22px 24px;border-radius:22px;background:rgba(32,33,30,.94);border:1px solid #ffffff14}
+body.shell:has(#entry) #lobby #room-info{margin:0 0 18px;padding-bottom:18px;border-bottom:1px solid #ffffff12;font-size:18px}
+body.shell:has(#entry) #lobby .seat-row{margin:0 0 10px}
+body.shell:has(#entry) #lobby .seat-row button{background:#292a26;border:1px solid #ffffff14;border-radius:14px}
+body.shell:has(#entry) #lobby .seat-row button[aria-pressed=true]{background:var(--pink);color:var(--wine);border-color:transparent}
+body.shell:has(#entry) #lobby #room-settings{margin:22px 0;border:1px solid #ffffff12;background:#292a26;border-radius:16px}
+body.shell:has(#entry) #lobby .row{border-top:1px solid #ffffff12;padding-top:20px}
+body.shell:has(#entry) .loadout-panel{margin:20px 0;padding:24px;border:1px solid #ffffff14;border-radius:18px;background:#292a26}
+body.shell:has(#entry) .section-kicker{color:#d898a8;font-size:11px;font-weight:750;letter-spacing:.18em}
+body.shell:has(#entry) .loadout-panel h2{margin:5px 0;font-size:24px}
+body.shell:has(#entry) .loadout-panel>p{margin:0 0 16px;color:var(--muted);font-size:13px}
+body.shell:has(#entry) .loadout-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+body.shell:has(#entry) .loadout-card{display:flex;min-height:98px;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px;padding:16px;border:1px solid #ffffff18;border-radius:14px;background:#20211e;text-align:left}
+body.shell:has(#entry) .loadout-card strong{font-size:16px}
+body.shell:has(#entry) .loadout-card small{font-size:11px;color:var(--muted)}
+body.shell:has(#entry) .loadout-card[aria-pressed=true]{border-color:var(--pink);background:#512028;color:#fff2f6}
+body.shell:has(#entry) .loadout-card[aria-pressed=true] small{color:#f0cbd2}
+body.shell:has(#entry) #loadout-status{margin-top:12px;margin-bottom:0;color:#d898a8}
+@media(max-width:720px){body.shell:has(#entry) .intro{display:block;margin:28px 0 20px}body.shell:has(#entry) .intro p{text-align:left;margin-top:10px}body.shell:has(#entry) #entry{grid-template-columns:1fr}body.shell:has(#entry) #entry>div{min-height:160px}body.shell:has(#entry) #lobby{padding:18px 14px}}
+@media(max-width:720px){body.shell:has(#entry) .loadout-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+body.shell .rollback-option{display:flex;align-items:center;gap:10px;margin-top:16px;cursor:pointer}
+body.shell .rollback-option input{width:20px;height:20px;flex:none;accent-color:var(--pink)}
+body.shell #rollback-help{font-size:13px;line-height:1.6;margin-bottom:0}

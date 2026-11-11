@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#111210"><title>东方梦时空 · 局域网联机</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="site.css"><link rel="stylesheet" href="room.css"><link rel="stylesheet" href="site-adapter.css"><link rel="stylesheet" href="player-ui.css"><link rel="stylesheet" href="touch-overlay.css"><link rel="stylesheet" href="touch-adapter.css"><link rel="stylesheet" href="room-runtime.css"><link rel="stylesheet" href="room-ui.css"></head><body data-room-game="03" class="shell room-page" data-view="outside"><header class="masthead"><a class="brand" href="index.html">TOUHOU / 03 · 测试 beta0.3 · 性能版</a><small>東方夢時空 · PHANTASMAGORIA OF DIM.DREAM</small></header><nav class="mode-nav" aria-label="游戏模式"><a data-mode="solo" href="solo.html">单机游戏</a><a data-mode="local" href="local.html">本地双人</a><a data-mode="lan" data-network="lan" href="lan.html?network=lan">局域网联机</a><a data-mode="public" data-network="public" href="lan.html?network=public">公网联机</a></nav>
+<header class="intro"><div><span class="eyebrow">PHANTASMAGORIA OF DIM.DREAM / MULTIPLAYER</span><h1 id="page-title">局域网联机</h1></div><p id="mode-description"></p></header>
+<section class="panel local-music-settings" aria-label="本机音乐">
+<label class="bgm-version">本机音乐 <select data-bgm-version-control aria-label="本机音乐版本"><option value="old">游戏原版</option><option value="new">幺乐团专辑版</option></select><small data-bgm-restart-note></small></label>
+<p class="muted">仅影响本机播放的音乐，不改变其他玩家的选择；自动保存，游戏中切换会从头播放当前曲目。</p>
+</section>
+
+<section id="entry" class="panel entry-grid" aria-label="创建或加入房间">
+<div><h2>创建房间</h2><p>邀请伙伴，选择语言和难度，开始双人对战。</p><button id="create" class="primary" type="button">创建房间 →</button></div>
+<div><h2>加入伙伴</h2><p>输入伙伴分享的四位房间号。</p><div class="join-row"><input id="room" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="四位房间号" aria-label="房间号"><button id="join" type="button">加入房间</button><button id="watch-room" type="button">观战</button><span id="watch-status" role="status"></span></div></div></section>
+<p id="lan-status" role="status" aria-live="polite">创建房间，或输入伙伴分享的四位房间号。</p>
+<p><button id="configure-controls" type="button">键盘 / 手柄改键</button><span class="muted"> 本机设置，开局前即可修改</span></p>
+<p><label>本机运行方式 <select id="network-runtime"><option value="worker">独立线程（推荐）</option><option value="main">兼容模式</option></select></label><span class="muted"> 开局前选择，自动保存；卡顿时可尝试另一种模式。</span></p>
+<dialog id="controls-dialog"><form method="dialog"><h2>本机键盘 / 手柄改键</h2><button aria-label="关闭改键设置">完成</button></form><iframe title="本机改键设置" allow="gamepad"></iframe></dialog>
+<details id="connection-settings"><summary>连接设置与帮助</summary><div class="connection-options">
+<label>连接方式 <select id="mode"><option value="rtc">设备直连 / TURN（WebRTC）</option><option value="relay">服务器转发（WebSocket）</option></select></label>
+<label id="ice-option" hidden>UDP 策略 <select id="ice"><option value="all">自动打洞 + TURN 兜底</option><option value="relay">强制 TURN 中继</option></select></label></div><p id="connection-help"></p><p>房间内使用相同连接方式。切换方式后请重新建房。</p></details>
+<section id="lobby" hidden aria-label="联机房间">
+<div class="room-heading"><div><span class="section-kicker">ROOM / 双人对战</span><h2 id="room-info" class="room-code"></h2><p id="resource-status" class="muted">进入房间后将在后台预载游戏、音效和开场音乐。</p></div></div>
+<div class="seat-row" aria-label="玩家状态"><article class="seat-card" id="host-seat"><span class="section-kicker">PLAYER 01</span><strong>P1 · 左侧 · 房主</strong><span id="host-state">等待加入</span></article><article class="seat-card" id="guest-seat"><span class="section-kicker">PLAYER 02</span><strong>P2 · 右侧 · 客机</strong><span id="guest-state">等待加入</span></article></div>
+<p class="muted" id="seat-help">房主可选择左右席位，客机自动分配到另一侧。开局后在游戏内选择角色。</p>
+<fieldset id="room-settings"><legend>本局设置 · 房主修改（全员使用相同语言）</legend><div class="settings-grid">
+<label>房主席位 <select id="host-seat-choice" aria-describedby="host-seat-help"><option value="0">P1 · 左侧</option><option value="1">P2 · 右侧</option></select></label>
+<label>游戏语言 <select id="language"><option value="jp">日文原版</option><option value="cn">中文汉化</option></select></label>
+<label>难度 <select id="difficulty"><option value="0">Easy</option><option value="1">Normal</option><option value="2">Hard</option><option value="3" selected>Lunatic</option></select></label>
+<select id="clock" hidden aria-hidden="true"><option value="32" selected>自动</option></select></div>
+<p id="host-seat-help" class="muted">客机自动分配到另一侧；更换席位后双方需重新准备，开局后固定。房主设置会自动保存，下次创建房间时恢复。</p>
+<label class="rollback-option"><input id="focus-enabled" type="checkbox" role="switch" checked aria-describedby="focus-help"> 启用低速模式（双方）</label><p id="focus-help" class="muted">由房主统一控制。判定点显示由各玩家在自己的浏览器设置。</p>
+<label class="rollback-option"><input id="touch-unlimited-allowed" type="checkbox" role="switch" checked> 允许触摸不限速移动（双方）</label><p class="muted">房主关闭后，双方触摸移动都受角色速度限制；修改后需重新准备。</p>
+<label class="rollback-option"><input id="rollback" type="checkbox" role="switch" aria-describedby="rollback-help"> 启用回滚</label><p id="rollback-help" class="muted">默认关闭。开启后操作响应更快，但占用更多性能；关闭时等待双方输入。设置修改后需双方重新准备。</p></fieldset>
+<details><summary>操作与对战说明</summary><p>联机双方都使用本机 1P 键位：方向键移动、Z 连发（最高速，60帧下每秒15次）、Shift 蓄力、X Bomb、空格低速。支持手柄和触摸操作。开局前点击本页“键盘 / 手柄改键”，开局后点击画面右上方“键盘 / 手柄”，即可修改本机键位及手柄按钮，左右席位共用本机配置。</p><p>Esc 打开自己的暂停菜单。当前回合认输或整场认输按原版流程结算；中文和日文版显示对应语言的暂停菜单。</p></details>
+<div class="row room-actions"><button id="ready" type="button">准备</button><button id="start" class="primary" type="button" disabled>房主开始游戏</button><button id="leave" type="button">结束并返回</button></div></section>
+<section id="startup-progress" class="panel" hidden aria-label="双方加载进度"><h2>加载进度</h2><div class="progress-grid"><p id="host-progress"></p><p id="guest-progress"></p></div></section>
+<details id="connection-details" hidden><summary>连接与运行详情</summary><p id="connection-path" role="status" hidden></p></details>
+<div id="game" hidden></div>
+<footer class="footer"><a href="index.html">← 返回启动器</a><span>TH03 · PHANTASMAGORIA OF DIM.DREAM</span></footer><script type="module" src="lan.js"></script><script type="module" src="bgm-version.js"></script><script type="module" src="replay/room-watch.js"></script><script type="module" src="room-ui.js"></script></body></html>

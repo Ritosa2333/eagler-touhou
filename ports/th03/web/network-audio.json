@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "url": "native/network-audio.com",
+  "bytes": 883,
+  "sha256": "b262592daf701e0acfb35af8ee085016d2ff0e802c765833c2f8000afa3baa18",
+  "signature": "TH03LOCALBGMv01!",
+  "mailbox_com_offset": 566,
+  "soundEffectCommand": 12,
+  "soundEffects": "sfx/manifest.json"
+}

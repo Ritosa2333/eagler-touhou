@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "signature": "TH03LOCALPAUSE1!",
+  "mailboxSize": 44,
+  "url": "native/main.exe",
+  "sha256": "bd8d66fc2fdf36c19e42972abb1d6d74667b638daf91e753126434a967523013",
+  "bytes": 131922,
+  "originalSha256": "f41fde47ea36bf4d985ff9127b67fe93d5ecb58cc36e7cffab86959db7f2ce6b",
+  "acceptedMainHashes": [
+    "08631ab85556cf55c44be11a4f6a5fb21bd874e9be3d664398e97a5395831909",
+    "0f4bd75ad75257736f8b4619ec41ca89e079ef74b0c4747f02f4e4bfd2b20043",
+    "1bc861fd324d741b4586ed8e7619cbe2f9863ca23695521f17c6380990c5b931",
+    "2900db214e404257e723ecef5b9d3359de8825e104824442bf92bdcea0a0a655",
+    "6156859559d620aa3ca009ec176ac098ccb75327f33d2675003b7cddc9c4ea00",
+    "bd8d66fc2fdf36c19e42972abb1d6d74667b638daf91e753126434a967523013",
+    "7b37be5823c46a01d73b5f073c52f87350c63cf9aadc3e93b0dc9869633bb67a",
+    "8d8fcd19ea0223e06d34eeb0d53ccbb531e8312631efd265ddf634c5d1aab8eb",
+    "cb64e6397b2164fae4af55a96cb277a26a8bb3fad9f074397483126aba419536",
+    "f41fde47ea36bf4d985ff9127b67fe93d5ecb58cc36e7cffab86959db7f2ce6b"
+  ],
+  "insertImageOffset": 59632,
+  "insertSize": 1040,
+  "codeSegment": 2414,
+  "overlapTail": {
+    "imageOffset": 59632,
+    "bytes": "ff207c9a5f5ec9c3"
+  },
+  "dataSegment": 7575,
+  "mailboxCsOffset": 21026,
+  "hooks": [
+    {
+      "imageOffset": 38782,
+      "original": "e8b70c",
+      "target": 21175
+    },
+    {
+      "imageOffset": 38703,
+      "original": "e84600",
+      "target": 21070
+    },
+    {
+      "imageOffset": 56010,
+      "original": "e851fc",
+      "target": 21443
+    },
+    {
+      "imageOffset": 39179,
+      "original": "e80a46",
+      "target": 21834
+    }
+  ],
+  "disabledNativePause": {
+    "imageOffset": 38978,
+    "original": "e8602f"
+  },
+  "fields": {
+    "ticks": 16,
+    "ds": 20,
+    "phase": 22,
+    "command": 23,
+    "seat": 24,
+    "ack": 25,
+    "focus": 26,
+    "points": 27,
+    "generation": 28,
+    "alwaysPoint": 31,
+    "touch": 32
+  },
+  "focus": {
+    "speedDivisor": 2,
+    "playerVelocity": 25990,
+    "fieldShiftX": 26012,
+    "vramRows": 200
+  },
+  "startup": {
+    "music": {
+      "url": "native/music.com",
+      "bytes": 878,
+      "sha256": "46ecae8ab9e22a4d99f847cdbd019d724925134a80d821981c6b8195721cfe56",
+      "signature": "TH03LOCALBGMv01!",
+      "mailbox_com_offset": 561
+    },
+    "launcher": {
+      "url": "native/start.com",
+      "bytes": 230,
+      "sha256": "56936478df4a99bc5c80e87b88243d607d52d4845f21e0d5a76b49b7fa8b51e4"
+    },
+    "batches": {
+      "jp": {
+        "url": "native/game-jp.bat",
+        "bytes": 1158,
+        "sha256": "9c49519c9879479f1f3f2ce88ea80a9159d3f43b1cadb09df0e1cf05247919e1",
+        "originalSha256": "10a0cabdd6f99ce8b2f49e78cb942dca4a2e120f691d5aa489e84e43e100daf1",
+        "acceptedHashes": [
+          "099549f4d4d4778b4232bc40af3e109163b9f99521ab9e75f9c569eefd1088fa",
+          "10a0cabdd6f99ce8b2f49e78cb942dca4a2e120f691d5aa489e84e43e100daf1",
+          "5b7468bc6df147f7978683ad6398bb1fd89688702519e967e5e07e8a2dca4e08",
+          "9c49519c9879479f1f3f2ce88ea80a9159d3f43b1cadb09df0e1cf05247919e1"
+        ]
+      },
+      "cn": {
+        "url": "native/game-cn.bat",
+        "bytes": 1158,
+        "sha256": "9c49519c9879479f1f3f2ce88ea80a9159d3f43b1cadb09df0e1cf05247919e1",
+        "originalSha256": "10a0cabdd6f99ce8b2f49e78cb942dca4a2e120f691d5aa489e84e43e100daf1",
+        "acceptedHashes": [
+          "099549f4d4d4778b4232bc40af3e109163b9f99521ab9e75f9c569eefd1088fa",
+          "10a0cabdd6f99ce8b2f49e78cb942dca4a2e120f691d5aa489e84e43e100daf1",
+          "5b7468bc6df147f7978683ad6398bb1fd89688702519e967e5e07e8a2dca4e08",
+          "9c49519c9879479f1f3f2ce88ea80a9159d3f43b1cadb09df0e1cf05247919e1"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Browser resource hashes must survive checkout on Windows and Linux.
+web/*.js text eol=lf
+web/*.json text eol=lf
+web/*.html text eol=lf
+web/*.css text eol=lf
+web/netplay/*.js text eol=lf
+web/bgm/manifest.json text eol=lf
+web/sfx/manifest.json text eol=lf
+web/sfx/*.wav -text
+web/disks/manifest.json text eol=lf
+web/vendor/dosbox-x/* text=auto eol=lf
+web/vendor/dosbox-x/*.wasm -text
+
+# These are byte-verified DOS payloads; preserve their CRLF verbatim.
+web/native/* -text
+# Legacy DOS batches are byte-verified payloads, including their spacing.
+web/native/*.bat -whitespace

@@ -1,0 +1,89 @@
+{
+  "schema": 3,
+  "game": "TH03",
+  "package": "emulators",
+  "version": "8.5.2",
+  "machine": "pc98",
+  "local": {
+    "core": "simple",
+    "cycles": "max 100%",
+    "continuation": "JSPI",
+    "initialHeapMiB": 64,
+    "maximumHeapMiB": 256,
+    "sourceWasm": "c154235667747e613be00d0955f068b54cbf8e1fb8e5c34d34e5552292f4c72a"
+  },
+  "network": {
+    "core": "simple",
+    "cycles": 16000,
+    "continuation": "full Asyncify, TH03 zero-time native scheduling",
+    "binaryen": "132",
+    "initialHeapMiB": 64,
+    "maximumHeapMiB": 256,
+    "snapshotStride": 2,
+    "writeJournal": {
+      "schema": 1,
+      "pageBytes": 4096,
+      "enabled": "rollback and multi-memory"
+    },
+    "nativeScheduling": true,
+    "nativeCpu": true,
+    "nativePlanar": false,
+    "nativeFramePresentation": false,
+    "idleFusion": "th03-battle-wait-four-instructions",
+    "snapshotScan": "adaptive-word8",
+    "gameplayAccepted": false,
+    "inputPolicy": {
+      "mode": "room-rtt-hybrid",
+      "minInputDelay": 0,
+      "maxInputDelay": 6,
+      "zeroDelayRttMs": 20,
+      "rttSamples": 3,
+      "directionPrediction": 6,
+      "maxPredictionLead": 4,
+      "maxRollback": 12,
+      "lockstepBootDelay": 2,
+      "schedulingMarginSteps": 0,
+      "policySchema": 2,
+      "hybridReserveSteps": 2,
+      "predictionJitterSteps": 2
+    }
+  },
+  "presentation": {
+    "local": "direct",
+    "network": "completed batch",
+    "sha256": "78f43396c4ac9a0b7acf10659626f9c8c877bf65603be9554ad46745cdc1ba8a"
+  },
+  "sourceWasm": "bcccb737e3eb713f5c939e4d914795c8c3954a44d0663706886aebbc4a5c79b5",
+  "keyboardFix": {
+    "excludedKeys": [
+      340,
+      341,
+      342,
+      343,
+      344,
+      345,
+      346,
+      347
+    ]
+  },
+  "files": {
+    "LICENSE": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+    "NOTICE.md": "39fe71fe22fd9ab82192f39715b372a3345713f660fb51ff41cfebb2aff00eee",
+    "audio-worklet.js": "e1e8912f986479b1926cca0d8342f6b504defca873d3a51aac1172e5fbbf4c5d",
+    "core-build.json": "dad611bdc5d3970a5841d16b3917a6cbeb938cac805ba7707fb230108ceb0e71",
+    "dosbox-jspi.mjs": "b762346410a2ca8d66af37a6e48024bb8b28376bbb83d3b84020f305e94a677e",
+    "dosbox-rollback-tracked.mjs": "6519cdb4b4d0bef1b63e534d5f25f3de2124c1859b5783462120d8147b6ee5aa",
+    "dosbox-rollback.mjs": "6413468063aab490225edaf90d0fc5af42675ab83220f599bb45c5b78e4dc7dd",
+    "emulators.js": "066176a9e9e6babfb5388552a5154f3c1f81ed778af3bf4a1f9f904161e3c4bb",
+    "snapshot-diff-tracked.wasm": "d3eff5c0bb6c0dd7df1abb1f61ae38ff15b7139b7fdb3142bab465e13c564bec",
+    "snapshot-diff.wasm": "20235d6360a49d633f2db03832ef5ad3fbe6daffd4f44e4d7f8e790875a4662f",
+    "wdosbox-x-fast.wasm": "bcf82c465a012bd19c0999a31c5fb15efcee6d32b28bd4f7d23ca1a030e92cee",
+    "wdosbox-x-jspi.wasm": "c154235667747e613be00d0955f068b54cbf8e1fb8e5c34d34e5552292f4c72a",
+    "wdosbox-x-rollback-tracked.wasm": "270d5d491e09f04028d4f89cf828c1d6c4a8ad462ecdcfb326193117f8602a99",
+    "wdosbox-x-rollback.wasm": "cc557b7af3651f166c59968310863d300e7caa23830fff300cde2a1a9c3c2bd3"
+  },
+  "sourceRevisions": {
+    "emulators": "6bbf0925d221a7304ea8e0dda1e89b8dc01569b2",
+    "dosbox-x": "788fde99d3d451eab3621009186e5abe516f2b9c"
+  }
+}

@@ -1,0 +1,115 @@
+/* TH03-specific content and runtime integration on the shared TH04 shell. */
+body.shell>main{max-width:none;margin:0;padding:0}
+.shell .masthead{margin:0}
+.shell .intro{display:block}
+.shell .mode-nav{border:0;padding:0}
+.shell .mode-nav a{font-size:14px}
+.shell .launch-settings .settings-grid,.room-page .settings-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.shell .launch-toolbar{font-size:13px}
+.shell .launch-toolbar #start{min-height:46px;padding:11px 22px;font-size:15px;border-radius:14px;background:var(--pink);color:var(--wine);border-color:transparent}
+.shell .launch-toolbar #start:hover{background:#fff2f6}
+.shell .status{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted);padding:0;margin:18px 0}
+.shell .status #status{flex:1;margin:0}
+.shell .toolbar{justify-content:space-between}
+.shell .file-button{display:inline-flex;align-items:center;min-height:46px;padding:11px 18px;border:1px solid transparent;border-radius:14px;background:#30312c;color:var(--paper);font-weight:650}
+.shell .players{border-color:var(--line);padding-top:20px}
+.shell .p1 strong,.shell .p2 strong{color:var(--pink)}
+.shell #cover{color:var(--muted);font-size:14px;text-align:center;padding:24px;background:#10110f}
+.shell dialog{background:var(--surface);border-color:var(--line);border-radius:20px;color:var(--paper)}
+.shell dialog label{color:var(--muted)}
+.shell dialog input[type=checkbox]{min-height:0;width:18px;height:18px;accent-color:var(--pink)}
+.shell dialog .focus-settings fieldset{background:#292a26;border-color:var(--line);border-radius:12px}
+.shell .binding-table :is(td,th){border-color:var(--line)}
+.shell .binding-table button.listening{border-color:var(--pink);color:var(--pink)}
+@font-face{font-family:TH03 Pause Pixel;src:url('./fonts/th03-pause-pixel.woff2') format('woff2');font-style:normal;font-weight:400;font-display:swap}
+.shell #pause-shade{background:#0008}
+.shell #pause-menu{
+  --pause-ink:#fff;--pause-selected:#ffff55;
+  left:5%;right:auto;top:50%;transform:translateY(-50%);
+  width:320px;max-width:90%;padding:16px;
+  display:grid;gap:0;border:2px solid #aaa;border-radius:0;
+  background:#080018ed;box-shadow:none;color:var(--pause-ink);
+  font-family:TH03 Pause Pixel,monospace;font-size:32px;font-weight:400;
+  font-synthesis:none;letter-spacing:0;text-align:center;
+  -webkit-font-smoothing:none;
+}
+.shell #pause-menu[data-seat="1"]{left:auto;right:5%;border-color:#aaa}
+.shell #pause-menu[hidden],.shell #pause-shade[hidden]{display:none}
+.shell #pause-menu h2{margin:0 0 8px;padding:0 0 12px;border-bottom:2px solid #555;color:var(--pause-ink);font:400 16px/24px TH03 Pause Pixel,monospace;letter-spacing:0}
+.shell #pause-menu button{
+  display:block;width:100%;min-height:48px;margin:0;padding:4px 8px 8px;
+  border:0;border-radius:0;background:transparent;box-shadow:none;
+  color:var(--pause-ink);font:inherit;line-height:36px;text-align:center;
+  overflow-wrap:normal;white-space:nowrap;transition:none;opacity:1;
+}
+.shell #pause-menu .pause-label{position:relative;display:inline-block}
+.shell #pause-menu .pause-label::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px;background:currentColor;visibility:hidden}
+.shell #pause-menu button[data-selected=true],.shell #pause-menu[data-seat="1"] button[data-selected=true]{color:var(--pause-selected);background:transparent;border:0}
+.shell #pause-menu button[data-selected=true] .pause-label::after{visibility:visible}
+.shell #pause-menu button:focus-visible{outline:none}
+.shell #pause-menu button:focus-visible .pause-label::after{visibility:visible}
+.shell #pause-menu button:disabled{color:#666;opacity:1;cursor:default}
+.shell #pause-menu button:disabled .pause-label::after{visibility:hidden}
+.shell #pause-help,.shell #pause-message{margin:8px 0 0;color:#aaa;font:400 16px/20px TH03 Pause Pixel,monospace;letter-spacing:0;overflow-wrap:anywhere}
+.shell #pause-help{min-height:20px}
+.shell #pause-message{color:#ffaaaa}
+@media(hover:hover){.shell #pause-menu button:not(:disabled):hover{color:var(--pause-selected);background:transparent}}
+@container(max-width:420px){
+  .shell #pause-menu{width:256px;font-size:16px;padding:12px}
+  .shell #pause-menu button{min-height:44px;line-height:24px;padding:8px}
+}
+@container(max-height:300px){
+  .shell #pause-menu{padding:8px 12px;font-size:16px}
+  .shell #pause-menu h2{margin-bottom:0;padding-bottom:4px;line-height:20px}
+  .shell #pause-menu button{min-height:44px;line-height:24px;padding:8px}
+  .shell #pause-help,.shell #pause-message{margin-top:4px}
+}
+.shell .th03-player input[type=checkbox]{min-height:0;padding:0}
+.shell .th03-player label{display:flex;align-items:center}
+.shell .th03-player .touch-layout-editor header{margin:0}
+.room-page .room-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:18px}
+body.room-page:has(#entry) #lobby #room-info{border:0;padding:0;margin:4px 0 0;font-size:22px}
+.room-page .seat-row{grid-template-columns:repeat(2,minmax(0,1fr));padding:0}
+.room-page .seat-card{display:grid;gap:8px;padding:20px;border:1px solid var(--line);border-radius:14px;background:#292a26;font-size:14px}
+.room-page .seat-card[data-local=true]{border-color:#fce5ec70;background:#35242a}
+.room-page .seat-card[data-ready=true] span:last-child{color:#b7ddb2}
+.room-page .seat-card[data-present=false]{opacity:.65}
+.room-page #seat-help,.room-page #focus-help{font-size:13px}
+.room-page .room-actions{margin-bottom:0}
+.room-page .connection-options{display:flex;flex-wrap:wrap;gap:16px;margin-top:16px}
+.room-page .connection-options label{display:grid;gap:8px;font-size:13px;flex:1 1 250px;max-width:460px}
+.room-page :is(#lan-status,#room-info,#connection-path){overflow-wrap:anywhere}
+.room-page .progress-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:13px}
+.room-page #game iframe{display:block;border:0;width:100%;height:850px;background:#111210;border-radius:18px}
+.room-page [data-error=true],.shell #status[data-error=true]{color:#ff9292}
+body.shell.embedded{max-width:none;margin:0;padding:0;min-height:0;background:#111210}
+body.controls-only{margin:0;padding:0;min-height:0;background:#111210}
+body.controls-only> :not(#settings){display:none!important}
+body.controls-only #settings{position:static;box-sizing:border-box;width:100%;max-height:none;margin:0;border:0;border-radius:0}
+body.controls-only #settings>form{display:none}
+#controls-dialog{width:min(680px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:16px;background:#20211e;color:#eee;border:1px solid #666;border-radius:16px}
+#controls-dialog form{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+#controls-dialog h2{font-size:18px;margin:0}
+#controls-dialog iframe{display:block;width:100%;height:min(680px,calc(100dvh - 130px));border:0}
+body.embedded>.masthead,body.embedded>.mode-nav,body.embedded>.footer,body.embedded .launch-settings,body.embedded .launch-toolbar{display:none}
+body.embedded>main{padding:0}
+body.shell.embedded main>.intro{display:none}
+/* The parent sizes the iframe from main: avoid feeding its height back via dvh. */
+body.shell.embedded .th03-player:not(.immersive):not(:fullscreen){height:clamp(400px,62.5vw,800px);min-height:0}
+body.embedded .toolbar,body.embedded .status,body.embedded .players{padding-inline:14px}
+@media(max-width:720px){
+  .shell .launch-settings .settings-grid,.room-page .settings-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .room-page .room-heading{gap:12px}.room-page .seat-card{padding:14px;font-size:13px}
+  .room-page .progress-grid{grid-template-columns:1fr;gap:0}
+}
+@media(max-width:560px){
+  body.shell:has(#entry){padding-inline:16px}
+  .shell .mode-nav a{font-size:13px}
+  .room-page .room-heading>button{width:100%}
+  .room-page #room-settings{padding:18px 14px}
+  .shell .status{align-items:stretch}.shell .status #status{flex-basis:100%}
+}
+/* A room iframe must fill the parent viewport for the native-fullscreen fallback. */
+#game iframe.game-immersive{position:fixed;inset:0;z-index:10000;width:100vw;height:100dvh!important;border:0}
+.th03-player .room-return-current-run{position:absolute;z-index:45;top:max(10px,env(safe-area-inset-top));left:max(62px,calc(env(safe-area-inset-left) + 62px));height:42px;min-height:0;padding:0 10px;border:0;border-radius:7px;background:#121511d1;color:#eee;font:12px system-ui}
+html:has(#game iframe.game-immersive){overflow:hidden}

@@ -1,0 +1,199 @@
+{
+  "collection": "Akyu Untouched Score",
+  "volume": 4,
+  "codec": "opus",
+  "bitrate": 64000,
+  "sampleRate": 48000,
+  "tracks": {
+    "00mm-m26": {
+      "url": "akyu/03.opus",
+      "title": "03. Eastern Mystical Love Consultation-opus64",
+      "audioSha256": "a60969bb8e0de25a34edebafaef39d12eb1e4df54100145fd0923097412f472e",
+      "bytes": 1899004,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 211.859833
+    },
+    "01mm-m26": {
+      "url": "akyu/04.opus",
+      "title": "04. Reincarnation-opus64",
+      "audioSha256": "c621c61b4253c159d19cf3ef28382ed3ff70fa9793eb12c3a1fd0c0742b5f9d6",
+      "bytes": 1973114,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 206.0065
+    },
+    "02mm-m26": {
+      "url": "akyu/05.opus",
+      "title": "05. Dim. Dream-opus64",
+      "audioSha256": "f544b4c260df48b143e24aa126645bd101f1ad2a45c0fd23901725f046ecb19f",
+      "bytes": 2430918,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 263.4065
+    },
+    "03mm-m26": {
+      "url": "akyu/06.opus",
+      "title": "06. Tabula rasa ~ The Empty Girl-opus64",
+      "audioSha256": "984d8425c906fd3c554b4f7d02f85d9f73e3458c3013fb937b714df7e7bf1d32",
+      "bytes": 2205152,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 220.593167
+    },
+    "04mm-m26": {
+      "url": "akyu/07.opus",
+      "title": "07. Maniacal Princess-opus64",
+      "audioSha256": "8913cdb7e74f982a0f96c7c949d849efd56290302b32eb12cf81e2c66026f161",
+      "bytes": 1607880,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 162.259833
+    },
+    "05mm-m26": {
+      "url": "akyu/08.opus",
+      "title": "08. Vanishing Dream ~ Lost Dream-opus64",
+      "audioSha256": "4f0fa8e38a4bd92985f8658af6029ba1ffe5450bbb6d52b4654380e38d7fcb77",
+      "bytes": 2643983,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 273.433167
+    },
+    "06mm-m26": {
+      "url": "akyu/09.opus",
+      "title": "09. Visionary Game ~ Dream War-opus64",
+      "audioSha256": "746cb2d30a799ac32074cd56d6d4ba8604b5db95f6e7203c82eb8309af53be59",
+      "bytes": 3177714,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 316.2065
+    },
+    "07mm-m26": {
+      "url": "akyu/13.opus",
+      "title": "13. Sailor of Time-opus64",
+      "audioSha256": "4f74d1ad9415fcabdcabb68e9ec28276e03391ae86f9e9bed3f0ec610b690e61",
+      "bytes": 2203447,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 232.659833
+    },
+    "08mm-m26": {
+      "url": "akyu/15.opus",
+      "title": "15. Strawberry Crisis!!-opus64",
+      "audioSha256": "5ec744cc7a09d3205f8390dd23c185852a691f699714fb4a22e537b46a2f1da9",
+      "bytes": 3128934,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 358.099833
+    },
+    "dec-m26": {
+      "url": "akyu/11.opus",
+      "title": "11. Decisive Magic Battle! ~ Fight it out!-opus64",
+      "audioSha256": "4862e7966f4978f603527abff206b560d5b1d9dea622971a7bbb35c289fd8069",
+      "bytes": 1432216,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 149.913167
+    },
+    "demo1-m26": {
+      "url": "akyu/12.opus",
+      "title": "12. Disunified Field Theory of Magic-opus64",
+      "audioSha256": "91c5ae2a3de903ff41056f4faf8463a25116c7e35fa1a2743a396062cf2b49f8",
+      "bytes": 800848,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 87.353167
+    },
+    "demo2-m26": {
+      "url": "akyu/14.opus",
+      "title": "14. Adoration of Magic-opus64",
+      "audioSha256": "32ec5066ef96465f64453f91ffae51a8adcfa9c25efd79b8e928042cc037e43b",
+      "bytes": 451471,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 51.059833
+    },
+    "demo3-m26": {
+      "url": "akyu/16.opus",
+      "title": "16. Dream of Eternity-opus64",
+      "audioSha256": "87bcd6296945923b3daba732168c84fcaf4a15a83d3bdcdf9b9845ffc41d4e44",
+      "bytes": 668056,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 66.499833
+    },
+    "demo4-m26": {
+      "url": "akyu/17.opus",
+      "title": "17. Eastern Blue Sky-opus64",
+      "audioSha256": "ce39c73948f5a26bec3aaf18599dc723683d1af2add97d99fb49874bfce058ca",
+      "bytes": 388873,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 31.579833
+    },
+    "demo5-m26": {
+      "url": "akyu/18.opus",
+      "title": "18. Eternal Full Moon-opus64",
+      "audioSha256": "fbfeace50db33534f59674fde2273d8bf07c4b6c07661b789b5aeb635e0d75be",
+      "bytes": 1106895,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 106.353167
+    },
+    "ed-m26": {
+      "url": "akyu/19.opus",
+      "title": "19. Maple Dream...-opus64",
+      "audioSha256": "2b3c8f238106bb0e927d0614a91975031325c1ac89a2969bb37e7ce3fbd90dfb",
+      "bytes": 1729248,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 163.659833
+    },
+    "op-m26": {
+      "url": "akyu/01.opus",
+      "title": "01. A Dream Transcending Space-Time-opus64",
+      "audioSha256": "5ef3cd4aa04dfd4bb0adcdf9b4d658da147389da712692f5eb3cd1d156b7e198",
+      "bytes": 2124408,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 219.379833
+    },
+    "over-m26": {
+      "url": "akyu/20.opus",
+      "title": "20. Game Over-opus64",
+      "audioSha256": "20214fe33d24a6640abc9410ccd3d8c1de68bbbca72300761446bc36971d878c",
+      "bytes": 36393,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 4.979833
+    },
+    "score-m26": {
+      "url": "akyu/21.opus",
+      "title": "21. Ghostly Person's Holiday-opus64",
+      "audioSha256": "36649d05c6f7603d30688d2d4ff970ecf8f4fb831a344bef796f32bde62f8cb2",
+      "bytes": 706688,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 71.139833
+    },
+    "select-m26": {
+      "url": "akyu/02.opus",
+      "title": "02. Selection-opus64",
+      "audioSha256": "5b8bba7617a9f1bb9d0ba8f99113322d07f538e475955d62605fe388d90d121e",
+      "bytes": 768089,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 86.5665
+    },
+    "win-m26": {
+      "url": "akyu/10.opus",
+      "title": "10. Victory Demonstration-opus64",
+      "audioSha256": "e0f4590a2f621ca645f4065813a8984a265aec49871606eb375d1a40c89e5e17",
+      "bytes": 81777,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 12.0065
+    }
+  },
+  "fallback": []
+}

@@ -1,0 +1,221 @@
+{
+  "version": 2,
+  "codec": "opus",
+  "bitrate": 64000,
+  "sampleRate": 48000,
+  "headerBytes": 25,
+  "headers": {
+    "918895058": "00mm-m26",
+    "2002729919": "01mm-m26",
+    "1981761718": "02mm-m26",
+    "1396578158": "03mm-m26",
+    "2188256678": "04mm-m26",
+    "455559374": "05mm-m26",
+    "3595081984": "06mm-m26",
+    "2508160191": "07mm-m26",
+    "287109765": "08mm-m26",
+    "1581360158": "dec-m26",
+    "2407667661": "demo1-m26",
+    "826571741": "demo2-m26",
+    "1149992726": "demo3-m26",
+    "3010390932": "demo4-m26",
+    "3082700548": "demo5-m26",
+    "1795247835": "ed-m26",
+    "2731759616": "op-m26",
+    "3177710532": "over-m26",
+    "3605840531": "score-m26",
+    "3255279595": "select-m26",
+    "3788266273": "win-m26"
+  },
+  "tracks": {
+    "00mm-m26": {
+      "url": "00mm-m26-opus64-single-loop-v2.opus",
+      "loopStart": 23.059,
+      "loopEnd": 125.632,
+      "sha256": "69543a1e9d17d2c3e7f6fc6901284dad46c220a0d9c13c090505b973812c4038",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1021278,
+      "audioSha256": "7d052ed38856d63bc9eb0828c801853d0613204f3326b9931f4bd11a73dbab3a"
+    },
+    "01mm-m26": {
+      "url": "01mm-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.017,
+      "loopEnd": 161.521,
+      "sha256": "78228cbfcff0ab66a220b116230ad764b9886a50f2d72d5dd6802f0a5e247150",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1312906,
+      "audioSha256": "7cc4edf9fbbb6b0c30db89e837ebebf3c98b09ddc35449fdff869621848dcdd8"
+    },
+    "02mm-m26": {
+      "url": "02mm-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.019,
+      "loopEnd": 123.306,
+      "sha256": "2e148e9f276d21a4e3667243df69b76a1bb8d07ddf5fd37d1c6cb2065e48296b",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1002468,
+      "audioSha256": "cb37cac0fe00a1e19aac7d56d06eec5da792f5032d950423892d9be3be343d5a"
+    },
+    "03mm-m26": {
+      "url": "03mm-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.423,
+      "loopEnd": 133.533,
+      "sha256": "05d5540ea63e4dbee720318d2f7efc644baa344ea174dba772f85fccbaf52080",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1085510,
+      "audioSha256": "db4c8b366119b3ded7bab6579c24c53eecc31d3139589568b5eb8c00af3f525a"
+    },
+    "04mm-m26": {
+      "url": "04mm-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.018,
+      "loopEnd": 141.472,
+      "sha256": "729971e9289212f5da36f0e1c0719a17c2c3d0dff2b403c9609d5c4c687e74c8",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1150077,
+      "audioSha256": "9bd96f7746cfa463ee592041bb7eaca74e417310a580fdbf8b4fbe5d8d05d9fb"
+    },
+    "05mm-m26": {
+      "url": "05mm-m26-opus64-single-loop-v2.opus",
+      "loopStart": 6.332,
+      "loopEnd": 133.404,
+      "sha256": "5ac0dddd416d9a3e1adf00272d1dc7c8aeb580c3ed4a8173608c7cf89aa3c6d5",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1084627,
+      "audioSha256": "9e333f7223fea244c1d9b91640e92d6553b21d91ae45aaf15b2c39c915f9b24b"
+    },
+    "06mm-m26": {
+      "url": "06mm-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.037,
+      "loopEnd": 297.363,
+      "sha256": "baada063eacb36a2bb7a2a84a27819a5d78b93fef5bd2b9f4fd8c39e1e443bbe",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 2417060,
+      "audioSha256": "8afc9ad007f919ae1011d2229b94e3483638bde3bc83887e83dd316e5ddb37fb"
+    },
+    "07mm-m26": {
+      "url": "07mm-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.018,
+      "loopEnd": 106.967,
+      "sha256": "cfc2d90b9e00d504574c32f6cb5dd7a3234e325c528ad165b7547e17c36988c8",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 869571,
+      "audioSha256": "8fa10d49bac1486d90683bb917bcfedf3d270dcf2a63eb04c5cfc5f516bd5a1f"
+    },
+    "08mm-m26": {
+      "url": "08mm-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.018,
+      "loopEnd": 169.94,
+      "sha256": "f52a027e759a2ac6a076af2242136587ff6d49ad231d45997dc7dd731fb57d54",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1381481,
+      "audioSha256": "8d6f7e0c2c655d9ef91edae55170678b72d85e7db853dbe0ae928380eec99da3"
+    },
+    "dec-m26": {
+      "url": "dec-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.037,
+      "loopEnd": 126.518,
+      "sha256": "e4d91c75b8c906b7e1579a6e10fd7df447437474fec2272269f90ef8d72d5ad5",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1028438,
+      "audioSha256": "18d9e87d43131159b9bf3c6087fe1ff27d60aa44c3c7d6500874b8b666de2104"
+    },
+    "demo1-m26": {
+      "url": "demo1-m26-opus64-single-loop-v2.opus",
+      "loopStart": 31.144,
+      "loopEnd": 55.957,
+      "sha256": "c8c8332c435a9ce9bd3e08a3805020354f4fd040e0ee6cdbdbea7d0b59e3ecc0",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 454987,
+      "audioSha256": "b11856575c88eb3eb2c4ea66437a0f540760dcf42233afd0e54ebea4eafadf03"
+    },
+    "demo2-m26": {
+      "url": "demo2-m26-opus64-single-loop-v2.opus",
+      "loopStart": 12.647,
+      "loopEnd": 25.274,
+      "sha256": "dced2a96837d0e2bb571ba15a537e5001f283422552f9ccdb337fd76f0052d8f",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 205679,
+      "audioSha256": "8e7aca565ffb218e0d271a53e38c55545e0864571daf92a0f593b2f8ee3adc43"
+    },
+    "demo3-m26": {
+      "url": "demo3-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.0,
+      "loopEnd": 45.009,
+      "sha256": "d353d9d3aeade39f8e9f20711c0be515b9e94029f3102679802130bd50bf5aa9",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 364214,
+      "audioSha256": "caf9ab0cd780ca4a1ce6970f47dc218e1af02b2af7f43a260b855d15b43cdd27"
+    },
+    "demo4-m26": {
+      "url": "demo4-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.036,
+      "loopEnd": 31.569,
+      "sha256": "aeaa2523c29d87593098ee0a2c0e8dd4e5714f15b1880a9c9cd830d191aed798",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 256849,
+      "audioSha256": "77e0438d95480412a852104d1d838004d880687092bf5115aeedeb83f94d2315"
+    },
+    "demo5-m26": {
+      "url": "demo5-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.019,
+      "loopEnd": 44.548,
+      "sha256": "e45a4514f716ab65a098d4c7d61c79b14b6e1bbd29d189c8b0133b905756f1ad",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 362273,
+      "audioSha256": "6cb209c865cc606f78afcf73e718f19a865be6357045508a7d042353557ab7d8"
+    },
+    "ed-m26": {
+      "url": "ed-m26-opus64-single-loop-v2.opus",
+      "loopStart": 156.168,
+      "loopEnd": 184.968,
+      "sha256": "278f22b1277c651154d35dd3f26cd326b5b7dcd7fd5ff2d34e5b44b837a8efda",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1503543,
+      "audioSha256": "3326c02c45c75ceaff6ebd64f5a4b588e12955a1c09948346735f2459b9b07b7"
+    },
+    "op-m26": {
+      "url": "op-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0.031,
+      "loopEnd": 102.958,
+      "sha256": "47dac7ea9ff036d18975d8e57e9c065ee8a49ae1ba7a6994466ca45e5072d268",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 836952,
+      "audioSha256": "53bf1aec863458373b42230da698d8c0784f3611df0ceaeefea682205f0615c1"
+    },
+    "over-m26": {
+      "url": "over-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0,
+      "loopEnd": 0,
+      "sha256": "79f0a8bef5ebfd898ed22105211b59b4c6711cbbeabb494156d127c40d1e0e34",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 39032,
+      "audioSha256": "8a75dce2c462d5031a5adaae9eb91422a4cfc52e37679d349cae3fbf4e7aa1c0"
+    },
+    "score-m26": {
+      "url": "score-m26-opus64-single-loop-v2.opus",
+      "loopStart": 27.046,
+      "loopEnd": 54.074,
+      "sha256": "e2d4269885e7fefb3ca839d3069826cf410a316dec4baea528570ea3cac44557",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 439891,
+      "audioSha256": "cfd6d2064b3e177bcde1f53ea314804f95dd666ef2de742978742e888ffe5f83"
+    },
+    "select-m26": {
+      "url": "select-m26-opus64-single-loop-v2.opus",
+      "loopStart": 24.406,
+      "loopEnd": 74.659,
+      "sha256": "6ff6cfff4d056aa363fb2657a1761aa23982169777515da1fc3103fce3820874",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 607131,
+      "audioSha256": "9beae84602bcc21a90dbb9b2844dc4ffd6c7df36f24d54049d0afac9041177c4"
+    },
+    "win-m26": {
+      "url": "win-m26-opus64-single-loop-v2.opus",
+      "loopStart": 0,
+      "loopEnd": 0,
+      "sha256": "88be9cbf95eb87358151385918aa9468c4e6892b6eac9a473713fd99f4ded8be",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 74002,
+      "audioSha256": "5fbbf60bce5522dd55d8fb624ebdfd646ed40ab6031711e5f1a53a1c1f9702ab"
+    }
+  }
+}
