@@ -133,7 +133,7 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
           <BootTouchControls session={session} settings={settings} />
         )}
       {session.getActiveSettings() && playerUsesGameInput(mode) && !replayWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
-        <GameplayControls session={session} />
+        <GameplayControls session={session} roomWorkspace={roomWorkspace} />
       )}
     </>
   );
@@ -199,7 +199,7 @@ function BootTouchControls({
     </>
   );
 }
-function GameplayControls({ session }: { session: BrowserSession }) {
+function GameplayControls({ session, roomWorkspace }: { session: BrowserSession; roomWorkspace: boolean }) {
   const { t } = useLocale(),
     state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const settings = session.getActiveSettings()!,
@@ -215,6 +215,7 @@ function GameplayControls({ session }: { session: BrowserSession }) {
     enabled = settings.options.touchEnabled && playerUsesGameInput(session.getPlayerMode());
   const wheel = touchMovementUsesJoystick(settings.options.touchMovementMode);
   const product = PRODUCT_GAMES[settings.gameId];
+  useLayoutEffect(() => {if (roomWorkspace) input?.cancelPointers(); else input?.syncControls();}, [input, roomWorkspace]);
   const browserPractice = !settings.multiplayer && 'practiceUI' in product && product.practiceUI === 'browser';
   const hostDirect = navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches ||
     /\bAndroid\b|iPhone|iPad|iPod/i.test(navigator.userAgent);

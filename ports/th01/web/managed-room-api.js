@@ -1,5 +1,5 @@
 // Appended to netplay/app.js. The existing NetSession owns simulation and hashes.
-function sample(){return globalThis.__eaglerPC98Input.nativeSample();}
+function sample(){return globalThis.__eaglerPC98Input.nativeSample({menu:!!session?.game.state()?.menu});}
 export const managedAPI={
  async start({options,music}){
   const count=options.netplayPlayerCount,slot=options.netplayPlayer;

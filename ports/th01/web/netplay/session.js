@@ -224,7 +224,7 @@ export class NetSession{
         this.start(message.startAfter);break;
       case 'input':{
         if(!this.running||message.slot!==this.room.seats[source])throw Error('输入座位或开局状态无效');
-        const commands=message.buttons&~(255|4096);
+        const commands=message.buttons&~(255|4096|0xffff8000);
         if(commands&&(source!=='host'||(!this.room.settings.qa&&commands!==256)))throw Error('队友发送了未授权控制命令');
         this.queue.receive(message.frame,message.buttons,message.slot);this.forward(message,source);this.pump();break;
       }

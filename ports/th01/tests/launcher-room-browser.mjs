@@ -7,13 +7,14 @@ const require=createRequire(new URL('../../../launcher/package.json',import.meta
 const base=process.env.PC98_LAUNCHER_URL||'http://127.0.0.1:18310/';
 const out=resolve(import.meta.dirname,'../.cache/launcher-room');await mkdir(out,{recursive:true});
 const browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
-const pages=[],errors=[],events=[[],[]];
+const pages=[],errors=[],events=[[],[]],touchTest=process.env.PC98_TEST_TOUCH==='1';
 async function navigate(page,url){
   await page.goto(url);await page.waitForFunction(()=>/lobby\.html/.test(location.pathname)?!document.documentElement.hasAttribute('data-lobby-boot'):window.__eaglerBoot?.done===true,{timeout:45000});
   await page.evaluate(()=>document.querySelector('#firstUseNoticeDialog')?.close());
 }
 async function open(seat,url){
-  const context=await browser.createBrowserContext(),page=await context.newPage();pages.push(page);await page.setViewport({width:1400,height:900});
+  const context=await browser.createBrowserContext(),page=await context.newPage();pages.push(page);await page.setViewport(touchTest?{width:960,height:600,hasTouch:true,isMobile:true}:{width:1400,height:900});
+  if(touchTest)await page.evaluateOnNewDocument(()=>{localStorage.setItem('eagler-touch-help-seen-v8','1');localStorage.setItem('eagler-touhou-game-options-v1-th01',JSON.stringify({options:{touchEnabled:true,touchMovementMode:'touch'}}));});
   page.on('pageerror',e=>errors.push(e.message));
   await page.exposeFunction('recordRuntimeEvent',m=>events[seat].push(m));
   await page.evaluateOnNewDocument(()=>{addEventListener('message',e=>{if(e.data?.protocol==='eagler-touhou/1')window.recordRuntimeEvent(e.data);});});
@@ -70,6 +71,20 @@ try{
   await wait(async()=>(await Promise.all(pages.map(page=>page.evaluate(()=>{const e=document.querySelector('.room-workspace-preparation');return !e||e.hidden})))).every(Boolean),'main room loading cover must close',10000);
   for(const frame of frames)assert(await frame.$eval('canvas',e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0;}),'game canvas is visible');
   for(const frame of frames)await assertCanvasFits(frame);
+  if(touchTest && round==='match-1'){
+    await host.bringToFront();
+    if(await host.$('.room-workspace-fullscreen'))await host.click('.room-workspace-fullscreen');
+    await host.waitForFunction(()=>!!document.fullscreenElement&&!!document.querySelector('#touchDirectSurface'));
+    await frames[0].evaluate(()=>{const input=globalThis.__eaglerPC98Input,old=input.cancelTouch.bind(input);window.cancelledTouches=0;input.cancelTouch=()=>{window.cancelledTouches++;return old();};});
+    await host.evaluate(()=>document.exitFullscreen());
+    await wait(()=>host.evaluate(()=>document.querySelector('#player')?.classList.contains('room-workspace')&&!!document.querySelector('#mpRoomView')),'room layout after fullscreen exit',10000);
+    await wait(()=>frames[0].evaluate(()=>window.cancelledTouches>0),'touch state cancelled after fullscreen exit',5000);
+    const info=await host.evaluate(()=>{const player=document.querySelector('#player'),frame=document.querySelector('#gameFrame'),hud=document.querySelector('#touchDirectSurface'),r=frame.getBoundingClientRect();return {room:player.classList.contains('room-workspace'),hudVisible:hud&&getComputedStyle(hud).display!=='none',width:r.width,height:r.height};});
+    assert(info.room&&!info.hudVisible&&info.width>0&&info.height>0,'room presentation restores without gameplay touch overlay');
+    await host.click('.room-workspace-fullscreen');await host.waitForFunction(()=>!!document.fullscreenElement&&!document.querySelector('#player').classList.contains('room-workspace'));
+    assert(await host.$eval('#touchDirectSurface',element=>getComputedStyle(element).display!=='none'),'touch overlay returns on fullscreen reentry');
+    console.log('PASS touch fullscreen exit and reentry');break;
+  }
   for(const [seat,page] of pages.entries())await page.screenshot({path:resolve(out,'player-'+seat+'.png')});
   assert.deepEqual(errors,[]);console.log('PASS main Launcher create/join/seat/preload/ready/start and native multiplayer');
   if(round==='match-1'){
