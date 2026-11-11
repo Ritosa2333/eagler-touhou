@@ -10,6 +10,7 @@ const epoch = Number(query.get('runtimeEpoch'));
 const validEpoch = Number.isSafeInteger(epoch) && epoch > 0;
 let core, launched = false, first = false, stopping = false, options = {}, music = true, queue = Promise.resolve();
 let multiplayerBridge = null;
+let spectatorPlayback = null;
 // 房间预览（launcher prepare-room）：正式多人页在房间内先呈现标题面，
 // launch 时停掉预览泵再交给桥进局（th15 shell 同型）。
 let roomPreview = false;
@@ -37,6 +38,81 @@ function clearKeyboard() {
   keyboard.clear();
   core?._th13_keys_clear();
 }
+// BEGIN GENERATED SPECTATOR PLAYBACK
+// Generated from eagler-common/browser/spectator-playback.mjs.
+// Native playback owns every cursor and restore. The shell only transports
+// authenticated Launcher commands and publishes native reports.
+function createSpectatorPlaybackBridge({active,memory,state,control,allocate,deallocate,emit,
+  replay=()=>globalThis.__eaglerPeerTransport?.spectatorReplay,
+  complete,
+  schedule=globalThis.setInterval,cancel=globalThis.clearInterval}) {
+  let timer=null,last=null,menuSession=null;
+  const clear=()=>{if(last){last=null;emit('runtime-info',{spectatorPlayback:null});}};
+  const closeMenu=()=>{if(menuSession){menuSession=null;globalThis.__eaglerSpectatorMenu=false;emit('runtime-info',{spectatorMenu:false});}};
+  function poll() {
+    if(!active()){closeMenu();clear();return null;}
+    const file=replay();
+    if(menuSession){clear();return null;}
+    try {
+      const pointer=state();
+      if(!pointer){clear();return null;}
+      const heap=memory();
+      if(!(heap instanceof Uint8Array)||!Number.isInteger(pointer)||pointer<1||pointer>=heap.length)
+        throw Error('Invalid native spectator report address');
+      const limit=Math.min(heap.length,pointer+131072);let end=pointer;
+      while(end<limit&&heap[end])++end;
+      if(end===limit)throw Error('Native spectator report exceeds its bound');
+      const report=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(heap.subarray(pointer,end)));
+      if(report?.version!==1||typeof report.run!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(report.run)||
+         !Number.isInteger(report.revision)||report.revision<1||report.revision>0xfffffffe||
+         !Array.isArray(report.nodes)||report.nodes.length>512)throw Error('Invalid native spectator report');
+      if(complete&&!menuSession&&report.ended&&!report.paused&&!report.seeking&&report.position>=report.received&&
+         report.run.startsWith('s'+file?.session+'_')&&file?.bytes instanceof Uint8Array){
+        const pointer=allocate(file.bytes.length);
+        if(!Number.isInteger(pointer)||pointer<1)throw Error('Spectator result allocation failed');
+        try{const heap=memory();if(pointer>heap.length-file.bytes.length)throw Error('Invalid spectator result allocation');heap.set(file.bytes,pointer);
+          if(complete(pointer,file.bytes.length)){menuSession=file.session;globalThis.__eaglerSpectatorMenu=true;emit('runtime-info',{spectatorMenu:true});}
+        }finally{deallocate(pointer);}
+        if(menuSession){clear();return null;}
+      }
+      if(last?.run===report.run&&(report.revision<=last.revision||report.received<last.received))return last;
+      last=report;emit('runtime-info',{spectatorPlayback:report});return report;
+    } catch(error) {
+      clear();return null;
+    }
+  }
+  function command(message) {
+    if(!active())throw Error('Spectator playback is not active');
+    if(typeof message?.run!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(message.run)||
+       !['pause','play','seek','live'].includes(message.action)||
+       (message.action==='seek'&&(!Number.isInteger(message.frame)||message.frame<0||message.frame>0xfffffffe)))
+      throw Error('Invalid spectator playback command');
+    const report=poll();
+    if(!report||message.run!==report.run)throw Error('Spectator playback run has changed');
+    if(message.action==='seek'&&(message.frame<report.min||message.frame>report.edge))
+      throw Error('Spectator seek is outside received history');
+    // Keep terminators as zero bytes. The classic inline HTML optimizer can
+    // turn a JS NUL escape into a literal NUL, which HTML replaces by U+FFFD.
+    const run=new TextEncoder().encode(message.run),action=new TextEncoder().encode(message.action);
+    const actionOffset=run.length+1,bytes=new Uint8Array(actionOffset+action.length+1);
+    bytes.set(run);bytes.set(action,actionOffset);
+    const pointer=allocate(bytes.length);
+    if(!Number.isInteger(pointer)||pointer<1)throw Error('Spectator command allocation failed');
+    try {
+      const heap=memory();
+      if(pointer>heap.length-bytes.length)throw Error('Invalid spectator command allocation');
+      heap.set(bytes,pointer);
+      if(!control(pointer,pointer+actionOffset,message.action==='seek'?message.frame:0))
+        throw Error('Spectator playback command could not be applied');
+    } finally {deallocate(pointer);}
+    poll();return {};
+  }
+  return Object.freeze({poll,command,
+    start(){if(timer===null)timer=schedule(poll,250);poll();},
+    stop(){if(timer!==null)cancel(timer);timer=null;closeMenu();clear();},
+  });
+}
+// END GENERATED SPECTATOR PLAYBACK
 const err = () => {
   let p = runtimeBuild.multiplayer && typeof core._th13_mp_error === 'function'
     ? core._th13_mp_error() : core._th13_error();
@@ -207,6 +283,46 @@ function closeAudio() {
     if (borrowed) s.audioContext = context;
   }
 }
+// M9/P6：多人录像 inspect（native 描述面——eagler_replay_inspect）。
+function inspectReplay(bytes) {
+  const pointer = core._malloc(bytes.length);
+  try {
+    core.HEAPU8.set(bytes, pointer);
+    const report = core.eagler_replay_inspect(pointer, bytes.length);
+    if (!report) throw Error('录像解析失败');
+    const end = core.HEAPU8.indexOf(0, report);
+    return {description: JSON.parse(new TextDecoder().decode(
+      core.HEAPU8.subarray(report, end < 0 ? report + 65536 : end)))};
+  } finally {
+    core._free(pointer);
+  }
+}
+// M9/P6：回放进度报告（ReplayTransport 消费；replayViewer 打开后周期发布）。
+let playbackPath = null, playbackPaused = false, playbackRate = 1;
+let playbackReportTimer = null;
+function publishPlaybackState() {
+  if (!runtimeBuild.multiplayer || options.replayViewer !== true || !launched) {
+    if (playbackReportTimer !== null) { clearInterval(playbackReportTimer); playbackReportTimer = null; }
+    return;
+  }
+  const pointer = core.eagler_replay_state?.() ? core.eagler_replay_state() >>> 2 : 0;
+  if (!pointer) return;
+  const state = Array.from(core.HEAPU32.subarray(pointer, pointer + 6));
+  emit('runtime-info', {playback: {
+    kind: 'replay', path: playbackPath, frame: state[0], total: state[1],
+    paused: playbackPaused, seeking: false, target: null, rate: playbackRate,
+    ended: !!state[2], stage: state[3] || 1,
+    difficulty: -1, left: 0, right: 0, startFrame: state[5],
+  }});
+}
+function startPlaybackReports(path) {
+  playbackPath = path;
+  playbackPaused = false;
+  playbackRate = 1;
+  if (playbackReportTimer !== null) clearInterval(playbackReportTimer);
+  playbackReportTimer = setInterval(publishPlaybackState, 250);
+  publishPlaybackState();
+}
 const save = () => { multiplayerBridge?.save(); };
 async function stop() {
   if (stopping) return;
@@ -215,6 +331,8 @@ async function stop() {
     core._th13_loop_stop();
     try { await save(); } finally { multiplayerBridge?.close(); }
     closeAudio();
+    spectatorPlayback?.stop();
+    if (playbackReportTimer !== null) { clearInterval(playbackReportTimer); playbackReportTimer = null; }
     launched = false;
     emit('exit', {code: 0, status: 'success'});
   } finally {
@@ -355,12 +473,15 @@ async function command(m) {
         $('#loading').textContent = '';
         // 多人：configure → connect → start 由桥完成，成功后才启动 rAF 泵；
         // 缺省（非多人）保持单席原有顺序。录像启动不建立玩家连接，桥返回
-        // false 时交给 playback 命令/宿主回放器接管。
+        // false 时交给 playback 命令/宿主回放器接管。观众启动同理：桥的
+        // launch 走 spectator_connect → start（收流待命），泵启动后由
+        // 观战桥发布 native 报告。
         let loopStarted = !runtimeBuild.multiplayer;
         if (runtimeBuild.multiplayer) {
           if (options.replayViewer === true && typeof options.replayPath === 'string' && options.replayPath) {
             await multiplayerBridge.openReplay(options.replayPath, options.replayStage);
             loopStarted = true;
+            startPlaybackReports('replay/' + options.replayPath.split('/').pop());
           } else if (await multiplayerBridge.launch()) loopStarted = true;
         }
         if (loopStarted) core._th13_loop_start();
@@ -368,6 +489,8 @@ async function command(m) {
           first = true;
           emit('first-frame');
         }
+        // 观众：桥启动后开始周期发布观战报告（暂停/定位控制面）。
+        if (options.netplaySpectator) spectatorPlayback?.start();
         // 持久化录像回灌 catalog（launcher 工作台经 write 写入的、以及上次
         // 会话游戏内保存的）：晚于 loop_start，与 th13.html 内置预装同一拍。
         // 多人 Replay 使用独立命名空间，不回灌单席 catalog。
@@ -375,18 +498,51 @@ async function command(m) {
         emit('runtime-info', {renderer: 'SDL3 / WebGL2 / C++', architecture: protocol, ...runtimeBuild});
       }
       return {};
+    case 'spectator-playback':
+      // 观战控制（暂停/继续/定位/回直播）：native SpectatorStageView。
+      if (!runtimeBuild.multiplayer) throw Error('此 Runtime 不支持观战控制');
+      return spectatorPlayback.command(m);
     case 'playback': {
-      // TH13 正式页目前只接「打开多人录像」：播放器本体（inspect/pause/
-      // seek/rate）依赖尚未导出的 MP Replay 观测面，按 M9 缺口如实拒绝。
+      // M9/P6：多人录像回放——open 建档启动；inspect/pause/play/seek/rate
+      // 走 native 观测/控制面（eagler_replay_state / replay_pause 族导出）。
       if (!runtimeBuild.multiplayer) throw Error('此 Runtime 不支持录像回放控制');
       if (!launched || options.replayViewer !== true) throw Error('请先打开录像管理器');
-      if (m.action !== 'open') throw Error('TH13 多人录像的解析与播放控制尚未接入');
+      if (m.action === 'inspect') {
+        const target = sanitizePath(m.path);
+        if (!target.startsWith('replay/')) throw Error('录像路径无效');
+        const bytes = readReplayFile(target.slice(7));
+        if (!bytes) throw Error('文件不存在');
+        return inspectReplay(bytes);
+      }
+      if (m.action === 'pause' || m.action === 'play') {
+        if (!core._th13_mp_replay_pause(m.action === 'pause' ? 1 : 0))
+          throw Error('回放暂停控制失败');
+        playbackPaused = m.action === 'pause';
+        publishPlaybackState();
+        return {};
+      }
+      if (m.action === 'rate') {
+        if (!core._th13_mp_replay_rate(Number(m.value) || 0))
+          throw Error('回放速率无效');
+        playbackRate = Number(m.value) || 1;
+        publishPlaybackState();
+        return {};
+      }
+      if (m.action === 'seek') {
+        // 章节/帧定位：value = 章节 label（世界重建锚点）。
+        if (!core._th13_mp_replay_seek_stage(Number(m.value) || 0))
+          throw Error('回放定位目标无效');
+        publishPlaybackState();
+        return {};
+      }
+      if (m.action !== 'open') throw Error('TH13 多人录像暂不支持此回放控制');
       const target = sanitizePath(m.path);
       if (!target.startsWith('replay/')) throw Error('录像路径无效');
       const name = target.slice(7), bytes = readReplayFile(name);
       if (!bytes) throw Error('文件不存在');
       await multiplayerBridge.openReplay(name, m.stage, bytes);
       core._th13_loop_start();
+      startPlaybackReports(target);
       return {};
     }
     case 'sync':
@@ -644,6 +800,18 @@ const initialized = (async () => {
     const manifest = await (await fetch('./manifest.json')).json();
     multiplayerBridge = createMultiplayerBridge({core, getOptions: () => options, manifest,
       emit, onError: fatal, onExit: stop});
+    // 观战桥（M9/P6）：native 观战报告/控制转发；观众端完整录像落地
+    //（complete = th13_mp_spectator_result，接管后可本地保存）。
+    spectatorPlayback = createSpectatorPlaybackBridge({
+      active: () => launched && options.netplaySpectator === true && !stopping,
+      memory: () => core.HEAPU8,
+      state: () => core._th13_mp_spectator_state?.() || 0,
+      control: (run, action, frame) => core._th13_mp_spectator_control?.(run, action, frame) || 0,
+      allocate: size => core._malloc(size),
+      deallocate: pointer => core._free(pointer),
+      emit,
+      complete: (pointer, size) => core._th13_mp_spectator_result?.(pointer, size) || 0,
+    });
   }
 
   emit('ready');

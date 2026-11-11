@@ -258,6 +258,15 @@ void Session::OnFrameSimulated() {
     }
     pending_audio_ = nullptr;  // Record 已落账
     pending_audio_frame_ = 0;
+    // M9/P6：观战帧记录（发布端——每执行帧恰一次，含回滚重放帧）。
+    // 决策输入重取（MarkSimulated 已消费本帧决策；Prepare 幂等）。
+    // 关号/关头需求/StageEntry 捕获由宿主回调内完成（宿主持有 app 面）。
+    if (spectator_sink) {
+        const auto decision = runtime_.Prepare(sim_frame_);
+        if (!spectator_sink(sim_frame_, decision.inputs)) {
+            // 记录被拒：发布线退役（宿主回调内已处理）；不阻断模拟。
+        }
+    }
     // update_us：放行 → 落账（近似一帧模拟耗时）；纠正期同时计入 resim_us。
     const std::uint64_t update_elapsed = NowMicros() - frame_granted_us_;
     update_us_sum_ += update_elapsed;
