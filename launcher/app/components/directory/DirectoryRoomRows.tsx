@@ -118,7 +118,7 @@ function RoomRow({
     </span>;
   }) : [];
   const minutes = Math.max(...room.seats.map(seat => seat?.stats?.minutes ?? 0), 0);
-  const difficulty = policy.inGameSelection ? '' : policy.difficulties[room.difficulty];
+  const difficulty = policy.inGameSelection && room.product !== 'th03mp' ? '' : policy.difficulties[room.difficulty];
   const state = directoryRoomState(room);
   const statusLabel = t(`lobby.${state}`);
   const spectating = directoryRoomSpectatorEntry(room);

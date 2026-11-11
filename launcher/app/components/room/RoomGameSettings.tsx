@@ -15,6 +15,7 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
   const {t} = useLocale(), {room, ready, owner, config} = roomPresentation(state, t)!;
   const disabled = !ready || !owner || room.phase !== 'lobby';
   const privateHelp = room.visibility === 'private';
+  const inGameDifficulty = config.inGameSelection && state.product !== 'th03mp';
   return <section className="mp-room-settings room-grouped-settings options-settings" id="mpRoomSettings" hidden={hidden} data-room-panel="game">
     <section className="room-settings-group" aria-label={t('room.basicSettings')}>
       <div className="room-basic-fields">
@@ -36,12 +37,12 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
         <OptionSwitch id="mpRoomUnrated" label={t('room.unrated')} checked={room.unrated} disabled={disabled}
           onChange={() => service.setRoomSettings({unrated: !room.unrated})}/>
       </div>}
-      {!config.inGameSelection && <RoomChoiceGroup title={<><span>{t('lobby.difficulty')}</span>{room.challengeMode && <span className="room-challenge-on">{t('room.challengeEnabled')}</span>}</>} name="difficulty" valueAttribute="data-mp-difficulty" choices={config.difficulties.map((label, index) => ({value:index,label,selected:room.difficulty === index,disabled}))} onSelect={difficulty => service.setRoomSettings({difficulty})}/>}
+      {!inGameDifficulty && <RoomChoiceGroup title={<><span>{t('lobby.difficulty')}</span>{room.challengeMode && <span className="room-challenge-on">{t('room.challengeEnabled')}</span>}</>} name="difficulty" valueAttribute="data-mp-difficulty" choices={config.difficulties.map((label, index) => ({value:index,label,selected:room.difficulty === index,disabled}))} onSelect={difficulty => service.setRoomSettings({difficulty})}/>}
     </section>
     <section className="room-settings-group">
       <h3 className="flex items-center gap-1">
         <span>{t('room.gameSettingsGroup')}</span>
-        {config.inGameSelection && <FieldHelp id="mpRoomGameHelp" label={t('room.gameSettingsGroup')}>{t('room.inGameSelectionHint')}</FieldHelp>}
+        {inGameDifficulty && <FieldHelp id="mpRoomGameHelp" label={t('room.gameSettingsGroup')}>{t('room.inGameSelectionHint')}</FieldHelp>}
         {state.product === 'th05mp' && <FieldHelp id="mpTh05InitialStockHint" label={t('room.gameSettingsGroup')}>{t('room.th05InitialStockHint')}</FieldHelp>}
       </h3>
       <RoomTiming state={state} service={service}/><RoomTiming state={state} service={service} settings/>
