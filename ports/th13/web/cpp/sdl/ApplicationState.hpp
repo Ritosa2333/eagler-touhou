@@ -176,6 +176,10 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // 渲染 BLOCKED；空 = 字体可用）。标题/HUD ASCII 文本不依赖字体设备。
     std::string fonts_failure;
     AudioDevice audio_device;
+    // 疮痍时刻的对局曲快照（0043f570 存 GameInf+0x2e4 曲名 / +0x2dc 播放
+    // 位置；续关 0x440772 恢复）。空 = 未经过 game_over（续关不可达）。
+    std::string game_over_music;
+    u32 game_over_music_cursor = 0;
     FileStore files;
     GameRandom visual;
     u16 boot_seed = 0;
