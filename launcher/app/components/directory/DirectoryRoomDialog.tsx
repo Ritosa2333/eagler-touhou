@@ -28,7 +28,8 @@ export function DirectoryRoomDialog({service, assetUrl, open, onCloseRequest, co
   const submission = useRef<{owner: object; parentKey: string | null | undefined; href?: string} | null>(null);
   const form = state.form, created = form.mode === 'create';
   const policy = form.product ? multiplayerConfigForProduct(form.product) : null;
-  const inGameHelp = created && policy?.inGameSelection;
+  const inGameDifficulty = policy?.inGameSelection && form.product !== 'th03mp';
+  const inGameHelp = created && inGameDifficulty;
   const privateHelp = created && form.visibility === 'private';
   const disabled = state.connection !== 'live' || !!state.mine || state.leaving || !state.products.length;
   useLayoutEffect(() => {
@@ -89,7 +90,7 @@ export function DirectoryRoomDialog({service, assetUrl, open, onCloseRequest, co
           {state.products.map(product => <option key={product} value={product}>{PRODUCT_GAMES[gameIdForProduct(product)].title}</option>)}
         </MainSelect>
       </div>
-      <div id="createFields" className="lobby-form-pair" hidden={!created}><label className="lobby-field"><span>{t('lobby.capacity')}</span><MainSelect id="capacitySelect" aria-label={t('lobby.capacity')} value={form.capacity} onChange={event => service.updateForm({capacity: Number(event.target.value) as 2 | 3})}>{policy?.playerCounts.map(count => <option key={count} value={count}>{t('lobby.playersCount', {count})}</option>)}</MainSelect></label><label className="lobby-field" hidden={policy?.inGameSelection}><span>{t('lobby.difficulty')}</span><MainSelect id="difficultySelect" aria-label={t('lobby.difficulty')} className="difficulty-label" data-difficulty={(policy?.difficulties[form.difficulty] || '').toLowerCase()} disabled={policy?.inGameSelection} value={form.difficulty} onChange={event => service.updateForm({difficulty: Number(event.target.value)})}>{policy?.difficulties.map((name, index) => <option key={name} value={index} className="difficulty-label" data-difficulty={name.toLowerCase()}>{name}</option>)}</MainSelect></label></div>
+      <div id="createFields" className="lobby-form-pair" hidden={!created}><label className="lobby-field"><span>{t('lobby.capacity')}</span><MainSelect id="capacitySelect" aria-label={t('lobby.capacity')} value={form.capacity} onChange={event => service.updateForm({capacity: Number(event.target.value) as 2 | 3})}>{policy?.playerCounts.map(count => <option key={count} value={count}>{t('lobby.playersCount', {count})}</option>)}</MainSelect></label><label className="lobby-field" hidden={inGameDifficulty}><span>{t('lobby.difficulty')}</span><MainSelect id="difficultySelect" aria-label={t('lobby.difficulty')} className="difficulty-label" data-difficulty={(policy?.difficulties[form.difficulty] || '').toLowerCase()} disabled={inGameDifficulty} value={form.difficulty} onChange={event => service.updateForm({difficulty: Number(event.target.value)})}>{policy?.difficulties.map((name, index) => <option key={name} value={index} className="difficulty-label" data-difficulty={name.toLowerCase()}>{name}</option>)}</MainSelect></label></div>
       {created && accountsEnabled && form.product === 'th09mp' && <div className="flex min-h-9 items-center justify-between gap-3">
         <label className="text-sm font-semibold text-foreground" htmlFor="createRoomUnrated">{t('room.unrated')}</label>
         <OptionSwitch id="createRoomUnrated" label={t('room.unrated')} checked={form.unrated === true}

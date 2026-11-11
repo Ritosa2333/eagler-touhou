@@ -1,5 +1,6 @@
 #pragma once
 #if defined(TH_ENABLE_NETPLAY) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+#include "EclManager.hpp"
 #include "GameManager.hpp"
 #include "Player.hpp"
 #include "ReplayExtension.hpp"
@@ -13,12 +14,13 @@
 // A streaming Replay uses the same stage-entry values as ReplayManager.
 // Inputs remain a separate, append-only confirmed stream.
 namespace SpectatorReplayStart {
-inline constexpr u32 Schema=1;
+inline constexpr u32 Schema=2;
 struct NativeStage { u32 score=0; i32 pointItemsCollectedForExtend=0,cherry=0,cherryMax=0,cherryPlus=0,grazeInTotal=0,extendsFromPointItems=0,nextNeededPointItemsForExtend=0; i16 stageRngSeed=0; u8 currentPower=0,livesRemaining=0,bombsRemaining=0,rank=0,powerItemCountForScore=0,spellCardsCaptured=0; };
 struct Stage {
     u32 number=0,difficulty=0;
     u8 lifeCount=0,bombCount=0;
     NativeStage native;
+    EclGlobalVars eclGlobals{};
     u32 leadInFrames=0;
     std::array<std::array<Netplay::FrameInput,3>,4> leadIn{};
     MultiplayerGameplay::SessionState setup;
@@ -26,6 +28,12 @@ struct Stage {
     std::array<ReplayExtension::MultiplayerContributionSnapshot,3> contributions{};
 };
 inline std::array<std::vector<u8>,8> recorded;
+struct TransitionLeadIn {
+    bool ready=false;
+    bool ticked=false;
+    std::array<Netplay::FrameInput,3> inputs{};
+};
+inline std::array<TransitionLeadIn,8> transitions;
 inline Stage prepared;
 inline bool applying=false,applied=false;
 template<class C> bool Values(C& c,Stage& s){
@@ -36,6 +44,7 @@ template<class C> bool Values(C& c,Stage& s){
     for(auto& p:setup.players)if(!c.Values(p.active,p.temporarilyAbsent,p.permanentlyDeparted,p.character,p.shot))return false;
     for(auto& r:s.resources)if(!c.Values(r.lives,r.bombs,r.power,r.challengeDeaths))return false;
     for(auto& r:s.contributions)if(!c.Values(r.enemiesDefeated,r.damageDealt))return false;
+    if(!c.Array(s.eclGlobals.intVars)||!c.Array(s.eclGlobals.floatVars))return false;
     if(!c.Value(s.leadInFrames)||s.leadInFrames>s.leadIn.size())return false;
     for(u32 f=0;f<s.leadInFrames;++f)for(auto& p:s.leadIn[f])
         if(!c.Values(p.buttons,p.analogMode,p.x,p.y,p.unlimited,p.touchUsed,p.touchBomb))return false;
@@ -53,6 +62,9 @@ inline bool Valid(const Stage& s){
 inline void Record(const StageReplayData& native){
     if(applying||!MultiplayerGameplay::IsMultiplayer())return;
     Stage s;s.number=g_GameManager.currentStage;s.difficulty=g_GameManager.difficulty;
+    if(s.number<1||s.number>recorded.size())return;
+    recorded[s.number-1].clear();
+    transitions[s.number-1]={};
     s.lifeCount=g_GameManager.defaultCfg->lifeCount;s.bombCount=g_GameManager.defaultCfg->bombCount;
     s.native.score=g_GameManager.globals->score;
     s.native.pointItemsCollectedForExtend=native.pointItemsCollectedForExtend;
@@ -69,6 +81,8 @@ inline void Record(const StageReplayData& native){
     s.native.rank=native.rank;
     s.native.powerItemCountForScore=native.powerItemCountForScore;
     s.native.spellCardsCaptured=native.spellCardsCaptured;
+    // ECL globals outlive the stage's enemy manager on a live stage change.
+    s.eclGlobals=g_GlobalEclVars;
     s.setup=MultiplayerGameplay::GetState();
     for(unsigned i=0;i<s.setup.playerCount;++i){
         s.resources[i]={GetPlayerLives(i),GetPlayerBombs(i),GetPlayerPower(i),g_MultiplayerContributionStats[i].challengeDeaths};
@@ -78,15 +92,31 @@ inline void Record(const StageReplayData& native){
     Netplay::SpectatorScalars::Writer writer;
     if(Values(writer,s)&&writer.Good())recorded[s.number-1]=writer.Bytes();
 }
-inline bool Encode(std::vector<u8>* output){
+inline void RecordTransition(std::array<Netplay::FrameInput,3> inputs){
+    const auto stage=g_GameManager.currentStage;
+    const auto ticks=g_GameManager.framesThisStage;
+    if(stage<1||stage>8||ticks<0||ticks>1)return;
+    for(unsigned seat=0;seat<inputs.size();++seat)inputs[seat].buttons=g_CurFrameGameInputs[seat];
+    transitions[stage-1]={true,ticks==1,inputs};
+}
+inline bool Encode(bool runStart,std::vector<u8>* output){
     const auto stage=g_GameManager.currentStage;
     if(!output||stage<1||stage>8||recorded[stage-1].empty())return false;
     Stage entry;Netplay::SpectatorScalars::Reader reader(recorded[stage-1]);
-    if(!Values(reader,entry)||!reader.Done()||!g_ReplayManager||g_ReplayManager->frameId<0||
-       g_ReplayManager->frameId>static_cast<i32>(entry.leadIn.size()))return false;
-    entry.leadInFrames=static_cast<u32>(g_ReplayManager->frameId);
-    for(u32 f=0;f<entry.leadInFrames;++f)
-        if(!ReplayExtension::GetMultiplayerRecordedFrame(stage-1,f,entry.leadIn[f].data(),3))return false;
+    if(!Values(reader,entry)||!reader.Done())return false;
+    if(runStart){
+        if(!g_ReplayManager||g_ReplayManager->frameId<0||
+           g_ReplayManager->frameId>static_cast<i32>(entry.leadIn.size()))return false;
+        entry.leadInFrames=static_cast<u32>(g_ReplayManager->frameId);
+        for(u32 f=0;f<entry.leadInFrames;++f)
+            if(!ReplayExtension::GetMultiplayerRecordedFrame(stage-1,f,entry.leadIn[f].data(),3))return false;
+    }else{
+        // Rollback can revisit the checkpoint after the local replay writer
+        // has moved on. The transition tick itself owns this input, not frameId.
+        const auto& transition=transitions[stage-1];
+        if(!transition.ready)return false;
+        if(transition.ticked){entry.leadInFrames=1;entry.leadIn[0]=transition.inputs;}
+    }
     Netplay::SpectatorScalars::Writer writer;
     if(!Values(writer,entry)||!writer.Good())return false;
     *output=writer.Bytes();return true;
@@ -130,6 +160,7 @@ inline bool Apply(){
         g_MultiplayerContributionStats[i].damageDealt=prepared.contributions[i].damageDealt;
     }
     g_Rng.SetSeed(n.stageRngSeed);
+    g_GlobalEclVars=prepared.eclGlobals;
     applied=true;return true;
 }
 inline ChainElem& StreamRng(){static ChainElem node;return node;}
