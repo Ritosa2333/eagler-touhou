@@ -72,14 +72,18 @@ bool TitleOptionsMenu::refresh_volumes() {
                                             : kSpriteLarge) +
                                        digits[place]))
                     return fail("Title option digit sprite select failed");
-                // 原版 VM+0x18 bit1 ↔ port visual.flags bit0（tick 每帧按 flags
-                // 重导出 visible，双写与 TitleSelectionMenu poke 惯例一致）。
+                // 0044ed70 尾段（0x44f3e0/0x44f430/0x44f480 `and [vm+0x18],0xfffffffd`、
+                // 0x44f640/0x44f8a0 `or [vm+0x18],2`）：前导零可见位走 +0x18 bit1
+                //（= port visual.flags bit1，与 pause_tree 同位；绘制门
+                // AnmRenderer `flags&3==3`），从不触碰 bit0 —— bit0 由脚本
+                // op300（0x46356a `or [ebx+0x18],eax`，eax=1）与 label 跳转
+                //（0x46265d `or [ebx+0x18],1`）管理。行切换广播（0x46fca0
+                // label3 → 子体 tick 跳转 → bit0 置位）因此不会复活已隐藏的
+                // 百位/十位 0（此前误用 bit0 隐藏曾致「060」闪烁）。
                 if (visible[place]) {
-                    vm->visual.flags |= 1u;
-                    vm->visible = true;
+                    vm->visual.flags |= 2u;
                 } else {
-                    vm->visual.flags &= ~1u;
-                    vm->visible = false;
+                    vm->visual.flags &= ~2u;
                 }
             }
         }
