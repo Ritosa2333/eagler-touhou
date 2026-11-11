@@ -1,13 +1,16 @@
 @layer components {
   .site-footer {border-top: 1px solid var(--kit-border); color: var(--kit-foreground);}
-  .site-footer-grid {max-width: var(--launcher-layout-width); margin: auto; padding: 15px var(--launcher-layout-gutter) 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 40px;}
-  .site-footer-brand {grid-column: 1 / -1; display: flex; align-items: center; min-height: 44px; width: 132px;}
+  .site-footer-grid {max-width: 1120px; margin: auto; padding: 24px var(--launcher-layout-gutter) 28px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 24px;}
+  .site-footer-brand {grid-column: 1 / -1; display: flex; align-items: flex-start; width: 132px;}
   .site-footer-brand .site-brand {width: 100%;}
-  .site-footer h2 {margin: 0 0 7px; font: 500 18px / 1.35 var(--kit-font);}
+  .site-footer h2 {margin: 0 0 8px; font: 500 15px / 24px var(--kit-font);}
   .site-footer nav {min-width: 0;}
-  .site-footer nav :is(a, button) {display: flex; align-items: center; min-height: 32px; padding: 0; border: 0; background: transparent; color: var(--kit-muted-foreground); font: 400 14px / 20px var(--kit-font); text-decoration: none; text-align: left; overflow-wrap: anywhere; cursor: pointer;}
+  .site-footer nav :is(a, button) {display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 0; border: 0; background: transparent; color: var(--kit-muted-foreground); font: 400 14px / 20px var(--kit-font); text-decoration: none; text-align: left; overflow-wrap: anywhere; cursor: pointer;}
+  .site-footer nav svg {width: 15px; height: 15px; flex: none; stroke-width: 1.7;}
+  .site-footer nav .site-footer-external {width: 12px; height: 12px; margin-left: -4px; opacity: .65;}
+  .site-footer nav span .site-footer-external {display: inline; margin-left: 0; vertical-align: -1px;}
   .site-footer nav :is(a, button):hover {color: var(--kit-foreground); text-decoration: underline; text-underline-offset: 4px;}
   .site-footer :is(a, button):focus-visible {outline: 2px solid var(--kit-ring); outline-offset: 3px;}
-  @media (min-width: 720px) {.site-footer-grid {grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; padding-block: 22px 23px;}}
-  @media (min-width: 960px) {.site-footer-grid {grid-template-columns: minmax(150px, 1.1fr) repeat(4, minmax(0, 1fr)); gap: 24px; padding-block: 25px 26px;}.site-footer-brand {grid-column: auto; min-height: 0;}}
+  @media (min-width: 720px) {.site-footer-grid {grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; padding-block: 28px 32px;}}
+  @media (min-width: 960px) {.site-footer-grid {grid-template-columns: 160px repeat(3, minmax(100px, 1fr)) minmax(190px, 1.25fr); gap: 32px;}.site-footer-brand {grid-column: auto; padding-top: 2px;}}
 }
