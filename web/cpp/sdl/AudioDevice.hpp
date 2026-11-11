@@ -102,6 +102,10 @@ public:
     bool mix(float* stereo, u32 frames);
     bool seek_music_frames(u32 frame);
     Statistics statistics() const;
+    // 当前选中曲目文件名（thbgm.fmt 布局行；无曲目 = 空）。0x4e13c0 对应物：
+    // 0043f570 疮痍快照 / 00440772 续关恢复的曲名源。defer 模式下读已应用
+    // 态（impl->track 只在冲账拍变更），与听感一致。
+    std::string music_filename() const;
     // Original voice+0x10 (averaged milli-pan from 0x460dd0) and the
     // attenuation fixed by 0x4613c0 at this ID's last start. Diagnostics for
     // PCM tests and traces; invalid IDs return 0.
