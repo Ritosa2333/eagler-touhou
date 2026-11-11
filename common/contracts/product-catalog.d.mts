@@ -58,7 +58,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
     }>;
     th03: Readonly<{
-        testOnly:true; number:'03';title:'東方夢時空';subtitle:'Phantasmagoria of Dim.Dream';cardArtwork:'th03-card.webp';
+        buildOptIn:true; testOnly:true; number:'03';title:'東方夢時空';subtitle:'Phantasmagoria of Dim.Dream';cardArtwork:'th03-card.webp';
         storage:Readonly<{saveRoot:'/savesth03';scoreFile:'YUME.NEM';configFiles:readonly string[]}>;
         runtime:'./runtime/th03/th03.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
         dataProvider:'retail-memory';runtimeResourceTransport:'resources';

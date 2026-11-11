@@ -126,7 +126,7 @@ export const PRODUCT_GAMES = Object.freeze({
         features:Object.freeze({thprac:false,languages:false,focusHitbox:false}),
     }),
     th03: Object.freeze({
-        testOnly: true, number: '03', title: '東方夢時空', subtitle: 'Phantasmagoria of Dim.Dream', cardArtwork: 'th03-card.webp',
+        buildOptIn: true, testOnly: true, number: '03', title: '東方夢時空', subtitle: 'Phantasmagoria of Dim.Dream', cardArtwork: 'th03-card.webp',
         storage: Object.freeze({saveRoot:'/savesth03',scoreFile:'YUME.NEM',configFiles:Object.freeze(["YUME.CFG"])}),
         runtime:'./runtime/th03/th03.html', runtimeFileLayout:'directory', runtimeFileTree:true,
         runtimeAssets:Object.freeze(['th03.html','manifest.json','managed-shell.mjs','managed-data.mjs','managed-worker.mjs']), requiredShared:Object.freeze([]),
