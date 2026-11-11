@@ -651,7 +651,7 @@ for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product 
     await rowsMount.update({snapshot: f.service.getSnapshot()});
     const snapshot = f.service.getSnapshot();
     const policy = owners.multiplayerConfigForProduct(product);
-    if (policy.inGameSelection) {
+    if (policy.inGameSelection && product !== 'th03mp') {
       assert.equal(env.document.querySelector('.lobby-difficulty'),null);
       assert.equal(all('.difficulty-label').length, 0);
     } else {
@@ -673,9 +673,10 @@ for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product 
     const policy = owners.multiplayerConfigForProduct(product);
     assert.deepEqual(all('#capacitySelect option').map(x => [x.value, x.textContent]), policy.playerCounts.map(count => [String(count), t(locale, 'lobby.playersCount', {count})]));
     assert.deepEqual(all('#difficultySelect option').map(x => [x.value, x.textContent]), policy.difficulties.map((name, index) => [String(index), name]));
-    assert.equal(n('#difficultySelect').disabled,!!policy.inGameSelection);
-    assert.equal(n('#difficultySelect').closest('label').hidden,!!policy.inGameSelection);
-    if(policy.inGameSelection) assert.ok(n('#roomForm').textContent.includes(t(locale,'room.inGameSelectionHint')));
+    const inGameDifficulty = !!policy.inGameSelection && product !== 'th03mp';
+    assert.equal(n('#difficultySelect').disabled,inGameDifficulty);
+    assert.equal(n('#difficultySelect').closest('label').hidden,inGameDifficulty);
+    if(inGameDifficulty) assert.ok(n('#roomForm').textContent.includes(t(locale,'room.inGameSelectionHint')));
   }
   await m.update({open: false});
 });

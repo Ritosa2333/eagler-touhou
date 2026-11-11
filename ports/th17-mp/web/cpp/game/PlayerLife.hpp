@@ -11,6 +11,11 @@ struct PlayerLifeSession {
     u32 roaring_flags=0;Timer roaring_countdown;bool bomb_available=true;
     i32 roaring_breaks=0;
     u32 practice_tools=0;
+    bool challenge=false;
+    void enable_challenge() noexcept {
+        challenge=true;
+        initial_bombs=bombs=bomb_pieces=0;
+    }
 };
 struct PlayerLifeServices {
     virtual ~PlayerLifeServices()=default;

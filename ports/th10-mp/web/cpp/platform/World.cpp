@@ -127,7 +127,10 @@ bool World::end_netplay_frame(){
 }
 bool World::commit_audio(){
     const auto& runtime=state.netplay_runtime;
-    if(runtime.StagePlaybackReady())return true;
+    // Confirmed spectator ticks write directly to the native audio manager.
+    // AppLoop skips its normal queue update during multiplayer, so drain it
+    // here too, including music commands during silent fast-forward.
+    if(runtime.StagePlaybackReady())return audio.update()>=0;
     if(runtime.Correcting()||runtime.HasRollbackRequest())return true;
     return audio_events.CommitThrough(runtime.ConfirmedThroughAllRemotes(),
         runtime.LastSimulatedFrame(),audio.manager,[](void* context){

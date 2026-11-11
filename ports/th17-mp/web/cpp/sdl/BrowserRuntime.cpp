@@ -57,7 +57,7 @@ struct RoomPhaseTimer {
 };
 struct RoomRuntime final : multiplayer::World {
 #if TH17_ROOM_BENCHMARK
- using Status=std::array<u32,51>;
+ using Status=std::array<u32,54>;
 #else
  using Status=std::array<u32,44>;
 #endif
@@ -97,6 +97,9 @@ struct RoomRuntime final : multiplayer::World {
  std::uint64_t now_ms=0;
  u32 capture_count=0,capture_us=0,replay_slices=0,logical_draws=0;
  unsigned pending_releases=0;
+ uintptr_t early_capture_token=0;
+ double early_capture_until=0;
+ u32 early_capture_head=0;
  bool released_confirmed=false;
  std::array<u32,3> phase_corrections{};
  u32 barrier=Netplay::INVALID_FRAME;
@@ -253,7 +256,7 @@ struct RoomRuntime final : multiplayer::World {
 #if TH17_ROOM_BENCHMARK
    if(benchmark_story_stage)initial_stage=benchmark_story_stage;
 #endif
-   if(!app->begin_room(setup.seed,setup.difficulty,setup.seats,loadouts,initial_stage))return false;
+   if(!app->begin_room(setup.seed,setup.difficulty,setup.seats,loadouts,initial_stage,setup.challenge))return false;
    app->renderer.hud_viewer=setup.local+1;
    entered=true;
   }
@@ -282,7 +285,7 @@ struct RoomRuntime final : multiplayer::World {
   if(!spectator&&!playing_replay&&!setup.local&&!publisher_failed&&app->scene()&&!app->scene()->active()&&
      entry_stage!=app->room_stage_generation&&app->loading_destination==AppScene::Uninitialized){
    if(multiplayer::capture_stage_entry(*app,setup,menu_before,number,output.publication.initializer)){
-    output.publication.schema=multiplayer::StageEntry::schema;entry_stage=app->room_stage_generation;
+    output.publication.schema=multiplayer::StageEntry::transport_schema;entry_stage=app->room_stage_generation;
    }else {publisher_failed=true;transport.StopSpectators();}
   }
   const auto bosses_before=app->scene()?app->scene()->battle.enemy_world.boss_ids:std::array<u32,3>{};
@@ -343,7 +346,7 @@ struct RoomRuntime final : multiplayer::World {
   now_ms=std::uint64_t(now);
   // Input cadence follows the refresh clock. Use the live clock for the
   // transport so callback jitter does not change packet and retry timings.
-  session.capture_phase(entered&&!can_predict(),std::uint64_t((input_time>=0?input_time:now)*1000));
+  session.capture_phase(entered&&!can_predict(),std::uint64_t((input_time>=0?input_time:now)*1000),app->touch.mode==2);
   replay_deadline=now+8;
   if(spectator)return receive_spectator();
   if(playing_replay)return true;
@@ -417,6 +420,9 @@ RoomRuntime::Status RoomRuntime::status(u32 number)const{
    result[14+seat*4]=u32(pilot.session.extra_lives);result[15+seat*4]=u32(pilot.session.bombs);
    result[24+seat]=u32(pilot.session.power);
    if(battle.pilot_ghost(seat))result[43]|=1u<<seat;
+#if TH17_ROOM_BENCHMARK
+   result[51+seat]=u32(pilot.session.deaths);
+#endif
   }
   result[27]=battle.items->items.active_count;result[28]=battle.items->spirits.count();
   result[29]=battle.laser_scene->manager.count();result[30]=battle.spell.flags;result[31]=app->visual.calls;
@@ -526,7 +532,7 @@ u32 sample_controller(u32& buttons){
  const auto hat=SDL_GetNumJoystickHats(controller)>0?SDL_GetJoystickHat(controller,0):0;
  if(hat&SDL_HAT_UP)keys|=0x10;if(hat&SDL_HAT_DOWN)keys|=0x20;if(hat&SDL_HAT_LEFT)keys|=0x40;if(hat&SDL_HAT_RIGHT)keys|=0x80;return keys;
 }
-bool sample_and_tick(double input_time=-1){
+bool sample_and_tick(double input_time=-1,bool capture_only=false){
  if(!app)return false;SDL_Event event;while(SDL_PollEvent(&event)){
   ThpracUi::process_event(event,float(render_scale));
   if(event.type==SDL_EVENT_WINDOW_FOCUS_LOST){clear_inputs();lost_focus=!th17_host_has_focus();}
@@ -539,7 +545,7 @@ bool sample_and_tick(double input_time=-1){
   if(!room->local_results){
    if(room->spectator||room->playing_replay)return room->update();
    if(room->terminal)return room->update(false);
-   if(!room->session.needs_input())return room->update();
+   if(!room->session.needs_input())return capture_only?room->session.flush_inputs(room->now_ms):room->update();
   }
  }
 #endif
@@ -574,7 +580,7 @@ bool sample_and_tick(double input_time=-1){
  if(ThpracUi::captures_game_input(*app)){held=buttons=0;app->touch={};}
 #if TH17_MULTIPLAYER
  if(room&&!room->local_results){
-  if(room->capture_physical(held,app->touch))return room->update();
+  if(room->capture_physical(held,app->touch))return capture_only?room->session.flush_inputs(room->now_ms):room->update();
   room->session.flush_inputs(room->now_ms);
   return false;
  }
@@ -586,6 +592,31 @@ bool sample_and_tick(double input_time=-1){
  if(ok){window_ticks++;const double duration=now-window_start;if(duration>=1){measured_fps=float(window_ticks/duration);window_ticks=0;window_start=now;}}
  return ok;
 }
+#if TH17_MULTIPLAYER
+// A slow lane still samples only one real input for each immutable slot.
+// Use a timer because a 60 Hz page has no intervening rAF to send that slot.
+void queue_early_room_capture(double next_tick){
+ if(!room||room->spectator||room->playing_replay||room->local_results||room->terminal||
+    app->touch.mode!=2||!room->can_predict()||!room->session.can_capture_early())return;
+ const double now=emscripten_get_now();
+ if(next_tick-now<4)return;
+ static uintptr_t token=0;
+ room->early_capture_token=++token;
+ room->early_capture_head=room->session.prediction_head();
+ room->early_capture_until=next_tick-1;
+ emscripten_async_call([](void* cookie){
+  const double capture_time=emscripten_get_now();
+  if(!running||suspended||!room||room->early_capture_token!=uintptr_t(cookie)||
+     capture_time>room->early_capture_until||room->session.prediction_head()!=room->early_capture_head||
+     room->terminal||room->local_results||!room->can_predict()||
+     room->session.repair_pending()||!room->session.can_capture_early())return;
+  if(!sample_and_tick(capture_time,true)){
+   running=false;
+   th17_browser_frame(0,0,0,0);
+  }
+ },reinterpret_cast<void*>(token),int(std::max(1.,next_tick-now-8.)));
+}
+#endif
 }
 }
 extern "C" {
@@ -606,7 +637,9 @@ EMSCRIPTEN_KEEPALIVE int th17_room_preview(){
 }
 EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,const char* url,const char* spectator_id){
  using namespace th17::sdl;
- if(!app||!app->title||running||room||!words||count!=19||words[0]!=2||!url||
+ if(!app||!app->title||running||room||!words||!url)return 0;
+ const bool legacy=count==19&&words[0]==2;
+ if((!legacy&&(count!=20||words[0]!=3||words[19]>1))||
     words[1]>3||words[2]>=words[1]||words[3]>4||words[4]>65535||words[7]>9||words[18]>1||
     (words[18]&&words[7]))return 0;
  auto candidate=std::make_unique<RoomRuntime>();
@@ -616,6 +649,7 @@ EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,con
  setup.difficulty=std::uint8_t(words[3]);setup.seed=th17::u16(words[4]);
  setup.room=words[5]|(std::uint64_t(words[6])<<32);
  setup.delay=std::uint8_t(words[7]);setup.rollback=words[18]!=0;
+ setup.challenge=!legacy&&words[19]!=0;
  for(unsigned seat=0;seat<3;++seat){
   if(words[8+seat*2]>2||words[9+seat*2]>2)return 0;
   setup.loadouts[seat]={std::uint8_t(words[8+seat*2]),std::uint8_t(words[9+seat*2])};
@@ -642,7 +676,7 @@ EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,con
 EMSCRIPTEN_KEEPALIVE int th17_room_return(){
  using namespace th17::sdl;
  if(running||!app)return 0;
- room.reset();app->room_replay_save={};app->room_seats=0;app->room_partners={};
+ room.reset();app->room_replay_save={};app->room_seats=0;app->room_challenge=false;app->room_partners={};
  app->flow.pending=th17::AppScene::Title;
  if(!app->release_ending()||!app->release_game()||!app->release_title())return 0;
  app->recording.reset();app->room_description.reset();app->selected_replay.reset();
@@ -725,6 +759,12 @@ EMSCRIPTEN_KEEPALIVE unsigned th17_room_wait_state(){
         (room->barrier==room->session.next_frame()?2u:0u)|
         (!app->can_rollback()?4u:0u)|
         (scene&&scene->battle.dialogue_present()?8u:0u);
+}
+EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_input_frontiers(){
+ using namespace th17::sdl;
+ static std::array<unsigned,7> value{};
+ value=room?room->session.input_frontiers():std::array<unsigned,7>{};
+ return value.data();
 }
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_performance(){
  using namespace th17::sdl;
@@ -876,6 +916,7 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
   }
 #if TH17_MULTIPLAYER
   if(room)room->release_retired(deadline);
+  if(ok&&completed)queue_early_room_capture(time+(period-cadence.debt)*1000);
 #endif
   if(ok&&presented)++presentation_frames;const double elapsed=time-presentation_start;if(elapsed>=1000){presentation_fps=float(presentation_frames*1000./elapsed);presentation_start=time;presentation_frames=0;}
   if(work||presented||elapsed>=1000)th17_browser_frame(ok?1:0,emscripten_get_now()-begin,completed,presented);
