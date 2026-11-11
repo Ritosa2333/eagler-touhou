@@ -1919,6 +1919,9 @@ export declare function createLocalProductManifest(): {
         } | (typeof PRODUCT_GAMES.th19 & {music: {midi: {files: never[]; supported: boolean}};languageOptions: {id: string; title: string; pack: null}[];}) | (typeof PRODUCT_GAMES.th05 & {music: {midi: {files: never[]; supported: boolean}};languageOptions: {id: string; title: string; pack: null}[];}) | (typeof PRODUCT_GAMES.th12 & {
             music: {midi: {files: never[]; supported: boolean}};
             languageOptions: {id: string; title: string; pack: null}[];
+        }) | (typeof PRODUCT_GAMES.th13 & {
+            music: {midi: {files: never[]; supported: boolean}};
+            languageOptions: {id: string; title: string; pack: null}[];
         });
     };
 };

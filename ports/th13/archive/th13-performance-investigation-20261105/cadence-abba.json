@@ -1,0 +1,514 @@
+[
+  {
+    "config": {
+      "stage": 6,
+      "scale": 2,
+      "variant": "base",
+      "rate": 6
+    },
+    "info": {
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Laptop GPU (0x000028E0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "timer": true,
+      "initMs": 408.8999999985099
+    },
+    "windows": [],
+    "realtime": {
+      "elapsed": 4084.5,
+      "startFrame": 4200,
+      "endFrame": 4412,
+      "displayFps": 23.258660790794465,
+      "logicFps": 51.903537764720284,
+      "callbacks": 113,
+      "tickHistogram": {
+        "0": 18,
+        "1": 44,
+        "2": 15,
+        "3": 6,
+        "4": 30
+      },
+      "cpuCallback": {
+        "mean": 33.797345132822485,
+        "p50": 18.90000000037253,
+        "p95": 91.5,
+        "max": 110.60000000149012
+      },
+      "counters": {
+        "calls": 193779,
+        "batches": 155326,
+        "uploadBytes": 0,
+        "readBytes": 0,
+        "frames": 212,
+        "presentations": 95,
+        "bufferReplacements": 156924,
+        "bufferSubUpdates": 0,
+        "vertexUploadBytes": 41532980,
+        "directBytes": 33993960,
+        "copiedBytes": 356160,
+        "layoutSetups": 0,
+        "textureBinds": 6483,
+        "framebufferBinds": 1250,
+        "programCompiles": 0,
+        "genericBatches": 155326,
+        "resamples": 0
+      },
+      "pending": {
+        "pending_destination": -1,
+        "pending_load": 0,
+        "loading_startup": false,
+        "loading_frames": 0,
+        "pending_replay_file": -1,
+        "pending_replay_stage_slot": -1,
+        "replay_active": true,
+        "has_run": true,
+        "has_title": false,
+        "failure": null
+      }
+    }
+  },
+  {
+    "config": {
+      "stage": 6,
+      "scale": 2,
+      "variant": "cap1",
+      "rate": 6
+    },
+    "info": {
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Laptop GPU (0x000028E0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "timer": true,
+      "initMs": 378.30000000074506
+    },
+    "windows": [],
+    "realtime": {
+      "elapsed": 4019.199999999255,
+      "startFrame": 4200,
+      "endFrame": 4418,
+      "displayFps": 54.239649681538715,
+      "logicFps": 54.239649681538715,
+      "callbacks": 285,
+      "tickHistogram": {
+        "0": 67,
+        "1": 218
+      },
+      "cpuCallback": {
+        "mean": 12.148421052679943,
+        "p50": 13.300000000745058,
+        "p95": 21.699999999254942,
+        "max": 26.40000000037253
+      },
+      "counters": {
+        "calls": 198715,
+        "batches": 159601,
+        "uploadBytes": 0,
+        "readBytes": 0,
+        "frames": 218,
+        "presentations": 218,
+        "bufferReplacements": 161223,
+        "bufferSubUpdates": 0,
+        "vertexUploadBytes": 42560080,
+        "directBytes": 34882344,
+        "copiedBytes": 366240,
+        "layoutSetups": 0,
+        "textureBinds": 6660,
+        "framebufferBinds": 1526,
+        "programCompiles": 0,
+        "genericBatches": 159601,
+        "resamples": 0
+      },
+      "pending": {
+        "pending_destination": -1,
+        "pending_load": 0,
+        "loading_startup": false,
+        "loading_frames": 0,
+        "pending_replay_file": -1,
+        "pending_replay_stage_slot": -1,
+        "replay_active": true,
+        "has_run": true,
+        "has_title": false,
+        "failure": null
+      }
+    }
+  },
+  {
+    "config": {
+      "stage": 6,
+      "scale": 2,
+      "variant": "cap1",
+      "rate": 6
+    },
+    "info": {
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Laptop GPU (0x000028E0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "timer": true,
+      "initMs": 401.09999999962747
+    },
+    "windows": [],
+    "realtime": {
+      "elapsed": 4006.5999999996275,
+      "startFrame": 4200,
+      "endFrame": 4420,
+      "displayFps": 54.90939949084522,
+      "logicFps": 54.90939949084522,
+      "callbacks": 297,
+      "tickHistogram": {
+        "0": 77,
+        "1": 220
+      },
+      "cpuCallback": {
+        "mean": 11.532323232278078,
+        "p50": 13,
+        "p95": 22.600000001490116,
+        "max": 34.899999998509884
+      },
+      "counters": {
+        "calls": 200348,
+        "batches": 161024,
+        "uploadBytes": 0,
+        "readBytes": 0,
+        "frames": 220,
+        "presentations": 220,
+        "bufferReplacements": 162654,
+        "bufferSubUpdates": 0,
+        "vertexUploadBytes": 42900960,
+        "directBytes": 35177688,
+        "copiedBytes": 369600,
+        "layoutSetups": 0,
+        "textureBinds": 6717,
+        "framebufferBinds": 1540,
+        "programCompiles": 0,
+        "genericBatches": 161024,
+        "resamples": 0
+      },
+      "pending": {
+        "pending_destination": -1,
+        "pending_load": 0,
+        "loading_startup": false,
+        "loading_frames": 0,
+        "pending_replay_file": -1,
+        "pending_replay_stage_slot": -1,
+        "replay_active": true,
+        "has_run": true,
+        "has_title": false,
+        "failure": null
+      }
+    }
+  },
+  {
+    "config": {
+      "stage": 6,
+      "scale": 2,
+      "variant": "base",
+      "rate": 6
+    },
+    "info": {
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Laptop GPU (0x000028E0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "timer": true,
+      "initMs": 421.09999999962747
+    },
+    "windows": [],
+    "realtime": {
+      "elapsed": 4029,
+      "startFrame": 4200,
+      "endFrame": 4440,
+      "displayFps": 46.909903201787046,
+      "logicFps": 59.56813104988831,
+      "callbacks": 296,
+      "tickHistogram": {
+        "0": 107,
+        "1": 149,
+        "2": 32,
+        "3": 5,
+        "4": 3
+      },
+      "cpuCallback": {
+        "mean": 11.541216216295505,
+        "p50": 11.300000000745058,
+        "p95": 35.30000000074506,
+        "max": 66.59999999962747
+      },
+      "counters": {
+        "calls": 216135,
+        "batches": 174990,
+        "uploadBytes": 0,
+        "readBytes": 0,
+        "frames": 240,
+        "presentations": 189,
+        "bufferReplacements": 176682,
+        "bufferSubUpdates": 0,
+        "vertexUploadBytes": 46211068,
+        "directBytes": 38082072,
+        "copiedBytes": 403200,
+        "layoutSetups": 0,
+        "textureBinds": 7290,
+        "framebufferBinds": 1578,
+        "programCompiles": 0,
+        "genericBatches": 174990,
+        "resamples": 0
+      },
+      "pending": {
+        "pending_destination": -1,
+        "pending_load": 0,
+        "loading_startup": false,
+        "loading_frames": 0,
+        "pending_replay_file": -1,
+        "pending_replay_stage_slot": -1,
+        "replay_active": true,
+        "has_run": true,
+        "has_title": false,
+        "failure": null
+      }
+    }
+  },
+  {
+    "config": {
+      "stage": 6,
+      "scale": 2,
+      "variant": "base",
+      "rate": 12
+    },
+    "info": {
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Laptop GPU (0x000028E0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "timer": true,
+      "initMs": 353.7999999988824
+    },
+    "windows": [],
+    "realtime": {
+      "elapsed": 4347.0999999996275,
+      "startFrame": 4200,
+      "endFrame": 4277,
+      "displayFps": 4.600768328311222,
+      "logicFps": 17.712958063998204,
+      "callbacks": 23,
+      "tickHistogram": {
+        "0": 3,
+        "1": 1,
+        "4": 19
+      },
+      "cpuCallback": {
+        "mean": 182.60869565233588,
+        "p50": 171.5,
+        "p95": 332.7000000011176,
+        "max": 337.30000000074506
+      },
+      "counters": {
+        "calls": 82582,
+        "batches": 59031,
+        "uploadBytes": 0,
+        "readBytes": 0,
+        "frames": 77,
+        "presentations": 20,
+        "bufferReplacements": 59980,
+        "bufferSubUpdates": 0,
+        "vertexUploadBytes": 17721780,
+        "directBytes": 13514088,
+        "copiedBytes": 129360,
+        "layoutSetups": 0,
+        "textureBinds": 2400,
+        "framebufferBinds": 425,
+        "programCompiles": 0,
+        "genericBatches": 59031,
+        "resamples": 0
+      },
+      "pending": {
+        "pending_destination": -1,
+        "pending_load": 0,
+        "loading_startup": false,
+        "loading_frames": 0,
+        "pending_replay_file": -1,
+        "pending_replay_stage_slot": -1,
+        "replay_active": true,
+        "has_run": true,
+        "has_title": false,
+        "failure": null
+      }
+    }
+  },
+  {
+    "config": {
+      "stage": 6,
+      "scale": 2,
+      "variant": "cap1",
+      "rate": 12
+    },
+    "info": {
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Laptop GPU (0x000028E0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "timer": true,
+      "initMs": 380.2999999988824
+    },
+    "windows": [],
+    "realtime": {
+      "elapsed": 4065.300000000745,
+      "startFrame": 4200,
+      "endFrame": 4263,
+      "displayFps": 15.497011290676815,
+      "logicFps": 15.497011290676815,
+      "callbacks": 66,
+      "tickHistogram": {
+        "0": 3,
+        "1": 63
+      },
+      "cpuCallback": {
+        "mean": 55.889393939269766,
+        "p50": 56.30000000074506,
+        "p95": 87.69999999925494,
+        "max": 108
+      },
+      "counters": {
+        "calls": 70732,
+        "batches": 49215,
+        "uploadBytes": 0,
+        "readBytes": 0,
+        "frames": 63,
+        "presentations": 63,
+        "bufferReplacements": 50078,
+        "bufferSubUpdates": 0,
+        "vertexUploadBytes": 15236692,
+        "directBytes": 11450544,
+        "copiedBytes": 105840,
+        "layoutSetups": 0,
+        "textureBinds": 1951,
+        "framebufferBinds": 441,
+        "programCompiles": 0,
+        "genericBatches": 49215,
+        "resamples": 0
+      },
+      "pending": {
+        "pending_destination": -1,
+        "pending_load": 0,
+        "loading_startup": false,
+        "loading_frames": 0,
+        "pending_replay_file": -1,
+        "pending_replay_stage_slot": -1,
+        "replay_active": true,
+        "has_run": true,
+        "has_title": false,
+        "failure": null
+      }
+    }
+  },
+  {
+    "config": {
+      "stage": 6,
+      "scale": 2,
+      "variant": "cap1",
+      "rate": 12
+    },
+    "info": {
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Laptop GPU (0x000028E0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "timer": true,
+      "initMs": 387.2000000011176
+    },
+    "windows": [],
+    "realtime": {
+      "elapsed": 4104.5,
+      "startFrame": 4200,
+      "endFrame": 4264,
+      "displayFps": 15.592642221951516,
+      "logicFps": 15.592642221951516,
+      "callbacks": 67,
+      "tickHistogram": {
+        "0": 3,
+        "1": 64
+      },
+      "cpuCallback": {
+        "mean": 55.56417910437753,
+        "p50": 54.80000000074506,
+        "p95": 83.19999999925494,
+        "max": 118.90000000037253
+      },
+      "counters": {
+        "calls": 71591,
+        "batches": 49901,
+        "uploadBytes": 0,
+        "readBytes": 0,
+        "frames": 64,
+        "presentations": 64,
+        "bufferReplacements": 50769,
+        "bufferSubUpdates": 0,
+        "vertexUploadBytes": 15413232,
+        "directBytes": 11597544,
+        "copiedBytes": 107520,
+        "layoutSetups": 0,
+        "textureBinds": 1983,
+        "framebufferBinds": 448,
+        "programCompiles": 0,
+        "genericBatches": 49901,
+        "resamples": 0
+      },
+      "pending": {
+        "pending_destination": -1,
+        "pending_load": 0,
+        "loading_startup": false,
+        "loading_frames": 0,
+        "pending_replay_file": -1,
+        "pending_replay_stage_slot": -1,
+        "replay_active": true,
+        "has_run": true,
+        "has_title": false,
+        "failure": null
+      }
+    }
+  },
+  {
+    "config": {
+      "stage": 6,
+      "scale": 2,
+      "variant": "base",
+      "rate": 12
+    },
+    "info": {
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Laptop GPU (0x000028E0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "timer": true,
+      "initMs": 362.19999999925494
+    },
+    "windows": [],
+    "realtime": {
+      "elapsed": 4423.5,
+      "startFrame": 4200,
+      "endFrame": 4273,
+      "displayFps": 4.29524132474285,
+      "logicFps": 16.502769300327795,
+      "callbacks": 22,
+      "tickHistogram": {
+        "0": 3,
+        "1": 1,
+        "4": 18
+      },
+      "cpuCallback": {
+        "mean": 194.69545454540375,
+        "p50": 198.80000000074506,
+        "p95": 361.1000000014901,
+        "max": 375.19999999925494
+      },
+      "counters": {
+        "calls": 79226,
+        "batches": 56180,
+        "uploadBytes": 0,
+        "readBytes": 0,
+        "frames": 73,
+        "presentations": 19,
+        "bufferReplacements": 57101,
+        "bufferSubUpdates": 0,
+        "vertexUploadBytes": 16999560,
+        "directBytes": 12914496,
+        "copiedBytes": 122640,
+        "layoutSetups": 0,
+        "textureBinds": 2272,
+        "framebufferBinds": 403,
+        "programCompiles": 0,
+        "genericBatches": 56180,
+        "resamples": 0
+      },
+      "pending": {
+        "pending_destination": -1,
+        "pending_load": 0,
+        "loading_startup": false,
+        "loading_frames": 0,
+        "pending_replay_file": -1,
+        "pending_replay_stage_slot": -1,
+        "replay_active": true,
+        "has_run": true,
+        "has_title": false,
+        "failure": null
+      }
+    }
+  }
+]
