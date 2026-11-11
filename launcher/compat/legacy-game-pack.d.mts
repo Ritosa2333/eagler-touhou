@@ -1,3 +1,6 @@
+export const GAME_DATA_PACK_SCHEMA: "eagler-touhou/game-data-pack/1";
+export const OFFLINE_GAME_PACK_SCHEMA: "eagler-touhou/offline-game-pack/1";
+
 import type { GameId } from "../src/contracts/product-catalog.mjs";
 
 export interface LegacyDeclaredFile {

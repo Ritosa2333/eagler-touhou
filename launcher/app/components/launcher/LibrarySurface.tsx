@@ -2,6 +2,7 @@ import type {ReactNode} from 'react';
 import type {LibraryCardsProps} from './LibraryCards';
 import {BookLibrary} from './BookLibrary';
 import {useLocale} from '../../i18n';
+import {SiteFooter} from './SiteFooter';
 
 export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> {
   masthead: ReactNode;
@@ -10,9 +11,10 @@ export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' |
   roomOpen?: boolean;
   roomDrawer?: ReactNode;
   children?: ReactNode;
+  onDonation?: () => void;
 }
 /** The page holds library content. Settings occupy the application overlay layer. */
-export function LibrarySurface({masthead, serverStatusNote, optionsOpen, roomOpen = false, roomDrawer, children, ...rail}: LibrarySurfaceProps) {
+export function LibrarySurface({masthead, serverStatusNote, optionsOpen, roomOpen = false, roomDrawer, children, onDonation, ...rail}: LibrarySurfaceProps) {
   const {t} = useLocale();
   return <><div className="library-background" aria-hidden="true"/><div className="sheet">
     {masthead}
@@ -23,6 +25,7 @@ export function LibrarySurface({masthead, serverStatusNote, optionsOpen, roomOpe
       </div>
       {children}
     </main>
+    <SiteFooter onDonation={onDonation}/>
     {roomDrawer}{serverStatusNote}
   </div></>;
 }

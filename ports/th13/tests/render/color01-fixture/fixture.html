@@ -1,0 +1,15 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>COLOR-01 production Renderer fixture</title>
+<canvas id="canvas" width="640" height="480"></canvas>
+<script type="module">
+import createColor01Fixture from './fixture.mjs';
+try {
+  const mod = await createColor01Fixture();
+  const ptr = mod._color01_run();
+  window.color01Result = mod.UTF8ToString(ptr);
+} catch (error) {
+  window.color01Error = String(error && error.stack ? error.stack : error);
+}
+window.color01Ready = true;
+</script>

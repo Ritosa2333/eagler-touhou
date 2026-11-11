@@ -1,6 +1,7 @@
 import {TH05_DATA_LAYOUT,TH05_MUSIC_FILES} from "./th05-content-layout.mjs";
 import {TH17_MUSIC_FILES} from "./th17-content-layout.mjs";
 import { TH12_DATA_LAYOUT, TH12_MUSIC_FILES } from "./th12-content-layout.mjs";
+import { TH13_DATA_LAYOUT, TH13_MUSIC_FILES } from "./th13-content-layout.mjs";
 import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
 import { TH15_MUSIC_FILES } from "./th15-content-layout.mjs";
 import { TH11_MUSIC_FILES } from "./th11-content-layout.mjs";
@@ -14,10 +15,33 @@ const TH06_ARCHIVES = Object.freeze([
 const TH05_PREPARED_CONTENT = Object.freeze({directory: "assets-eagler", markerFiles: Object.freeze([
   "th05.data", ...TH05_MUSIC_FILES.map(file => `music/${file}`), "artwork/th05-card.webp",
 ])});
+const PC98_DATA_LAYOUT = "sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579";
+function pc98PreparedContent(game, tracks) {
+  const files = Object.freeze([`${game}.data`]);
+  const preparedContent = Object.freeze({directory: "content", markerFiles: files});
+  return Object.freeze({
+    original: Object.freeze({files, preparedAlternative: preparedContent}),
+    dataLayout: PC98_DATA_LAYOUT,
+    music: Object.freeze({ogg: Object.freeze({
+      mount: PRODUCT_GAMES[game].package.musicMounts.ogg,
+      files: Object.freeze(Array.from({length: tracks}, (_, index) => `${String(index + 1).padStart(2, "0")}.ogg`)),
+    })}),
+    hostPreparation: Object.freeze({
+      preparedContent,
+      artwork: Object.freeze({kind: "prepared-artwork"}),
+      ogg: Object.freeze({kind: "prepared-content"}),
+      dataAssets: Object.freeze({kind: "prepared-content"}),
+    }),
+  });
+}
 
 // Product content shape only. This file declares names and Runtime mounts, but
 // never points at a workstation build, asset directory, or generated identity.
 export const PRODUCT_CONTENT = Object.freeze({
+  th01: pc98PreparedContent("th01", 14),
+  th02: pc98PreparedContent("th02", 15),
+  th03: pc98PreparedContent("th03", 21),
+  th04: pc98PreparedContent("th04", 22),
   th05: Object.freeze({
     original: Object.freeze({files: Object.freeze(["kaiki1.dat", "kaiki2.dat", "zun.com"]), preparedAlternative: TH05_PREPARED_CONTENT}),
     dataLayout: TH05_DATA_LAYOUT,
@@ -288,13 +312,31 @@ export const PRODUCT_CONTENT = Object.freeze({
   th13: Object.freeze({
     original: Object.freeze({
       files: Object.freeze(["th13.dat"]),
-      oggSourceFiles: Object.freeze(["thbgm.dat"]),
+      oggSourceFiles: Object.freeze(["bgm-ogg/thbgm.ogg"]),
+      preparedAlternative: Object.freeze({
+        directory: "assets-ogg",
+        markerFiles: Object.freeze(["th13.data", "bgm-ogg/thbgm.ogg"]),
+      }),
     }),
-    dataLayout: "sha256-9aceb48a8a4c87b1f3d916ae86c8788dee80e271ce42553f3246e699d91a7f18",
+    dataLayout: TH13_DATA_LAYOUT,
     music: Object.freeze({
-      ogg: Object.freeze({mount: PRODUCT_GAMES.th13.package.musicMounts.ogg, files: Object.freeze(["thbgm.ogg"])}),
+      ogg: Object.freeze({
+        mount: PRODUCT_GAMES.th13.package.musicMounts.ogg,
+        files: TH13_MUSIC_FILES,
+      }),
     }),
-    hostPreparation: Object.freeze({dataAssets: Object.freeze({kind: "prepared-content"})}),
+    hostPreparation: Object.freeze({
+      artwork: Object.freeze({
+        kind: "retail-memory-title-no-reader",
+      }),
+      preparedContent: Object.freeze({
+        directory: "assets-ogg",
+        markerFiles: Object.freeze(["th13.data", "bgm-ogg/thbgm.ogg"]),
+        script: "scripts/prepare-th13-content.mjs",
+      }),
+      ogg: Object.freeze({ kind: "prepared-content" }),
+      dataAssets: Object.freeze({ kind: "prepared-content" }),
+    }),
   }),
   th15: Object.freeze({
     original: Object.freeze({

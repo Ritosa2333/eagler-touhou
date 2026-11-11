@@ -137,7 +137,7 @@ async function profile(){
   }
   await button('账户设置');
   for(const[label,module]of [['编辑资料','edit'],['隐私','privacy'],['账户与安全','security']]){await button(label,'.profile-settings-heading [role=tab]');await page.keyboard.press('Control+Home');await shot('profile-'+module);await page.keyboard.press('Control+End');await shot('profile-'+module+'-bottom');}
-  await go('/login.html');await page.waitForSelector('.account-tabs');await shot('account-login');await button('注册','.account-tabs [role=tab]');await shot('account-register');
+  await go('/login.html');await page.waitForSelector('.account-switch');await shot('account-login');await button('注册账号','.account-switch');await shot('account-register');
 }
 async function directory(){
   await fixture('directory.html');await page.waitForSelector('#roomList .lobby-room-row');

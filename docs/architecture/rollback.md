@@ -2,7 +2,7 @@
 
 回滚通过输入历史和状态日志恢复游戏世界，再按帧确认顺序提交音频、存档、Replay 与观战输出。维护多人帧循环时，按下方分工接入公共核心与各作状态。
 
-配套阅读：[联机输入时序与 Adonis](netplay.md)；[适配总览](../adaptation/README.md)。旧回滚手册保留为基线 `991e7cdf9060252e022eba25431254c6a0ce73e9` 的历史材料：[回滚 Playbook](https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md)。实验记录列出了当时的构建、输入和设备条件。
+配套阅读：[联机输入时序与 Adonis](netplay.md)；[适配总览](../adaptation/README.md)。旧回滚手册保留为基线 `991e7cdf9060252e022eba25431254c6a0ce73e9` 的历史材料：[回滚 Playbook](https://github.com/Ritosa2333/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md)。实验记录列出了当时的构建、输入和设备条件。
 
 ## 所有权边界
 
@@ -95,7 +95,7 @@
 - 发生生命周期切换时先完成本阶段历史对账，再关闭阶段资源及日志；网络会话另走输入确认和 ACK 退休屏障。
 - 纯延迟模式每帧只在全部真实输入到达后推进，因此不需要预测撤销存储；确认后的音频、存档、Replay 和对象池仍按各自所有权提交。
 
-TH09 输出环按“最旧未发布帧”保留空间，标题驱动同时管理纠正前沿和输出提交游标，供音频、Replay 与观战按序发布。细节见固定基线报告的 [TH09 确认输出保留记录](https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md#th09-confirmed-output-retention-issue-89-2026-10-16)。
+TH09 输出环按“最旧未发布帧”保留空间，标题驱动同时管理纠正前沿和输出提交游标，供音频、Replay 与观战按序发布。细节见固定基线报告的 [TH09 确认输出保留记录](https://github.com/Ritosa2333/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md#th09-confirmed-output-retention-issue-89-2026-10-16)。
 
 ## 标题差异
 
@@ -117,7 +117,7 @@ TH08 的受控分析中，fixture 的 `Update` 大部分成本来自 Bullet job�
 
 TH08 MP 的活动索引在 Item 更新后、Bullet/Laser 更新前重建，替换每名玩家每次扫描 192 个取消区域槽的路径。正向执行与重模拟逐帧刷新索引，其生命周期覆盖这些游戏任务，存档保存原始游戏状态。目标筛选只在瞄准 extra 实际需要时运行；远距离碰撞拒绝保留精确几何回退。
 
-历史受控基准采用 4 倍 CPU 限速：2P Update 从 6.40 ms 降至 2.40 ms，3P 从 8.96 ms 降至 2.92 ms。该基准用同世界、同输入比较更新路径；设备与发布验收按适配表覆盖手机、长流程和音频。完整测量记录见 [TH08 Update 复用报告](https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback/th08-mp-base-update-reuse-2026-09-27.md)。
+历史受控基准采用 4 倍 CPU 限速：2P Update 从 6.40 ms 降至 2.40 ms，3P 从 8.96 ms 降至 2.92 ms。该基准用同世界、同输入比较更新路径；设备与发布验收按适配表覆盖手机、长流程和音频。完整测量记录见 [TH08 Update 复用报告](https://github.com/Ritosa2333/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback/th08-mp-base-update-reuse-2026-09-27.md)。
 
 ### TH09：保持已采样输入，恢复安排不制造额外延迟
 
@@ -128,7 +128,7 @@ TH08 MP 的活动索引在 Item 更新后、Bullet/Laser 更新前重建，替�
 - 真实采样沿 `RollbackSession::Capture()` 发生一次；历史 `Prepare/Complete` 和 `Restored()` 只消费缓存输入。`PacedElapsedMs()` 将 Adonis 建议应用到外层经过时间，而非改变固定逻辑 tick。
 - 确认输出环的退休点独立于“待纠正帧”。按最旧未提交输出保留空间，恢复工作跨显示回调时，已经确认的音频/Replay/观战帧仍可顺序排空。
 
-输入恢复记录：[TH09 输入调度与 Present 后恢复](https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md#th09-input-scheduling-and-post-present-recovery-2026-10-16)。
+输入恢复记录：[TH09 输入调度与 Present 后恢复](https://github.com/Ritosa2333/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md#th09-input-scheduling-and-post-present-recovery-2026-10-16)。
 
 ### th15：值状态、版本身份与基础更新成本
 

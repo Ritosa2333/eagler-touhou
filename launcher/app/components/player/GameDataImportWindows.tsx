@@ -1,5 +1,5 @@
 import {Button as UiButton} from '../../ui/controls';
-import {useEffectEvent, useLayoutEffect, useSyncExternalStore} from 'react';
+import {useEffectEvent, useLayoutEffect, useState, useSyncExternalStore} from 'react';
 import {useLocale} from '../../i18n';
 import type {GameDataImportModel} from '../../models/game-data-import';
 import {closeMainSelectMenus} from '../launcher/MainSelect';
@@ -10,27 +10,43 @@ export interface GameDataImportWindowsProps {
   /** Read the live Runtime state for main's programmatic-popup fallback policy. */
   getRuntimeReady(): boolean;
 }
+
 /** Main public/index.html838–864 + app.mts3328–3367,9643–9672.
  * Host places these transient sections in the correct fullscreen overlay host;
  * no second dialog/history, file session, continuation or startup owner.
  */
 export function GameDataImportWindows({model, getRuntimeReady}: GameDataImportWindowsProps) {
   const {t} = useLocale(), state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
+  const [password, setPassword] = useState('');
   const present = useEffectEvent(() => {
     // Main app.mts3361/9656 closes menus on presentation, including repeated
     // opens. A hidden remount must not replay an earlier presentation, and
     // busy/progress/metadata changes are not presentation events.
     if (state.importOpen || state.linkOpen) closeMainSelectMenus();
   });
-  useLayoutEffect(() => {if (state.presentationRevision) present();}, [state.presentationRevision]);
+  useLayoutEffect(() => {setPassword(''); if (state.presentationRevision) present();}, [state.presentationRevision]);
   const fallback = state.fallback;
   return <>
     <TransientWindow id="gameDataImportWindow" titleId="gameDataImportTitle" title={t('package.importTitle')}
       closeId="gameDataImportClose" closeLabel={t('package.closeImport')} open={state.importOpen} busy={state.busy} onClose={model.dismissImport}>
       <p id="gameDataImportReason">{state.reason || t('package.unavailable')}</p>
       <div className="game-data-import-busy" id="gameDataImportBusy" role="status" aria-live="polite" hidden={!state.busy}><i className="eagler-preload-spinner" aria-hidden="true"/><span id="gameDataImportBusyText">{state.busyText || t('package.installing')}</span></div>
-      <div className="game-data-import-actions"><UiButton variant="primary" className="transfer-import" id="transferImport" type="button" disabled={state.busy} onClick={() => {void model.chooseFile();}}>{t('action.import')}</UiButton><UiButton className="transfer-download" id="transferDownload" type="button" disabled={state.busy || !fallback} title={t(fallback ? 'package.fallbackLinkTitle' : 'package.fallbackLinkUnavailableTitle')} onClick={model.openLink}>{t('action.openLink')}</UiButton></div>
-      <input id="gameDataImportInput" type="file" accept=".zip,.dat,application/zip" hidden onChange={event => {const file = event.currentTarget.files?.[0] ?? null; event.currentTarget.value = ''; void model.importFile(file);}}/>
+      {state.passwordRequired && <div className="game-data-archive-password">
+        <input type="password" aria-label={t('package.originalPassword')} autoComplete="off" value={password}
+          disabled={state.busy} onChange={event => setPassword(event.target.value)}
+          onKeyDown={event => {if (event.key === 'Enter' && password) void model.chooseFile(password);}}/>
+      </div>}
+      <div className="game-data-import-actions">
+        <UiButton variant="primary" className="transfer-import" id="transferImport" type="button"
+          disabled={state.busy || (state.passwordRequired && !password)} onClick={() => {void model.chooseFile(password);}}>{t('action.import')}</UiButton>
+        {!state.passwordRequired && <UiButton className="transfer-download" id="transferDownload" type="button" disabled={state.busy || !fallback}
+          title={t(fallback ? 'package.fallbackLinkTitle' : 'package.fallbackLinkUnavailableTitle')} onClick={model.openLink}>{t('action.openLink')}</UiButton>}
+      </div>
+      <input id="gameDataImportInput" type="file" accept=".zip,.rar,.7z,.dat,.data,.wav,.ogg" multiple hidden onChange={event => {
+        const files = Array.from(event.currentTarget.files ?? []);
+        event.currentTarget.value = '';
+        void model.importSelection(files);
+      }}/>
     </TransientWindow>
     <TransientWindow variant="reference" id="gameDataLinkWindow" titleId="gameDataLinkTitle" title={t('package.downloadTitle')}
       closeId="gameDataLinkClose" closeLabel={t('package.closeLink')} open={state.linkOpen} onClose={model.closeLink}>

@@ -55,6 +55,7 @@ export interface NormalizedMultiplayerLobbySnapshot {
   startedAt?: number;
   visibility: 'public' | 'private';
   disableCheatMovement: boolean;
+  unrated?: boolean;
   disableLocalChargePriority?: boolean;
   challengeMode?: boolean;
   chapterThreshold?: number;
@@ -231,6 +232,7 @@ export function normalizeMultiplayerLobbySnapshot(
       : {}),
     visibility: source.visibility === 'private' ? 'private' : 'public',
     disableCheatMovement: source.disableCheatMovement === true,
+    ...(typeof source.unrated === 'boolean' ? {unrated: source.unrated} : {}),
     ...(source.disableLocalChargePriority !== undefined ? {disableLocalChargePriority: source.disableLocalChargePriority === true} : {}),
     ...(source.challengeMode !== undefined ? { challengeMode: source.challengeMode === true } : {}),
     ...(source.prankMode !== undefined ? { prankMode: false } : {}),

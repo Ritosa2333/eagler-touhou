@@ -26,7 +26,7 @@ import { BUILD_AUTHORITY_PUBLICATION, classifyBuildProfile } from "../lib/build-
 import { hostArtworkFiles } from "../lib/host-artwork.mjs";
 import { assertAppShellContract } from "../lib/app-shell-validation.mjs";
 import { APP_SHELL_RETIREMENT_WORKER } from "../lib/app-shell-retirement.mjs";
-import { readReactFrontendArtifact } from "../lib/react-frontend-artifact.mjs";
+import { assertReactFrontendGameCoverage, readReactFrontendArtifact } from "../lib/react-frontend-artifact.mjs";
 import { STATIC_APP_SHELL_FILES } from "../lib/frontend-static-manifest.mjs";
 import { browserModuleClosure } from "../lib/browser-module-graph.mjs";
 import { normalizeSiteUrl } from "../lib/site-metadata.mjs";
@@ -74,6 +74,7 @@ if (!resourceMode) throw new Error("invalid deployment resourceMode");
 const games = validateSiteManifest(JSON.parse(await readFile(resolve(root, SITE_MANIFEST_FILE), "utf8")));
 await verifyLegacySiteManifestAlias(root, games);
 const gameIds = Object.keys(games.games);
+assertReactFrontendGameCoverage(reactFrontend, gameIds);
 if (!gameIds.length || gameIds.some(game => !Object.hasOwn(PRODUCT_GAMES, game))) {
   throw new Error("Site Manifest contains no products or an unregistered product");
 }

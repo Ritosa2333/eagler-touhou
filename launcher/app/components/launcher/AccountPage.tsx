@@ -1,11 +1,12 @@
 import {loginDestination, notifyAccountChange, useAccountSession} from '../../services/account-session';
-import {accountRequest, AccountRequestError} from '../../services/account-client';
+import {accountRequest, AccountRequestError, mailCaptchaError} from '../../services/account-client';
 import {Input} from '../../ui/input';
-import {Tabs, TabsList, TabsTrigger, TabsContent} from '../../ui/tabs';
+import {Button} from '../../ui/button';
+import {FormCallout} from '../../ui/form-callout';
+import {FieldHelp} from '../../ui/field-help';
 import {Skeleton} from '../../ui/skeleton';
 import {BookButton} from './BookButton';
 import {useEffect, useLayoutEffect, useRef, useState, type FormEvent} from 'react';
-import {ArrowRight} from 'lucide-react';
 import {PasswordField} from './PasswordField';
 import {PasswordResetForm} from './PasswordResetForm';
 import {useSearchParams} from 'react-router';
@@ -14,6 +15,7 @@ import './account-page.css';
 import {useLocale, type UiMessageKey} from '../../i18n';
 
 type RegistrationChallenge = {challengeId: string; expiresAt: number};
+type AccountMode = 'login' | 'register' | 'reset';
 
 export function AccountPage(props: {artworkSrc?:string}) {
   const {t} = useLocale(), {state,retry} = useAccountSession();
@@ -35,18 +37,23 @@ function AccountForm() {
   const [search, setSearch] = useSearchParams();
   const registering = search.get('mode') === 'register';
   const resetting = search.get('mode') === 'reset';
-  const changeMode = (mode: string) => setSearch(previous => {const next = new URLSearchParams(previous); if (mode === 'login') next.delete('mode'); else next.set('mode', mode); return next;});
   const entryInput = useRef<HTMLInputElement>(null);
-  const focusMode = useRef<'login' | 'reset' | null>(null);
+  const codeInput = useRef<HTMLInputElement>(null);
+  const focusMode = useRef<AccountMode | null>(null);
   const activeMode = resetting ? 'reset' : registering ? 'register' : 'login';
-  const changePasswordMode = (mode: 'login' | 'reset', keyboard: boolean) => {
+  const changeMode = (mode: AccountMode, keyboard: boolean) => {
     focusMode.current = keyboard ? mode : null;
-    changeMode(mode);
+    setSearch(previous => {
+      const next = new URLSearchParams(previous);
+      if (mode === 'login') next.delete('mode');
+      else next.set('mode', mode);
+      return next;
+    });
   };
   useLayoutEffect(() => {
     if (focusMode.current !== activeMode) return;
     focusMode.current = null;
-    entryInput.current?.focus({preventScroll: true});
+    (entryInput.current?.disabled ? codeInput.current : entryInput.current)?.focus({preventScroll: true});
   }, [activeMode]);
   const [username, setUsername] = useState(''), [email, setEmail] = useState('');
   const [identity, setIdentity] = useState(''), [loginPassword, setLoginPassword] = useState(''), [registrationPassword, setRegistrationPassword] = useState(''), [confirmation, setConfirmation] = useState('');
@@ -54,9 +61,10 @@ function AccountForm() {
   const [challenge, setChallenge] = useState<RegistrationChallenge | null>(null);
   const registrationLocked = challenge !== null;
   const [code, setCode] = useState('');
+  useEffect(() => {if (registrationLocked) codeInput.current?.focus();}, [registrationLocked]);
   const [remaining, setRemaining] = useState(0), [registrationExpired, setRegistrationExpired] = useState(false);
   const [message, setMessage] = useState<UiMessageKey | null>(null), [error, setError] = useState<UiMessageKey | null>(null);
-  const messageRef = useRef<HTMLParagraphElement>(null);
+  const messageRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!remaining) return;
     const timer = window.setTimeout(() => setRemaining(value => Math.max(0, value - 1)), 1000);
@@ -71,6 +79,8 @@ function AccountForm() {
   }, [registering, resetting]);
   useEffect(() => {if (error) messageRef.current?.focus();}, [error]);
   const errorMessage = (cause: unknown, operation: 'start' | 'resend' | 'verify' | 'login'): UiMessageKey => {
+    const captchaError = mailCaptchaError(cause);
+    if (captchaError) return captchaError;
     const code = cause instanceof AccountRequestError ? cause.code : '';
     const status = cause instanceof AccountRequestError ? cause.status : undefined;
     if (['USERNAME_IS_ALREADY_TAKEN', 'USERNAME_ALREADY_EXISTS'].includes(code)) return 'account.usernameInUse';
@@ -105,19 +115,20 @@ function AccountForm() {
         if (!challenge) throw new AccountRequestError('ACCOUNT_REQUEST_FAILED');
         const result = await accountRequest<{expiresAt: number}>('account/register/resend', {
           challengeId: challenge.challengeId, email: codeTarget, password: registrationPassword,
-        });
+        }, {emailCaptcha: true});
         if (!Number.isFinite(result?.expiresAt)) throw new AccountRequestError('ACCOUNT_RESPONSE_INVALID');
         setChallenge({...challenge, expiresAt: result.expiresAt});
       } else {
         const result = await accountRequest<RegistrationChallenge>('account/register/start', {
           email: codeTarget, username: username.trim(), name: nickname.trim(), password: registrationPassword,
-        });
+        }, {emailCaptcha: true});
         if (typeof result?.challengeId !== 'string' || !result.challengeId || !Number.isFinite(result.expiresAt))
           throw new AccountRequestError('ACCOUNT_RESPONSE_INVALID');
         setChallenge(result);
       }
       setRegistrationExpired(false); setRemaining(60); setMessage('account.codeSent');
     } catch (cause) {
+      if (cause instanceof DOMException && cause.name === 'AbortError') return;
       const expired = cause instanceof AccountRequestError && cause.status === 410;
       setRegistrationExpired(expired);
       setApiError(expired ? null : errorMessage(cause, registrationLocked ? 'resend' : 'start'));
@@ -127,6 +138,7 @@ function AccountForm() {
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (busy) return;
+    if (registering && !registrationLocked) {await sendCode(); return;}
     setError(null); setMessage(null); setApiError(null);
     if (registering && (!challenge || registrationExpired || code.length !== 6)) {setError('account.codeRequired'); return;}
     setBusy(true);
@@ -148,28 +160,45 @@ function AccountForm() {
     }
     finally {setBusy(false);}
   };
-  return <Tabs value={registering ? 'register' : 'login'} onValueChange={changeMode} asChild><div className="account-content">
-        {resetting ? <PasswordResetForm emailInputRef={entryInput} onBack={keyboard => changePasswordMode('login', keyboard)}/> : <>
-        <TabsList asChild><nav className="account-tabs" aria-label={t('account.actions')}>{[['login',t('account.login')],['register',t('account.register')]].map(([mode,label]) => <TabsTrigger key={mode} value={mode} aria-current={registering===(mode==='register') ? 'page' : undefined}>{label}</TabsTrigger>)}</nav></TabsList>
-        <TabsContent asChild value={registering ? 'register' : 'login'}><div key={registering ? 'register' : 'login'} className="account-mode-content">
+  return <div className="account-content">
+        {resetting ? <PasswordResetForm emailInputRef={entryInput} onBack={keyboard => changeMode('login', keyboard)}/> :
+        <div key={activeMode} className="account-mode-content">
         <header><h1 id="account-title">{registering ? t('account.registerTitle') : t('account.login')}</h1></header>
         <form method="post" onSubmit={submit} aria-busy={busy}>
           {registering ? <>
-            <label>{t('account.username')}<Input className="max-[959px]:text-base" name="username" autoComplete="username" minLength={3} maxLength={12} pattern="[A-Za-z0-9_.]{3,12}" required disabled={busy || registrationLocked} value={username} onChange={event => setUsername(event.target.value)} placeholder={t('account.usernamePlaceholder')}/></label>
-            <label>{t('profile.name')}<Input className="max-[959px]:text-base" name="nickname" required maxLength={24} disabled={busy || registrationLocked} value={nickname} placeholder={t('profile.name.placeholder')} onChange={event => setNickname([...event.target.value].slice(0,12).join(''))}/></label>
+            <div className="grid min-w-0 gap-2">
+              <div className="flex items-center gap-1">
+                <label htmlFor="account-username">{t('account.username')}</label>
+                <FieldHelp id="account-username-help" label={t('account.username')}>{t('account.usernameHelp')}</FieldHelp>
+              </div>
+              <Input id="account-username" aria-describedby="account-username-help" ref={entryInput} className="max-[959px]:text-base" name="username" autoComplete="username" minLength={3} maxLength={12} pattern="[A-Za-z0-9_.]{3,12}" required disabled={busy || registrationLocked} value={username} onChange={event => setUsername(event.target.value)}/>
+            </div>
+            <div className="grid min-w-0 gap-2">
+              <div className="flex items-center gap-1">
+                <label htmlFor="account-nickname">{t('account.nickname')}</label>
+                <FieldHelp id="account-nickname-help" label={t('account.nickname')}>{t('account.nicknameHelp')}</FieldHelp>
+              </div>
+              <Input id="account-nickname" aria-describedby="account-nickname-help" className="max-[959px]:text-base" name="nickname" required maxLength={24} disabled={busy || registrationLocked} value={nickname} onChange={event => setNickname([...event.target.value].slice(0,12).join(''))}/>
+            </div>
             <label>{t('account.email')}<Input className="max-[959px]:text-base" name="email" type="email" autoComplete="email" required disabled={busy || registrationLocked} value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com"/></label>
-          </> : <label>{t('account.identity')}<Input ref={entryInput} className="max-[959px]:text-base" name="identity" autoComplete="username" required value={identity} onChange={event => setIdentity(event.target.value)} placeholder={t('account.identityPlaceholder')}/></label>}
-          <label htmlFor="account-password">{t('account.password')}<PasswordField id="account-password" key={registering ? 'register' : 'login'} aria-label={t('account.password')} name="password" autoComplete={registering ? 'new-password' : 'current-password'} minLength={registering ? 8 : undefined} maxLength={128} required disabled={busy || (registering && registrationLocked)} value={registering ? registrationPassword : loginPassword} onChange={event => registering ? setRegistrationPassword(event.target.value) : setLoginPassword(event.target.value)} placeholder={registering ? t('account.newPasswordPlaceholder') : t('account.passwordPlaceholder')}/></label>
-          {!registering && <BookButton variant="quiet" className="account-forgot" type="button" onClick={event => changePasswordMode('reset', event.detail === 0)}>{t('account.forgotPassword')}</BookButton>}
-          {registering && <><label htmlFor="account-password-confirmation">{t('account.confirmPassword')}<PasswordField id="account-password-confirmation" name="confirmation" autoComplete="new-password" maxLength={128} required disabled={busy || registrationLocked} value={confirmation} onChange={event => setConfirmation(event.target.value)} placeholder={t('account.confirmationPlaceholder')} aria-invalid={confirmation.length > 0 && registrationPassword !== confirmation ? true : undefined}/>{confirmation.length > 0 && registrationPassword !== confirmation && <small className="account-field-error">{t('account.passwordMismatch')}</small>}</label>
-            <label>{t('account.emailCode')}<span className="account-code"><Input className="max-[959px]:text-base" name="code" autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ''))} placeholder={t('account.codePlaceholder')}/><BookButton variant="action" type="button" disabled={busy || remaining > 0} onClick={sendCode}>{remaining ? `${remaining}s` : t('account.requestCode')}</BookButton></span></label>
-          </>}
-          {apiError && <p className="account-feedback is-error" role="alert">{t(apiError)}</p>}
-          {error && <p className="account-feedback is-error" role="alert" ref={messageRef} tabIndex={-1}>{t(error)}</p>}
-          {registering && registrationExpired && <><p className="account-feedback" role="status">{t('account.codeExpired')}</p><BookButton variant="action" type="button" className="account-edit-details" disabled={busy} onClick={() => {setChallenge(null); setRegistrationExpired(false); setRemaining(0); setCode(''); setApiError(null); setMessage(null);}}>{t('account.editDetails')}</BookButton></>}
-          {message && <p className="account-feedback" role="status">{t(message)}</p>}
-          <BookButton variant="primary" type="submit" className="account-submit" disabled={busy || (registering && (!registrationLocked || registrationExpired))}>{registering ? t('account.register') : t('account.login')}<ArrowRight aria-hidden="true"/></BookButton>
+          </> : <label>{t('account.identity')}<Input ref={entryInput} className="max-[959px]:text-base" name="identity" autoComplete="username" required value={identity} onChange={event => setIdentity(event.target.value)}/></label>}
+          <div className="account-password-field">
+            <label htmlFor="account-password">{t('account.password')}</label>
+            <PasswordField id="account-password" name="password" autoComplete={registering ? 'new-password' : 'current-password'} minLength={registering ? 8 : undefined} maxLength={128} required disabled={busy || (registering && registrationLocked)} value={registering ? registrationPassword : loginPassword} onChange={event => registering ? setRegistrationPassword(event.target.value) : setLoginPassword(event.target.value)} placeholder={registering ? t('account.newPasswordPlaceholder') : undefined}/>
+            {!registering && <Button variant="link" size="sm" className="account-forgot px-0 text-muted-foreground underline" disabled={busy} onClick={event => changeMode('reset', event.detail === 0)}>{t('account.forgotPassword')}</Button>}
+          </div>
+          {registering && <label htmlFor="account-password-confirmation">{t('account.confirmPassword')}<PasswordField id="account-password-confirmation" name="confirmation" autoComplete="new-password" maxLength={128} required disabled={busy || registrationLocked} value={confirmation} onChange={event => setConfirmation(event.target.value)} aria-invalid={confirmation.length > 0 && registrationPassword !== confirmation ? true : undefined}/>{confirmation.length > 0 && registrationPassword !== confirmation && <small className="account-field-error">{t('account.passwordMismatch')}</small>}</label>}
+          {registering && registrationLocked && <div className="account-code-field">
+            <label htmlFor="account-registration-code">{t('account.emailCode')}</label>
+            <div className="account-code"><Input id="account-registration-code" ref={codeInput} className="max-[959px]:text-base" name="code" autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required disabled={busy || registrationExpired} value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ''))} placeholder={t('account.codePlaceholder')}/><BookButton variant="action" type="button" disabled={busy || registrationExpired || remaining > 0} onClick={sendCode}>{remaining ? `${remaining}s` : t('account.resendCode')}</BookButton></div>
+          </div>}
+          {apiError && <FormCallout type="error" role="alert">{t(apiError)}</FormCallout>}
+          {error && <FormCallout type="error" role="alert" ref={messageRef} tabIndex={-1}>{t(error)}</FormCallout>}
+          {registering && registrationExpired && <><FormCallout type="warning" role="status">{t('account.codeExpired')}</FormCallout><BookButton variant="action" type="button" className="account-edit-details" disabled={busy} onClick={() => {setChallenge(null); setRegistrationExpired(false); setRemaining(0); setCode(''); setApiError(null); setMessage(null);}}>{t('account.editDetails')}</BookButton></>}
+          {message && <FormCallout type="success" role="status">{t(message)}</FormCallout>}
+          <BookButton variant="primary" type="submit" className="account-submit" disabled={busy || registrationExpired && registering}>{t(registering ? registrationLocked ? 'account.register' : 'account.requestCode' : 'account.login')}</BookButton>
         </form>
-        </div></TabsContent></>}
-  </div></Tabs>;
+        <Button variant="link" className="account-switch px-0 text-muted-foreground underline" disabled={busy} onClick={event => changeMode(registering ? 'login' : 'register', event.detail === 0)}>{t(registering ? 'account.backToLogin' : 'account.registerTitle')}</Button>
+        </div>}
+  </div>;
 }

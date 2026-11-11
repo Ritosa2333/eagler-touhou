@@ -87,6 +87,23 @@ public:
             x+=raster->advance;
         }return true;
     }
+    int measure(const std::string& text, std::uint32_t profile = 0) {
+        if(!initialized || profile >= faces.size()) return -1;
+        auto& face = faces[profile];
+        const auto* cursor = reinterpret_cast<const std::uint8_t*>(text.data());
+        const auto* end = cursor + text.size();
+        int width = 0;
+        while(cursor < end && *cursor) {
+            std::uint32_t bytes = *cursor++;
+            if((bytes >= 0x81 && bytes <= 0x9f) || (bytes >= 0xe0 && bytes <= 0xfc)) {
+                if(cursor < end && *cursor) bytes = (bytes << 8) | *cursor++;
+            }
+            const auto* raster = glyph(face, encoding[bytes]);
+            if(!raster) return -1;
+            width += raster->advance;
+        }
+        return width;
+    }
     std::size_t cachedGlyphs()const {std::size_t result=0;for(const auto& face:faces)result+=face.glyphs.size();return result;}
     std::size_t cachedBytes()const {std::size_t result=0;for(const auto& face:faces)result+=face.bytes;return result;}
 };

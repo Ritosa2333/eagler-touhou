@@ -7,7 +7,7 @@ import {Button} from '../../ui/button';
 import {Toggle} from '../../ui/controls';
 import {Field, FieldContent, FieldGroup, FieldLabel} from '../../ui/field';
 import {animateSurface} from '../../ui/surface-motion';
-import {AccountRequestError,accountRequest} from '../../services/account-client';
+import {AccountRequestError,accountRequest,mailCaptchaError} from '../../services/account-client';
 import {notifyRoomProfileChange} from '../../services/account-session';
 import {prepareCroppedProfileImage, prepareStoredAvatarThumbnail, validateProfileImage, ProfileImageError, type ProfileImageCrop, type ProfileImageKind} from '../../services/profile-image';
 import {useLocale, type UiMessageKey} from '../../i18n';
@@ -266,7 +266,7 @@ function SecuritySettings() {
   const {t} = useLocale();
   const [email,setEmail] = useState(''), [otp,setOtp] = useState(''), [sentTo,setSentTo] = useState('');
   const [current,setCurrent] = useState(''), [password,setPassword] = useState(''), [confirmation,setConfirmation] = useState('');
-  const [feedback,setFeedback] = useState<UiMessageKey>(), [failure,setFailure] = useState(false), [pending,setPending] = useState(false);
+  const [feedback,setFeedback] = useState<UiMessageKey>(), [failure,setFailure] = useState<UiMessageKey>(), [pending,setPending] = useState(false);
   const [remaining,setRemaining] = useState(0);
   useEffect(()=>{
     if (!remaining) return;
@@ -275,9 +275,14 @@ function SecuritySettings() {
   },[remaining]);
   async function send(path:string,body:Record<string,unknown>,message:UiMessageKey) {
     if (pending) return false;
-    setFailure(false);setFeedback(undefined);setPending(true);
-    try {await accountRequest('auth/'+path,body);setFeedback(message);return true;}
-    catch {setFailure(true);return false;}
+    setFailure(undefined);setFeedback(undefined);setPending(true);
+    try {
+      await accountRequest('auth/'+path,body,{emailCaptcha:path==='email-otp/request-email-change'});
+      setFeedback(message);return true;
+    } catch (cause) {
+      if (!(cause instanceof DOMException && cause.name === 'AbortError')) setFailure(mailCaptchaError(cause) ?? 'account.requestFailed');
+      return false;
+    }
     finally {setPending(false);}
   }
   return <section aria-labelledby="security-settings-title">
@@ -323,7 +328,7 @@ function SecuritySettings() {
         <div className="settings-form-actions"><Button type="submit" variant="outline" disabled={pending}>{t('profile.security.changePassword')}</Button></div>
       </form>
     </section>
-    {failure && <p className="settings-feedback" role="alert">{t('account.requestFailed')}</p>}
+    {failure && <p className="settings-feedback" role="alert">{t(failure)}</p>}
     {feedback && <p className="settings-feedback" role="status">{t(feedback)}</p>}
   </section>;
 }

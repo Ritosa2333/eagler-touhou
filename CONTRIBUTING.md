@@ -10,7 +10,7 @@
 git clone --filter=blob:none --sparse https://github.com/YOUR-NAME/eagler-touhou.git
 cd eagler-touhou
 git sparse-checkout set launcher common tools docs
-git remote add upstream https://github.com/YomotsuHisami/eagler-touhou.git
+git remote add upstream https://github.com/Ritosa2333/eagler-touhou.git
 git switch -c your-change
 ```
 

@@ -15,24 +15,24 @@ html[data-ui-route-transition="page"] .account-art{clip-path:inset(var(--site-he
 }
 .account-mode-content{animation:account-mode-enter var(--ui-surface-duration) var(--ui-surface-easing) both}
 @keyframes account-mode-enter{from{opacity:0}to{opacity:1}}
-.account-content .account-tabs{margin:0 0 24px}
-.account-content h1{margin:0 0 24px;font-size:24px;line-height:1.25;font-weight:650;letter-spacing:-.025em}
-.account-content form{display:grid;gap:14px}
-.account-content label{display:grid;gap:6px;min-width:0;font-size:13px;font-weight:500;color:var(--book-ink)}
+.account-content h1{margin:0 0 24px;font-size:28px;line-height:1.2;font-weight:650;letter-spacing:-.025em}
+.account-content form{display:grid;gap:16px}
+.account-content label{display:grid;gap:8px;min-width:0;font-size:14px;color:var(--book-ink)}
 .account-content input{display:block;width:100%;min-width:0;min-height:44px;font-weight:400}
 .account-page button{cursor:pointer}
 .account-page :is(button,a):focus-visible{outline:2px solid var(--book-accent);outline-offset:3px}
+.account-password-field{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px}
+.account-password-field>.account-password{grid-area:2/1/3/-1}
+.account-forgot{grid-area:1/2}
 .account-password{position:relative;display:block}
 .account-page .account-password-toggle{position:absolute;right:0;top:0;display:grid;place-items:center;width:44px;height:44px;min-height:44px;color:var(--book-muted)}
 .account-password-toggle svg{width:18px;height:18px}
+.account-code-field{display:grid;gap:8px;min-width:0}
 .account-code{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
 .account-code button{height:auto;min-height:44px;padding-inline:12px}
-.account-submit{width:100%;min-height:44px;margin-top:6px;gap:10px}
-.account-submit svg{width:16px;height:16px}
-.account-feedback{margin:0;padding:10px 12px;border:1px solid var(--book-border);border-radius:7px;background:var(--book-raised);color:var(--book-muted);font-size:12px;overflow-wrap:anywhere}
-.account-feedback.is-error,.account-field-error{color:var(--kit-destructive)}
-.account-field-error{font-size:12px}
-.account-forgot{justify-self:end;margin-top:-8px;padding-inline:0;color:var(--book-muted);font-size:12px}
+.account-submit{width:100%;min-height:44px;margin-top:8px}
+.account-switch{margin-top:16px}
+ .account-field-error{color:var(--kit-destructive);font-size:12px}
 .account-back{margin:0 0 24px;padding-inline:0;color:var(--book-muted)}
 .account-back svg{width:16px;height:16px}
 .account-reset-success{display:grid;gap:18px}
@@ -46,11 +46,17 @@ html[data-ui-route-transition="page"] .account-art{clip-path:inset(var(--site-he
  .account-content{padding:36px 32px}
 }
 @media(max-width:540px){
- .account-content{padding:28px 24px 32px}
- .account-content h1{font-size:22px;margin-bottom:22px}
- .account-content .account-tabs{margin-bottom:22px}
+ .account-content{padding:32px 24px}
+ .account-content h1{font-size:24px}
 }
 @media(prefers-reduced-transparency:reduce){.account-shell{background:var(--book-surface);backdrop-filter:none;-webkit-backdrop-filter:none}}
 @media(prefers-reduced-motion:reduce){.account-mode-content{animation:none}}
 html:has(body.less-motion) .account-mode-content{animation:none}
+}
+
+/* Fit the provider's 300px slider on a 320px screen without scaling its drag coordinates. */
+@media(max-width:364px){
+ #captcha-sdk-modal{padding-inline:0!important}
+ #captcha-sdk-modal > div{min-width:316px!important}
+ #captcha-sdk-modal #tianai-captcha-parent{padding-inline:8px}
 }

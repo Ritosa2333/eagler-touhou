@@ -27,6 +27,9 @@ const th11ContentRoot = process.env.EAGLER_TH11_CONTENT_DIR?.trim()
 const th12ContentRoot = process.env.EAGLER_TH12_CONTENT_DIR?.trim()
   ? resolve(process.env.EAGLER_TH12_CONTENT_DIR.trim())
   : null;
+const th13ContentRoot = process.env.EAGLER_TH13_CONTENT_DIR?.trim()
+  ? resolve(process.env.EAGLER_TH13_CONTENT_DIR.trim())
+  : null;
 const th09ContentRoot = process.env.EAGLER_TH09_CONTENT_DIR?.trim()
   ? resolve(process.env.EAGLER_TH09_CONTENT_DIR.trim())
   : null;
@@ -103,16 +106,6 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       ...(process.env.EAGLER_TH075_LANGUAGE_PACKS ? {languagePackDirectory:projectRelativePath(process.env.EAGLER_TH075_LANGUAGE_PACKS)} : {}),
       runtime:`${ws("th075","build-eagler","th075.html")}?hosted=1`,
       multiplayerRuntime:`${ws("th075mp","build-eagler-multiplayer","th075.html")}?hosted=1`,
-      data:Object.freeze({source:process.env.EAGLER_TH075_CONTENT_DIR ? projectRelativePath(resolve(process.env.EAGLER_TH075_CONTENT_DIR,"th075.data")) : ws("th075","assets-ogg","th075.data"),layout:PRODUCT_CONTENT.th075.dataLayout}),
-      music:availableMusic({ogg:Object.freeze({base:process.env.EAGLER_TH075_CONTENT_DIR ? `${projectRelativePath(resolve(process.env.EAGLER_TH075_CONTENT_DIR,"music"))}/` : wsDir("th075","assets-ogg","music"),...PRODUCT_CONTENT.th075.music.ogg})},process.env.EAGLER_TH075_CONTENT_DIR),
-    }),
-    th075: Object.freeze({
-      runtime:`${ws("th075","build-eagler","th075.html")}?hosted=1`,
-      data:Object.freeze({source:process.env.EAGLER_TH075_CONTENT_DIR ? projectRelativePath(resolve(process.env.EAGLER_TH075_CONTENT_DIR,"th075.data")) : ws("th075","assets-ogg","th075.data"),layout:PRODUCT_CONTENT.th075.dataLayout}),
-      music:availableMusic({ogg:Object.freeze({base:process.env.EAGLER_TH075_CONTENT_DIR ? `${projectRelativePath(resolve(process.env.EAGLER_TH075_CONTENT_DIR,"music"))}/` : wsDir("th075","assets-ogg","music"),...PRODUCT_CONTENT.th075.music.ogg})},process.env.EAGLER_TH075_CONTENT_DIR),
-    }),
-    th075: Object.freeze({
-      runtime:`${ws("th075","build-eagler","th075.html")}?hosted=1`,
       data:Object.freeze({source:process.env.EAGLER_TH075_CONTENT_DIR ? projectRelativePath(resolve(process.env.EAGLER_TH075_CONTENT_DIR,"th075.data")) : ws("th075","assets-ogg","th075.data"),layout:PRODUCT_CONTENT.th075.dataLayout}),
       music:availableMusic({ogg:Object.freeze({base:process.env.EAGLER_TH075_CONTENT_DIR ? `${projectRelativePath(resolve(process.env.EAGLER_TH075_CONTENT_DIR,"music"))}/` : wsDir("th075","assets-ogg","music"),...PRODUCT_CONTENT.th075.music.ogg})},process.env.EAGLER_TH075_CONTENT_DIR),
     }),
@@ -207,6 +200,21 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
         ogg: Object.freeze({
           base: `${projectRelativePath(resolve(th12ContentRoot, "music"))}/`,
           ...PRODUCT_CONTENT.th12.music.ogg,
+        }),
+      } : {}),
+    }),
+    th13: Object.freeze({
+      runtime: `${ws("th13", "build-eagler", "th13.html")}?hosted=1`,
+      data: Object.freeze({
+        source: th13ContentRoot
+          ? projectRelativePath(resolve(th13ContentRoot, "th13.data"))
+          : ws("th13", "artifacts", "eagler-content", "th13.data"),
+        layout: PRODUCT_CONTENT.th13.dataLayout,
+      }),
+      music: Object.freeze(th13ContentRoot ? {
+        ogg: Object.freeze({
+          base: `${projectRelativePath(resolve(th13ContentRoot, "bgm-ogg"))}/`,
+          ...PRODUCT_CONTENT.th13.music.ogg,
         }),
       } : {}),
     }),
