@@ -73,7 +73,7 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
   await patch('replay/battle-boot.js',()=>`export async function bootBattleResources(){throw Error('TH03 多人录像播放尚未接入');}\n`);
   await patch('bgm-version.js',text=>text.replace(/export async function loadMidiTracks\(signal\)\{[\s\S]*?\n\}/,"export async function loadMidiTracks(){return {};}"));
   await patch('site.css',text=>text.replace("url('assets/launcher-background.webp')",'none'));
-  for(const name of await files(resolve(port,'web')))if(!name.endsWith('-api.js')){await copyFile(resolve(port,'web',name),resolve(output,name));runtime.push(name);}
+  for(const name of await files(resolve(port,'web')))if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')){await copyFile(resolve(port,'web',name),resolve(output,name));runtime.push(name);}
   for(const name of ['directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs']){await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
   const strip=text=>text.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'');
   await writeFile(resolve(output,'managed-room.html'),strip(await readFile(resolve(web,'local.html'),'utf8')));runtime.push('managed-room.html');
