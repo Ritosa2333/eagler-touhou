@@ -41,7 +41,7 @@
     white-space: nowrap;
     text-decoration: none;
   }
-  .book-brand>.site-brand{width:148px;max-width:100%}
+  .book-brand>.site-brand{width:148px;max-width:calc(100% - 13px);margin-inline-start:13px}
   .book-brand .brand-version {
     display: none;
   }
@@ -224,7 +224,7 @@
     }
     .book-masthead .book-brand > .site-brand {
       width: 128px;
-      max-width: 100%;
+      max-width: calc(100% - 13px);
     }
     .book-masthead .book-main-nav {
       grid-column: 1 / -1;
