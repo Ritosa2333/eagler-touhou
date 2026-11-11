@@ -53,11 +53,11 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
   });
   await patch('site.css',text=>text.replace("url('assets/launcher-background.webp')",'none'));
   await patch('bgm-version.js',text=>text.replace(/export async function loadMidiTracks\(signal\)\{[\s\S]*?\n\}/,"export async function loadMidiTracks(){return {};}"));
-  for(const name of await files(resolve(port,'web')))if(!name.endsWith('-api.js')){await copyFile(resolve(port,'web',name),resolve(output,name));runtime.push(name);}
+  for(const name of await files(resolve(port,'web')))if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')){await copyFile(resolve(port,'web',name),resolve(output,name));runtime.push(name);}
   for(const name of ['directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs']){await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
   const strip=text=>text.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'');
   await writeFile(resolve(output,'managed-room.html'),strip(await readFile(resolve(web,'lan.html'),'utf8')));runtime.push('managed-room.html');
   let html=strip(await readFile(resolve(web,'solo.html'),'utf8'));
-  html=html.replace('</head>',`<style>html,body{margin:0;background:#000}#site-header,main>.intro,main>.setup,.diagnostics{display:none!important}main{margin:0;padding:0}#player{position:fixed;inset:0;border:0;padding:0;margin:0}#player>.toolbar,#player>p,#touch,#overlay{display:none!important}#stage{width:100%;height:100%;max-height:none;aspect-ratio:auto}#game{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}</style><script type="module" src="managed-shell.mjs"></script></head>`);
+  html=html.replace('</head>',`<style>html,body{margin:0;background:#000}#site-header,main>:not(#player),.diagnostics{display:none!important}main{margin:0;padding:0}#player{position:fixed;inset:0;border:0;padding:0;margin:0}#player>:not(#stage),#touch{display:none!important}#stage{width:100%;height:100%;max-height:none;aspect-ratio:auto}#game{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}</style><script type="module" src="managed-shell.mjs"></script></head>`);
   await writeFile(resolve(output,'th01.html'),html);runtime.push('th01.html');
 }
