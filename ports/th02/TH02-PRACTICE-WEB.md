@@ -1,6 +1,6 @@
 # TH02 网页练习工具
 
-首版：2026-10-24，配置身份 `th02-browser-practice/1`。参照 [移植交接](../TH02-04-PRACTICE-PORTING.md)、TH04 网页实现和 TH02 原生状态机接入，运行入口为 `web/solo.html`。
+首版：2026-10-24，配置身份 `th02-browser-practice/1`。参照 移植交接（原工作区本地文件 `../TH02-04-PRACTICE-PORTING.md`）、TH04 网页实现和 TH02 原生状态机接入，运行入口为 `web/solo.html`。
 
 ## 使用
 

@@ -1,3 +1,4 @@
+import {printPC98Inputs} from '../../../tools/build/pc98-inputs.mjs';
 import {createHash} from 'node:crypto';
 import {readFile,writeFile,mkdir,readdir,copyFile,stat,mkdtemp,rename,rm} from 'node:fs/promises';
 import {resolve,relative,dirname} from 'node:path';
@@ -7,12 +8,19 @@ import {assertPortableRuntimeSources} from '../../../launcher/lib/runtime-genera
 import {DATA_SCHEMA,DATA_MAGIC,DATA_LAYOUT_SPEC} from '../web/managed-data.mjs';
 const port = resolve(fileURLToPath(new URL('..', import.meta.url))), repo=resolve(port,'../..');
 const args = Object.fromEntries(process.argv.slice(2).map(arg => { const at=arg.indexOf('='); return [arg.slice(2,at<0?undefined:at),at<0?true:arg.slice(at+1)]; }));
-if (!args.source) throw Error('Specify --source=<complete th02-coop-lab directory>');
-const source = resolve(args.source), web=resolve(source,'web');
+if(args['print-inputs']) await printPC98Inputs({port,game:'th02'});
+const source = resolve(args.source||port), web=resolve(source,'web');
+const sourceIdentity=args.source?null:JSON.parse(await readFile(resolve(port,'source-import.json'),'utf8'));
+const privateInputs=new Set(sourceIdentity?.resources||[]);
+const assets=resolve(args.assets||resolve(port,'.cache/source-resources'));
+async function readInput(name){
+  try{return await readFile(resolve(privateInputs.has(name)?assets:web,name));}
+  catch(error){if(error.code==='ENOENT'&&privateInputs.has(name))throw Error('Missing private resource '+name+'; specify --assets=<standalone web directory>.');throw error;}
+}
 const coopPatch=JSON.parse(await readFile(resolve(web,'local-patch.json'),'utf8'));
 if(coopPatch.hitClear?.version!==1||!coopPatch.hitClear.testInvincibility)
   throw Error('TH02 source must include native multiplayer hit-clear v1 (including test invincibility).');
-let revision=null;try{revision=execFileSync('git',['-c','safe.directory='+source.replaceAll('\\','/'),'rev-parse','HEAD'],{cwd:source,encoding:'utf8'}).trim();}catch{}
+let revision=sourceIdentity?.commit??null;if(args.source){try{revision=execFileSync('git',['-c','safe.directory='+source.replaceAll('\\','/'),'rev-parse','HEAD'],{cwd:source,encoding:'utf8'}).trim();}catch{}}
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 async function files(directory,prefix='') {
   const result=[];
@@ -23,16 +31,16 @@ async function files(directory,prefix='') {
   }
   return result.sort();
 }
-const names=(await files(web)).filter(name=>name!=='room-title-th05.js'&&!/(?:^|\/)(?:build|reports|baseline|screenshots|backups|tools|test-results|__pycache__)(?:\/|$)/.test(name) && !/\.(?:map|wat|cpuprofile|log|tmp|bak)$/.test(name));
-const input=[]; for(const name of names) { const bytes=await readFile(resolve(web,name)); input.push({path:name,bytes:bytes.length,sha256:sha(bytes)}); }
-if(args['print-inputs']) { console.log(JSON.stringify({game:'th02',kind:'managed-import',inputs:input})); process.exit(0); }
+const names=[...new Set([...(await files(web)).filter(name=>!/^managed-[^/]+\.(?:mjs|js)$/.test(name)),...privateInputs])].sort().filter(name=>name!=='room-title-th05.js'&&!/(?:^|\/)(?:build|reports|baseline|screenshots|backups|tools|test-results|__pycache__)(?:\/|$)/.test(name) && !/\.(?:map|wat|cpuprofile|log|tmp|bak)$/.test(name));
+const input=[]; for(const name of names) { const bytes=await readInput(name); input.push({path:name,bytes:bytes.length,sha256:sha(bytes)}); }
+if(args['print-package-inputs']) { console.log(JSON.stringify({game:'th02',kind:'managed-import',inputs:input})); process.exit(0); }
 const cache=resolve(port,'.cache');await mkdir(cache,{recursive:true});
 const staging=await mkdtemp(resolve(cache,'build-')),output=resolve(staging,'build-eagler'),content=resolve(staging,'content');
 try {
 await mkdir(output,{recursive:true});await mkdir(content,{recursive:true});
 const runtime=[], payload=[], entries=[];let offset=0;
 for(const item of input) {
-  const bytes=await readFile(resolve(web,item.path));
+  const bytes=await readInput(item.path);
   if(/\.(?:js|mjs|css|html|wasm|json)$/.test(item.path)) {
     const target=resolve(output,item.path);await mkdir(dirname(target),{recursive:true});await writeFile(target,bytes);runtime.push(item.path);
   } else {
@@ -43,7 +51,7 @@ for(const item of input) {
 function replaceOnce(text,from,to,label) { if(text.split(from).length!==2) throw Error('Upstream changed at '+label); return text.replace(from,to); }
 const patch=async(name,edit)=>{const path=resolve(output,name);await writeFile(path,edit((await readFile(path,'utf8')).replaceAll('\r\n','\n')));};
 const {adaptRuntime}=await import('./adapt-runtime.mjs');
-await adaptRuntime({patch,replaceOnce,output,port,web,runtime,repo,files});
+await adaptRuntime({patch,replaceOnce,output,port,web,runtime,repo,files,readInput});
 // Adapted sources have their own verified identity; keep upstream asset checks active.
 for(const manifestPath of ['netplay/runtime.json','lockstep-runtime.json']) {
   let manifest;try{manifest=JSON.parse(await readFile(resolve(output,manifestPath),'utf8'));}catch(error){if(error.code==='ENOENT')continue;throw error;}

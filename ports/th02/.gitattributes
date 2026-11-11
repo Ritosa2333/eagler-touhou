@@ -6,3 +6,8 @@
 # Resource manifests hash exact bytes, including JSON and line endings.
 # Preserve all deployed web files on add/checkout, regardless of core.autocrlf.
 /web/** -text
+
+# Preserve deployed Runtime bytes, including manifest-covered line endings.
+/web/** -text whitespace=trailing-space,space-before-tab,cr-at-eol
+# Generated vendor code retains upstream whitespace and byte identities.
+/web/vendor/** whitespace=-blank-at-eol,cr-at-eol

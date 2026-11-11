@@ -1,7 +1,7 @@
 import {adaptPC98Practice} from '../../../common/browser/adapt-pc98-practice.mjs';
 import {readFile,writeFile,copyFile,mkdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
-export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,repo,files}){
+export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,repo,files,readInput}){
 await patch('solo.js',text=>{
   text=replaceOnce(text,'function release(){','function release(){globalThis.__eaglerPC98Input.releaseGameplay();','release managed keys');
   text=replaceOnce(text,"let bits=enabled?keyboardBits(keys,'solo')|padBits(navigator.getGamepads?.()[Number($('gamepad').value)],'solo'):0;",'let bits=enabled?globalThis.__eaglerPC98Input.sample({play:readSoloState()?.mode===1&&!readSoloState()?.hit}):0;','solo input');
@@ -51,9 +51,9 @@ await patch('netplay/runtime.html',text=>replaceOnce(text,'<script>','<script ty
 let roomHtml=await readFile(resolve(web,'lan.html'),'utf8');
 roomHtml=roomHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'');
 await writeFile(resolve(output,'managed-room.html'),roomHtml);runtime.push('managed-room.html');
-for(const name of await files(resolve(port,'web'))) if(!name.endsWith('-api.js')) { await copyFile(resolve(port,'web',name),resolve(output,name)); runtime.push(name); }
+for(const name of await files(resolve(port,'web'))) if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')) { await copyFile(resolve(port,'web',name),resolve(output,name)); runtime.push(name); }
 for(const name of ['directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs','pc98-practice.mjs']) {await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
-for(const name of ['assets/option-0.png','assets/option-1.png','assets/option-2.png']) {await mkdir(resolve(output,'assets'),{recursive:true});await copyFile(resolve(web,name),resolve(output,name));runtime.push(name);}
+for(const name of ['assets/option-0.png','assets/option-1.png','assets/option-2.png']) {await mkdir(resolve(output,'assets'),{recursive:true});await writeFile(resolve(output,name),await readInput(name));runtime.push(name);}
 let html=await readFile(resolve(web,'solo.html'),'utf8');
 html=html.replace('<head>','<head><meta name="eagler-data-provider" content="retail-memory">');
 html=replaceOnce(html,'src="solo.js"','src="managed-shell.mjs"','managed entry');

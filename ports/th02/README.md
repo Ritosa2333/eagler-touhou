@@ -1,5 +1,8 @@
 # TH02 主项目适配
 
+[适配检查](ADAPTATION.md) · [来源迁移](../../docs/migration/th02-eagler-20261025.md)
+[原仓库说明](README-UPSTREAM.md) · [来源与子树维护](../../docs/migration/th02-eagler-20261025.md)
+
 `ports/th02` 将《东方封魔录》的 PC-98 DOSBox-X 运行时接入 Eagler Touhou。主项目负责 Package Store 安装、`/savesth02` 与 `/savesth02mp` 文件空间、房间成员、准备状态和开局；运行时继续使用封魔录的原生盘片与游戏逻辑。
 
 在 monorepo 根目录运行：
@@ -9,7 +12,7 @@ npm --prefix launcher run build:ui-rewrite
 node ports/th02/scripts/dev.mjs
 ```
 
-打开 `http://127.0.0.1:18320/?test=th02`。脚本从相邻 `../th02-coop-lab` 构建运行时及本地 `content/th02.data`，并启动主 Launcher 与 Relay。主项目存档文件为 `HUUHI.DAT`，设置文件为 `HUUMA.CFG`；它们从游戏磁盘 `HUMAROKU` 导出。合作模式支持两人和三人，保留原项目的三种机体射击配置。
+打开 `http://127.0.0.1:18320/?test=th02`。脚本从本目录代码与相邻 `../th02-coop-lab/web` 资源 构建运行时及本地 `content/th02.data`，并启动主 Launcher 与 Relay。主项目存档文件为 `HUUHI.DAT`，设置文件为 `HUUMA.CFG`；它们从游戏磁盘 `HUMAROKU` 导出。合作模式支持两人和三人，保留原项目的三种机体射击配置。
 
 可重复验证：
 
@@ -39,3 +42,5 @@ node ports/th02/tests/launcher-room-browser.mjs
 特定跳关沿用原资源预载与后台预备实例：目标就绪后准备下一次起点，Shift+F 使用已确认的目标与最新辅助选项，预备实例在激活前保持冻结。高级设置中的预备快速重试选项可控制后台准备。练习 REP 存入主项目录像文件空间。手机可直接操作浏览器面板；合作房间使用原有同步内核。
 
 统一练习器验证：启动包含 TH02、TH04、TH05 的主 Launcher 后运行 `node common/tests/pc98-practice-browser.mjs`。测试使用真实模拟器验证目标阶段、浏览器表单、辅助开关、后台预备完成与命中、暂停起点冻结、预备开关、右侧布局与窄屏面板。设置 `PC98_PRACTICE_MOBILE=1` 可验证移动浏览器面板与画面触控移动。
+
+构建器默认使用当前 `ports/th02/web` 的代码；通过 `--assets=<原运行时 web 目录>` 提供游戏资源和预编译核心。`PC98_ASSETS_DIR` 可覆盖开发脚本默认的资源路径。源码基线与资源清单见 [source-import.json](source-import.json)，每次构建的实际输入哈希写入 `content/source.json`。
