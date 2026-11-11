@@ -44,7 +44,10 @@ export function staticContentCacheControl(path) {
   const immutableRuntime = /(?:^|\/)runtime\/(?:[A-Za-z0-9_-]+\/)+[a-f0-9]{64}\/[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(path) &&
     !path.split("/").some(part => part === ".." || part === ".");
   const contentAddressedPack = extension === ".zip" && /[a-f0-9]{24}\.zip$/i.test(path);
-  return immutableRuntime || contentAddressedPack
+  // Generation files are verified byte-for-byte by the launcher. CDN HTML
+  // injections or optimizations must not rewrite this authenticated code set.
+  if (immutableRuntime) return "public, max-age=31536000, immutable, no-transform";
+  return contentAddressedPack
     ? "public, max-age=31536000, immutable"
     : "public, max-age=0, must-revalidate";
 }
