@@ -41,6 +41,11 @@ try{
   page.on('request',r=>requests.push(r.url()));page.on('requestfailed',r=>failures.push({url:r.url(),error:r.failure()?.errorText}));
   page.on('response',r=>{if(r.status()>=400)failures.push({url:r.url(),status:r.status()});});
   if(process.env.PC98_TEST_RELAY==='1')await page.evaluateOnNewDocument(()=>{delete window.RTCPeerConnection;});
+  if(process.env.PC98_TEST_AUDIO_GATE==='1')await page.evaluateOnNewDocument(()=>{
+    const resume=AudioContext.prototype.resume;
+    window.__audioResumeAttempts=0;window.__allowAudioResume=false;
+    AudioContext.prototype.resume=function(){window.__audioResumeAttempts++;return window.__allowAudioResume?resume.call(this):Promise.reject(new DOMException('User gesture required','NotAllowedError'));};
+  });
   page.on('console',m=>{if(m.type()==='error')console.error('CONSOLE',m.text());});
   const load=async(count,mp)=>{
     await page.goto('http://127.0.0.1:'+server.address().port);
@@ -102,6 +107,18 @@ try{
     const frames=()=>page.frames().filter(f=>/th01.html\?runtimeEpoch=/.test(f.url()));
     const health=()=>Promise.all(frames().map(f=>f.evaluate(async()=>{const {managedAPI}=await import('./netplay/app.js');return managedAPI.health();})));
     await wait(async()=>{const errors=await page.evaluate(()=>events.filter(e=>e.event==='error'));if(errors.length)throw Error(JSON.stringify(errors));const states=await health();return states.length===count&&states.every(s=>s.running&&s.confirmed>=120&&s.frames>0);},'MP confirmed gameplay',120000);
+    if(process.env.PC98_TEST_AUDIO==='1'){
+      await wait(async()=>(await Promise.all(frames().map(f=>f.evaluate(()=>{const audio=window.th01Net.session.game.audio;return audio.context?.state==='running'&&!!audio.source;})))).every(Boolean),'music starts without an extra game-screen gesture',30000);
+      console.log('PASS TH01 multiplayer music starts automatically');
+    }
+    if(process.env.PC98_TEST_AUDIO_GATE==='1'){
+      for(const [seat,frame] of frames().entries()){
+        const attempts=await frame.evaluate(()=>window.__audioResumeAttempts);assert(attempts>0,'launch must attempt audio');
+        await frame.evaluate(seat=>{window.__allowAudioResume=true;const bridge=window.__eaglerDirectInputBridge,base={protocol:'eagler-touhou/1',game:'th01',epoch:seat+1,command:'direct-touch',id:77,x:.5,y:.5};if(!bridge.submit({...base,type:'down'})||!bridge.submit({...base,type:'up'}))throw Error('hosted touch rejected');},seat);
+        await wait(()=>frame.evaluate(previous=>window.__audioResumeAttempts>previous&&window.th01Net.session.game.audio.context?.state==='running',attempts),'hosted touch resumes blocked audio',10000);
+      }
+      console.log('PASS TH01 hosted touch unlocks blocked multiplayer audio');
+    }
     if(process.env.PC98_TEST_TOUCH==='1')await verifyTouch();
     for(const frame of frames()) assert.equal(await frame.evaluate(()=>window.th01Net.room.settings.count),6,'each peer receives the six-ball rule');
     for(const state of await health())assert.equal(state.rollbackEnabled,process.env.PC98_TEST_ROLLBACK==='1'&&process.env.PC98_TEST_NO_WORKER!=='1','room rollback setting must reach the simulation');

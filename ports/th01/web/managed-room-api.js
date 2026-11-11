@@ -16,12 +16,15 @@ export const managedAPI={
   globalThis.__eaglerPC98RoomEnd=()=>managedAPI.end('本局结束');
   session=new NetSession(identity,room,{canvas:$('canvas'),api:post,status,buttons:sample,render,failure:message=>{managedAPI.stop();globalThis.__eaglerPC98Emit({event:'error',message});}});
   session.game.setMusicVolume(music==='none'?0:.7);
+  const unlock=()=>{void session?.game.unlockAudio().catch(()=>{});};
+  globalThis.__eaglerPC98Input.onGesture=unlock;
+  unlock();
   window.th01Net={get session(){return session;},get room(){return room;}};
   await session.prepare();
  },
  end(reason){if(returningTask)return returningTask;returningTask=(async()=>{try{await session?.relay?.finish();session?.recorder.finish(reason);await session?.recorder.sealPublisher();await session?.recorder.seal(2000);managedAPI.stop();globalThis.__eaglerPC98Emit({event:'exit',code:0,reason});}catch(error){managedAPI.stop();globalThis.__eaglerPC98Emit({event:'error',message:error.message});}})();return returningTask;},
- health(){const frame=session?.queue?.frame??0;Object.assign(globalThis,{__eaglerNetplayLanActive:!!session?.running,__eaglerNetplayLanFrame:frame,__eaglerNetplayLanConfirmed:Math.min(frame,session?.queue?.confirmed??0),__eaglerNetplayLanRollback:session?.rollbackCount??0,__eaglerNetplayLanResimulated:session?.replayedFrames??0,__eaglerNetplayInputDelayFrames:session?.queue?.delay??0});return {frames:session?.game.displayFrames??0,frame,confirmed:Math.min(frame,session?.queue?.confirmed??0),rollbackEnabled:!!session?.queue?.rollback,rollbackCount:session?.rollbackCount??0,replayedFrames:session?.replayedFrames??0,running:!!session?.running,stopped:!!session?.closed,audio:{state:session?.running?'running':'loading'}};},
+ health(){const frame=session?.queue?.frame??0;Object.assign(globalThis,{__eaglerNetplayLanActive:!!session?.running,__eaglerNetplayLanFrame:frame,__eaglerNetplayLanConfirmed:Math.min(frame,session?.queue?.confirmed??0),__eaglerNetplayLanRollback:session?.rollbackCount??0,__eaglerNetplayLanResimulated:session?.replayedFrames??0,__eaglerNetplayInputDelayFrames:session?.queue?.delay??0});return {frames:session?.game.displayFrames??0,frame,confirmed:Math.min(frame,session?.queue?.confirmed??0),rollbackEnabled:!!session?.queue?.rollback,rollbackCount:session?.rollbackCount??0,replayedFrames:session?.replayedFrames??0,running:!!session?.running,stopped:!!session?.closed,audio:{state:session?.game.audio.context?.state??'suspended'}};},
  files:message=>globalThis.__eaglerPC98FileCommands(message),
  playback(){throw Error('多人录像工作台尚未接入');},
- stop(){session?.close();clear();},
+ stop(){globalThis.__eaglerPC98Input.onGesture=null;session?.close();clear();},
 };

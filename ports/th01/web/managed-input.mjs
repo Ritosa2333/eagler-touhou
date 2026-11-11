@@ -4,7 +4,7 @@ const netButtons={ArrowLeft:1,ArrowRight:2,KeyZ:4,KeyX:8,KeyC:4096,ArrowUp:16,Ar
 const localButtons={ArrowLeft:1,ArrowRight:2,KeyZ:4,KeyX:8,KeyC:16};
 export function managedInput({game, epoch, active, options}) {
   const held = new Set(), secondary = new Set(); let touch = {}, pulse = 0, menuPulse = 0, localPulse = 0, netKeyPulse = 0, localKeyPulse = 0, keyPulse = 0, bomb = 0, escape = 0, point = null, motion = {x:0,y:0,active:false};
-  const keyboard = createBrowserKeyboard({send:(code, down) => {if(down){held.add(code);netKeyPulse|=netButtons[code]??0;localKeyPulse|=localButtons[code]??0;keyPulse|=buttons[code]??0;}else held.delete(code);},
+  const keyboard = createBrowserKeyboard({send:(code, down) => {if(down){input.onGesture?.();held.add(code);netKeyPulse|=netButtons[code]??0;localKeyPulse|=localButtons[code]??0;keyPulse|=buttons[code]??0;}else held.delete(code);},
     hostContext:{target:globalThis,protocol:'eagler-touhou/1',game,epoch,origin:location.origin,ready:active}});
   const input = {
     key(message) { keyboard.event(message, message.down, 'hosted'); },
@@ -13,6 +13,7 @@ export function managedInput({game, epoch, active, options}) {
     cancelTouch() { secondary.clear(); touch = {}; pulse = menuPulse = localPulse = 0; point = null; motion = {x:0,y:0,active:false}; },
     touch(message) {
       if (typeof message.fireEnabled !== 'boolean' || typeof message.focusEnabled !== 'boolean' || !['bombSerial','escapeSerial'].every(k => Number.isSafeInteger(message[k]) && message[k] >= 0) || !['joystickX','joystickY'].every(k => Number.isFinite(message[k]) && Math.abs(message[k]) <= 32767)) throw Error('触控输入无效');
+      if (message.bombSerial !== bomb || message.escapeSerial !== escape || message.focusEnabled && !touch.focusEnabled || message.fireEnabled && !touch.fireEnabled || message.joystickX || message.joystickY) input.onGesture?.();
       if (message.focusEnabled && !touch.focusEnabled) {netKeyPulse |= 8; localKeyPulse |= 8; keyPulse |= 16;}
       if (message.bombSerial !== bomb) {pulse |= 16; localPulse |= 16;}
       if (message.escapeSerial !== escape) pulse |= 128;
@@ -20,6 +21,7 @@ export function managedInput({game, epoch, active, options}) {
     },
     pointer(message) {
       if (!['down','move','up'].includes(message.type) || !Number.isSafeInteger(message.id) || !Number.isFinite(message.x) || !Number.isFinite(message.y)) throw Error('触控坐标无效');
+      if (message.type === 'down') input.onGesture?.();
       if (message.type === 'down' && point) { secondary.add(message.id); point.menuMoved=true; return; }
       if (message.type === 'up' && secondary.delete(message.id)) { menuPulse |= 128; return; }
       if (message.type === 'down') { point = {...message, startX:message.x, startY:message.y, menuMoved:false}; motion = {x:0,y:0,active:true,begin:true}; }
