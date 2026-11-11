@@ -159,9 +159,12 @@ void TitleResultEntry::retire_slot_visuals() {
 }
 
 // 0x454050 case3（DAT_004be7c8 != 0 分支）：FUN_00448080 + FUN_0044bac0(...,1)
-// = 回主菜单。网页侧复用标题返回路径：flags bit1（原版 +0x5c40 bit1）令
+// = 回主菜单，随后 0x454658 重选标题曲 th13_00（计分页的 Player's Score
+// 退场）。网页侧复用标题返回路径：flags bit1（原版 +0x5c40 bit1）令
 // TitleMainMenu 跳过 180 帧 intro、直接展开菜单；光标归主菜单首项。
-void TitleResultEntry::return_main() {
+bool TitleResultEntry::return_main() {
+    if (!host.queue_title_music(2, -1, "th13_00.wav"))
+        return fail("Result return title music failed");
     state.flags |= 2u;
     state.return_reason = 1;
     state.menu.count = kTitleMainEntries;
@@ -169,6 +172,7 @@ void TitleResultEntry::return_main() {
     state.menu.disabled_count = 0;
     state.menu.select(0);
     state.change_screen(TitleScreen::Main);
+    return true;
 }
 
 // 0x454050 case2 / 0x4549d0 case3 共用的 91 字符名字编辑。
@@ -310,7 +314,7 @@ bool TitleResultEntry::update(u32 pressed, u32 repeated) {
                 if (host.result_replay_save_available())
                     state.change_screen(TitleScreen::ResultReplaySlot);
                 else
-                    return_main();
+                    return return_main();
             }
             break;
         default:
@@ -333,7 +337,7 @@ bool TitleResultEntry::update(u32 pressed, u32 repeated) {
         case 4:
             if (state.age.current > 5) {
                 retire_slot_visuals();
-                return_main();
+                return return_main();
             }
             break;
         default:
