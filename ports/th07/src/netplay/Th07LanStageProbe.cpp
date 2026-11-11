@@ -1424,10 +1424,12 @@ bool Initialize()
         const value = Module.eaglerOptions?.netplayInputDelayFrames;
         return Number.isInteger(value) && value >= 0 && value <= 12 ? value : $0;
     }, coreConfig.inputDelay));
-    coreConfig.maxDirectTouchDeltaPredictionFrames = static_cast<std::uint8_t>(EM_ASM_INT({
-        const value = Module.eaglerOptions?.netplayTouchDeltaPredictionFrames;
-        return Number.isInteger(value) && value >= 0 && value <= 6 ? value : 0;
-    }));
+    // Keep explicit displacement extrapolation in the old benchmark only.
+    if (ProbeMode())
+        coreConfig.maxDirectTouchDeltaPredictionFrames = static_cast<std::uint8_t>(EM_ASM_INT({
+            const value = Module.eaglerOptions?.netplayTouchDeltaPredictionFrames;
+            return Number.isInteger(value) && value >= 0 && value <= 6 ? value : 0;
+        }));
     g_TouchQuantizationStep = static_cast<float>(EM_ASM_DOUBLE({
         const value = Number(Module.eaglerOptions?.netplayTouchQuantization || 0);
         return Number.isFinite(value) && value >= 0 && value <= 2 ? value : 0;
@@ -1539,7 +1541,9 @@ bool Initialize()
     coreConfig.predictableButtons =
         TH_BUTTON_DIRECTION | TH_BUTTON_FOCUS | TH_BUTTON_SHOOT | TH_BUTTON_SKIP;
     coreConfig.directionButtons = TH_BUTTON_DIRECTION;
-    coreConfig.maxDirectionPredictionFrames = 3;
+    if (coreConfig.maxDirectTouchDeltaPredictionFrames)
+        coreConfig.maxDirectionPredictionFrames = 3;
+    else coreConfig.prediction = InputPrediction::ConfirmedHold;
     if (!g_SpectatorMode && !g_Core.Reset(coreConfig))
         return false;
 
