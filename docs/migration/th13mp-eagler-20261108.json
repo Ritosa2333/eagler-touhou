@@ -1,0 +1,21 @@
+{
+  "schema": "eagler-touhou/source-fork/1",
+  "game": "th13mp",
+  "sourceKind": "monorepo-directory-fork",
+  "destination": "ports/th13-mp",
+  "commit": "39662d3751fa8b094fc580e69d58692fe8faed53",
+  "currentMode": "git-subtree",
+  "derivedFrom": {
+    "directory": "ports/th13",
+    "registration": "docs/migration/th13-eagler-20261028.json",
+    "split": "26f905458d91213fa778140227c981d850717ab5",
+    "directoryCopy": "f4ea0fd13f888b421afec5b8dcc905637338420a"
+  },
+  "subtree": {
+    "upstreamCommit": "39662d3751fa8b094fc580e69d58692fe8faed53",
+    "initialJoin": "fe06dc19c0000fc7ec24ce5b6a2aca823e3728e4",
+    "initialSplit": "39662d3751fa8b094fc580e69d58692fe8faed53",
+    "latestJoin": "fe06dc19c0000fc7ec24ce5b6a2aca823e3728e4",
+    "currentSplit": "39662d3751fa8b094fc580e69d58692fe8faed53"
+  }
+}
