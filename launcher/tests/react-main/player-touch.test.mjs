@@ -48,6 +48,32 @@ function fixture({game = 'th06', ios = false, movement = 'touch', focus = 'hold-
   }; active.push(f); return f;
 }
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+test('TH03 new run starts with touch fire released and can toggle it',()=>{
+ const f=fixture({game:'th03'});f.touch.resetTh03Fire();f.touch.syncControls();
+ assert.equal(f.sent.at(-1).fireEnabled,false);assert.equal(f.touch.getSnapshot().fireEnabled,false);
+ f.pointer('fire','pointerdown');f.pointer('fire','pointerup');assert.equal(f.sent.at(-1).fireEnabled,true);
+ f.pointer('fire','pointerdown');f.pointer('fire','pointerup');assert.equal(f.sent.at(-1).fireEnabled,false);
+});
+test('TH01 slide holds and releases even with an old focus preference', () => {
+  for (const focus of ['two-finger', 'toggle-button']) {
+    const f = fixture({game: 'th01', focus});
+    f.pointer('focus', 'pointerdown'); assert.equal(f.sent.at(-1).focusEnabled, true);
+    f.pointer('focus', 'pointerup'); assert.equal(f.sent.at(-1).focusEnabled, false);
+    f.pointer('focus', 'pointerdown'); f.pointer('focus', 'pointercancel'); assert.equal(f.sent.at(-1).focusEnabled, false);
+  }
+  const f = fixture({game: 'th01', focus: 'two-finger', ios: true});
+  f.iosEvent('focus', 'touchstart', [{identifier: 1}]); assert.equal(f.sent.at(-1).focusEnabled, true);
+  f.iosEvent('focus', 'touchcancel', [{identifier: 1}]); assert.equal(f.sent.at(-1).focusEnabled, false);
+});
+test('TH03 fire is a persistent toggle like TH02 and TH04', () => {
+  const f=fixture({game:'th03'});
+  f.touch.syncControls(); assert.equal(f.sent.at(-1).fireEnabled,true);
+  f.pointer('fire','pointerdown'); f.pointer('fire','pointerup');
+  assert.equal(f.touch.getSnapshot().fireEnabled,false);
+  f.pointer('fire','pointerdown'); f.pointer('fire','pointerup');
+  assert.equal(f.touch.getSnapshot().fireEnabled,true);
+  assert.equal(f.sent.at(-1).fireEnabled,true);
+});
 test('declared native actions hold A/B/C/D together without keyboard or auto-fire ownership', () => {
   const f=fixture({game:'th075'});
   for(const [index,name] of ['fire','bomb','focus','functionKey'].entries())f.pointer(name,'pointerdown',{pointerId:index+1});
@@ -186,6 +212,13 @@ for(const ios of [false,true])test('TH19 '+(ios?'iOS touch':'pointer')+' charge 
  assert.equal(f.touch.getSnapshot().functionDown,true);
  if(ios)f.iosEvent('functionKey','touchend',[{identifier:10}]);else f.pointer('functionKey','pointerup',{pointerId:10});
  await wait(70);assert.deepEqual(events(),[['KeyX',true],['KeyX',false]]);assert.equal(f.touch.getSnapshot().functionDown,false);
+});
+for(const ios of [false,true])test('TH03 '+(ios?'iOS touch':'pointer')+' charge holds Shift until release',async()=>{
+ const f=fixture({game:'th03',ios});const events=()=>f.sent.filter(m=>m.command==='keyboard').map(m=>[m.code,m.down]);
+ if(ios)f.iosEvent('functionKey','touchstart',[{identifier:10}]);else f.pointer('functionKey','pointerdown',{pointerId:10});
+ await wait(70);assert.deepEqual(events(),[['ShiftLeft',true]]);
+ if(ios)f.iosEvent('functionKey','touchend',[{identifier:10}]);else f.pointer('functionKey','pointerup',{pointerId:10});
+ await wait(70);assert.deepEqual(events(),[['ShiftLeft',true],['ShiftLeft',false]]);
 });
 for(const reason of ['pointercancel','lostpointercapture','editing','cancel'])test('TH19 charge releases on '+reason,()=>{
  const f=fixture({game:'th19'});f.pointer('functionKey','pointerdown');

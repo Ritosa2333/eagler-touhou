@@ -10,6 +10,20 @@
   aspect-ratio:4/3;
 }
 /* Workspace controls own these surfaces; gameplay hit areas stay inactive. */
-#player:is(.room-workspace,.replay-workspace):not(.touch-layout-edit) :is(.touch-hud,.touch-escape,.touch-restart,.touch-joystick,.touch-direct-surface,.touch-layout-safe-zone,.touch-layout-reserved-zone,.touch-thprac-input,.touch-thprac-tab,.touch-thprac-menu,.touch-utility-row,.touch-help-open){display:none!important}
+#player:is(.room-workspace,.replay-workspace):not(.touch-layout-edit,.th03-room-touch-active) :is(.touch-hud,.touch-escape,.touch-restart,.touch-joystick,.touch-direct-surface,.touch-layout-safe-zone,.touch-layout-reserved-zone,.touch-thprac-input,.touch-thprac-tab,.touch-thprac-menu,.touch-utility-row,.touch-help-open){display:none!important}
+/* During a TH03 match the room stays visible; restrict dragging to the game. */
+#player.room-workspace.th03-room-touch-active .touch-hud{display:flex}
+#player.room-workspace.th03-room-touch-active .touch-escape{display:block}
+#player.room-workspace.th03-room-touch-active:not(.touch-layout-custom) .touch-hud{
+  position:fixed!important;inset:auto!important;left:var(--th03-touch-left)!important;top:var(--th03-touch-top)!important;
+  width:var(--th03-touch-width)!important;height:var(--th03-touch-height)!important;z-index:31!important;
+}
+#player.room-workspace.th03-room-touch-active:not(.touch-layout-custom) .touch-escape{
+  position:fixed!important;left:calc(var(--th03-touch-left) + 8px)!important;top:calc(var(--th03-touch-top) + 8px)!important;
+}
+#player.room-workspace.th03-room-touch-active .touch-direct-surface:not([hidden]){
+  position:fixed;inset:auto;left:var(--th03-touch-left);top:var(--th03-touch-top);
+  width:var(--th03-touch-width);height:var(--th03-touch-height);
+}
 
 }

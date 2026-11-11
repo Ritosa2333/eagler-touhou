@@ -9,8 +9,8 @@ import {createExternalReplayHost,inspectExternalMemory} from './replay/external-
 import {loadExternalDosboxFactory} from './replay/external-loader.js';
 import {createSoloReplayLifecycle} from './replay/external-lifecycle.js';
 import {createPracticeEngine} from './practice-engine.js';
-import {createPracticeClock} from './practice-config.js';
-const codes={ArrowUp:265,ArrowDown:264,ArrowLeft:263,ArrowRight:262,KeyZ:90,KeyX:88,ShiftLeft:340,ShiftRight:344,Escape:256,Enter:257,Space:32};
+import {createPracticeClock,normalizePractice,decodeNativeOptions} from './practice-config.js';
+const codes={ArrowUp:265,ArrowDown:264,ArrowLeft:263,ArrowRight:262,KeyZ:90,KeyX:88,ShiftLeft:340,ShiftRight:344,Escape:256,Enter:257,Space:32,Backspace:259,F1:290,F2:291,F3:292,F4:293,F5:294,KeyU:85};
 export const supportsWriteJournal=()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,5,5,2,0,1,0,1]));
 export class DOSBoxPC98 {
   static async create(config){const emulator=new DOSBoxPC98(config);try{await emulator.initialize();return emulator;}catch(error){emulator.dispose();throw error;}}
@@ -45,15 +45,18 @@ export class DOSBoxPC98 {
     if((this.config.externalReplay||this.config.practice)&&!net){
       const replay=this.config.externalReplay||{mode:'record',boundaryMode:'sleep'};
       if(this.config.practice){
-        this.practiceClock=createPracticeClock(this.config.practice.options.speed);
+        this.practiceClock=createPracticeClock(this.config.practice.mode==='target'?8:this.config.practice.options.speed);
         this.practice=createPracticeEngine({mod:this.module,patch:this.config.practicePatch,config:this.config.practice,clock:this.practiceClock});
-        this.module.practiceSignal=(port,packed)=>this.practice.signal(port,packed);
+        this.module.practiceSignal=(port,packed)=>{if(!this.acceptNativePracticeForm(port))this.practice.signal(port,packed);};
+        this.module.practicePreparing=()=>this.practice.status.preparing;
       }
-      const lifecycle=replay.lifecycle?createSoloReplayLifecycle(replay.lifecycle,()=>this.module.HEAPU8):null;
+      const lifeConfig=replay.lifecycle||(this.config.practice?{game:'02',patch:this.config.practicePatch}:null);
+      const lifecycle=lifeConfig?createSoloReplayLifecycle(lifeConfig,()=>this.module.HEAPU8):null;let lifeState;
       this.externalHost=createExternalReplayHost({...replay,
-        clock:this.practiceClock,shouldHold:()=>this.holdPreparedPractice(),onBoundary:()=>this.module.observeReplayBoundary?.(),
-        observe:()=>{const p=this.practice?.status;if(p?.outcome)return {active:true,stage:p.stage,paused:true,finish:p.outcome==='clear'?'clear':'game-over'};return lifecycle?.();},
-        applyInput:command=>this.applyReplayInput(command),inspect:()=>inspectExternalMemory(this.module),
+        clock:this.practiceClock,shouldHold:()=>this.holdPreparedPractice(),
+        shouldFastForward:()=>!!this.practice?.status.preparing,onBoundary:()=>{if(replay.mode==='record'){lifeState=lifecycle?.();if(lifeState?.finish==='game-over')this.practice?.gameOver();else if(lifeState?.finish==='clear')this.practice?.clear();}this.module.observeReplayBoundary?.();},
+        observe:()=>{const p=this.practice?.status;if(this.nativeTransition){if(!p?.ready)return {active:false,paused:true,finish:null};this.nativeTransition=false;}if(p?.outcome)return {active:true,stage:p.stage,paused:true,finish:null};return lifeState;},
+        applyInput:command=>this.applyReplayInput(command),inspect:()=>inspectExternalMemory(this.module,{scope:replay.memoryScope,patch:this.config.practicePatch}),
         onChunk:value=>replay.onChunk?.(value),onEnd:value=>replay.onEnd?.(value),
         onError:error=>{if(replay.onError)replay.onError(error);else this.config.onError?.(error);},
         onRecordingError:error=>replay.onRecordingError?.(error),
@@ -67,8 +70,24 @@ export class DOSBoxPC98 {
       }
     }else factory=(await import(net?(tracked?'./vendor/dosbox-x/dosbox-rollback-tracked.mjs':'./vendor/dosbox-x/dosbox-rollback.mjs'):'./vendor/dosbox-x/dosbox-jspi.mjs')).default;
     await factory(this.module);
+    // Use the core's planar lookup only for lockstep. Mark the host write so
+    // rollback retains the same renderer configuration at every boundary.
+    if(net){const api=this.module.nativeExports(),at=api.thPlanarState?.();if(!at)throw Error('TH02 联机图形核心接口不匹配');this.module.thDirtyMark?.(at,4);this.module.HEAPU32[at>>>2]=1;}
     if(art)this.module.playerArt=installPlayerArt(this.module,this.config.artPatch,art);
     this.module.callMain([this.transport.sessionId]);
+    // The DOS batch returns only when Quit is selected at the title.
+    // Signal the host at that boundary while the mounted save files remain available.
+    if(this.config.exitOnGameQuit){
+      const fs=this.module.FS,open=fs.open,owner=this;
+      fs.open=function(path,...args){
+        const result=open.call(this,path,...args);
+        if(typeof path==='string'&&/(?:^|\/)EGLQUIT\.TXT$/i.test(path)&&!owner.gameQuitSignalled){
+          owner.gameQuitSignalled=true;setTimeout(()=>{if(!owner.disposed&&!owner.resetting)owner.config.onExit?.();},0);
+        }
+        return result;
+      };
+    }
+
     if(net&&this.config.rollbackEnabled!==false)this.module.memoryDiff=await makeMemoryDiff(this.module);
     this.onSleep=({data})=>{if(!net&&data?.name==='ws-sync-sleep'&&data.props.sessionId===this.transport.sessionId)globalThis.postMessage({name:'wc-sync-sleep',props:data.props},'*');};
     if(!net&&typeof window!=='undefined'&&window.postMessage)window.addEventListener('message',this.onSleep);
@@ -88,7 +107,7 @@ export class DOSBoxPC98 {
     m.netFlushAudio=()=>this.audio.flush();m.netInfo=()=>({tick:this.tick,...this.audio.info()});
     m.netPresent=()=>m.framePresenter?.flush({redraw:true})||false;
   }
-  key(code,down){if(this.externalHost){if(this.externalHost.status.mode==='playback')return;this.externalHost.queue({type:'key',code,down});return;}this.applyKey(code,down);}
+  key(code,down){if(code==='F12')return;if(this.externalHost){if(this.externalHost.status.mode==='playback')return;this.externalHost.queue({type:'key',code,down});return;}this.applyKey(code,down);}
   applyKey(code,down){const number=codes[code];if(number===undefined)return;if(down)this.keys.add(code);else this.keys.delete(code);if(this.config.lockstep)this.ci?.addKey(number,down,this.module.virtualNow);else if(this.externalHost)this.ci?.addKey(number,down,this.externalHost.keyTime());else this.ci?.sendKeyEvent(number,down);}
   applyReplayInput(command){if(command.type==='key')this.applyKey(command.code,command.down);else if(command.type==='assist')this.config.applyReplayInput?.(command.input);else if(command.type==='practice-options'&&this.practice)this.practice.configure(command.options);else throw Error('单人 Replay 输入类型无效');}
   holdPreparedPractice(){
@@ -105,8 +124,18 @@ export class DOSBoxPC98 {
     this.practiceOptions(options);this.practiceStandby=false;this.practiceParked=false;this.practiceClock.setPaused(false);this.run();
   }
   practiceOptions(options){if(!this.practice||this.externalHost?.status.mode==='playback')return;if(this.config.externalReplay&&this.externalHost.status.recording)this.externalHost.queue({type:'practice-options',options});else this.practice.configure(options);}
+  acceptNativePracticeForm(port){
+    if(port!==0x7fd1||!this.practice)return false;const e=this.config.practicePatch.practice.entries,base=this.practice.debug.csBase,h=this.module.HEAPU8;
+    if(base<0||!Number.isInteger(e.resultSelecting)||h[base+e.formOpen]||h[base+e.formRequest]!==1)return false;
+    const [stage,character,difficulty,entry,phase,lives,bombs,power,,rank]=h.subarray(base+e.formValues,base+e.formValues+10);
+    const options=decodeNativeOptions(Array.from(h.subarray(base+e.formOptions,base+e.formOptions+11)),this.practice.status.options),hp=new DataView(h.buffer).getUint16(base+e.formHp,true);
+    const config=normalizePractice({...this.config.practice,mode:'target',setup:{...this.config.practice.setup,stage,character,difficulty,entry:['stage','mid','boss'][entry],phase,lives,bombs,power,rank:rank-6,hp},options});
+    const inplace=h[base+e.restartPending]===2;this.config.practice=config;this.practice=createPracticeEngine({mod:this.module,patch:this.config.practicePatch,config,clock:this.practiceClock,restarting:!inplace,nativeSetup:true});this.nativeTransition=true;return true;
+  }
+  restartPractice(restarting=false){if(!this.practice)return;const config={...this.config.practice,options:this.practice.status.options};this.config.practice=config;this.practice=createPracticeEngine({mod:this.module,patch:this.config.practicePatch,config,clock:this.practiceClock,restarting});}
   assist(input){if(this.externalHost){if(this.externalHost.status.mode==='playback')return;this.externalHost.queue({type:'assist',input});}else this.config.applyReplayInput?.(input);}
   finishReplay(){this.externalHost?.finish();}
+  rearmBrowserRecording(keepPaused=false){if(!this.externalHost)throw Error('录像不可用');this.externalHost.rearm(keepPaused);}
   fastForwardReplay(value){this.externalHost?.fastForward(value);}
   stopBrowserRecording(){this.externalHost?.disable();}
   pauseReplay(value){if(value)this.pause();else this.run();}
@@ -114,8 +143,8 @@ export class DOSBoxPC98 {
   async setHdd(drive,name){
     if(drive!==0||!this.disks.has(name))throw Error('无效游戏磁盘');this.diskName=name;
     this.extracted=extractGame(this.disks.get(name));
-    const network=!!this.config.lockstep,directLaunch=!!this.config.launchFiles?.some(file=>file.path==='game/HUMAROKU/WEBSTART.COM'),launcher=prepareFastBoot(this.extracted,{network,directLaunch});
-    const init=[...this.extracted.files,...(this.config.launchFiles||[]),launcher,{dosboxConf:dosboxConfig({network,fastBoot:true}),jsdosConf:{version:'8'}}];
+    const network=!!this.config.lockstep,directLaunch=!!this.config.launchFiles?.some(file=>file.path==='game/HUMAROKU/WEBSTART.COM'),launcher=prepareFastBoot(this.extracted,{network,directLaunch,practice:this.config.practice?.mode==='target',returnAfterPractice:this.config.practice?.mode==='target'||!!this.config.practice?.directStart});
+    const init=[...this.extracted.files,...(this.config.launchFiles||[]),launcher,{dosboxConf:dosboxConfig({network,fastBoot:true,exitOnGameQuit:!!this.config.exitOnGameQuit}),jsdosConf:{version:'8'}}];
     this.ci=await globalThis.emulators.backend(init,this.transport,{});
     this.ci.events().onSoundPush(samples=>{this.module.audioPackets=(this.module.audioPackets||0)+1;const p=this.practice?.status;if(this.practiceStandby||this.externalHost?.status.fastForward||this.module.warmingBoot||this.config.independentEffects||p&&(p.preparing||p.waiting||p.outcome))return;if(this.config.workerRuntime){this.audioChunks.push(samples.slice());return;}if(this.frame!==null)this.outputs.get(this.frame)?.push(samples.slice());else this.audio.push([samples]);});
     this.logs=[];this.ci.events().onMessage((type,...messages)=>{this.logs.push([type,...messages]);this.logs=this.logs.slice(-40);if(type==='error'&&messages.some(s=>String(s).includes('[panic]'))){this.state='failed';this.config.onError?.(Error(messages.join(' ')));}});
@@ -146,7 +175,7 @@ export class DOSBoxPC98 {
     if(!m.pendingWake)throw Error('DOSBox-X 未在同步边界挂起');
   }
   readAudio(){if(!this.audioChunks.length)return null;const length=this.audioChunks.reduce((n,s)=>n+s.length,0),samples=new Float32Array(length);let at=0;for(const block of this.audioChunks.splice(0)){samples.set(block,at);at+=block.length;}return [samples];}
-  dispose(){if(this.disposed)return;this.disposed=true;this.rejectPrepared?.(Error('练习实例已关闭'));this.externalHost?.disable();if(this.audio)this.pause();this.externalHost?.dispose();this.ci?.exit();this.module?.framePresenter?.dispose();this.audio?.disconnect();this.audio?.context.close().catch(()=>{});for(const type of ['keydown','keyup'])this.config.canvas.removeEventListener?.(type,this.onKey);if(typeof window!=='undefined')window.removeEventListener('message',this.onSleep);}
+  dispose(){if(this.disposed)return;this.disposed=true;this.rejectPrepared?.(Error('练习实例已关闭'));this.externalHost?.disable();if(this.audio)this.pause();this.externalHost?.dispose();const exiting=this.ci?.exit();this.module?.framePresenter?.dispose();this.audio?.disconnect();this.audio?.context.close().catch(()=>{});for(const type of ['keydown','keyup'])this.config.canvas.removeEventListener?.(type,this.onKey);if(typeof window!=='undefined')window.removeEventListener('message',this.onSleep);return exiting?.catch(()=>{});}
 }
 // Source imports keep their legacy class name, while every new instance uses DOSBox-X.
 export {DOSBoxPC98 as NP21};

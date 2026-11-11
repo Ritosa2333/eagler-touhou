@@ -19,7 +19,11 @@ try{
   await page.waitForSelector('.game[data-game="th02"]',{timeout:45000});
   await page.evaluate(()=>document.querySelector('#firstUseNoticeDialog')?.close());
   console.log('Launcher TH02 card ready');
-  await page.click('.game[data-game="th02"]:not([data-product])');
+  const selectionDeadline=Date.now()+15000;
+  while(!await page.$('.tools.is-open')&&Date.now()<selectionDeadline){
+    await page.$eval('.game[data-game="th02"]:not([data-product])',node=>node.click());
+    await new Promise(resolve=>setTimeout(resolve,100));
+  }
   await page.waitForSelector('.tools.is-open',{visible:true});
   await page.$eval('.tools.is-open',async panel=>{await Promise.all(panel.getAnimations().map(animation=>animation.finished.catch(()=>{})));});
   await page.waitForSelector('#musicSelect');
@@ -36,6 +40,18 @@ try{
     await new Promise(r=>setTimeout(r,200));
   }
   assert(events.some(e=>e.event==='first-frame'),'full Launcher must present a real frame');
+  const audioDeadline=Date.now()+60000;
+  while(Date.now()<audioDeadline&&!events.some(e=>e.event==='audio-health'&&e.musicStatus?.startsWith('原版 FM：')))await new Promise(resolve=>setTimeout(resolve,250));
+  assert(events.some(e=>e.event==='audio-health'&&e.musicStatus?.startsWith('原版 FM：')),'original PMD music must play');
+  for(let i=0;i<8&&!events.some(e=>e.event==='audio-health'&&e.effectsPeak>0.001);i++){
+    await page.keyboard.down('KeyZ');await new Promise(resolve=>setTimeout(resolve,200));await page.keyboard.up('KeyZ');await new Promise(resolve=>setTimeout(resolve,1500));
+  }
+  assert(events.some(e=>e.event==='audio-health'&&e.effectsPeak>0.001),'original sound effects must produce audio');
+  await page.click('.fullscreen-toggle');
+  const gameFrame=page.frames().find(frame=>/th02\.html.*runtimeEpoch=/.test(frame.url()));
+  await gameFrame.click('#canvas');
+  assert.equal(await gameFrame.$eval('#canvas',node=>getComputedStyle(node).outlineStyle),'none','focused game canvas has no outline');
+  assert.equal(await page.$eval('#gameFrame',node=>getComputedStyle(node).outlineStyle),'none','focused game frame has no outline');
   await page.screenshot({path:resolve(out,'solo.png')});
   assert.deepEqual(errors,[]);
   console.log('PASS full Launcher Package Store installation and TH02 solo presentation');

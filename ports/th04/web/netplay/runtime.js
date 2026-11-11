@@ -1,3 +1,7 @@
+import {installChallengeHud} from '../pc98-challenge-hud-install.mjs';
+import {installDimBody} from '../managed-dim-body.mjs';
+import {createChallengeStocks} from '../pc98-challenge-stocks.mjs';
+import {challengeStockLayout,writeChallengeHud} from '../pc98-challenge-layouts.mjs';
 import {gameVersion} from '../game-version.js';
 import {NP21} from '../dosbox-adapter.js';
 import {writeNativeTouch,touchPlayer} from '../native-touch.js';
@@ -10,6 +14,8 @@ import {createPersonalHud} from './personal-hud.js';
 import {readSoloFault} from '../solo-fault.js';
 import {LocalSe,readNativeSe} from './local-se.js';
 import {assetBytes} from '../preload-cache.js';
+import {Fat12} from '../solo-fat12.js';
+import {installNetPause} from '../pc98-net-pause.mjs';
 const workerHost=globalThis.th04WorkerHost;
 const canvas=workerHost?.canvas??document.getElementById('canvas'),details=workerHost?{}:document.getElementById('details');
 const nativeCanvas=workerHost?.canvas??document.createElement('canvas');
@@ -23,7 +29,7 @@ let pointPreferences={focus:true,always:false};
 const signature=new TextEncoder().encode('TH04COOPLABv001!');
 const keyTable=[['ArrowUp','ArrowUp',38,1],['ArrowDown','ArrowDown',40,2],['ArrowLeft','ArrowLeft',37,4],['ArrowRight','ArrowRight',39,8],['KeyX','x',88,16],['KeyZ','z',90,32],['ShiftLeft','Shift',16,64],['Escape','Escape',27,128],['Enter','Enter',13,256]];
 let emulator,patch,soundPolicy,bgm,musicTask,closed=false,bootPromise,oldP1=0,ticks=0,inputListener=()=>{},keys=new Set(),enabled=false,mailbox=-1;
-let guestMemoryBase=-1,residentAddress=-1,gameplaySeen=false;
+let guestMemoryBase=-1,residentAddress=-1,gameplaySeen=false,challenge=null,titleInputReset=false;
 const residentSignature=new TextEncoder().encode('HUMAConfig\0');
 let musicStatus='浏览器音乐：等待游戏开始后加载',musicError=false,lastMusicSequence=null;
 let pendingMusic=[],lastMusicName='',musicSettings,musicReady=false,stoppedMusic=null;
@@ -62,6 +68,23 @@ function nativePauseAddress(){
 function nativePauseActive(){
   const at=nativePauseAddress();
   return at>=0&&emulator.module.HEAPU8[at+3]!==0;
+}
+function restartNativeGame(){
+  const h=emulator.module.HEAPU8,v=new DataView(h.buffer),code=mailbox-patch.mailbox_cs_offset,data=gameDataBase(),resident=residentAddress;
+  if(!mailboxOwned(mailbox,guestMemoryBase,resident)||h[code+0x86]!==0x75||h[code+0x87]!==5||h[code+0x8d]!==0x1e||h[code+0x8e]!==0x68||v.getUint16(code+0x8f,true)!==0xcd)throw Error('TH04 联机重开入口不匹配');
+  emulator.module.thDirtyMark?.(resident+11,63);
+  emulator.module.thDirtyMark?.(code+0x88,9);
+  emulator.module.thDirtyMark?.(data+0x5392,1);
+  const stage=musicSettings.difficulty===4?6:0;
+  // Match the private launcher's fresh-run initialization, including stocks,
+  // score and P1 loadout. The sound-board bytes come from its resident config.
+  const board=h[resident+16],mode=h[resident+24],ownership=h[resident+48];h.fill(0,resident+11,resident+74);h[resident+48]=ownership;
+  for(const at of [11,12,58])h[resident+at]=musicSettings.lives;
+  for(const at of [13,14,59])h[resident+at]=musicSettings.bombs;
+  h[resident+15]=musicSettings.difficulty;h[resident+16]=board;h[resident+24]=mode;
+  h[resident+17]=stage;h[resident+19]=48+stage;h[resident+18]=48+(musicSettings.p1>>1);h[resident+25]=musicSettings.p1&1;
+  v.setUint32(resident+20,0x4a3d,true);h[resident+72]=1;
+  h.set([0x6d,0x61,0x69,0x6e,0],code+0x88);h[code+0x8d]=0x0e;v.setUint16(code+0x8f,0x88,true);h[data+0x5392]=1;
 }
 function predictionBlockReason(){
   if(pauseMenu.exited)return '退出同步';
@@ -106,6 +129,7 @@ async function bootProgress(message,step){
   await new Promise(resolve=>setTimeout(resolve,0));
 }
 async function boot(config){
+  challenge=config.challengeMode?createChallengeStocks(playerCount):null;
   const selected=gameVersion(config.language);
   await bootProgress('下载游戏磁盘与版本清单',1);
   if(typeof WebAssembly==='undefined')throw Error('浏览器不支持 WebAssembly，请使用最新版 Chrome / Edge / Safari');
@@ -114,9 +138,18 @@ async function boot(config){
     get('../'+selected.coopMeta),get('../'+selected.coopPatch),get('./runtime.json')]);
   patch=manifest;
   await bootProgress('解压游戏磁盘',2);
-  const disk=await assetBytes(selected.coopDisk,{hash:meta.sha256,size:meta.size,gzip:true});
-  await bootProgress('校验游戏磁盘（局域网 HTTP 下可能需要更长时间）',3);
-  if(disk.length!==meta.size||await sha256(disk)!==meta.sha256)throw Error('游戏磁盘校验失败，请刷新页面');
+  if(!/^[a-f0-9]{64}$/.test(meta.sha256)||!Number.isSafeInteger(meta.size)||meta.size<=0)throw Error('游戏磁盘清单无效');
+  const tracked=config.rollback!==false&&WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,5,5,2,0,1,0,1]));
+  const core=tracked?'wdosbox-x-rollback-tracked.wasm':'wdosbox-x-rollback.wasm';
+  const wasmHash=tracked?version.write_journal?.wasm_sha256:version.rollback_wasm?.sha256;
+  if(!/^[a-f0-9]{64}$/.test(wasmHash))throw Error('WASM 核心清单无效');
+  const [disk,wasmBinary]=await Promise.all([
+    assetBytes(selected.coopDisk,{hash:meta.sha256,size:meta.size,gzip:true}),
+    assetBytes(`vendor/dosbox-x/${core}`,{hash:wasmHash})]);
+  await bootProgress('游戏磁盘已校验',3);
+  const overlay=(await get('./native-pause-overlay.json')).languages[selected.language],fat=new Fat12(disk),main=fat.find('GENSO/MAIN.EXE');
+  const {emptyPc98Scores}=await import('../pc98-empty-scores.mjs');fat.replace(fat.find('GENSO/GENSOU.SCR'),emptyPc98Scores('th04'));
+  if(!overlay||overlay.codeSegment!==patch.code_segment||overlay.dataSegment!==patch.data_segment||await sha256(fat.read(main))!==overlay.sourceMainSha256)throw Error('TH04 联机暂停补丁版本不匹配');
   installConfig(disk,patch,encodeConfig(config));
   await bootProgress('安装本局配置和声音补丁',4);
   // BGM OFF / FM SE arbitration ON; driver play calls use browser samples.
@@ -131,18 +164,24 @@ async function boot(config){
     }
   }
   for(const edit of sound.edits)edit.targets.forEach((at,i)=>{disk[at]=edit.values[i];});
+  let patchedMain=installNetPause(fat.read(main),overlay);if(challenge){const hud=installChallengeHud(patchedMain,'04',patch);patchedMain=hud.bytes;patch.challengeHudOffset=hud.countsOffset;patch.data_segment+=hud.addedParagraphs;}patchedMain=installDimBody(patchedMain,patch,!!challenge);patch.data_segment+=12;fat.replace(main,patchedMain);
   await bootProgress('下载、编译并初始化 DOSBox-X WASM 与音频设备',5);
-  const tracked=config.rollback!==false&&WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,5,5,2,0,1,0,1]));
-  const core=tracked?'wdosbox-x-rollback-tracked.wasm':'wdosbox-x-rollback.wasm';
-  const wasmHash=tracked?version.write_journal?.wasm_sha256:version.rollback_wasm?.sha256;
-  const wasmBinary=await assetBytes(`vendor/dosbox-x/${core}`,{hash:wasmHash});
   emulator=await NP21.create({canvas:nativeCanvas,artPatch:patch,wasmBinary,lockstep:true,externalEffects:true,
     ...(workerHost?{workerRuntime:true,audioContext:workerHost.audioContext}:{}),rollbackEnabled:config.rollback!==false,lockstepEpoch:version.epoch,
     ExMemory:7,Latencys:40,SampleHz:44100,SNDboard:4,
     no_mouse:true,use_menu:false,fontfile:'font.bmp',
     onError:error=>reportRuntimeFailure('emulator-error',Error('模拟器异常：'+String(error?.message||error))),
     onExit:()=>reportRuntimeFailure('emulator-exit',Error('游戏模拟器已经退出'))});
+  // MAINE replaces itself with OP after the ending. Release any controls
+  // carried through the ending before the title menu can consume them.
+  const openGameFile=emulator.module.FS.open;
+  emulator.module.FS.open=function(...args){
+    const stream=openGameFile.apply(this,args);
+    if(gameplaySeen&&mailbox<0&&/\/GENSO\/OP\.EXE$/i.test(stream.path))titleInputReset=true;
+    return stream;
+  };
   emulator.module.projectileArt.view(localSlot);
+  emulator.module.projectileArt.configureBody([config.p1,config.p2,config.p3].slice(0,playerCount),localSlot);
   if(workerHost){
     emulator.module.getPersonalHud=()=>presentationHud;
     emulator.module.getHitPoints=()=>presentationHud?.points||[];
@@ -213,7 +252,7 @@ function findMailbox(){
 function refreshMailbox(){
   if(mailbox<0)return;
   if(mailboxOwned(mailbox,guestMemoryBase,residentAddress))return;
-  mailbox=-1;emulator.module.projectileArt?.bind(-1);
+  mailbox=-1;emulator.module.projectileArt?.clearLayers();emulator.module.projectileArt?.bind(-1);
 }
 function applyP1(bits){
   for(const [code,key,keyCode,bit]of keyTable){
@@ -226,27 +265,29 @@ function applyP1(bits){
 function stepInner(inputs){
   // Browser-written input lives in the guest's conventional-memory window.
   // Native writes and host glue writes are journaled by the tracked core.
-  if(guestMemoryBase>=0)emulator.module.thDirtyMark?.(guestMemoryBase,1048576);
   const touchInputs=inputs;
   if(!enabled)throw Error(runtimeFailure?.message||'本机游戏没有运行');
   // There is no native stage pause before the first gameplay mailbox exists.
   if(mailbox<0&&emulatedTicks%15===0)findMailbox();
   if(mailbox>=0){
+    emulator.module.thDirtyMark?.(mailbox-patch.mailbox_cs_offset+patch.focus_visible_mask_cs_offset,1);
     emulator.module.HEAPU8[mailbox-patch.mailbox_cs_offset+patch.focus_visible_mask_cs_offset]=
-      0; // All peers disable native markers; browser preferences only affect final pixels.
+      workerHost?.replayOnly || !(pointPreferences.always || pointPreferences.focus && (touchInputs[localSlot]&64)) ? 0 : (1 << localSlot);
   }
   inputs=inputs.map(value=>(value&4095)&~2048);
   const wasPaused=pauseMenu.paused,result=mailbox>=0?pauseMenu.step(inputs):'play';
   ticks++;
   if(result==='exit')return 'exit';
+  if(result==='restart'){restartNativeGame();challenge?.reset();}
   if(result==='paused'&&!wasPaused)currentEffect.flushAudio=true;
-  if(result==='resume')blocked=[...inputs];
-  inputs=inputs.map((value,i)=>{blocked[i]&=value;return value&~blocked[i]&~(128|512|1024);});
+  if(result==='resume'||result==='restart'||titleInputReset){blocked=[...inputs];titleInputReset=false;}
+  inputs=inputs.map((value,i)=>{blocked[i]&=value;return value&~blocked[i]&~(128|512|1024|(challenge?16:0));});
   const pauseAt=nativePauseAddress(),active=nativePauseActive();
   if(pauseAt>=0){
+    emulator.module.thDirtyMark?.(pauseAt,3);
     const heap=emulator.module.HEAPU8;
     heap[pauseAt]=1;heap[pauseAt+1]=pauseMenu.paused?1:0;heap[pauseAt+2]=pauseMenu.selection;
-    if(pauseMenu.paused||active||result==='resume'){
+    if(pauseMenu.paused||active||result==='resume'||result==='restart'){
       inputs=Array(playerCount).fill(0);
       // Any seat can request the original P1 pause entry. Release Esc as soon
       // as native code acknowledges it; native menu commands use the bridge.
@@ -258,12 +299,18 @@ function stepInner(inputs){
     const heap=emulator.module.HEAPU8;
     for(let slot=1;slot<playerCount;slot++){
       const at=slot===1?mailbox+22:mailbox-patch.mailbox_cs_offset+patch.p3_input_cs_offset;
+      emulator.module.thDirtyMark?.(at,3);
       heap[at]=inputs[slot]&63;heap[at+1]=0;heap[at+2]=(inputs[slot]>>>6)&1;
     }
   }
+  if(mailbox>=0)emulator.module.thDirtyMark?.(mailbox-patch.mailbox_cs_offset+patch.touch_cs_offset,3*patch.touch_stride);
   writeNativeTouch(emulator.module.HEAPU8,mailbox,patch,touchInputs,pauseMenu.paused||active||result==='resume');
-  emulator.step();emulatedTicks++;
+  const previousMailbox=mailbox,challengeLayout=challenge&&mailboxOwned(mailbox,guestMemoryBase,residentAddress)&&!pauseMenu.paused&&!active?challengeStockLayout('04',emulator.module.HEAPU8,mailbox,patch,residentAddress):null;
+  const offline=mailbox>=0?emulator.module.HEAPU8[mailbox-patch.mailbox_cs_offset+patch.offline_mask_cs_offset]:0;
+  if(challengeLayout){writeChallengeHud(emulator.module.HEAPU8,mailbox,patch.mailbox_cs_offset,patch.challengeHudOffset,challenge.snapshot(),(at,size)=>emulator.module.thDirtyMark?.(at,size));challengeLayout.write(challenge.begin(offline),offline,(at,size)=>emulator.module.thDirtyMark?.(at,size));}
+  try{emulator.step();}catch(error){challenge?.abort();throw error;}emulatedTicks++;
   refreshMailbox();
+  if(challengeLayout){if(mailbox===previousMailbox&&mailboxOwned(mailbox,guestMemoryBase,residentAddress)){const next=challenge.finish(challengeLayout.read(playerCount));challengeLayout.write(next,offline,(at,size)=>emulator.module.thDirtyMark?.(at,size));}else challenge.abort();}
   if(mailbox>=0&&!seError){
     try{currentEffect.se=readNativeSe(emulator.module.HEAPU8,gameDataBase(),soundPolicy.observer);}
     catch(error){currentEffect.seError=error.message;}
@@ -291,7 +338,7 @@ function step(inputs,{frame=ticks,replay=false,offlineMask=0}={}){
   emulator.module.netBeginFrame(frame,replay);
   try{
     refreshMailbox();
-    if(mailbox>=0)emulator.module.HEAPU8[mailbox-patch.mailbox_cs_offset+patch.offline_mask_cs_offset]=offlineMask;
+    if(mailbox>=0){const at=mailbox-patch.mailbox_cs_offset+patch.offline_mask_cs_offset;emulator.module.thDirtyMark?.(at,1);emulator.module.HEAPU8[at]=offlineMask;}
     currentEffect.result=stepInner(inputs);effects.set(frame,currentEffect);
     if(!replay)presentationPending=true;
     return currentEffect.result;
@@ -316,7 +363,7 @@ function capture(frame,restored=false){
   const previous=rollbackStates.get(frame-1);
   const nativeFrame=previous?.nativeFrame===frame-1?frame-1:frame;
   if(nativeFrame===frame)emulator.module.netCapture(frame,restored);
-  rollbackStates.set(frame,{nativeFrame,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,blocked:blocked.slice(),
+  rollbackStates.set(frame,{nativeFrame,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,titleInputReset,blocked:blocked.slice(),challenge:challenge?.snapshot(),
     pause:{previous:pauseMenu.previous.slice(),paused:pauseMenu.paused,selection:pauseMenu.selection,exited:pauseMenu.exited}});
 }
 function restore(frame){
@@ -326,7 +373,7 @@ function restore(frame){
   const from=saved.nativeFrame,checkpoint=rollbackStates.get(from);
   if(!checkpoint||(from!==frame&&!checkpoint.execution))throw Error('游戏回滚检查点缺失');
   emulator.module.netRestore(from);
-  ({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen}=checkpoint);blocked=checkpoint.blocked.slice();
+  ({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,titleInputReset}=checkpoint);blocked=checkpoint.blocked.slice();if(challenge)challenge.restore(checkpoint.challenge);
   Object.assign(pauseMenu,checkpoint.pause,{previous:checkpoint.pause.previous.slice()});
   for(const key of rollbackStates.keys())if(key>=from)rollbackStates.delete(key);
   for(const key of effects.keys())if(key>=from)effects.delete(key);
@@ -423,10 +470,12 @@ function guestBase(){
 }
 function checksum(){
   let h=0x811c9dc5;
-  for(const value of [...pauseMenu.signature(),...blocked,emulatedTicks])h=Math.imul(h^value,0x01000193);
+  for(const value of [...pauseMenu.signature(),...blocked,emulatedTicks,Number(titleInputReset),...(challenge?challenge.snapshot():[])])h=Math.imul(h^value,0x01000193);
   if(guestMemoryBase<0)return {tick:ticks,hash:(h>>>0).toString(16).padStart(8,'0'),gameFrame:0};
   const heap=emulator.module.HEAPU8,v=new DataView(heap.buffer),base=guestBase();
+  const markerAt=mailbox-patch.mailbox_cs_offset+patch.focus_visible_mask_cs_offset,marker=heap[markerAt];if(mailbox>=0)heap[markerAt]=0;
   for(let at=base;at<base+0xa0000;at++)h=Math.imul(h^heap[at],0x01000193);
+  if(mailbox>=0)heap[markerAt]=marker;
   return {tick:ticks,hash:(h>>>0).toString(16).padStart(8,'0'),gameFrame:mailboxOwned(mailbox,guestMemoryBase,residentAddress)?v.getUint32(mailbox+16,true):0};
 }
 
@@ -438,7 +487,7 @@ function portableBoundary(){
 async function replaySave(identity){
  portableBoundary();const {createPortableCheckpoint,encodeCheckpoint}=await import('../replay/portable.js');
  portableReplay??=createPortableCheckpoint(emulator.module,emulator.ci);
- const host={identity,frame:ticks,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,blocked,pause:{previous:pauseMenu.previous,paused:pauseMenu.paused,selection:pauseMenu.selection,exited:pauseMenu.exited},lastMusicSequence,lastMusicName,pendingMusic,seError,musicError,musicStatus,emulator:{tick:emulator.tick,keys:[...emulator.keys],state:emulator.state},audio:workerHost.captureAudioState?.(),proof:sync.replayProof(),check:checksum()};
+ const host={identity,frame:ticks,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,titleInputReset,blocked,challenge:challenge?.snapshot(),pause:{previous:pauseMenu.previous,paused:pauseMenu.paused,selection:pauseMenu.selection,exited:pauseMenu.exited},lastMusicSequence,lastMusicName,pendingMusic,seError,musicError,musicStatus,emulator:{tick:emulator.tick,keys:[...emulator.keys],state:emulator.state},audio:workerHost.captureAudioState?.(),proof:sync.replayProof(),check:checksum()};
  const state=portableReplay.capture(host),bytes=await encodeCheckpoint(state,ticks?portableBase:null);
  if(!ticks)portableBase=state;
  return {frame:ticks,bytes,proof:host.proof,check:host.check};
@@ -448,8 +497,8 @@ async function replayLoad(bytes,baseBytes,identity){
  portableReplay??=createPortableCheckpoint(emulator.module,emulator.ci);
  const base=baseBytes?await decodeCheckpoint(baseBytes):null,state=await decodeCheckpoint(bytes,base),h=state.host;
  if(h?.identity!==identity||!Number.isSafeInteger(h.frame)||h.frame<0||h.frame>216000||h.frame!==h.ticks)throw Error('完整检查点身份或帧号无效');
- portableReplay.restore(state);({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,lastMusicSequence,lastMusicName,pendingMusic,seError,musicError,musicStatus}=h);blocked=h.blocked.slice();Object.assign(pauseMenu,h.pause,{previous:h.pause.previous.slice()});
- emulator.tick=h.emulator.tick;emulator.keys=new Set(h.emulator.keys);emulator.state=h.emulator.state;emulator.outputs.clear();
+ portableReplay.restore(state);({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,titleInputReset,lastMusicSequence,lastMusicName,pendingMusic,seError,musicError,musicStatus}=h);blocked=h.blocked.slice();Object.assign(pauseMenu,h.pause,{previous:h.pause.previous.slice()});
+ if(challenge)challenge.restore(h.challenge);emulator.tick=h.emulator.tick;emulator.keys=new Set(h.emulator.keys);emulator.state=h.emulator.state;emulator.outputs.clear();
   confirmedPrefix=ticks;rollbackStates.clear();effects.clear();presentationPending=true;
  if(sync.replayProof()!==h.proof||JSON.stringify(checksum())!==JSON.stringify(h.check))throw Error('完整检查点恢复校验不一致');
   workerHost.restoreAudioState?.(h.audio);
@@ -458,7 +507,7 @@ async function replayLoad(bytes,baseBytes,identity){
 
 function musicInfo(){return {observedTrack:lastMusicName,sequence:lastMusicSequence,error:musicError?musicStatus:null,status:bgm?.status??musicStatus,track:bgm?.active?.id,requested:bgm?.requested?.id};}
 const sync={
-  faultReport({cpu=true}={}){return {settings:musicSettings,game:snapshot(),runtimeFailure,
+  faultReport({cpu=true}={}){return {settings:musicSettings,game:snapshot(),challenge:challenge?.snapshot(),runtimeFailure,
     sound:{...localSe?.info(),error:seError},
     music:stoppedMusic??musicInfo(),
     emulator:emulator?{state:emulator.state,error:emulator.failedError?.message??null,logs:emulator.logs??[]}:null,
@@ -496,7 +545,7 @@ const sync={
   onInput(callback){inputListener=callback;},
   start(){emulator.run();enabled=true;details.textContent='启动进度：全员已同步开局，正在启动 DOS 和游戏。';canvas.focus?.();},
   stop(){stoppedMusic??=musicInfo();enabled=false;closed=true;clearKeys();bgm?.dispose();localSe?.dispose();if(emulator){emulator.module.netFlushAudio();emulator.pause();}},
-  replayProof:()=>JSON.stringify([ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,blocked,pauseMenu.previous,pauseMenu.paused,pauseMenu.selection,pauseMenu.exited,snapshot()]),
+  replayProof:()=>JSON.stringify([ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,blocked,pauseMenu.previous,pauseMenu.paused,pauseMenu.selection,pauseMenu.exited,snapshot(),...(challenge?[challenge.snapshot()]:[]),titleInputReset]),
   replayScene(){
     if(!mailboxOwned(mailbox,guestMemoryBase,residentAddress))return null;
     const stage=emulator.module.HEAPU8[gameDataBase()+0x5394];

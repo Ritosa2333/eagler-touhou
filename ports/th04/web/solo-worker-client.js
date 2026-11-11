@@ -32,7 +32,7 @@ export class WorkerNP21 {
     if(!supportsSoloWorker())throw Error('浏览器不支持后台模拟，请选择兼容模式');
     const {canvas,onDiskChange,onExit,onError:configOnError,onPracticeParked,applyReplayInput,...config}=this.config;
     const replay=config.externalReplay;this.externalReplayCallbacks=replay||null;
-    if(replay)config.externalReplay={mode:replay.mode,boundaryMode:replay.boundaryMode,endReason:replay.endReason,endPhase:replay.endPhase,timeline:replay.timeline,lifecycle:replay.lifecycle,
+    if(replay)config.externalReplay={mode:replay.mode,boundaryMode:replay.boundaryMode,endReason:replay.endReason,endPhase:replay.endPhase,timeline:replay.timeline,lifecycle:replay.lifecycle,memoryScope:replay.memoryScope,
       ...(replay.clocks?{clocks:replay.clocks.slice()}:{}),...(replay.events?{events:replay.events}:{}),...(replay.endBoundary!==undefined?{endBoundary:replay.endBoundary}:{})};
     const offscreen=canvas.transferControlToOffscreen();
     const {onError,...setup}=this.setup;
@@ -117,6 +117,7 @@ export class WorkerNP21 {
   }
   clearInput(){this.queuedInput=null;this.send('clear');}
   finishReplay(){this.send('externalReplayFinish');}
+  rearmBrowserRecording(keepPaused=false){return this.call('externalReplayRearm',[keepPaused]);}
   async activatePractice(options){await this.call('practiceActivate',[options]);this.practiceParked=false;this.config.practiceStandby=false;this.state='running';this.context.resume().catch(()=>{});}
   practiceOptions(options){this.send('practiceOptions',[options]);}
   fastForwardReplay(value){this.send('externalReplayFast',[!!value]);}

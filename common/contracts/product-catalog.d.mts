@@ -29,6 +29,62 @@ export type HostRuntimeFeatures = Readonly<Partial<Record<HostRuntimeFeatureId, 
 export declare function isHostRuntimeFeatureId(value: string): value is HostRuntimeFeatureId;
 export declare function languagePriority(id: string): number;
 export declare const PRODUCT_GAMES: Readonly<{
+    th01: Readonly<{
+        testOnly:true; number:'01';title:'東方靈異伝';subtitle:'Highly Responsive to Prayers';cardArtwork:'th01-card.webp';
+        storage:Readonly<{saveRoot:'/savesth01';scoreFile:'scores.dat';configFiles:readonly string[]}>;
+        runtime:'./runtime/th01/th01.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
+        dataProvider:'retail-memory';runtimeResourceTransport:'resources';
+        package:Readonly<{dataFileId:'game-data';dataTarget:'/th01.data';musicSourceDirectories:Readonly<{ogg:'music'}>;musicMounts:Readonly<{ogg:'/bgm/akyu'}>}>;
+        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true;sources:readonly ['original','akyu']}>;
+        touchFire:Readonly<{mode:'held-key';labelKey:'touch.actionHold';key:Readonly<{code:'KeyZ';key:'z';keyCode:90}>}>;
+        support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
+        replay:Readonly<{prefix:'th01';extensions:readonly string[];naming:'filename'}>;
+        multiplayerRuntime:'./runtime/th01/multiplayer/th01.html';
+        multiplayer:Readonly<{titleKey:'game.title.th01mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th01PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:false;inputTiming:Readonly<{rollbackLimit:8;sendPredictionLimit:8;rollbackDefault:true;runtimeTiming:true}>}>;
+        features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
+    }>;
+    th02: Readonly<{
+        testOnly:true; number:'02';title:'東方封魔録';subtitle:'the Story of Eastern Wonderland';cardArtwork:'th02-card.webp';
+        storage:Readonly<{saveRoot:'/savesth02';scoreFile:'HUUHI.DAT';configFiles:readonly string[]}>;
+        runtime:'./runtime/th02/th02.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
+        dataProvider:'retail-memory';runtimeResourceTransport:'resources';
+        package:Readonly<{dataFileId:'game-data';dataTarget:'/th02.data';musicSourceDirectories:Readonly<{ogg:'bgm'}>;musicMounts:Readonly<{ogg:'/bgm'}>}>;
+        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true}>;
+        touchFire:Readonly<{mode:'toggle';labelKey:'touch.tapToggle'}>;
+        support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
+        replay:Readonly<{prefix:'th02';extensions:readonly string[];naming:'filename'}>;
+        multiplayerRuntime:'./runtime/th02/multiplayer/th02.html';
+        multiplayer:Readonly<{titleKey:'game.title.th02mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th02PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:true;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:false;runtimeTiming:true}>}>;
+        features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
+    }>;
+    th03: Readonly<{
+        testOnly:true; number:'03';title:'東方夢時空';subtitle:'Phantasmagoria of Dim.Dream';cardArtwork:'th03-card.webp';
+        storage:Readonly<{saveRoot:'/savesth03';scoreFile:'YUME.NEM';configFiles:readonly string[]}>;
+        runtime:'./runtime/th03/th03.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
+        dataProvider:'retail-memory';runtimeResourceTransport:'resources';
+        package:Readonly<{dataFileId:'game-data';dataTarget:'/th03.data';musicSourceDirectories:Readonly<{ogg:'music'}>;musicMounts:Readonly<{ogg:'/bgm/akyu'}>}>;
+        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true;sources:readonly ['original','akyu']}>;
+        touchFire:Readonly<{mode:'toggle';labelKey:'touch.tapToggle'}>;
+        support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
+        replay:Readonly<{prefix:'th03';extensions:readonly string[];naming:'filename'}>;
+        multiplayerRuntime:'./runtime/th03/multiplayer/th03.html';
+        multiplayer:Readonly<{titleKey:'game.title.th03mp';gameplay:'versus';inGameSelection:true;playerCounts:readonly [2];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th03PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:false;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:false;runtimeTiming:true}>}>;
+        features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
+    }>;
+    th04: Readonly<{
+        testOnly:true; number:'04';title:'東方幻想郷';subtitle:'Lotus Land Story';cardArtwork:'th04-card.webp';
+        storage:Readonly<{saveRoot:'/savesth04';scoreFile:'GENSOU.SCR';configFiles:readonly string[]}>;
+        runtime:'./runtime/th04/th04.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
+        dataProvider:'retail-memory';runtimeResourceTransport:'resources';
+        package:Readonly<{dataFileId:'game-data';dataTarget:'/th04.data';musicSourceDirectories:Readonly<{ogg:'bgm'}>;musicMounts:Readonly<{ogg:'/bgm'}>}>;
+        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true}>;
+        touchFire:Readonly<{mode:'toggle';labelKey:'touch.tapToggle'}>;
+        support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
+        replay:Readonly<{prefix:'th04';extensions:readonly string[];naming:'filename'}>;
+        multiplayerRuntime:'./runtime/th04/multiplayer/th04.html';
+        multiplayer:Readonly<{titleKey:'game.title.th04mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th04PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:true;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:false;runtimeTiming:true}>}>;
+        features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
+    }>;
     th05: Readonly<{
         testOnly: false; number: "05"; title: "東方怪綺談"; subtitle: "Mystic Square"; cardArtwork: "th05-card.webp";
         storage: Readonly<{saveRoot: "/savesth05"; scoreFile: "score.dat"; configFiles: readonly string[]}>;
@@ -977,6 +1033,7 @@ export interface MultiplayerLoadoutConfig {
     shot: number;
 }
 export interface MultiplayerInputTimingConfig {
+    runtimeTiming?: boolean;
     rollbackDefault?: boolean;
     /** Zero permits confirmed input only: no prediction, rollback or hybrid mode. */
     rollbackLimit: number;
@@ -985,6 +1042,7 @@ export interface MultiplayerInputTimingConfig {
     manualDelayLimit?: number;
 }
 export interface MultiplayerProductConfig {
+    challengeMode?: boolean;
     relaySourceEnvelope?: boolean;
     spectator?: boolean;
     titleRoomEntry?: boolean;

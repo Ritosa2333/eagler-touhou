@@ -1,5 +1,5 @@
 import {PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, type ProductId, type GameId} from '../../../src/contracts/product-catalog.mts';
-const shortTitles:Record<GameId,string>={th05:'怪',th06:'红',th07:'妖',th075:'萃',th08:'永',th09:'花',th10:'风',th11:'地',th12:'星',th13:'神',th15:'绀',th17:'兽',th19:'园',th20:'锦'};
+const shortTitles:Record<GameId,string>={th01:'灵',th02:'封',th03:'梦',th04:'幻',th05:'怪',th06:'红',th07:'妖',th075:'萃',th08:'永',th09:'花',th10:'风',th11:'地',th12:'星',th13:'神',th15:'绀',th17:'兽',th19:'园',th20:'锦'};
 
 /** Host/publication decides membership and URLs before constructing this view data. */
 export interface LibraryProduct {
@@ -27,6 +27,7 @@ export function isPc98Product(product: Pick<LibraryProduct, 'number'>): boolean 
 export type MultiplayerGroup = 'versus' | 'original' | 'fighting' | 'pc98';
 export function multiplayerGroup(product: Pick<LibraryProduct, 'gameId'>): MultiplayerGroup {
   const game = PRODUCT_GAMES[product.gameId];
+  if (product.gameId === 'th03') return 'versus';
   if (isPc98Product(game)) return 'pc98';
   if ('inputProfile' in game && game.inputProfile === 'fighting') return 'fighting';
   return 'multiplayer' in game && game.multiplayer.gameplay === 'versus' ? 'versus' : 'original';

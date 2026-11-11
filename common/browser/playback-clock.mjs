@@ -1,8 +1,8 @@
 // A presentation callback owns a bounded slice of fixed simulation ticks.
 // Seeking runs existing input again; it never integrates a negative delta.
 export class PlaybackClock {
-  constructor({budgetMs=8,maxSteps=4096,now=()=>performance.now()}={}) {
-    this.budgetMs=budgetMs;this.maxSteps=maxSteps;this.now=now;
+  constructor({budgetMs=8,maxSteps=4096,tickRate=60,now=()=>performance.now()}={}) {
+    this.budgetMs=budgetMs;this.maxSteps=maxSteps;this.tickRate=tickRate;this.now=now;
     this.rate=1;this.paused=false;this.target=null;this.last=null;this.credit=0;
   }
   reset() {this.last=null;this.credit=0;this.target=null;}
@@ -14,7 +14,7 @@ export class PlaybackClock {
     if(ended()||(this.paused&&this.target===null))return 0;
     if(this.target!==null&&position()>=this.target){this.target=null;this.credit=0;return 0;}
     const seeking=this.target!==null,unlimited=seeking||this.rate===0;
-    if(!unlimited)this.credit=Math.min(240,this.credit+delta*60*this.rate);
+    if(!unlimited)this.credit=Math.min(240,this.credit+delta*this.tickRate*this.rate);
     const allowed=unlimited?this.maxSteps:Math.min(this.maxSteps,Math.floor(this.credit+1e-9));
     const started=this.now();let count=0;
     while(count<allowed&&!ended()&&(count===0||this.now()-started<this.budgetMs)) {

@@ -15,15 +15,15 @@ export function createManagedTransport(options, roles, fail, environment = globa
   const peers = new Map(), early = [], encoder = new TextEncoder(), decoder = new TextDecoder('utf-8', {fatal:true});
   const fatal = error => { if (!closed) {
     if(localEnded&&endSeen.size===peers.size&&endAck.size===peers.size){clearTimeout(endTimer);clearTimeout(endGrace);endReject=null;endResolve?.();return;}
-    status.failed=true;status.error=String(error.message||error);close(); fail(error instanceof Error ? error : Error(String(error)));
+    status.failed=true;status.error=String(error.message||error);close(false); fail(error instanceof Error ? error : Error(String(error)));
   } };
   const guard = fn => (...args) => { if (!closed) try { const result = fn(...args); result?.catch?.(fatal); } catch (error) { fatal(error); } };
   const control = message => { if (!closed && signal?.readyState === 1) signal.send(JSON.stringify(message)); };
-  function close() {
+  function close(notifyPeers=true) {
     if (closed) return; closed = true;status.disconnected=true;clearTimeout(timeout);
     clearTimeout(endTimer);clearTimeout(endGrace);endReject?.(Error('本局网络在结束确认前关闭'));endReject=null;
     for (const peer of peers.values()) {
-      peer.channel.readyState = 'closed'; peer.channel.onclose?.();
+      peer.channel.readyState = 'closed'; if(notifyPeers)peer.channel.onclose?.();
       peer.rtc?.close(); peer.pc?.close();
     }
     early.length = 0; earlyBytes = 0;
@@ -83,7 +83,7 @@ export function createManagedTransport(options, roles, fail, environment = globa
     if (peer.rtc) throw Error('重复直连通道'); peer.rtc = rtc;
     rtc.onopen = checkRtc;
     rtc.onmessage = guard(event => { if (!route || route === 'rtc') deliver(peer,event.data); });
-    rtc.onerror = () => route === 'rtc' ? fatal(Error('直连通道失败')) : fallback();
+    rtc.onerror = event => route === 'rtc' ? fatal(Error('直连通道失败：'+String(event?.error?.message||event?.error||'未知原因'))) : fallback();
     rtc.onclose = () => { if (route === 'rtc') fatal(Error('直连通道已关闭')); else if (!route) fallback(); };
   }
   async function description(peer, value) {
@@ -162,7 +162,7 @@ export function createManagedTransport(options, roles, fail, environment = globa
           }).catch(fallback);
         }
       });
-      for (const socket of [data,signal]) { socket.onerror=() => { if (!route) fallback(); }; socket.onclose=() => { if (!closed && (route !== 'rtc' || socket === signal)) fatal(Error('本局网络连接已关闭')); }; }
+      for (const socket of [data,signal]) { socket.onerror=() => { if (!route) fallback(); }; socket.onclose=() => { if (!closed && route !== 'rtc') fatal(Error('本局网络连接已关闭')); }; }
       timeout=setTimeout(() => fatal(Error('等待主项目网络路由超时')),45000);
     }, close, finish,
   };

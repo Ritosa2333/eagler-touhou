@@ -16,7 +16,7 @@ import {
 } from "../.cache/build/browser/assets/launcher/replay-files.mjs";
 
 test("replay files", async () => {
-assert.equal(replayImportAccept, ".zip,.rpy,.rpyx,.rep");
+assert.equal(replayImportAccept, ".zip,.rpy,.rpyx,.th01r,.th02r,.th03r,.th04r,.rep");
 assert.equal(isReplayFilePath("replay/replay000.rep"), true);
 assert.equal(isValidReplayName("th075", "replay000.rep"), true);
 assert.equal(isValidReplayName("th075", "../replay000.rep"), false);

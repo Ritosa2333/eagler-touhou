@@ -1,8 +1,9 @@
 """Derive practice overlays only from the hash-pinned published solo HUD MAINs."""
 from pathlib import Path
-import sys,gzip,json,struct,subprocess,hashlib,copy
+import sys,gzip,json,struct,subprocess,hashlib,copy,os
 ROOT=Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(ROOT.parent/'tools'))
+sys.path.insert(0,os.environ.get('PC98_HUD_TOOLS',str(ROOT.parent/'tools')))
+sys.path.insert(0,os.environ.get('PC98_DISK_TOOLS',str(ROOT/'tools')))
 from build_native_boss_hud import mz_parts,insert_bridge,mz_finish
 from disk_image import Fat12
 sha=lambda b:hashlib.sha256(b).hexdigest()
@@ -12,11 +13,12 @@ SOURCES={'cn':'039e00e3d1b022a6af853a0663fe922414010b0b8dfa2b994dcaa6a3604318b3'
 
 def main():
     out=ROOT/'build/practice';out.mkdir(parents=True,exist_ok=True)
+    source_web=Path(os.environ.get('PC98_SOURCE_WEB',ROOT/'web'))
     manifest={'schema':1,'version':'th04-browser-practice/1','languages':{}}
     for language in ('cn','jp'):
         suffix='-jp' if language=='jp' else ''
         p=copy.deepcopy(json.loads((ROOT/f'web/solo-patch{suffix}.json').read_text()))
-        raw=gzip.decompress((ROOT/f'web/th04-solo{suffix}.hdi.gz').read_bytes())
+        raw=gzip.decompress((source_web/f'th04-solo{suffix}.hdi.gz').read_bytes())
         assert sha(raw)==p['disk']['sha256']
         disk=Fat12(raw);source=disk.read(disk.files()['GENSO/MAIN.EXE'])
         assert sha(source)==p['sha256']
@@ -41,13 +43,17 @@ def main():
         assert image[power_update:power_update+14]==bytes.fromhex('33db33c0a06446b909003b87de1e')
         assert image[power_update+25:power_update+38]==bytes.fromhex('88166546031e9c448b07a39a44')
         assert image[dream_put:dream_put+16]==bytes.fromhex('558bec666811003e00a1ccbc6bc00a50')
-        (out/'practice-config.inc').write_text(f'%define PRACTICE_ORG {insert-cs*16}\n%define SOLO_UPDATE {p["entries"][1]}\n%define SOLO_PAUSE {p["entries"][4]}\n%define SOLO_FRAME {p["entries"][7]}\n%define DIALOG_BODY {dialog+4-cs*16}\n%define DIALOG_OP {dialog_op-cs*16}\n%define POWER_UPDATE {power_update-cs*16}\n%define DREAM_PUT {dream_put-cs*16}\n')
-        nasm=ROOT/'tools/nasm-2.16.03/nasm.exe'
-        subprocess.run([str(nasm),'-f','bin','-I',str(out)+'/',str(ROOT/'patches/practice.asm'),'-o',str(out/'practice.bin')],check=True)
+        (out/'practice-config.inc').write_text(f'%define PRACTICE_ORG {insert-cs*16}\n%define SOLO_UPDATE {p["entries"][1]}\n%define SOLO_PAUSE {p["entries"][4]}\n%define SOLO_FRAME {p["entries"][7]}\n%define SOLO_MAILBOX {p["mailbox_cs_offset"]}\n%define PRACTICE_CHECKPOINT_BYTES {(struct.unpack_from("<H",h,14)[0]-p["data_segment"])*16}\n%define DIALOG_BODY {dialog+4-cs*16}\n%define DIALOG_OP {dialog_op-cs*16}\n%define POWER_UPDATE {power_update-cs*16}\n%define DREAM_PUT {dream_put-cs*16}\n')
+        nasm=os.environ.get('NASM',str(ROOT/'tools/nasm-2.16.03/nasm.exe'))
+        common=ROOT.parent.parent/'common/pc98'
+        subprocess.run([str(nasm),'-f','bin','-I',str(out)+'/', '-I',str(common)+'/', '-I',str(ROOT/'patches')+'/',str(ROOT/'patches/practice.asm'),'-o',str(out/'practice.bin')],check=True)
         code=(out/'practice.bin').read_bytes();assert code[:8]==b'T04PRA01'
-        names=('load','frame','player','world','entryPause','hold','targetPractice','lockLives','unlimitedBombs','enemyLock','respawnLives','bombGate','bombConsume','livesZero','bombsZero','shotsReturn','dialogRun','resourceDirty','boss')
-        entries=dict(zip(names,struct.unpack_from('<19H',code,8)))
-        gap=(len(code)+15)&~15;assert gap<=1024 and insert-cs*16+gap<65536
+        names=('load','frame','player','world','entryPause','hold','targetPractice','lockLives','unlimitedBombs','enemyLock','respawnLives','bombGate','bombConsume','livesZero','bombsZero','shotsReturn','dialogRun','resourceDirty','boss','pauseCall','assistFlags','cleanupKeepBits','cleanupCounts','cleanupPending','redrawFrame','targetPreparing','initialLives','initialBombs','initialPower','initialRank','targetResources','initialEntry','warpState','targetWarp','arrivalPending','targetArrival','initialPhase','initialGengetsu','targetReached','targetCheck','initialHp','targetHp','initialReimu','targetAdvance','initialStage','targetOutcome','targetOutcomeStep','resultVisible','resultRequest','resultAck','resultInput')
+        names+=('pauseOpen','pauseRequest','pauseAck','pauseInput')
+        names+=('formOpen','formInput','formValues','formRequest','formHp','formOptions','infoEnabled','infoValues')
+        names+=('restartPending','restartValues','resultSelecting')
+        entries=dict(zip(names,struct.unpack_from('<'+str(len(names))+'H',code,8)))
+        gap=(len(code)+15)&~15;assert gap<=14336 and insert-cs*16+gap<65536
         insert_bridge(h,image,rel,insert,gap);image[insert:insert+len(code)]=code
         edits=[]
         def patch(at,before,after):

@@ -1,0 +1,5 @@
+/* Browser practice owns pointer targets while its original tools are open. */
+#player.browser-practice-open :is(.touch-hud,[data-touch-layout-control],.touch-direct-surface,.touch-utility-row){
+  visibility:hidden!important;
+  pointer-events:none!important;
+}

@@ -50,6 +50,14 @@ async function fixture(locale='zh-CN'){
  await React.act(async()=>root.render(React.createElement(views.LocaleProvider,{locale},React.createElement(views.SpectatorPlayback,{session}))));
  return {model,calls,container,session,async update(value,context=owner){runtime=context;await React.act(async()=>model.update(context,value));},async click(selector){await React.act(async()=>container.querySelector(selector).click());}};
 }
+test('TH03 spectator timeline displays the room match score',async()=>{
+ const model=views.createSpectatorPlayback(),container=env.document.createElement('div');env.document.body.append(container);
+ const root=createRoot(container);mounts.push(root);const session={baseUrl:'https://example.test/',spectatorPlayback:model,getSnapshot:()=>({runtime:owner}),async controlSpectator(){}};
+ const render=score=>React.act(async()=>root.render(React.createElement(views.LocaleProvider,{locale:'en'},React.createElement(views.SpectatorPlayback,{session,score}))));
+ await render([2,1]);await React.act(async()=>model.update(owner,report()));
+ assert.equal(container.querySelector('[id$="Score"]').textContent,'<2 : 1>');
+ await render([2,2]);assert.equal(container.querySelector('[id$="Score"]').textContent,'<2 : 2>');
+});
 for(const locale of ['zh-CN','en'])test(locale+': cooperative data and commands use the shared TH09 view',async()=>{
  const f=await fixture(locale);assert.equal(f.container.textContent,'');await f.update(report());
  const panel=f.container.querySelector('section.spectator-timeline');assert.ok(panel);

@@ -1,7 +1,9 @@
 import {descriptorGameVersion} from "../../package/game-version.mjs";
 import {componentFileIds} from '../../package/package-generation.mjs';
+import {pc98RequiredBlockFiles} from '../../package/pc98-block-selection.mjs';
 import {fetchPublishedPackage, desiredFilesForPublishedPackage} from '../../package/package-launcher.mjs';
 import {installPackageFromRemote} from '../../package/package-installer.mjs';
+import {packageObjectMatches, readPackageObject} from '../../package/package-store.mjs';
 import {linkAbortSignals} from './abort-signals';
 import {PRODUCT_GAMES, type GameId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
@@ -17,6 +19,33 @@ export const musicTransport = (mode: MusicMode): 'ogg' | 'midi' | 'none' => oggM
 export const musicModeLabel = (mode: MusicMode, t: Translate) => mode === 'midi' ? 'midi'
   : t(mode === 'ogg-stream' ? 'settings.music.oggStream' : mode === 'ogg-full' ? 'settings.music.oggFull'
     : mode === 'ogg-akyu' ? 'settings.music.akyu' : 'settings.music.none');
+
+export async function ensurePC98Disks(generation: InstalledPackageGeneration | null, acquisition: PackageAcquisition,
+  language: string, multiplayer: boolean, signal?: AbortSignal, replay = false): Promise<InstalledPackageGeneration | null> {
+  if (!generation || !generation.descriptor.components?.['pc98-manifest']) return generation;
+  const ids = pc98RequiredBlockFiles(generation.descriptor, {game: generation.game, language, multiplayer, replay});
+  const valid = await Promise.all(ids.map(async id => {
+    const file = generation.descriptor.files[id], objectId = generation.files[id]?.objectId;
+    if (!file || !objectId || !file.sha256 || file.bytes == null) return false;
+    return packageObjectMatches(await readPackageObject(objectId), file.bytes, file.sha256);
+  }));
+  checkPreparationAbort(signal);
+  if (valid.every(Boolean)) return generation;
+  const publication = await acquisition.getPublication(descriptorGameVersion(generation.descriptor), signal);
+  const published = await fetchPublishedPackage(generation.game, {...publication, fetchImpl: acquisition.fetchImpl, signal});
+  if (!published || JSON.stringify(published.descriptor) !== JSON.stringify(generation.descriptor)) throw new GameDataAcquisitionError('游戏磁盘资源版本不匹配，请更新游戏');
+  const result = await installPackageFromRemote(published.descriptor, {descriptorUrl: published.descriptorUrl,
+    expectedGenerationId: generation.id,
+    desiredFileIds: current => {
+      if (current.generation?.id !== generation.id) throw new Error('游戏安装已变化，请重新启动');
+      return desiredFilesForPublishedPackage(published.descriptor, {current: current.generation, addFileIds: ids});
+    },
+    source: current => current.installation?.source === 'local' ? 'local' : 'remote',
+    fetchImpl: acquisition.getPackageFetch(generation.game), signal});
+  if (!ids.every(id => !!result.generation.files[id]?.objectId)) throw new GameDataAcquisitionError('游戏磁盘资源安装不完整');
+  await acquisition.refreshInstalled(generation.game);
+  return result.generation;
+}
 
 /** Upgrade only a newly required shared dependency. Existing DATA and selected
  * optional files must have identical content in the publication. */
@@ -59,7 +88,7 @@ export function packageResourceIds(generation: InstalledPackageGeneration): stri
   const descriptor = generation.descriptor, runtimeOwned = new Set<string>();
   const runtimes = descriptor.runtimes || (descriptor.runtime ? {normal: descriptor.runtime} : {});
   for (const runtime of Object.values(runtimes)) for (const id of runtime.bootstrap || [runtime.entry]) if (id) runtimeOwned.add(id);
-  const resourceIds = Object.keys(descriptor.components).filter(id => descriptor.components[id].type === 'resource')
+  const resourceIds = Object.keys(descriptor.components).filter(id => ['resource', 'pc98-disk'].includes(descriptor.components[id].type))
     .flatMap(id => componentFileIds(descriptor, id));
   return [...new Set([...descriptor.base.files, ...resourceIds])].filter(id => {
     const declaration = descriptor.files[id];
@@ -102,6 +131,7 @@ export function sharedResources({game, generation, host, language, thprac, baseU
 }
 export function remoteMusicResources(game: GameId, music: MusicMode, host: SiteManifest | null, baseUrl: string, t: Translate) {
   if (!oggMusic(music)) return [];
+  if ('embeddedOgg' in PRODUCT_GAMES[game].musicRuntime && PRODUCT_GAMES[game].musicRuntime.embeddedOgg === true) return [];
   const pack = host?.games[game]?.music.ogg;
   if (!pack || !Array.isArray(pack.files)) throw new Error(t('music.manifestInvalid'));
   const mount = typeof pack.mount === 'string' ? pack.mount.replace(/\/$/, '') : '';
@@ -123,7 +153,10 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
   completeSet?: boolean;
 }): Promise<{generation: InstalledPackageGeneration | null; music: MusicMode}> {
   if (!generation || !oggMusic(music)) return {generation, music};
-  const fallback: MusicMode = PRODUCT_GAMES[generation.game].musicCapabilities?.midi === true ? 'midi' : 'none';
+  const musicPolicy = PRODUCT_GAMES[generation.game].musicRuntime;
+  const embedded = 'embeddedOgg' in musicPolicy && musicPolicy.embeddedOgg === true;
+  if (embedded && music !== 'ogg-akyu') return {generation, music};
+  const fallback: MusicMode = embedded ? 'ogg-stream' : PRODUCT_GAMES[generation.game].musicCapabilities?.midi === true ? 'midi' : 'none';
   checkPreparationAbort(signal);
   const declared = componentFileIds(generation.descriptor, 'ogg');
   const initial = completeSet ? declared : declared.slice(0, 2);

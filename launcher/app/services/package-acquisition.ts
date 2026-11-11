@@ -162,7 +162,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       request.onAcquisitionActivity?.(true);
       progress(request, 'package.installingResources');
       const result = await deps.installAcquired({descriptor, source: 'remote',
-        desiredFileIds: ['game-data', ...(isOgg(request.music) ? componentFileIds(descriptor, 'ogg') : [])],
+        desiredFileIds: ['game-data', ...((['th01','th02','th03','th04'].includes(game) ? request.music === 'ogg-akyu' : isOgg(request.music)) ? componentFileIds(descriptor, 'ogg') : [])],
         acquire: async (id, declaration) => {
           checkPreparationAbort(request.signal);
           const source = id === 'game-data' ? hosted.gameData.source! : `${typeof hosted.music.ogg?.base === 'string' ? hosted.music.ogg.base : ''}${declaration.source}`;

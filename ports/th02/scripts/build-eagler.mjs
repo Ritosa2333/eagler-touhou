@@ -1,9 +1,11 @@
 import {printPC98Inputs} from '../../../tools/build/pc98-inputs.mjs';
+import {exportPC98Disks} from '../../../tools/build/pc98-disks.mjs';
 import {createHash} from 'node:crypto';
 import {readFile,writeFile,mkdir,readdir,copyFile,stat,mkdtemp,rename,rm} from 'node:fs/promises';
 import {resolve,relative,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
+import {gunzipSync} from 'node:zlib';
 import {assertPortableRuntimeSources} from '../../../launcher/lib/runtime-generations.mjs';
 import {DATA_SCHEMA,DATA_MAGIC,DATA_LAYOUT_SPEC} from '../web/managed-data.mjs';
 const port = resolve(fileURLToPath(new URL('..', import.meta.url))), repo=resolve(port,'../..');
@@ -12,9 +14,10 @@ if(args['print-inputs']) await printPC98Inputs({port,game:'th02'});
 const source = resolve(args.source||port), web=resolve(source,'web');
 const sourceIdentity=args.source?null:JSON.parse(await readFile(resolve(port,'source-import.json'),'utf8'));
 const privateInputs=new Set(sourceIdentity?.resources||[]);
-const assets=resolve(args.assets||resolve(port,'.cache/source-resources'));
+const assets=resolve(args.assets||web);
+const nativePractice=new Set(['practice-cn.exe.gz','practice-jp.exe.gz','practice-start.com']);
 async function readInput(name){
-  try{return await readFile(resolve(privateInputs.has(name)?assets:web,name));}
+  try{return await readFile(resolve(nativePractice.has(name)?web:privateInputs.has(name)&&!name.endsWith('.wasm')?assets:web,name));}
   catch(error){if(error.code==='ENOENT'&&privateInputs.has(name))throw Error('Missing private resource '+name+'; specify --assets=<standalone web directory>.');throw error;}
 }
 const coopPatch=JSON.parse(await readFile(resolve(web,'local-patch.json'),'utf8'));
@@ -33,6 +36,11 @@ async function files(directory,prefix='') {
 }
 const names=[...new Set([...(await files(web)).filter(name=>!/^managed-[^/]+\.(?:mjs|js)$/.test(name)),...privateInputs])].sort().filter(name=>name!=='room-title-th05.js'&&!/(?:^|\/)(?:build|reports|baseline|screenshots|backups|tools|test-results|__pycache__)(?:\/|$)/.test(name) && !/\.(?:map|wat|cpuprofile|log|tmp|bak)$/.test(name));
 const input=[]; for(const name of names) { const bytes=await readInput(name); input.push({path:name,bytes:bytes.length,sha256:sha(bytes)}); }
+const practiceManifest=JSON.parse(await readFile(resolve(web,'practice-assets.json'),'utf8'));
+for(const [language,spec] of Object.entries(practiceManifest.languages)){
+  const raw=gunzipSync(await readInput(spec.url));
+  if(raw.length!==spec.size||sha(raw)!==spec.sha256)throw Error(`TH02 ${language} native practice overlay is stale; rebuild it with tools/build_practice_assets.py`);
+}
 if(args['print-package-inputs']) { console.log(JSON.stringify({game:'th02',kind:'managed-import',inputs:input})); process.exit(0); }
 const cache=resolve(port,'.cache');await mkdir(cache,{recursive:true});
 const staging=await mkdtemp(resolve(cache,'build-')),output=resolve(staging,'build-eagler'),content=resolve(staging,'content');
@@ -41,7 +49,9 @@ await mkdir(output,{recursive:true});await mkdir(content,{recursive:true});
 const runtime=[], payload=[], entries=[];let offset=0;
 for(const item of input) {
   const bytes=await readInput(item.path);
-  if(/\.(?:js|mjs|css|html|wasm|json)$/.test(item.path)) {
+  if(/^bgm\/akyu\/\d{2}\.opus$/.test(item.path)) {
+    const target=resolve(content,'music',item.path.split('/').at(-1).replace(/\.opus$/,'.ogg'));await mkdir(dirname(target),{recursive:true});await writeFile(target,bytes);
+  } else if(/\.(?:js|mjs|css|html|wasm|json)$/.test(item.path)) {
     const target=resolve(output,item.path);await mkdir(dirname(target),{recursive:true});await writeFile(target,bytes);runtime.push(item.path);
   } else {
     if(!bytes.length) continue;
@@ -52,9 +62,12 @@ function replaceOnce(text,from,to,label) { if(text.split(from).length!==2) throw
 const patch=async(name,edit)=>{const path=resolve(output,name);await writeFile(path,edit((await readFile(path,'utf8')).replaceAll('\r\n','\n')));};
 const {adaptRuntime}=await import('./adapt-runtime.mjs');
 await adaptRuntime({patch,replaceOnce,output,port,web,runtime,repo,files,readInput});
+await copyFile(resolve(repo,'launcher/lib/pc98-disk-blocks.mjs'),resolve(output,'pc98-disk-blocks.mjs'));runtime.push('pc98-disk-blocks.mjs');
+await patch('bgm/akyu/manifest.json',text=>text.replace(/\.opus/g,'.ogg'));
 // Adapted sources have their own verified identity; keep upstream asset checks active.
 for(const manifestPath of ['netplay/runtime.json','lockstep-runtime.json']) {
   let manifest;try{manifest=JSON.parse(await readFile(resolve(output,manifestPath),'utf8'));}catch(error){if(error.code==='ENOENT')continue;throw error;}
+  if(manifest.assets)for(const name of ['pc98-challenge-counters.mjs','pc98-challenge-stocks.mjs','pc98-challenge-layouts.mjs','pc98-challenge-hud-install.mjs'])manifest.assets[name]=sha(await readFile(resolve(output,name)));
   for(const table of [manifest.files,manifest.assets])if(table)for(const name of Object.keys(table)) {
     if(name===manifestPath)throw Error('Self-referencing runtime hash');
     try{const bytes=await readFile(resolve(output,name));if(typeof table[name]==='string')table[name]=sha(bytes);}catch(error){if(error.code!=='ENOENT')throw error;if(!names.includes(name))delete table[name];}
@@ -64,9 +77,10 @@ for(const manifestPath of ['netplay/runtime.json','lockstep-runtime.json']) {
 const escape=text=>text.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 let notices='<!doctype html><html lang="en"><meta charset="utf-8"><title>TH02 runtime notices</title><body><h1>TH02 runtime sources and licenses</h1><p>Adapted from <a href="https://github.com/IxinorTyan/th02-coop-lab">th02-coop-lab</a>, revision '+escape(revision??'local working tree')+'.</p>';
 for(const name of ['vendor/dosbox-x/NOTICE.md','vendor/dosbox-x/LICENSE','room-ui-assets/LICENSE.txt'])notices+='<h2>'+escape(name)+'</h2><pre style="white-space:pre-wrap">'+escape(await readFile(resolve(web,name),'utf8'))+'</pre>';
-await writeFile(resolve(output,'NOTICE.html'),notices+'</body></html>');runtime.push('NOTICE.html');
+await writeFile(resolve(output,'NOTICE.html'),notices+'<h2>PMD player</h2><p><a href="pmd-player.UPSTREAM.txt">Source</a> · <a href="pmd-player.NOTICE.txt">Notice</a> · <a href="pmd-player.LICENSE.txt">License</a></p></body></html>');runtime.push('NOTICE.html');
 const manifestBytes=Buffer.from(JSON.stringify({schema:DATA_SCHEMA,game:'th02',files:entries})),header=Buffer.alloc(12);header.write(DATA_MAGIC);header.writeUInt32LE(manifestBytes.length,8);
 await writeFile(resolve(content,'th02.data'),Buffer.concat([header,manifestBytes,...payload]));
+await exportPC98Disks({game:'th02',output:content,entries,payload});
 const sources=new Map();for(const name of [...new Set(runtime)].sort())sources.set(name,await readFile(resolve(output,name)));assertPortableRuntimeSources(sources);
 const identities={};for(const name of [...new Set(runtime)].sort()){const bytes=await readFile(resolve(output,name));identities[name]={bytes:bytes.length,sha256:sha(bytes)};}
 await writeFile(resolve(output,'manifest.json'),JSON.stringify({game:'th02',protocol:'eagler-touhou/1',features:{thprac:false,languages:false,focusHitbox:false},files:identities},null,2)+'\n');

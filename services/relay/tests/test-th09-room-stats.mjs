@@ -46,3 +46,15 @@ test('partial minutes survive character changes and duplicate progress is not co
   assert.equal(accept(room,next,'host',{serial:2,start:0,frames:1800,winner:0}),true);
   assert.deepEqual(stats(room,'host'),{wins:1,losses:0,minutes:1});
 });
+
+test('TH03 confirmed match results count once for the correct seat',()=>{
+  const room={id:'th03mp-1234',lobby:{startSerial:1}},run={lobbyClientIds:['host','guest']};
+  const result={serial:1,start:100,frames:1,winner:1};
+  assert.equal(accept(room,run,'guest',result),false);
+  assert.equal(accept(room,run,'host',result),true);
+  assert.equal(accept(room,run,'host',result),false);
+  assert.deepEqual(stats(room,'host'),{wins:0,losses:1,minutes:0});
+  assert.deepEqual(stats(room,'guest'),{wins:1,losses:0,minutes:0});
+  assert.equal(accept(room,run,'host',{serial:1,start:200,frames:1,winner:0}),true);
+  assert.equal(stats(room,'host').wins,1);
+});

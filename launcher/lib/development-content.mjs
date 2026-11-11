@@ -59,6 +59,30 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       : ws("dependencies", "unifont-15.1.05", "unifont-15.1.05.otf"),
   }),
   games: Object.freeze({
+    th01: Object.freeze({
+      runtime: `${ws('th01','build-eagler','th01.html')}?hosted=1`,
+      multiplayerRuntime: `${ws('th01','build-eagler','th01.html')}?hosted=1&runtimeVariant=multiplayer`,
+      data:Object.freeze({source:ws('th01','content','th01.data'),layout:PRODUCT_CONTENT.th01.dataLayout}),
+      music:availableMusic({ogg:Object.freeze({base:wsDir('th01','content','music'),...PRODUCT_CONTENT.th01.music.ogg})}),
+    }),
+    th02: Object.freeze({
+      runtime: `${ws('th02','build-eagler','th02.html')}?hosted=1`,
+      multiplayerRuntime: `${ws('th02','build-eagler','th02.html')}?hosted=1&runtimeVariant=multiplayer`,
+      data:Object.freeze({source:ws('th02','content','th02.data'),layout:PRODUCT_CONTENT.th02.dataLayout}),
+      music:availableMusic({ogg:Object.freeze({base:wsDir('th02','content','music'),...PRODUCT_CONTENT.th02.music.ogg})}),
+    }),
+    th03: Object.freeze({
+      runtime: `${ws('th03','build-eagler','th03.html')}?hosted=1`,
+      multiplayerRuntime: `${ws('th03','build-eagler','th03.html')}?hosted=1&runtimeVariant=multiplayer`,
+      data:Object.freeze({source:ws('th03','content','th03.data'),layout:PRODUCT_CONTENT.th03.dataLayout}),
+      music:availableMusic({ogg:Object.freeze({base:wsDir('th03','content','music'),...PRODUCT_CONTENT.th03.music.ogg})}),
+    }),
+    th04: Object.freeze({
+      runtime: `${ws('th04','build-eagler','th04.html')}?hosted=1`,
+      multiplayerRuntime: `${ws('th04','build-eagler','th04.html')}?hosted=1&runtimeVariant=multiplayer`,
+      data:Object.freeze({source:ws('th04','content','th04.data'),layout:PRODUCT_CONTENT.th04.dataLayout}),
+      music:availableMusic({ogg:Object.freeze({base:wsDir('th04','content','music'),...PRODUCT_CONTENT.th04.music.ogg})}),
+    }),
     th05: Object.freeze({
       runtime: `${ws("th05", "artifacts", "runtime", "th05.html")}?hosted=1`,
       multiplayerRuntime: `${ws("th05mp", "artifacts", "runtime", "th05.html")}?hosted=1`,

@@ -9,7 +9,7 @@ import {FullscreenIcons} from './utility-icons';
 export interface ReplayTransportState {
   path: string; frame: number; total: number; paused: boolean;
   seeking: boolean; target: number | null; rate: number; ended: boolean;
-  roundStarts?: number[]; startFrame?: number;
+  roundStarts?: number[]; startFrame?: number; seekable?: boolean; rateControl?: boolean;
 }
 export type ReplayControlAction = 'pause' | 'play' | 'seek' | 'rate';
 const rates = [.5, 1, 2, 4, 8, 0];
@@ -28,11 +28,11 @@ export function ReplayTransport({playback, busy = false, fullscreen = false, spe
         {paused ? <Play aria-hidden="true"/> : <Pause aria-hidden="true"/>}
       </UiButton>
       <UiButton size="lg" type="button" className="replay-restart replay-button" aria-label={t('replay.ui.restart')} disabled={!playback || busy} onClick={() => onControl('seek', start)}><RotateCcw aria-hidden="true"/><span>{t('replay.ui.restart')}</span></UiButton>
-      <div className="replay-speed"><MainSelect id={speedId ?? id} className="option-select" aria-label={t('replay.ui.speed')} value={playback?.rate ?? 1} disabled={!playback || busy} onChange={event => onControl('rate', Number(event.target.value))}>
+      <div className="replay-speed"><MainSelect id={speedId ?? id} className="option-select" aria-label={t('replay.ui.speed')} value={playback?.rate ?? 1} disabled={!playback || busy || playback.rateControl === false} onChange={event => onControl('rate', Number(event.target.value))}>
         {rates.map(rate => <option key={rate} value={rate}>{rate ? `${rate}×` : t('replay.ui.fullSpeed')}</option>)}
       </MainSelect></div>
     </div>
-    <ReplaySeekBar key={`${playback?.path ?? ''}:${start}`} frame={Math.max(0, (playback?.frame ?? 0) - start)} total={Math.max(0, (playback?.total ?? 0) - start)} roundStarts={playback?.roundStarts} disabled={busy || !playback} onSeek={target => onControl('seek', target + start)}/>
+    <ReplaySeekBar key={`${playback?.path ?? ''}:${start}`} frame={Math.max(0, (playback?.frame ?? 0) - start)} total={Math.max(0, (playback?.total ?? 0) - start)} roundStarts={playback?.roundStarts} disabled={busy || !playback || playback.seekable === false} onSeek={target => onControl('seek', target + start)}/>
     <UiButton variant="icon" type="button" className="replay-fullscreen replay-button" aria-label={t('replay.ui.fullscreen')} onClick={onToggleFullscreen} data-fullscreen={fullscreen}><FullscreenIcons/></UiButton>
     <span className="replay-seek-status" role="status">{playback?.seeking ? t('replay.ui.seek', {time:replayClock(Math.max(0, (playback.target ?? 0) - start))}) : playback?.ended ? t('replay.ui.ended') : ''}</span>
   </section>;

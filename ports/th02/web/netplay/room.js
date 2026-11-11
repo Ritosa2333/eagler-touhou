@@ -2,7 +2,7 @@ import {publishNetworkStatus,mountNetworkStatus} from '../network-status.js';
 import {startFrameLoop} from '../frame-limit.js';
 import {createInputChannel,acceptInputChannel} from './input-transport.js';
 import {readNetworkMode,networkUrl} from './network-mode.js';
-import {PROTOCOL,RollbackQueue,TICK_MS,MAX_ROLLBACK,BOOT_DELAY,MAX_INPUT_DELAY,MAX_ROLLBACK_INPUT_DELAY,lockstepDelayForRtt,rollbackPolicyForRtt,validRollbackPolicy,rollbackRttForSamples} from './rollback-queue.js';
+import {PROTOCOL,POLICY_SCHEMA,RollbackQueue,TICK_MS,MAX_ROLLBACK,BOOT_DELAY,MAX_INPUT_DELAY,MAX_ROLLBACK_INPUT_DELAY,lockstepDelayForRtt,rollbackPolicyForRtt,validRollbackPolicy,rollbackRttForSamples} from './rollback-queue.js';
 import {mountPlayer} from '../player-ui.js';
 import {isBound,keyboardBits,gamepadBits,gamepadStatus,normalize} from './controls.js';
 import {mountFocusSettings} from './focus-display.js';
@@ -364,8 +364,8 @@ async function prepareRoomResources(value){
  const report=text=>{if(generation===preloadGeneration&&state?.phase==='lobby'&&!stopped)$('resource-status').textContent=text;};
  preloadPromise=(async()=>{
   report('正在预载游戏磁盘、DOSBox-X、音效和开场音乐…');
-  const [patch,manifest,sfxManifest,bgmManifest,alternate,midi]=await Promise.all([
-   freshJSON('local-patch.json'),freshJSON('netplay/runtime.json'),freshJSON('sfx/manifest.json'),
+  const [patch,manifest,bgmManifest,alternate,midi]=await Promise.all([
+   freshJSON('local-patch.json'),freshJSON('netplay/runtime.json'),
    freshJSON('bgm/manifest.json'),freshJSON('bgm/akyu/manifest.json'),loadMidiTracks()]);
   const disk=patch.disks[value.settings.language];if(!disk)throw Error('找不到所选语言的游戏磁盘');
   const supports=WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,5,5,2,0,1,0,1]));
@@ -375,8 +375,7 @@ async function prepareRoomResources(value){
    parallelAssets(Object.entries(manifest.assets),async([path,hash])=>assetBytes(path,{hash})),
    assetBytes(disk.file,{hash:disk.sha256,size:disk.size,gzip:true}),
    assetBytes(coreEntry.file,{hash:coreEntry.sha256}),
-   parallelAssets(Object.entries(sfxManifest.effects),async([,item])=>assetBytes(`sfx/${item.file}`,{hash:item.sha256})),
-   track&&assetBytes(`bgm/${track.url}`,{hash:track.audioSha256||track.sha256,size:track.bytes})
+   track&&['new','midi'].includes(bgmVersion())&&assetBytes(`bgm/${track.url}`,{hash:track.audioSha256||track.sha256,size:track.bytes})
   ]);
   if(generation===preloadGeneration)report('游戏磁盘、核心、音效和当前关卡音乐已校验并预载');
  })();
@@ -500,7 +499,7 @@ function attachChannel(peer,channel){
       if(stopped&&m.type!=='end'&&m.type!=='end-ack')return;
       switch(m.type){
         case 'hello':
-          if(m.inputPolicy?.policySchema!==2)throw Error('输入策略版本不同，请所有玩家刷新后重新建房');
+          if(m.inputPolicy?.policySchema!==POLICY_SCHEMA)throw Error('输入策略版本不同，请所有玩家刷新后重新建房');
           if(JSON.stringify(m.settings)!==JSON.stringify(state.settings)||JSON.stringify(m.slots)!==JSON.stringify(state.slots))throw Error('开局设置不一致');
           if(m.inputPolicy?.inputDelay!==inputPolicy.inputDelay||m.inputPolicy?.directionPrediction!==inputPolicy.directionPrediction||m.inputPolicy?.rollbackEnabled!==inputPolicy.rollbackEnabled)throw Error('联机性能策略不一致，请全员刷新并使用相同网络模式');
           peer.hello=true;maybeRun();break;
@@ -515,7 +514,7 @@ function attachChannel(peer,channel){
           if(!Number.isInteger(m.delay)||m.delay<BOOT_DELAY||m.delay>MAX_INPUT_DELAY)throw Error('无效开局输入缓冲');
           if(!Number.isInteger(m.inputDelay)||m.inputDelay<0||m.inputDelay>MAX_ROLLBACK_INPUT_DELAY||
              m.inputDelay>m.delay||(!inputPolicy.rollbackEnabled&&m.inputDelay!==0))throw Error('无效回滚输入策略');
-          if(!validRollbackPolicy(m.policy)||m.policy.rollbackEnabled!==inputPolicy.rollbackEnabled||
+          if(!validRollbackPolicy(m.policy,state.settings.players)||m.policy.rollbackEnabled!==inputPolicy.rollbackEnabled||
              m.policy.inputDelay!==m.inputDelay||m.policy.rttMs<Math.ceil(Math.max(...[...peers.values()].map(p=>rollbackRttForSamples(p.timingSamples)))))throw Error('无效混合输入策略');
           runDelay=m.delay;runInputDelay=m.inputDelay;runPolicy=m.policy;
           runRequested=true;maybeRun();break;
@@ -644,7 +643,7 @@ async function setupConnections(){
   for(const peer of oldPeers){clearTimeout(peer.connectTimer);peer.channel?.close();peer.pc.close();}
   relay?.close();relay=null;
   runPolicy=null;
-  inputPolicy=Object.freeze({inputDelay:0,directionPrediction:6,policySchema:2,rollbackEnabled:state.settings.rollback});
+  inputPolicy=Object.freeze({inputDelay:0,directionPrediction:6,policySchema:POLICY_SCHEMA,rollbackEnabled:state.settings.rollback});
   queue=new RollbackQueue(state.slots[session.role],state.settings.players,inputPolicy);
   let rtcConfiguration=null;
   if(!relayMode){
@@ -840,7 +839,7 @@ function maybeRun(){
     if(![...peers.values()].every(peer=>Number.isFinite(peer.startRtt)))return;
     const rtt=Math.max(...[...peers.values()].flatMap(peer=>[peer.startRtt,...peer.timingSamples]));
     const rollbackRtt=Math.max(...[...peers.values()].flatMap(peer=>[peer.startRollbackRtt,rollbackRttForSamples(peer.timingSamples)]));
-    runPolicy=rollbackPolicyForRtt(rollbackRtt,inputPolicy.rollbackEnabled);
+    runPolicy=rollbackPolicyForRtt(rollbackRtt,inputPolicy.rollbackEnabled,state.settings.players);
     runInputDelay=runPolicy.inputDelay;
     runDelay=inputPolicy.rollbackEnabled?Math.max(BOOT_DELAY,runInputDelay):lockstepDelayForRtt(rtt);
     broadcast({type:'run',delay:runDelay,inputDelay:runInputDelay,policy:runPolicy});runRequested=true;
@@ -932,6 +931,7 @@ function observeInput(){
   inputLatch.observe(controlEditor.isEditing()?0:normalize(player.sample(keyboardBits(keys)|childBits|gamepadBits())|pendingAction));
 }
 function captureLocalInput(frontier=queue.frame,context=null){
+  if(!queue.needsCapture(frontier))return false;
   // Continue authoritative synchronization while hidden, with neutral input.
   // Do not poll held gamepads, touch auto-fire or menu pulses in the background.
   let packed=0;

@@ -278,6 +278,9 @@ export const GAME_OPTION_CLASSIFICATION = Object.freeze({
   doubleTapBombEnabled: { capability: "touch-controls", class: "required", owner: "launcher-runtime" },
   restartButtonEnabled: { capability: "restart-action", class: "required", owner: "launcher-runtime", note: "the preference only controls shared Launcher R-button visibility; every adapter still owes pause-menu restart semantics" },
   alwaysHitbox: { capability: "always-hitbox", class: "required", owner: "launcher-runtime" },
+  th02RapidFire: { capability: "rapid-fire", class: "optional", owner: "product" },
+  th03RapidFire: { capability: "rapid-fire", class: "optional", owner: "product" },
+  th03FocusEnabled: { capability: "focus-hitbox", class: "optional", owner: "product" },
   multiplayerLocalPlayerVisibility: { capability: "multiplayer-local-player-visibility", class: "profile-required", owner: "launcher-runtime" },
   externalMidiDeviceId: { capability: "midi-music", class: "optional", owner: "product", note: "opaque MIDIPort.id of the selected output; empty means the first available device. The external-MIDI on/off switch is session-only Launcher state and deliberately not a GameOptions field" },
 } satisfies Readonly<Record<string, GameOptionClassification>>);

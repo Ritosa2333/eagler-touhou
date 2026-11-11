@@ -1,4 +1,5 @@
 // Shared TH04 runtime, with serial native operations and page-owned audio.
+import {stable,digest,toBase64} from '../replay/tape.js';
 const send=(message,transfer=[])=>postMessage(message,transfer);
 const audioContext={sampleRate:44100,state:'running',currentTime:0,
  addEventListener(){},removeEventListener(){},resume:async()=>{},close:async()=>{}};
@@ -15,18 +16,22 @@ globalThis.th04WorkerHost={canvas:new OffscreenCanvas(640,400),audioContext,
   const count=(event.sequence-sequence)&65535;
   if(count>8)throw Error('音效事件超过桥接队列容量');
   for(let i=0;i<count;i++){const id=event.ring[(sequence+i)&7];if(!Number.isInteger(id)||id<0||id>=17)throw Error('原生音效编号无效');}
-  sequence=event.sequence;played+=count;send({type:'se',event});
+  sequence=event.sequence;played+=count;
+  // The native observer is sampled every confirmed step, but an unchanged
+  // sequence contains no sound command. Avoid posting an empty event for
+  // every player and the checkpoint replica at 60 Hz.
+  if(count)send({type:'se',event});
  },stop:()=>send({type:'se-stop'}),dispose(){},
  info:()=>({sequence,played,status:'浏览器音效：确认事件交给页面',loaded:17})}
 };
-let lastDiagnostics=-Infinity,lastGameAt=-Infinity,lastGameStep=-30,simulatedSteps=0;
+let lastDiagnostics=-Infinity,lastGameAt=-Infinity,lastGameStep=-6,simulatedSteps=0;
 function status(force=false){
  const r=th04WorkerHost.runtime,now=performance.now();
  // Control, prediction and replay proof must follow every completed command.
  // UI-only diagnostics match the room's 250 ms refresh, including during replay.
  const state={proof:r.replayProof(),ready:r.readyForRollback(),reason:r.predictionBlockReason(),touch:r.touchContext()};
  if(th04WorkerHost.replayOnly)state.scene=r.replayScene();
- if(force||simulatedSteps-lastGameStep>=30||now-lastGameAt>=1000){state.game=r.snapshot();lastGameStep=simulatedSteps;lastGameAt=now;}
+ if(force||simulatedSteps-lastGameStep>=6||now-lastGameAt>=1000){state.game=r.snapshot();lastGameStep=simulatedSteps;lastGameAt=now;}
  if(force||now-lastDiagnostics>=250){
   Object.assign(state,{rollback:r.rollbackInfo(),render:r.renderInfo(),diagnostics:r.diagnosticText(),fault:r.faultReport({cpu:false})});
   lastDiagnostics=now;
@@ -53,6 +58,13 @@ onmessage=({data})=>{
    simulatedSteps++;
    if(data.hash)result=r.checksum();
    if(data.stagePresentation&&!data.replay)present(true);
+  }else if(data.type==='executeBatch'){
+   if(!th04WorkerHost.replayOnly||!Number.isSafeInteger(data.frame)||!Array.isArray(data.rows)||!data.rows.length||data.rows.length>32)throw Error('TH04 观战批次无效');
+   for(let i=0;i<data.rows.length;i++){
+    const row=data.rows[i],frame=data.frame+i;r.step(row.inputs,{frame,replay:false,offlineMask:row.offlineMask});simulatedSteps++;
+    if(r.replayProof()!==row.proof||(row.hash!==null&&stable(r.checksum())!==stable(row.hash)))throw Error('录像模拟校验不一致：第 '+frame+' 步');
+    r.confirm(frame+1);
+   }
   }else if(data.type==='replay-slice'){
    if(!Array.isArray(data.plans)||!data.plans.length||data.plans.length>REPLAY_MAX_STEPS)throw Error('TH04 回滚补算批次无效');
    if(!Number.isSafeInteger(data.frame)||data.frame<0||data.plans.some((plan,index)=>!plan||plan.frame!==data.frame+index||!Array.isArray(plan.inputs)||!Number.isInteger(plan.offlineMask)))throw Error('TH04 回滚补算帧顺序无效');
@@ -70,11 +82,15 @@ onmessage=({data})=>{
    }
    if(data.stagePresentation&&applied&&data.plans[applied-1].end)present(true);
    result={applied,records,blocked,exited,sliceMs:performance.now()-sliceStarted};
+  }else if(data.type==='replaySavePoint'){
+   if(!th04WorkerHost.replayOnly)throw Error('检查点只能由旁观实例生成');
+   const point=await r.replaySave(...data.args);
+   result={frame:point.frame,size:point.bytes.length,sha:await digest(point.bytes),data:toBase64(point.bytes),bytes:point.bytes};
   }else if(data.type==='present')result=present();
   else if(data.type==='stop'){stopped=true;r.stop();return;}
   else {if(typeof r[data.type]!=='function')throw Error('Unknown TH04 worker command');result=await r[data.type](...data.args);if(data.type==='step')simulatedSteps++;}
   if(data.type==='confirm'&&data.oneWay){if(result==='exit')send({type:'confirmed-exit'});return;}
-  send({type:'result',id:data.id,result,status:status(['load','start','replayLoad','faultReport'].includes(data.type)),executionMs:performance.now()-started});
+  send({type:'result',id:data.id,result,status:status(['load','start','replayLoad','faultReport'].includes(data.type)),executionMs:performance.now()-started},data.type==='replaySavePoint'?[result.bytes.buffer]:[]);
  }).catch(error=>{
   stopped=true;let fault;try{fault=th04WorkerHost.runtime?.faultReport();}catch{/* Preserve the command failure. */}
   send({type:'error',id:data.id,message:error.stack||String(error),fault});

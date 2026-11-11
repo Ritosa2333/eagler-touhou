@@ -147,10 +147,16 @@ th04-network-fault.json
 !/patches/
 /patches/*
 !/patches/practice.asm
+!/patches/practice-time.inc
+!/patches/practice-cleanup.inc
+!/patches/practice-resources.inc
+!/patches/practice-advance.inc
+!/patches/practice-outcome.inc
 !/patches/launch.asm
 !/tools/build_practice_assets.py
 !/tools/build_practice_core.mjs
 !/tools/test_practice_guest.py
+!/tools/test_practice_time.py
 !/tools/test_practice_engine.mjs
 !/tools/test_practice_browser.cjs
 
@@ -268,15 +274,4 @@ th04-network-fault.json
 /web/th04-coop.hdi.gz
 /web/th04-solo-jp.hdi.gz
 /web/th04-solo.hdi.gz
-/web/vendor/dosbox-x/snapshot-diff-tracked.wasm
-/web/vendor/dosbox-x/snapshot-diff.wasm
-/web/vendor/dosbox-x/wdosbox-x-fast.wasm
-/web/vendor/dosbox-x/wdosbox-x-jspi.wasm
-/web/vendor/dosbox-x/wdosbox-x-practice.wasm
-/web/vendor/dosbox-x/wdosbox-x-rollback-tracked.wasm
-/web/vendor/dosbox-x/wdosbox-x-rollback.wasm
 /web/vendor/np2/font.bmp
-/web/vendor/np2/np21-mobile.wasm
-/web/vendor/np2/np21-rollback-mobile.wasm
-/web/vendor/np2/np21-rollback.wasm
-/web/vendor/np2/np21.wasm

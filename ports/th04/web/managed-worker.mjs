@@ -8,7 +8,9 @@ const receive = async event => {
   if (data?.type !== 'eagler-content-init') return;
   started = true;
   try {
+    globalThis.__eaglerPC98StartupAssets=new Map(data.startupAssets??[]);
     const content = new ManagedContent(data.blob, data.entries, data.game);
+    content.optional = new Map(data.optional ?? []);
     content.install(globalThis, data.base);
     installManagedWorkers(globalThis, content, data.base);
     await import(data.url);

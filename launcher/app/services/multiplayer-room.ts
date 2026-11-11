@@ -1,3 +1,4 @@
+import {PC98_INITIAL_STOCK,isPc98StockProduct,validPc98InitialSpares,validPc98InitialBombs} from '../../src/launcher/pc98-initial-stock.mts';
 import {TH19_VERSUS_RULES,validTh19VersusRules} from '../../src/launcher/th19-versus-rules.mts';
 import {normalizePublicNickname, parsePublicNicknameState, type PublicNicknameState} from '../../src/contracts/public-nickname.mts';
 import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from '../../src/launcher/th05-initial-stock.mts';
@@ -234,10 +235,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         difficulty: room.difficulty,
         created: room.created,
         ...(product==='th19mp'?{th19Rules:[...(room.th19Rules??TH19_VERSUS_RULES)]}:{}),
-        ...(product==='th05mp'?{initialSpares:room.initialSpares,initialBombs:room.initialBombs}:{}),
+        ...((product==='th05mp'||isPc98StockProduct(product))?{initialSpares:room.initialSpares,initialBombs:room.initialBombs}:{}),
         visibility: room.visibility,
         disableCheatMovement: room.disableCheatMovement,
         disableLocalChargePriority: room.disableLocalChargePriority,
+        disableFocus: room.disableFocus,
+        ballCount: room.ballCount,
         chapterThreshold: room.chapterThreshold,
         challengeMode: room.challengeMode,
         prankMode: false,
@@ -416,10 +419,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       playerCount: room.playerCount,
       difficulty: room.difficulty,
       ...(product==='th19mp'?{th19Rules:[...(room.th19Rules??TH19_VERSUS_RULES)]}:{}),
-        ...(product==='th05mp'?{initialSpares:room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
+        ...((product==='th05mp'||isPc98StockProduct(product))?{initialSpares:room.initialSpares??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).spares,initialBombs:room.initialBombs??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).bombs}:{}),
       visibility: room.visibility || 'public',
       disableCheatMovement: !!room.disableCheatMovement,
       ...(product === 'th09mp' ? {disableLocalChargePriority:!!room.disableLocalChargePriority} : {}),
+      ...(product === 'th03mp' ? {disableFocus:room.disableFocus !== false} : product === 'th02mp' ? {disableFocus:room.disableFocus === true} : {}),
+      ...(product === 'th01mp' ? {ballCount:room.ballCount ?? 2} : {}),
       ...(product === "th15mp"
         ? {
             chapterThreshold:
@@ -452,8 +457,10 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       connection: 'connected',
       challengeMode: normalized.challengeMode ?? false,
       ...(product==='th19mp'?{th19Rules:[...(normalized.th19Rules??TH19_VERSUS_RULES)]}:{}),
-      ...(product==='th05mp'?{initialSpares:normalized.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:normalized.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
+      ...((product==='th05mp'||isPc98StockProduct(product))?{initialSpares:normalized.initialSpares??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).spares,initialBombs:normalized.initialBombs??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).bombs}:{}),
       ...(product === 'th09mp' ? {disableLocalChargePriority:normalized.disableLocalChargePriority ?? false} : {}),
+      ...(product === 'th03mp' ? {disableFocus:normalized.disableFocus ?? true} : product === 'th02mp' ? {disableFocus:normalized.disableFocus === true} : {}),
+      ...(product === 'th01mp' ? {ballCount:normalized.ballCount ?? 2} : {}),
       prankMode: false,
       inputDelayAuto: normalized.inputDelayAuto ?? false,
       predictionReserve: normalized.predictionReserve ?? 2,
@@ -501,6 +508,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         visibility: room.visibility,
         disableCheatMovement: room.disableCheatMovement,
         disableLocalChargePriority: room.disableLocalChargePriority,
+        disableFocus: room.disableFocus,
+        ballCount: room.ballCount,
+        initialSpares: room.initialSpares, initialBombs: room.initialBombs,
         chapterThreshold: room.chapterThreshold,
         ...(product==='th19mp'?{th19Rules:room.th19Rules}:{}),
         challengeMode: room.challengeMode,
@@ -758,15 +768,17 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       difficulty:
         saved?.room.difficulty ??
         (created
-          ? Math.max(0, Math.min(config.difficulties.length - 1, Math.trunc(invite.d ?? 0)))
-          : 1),
+          ? Math.max(0, Math.min(config.difficulties.length - 1, Math.trunc(invite.d ?? (product === 'th03mp' ? 3 : 0))))
+          : product === 'th03mp' ? 3 : 1),
       created: created || !!saved?.room.created,
       visibility: saved?.room.visibility ?? (invite.v === 'private' ? 'private' : 'public'),
       disableCheatMovement: saved?.room.disableCheatMovement ?? invite.c === true,
       ...(product === 'th09mp' ? {disableLocalChargePriority:saved?.room.disableLocalChargePriority ?? false} : {}),
+      ...(product === 'th03mp' ? {disableFocus:saved?.room.disableFocus ?? true} : product === 'th02mp' ? {disableFocus:saved?.room.disableFocus === true} : {}),
+      ...(product === 'th01mp' ? {ballCount:saved?.room.ballCount ?? 2} : {}),
       chapterThreshold: saved?.room.chapterThreshold,
       ...(product==='th19mp'?{th19Rules:[...(saved?.room.th19Rules??TH19_VERSUS_RULES)]}:{}),
-      ...(product==='th05mp'?{initialSpares:saved?.room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:saved?.room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
+      ...((product==='th05mp'||isPc98StockProduct(product))?{initialSpares:saved?.room.initialSpares??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).spares,initialBombs:saved?.room.initialBombs??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).bombs}:{}),
       challengeMode: saved?.room.challengeMode ?? false,
       prankMode: false,
       seats: null,
@@ -778,7 +790,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     state.spectatorRequested = spectatorEntry || !!saved?.spectatorRequested;
     state.roomSettingsOpen = !!saved?.roomSettingsOpen;
     state.timingChoice = 'auto';
-    state.rollbackEnabled = multiplayerInputTimingPolicy(config).rollback;
+    state.rollbackEnabled = multiplayerInputTimingPolicy(config).rollback && config.inputTiming?.rollbackDefault !== false;
     ports.routes.restore({ product: restoredProduct, code, fromDirectory: state.fromDirectory });
     publish();
     connect();
@@ -795,11 +807,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     autoSeat = false;
     state.fromDirectory = false;
     state.timingChoice = 'auto';
-    state.rollbackEnabled = multiplayerInputTimingPolicy(policy()).rollback;
+    state.rollbackEnabled = multiplayerInputTimingPolicy(policy()).rollback && policy()?.inputTiming?.rollbackDefault !== false;
     room = {
       code,
       playerCount: policy()!.playerCounts[0],
-      difficulty: 1,
+      difficulty: nextProduct === 'th03mp' ? 3 : 1,
+      ...(nextProduct === 'th03mp' ? {disableFocus:true} : nextProduct === 'th02mp' ? {disableFocus:false} : {}),
       created,
       seats: null,
       synced: false,
@@ -994,6 +1007,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       Pick<
         MultiplayerRoomState,
         | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode' | 'disableLocalChargePriority'
+        | 'disableFocus' | 'ballCount'
         | "chapterThreshold"
         | 'initialSpares' | 'initialBombs' | 'th19Rules'
       >
@@ -1007,12 +1021,16 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       (patch.visibility !== undefined ||
         patch.disableCheatMovement !== undefined ||
         patch.disableLocalChargePriority !== undefined ||
+        patch.disableFocus !== undefined ||
+        patch.ballCount !== undefined ||
         patch.challengeMode !== undefined)
     )
       return;
     if(patch.disableLocalChargePriority !== undefined && product !== 'th09mp')return;
+    if(patch.ballCount !== undefined && (product !== 'th01mp' || ![1,2,3,4,6,8].includes(patch.ballCount)))return;
+    if(patch.disableFocus !== undefined && ((product !== 'th02mp' && product !== 'th03mp')||typeof patch.disableFocus!=='boolean'))return;
     if(patch.th19Rules!==undefined&&(product!=='th19mp'||room.phase!=='lobby'||!validTh19VersusRules(patch.th19Rules)))return;
-    if((patch.initialSpares!==undefined||patch.initialBombs!==undefined)&&(product!=='th05mp'||room.phase!=='lobby'||!validTh05InitialSpares(patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares)||!validTh05InitialBombs(patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs)))return;
+    if((patch.initialSpares!==undefined||patch.initialBombs!==undefined)&&(room.phase!=='lobby'||(isPc98StockProduct(product)?(!validPc98InitialSpares(patch.initialSpares??room.initialSpares??3)||!validPc98InitialBombs(patch.initialBombs??room.initialBombs??2)):(product!=='th05mp'||!validTh05InitialSpares(patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares)||!validTh05InitialBombs(patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs)))))return;
     if (
       patch.chapterThreshold !== undefined &&
       (product !== "th15mp" ||
@@ -1021,6 +1039,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     )
       return;
     const config = policy()!;
+    if(patch.challengeMode === true && config.challengeMode === false)return;
     const chapterThreshold =
       product === "th15mp"
         ? (patch.chapterThreshold ??
@@ -1053,10 +1072,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       difficulty,
       ...(chapterThreshold !== undefined ? { chapterThreshold } : {}),
       ...(product==='th19mp'?{th19Rules:[...(patch.th19Rules??room.th19Rules??TH19_VERSUS_RULES)]}:{}),
-      ...(product==='th05mp'?{initialSpares:patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
+      ...((product==='th05mp'||isPc98StockProduct(product))?{initialSpares:patch.initialSpares??room.initialSpares??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).spares,initialBombs:patch.initialBombs??room.initialBombs??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).bombs}:{}),
       visibility: patch.visibility ?? room.visibility ?? 'public',
       disableCheatMovement: patch.disableCheatMovement ?? !!room.disableCheatMovement,
       ...(product === 'th09mp' ? {disableLocalChargePriority:patch.disableLocalChargePriority ?? !!room.disableLocalChargePriority} : {}),
+      ...(product === 'th03mp' ? {disableFocus:patch.disableFocus ?? (room.disableFocus !== false)} : product === 'th02mp' ? {disableFocus:patch.disableFocus ?? (room.disableFocus === true)} : {}),
+      ...(product === 'th01mp' ? {ballCount:patch.ballCount ?? room.ballCount ?? 2} : {}),
       challengeMode: patch.challengeMode ?? !!room.challengeMode,
       prankMode: false,
     });
@@ -1142,7 +1163,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           : timingRecommendation().inputDelay;
     send({
       type: 'start',
-      inputDelay,
+      inputDelay: timing.runtimeTiming ? 0 : inputDelay,
       adonisMode,
       ...(measured ? { inputDelayAuto: automatic, predictionReserve: 2 } : {}),
       ...(!timingPolicy.rollback || timing.sendPredictionLimit != null
@@ -1192,7 +1213,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         seed: Number.parseInt(room.code, 10) & 0xffff,
         difficulty: Math.max(0, Math.min(config.difficulties.length - 1, room.difficulty)),
         ...(product==='th19mp'?{th19Rules:[...(room.th19Rules??TH19_VERSUS_RULES)]}:{}),
-        ...(product==='th05mp'?{initialSpares:room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
+        ...((product==='th05mp'||isPc98StockProduct(product))?{initialSpares:room.initialSpares??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).spares,initialBombs:room.initialBombs??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).bombs}:{}),
         ...(config.inputTiming ? { inputDelay: Number(room.inputDelay) || 0, adonisMode: Number(room.adonisMode) || 0 } : {}),
         ...(config.inputTiming?.measuredStartup
           ? {
@@ -1211,6 +1232,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         spectatorId: spectator ? clientId : '',
         spectatorCount: Math.max(0, Number(room.spectatorCount) || 0),
         spectatorTimeline: room.spectatorTimeline === true,
+        ...(product === 'th03mp' ? {disableFocus:room.disableFocus!==false} : product === 'th02mp' ? {disableFocus:room.disableFocus===true} : {}),
+        ...(product === 'th01mp' ? {ballCount:room.ballCount ?? 2} : {}),
         ...(product === 'th09mp' ? {
           disableLocalChargePriority:room.disableLocalChargePriority === true,
           replayAutoSave: ports.settings().replayAutoSave ?? ports.preferences.replayAutoSave(product),
@@ -1219,7 +1242,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         ...(product === 'th15mp' ? {
           chapterThreshold: room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount),
         } : {}),
-        ...(config.gameplay === 'cooperative'
+        ...(config.gameplay === 'cooperative' && config.challengeMode !== false
           ? { challengeMode: room.challengeMode === true }
           : {}),
         iceServers: ports.settings().iceServers,
@@ -1595,7 +1618,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     acceptMeasuredTiming,
     acceptTh09Match(value: unknown) {
       if (
-        product !== 'th09mp' ||
+        !['th03mp','th09mp'].includes(product ?? '') ||
         state.seat !== 0 ||
         state.spectatorRequested ||
         !state.connected ||

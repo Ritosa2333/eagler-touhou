@@ -46,6 +46,7 @@ try{
   await wait(async()=>{const e=events.flat().filter(e=>e.event==='error');if(e.length)throw Error(JSON.stringify(e));return(await Promise.all(pages.map(page=>page.evaluate(()=>document.querySelector('#mpReady')?.disabled===false)))).every(Boolean);},'main room preparation');
   assert(await host.$eval('#mpRoomChallengeToggle',e=>!!e.closest('[hidden]')),'unsupported challenge rules must not be offered');
   if(round==='check'){
+    await host.screenshot({path:resolve(out,'waiting.png')});
     await host.click('[data-mp-seat="0"] .mp-seat-edit');await host.waitForSelector('#mpCheckGame',{visible:true});await host.click('#mpCheckGame');
     await wait(async()=>{const failure=events[0].find(e=>e.event==='error');if(failure)throw Error(JSON.stringify(failure));return events[0].some(e=>e.event==='first-frame');},'main room real native preflight');
     const frame=host.frames().find(f=>/th02.html.*runtimeEpoch=/.test(f.url()));
@@ -57,9 +58,14 @@ try{
   await host.click('#mpStartGame');
   await wait(async()=>{const e=events.flat().filter(e=>e.event==='error');if(e.length)throw Error(JSON.stringify(e));return events.every(list=>list.some(e=>e.event==='first-frame'));},'main room native launch');
   const frames=pages.map(page=>page.frames().find(f=>/th02.html.*runtimeEpoch=/.test(f.url())));
+  for(const frame of frames)assert(await frame.evaluate(()=>!!document.querySelector('canvas')&&!document.querySelector('.masthead,.mode-nav')),'managed room uses the launcher game surface');
+  assert(frames.every(frame=>!frame.childFrames().some(child=>/netplay\/runtime.html/.test(child.url()))),'managed game must not load a nested runtime page');
   await wait(async()=>{const states=await Promise.all(frames.map(frame=>frame.evaluate(async()=>{const m=await import('./netplay/room.js');return m.managedAPI.health();})));return states.every(s=>s.confirmed>=120&&s.frames>0);},'main room confirmed gameplay');
   await wait(async()=>(await Promise.all(pages.map(page=>page.evaluate(()=>{const e=document.querySelector('.room-workspace-preparation');return !e||e.hidden})))).every(Boolean),'main room loading cover must close',10000);
+  await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(async()=>{const m=await import('./netplay/room.js');const music=m.managedAPI.health().music;if(music?.error)throw Error(music.error);return music?.status?.startsWith('原版 FM：');})))).every(Boolean),'both players hear original music',30000);
+  for(const frame of frames)assert(await frame.$eval('canvas',e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0;}),'game canvas is visible');
   for(const [seat,page] of pages.entries())await page.screenshot({path:resolve(out,'player-'+seat+'.png')});
+  for(const frame of frames)assert(await frame.$('#pc98-game-fps'),'game FPS counter appears during multiplayer');
   assert.deepEqual(errors,[]);console.log('PASS main Launcher create/join/seat/preload/ready/start and native multiplayer');
   if(round==='match-1'){
     await host.bringToFront();

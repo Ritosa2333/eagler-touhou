@@ -1,8 +1,8 @@
-import {ManagedContent,installManagedWorkers} from './managed-data.mjs';
+import {mountGameFps} from './pc98-game-fps.mjs';
+import {ManagedContent} from './managed-data.mjs';
 import {managedInput} from './managed-input.mjs';
 import {openUserFiles,userPath} from './managed-storage.mjs';
 import {createDirectInputBridge} from './direct-input-bridge.mjs';
-import {titlePreview} from './managed-preview.mjs';
 const protocol='eagler-touhou/1',game='th03';
 const query=new URL(location.href).searchParams,epoch=Number(query.get('runtimeEpoch'));
 if(parent===window||!Number.isSafeInteger(epoch)||epoch<=0)throw Error('请从 Eagler Touhou 启动游戏');
@@ -14,9 +14,11 @@ let ready=false,configured=false,launched=false,options={},music='ogg',language=
 const input=managedInput({game,epoch,active:()=>launched,options:()=>options});
 globalThis.__eaglerPC98Input=input;globalThis.__eaglerPC98Emit=emit;globalThis.__eaglerPC98Options=()=>options;
 function live(message){
+  if(launched&&((message.command==='keyboard'&&message.down)||(message.command==='touch-controls')||(message.command==='direct-touch'&&message.type==='down')))api?.unlock?.();
   switch(message.command){
     case 'keyboard':if(typeof message.code!=='string'||typeof message.down!=='boolean')throw Error('键盘输入无效');input.key(message);break;
-    case 'keyboard-clear':case 'touch-cancel':input.clear();break;
+    case 'keyboard-clear':input.clearKeyboard();break;
+    case 'touch-cancel':input.cancelTouch();break;
     case 'touch-controls':input.touch(message);break;
     case 'direct-touch':input.pointer(message);break;
     default:return false;
@@ -33,10 +35,11 @@ globalThis.__eaglerPC98FileCommands=async message=>{
   if(message.command==='write'){
     if(!Array.isArray(message.bytes)||message.bytes.some(n=>!Number.isInteger(n)||n<0||n>255))throw Error('用户文件字节无效');
     const bytes=new Uint8Array(message.bytes);
-    if(path.endsWith('.th03r')){const {decodeExternalReplay}=await import('./replay/external-codec.js');await decodeExternalReplay(new Blob([bytes]),'03');}
+    if(path.endsWith('.th03r')){const {decodeReplay}=await import('./native-replay.mjs');await decodeReplay(bytes);if(store.memory.has(path))throw Error('录像文件已存在');}
     await store.write(path,bytes);return {};
   }throw Error('用户文件操作无效');
 };
+let playerApi,content;
 let queue=Promise.resolve();
 async function command(message){
   if(!ready)throw Error('游戏资源尚未就绪');
@@ -50,29 +53,28 @@ async function command(message){
       if(message.runtimePack)throw Error('此入口使用已打包的 PC-98 语言资源');
       if(message.options!==undefined&&(!message.options||typeof message.options!=='object'||Array.isArray(message.options)))throw Error('运行配置无效');
       const next={...message.options};
+      if(next.musicSource!==undefined&&!['original','akyu'].includes(next.musicSource))throw Error('音乐音源无效');
+      for(const key of ['th03FocusEnabled','th03RapidFire','focusHitboxEnabled','alwaysHitbox','netplayDisableFocus'])if(next[key]!==undefined&&typeof next[key]!=='boolean')throw Error('运行配置无效');
       if(next.touchSensitivity!==undefined&&(!Number.isFinite(next.touchSensitivity)||next.touchSensitivity<100||next.touchSensitivity>300))throw Error('触控灵敏度无效');
-      if(next.netplaySpectator||next.replayViewer)throw Error('此接入预览尚未启用多人观战与录像工作台');
       const nextLanguage=message.language??'ja';if(nextLanguage!==language)preview?.stop();
       options=next;music=message.music;language=nextLanguage;configured=true;
       globalThis.Module ??= {}; globalThis.Module.eaglerOptions=options;
       return {};
     }
-    case 'resources':if(!Array.isArray(message.resources)||message.resources.length)throw Error('此资源包已包含运行所需的资源');return {};
+    case 'resources':await content.addResources(message.resources);return {};
     case 'prepare-room':if(!multiplayer||!configured||launched)throw Error('房间预载状态无效');return preview.prepare(language);
     case 'launch':
       if(!configured||launched)throw Error('游戏启动状态无效');
-      if(multiplayer&&options.multiplayerPreflight){
-        launchSerial=message.launchSerial??0;
-        await preview.prepare(language);launched=true;firstFrame=true;
-        emit({event:'runtime-info',renderer:'DOSBox-X / PC-98',architecture:'wasm',version:'pc98-managed-preview/1'});
-        emit({event:'first-frame',launchSerial});return {};
-      }
-      preview?.stop();launchSerial=message.launchSerial??0;firstFrame=false;launched=true;
+      preview?.stop();input.clear();launchSerial=message.launchSerial??0;firstFrame=false;launched=true;
+
+      api=multiplayer&&options.multiplayerPreflight?(await import('./managed-native-solo.mjs')).managedAPI:playerApi;
+      if(options.replayViewer)document.querySelector('#cover')?.setAttribute('hidden','');
       try{await api.start({options,music,language});}catch(error){launched=false;api.stop();throw error;}
-      emit({event:'runtime-info',renderer:'DOSBox-X / PC-98',architecture:'wasm',version:'pc98-managed-preview/1'});return {};
+      emit({event:'runtime-info',renderer:'Native TH03',architecture:'wasm',version:'native-th03/1'});return {};
     case 'network-cancel':await api.files({command:'sync'});input.clear();preview?.stop();api.stop();launched=false;emit({event:'exit',code:0});return {};
     case 'list':case 'read':case 'write':case 'remove':case 'sync':return api.files(message);
     case 'playback':return api.playback(message);
+    case 'spectator-playback':if(!options.netplaySpectator)throw Error('当前不是观战模式');return api.playback(message);
     default:throw Error('未支持的运行命令：'+message.command);
   }
 }
@@ -88,21 +90,22 @@ try{
   const provider=parent.__eaglerPrepareManagedRuntimeDataV1;
   if(typeof provider!=='function')throw Error('启动器未提供游戏资源');
   const result=await provider.call(parent,{game,generation:query.get('gameGeneration'),epoch});
-  const content=await ManagedContent.open(result.buffer,game),base=new URL('.',location.href).href;
-  content.install(globalThis,base);installManagedWorkers(globalThis,content,base);
+  content=await ManagedContent.open(result.buffer,game);const base=new URL('.',location.href).href;
+  content.install(globalThis,base);
   store=globalThis.__eaglerPC98Files=await openUserFiles({multiplayer});
   if(multiplayer){
-    const html=await(await fetch('./managed-room.html')).text(),source=new DOMParser().parseFromString(html,'text/html');
-    for(const link of source.querySelectorAll('link[rel="stylesheet"]'))document.head.append(link.cloneNode());
-    document.body.replaceChildren(...source.body.childNodes);
-    const style=document.createElement('style');style.textContent='#site-header,main>*:not(#screen){display:none!important}main{margin:0;padding:0}#screen{position:fixed;inset:0;border:0;margin:0;padding:0}.player-stage{position:relative;width:100%;height:100%}.player-stage iframe{width:100%;height:100%;border:0}.player-toolbar,.player-actions,.player-movement,.player-note,[class^="touch-"],[data-layout-control],.room-ui-return{display:none!important}';document.head.append(style);
-    api=(await import('./managed-room.mjs')).managedAPI;preview=titlePreview(document.querySelector('#screen'));
-  }else api=(await import('./solo.js')).managedAPI;
+    const {mountManagedRoom}=await import('./managed-room-layout.mjs');mountManagedRoom();
+    api=(await import('./managed-native-room.mjs')).managedAPI;
+    const previewApi=(await import('./managed-native-solo.mjs')).managedAPI;let previewGeneration=0;
+    preview={stop(){previewGeneration++;previewApi.stop();},async prepare(){const own=++previewGeneration;previewApi.stop();await previewApi.start({options:{...options,touchEnabled:false,previewMuted:true},music:'none',language});if(own!==previewGeneration){previewApi.stop();throw Error('房间预载已取消');}for(let i=0;i<200;i++){if(own!==previewGeneration)throw Error('房间预载已取消');if(previewApi.health().frames>0)return {presented:true};await new Promise(resolve=>setTimeout(resolve,10));}previewApi.stop();throw Error('房间预载画面超时');}};
+  }else api=(await import('./managed-native-solo.mjs')).managedAPI;
+  playerApi=api;
+  const fps=mountGameFps();
   ready=true;emit({event:'ready',saveRoot:'/savesth03'+(multiplayer?'mp':''),roomPreview:multiplayer});
   let lastFrames=0,lastAt=performance.now(),lastHealth=0;
   setInterval(()=>{
-    if(!launched||options.multiplayerPreflight)return;
-    const health=api.health(),now=performance.now();
+    if(!launched)return;
+    const health=api.health(),now=performance.now();fps.update(health.gameFrame,now);
     if(!firstFrame&&health.frames>0){firstFrame=true;emit({event:'first-frame',launchSerial});}
     if(now-lastHealth<1000)return;lastHealth=now;
     emit({event:'frame-health',fps:(health.frames-lastFrames)*1000/(now-lastAt),frameMs:health.frameMs??0});

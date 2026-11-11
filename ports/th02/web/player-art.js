@@ -9,9 +9,14 @@ export async function loadPlayerArt(patch){
   if(!response.ok)throw Error('TH02 多人配色素材读取失败');
   const bytes=new Uint8Array(await response.arrayBuffer());
   if(bytes.length!==entry.bytes||await sha256(bytes)!==entry.sha256)throw Error('TH02 多人配色素材校验失败，请刷新游戏');
-  return bytes;
+  const dimResponse=await fetch(new URL(entry.dimFile,import.meta.url),{cache:'no-store'});
+  if(!dimResponse.ok)throw Error('TH02 队友素材读取失败');
+  const dim=new Uint8Array(await dimResponse.arrayBuffer());
+  if(dim.length!==entry.bytes||await sha256(dim)!==entry.dimSha256)throw Error('TH02 队友素材校验失败');
+  return {bytes,dim};
 }
-export function installPlayerArt(mod,patch,bytes){
+export function installPlayerArt(mod,patch,art){
+  const {bytes,dim}=art;
   const api=mod.nativeExports();
   if(!api.thArtBind||!api.thArtState||!api.thLayerSetView)throw Error('TH02 多人配色核心版本不匹配');
   const control=api.malloc(32),table=api.malloc(bytes.length),tags=api.malloc(2*262144*2);
@@ -28,7 +33,8 @@ export function installPlayerArt(mod,patch,bytes){
   let mailbox=-1,checks=0;
   function setMailbox(at){
     const next=Number.isInteger(at)&&at>=0&&valid(at)&&mod.HEAPU8[at+22]===1?at:-1;
-    if(next===mailbox)return;
+    const context=next<0?0:next-patch.entries.mailbox+patch.entries.art_context;
+    if(next===mailbox&&view().getUint32(control,true)===context&&view().getUint32(control+12,true)===(next<0?0:next+22))return;
     mailbox=next;mod.thDirtyMark?.(control,32);
     view().setUint32(control,mailbox<0?0:mailbox-patch.entries.mailbox+patch.entries.art_context,true);
     view().setUint32(control+12,mailbox<0?0:mailbox+22,true);
@@ -45,6 +51,20 @@ export function installPlayerArt(mod,patch,bytes){
       setMailbox(candidate);break;
     }
   }
-  return {bind,view:slot=>api.thLayerSetView(Number.isInteger(slot)&&slot>=0&&slot<3?slot:-1),info:()=>({enabled:true,bound:valid(mailbox),source:patch.playerArt.bodySource,
+  function clearLayers(){
+    // Records are ignored wherever coverage is zero; they need not be cleared.
+    mod.thDirtyMark?.(tags,1048576);mod.thDirtyMark?.(coverage,524288);
+    mod.HEAPU8.fill(0,tags,tags+1048576);mod.HEAPU8.fill(0,coverage,coverage+524288);
+  }
+  function setView(slot){
+    for(let seat=0;seat<3;seat++){
+      const source=seat===slot?bytes:dim,body=(1+seat*18432)*4,shot=(60016+seat*16)*4;
+      mod.thDirtyMark?.(table+body,18432*4);mod.thDirtyMark?.(table+shot,64);
+      mod.HEAPU8.set(source.subarray(body,body+18432*4),table+body);
+      mod.HEAPU8.set(source.subarray(shot,shot+64),table+shot);
+    }
+    api.thLayerSetView(Number.isInteger(slot)&&slot>=0&&slot<3?slot:-1);
+  }
+  return {bind,clearLayers,view:setView,info:()=>({enabled:true,bound:valid(mailbox),source:patch.playerArt.bodySource,
     variants:patch.playerArt.variants,originalGenjiiPreserved:true}),control,table,tags};
 }

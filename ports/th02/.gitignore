@@ -25,6 +25,17 @@
 !/configure-turn.bat
 
 # tools/, patches/, build/ and reports/ are excluded by the root allowlist.
+!/patches/
+/patches/*
+!/patches/practice.asm
+!/patches/practice-resources.inc
+!/patches/practice-phase.inc
+!/patches/practice-outcome.inc
+!/patches/launch.asm
+!/tools/
+/tools/*
+!/tools/build_practice_assets.py
+!/tools/test_practice_guest.py
 # This also excludes public-test-url.txt and turn-config.local.json.
 # Keep runtime JS/MJS/WASM, music, assets, manifests and bundled licenses.
 # Never ignore *.wasm, *.mjs, *.com or *.opus globally.
@@ -186,9 +197,3 @@ th02-*-fault.json
 /web/th02-local-jp.hdi.gz
 /web/th02-solo-cn.hdi.gz
 /web/th02-solo-jp.hdi.gz
-/web/vendor/dosbox-x/snapshot-diff-tracked.wasm
-/web/vendor/dosbox-x/snapshot-diff.wasm
-/web/vendor/dosbox-x/wdosbox-x-fast.wasm
-/web/vendor/dosbox-x/wdosbox-x-practice.wasm
-/web/vendor/dosbox-x/wdosbox-x-rollback-tracked.wasm
-/web/vendor/dosbox-x/wdosbox-x-rollback.wasm

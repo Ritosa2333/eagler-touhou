@@ -24,10 +24,15 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
         </MainSelect></label>
       </div>
       <p className="room-setting-description" hidden={room.visibility !== 'private'}>{t('room.privateHint')}</p>
-      {config.inGameSelection ? <p className="room-setting-description">{t('room.inGameSelectionHint')}</p> : <RoomChoiceGroup title={<><span>{t('multiplayer.difficulty')}</span>{room.challengeMode && <span className="room-challenge-on">{t('room.challengeEnabled')}</span>}</>} name="difficulty" valueAttribute="data-mp-difficulty" choices={config.difficulties.map((label, index) => ({value:index,label,selected:room.difficulty === index,disabled}))} onSelect={difficulty => service.setRoomSettings({difficulty})}/>}
+      {config.inGameSelection && state.product !== 'th03mp' ? <p className="room-setting-description">{t('room.inGameSelectionHint')}</p> : <RoomChoiceGroup title={<><span>{t('multiplayer.difficulty')}</span>{room.challengeMode && <span className="room-challenge-on">{t(state.product === 'th02mp' || state.product === 'th04mp' ? 'room.pc98ChallengeEnabled' : 'room.challengeEnabled')}</span>}</>} name="difficulty" valueAttribute="data-mp-difficulty" choices={config.difficulties.map((label, index) => ({value:index,label,selected:room.difficulty === index,disabled}))} onSelect={difficulty => service.setRoomSettings({difficulty})}/>}
     </section>
     <section className="room-settings-group"><h3>{t('room.gameSettingsGroup')}</h3>
       <RoomTiming state={state} service={service}/><RoomTiming state={state} service={service} settings/>
+      {state.product === 'th01mp' && <SettingsSelect id="mpTh01BallCount" label={t('room.th01BallCount')} value={room.ballCount ?? 2} disabled={disabled} onChange={event=>service.setRoomSettings({ballCount:Number(event.target.value)})}>{[1,2,3,4,6,8].map(value=><option key={value} value={value}>{value}</option>)}</SettingsSelect>}
+      {(state.product === 'th02mp' || state.product === 'th04mp') && <fieldset className="room-basic-fields">
+        <SettingsSelect id="mpPc98InitialSpares" label={t('room.th05InitialSpares')} value={room.initialSpares ?? 3} disabled={disabled || !!room.challengeMode} onChange={event=>service.setRoomSettings({initialSpares:Number(event.target.value)})}>{[0,1,2,3,4,5].map(value=><option key={value} value={value}>{value}</option>)}</SettingsSelect>
+        <SettingsSelect id="mpPc98InitialBombs" label={t('room.th05InitialBombs')} value={room.initialBombs ?? 2} disabled={disabled || !!room.challengeMode} onChange={event=>service.setRoomSettings({initialBombs:Number(event.target.value)})}>{[0,1,2].map(value=><option key={value} value={value}>{value}</option>)}</SettingsSelect>
+      </fieldset>}
       {state.product === 'th19mp' && <Th19VersusSettings rules={room.th19Rules} disabled={disabled} onChange={th19Rules=>service.setRoomSettings({th19Rules})}/>}
       {state.product === 'th05mp' && <>
         <fieldset className="room-basic-fields" aria-describedby="mpTh05InitialStockHint">
@@ -47,12 +52,14 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
       </MainSelect></label><p className="room-setting-description" id="mpTh15ChapterGraze">{t('room.th15ChapterGraze',{count:(room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount))/5000})}</p></>}
     </section>
     <section className="room-settings-group"><h3>{t('room.ruleSettings')}</h3>
-      {(['cheat','challenge'] as const).map(kind => <div className="room-rule-field" key={kind} hidden={kind === 'challenge' && config.gameplay !== 'cooperative'}><div><strong>{t(kind === 'cheat' ? 'lobby.noCheat' : 'room.challengeMode')}</strong><p className="room-setting-description" id={kind === 'cheat' ? 'mpRoomCheatHint' : 'mpRoomChallengeHint'}>{t(kind === 'cheat' ? 'room.cheatHint' : 'room.challengeHint')}</p></div>
+      {(['cheat','challenge'] as const).map(kind => <div className="room-rule-field" key={kind} hidden={kind === 'challenge' && (config.gameplay !== 'cooperative' || config.challengeMode === false)}><div><strong>{t(kind === 'cheat' ? 'lobby.noCheat' : 'room.challengeMode')}</strong><p className="room-setting-description" id={kind === 'cheat' ? 'mpRoomCheatHint' : 'mpRoomChallengeHint'}>{t(kind === 'cheat' ? 'room.cheatHint' : state.product === 'th02mp' || state.product === 'th04mp' ? 'room.pc98ChallengeHint' : 'room.challengeHint')}</p></div>
         <OptionSwitch id={kind === 'cheat' ? 'mpRoomCheatToggle' : 'mpRoomChallengeToggle'} label={t(kind === 'cheat' ? 'lobby.noCheat' : 'room.challengeMode')} checked={kind === 'cheat' ? !!room.disableCheatMovement : !!room.challengeMode} disabled={disabled} onChange={() => service.setRoomSettings(kind === 'cheat' ? {disableCheatMovement:!room.disableCheatMovement} : {challengeMode:!room.challengeMode})}/>
       </div>)}
       {state.product === 'th09mp' && <div className="room-rule-field"><div><strong>{t('room.disableLocalChargePriority')}</strong><p className="room-setting-description" id="mpLocalChargeReplayHint">{t('room.localChargeReplayHint')}</p></div>
         <OptionSwitch id="mpDisableLocalChargePriority" label={t('room.disableLocalChargePriority')} describedBy="mpLocalChargeReplayHint" checked={!!room.disableLocalChargePriority} disabled={disabled} onChange={()=>service.setRoomSettings({disableLocalChargePriority:!room.disableLocalChargePriority})}/>
       </div>}
+      {state.product === 'th02mp' && <div className="room-rule-field"><div><strong>{t('room.th02DisableFocus')}</strong></div><OptionSwitch id="mpTh02DisableFocus" label={t('room.th02DisableFocus')} checked={room.disableFocus === true} disabled={disabled} onChange={()=>service.setRoomSettings({disableFocus:room.disableFocus !== true})}/></div>}
+      {state.product === 'th03mp' && <div className="room-rule-field"><div><strong>{t('room.th03SpecialFocus')}</strong></div><OptionSwitch id="mpTh03DisableFocus" label={t('room.th03SpecialFocus')} checked={room.disableFocus === false} disabled={disabled} onChange={()=>service.setRoomSettings({disableFocus:room.disableFocus === false})}/></div>}
     </section>
     {!owner && <p className="room-setting-description" id="mpRoomSettingsHint">{t(!room.seats?.[0] ? 'room.hostAvailable' : 'multiplayer.ownerRemoteHint')}</p>}
     <UiButton id="mpTakeHostSeat" type="button" hidden={!!room.seats?.[0] || owner} disabled={!ready || room.phase !== 'lobby'} onClick={()=>{void service.takeSeat(0);}}>{t('room.takeHostSeat')}</UiButton>

@@ -27,6 +27,7 @@ import { Th09MatchStats } from './Th09MatchStats';
 import { SpectatorPlayback } from './SpectatorPlayback';
 import {NetplayPlayerStatus} from './NetplayPlayerStatus';
 import {PlayerStage} from './PlayerSurface';
+import './browser-practice.css';
 const noopSubscribe = () => () => {};
 const initialTouch = () => undefined;
 const noNetwork = () => null;
@@ -74,7 +75,7 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
     state.runtime?.launched && room.spectatorRequested && room.room?.spectatorTimeline === true;
   const mode = session.getPlayerMode(), spectating = mode === 'spectator';
   const netplay = network?.diagnostics as NetplayDiagnosticLines | undefined;
-  const th09Information = state.runtime?.launched === true && room.product === 'th09mp' && !state.replayViewer;
+  const th09Information = state.runtime?.launched === true && (room.product === 'th09mp' || room.product === 'th03mp') && !state.replayViewer;
   const cooperativeSpectator = state.runtime?.launched === true && state.runtime.spectator === true &&
     state.runtime.game !== 'th09' && !state.replayViewer;
   const informationColumn = th09Information || cooperativeSpectator;
@@ -85,7 +86,8 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
       {network && (
         <NetplayConnectionWindow
           network={network}
-          calibration={session.calibration}          onReturn={() => {
+          calibration={session.calibration}
+          onReturn={() => {
             if (room.room && network.connection?.ended) {
               void session.requestRuntimeClose().then(closed => closed ? navigation.closeRoomFullscreen() : undefined).catch(session.reportError);
             } else if (room.room) void session.exitRoomPlayerFullscreen().then(navigation.closeRoomFullscreen).catch(session.reportError);
@@ -94,8 +96,8 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
         />
       )}
       <PlayerInformationColumn enabled={informationColumn} className={th09Information ? 'th09-player-information' : undefined}>
-      {cooperativeSpectator && !roomWorkspace && <SpectatorPlayback session={session} />}
-      {th09Information && !roomWorkspace && (spectatorTimeline ? <SpectatorMatchScore wins={wins} minutes={Math.max(...(room.room?.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}
+      {cooperativeSpectator && !roomWorkspace && <SpectatorPlayback session={session} score={room.product==='th03mp'?wins:undefined} />}
+      {th09Information && !roomWorkspace && (spectatorTimeline && room.product === 'th09mp' ? <SpectatorMatchScore wins={wins} minutes={Math.max(...(room.room?.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}
         names={[room.room?.seats?.[0]?.name ?? '', room.room?.seats?.[1]?.name ?? '']}/>
         : !room.spectatorRequested && room.seat != null ? <Th09MatchStats wins={wins}
           minutes={Math.max(...(room.room?.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}
@@ -107,7 +109,8 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
           playbackControls={!!spectatorTimeline}
         >
           <NetplayCalibrationReport
-            model={session.calibration}            currentNetwork={() =>
+            model={session.calibration}
+            currentNetwork={() =>
               gameplay?.getSnapshot().diagnostics.runtimeNetplayQualityDiag ?? ''
             }
           />
@@ -129,8 +132,8 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
         navigation.surface !== 'touch' && (
           <BootTouchControls session={session} settings={settings} />
         )}
-      {session.getActiveSettings() && playerUsesGameInput(mode) && !replayWorkspace && !roomWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
-        <GameplayControls session={session} />
+      {session.getActiveSettings() && playerUsesGameInput(mode) && !replayWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
+        <GameplayControls session={session} roomWorkspace={roomWorkspace} />
       )}
     </>
   );
@@ -196,7 +199,7 @@ function BootTouchControls({
     </>
   );
 }
-function GameplayControls({ session }: { session: BrowserSession }) {
+function GameplayControls({ session, roomWorkspace }: { session: BrowserSession; roomWorkspace: boolean }) {
   const { t } = useLocale(),
     state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const settings = session.getActiveSettings()!,
@@ -211,9 +214,43 @@ function GameplayControls({ session }: { session: BrowserSession }) {
   const spectator = session.getPlayerMode() === 'spectator',
     enabled = settings.options.touchEnabled && playerUsesGameInput(session.getPlayerMode());
   const wheel = touchMovementUsesJoystick(settings.options.touchMovementMode);
-  const hostDirect =
-    /\bAndroid\b|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-    (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  const product = PRODUCT_GAMES[settings.gameId];
+  useLayoutEffect(() => {
+    const player=document.getElementById('player'), surface=document.getElementById('touchDirectSurface'), frame=document.getElementById('gameFrame');
+    const active=!!player && roomWorkspace && settings.gameId==='th03' && enabled && state.runtime?.launched===true;
+    player?.classList.toggle('th03-room-touch-active',active);
+    if(!active || !surface || !frame) return () => player?.classList.remove('th03-room-touch-active');
+    const update=()=>{const rect=frame.getBoundingClientRect();player.style.setProperty('--th03-touch-left',`${rect.left}px`);player.style.setProperty('--th03-touch-top',`${rect.top}px`);player.style.setProperty('--th03-touch-width',`${rect.width}px`);player.style.setProperty('--th03-touch-height',`${rect.height}px`);};
+    const observer=new ResizeObserver(update);observer.observe(frame);window.addEventListener('resize',update);window.addEventListener('scroll',update,true);update();
+    return ()=>{observer.disconnect();window.removeEventListener('resize',update);window.removeEventListener('scroll',update,true);player.classList.remove('th03-room-touch-active');for(const name of ['--th03-touch-left','--th03-touch-top','--th03-touch-width','--th03-touch-height'])player.style.removeProperty(name);};
+  },[roomWorkspace,settings.gameId,enabled,state.runtime?.launched]);
+  const browserPractice = !settings.multiplayer && 'practiceUI' in product && product.practiceUI === 'browser';
+  const hostDirect = navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches ||
+    /\bAndroid\b|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  useLayoutEffect(() => {
+    if (!browserPractice) return;
+    const runtime = session.getRuntime(), player = document.getElementById('player');
+    if (!runtime || !player) return;
+    let nativeDocument: Document | null = null, observer: MutationObserver | null = null;
+    const update = () => {
+      const open = runtime.getSnapshot().launched && nativeDocument?.documentElement.dataset.browserPracticeOpen === 'true';
+      if (open && !player.classList.contains('browser-practice-open')) input?.cancelPointers();
+      player.classList.toggle('browser-practice-open',open);
+    };
+    const sync = () => {
+      const next = runtime.getMidiEventContext()?.document as Document | null;
+      if (next !== nativeDocument) {
+        observer?.disconnect(); nativeDocument = next;
+        if (next?.documentElement) {
+          observer = new MutationObserver(update);
+          observer.observe(next.documentElement,{attributes:true,attributeFilter:['data-browser-practice-open']});
+        }
+      }
+      update();
+    };
+    const unsubscribe = runtime.subscribe(sync); sync();
+    return () => {unsubscribe();observer?.disconnect();player.classList.remove('browser-practice-open');};
+  },[session,browserPractice,input]);
   useLayoutEffect(() => {
     const binding = bindPlayerInput({
       session,
@@ -232,6 +269,12 @@ function GameplayControls({ session }: { session: BrowserSession }) {
     const player = document.getElementById('player')!;
     player.classList.toggle('touch-enabled', enabled);
     player.classList.toggle('touch-joystick-enabled', enabled && wheel);
+    const safe = document.getElementById('touchLayoutSafeZone');
+    if (safe) {
+      const width = window.visualViewport?.width || document.documentElement.clientWidth || player.clientWidth;
+      const height = window.visualViewport?.height || document.documentElement.clientHeight || player.clientHeight;
+      applySavedPlayerTouchLayout(player, safe, session.touchLayout.getSnapshot().saved?.profiles[width >= height ? 'landscape' : 'portrait'] ?? null);
+    }
     player.style.setProperty(
       '--touch-control-opacity',
       String(settings.options.touchControlOpacity / 100),
@@ -240,7 +283,7 @@ function GameplayControls({ session }: { session: BrowserSession }) {
       player.classList.remove('touch-enabled', 'touch-joystick-enabled', 'touch-layout-custom');
       player.style.removeProperty('--touch-control-opacity');
     };
-  }, [settings, enabled, wheel]);
+  }, [session, settings, enabled, wheel, roomWorkspace]);
   return (
     <>
       <div className="touch-layout-safe-zone" id="touchLayoutSafeZone" aria-hidden="true" />
@@ -291,6 +334,7 @@ function PlayerUtilities({
       <TouchHelp
         nativeControls={'touchActions' in PRODUCT_GAMES[settings.gameId]}
         th19Charge={settings.gameId === 'th19'}
+        th01={settings.gameId === 'th01'}
         open={state.touchHelpOpen && !spectating && !roomWorkspace}
         onCloseRequest={session.closeTouchHelp}
         touchEnabled={settings.options.touchEnabled}

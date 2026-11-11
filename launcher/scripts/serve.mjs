@@ -1,3 +1,4 @@
+import {th03BrotliSidecar,acceptsBrotli} from '../lib/th03-brotli.mjs';
 import {LEGACY_HOST_MANIFEST_FILE, legacyHostManifestResponse} from '../compat/site-manifest.mjs';
 import { createReadStream, existsSync, watch } from "node:fs";
 import { createHash } from "node:crypto";
@@ -89,6 +90,26 @@ const developmentMetadata = sourceDevelopmentServer ? new Map([
 ]) : null;
 if (developmentMetadata) developmentMetadata.set(LEGACY_HOST_MANIFEST_FILE,
   JSON.stringify(legacyHostManifestResponse(JSON.parse(developmentMetadata.get(SITE_MANIFEST_FILE)))) + '\n');
+
+// Development builds can replace DATA while the server is running. Refresh
+// identities on metadata requests so a new file is never advertised with the
+// size and digest captured when this process started.
+let metadataRefresh = null;
+async function refreshDevelopmentMetadata() {
+  if (!developmentMetadata || localManifest) return;
+  metadataRefresh ??= createDevelopmentSiteManifest({
+    netplayRelay: configuredNetplayRelay,
+    games: selectedDevelopmentGames,
+    publishManifest: manifest => {
+      developmentResources = developmentResourceRoutes(manifest, {sourceRoot:project});
+      return developmentResources.manifest;
+    },
+  }).then(manifest => {
+    developmentMetadata.set(SITE_MANIFEST_FILE, `${JSON.stringify(manifest, null, 2)}\n`);
+    developmentMetadata.set(LEGACY_HOST_MANIFEST_FILE, JSON.stringify(legacyHostManifestResponse(manifest)) + '\n');
+  }).finally(() => {metadataRefresh = null;});
+  await metadataRefresh;
+}
 
 const localAppShellOptions = {
   quiet: true,
@@ -192,6 +213,7 @@ createServer(async (request, response) => {
     }
     if (developmentMetadata && pathname.startsWith("/")) {
       const name = pathname.slice(1);
+      if (name === SITE_MANIFEST_FILE || name === LEGACY_HOST_MANIFEST_FILE) await refreshDevelopmentMetadata();
       const body = developmentMetadata.get(name);
       if (body != null) {
         response.writeHead(200, {
@@ -293,16 +315,20 @@ createServer(async (request, response) => {
 
     const accepted = request.headers["accept-encoding"] || "";
     const shouldCompress = staticContentCompressible(file, info.size);
-    const encoding = shouldCompress && /\bbr\b/.test(accepted) ? "br"
+    const packedBr=shouldCompress?await th03BrotliSidecar(file,url.pathname,accepted):null;
+    const encoding = packedBr || shouldCompress && acceptsBrotli(accepted) ? "br"
       : shouldCompress && /\bgzip\b/.test(accepted) ? "gzip" : "";
     const headers = { ...commonHeaders };
     if (encoding) headers["Content-Encoding"] = encoding;
-    else headers["Content-Length"] = info.size;
+    if (packedBr) headers["Content-Length"] = packedBr.size;
+    else if (!encoding) headers["Content-Length"] = info.size;
     response.writeHead(200, headers);
     if (request.method === "HEAD") { response.end(); return; }
 
-    const source = createReadStream(file);
-    if (encoding === "br") {
+    const source = createReadStream(packedBr ? file+".br" : file);
+    if (packedBr) {
+      await pipeline(source,response);
+    } else if (encoding === "br") {
       await pipeline(source, createBrotliCompress({ params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 5 } }), response);
     } else if (encoding === "gzip") {
       await pipeline(source, createGzip({ level: 6 }), response);

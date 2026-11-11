@@ -5,18 +5,40 @@ export const CLOCK_BYTES=9,CLOCK_CHUNK=4096;
 const RealDate=Date,realPerformance=globalThis.performance;
 const realNow=()=>realPerformance.now();
 
-export function inspectExternalMemory(module){
-  const bytes=module.HEAPU8.slice();let hash=2166136261;
-  for(const value of bytes)hash=Math.imul(hash^value,16777619);
-  return sha256(bytes).then(memorySha256=>({memoryHash:(hash>>>0).toString(16).padStart(8,'0'),memorySha256,memoryBytes:bytes.length}));
+export async function inspectExternalMemory(module,{scope,patch}={}){
+  let bytes=module.HEAPU8;
+  if(scope==='pc98-guest-ram/1'){
+    const sig=new TextEncoder().encode(patch.signature),view=new DataView(bytes.buffer),matches=[],active=[];
+    const mailbox=patch.entries?.mailbox??patch.mailbox_cs_offset,csSegment=patch.codeSegment??patch.code_segment,dsSegment=patch.dataSegment??patch.data_segment;
+    const residentName=new TextEncoder().encode(patch.signature.startsWith('TH02')?'MIKOConfig\0':'HUMAConfig\0'),residentOffset=patch.signature.startsWith('TH02')?0x27fc:0xba86;
+    for(let at=bytes.indexOf(sig[0]);at>=0;at=bytes.indexOf(sig[0],at+1)){
+      if(at+36>bytes.length||!sig.every((v,i)=>bytes[at+i]===v))continue;
+      const ds=view.getUint16(at+20,true),cs=ds-dsSegment+csSegment,base=at-mailbox-cs*16,data=base+ds*16;
+      if(cs<=0||base<0||base+0x100000>bytes.length||data<base||data+residentOffset+4>base+0xa0000)continue;
+      const ptr=base+view.getUint16(data+residentOffset,true)+view.getUint16(data+residentOffset+2,true)*16;
+      if(ptr>=base&&ptr+residentName.length<base+0xa0000&&residentName.every((v,i)=>bytes[ptr+i]===v)){matches.push(base);if(bytes[at+22]===1)active.push(base);}
+    }
+    const candidates=active.length===1?active:matches;if(candidates.length!==1)throw Error('Replay 游戏内存定位失败');bytes=bytes.subarray(candidates[0],candidates[0]+0x100000);
+  }
+  bytes=bytes.slice();let hash=2166136261;
+  // Snapshot first, then yield between chunks so the result menu can paint
+  // while the exact final-state checksum is being calculated.
+  for(let start=0;start<bytes.length;start+=1024*1024){
+    await new Promise(resolve=>setTimeout(resolve,0));
+    const end=Math.min(start+1024*1024,bytes.length);
+    for(let i=start;i<end;i++)hash=Math.imul(hash^bytes[i],16777619);
+  }
+  const memorySha256=await sha256(bytes);
+  return {memoryHash:(hash>>>0).toString(16).padStart(8,'0'),memorySha256,memoryBytes:bytes.length,...(scope?{memoryScope:scope}:{})};
 }
 
 export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endReason='sleep',endPhase='after-input',timeline,boundaryMode='sleep',onChunk=()=>{},onEnd=()=>{},onError=()=>{},
-  onRecordingError=onError,applyInput=()=>{},inspect,observe,maxClockBytes=512*1024*1024,clock,onBoundary=()=>{},shouldHold}={}){
+  onRecordingError=onError,applyInput=()=>{},inspect,observe,maxClockBytes=512*1024*1024,clock,onBoundary=()=>{},shouldHold,shouldFastForward=()=>false}={}){
   if(!['record','playback'].includes(mode)||!['sleep','clock'].includes(boundaryMode))throw Error('无效的单人 Replay 主机配置');
   let module=null,boundary=0,count=0,eventCursor=0,queued=[],buffer=new Uint8Array(CLOCK_BYTES*CLOCK_CHUNK),used=0;
   let stopped=false,ending=false,held=false,wake=null,timer=null,lastWake=0,recording=mode==='record',finished=false,extraClockReads=0,detached=false;
-  let runStart=null,runStage=0,runReason='manual',pauseStart=null,skipCursor=0,fastYield=realNow(),sealedHold=false,manualFast=false;
+  let runStart=null,runStage=0,runReason='manual',pauseStart=null,skipCursor=0,fastYield=realNow(),sealedHold=false,manualFast=false,waitForInactive=false;
+  let playbackRate=1,seekBoundary=null;
   const skipRanges=[];
   const source=clocks?new DataView(clocks.buffer,clocks.byteOffset,clocks.byteLength):null;
   const started=realNow();
@@ -51,7 +73,7 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
       ...(mode==='record'&&runStart!==null?{timeline:{startBoundary:runStart,skipRanges,reason:runReason,stage:runStage}}:{})};
     let snapshot;
     try{snapshot=inspect?.();}catch(error){finishFailed(error);return;}
-    Promise.resolve(snapshot).then(extra=>onEnd({...result,...extra})).catch(finishFailed);
+    Promise.resolve(snapshot).then(extra=>{releaseSeal();return onEnd({...result,...extra});}).catch(finishFailed);
   }
   function time(kind){
     if(detached)return kind===1?realPerformance.now():RealDate.now();
@@ -83,16 +105,17 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
   Object.setPrototypeOf(HostDate,RealDate);HostDate.prototype=RealDate.prototype;HostDate.now=()=>time(2);
   const hostPerformance=new Proxy(realPerformance,{get(target,name){if(name==='now')return ()=>time(1);const value=Reflect.get(target,name,target);return typeof value==='function'?value.bind(target):value;}});
   function isFast(){
-    if(mode!=='playback'||held||stopped)return false;
-    if(manualFast)return true;
+    if(held||stopped)return false;
+    if(mode==='record')return shouldFastForward();
+    if(manualFast||seekBoundary!==null||playbackRate===0)return true;
     const ranges=timeline?.skipRanges||[];
     while(ranges[skipCursor]&&boundary>=ranges[skipCursor].to)skipCursor++;
     return !!(ranges[skipCursor]&&boundary>=ranges[skipCursor].from&&boundary<ranges[skipCursor].to);
   }
   function observeRun(){
     if(!recording||!observe)return false;
-    const state=observe();if(!state)return false;
-    if(state.active&&runStart===null){runStart=boundary;if(boundary>1)skipRanges.push({from:1,to:boundary});}
+    const state=observe();if(waitForInactive){if(!(state?.currentActive??state?.active))waitForInactive=false;return false;}if(!state)return false;
+    if((state.currentActive??state.active)&&runStart===null){runStart=boundary;if(boundary>1)skipRanges.push({from:1,to:boundary});}
     if(runStart===null)return false;
     runStage=state.stage??runStage;
     if(state.paused&&pauseStart===null)pauseStart=boundary;
@@ -109,6 +132,7 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
       // delivering commands that the DOS instance has not consumed yet.
       if(held){if(ending)finish(boundaryMode,'before-input');return;}
       if(detached){const next=wake;wake=null;next();return;}
+      if(mode==='playback'&&seekBoundary!==null&&boundary>=seekBoundary){seekBoundary=null;held=true;return;}
       onBoundary();
       // Seal before input delivery: a queued continue/confirmation belongs to
       // the live game after this run, never to its replay.
@@ -159,7 +183,7 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
             // Consume the unchanged tape during skips. Yield regularly so
             // browser pause/stop controls remain responsive.
             if(isFast()&&realNow()-fastYield<8)queueMicrotask(resume);
-            else{fastYield=realNow();timer=setTimeout(resume,isFast()?0:nonSkippable?Math.max(0,ms)/(clock?.speed||1):0);}
+            else{fastYield=realNow();timer=setTimeout(resume,isFast()?0:nonSkippable?Math.max(0,ms)/((clock?.speed||1)*(mode==='playback'?playbackRate||1:1)):0);}
           });
           lastWake=now;module.last_wakeup=now;module.nativeBurstStarted=realNow();
         });
@@ -177,13 +201,16 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
       if(boundaryMode==='clock')finish();
       else if(wake)resume();
     },
+    rearm(keepPaused=false){if(mode!=='record'||stopped||!finished)throw Error('Replay 尚未结束');finished=false;recording=true;ending=false;runStart=null;runStage=0;runReason='manual';pauseStart=null;skipRanges.length=0;waitForInactive=true;releaseSeal();if(keepPaused)held=true;},
     disable(){recording=false;ending=false;used=0;releaseSeal();},
     // Let the ordinary exit request finish even if playback held its last
     // JSPI continuation. No tape or proof work survives disposal.
     dispose(){detached=true;recording=false;ending=false;used=0;queued=[];held=false;stopped=false;if(wake)timer=setTimeout(resume,0);},
-    pause(value){held=!!value;if(!held&&wake)timer=setTimeout(resume,0);},
+    pause(value){if(!value&&sealedHold)return;held=!!value;if(!held&&wake)timer=setTimeout(resume,0);},
     fastForward(value){manualFast=!!value;},
+    seek(value){if(mode!=='playback'||!Number.isSafeInteger(value)||value<=boundary||value>=endBoundary)throw Error('录像位置无效');seekBoundary=value;held=false;if(wake)timer=setTimeout(resume,0);},
+    rate(value){if(mode!=='playback'||![0,.5,1,2,4,8].includes(value))throw Error('录像速度无效');playbackRate=value;},
     get boundary(){return boundaryMode==='clock'?count:boundary;},
-    get status(){return {mode,boundaryMode,boundary,count,stopped,held,recording,finished,extraClockReads,fastForward:isFast()};},
+    get status(){return {mode,boundaryMode,boundary,count,stopped,held,recording,finished,extraClockReads,seekBoundary,rate:playbackRate,fastForward:isFast()};},
   };
 }

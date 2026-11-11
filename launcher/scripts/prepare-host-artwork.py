@@ -23,6 +23,10 @@ from touhou_formats import extract_pbg3_entry, extract_pbg4_entry, extract_pbgz_
 
 
 ARTWORK_BY_GAME = {
+    "th01": ("th01-card.webp",),
+    "th02": ("th02-card.webp",),
+    "th03": ("th03-card.webp",),
+    "th04": ("th04-card.webp",),
     "th05": ("th05-card.webp",),
     "th06": (
         "th06-card.webp",
@@ -219,6 +223,11 @@ def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = 
         raise FileNotFoundError(
             f"{game}: original directory is required unless every host artwork file is overridden"
         )
+    if game in ("th01", "th02", "th03", "th04"):
+        for candidate in (root / "artwork" / name, root / "content/artwork" / name):
+            if candidate.is_file():
+                return candidate.read_bytes()
+        raise FileNotFoundError(f"{game}: prepare packaging artwork with scripts/prepare-pc98-cover-artwork.py")
     if name == "th06-card.webp":
         return _extract_th06_title(root)
     if name == "th07-card.webp":

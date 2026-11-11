@@ -3,7 +3,7 @@ import {NativeSimulation} from './runtime-core.js';
 // This core owns gameplay. Display cores remain isolated: rendering must never
 // mutate the memory used for checksums, menus, scores or confirmed sound.
 let simulation,core,settings,scoreRevision,failed=false,renderers=[],layout,before,after;
-let renderFrame=-1,sequence=0;const transfers=new Set();
+let renderFrame=-1,sequence=0,renderGeneration=0;const transfers=new Set(),snapshots=new Map();
 const send=(message,transfer=[])=>postMessage(message,transfer);
 function summary(){return {frame:simulation.frame,state:simulation.state(),checksum:simulation.checksum()};}
 function audio(){
@@ -35,8 +35,9 @@ async function init(data){
       const job=lane.pending;
       if(message.type!=='frame'||!job||job.frame!==message.frame||!(message.snapshot instanceof ArrayBuffer)||message.snapshot.byteLength!==layout[1]-layout[3]){message.bitmap?.close();fatal(Error('绘图线程返回了无效帧'));return;}
       lane.pending=null;lane.snapshot=message.snapshot;
+      if(job.generation!==renderGeneration){message.bitmap.close();return;}
       const id=++sequence;transfers.add(id);
-      send({type:'frame',sequence:id,frame:message.frame,bitmap:message.bitmap,cost:message.cost+job.snapshotMs,snapshotMs:job.snapshotMs,latency:performance.now()-job.started},[message.bitmap]);
+      send({type:'frame',sequence:id,generation:job.generation,frame:message.frame,bitmap:message.bitmap,cost:message.cost+job.snapshotMs,snapshotMs:job.snapshotMs,latency:performance.now()-job.started},[message.bitmap]);
     };
     worker.postMessage({type:'init',module:data.module,layout});
   })));
@@ -47,7 +48,7 @@ function present(localSlot){
   const lane=renderers.find(lane=>!lane.pending);if(!lane)return false;
   const at=performance.now(),snapshot=lane.snapshot,packed=new Uint8Array(snapshot);
   if(before.length)packed.set(before);packed.set(after,before.length);
-  lane.pending={frame:simulation.frame,started:at,snapshotMs:performance.now()-at};lane.snapshot=null;renderFrame=simulation.frame;
+  lane.pending={frame:simulation.frame,generation:renderGeneration,started:at,snapshotMs:performance.now()-at};lane.snapshot=null;renderFrame=simulation.frame;
   lane.worker.postMessage({type:'render',frame:simulation.frame,localSlot,snapshot},[snapshot]);return true;
 }
 function fatal(error,id){
@@ -63,9 +64,17 @@ onmessage=({data})=>{
     else if(!simulation)throw Error('联机模拟线程尚未初始化');
     else if(data.type==='execute'){
       if(data.frame!==simulation.frame||!Array.isArray(data.inputs)||data.inputs.length!==settings.players||data.inputs.some(n=>!Number.isInteger(n)||n<0||n>4294967295))throw Error('联机模拟输入边界无效');
+      if(data.capture){snapshots.set(data.frame,{memory:new Uint8Array(core.memory.buffer).slice(),previous:simulation.previous.slice(),resultFrames:simulation.resultFrames});}
       simulation.step(data.inputs);result={...summary(),audio:audio()};
       const revision=core.th_get(110,0);
       if(revision!==scoreRevision){scoreRevision=revision;result.scores=new Uint8Array(core.memory.buffer,core.th_score_data(),core.th_score_size()).slice();}
+    }else if(data.type==='restore'){
+      const saved=snapshots.get(data.frame);if(!saved)throw Error('回滚快照已过期');
+      new Uint8Array(core.memory.buffer).set(saved.memory);simulation.frame=data.frame;simulation.previous=saved.previous.slice();simulation.resultFrames=saved.resultFrames;
+      for(const at of snapshots.keys())if(at>=data.frame)snapshots.delete(at);
+      renderGeneration++;renderFrame=-1;scoreRevision=core.th_get(110,0);result={...summary(),audio:audio()};
+    }else if(data.type==='confirm'){
+      for(const at of snapshots.keys())if(at<data.prefix)snapshots.delete(at);result=true;
     }else if(data.type==='present')result=present(data.localSlot);
     else throw Error('未知联机模拟指令');
     send({type:'result',id:data.id,result,executionMs:performance.now()-started},result?.scores?[result.scores.buffer]:[]);

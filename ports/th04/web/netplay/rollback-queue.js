@@ -5,26 +5,24 @@ export const BOOT_DELAY=2;
 export const MAX_ROLLBACK=12;
 export const MAX_INPUT_DELAY=12;
 export const MAX_ROLLBACK_INPUT_DELAY=6;
-export const POLICY_SCHEMA=3;
-export const HYBRID_RESERVE=0,PREDICTION_JITTER_STEPS=6;
+export const POLICY_SCHEMA=5;
+export const HYBRID_RESERVE=8,PREDICTION_JITTER_STEPS=4;
 export function rollbackRttForSamples(samples){
   if(!Array.isArray(samples)||samples.length!==3||samples.some(n=>!Number.isFinite(n)||n<0||n>30000))throw Error('无效开局延迟采样');
   return [...samples].sort((a,b)=>a-b)[1];
 }
-// TH04 keeps the measured first-round D and six-step speculative limit.
-// Moving transit steps into prediction increased native restore/replay costs.
-// The strict policy handshake remains; schema 3 rejects the aggressive policy.
-export function rollbackPolicyForRtt(rtt,rollbackEnabled=true){
-  if(!Number.isFinite(rtt)||rtt<0||rtt>30000||typeof rollbackEnabled!=='boolean')throw Error('无效网络延迟');
+// Use the same bounded transit split for two and three players.
+export function rollbackPolicyForRtt(rtt,rollbackEnabled=true,players=2){
+  if(!Number.isFinite(rtt)||rtt<0||rtt>30000||typeof rollbackEnabled!=='boolean'||![2,3].includes(players))throw Error('无效网络延迟');
   const rttMs=Math.ceil(rtt),transitSteps=rollbackEnabled&&rttMs>20?Math.ceil(rttMs/2/TICK_MS):0;
   const predictionSteps=Math.min(HYBRID_RESERVE,Math.max(0,transitSteps-1));
   const inputDelay=Math.min(MAX_ROLLBACK_INPUT_DELAY,transitSteps-predictionSteps);
-  const predictionLead=rollbackEnabled?predictionSteps+PREDICTION_JITTER_STEPS:0;
+  const predictionLead=rollbackEnabled?Math.min(MAX_ROLLBACK,predictionSteps+PREDICTION_JITTER_STEPS):0;
   return {schema:POLICY_SCHEMA,rollbackEnabled,rttMs,transitSteps,inputDelay,predictionSteps,predictionLead};
 }
-export function validRollbackPolicy(policy){
+export function validRollbackPolicy(policy,players=2){
   if(!policy)return false;
-  try{const expected=rollbackPolicyForRtt(policy.rttMs,policy.rollbackEnabled);return Object.keys(policy).length===Object.keys(expected).length&&Object.entries(expected).every(([key,value])=>policy[key]===value);}
+  try{const expected=rollbackPolicyForRtt(policy.rttMs,policy.rollbackEnabled,players);return Object.keys(policy).length===Object.keys(expected).length&&Object.entries(expected).every(([key,value])=>policy[key]===value);}
   catch{return false;}
 }
 export function rollbackInputDelayForRtt(rtt){return rollbackPolicyForRtt(rtt).inputDelay;}
@@ -84,6 +82,7 @@ export class RollbackQueue {
     if(this.inputDelay>this.lockstepDelay)throw Error('回滚输入缓冲尚未预填');
     this.activation=frame;
   }
+  needsCapture(frontier=this.frame){return !this.inputs[this.slot].has(frontier+(this.active?this.inputDelay:this.lockstepDelay));}
   capture(buttons,frontier=this.frame){
     // Keep current physical input on the live timeline during historical repair.
     if(!Number.isSafeInteger(frontier)||frontier<this.frame||frontier>this.frame+MAX_ROLLBACK||

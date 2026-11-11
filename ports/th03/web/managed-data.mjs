@@ -26,7 +26,16 @@ export class ManagedContent {
     if (base + end !== blob.size) throw Error('游戏资源包长度无效');
     return new ManagedContent(blob.slice(base), [...files], game);
   }
-  constructor(blob, entries, game) { this.blob = blob; this.files = new Map(entries); this.game = game; this.verified = new Map(); }
+  constructor(blob, entries, game) { this.blob = blob; this.files = new Map(entries); this.game = game; this.verified = new Map(); this.optional = new Map(); }
+  async addResources(resources) {
+    if(!Array.isArray(resources))throw Error('音乐资源无效');
+    for(const item of resources){
+      if(!item||!(/^\/bgm\/akyu\/\d{2}\.ogg$/.test(item.path)||/^\/pc98\/(?:disks\.json|disk-blocks\/[a-f0-9]{64}\.gz)$/.test(item.path))||typeof item.url!=='string'||!item.url.startsWith('blob:')||!Number.isSafeInteger(item.bytes)||item.bytes<=0||!/^[a-f0-9]{64}$/i.test(item.sha256||''))throw Error('音乐资源无效');
+      const response=await fetch(item.url);if(!response.ok)throw Error('音乐资源读取失败');
+      const blob=await response.blob();if(blob.size!==item.bytes||await digest(blob)!==item.sha256.toLowerCase())throw Error('音乐资源校验失败');
+      this.optional.set(item.path.slice(1),blob);
+    }
+  }
   async fetch(path) {
     const item = this.files.get(contentPath(path));
     if (!item) return new Response('Resource is not installed', {status: 404});
@@ -48,6 +57,7 @@ export class ManagedContent {
       const url = new URL(source, environment.location.href);
       if (url.origin === root.origin && url.pathname.startsWith(root.pathname)) {
         const path = decodeURIComponent(url.pathname.slice(root.pathname.length));
+        if (content.optional.has(path)) return new Response(content.optional.get(path), {headers:{'Content-Type':mime(path)}});
         if (content.files.has(path)) {
           if ((init?.method ?? input.method ?? 'GET').toUpperCase() !== 'GET') throw Error('游戏资源为只读');
           const signal = init?.signal ?? input.signal; signal?.throwIfAborted();
@@ -59,17 +69,4 @@ export class ManagedContent {
       return nativeFetch(input, init);
     };
   }
-}
-
-export function installManagedWorkers(environment, content, base) {
-  if (!environment.Worker) return;
-  const NativeWorker = environment.Worker;
-  const bootstrap = new URL('managed-worker.mjs', base).href;
-  environment.Worker = class ManagedWorker extends NativeWorker {
-    constructor(url, options = {}) {
-      if (options.type !== 'module') throw Error('接入运行时需要模块 Worker');
-      super(bootstrap, {...options, type: 'module'});
-      super.postMessage({type: 'eagler-content-init', url: new URL(url, environment.location.href).href, base, game: content.game, blob: content.blob, entries: [...content.files]});
-    }
-  };
 }

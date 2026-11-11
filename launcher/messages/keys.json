@@ -1305,6 +1305,14 @@
       "count"
     ]
   },
+  "room.pc98ChallengeEnabled": {
+    "id": "room_pc98ChallengeEnabled",
+    "params": []
+  },
+  "room.pc98ChallengeHint": {
+    "id": "room_pc98ChallengeHint",
+    "params": []
+  },
   "room.challengeHint": {
     "id": "room_challengeHint",
     "params": []
@@ -4953,6 +4961,14 @@
   },
   "touch.leftControls": {
     "id": "touch_leftControls",
+    "params": []
+  },
+  "touch.th01Slide": {
+    "id": "touch_th01Slide",
+    "params": []
+  },
+  "touch.th01SlideHold": {
+    "id": "touch_th01SlideHold",
     "params": []
   },
   "touch.focus": {
@@ -8891,6 +8907,72 @@
   },
   "th19.charge": {
     "id": "th19_charge",
+    "params": []
+  },
+  "game.title.th01mp": {
+    "id": "game_title_th01mp",
+    "params": []
+  },
+  "game.title.th02mp": {
+    "id": "game_title_th02mp",
+    "params": []
+  },
+  "game.title.th03mp": {
+    "id": "game_title_th03mp",
+    "params": []
+  },
+  "game.title.th04mp": {
+    "id": "game_title_th04mp",
+    "params": []
+  },
+  "multiplayer.loadout.th01_reimu": {
+    "id": "multiplayer_loadout_th01_reimu",
+    "params": []
+  },
+  "multiplayer.loadout.th02_fast": {
+    "id": "multiplayer_loadout_th02_fast",
+    "params": []
+  },
+  "multiplayer.loadout.th02_balanced": {
+    "id": "multiplayer_loadout_th02_balanced",
+    "params": []
+  },
+  "multiplayer.loadout.th02_slow": {
+    "id": "multiplayer_loadout_th02_slow",
+    "params": []
+  },
+  "settings.th02RapidFire": {
+    "id": "settings_th02RapidFire",
+    "params": []
+  },
+  "settings.th03Focus": {
+    "id": "settings_th03Focus",
+    "params": []
+  },
+  "room.th03DisableFocus": {
+    "id": "room_th03DisableFocus",
+    "params": []
+  },
+  "room.th03SpecialFocus": {
+    "id": "room_th03SpecialFocus",
+    "params": []
+  },
+  "room.th01BallCount": {
+    "id": "room_th01BallCount",
+    "params": []
+  },
+  "room.th01SpecialBalls": {
+    "id": "room_th01SpecialBalls",
+    "params": [
+      "count"
+    ]
+  },
+  "room.th02DisableFocus": {
+    "id": "room_th02DisableFocus",
+    "params": []
+  },
+  "room.th02SpecialFocus": {
+    "id": "room_th02SpecialFocus",
     "params": []
   }
 }

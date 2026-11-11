@@ -66,7 +66,7 @@ F2／F3 接入原生扣命与 Bomb 分支，零库存也在原生 HUD 重绘入�
 
 `tools/build_practice_assets.py` 从哈希锁定的中日文单人 HUD MAIN 派生独立覆盖，校验 Hook 原字节并更新 MZ 重定位。生成 `web/practice-*.exe.gz`、启动器与描述清单。`tools/build_practice_core.mjs` 从锁定的 fast 核心派生 `wdosbox-x-practice.wasm`，只增加上述 OUT 回调。
 
-普通单人和定点都加载这套私有覆盖；单人使用固定 16000 CPU cycles。多人仍走原有核心／配置。构建不写发布 HDI，也不更新原生 HUD baseline。启动时只修改内存中的 FAT 副本。
+普通单人和定点都加载这套私有覆盖；单人使用固定 30000 CPU cycles。普通流程和定点练习均使用原版 Turbo 模式，避免弹幕数量触发人为减速。多人使用相同弹幕时序及固定 30000 CPU cycles，并在版本握手中校验实现。构建不写发布 HDI，也不更新原生 HUD baseline。启动时只修改内存中的 FAT 副本。
 
 完整开发工作区中的构建／检查命令：
 

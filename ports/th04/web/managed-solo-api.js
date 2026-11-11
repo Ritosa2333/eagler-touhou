@@ -41,7 +41,7 @@ export const managedAPI = {
     managedPractice.start({readOnly:!!options.replayPath});
   },
   health() {
-    return {frames:emulator?.module.renderMetrics?.drawn ?? emulator?.module.framePresenter?.info().drawn ?? 0, audio:{state:emulator?.context?.state ?? emulator?.module.SDL2?.audioContext?.state}};
+    return {frames:emulator?.module.renderMetrics?.drawn ?? emulator?.module.framePresenter?.info().drawn ?? 0, audio:{state:emulator?.context?.state ?? emulator?.module.SDL2?.audioContext?.state,musicStatus:soloMusic?.player.status??null,effectsPeak:activeAttempt?.sfx?.peak??0}};
   },
   async files(message) {
     const {userPath} = await import('./managed-storage.mjs'), store = globalThis.__eaglerPC98Files;

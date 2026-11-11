@@ -3,7 +3,7 @@ import {validNativeCommand} from './native-command-schema.js';
 export const VERSION='pc98-confirmed-tape/1',MAX_FRAMES=216000,MAX_RAW=48*1024*1024;
 export const MAX_POINT_BYTES=16*1024*1024;
 export const MAX_POINT_TOTAL=128*1024*1024;
-export function toBase64(bytes){let s='';for(let n=0;n<bytes.length;n+=16384)s+=String.fromCharCode(...bytes.subarray(n,n+16384));return btoa(s);}
+export function toBase64(bytes){if(typeof bytes.toBase64==='function')return bytes.toBase64();let s='';for(let n=0;n<bytes.length;n+=16384)s+=String.fromCharCode(...bytes.subarray(n,n+16384));return btoa(s);}
 export function pointBytes(point){return Uint8Array.from(atob(point.data),c=>c.charCodeAt(0));}
 export function stable(value){
   if(value===undefined)return 'null';
@@ -14,8 +14,8 @@ export function stable(value){
 import {sha256} from './sha256.js';
 export const digest=bytes=>sha256(bytes instanceof ArrayBuffer?new Uint8Array(bytes):bytes);
 export function randomId(){return Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');}
-export async function fingerprint(paths){
-  const entries=await Promise.all(paths.map(async path=>{const r=await fetch(new URL(path,import.meta.url),{cache:'no-cache'});if(!r.ok)throw Error('录像资源读取失败：'+path);return [path,await digest(await r.arrayBuffer())];}));
+export async function fingerprint(paths,overrides={}){
+  const entries=await Promise.all(paths.map(async path=>{if(overrides[path])return [path,overrides[path]];const r=await fetch(new URL(path,import.meta.url),{cache:'no-cache'});if(!r.ok)throw Error('录像资源读取失败：'+path);return [path,await digest(await r.arrayBuffer())];}));
   return digest(new TextEncoder().encode(stable(entries)));
 }
 export function validateHeader(h){
@@ -40,25 +40,36 @@ function validBattleInput(v){
     Number.isSafeInteger(v.touch)&&v.touch>=0&&v.touch<2**45&&typeof v.focusEnabled==='boolean'&&typeof v.points==='boolean'&&
     Array.isArray(v.commands)&&v.commands.length<=16&&v.commands.every(c=>['pause','resume','round','match','up','down','confirm','escape','hidden','visible'].includes(c));
 }
+// Store only confirmed frames as UTF-8 records in contiguous blocks. The
+// temporary prediction window remains replaceable until it is confirmed.
 export class ConfirmedTape{
-  constructor(header){validateHeader(header);this.header=structuredClone(header);this.rows=[];this.pending=new Map();this.end=null;this.bytes=0;}
+  constructor(header){validateHeader(header);this.header=structuredClone(header);this.pending=new Map();this.end=null;this.bytes=0;
+    this.data=new Uint8Array(4096);this.offsets=new Uint32Array(1024);this.length=0;this.used=0;this.encoder=new TextEncoder();this.decoder=new TextDecoder();}
+  row(frame){if(!Number.isInteger(frame)||frame<0||frame>=this.length)return undefined;
+    const start=this.offsets[frame],end=frame+1<this.length?this.offsets[frame+1]:this.used;
+    return JSON.parse(this.decoder.decode(this.data.subarray(start,end)));}
+  slice(first=0,end=this.length){const result=[];for(let i=Math.max(0,first);i<Math.min(end,this.length);i++)result.push(this.row(i));return result;}
   stage(frame,row){
     if(this.end)return;
-    if(!Number.isInteger(frame)||frame<this.rows.length||frame>this.rows.length+120)throw Error('录像预测窗口越界');
+    if(!Number.isInteger(frame)||frame<this.length||frame>this.length+120)throw Error('录像预测窗口越界');
     validateRow(row,this.header,frame);this.pending.set(frame,structuredClone(row));
   }
   confirm(prefix,dirty=false){
     if(this.end||dirty)return false;
-    if(!Number.isInteger(prefix)||prefix<this.rows.length||prefix>MAX_FRAMES)throw Error('录像确认范围越界');
-    const batch=[];let bytes=0;
-    for(let f=this.rows.length;f<prefix;f++){const row=this.pending.get(f);if(!row)throw Error('录像确认历史缺帧');batch.push(row);bytes+=stable(row).length*3;}
-    if(this.bytes+bytes>MAX_RAW)throw Error('录像输入历史达到容量上限');
-    for(let f=this.rows.length;f<prefix;f++)this.pending.delete(f);
-    this.bytes+=bytes;this.rows.push(...batch);return true;
+    if(!Number.isInteger(prefix)||prefix<0||prefix>MAX_FRAMES)throw Error('录像确认范围越界');
+    // A rollback may temporarily report an older already-published prefix.
+    if(prefix<this.length)return false;
+    const batch=[];let size=0;
+    for(let f=this.length;f<prefix;f++){const row=this.pending.get(f);if(!row)throw Error('录像确认历史缺帧');const data=this.encoder.encode(JSON.stringify(row));batch.push(data);size+=data.length;}
+    if(this.used+size>MAX_RAW)throw Error('录像输入历史达到容量上限');
+    if(this.used+size>this.data.length){const next=new Uint8Array(Math.min(MAX_RAW,Math.max(this.used+size,this.data.length*2)));next.set(this.data.subarray(0,this.used));this.data=next;}
+    if(prefix>this.offsets.length){const next=new Uint32Array(Math.max(prefix,this.offsets.length*2));next.set(this.offsets);this.offsets=next;}
+    for(const data of batch){this.offsets[this.length]=this.used;this.data.set(data,this.used);this.used+=data.length;this.pending.delete(this.length++);}
+    this.bytes=this.used;return true;
   }
-  rewind(frame){if(frame<this.rows.length)throw Error('不能修改已发布录像');for(const f of this.pending.keys())if(f>=frame)this.pending.delete(f);}
-  finish(reason='片段结束'){if(!this.end)this.end={frame:this.rows.length,reason:String(reason).slice(0,250)};this.pending.clear();}
-  snapshot(){return {header:structuredClone(this.header),rows:structuredClone(this.rows),end:{frame:this.rows.length,reason:this.end?.reason||'途中导出的确认片段'}};}
+  rewind(frame){if(frame<this.length)throw Error('不能修改已发布录像');for(const f of this.pending.keys())if(f>=frame)this.pending.delete(f);}
+  finish(reason='片段结束'){if(!this.end)this.end={frame:this.length,reason:String(reason).slice(0,250)};this.pending.clear();}
+  snapshot(){return {header:structuredClone(this.header),rows:this.slice(),end:{frame:this.length,reason:this.end?.reason||'途中导出的确认片段'}};}
 }
 export async function encodeTape(tape){
   validateTape(tape);const raw=new TextEncoder().encode(JSON.stringify(tape));if(raw.length>MAX_RAW)throw Error('录像超过容量');

@@ -1,9 +1,9 @@
 // Shared pure simulation for players and isolated replay Workers.
 import {applyStage} from '../stage-select.js';
 export class NativeSimulation{
-  constructor(core,settings,hostSlot){this.core=core;this.settings=structuredClone(settings);this.hostSlot=hostSlot;this.frame=0;this.previous=[];}
+  constructor(core,settings,hostSlot){this.core=core;this.settings=structuredClone(settings);this.hostSlot=hostSlot;this.frame=0;this.previous=[];this.resultFrames=0;}
   reset(){
-    const s=this.settings,e=this.core;
+    const s=this.settings,e=this.core;this.resultFrames=0;
     e.th_init(s.players,s.count,0x12345678,s.lifeCompensation?1:0);
     e.th_set_netplay_rules(1);e.th_set_difficulty(s.rank);applyStage(e,s.startStage);
   }
@@ -17,7 +17,8 @@ export class NativeSimulation{
   }
   step(inputs){
     const e=this.core,g=(f,p=0)=>e.th_get(f,p),host=inputs[this.hostSlot],edges=inputs.map((v,i)=>v&~(this.previous[i]||0)),edge=edges[this.hostSlot];
-    const menu=g(50);let handled=false;
+    const menu=g(50),phase=g(0);let handled=false;
+    if(phase!==2||menu)this.resultFrames=0;
     // Any player may request pause. Only the room owner controls menus,
     // including route choice, continue, ending skip and name registration.
     if(!menu&&edges.some(v=>v&128)){
@@ -33,7 +34,7 @@ export class NativeSimulation{
         if(action===3)e.th_menu_open(1,this.settings.lifeCompensation?1:0);
         handled=true;
       }
-    }else if(g(0)===2&&(edge&(4|64))){e.th_continue();handled=true;}
+    }else if(phase===2&&this.resultFrames>=24&&(edge&(4|64))){e.th_continue();handled=true;}
     if(this.settings.qa&&!menu){
       if(edge&16384)e.th_debug_invincible(!g(43));
       for(let p=0;p<inputs.length;p++)if(edge&[512,1024,8192][p])e.th_debug_hit(p,1);
@@ -43,12 +44,13 @@ export class NativeSimulation{
       }
     }
     if(!handled)e.th_step(...[0,1,2].map(i=>((inputs[i]||0)&15|((inputs[i]||0)&4096?16:0)|((inputs[i]||0)&0xffff8000))>>>0));
+    if(!menu&&phase===2&&g(0)===2)this.resultFrames++;
     this.previous=inputs.slice();this.frame++;
 
   }
   checksum(){
     let h=this.core.th_net_checksum();
-    for(const n of [this.frame,...this.previous])for(let b=0;b<4;b++)h=Math.imul(h^((n>>>(8*b))&255),16777619);
+    for(const n of [this.frame,this.resultFrames,...this.previous])for(let b=0;b<4;b++)h=Math.imul(h^((n>>>(8*b))&255),16777619);
     return {type:'hash',frame:this.frame,hash:(h>>>0).toString(16).padStart(8,'0'),memory:true};
   }
 }

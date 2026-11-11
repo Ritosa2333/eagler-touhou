@@ -11,11 +11,58 @@ async function inflate(bytes,expected){
   for(;;){const {done,value}=await reader.read();if(done)break;total+=value.length;if(total>expected){await reader.cancel();throw Error('Replay 解压长度越界');}parts.push(value);}
   if(total!==expected)throw Error('Replay 解压长度不符');return new Uint8Array(await new Blob(parts).arrayBuffer());
 }
+// Preserve every IEEE-754 timestamp exactly; nearby bit patterns use small signed deltas.
+function packClocks(bytes){
+  const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),count=bytes.length/CLOCK_BYTES,maskBytes=Math.ceil(count/8);
+  let packed=new Uint8Array(maskBytes+count*2);let at=maskBytes;
+  function append(value){if(at===packed.length){const next=new Uint8Array(Math.min(maskBytes+count*10,packed.length*2));next.set(packed);packed=next;}packed[at++]=value;}
+  for(let i=0;i<count;i++)if(bytes[i*CLOCK_BYTES]===2)packed[i>>3]|=1<<(i&7);
+  for(const kind of [1,2]){
+    let previous=0n;
+    for(let i=0;i<count;i++){
+      const offset=i*CLOCK_BYTES;if(bytes[offset]!==kind)continue;
+      const value=view.getBigUint64(offset+1,true),difference=value-previous;previous=value;
+      let delta=difference>=0n?difference*2n:-difference*2n-1n;
+      while(delta>=128n){append(Number(delta&127n)|128);delta>>=7n;}append(Number(delta));
+    }
+  }
+  return packed.subarray(0,at);
+}
+function unpackClocks(bytes,length,encoding){
+  const output=new Uint8Array(length),view=new DataView(output.buffer),previous=[0n,0n,0n],count=length/CLOCK_BYTES;
+  if(encoding==='xor-varint/2'||encoding==='delta-varint/3'){
+    const maskBytes=Math.ceil(count/8);if(maskBytes>bytes.length)throw Error('Replay 时钟数据损坏');
+    let at=maskBytes;
+    for(const kind of [1,2])for(let index=0;index<count;index++){
+      if((bytes[index>>3]&(1<<(index&7))?2:1)!==kind)continue;
+      let delta=0n,shift=0n,part;do{if(at>=bytes.length||shift>(encoding==='delta-varint/3'?64n:63n))throw Error('Replay 时钟数据损坏');part=bytes[at++];delta|=BigInt(part&127)<<shift;shift+=7n;}while(part&128);
+      if(encoding==='delta-varint/3'){if(delta>0x1fffffffffffffffEn)throw Error('Replay 时钟数据越界');previous[kind]+=(delta&1n)?-((delta+1n)>>1n):delta>>1n;}
+      else {if(delta>0xffffffffffffffffn)throw Error('Replay 时钟数据越界');previous[kind]^=delta;}
+      if(previous[kind]<0n||previous[kind]>0xffffffffffffffffn)throw Error('Replay 时钟数据越界');output[index*CLOCK_BYTES]=kind;view.setBigUint64(index*CLOCK_BYTES+1,previous[kind],true);
+    }
+    if(at!==bytes.length)throw Error('Replay 时钟数据长度不符');return output;
+  }
+  let at=0;
+  for(let offset=0;offset<length;offset+=CLOCK_BYTES){
+    const kind=bytes[at++];if(kind!==1&&kind!==2)throw Error('Replay 时钟类型无效');let delta=0n,shift=0n,part;
+    do{if(at>=bytes.length||shift>63n)throw Error('Replay 时钟数据损坏');part=bytes[at++];delta|=BigInt(part&127)<<shift;shift+=7n;}while(part&128);
+    if(delta>0xffffffffffffffffn)throw Error('Replay 时钟数据越界');previous[kind]^=delta;output[offset]=kind;view.setBigUint64(offset+1,previous[kind],true);
+  }
+  if(at!==bytes.length)throw Error('Replay 时钟数据长度不符');return output;
+}
 function validAssist(game,input){
   if(!input||typeof input!=='object'||Array.isArray(input))return false;
   const integer=(value,min,max)=>Number.isSafeInteger(value)&&value>=min&&value<=max;
   if(input.address!==undefined&&!integer(input.address,-1,2**31-1)||
     input.generation!==undefined&&!integer(input.generation,0,65535))return false;
+  if(input.quit===true||input.restart===true){if(input.quit&&input.restart||!['02','04'].includes(game))return false;if(input.practiceConfig!==undefined){try{if(!input.restart||game!=='04'||normalizePractice(input.practiceConfig).mode!=='target')return false;}catch{return false;}}return true;}
+  if(game==='04'&&input.formOpen){const f=input.formOpen;return f===true||Array.isArray(f.values)&&f.values.length===10&&f.values.every(n=>integer(n,0,255))&&Array.isArray(f.settings)&&f.settings.length===11&&f.settings.every((n,i)=>integer(n,0,i===10?5:1))&&integer(f.hp,0,30000);}
+  if(game==='04'&&input.formInput!==undefined)return integer(input.formInput,0,64);
+  if(game==='04'&&input.pauseInput!==undefined)return integer(input.pauseInput,0,15)&&(input.openPause===undefined||typeof input.openPause==='boolean');
+  if(game==='04'&&input.pauseAck!==undefined)return integer(input.pauseAck,1,2);
+  if(game==='04'&&input.resultInput!==undefined)return integer(input.resultInput,0,31);
+  if(game==='04'&&input.resultAck!==undefined)return integer(input.resultAck,1,2);
+  if(game==='04'&&input.resultRetry===true)return true;
   if(game==='02')return integer(input.currentInput,0,256)&&!(input.currentInput&255)&&typeof input.focusEnabled==='boolean'&&
     integer(input.points,0,15)&&['add','keep','clear'].includes(input.touchAction)&&typeof input.unlimited==='boolean'&&
     Number.isSafeInteger(input.x)&&Number.isSafeInteger(input.y);
@@ -35,6 +82,7 @@ function validate(header,clockBytes,diskBytes,eventBytes,events){
     !/^[a-f0-9]{64}$/.test(header.identity)||!/^([a-f0-9]{64})$/.test(header.diskSha256)||
     !/^[a-f0-9]{8}$/.test(header.result?.memoryHash)||!/^[a-f0-9]{64}$/.test(header.result?.memorySha256)||
     !Number.isSafeInteger(header.result?.memoryBytes)||header.result.memoryBytes<1||header.result.memoryBytes>1024*1024*1024||
+    header.result.memoryScope!==undefined&&(header.result.memoryScope!=='pc98-guest-ram/1'||header.result.memoryBytes!==0x100000)||
     header.result.boundary!==header.endBoundary||header.result.clockCount!==header.clockCount||header.result.extraClockReads!==0||
     !['sleep','clock','exit'].includes(header.result.endReason)||
     header.result.endPhase!==undefined&&!['before-input','after-input'].includes(header.result.endPhase)||
@@ -102,16 +150,18 @@ export async function restoreExternalReplayDisk(replay,base){
   }
   if(await sha256(disk)!==h.diskSha256)throw Error('Replay 启动磁盘摘要不匹配');return disk;
 }
-export async function encodeExternalReplay(header,{clockChunks,events,disk,baseDisk=disk}){
+export async function encodeExternalReplay(header,{clockChunks,events,disk,baseDisk=disk,savedFiles={}}){
   const clocks=new Uint8Array(await new Blob(clockChunks).arrayBuffer()),eventRaw=new TextEncoder().encode(JSON.stringify(events));
   if(!(disk instanceof Uint8Array)||disk.length<1||disk.length>MAX_DISK_BYTES)throw Error('Replay 启动磁盘缺失或超过容量');
   const delta=diskDelta(disk,baseDisk),diskSha256=await sha256(disk),diskBaseSha256=await sha256(baseDisk);
-  const eventTape=await gzip(eventRaw),diskTape=await gzip(delta),clockTape=await gzip(clocks);
+  const packedClocks=packClocks(clocks),eventTape=await gzip(eventRaw),diskTape=await gzip(delta),clockTape=await gzip(packedClocks);
+  const saveRaw=new TextEncoder().encode(JSON.stringify(Object.fromEntries(Object.entries(savedFiles).map(([name,bytes])=>[name,Array.from(bytes)]))));
+  const saveTape=header.diskBaseKind==='installed-practice/2'?await gzip(saveRaw):new Uint8Array();
   validate({...header,version:HOST_VERSION,mode:'solo',clockCount:clocks.length/CLOCK_BYTES,diskBytes:disk.length,diskSha256},clocks.length,disk.length,eventRaw.length,events);
-  const payload=new Uint8Array(clockTape.length+diskTape.length+eventTape.length);payload.set(clockTape);payload.set(diskTape,clockTape.length);payload.set(eventTape,clockTape.length+diskTape.length);
+  const payload=new Uint8Array(clockTape.length+diskTape.length+eventTape.length+saveTape.length);payload.set(clockTape);payload.set(diskTape,clockTape.length);payload.set(eventTape,clockTape.length+diskTape.length);payload.set(saveTape,clockTape.length+diskTape.length+eventTape.length);
   const json=new TextEncoder().encode(JSON.stringify({...header,version:HOST_VERSION,mode:'solo',compression:'gzip',clockCount:clocks.length/CLOCK_BYTES,
-    clockRawBytes:clocks.length,diskBytes:disk.length,eventRawBytes:eventRaw.length,clockPayloadBytes:clockTape.length,diskPayloadBytes:diskTape.length,
-    eventPayloadBytes:eventTape.length,payloadSha256:await sha256(payload),diskSha256,diskEncoding:'xor-pages/1',diskBaseSha256,diskDeltaRawBytes:delta.length}));
+    clockEncoding:'delta-varint/3',clockPackedBytes:packedClocks.length,clockRawBytes:clocks.length,diskBytes:disk.length,eventRawBytes:eventRaw.length,clockPayloadBytes:clockTape.length,diskPayloadBytes:diskTape.length,
+    eventPayloadBytes:eventTape.length,...(header.diskBaseKind==='installed-practice/2'?{saveRawBytes:saveRaw.length,savePayloadBytes:saveTape.length}:{}),payloadSha256:await sha256(payload),diskSha256,diskEncoding:'xor-pages/1',diskBaseSha256,diskDeltaRawBytes:delta.length}));
   if(json.length>HEADER_LIMIT||json.length+payload.length+12>FILE_LIMIT)throw Error('Replay 超过文件容量限制');
   const prefix=new Uint8Array(12);prefix.set(MAGIC);new DataView(prefix.buffer).setUint32(8,json.length,true);
   return new Blob([prefix,json,payload],{type:'application/octet-stream'});
@@ -125,15 +175,24 @@ export async function decodeExternalReplay(file,expectedGame){
   if(header.game!==expectedGame||header.compression!=='gzip'||!Number.isSafeInteger(header.clockRawBytes)||header.clockRawBytes<1||header.clockRawBytes>MAX_CLOCK_BYTES||
     !Number.isSafeInteger(header.eventRawBytes)||header.eventRawBytes<2||header.eventRawBytes>MAX_EVENT_BYTES||!Number.isSafeInteger(header.diskBytes)||header.diskBytes<1||header.diskBytes>MAX_DISK_BYTES||
     ![header.clockPayloadBytes,header.diskPayloadBytes,header.eventPayloadBytes].every(size=>Number.isSafeInteger(size)&&size>0&&size<=payload.length)||
-    header.clockPayloadBytes+header.diskPayloadBytes+header.eventPayloadBytes!==payload.length||await sha256(payload)!==header.payloadSha256)throw Error('Replay 数据损坏或作品不匹配');
+    header.clockPayloadBytes+header.diskPayloadBytes+header.eventPayloadBytes+(header.savePayloadBytes||0)!==payload.length||await sha256(payload)!==header.payloadSha256)throw Error('Replay 数据损坏或作品不匹配');
   if(compact&&(header.diskEncoding!=='xor-pages/1'||!/^[a-f0-9]{64}$/.test(header.diskBaseSha256)||
     !Number.isSafeInteger(header.diskDeltaRawBytes)||header.diskDeltaRawBytes<0||header.diskDeltaRawBytes>MAX_DISK_DELTA_BYTES))throw Error('Replay 磁盘差异无效');
   if(!compact&&header.diskEncoding!==undefined)throw Error('Replay 磁盘格式不匹配');
-  let offset=0;const clocks=await inflate(payload.subarray(offset,offset+=header.clockPayloadBytes),header.clockRawBytes);
+  if(header.clockEncoding!==undefined&&(!['xor-varint/1','xor-varint/2','delta-varint/3'].includes(header.clockEncoding)||!Number.isSafeInteger(header.clockPackedBytes)||header.clockPackedBytes<1||header.clockPackedBytes>header.clockRawBytes*2))throw Error('Replay 时钟格式无效');
+  if(header.diskBaseKind!==undefined&&!['installed-practice/1','installed-practice/2'].includes(header.diskBaseKind))throw Error('Replay 基础磁盘类型无效');
+  if(header.diskBaseKind==='installed-practice/2'&&(!Number.isSafeInteger(header.saveRawBytes)||header.saveRawBytes<2||header.saveRawBytes>65536||!Number.isSafeInteger(header.savePayloadBytes)||header.savePayloadBytes<1||header.savePayloadBytes>payload.length))throw Error('Replay 存档载荷无效');
+  let offset=0;const clockData=await inflate(payload.subarray(offset,offset+=header.clockPayloadBytes),header.clockEncoding?header.clockPackedBytes:header.clockRawBytes);
+  const clocks=header.clockEncoding?unpackClocks(clockData,header.clockRawBytes,header.clockEncoding):clockData;
   const diskData=await inflate(payload.subarray(offset,offset+=header.diskPayloadBytes),compact?header.diskDeltaRawBytes:header.diskBytes);
-  const eventBytes=await inflate(payload.subarray(offset),header.eventRawBytes),events=JSON.parse(new TextDecoder().decode(eventBytes));
+  const eventBytes=await inflate(payload.subarray(offset,offset+=header.eventPayloadBytes),header.eventRawBytes),events=JSON.parse(new TextDecoder().decode(eventBytes));
+  let savedFiles={};if(header.diskBaseKind==='installed-practice/2'){
+    const raw=await inflate(payload.subarray(offset),header.saveRawBytes),files=JSON.parse(new TextDecoder().decode(raw));
+    const allowed=header.game==='02'?['HUUHI.DAT','HUUMA.CFG']:['GENSOU.SCR','MIKO.CFG'];
+    for(const [name,data] of Object.entries(files)){if(!allowed.includes(name)||!Array.isArray(data)||data.length>32768||data.some(x=>!Number.isInteger(x)||x<0||x>255))throw Error('Replay 存档数据无效');savedFiles[name]=new Uint8Array(data);}
+  }
   validate(header,clocks.length,header.diskBytes,eventBytes.length,events);
   if(compact)validateDelta(diskData,header.diskBytes);
   else if(await sha256(diskData)!==header.diskSha256)throw Error('Replay 启动磁盘摘要不匹配');
-  return {header,clocks,events,disk:compact?null:diskData,diskDelta:compact?diskData:null};
+  return {header,clocks,events,savedFiles,disk:compact?null:diskData,diskDelta:compact?diskData:null};
 }

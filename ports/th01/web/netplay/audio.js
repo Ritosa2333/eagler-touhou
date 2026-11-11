@@ -15,28 +15,32 @@ export class LocalAudio{
     if(this.core)this.update(this.core);
   }
   setVolume(value){this.volume=Math.max(0,Math.min(1,value));if(this.gain)this.gain.gain.value=this.volume;}
+  prewarm(key){
+    if(!this.context||key==='silent'||this.buffers.has(key))return;
+    const pending=loadMusicTrack(this.context,key);this.buffers.set(key,pending);
+    void pending.catch(()=>{if(this.buffers.get(key)===pending)this.buffers.delete(key);});
+  }
   async track(key){
     if(this.trackKey===key||this.stopped)return;
     const request=++this.trackRequest;
     this.trackKey=key;this.source?.stop();this.source?.disconnect();this.source=null;
     if(key==='silent')return;
     try{
-      if(!this.buffers.has(key)){
-        const pending=loadMusicTrack(this.context,key);
-        this.buffers.set(key,pending);
-        void pending.catch(()=>{if(this.buffers.get(key)===pending)this.buffers.delete(key);});
-      }
+      this.prewarm(key);
       const [buffer,loop]=await this.buffers.get(key);
       if(this.stopped||this.trackRequest!==request)return;
       const source=this.context.createBufferSource();source.buffer=buffer;source.loop=true;
       source.loopStart=loop.loopStart;source.loopEnd=loop.loopEnd;source.connect(this.gain);source.start();this.source=source;
+      const index=musicRoomTracks.findIndex(track=>track.key===key);
+      for(const next of musicRoomTracks.slice(index+1,index+3))this.prewarm(next.key);
       this.onStatus?.(`本机音乐：${key}`);
     }catch{if(this.trackRequest===request){this.trackKey=null;this.onStatus?.('本机音乐读取失败，可重新启用声音');}}
   }
   update(core){
     this.core=core;const end=core.th_get(11,0)>>>0;
-    if(!this.context||this.context.state!=='running'||this.stopped){this.cursor=end;return;}
     const cue=core.th_get(79,0),key=cue===2?'silent':musicRoomTracks[cue<2?cue:cue-3]?.key||'silent';
+    this.prewarm(key);
+    if(!this.context||this.context.state!=='running'||this.stopped){this.cursor=end;return;}
     if(this.trackKey!==key)void this.track(key);
     if(this.cursor>end)this.cursor=0;this.cursor=Math.max(this.cursor,end-128);
     let latestBuffer=null;

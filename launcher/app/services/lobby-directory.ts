@@ -46,6 +46,8 @@ export interface DirectoryRoom {
   seats: readonly (DirectorySeat | null)[];
   disableCheatMovement: boolean;
   challengeMode: boolean;
+  disableFocus?: boolean;
+  ballCount?: number;
 }
 export interface DirectoryMembership {
   product: MultiplayerProductId;
@@ -289,7 +291,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         initial,
         ...(Number.isInteger(seat?.loadout) && Number(seat?.loadout) >= 0 && Number(seat?.loadout) < policy.loadouts.length ? {loadout: Number(seat?.loadout)} : {}),
         ...(row.publicNames === true ? {name:normalizePublicNickname(seat?.name)} : {}),
-        ...(row.product === 'th09mp'
+        ...((row.product === 'th03mp' || row.product === 'th09mp')
           ? {
               machineSign:
                 typeof seat?.machineSign === 'string'
@@ -320,6 +322,8 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       seats: Object.freeze(seats),
       disableCheatMovement: row.disableCheatMovement === true,
       challengeMode: row.challengeMode === true,
+      ...(row.product === 'th03mp' ? {disableFocus: row.disableFocus !== false} : row.product === 'th02mp' ? {disableFocus: row.disableFocus === true} : {}),
+      ...(row.product === 'th01mp' ? {ballCount:[1,2,3,4,6,8].includes(row.ballCount as number) ? row.ballCount as number : 2} : {}),
       players: seats.filter(Boolean).length,
       ready: bounded(row.ready, capacity),
       spectators: bounded(row.spectators, 999),
@@ -454,7 +458,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   }
   function formDefaults(product: MultiplayerProductId | '') {
     const policy = product ? multiplayerConfigForProduct(product) : null;
-    return { product, capacity: policy?.playerCounts[0] ?? 2, difficulty: 1 } as const;
+    return { product, capacity: policy?.playerCounts[0] ?? 2, difficulty: product === 'th03mp' ? 3 : 1 } as const;
   }
   async function initialize() {
     if (bootRunning || disposed || snapshot.leaving) return;

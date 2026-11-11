@@ -36,8 +36,25 @@ try{
     await new Promise(r=>setTimeout(r,200));
   }
   assert(events.some(e=>e.event==='first-frame'),'full Launcher must present a real frame');
-  await page.screenshot({path:resolve(out,'solo.png')});
+  const frame=page.frames().find(f=>/th01.html.*runtimeEpoch=/.test(f.url()));
+  const health=()=>frame.evaluate(async()=>(await import('./app.js')).managedAPI.health());
+  await new Promise(resolve=>setTimeout(resolve,2000));
+  assert.equal((await health()).menu,1,'title remains open without input');
+  async function checkRatio(){
+    const box=await frame.$eval('#game',node=>{const r=node.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,viewportWidth:innerWidth,viewportHeight:innerHeight};});
+    assert(Math.abs(box.width/box.height-1.6)<.01,'game canvas retains 640:400 aspect ratio');
+    assert(box.x>=-1&&box.y>=-1&&box.x+box.width<=box.viewportWidth+1&&box.y+box.height<=box.viewportHeight+1,'game canvas fits the viewport');
+  }
+  await checkRatio();
+  await page.setViewport({width:480,height:800});await checkRatio();
+  await page.setViewport({width:1360,height:900});
+  if(!await page.evaluate(()=>!!document.fullscreenElement))await page.click('#fullscreenToggle');
+  await page.waitForFunction(()=>!!document.fullscreenElement,{timeout:5000});
+  await checkRatio();await page.screenshot({path:resolve(out,'solo.png')});
+  await frame.$eval('#game',node=>node.focus());await page.keyboard.press('KeyZ',{delay:100});
+  await frame.waitForFunction(async()=> (await import('./app.js')).managedAPI.health().menu===0,{timeout:5000});
   assert.deepEqual(errors,[]);
   console.log('PASS full Launcher Package Store installation and TH01 solo presentation');
 }catch(error){await page.screenshot({path:resolve(out,'failure.png')});console.error(await page.evaluate(()=>document.body.innerText.slice(-3500)));throw error;}
 finally{await writeFile(resolve(out,'result.json'),JSON.stringify({errors,events},null,2));await browser.close();}
+

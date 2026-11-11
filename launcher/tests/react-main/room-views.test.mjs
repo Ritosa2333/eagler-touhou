@@ -150,6 +150,56 @@ test('TH09 local charge rule defaults on, restores native Replay by room agreeme
   assert.equal(all('#mpDisableLocalChargePriority',m.container).length,0);
   assert.equal('netplayDisableLocalChargePriority' in other.service.runtimeOptions(),false);
 });
+test('TH01 rollback is enabled by default and the host can disable it',async()=>{
+  const f=await fixture({product:'th01mp',locale:'zh-CN'}).live({adonisMode:0});
+  await mountRoom(f,{panel:{kind:'game'}});
+  assert.equal(f.service.getSnapshot().rollbackEnabled,true);
+  assert.equal(n('#mpRollbackToggle').getAttribute('aria-checked'),'true');
+  assert.equal(n('#mpRollbackToggle').hidden,false);
+  assert.equal(f.service.runtimeOptions().netplayAdonisMode,0);
+  await act(()=>f.service.setRollbackEnabled(false));
+  assert.equal(n('#mpRollbackToggle').getAttribute('aria-checked'),'false');
+});
+test('TH01 ball count is host controlled and reaches runtime options',async()=>{
+  const f=await fixture({product:'th01mp',locale:'zh-CN'}).live({adonisMode:1});await mountRoom(f,{panel:{kind:'game'}});
+  assert.equal(f.service.runtimeOptions().netplayBallCount,2);
+  await act(()=>f.service.setRoomSettings({ballCount:6}));assert.equal(f.socket.sent.findLast(m=>m.type==='settings').ballCount,6);
+  await f.receive({ballCount:6,adonisMode:1});assert.equal(f.service.runtimeOptions().netplayBallCount,6);
+  assert.equal(n('.room-workspace-meta .room-challenge-on').textContent,'6 球');
+  await f.receive({ballCount:6,phase:'running',adonisMode:1});assert.equal(n('#mpTh01BallCount').disabled,true);
+  const count=f.socket.sent.length;await act(()=>f.service.setRoomSettings({ballCount:1}));assert.equal(f.socket.sent.length,count);
+});
+test('TH03 focus rule belongs to the host and reaches runtime options',async()=>{
+  const f=await fixture({product:'th03mp',locale:'zh-CN'}).live();await mountRoom(f,{panel:{kind:'game'}});
+  const toggle=n('#mpTh03DisableFocus');assert.equal(toggle.getAttribute('aria-checked'),'false');
+  assert.equal(f.service.runtimeOptions().netplayDisableFocus,true);
+  assert.equal(toggle.getAttribute('aria-label'),'启用低速');
+  await click('#mpTh03DisableFocus');assert.equal(f.socket.sent.findLast(m=>m.type==='settings').disableFocus,false);
+  await f.receive({disableFocus:false});assert.equal(toggle.getAttribute('aria-checked'),'true');
+  assert.equal(f.service.runtimeOptions().netplayDisableFocus,false);
+  assert.equal(n('.room-workspace-meta .room-challenge-on').textContent,'启用低速');
+  await f.receive({disableFocus:false,phase:'running'});assert.equal(toggle.disabled,true);
+  const count=f.socket.sent.length;await act(()=>f.service.setRoomSettings({disableFocus:true}));assert.equal(f.socket.sent.length,count);
+});
+test('TH02 disabling focus is a host-controlled special rule',async()=>{
+  const f=await fixture({product:'th02mp',locale:'zh-CN'}).live();await mountRoom(f,{panel:{kind:'game'}});
+  const toggle=n('#mpTh02DisableFocus');assert.equal(toggle.getAttribute('aria-checked'),'false');
+  assert.equal(f.service.runtimeOptions().netplayDisableFocus,false);
+  await click('#mpTh02DisableFocus');assert.equal(f.socket.sent.findLast(m=>m.type==='settings').disableFocus,true);
+  await f.receive({disableFocus:true});assert.equal(toggle.getAttribute('aria-checked'),'true');
+  assert.equal(f.service.runtimeOptions().netplayDisableFocus,true);
+  assert.equal(n('.room-workspace-meta .room-challenge-on').textContent,'禁用低速');
+  await f.receive({disableFocus:true,phase:'running'});assert.equal(toggle.disabled,true);
+});
+test('TH03 room defaults to Lunatic and host can choose difficulty',async()=>{
+  const f=await fixture({product:'th03mp',locale:'zh-CN'}).enter();
+  assert.equal(f.service.getSnapshot().room.difficulty,3);
+  await act(()=>f.socket.open());await f.receive({difficulty:3,disableFocus:true});
+  await mountRoom(f,{panel:{kind:'game'}});
+  assert.equal(n('#mpRoomDifficultyBadge').textContent,'Lunatic');
+  await click('[data-mp-difficulty="2"]');assert.equal(f.socket.sent.findLast(m=>m.type==='settings').difficulty,2);
+  await f.receive({difficulty:2,disableFocus:true});assert.equal(f.service.runtimeOptions().netplayDifficulty,2);
+});
 test('TH09 auto-save preference reaches only player Runtime options and survives leaving', async () => {
   const f = await fixture({product:'th09mp'}).live();
   // Seat identity is owned by the fixture, not the rendered nickname.
@@ -259,11 +309,10 @@ for (const locale of ['zh-CN', 'en']) test(`All catalog multiplayer products pre
     const config = owners.multiplayerConfigForProduct(product);
     for (const loadout of [0, config.loadouts.length - 1]) {await f.receive({difficulty: config.difficulties.length - 1, seats: [{clientId: f.id, name: 'A', loadout, ready: false}, {clientId: 'peer12345', name: 'B', loadout: -1, ready: false, controlMode: 'cheat'}]}); if (config.inGameSelection) {
       assert.equal(n('#mpRoomDifficultyBadge').textContent, config.difficulties[f.service.getSnapshot().room.difficulty]);
-      assert.equal(all('[data-mp-difficulty]').length,0);
-      assert.equal(all('[data-mp-difficulty]').length,0);
+      assert.equal(all('[data-mp-difficulty]').length,product==='th03mp'?config.difficulties.length:0);
       assert.equal(all('#mpLoadoutPrevSeat, #mpLoadoutNextSeat, #mpLoadoutPrev, #mpLoadoutNext').length,0);
       assert.equal(f.service.runtimeOptions().netplayInGameSelection,true);
-      assert.match(n('#mpRoomSettings').textContent,locale==='zh-CN'?/双方/:/Both players/);
+      if(product!=='th03mp')assert.match(n('#mpRoomSettings').textContent,locale==='zh-CN'?/双方/:/Both players/);
     } else compare(f, {panel: {kind: 'game'}});}
     await m.unmount();
   }
@@ -338,6 +387,17 @@ test('Room settings remain synchronized while owner and phase change', async () 
  await f.receive({seats:[{clientId:'other12345',name:'O',loadout:1},{clientId:f.id,name:'A',loadout:0}]});
  assert.equal(n('#roomWorkspacePanel-game').hidden,false);assert.equal(n('#mpRoomPlayerCount').disabled,true);
  await f.receive();assert.equal(n('#mpRoomPlayerCount').disabled,false);await click('#roomWorkspaceTab-chat');assert.equal(f.service.getSnapshot().roomSettingsOpen,false);
+});
+
+for (const product of ['th02mp', 'th04mp']) test(`${product} challenge settings follow the synchronized room`, async () => {
+ const f=await fixture({product}).live();await mountRoom(f);await click('#roomWorkspaceTab-game');
+ assert.equal(n('#mpRoomChallengeToggle').closest('.room-rule-field').hidden,false);
+ assert.equal(n('#mpPc98InitialSpares').disabled,false);assert.equal(n('#mpPc98InitialBombs').disabled,false);
+ await click('#mpRoomChallengeToggle');assert.equal(f.socket.sent.at(-1).challengeMode,true);
+ await f.receive({challengeMode:true});
+ assert.equal(n('#mpPc98InitialSpares').disabled,true);assert.equal(n('#mpPc98InitialBombs').disabled,true);
+ assert.equal(n('#mpRoomChallengeToggle').getAttribute('aria-checked'),'true');
+ await f.receive({challengeMode:false});assert.equal(n('#mpPc98InitialSpares').disabled,false);assert.equal(n('#mpPc98InitialBombs').disabled,false);
 });
 
 test('Ready/start gates use synchronized occupied seats and check-game calls real preparation/runtime port', async () => {

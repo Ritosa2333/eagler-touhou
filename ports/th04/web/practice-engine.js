@@ -1,17 +1,20 @@
-import {normalizePractice,validatePracticeOptions,phaseList,PRACTICE_RANK_LIMITS} from './practice-config.js';
+import {normalizePractice,validatePracticeOptions,phaseList,PRACTICE_RANK_LIMITS,encodeNativeOptions} from './practice-config.js';
 // TH04 DS offsets from MAIN disassembly/ReC98; never use display/HUD estimates
 // to decide attack completion. TH04 boss_hittest_shots owns phase_frame.
 const limits=PRACTICE_RANK_LIMITS;
 const fixed=[{3:1501,4:601},{3:2001,5:700},{},{},{4:500,7:500,10:500,13:288,16:288,17:1000},{16:2500},{4:192,6:4000}];
 const loops=[{2:16},{2:11,4:11},{3:40},{2:52},{2:4,5:4,8:4,11:4,14:4},{2:10,4:10,8:10,12:10,14:18},{2:36}];
-export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}}){
-  const initial=normalizePractice(config),setup=initial.setup,targeted=initial.mode==='target';let options=initial.options;
+export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{},restarting=false,nativeSetup=false}){
+  const initial=normalizePractice(config),setup=initial.setup;let targeted=initial.mode==='target',options=initial.options;
   let base=-1,d=-1,csBase=-1,resident=-1,initialized=false,ready=false,preparing=targeted,waiting=false,outcome=null,error=null;
-  let frames=0,elapsed=0,misses=0,bombsUsed=0,lastNativeBombs=0,lockedPower=null,warped=false,prepareFrames=0,seenBoss=false,selectedPhase=0,pendingHitCounted=false,seekFinalHp=0,idleBoundaries=0,observedFrames=-1;
+  let frames=0,elapsed=0,misses=0,bombsUsed=0,lastNativeBombs=0,lockedPower=null,warped=false,prepareFrames=0,seenBoss=false,seenGengetsu=false,selectedPhase=0,pendingHitCounted=false,seekFinalHp=0,idleBoundaries=0,observedFrames=-1;
   let effectiveKeys=0,effectiveFocus=0;
-  let entryCleanup=null,redrawFrames=0;
+  let entryCleanup=null,redrawFrames=0,fatal=false;
   const heap=()=>mod.HEAPU8,view=()=>new DataView(heap().buffer),u8=n=>heap()[d+n],u16=n=>view().getUint16(d+n,true),i16=n=>view().getInt16(d+n,true),w8=(n,x)=>{heap()[d+n]=x;},w16=(n,x)=>view().setUint16(d+n,x,true);
   const e=patch.practice.entries,flag=(name,value)=>{heap()[csBase+e[name]]=Number(!!value);};
+  const assistKeys=['invincible','lockLives','lockBombs','lockPower','lockTime','enemyInvincible'];
+  function writeGuestAssists(){if(csBase>=0&&Number.isInteger(e.assistFlags))heap()[csBase+e.assistFlags]=assistKeys.reduce((bits,key,i)=>bits|(options[key]?1<<i:0),0);}
+  function readGuestAssists(){if(csBase<0||!Number.isInteger(e.assistFlags))return;const bits=heap()[csBase+e.assistFlags];for(let i=0;i<assistKeys.length;i++){const key=assistKeys[i],next=!!(bits&(1<<i));if(key==='lockPower'&&next!==options[key])lockedPower=next&&ready?u8(0x4664):null;options[key]=next;}}
   function locate(packed){
     const cs=packed&65535,ds=packed>>>16,h=heap(),v=view();
     if(base>=0){csBase=base+cs*16;d=base+ds*16;return;}
@@ -26,10 +29,11 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
     }
     throw Error('TH04 练习运行实例身份校验失败');
   }
-  function stocks(){if(targeted){heap()[resident+11]=1;heap()[resident+13]=0;}}
+  function stocks(){if(targeted&&preparing&&!Number.isInteger(e.initialPower)){heap()[resident+11]=setup.lives+1;heap()[resident+13]=setup.bombs;}}
   function refreshResources(bits){heap()[csBase+e.resourceDirty]|=bits;}
   function setPower(value){if(u8(0x4664)!==value){w8(0x4664,value);refreshResources(1);}}
   function resources(){
+    if(Number.isInteger(e.initialPower))return;
     stocks();setPower(setup.power);
     // TH04 Dream consists of a pickup count (0..7) and its score cache.
     // Preparation must not carry Dream pickups into the selected entry.
@@ -64,11 +68,13 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
     heap().fill(1,d+0x4700,d+0x4d40);redrawFrames=2;
   }
   function locks(){
+    if(targeted&&nativeSetup)return;
     stocks();if(options.lockPower&&ready){lockedPower??=u8(0x4664);setPower(lockedPower);}
-    if(options.lockRank){const [a,b]=limits[u8(0x4348)]||limits[1];w8(0x5395,Math.max(a,Math.min(b,setup.rank)));}
+    if(options.lockRank&&!(targeted&&nativeSetup)){const [a,b]=limits[u8(0x4348)]||limits[1];w8(0x5395,Math.max(a,Math.min(b,setup.rank)));}
     flag('lockLives',ready&&options.lockLives);flag('unlimitedBombs',ready&&options.lockBombs);flag('enemyLock',ready&&options.enemyInvincible);
   }
   function inputs(){
+    if(targeted&&nativeSetup){effectiveKeys=u16(0x3974);effectiveFocus=u8(0x3976);return;}
     let keys=u16(0x3974);if(preparing||outcome)keys=0;if(options.disableBomb)keys&=~16;if(options.disableShot)keys&=~32;w16(0x3974,keys);effectiveKeys=keys;
     if(options.disableFocus)w8(0x3976,0);else if(options.forceFocus)w8(0x3976,1);effectiveFocus=u8(0x3976);
   }
@@ -92,21 +98,26 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
     const type=active(),phase=u8(type==='mid'?0x53c5:0x53d9),gengetsu=setup.stage===6&&u16(0xbcd0)===0xc7da;
     const wantedGen=setup.stage===6&&setup.branch==='gengetsu';
     const minimum=type==='mid'?(setup.stage===0?3:1):setup.stage===2?3:2;
-    if(!(setup.entry==='stage'||type===setup.entry&&(!wantedGen||gengetsu)&&(setup.phase?phase===setup.phase:phase>=minimum)))return false;
+    if(Number.isInteger(e.targetReached)?!heap()[csBase+e.targetReached]:!(setup.entry==='stage'||type===setup.entry&&(!wantedGen||gengetsu)&&(setup.phase?phase===setup.phase:phase>=minimum)))return false;
     // Preserve the real final-survival HP carried through the preceding kill.
-    if(type==='boss'&&setup.phase&&i16(0x53d6)<=0&&seekFinalHp>0)w16(0x53d6,seekFinalHp);
-    if(setup.entry!=='stage')clearEntryProjectiles();
-    ready=true;preparing=false;waiting=true;selectedPhase=phase;resources();refreshResources(3);clearEntry();
-    if(setup.hp&&type){const at=type==='mid'?0x53c2:0x53d6,max=i16(at),min=type==='mid'?0:i16(0x53e0);w16(at,Math.max(min+1,Math.min(max,setup.hp)));}
-    flag('entryPause',1);elapsed=misses=bombsUsed=0;lastNativeBombs=heap()[resident+50];clock?.setSpeed(options.speed);return true;
+    if(!Number.isInteger(e.targetAdvance)&&type==='boss'&&setup.phase&&i16(0x53d6)<=0&&seekFinalHp>0)w16(0x53d6,seekFinalHp);
+    if(setup.entry!=='stage'){
+      if(Number.isInteger(e.cleanupPending)){
+        if(!Number.isInteger(e.targetReached)){flag('cleanupKeepBits',setup.stage===3&&setup.entry==='boss'&&setup.character<2);flag('cleanupPending',1);}entryCleanup={native:true};
+      }else clearEntryProjectiles();
+    }
+    resources();if(!Number.isInteger(e.targetReached)){if(Number.isInteger(e.arrivalPending))flag('arrivalPending',1);else{heap().fill(0,d+0x4349,d+0x4351);heap().fill(0,d+0x435a,d+0x4362);w8(0x1a66,0);clearEntry();}if(Number.isInteger(e.targetPreparing))flag('targetPreparing',0);flag('entryPause',1);}ready=true;preparing=false;waiting=true;selectedPhase=phase;refreshResources(3);
+    if(setup.hp&&type&&!Number.isInteger(e.initialHp)){const at=type==='mid'?0x53c2:0x53d6,max=i16(at),min=type==='mid'?0:i16(0x53e0);w16(at,Math.max(min+1,Math.min(max,setup.hp)));}
+    elapsed=misses=bombsUsed=0;lastNativeBombs=heap()[resident+50];clock?.setSpeed(options.speed);return true;
   }
   function prepare(){
+    if(nativeSetup&&Number.isInteger(e.targetOutcome)&&heap()[csBase+e.targetOutcome]){preparing=false;ready=true;waiting=false;clock?.setSpeed(options.speed);finish('failed');return;}
     if(++prepareFrames>40000){error='目标准备超时，请改选关卡开头';preparing=false;flag('hold',1);return;}
     if(!warped){
       warped=true;
       // Stage assets/STD are loaded; omit only the unrelated enemy VM. The
       // original dialog still allocates and loads all boss resources.
-      if(setup.entry!=='stage'){
+      if(!Number.isInteger(e.initialEntry)&&setup.entry!=='stage'){
         view().setUint32(d+0x4646,view().getUint32(d+0xbcd0,true),true);
         if(setup.entry==='boss'){w8(0x4277,0);view().setUint32(d+0x46b6,view().getUint32(d+0xbcd0,true),true);w8(0x53c5,255);w16(0x53c2,0);}
         else w16(0x538a,u16(0x53c0));
@@ -115,52 +126,88 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
     const type=active(),phase=u8(type==='mid'?0x53c5:0x53d9),gengetsu=setup.stage===6&&u16(0xbcd0)===0xc7da;
     const wantedGen=setup.stage===6&&setup.branch==='gengetsu';
     if(arrive())return;
-    resources();w8(0x4662,2);w8(0x4669,0);w8(0x466a,0);
+    if(!Number.isInteger(e.initialPower)){resources();w8(0x4662,2);w8(0x4669,0);w8(0x466a,0);}
     if(type==='boss'){
+      // Stage 6 / Extra entrance and HP-fill states have no movement or loads.
+      // Keep frame zero (Mugetsu installs her callbacks there), then let the
+      // original update execute its terminal branch immediately. In particular,
+      // phase 3 installs Mugetsu's next attack callback and cannot be bypassed.
+      if(!Number.isInteger(e.targetAdvance)&&setup.stage>=5){
+        const deadline=phase===0?129:phase===1?64:setup.stage===6&&!gengetsu&&phase===3?64:setup.stage===6&&!gengetsu&&phase===5?128:0;
+        if(deadline&&u16(0x53da)>0&&u16(0x53da)<deadline-1)w16(0x53da,deadline-1);
+        if(gengetsu&&setup.phase>phase){
+          const frame=u16(0x53da);
+          // gengetsu_1F97A: frame one chooses the destination and computes
+          // integer velocity. Frames 2..63 only move by that velocity; frame
+          // 64 clears wave_amp and lets the native attack transition proceed.
+          if(phase>=2&&phase<=5&&u8(0x53dd)===255&&frame>=2&&frame<64){
+            w16(0x53ca,i16(0x53ca)+(64-frame)*i16(0x53d2));w16(0x53da,64);
+          }
+          // gengetsu_1F9C5 snaps both position and distortion at frame 128.
+          // Its hittest increments the clock before the movement callback.
+          if(phase===6&&frame>0&&frame<127)w16(0x53da,127);
+        }
+      }
       // Elly's prelude uses an absolute stage-frame deadline.
-      if(setup.stage===2&&phase===1)w16(0x538a,9240);
+      if(!Number.isInteger(e.targetAdvance)&&setup.stage===2&&phase===1)w16(0x538a,9240);
       const attacks=phaseList({...setup,entry:'boss',branch:gengetsu?'gengetsu':'auto'});
       if(attacks.includes(phase)&&(wantedGen&&!gengetsu||setup.phase>phase)){
-        if(i16(0x53e0)===0&&i16(0x53d6)>0)seekFinalHp=i16(0x53d6);
-        w16(0x53d6,Math.max(0,i16(0x53e0)-1));
+        if(!Number.isInteger(e.targetAdvance)&&i16(0x53e0)===0&&i16(0x53d6)>0)seekFinalHp=i16(0x53d6);
+        if(!Number.isInteger(e.targetAdvance))w16(0x53d6,Math.max(0,i16(0x53e0)-1));
       }
     }
   }
-  function finish(value){if(outcome)return;outcome=value;flag('hold',1);onComplete(status());}
+  function finish(value){if(outcome)return;if(!nativeSetup&&Number.isInteger(e.formValues)&&Number.isInteger(e.formOptions)&&Number.isInteger(e.formHp)){heap().set([setup.stage,setup.character,setup.difficulty,({stage:0,mid:1,boss:2})[setup.entry],setup.phase,setup.lives,setup.bombs,setup.power,setup.branch==='gengetsu'?1:0,setup.rank-4],csBase+e.formValues);heap().set(encodeNativeOptions(options),csBase+e.formOptions);view().setUint16(csBase+e.formHp,setup.hp,true);}outcome=value;if(!nativeSetup)flag('hold',1);onComplete(status());}
   function complete(){
     if(u8(0x5394)!==setup.stage||u8(0x5392)===2)return true;
     const phase=u8(setup.entry==='mid'?0x53c5:0x53d9);
     if(setup.entry==='mid')return setup.phase?phase!==selectedPhase:phase>=254;
     const boss=active()==='boss';if(boss&&u8(0x53d9)>=2)seenBoss=true;
+    if(boss&&u16(0xbcd0)===0xc7da)seenGengetsu=true;
     // Extra whole stage/Boss includes both sisters; Mugetsu's first defeat
     // is a native handoff, not completion of the entire Extra boss range.
     if(setup.phase)return phase!==selectedPhase;
-    if(setup.stage===6&&setup.branch!=='gengetsu')return seenBoss&&u16(0xbcd0)===0xc7da&&phase>=254;
+    if(setup.stage===6&&setup.branch!=='gengetsu')return seenBoss&&seenGengetsu&&phase>=254;
     return seenBoss&&phase>=254;
   }
-  function status(){return {mode:initial.mode,ready,preparing,waiting,outcome,error,frames,elapsed,misses,bombsUsed,options:{...options},setup:{...setup},...(d>=0?{stage:u8(0x5394),phase:u8(0x53d9),midPhase:u8(0x53c5),bossHp:i16(0x53d6),phaseEndHp:i16(0x53e0),midHp:i16(0x53c2),phaseFrame:u16(0x53da),bossUpdate:u16(0xbcd0),midUpdate:u16(0x46b6),power:u8(0x4664),shotLevel:u8(0x4665),shotFunction:u16(0x449a),dream:u16(0xbccc)*10,dreamItems:u8(0x4676),rank:u8(0x5395),keys:effectiveKeys,focus:effectiveFocus,lives:heap()[resident+11]-1,bombs:heap()[resident+13],invincibility:u8(0x4662),missTimer:u8(0x466a),playerHit:u8(0x4669),bombActive:!!u8(0x4368)}:{})};}
+  function liveGuest(){const h=heap(),at=csBase+patch.mailbox_cs_offset;return csBase>=0&&resident>=0&&at>=0&&at+36<=h.length&&resident+80<=h.length&&'TH04SOLOINPUTv1!'.split('').every((c,i)=>h[at+i]===c.charCodeAt(0))&&[1,2].includes(h[at+22])&&'HUMAConfig'.split('').every((c,i)=>h[resident+i]===c.charCodeAt(0))&&h[resident+10]===0&&![0xfd,0xfe,0xff].includes(heap()[resident+48]);}
+  function status(){const live=liveGuest();return {nativeInfo:Number.isInteger(e.infoEnabled),mode:targeted?'target':'full',ready,preparing,waiting,outcome,error,frames,elapsed,misses,bombsUsed,options:{...options},setup:{...setup},...(csBase>=0&&Number.isInteger(e.resultRequest)?{nativeResult:{visible:live&&!!heap()[csBase+e.resultVisible],request:live&&!(Number.isInteger(e.restartPending)&&heap()[csBase+e.resultRequest]===1)?heap()[csBase+e.resultRequest]:0}}:{}),...(resident>=0?{restartSetup:{stage:heap()[resident+15]===4?6:0,difficulty:heap()[resident+15],character:Math.max(0,heap()[resident+18]-48)*2+heap()[resident+25],lives:Math.max(0,heap()[resident+58]-1),bombs:heap()[resident+59]}}:{}),...(csBase>=0&&Number.isInteger(e.formOpen)?{nativeForm:{visible:live&&heap()[csBase+e.formOpen]===2,request:live&&!(Number.isInteger(e.restartPending)&&heap()[csBase+e.formRequest]===1)?heap()[csBase+e.formRequest]:0,values:live?Array.from(heap().subarray(csBase+e.formValues,csBase+e.formValues+10)):[],hp:live?view().getUint16(csBase+e.formHp,true):0,settings:live?Array.from(heap().subarray(csBase+e.formOptions,csBase+e.formOptions+11)):[]}}:{}),...(csBase>=0&&Number.isInteger(e.pauseOpen)?{nativePause:{visible:live&&!!heap()[csBase+e.pauseOpen],choice:live?heap()[csBase+e.pauseOpen+1]:0,request:live?heap()[csBase+e.pauseRequest]:0}}:{}),...(d>=0?{stage:u8(0x5394),phase:u8(0x53d9),midPhase:u8(0x53c5),bossHp:i16(0x53d6),phaseEndHp:i16(0x53e0),midHp:i16(0x53c2),phaseFrame:u16(0x53da),bossUpdate:u16(0xbcd0),midUpdate:u16(0x46b6),power:u8(0x4664),shotLevel:u8(0x4665),shotFunction:u16(0x449a),dream:u16(0xbccc)*10,dreamItems:u8(0x4676),rank:u8(0x5395),keys:effectiveKeys,focus:effectiveFocus,lives:heap()[resident+11]-1,bombs:heap()[resident+13],invincibility:u8(0x4662),missTimer:u8(0x466a),playerHit:u8(0x4669),bombActive:!!u8(0x4368)}:{})};}
   return {
+    exitPractice(){targeted=false;preparing=false;waiting=false;outcome=null;flag('targetPractice',0);if(Number.isInteger(e.targetPreparing))flag('targetPreparing',0);flag('entryPause',0);flag('hold',0);clock?.setSpeed(options.speed);},
+    gameOver(){if(targeted&&!nativeSetup&&ready&&!outcome)finish('failed');},
+    clear(){if(targeted&&!nativeSetup&&ready&&!outcome)finish('clear');},
     observeBoundary(){
       if(!targeted||!initialized||!preparing||error)return;
       const program=mod._emGetRunningProgram&&mod.UTF8ToString?.(mod._emGetRunningProgram());
-      if(program&&!/^MAIN(?:\.EXE)?$/i.test(program))error='目标准备中 MAIN 已退出，请按 F12 改选目标或重新开始';
+      // DOSBox can report the parent OP process while a same-session MAIN
+      // exec is active. Frame progress is the reliable liveness check there.
+      if(!restarting&&program&&!/^MAIN(?:\.EXE)?$/i.test(program))error='目标准备中 MAIN 已退出，请按 F12 改选目标或重新开始';
       if(observedFrames!==frames){observedFrames=frames;idleBoundaries=0;}else if(++idleBoundaries>100000)error='目标准备未能继续，请按 F12 改选目标或重新开始';
       if(error)preparing=false;
     },
-    configure(value){validatePracticeOptions(value,true);if('lockPower'in value&&value.lockPower!==options.lockPower)lockedPower=value.lockPower&&ready?u8(0x4664):null;options={...options,...value};clock?.setSpeed(preparing&&prepareFrames?8:options.speed);},
+    configure(value){validatePracticeOptions(value,true);if('lockPower'in value&&value.lockPower!==options.lockPower)lockedPower=value.lockPower&&ready?u8(0x4664):null;options={...options,...value};writeGuestAssists();if(csBase>=0&&Number.isInteger(e.formOptions)&&!heap()[csBase+e.formOpen])heap().set(encodeNativeOptions(options),csBase+e.formOptions);clock?.setSpeed(preparing&&prepareFrames?8:options.speed);},
     signal(port,packed){
       locate(packed);if(error||heap()[resident+62])return;
       if(port===0x7fe0){
-        if(targeted){heap()[resident+17]=setup.stage;heap()[resident+19]=48+setup.stage;w8(0x5394,setup.stage);}
-        initialized=true;flag('targetPractice',targeted);return;
+        writeGuestAssists();
+        if(!nativeSetup){if(Number.isInteger(e.initialPower)){heap()[csBase+e.initialLives]=setup.lives;heap()[csBase+e.initialBombs]=setup.bombs;heap()[csBase+e.initialPower]=setup.power;const [a,b]=limits[setup.difficulty];heap()[csBase+e.initialRank]=Math.max(a,Math.min(b,setup.rank));flag('targetPreparing',preparing);}if(Number.isInteger(e.initialEntry))heap()[csBase+e.initialEntry]=({stage:0,mid:1,boss:2})[setup.entry];if(Number.isInteger(e.initialPhase)){heap()[csBase+e.initialPhase]=setup.phase;flag('initialGengetsu',setup.branch==='gengetsu');}if(Number.isInteger(e.initialHp))view().setUint16(csBase+e.initialHp,setup.hp,true);if(Number.isInteger(e.initialReimu))flag('initialReimu',setup.character>=2);if(Number.isInteger(e.initialStage))heap()[csBase+e.initialStage]=setup.stage;}
+        heap()[resident+73]=1;w8(0x53a0,1);
+        if(targeted&&!nativeSetup){heap()[resident+17]=setup.stage;heap()[resident+19]=48+setup.stage;w8(0x5394,setup.stage);}
+        initialized=true;if(!nativeSetup)flag('targetPractice',targeted);stocks();return;
       }
       if(!initialized||u8(0x5392)>2)return;
+      readGuestAssists();
       if(port===0x7fe1){
+        if(Number.isInteger(e.infoEnabled)&&Number.isInteger(e.infoValues)){
+          heap()[csBase+e.infoEnabled]=(options.showInfo||options.showKeys)?1:0;
+          if(!(targeted&&nativeSetup)){const info=[misses,bombsUsed,u8(0x4664),u8(0x5395),effectiveKeys],v=view(),p=csBase+e.infoValues;
+          for(const [i,n] of [Math.max(0,heap()[resident+11]-1),heap()[resident+13],info[0],info[1],info[2],Math.max(0,info[3]),Math.floor(elapsed/56.4),options.showKeys?info[4]:0].entries())v.setUint16(p+i*2,Math.max(0,Math.min(65535,n)),true);}
+        }
         frames++;if(!targeted&&!ready){ready=true;lastNativeBombs=heap()[resident+50];}
         // Native midboss activation runs immediately after this callback.
         // A long Boss-only attempt can otherwise cross its original stage
         // deadline and spawn the unrelated midboss on top of the Boss.
-        if(targeted&&setup.entry==='boss')w16(0x53c0,(u16(0x538a)-1)&65535);
+        if(targeted&&setup.entry==='boss'&&!nativeSetup)w16(0x53c0,(u16(0x538a)-1)&65535);
         if(preparing){if(!prepareFrames&&setup.entry!=='stage')clock?.setSpeed(8);prepare();}
         if(redrawFrames){heap().fill(1,d+0x4700,d+0x4d40);redrawFrames--;}
         if(ready&&!waiting&&!outcome)elapsed++;
@@ -172,32 +219,33 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
         // The native pause/dialog can resense held keys after the frame hook.
         // Apply restrictions at the actual player update as well.
         inputs();
-        if(options.lockTime&&ready)timeLock();
+        if(options.lockTime&&ready&&!nativeSetup)timeLock();
         // Player updates precede world collisions in TH04. A pending hit was
         // produced by the preceding native collision (and its bullet removed).
         if(ready&&!outcome&&u8(0x4669)&&u8(0x4662)<=1&&!u8(0x466a)){
-          if(!pendingHitCounted)misses++;if(options.invincible)w8(0x4669,0);
+          if(!pendingHitCounted)misses++;if(options.invincible&&!nativeSetup)w8(0x4669,0);
         }
         pendingHitCounted=false;
         locks();
       }
-      if(port===0x7fe3){if(targeted&&ready&&!outcome&&u8(0x466a)&&!options.lockLives)finish('failed');locks();}
+      if(port===0x7fe3){locks();}
       if(port===0x7fe4){
         const bombs=heap()[resident+50];if(ready&&!outcome)bombsUsed+=(bombs-lastNativeBombs)&255;lastNativeBombs=bombs;locks();
         if(ready&&!outcome){
           // A hit and a phase clear in this same native update fails first.
           if(u8(0x4669)&&u8(0x4662)<=1&&!u8(0x466a)){
             misses++;pendingHitCounted=true;
-            if(options.invincible){w8(0x4669,0);pendingHitCounted=false;}
-            else if(targeted&&!options.lockLives)finish('failed');
+            if(options.invincible&&!nativeSetup){w8(0x4669,0);pendingHitCounted=false;}
+
           }
-          if(targeted&&!outcome&&complete())finish('clear');
+          if(targeted&&!outcome){if(Number.isInteger(e.targetOutcome)){const result=heap()[csBase+e.targetOutcome];if(result)finish(result===1?'clear':'failed');}else{const miss=u8(0x466a),lives=heap()[resident+11];if(miss>0&&miss<=32&&lives<=1)fatal=true;if(lives>1)fatal=false;if(fatal&&!miss&&lives<=1)finish('failed');else if(!miss&&!u8(0x4669)&&complete())finish('clear');}}
         }
       }
       // The state machine has changed phase, but the selected attack has not
       // updated yet. Retire old emitters before gather/items/render run.
-      if(port===0x7fe5&&preparing&&warped&&setup.entry!=='stage')arrive();
+      if(port===0x7fe5&&preparing&&(warped||Number.isInteger(e.targetReached)&&heap()[csBase+e.targetReached])&&(setup.entry!=='stage'||Number.isInteger(e.targetReached)&&heap()[csBase+e.targetReached]))arrive();
+      if(port===0x7fe5&&targeted&&ready&&!waiting&&!outcome){if(Number.isInteger(e.targetOutcome)){const result=heap()[csBase+e.targetOutcome];if(result)finish(result===1?'clear':'failed');}else if(!u8(0x466a)&&!u8(0x4669)&&complete())finish('clear');}
     },
-    get status(){return status();},get debug(){return {base,d,csBase,resident,prepareFrames,entryCleanup};}
+    get status(){return status();},get debug(){const cleanup=entryCleanup?.native&&csBase>=0?Object.fromEntries(['bullets','lasers','gather','items','circles','custom'].map((name,i)=>[name,view().getUint16(csBase+e.cleanupCounts+i*2,true)])):entryCleanup;return {base,d,csBase,resident,prepareFrames,entryCleanup:cleanup};}
   };
 }

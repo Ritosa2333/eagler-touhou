@@ -1,0 +1,161 @@
+{
+  "schema": 1,
+  "sampleRate": 44100,
+  "channels": 1,
+  "source": "Original TH04 PMD FM effects recorded using the shipped DOSBox-X core",
+  "clips": [
+    {
+      "id": 0,
+      "url": "se-00.wav",
+      "bytes": 1808,
+      "sha256": "98074cdda722e0a17eef5425de999392938a6582af4d3af8186d2f6dcde3d8db",
+      "duration": 0.02,
+      "peak": 0,
+      "silent": true
+    },
+    {
+      "id": 1,
+      "url": "se-01.wav",
+      "bytes": 10758,
+      "sha256": "0c09e822dde978fcb57ad77bf529c332f5d7e80c10bdf7f70cab7e2b6597c6ef",
+      "duration": 0.12147392290249433,
+      "peak": 0.11279296875,
+      "silent": false
+    },
+    {
+      "id": 2,
+      "url": "se-02.wav",
+      "bytes": 129640,
+      "sha256": "639403d41f577dfdd130efd1070070ba2b158d3b0d748821a383290a118b40fa",
+      "duration": 1.469342403628118,
+      "peak": 0.46136474609375,
+      "silent": false
+    },
+    {
+      "id": 3,
+      "url": "se-03.wav",
+      "bytes": 64378,
+      "sha256": "18bd603f92085e3414dd45e927172099440c99a7df65294a9215636a4b3741ad",
+      "duration": 0.7294104308390023,
+      "peak": 0.5589599609375,
+      "silent": false
+    },
+    {
+      "id": 4,
+      "url": "se-04.wav",
+      "bytes": 15634,
+      "sha256": "721eaa975da6c09027731340c6297fad9af4d0229b5a28960649f4569604901e",
+      "duration": 0.17675736961451247,
+      "peak": 0.18670654296875,
+      "silent": false
+    },
+    {
+      "id": 5,
+      "url": "se-05.wav",
+      "bytes": 79036,
+      "sha256": "efa7786def920340df0bc229a341cc6a31bad2c08498e3ccb895362e74786672",
+      "duration": 0.8956009070294785,
+      "peak": 0.180511474609375,
+      "silent": false
+    },
+    {
+      "id": 6,
+      "url": "se-06.wav",
+      "bytes": 59528,
+      "sha256": "fb29070be2c3b8162f1ad12d40426fe42a073b88e030ffaa78abaedacaf3986c",
+      "duration": 0.6744217687074829,
+      "peak": 0.54754638671875,
+      "silent": false
+    },
+    {
+      "id": 7,
+      "url": "se-07.wav",
+      "bytes": 108274,
+      "sha256": "a865ff593f892f4436dc76302d202a6f3f957f1aa8dccb462955b557119efd4b",
+      "duration": 1.2270975056689342,
+      "peak": 0.28753662109375,
+      "silent": false
+    },
+    {
+      "id": 8,
+      "url": "se-08.wav",
+      "bytes": 155682,
+      "sha256": "ef8a4def4f4a315a28b5309ddf1dda15c98fd95a6ed2a4bc10bc9473baa89caa",
+      "duration": 1.7646031746031745,
+      "peak": 0.70965576171875,
+      "silent": false
+    },
+    {
+      "id": 9,
+      "url": "se-09.wav",
+      "bytes": 88710,
+      "sha256": "908aada48fdbc87f7a44155aa3237a32b167b6b7f799aaf78af258021750d286",
+      "duration": 1.0052834467120182,
+      "peak": 0.500030517578125,
+      "silent": false
+    },
+    {
+      "id": 10,
+      "url": "se-10.wav",
+      "bytes": 10756,
+      "sha256": "ffd813f38a782835a633d5188b66c860cd59cd404cd008ad5b2b39cee983b31b",
+      "duration": 0.12145124716553288,
+      "peak": 0.1260986328125,
+      "silent": false
+    },
+    {
+      "id": 11,
+      "url": "se-11.wav",
+      "bytes": 119268,
+      "sha256": "321193fcd75a665c94823a3a8237516ef9f7778071ac4d6cd5872abb6b246384",
+      "duration": 1.3517460317460317,
+      "peak": 0.143829345703125,
+      "silent": false
+    },
+    {
+      "id": 12,
+      "url": "se-12.wav",
+      "bytes": 240958,
+      "sha256": "15a337bb709932ef1910a33bb885b038424c0ec381e430155f6990e77f089146",
+      "duration": 2.731451247165533,
+      "peak": 0.83062744140625,
+      "silent": false
+    },
+    {
+      "id": 13,
+      "url": "se-13.wav",
+      "bytes": 311046,
+      "sha256": "b4d84335d6ebfa014e317012ed1dbb4ec5efcc6fbcdcf955fe32227979539e95",
+      "duration": 3.5260997732426302,
+      "peak": 0.557647705078125,
+      "silent": false
+    },
+    {
+      "id": 14,
+      "url": "se-14.wav",
+      "bytes": 46524,
+      "sha256": "c0052442e2cde27634bed3feedd8788cefe43f7b3ae55da6fa6830662e18e9cc",
+      "duration": 0.526984126984127,
+      "peak": 0.3638916015625,
+      "silent": false
+    },
+    {
+      "id": 15,
+      "url": "se-15.wav",
+      "bytes": 20512,
+      "sha256": "63334e27cc878ade274e3b58f1cf0f5530df0a88e9c1d46f577b916f000a19bc",
+      "duration": 0.23206349206349206,
+      "peak": 0.724639892578125,
+      "silent": false
+    },
+    {
+      "id": 16,
+      "url": "se-16.wav",
+      "bytes": 1808,
+      "sha256": "98074cdda722e0a17eef5425de999392938a6582af4d3af8186d2f6dcde3d8db",
+      "duration": 0.02,
+      "peak": 0,
+      "silent": true
+    }
+  ]
+}

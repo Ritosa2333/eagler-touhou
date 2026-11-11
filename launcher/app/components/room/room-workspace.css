@@ -1,4 +1,5 @@
 @layer foundation {
+.room-replay-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
 /* Room layout uses the same surfaces, typography and permanent Player stage as
  * the Replay workspace. Rules stay scoped: native game/fullscreen is unchanged. */
 .room-packet-loss{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}

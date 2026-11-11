@@ -1,4 +1,5 @@
 // Same native runtime and complete checkpoints, with page-owned input/audio.
+import {stable,digest,toBase64} from '../replay/tape.js';
 const send=(message,transfer=[])=>postMessage(message,transfer);
 const audioContext={sampleRate:44100,state:'running',currentTime:0,addEventListener(){},removeEventListener(){},resume:async()=>{},close:async()=>{}};
 let ready,stopped=false,loaded=false,frameSequence=0,replayMusic;
@@ -7,7 +8,7 @@ const transfers=new Set();
 // authoritative inputs while this Worker owns a short native batch.
 const REPLAY_MAX_STEPS=4,REPLAY_BUDGET_MS=6;
 const metrics={captureMs:0,captures:0,stepMs:0,steps:0,replaySteps:0,restoreMs:0,restores:0,confirmMs:0,confirmations:0,hashMs:0,hashes:0,presentMs:0,presentations:0,bitmapMs:0,bitmaps:0,nativeMs:0,nativeSteps:0,nativeMaxMs:0,statusMs:0,queueMs:0,commands:0};
-const slowSteps=[];let detailAt=-Infinity,lastGameAt=-Infinity,lastGameStep=-30;
+const slowSteps=[];let detailAt=-Infinity,lastGameAt=-Infinity,lastGameStep=-6;
 function timed(kind,count,action){const at=performance.now();try{return action();}finally{metrics[kind]+=performance.now()-at;metrics[count]++;}}
 globalThis.th02WorkerHost={canvas:new OffscreenCanvas(640,400),audioContext,
  captureAudioState:()=>({music:replayMusic.capture()}),
@@ -19,7 +20,7 @@ globalThis.th02WorkerHost={canvas:new OffscreenCanvas(640,400),audioContext,
 function status(force=false){const at=performance.now(),r=th02WorkerHost.runtime;
  const value={proof:r.replayProof(),ready:r.readyForRollback(),reason:r.predictionBlockReason(),touch:r.touchContext()};
  if(th02WorkerHost.replayOnly)value.scene=r.replayScene();
- if(force||metrics.steps-lastGameStep>=30||at-lastGameAt>=1000){value.game=r.snapshot();lastGameStep=metrics.steps;lastGameAt=at;}
+ if(force||metrics.steps-lastGameStep>=6||at-lastGameAt>=1000){value.game=r.snapshot();lastGameStep=metrics.steps;lastGameAt=at;}
  // Expensive display percentile sorting and fault detail are observational;
  // keep them out of every step/confirm RPC, while game policy stays current.
  if(at-detailAt>=250){detailAt=at;Object.assign(value,{rollback:r.rollbackInfo(),render:r.renderInfo(),diagnostics:r.diagnosticText(),fault:r.faultReport(),slowSteps:slowSteps.slice()});}
@@ -45,6 +46,14 @@ onmessage=({data})=>{
    timed('stepMs','steps',()=>r.step(data.inputs,{frame:data.frame,replay:data.replay,offlineMask:data.offlineMask}));if(data.replay)metrics.replaySteps++;
    if(data.hash)result=timed('hashMs','hashes',()=>r.checksum());
    if(data.stagePresentation&&!data.replay)present(true);
+  }else if(data.type==='executeBatch'){
+   if(!th02WorkerHost.replayOnly||!Number.isSafeInteger(data.frame)||!Array.isArray(data.rows)||!data.rows.length||data.rows.length>32)throw Error('TH02 观战批次无效');
+   for(let i=0;i<data.rows.length;i++){
+    const row=data.rows[i],frame=data.frame+i;
+    timed('stepMs','steps',()=>r.step(row.inputs,{frame,replay:false,offlineMask:row.offlineMask}));
+    if(r.replayProof()!==row.proof||(row.hash!==null&&stable(r.checksum())!==stable(row.hash)))throw Error('录像模拟校验不一致：第 '+frame+' 步');
+    r.confirm(frame+1);
+   }
   }else if(data.type==='replay-slice'){
    if(!Array.isArray(data.plans)||!data.plans.length||data.plans.length>REPLAY_MAX_STEPS)throw Error('TH02 回滚补算批次无效');
    if(!Number.isSafeInteger(data.frame)||data.frame<0||data.plans.some((plan,index)=>!plan||plan.frame!==data.frame+index||!Array.isArray(plan.inputs)||!Number.isInteger(plan.offlineMask)))throw Error('TH02 回滚补算帧顺序无效');
@@ -64,6 +73,10 @@ onmessage=({data})=>{
    }
    if(data.stagePresentation&&applied&&data.plans[applied-1].end)present(true);
    result={applied,records,blocked,exited,sliceMs:performance.now()-sliceStarted};
+  }else if(data.type==='replaySavePoint'){
+   if(!th02WorkerHost.replayOnly)throw Error('检查点只能由旁观实例生成');
+   const point=await r.replaySave(...data.args);
+   result={frame:point.frame,size:point.bytes.length,sha:await digest(point.bytes),data:toBase64(point.bytes),bytes:point.bytes};
   }else if(data.type==='present')result=present();
   else if(data.type==='stop'){stopped=true;r.stop();return;}
   else {if(typeof r[data.type]!=='function')throw Error('Unknown TH02 worker command');
@@ -74,6 +87,6 @@ onmessage=({data})=>{
   // TH05 sends confirmations in order without waiting for another full state
   // response. Effects still commit only here, on the serial native boundary.
   if(data.type==='confirm'&&data.oneWay){if(result==='exit')send({type:'confirmed-exit'});return;}
-  send({type:'result',id:data.id,result,status:status(['load','start'].includes(data.type)),executionMs:performance.now()-started});
+  send({type:'result',id:data.id,result,status:status(['load','start'].includes(data.type)),executionMs:performance.now()-started},data.type==='replaySavePoint'?[result.bytes.buffer]:[]);
  }).catch(error=>send({type:'error',id:data.id,message:error.stack||String(error)}));
 };

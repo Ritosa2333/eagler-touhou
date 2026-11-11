@@ -6,9 +6,12 @@ import {createRequire} from 'node:module';
 import {spawn} from 'node:child_process';
 import {findChromiumExecutable} from '../../../launcher/lib/chromium-executable.mjs';
 const require=createRequire(new URL('../../../launcher/package.json',import.meta.url)),puppeteer=require('puppeteer-core');
+const {build}=require('esbuild');
+const touchDriver=(await build({entryPoints:[resolve(import.meta.dirname,'../../../launcher/app/services/player-direct-touch.ts')],bundle:true,format:'esm',platform:'browser',write:false})).outputFiles[0].contents;
 const root=resolve(import.meta.dirname,'../../..'),portRoot=resolve(import.meta.dirname,'..'),runtime=resolve(portRoot,'build-eagler'),out=resolve(portRoot,'.cache/browser');
 await mkdir(out,{recursive:true});
-const data=await readFile(resolve(portRoot,'content/th02.data'));
+const split=process.env.PC98_TEST_SPLIT==='1'?await(await import('../../../tools/ports/pc98-split-harness.mjs')).pc98SplitFixture(portRoot,'th02'):null;
+const data=split?.data??await readFile(resolve(portRoot,'content/th02.data'));
 let browser,relay,log='';const sockets=[],errors=[],requests=[],failures=[],results=[];
 const wait=async(check,label,ms=90000)=>{const end=Date.now()+ms;while(Date.now()<end){if(await check())return;await new Promise(r=>setTimeout(r,100));}throw Error(label+' timeout\n'+log);};
 const html=`<!doctype html><style>body{margin:0;background:#111}iframe{width:640px;height:480px;border:0}</style><script>
@@ -19,10 +22,12 @@ window.rpc=(seat,command,fields={})=>new Promise((yes,no)=>{const f=document.get
 const server=createServer(async(req,res)=>{try{
   const path=new URL(req.url,'http://localhost').pathname;
   if(path==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}
+  if(path==='/touch-driver.js'){res.setHeader('Content-Type','text/javascript');res.end(touchDriver);return;}
   if(path==='/data'){res.end(data);return;}
+  if(split&&path.startsWith('/split/')){const index=Number(path.slice(7));if(!Number.isInteger(index)||!split.buffers[index])throw Error('invalid split resource');res.end(split.buffers[index]);return;}
   if(!path.startsWith('/runtime/')){res.writeHead(404).end();return;}
   const file=resolve(runtime,decodeURIComponent(path.slice(9)));if(!file.startsWith(runtime+sep))throw Error('path');
-  res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.wasm':'application/wasm','.css':'text/css','.json':'application/json'})[extname(file)]||'application/octet-stream');res.end(await readFile(file));
+  res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.wasm':'application/wasm','.css':'text/css','.json':'application/json'})[extname(file)]||'application/octet-stream');let bytes=await readFile(file);if(process.env.PC98_TEST_TOUCH==='1'&&path==='/runtime/managed-solo.mjs')bytes=Buffer.concat([bytes,Buffer.from('\nexport function testTouchState(){return readState();}\n')]);res.end(bytes);
 }catch(error){res.writeHead(404).end(error.message);}});
 await new Promise(r=>server.listen(Number(process.env.PC98_TEST_HTTP_PORT||18382),'127.0.0.1',r));
 function connection(url){
@@ -37,20 +42,61 @@ try{
   page.on('request',r=>requests.push(r.url()));page.on('requestfailed',r=>failures.push({url:r.url(),error:r.failure()?.errorText}));
   page.on('response',r=>{if(r.status()>=400)failures.push({url:r.url(),status:r.status()});});
   if(process.env.PC98_TEST_RELAY==='1')await page.evaluateOnNewDocument(()=>{delete window.RTCPeerConnection;});
+  if(process.env.PC98_TEST_AUDIO_RATE_FALLBACK==='1')await page.evaluateOnNewDocument(()=>{
+    const NativeAudioContext=window.AudioContext;
+    window.AudioContext=class extends NativeAudioContext {
+      constructor(options){if(options?.sampleRate===44100)throw new DOMException('unsupported sample rate','NotSupportedError');super({sampleRate:48000});}
+    };
+  });
   page.on('console',m=>{if(m.type()==='error')console.error('CONSOLE',m.text());});
   const load=async(count,mp)=>{
     await page.goto('http://127.0.0.1:'+server.address().port);
     await page.evaluate(({count,mp})=>{for(let i=0;i<count;i++)addRuntime(i,mp);},{count,mp});
     await wait(async()=>{const result=await page.evaluate(count=>({ready:events.filter(e=>e.event==='ready').length===count,errors:events.filter(e=>e.event==='error')}),count);if(result.errors.length)throw Error(JSON.stringify(result.errors));return result.ready;},'Runtime ready');
+    if(split)await page.evaluate(async({count,resources})=>{for(let seat=0;seat<count;seat++)for(let i=0;i<resources.length;i++){const f=resources[i],blob=await(await fetch('/split/'+i)).blob(),url=URL.createObjectURL(blob);try{await rpc(seat,'resources',{resources:[{url,path:f.target,bytes:f.bytes,sha256:f.sha256}]});}finally{URL.revokeObjectURL(url);}}},{count,resources:split.resources});
+  };
+  const installTouch=async()=>page.evaluate(async()=>{
+    document.getElementById('testTouchSurface')?.remove();
+    const frame=document.getElementById('p0'),r=frame.getBoundingClientRect();
+    const surface=document.createElement('div');surface.id='testTouchSurface';
+    Object.assign(surface.style,{position:'absolute',left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px',zIndex:'999',touchAction:'none'});document.body.append(surface);
+    const {bindPlayerDirectTouch}=await import('/touch-driver.js');
+    bindPlayerDirectTouch({surface,frame,ios:false,allowed:()=>true,zoom:{isActive:()=>false},context:()=>({target:frame.contentWindow,targetOrigin:location.origin,protocol:'eagler-touhou/1',game:'th02',epoch:1,launched:true,ready:true,spectator:false})});
+    frame.contentWindow.focus();
+  });
+  const dragTouch=async(startX,endX)=>{
+    await installTouch();const cdp=await page.createCDPSession();
+    const send=(type,x)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x,y:240,id:1}]});
+    await send('touchStart',startX);
+    // A real change of focus across the iframe must not cancel hosted touch.
+    await page.evaluate(()=>{const b=document.createElement('button');document.body.append(b);b.focus();b.remove();});
+    for(let i=1;i<=8;i++){await send('touchMove',startX+(endX-startX)*i/8);await new Promise(r=>setTimeout(r,100));}
+    await send('touchEnd',endX);await cdp.detach();
   };
   if(!process.argv.includes('--net-only')){
     await load(1,false);console.log('SOLO ready');
     await page.evaluate(()=>rpc(0,'configure',{music:'ogg',options:{touchEnabled:true,touchSensitivity:150,alwaysHitbox:true}}));
     await page.evaluate(()=>rpc(0,'launch'));console.log('SOLO launch acknowledged');
     await wait(()=>page.evaluate(()=>events.some(e=>e.event==='first-frame')),'solo presentation');
+    if(process.env.PC98_TEST_TOUCH==='1'){
+      const frame=page.frames().find(f=>f.url().includes('runtimeEpoch=1'));
+      const state=()=>frame.evaluate(async()=>(await import('./managed-solo.mjs')).testTouchState());
+      for(let i=0;i<40;i++){
+        if((await state())?.mode===1)break;
+        await page.evaluate(()=>rpc(0,'direct-touch',{type:'down',id:7,x:.5,y:.5}));await new Promise(r=>setTimeout(r,100));
+        await page.evaluate(()=>rpc(0,'direct-touch',{type:'up',id:7,x:.5,y:.5}));await new Promise(r=>setTimeout(r,400));
+      }
+      await wait(async()=>{const s=await state();return s?.mode===1&&s.ticks>60&&!s.hit&&s.x>0;},'touch gameplay',90000);
+      await new Promise(r=>setTimeout(r,2000));const before=await state();
+      await dragTouch(256,333);await new Promise(r=>setTimeout(r,400));
+      const after=await state();console.log('SOLO touch position',before,after);assert.notEqual(after?.x,before?.x,'touch drag moves the native solo player');
+      await frame.evaluate(()=>{const bridge=globalThis.__eaglerDirectInputBridge;for(const [type,x] of [['down',.6],['move',.45],['up',.45]])assertBridge(bridge.submit({protocol:'eagler-touhou/1',game:'th02',epoch:1,command:'direct-touch',type,id:9,x,y:.5}));function assertBridge(ok){if(!ok)throw Error('touch bridge refused input');}});
+      await new Promise(r=>setTimeout(r,400));const quick=await state();assert.ok(quick.x<after.x,'a swipe released before the next sample still moves the player');
+      const preserved=await frame.evaluate(()=>{const b=globalThis.__eaglerDirectInputBridge,base={protocol:'eagler-touhou/1',game:'th02',epoch:1};b.submit({...base,command:'keyboard',code:'KeyZ',key:'z',keyCode:90,down:true});b.submit({...base,command:'touch-cancel'});const bits=globalThis.__eaglerPC98Input.sample();b.submit({...base,command:'keyboard',code:'KeyZ',key:'z',keyCode:90,down:false});return bits;});assert.ok(preserved&32,'touch cancellation keeps a held keyboard action');
+    }
     await page.screenshot({path:resolve(out,'solo.png')});
     const frame=page.frames().find(f=>f.url().includes('runtimeEpoch='));
-    const health=await frame.evaluate(async()=>{const m=await import('./solo.js');return m.managedAPI.health();});
+    const health=await frame.evaluate(async()=>{const m=await import('./managed-solo.mjs');return m.managedAPI.health();});
     assert(health.frames>0);results.push({solo:health});console.log('SOLO presented',health.frames);
     await page.evaluate(()=>rpc(0,'sync'));const saved=await page.evaluate(()=>rpc(0,'list'));
     assert(saved.files.some(file=>file.path==='HUUHI.DAT'),'native score must be exported');
@@ -71,15 +117,31 @@ try{
     for(let seat=0;seat<count;seat++)await lobbies[seat].send({type:'set-ready',ready:true,runtimeGeneration:generation},m=>m.room?.seats[seat]?.ready||m.type==='error');
     const start=await lobbies[0].send({type:'start',adonisMode:process.env.PC98_TEST_ROLLBACK==='1'?0:1},m=>m.type==='start'||m.type==='error');
     await page.evaluate(async({count,room,relayPort,serial,generation,rollback})=>Promise.all(Array.from({length:count},async(_,s)=>{
-      await rpc(s,'configure',{music:'ogg',options:{netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,run:String(serial),member:'pc98-private-'+s,runtimeGeneration:generation}),netplayPlayer:s,netplayPlayerCount:count,netplayDifficulty:1,netplaySeed:1234,netplayAdonisMode:rollback?0:1,netplayLoadouts:Array.from({length:count},(_,i)=>({character:0,shot:i%3}))}});await rpc(s,'launch');
+      await rpc(s,'configure',{music:'ogg',options:{touchEnabled:true,touchSensitivity:150,netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,run:String(serial),member:'pc98-private-'+s,runtimeGeneration:generation}),netplayPlayer:s,netplayPlayerCount:count,netplayDifficulty:1,netplaySeed:1234,netplayAdonisMode:rollback?0:1,netplayLoadouts:Array.from({length:count},(_,i)=>({character:0,shot:i%3}))}});await rpc(s,'launch');
     })),{count,room,relayPort,serial:start.serial,generation,rollback:process.env.PC98_TEST_ROLLBACK==='1'});console.log('MP launch acknowledged');
     const frames=()=>page.frames().filter(f=>/th02.html\?runtimeEpoch=/.test(f.url()));
     const health=()=>Promise.all(frames().map(f=>f.evaluate(async()=>{const {managedAPI}=await import('./netplay/room.js');return managedAPI.health();})));
     await wait(async()=>{const errors=await page.evaluate(()=>events.filter(e=>e.event==='error'));if(errors.length)throw Error(JSON.stringify(errors));const states=await health();return states.length===count&&states.every(s=>s.running&&s.confirmed>=120&&s.frames>0);},'MP confirmed gameplay',120000);
+    if(process.env.PC98_TEST_FOCUS_SYNC==='1')await page.evaluate(()=>rpc(0,'keyboard',{code:'ShiftLeft',down:true}));
     await page.evaluate(async count=>{for(let s=0;s<count;s++)await rpc(s,'keyboard',{code:s%2?'ArrowLeft':'ArrowRight',down:true});},count);
     const before=(await health())[0].confirmed;
     await wait(async()=>(await health()).every(s=>s.confirmed>=before+360),'moving players remain synchronized',30000);
     await page.evaluate(async count=>{for(let s=0;s<count;s++)await rpc(s,'keyboard-clear');},count);
+    if(process.env.PC98_TEST_INPUT_LATENCY==='1'){
+      const f=frames()[0],position=async()=>(await f.evaluate(async()=>(await import('./netplay/room.js')).managedAPI.sampleGame()))?.players?.[0]?.x;
+      await wait(async()=>Number.isFinite(await position()),'latency player state');const samples=[];
+      for(let i=0;i<5;i++){const before=await position(),code=before>200?'ArrowLeft':'ArrowRight',started=performance.now();
+        await page.evaluate(code=>rpc(0,'keyboard',{code,down:true}),code);const deadline=performance.now()+10000;while(await position()===before){if(performance.now()>deadline)throw Error('input response timeout');await new Promise(r=>setTimeout(r,5));}
+        samples.push(performance.now()-started);await page.evaluate(code=>rpc(0,'keyboard',{code,down:false}),code);await new Promise(r=>setTimeout(r,150));}
+      console.log('INPUT RESPONSE TH02 (RPC to observed native position, ms)',JSON.stringify(samples));
+    }
+    if(process.env.PC98_TEST_TOUCH==='1'){
+      const position=async()=>{const s=await frames()[0].evaluate(async()=>(await import('./netplay/room.js')).managedAPI.sampleGame());return s?.players?.[0]?.x;};
+      await wait(async()=>Number.isFinite(await position()),'native player state',30000);const before=await position();
+      await dragTouch(384,288);
+      await wait(async()=>(await position())<before,'launcher touch drag moves multiplayer player',15000);
+      console.log('PASS TH02 multiplayer short swipe');
+    }
     const states=await health();await page.screenshot({path:resolve(out,'multiplayer.png')});
     const route=process.env.PC98_TEST_RELAY==='1'?'relay':'rtc';
     assert(log.includes('mode='+route),'must exercise the requested '+route+' route: '+log);

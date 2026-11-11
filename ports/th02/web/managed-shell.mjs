@@ -1,3 +1,6 @@
+import {setManagedBgmVersion} from './bgm-version.js';
+import {createPc98SpectatorPublisher} from './pc98-spectator-publisher.mjs';
+import {mountGameFps} from './pc98-game-fps.mjs';
 import {ManagedContent,installManagedWorkers} from './managed-data.mjs';
 import {managedInput} from './managed-input.mjs';
 import {openUserFiles,userPath} from './managed-storage.mjs';
@@ -12,11 +15,13 @@ const emit=payload=>parent.postMessage({protocol,game,epoch,...payload,
 const multiplayer=query.get('runtimeVariant')==='multiplayer';
 let ready=false,configured=false,launched=false,options={},music='ogg',language='ja',api,preview,store,launchSerial=0,firstFrame=false;
 const input=managedInput({game,epoch,active:()=>launched,options:()=>options});
+globalThis.__eaglerPC98SpectatorPublisher=createPc98SpectatorPublisher;
 globalThis.__eaglerPC98Input=input;globalThis.__eaglerPC98Emit=emit;globalThis.__eaglerPC98Options=()=>options;
 function live(message){
   switch(message.command){
     case 'keyboard':if(typeof message.code!=='string'||typeof message.down!=='boolean')throw Error('键盘输入无效');input.key(message);break;
-    case 'keyboard-clear':case 'touch-cancel':input.clear();break;
+    case 'keyboard-clear':input.clearKeyboard();break;
+    case 'touch-cancel':input.cancelTouch();break;
     case 'touch-controls':input.touch(message);break;
     case 'direct-touch':input.pointer(message);break;
     default:return false;
@@ -28,7 +33,7 @@ globalThis.__eaglerPC98FileCommands=async message=>{
   if(message.command==='list')return {files:[...store.memory].map(([path,bytes])=>({path,size:bytes.byteLength}))};
   const path=userPath(message.path);
   if(message.command==='read'){const bytes=store.memory.get(path);if(!bytes)throw Error('文件不存在');return {bytes:Array.from(bytes)};}
-  if(launched)throw Error('请退出游戏后管理文件');
+  if(launched&&!(options.replayViewer&&path.startsWith('replay/')))throw Error('请退出游戏后管理文件');
   if(message.command==='remove'){await store.remove(path);return {};}
   if(message.command==='write'){
     if(!Array.isArray(message.bytes)||message.bytes.some(n=>!Number.isInteger(n)||n<0||n>255))throw Error('用户文件字节无效');
@@ -37,6 +42,7 @@ globalThis.__eaglerPC98FileCommands=async message=>{
     await store.write(path,bytes);return {};
   }throw Error('用户文件操作无效');
 };
+let playerApi,content;
 let queue=Promise.resolve();
 async function command(message){
   if(!ready)throw Error('游戏资源尚未就绪');
@@ -51,28 +57,32 @@ async function command(message){
       if(message.options!==undefined&&(!message.options||typeof message.options!=='object'||Array.isArray(message.options)))throw Error('运行配置无效');
       const next={...message.options};
       if(next.touchSensitivity!==undefined&&(!Number.isFinite(next.touchSensitivity)||next.touchSensitivity<100||next.touchSensitivity>300))throw Error('触控灵敏度无效');
-      if(next.netplaySpectator||next.replayViewer)throw Error('此接入预览尚未启用多人观战与录像工作台');
+      if(multiplayer&&next.replayViewer)throw Error('此接入预览尚未启用多人观战与录像工作台');
+      if(next.musicSource!==undefined&&!['original','akyu'].includes(next.musicSource))throw Error('音乐音源无效');
+      setManagedBgmVersion(next.musicSource??'original');
       const nextLanguage=message.language??'ja';if(nextLanguage!==language)preview?.stop();
       options=next;music=message.music;language=nextLanguage;configured=true;
       globalThis.Module ??= {}; globalThis.Module.eaglerOptions=options;
       return {};
     }
-    case 'resources':if(!Array.isArray(message.resources)||message.resources.length)throw Error('此资源包已包含运行所需的资源');return {};
+    case 'resources':await content.addResources(message.resources);return {};
     case 'prepare-room':if(!multiplayer||!configured||launched)throw Error('房间预载状态无效');return preview.prepare(language);
     case 'launch':
       if(!configured||launched)throw Error('游戏启动状态无效');
-      if(multiplayer&&options.multiplayerPreflight){
+      if(multiplayer&&options.multiplayerPreflight&&!options.netplaySpectator){
         launchSerial=message.launchSerial??0;
         await preview.prepare(language);launched=true;firstFrame=true;
         emit({event:'runtime-info',renderer:'DOSBox-X / PC-98',architecture:'wasm',version:'pc98-managed-preview/1'});
         emit({event:'first-frame',launchSerial});return {};
       }
       preview?.stop();launchSerial=message.launchSerial??0;firstFrame=false;launched=true;
-      try{await api.start({options,music,language});}catch(error){launched=false;api.stop();throw error;}
+      api=multiplayer&&options.netplaySpectator?(await import('./pc98-managed-spectator.mjs')).createManagedSpectator('02',emit):playerApi;
+      try{await api.start({options,music,language});}catch(error){launched=false;await api.stop();throw error;}
       emit({event:'runtime-info',renderer:'DOSBox-X / PC-98',architecture:'wasm',version:'pc98-managed-preview/1'});return {};
-    case 'network-cancel':await api.files({command:'sync'});input.clear();preview?.stop();api.stop();launched=false;emit({event:'exit',code:0});return {};
+    case 'network-cancel':await api.files({command:'sync'});input.clear();preview?.stop();await api.stop();launched=false;emit({event:'exit',code:0});return {};
     case 'list':case 'read':case 'write':case 'remove':case 'sync':return api.files(message);
     case 'playback':return api.playback(message);
+    case 'spectator-playback':if(!options.netplaySpectator)throw Error('当前不是观战模式');return api.playback(message);
     default:throw Error('未支持的运行命令：'+message.command);
   }
 }
@@ -88,21 +98,20 @@ try{
   const provider=parent.__eaglerPrepareManagedRuntimeDataV1;
   if(typeof provider!=='function')throw Error('启动器未提供游戏资源');
   const result=await provider.call(parent,{game,generation:query.get('gameGeneration'),epoch});
-  const content=await ManagedContent.open(result.buffer,game),base=new URL('.',location.href).href;
+  content=await ManagedContent.open(result.buffer,game);const base=new URL('.',location.href).href;
   content.install(globalThis,base);installManagedWorkers(globalThis,content,base);
   store=globalThis.__eaglerPC98Files=await openUserFiles({multiplayer});
   if(multiplayer){
-    const html=await(await fetch('./managed-room.html')).text(),source=new DOMParser().parseFromString(html,'text/html');
-    for(const link of source.querySelectorAll('link[rel="stylesheet"]'))document.head.append(link.cloneNode());
-    document.body.replaceChildren(...source.body.childNodes);
-    const style=document.createElement('style');style.textContent='body>*:not(#game):not(#status){display:none!important}#status{position:absolute;bottom:0;z-index:1}#game{position:fixed;inset:0}.player-stage{position:relative;width:100%;height:100%}.player-stage iframe{width:100%;height:100%;border:0}.player-toolbar,.player-actions,.player-movement,.player-note,[class^="touch-"],[data-layout-control],.room-ui-return{display:none!important}';document.head.append(style);
+    const {mountManagedRoom}=await import('./managed-room-layout.mjs');mountManagedRoom();
     api=(await import('./netplay/room.js')).managedAPI;preview=titlePreview(document.querySelector('#game .player-stage'));
-  }else api=(await import('./solo.js')).managedAPI;
+  }else api=(await import('./managed-solo.mjs')).managedAPI;
+  playerApi=api;
+  const fps=mountGameFps();
   ready=true;emit({event:'ready',saveRoot:'/savesth02'+(multiplayer?'mp':''),roomPreview:multiplayer});
   let lastFrames=0,lastAt=performance.now(),lastHealth=0;
   setInterval(()=>{
-    if(!launched||options.multiplayerPreflight)return;
-    const health=api.health(),now=performance.now();
+    if(!launched||options.multiplayerPreflight&&!options.netplaySpectator)return;
+    const health=api.health(),now=performance.now();fps.update(health.gameFrame,now);
     if(!firstFrame&&health.frames>0){firstFrame=true;emit({event:'first-frame',launchSerial});}
     if(now-lastHealth<1000)return;lastHealth=now;
     emit({event:'frame-health',fps:(health.frames-lastFrames)*1000/(now-lastAt),frameMs:health.frameMs??0});

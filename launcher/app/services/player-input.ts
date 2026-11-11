@@ -89,7 +89,7 @@ export function bindPlayerInput({session, document, window, translate: t}: {sess
     getBaseOffset: () => ({x: (profile()?.viewport.x ?? 0) * player.clientWidth, y: 0}), getResetLabel: () => t('action.reset'),
     isAvailable: () => !!session.getActiveSettings()?.options.magnifierEnabled && (session.mobile || window.navigator.maxTouchPoints > 0) && runtime.getSnapshot().launched && !editing(), minScale: 1, maxScale: 3});
   const refocus = () => {if (document.activeElement !== frame) frame.focus({preventScroll: true});};
-  const touch = createPlayerTouch({runtime, fireState: session.touchFireState, getSettings: session.getActiveSettings, editing, playerOpen: () => session.getSnapshot().playerOpen,
+  const touch = createPlayerTouch({runtime, fireState: session.touchFireState, getSettings: session.getActiveSettings, editing, controlsBlocked:()=>player.classList.contains('browser-practice-open'), playerOpen: () => session.getSnapshot().playerOpen,
     iosWebKitTouch: ios, refocus, zoom, document, window, elements: {frame, directSurface,
       fire: element('touchFire'), focus: element('touchFocus'), functionKey: element('touchFunction'), escape: element('touchEscape'), bomb: element('touchBomb'), restart: element('touchRestart'),
       joystick: element('touchJoystick'), joystickKnob: element('touchJoystickKnob'), thpracBackspace: element('touchThpracBackspace'), thpracKeys: [...player.querySelectorAll<HTMLElement>('[data-thprac-key]')]}});
@@ -116,7 +116,7 @@ export function bindPlayerInput({session, document, window, translate: t}: {sess
       if (next) zoom.bindInputWindow(next.target as Window);
     }
     if (snapshot.phase === 'launching' && snapshot.epoch !== requestedEpoch) {requestedEpoch = snapshot.epoch; keyboard.startFocusRelay();}
-    if (snapshot.launched && snapshot.epoch !== startedEpoch) {startedEpoch = snapshot.epoch; zoom.applyTransform(1, 0, 0); touch.syncControls(); keyboard.startFocusRelay(); fullscreen();}
+    if (snapshot.launched && snapshot.epoch !== startedEpoch) {startedEpoch = snapshot.epoch; if (session.getActiveSettings()?.gameId === 'th03') touch.resetTh03Fire(); zoom.applyTransform(1, 0, 0); touch.syncControls(); keyboard.startFocusRelay(); fullscreen();}
     if (!snapshot.launched) startedEpoch = null; if (!snapshot.ready) requestedEpoch = null;
     zoom.refreshUi();
   }

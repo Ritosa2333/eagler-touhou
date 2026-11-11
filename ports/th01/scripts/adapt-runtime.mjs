@@ -9,6 +9,7 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
     text=text.slice(0,start)+`function loadScores(){
       const saved=globalThis.__eaglerPC98Files.memory.get('scores.dat');
       if(saved){if(saved.length!==core.th_score_size())throw Error('TH01 成绩文件大小无效');new Uint8Array(core.memory.buffer,core.th_score_data(),saved.length).set(saved);core.th_score_load(saved.length);}
+      else{const bytes=new Uint8Array(core.memory.buffer,core.th_score_data(),core.th_score_size());if(bytes.length!==812)throw Error('TH01 成绩格式不匹配');for(let at=8;at<808;at+=20)bytes.fill(0,at,at+12);let hash=2166136261;for(let i=0;i<808;i++)hash=Math.imul(hash^bytes[i],16777619);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setUint32(808,hash>>>0,true);if(!core.th_score_load(bytes.length))throw Error('TH01 初始成绩初始化失败');}
       scoreRevision=core.th_get(110,0);formalScores=new Uint8Array(core.memory.buffer,core.th_score_data(),core.th_score_size()).slice();
     }
     function saveScores(){const revision=core.th_get(110,0);if(revision===scoreRevision)return;scoreRevision=revision;
@@ -20,8 +21,9 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
     text=replaceOnce(text,'function buttons(){','function nativeButtons(){','native input sampling');
     text=replaceOnce(text,'if(configuring){last=now;','managedMenuInput();if(configuring){last=now;','managed menu input');
     text=replaceOnce(text,'drawMs+=performance.now()-start;++draws;','drawMs+=performance.now()-start;++draws;++managedFrames;','render health');
+    text=replaceOnce(text,"if(!event.repeat&&(event.code==='KeyZ'||event.code==='Enter')&&(paused||core?.th_get(0,0)===2)){","if(!event.repeat&&(event.code==='KeyZ'||event.code==='Enter')&&core?.th_get(0,0)===2&&!managedResultReady()){event.preventDefault();return;}\n  if(!event.repeat&&(event.code==='KeyZ'||event.code==='Enter')&&(paused||core?.th_get(0,0)===2)){",'protect result presentation');
     text=replaceOnce(text,"window.addEventListener('blur',()=>{if(core&&started&&!configuring)setPaused(true);});","window.addEventListener('blur',release);",'hosted focus release');
-    text=replaceOnce(text,'else if(action===3||action===4){paused=true;stopEffects();release();}',"else if(action===3||action===4){paused=true;stopEffects();release();if(action===3)void managedExit();}",'managed room exit');
+    text=replaceOnce(text,'else if(action===3||action===4){paused=true;stopEffects();release();}',"else if(action===3||action===4){paused=true;stopEffects();release();if(action===3){nativeRecorder?.finish('退出');nativeRecording=null;nativeReplayFinished=true;core.th_menu_open(1,$('compensation').checked?1:0);}}",'managed return to title');
     text=text.replace("const dialog=$('solo-replay-dialog');\n  if(dialog){","const dialog=null;\n  if(dialog){");
     return text;
   });
@@ -29,21 +31,22 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
   await patch('netplay/session.js',text=>{
     text=replaceOnce(text,"import {createRelay} from './relay.js';","import {createManagedTransport} from '../managed-transport.mjs';\nconst createRelay=(_identity,_generation,roles,fail)=>createManagedTransport(globalThis.__eaglerPC98Options(),roles,fail);",'main transport');
     text=replaceOnce(text,"if(this.identity.role==='host')this.recorder.connectNetwork",'if(false)this.recorder.connectNetwork','standalone replay service');
-    text=replaceOnce(text,"if(this.sawGameplay&&nativeState?.menu===1){this.fail(Error('已返回标题，本局结束。'),false);return;}","if(this.sawGameplay&&nativeState?.menu===1){void globalThis.__eaglerPC98RoomEnd();return;}",'confirmed native room exit');
+    text=replaceOnce(text,"if(this.sawGameplay&&nativeState?.menu===1&&this.queue.frame<=this.queue.confirmed){this.fail(Error('已返回标题，本局结束。'),false);return;}","if(this.sawGameplay&&nativeState?.menu===1&&this.queue.frame<=this.queue.confirmed){void globalThis.__eaglerPC98RoomEnd();return;}",'confirmed native room exit');
     return text;
   });
-  await patch('netplay/app.js',text=>{
-    text=replaceOnce(text,'function sample(){let v=','function legacySample(){let v=','managed input');
-    text=replaceOnce(text,'async function post(action,data={}){',"async function post(action,data={}){throw Error('房间由主项目管理：'+action);",'legacy API guard');
-    text=replaceOnce(text,"async function returnToRoom(reason='本局已结束，可重新准备。',snapshot=null){","async function returnToRoom(reason='本局已结束，可重新准备。',snapshot=null){return managedAPI.end(reason);",'main room return');
-    text=replaceOnce(text,'async function poll(){','async function poll(){return;','legacy poll');
-    text=replaceOnce(text,"fetch('/api/network'", "if(false)fetch('/api/network'",'legacy service check');
-    text=replaceOnce(text,'setInterval(poll,250);','// hosted main-room lifecycle','legacy polling timer');
-    text=replaceOnce(text,"if(identity)navigator.sendBeacon",'if(false)navigator.sendBeacon','legacy leave');
-    text=text+'\n'+managedRoomApi;
-    return text;
+  await writeFile(resolve(output,'netplay/app.js'),`import {NetSession} from './session.js';
+const $=id=>document.getElementById(id),roles=['host','guest','guest2'];
+let identity,room,session,returningTask=null;
+const status=()=>{},render=()=>{};
+const post=()=>{throw Error('房间由主项目管理');};
+function clear(){globalThis.__eaglerPC98Input.clear();}
+$('canvas').addEventListener('pointerdown',()=>{$('canvas').focus();void session?.game.unlockAudio().catch(()=>{});});
+addEventListener('pagehide',()=>session?.close());
+${managedRoomApi}`);
+  await patch('netplay/runtime.js',text=>{
+    text=replaceOnce(text,"localStorage.setItem('th01-native-net-scores-v1',btoa(String.fromCharCode(...data)));","void globalThis.__eaglerPC98Files.write('scores.dat',data);",'managed network score file');
+    return replaceOnce(text,'await this.startRenderer(module,rendererSource);','// Render against the live core framebuffer.','managed native renderer');
   });
-  await patch('netplay/runtime.js',text=>replaceOnce(text,"localStorage.setItem('th01-native-net-scores-v1',btoa(String.fromCharCode(...data)));","void globalThis.__eaglerPC98Files.write('scores.dat',data);",'managed network score file'));
   await patch('netplay/runtime-worker-client.js',text=>replaceOnce(text,"localStorage.setItem('th01-native-net-scores-v1',btoa(String.fromCharCode(...result.scores)));","void globalThis.__eaglerPC98Files.write('scores.dat',new Uint8Array(result.scores));",'managed worker score file'));
   await writeFile(resolve(output,'room-title-worker.js'),`onmessage=async({data})=>{try{const core=(await WebAssembly.instantiate(data.module,{})).exports;core.th_init(1,1,0x12345678,0);core.th_menu_open(1,0);core.th_render();data.canvas.getContext('2d',{alpha:false}).putImageData(new ImageData(new Uint8ClampedArray(core.memory.buffer,core.th_pixels(),640*400*4),640,400),0,0);postMessage({type:'ready'});}catch(error){postMessage({type:'error',message:error.message});}};`);
   await patch('replay/audio.js',text=>{
@@ -54,10 +57,10 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
   await patch('site.css',text=>text.replace("url('assets/launcher-background.webp')",'none'));
   await patch('bgm-version.js',text=>text.replace(/export async function loadMidiTracks\(signal\)\{[\s\S]*?\n\}/,"export async function loadMidiTracks(){return {};}"));
   for(const name of await files(resolve(port,'web')))if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')){await copyFile(resolve(port,'web',name),resolve(output,name));runtime.push(name);}
-  for(const name of ['directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs']){await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
+  for(const name of ['pc98-spectator-audio.mjs','pc98-spectator-channel.mjs','pc98-spectator-publisher.mjs','pc98-local-spectator.mjs','pc98-match-index.mjs','pc98-managed-spectator.mjs','directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs']){await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
   const strip=text=>text.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'');
-  await writeFile(resolve(output,'managed-room.html'),strip(await readFile(resolve(web,'lan.html'),'utf8')));runtime.push('managed-room.html');
   let html=strip(await readFile(resolve(web,'solo.html'),'utf8'));
-  html=html.replace('</head>',`<style>html,body{margin:0;background:#000}#site-header,main>:not(#player),.diagnostics{display:none!important}main{margin:0;padding:0}#player{position:fixed;inset:0;border:0;padding:0;margin:0}#player>:not(#stage),#touch{display:none!important}#stage{width:100%;height:100%;max-height:none;aspect-ratio:auto}#game{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}</style><script type="module" src="managed-shell.mjs"></script></head>`);
+  html=html.replace(/<body([^>]*)>([\s\S]*?)<\/body>/,(_match,attributes,body)=>`<body${attributes}><template id="solo-content">${body}</template><script>const template=document.getElementById('solo-content');if(new URLSearchParams(location.search).get('runtimeVariant')!=='multiplayer')document.body.append(template.content.cloneNode(true));template.remove();</script></body>`);
+  html=html.replace('</head>',`<style>html,body{margin:0;background:#000}#site-header,main>:not(#player),.diagnostics{display:none!important}main{margin:0;padding:0}#player{position:fixed;inset:0;border:0;padding:0;margin:0}#player>:not(#stage),#touch{display:none!important}#stage{width:100%;height:100%;max-width:none;max-height:none;aspect-ratio:auto;display:grid;place-items:center}#game{width:min(100vw,160vh);height:min(100vh,62.5vw);max-width:none;max-height:none;object-fit:contain;image-rendering:pixelated}</style><script type="module" src="managed-shell.mjs"></script></head>`);
   await writeFile(resolve(output,'th01.html'),html);runtime.push('th01.html');
 }

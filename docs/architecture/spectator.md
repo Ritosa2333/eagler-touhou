@@ -86,6 +86,12 @@ Relay 先完整校验新 checkpoint，再把 late-join 历史起点切换到该 
 | th15-mp | `'F'` | [`SpectatorReplayStart.cpp`](../../ports/th15-mp/web/cpp/multiplayer/SpectatorReplayStart.cpp) 捕获/恢复阶段点；[`NetplayRuntime.cpp`](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 发布确认历史。 |
 | TH20 | — | 当前产品目录未声明 Multiplayer，因此没有 E?SV 旁观流；见 [`product-catalog.mts`](../../launcher/src/contracts/product-catalog.mts)。 |
 
+## TH03 对战局起点
+
+TH03 使用 PC-98 确认输入流，每次选人后进入一整局时，由独立副本在该局的首个确认输入之后生成可恢复起点；局内小回合不生成新的大局起点。`P98S/1` 的 kind `6` 表示已完整发布的局起点，`frame` 是当前已发布输入末端，`count` 是起点的下一份输入帧；kind `7` 表示新局已开始但起点仍在生成，`count` 是该局起点。Relay 在 kind 7 后暂缓新观众接入，直到对应起点完整校验并收到 kind 6。
+
+Relay 为新观众保留初始基准、当前局起点及起点后的连续输入；已连接的观众保留自己接收的旧局历史。起点携带原始运行时的压缩状态差量，恢复时校验摘要、游戏状态和确认输入证明。首次连接或回看在起点可用后恢复，不从先前大局重演。旁观历史接收与重放不参与玩家同步屏障。
+
 ## th09 独立格式与时间坐标
 
 th09 的对战局有完整比赛初始化器和回合标记，不使用 E?SV、stage key 或合作作品的公共面板。所有多字节数值和 float32 为 little-endian；`build` 是 12 字节 Runtime build 标识。

@@ -394,9 +394,9 @@ async function prepareRoomAssets(value){
   preloadPromise=(async()=>{
     report('正在预载游戏磁盘、DOSBox-X、音效与开场音乐…');
     const selected=gameVersion(language);
-    const [meta,version,patch,soundManifest,bgmManifest,alternate]=await Promise.all([
+    const [meta,version,patch,bgmManifest,alternate]=await Promise.all([
       freshJSON(selected.coopMeta),freshJSON('netplay/runtime.json'),freshJSON(selected.coopPatch),
-      freshJSON('assets/se-manifest.json'),freshJSON('bgm/manifest.json'),freshJSON('bgm/akyu/manifest.json')]);
+      freshJSON('bgm/manifest.json'),freshJSON('bgm/akyu/manifest.json')]);
     const tracked=rollback&&WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,5,5,2,0,1,0,1]));
     const core=tracked?'wdosbox-x-rollback-tracked.wasm':'wdosbox-x-rollback.wasm';
     const coreHash=tracked?version.write_journal?.wasm_sha256:version.rollback_wasm?.sha256;
@@ -406,8 +406,7 @@ async function prepareRoomAssets(value){
     const assets=[
       assetBytes(selected.coopDisk,{hash:meta.sha256,size:meta.size,gzip:true}),
       assetBytes(`vendor/dosbox-x/${core}`,{hash:coreHash}),
-      ...soundManifest.clips.map(clip=>assetBytes(`assets/${clip.url}`,{hash:clip.sha256,size:clip.bytes})),
-      ...tracks.map(track=>assetBytes(`bgm/${track.url}`,{hash:track.audioSha256,size:track.bytes}))
+      ...(bgmVersion()==='new'?tracks:[]).map(track=>assetBytes(`bgm/${track.url}`,{hash:track.audioSha256,size:track.bytes}))
     ];
     await Promise.all(assets);
     if(generation!==preloadGeneration)return;
@@ -530,7 +529,7 @@ function attachChannel(peer,channel){
           if(!Number.isInteger(m.delay)||m.delay<BOOT_DELAY||m.delay>MAX_INPUT_DELAY)throw Error('无效开局输入缓冲');
           if(!Number.isInteger(m.inputDelay)||m.inputDelay<0||m.inputDelay>MAX_ROLLBACK_INPUT_DELAY||
              m.inputDelay>m.delay||(!inputPolicy.rollbackEnabled&&m.inputDelay!==0))throw Error('无效回滚输入策略');
-          if(!validRollbackPolicy(m.policy)||m.policy.rollbackEnabled!==inputPolicy.rollbackEnabled||
+          if(!validRollbackPolicy(m.policy,state.settings.players)||m.policy.rollbackEnabled!==inputPolicy.rollbackEnabled||
              m.policy.inputDelay!==m.inputDelay||m.policy.rttMs<Math.ceil(Math.max(...[...peers.values()].map(p=>rollbackRttForSamples(p.timingSamples)))))throw Error('无效混合输入策略');
           runDelay=m.delay;runInputDelay=m.inputDelay;runPolicy=m.policy;
           runRequested=true;maybeRun();break;
@@ -792,7 +791,7 @@ function maybeRun(){
     if(![...peers.values()].every(peer=>Number.isFinite(peer.startRtt)))return;
     const rtt=Math.max(...[...peers.values()].flatMap(peer=>[peer.startRtt,...peer.timingSamples]));
     const rollbackRtt=Math.max(...[...peers.values()].flatMap(peer=>[peer.startRollbackRtt,rollbackRttForSamples(peer.timingSamples)]));
-    runPolicy=rollbackPolicyForRtt(rollbackRtt,inputPolicy.rollbackEnabled);
+    runPolicy=rollbackPolicyForRtt(rollbackRtt,inputPolicy.rollbackEnabled,state.settings.players);
     runInputDelay=runPolicy.inputDelay;
     runDelay=inputPolicy.rollbackEnabled?Math.max(BOOT_DELAY,runInputDelay):lockstepDelayForRtt(rtt,inputPolicy.jitterSteps);
     broadcast({type:'run',delay:runDelay,inputDelay:runInputDelay,policy:runPolicy});runRequested=true;
@@ -824,7 +823,7 @@ function wake(delay=0){
     wakePending=false;wakeTimer=null;pump(performance.now());
   },delay);
 }
-function tick(now){if(running&&!stopped)pump(now);}
+function tick(now){if(running&&!stopped){observeInput();pump(now);}}
 function armRollback(){
   if(!inputPolicy.rollbackEnabled||session.role!=='host'||!running||membership||queue.activation!==null||!runtime.readyForRollback()||
      !onlinePeers().every(peer=>peer.rollbackReady))return;
@@ -881,6 +880,7 @@ function observeInput(){
   inputLatch.observe(controlEditor.isEditing()?0:normalize(player.sample(keyboardBits(keys)|childBits|gamepadBits())|pendingAction));
 }
 function captureLocalInput(frontier=queue.frame,context=null){
+  if(!queue.needsCapture(frontier))return false;
   // Hidden pages must still produce authoritative input. Never read a held
   // gamepad, touch auto-fire or menu pulse while the player is away.
   let packed=0;

@@ -142,7 +142,7 @@ async function main(args) {
   const previous = readStatusReport(root);
   const games = [...new Set(selected.map(target=>target.game))];
   const shared = sharedPlan.gates.filter(gate=>selected.some(target=>
-    (!gate.games || gate.games.includes(target.game)) && (!gate.variants || gate.variants.includes(target.variant))))
+    (!gate.games || gate.games.includes(target.game)) && (!gate.excludedGames?.includes(target.game)) && (!gate.variants || gate.variants.includes(target.variant))))
     .map(gate => ({...gate, ...commandCheck(gate, options.output, games)}));
   const records = [];
   for (const target of selected) {

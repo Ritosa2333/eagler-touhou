@@ -10,6 +10,8 @@ export function readPackageObject(
   options?: { indexedDBFactory?: IDBFactory },
 ): Promise<StoredPackageObject | null>;
 
+export function packageObjectMatches(object: StoredPackageObject | null, bytes: number | null, sha256: string | null): Promise<boolean>;
+
 export function readVerifiedPackageObjectBySha256(
   sha256: string,
   bytes: number,

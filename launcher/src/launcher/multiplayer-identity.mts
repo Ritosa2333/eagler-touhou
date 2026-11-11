@@ -21,22 +21,23 @@ export function generateMultiplayerRoomCode(
   throw new Error('Unable to generate a room code');
 }
 
-// A browser membership spans titles and tabs; the existing client id still
-// belongs to a single tab. No name or account information is used here.
+// Local testing permits separate tabs to participate in the same room.
+// Hosted sessions retain browser-wide membership and recovery.
 let rememberedMemberId = "";
 export function multiplayerMemberId(): string {
   if (rememberedMemberId) return rememberedMemberId;
   const key = "eagler-touhou-mp-member-v1";
+  const localTest = ['localhost', '127.0.0.1', '[::1]'].includes(globalThis.location?.hostname ?? '');
   try {
-    const saved = localStorage.getItem(key);
-    if (validMultiplayerClientId(saved)) {rememberedMemberId = saved; return saved;}
+    const saved = (localTest ? sessionStorage : localStorage).getItem(key);
+    if (validMultiplayerClientId(saved)) return rememberedMemberId = saved;
   } catch {}
   const words = new Uint32Array(4);
   // Membership also authorizes room transports. Fail closed if cryptographic
   // randomness is unavailable rather than minting a predictable credential.
   crypto.getRandomValues(words);
   rememberedMemberId = `m${Array.from(words, n => n.toString(36).padStart(7, "0")).join("")}`;
-  try { localStorage.setItem(key, rememberedMemberId); } catch {}
+  try { (localTest ? sessionStorage : localStorage).setItem(key, rememberedMemberId); } catch {}
   return rememberedMemberId;
 }
 

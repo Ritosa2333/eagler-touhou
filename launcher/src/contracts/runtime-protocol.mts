@@ -91,6 +91,9 @@ export interface Th05MultiplayerDisplay {
 }
 export interface RuntimeConfigureOptions {
   th05MultiplayerDisplay?: Readonly<Th05MultiplayerDisplay>;
+  th02RapidFire?: boolean;
+  th03RapidFire?: boolean;
+  th03FocusEnabled?: boolean;
   thpracEnabled?: boolean;
   limitPresentationTo60?: boolean;
   touchEnabled?: boolean;
@@ -118,6 +121,8 @@ export interface RuntimeConfigureOptions {
   netplayDifficulty?: number;
   netplayChallengeMode?: boolean;
   netplayDisableLocalChargePriority?: boolean;
+  netplayDisableFocus?: boolean;
+  netplayBallCount?: number;
   netplayTh19Rules?: number[];
   netplayChapterThreshold?: number;
   netplayInitialSpares?: number;
@@ -153,6 +158,9 @@ export interface RuntimeConfigureOptions {
 export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   th05MultiplayerDisplay: Object.freeze({requirement: "optional", capability: "multiplayer", when: "TH05 multiplayer local presentation"}),
   netplayAllowWebsocketFallback: Object.freeze({requirement: "optional", capability: "multiplayer", when: "server explicitly enables legacy WebSocket gameplay fallback"}),
+  th02RapidFire: Object.freeze({ requirement: "optional", capability: "rapid-fire", when: "TH02" }),
+  th03RapidFire: Object.freeze({ requirement: "optional", capability: "rapid-fire", when: "TH03" }),
+  th03FocusEnabled: Object.freeze({requirement:"optional",capability:"focus-hitbox",when:"TH03 single player"}),
   thpracEnabled: Object.freeze({ requirement: "optional", capability: "thprac", when: "product declares thprac" }),
   limitPresentationTo60: Object.freeze({ requirement: "required", capability: "presentation-cadence" }),
   touchEnabled: Object.freeze({ requirement: "required", capability: "touch-controls" }),
@@ -178,6 +186,8 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   netplaySeed: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer player session" }),
   netplayChallengeMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "TH06/TH07/TH08/TH10 multiplayer; fixed before start" }),
   netplayDisableLocalChargePriority: Object.freeze({requirement: "profile-required", capability: "multiplayer", when: "TH09 multiplayer; true restores native charge progression and Replay; fixed before HELLO"}),
+  netplayBallCount: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH01 multiplayer ball count"}),
+  netplayDisableFocus: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH02 and TH03 multiplayer room rule; fixed before HELLO"}),
   netplayTh19Rules: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH19 only; nine native rule and card-selection indices; immutable after start"}),
   netplayChapterThreshold: Object.freeze({requirement: "profile-required", capability: "multiplayer", when: "TH15 multiplayer chapter reward; 500000–5000000 in steps of 250000; immutable after start"}),
   netplayInitialSpares: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH05 multiplayer; team spare lives 0–5 excluding the current life; fixed before HELLO"}),

@@ -1,7 +1,7 @@
 // TH02 native ranges: 80 power, spare lives, signed play-performance Rank.
 export const PRACTICE_VERSION='th02-browser-practice/1';
-export const PRACTICE_DEFAULTS=Object.freeze({invincible:false,lockLives:false,lockBombs:false,lockPower:false,lockTime:false,enemyInvincible:false,lockRank:false,disableBomb:false,disableFocus:false,disableShot:false,forceFocus:false,quickRetry:true,preparedRetry:true,showKeys:false,showInfo:false,alwaysPoint:false,speed:1});
-export const PRACTICE_SETUP=Object.freeze({stage:0,character:0,difficulty:1,entry:'stage',phase:0,lives:0,bombs:0,power:80,rank:0,hp:0});
+export const PRACTICE_DEFAULTS=Object.freeze({invincible:false,lockLives:false,lockBombs:false,lockPower:false,lockTime:false,enemyInvincible:false,lockRank:false,disableBomb:false,disableFocus:false,disableShot:false,forceFocus:false,quickRetry:true,preparedRetry:false,showKeys:false,showInfo:false,alwaysPoint:false,speed:1});
+export const PRACTICE_SETUP=Object.freeze({stage:0,character:0,difficulty:1,entry:'stage',phase:0,lives:3,bombs:2,power:80,rank:0,hp:0});
 export const PRACTICE_PHASES=Object.freeze([[1,2,3],[1,2,3],[],[],[1,3,5,7,9],[1,3,5,7,9]]);
 export function phaseList(s){return s.entry==='boss'?PRACTICE_PHASES[s.stage]:[];}
 export function hpLimit(s){
@@ -19,7 +19,7 @@ export function validatePracticeOptions(value,partial=false){
 }
 export function normalizePracticeSetup(value={}){
   if(!value||typeof value!=='object'||Array.isArray(value))throw Error('练习起点无效');
-  const ranges={stage:[0,5],character:[0,2],difficulty:[0,4],phase:[0,9],lives:[0,0],bombs:[0,0],power:[1,80],rank:[-6,16],hp:[0,8500]};
+  const ranges={stage:[0,5],character:[0,2],difficulty:[0,4],phase:[0,9],lives:[0,5],bombs:[0,5],power:[1,80],rank:[-6,16],hp:[0,8500]};
   for(const [k,v]of Object.entries(value)){
     if(!(k in PRACTICE_SETUP))throw Error('未知练习起点：'+k);
     if(k in ranges){const [a,b]=ranges[k];if(!Number.isInteger(v)||v<a||v>b)throw Error('练习参数超出范围：'+k);}
@@ -33,7 +33,7 @@ export function normalizePracticeSetup(value={}){
 }
 export function normalizePractice(value){
   if(!value||value.version!==PRACTICE_VERSION||!['full','target'].includes(value.mode))throw Error('TH02 练习版本不支持');
-  return {version:PRACTICE_VERSION,mode:value.mode,setup:normalizePracticeSetup(value.setup),options:{...PRACTICE_DEFAULTS,...validatePracticeOptions(value.options||{},true)}};
+  return {version:PRACTICE_VERSION,mode:value.mode,...(value.directStart===true&&value.mode==='full'?{directStart:true}:{}),setup:normalizePracticeSetup(value.setup),options:{...PRACTICE_DEFAULTS,...validatePracticeOptions(value.options||{},true)}};
 }
 
 export function createPracticeClock(initial=1){
@@ -43,4 +43,12 @@ export function createPracticeClock(initial=1){
   Object.setPrototypeOf(PracticeDate,RealDate);PracticeDate.prototype=RealDate.prototype;PracticeDate.now=()=>Math.floor(epoch+now());
   const hostPerformance=new Proxy(performance,{get(t,k){if(k==='now')return now;const value=Reflect.get(t,k,t);return typeof value==='function'?value.bind(t):value;}});
   return {Date:PracticeDate,performance:hostPerformance,now,date:()=>Math.floor(epoch+now()),get speed(){return speed;},setPaused(value){elapsed=now();anchor=performance.now();paused=!!value;},setSpeed(value){if(![.25,.5,.75,1,1.5,2,8].includes(value))throw Error('无效变速');elapsed=now();anchor=performance.now();speed=value;}};
+}
+
+const NATIVE_OPTION_KEYS=['lockRank','disableBomb','disableFocus','disableShot','forceFocus','quickRetry','alwaysPoint','showKeys','showInfo','preparedRetry'];
+const NATIVE_SPEEDS=[.25,.5,.75,1,1.5,2];
+export function encodeNativeOptions(options){return [...NATIVE_OPTION_KEYS.map(key=>options[key]?1:0),Math.max(0,NATIVE_SPEEDS.indexOf(options.speed))];}
+export function decodeNativeOptions(values,previous){
+  if(!Array.isArray(values)||values.length!==11||values.some((v,i)=>!Number.isInteger(v)||v<0||v>(i===10?5:1)))throw Error('原生练习选项无效');
+  return {...previous,...Object.fromEntries(NATIVE_OPTION_KEYS.map((key,i)=>[key,!!values[i]])),speed:NATIVE_SPEEDS[values[10]]};
 }

@@ -79,10 +79,10 @@ function RoomRow({
   const artwork = bookGameArtwork(gameIdForProduct(room.product)) ?? ('cardArtwork' in meta && meta.cardArtwork ? assetUrl(`assets/${meta.cardArtwork}`) : undefined);
   const title = meta.title;
   const policy = multiplayerConfigForProduct(room.product)!;
-  const duel = room.product === 'th09mp';
-  const score = room.seats[0] && room.seats[1] ? `${room.seats[0].stats?.wins ?? 0} : ${room.seats[1].stats?.wins ?? 0}` : 'VS';
+  const duel = policy.gameplay === 'versus', hasScore=room.product==='th09mp'||room.product==='th03mp';
+  const score = hasScore&&room.seats[0] && room.seats[1] ? `${room.seats[0].stats?.wins ?? 0} : ${room.seats[1].stats?.wins ?? 0}` : 'VS';
   const minutes = Math.max(...room.seats.map(seat => seat?.stats?.minutes ?? 0), 0);
-  const difficulty = policy.inGameSelection ? '' : policy.difficulties[room.difficulty];
+  const difficulty = policy.inGameSelection && room.product !== 'th03mp' ? '' : policy.difficulties[room.difficulty];
   const state = directoryRoomState(room);
   const spectating = directoryRoomSpectatorEntry(room);
   const count = t('lobby.count', { players: room.players, capacity: room.capacity });
@@ -120,16 +120,16 @@ function RoomRow({
               title={t('th09.spectatorCount', {count: room.spectators})}>
               <UsersRound aria-hidden="true"/>{t('th09.spectatorCount', {count: room.spectators})}
             </span>
-            {room.phase !== 'lobby' && (duel || !!room.startedAt) && <>
+            {room.phase !== 'lobby' && (hasScore || !!room.startedAt) && <>
               <span className="lobby-room-fact-divider" aria-hidden="true">|</span>
-              <RoomElapsed phase={room.phase} startedAt={duel?undefined:room.startedAt} elapsedMinutes={duel?minutes:undefined}/>
+              <RoomElapsed phase={room.phase} startedAt={room.product==='th09mp'?undefined:room.startedAt} elapsedMinutes={room.product==='th09mp'?minutes:undefined}/>
             </>}
           </div>
         </div>
       </div>
       <div className="lobby-room-rules">
-        {!room.disableCheatMovement && !room.challengeMode ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
-          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
+        {!room.disableCheatMovement && !room.challengeMode && !(room.product === 'th03mp' && room.disableFocus === false) && !(room.product === 'th02mp' && room.disableFocus === true) && (room.ballCount ?? 2) === 2 ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
+          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t(room.product==='th02mp'||room.product==='th04mp'?'room.pc98ChallengeEnabled':'room.challengeMode') : '', room.product === 'th03mp' && room.disableFocus === false ? t('room.th03SpecialFocus') : '', room.product === 'th02mp' && room.disableFocus === true ? t('room.th02SpecialFocus') : '', (room.ballCount ?? 2) !== 2 ? t('room.th01SpecialBalls',{count:room.ballCount ?? 2}) : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
       </div>
       <div className="lobby-room-status">
         <span className="lobby-room-state" data-state={state}>{t(`lobby.${state}`)}</span>
@@ -177,7 +177,7 @@ function RoomRow({
               : (seat.name !== undefined ? seat.name : duel ? seat.machineSign || seat.initial : '') || `P${index + 1}`;
             // biome-ignore lint/suspicious/noArrayIndexKey: A numbered seat is the slot identity even when its occupant changes.
             return <Fragment key={index}>
-              {duel && index === 1 && <strong className="book-room-score" role="img" aria-label={`${t('th09.score')} ${score}`}>
+              {duel && index === 1 && <strong className="book-room-score" role="img" aria-label={score==='VS'?'VS':`${t('th09.score')} ${score}`}>
                 <span className="book-room-score-value">{score === 'VS' ? score : <><span>{room.seats[0]?.stats?.wins ?? 0}</span><span className="book-room-score-separator"> : </span><span>{room.seats[1]?.stats?.wins ?? 0}</span></>}</span>
               </strong>}
               <span className="lobby-public-player" data-empty={String(!seat)}>

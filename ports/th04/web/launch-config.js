@@ -1,3 +1,4 @@
+import {Fat12} from './solo-fat12.js';
 // All configuration is installed in the verified private disk before boot.
 export function encodeConfig({p1,p2,p3=0,players=2,difficulty,lives,bombs}) {
   for(const [value,min,max] of [[p1,0,3],[p2,0,3],[p3,0,3],[players,2,3],[difficulty,0,4],[lives,1,6],[bombs,0,2]])
@@ -19,4 +20,10 @@ export function installConfig(disk,manifest,config) {
     });
   }
   for(const target of spec.targets)target.forEach((at,i)=>{disk[at]=config[i];});
+  // Use the original Turbo-mode bullet timing for every synchronized player.
+  const fat=new Fat12(disk),entry=fat.find('GENSO/MAIN.EXE'),main=fat.read(entry);
+  const pattern=Uint8Array.of(0x80,0x3e,0xa0,0x53,0x00,0x0f,0x85,0x0c,0x01,0xbf,0x18,0x00);
+  const at=main.findIndex((b,i)=>b===pattern[0]&&pattern.every((v,j)=>main[i+j]===v));
+  if(at<0)throw Error('联机游戏弹幕速度补丁版本不匹配');
+  main[at+4]=0xff;fat.replace(entry,main);
 }

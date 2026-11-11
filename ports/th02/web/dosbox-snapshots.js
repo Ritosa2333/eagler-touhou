@@ -1,6 +1,12 @@
 // Suspend at an Asyncify boundary; capture native memory/globals, the saved
 // continuation, and the host filesystem. Audio reaches output on confirmation.
-const copyBag=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k,Array.isArray(v)?v.slice():v]));
+function copyBag(o){
+  const bag={};
+  // Snapshot arrays independently without creating entry and pair arrays for
+  // every filesystem node on each speculative checkpoint.
+  for(const key of Object.keys(o)){const value=o[key],copy=Array.isArray(value)?value.slice():value;if(key==='__proto__')Object.defineProperty(bag,key,{value:copy,writable:true,enumerable:true,configurable:true});else bag[key]=copy;}
+  return bag;
+}
 function restoreBag(o,bag){for(const k of Object.keys(o))if(!Object.hasOwn(bag,k))delete o[k];Object.assign(o,bag);}
 export function createDosboxSnapshots(emulator){
   const m=emulator.module,fs=m.FS,frames=new Map(),pool=[],diff=m.memoryDiff;
@@ -15,7 +21,13 @@ export function createDosboxSnapshots(emulator){
   function release(saved){if(saved.memory)pool.push(saved.memory);else for(const block of saved.undo)diff.release(block);}
   const write=m.MEMFS.stream_ops.write;
   m.MEMFS.stream_ops.write=function(stream,buffer,offset,length,position,canOwn){
-    const contents=stream.node.contents;if(tracking&&contents&&length){let pages=tracking.writes.get(contents);if(!pages){pages=new Map();tracking.writes.set(contents,pages);}for(let at=Math.floor(position/4096)*4096;at<Math.min(contents.length,position+length);at+=4096)if(!pages.has(at))pages.set(at,contents.slice(at,at+4096));}
+    const contents=stream.node.contents;
+    if(tracking&&contents&&length){
+      // Heap-backed file views share native checkpoint pages. Capturing a
+      // second preimage here can overwrite earlier native writes on restore.
+      if(contents.buffer===m.HEAPU8.buffer)m.thDirtyMark?.(contents.byteOffset+position,Math.min(length,Math.max(0,contents.length-position)));
+      else{let pages=tracking.writes.get(contents);if(!pages){pages=new Map();tracking.writes.set(contents,pages);}for(let at=Math.floor(position/4096)*4096;at<Math.min(contents.length,position+length);at+=4096)if(!pages.has(at))pages.set(at,contents.slice(at,at+4096));}
+    }
     return write.call(this,stream,buffer,offset,length,position,canOwn);
   };
   if(m.MEMFS.ops_table)m.MEMFS.ops_table.file.stream.write=m.MEMFS.stream_ops.write;
@@ -34,9 +46,11 @@ export function createDosboxSnapshots(emulator){
     // heap scan at every boundary. Filesystem writes remain tracked meanwhile.
     seal(){active=null;},
     restore(frame){active=null;const s=frames.get(frame);if(!s)throw Error('DOSBox-X 快照已过期');
-      syncMemory();const undo=[];for(const key of [...frames.keys()].sort((a,b)=>b-a))if(key>=frame){const saved=frames.get(key);for(const [buffer,pages]of saved.writes)for(const [at,data]of pages)buffer.set(data,at);if(diff)for(let i=saved.undo.length-1;i>=0;i--)undo.push(saved.undo[i]);}
-      if(diff){if(diff.restoreBlocks)diff.restoreBlocks(undo);else for(const block of undo)diff.restoreBlock(block);}
-      if(s.memory)m.HEAPU8.set(s.memory);globals.forEach((g,i)=>{g.value=s.globals[i];});m.restoreContinuation(s.continuation);emulator.tick=s.tick;emulator.keys=new Set(s.keys);emulator.ci.keyMatrix={...s.keyMatrix};
+      syncMemory();const restoring=[...frames.keys()].filter(key=>key>=frame).sort((a,b)=>b-a).map(key=>frames.get(key));
+      if(diff){const blocks=restoring.flatMap(saved=>saved.undo.slice().reverse());if(diff.restoreBlocks)diff.restoreBlocks(blocks);else for(const block of blocks)diff.restoreBlock(block);}
+      if(s.memory)m.HEAPU8.set(s.memory);
+      for(const saved of restoring)for(const [buffer,pages]of saved.writes)for(const [at,data]of pages)buffer.set(data,at);
+      globals.forEach((g,i)=>{g.value=s.globals[i];});m.restoreContinuation(s.continuation);emulator.tick=s.tick;emulator.keys=new Set(s.keys);emulator.ci.keyMatrix={...s.keyMatrix};
       // Restore the framebuffer pointer/size alongside the native allocation.
       // The GPU stays unchanged until the room finishes catching up.
       m.framePresenter?.restore(s.presentation);

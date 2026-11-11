@@ -28,12 +28,17 @@ export async function createReplica(header,{onFrame=()=>{},onEvent=()=>{},onProg
     return {
       get frame(){return frame;},get executed(){return executed;},get scene(){return scene;},stop,
       async advance(row){
-        const r=await request('execute',[],{frame,inputs:row.inputs,offlineMask:row.offlineMask,replay:false,capture:false,hash:row.hash!==null});
-        if(r.status.proof!==row.proof||(row.hash!==null&&stable(r.value)!==stable(row.hash)))throw Error('录像模拟校验不一致：第 '+frame+' 步');
-        await request('confirm',[frame+1]);scene=r.status.scene??null;frame++;executed++;return r;
+        // Verify and confirm on the same worker turn. The worker checks the
+        // proof and optional hash before committing effects, just as playback
+        // did when these were two separate messages.
+        const r=await request('executeBatch',[],{frame,rows:[row]});
+        scene=r.status.scene??null;frame++;executed++;return r;
+      },
+      async advanceBatch(rows){
+        const r=await request('executeBatch',[],{frame,rows});frame+=rows.length;executed+=rows.length;scene=r.status.scene??null;return r;
       },
       present:()=>request('present'),
-      async save(){const r=await request('replaySave',[header.identity]);return r.value;},
+      async save(){const r=await request('replaySavePoint',[header.identity]);return r.value;},
       async restore(bytes,baseBytes){const r=await request('replayLoad',[bytes,baseBytes,header.identity]);frame=r.value.frame;return r.value;},
       request
     };

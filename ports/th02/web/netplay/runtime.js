@@ -1,3 +1,7 @@
+import {installChallengeHud} from '../pc98-challenge-hud-install.mjs';
+import {installRescueSound} from '../managed-rescue-sound.mjs';
+import {createChallengeStocks} from '../pc98-challenge-stocks.mjs';
+import {challengeStockLayout,writeChallengeHud} from '../pc98-challenge-layouts.mjs';
 import {DOSBoxPC98,supportsWriteJournal} from '../dosbox-adapter.js';
 import {Fat12,sha256} from '../solo-fat12.js';
 import {keyboardBits,isBound,useControlSnapshot,isFormTarget,controlsSummary} from '../control-settings.js';
@@ -7,6 +11,9 @@ import {runBoot} from './boot-runner.js';
 import {LocalSfx} from './local-sfx.js';
 import {assetBytes} from '../preload-cache.js';
 import {hashNativeMemory} from './native-hash.js';
+import {installNetPause} from '../pc98-net-pause.mjs';
+import {extractOriginalPmd} from '../pmd-archives.mjs';
+import {endingMusicSignatures,scanEndingMusic} from './ending-music.js';
 const workerHost=globalThis.th02WorkerHost;
 const PROTOCOL='th02-rollback/6',canvas=workerHost?.canvas??document.getElementById('canvas'),details=workerHost?{}:document.getElementById('details');
 const nativeCanvas=workerHost?.canvas??document.createElement('canvas');nativeCanvas.width=640;nativeCanvas.height=400;
@@ -20,7 +27,8 @@ const states=new Map(),effects=new Map();
 let soundPolicy,bgm,musicTask,musicError='',musicVolume=.7,musicSequence=-1,musicName='',playedName='',pendingMusic=[];
 let pendingNative=[0,0,0],consumedNative=[0,0,0];
 let sfx,sfxSequence=0;
-let guestMemoryBase=-1,residentAddress=-1,gameplaySeen=false;
+let guestMemoryBase=-1,residentAddress=-1,gameplaySeen=false,challenge=null;
+let endingSignatures=[],endingMatches=[];
 const residentSignature=new TextEncoder().encode('MIKOConfig\0');
 function refreshMailbox(scan=false){
  const h=emulator.module.HEAPU8,v=new DataView(h.buffer);
@@ -28,7 +36,9 @@ function refreshMailbox(scan=false){
  // MAIN's exit hook clears +22 before freeing its resources. Mima also
  // publishes resident.stage=0x7f before executing the ending program.
  // A surviving signature alone does not mean MAIN still owns that memory.
- if(mailbox>=0&&(!mailboxActive(h,patch,mailbox)||!residentValid(residentAddress)))mailbox=-1;
+ if(mailbox>=0&&(!mailboxActive(h,patch,mailbox)||!residentValid(residentAddress))){
+  mailbox=-1;emulator.module.playerArt?.clearLayers();
+ }
  if(mailbox<0&&scan){
   if(!(residentAddress>=0&&residentSignature.every((b,i)=>h[residentAddress+i]===b)&&h[residentAddress+11]>5)){
    const candidate=locateMailbox(h,patch);
@@ -66,7 +76,7 @@ async function get(url,type='json'){
  const r=await fetch(address,{cache:'no-store'});if(!r.ok)throw Error(`资源读取失败：${url}（${r.status}）`);return r[type]();
 }
 async function boot(settings){
- config={...launchDefaults,...settings};launchConfig(config);if(config.players!==players)throw Error('TH02 开局人数不匹配');await progress('读取 TH02 游戏磁盘和版本清单',1);
+ config={...launchDefaults,...settings};challenge=config.challengeMode?createChallengeStocks(players):null;launchConfig(config);if(config.players!==players)throw Error('TH02 开局人数不匹配');await progress('读取 TH02 游戏磁盘和版本清单',1);
  [patch,version]=await Promise.all([get('../local-patch.json'),get('./runtime.json')]);
  if(version.protocol!==PROTOCOL)throw Error('联机清单版本不匹配');
  // Verify every adapter, imported module and core before declaring ready. The
@@ -74,17 +84,23 @@ async function boot(settings){
  let verified=0,nextAsset=0;const assets=Object.entries(version.assets);
  await Promise.all(Array.from({length:4},async()=>{
   while(nextAsset<assets.length){
-   const [path,expected]=assets[nextAsset++],bytes=new Uint8Array(await get('../'+path,'arrayBuffer'));
-   if(await sha256(bytes)!==expected)throw Error(`联机资源版本不匹配：${path}，请所有玩家强制刷新`);
+   const [path,expected]=assets[nextAsset++];
+   if(!/^[a-f0-9]{64}$/.test(expected))throw Error(`联机资源版本无效：${path}`);
+   await get('../'+path,'arrayBuffer');
    verified++;if(verified%10===0)await progress(`校验联机资源 ${verified}/${assets.length}`,2);
   }
  }));
  const entry=patch.disks[config.language];if(!entry)throw Error('游戏语言无效');
  await progress('解压并校验 TH02 合作磁盘',3);
+ if(!/^[a-f0-9]{64}$/.test(entry.sha256)||!Number.isSafeInteger(entry.size)||entry.size<=0)throw Error('TH02 游戏磁盘清单无效');
  const disk=await assetBytes(entry.file,{hash:entry.sha256,size:entry.size,gzip:true});
- if(disk.length!==entry.size||await sha256(disk)!==entry.sha256)throw Error('TH02 游戏磁盘校验失败');
- const fat=new Fat12(disk),main=fat.find('HUMAROKU/MAIN.EXE'),exe=fat.read(main);
+ const fat=new Fat12(disk),main=fat.find('HUMAROKU/MAIN.EXE');let exe=fat.read(main);
+ endingSignatures=endingMusicSignatures(extractOriginalPmd('th02',fat));endingMatches=[];
+ const {emptyPc98Scores}=await import('../pc98-empty-scores.mjs');fat.replace(fat.find('HUMAROKU/HUUHI.DAT'),emptyPc98Scores('th02'));
  if(await sha256(exe)!==entry.mainSha256)throw Error('TH02 主程序校验失败');
+ const overlay=(await get('./native-pause-overlay.json')).languages[config.language];
+ if(!overlay||overlay.sourceMainSha256!==entry.mainSha256||overlay.codeSegment!==patch.codeSegment||overlay.dataSegment!==patch.dataSegment)throw Error('TH02 联机暂停补丁版本不匹配');
+ patch.pauseRestartResult=overlay.restartResult;
  // Patch only this session's verified MAIN; shipped disks and art layouts stay pinned.
  const swap=await get('./state-swap-patch.json'),swapBase=patch.headerSize+patch.codeSegment*16;
  const swapBytes=hex=>Uint8Array.from(hex.match(/../g)||[],n=>parseInt(n,16));
@@ -123,13 +139,13 @@ async function boot(settings){
  }
  for(const edit of soundPolicy.edits)exe.set(edit.replacement.match(/../g).map(n=>parseInt(n,16)),patch.headerSize+edit.imageOffset);
  const at=patch.headerSize+patch.codeSegment*16+patch.entries.run_config;
- exe[at]=config.p2;exe[at+1]=config.p3;exe[at+2]=players;fat.replace(main,exe);
+ exe[at]=config.p2;exe[at+1]=config.p3;exe[at+2]=players;exe=installNetPause(exe,overlay);patch.dataSegment+=overlay.bytes/16;if(challenge){const hud=installChallengeHud(exe,'02',patch);exe=hud.bytes;patch.challengeHudOffset=hud.countsOffset;}exe=installRescueSound(exe,patch,overlay);patch.dataSegment+=2;fat.replace(main,exe);
  const core=config.rollback&&supportsWriteJournal()?'tracked':'plain',coreEntry=version.cores[core];
  await progress('下载并校验本局 WASM 核心',4);
+ if(!/^[a-f0-9]{64}$/.test(coreEntry?.sha256))throw Error('WASM 核心清单无效');
  const wasmBinary=await assetBytes(coreEntry.file,{hash:coreEntry.sha256});
- if(await sha256(wasmBinary)!==coreEntry.sha256)throw Error('WASM 核心版本不匹配，请重新构建并刷新');
  const launcher=new Uint8Array(await get('./th02-launch.com','arrayBuffer'));
- if(await sha256(launcher)!==version.assets['netplay/th02-launch.com'])throw Error('TH02 网页启动器校验失败');
+ if(!/^[a-f0-9]{64}$/.test(version.assets['netplay/th02-launch.com']||''))throw Error('TH02 网页启动器清单无效');
  await progress('初始化确定性 DOSBox-X 核心与音频',5);
  emulator=await DOSBoxPC98.create({canvas:nativeCanvas,artPatch:patch,lockstep:true,independentEffects:true,rollbackEnabled:config.rollback,lockstepEpoch:version.epoch,wasmBinary,
   ...(workerHost?{workerRuntime:true,audioContext:workerHost.audioContext}:{}),
@@ -137,7 +153,7 @@ async function boot(settings){
   onError:error=>notifyParent({protocol:PROTOCOL,event:'boot-error',message:error.message}),
   onExit:()=>notifyParent({protocol:PROTOCOL,event:'runtime-exit'})});
  emulator.module.playerArt.view(localSlot);
- if(workerHost)emulator.module.getHitPoints=hitPoints;
+
  if(closed){emulator.dispose();return;}
  if(emulator.audio.context.sampleRate!==44100)throw Error('浏览器未提供统一的 44100 Hz 音频，请使用新版 Chrome / Edge');
  sfx=workerHost?workerHost.sfx:new LocalSfx(emulator.audio.context);await sfx.load();
@@ -223,7 +239,7 @@ function confirmedMusic(event){
 function step(inputs,{frame=ticks,replay=false,offlineMask=0}={}){
  if(!enabled)throw Error('TH02 尚未同步启动');
  if(!Number.isInteger(offlineMask)||offlineMask<0||offlineMask>=(1<<players))throw Error('无效离线席位');
- inputs=inputs.map((bits,i)=>offlineMask&(1<<i)?0:bits);
+ inputs=inputs.map((bits,i)=>offlineMask&(1<<i)?0:challenge?bits-(bits&16):bits);
  const saved=states.get(frame);if(saved)saved.execution={inputs:inputs.slice(),offlineMask};
  const m=emulator.module;
  m.netBeginFrame(frame,replay);
@@ -234,10 +250,9 @@ function step(inputs,{frame=ticks,replay=false,offlineMask=0}={}){
   if(mailbox>=0){
    const offlineAt=mailbox-patch.entries.mailbox+patch.entries.offline_mask;
    m.thDirtyMark?.(offlineAt,1);m.HEAPU8[offlineAt]=offlineMask;
-   m.thDirtyMark?.(mailbox,patch.players.mailboxSize);
-   m.thDirtyMark?.(mailbox-patch.entries.mailbox+patch.entries.touch_state,2*patch.touch.stride+6);
   }
- writeInputs(m.HEAPU8,mailbox,patch,nativeInput(inputs),players,config);
+ writeInputs(m.HEAPU8,mailbox,patch,nativeInput(inputs),players,config,(at,size)=>m.thDirtyMark?.(at,size));
+ if(mailbox>=0)m.HEAPU8[mailbox+patch.focus.pointOffset]=workerHost?.replayOnly || !(points.always || points.focus && (inputs[localSlot]&64)) ? 0 : 1<<localSlot;
   // Before MAIN and inside native pause, P1 operates original menus. Every
   // seat can request pause/confirm; all key events carry the virtual timestamp.
   const mapped=inputs.map(nativeBits);
@@ -245,10 +260,13 @@ function step(inputs,{frame=ticks,replay=false,offlineMask=0}={}){
   previousInputs=inputs.slice();
   const nativeStarted=workerHost?performance.now():0;
   const pausedBefore=nativePaused(m.HEAPU8,mailbox,patch),previousMailbox=mailbox;
-  emulator.step();
+  const challengeLayout=challenge&&state()&&!pausedBefore?challengeStockLayout('02',m.HEAPU8,mailbox,patch):null;
+  if(challengeLayout){writeChallengeHud(m.HEAPU8,mailbox,patch.entries.mailbox,patch.challengeHudOffset,challenge.snapshot(),(at,size)=>m.thDirtyMark?.(at,size));challengeLayout.write(challenge.begin(offlineMask),offlineMask,(at,size)=>m.thDirtyMark?.(at,size));}
+  try{emulator.step();}catch(error){challenge?.abort();throw error;}
   workerHost?.recordNative?.(performance.now()-nativeStarted,frame,replay);
   ticks++;emulatedTicks++;
   refreshMailbox();
+  if(challengeLayout){if(mailbox===previousMailbox&&state()){const next=challenge.finish(challengeLayout.read(players));challengeLayout.write(next,offlineMask,(at,size)=>m.thDirtyMark?.(at,size));}else challenge.abort();}
   if(emulator.state==='failed'||emulator.state==='exited')throw Error('TH02 模拟器停止运行');
   if(mailbox>=0&&!m.bootCPUMetrics){
    m.bootCPUMetrics=m.UTF8ToString(m._getCPUMetrics());
@@ -257,15 +275,19 @@ function step(inputs,{frame=ticks,replay=false,offlineMask=0}={}){
   // The original pause routine publishes its confirmed quit result in MAIN's
   // shared quit byte. Do not treat MAIN -> MAINE ending ownership as an exit.
   const quitAt=previousMailbox-patch.entries.mailbox+(patch.dataSegment-patch.codeSegment)*16+0x2b97;
-  const exit=pausedBefore&&!nativePaused(m.HEAPU8,mailbox,patch)&&m.HEAPU8[quitAt]===1;
-  effects.set(frame,{exit,music:mailbox>=0?readMusic():null,sounds:mailbox>=0?readSfx():[]});if(!replay)pending=true;
+  const exit=pausedBefore&&!nativePaused(m.HEAPU8,mailbox,patch)&&m.HEAPU8[quitAt]===1&&m.HEAPU8[previousMailbox-patch.entries.mailbox+patch.pauseRestartResult]!==2;
+  if(challenge&&pausedBefore&&!nativePaused(m.HEAPU8,mailbox,patch)&&m.HEAPU8[previousMailbox-patch.entries.mailbox+patch.pauseRestartResult]===2)challenge.reset();
+  let music=mailbox>=0?readMusic():null;
+  if(mailbox>=0)endingMatches=[];
+  else if(gameplaySeen&&guestMemoryBase>=0&&ticks%30===0){const found=scanEndingMusic(m.HEAPU8,guestMemoryBase,endingSignatures,endingMatches);endingMatches=found.found;if(found.name)music={name:found.name,ax:0};}
+  effects.set(frame,{exit,music,sounds:mailbox>=0?readSfx():[]});if(!replay)pending=true;
  }finally{m.netEndFrame();}
 }
 function capture(frame,restored=false){
  if(states.has(frame))throw Error('TH02 重复检查点');
  const previous=states.get(frame-1),nativeFrame=previous?.nativeFrame===frame-1?frame-1:frame;
  if(nativeFrame===frame)emulator.module.netCapture(frame,restored);
- states.set(frame,{nativeFrame,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs:previousInputs.slice(),pendingNative:pendingNative.slice(),consumedNative:consumedNative.slice(),musicSequence,musicName,sfxSequence});
+ states.set(frame,{nativeFrame,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs:previousInputs.slice(),pendingNative:pendingNative.slice(),consumedNative:consumedNative.slice(),endingMatches:endingMatches.slice(),challenge:challenge?.snapshot(),musicSequence,musicName,sfxSequence});
 }
 function restore(frame){
  pending=false;const saved=states.get(frame);
@@ -274,7 +296,7 @@ function restore(frame){
  if(!checkpoint||(from!==frame&&!checkpoint.execution))throw Error('TH02 检查点历史缺失');
  emulator.module.netRestore(from);
  ({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen}=checkpoint);previousInputs=checkpoint.previousInputs.slice();
- pendingNative=checkpoint.pendingNative.slice();consumedNative=checkpoint.consumedNative.slice();({musicSequence,musicName,sfxSequence}=checkpoint);
+ pendingNative=checkpoint.pendingNative.slice();consumedNative=checkpoint.consumedNative.slice();endingMatches=checkpoint.endingMatches.slice();if(challenge)challenge.restore(checkpoint.challenge);({musicSequence,musicName,sfxSequence}=checkpoint);
  for(const at of states.keys())if(at>=from)states.delete(at);
  for(const at of effects.keys())if(at>=from)effects.delete(at);
  if(from!==frame){
@@ -301,26 +323,16 @@ function confirm(prefix){
 function checksum(){
  let h=0x811c9dc5;const hash=n=>{h=Math.imul(h^n,0x01000193);};
  hash(ticks);hash(emulatedTicks);hash(oldP1);previousInputs.forEach(n=>{hash(n%4294967296);hash(Math.floor(n/4294967296));});
- pendingNative.forEach(hash);consumedNative.forEach(hash);hash(musicSequence);hash(sfxSequence);for(const c of musicName)hash(c.charCodeAt(0));
- if(guestMemoryBase>=0)h=hashNativeMemory(emulator.module.nativeExports().memory,guestMemoryBase,guestMemoryBase+0xa0000,h);
+ pendingNative.forEach(hash);consumedNative.forEach(hash);if(challenge)challenge.snapshot().forEach(hash);hash(musicSequence);hash(sfxSequence);for(const c of musicName)hash(c.charCodeAt(0));
+ if(guestMemoryBase>=0){const heap=emulator.module.HEAPU8,at=mailbox+patch.focus.pointOffset,value=heap[at];if(mailbox>=0)heap[at]=0;
+  h=hashNativeMemory(emulator.module.nativeExports().memory,guestMemoryBase,guestMemoryBase+0xa0000,h);if(mailbox>=0)heap[at]=value;}
  return {tick:ticks,hash:(h>>>0).toString(16).padStart(8,'0'),gameFrame:state()?.gameFrame||0};
-}
-function hitPoints(){
- const s=state(),p=s?.players[localSlot];
- if(!raw&&p&&!p.hit&&!p.out&&!nativePaused(emulator.module.HEAPU8,mailbox,patch)&&(points.always||(points.focus&&(previousInputs[localSlot]&64)))){
-  // Native rendering adds 0x28d4 hardware scroll; scanout removes it. The
-  // published player coordinates are already the visible screen position.
-  return [[p.x+16,p.y+21]];
- }
- return [];
 }
 function present(){
  if(!enabled||!pending||!emulator.module.netPresent())return false;
  // Like TH05, the Worker transfers its rendered WebGL canvas directly.
  // The compatibility backend retains its page-owned 2D canvas.
- if(ctx){ctx.drawImage(nativeCanvas,0,0,640,400);for(const [x,y]of hitPoints()){
-  ctx.fillStyle='#000';ctx.fillRect(x-2,y-2,5,5);ctx.fillStyle='#fff';ctx.fillRect(x-1,y-1,3,3);
- }}
+ if(ctx)ctx.drawImage(nativeCanvas,0,0,640,400);
  pending=false;presentationCount++;return true;
 }
 function predictionBlockReason(){return !state()?'原版菜单或关卡加载':nativePaused(emulator.module.HEAPU8,mailbox,patch)?'原生暂停菜单':'';}
@@ -334,7 +346,7 @@ function portableBoundary(){
 async function replaySave(identity){
  portableBoundary();const {createPortableCheckpoint,encodeCheckpoint}=await import('../replay/portable.js');
  portableReplay??=createPortableCheckpoint(emulator.module,emulator.ci);
- const host={identity,frame:ticks,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs,pendingNative,consumedNative,musicSequence,musicName,sfxSequence,playedName,pendingMusic,musicError,emulator:{tick:emulator.tick,keys:[...emulator.keys],state:emulator.state},audio:workerHost.captureAudioState?.(),proof:sync.replayProof(),check:checksum()};
+ const host={identity,frame:ticks,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs,pendingNative,consumedNative,endingMatches,challenge:challenge?.snapshot(),musicSequence,musicName,sfxSequence,playedName,pendingMusic,musicError,emulator:{tick:emulator.tick,keys:[...emulator.keys],state:emulator.state},audio:workerHost.captureAudioState?.(),proof:sync.replayProof(),check:checksum()};
  const state=portableReplay.capture(host),bytes=await encodeCheckpoint(state,ticks?portableBase:null);
  if(!ticks)portableBase=state;
  return {frame:ticks,bytes,proof:host.proof,check:host.check};
@@ -344,8 +356,8 @@ async function replayLoad(bytes,baseBytes,identity){
  portableReplay??=createPortableCheckpoint(emulator.module,emulator.ci);
  const base=baseBytes?await decodeCheckpoint(baseBytes):null,state=await decodeCheckpoint(bytes,base),h=state.host;
  if(h?.identity!==identity||!Number.isSafeInteger(h.frame)||h.frame<0||h.frame>216000||h.frame!==h.ticks)throw Error('完整检查点身份或帧号无效');
- portableReplay.restore(state);({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs,pendingNative,consumedNative,musicSequence,musicName,sfxSequence,playedName,pendingMusic,musicError}=h);
- emulator.tick=h.emulator.tick;emulator.keys=new Set(h.emulator.keys);emulator.state=h.emulator.state;emulator.outputs.clear();
+ portableReplay.restore(state);({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs,pendingNative,consumedNative,musicSequence,musicName,sfxSequence,playedName,pendingMusic,musicError}=h);endingMatches=h.endingMatches??[];
+ if(challenge)challenge.restore(h.challenge);emulator.tick=h.emulator.tick;emulator.keys=new Set(h.emulator.keys);emulator.state=h.emulator.state;emulator.outputs.clear();
   confirmedPrefix=ticks;states.clear();effects.clear();pending=true;
  if(sync.replayProof()!==h.proof||JSON.stringify(checksum())!==JSON.stringify(h.check))throw Error('完整检查点恢复校验不一致');
   workerHost.restoreAudioState?.(h.audio);
@@ -362,7 +374,7 @@ const sync={
  setPointPreferences(value){points={...value};},setRawPresentation(value){raw=!!value;pending=true;},
  async unlockAudio(){const context=emulator?.audio.context;if(context?.state!=='running')await context?.resume();return context?.state==='running';},
  touchContext(){const s=state(),p=s?.players[localSlot],paused=emulator&&nativePaused(emulator.module.HEAPU8,mailbox,patch);return {key:`${s?.generation??0}:${!s||paused?'menu':'game'}`,play:!!p&&!p.hit&&!p.out&&!paused};},
- replayProof:()=>JSON.stringify([ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs,pendingNative,consumedNative,musicSequence,musicName,sfxSequence,state()]),
+ replayProof:()=>JSON.stringify([ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs,pendingNative,consumedNative,musicSequence,musicName,sfxSequence,state(),...(challenge?[challenge.snapshot()]:[])]),
  replayScene(){const s=state();return s?{kind:'stage',stage:s.stage}:null;},
  replaySave,replayLoad,
  snapshot:state,checksum,step,present,capture,restore,confirm,
@@ -370,7 +382,7 @@ const sync={
  canPredict:()=>!predictionBlockReason(),predictionBlockReason,
  rollbackInfo:()=>({...emulator?.module.netSnapshotInfo(),checkpointFrames:2,checkpointReplays}),
  diagnosticText,renderInfo:()=>emulator?.module.framePresenter.info(),
- faultReport:()=>({settings:config,game:state(),diagnostics:diagnosticText(),music:{error:musicError,status:bgm?.status,track:bgm?.active?.id,sequence:musicSequence,nativeBgm:false,nativeEffects:false},sound:{...sfx?.info(),sequence:sfxSequence},input:{pendingNative,consumedNative},logs:emulator?.logs,build:version?.build})
+ faultReport:()=>({settings:config,game:state(),challenge:challenge?.snapshot(),diagnostics:diagnosticText(),music:{error:musicError,status:bgm?.status,track:bgm?.active?.id,sequence:musicSequence,nativeBgm:false,nativeEffects:false},sound:{...sfx?.info(),sequence:sfxSequence},input:{pendingNative,consumedNative},logs:emulator?.logs,build:version?.build})
 };
 if(workerHost)workerHost.runtime=sync;
 else{

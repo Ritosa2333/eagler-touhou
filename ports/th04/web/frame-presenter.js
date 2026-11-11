@@ -85,7 +85,7 @@ export function installFramePresenter(mod,{deferred=false,isReplaying=()=>false}
   function flush({redraw=false}={}){
     if(disposed||!latest||(!dirty&&!redraw))return false;
     if(gl.isContextLost())throw Error('GPU 画面上下文已丢失，请重新开始');
-    const {frame,frameWidth,frameHeight}=latest,size=frameWidth*frameHeight*3;
+    const {frame,frameWidth,frameHeight,sidebarColor}=latest,size=frameWidth*frameHeight*3;
     if(dirty&&(frame<0||size<=0||frame+size>mod.HEAPU8.length))throw Error('TH04 画面缓冲范围无效');
     gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,frameWidth,frameHeight);gl.useProgram(program);
     for(const capability of capabilities)gl.disable(capability);
@@ -93,18 +93,9 @@ export function installFramePresenter(mod,{deferred=false,isReplaying=()=>false}
     gl.vertexAttribPointer(position,2,gl.FLOAT,false,16,0);gl.vertexAttribPointer(uv,2,gl.FLOAT,false,16,8);
     gl.enableVertexAttribArray(position);gl.enableVertexAttribArray(uv);
     gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);gl.uniform1i(sampler,0);
-    const palette=mod.sidebarPaletteAddress;
-    // DOS EXEC can retain OP as the reported program name during solo MAIN.
-    // Callers bind this address only while a validated game mailbox is live.
-    const normalize=frameWidth===640&&frameHeight===400&&Number.isInteger(palette)&&palette>=0&&palette+3<=mod.HEAPU8.length;
+    const normalize=sidebarColor!==null;
     gl.uniform1i(normalizeSidebar,normalize?1:0);
-    if(normalize){
-      // DOSBox-X dac_4to6, then the VGA 6-to-8-bit DAC expansion.
-      const rgb=Array.from(mod.HEAPU8.subarray(palette,palette+3),value=>{
-        const nibble=value>>4,six=(nibble<<2)|(nibble>>2);return ((six<<2)|(six>>4))/255;
-      });
-      gl.uniform3f(sidebarBackground,...rgb);
-    }
+    if(normalize)gl.uniform3f(sidebarBackground,...sidebarColor);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
     // WebGL consumes this view during the call. Reacquire the heap on every
     // upload, including after memory growth or a rollback restore.
@@ -140,8 +131,19 @@ export function installFramePresenter(mod,{deferred=false,isReplaying=()=>false}
     metrics.submitted++;mod.frameUploads=(mod.frameUploads||0)+1;
     if(isReplaying())metrics.replaySubmitted++;
     if(dirty)metrics.coalesced++;
-    latest={frame,frameWidth,frameHeight};dirty=true;
-    if(!deferred)flush();
+    // Capture the palette with the submitted frame: deferred rendering may run
+    // after the game has already changed the palette for the following frame.
+    const palette=mod.sidebarPaletteAddress;
+    const valid=frameWidth===640&&frameHeight===400&&Number.isInteger(palette)&&palette>=0x26de&&palette+3<=mod.HEAPU8.length;
+    const tone=valid?Math.max(0,Math.min(200,new DataView(mod.HEAPU8.buffer).getInt16(palette-0x26de,true))):100;
+    const sidebarColor=valid?Array.from(mod.HEAPU8.subarray(palette,palette+3),value=>{
+      // master.lib palette_show applies PaletteTone before writing the 4-bit DAC.
+      const raw=value>>4,white=tone>100?15:0,scale=tone>100?200-tone:tone;
+      const nibble=(Math.floor((raw^white)*scale/100)^white),six=(nibble<<2)|(nibble>>2);
+      return ((six<<2)|(six>>4))/255;
+    }):null;
+    latest={frame,frameWidth,frameHeight,sidebarColor};dirty=true;
+    if(!deferred&&!mod.practicePreparing?.())flush();
   };
   return {
     flush,

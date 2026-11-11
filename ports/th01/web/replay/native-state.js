@@ -1,16 +1,17 @@
 import {digest,stable} from './tape.js';
 export const NATIVE_LAYOUT='th01-native-state/1';
-// This exact ordinary core was audited with wasm-dis: no imports, one mutable
+// These exact ordinary cores were disassembled: no imports, one mutable
 // i32 stack pointer, fixed 64-page memory and a fixed 3-entry function table.
 // The element segment initializes that table; there are no table write/grow
 // instructions. The isolated replica exports the existing global; code/data
 // sections and the player's original module remain byte-for-byte unchanged.
-export const AUDITED_CORE='5b424c9e372635ffe9711900c2610a5fb5fece5a1e91366171db545067d1bd17';
+export const AUDITED_CORE='10ddef930adc2527f34f8584dc7383b825bb916d52782bd66919f7a653a56eee';
+const AUDITED_CORES=new Set([AUDITED_CORE,'3dd9b4e8a2bb13d5396c1a44625bce612a26d2ddfe00aa8c927067731e0ff0bf','5b424c9e372635ffe9711900c2610a5fb5fece5a1e91366171db545067d1bd17']);
 const HEAP=4194304,MAX_JSON=16384;
 const leb=n=>{const bytes=[];do{let b=n&127;n>>>=7;bytes.push(b|(n?128:0));}while(n);return bytes;};
 function uint(bytes,cursor){let value=0,shift=0;for(let n=0;n<5;n++){const b=bytes[cursor.at++];if(b===undefined)throw Error('原生模块截断');value|=(b&127)<<shift;if(!(b&128))return value>>>0;shift+=7;}throw Error('原生模块长度无效');}
 export async function replicaBinary(bytes){
-  if(await digest(bytes)!==AUDITED_CORE)throw Error('原生核心尚未通过完整状态布局审计');
+  if(!AUDITED_CORES.has(await digest(bytes)))throw Error('原生核心尚未通过完整状态布局审计');
   const parts=[bytes.subarray(0,8)],cursor={at:8};let exported=false;
   while(cursor.at<bytes.length){
     const begin=cursor.at,id=bytes[cursor.at++],size=uint(bytes,cursor),start=cursor.at,end=start+size;if(end>bytes.length)throw Error('原生模块区段越界');
@@ -25,7 +26,7 @@ export async function replicaBinary(bytes){
 }
 export function captureNative(simulation,identity){
   const e=simulation.core;if(!(e.__replay_stack instanceof WebAssembly.Global)||e.memory.buffer.byteLength!==HEAP)throw Error('原生状态布局无效');
-  return {host:{version:NATIVE_LAYOUT,identity,frame:simulation.frame,previous:simulation.previous.slice(),hostSlot:simulation.hostSlot,settings:simulation.settings,
+  return {host:{version:NATIVE_LAYOUT,identity,frame:simulation.frame,previous:simulation.previous.slice(),resultFrames:simulation.resultFrames??0,hostSlot:simulation.hostSlot,settings:simulation.settings,
     stack:e.__replay_stack.value,proof:JSON.stringify(simulation.checksum())},heap:new Uint8Array(e.memory.buffer).slice()};
 }
 export async function encodeNative(state,base){
@@ -50,7 +51,8 @@ export function restoreNative(simulation,state,identity){
   if(h.identity!==identity||h.version!==NATIVE_LAYOUT||h.hostSlot!==simulation.hostSlot||stable(h.settings)!==stable(simulation.settings)||
     !Number.isInteger(h.frame)||h.frame<0||h.frame>216000||!Array.isArray(h.previous)||
     (h.frame===0?h.previous.length!==0:h.previous.length!==simulation.settings.players)||h.previous.some(n=>!Number.isSafeInteger(n)||n<0||n>=2**44)||
+    !Number.isSafeInteger(h.resultFrames)||h.resultFrames<0||h.resultFrames>216000||
     !Number.isInteger(h.stack)||h.stack<0||h.stack>HEAP||typeof h.proof!=='string'||state.heap.length!==HEAP)throw Error('原生检查点身份或宿主状态无效');
-  new Uint8Array(e.memory.buffer).set(state.heap);e.__replay_stack.value=h.stack;simulation.frame=h.frame;simulation.previous=h.previous.slice();
+  new Uint8Array(e.memory.buffer).set(state.heap);e.__replay_stack.value=h.stack;simulation.frame=h.frame;simulation.previous=h.previous.slice();if('resultFrames' in simulation)simulation.resultFrames=h.resultFrames;
   if(JSON.stringify(simulation.checksum())!==h.proof)throw Error('原生检查点恢复证明不一致');return {frame:h.frame,proof:h.proof};
 }

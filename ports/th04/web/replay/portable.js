@@ -75,12 +75,21 @@ export function createPortableCheckpoint(mod,ci){
     },
   };
 }
+// XOR full words when both inputs are aligned. Checkpoint heaps are large;
+// avoiding one JavaScript operation per byte reduces spectator CPU pressure.
+function xorBytes(a,b){
+  const out=new Uint8Array(a.length);let n=0;
+  if(((a.byteOffset|b.byteOffset)&3)===0){
+    const words=Math.floor(a.length/4),av=new Uint32Array(a.buffer,a.byteOffset,words),bv=new Uint32Array(b.buffer,b.byteOffset,words),ov=new Uint32Array(out.buffer,0,words);
+    for(let i=0;i<words;i++)ov[i]=av[i]^bv[i];n=words*4;
+  }
+  for(;n<a.length;n++)out[n]=a[n]^b[n];return out;
+}
 export async function encodeCheckpoint(state,base=null){
   const {buffers:original,...meta}=state,xor=[];
   const buffers=original.map((b,i)=>{
     if(!base||base.buffers[i]?.length!==b.length){xor.push(false);return b;}
-    xor.push(true);const bytes=new Uint8Array(b.length),previous=base.buffers[i];
-    for(let n=0;n<b.length;n++)bytes[n]=b[n]^previous[n];return bytes;
+    xor.push(true);return xorBytes(b,base.buffers[i]);
   });
   const header=new TextEncoder().encode(JSON.stringify({...meta,delta:!!base,xor,lengths:buffers.map(b=>b.length)}));
   const total=4+header.length+buffers.reduce((n,b)=>n+b.length,0);
@@ -99,7 +108,7 @@ export async function decodeCheckpoint(bytes,base=null){
   meta.buffers=meta.lengths.map(n=>{if(!Number.isInteger(n)||n<0||at+n>raw.length)throw Error('检查点字节范围无效');const b=raw.subarray(at,at+n);at+=n;return b;});
   if(meta.delta){
     if(!base||base.delta||!Array.isArray(meta.xor)||meta.xor.length!==meta.buffers.length)throw Error('检查点基准缺失');
-    meta.buffers=meta.buffers.map((b,i)=>{if(!meta.xor[i])return b;const previous=base.buffers[i];if(previous?.length!==b.length)throw Error('检查点基准长度不符');const bytes=new Uint8Array(b.length);for(let n=0;n<b.length;n++)bytes[n]=b[n]^previous[n];return bytes;});
+    meta.buffers=meta.buffers.map((b,i)=>{if(!meta.xor[i])return b;const previous=base.buffers[i];if(previous?.length!==b.length)throw Error('检查点基准长度不符');return xorBytes(b,previous);});
   }
   if(at!==raw.length)throw Error('检查点尾部无效');return meta;
 }

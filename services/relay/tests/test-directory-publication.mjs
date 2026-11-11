@@ -72,3 +72,10 @@ test('directory shares public work but not membership, and refreshes each public
     directory.close();
   }
 });
+
+test('TH03 special focus rule is published to the directory',t=>{
+  t.mock.timers.enable({apis:['setTimeout']});
+  const client=new Socket(),room={id:'th03mp-3456',multiplayer:{},createdAt:1,lastActivityAt:Date.now(),lobby:{visibility:'public',playerCount:2,phase:'lobby',startSerial:0,disableFocus:true,spectators:new Map(),seats:[{clientId:'host',name:'host'},null]},lobbyClients:new Map([['host',client]]),lobbyDisconnectTimers:new Map(),clients:new Map(),runs:new Map()};
+  const directory=createRoomDirectory({rooms:new Map([[room.id,room]]),clearSeat:()=>false,invalidateReady(){},broadcast(){},maybeDelete(){}}),viewer=new Socket();
+  try{directory.connect(viewer,'viewer');t.mock.timers.tick(100);assert.equal(viewer.messages.at(-1).rooms[0].disableFocus,true);}finally{directory.close();}
+});

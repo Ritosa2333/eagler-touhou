@@ -72,6 +72,7 @@ export function RoomComposition({
       workspaceHost={workspace?.host}
       workspaceStage={workspace?.stage}
       playbackControls={playback}
+      th03Replays={state.th03RoomReplays?.filter(item=>item.roomEpoch===room.epoch)}
       onFullscreen={()=>{void session.togglePlayerFullscreen();}}
       reloadPending={state.roomReloadPending}
       onReloadResources={session.reloadRoomResources}

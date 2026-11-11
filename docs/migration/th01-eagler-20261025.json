@@ -1,0 +1,22 @@
+{
+  "schema": "eagler-touhou/source-import/1",
+  "game": "th01",
+  "repository": "https://github.com/IxinorTyan/th01-multiorb-lab",
+  "branch": "main",
+  "commit": "0fdb5febf1236af61754ea41566a913d14a4b39a",
+  "destination": "ports/th01",
+  "sourceManifest": "../../ports/th01/source-import.json",
+  "mode": "managed-adapter-preview",
+  "currentMode": "git-subtree",
+  "subtree": {
+    "upstreamCommit": "0fdb5febf1236af61754ea41566a913d14a4b39a",
+    "initialJoin": "c9e615876c62a0755704fff9d78545eccb7d3e6c",
+    "initialSplit": "c9501d90358664ca333753c3dac51f4b693324f4",
+    "latestJoin": "dcb71ade092bc48b3f22d54d96e9b520321378c7",
+    "currentSplit": "9bbf0d16e7521c624f32f0b147dde6896054564b"
+  },
+  "builder": "ports/th01/scripts/build-eagler.mjs",
+  "inputIdentityRecord": "ports/th01/content/source.json",
+  "normalAndMultiplayer": "native WASM adapter with main-room transport and independent save namespaces",
+  "record": "docs/migration/th01-eagler-20261025.md"
+}

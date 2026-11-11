@@ -1,6 +1,12 @@
+import {gameVersion} from '../game-version.js';
+import {Fat12} from '../solo-fat12.js';
+import {extractOriginalPmd} from '../pmd-archives.mjs';
+import {PmdPlayer} from '../pmd-player.mjs';
+import {OriginalSfx} from '../original-sfx.mjs';
+import {assetBytes} from '../preload-cache.js';
 import {keyboardBits,isBound} from './controls.js';
 import {isFormTarget,useControlSnapshot,controlsSummary} from '../control-settings.js';
-import {LocalSe} from './local-se.js';
+
 import {LocalBgm} from './local-bgm.js';
 const PROTOCOL='th04-rollback/4',canvas=document.getElementById('canvas');
 let bitmapContext;try{bitmapContext=canvas.getContext('bitmaprenderer',{alpha:false});}catch{bitmapContext=null;}
@@ -8,10 +14,11 @@ const ctx=bitmapContext||canvas.getContext('2d',{alpha:false});
 if(!ctx)throw Error('浏览器无法创建游戏画面');
 if(!bitmapContext)ctx.imageSmoothingEnabled=false;
 let worker,serial=0,stopped=false,settings,configuration=[0,0,2],volume=.7,blocked=false,listener=()=>{},keys=new Set();
-let context,se,bgm,musicTask,musicError='',seError='',pendingMusic=[],cache={},check=null,queuedFrame=null,preparedFrame=null,raf=0,presentPending=false;
+let fat,pmd,context,se,bgm,musicTask,musicError='',seError='',pendingMusic=[],cache={},check=null,queuedFrame=null,preparedFrame=null,raf=0,presentPending=false;
+let frameCutoff=0;
 let raw=false,points={focus:true,always:false},lastPoints='',acknowledgedPrefix=0,sentPrefix=0,stagedMode=false,preparedReady=false,bootPromise,lastFaultCpu=null;
 let drawn=0,replaced=0,lastDraw=0,intervals=[],executionMs=0,stoppedMusic=null;
-const rpcMetrics={renderer:bitmapContext?'bitmaprenderer':'2d',displayMs:0,expired:0,hiddenDiscarded:0,queuedConfirmations:0,presentationRpcs:0};
+const rpcMetrics={renderer:bitmapContext?'bitmaprenderer':'2d',displayMs:0,expired:0,lateDisplayed:0,hiddenDiscarded:0,queuedConfirmations:0,presentationRpcs:0};
 const requests=new Map();
 function request(type,args=[],extra={}){
  if(stopped||!worker)return Promise.reject(Error('TH04 Worker 未运行'));
@@ -25,33 +32,43 @@ function fire(type,args=[]){if(worker)void request(type,args).catch(e=>{if(!stop
 function clearKeys(){keys.clear();listener(0);}
 function releaseFrame(frame){frame.bitmap.close();worker?.postMessage({type:'frame-ack',sequence:frame.sequence});}
 function discardPrepared(){preparedReady=false;if(preparedFrame){releaseFrame(preparedFrame);preparedFrame=null;}}
-function discardFrames(){preparedReady=false;if(preparedFrame){releaseFrame(preparedFrame);preparedFrame=null;}if(queuedFrame){releaseFrame(queuedFrame);queuedFrame=null;}if(raf){cancelAnimationFrame(raf);raf=0;}}
+function discardFrames(){frameCutoff=performance.timeOrigin+performance.now();preparedReady=false;if(preparedFrame){releaseFrame(preparedFrame);preparedFrame=null;}if(queuedFrame){releaseFrame(queuedFrame);queuedFrame=null;}if(raf){cancelAnimationFrame(raf);raf=0;}}
 function queueForDisplay(frame){if(document.hidden){releaseFrame(frame);rpcMetrics.hiddenDiscarded++;return;}if(queuedFrame){releaseFrame(queuedFrame);replaced++;}queuedFrame=frame;if(!raf)raf=requestAnimationFrame(draw);}
 function draw(){
  raf=0;if(!queuedFrame||stopped)return;
  const frame=queuedFrame;queuedFrame=null;
- const hidden=document.hidden,expired=Number.isFinite(frame.producedAt)&&performance.timeOrigin+performance.now()-frame.producedAt>50;
- if(hidden||expired){releaseFrame(frame);rpcMetrics[hidden?'hiddenDiscarded':'expired']++;return;}
+ // queueForDisplay has already discarded older frames, and rollback clears
+ // this queue. Even when the UI thread stalls, this is the newest valid frame;
+ // displaying it avoids a second visible freeze while waiting for another.
+ if(document.hidden){releaseFrame(frame);rpcMetrics.hiddenDiscarded++;return;}
+ if(Number.isFinite(frame.producedAt)&&performance.timeOrigin+performance.now()-frame.producedAt>50)rpcMetrics.lateDisplayed++;
  const began=performance.now();
  try{if(bitmapContext)bitmapContext.transferFromImageBitmap(frame.bitmap);else ctx.drawImage(frame.bitmap,0,0,640,400);drawn++;const now=performance.now();rpcMetrics.displayMs+=now-began;if(lastDraw)intervals.push(now-lastDraw);lastDraw=now;if(intervals.length>120)intervals.shift();}
  catch(error){fatal(error.message);}
  finally{releaseFrame(frame);}
 }
 function musicInfo(){return {...cache.fault?.music,error:musicError||cache.fault?.music?.error,status:bgm?.status,track:bgm?.active?.id,requested:bgm?.requested?.id};}
+function prepareMusic(){
+ if(!musicTask&&!musicError)musicTask=Promise.resolve().then(async()=>{
+  if(stopped)return;bgm=new LocalBgm(context,()=>{});bgm.pmd={tracks:extractOriginalPmd('th04',fat),engine:pmd};bgm.setVolume(volume);
+  await bgm.load({...settings,warmOpening:false});if(stopped)return;
+  const opening=`st${String(settings.stage??0).padStart(2,'0')}`;bgm.warmOriginal(`${opening}-m86`);bgm.warmOriginal(`${opening}-m26`);
+  for(const [ax,name]of pendingMusic.splice(0))bgm.commandTrack(ax,name);
+ }).catch(e=>{if(!stopped)musicError=e.message;});
+ return musicTask;
+}
 function music(event){
  pendingMusic.push([event.ax,event.name]);if(pendingMusic.length>64)pendingMusic.splice(0,pendingMusic.length-64);
  if(bgm?.manifest){for(const [ax,name]of pendingMusic.splice(0))bgm.commandTrack(ax,name);return;}
- if(!musicTask&&!musicError)musicTask=Promise.resolve().then(async()=>{
-  if(stopped)return;bgm=new LocalBgm(context,()=>{});bgm.setVolume(volume);
-  await bgm.load({...settings,warmOpening:false});if(stopped)return;
-  for(const [ax,name]of pendingMusic.splice(0))bgm.commandTrack(ax,name);
- }).catch(e=>{if(!stopped)musicError=e.message;});
+ void prepareMusic();
 }
 async function load(config){
- settings=config;context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});await context.resume().catch(()=>{});
- if(context.sampleRate!==44100)throw Error('此浏览器未提供统一的 44100 Hz 音频');
- se=new LocalSe(context);await se.load().catch(e=>{seError='浏览器音效加载失败：'+e.message;});
- if(stopped){se.dispose();throw Error('TH04 Worker 已停止');}
+ settings=config;
+ // Device audio is local; the Worker always runs the deterministic 44100 Hz
+ // core independently. Some mobile browsers reject an explicit sample rate.
+ try{context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});}
+ catch{context=new AudioContext();}
+ await context.resume().catch(()=>{});
  worker=new Worker(new URL('./runtime-worker.js',import.meta.url),{type:'module'});
  worker.onerror=e=>fatal(e.message||'TH04 Worker 失败');
  worker.onmessageerror=()=>fatal('TH04 Worker 消息读取失败');
@@ -65,10 +82,10 @@ async function load(config){
   }
   if(data.type==='music'){music(data.event);return;}
   if(data.type==='se'){
-   if(!seError)try{se.confirm(data.event);}catch(e){seError='浏览器音效错误：'+e.message;se.stop();}return;
+   if(!seError&&se)try{se.confirm(data.event);}catch(e){seError='浏览器音效错误：'+e.message;se.stop();}return;
   }
-  if(data.type==='se-stop'){se.stop();return;}
-  if(data.type==='frame'){if(data.staged){if(preparedFrame)releaseFrame(preparedFrame);preparedFrame=data;}else queueForDisplay(data);return;}
+  if(data.type==='se-stop'){se?.stop();return;}
+  if(data.type==='frame'){if(Number.isFinite(data.producedAt)&&data.producedAt<=frameCutoff){releaseFrame(data);return;}if(data.staged){if(preparedFrame)releaseFrame(preparedFrame);preparedFrame=data;}else queueForDisplay(data);return;}
   if(data.type==='error'){
    if(data.fault){cache.fault=data.fault;lastFaultCpu=data.fault.cpu;}
    const pending=requests.get(data.id);requests.delete(data.id);pending?.reject(Error(data.message));fatal(data.message);return;
@@ -76,7 +93,15 @@ async function load(config){
   if(data.type!=='result')return;
   Object.assign(cache,data.status);executionMs=data.executionMs;const pending=requests.get(data.id);requests.delete(data.id);pending?.resolve(data.result);
  };
- const result=await request('load',[],{settings:config,configure:configuration});
+ const workerLoading=request('load',[],{settings:config,configure:configuration});
+ const audioLoading=(async()=>{
+ const selected=gameVersion(config.language),meta=await (await fetch(new URL('../'+selected.coopMeta,import.meta.url))).json();
+ fat=new Fat12(await assetBytes(selected.coopDisk,{hash:meta.sha256,size:meta.size,gzip:true}));
+ [se,pmd]=await Promise.all([OriginalSfx.create('th04',fat),PmdPlayer.prepare(context,new URL('../',import.meta.url))]);
+ if(stopped){se.dispose();throw Error('TH04 Worker 已停止');}
+ void prepareMusic();
+ })();
+ let result;try{[result]=await Promise.all([workerLoading,audioLoading]);}catch(error){sync.stop();throw error;}
  await request('setRawPresentation',[raw]);await request('setPointPreferences',[points]);return result;
 }
 const sync={
@@ -100,14 +125,14 @@ const sync={
  },
  async confirm(prefix){if(prefix<=acknowledgedPrefix)return;const result=await request('confirm',[prefix]);acknowledgedPrefix=Math.max(acknowledgedPrefix,prefix);sentPrefix=Math.max(sentPrefix,prefix);return result;},
  confirmQueued(prefix,onExit){if(prefix<=sentPrefix||stopped||!worker)return false;sentPrefix=prefix;worker.postMessage({type:'confirm',args:[prefix],oneWay:true});if(onExit)sync.onConfirmedExit=onExit;rpcMetrics.queuedConfirmations++;return true;},
- replayProof:()=>cache.proof,checksum:()=>check,snapshot:()=>cache.game??null,
+ replayProof:()=>cache.proof,checksum:()=>check,snapshot:()=>cache.game??null,sampleGame:()=>request('snapshot'),
  present(){if(stopped||!worker)return false;if(stagedMode){if(!preparedReady)return false;preparedReady=false;if(!preparedFrame)return false;const frame=preparedFrame;preparedFrame=null;queueForDisplay(frame);return true;}if(presentPending)return false;rpcMetrics.presentationRpcs++;presentPending=true;request('present').catch(e=>{if(!stopped)fatal(e.message);}).finally(()=>{presentPending=false;});return true;},
  onInput(callback){listener=callback;},onMenuAction(){},
  setMusicVolume(value){volume=Math.max(0,Math.min(1,Number(value)/100||0));bgm?.setVolume(volume);},
  updateControls(value,editing=false){clearKeys();useControlSnapshot(value);blocked=editing;document.getElementById('controls-summary').textContent=controlsSummary('online');},
  setPointPreferences(value){points={...value};const next=JSON.stringify(value);if(next!==lastPoints){lastPoints=next;fire('setPointPreferences',[value]);}},
  setRawPresentation(value){raw=!!value;fire('setRawPresentation',[raw]);},
- async unlockAudio(){if(context?.state!=='running')await context?.resume();return context?.state==='running';},
+ async unlockAudio(){await se?.resume();if(context?.state!=='running')await context?.resume();return context?.state==='running';},
  touchContext:()=>cache.touch??{key:'boot',play:false},readyForRollback:()=>!!cache.ready,
  canPredict:()=>cache.reason==='',predictionBlockReason:()=>cache.reason??'游戏尚未就绪',
  rollbackInfo:()=>cache.rollback??{},

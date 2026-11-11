@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {createNativeMusic,musicTrack} from '../web/native-music-player.mjs';
+test('native cue mapping keeps stage and alternate track identities',()=>{assert.equal(musicTrack(1,0),'op');assert.equal(musicTrack(2,0),'select');assert.equal(musicTrack(3,7),'dec');assert.equal(musicTrack(4,2),'00mm');assert.equal(musicTrack(5,0),'win');});
+test('alternate music responds only to song commands and stops cleanly',async()=>{
+ const prev={Audio:globalThis.Audio,fetch:globalThis.fetch},instances=[];globalThis.Audio=class{constructor(){this.paused=true;instances.push(this);}play(){this.paused=false;return Promise.resolve();}pause(){this.paused=true;}removeAttribute(){}load(){}};globalThis.fetch=async()=>({ok:true,json:async()=>({tracks:{'select-m26':{url:'akyu/02.opus',fullLoop:true}}})});
+ try{const m=createNativeMusic({source:'akyu'});m.commands(Uint8Array.from([0,2,0,0,1,2,0,0,8,0,0,0]));await new Promise(r=>setTimeout(r,0));assert.equal(instances.length,1);assert.equal(instances[0].src,'./bgm/akyu/02.opus');assert.equal(instances[0].paused,false);m.commands(Uint8Array.from([2,0,0,0]));assert.equal(instances[0].paused,true);m.stop();}finally{globalThis.Audio=prev.Audio;globalThis.fetch=prev.fetch;}
+});

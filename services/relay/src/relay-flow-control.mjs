@@ -63,6 +63,16 @@ export function acceptRelayMessage(socket, data, gate) {
   return false;
 }
 
+// PC-98 adapters reuse a per-peer JSON channel. Derive that channel's source
+// from the authenticated gameplay socket; a client payload cannot select it.
+export function relayGameplayPayload(policy, player, payload) {
+  if (policy?.relaySourceEnvelope !== true) return payload;
+  const result = Buffer.allocUnsafe(payload.byteLength + 2);
+  result[0] = 0xe6; result[1] = player;
+  result.set(payload, 2);
+  return result;
+}
+
 // JSON objects must not reach Number/String coercion through attacker-supplied
 // valueOf/toString properties. Structured SDP/ICE/timing have their own owners.
 const numericFields = [

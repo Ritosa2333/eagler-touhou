@@ -11,12 +11,11 @@ export class SoloMusic {
     this.lastPoll=-Infinity;this.closed=false;
   }
   async install(data,folder) {
-    const response=await fetch('solo-music.json');
-    if(!response.ok)throw Error('独立音乐配置加载失败');
-    const meta=await response.json(),asset=await fetch(meta.url);
-    if(!asset.ok)throw Error('独立音乐驱动加载失败');
-    const bytes=new Uint8Array(await asset.arrayBuffer());
-    if(bytes.length!==meta.bytes||await sha256(bytes)!==meta.sha256)throw Error('独立音乐驱动校验失败');
+    let meta,bytes;
+    if(this.sfx){const bridge=await import('./music-bridge.mjs');meta=bridge.musicBridgeMeta;bytes=bridge.musicBridge;}
+    else{const response=await fetch('solo-music.json');if(!response.ok)throw Error('独立音乐配置加载失败');
+      meta=await response.json();const asset=await fetch(meta.url);if(!asset.ok)throw Error('独立音乐驱动加载失败');
+      bytes=new Uint8Array(await asset.arrayBuffer());if(bytes.length!==meta.bytes||await sha256(bytes)!==meta.sha256)throw Error('独立音乐驱动校验失败');}
     this.reader=new NativeMusic(meta);
     this.batchPath=folder+'/GAME.BAT';this.driverPath=folder+'/WEBMUSIC.COM';
     const fat=new Fat12(data),entry=fat.find(this.batchPath);
@@ -71,6 +70,7 @@ export class SoloMusic {
     });
   }
   async attachReplay(){
+    if(this.sfx){const {musicBridgeMeta}=await import('./music-bridge.mjs');this.reader=new NativeMusic(musicBridgeMeta);return;}
     const response=await fetch('solo-music.json',{cache:'no-store'});if(!response.ok)throw Error('Replay 音乐桥读取失败');
     this.reader=new NativeMusic(await response.json());
   }
@@ -83,10 +83,10 @@ export class SoloMusic {
     return copy;
   }
   poll(heap,now,boundary=false) {
-    if(this.closed||!this.reader||!boundary&&now-this.lastPoll<50)return;
+    if(this.closed||!this.reader||!boundary&&now-this.lastPoll<16)return;
     this.lastPoll=now;
     try {
-      for(const [ax,hash] of this.reader.read(heap))this.player.command(ax,hash);
+      for(const [ax,hash] of this.reader.read(heap)){if((ax>>>8)===12)this.sfx?.command(ax);else this.player.command(ax,hash);}
       if(this.player.status.includes('错误')||this.player.status.includes('未识别')) {
         if(this.lastError!==this.player.status){this.lastError=this.player.status;this.report(this.lastError+'；可重启选择原声模式');}
       }

@@ -82,6 +82,6 @@ export function createSoloReplayLifecycle({game,patch},memory){
     if(active&&!started)started=true;
     if(active)generation=gen;
     lastStage=stage;
-    return {active:started,paused,finish,stage};
+    return {active:started,currentActive:active,paused,finish,stage};
   };
 }

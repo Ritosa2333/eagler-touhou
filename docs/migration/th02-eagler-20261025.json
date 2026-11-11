@@ -1,0 +1,22 @@
+{
+  "schema": "eagler-touhou/source-import/1",
+  "game": "th02",
+  "repository": "https://github.com/IxinorTyan/th02-coop-lab",
+  "branch": "main",
+  "commit": "5b5d583faddfd837b423cbeb705c3e0504f18c1f",
+  "destination": "ports/th02",
+  "sourceManifest": "../../ports/th02/source-import.json",
+  "mode": "managed-adapter-preview",
+  "currentMode": "git-subtree",
+  "subtree": {
+    "upstreamCommit": "5b5d583faddfd837b423cbeb705c3e0504f18c1f",
+    "initialJoin": "9c821e9eda78b0b93b9e36205d319c8c98d9ec29",
+    "initialSplit": "1d5b0bf8a21d7b205a58b9dcd4571f57f8de3a25",
+    "latestJoin": "b07ccbc8ab28173cc4ca1c54c40c0613100e68ec",
+    "currentSplit": "42be0fc330aec7a71a55678e98ca7eba211dadbd"
+  },
+  "builder": "ports/th02/scripts/build-eagler.mjs",
+  "inputIdentityRecord": "ports/th02/content/source.json",
+  "normalAndMultiplayer": "DOSBox-X adapter with main-room transport and independent save namespaces",
+  "record": "docs/migration/th02-eagler-20261025.md"
+}

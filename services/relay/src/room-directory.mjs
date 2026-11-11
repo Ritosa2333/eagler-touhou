@@ -83,6 +83,8 @@ export function createRoomDirectory({
       host: publicNames ? seats[0]?.name || '' : initial(seats[0]?.name),
       disableCheatMovement: room.lobby.disableCheatMovement === true,
       challengeMode: room.lobby.challengeMode === true,
+      ...((match[1]==='th02mp'||match[1]==='th03mp')?{disableFocus:room.lobby.disableFocus===true}:{}),
+      ...(match[1]==='th01mp'?{ballCount:room.lobby.ballCount??2}:{}),
       prankMode: room.lobby.prankMode === true,
       spectators,
       initials: seats.map((seat) => (seat ? initial(seat.name) : null)),
@@ -92,7 +94,7 @@ export function createRoomDirectory({
               initial: initial(seat.name),
               loadout: seat.loadout,
               ...(publicNames ? {name:seat.name || ''} : {}),
-              ...(match[1] === 'th09mp'
+              ...(['th03mp','th09mp'].includes(match[1])
                 ? {
                     ...(!publicNames && typeof seat.machineSign === 'string' && seat.machineSign.trim()
                       ? {

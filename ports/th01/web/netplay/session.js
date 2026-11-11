@@ -23,8 +23,8 @@ export class NetSession{
     this.recorder=createRecorder(document.querySelector('.toolbar'));globalThis.th01Replay=this.recorder;
     this.game.onFailure=e=>this.fail(e);
     this.autoBuffer=room.settings.delay===0;
-    this.queue=new FrameQueue(this.slot,this.autoBuffer?(room.settings.network==='public'?6:3):room.settings.delay,this.roles.length);
-    this.hashes=new Map();this.remoteHashes=new Map(this.remotes.map(r=>[r,new Map()]));this.iceCounts={};this.iceErrors=[];
+    this.queue=new FrameQueue(this.slot,this.autoBuffer?(room.settings.network==='public'?6:3):room.settings.delay,this.roles.length,{rollback:this.room.settings.rollback!==false&&!!this.game.asyncExecution});
+    this.hashes=new Map();this.pendingHashes=new Map();this.confirmedPrefix=0;this.replayUntil=null;this.rollbackCount=0;this.replayedFrames=0;this.remoteHashes=new Map(this.remotes.map(r=>[r,new Map()]));this.iceCounts={};this.iceErrors=[];
     this.closed=false;this.running=false;this.connected=false;this.lastAdvance=performance.now();
     this.rtt=0;this.lastHash=0;this.waitHash=false;this.signalChain=Promise.resolve();
     this.waitStats={since:performance.now(),elapsed:0,input:0,hash:0};
@@ -171,7 +171,7 @@ export class NetSession{
           }
         }
         if(this.links.every(r=>(this.peers.get(r)?.samples||0)>=BUFFER_PROBES)){
-          this.queue=new FrameQueue(this.slot,this.recommendedDelay(true),this.roles.length);this.bufferReady=true;
+          this.queue=new FrameQueue(this.slot,this.recommendedDelay(true),this.roles.length,{rollback:this.room.settings.rollback!==false&&!!this.game.asyncExecution});this.bufferReady=true;
         }else{
           if(this.bufferTimer==null){
             this.status('测量连接延迟，选择输入缓冲…');
@@ -180,7 +180,7 @@ export class NetSession{
               try{
                 if(this.closed||this.running)return;
                 // Keep a conservative floor if a slow link did not finish probing.
-                this.queue=new FrameQueue(this.slot,Math.max(this.queue.delay,this.recommendedDelay(true)),this.roles.length);
+                this.queue=new FrameQueue(this.slot,Math.max(this.queue.delay,this.recommendedDelay(true)),this.roles.length,{rollback:this.room.settings.rollback!==false&&!!this.game.asyncExecution});
                 this.bufferReady=true;this.bufferFallback=true;this.maybeHello();
               }catch(e){this.fail(e);}
             },BUFFER_PROBE_TIMEOUT);
@@ -217,7 +217,7 @@ export class NetSession{
         if(!Number.isInteger(message.delay)||message.delay<1||message.delay>12||
           (!this.autoBuffer&&message.delay!==this.room.settings.delay)||typeof message.fallback!=='boolean'||
           !Number.isFinite(message.startAfter)||message.startAfter<0||message.startAfter>10000)throw Error('开局输入缓冲无效');
-        this.queue=new FrameQueue(this.slot,message.delay,this.roles.length);this.bufferFallback=message.fallback;
+        this.queue=new FrameQueue(this.slot,message.delay,this.roles.length,{rollback:this.room.settings.rollback!==false&&!!this.game.asyncExecution});this.bufferFallback=message.fallback;
         this.start(message.startAfter);break;
       case 'input':{
         if(!this.running||message.slot!==this.room.seats[source])throw Error('输入座位或开局状态无效');
@@ -263,46 +263,67 @@ export class NetSession{
     this.timer=setInterval(()=>this.pump(),4);
   }
   async pump(){
-    if(this.closed||!this.running||this.pumping)return;
+    if(this.closed||!this.running)return;
+    if(this.pumping){this.pumpPending=true;return;}
     this.pumping=true;
     try{
       const now=performance.now();
       if(now-this.lastAdvance>30000)throw Error('等待队友输入超过 30 秒，请重开房间');
       this.recordWait(now);
       this.waitKind=null;
-      let budget=4;const started=performance.now();
-      while(now>=this.nextTick&&budget-->0&&(budget===3||performance.now()-started<6)){
-        // Do not consume short taps while this immutable frame is already sampled.
-        if(!this.queue.lanes[this.slot].has(this.queue.frame+this.queue.delay)){
-          // Keep authority flowing while hidden; already published frames stay
-          // immutable, and background pages never consume live device edges.
+      let budget=4,progressed=false;const started=performance.now();
+      const confirm=()=>{
+        if(this.queue.dirty!==null)return;
+        const prefix=Math.min(this.queue.frame,this.queue.confirmed);
+        if(prefix<=this.confirmedPrefix)return;
+        this.confirmedPrefix=prefix;this.recorder.confirm(prefix,false);this.game.confirm?.(prefix);
+        for(const [frame,checksum] of this.pendingHashes)if(frame<=prefix){this.pendingHashes.delete(frame);this.hashes.set(frame,checksum);this.send(checksum);this.checkHashes();}
+        this.queue.prune();
+      };
+      if(this.queue.rollback)this.queue.refreshCorrection();
+      if(this.queue.dirty!==null){
+        const from=this.queue.dirty;this.rollbackCount++;this.replayUntil=Math.max(this.replayUntil??0,this.queue.frame);
+        await this.game.restore(from);if(this.closed)return;
+        this.recorder.rewind(from);this.queue.rewind(from);
+        for(const frame of this.pendingHashes.keys())if(frame>from)this.pendingHashes.delete(frame);
+        this.queue.refreshCorrection();
+      }
+      if(this.queue.dirty!==null)return;
+      confirm();
+      while((this.replayUntil!==null&&this.queue.frame<this.replayUntil||now>=this.nextTick)&&budget-->0&&(budget===3||performance.now()-started<6)){
+        const replay=this.replayUntil!==null&&this.queue.frame<this.replayUntil;
+        if(!replay&&!this.queue.lanes[this.slot].has(this.queue.frame+this.queue.delay)){
           const packet=this.queue.capture(document.hidden?0:this.buttons());if(packet)this.send(packet);
         }
-        // Hashes normally compare in the background. Stop only at the bounded
-        // horizon; still publish this frame's immutable input for slower peers.
         this.waitHash=this.queue.frame-this.lastHash>=HASH_WINDOW;
         if(this.waitHash){this.waitKind='hash';this.nextTick=Math.max(this.nextTick,now);break;}
         const inputs=this.queue.peek();
-        if(!inputs){this.waitKind='input';this.nextTick=Math.max(this.nextTick,now);break;}
+        if(!inputs){this.waitKind='input';if(!replay)this.nextTick=Math.max(this.nextTick,now);break;}
         const recordedFrame=this.queue.frame;
-        if(this.game.asyncExecution)await this.game.execute(inputs,recordedFrame);else this.game.step(inputs);
+        if(this.game.asyncExecution)await this.game.execute(inputs,recordedFrame,this.queue.rollback&&recordedFrame>=this.queue.confirmed);else this.game.step(inputs);
         if(this.closed)return;
         this.recorder.stage(recordedFrame,{inputs,offlineMask:0,proof:this.game.replayProof(),hash:(recordedFrame+1)%120===0?this.game.checksum():null});
-        this.recorder.confirm(recordedFrame+1,false);this.queue.commit();
+        this.queue.commit(inputs);progressed=true;
+        if(this.queue.rollback)this.queue.refreshCorrection();
+        if(this.queue.frame%HASH_INTERVAL===0)this.pendingHashes.set(this.queue.frame,this.game.checksum());
+        if(this.queue.dirty!==null)break;
+        confirm();
         const nativeState=this.game.state();
         if(nativeState&&!nativeState.menu)this.sawGameplay=true;
-        if(this.sawGameplay&&nativeState?.menu===1){this.fail(Error('已返回标题，本局结束。'),false);return;}this.lastAdvance=performance.now();this.nextTick+=TICK;
-        if(this.nextTick<now-4*TICK)this.nextTick=now;
-        if(this.queue.frame%HASH_INTERVAL===0){
-          const checksum=this.game.checksum();this.hashes.set(checksum.frame,checksum);
-          this.send(checksum);this.checkHashes();
-        }
+        if(this.sawGameplay&&nativeState?.menu===1&&this.queue.frame<=this.queue.confirmed){this.fail(Error('已返回标题，本局结束。'),false);return;}
+        this.lastAdvance=performance.now();
+        if(replay){this.replayedFrames++;if(this.queue.frame>=this.replayUntil)this.replayUntil=null;}
+        else{this.nextTick+=TICK;if(this.nextTick<now-4*TICK)this.nextTick=now;}
       }
-      if(!document.hidden){
+      if(this.queue.dirty!==null||this.replayUntil!==null&&progressed)this.pumpPending=true;
+      if(!document.hidden&&this.replayUntil===null&&this.queue.dirty===null){
         this.game.requestPresent?.();
         if(now-(this.renderAt||0)>150){this.renderAt=now;this.render(this);}
       }
-    }catch(error){this.fail(error);}finally{this.pumping=false;}
+    }catch(error){this.fail(error);}finally{
+      this.pumping=false;
+      if(this.pumpPending&&!this.closed&&this.running){this.pumpPending=false;queueMicrotask(()=>this.pump());}
+    }
   }
   recordWait(now){
     const sample=this.performanceSample;

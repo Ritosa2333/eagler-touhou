@@ -1,3 +1,4 @@
+import {isPc98StockProduct} from './pc98-initial-stock.mjs';
 import {validTh19VersusRules} from './th19-versus-rules.mjs';
 import {validTh15ChapterThreshold} from "./th15-chapter-reward.mjs";
 import {validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
@@ -15,6 +16,8 @@ export interface MultiplayerRoomSessionSnapshot {
     visibility?: "public" | "private";
     disableCheatMovement?: boolean;
     disableLocalChargePriority?: boolean;
+    disableFocus?: boolean;
+  ballCount?: number;
     challengeMode?:boolean;
   chapterThreshold?: number;
     th19Rules?: number[];
@@ -69,6 +72,8 @@ export function createMultiplayerRoomSessionStore({
           visibility: snapshot.room.visibility,
           disableCheatMovement: snapshot.room.disableCheatMovement,
           disableLocalChargePriority: snapshot.room.disableLocalChargePriority,
+          disableFocus: snapshot.room.disableFocus,
+          ballCount: snapshot.room.ballCount,
           chapterThreshold:snapshot.room.chapterThreshold,challengeMode:snapshot.room.challengeMode,prankMode:snapshot.room.prankMode,
           th19Rules:product==='th19mp'?snapshot.room.th19Rules:undefined,
           initialSpares:snapshot.room.initialSpares,initialBombs:snapshot.room.initialBombs,
@@ -117,10 +122,12 @@ export function createMultiplayerRoomSessionStore({
         visibility: room.visibility === "private" ? "private" : "public",
         disableCheatMovement: room.disableCheatMovement === true,
         ...(product === 'th09mp' ? {disableLocalChargePriority: room.disableLocalChargePriority === true} : {}),
+        ...(product === 'th01mp' ? {ballCount:[1,2,3,4,6,8].includes(room.ballCount as number) ? room.ballCount as number : 2} : {}),
+        ...(product === 'th03mp' ? {disableFocus:room.disableFocus!==false} : product === 'th02mp' ? {disableFocus:room.disableFocus===true} : {}),
         ...(validTh15ChapterThreshold(room.chapterThreshold)?{chapterThreshold:room.chapterThreshold}:{}),
         ...(product==='th19mp'&&validTh19VersusRules(room.th19Rules)?{th19Rules:[...room.th19Rules]}:{}),
-        ...(product==='th05mp'&&validTh05InitialSpares(room.initialSpares)?{initialSpares:room.initialSpares as number}:{}),
-        ...(product==='th05mp'&&validTh05InitialBombs(room.initialBombs)?{initialBombs:room.initialBombs as number}:{}),
+        ...((product==='th05mp'||isPc98StockProduct(product))&&validTh05InitialSpares(room.initialSpares)?{initialSpares:room.initialSpares as number}:{}),
+        ...((product==='th05mp'||isPc98StockProduct(product))&&validTh05InitialBombs(room.initialBombs)?{initialBombs:room.initialBombs as number}:{}),
         ...(room.challengeMode!==undefined?{challengeMode:room.challengeMode===true}:{}),
         ...(room.prankMode!==undefined?{prankMode:room.prankMode===true}:{}),
         playerCount,

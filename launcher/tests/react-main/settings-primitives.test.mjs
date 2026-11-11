@@ -208,3 +208,16 @@ test('TH05 MP display controls track EoSD/ring dependencies and stay hidden for 
   assert.equal(env.document.querySelector('#mpTh05BossBarSelect'), null);
   assert.equal(env.document.querySelector('[id^="mpTh05"][id$="Toggle"]'), null);
 });
+
+test('TH03 solo focus and always-visible hitbox settings are independent',async()=>{
+  const model=owners.createGameSettingsModel({storage:{getItem:()=>null,setItem(){}}});
+  model.hydrate({productId:'th03',uiLocale:'en',languages:[{id:'ja',title:'Japanese'}],musicAvailability:{audio:true,midiAvailable:true,importServer:false,remoteOggAdvertised:false},webMidiAvailable:false,mobile:false});
+  const midi=Object.freeze({enabled:false,granted:false,busy:false,supported:false,outputs:[],selectedId:'',hint:''});
+  const unexpected=()=>{throw Error('Unexpected action');};
+  const actions={confirm:unexpected,file:unexpected,showAppleNotice:unexpected,feedback(){},reportError:unexpected,externalMidi:{subscribe:()=>()=>{},getSnapshot:()=>midi,setEnabled:unexpected,selectOutput:unexpected}};
+  await render(React.createElement(owners.LocaleProvider,{locale:'en'},React.createElement(owners.SettingsBody,{model,actions,onOpenTouchLayout:unexpected})));
+  assert.equal(n('#th03FocusToggle').getAttribute('aria-checked'),'true');assert.equal(n('#th03AlwaysHitboxToggle').getAttribute('aria-checked'),'false');
+  assert.equal(n('#th03FocusHitboxToggle').getAttribute('aria-checked'),'true');
+  await act(()=>n('#th03FocusToggle').click());await act(()=>n('#th03AlwaysHitboxToggle').click());await act(()=>n('#th03FocusHitboxToggle').click());
+  assert.equal(model.getSnapshot().options.th03FocusEnabled,false);assert.equal(model.getSnapshot().options.alwaysHitbox,true);assert.equal(model.getSnapshot().options.th03FocusPointEnabled,false);
+});
