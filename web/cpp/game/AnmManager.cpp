@@ -86,8 +86,9 @@ bool AnmManager::initial_tick(AnmVm& vm){
 }
 // 0x46f820：池分配→模板复制+时间重置→0x200 活动→layer∈[0,21)→0x40000→
 // 位置（bit0 时 +320/+16）→anmArg→立即 tick→按 flags 入链（Registry::submit）。
-u32 AnmManager::create(i32 id,i32 script,i32 layer,u32 ordering,const Vec3& translation,float anm_arg,bool game_coordinates){
+u32 AnmManager::create(i32 id,i32 script,i32 layer,u32 ordering,const Vec3& translation,float anm_arg,bool game_coordinates,u8 shot_effect_owner){
     auto* source=resource(id);if(!source){error="Animation resource unavailable";return 0;}auto* vm=instantiate(*source,script);if(!vm)return 0;
+    vm->shot_effect_owner=shot_effect_owner;
     vm->visual.render_flags|=0x200;
     if(layer>=0){vm->visual.layer=layer;if(layer<21)vm->visual.render_flags|=0x40000;}
     vm->visual.translation=translation;
@@ -111,12 +112,14 @@ u32 AnmManager::create_preserve_ip(i32 id,i32 script,i32 layer,u32 ordering,cons
 }
 AnmVm* AnmManager::spawn_child(AnmVm& source,i32 script,u32 ordering){
     if(!source.resource){error="Child animation source has no resource";return nullptr;}auto* vm=instantiate(*source.resource,source.local_script_index(script));if(!vm)return nullptr;
+    vm->shot_effect_owner=source.shot_effect_owner;
     // 0x46f990：位置清零、layer 继承父、父指针直挂本源、0x200 活动位。
     vm->visual.translation={};vm->visual.layer=source.visual.layer;vm->creation_parent=&source;vm->rotation_parent=&source;vm->visual.render_flags|=0x200;
     if(!initial_tick(*vm))return nullptr;if(anm_random_observer)anm_random_observer(*vm,-1,0,0,0,0,0,0,false);vm->ordering=ordering;if(!registry.submit(*vm,ordering)||!registry.attach(*vm,source)){error=registry.error;registry.destroy_tree(*vm);return nullptr;}if(anm_spawn_observer)anm_spawn_observer(source,vm->source_script,registry.handle(*vm));return vm;
 }
 AnmVm* AnmManager::spawn_detached(AnmVm& source,i32 script){
     if(!source.resource){error="Detached animation source has no resource";return nullptr;}auto* vm=instantiate(*source.resource,source.local_script_index(script));if(!vm)return nullptr;
+    vm->shot_effect_owner=source.shot_effect_owner;
     // 0x46fab0：layer/平移/旋转继承父，锚点=父脚本位置，主链尾入链。
     vm->visual.render_flags|=0x200;vm->visual.layer=source.visual.layer;
     vm->visual.translation=source.visual.translation;vm->variables.rotation=source.variables.rotation;vm->visual.child_anchor=source.variables.position;

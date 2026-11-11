@@ -120,10 +120,70 @@ const err = () => {
   const end = core.HEAPU8.indexOf(0, p);
   return new TextDecoder().decode(core.HEAPU8.subarray(p, end < 0 ? p + 256 : end));
 };
+function offerMultiplayerReport(message, stack) {
+  if (!runtimeBuild.multiplayer || options.netplayMode !== 'lan') return;
+  const errorBox = $('#error');
+  let native = null;
+  let playerAnimation = null;
+  try {
+    const pointer = core?._th13_mp_diagnostic_report?.();
+    if (pointer) native = JSON.parse(core.UTF8ToString(pointer));
+    const presentation = core?._th13_debug_stage_report?.();
+    if (presentation) {
+      playerAnimation = core.UTF8ToString(presentation).split('\n')
+        .map(line => line.trim()).filter(line => line.startsWith('player script='));
+    }
+  } catch (error) {
+    console.warn('[th13] Native diagnostics unavailable', error);
+  }
+  const digest = /multiplayer\/([0-9a-f]{64})\//.exec(location.pathname)?.[1] ?? null;
+  const route = window.__eaglerPeerTransport?.route;
+  const report = {
+    schema: 'eagler-th13-multiplayer-error/1',
+    capturedAt: new Date().toISOString(),
+    error: message.replace(/(?:https?|wss?):\/\/[^\s]+/gi, '[URL]').slice(0, 1000),
+    wasmFrames: Array.from(String(stack ?? '').matchAll(/wasm-function\[(\d+)\]:(0x[0-9a-f]+)/gi),
+      ([, fn, offset]) => ({function: Number(fn), offset})).slice(0, 24),
+    runtime: {version: runtimeBuild.version, generation: digest},
+    browser: navigator.userAgent,
+    presentation: {canvas: [canvas.width, canvas.height], devicePixelRatio,
+      visibility: document.visibilityState, fps: window.__eaglerNetplayPresentationFps ?? null,
+      playerAnimation},
+    network: {route: ['rtc', 'relay'].includes(route) ? route : null,
+      transport: (() => {
+        const t = globalThis.__eaglerPeerTransport;
+        if (!t) return null;
+        return {closed: !!t.closed, failed: !!t.failed, disconnected: !!t.disconnected,
+          error: String(t.error ?? '').replace(/(?:https?|wss?):\/\/[^\s]+/gi, '[URL]').slice(0, 1000),
+          peers: [...(t.peers?.entries?.() ?? [])].map(([seat, p]) => ({seat,
+            inputOpen: !!p.inputOpen, controlOpen: !!p.controlOpen,
+            connection: p.pc?.connectionState ?? null, ice: p.pc?.iceConnectionState ?? null,
+            recovering: !!p.recoveryPending, restartAttempts: p.restartAttempts ?? 0}))};
+      })(),
+      diagnostics: window.__eaglerNetplayDiagnostics ?? null},
+    native,
+  };
+  const content = JSON.stringify(report, null, 2) + '\n';
+  const download = document.createElement('button');
+  download.type = 'button';
+  download.style.display = 'block';
+  download.style.margin = '0.75rem auto 0';
+  download.textContent = '下载联机错误报告 / Download report';
+  download.addEventListener('click', () => {
+    const url = URL.createObjectURL(new Blob([content], {type: 'application/json'}));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'eagler-th13-mp-error-' + report.capturedAt.replace(/[:.]/g, '-') + '.json';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  });
+  errorBox.append(download);
+}
 const fatal = e => {
   const message = e?.message || String(e);
   $('#error').textContent = message;
-  core?._th13_loop_pause(1);
+  try { core?._th13_loop_pause(1); } catch { /* The WASM instance may have trapped. */ }
+  offerMultiplayerReport(message, e?.stack);
   emit('error', {error: message});
 };
 
@@ -288,7 +348,7 @@ function inspectReplay(bytes) {
   const pointer = core._malloc(bytes.length);
   try {
     core.HEAPU8.set(bytes, pointer);
-    const report = core.eagler_replay_inspect(pointer, bytes.length);
+    const report = core._eagler_replay_inspect(pointer, bytes.length);
     if (!report) throw Error('录像解析失败');
     const end = core.HEAPU8.indexOf(0, report);
     return {description: JSON.parse(new TextDecoder().decode(
@@ -305,12 +365,12 @@ function publishPlaybackState() {
     if (playbackReportTimer !== null) { clearInterval(playbackReportTimer); playbackReportTimer = null; }
     return;
   }
-  const pointer = core.eagler_replay_state?.() ? core.eagler_replay_state() >>> 2 : 0;
+  const pointer = core._eagler_replay_state?.() ? core._eagler_replay_state() >>> 2 : 0;
   if (!pointer) return;
-  const state = Array.from(core.HEAPU32.subarray(pointer, pointer + 6));
+  const state = Array.from(core.HEAPU32.subarray(pointer, pointer + 8));
   emit('runtime-info', {playback: {
     kind: 'replay', path: playbackPath, frame: state[0], total: state[1],
-    paused: playbackPaused, seeking: false, target: null, rate: playbackRate,
+    paused: playbackPaused, seeking: !!state[7], target: state[7] ? state[6] : null, rate: playbackRate,
     ended: !!state[2], stage: state[3] || 1,
     difficulty: -1, left: 0, right: 0, startFrame: state[5],
   }});
@@ -529,8 +589,8 @@ async function command(m) {
         return {};
       }
       if (m.action === 'seek') {
-        // 章节/帧定位：value = 章节 label（世界重建锚点）。
-        if (!core._th13_mp_replay_seek_stage(Number(m.value) || 0))
+        // Timeline values are absolute replay frames.
+        if (!core._th13_mp_replay_seek(Number(m.value) || 0))
           throw Error('回放定位目标无效');
         publishPlaybackState();
         return {};
@@ -664,6 +724,10 @@ for (const event of ['pointerdown', 'keydown']) window.addEventListener(event, (
 canvas.addEventListener('webglcontextlost', e => {
   e.preventDefault();
   fatal(Error('图形环境失效，请退出后重新开始。'));
+});
+window.addEventListener('error', event => {
+  if (launched && runtimeBuild.multiplayer && options.netplayMode === 'lan' &&
+      event.error instanceof WebAssembly.RuntimeError) fatal(event.error);
 });
 window.addEventListener('pagehide', () => {
   clearKeyboard();

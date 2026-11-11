@@ -34,6 +34,8 @@ class AnmVm {
     friend class multiplayer::WorldState;  // M6 快照：saved_offset/saved_timer（中断保存点）
     std::vector<u8>* script=nullptr;u32 saved_offset=0;Timer saved_timer{};
 public:
+    // One-based owner of a shot or shooting effect. Zero is unowned.
+    u8 shot_effect_owner = 0;
     inline static u64 presentation_counter=0;
     u64 presentation_generation=++presentation_counter;bool presentation_motion=false;u32 presentation_part=0;
     AnmVariables variables;AnmVisualState visual;AnmInterpolators interpolators;Timer timer,age;i32 instruction_offset=-1;bool visible=false;std::string error;

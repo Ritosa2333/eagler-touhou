@@ -1,3 +1,5 @@
+#include <sstream>
+#include <locale>
 // 浏览器宿主（th15 BrowserRuntime 裁剪：EM 导出 + RAF 循环 + FrameCadence；
 // 触控/thprac/practice lab 全部裁掉，docs/plans/ui-base.md §三）。
 // 输入：SDL3 emscripten 端口把键盘事件汇入 SDL 键位态，再经
@@ -63,9 +65,11 @@ std::unique_ptr<th13::multiplayer::ReplayArchive> mp_replay_loaded;
 bool mp_playback_pending = false;
 bool mp_started = false;
 bool mp_spectator_mode = false;
+std::uint32_t mp_spectator_stage = 0;
 std::uint32_t mp_playback_frame = 0;
 std::uint32_t mp_playback_chapter = 0;  // 起始章节 label（0 = 首章）
 bool mp_playback_paused = false;         // 回放暂停门（mp_tick_playback）
+std::uint32_t mp_playback_seek_target = Netplay::INVALID_FRAME;
 unsigned mp_playback_rate = 1;           // 回放速率（帧/tick，1..8）
 void observe_anm_random(const AnmVm& vm, i32 opcode, i32 variable, i32 argument,
                         u32 before, u32 seed_before, u32 after, u32 seed_after, bool game_stream) {
@@ -111,11 +115,14 @@ touhou::input::TouchState touch_state() {
     const auto& battle = app->run->battle;
     state.context = app->run->dialog_active() ? 2 : 1;
     state.instance = app->progress.stage;
-    state.ready = battle.player_phase == StageBattle::PlayerPhase::Active && !battle.player_dead;
-    state.retain_motion = battle.player_phase == StageBattle::PlayerPhase::Deathbomb && !battle.player_dead;
-    state.x = battle.player_x; state.y = battle.player_y;
-    state.fast = float(battle.speed_orth) / 128;
-    state.slow = float(battle.speed_orth_focus) / 128;
+    const auto& player = battle.seat_count >= 2
+        ? battle.seats[size_t(battle.mp_local_seat)] : battle.player_state();
+    const bool available = !player.dead && !player.ghost;
+    state.ready = available && player.phase == StagePlayerState::Phase::Active;
+    state.retain_motion = available && player.phase == StagePlayerState::Phase::Deathbomb;
+    state.x = player.x; state.y = player.y;
+    state.fast = float(player.speed_orth) / 128;
+    state.slow = float(player.speed_orth_focus) / 128;
     state.min_x = -184; state.max_x = 184; state.min_y = 32; state.max_y = 432;
     return state;
 }
@@ -196,6 +203,7 @@ void clear_inputs() {
 // pressed）。非 MP 路径仍按原三段复合调用。
 struct SampledFrame {
     u32 held = 0;
+    StagePlayerState::TouchMotion touch;
     bool focus = false;
     bool skip = false;  // app->exiting：本 tick 不推进（原 sample_and_tick 语义）
 };
@@ -243,7 +251,9 @@ SampledFrame sample_input() {
     const auto touch = gestures.sample(touch_state(), SDL_GetTicks(), keys[16] || (pad_keys & 8),
         keys[37] || keys[38] || keys[39] || keys[40] || (pad_keys & 0xf0));
     for (u32 i = 0; i < 256; ++i) keys[i] = keys[i] || touch.keys[i];
-    if (app->run) app->run->battle.touch = {touch.motion, touch.x, touch.y};
+    sampled.touch = {touch.motion, touch.x, touch.y};
+    if (app->run && app->run->battle.seat_count < 2)
+        app->run->battle.touch = sampled.touch;
     u32 held = keyboard_keys(keys) | pad_keys;
     // Physical input always belongs to menus, including Replay pause/end.
     // RunScene consumes recorded gameplay input only after its freeze gate;
@@ -297,7 +307,10 @@ bool mp_tick_spectator(float fps, unsigned& simulated) {
                 return false;
             // 首个 checkpoint：世界尚未建立——按观众身份进局（双 RNG 从
             // 会话 seed 起步，restore 覆盖为存档位相）。
-            if (!app->run) {
+            // A checkpoint starts a fresh world, including backward seeks
+            // within the current stage. StageEntry restores continuation
+            // resources; it cannot clear already spawned enemies or shots.
+            {
                 const auto& setup = multiplayer::session.Setup();
                 const std::array<th13::i32, 3> characters = {
                     th13::i32(setup.selections[0]),
@@ -307,7 +320,7 @@ bool mp_tick_spectator(float fps, unsigned& simulated) {
                                                 characters, 0))
                     return false;
                 app->progress.run_mode_flags = 0;
-                app->progress.practice_mode = 1;  // 观众不进终局记账
+                app->progress.practice_mode = 0;  // Preserve normal stage flow.
                 app->progress.selected_spell_id = -1;
                 if (!app->start_game(th13::i32(checkpoint.stage))) return false;
                 app->pending_destination = -1;
@@ -322,6 +335,7 @@ bool mp_tick_spectator(float fps, unsigned& simulated) {
                 app->visual.reseed_restore(
                     static_cast<std::uint16_t>(setup.seed));
                 if (!app->begin_run()) return false;
+                mp_spectator_stage = checkpoint.stage;
             }
             std::uint16_t gameSeed = 0, visualSeed = 0;
             std::uint32_t gameIndex = 0, visualIndex = 0;
@@ -339,10 +353,15 @@ bool mp_tick_spectator(float fps, unsigned& simulated) {
         [&](const Netplay::SpectatorFramePacket& packet, bool seeking) {
             // 全席输入注入（观众无本地席——全部走 seat_inputs）。
             const unsigned count = std::min<unsigned>(packet.playerCount, 3);
-            for (unsigned seat = 0; seat < count; ++seat)
-                app->run->battle.seat_inputs[seat].update(
-                    packet.inputs[seat].buttons &
-                    th13::multiplayer::InputLanes::HeldMask);
+            auto& battle = app->run->battle;
+            for (unsigned seat = 0; seat < count; ++seat) {
+                battle.seat_inputs[seat].update(packet.inputs[seat].buttons &
+                                                multiplayer::InputLanes::HeldMask);
+                multiplayer::InputLanes::ApplyTouch(battle, seat, packet.inputs[seat]);
+            }
+            app->run->playback_input = []() -> const th13::GameInput* {
+                return &app->run->battle.seat_inputs[0];
+            };
             if (!app->update(GameInput{}, false) || !app->commit(fps)) return false;
             ++simulated;
             return true;
@@ -366,25 +385,37 @@ bool mp_tick_spectator(float fps, unsigned& simulated) {
 bool mp_tick_playback(float fps, unsigned& simulated) {
     const auto* archive = mp_replay_loaded.get();
     if (!archive || !archive->Loaded()) return false;
-    if (mp_playback_paused) return app->present();
+    const bool seeking = mp_playback_seek_target != Netplay::INVALID_FRAME;
+    app->audio_device.suspend(seeking || mp_playback_paused);
+    if (mp_playback_paused && !seeking) return app->present();
+    const auto begin = std::chrono::steady_clock::now();
+    const auto limit = seeking ? mp_playback_seek_target : archive->FrameCount();
     unsigned steps = 0;
-    while (steps < mp_playback_rate &&
-           mp_playback_frame < archive->FrameCount()) {
+    while (steps < (seeking ? 120u : mp_playback_rate) && mp_playback_frame < limit) {
         const auto* frame = archive->FrameAt(mp_playback_frame);
         if (!frame) {
             last_error = "TH13 multiplayer replay frame is missing";
             return false;
         }
         const unsigned count = archive->Setup().player_count;
-        for (unsigned seat = 0; seat < count && seat < 3; ++seat)
-            app->run->battle.seat_inputs[seat].update(
-                (*frame)[seat].buttons & th13::multiplayer::InputLanes::HeldMask);
-        if (!app->update(GameInput{}, false) || !app->commit(fps)) return false;
+        auto& battle = app->run->battle;
+        for (unsigned seat = 0; seat < count && seat < 3; ++seat) {
+            battle.seat_inputs[seat].update((*frame)[seat].buttons & multiplayer::InputLanes::HeldMask);
+            multiplayer::InputLanes::ApplyTouch(battle, seat, (*frame)[seat]);
+        }
+        app->run->playback_input = []() -> const th13::GameInput* {
+                return &app->run->battle.seat_inputs[0];
+            };
+            if (!app->update(GameInput{}, false) || !app->commit(fps)) return false;
         ++mp_playback_frame;
         ++steps;
         ++simulated;
         if (app->exiting) break;
+        if (seeking && std::chrono::duration<double, std::milli>(
+                std::chrono::steady_clock::now() - begin).count() >= 6.0) break;
     }
+    if (seeking && mp_playback_frame >= mp_playback_seek_target)
+        mp_playback_seek_target = Netplay::INVALID_FRAME;
     return app->present();
 }
 
@@ -437,7 +468,7 @@ bool mp_tick(float fps, unsigned& simulated) {
         // 采集条件：相位 == 模拟帧 = 本帧需要物理输入。纠正期相位在前
         // （不重复采集）；停等后相位已超前（不漏拍）。
         if (multiplayer::session.CaptureFrame() == multiplayer::session.SimFrame()) {
-            if (!multiplayer::session.CaptureLocal(sampled.held, now_ms)) return false;
+            if (!multiplayer::session.CaptureLocal(sampled.held, now_ms, sampled.touch)) return false;
             multiplayer::session.AdvanceCapturePhase();
         }
         if (!multiplayer::session.CanSimulate()) {
@@ -457,7 +488,8 @@ bool mp_tick(float fps, unsigned& simulated) {
         auto& runtime = multiplayer::session.Runtime();
         if (!multiplayer::session.Spectator())
             runtime.PublishSpectator(multiplayer::session.ConfirmedThrough(),
-                                     multiplayer::session.SimFrame());
+                multiplayer::session.SimFrame() ? multiplayer::session.SimFrame() - 1
+                                               : Netplay::INVALID_FRAME);
     }
     // 3) 每 tick 恰一次 present（重模拟帧不 present）。
     return app->present();
@@ -1160,6 +1192,7 @@ using th13::sdl::mp_started;
 using th13::sdl::mp_playback_pending;
 using th13::sdl::mp_spectator_mode;
 using th13::sdl::mp_playback_frame;
+using th13::sdl::mp_playback_seek_target;
 using th13::sdl::mp_playback_chapter;
 using th13::sdl::mp_playback_paused;
 using th13::sdl::mp_playback_rate;
@@ -1461,6 +1494,7 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_configure(const unsigned* words, unsigned count
     reset_mp_accumulator();
     mp_started = mp_playback_pending = mp_spectator_mode = mp_recording = false;
     mp_recorded_through = 0;
+    mp_spectator_stage = 0;
     last_error.clear();
     return 1;
 }
@@ -1549,18 +1583,17 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_start() {
     // P5 MP Replay 录制：frame0 前冻结会话身份；Commit 退役确认帧时追加。
     if (!mp_replay_archive) mp_replay_archive = std::make_unique<th13::multiplayer::ReplayArchive>();
     mp_replay_archive->Clear();
-    if (!mp_replay_archive->Begin(setup, std::uint64_t(emscripten_get_now()))) {
+    if (!mp_replay_archive->Begin(setup, std::uint64_t(emscripten_date_now()))) {
         last_error = "TH13 multiplayer replay begin failed";
         return 0;
     }
     mp_recorded_through = 0;
     mp_recording = true;
-    session.confirmed_sink = [](std::uint32_t frame,
+    session.stage_source = [] { return std::uint32_t(std::max(1, app->progress.stage)); };
+    session.confirmed_sink = [](std::uint32_t frame, std::uint32_t stage,
                                 const std::array<Netplay::FrameInput, 3>& inputs) {
         if (!mp_recording || !mp_replay_archive) return;
-        if (frame <= mp_recorded_through) return;  // 重放/重复落账不重写
-        const std::uint32_t stage = th13::sdl::app
-            ? std::uint32_t(std::max(1, th13::sdl::app->progress.stage)) : 1u;
+        if (frame < mp_replay_archive->FrameCount()) return;
         if (!mp_replay_archive->Append(frame, stage, inputs.data(),
                                        mp_replay_archive->Setup().player_count))
             return;
@@ -1577,6 +1610,13 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_start() {
                 std::uint32_t(std::max(1, th13::sdl::app->progress.stage));
             const std::vector<std::uint8_t>* initializer = nullptr;
             static std::vector<std::uint8_t> entryBytes;
+            if (mp_recording && mp_replay_archive && !mp_replay_archive->StageEntryAt(stage)) {
+                th13::multiplayer::StageEntry capture;
+                capture.Capture(app->run->battle, app->progress, app->run->score_view(),
+                                app->game_random.seed(), app->game_random.index(),
+                                app->visual.seed(), app->visual.index());
+                if (!mp_replay_archive->AppendStageEntry(stage, capture.Encode())) return false;
+            }
             const auto need = runtime.SpectatorCheckpointNeeded(frame, stage);
             if (need == Netplay::SpectatorStagePublisher::CheckpointRequirement::Required) {
                 th13::multiplayer::StageEntry capture;
@@ -1614,6 +1654,7 @@ bool mp_start_playback() {
         return false;
     }
     const auto& setup = archive->Setup();
+    const auto stage = mp_playback_chapter ? mp_playback_chapter : archive->Info().chapters[0].label;
     const std::array<th13::i32, 3> characters = {
         th13::i32(setup.selections[0]), th13::i32(setup.selections[1]),
         th13::i32(setup.selections[2])};
@@ -1622,17 +1663,17 @@ bool mp_start_playback() {
         return false;
     }
     app->progress.run_mode_flags = 0;
-    app->progress.practice_mode = 1;  // 回放不进终局记账（SP 回放同语义）
+    app->progress.practice_mode = 0;  // 回放不进终局记账（SP 回放同语义）
     app->progress.selected_spell_id = -1;
-    if (!app->start_game(1)) {
+    if (!app->start_game(th13::i32(stage))) {
         last_error = app->failure;
         return false;
     }
     app->pending_destination = -1;
     app->progress.character = th13::i32(setup.selections[0]);
     app->progress.difficulty = th13::i32(setup.difficulty);
-    app->progress.stage = app->progress.starting_stage = 1;
-    app->selected_stage = 1;
+    app->progress.stage = app->progress.starting_stage = th13::i32(stage);
+    app->selected_stage = th13::i32(stage);
     app->frames = 0;
     // 回放世界从会话 seed 起步（关头 StageEntry 重建时按存档位相覆盖）。
     app->game_random.reseed_restore(static_cast<std::uint16_t>(setup.seed));
@@ -1644,7 +1685,7 @@ bool mp_start_playback() {
     }
     // 关头 StageEntry（章节 1 锚点）：录制从 frame0 起必有首章条目；
     // 缺失时按普通开局续推（旧档容错——不伪造关头延续）。
-    const auto* entryBytes = archive->StageEntryAt(1);
+    const auto* entryBytes = archive->StageEntryAt(stage);
     if (entryBytes) {
         th13::multiplayer::StageEntry entry;
         if (!th13::multiplayer::StageEntry::Decode(entryBytes->data(),
@@ -1667,9 +1708,10 @@ bool mp_start_playback() {
     // 游标由调用方管理（start 从 0；章节 seek 重定位后重入）。
     if (mp_playback_chapter == 0) {
         mp_playback_frame = 0;
-        mp_playback_chapter = 1;
+        mp_playback_chapter = stage;
     }
     mp_playback_paused = false;
+    mp_playback_seek_target = Netplay::INVALID_FRAME;
     mp_playback_rate = 1;
     mp_recording = false;  // 回放不录制（旧档保护）
     return true;
@@ -1739,6 +1781,35 @@ EMSCRIPTEN_KEEPALIVE const char* th13_mp_error() {
         return th13::sdl::app->failure.c_str();
     if (!th13::sdl::last_error.empty()) return th13::sdl::last_error.c_str();
     return error ? error : "";
+}
+
+EMSCRIPTEN_KEEPALIVE const char* th13_mp_diagnostic_report() {
+    static std::string report;
+    const auto& app = th13::sdl::app;
+    const auto* battle = app && app->run ? &app->run->battle : nullptr;
+    report = th13::multiplayer::session.DiagnosticJson();
+    report.pop_back();  // Add live renderer state to the native session report.
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    out << ",\"presentationSeat\":" << (battle ? battle->active_seat + 1 : 0)
+        << ",\"seatsAtStop\":[";
+    if (battle) for (int i = 0; i < battle->seat_count && i < 3; ++i) {
+        if (i) out << ',';
+        const auto& player = battle->seats[i];
+        out << "{\"seat\":" << i + 1 << ",\"character\":" << battle->seat_characters[i]
+            << ",\"x\":";
+        if (std::isfinite(player.x)) out << player.x; else out << "null";
+        out << ",\"y\":";
+        if (std::isfinite(player.y)) out << player.y; else out << "null";
+        out << ",\"initialized\":" << (player.initialized ? "true" : "false")
+            << ",\"ghost\":" << (player.ghost ? "true" : "false")
+            << ",\"dead\":" << (player.dead ? "true" : "false")
+            << ",\"phase\":" << int(player.phase) << ",\"held\":" << battle->seat_inputs[i].held
+            << ",\"shots\":" << player.shots.size() << ",\"power\":" << battle->seat_huds[i].power << '}';
+    }
+    out << "]}";
+    report += out.str();
+    return report.c_str();
 }
 
 EMSCRIPTEN_KEEPALIVE void th13_mp_close() {
@@ -1888,7 +1959,7 @@ EMSCRIPTEN_KEEPALIVE const char* eagler_replay_inspect(const unsigned char* byte
 // 非 playback 模式返回零面（launcher 录像工作台的进度条）。
 EMSCRIPTEN_KEEPALIVE const unsigned* eagler_replay_state() {
     using namespace th13::sdl;
-    static std::array<unsigned, 6> state{};
+    static std::array<unsigned, 8> state{};
     state.fill(0);
     const auto* archive = mp_replay_loaded.get();
     if (!mp_playback_pending || !mp_started || !archive || !archive->Loaded())
@@ -1898,7 +1969,11 @@ EMSCRIPTEN_KEEPALIVE const unsigned* eagler_replay_state() {
     state[2] = mp_playback_frame >= archive->FrameCount() ? 1u : 0u;
     state[3] = app ? unsigned(std::max(1, app->progress.stage)) : 1u;
     state[4] = mp_playback_chapter;
-    state[5] = mp_playback_chapter;  // 起始章节锚点（章节 seek 用）
+    for (unsigned i = 0; i < archive->Info().chapterCount; ++i)
+        if (archive->Info().chapters[i].label == mp_playback_chapter)
+            state[5] = archive->Info().chapters[i].firstFrame;
+    state[6] = mp_playback_seek_target;
+    state[7] = mp_playback_seek_target != Netplay::INVALID_FRAME ? 1u : 0u;
     return state.data();
 }
 
@@ -1907,6 +1982,7 @@ EMSCRIPTEN_KEEPALIVE const unsigned* eagler_replay_state() {
 EMSCRIPTEN_KEEPALIVE int th13_mp_replay_pause(int paused) {
     if (!mp_playback_pending || !mp_started) return 0;
     mp_playback_paused = paused != 0;
+    if (mp_playback_paused) mp_playback_seek_target = Netplay::INVALID_FRAME;
     return 1;
 }
 
@@ -1937,6 +2013,26 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_replay_seek_stage(unsigned stage) {
             return 1;
         }
     return 0;
+}
+
+// Timeline seek values are absolute replay frames. Rebuild from the nearest
+// chapter and simulate the remainder under the regular per-callback budget.
+EMSCRIPTEN_KEEPALIVE int th13_mp_replay_seek(unsigned frame) {
+    using namespace th13::sdl;
+    if (!mp_playback_pending || !mp_started || !mp_replay_loaded ||
+        frame > mp_replay_loaded->FrameCount()) return 0;
+    const auto& info = mp_replay_loaded->Info();
+    if (!info.chapterCount) return 0;
+    unsigned chapter = info.chapters[0].label;
+    for (unsigned i = 0; i < info.chapterCount; ++i)
+        if (info.chapters[i].firstFrame <= frame) chapter = info.chapters[i].label;
+    const auto paused = mp_playback_paused;
+    const auto rate = mp_playback_rate;
+    if (!th13_mp_replay_seek_stage(chapter)) return 0;
+    mp_playback_paused = paused;
+    mp_playback_rate = rate;
+    mp_playback_seek_target = frame;
+    return 1;
 }
 
 // 生产 MP Replay 保存：仅确认帧入档（Session::Commit 的 confirmed_sink），
@@ -2023,6 +2119,7 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_replay_load(const unsigned char* bytes, unsigne
     mp_playback_frame = 0;
     mp_playback_chapter = 0;  // start 时归 1（首章锚点）
     mp_playback_paused = false;
+    mp_playback_seek_target = Netplay::INVALID_FRAME;
     mp_playback_rate = 1;
     last_error.clear();
     return 1;

@@ -386,6 +386,61 @@ TEST(anm_borrowed_parent_chains) {
     CHECK(borrowed_linked);
 }
 
+TEST(wire_digest_uses_enemy_animation_occupancy) {
+    Fixture fixture;
+    CHECK(fixture.init());
+    CHECK(!fixture.battle.sim.enemies.empty());
+    if (fixture.battle.sim.enemies.empty()) return;
+    auto& enemy = *fixture.battle.sim.enemies.front();
+    GameRandom visual(0x1234);
+    auto before = std::make_unique<multiplayer::WorldState>();
+    auto after = std::make_unique<multiplayer::WorldState>();
+    enemy.anm_slot_handle[0] = 0x2001;
+    CHECK(before->capture(fixture.battle, visual));
+    enemy.anm_slot_handle[0] = 0x4002;
+    CHECK(after->capture(fixture.battle, visual));
+    CHECK_EQ(before->digest_core(), after->digest_core());
+    CHECK(before->digest() != after->digest());
+    enemy.anm_slot_handle[0] = 0;
+    CHECK(after->capture(fixture.battle, visual));
+    CHECK(before->digest_core() != after->digest_core());
+    enemy.anm_slot_handle[0] = 0x4002;
+    enemy.life += 1;
+    CHECK(after->capture(fixture.battle, visual));
+    CHECK(before->digest_core() != after->digest_core());
+}
+
+TEST(anm_recreated_and_frozen_roots) {
+    AnmRegistry registry;
+    auto original = std::make_unique<AnmVm>();
+    auto* child = registry.allocate();
+    const u32 handle = registry.submit(*child);
+    CHECK(registry.attach(*child, *original));
+    child->creation_parent = child->rotation_parent = original.get();
+    AnmRegistry::SnapshotData borrowed;
+    CHECK(registry.capture(borrowed));
+    const auto* identity = original.get();
+    original.reset();
+    AnmVm replacement;
+    CHECK(registry.restore(borrowed, {{identity, &replacement}}));
+    child = registry.find(handle);
+    CHECK(child && child->creation_parent == &replacement &&
+          child->rotation_parent == &replacement);
+    replacement.visual.translation.x = 137;
+    CHECK(registry.preserve_embedded_children(replacement));
+    AnmRegistry::SnapshotData frozen;
+    CHECK(registry.capture(frozen));
+    for (int repeat = 0; repeat < 2; ++repeat) {
+        CHECK(registry.restore(frozen));
+        child = registry.find(handle);
+        CHECK(child && child->creation_parent);
+        if (!child || !child->creation_parent) return;
+        CHECK(child->creation_parent == child->rotation_parent);
+        CHECK_EQ(child->creation_parent->visual.translation.x, 137);
+        CHECK_EQ(registry.children(*child->creation_parent).size(), 1u);
+    }
+}
+
 // ---- scheduler_callback_rebind：FrameScheduler 稳定 callback 身份 ----
 TEST(scheduler_callback_rebind) {
     // 快照红线：FrameScheduler 按稳定 callback 身份恢复。TH13 的 callback

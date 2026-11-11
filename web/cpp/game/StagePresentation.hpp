@@ -1,3 +1,4 @@
+#include <optional>
 // Stage1 战斗表现层：把 StageSim/StageBattle 的状态同步为 ANM VM 并直绘。
 // 敌机 = ECL 302/303/306 记录的脚本（stage ANM 合并表全局序号）；
 // 敌弹 = bullet.anm 脚本 + 0x4120b0 精灵解析（BulletAppearance 表）；
@@ -28,6 +29,7 @@ public:
         i32 effect = 8;  // effect.anm（mgr 槽 8；ECL 文件索引 1 的特效创建源）
         i32 spirit = 25; // 00405530: astral.anm, original resource slot25.
         i32 front = 3;   // front.anm：0x438730 神霊拾取动画（0x4c2190+0x2a8）
+        std::array<i32, 2> teammate_player{};
     };
     // player_shot_sprite：无 .sht 会话的自机弹回退精灵（plXX.anm 内）。
     StagePresentation(AnmManager& animations, AnmRenderer& renderer, Banks banks,
@@ -63,7 +65,7 @@ public:
     // 清除。
     bool interrupt_player_options();
     bool reimu_bomb_orb_birth(const StageBattle& battle, i32 index);
-    bool initialize_player_shot(PlayerShot& shot, u32 index);
+    bool initialize_player_shot(PlayerShot& shot, u32 index, i32 seat = 0);
     bool tick_bullet(StageBullet& bullet, bool birth);
     bool initialize_bullet(StageBullet& bullet, i32 interrupt);
     bool bullet_cancel(i32 script,const Vec3& position,const Vec3& displacement,bool interpolate=true);
@@ -83,7 +85,7 @@ public:
     u32 player_effect(i32 script,const Vec3& position,i32 layer = -1) {
         return create_player_effect(banks.effect,script,layer,0,position);
     }
-    bool beam_hit_effect(const Vec3& position, const Vec3& displacement, float angle);
+    bool beam_hit_effect(const Vec3& position, const Vec3& displacement, float angle, i32 seat = 0);
     // 非 const：死亡演出第 3 帧消费 StageBattle::death_option_rebuild（一次性
     // 边沿，见 StageBattle.hpp 注释），与 0x444df0 的“重建后清状态”同构。
     bool sync_player_options(StageBattle& battle, bool power_rebuild = false);
@@ -95,7 +97,7 @@ public:
         return sync_item_spirits(battle);
     }
     bool sync_youmu_slash(StageBattle& battle);
-    bool youmu_charge_effect(i32 action, const Vec3& position);
+    bool youmu_charge_effect(i32 action, const Vec3& position, i32 seat = 0);
     bool spirit_animation_alive(u32 slot, u32 serial) const noexcept;
     // 0x438730 收集瞬间的 front.anm 拾取动画（0x46f820 flags=0 尾插、layer -1、
     // 位置=神霊位、anmArg=0；句柄原版丢弃）。失败置 error_ 并返回 false。
@@ -113,6 +115,7 @@ public:
     bool enemies_from_ecl = false;
     // 直绘 pass：0=自机弹 1=自机 2=敌机 3=敌弹（调用方保证 Fullscreen 相机）。
     bool draw(u32 pass);
+    void prepare_player_opacity();
     void release_stage();
     void release();  // 场景卸载：销毁敌机子树（外部 VM 归还 registry 外部表）
     // M6 快照：表现层手账的值快照（与 AnmRegistry::SnapshotData 同批次
@@ -134,17 +137,20 @@ public:
     struct SnapshotData {
         struct EnemyVisualData { u32 serial = 0; i32 script = -1; bool has_vm = false; AnmVm vm; };
         struct BulletSlotData { bool has_vm = false; AnmVm vm; i32 script = -1, color = -1, source_type = 0, source_color = 0; u32 generation = 0; bool active = false; };
-        struct ShotFadeData { u32 handle = 0, generation = 0; float x = 0, y = 0, angle = 0, drift = 0; bool sine_moving = false; i32 age = 0; };
+        struct ShotFadeData { u32 handle = 0, generation = 0; float x = 0, y = 0, angle = 0, drift = 0; bool sine_moving = false; i32 age = 0; StageMover sine_motion; };
+        std::vector<const AnmVm*> embedded_identities;
         std::vector<EnemyVisualData> enemies;
         std::deque<BulletSlotData> bullets;
         std::vector<u32> shot_handles;
         std::vector<AnmVm> shots;          // 回退精灵直贴 VM（script<0）
         std::vector<u32> shot_generations;
         std::vector<ShotFadeData> shot_fades;
-        std::vector<u32> shot_faded_generations;  // unordered_set → 排序值
+        std::vector<u64> shot_faded_generations;  // unordered_set → 排序值
         bool has_player = false;
         AnmVm player;
         i32 player_script = -1, player_tilt = 0;
+        std::array<std::optional<AnmVm>, 2> teammate_players{};
+        std::array<i32, 2> teammate_tilts{};
         std::array<u32, ItemManager::kSpiritCapacity> spirit_handles{}, spirit_serials{};
         std::array<i32, ItemManager::kSpiritCapacity> spirit_scripts{};
         std::array<bool, ItemManager::kItemCapacity> item_vm_present{}, item_side_vm_present{};
@@ -157,7 +163,8 @@ public:
         u32 trance_handle = 0;
         bool trance_was_active = false;
         std::vector<u32> bullet_cancel_handles;
-        u32 focus_handle = 0, youmu_charge_handle = 0;
+        u32 focus_handle = 0;
+        std::array<u32, 3> youmu_charge_handles{};
         std::unordered_map<u32, std::array<u32, 16>> fog_handles;
         i32 option_character = -1, option_count = -1;
         bool option_anchor_deferred = false, option_rebuild_pending = false;
@@ -167,10 +174,10 @@ public:
         std::vector<u32> player_effect_handles;
     };
     bool capture_presentation(SnapshotData& out) const;
-    // restore_presentation：手账整场替换。前置：registry 已 restore（句柄
-    // 值语义恢复），自有 VM 的宿主指针（environment/object_host/资源）
-    // 在快照存活期不变。restore 后 sync 走「句柄/代匹配 → 复用」路径。
-    bool restore_presentation(const SnapshotData& source);
+    // Recreate embedded VMs and return the old-to-new identity map so the
+    // registry can restore their child chains afterward.
+    bool restore_presentation(const SnapshotData& source,
+                              std::unordered_map<const AnmVm*, AnmVm*>* remapped = nullptr);
     // M6 快照恢复：手账缓存重置（WorldState::restore 后由宿主调用）。
     // 敌机视觉缓存/弹体槽/自机弹句柄池/留尸池是「权威态 → 表现层」的
     // 派生缓存：restore 恢复权威态与 registry VM 池后，这些句柄映射手账
@@ -298,12 +305,14 @@ private:
     std::vector<ShotFade> shot_fades_;
     // 已入留尸池的弹代（防同一死亡被重复消费：battle 向量里的死弹要到下一次
     // step_shots 才被压实，若调用方在两次 step 之间重复 sync 仍会看到它）。
-    std::unordered_set<u32> shot_faded_generations_;
+    std::unordered_set<u64> shot_faded_generations_;
     std::unique_ptr<AnmVm> player_;
+    std::array<std::unique_ptr<AnmVm>, 2> teammate_players_{};
+    std::array<i32, 2> teammate_tilts_{};
     // 00442960 / 00444df0：判定点和卫星本体是管理器中的真实 VM，
     // 不在直绘 pass 再画一次。位置只读战斗单一状态，生命周期由句柄池回收。
     u32 focus_handle_ = 0;
-    u32 youmu_charge_handle_ = 0;
+    std::array<u32, 3> youmu_charge_handles_{};
     std::array<u32, 8> option_handles_{}, full_option_handles_{}, bomb_orb_handles_{};
     bool option_anchor_deferred_ = false;
     // 门内旧 option 树已由 0x442960 清槽退场：sync_player_options 不再按

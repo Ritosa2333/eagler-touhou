@@ -216,8 +216,8 @@ export function createMultiplayerBridge({core, getOptions, manifest, emit, onErr
       new Uint8Array(new Uint32Array(buildWords).buffer),
       b => core._th13_mp_replay_load(p, n, b)));
     if (!loaded || !core._th13_mp_start()) throw Error(error());
-    if (typeof core._th13_mp_replay_select_stage === 'function' && stage !== undefined &&
-        !core._th13_mp_replay_select_stage(stage)) throw Error(error());
+    if (typeof core._th13_mp_replay_seek_stage === 'function' && Number(stage) > 0 &&
+        !core._th13_mp_replay_seek_stage(Number(stage))) throw Error(error());
     active = true;
     target.__eaglerNetplayFailed = false;
     target.__eaglerNetplaySpectator = true;
