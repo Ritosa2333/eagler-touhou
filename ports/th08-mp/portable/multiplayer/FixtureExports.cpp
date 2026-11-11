@@ -339,13 +339,24 @@ const char* mp_fixture_snapshot_block_name(BrowserRuntime* r,u32 index){
 }
 __attribute__((export_name("mp_fixture_stage_clear_setup")))
 u32 mp_fixture_stage_clear_setup(BrowserRuntime* r){
-    if(!r||!r->app.in_game()||r->app.loading_game()||r->app.game.globals.stage!=0)return 0;
+    if(!r||!r->app.in_game()||r->app.loading_game()||r->app.game.globals.stage>=5)return 0;
     auto& g=r->app.game;
     // Start at the native clear-clock animation, just before Shoot can shorten
     // it. Delayed P1 input then changes the exact stage-transition frame.
     g.display.clear_frames=2;g.display.clear_clock_old=660;
     g.display.clear_clock=690;g.display.clear_clock_display=682;g.display.clear_clock_delay=60;
     g.globals.game_flags&=~0x60u;
+    return 1;
+}
+__attribute__((export_name("mp_fixture_stage_five_setup")))
+u32 mp_fixture_stage_five_setup(BrowserRuntime* r){
+    if(!r||!r->app.in_game()||r->app.loading_game())return 0;
+    auto& app=r->app;auto& game=app.game;
+    if(game.globals.stage!=3&&game.globals.stage!=4)return 0;
+    // Reach Stage 5 with the story clock and prior deaths already recorded.
+    app.session.numbers.clock_time=8;
+    for(u32 seat=0;seat<app.session.player_count;++seat)
+        app.session.pilot_resources[seat].deaths=float(9+seat);
     return 1;
 }
 // Begin the actual supervisor's terminal transition after an exact input frame.
@@ -426,7 +437,9 @@ const u32* mp_fixture_spectator_diagnostics(BrowserRuntime* r){
     words[16]=playback.Seeking();words[17]=driver->SpectatorRestoreFailure();
     if(const auto* segment=history.Locate(playback.Target())){
         Netplay::SpectatorScalars::Reader reader(segment->checkpoint.state);multiplayer::ReplayStageStart entry;
-        if(multiplayer::ReplayStartValues(reader,entry)&&reader.Done()){
+        multiplayer::SpectatorStageBoundary boundary;
+        if(multiplayer::ReplayStartValues(reader,entry)&&
+           (segment->checkpoint.schema!=multiplayer::SpectatorReplaySchema||boundary.Values(reader))&&reader.Done()){
             words[44]=segment->checkpoint.frame;words[45]=segment->checkpoint.stage;
             words[46]=entry.stage;words[47]=entry.difficulty;words[48]=entry.characters[0];
         }
