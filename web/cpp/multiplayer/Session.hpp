@@ -49,6 +49,7 @@ private:
     // 账本吞掉重发）；Stop/Pan/Music 确认后经 audio_out_ 冲账。
     struct Record {
         std::uint32_t frame = 0;
+        std::uint32_t stage = 1;
         bool has_snapshot = false;
         WorldState snapshot;
         // P3.4：线上 digest 采样（仅预测帧的 60 倍帧号；Commit 退役时
@@ -160,7 +161,8 @@ public:
     // 本地输入采集（每游戏帧恰一次；暂停/对话期也采集——输入沿语义
     // 与回放一致：EOF/暂停帧不消耗游戏帧但采集相位照常推进）。
     // 采集门 = simulating_（Start 后）；capture 相位 0 是合法首帧号。
-    bool CaptureLocal(std::uint32_t held, std::uint64_t now_ms);
+    bool CaptureLocal(std::uint32_t held, std::uint64_t now_ms,
+                      StagePlayerState::TouchMotion touch = {});
     void AdvanceCapturePhase() { runtime_.AdvanceCapturePhase(); }
     std::uint32_t CaptureFrame() const { return runtime_.CaptureFrame(); }
 
@@ -347,11 +349,14 @@ public:
     bool Active() const { return active_; }
     bool Simulating() const { return simulating_; }
 
+    std::string DiagnosticJson() const;
+    std::function<std::uint32_t()> stage_source;
+
     // P5：确认帧落账观察（生产 MP Replay 录制）。Commit 每退役一条确认
     // Record 调用一次（inputs = 已确认的全席输入）。默认空 = 零变化。
-    std::function<void(std::uint32_t, const std::array<Netplay::FrameInput, 3>&)>
+    std::function<void(std::uint32_t, std::uint32_t, const std::array<Netplay::FrameInput, 3>&)>
         confirmed_sink;
-    // M9/P6：观战帧记录观察（发布端）。OnFrameSimulated 每落账一帧调用
+    // M9/P6：观战帧记录观察（发布端）。CanSimulate 每放行一帧、输入注入前调用
     // 一次（frame + 本帧决策输入）。宿主在回调内查关头需求、捕获
     // StageEntry 并转发 NetplayRuntime::RecordSpectatorFrame。默认空 =
     // 零变化。回调返回 false = 记录被拒（发布线退役，不阻断模拟）。
@@ -359,6 +364,17 @@ public:
         spectator_sink;
 
 private:
+    struct DiagnosticInput {
+        std::uint32_t frame = 0, stage = 0;
+        std::array<std::uint32_t, 3> buttons{};
+    };
+    struct DiagnosticSample {
+        std::uint32_t frame = 0, stage = 0;
+        std::array<char, 2048> domains{};
+    };
+    std::array<DiagnosticInput, 128> diagnostic_inputs_{};
+    std::size_t diagnostic_input_count_ = 0;
+    std::array<DiagnosticSample, NetplayRuntime::kDigestSlots> diagnostic_samples_{};
     NetplayRuntime runtime_;
     th13::StageBattle* battle_ = nullptr;
     GameInput local_input_{};   // 本地席位延迟输入（沿状态机由宿主泵驱动）

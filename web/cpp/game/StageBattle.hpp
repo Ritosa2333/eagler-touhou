@@ -365,7 +365,7 @@ public:
     std::vector<PlayerShot>& shots = player_state_.shots;
     // 447230 creates the hit effect synchronously during enemy collision,
     // before later enemies/ANM instructions consume visual RNG.
-    std::function<bool(const Vec3&, const Vec3&, float)> beam_hit_effect;
+    std::function<bool(const Vec3&, const Vec3&, float, i32)> beam_hit_effect;
     std::function<bool(StageBattle&)> option_power_changed;
     // 0x443240 case2：0x668==3（死亡演出第 3 帧）先 0x445a20 扣 power，
     // 再调 0x444df0 重建 option 树；0x444a10 已把 0x146c4 置 0。表现层
@@ -487,9 +487,9 @@ public:
     bool open_event_sink(const char* path);
     const std::string& error() const { return error_; }
 
-    void begin_player_shot_geometry_snapshot();
+    void begin_player_shot_geometry_snapshot(i32 seat = -1);
     void set_player_shot_geometry(i32 slot, i32 age, i32 script, u32 generation,
-                                  const std::array<Vec3, 4>& quad);
+                                  const std::array<Vec3, 4>& quad, i32 seat = -1);
 
     // .sht 弹型域：5 能量档非聚焦（块 0-4）+ 5 能量档聚焦（块 5-9）+
     // 特殊块 10（类别 2，未接入）。M2：逐席域（每角色独立弹型表），经

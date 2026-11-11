@@ -79,6 +79,7 @@ public:
     // RunPause overlay 面板）按其宿主对象在快照后仍存活的前提只记录
     // 指针身份（restore 校验仍可 find）。
     struct SnapshotData {
+        static constexpr u32 kNoVm = 0xffffffffu;
         struct Entry {
             AnmVm vm;            // 值拷贝（含资源指针——bank 存活期稳定）
             u32 slot = 0x1fff;
@@ -86,6 +87,7 @@ public:
             bool active = false, registered = false, alternate = false;
             bool borrowed = false, frozen_root = false, queued_deletion = false;
             u32 parent = 0xFFFFFFFFu;     // 快照内序号（borrowed 父 = 0xFFFFFFFEu 哨兵）
+            u32 creation_parent = kNoVm, rotation_parent = kNoVm;
             std::vector<u32> children;     // 快照内序号
             bool in_overflow = false;     // 池外节点（restore 重新分配）
             u32 chain_index[2] = {0xFFFFFFFFu, 0xFFFFFFFFu};  // 主/副链序号
@@ -100,7 +102,8 @@ public:
     bool capture(SnapshotData& out) const;
     // restore 后层桶为空：下一次 update()/update_chain() 重建（每帧开头
     // clear+归桶，AnmRegistry.cpp tick_chain 语义——快照不含层桶派生缓存）。
-    bool restore(const SnapshotData& source);
+    bool restore(const SnapshotData& source,
+                 const std::unordered_map<const AnmVm*, AnmVm*>& remapped = {});
     // 快照辅助：VM 在池内的槽号（池外/未分配 = 0x1fff）。
     u32 pool_slot(const AnmVm& vm) const noexcept;
 };

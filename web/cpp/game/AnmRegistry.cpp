@@ -172,9 +172,17 @@ bool AnmRegistry::capture(SnapshotData& out) const {
     std::unordered_map<const Node*, u32> index_of;
     index_of.reserve(ordered.size());
     for (u32 i = 0; i < ordered.size(); ++i) index_of[ordered[i]] = i;
+    const auto vm_ref = [&](const AnmVm* vm) {
+        if (!vm) return SnapshotData::kNoVm;
+        const auto it = index_of.find(node(*const_cast<AnmVm*>(vm)));
+        return it == index_of.end() ? SnapshotData::kNoVm : it->second;
+    };
     for (const Node* node : ordered) {
         SnapshotData::Entry entry;
         entry.vm = node->vm;
+        entry.creation_parent = vm_ref(entry.vm.creation_parent);
+        entry.rotation_parent = vm_ref(entry.vm.rotation_parent);
+        entry.vm.creation_parent = entry.vm.rotation_parent = nullptr;
         entry.slot = node->slot;
         entry.handle = node->handle;
         entry.active = node->active;
@@ -205,7 +213,8 @@ bool AnmRegistry::capture(SnapshotData& out) const {
     }
     return true;
 }
-bool AnmRegistry::restore(const SnapshotData& source) {
+bool AnmRegistry::restore(const SnapshotData& source,
+                          const std::unordered_map<const AnmVm*, AnmVm*>& remapped) {
     // 前置：清空当前全部节点（直毁语义，无 0x20 延迟——快照恢复是确认
     // 栅栏后的整场替换，不走帧内回收路径）。
     for (const auto& slot_node : pool) if (slot_node) { slot_node->active=false; slot_node->registered=false; slot_node->handle=0; slot_node->parent=nullptr; slot_node->children.clear(); slot_node->vm=AnmVm{}; }
@@ -234,7 +243,14 @@ bool AnmRegistry::restore(const SnapshotData& source) {
                 return false;
             }
             auto node = std::make_unique<Node>();
-            node->borrowed = source.borrowed_roots[borrowed_index++];
+            AnmVm* old_root = source.borrowed_roots[borrowed_index++];
+            const auto replacement = remapped.find(old_root);
+            if (entry.frozen_root) {
+                node->vm = entry.vm;
+                node->borrowed = &node->vm;
+            } else {
+                node->borrowed = replacement == remapped.end() ? old_root : replacement->second;
+            }
             node->slot = 0x1fff;
             node->handle = entry.handle;
             node->active = entry.active;
@@ -278,6 +294,15 @@ bool AnmRegistry::restore(const SnapshotData& source) {
         const SnapshotData::Entry& entry = source.entries[i];
         Node* node = restored[i];
         if (!node) continue;
+        const auto vm_at = [&](u32 index) -> AnmVm* {
+            if (index >= restored.size() || !restored[index]) return nullptr;
+            auto* target = restored[index];
+            return target->borrowed ? target->borrowed : &target->vm;
+        };
+        if (!entry.borrowed || entry.frozen_root) {
+            node->vm.creation_parent = vm_at(entry.creation_parent);
+            node->vm.rotation_parent = vm_at(entry.rotation_parent);
+        }
         if (entry.parent != 0xFFFFFFFFu && entry.parent < restored.size())
             node->parent = restored[entry.parent];
         for (const u32 child : entry.children)

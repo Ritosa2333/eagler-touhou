@@ -219,7 +219,7 @@ private:
     bool has_replay_ = false;
     bool ready_ = false;
     // digest 的两段实现（core=权威模拟面；anm=表现层 registry 面仅全量）。
-    void digest_core_sink(DigestSink&) const;
+    void digest_core_sink(DigestSink&, bool include_animation_ids) const;
     void digest_anm_sink(DigestSink&) const;
 };
 

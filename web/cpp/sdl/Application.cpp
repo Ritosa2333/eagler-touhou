@@ -34,6 +34,7 @@ constexpr i32 kFrontBank = 3;
 // 引用即此序）、bullet = 弹幕外观表脚本、player = plXX.anm（选人定档）、
 // scenery = STD 引用 ANM（st01.std → st01wl.anm）。
 constexpr i32 kStageBank = 4, kBulletBank = 5, kPlayerBank = 6, kSceneryBank = 7;
+constexpr std::array<i32, 2> kTeammateBanks{101, 102};
 constexpr i32 kSpiritBank = 25; // 00405530: astral.anm.
 constexpr i32 kStageLogoBank = 27;
 
@@ -635,7 +636,7 @@ void ApplicationState::release_run(bool preserve_hud) {
     // 对局 bank 卸载（unload 从 banks 摘除并落 retired 队列，供重开再装载）；
     // 常驻 bank（text/ascii/effect）只 retire 活动 VM，资源本体跨场景常驻。
     for (const auto bank : {kFrontBank, kStageBank, kBulletBank, kPlayerBank, kSceneryBank, 26, kStageLogoBank,
-                            kSpiritBank}) {
+                            kSpiritBank, kTeammateBanks[0], kTeammateBanks[1]}) {
         if (preserve_hud && bank == kFrontBank) continue;
         animations.unload(bank);
     }
@@ -885,6 +886,16 @@ bool ApplicationState::begin_run() {
     // 第 4 员 effect=8（kBanks 表 effect.anm 同值）：ECL 307/308 特效 VM 创建源。
     StagePresentation::Banks banks{kStageBank, kBulletBank, kPlayerBank, 8, kSpiritBank,
                                    kFrontBank};
+    for (i32 seat = 1; seat < mp_seat_count && seat < 3; ++seat) {
+        const auto teammate = mp_characters[seat] & 3;
+        const auto bank = teammate == character ? kPlayerBank : kTeammateBanks[seat - 1];
+        if (!animations.resource(bank) &&
+            (!read(player_files[teammate], bytes) ||
+             !animations.load(bank, bytes.data(), u32(bytes.size())) ||
+             !graphics.preload(*animations.resource(bank))))
+            return fail("Teammate ANM bank: " + animations.error + graphics.error);
+        banks.teammate_player[seat - 1] = bank;
+    }
     // STD 舞台背景资产名（0x4bb4f0 行 +0x4；Stage1 = st01.std → st01wl.anm）。
     char stage_std[16];
     std::snprintf(stage_std, sizeof stage_std, "st%02d.std", progress.stage);
@@ -1525,10 +1536,11 @@ bool ApplicationState::update(const GameInput& input, bool lost_focus) {
     // focus_pause_enabled），单端失焦不开 PauseEntrance::Pause、也不入
     // pause->controls（转发同门）。显式 Esc（pressed&0x100）暂停不受该门
     // 影响；PauseFrame 只消费 pressed/repeated，SP 下同门转发零行为变化。
-    const bool focus_pause = lost_focus && focus_pause_enabled;
+    const bool local_pause_allowed = !multiplayer::session.Active();
+    const bool focus_pause = local_pause_allowed && lost_focus && focus_pause_enabled;
     if (run && pause) {
         if (pause->active()) pause->controls({input.pressed, input.repeated, focus_pause});
-        else if ((input.pressed & 0x100u) || focus_pause)
+        else if (local_pause_allowed && ((input.pressed & 0x100u) || focus_pause))
             if (!pause->open(PauseEntrance::Pause)) return fail(pause->error);
     }
     physical_input = &input;
@@ -1794,6 +1806,8 @@ bool ApplicationState::commit(float presentation_fps) {
 // 段；restart 循环可多次触发 update_scene_pass，中途 clear 无任何像素消费者
 // （绘制只在帧尾一次），设备可见帧序不变。
 bool ApplicationState::present() {
+    if (run && run->presentation) run->presentation->prepare_player_opacity();
+    else renderer.player_opacity.fill(255);
     if (ending) {
         if (!graphics.select_target(nullptr, 0) ||
             !graphics.clear_target(0xff000000, nullptr))
