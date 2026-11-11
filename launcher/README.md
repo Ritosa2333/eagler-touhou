@@ -6,6 +6,7 @@
   <p>一个旨在<strong>极大降低玩家入门门槛</strong>的，东方 Project 官方游戏、同人游戏及其工具、联机 Mod 的<strong> Web 适配计划</strong>。</p>
   <p>
     <a href="https://touhouonline.com/"><img src="https://img.shields.io/badge/%E5%9C%A8%E7%BA%BF%E6%B8%B8%E7%8E%A9-touhouonline.com-E5322D?style=flat-square" alt="在线游玩 touhouonline.com"></a>
+    <a href="https://discord.gg/HwVz9ZTSF"><img src="https://img.shields.io/badge/Discord-5865F2?style=flat-square&amp;logo=discord&amp;logoColor=white" alt="Discord"></a>
     <a href="https://qm.qq.com/q/eeUrxIltug?from=tim"><img src="https://img.shields.io/badge/QQ%20Group-1124121427-12B7F5?style=flat-square&amp;logo=tencentqq&amp;logoColor=white" alt="QQ Group 1124121427"></a>
     <img src="https://img.shields.io/badge/Chromium-%E2%89%A5108-4285F4?style=flat-square&amp;logo=googlechrome&amp;logoColor=white" alt="Chromium >=108">
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg?style=flat-square" alt="License: GPL-3.0-or-later"></a>
@@ -16,7 +17,7 @@
 > [!TIP]
 > 对于游戏支持情况，参见[游戏还原和适配总进度表](https://github.com/Ritosa2333/eagler-touhou/blob/main/docs/TOUHOU_PROGRESS.md)。<br>
 > 如果您已经着手做某作了，直接提交修改表格的 Issue 或 PR 即可。<br>
-> 如果您对原作逆向或原作/东二适配感兴趣，欢迎加入我们的 [QQ 群](https://qm.qq.com/q/eeUrxIltug?from=tim)，我们有个开发者群。
+> 如果您对原作逆向或原作/东二适配感兴趣，欢迎加入我们的 [Discord](https://discord.gg/HwVz9ZTSF) 或 [QQ 群](https://qm.qq.com/q/eeUrxIltug?from=tim)，我们有个开发者群。
 
 ## 概要
 
