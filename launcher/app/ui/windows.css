@@ -720,7 +720,6 @@
     .mp-guide-content,
     .apple-refresh-content,
     .donation-content,
-    .lobby-form-note,
     .game-data-link-window,
     .game-data-import-window
   ) {
@@ -746,9 +745,6 @@
   .lobby-dialog .lobby-field {
     font: 500 13px / 1.5 var(--kit-font);
     color: var(--kit-foreground);
-  }
-  .lobby-dialog .lobby-form-note {
-    font: 400 12px / 1.65 var(--kit-font);
   }
   .lobby-dialog .lobby-form-error {
     color: var(--kit-destructive);
@@ -785,7 +781,7 @@
   }
   #roomForm .lobby-form-pair {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+    align-items: end;
     gap: 12px;
   }
   #roomForm .lobby-form-pair:has(> :last-child[hidden]) {
@@ -813,7 +809,7 @@
   #roomForm :is(.lobby-form-pair, .lobby-field, .lobby-form-error)[hidden] {
     display: none;
   }
-  #roomForm :is(.lobby-form-note, .lobby-form-error) {
+  #roomForm .lobby-form-error {
     margin: 0;
   }
   #roomForm #roomCodeInput {

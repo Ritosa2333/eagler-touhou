@@ -532,6 +532,11 @@
   text-decoration: none;
   color: var(--ui-text);
 }
+.ui-menu.ui-field-help {
+  width: 256px;
+  padding: 8px 12px;
+  font: 14px / 1.65 var(--kit-font);
+}
 .ui-menu-item svg {
   width: 16px;
   height: 16px;
