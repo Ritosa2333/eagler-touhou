@@ -3200,6 +3200,48 @@
       "reason"
     ]
   },
+  "package.originalInvalid": {
+    "id": "package_originalInvalid",
+    "params": [
+      "reason"
+    ]
+  },
+  "package.importShort": {
+    "id": "package_importShort",
+    "params": []
+  },
+  "package.importShortWav": {
+    "id": "package_importShortWav",
+    "params": []
+  },
+  "package.archiveWrongPassword": {
+    "id": "package_archiveWrongPassword",
+    "params": []
+  },
+  "package.importOnePackage": {
+    "id": "package_importOnePackage",
+    "params": []
+  },
+  "package.originalPassword": {
+    "id": "package_originalPassword",
+    "params": []
+  },
+  "package.originalUnavailable": {
+    "id": "package_originalUnavailable",
+    "params": []
+  },
+  "package.originalConverting": {
+    "id": "package_originalConverting",
+    "params": []
+  },
+  "package.originalEncoding": {
+    "id": "package_originalEncoding",
+    "params": [
+      "completed",
+      "name",
+      "total"
+    ]
+  },
   "package.manualImportIntro": {
     "id": "package_manualImportIntro",
     "params": []
@@ -9869,7 +9911,9 @@
   },
   "th09.characterGames": {
     "id": "th09_characterGames",
-    "params": ["count"]
+    "params": [
+      "count"
+    ]
   },
   "th09.totalWins": {
     "id": "th09_totalWins",
@@ -10066,6 +10110,38 @@
   },
   "nav.privacyPolicy": {
     "id": "nav_privacyPolicy",
+    "params": []
+  },
+  "game.title.th01mp": {
+    "id": "game_title_th01mp",
+    "params": []
+  },
+  "game.title.th02mp": {
+    "id": "game_title_th02mp",
+    "params": []
+  },
+  "game.title.th03mp": {
+    "id": "game_title_th03mp",
+    "params": []
+  },
+  "game.title.th04mp": {
+    "id": "game_title_th04mp",
+    "params": []
+  },
+  "multiplayer.loadout.th01_reimu": {
+    "id": "multiplayer_loadout_th01_reimu",
+    "params": []
+  },
+  "multiplayer.loadout.th02_fast": {
+    "id": "multiplayer_loadout_th02_fast",
+    "params": []
+  },
+  "multiplayer.loadout.th02_balanced": {
+    "id": "multiplayer_loadout_th02_balanced",
+    "params": []
+  },
+  "multiplayer.loadout.th02_slow": {
+    "id": "multiplayer_loadout_th02_slow",
     "params": []
   }
 }

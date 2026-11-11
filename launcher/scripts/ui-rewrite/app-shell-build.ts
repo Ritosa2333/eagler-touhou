@@ -3,15 +3,16 @@ import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {parse, type DefaultTreeAdapterMap} from 'parse5';
 import {buildAppShell} from '../../lib/app-shell-build.mjs';
-import {STATIC_APP_SHELL_FILES, HOST_SITE_ARTWORK_FILES, REACT_DOCUMENT_FILES, UI_REVIEW_DOCUMENT, hasUiReviewEntry} from '../../lib/frontend-static-manifest.mjs';
+import {STATIC_APP_SHELL_FILES, HOST_SITE_ARTWORK_FILES, REACT_DOCUMENT_FILES, UI_REVIEW_DOCUMENT, hasUiReviewEntry, isOnDemandFrontendAsset} from '../../lib/frontend-static-manifest.mjs';
 import {buildRuntimeGenerationWorkerSource} from '../../lib/frontend-assets.mjs';
 import * as runtimeContract from '../../src/contracts/runtime-generations.mts';
 import {writeFileAtomic} from '../../lib/atomic-file.mjs';
 import {normalizeReactMountPath, REACT_APP_SHELL_META, validateReactAppShellDeployment, type ReactAppShellDeployment} from '../../app/services/app-shell-deployment.ts';
 import {readReactFrontendArtifact, reactDocumentAssetUrl} from '../../lib/react-frontend-artifact.mjs';
 import {writeAppShellRetirementWorker} from '../../lib/app-shell-retirement.mjs';
+import {PRODUCT_GAMES} from '../../src/contracts/product-catalog.mts';
 
-interface ReactShellGraph {schema: string; mountPath: string; appShell: ReactAppShellDeployment | null; shellFiles: string[]}
+interface ReactShellGraph {schema: string; mountPath: string; appShell: ReactAppShellDeployment | null; gameIds: string[]; shellFiles: string[]}
 interface BuildOptions {
   clientDirectory: string;
   mountPath: string;
@@ -37,7 +38,8 @@ export async function writeReactAppShellGraph({clientDirectory, mountPath, appSh
   const staticFiles = STATIC_APP_SHELL_FILES.filter(path => !retiredEntryStyles.has(path));
   if (hasUiReviewEntry(manifest)) staticFiles.push(UI_REVIEW_DOCUMENT.file);
   const graph: ReactShellGraph = {schema: 'eagler-touhou/react-app-shell-graph/1', mountPath, appShell,
-    shellFiles: [...new Set([...staticFiles, ...generatedFiles])].sort()};
+    gameIds: Object.keys(PRODUCT_GAMES).sort(),
+    shellFiles: [...new Set([...staticFiles, ...generatedFiles.filter(path => !isOnDemandFrontendAsset(path))])].sort()};
   await writeFileAtomic(resolve(clientDirectory, '.vite/react-app-shell-graph.json'), JSON.stringify(graph, null, 2) + '\n');
   return graph;
 }

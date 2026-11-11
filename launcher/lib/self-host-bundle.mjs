@@ -97,6 +97,7 @@ const hostRuntimeRoots = [
   "scripts/touhou_formats.py",
   "scripts/verify-offline-game-package.mjs",
   "scripts/verify-deployed-site.mjs",
+  "scripts/verify-frontend-game-catalog.mjs",
   "scripts/verify-runtime-release.mjs",
   "scripts/verify-server-build.mjs",
   "server/static-content-policy.mjs",

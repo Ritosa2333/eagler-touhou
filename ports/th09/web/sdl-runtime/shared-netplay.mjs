@@ -119,6 +119,7 @@ export class SharedNetplay {
     delete globalThis.__eaglerNetplayMissingInputs;
     globalThis.__eaglerNetplayLanActive = false;
     globalThis.__eaglerNetplayTransport = 'connecting';
+    if (!spectator) url.searchParams.set('th09MatchReport','1');
     const encoded = new TextEncoder().encode(url.href);
     if (encoded.length >= 1024) throw Error('TH09 联机地址过长');
     const pointer = this.core._th09_peer_url_buffer();
@@ -133,6 +134,18 @@ export class SharedNetplay {
     this.connected = true;
     this.startupNoticeAt = 0;
     this.startupTransport = globalThis.__eaglerPeerTransport;
+    this.directMatchReport = false;
+    const transport = this.startupTransport;
+    const sockets = spectator ? [] : [transport?.signal,transport?.relay];
+    const acceptReportCapability = ({data}) => {
+      if (typeof data !== 'string' || this.startupTransport !== transport) return;
+      let message;
+      try { message = JSON.parse(data); } catch { return; }
+      if (message?.type !== 'th09-match-report' && !(message?.type === 'peers' && message.th09MatchReport === true)) return;
+      this.directMatchReport = true;
+      for (const socket of sockets) socket?.removeEventListener?.('message',acceptReportCapability);
+    };
+    for (const socket of sockets) socket?.addEventListener?.('message',acceptReportCapability);
     if(this.startupTransport)this.startupTransport.onDisconnect=()=>this.connectionEnded();
     // Arrival-driven receive/ACK refreshes pending corrections and can wake
     // one already-due tick. Packets never earn fresh simulation clock credit.
@@ -524,7 +537,18 @@ export class SharedNetplay {
     const start = this.matchStart;
     if (start === null || frame <= start || !this.connected || this.spectator) return;
     this.matchStart = null;
-    this.onMatch({start,frames:frame-start,winner,characters:[first,second]});
+    const result = {start,frames:frame-start,winner,characters:[first,second]};
+    const transport = this.startupTransport;
+    const socket = transport?.route === 'relay' ? transport.relay : transport?.signal;
+    if (this.directMatchReport && socket?.readyState === WebSocket.OPEN) {
+      try {
+        socket.send(JSON.stringify({type:'th09-match',...result}));
+        return;
+      } catch {
+        // The lobby connection can still be open when the game socket closes.
+      }
+    }
+    this.onMatch(result);
   }
   beginMatch(frame,state) {
     if(!this.timelineExperiment||this.spectator||!this.connected||this.side!==0||![50,78].includes(state.length))return;

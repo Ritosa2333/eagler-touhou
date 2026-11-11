@@ -23,6 +23,22 @@ export function createBrowserPorts({document, window, baseUrl}: {document: Docum
     }).catch(error => {vendorLoads.delete(path); throw error;});
     vendorLoads.set(path, task); return task;
   }
+  function pickFiles(accept: string, multiple: boolean): Promise<File[]> {
+    const input = document.querySelector<HTMLInputElement>('#fileInput');
+    if (!input) return Promise.reject(new Error('Launcher file input is not mounted'));
+    input.accept = accept;
+    input.multiple = multiple;
+    input.value = '';
+    return new Promise(resolve => {
+      const finish = (files: File[] = []) => {
+        input.onchange = input.oncancel = null;
+        resolve(files);
+      };
+      input.onchange = () => finish(Array.from(input.files ?? []));
+      input.oncancel = () => finish();
+      input.click();
+    });
+  }
   return {
     async copyText(text: string): Promise<boolean> {
       try {if (window.navigator.clipboard?.writeText) {await window.navigator.clipboard.writeText(text); return true;}} catch {}
@@ -41,16 +57,10 @@ export function createBrowserPorts({document, window, baseUrl}: {document: Docum
       await loadVendor('vendor/browser-image-compression.min.js', () => typeof host.imageCompression === 'function', 'Image compressor');
       return host.imageCompression!;
     },
-    pickFile(accept: string): Promise<File | null> {
-      const input = document.querySelector<HTMLInputElement>('#fileInput');
-      if (!input) return Promise.reject(new Error('Launcher file input is not mounted'));
-      input.accept = accept; input.multiple = false; input.value = '';
-      return new Promise(resolve => {
-        let settled = false;
-        const finish = (file: File | null = null) => {if (settled) return; settled = true; input.onchange = input.oncancel = null; resolve(file);};
-        input.onchange = () => finish(input.files?.[0] ?? null); input.oncancel = () => finish(); input.click();
-      });
+    async pickFile(accept: string): Promise<File | null> {
+      return (await pickFiles(accept, false))[0] ?? null;
     },
+    pickFiles: (accept: string) => pickFiles(accept, true),
     download(name: string, bytes: ArrayBuffer, mime: string) {
       const url = URL.createObjectURL(new Blob([bytes], {type: mime})), link = document.createElement('a');
       link.href = url; link.download = name; link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);

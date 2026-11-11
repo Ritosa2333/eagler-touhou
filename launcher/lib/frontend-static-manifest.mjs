@@ -1,5 +1,10 @@
 import {SITE_BRAND_FACES,SITE_BRAND_DEFAULT} from './site-brand.mjs';
 import {MULTIPLAYER_GUIDE_TOPICS, multiplayerGuidePath} from './multiplayer-guide.mjs';
+
+// Published with the UI, but fetched only when the selected files need conversion or extraction.
+export function isOnDemandFrontendAsset(path) {
+  return /^assets\/(?:ogg|ffmpeg-core|unrar|7zz)-[A-Za-z0-9_-]+\.wasm$/.test(path);
+}
 /** Router addresses and their mount-local publication files have one inventory. */
 export function uiReviewEnabled(environment = globalThis.process?.env ?? {}) {
   const review = environment.VITE_UI_REVIEW_ENABLED;

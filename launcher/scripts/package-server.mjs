@@ -37,6 +37,7 @@ import { verifyRuntimeRelease, runtimeFileNames, runtimeStem, directoryFeatureAt
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { WORKSPACE_REPOSITORIES, workspacePath, workspaceRoot } from "../lib/workspace-layout.mjs";
 import { FRONTEND_PACKAGE_FILES, REACT_FRONTEND_ARTIFACT, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
+import { assertReactFrontendGameCoverage } from "../lib/react-frontend-artifact.mjs";
 import { resolveRuntimeGenerationWorkerSource } from "../lib/contracts-build.mjs";
 import { normalizeSiteUrl, writeSiteMetadata } from "../lib/site-metadata.mjs";
 import { PRIVATE_FRONTEND_ASSETS, privateFrontendAssetSource } from "../lib/private-frontend-assets.mjs";
@@ -102,6 +103,7 @@ if (!testBuild && gameIds.some(game => PRODUCT_GAMES[game].buildOptIn === true))
 if (publicationBuild && gameIds.some(game => PRODUCT_GAMES[game].buildOptIn === true)) {
   throw new Error('Opt-in adapters are not enabled for production release profiles');
 }
+assertReactFrontendGameCoverage(REACT_FRONTEND_ARTIFACT, gameIds);
 const languageGames = gameIds.filter(game => PRODUCT_GAMES[game].features.languages);
 const thpracGames = gameIds.filter(game => PRODUCT_GAMES[game].features.thprac);
 const serverFeatureGames = gameIds.filter(game =>

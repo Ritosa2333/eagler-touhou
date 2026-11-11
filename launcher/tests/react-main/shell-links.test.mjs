@@ -24,8 +24,8 @@ before(async()=>{
  export * from './app/ui/scrollbars.tsx';
  export * from './app/navigation/document-locale.ts';
  export {MemoryRouter,useLocation} from 'react-router';
- export {previewFeaturesEnabled,accountsEnabled,isPreviewOnlyPage,resolveReleaseFeatures} from './app/release-features.ts';
- `},bundle:true,platform:'node',format:'esm',jsx:'automatic',loader:{'.webp':'dataurl'},define:{'import.meta.env':JSON.stringify({DEV:true,VITE_ACCOUNTS_ENABLED:'true'})},outfile:resolve(buildDirectory,'bundle.mjs'),logLevel:'silent',plugins:[authoredSourcesPlugin(project),{name:'dependencies',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:args.path,external:true}));ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});}}]});
+ export {accountsEnabled,isPreviewOnlyPage,resolveReleaseFeatures} from './app/release-features.ts';
+ `},bundle:true,platform:'node',format:'esm',jsx:'automatic',loader:{'.webp':'dataurl'},define:{'import.meta.env':JSON.stringify({DEV:false,VITE_PREVIEW_FEATURES:'false',VITE_UI_REVIEW_ENABLED:'true',VITE_ACCOUNTS_ENABLED:'true'})},outfile:resolve(buildDirectory,'bundle.mjs'),logLevel:'silent',plugins:[authoredSourcesPlugin(project),{name:'dependencies',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:args.path,external:true}));ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});}}]});
  owners=await import(pathToFileURL(resolve(buildDirectory,'bundle.mjs')));
 });
 afterEach(async()=>{if(root)await React.act(async()=>root.unmount());root=null;env.document.body.replaceChildren();assert.deepEqual(env.errors.splice(0),[]);});
@@ -138,28 +138,23 @@ test('mounted Router links remove the deployment mount before navigation', async
 
 test('source-only preview keeps account routes gated unless accounts are explicitly enabled', () => {
   const sourceOnly = owners.resolveReleaseFeatures({DEV: true});
-  assert.equal(sourceOnly.previewFeaturesEnabled, true);
   assert.equal(sourceOnly.accountsEnabled, false);
   assert.equal(sourceOnly.isPreviewOnlyPage('/ui-review.html'), false);
   for (const path of ['/login.html', '/profile.html', '/u/reimu.1_test']) assert.equal(sourceOnly.isPreviewOnlyPage(path), true);
-  assert.equal(owners.previewFeaturesEnabled, true);
   assert.equal(owners.accountsEnabled, true, 'the synthetic component harness opts into account navigation');
 });
 
 test('production hides account routes by default and supports account-only opt-in', () => {
   const production = owners.resolveReleaseFeatures({DEV: false});
-  assert.equal(production.previewFeaturesEnabled, false);
   assert.equal(production.accountsEnabled, false);
   for (const path of ['/login.html', '/profile.html', '/u/reimu.1_test']) assert.equal(production.isPreviewOnlyPage(path), true, path);
 
   const accountOptIn = owners.resolveReleaseFeatures({DEV: false, VITE_ACCOUNTS_ENABLED: 'true'});
-  assert.equal(accountOptIn.previewFeaturesEnabled, false);
   assert.equal(accountOptIn.accountsEnabled, true);
   for (const path of ['/login.html', '/profile.html', '/u/reimu.1_test']) assert.equal(accountOptIn.isPreviewOnlyPage(path), false, path);
   assert.equal(accountOptIn.isPreviewOnlyPage('/ui-review.html'), true, 'account opt-in does not publish the UI review page');
 
   const previewOptIn = owners.resolveReleaseFeatures({DEV: false, VITE_PREVIEW_FEATURES: 'true'});
-  assert.equal(previewOptIn.previewFeaturesEnabled, true);
   assert.equal(previewOptIn.accountsEnabled, false, 'generic preview does not enable accounts');
   assert.equal(previewOptIn.isPreviewOnlyPage('/ui-review.html'), false);
   for (const path of ['/login.html', '/profile.html', '/u/reimu.1_test']) assert.equal(previewOptIn.isPreviewOnlyPage(path), true, path);
@@ -227,11 +222,9 @@ test('the masthead menu omits migration when the host provides no allowed addres
 
 test('the UI review route can be published independently of beta features', () => {
   const hidden = owners.resolveReleaseFeatures({DEV: false, VITE_PREVIEW_FEATURES: 'true', VITE_UI_REVIEW_ENABLED: 'false'});
-  assert.equal(hidden.previewFeaturesEnabled, true);
   assert.equal(hidden.uiReviewEnabled, false);
   assert.equal(hidden.isPreviewOnlyPage('/ui-review.html'), true);
   const shown = owners.resolveReleaseFeatures({DEV: false, VITE_PREVIEW_FEATURES: 'false', VITE_UI_REVIEW_ENABLED: 'true'});
-  assert.equal(shown.previewFeaturesEnabled, false);
   assert.equal(shown.uiReviewEnabled, true);
   assert.equal(shown.isPreviewOnlyPage('/ui-review.html'), false);
 });

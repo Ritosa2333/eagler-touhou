@@ -2,6 +2,7 @@
 // Compiled only into TH05_BROWSER_TESTS builds. Exercise the production game
 // classes with actual DAT resources without rendering thousands of frames.
 #include "../Game/Game.h"
+#include "../Game/Original/OriginalScenes.h"
 #include "../Game/Stage/Stage.h"
 #include "../Game/Stage/Item/Item.h"
 #include "../Game/Stage/Summary/Summary.h"
@@ -31,6 +32,23 @@ void AuditSpecialShot(int kind,int speed){
 } } }
 namespace th5w {
 struct PracticeTests {
+ static int AllCast(int field){
+  auto* game=CGame::s_pCurGame;if(!game)return -1;
+  if(field<0){
+   if(field<-4)return -1;
+   auto& g=CGame::GVar();g.m_playStage=6;g.m_playChara=-field-1;
+   CScheme* next=nullptr;int id=0;
+   if(!CSchemeSwitcher::SwitchScheme(&next,&id,5,1)||id!=10)return -1;
+   delete game->m_pCurScheme;game->m_pCurScheme=next;game->m_curSchemeID=id;
+   return static_cast<COriginalEnd*>(next)->m_ready?1:0;
+  }
+  if(game->m_curSchemeID!=10)return -1;
+  const auto* cast=static_cast<const COriginalEnd*>(game->m_pCurScheme);
+  if(field==0)return cast->m_castScreen;
+  if(field==1)return cast->m_castState;
+  if(field==2)return cast->m_measure;
+  return cast->m_age;
+ }
  static int Draw(int atlas){
   auto* game=CGame::s_pCurGame;if(!game||game->m_curSchemeID!=4)return 0;
   web::graphics::SpriteAtlasEnabled(atlas!=0);web::graphics::BeginFrame();practice::BeginFrame();game->m_pCurScheme->Draw();practice::DrawStatus();practice::EndFrame();web::graphics::Present();web::graphics::SpriteAtlasEnabled(true);return 1;
@@ -1026,5 +1044,6 @@ extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_combat_start(int stage,int chara
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_combat_damage(int boss,int bombing,int age,int frame,int x,int y,int shots){return th5w::PracticeTests::CombatDamage(boss,bombing,age,frame,x,y,shots);}
 extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_combat_bomb_step(int frame,int key){return th5w::PracticeTests::CombatBombStep(frame,key);}
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_bomb_rage_rules(){return th5w::original::BombAndRageEnabled();}
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_allcast(int field){return th5w::PracticeTests::AllCast(field);}
 extern "C" EMSCRIPTEN_KEEPALIVE void th05_native_combat_special_start(int kind,int angle){th5w::PracticeTests::CombatSpecialStart(kind,angle);}
 extern "C" EMSCRIPTEN_KEEPALIVE const int* th05_native_combat_special_step(int kind,int clear){return th5w::PracticeTests::CombatSpecialStep(kind,clear);}
