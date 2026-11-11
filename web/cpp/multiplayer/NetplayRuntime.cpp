@@ -1,6 +1,8 @@
 // TH13 MP 联机运行时实现（M7）。语义表见 NetplayRuntime.hpp 文件头。
 #include "NetplayRuntime.hpp"
 
+#include "SpectatorJournal.hpp"  // kGame/SpectatorStageSchema（观战线标识）
+
 #include <cstring>
 
 namespace th13::multiplayer {
@@ -112,6 +114,18 @@ void NetplayRuntime::Clear() {
     digest_mismatch_frame_ = 0;
     digests_sent_ = digests_received_ = desync_detected_ = 0;
     error_.clear();
+    // M9/P6：观战面随会话重置（发布器/回放/缓冲全清）。
+    spectator_ = false;
+    stage_received_ = false;
+    publish_started_ = false;
+    publish_failed_ = false;
+    spectator_deadline_ms_ = 0;
+    spectator_recorded_ = 0;
+    receive_frame_ = 0;
+    stage_publisher_ = {};
+    stage_playback_.Clear();
+    stage_view_.Clear();
+    spectator_frames_.clear();
 }
 
 bool NetplayRuntime::Connect(const char* relay_url) {
@@ -119,12 +133,208 @@ bool NetplayRuntime::Connect(const char* relay_url) {
         error_ = "connect before configure";
         return false;
     }
+    // 观战历史中继线（stageSpectatorHistory）：席 0 保留发布面
+    //（BeginSpectatorSession 通告 + 观战帧上载），其余席无发布权。
     if (!transport_.Connect(relay_url, std::uint8_t(setup_.local_player),
-                           std::uint8_t(setup_.player_count))) {
+                           std::uint8_t(setup_.player_count), true)) {
         error_ = "transport connect failed";
         return false;
     }
+    transport_.BeginSpectatorSession(setup_.session_id, setup_.seed);
     gate_.SetTransportAvailable(true);
+    return true;
+}
+
+// ---- M9/P6：公共观战面 ----
+// 观众连接：不参与 HELLO/READY 门；会话身份由 relay 的 spectator-session
+// 通告携带（TakeSpectatorSession 在 DrainSpectator 内消费）。
+bool NetplayRuntime::ConnectSpectator(const char* relay_url,
+                                      const char* spectator_id) {
+    if (!configured_ || !relay_url || !*relay_url || !spectator_id || !*spectator_id) {
+        error_ = "invalid spectator admission";
+        return false;
+    }
+    if (!transport_.ConnectSpectator(relay_url, spectator_id,
+                                     std::uint8_t(setup_.player_count), true)) {
+        error_ = "spectator transport could not connect";
+        return false;
+    }
+    spectator_ = true;
+    stage_playback_.Clear();
+    stage_view_.Clear();
+    spectator_frames_.clear();
+    stage_received_ = false;
+    receive_frame_ = 0;
+    spectator_deadline_ms_ = 0;  // Pump 首轮以当前时刻起算
+    return true;
+}
+
+// 发布端帧记录（每执行帧恰一次，含回滚重放帧——Record 幂等校验输入
+// 一致）。首次带 initializer 时建立发布器；同关 NotRequired 传空。
+bool NetplayRuntime::RecordSpectatorFrame(
+    std::uint32_t frame, std::uint32_t stage, const Netplay::FrameInput* inputs,
+    unsigned count, const std::vector<std::uint8_t>* initializer) {
+    if (!configured_ || spectator_ || setup_.local_player != 0 || publish_failed_)
+        return true;  // 无发布权/已退役：静默（不阻断玩家模拟）
+    if (!publish_started_) {
+        if (!initializer || initializer->empty()) return true;  // 首帧前无 checkpoint：不入流
+        if (!stage_publisher_.Reset(SpectatorJournal::kGame,
+                                    std::uint8_t(setup_.player_count),
+                                    setup_.session_id, GameplayAbi(setup_), frame)) {
+            publish_failed_ = true;
+            transport_.StopSpectators();
+            return true;
+        }
+        publish_started_ = true;
+    }
+    Netplay::SpectatorStagePublisher::Frame record;
+    record.frame = frame;
+    record.stage = stage;
+    record.schema = initializer && !initializer->empty() ? SpectatorStageSchema : 0;
+    if (initializer && !initializer->empty()) record.initializer = *initializer;
+    for (unsigned seat = 0; seat < count && seat < 3; ++seat)
+        record.inputs[seat] = inputs[seat];
+    record.hasInputs = true;
+    if (!stage_publisher_.Record(std::move(record))) {
+        publish_failed_ = true;
+        transport_.StopSpectators();
+        return true;
+    }
+    spectator_recorded_ = frame;
+    return true;
+}
+
+// 发布冲账：只发确认历史（confirmed 与 simulated 取 min）。
+bool NetplayRuntime::PublishSpectator(std::uint32_t confirmed,
+                                      std::uint32_t simulated) {
+    if (!publish_started_ || publish_failed_ || spectator_ ||
+        setup_.local_player != 0)
+        return true;
+    if (transport_.SpectatorState() < 0) {
+        publish_failed_ = true;
+        transport_.StopSpectators();
+        return true;
+    }
+    Netplay::SpectatorStagePublisher::PublishFailure failure{};
+    const bool published = stage_publisher_.Publish(
+        confirmed, simulated,
+        [&](std::uint32_t frame, std::array<Netplay::FrameInput, 3>& out) {
+            return core_.ConfirmedInputs(frame, &out);
+        },
+        [&](const std::vector<std::uint8_t>& wire) {
+            return transport_.SendSpectator(wire.data(), wire.size());
+        },
+        &failure);
+    if (!published && !Netplay::SpectatorStagePublisher::Retryable(failure)) {
+        publish_failed_ = true;
+        transport_.StopSpectators();
+    }
+    return true;
+}
+
+// 终局 End 事件（发布端）。
+bool NetplayRuntime::FinishSpectator(std::uint32_t end_frame) {
+    if (!publish_started_ || publish_failed_ || spectator_ ||
+        setup_.local_player != 0)
+        return true;
+    const bool finished = stage_publisher_.Finish(
+        end_frame, [&](const std::vector<std::uint8_t>& wire) {
+            return transport_.SendSpectator(wire.data(), wire.size());
+        });
+    if (finished) transport_.StopSpectators(true);
+    return true;
+}
+
+// 观众端收流：transport 轮询 → 事件（checkpoint/node/end/bootstrap）或
+// 输入帧包。会话通告（spectator-session）重置身份与 playback。
+bool NetplayRuntime::DrainSpectator(std::uint64_t now_ms) {
+    std::uint64_t session = 0;
+    std::uint32_t seed = 0;
+    if (transport_.TakeSpectatorSession(&session, &seed)) {
+        auto setup = setup_;
+        setup.session_id = session;
+        setup.seed = seed;
+        if (!Reset(setup)) return false;
+        spectator_ = true;  // Reset/Clear 清位，重接观战身份后恢复
+        spectator_frames_.clear();
+        stage_playback_.Clear();
+        stage_view_.Clear();
+        stage_received_ = false;
+        receive_frame_ = 0;
+        spectator_deadline_ms_ = now_ms + 90'000;
+    }
+    if (!spectator_deadline_ms_) spectator_deadline_ms_ = now_ms + 90'000;
+    std::vector<std::uint8_t> bytes;
+    for (unsigned n = 0; n < 128 && transport_.Poll(&bytes); ++n) {
+        if (Netplay::IsSpectatorStageEvent(bytes.data(), bytes.size())) {
+            Netplay::SpectatorStageEvent event;
+            if (!Netplay::DecodeSpectatorStageEvent(bytes.data(), bytes.size(),
+                                                    &event) ||
+                event.game != SpectatorJournal::kGame ||
+                event.playerCount != setup_.player_count ||
+                event.sessionId != setup_.session_id ||
+                event.gameplayAbi != GameplayAbi(setup_) ||
+                (event.kind == Netplay::SpectatorEventKind::Checkpoint &&
+                 event.schema != SpectatorStageSchema) ||
+                !stage_playback_.Receive(event)) {
+                error_ = "invalid TH13 spectator stage stream";
+                return false;
+            }
+            stage_received_ = true;
+            spectator_frames_.clear();
+            spectator_deadline_ms_ = now_ms + 15'000;
+            continue;
+        }
+        if (stage_received_) {
+            Netplay::SpectatorFramePacket packet;
+            if (!Netplay::DecodeSpectatorFramePacket(bytes.data(), bytes.size(),
+                                                     &packet) ||
+                !stage_playback_.Receive(packet)) {
+                error_ = "invalid TH13 spectator input stream";
+                return false;
+            }
+            spectator_deadline_ms_ = now_ms + 15'000;
+            continue;
+        }
+        // 旧输入流（无 stage 事件前）：按帧号连续入缓冲（对齐 th12 语义）。
+        Netplay::SpectatorFramePacket packet;
+        if (spectator_frames_.size() >= 8192 ||
+            !Netplay::DecodeSpectatorFramePacket(bytes.data(), bytes.size(),
+                                                 &packet) ||
+            packet.sessionId != setup_.session_id ||
+            packet.gameplayAbi != GameplayAbi(setup_) ||
+            packet.playerCount != setup_.player_count ||
+            packet.frame != receive_frame_) {
+            error_ = "invalid TH13 spectator input stream";
+            return false;
+        }
+        spectator_frames_.push_back(packet);
+        ++receive_frame_;
+        spectator_deadline_ms_ = now_ms + 15'000;
+    }
+    if (stage_received_) {
+        if (stage_playback_.History().Ended()) return true;
+        if (transport_.Failed()) {
+            error_ = transport_.LastError();
+            return false;
+        }
+        // bootstrap 有界等待；转直播后静默不判死（源可能暂停）。
+        if (!stage_playback_.Ready() && now_ms >= spectator_deadline_ms_) {
+            error_ = "TH13 spectator stage stream stalled; players are unaffected";
+            return false;
+        }
+        return true;
+    }
+    if (spectator_frames_.empty()) {
+        if (transport_.Failed()) {
+            error_ = transport_.LastError();
+            return false;
+        }
+        if (now_ms >= spectator_deadline_ms_) {
+            error_ = "TH13 spectator stream ended or stalled; players are unaffected";
+            return false;
+        }
+    }
     return true;
 }
 
@@ -132,6 +342,8 @@ bool NetplayRuntime::Pump(bool world_ready, std::uint64_t now_ms) {
     if (!configured_) return true;  // 未配置：静默（单席/本地模式）
     // P3.4：失配是终态（error_ 已含帧号；Error() 优先返回它）。
     if (digest_mismatch_) return false;
+    // 观众端：只收流，不推进玩家信道/门。
+    if (spectator_) return DrainSpectator(now_ms);
     if (!channel_.Active() && transport_.IsOpen()) {
         // PR#225：输入重传周期与 th15 生产配置对齐（16 ms）；其余默认。
         Netplay::SessionChannelConfig policy;
