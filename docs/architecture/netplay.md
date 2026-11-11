@@ -2,7 +2,7 @@
 
 Adonis 在实际游戏输入通道上测量 RTT，协商输入延迟 `D` 与预测预算 `P`，并在运行期保持 60 Hz 逻辑帧。产品入口与适配总览见[适配文档](../adaptation/README.md)，回滚所有权见[回滚运行参考](rollback.md)。
 
-旧 Adonis 操作说明保留为基线 `991e7cdf9060252e022eba25431254c6a0ce73e9` 的历史材料：[Adonis adaptation playbook](https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/adonis-adaptation.md)。本页按当前源码记录参数和负责模块。
+旧 Adonis 操作说明保留为基线 `991e7cdf9060252e022eba25431254c6a0ce73e9` 的历史材料：[Adonis adaptation playbook](https://github.com/Ritosa2333/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/adonis-adaptation.md)。本页按当前源码记录参数和负责模块。
 
 ## 谁负责什么
 
@@ -177,13 +177,13 @@ TH09 使用单独的 [`th09_startup_info`](../../ports/th09/web/cpp/sdl/Applicat
 
 TH08 已把 `AdonisConnection` 放在现有标题输入 transport 之上，`NetworkConnection` 先完成测量，再配置共同 delay/prediction 并进入 `SessionChannel`。`RollbackDriver` 只在稳定游戏世界允许纠正，独立维护本地捕获前沿；确认输出从该标题自己的 Journal、音频和 Replay 队列排出。
 
-TH08 的历史 Update 基准中，Bullet job 占约 88–91%，活动区域索引据此集中优化该路径。活动取消区域缓存只在 Item 更新后至 Bullet/Laser 更新前有效，正向与重模拟每帧重建；对象顺序、活动检查、命中计数、精确几何和特殊边界回退保持一致。历史候选基准详见固定 SHA 下的 [TH08 复用实验](https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback/th08-mp-base-update-reuse-2026-09-27.md)。测量构建、输入和设备条件见该记录。
+TH08 的历史 Update 基准中，Bullet job 占约 88–91%，活动区域索引据此集中优化该路径。活动取消区域缓存只在 Item 更新后至 Bullet/Laser 更新前有效，正向与重模拟每帧重建；对象顺序、活动检查、命中计数、精确几何和特殊边界回退保持一致。历史候选基准详见固定 SHA 下的 [TH08 复用实验](https://github.com/Ritosa2333/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback/th08-mp-base-update-reuse-2026-09-27.md)。测量构建、输入和设备条件见该记录。
 
 ### TH09
 
 TH09 复用公共 `AdonisStartup` 和 `SessionChannel`，由标题 `RollbackSession::BeginMeasured()` 与 `PumpStartup()` 管理提交后切入。普通网络等待记录一个待重试的到期帧；下一显示机会只重试该帧，墙钟欠账不随等待增长。恢复复用已到期的帧，新本地输入保持原采样节奏。
 
-TH09 的恢复与输出调度：恢复放在 Present 后分批执行；`RecoverySchedule` ticket 和 loop epoch 让暂停/停止取消旧回调；输入在 `Capture()` 一次采样并由重模拟复用；确认音频、Replay 和观战帧由独立发布前沿保留。报告中的旧浏览器/网络条件记录保存在 [固定基线回滚 Playbook](https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md#th09-input-scheduling-and-post-present-recovery-2026-10-16)。
+TH09 的恢复与输出调度：恢复放在 Present 后分批执行；`RecoverySchedule` ticket 和 loop epoch 让暂停/停止取消旧回调；输入在 `Capture()` 一次采样并由重模拟复用；确认音频、Replay 和观战帧由独立发布前沿保留。报告中的旧浏览器/网络条件记录保存在 [固定基线回滚 Playbook](https://github.com/Ritosa2333/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md#th09-input-scheduling-and-post-present-recovery-2026-10-16)。
 
 ## Relay 入口自动切换
 

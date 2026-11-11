@@ -52,7 +52,7 @@
 
 ## 反馈问题
 
-如果以上步骤没解决问题，请在 [QQ 群](https://qm.qq.com/q/eeUrxIltug)或 [GitHub Issues](https://github.com/YomotsuHisami/eagler-touhou/issues)反馈。附上作品名、设备和浏览器、出现问题前的操作，以及能看到的报错。
+如果以上步骤没解决问题，请在 [QQ 群](https://qm.qq.com/q/eeUrxIltug)或 [GitHub Issues](https://github.com/Ritosa2333/eagler-touhou/issues)反馈。附上作品名、设备和浏览器、出现问题前的操作，以及能看到的报错。
 
 感谢 Goan114 和参与测试、反馈的玩家。
 

@@ -42,7 +42,7 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 |  |  | 还原 | 移植 | Web 适配 | 多人联机 |
 | :---: | :---: | :---: | :---: | :---: | :---: |
-| <img src="../launcher/docs/assets/game-covers/thumbnails/th075.jpg" width="40" height="40" alt="东方萃梦想"> | **[th075] 東方萃夢想** | [SteinsGateON](https://space.bilibili.com/34714121)<br>![Done][done] | [SteinsGateON](https://github.com/YomotsuHisami/eagler-touhou/tree/main/ports/th075)<br>![Done][done] | [Goan114](https://github.com/YomotsuHisami/eagler-touhou/tree/main/ports/th075)<br>![In Progress][in-progress] | [Goan114](https://github.com/YomotsuHisami/eagler-touhou/tree/main/ports/th075-mp)<br>![In Progress][in-progress] |
+| <img src="../launcher/docs/assets/game-covers/thumbnails/th075.jpg" width="40" height="40" alt="东方萃梦想"> | **[th075] 東方萃夢想** | [SteinsGateON](https://space.bilibili.com/34714121)<br>![Done][done] | [SteinsGateON](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th075)<br>![Done][done] | [Goan114](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th075)<br>![In Progress][in-progress] | [Goan114](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th075-mp)<br>![In Progress][in-progress] |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th095.jpg" width="40" height="40" alt="东方文花帖"> | **[th095] 東方文花帖** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th105.jpg" width="40" height="40" alt="东方绯想天"> | **[th105] 東方緋想天** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th123.jpg" width="40" height="40" alt="东方非想天则"> | **[th123] 東方非想天則** | ![Unassigned][unassigned] | - | - | - |
