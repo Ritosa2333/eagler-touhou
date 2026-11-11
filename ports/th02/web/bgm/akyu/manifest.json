@@ -1,0 +1,145 @@
+{
+  "collection": "Akyu Untouched Score",
+  "volume": 3,
+  "codec": "opus",
+  "bitrate": 64000,
+  "sampleRate": 48000,
+  "tracks": {
+    "boss1-m86": {
+      "url": "akyu/03.opus",
+      "title": "03. She's in a temper!!-opus64",
+      "audioSha256": "60b1142cb4dcfce8231fe0924f951bc490cd872c8beab6545fda4860207a033a",
+      "bytes": 1527363,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 150.833167
+    },
+    "boss2-m86": {
+      "url": "akyu/07.opus",
+      "title": "07. Bet on Death-opus64",
+      "audioSha256": "b105907a36154b04dbefda85dcb74c1c764bcd12df4ccb04d8ba93359a5f4811",
+      "bytes": 1694667,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 162.259833
+    },
+    "boss3-m86": {
+      "url": "akyu/09.opus",
+      "title": "09. Love-Colored Magic-opus64",
+      "audioSha256": "4af6508021f0279fc5fda5ecf26dc65174bc67af20643122398e609af9ba89b8",
+      "bytes": 1285727,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 132.259833
+    },
+    "boss4-m86": {
+      "url": "akyu/05.opus",
+      "title": "05. Power of Darkness-opus64",
+      "audioSha256": "b32145a79838cfbd5534c8669515ffc795a43efb8c4e91ddd3b4aa3d25cfed23",
+      "bytes": 1843924,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 181.4865
+    },
+    "boss5-m86": {
+      "url": "akyu/13.opus",
+      "title": "13. The Tank Girl's Dream-opus64",
+      "audioSha256": "5975c930f15b290aa91e72437261b296317d4cab5b9fd35ebd53da13d3e192e4",
+      "bytes": 3130358,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 302.699833
+    },
+    "end1-m86": {
+      "url": "akyu/14.opus",
+      "title": "14. Forest of Tono-opus64",
+      "audioSha256": "94ff0458104131cd62a8d68160e97102d2910a8bd0db5c66751bd975da8eea55",
+      "bytes": 1013617,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 91.7665
+    },
+    "ending-m86": {
+      "url": "akyu/15.opus",
+      "title": "15. Legendary Wonderland-opus64",
+      "audioSha256": "95254d0388f61e3efd3fd2099e11738dfbf7facf3acb063c2c07bcfe962351df",
+      "bytes": 1891484,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 181.2065
+    },
+    "mima-m86": {
+      "url": "akyu/11.opus",
+      "title": "11. Complete Darkness-opus64",
+      "audioSha256": "5ee75d44916a1b82a1fce7d117d5ba780dcfed3e3b669920ebd0b833043bb00b",
+      "bytes": 2626254,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 255.793167
+    },
+    "op-m86": {
+      "url": "akyu/01.opus",
+      "title": "01. Eastern Demon-Sealing Record ~ Pure Land Mandala-opus64",
+      "audioSha256": "99de13a47ef8285abc6634233302d31326a099e62f1931a275a6050412a77a6e",
+      "bytes": 1935048,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 181.299833
+    },
+    "stage0-m86": {
+      "url": "akyu/02.opus",
+      "title": "02. Hakurei ~ Eastern Wind-opus64",
+      "audioSha256": "d8427e5653d57618635f806dbae6a225f2e82267dee5d4c66ec05ff21cd2ca5d",
+      "bytes": 2461719,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 243.8065
+    },
+    "stage1-m86": {
+      "url": "akyu/04.opus",
+      "title": "04. End of Daylight-opus64",
+      "audioSha256": "36f2a733d2e2e6ecd07f751f8d99404df12542e81064f2c459e32640796a7cb3",
+      "bytes": 2860298,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 252.4465
+    },
+    "stage2-m86": {
+      "url": "akyu/06.opus",
+      "title": "06. World of Fantasies-opus64",
+      "audioSha256": "edc84483714abc90c43246a77142dccd223e94033688bb8d2f1864b1b1c41095",
+      "bytes": 2972319,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 273.433167
+    },
+    "stage3-m86": {
+      "url": "akyu/08.opus",
+      "title": "08. Himorogi, Blazing in Purple-opus64",
+      "audioSha256": "5422ddd2f0589c7f4272103153e8f715ce1a6a2a07835828f7122e759b9ffa26",
+      "bytes": 1833242,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 182.419833
+    },
+    "stage4-m86": {
+      "url": "akyu/10.opus",
+      "title": "10. Eastern Demon-Sealing Record ~ Spectral Boisterous Dance-opus64",
+      "audioSha256": "95c7457bb2e330db09bd01563cc8124c595239c0fa6472e617f71139c24c09c1",
+      "bytes": 2124030,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 212.8865
+    },
+    "stage5-m86": {
+      "url": "akyu/12.opus",
+      "title": "12. Extra Love-opus64",
+      "audioSha256": "ba9d0143fe6f289680c5450792efbcb7f042b7ae53e3afc3c9a888249aa23cca",
+      "bytes": 2037187,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 194.019833
+    }
+  },
+  "fallback": []
+}

@@ -1,0 +1,167 @@
+{
+  "version": 1,
+  "disks": {
+    "jp": {
+      "file": "th02-solo-jp.hdi.gz",
+      "size": 21415936,
+      "sha256": "5e8655f87ea862ed9796b02b0d1ec97286b5919b9dc8d51d3aba167fce471b3f",
+      "signature": "TH02SOLOINPUTv1!",
+      "entries": {
+        "stage": 19053,
+        "update": 19076,
+        "move": 19091,
+        "pause": 19105,
+        "render": 19132,
+        "exit": 19149,
+        "mailbox": 18862,
+        "touch": 19628,
+        "currentInput": 18970
+      },
+      "headerSize": 6656,
+      "codeSegment": 2838,
+      "dataSegment": 7705,
+      "gap": 1824,
+      "originalMainSha256": "9e9a323781e793738c8e3a5b575d99c0cb6a71bac8c3d581178976b4977f0a92",
+      "mainSha256": "eec57979b004fc9ecb356d8f96202b6f98749e1d7ed30738e04650983f732302",
+      "hooks": [
+        {
+          "offset": 46619,
+          "original": "e8920f",
+          "entry": "stage"
+        },
+        {
+          "offset": 47531,
+          "original": "e8020c",
+          "entry": "stage"
+        },
+        {
+          "offset": 48588,
+          "original": "e80934",
+          "entry": "update"
+        },
+        {
+          "offset": 62203,
+          "original": "5657e8c3fb",
+          "entry": "move"
+        },
+        {
+          "offset": 48643,
+          "original": "e8dcfb",
+          "entry": "pause"
+        },
+        {
+          "offset": 48616,
+          "original": "e84b31",
+          "entry": "render"
+        },
+        {
+          "offset": 50551,
+          "original": "e8d01c",
+          "entry": "exit"
+        }
+      ],
+      "compressedSha256": "49a79a57c29fb6d8351d0cd70fe1fc22c3912b082c94ba4e5020468f858ad92f",
+      "nativeBossHud": {
+        "schema": 1,
+        "implementation": "guest-ems",
+        "module": "A:\\NBHUD.BIN",
+        "moduleSha256": "4784b2e9688b3b8cbb7be80c86f444531ae2556eba63127a23a611a91e258aa0",
+        "moduleBytes": 1993,
+        "emsPages": 1,
+        "conventionalBytesAdded": 512,
+        "bridge": {
+          "entry": 20096,
+          "cleanup": 20174,
+          "handle": 20199,
+          "status": 20201,
+          "pointer": 20202
+        },
+        "hp": true,
+        "phaseCuts": true,
+        "timer": "native audited deadlines; unavailable deadlines blank",
+        "browserOverlay": false
+      }
+    },
+    "cn": {
+      "file": "th02-solo-cn.hdi.gz",
+      "size": 21415936,
+      "sha256": "6fcaa00ea239c69e1a0e3fd12588fe61536a33a5a418cc009254fcee7163329d",
+      "signature": "TH02SOLOINPUTv1!",
+      "entries": {
+        "stage": 19053,
+        "update": 19076,
+        "move": 19091,
+        "pause": 19105,
+        "render": 19132,
+        "exit": 19149,
+        "mailbox": 18862,
+        "touch": 19628,
+        "currentInput": 18970
+      },
+      "headerSize": 6656,
+      "codeSegment": 2838,
+      "dataSegment": 7705,
+      "gap": 1824,
+      "originalMainSha256": "d54640c76acab16c3f0bdf34774c5153468172d7ca132426ab845ef2a1c8dce8",
+      "mainSha256": "74a315562d6f37ee1ff4b4bd229e98937a3ca4c989becdc51e101798d52f8f5d",
+      "hooks": [
+        {
+          "offset": 46619,
+          "original": "e8920f",
+          "entry": "stage"
+        },
+        {
+          "offset": 47531,
+          "original": "e8020c",
+          "entry": "stage"
+        },
+        {
+          "offset": 48588,
+          "original": "e80934",
+          "entry": "update"
+        },
+        {
+          "offset": 62203,
+          "original": "5657e8c3fb",
+          "entry": "move"
+        },
+        {
+          "offset": 48643,
+          "original": "e8dcfb",
+          "entry": "pause"
+        },
+        {
+          "offset": 48616,
+          "original": "e84b31",
+          "entry": "render"
+        },
+        {
+          "offset": 50551,
+          "original": "e8d01c",
+          "entry": "exit"
+        }
+      ],
+      "compressedSha256": "48802484c63e8e0b1ef5754cd34116a9d6ecfc948f4d0b4eb4dd3034c9c21ba4",
+      "nativeBossHud": {
+        "schema": 1,
+        "implementation": "guest-ems",
+        "module": "A:\\NBHUD.BIN",
+        "moduleSha256": "4784b2e9688b3b8cbb7be80c86f444531ae2556eba63127a23a611a91e258aa0",
+        "moduleBytes": 1993,
+        "emsPages": 1,
+        "conventionalBytesAdded": 512,
+        "bridge": {
+          "entry": 20096,
+          "cleanup": 20174,
+          "handle": 20199,
+          "status": 20201,
+          "pointer": 20202
+        },
+        "hp": true,
+        "phaseCuts": true,
+        "timer": "native audited deadlines; unavailable deadlines blank",
+        "browserOverlay": false
+      }
+    }
+  }
+}

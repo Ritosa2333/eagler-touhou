@@ -1,0 +1,8 @@
+# Documentation and service sources may use normal Git text handling.
+* text=auto
+*.bat text eol=crlf
+*.py text eol=lf
+
+# Resource manifests hash exact bytes, including JSON and line endings.
+# Preserve all deployed web files on add/checkout, regardless of core.autocrlf.
+/web/** -text

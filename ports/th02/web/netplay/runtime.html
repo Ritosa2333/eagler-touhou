@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>html,body{width:100%;height:100%;overflow:hidden}body>p,body>pre{display:none}body>.screen{width:100%;height:100%;display:flex;align-items:center;justify-content:center}body>.screen>canvas{width:100%;height:100%;object-fit:contain;aspect-ratio:auto;touch-action:none}</style>
+<style>:root{color-scheme:dark;font:14px system-ui;background:#11141b;color:#d7e4f5}body{margin:0}canvas{display:block;width:100%;aspect-ratio:8/5;image-rendering:pixelated;background:#000;outline:none}button{padding:9px;background:#253b50;color:inherit;border:1px solid #55708b;border-radius:6px;cursor:pointer}p{line-height:1.5}pre{white-space:pre-wrap}</style>
+<div class="screen"><canvas id="canvas" width="640" height="400" tabindex="0" aria-label="本机运行的 TH02 游戏"></canvas>
+</div>
+<p><button id="sound">启用本机声音</button> <span id="controls-summary">操作可在房间页面的「自定义操作」中设置。</span></p>
+<p>标准手柄：左摇杆 / 十字键移动，A / × 射击，B / ○ 炸弹，RB / R1 低速，Start / Options 暂停。键盘与手柄均控制你的座位；连接手柄后先按一下按钮。</p>
+<p>游戏内暂停：P1 用方向键与 Z / Enter 操作原版菜单；所有玩家均可请求暂停／确认；F11 切换浏览器全屏；确认退出后全员返回原房间，可重新准备开局。</p>
+<p>BGM 和原作音效由浏览器独立播放；已开始的声音可完整播完，回滚不会重复播放音效。</p>
+
+<pre id="details">等待房间统一开局…</pre>
+<pre id="page-warning" hidden></pre>
+<script>
+// Global browser events can originate from extensions or injected scripts.
+// Only our explicit module/load/simulation failure paths may stop the session.
+(function(){
+  function warning(message,source,stack){
+    var urls=(String(source||'')+'\n'+String(stack||'')).match(/https?:\/\/[^\s)]+/g)||[];
+    var externalScript=urls.some(function(value){try{return new URL(value).origin!==location.origin;}catch(_){return false;}});
+    var text=String(message)+'\n来源：'+(source||'未提供')+'\n'+String(stack||'');
+    var panel=document.getElementById('page-warning');panel.hidden=false;
+    panel.textContent='页面异常记录（来源未确认，不自动结束游戏）：\n'+text;
+    window.parent.postMessage({protocol:'th02-rollback/6',event:'page-warning',message:text.slice(0,1500),externalScript:externalScript},location.origin);
+  }
+  window.addEventListener('error',function(e){warning(e.message||'资源加载异常',e.filename||(e.target&&e.target.src),e.error&&e.error.stack);},true);
+  window.addEventListener('unhandledrejection',function(e){warning(e.reason&&e.reason.message||String(e.reason),'未处理的 Promise',e.reason&&e.reason.stack);});
+  var workerCapable=typeof Worker==='function'&&typeof OffscreenCanvas==='function'&&typeof OffscreenCanvas.prototype.transferToImageBitmap==='function';
+  window.th02RuntimeReady=(workerCapable?import('./runtime-worker-client.js'):import('./runtime.js')).then(function(){return true;},function(error){
+    var message='游戏模块加载失败：'+String(error&&error.message||error);
+    document.getElementById('details').textContent=message;
+    window.parent.postMessage({protocol:'th02-rollback/6',event:'boot-error',message:message},location.origin);
+    return false;
+  });
+})();
+</script>
+</html>

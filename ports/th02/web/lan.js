@@ -1,0 +1,14 @@
+import {deploymentIceConfiguration} from './netplay/udp-config.js';
+import {readNetworkMode,networkUrl} from './netplay/network-mode.js';
+const mode=readNetworkMode();
+history.replaceState(null,'',networkUrl(mode));
+const isPublic=mode.network==='public';
+document.title=`东方封魔录 · ${isPublic?'公网':'局域网'}联机`;
+document.getElementById('page-title').textContent=isPublic?'公网联机':'局域网联机';
+document.getElementById('mode-description').textContent=isPublic?'与远方的伙伴一起进入封魔录。使用同一网址，创建或加入房间。':'连接同一个局域网，打开房主电脑提供的网址，创建或加入房间。';
+document.querySelector(`[data-mode="${mode.network}"]`).setAttribute('aria-current','page');
+const connection=document.getElementById('transport');connection.value=mode.transport;
+connection.onchange=()=>{location.href=networkUrl({...mode,transport:connection.value});};
+if(isPublic&&mode.transport==='rtc')window.th02NetplayUdp??=window.th02NetplayConnection??deploymentIceConfiguration;
+document.getElementById('status').textContent=mode.transport==='ws'?'已选择服务器转发。创建房间，或输入伙伴分享的四位房间号。':'已选择设备直连；连接失败时全房间自动改用服务器转发。';
+import('./netplay/room.js').catch(error=>{document.getElementById('status').textContent=`联机模块加载失败：${error.message||error}`;});
