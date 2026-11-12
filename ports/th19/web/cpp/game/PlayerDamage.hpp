@@ -10,6 +10,9 @@ struct PlayerDamage {
  enum Event {None,Death,Respawn,Recovered,Defeat};
  State state=Playing;int frame=0;float angle=0;
  bool controllable()const{return state==Playing;}
+ bool finishingRepel()const{return state==Repelled&&frame>=40;}
+ // 0x5469e4 restores Playing before the shot manager, after movement.
+ bool canUseWeapons()const{return controllable()||finishingRepel();}
  bool visible()const{return state!=Dead&&state!=Finished;}
  bool vulnerable(int invulnerable)const{return (state==Playing||state==Repelled||state==Respawning)&&invulnerable<=0;}
  void contact(bool barrier,float px,float py,float sx,float sy,int& invulnerable){
@@ -28,13 +31,20 @@ struct PlayerDamage {
    if(lives>0){state=Respawning;frame=0;return Respawn;}
    state=Finished;return Defeat;
   }
-  if((state==Respawning&&frame>=60)||(state==Repelled&&frame>=40)){
+  if((state==Respawning&&frame>=60)||finishingRepel()){
    state=Playing;frame=0;return Recovered;
   }
   ++frame;return None;
  }
  float respawnY()const{return 480.f-float(frame*10240/60)/128.f;}
- float repelSpeed()const{return std::max(0.f,2.f-frame*2.f/40.f);}
+ // 0x546880 moves on the pre-increment timer, using the 0x42fce0 grid.
+ void moveRepelled(float& x,float& y)const{
+  const float speed=std::max(0.f,2.f-frame*2.f/40.f);
+  const float dx=std::cos(angle),dy=std::sin(angle);
+  const float length=std::sqrt(dx*dx+dy*dy);
+  x+=int(dx/length*speed*128.f)/128.f;
+  y+=int(dy/length*speed*128.f)/128.f;
+ }
 };
 // 0x4f43a0 copies 0x5c6794 + type*0x158 into Bullet+0x674.
 inline float nativeBulletContactRadius(int type){
@@ -43,7 +53,8 @@ inline float nativeBulletContactRadius(int type){
 }
 // 549570 -> 4d44e0: rotate into the rectangle, then cross strips and rounded corners.
 inline bool nativeEnemyRectangleContact(float dx,float dy,float angle,float width,float height,float radius){
- if(width<=0||height<=0||radius<0)return false;
+ // A newly registered beam can have zero length and still contact a circle.
+ if(width<0||height<0||radius<0)return false;
  const float c=std::cos(angle),s=std::sin(angle);
  const float x=std::abs(dx*c+dy*s),y=std::abs(dy*c-dx*s),hw=width*.5f,hh=height*.5f;
  if((x<=hw+radius&&y<=hh)||(x<=hw&&y<=hh+radius))return true;

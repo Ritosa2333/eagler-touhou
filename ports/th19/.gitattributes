@@ -5,3 +5,5 @@
 *.h text eol=lf
 *.md text eol=lf
 *.bat text eol=crlf
+tools/parity/*.patch text eol=lf
+tools/parity/samples/**/*.jsonl text eol=lf

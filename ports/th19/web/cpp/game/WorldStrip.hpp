@@ -1,26 +1,37 @@
 #pragma once
+#include "AnmVm.hpp"
 #include "Types.hpp"
 #include <array>
 #include <algorithm>
 #include <cmath>
 namespace th19 {
 // Original callbacks 5/6: 0x4dc510/0x4dc6d0 and 0x4dafd0/0x4db170.
-// Local deterministic RNG until the native shared RNG stream is implemented.
 struct WorldStrip {
- int type=0,frame=1;u32 rng=1;float angle=.1745329252f;
+ static constexpr float radiansPerDegree=3.14159274101257324219f/180.f;
+ int type=0,frame=0;float angle=10.f*radiansPerDegree;
  std::array<Vec3,40> steps{},points{};
- void init(int effect,u32 seed){type=effect;frame=1;rng=seed?seed:1;angle=.1745329252f;
+ void init(int effect){type=effect;frame=0;angle=10.f*radiansPerDegree;
   for(auto&v:steps)v=type==5?Vec3{0,0,4}:Vec3{-3,0,-16};build();}
- float random(){rng=rng*1664525u+1013904223u;return float(rng>>8)/16777216.f;}
  int count()const{return type==5?40:16;}
  void tick(){
+  // The init callbacks sample an angle from the shared ANM stream on the
+  // first update. The vertex and draw callbacks do not read that angle.
+  if(++frame==1)AnmVm::rand_integer();
   if((type==5&&(frame&1)==0)||(type==6&&frame%4==0)){
    for(int i=count()-1;i>0;--i)steps[i]=steps[i-1];
-   if(type==5){float r=random();angle+=(angle>=.5235987756f?-r:angle<=.1745329252f?r:(r*2-1)*2)*.01745329252f;
+   if(type==5){
+    if(angle>=30.f*radiansPerDegree)angle-=AnmVm::rand_unit()*radiansPerDegree;
+    else if(angle<=10.f*radiansPerDegree)angle+=AnmVm::rand_unit()*radiansPerDegree;
+    else angle+=AnmVm::rand_signed_unit(radiansPerDegree)*2.f;
     steps[0]={-4*std::sin(angle),0,4*std::cos(angle)};
-   }else{float r=random();steps[0].x+=(steps[0].x>=3?-r:steps[0].x<=0?r:r*2-1)*.1f;}
+   }else{
+    float& x=steps[0].x;
+    if(x>=3.f)x-=AnmVm::rand_unit()*.1f;
+    else if(x<=0.f)x+=AnmVm::rand_unit()*.1f;
+    else x+=AnmVm::rand_signed_unit(.1f);
+   }
   }
-  build();++frame;
+  build();
  }
  void build(){Vec3 p{0,0,type==5?-200.f:0.f};for(int i=0;i<count();++i){points[i]=p;p.x+=steps[i].x;p.y+=steps[i].y;p.z+=steps[i].z;}}
  u32 color(int row,int side)const{

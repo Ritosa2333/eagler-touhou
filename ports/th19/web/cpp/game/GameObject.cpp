@@ -110,7 +110,10 @@ bool EclVm::game_object(const EclInstruction& ins){
                     // 50345a selects the origin. 52b8e0 adds the ECL619 muzzle radius.
                     l.x=(s.absolute_origin?s.absolute_x:e.x)+s.x+std::cos(l.angle)*s.muzzle_radius;
                     l.y=(s.absolute_origin?s.absolute_y:e.y)+s.y+std::sin(l.angle)*s.muzzle_radius;
-                    l.length=s.length;world_->lasers.push_back(l);
+                    l.length=s.length;
+                    // Native 0x52b550 runs at phase time zero on VS registration.
+                    if(world_->reward_mode==2)l.clock=-1;
+                    l.tick();world_->lasers.push_back(l);
                     if(s.sound>=0)world_->sound_events.push_back(s.sound);break;}
                 }
                 return true;
@@ -144,9 +147,13 @@ bool EclVm::game_object(const EclInstruction& ins){
                 world_->cancel_lasers_circle(e.x,e.y,radius,true);break;}
             return true;
         }
-        case 515: { // 0x501b6f -> 0x402650: replace, not extend, the invulnerability timer.
+        case 515: // 0x501b6f: damage protection.
+        case 535: { // 0x501b9a: contact protection.
             const int frames=param_i32(ins,0);
-            if(has_host)for(auto&e:world_->enemies)if(e.id==host_id){e.invulnerability_time=float(frames);return true;}
+            if(has_host)for(auto&e:world_->enemies)if(e.id==host_id){
+                (ins.id==515?e.invulnerability_time:e.contact_protection_time)=float(frames);
+                return true;
+            }
             return false;
         }
         case 512: {
@@ -165,13 +172,21 @@ bool EclVm::game_object(const EclInstruction& ins){
                 // ECL522: HP record +0x18 bit0; preserve sub-HP damage across hits.
                 e.spell_damage_scaled=true;e.life_reset_c=i32(u32(e.life)*7u);
             }
+            // 0x4f6bb9 starts the field-local introduction independently of the spell.
+            world_->deaths.push_back({0,0,0,13,-1,1,true});
             world_->sound_events.push_back(33);return true;
         }
         case 1020: world_->boss_escape_result=param_i32(ins,0);return true;
-        case 525: { // 0x50ca70: scripted enemy cleanup, not a rewarded kill.
-            for(auto&e:world_->enemies){
+        case 525: { // 0x50ca70 walks the enemy list newest first.
+            for(size_t i=world_->enemies.size();i>0;--i){
+                auto& e=world_->enemies[i-1];
                 const bool remove=(!(e.flags&0xa0)&&!(e.status_flags&0xc0)&&!(e.flags&0x400))||(e.flags&0x100);
                 if(!e.active||!remove)continue;
+                if(world_->reward_mode==2){
+                    // 0x50caf9 resets the drop record before 0x50cb96 dispatches death.
+                    e.item=0;
+                    if(world_->damage_enemy(e,0,true))continue;
+                }
                 e.active=false;e.status_flags|=0x200;
                 for(auto&animation:e.animations)animation.script=-1;
             }
@@ -249,13 +264,20 @@ bool EclVm::game_object(const EclInstruction& ins){
             }
             // Native 0x4fec6a copies EnemyInf+0x29c/+0x2ac into the spawn
             // record. Children receive a snapshot, including wave orbit phase.
+            const auto first=world_->enemies.size();
             auto&child=world_->spawn_enemy(name,x,y,life,item,score,&programs_);
-            child.mirrored=mirror;if(mirror)child.flags|=8;
+            // 0x50bee7 stores spawn mirroring in status, apart from ECL cull protection.
+            child.mirrored=mirror;
+            if(mirror)child.status_flags|=8u;
             child.ecl_ints=inherited_ints;child.ecl_floats=inherited_floats;
             // 0x50d410 -> 0x50be30 -> 0x508f20 executes initial ECL
             // before the creator resumes (BossStartInit registers ECL512).
             child.script_initialized_this_tick=true;
             EclVm* initial=child.vm.get();if(initial)initial->step();
+            // 0x50d5e8 prepends this actor after its initial ECL can register descendants.
+            auto& enemies=world_->enemies;
+            if(world_->reward_mode==2&&enemies.size()>first+1)
+                std::rotate(enemies.begin()+first,enemies.begin()+first+1,enemies.end());
             return true;
         }
         case 307: { // 0x4ff14c -> 0x40ff60: independent ANM at host position.
@@ -263,7 +285,7 @@ bool EclVm::game_object(const EclInstruction& ins){
             // Shared effect bank. Keep other banks reported as unsupported.
             if(file!=1)return false;
             if(has_host)for(const auto&e:world_->enemies)if(e.id==host_id){
-                world_->deaths.push_back({e.x,e.y,0,script,-1,file});break;
+                world_->deaths.push_back({e.x,e.y,0,script,-1,file,true});break;
             }
             return true;
         }
@@ -350,13 +372,13 @@ bool EclVm::game_object(const EclInstruction& ins){
                 // Native 4ffaa7 -> 40ece0 only clears interpolator duration.
                 // Zero-time ECL401 is a stop, not ECL400 position assignment.
                 if(ins.id==401&&param_i32(ins,0)<=0){e.move_x={};e.move_y={};break;}
-                if(x<=-999999.f)x=e.x;if(y<=-999999.f)y=e.y;
+                if(x<=-999999.f)x=e.absolute_x();if(y<=-999999.f)y=e.absolute_y();
                 // Native ECL400 writes coordinates without cancelling velocity.
                 // Mamizou uses it to place a reflected animal back at the edge.
                 if(ins.id==401){e.polar=e.orbit=e.ellipse=false;e.vx=e.vy=0;e.turn={};e.accelerate={};}
                 const int duration=ins.id==401?param_i32(ins,0):0;
-                if(duration>0){e.move_x={duration,0,mode,e.x,x};e.move_y={duration,0,mode,e.y,y};}
-                else{e.x=x;e.y=y;e.move_x={};e.move_y={};}break;
+                if(duration>0){e.move_x={duration,0,mode,e.absolute_x(),x};e.move_y={duration,0,mode,e.absolute_y(),y};}
+                else{e.set_absolute_position(x,y);e.move_x={};e.move_y={};}break;
             }return true;
         }
         case 404: { // set polar velocity (angle, speed)
@@ -383,7 +405,7 @@ bool EclVm::game_object(const EclInstruction& ins){
             const float radius=param_f32(ins,2),radial=param_f32(ins,3);
             if(has_host)for(auto&e:world_->enemies)if(e.id==host_id){
                 // Reissuing this instruction retains the existing center.
-                if(!e.orbit){e.orbit_x=e.x;e.orbit_y=e.y;}
+                if(!e.orbit){e.orbit_x=e.absolute_x();e.orbit_y=e.absolute_y();}
                 if(phase>-999999.f)e.angle=std::remainder(phase,6.28318530717958647692f);
                 if(omega>-999999.f)e.speed=omega;
                 if(radius>-999999.f)e.radius=radius;
@@ -391,8 +413,8 @@ bool EclVm::game_object(const EclInstruction& ins){
                 e.orbit=true;e.ellipse=false;e.polar=false;
                 // The dispatcher resolves the initial position immediately;
                 // the frame update then advances radius and phase once.
-                e.x=e.orbit_x+std::cos(e.angle)*e.radius;
-                e.y=e.orbit_y+std::sin(e.angle)*e.radius;
+                e.set_absolute_position(e.orbit_x+std::cos(e.angle)*e.radius,
+                    e.orbit_y+std::sin(e.angle)*e.radius);
                 break;
             }return true;
         }
@@ -400,9 +422,14 @@ bool EclVm::game_object(const EclInstruction& ins){
             const int duration=param_i32(ins,0),mode=param_i32(ins,1);
             const float speed=param_f32(ins,2);
             if(has_host)for(auto&e:world_->enemies)if(e.id==host_id){
-                const float randomAngle=world_->bullet_rng.signedUnit()*3.14159274101257324219f;
+                const float randomAngle=AnmVm::rand_signed_unit(3.14159274101257324219f,true);
                 const bool middle=e.x>=e.bound_x-e.bound_w*.25f&&e.x<=e.bound_x+e.bound_w*.25f;
-                const unsigned random16=middle?(world_->bullet_rng.next()&65535u):0;
+                unsigned random16=0;
+                if(middle){
+                    // 0x401960 returns the low word of the advanced seed before range reduction.
+                    AnmVm::rand_integer(true);
+                    random16=AnmVm::random_checkpoint(true)&65535u;
+                }
                 const float angle=nativeBossMoveAngle(e.x,e.y,world_->player_x,e.bound_x,e.bound_y,e.bound_w,e.bound_h,randomAngle,random16);
                 e.angle=angle;e.speed=speed;e.polar=true;e.orbit=e.ellipse=false;
                 e.move_x={};e.move_y={};
@@ -420,18 +447,20 @@ bool EclVm::game_object(const EclInstruction& ins){
                 if(phase>-999999)e.relative_phase=phase;if(omega>-999999)e.relative_omega=omega;
                 if(radius>-999999)e.relative_radius=radius;if(radial>-999999)e.relative_radial=radial;
                 if(rotation>-999999)e.relative_rotation=rotation;if(ratio>-999999)e.relative_ratio=ratio;
+                const float baseX=e.absolute_x(),baseY=e.absolute_y();
                 e.relative_ellipse=true;
                 const auto offset=enemyEllipseOffset(e.relative_phase,e.relative_rotation,e.relative_radius,e.relative_ratio);
-                e.x-=e.relative_x;e.y-=e.relative_y;
                 e.relative_x=e.relative_center_x+offset[0];
                 e.relative_y=e.relative_center_y+offset[1];
-                e.x+=e.relative_x;e.y+=e.relative_y;break;
+                e.set_absolute_position(baseX,baseY);break;
             }return true;
         }
         case 424: { // 0x4fed7d: replace bit 3 of EnemyInf+0x5170 (spawn mirror).
             const bool mirror=(param_i32(ins,0)&1)!=0;
             if(has_host)for(auto&e:world_->enemies)if(e.id==host_id){
-                e.flags=(e.flags&~8u)|(mirror?8u:0u);e.mirrored=mirror;break;
+                e.status_flags=(e.status_flags&~8u)|(mirror?8u:0u);
+                e.mirrored=mirror;
+                break;
             }return true;
         }
         case 427: { // native 0x500e..: clear movement while preserving absolute position

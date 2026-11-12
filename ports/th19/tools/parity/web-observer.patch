@@ -1,0 +1,210 @@
+--- a/ports/th19/web/cpp/game/AnmVm.cpp
++++ b/ports/th19/web/cpp/game/AnmVm.cpp
+@@ -4,6 +4,19 @@
+ #include <cmath>
+ #include <algorithm>
+ namespace th19 {
++bool traceOpeningRng = false;
++u32 openingRngRows[256][7]{}, openingRngCount=0;
++void traceOpeningDraw(u32 kind, const AnmVm* vm=nullptr, bool primary=false) {
++    if(!traceOpeningRng||openingRngCount>=256)return;
++    auto& row=openingRngRows[openingRngCount++];
++    row[0]=kind;row[1]=AnmVm::random_checkpoint(primary);
++    row[2]=vm?vm->time:0;
++    row[3]=vm?vm->ip:0;
++    row[4]=vm?vm->sprite:0;
++    row[5]=primary;
++    row[6]=0;
++}
++
+ u32 AnmVm::next_u16(){if(ip+2>stream_len)return 0;u32 v=u16(stream[ip])|(u16(stream[ip+1])<<8);ip+=2;return v;}
+ i32 AnmVm::next_i16(){return i32(i16(next_u16()));}
+ u32 AnmVm::next_u32(){if(ip+4>stream_len)return 0;u32 v=u32(stream[ip])|(u32(stream[ip+1])<<8)|(u32(stream[ip+2])<<16)|(u32(stream[ip+3])<<24);ip+=4;return v;}
+@@ -27,14 +40,16 @@
+ // The web match still supplies one seed; native replay import must provide both
+ // original object states separately and align other gameplay consumers.
+ void AnmVm::seed_random(u32 seed){animation_random.state=primary_animation_random.state=seed;}
+-u32 AnmVm::rand_integer(bool primary){return (primary?primary_animation_random:animation_random).next();}
++u32 AnmVm::rand_integer(bool primary){traceOpeningDraw(1,nullptr,primary);return (primary?primary_animation_random:animation_random).next();}
+ float AnmVm::rand_unit(bool primary){
+-    return (primary?primary_animation_random:animation_random).unit();
++    traceOpeningDraw(2,nullptr,primary); return (primary?primary_animation_random:animation_random).unit();
+ }
+ float AnmVm::rand_signed_unit(float scale,bool primary){
+-    return (primary?primary_animation_random:animation_random).signedUnit(scale);
++    traceOpeningDraw(3,nullptr,primary); return (primary?primary_animation_random:animation_random).signedUnit(scale);
+ }
+ float AnmVm::read_var_f(i32 id) const{
++    if(id==10010||id==10011||id==10012||id==10022)traceOpeningDraw(id,this);
++    if(id>=10030&&id<=10032)traceOpeningDraw(id,this,true);
+     switch(id){
+         case 10023: return rot_x;
+         case 10024: return rot_y;
+@@ -90,6 +105,7 @@
+     }
+ }
+ i32 AnmVm::read_var_i(i32 id) const{
++    if(id==10022&&extra_ivar[2])traceOpeningDraw(100000+id,this);
+     switch(id){
+         case 10008: return extra_ivar[0];
+         case 10009: return extra_ivar[1];
+--- a/ports/th19/web/cpp/sdl/Application.cpp
++++ b/ports/th19/web/cpp/sdl/Application.cpp
+@@ -4669,6 +4669,13 @@
+     return g_vs_mode&&bomb.character==1&&bomb.frame>0&&bomb.frame<=bomb.duration;
+ }
+
++// Diagnostic contacts are read from the same simulation path as damage.
++struct CapturedHomingContact {u32 side;float x,y;};
++static struct {
++    u32 count;
++    CapturedHomingContact rows[256];
++} capturedHomingContacts;
++
+ // Keep the registered beam centers when hit callbacks shorten their visible lengths.
+ struct DeferredShotContacts {
+     struct BeamArea { PlayerProjectile* shot; float x,y; bool wasHitting; };
+@@ -4756,6 +4763,8 @@
+                                               enemy.contact_angle,enemy.hitbox_w,enemy.hitbox_h)
+                 : th19::nativeEnemyRectangleContact(dx,dy,shot->angle,shot->hit_width,shot->hit_height,enemy.hitbox_w*.5f);
+             if(hit){
++                if(capturedHomingContacts.count<std::size(capturedHomingContacts.rows))
++                    capturedHomingContacts.rows[capturedHomingContacts.count++]={u32(side),shot->x,shot->y};
+                 damage+=shot->damage;
+                 shot->speed/=8.f;
+                 end_player_shot_on_impact(*shot);
+@@ -7748,3 +7757,117 @@
+     return gfx.error();
+ }
+ }
++
++#ifdef __EMSCRIPTEN__
++// Temporary exports for fixed-step parity diagnostics.
++__attribute__((export_name("th19_capture_step")))
++void th19_capture_step(bool present){
++    const bool paused=g_loop_paused;
++    g_loop_paused=false;
++    g_skip_present=!present;
++    game_tick();
++    g_skip_present=false;
++    g_loop_paused=paused;
++}
++namespace th19 {extern bool traceOpeningRng; extern u32 openingRngRows[256][7], openingRngCount;}
++__attribute__((export_name("th19_capture_rng_trace")))
++u32 th19_capture_rng_trace(int action) {
++    if (action==1) {th19::openingRngCount=0;th19::traceOpeningRng=true;return 1;}
++    if (action==2) {th19::traceOpeningRng=false;return th19::openingRngCount;}
++    return u32(th19::openingRngRows);
++}
++__attribute__((export_name("th19_capture_homing_contacts")))
++u32 th19_capture_homing_contacts(bool clear){
++    if(clear)capturedHomingContacts.count=0;
++    return u32(&capturedHomingContacts);
++}
++__attribute__((export_name("th19_capture_checkpoint")))
++u32 th19_capture_checkpoint(int action) {
++    static std::unique_ptr<ApplicationCheckpoint> saved;
++    if(action==1){saved=std::make_unique<ApplicationCheckpoint>();return 1;}
++    if(action==2&&saved){
++        const bool restored=saved->restore();saved.reset();return restored;
++    }
++    saved.reset();return 0;
++}
++__attribute__((export_name("th19_capture_cpu_begin")))
++u32 th19_capture_cpu_begin(u32 seed, u32 secondSeed, i32 difficulty, i32 left, i32 right, i32 lives, i32 timeRule,
++                           i32 cardMode,i32 leftCard,i32 rightCard) {
++    if (!seed || difficulty < 0 || difficulty > 3 || left < 0 || left >= 19 ||
++        right < 0 || right >= 19 || lives < 1 || lives > 5 || timeRule < 0 || timeRule >= 7 ||
++        (cardMode!=0&&cardMode!=3) || leftCard<0 || leftCard>38 || rightCard<0 || rightCard>38) return 0;
++    g_game_seed = seed;
++    g_vs_scene_rng.state = seed;
++    th19::AnmVm::seed_random(seed);
++    if (secondSeed) th19::AnmVm::restore_random(secondSeed, false);
++    g_played_frames = 0;
++    g_vs_entry = 2;
++    g_story_difficulty = difficulty;
++    g_char_sel = left;
++    g_opp_sel = right;
++    g_vs_rules[2] = cardMode;
++    g_vs_cards[0].reset(leftCard);g_vs_cards[1].reset(rightCard);
++    g_vs_rules[3] = g_vs_rules[4] = lives - 1;
++    g_local_vs_time = timeRule;
++    start_vs_match();
++    render();
++    return g_cpu_automatic;
++}
++
++__attribute__((export_name("th19_capture_cpu_state")))
++u32 th19_capture_cpu_state() {
++    static u32 state[36];
++    state[0] = g_played_frames;
++    state[1] = g_vs_match.round;
++    state[2] = g_p1_lives;
++    state[3] = g_p2_lives;
++    state[4] = g_cpu_left_bits;
++    state[5] = g_opponent_controls;
++    state[6] = g_ecl_fields[0].world.enemies.size();
++    state[7] = g_ecl_fields[1].world.enemies.size();
++    state[8] = g_ecl_fields[0].world.bullets.size();
++    state[9] = g_ecl_fields[1].world.bullets.size();
++    state[10] = th19::AnmVm::random_checkpoint(true);
++    state[11] = th19::AnmVm::random_checkpoint(false);
++    state[12] = g_char_sel;
++    state[13] = g_opp_sel;
++    state[14] = g_story_difficulty;
++    state[15] = g_vs_match.remaining;
++    state[16] = g_vs_round_announcements[0].stream != nullptr;
++    state[17] = g_screen;
++    state[18] = g_world_id;
++    state[19] = g_stage_strips.size();
++    state[20] = g_stage_strips.empty()?0:g_stage_strips.begin()->second.frame;
++    state[21] = g_vs_scene_side;
++    state[22] = g_ecl_fields[0].world.current_wave;
++    state[23] = g_ecl_fields[1].world.current_wave;
++    state[24] = g_ecl_fields[0].world.wave_schedule.rng_state();
++    state[25]=g_shoot_frame;state[26]=g_opp_shoot_frame;
++    state[27]=std::count_if(g_player_projectiles.begin(),g_player_projectiles.end(),[](const auto& p){return p.side==0;});
++    state[28]=std::count_if(g_player_projectiles.begin(),g_player_projectiles.end(),[](const auto& p){return p.side==1;});
++    state[29]=g_vs_match.elapsed;
++    state[30]=g_owned_cards.empty()?0:g_owned_cards.front();
++    state[31]=g_opponent_cards.empty()?0:g_opponent_cards.front();
++    const float positions[]={g_p1_x,g_p1_y,g_p2_x,g_p2_y};
++    static_assert(sizeof(positions)==4*sizeof(state[0]));
++    std::memcpy(state+32,positions,sizeof(positions));
++
++    return (u32)state;
++}
++
++__attribute__((export_name("th19_capture_bullet_positions")))
++u32 th19_capture_bullet_positions(int side, bool refresh) {
++    static std::vector<std::array<u32,4>> rows;
++    if(!refresh)return u32(rows.data());
++    rows.clear();
++    for(const auto& bullet:g_ecl_fields[side].world.bullets){
++        if(bullet.state!=1&&bullet.state!=2)continue;
++        std::array<u32,4> row{u32(bullet.kind),u32(bullet.color),0,0};
++        std::memcpy(&row[2],&bullet.x,sizeof(float));
++        std::memcpy(&row[3],&bullet.y,sizeof(float));
++        rows.push_back(row);
++    }
++    return u32(rows.size());
++}
++
++#endif
+--- a/ports/th19/web/sdl-runtime/shell.mjs
++++ b/ports/th19/web/sdl-runtime/shell.mjs
+@@ -136,12 +136,12 @@
+ case 'configure':if(launched)throw Error('游戏已启动');if(!['ogg','none'].includes(m.music))throw Error('音乐模式无效');if(m.language&&m.language!=='ja')throw Error('此构建使用日文原版');options=m.options||{};if(options.touchSensitivity!=null&&!(Number.isFinite(options.touchSensitivity)&&options.touchSensitivity>=100&&options.touchSensitivity<=300))throw Error('触控灵敏度无效');music=m.music==='ogg';touchUnlimited=options.touchMovementMode==='touch-unlimited';touchGain=Math.max(100,Math.min(300,Number(options.touchSensitivity)||100))/100;if(core?._th19_touch_motion)core._th19_touch_motion(0,0,touchUnlimited?1:0);for(const r of [...(m.sharedResources||[]),...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);core._th19_music_enabled(+music);applyTouchOptions();configured=true;return {};
+ case 'resources':for(const r of m.resources||[])await resource(r);return {};
+ case 'launch':if(!configured)throw Error('请先配置游戏');launchSerial=Number.isSafeInteger(m.launchSerial)?m.launchSerial:null;if(!launched){core._th19_loop_stop();
+- openGame();
++ openGame(m.captureSeed);
+  core._th19_loop_pause(0);launched=true;first=false;if(runtimeVariant==='multiplayer'&&options.netplayMode==='lan'){
+  const recorder=activeRecorder=createVersusRecorder({build,names:options.netplayReplayNames,write:writeReplay,notice:message=>emit('notice',{message})});
+  netplay=new Netplay(core,{onMatch:th09Match=>emit('runtime-info',{th09Match}),onPlayback:spectatorPlayback=>emit('runtime-info',{spectatorPlayback}),onBegin:config=>{if(options.netplayReplayAutoSave!==false)recorder.begin(config);},onConfirmed:bytes=>recorder.frame(bytes),onEnd:details=>recorder.end(details),onStatus:message=>emit('notice',{message}),onClose:message=>{emit('notice',{message});void stop().catch(fatal);},onResult:()=>{emit('notice',{message:'对局结束，已返回房间'});void stop().catch(fatal);}});
+  core._th19_loop_pause(1);await netplay.connect(options);
+- }else core._th19_loop_start();$('#loading').textContent='';window.__th19Runtime={core,status,save,command,netplay};emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,version:'th19-eagler-adapter-1'});}return {};
++ }else if(m.captureSeed===undefined)core._th19_loop_start();$('#loading').textContent='';window.__th19Runtime={core,status,save,command,netplay};emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,version:'th19-eagler-adapter-1'});}return {};
+ case 'sync':if(!player?.active){await activeRecorder?.snapshot();}await save();return {};
+ case 'spectator-playback':return {spectatorPlayback:netplay?.spectatorControl(m)};
+ case 'playback':{

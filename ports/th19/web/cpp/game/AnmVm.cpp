@@ -27,9 +27,12 @@ void AnmVm::restore_random(u32 state,bool primary){(primary?primary_animation_ra
 // The web match still supplies one seed; native replay import must provide both
 // original object states separately and align other gameplay consumers.
 void AnmVm::seed_random(u32 seed){animation_random.state=primary_animation_random.state=seed;}
-u32 AnmVm::rand_integer(){return animation_random.next();}
-float AnmVm::rand_unit(){
-    return animation_random.unit();
+u32 AnmVm::rand_integer(bool primary){return (primary?primary_animation_random:animation_random).next();}
+float AnmVm::rand_unit(bool primary){
+    return (primary?primary_animation_random:animation_random).unit();
+}
+float AnmVm::rand_signed_unit(float scale,bool primary){
+    return (primary?primary_animation_random:animation_random).signedUnit(scale);
 }
 float AnmVm::read_var_f(i32 id) const{
     switch(id){
@@ -149,13 +152,6 @@ void AnmVm::advance_interp(){
         float e=ease(ip_alpha.mode, ip_alpha.dur?(float)ip_alpha.elapsed/ip_alpha.dur:1.0f);
         alpha=i32(ip_alpha.v0+(ip_alpha.t0-ip_alpha.v0)*e);
     }
-    if(ip_scale.active){
-        ip_scale.elapsed++;
-        if(ip_scale.elapsed>=ip_scale.dur){ip_scale.elapsed=ip_scale.dur;ip_scale.active=false;}
-        float e=ease(ip_scale.mode, ip_scale.dur?(float)ip_scale.elapsed/ip_scale.dur:1.0f);
-        sx=ip_scale.v0+(ip_scale.t0-ip_scale.v0)*e;
-        sy=ip_scale.v1+(ip_scale.t1-ip_scale.v1)*e;
-    }
     if(ip_rot.active){
         ip_rot.elapsed++;
         // Native vector interpolator 0x4037e0, mode 7: targets are per-frame
@@ -173,7 +169,7 @@ void AnmVm::advance_interp(){
     }
 }
 
-void AnmVm::tick(const AnmVm* parent){
+void AnmVm::tick(const AnmVm* parent,bool advance_children){
     execution_parent_=parent;
     if(!deleted){
     ++time;
@@ -196,21 +192,31 @@ void AnmVm::tick(const AnmVm* parent){
             const u32 instr_start=ip;
             ip+=8;
             const u32 ip_start=ip;
-            run_instruction(type,instr_start);
+            run_instruction(type,instr_start,itime);
             if(ip==ip_start)ip+=length-8;
             if(halted)break;
         }
     }
+    // Opcode 412 (0x4c0323) starts the scale timer before this tick samples it.
+    if(ip_scale.active){
+        ip_scale.elapsed++;
+        if(ip_scale.elapsed>=ip_scale.dur){ip_scale.elapsed=ip_scale.dur;ip_scale.active=false;}
+        float e=ease(ip_scale.mode, ip_scale.dur?(float)ip_scale.elapsed/ip_scale.dur:1.0f);
+        sx=ip_scale.v0+(ip_scale.t0-ip_scale.v0)*e;
+        sy=ip_scale.v1+(ip_scale.t1-ip_scale.v1)*e;
+    }
     }
     // Child animations have independent native lifetimes (including children
     // of an emitter that has already executed delete).
-    for(auto& c:children)c.tick(this);
-    children.erase(std::remove_if(children.begin(),children.end(),[](const AnmVm& c){return c.deleted&&c.children.empty();}),children.end());
+    if(advance_children){
+        for(auto& c:children)c.tick(this);
+        children.erase(std::remove_if(children.begin(),children.end(),[](const AnmVm& c){return c.deleted&&c.children.empty();}),children.end());
+    }
     creation_registers_=false;
     execution_parent_=nullptr;
 }
 
-void AnmVm::run_instruction(u16 op,u32 instr_start){
+void AnmVm::run_instruction(u16 op,u32 instr_start,i16 instruction_time){
     // read a float param (index i); if mask bit i set, the float encodes a
     // variable id (read from the variable store), else it is an immediate.
     auto read_f = [&](u32 idx)->float{
@@ -228,7 +234,13 @@ void AnmVm::run_instruction(u16 op,u32 instr_start){
         case 1: visible=false;halted=true;deleted=true;break; // delete
         case 3: case 4: halted=true;break;              // stop / stop2
         case 5: {u32 l=next_u32();(void)l;break;}       // case label
-        case 6: {i32 w=read_i(0);time-=w;break;}  // wait
+        case 6: {
+            const int delay=read_i(0);
+            // The time -1 setup samples the preceding fade and leaves time 0 due.
+            if(instruction_time==-1)advance_interp();
+            else time-=delay;
+            break;
+        }
         case 7: if(has_return){ip=return_ip;time=return_time;halted=return_halted;has_return=false;}else halted=true;break;                                  // caseReturn
         case 200: {i32 o=i32(next_u32());i32 t=i32(next_u32());jump_to(o,t);break;} // jmp
         case 201: { // 0x4bd843: decrement the counter, branch only while positive
@@ -246,6 +258,13 @@ void AnmVm::run_instruction(u16 op,u32 instr_start){
             if(a<b)jump_to(offset,target);break;
         }
         case 300: {u32 n=next_u32();sprite=i32(n);break;} // sprite
+        case 301: { // 0x4bf206: choose a sprite in [first, first + count).
+            const i32 first=read_i(0);
+            const u32 count=u32(read_i(1));
+            const u32 draw=rand_integer();
+            if(count)sprite=i32(u32(first)+draw%count);
+            break;
+        }
         case 319: { // 0x4bf052: select one of four sprites by Z-rotation quadrant
             const i32 front=read_i(0),back=read_i(1),negative=read_i(2),positive=read_i(3);
             const float a=std::remainder(rot_z,6.28318530718f),quarter=.785398163397f;
@@ -326,6 +345,24 @@ void AnmVm::run_instruction(u16 op,u32 instr_start){
             i.v0=x;i.v1=y;i.v2=z;i.t0=read_f(4);i.t1=read_f(5);i.t2=read_f(6);
             for(int k=0;k<3;++k)i.tangent1[k]=read_f(k+7);break;}
         case 124: case 125: {i32 dest=i32(next_f32());float a=read_f(1);write_var_f(dest,op==124?std::sin(a):std::cos(a));break;}
+        case 130: case 131: {
+            const i32 destX=i32(next_f32()),destY=i32(next_f32());
+            float angle,radius;
+            if(op==130){
+                // 0x4be6c1 resolves the radius before the angle.
+                const float angleOperand=next_f32();
+                radius=read_f(3);
+                angle=(cur_mask&4)?read_var_f(i32(angleOperand)):angleOperand;
+            }else{
+                // 0x4be755 draws the radius first, followed by a signed angle.
+                const float minRadius=read_f(2),maxRadius=read_f(3);
+                radius=minRadius+(maxRadius-minRadius)*rand_unit();
+                angle=rand_signed_unit(3.14159265359f);
+            }
+            write_var_f(destX,std::cos(angle)*radius);
+            write_var_f(destY,std::sin(angle)*radius);
+            break;
+        }
         case 408: { // rgbTime: dur, mode, r, g, b
             u32 dur=next_u32(),mode=next_u32();
             u8 tr=u8(next_u32()),tg=u8(next_u32()),tb=u8(next_u32());
@@ -348,7 +385,15 @@ void AnmVm::run_instruction(u16 op,u32 instr_start){
             break;
         }
         case 413: {auto&i=ip_rgb2;i.active=true;i.dur=u32(read_i(0));i.mode=u32(read_i(1));i.elapsed=0;i.v0=r2;i.v1=g2;i.v2=b2;i.t0=read_i(2);i.t1=read_i(3);i.t2=read_i(4);break;}
-        case 414: {auto&i=ip_alpha2;i.active=true;i.dur=u32(read_i(0));i.mode=u32(read_i(1));i.elapsed=0;i.v0=alpha2;i.t0=read_i(2);if(color_mode==0)color_mode=1;break;}
+        case 414: {
+            auto&i=ip_alpha2;i.active=true;i.dur=u32(read_i(0));i.mode=u32(read_i(1));i.elapsed=0;i.v0=alpha2;i.t0=read_i(2);
+            if(color_mode==0)color_mode=1;
+            if(instruction_time==-1&&i.dur){
+                i.elapsed=1;i.active=i.dur>1;
+                alpha2=i32(i.v0+(i.t0-i.v0)*ease(i.mode,1.f/i.dur));
+            }
+            break;
+        }
         case 423: {color_mode=read_i(0);break;}
         case 424: {rotation_mode=read_i(0);break;}
         case 425: {u_speed=read_f(0);break;} // native VM +0x3cc
@@ -496,7 +541,8 @@ void AnmVm::interrupt_returning(i32 case_id){
     if(has_return)for(int n=0;n<64&&ip+8<=stream_len;++n){
         const u8*h=stream+ip;u16 op=u16(h[0])|(u16(h[1])<<8),len=u16(h[2])|(u16(h[3])<<8);
         if(len<8||ip+len>stream_len||op==7||op==1||op==3||op==4||op==0xffff)break;
-        cur_mask=u16(h[6])|(u16(h[7])<<8);u32 start=ip;ip+=8;run_instruction(op,start);ip=start+len;
+        cur_mask=u16(h[6])|(u16(h[7])<<8);u32 start=ip;ip+=8;
+        run_instruction(op,start,i16(u16(h[4])|(u16(h[5])<<8)));ip=start+len;
     }
     ip=old_ip;time=old_time;halted=old_halted;cur_mask=old_mask;
     return_ip=old_return_ip;return_time=old_return_time;return_halted=old_return_halted;has_return=old_has_return;
