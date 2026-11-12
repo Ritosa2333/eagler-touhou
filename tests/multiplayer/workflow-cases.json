@@ -275,20 +275,38 @@
       "id": "m2.four_characters_duplicates",
       "layer": "native",
       "files": [
-        "tests/multiplayer/native/m2_multi_seat_test.cpp"
+        "tests/multiplayer/native/m2_multi_seat_test.cpp",
+        "tests/multiplayer/native/seat_effects_test.cpp"
       ],
       "tests": [
-        "four_characters_duplicates"
+        "four_characters_duplicates",
+        "reimu_bomb_orb_slots_are_owned_by_each_seat",
+        "overlapping_and_repeat_reimu_bombs_restore_exactly",
+        "all_four_duplicate_characters_keep_separate_bomb_families",
+        "mixed_character_options_focus_and_death_stay_with_their_seat",
+        "reimu_slow_time_zero_age_births_once_and_replays_exactly",
+        "teammate_presentation_fields_are_captured_and_hashed"
       ]
     },
     {
       "id": "m2.damage_owner_ids",
       "layer": "native",
       "files": [
-        "tests/multiplayer/native/m2_multi_seat_test.cpp"
+        "tests/multiplayer/native/m2_multi_seat_test.cpp",
+        "tests/multiplayer/native/seat_damage_test.cpp"
       ],
       "tests": [
-        "damage_owner_ids"
+        "damage_owner_ids",
+        "second_seat_registered_shot_hits_ordinary_enemy",
+        "second_seat_registered_shot_hits_boss_at_cooperative_rate",
+        "all_seats_sum_hits_once_and_keep_their_registration_side_effects",
+        "owner_phase_reductions_and_ghosts_do_not_follow_observer_window",
+        "boss_fractional_damage_survives_dynamic_operable_counts",
+        "boss_remainder_is_authoritative_and_restores_before_replay",
+        "second_seat_bomb_cancels_bomb_sensitive_enemy",
+        "ship_callback_forwards_summed_damage_to_boss_once",
+        "hit_spirit_distance_uses_nearest_eligible_seat",
+        "owner_protection_and_spell_damage_gates_precede_boss_cooperation"
       ]
     },
     {
@@ -389,10 +407,20 @@
       "id": "m3.gift_not_broadcast",
       "layer": "native",
       "files": [
-        "tests/multiplayer/native/m3_items_test.cpp"
+        "tests/multiplayer/native/m3_items_test.cpp",
+        "tests/multiplayer/native/transfer_input_test.cpp"
       ],
       "tests": [
-        "gift_not_broadcast"
+        "gift_not_broadcast",
+        "life_five_edges_targeted_no_broadcast",
+        "life_hold_fire_timeout_distance_boundaries",
+        "life_three_seat_priority_and_fixed_donor_order",
+        "ghost_rescue_stock_power_bombs_protection_no_cancel",
+        "stage_clear_clamps_negative_stock_preserves_rewards",
+        "power_edges_threshold_priority_and_no_broadcast",
+        "targeted_gift_waits_for_ghost_and_pool_reuse_clears_target",
+        "power_timeout_range_full_and_ghost_reset",
+        "rollback_pending_gesture_and_inflight_gift_matches_forward"
       ]
     },
     {
@@ -503,10 +531,15 @@
       "id": "m5.team_wipe_180",
       "layer": "native",
       "files": [
-        "tests/multiplayer/native/m5_lifecycle_test.cpp"
+        "tests/multiplayer/native/m5_lifecycle_test.cpp",
+        "tests/multiplayer/native/team_wipe_flow_test.cpp"
       ],
       "tests": [
-        "team_wipe_180"
+        "team_wipe_180",
+        "team_wipe_production_180",
+        "team_wipe_pause_and_rescue",
+        "team_wipe_restore_replay",
+        "team_wipe_single_seat_unchanged"
       ]
     },
     {
@@ -533,10 +566,16 @@
       "id": "m5.no_sp_save_writes",
       "layer": "native",
       "files": [
-        "tests/multiplayer/native/m5_lifecycle_test.cpp"
+        "tests/multiplayer/native/m5_lifecycle_test.cpp",
+        "tests/multiplayer/native/mp_save_isolation_test.cpp"
       ],
       "tests": [
-        "no_sp_save_writes"
+        "no_sp_save_writes",
+        "mp_save_isolation_keeps_single_player_persistence_working",
+        "mp_save_isolation_still_persists_device_volume_options",
+        "mp_save_isolation_preserves_existing_sp_bytes_for_new_stale_and_terminal_events",
+        "mp_save_isolation_preserves_sp_data_through_real_begin_and_title_return",
+        "mp_save_isolation_never_falls_back_to_single_player_replay_slots"
       ]
     },
     {
@@ -588,10 +627,17 @@
       "id": "m6.full_state_restore_replay",
       "layer": "native",
       "files": [
-        "tests/multiplayer/native/m6_worldstate_test.cpp"
+        "tests/multiplayer/native/m6_worldstate_test.cpp",
+        "tests/multiplayer/native/host_state_test.cpp"
       ],
       "tests": [
-        "full_state_restore_replay"
+        "full_state_restore_replay",
+        "host_digest_detects_control_state_mutations",
+        "host_digest_covers_application_capture_and_restore",
+        "host_and_world_restore_replay_future_frames_together",
+        "new_session_discards_local_startup_loader_history",
+        "transfer_snapshot_and_digest",
+        "history_remote_menu_edges"
       ]
     },
     {
@@ -618,10 +664,16 @@
       "id": "m6.anm_borrowed_parent_chains",
       "layer": "native",
       "files": [
-        "tests/multiplayer/native/m6_worldstate_test.cpp"
+        "tests/multiplayer/native/m6_worldstate_test.cpp",
+        "tests/multiplayer/native/anm_binding_identity_test.cpp"
       ],
       "tests": [
-        "anm_borrowed_parent_chains"
+        "anm_borrowed_parent_chains",
+        "content_identity_is_address_independent_and_complete",
+        "resource_and_actual_sprite_bindings_change_the_vm_digest",
+        "actual_script_binding_and_raw_script_content_are_visible",
+        "append_order_and_packed_file_sprite_domains_are_visible",
+        "retired_resource_identity_and_registry_restore_keep_bindings"
       ]
     },
     {
@@ -638,10 +690,16 @@
       "id": "m6.dual_rng_events_transition",
       "layer": "native",
       "files": [
-        "tests/multiplayer/native/m6_worldstate_test.cpp"
+        "tests/multiplayer/native/m6_worldstate_test.cpp",
+        "tests/multiplayer/native/ecl_target_identity_test.cpp"
       ],
       "tests": [
-        "dual_rng_events_transition"
+        "dual_rng_events_transition",
+        "same_targets_in_separate_program_allocations_have_equal_digests",
+        "distinct_offsets_and_routines_are_visible_even_with_identical_instructions",
+        "child_interpolation_targets_are_part_of_the_same_production_digest",
+        "null_valid_and_invalid_targets_have_separate_identities",
+        "restored_targets_write_the_original_destination_after_replay"
       ]
     },
     {
@@ -889,20 +947,27 @@
       "id": "m9.stage_entry_carry",
       "layer": "native",
       "files": [
-        "tests/multiplayer/native/m9_replay_lifecycle_test.cpp"
+        "tests/multiplayer/native/m9_replay_lifecycle_test.cpp",
+        "tests/multiplayer/native/stage_clear_carry_test.cpp"
       ],
       "tests": [
-        "stage_entry_carry"
+        "stage_entry_carry",
+        "stage_clear_revives_first_seat_ghost_before_hud",
+        "stage_clear_revives_inflight_last_death_before_hud",
+        "stage_clear_revives_remote_ghost_preserving_survivors",
+        "stage_clear_revives_remote_inflight_last_death"
       ]
     },
     {
       "id": "m9.run_generation_isolation",
       "layer": "native",
       "files": [
-        "tests/multiplayer/native/m9_replay_lifecycle_test.cpp"
+        "tests/multiplayer/native/m9_replay_lifecycle_test.cpp",
+        "tests/multiplayer/native/scene_epoch_test.cpp"
       ],
       "tests": [
-        "run_generation_isolation"
+        "run_generation_isolation",
+        "retained_engine_three_runs_replace_scene_epoch_snapshots"
       ]
     },
     {

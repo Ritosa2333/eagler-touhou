@@ -93,12 +93,12 @@ export async function run(ctx) {
         }
       }
       // 帧推进门：全员输入确认才模拟（纯延迟停等）。
-      let advanced = false;
+      const granted = [];
       for (const client of clients) {
-        if (await netCanSimulate(client) === 1) advanced = true;
+        granted.push(await netCanSimulate(client) === 1);
       }
-      if (advanced) {
-        for (const client of clients) {
+      for (const [index, client] of clients.entries()) {
+        if (granted[index]) {
           await runFrame(client);
           await netOnSimulated(client);
         }

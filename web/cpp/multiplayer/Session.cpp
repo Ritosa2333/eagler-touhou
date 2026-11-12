@@ -36,9 +36,14 @@ Session::Record& Session::record_push(Record&& source) {
     slot.has_snapshot = source.has_snapshot;
     slot.inputs = source.inputs;
     slot.local_input = source.local_input;
+    slot.frame_inputs = source.frame_inputs;
+    slot.audited = false;
+    slot.domains[0] = 0;
     slot.wire_digest = 0;
     slot.has_wire_digest = false;
     slot.audio.clear();
+    slot.restore_host = {};
+    slot.confirmed_output = {};
     ++record_count_;
     return slot;
 }
@@ -51,6 +56,8 @@ void Session::record_pop_front() {
     slot.has_wire_digest = false;
     slot.wire_digest = 0;
     slot.audio.clear();
+    slot.restore_host = {};
+    slot.confirmed_output = {};
     record_head_ = (record_head_ + 1) % kRecordSlots;
     --record_count_;
 }
@@ -63,6 +70,8 @@ void Session::record_clear() {
         slot.has_wire_digest = false;
         slot.wire_digest = 0;
         slot.audio.clear();
+    slot.restore_host = {};
+    slot.confirmed_output = {};
     }
     record_head_ = 0;
     record_count_ = 0;
@@ -70,6 +79,7 @@ void Session::record_clear() {
 }
 
 bool Session::Configure(const std::uint32_t* words, std::size_t count) {
+    SetAudit(audit_enabled_);
     SessionSetup setup;
     if (!DecodeSessionSetup(setup, words, count)) {
         runtime_.Clear();
@@ -79,6 +89,8 @@ bool Session::Configure(const std::uint32_t* words, std::size_t count) {
     if (!runtime_.Reset(setup)) return false;
     diagnostic_input_count_ = 0;
     diagnostic_samples_ = {};
+    local_input_ = menu_input_ = {};
+    frame_inputs_ = {};
     record_clear();
     audio_out_.clear();
     voice_out_.clear();
@@ -92,6 +104,7 @@ bool Session::Configure(const std::uint32_t* words, std::size_t count) {
     sim_frame_ = 0;
     committed_ = restores_ = resimulated_ = checkpoints_ = 0;
     simulating_ = false;
+    world_finished_ = world_completed_ = spectator_finished_ = false;
     frame_simulated_ = false;
     frame_granted_ = false;
     prediction_barrier_ = false;  // P3.3：宿主每帧重设，会话边界归零
@@ -109,10 +122,44 @@ bool Session::Configure(const std::uint32_t* words, std::size_t count) {
     return true;
 }
 
-void Session::Stop() {
-    runtime_.Clear();
+bool Session::FinishWorldSimulation(bool completed) {
+    if (!AllFramesCommitted()) return false;
+    if (!simulating_) return true;
+    // Final confirmed frame has no following pre-input audit row. Capture its
+    // resulting world once, before the owner tears down battle/scene resources.
+    if (audit_enabled_ && battle_ && visual_rng_) {
+        std::ostringstream out;
+        if (digest_snapshot_.capture(*battle_, *visual_rng_, nullptr,
+                world_presentation_, world_scene_, transition_handle_ ? *transition_handle_ : 0)) {
+            std::array<char,2048> domains{};
+            digest_snapshot_.digest_domains(domains.data(), domains.size());
+            out << "{\"frames\":" << sim_frame_ << ",\"completed\":" << (completed ? "true" : "false")
+                << ",\"core\":\"" << std::hex << digest_snapshot_.digest_core()
+                << "\",\"full\":\"" << digest_snapshot_.digest()
+                << "\",\"host\":\"" << (digest_host ? digest_host() : 0)
+                << "\",\"domains\":\"" << domains.data() << "\"}";
+        } else out << "{\"error\":\"Final world capture failed\"}";
+        terminal_audit_ = out.str();
+    }
+    world_finished_ = true;
+    world_completed_ = completed;
+    simulating_ = false;
+    runtime_.PublishSpectator(ConfirmedThrough(), sim_frame_ ? sim_frame_ - 1 : Netplay::INVALID_FRAME);
+    spectator_finished_ = runtime_.FinishSpectator(sim_frame_);
+    return true;
+}
+
+void Session::Stop() { Stop(false); }
+
+void Session::Stop(bool keep_terminal_transport) {
+    SetAudit(false);
+    world_finished_ = world_completed_ = spectator_finished_ = false;
+    if (!keep_terminal_transport) runtime_.Clear();
     battle_ = nullptr;
     visual_rng_ = nullptr;
+    capture_host = {};
+    digest_host = {};
+    diagnostic_host = {};
     record_clear();
     audio_out_.clear();
     voice_out_.clear();
@@ -144,11 +191,45 @@ void Session::Stop() {
 }
 
 bool Session::Pump(std::uint64_t now_ms) {
+    if (world_finished_) {
+        if (!runtime_.PumpTerminal(now_ms)) return false;
+        // The peer may leave while this client is still naming/saving results.
+        // Retry the spectator tail independently of gameplay channel lifetime.
+        if (!spectator_finished_) {
+            runtime_.PublishSpectator(ConfirmedThrough(), sim_frame_ ? sim_frame_ - 1 : Netplay::INVALID_FRAME);
+            spectator_finished_ = runtime_.FinishSpectator(sim_frame_);
+        }
+        return true;
+    }
+    // A caller can query both peers' grants before either world advances.
+    // If one peer stalls, the other prediction is still unconsumed when the
+    // next packets arrive. Undo that grant before receiving: OnFrameSimulated
+    // must never record newly confirmed inputs for a world given older ones.
+    if (frame_granted_ && record_back().has_snapshot) {
+        auto& record = record_back();
+        if (!record.snapshot.restore(*battle_, *visual_rng_, nullptr,
+                world_presentation_, world_scene_, transition_handle_) ||
+            (record.restore_host && !record.restore_host())) {
+            rollback_failed_ = true;
+            return false;
+        }
+        local_input_ = record.local_input;
+        frame_inputs_ = record.frame_inputs;
+        record.has_snapshot = false;
+        record.audio.clear();
+        record.restore_host = {};
+        record.confirmed_output = {};
+        --record_count_;
+        pending_audio_ = nullptr;
+        pending_audio_frame_ = 0;
+        frame_granted_ = false;
+    }
     if (!runtime_.Pump(simulating_, now_ms)) return false;
     // M8：确认输入与预测不一致 → RollbackCore 请求回滚。
     if (!rollback_pending_ && runtime_.HasRollbackRequest()) rollback_pending_ = true;
-    if (rollback_pending_ && simulating_) return ExecuteRollback();
-    return true;
+    if (rollback_pending_ && simulating_ && !ExecuteRollback()) return false;
+    if (simulating_) Commit();
+    return !rollback_failed_;
 }
 
 bool Session::Connect(const char* relay_url) {
@@ -163,14 +244,45 @@ bool Session::CaptureLocal(std::uint32_t held, std::uint64_t now_ms,
     // delay 窗后首帧起对端停等）。
     if (!active_ || !simulating_) return true;  // 未开始采集：静默
     Netplay::FrameInput input;
-    if (!InputLanes::Capture(held, false, input)) return false;
+    if (!InputLanes::Capture(held, (held & 0x100u) != 0, input)) return false;
+    if (held & 0x80000u) input.buttons |= InputLanes::Confirm;
+    if (held & 0x200000u) input.buttons |= InputLanes::Restart;
+    if (held & 0x10000u) input.buttons |= InputLanes::Quit;
+    if ((held & 0x200u) && !(held & InputLanes::TranceBit))
+        input.buttons |= InputLanes::Dialogue;
     if (touch.mode) {
         input.analogMode = Netplay::AnalogMode::DirectTouch;
         input.x = touch.x;
         input.y = touch.y;
         input.unlimited = touch.mode == 2;
     }
-    return runtime_.Capture(runtime_.CaptureFrame(), input, now_ms);
+    const auto frame = runtime_.CaptureFrame();
+    TraceTiming("sample", frame, input.buttons);
+    const auto sent_before = runtime_.PacketsSent();
+    const bool captured = runtime_.Capture(frame, input, now_ms);
+    if (captured) TraceTiming(runtime_.PacketsSent() > sent_before ? "send" : "schedule",
+                              frame, input.buttons, runtime_.PacketsSent());
+    return captured;
+}
+
+void Session::BindWorld(th13::StageBattle* battle, GameRandom* visual,
+                        StagePresentation* presentation, th13::RunScene* scene,
+                        u32* transition_handle) {
+    battle_ = battle;
+    visual_rng_ = visual;
+    world_presentation_ = presentation;
+    world_scene_ = scene;
+    transition_handle_ = transition_handle;
+    // Activation can replace the battle after CanSimulate granted this frame.
+    // Copy the already advanced lanes; sampling or updating edges again here
+    // would lose the remote input or repeat a press on the activation frame.
+    if (battle_ && frame_granted_) {
+        const auto decision = runtime_.Prepare(sim_frame_);
+        for (unsigned seat = 0; seat < PlayerCount(); ++seat) {
+            battle_->seat_inputs[seat] = frame_inputs_[seat];
+            InputLanes::ApplyTouch(*battle_, seat, decision.inputs[seat]);
+        }
+    }
 }
 
 bool Session::CanSimulate() {
@@ -182,11 +294,14 @@ bool Session::CanSimulate() {
         ++stall_frames_;  // 输入不足：纯延迟停等/预测窗尽
         return false;
     }
-    // P3.3：确认帧门——MSG 对话/换关过渡期不建预测帧：本帧停等下一确认
+    // P3.3：确认帧门——暂停/换关过渡期不建预测帧：本帧停等下一确认
     // 输入（不建 Record/checkpoint，回滚快照域不跨越换关 bank 卸载点）。
     // 纯确认帧（predictedMask == 0）不受影响；已放行未落账的帧经上方
     // frame_granted_ 幂等门直接返回，不在此重查（门不撤单帧）。
-    if (prediction_barrier_ && decision.predictedMask != 0) return false;
+    bool menu_edge = false;
+    for (unsigned seat = 0; seat < PlayerCount(); ++seat)
+        menu_edge |= (decision.inputs[seat].buttons & InputLanes::Pause) != 0;
+    if ((prediction_barrier_ || menu_edge) && decision.predictedMask != 0) return false;
     // M8：预测帧 checkpoint（predictedMask != 0——回滚恢复点）。纯延迟
     // 帧（全员实际输入）永不产生纠正请求，无需快照。
     // 拍摄时点 = 远端注入之前：checkpoint 的沿是「上一帧推进后」的干净
@@ -201,6 +316,8 @@ bool Session::CanSimulate() {
         record.has_snapshot = true;
         record.inputs = decision.inputs;
         record.local_input = local_input_;  // 沿状态机快照（回滚恢复点）
+        record.frame_inputs = frame_inputs_;
+        if (capture_host) record.restore_host = capture_host();
         const std::uint64_t capture_started = NowMicros();
         const bool captured = record.snapshot.capture(
             *battle_, *visual_rng_, nullptr, world_presentation_, world_scene_,
@@ -222,16 +339,56 @@ bool Session::CanSimulate() {
     }
     // Capture stage initializers before this frame mutates inputs or the world.
     record_back().stage = stage_source ? stage_source() : 1u;
+    auto& record = record_back();
+    // Exact-input frames need the same periodic state check as predicted
+    // frames. Capture once before input edges advance, regardless of path.
+    if (battle_ && visual_rng_ && (audit_enabled_ ||
+        sim_frame_ % NetplayRuntime::kDigestIntervalFrames == 0)) {
+        WorldState* state = record.has_snapshot ? &record.snapshot : &digest_snapshot_;
+        if (!record.has_snapshot && !state->capture(*battle_, *visual_rng_, nullptr,
+                world_presentation_, world_scene_, transition_handle_ ? *transition_handle_ : 0)) {
+            rollback_failed_ = true;
+            return false;
+        }
+        record.has_wire_digest = sim_frame_ % NetplayRuntime::kDigestIntervalFrames == 0;
+        record.audited = audit_enabled_;
+        // Existing prediction checkpoints retain this scene epoch until
+        // commit/rollback. Hash only the accepted history, avoiding repeated
+        // full-state walks over predictions that correction will discard.
+        // Exact frames stay eager: their update can replace stage resources.
+        if (!record.has_snapshot) {
+            record.wire_digest = state->digest_core();
+            state->digest_domains(record.domains.data(), record.domains.size());
+            if (record.has_wire_digest) record.detail = state->diagnostic_detail();
+            if (record.audited) record.full_digest = state->digest();
+        }
+        if (record.audited) {
+            record.host_digest = digest_host ? digest_host() : 0;
+            record.host_detail = record.has_wire_digest && diagnostic_host
+                ? diagnostic_host() : std::string{};
+        }
+    }
     if (spectator_sink) spectator_sink(sim_frame_, decision.inputs);
+    // All seat edges advance once per network frame, including paused frames.
+    // Merge edges per seat so one held key cannot hide another player's press.
+    menu_input_ = {};
+    for (unsigned seat = 0; seat < PlayerCount(); ++seat) {
+        auto& input = frame_inputs_[seat];
+        input.update(InputLanes::Controls(decision.inputs[seat]));
+        menu_input_.held |= input.held;
+        menu_input_.pressed |= input.pressed;
+        menu_input_.released |= input.released;
+        menu_input_.repeated |= input.repeated;
+        for (unsigned bit = 0; bit < 32; ++bit)
+            menu_input_.duration[bit] = std::max(menu_input_.duration[bit], input.duration[bit]);
+    }
+    local_input_ = frame_inputs_[LocalSeat()];
     // 远端席位输入注入（本地席位走 LocalDelayedInput/playback_input 接缝）。
     if (battle_) {
         const auto count = PlayerCount();
         for (std::uint32_t seat = 0; seat < count && seat < 3; ++seat) {
             InputLanes::ApplyTouch(*battle_, seat, decision.inputs[seat]);
-            if (seat == LocalSeat()) continue;
-            // FrameInput → GameInput.held 的沿状态机：每帧 update。
-            battle_->seat_inputs[seat].update(decision.inputs[seat].buttons &
-                                              InputLanes::HeldMask);
+            battle_->seat_inputs[seat] = frame_inputs_[seat];
         }
     }
     // 音频缓冲开启：本帧模拟期的音频请求随 Record 走（P3.1：帧号随附，
@@ -239,6 +396,8 @@ bool Session::CanSimulate() {
     pending_audio_ = &record_back().audio;
     pending_audio_frame_ = sim_frame_;
     frame_granted_ = true;  // 放行幂等门：重复查询不再重复注入/建 Record
+    TraceTiming("apply", sim_frame_, decision.inputs[LocalSeat()].buttons,
+                decision.predictedMask | (runtime_.Correcting() ? 0x100u : 0));
     frame_granted_us_ = NowMicros();  // update_us 起点（本帧放行时刻）
     return true;
 }
@@ -255,22 +414,9 @@ void Session::OnFrameSimulated() {
         return;
     }
     frame_simulated_ = true;  // 本帧已落账——下一帧 CanSimulate 前必须重置
-    // P3.4：线上 digest 采样（60 帧一拍）。只对有快照的预测帧计算——快照的
-    // digest_core 是「本帧模拟前」的权威态（两端同帧同确认输入下一致）；
-    // 纯确认帧没有 WorldState 实例，跳过（60 帧采样率下预测帧覆盖足够；
-    // 确认帧/预测帧 digest 的等价性由 m8 session_driven 对照保证）。回滚
-    // 重放命中 60 倍帧时 Record 重建，digest 自然重算。
-    if (sim_frame_ % NetplayRuntime::kDigestIntervalFrames == 0) {
-        for (std::size_t logical = record_count_; logical-- > 0;) {
-            Record& record = record_at(logical);
-            if (record.frame != sim_frame_) continue;
-            if (record.has_snapshot) {
-                record.wire_digest = record.snapshot.digest_core();
-                record.has_wire_digest = true;
-            }
-            break;
-        }
-    }
+    TraceTiming("simulate", sim_frame_, decision.inputs[LocalSeat()].buttons,
+                runtime_.Correcting() ? 1 : 0);
+    // The pre-input state check was captured by CanSimulate for both paths.
     pending_audio_ = nullptr;  // Record 已落账
     pending_audio_frame_ = 0;
     // update_us：放行 → 落账（近似一帧模拟耗时）；纠正期同时计入 resim_us。
@@ -291,6 +437,7 @@ void Session::OnFrameSimulated() {
             return;
         }
         resimulated_ += resimulated_during_correction_;
+        TraceTiming("corrected", sim_frame_ - 1, resimulated_during_correction_);
         resimulated_during_correction_ = 0;
     }
     // M8：确认前沿推进 → commit（音频放行 + record 退役）。
@@ -318,12 +465,18 @@ void Session::Commit() {
     // 确认输入一致才可退役——预测帧的「预测输入 ≠ 确认输入」时保留
     // record（等回滚请求消化：ExecuteRollback 需要它的 checkpoint；
     // 退役会令回滚 target 缺失——M8 native session_driven 实证）。
-    while (record_count_ != 0 && record_front().frame <= confirmed) {
-        const auto& record = record_front();
+    while (record_count_ != 0 && record_front().frame < sim_frame_ && record_front().frame <= confirmed) {
+        auto& record = record_front();
         std::array<Netplay::FrameInput, 3> actual{};
         if (!runtime_.ConfirmedInputs(record.frame, actual) ||
             actual != record.inputs)
             break;  // 预测输入与确认不符：等待回滚请求（不退役）
+        if (record.has_snapshot && (record.audited || record.has_wire_digest)) {
+            record.wire_digest = record.snapshot.digest_core();
+            record.snapshot.digest_domains(record.domains.data(), record.domains.size());
+            if (record.has_wire_digest) record.detail = record.snapshot.diagnostic_detail();
+            if (record.audited) record.full_digest = record.snapshot.digest();
+        }
         for (const auto& observation : record.audio) {
             if (observation.kind == th13::sdl::AudioDevice::RequestObservation::Kind::Voice)
                 continue;  // 首播/去重账本已消费
@@ -348,14 +501,73 @@ void Session::Commit() {
             sample = {};
             sample.frame = record.frame;
             sample.stage = record.stage;
-            record.snapshot.digest_domains(sample.domains.data(), sample.domains.size());
+            sample.domains = record.domains;
+            sample.detail = record.detail;
             runtime_.SendDigestControl(record.frame, static_cast<std::uint32_t>(record.wire_digest));
         }
+        if (record.audited) {
+            std::ostringstream row;
+            row << "{\"frame\":" << record.frame << ",\"stage\":" << record.stage
+                << ",\"core\":\"" << std::hex << record.wire_digest
+                << "\",\"full\":\"" << record.full_digest
+                << "\",\"host\":\"" << record.host_digest << std::dec
+                << "\",\"hostDetail\":\"" << record.host_detail
+                << "\",\"domains\":\"" << record.domains.data() << "\",\"inputs\":[";
+            for (unsigned seat = 0; seat < PlayerCount(); ++seat) {
+                if (seat) row << ',';
+                row << record.inputs[seat].buttons;
+            }
+            row << "]}";
+            if (audit_rows_.size() == 512) { audit_rows_.pop_front(); ++audit_overflow_; }
+            audit_rows_.push_back(row.str());
+        }
+        if (record.confirmed_output && !record.confirmed_output()) {
+            rollback_failed_ = true;
+            return;
+        }
+        TraceTiming("confirm", record.frame, actual[LocalSeat()].buttons);
         // P5：确认帧录制（输入已全员确认且与预测一致——Replay 只收真值）。
         if (confirmed_sink) confirmed_sink(record.frame, record.stage, record.inputs);
         record_pop_front();
         ++committed_;
     }
+}
+
+std::string Session::TakeAuditJson() {
+    std::ostringstream out;
+    out << "{\"overflow\":" << audit_overflow_ << ",\"frames\":[";
+    bool comma = false;
+    for (const auto& row : audit_rows_) { if (comma) out << ','; comma = true; out << row; }
+    out << "],\"terminal\":" << (terminal_audit_.empty() ? "null" : terminal_audit_) << '}';
+    audit_rows_.clear();
+    return out.str();
+}
+
+void Session::TraceTiming(const char* kind, std::uint32_t frame,
+                           std::uint32_t value, std::uint32_t detail) {
+    if (!audit_enabled_) return;
+    if (timing_count_ == timing_events_.size()) {
+        timing_head_ = (timing_head_ + 1) % timing_events_.size();
+        --timing_count_; ++timing_overflow_;
+    }
+    timing_events_[(timing_head_ + timing_count_++) % timing_events_.size()] =
+        {kind, NowMicros(), frame, value, detail};
+}
+
+std::string Session::TakeTimingJson() {
+    std::ostringstream out;
+    out << "{\"clock\":\"steady-microseconds\",\"overflow\":" << timing_overflow_
+        << ",\"events\":[";
+    for (std::size_t index = 0; index < timing_count_; ++index) {
+        const auto& event = timing_events_[(timing_head_ + index) % timing_events_.size()];
+        if (index) out << ',';
+        out << "{\"kind\":\"" << event.kind << "\",\"us\":" << event.us
+            << ",\"frame\":" << event.frame << ",\"value\":" << event.value
+            << ",\"detail\":" << event.detail << '}';
+    }
+    out << "]}";
+    timing_head_ = timing_count_ = 0;
+    return out.str();
 }
 
 std::string Session::DiagnosticJson() const {
@@ -388,7 +600,7 @@ std::string Session::DiagnosticJson() const {
         if (comma) out << ',';
         comma = true;
         out << "{\"frame\":" << sample.frame << ",\"stage\":" << sample.stage
-            << ",\"domains\":\"" << sample.domains.data() << "\"}";
+            << ",\"domains\":\"" << sample.domains.data() << "\",\"detail\":\"" << sample.detail << "\"}";
     }
     out << "],\"confirmedInputs\":[";
     const auto first = diagnostic_input_count_ - std::min(diagnostic_input_count_, diagnostic_inputs_.size());
@@ -449,6 +661,7 @@ bool Session::ExecuteRollback() {
         rollback_failed_ = true;
         return false;
     }
+    TraceTiming("restore", target, sim_frame_ - target);
     // 纠正区间开启（决策历史回退 + 重放终点登记）；纠正中收到更早回滚
     // 走 RestartCorrection（th12 同语义）。
     const bool was_correcting = runtime_.Correcting();
@@ -503,6 +716,8 @@ bool Session::ExecuteRollback() {
     // 从 checkpoint 时刻的沿继续，不携带错误预测期历史）。先取值后 erase
     //（erase 会销毁 record）。
     const GameInput local_input_at_checkpoint = record_at(record_logical).local_input;
+    const auto frame_inputs_at_checkpoint = record_at(record_logical).frame_inputs;
+    if (record_at(record_logical).restore_host && !record_at(record_logical).restore_host()) return false;
     // P4：丢弃段 = 尾部截断（record_logical 起）；槽位保留容量待复用。
     for (std::size_t logical = record_count_; logical-- > record_logical;) {
         Record& dropped = record_at(logical);
@@ -511,6 +726,8 @@ bool Session::ExecuteRollback() {
         dropped.has_wire_digest = false;
         dropped.wire_digest = 0;
         dropped.audio.clear();
+        dropped.restore_host = {};
+        dropped.confirmed_output = {};
     }
     record_count_ = record_logical;
     // 纠正距离观测（验收面：12 帧窗场景 max_rollback_distance_ >= 12）。
@@ -524,6 +741,7 @@ bool Session::ExecuteRollback() {
     frame_simulated_ = false;  // target 帧重新模拟
     frame_granted_ = false;    // target 帧重新放行（副作用重执行）
     local_input_ = local_input_at_checkpoint;
+    frame_inputs_ = frame_inputs_at_checkpoint;
     pending_audio_ = nullptr;
     rollback_pending_ = false;  // 请求已消费（RewindSimulationTo 已清 core 请求）
     // 全新纠正从零累计重放帧数；RestartCorrection 保留既有累计（工作
@@ -559,7 +777,6 @@ const GameInput* Session::LocalDelayedInput() {
     if (!decision.canAdvance) return nullptr;
     // 本地席位的延迟输入：沿状态机由每帧 update 维护（与回放 replay_input
     // 同语义——pressed/released/duration 从 held 序列推导）。
-    local_input_.update(decision.inputs[LocalSeat()].buttons & InputLanes::HeldMask);
     return &local_input_;
 }
 
