@@ -44,12 +44,12 @@ export function createRollbackMatch({seat,channel,engine,sample,options={},onFra
     // A confirmed frame may be waiting for this input while prediction is
     // disabled (selection, pause, or a lifecycle boundary). Run that already
     // sampled frame immediately instead of waiting for the next clock tick.
-    if(!sync.closed&&sync.local.has(sync.frame)&&sync.remote.has(sync.frame))sync.advance(false);
+    while(!sync.closed&&sync.local.has(sync.frame)&&sync.remote.has(sync.frame)&&sync.advance(false)){}
   }}catch(error){running=false;sync.close();onError(error);}};
   channel.onclose=()=>{if(running){running=false;onError(Error('另一位玩家已断开'));}};
   return {tick(){if(!running)return;if(now()-lastProgress>10000){running=false;sync.close();onError(Error('另一位玩家连接超时'));return;}
     const scene=engine._th03_classic_scene(),canPredict=scene===9&&!!engine._th03_classic_surrender_allowed()&&pause.state.owner===null&&!engine._th03_classic_paused();
-    if(sync.frame-sync.confirmed>=sync.maxPrediction)return;
-    if(sync.local.has(sync.frame))sync.advance(canPredict);else sync.submit(sample()+(options.rapid===false?1024:0),canPredict);
+    if(sync.nextLocal-sync.confirmed<12)sync.enqueue(sample()+(options.rapid===false?1024:0));
+    if(sync.frame-sync.confirmed<sync.maxPrediction)sync.advance(canPredict);
   },stop(){running=false;sync.close();outputs.clear();proofs.clear();remoteProofs.clear();},get snapshotStats(){return {captures,restores};},get pause(){return pause;},get frame(){return sync.frame;},get confirmed(){return sync.confirmed;},get confirmedInput(){return confirmedInput;},get rollbacks(){return sync.rollbacks;},get running(){return running;}};
 }

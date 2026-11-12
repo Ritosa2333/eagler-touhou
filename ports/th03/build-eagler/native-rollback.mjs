@@ -5,14 +5,19 @@ export class NativeRollback {
   constructor({seat,send,capture,restore,release=()=>{},step,confirm,onError=()=>{},maxPrediction=6}) {
     if(![0,1].includes(seat)||!Number.isInteger(maxPrediction)||maxPrediction<1||maxPrediction>12)throw Error('Invalid rollback configuration');
     Object.assign(this,{seat,send,capture,restore,release,step,confirm,onError,maxPrediction});
-    this.frame=0;this.confirmed=0;this.local=new Map();this.remote=new Map();this.used=new Map();this.snapshots=new Map();this.closed=false;this.rollbacks=0;this.blocked=false;
+    this.frame=0;this.confirmed=0;this.nextLocal=0;this.local=new Map();this.remote=new Map();this.used=new Map();this.snapshots=new Map();this.closed=false;this.rollbacks=0;this.blocked=false;
+  }
+  enqueue(input) {
+    if(this.closed||this.nextLocal-this.confirmed>=12)return false;
+    this.validate(input);const frame=this.nextLocal++;
+    this.local.set(frame,input);this.send(JSON.stringify({type:'native-rollback-input',frame,input}));return true;
   }
   submit(input,allowPrediction) {
     if(this.closed)return false;
     this.validate(input);
     if(this.frame-this.confirmed>=this.maxPrediction)return false;
     const frame=this.frame;
-    if(!this.local.has(frame)){this.local.set(frame,input);this.send(JSON.stringify({type:'native-rollback-input',frame,input}));}
+    if(!this.local.has(frame)){this.local.set(frame,input);this.nextLocal=Math.max(this.nextLocal,frame+1);this.send(JSON.stringify({type:'native-rollback-input',frame,input}));}
     if(!this.remote.has(frame)&&!allowPrediction)return false;
     return this.advance(allowPrediction);
   }
@@ -32,9 +37,9 @@ export class NativeRollback {
     this.flush();return true;
   }
   predict(frame) {
-    // Never predict attack buttons as held: a missed release must not become
-    // sustained firing or charge during a network delay.
-    for(let at=frame-1;at>=Math.max(0,frame-12);at--)if(this.remote.has(at)){const input=this.remote.get(at),touch=unpackTouch(input);return packTouch((input&2047)&~(16|32|128|256|512),{active:touch.active,unlimited:touch.unlimited});}
+    // Keep a held charge while predicting; a received release rewinds it.
+    // Rapid fire and one-shot buttons are never carried across missing input.
+    for(let at=frame-1;at>=Math.max(0,frame-12);at--)if(this.remote.has(at)){const input=this.remote.get(at),touch=unpackTouch(input);return packTouch((input&2047)&~(16|128|256|512),{active:touch.active,unlimited:touch.unlimited});}
     return 0;
   }
   receive(text) {

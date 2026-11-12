@@ -168,8 +168,8 @@
       "sha256": "95a9fef9279332af29adc7b76fc93f8a8ce7522736aafcd9e7e759fb5785891d"
     },
     "native-match-rollback.mjs": {
-      "bytes": 6704,
-      "sha256": "90d0611d907f30307ab1acff48f918b6629f3918fc626567d6e2df712e05922b"
+      "bytes": 6693,
+      "sha256": "125a5123704df90e8a54d1ef78c4be5cdf52798c5a18f14abdafbda5a60b82d9"
     },
     "native-match.mjs": {
       "bytes": 3414,
@@ -188,8 +188,8 @@
       "sha256": "f2181a45731a97eaea8d6fd6da883a5a8e03f8bbe3c11e688b69376b444cbae4"
     },
     "native-rollback.mjs": {
-      "bytes": 4418,
-      "sha256": "47a8316e9285d06c5aa060aba11e437bf79b6b5dd6cfd35944bd57759c3c024f"
+      "bytes": 4759,
+      "sha256": "01414f90e70f789d0cc1e05d8c3dbd7cf2bc89c683b24d825afc2600d915c594"
     },
     "native-versus-pause.mjs": {
       "bytes": 7889,

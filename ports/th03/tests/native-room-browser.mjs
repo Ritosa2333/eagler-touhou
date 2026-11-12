@@ -66,6 +66,10 @@ try{
   await host.click('#mpStartGame');
   await wait(async()=>{const e=events.flat().filter(e=>e.event==='error');if(e.length)throw Error(JSON.stringify(e));return events.every(list=>list.some(e=>e.event==='first-frame'));},'main room native launch');
   const frames=pages.map(page=>page.frames().find(f=>/th03.html.*runtimeEpoch=/.test(f.url())));
+  if(process.env.TH03_NETWORK_DELAY_MS)for(const frame of frames)await frame.evaluate(delay=>{
+    const peer=[...globalThis.__th03PeerTransport.peers.values()][0],channel=peer.channel,send=channel.send.bind(channel);
+    channel.send=text=>setTimeout(()=>{if(channel.readyState==='open')send(text);},delay);
+  },Number(process.env.TH03_NETWORK_DELAY_MS));
   assert((await Promise.all(frames.map(frame=>frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health().scene)))).every(scene=>scene===3),'room launch starts at native character selection');
   for(const frame of frames)assert(await frame.evaluate(()=>!!document.querySelector('#canvas')&&!document.querySelector('.masthead,.mode-nav')),'managed room uses its own game surface');
   await wait(async()=>{const states=await Promise.all(frames.map(frame=>frame.evaluate(async()=>{const m=await import('./managed-native-room.mjs');return m.managedAPI.health();})));return states.every(s=>s.confirmed>=120&&s.frames>0);},'main room confirmed gameplay');

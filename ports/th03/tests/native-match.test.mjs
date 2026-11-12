@@ -73,3 +73,11 @@ test('selection advances as soon as a delayed remote input arrives',()=>{
  channels.forEach((channel,i)=>channel.onmessage({data:queues[i].shift()}));
  assert.deepEqual(peers.map(peer=>peer.frame),[1,1]);
 });
+test('selection continues at tick rate after a three-frame network delay',()=>{
+ const queues=[[],[]],channels=[{},{}],errors=[];let clock=0;
+ const engines=[0,1].map(()=>({HEAPU8:new Uint8Array(16),HEAP32:new Int32Array(4),_th03_classic_scene:()=>3,_th03_classic_surrender_allowed:()=>0,_th03_classic_paused:()=>0,_th03_classic_touch(){},_th03_classic_assist_pair(){},_th03_classic_step_pair:()=>0,_th03_classic_audio:()=>0,_th03_classic_audio_frames:()=>0,_th03_classic_defer_audio(){},_th03_classic_speculative(){},_th03_semantic_replay_samples:()=>0,_th03_classic_audio_commands:()=>0,_th03_classic_audio_command_count:()=>0,_th03_classic_audio_commit:()=>0}));
+ channels.forEach((ch,i)=>ch.send=data=>queues[1-i].push({data,due:clock+3}));
+ const peers=channels.map((channel,seat)=>createRollbackMatch({seat,channel,engine:engines[seat],sample:()=>0,onError:e=>errors.push(e),now:()=>clock*17}));
+ for(clock=0;clock<180;clock++){peers.forEach(p=>p.tick());for(let seat=0;seat<2;seat++)while(queues[seat].length&&queues[seat][0].due<=clock)channels[seat].onmessage({data:queues[seat].shift().data});}
+ assert.deepEqual(errors,[]);assert.ok(peers.every(p=>p.frame>=175),`frames: ${peers.map(p=>p.frame)}`);
+});
