@@ -69,6 +69,8 @@ struct Item {
     float anm_time = 0;          // +0xB80（出生 0）
     u32 flags = 0;               // +0xB88 bit0 = 已初始化
     bool alive = false;          // state != 0 的移植侧快捷判（不回写原版域）
+    i32 target_seat = -1;        // R-I9: explicit gift recipient; ordinary drops use -1.
+    i32 tracking_seat = -1;      // R-I7: retain an eligible ordinary homing receiver.
 };
 
 // 神霊池槽（0x438ec0 槽 +0x14 起；字段 = 0x438730 读法，float 索引 ×4）。
@@ -90,6 +92,7 @@ struct Spirit {
     u32 flags = 0;          // [0x21] bit0 = kind 门、bit1 = 界外反弹门
     bool fade_requested = false; // 00438a7c: deferred ANM label1 at frame480.
     bool alive = false;
+    i32 tracking_seat = -1;      // R-I7: independent of spirit birth flags/kind.
 };
 
 class ItemManager;
@@ -188,6 +191,7 @@ public:
     }
 
     void reset_items(); // 413e50: ordinary/cancel pools; spirit manager is separate.
+    bool spawn_targeted_item(float x, float y, i32 type, i32 target_seat);
 
     void bind_random(GameRandom& random) { random_ = &random; }
 
@@ -278,7 +282,14 @@ public:
 
 private:
     void home_step(Item& item, const ItemCollector& player);
-    void collect_check(Item& item, const ItemCollector& player);
+    void collect_check(Item& item, const ItemCollector& player,
+                       const ItemCollector* seats, i32 seat_count);
+    struct ResourceGrant {
+        i32 power = 0, power_steps = 0, life_pieces = 0, bomb_pieces = 0;
+        i32 lives = 0, bombs = 0;
+    };
+    bool grant_resources(const ResourceGrant& grant, const ItemCollector* seats, i32 seat_count);
+    static bool all_players_full_power(const ItemCollector* seats, i32 seat_count);
     // M3：最近合格席（平距平方最小，平局取小席位；全不合格回退 fallback
     // = seats[0]，与旧单席语义一致——死亡演出席仍接收，幽灵席由
     // eligible=false 排除）。
@@ -287,7 +298,8 @@ private:
                                                const ItemCollector& fallback);
     void push_level_up(const Item& item);
     float angle_to_player(const Spirit& s, const ItemCollector& player);
-    void collect_spirit(Spirit& s, const ItemCollector& player);
+    void collect_spirit(Spirit& s, const ItemCollector& player,
+                        const ItemCollector* seats, i32 seat_count);
     void add_max_point(float displayed_increment);  // 0042f510: ftol(value * 100), cap.
 
     GameRandom* random_ = nullptr;

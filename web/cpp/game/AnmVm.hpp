@@ -12,7 +12,7 @@
 #include "AnmGeometry.hpp"
 #include <string>
 namespace th13 {
-namespace multiplayer { class WorldState; }
+namespace multiplayer { class WorldState; class DigestSink; }
 struct AnmSpriteSource {
     virtual ~AnmSpriteSource()=default;
     virtual i32 sprite_index(i32 parameter)const noexcept=0;
@@ -31,6 +31,8 @@ struct AnmObjectHost {
 // work; unsupported instructions stop explicitly and are never silently skipped.
 class AnmVm {
     friend class AnmFile;
+    friend class AnmRegistry;
+    friend class multiplayer::DigestSink;
     friend class multiplayer::WorldState;  // M6 快照：saved_offset/saved_timer（中断保存点）
     std::vector<u8>* script=nullptr;u32 saved_offset=0;Timer saved_timer{};
 public:

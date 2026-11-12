@@ -30,6 +30,9 @@ public:
     void controls(const PauseFrameInput& value) noexcept { input = value; }
     void enable(bool value) noexcept { callback.enabled = value; }
     bool update(const PauseFrameInput&);
+    struct RollbackState { PauseFrameInput input; bool enabled; };
+    RollbackState capture_rollback() const { return {input, callback.enabled}; }
+    void restore_rollback(const RollbackState& saved) { input = saved.input; callback.enabled = saved.enabled; }
 };
 
 }  // namespace th13

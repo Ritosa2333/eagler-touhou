@@ -235,6 +235,9 @@ struct StageEnemy {
     // enemy-manager boss slot as outer +0x519c (0x519c - inner 0x11ec);
     // 00419a90:112-114 consumes and clears it after the geometric query.
     i32 pending_damage = 0;
+    // MP R-G: fractional Boss damage in twelfths. A common denominator
+    // preserves credit when the operable player count changes (9/12, 8/12).
+    i32 mp_boss_damage_remainder = 0;
     bool spell_active = false;  // +0x3f64 bit0
     i32 spell_base_life = 0, spell_life = 0;  // +0x3f50 / +0x3f58 (7x)
     i32 spell_id = -1;
@@ -581,6 +584,10 @@ public:
     std::function<bool(i32)> laser_sound;
     std::function<bool(i32, const Vec3&)> laser_cancel_effect;
     std::function<i32(const StageLaser&)> laser_collision;
+    // Optional contact positions from a multi-player collision query. Cleared
+    // for each query and consumed before the next one; never a frame snapshot.
+    std::array<Vec3, 3> laser_collision_centers{};
+    i32 laser_collision_count = 0;
     std::function<void(StageBullet&)> bullet_player_collision;
     bool defer_laser_update = false; // RunScene schedules the laser manager at22.
     StageEnemy* current = nullptr;  // 正在步进的敌机（gvars/commands 用）

@@ -18,6 +18,33 @@ LaserPresentation::~LaserPresentation() {
     sim.laser_cancel_effect = {};
     while (!visuals.empty()) retire(visuals.begin()->first);
 }
+LaserPresentation::SnapshotData LaserPresentation::capture() const {
+    SnapshotData state;
+    state.entries.reserve(visuals.size());
+    for (const auto& entry : visuals) {
+        const auto& v = *entry.second;
+        state.entries.push_back({entry.first, v.source.type, v.source.color, v.source.curve,
+                                 v.body, v.orb, v.tip, {&v.body, &v.orb, &v.tip}});
+    }
+    return state;
+}
+void LaserPresentation::restore(const SnapshotData& state,
+        std::unordered_map<const AnmVm*, AnmVm*>& remapped) {
+    // Registry ownership is restored next. Do not run release/birth/tick:
+    // those mutate the live chains and consume RNG during restoration.
+    visuals.clear();
+    for (const auto& entry : state.entries) {
+        auto v = std::make_unique<Visual>();
+        v->source.type = entry.type; v->source.color = entry.color;
+        v->source.curve = entry.curve;
+        v->body = entry.body; v->orb = entry.orb; v->tip = entry.tip;
+        v->body.sprite_source = &v->source;
+        remapped[entry.identities[0]] = &v->body;
+        remapped[entry.identities[1]] = &v->orb;
+        remapped[entry.identities[2]] = &v->tip;
+        visuals.emplace(entry.generation, std::move(v));
+    }
+}
 bool LaserPresentation::fail(const std::string& message) {
     if (error.empty()) error = message;
     return false;
