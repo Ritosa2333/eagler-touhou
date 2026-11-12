@@ -4479,7 +4479,10 @@ void emit_counter_bullets(int side,th19::GameWorld& world){
         ReflectedVisual v;v.target_side=1-side;
         v.target_x=signedUnit(148.f);v.target_y=(unit()-oldStoryOffset)*16.f;
         auto& state=v.state;
-        state.type=th19::counterBulletType(g_spirit_clock,g_spirit_clock>=3600?raw():0);
+        // 0x545420 reads the global attack controller's +0x28 clock.
+        // It advances during round banners as well as flight updates.
+        const int typeClock=g_vs_mode?g_global_rank.clock+1:g_spirit_clock;
+        state.type=th19::counterBulletType(typeClock,typeClock>=3600?raw():0);
         state.color=raw()&15;state.base_speed=1.f;
         // 0x51c250 rejects result-state initialization after emitter sampling.
         if(g_vs_mode&&g_vs_match.limit>0&&g_vs_match.remaining<=1)continue;
@@ -4734,6 +4737,12 @@ struct DeferredShotContacts {
                 // The native emitter samples the player after movement.
                 shot.x=(side?g_p2_x:g_p1_x)+shot.offset_x;
                 shot.y=(side?g_p2_y:g_p1_y)+shot.offset_y;
+                // 0x54ece5 cancels the birth velocity, then 0x4d4d41 still
+                // snaps the registered normal pellet to the 1/100 grid.
+                if(normalPellet(shot)){
+                    shot.x=std::floor(shot.x*100.f)/100.f;
+                    shot.y=std::floor(shot.y*100.f)/100.f;
+                }
             }
             if(shot.update==9){shot.target_id=0;continue;}
             if(shot.hit_callback!=2||!shot.age)continue;
@@ -4779,8 +4788,11 @@ struct DeferredShotContacts {
             const bool hit=(enemy.flags&0x1000)
                 ? th19::shotRectanglesOverlap(dx,dy,shot->angle,width,shot->hit_height,enemy.contact_angle,enemy.hitbox_w,enemy.hitbox_h)
                 : th19::nativeEnemyRectangleContact(dx,dy,shot->angle,width,shot->hit_height,enemy.hitbox_w*.5f);
+            if(!beam&&!fixedBeam&&g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last&&std::abs(dx)<40&&std::abs(dy)<60)
+                std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"pellet-contact\",\"id\":%u,\"position\":[%.9g,%.9g],\"shot\":[%.9g,%.9g],\"shape\":[%.9g,%.9g,%.9g,%.9g],\"age\":%d,\"hit\":%d}\n",g_vs_match.elapsed,enemy.id,enemy.x,enemy.y,shot->x,shot->y,shot->angle,width,shot->hit_height,enemy.hitbox_w*.5f,shot->age,int(hit));
             if(!hit)continue;
             if(fixedBeam){
+                if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"fixed-hit\",\"side\":%d,\"id\":%u,\"position\":[%.9g,%.9g],\"shot\":[%.9g,%.9g,%.9g,%.9g],\"damage\":%d}\n",g_vs_match.elapsed,side,enemy.id,enemy.x,enemy.y,shot->x,shot->y,shot->length,shot->hit_height,shot->damage);
                 shot->target_id=enemy.id;
                 // 0x54c7c0 returns the area's damage at every age, including length zero.
                 damage+=shot->damage;
@@ -5381,6 +5393,8 @@ void tick_cpu_opponent(int side=1){
    std::printf("%s[%u,%.9g,%.9g,%d,%u,%u,%d,%.9g,%d,%d,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g]",firstEnemy?"":",",enemy.id,enemy.x,enemy.y,enemy.life,enemy.status_flags,enemy.flags,enemy.spawn_hold,enemy.invulnerability_time,enemy.recoil_pending,enemy.age,enemy.absolute_base_x,enemy.absolute_base_y,enemy.angle,enemy.speed,enemy.vx,enemy.vy,enemy.turn.elapsed,enemy.accelerate.elapsed);
    firstEnemy=false;
   }
+  std::printf("],\"pickups\":[");
+  for(size_t i=0;i<w.pickups.size();++i){const auto&p=w.pickups[i];std::printf("%s[%u,%d,%.9g,%.9g]",i?",":"",p.id,p.state,p.x,p.y);}
   std::printf("],\"lasers\":[");
   bool firstLaser=true;
   for(const auto& laser:w.lasers)if(laser.active){

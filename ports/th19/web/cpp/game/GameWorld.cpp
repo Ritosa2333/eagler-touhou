@@ -371,6 +371,8 @@ bool GameWorld::damage_enemy(Enemy& e,int damage,bool forced,u32 damage_frame){
             e.life_reset_c=i32(u32(e.life_reset_c)-u32(damage));
             e.life=i32((int64_t(e.life_reset_c)-int64_t(e.life_scale_anchor)*7)/7+e.life_scale_anchor);
         }else e.life-=damage;
+        extern bool traceOpeningRng;
+        if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"damage\",\"id\":%u,\"position\":[%.9g,%.9g],\"damage\":%d,\"hp\":%d}\n",battle_frame,e.id,e.x,e.y,damage,e.life);
         auto trigger=e.phases.check(e.life,false);
         if(trigger&&!trigger.sub.empty()){
             e.life=trigger.hp;e.phases.consume(trigger);e.status_flags&=~0x100u;e.pending_phase=trigger.sub;
@@ -624,7 +626,7 @@ int GameWorld::cancel_lasers_region(const std::function<bool(float,float)>& insi
         }
         if(base.straight&&(base.source.type==8||rectangleSample)){ // 0x52c9f0 -> 0x52d680, 16-unit samples.
             std::vector<bool> mask;
-            for(float d=8;(rectangleSample?d+8<=base.length:d+8<base.length)&&mask.size()<512;d+=16){float px=base.x+std::cos(base.angle)*d,py=base.y+std::sin(base.angle)*d;
+            for(float d=8;d+8<=base.length&&mask.size()<512;d+=16){float px=base.x+std::cos(base.angle)*d,py=base.y+std::sin(base.angle)*d;
                 bool cut=rectangleSample?rectangleSample(px,py,base.angle):insideRegion(px,py);mask.push_back(cut);
                 if(cut){++hits;++cancelled_bullets;bullet_cancels.push_back({px,py,212+base.source.color*2});}}
             if(std::none_of(mask.begin(),mask.end(),[](bool b){return b;}))continue;
@@ -638,8 +640,9 @@ int GameWorld::cancel_lasers_region(const std::function<bool(float,float)>& insi
                 if(!kept){
                     // 0x52db90 registers the hit rectangle before the bomb's
                     // rectangular cut. The original segment uses it this tick.
-                    if(rectangleSample)part.cut_contact=base.contact_span();
-                    else part.cut_contact.reset();
+                    // Each cut registers the segment geometry present at that
+                    // call. Later cuts replace the preceding contact rectangle.
+                    part.cut_contact=InfiniteLaser::ContactSpan{base.x,base.y,base.length};
                     part.travel_cap=base.travel_cap;part.travelled=first?offset:base.travelled;
                     part.offscreen_grace=base.offscreen_grace;
                     lasers[i]=part;kept=true;
@@ -819,7 +822,9 @@ void GameWorld::tick_pickups(float px,float py,bool bomb_collect){
         }
         float dx=px-p.x,dy=py-p.y,d=std::hypot(dx,dy);
         // 0x520ecb enables the full-speed pull during the opening bomb ticks.
-        if((py<128&&p.state!=3)||(bomb_collect&&p.state==1)){p.state=3;p.speed=pickup_speed;}
+        // 0x520e72 and 0x521139 admit free or magnetized pickups.
+        // Rising charge points keep state 2 until their upward launch ends.
+        if((py<128&&(p.state==1||p.state==4))||(bomb_collect&&p.state==1)){p.state=3;p.speed=pickup_speed;}
         if(p.state==3){
             const float angle=std::atan2(dy,dx);
             p.vx=float(std::cos(double(angle))*p.speed);
@@ -999,6 +1004,8 @@ void GameWorld::finish_laser_graze(bool player_contacts,float player_radius){
         const bool aura=marisaAuraOverlapsLaser(charge_region,laser,cx,cy,length);
         if(aura)laser.aura_slowed=true; // 0x52de63 sets the 0.75 multiplier for subsequent updates.
         const bool physical=laser.hitsPlayer(player_x,player_y,player_radius+30.f);
+        extern bool traceOpeningRng;
+        if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"laser-graze\",\"id\":%u,\"position\":[%.9g,%.9g],\"angle\":%.9g,\"clock\":%u,\"physical\":%d,\"aura\":%d}\n",battle_frame,laser.id,span.x,span.y,laser.angle,laser.graze_clock,physical,aura);
         if((!aura&&!physical)||laser.hitsPlayer(player_x,player_y,player_radius)||laser.graze_clock++%8!=0)continue;
         // 0x52df1b projects either the player or the Aura's activation point.
         const auto target=physical?ChargeRegion::Point{player_x,player_y}:charge_region.origin;
@@ -1070,8 +1077,8 @@ void GameWorld::advance_guarded_enemy_scripts(){
         auto& enemy=enemies[i-1];
         if(!enemy.active||enemy.spawn_hold)continue;
         // 0x4f9df5 calls 0x509030 before admitting a CPU target.
-        // Converted pure spirits execute ECL here, while movement runs later.
-        if((enemy.status_flags&0x780000u)==0x180000u){
+        // Converted spirits execute ECL here, while movement runs later.
+        if((enemy.status_flags&0x80000u)&&(enemy.status_flags&0x700000u)){
             step_enemy_script(enemy);
             auto& updated=enemies[i-1];
             updated.script_advanced_before_cpu=true;
@@ -1101,7 +1108,8 @@ void GameWorld::advance_bullet(Bullet& b){
     // as it stood on entry. On the release frame case 1 also runs.
     const bool spawning=b.state==2;
     if(spawning){b.x+=b.vx*.5f;b.y+=b.vy*.5f;if(b.animation.ivar[0])b.state=1;}
-    const bool auraSlow=!spawning&&b.state==1&&!(b.flags&0x200)&&charge_region.contains(b.x,b.y,nativeBulletContactRadius(b.kind));
+    const bool auraSlow=!spawning&&b.state==1&&!(b.flags&0x200)&&
+        (!b.reflected||b.scripted||b.age>0)&&charge_region.contains(b.x,b.y,nativeBulletContactRadius(b.kind));
     b.motion_advanced=true;
     if(b.state==1&&b.scripted){
         float spriteWidth=0,spriteHeight=0;
@@ -1135,7 +1143,9 @@ void GameWorld::advance_vs_projectiles(){
         if(b.state==1||b.state==2)cull_vs_bullet(b);
     }
     for(auto& b:bullets)if(b.state==1&&b.reflected&&!b.scripted&&!(b.flags&0x200)){
-        const float movement=charge_region.contains(b.x,b.y,nativeBulletContactRadius(b.kind))?.5f:1.f;
+        // 0x51c058 initializes the reflected bullet's movement factor to one.
+        // Aura contact from its first manager pass affects later updates.
+        const float movement=b.age>0&&charge_region.contains(b.x,b.y,nativeBulletContactRadius(b.kind))?.5f:1.f;
         b.x+=b.vx*movement;b.y+=b.vy*movement;
         b.motion_advanced=true;
         cull_vs_bullet(b);
@@ -1286,7 +1296,7 @@ void GameWorld::tick_wave(bool tickSpiritMeter,
         }
         if(spirit.attack_entry==Enemy::AttackEntry::RetireController){spirit.active=false;continue;}
         const bool guarded_script_updated=spirit.arrival_motion==Enemy::ArrivalMotion::HoldScriptUpdated;
-        const bool script_updated=guarded_script_updated||spirit.script_advanced_before_cpu;
+        bool script_updated=guarded_script_updated||spirit.script_advanced_before_cpu;
         spirit.script_advanced_before_cpu=false;
         const bool hold_motion=spirit.arrival_motion==Enemy::ArrivalMotion::Hold||guarded_script_updated;
         const bool first_arrival_update=spirit.arrival_motion==Enemy::ArrivalMotion::FirstUpdate;
@@ -1299,7 +1309,12 @@ void GameWorld::tick_wave(bool tickSpiritMeter,
         if(!hold_motion&&(spirit.status_flags&0x700000u)&&!(spirit.status_flags&0x80000u)&&
            spirit.vm&&!spirit.callbacks[0].empty()&&in_aura){
             const auto callback=spirit.callbacks[0];
-            if(spirit.vm->start(callback.c_str())){spirit.status_flags|=0x80000u;spirit.spirit_aura_exit=true;}
+            if(spirit.vm->start(callback.c_str())){
+                spirit.status_flags|=0x80000u;spirit.spirit_aura_exit=true;
+                // 0x509030 runs the conversion callback before the arrival's
+                // first displacement, replacing the flight velocity immediately.
+                if(first_arrival_update){step_enemy_script(spirit);script_updated=true;}
+            }
         }
         // 0x50916e halves ordinary enemy displacement in the Aura.
         // 0x50925f reads the separate ECL rate, which stays at 1 in VS.

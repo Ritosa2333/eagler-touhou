@@ -1,0 +1,27 @@
+{
+  "wasmSha256": "5c829be5b95589c928b446164b5c271a1eef2aa28e778d8fd979bc2d648574e8",
+  "nativeTraceSha256": "b631312f23e7cf14df36a30bb1cd786bcecddd62c736f64335de0b9405b428ca",
+  "firstDifferentRngByStream": {
+    "primary": null,
+    "animation": {
+      "frame": 321,
+      "web": 1646528914,
+      "original": 352438177
+    }
+  },
+  "firstDifferentPlayerControls": null,
+  "firstDifferentPlayerPosition": null,
+  "firstDifferentBulletCount": null,
+  "firstDifferentBulletPosition": null,
+  "differentBulletPositionFrames": 0,
+  "frameRollback": {
+    "frames": [
+      5888,
+      5900
+    ],
+    "differences": [],
+    "image": true
+  },
+  "browserErrors": [],
+  "failure": null
+}

@@ -364,6 +364,37 @@ bool installAnmDetachedObserver(){
     FlushInstructionCache(GetCurrentProcess(),entry,5);VirtualProtect(entry,5,protection,&ignored);return true;
 }
 
+using StraightGrazeCall=unsigned(__thiscall*)(unsigned,unsigned);
+StraightGrazeCall originalStraightGraze;
+unsigned __fastcall observeStraightGraze(unsigned self,unsigned,unsigned argument){
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    const int before=read<int>(self+0x3c);
+    const unsigned result=originalStraightGraze(self,argument);
+    if(cpuDebugActive&&GetCurrentThreadId()==captureThread&&detailedFrame(frame,0,0)){
+        if(FILE* output=std::fopen("native-straight-graze.jsonl","ab")){
+            std::fprintf(output,"{\"frame\":%u,\"laser\":%u,\"position\":[%.9g,%.9g],\"angle\":%.9g,\"clock\":[%d,%d],\"contacts\":%d}\n",frame,self,read<float>(self+0x60),read<float>(self+0x64),read<float>(self+0x78),before,read<int>(self+0x3c),read<int>(self+0x864));
+            const auto shape=read<unsigned>(self+0x868);
+            std::fprintf(output,"{\"frame\":%u,\"laser\":%u,\"rectangle\":[%.9g,%.9g,%.9g,%.9g],\"length\":%.9g}\n",frame,self,read<float>(shape),read<float>(shape+4),read<float>(shape+0x18),read<float>(shape+0x1c),read<float>(self+0x7c));
+            std::fclose(output);
+        }
+    }
+    return result;
+}
+bool installStraightGrazeObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0x12dd30);
+    const unsigned char signature[]={0x55,0x8b,0xec,0x83,0xec,0x34};
+    if(std::memcmp(entry,signature,sizeof(signature)))return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,11,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,6);relativeJump(relay+6,reinterpret_cast<unsigned>(entry+6));
+    DWORD protection,ignored;
+    if(!VirtualProtect(entry,6,PAGE_EXECUTE_READWRITE,&protection))return false;
+    originalStraightGraze=reinterpret_cast<StraightGrazeCall>(relay);
+    relativeJump(entry,reinterpret_cast<unsigned>(observeStraightGraze));entry[5]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,6);VirtualProtect(entry,6,protection,&ignored);return true;
+}
+
 void* originalFieldRay;
 void __cdecl recordFieldRay(float angle,unsigned origin){
     const auto game=read<unsigned>(gameBase+0x1d1a54);
@@ -1206,6 +1237,14 @@ unsigned __fastcall observeCpuControl(unsigned self,unsigned unused){
             for(unsigned word=0;word<15;++word)std::fprintf(output,"%s%u",word?",":"",read<unsigned>(self+4+i*60+word*4));
             std::fputc(']',output);
         }
+        std::fputs("],\"pickups\":[",output);
+        const auto manager=read<unsigned>(read<unsigned>(self+0x36eec8)+0xc);
+        auto node=manager?read<unsigned>(manager+0xff85c):0;
+        for(unsigned index=0;node&&index<4096;++index){
+            const auto item=read<unsigned>(node);
+            std::fprintf(output,"%s[%u,%u,%.9g,%.9g]",index?",":"",item,read<unsigned>(item+0xcc8),read<float>(item+0xc80),read<float>(item+0xc84));
+            node=read<unsigned>(node+4);
+        }
         std::fputs("]}\n",output);std::fclose(output);
     }
     return result;
@@ -1348,6 +1387,7 @@ extern "C" IDirect3D9* WINAPI observeCreate9(UINT sdkVersion) {
         if (rngTrace&&cpuDebugActive) std::fprintf(trace,"{\"fieldRayObserverInstalled\":%s}\n",installFieldRayObserver()?"true":"false");
         if (rngTrace&&cpuDebugActive) std::fprintf(trace,"{\"anmChildObserverInstalled\":%s}\n",installAnmChildObserver()?"true":"false");
         if (rngTrace&&cpuDebugActive) std::fprintf(trace,"{\"anmDetachedObserverInstalled\":%s}\n",installAnmDetachedObserver()?"true":"false");
+        if(rngTrace&&cpuDebugActive)std::fprintf(trace,"{\"straightGrazeObserverInstalled\":%s}\n",installStraightGrazeObserver()?"true":"false");
         captureBulletPositions=GetEnvironmentVariableA("TH19_CAPTURE_BULLET_POSITIONS",nullptr,0)>0;
         if(const char* frames=std::getenv("TH19_CAPTURE_IMAGE_FRAMES")){
             while(*frames){
