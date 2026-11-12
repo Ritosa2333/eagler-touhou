@@ -60,7 +60,7 @@ export function multiplayerTransportRoomId(product: string, roomCode: string): s
 
 export function buildMultiplayerLobbyRelayUrl(
   baseUrl: string,
-  { product, roomCode, clientId, memberId, intent, visibility, disableCheatMovement, disableLocalChargePriority, disableFocus, ballCount, initialSpares, initialBombs, challengeMode, chapterThreshold, th19Rules, prankMode, playerCount, difficulty }: { product: string; roomCode: string; clientId: string; memberId?: string; intent?: string; visibility?: "public" | "private"; disableCheatMovement?: boolean; disableLocalChargePriority?: boolean; disableFocus?:boolean; ballCount?:number; initialSpares?:number; initialBombs?:number; challengeMode?:boolean; chapterThreshold?:number; th19Rules?:number[]; prankMode?:boolean; playerCount?: number; difficulty?: number },
+  { product, roomCode, clientId, memberId, intent, visibility, disableCheatMovement, disableLocalChargePriority, disableFocus, showHitboxes, ballCount, initialSpares, initialBombs, challengeMode, chapterThreshold, th19Rules, prankMode, playerCount, difficulty }: { product: string; roomCode: string; clientId: string; memberId?: string; intent?: string; visibility?: "public" | "private"; disableCheatMovement?: boolean; disableLocalChargePriority?: boolean; disableFocus?:boolean; showHitboxes?:boolean; ballCount?:number; initialSpares?:number; initialBombs?:number; challengeMode?:boolean; chapterThreshold?:number; th19Rules?:number[]; prankMode?:boolean; playerCount?: number; difficulty?: number },
 ): MultiplayerLobbyRelayUrl {
   const url = relayUrl(baseUrl);
   clearRelayRole(url);

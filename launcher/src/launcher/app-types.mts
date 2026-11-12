@@ -76,6 +76,7 @@ export interface MultiplayerRoomState {
   disableCheatMovement?: boolean;
   disableLocalChargePriority?: boolean;
   disableFocus?: boolean;
+  showHitboxes?: boolean;
   ballCount?: number;
   challengeMode?: boolean;
   chapterThreshold?: number;

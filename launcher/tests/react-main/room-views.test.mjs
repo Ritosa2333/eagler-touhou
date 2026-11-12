@@ -172,6 +172,10 @@ test('TH01 ball count is host controlled and reaches runtime options',async()=>{
 test('TH03 focus rule belongs to the host and reaches runtime options',async()=>{
   const f=await fixture({product:'th03mp',locale:'zh-CN'}).live();await mountRoom(f,{panel:{kind:'game'}});
   const toggle=n('#mpTh03DisableFocus');assert.equal(toggle.getAttribute('aria-checked'),'false');
+  const hitboxes=n('#mpTh03ShowHitboxes');assert.equal(hitboxes.getAttribute('aria-checked'),'false');
+  await click('#mpTh03ShowHitboxes');assert.equal(f.socket.sent.findLast(m=>m.type==='settings').showHitboxes,true);
+  await f.receive({showHitboxes:true});assert.equal(hitboxes.getAttribute('aria-checked'),'true');
+  assert.equal(f.service.runtimeOptions().netplayShowHitboxes,true);
   assert.equal(f.service.runtimeOptions().netplayDisableFocus,true);
   assert.equal(toggle.getAttribute('aria-label'),'启用低速');
   await click('#mpTh03DisableFocus');assert.equal(f.socket.sent.findLast(m=>m.type==='settings').disableFocus,false);

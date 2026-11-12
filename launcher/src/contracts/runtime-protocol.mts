@@ -122,6 +122,7 @@ export interface RuntimeConfigureOptions {
   netplayChallengeMode?: boolean;
   netplayDisableLocalChargePriority?: boolean;
   netplayDisableFocus?: boolean;
+  netplayShowHitboxes?: boolean;
   netplayBallCount?: number;
   netplayTh19Rules?: number[];
   netplayChapterThreshold?: number;
@@ -187,6 +188,7 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   netplayChallengeMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "TH06/TH07/TH08/TH10 multiplayer; fixed before start" }),
   netplayDisableLocalChargePriority: Object.freeze({requirement: "profile-required", capability: "multiplayer", when: "TH09 multiplayer; true restores native charge progression and Replay; fixed before HELLO"}),
   netplayBallCount: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH01 multiplayer ball count"}),
+  netplayShowHitboxes: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH03 multiplayer room display rule"}),
   netplayDisableFocus: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH02 and TH03 multiplayer room rule; fixed before HELLO"}),
   netplayTh19Rules: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH19 only; nine native rule and card-selection indices; immutable after start"}),
   netplayChapterThreshold: Object.freeze({requirement: "profile-required", capability: "multiplayer", when: "TH15 multiplayer chapter reward; 500000–5000000 in steps of 250000; immutable after start"}),

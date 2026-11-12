@@ -391,7 +391,7 @@ function getRoom(id, socket) {
         visibility: 'public',
         disableCheatMovement: false,
         ...(id.startsWith('th09mp-') ? {disableLocalChargePriority:false} : {}),
-        ...(id.startsWith('th03mp-') ? {disableFocus:true} : id.startsWith('th02mp-') ? {disableFocus:false} : {}),
+        ...(id.startsWith('th03mp-') ? {disableFocus:true,showHitboxes:false} : id.startsWith('th02mp-') ? {disableFocus:false} : {}),
         ...(id.startsWith('th01mp-') ? {ballCount:2} : {}),
         ...(pc98StockRoom(id)?{initialSpares:PC98_INITIAL_STOCK.spares,initialBombs:PC98_INITIAL_STOCK.bombs}:{}),
         ...(id.startsWith("th15mp-")
@@ -889,6 +889,7 @@ function lobbySnapshot(room) {
     disableCheatMovement: room.lobby.disableCheatMovement,
     ...(room.id.startsWith('th09mp-') ? {disableLocalChargePriority:room.lobby.disableLocalChargePriority} : {}),
     ...((room.id.startsWith('th02mp-') || room.id.startsWith('th03mp-')) ? {disableFocus:room.lobby.disableFocus} : {}),
+    ...(room.id.startsWith('th03mp-') ? {showHitboxes:room.lobby.showHitboxes===true} : {}),
     ...(room.id.startsWith('th01mp-') ? {ballCount:room.lobby.ballCount} : {}),
     ...(pc98StockRoom(room.id)?{initialSpares:room.lobby.initialSpares,initialBombs:room.lobby.initialBombs}:{}),
     ...(room.id.startsWith('th19mp-')?{th19Rules:[...room.lobby.th19Rules]}:{}),
@@ -1551,6 +1552,8 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       const disableLocalChargePriority=message.disableLocalChargePriority ?? room.lobby.disableLocalChargePriority;
       if(message.disableFocus!==undefined&&(!(room.id.startsWith('th02mp-')||room.id.startsWith('th03mp-'))||typeof message.disableFocus!=='boolean')){sendLobby(socket,{type:'error',error:'invalid focus rule'});return;}
       const disableFocus=message.disableFocus??room.lobby.disableFocus;
+      if(message.showHitboxes!==undefined&&(!room.id.startsWith('th03mp-')||typeof message.showHitboxes!=='boolean')){sendLobby(socket,{type:'error',error:'invalid hitbox rule'});return;}
+      const showHitboxes=message.showHitboxes??room.lobby.showHitboxes;
       if(message.ballCount!==undefined && (!room.id.startsWith('th01mp-') || ![1,2,3,4,6,8].includes(message.ballCount))){sendLobby(socket,{type:'error',error:'invalid ball count'});return;}
       const ballCount=message.ballCount??room.lobby.ballCount;
       if(pc98StockRoom(room.id)&&(!validPc98InitialSpares(message.initialSpares??room.lobby.initialSpares)||!validPc98InitialBombs(message.initialBombs??room.lobby.initialBombs))){sendLobby(socket,{type:'error',error:'invalid initial stock'});return;}
@@ -1571,6 +1574,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.disableCheatMovement !== disableCheatMovement ||
         room.lobby.disableLocalChargePriority !== disableLocalChargePriority ||
         room.lobby.disableFocus !== disableFocus ||
+        room.lobby.showHitboxes !== showHitboxes ||
         room.lobby.ballCount !== ballCount ||
         room.lobby.initialSpares !== initialSpares || room.lobby.initialBombs !== initialBombs ||
         room.lobby.challengeMode !== challengeMode ||
@@ -1582,6 +1586,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.disableCheatMovement = disableCheatMovement;
         if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=disableLocalChargePriority;
         if(room.id.startsWith('th02mp-')||room.id.startsWith('th03mp-'))room.lobby.disableFocus=disableFocus;
+        if(room.id.startsWith('th03mp-'))room.lobby.showHitboxes=showHitboxes;
         if(room.id.startsWith('th01mp-'))room.lobby.ballCount=ballCount;
         if(pc98StockRoom(room.id)){room.lobby.initialSpares=initialSpares;room.lobby.initialBombs=initialBombs;}
         room.lobby.challengeMode = challengeMode;

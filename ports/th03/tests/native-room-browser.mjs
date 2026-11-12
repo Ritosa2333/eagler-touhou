@@ -71,7 +71,8 @@ try{
     assert(await frame.evaluate(()=>!globalThis.__th03PeerTransport),'game check must not open gameplay transport');
     await host.screenshot({path:resolve(out,'preflight.png')});console.log('PASS main room check presents native title without gameplay transport');
   }else{
-  if(round==='match-1')await host.$eval('#mpTh03DisableFocus',button=>button.click());
+  if(round==='match-1'&&process.env.TH03_HITBOX_OFF!=='1'){await host.$eval('#mpTh03DisableFocus',button=>button.click());await host.$eval('#mpTh03ShowHitboxes',button=>button.click());await wait(async()=>(await Promise.all(pages.map(page=>page.$eval('#mpTh03ShowHitboxes',el=>el.getAttribute('aria-checked'))))).every(v=>v==='true'),'shared hitbox rule');}
+  if(round==='match-2'){await host.$eval('#mpTh03ShowHitboxes',button=>button.click());await wait(async()=>(await Promise.all(pages.map(page=>page.$eval('#mpTh03ShowHitboxes',el=>el.getAttribute('aria-checked'))))).every(v=>v==='false'),'shared hitbox rule disabled');}
   for(const page of pages)await page.click('#mpReady');
   if(sharedContext)await host.bringToFront();
   await host.waitForFunction(()=>document.querySelector('#mpStartGame')?.disabled===false,{timeout:30000});
@@ -83,6 +84,7 @@ try{
     channel.send=text=>setTimeout(()=>{if(channel.readyState==='open')send(text);},delay);
   },Number(process.env.TH03_NETWORK_DELAY_MS));
   assert((await Promise.all(frames.map(frame=>frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health().scene)))).every(scene=>scene===3),'room launch starts at native character selection');
+  if(round==='match-2')for(const frame of frames){const state=await frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health());assert.equal(state.showHitboxes,false);assert.deepEqual(state.visibleHitPoints,[]);}
   for(const frame of frames)assert(await frame.evaluate(()=>!!document.querySelector('#canvas')&&!document.querySelector('.masthead,.mode-nav')),'managed room uses its own game surface');
   await wait(async()=>{const states=await Promise.all(frames.map(frame=>frame.evaluate(async()=>{const m=await import('./managed-native-room.mjs');return m.managedAPI.health();})));return states.every(s=>s.confirmed>=120&&s.frames>0);},'main room confirmed gameplay');
   const selectionStart=await Promise.all(frames.map(frame=>frame.evaluate(async()=>{const s=(await import('./managed-native-room.mjs')).managedAPI.health();return {frame:s.gameFrame,at:performance.now()};})));
@@ -154,13 +156,12 @@ try{
       await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+100,y,id:1}]});await new Promise(r=>setTimeout(r,400));await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
       await wait(async()=>frames[0].evaluate(async old=>(await import('./managed-native-room.mjs')).managedAPI.health().players.find(p=>p.seat===0)?.x>old,before),'real room touch moves player',10000);await cdp.detach();console.log('PASS room touch surface and released fire');
     }
-    await host.bringToFront();await host.keyboard.down('Space');
-    await wait(async()=>frames[0].evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health().localHitPoint),'local focus point appears',10000);
-    await frames[0].evaluate(()=>__eaglerPC98Options().focusHitboxEnabled=false);
-    await wait(async()=>frames[0].evaluate(async()=>!(await import('./managed-native-room.mjs')).managedAPI.health().localHitPoint),'local focus point hidden',10000);
-    await frames[0].evaluate(()=>__eaglerPC98Options().alwaysHitbox=true);await host.keyboard.up('Space');
-    await wait(async()=>frames[0].evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health().localHitPoint),'local always point remains visible',10000);
-    await frames[0].evaluate(()=>{__eaglerPC98Options().alwaysHitbox=false;__eaglerPC98Options().focusHitboxEnabled=true;});console.log('PASS room focus and local point switches');
+    for(const frame of frames){
+      await frame.evaluate(()=>{__eaglerPC98Options().alwaysHitbox=false;__eaglerPC98Options().focusHitboxEnabled=false;});
+      const state=await frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health());
+      assert.equal(state.showHitboxes,process.env.TH03_HITBOX_OFF!=='1');assert.deepEqual(state.visibleHitPoints,process.env.TH03_HITBOX_OFF==='1'?[]:[0,1]);
+    }
+    console.log('PASS shared hitbox rule shows both players regardless of local settings');
     const touchChecks=await frames[0].evaluate(()=>{
       const input=__eaglerPC98Input,options=__eaglerPC98Options();options.touchEnabled=false;
       input.touch({fireEnabled:true,focusEnabled:true,bombSerial:1,escapeSerial:1,joystickX:1,joystickY:1});

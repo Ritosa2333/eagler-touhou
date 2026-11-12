@@ -44,6 +44,10 @@ try {
   assert(changed.room.seats.slice(0,2).every(s=>!s.ready));assert(changed.room.settingsVersion>first.room.settingsVersion);await guest.wait(m=>m.room?.disableFocus===false);
   const denied=await send(guest,{type:'settings',playerCount:2,difficulty:1,disableFocus:true},m=>m.type==='error');assert(denied.error);
   await send(host,{type:'settings',playerCount:2,difficulty:1,disableFocus:'yes'},m=>m.type==='error');
+  const hitboxes=await send(host,{type:'settings',playerCount:2,difficulty:1,showHitboxes:true},m=>m.room?.showHitboxes===true);
+  assert.equal(hitboxes.room.showHitboxes,true);await guest.wait(m=>m.room?.showHitboxes===true);
+  const forbidden=await send(guest,{type:'settings',playerCount:2,difficulty:1,showHitboxes:false},m=>m.type==='error');assert(forbidden.error);
+  await send(host,{type:'settings',playerCount:2,difficulty:1,showHitboxes:'yes'},m=>m.type==='error');
   console.log('TH03 relay focus rule, host authority and ready reset PASS');
 } finally {
   for(const socket of sockets)if(socket.readyState<2)socket.terminate();
