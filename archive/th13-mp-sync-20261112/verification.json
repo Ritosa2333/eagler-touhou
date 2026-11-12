@@ -1,0 +1,149 @@
+{
+  "schema": "th13-mp/commit-handoff/1",
+  "baseline": "6c0a4a67d",
+  "deliveryPassed": false,
+  "rendering": "GPU omitted at user request; no framebuffer certification",
+  "productionWasmSha256": "5038d1aa8c459322bade844ceca572469dbca0f640b264d9aeaec60d1f8e9c1d",
+  "spectatorFix": {
+    "status": "directed-native-and-real-relay-passed",
+    "checks": 12656,
+    "failures": 0,
+    "seconds": 2.3745468470006017,
+    "oldAdapterFailureCount": 39,
+    "oldAdapterChecks": 12650,
+    "recordedVsContinuousViewerStateComparisons": 693,
+    "capacityFrames": 279620,
+    "byteLimit": 16777216,
+    "legacyFrameLimit": 108000,
+    "independentlyReviewed": true
+  },
+  "remaining": [
+    "Formal RTC/Relay x RTT0/50/100 complete Normal/Extra launcher campaigns",
+    "Formal three-browser complete Lunatic campaign",
+    "Sustained wire-loss repair and wall-clock input latency acceptance",
+    "Every-confirmed-frame complete audit >=8x",
+    "GPU/framebuffer certification omitted by request"
+  ],
+  "retainedFailures": {
+    "endingController": "original child17/parent31: exact 8-character fixture expectation versus legally saved empty name; independent full archive decoder passed",
+    "longAudit": "Normal/Lunatic omitted complete_loading in original driver; missing terminal/partial tail; all original exits-15 retained",
+    "expandedLauncherUi": {
+      "passed": 1650,
+      "failed": 62,
+      "notExecuted": 326,
+      "causality": "not established"
+    }
+  },
+  "localEvidenceRoot": "/work/artifacts/mp-sync-20261112",
+  "evidence": [
+    {
+      "path": "spectator-prefix/SPECTATOR-PREFIX-REVIEW.md",
+      "sha256": "7730edadb54b3e2a0385a0c9b5b860c516ad101e92cd585e5efa1d5e44cb283d"
+    },
+    {
+      "path": "spectator-prefix/spectator-prefix-review.json",
+      "sha256": "036482acd357efdbf11e9d5552b5d9b8778cf923ca12691238cd8f24e9e7dc07"
+    },
+    {
+      "path": "spectator-prefix/current-v3/process.json",
+      "sha256": "1825c92c9b36c918d3404931d6260a9a201cb149e48b036c9efabe0d64f25ec1"
+    },
+    {
+      "path": "spectator-prefix/historical-negative-v3/process.json",
+      "sha256": "0639fdb25989898ed4f6745e1d222eaaaffc82be49256efc91f90a0d7c9983d6"
+    },
+    {
+      "path": "spectator-prefix-fix/real-relay-v1.json",
+      "sha256": "e1f14194896ec0edf3a1a459c6cf173c6f385ddca18ed0380da7734686e220f4"
+    },
+    {
+      "path": "spectator-prefix-fix/relay-stages.json",
+      "sha256": "68e5fd9657ebf00e32ed11ff3c6a539ec91feaef169df000d3a9c688bbb29e24"
+    },
+    {
+      "path": "spectator-prefix-fix/relay-existing-live.json",
+      "sha256": "aaf07e08f64595c1d14123f4e618f6494d845cf8cc79b610d0d8aeb9998456ff"
+    },
+    {
+      "path": "spectator-prefix-fix/common-test-v3.json",
+      "sha256": "ac6ceec9cd4bc78d44364f2983f0869a5c1ef30e7e0921b2a5bbb4205ba1b6aa"
+    },
+    {
+      "path": "spectator-prefix-fix/wasm-final-build-receipt.json",
+      "sha256": "bd65e137b56542f8505d2425235923fd45def3d52bb6691256504bb669fcb0e1"
+    },
+    {
+      "path": "commit-prep/checks.json",
+      "sha256": "de137b4d1e9f7f35e8b8cd090a7e1585584d1c670a08699282c8a8970f118213"
+    },
+    {
+      "path": "ending-clip-v2-independent/review.json",
+      "sha256": "2fa1f0bfbfcaf6fbdd45d1eb9449bc926ec27adec9b9263cb237b2f7c9210bf9"
+    },
+    {
+      "path": "native-fastlogic-final-independent/final-review.json",
+      "sha256": "e4d3d580cb8bae98bd5ff8172da8e3f37b8fac433358fc1d552a420aacd37f1c"
+    },
+    {
+      "path": "spectator-prefix-independent/REVIEW.md",
+      "sha256": "c52a98ff7099b7b1462f2863a6d8b6a3223efaae7a0640c012fe93c5f67ac6ba"
+    },
+    {
+      "path": "spectator-prefix-independent/review.json",
+      "sha256": "928c04f68ea65ac04bace12b1d628d87069353aa108e2561251645386edf2cf6"
+    },
+    {
+      "path": "commit-prep/native-final-process.json",
+      "sha256": "98d2c804b88079f319ad03b3e56f2c676f2610a79c68d49d83cadd4e3388c36c"
+    },
+    {
+      "path": "commit-prep/native-final-report.json",
+      "sha256": "1ef8f368266e87dcd4ab6a49ba7c3037c93acc4b9009cc7f24a08f630ef479a6"
+    },
+    {
+      "path": "commit-prep/native-source-identity.json",
+      "sha256": "9026bcb82805800f54f04be8483d64cce48281ebe74c8af678052a06fce1b7f6"
+    },
+    {
+      "path": "commit-prep/history-writeback-applied.json",
+      "sha256": "e6072db062b8e9b42ee403c36fd23dfdee81ca0e792f6da6285792677e66e3f8"
+    },
+    {
+      "path": "commit-prep/port-history-after-writeback.json",
+      "sha256": "676b713b20143f4e1d5caa8e049393cc634eabfbb8a753bf453225e18cf14d76"
+    },
+    {
+      "path": "commit-prep/history-source-check.json",
+      "sha256": "06d38b264db4dfae7d8ddf4532410f490b273f814975629ae297d79fec95ffcd"
+    },
+    {
+      "path": "commit-prep/history-source-check-v2.json",
+      "sha256": "4cb40b67f197958fcc7c7ca37c7dbf59f1ecb1a19c8495c39584855873ad85f4"
+    }
+  ],
+  "assetsIncluded": false,
+  "deployed": false,
+  "nativeCumulative": {
+    "cases": 56,
+    "passed": 56,
+    "assertions": 69987,
+    "skipped": 0,
+    "exitCode": 0,
+    "seconds": 39.44708927000465,
+    "sourceDigest": "9026bcb82805800f54f04be8483d64cce48281ebe74c8af678052a06fce1b7f6"
+  },
+  "commits": [
+    "dc9a747eee712649f8b06b5d31120cd4da300ec0",
+    "ec57e3c9188f0ee91f5975963275a2fcc91ed422",
+    "2a93ac2d257ead45bec953ed0cca5f5d4dcefa86",
+    "01abb4ae53cd17a6cccf847914c7eaad416969e1",
+    "3da0ed775c0a00177f61677f578474aff2e1ae37",
+    "724446c00d19addc90cc00d3e660beee6ea400b6"
+  ],
+  "sourceHistoryCheck": {
+    "passed": true,
+    "verifiedExport": "154f31df4c1f5552de7a2abbab07b736465d72fd",
+    "tool": "Official Git v2.51.0 git-subtree, installed locally under ignored artifacts",
+    "initialEnvironmentFailure": "Container Git 2.39.5 subtree rejects --quiet; original failure retained. No repository checker edit."
+  }
+}
