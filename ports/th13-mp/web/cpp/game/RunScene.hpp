@@ -194,6 +194,8 @@ class RunScene final : private StageDialogHost, private MsgHost, private PostGam
     MsgAdvance dialogue_advance_{};  // Update 20 锁存同一有效输入，Update 28 消费。
     bool dialogue_update_pending_ = false;
     i32 dialogue_rows_ = 0;     // 上一 update 已提交的正文行数（0 = 无文本）
+    u32 team_wipe_frames_ = 0;
+    bool team_wipe_game_over_ = false;
     // 对话立绘/名牌 VM 面（0x428ae0 opcode 1/2/20/31 可视指令；见 MsgPresentation）。
     std::unique_ptr<MsgPresentation> msg_presentation;
     PostGameFlow post_flow;
@@ -285,6 +287,62 @@ public:
     bool inject_shake(ScreenShake effect) { return start_shake(effect); }
     // 对话观测：MsgPlayer 只读面（clock/active——快照等价 case 的对拍点）。
     u32 dialog_clock() const { return dialog.clock(); }
+    struct RollbackState {
+        PostGameFlow::RollbackState post;
+        GameHud::RollbackState hud;
+        SpellPresentation::RollbackState spell;
+        MsgPresentation::RollbackState portraits;
+        ScorePopups::RollbackState popups;
+        LaserPresentation::SnapshotData lasers;
+        Vec3 camera_origin, screen_translation, reference_position, background_delta, stage_direction;
+        Vec2 shake_offset;
+        GameRandom environment_rng{0};
+        float animation_rate;
+        bool paused;
+        i32 dialogue_rows;
+        Timer age;
+        bool player_activation_pending;
+        bool transition_wait, scenery_started;
+        u32 team_wipe_frames;
+        bool team_wipe_game_over;
+    };
+    RollbackState capture_rollback() const {
+        return {post_flow.capture_rollback(), hud.capture_rollback(),
+                spell_presentation ? spell_presentation->capture_rollback() : SpellPresentation::RollbackState{},
+                msg_presentation ? msg_presentation->capture_rollback() : MsgPresentation::RollbackState{},
+                score_popups.capture_rollback(),
+                laser_presentation ? laser_presentation->capture() : LaserPresentation::SnapshotData{},
+                environment.camera_origin, environment.screen_translation, environment.reference_position,
+                environment.background_delta, environment.stage_direction, environment.screen_shake_offset,
+                environment.game_rng, animations.rate, environment.paused, dialogue_rows_,
+                age, player_effect_activation_pending,
+                transition_wait, scenery_started, team_wipe_frames_, team_wipe_game_over_};
+    }
+    void restore_rollback(const RollbackState& state,
+            std::unordered_map<const AnmVm*, AnmVm*>& remapped) {
+        post_flow.restore_rollback(state.post);
+        hud.restore_rollback(state.hud);
+        if (spell_presentation) spell_presentation->restore_rollback(state.spell);
+        if (msg_presentation) msg_presentation->restore_rollback(state.portraits);
+        score_popups.restore_rollback(state.popups);
+        if (laser_presentation) laser_presentation->restore(state.lasers, remapped);
+        environment.camera_origin = state.camera_origin;
+        environment.screen_translation = state.screen_translation;
+        environment.reference_position = state.reference_position;
+        environment.background_delta = state.background_delta;
+        environment.stage_direction = state.stage_direction;
+        environment.screen_shake_offset = state.shake_offset;
+        environment.game_rng = state.environment_rng;
+        animations.rate = state.animation_rate;
+        environment.paused = state.paused;
+        dialogue_rows_ = state.dialogue_rows;
+        age = state.age;
+        player_effect_activation_pending = state.player_activation_pending;
+        transition_wait = state.transition_wait;
+        scenery_started = state.scenery_started;
+        team_wipe_frames_ = state.team_wipe_frames;
+        team_wipe_game_over_ = state.team_wipe_game_over;
+    }
     bool draw();
     bool draw_stage(u32 pass);  // 战斗直绘（initialize 注册的 4 个 Draw 回调）
     bool draw_scenery(u32 pass);  // STD 背景（层 0-7 背景组 / 8-11 前景组）

@@ -1,9 +1,11 @@
 // M6：WorldState 实现——capture/restore/digest（头文件注释即契约）。
 #include "WorldState.hpp"
+#include "HostState.hpp"
 
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <sstream>
 
 namespace th13::multiplayer {
 
@@ -12,6 +14,7 @@ namespace th13::multiplayer {
 // 具名作用域（非匿名）：WorldState.hpp 的成员声明前向引用此类。
 class DigestSink {
 public:
+    void vm(const AnmVm& value);
     void tag(const char* text) {
         mix(0x9e3779b97f4a7c15ull ^ static_cast<uint64_t>(std::strlen(text)));
         for (const char* p = text; *p; ++p) mix(static_cast<uint8_t>(*p));
@@ -19,13 +22,16 @@ public:
     }
     void u8(uint8_t value) { mix(value); }
     void u32(uint32_t value) {
+        // Four zero bytes multiply by P^4 modulo 2^64. Keep the exact
+        // serialized bytes while avoiding four dependent multiplies.
+        if (value == 0) { zero_bytes_ += 4; return; }
         mix(value & 0xffu); mix((value >> 8) & 0xffu);
         mix((value >> 16) & 0xffu); mix((value >> 24) & 0xffu);
     }
     void i32(int32_t value) { u32(static_cast<uint32_t>(value)); }
     void u64(uint64_t value) {
-        for (unsigned shift = 0; shift < 64; shift += 8)
-            mix(static_cast<uint8_t>(value >> shift));
+        u32(static_cast<uint32_t>(value));
+        u32(static_cast<uint32_t>(value >> 32));
     }
     void f32(float value) {
         static_assert(sizeof(float) == 4, "digest requires float32");
@@ -34,11 +40,67 @@ public:
         u32(bits);
     }
     void boolean(bool value) { u8(value ? 1 : 0); }
-    uint64_t value() const { return state_; }
+    uint64_t value() const { return with_zeros(state_, zero_bytes_); }
 private:
-    void mix(uint8_t byte) { state_ ^= byte; state_ *= 0x100000001b3ull; }
+    static uint64_t with_zeros(uint64_t state, uint64_t count) {
+        static const auto powers = [] {
+            std::array<uint64_t, 1025> result{};
+            result[0] = 1;
+            for (size_t i = 1; i < result.size(); ++i)
+                result[i] = result[i - 1] * 0x100000001b3ull;
+            return result;
+        }();
+        while (count > 1024) { state *= powers[1024]; count -= 1024; }
+        return state * powers[count];
+    }
+    void mix(uint8_t byte) {
+        if (!byte) { ++zero_bytes_; return; }
+        if (zero_bytes_) { state_ = with_zeros(state_, zero_bytes_); zero_bytes_ = 0; }
+        state_ ^= byte; state_ *= 0x100000001b3ull;
+    }
+    uint64_t zero_bytes_ = 0;
     uint64_t state_ = 0xcbf29ce484222325ull;
 };
+
+} // namespace th13::multiplayer
+#include "WorldDigestValues.hpp"
+namespace th13::multiplayer {
+void DigestSink::vm(const AnmVm& v) {
+    digest_value(*this,std::tie(v.shot_effect_owner,v.presentation_motion,v.presentation_part,
+        v.variables,v.visual,v.interpolators,v.timer,v.age,v.instruction_offset,v.visible,
+        v.pending_interrupt,v.geometry,v.slowdown,v.source_script,v.ordering,v.saved_offset,v.saved_timer));
+    tag("anm.bindings");
+    boolean(v.resource!=nullptr);
+    if(v.resource)u64(v.resource->content_identity());
+    boolean(v.sprite_resource!=nullptr);
+    if(v.sprite_resource)u64(v.sprite_resource->content_identity());
+    // Use the actual bound pointers, not source_script/visual.sprite: those
+    // retain the original file-local fields, including fallback selections.
+    const auto script_index=v.resource?v.resource->script_index(v.script):(v.script?-2:-1);
+    i32(script_index);
+    if(script_index==-2 && v.script)u64(anm_script_identity(*v.script));
+    const auto* sprite_source=v.sprite_resource?v.sprite_resource:v.resource;
+    const auto sprite_index=sprite_source?sprite_source->sprite_index(v.sprite):(v.sprite?-2:-1);
+    i32(sprite_index);
+    if(sprite_index==-2 && v.sprite) {
+        const auto& s=*v.sprite;
+        digest_value(*this,std::tie(s.source_id,s.texture,s.x,s.y,s.width,s.height,s.u0,s.v0,s.u1,s.v1));
+    }
+}
+
+uint64_t WorldState::digest_dialogue(const DialogueText::RollbackState& state) {
+    DigestSink d;
+    d.tag("host.dialogue");
+    digest_value(d, std::tie(state.handles, state.text, state.block, state.cached,
+        state.lines, state.box, state.anchor_y, state.anchor_y_set));
+    for (const auto& region : state.regions)
+        digest_value(d, std::tie(region.x, region.y, region.width, region.height));
+    d.boolean(state.texture != 0);
+    d.boolean(state.pixel_texture != 0);
+    d.boolean(bool(state.pixels));
+    if (state.pixels) digest_value(d, *state.pixels);
+    return d.value();
+}
 
 void digest_timer(DigestSink& d, const char* tag, const Timer& timer) {
     d.tag(tag);
@@ -61,6 +123,7 @@ void digest_player_state(DigestSink& d, const StagePlayerState& state) {
     d.i32(state.fixed_x); d.i32(state.fixed_y);
     d.boolean(state.focus); d.boolean(state.dead); d.boolean(state.ghost);
     d.u8(state.life_transfer_state);
+    d.u8(state.power_transfer_state);
     d.i32(static_cast<i32>(state.phase));
     d.i32(state.phase_frame); d.i32(state.invulnerable);
     d.i32(state.phase_frame_previous);
@@ -85,6 +148,7 @@ void digest_player_state(DigestSink& d, const StagePlayerState& state) {
         digest_timer(d, "shot.damage_clock", shot.damage_clock);
         d.u32(shot.target_serial); d.u32(shot.generation);
         d.i32(shot.hit_behavior); d.boolean(shot.sine_moving);
+        digest_value(d, shot.sine_motion);
         d.i32(shot.registration_slot);
         d.boolean(shot.beam_contact); d.boolean(shot.beam_contact_seen);
         d.i32(shot.beam_interrupt); d.i32(shot.owner_seat);
@@ -127,6 +191,7 @@ void digest_player_state(DigestSink& d, const StagePlayerState& state) {
     for (const auto& history : state.movement_history)
         for (i32 value : history) d.i32(value);
     d.i32(state.option_power);
+    d.boolean(state.option_reset_pending); d.boolean(state.option_movement_tick);
     d.boolean(state.death_option_rebuild);
     d.boolean(state.respawn_damage.active);
     d.f32(state.respawn_damage.center.x); d.f32(state.respawn_damage.center.y);
@@ -176,23 +241,102 @@ void digest_player_state(DigestSink& d, const StagePlayerState& state) {
     }
     d.i32(state.character); d.f32(state.hit_size);
     d.boolean(state.trance_protection);
-    // youmu_bomb 池：YoumuBomb 私有——经只读视图 digest（cursor/槽域全量）。
-    for (int slot = 0; slot < YoumuBomb::kSlots; ++slot) {
-        d.boolean(state.youmu_bomb.has_anm(slot));
-        d.f32(state.youmu_bomb.scale(slot));
-        d.f32(state.youmu_bomb.rect_scale(slot));
-        d.f32(state.youmu_bomb.lane_y(slot));
-        d.f32(state.youmu_bomb.angle(slot));
-        d.i32(state.youmu_bomb.script(slot));
-    }
-    d.i32(state.youmu_bomb.cursor());
+    state.youmu_bomb.visit_state([&](const auto&... values) {
+        digest_value(d, std::tie(values...));
+    });
 }
 
 void digest_hud_player(DigestSink& d, const HudPlayerState& hud) {
     d.i32(hud.extra_lives); d.i32(hud.life_pieces);
+    d.i32(hud.life_piece_threshold_index);
     d.i32(hud.bombs); d.i32(hud.bomb_pieces);
     d.i32(hud.power); d.i32(hud.max_power); d.i32(hud.power_step);
     d.i32(hud.deaths); d.u32(hud.mode_flags);
+}
+
+static void digest_registry(DigestSink&, const AnmRegistry::SnapshotData&);
+
+uint64_t WorldState::digest_host(const HostState& state) {
+    DigestSink d;
+    d.tag("host.application");
+    const auto& s = state.state_fields;
+    digest_value(d, std::tie(s.frames, s.pending_destination, s.pending_load,
+        s.record_edge_reset_pending, s.spell_time_stage, s.spell_clock_active,
+        s.spell_clock_index, s.stage_transition_loading, s.stage_transition_active,
+        s.stage_startup_age, s.transition_gate_active, s.transition_gate_frames));
+    digest_hud_player(d, s.selection_player);
+    digest_value(d, s.game_over_music);
+    const auto& e = s.loading_environment;
+    digest_value(d, std::tie(e.game_rng, e.camera_origin, e.screen_translation,
+        e.reference_position, e.background_delta, e.paused, e.screen_shake_offset,
+        e.stage_direction, e.stage_difficulty, e.render_target_has_alpha,
+        e.playfield_origin));
+    d.boolean(e.shared_game_rng != nullptr);
+    d.boolean(e.chapter != nullptr);
+    if (e.chapter) d.i32(*e.chapter);
+    d.boolean(e.fallback_sprite_resource != nullptr);
+    if (e.fallback_sprite_resource) d.u64(e.fallback_sprite_resource->content_identity());
+    // Resolution, raster scale, screen offsets and physical dimensions belong
+    // to each display. Their logical simulation values above remain compared.
+    digest_value(d, std::tie(s.loading_animation_rate, s.loading_signature, s.loading_prayer));
+    d.boolean(bool(s.loading_registry));
+    if (s.loading_registry) digest_registry(d, *s.loading_registry);
+    d.boolean(s.has_pause);
+    if (s.has_pause) {
+        const auto& p = s.pause;
+        const auto& m = p.menu;
+        digest_value(d, std::tie(p.age, p.selection_age, m.cursor, m.previous, m.count,
+            m.history_cursor, m.history_count, m.disabled, m.depth, m.wrapping,
+            m.disabled_count, m.error, p.screen, p.previous, p.phase, p.flags,
+            p.menu_animation, p.snapshot_animation, p.front_bank, p.practice,
+            p.can_continue, p.can_save_replay, p.can_open_options, p.selected_action,
+            p.replay_slot, p.name_cursor, p.option_row, p.replay_name, p.name_is_result,
+            p.result_needs_name, p.saved_rate, s.pause_frame.input.pressed,
+            s.pause_frame.input.repeated, s.pause_frame.input.lost_focus,
+            s.pause_frame.enabled));
+    }
+    d.u64(s.fades.size());
+    for (const auto& f : s.fades)
+        digest_value(d, std::tie(f.kind, f.duration, f.time, f.alpha, f.playfield_only));
+    d.u64(state.dialogue_digest);
+    return d.value();
+}
+
+std::string WorldState::diagnostic_host_detail(const HostState& state) {
+    std::ostringstream out;
+    const auto& s = state.state_fields;
+    const auto write = [&](const char* name, const auto& value) {
+        DigestSink d; digest_value(d, value);
+        out << name << '=' << std::hex << d.value() << ' ';
+    };
+    write("frames", s.frames); write("destination", s.pending_destination);
+    write("load", s.pending_load); write("edge", s.record_edge_reset_pending);
+    write("spell", std::tie(s.spell_time_stage, s.spell_clock_active, s.spell_clock_index));
+    write("transition", std::tie(s.stage_transition_loading, s.stage_transition_active,
+        s.stage_startup_age, s.transition_gate_active, s.transition_gate_frames));
+    { DigestSink d; digest_hud_player(d, s.selection_player); out << "selection=" << std::hex << d.value() << ' '; }
+    write("music", s.game_over_music);
+    const auto& e = s.loading_environment;
+    write("loading_environment", std::tie(e.game_rng, e.camera_origin, e.screen_translation,
+        e.reference_position, e.background_delta, e.paused, e.screen_shake_offset,
+        e.stage_direction, e.stage_difficulty, e.render_target_has_alpha, e.playfield_origin));
+    write("loading_handles", std::tie(s.loading_signature, s.loading_prayer));
+    write("loading_rate", s.loading_animation_rate);
+    { DigestSink d; if (s.loading_registry) digest_registry(d, *s.loading_registry);
+      out << "loading_registry=" << std::hex << d.value() << ' '; }
+    write("pause", std::tie(s.has_pause, s.pause.age, s.pause.selection_age,
+        s.pause.screen, s.pause.previous, s.pause.phase, s.pause.flags,
+        s.pause.menu_animation, s.pause.snapshot_animation, s.pause.front_bank,
+        s.pause.practice, s.pause.can_continue, s.pause.can_save_replay,
+        s.pause.can_open_options, s.pause.selected_action, s.pause.replay_slot,
+        s.pause.name_cursor, s.pause.option_row, s.pause.replay_name, s.pause.name_is_result,
+        s.pause.result_needs_name, s.pause.saved_rate, s.pause_frame.input.pressed,
+        s.pause_frame.input.repeated, s.pause_frame.input.lost_focus, s.pause_frame.enabled));
+    const auto& m = s.pause.menu;
+    write("menu", std::tie(m.cursor, m.previous, m.count, m.history_cursor,
+        m.history_count, m.disabled, m.depth, m.wrapping, m.disabled_count, m.error));
+    write("dialogue", state.dialogue_digest);
+    return out.str();
 }
 
 void digest_bullet(DigestSink& d, const StageBullet& bullet) {
@@ -301,17 +445,6 @@ void digest_stage_enemy(DigestSink& d, const StageEnemy& enemy,
                         bool include_animation_ids = true) {
     d.tag("enemy");
     d.i32(enemy.native_function); d.i32(enemy.native_function_mode);
-    d.boolean(enemy.fog != nullptr);
-    if (enemy.fog) {
-        d.f32(enemy.fog->target); d.f32(enemy.fog->radius);
-        d.f32(enemy.fog->angle_x); d.f32(enemy.fog->angle_y);
-        d.u32(enemy.fog->color);
-        for (const AnmGeometryVertex& vertex : enemy.fog->vertices) {
-            d.f32(vertex.position.x); d.f32(vertex.position.y);
-            d.f32(vertex.position.z); d.f32(vertex.reciprocal_w);
-            d.u32(vertex.color); d.f32(vertex.uv.x); d.f32(vertex.uv.y);
-        }
-    }
     d.u32(enemy.serial); d.i32(enemy.script_id); d.i32(enemy.trace_id);
     d.u64(enemy.routine.size());
     for (char value : enemy.routine) d.u8(static_cast<uint8_t>(value));
@@ -401,6 +534,7 @@ void digest_stage_enemy(DigestSink& d, const StageEnemy& enemy,
     d.i32(enemy.body_invulnerable);
     digest_timer(d, "enemy.body_clock", enemy.body_invulnerable_clock);
     d.i32(enemy.damage_function); d.i32(enemy.pending_damage);
+    d.i32(enemy.mp_boss_damage_remainder);
     d.boolean(enemy.spell_active);
     d.i32(enemy.spell_base_life); d.i32(enemy.spell_life); d.i32(enemy.spell_id);
     d.u64(enemy.spell_name.size());
@@ -435,7 +569,49 @@ void digest_stage_enemy(DigestSink& d, const StageEnemy& enemy,
     d.i32(enemy.mirror_script_base);
 }
 
+void digest_enemy_fog(DigestSink& d, const EnemySnapshot& enemy) {
+    d.boolean(enemy.has_fog);
+    if (!enemy.has_fog) return;
+    const auto& fog = enemy.fog;
+    digest_value(d, std::tie(fog.target, fog.radius, fog.angle_x, fog.angle_y, fog.color, fog.vertices));
+}
+
 void digest_ecl_threads(DigestSink& d, const EclThreadsSnapshot& threads) {
+    const auto targets = [&](const EclContext& context) {
+        d.tag("ecl.interpolation_targets");
+        for (const EclInstruction* target : context.interpolation_targets) {
+            if (!target) { d.u8(0); continue; }
+            bool found = false;
+            if (context.program) {
+                const auto pointer = reinterpret_cast<std::uintptr_t>(target);
+                for (u32 routine = 0; routine < context.program->definitions.size(); ++routine) {
+                    const auto& definition = context.program->definitions[routine];
+                    const auto& sub = context.program->subroutine(routine);
+                    if (sub.size < 32) continue;
+                    const auto* code = definition.file->bytes.data() + sub.offset + 16;
+                    const auto base = reinterpret_cast<std::uintptr_t>(code);
+                    if (pointer < base || pointer - base > sub.size - 32) continue;
+                    const u32 offset = u32(pointer - base);
+                    if (offset % 4) break;
+                    u32 cursor = 0;
+                    while (cursor < offset) {
+                        const auto* instruction = reinterpret_cast<const EclInstruction*>(code + cursor);
+                        if (instruction->length < 16 || instruction->length % 4 ||
+                            instruction->length > sub.size - 16 - cursor) break;
+                        cursor += instruction->length;
+                    }
+                    if (cursor == offset) {
+                        d.u8(1); d.u32(routine); d.u32(offset);
+                        found = true;
+                    }
+                    break;
+                }
+            }
+            // Non-null foreign or non-boundary pointers have no legal program
+            // identity. Distinguish them from null without reading that storage.
+            if (!found) d.u8(2);
+        }
+    };
     d.tag("ecl.main");
     const EclContext& main = threads.main;
     d.f32(main.time); d.i32(main.routine); d.i32(main.instruction_offset);
@@ -450,8 +626,7 @@ void digest_ecl_threads(DigestSink& d, const EclThreadsSnapshot& threads) {
         d.f32(channel.control1); d.f32(channel.control2); d.f32(channel.current);
         digest_timer(d, "ecl.itp", channel.timer);
     }
-    for (const EclInstruction* target : main.interpolation_targets)
-        d.boolean(target != nullptr);
+    targets(main);
     d.u64(threads.children.size());
     for (const EclContext& child : threads.children) {
         d.tag("ecl.child");
@@ -469,8 +644,7 @@ void digest_ecl_threads(DigestSink& d, const EclThreadsSnapshot& threads) {
             d.f32(channel.current);
             digest_timer(d, "ecl.itp", channel.timer);
         }
-        for (const EclInstruction* target : child.interpolation_targets)
-            d.boolean(target != nullptr);
+        targets(child);
     }
 }
 
@@ -481,6 +655,10 @@ bool WorldState::capture(StageBattle& battle, GameRandom& visual, const ReplayVi
     // ---- StageBattle 玩家面 ----
     battle_.seat_count = battle.seat_count;
     battle_.active_seat = battle.active_seat;
+    if (battle.seat_count < 2) {
+        battle_.single_player = battle.player_state_;
+        battle_.single_hud = battle.player_ ? *battle.player_ : HudPlayerState{};
+    }
     battle_.seats = battle.seats;
     battle_.seat_huds = battle.seat_huds;
     battle_.seat_characters = battle.seat_characters;
@@ -583,6 +761,7 @@ bool WorldState::capture(StageBattle& battle, GameRandom& visual, const ReplayVi
     // 无头测试不传 scene = 该组域为空，restore 跳过（与 presentation 同门）。
     has_scene_ = scene != nullptr;
     if (scene) {
+        scene_state_ = scene->capture_rollback();
         scene->capture_shakes(shakes_);
         const auto dialog = scene->capture_dialog();
         dialog_ = dialog.player;
@@ -590,8 +769,15 @@ bool WorldState::capture(StageBattle& battle, GameRandom& visual, const ReplayVi
         dialog_ready_ = dialog.ready;
         if (!scene->capture_scenery(scenery_extra_, scenery_script_, has_scenery_))
             return false;
+        has_previous_scenery_ = scene->previous_scenery != nullptr;
+        previous_scenery_bank_ = scene->previous_scenery_bank;
+        if (has_previous_scenery_) {
+            previous_scenery_script_ = scene->previous_scenery->script.state;
+            previous_scenery_extra_ = scene->previous_scenery->capture_extra();
+        }
         transition_handle_ = transition_handle;
     } else {
+        scene_state_ = RunScene::RollbackState{};
         shakes_.clear();
         dialog_ = MsgPlayer::Snapshot{};
         dialog_advance_ = MsgAdvance{};
@@ -599,6 +785,10 @@ bool WorldState::capture(StageBattle& battle, GameRandom& visual, const ReplayVi
         has_scenery_ = false;
         scenery_script_ = StageScriptState{};
         scenery_extra_ = StageScenery::ExtraSnapshot{};
+        has_previous_scenery_ = false;
+        previous_scenery_bank_ = -1;
+        previous_scenery_script_ = StageScriptState{};
+        previous_scenery_extra_ = StageScenery::ExtraSnapshot{};
         transition_handle_ = 0;
     }
     // ---- 宿主回放面（回放会话输入游标；live run 不传 = 不快照）----
@@ -618,6 +808,7 @@ bool WorldState::restore(StageBattle& battle, GameRandom& visual, ReplayView* re
     std::unordered_map<const AnmVm*, AnmVm*> remapped;
     if (presentation && has_present_ &&
         !presentation->restore_presentation(present_, &remapped)) return false;
+    if (scene && has_scene_) scene->restore_rollback(scene_state_, remapped);
     if (battle.mp_registry() && !battle.mp_registry()->restore(anm_, remapped)) return false;
     // ---- P3.2 宿主域恢复（敌机池/RNG 已恢复之后：震动回调的 run 引用
     // scene.battle.sim.random，battle 必须先就位；重建经 start_shake 生产
@@ -627,6 +818,12 @@ bool WorldState::restore(StageBattle& battle, GameRandom& visual, ReplayView* re
         scene->restore_dialog({dialog_, dialog_advance_, dialog_ready_});
         if (!scene->restore_scenery(scenery_extra_, scenery_script_, has_scenery_))
             return false;
+        if (has_previous_scenery_ != (scene->previous_scenery != nullptr) ||
+            previous_scenery_bank_ != scene->previous_scenery_bank) return false;
+        if (has_previous_scenery_) {
+            scene->previous_scenery->script.state = previous_scenery_script_;
+            scene->previous_scenery->restore_extra(previous_scenery_extra_);
+        }
         if (transition_handle_out) *transition_handle_out = transition_handle_;
     }
     // ---- StageSim 敌机池（数量对齐 → 逐只值拷贝 + 线程恢复）----
@@ -740,6 +937,10 @@ bool WorldState::restore(StageBattle& battle, GameRandom& visual, ReplayView* re
         battle.player_ = &battle.seat_huds[size_t(battle.active_seat)];
         battle.character_ = battle.seat_characters[size_t(battle.active_seat)];
     }
+    else {
+        battle.player_state_ = battle_.single_player;
+        if (battle.player_) *battle.player_ = battle_.single_hud;
+    }
     // ---- 宿主回放面（capture 时带游标的会话才恢复——live run 的
     // replay_consumed/cursor 不在快照边界内）----
     if (replay && has_replay_) *replay = replay_;
@@ -793,6 +994,23 @@ size_t WorldState::retained_bytes() const noexcept {
     return total;
 }
 
+std::string WorldState::diagnostic_detail() const {
+    std::ostringstream out;
+    const auto write=[&](const char* name,const auto& value) {
+        DigestSink d;digest_value(d,value);
+        out << name << '=' << std::hex << d.value() << ' ';
+    };
+    size_t index=0;
+    std::apply([&](const auto&... fields) {
+        (write(("presentation."+std::to_string(index++)).c_str(),fields),...);
+    },state_fields(present_));
+    index=0;
+    std::apply([&](const auto&... fields) {
+        (write(("scene."+std::to_string(index++)).c_str(),fields),...);
+    },state_fields(scene_state_));
+    return out.str();
+}
+
 uint64_t WorldState::digest_core() const {
     DigestSink d;
     digest_core_sink(d, false);
@@ -803,6 +1021,9 @@ uint64_t WorldState::digest() const {
     DigestSink d;
     digest_core_sink(d, true);
     digest_anm_sink(d);
+    digest_value(d, has_present_);
+    if (has_present_) digest_value(d, present_);
+    digest_scene_sink(d, true);
     return d.value();
 }
 // 分域 digest（诊断面）：core 各域独立摘要（首差域定位）。
@@ -824,6 +1045,10 @@ void WorldState::digest_domains(char* buffer, size_t capacity) const {
     {
         DigestSink d; d.tag("battle");
         d.i32(battle_.seat_count); d.i32(battle_.active_seat);
+        if (battle_.seat_count < 2) {
+            digest_player_state(d, battle_.single_player);
+            digest_hud_player(d, battle_.single_hud);
+        }
         for (const StagePlayerState& seat : battle_.seats) digest_player_state(d, seat);
         for (const HudPlayerState& hud : battle_.seat_huds) digest_hud_player(d, hud);
         for (i32 value : battle_.seat_characters) d.i32(value);
@@ -872,6 +1097,7 @@ void WorldState::digest_domains(char* buffer, size_t capacity) const {
         d.u64(sim_.enemies.size());
         for (const EnemySnapshot& enemy : sim_.enemies) {
             digest_stage_enemy(d, enemy.fields);
+            digest_enemy_fog(d, enemy);
             digest_ecl_threads(d, enemy.threads);
         }
         d.u64(sim_.bullets.size());
@@ -925,6 +1151,7 @@ void WorldState::digest_domains(char* buffer, size_t capacity) const {
         DigestSink d; d.tag("simenemies");
         for (const EnemySnapshot& enemy : sim_.enemies) {
             digest_stage_enemy(d, enemy.fields);
+            digest_enemy_fog(d, enemy);
             digest_ecl_threads(d, enemy.threads);
         }
         write("simenemies", d.value());
@@ -932,7 +1159,9 @@ void WorldState::digest_domains(char* buffer, size_t capacity) const {
     {
         DigestSink d; d.tag("enemyfields");
         d.u64(sim_.enemies.size());
-        for (const EnemySnapshot& enemy : sim_.enemies) digest_stage_enemy(d, enemy.fields);
+        for (const EnemySnapshot& enemy : sim_.enemies) {
+            digest_stage_enemy(d, enemy.fields); digest_enemy_fog(d, enemy);
+        }
         write("enemyfields", d.value());
     }
     {
@@ -941,6 +1170,7 @@ void WorldState::digest_domains(char* buffer, size_t capacity) const {
             const auto& fields = enemy.fields;
             for (u32 handle : fields.anm_slot_handle) handles.u32(handle);
             digest_stage_enemy(values, fields, false);
+            digest_enemy_fog(values, enemy);
             feedback.i32(fields.hit_anim_timer);
             feedback.i32(fields.hit_feedback_cooldown);
             feedback.boolean(fields.periodic_flash);
@@ -1007,6 +1237,8 @@ void WorldState::digest_domains(char* buffer, size_t capacity) const {
         DigestSink d; d.tag("items");
         for (const Item& item : items_.items) {
             d.i32(item.state); d.i32(item.type); d.i32(item.type2);
+            d.i32(item.target_seat);
+            d.i32(item.tracking_seat);
             d.f32(item.x); d.f32(item.y); d.f32(item.z);
             d.f32(item.vx); d.f32(item.vy); d.f32(item.vz);
             d.f32(item.homing_speed); d.i32(item.sprite);
@@ -1015,6 +1247,7 @@ void WorldState::digest_domains(char* buffer, size_t capacity) const {
         }
         for (const Spirit& spirit : items_.spirits) {
             d.i32(spirit.state); d.i32(spirit.kind); d.u32(spirit.serial);
+            d.i32(spirit.tracking_seat);
             d.f32(spirit.speed); d.f32(spirit.move_speed);
             d.f32(spirit.x); d.f32(spirit.y); d.f32(spirit.z);
             d.f32(spirit.angle); d.i32(spirit.anm_frame);
@@ -1075,11 +1308,43 @@ void WorldState::digest_domains(char* buffer, size_t capacity) const {
         d.u32(visual_rng_.seed); d.u32(visual_rng_.index);
         write("rng", d.value());
     }
+    { DigestSink d; digest_scene_sink(d, false); write("scene", d.value()); }
+    { DigestSink d; digest_scene_sink(d, true); write("scene_full", d.value()); }
+    { DigestSink d; digest_value(d, has_present_); if (has_present_) digest_value(d, present_); write("presentation", d.value()); }
+}
+
+void WorldState::digest_scene_sink(DigestSink& d, bool full) const {
+    d.tag("scene");
+    digest_value(d, has_scene_);
+    if (!has_scene_) return;
+    digest_value(d, shakes_); digest_value(d, dialog_);
+    digest_value(d, dialog_advance_); digest_value(d, dialog_ready_);
+    digest_value(d, has_scenery_);
+    if (has_scenery_) digest_value(d, scenery_script_);
+    digest_value(d, has_previous_scenery_);
+    digest_value(d, previous_scenery_bank_);
+    if (has_previous_scenery_) digest_value(d, previous_scenery_script_);
+    digest_value(d, transition_handle_);
+    const auto& s = scene_state_;
+    digest_value(d, std::tie(s.post,s.age,s.player_activation_pending,s.transition_wait,s.scenery_started,
+        s.team_wipe_frames,s.team_wipe_game_over,
+        s.hud.flags,s.hud.intro_age,s.hud.frame_age,s.hud.clear_age,s.hud.displayed_score,s.hud.score_increment,
+        s.camera_origin,s.screen_translation,s.reference_position,s.background_delta,s.stage_direction,
+        s.shake_offset,s.environment_rng,s.animation_rate,s.paused,s.dialogue_rows));
+    if (full) {
+        digest_value(d, s);
+        if (has_scenery_) digest_value(d, scenery_extra_);
+        if (has_previous_scenery_) digest_value(d, previous_scenery_extra_);
+    }
 }
 
 void WorldState::digest_core_sink(DigestSink& d, bool include_animation_ids) const {
     d.tag("worldstate");
     d.i32(battle_.seat_count); d.i32(battle_.active_seat);
+    if (battle_.seat_count < 2) {
+        digest_player_state(d, battle_.single_player);
+        digest_hud_player(d, battle_.single_hud);
+    }
     for (const StagePlayerState& seat : battle_.seats) digest_player_state(d, seat);
     for (const HudPlayerState& hud : battle_.seat_huds) digest_hud_player(d, hud);
     for (i32 value : battle_.seat_characters) d.i32(value);
@@ -1094,6 +1359,7 @@ void WorldState::digest_core_sink(DigestSink& d, bool include_animation_ids) con
     d.u64(sim_.enemies.size());
     for (const EnemySnapshot& enemy : sim_.enemies) {
         digest_stage_enemy(d, enemy.fields, include_animation_ids);
+        digest_enemy_fog(d, enemy);
         digest_ecl_threads(d, enemy.threads);
     }
     d.u64(sim_.bullets.size());
@@ -1149,6 +1415,8 @@ void WorldState::digest_core_sink(DigestSink& d, bool include_animation_ids) con
     // state!=0 即活；空槽是常量默认值，等价全量）。
     for (const Item& item : items_.items) {
         d.i32(item.state); d.i32(item.type); d.i32(item.type2);
+        d.i32(item.target_seat);
+        d.i32(item.tracking_seat);
         d.f32(item.x); d.f32(item.y); d.f32(item.z);
         d.f32(item.vx); d.f32(item.vy); d.f32(item.vz);
         d.f32(item.homing_speed); d.i32(item.sprite);
@@ -1157,6 +1425,7 @@ void WorldState::digest_core_sink(DigestSink& d, bool include_animation_ids) con
     }
     for (const Spirit& spirit : items_.spirits) {
         d.i32(spirit.state); d.i32(spirit.kind); d.u32(spirit.serial);
+        d.i32(spirit.tracking_seat);
         d.f32(spirit.speed); d.f32(spirit.move_speed);
         d.f32(spirit.x); d.f32(spirit.y); d.f32(spirit.z);
         d.f32(spirit.angle); d.i32(spirit.anm_frame);
@@ -1205,61 +1474,31 @@ void WorldState::digest_core_sink(DigestSink& d, bool include_animation_ids) con
     // 双 RNG。
     d.u32(game_rng_.seed); d.u32(game_rng_.index);
     d.u32(visual_rng_.seed); d.u32(visual_rng_.index);
+    digest_scene_sink(d, false);
 }
 
 // ANM registry：序号化摘要（不 hash 指针——VM 值 + 链关系 + 句柄）。
 // digest_core_sink 尾接调用（全量 digest 专用——表现层 VM 池面）。
 void WorldState::digest_anm_sink(DigestSink& d) const {
+    digest_registry(d, anm_);
+}
+
+static void digest_registry(DigestSink& d, const AnmRegistry::SnapshotData& anm_) {
     d.u32(anm_.generation); d.u32(anm_.active_count);
+    d.u64(anm_.next_serialization_ordinal);
     d.u64(anm_.entries.size());
     for (const AnmRegistry::SnapshotData::Entry& entry : anm_.entries) {
         d.tag("anm");
         d.u32(entry.slot); d.u32(entry.handle);
+        d.u64(entry.serialization_ordinal);
         d.boolean(entry.active); d.boolean(entry.registered);
         d.boolean(entry.alternate); d.boolean(entry.borrowed);
         d.boolean(entry.frozen_root); d.boolean(entry.queued_deletion);
-        d.u32(entry.parent); d.u64(entry.children.size());
+        d.u32(entry.parent); d.u32(entry.creation_parent); d.u32(entry.rotation_parent);
+        d.u64(entry.children.size());
         for (u32 child : entry.children) d.u32(child);
         d.u32(entry.chain_index[0]); d.u32(entry.chain_index[1]);
-        // VM 值域（state_digest.hpp digest_vm 的同域子集——权威模拟相关：
-        // 指令游标/计时器/变量/可见性/中断/插值；资源指针不入摘要）。
-        const AnmVm& vm = entry.vm;
-        d.i32(vm.source_script); d.i32(vm.instruction_offset);
-        d.boolean(vm.visible); d.i32(vm.pending_interrupt);
-        digest_timer(d, "vm.timer", vm.timer);
-        digest_timer(d, "vm.age", vm.age);
-        d.f32(vm.slowdown); d.u32(vm.ordering);
-        for (i32 value : vm.variables.integers) d.i32(value);
-        for (i32 value : vm.variables.extra_integers) d.i32(value);
-        for (float value : vm.variables.floats) d.f32(value);
-        d.f32(vm.variables.random_scale); d.f32(vm.variables.random_angle);
-        d.u32(vm.variables.random_bound);
-        d.f32(vm.variables.position.x); d.f32(vm.variables.position.y);
-        d.f32(vm.variables.position.z);
-        d.f32(vm.variables.rotation.x); d.f32(vm.variables.rotation.y);
-        d.f32(vm.variables.rotation.z);
-        d.u32(vm.visual.flags); d.u32(vm.visual.render_flags);
-        d.i32(vm.visual.layer); d.i32(vm.visual.sprite);
-        d.f32(vm.visual.child_anchor.x); d.f32(vm.visual.child_anchor.y);
-        d.f32(vm.visual.child_anchor.z);
-        d.f32(vm.visual.angular_velocity.x); d.f32(vm.visual.angular_velocity.y);
-        d.f32(vm.visual.angular_velocity.z);
-        d.f32(vm.visual.scale.x); d.f32(vm.visual.scale.y);
-        d.f32(vm.visual.secondary_scale.x); d.f32(vm.visual.secondary_scale.y);
-        d.f32(vm.visual.scale_velocity.x); d.f32(vm.visual.scale_velocity.y);
-        d.f32(vm.visual.uv_scale.x); d.f32(vm.visual.uv_scale.y);
-        d.f32(vm.visual.uv_offset.x); d.f32(vm.visual.uv_offset.y);
-        d.f32(vm.visual.uv_velocity.x); d.f32(vm.visual.uv_velocity.y);
-        d.f32(vm.visual.size.x); d.f32(vm.visual.size.y);
-        d.u32(vm.visual.color); d.u32(vm.visual.secondary_color);
-        for (const Vec2& uv : vm.visual.uv) { d.f32(uv.x); d.f32(uv.y); }
-        d.f32(vm.visual.sprite_size.x); d.f32(vm.visual.sprite_size.y);
-        d.i32(vm.visual.sprite_frame);
-        d.f32(vm.visual.translation.x); d.f32(vm.visual.translation.y);
-        d.f32(vm.visual.translation.z);
-        d.u32(vm.visual.inherited_color);
-        d.i32(vm.saved_offset);
-        digest_timer(d, "vm.saved_timer", vm.saved_timer);
+        d.vm(entry.vm);
     }
     d.u64(anm_.free_slots.size());
     for (u32 value : anm_.free_slots) d.u32(value);

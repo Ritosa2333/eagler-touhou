@@ -32,6 +32,7 @@
 
 #include <array>
 #include <functional>
+#include <memory>
 #include <string>
 
 namespace th13 {
@@ -81,10 +82,29 @@ public:
     void bind_bubble_bank(i32 bank) noexcept { bubble_bank_ = bank; }
     u32 bubble_handle() const noexcept { return box_; }
 
-private:
+    // The cache decides whether submit creates a new bubble. Restore it with
+    // the registry, including the pixels already written by the dialogue.
     struct Region {
         i32 x = 0, y = 0, width = 0, height = 0;
     };
+    struct RollbackState {
+        std::array<u32, kVmCount> handles;
+        std::array<Region, kVmCount> regions;
+        std::array<std::string, kLineCount> text;
+        std::array<u32, kLineCount> block;
+        std::array<bool, kLineCount> cached;
+        std::array<MsgLine, kLineCount> lines;
+        u32 box, texture;
+        float anchor_y;
+        bool anchor_y_set;
+        u32 pixel_texture;
+        std::shared_ptr<const std::vector<u8>> pixels;
+    };
+    RollbackState capture_rollback(AnmManager&, DialogueTextureSink&) const;
+    bool restore_rollback(const RollbackState&, AnmManager&, DialogueTextureSink&,
+                          std::string& error);
+
+private:
     bool ensure(AnmManager& manager, DialogueTextureSink& sink, std::string& error);
     bool blank(DialogueTextureSink& sink, const Region& region, std::string& error);
     bool write_row(AnmManager& manager, DialogueTextureSink& sink, i32 row, const MsgLine& line,
@@ -119,6 +139,8 @@ private:
     float anchor_y_ = 0;
     bool anchor_y_set_ = false;
     TextureImage scratch_;
+    mutable std::shared_ptr<const std::vector<u8>> rollback_pixels_;
+    mutable u32 rollback_texture_ = 0;
 };
 
 }  // namespace th13

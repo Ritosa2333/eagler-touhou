@@ -75,6 +75,12 @@ public:
     float angle(int slot) const;
     int script(int slot) const;
     int cursor() const;
+    template<class Visitor> void visit_state(Visitor&& visitor) const {
+        visitor(cursor_, cooldown_, slots_left_);
+        for (const auto& slot : slots_)
+            visitor(slot.has_anm, slot.alive, slot.odd, slot.script, slot.counter,
+                    slot.y, slot.angle, slot.scale, slot.rect_scale);
+    }
 
     // 槽矩形（0x40cb50 注册参数；中心 = lane 点沿 angle+π/2 垂线偏移 ±256，偶−/奇+）。
     Rect rect(int slot) const;

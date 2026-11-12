@@ -29,6 +29,7 @@
 #pragma once
 
 #include "../game/AnmRegistry.hpp"
+#include "../game/DialogueText.hpp"
 #include "../game/GameInput.hpp"
 #include "../game/GameRandom.hpp"  // Rng.hpp 的 GameRandom
 #include "../game/ItemManager.hpp"
@@ -49,6 +50,7 @@
 namespace th13::multiplayer {
 
 class DigestSink;  // WorldState.cpp 内定义（FNV-1a 64 生产侧 hash）
+struct HostState;
 
 // 敌机快照：值域 + ECL 线程组（EclThreads::snapshot 已有）+ fog（值数组）。
 struct EnemySnapshot {
@@ -105,14 +107,13 @@ public:
     // 供回滚一致性断言（S→前进→restore(S)→digest 相等）与锁步确认帧
     // 对拍（M7+）。不 hash 指针/padding/unordered_map 顺序/墙钟。
     uint64_t digest() const;
-    // ---- 权威模拟面 digest（不含 anm registry 表现层 VM 池）。
-    // 续推对照（restore 分支 vs 独立连续基线）专用：特效粒子流（每帧
-    // 出生/死亡的视觉 VM，如 eff_switch script91）在 restore 分支被回滚
-    // 丢弃 60 帧视觉历史，与从未回滚的连续基线天然不同批——这是回滚
-    // 的语义而非缺陷。权威模拟面（敌机/弹/席位/道具/神霊/RNG/会话/
-    // shot_geometry）在同输入下与连续基线逐帧一致。回滚一致性（同
-    // confirmed 态同输入重放，两侧路径对称）仍用全量 digest()。
+    // Simulation-domain summary for the periodic wire check. This excludes
+    // presentation/registry state; acceptance must also compare digest() and
+    // the host domains on every confirmed frame, including rollback replay.
     uint64_t digest_core() const;
+    static uint64_t digest_dialogue(const DialogueText::RollbackState&);
+    static uint64_t digest_host(const HostState&);
+    static std::string diagnostic_host_detail(const HostState&);
 
     // ---- 字段台账（M6 交付面）：快照覆盖的权威域清单（测试断言用）。
     static const char* field_ledger();
@@ -120,12 +121,15 @@ public:
     //（"battle"|"sim"|"items"|"progress"|"score"|"rng"）。续推分歧定位用。
     void digest_domains(char* buffer, size_t capacity) const;
 
+    std::string diagnostic_detail() const;
     size_t retained_bytes() const noexcept;
 
 private:
     // StageBattle 玩家面（M2 席位架构：seats 权威 + 窗口是观察副本）。
     struct BattleData {
         i32 seat_count = 0, active_seat = 0;
+        StagePlayerState single_player{};
+        HudPlayerState single_hud{};
         std::array<StagePlayerState, 3> seats{};
         std::array<HudPlayerState, 3> seat_huds{};
         std::array<i32, 3> seat_characters{};
@@ -202,6 +206,7 @@ private:
     // ---- P3.2 快照扩展域（RunScene 宿主面；scene 非空时有效）----
     // 震动列表（envelope 型消费 game RNG——跨震动帧回滚的 RNG 漂移根因；
     // 非 envelope 型消费 visual RNG，同窗回滚同理）。
+    RunScene::RollbackState scene_state_;
     std::vector<ScreenShake> shakes_;
     // MSG 对话域（MsgPlayer 值域 + 宿主锁存输入沿 + dialog_ready）。
     MsgPlayer::Snapshot dialog_;
@@ -211,6 +216,10 @@ private:
     StageScriptState scenery_script_;
     StageScenery::ExtraSnapshot scenery_extra_;
     bool has_scenery_ = false;
+    StageScriptState previous_scenery_script_;
+    StageScenery::ExtraSnapshot previous_scenery_extra_;
+    bool has_previous_scenery_ = false;
+    i32 previous_scenery_bank_ = -1;
     // 开局转场句柄（RunTransitionEffect 的唯一值状态；VM 本体在 anm_ 域）。
     u32 transition_handle_ = 0;
     bool has_scene_ = false;  // scene 接线是否在 capture 时可用（整组域的门）
@@ -219,6 +228,7 @@ private:
     bool has_replay_ = false;
     bool ready_ = false;
     // digest 的两段实现（core=权威模拟面；anm=表现层 registry 面仅全量）。
+    void digest_scene_sink(DigestSink& d, bool full) const;
     void digest_core_sink(DigestSink&, bool include_animation_ids) const;
     void digest_anm_sink(DigestSink&) const;
 };

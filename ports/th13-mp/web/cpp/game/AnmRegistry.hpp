@@ -23,6 +23,7 @@ class AnmRegistry {
     struct Node {
         AnmVm vm;AnmVm* borrowed=nullptr;u32 slot=0x1fff,handle=0;bool active=false,registered=false,alternate=false;
         bool frozen_root=false,queued_deletion=false;
+        u64 serialization_ordinal=0;
         Node* parent=nullptr;std::list<Node*> children;
         std::list<Node*>::iterator position;
     };
@@ -35,6 +36,8 @@ class AnmRegistry {
     std::array<std::vector<AnmVm*>,33> layers;
     std::vector<Node*> pending_deletion;
     u32 generation=0;u32 active_count=0;
+    // 池内按槽序列化；池外/内嵌根按创建序，不能依赖分配地址。
+    u64 next_serialization_ordinal=1;
     void collect(Node&);void retire(Node&);void erase(Node&);Node* node(AnmVm&)const noexcept;
     bool tick_chain(u32 alternate,GameRandom&,float rate);
 public:
@@ -84,6 +87,7 @@ public:
             AnmVm vm;            // 值拷贝（含资源指针——bank 存活期稳定）
             u32 slot = 0x1fff;
             u32 handle = 0;
+            u64 serialization_ordinal = 0;
             bool active = false, registered = false, alternate = false;
             bool borrowed = false, frozen_root = false, queued_deletion = false;
             u32 parent = 0xFFFFFFFFu;     // 快照内序号（borrowed 父 = 0xFFFFFFFEu 哨兵）
@@ -95,6 +99,7 @@ public:
         std::vector<Entry> entries;
         std::vector<u32> free_slots;
         u32 generation = 0, active_count = 0;
+        u64 next_serialization_ordinal = 1;
         // borrowed 根的宿主身份（AnmVm* 原值；restore 时校验 external 键
         // 仍指向同一宿主对象——外部 VM 由宿主对象持有，快照不拥有）。
         std::vector<AnmVm*> borrowed_roots;
