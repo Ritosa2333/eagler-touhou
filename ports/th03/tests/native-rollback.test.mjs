@@ -2,6 +2,30 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {NativeRollback} from '../web/native-rollback.mjs';
 import {packTouch,unpackTouch} from '../web/touch-input.js';
+import {NativeChargeHistory} from '../web/native-charge-history.mjs';
+
+test('charge records gate confirmation and late corrections rewind',()=>{
+ let state=0;const charges=new NativeChargeHistory(),confirmed=[];
+ const predicted=[0,0,-1,0],actual=[1024,0,-1,4];
+ const net=new NativeRollback({seat:0,send:()=>{},capture:()=>state,restore:s=>{state=s;},
+  canConfirm:f=>charges.get(f)!==undefined,
+  step:(_pair,frame)=>{const sample=charges.get(frame)??predicted;charges.markUsed(frame,sample);state+=sample[0];},
+  confirm:frame=>{charges.confirm(frame);confirmed.push(frame);}});
+ net.receive(JSON.stringify({type:'native-rollback-input',frame:0,input:0}));
+ assert.equal(net.submit(0,true),true);assert.equal(net.confirmed,0);assert.equal(state,0);
+ assert.equal(charges.accept(0,actual,net.frame),true);
+ charges.rewind(0);net.rewind(0);net.flush();
+ assert.equal(state,1024);assert.deepEqual(confirmed,[0]);assert.equal(net.rollbacks,1);
+});
+test('a non-snapshot boundary proceeds only with confirmed input',()=>{
+ let boundary=false,steps=0,notifications=0;
+ const net=new NativeRollback({seat:0,send:()=>{},capture:()=>null,restore:()=>{},
+  canConfirm:()=>boundary,onCaptureUnavailable:()=>{notifications++;boundary=true;return true;},
+  step:()=>{steps++;}});
+ assert.equal(net.submit(0,true),false);assert.equal(notifications,0);
+ net.receive(JSON.stringify({type:'native-rollback-input',frame:0,input:0}));
+ assert.equal(net.advance(false),true);assert.equal(net.confirmed,1);assert.equal(notifications,1);assert.equal(steps,1);
+});
 
 test('late input restores and replays the predicted suffix',()=>{
  let state=0;const errors=[],sent=[],confirmed=[];

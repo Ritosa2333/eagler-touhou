@@ -2,18 +2,31 @@ import {NativeRollback} from './native-rollback.mjs';
 import {FireControl} from './fire-control.js';
 import {unpackTouch} from './touch-input.js';
 import {createVersusPause} from './native-versus-pause.mjs';
+import {NativeChargeHistory,validChargeSample} from './native-charge-history.mjs';
 
 export function createRollbackMatch({seat,channel,engine,sample,options={},onFrame=()=>{},onConfirmedInput=()=>{},onError=()=>{},now=()=>performance.now()}){
   const fire=[new FireControl(),new FireControl()], pause=createVersusPause(), outputs=new Map(),proofs=new Map(),remoteProofs=new Map();let running=true,lastProgress=now(),confirmedInput=[0,0];
   const metadata=()=>({scene:engine._th03_classic_scene(),round:engine._th03_semantic_round?.()??-1,serial:engine._th03_classic_match_serial?.()??0,winner:engine._th03_classic_match_winner?.()??-1});
   const compare=frame=>{if(!proofs.has(frame)||!remoteProofs.has(frame))return;if(proofs.get(frame)!==remoteProofs.get(frame))throw Error(`双方游戏状态不同步（第 ${frame} 帧）`);proofs.delete(frame);remoteProofs.delete(frame);};
   const freeSlots=[7,6,5,4,3,2,1,0];let captures=0,restores=0;
+  const remoteCharge=new NativeChargeHistory(),localCharge=new Map(),chargeBoundaries=new Set();
+  let localShadow;
+  const supportsCharge=typeof engine._th03_classic_charge_enable==='function';
+  const activeCharge=()=>supportsCharge&&engine._th03_classic_scene()===9&&!!engine._th03_classic_surrender_allowed()&&pause.state.owner===null&&!engine._th03_classic_paused();
+  const needsCharge=frame=>{
+    if(chargeBoundaries.has(frame))return false;
+    if(outputs.has(frame))return !!outputs.get(frame).needsCharge;
+    if(!activeCharge())return false;
+    const a=sync.local.get(frame),b=sync.remote.get(frame);
+    return !((a!==undefined&&b!==undefined)&&((a|b)&128));
+  };
   engine._th03_classic_defer_audio();
   const snapshot=()=>{const slot=freeSlots.pop();if(slot===undefined)throw Error('原生回滚历史已满');if(!engine._th03_classic_capture(slot)){freeSlots.push(slot);return null;}captures++;return {slot,fire:fire.map(item=>({...item.state})),pause:pause.capture()};};
   const release=s=>{freeSlots.push(s.slot);};
   const restore=s=>{if(!engine._th03_classic_restore(s.slot))throw Error('原生回滚状态恢复失败');restores++;fire.forEach((item,i)=>item.state={...s.fire[i]});pause.restore(s.pause);};
-  const sync=new NativeRollback({seat,send:text=>channel.send(text),capture:snapshot,restore,release,onError,step(inputs,frame,speculative){
+  const sync=new NativeRollback({seat,send:text=>channel.send(text),capture:snapshot,restore,release,onError,canConfirm:frame=>!needsCharge(frame)||(localCharge.has(frame)&&!!remoteCharge.get(frame)),onCaptureUnavailable(frame){if(!supportsCharge||!needsCharge(frame))return false;chargeBoundaries.add(frame);channel.send(JSON.stringify({type:'native-charge-boundary',frame}));return true;},step(inputs,frame,speculative){
     const recordedInputs=[...inputs];
+    const chargeFrame=needsCharge(frame);
     if(speculative&&(pause.state.owner!==null||(engine._th03_classic_scene()===9&&((inputs[0]|inputs[1])&128))))return false;
     const menu=pause.advance(inputs,engine._th03_classic_scene(),engine._th03_classic_surrender_allowed());
     if(menu.paused){fire.forEach(f=>f.reset());outputs.set(frame,{paused:true,lanes:[0,0],inputs:recordedInputs,replaySamples:engine._th03_semantic_replay_samples(),...metadata()});lastProgress=now();return;}
@@ -24,21 +37,48 @@ export function createRollbackMatch({seat,channel,engine,sample,options={},onFra
     engine._th03_classic_assist_pair(options.focus!==false&&!!(inputs[0]&64),options.focus!==false&&!!(inputs[1]&64));
     const system=lanes[0]|((engine._th03_classic_scene()!==9&&(inputs[0]&128))?0x1000:0)|((inputs[0]&256)?0x2000:0);
     const charge=((inputs[0]&32)?1:0)|((inputs[1]&32)?2:0);
+    if(supportsCharge){
+      engine._th03_classic_charge_enable(chargeFrame?1:0);
+      if(chargeFrame)for(let p=0;p<2;p++){
+        const sample=p===seat?localCharge.get(frame):remoteCharge.get(frame);
+        const previous=p===seat&&!sample&&localShadow?.frame===frame-1&&(localShadow.sample[3]&4)?localShadow.sample:undefined;
+        engine._th03_classic_charge_set(p,sample?1:previous?2:0,...(sample??previous??[0,0,-1,0]));
+      }
+    }
     engine._th03_classic_speculative(speculative?1:0);
     let result;try{result=engine._th03_classic_step_pair(lanes[0],lanes[1],system,charge);}finally{engine._th03_classic_speculative(0);}
+    let chargePair;
+    if(chargeFrame){
+      const observed=[0,1].map(p=>[0,1,2,3].map(field=>engine._th03_classic_charge_get(p,field)));
+      if(observed.some(sample=>!validChargeSample(sample)))throw Error('原生蓄力数据无效');
+      if(!localCharge.has(frame)){localCharge.set(frame,observed[seat]);localShadow={frame,sample:observed[seat]};channel.send(JSON.stringify({type:'native-charge',frame,sample:observed[seat]}));}
+      const remoteSample=remoteCharge.get(frame)??observed[1-seat];
+      remoteCharge.markUsed(frame,remoteSample);
+      chargePair=seat===0?[localCharge.get(frame),remoteSample]:[remoteSample,localCharge.get(frame)];
+    }else if(localShadow?.frame===frame-1)localShadow=undefined;
     if(speculative&&(result!==0||engine._th03_classic_boundary()||engine._th03_classic_scene()!==9||engine._th03_classic_paused()))return false;
     if(result!==0)throw Error('游戏结束或同步失败：'+result);
     const ptr=engine._th03_classic_audio_commands(),count=engine._th03_classic_audio_command_count();
     let proof;
     if((frame+1)%120===0)proof=engine._th03_classic_scene()===9?engine._th03_semantic_state_hash()>>>0:0;
-    outputs.set(frame,{commands:engine.HEAPU8.slice(ptr,ptr+count*4),count,proof,lanes,inputs:recordedInputs,replaySamples:engine._th03_semantic_replay_samples(),...metadata()});
+    outputs.set(frame,{commands:engine.HEAPU8.slice(ptr,ptr+count*4),count,proof,lanes,inputs:recordedInputs,needsCharge:chargeFrame,chargePair,replaySamples:engine._th03_semantic_replay_samples(),...metadata()});
     lastProgress=now();
-  },confirm(frame){const output=outputs.get(frame);outputs.delete(frame);if(!output)throw Error('确认帧音频缺失');confirmedInput=output.lanes;let sound=new Int32Array(0);if(!output.paused){engine.HEAPU8.set(output.commands,engine._th03_classic_audio_commands());if(engine._th03_classic_audio_commit(output.count)!==0)throw Error('原生音频提交失败');const ptr=engine._th03_classic_audio(),count=engine._th03_classic_audio_frames();sound=engine.HEAP32.slice(ptr>>>2,(ptr>>>2)+count*2);}if(output.proof!==undefined){proofs.set(frame,output.proof);channel.send(JSON.stringify({type:'native-rollback-proof',frame,proof:output.proof}));compare(frame);}onConfirmedInput(frame,output.inputs,{replaySamples:output.replaySamples,scene:output.scene,round:output.round,serial:output.serial,winner:output.winner});onFrame(frame,sound,output.commands);}});
+  },confirm(frame){const output=outputs.get(frame);outputs.delete(frame);if(!output)throw Error('确认帧音频缺失');if(output.needsCharge)remoteCharge.confirm(frame);else remoteCharge.skip(frame);localCharge.delete(frame);chargeBoundaries.delete(frame);confirmedInput=output.lanes;let sound=new Int32Array(0);if(!output.paused){engine.HEAPU8.set(output.commands,engine._th03_classic_audio_commands());if(engine._th03_classic_audio_commit(output.count)!==0)throw Error('原生音频提交失败');const ptr=engine._th03_classic_audio(),count=engine._th03_classic_audio_frames();sound=engine.HEAP32.slice(ptr>>>2,(ptr>>>2)+count*2);}if(output.proof!==undefined){proofs.set(frame,output.proof);channel.send(JSON.stringify({type:'native-rollback-proof',frame,proof:output.proof}));compare(frame);}onConfirmedInput(frame,output.inputs,{charge:output.chargePair,replaySamples:output.replaySamples,scene:output.scene,round:output.round,serial:output.serial,winner:output.winner});onFrame(frame,sound,output.commands);}});
   const originalRestore=sync.restore;
-  sync.restore=(s,at)=>{originalRestore(s);for(const frame of outputs.keys())if(frame>=at)outputs.delete(frame);};
+  sync.restore=(s,at)=>{originalRestore(s);remoteCharge.rewind(at);for(const frame of outputs.keys())if(frame>=at)outputs.delete(frame);};
   channel.onmessage=event=>{try{const msg=JSON.parse(event.data);if(msg.type==='native-rollback-proof'){
     if(!Number.isSafeInteger(msg.frame)||msg.frame<0||(msg.frame+1)%120!==0||msg.frame>sync.frame+120||!Number.isInteger(msg.proof)||msg.proof<0||msg.proof>0xffffffff||remoteProofs.has(msg.frame))throw Error('回滚校验消息无效');
     remoteProofs.set(msg.frame,msg.proof);compare(msg.frame);
+  }else if(msg.type==='native-charge-boundary'){
+    if(!supportsCharge||!Number.isSafeInteger(msg.frame)||msg.frame<0||msg.frame>sync.frame+12)throw Error('蓄力边界数据无效');
+    if(msg.frame>=sync.confirmed){chargeBoundaries.add(msg.frame);if(msg.frame<sync.frame&&outputs.get(msg.frame)?.needsCharge)sync.rewind(msg.frame);sync.flush();}
+    while(!sync.closed&&sync.local.has(sync.frame)&&sync.remote.has(sync.frame)&&sync.advance(false)){}
+  }else if(msg.type==='native-charge'){
+    if(!supportsCharge)throw Error('联机版本不同，请刷新双方页面');
+    const changed=remoteCharge.accept(msg.frame,msg.sample,sync.frame);
+    if(changed&&msg.frame<sync.frame)sync.rewind(msg.frame);
+    sync.flush();
+    while(!sync.closed&&sync.local.has(sync.frame)&&sync.remote.has(sync.frame)&&sync.advance(false)){}
   }else {
     sync.receive(event.data);
     // A confirmed frame may be waiting for this input while prediction is
@@ -51,5 +91,5 @@ export function createRollbackMatch({seat,channel,engine,sample,options={},onFra
     const scene=engine._th03_classic_scene(),canPredict=scene===9&&!!engine._th03_classic_surrender_allowed()&&pause.state.owner===null&&!engine._th03_classic_paused();
     if(sync.nextLocal-sync.confirmed<12)sync.enqueue(sample()+(options.rapid===false?1024:0));
     if(sync.frame-sync.confirmed<sync.maxPrediction)sync.advance(canPredict);
-  },stop(){running=false;sync.close();outputs.clear();proofs.clear();remoteProofs.clear();},get snapshotStats(){return {captures,restores};},get pause(){return pause;},get frame(){return sync.frame;},get confirmed(){return sync.confirmed;},get confirmedInput(){return confirmedInput;},get rollbacks(){return sync.rollbacks;},get running(){return running;}};
+  },stop(){running=false;sync.close();remoteCharge.clear();localCharge.clear();chargeBoundaries.clear();outputs.clear();proofs.clear();remoteProofs.clear();},get snapshotStats(){return {captures,restores};},get pause(){return pause;},get frame(){return sync.frame;},get confirmed(){return sync.confirmed;},get confirmedInput(){return confirmedInput;},get rollbacks(){return sync.rollbacks;},get running(){return running;}};
 }

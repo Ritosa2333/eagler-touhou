@@ -30,6 +30,13 @@ int th03_surrender_allowed = 0;
 int th03_semantic_speculative = 0;
 int th03_semantic_boundary = 0;
 int th03_assist_charge = 0;
+int th03_charge_enabled = 0;
+int th03_charge_mode[2] = {};
+int th03_charge_input[2][4] = {};
+int th03_charge_output[2][4] = {};
+int th03_charge_reset[2] = {};
+int th03_charge_suppress = 0;
+int th03_charge_overflow = 0;
 }
 
 namespace th03::detail {''')
@@ -88,6 +95,88 @@ replace('src/core/frame/player_collision.inl',
 \t\tth03_touch_x[player_id]=std::clamp(th03_touch_x[player_id],-8192,8191);
 \t\tth03_touch_y[player_id]=std::clamp(th03_touch_y[player_id],-8192,8191);''')
 replace('src/core/frame.cpp', '#include <cstdint>', '#include <cstdint>\n#include <cmath>')
+charge_updates = root / 'src/core/frame/characters/charge_update.inl'
+charge_text = charge_updates.read_text(encoding='utf-8')
+for target in ('state.players[player_id].gauge_charged = 0U;', 'player.gauge_charged = 0U;'):
+    if target not in charge_text:
+        raise SystemExit('Unexpected charge shot source')
+    charge_text = charge_text.replace(target, '(th03_charge_reset[player_id] = 1, ' + target[:-1] + ');')
+charge_updates.write_text(charge_text, encoding='utf-8', newline='\n')
+replace('src/core/game_internal.hpp',
+        '\tstd::uint16_t gauge_charged = 0;\n\tstd::uint16_t gauge_avail = 0;',
+        '\tstd::uint16_t gauge_charged = 0;\n\tstd::array<std::uint16_t, 8> th03_pending_charge{};\n\tstd::uint8_t th03_pending_charge_count = 0;\n\tstd::uint16_t gauge_avail = 0;')
+replace('src/core/rollback_snapshot.cpp',
+        '\tvalue.knockback_active, value.gauge_charged, value.gauge_avail,',
+        '\tvalue.knockback_active, value.gauge_charged, value.th03_pending_charge, value.th03_pending_charge_count, value.gauge_avail,')
+replace('src/core/state_hash.cpp',
+        '\thash = hash_u16(hash, player.gauge_charged);',
+        '\thash = hash_u16(hash, player.gauge_charged);\n\thash = hash_u8(hash, player.th03_pending_charge_count);\n\tfor(auto value : player.th03_pending_charge) hash = hash_u16(hash, value);')
+replace('src/core/frame/player_collision.inl',
+        '''\tauto &player = state.players[player_id];
+\tbool acted = false;
+\tif(player.knockback_active) {''',
+        '''\tauto &player = state.players[player_id];
+\tbool acted = false;
+\tconst bool th03_was_knocked_back = player.knockback_active;
+\tif(th03_charge_enabled && th03_charge_mode[player_id] == 2 && !th03_charge_reset[player_id] && !player.knockback_active) {
+\t\tplayer.gauge_charged = std::min<std::uint16_t>(static_cast<std::uint16_t>(th03_charge_input[player_id][0]), player.gauge_avail);
+\t\tplayer.spell_ready_frames = static_cast<std::uint8_t>(th03_charge_input[player_id][1]);
+\t}
+\tif(player.knockback_active) {''')
+replace('src/core/frame/player_actions.inl',
+        '\tconst auto charged = player.gauge_charged;\n\tif(charged >= gauge_64) {',
+        '''\tconst auto charged = player.gauge_charged;
+\tif(th03_charge_enabled && !th03_charge_suppress) { th03_charge_output[player_id][2] = charged; th03_charge_output[player_id][3] |= 1; }
+\tif(charged >= gauge_64) {''')
+replace('src/core/frame/player_collision.inl',
+        '''\t} else if(
+\t\tstate.autofire_shot_gate[player_id] <= 2U &&
+\t\tplayer.hyper_active == 0U''',
+        '''\t} else if(th03_charge_enabled && th03_charge_mode[player_id] == 1 && (th03_charge_input[player_id][3] & 4)) {
+\t\tconst auto *sample = th03_charge_input[player_id];
+\t\tplayer.gauge_charged = std::min<std::uint16_t>(static_cast<std::uint16_t>(sample[0]), player.gauge_avail);
+\t\tplayer.spell_ready_frames = static_cast<std::uint8_t>(sample[1]);
+\t\tif(sample[3] & 2) observe_main_feedback(observer, MainFeedbackCueSite::gauge_spell_ready, player_id);
+\t} else if(
+\t\tstate.autofire_shot_gate[player_id] <= 2U &&
+\t\tplayer.hyper_active == 0U''')
+replace('src/core/frame/player_collision.inl',
+        '''\t\t\tif(player.gauge_charged == 0x180U) {
+\t\t\t\tobserve_main_feedback(''',
+        '''\t\t\tif(player.gauge_charged == 0x180U) {
+\t\t\t\tif(th03_charge_enabled) th03_charge_output[player_id][3] |= 2;
+\t\t\t\tobserve_main_feedback(''')
+replace('src/core/frame/player_collision.inl',
+        '''\tif(player.shot_active == 2U) {
+\t\tlive_input = 0U;''',
+        '''\tif(!th03_was_knocked_back && player.hyper_active == 0U && player.th03_pending_charge_count != 0U && !(th03_charge_enabled && th03_charge_mode[player_id] != 1 && (th03_charge_output[player_id][3] & 1))) {
+\t\tconst auto pending = player.th03_pending_charge[0];
+\t\tfor(std::size_t i=1; i<player.th03_pending_charge_count; ++i) player.th03_pending_charge[i-1] = player.th03_pending_charge[i];
+\t\tplayer.th03_pending_charge[--player.th03_pending_charge_count] = 0U;
+\t\tconst auto saved = player.gauge_charged;
+\t\tplayer.gauge_charged = std::min<std::uint16_t>(pending, player.gauge_avail);
+\t\tacted = acted || player.gauge_charged >= gauge_64;
+\t\tth03_charge_suppress = 1; release_gauge(state, player_id, observer); th03_charge_suppress = 0;
+\t\tplayer.gauge_charged = std::min<std::uint16_t>(saved, player.gauge_avail);
+\t}
+\tif(th03_charge_enabled) {
+\t\tth03_charge_output[player_id][0] = player.gauge_charged;
+\t\tth03_charge_output[player_id][1] = player.spell_ready_frames;
+\t\tth03_charge_output[player_id][3] |= 4;
+\t}
+\tif(player.shot_active == 2U) {
+\t\tlive_input = 0U;''')
+replace('src/core/frame/player_collision.inl',
+        '''\tauto &player = state.players[player_id];
+\tstd::optional<std::int8_t> final_velocity_x_write;
+\tif(!player_update_begin(state, player_id, observer)) {''',
+        '''\tauto &player = state.players[player_id];
+\tif(th03_charge_enabled && th03_charge_mode[player_id] == 1 && (th03_charge_input[player_id][3] & 1) && th03_charge_input[player_id][2] >= gauge_64) {
+\t\tif(player.th03_pending_charge_count < player.th03_pending_charge.size()) player.th03_pending_charge[player.th03_pending_charge_count++] = static_cast<std::uint16_t>(th03_charge_input[player_id][2]);
+\t\telse th03_charge_overflow = 1;
+\t}
+\tstd::optional<std::int8_t> final_velocity_x_write;
+\tif(!player_update_begin(state, player_id, observer)) {''')
 replace('src/core/frame/player_collision.inl',
         '\tplayer_update_finish(\n\t\tstate, player_id, live_input, final_velocity_x_write, observer\n\t);',
         '''\tif(player.is_cpu == 0U && (static_cast<unsigned>(th03_assist_charge) & (1U << player_id))) {

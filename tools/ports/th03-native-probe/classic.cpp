@@ -17,6 +17,7 @@ extern "C" { extern int th03_touch_active[2], th03_touch_unlimited[2], th03_touc
 extern "C" { extern int th03_surrender_request, th03_surrender_allowed; }
 extern "C" { extern int th03_semantic_speculative, th03_semantic_boundary, th03_match_winner, th03_assist_charge; extern unsigned th03_match_serial; }
 extern "C" { int th03_semantic_capture(int); int th03_semantic_restore(int); }
+extern "C" { extern int th03_charge_enabled, th03_charge_mode[2], th03_charge_input[2][4], th03_charge_output[2][4], th03_charge_reset[2], th03_charge_overflow; }
 
 namespace {
 std::unique_ptr<th03::app::ClassicRunner> runner;
@@ -54,7 +55,7 @@ int drain() {
 extern "C" {
 void th03_classic_external_music(int enabled) { music_external = enabled != 0; }
 int th03_classic_create() {
-	runner.reset(); audio.reset(); th03_match_winner = -1; th03_match_serial = 0; tick = 0; samples.clear(); replay_bytes.clear(); replay_serial = 0; deferred_audio = false; frame_command_count = 0; point_age = 99; scene = 0; th03_netplay_paused = 0; th03_assist_focus = 0; th03_assist_x = -1; th03_assist_y = -1;
+	runner.reset(); audio.reset(); th03_charge_enabled = 0; th03_charge_mode[0] = th03_charge_mode[1] = 0; th03_match_winner = -1; th03_match_serial = 0; tick = 0; samples.clear(); replay_bytes.clear(); replay_serial = 0; deferred_audio = false; frame_command_count = 0; point_age = 99; scene = 0; th03_netplay_paused = 0; th03_assist_focus = 0; th03_assist_x = -1; th03_assist_y = -1;
 	for(int seat = 0; seat < 2; ++seat) th03_touch_active[seat] = th03_touch_unlimited[seat] = th03_touch_x[seat] = th03_touch_y[seat] = 0;
 	th03_surrender_request = th03_surrender_allowed = 0;
 	th03::app::ClassicRunnerRequest request{};
@@ -82,6 +83,8 @@ int th03_classic_step_pair(std::uint16_t input, std::uint16_t second, std::uint1
 	if(!runner || !audio) return -1;
 	frame_command_count = 0;
 	th03_semantic_boundary = 0;
+	th03_charge_overflow = 0;
+	for(int seat=0;seat<2;++seat) { th03_charge_reset[seat]=0; th03_charge_output[seat][0]=0; th03_charge_output[seat][1]=0; th03_charge_output[seat][2]=-1; th03_charge_output[seat][3]=0; }
 	th03::app::LogicalTickInput sample{};
 	sample.tick_index = tick++;
 	sample.deadline_ns = tick * 17723000U;
@@ -89,6 +92,7 @@ int th03_classic_step_pair(std::uint16_t input, std::uint16_t second, std::uint1
 	th03_assist_charge = charge & 3U;
 	const auto previous_seen = th03_assist_seen;
 	auto result = runner->consume(sample, audio->status());
+	if(th03_charge_overflow) return -32;
 	if(!result) return -100 - static_cast<int>(result.error().code);
 	scene = static_cast<int>(result->pixel_oracle_identity.scene);
 	if(!th03_semantic_speculative) if(auto replay = runner->take_completed_replay()) {
@@ -104,6 +108,13 @@ int th03_classic_step_pair(std::uint16_t input, std::uint16_t second, std::uint1
 	samples.assign(rendered->canonical_frames.begin(), rendered->canonical_frames.end());
 	return static_cast<int>(result->status);
 }
+void th03_classic_charge_enable(int enabled) { th03_charge_enabled = enabled != 0; th03_charge_mode[0]=th03_charge_mode[1]=0; }
+void th03_classic_charge_set(int seat, int mode, int charge, int ready, int released, int flags) {
+	if(seat<0 || seat>1) return;
+	th03_charge_mode[seat] = mode;
+	th03_charge_input[seat][0]=charge; th03_charge_input[seat][1]=ready; th03_charge_input[seat][2]=released; th03_charge_input[seat][3]=flags;
+}
+int th03_classic_charge_get(int seat,int field) { return seat>=0 && seat<2 && field>=0 && field<4 ? th03_charge_output[seat][field] : -1; }
 int th03_classic_step(std::uint16_t input, std::uint16_t system, std::uint8_t charge) { return th03_classic_step_pair(input, 0, system, charge); }
 const std::byte* th03_classic_pixels() {
 	if(!runner) return nullptr;

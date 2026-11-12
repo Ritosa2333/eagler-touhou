@@ -124,8 +124,8 @@
       "sha256": "b30a388f4187446ddb37819dd540a4d0195289feaa0c56baa13c5b08721f2ae0"
     },
     "managed-native-room.mjs": {
-      "bytes": 16493,
-      "sha256": "d346937171b015e0905df4b621877072da07c0567bf7e537495c80539aef4ab1"
+      "bytes": 16830,
+      "sha256": "8b7c0d6175380ff434cf61ec30b2b9a14d9ea68eaef268b41bf2a12d89093df6"
     },
     "managed-native-solo.mjs": {
       "bytes": 9446,
@@ -147,17 +147,21 @@
       "bytes": 10921,
       "sha256": "401b9355213931d07135f8467b6c5e79c789978a6704747bf49a8af40c09acd6"
     },
+    "native-charge-history.mjs": {
+      "bytes": 2534,
+      "sha256": "dd92befc65f439b36bda3745adc9640bd8a320bdfb771a2c3e3e5a7eff7ec89a"
+    },
     "native-classic.js": {
-      "bytes": 66481,
-      "sha256": "45c8ae0958c781619c1406a4eed518cf3ccaa4af3a35b757e8ef4dc5a4d0cbb2"
+      "bytes": 66709,
+      "sha256": "124a4ae0f935c291596cbada4ccdce144eb4b9db6d2bf72ae8f9ef8726b67f94"
     },
     "native-classic.wasm": {
-      "bytes": 2277007,
-      "sha256": "3b41529a727ea3e01a062166d8979266ba19f44b521e734a66e35f6294bd9b8b"
+      "bytes": 2279837,
+      "sha256": "79e85d530137b6b1ae857b8f83fb1304501ab9e549479ca2859f01492eaadea7"
     },
     "native-confirmed-driver.mjs": {
-      "bytes": 1811,
-      "sha256": "eb559e8276efe60b20926b73b2f541e5833951acd931f1b74e009057d651b4ee"
+      "bytes": 2226,
+      "sha256": "b7f5022d64d592858592f13a3affe8c1c5191064490660d67b91d6263e9dfaa4"
     },
     "native-hit-point.mjs": {
       "bytes": 916,
@@ -168,8 +172,8 @@
       "sha256": "95a9fef9279332af29adc7b76fc93f8a8ce7522736aafcd9e7e759fb5785891d"
     },
     "native-match-rollback.mjs": {
-      "bytes": 6693,
-      "sha256": "125a5123704df90e8a54d1ef78c4be5cdf52798c5a18f14abdafbda5a60b82d9"
+      "bytes": 10064,
+      "sha256": "7c6432cbd8e2b174b3bb4a3651cbe5b1f9d003ef509fb10712558a25b729176b"
     },
     "native-match.mjs": {
       "bytes": 3414,
@@ -184,20 +188,20 @@
       "sha256": "013de0018186759d159e2586007c5398cd107944c0e6972fbb069c17aea5e926"
     },
     "native-replay.mjs": {
-      "bytes": 2341,
-      "sha256": "f2181a45731a97eaea8d6fd6da883a5a8e03f8bbe3c11e688b69376b444cbae4"
+      "bytes": 2491,
+      "sha256": "9a72e15c66af705a1264a51543487e59e0d55e668954109b6c0e067ef422c90f"
     },
     "native-rollback.mjs": {
-      "bytes": 4840,
-      "sha256": "c5952975dc87255cbf5489d78478230bd663aa13493c34b2245742fc68426c5a"
+      "bytes": 5156,
+      "sha256": "5e83f69749a282662c67535b63e769dd7e0004d92cc16ef5e5cfaa38f7d55329"
     },
     "native-versus-pause.mjs": {
       "bytes": 7889,
       "sha256": "35dde5f9ed334df5663ab5e21475364f01729a876cd2a35a79b88d17e26aada7"
     },
     "netplay/input-transport.js": {
-      "bytes": 10883,
-      "sha256": "adc43ad814b10a9397a54519d329af8dd0eddaef25200487523b8004f72f4538"
+      "bytes": 10924,
+      "sha256": "a4dbe0ea036f1ed1d689b23a4828b97692b6e0baaa29760c7b387ad20f40844f"
     },
     "pc98-game-fps.mjs": {
       "bytes": 876,

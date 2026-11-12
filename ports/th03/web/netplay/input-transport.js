@@ -7,7 +7,7 @@ const bytes=value=>encoder.encode(value).length;
 const integer=value=>Number.isSafeInteger(value)&&value>=0;
 const isInput=text=>{
   const value=JSON.parse(text);
-  return (['input','native-input','native-rollback-input'].includes(value.type)&&Number.isSafeInteger(value.frame))||value.type==='frame';
+  return (['input','native-input','native-rollback-input','native-charge','native-charge-boundary'].includes(value.type)&&Number.isSafeInteger(value.frame))||value.type==='frame';
 };
 
 // Preserve control/input causality across two lanes. Inputs within one control

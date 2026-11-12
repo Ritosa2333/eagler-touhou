@@ -19,3 +19,11 @@ test('solo replay validates input and initial files while preserving legacy mult
  const invalid=await encodeReplay([[64,0,0,0,1]],true,Uint8Array.of(5),{mode:'solo',files});await assert.rejects(decodeReplay(invalid),/无效/);
  const badFile=await encodeReplay(rows,true,Uint8Array.of(5),{mode:'solo',files:{'../config':[1]}});await assert.rejects(decodeReplay(badFile),/无效/);
 });
+
+test('multiplayer replay preserves charge releases and rejects malformed samples',async()=>{
+ const rows=[[0,512],[32,0,[512,2,-1,4],[0,0,1024,5]]];
+ const bytes=await encodeReplay(rows,true,Uint8Array.of(7));
+ assert.deepEqual((await decodeReplay(bytes)).rows,rows);
+ const invalid=await encodeReplay([[0,0,[0,0,1024,4],[0,0,-1,0]]],true,Uint8Array.of(7));
+ await assert.rejects(decodeReplay(invalid),/无效/);
+});

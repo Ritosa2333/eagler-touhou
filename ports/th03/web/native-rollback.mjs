@@ -2,9 +2,9 @@ import {packTouch,unpackTouch} from './touch-input.js';
 // Bounded rollback scheduler. Snapshot ownership and boundary eligibility are
 // supplied by the runtime; no remote-provided bytes are ever restored.
 export class NativeRollback {
-  constructor({seat,send,capture,restore,release=()=>{},step,confirm,onError=()=>{},maxPrediction=6}) {
+  constructor({seat,send,capture,restore,release=()=>{},step,confirm,canConfirm=()=>true,onCaptureUnavailable=()=>false,onError=()=>{},maxPrediction=6}) {
     if(![0,1].includes(seat)||!Number.isInteger(maxPrediction)||maxPrediction<1||maxPrediction>12)throw Error('Invalid rollback configuration');
-    Object.assign(this,{seat,send,capture,restore,release,step,confirm,onError,maxPrediction});
+    Object.assign(this,{seat,send,capture,restore,release,step,confirm,canConfirm,onCaptureUnavailable,onError,maxPrediction});
     this.frame=0;this.confirmed=0;this.nextLocal=0;this.local=new Map();this.remote=new Map();this.used=new Map();this.snapshots=new Map();this.closed=false;this.rollbacks=0;this.blocked=false;
   }
   enqueue(input) {
@@ -23,10 +23,11 @@ export class NativeRollback {
   }
   advance(allowPrediction) {
     const frame=this.frame;
+    if(frame-this.confirmed>=this.maxPrediction)return false;
     if(!this.local.has(frame)||(!this.remote.has(frame)&&!allowPrediction)||(this.blocked&&this.confirmed<frame))return false;
     const remote=this.remote.has(frame)?this.remote.get(frame):this.predict(frame);
-    const predicted=!this.remote.has(frame), speculative=predicted||frame>this.confirmed;
-    if(speculative){const snapshot=this.capture();if(snapshot==null)return false;this.snapshots.set(frame,snapshot);}
+    const predicted=!this.remote.has(frame), speculative=predicted||frame>this.confirmed||!this.canConfirm(frame);
+    if(speculative){const snapshot=this.capture();if(snapshot==null){if(frame===this.confirmed&&this.remote.has(frame)&&this.onCaptureUnavailable(frame))return this.advance(false);return false;}this.snapshots.set(frame,snapshot);}
     const pair=this.seat===0?[this.local.get(frame),remote]:[remote,this.local.get(frame)];
     this.used.set(frame,remote);
     if(this.step(pair,frame,speculative)===false){
@@ -64,7 +65,7 @@ export class NativeRollback {
     while(this.frame<end){if(!this.advance(true))break;}
   }
   flush() {
-    while(this.confirmed<this.frame&&this.remote.has(this.confirmed)){
+    while(this.confirmed<this.frame&&this.remote.has(this.confirmed)&&this.canConfirm(this.confirmed)){
       this.confirm?.(this.confirmed);this.local.delete(this.confirmed);this.used.delete(this.confirmed);if(this.snapshots.has(this.confirmed)){this.release(this.snapshots.get(this.confirmed));this.snapshots.delete(this.confirmed);}this.confirmed++;
     }
     for(const frame of this.remote.keys())if(frame<this.confirmed-12)this.remote.delete(frame);

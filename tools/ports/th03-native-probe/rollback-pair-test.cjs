@@ -13,12 +13,12 @@ async function copy(m,dir,dst){for(const e of await readdir(dir,{withFileTypes:t
  const spectator=createConfirmedDriver(modules[2]);let compared=0;
  const queues=[[],[]], channels=[{},{}], errors=[],played=[[],[]],confirmedInputs=[[],[]];let hostTick=0;
  channels.forEach((ch,i)=>ch.send=message=>queues[1-i].push({message,due:hostTick+(hostTick>700&&i===1?3:0)}));
- const matches=channels.map((channel,seat)=>createRollbackMatch({seat,channel,engine:modules[seat],sample:()=>{const bits=hostTick<500?0:hostTick<650?(hostTick%60<5?512:0):(hostTick%40<20?(seat?8:4):0)|(hostTick%80<20?512:0);const active=hostTick>=800&&hostTick<900;return packTouch(bits,{active,begin:hostTick===800,x:active?(seat?-16:16):0,y:active?8:0});},onConfirmedInput:(frame,inputs,metadata)=>confirmedInputs[seat].push([frame,...inputs,metadata.replaySamples]),onFrame:(frame,pcm)=>{let hash=2166136261;for(const value of pcm)hash=Math.imul(hash^value,16777619);played[seat].push([frame,pcm.length,hash>>>0]);},onError:e=>errors.push(e),now:()=>hostTick*5}));
+ const matches=channels.map((channel,seat)=>createRollbackMatch({seat,channel,engine:modules[seat],sample:()=>{const bits=hostTick<500?0:hostTick<650?(hostTick%60<5?512:0):(hostTick%40<20?(seat?8:4):0)|(hostTick%80<20?512:0);const active=hostTick>=800&&hostTick<900;return packTouch(bits,{active,begin:hostTick===800,x:active?(seat?-16:16):0,y:active?8:0});},onConfirmedInput:(frame,inputs,metadata)=>confirmedInputs[seat].push([frame,...inputs,metadata.replaySamples,metadata.charge]),onFrame:(frame,pcm)=>{let hash=2166136261;for(const value of pcm)hash=Math.imul(hash^value,16777619);played[seat].push([frame,pcm.length,hash>>>0]);},onError:e=>errors.push(e),now:()=>hostTick*5}));
  for(hostTick=0;hostTick<1600;hostTick++){
   matches.forEach(m=>m.tick());
   for(let i=0;i<2;i++)while(queues[i].length&&queues[i][0].due<=hostTick)channels[i].onmessage({data:queues[i].shift().message});
   if(errors.length)throw errors[0];
-  while(spectator.frame<confirmedInputs[0].length){const row=confirmedInputs[0][spectator.frame];spectator.step(row.slice(1,3));}
+  while(spectator.frame<confirmedInputs[0].length){const row=confirmedInputs[0][spectator.frame];spectator.step(row.slice(1,3),row[4]);}
   if(matches[0].frame===matches[0].confirmed&&spectator.frame===matches[0].frame&&spectator.frame>750){
     assert.equal(modules[2]._th03_classic_scene(),modules[0]._th03_classic_scene());
     if(modules[0]._th03_classic_scene()===9)assert.equal(modules[2]._th03_semantic_state_hash(),modules[0]._th03_semantic_state_hash());
