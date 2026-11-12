@@ -345,7 +345,7 @@ export const PRODUCT_CONTENT = Object.freeze({
       oggSourceFiles: Object.freeze(["thbgm.dat"]),
       preparedAlternative: Object.freeze({
         directory: "assets-eagler",
-        markerFiles: Object.freeze(["th14.data", "music/th14_01.flac"]),
+        markerFiles: Object.freeze(["th14.data", "music/th14_01.ogg"]),
       }),
     }),
     dataLayout: TH14_DATA_LAYOUT,
@@ -356,7 +356,7 @@ export const PRODUCT_CONTENT = Object.freeze({
       artwork: Object.freeze({kind: "retail-memory-title-no-reader"}),
       preparedContent: Object.freeze({
         directory: "assets-eagler",
-        markerFiles: Object.freeze(["th14.data", "music/th14_01.flac"]),
+        markerFiles: Object.freeze(["th14.data", "music/th14_01.ogg"]),
         script: "scripts/prepare-th14-content.mjs",
       }),
       ogg: Object.freeze({kind: "prepared-content"}),

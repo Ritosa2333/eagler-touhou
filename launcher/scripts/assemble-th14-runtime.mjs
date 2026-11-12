@@ -35,7 +35,7 @@ if (!build.flags?.includes('-DPORT_TITLE=14') || !build.runtimeFiles ||
 
 const replacements = new Map();
 for (const [name, expected] of Object.entries(build.runtimeFiles)) {
-  if (!names.includes(name) || !/^(?:th14-sdl\.(?:mjs|wasm)|Th14[A-Za-z0-9]+\.mjs)$/.test(name))
+  if (!names.includes(name) || !/^(?:th14-sdl\.(?:mjs|wasm)|Th14[A-Za-z0-9]+\.mjs|eagler-host\.mjs)$/.test(name))
     throw Error('Unexpected TH14 core output: ' + name);
   replacements.set(name, await checked(core, name, expected));
 }
@@ -64,7 +64,8 @@ if ([...originalHtml.matchAll(canvas)].length !== 1) throw Error('Missing TH14 c
 const html = originalHtml.replace(canvas, tag =>
   tag.replace(/\s(?:width|height)="\d+"/g, '').replace(/>$/, ' width="1280" height="960">'));
 assertRuntimeDataShell(html, 'th14', 'normal');
-assertRuntimeProtocolSources([shell, (await readTemplate('eagler-host.mjs')).toString('utf8'),
+const host = replacements.get('eagler-host.mjs') ?? await readTemplate('eagler-host.mjs');
+assertRuntimeProtocolSources([shell, host.toString('utf8'),
   (await readTemplate('runtime-epoch.mjs')).toString('utf8')], 'th14', 'normal');
 replacements.set('shell.mjs', Buffer.from(shell));
 replacements.set('th14.html', Buffer.from(html));

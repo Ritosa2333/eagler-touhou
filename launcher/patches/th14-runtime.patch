@@ -33,10 +33,10 @@ index 0000000000000000000000000000000000000000..25fc1a71c6a044f980e895c3db674984
 +加 `--strict` 时，VM 差异、缺失操作码或字库选择不符都会返回非零。报告记录每个不同字段的原版和移植 32 位原始值。修复前的 120 组对照中有 31 组不同、3 组未映射。修复后扩展至 349 组全部相同；另有 69 组[界面对照](TH14_UI_ORACLE.md)通过。父子 VM 管理、绘制队列、完整战斗和最终像素未由这份组件对照覆盖。
 diff --git a/docs/porting/TH14_BROWSER_PERFORMANCE.md b/docs/porting/TH14_BROWSER_PERFORMANCE.md
 new file mode 100644
-index 0000000000000000000000000000000000000000..aed12841c77356413562ceffd4f99cb17767b06f
+index 0000000000000000000000000000000000000000..455c61af9cd4d0dac576f2e09d91ef641bb314ad
 --- /dev/null
 +++ b/docs/porting/TH14_BROWSER_PERFORMANCE.md
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,30 @@
 +# TH14 browser frame pacing
 +
 +The browser accumulates refresh time separately from the retail deadline
@@ -51,6 +51,10 @@ index 0000000000000000000000000000000000000000..aed12841c77356413562ceffd4f99cb1
 +browser backend therefore skips SDL's extra Asyncify sleep after the blit.
 +The host reserves its next RAF before entering its serialized Wasm callback
 +and keeps at most one frame in flight.
++
++Hosted keyboard presses survive a keyup that arrives before the next
++simulation tick. The sampler consumes the pending press once; a held key
++continues to follow the current state. Focus and session resets clear both.
 +
 +GLES reuses the same eye/clip matrices for fog, projectability and vertex
 +submission. The ordinary positive-W world batch bypasses the near-clip
@@ -1077,7 +1081,7 @@ index c91062f77f39cdc37dac75bbe8d697d98b1ee72c..44601056b63271565f978c2342944931
          }
          if(pressed&0x102){if(name_length){sounds.push_back(11);entered_name[--name_length]=' ';}else step(2);}break;
 diff --git a/runtimes/th12/th12_web/cpp/sdl/Application.cpp b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
-index bae5d17e65ee2a98f46cb063007b05d43941077d..d5348bbbed144d595e556731c24dad3a9349fba8 100644
+index bae5d17e65ee2a98f46cb063007b05d43941077d..1dc5362115aa32cd2f2742c75f6ca5f78e88f2dc 100644
 --- a/runtimes/th12/th12_web/cpp/sdl/Application.cpp
 +++ b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
 @@ -306,7 +306,18 @@ struct Application:StageResourceEffects
@@ -1131,7 +1135,70 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..d5348bbbed144d595e556731c24dad3a
  #endif
          frame_text.clear();
  #if PORT_TITLE == 14
-@@ -2295,8 +2313,23 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
+@@ -2107,7 +2125,34 @@ struct Application:StageResourceEffects
+     }
+ };
+ Application app;
+-struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
++struct Key {
++    const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;
++#if PORT_TITLE == 14
++    bool pending_press=false;
++#endif
++    void event(bool down) noexcept {
++#if PORT_TITLE == 14
++        // Keydown and keyup can both arrive between two browser updates.
++        if(down&&!hosted)pending_press=true;
++#endif
++        hosted=down;
++    }
++    bool sample() noexcept {
++#if PORT_TITLE == 14
++        const bool value=hosted||pending_press;
++        pending_press=false;
++        return value;
++#else
++        return hosted;
++#endif
++    }
++    void clear() noexcept {
++        hosted=false;
++#if PORT_TITLE == 14
++        pending_press=false;
++#endif
++    }
++};
+ #include "../../../portable/input/KeyboardMap.inc"
+ touhou::input::TouchController gestures;
+ touhou::sdl::FrameCadence cadence;
+@@ -2145,7 +2190,7 @@ touhou::input::TouchState touch_state(){
+     s.x=p.position.x;s.y=p.position.y;s.fast=float(p.normal_speed)/128;s.slow=float(p.focus_speed)/128;
+     s.min_x=-184;s.max_x=184;s.min_y=32;s.max_y=432;return s;
+ }
+-void clear_inputs(){th11_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;previous_scans.fill(0);gestures.reset();if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;}
++void clear_inputs(){th11_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.clear();previous_scans.fill(0);gestures.reset();if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;}
+ void touch_event(unsigned type,int id,float x,float y){
+     if(std::isfinite(x)&&std::isfinite(y))gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);
+ }
+@@ -2169,7 +2214,7 @@ bool sample_and_tick_once(){
+         else if(event.type==SDL_EVENT_JOYSTICK_REMOVED&&controller&&SDL_GetJoystickID(controller)==event.jdevice.which){SDL_CloseJoystick(controller);controller=nullptr;int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;++i)add_controller(ids[i]);SDL_free(ids);}
+     }
+     bool keys[256]{};std::array<u8,256> scans{};const auto* physical=th11_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
+-    for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.scan<256)scans[k.scan]=128;if(k.vk<256)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
++    for(auto& k:keyboard_map)if(k.sample()||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.scan<256)scans[k.scan]=128;if(k.vk<256)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
+     if(app.session.title){auto& title=*app.session.title;for(u32 i=0;i<256;++i)title.key_edges[i]=scans[i]&~previous_scans[i];title.number_keys=0;for(u32 i=0;i<9;++i)if(keys[49+i])title.number_keys|=1u<<i;}
+     previous_scans=scans;
+     const auto sample=gestures.sample(touch_state(),SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
+@@ -2266,7 +2311,7 @@ EMSCRIPTEN_KEEPALIVE unsigned th11_heap_bytes(){return unsigned(emscripten_get_h
+ EMSCRIPTEN_KEEPALIVE unsigned th11_dynamic_allocs(){return unsigned(mallinfo().uordblks);}
+ EMSCRIPTEN_KEEPALIVE int th11_pause(){return th11::sdl::app.pause()?1:0;}
+ EMSCRIPTEN_KEEPALIVE int th11_resume(){return th11::sdl::app.resume()?1:0;}
+-EMSCRIPTEN_KEEPALIVE void th11_key(unsigned scan,unsigned down){for(auto& k:th11::sdl::keyboard_map)if(k.scan==scan)k.hosted=down!=0;}
++EMSCRIPTEN_KEEPALIVE void th11_key(unsigned scan,unsigned down){for(auto& k:th11::sdl::keyboard_map)if(k.scan==scan)k.event(down!=0);}
+ EMSCRIPTEN_KEEPALIVE void th11_keys_clear(){th11::sdl::clear_inputs();}
+ EMSCRIPTEN_KEEPALIVE void th11_music_enabled(unsigned on){using namespace th11::sdl;app.audio.music_enabled=on!=0;app.audio.refresh_volume();}
+ EMSCRIPTEN_KEEPALIVE const unsigned* th11_audio_statistics(){return th11::sdl::app.audio.statistics();}
+@@ -2295,8 +2340,23 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
          if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
          const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
          if(suspended){cadence.reset();return EM_TRUE;}
@@ -1176,6 +1243,50 @@ index 997267a818ce8545c62c3cf262c5982e00972c05..b1c158592be72316d6d65db725a0ac60
  }
  template<class Session> AnmResource* th14_deferred_capture_target(Session& session,const DeferredCaptureRequestTh14& request){
   // Both actual44be40 callers use text52 from Supervisor+71c/slot0.
+diff --git a/runtimes/th12/th12_web/cpp/sdl/AudioDevice.cpp b/runtimes/th12/th12_web/cpp/sdl/AudioDevice.cpp
+index 321fecd7cffb71035a9a3681dc32577ae2dc8215..ae8d1ba432544320b9856f3ebabac395a37d04cf 100644
+--- a/runtimes/th12/th12_web/cpp/sdl/AudioDevice.cpp
++++ b/runtimes/th12/th12_web/cpp/sdl/AudioDevice.cpp
+@@ -238,16 +238,16 @@ bool AudioDevice::consume_initial_music_request(bool native_direct_sound){
+         const u32 bytes=word(format+20),total=word(format+28);
+         if(!align||!rate||!channels||bits!=16||bytes%align||bytes!=total){error="Unsupported initial music PCM layout";return Result::Failed;}
+         std::string stem=request.file;const auto dot=stem.find_last_of('.');if(dot!=std::string::npos)stem.erase(dot);
+-        const auto path=std::string("/music/")+stem+".flac";
++        auto path=std::string("/music/")+stem+".ogg";
+         ma_decoder decoder{};const auto config=ma_decoder_config_init(ma_format_s16,channels,rate);
+-        if(ma_decoder_init_file(path.c_str(),&config,&decoder)!=MA_SUCCESS){error="Unable to preload "+path;return Result::Failed;}
++        if(open_th14_music(path,config,decoder)!=MA_SUCCESS){error="Unable to preload "+path;return Result::Failed;}
+         auto pcm=std::make_shared<Impl::MusicPcm>();pcm->filename=request.file;pcm->format=format;pcm->wave.resize(44+bytes);
+         ma_uint64 length=0,read=0;const bool ok=ma_decoder_get_length_in_pcm_frames(&decoder,&length)==MA_SUCCESS&&length==total/align&&
+             ma_decoder_read_pcm_frames(&decoder,pcm->wave.data()+44,bytes/align,&read)==MA_SUCCESS&&read==bytes/align;
+         ma_decoder_uninit(&decoder);
+         if(!ok){error="Initial music PCM length differs from original: "+path;return Result::Failed;}
+         // A 44-byte WAV view lets the existing streaming/Continue decoder
+-        // read this exact s16 PCM without keeping a second payload copy.
++        // read the decoded s16 PCM without keeping a second payload copy.
+         auto* w=pcm->wave.data();const auto put32=[&](u32 offset,u32 value){std::memcpy(w+offset,&value,4);};
+         const auto put16=[&](u32 offset,u16 value){std::memcpy(w+offset,&value,2);};
+         std::memcpy(w,"RIFF",4);put32(4,36+bytes);std::memcpy(w+8,"WAVEfmt ",8);put32(16,16);put16(20,1);put16(22,u16(channels));
+@@ -281,17 +281,13 @@ bool AudioDevice::music(i32 track){
+ #endif
+         ma_sound_set_volume(&a.music->sound,music_enabled?volume(SoundEffects::adjusted_volume(0,music_volume,true)):0.f);ma_sound_start(&a.music->sound);return true;}
+     auto next=std::make_unique<Impl::Voice>();
+-#if PORT_TITLE == 14
+-    const auto path=std::string("/music/")+stem+".flac";
+-#else
+-    const auto path=std::string("/music/")+stem+".ogg";
+-#endif
++    auto path=std::string("/music/")+stem+".ogg";
+     const u32 rate=word(format+36),align=short_word(format+44),channels=short_word(format+34),total=word(format+28),intro=word(format+24);
+     if(!align||!rate||!channels||intro>=total){error="Invalid music loop";return false;}
+     auto config=ma_decoder_config_init(ma_format_f32,channels,rate);
+ #if PORT_TITLE == 14
+     next->cached_pcm=std::move(cached_music);
+-    const auto decoded=next->cached_pcm?ma_decoder_init_memory(next->cached_pcm->wave.data(),next->cached_pcm->wave.size(),&config,&next->decoder):ma_decoder_init_file(path.c_str(),&config,&next->decoder);
++    const auto decoded=next->cached_pcm?ma_decoder_init_memory(next->cached_pcm->wave.data(),next->cached_pcm->wave.size(),&config,&next->decoder):open_th14_music(path,config,next->decoder);
+     if(decoded!=MA_SUCCESS){error="Unable to decode "+path;return false;}next->decoded=true;
+     if(next->cached_pcm)++a.preload_cache_hits;
+ #else
 diff --git a/runtimes/th12/th12_web/cpp/sdl/GraphicsDevice.cpp b/runtimes/th12/th12_web/cpp/sdl/GraphicsDevice.cpp
 index 214e6394474a90211b061d09f30c059f005dca88..4dc7b8a2611477ce18f5963e88463e137e53b42f 100644
 --- a/runtimes/th12/th12_web/cpp/sdl/GraphicsDevice.cpp
@@ -1189,6 +1300,57 @@ index 214e6394474a90211b061d09f30c059f005dca88..4dc7b8a2611477ce18f5963e88463e13
  #endif
      );
      if(!loaded){error="Unable to prepare ANM texture: "+source.name+" ("+texture.image.failure+")";return false;}
+diff --git a/runtimes/th12/th12_web/cpp/sdl/Th14MusicStream.hpp b/runtimes/th12/th12_web/cpp/sdl/Th14MusicStream.hpp
+index c61edb9701f1e14af6c58e0c7cbabfa029daff5e..224266022445e77587f899b64929598692d261f7 100644
+--- a/runtimes/th12/th12_web/cpp/sdl/Th14MusicStream.hpp
++++ b/runtimes/th12/th12_web/cpp/sdl/Th14MusicStream.hpp
+@@ -1,8 +1,19 @@
+ #pragma once
+ 
+ namespace th11::sdl {
+-// Reconstruct the retail raw PCM file address space from its lossless tracks.
+-// Ordinary reads still use the existing decoder and its original loop points.
++// Prefer the published Ogg tracks. Old installations may still have FLAC files
++// mounted under their previous package revision.
++inline ma_result open_th14_music(std::string& path,const ma_decoder_config& config,ma_decoder& decoder){
++    const auto result=ma_decoder_init_file(path.c_str(),&config,&decoder);
++    if(result!=MA_DOES_NOT_EXIST)return result;
++    auto legacy=path.substr(0,path.size()-4)+".flac";
++    const auto fallback=ma_decoder_init_file(legacy.c_str(),&config,&decoder);
++    if(fallback==MA_SUCCESS)path=std::move(legacy);
++    return fallback;
++}
++
++// Reconstruct the retail PCM address space from the decoded tracks.
++// Original loop points and Continue offsets remain in retail sample frames.
+ struct Th14MusicStream {
+     ma_data_source_base base{};
+     ma_decoder* primary;
+@@ -53,9 +64,9 @@ struct Th14MusicStream {
+                 else{
+                     const auto end=std::find(p,p+16,u8(0));std::string name(reinterpret_cast<const char*>(p),size_t(end-p));
+                     const auto dot=name.find_last_of('.');if(dot==std::string::npos)return MA_INVALID_DATA;
+-                    name.resize(dot);const auto path=std::string("/music/")+name+".flac";
++                    name.resize(dot);auto path=std::string("/music/")+name+".ogg";
+                     auto config=ma_decoder_config_init(ma_format_f32,half(p+34),word(p+36));
+-                    const auto result=ma_decoder_init_file(path.c_str(),&config,&preceding);if(result!=MA_SUCCESS)return result;
++                    const auto result=open_th14_music(path,config,preceding);if(result!=MA_SUCCESS)return result;
+                     preceding_ready=true;decoder=&preceding;
+                 }
+                 const auto result=ma_data_source_seek_to_pcm_frame(decoder,(physical-offset)/align());if(result!=MA_SUCCESS)return result;
+diff --git a/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs b/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
+index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..369fef8c5ab61a4dd8fdcc8b97414ccd7630a9dc 100644
+--- a/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
++++ b/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
+@@ -97,7 +97,7 @@ export function directTouch(core,canvas,message,viewport) {
+  core.sdl_touch(type,id,(x*viewport.width-rect.left)/rect.width,(y*viewport.height-rect.top)/rect.height);
+ }
+ export function resourcePath(path,game) {
+- if(game==='th14'&&typeof path==='string'&&/^\/music\/(?:th14_[0-9]{2}|th128_08)\.flac$/.test(path))return true;
++ if(game==='th14'&&typeof path==='string'&&/^\/music\/(?:th14_[0-9]{2}|th128_08)\.(?:ogg|flac)$/.test(path))return true;
+  return typeof path==='string'&&((new RegExp('^/music/'+game+'_(?:[0-9]{2})\\.ogg$').test(path)||/^\/music\/th10_17\.ogg$/.test(path))||/^\/fonts\/[a-z0-9_.-]+$/.test(path)||path==='/unifont.otf'||(new RegExp('^/thcrap/'+game+'/[a-z0-9_/.-]+$').test(path)&&!path.includes('..')&&!path.includes('//')));
+ }
+ export function ensureSharedFontAlias(Module,language){
 diff --git a/runtimes/th12/th12_web/tests/cpp/th14-anm-vm-oracle.cpp b/runtimes/th12/th12_web/tests/cpp/th14-anm-vm-oracle.cpp
 new file mode 100644
 index 0000000000000000000000000000000000000000..b9a59a804a81f032197649748b8c56300fc3cfb7
@@ -2054,15 +2216,30 @@ index 60d5183dffe1480f4a228efbba8db66ecff408d3..b5b6badc34f874463868c963f2ecb0f5
      runtime.openArchive(bytes);assert.equal(await runtime.archiveOpening,227);await valid();assert.equal(copies,3);
      assert.equal(module._fixture_reset(),1);assert.equal(module._fixture_empty(),1);const before=copies;
 diff --git a/tools/th14-build-gles.py b/tools/th14-build-gles.py
-index 0721fa9d26730472f580751ef017daacce2324a0..16a1ff3a5a8c806cb92459334cd49ebd49130144 100644
+index 0721fa9d26730472f580751ef017daacce2324a0..60fdfff1071d3042f50642d05aafdeaa2729a798 100644
 --- a/tools/th14-build-gles.py
 +++ b/tools/th14-build-gles.py
-@@ -64,11 +64,15 @@ def main():
+@@ -38,7 +38,8 @@ def main():
+     for directory in (cpp, runtime / 'portable'):
+         tracked.update(p for p in directory.rglob('*')
+                        if p.is_file() and p.suffix in {'.hpp', '.h', '.inc', '.js', '.mjs'})
+-    tracked.update((Path(__file__).resolve(), repo / 'tools/th14-gles-profile.json'))
++    host = runtime / 'th12_web/sdl-runtime/eagler-host.mjs'
++    tracked.update((Path(__file__).resolve(), repo / 'tools/th14-gles-profile.json', host))
+     source_bindings = {p.relative_to(repo).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+                        for p in sorted(tracked)}
+ 
+@@ -60,15 +61,20 @@ def main():
+         run([*profile['flags'], *compiled, *link_flags, '-o', str(output / 'th14-sdl.mjs')])
+     for helper in profile['helpers']:
+         shutil.copyfile(portable / helper, output / helper)
++    shutil.copyfile(host, output / host.name)
+     for name, expected in source_bindings.items():
          if hashlib.sha256((repo / name).read_bytes()).hexdigest() != expected:
              raise RuntimeError('Source changed during build: ' + name)
      wasm = output / 'th14-sdl.wasm'
 +    runtime_files = {}
-+    for name in ['th14-sdl.mjs', 'th14-sdl.wasm', *profile['helpers']]:
++    for name in ['th14-sdl.mjs', 'th14-sdl.wasm', host.name, *profile['helpers']]:
 +        data = (output / name).read_bytes()
 +        runtime_files[name] = dict(bytes=len(data), sha256=hashlib.sha256(data).hexdigest())
      report = dict(module=str(wasm), units=len(compiled), sourceBindings=source_bindings,

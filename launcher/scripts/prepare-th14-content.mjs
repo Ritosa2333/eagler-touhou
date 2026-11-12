@@ -3,6 +3,7 @@ import {createHash, randomUUID} from 'node:crypto';
 import {resolve, join} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {TH14_MUSIC_LAYOUT} from '../lib/th14-content-layout.mjs';
+import {pinOggSerial} from '../lib/ogg-production-baseline.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).map(argument => {
   const match = /^--(original|output)=(.+)$/.exec(argument);
@@ -26,19 +27,25 @@ if (archivePath !== join(args.output, 'th14.data')) await copyFile(archivePath, 
 const tracks = [];
 for (const row of TH14_MUSIC_LAYOUT) {
   const target = join(args.output, 'music', row.file);
-  const temporary = target + '.' + randomUUID() + '.flac';
+  const end = row.offset + row.frames * 4;
+  if (row.offset < 16 || row.offset % 4 || row.loopFrame < 0 ||
+      row.loopFrame >= row.frames || end > music.length) throw Error('Invalid PCM layout for ' + row.file);
   const result = spawnSync('ffmpeg', [
     '-hide_banner', '-loglevel', 'error', '-nostdin',
-    '-f', 's16le', '-ar', '44100', '-ac', '2', '-skip_initial_bytes', String(row.offset),
-    '-i', musicPath, '-af', 'atrim=end_sample=' + row.frames,
-    '-c:a', 'flac', '-compression_level', '8', temporary,
-  ], {stdio: 'inherit', windowsHide: true});
-  if (result.error || result.status !== 0) throw result.error || Error('FLAC preparation failed for ' + row.file);
+    '-f', 's16le', '-ar', '44100', '-ac', '2', '-i', 'pipe:0',
+    '-c:a', 'libvorbis', '-q:a', '5', '-f', 'ogg', 'pipe:1',
+  ], {input: music.subarray(row.offset, end), windowsHide: true, maxBuffer: 16 * 1024 * 1024});
+  if (result.error || result.status !== 0 || !result.stdout?.length)
+    throw result.error || Error('Ogg preparation failed for ' + row.file + ': ' + result.stderr);
+  // FFmpeg's default stream serial is random; pin it so re-encoding the
+  // same input with the same encoder does not invalidate the package cache.
+  const encoded = pinOggSerial(result.stdout, Number.parseInt(digest(row.file).slice(0, 8), 16));
+  const temporary = target + '.' + randomUUID() + '.tmp';
+  await writeFile(temporary, encoded, {flag: 'wx'});
   await rename(temporary, target);
-  const encoded = await readFile(target);
   tracks.push({...row, bytes: encoded.length, sha256: digest(encoded)});
 }
 await writeFile(join(args.output, 'provenance.json'), JSON.stringify({
   game: 'th14', archiveSha256: digest(archive), musicSha256: digest(music),
-  codec: 'flac', sampleRate: 44100, channels: 2, tracks,
+  codec: 'vorbis', encoder: {codec: 'libvorbis', quality: 5}, sampleRate: 44100, channels: 2, tracks,
 }, null, 2) + '\n');
