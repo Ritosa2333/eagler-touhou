@@ -647,7 +647,10 @@ int GameWorld::cancel_lasers_region(const std::function<bool(float,float)>& insi
                     part.offscreen_grace=base.offscreen_grace;
                     lasers[i]=part;kept=true;
                 }else{
+                    // A split creates a fresh native laser controller. Its first
+                    // manager pass moves it and starts a new contact timer.
                     part.id=next_id++;part.cut_contact.reset();
+                    part.graze_clock=0;part.aura_slowed=false;part.motion_frame=-1;
                     part.straight_changes={};part.straight_bounds_grace=3;part.change_sounds=0;
                     lasers.push_back(part);
                 }
