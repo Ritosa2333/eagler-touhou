@@ -116,6 +116,56 @@ public:
     explicit BossPresentation(AnmManager& animations, Banks banks)
         : animations_(animations), banks_(banks) {}
 
+    struct RollbackState {
+        bool gate_;
+        float displayed_ratio_;
+        float target_ratio_;
+        i32 timer_seconds_;
+        i32 timer_displayed_;
+        i32 timer_frames_;
+        i32 timer_centiseconds_;
+        std::array<u32, 10> remaining_star_handles_;
+        i32 warn_state_;
+        u32 move_state_;
+        i32 escalate_state_;
+        bool proximity_hidden_;
+        bool stars_created_;
+        bool ring_created_;
+        i32 marker_glyph_;
+        u32 digit_tens_;
+        u32 digit_ones_;
+        u32 ring_arc_;
+        std::array<u32, 2> ring_overlays_;
+        std::array<u32, 4> star_handles_;
+        u32 marker_handle_;
+        u32 name_handle_;
+    };
+    RollbackState capture_rollback() const { return {gate_, displayed_ratio_, target_ratio_, timer_seconds_, timer_displayed_, timer_frames_, timer_centiseconds_, remaining_star_handles_, warn_state_, move_state_, escalate_state_, proximity_hidden_, stars_created_, ring_created_, marker_glyph_, digit_tens_, digit_ones_, ring_arc_, ring_overlays_, star_handles_, marker_handle_, name_handle_}; }
+    void restore_rollback(const RollbackState& state) {
+        gate_ = state.gate_;
+        displayed_ratio_ = state.displayed_ratio_;
+        target_ratio_ = state.target_ratio_;
+        timer_seconds_ = state.timer_seconds_;
+        timer_displayed_ = state.timer_displayed_;
+        timer_frames_ = state.timer_frames_;
+        timer_centiseconds_ = state.timer_centiseconds_;
+        remaining_star_handles_ = state.remaining_star_handles_;
+        warn_state_ = state.warn_state_;
+        move_state_ = state.move_state_;
+        escalate_state_ = state.escalate_state_;
+        proximity_hidden_ = state.proximity_hidden_;
+        stars_created_ = state.stars_created_;
+        ring_created_ = state.ring_created_;
+        marker_glyph_ = state.marker_glyph_;
+        digit_tens_ = state.digit_tens_;
+        digit_ones_ = state.digit_ones_;
+        ring_arc_ = state.ring_arc_;
+        ring_overlays_ = state.ring_overlays_;
+        star_handles_ = state.star_handles_;
+        marker_handle_ = state.marker_handle_;
+        name_handle_ = state.name_handle_;
+    }
+
     // 0x425170:181-287：数字 VM 常备、初始隐藏（flags bit1 清）。
     bool initialize();
     // 00424fd0：换关只复位 ctx+0x1a0/+0x1a8 的计时显示，保留数字计时 VM

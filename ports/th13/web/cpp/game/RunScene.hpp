@@ -260,6 +260,58 @@ public:
         return !spell_presentation ||
                spell_presentation->show_spirit_notice(level, x, y, z);
     }
+    struct RollbackState {
+        PostGameFlow::RollbackState post;
+        GameHud::RollbackState hud;
+        SpellPresentation::RollbackState spell;
+        MsgPresentation::RollbackState portraits;
+        ScorePopups::RollbackState popups;
+        LaserPresentation::SnapshotData lasers;
+        Vec3 camera_origin, screen_translation, reference_position, background_delta, stage_direction;
+        Vec2 shake_offset;
+        GameRandom environment_rng{0};
+        float animation_rate;
+        bool paused;
+        i32 dialogue_rows;
+        Timer age;
+        bool player_activation_pending;
+        bool transition_wait, scenery_started;
+    };
+    RollbackState capture_rollback() const {
+        return {post_flow.capture_rollback(), hud.capture_rollback(),
+                spell_presentation ? spell_presentation->capture_rollback() : SpellPresentation::RollbackState{},
+                msg_presentation ? msg_presentation->capture_rollback() : MsgPresentation::RollbackState{},
+                score_popups.capture_rollback(),
+                laser_presentation ? laser_presentation->capture() : LaserPresentation::SnapshotData{},
+                environment.camera_origin, environment.screen_translation, environment.reference_position,
+                environment.background_delta, environment.stage_direction, environment.screen_shake_offset,
+                environment.game_rng, animations.rate, environment.paused, dialogue_rows_,
+                age, player_effect_activation_pending,
+                transition_wait, scenery_started};
+    }
+    void restore_rollback(const RollbackState& state,
+            std::unordered_map<const AnmVm*, AnmVm*>& remapped) {
+        post_flow.restore_rollback(state.post);
+        hud.restore_rollback(state.hud);
+        if (spell_presentation) spell_presentation->restore_rollback(state.spell);
+        if (msg_presentation) msg_presentation->restore_rollback(state.portraits);
+        score_popups.restore_rollback(state.popups);
+        if (laser_presentation) laser_presentation->restore(state.lasers, remapped);
+        environment.camera_origin = state.camera_origin;
+        environment.screen_translation = state.screen_translation;
+        environment.reference_position = state.reference_position;
+        environment.background_delta = state.background_delta;
+        environment.stage_direction = state.stage_direction;
+        environment.screen_shake_offset = state.shake_offset;
+        environment.game_rng = state.environment_rng;
+        animations.rate = state.animation_rate;
+        environment.paused = state.paused;
+        dialogue_rows_ = state.dialogue_rows;
+        age = state.age;
+        player_effect_activation_pending = state.player_activation_pending;
+        transition_wait = state.transition_wait;
+        scenery_started = state.scenery_started;
+    }
     bool draw();
     bool draw_stage(u32 pass);  // 战斗直绘（initialize 注册的 4 个 Draw 回调）
     bool draw_scenery(u32 pass);  // STD 背景（层 0-7 背景组 / 8-11 前景组）

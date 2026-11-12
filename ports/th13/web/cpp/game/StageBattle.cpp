@@ -1479,9 +1479,10 @@ void StageBattle::step_bomb() {
         return; // 40a860/40c2c0/40cb50 terminate before geometry/cancellation.
     }
     if (character_ == 0) {
-        // 40b590 creates all eight 40b1b0 registrations before the separate
-        // movement loop, preserving their original slot allocation order.
-        if (bomb_age == 0)
+        // 40b714..40b721 requires age != previous && age == 0 before
+        // 40b750 creates all eight 40b1b0 registrations. Fractional time may
+        // retain age zero for several updates; those updates reuse the orbs.
+        if (age_advanced && bomb_age == 0)
             for (int i = 0; i < 8; ++i) {
                 auto& orb = bomb_orbs[i];
                 if (reimu_bomb_orb_birth && !reimu_bomb_orb_birth(*this, i)) {
