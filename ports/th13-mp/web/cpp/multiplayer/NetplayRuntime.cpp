@@ -244,7 +244,7 @@ bool NetplayRuntime::FinishSpectator(std::uint32_t end_frame) {
             return transport_.SendSpectator(wire.data(), wire.size());
         });
     if (finished) transport_.StopSpectators(true);
-    return true;
+    return finished;
 }
 
 // 观众端收流：transport 轮询 → 事件（checkpoint/node/end/bootstrap）或
@@ -378,6 +378,21 @@ bool NetplayRuntime::Pump(bool world_ready, std::uint64_t now_ms) {
     }
     if (digest_mismatch_) return false;  // 本次 Pump 内消化 T13D 触发
     return true;
+}
+
+bool NetplayRuntime::PumpTerminal(std::uint64_t now_ms) {
+    if (!configured_ || local_simulation_ || spectator_ ||
+        transport_.Disconnected() || transport_.Failed()) return true;
+    if (channel_.Active()) {
+        if (!channel_.Pump(gate_, core_, now_ms, false)) return false;
+        const auto terminal = core_.LastSimulatedFrame();
+        if (terminal == Netplay::INVALID_FRAME) return true;
+        if (!channel_.FlushRetirementFence(core_, terminal, now_ms)) return false;
+        if (channel_.CanRetire(core_, terminal))
+            return channel_.Retire(core_, terminal, now_ms);
+        return true;
+    }
+    return !channel_.Retiring() || channel_.PumpRetirement(now_ms);
 }
 
 bool NetplayRuntime::Capture(std::uint32_t capture_frame,

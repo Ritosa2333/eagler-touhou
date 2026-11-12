@@ -153,7 +153,9 @@ async function loadBuildIdentity() {
 }
 
 // ---- 浏览器客户端（th13-debug.html 手动泵 / rAF 自然泵）----
-const CHROMIUM_ARGS = ['--no-sandbox', '--disable-dev-shm-usage', '--use-angle=swiftshader',
+const CHROMIUM_ARGS = ['--no-sandbox', '--disable-dev-shm-usage',
+  process.env.TH13_ANGLE === 'gl' ? '--use-angle=gl' : '--use-angle=swiftshader',
+  ...(process.env.TH13_ANGLE === 'gl' ? ['--ignore-gpu-blocklist', '--disable-gpu-sandbox'] : []),
   '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required',
   '--force-color-profile=srgb'];
 

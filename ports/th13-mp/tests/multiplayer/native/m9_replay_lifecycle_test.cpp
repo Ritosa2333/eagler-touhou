@@ -232,6 +232,9 @@ TEST(stage_entry_carry) {
         }
     };
     step(continuous, 30);
+    continuous.battle.seat_huds[0].life_piece_threshold_index=1;
+    continuous.battle.seat_huds[1].life_piece_threshold_index=4;
+    continuous.progress.life_piece_threshold_index=1;
     // 关头快照（连续世界）。
     StageEntry carry;
     carry.Capture(continuous.battle, continuous.progress, continuous.score,
@@ -251,6 +254,8 @@ TEST(stage_entry_carry) {
     mid.Capture(carried.battle, carried.progress, carried.score,
                 47932, carried.battle.sim.random.index(), 0x1234,
                 carried.visual.index());
+    mid.seats[0].life_piece_threshold_index=1; mid.seats[1].life_piece_threshold_index=4;
+    mid.life_piece_threshold_index=1;
     const auto bytes = mid.Encode();
     CHECK(!bytes.empty());
     StageEntry decoded;
@@ -263,6 +268,25 @@ TEST(stage_entry_carry) {
     CHECK(gameIndex == mid.game_index);
     CHECK(visualSeed == 0x1234);
     CHECK(visualIndex == mid.visual_index);
+    CHECK_EQ(carried.battle.seat_huds[0].life_piece_threshold_index,1);
+    CHECK_EQ(carried.battle.seat_huds[1].life_piece_threshold_index,4);
+    CHECK(decoded.Encode()==bytes);
+    // v1 carried only a shared threshold. Migrate it to every enabled seat;
+    // retain every input word while removing the two v2-only seat words.
+    auto legacy=bytes; legacy[0]=1;
+    constexpr size_t header=80, seatBytes=328;
+    for(int seat=1;seat>=0;--seat)
+        legacy.erase(legacy.begin()+header+size_t(seat)*seatBytes+44,
+                     legacy.begin()+header+size_t(seat)*seatBytes+48);
+    StageEntry migrated; CHECK(StageEntry::Decode(legacy.data(),legacy.size(),migrated));
+    CHECK_EQ(migrated.seats[0].life_piece_threshold_index,1);
+    CHECK_EQ(migrated.seats[1].life_piece_threshold_index,1);
+    for(size_t seat=0;seat<2;++seat) {
+        CHECK_EQ(migrated.inputs[seat].held,mid.inputs[seat].held);
+        CHECK(migrated.inputs[seat].repeat_age==mid.inputs[seat].repeat_age);
+        CHECK(migrated.inputs[seat].duration==mid.inputs[seat].duration);
+    }
+    CHECK(!StageEntry::Decode(legacy.data(),legacy.size()-1,migrated));
     step(carried, 30);
     WorldState actual;
     CHECK(actual.capture(carried.battle, carried.visual));

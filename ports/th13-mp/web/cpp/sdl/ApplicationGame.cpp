@@ -1,6 +1,7 @@
 // 对局期平台服务（th15 ApplicationGame.cpp 裁剪：life_hud/bomb_hud/game_over
 // 保留，battle/敌机/符卡回调随分期接入）。
 #include "ApplicationState.hpp"
+#include "../multiplayer/Session.hpp"
 #include "../game/AnmText.hpp"
 #include "../game/RunScene.hpp"
 #include "../game/SpellPresentation.hpp"
@@ -179,6 +180,21 @@ bool ApplicationState::dialogue_begin() {
     return true;
 }
 
+std::function<bool()> ApplicationState::capture_dialogue_rollback() {
+    DeviceDialogueSink sink{graphics};
+    const auto state = dialogue_text.capture_rollback(animations, sink);
+    return [this, state] {
+        DeviceDialogueSink sink{graphics};
+        std::string error;
+        return dialogue_text.restore_rollback(state, animations, sink, error) || fail(error);
+    };
+}
+
+u64 ApplicationState::digest_dialogue_rollback() {
+    DeviceDialogueSink sink{graphics};
+    return multiplayer::WorldState::digest_dialogue(dialogue_text.capture_rollback(animations, sink));
+}
+
 bool ApplicationState::dialogue_line(i32 row, const MsgLine& line, float box_x,
                                      float box_y) {
     DeviceDialogueSink sink{graphics};
@@ -236,9 +252,16 @@ bool ApplicationState::game_over() {
     // 0x4e13c0）与播放位置（+0x2dc qword，0x476e00），供续关恢复。MP defer
     // 模式下 music_filename()/statistics() 读的是已冲账的应用态——恰为
     // 待存的对局曲（th128_08 请求此刻最多还在账本里未应用）。
-    game_over_music = audio_device.music_filename();
-    game_over_music_cursor = audio_device.statistics().music_cursor;
-    const bool results_menu = (progress.run_mode_flags & 0x30u) != 0;
+    if (mp_seat_count >= 2) {
+        // MP has no Continue. Device playback may already have committed a
+        // newer song when this logical GameOver is replayed after rollback.
+        game_over_music.clear();
+        game_over_music_cursor = 0;
+    } else {
+        game_over_music = audio_device.music_filename();
+        game_over_music_cursor = audio_device.statistics().music_cursor;
+    }
+    const bool results_menu = mp_seat_count >= 2 || (progress.run_mode_flags & 0x30u) != 0;
     if (!pause || !pause->open(results_menu ? PauseEntrance::BGameOver
                                             : PauseEntrance::GameOver))
         return fail(pause ? pause->error : "Game-over menu has no owner");
@@ -315,6 +338,10 @@ bool ApplicationState::request_extra_results() {
 }
 
 bool ApplicationState::restart_run() {
+    // A completed network run is immutable. A fresh multiplayer game starts
+    // from the room, where both players agree on a new session identity.
+    if (multiplayer::session.Active() && !multiplayer::session.Simulating())
+        return return_to_title();
     // Retry (0xa ordinary / 0xb practice, 0x440960 state 0x1d cursor 2) is a
     // fresh run, not the pending 0xc continuation. A pause opened while the
     // 0xc transition was active must discard that pending stage and resume
@@ -382,13 +409,15 @@ bool ApplicationState::continue_run() {
 }
 
 bool ApplicationState::can_save_replay() const {
-    return !replay_active && recorder.ready();
+    if (multiplayer_replay_available) return multiplayer_replay_available();
+    return mp_seat_count < 2 && !replay_active && recorder.ready();
 }
 
 bool ApplicationState::result_replay_save_available() const {
+    if (multiplayer_replay_available) return multiplayer_replay_available();
     // 0x454050 state3：DAT_004be7c8（续关数）==0 才进 0x4549d0（回放保存）；
     // 网页侧叠加 recorder.ready()（无录像数据时保存无意义）。
-    return !replay_active && recorder.ready() && progress.continues == 0;
+    return mp_seat_count < 2 && !replay_active && recorder.ready() && progress.continues == 0;
 }
 
 bool ApplicationState::result_screen_data(TitleResultScreenData& out) const {
@@ -425,7 +454,7 @@ bool ApplicationState::result_screen_data(TitleResultScreenData& out) const {
     for (size_t i = 0; i < out.records.size(); ++i) out.records[i] = ranking[i];
     // Preview the same ties-before-old insertion as FileStore::record_high_score,
     // without persisting a nameless score before the editor is confirmed.
-    if (!replay_active && progress.practice_mode == 0 &&
+    if (mp_seat_count < 2 && !replay_active && progress.practice_mode == 0 &&
         (progress.run_mode_flags & 0x30u) == 0 && selection_score.score >= 0) {
         for (size_t i = 0; i < out.records.size(); ++i) {
             if (out.records[i].score > selection_score.score) continue;
@@ -461,6 +490,8 @@ bool ApplicationState::save_replay_slot(i32 slot, const std::string& name) {
 bool ApplicationState::save_replay_slot(i32 slot, const std::string& name,
                                         const ReplaySaveMeta* pinned) {
     if (slot < 1 || slot > 25) return fail("Invalid replay slot");
+    if (multiplayer_replay_save) return multiplayer_replay_save(slot, name) || fail("Multiplayer replay save failed");
+    if (mp_seat_count >= 2) return fail("Multiplayer replay save unavailable");
     std::vector<u8> bytes;
     if (pinned) {
         // 端到端注入：0x4484d0 保存时刻的可变字段由调用方钉住（date/slow/
@@ -552,7 +583,7 @@ bool ApplicationState::record_clear_result_name(const std::string& name) {
 }
 
 bool ApplicationState::result_needs_name() const {
-    if (replay_active || progress.practice_mode != 0 ||
+    if (mp_seat_count >= 2 || replay_active || progress.practice_mode != 0 ||
         (progress.run_mode_flags & 0x30u) != 0 || progress.character < 0 ||
         progress.character >= kSaveCharacters || progress.difficulty < 0 ||
         progress.difficulty >= kSaveDifficulties || selection_score.score < 0) return false;

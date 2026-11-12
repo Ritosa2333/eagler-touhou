@@ -97,7 +97,9 @@ public:
 
 private:
     Netplay::SpectatorStagePublisher publisher_;
-    Netplay::SpectatorStagePlayback playback_;
+    Netplay::SpectatorStagePlayback playback_{
+        Netplay::SpectatorStagePlayback::RestoreMode::Run,
+        Netplay::SpectatorStageHistory::FullRunMaxFrames};
     SessionSetup setup_{};
     bool publisherActive_ = false;
     bool viewerActive_ = false;
