@@ -35,7 +35,9 @@ export function staticContentType(path) {
 }
 
 export function staticContentCompressible(path, bytes) {
-  return Number.isFinite(bytes) && bytes >= 1024 && COMPRESSIBLE.has(extname(path).toLowerCase());
+  const th14Font = /(?:^|\/)runtime\/th14\/[a-f0-9]{64}\/fonts\/(?:font[0-7]|cp932|blend4444)\.bin$/.test(path.replaceAll('\\', '/'));
+  return Number.isFinite(bytes) && bytes >= 1024 &&
+    (COMPRESSIBLE.has(extname(path).toLowerCase()) || th14Font);
 }
 
 export function staticContentCacheControl(path) {
@@ -51,3 +53,4 @@ export function staticContentCacheControl(path) {
     ? "public, max-age=31536000, immutable"
     : "public, max-age=0, must-revalidate";
 }
+
