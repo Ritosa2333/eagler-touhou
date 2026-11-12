@@ -97,6 +97,10 @@ try{
       await wait(()=>frames[seat].evaluate(()=>__eaglerKeyboardInputBridge.keyDown('KeyZ')),'seat '+seat+' shot bridge',5000);
       await new Promise(resolve=>setTimeout(resolve,50));await page.keyboard.up('KeyZ');
     }
+    if(process.env.TH03_MUSIC_QA==='1'){
+      await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health().audio.musicPlaying)))).every(Boolean),'independent original music plays',15000);
+      assert.deepEqual(events.flat().filter(e=>e.event==='music-error'),[]);
+    }
     try { await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(()=>window.th03SyncState?.phase===1)))).every(Boolean),'both players select and enter battle',45000); }
     catch(error){console.log('native state',await Promise.all(frames.map(frame=>frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health()))));throw error;}
     for(let i=0;i<20;i++){

@@ -26,19 +26,32 @@ test('a reliable boundary holds input until both players confirm it',()=>{
  net.receive(JSON.stringify({type:'native-rollback-input',frame:0,input:8}));
  assert.equal(net.advance(false),true);assert.deepEqual(steps,[[8,4]]);assert.equal(net.confirmed,1);
 });
-test('prediction carries charge but not automatic fire and corrects its release',()=>{
+test('prediction carries held controls and corrects their release',()=>{
  let state=0;const steps=[];const net=new NativeRollback({seat:0,send:()=>{},capture:()=>state,restore:s=>state=s,step:pair=>{steps.push(pair);state=pair[1];}});
  net.receive(JSON.stringify({type:'native-rollback-input',frame:0,input:512|32|8}));net.submit(0,true);net.submit(0,true);
- assert.deepEqual(steps,[[0,552],[0,40]]);
+ assert.deepEqual(steps,[[0,552],[0,552]]);
  net.receive(JSON.stringify({type:'native-rollback-input',frame:1,input:8}));
  assert.equal(net.rollbacks,1);assert.equal(state,8);assert.equal(net.confirmed,2);
+});
+test('held rapid fire does not repeatedly roll back and missing input stays bounded',()=>{
+ let state=0;const net=new NativeRollback({seat:0,send:()=>{},capture:()=>state,restore:s=>state=s,step:pair=>{state=pair[1];}});
+ net.receive(JSON.stringify({type:'native-rollback-input',frame:0,input:512}));net.submit(0,true);
+ for(let frame=1;frame<100;frame++){
+  assert.equal(net.submit(0,true),true);
+  net.receive(JSON.stringify({type:'native-rollback-input',frame,input:512}));
+ }
+ assert.equal(net.rollbacks,0);
+ for(let i=0;i<6;i++)assert.equal(net.submit(0,true),true);
+ assert.equal(net.submit(0,true),false,'prediction stops when the peer stops sending');
+ net.receive(JSON.stringify({type:'native-rollback-input',frame:100,input:0}));
+ assert.equal(net.rollbacks,1);assert.equal(state,0,'confirmed release is restored');
 });
 test('predicted touch holds contact without replaying movement or attacks',()=>{
  const steps=[];const net=new NativeRollback({seat:0,send:()=>{},capture:()=>({}),restore:()=>{},step:pair=>steps.push(pair)});
  const input=packTouch(512|32|8,{active:true,begin:true,unlimited:true,x:120,y:-80});
  net.receive(JSON.stringify({type:'native-rollback-input',frame:0,input}));net.submit(0,true);net.submit(0,true);
- assert.equal(steps[1][1]&2047,40);
- assert.deepEqual(unpackTouch(steps[1][1]),unpackTouch(packTouch(40,{active:true,unlimited:true})));
+ assert.equal(steps[1][1]&2047,552);
+ assert.deepEqual(unpackTouch(steps[1][1]),unpackTouch(packTouch(552,{active:true,unlimited:true})));
 });
 test('snapshots are released on correction, confirmation and close',()=>{
  let id=0,state=0;const captured=[],released=[];

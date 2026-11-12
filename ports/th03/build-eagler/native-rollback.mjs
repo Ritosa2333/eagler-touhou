@@ -37,9 +37,10 @@ export class NativeRollback {
     this.flush();return true;
   }
   predict(frame) {
-    // Keep a held charge while predicting; a received release rewinds it.
-    // Rapid fire and one-shot buttons are never carried across missing input.
-    for(let at=frame-1;at>=Math.max(0,frame-12);at--)if(this.remote.has(at)){const input=this.remote.get(at),touch=unpackTouch(input);return packTouch((input&2047)&~(16|128|256|512),{active:touch.active,unlimited:touch.unlimited});}
+    // Hold continuous controls for bounded prediction. Actual releases rewind
+    // incorrect predictions; without received input the prediction limit stops
+    // the match from generating indefinite fire. Never repeat one-shot inputs.
+    for(let at=frame-1;at>=Math.max(0,frame-12);at--)if(this.remote.has(at)){const input=this.remote.get(at),touch=unpackTouch(input);return packTouch((input&2047)&~(16|128|256),{active:touch.active,unlimited:touch.unlimited});}
     return 0;
   }
   receive(text) {

@@ -124,12 +124,12 @@
       "sha256": "b30a388f4187446ddb37819dd540a4d0195289feaa0c56baa13c5b08721f2ae0"
     },
     "managed-native-room.mjs": {
-      "bytes": 16423,
-      "sha256": "2f95356981e9454d22f27ca7b513a3e6aad4fe2c48c4eef6058675ce5b84ce4c"
+      "bytes": 16493,
+      "sha256": "d346937171b015e0905df4b621877072da07c0567bf7e537495c80539aef4ab1"
     },
     "managed-native-solo.mjs": {
-      "bytes": 9362,
-      "sha256": "09242e5383cf94239845562eaecfb2d4ee848061ecde8179ee77295207fa1441"
+      "bytes": 9446,
+      "sha256": "ab539d998fada3256f6b06906bd8596ec8493ee851234ea0503228f8c10cef47"
     },
     "managed-room-layout.mjs": {
       "bytes": 206,
@@ -176,8 +176,8 @@
       "sha256": "35beed320833a07f8c05ca414ffc61f1ede96a22397597e48920dd60b3fea9d4"
     },
     "native-music-player.mjs": {
-      "bytes": 2189,
-      "sha256": "17a110eb1bbbd52d2c7d792fa6b22fcdd5b60a7f7b1fd6c8c28ba8d4b26c8459"
+      "bytes": 3120,
+      "sha256": "e202f2da10525f46a9c1e1fa7bac16dbf2d0bc391e3dbb8c26f711b46165879b"
     },
     "native-replay-player.mjs": {
       "bytes": 2140,
@@ -188,8 +188,8 @@
       "sha256": "f2181a45731a97eaea8d6fd6da883a5a8e03f8bbe3c11e688b69376b444cbae4"
     },
     "native-rollback.mjs": {
-      "bytes": 4759,
-      "sha256": "01414f90e70f789d0cc1e05d8c3dbd7cf2bc89c683b24d825afc2600d915c594"
+      "bytes": 4840,
+      "sha256": "c5952975dc87255cbf5489d78478230bd663aa13493c34b2245742fc68426c5a"
     },
     "native-versus-pause.mjs": {
       "bytes": 7889,
@@ -222,6 +222,18 @@
     "playback-clock.mjs": {
       "bytes": 1865,
       "sha256": "a46d7e7c2a7d366580aed12b65e9c39da3083ae2c0d00d4581d714d8d1012391"
+    },
+    "pmd-player.mjs": {
+      "bytes": 2021,
+      "sha256": "55272e3ff6bf145778618c020d602915d56abc43b67399070f5c4f00551840e2"
+    },
+    "pmd-player.wasm": {
+      "bytes": 296548,
+      "sha256": "ed4c29abd128577d6b4a318109f5d20cfa166bbe8ac89115324f000ec55678ee"
+    },
+    "pmd-worklet.js": {
+      "bytes": 1339,
+      "sha256": "0ba9fcdee9603d13863e8e162bbbc6e42db68048eb85800d1c0dd71bc56ed953"
     },
     "th03.html": {
       "bytes": 529,
