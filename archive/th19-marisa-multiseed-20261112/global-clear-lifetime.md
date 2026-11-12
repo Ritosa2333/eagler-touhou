@@ -15,3 +15,5 @@ ECL 613 调用原版 0x4edf90，遍历占用槽位并跳过接触取消的 state
 ![种子 123 修复后](screenshots/global-clear-seed123-after/frame-12228.png)
 
 原始种子同构建完整 36000 帧回归通过，见 [基线证据](global-clear-baseline-36000.json)。种子 1 完整比较至 36000 帧，首个敌弹差异推进至 14476 帧，CPU 首差推进至 14570 帧。
+
+五种子同构建完整长测见 [逐组结果](global-clear-five-seeds.json)。各组均累计比较至 36000 帧。
