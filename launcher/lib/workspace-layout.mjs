@@ -1,6 +1,6 @@
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DEFAULT_BUILD_GAMES } from "./product-selection.mjs";
+import { DEFAULT_BUILD_GAMES, normalizeProductSelection } from "./product-selection.mjs";
 import { loadSourceLayout, resolveWorkspaceRoot } from "./source-layout.mjs";
 export { WORKSPACE_LAYOUT_SCHEMA } from "./source-layout.mjs";
 
@@ -11,7 +11,9 @@ export function launcherRoot() {
   return projectRoot;
 }
 
-const requiredRepositories = ["launcher", ...DEFAULT_BUILD_GAMES, "thprac", "dependencies", "toolchains"];
+const requiredGames = process.env.EAGLER_DEVELOPMENT_GAMES
+  ? normalizeProductSelection(process.env.EAGLER_DEVELOPMENT_GAMES) : DEFAULT_BUILD_GAMES;
+const requiredRepositories = ["launcher", ...requiredGames, "thprac", "dependencies", "toolchains"];
 for (const key of requiredRepositories) {
   if (!layout.repositories[key]) throw new Error(`missing workspace repository: ${key}`);
 }

@@ -246,6 +246,44 @@ test('native menu return cancels an unfinished first-frame wait without retiring
   assert.equal(f.service.getSnapshot().launched,true);
 });
 
+for (const native of [false,true]) test(`successful ${native?'native':'requested'} room return reports the original run once after local configure acknowledgment`,async()=>{
+  const f=fixture(),plan=managedPlan('th11');plan.runtimeVariant='multiplayer';
+  await f.prepare(plan,{roomReturn:true});const epoch=f.service.getSnapshot().epoch,returns=[];
+  const unsubscribe=f.service.subscribeRoomReturns(context=>returns.push(context));
+  const netplayUrl='wss://relay.invalid/?room=th11mp-1234&run=7';
+  const configuring=f.service.configurePreparedRoom(epoch,{netplayMode:'lan',netplayUrl,netplayPlayer:1});
+  await flush();f.ack('configure');await configuring;
+  const launching=f.service.launch();await flush();const launched=f.ack('launch');await launching;
+  for(const [extra,envelope] of [
+    [{launchSerial:launched.launchSerial-1},{}],
+    [{launchSerial:launched.launchSerial,epoch:epoch+1},{}],
+    [{launchSerial:launched.launchSerial},{origin:'https://other.invalid'}],
+    [{launchSerial:launched.launchSerial},{source:{}}],
+  ])f.event('room-menu',extra,envelope);
+  assert.equal(f.service.getSnapshot().launched,true);assert.equal(returns.length,0);
+  let returning;
+  if(native){f.event('room-menu',{launchSerial:launched.launchSerial});await flush();}
+  else{returning=f.service.returnToRoom();await flush();f.ack('sync');await flush();f.ack('return-room',{presented:true});await flush();}
+  assert.equal(returns.length,0,'native terminal receipt alone does not report an unfinished local menu');
+  f.ack('configure');if(returning)await returning;await flush();
+  assert.deepEqual(returns,[{epoch,launchSerial:launched.launchSerial,netplayUrl,player:1,spectator:false}]);
+  assert.equal(f.service.getLauncherControlContext().options.netplayUrl,undefined,'payload survives restoring mutable menu options');
+  const sends=f.outbound.length;f.event('room-menu',{launchSerial:launched.launchSerial});await flush();
+  assert.equal(returns.length,1);assert.equal(f.outbound.length,sends,'duplicate return cannot reconfigure a prepared menu');
+  unsubscribe();
+});
+
+for(const failure of ['native-ack','not-presented','restore'])test(`failed room return ${failure} never emits a lifecycle receipt`,async()=>{
+  const f=fixture(),plan=managedPlan('th11',{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?run=8',netplayPlayer:0});plan.runtimeVariant='multiplayer';
+  await f.prepare(plan,{roomReturn:true});const returns=[];f.service.subscribeRoomReturns(context=>returns.push(context));
+  const launching=f.service.launch();await flush();f.ack('launch');await launching;
+  const returning=f.service.returnToRoom(),rejected=assert.rejects(returning);
+  await flush();f.ack('sync');await flush();
+  f.ack('return-room',failure==='native-ack'?{ok:false,error:'return failed'}:{presented:failure!=='not-presented'});await flush();
+  if(failure==='restore'){f.ack('configure',{ok:false,error:'restore failed'});await flush();}
+  await rejected;assert.deepEqual(returns,[]);
+});
+
 test('a Runtime without room-return support stays loaded when return is requested', async () => {
   const f=fixture(),plan=managedPlan();plan.runtimeVariant='multiplayer';await f.prepare(plan);
   const launching=f.service.launch();await flush();f.ack('launch');await launching;
