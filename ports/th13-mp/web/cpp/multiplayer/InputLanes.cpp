@@ -29,6 +29,23 @@ void InputLanes::ApplyTouch(StageBattle& battle, unsigned seat,
         touch = {input.unlimited ? 2 : 1, input.x, input.y};
 }
 
+GameInput InputLanes::AdvanceHistory(StageBattle& battle,
+        const Netplay::FrameInput* frames, unsigned count) {
+    GameInput menu;
+    for (unsigned seat = 0; seat < count; ++seat) {
+        auto& input = battle.seat_inputs[seat];
+        input.update(Controls(frames[seat]));
+        ApplyTouch(battle, seat, frames[seat]);
+        menu.held |= input.held;
+        menu.pressed |= input.pressed;
+        menu.released |= input.released;
+        menu.repeated |= input.repeated;
+        for (unsigned bit = 0; bit < 32; ++bit)
+            menu.duration[bit] = std::max(menu.duration[bit], input.duration[bit]);
+    }
+    return menu;
+}
+
 bool InputLanes::Decode(const Netplay::FrameInput* frames, unsigned count,
                         std::array<std::uint32_t, 3>& out) {
     if (!frames || count < 2 || count > 3) return false;
@@ -36,7 +53,7 @@ bool InputLanes::Decode(const Netplay::FrameInput* frames, unsigned count,
     for (unsigned seat = 0; seat < count; ++seat) {
         const auto& frame = frames[seat];
         if (!Netplay::IsValidFrameInput(frame) || frame.touchBomb ||
-            (frame.buttons & ~(HeldMask | Pause)))
+            (frame.buttons & ~(HeldMask | Pause | Confirm | Dialogue | Restart | Quit)))
             return false;
         // 网线路 → GameInput.held：gameplay 位原样回（灵界 0x800 已在线路
         // 内，GameInput::update 的沿状态机由驱动层按帧喂）。

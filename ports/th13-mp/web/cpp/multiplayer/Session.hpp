@@ -61,7 +61,15 @@ private:
         // 的 pressed/duration 历史必须回到 checkpoint 时刻——沿状态机
         // 从错误预测期直接续推会令重放帧的边沿与连续基线不同（M8 实证）。
         GameInput local_input{};
+        std::array<GameInput, 3> frame_inputs{};
+        std::array<char, 2048> domains{};
+        std::string detail;
+        std::uint64_t full_digest = 0;
+        std::uint64_t host_digest = 0;
+        std::string host_detail;
+        bool audited = false;
         std::vector<th13::sdl::AudioDevice::RequestObservation> audio;
+        std::function<bool()> restore_host, confirmed_output;
     };
     // 未确认帧记录（checkpoint/输入/音频汇；确认前沿退役）。
     // P4：16 槽固定环形环（12 回滚窗 + 余量；远端落后 >12 帧即停等，
@@ -119,6 +127,11 @@ public:
     // 配置（坏身份在 DecodeSessionSetup 拒绝——frame0 前）。
     bool Configure(const std::uint32_t* words, std::size_t count);
     void Stop();
+    void Stop(bool keep_terminal_transport);
+    bool PumpTerminal(std::uint64_t now_ms) { return runtime_.PumpTerminal(now_ms); }
+    // R-G: after the last confirmed battle frame, ending/results use local input.
+    bool FinishWorldSimulation(bool completed = false);
+    bool WorldCompleted() const { return world_completed_; }
 
     // relay 连接（RTC/relay 竞速在 transport 内收敛）。
     bool Connect(const char* relay_url);
@@ -188,6 +201,24 @@ public:
     // 本地席位的延迟输入（RunScene playback_input 接缝的供给源）。
     // 返回 nullptr = 本帧无输入（停等——宿主跳过 RunScene update）。
     const GameInput* LocalDelayedInput();
+    const GameInput& MenuInput() const { return menu_input_; }
+    std::function<std::function<bool()>()> capture_host;
+    std::function<std::uint64_t()> digest_host;
+    std::function<std::string()> diagnostic_host;
+    void SetConfirmedOutput(std::function<bool()> output) { record_back().confirmed_output = std::move(output); }
+    bool AllFramesCommitted() const { return record_count_ == 0 && !Correcting(); }
+    bool PredictionBarrier() const { return prediction_barrier_; }
+    void SetAudit(bool enabled) {
+        audit_enabled_ = enabled; audit_rows_.clear(); audit_overflow_ = 0;
+        terminal_audit_.clear();
+        timing_head_ = timing_count_ = 0; timing_overflow_ = 0;
+        for (std::size_t i = 0; i < record_count_; ++i) record_at(i).audited = false;
+    }
+    std::string TakeAuditJson();
+    // Optional bounded observations; timestamps never feed the game clock.
+    void TraceTiming(const char* kind, std::uint32_t frame,
+                     std::uint32_t value = 0, std::uint32_t detail = 0);
+    std::string TakeTimingJson();
 
     // 世界接线（begin_run 后由宿主调用一次）——battle + visual RNG +
     // presentation（WorldState capture/restore 的完整面）。P3.2：scene
@@ -195,13 +226,7 @@ public:
     // 句柄的读写面——capture 取当前值、restore 回写）一并接线。
     void BindWorld(th13::StageBattle* battle, GameRandom* visual,
                    StagePresentation* presentation, th13::RunScene* scene = nullptr,
-                   u32* transition_handle = nullptr) {
-        battle_ = battle;
-        visual_rng_ = visual;
-        world_presentation_ = presentation;
-        world_scene_ = scene;
-        transition_handle_ = transition_handle;
-    }
+                   u32* transition_handle = nullptr);
     // Configure 后的补接线：宿主 begin_run 先于 session.Configure 的时序
     //（debug 页直入对局 → handshake 里 configure）下，BindWorld 的
     // session.Active() 门未过。Configure 成功后宿主重试接线（run 已存在
@@ -371,6 +396,7 @@ private:
     struct DiagnosticSample {
         std::uint32_t frame = 0, stage = 0;
         std::array<char, 2048> domains{};
+        std::string detail;
     };
     std::array<DiagnosticInput, 128> diagnostic_inputs_{};
     std::size_t diagnostic_input_count_ = 0;
@@ -378,9 +404,24 @@ private:
     NetplayRuntime runtime_;
     th13::StageBattle* battle_ = nullptr;
     GameInput local_input_{};   // 本地席位延迟输入（沿状态机由宿主泵驱动）
+    std::array<GameInput, 3> frame_inputs_{};
+    GameInput menu_input_{};
+    WorldState digest_snapshot_;
+    bool audit_enabled_ = false;
+    std::deque<std::string> audit_rows_;
+    std::uint64_t audit_overflow_ = 0;
+    struct TimingEvent {
+        const char* kind = nullptr;
+        std::uint64_t us = 0;
+        std::uint32_t frame = 0, value = 0, detail = 0;
+    };
+    std::array<TimingEvent, 4096> timing_events_{};
+    std::size_t timing_head_ = 0, timing_count_ = 0;
+    std::uint64_t timing_overflow_ = 0;
     GameRandom* visual_rng_ = nullptr;  // WorldState capture/restore 的 visual 面
     std::uint32_t sim_frame_ = 0;
     bool simulating_ = false;   // CanStart 后置位（Pump 的 world_ready 面）
+    bool world_finished_ = false, world_completed_ = false, spectator_finished_ = false;
     bool active_ = false;
     // 本帧生命周期：CanSimulate 放行 → OnFrameSimulated 落账 → 末尾重置。
     // 同一 sim_frame 内的重复 CanSimulate 查询被挡（宿主每帧多泵）；
@@ -411,6 +452,7 @@ private:
     std::uint64_t rollback_distance_sum_ = 0;
     std::uint64_t stall_frames_ = 0;
     std::uint64_t frame_granted_us_ = 0;
+    std::string terminal_audit_;
     static std::uint64_t NowMicros();
     void Commit();
     bool ExecuteRollback();

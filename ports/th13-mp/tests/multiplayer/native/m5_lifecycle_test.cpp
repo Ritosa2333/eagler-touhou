@@ -16,8 +16,11 @@
 //   stage_revive            → 过关复活清全部幽灵
 #include "../../ecl/ecl_test_fixtures.hpp"
 #include "game/StageBattle.hpp"
+#include "sdl/ApplicationState.hpp"
+#include "multiplayer/Session.hpp"
 #include "eagler/gameplay/CooperativeRules.hpp"
 #include <cmath>
+#include <cstdlib>
 
 using namespace th13;
 using namespace th13test;
@@ -138,7 +141,9 @@ TEST(ghost_rescue_resources) {
     CHECK_EQ(battle.seat_huds[0].extra_lives, 0);  // donor 扣 1
     CHECK(!battle.seats[1].ghost);                  // 幽灵位清
     CHECK_EQ(battle.seat_huds[1].bombs, 2);         // SP 初始 Bomb（R-G）
-    CHECK_EQ(battle.seats[1].invulnerable, 120);
+    // R-G / launcher MULTIPLAYER life-transfer: rescue grants about 4 s;
+    // the separate stage-clear revival below remains 120 frames.
+    CHECK_EQ(battle.seats[1].invulnerable, 240);
     // ⑥ 救援约束：非幽灵不可救、无命不可送、自送拒绝。
     CHECK(!battle.rescue_seat(0, 1));   // seat 1 已可操作
     battle.seats[1].ghost = true;
@@ -274,6 +279,59 @@ TEST(menu_edges_pause_dialogue) {
     for (int frame = 0; frame < 3; ++frame) CHECK(dual.battle.step(none));
     CHECK_EQ(dual.battle.seat_inputs[0].held, 0u);
     CHECK_EQ(dual.battle.seat_inputs[1].held, 0u);
+
+    // R-T10: exercise the actual Application pause path while Manual trance
+    // is active. A transition-only step does not prove pause freezes its gauge.
+    multiplayer::session.Stop();
+    sdl::ApplicationState app;
+    const char* assets = std::getenv("TH13_NATIVE_ASSET_ROOT");
+    const char* root = std::getenv("TH13_NATIVE_REPO_ROOT");
+    CHECK(assets && root);
+    if (!assets || !root) return;
+    ::setenv("TH13_SAVE_PATH", "manual-trance-pause.bin", 1);
+    CHECK(app.audio_device.initialize_for_test(assets,
+        std::string(root) + "/games/th13/thbgmogg.dat"));
+    CHECK(app.initialize(false));
+    CHECK(app.configure_multiplayer(2, {0, 1, 0}, 0));
+    CHECK(app.start_game(1));
+    app.pending_destination = -1;
+    app.frames = 0;
+    app.game_random.reseed_restore(1234);
+    app.visual.reseed_restore(1234);
+    CHECK(app.begin_run());
+    if (!app.run) return;
+    GameInput controls;
+    const auto step = [&](u32 held) {
+        controls.update(held);
+        return app.update(controls, false) && app.commit(60.f) &&
+            app.present() && app.failure.empty();
+    };
+    for (unsigned i = 0; i < 35; ++i) CHECK(step(0));
+    app.progress.ending_points = 600;
+    CHECK(step(0x800));
+    CHECK(app.run->battle.team_trance_active());
+    CHECK_EQ(app.run->battle.trance_mode, StageBattle::TranceMode::Manual);
+    CHECK(step(0));
+    CHECK(step(0x100));
+    CHECK(app.pause->active());
+    CHECK_EQ(app.pause->state.screen, PauseScreen::Pause);
+    const i32 paused_frame = app.progress.stage_frame;
+    const i32 paused_gauge = app.progress.ending_points;
+    const u32 generation = app.run->battle.trance_generation;
+    for (unsigned i = 0; i < 40; ++i) {
+        CHECK(step(0));
+        CHECK(app.pause->active());
+        CHECK_EQ(app.progress.stage_frame, paused_frame);
+        CHECK_EQ(app.progress.ending_points, paused_gauge);
+        CHECK_EQ(app.run->battle.trance_generation, generation);
+    }
+    CHECK(step(0x100));
+    for (unsigned i = 0; i < 15; ++i) CHECK(step(0));
+    CHECK(!app.pause->active());
+    CHECK(app.progress.stage_frame > paused_frame);
+    CHECK_EQ(app.progress.ending_points,
+        paused_gauge - (app.progress.stage_frame - paused_frame));
+    CHECK_EQ(app.run->battle.trance_generation, generation);
 }
 
 // ---- no_sp_save_writes：MP 不写 SP 成绩/存档面 ----

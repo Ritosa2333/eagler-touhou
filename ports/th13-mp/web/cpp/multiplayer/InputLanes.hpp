@@ -18,6 +18,7 @@
 namespace th13 {
 
 class StageBattle;
+struct GameInput;
 
 namespace multiplayer {
 
@@ -25,6 +26,8 @@ class InputLanes {
 public:
     // 网线路暂停位（FrameInput.buttons 高位区，gameplay 位之外）。
     static constexpr std::uint16_t Pause = 0x8000;
+    static constexpr std::uint16_t Confirm = 0x1000, Dialogue = 0x200;
+    static constexpr std::uint16_t Restart = 0x2000, Quit = 0x4000;
     // gameplay 位全集（GameInput.held 的网线路投影；0x200/0x100 剥离）。
     // bits 0-7 = Z/X/低速/↑↓←→/斜向（0x50/0x60/0x90/0xa0 组合在 bits 4-7），
     // bit 11 = 0x800 灵界（C）。0x200（对话快进）与 0x100（Esc）不在内。
@@ -35,7 +38,16 @@ public:
 
     // 采集：物理 held（32 位）→ FrameInput。非法位/非法模式拒绝。
     static bool Capture(std::uint32_t held, bool pause, Netplay::FrameInput& out);
+    static std::uint32_t Controls(const Netplay::FrameInput& input) {
+        return (input.buttons & (HeldMask | Dialogue)) |
+            ((input.buttons & Pause) ? 0x100u : 0) |
+            ((input.buttons & Confirm) ? 0x80000u : 0) |
+            ((input.buttons & Restart) ? 0x200000u : 0) |
+            ((input.buttons & Quit) ? 0x10000u : 0);
+    }
     static void ApplyTouch(StageBattle& battle, unsigned seat, const Netplay::FrameInput& input);
+    static GameInput AdvanceHistory(StageBattle& battle,
+                                    const Netplay::FrameInput* frames, unsigned count);
     // 解码：FrameInput[seat] → 每席 held（网线路 → GameInput.held 的
     // gameplay 面；灵界位原样回 0x800）。count = 席位数（2..3）。
     static bool Decode(const Netplay::FrameInput* frames, unsigned count,
