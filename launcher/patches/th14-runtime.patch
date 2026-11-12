@@ -63,6 +63,33 @@ index 0000000000000000000000000000000000000000..aed12841c77356413562ceffd4f99cb1
 +with `-DPORT_TITLE=14` for the browser clock. Measure Stage 1 separately as
 +logical updates and presentations: on a slow device these are intentionally
 +different. The game backbuffer and UI remain 1280×960.
+diff --git a/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md b/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..6607a598f5fecba3aa901407efe1358fc540caed
+--- /dev/null
++++ b/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md
+@@ -0,0 +1,21 @@
++# TH14 texture sizes
++
++The ANM flag at chunk byte 34 is a retail upload hint. The Japanese 1.00b
++routine at 0x47cb70 uses the display scale times one half only when that
++flag is set and the scale is below 2. At 1280×960 it uploads the unscaled
++embedded pixels. At 960×720 it uploads at 75%; at 640×480 it uploads at
++50%. Textures without the flag do not use this reduction.
++
++The retail archive contains 433 embedded ANM texture chunks, including 256
++with this flag. Among them are front/front00.png, the pause atlases, title
++art and dialogue portraits. The archive also has distinct ASCII atlases for
++the three modes. This rule restores the detail already in the retail data.
++
++Run the upload oracle with the retail executable and a GLES build receipt:
++
++    python tools/th14-texture-display-oracle.py --exe <th14.exe> --build <gles-build> --emsdk <sdk> --output <report.json>
++
++The oracle executes retail allocation and upload requests under Unicorn and
++compares allocation size and whether embedded pixels are copied unchanged
++against the actual GLES build objects. The Direct3D device is a recording
++boundary; this is not a GPU pixel comparison.
 diff --git a/docs/porting/TH14_UI_ORACLE.md b/docs/porting/TH14_UI_ORACLE.md
 new file mode 100644
 index 0000000000000000000000000000000000000000..82e762598ebfb6f125e7844ade222b0f09b42fb4
@@ -993,6 +1020,49 @@ index a3e63fe228287890e69b17af24edfea2684474b2..a7d4cf12bf221720e07b639c8c933962
  #endif
      auto name=[&](float x,float y){
          add(entered_name.data(),x,y);style.color=0xffffff00;add("_",x+9*(name_length==8?7:name_length),y);
+diff --git a/runtimes/th12/th12_web/cpp/game/TextureImage.cpp b/runtimes/th12/th12_web/cpp/game/TextureImage.cpp
+index f83ed09512d920a0fb22346e059407acaf7cf3f8..fae2765c213860249768619fde2002da118bf8e1 100644
+--- a/runtimes/th12/th12_web/cpp/game/TextureImage.cpp
++++ b/runtimes/th12/th12_web/cpp/game/TextureImage.cpp
+@@ -39,7 +39,7 @@ bool TextureImage::load(const AnmTexture& source,bool low_color){
+ #if PORT_TITLE == 14
+     return load(source,low_color,false);
+ }
+-bool TextureImage::load(const AnmTexture& source,bool low_color,bool high_precision){
++bool TextureImage::load(const AnmTexture& source,bool low_color,bool high_precision,u32 display_width){
+ #endif
+     failure.clear();
+     char buffer[256];
+@@ -82,10 +82,12 @@ bool TextureImage::load(const AnmTexture& source,bool low_color,bool high_precis
+         }
+     }
+ #if PORT_TITLE == 14
+-    if(embedded&&source.half_resolution){
+-        // Retail47cb70: at the fixed640x480 logical scale1, flag+34 halves
+-        // allocation and upload rectangles and selects TRIANGLE|MIRROR_U|MIRROR_V.
+-        const u32 tw=w/2,th=h/2,pw=source.pixel_width/2,ph=source.pixel_height/2;
++    const float display_scale=float(display_width)/640.f;
++    if(embedded&&source.half_resolution&&display_scale<2.f){
++        // Retail 47cb70: flagged textures are reduced only below the 1280 mode.
++        // Apply the same factor to the surface and the embedded pixel rectangle.
++        const auto reduce=[display_scale](u32 n){return u32((float(n)*display_scale)*.5f);};
++        const u32 tw=reduce(w),th=reduce(h),pw=reduce(source.pixel_width),ph=reduce(source.pixel_height);
+         if(!tw||!th||!pw||!ph)return reject("half-resolution texture is empty");
+         TextureImage input,filtered;const auto& native_input=formats[source.pixel_format];
+         input.width=source.pixel_width;input.height=source.pixel_height;input.pitch=input.width*native_input.bytes;
+diff --git a/runtimes/th12/th12_web/cpp/game/TextureImage.hpp b/runtimes/th12/th12_web/cpp/game/TextureImage.hpp
+index bbe1076cf69e41d72391da2b83937e0aa2a3c9a0..70bc629f77f5138cce049264de9ecd6a0044845e 100644
+--- a/runtimes/th12/th12_web/cpp/game/TextureImage.hpp
++++ b/runtimes/th12/th12_web/cpp/game/TextureImage.hpp
+@@ -9,7 +9,7 @@ struct TextureImage {
+     std::vector<u8> pixels;
+     bool load(const AnmTexture&,bool low_color=false);
+ #if PORT_TITLE == 14
+-    bool load(const AnmTexture&,bool low_color,bool high_precision);
++    bool load(const AnmTexture&,bool low_color,bool high_precision,u32 display_width=640);
+ #endif
+     // Populated by load() when it returns false, so callers can report which
+     // precondition rejected the texture instead of just naming the file.
 diff --git a/runtimes/th12/th12_web/cpp/game/TitleResults.cpp b/runtimes/th12/th12_web/cpp/game/TitleResults.cpp
 index c91062f77f39cdc37dac75bbe8d697d98b1ee72c..44601056b63271565f978c23429449315ddbf456 100644
 --- a/runtimes/th12/th12_web/cpp/game/TitleResults.cpp
@@ -1106,6 +1176,19 @@ index 997267a818ce8545c62c3cf262c5982e00972c05..b1c158592be72316d6d65db725a0ac60
  }
  template<class Session> AnmResource* th14_deferred_capture_target(Session& session,const DeferredCaptureRequestTh14& request){
   // Both actual44be40 callers use text52 from Supervisor+71c/slot0.
+diff --git a/runtimes/th12/th12_web/cpp/sdl/GraphicsDevice.cpp b/runtimes/th12/th12_web/cpp/sdl/GraphicsDevice.cpp
+index 214e6394474a90211b061d09f30c059f005dca88..4dc7b8a2611477ce18f5963e88463e137e53b42f 100644
+--- a/runtimes/th12/th12_web/cpp/sdl/GraphicsDevice.cpp
++++ b/runtimes/th12/th12_web/cpp/sdl/GraphicsDevice.cpp
+@@ -139,7 +139,7 @@ bool GraphicsDevice::prepare_texture(AnmResource& file,u32 index,u32& handle,boo
+ #endif
+     const bool loaded=texture.image.load(selected,low_color
+ #if PORT_TITLE == 14
+-            ,texture_high_precision&&*texture_high_precision
++            ,texture_high_precision&&*texture_high_precision,textures.at(screen).image.width
+ #endif
+     );
+     if(!loaded){error="Unable to prepare ANM texture: "+source.name+" ("+texture.image.failure+")";return false;}
 diff --git a/runtimes/th12/th12_web/tests/cpp/th14-anm-vm-oracle.cpp b/runtimes/th12/th12_web/tests/cpp/th14-anm-vm-oracle.cpp
 new file mode 100644
 index 0000000000000000000000000000000000000000..b9a59a804a81f032197649748b8c56300fc3cfb7
@@ -1314,6 +1397,46 @@ index 0000000000000000000000000000000000000000..f31f097a18c39d6ece52dd696629cc2e
 +        updates += ticks;
 +    }
 +    assert(updates >= 59 && updates <= 61);
++}
+diff --git a/runtimes/th12/th12_web/tests/cpp/th14-texture-display-oracle.cpp b/runtimes/th12/th12_web/tests/cpp/th14-texture-display-oracle.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..397588b382742fbd91da3ceb175b8d21a3d69d17
+--- /dev/null
++++ b/runtimes/th12/th12_web/tests/cpp/th14-texture-display-oracle.cpp
+@@ -0,0 +1,34 @@
++#include "TextureImage.hpp"
++#include <algorithm>
++#include <cstdio>
++using namespace th11;
++
++int main() {
++    for (const auto display : {640u, 960u, 1280u}) {
++        for (const bool flagged : {false, true}) {
++            for (const bool odd : {false, true}) {
++                AnmTexture source;
++                source.width=16+odd; source.height=20+odd;
++                source.pixel_width=12+odd; source.pixel_height=16+odd;
++                source.format=source.pixel_format=1;
++                source.half_resolution=flagged;
++                const u32 row_bytes=source.pixel_width*4;
++                source.pixels.resize(row_bytes*source.pixel_height);
++                for(u32 i=0;i<source.pixels.size();++i)
++                    source.pixels[i]=u8(i*73+29);
++
++                TextureImage image;
++                if (!image.load(source,false,false,display)) {
++                    std::fprintf(stderr,"%s\n",image.failure.c_str()); return 1;
++                }
++                bool identical=image.width==source.width&&image.height==source.height;
++                if(identical)for(u32 y=0;y<source.pixel_height;++y){
++                    const auto start=source.pixels.begin()+y*row_bytes;
++                    identical&=std::equal(start,start+row_bytes,image.pixels.begin()+y*image.pitch);
++                }
++                std::printf("%u %u %u %u %u %u\n",display,unsigned(flagged),unsigned(odd),
++                    image.width,image.height,unsigned(identical));
++            }
++        }
++    }
 +}
 diff --git a/runtimes/th12/th12_web/tests/cpp/th14-ui-oracle.cpp b/runtimes/th12/th12_web/tests/cpp/th14-ui-oracle.cpp
 new file mode 100644
@@ -1952,6 +2075,136 @@ index 0721fa9d26730472f580751ef017daacce2324a0..16a1ff3a5a8c806cb92459334cd49ebd
      (output / 'build.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
      print(json.dumps(dict(module=str(wasm), units=len(compiled), sha256=report['sha256'])))
  
+diff --git a/tools/th14-texture-display-oracle.py b/tools/th14-texture-display-oracle.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..de24fee730a2cd08cc5c8538787c0f305561c4a2
+--- /dev/null
++++ b/tools/th14-texture-display-oracle.py
+@@ -0,0 +1,124 @@
++"""Compare TH14 ANM texture allocation at 640, 960 and 1280 with retail 1.00b.
++
++Retail texture allocation and upload are recorded at the D3D boundary; the
++candidate uses the actual GLES build's TextureImage and ImageResample objects.
++"""
++import argparse
++import importlib
++import json
++import os
++from pathlib import Path
++import struct
++import subprocess
++import sys
++import tempfile
++
++from unicorn.x86_const import UC_X86_REG_EAX, UC_X86_REG_EIP, UC_X86_REG_ESP
++
++ui = importlib.import_module('th14-ui-oracle')
++ROOT, RUNTIME = ui.ROOT, ui.RUNTIME
++
++
++def native_rows(image):
++    retail = ui.Retail(image)
++    machine = retail.machine
++    current, uploads, result = {}, [], {}
++    arena = ui.DATA + 0x8000
++
++    def allocate(size):
++        nonlocal arena
++        p = arena
++        arena = (arena + size + 15) & ~15
++        machine.mem_write(p, bytes(size))
++        return p
++
++    def get(p):
++        return retail.words(p, 1)[0]
++
++    def ret(value, argc):
++        sp = machine.reg_read(UC_X86_REG_ESP)
++        machine.reg_write(UC_X86_REG_EAX, value)
++        machine.reg_write(UC_X86_REG_ESP, sp + 4 + argc * 4)
++        machine.reg_write(UC_X86_REG_EIP, get(sp))
++
++    host = importlib.import_module('th14-native-physical-texture-host')
++    host.install(machine, allocate, current, uploads, get, retail.put, ret)
++    owner, header, tex = ui.DATA, ui.DATA + 0x100, ui.DATA + 0x200
++    for display in (640, 960, 1280):
++        retail.put(0x4f7a6c, ui.float_word(display/640))
++        for flag in (0, 1):
++            for odd in (0, 1):
++                width, height, pw, ph = (n+odd for n in (16,20,12,16))
++                chunk = bytearray(64)
++                chunk[32], chunk[34] = 1, flag
++                pixels = bytes((i*73+29) & 255 for i in range(pw*ph*4))
++                machine.mem_write(owner, bytes(0x40))
++                retail.put(owner+0x10, header)
++                machine.mem_write(header, bytes(chunk))
++                machine.mem_write(tex, struct.pack('<4s4HI', b'THTX',0,1,pw,ph,len(pixels))+pixels)
++                current.update(chunk=chunk, index=0, textures={})
++                uploads.clear()
++                retail.run(0x47cb70,owner,tex,1,width,height)
++                row, = uploads
++                assert row['sourceRect']==[0,0,pw,ph] and row['sourceSha256']==ui.digest(pixels)
++                assert row['filter'] in (1, 0x30004)
++                result[display, flag, odd] = row
++    return result
++
++
++def candidate_rows(build, sdk):
++    receipt = json.loads((build/'build.json').read_bytes())
++    assert ui.digest((build/'th14-sdl.wasm').read_bytes()) == receipt['sha256']
++    for path, expected in receipt['sourceBindings'].items():
++        assert ui.digest((ROOT/path).read_bytes())==expected, path
++    objects=[]
++    for source in ('TextureImage.cpp', 'ImageResample.cpp'):
++        name, = [name for name in receipt['objects'] if name.endswith('_'+source+'.o')]
++        obj = build/name
++        assert ui.digest(obj.read_bytes())==receipt['objects'][name], name
++        objects.append(obj)
++    flags = [f for f in receipt['flags'] if f not in ('--profiling-funcs', '--use-port=sdl3')]
++    fixture = RUNTIME/'th12_web/tests/cpp/th14-texture-display-oracle.cpp'
++    with tempfile.TemporaryDirectory(prefix='texture-display-',dir=build) as temp:
++        module = Path(temp)/'probe.mjs'
++        runner = Path(temp)/'run.mjs'
++        env = {**os.environ, 'EMSDK':str(sdk), 'EM_CONFIG':str(sdk/'.emscripten'),
++               'TMP':temp,'TMPDIR':temp,'TEMP':temp}
++        subprocess.run([sys.executable,str(sdk/'upstream/emscripten/emcc.py'),*flags,
++                        '-Ith12_web/cpp/game',str(fixture),*map(str,objects),
++                        '-sDEFAULT_TO_CXX=1','-sENVIRONMENT=node','-sEXIT_RUNTIME=1',
++                        '-o',str(module)],check=True,cwd=RUNTIME,env=env)
++        runner.write_text("import make from './probe.mjs';\nawait make();\n",encoding='utf8')
++        lines = subprocess.check_output(['node',str(runner)],text=True).splitlines()
++    return {tuple(words[:3]): words[3:] for words in (list(map(int,line.split())) for line in lines)}
++
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--exe', type=Path, required=True)
++    parser.add_argument('--build', type=Path, required=True)
++    parser.add_argument('--emsdk', type=Path, required=True)
++    parser.add_argument('--output', type=Path)
++    a=parser.parse_args()
++    image = importlib.import_module('th-anm-handlers').handlers(14,a.exe)[0]
++    assert ui.digest(image.data)=='f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353'
++    native=native_rows(image)
++    candidate=candidate_rows(a.build.resolve(),a.emsdk.resolve())
++    assert candidate.keys()==native.keys()
++    differences=[]
++    for key,row in native.items():
++        expected=[row['width'],row['height'],int(row['filter']==1)]
++        if candidate[key]!=expected:
++            differences.append({'case':key,'retail':expected,'candidate':candidate[key]})
++    report={'passed':not differences,'cases':len(native),'differences':differences,
++            'rows':[{'display':key[0],'flagged':bool(key[1]),'odd':bool(key[2]),
++                     'allocation':[row['width'],row['height']],'upload':row['destinationRect'][2:],
++                     'retailFilter':row['filter'],'candidate':candidate[key]} for key,row in native.items()]}
++    if a.output:
++        a.output.write_text(json.dumps(report,indent=2)+'\n',encoding='utf8')
++    print(json.dumps({k:report[k] for k in ('passed','cases','differences')}))
++    raise SystemExit(bool(differences))
++
++
++if __name__=='__main__':
++    main()
 diff --git a/tools/th14-ui-oracle.py b/tools/th14-ui-oracle.py
 new file mode 100644
 index 0000000000000000000000000000000000000000..8daa8dd2d50259684a999ea37e476a54b730365a
