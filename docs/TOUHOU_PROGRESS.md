@@ -82,7 +82,7 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++／SDL3／Wasm 实现进行中，整作1:1尚未完成。[当前游戏源码](https://github.com/AdingApkgg/thp/commit/6e8dcbb4ce667718d9af3971080728d7a7739498)已部署到[TH14测试站](https://wth.saop.cc/)，[网站接入PR #233](https://github.com/Ritosa2333/eagler-touhou/pull/233)待上游合入。原作DATA、FLAC音乐与不可变Runtime分开提供。
+独立 C++／SDL3／Wasm 实现进行中，整作1:1尚未完成。[当前游戏源码](https://github.com/AdingApkgg/thp/commit/572751a813eb58c874c901e20040b7674b1b8dcd)已部署到[TH14测试站](https://wth.saop.cc/)，[网站接入PR #233](https://github.com/Ritosa2333/eagler-touhou/pull/233)待上游合入。原作DATA、FLAC音乐与不可变Runtime分开提供。
 
 最新修正文字队列坐标和对齐顺序：先按原版缩放起始XYZ、添加pass1原点，再执行居中／靠右／垂直对齐；HUD分数和奖励文字保留对齐信息到这个阶段。[原版队列40b9b0与文字40bf20串联对照](https://github.com/AdingApkgg/thp/blob/6e8dcbb4ce667718d9af3971080728d7a7739498/docs/porting/TH14_ASCII_QUEUE_LAYOUT_NOV12.md)覆盖六个宽度、六种字体、三种字形缩放、阴影、两段文字、三个通道和五种对齐组合，共6,480组／160,380字形／962,280字完全一致。旧API只支持其中1,296组左／顶部样例，1,152组失败；未把另5,184组计作旧版通过。两条真实HUD文字生产路径另有48组侧栏及144组奖励／时间样例，共4,372字形／21,860字全部相同，旧版160组失败。CRT、图集、几何和GPU仍为声明的服务边界；队列在稳定显示尺寸下延迟转换坐标，不宣称中途换分辨率、真实图集几何或像素通过。
 
@@ -90,13 +90,17 @@ TH14文字样式布局改变，因此重新编译全部141个游戏单元、146�
 
 此前type0实际批次提交／混合缓存修正的360组／161,406字、普通精灵及ASCII查询后提交各13,824组／165,888坐标字，以及mode8两条路线各4,608组矩阵对照，保留各自有限范围。已有修正还包括初次Control在Overlay8后的发布、工作线程复用暂停菜单、Control／演示时钟及提前返回和正常Quit保存同步。原版分数／配置导入后可由C++正常Quit逐字节保留，原版编解码器也可往返当前新存档；这些不视为完整浏览器持久化通过。
 
-[当前发布记录](https://github.com/AdingApkgg/thp/blob/main/docs/porting/th14-ascii-queue-release-nov12.json)：代次`d9bc19bba2c1423e845dd84f5f59f90f4311d908259868966f59bd3bbb5aad52`，Wasm SHA-256 `2c4061e9aab6f876bb644974ef80d1c9c704859b8dc3286352fdc2de2a5fe04a`。GitHub上367个构建源码文件与本地字节相同；源站39个Runtime文件哈希相符，公网核对新Wasm、加载器、shell、清单和HTML共5个正文及COOP／COEP／no-transform。其余未改公网正文未重复下载，之前完整公网校验保持单独范围。e6b15d27旧版经TS Arch服务SSH转发的浏览器验收覆盖Normal灵梦B开局／射击／Bomb、暂停恢复、标题及Quit；当前Chrome连接仍未附加调试，未取得新浏览器UI验收，未要求用户手动恢复。
+[当前发布记录](https://github.com/AdingApkgg/thp/blob/main/docs/porting/th14-camera-right-release-nov12.json)：代次`4df167f1d7279ce829ac1ff6636e6540948a92731aad0429d57b24d53d564ac7`，Wasm SHA-256 `9b17c2e2bfe2e19a63af3b6d2c7d0ba6082ca05f24bef858ab51f85d65e022b4`。GitHub上368个构建源码文件与本地字节相同；源站39个Runtime文件哈希相符，公网核对新Wasm、加载器、shell、清单和HTML共5个正文及COOP／COEP／no-transform。其余未改公网正文未重复下载，之前完整公网校验保持单独范围。e6b15d27旧版经TS Arch服务SSH转发的浏览器验收覆盖Normal灵梦B开局／射击／Bomb、暂停恢复、标题及Quit；当前Chrome连接仍未附加调试，未取得新浏览器UI验收，未要求用户手动恢复。
 
 加载／动画RNG仍是首要剩余项。[保留506b9da9实测的交接审计](https://github.com/AdingApkgg/thp/blob/6e8dcbb4ce667718d9af3971080728d7a7739498/docs/porting/th14-loading-enable-boundary-nov12.json)显示47个相同原始root／age／counter节点的SCRIPT种子和次数完全一致；在age79时RNG仍同，C++已启用Control而原版到age84才启用。24次差异在各自首个Player之前已存在，双方之后各消耗20次。三个原版403310轨道检查精确复现端点；这不是实际调用者／抢占轨迹证明，21／20粒子只与一次额外出生相符，物理完成时序仍未接受。该旧实测首帧仍差281,902像素／3,036个Alpha字节；本次没有重跑Player或继承其通过范围，也未固定补帧／随机调用或反馈原版状态。全部自机／难度、完整录像、相机缓存、整局图像、普通完整流程／存档和最终PCM继续验收。
 
 补充真实图集和绘制路径对照：[648组图集绑定／顶点／有效状态检查](https://github.com/AdingApkgg/thp/blob/c6d907d22c9fdaf74d6fe13f19cc82d04bf53e63/docs/porting/TH14_ASCII_ATLAS_GEOMETRY_NOV12.md)执行原版真实ASCII资源加载、VM绑定、队列、几何和实际批次flush，覆盖640／960／1280宽度、六字体、两缩放、阴影、三通道和三对齐组合；31,392个提交顶点、941,760字的有效状态／顶点对照一致，提交次数全部相同。原始状态检查仍保留31,392字失败：原版纹理变换标志2而C++为0；仅在D3D规定忽略纹理变换的XYZRHW顶点上另行比较有效语义，未宣称原始状态逐字相同。世界坐标／UV／混合因子的负对照生效。未改游戏源码、未重复部署或运行游戏／GPU；图像、加载时序、浏览器及整作仍未验收。当前公网th14.html重新核对506字节及清单哈希相同，保留no-transform。
 
 补充真实像素对照：[18组ASCII离屏光栅检查](https://github.com/AdingApkgg/thp/blob/ac8a7dd3cdb829f64e040e44a571dbe9add77397/docs/porting/TH14_ASCII_ATLAS_RASTER_NOV12.md)将原版真实几何和原始ARGB4444纹理交给独立D3D9 HAL，与当前C++真实资源解析／文字／GraphicsDevice／Renderer在ANGLE/GLES上的输出比较。640／960／1280三宽度、字体0／4和三个通道的18组全部像素一致；总目标13,363,200像素，其中5,403像素非背景。测试明确关闭fog／depth，使用Z0、0.7／0.3缩放、阴影和左顶部对齐；不代表全部字形组合或整局图像。首轮原版夹具漏传初始viewport，失败314像素；补上原版空队列真实camera上传后，仅viewport记录改变，失败参考保留。复用同一次C++GPU运行的16组原有精确结果及另外2组保留图像逐字节比对，没有为修正参考重跑C++。各GPU对象和隐藏窗口已回收，全程静音，未启动原版游戏／完整录像、未改源码或重新部署。加载RNG／物理时序、相机缓存、全部模式、浏览器和整作继续验收。
+
+共享相机right发布修正：[原版8／4／4／4／4字节写入协议](https://github.com/AdingApkgg/thp/blob/572751a813eb58c874c901e20040b7674b1b8dcd/docs/porting/TH14_CAMERA_RIGHT_PUBLICATION_NOV12.md)现在由共享world相机的对齐64位XY发布、标量Z以及归一化XYZ三笔32位发布保持。旧优化SDK对象将原始Y／X拆成两笔写入；当前SDK和浏览器对象均核对了实际生成指令。world相机所有者保证8字节对齐，SceneCamera保持300字节，SceneCompositor实测尺寸不变；其他未对齐私有相机的普通qword回退不宣称原子性，也未把75个独立读取改成整相机快照。TH12／13／16及TH14无worker的相机／compositor共八对对象逐字节相同。40组真实原版宿主数学／40组FOV负对照，以及80组对齐／未对齐阶段观察例全部保持75字最终结果。全部141个游戏、4个宿主及146个正常浏览器单元重新编译，368个发布源码字节与构建来源相同。
+
+一次静音真实C++Application／GLES冷启动在508个宿主帧后到达第一个灵梦B Normal Player画面（1个Player回调），实际共享right对齐正确；四个逻辑回调、两个物理worker宿主及GPU／计时器／时钟全部回收。对保留原版参考的严格比较仍差194,896像素／3,092个Alpha字节，SCRIPT仍差24次；各次物理加载时间不同，不能把该图像数量与旧版本的差距归因于这项修正，也未证明旧缓存矩阵差异的全部原因。当前发布代次、Wasm和39源站／5公网正文核验见上方发布记录，COOP／COEP／no-transform保持；当前浏览器UI／持久化、加载时序、整帧、全部模式／完整录像、完整普通流程／存档和最终PCM仍未完成。
 
 ## [th15] 東方紺珠伝 v1.00b
 
