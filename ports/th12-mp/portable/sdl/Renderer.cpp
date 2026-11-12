@@ -212,7 +212,10 @@ void Renderer::region(const Texture& t,float sx,float sy,float sw,float sh,float
     material(blend);bind(t,o.point);primitive(Triangles);
     const Corners c=o.mode==0||o.mode==1?native_quad_corners(x,y,w,h,angle,o.anchor_x,o.anchor_y,o.mode,o.shake):quad_corners(x,y,w,h,angle,o.anchor_x,o.anchor_y,o.pixel);
     const float end_x=sx+sw*o.uv_scale_x,end_y=sy+sh*o.uv_scale_y;
-    quad(c,sx/t.w+o.u,end_x/t.w+o.u,sy/t.h+o.v,end_y/t.h+o.v,t.flip_y,{tint.r,tint.g,tint.b,alpha});
+    // Mode1 retains native integer pixel centers when rasterized by GLES.
+    // This also preserves the bright center of 1.024px laser warnings.
+    const float raster_offset=o.mode==1?.5f:0;
+    quad(c,sx/t.w+o.u,end_x/t.w+o.u,sy/t.h+o.v,end_y/t.h+o.v,t.flip_y,{tint.r,tint.g,tint.b,alpha},raster_offset,raster_offset);
 }
 void Renderer::solid_triangles(const Vertex* v,const u32* indices,u32 count,i32 blend){
     material(blend);bind(solid_,true);primitive(Triangles);for(u32 i=0;i<count;++i){Vertex p=v[indices[i]];p.u=p.v=.5f;p.depth=1;p.fog=0;batch.push_back(p);}

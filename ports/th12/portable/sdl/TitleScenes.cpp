@@ -4,7 +4,7 @@
 namespace th12host {
 const char name_characters[89]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-=.,!?@:;[]()_/{}|~^#$%&*";
 namespace {
-constexpr u32 Confirm=0x80001,Cancel=0x102,Directions=0xf0,RetryKey=0x200000;
+constexpr u32 Confirm=0x80001,Cancel=0x102,Directions=0xf0,RetryKey=0x200000,QuitKey=0x10000;
 std::u32string ascii(const char* s){std::u32string out;for(;*s;++s)out+=char32_t(u8(*s));return out;}
 const char32_t* const characters[3]{U"博麗 霊夢",U"霧雨 魔理沙",U"東風谷 早苗"};
 // Title+ demo order (4205c0): demo2, demo1, demo0.
@@ -179,6 +179,7 @@ void TitleScenes::tick(u32 held,u32 pulses){
     if(s.capture_joy>=0){if(pressed&Cancel)s.capture_joy=-1;return;}
     if(s.phase==MenuState::Phase::In){s.phase=MenuState::Phase::Active;MenuEvent e;e.type=MenuEvent::Ready;e.selection=s.selection;e.reset_interrupt=3;e.selection_interrupt=17+s.selection;s.events.push_back(e);}
     if(s.scene==MenuScene::Pause&&(pressed&RetryKey)&&quick_retry())return;
+    if(s.scene==MenuScene::Pause&&(pressed&QuitKey)&&quick_quit())return;
     const u32 direction=(pressed|repeat)&Directions;
     if(s.scene==MenuScene::Name&&!s.ranked&&s.name_kind==NameKind::Score){
         // The unqualified score shows all ten rows, with no character grid.
@@ -207,6 +208,11 @@ bool TitleScenes::quick_retry(){
     auto& s=state;if(s.scene!=MenuScene::Pause||s.context.run.mode==ModeReplay||!ready())return false;
     // 432c5f..432ccf bypasses confirmation (IRQ6 on front93); 4335fe waits 12 ticks.
     sound(7);animate(MenuEvent::RetryShortcut);const MenuContext c=s.context;wait(12,[this,c]{pause_action("retry",c);},"retry-shortcut");return true;
+}
+bool TitleScenes::quick_quit(){
+    if(state.scene!=MenuScene::Pause||!ready())return false;
+    // 432cd9..432d1a uses Q (10000), front91 IRQ6 and the 12-tick exit state.
+    sound(7);animate(MenuEvent::QuitShortcut);wait(12,[this]{return_title();},"quit-shortcut");return true;
 }
 void TitleScenes::return_from_pause_confirm(){
     const MenuContext c=state.context;const i32 selection=state.pause_selection;animate(MenuEvent::ConfirmNo);
@@ -291,7 +297,10 @@ void TitleScenes::confirm(){
     case MenuScene::Pause:if(item&&item->id==0)resume();
         else{const MenuContext c=s.context;const i32 sel=s.selection;const std::string action=!item?"title":item->id==3?"retry":item->id==4?"replay-again":item->id==2?"save-exit":"title";
             enter(MenuScene::PauseConfirm,1,[&](MenuState& st){st.context=c;st.pause_selection=sel;st.pause_action=action;st.ready_at=30;});}break;
-    case MenuScene::PauseConfirm:if(item&&item->id==1)return_from_pause_confirm();else{const MenuContext c=s.context;pause_action(s.pause_action,c);}break;
+    case MenuScene::PauseConfirm:if(item&&item->id==1)return_from_pause_confirm();else{
+            const MenuContext c=s.context;const std::string action=s.pause_action;
+            // 432e70 accepts Yes (front100 IRQ6); 4334c4 waits 20 UI ticks.
+            animate(MenuEvent::ConfirmYes);wait(20,[this,c,action]{pause_action(action,c);});}break;
     case MenuScene::Continue:
         if(item&&item->id==0){MenuAction a;a.type=MenuAction::Continue;a.run=s.context.run;enter(MenuScene::Playing,0,[](MenuState& st){st.ready_at=0;});emit(a);}
         else if(item&&item->id==3){const MenuContext c=s.context;pause_action("retry",c);}
