@@ -50,6 +50,13 @@ void read_damage(ReplayJson& json,ReplayExtension& extension){
     });require(schema&&layout&&character&&shot&&stages);
 }
 }
+std::array<i32,3> ReplayExtension::tool_state(i32 stage,u32 frame)const{
+    const std::array<i32,3> defaults{0,0,0x3f000000};
+    const auto it=tools.find(stage);if(it==tools.end())return defaults;
+    const auto& rows=it->second;
+    auto row=std::upper_bound(rows.begin(),rows.end(),frame,[](u32 frame,const auto& event){return frame<event.frame;});
+    return row==rows.begin()?defaults:std::prev(row)->state;
+}
 std::array<i32,2> ReplayExtension::delta(i32 stage,u32 frame)const{
     const auto it=motion.find(stage);if(it==motion.end())return {};
     const auto& rows=it->second;const auto row=std::lower_bound(rows.begin(),rows.end(),frame,[](const auto& r,u32 frame){return r.frame<frame;});
@@ -63,11 +70,31 @@ bool read_replay_extension(const std::vector<u8>& file,size_t at,const std::map<
         ReplayJson json(std::string_view(reinterpret_cast<const char*>(file.data()+at+16),size));ReplayExtension e;e.present=true;
         bool schema=false,scale=false,unlimited=false,records=false;
         json.object([&](const auto& key){
-            if(key=="schema")schema=json.string()=="th12-web-motion/1";
+            if(key=="schema"){const auto value=json.string();schema=value=="th12-web-motion/1"||value=="th12-web-motion/2";}
             else if(key=="coordinateScale")scale=json.integer()==128;
             else if(key=="unlimited"){e.unlimited=json.boolean();unlimited=true;}
             else if(key=="practice")read_practice(json,e);
             else if(key=="damage")read_damage(json,e);
+            else if(key=="tools"){
+                json.array(stages.size(),[&](size_t){
+                    int stage=0;bool number=false,events=false;std::vector<ReplayToolEvent> rows;
+                    json.object([&](const auto& field){
+                        if(field=="number"){stage=int(json.integer(1,7));number=true;}
+                        else if(field=="events"){
+                            events=true;json.array(10000000,[&](size_t){
+                                std::array<i32,4> values{};size_t count=0;
+                                const i64 maximum[]{9999999,511,7,0x3f800000};
+                                json.array(4,[&](size_t n){values[n]=i32(json.integer(0,maximum[n]));++count;});
+                                require(count==4&&(rows.empty()||u32(values[0])>rows.back().frame));
+                                rows.push_back({u32(values[0]),{values[1],values[2],values[3]}});
+                            });
+                        }else json.skip();
+                    });
+                    const auto original=stages.find(stage);
+                    require(number&&events&&original!=stages.end()&&(rows.empty()||rows.back().frame<original->second));
+                    require(e.tools.emplace(stage,std::move(rows)).second);
+                });e.assisted=true;
+            }
             else if(key=="stages"){
                 records=true;json.array(stages.size(),[&](size_t){int stage=0;bool number=false,deltas=false;std::vector<ReplayMotion> rows;
                     json.object([&](const auto& field){
@@ -83,8 +110,8 @@ bool read_replay_extension(const std::vector<u8>& file,size_t at,const std::map<
     }catch(const std::exception& e){error=e.what();return false;}
 }
 void append_replay_extension(std::vector<u8>& file,const ReplayExtension& e){
-    bool motion=false;for(const auto& [stage,rows]:e.motion)motion|=!rows.empty();if(!motion&&!e.practice&&e.damage.empty())return;
-    std::ostringstream out;out<<"{\"schema\":\"th12-web-motion/1\",\"coordinateScale\":128,\"unlimited\":"<<(e.unlimited?"true":"false")<<",\"practice\":";
+    bool motion=false;for(const auto& [stage,rows]:e.motion)motion|=!rows.empty();bool tools=false;for(const auto& [stage,rows]:e.tools)tools|=!rows.empty();if(!motion&&!e.practice&&e.damage.empty()&&!tools)return;
+    std::ostringstream out;out<<"{\"schema\":\"th12-web-motion/"<<(tools?2:1)<<"\",\"coordinateScale\":128,\"unlimited\":"<<(e.unlimited?"true":"false")<<",\"practice\":";
     if(e.practice){const auto& p=*e.practice;const int indices[]{1,2,3,4,5,6,8,9,10,11,12,13,14,15,16,17,18};
         out<<"{\"schema\":\"eagler-touhou/th12-practice/1\",\"game\":\"th12\",\"assisted\":"<<(e.assisted?"true":"false")<<",\"params\":{";
         for(int i=0;names[i];++i){if(i)out<<',';out<<'"'<<names[i]<<"\":";if(i==4)out<<(p[5]?"true":"false");else if(i==5)out<<(u32(p[6])|(u64(u32(p[7]))<<32));else out<<p[size_t(indices[i])];}
@@ -93,6 +120,14 @@ void append_replay_extension(std::vector<u8>& file,const ReplayExtension& e){
     out<<",\"damage\":";if(e.damage.empty())out<<"null";else{
         out<<"{\"schema\":\"eagler-touhou/th12-damage-sources/1\",\"layout\":\"th12-portable-damage-source/1\",\"character\":0,\"shot\":0,\"stages\":[";bool comma=false;
         for(const auto& [stage,words]:e.damage){if(comma)out<<',';comma=true;out<<"{\"number\":"<<stage<<",\"words\":[";for(size_t n=0;n<words.size();++n){if(n)out<<',';out<<words[n];}out<<"]}";}out<<"]}";
+    }
+    if(tools){
+        out<<",\"tools\":[";bool comma=false;
+        for(const auto& [stage,rows]:e.tools){if(rows.empty())continue;if(comma)out<<',';comma=true;
+            out<<"{\"number\":"<<stage<<",\"events\":[";
+            for(size_t n=0;n<rows.size();++n){if(n)out<<',';const auto& r=rows[n];out<<'['<<r.frame<<','<<r.state[0]<<','<<r.state[1]<<','<<r.state[2]<<']';}
+            out<<"]}";
+        }out<<']';
     }
     out<<",\"stages\":[";bool comma=false;for(const auto& [stage,rows]:e.motion){if(comma)out<<',';comma=true;out<<"{\"number\":"<<stage<<",\"deltas\":[";for(size_t n=0;n<rows.size();++n){if(n)out<<',';const auto& r=rows[n];out<<'['<<r.frame<<','<<r.x<<','<<r.y<<']';}out<<"]}";}out<<"]}";
     const auto json=out.str();if(json.size()>MaxTrailer)throw std::runtime_error("TH12 replay extension exceeds 16 MiB");

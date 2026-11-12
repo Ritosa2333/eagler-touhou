@@ -15,7 +15,7 @@ enum class MenuScene {Title,Difficulty,Character,Shot,Practice,Replay,ReplayStag
 enum RunMode:i32 {ModeStory=0,ModePractice=1,ModeExtra=2,ModeReplay=3,ModeDemo=4};
 struct MenuRun {i32 mode=ModeStory,difficulty=1,character=0,shot=0,stage=1;std::string replay_file;};
 struct MenuChoice {std::u32string label;i32 id=0;bool disabled=false;};
-struct MenuEvent {enum Type {Ready,Selection,Confirm,Cancel,Resume,RetryShortcut,ConfirmNo,Fade,DataHeader} type=Selection;i32 previous=0,selection=0,reset_interrupt=3,selection_interrupt=7,frames=0;};
+struct MenuEvent {enum Type {Ready,Selection,Confirm,Cancel,Resume,RetryShortcut,QuitShortcut,ConfirmYes,ConfirmNo,Fade,DataHeader} type=Selection;i32 previous=0,selection=0,reset_interrupt=3,selection_interrupt=7,frames=0;};
 // A run as the result pages see it (upstream resultData).
 struct MenuContext {
     MenuRun run;bool multiplayer=false,can_continue=true,can_save_replay=false,clear=false,ranked=true;
@@ -104,6 +104,7 @@ private:
     void confirm();
     void resume();
     bool quick_retry();
+    bool quick_quit();
     void return_from_pause_confirm();
     void pause_action(const std::string& action,const MenuContext& context);
     void open_result_menu(const MenuContext& result,bool from_name=false,NameContext context=NameContext::Pause);
