@@ -73,6 +73,12 @@ void AnmRegistry::erase(Node& entry){
     // 0x46f690：子链全体摘父指针并标待回收（0x20），下帧由链扫描回收。
     for(auto* child:entry.children){child->parent=nullptr;child->vm.rotation_parent=child->vm.creation_parent=nullptr;child->vm.visual.render_flags=child->vm.visual.render_flags|32u;}entry.children.clear();
     entry.vm.rotation_parent=entry.vm.creation_parent=nullptr;entry.vm.instruction_offset=-1;entry.active=entry.registered=entry.queued_deletion=false;entry.handle=0;active_count--;
+    // A freed pool slot owns no script, sprite or allocated geometry. Keeping
+    // these bindings after the bank unloads makes a later snapshot dereference
+    // released storage. allocate callers install a complete template on reuse.
+    entry.vm.script=nullptr;entry.vm.resource=entry.vm.sprite_resource=nullptr;
+    entry.vm.sprite=nullptr;entry.vm.sprite_source=nullptr;entry.vm.pre_tick=nullptr;
+    entry.vm.geometry={};
     if(entry.slot<pool.size())free_slots.push_back(entry.slot);else{nodes.erase(&entry.vm);overflow.erase(&entry);}
 }
 bool AnmRegistry::discard(AnmVm& vm){auto* entry=node(vm);if(!entry||!entry->active)return true;if(!entry->children.empty()){error="Animation with children needs recursive deletion";return false;}pending_deletion.erase(std::remove(pending_deletion.begin(),pending_deletion.end(),entry),pending_deletion.end());erase(*entry);return true;}

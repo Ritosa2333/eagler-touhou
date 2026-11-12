@@ -57,6 +57,58 @@ public:
     explicit SpellPresentation(AnmManager& animations, Banks banks)
         : animations_(animations), banks_(banks) {}
 
+    struct RollbackState {
+        u32 flags_;
+        i32 spell_id_;
+        std::string name_;
+        i32 bonus_base_;
+        i32 bonus_cap_;
+        i32 duration_;
+        u32 background_;
+        std::array<float, 3> anchor_;
+        SpellSnapshot snapshot_;
+        std::array<u32, 3> displays_;
+        u32 stage_background_;
+        u32 decoration_;
+        u32 banner_;
+        u32 notice_;
+        u32 spirit_notice_;
+        std::vector<u32> spirit_notices_;
+        std::array<u32, 8> bonus_digits_;
+        u32 bonus_million_;
+        u32 bonus_thousand_;
+        u32 bonus_capture_effect_;
+        i32 capture_frames_;
+        bool production_;
+        std::vector<u32> retiring_displays_;
+    };
+    RollbackState capture_rollback() const { return {flags_, spell_id_, name_, bonus_base_, bonus_cap_, duration_, background_, anchor_, snapshot_, displays_, stage_background_, decoration_, banner_, notice_, spirit_notice_, spirit_notices_, bonus_digits_, bonus_million_, bonus_thousand_, bonus_capture_effect_, capture_frames_, production_, retiring_displays_}; }
+    void restore_rollback(const RollbackState& state) {
+        flags_ = state.flags_;
+        spell_id_ = state.spell_id_;
+        name_ = state.name_;
+        bonus_base_ = state.bonus_base_;
+        bonus_cap_ = state.bonus_cap_;
+        duration_ = state.duration_;
+        background_ = state.background_;
+        anchor_ = state.anchor_;
+        snapshot_ = state.snapshot_;
+        displays_ = state.displays_;
+        stage_background_ = state.stage_background_;
+        decoration_ = state.decoration_;
+        banner_ = state.banner_;
+        notice_ = state.notice_;
+        spirit_notice_ = state.spirit_notice_;
+        spirit_notices_ = state.spirit_notices_;
+        bonus_digits_ = state.bonus_digits_;
+        bonus_million_ = state.bonus_million_;
+        bonus_thousand_ = state.bonus_thousand_;
+        bonus_capture_effect_ = state.bonus_capture_effect_;
+        capture_frames_ = state.capture_frames_;
+        production_ = state.production_;
+        retiring_displays_ = state.retiring_displays_;
+    }
+
     // Production path: shared SpellState is the sole authority for capture,
     // timer and bonus. This consumes every actual begin/end instruction event;
     // it never adds score or writes a record. chapter = ECL 524 章节号
@@ -157,9 +209,9 @@ private:
     i32 bonus_base_ = 0, bonus_cap_ = 0;  // +0x80/+0x84
     i32 duration_ = 0;                    // +0x88
     u32 background_ = 0;                  // +0x20 背景枚 VM
-    float anchor_[3] = {0, 0, 0};         // +0xac.. 符卡环平滑跟随位置
+    std::array<float, 3> anchor_{};         // +0xac.. 符卡环平滑跟随位置
     SpellSnapshot snapshot_;
-    u32 displays_[3] = {};
+    std::array<u32, 3> displays_{};
     u32 stage_background_ = 0, decoration_ = 0;
     u32 banner_ = 0;  // 0x42a430 写在 stage ctx+0xcc 的结算横幅
     // 0x42a430 case2/3/4：非符卡横幅句柄（原版 stage ctx+0xd0 槽，与
@@ -173,7 +225,7 @@ private:
     // 4..11，句柄组 stage+0xa4）+ 分隔符（≥10^6 script12 → +0xc4、
     // ≥10^3 script13 → +0xc8，sprite 0x11c=284）+ 捕获特效 front
     // script95（+0x118）。
-    u32 bonus_digits_[8] = {};
+    std::array<u32, 8> bonus_digits_{};
     u32 bonus_million_ = 0, bonus_thousand_ = 0;
     u32 bonus_capture_effect_ = 0;
     i32 capture_frames_ = 0; // manager+0x94 survives the next spell's +0x90 reset

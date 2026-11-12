@@ -30,6 +30,7 @@ struct AnmObjectHost {
 // work; unsupported instructions stop explicitly and are never silently skipped.
 class AnmVm {
     friend class AnmFile;
+    friend class AnmRegistry;
     std::vector<u8>* script=nullptr;u32 saved_offset=0;Timer saved_timer{};
 public:
     inline static u64 presentation_counter=0;
