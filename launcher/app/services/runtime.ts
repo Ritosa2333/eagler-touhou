@@ -123,6 +123,13 @@ export interface RuntimePlan {
   launcherControls?: RuntimeLauncherControls;
 }
 export type RuntimeReadyContinuation = (epoch: number) => Promise<RuntimePlan>;
+export interface RuntimeRoomReturnContext {
+  readonly epoch: number;
+  readonly launchSerial: number;
+  readonly netplayUrl: string;
+  readonly player: number;
+  readonly spectator: boolean;
+}
 export type RuntimePhase = 'idle' | 'loading' | 'configuring' | 'prepared' | 'launching' | 'running' | 'saving' | 'exited' | 'error';
 export type RuntimeRequestCommand = 'playback' | 'spectator-playback' | 'list' | 'read' | 'write' | 'remove' | 'resources' | 'retry-music';
 export type RuntimeFileCommand = 'list' | 'read' | 'write' | 'remove';
@@ -294,6 +301,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   const generations = createManagedRuntimeGenerationLease();
   const listeners = new Set<() => void>();
   const eventListeners = new Set<(message: RuntimeEventMessage) => void>();
+  const roomReturnListeners = new Set<(context: RuntimeRoomReturnContext) => void>();
   const pending = new Map<string, PendingRequest>();
   const waiters = new Set<Waiter>();
   let snapshot = initialSnapshot();
@@ -308,6 +316,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   let roomMenuConfigure: RuntimePlan['configure'] | null = null;
   let roomReturnPending: {epoch: number; promise: Promise<void>} | null = null;
   let roomLaunchSerial = 0;
+  let roomReturnContext: RuntimeRoomReturnContext | null = null;
   let codeUpdate: {epoch:number; check:NonNullable<Awaited<ReturnType<typeof prepareRuntimeLaunch>>['checkForUpdate']>} | null = null;
   const updateNotices = new Set<string>();
   let oggExtensionTail: Promise<void> = Promise.resolve();
@@ -450,7 +459,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     finishProgramTransfers(); sessions.clear(); generations.clear(); releaseLease();
     rejectPending(new RuntimeSessionSupersededError());
     audioMix.detach();
-    runtimeDocument = null; preparedPlan = null; roomMenuConfigure = null; roomReturnPending = null; roomLaunchSerial = 0; launchRequested = false;codeUpdate = null;
+    runtimeDocument = null; preparedPlan = null; roomMenuConfigure = null; roomReturnPending = null; roomReturnContext = null; roomLaunchSerial = 0; launchRequested = false;codeUpdate = null;
     if (!hasTerminalSaveLoss) preflightEpoch = null;
     takeTelemetry(); // A display tick from an old epoch cannot repopulate reset state.
     if (!hasTerminalSaveLoss) terminalLossEpoch = null;
@@ -1098,7 +1107,14 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   }
   function completeRoomReturn(token: RuntimeSessionToken): Promise<void> {
     if (roomReturnPending?.epoch === token.id) return roomReturnPending.promise;
-    const promise = restoreRoomMenu(token), pending = {epoch: token.id, promise};
+    if (!launchRequested && snapshot.roomPreview) return Promise.resolve();
+    const returned = roomReturnContext;
+    const promise = restoreRoomMenu(token).then(() => {
+      assertCurrent(token);
+      if (!returned || roomReturnContext !== returned || returned.launchSerial !== roomLaunchSerial) return;
+      roomReturnContext = null;
+      for (const listener of roomReturnListeners) listener(returned);
+    }), pending = {epoch: token.id, promise};
     roomReturnPending = pending;
     void promise.then(() => {if (roomReturnPending === pending) roomReturnPending = null;},
       () => {if (roomReturnPending === pending) roomReturnPending = null;});
@@ -1148,6 +1164,10 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     launchRequested = true;
     if (snapshot.roomReturnSupported) roomLaunchSerial++;
     const serial = roomLaunchSerial;
+    const roomOptions = plan.configure.options;
+    roomReturnContext = snapshot.roomReturnSupported && networked && roomOptions?.netplayUrl
+      ? Object.freeze({epoch: token.id, launchSerial: serial, netplayUrl: roomOptions.netplayUrl,
+        player: Number(roomOptions.netplayPlayer), spectator: roomOptions.netplaySpectator === true}) : null;
     update({ phase: 'launching' });
     const presented = awaitFirstFrame ? waitFor('first-frame', token, options.timeouts?.firstFrame ?? (directory || networked ? 122_000 : 14_000)) : null;
     if (presented) void presented.catch(() => {});
@@ -1480,6 +1500,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (host.__eaglerPrepareManagedRuntimeDataV1 === provideData) delete host.__eaglerPrepareManagedRuntimeDataV1;
     listeners.clear();
     eventListeners.clear();
+    roomReturnListeners.clear();
   }
   /**
    * Last-resort cleanup AFTER a DOM owner has already removed this iframe.
@@ -1516,6 +1537,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     getSnapshot: () => snapshot, getNetworkSnapshot: () => network.snapshot(),
     subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; },
     subscribeEvents: (listener: (message: RuntimeEventMessage) => void) => {eventListeners.add(listener); return () => {eventListeners.delete(listener);};},
+    subscribeRoomReturns: (listener: (context: RuntimeRoomReturnContext) => void) => {roomReturnListeners.add(listener); return () => {roomReturnListeners.delete(listener);};},
   });
 }
 type RuntimeServiceImplementation = ReturnType<typeof createRuntimeService>;

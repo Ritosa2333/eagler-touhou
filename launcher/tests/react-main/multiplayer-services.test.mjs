@@ -460,6 +460,49 @@ async function joinedRoom(extra = {}) {
   return fixture;
 }
 
+test('room return is pinned to the launched run and original seat; reconnect retries only on the current lobby socket',async()=>{
+  const listeners=new Set(),runtime={getSnapshot:()=>({epoch:41}),subscribeRoomReturns(listener){listeners.add(listener);return()=>listeners.delete(listener);}};
+  const f=await joinedRoom({runtime:()=>runtime}),id=f.identity.lobbyClientId('th06mp'),socket=f.sockets[0];
+  const started=serial=>roomState(id,{startSerial:serial,phase:'starting',seats:[{clientId:id,loadout:0,ready:true},{clientId:'other-player',loadout:1,ready:true}]});
+  socket.message({type:'state',roomDirectory:{runReturn:true},room:roomState(id)});
+  socket.message({type:'start',serial:7,room:started(7)});await flush();
+  const launched=f.events.findLast(([kind])=>kind==='launch')[1],callback=[...listeners][0];assert.ok(callback);
+  const returned={epoch:41,launchSerial:1,netplayUrl:launched.runtimeOptions.netplayUrl,player:0,spectator:false};
+  for(const override of [{epoch:40},{netplayUrl:returned.netplayUrl.replace('run=7','run=6')},{player:1},{spectator:true}])callback({...returned,...override});
+  assert.equal(socket.sent.some(m=>m.type==='run-returned'),false,'another Runtime, run, seat or observer cannot return this run');
+  callback(returned);callback(returned);
+  assert.deepEqual(socket.sent.filter(m=>m.type==='run-returned'),[{type:'run-returned',serial:7}]);
+  socket.close(1006);f.clock.tick(650);const next=f.sockets[1];next.open();
+  assert.equal(next.sent.some(m=>m.type==='run-returned'),false,'reconnect waits for capability and run identity');
+  next.message({type:'state',roomDirectory:{runReturn:true},room:{...started(7),phase:'running'}});
+  assert.deepEqual(next.sent.filter(m=>m.type==='run-returned'),[{type:'run-returned',serial:7}]);
+  next.message({type:'state',room:{...started(7),phase:'lobby'}});
+  next.message({type:'start',serial:8,room:started(8)});await flush();
+  callback(returned);assert.equal(next.sent.filter(m=>m.type==='run-returned').length,1,'old callback cannot return the next run');
+  const current=[...listeners][0],nextLaunch=f.events.findLast(([kind])=>kind==='launch')[1];
+  assert.notEqual(current,callback);assert.equal(listeners.size,1);
+  current({...returned,launchSerial:2,netplayUrl:nextLaunch.runtimeOptions.netplayUrl});
+  assert.deepEqual(next.sent.filter(m=>m.type==='run-returned').at(-1),{type:'run-returned',serial:8});
+  f.service.leave();assert.equal(listeners.size,0);const sends=next.sent.length;
+  current({...returned,netplayUrl:nextLaunch.runtimeOptions.netplayUrl});assert.equal(next.sent.length,sends);
+  f.service.dispose();
+});
+
+test('room return waits for a supported connection and keeps a disconnected success until reconnect',async()=>{
+  let returned;
+  const runtime={getSnapshot:()=>({epoch:9}),subscribeRoomReturns(listener){returned=listener;return()=>{};}};
+  const f=await joinedRoom({runtime:()=>runtime}),id=f.identity.lobbyClientId('th06mp'),socket=f.sockets[0];
+  const room=roomState(id,{startSerial:2,phase:'starting'});
+  socket.message({type:'start',serial:2,room});await flush();
+  const launch=f.events.findLast(([kind])=>kind==='launch')[1];
+  returned({epoch:9,launchSerial:1,netplayUrl:launch.runtimeOptions.netplayUrl,player:0,spectator:false});
+  assert.equal(socket.sent.some(m=>m.type==='run-returned'),false,'old Relay does not receive a new protocol action');
+  socket.close(1006);f.clock.tick(650);const next=f.sockets[1];next.open();
+  next.message({type:'state',roomDirectory:{runReturn:true},room:{...room,phase:'running'}});
+  assert.deepEqual(next.sent.filter(m=>m.type==='run-returned'),[{type:'run-returned',serial:2}]);
+  f.service.dispose();
+});
+
 test('account refresh replaces only the lobby socket and fences late nickname tickets',async()=>{
   let resolveOldTicket;
   const oldTicket=new Promise(resolve=>{resolveOldTicket=resolve;});
