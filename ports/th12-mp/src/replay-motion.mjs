@@ -5,10 +5,25 @@ import {validateDamageMetadata} from './practice/damage-sources.mjs';
 const encoder=new TextEncoder(),decoder=new TextDecoder('utf-8',{fatal:true}),MAGIC='TH12WEB1';
 const bytesOf=value=>value instanceof Uint8Array?value:new Uint8Array(value);
 function crc32(bytes){let crc=0xffffffff;for(const byte of bytes){crc^=byte;for(let bit=0;bit<8;bit++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);}return (crc^0xffffffff)>>>0;}
-export function appendMotionReplay(value,stages,unlimited=false,{practice=null,damage=null}={}){
-  practice=readPracticeMetadata(practice);damage=validateDamageMetadata(damage);
-  if(!stages.some(stage=>stage.motion?.length)&&!practice&&!damage)return value;
-  const payload=encoder.encode(JSON.stringify({schema:'th12-web-motion/1',coordinateScale:128,unlimited:!!unlimited,practice,damage,stages:stages.map(stage=>({number:stage.number,deltas:stage.motion??[]}))}));
+function toolRecords(value,stages){
+  if(value==null)return [];
+  if(!Array.isArray(value)||value.length>stages.length)throw Error('录像练习工具扩展无效');
+  const seen=new Set();
+  return value.map(record=>{
+    const stage=stages.find(stage=>stage.number===record.number);
+    if(!stage||seen.has(record.number)||!Array.isArray(record.events)||record.events.length>stage.frames)throw Error('录像练习工具关卡无效');
+    seen.add(record.number);let previous=-1;
+    const events=record.events.map(row=>{
+      if(!Array.isArray(row)||row.length!==4||!row.every(Number.isInteger)||row.some(n=>n<0)||row[0]<=previous||row[0]>=stage.frames||row[1]>511||row[2]>7||row[3]>0x3f800000)throw Error('录像练习工具帧无效');
+      previous=row[0];return [...row];
+    });
+    return {number:record.number,events};
+  });
+}
+export function appendMotionReplay(value,stages,unlimited=false,{practice=null,damage=null,tools=null}={}){
+  practice=readPracticeMetadata(practice);damage=validateDamageMetadata(damage);tools=toolRecords(tools,stages);
+  if(!stages.some(stage=>stage.motion?.length)&&!practice&&!damage&&!tools.length)return value;
+  const payload=encoder.encode(JSON.stringify({schema:tools.length?'th12-web-motion/2':'th12-web-motion/1',coordinateScale:128,unlimited:!!unlimited,practice,damage,...(tools.length?{tools}:{}),stages:stages.map(stage=>({number:stage.number,deltas:stage.motion??[]}))}));
   if(payload.length>16*1024*1024)throw Error('录像扩展过大');
   const input=bytesOf(value),out=new Uint8Array(input.length+16+payload.length),v=new DataView(out.buffer);
   out.set(input);out.set(encoder.encode(MAGIC),input.length);v.setUint32(input.length+8,payload.length,true);v.setUint32(input.length+12,crc32(payload),true);out.set(payload,input.length+16);return out;
@@ -21,7 +36,7 @@ export function readMotionReplay(source,stages){
   const size=v.getUint32(at+8,true);if(size>16*1024*1024||at+16+size!==bytes.length)throw Error('录像扩展长度无效');
   const payload=bytes.subarray(at+16);if(crc32(payload)!==v.getUint32(at+12,true))throw Error('录像扩展校验失败');
   const data=JSON.parse(decoder.decode(payload));
-  if(data.schema!=='th12-web-motion/1'||data.coordinateScale!==128||typeof data.unlimited!=='boolean'||!Array.isArray(data.stages)||data.stages.length!==stages.length)throw Error('录像移动扩展格式无效');
+  if(!['th12-web-motion/1','th12-web-motion/2'].includes(data.schema)||data.coordinateScale!==128||typeof data.unlimited!=='boolean'||!Array.isArray(data.stages)||data.stages.length!==stages.length)throw Error('录像移动扩展格式无效');
   const indexed=new Map();
   for(const record of data.stages){
     const stage=stages.find(stage=>stage.number===record.number);if(!stage||indexed.has(stage.number)||!Array.isArray(record.deltas)||record.deltas.length>stage.frames)throw Error('录像移动扩展关卡无效');
@@ -32,5 +47,5 @@ export function readMotionReplay(source,stages){
     }
     indexed.set(stage.number,deltas);
   }
-  return {schema:data.schema,unlimited:data.unlimited,practice:readPracticeMetadata(data.practice),damage:validateDamageMetadata(data.damage),motion:(stage,frame)=>indexed.get(stage)?.get(frame)??null};
+  return {schema:data.schema,tools:toolRecords(data.tools,stages),unlimited:data.unlimited,practice:readPracticeMetadata(data.practice),damage:validateDamageMetadata(data.damage),motion:(stage,frame)=>indexed.get(stage)?.get(frame)??null};
 }
