@@ -12,7 +12,7 @@
 #include "th03/app/runtime/host_surface.hpp"
 #include "th03/formats/v14.hpp"
 
-extern "C" { extern int th03_assist_focus, th03_assist_focus_p2, th03_assist_x, th03_assist_y, th03_assist_x2, th03_assist_y2, th03_netplay_boot, th03_netplay_paused; extern unsigned th03_assist_seen; }
+extern "C" { extern int th03_assist_focus, th03_assist_focus_p2, th03_assist_x, th03_assist_y, th03_assist_x2, th03_assist_y2, th03_netplay_paused; extern unsigned th03_assist_seen; }
 extern "C" { extern int th03_touch_active[2], th03_touch_unlimited[2], th03_touch_x[2], th03_touch_y[2]; }
 extern "C" { extern int th03_surrender_request, th03_surrender_allowed; }
 extern "C" { extern int th03_semantic_speculative, th03_semantic_boundary, th03_match_winner, th03_assist_charge; extern unsigned th03_match_serial; }
@@ -54,11 +54,12 @@ int drain() {
 }
 extern "C" {
 void th03_classic_external_music(int enabled) { music_external = enabled != 0; }
-int th03_classic_create() {
+int th03_classic_create_mode(bool versus) {
 	runner.reset(); audio.reset(); th03_charge_enabled = 0; th03_charge_mode[0] = th03_charge_mode[1] = 0; th03_match_winner = -1; th03_match_serial = 0; tick = 0; samples.clear(); replay_bytes.clear(); replay_serial = 0; deferred_audio = false; frame_command_count = 0; point_age = 99; scene = 0; th03_netplay_paused = 0; th03_assist_focus = 0; th03_assist_x = -1; th03_assist_y = -1;
 	for(int seat = 0; seat < 2; ++seat) th03_touch_active[seat] = th03_touch_unlimited[seat] = th03_touch_x[seat] = th03_touch_y[seat] = 0;
 	th03_surrender_request = th03_surrender_allowed = 0;
 	th03::app::ClassicRunnerRequest request{};
+	request.th03_direct_versus = versus;
 	request.content.data_root = "/content";
 	request.content.main_executable = "/content/MAIN.EXE";
 	request.content.mainl_executable = "/content/MAINL.EXE";
@@ -72,13 +73,15 @@ int th03_classic_create() {
 	request.fm_available = true;
 	request.experience = th03::app::ExperienceProfile::new_classic;
 	auto created = th03::app::ClassicRunner::load(std::move(request));
-	if(!created) return -100 - static_cast<int>(created.error().code);
+	if(!created) return -1000 - static_cast<int>(created.error().code)*100 - static_cast<int>(created.error().detail_code);
 	runner = std::move(*created);
 	auto sound = th03::app::ClassicAudioSession::create({.data_root = "/content", .tick_rate = th03::app::pc98_24khz_nominal_tick_rate, .effects_follow_bgm = false, .music_volume_percent = static_cast<std::uint8_t>(music_external ? 0 : 100)});
 	if(!sound) { runner.reset(); return -200 - static_cast<int>(sound.error().code); }
 	audio = std::move(*sound);
 	return drain() == 0 ? 1 : -30;
 }
+int th03_classic_create() { return th03_classic_create_mode(false); }
+int th03_classic_create_versus() { return th03_classic_create_mode(true); }
 int th03_classic_step_pair(std::uint16_t input, std::uint16_t second, std::uint16_t system, std::uint8_t charge) {
 	if(!runner || !audio) return -1;
 	frame_command_count = 0;
@@ -167,8 +170,8 @@ int th03_classic_point_y() { return point_age < 4 ? th03_assist_y : -1; }
 int th03_classic_point_x2() { return scene == 9 ? th03_assist_x2 : -1; }
 int th03_classic_point_y2() { return scene == 9 ? th03_assist_y2 : -1; }
 int th03_classic_scene() { return scene; }
-void th03_classic_start_versus() { th03_netplay_boot = 1; }
-int th03_classic_boot_state() { return th03_netplay_boot; }
+void th03_classic_start_versus() { (void)th03_classic_create_versus(); }
+int th03_classic_boot_state() { return 0; }
 int th03_classic_paused() { return th03_netplay_paused; }
 int th03_classic_surrender_allowed() { return th03_surrender_allowed; }
 void th03_classic_surrender(int seat, int match) { if(seat >= 0 && seat < 2) th03_surrender_request = 1 + seat + (match ? 2 : 0); }

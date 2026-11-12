@@ -124,8 +124,8 @@
       "sha256": "b30a388f4187446ddb37819dd540a4d0195289feaa0c56baa13c5b08721f2ae0"
     },
     "managed-native-room.mjs": {
-      "bytes": 16830,
-      "sha256": "8b7c0d6175380ff434cf61ec30b2b9a14d9ea68eaef268b41bf2a12d89093df6"
+      "bytes": 16461,
+      "sha256": "15c9139481f3607a0bd521a7f2d402187ede3389cc2605fbcd37152c7e452eab"
     },
     "managed-native-solo.mjs": {
       "bytes": 9446,
@@ -152,12 +152,12 @@
       "sha256": "dd92befc65f439b36bda3745adc9640bd8a320bdfb771a2c3e3e5a7eff7ec89a"
     },
     "native-classic.js": {
-      "bytes": 66709,
-      "sha256": "124a4ae0f935c291596cbada4ccdce144eb4b9db6d2bf72ae8f9ef8726b67f94"
+      "bytes": 66789,
+      "sha256": "e0084c25248bde0bb81f4485fb550d48c28606048b244ae2c7be577448981841"
     },
     "native-classic.wasm": {
-      "bytes": 2279837,
-      "sha256": "79e85d530137b6b1ae857b8f83fb1304501ab9e549479ca2859f01492eaadea7"
+      "bytes": 2279718,
+      "sha256": "9c0239bda70d798bc752edfa75f1c31adac38860a384441d334555bfcd34d630"
     },
     "native-confirmed-driver.mjs": {
       "bytes": 2226,

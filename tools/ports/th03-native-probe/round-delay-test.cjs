@@ -9,7 +9,7 @@ async function copy(m,dir,dst){for(const e of await readdir(dir,{withFileTypes:t
  const {createConfirmedDriver}=await import(pathToFileURL(resolve('ports/th03/web/native-confirmed-driver.mjs')));
  const {packTouch}=await import(pathToFileURL(resolve('ports/th03/web/touch-input.js')));
  const modules=await Promise.all([create(),create(),create()]);
- for(const m of modules){m.FS.mkdir('/content');m.FS.mkdir('/user');m.FS.mkdir('/user/REPLAY');await copy(m,root,'/content');m.FS.mkdir('/content/PODDUI');await copy(m,ui,'/content/PODDUI');m._th03_classic_external_music(process.env.TH03_TEST_EXTERNAL_MUSIC==='1'?1:0);assert.equal(m._th03_classic_create(),1);m._th03_classic_start_versus();}
+ for(const m of modules){m.FS.mkdir('/content');m.FS.mkdir('/user');m.FS.mkdir('/user/REPLAY');await copy(m,root,'/content');m.FS.mkdir('/content/PODDUI');await copy(m,ui,'/content/PODDUI');m._th03_classic_external_music(process.env.TH03_TEST_EXTERNAL_MUSIC==='1'?1:0);assert.equal(m._th03_classic_create_versus(),1);assert.equal(m._th03_classic_step_pair(0,0,0,0),0);assert.equal(m._th03_classic_scene(),3);}
  const spectator=createConfirmedDriver(modules[2]);let compared=0;
  const queues=[[],[]], channels=[{},{}], errors=[],played=[[],[]],confirmedInputs=[[],[]];let hostTick=0,audibleBattleFrames=0,battleEffectCommands=0;
  channels.forEach((ch,i)=>ch.send=message=>{const type=JSON.parse(message).type,extra=process.env.TH03_REORDER_CHARGE==='1'&&type==='native-charge'?(hostTick%3===0?3:0):0;queues[1-i].push({message,due:hostTick+(hostTick>700&&i===1?3:0)+extra});});

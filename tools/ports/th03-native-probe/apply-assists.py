@@ -23,7 +23,6 @@ int th03_assist_y = -1;
 int th03_assist_x2 = -1;
 int th03_assist_y2 = -1;
 unsigned th03_assist_seen = 0;
-int th03_netplay_boot = 0;
 int th03_netplay_paused = 0;
 int th03_surrender_request = 0;
 int th03_surrender_allowed = 0;
@@ -198,29 +197,17 @@ replace('src/core/frame/player_collision.inl',
 \t\t\tth03_assist_y2 = ((player.center_y.raw() >> 5) + 7) * 2;
 \t\t} else { th03_assist_x2 = -1; th03_assist_y2 = -1; }
 \t}''')
-replace('src/app/classic/op/classic_op_scene.cpp',
-        '#include "classic/op/classic_op_selection_internal.hpp"',
-        '#include "classic/op/classic_op_selection_internal.hpp"\nextern "C" int th03_netplay_boot;')
-replace('src/app/classic/op/classic_op_scene.cpp',
-        'ClassicOpTitleMenuScene::advance(ClassicOpInput input)\n{',
-        '''ClassicOpTitleMenuScene::advance(ClassicOpInput input)
-{
-\tif(th03_netplay_boot > 0) {
-\t\tinput = {};
-\t\tif(phase_ == ClassicOpPhase::main_menu && th03_netplay_boot <= 4) {
-\t\t\tif(th03_netplay_boot == 2) input.down = true;
-\t\t\tif(th03_netplay_boot == 4) input.shot = true;
-\t\t\tinput.raw_any = input.down || input.shot;
-\t\t\t++th03_netplay_boot;
-\t\t} else if(phase_ == ClassicOpPhase::vs_menu && th03_netplay_boot >= 5 && th03_netplay_boot <= 8) {
-\t\t\tif(th03_netplay_boot == 6) input.down = true;
-\t\t\tif(th03_netplay_boot == 8) input.shot = true;
-\t\t\tinput.raw_any = input.down || input.shot;
-\t\t\tif(++th03_netplay_boot == 9) th03_netplay_boot = 0;
-\t\t} else if(th03_netplay_boot == 1) {
-\t\t\tinput.shot = true;
-\t\t\tinput.raw_any = true;
-\t\t}
+replace('include/th03/app/classic/classic_runner.hpp',
+        '\tClassicContentPaths content{};',
+        '\tClassicContentPaths content{};\n\tbool th03_direct_versus = false;')
+replace('src/app/classic/classic_runner.cpp',
+        '\tauto resident = initial_resident(request.seed, request.gameplay_ruleset);',
+        '''\tauto resident = initial_resident(request.seed, request.gameplay_ruleset);
+\tif(request.th03_direct_versus) {
+\t\tresident.game_mode = game_mode::vs_1p_2p;
+\t\tresident.demo_number = 0U;
+\t\tresident.is_cpu = {0U, 0U};
+\t\tresident.paletted_character = {1, 1};
 \t}''')
 replace('src/app/classic/op/classic_op_session_backend.cpp',
         '#include "th03/app/new_classic/new_classic_pause.hpp"',
