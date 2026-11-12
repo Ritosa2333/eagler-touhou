@@ -1659,7 +1659,7 @@
     "th13": {
       "normal": "ports/th13",
       "multiplayer": "ports/th13-mp",
-      "base": "9ee91331fade771479437feabdd8a4b590661c5b",
+      "base": "dc9a747eee712649f8b06b5d31120cd4da300ec0",
       "history": [
         {
           "kind": "manual",
@@ -1705,6 +1705,40 @@
             "ports/th13-mp/web/cpp/sdl/GraphicsDevice.cpp"
           ],
           "note": "SP 修复同步：符卡练习返回重建/对局返回级联/伤害池逐出 + PR#159 残留（转场/UNORM）；MP 侧同名文件整份镜像，TitleScene/ApplicationTitle 按共同部分外科补丁"
+        },
+        {
+          "kind": "manual",
+          "base": "9ee91331fade771479437feabdd8a4b590661c5b",
+          "source": "dc9a747eee712649f8b06b5d31120cd4da300ec0",
+          "targetHead": "724446c00d19addc90cc00d3e660beee6ea400b6",
+          "paths": [
+            "ports/th13-mp/tests/ui/dialogue_text_test.cpp",
+            "ports/th13-mp/web/cpp/game/AnmRegistry.cpp",
+            "ports/th13-mp/web/cpp/game/AnmResource.cpp",
+            "ports/th13-mp/web/cpp/game/AnmResource.hpp",
+            "ports/th13-mp/web/cpp/game/AnmVm.hpp",
+            "ports/th13-mp/web/cpp/game/BossPresentation.hpp",
+            "ports/th13-mp/web/cpp/game/DialogueText.cpp",
+            "ports/th13-mp/web/cpp/game/DialogueText.hpp",
+            "ports/th13-mp/web/cpp/game/GameHud.hpp",
+            "ports/th13-mp/web/cpp/game/LaserPresentation.cpp",
+            "ports/th13-mp/web/cpp/game/LaserPresentation.hpp",
+            "ports/th13-mp/web/cpp/game/MsgPresentation.hpp",
+            "ports/th13-mp/web/cpp/game/PauseFrame.hpp",
+            "ports/th13-mp/web/cpp/game/PostGameFlow.hpp",
+            "ports/th13-mp/web/cpp/game/RunScene.hpp",
+            "ports/th13-mp/web/cpp/game/ScorePopups.hpp",
+            "ports/th13-mp/web/cpp/game/SpellPresentation.hpp",
+            "ports/th13-mp/web/cpp/game/StageBattle.cpp",
+            "ports/th13-mp/web/cpp/game/StageLaser.cpp",
+            "ports/th13-mp/web/cpp/game/StageSim.hpp",
+            "ports/th13-mp/web/cpp/game/YoumuBomb.hpp",
+            "ports/th13-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th13-mp/web/cpp/sdl/SceneDisplay.cpp",
+            "ports/th13-mp/web/cpp/sdl/SceneDisplay.hpp",
+            "ports/th13-mp/web/sdl-runtime/shell.mjs"
+          ],
+          "note": "接收 dc9a747 的25个通用文件：17个同blob，8个保留多人适配；动画资源身份/退役绑定、对话/HUD/Boss/激光/符卡恢复及绘制准备拆分已随 ec57e3c 与 3da0ed775 迁入。保留多人世界/宿主快照、全席位输入、Run前缀旁观、存档隔离和网络唤醒。目录投影合并154f31df、双亲写回724446c 保持已验证内容树不变；SP原有六个未提交菜单文件未纳入。M1–M9 56/56、69987断言，旁观/录像及Relay定向回归通过；正式整场网络与GPU未认证。"
         }
       ]
     },
