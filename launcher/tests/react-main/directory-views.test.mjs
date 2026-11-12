@@ -20,7 +20,7 @@ const require = createRequire(resolve(project, 'package.json'));
 const {build} = require('esbuild');
 const pinnedMain = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 const pinned = path => synchronizedMainAuthority(path, project, pinnedMain);
-let env, work, owners, React, createRoot, createMemoryRouter, RouterProvider, originalHTML;
+let env, work, owners, ownersAccounts, React, createRoot, createMemoryRouter, RouterProvider, originalHTML;
 const mounts = new Set(), fixtures = new Set();
 const assetUrl = path => path;
 const t = (locale, key, params) => owners.translate(locale, key, params);
@@ -35,7 +35,7 @@ before(async () => {
   ({createMemoryRouter, RouterProvider} = await import('react-router'));
   originalHTML = pinned('public/lobby.html');
   work = await mkdtemp(resolve(here, 'directory-views-build-'));
-  await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
+  const buildOptions = {absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export * from './app/components/directory/DirectoryRoomRows.tsx';
     export * from './app/components/directory/LobbyDirectoryView.tsx';
     export * from './app/components/directory/DirectoryRoomDialog.tsx';
@@ -49,8 +49,11 @@ before(async () => {
     plugins: [{name: 'installed-deps-original-mts', setup(ctx) {
       ctx.onResolve({filter: /^[^./]/}, args => ({path: args.path, external: true}));
       ctx.onResolve({filter: /^\.\.?\/.*\.mjs$/}, args => {const path = resolve(dirname(args.importer), args.path).replace(/\.mjs$/, '.mts'); if (existsSync(path)) return {path};});
-    }}]});
+    }}]};
+  await build(buildOptions);
   owners = await import(pathToFileURL(resolve(work, 'actual-bundle.mjs')));
+  await build({...buildOptions, outfile: resolve(work, 'accounts-bundle.mjs'), define: {'import.meta.env': JSON.stringify({VITE_ACCOUNTS_ENABLED:'true'})}});
+  ownersAccounts = await import(pathToFileURL(resolve(work, 'accounts-bundle.mjs')));
 });
 afterEach(async () => {
   for (const m of mounts) {await React.act(async () => m.root.unmount()); m.router?.dispose();}
@@ -108,9 +111,9 @@ function fixture({locale = 'en', selectedProduct = 'th06mp', host = {}, loadErro
 function room(patch = {}) {return {product: 'th06mp', code: '1234', capacity: 3, players: 2, ready: 1, difficulty: 1, spectators: 0,
   phase: 'lobby', joinable: true, seats: [{initial: '霊', online: true, ready: true, controlMode: 'normal'}, {initial: 'M', online: false, ready: false, controlMode: 'touch'}, null],
   disableCheatMovement: false, challengeMode: false, ...patch};}
-async function mount(Component, initial, {locale = 'en', strict = false} = {}) {
+async function mount(Component, initial, {locale = 'en', strict = false, localeOwner = owners} = {}) {
   let props = initial; const container = env.document.createElement('div'); env.document.body.append(container); const root = createRoot(container);
-  async function render() {let tree = React.createElement(owners.LocaleProvider, {locale}, React.createElement(Component, props));
+  async function render() {let tree = React.createElement(localeOwner.LocaleProvider, {locale}, React.createElement(Component, props));
     if (strict) tree = React.createElement(React.StrictMode, null, tree); await React.act(async () => root.render(tree));}
   const m = {root, container, async update(patch) {props = {...props, ...patch}; await render();}, async setLocale(next) {locale = next; await render();},
     async unmount() {await React.act(async () => root.unmount()); mounts.delete(m);}};
@@ -174,6 +177,18 @@ function expectedDialog(f, locale) {
   n('#codeField span', doc).className = 'sr-only';
   if (create && form.visibility === 'private') n('#formNote', doc).textContent = t(locale, 'room.privateHint');
   else n('#formNote', doc).remove();
+  for (const id of ['gameSelect', 'visibilitySelect']) {
+    const field = n('#'+id, doc).closest('label');
+    const group = doc.createElement('div'), heading = doc.createElement('div'), label = doc.createElement('label');
+    group.className = field.className;
+    heading.className = 'flex items-center gap-1';
+    label.htmlFor = id+'-trigger';
+    label.textContent = field.firstElementChild.textContent;
+    field.firstElementChild.remove();
+    heading.append(label);
+    group.append(heading, ...field.childNodes);
+    field.replaceWith(group);
+  }
   for (const [id, key] of [['gameSelect','lobby.game'], ['capacitySelect','lobby.capacity'], ['difficultySelect','lobby.difficulty'], ['visibilitySelect','room.visibility'], ['cheatSelect','room.cheatMovement']]) n('#'+id, doc).setAttribute('aria-label', t(locale,key));
   return n('#roomDialog', doc);
 }
@@ -402,6 +417,40 @@ test('favorite multiplayer rooms sort first, update immediately and retain order
   }
 });
 
+test('Lobby defaults to live ratings and shows no-rating games without a win-rate fallback', async () => {
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  globalThis.fetch = async input => {
+    const path = new URL(String(input), 'https://launcher.invalid').pathname;
+    requests.push(path);
+    const responses = {
+      '/api/ready': {ready:true}, '/api/auth/get-session': null,
+      '/api/v1/th09/ratings': {sequence:1,players:{rated:{rating:1438,interval:120,games:18,group:1}}},
+    };
+    assert.ok(path in responses, path);
+    return new Response(JSON.stringify(responses[path]), {headers:{'Content-Type':'application/json'}});
+  };
+  try {
+    const f = await fixture({selectedProduct:'th09mp'}).live(['rated','unrated'].map((username,index) => room({
+      product:'th09mp',code:String(4201+index),capacity:2,players:1,
+      seats:[{initial:'R',online:true,profile:{username,th09:{games:26,wins:13}}},null],
+    })));
+    const props = {service:f.service,assetUrl,masthead:null,products:[],onSelect:()=>{},onActivate:()=>{},
+      guideHref:null,onNetwork:null,onOpenForm:()=>{}};
+    const m = await mount(ownersAccounts.LobbyDirectoryView,props,{locale:'zh-CN',localeOwner:ownersAccounts});
+    await React.act(async () => {await new Promise(resolve=>setTimeout(resolve,0));});
+    assert.ok(requests.includes('/api/v1/th09/ratings'));
+    assert.deepEqual(all('.book-room-duel-summary[data-side="0"]').map(node=>node.textContent),['1438 (局数 26)','— (局数 26)']);
+    await m.unmount();
+    requests.length = 0;
+    await mount(ownersAccounts.LobbyDirectoryView,{...props,interactive:false},{localeOwner:ownersAccounts});
+    await flush();
+    assert.deepEqual(requests,[],'inactive initial render does not request accounts or ratings');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('Lobby failed live connection retains stale room warning, interrupted reconnect, and recovery', async () => {
   const f = await fixture().live([room()]); await mountLobby(f); await f.emit('error');
   assert.equal(n('#connectionWarningTitle').textContent, t('en', 'lobby.disconnected')); assert.equal(n('#connectionWarning').hidden, false);
@@ -492,7 +541,7 @@ for (const locale of ['zh-CN', 'en']) test(`Dialog invalid code uses native vali
 test('global room-code join hides the title picker and follows the listed title', async () => {
   const f=await fixture({selectedProduct:''}).live([room({product:'th07mp',code:'5678'})],{globalRoomCodes:true});
   const dialog=await mountDialog(f,'join');
-  assert.equal(n('#gameSelect').closest('label').hidden,true);
+  assert.equal(n('#gameSelect').closest('.lobby-field').hidden,true);
   await change('#roomCodeInput','5678');
   await submit();
   await dialog.m.update({open:false});
@@ -602,7 +651,7 @@ for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product 
     await rowsMount.update({snapshot: f.service.getSnapshot()});
     const snapshot = f.service.getSnapshot();
     const policy = owners.multiplayerConfigForProduct(product);
-    if (policy.inGameSelection) {
+    if (policy.inGameSelection && product !== 'th03mp') {
       assert.equal(env.document.querySelector('.lobby-difficulty'),null);
       assert.equal(all('.difficulty-label').length, 0);
     } else {
@@ -624,9 +673,10 @@ for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product 
     const policy = owners.multiplayerConfigForProduct(product);
     assert.deepEqual(all('#capacitySelect option').map(x => [x.value, x.textContent]), policy.playerCounts.map(count => [String(count), t(locale, 'lobby.playersCount', {count})]));
     assert.deepEqual(all('#difficultySelect option').map(x => [x.value, x.textContent]), policy.difficulties.map((name, index) => [String(index), name]));
-    assert.equal(n('#difficultySelect').disabled,!!policy.inGameSelection);
-    assert.equal(n('#difficultySelect').closest('label').hidden,!!policy.inGameSelection);
-    if(policy.inGameSelection) assert.ok(n('#roomForm').textContent.includes(t(locale,'room.inGameSelectionHint')));
+    const inGameDifficulty = !!policy.inGameSelection && product !== 'th03mp';
+    assert.equal(n('#difficultySelect').disabled,inGameDifficulty);
+    assert.equal(n('#difficultySelect').closest('label').hidden,inGameDifficulty);
+    if(inGameDifficulty) assert.ok(n('#roomForm').textContent.includes(t(locale,'room.inGameSelectionHint')));
   }
   await m.update({open: false});
 });

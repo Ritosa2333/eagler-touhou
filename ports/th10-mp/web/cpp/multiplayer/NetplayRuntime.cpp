@@ -39,12 +39,8 @@ Netplay::CoreConfig core_config(const SessionSetup& setup,std::uint64_t sessionI
     core.inputDelay=inputDelay;
     core.maxRollbackFrames=12;
     core.allowPrediction=setup.adonis_mode!=unsigned(Netplay::AdonisMode::Delay);
-    // Match the proven TH06/TH07 production policy: rollback depth stays 12,
-    // while movement/focus/shoot may be predicted for at most three frames.
     core.predictableButtons=InputLanes::kShoot|InputLanes::kFocus|InputLanes::kDirection;
-    core.directionButtons=InputLanes::kDirection;
-    core.maxDirectionPredictionFrames=3;
-    core.maxDirectTouchDeltaPredictionFrames=0;
+    core.directionButtons=InputLanes::kDirection;core.prediction=Netplay::InputPrediction::ConfirmedHold;
     // TH10 mode 2 carries an absolute hundredth-pixel target, not a delta.
     core.directTouchIsAbsolute=true;
     return core;

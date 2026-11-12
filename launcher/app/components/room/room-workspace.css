@@ -104,7 +104,8 @@ body:has(#player.room-workspace) :is(.ui-kit-select-content,.ui-menu)[data-ui-su
 #mpRoomView.room-workspace-view .mp-room-delay{gap:8px;flex-wrap:nowrap}
 #mpRoomView.room-workspace-view .mp-room-delay>span{font-size:13px;white-space:nowrap}
 .mp-delay-auto{display:inline-flex!important;align-items:center;gap:6px;white-space:nowrap;font-size:12px!important;line-height:1.4;margin:0}
-.room-rule-field{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;padding-block:8px;font-size:13px}
+.room-rule-field{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;padding-block:8px;color:var(--kit-foreground);font-size:14px;font-weight:600}
+.mp-room-settings .room-rule-field label{display:block;color:inherit;font:inherit}
 .room-rule-field>div{flex:1;min-width:0}
 /* Member cards keep a fixed footprint; status artwork has its own clipped layer. */
 #player.room-workspace .room-workspace-roster{flex:0 0 auto;min-width:0;min-height:0;touch-action:pan-y}
@@ -295,7 +296,7 @@ body:has(#player.room-workspace) :is(.ui-kit-select-content,.ui-menu)[data-ui-su
 .room-settings-group{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--kit-border)}
 .room-settings-group:last-of-type{margin-bottom:0;padding-bottom:0;border-bottom:0}
 .room-settings-group h3{margin:0 0 10px;font-size:13px;font-weight:600}
-.room-basic-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;min-width:0;margin:0 0 12px;padding:0;border:0}
+.room-basic-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end;gap:12px;min-width:0;margin:0 0 12px;padding:0;border:0}
 #mpRoomView .room-basic-fields label{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;color:var(--kit-muted-foreground);font-size:12px}
 #mpRoomView :is(.room-setting-description,.mp-room-delay-hint){margin:6px 0 0;color:var(--kit-muted-foreground);font-size:12px;line-height:1.65}
 #mpRoomView .mp-delay-stepper{flex:none}

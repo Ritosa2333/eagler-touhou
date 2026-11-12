@@ -62,7 +62,7 @@ bool RoomRuntime::receive_spectator(){
    Netplay::SpectatorStageEvent event;
    if(!Netplay::DecodeSpectatorStageEvent(bytes.data(),bytes.size(),&event)||event.game!='G'||
       event.playerCount!=setup.seats||event.sessionId!=setup.room||event.gameplayAbi!=setup.gameplay_abi()||
-      (event.kind==Netplay::SpectatorEventKind::Checkpoint&&event.schema!=multiplayer::StageEntry::schema)||
+      (event.kind==Netplay::SpectatorEventKind::Checkpoint&&event.schema!=multiplayer::StageEntry::transport_schema)||
       !playback.Receive(event))return app->fail("TH17 spectator stage contract mismatch");
   }else{
    Netplay::SpectatorFramePacket frame;
@@ -82,7 +82,7 @@ bool RoomRuntime::advance_playback(bool advance){
   const bool fast=playback.FastForwarding();
   app->audio_device.suspend(playback.Paused()||playback.Seeking());
   return playback.Step([&](const auto& checkpoint){
-   if(!multiplayer::StageEntry::supports(checkpoint.schema)||
+   if(checkpoint.schema!=multiplayer::StageEntry::transport_schema||
       !multiplayer::restore_stage_entry(*app,setup,main_input,checkpoint.frame,checkpoint.state))
     return false;
    entered=true;app->renderer.hud_viewer=1;return true;

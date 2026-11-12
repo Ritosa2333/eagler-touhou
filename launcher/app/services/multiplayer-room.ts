@@ -33,6 +33,7 @@ import {
 } from '../../src/launcher/multiplayer-runtime-options.mts';
 import { recommendMultiplayerInputTiming } from '../../src/launcher/multiplayer-input-timing.mts';
 import {th09CharacterLoadout} from '../../src/launcher/th09-room-stats.mjs';
+import {th09RatingSettled} from './th09-ratings';
 import {
   parseMeasuredNetplayTiming,
   resolveAdonisPredictionReserve,
@@ -272,6 +273,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         ...(product==='th05mp'?{initialSpares:room.initialSpares,initialBombs:room.initialBombs}:{}),
         visibility: room.visibility,
         disableCheatMovement: room.disableCheatMovement,
+        unrated: room.unrated,
         disableLocalChargePriority: room.disableLocalChargePriority,
         chapterThreshold: room.chapterThreshold,
         challengeMode: room.challengeMode,
@@ -539,6 +541,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         intent,
         visibility: room.visibility,
         disableCheatMovement: room.disableCheatMovement,
+        unrated: room.unrated,
         disableLocalChargePriority: room.disableLocalChargePriority,
         chapterThreshold: room.chapterThreshold,
         ...(product==='th19mp'?{th19Rules:room.th19Rules}:{}),
@@ -647,8 +650,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         }
         return;
       }
-      if (['quick-chat','free-chat','chat-history','chat-retract','chat-status','chat-result'].includes(String(message.type))) {
+      if (['quick-chat','free-chat','chat-history','chat-retract','chat-status','chat-result','th09-rating'].includes(String(message.type))) {
         ports.quickChat?.receive(message);
+        if (message.type === 'th09-rating' && typeof window !== 'undefined') window.dispatchEvent(new Event(th09RatingSettled));
         return;
       }
       if (message.type === 'room-product' && ports.routes.switchProduct && room &&
@@ -858,6 +862,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       created: created || !!saved?.room.created,
       visibility: saved?.room.visibility ?? (invite.v === 'private' ? 'private' : 'public'),
       disableCheatMovement: saved?.room.disableCheatMovement ?? invite.c === true,
+      ...(product === 'th09mp' && (saved?.room.unrated ?? invite.u) ? {unrated: true} : {}),
       ...(product === 'th09mp' ? {disableLocalChargePriority:saved?.room.disableLocalChargePriority ?? false} : {}),
       chapterThreshold: saved?.room.chapterThreshold,
       ...(product==='th19mp'?{th19Rules:[...(saved?.room.th19Rules??TH19_VERSUS_RULES)]}:{}),
@@ -1089,7 +1094,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     patch: Partial<
       Pick<
         MultiplayerRoomState,
-        | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode' | 'disableLocalChargePriority'
+        | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode' | 'disableLocalChargePriority' | 'unrated'
         | "chapterThreshold"
         | 'initialSpares' | 'initialBombs' | 'th19Rules'
       >
@@ -1103,10 +1108,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       (patch.visibility !== undefined ||
         patch.disableCheatMovement !== undefined ||
         patch.disableLocalChargePriority !== undefined ||
+        patch.unrated !== undefined ||
         patch.challengeMode !== undefined)
     )
       return;
     if(patch.disableLocalChargePriority !== undefined && product !== 'th09mp')return;
+    if (patch.unrated !== undefined && (product !== 'th09mp' || room.unrated === undefined)) return;
     if(patch.th19Rules!==undefined&&(product!=='th19mp'||room.phase!=='lobby'||!validTh19VersusRules(patch.th19Rules)))return;
     if((patch.initialSpares!==undefined||patch.initialBombs!==undefined)&&(product!=='th05mp'||room.phase!=='lobby'||!validTh05InitialSpares(patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares)||!validTh05InitialBombs(patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs)))return;
     if (
@@ -1152,6 +1159,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ...(product==='th05mp'?{initialSpares:patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
       visibility: patch.visibility ?? room.visibility ?? 'public',
       disableCheatMovement: patch.disableCheatMovement ?? !!room.disableCheatMovement,
+      ...(patch.unrated !== undefined ? {unrated: patch.unrated} : {}),
       ...(product === 'th09mp' ? {disableLocalChargePriority:patch.disableLocalChargePriority ?? !!room.disableLocalChargePriority} : {}),
       challengeMode: patch.challengeMode ?? !!room.challengeMode,
       prankMode: false,

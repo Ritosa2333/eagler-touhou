@@ -27,6 +27,8 @@ parser.add_argument('--music',choices=['ogg','none'],default='ogg')
 parser.add_argument('--challenge',action='store_true')
 parser.add_argument('--join-frame',type=int,default=0,help='wait for the source frame before admitting the spectator Runtime')
 parser.add_argument('--join-stage',type=int,choices=range(9),default=0,help='wait for this source stage, then wait join-frame inputs before spectator admission')
+parser.add_argument('--verify-stage',type=int,choices=range(1,9),help='require a native state comparison in this stage')
+parser.add_argument('--rtc',action='store_true',help='let the player endpoints use WebRTC')
 parser.add_argument('--physical-input',action='store_true',help='drive native keyboard input with shooting, movement, Focus and Bomb edges')
 parser.add_argument('--until-end',action='store_true',help='observe a native team wipe and enter the native result menu after consuming the confirmed tail')
 parser.add_argument('--frames',type=int,default=2400)
@@ -40,7 +42,15 @@ build=args.runtime_directory.resolve();music=args.music_directory.resolve()
 fixture_path=build/'private-spectator.json'
 fixture=json.loads(fixture_path.read_text(encoding='utf-8')) if fixture_path.is_file() else None
 assert (build/(game+'.wasm')).is_file() and args.font.is_file()
+wasm=hashlib.sha256((build/(game+'.wasm')).read_bytes()).hexdigest()
 host=(root/('ports/'+game+'/tests/netplay-spectator-browser-host.html')).read_text()
+if fixture:
+ assert fixture['privateSpectatorFixture'] is True and fixture['wasm']==wasm
+ if game=='th07':
+  assert fixture['initialStage'] in range(1,7)
+  host=host.replace('netplayTestFrames: 12000,','netplayTestFrames: 12000, netplayTestStage: '+str(fixture['initialStage'])+',')
+  if fixture.get('forceStageTransition'):
+   host=host.replace('netplayStageTransition: stageTransition,','netplayStageTransition: true,').replace('netplayTestFrames: 12000,','netplayTestFrames: 24000,')
 bgmdir='/bgm/' if game=='th06' else '/bgm-ogg/'
 resources=[{'path':bgmdir+p.name,'url':'/music/'+p.name} for p in sorted(music.glob(game+'_??.ogg'))]
 if args.music=='ogg':
@@ -73,9 +83,8 @@ class Handler(SimpleHTTPRequestHandler):
    return str(candidate if candidate.is_relative_to(music) else build/'__missing__')
   return str(build/'__missing__')
 s=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=s.serve_forever,daemon=True).start()
-report={'game':game,'players':count,'difficulty':args.difficulty,'challenge':args.challenge,'joinFrame':args.join_frame,'musicMode':args.music,'scope':'native live stage without gameplay fixtures','physicalInput':args.physical_input,'passed':False,'wasm':hashlib.sha256((build/(game+'.wasm')).read_bytes()).hexdigest(),'samples':[],'errors':[]}
+report={'game':game,'players':count,'difficulty':args.difficulty,'challenge':args.challenge,'joinFrame':args.join_frame,'musicMode':args.music,'scope':'native live stage without gameplay fixtures','physicalInput':args.physical_input,'passed':False,'wasm':wasm,'samples':[],'errors':[]}
 if fixture:
- assert fixture['privateSpectatorFixture'] is True and fixture['wasm']==report['wasm']
  report.update(scope='native stage with selected initial stage and mirrored invulnerability',runtimeFixture=fixture)
 initial_stage=fixture['initialStage'] if fixture else (7 if args.difficulty==4 else 1)
 initial_track=game+'_'+str(initial_stage*2).zfill(2)
@@ -88,7 +97,7 @@ try:
    room=game+'mp-natural-'+str(time.time_ns());m.admit_lobby(setup,relaybase,room,'natural_view',count,args.difficulty,args.challenge)
    pages=[b.new_page() for _ in range(count+1)]
    for seat,p in enumerate(pages):
-    p.add_init_script('''delete globalThis.RTCPeerConnection; addEventListener('message',e=>{const m=e.data||{};if(m.event==='runtime-info'&&m.spectatorPlayback)globalThis.__spectatorPlaybackReport=m.spectatorPlayback;});''');p.on('pageerror',lambda e:report['errors'].append(str(e)))
+    p.add_init_script(('' if args.rtc else 'delete globalThis.RTCPeerConnection; ') + '''addEventListener('message',e=>{const m=e.data||{};if(m.event==='runtime-info'&&m.spectatorPlayback)globalThis.__spectatorPlaybackReport=m.spectatorPlayback;});''');p.on('pageerror',lambda e:report['errors'].append(str(e)))
     if seat==count:
      admission_deadline=time.monotonic()+args.timeout
      join_target=args.join_frame;waiting_stage=args.join_stage;next_admission_log=0
@@ -155,7 +164,7 @@ try:
     assert not any(v['failed'] or v['hostFailure'] for v in values),values
     if all((v['frame'] if i==count or v['active'] else v['confirmed']+1)>=frame for i,v in enumerate(values)) and min(v['confirmed'] for v in values[:count])>=frame:
      if all(v['hash'] for v in values):
-      row={'frame':frame,'hashes':[v['hash'] for v in values]};report['samples'].append(row)
+      row={'frame':frame,'stage':values[0]['replayResources'][2],'hashes':[v['hash'] for v in values]};report['samples'].append(row)
       if len(set(row['hashes']))!=1:
        report['firstDifference']=values;raise AssertionError('native state differs at '+str(frame))
       if frame%300==0:
@@ -165,10 +174,16 @@ try:
     assert time.monotonic()<deadline,{'timeoutAt':frame,'values':values}
     pages[0].wait_for_timeout(50)
    if args.until_end:assert report.get('terminal'),report['latest']
+   if args.verify_stage:
+    assert any(sample['stage']==args.verify_stage for sample in report['samples']),f'did not compare stage {args.verify_stage}'
    # Backward restore and forward seek must reconstruct the same native owners.
    viewer=pages[-1];state=m.snapshot(viewer,300)['playback'];assert state,state
    if not args.until_end:m.spectator_command(viewer,game,state['run'],'pause')
    targets=[] if args.until_end else [base_frame+300,base_frame+900,base_frame+600]+[20*(n['frame']//20+1) for n in state['nodes'] if n['kind']=='boss' and 20*(n['frame']//20+1)<=endframe]
+   if args.verify_stage and not args.until_end:
+    stage_entry=next(n['frame'] for n in state['nodes'] if n['kind']=='stage' and n['stage']==args.verify_stage)
+    target=20*(stage_entry//20+1)
+    if target not in targets:targets.append(target)
    for target in targets:
     m.spectator_command(viewer,game,state['run'],'seek',target)
     m.wait_playback(viewer,lambda v:v['position']==target and v['paused'] and not v['seeking'])

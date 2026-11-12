@@ -262,11 +262,20 @@ for (const locale of ['zh-CN', 'en']) test(`All catalog multiplayer products pre
     const config = owners.multiplayerConfigForProduct(product);
     for (const loadout of [0, config.loadouts.length - 1]) {await f.receive({difficulty: config.difficulties.length - 1, seats: [{clientId: f.id, name: 'A', loadout, ready: false}, {clientId: 'peer12345', name: 'B', loadout: -1, ready: false, controlMode: 'cheat'}]}); if (config.inGameSelection) {
       assert.equal(n('#mpRoomDifficultyBadge').textContent, config.difficulties[f.service.getSnapshot().room.difficulty]);
-      assert.equal(all('[data-mp-difficulty]').length,0);
-      assert.equal(all('[data-mp-difficulty]').length,0);
       assert.equal(all('#mpLoadoutPrevSeat, #mpLoadoutNextSeat, #mpLoadoutPrev, #mpLoadoutNext').length,0);
       assert.equal(f.service.runtimeOptions().netplayInGameSelection,true);
-      assert.match(n('#mpRoomSettings').textContent,locale==='zh-CN'?/双方/:/Both players/);
+      if (product === 'th03mp') {
+        assert.equal(all('[data-mp-difficulty]').length,config.difficulties.length);
+        await click('[data-mp-difficulty="2"]');
+        assert.equal(f.socket.sent.at(-1).type,'settings');
+        assert.equal(f.socket.sent.at(-1).difficulty,2);
+        await f.receive({difficulty:2});
+        assert.equal(n('#mpRoomDifficultyBadge').textContent,'Hard');
+        assert.equal(f.service.runtimeOptions().netplayDifficulty,2);
+      } else {
+        assert.equal(all('[data-mp-difficulty]').length,0);
+        assert.match(n('#mpRoomSettings').textContent,locale==='zh-CN'?/双方/:/Both players/);
+      }
     } else compare(f, {panel: {kind: 'game'}});}
     await m.unmount();
   }

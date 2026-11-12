@@ -7,10 +7,10 @@ const base = process.argv[2] || 'http://127.0.0.1:5173/';
 const viewportSizes = process.env.ACCOUNT_TEST_FAST ? [[320, 640]] : [[1440, 900], [1280, 800], [900, 600], [390, 844], [320, 640]];
 const selectMode = async (page, mode) => {
   const register = mode === 'register';
-  const tab = `.account-tabs button:nth-child(${register ? 2 : 1})`;
-  await page.waitForSelector(tab);
-  await page.click(tab);
-  await page.waitForSelector(register ? '[name=username]' : '[name=identity]');
+  const field = register ? '[name=username]' : '[name=identity]';
+  await page.waitForSelector('.account-switch');
+  if (!await page.$(field)) await page.click('.account-switch');
+  await page.waitForSelector(field);
   await page.evaluate(async () => {
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     const content = document.querySelector('.account-mode-content');
@@ -32,19 +32,29 @@ try {
     try {localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1');} catch {}
   });
   page.on('pageerror', error => errors.push(error.message));
-  let loginAttempts = 0, challengeStarts = 0, verificationAttempts = 0;
+  let loginAttempts = 0, challengeStarts = 0, verificationAttempts = 0, captchaEnabled = false;
   let sessionUser = null, resetCodeRequests = 0, resetPasswordAttempts = 0, holdResetCodeRequest = false, heldResetCodeRequest = null;
   const resetCodeBodies = [], resetPasswordBodies = [], cancelledRequests = [];
   const avatar = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEklEQVR4nGO8pOTCwMDAxAAGAA9YATw80XvmAAAAAElFTkSuQmCC';
   await page.setRequestInterception(true);
   page.on('request', request => {
     const url = new URL(request.url());
+    if (url.href === 'https://cv.naids.com/sdk/load.min.js') {
+      void request.respond({status:200, contentType:'text/javascript', body:`window.CaptchaSDK = {
+        async open({appId}) {
+          if (appId !== 'test-app') throw Error('wrong application');
+          if (window.cancelCaptcha) throw Object.assign(Error('cancelled'), {code:'CAPTCHA_CANCELLED'});
+          return 'one-time-proof';
+        }, close() {}, isCancelled(error) {return error.code === 'CAPTCHA_CANCELLED';}
+      }`});
+      return;
+    }
     if (url.pathname === '/api/auth/email-otp/request-password-reset' && holdResetCodeRequest) {
       heldResetCodeRequest = request;
       return;
     }
     if (url.pathname === '/api/ready') {
-      void request.respond({status: 200, contentType: 'application/json', body: JSON.stringify({ready: true})});
+      void request.respond({status: 200, contentType: 'application/json', body: JSON.stringify({ready: true, captchaAppId: captchaEnabled ? 'test-app' : undefined})});
       return;
     }
     if (url.pathname.startsWith('/api/')) {
@@ -220,7 +230,6 @@ try {
       assert.deepEqual(registrationArt,artSignature,`${width}x${height}: stable artwork source and presentation`);
       const registration = await assertLayout('register',width,height);
       assert.ok(Math.abs((registration.heading.top-registration.shell.top)-headingAnchor) <= 4, `${width}x${height}: title stays anchored when switching account mode`);
-      assert.equal(await page.$$eval('[data-captcha-slot]', elements => elements.length), 0);
       await clearFocus(page);
       await page.screenshot({path: `${screenshotDirectory}/${width}x${height}-register-${theme}.png`,fullPage:false});
       layoutRecords.push({width,height,theme,login,register:registration});
@@ -361,12 +370,18 @@ try {
   await page.type('[name=email]', 'player@example.com');
   await page.type('[name=password]', registrationPassword);
   await page.type('[name=confirmation]', 'wrong-password');
-  await page.click('.account-code button');
+  await page.click('.account-submit');
   assert.match(await page.$eval('.account-page [role=alert]', el => el.textContent), /不一致/);
   assert.equal(submissions.filter(request=>request.path==='/api/account/register/start').length, 0, 'invalid registration draft is not sent');
   await page.$eval('[name=confirmation]', el => {el.select();});
   await page.type('[name=confirmation]', registrationPassword);
-  await page.click('.account-code button');
+  captchaEnabled = true;
+  await page.evaluate(() => {window.cancelCaptcha = true;});
+  await page.click('.account-submit');
+  await page.waitForFunction(() => window.CaptchaSDK && !document.querySelector('.account-submit').disabled);
+  assert.equal(challengeStarts, 0, 'closing the slider sends no email request');
+  await page.evaluate(() => {window.cancelCaptcha = false;});
+  await page.click('.account-submit');
   await page.waitForSelector('.account-page [role=status]');
   assert.match(await page.$eval('.account-page [role=status]', el => el.textContent), /验证码已发送/);
   assert.equal(await page.$eval('.account-code button', el => el.disabled), true);
@@ -386,7 +401,7 @@ try {
   assert.equal(await page.$eval('[name=email]', el => el.disabled), false, 'editing is available after explicitly abandoning the expired challenge');
   await page.$eval('[name=email]', el => {el.select();});
   await page.type('[name=email]', 'player2@example.com');
-  await page.click('.account-code button');
+  await page.click('.account-submit');
   await page.waitForSelector('.account-page [role=status]');
   assert.match(await page.$eval('.account-page [role=status]', el => el.textContent), /验证码已发送/);
   await page.type('[name=code]', '123456');
@@ -395,8 +410,8 @@ try {
   const signUps = submissions.filter(request => request.path === '/api/account/register/start');
   assert.equal(signUps.length, 2);
   const signUp = signUps[0];
-  assert.deepEqual(JSON.parse(signUp.body), {username: 'reimu', name: '博丽灵梦', email: 'player@example.com', password: registrationPassword});
-  assert.deepEqual(JSON.parse(signUps[1].body), {username: 'reimu', name: '博丽灵梦', email: 'player2@example.com', password: registrationPassword});
+  assert.deepEqual(JSON.parse(signUp.body), {username: 'reimu', name: '博丽灵梦', email: 'player@example.com', password: registrationPassword, captchaToken:'one-time-proof'});
+  assert.deepEqual(JSON.parse(signUps[1].body), {username: 'reimu', name: '博丽灵梦', email: 'player2@example.com', password: registrationPassword, captchaToken:'one-time-proof'});
   const verifications = submissions.filter(request => request.path === '/api/account/register/verify');
   assert.deepEqual(JSON.parse(verifications[0].body), {challengeId: 'challenge-1', email: 'player@example.com', otp: '123456', password: registrationPassword});
   assert.deepEqual(JSON.parse(verifications[1].body), {challengeId: 'challenge-2', email: 'player2@example.com', otp: '123456', password: registrationPassword});
