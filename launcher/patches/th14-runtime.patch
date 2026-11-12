@@ -33,10 +33,10 @@ index 0000000000000000000000000000000000000000..25fc1a71c6a044f980e895c3db674984
 +加 `--strict` 时，VM 差异、缺失操作码或字库选择不符都会返回非零。报告记录每个不同字段的原版和移植 32 位原始值。修复前的 120 组对照中有 31 组不同、3 组未映射。修复后扩展至 349 组全部相同；另有 69 组[界面对照](TH14_UI_ORACLE.md)通过。父子 VM 管理、绘制队列、完整战斗和最终像素未由这份组件对照覆盖。
 diff --git a/docs/porting/TH14_BROWSER_PERFORMANCE.md b/docs/porting/TH14_BROWSER_PERFORMANCE.md
 new file mode 100644
-index 0000000000000000000000000000000000000000..455c61af9cd4d0dac576f2e09d91ef641bb314ad
+index 0000000000000000000000000000000000000000..b1b15f0a743202835ec7aeb91e653c5ecb73fe9d
 --- /dev/null
 +++ b/docs/porting/TH14_BROWSER_PERFORMANCE.md
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,42 @@
 +# TH14 browser frame pacing
 +
 +The browser accumulates refresh time separately from the retail deadline
@@ -50,7 +50,13 @@ index 0000000000000000000000000000000000000000..455c61af9cd4d0dac576f2e09d91ef64
 +The implicit WebGL canvas presents when the RAF host returns. The TH14
 +browser backend therefore skips SDL's extra Asyncify sleep after the blit.
 +The host reserves its next RAF before entering its serialized Wasm callback
-+and keeps at most one frame in flight.
++and keeps at most one Wasm frame callback in flight. WebGL work can outlive
++that callback, so the renderer flushes after the final blit and tracks its
++two most recent submissions with fences. If the older fence is still
++pending, ordinary live gameplay keeps updating and skips the stale scene
++draw. The zero-timeout poll never waits for the GPU. Two slots allow
++rendering to overlap the preceding frame; one slot can halve the visible
++update rate when fence completion crosses the next refresh.
 +
 +Hosted keyboard presses survive a keyup that arrives before the next
 +simulation tick. The sampler consumes the pending press once; a held key
@@ -67,6 +73,12 @@ index 0000000000000000000000000000000000000000..455c61af9cd4d0dac576f2e09d91ef64
 +with `-DPORT_TITLE=14` for the browser clock. Measure Stage 1 separately as
 +logical updates and presentations: on a slow device these are intentionally
 +different. The game backbuffer and UI remain 1280×960.
++
++For movement latency, hold each direction for about 600 ms in Stage 1,
++including a repeated keydown, and then release it. Compare the event to
++the first final blit containing the changed player position or stopped
++motion. Poll a fence after that blit to separate command submission from
++GPU completion. This does not measure compositor or monitor scanout.
 diff --git a/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md b/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md
 new file mode 100644
 index 0000000000000000000000000000000000000000..6607a598f5fecba3aa901407efe1358fc540caed
@@ -144,7 +156,7 @@ index a53fbc3b90b344febae9e9b81619c0ea548eae9c..4591ba821d7f94647dfd9dc3b065a2c5
      // Other titles retain their existing bounded catch-up policy.
      double debt=0;
 diff --git a/runtimes/th12/portable/sdl/Renderer.cpp b/runtimes/th12/portable/sdl/Renderer.cpp
-index 086076dbaa745c3b3874633575e322e4bd6a6e83..55e80993ad6e7cb907a1ec38b34619b84383eab4 100644
+index 086076dbaa745c3b3874633575e322e4bd6a6e83..ac3118fe9a8f556a853b1e61e1b12f4b0bd1fd4a 100644
 --- a/runtimes/th12/portable/sdl/Renderer.cpp
 +++ b/runtimes/th12/portable/sdl/Renderer.cpp
 @@ -88,6 +88,16 @@ bool Renderer::initialize(){
@@ -164,7 +176,18 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..55e80993ad6e7cb907a1ec38b34619b8
   resampleProgram=glCreateProgram();const auto rv=shader(GL_VERTEX_SHADER,resampleVertex),rf=shader(GL_FRAGMENT_SHADER,resampleFragment);
   glAttachShader(resampleProgram,rv);glAttachShader(resampleProgram,rf);glLinkProgram(resampleProgram);glDeleteShader(rv);glDeleteShader(rf);
   GLint linked=0;glGetProgramiv(resampleProgram,GL_LINK_STATUS,&linked);if(!linked){failure="Resample program link failed";return false;}
-@@ -114,13 +124,21 @@ void Renderer::transform(MatrixKind kind,const void* p){auto& m=state.matrix[u32
+@@ -98,6 +108,10 @@ Renderer::~Renderer(){discard();
+ #ifdef TH14_WEBGPU_BACKEND
+  if(webGpu){delete webGpu;if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();return;}
+ #endif
++#if defined(__EMSCRIPTEN__) && defined(PORT_TITLE) && PORT_TITLE == 14
++ if(previousBrowserFrame)glDeleteSync(previousBrowserFrame);
++ if(latestBrowserFrame)glDeleteSync(latestBrowserFrame);
++#endif
+ for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);if(context)SDL_GL_DestroyContext(context);if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
+ void Renderer::bind_texture(GLuint id){if(boundTexture!=id){glBindTexture(GL_TEXTURE_2D,id);boundTexture=id;++stats.textureBinds;}}
+ void Renderer::bind_framebuffer(GLenum target,GLuint id){
+@@ -114,13 +128,21 @@ void Renderer::transform(MatrixKind kind,const void* p){auto& m=state.matrix[u32
  void Renderer::viewport(const Viewport& v){state.viewport=v;}
  void Renderer::select(const State& s){
   const auto& p=s.pipeline;auto arg=[](Argument a){return u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u);};
@@ -188,7 +211,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..55e80993ad6e7cb907a1ec38b34619b8
    replace(source,"precision highp float;","precision highp float;\n"+defs);}
    // Match byte alpha after the measured RGBA8 conversion. Float32 arithmetic
    // alone differs at rounding boundaries on some devices.
-@@ -128,6 +146,8 @@ void Renderer::select(const State& s){
+@@ -128,6 +150,8 @@ void Renderer::select(const State& s){
    if(version==8)replace(source,"float a=c.a*255.0","float a=floor(c.a*255.0+.5)");
    if(version==8)replace(source,"gl_FragDepth=depth16?(floor(scaled)+floor(fract(scaled)-gl_FragCoord.z+0.5))/65535.0:gl_FragCoord.z;","");
  #if defined(PORT_TITLE) && PORT_TITLE == 14
@@ -197,7 +220,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..55e80993ad6e7cb907a1ec38b34619b8
    // Installed D3D9 D16 conversion: truncate to twenty fractional bits,
    // then round the sixteen-bit result to nearest with ties downward.
    if(version==10){replace(source,"float scaled=gl_FragCoord.z*65536.0;","float quantized=floor(gl_FragCoord.z*1048576.0)/1048576.0;float scaled=quantized*65536.0;");replace(source,"floor(fract(scaled)-gl_FragCoord.z+0.5)","ceil(fract(scaled)-quantized-0.5)");}
-@@ -204,15 +224,47 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
+@@ -204,15 +228,47 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
   if(webGpu){webGpu->issue(d,primitive,count,data,index,indexFormat,instance,instanceSize);return;}
  #endif
  #if defined(PORT_TITLE) && PORT_TITLE == 14
@@ -251,7 +274,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..55e80993ad6e7cb907a1ec38b34619b8
   }
  #endif
   const auto& p=d.pipeline;auto& cached=drawState.pipeline;const bool all=!drawState.valid;
-@@ -221,12 +273,15 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
+@@ -221,12 +277,15 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
   if(!drawState.has_viewport||std::memcmp(&drawState.viewport,&v,sizeof(v))){glViewport(v.x,v.y,v.width,v.height);glDepthRangef(v.min,v.max);drawState.viewport=v;drawState.has_viewport=true;}select(d);
   float vp[]{float(v.x),float(v.y),float(v.width),float(v.height)};uniform(0,4,vp);const bool transformed=d.layout.screen;
  #if defined(PORT_TITLE) && PORT_TITLE == 14
@@ -270,7 +293,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..55e80993ad6e7cb907a1ec38b34619b8
   else {for(int i=0;i<4;i++)uniform(4+i,16,d.matrix[i].data());}
   float fogLinear[3]{};if(nativeFog){volatile float range=p.fogFar-p.fogNear;volatile float scale=1.f/range;volatile float bias=p.fogFar*scale;fogLinear[0]=bias;fogLinear[1]=scale;fogLinear[2]=1.f;}uniform(27,3,fogLinear);
  #else
-@@ -275,14 +330,14 @@ integer(13,!!texture);uniform(14,4,color(p.textureFactor).data());
+@@ -275,14 +334,14 @@ integer(13,!!texture);uniform(14,4,color(p.textureFactor).data());
   if(!instance){
    if(clippedGeometry){glDisableVertexAttribArray(13);glVertexAttrib1f(13,-1.f);glVertexAttribDivisor(13,0);}
    else if(!transformed&&!index&&primitive==Topology::Triangles){
@@ -287,7 +310,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..55e80993ad6e7cb907a1ec38b34619b8
     glVertexAttrib1f(13,eligible);glVertexAttribDivisor(13,0);
    }
   }
-@@ -308,16 +363,6 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,(transformed||clippedGeomet
+@@ -308,16 +367,6 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,(transformed||clippedGeomet
  #if defined(PORT_TITLE) && PORT_TITLE == 14
   // Keep each original world/factor record and append its derived clip matrix.
   // The queue remains 68B; only the submitted instance buffer gains the matrix.
@@ -304,12 +327,39 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..55e80993ad6e7cb907a1ec38b34619b8
   u32 b=upload(instances,GL_ARRAY_BUFFER,expanded.data(),u32(expanded.size()),65536);
  #else
   u32 b=upload(instances,GL_ARRAY_BUFFER,instance,instanceSize,65536);
-@@ -397,7 +442,13 @@ glBlitFramebuffer(0,0,s.width,s.height,0,s.height,s.width,0,GL_COLOR_BUFFER_BIT,
+@@ -387,6 +436,24 @@ void Renderer::release(u32 id){flush();
+ #endif
+ auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);depths.erase(d);}auto it=surfaces.find(id);if(it==surfaces.end())return;glDeleteTextures(1,&it->second.texture);glDeleteFramebuffers(1,&it->second.framebuffer);surfaces.erase(it);boundTexture=readFramebuffer=drawFramebuffer=~0u;}
+ void Renderer::present(u32 id){flush();pending=id;stats.frames++;if(!defer)commit();}
++#if defined(__EMSCRIPTEN__) && defined(PORT_TITLE) && PORT_TITLE == 14
++bool Renderer::browser_draw_backpressured(){
++ // Keep one frame of overlap between RAF and the GPU. If both recent
++ // frames are still queued, keep ticking and skip only the stale draw.
++ return previousBrowserFrame&&latestBrowserFrame&&
++        glClientWaitSync(previousBrowserFrame,0,0)==GL_TIMEOUT_EXPIRED;
++}
++void Renderer::fence_browser_frame(){
++ // A later fence also covers preceding draws, including mandatory
++ // menu, transition and capture frames that can bypass the gate.
++ if(previousBrowserFrame)glDeleteSync(previousBrowserFrame);
++ previousBrowserFrame=latestBrowserFrame;
++ latestBrowserFrame=glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
++ // Send the final blit and its fence now. This does not wait for the GPU
++ // or use SDL's browser swap (which sleeps through Asyncify).
++ glFlush();
++}
++#endif
+ bool Renderer::commit(){if(!pending)return false;
+ #ifdef TH14_WEBGPU_BACKEND
+  if(webGpu){const auto id=pending;pending=0;webGpu->present(id);++stats.presentations;return true;}
+@@ -397,7 +464,15 @@ glBlitFramebuffer(0,0,s.width,s.height,0,s.height,s.width,0,GL_COLOR_BUFFER_BIT,
  #else
  glBlitFramebuffer(0,0,s.width,s.height,0,480,640,0,GL_COLOR_BUFFER_BIT,GL_NEAREST);
  #endif
 -SDL_GL_SwapWindow(window);stats.presentations++;return true;}
-+#if !defined(__EMSCRIPTEN__) || !defined(PORT_TITLE) || PORT_TITLE != 14
++#if defined(__EMSCRIPTEN__) && defined(PORT_TITLE) && PORT_TITLE == 14
++fence_browser_frame();
++#else
 +SDL_GL_SwapWindow(window);
 +#endif
 +// SDL's browser GLES swap has no buffer swap: it sleeps through Asyncify.
@@ -319,6 +369,31 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..55e80993ad6e7cb907a1ec38b34619b8
  }
  extern "C" {
  const touhou::sdl::Statistics* sdl_stats(){static touhou::sdl::Statistics zero{};return touhou::sdl::current()?&touhou::sdl::current()->stats:&zero;}
+diff --git a/runtimes/th12/portable/sdl/Renderer.hpp b/runtimes/th12/portable/sdl/Renderer.hpp
+index 05807cb86614061d707a87336b4bc6fee7a09cfb..37ffcdd600ccc7d2558fe02b6f27d63bce6c6ebc 100644
+--- a/runtimes/th12/portable/sdl/Renderer.hpp
++++ b/runtimes/th12/portable/sdl/Renderer.hpp
+@@ -29,6 +29,9 @@ public:
+     Statistics stats{};State state{};bool defer=false;
+     Renderer(int version,Resolve,void*);~Renderer();
+     bool initialize();void flush();void discard();bool commit();
++#if defined(__EMSCRIPTEN__) && defined(PORT_TITLE) && PORT_TITLE == 14
++    bool browser_draw_backpressured();
++#endif
+     PipelineState& pipeline() override { return state.pipeline; }
+     void transform(MatrixKind,const void*);void viewport(const Viewport&);
+     void draw(Topology primitive,u32 count,const void*,u32 stride,const void* indices=nullptr,IndexType indexFormat=IndexType::UInt16);
+@@ -60,6 +63,10 @@ private:
+     Stream vertices{},indices{},instances{};State batchState{};
+     std::vector<u8> batchBytes,quad,worlds,pixels;bool batching=false,instancing=false;
+     u32 batchCount=0,pending=0;std::string failure;
++#if defined(__EMSCRIPTEN__) && defined(PORT_TITLE) && PORT_TITLE == 14
++    GLsync previousBrowserFrame=nullptr,latestBrowserFrame=nullptr;
++    void fence_browser_frame();
++#endif
+     GPU& surface(u32);GPU& target(u32,u32);void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32,bool clippedGeometry=false);
+     void bind_texture(GLuint);void bind_framebuffer(GLenum,GLuint);
+     void select(const State&);void uniform(int,int,const float*);void integer(int,int);
 diff --git a/runtimes/th12/portable/sdl/Th14AsyncRuntime.mjs b/runtimes/th12/portable/sdl/Th14AsyncRuntime.mjs
 index 326dd35435272e49a0524bc50646b06e4803cec6..8a7b91ab31346b715c360c386ea0f6fab7a654fd 100644
 --- a/runtimes/th12/portable/sdl/Th14AsyncRuntime.mjs
@@ -1081,7 +1156,7 @@ index c91062f77f39cdc37dac75bbe8d697d98b1ee72c..44601056b63271565f978c2342944931
          }
          if(pressed&0x102){if(name_length){sounds.push_back(11);entered_name[--name_length]=' ';}else step(2);}break;
 diff --git a/runtimes/th12/th12_web/cpp/sdl/Application.cpp b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
-index bae5d17e65ee2a98f46cb063007b05d43941077d..1dc5362115aa32cd2f2742c75f6ca5f78e88f2dc 100644
+index bae5d17e65ee2a98f46cb063007b05d43941077d..4b8eeaf0e45eff019f05842f31ab3a10ff14feb4 100644
 --- a/runtimes/th12/th12_web/cpp/sdl/Application.cpp
 +++ b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
 @@ -306,7 +306,18 @@ struct Application:StageResourceEffects
@@ -1198,14 +1273,16 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..1dc5362115aa32cd2f2742c75f6ca5f7
  EMSCRIPTEN_KEEPALIVE void th11_keys_clear(){th11::sdl::clear_inputs();}
  EMSCRIPTEN_KEEPALIVE void th11_music_enabled(unsigned on){using namespace th11::sdl;app.audio.music_enabled=on!=0;app.audio.refresh_volume();}
  EMSCRIPTEN_KEEPALIVE const unsigned* th11_audio_statistics(){return th11::sdl::app.audio.statistics();}
-@@ -2295,8 +2340,23 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
+@@ -2295,8 +2340,25 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
          if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
          const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
          if(suspended){cadence.reset();return EM_TRUE;}
 -        const auto ticks=cadence.advance(delta);bool ok=true;app.graphics.backend.defer=true;
 -        for(unsigned n=0;n<ticks&&ok;++n)ok=sample_and_tick();
 +#if PORT_TITLE == 14
-+        const auto limit=cadence.advance_display(delta,app.can_coalesce_browser_draw());
++        const bool can_coalesce=app.can_coalesce_browser_draw();
++        const auto limit=cadence.advance_display(delta,can_coalesce);
++        const bool backpressured=limit&&can_coalesce&&app.graphics.backend.browser_draw_backpressured();
 +#else
 +        const auto limit=cadence.advance(delta);
 +#endif
@@ -1214,7 +1291,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..1dc5362115aa32cd2f2742c75f6ca5f7
 +        for(;ticks<limit&&ok;++ticks){
 +#if PORT_TITLE == 14
 +            if(ticks&&!app.can_coalesce_browser_draw())break;
-+            app.coalesce_browser_draw=ticks+1<limit;
++            app.coalesce_browser_draw=backpressured||ticks+1<limit;
 +#endif
 +            ok=sample_and_tick();
 +        }
