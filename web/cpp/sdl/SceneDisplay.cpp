@@ -35,7 +35,7 @@ void SceneDisplay::detach() noexcept {
     graphics.select_target(nullptr, 0);
 }
 
-bool SceneDisplay::draw() {
+bool SceneDisplay::prepare() {
     if (!error.empty() || !animation_drawing) return false;
     graphics.presentation.begin();
     if (!graphics.select_target(nullptr, 0)) return fail(graphics.error);
@@ -49,8 +49,16 @@ bool SceneDisplay::draw() {
     // 写进 text.anm entry1 纹理）。必须晚于场景绘制 flush、早于 present。
     if (before_present && !before_present()) return fail("Scene present hook failed");
     graphics.presentation.finish();
+    return graphics.error.empty() || fail(graphics.error);
+}
+
+bool SceneDisplay::present() {
     graphics.present();
     return graphics.error.empty() || fail(graphics.error);
+}
+
+bool SceneDisplay::draw() {
+    return prepare() && present();
 }
 
 }  // namespace th13::sdl
