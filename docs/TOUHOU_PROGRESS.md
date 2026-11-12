@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++／SDL3／Wasm 实现进行中，整作 1:1 尚未完成。[当前游戏源码 b8e36ef2](https://github.com/AdingApkgg/thp/commit/b8e36ef27d96238352f5edaf9b368ca23394ceb3)已部署至[TH14 测试站](https://wth.saop.cc/)，[网站接入 PR #233](https://github.com/Ritosa2333/eagler-touhou/pull/233)待合入。网站运行逻辑为2eeb8db4，fork的bd9badc9只更新TH14核心构建指针，Arch检出同步。原作数据、音乐和生成运行包不加入源码Git。
+2026-11-13最新：[核心源码59a8cc4](https://github.com/AdingApkgg/thp/commit/59a8cc4cc5ae404d8439019b35f4915f75c03c5d)补齐33个Player历史点和八个僚机初始Y；六自机／90步／183,060字原版Oracle零差异，三对其他作品对象相同。当前源码静音35,000回调的游戏状态、两组RNG、弹数、HUD与游标相同，123个弹槽点／4,275个VM的1,293,735实测字零差异，另1,590个未捕获链接保持未知。三个历史弹数点在本病例一致；113字严格前缀30,827，三面相机缓存十字段仍有4,173行不同。运行脚本沿用旧68点／2快照验收范围而退出1，原报告保留；按运行前夹具定义的123点／4快照独立核验后再进行上述比较，未重跑或改写游戏结果。浏览器仅重编1单元、核验复用145；新包尚未部署，线上仍为b8e36ef2。[完整范围与证据](https://github.com/AdingApkgg/thp/blob/59a8cc4cc5ae404d8439019b35f4915f75c03c5d/docs/porting/TH14_OPTION_INITIAL_STATE_NOV13.md)。
+
+独立 C++／SDL3／Wasm 实现进行中，整作 1:1 尚未完成。[线上游戏源码 b8e36ef2](https://github.com/AdingApkgg/thp/commit/b8e36ef27d96238352f5edaf9b368ca23394ceb3)已部署至[TH14 测试站](https://wth.saop.cc/)，[网站接入 PR #233](https://github.com/Ritosa2333/eagler-touhou/pull/233)待合入。网站运行逻辑为2eeb8db4，fork的bd9badc9只更新TH14核心构建指针，Arch检出同步。原作数据、音乐和生成运行包不加入源码Git。
 
 2026-11-13修正Player激活前的transition时钟，以及TH14 tick的空速率语义。完整原版构造／初始化在六种自机上执行；规范映射后的18个时钟字差异消失，3,024字一致。240组原版时钟输入在四种Wasm零地址哨兵下共960次比较通过，旧实现64例失败保留。SDK141／浏览器146单元全量重编，六对其他作品优化对象相同。新对象的加载13组、2,093帧／2,928,024字回归通过；实际静音普通菜单灵梦B Normal在540个宿主更新后到达首个Player，已测线程／GPU／文件／时钟资源回收。该有限入口使用旧FLAC，没有当作当前浏览器Vorbis播放验收。
 
