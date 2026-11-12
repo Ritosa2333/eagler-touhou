@@ -403,6 +403,7 @@ public:
     int cancel_lasers_region(const std::function<bool(float,float)>& inside,bool respect_lock=true,
         const std::function<bool(float,float,float)>& rectangleSample={});
     void cancel_enoko_trap(float x,float y,float angle);
+    void cancel_all_bullets();
     int cancel_bullets_shape(const std::function<bool(float,float,float)>& contact);
     int cancel_bullets_polygon(float x,float y,float radius,float angle,int sides);
     int cancel_bullets_rect(float x,float y,float width,float height,float angle=0);

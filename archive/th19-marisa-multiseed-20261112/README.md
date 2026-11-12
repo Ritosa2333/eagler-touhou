@@ -51,3 +51,5 @@ PR #214 的提交 `9c0eb6512b610ebcaa291724e8e64ba658371a3f` 已完成额外五�
 直激光分裂计时与首帧移动修复见 [分裂修复验证](straight-split-fix.md)，包含同构建 36000 帧基线及种子 42 后续差异。
 
 激光残段与复活修正见 [验证记录](growth-respawn-fixes.md)。跨场死亡圈反击弹顺序与五组长测见 [共享顺序验证](shared-chain-order.md)。
+
+全局消弹对已取消槽位重置退出计时的规则见 [槽位生命周期修复](global-clear-lifetime.md)。

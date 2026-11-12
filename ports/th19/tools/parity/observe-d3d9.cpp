@@ -364,6 +364,32 @@ bool installAnmDetachedObserver(){
     FlushInstructionCache(GetCurrentProcess(),entry,5);VirtualProtect(entry,5,protection,&ignored);return true;
 }
 
+using BulletCancelCall=unsigned(__thiscall*)(unsigned,unsigned);
+BulletCancelCall originalBulletCancel;
+unsigned __fastcall observeBulletCancel(unsigned self,unsigned,unsigned argument){
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    if(cpuDebugActive&&GetCurrentThreadId()==captureThread&&detailedFrame(frame,0,0))
+        if(FILE* output=std::fopen("native-bullet-cancel.jsonl","ab")){
+            std::fprintf(output,"{\"frame\":%u,\"bullet\":%u,\"state\":%u,\"position\":[%.9g,%.9g],\"caller\":%u}\n",frame,self,read<unsigned>(self+0x1044),read<float>(self+0x650),read<float>(self+0x654),unsigned(__builtin_return_address(0))-gameBase);
+            std::fclose(output);
+        }
+    return originalBulletCancel(self,argument);
+}
+bool installBulletCancelObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0xeeb30);
+    const unsigned char signature[]={0x55,0x8b,0xec,0x83,0xec,0x74};
+    if(std::memcmp(entry,signature,sizeof(signature)))return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,11,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,6);relativeJump(relay+6,reinterpret_cast<unsigned>(entry+6));
+    DWORD protection,ignored;
+    if(!VirtualProtect(entry,6,PAGE_EXECUTE_READWRITE,&protection))return false;
+    originalBulletCancel=reinterpret_cast<BulletCancelCall>(relay);
+    relativeJump(entry,reinterpret_cast<unsigned>(observeBulletCancel));entry[5]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,6);VirtualProtect(entry,6,protection,&ignored);return true;
+}
+
 using StraightCircleCall=unsigned(__thiscall*)(unsigned,unsigned,float,unsigned,unsigned);
 StraightCircleCall originalStraightCircle;
 unsigned __fastcall observeStraightCircle(unsigned self,unsigned,unsigned point,float radius,unsigned argument,unsigned lock){
@@ -1419,6 +1445,7 @@ extern "C" IDirect3D9* WINAPI observeCreate9(UINT sdkVersion) {
         if (rngTrace&&cpuDebugActive) std::fprintf(trace,"{\"anmDetachedObserverInstalled\":%s}\n",installAnmDetachedObserver()?"true":"false");
         if(rngTrace&&cpuDebugActive)std::fprintf(trace,"{\"straightGrazeObserverInstalled\":%s}\n",installStraightGrazeObserver()?"true":"false");
         if(rngTrace&&cpuDebugActive)std::fprintf(trace,"{\"straightCircleObserverInstalled\":%s}\n",installStraightCircleObserver()?"true":"false");
+        if(rngTrace&&cpuDebugActive)std::fprintf(trace,"{\"bulletCancelObserverInstalled\":%s}\n",installBulletCancelObserver()?"true":"false");
         captureBulletPositions=GetEnvironmentVariableA("TH19_CAPTURE_BULLET_POSITIONS",nullptr,0)>0;
         if(const char* frames=std::getenv("TH19_CAPTURE_IMAGE_FRAMES")){
             while(*frames){

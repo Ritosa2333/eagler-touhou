@@ -52,7 +52,7 @@ bool EclVm::game_object(const EclInstruction& ins){
         }
         case 613: { // 0x502dbd -> 0x4edf90 / 0x530bd0, without lock filtering.
             if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"global-clear\",\"id\":%u}\n",world_->battle_frame,host_id);
-            world_->cancel_bullets_circle(0,224,1e20f,99999,false);
+            world_->cancel_all_bullets();
             for(auto& laser:world_->lasers)laser.active=false;
             return true;
         }

@@ -531,6 +531,14 @@ int GameWorld::cancel_bullets_circle(float x,float y,float radius,int limit,bool
     }
     return count;
 }
+void GameWorld::cancel_all_bullets(){
+    // 0x4edf90 cancels every occupied slot except contact-canceled state 3.
+    // Script-canceled state 4 is interrupted again and restarts its lifetime.
+    for(auto& bullet:bullets){
+        if(bullet.state==4||bullet.contact_cancel)continue;
+        cancel_bullet(bullet,reward_mode==2);
+    }
+}
 int GameWorld::cancel_bullets_shape(const std::function<bool(float,float,float)>& contact){
  int count=0;for(auto&b:bullets){
   if((b.state!=1&&b.state!=2)||b.cancel_lock!=0||!contact(b.x,b.y,b.hit_width))continue;
@@ -994,7 +1002,6 @@ void GameWorld::tick_graze(float px,float py,float player_radius,bool defer_rewa
 void GameWorld::award_graze(float x,float y,u32 color){
     extern bool traceOpeningRng;
     if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"graze-reward\",\"position\":[%.9g,%.9g]}\n",battle_frame,x,y);
-    extern bool traceOpeningRng;
     if(traceOpeningRng)std::printf("GRAZEDBG {\"frame\":%d,\"position\":[%.9g,%.9g],\"player\":[%.9g,%.9g],\"seed\":%u,\"color\":%u}\n",battle_frame,x,y,player_x,player_y,AnmVm::random_checkpoint(true),color);
     grazed_bullets=std::min(grazed_bullets+1,99999999);
     sound_events.push_back(42);
