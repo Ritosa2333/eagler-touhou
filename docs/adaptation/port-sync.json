@@ -973,7 +973,7 @@
     "th12": {
       "normal": "ports/th12",
       "multiplayer": "ports/th12-mp",
-      "base": "555fa3f382c0f601e5d5906bae5cc7b1f18f222c",
+      "base": "4245da6eeaeb9ab06b67e9f9938c1c39cca8bb92",
       "origin": {
         "normalCommit": "5e5081a1d2a434b2f8d785ebbd6b965f1058d828",
         "multiplayerCommit": "02e3a62a7ff38ca5ec1f3ad2007c117534e9ba26",
@@ -1618,6 +1618,16 @@
             "ports/th12-mp/tests/sdl-boundary.test.mjs"
           ],
           "note": "已同步残像连续性、细激光预警、二面摇镜、暂停退出及THPrac辅助录像；保留多人录像格式，飞碟吸附道具接触拾取按多人席位单独修复。"
+        },
+        {
+          "kind": "manual",
+          "base": "555fa3f382c0f601e5d5906bae5cc7b1f18f222c",
+          "source": "4245da6eeaeb9ab06b67e9f9938c1c39cca8bb92",
+          "targetHead": "4245da6eeaeb9ab06b67e9f9938c1c39cca8bb92",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md"
+          ],
+          "note": "普通版生成的ADAPTATION记录为9/10，失败来自上游hsob工作区配置；多人版9/9，保留其独立适配表。共同代码已完成来源历史合并，本次验证元数据按模式分别维护。"
         }
       ],
       "watches": {
