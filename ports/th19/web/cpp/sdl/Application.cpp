@@ -4490,6 +4490,8 @@ void emit_counter_bullets(int side,th19::GameWorld& world){
         state.from={(side?GAME_F2_CX:GAME_F1_CX)+GAME_SCALE*sourceX,GAME_FY0+GAME_SCALE*sourceY};
         state.to={(side?GAME_F1_CX:GAME_F2_CX)+GAME_SCALE*v.target_x,GAME_FY0+GAME_SCALE*v.target_y};
         state.start_tangent={signedUnit(100.f),-400};state.end_tangent={signedUnit(100.f),100};
+        if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)
+            std::printf("BULLETDBG {\"frame\":%d,\"event\":\"counter-flight\",\"side\":%d,\"target\":[%.9g,%.9g],\"kind\":%d,\"color\":%d,\"duration\":%d}\n",g_vs_match.elapsed,side,v.target_x,v.target_y,state.type,state.color,state.duration);
         g_reflected_flights.push_back(v);
     }
     world.counter_bullet_requests.clear();
@@ -4613,9 +4615,23 @@ void tick_spirit_transits(){
             g_ecl_fields[1-side].world.resolve_marisa_extra_arrivals();
         }
         // The flight manager runs chain circles, counter arrivals, then spirit arrivals.
-        for(int side=1;side>=0;--side){
-            g_ecl_fields[side].world.tick_vs_death_chain_cancels();
-            collect_chain_bullet_transits(side);
+        struct ChainVisit {int side;const th19::DeathChain* chain;};
+        std::vector<ChainVisit> chainVisits;
+        // The shared native flight list prepends death circles across both fields.
+        // Right-field enemies update first, so left-field ties are newer.
+        for(int side=0;side<2;++side){
+            const auto& chains=g_ecl_fields[side].world.death_chains;
+            for(auto it=chains.rbegin();it!=chains.rend();++it)chainVisits.push_back({side,&*it});
+        }
+        std::stable_sort(chainVisits.begin(),chainVisits.end(),[](const auto& a,const auto& b){return a.chain->age<b.chain->age;});
+        for(const auto& visit:chainVisits){
+            const auto& chain=*visit.chain;
+            const int age=chain.age+1;
+            if(age>chain.duration)continue;
+            auto& world=g_ecl_fields[visit.side].world;
+            const float radius=1+(chain.target-1)*th19::nativeEase(5,float(age)/chain.duration);
+            world.cancel_death_chain_bullets(chain,radius,world.battle_frame+1);
+            collect_chain_bullet_transits(visit.side);
         }
         resolve_counter_arrivals();
     }
@@ -4865,7 +4881,8 @@ void tick_player_pickups(){
         world.pickup_range=collectCard?110:70;
         const auto& bomb=g_bombs[side];
         const bool bombCollect=g_vs_mode&&bomb.active()&&bomb.frame<60;
-        world.tick_pickups(side?g_p2_x:g_p1_x,side?g_p2_y:g_p1_y,bombCollect);
+        world.tick_pickups(side?g_p2_x:g_p1_x,side?g_p2_y:g_p1_y,bombCollect,
+            g_player_damage[side].state!=th19::PlayerDamage::Dead);
         g_charge[side].energy=std::clamp(g_charge[side].energy+world.pending_energy,0,2500);
         world.pending_energy=0;
     }
@@ -4891,6 +4908,8 @@ void resolve_counter_arrivals(){
             // 0x51c058 enters the same x87 launch path as scripted bullets.
             b.vx=float(std::cos(double(angle))*speed);
             b.vy=float(std::sin(double(angle))*speed);
+            if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)
+                std::printf("BULLETDBG {\"frame\":%d,\"event\":\"counter-arrival\",\"side\":%d,\"id\":%u,\"position\":[%.9g,%.9g],\"kind\":%d,\"color\":%d,\"advanced\":%d}\n",g_vs_match.elapsed,v.target_side,b.id,b.x,b.y,b.kind,b.color,int(b.motion_advanced));
             ++g_reflection_arrivals;
         }
     };
@@ -5929,7 +5948,7 @@ void tick_player_damage(){
         if(d.state==th19::PlayerDamage::Respawning)py=d.respawnY();
         if(d.state==th19::PlayerDamage::Respawning&&d.frame>=30){
             // 0x546464 clears the field from the current respawn position.
-            w.cancel_bullets_circle(px,py,640.f);
+            w.cancel_bullets_circle(px,py,640.f,99999,false);
             w.cancel_lasers_circle(px,py,640.f);
         }
         if(d.state==th19::PlayerDamage::Repelled&&g_vs_mode){
@@ -6792,7 +6811,7 @@ void game_tick() {
                 auto& py=side?g_p2_y:g_p1_y;
                 py=400.f;
                 auto& world=g_ecl_fields[side].world;
-                world.cancel_bullets_circle(px,py,640.f);
+                world.cancel_bullets_circle(px,py,640.f,99999,false);
                 world.cancel_lasers_circle(px,py,640.f);
                 damage.state=th19::PlayerDamage::Playing;
                 damage.frame=0;

@@ -1,0 +1,1036 @@
+[
+  {
+    "primarySeed": 1,
+    "animationSeed": 7,
+    "nativeCapture": "present-52phuhbu",
+    "webCapture": "th19-web-0kCTHo",
+    "wasmSha256": "f7090c1970894d6911d64e4dfd291d9d4ae08ab4b8550ced8a718f96824f591c",
+    "nativeTraceSha256": "d82f12a75221fb89db80fc7cf196fbedd92ec23b0b9a6aee1946d828cc3d9dc1",
+    "fixture": {
+      "difficulty": 3,
+      "characters": [
+        1,
+        1
+      ],
+      "cardMode": 0,
+      "cards": [
+        0,
+        0
+      ],
+      "lives": 2,
+      "timeRule": 4
+    },
+    "continuous": true,
+    "playerControlCoverage": 35999,
+    "playerPositionCoverage": 35999,
+    "bulletPositionCoverage": {
+      "frames": 35999,
+      "first": 1,
+      "last": 36000,
+      "nonemptyFrames": 35575,
+      "originalBulletSamples": 4085458,
+      "webBulletSamples": 4641739,
+      "missingFrames": [
+        0,
+        33776
+      ]
+    },
+    "differentBulletPositionFrames": 22184,
+    "firstDifferentPlayerControls": {
+      "frame": 13700,
+      "web": [
+        129,
+        81
+      ],
+      "original": [
+        129,
+        1
+      ]
+    },
+    "firstDifferentPlayerPosition": {
+      "frame": 13700,
+      "web": [
+        103.0078125,
+        207.1796875,
+        26.5078125,
+        367.046875
+      ],
+      "original": [
+        103.0078125,
+        207.1796875,
+        30.0390625,
+        370.578125
+      ]
+    },
+    "firstDifferentBulletCount": {
+      "frame": 13829,
+      "side": 0,
+      "original": 43,
+      "web": 42
+    },
+    "firstDifferentBulletPosition": {
+      "frame": 13760,
+      "side": 1,
+      "kind": 1,
+      "color": 8,
+      "original": [
+        [
+          35.04540252685547,
+          7.811471939086914
+        ],
+        [
+          41.401947021484375,
+          19.55064582824707
+        ]
+      ],
+      "web": [
+        [
+          35.5052490234375,
+          7.660157680511475
+        ],
+        [
+          41.401947021484375,
+          19.55064582824707
+        ]
+      ]
+    },
+    "firstDifferentRngByStream": {
+      "primary": {
+        "frame": 13756,
+        "web": 513515973,
+        "original": 506073382
+      },
+      "animation": {
+        "frame": 406,
+        "web": 1391184678,
+        "original": 393706518
+      }
+    },
+    "frameRollback": {
+      "frames": [
+        5395,
+        5420
+      ],
+      "differences": [],
+      "image": true
+    },
+    "browserErrors": [],
+    "failure": null,
+    "nativeDiagnosticNote": "Trace window 1..1 contained no RNG calls; capture identity, CPU fixture, rules and >=36000 continuous frames verified before that diagnostic check."
+  },
+  {
+    "primarySeed": 42,
+    "animationSeed": 2026,
+    "nativeCapture": "present-ypkh2_50",
+    "webCapture": "th19-web-ez6B7v",
+    "wasmSha256": "f7090c1970894d6911d64e4dfd291d9d4ae08ab4b8550ced8a718f96824f591c",
+    "nativeTraceSha256": "a46391466d2e94c320811f886b5b17ecbcb88cd1d99f78a79c220f4809266334",
+    "fixture": {
+      "difficulty": 3,
+      "characters": [
+        1,
+        1
+      ],
+      "cardMode": 0,
+      "cards": [
+        0,
+        0
+      ],
+      "lives": 2,
+      "timeRule": 4
+    },
+    "continuous": true,
+    "playerControlCoverage": 36000,
+    "playerPositionCoverage": 36000,
+    "bulletPositionCoverage": {
+      "frames": 36000,
+      "first": 1,
+      "last": 36000,
+      "nonemptyFrames": 35594,
+      "originalBulletSamples": 5072425,
+      "webBulletSamples": 4216177,
+      "missingFrames": [
+        0
+      ]
+    },
+    "differentBulletPositionFrames": 15991,
+    "firstDifferentPlayerControls": {
+      "frame": 20009,
+      "web": [
+        99,
+        169
+      ],
+      "original": [
+        97,
+        169
+      ]
+    },
+    "firstDifferentPlayerPosition": {
+      "frame": 20058,
+      "web": [
+        -136.46875,
+        428.46875,
+        39.5859375,
+        396.0078125
+      ],
+      "original": [
+        -138.5859375,
+        430.5859375,
+        41.5859375,
+        396.0078125
+      ]
+    },
+    "firstDifferentBulletCount": {
+      "frame": 20074,
+      "side": 1,
+      "original": 137,
+      "web": 136
+    },
+    "firstDifferentBulletPosition": {
+      "frame": 20010,
+      "side": 1,
+      "kind": 1,
+      "color": 13,
+      "original": [
+        [
+          -102.35499572753906,
+          146.53875732421875
+        ],
+        [
+          -43.352500915527344,
+          20.75721549987793
+        ],
+        [
+          -33.66753005981445,
+          25.617244720458984
+        ],
+        [
+          -31.12744140625,
+          62.987247467041016
+        ],
+        [
+          -23.018049240112305,
+          5.286459922790527
+        ],
+        [
+          0.2747359275817871,
+          53.35802459716797
+        ],
+        [
+          3.0423874855041504,
+          29.426523208618164
+        ],
+        [
+          7.9449238777160645,
+          76.34352111816406
+        ],
+        [
+          12.864656448364258,
+          102.13584899902344
+        ],
+        [
+          17.947566986083984,
+          92.3091049194336
+        ],
+        [
+          26.890949249267578,
+          66.21372985839844
+        ],
+        [
+          30.858964920043945,
+          16.67122459411621
+        ],
+        [
+          35.91134262084961,
+          61.150062561035156
+        ],
+        [
+          45.34834671020508,
+          20.517559051513672
+        ],
+        [
+          94.86331176757812,
+          57.96813201904297
+        ]
+      ],
+      "web": [
+        [
+          -102.35499572753906,
+          146.53875732421875
+        ],
+        [
+          -43.352500915527344,
+          20.75721549987793
+        ],
+        [
+          -33.66753005981445,
+          25.617244720458984
+        ],
+        [
+          -31.12744140625,
+          62.987247467041016
+        ],
+        [
+          -23.018049240112305,
+          5.286459922790527
+        ],
+        [
+          0.2747359275817871,
+          53.35802459716797
+        ],
+        [
+          3.0423874855041504,
+          29.426523208618164
+        ],
+        [
+          7.9449238777160645,
+          76.34352111816406
+        ],
+        [
+          12.864656448364258,
+          102.13584899902344
+        ],
+        [
+          17.947566986083984,
+          92.3091049194336
+        ],
+        [
+          26.890949249267578,
+          66.21372985839844
+        ],
+        [
+          32.326759338378906,
+          16.47007942199707
+        ],
+        [
+          35.91134262084961,
+          61.150062561035156
+        ],
+        [
+          45.34834671020508,
+          20.517559051513672
+        ],
+        [
+          94.86331176757812,
+          57.96813201904297
+        ]
+      ]
+    },
+    "firstDifferentRngByStream": {
+      "primary": {
+        "frame": 20009,
+        "web": 515202261,
+        "original": 218536075
+      },
+      "animation": {
+        "frame": 362,
+        "web": 749524945,
+        "original": 569634120
+      }
+    },
+    "frameRollback": {
+      "frames": [
+        5395,
+        5420
+      ],
+      "differences": [],
+      "image": true
+    },
+    "browserErrors": [],
+    "failure": null,
+    "nativeDiagnosticNote": "Trace window 1..1 contained no RNG calls; capture identity, CPU fixture, rules and >=36000 continuous frames verified before that diagnostic check."
+  },
+  {
+    "primarySeed": 20261112,
+    "animationSeed": 424182232,
+    "nativeCapture": "present-yxxfs6du",
+    "webCapture": "th19-web-1sosb9",
+    "wasmSha256": "f7090c1970894d6911d64e4dfd291d9d4ae08ab4b8550ced8a718f96824f591c",
+    "nativeTraceSha256": "85c9a07b42246c7535114d1748aedb42a33fc4798e7f0027eea74fe509340444",
+    "fixture": {
+      "difficulty": 3,
+      "characters": [
+        1,
+        1
+      ],
+      "cardMode": 0,
+      "cards": [
+        0,
+        0
+      ],
+      "lives": 2,
+      "timeRule": 4
+    },
+    "continuous": true,
+    "playerControlCoverage": 35999,
+    "playerPositionCoverage": 35999,
+    "bulletPositionCoverage": {
+      "frames": 35999,
+      "first": 1,
+      "last": 36000,
+      "nonemptyFrames": 35719,
+      "originalBulletSamples": 3725652,
+      "webBulletSamples": 4748133,
+      "missingFrames": [
+        0,
+        27900
+      ]
+    },
+    "differentBulletPositionFrames": 24791,
+    "firstDifferentPlayerControls": {
+      "frame": 11208,
+      "web": [
+        129,
+        81
+      ],
+      "original": [
+        129,
+        1
+      ]
+    },
+    "firstDifferentPlayerPosition": {
+      "frame": 11208,
+      "web": [
+        0.1796875,
+        420.6875,
+        13.078125,
+        401.6171875
+      ],
+      "original": [
+        0.1796875,
+        420.6875,
+        16.609375,
+        405.1484375
+      ]
+    },
+    "firstDifferentBulletCount": {
+      "frame": 11227,
+      "side": 0,
+      "original": 123,
+      "web": 124
+    },
+    "firstDifferentBulletPosition": {
+      "frame": 11209,
+      "side": 0,
+      "kind": 1,
+      "color": 2,
+      "original": [
+        [
+          -154.24932861328125,
+          442.93792724609375
+        ],
+        [
+          -149.71705627441406,
+          446.8209533691406
+        ],
+        [
+          -147.6099853515625,
+          440.6697082519531
+        ],
+        [
+          -142.37522888183594,
+          415.16949462890625
+        ],
+        [
+          -141.7538299560547,
+          430.1774597167969
+        ],
+        [
+          -123.27716064453125,
+          423.24853515625
+        ],
+        [
+          -95.49176788330078,
+          12.370750427246094
+        ],
+        [
+          110.75688934326172,
+          -41.73360824584961
+        ],
+        [
+          136.94427490234375,
+          453.9450378417969
+        ],
+        [
+          141.02540588378906,
+          447.68023681640625
+        ]
+      ],
+      "web": [
+        [
+          -153.1070556640625,
+          449.44818115234375
+        ],
+        [
+          -149.71705627441406,
+          446.8209533691406
+        ],
+        [
+          -147.6099853515625,
+          440.6697082519531
+        ],
+        [
+          -142.37522888183594,
+          415.16949462890625
+        ],
+        [
+          -141.7538299560547,
+          430.1774597167969
+        ],
+        [
+          -123.27716064453125,
+          423.24853515625
+        ],
+        [
+          -95.49176788330078,
+          12.370750427246094
+        ],
+        [
+          110.75688934326172,
+          -41.73360824584961
+        ],
+        [
+          133.39645385742188,
+          451.1072998046875
+        ],
+        [
+          141.02540588378906,
+          447.68023681640625
+        ]
+      ]
+    },
+    "firstDifferentRngByStream": {
+      "primary": {
+        "frame": 11208,
+        "web": 1411088235,
+        "original": 491472821
+      },
+      "animation": {
+        "frame": 865,
+        "web": 176280824,
+        "original": 1550462142
+      }
+    },
+    "frameRollback": {
+      "frames": [
+        5395,
+        5420
+      ],
+      "differences": [],
+      "image": true
+    },
+    "browserErrors": [],
+    "failure": null,
+    "nativeDiagnosticNote": "Trace window 1..1 contained no RNG calls; capture identity, CPU fixture, rules and >=36000 continuous frames verified before that diagnostic check."
+  },
+  {
+    "primarySeed": 123456789,
+    "animationSeed": 987654321,
+    "nativeCapture": "present-n5uaa1rq",
+    "webCapture": "th19-web-6cntkx",
+    "wasmSha256": "f7090c1970894d6911d64e4dfd291d9d4ae08ab4b8550ced8a718f96824f591c",
+    "nativeTraceSha256": "150f3fedffa8209e164b9e8b741f391a9b7634da849346d34a4479edad53f665",
+    "fixture": {
+      "difficulty": 3,
+      "characters": [
+        1,
+        1
+      ],
+      "cardMode": 0,
+      "cards": [
+        0,
+        0
+      ],
+      "lives": 2,
+      "timeRule": 4
+    },
+    "continuous": true,
+    "playerControlCoverage": 35999,
+    "playerPositionCoverage": 35999,
+    "bulletPositionCoverage": {
+      "frames": 35999,
+      "first": 1,
+      "last": 36000,
+      "nonemptyFrames": 35718,
+      "originalBulletSamples": 3856839,
+      "webBulletSamples": 4520404,
+      "missingFrames": [
+        0,
+        26822
+      ]
+    },
+    "differentBulletPositionFrames": 23642,
+    "firstDifferentPlayerControls": {
+      "frame": 12228,
+      "web": [
+        137,
+        0
+      ],
+      "original": [
+        137,
+        96
+      ]
+    },
+    "firstDifferentPlayerPosition": {
+      "frame": 12228,
+      "web": [
+        -24.8828125,
+        390.7265625,
+        -120,
+        395.046875
+      ],
+      "original": [
+        -24.8828125,
+        390.7265625,
+        -123.53125,
+        398.578125
+      ]
+    },
+    "firstDifferentBulletCount": {
+      "frame": 12365,
+      "side": 1,
+      "original": 25,
+      "web": 26
+    },
+    "firstDifferentBulletPosition": {
+      "frame": 12358,
+      "side": 0,
+      "kind": 16,
+      "color": 13,
+      "original": [
+        [
+          -151.70240783691406,
+          290.56463623046875
+        ],
+        [
+          -149.90927124023438,
+          229.51414489746094
+        ],
+        [
+          -143.6592254638672,
+          289.54620361328125
+        ],
+        [
+          -139.6354522705078,
+          275.60125732421875
+        ],
+        [
+          -137.24945068359375,
+          256.1336669921875
+        ],
+        [
+          -121.11502838134766,
+          310.8680114746094
+        ],
+        [
+          -119.28413391113281,
+          295.84686279296875
+        ],
+        [
+          -116.83363342285156,
+          293.89532470703125
+        ],
+        [
+          -116.83303833007812,
+          272.3239440917969
+        ],
+        [
+          -114.14972686767578,
+          265.1590576171875
+        ],
+        [
+          -106.90611267089844,
+          309.7629089355469
+        ],
+        [
+          -83.17906951904297,
+          288.6170654296875
+        ],
+        [
+          -79.38987731933594,
+          432.0826416015625
+        ],
+        [
+          -76.39956665039062,
+          253.73773193359375
+        ],
+        [
+          -70.60453033447266,
+          429.66448974609375
+        ],
+        [
+          -54.21343994140625,
+          434.1224670410156
+        ],
+        [
+          -53.307403564453125,
+          275.9248046875
+        ],
+        [
+          -50.02617645263672,
+          444.464111328125
+        ],
+        [
+          -48.23780822753906,
+          416.6401672363281
+        ],
+        [
+          -47.64790725708008,
+          450.1094665527344
+        ],
+        [
+          -40.87765121459961,
+          262.67083740234375
+        ],
+        [
+          -38.4493408203125,
+          426.8299255371094
+        ],
+        [
+          -37.695865631103516,
+          453.2574157714844
+        ],
+        [
+          -16.983718872070312,
+          444.89825439453125
+        ],
+        [
+          -6.053783893585205,
+          446.90447998046875
+        ],
+        [
+          97.7508544921875,
+          444.3099060058594
+        ],
+        [
+          97.91949462890625,
+          427.96484375
+        ],
+        [
+          108.92833709716797,
+          434.97357177734375
+        ],
+        [
+          111.97674560546875,
+          391.9976501464844
+        ],
+        [
+          131.47738647460938,
+          409.6003723144531
+        ],
+        [
+          131.79473876953125,
+          447.9388732910156
+        ],
+        [
+          132.85137939453125,
+          396.9866027832031
+        ],
+        [
+          136.84292602539062,
+          431.0685119628906
+        ],
+        [
+          138.05294799804688,
+          450.4539794921875
+        ],
+        [
+          140.5846710205078,
+          416.05303955078125
+        ],
+        [
+          154.29299926757812,
+          410.5667724609375
+        ]
+      ],
+      "web": [
+        [
+          -151.70240783691406,
+          290.56463623046875
+        ],
+        [
+          -149.90927124023438,
+          229.51414489746094
+        ],
+        [
+          -143.6592254638672,
+          289.54620361328125
+        ],
+        [
+          -139.6354522705078,
+          275.60125732421875
+        ],
+        [
+          -137.24945068359375,
+          256.1336669921875
+        ],
+        [
+          -121.11502838134766,
+          310.8680114746094
+        ],
+        [
+          -119.28413391113281,
+          295.84686279296875
+        ],
+        [
+          -116.83363342285156,
+          293.89532470703125
+        ],
+        [
+          -116.83303833007812,
+          272.3239440917969
+        ],
+        [
+          -114.14972686767578,
+          265.1590576171875
+        ],
+        [
+          -106.90611267089844,
+          309.7629089355469
+        ],
+        [
+          -83.17906951904297,
+          288.6170654296875
+        ],
+        [
+          -79.38987731933594,
+          432.0826416015625
+        ],
+        [
+          -76.39956665039062,
+          253.73773193359375
+        ],
+        [
+          -70.60453033447266,
+          429.66448974609375
+        ],
+        [
+          -54.21343994140625,
+          434.1224670410156
+        ],
+        [
+          -53.307403564453125,
+          275.9248046875
+        ],
+        [
+          -50.02617645263672,
+          444.464111328125
+        ],
+        [
+          -50.00992965698242,
+          455.8969421386719
+        ],
+        [
+          -48.23780822753906,
+          416.6401672363281
+        ],
+        [
+          -47.64790725708008,
+          450.1094665527344
+        ],
+        [
+          -40.87765121459961,
+          262.67083740234375
+        ],
+        [
+          -38.4493408203125,
+          426.8299255371094
+        ],
+        [
+          -16.983718872070312,
+          444.89825439453125
+        ],
+        [
+          -6.053783893585205,
+          446.90447998046875
+        ],
+        [
+          97.7508544921875,
+          444.3099060058594
+        ],
+        [
+          97.91949462890625,
+          427.96484375
+        ],
+        [
+          108.92833709716797,
+          434.97357177734375
+        ],
+        [
+          111.97674560546875,
+          391.9976501464844
+        ],
+        [
+          131.47738647460938,
+          409.6003723144531
+        ],
+        [
+          131.79473876953125,
+          447.9388732910156
+        ],
+        [
+          132.85137939453125,
+          396.9866027832031
+        ],
+        [
+          136.84292602539062,
+          431.0685119628906
+        ],
+        [
+          138.05294799804688,
+          450.4539794921875
+        ],
+        [
+          140.5846710205078,
+          416.05303955078125
+        ],
+        [
+          154.29299926757812,
+          410.5667724609375
+        ]
+      ]
+    },
+    "firstDifferentRngByStream": {
+      "primary": {
+        "frame": 12357,
+        "web": 137521401,
+        "original": 423594794
+      },
+      "animation": {
+        "frame": 321,
+        "web": 1646528914,
+        "original": 352438177
+      }
+    },
+    "frameRollback": {
+      "frames": [
+        5395,
+        5420
+      ],
+      "differences": [],
+      "image": true
+    },
+    "browserErrors": [],
+    "failure": null,
+    "nativeDiagnosticNote": "Trace window 1..1 contained no RNG calls; capture identity, CPU fixture, rules and >=36000 continuous frames verified before that diagnostic check."
+  },
+  {
+    "primarySeed": 987654321,
+    "animationSeed": 1357911,
+    "nativeCapture": "present-bbw08eh8",
+    "webCapture": "th19-web-Vm6ZXZ",
+    "wasmSha256": "f7090c1970894d6911d64e4dfd291d9d4ae08ab4b8550ced8a718f96824f591c",
+    "nativeTraceSha256": "9e312a3a0bf602897e3d31da8ba91fff77ae94578d4bd2f3bea32a48b811bc4e",
+    "fixture": {
+      "difficulty": 3,
+      "characters": [
+        1,
+        1
+      ],
+      "cardMode": 0,
+      "cards": [
+        0,
+        0
+      ],
+      "lives": 2,
+      "timeRule": 4
+    },
+    "continuous": true,
+    "playerControlCoverage": 35999,
+    "playerPositionCoverage": 35999,
+    "bulletPositionCoverage": {
+      "frames": 35999,
+      "first": 1,
+      "last": 36000,
+      "nonemptyFrames": 35745,
+      "originalBulletSamples": 4449999,
+      "webBulletSamples": 4690743,
+      "missingFrames": [
+        0,
+        35835
+      ]
+    },
+    "differentBulletPositionFrames": 21527,
+    "firstDifferentPlayerControls": {
+      "frame": 14471,
+      "web": [
+        1,
+        131
+      ],
+      "original": [
+        1,
+        129
+      ]
+    },
+    "firstDifferentPlayerPosition": {
+      "frame": 14535,
+      "web": [
+        62.6015625,
+        405.5859375,
+        65.765625,
+        432
+      ],
+      "original": [
+        64.015625,
+        402,
+        69.296875,
+        432
+      ]
+    },
+    "firstDifferentBulletCount": {
+      "frame": 14475,
+      "side": 1,
+      "original": 115,
+      "web": 116
+    },
+    "firstDifferentBulletPosition": {
+      "frame": 14472,
+      "side": 1,
+      "kind": 4,
+      "color": 5,
+      "original": [
+        [
+          -138.89193725585938,
+          73.52576446533203
+        ],
+        [
+          29.254806518554688,
+          450.0741271972656
+        ]
+      ],
+      "web": [
+        [
+          -138.89193725585938,
+          73.52576446533203
+        ],
+        [
+          29.36532974243164,
+          449.0766296386719
+        ]
+      ]
+    },
+    "firstDifferentRngByStream": {
+      "primary": {
+        "frame": 14471,
+        "web": 1280461186,
+        "original": 289309067
+      },
+      "animation": {
+        "frame": 374,
+        "web": 130420130,
+        "original": 854744046
+      }
+    },
+    "frameRollback": {
+      "frames": [
+        5395,
+        5420
+      ],
+      "differences": [],
+      "image": true
+    },
+    "browserErrors": [],
+    "failure": null,
+    "nativeDiagnosticNote": "Trace window 1..1 contained no RNG calls; capture identity, CPU fixture, rules and >=36000 continuous frames verified before that diagnostic check."
+  }
+]

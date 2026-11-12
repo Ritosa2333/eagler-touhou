@@ -643,6 +643,10 @@ int GameWorld::cancel_lasers_region(const std::function<bool(float,float)>& insi
                     // Each cut registers the segment geometry present at that
                     // call. Later cuts replace the preceding contact rectangle.
                     part.cut_contact=InfiniteLaser::ContactSpan{base.x,base.y,base.length};
+                    // 0x52d875 subtracts the removed length from the existing
+                    // growth target. A head segment still growing keeps its
+                    // remaining growth; a shifted leading run resets the target.
+                    if(!first)part.straight_target=base.straight_target-(base.length-len);
                     part.travel_cap=base.travel_cap;part.travelled=first?offset:base.travelled;
                     part.offscreen_grace=base.offscreen_grace;
                     lasers[i]=part;kept=true;
@@ -744,6 +748,8 @@ void GameWorld::cancel_death_chain_bullets(const DeathChain& c,float radius,int 
             transit.startTangentX=AnmVm::rand_signed_unit(100.f,true);
             transit.endTangentX=AnmVm::rand_signed_unit(100.f,true);
         }
+        extern bool traceOpeningRng;
+        if(traceOpeningRng)std::printf("BULLETDBG {\"frame\":%d,\"event\":\"chain-flight\",\"id\":%u,\"source\":[%.9g,%.9g],\"target\":[%.9g,%.9g],\"kind\":%d,\"color\":%d,\"duration\":%d}\n",battle_frame,b.id,b.x,b.y,transit.targetX,transit.targetY,transit.kind,transit.color,transit.duration);
         chain_bullet_transits.push_back(transit);
         // 0x4eeb30 leaves the slot occupied until the embedded ANM ends.
         if(reward_mode==2&&b.animation.stream)b.state=Bullet::Canceling;
@@ -816,7 +822,7 @@ void GameWorld::spawn_pickup(int type,float x,float y,float vx,float vy){
     }
     pickups.push_back(p);
 }
-void GameWorld::tick_pickups(float px,float py,bool bomb_collect){
+void GameWorld::tick_pickups(float px,float py,bool bomb_collect,bool can_collect){
     // 0x520d40; defaults from Player +0x20b0..0x20c0: 5,30,70,70,128.
     for(auto&p:pickups){if(!p.active)continue;
         if(p.state==5){
@@ -843,9 +849,10 @@ void GameWorld::tick_pickups(float px,float py,bool bomb_collect){
             if(p.y>472.f||std::abs(p.x)>=156.f){p.active=false;continue;}
         }
         const float distance=std::hypot(px-p.x,py-p.y);
-        if(distance<30){p.active=false;++collected;if(p.type>=9&&p.type<=14)pending_energy+=15;sound_events.push_back(37);}
+        // 0x521356 skips collection and magnet acquisition while Player is Dead.
+        if(can_collect&&distance<30){p.active=false;++collected;if(p.type>=9&&p.type<=14)pending_energy+=15;sound_events.push_back(37);}
         // 0x521449 enters magnetized state after this tick's movement.
-        else if(p.state==1&&distance<pickup_range){p.state=4;p.speed=pickup_speed/3.f;}
+        else if(can_collect&&p.state==1&&distance<pickup_range){p.state=4;p.speed=pickup_speed/3.f;}
     }
     pickups.erase(std::remove_if(pickups.begin(),pickups.end(),[](const auto&p){return !p.active;}),pickups.end());
 }
@@ -985,6 +992,8 @@ void GameWorld::tick_graze(float px,float py,float player_radius,bool defer_rewa
     }
 }
 void GameWorld::award_graze(float x,float y,u32 color){
+    extern bool traceOpeningRng;
+    if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"graze-reward\",\"position\":[%.9g,%.9g]}\n",battle_frame,x,y);
     extern bool traceOpeningRng;
     if(traceOpeningRng)std::printf("GRAZEDBG {\"frame\":%d,\"position\":[%.9g,%.9g],\"player\":[%.9g,%.9g],\"seed\":%u,\"color\":%u}\n",battle_frame,x,y,player_x,player_y,AnmVm::random_checkpoint(true),color);
     grazed_bullets=std::min(grazed_bullets+1,99999999);

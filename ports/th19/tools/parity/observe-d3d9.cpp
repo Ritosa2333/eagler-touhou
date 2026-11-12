@@ -364,6 +364,35 @@ bool installAnmDetachedObserver(){
     FlushInstructionCache(GetCurrentProcess(),entry,5);VirtualProtect(entry,5,protection,&ignored);return true;
 }
 
+using StraightCircleCall=unsigned(__thiscall*)(unsigned,unsigned,float,unsigned,unsigned);
+StraightCircleCall originalStraightCircle;
+unsigned __fastcall observeStraightCircle(unsigned self,unsigned,unsigned point,float radius,unsigned argument,unsigned lock){
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    const float x=read<float>(self+0x60),y=read<float>(self+0x64),length=read<float>(self+0x7c);
+    const unsigned result=originalStraightCircle(self,point,radius,argument,lock);
+    if(cpuDebugActive&&GetCurrentThreadId()==captureThread&&detailedFrame(frame,0,0)){
+        if(FILE* output=std::fopen("native-straight-circle.jsonl","ab")){
+            std::fprintf(output,"{\"frame\":%u,\"laser\":%u,\"circle\":[%.9g,%.9g,%.9g],\"before\":[%.9g,%.9g,%.9g],\"after\":[%.9g,%.9g,%.9g],\"result\":%u}\n",frame,self,read<float>(point),read<float>(point+4),radius,x,y,length,read<float>(self+0x60),read<float>(self+0x64),read<float>(self+0x7c),result);
+            std::fclose(output);
+        }
+    }
+    return result;
+}
+bool installStraightCircleObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0x12c9f0);
+    const unsigned char signature[]={0x55,0x8b,0xec,0x81,0xec,0x40,0x02,0x00,0x00};
+    if(std::memcmp(entry,signature,sizeof(signature)))return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,14,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,9);relativeJump(relay+9,reinterpret_cast<unsigned>(entry+9));
+    DWORD protection,ignored;
+    if(!VirtualProtect(entry,9,PAGE_EXECUTE_READWRITE,&protection))return false;
+    originalStraightCircle=reinterpret_cast<StraightCircleCall>(relay);
+    relativeJump(entry,reinterpret_cast<unsigned>(observeStraightCircle));for(int i=5;i<9;++i)entry[i]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,9);VirtualProtect(entry,9,protection,&ignored);return true;
+}
+
 using StraightGrazeCall=unsigned(__thiscall*)(unsigned,unsigned);
 StraightGrazeCall originalStraightGraze;
 unsigned __fastcall observeStraightGraze(unsigned self,unsigned,unsigned argument){
@@ -940,6 +969,7 @@ void writeBulletPositions(FILE* output, unsigned manager) {
     bool first = true;
     for (unsigned i=0; bullet && i<2000; ++i, bullet=read<unsigned>(bullet+4)) {
         const auto state = read<unsigned>(bullet+0x1044);
+        if(detail&&(state==3||state==4))std::fprintf(detail,"{\"frame\":%u,\"bullet\":%u,\"state\":%u,\"position\":[%.9g,%.9g],\"kind\":%u,\"flags\":%u,\"anm\":[%u,%u,%u,%u],\"timers\":[%u,%u]}\n",frame,bullet,state,read<float>(bullet+0x650),read<float>(bullet+0x654),unsigned(read<unsigned short>(bullet+0x1078)),read<unsigned>(bullet+0x10),read<unsigned>(bullet+0x34),read<unsigned>(bullet+0x40),read<unsigned>(bullet+0x44),read<unsigned>(bullet+0x46c),read<unsigned>(bullet+0x104c),read<unsigned>(bullet+0x1060));
         if (state!=1 && state!=2) continue; // 0x4ee3e9 selects live bullets.
         if(detail)std::fprintf(detail,"{\"frame\":%u,\"manager\":%u,\"bullet\":%u,\"kind\":%u,\"color\":%u,\"position\":[%.9g,%.9g],\"radius\":%.9g,\"scale\":%.9g,\"flags\":%u,\"changes\":%u,\"velocity\":[%.9g,%.9g],\"speed\":%.9g,\"angle\":%.9g}\n",frame,manager,bullet,unsigned(read<unsigned short>(bullet+0x1078)),unsigned(read<unsigned short>(bullet+0x107a)),read<float>(bullet+0x650),read<float>(bullet+0x654),read<float>(bullet+0x674),read<float>(bullet+0xfd4),read<unsigned>(bullet+0x10),read<unsigned>(bullet+0x6a8),read<float>(bullet+0x65c),read<float>(bullet+0x660),read<float>(bullet+0x668),read<float>(bullet+0x670));
         std::fprintf(output,"%s[%u,%u,%u,%u]",first?"":",",
@@ -1388,6 +1418,7 @@ extern "C" IDirect3D9* WINAPI observeCreate9(UINT sdkVersion) {
         if (rngTrace&&cpuDebugActive) std::fprintf(trace,"{\"anmChildObserverInstalled\":%s}\n",installAnmChildObserver()?"true":"false");
         if (rngTrace&&cpuDebugActive) std::fprintf(trace,"{\"anmDetachedObserverInstalled\":%s}\n",installAnmDetachedObserver()?"true":"false");
         if(rngTrace&&cpuDebugActive)std::fprintf(trace,"{\"straightGrazeObserverInstalled\":%s}\n",installStraightGrazeObserver()?"true":"false");
+        if(rngTrace&&cpuDebugActive)std::fprintf(trace,"{\"straightCircleObserverInstalled\":%s}\n",installStraightCircleObserver()?"true":"false");
         captureBulletPositions=GetEnvironmentVariableA("TH19_CAPTURE_BULLET_POSITIONS",nullptr,0)>0;
         if(const char* frames=std::getenv("TH19_CAPTURE_IMAGE_FRAMES")){
             while(*frames){

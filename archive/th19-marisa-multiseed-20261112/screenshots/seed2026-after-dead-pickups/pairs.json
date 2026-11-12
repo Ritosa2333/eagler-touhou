@@ -1,0 +1,30 @@
+{
+  "wasmSha256": "ce4f859f7286f5de5d73976f950ea951d2e402aa067a3691b64c797ec2cc672f",
+  "nativeTraceSha256": "e8282706bd7ad4d8bb1c49dc80596b504e56ba9c74dd72830db2bf07e300b2c4",
+  "pairs": [
+    {
+      "frame": 10720,
+      "status": "动画 RNG不一致",
+      "differentFramesThroughCurrent": 7565,
+      "image": "frame-10720.png",
+      "webImageSha256": "6e2e1851a671f05fab35a8f6699cc4d266ac6e59d58146848b6badecb3516572",
+      "nativeImageSha256": "7f78a7a3921abffcdf9c410207892b2a0528862df002c4dd3068ce2b8cce0bc9"
+    },
+    {
+      "frame": 10721,
+      "status": "动画 RNG不一致",
+      "differentFramesThroughCurrent": 7566,
+      "image": "frame-10721.png",
+      "webImageSha256": "e34eba19a98424de6ddc0401280658eb819204932f1f55f314f5dc4838db0e9c",
+      "nativeImageSha256": "afeca53c2331c9a92b8bf5c8042ee626a8c779df9d4a79730e16fb9749f92d1c"
+    },
+    {
+      "frame": 10725,
+      "status": "动画 RNG不一致",
+      "differentFramesThroughCurrent": 7570,
+      "image": "frame-10725.png",
+      "webImageSha256": "b8170ad40b42b90a646575c9ffad866f96166bcc4c0e84d7a3f5d7e877e080d6",
+      "nativeImageSha256": "2e6953d1045c694a64768eaa7f0640b4eaf1b946ac0314704815be26bb947d3a"
+    }
+  ]
+}

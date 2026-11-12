@@ -422,7 +422,7 @@ public:
     int convert_zanmu(float x,float y,float radius,int& ordinary_count);
     void spawn_pickup(int type,float x,float y,float vx,float vy);
     void scatter_charge_pickup(float x,float y);
-    void tick_pickups(float player_x,float player_y,bool bomb_collect=false);
+    void tick_pickups(float player_x,float player_y,bool bomb_collect=false,bool can_collect=true);
     void advance_vs_projectiles();
     ReflectionRng bullet_rng; // Native algorithm; shared replay seed is not wired yet.
     u32 next_id=1;
