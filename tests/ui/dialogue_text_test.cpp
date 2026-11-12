@@ -515,4 +515,105 @@ TEST(dialogue_text_negative_controls) {
     CHECK(!error.empty());
 }
 
+
+TEST(dialogue_rollback_restores_cache_handles_and_pixels) {
+    GameRandom random;
+    AnmEnvironment environment;
+    AnmManager manager{random, environment};
+    const auto bytes = synthetic_text_anm();
+    CHECK(manager.load(0, bytes.data(), u32(bytes.size())));
+    FakeSink sink;
+    DialogueText text;
+    text.bind_bubble_bank(-1);
+    MsgLine line;
+    line.text_cp932 = "first";
+    line.block = 1;
+    std::string error;
+    CHECK(text.submit(manager, sink, 0, line, 100.f, 200.f, raster_block, error));
+    const auto saved = text.capture_rollback(manager, sink);
+    const auto again = text.capture_rollback(manager, sink);
+    CHECK(saved.pixels == again.pixels); // No texture copy on unchanged frames.
+    AnmRegistry::SnapshotData registry;
+    CHECK(manager.registry.capture(registry));
+    const auto expected = sink.image.pixels;
+    line.text_cp932 = "later";
+    line.block = 2;
+    const auto erase = [](TextureImage& image, i32, i32, bool, u32, const std::string&) {
+        std::fill(image.pixels.begin(), image.pixels.end(), 0);
+        return true;
+    };
+    CHECK(text.submit(manager, sink, 0, line, 120.f, 240.f, erase, error));
+    CHECK(sink.image.pixels != expected); // Negative control: speculative write.
+    text.release(manager);
+    CHECK(manager.update(false));
+    CHECK(manager.registry.restore(registry));
+    const size_t spell_pixel = size_t(96) * sink.image.pitch;
+    sink.image.pixels[spell_pixel] = 0x5a;
+    auto expected_with_spell = expected;
+    expected_with_spell[spell_pixel] = 0x5a;
+    CHECK(text.restore_rollback(saved, manager, sink, error));
+    CHECK(sink.image.pixels == expected_with_spell);
+    CHECK(text.active());
+    const auto uploads = sink.uploads;
+    const auto count = manager.registry.count();
+    line.text_cp932 = "first";
+    line.block = 1;
+    CHECK(text.submit(manager, sink, 0, line, 100.f, 200.f, erase, error));
+    CHECK_EQ(sink.uploads, uploads); // Saved cache prevents duplicate submission.
+    CHECK_EQ(manager.registry.count(), count);
+    CHECK(sink.image.pixels == expected_with_spell);
+    auto broken = saved;
+    broken.pixels.reset();
+    CHECK(!text.restore_rollback(broken, manager, sink, error));
+}
+
+TEST(independent_real_bubble_restore_and_missing_restore_negative_control) {
+    GameRandom random;
+    AnmEnvironment environment;
+    AnmManager manager{random, environment};
+    const auto text_bytes = read_reference_anm("text.anm");
+    const auto front_bytes = read_reference_anm("front.anm");
+    CHECK(!text_bytes.empty()); CHECK(!front_bytes.empty());
+    CHECK(manager.load(0, text_bytes.data(), u32(text_bytes.size())));
+    CHECK(manager.load(3, front_bytes.data(), u32(front_bytes.size())));
+    DialogueText dialogue;
+    FakeSink sink;
+    MsgLine first;
+    first.text_cp932 = "first"; first.block = 1;
+    first.side = 1; first.bubble_width = 100.f;
+    std::string error;
+    CHECK(dialogue.submit(manager, sink, 0, first, 288.f, 64.f, raster_block, error));
+    auto state = dialogue.capture_rollback(manager, sink);
+    const auto saved_box = dialogue.bubble_handle();
+    CHECK(saved_box); CHECK(manager.registry.find(saved_box));
+    AnmRegistry::SnapshotData registry;
+    CHECK(manager.registry.capture(registry));
+    MsgLine speculative = first;
+    speculative.text_cp932 = "later"; speculative.block = 2;
+    CHECK(dialogue.submit(manager, sink, 0, speculative, 288.f, 64.f, raster_block, error));
+    CHECK(dialogue.bubble_handle() != saved_box);
+    CHECK(manager.registry.restore(registry));
+    // Deliberately omit the host dialogue restore: reproduces the mechanism.
+    CHECK(dialogue.submit(manager, sink, 0, first, 288.f, 64.f, raster_block, error));
+    AnmRegistry::SnapshotData negative;
+    CHECK(manager.registry.capture(negative));
+    CHECK(negative.generation > registry.generation);
+    CHECK(negative.active_count > registry.active_count);
+    std::printf("NEGATIVE original_generation=%u mutated_generation=%u original_active=%u mutated_active=%u\n",
+       registry.generation, negative.generation, registry.active_count, negative.active_count);
+    CHECK(manager.registry.restore(registry));
+    CHECK(dialogue.restore_rollback(state, manager, sink, error));
+    CHECK_EQ(dialogue.bubble_handle(), saved_box);
+    const auto uploads = sink.uploads;
+    CHECK(dialogue.submit(manager, sink, 0, first, 288.f, 64.f, raster_block, error));
+    AnmRegistry::SnapshotData positive;
+    CHECK(manager.registry.capture(positive));
+    CHECK_EQ(positive.generation, registry.generation);
+    CHECK_EQ(positive.active_count, registry.active_count);
+    CHECK_EQ(positive.entries.size(), registry.entries.size());
+    CHECK_EQ(sink.uploads, uploads);
+    std::printf("POSITIVE generation=%u active=%u saved_box=%u restored_box=%u\n",
+       positive.generation, positive.active_count, saved_box, dialogue.bubble_handle());
+}
+
 int main() { return th13test::run_all("text.anm 对话动态纹理"); }

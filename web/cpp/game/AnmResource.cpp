@@ -1,11 +1,28 @@
 #include "AnmResource.hpp"
 #include <cmath>
+#include <cstdint>
 #include <utility>
 namespace th13 {
 namespace {
 template<class T> T read(const u8* p){T v;std::memcpy(&v,p,sizeof v);return v;}
 bool span(u32 offset,u32 length,u32 size){return offset<=size&&length<=size-offset;}
 u32 pixel_size(u16 f){return f==1?4:f==2||f==3||f==5||f==6?2:f==4?3:f==7?1:0;}
+struct ContentIdentity {
+    u64 value=0xcbf29ce484222325ull;
+    void byte(u8 v)noexcept{value=(value^v)*0x100000001b3ull;}
+    void number(u64 v)noexcept{for(unsigned shift=0;shift<64;shift+=8)byte(u8(v>>shift));}
+    void real(float v)noexcept{u32 bits;std::memcpy(&bits,&v,sizeof bits);number(bits);}
+    void bytes(const u8* data,size_t size)noexcept{number(size);for(size_t i=0;i<size;++i)byte(data[i]);}
+};
+template<class T,class M>i32 table_index(const std::vector<T>& table,const M* member,const M* first)noexcept{
+    if(!member)return -1;
+    if(table.empty())return -2;
+    const auto address=reinterpret_cast<std::uintptr_t>(member);
+    const auto base=reinterpret_cast<std::uintptr_t>(first);
+    if(address<base)return -2;
+    const auto offset=address-base,index=offset/sizeof(T);
+    return offset%sizeof(T)==0&&index<table.size()?i32(index):-2;
+}
 }
 namespace {
 // 单文件 entry 链解析（open 与 append 共用）：内容追加到 target，
@@ -73,16 +90,56 @@ bool parse_entries(const u8* data,u32 size,AnmResource& target){
 }
 
 bool AnmResource::open(const u8* data,u32 size){
-    textures.clear();sprites.clear();scripts.clear();
+    textures.clear();sprites.clear();scripts.clear();content_identity_=0;
     AnmResource next;
     if(!parse_entries(data,size,next))return false;
-    *this=std::move(next);return true;
+    next.refresh_identity();*this=std::move(next);return true;
 }
 
 bool AnmResource::append(const u8* data,u32 size){
     if(textures.empty()&&sprites.empty()&&scripts.empty())return open(data,size);
     if(!parse_entries(data,size,*this))return false;
+    refresh_identity();
     return true;
+}
+
+u64 anm_script_identity(const std::vector<u8>& bytes)noexcept{
+    ContentIdentity id;id.number(0x414e4d5343524950ull);id.bytes(bytes.data(),bytes.size());return id.value;
+}
+u64 AnmResource::content_identity()const noexcept{
+    if(!content_identity_)refresh_identity();
+    return content_identity_;
+}
+void AnmResource::refresh_identity()const noexcept{
+    ContentIdentity id;id.number(0x414e4d5245530001ull);
+    id.number(textures.size());
+    for(const auto& t:textures){
+        id.bytes(reinterpret_cast<const u8*>(t.name.data()),t.name.size());
+        id.number(u32(t.kind));id.number(t.width);id.number(t.height);id.number(t.format);
+        id.number(t.pixel_width);id.number(t.pixel_height);id.number(t.pixel_format);
+        id.number(u16(t.source_x));id.number(u16(t.source_y));id.number(t.priority);
+        id.number(t.low_resolution_scale);id.bytes(t.pixels.data(),t.pixels.size());
+    }
+    id.number(sprites.size());
+    for(const auto& s:sprites){
+        id.number(s.source_id);id.number(s.texture);
+        id.real(s.x);id.real(s.y);id.real(s.width);id.real(s.height);
+        id.real(s.u0);id.real(s.v0);id.real(s.u1);id.real(s.v1);
+    }
+    id.number(scripts.size());
+    for(const auto& s:scripts){
+        id.number(u32(s.source_id));id.number(s.file_offset);
+        id.number(s.sprite_base);id.number(s.script_base);id.bytes(s.bytes.data(),s.bytes.size());
+    }
+    content_identity_=id.value;
+}
+i32 AnmResource::script_index(const std::vector<u8>* script)const noexcept{
+    const auto index=table_index(scripts,script,scripts.empty()?nullptr:&scripts[0].bytes);
+    return index>=0 && &scripts[u32(index)].bytes!=script ? -2 : index;
+}
+i32 AnmResource::sprite_index(const AnmSprite* sprite)const noexcept{
+    const auto index=table_index(sprites,sprite,sprites.data());
+    return index>=0 && &sprites[u32(index)]!=sprite ? -2 : index;
 }
 bool AnmTexture::rgba(std::vector<u8>& out) const {
     out.clear();if(kind!=Kind::Embedded)return false;

@@ -2243,6 +2243,7 @@ void StageEnemy::capture_fields(StageEnemy& out) const {
     out.body_invulnerable_clock = body_invulnerable_clock;
     out.damage_function = damage_function;
     out.pending_damage = pending_damage;
+    out.mp_boss_damage_remainder = mp_boss_damage_remainder;
     out.spell_active = spell_active;
     out.spell_base_life = spell_base_life;
     out.spell_life = spell_life;

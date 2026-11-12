@@ -713,13 +713,31 @@ bool RunScene::update() {
     //（原生出生帧 NaN x 实证）；不能同一帧先 spawn 后 update。
     score_popups.update(animations.rate);
     if (!battle.step(input)) return fail(battle.error());
+    // R-G: an exhausted team keeps playing for 180 active logical frames.
+    // The scene's pause/overlay/transition gates above freeze this clock;
+    // any revival interrupts the consecutive-wipe interval.
+    if (!battle.team_wiped()) team_wipe_frames_ = 0;
+    else if (!team_wipe_game_over_ && ++team_wipe_frames_ == 180) {
+        team_wipe_game_over_ = true;
+        return host.request_game_over() || fail("Team game-over request failed");
+    }
     // 4265a0 advances HUD+184 before it calls the dialogue interpreter.
     // MSG21 may create the clear event below: its birth frame stays at0.
     // ECL's direct -2 clear, on the other hand, already happened above.
     hud.tick_stage_clear();
     // 0x4274cc 的 MSG 步进属于 Update 28，不随 battle 在 20 执行。
     // 只锁存推进键面；回放游标与 record_input 仍在本任务消费一次。
-    const GameInput& dialogue_input = battle.seat_count >= 2 ? battle.seat_inputs[0] : input;
+    GameInput cooperative;
+    if (battle.seat_count >= 2) {
+        for (int seat = 0; seat < battle.seat_count; ++seat) {
+            const auto& lane = battle.seat_inputs[size_t(seat)];
+            cooperative.held |= lane.held;
+            cooperative.pressed |= lane.pressed;
+            for (size_t bit = 0; bit < cooperative.duration.size(); ++bit)
+                cooperative.duration[bit] = std::max(cooperative.duration[bit], lane.duration[bit]);
+        }
+    }
+    const GameInput& dialogue_input = battle.seat_count >= 2 ? cooperative : input;
     dialogue_advance_.z_pressed = (dialogue_input.pressed & 0x01u) != 0;
     dialogue_advance_.held = dialogue_input.held;
     dialogue_advance_.pressed = dialogue_input.pressed;

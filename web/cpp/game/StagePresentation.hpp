@@ -55,7 +55,7 @@ public:
     // 0x42b6d0 隐藏位（player+0x14698 bit3 的移植等价）：clear 帧已下发时
     // 门（prepare_next_stage）不再重复 interrupt（原生 0x42cd40 只在 clear
     // 调 0x42b6d0，门 0x42bfa0 不调）。
-    bool options_hidden() const noexcept { return options_hidden_; }
+    bool options_hidden() const noexcept { return player_effects_[0].options_hidden; }
     // 0x442960 隐藏支路（player+0x14698 bit3 且 +0x1469c>0x1d）：对每个
     // option 槽的两个根 VM 及其直接子体置 pending=1（label1）；原版清槽
     // active 标志 player+0xa2b8（不是根句柄），移植侧按 correctedPlan 等价
@@ -134,6 +134,20 @@ public:
     // 行：sync 重建走 fresh allocate 路径，restore 恢复的 registry VM 成
     // 孤儿滞留池（digest 含 registry → restore 后首帧即分歧），且新建
     // VM 的 age/RNG 消耗与连续基线不同源（M6 浏览器探针：302 vs 253）。
+    // Every player owns an independent ANM handle family. Team overlays and
+    // the registry retirement ledger remain shared by the world.
+    struct PlayerEffectsState {
+        std::array<u32, YoumuBomb::kSlots> youmu_slash_handles{};
+        std::vector<u32> youmu_slash_extra;
+        std::array<u32, 8> option_handles{}, full_option_handles{}, bomb_orb_handles{};
+        std::array<bool, 8> bomb_orb_exploding{};
+        std::array<u32, 5> bomb_ray_handles{};
+        u32 focus_handle = 0;
+        i32 option_character = -1, option_count = -1;
+        bool option_anchor_deferred = false, option_rebuild_pending = false;
+        bool options_hidden = false, death_options_queued = false, full_options = false;
+        u32 bomb_generation = 0, bomb_background = 0, bomb_beam = 0;
+    };
     struct SnapshotData {
         struct EnemyVisualData { u32 serial = 0; i32 script = -1; bool has_vm = false; AnmVm vm; };
         struct BulletSlotData { bool has_vm = false; AnmVm vm; i32 script = -1, color = -1, source_type = 0, source_color = 0; u32 generation = 0; bool active = false; };
@@ -172,6 +186,7 @@ public:
         bool full_options = false, frame_synced = false;
         u32 bomb_generation = 0, bomb_background = 0, bomb_beam = 0;
         std::vector<u32> player_effect_handles;
+        std::array<PlayerEffectsState, 2> teammate_effects{};
     };
     bool capture_presentation(SnapshotData& out) const;
     // Recreate embedded VMs and return the old-to-new identity map so the
@@ -240,8 +255,6 @@ private:
     // slot 0..59 ↔ 句柄一一对应（ctx+0x610 anm id 区）；slot=-1（cursor
     // 越界写）= 仅视觉、无战斗槽，挂 youmu_slash_extra_。VM 生命由脚本自灭
     // （op1）→ set_vm(alive=false) 清槽；rotation.z 回填 = ins_119 抽后值。
-    std::array<u32, YoumuBomb::kSlots> youmu_slash_handles_{};
-    std::vector<u32> youmu_slash_extra_;
     // file≥2 合并 stage bank 的文件内局部脚本号 → 合并全局号偏移
     //（0x4243e0 用 file_table[e.anm_file] 文件对象 + 局部脚本；append 保
     // 留文件局部 source_id，表内升序 → 回绕即文件边界）。
@@ -311,29 +324,14 @@ private:
     std::array<i32, 2> teammate_tilts_{};
     // 00442960 / 00444df0：判定点和卫星本体是管理器中的真实 VM，
     // 不在直绘 pass 再画一次。位置只读战斗单一状态，生命周期由句柄池回收。
-    u32 focus_handle_ = 0;
+    std::array<PlayerEffectsState, 3> player_effects_{};
     std::array<u32, 3> youmu_charge_handles_{};
-    std::array<u32, 8> option_handles_{}, full_option_handles_{}, bomb_orb_handles_{};
-    bool option_anchor_deferred_ = false;
-    // 门内旧 option 树已由 0x442960 清槽退场：sync_player_options 不再按
-    // missing 重建，直到 0x441b00 label2 激活（activate_player_effects）后
-    // 由 0x444df0 语义重建（0x441b00 先于 0x444df0，重建树不接 label2）。
-    bool option_rebuild_pending_ = false;
-    // player+0x14698 bit3 的移植对应物：0x42b6d0 置位、0x441b00 清除。
-    // 置位期间 sync_player_options 走 0x442960 隐藏支路——把 option 槽位置
-    // 钉在 player+0x5c4/+0x5c8（port：battle.player_x/player_y）并跳过
-    // per-slot 偏移更新，而不是读门内已过时的 battle.options[i].x/y。
-    bool options_hidden_ = false;
-    std::array<bool, 8> bomb_orb_exploding_{};
-    u32 bomb_generation_=0,bomb_background_=0,bomb_beam_=0;
-    std::array<u32,5> bomb_ray_handles_{};
     std::vector<u32> player_effect_handles_;
-    i32 option_character_ = -1, option_count_ = -1;
-    bool full_options_ = false;
-    // 0x444a10 已对 option 根/子体排队 label1（每次死亡只排一次）。
-    bool death_options_queued_ = false;
-    bool sync_player_effects(StageBattle&);
-    bool sync_bomb_effects(const StageBattle&);
+    bool sync_all_player_effects(StageBattle&);
+    bool sync_player_options(StageBattle&, bool power_rebuild, i32 seat);
+    i32 player_bank(i32 seat) const { return seat ? banks.teammate_player[size_t(seat - 1)] : banks.player; }
+    bool sync_player_effects(StageBattle&, i32 seat = -1);
+    bool sync_bomb_effects(const StageBattle&, i32 seat);
     // 主链 update 之后（0x46f170 遍历完成）的收尾：四角几何快照（供下一
     // battle.step 的 0x446531 剔除用，须取 post-tick 的 VM 状态）、脚本自灭
     // 检出（0x4464d0 查无 VM 语义）与留尸出池。挂 AnmManager::after_main_update。
@@ -342,6 +340,8 @@ private:
     bool frame_synced_ = false;      // sync 完成且钩子尚未消费（暂停/覆盖层跳过）
     u32 create_player_effect(i32 bank, i32 script, i32 layer, u32 ordering,
                              const Vec3& position);
+    u32 create_player_effect(i32 bank, i32 script, i32 layer, u32 ordering,
+                             const Vec3& position, u8 owner);
     bool end_player_effect(u32& handle, bool retire);
     i32 player_script_ = -1, player_tilt_ = 0;
     i32 player_shot_sprite_;

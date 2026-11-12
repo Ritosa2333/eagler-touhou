@@ -1,11 +1,11 @@
 // TH13 MP 关头延续快照（M9 StageEntry）。
 // 跨关推进（stage N → N+1）时的完整延续面：全席资源（残机/碎片/Bomb/
-// Power/死亡数）、共享会话态（灵界槽/最大得点/Graze/点道具/碎片阈值下标/
+// Power/死亡数/碎片阈值下标）、共享会话态（灵界槽/最大得点/Graze/点道具/
 // 好结局资格）、双 RNG 位相、灵界生命周期（mode/owner/generation/计时）、
 // 关卡号与章节帧。ReplayArchive 的关头表按章节携带本编码——回放 seek 到
 // 章节 C 时重建 C 的 StageEntry 态（不伪切当前帧号：从 C 的 firstFrame
 // 起重放输入，WorldState 按关头重建后逐帧推进）。
-// 编码为显式线格式（v1）：无指针/无 padding/无容器序列化陷阱。
+// 编码为显式线格式（v2，兼容读取 v1）：无指针/无 padding/无容器序列化陷阱。
 #pragma once
 
 #include "../game/GameInput.hpp"
@@ -22,7 +22,7 @@ class StageBattle;  // game/StageBattle.hpp（StageEntry.cpp 内含）
 namespace th13::multiplayer {
 
 struct StageEntry {
-    static constexpr std::uint32_t Version = 1;
+    static constexpr std::uint32_t Version = 2, LegacyVersion = 1;
     static constexpr std::uint32_t MaxSeats = 3;
 
     std::uint32_t stage = 1;            // 关号（1..6/7）
@@ -39,6 +39,7 @@ struct StageEntry {
     // 全席资源（RULES R-X：席位资源独立；幽灵席也延续）。
     struct Seat {
         std::int32_t extra_lives = 2, life_pieces = 0;
+        std::int32_t life_piece_threshold_index = 0;
         std::int32_t bombs = 2, bomb_pieces = 0;
         std::int32_t power = 100, max_power = 400, power_step = 100;
         std::int32_t deaths = 0;
@@ -67,7 +68,7 @@ struct StageEntry {
         return stage >= 1 && stage <= 7 && seat_count >= 1 && seat_count <= MaxSeats;
     }
 
-    // 线格式编码/解码（v1；非法输入整体拒绝）。
+    // 线格式编码/解码（v2，读取 v1；非法输入整体拒绝）。
     std::vector<std::uint8_t> Encode() const;
     static bool Decode(const std::uint8_t* bytes, std::size_t size, StageEntry& out);
     // 从权威面取值（battle 的共享态 + 席位资源 + RNG；调用方供 RNG 位相）。
@@ -81,6 +82,13 @@ struct StageEntry {
     void Restore(th13::StageBattle& battle, SessionState& progress,
                  HudScoreState& score, std::uint16_t& game_seed, std::uint32_t& game_index,
                  std::uint16_t& visual_seed, std::uint32_t& visual_index) const;
+    // Live clear activation builds the HUD before enabling the new seats.
+    // Seed its first player with the revival resources, and include a final
+    // death still in its animation among the seats revived after restoration.
+    // Capture/Restore alone retain the raw chapter snapshot for replay seeks.
+    void PrepareStageClear(HudPlayerState& first_player);
+    // Live activation keeps the new stage's clocks and constructor RNG draws.
+    void RestoreBattleCarry(th13::StageBattle& battle) const;
 };
 
 }  // namespace th13::multiplayer

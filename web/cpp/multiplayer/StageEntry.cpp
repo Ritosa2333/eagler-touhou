@@ -8,7 +8,7 @@
 namespace th13::multiplayer {
 
 namespace {
-// 线布局（v1，定长）：
+// 线布局（v2；v1 读取时以原共享下标迁移各席）：
 //   version(4) stage(4) chapter_frame(4) seatCount(4)
 //   shared: ending(4) goodEndings(4) pointItems(4) maxPoint(4) maxPointCap(4)
 //           graze(4) lifePieceIndex(4) score(4) highScore(4)
@@ -16,11 +16,11 @@ namespace {
 //   rng: gameSeed(2) gameIndex(4) visualSeed(2) visualIndex(4)
 //   seats × seatCount: lives(4) lifePieces(4) bombs(4) bombPieces(4) power(4)
 //                      maxPower(4) powerStep(4) deaths(4) modeFlags(4)
-//                      character(4) ghost(4)
+//                      character(4) ghost(4) lifePieceIndex(4)
 //                      input: held(4) previous(4) repeated(4) pressed(4)
 //                             released(4) longHeld(4) repeatAge(32*4)
 //                             duration(32*4)
-constexpr std::size_t kSeatBytes = 11 * 4 + 6 * 4 + 32 * 4 * 2;
+constexpr std::size_t kSeatBytes = 12 * 4 + 6 * 4 + 32 * 4 * 2;
 // 头部：4(头) + 9×4(shared) + 4×4(trance) + 2+4+2+4(rng) = 80。
 constexpr std::size_t kHeaderBytes = 4 * 4 + 9 * 4 + 4 * 4 + 2 + 4 + 2 + 4;
 
@@ -76,6 +76,7 @@ std::vector<std::uint8_t> StageEntry::Encode() const {
         Write32(out, s.mode_flags);
         Write32(out, std::uint32_t(s.character));
         Write32(out, s.ghost ? 1u : 0u);
+        Write32(out, std::uint32_t(s.life_piece_threshold_index));
         const GameInput& input = inputs[seat];
         Write32(out, input.held);
         Write32(out, input.previous);
@@ -91,13 +92,15 @@ std::vector<std::uint8_t> StageEntry::Encode() const {
 
 bool StageEntry::Decode(const std::uint8_t* bytes, std::size_t size, StageEntry& out) {
     if (!bytes || size < kHeaderBytes) return false;
-    if (Read32(bytes) != Version) return false;
+    const auto version = Read32(bytes);
+    if (version != Version && version != LegacyVersion) return false;
     StageEntry entry;
     entry.stage = Read32(bytes + 4);
     entry.chapter_frame = Read32(bytes + 8);
     const std::uint32_t seatCount = Read32(bytes + 12);
     if (seatCount < 1 || seatCount > MaxSeats) return false;
-    if (size != kHeaderBytes + seatCount * kSeatBytes) return false;
+    const auto seat_bytes = version == Version ? kSeatBytes : kSeatBytes - 4;
+    if (size != kHeaderBytes + seatCount * seat_bytes) return false;
     const std::uint8_t* p = bytes + 16;
     // shared 段 9×4（ending..highScore，Encode 同序）。
     entry.ending_points = std::int32_t(Read32(p));
@@ -133,20 +136,23 @@ bool StageEntry::Decode(const std::uint8_t* bytes, std::size_t size, StageEntry&
         s.mode_flags = Read32(p + 32);
         s.character = std::int32_t(Read32(p + 36));
         s.ghost = Read32(p + 40) != 0;
+        s.life_piece_threshold_index = version == Version ? std::int32_t(Read32(p + 44))
+                                                           : entry.life_piece_threshold_index;
+        const auto* input_bytes = p + (version == Version ? 48 : 44);
         GameInput& input = entry.inputs[seat];
-        input.held = Read32(p + 44);
-        input.previous = Read32(p + 48);
-        input.repeated = Read32(p + 52);
-        input.pressed = Read32(p + 56);
-        input.released = Read32(p + 60);
-        input.long_held = Read32(p + 64);
-        const std::uint8_t* q = p + 68;
+        input.held = Read32(input_bytes + 0);
+        input.previous = Read32(input_bytes + 4);
+        input.repeated = Read32(input_bytes + 8);
+        input.pressed = Read32(input_bytes + 12);
+        input.released = Read32(input_bytes + 16);
+        input.long_held = Read32(input_bytes + 20);
+        const std::uint8_t* q = input_bytes + 24;
         for (std::uint32_t bit = 0; bit < 32; ++bit)
             input.repeat_age[bit] = Read32(q + bit * 4);
         q += 32 * 4;
         for (std::uint32_t bit = 0; bit < 32; ++bit)
             input.duration[bit] = Read32(q + bit * 4);
-        p += kSeatBytes;
+        p += seat_bytes;
     }
     entry.seat_count = seatCount;
     if (!entry.valid()) return false;
@@ -175,6 +181,7 @@ void StageEntry::Capture(const StageBattle& battle, const SessionState& progress
         const HudPlayerState& hud = battle.seat_huds[seat];
         s.extra_lives = hud.extra_lives;
         s.life_pieces = hud.life_pieces;
+        s.life_piece_threshold_index = hud.life_piece_threshold_index;
         s.bombs = hud.bombs;
         s.bomb_pieces = hud.bomb_pieces;
         s.power = hud.power;
@@ -212,11 +219,34 @@ void StageEntry::Restore(StageBattle& battle, SessionState& progress,
     progress.life_piece_threshold_index = life_piece_threshold_index;
     progress.high_score = high_score;
     score.score = this->score;  // HudScoreState::score ← 成员（参数名遮蔽）
+    RestoreBattleCarry(battle);
+    game_seed = this->game_seed;
+    game_index = this->game_index;
+    visual_seed = this->visual_seed;
+    visual_index = this->visual_index;
+}
+
+void StageEntry::PrepareStageClear(HudPlayerState& first_player) {
+    for (std::uint32_t seat = 0; seat < seat_count && seat < MaxSeats; ++seat) {
+        // The last life is deducted at death commit, before the 30-frame
+        // animation marks the seat as a ghost. Clear revives both phases.
+        if (seats[seat].extra_lives < 0) seats[seat].ghost = true;
+    }
+    if (seats[0].ghost) {
+        first_player.extra_lives = std::max(0, first_player.extra_lives);
+        first_player.bombs = 2;
+        first_player.bomb_pieces = 0;
+        first_player.power = first_player.max_power / 2;
+    }
+}
+
+void StageEntry::RestoreBattleCarry(StageBattle& battle) const {
     for (std::uint32_t seat = 0; seat < seat_count && seat < MaxSeats; ++seat) {
         const Seat& s = seats[seat];
         HudPlayerState& hud = battle.seat_huds[seat];
         hud.extra_lives = s.extra_lives;
         hud.life_pieces = s.life_pieces;
+        hud.life_piece_threshold_index = s.life_piece_threshold_index;
         hud.bombs = s.bombs;
         hud.bomb_pieces = s.bomb_pieces;
         hud.power = s.power;
@@ -226,16 +256,14 @@ void StageEntry::Restore(StageBattle& battle, SessionState& progress,
         hud.mode_flags = s.mode_flags;
         battle.seat_characters[seat] = s.character;
         battle.seats[seat].ghost = s.ghost;
+        battle.seats[seat].life_transfer_state = 0;
+        battle.seats[seat].power_transfer_state = 0;
         battle.seat_inputs[seat] = inputs[seat];
     }
     battle.trance_mode = static_cast<StageBattle::TranceMode>(trance_mode);
     battle.trance_owner_seat = trance_owner_seat;
     battle.trance_generation = trance_generation;
     battle.trance_task_frame_ = trance_task_frame;
-    game_seed = this->game_seed;
-    game_index = this->game_index;
-    visual_seed = this->visual_seed;
-    visual_index = this->visual_index;
 }
 
 }  // namespace th13::multiplayer

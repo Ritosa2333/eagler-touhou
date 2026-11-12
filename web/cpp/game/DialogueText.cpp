@@ -27,6 +27,67 @@ bool read_region(const AnmResource& resource, i32 script, i32& x, i32& y, i32& w
 }
 }  // namespace
 
+DialogueText::RollbackState DialogueText::capture_rollback(
+    AnmManager& manager, DialogueTextureSink& sink) const {
+    const auto* resource = manager.resource(0);
+    const u32 pixel_texture = resource ? sink.texture(*resource, 0) : 0;
+    auto regions = regions_;
+    if (resource)
+        for (i32 i = 0; i < kVmCount; ++i)
+            read_region(*resource, i, regions[i].x, regions[i].y,
+                        regions[i].width, regions[i].height);
+    if (pixel_texture != rollback_texture_) rollback_pixels_.reset();
+    rollback_texture_ = pixel_texture;
+    if (!rollback_pixels_ && pixel_texture) {
+        if (const auto* image = sink.pixels(pixel_texture)) {
+            auto pixels = std::make_shared<std::vector<u8>>();
+            for (const auto& region : regions)
+                for (i32 y = 0; y < region.height; ++y) {
+                    const auto* row = image->pixels.data() + size_t(region.y + y) * image->pitch + size_t(region.x) * 2;
+                    pixels->insert(pixels->end(), row, row + region.width * 2);
+                }
+            rollback_pixels_ = pixels;
+        }
+    }
+    return {handles_, regions, cached_text_, cached_block_, cached_, cached_line_,
+            box_, texture_, anchor_y_, anchor_y_set_, pixel_texture, rollback_pixels_};
+}
+
+bool DialogueText::restore_rollback(const RollbackState& state, AnmManager& manager,
+                                  DialogueTextureSink& sink, std::string& error) {
+    if (state.pixel_texture) {
+        auto* image = sink.pixels(state.pixel_texture);
+        if (!image || !state.pixels) {
+            error = "Dialogue rollback texture unavailable";
+            return false;
+        }
+        size_t offset = 0;
+        for (const auto& region : state.regions) {
+            for (i32 y = 0; y < region.height; ++y) {
+                auto* row = image->pixels.data() + size_t(region.y + y) * image->pitch + size_t(region.x) * 2;
+                std::memcpy(row, state.pixels->data() + offset, size_t(region.width) * 2);
+                offset += size_t(region.width) * 2;
+            }
+            sink.changed(state.pixel_texture, {u32(region.x), u32(region.y),
+                u32(region.x + region.width), u32(region.y + region.height)});
+        }
+    }
+    handles_ = state.handles;
+    regions_ = state.regions;
+    cached_text_ = state.text;
+    cached_block_ = state.block;
+    cached_ = state.cached;
+    cached_line_ = state.lines;
+    box_ = state.box;
+    texture_ = state.texture;
+    anchor_y_ = state.anchor_y;
+    anchor_y_set_ = state.anchor_y_set;
+    manager_ = &manager;
+    rollback_pixels_ = state.pixels;
+    rollback_texture_ = state.pixel_texture;
+    return true;
+}
+
 bool DialogueText::ensure(AnmManager& manager, DialogueTextureSink& sink, std::string& error) {
     AnmResource* resource = manager.resource(0);
     if (!resource) {
@@ -87,6 +148,7 @@ bool DialogueText::ensure(AnmManager& manager, DialogueTextureSink& sink, std::s
 }
 
 bool DialogueText::blank(DialogueTextureSink& sink, const Region& region, std::string& error) {
+    rollback_pixels_.reset();
     TextureImage* image = sink.pixels(texture_);
     if (!image) {
         error = "text.anm texture0 pixels unavailable";
@@ -143,6 +205,7 @@ bool DialogueText::request_label(AnmManager& manager, u32 handle, i32 label,
 
 bool DialogueText::copy_strip(DialogueTextureSink& sink, const Region& region,
                               std::string& error) {
+    rollback_pixels_.reset();
     TextureImage* image = sink.pixels(texture_);
     if (!image) {
         error = "text.anm texture0 pixels unavailable";
@@ -349,6 +412,8 @@ bool DialogueText::set_visible(AnmManager& manager, bool visible, std::string& e
 }
 
 void DialogueText::release(AnmManager& manager) noexcept {
+    rollback_pixels_.reset();
+    rollback_texture_ = 0;
     for (u32& handle : handles_) manager.retire(handle);
     handles_.fill(0);
     if (box_) manager.retire(box_);

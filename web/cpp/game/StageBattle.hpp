@@ -226,6 +226,7 @@ struct StagePlayerState {
     bool ghost = false;
     // M5/R-I9：送残/送 P 计数（AdvanceLifeTransfer 状态字节：taps*32+剩余窗）。
     u8 life_transfer_state = 0;
+    u8 power_transfer_state = 0;
     Phase phase = Phase::Active;
     i32 phase_frame = 0, invulnerable = 0;
     // 上一帧的 phase_frame（0x443240 蓝帧判据的 pre-increment 快照）：
@@ -584,6 +585,7 @@ public:
         auto& donor_hud = seat_huds[size_t(donor)];
         auto& recipient_hud = seat_huds[size_t(recipient)];
         if (!seats[size_t(recipient)].ghost) return false;   // 非幽灵不可救
+        if (seats[size_t(donor)].ghost || seats[size_t(donor)].dead) return false;
         if (donor_hud.extra_lives <= 0) return false;         // 无命可送
         --donor_hud.extra_lives;
         seats[size_t(recipient)].ghost = false;
@@ -591,10 +593,14 @@ public:
         // SP 重生资源（R-G：救援数值用本作 SP 上限与初始 Bomb）。
         recipient_hud.bombs = 2;
         recipient_hud.bomb_pieces = 0;
+        recipient_hud.extra_lives = std::max(0, recipient_hud.extra_lives);
+        recipient_hud.power = recipient_hud.max_power / 2;
+        seats[size_t(recipient)].life_transfer_state = 0;
+        seats[size_t(recipient)].power_transfer_state = 0;
         // 位置/相位复位（Entering 重生态由 update_player 的重生序接管）。
         seats[size_t(recipient)].phase = StagePlayerState::Phase::Active;
         seats[size_t(recipient)].phase_frame = 0;
-        seats[size_t(recipient)].invulnerable = 120;
+        seats[size_t(recipient)].invulnerable = 240;
         return true;
     }
     // 过关复活（R-G）：stage 切换时清全部幽灵位（过关复活=全员可操作）。
@@ -605,6 +611,10 @@ public:
             seats[size_t(seat)].dead = false;
             seat_huds[size_t(seat)].bombs = 2;
             seat_huds[size_t(seat)].bomb_pieces = 0;
+            seat_huds[size_t(seat)].extra_lives = std::max(0, seat_huds[size_t(seat)].extra_lives);
+            seat_huds[size_t(seat)].power = seat_huds[size_t(seat)].max_power / 2;
+            seats[size_t(seat)].life_transfer_state = 0;
+            seats[size_t(seat)].power_transfer_state = 0;
             seats[size_t(seat)].phase = StagePlayerState::Phase::Active;
             seats[size_t(seat)].phase_frame = 0;
             seats[size_t(seat)].invulnerable = 120;
@@ -617,6 +627,7 @@ public:
     }
 
 private:
+    void update_transfers();
     bool player_prepared_ = false;
     void rebuild_options_for_power();
     // M3：单席弹-玩家碰撞体（collide_player_bullet 的 MP 分派按席位循环
@@ -658,7 +669,8 @@ private:
     bool kill_player();
     bool commit_death();
     bool commit_death_normal();
-    bool update_player(const GameInput&);
+    bool prepare_expired_deathbombs(std::array<bool, 3>&);
+    bool update_player(const GameInput&, bool deathbomb_prepared = false);
     StageBattleServices* host_ = nullptr;
     SessionState* progress_ = nullptr;
     HudPlayerState* player_ = nullptr;

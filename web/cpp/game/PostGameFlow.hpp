@@ -81,6 +81,20 @@ public:
                  PostGamePlatform& host)
         : progress_(progress), player_(player), score_(score), host_(host) {}
 
+    struct RollbackState {
+        OverlayState state_;
+        u32 age_;
+        bool clear_sequence_;
+        u32 clear_frame_;
+    };
+    RollbackState capture_rollback() const { return {state_, age_, clear_sequence_, clear_frame_}; }
+    void restore_rollback(const RollbackState& state) {
+        state_ = state.state_;
+        age_ = state.age_;
+        clear_sequence_ = state.clear_sequence_;
+        clear_frame_ = state.clear_frame_;
+    }
+
     OverlayState state() const { return state_; }
     u32 age() const { return age_; }
     bool frozen() const { return (progress_.scene_flags & 0x10u) != 0; }
