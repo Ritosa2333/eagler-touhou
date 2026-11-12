@@ -51,6 +51,8 @@ Enemy& GameWorld::spawn_enemy(const std::string& sub_name,float x,float y,i32 li
     for(auto*p:scripts)for(size_t i=e.animation_files.size();i<p->anims.size();++i)
         e.animation_files.push_back(p->anims[i]);
     e.id=next_id++;e.set_absolute_position(x,y);e.previous_x=x;e.previous_y=y;e.life=life;e.item=item;e.score=score;
+    extern bool traceOpeningRng;
+    if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"spawn\",\"id\":%u,\"position\":[%.9g,%.9g]}\n",battle_frame,e.id,x,y);
     last_spawned_id=e.id;
     e.vm=std::make_unique<EclVm>();
     // attach the FULL program set so cross-file sub names resolve (Wave01_GirlB01 etc.)
@@ -238,6 +240,8 @@ bool GameWorld::fire_bullets(const LaserShooter&s,float ox,float oy){
         const float randomAngle=(s.aim_mode==6||s.aim_mode==8)?bullet_rng.signedUnit():0;
         const float randomSpeed=(s.aim_mode==7||s.aim_mode==8)?bullet_rng.unit():0;
         BulletPatternPoint p;if(!nativeBulletPattern(s.aim_mode,s.count1,s.count2,col,row,s.angle,s.angle2,s.speed,s.speed2,aim,p,randomAngle,randomSpeed))return false;
+        extern bool traceOpeningRng;
+        if(traceOpeningRng)std::printf("BULLETDBG {\"frame\":%d,\"event\":\"pattern\",\"mode\":%d,\"counts\":[%d,%d],\"index\":[%d,%d],\"kind\":%d,\"color\":%d,\"position\":[%.9g,%.9g],\"angles\":[%.9g,%.9g,%.9g,%.9g],\"speed\":%.9g}\n",battle_frame,s.aim_mode,s.count1,s.count2,col,row,s.type,s.color,x,y,s.angle,s.angle2,aim,p.angle,p.speed);
         // A full native pool refuses the new bullet; existing live bullets stay.
         // Keep the emitter's random draws in order even when its pool is full.
         if(bullets.size()>=bullet_capacity){++dropped_bullets;continue;}
@@ -246,7 +250,9 @@ bool GameWorld::fire_bullets(const LaserShooter&s,float ox,float oy){
         const double cosine=std::cos(double(p.angle)), sine=std::sin(double(p.angle));
         auto&b=spawn_bullet();b.x=x+float(cosine*s.muzzle_radius);b.y=y+float(sine*s.muzzle_radius);
         b.kind=s.type;b.color=s.color;b.sprite=sprite;b.scripted=true;
-        b.vx=float(cosine*p.speed);b.vy=float(sine*p.speed);
+        // 0x4f42b3 reads the unwrapped stack angle retained at 0x4f3ba6.
+        b.vx=float(std::cos(double(p.launch_angle))*p.speed);
+        b.vy=float(std::sin(double(p.launch_angle))*p.speed);
         b.launch_speed=p.speed;
         b.cancel_script=nativeBulletCancelScript(b.kind,b.color);b.visual_heading=p.angle;b.changes.records=s.changes;b.change_sound=s.end_sound;
         if(bullet_scripts){auto it=bullet_scripts->find(nativeBulletAnimation(s.type));if(it!=bullet_scripts->end()){
@@ -291,6 +297,8 @@ Bullet& GameWorld::spawn_bullet(){
 }
 void GameWorld::retire_bullet(Bullet& bullet){
     if(bullet.state==4)return;
+    extern bool traceOpeningRng;
+    if(traceOpeningRng)std::printf("BULLETDBG {\"frame\":%d,\"event\":\"retire\",\"id\":%u,\"type\":[%d,%d],\"state\":%d,\"position\":[%.9g,%.9g],\"age\":%d,\"flags\":%u,\"cursor\":%d}\n",battle_frame,bullet.id,bullet.kind,bullet.color,bullet.state,bullet.x,bullet.y,bullet.age,bullet.flags,bullet.changes.cursor);
     // 0x4f50fb preserves the movement bit when pushing onto the free list.
     if(reward_mode==2)reusable_bullet_motion_.push_back(bullet.motion_advanced);
     bullet.state=4;
@@ -305,6 +313,8 @@ void GameWorld::clear_bullets(){
 Spirit& GameWorld::spawn_spirit(float x,float y){spirits.emplace_back();spirits.back().id=next_id++;spirits.back().x=x;spirits.back().y=y;return spirits.back();}
 void GameWorld::launch_animal_spirit(const Enemy& enemy){
     const SpiritRequest request{enemy.x,enemy.y,deathSpiritKind(enemy.x,enemy.y,player_x,player_y),enemy.ecl_ints[2]};
+    extern bool traceOpeningRng;
+    if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"animal-launch\",\"id\":%u,\"kind\":%d,\"position\":[%.9g,%.9g],\"player\":[%.9g,%.9g],\"seed\":%u}\n",battle_frame,enemy.id,request.kind,enemy.x,enemy.y,player_x,player_y,AnmVm::random_checkpoint(true));
     if(reward_mode!=2){
         spirit_requests.push_back(request);
         return;
@@ -369,6 +379,10 @@ bool GameWorld::damage_enemy(Enemy& e,int damage,bool forced,u32 damage_frame){
         }
         if(e.life>0||(e.flags&0x80))return false;
     }
+    return dispatch_enemy_death(e);
+}
+bool GameWorld::dispatch_enemy_death(Enemy& e){
+    if(!e.active||e.death_pending||!e.pending_phase.empty())return false;
     // 0x50c4ca: the death callback runs after death effects/rewards. Keep the
     // host until the damage pass ends, so an ECL spawn cannot invalidate a
     // caller's enemy iteration. Only native flag 0x08000000 preserves it.
@@ -381,6 +395,8 @@ bool GameWorld::damage_enemy(Enemy& e,int damage,bool forced,u32 damage_frame){
     if(e.item>0)spawn_pickup(e.item,e.x,e.y,0,-2.2f);
     e.item=0; // 0x50c3c5: an item is dropped once, even if the host revives.
     // 0x50c6d0 selects a scatter heading before checking the extra-drop count.
+    extern bool traceOpeningRng;
+    if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"death\",\"id\":%u,\"position\":[%.9g,%.9g],\"status\":%u,\"seed\":%u}\n",battle_frame,e.id,e.x,e.y,e.status_flags,AnmVm::random_checkpoint(true));
     AnmVm::rand_signed_unit(3.14159265359f,true);
     // 0x50c1f0 -> 0x549780: excluded actors do not extend/count the chain.
     // ECL 1032 supplies the extension (default 20), capped at 60 frames.
@@ -481,6 +497,8 @@ void GameWorld::record_bullet_cancel(Bullet& bullet,float x,float y,bool initial
     sound_events.push_back(71);
 }
 void GameWorld::cancel_bullet(Bullet& bullet,bool inlineAnimation){
+    extern bool traceOpeningRng;
+    if(traceOpeningRng)std::printf("BULLETDBG {\"frame\":%d,\"event\":\"cancel\",\"id\":%u,\"type\":[%d,%d],\"state\":%d,\"position\":[%.9g,%.9g],\"age\":%d,\"flags\":%u,\"cursor\":%d}\n",battle_frame,bullet.id,bullet.kind,bullet.color,bullet.state,bullet.x,bullet.y,bullet.age,bullet.flags,bullet.changes.cursor);
     if(inlineAnimation&&bullet.animation.stream){
         bullet.animation.interrupt(1);
         bullet.animation.tick();
@@ -494,6 +512,8 @@ void GameWorld::cancel_bullet(Bullet& bullet,bool inlineAnimation){
     }
 }
 int GameWorld::cancel_bullets_circle(float x,float y,float radius,int limit,bool respect_lock){
+    extern bool traceOpeningRng;
+    if(traceOpeningRng)std::printf("BULLETDBG {\"frame\":%d,\"event\":\"circle\",\"position\":[%.9g,%.9g],\"radius\":%.9g,\"lock\":%d}\n",battle_frame,x,y,radius,respect_lock);
     // ECL 615/616 calls 0x4ee880, which keeps the slot alive during its cancel ANM.
     const bool scriptClear=reward_mode==2&&!respect_lock;
     int count=0;
@@ -528,6 +548,8 @@ int GameWorld::cancel_bullets_polygon(float x,float y,float radius,float angle,i
  }return count;
 }
 int GameWorld::cancel_bullets_rect(float x,float y,float width,float height,float angle){
+    extern bool traceOpeningRng;
+    if(traceOpeningRng)std::printf("BULLETDBG {\"frame\":%d,\"event\":\"rectangle\",\"position\":[%.9g,%.9g],\"size\":[%.9g,%.9g],\"angle\":%.9g}\n",battle_frame,x,y,width,height,angle);
     // 0x4ee0d0 checks both the rectangle and the field using the bullet radius.
     int count=0;
     const bool versus=reward_mode==2;
@@ -644,6 +666,8 @@ int GameWorld::cancel_lasers_region(const std::function<bool(float,float)>& insi
         // 0x52b250 reads the fixed laser rectangle registered before the bomb.
         if(rectangleSample&&base.fixed())lasers[i].cut_contact=base.contact_span();
         lasers[i].length=float(first)*16;bool kept=first>0;
+        extern bool traceOpeningRng;
+        if(traceOpeningRng&&base.fixed())std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"fixed-cut\",\"id\":%u,\"position\":[%.9g,%.9g],\"angle\":%.9g,\"before\":%.9g,\"after\":%.9g,\"rectangle\":%d}\n",battle_frame,base.id,base.x,base.y,base.angle,base.length,lasers[i].length,bool(rectangleSample));
         for(size_t k=first;k<cut.size();){if(cut[k]){++k;continue;}
             const size_t begin=k;while(k<cut.size()&&!cut[k])++k;
             auto part=base;float offset=float(begin)*16;
@@ -651,6 +675,17 @@ int GameWorld::cancel_lasers_region(const std::function<bool(float,float)>& insi
             part.length=float(k-begin)*16;
             part.fragment=true;part.phase=2;part.clock=0;part.age=0;part.travelled=0;
             part.travel_cap=(base.fragment?base.travel_cap-base.travelled:base.source.max_length)-offset;
+            // 0x52ae4e..0x52afa1 initializes a straight laser moving at 8,
+            // with a constructor update before the next CPU scan.
+            part.straight=true;part.straight_target=part.length;
+            part.source.speed=8;part.source.changes={};
+            part.source.sound=part.source.end_sound=-1;
+            part.straight_changes={};part.straight_changes.initialized=true;
+            part.straight_changes.vx=float(std::cos(double(part.angle))*8);
+            part.straight_changes.vy=float(std::sin(double(part.angle))*8);
+            part.offscreen_grace=30;part.straight_bounds_grace=3;part.cancel_lock=0;
+            part.cut_contact.reset();part.graze_clock=0;part.aura_slowed=false;
+            part.tick(player_x,player_y);
             if(base.fragment&&!kept){part.id=base.id;lasers[i]=part;kept=true;}
             else{part.id=next_id++;lasers.push_back(part);}
         }
@@ -942,6 +977,8 @@ void GameWorld::tick_graze(float px,float py,float player_radius,bool defer_rewa
     }
 }
 void GameWorld::award_graze(float x,float y,u32 color){
+    extern bool traceOpeningRng;
+    if(traceOpeningRng)std::printf("GRAZEDBG {\"frame\":%d,\"position\":[%.9g,%.9g],\"player\":[%.9g,%.9g],\"seed\":%u,\"color\":%u}\n",battle_frame,x,y,player_x,player_y,AnmVm::random_checkpoint(true),color);
     grazed_bullets=std::min(grazed_bullets+1,99999999);
     sound_events.push_back(42);
     // 0x54a033 queues the trail using the low three bits as delay.
@@ -1032,6 +1069,15 @@ void GameWorld::advance_guarded_enemy_scripts(){
     for(size_t i=enemies.size();i>0;--i){
         auto& enemy=enemies[i-1];
         if(!enemy.active||enemy.spawn_hold)continue;
+        // 0x4f9df5 calls 0x509030 before admitting a CPU target.
+        // Converted pure spirits execute ECL here, while movement runs later.
+        if((enemy.status_flags&0x780000u)==0x180000u){
+            step_enemy_script(enemy);
+            auto& updated=enemies[i-1];
+            updated.script_advanced_before_cpu=true;
+            if(updated.vm&&updated.vm->finished())updated.active=false;
+            continue;
+        }
         if(enemy.attack_entry!=Enemy::AttackEntry::StepScript&&enemy.arrival_motion!=Enemy::ArrivalMotion::Hold)continue;
         enemy.attack_entry=Enemy::AttackEntry::None;
         enemy.arrival_motion=Enemy::ArrivalMotion::HoldScriptUpdated;
@@ -1076,8 +1122,10 @@ void GameWorld::advance_canceling_bullet(Bullet& b){
     if(b.motion_advanced)return;
     // 0x4f568c marks the slot before updating the embedded animation.
     b.motion_advanced=true;
+    if(b.contact_cancel){b.x+=b.vx*.5f;b.y+=b.vy*.5f;}
     b.animation.tick();
     if(b.animation.deleted)retire_bullet(b);
+    else cull_vs_bullet(b); // 0x4f5e64 joins both cancel states to the bounds gate.
 }
 void GameWorld::advance_vs_projectiles(){
     // 0x4f9b17 advances canceled slots before the CPU collects hazards.
@@ -1116,7 +1164,7 @@ void GameWorld::advance_lasers(LaserPass pass,int motion_frame){
     for(auto& laser:lasers){
         const bool beforeCpu=reward_mode==2&&(laser.straight||laser.fixed());
         if(beforeCpu!=(pass!=LaserPass::Remaining))continue;
-        if(pass==LaserPass::NewStraight&&!laser.straight)continue;
+        if(pass==LaserPass::NewStraight&&!laser.straight&&!laser.fixed())continue;
         if(laser.motion_frame==motion_frame)continue;
         laser.motion_frame=motion_frame;
         laser.tick(player_x,player_y,&reflected_lasers);
@@ -1135,12 +1183,19 @@ void GameWorld::register_marisa_extra_arrival(const std::string& sub,float x,flo
     const auto actorIndex=enemies.size();
     auto& enemy=spawn_enemy(sub,x,y,life,0,0,&source);
     enemy.set_absolute_position(snapEnemyCoordinate(enemy.x),snapEnemyCoordinate(enemy.y));
+    // 0x50c540 computes the arrival's combined displacement from the
+    // constructor's zero position before its two registration guards clear.
+    // CPU obstacle collection at 0x4f9e6d reads this displacement.
+    enemy.previous_x=0;
+    enemy.previous_y=0;
     const auto firstLaser=lasers.size();
     step_enemy_script(enemy);
     auto& actor=enemies[actorIndex];
     if(!actor.active)hold_finished_attack_controller(actor);
-    // Fixed lasers have already run their registration update. Preserve the
-    // late-pass guard for other lasers emitted by this arrival callback.
+    extern bool traceOpeningRng;
+    if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"arrival-register\",\"id\":%u,\"active\":%d,\"hold\":%u,\"entry\":%u,\"sprite\":%d,\"flags\":%u,\"status\":%u}\n",battle_frame,actor.id,actor.active,unsigned(actor.spawn_hold),unsigned(actor.attack_entry),actor.sprite,actor.flags,actor.status_flags);
+    // Fixed lasers receive their registration update after this tick's ECL.
+    // Preserve the late-pass guard for other emitted lasers.
     for(size_t i=firstLaser;i<lasers.size();++i)
         if(!lasers[i].fixed())lasers[i].motion_frame=battle_frame+1;
 }
@@ -1230,8 +1285,10 @@ void GameWorld::tick_wave(bool tickSpiritMeter,
             continue;
         }
         if(spirit.attack_entry==Enemy::AttackEntry::RetireController){spirit.active=false;continue;}
-        const bool script_updated=spirit.arrival_motion==Enemy::ArrivalMotion::HoldScriptUpdated;
-        const bool hold_motion=spirit.arrival_motion==Enemy::ArrivalMotion::Hold||script_updated;
+        const bool guarded_script_updated=spirit.arrival_motion==Enemy::ArrivalMotion::HoldScriptUpdated;
+        const bool script_updated=guarded_script_updated||spirit.script_advanced_before_cpu;
+        spirit.script_advanced_before_cpu=false;
+        const bool hold_motion=spirit.arrival_motion==Enemy::ArrivalMotion::Hold||guarded_script_updated;
         const bool first_arrival_update=spirit.arrival_motion==Enemy::ArrivalMotion::FirstUpdate;
         // 0x509108 tests the initial combined position against the Aura
         // after the player's movement, before copying the flight destination.
@@ -1278,7 +1335,10 @@ void GameWorld::tick_wave(bool tickSpiritMeter,
             // 0x4d4dc0 applies the Aura rate to the resulting movement.
             e.turn.advance(e.angle);e.accelerate.advance(e.speed);
             if(e.move_x.duration>0||e.move_y.duration>0){
-                const float x=e.x,y=e.y;e.move_x.advance(e.x,motion_step);e.move_y.advance(e.y,motion_step);
+                // 0x50a5d4 -> 0x4108c0 advances the position interpolator
+                // with the frame clock, independently of Aura displacement rate.
+                const float interpolation_step=reward_mode==2?1.f:motion_step;
+                const float x=e.x,y=e.y;e.move_x.advance(e.x,interpolation_step);e.move_y.advance(e.y,interpolation_step);
                 e.vx=e.x-x;e.vy=e.y-y;
                 if(e.move_x.duration==0&&e.move_y.duration==0)e.vx=e.vy=0;
             }else if(e.orbit){
@@ -1296,7 +1356,12 @@ void GameWorld::tick_wave(bool tickSpiritMeter,
                 // rewrites Enemy+0xac (angle).  The following native motion
                 // step consumes that angle even for the small-Suika actor;
                 // its ECL record does not set the generic polar bit.
-                if(e.polar||e.native_update_callback==3){e.vx=std::cos(e.angle)*e.speed;e.vy=std::sin(e.angle)*e.speed;}
+                if(e.polar||e.native_update_callback==3){
+                    // 0x4d4e0c keeps FSINCOS and the speed product in x87
+                    // precision until FSTP writes the velocity components.
+                    e.vx=float(std::cos(double(e.angle))*e.speed);
+                    e.vy=float(std::sin(double(e.angle))*e.speed);
+                }
                 // The ordinary path sets half-speed at birth. The spirit
                 // path at 0x509058 preserves it, including during conversion.
                 const float movement=e.arrival_slow_motion?.5f:motion_step;
@@ -1314,6 +1379,14 @@ void GameWorld::tick_wave(bool tickSpiritMeter,
             }
             // 0x50c540 rounds the combined position separately from absolute motion.
             e.set_absolute_position(e.x,e.y);
+            e.combined_dx=e.x-e.previous_x;
+            e.combined_dy=e.y-e.previous_y;
+            if(reward_mode==2){
+                // 0x50c578 stores absolute + relative - previous as a float.
+                // 0x4d4a00 adds that displacement back before grid rounding.
+                const float dx=e.x-e.previous_x,dy=e.y-e.previous_y;
+                e.x=e.previous_x+dx;e.y=e.previous_y+dy;
+            }
             if(e.relative_ellipse||reward_mode==2){
                 e.x=snapEnemyCoordinate(e.x);e.y=snapEnemyCoordinate(e.y);
             }
@@ -1359,10 +1432,10 @@ void GameWorld::tick_wave(bool tickSpiritMeter,
                 if(e.vm&&e.vm->finished()&&(e.status_flags&0x80000u))e.active=false;
             }
         }
-        if(script_step&&move_before_script&&enemies[i].active)step_enemy_script(enemies[i]);
+        if(script_step&&move_before_script&&!script_updated&&enemies[i].active)step_enemy_script(enemies[i]);
         apply_damage(enemies[i]);
     }
-    // The VS straight-laser manager advances beams emitted by this ECL pass.
+    // The VS laser manager advances newly registered beams after ECL clears.
     if(reward_mode==2)advance_lasers(LaserPass::NewStraight,battle_frame);
     if(perEnemyDamage)
         death_chains.erase(std::remove_if(death_chains.begin(),death_chains.end(),[](const auto&c){return c.age>=c.duration;}),death_chains.end());

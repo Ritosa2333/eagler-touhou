@@ -143,6 +143,8 @@ struct Enemy {
     float x=0,y=0;
     float vx=0,vy=0,angle=0,speed=0;
     float previous_x=0,previous_y=0;
+    float combined_dx=0,combined_dy=0; // Native +0x80/+0x84, before combined-position rounding.
+    bool script_advanced_before_cpu=false;
     bool mirrored=false,polar=false;
     // ECL 408: angle/speed become orbital phase/angular speed; +0x20/+0x24
     // in the native movement record hold radius/radial speed.
@@ -275,6 +277,7 @@ struct Bullet {
     BulletGraze graze;float graze_x=0,graze_y=0;u32 graze_tint=0;
     AnmVm animation,attached_effect;float visual_heading=0;int native_timer=0;
     int state=1,cancel_lock=0,cancel_script=-1;float hit_width=0;u32 flags=0;
+    bool contact_cancel=false; // Native state 3 drifts; script cancellation uses state 4.
 };
 struct Spirit {
     u32 id=0;
@@ -392,6 +395,7 @@ public:
         return damage_enemy(enemy,damage,forced,battle_frame);
     }
     bool damage_enemy(Enemy& enemy,int damage,bool forced,u32 damage_frame);
+    bool dispatch_enemy_death(Enemy& enemy);
     void launch_animal_spirit(const Enemy& enemy);
     void finish_enemy_deaths();
     void finish_hit_feedback(u32 native_mode_flags=0);

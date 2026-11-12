@@ -10,6 +10,13 @@ namespace th19 {
 // wave01.ecl + enemy.anm (see docs/ecl-opcodes reference). Returns true if handled.
 bool EclVm::game_object(const EclInstruction& ins){
     if(!world_)return false;
+    extern bool traceOpeningRng;
+    if(traceOpeningRng&&has_host&&ins.id>=400&&ins.id<=427){
+        for(const auto& enemy:world_->enemies)if(enemy.id==host_id){
+            std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"motion-op\",\"id\":%u,\"opcode\":%u,\"absolute\":[%.9g,%.9g],\"position\":[%.9g,%.9g]}\n",world_->battle_frame,host_id,unsigned(ins.id),enemy.absolute_x(),enemy.absolute_y(),enemy.x,enemy.y);
+            break;
+        }
+    }
     switch(ins.id){
         case 609: case 610: case 611: case 612: {
             // 0x5027a3: explicit slot (609/610), append slot (611/612).
@@ -43,9 +50,12 @@ bool EclVm::game_object(const EclInstruction& ins){
             }
             return false;
         }
-        // 613 is global bullet/laser cancellation (0x502dbd), not an emitter
-        // change. Leave it unsupported until cancellation parameters are wired.
-        case 613:return false;
+        case 613: { // 0x502dbd -> 0x4edf90 / 0x530bd0, without lock filtering.
+            if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"global-clear\",\"id\":%u}\n",world_->battle_frame,host_id);
+            world_->cancel_bullets_circle(0,224,1e20f,99999,false);
+            for(auto& laser:world_->lasers)laser.active=false;
+            return true;
+        }
         case 601: {
             if(!has_host)return false;const int index=param_i32(ins,0);
             for(auto&e:world_->enemies)if(e.id==host_id){auto it=e.laser_shooters.find(index);
@@ -70,7 +80,10 @@ bool EclVm::game_object(const EclInstruction& ins){
                 case 600:s={};e.change_append[index]=0;break;
                 case 602:s.type=param_i32(ins,1);s.color=param_i32(ins,2);break;
                 case 603:s.x=param_f32(ins,1);s.y=param_f32(ins,2);break;
-                case 604:s.angle=param_f32(ins,1);s.angle2=param_f32(ins,2);break;
+                case 604: // 0x5025c1 / 0x5025ec normalize both descriptor angles.
+                    s.angle=std::remainder(param_f32(ins,1),6.2831854820251465f);
+                    s.angle2=std::remainder(param_f32(ins,2),6.2831854820251465f);
+                    break;
                 case 605:s.speed=param_f32(ins,1);s.speed2=param_f32(ins,2);break;
                 // Native 0x502695 / 0x5026fc stores unsigned 16-bit fields.
                 case 606:s.count1=static_cast<unsigned short>(param_i32(ins,1));s.count2=static_cast<unsigned short>(param_i32(ins,2));break;
@@ -111,9 +124,11 @@ bool EclVm::game_object(const EclInstruction& ins){
                     l.x=(s.absolute_origin?s.absolute_x:e.x)+s.x+std::cos(l.angle)*s.muzzle_radius;
                     l.y=(s.absolute_origin?s.absolute_y:e.y)+s.y+std::sin(l.angle)*s.muzzle_radius;
                     l.length=s.length;
-                    // Native 0x52b550 runs at phase time zero on VS registration.
+                    // VS 0x530df0 links the laser without advancing it. The
+                    // laser-manager pass follows enemy ECL clears this tick.
                     if(world_->reward_mode==2)l.clock=-1;
-                    l.tick();world_->lasers.push_back(l);
+                    else l.tick();
+                    world_->lasers.push_back(l);
                     if(s.sound>=0)world_->sound_events.push_back(s.sound);break;}
                 }
                 return true;
@@ -122,13 +137,32 @@ bool EclVm::game_object(const EclInstruction& ins){
         }
         case 569: { // 4fecc0 case 6d -> 4d3140: forward intersection with 296x448 field.
             const float x=param_f32(ins,2),y=param_f32(ins,3),a=param_f32(ins,4);
-            const float dx=std::cos(a),dy=std::sin(a);float t=1e30f;
-            auto candidate=[&](float v,float other,float lo,float hi){if(v>=0&&other>=lo-.001f&&other<=hi+.001f)t=std::min(t,v);};
-            if(std::abs(dx)>1e-7f){for(float edge:{-148.f,148.f}){float v=(edge-x)/dx;candidate(v,y+v*dy,0,448);}}
-            if(std::abs(dy)>1e-7f){for(float edge:{0.f,448.f}){float v=(edge-y)/dy;candidate(v,x+v*dx,-148,148);}}
-            if(t==1e30f)t=0;
-            if(param_stack_ref(ins,0))set_var_float(i32(read_f32(param_off(0))),x+dx*t);
-            if(param_stack_ref(ins,1))set_var_float(i32(read_f32(param_off(1))),y+dy*t);
+            if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"ray-input\",\"id\":%u,\"position\":[%.9g,%.9g],\"angle\":%.9g}\n",world_->battle_frame,host_id,x,y,a);
+            const float dx=float(std::cos(double(a))),dy=float(std::sin(double(a)));
+            // 0x4d3140 constructs a 2000-unit segment. 0x4d38f0 derives
+            // its slope/intercept before intersecting each rectangle edge.
+            const float ax=x-dx*1000.f,ay=y-dy*1000.f;
+            const float bx=x+dx*1000.f,by=y+dy*1000.f;
+            const float width=bx-ax,height=by-ay;
+            float outX=x,outY=y,t=1e30f;
+            const auto candidate=[&](float distance,float px,float py){
+                if(distance<0||distance>=t||px< -148.001f||px>148.001f||py< -.001f||py>448.001f)return;
+                t=distance;outX=px;outY=py;
+            };
+            if(std::abs(width)<.01f){
+                if(std::abs(dy)>1e-7f)for(float edge:{0.f,448.f})candidate((edge-y)/dy,ax,edge);
+            }else{
+                const float slope=height/width;
+                const float intercept=ay-(height*ax)/width;
+                if(std::abs(dx)>1e-7f)for(float edge:{-148.f,148.f})
+                    candidate((edge-x)/dx,edge,slope*edge+intercept);
+                if(std::abs(slope)>1e-7f)for(float edge:{0.f,448.f}){
+                    const float difference=edge-intercept;
+                    candidate((edge-y)/dy,difference/slope,(difference*slope)/slope+intercept);
+                }
+            }
+            if(param_stack_ref(ins,0))set_var_float(i32(read_f32(param_off(0))),outX);
+            if(param_stack_ref(ins,1))set_var_float(i32(read_f32(param_off(1))),outY);
             return true;
         }
         case 504: { // 0x500f6a: center x/y and full width/height, not corner bounds.
@@ -143,6 +177,7 @@ bool EclVm::game_object(const EclInstruction& ins){
         case 616: { // 0x503d9e: 4ee880 ignores bullet lock; laser call uses respect-lock=1.
             const float radius=param_f32(ins,0);if(radius<0)return false;
             if(has_host)for(const auto&e:world_->enemies)if(e.id==host_id){
+                if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"ecl-clear\",\"id\":%u,\"position\":[%.9g,%.9g],\"radius\":%.9g,\"sub\":\"%s\"}\n",world_->battle_frame,e.id,e.x,e.y,radius,current_sub_name());
                 world_->cancel_bullets_circle(e.x,e.y,radius,99999,false);
                 world_->cancel_lasers_circle(e.x,e.y,radius,true);break;}
             return true;
@@ -183,9 +218,10 @@ bool EclVm::game_object(const EclInstruction& ins){
                 const bool remove=(!(e.flags&0xa0)&&!(e.status_flags&0xc0)&&!(e.flags&0x400))||(e.flags&0x100);
                 if(!e.active||!remove)continue;
                 if(world_->reward_mode==2){
-                    // 0x50caf9 resets the drop record before 0x50cb96 dispatches death.
+                    // 0x50cb96 calls death directly, including animationless birth
+                    // controllers. Damage-target protection is checked by other callers.
                     e.item=0;
-                    if(world_->damage_enemy(e,0,true))continue;
+                    if(world_->dispatch_enemy_death(e))continue;
                 }
                 e.active=false;e.status_flags|=0x200;
                 for(auto&animation:e.animations)animation.script=-1;
@@ -266,6 +302,11 @@ bool EclVm::game_object(const EclInstruction& ins){
             // record. Children receive a snapshot, including wave orbit phase.
             const auto first=world_->enemies.size();
             auto&child=world_->spawn_enemy(name,x,y,life,item,score,&programs_);
+            if(world_->reward_mode==2){
+                // 0x50be30 -> 0x508f20 -> 0x509030 advances the zero-velocity
+                // position through 0x4d4a00 before the initial ECL executes.
+                child.set_absolute_position(std::floor(x*100.f)/100.f,std::floor(y*100.f)/100.f);
+            }
             // 0x50bee7 stores spawn mirroring in status, apart from ECL cull protection.
             child.mirrored=mirror;
             if(mirror)child.status_flags|=8u;

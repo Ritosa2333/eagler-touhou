@@ -74,8 +74,10 @@ struct AnmVm {
     } ip_pos, ip_rgb, ip_alpha, ip_scale, ip_rot, ip_rgb2, ip_alpha2, ip_secondary_scale;
 
     u32 return_ip=0; i32 return_time=0; bool return_halted=false,has_return=false;
+    inline static u32 next_registration=1;
+    u32 registration=0;
     void tick(const AnmVm* parent=nullptr,bool advance_children=true);
-    void bind(const u8* s,u32 len){stream=s;stream_len=len;ip=0;time=0;deleted=false;}
+    void bind(const u8* s,u32 len){registration=next_registration++;stream=s;stream_len=len;ip=0;time=0;deleted=false;}
     void bind_entry(const u8* s,u32 len,const std::unordered_map<i32,AnmScriptLoc>* table){
         bind(s,len);global_scripts=table;
     }

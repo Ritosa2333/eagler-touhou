@@ -1,0 +1,64 @@
+--- a/junowen-lib/src/th19.rs
++++ b/junowen-lib/src/th19.rs
+@@ -37,57 +37,14 @@
+ pub type Fn1049e0 = extern "fastcall" fn();
+ pub type Fn10f720 = extern "fastcall" fn();
+ 
++#[unsafe(naked)]
+ extern "fastcall" fn dummy_from_0aba30_00fb() {
+-    unsafe {
+-        asm! {
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            //
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-        }
+-    }
++    std::arch::naked_asm!(".rept 21", "nop", ".endr", "ret");
+ }
+ 
++#[unsafe(naked)]
+ extern "fastcall" fn dummy_from_0aba30_018e() {
+-    unsafe {
+-        asm! {
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            //
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-            "NOP",
+-        }
+-    }
++    std::arch::naked_asm!(".rept 16", "nop", ".endr", "ret");
+ }
+ 
+ pub type ApplyFn = Box<dyn FnOnce(&mut Th19)>;

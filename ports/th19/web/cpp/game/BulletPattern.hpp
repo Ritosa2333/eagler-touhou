@@ -3,7 +3,7 @@
 namespace th19 {
 // 0x4f1340 loops row(speed) outside column(angle); 0x4f3910 modes 0..10.
 // Modes 6/8 use signed random spread; 7/8 add unsigned random speed2 to speed.
-struct BulletPatternPoint {float angle=0,speed=0;};
+struct BulletPatternPoint {float angle=0,speed=0,launch_angle=0;};
 inline bool nativeBulletPattern(int mode,int count,int rows,int column,int row,
  float angle,float spread,float speed,float speed2,float aim,BulletPatternPoint& out,
  float signedRandom=0,float unitRandom=0){
@@ -21,6 +21,7 @@ inline bool nativeBulletPattern(int mode,int count,int rows,int column,int row,
   else{delta+=(row/2+.5f)*spread;if(rows>1)out.speed=(row&~1)*(speed2-speed)/(rows-1)+speed;}
   if(row&1)delta=-delta;out.angle=angle+delta+(mode==9?aim:0);
  }else{out.angle=row*spread+angle+2*pi*column/count+(mode>=4?pi/count:0)+(mode==2||mode==4?aim:0);}
+ out.launch_angle=out.angle;
  out.angle=std::remainder(out.angle,2*pi);return true;
 }
 }

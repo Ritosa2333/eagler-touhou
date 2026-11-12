@@ -2,6 +2,7 @@
 #include "CpuAvoidance.hpp"
 #include <optional>
 #include <vector>
+#include <cstdio>
 namespace th19 {
 // 4f9530 selects an approaching object; 4fa3e0 steers around it before
 // the eighteen-candidate collision pass. Coordinates are field-local.
@@ -13,8 +14,14 @@ struct CpuObstacle {
   const Object* selected=nullptr;float closestX=0,closestY=0,best=pi/2;
   for(const auto&o:objects){const auto&h=o.shape;float px=h.x,py=h.y;
    if(o.line){float c=std::cos(h.angle),s=std::sin(h.angle);
-    float along=std::clamp((x-h.x)*c+(y-h.y)*s,-h.width/2,h.width/2);px+=along*c;py+=along*s;
-    float dx=x-px,dy=y-py;if(dx*dx+dy*dy-h.height*h.height*o.speed>32*32)continue;
+    const float dx=x-h.x,dy=y-h.y;
+    const float localX=dx*c+dy*s,localY=dy*c-dx*s;
+    float along=std::clamp(localX,-h.width/2,h.width/2);px+=along*c;py+=along*s;
+    // 0x4d3580 measures in rotated coordinates before rounding the returned
+    // world point. 0x4f97aa then squares that rounded distance again.
+    const float ex=along-localX;
+    const float distance=float(std::sqrt(double(ex*ex+localY*localY)));
+    if(distance*distance-h.height*h.height*o.speed>32*32)continue;
    }else{
     float dx=x-px,dy=y-py,d=dx*dx+dy*dy-h.radius*h.radius*o.speed;
     if(d>=128*128)continue;
@@ -27,6 +34,8 @@ struct CpuObstacle {
      best=delta;
     }else if(delta>=pi/2)continue;
    }
+   extern bool traceOpeningRng;
+   if(traceOpeningRng)std::printf("ENEMYDBG {\"event\":\"obstacle-choice\",\"index\":%d,\"player\":[%.9g,%.9g],\"closest\":[%.9g,%.9g]}\n",int(&o-objects.data()),x,y,px,py);
    selected=&o;closestX=px;closestY=py;
   }
   if(!selected)return original;

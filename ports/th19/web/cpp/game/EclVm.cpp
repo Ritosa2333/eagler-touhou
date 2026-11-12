@@ -159,10 +159,13 @@ float EclVm::var_float(i32 addr) const {
             // ECL404 passes enemy+90 to 40fdf0, which writes offset+1c.
             if(addr==-9971)return std::remainder(e.angle,6.28318530717958647692f);
             // 0x4fcb9c takes the heading of the last combined displacement.
-            if(addr==-9958)return float(std::atan2(double(e.y-e.previous_y),double(e.x-e.previous_x)));
+            if(addr==-9958)return world_->reward_mode==2
+                ? float(std::atan2(double(e.combined_dy),double(e.combined_dx)))
+                : float(std::atan2(double(e.y-e.previous_y),double(e.x-e.previous_x)));
             // 4fc530 case d928 is the real distance, including Chiyari.
             if(addr==-9944)return std::hypot(world_->player_x-e.x,world_->player_y-e.y);
-            if(addr==-9989)return std::atan2(world_->player_y-e.y,world_->player_x-e.x);
+            // 0x407490 promotes the single-precision differences for atan2.
+            if(addr==-9989)return float(std::atan2(double(world_->player_y-e.y),double(world_->player_x-e.x)));
             break;
         }
     }
@@ -419,7 +422,7 @@ bool EclVm::step_self(){
             }
             case 87: { // EXE ECL 87: angle from (x1,y1) to (x2,y2).
                 const float x1=param_f32(ins,1),y1=param_f32(ins,2),x2=param_f32(ins,3),y2=param_f32(ins,4);
-                if(param_stack_ref(ins,0))set_var_float(i32(read_f32(param_off(0))),std::atan2(y2-y1,x2-x1));
+                if(param_stack_ref(ins,0))set_var_float(i32(read_f32(param_off(0))),float(std::atan2(double(y2-y1),double(x2-x1))));
                 ip_+=ins.size;continue;
             }
             case 88: {push_float(std::sqrt(pop_float()));ip_+=ins.size;continue;}

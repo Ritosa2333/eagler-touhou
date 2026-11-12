@@ -1,0 +1,31 @@
+{
+  "frame": 24097,
+  "nativeCapture": "present-fulbe89j",
+  "webCapture": "th19-web-CdQSbt",
+  "longVerification": "th19-web-ncy6YB",
+  "event": "fixed laser graze one tick late",
+  "grazePosition": [
+    102.19896697998047,
+    401.5313415527344
+  ],
+  "primarySeedBefore": 115134020,
+  "nativeCallers": [
+    "0x54a033",
+    "0x521cbf"
+  ],
+  "webGrazeBattleFrame": 24097,
+  "nativeGrazeFrame": 24097,
+  "nativeCpuFrame24097LaserLength": 48,
+  "webCpuFrame24096LaserLength": 40,
+  "nativeWidth": 7,
+  "webWidth": 7,
+  "laserOrigin": [
+    96.6399994,
+    448
+  ],
+  "laserAngle": -1.45173395,
+  "webLaserId": 15788,
+  "status": "resolved",
+  "verification": "th19-web-zMkQkQ, 36000 continuous frames",
+  "resolution": "Advance newly registered fixed lasers after ECL cleanup in their registration frame."
+}

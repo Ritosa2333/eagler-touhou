@@ -76,7 +76,7 @@ struct BulletChanges {
                         constexpr float pi=3.14159265358979323846f;
                         const float offset=c.floats[2]<=-999990.f?pi:c.floats[2];
                         const float dx=player_x-x,dy=player_y-y;
-                        direction=(dx==0&&dy==0?pi*.5f:std::atan2(dy,dx))+offset;
+                        direction=(dx==0&&dy==0?pi*.5f:float(std::atan2(double(dy),double(dx))))+offset;
                     }
                 }
                 if((slot<2||slot==5)&&index>0)++sounds;
@@ -103,19 +103,19 @@ struct BulletChanges {
                     if(a.elapsed>=c.integers[0]){a.active=false;completed=true;continue;}
                     constexpr float pi=3.14159265358979323846f;
                     const float dx=player_x-x,dy=player_y-y;
-                    float target=(dx==0&&dy==0?pi*.5f:std::atan2(dy,dx))+c.floats[1];
+                    float target=(dx==0&&dy==0?pi*.5f:float(std::atan2(double(dy),double(dx))))+c.floats[1];
                     for(int i=0;target>pi&&i<33;++i)target-=2*pi;
                     for(int i=0;target< -pi&&i<33;++i)target+=2*pi;
                     vx+=(std::cos(target)*c.floats[0]-vx)*c.floats[2];
                     vy+=(std::sin(target)*c.floats[0]-vy)*c.floats[2];
-                    speed=std::hypot(vx,vy);angle=std::atan2(vy,vx);
+                    speed=std::hypot(vx,vy);angle=float(std::atan2(double(vy),double(vx)));
                     a.elapsed+=time_scale;continue;
                 }
                 if(slot==7){ // 0x4f5680: temporary +5 boost, timer 0..16 inclusive.
                     // Descriptor speed remains unchanged for following changes.
                     if(int(a.elapsed)>16){a.active=false;completed=true;continue;}
                     const float velocity=speed+5.f-float(a.elapsed)*5.f/16.f;
-                    vx=std::cos(angle)*velocity;vy=std::sin(angle)*velocity;
+                    vx=float(std::cos(double(angle))*velocity);vy=float(std::sin(double(angle))*velocity);
                     a.elapsed+=time_scale;continue;
                 }
                 if(slot==6){ // 4eeda0: countdown, then native forward-corner test for subtype1.
@@ -160,30 +160,37 @@ struct BulletChanges {
                 }
                 if(slot==2){
                     float velocity=speed;
-                    if(a.elapsed<c.integers[0])velocity=speed*(1.f-float(a.elapsed)/c.integers[0]);
+                    // 0x4f0a5a multiplies elapsed by speed before division.
+                    if(a.elapsed<c.integers[0])velocity=speed-(float(a.elapsed)*speed)/c.integers[0];
                     else{++redirects;++sounds;
                         if(c.integers[2]==0||c.integers[2]==5)angle+=redirect_angle;
-                        else if(c.integers[2]==1||c.integers[2]==6)angle=std::atan2(player_y-y,player_x-x)+redirect_angle;
+                        else if(c.integers[2]==1||c.integers[2]==6)angle=float(std::atan2(double(player_y-y),double(player_x-x)))+redirect_angle;
                         else angle=redirect_angle;
                         angle=std::remainder(angle,6.28318530717958647692f);
                         speed=velocity=redirect_speed;a.elapsed=0;
                         if(redirects>=c.integers[1]){a.active=false;completed=true;}}
-                    vx=std::cos(angle)*velocity;vy=std::sin(angle)*velocity;
+                    // 0x4f0aaf keeps the trig product precise until the float store.
+                    vx=float(std::cos(double(angle))*velocity);vy=float(std::sin(double(angle))*velocity);
                     if(a.active)a.elapsed+=time_scale;continue;
                 }
                 if(a.elapsed>=c.integers[0]){a.active=false;completed=true;continue;}
                 if(slot==0||slot==5){
                     speed+=c.floats[0]*time_scale;
-                    vx+=std::cos(c.floats[1])*c.floats[0]*time_scale;
-                    vy+=std::sin(c.floats[1])*c.floats[0]*time_scale;
+                    // 0x4f1a75 / 0x4f2e90 rounds the x87 trig product into
+                    // the acceleration vector before applying the frame rate.
+                    const float ax=float(std::cos(double(c.floats[1]))*c.floats[0]);
+                    const float ay=float(std::sin(double(c.floats[1]))*c.floats[0]);
+                    vx+=ax*time_scale;
+                    vy+=ay*time_scale;
                     if(std::abs(vx)>0.0001f||std::abs(vy)>0.0001f){
-                        angle=std::atan2(vy,vx);speed=std::sqrt(vx*vx+vy*vy);
+                        angle=float(std::atan2(double(vy),double(vx)));speed=std::sqrt(vx*vx+vy*vy);
                     }
                 }else if(slot==1){
                     angle+=c.floats[1]*time_scale;constexpr float pi=3.14159265358979323846f;
                     for(int i=0;angle>pi&&i<33;++i)angle-=2*pi;
                     for(int i=0;angle< -pi&&i<33;++i)angle+=2*pi;
-                    speed+=c.floats[0]*time_scale;vx=std::cos(angle)*speed;vy=std::sin(angle)*speed;
+                    speed+=c.floats[0]*time_scale;
+                    vx=float(std::cos(double(angle))*speed);vy=float(std::sin(double(angle))*speed);
                 }
                 a.elapsed+=time_scale;
             }

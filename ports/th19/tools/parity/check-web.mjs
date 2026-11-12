@@ -9,6 +9,7 @@ import {startServer} from "../../scripts/static-server.mjs";
 import puppeteer from "puppeteer-core";
 
 const capture = process.argv[2];
+const continuous = process.argv.includes("--continuous");
 if (!capture) throw Error("Usage: node check-web.mjs <capture directory> [--reverse] [--opening-only] [--through FRAME] [--trace-window FIRST LAST] [--rollback-window FIRST LAST]");
 const throughIndex = process.argv.indexOf("--through");
 const through = throughIndex < 0 ? null : Number(process.argv[throughIndex + 1]);
@@ -33,15 +34,25 @@ const nativeBytes = await readFile(nativePath);
 const nativeRows = nativeBytes.toString("utf8").trim().split("\n").map(JSON.parse);
 const nativeFrames = new Map();
 const nativeFramesWithMultipleRngStates = new Set();
+let previousNativeFrame;
+let continuousNativeFrame = 0;
 for (const row of nativeRows) {
-  if (row.segment !== 0 || !Number.isInteger(row.frame)) continue;
-  const first = nativeFrames.get(row.frame);
-  if (!first) nativeFrames.set(row.frame, row);
+  if ((!continuous && row.segment !== 0) || !Number.isInteger(row.frame)) continue;
+  if (continuous && previousNativeFrame) {
+    continuousNativeFrame += row.segment === previousNativeFrame.segment
+      ? Math.max(0, row.frame - previousNativeFrame.frame) : 1;
+  }
+  previousNativeFrame = row;
+  const frame = continuous ? continuousNativeFrame : row.frame;
+  const first = nativeFrames.get(frame);
+  if (!first) nativeFrames.set(frame, row);
   else if (row.rng[0] !== first.rng[0] || row.rng[2] !== first.rng[2]) {
-    nativeFramesWithMultipleRngStates.add(row.frame);
+    nativeFramesWithMultipleRngStates.add(frame);
   }
 }
-const nativeRng = nativeFrames.get(0).rng;
+const nativeOpening = nativeFrames.get(0);
+assert.ok(nativeOpening, "Missing native opening frame 0; verify that the original CPU capture entered battle");
+const nativeRng = nativeOpening.rng;
 const frameNumbers = new Set((through === null
   ? [...Array.from({length: 201}, (_, i) => i), 300, 600]
   : Array.from({length: through + 1}, (_, i) => i)).filter(n => nativeFrames.has(n)));
@@ -77,10 +88,14 @@ const output = resolve(process.env.TH19_CAPTURE_OUTPUT || tmpdir());
 await mkdir(output, {recursive: true});
 const directory = await mkdtemp(resolve(output, "th19-web-"));
 const errors = [];
+const cpuDebug = [];
+const grazeDebug = [];
+const bulletDebug = [];
+const enemyDebug = [];
 let server;
 const browser = await puppeteer.launch({
   executablePath: process.env.TH19_CHROME || "C:/Program Files/Google/Chrome/Application/chrome.exe",
-  headless: true, protocolTimeout: 180000,
+  headless: true, protocolTimeout: continuous || through > 18000 ? 900000 : 180000,
   args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--autoplay-policy=no-user-gesture-required"]
 });
 
@@ -88,6 +103,10 @@ async function inGame(action, payload) {
   const context = await browser.createBrowserContext();
   try {
     const page = await context.newPage();
+    page.on("console", message => {const line=message.text();if(line.startsWith("CPUDBG "))cpuDebug.push(JSON.parse(line.slice(7)));});
+    page.on("console", message => {const line=message.text();if(line.startsWith("GRAZEDBG "))grazeDebug.push(JSON.parse(line.slice(9)));});
+    page.on("console", message => {const line=message.text();if(line.startsWith("BULLETDBG "))bulletDebug.push(JSON.parse(line.slice(10)));});
+    page.on("console", message => {const line=message.text();if(line.startsWith("ENEMYDBG "))enemyDebug.push(JSON.parse(line.slice(9)));});
     page.on("pageerror", error => errors.push(error.message));
     await page.setViewport({width: 1280, height: 960});
     await page.goto(`http://127.0.0.1:${port}/tests/harness.html?autolaunch=0`);
@@ -115,7 +134,7 @@ async function inGame(action, payload) {
   }
 }
 
-function runCapture({seed, otherSeed, frames, visualFrames, fixture, rollbackWindow, traceWindow, fastCapture, bulletFrames}) {
+function runCapture({seed, otherSeed, frames, visualFrames, fixture, rollbackWindow, traceWindow, fastCapture, bulletFrames, continuous}) {
   const win = window.__TH19_HARNESS.frame.contentWindow;
   const c = win.__th19Runtime.core;
   c._th19_loop_stop();
@@ -123,6 +142,7 @@ function runCapture({seed, otherSeed, frames, visualFrames, fixture, rollbackWin
   c._th19_test_ticks(180); // Complete the normal loading animation before reseeding.
   if (c._th19_capture_cpu_begin(seed, otherSeed, fixture.difficulty, ...fixture.characters,
       fixture.lives, fixture.timeRule, fixture.cardMode, ...fixture.cards) !== 1) throw Error("CPU match failed to start");
+  if (traceWindow && c._th19_capture_cpu_trace) c._th19_capture_cpu_trace(...traceWindow);
   const canvas = win.document.querySelector("canvas");
   const screenshots = new Set(visualFrames);
   const sampleBullets = new Set(bulletFrames);
@@ -136,17 +156,25 @@ function runCapture({seed, otherSeed, frames, visualFrames, fixture, rollbackWin
     const offset = c._th19_capture_cpu_state() / 4;
     return Array.from(c.HEAP32.subarray(offset, offset + 36), value => value >>> 0);
   };
+  let continuousFrame = 0;
+  let previousWebState = readState();
   const advanceToFrame = (frame, present, fast) => {
-    let elapsed = readState()[29];
+    let elapsed = continuous ? continuousFrame : readState()[29];
     let stalledTicks = 0;
     while (elapsed < frame) {
       if (fast) c._th19_capture_step(present && elapsed === frame - 1);
       else c._th19_test_ticks(1);
       const state = readState();
-      if (state[1] !== 1 || state[29] < elapsed) throw Error(`Round ended before frame ${frame}`);
-      stalledTicks = state[29] === elapsed ? stalledTicks + 1 : 0;
+      if (!continuous && (state[1] !== 1 || state[29] < elapsed)) throw Error(`Round ended before frame ${frame}`);
+      if (continuous) {
+        continuousFrame += state[1] === previousWebState[1]
+          ? Math.max(0, state[29] - previousWebState[29]) : 1;
+        previousWebState = state;
+      }
+      const current = continuous ? continuousFrame : state[29];
+      stalledTicks = current === elapsed ? stalledTicks + 1 : 0;
       if (stalledTicks > 600) throw Error(`Web clock stopped at frame ${elapsed}`);
-      elapsed = state[29];
+      elapsed = current;
     }
   };
   const results = [];
@@ -172,9 +200,11 @@ function runCapture({seed, otherSeed, frames, visualFrames, fixture, rollbackWin
       return {side: c.HEAP32[offset], x: contactPositions[offset + 1], y: contactPositions[offset + 2]};
     });
     const row = readState();
+    const damageOffset = traceRng ? c._th19_test_player_damage(0) / 4 : 0;
+    const playerDamage = traceRng ? Array.from(c.HEAP32.subarray(damageOffset, damageOffset + 12)) : undefined;
     const bulletPositions = sampleBullets.has(frame) ? [readBullets(0), readBullets(1)] : undefined;
     results.push({
-      frame, openingDraws, homingContacts, playedFrames: row[0], round: row[1], lives: row.slice(2, 4),
+      frame, openingDraws, homingContacts, playerDamage, playedFrames: row[0], round: row[1], lives: row.slice(2, 4),
       controls: row.slice(4, 6), enemies: row.slice(6, 8), bullets: row.slice(8, 10),
       cards: row.slice(30, 32), positionBits: row.slice(32, 36),
       bulletPositions,
@@ -188,6 +218,10 @@ function runCapture({seed, otherSeed, frames, visualFrames, fixture, rollbackWin
     if (checkpoint && frame === rollbackWindow[1]) {
       const image = win.__th19ParityImage();
       if (!c._th19_capture_checkpoint(2)) throw Error("Impact checkpoint restore failed");
+      if (continuous) {
+        continuousFrame = rollbackWindow[0];
+        previousWebState = readState();
+      }
       advanceToFrame(frame, true, false);
       const replayed = readState();
       const differences = row.flatMap((value, index) => value === replayed[index] ? [] :
@@ -356,6 +390,7 @@ const report = {
   nativeExe: identity.originalExecutableSha256,
   nativeTraceSha256: sha256(nativeBytes), wasmPath, wasmSha256,
   fixture,
+  continuous,
   initialAnimationRng: [nativeRng[0], nativeRng[2]]
 };
 try {
@@ -363,11 +398,11 @@ try {
   server = startServer({routes:[{prefix:"/runtime/",directory:runtime},{prefix:"/",directory:root}],host:"127.0.0.1",port});
   await once(server, "listening");
   const {results: seeded, impactRollback} = await inGame(runCapture, {
-    fixture, seed: nativeRng[0], otherSeed: nativeRng[2], frames, traceWindow,
+    fixture, seed: nativeRng[0], otherSeed: nativeRng[2], frames, traceWindow, continuous,
     bulletFrames,
     rollbackWindow: requestedRollback ?? (openingOnly ? null : [124, 128]), fastCapture: through !== null,
     visualFrames: through !== null
-      ? nativeRows.filter(row => row.segment === 0 && row.image && row.frame <= through).map(row => row.frame)
+      ? [...nativeFrames].filter(([frame,row]) => row.image && frame <= through).map(([frame]) => frame)
       : openingOnly ? [86, 125, 140, 180] : [86,105,112,113,120,124,125,126,127,130,140,180]
   });
   for (const {frame, png} of seeded) if (png) await saveImage(`web-step-${frame}`, png);
@@ -375,6 +410,8 @@ try {
     originalRng: [nativeFrames.get(state.frame).rng[0], nativeFrames.get(state.frame).rng[2]],
     originalPositionBits: nativeFrames.get(state.frame).playerPositionBits,
     originalControls: nativeFrames.get(state.frame).playerControls,
+    originalRound: nativeFrames.get(state.frame).segment + 1,
+    originalRoundFrame: nativeFrames.get(state.frame).frame,
     seconds: Math.ceil(state.remaining / 60)
   }));
   const bulletSamples = seeded.filter(row => row.bulletPositions);
@@ -409,6 +446,11 @@ try {
     }
   }
   const comparablePositions = report.samples.filter(row => row.originalPositionBits?.length === 4);
+  const differentRound = report.samples.find(row => row.round !== row.originalRound || row.elapsed !== row.originalRoundFrame);
+  report.firstDifferentRoundClock = differentRound ? {
+    frame: differentRound.frame, web: [differentRound.round, differentRound.elapsed],
+    original: [differentRound.originalRound, differentRound.originalRoundFrame],
+  } : null;
   report.playerPositionCoverage = comparablePositions.length;
   report.firstDifferentPlayerPosition = null;
   for (const row of comparablePositions) {
@@ -495,6 +537,10 @@ try {
   throw error;
 } finally {
   report.browserErrors = errors;
+  if(cpuDebug.length)await writeFile(`${directory}/web-cpu-debug.jsonl`,cpuDebug.map(JSON.stringify).join("\n")+"\n");
+  if(grazeDebug.length)await writeFile(`${directory}/web-graze-debug.jsonl`,grazeDebug.map(JSON.stringify).join("\n")+"\n");
+  if(bulletDebug.length)await writeFile(`${directory}/web-bullet-debug.jsonl`,bulletDebug.map(JSON.stringify).join("\n")+"\n");
+  if(enemyDebug.length)await writeFile(`${directory}/web-enemy-debug.jsonl`,enemyDebug.map(JSON.stringify).join("\n")+"\n");
   await writeFile(`${directory}/report.json`, JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify({directory, matchingRngThrough: report.firstConsecutiveMatchingFrames - 1,
     firstDifferentRngFrame: report.firstDifferentRngSample?.frame ?? null,

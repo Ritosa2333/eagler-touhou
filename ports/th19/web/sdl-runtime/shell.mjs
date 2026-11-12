@@ -136,12 +136,12 @@ case 'return-room':if(runtimeVariant!=='multiplayer')throw Error('Invalid room r
 case 'configure':if(launched)throw Error('游戏已启动');if(!['ogg','none'].includes(m.music))throw Error('音乐模式无效');if(m.language&&m.language!=='ja')throw Error('此构建使用日文原版');options=m.options||{};if(options.touchSensitivity!=null&&!(Number.isFinite(options.touchSensitivity)&&options.touchSensitivity>=100&&options.touchSensitivity<=300))throw Error('触控灵敏度无效');music=m.music==='ogg';touchUnlimited=options.touchMovementMode==='touch-unlimited';touchGain=Math.max(100,Math.min(300,Number(options.touchSensitivity)||100))/100;if(core?._th19_touch_motion)core._th19_touch_motion(0,0,touchUnlimited?1:0);for(const r of [...(m.sharedResources||[]),...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);core._th19_music_enabled(+music);applyTouchOptions();configured=true;return {};
 case 'resources':for(const r of m.resources||[])await resource(r);return {};
 case 'launch':if(!configured)throw Error('请先配置游戏');launchSerial=Number.isSafeInteger(m.launchSerial)?m.launchSerial:null;if(!launched){core._th19_loop_stop();
- openGame();
+ openGame(m.captureSeed);
  core._th19_loop_pause(0);launched=true;first=false;if(runtimeVariant==='multiplayer'&&options.netplayMode==='lan'){
  const recorder=activeRecorder=createVersusRecorder({build,names:options.netplayReplayNames,write:writeReplay,notice:message=>emit('notice',{message})});
  netplay=new Netplay(core,{onMatch:th09Match=>emit('runtime-info',{th09Match}),onPlayback:spectatorPlayback=>emit('runtime-info',{spectatorPlayback}),onBegin:config=>{if(options.netplayReplayAutoSave!==false)recorder.begin(config);},onConfirmed:bytes=>recorder.frame(bytes),onEnd:details=>recorder.end(details),onStatus:message=>emit('notice',{message}),onClose:message=>{emit('notice',{message});void stop().catch(fatal);},onResult:()=>{emit('notice',{message:'对局结束，已返回房间'});void stop().catch(fatal);}});
  core._th19_loop_pause(1);await netplay.connect(options);
- }else core._th19_loop_start();$('#loading').textContent='';window.__th19Runtime={core,status,save,command,netplay};emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,version:'th19-eagler-adapter-1'});}return {};
+ }else if(m.captureSeed===undefined)core._th19_loop_start();$('#loading').textContent='';window.__th19Runtime={core,status,save,command,netplay};emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,version:'th19-eagler-adapter-1'});}return {};
 case 'sync':if(!player?.active){await activeRecorder?.snapshot();}await save();return {};
 case 'spectator-playback':return {spectatorPlayback:netplay?.spectatorControl(m)};
 case 'playback':{

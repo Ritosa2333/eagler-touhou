@@ -24,6 +24,11 @@ class BattleProgress:
         self.last_opening_frame = None
         self.opening_rules = None
         self.fast_state_active = False
+        self.display_mode_fallback = False
+        self.silent_audio_active = False
+        self.input_reset_skipped = False
+        self.last_frame_key = None
+        self.last_continuous_frame = 0
 
     def poll(self):
         try:
@@ -38,10 +43,23 @@ class BattleProgress:
                 row = json.loads(line)
                 if row.get("fastStateActive"):
                     self.fast_state_active = True
+                if row.get("displayModeFallback"):
+                    self.display_mode_fallback = True
+                if row.get("silentAudioActive"):
+                    self.silent_audio_active = True
+                if row.get("inputResetSkipped"):
+                    self.input_reset_skipped = True
                 if row.get("segment") == 0 and "settingsWords" in row:
                     self.opening_rules = row["settingsWords"]
                 if "frame" in row:
                     self.samples += 1
+                    key = (row.get("segment"), row["frame"])
+                    if self.last_frame_key is not None:
+                        self.last_continuous_frame += (
+                            max(0, key[1] - self.last_frame_key[1])
+                            if key[0] == self.last_frame_key[0] else 1
+                        )
+                    self.last_frame_key = key
                     if row.get("segment") == 0:
                         self.last_opening_frame = row["frame"]
                 self.offset += len(line)
@@ -86,6 +104,8 @@ def main():
     parser.add_argument("--timeout", type=int, default=180)
     parser.add_argument("--stop-at-frame", type=int,
                         help="Stop after this simulated frame in the opening round")
+    parser.add_argument("--stop-after-ticks", type=int,
+                        help="Stop after this many simulated ticks accumulated across rounds")
     parser.add_argument("--replay", type=Path)
     parser.add_argument("--cpu-fixture", type=Path)
     parser.add_argument("--cpu-start-delay", type=int, default=0)
@@ -95,16 +115,40 @@ def main():
                         help="Use a unique pipe with the repository's patched CPU driver")
     parser.add_argument("--cpu-second-rng", type=int)
     parser.add_argument("--rng-calls", action="store_true")
+    parser.add_argument("--cpu-debug", action="store_true", help="record CPU obstacles, avoidance state and detailed impacts within the trace window")
     parser.add_argument("--bullet-positions", action="store_true", help="sample live enemy bullet coordinates in both fields")
+    parser.add_argument("--image-frames", nargs="+", type=int, default=[],
+                        help="additional simulated frames to save as original screenshots")
     parser.add_argument("--fast-state", action="store_true", help="run CPU battle capture without a frame-rate cap, for state comparisons only")
+    parser.add_argument("--state-only", action="store_true", help="omit GPU draw submissions during CPU battles and save state samples")
+    parser.add_argument("--render-from-frame", type=int, help="resume GPU draw submissions at this opening-round frame")
     parser.add_argument("--minimized", action="store_true", help="start the isolated game minimized without taking focus")
+    parser.add_argument("--no-activate", action="store_true", help="show the capture window without taking focus")
+    parser.add_argument("--display-mode-fallback", action="store_true",
+                        help="Use the current 32-bit desktop mode if the remote D3D9 display-mode query fails")
+    parser.add_argument("--software-d3d9", action="store_true",
+                        help="Run D3D9 through the system D3D9On12 runtime and WARP software device")
+    parser.add_argument("--silent-audio", action="store_true",
+                        help="omit sound requests in the isolated process, for hosts without an audio device")
+    parser.add_argument("--cpu-no-input-reset", action="store_true",
+                        help="retain initialized DirectInput devices when entering an isolated CPU battle")
     parser.add_argument("--trace-window", nargs=2, type=int, metavar=("FIRST", "LAST"),
                         help="Limit RNG and collision detail to this inclusive frame range")
     args = parser.parse_args()
     if args.timeout < 1:
         parser.error("timeout must be positive")
+    if args.minimized and args.no_activate:
+        parser.error("Choose minimized or no-activate window startup")
+    if args.minimized and args.software_d3d9:
+        parser.error("Software D3D9 requires a visible window; use --no-activate")
+    if any(frame < 0 or frame > 216000 for frame in args.image_frames):
+        parser.error("Image frames must be between 0 and 216000")
     if args.stop_at_frame is not None and args.stop_at_frame < 1:
         parser.error("stop-at-frame must be positive")
+    if args.stop_after_ticks is not None and args.stop_after_ticks < 1:
+        parser.error("stop-after-ticks must be positive")
+    if args.stop_after_ticks is not None and args.stop_at_frame is not None:
+        parser.error("Choose an opening-round frame or an accumulated tick limit")
     if not 0 <= args.cpu_start_delay < args.timeout:
         parser.error("CPU start delay must be smaller than the timeout")
     if args.cpu_fixture and args.replay:
@@ -123,8 +167,16 @@ def main():
         parser.error("RNG call tracing requires an isolated CPU fixture")
     if args.bullet_positions and not args.rng_calls:
         parser.error("bullet-positions requires rng-calls")
+    if args.cpu_debug and (not args.rng_calls or not args.trace_window):
+        parser.error("cpu-debug requires rng-calls and a trace-window")
     if args.fast_state and not args.cpu_fixture:
         parser.error("fast-state requires a CPU fixture")
+    if args.state_only and not args.cpu_fixture:
+        parser.error("state-only requires a CPU fixture")
+    if args.render_from_frame is not None and (not args.cpu_fixture or args.render_from_frame < 1 or args.state_only):
+        parser.error("render-from-frame requires a CPU fixture, a positive frame and rendering enabled")
+    if args.cpu_no_input_reset and not args.cpu_fixture:
+        parser.error("cpu-no-input-reset requires a CPU fixture")
     if args.trace_window and (not args.rng_calls or not 0 <= args.trace_window[0] <= args.trace_window[1] <= 36000):
         parser.error("trace-window requires rng-calls and a valid ordered frame range")
     if args.cpu_second_rng is not None and not 0 < args.cpu_second_rng < 2147483647:
@@ -144,7 +196,18 @@ def main():
     copied = original.replace(old, unique, 1)
     (work / "th19.exe").write_bytes(copied)
     for name in ("th19.dat", "thbgm.dat"):
-        os.link(source / name, work / name)
+        try:
+            os.link(source / name, work / name)
+        except OSError:
+            # Read-only source directories and cross-volume workspaces cannot
+            # create hard links. A private copy preserves the same game bytes.
+            shutil.copy2(source / name, work / name)
+    # The original imports this legacy DirectX runtime. Server installations can
+    # provide it beside the game rather than in SysWOW64; retain that layout in
+    # the isolated copy without installing a system-wide runtime.
+    local_directx = source / "d3dx9_43.dll"
+    if local_directx.is_file():
+        shutil.copy2(local_directx, work / local_directx.name)
     shutil.copy2(args.observer, work / "d3d9.dll")
 
     real_profile = Path(os.environ["APPDATA"]) / "ShanghaiAlice" / "th19"
@@ -183,6 +246,7 @@ def main():
             raise ValueError("Unexpected CPU driver SHA-256")
         shutil.copy2(driver, work / "th19replayplayer_hook.dll")
     summary = {
+        "observerSha256": hashlib.sha256((work / "d3d9.dll").read_bytes()).hexdigest(),
         "originalExecutableSha256": EXPECTED_EXE,
         "testExecutableSha256": hashlib.sha256(copied).hexdigest(),
         "testExecutableChange": "Private Win32 singleton mutex string",
@@ -194,6 +258,16 @@ def main():
         "cpuDriverSha256": driver_hash,
         "cpuSecondRng": args.cpu_second_rng,
         "bulletPositions": args.bullet_positions,
+        "cpuDebug": args.cpu_debug,
+        "displayModeFallbackRequested": args.display_mode_fallback,
+        "softwareD3d9": args.software_d3d9,
+        "silentAudioRequested": args.silent_audio,
+        "inputResetSkipRequested": args.cpu_no_input_reset,
+        "stateOnlyRequested": args.state_only,
+        "renderFromFrame": args.render_from_frame,
+        "stopAfterTicks": args.stop_after_ticks,
+        "imageFrames": sorted(set(args.image_frames)),
+        "cpuStartDelay": args.cpu_start_delay,
     }
     (work / "capture.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf8")
     env = dict(os.environ, APPDATA=str(appdata), LOCALAPPDATA=str(appdata))
@@ -207,17 +281,33 @@ def main():
         env["TH19_CAPTURE_SECOND_RNG"] = str(args.cpu_second_rng)
     if args.rng_calls:
         env["TH19_CAPTURE_RNG_CALLS"] = "1"
+    if args.cpu_debug:
+        env["TH19_CAPTURE_CPU_DEBUG"] = "1"
     if args.bullet_positions:
         env["TH19_CAPTURE_BULLET_POSITIONS"] = "1"
     if args.fast_state:
         env["TH19_CAPTURE_FAST_STATE"] = "1"
+    if args.state_only:
+        env["TH19_CAPTURE_STATE_ONLY"] = "1"
+    if args.render_from_frame is not None:
+        env["TH19_CAPTURE_RENDER_FROM"] = str(args.render_from_frame)
+    if args.display_mode_fallback:
+        env["TH19_CAPTURE_DISPLAY_FALLBACK"] = "1"
+    if args.software_d3d9:
+        env["TH19_CAPTURE_SOFTWARE_D3D9"] = "1"
+    if args.silent_audio:
+        env["TH19_CAPTURE_SILENT_AUDIO"] = "1"
+    if args.cpu_no_input_reset:
+        env["TH19_CAPTURE_SKIP_INPUT_RESET"] = "1"
+    if args.image_frames:
+        env["TH19_CAPTURE_IMAGE_FRAMES"] = ",".join(map(str, sorted(set(args.image_frames))))
     if args.trace_window:
         env["TH19_CAPTURE_TRACE_FIRST"], env["TH19_CAPTURE_TRACE_LAST"] = map(str, args.trace_window)
     startup = None
-    if args.minimized:
+    if args.minimized or args.no_activate:
         startup = subprocess.STARTUPINFO()
         startup.dwFlags = subprocess.STARTF_USESHOWWINDOW
-        startup.wShowWindow = 7  # SW_SHOWMINNOACTIVE
+        startup.wShowWindow = 7 if args.minimized else 4  # SW_SHOWMINNOACTIVE / SW_SHOWNOACTIVATE
     process = subprocess.Popen([str(work / "th19.exe")], cwd=work, env=env, startupinfo=startup)
     progress = BattleProgress(work / "native-present.jsonl")
     print(f"CAPTURE={work}", flush=True)
@@ -231,20 +321,35 @@ def main():
             (work / "capture.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf8")
             print("CPU_FIXTURE_SUBMITTED", flush=True)
         while time.monotonic() < stop and process.poll() is None:
-            if args.stop_at_frame is not None:
+            if args.stop_at_frame is not None or args.stop_after_ticks is not None:
                 progress.poll()
                 frame = progress.last_opening_frame
-                if frame is not None and frame >= args.stop_at_frame:
+                if args.stop_at_frame is not None and frame is not None and frame >= args.stop_at_frame:
+                    break
+                if args.stop_after_ticks is not None and progress.last_continuous_frame >= args.stop_after_ticks:
                     break
             time.sleep(.2)
     finally:
         summary["exitedBeforeDeadline"] = process.poll() is not None
         if process.poll() is None:
             process.terminate()
-        summary["processExitCode"] = process.wait(timeout=10)
+        try:
+            summary["processExitCode"] = process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            # WARP teardown can outlive the first termination wait on Windows Server.
+            summary["processExitWaitRetried"] = True
+            process.kill()
+            summary["processExitCode"] = process.wait(timeout=30)
         progress.poll()
         summary.update(battlePresentSamples=progress.samples,
-                       lastOpeningFrame=progress.last_opening_frame, rules=progress.opening_rules)
+                       lastOpeningFrame=progress.last_opening_frame,
+                       lastContinuousFrame=progress.last_continuous_frame, rules=progress.opening_rules)
+        summary["displayModeFallbackUsed"] = progress.display_mode_fallback
+        summary["silentAudioActive"] = progress.silent_audio_active
+        summary["inputResetSkipped"] = progress.input_reset_skipped
+        backend = work / "native-backend.jsonl"
+        if backend.is_file():
+            summary["backendStages"] = [json.loads(line) for line in backend.read_text(encoding="utf8").splitlines()]
         if args.fast_state:
             summary["fastStateActive"] = progress.fast_state_active
         selection = work / "cpu-selection.json"
@@ -253,12 +358,16 @@ def main():
         (work / "capture.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf8")
     if fixture and not summary["battlePresentSamples"]:
         raise RuntimeError(f"CPU fixture produced no battle frames in {work}")
+    if args.silent_audio and not progress.silent_audio_active:
+        raise RuntimeError(f"Silent audio capture did not activate in {work}")
     if args.fast_state and not progress.fast_state_active:
         raise RuntimeError(f"Fast state capture did not activate in {work}")
     if args.stop_at_frame is not None:
         frame = summary["lastOpeningFrame"]
         if frame is None or frame < args.stop_at_frame:
             raise RuntimeError(f"Capture stopped before opening frame {args.stop_at_frame} in {work}")
+    if args.stop_after_ticks is not None and summary["lastContinuousFrame"] < args.stop_after_ticks:
+        raise RuntimeError(f"Capture stopped before accumulated tick {args.stop_after_ticks} in {work}")
     if args.cpu_driver:
         expected = {"mode": 2, "matchup": 2, "difficulty": replay[8], "characters": [replay[13], replay[15]]}
         if replay[10] >> 6 == 3:

@@ -1,6 +1,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <d3d9.h>
+#include <d3d12.h>
+#include <dxgi1_4.h>
 #include <intrin.h>
 #include <climits>
 #include <cstdint>
@@ -12,18 +14,90 @@
 
 namespace {
 using Create9 = IDirect3D9* (WINAPI*)(UINT);
+using DisplayMode = HRESULT (STDMETHODCALLTYPE*)(IDirect3D9*, UINT, D3DDISPLAYMODE*);
 using CreateDevice = HRESULT (STDMETHODCALLTYPE*)(IDirect3D9*, UINT, D3DDEVTYPE, HWND,
     DWORD, D3DPRESENT_PARAMETERS*, IDirect3DDevice9**);
 using Present = HRESULT (STDMETHODCALLTYPE*)(IDirect3DDevice9*, const RECT*, const RECT*,
     HWND, const RGNDATA*);
+using DrawPrimitive = HRESULT (STDMETHODCALLTYPE*)(IDirect3DDevice9*,D3DPRIMITIVETYPE,UINT,UINT);
+using DrawIndexedPrimitive = HRESULT (STDMETHODCALLTYPE*)(IDirect3DDevice9*,D3DPRIMITIVETYPE,INT,UINT,UINT,UINT,UINT);
+using DrawPrimitiveUP = HRESULT (STDMETHODCALLTYPE*)(IDirect3DDevice9*,D3DPRIMITIVETYPE,UINT,const void*,UINT);
+using DrawIndexedPrimitiveUP = HRESULT (STDMETHODCALLTYPE*)(IDirect3DDevice9*,D3DPRIMITIVETYPE,UINT,UINT,UINT,const void*,D3DFORMAT,const void*,UINT);
 CreateDevice originalCreateDevice;
+DisplayMode originalDisplayMode;
 Present originalPresent;
+DrawPrimitive originalDrawPrimitive;
+DrawIndexedPrimitive originalDrawIndexedPrimitive;
+DrawPrimitiveUP originalDrawPrimitiveUP;
+DrawIndexedPrimitiveUP originalDrawIndexedPrimitiveUP;
+bool stateOnlyDrawActive;
+bool cpuDebugActive;
 std::uintptr_t gameBase;
 FILE* trace;
+LONG CALLBACK recordCaptureException(EXCEPTION_POINTERS* event) {
+    if(event->ExceptionRecord->ExceptionCode!=EXCEPTION_ACCESS_VIOLATION)return EXCEPTION_CONTINUE_SEARCH;
+    if(FILE* output=std::fopen("native-exception.jsonl","ab")){
+        const auto& c=*event->ContextRecord;
+        std::fprintf(output,"{\"code\":%lu,\"eip\":%lu,\"rva\":%lu,\"eax\":%lu,\"ebx\":%lu,\"ecx\":%lu,\"edx\":%lu,\"esi\":%lu,\"edi\":%lu,\"esp\":%lu,\"access\":%llu,\"address\":%llu,\"stack\":[",
+            event->ExceptionRecord->ExceptionCode,c.Eip,static_cast<unsigned long>(c.Eip-gameBase),c.Eax,c.Ebx,c.Ecx,c.Edx,c.Esi,c.Edi,c.Esp,
+            static_cast<unsigned long long>(event->ExceptionRecord->ExceptionInformation[0]),static_cast<unsigned long long>(event->ExceptionRecord->ExceptionInformation[1]));
+        unsigned words[24]{};SIZE_T count=0;ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(c.Esp),words,sizeof(words),&count);
+        for(unsigned i=0;i<count/4;++i)std::fprintf(output,"%s%u",i?",":"",words[i]);
+        std::fputs("]}\n",output);std::fclose(output);
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+// Layout from the Windows SDK D3D9ON12_ARGS; keep old MinGW SDKs usable.
+struct On12Arguments {
+    BOOL enabled;
+    IUnknown* device;
+    IUnknown* queues[2];
+    UINT queueCount;
+    UINT nodeMask;
+};
+void backendEvent(const char* stage, HRESULT result) {
+    if (FILE* output=std::fopen("native-backend.jsonl","ab")) {
+        std::fprintf(output,"{\"backend\":\"warp-d3d9on12\",\"stage\":\"%s\",\"result\":%ld}\n",stage,long(result));
+        std::fclose(output);
+    }
+}
+IDirect3D9* createWarp9(HMODULE d3d9, UINT sdkVersion) {
+    using CreateFactory = HRESULT (WINAPI*)(REFIID, void**);
+    using CreateDevice12 = HRESULT (WINAPI*)(IUnknown*, D3D_FEATURE_LEVEL, REFIID, void**);
+    using CreateOn12 = IDirect3D9* (WINAPI*)(UINT, On12Arguments*, UINT);
+    const auto dxgi=LoadLibraryExW(L"dxgi.dll",nullptr,LOAD_LIBRARY_SEARCH_SYSTEM32);
+    const auto d3d12=LoadLibraryExW(L"d3d12.dll",nullptr,LOAD_LIBRARY_SEARCH_SYSTEM32);
+    const auto createFactory=dxgi?reinterpret_cast<CreateFactory>(GetProcAddress(dxgi,"CreateDXGIFactory1")):nullptr;
+    const auto create12=d3d12?reinterpret_cast<CreateDevice12>(GetProcAddress(d3d12,"D3D12CreateDevice")):nullptr;
+    const auto create9=reinterpret_cast<CreateOn12>(GetProcAddress(d3d9,"Direct3DCreate9On12"));
+    if(!createFactory||!create12||!create9){backendEvent("entrypoints",E_NOINTERFACE);return nullptr;}
+    IDXGIFactory4* factory=nullptr;
+    HRESULT hr=createFactory(__uuidof(IDXGIFactory4),reinterpret_cast<void**>(&factory));
+    backendEvent("factory",hr);
+    if(FAILED(hr))return nullptr;
+    IDXGIAdapter* adapter=nullptr;
+    hr=factory->EnumWarpAdapter(__uuidof(IDXGIAdapter),reinterpret_cast<void**>(&adapter));
+    factory->Release();
+    backendEvent("warp-adapter",hr);
+    if(FAILED(hr))return nullptr;
+    ID3D12Device* device=nullptr;
+    hr=create12(adapter,D3D_FEATURE_LEVEL_11_0,__uuidof(ID3D12Device),reinterpret_cast<void**>(&device));
+    adapter->Release();
+    backendEvent("warp-device",hr);
+    if(FAILED(hr))return nullptr;
+    On12Arguments arguments{};
+    arguments.enabled=TRUE;
+    arguments.device=device;
+    IDirect3D9* result=create9(sdkVersion,&arguments,1);
+    device->Release();
+    backendEvent("d3d9",result?S_OK:E_FAIL);
+    return result;
+}
 unsigned presentIndex, generation, priorFrame;
 std::uintptr_t priorOwner;
 constexpr unsigned imageFrames[] = {80, 83, 84, 85, 86, 87, 88, 90, 100, 105, 111, 112, 113, 114, 120, 124, 125, 126, 127, 130, 140, 180, 300, 600, 1200};
 bool savedImage[sizeof(imageFrames) / sizeof(imageFrames[0])];
+std::vector<unsigned> extraImageFrames;
 unsigned imageSegment = UINT_MAX;
 void* originalRng;
 DWORD captureThread;
@@ -36,7 +110,7 @@ struct RngCall {
     unsigned present, frame, flags, object, before, caller, bp, si, di;
     unsigned stack[8], frameWords[12], instructionWords[6];
     unsigned subIndex, ip, subContext[6];
-    unsigned animation[8];
+    unsigned animation[12];
     unsigned counterManagerIndex, counterSlot, counterSlotFlags;
     char subName[64];
 };
@@ -84,6 +158,18 @@ void __cdecl recordRngCall(unsigned object, const unsigned* stack, unsigned bp, 
     sample.bp = bp;
     sample.si = si;
     sample.di = di;
+    if(cpuDebugActive&&sample.caller==0x10c6fb){
+        if(FILE* output=std::fopen("native-enemy-death.jsonl","ab")){
+            std::fprintf(output,"{\"frame\":%u,\"seed\":%u,\"id\":%u,\"position\":[%.9g,%.9g],\"flags\":%u,\"status\":%u,\"sprite\":%d}\n",frame,sample.before,read<unsigned>(si+0x6858),read<float>(si+0x1278),read<float>(si+0x127c),read<unsigned>(si+0x639c),read<unsigned>(si+0x63a0),read<int>(si+0x14a8));
+            std::fclose(output);
+        }
+    }
+    if(cpuDebugActive&&sample.caller==0x14a033){
+        if(FILE* output=std::fopen("native-graze-debug.jsonl","ab")){
+            std::fprintf(output,"{\"frame\":%u,\"seed\":%u,\"position\":[%u,%u]}\n",frame,sample.before,read<unsigned>(di),read<unsigned>(di+4));
+            std::fclose(output);
+        }
+    }
     if (sample.caller == 0x11be8e) {
         // 0x51c042 selects the receiving manager. 0x4f3925 takes its first free slot.
         const auto get=[](unsigned address){
@@ -111,6 +197,8 @@ void __cdecl recordRngCall(unsigned object, const unsigned* stack, unsigned bp, 
         sample.animation[2]=get(vm+0x28);sample.animation[3]=get(vm+0x2c);
         sample.animation[4]=get(vm+0x454);
         sample.animation[5]=get(di);sample.animation[6]=get(di+4);sample.animation[7]=get(di+12);
+        sample.animation[8]=get(vm+0x4cc);sample.animation[9]=get(vm+0x4e4);
+        sample.animation[10]=get(vm+0x508);sample.animation[11]=get(vm+0x564);
     }
     if (frame >= 85 && frame <= 86 && (sample.caller == 0x4c48 || sample.caller == 0x4ca1)) {
         ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<const void*>(bp),
@@ -169,6 +257,275 @@ void relativeJump(unsigned char* instruction, std::uintptr_t destination) {
     std::memcpy(instruction + 1, &delta, sizeof(delta));
 }
 
+void* originalInputReset;
+__declspec(naked) void observeInputReset() {
+    __asm {
+        cmp dword ptr [ecx + 0x2e10], 0
+        je initialize
+        xor eax, eax
+        ret
+    initialize:
+        jmp dword ptr [originalInputReset]
+    }
+}
+
+bool installCpuInputResetCompatibility() {
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0xb8b80);
+    const unsigned char prolog[]={0x55,0x8b,0xec,0x6a,0xff,0x68};
+    if(std::memcmp(entry,prolog,sizeof(prolog))!=0||
+       read<unsigned>(gameBase+0xb8b86)!=gameBase+0x17645b)return false;
+    auto* trampoline=static_cast<unsigned char*>(VirtualAlloc(nullptr,10,MEM_RESERVE|MEM_COMMIT,PAGE_EXECUTE_READWRITE));
+    if(!trampoline)return false;
+    std::memcpy(trampoline,entry,5);
+    relativeJump(trampoline+5,reinterpret_cast<std::uintptr_t>(entry+5));
+    DWORD protection=0,ignored=0;
+    if(!VirtualProtect(entry,5,PAGE_EXECUTE_READWRITE,&protection)){
+        VirtualFree(trampoline,0,MEM_RELEASE);return false;
+    }
+    originalInputReset=trampoline;
+    relativeJump(entry,reinterpret_cast<std::uintptr_t>(&observeInputReset));
+    FlushInstructionCache(GetCurrentProcess(),entry,5);
+    VirtualProtect(entry,5,protection,&ignored);
+    return true;
+}
+
+void* originalAnmChild;
+unsigned __fastcall observeAnmChild(void* file,void*,unsigned output,int script,unsigned parent,unsigned flags){
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    if(parent&&GetCurrentThreadId()==captureThread&&cpuDebugActive&&detailedFrame(frame,0,0)){
+        const auto nextNode=read<unsigned>(parent+0x510);
+        const auto next=nextNode?read<unsigned>(nextNode):0;
+        if(FILE* trace=std::fopen("native-anm-child.jsonl","ab")){
+            std::fprintf(trace,"{\"frame\":%u,\"script\":%d,\"flags\":%u,\"parent\":%u,\"parentScript\":%d,\"parentTime\":%d,\"parentFlags\":%u,\"nextScript\":%d}\n",frame,script,flags,parent,read<int>(parent+0x28),read<int>(parent+0x4e4),read<unsigned>(parent+0x57c),next?read<int>(next+0x28):-1);
+            std::fclose(trace);
+        }
+    }
+    using Create=unsigned(__thiscall*)(void*,unsigned,int,unsigned,unsigned);
+    return reinterpret_cast<Create>(originalAnmChild)(file,output,script,parent,flags);
+}
+bool installAnmChildObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0xd0770);
+    const unsigned char prolog[]={0x55,0x8b,0xec,0x6a,0xff};
+    if(std::memcmp(entry,prolog,sizeof(prolog))!=0)return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,10,MEM_RESERVE|MEM_COMMIT,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,5);
+    relativeJump(relay+5,reinterpret_cast<std::uintptr_t>(entry+5));
+    DWORD protection=0,ignored=0;
+    if(!VirtualProtect(entry,5,PAGE_EXECUTE_READWRITE,&protection)){VirtualFree(relay,0,MEM_RELEASE);return false;}
+    originalAnmChild=relay;relativeJump(entry,reinterpret_cast<std::uintptr_t>(&observeAnmChild));
+    FlushInstructionCache(GetCurrentProcess(),entry,5);VirtualProtect(entry,5,protection,&ignored);return true;
+}
+
+void* originalAnmDetached;
+unsigned __fastcall observeAnmDetached(void* file,void*,unsigned output,int script,unsigned parent,unsigned flags){
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    if(parent&&GetCurrentThreadId()==captureThread&&cpuDebugActive&&detailedFrame(frame,0,0)){
+        static unsigned lastQueueFrame=~0u;
+        static std::vector<unsigned> queueManagers;
+        if(frame!=lastQueueFrame){lastQueueFrame=frame;queueManagers.clear();}
+        const auto manager=read<unsigned>(parent+0x508);
+        if(std::find(queueManagers.begin(),queueManagers.end(),manager)==queueManagers.end()){
+            queueManagers.push_back(manager);
+            if(FILE* queue=std::fopen("native-anm-queue.jsonl","ab")){
+                unsigned index=0;
+                for(auto node=manager?read<unsigned>(manager):0;node&&index<10000;node=read<unsigned>(node+4),++index){
+                    const auto vm=read<unsigned>(node);
+                    const int sid=read<int>(vm+0x28);
+                    if(sid==106||sid==170)
+                        std::fprintf(queue,"{\"frame\":%u,\"manager\":%u,\"index\":%u,\"vm\":%u,\"script\":%d,\"time\":%d,\"registration\":%u,\"flags\":%u,\"position\":[%.9g,%.9g]}\n",frame,manager,index,vm,sid,read<int>(vm+0x4e4),read<unsigned>(vm+0x4d8),read<unsigned>(vm+0x57c),read<float>(vm+0x30),read<float>(vm+0x34));
+                }
+                std::fclose(queue);
+            }
+        }
+        const auto nextNode=read<unsigned>(parent+0x510);
+        const auto next=nextNode?read<unsigned>(nextNode):0;
+        if(FILE* trace=std::fopen("native-anm-detached.jsonl","ab")){
+            std::fprintf(trace,"{\"frame\":%u,\"script\":%d,\"flags\":%u,\"parent\":%u,\"parentScript\":%d,\"parentTime\":%d,\"parentFlags\":%u,\"nextScript\":%d}\n",frame,script,flags,parent,read<int>(parent+0x28),read<int>(parent+0x4e4),read<unsigned>(parent+0x57c),next?read<int>(next+0x28):-1);
+            std::fclose(trace);
+        }
+    }
+    using Create=unsigned(__thiscall*)(void*,unsigned,int,unsigned,unsigned);
+    return reinterpret_cast<Create>(originalAnmDetached)(file,output,script,parent,flags);
+}
+bool installAnmDetachedObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0xd09b0);
+    const unsigned char prolog[]={0x55,0x8b,0xec,0x6a,0xff};
+    if(std::memcmp(entry,prolog,sizeof(prolog))!=0)return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,10,MEM_RESERVE|MEM_COMMIT,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,5);
+    relativeJump(relay+5,reinterpret_cast<std::uintptr_t>(entry+5));
+    DWORD protection=0,ignored=0;
+    if(!VirtualProtect(entry,5,PAGE_EXECUTE_READWRITE,&protection)){VirtualFree(relay,0,MEM_RELEASE);return false;}
+    originalAnmDetached=relay;relativeJump(entry,reinterpret_cast<std::uintptr_t>(&observeAnmDetached));
+    FlushInstructionCache(GetCurrentProcess(),entry,5);VirtualProtect(entry,5,protection,&ignored);return true;
+}
+
+void* originalFieldRay;
+void __cdecl recordFieldRay(float angle,unsigned origin){
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    if(GetCurrentThreadId()!=captureThread||!cpuDebugActive||!detailedFrame(frame,0,0))return;
+    if(FILE* output=std::fopen("native-field-ray.jsonl","ab")){
+        std::fprintf(output,"{\"frame\":%u,\"position\":[%.9g,%.9g],\"angle\":%.9g}\n",frame,read<float>(origin),read<float>(origin+4),angle);
+        std::fclose(output);
+    }
+}
+__declspec(naked) void observeFieldRay(){
+    __asm {
+        pushfd
+        pushad
+        sub esp,16
+        movss dword ptr [esp],xmm3
+        mov eax,dword ptr [esp+56]
+        mov dword ptr [esp+4],eax
+        call recordFieldRay
+        movss xmm3,dword ptr [esp]
+        add esp,16
+        popad
+        popfd
+        jmp dword ptr [originalFieldRay]
+    }
+}
+bool installFieldRayObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0xd3140);
+    const unsigned char prolog[]={0x55,0x8b,0xec,0x83,0xe4,0xf8};
+    if(std::memcmp(entry,prolog,sizeof(prolog))!=0)return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,11,MEM_RESERVE|MEM_COMMIT,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,6);
+    relativeJump(relay+6,reinterpret_cast<std::uintptr_t>(entry+6));
+    DWORD protection=0,ignored=0;
+    if(!VirtualProtect(entry,6,PAGE_EXECUTE_READWRITE,&protection)){
+        VirtualFree(relay,0,MEM_RELEASE);return false;
+    }
+    originalFieldRay=relay;
+    relativeJump(entry,reinterpret_cast<std::uintptr_t>(&observeFieldRay));entry[5]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,6);
+    VirtualProtect(entry,6,protection,&ignored);
+    return true;
+}
+
+void* originalBulletFire;
+int __fastcall observeBulletFire(void* manager,void*,unsigned descriptor,int column,int row,float aim){
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    if(GetCurrentThreadId()==captureThread&&cpuDebugActive&&detailedFrame(frame,0,0)){
+        if(FILE* output=std::fopen("native-bullet-fire.jsonl","ab")){
+            std::fprintf(output,"{\"frame\":%u,\"descriptor\":%u,\"index\":[%d,%d],\"position\":[%.9g,%.9g],\"angles\":[%.9g,%.9g,%.9g],\"speed\":[%.9g,%.9g],\"muzzle\":%.9g,\"kind\":%u,\"color\":%u}\n",frame,descriptor,column,row,read<float>(descriptor+8),read<float>(descriptor+12),read<float>(descriptor+20),read<float>(descriptor+24),aim,read<float>(descriptor+28),read<float>(descriptor+32),read<float>(descriptor+36),unsigned(read<unsigned short>(descriptor)),unsigned(read<unsigned short>(descriptor+4)));
+            std::fclose(output);
+        }
+    }
+    using Fire=int(__thiscall*)(void*,unsigned,int,int,float);
+    return reinterpret_cast<Fire>(originalBulletFire)(manager,descriptor,column,row,aim);
+}
+bool installBulletFireObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0xf3910);
+    const unsigned char prolog[]={0x55,0x8b,0xec,0x83,0xe4,0xc0};
+    if(std::memcmp(entry,prolog,sizeof(prolog))!=0)return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,11,MEM_RESERVE|MEM_COMMIT,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,6);
+    relativeJump(relay+6,reinterpret_cast<std::uintptr_t>(entry+6));
+    DWORD protection=0,ignored=0;
+    if(!VirtualProtect(entry,6,PAGE_EXECUTE_READWRITE,&protection)){
+        VirtualFree(relay,0,MEM_RELEASE);return false;
+    }
+    originalBulletFire=relay;
+    relativeJump(entry,reinterpret_cast<std::uintptr_t>(&observeBulletFire));
+    entry[5]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,6);
+    VirtualProtect(entry,6,protection,&ignored);
+    return true;
+}
+
+void* originalFixedCut;
+void* originalFixedCircle;
+void* originalFixedUpdate;
+int __fastcall observeFixedUpdate(void* laser,void*){
+    using Update=int(__thiscall*)(void*);
+    const int result=reinterpret_cast<Update>(originalFixedUpdate)(laser);
+    const auto address=reinterpret_cast<std::uintptr_t>(laser);
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    if(GetCurrentThreadId()==captureThread&&cpuDebugActive&&detailedFrame(frame,0,0))
+        if(FILE* output=std::fopen("native-fixed-update.jsonl","ab")){
+            std::fprintf(output,"{\"frame\":%u,\"laser\":%u,\"position\":[%.9g,%.9g],\"length\":%.9g,\"width\":%.9g,\"phase\":%u,\"clock\":%d,\"durations\":[%d,%d,%d,%d]}\n",frame,unsigned(address),read<float>(address+0x60),read<float>(address+0x64),read<float>(address+0x7c),read<float>(address+0x80),read<unsigned>(address+0x1c),read<int>(address+0x28),read<int>(address+0x8b8),read<int>(address+0x8bc),read<int>(address+0x8c0),read<int>(address+0x8c4));
+            std::fclose(output);
+        }
+    return result;
+}
+int __fastcall observeFixedCircle(void* laser,void*,unsigned center,unsigned radius,unsigned third,unsigned lock){
+    const auto address=reinterpret_cast<std::uintptr_t>(laser);
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    if(GetCurrentThreadId()==captureThread&&cpuDebugActive&&detailedFrame(frame,0,0))
+        if(FILE* output=std::fopen("native-fixed-circle.jsonl","ab")){
+            float radiusValue;std::memcpy(&radiusValue,&radius,4);
+            std::fprintf(output,"{\"frame\":%u,\"present\":%u,\"laser\":%u,\"center\":[%.9g,%.9g],\"radius\":%.9g,\"position\":[%.9g,%.9g],\"length\":%.9g,\"phase\":%u}\n",frame,presentIndex+1,unsigned(address),read<float>(center),read<float>(center+4),radiusValue,read<float>(address+0x60),read<float>(address+0x64),read<float>(address+0x7c),read<unsigned>(address+0x1c));
+            std::fclose(output);
+        }
+    using Circle=int(__thiscall*)(void*,unsigned,unsigned,unsigned,unsigned);
+    return reinterpret_cast<Circle>(originalFixedCircle)(laser,center,radius,third,lock);
+}
+int __fastcall observeFixedCut(void* laser,void*,unsigned mask,int count){
+    const auto address=reinterpret_cast<std::uintptr_t>(laser);
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    const bool capture=GetCurrentThreadId()==captureThread&&cpuDebugActive&&detailedFrame(frame,0,0);
+    const float before=capture?read<float>(address+0x7c):0;
+    using Cut=int(__thiscall*)(void*,unsigned,int);
+    const int result=reinterpret_cast<Cut>(originalFixedCut)(laser,mask,count);
+    if(capture)if(FILE* output=std::fopen("native-fixed-cut.jsonl","ab")){
+        std::fprintf(output,"{\"frame\":%u,\"present\":%u,\"laser\":%u,\"position\":[%.9g,%.9g],\"angle\":%.9g,\"before\":%.9g,\"after\":%.9g,\"phase\":%u,\"mask\":[",frame,presentIndex+1,unsigned(address),read<float>(address+0x60),read<float>(address+0x64),read<float>(address+0x78),before,read<float>(address+0x7c),read<unsigned>(address+0x1c));
+        for(int i=0;i<count&&i<512;++i)std::fprintf(output,"%s%u",i?",":"",unsigned(read<unsigned char>(mask+i)));
+        std::fputs("]}\n",output);std::fclose(output);
+    }
+    return result;
+}
+bool installFixedCutObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0x12ac90);
+    const unsigned char prolog[]={0x55,0x8b,0xec,0x81,0xec,0x90,0x04,0x00,0x00};
+    if(std::memcmp(entry,prolog,sizeof(prolog))!=0)return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,14,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,9);relativeJump(relay+9,reinterpret_cast<std::uintptr_t>(entry+9));
+    DWORD protection=0,ignored=0;
+    if(!VirtualProtect(entry,9,PAGE_EXECUTE_READWRITE,&protection)){VirtualFree(relay,0,MEM_RELEASE);return false;}
+    originalFixedCut=relay;relativeJump(entry,reinterpret_cast<std::uintptr_t>(&observeFixedCut));
+    std::memset(entry+5,0x90,4);FlushInstructionCache(GetCurrentProcess(),entry,9);
+    VirtualProtect(entry,9,protection,&ignored);return true;
+}
+bool installFixedCircleObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0x12a040);
+    const unsigned char prolog[]={0x55,0x8b,0xec,0x81,0xec,0x40,0x02,0x00,0x00};
+    if(std::memcmp(entry,prolog,sizeof(prolog))!=0)return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,14,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,9);relativeJump(relay+9,reinterpret_cast<std::uintptr_t>(entry+9));
+    DWORD protection=0,ignored=0;
+    if(!VirtualProtect(entry,9,PAGE_EXECUTE_READWRITE,&protection)){VirtualFree(relay,0,MEM_RELEASE);return false;}
+    originalFixedCircle=relay;relativeJump(entry,reinterpret_cast<std::uintptr_t>(&observeFixedCircle));
+    std::memset(entry+5,0x90,4);FlushInstructionCache(GetCurrentProcess(),entry,9);
+    VirtualProtect(entry,9,protection,&ignored);return true;
+}
+bool installFixedUpdateObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0x12b550);
+    const unsigned char prolog[]={0x55,0x8b,0xec,0x83,0xec,0x18};
+    if(std::memcmp(entry,prolog,sizeof(prolog))!=0)return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,11,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,6);relativeJump(relay+6,reinterpret_cast<std::uintptr_t>(entry+6));
+    DWORD protection=0,ignored=0;
+    if(!VirtualProtect(entry,6,PAGE_EXECUTE_READWRITE,&protection)){VirtualFree(relay,0,MEM_RELEASE);return false;}
+    originalFixedUpdate=relay;relativeJump(entry,reinterpret_cast<std::uintptr_t>(&observeFixedUpdate));
+    entry[5]=0x90;FlushInstructionCache(GetCurrentProcess(),entry,6);
+    VirtualProtect(entry,6,protection,&ignored);return true;
+}
+
 void* originalShot;
 struct ShotGate {
     unsigned timer, seat, warmup, emitClock, seatFlags, gameFlags, stageReady, frozen;
@@ -178,11 +535,11 @@ unsigned shotGateCount, shotGateFlushed;
 struct PlayerSample {unsigned owner, timer, x, y, controls, bulletManager;};
 PlayerSample playerSamples[2];
 bool captureBulletPositions;
-struct ProjectileSample {unsigned timer,seat,projectile,vm,age,x,y,angle,speed,kind;};
-ProjectileSample projectileSamples[4096];
+struct ProjectileSample {unsigned timer,seat,projectile,vm,age,x,y,angle,speed,kind,damage;};
+ProjectileSample projectileSamples[16384];
 unsigned projectileCount,projectileFlushed;
-struct EnemySample {unsigned timer,id,x,y,flags,status;int hp;};
-EnemySample enemySamples[1024];
+struct EnemySample {unsigned timer,id,x,y,flags,status;int hp;unsigned seat;};
+EnemySample enemySamples[8192];
 unsigned enemyCount,enemyFlushed;
 
 void __cdecl recordShotGate(unsigned shot) {
@@ -199,7 +556,24 @@ void __cdecl recordShotGate(unsigned shot) {
         playerSamples[seat]={game,timer,read<unsigned>(status+0x68c),read<unsigned>(status+0x690),
             input?read<unsigned>(input+0x29c)&0xffu:0x100u,read<unsigned>(ctx)};
     }
-    if(shotGateCount>=_countof(shotGateSamples)||!detailedFrame(timer,0,130)) return;
+    if(!detailedFrame(timer,0,130)) return;
+    if(cpuDebugActive&&ctx&&seat<2){
+        const auto manager=read<unsigned>(ctx+8);
+        auto node=manager?read<unsigned>(manager+0x4b50):0;
+        if(FILE* output=std::fopen("native-enemy-motion.jsonl","ab")){
+            for(unsigned i=0;node&&i<1024;++i){
+                const auto enemy=read<unsigned>(node);
+                if(!enemy)break;
+                std::fprintf(output,"{\"frame\":%u,\"seat\":%u,\"id\":%u,\"position\":[%u,%u],\"spawn\":[%u,%u],\"hp\":%d,\"viewport\":[%d,%d],\"motion\":[",timer,seat,read<unsigned>(enemy+0x6858),read<unsigned>(enemy+0x1278),read<unsigned>(enemy+0x127c),read<unsigned>(enemy+0x6880),read<unsigned>(enemy+0x6884),read<int>(enemy+0x6238),read<int>(gameBase+0x22ce48),read<int>(gameBase+0x22ce4c));
+                // Enemy::update receives the gameplay record at allocation +0x1230.
+                for(unsigned word=0;word<20;++word)std::fprintf(output,"%s%u",word?",":"",read<unsigned>(enemy+0x12c0+word*4));
+                std::fputs("]}\n",output);
+                node=read<unsigned>(node+4);
+            }
+            std::fclose(output);
+        }
+    }
+    if(shotGateCount>=_countof(shotGateSamples))return;
     auto& sample=shotGateSamples[shotGateCount++];
     const auto stage=read<unsigned>(gameBase+0x1d1a68);
     const auto director=read<unsigned>(gameBase+0x1d1a50);
@@ -207,7 +581,7 @@ void __cdecl recordShotGate(unsigned shot) {
         read<unsigned>(shot+0x12804),status?read<unsigned>(status+0x14):0,
         read<unsigned>(game+0x140),stage?read<unsigned>(stage+0x4b78):0,
         director?read<unsigned>(director+0x310):0};
-    if(detailedFrame(timer,84,130)&&sample.seat==0&&ctx){
+    if(detailedFrame(timer,84,130)&&sample.seat<2&&ctx){
         auto manager=read<unsigned>(ctx+8);
         auto node=manager?read<unsigned>(manager+0x4b50):0;
         for(unsigned i=0;node&&i<24&&enemyCount<_countof(enemySamples);++i){
@@ -215,18 +589,31 @@ void __cdecl recordShotGate(unsigned shot) {
             if(!enemy)break;
             // 0x509e68 subtracts damage from the +0x1230 subobject at +0x5008.
             enemySamples[enemyCount++]={timer,read<unsigned>(enemy+0x6858),read<unsigned>(enemy+0x1278),
-                read<unsigned>(enemy+0x127c),read<unsigned>(enemy+0x639c),read<unsigned>(enemy+0x63a0),read<int>(enemy+0x6238)};
+                read<unsigned>(enemy+0x127c),read<unsigned>(enemy+0x639c),read<unsigned>(enemy+0x63a0),read<int>(enemy+0x6238),sample.seat};
             node=read<unsigned>(node+4);
         }
     }
-    if(detailedFrame(timer,86,130)&&sample.seat==0) {
+    if(detailedFrame(timer,86,130)&&sample.seat<2) {
         auto node=read<unsigned>(shot+0x12840);
         for(unsigned i=0;node&&i<96&&projectileCount<_countof(projectileSamples);++i) {
             const auto projectile=read<unsigned>(node);
             if(!projectile)break;
+            if(cpuDebugActive){
+                const auto vmId=read<unsigned>(projectile+0x14);
+                using FindVm=unsigned(__thiscall*)(void*,unsigned);
+                const auto vm=reinterpret_cast<FindVm>(gameBase+0xcb8b0)(reinterpret_cast<void*>(read<unsigned>(gameBase+0x1d19bc)),vmId);
+                if(vm)if(FILE* output=std::fopen("native-shot-vertices.jsonl","ab")){
+                    float vertices[12]{};
+                    using Quad=void(__thiscall*)(void*,float*);
+                    reinterpret_cast<Quad>(gameBase+0xca2e0)(reinterpret_cast<void*>(vm),vertices);
+                    std::fprintf(output,"{\"frame\":%u,\"seat\":%u,\"shot\":%u,\"age\":%u,\"position\":[%.9g,%.9g],\"viewport\":[%d,%d],\"vertices\":[",timer,seat,projectile,read<unsigned>(projectile+0x1c),read<float>(projectile+0x54),read<float>(projectile+0x58),read<int>(gameBase+0x22ce48),read<int>(gameBase+0x22ce4c));
+                    for(unsigned j=0;j<12;++j)std::fprintf(output,"%s%.9g",j?",":"",vertices[j]);
+                    std::fputs("]}\n",output);std::fclose(output);
+                }
+            }
             projectileSamples[projectileCount++]={timer,sample.seat,projectile,read<unsigned>(projectile+0x14),
                 read<unsigned>(projectile+0x1c),read<unsigned>(projectile+0x54),read<unsigned>(projectile+0x58),
-                read<unsigned>(projectile+0x70),read<unsigned>(projectile+0x6c),read<unsigned>(projectile+0x9c)};
+                read<unsigned>(projectile+0x70),read<unsigned>(projectile+0x6c),read<unsigned>(projectile+0x9c),read<unsigned>(projectile+0xac)};
             node=read<unsigned>(node+4);
         }
     }
@@ -274,12 +661,16 @@ void* originalImpact;
 struct ImpactSample {unsigned timer,seat,vm,x,y,kind,age;};
 ImpactSample impactSamples[256];
 unsigned impactCount,impactFlushed;
-void __cdecl recordImpact(unsigned shot) {
+void __cdecl recordImpact(unsigned shot,unsigned caller) {
     if(GetCurrentThreadId()!=captureThread || impactCount>=_countof(impactSamples))return;
     const auto game=read<unsigned>(gameBase+0x1d1a54);
     if(!game)return;
     const auto frame=read<unsigned>(game+0x14);
     if(!detailedFrame(frame,100,130))return;
+    if(cpuDebugActive)if(FILE* output=std::fopen("native-impact-detail.jsonl","ab")){
+        std::fprintf(output,"{\"frame\":%u,\"shot\":%u,\"caller\":%u,\"age\":%d,\"x\":%u,\"y\":%u}\n",frame,shot,caller-gameBase,read<int>(shot+0x1c),read<unsigned>(shot+0x54),read<unsigned>(shot+0x58));
+        std::fclose(output);
+    }
     impactSamples[impactCount++]={frame,read<unsigned>(shot+0x11c),read<unsigned>(shot+0x14),
         read<unsigned>(shot+0x54),read<unsigned>(shot+0x58),read<unsigned>(shot+0x9c),
         read<unsigned>(shot+0x114)};
@@ -292,9 +683,10 @@ __declspec(naked) void observeImpact() {
         and esp, -16
         sub esp, 512
         fxsave [esp]
+        push dword ptr [ebx + 36]
         push ecx
         call recordImpact
-        add esp, 4
+        add esp, 8
         fxrstor [esp]
         mov esp, ebx
         popad
@@ -454,6 +846,7 @@ void flushRngCalls() {
 }
 
 bool saveBackbuffer(IDirect3DDevice9* device, const char* path) {
+    if(stateOnlyDrawActive)return false;
     IDirect3DSurface9* back = nullptr;
     if (FAILED(device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &back))) return false;
     D3DSURFACE_DESC desc{};
@@ -508,17 +901,23 @@ bool saveBackbuffer(IDirect3DDevice9* device, const char* path) {
 void writeBulletPositions(FILE* output, unsigned manager) {
     // 0x40e0fb starts the active list and 0x40e0b3 advances it.
     auto bullet = read<unsigned>(manager+0x8156d8);
+    const auto owner=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=owner?read<unsigned>(owner+0x14):0;
+    FILE* detail=nullptr;
+    if(cpuDebugActive&&detailedFrame(frame,0,130))detail=std::fopen("native-bullet-detail.jsonl","ab");
     std::fputc('[', output);
     bool first = true;
     for (unsigned i=0; bullet && i<2000; ++i, bullet=read<unsigned>(bullet+4)) {
         const auto state = read<unsigned>(bullet+0x1044);
         if (state!=1 && state!=2) continue; // 0x4ee3e9 selects live bullets.
+        if(detail)std::fprintf(detail,"{\"frame\":%u,\"manager\":%u,\"bullet\":%u,\"kind\":%u,\"color\":%u,\"position\":[%.9g,%.9g],\"radius\":%.9g,\"scale\":%.9g,\"flags\":%u,\"changes\":%u,\"velocity\":[%.9g,%.9g],\"speed\":%.9g,\"angle\":%.9g}\n",frame,manager,bullet,unsigned(read<unsigned short>(bullet+0x1078)),unsigned(read<unsigned short>(bullet+0x107a)),read<float>(bullet+0x650),read<float>(bullet+0x654),read<float>(bullet+0x674),read<float>(bullet+0xfd4),read<unsigned>(bullet+0x10),read<unsigned>(bullet+0x6a8),read<float>(bullet+0x65c),read<float>(bullet+0x660),read<float>(bullet+0x668),read<float>(bullet+0x670));
         std::fprintf(output,"%s[%u,%u,%u,%u]",first?"":",",
             unsigned(read<unsigned short>(bullet+0x1078)),unsigned(read<unsigned short>(bullet+0x107a)),
             read<unsigned>(bullet+0x650),read<unsigned>(bullet+0x654));
         first = false;
     }
     std::fputc(']', output);
+    if(detail)std::fclose(detail);
 }
 
 void capture(IDirect3DDevice9* device) {
@@ -604,7 +1003,7 @@ void capture(IDirect3DDevice9* device) {
         bool first=true;
         for(;enemyFlushed<enemyCount;++enemyFlushed){
             const auto& g=enemySamples[enemyFlushed];
-            std::fprintf(trace,"%s[%u,%u,%u,%u,%u,%u,%d]",first?"":",",g.timer,g.id,g.x,g.y,g.flags,g.status,g.hp);
+            std::fprintf(trace,"%s[%u,%u,%u,%u,%u,%u,%d,%u]",first?"":",",g.timer,g.id,g.x,g.y,g.flags,g.status,g.hp,g.seat);
             first=false;
         }
         std::fputc(']',trace);
@@ -614,8 +1013,8 @@ void capture(IDirect3DDevice9* device) {
         bool first=true;
         for(;projectileFlushed<projectileCount;++projectileFlushed){
             const auto& g=projectileSamples[projectileFlushed];
-            std::fprintf(trace,"%s[%u,%u,%u,%u,%u,%u,%u,%u,%u,%u]",first?"":",",
-                g.timer,g.seat,g.projectile,g.vm,g.age,g.x,g.y,g.angle,g.speed,g.kind);
+            std::fprintf(trace,"%s[%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u]",first?"":",",
+                g.timer,g.seat,g.projectile,g.vm,g.age,g.x,g.y,g.angle,g.speed,g.kind,g.damage);
             first=false;
         }
         std::fputc(']',trace);
@@ -646,6 +1045,13 @@ void capture(IDirect3DDevice9* device) {
         savedImage[i] = saveBackbuffer(device, name);
         if (savedImage[i]) std::fprintf(trace, ",\"image\":\"%s\"", name);
     }
+    for (unsigned wanted : extraImageFrames) {
+        if(frame!=wanted)continue;
+        char name[80]{};
+        sprintf_s(name,"native-segment-%u-frame-%u.bmp",generation,frame);
+        if(GetFileAttributesA(name)==INVALID_FILE_ATTRIBUTES&&saveBackbuffer(device,name))
+            std::fprintf(trace,",\"image\":\"%s\"",name);
+    }
     std::fputs("}\n", trace);
     std::fflush(trace);
 }
@@ -675,9 +1081,27 @@ bool enableFastStateCapture() {
     return true;
 }
 
+HRESULT STDMETHODCALLTYPE observeDrawPrimitive(IDirect3DDevice9* self,D3DPRIMITIVETYPE type,UINT start,UINT count){
+    return stateOnlyDrawActive?D3D_OK:originalDrawPrimitive(self,type,start,count);
+}
+HRESULT STDMETHODCALLTYPE observeDrawIndexedPrimitive(IDirect3DDevice9* self,D3DPRIMITIVETYPE type,INT base,UINT minimum,UINT vertices,UINT start,UINT count){
+    return stateOnlyDrawActive?D3D_OK:originalDrawIndexedPrimitive(self,type,base,minimum,vertices,start,count);
+}
+HRESULT STDMETHODCALLTYPE observeDrawPrimitiveUP(IDirect3DDevice9* self,D3DPRIMITIVETYPE type,UINT count,const void* vertices,UINT stride){
+    return stateOnlyDrawActive?D3D_OK:originalDrawPrimitiveUP(self,type,count,vertices,stride);
+}
+HRESULT STDMETHODCALLTYPE observeDrawIndexedPrimitiveUP(IDirect3DDevice9* self,D3DPRIMITIVETYPE type,UINT minimum,UINT vertices,UINT count,const void* indices,D3DFORMAT format,const void* data,UINT stride){
+    return stateOnlyDrawActive?D3D_OK:originalDrawIndexedPrimitiveUP(self,type,minimum,vertices,count,indices,format,data,stride);
+}
+
 HRESULT STDMETHODCALLTYPE observePresent(IDirect3DDevice9* self, const RECT* source, const RECT* dest,
                                           HWND window, const RGNDATA* dirty) {
     capture(self);
+    const auto owner=read<unsigned>(gameBase+0x1d1a54);
+    static const bool stateOnly=GetEnvironmentVariableA("TH19_CAPTURE_STATE_ONLY",nullptr,0)>0;
+    static const unsigned renderFrom=[](){char value[32]{};GetEnvironmentVariableA("TH19_CAPTURE_RENDER_FROM",value,sizeof(value));return unsigned(std::strtoul(value,nullptr,10));}();
+    stateOnlyDrawActive=owner&&(read<unsigned>(owner+0x140)&0x4000000u)&&
+        (stateOnly||(renderFrom&&read<unsigned>(owner+0x14)+1<renderFrom));
     static const bool requested=GetEnvironmentVariableA("TH19_CAPTURE_FAST_STATE",nullptr,0)>0;
     if(requested){
         const auto owner=read<unsigned>(gameBase+0x1d1a54);
@@ -688,23 +1112,153 @@ HRESULT STDMETHODCALLTYPE observePresent(IDirect3DDevice9* self, const RECT* sou
                 std::fflush(trace);
                 return result;
             }();
-            if(active&&read<unsigned>(owner+0x14)%60!=0)return D3D_OK;
+            if(active&&(stateOnlyDrawActive||read<unsigned>(owner+0x14)%60!=0))return D3D_OK;
         }
     }
     return originalPresent(self, source, dest, window, dirty);
 }
 
+HRESULT STDMETHODCALLTYPE observeDisplayMode(IDirect3D9* self, UINT adapter, D3DDISPLAYMODE* mode) {
+    const HRESULT result = originalDisplayMode(self, adapter, mode);
+    if (FAILED(result) && mode && adapter == D3DADAPTER_DEFAULT &&
+        GetEnvironmentVariableA("TH19_CAPTURE_DISPLAY_FALLBACK", nullptr, 0)>0) {
+        DEVMODEW current{};
+        current.dmSize = sizeof(current);
+        const BOOL enumerated = EnumDisplaySettingsW(nullptr, ENUM_CURRENT_SETTINGS, &current);
+        const DWORD enumerationError = enumerated ? 0 : GetLastError();
+        if (trace) {
+            std::fprintf(trace, "{\"displayModeFallbackAttempt\":true,\"enumerated\":%s,\"error\":%lu,\"bitsPerPixel\":%lu,\"width\":%lu,\"height\":%lu}\n",
+                enumerated?"true":"false", enumerationError, current.dmBitsPerPel, current.dmPelsWidth, current.dmPelsHeight);
+            std::fflush(trace);
+        }
+        if (enumerated &&
+            current.dmBitsPerPel == 32 && current.dmPelsWidth && current.dmPelsHeight) {
+            mode->Width = current.dmPelsWidth;
+            mode->Height = current.dmPelsHeight;
+            mode->RefreshRate = current.dmDisplayFrequency;
+            mode->Format = D3DFMT_X8R8G8B8;
+            if (trace) {
+                std::fprintf(trace, "{\"displayModeFallback\":true,\"originalResult\":%ld,\"width\":%u,\"height\":%u,\"refresh\":%u,\"bitsPerPixel\":%lu}\n",
+                    long(result), mode->Width, mode->Height, mode->RefreshRate, current.dmBitsPerPel);
+                std::fflush(trace);
+            }
+            return D3D_OK;
+        }
+    }
+    if (trace && mode) {
+        std::fprintf(trace, "{\"displayMode\":{\"result\":%ld,\"width\":%u,\"height\":%u,\"refresh\":%u,\"format\":%u}}\n",
+            long(result), SUCCEEDED(result)?mode->Width:0, SUCCEEDED(result)?mode->Height:0,
+            SUCCEEDED(result)?mode->RefreshRate:0, SUCCEEDED(result)?unsigned(mode->Format):0);
+        std::fflush(trace);
+    }
+    return result;
+}
+
+using CpuObstacleCall=unsigned(__fastcall*)(unsigned,unsigned);
+CpuObstacleCall originalCpuObstacle;
+unsigned __fastcall observeCpuObstacle(unsigned self,unsigned unused){
+    const unsigned selected=originalCpuObstacle(self,unused);
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    if(detailedFrame(frame,0,0))if(FILE* output=std::fopen("native-cpu-obstacles.jsonl","ab")){
+        const auto count=read<unsigned>(self+0x36ee84);
+        std::fprintf(output,"{\"frame\":%u,\"cpu\":%u,\"position\":[%u,%u],\"selected\":%d,\"objects\":[",frame,self,
+            read<unsigned>(self+0x36ee88),read<unsigned>(self+0x36ee8c),selected?int((selected-self-4)/60):-1);
+        for(unsigned i=0;i<count&&i<30000;++i){
+            std::fputs(i?",[":"[",output);
+            for(unsigned word=0;word<15;++word)std::fprintf(output,"%s%u",word?",":"",read<unsigned>(self+4+i*60+word*4));
+            std::fputc(']',output);
+        }
+        std::fputs("]}\n",output);std::fclose(output);
+    }
+    return selected;
+}
+bool installCpuObstacleObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0xf9530);
+    const unsigned char signature[]={0x55,0x8b,0xec,0x83,0xe4,0xc0,0x83,0xec,0x34};
+    if(std::memcmp(entry,signature,sizeof(signature)))return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,11,MEM_COMMIT|MEM_RESERVE,PAGE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,6);relativeJump(relay+6,reinterpret_cast<unsigned>(entry+6));
+    DWORD protection,ignored;
+    if(!VirtualProtect(relay,11,PAGE_EXECUTE_READ,&ignored)||!VirtualProtect(entry,6,PAGE_EXECUTE_READWRITE,&protection))return false;
+    originalCpuObstacle=reinterpret_cast<CpuObstacleCall>(relay);
+    relativeJump(entry,reinterpret_cast<unsigned>(observeCpuObstacle));entry[5]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,6);FlushInstructionCache(GetCurrentProcess(),relay,11);
+    VirtualProtect(entry,6,protection,&ignored);return true;
+}
+CpuObstacleCall originalCpuControl;
+unsigned __fastcall observeCpuControl(unsigned self,unsigned unused){
+    const unsigned result=originalCpuControl(self,unused);
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    if(detailedFrame(frame,0,0))if(FILE* output=std::fopen("native-cpu-control.jsonl","ab")){
+        const auto count=read<unsigned>(self+0x36ee84);
+        const auto player=read<unsigned>(read<unsigned>(self+0x36eec8)+4);
+        std::fprintf(output,"{\"frame\":%u,\"cpu\":%u,\"bits\":%u,\"player\":[%u,%u,%u,%u],\"position\":[%u,%u],\"radius\":%u,\"steps\":[%u,%u,%u,%u],\"state\":[",frame,self,result,
+            read<unsigned>(player+0x10),read<unsigned>(player+0x14),read<unsigned>(player+0x6b8),read<unsigned>(player+0x2078),
+            read<unsigned>(self+0x36ee88),read<unsigned>(self+0x36ee8c),read<unsigned>(player+0x20c8),
+            read<unsigned>(player+0x20e4),read<unsigned>(player+0x20e8),read<unsigned>(player+0x20ec),read<unsigned>(player+0x20f0));
+        for(unsigned offset=0x36ee94;offset<0x36eec8;offset+=4)std::fprintf(output,"%s%u",offset==0x36ee94?"":",",read<unsigned>(self+offset));
+        std::fputs("],\"objects\":[",output);
+        for(unsigned i=0;i<count&&i<30000;++i){
+            std::fputs(i?",[":"[",output);
+            for(unsigned word=0;word<15;++word)std::fprintf(output,"%s%u",word?",":"",read<unsigned>(self+4+i*60+word*4));
+            std::fputc(']',output);
+        }
+        std::fputs("]}\n",output);std::fclose(output);
+    }
+    return result;
+}
+bool installCpuControlObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0xfa3e0);
+    const unsigned char signature[]={0x55,0x8b,0xec,0x83,0xe4,0xc0,0x83,0xec,0x74};
+    if(std::memcmp(entry,signature,sizeof(signature)))return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,11,MEM_COMMIT|MEM_RESERVE,PAGE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,6);relativeJump(relay+6,reinterpret_cast<unsigned>(entry+6));
+    DWORD protection,ignored;
+    if(!VirtualProtect(relay,11,PAGE_EXECUTE_READ,&ignored)||!VirtualProtect(entry,6,PAGE_EXECUTE_READWRITE,&protection))return false;
+    originalCpuControl=reinterpret_cast<CpuObstacleCall>(relay);
+    relativeJump(entry,reinterpret_cast<unsigned>(observeCpuControl));entry[5]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,6);FlushInstructionCache(GetCurrentProcess(),relay,11);
+    VirtualProtect(entry,6,protection,&ignored);return true;
+}
 HRESULT STDMETHODCALLTYPE observeDevice(IDirect3D9* self, UINT adapter, D3DDEVTYPE type, HWND window,
                                          DWORD behavior, D3DPRESENT_PARAMETERS* parameters,
                                          IDirect3DDevice9** device) {
     HRESULT result = originalCreateDevice(self, adapter, type, window, behavior, parameters, device);
+    if (trace && parameters) {
+        std::fprintf(trace, "{\"deviceCreated\":%s,\"result\":%ld,\"width\":%u,\"height\":%u,\"windowed\":%s,\"arguments\":[%u,%u,%lu,%u,%u,%u,%lu,%d,%u,%lu,%u,%d,%d]}\n",
+            SUCCEEDED(result) ? "true" : "false", long(result),
+            parameters->BackBufferWidth, parameters->BackBufferHeight,
+            parameters->Windowed ? "true" : "false", adapter, unsigned(type), behavior,
+            unsigned(parameters->BackBufferFormat), unsigned(parameters->SwapEffect),
+            unsigned(parameters->MultiSampleType), parameters->MultiSampleQuality,
+            parameters->EnableAutoDepthStencil, unsigned(parameters->AutoDepthStencilFormat),
+            parameters->Flags, parameters->PresentationInterval, IsWindow(window), IsWindow(parameters->hDeviceWindow));
+        std::fflush(trace);
+    }
     if (SUCCEEDED(result) && device && *device && !originalPresent)
         patch(*reinterpret_cast<void***>(*device) + 17, observePresent, originalPresent);
+    if(SUCCEEDED(result)&&device&&*device&&!originalDrawPrimitive&&
+       (GetEnvironmentVariableA("TH19_CAPTURE_STATE_ONLY",nullptr,0)>0||GetEnvironmentVariableA("TH19_CAPTURE_RENDER_FROM",nullptr,0)>0)){
+        auto** table=*reinterpret_cast<void***>(*device);
+        const bool active=patch(table+81,observeDrawPrimitive,originalDrawPrimitive)&&
+            patch(table+82,observeDrawIndexedPrimitive,originalDrawIndexedPrimitive)&&
+            patch(table+83,observeDrawPrimitiveUP,originalDrawPrimitiveUP)&&
+            patch(table+84,observeDrawIndexedPrimitiveUP,originalDrawIndexedPrimitiveUP);
+        if(trace){std::fprintf(trace,"{\"stateOnlyDrawInstalled\":%s}\n",active?"true":"false");std::fflush(trace);}
+    }
     return result;
 }
 }
 
+#if defined(__MINGW32__)
+#pragma comment(linker, "/export:Direct3DCreate9=observeCreate9@4")
+#else
 #pragma comment(linker, "/export:Direct3DCreate9=_observeCreate9@4")
+#endif
 extern "C" IDirect3D9* WINAPI observeCreate9(UINT sdkVersion) {
     wchar_t path[MAX_PATH]{};
     const UINT size = GetSystemDirectoryW(path, MAX_PATH);
@@ -713,9 +1267,12 @@ extern "C" IDirect3D9* WINAPI observeCreate9(UINT sdkVersion) {
     const auto real = LoadLibraryExW(path, nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
     const auto create = real ? reinterpret_cast<Create9>(GetProcAddress(real, "Direct3DCreate9")) : nullptr;
     if (!create || create == observeCreate9) return nullptr;
-    IDirect3D9* d3d = create(sdkVersion);
+    IDirect3D9* d3d = GetEnvironmentVariableA("TH19_CAPTURE_SOFTWARE_D3D9",nullptr,0)>0
+        ? createWarp9(real,sdkVersion) : create(sdkVersion);
     if (!d3d || originalCreateDevice) return d3d;
     gameBase = reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
+    cpuDebugActive=GetEnvironmentVariableA("TH19_CAPTURE_CPU_DEBUG",nullptr,0)>0;
+    if(cpuDebugActive)AddVectoredExceptionHandler(1,recordCaptureException);
     const unsigned char timer[] = {0x8b,0x41,0x0c,0x83,0xf8,0x01,0x72,0x09};
     if (std::memcmp(reinterpret_cast<const void*>(gameBase+0x26c0),timer,sizeof(timer))!=0 ||
         read<std::uint32_t>(gameBase+0x116cf3) != gameBase+0x1d1a54)
@@ -724,6 +1281,52 @@ extern "C" IDirect3D9* WINAPI observeCreate9(UINT sdkVersion) {
     if (trace &&
         patch(*reinterpret_cast<void***>(d3d) + 16, observeDevice, originalCreateDevice)) {
         std::fputs("{\"observer\":\"th19-d3d9-pre-present\",\"stateCoverage\":[\"clock\",\"flags\",\"rng\"]}\n", trace);
+        if(GetEnvironmentVariableA("TH19_CAPTURE_SKIP_INPUT_RESET",nullptr,0)>0&&
+           GetEnvironmentVariableA("TH19_CAPTURE_CPU",nullptr,0)>0){
+            // 0x4b8b80 resets devices through 0x4b8a40. On Server/RDP,
+            // the keyboard Unacquire at 0x4b8adf can block indefinitely.
+            // The CPU driver supplies both seats' input. Retain the devices
+            // initialized before this observation provider was loaded.
+            const bool active=installCpuInputResetCompatibility();
+            std::fprintf(trace,"{\"inputResetSkipped\":%s}\n",active?"true":"false");
+        }
+        if(GetEnvironmentVariableA("TH19_CAPTURE_SILENT_AUDIO",nullptr,0)>0){
+            // 0x4babe0 only enqueues sound requests (three stack arguments).
+            // Without a DirectSound device, 0x4baeda skips draining the queue,
+            // while the stage loader waits forever at 0x518be4. In explicit
+            // silent captures, omit requests rather than bypassing stage load.
+            auto* entry=reinterpret_cast<unsigned char*>(gameBase+0xbabe0);
+            const unsigned char prolog[]={0x55,0x8b,0xec,0x56,0x68};
+            DWORD protection=0,ignored=0;
+            bool active=std::memcmp(entry,prolog,sizeof(prolog))==0&&
+                read<unsigned>(gameBase+0xbabe5)==gameBase+0x22af28&&
+                VirtualProtect(entry,3,PAGE_EXECUTE_READWRITE,&protection);
+            if(active){
+                entry[0]=0xc2;entry[1]=0x0c;entry[2]=0;
+                FlushInstructionCache(GetCurrentProcess(),entry,3);
+                VirtualProtect(entry,3,protection,&ignored);
+            }
+            std::fprintf(trace,"{\"silentAudioActive\":%s}\n",active?"true":"false");
+            // 0x54cae2 / 0x54d6e2 pan Marisa's looping beam buffer directly. With no
+            // DirectSound device, 0x6270a4 remains null; the queued-SFX shim
+            // above is not involved. The next block at 0x54d6fa updates length.
+            const unsigned char panTail[]={0x8b,0x08,0xf3,0x0f,0x2c,0xd0,0x52,0x50,0xff,0x51,0x40};
+            unsigned panSkipped=0;
+            for(unsigned rva:{0x14cae2u,0x14d6e2u}){
+                auto* pan=reinterpret_cast<unsigned char*>(gameBase+rva);
+                if(active&&pan[0]==0xa1&&
+                   read<unsigned>(reinterpret_cast<unsigned>(pan+1))==gameBase+0x2270a4&&
+                   std::memcmp(pan+13,panTail,sizeof(panTail))==0&&
+                   VirtualProtect(pan,5,PAGE_EXECUTE_READWRITE,&protection)){
+                    relativeJump(pan,gameBase+rva+24);
+                    FlushInstructionCache(GetCurrentProcess(),pan,5);
+                    VirtualProtect(pan,5,protection,&ignored);
+                    ++panSkipped;
+                }
+            }
+            std::fprintf(trace,"{\"silentAudioPanSkipped\":%u}\n",panSkipped);
+        }
+        patch(*reinterpret_cast<void***>(d3d) + 8, observeDisplayMode, originalDisplayMode);
         if (GetFileAttributesW(L".\\th19replayplayer_hook.dll") != INVALID_FILE_ATTRIBUTES) {
             const auto player = LoadLibraryW(L".\\th19replayplayer_hook.dll");
             std::fprintf(trace, "{\"cpuDriverLoaded\":%s,\"loadError\":%lu}\n",
@@ -737,7 +1340,24 @@ extern "C" IDirect3D9* WINAPI observeCreate9(UINT sdkVersion) {
         if (rngTrace) std::fprintf(trace,"{\"rectObserverInstalled\":%s}\n",installRectObserver()?"true":"false");
         if (rngTrace) std::fprintf(trace,"{\"impactObserverInstalled\":%s}\n",installImpactObserver()?"true":"false");
         if (rngTrace) std::fprintf(trace,"{\"shotObserverInstalled\":%s}\n",installShotObserver()?"true":"false");
+        if (rngTrace&&cpuDebugActive) std::fprintf(trace,"{\"cpuObstacleObserverInstalled\":%s,\"cpuControlObserverInstalled\":%s}\n",installCpuObstacleObserver()?"true":"false",installCpuControlObserver()?"true":"false");
+        if (rngTrace&&cpuDebugActive) std::fprintf(trace,"{\"fixedCutObserverInstalled\":%s}\n",installFixedCutObserver()?"true":"false");
+        if (rngTrace&&cpuDebugActive) std::fprintf(trace,"{\"fixedCircleObserverInstalled\":%s}\n",installFixedCircleObserver()?"true":"false");
+        if (rngTrace&&cpuDebugActive) std::fprintf(trace,"{\"fixedUpdateObserverInstalled\":%s}\n",installFixedUpdateObserver()?"true":"false");
+        if (rngTrace&&cpuDebugActive) std::fprintf(trace,"{\"bulletFireObserverInstalled\":%s}\n",installBulletFireObserver()?"true":"false");
+        if (rngTrace&&cpuDebugActive) std::fprintf(trace,"{\"fieldRayObserverInstalled\":%s}\n",installFieldRayObserver()?"true":"false");
+        if (rngTrace&&cpuDebugActive) std::fprintf(trace,"{\"anmChildObserverInstalled\":%s}\n",installAnmChildObserver()?"true":"false");
+        if (rngTrace&&cpuDebugActive) std::fprintf(trace,"{\"anmDetachedObserverInstalled\":%s}\n",installAnmDetachedObserver()?"true":"false");
         captureBulletPositions=GetEnvironmentVariableA("TH19_CAPTURE_BULLET_POSITIONS",nullptr,0)>0;
+        if(const char* frames=std::getenv("TH19_CAPTURE_IMAGE_FRAMES")){
+            while(*frames){
+                char* end=nullptr;
+                const unsigned long value=std::strtoul(frames,&end,10);
+                if(end==frames||value>216000||(*end&&*end!=','))break;
+                extraImageFrames.push_back(unsigned(value));
+                frames=*end?end+1:end;
+            }
+        }
         std::fflush(trace);
     }
     return d3d;

@@ -13,15 +13,16 @@ class WorldCheckpoint {
   void rebind(){root.restore_world(&world);for(auto&e:world.enemies)if(e.vm)e.vm->restore_world(&world);}
  };
  std::unique_ptr<Field> fields_[2];
- u32 random_,primary_random_;
+ u32 random_,primary_random_,registration_;
 public:
  WorldCheckpoint(const GameWorld&left,const EclVm&leftRoot,const GameWorld&right,const EclVm&rightRoot)
- :fields_{std::make_unique<Field>(left,leftRoot),std::make_unique<Field>(right,rightRoot)},random_(AnmVm::random_checkpoint()),primary_random_(AnmVm::random_checkpoint(true)){}
+ :fields_{std::make_unique<Field>(left,leftRoot),std::make_unique<Field>(right,rightRoot)},random_(AnmVm::random_checkpoint()),primary_random_(AnmVm::random_checkpoint(true)),registration_(AnmVm::next_registration){}
  void capture(const GameWorld&left,const EclVm&leftRoot,const GameWorld&right,const EclVm&rightRoot){
   const GameWorld* worlds[]{&left,&right};const EclVm* roots[]{&leftRoot,&rightRoot};
   for(int i=0;i<2;i++){fields_[i]->world=*worlds[i];fields_[i]->root=*roots[i];fields_[i]->rebind();}
   random_=AnmVm::random_checkpoint();
   primary_random_=AnmVm::random_checkpoint(true);
+  registration_=AnmVm::next_registration;
  }
  void restore(GameWorld&left,EclVm&leftRoot,GameWorld&right,EclVm&rightRoot)const{
   GameWorld* worlds[]{&left,&right};EclVm* roots[]{&leftRoot,&rightRoot};
@@ -29,6 +30,7 @@ public:
    roots[i]->restore_world(worlds[i]);for(auto&e:worlds[i]->enemies)if(e.vm)e.vm->restore_world(worlds[i]);}
   AnmVm::restore_random(random_);
   AnmVm::restore_random(primary_random_,true);
+  AnmVm::next_registration=registration_;
  }
 };
 }

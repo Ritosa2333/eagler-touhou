@@ -1,0 +1,2028 @@
+{
+  "pr": "https://github.com/Ritosa2333/eagler-touhou/pull/214",
+  "baselineCommit": "dbd0ba4f3a915c21da6a7bc9100dff40cb3ddcd7",
+  "nativeExecutableSha256": "804107d9033601f69c251a5e6e449bd88d9add36591129db394765295893bac6",
+  "native36000Capture": "present-gfuqefp5",
+  "targetFrames": 36000,
+  "runs": [
+    {
+      "label": "PR baseline",
+      "capture": "th19-web-6Nrdfo",
+      "comparedThrough": 13000,
+      "wasmSha256": "ad0aed94a0dc17096883cf0ba46c0a395b4112e1b0558755309626faa19a9981",
+      "nativeTraceSha256": "1e5bc669e8b1f1e806413889049786def2a3b5847eea59df0446f67781991499",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": false,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 12579,
+          "web": 1603222781,
+          "original": 1674344258
+        },
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": {
+        "frame": 12572,
+        "web": [
+          25,
+          97
+        ],
+        "original": [
+          89,
+          97
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 12572,
+        "web": [
+          2.1015625,
+          430,
+          3.78125,
+          380.4453125
+        ],
+        "original": [
+          0.6875,
+          430.5859375,
+          3.78125,
+          380.4453125
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 12581,
+        "side": 0,
+        "original": 86,
+        "web": 85
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1043,
+        "side": 1,
+        "kind": 12,
+        "color": 6,
+        "original": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.4123306274414,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ],
+        "web": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.41233825683594,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ]
+      },
+      "frameRollback": {
+        "frames": [
+          12560,
+          12590
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null
+    },
+    {
+      "label": "Arrival controller displacement and newborn contacts",
+      "capture": "th19-web-VZjLfI",
+      "comparedThrough": 15000,
+      "wasmSha256": "8a33ed2c8431c745fb3a3ae172bed18c679374aa6241d5a40fe1c8f1a84e3331",
+      "nativeTraceSha256": "030aeb7eb8ce8a3a60f0eec40fb45d47b6439a702a18b7e8d5445dde4d3d52dd",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": false,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 12610,
+          "web": 959109668,
+          "original": 1268899644
+        },
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": {
+        "frame": 12608,
+        "web": [
+          129,
+          97
+        ],
+        "original": [
+          129,
+          161
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 12608,
+        "web": [
+          19.375,
+          409.2734375,
+          -16.9375,
+          422.1015625
+        ],
+        "original": [
+          19.375,
+          409.2734375,
+          -9.875,
+          422.1015625
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 12627,
+        "side": 1,
+        "original": 42,
+        "web": 43
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1043,
+        "side": 1,
+        "kind": 12,
+        "color": 6,
+        "original": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.4123306274414,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ],
+        "web": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.41233825683594,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ]
+      },
+      "frameRollback": {
+        "frames": [
+          12375,
+          12395
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null
+    },
+    {
+      "label": "Receiving-field arrival order",
+      "capture": "th19-web-lLfaAC",
+      "comparedThrough": 15000,
+      "wasmSha256": "fa2bc74f446b1fafbc6a6617269b64b8d139d6b6c9e5ea13b17594f835c670cf",
+      "nativeTraceSha256": "030aeb7eb8ce8a3a60f0eec40fb45d47b6439a702a18b7e8d5445dde4d3d52dd",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": false,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 12626,
+          "web": 1540087662,
+          "original": 255216202
+        },
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": {
+        "frame": 12624,
+        "web": [
+          43,
+          161
+        ],
+        "original": [
+          43,
+          97
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 12624,
+        "web": [
+          23.6171875,
+          368.03125,
+          29.9140625,
+          428.4609375
+        ],
+        "original": [
+          23.6171875,
+          368.03125,
+          22.8515625,
+          428.4609375
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 12647,
+        "side": 1,
+        "original": 47,
+        "web": 48
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1043,
+        "side": 1,
+        "kind": 12,
+        "color": 6,
+        "original": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.4123306274414,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ],
+        "web": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.41233825683594,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ]
+      },
+      "frameRollback": {
+        "frames": [
+          12570,
+          12620
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null
+    },
+    {
+      "label": "Sender launch and arrival order",
+      "capture": "th19-web-qcZL7W",
+      "comparedThrough": 15000,
+      "wasmSha256": "6b28bfa314708bf55bdc91f7ad11fae825ce83a46ad7bf1ea256c31c9d615aff",
+      "nativeTraceSha256": "030aeb7eb8ce8a3a60f0eec40fb45d47b6439a702a18b7e8d5445dde4d3d52dd",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": false,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 12840,
+          "web": 177901939,
+          "original": 1246711827
+        },
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": {
+        "frame": 12831,
+        "web": [
+          17,
+          97
+        ],
+        "original": [
+          17,
+          161
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 12831,
+        "web": [
+          129.40625,
+          411.40625,
+          69.5859375,
+          432
+        ],
+        "original": [
+          129.40625,
+          411.40625,
+          76.6484375,
+          432
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 12946,
+        "side": 0,
+        "original": 173,
+        "web": 172
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1043,
+        "side": 1,
+        "kind": 12,
+        "color": 6,
+        "original": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.4123306274414,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ],
+        "web": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.41233825683594,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ]
+      },
+      "frameRollback": {
+        "frames": [
+          12570,
+          12630
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null
+    },
+    {
+      "label": "Shared spirit arrival order, 36000 frames",
+      "capture": "th19-web-joVMfs",
+      "comparedThrough": 36000,
+      "wasmSha256": "67d2c63f74f917d6ba22471863d3ce732e0cb152a10bcf6f24b3f5a3a1c02955",
+      "nativeTraceSha256": "030aeb7eb8ce8a3a60f0eec40fb45d47b6439a702a18b7e8d5445dde4d3d52dd",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": true,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 12938,
+          "web": 1701151363,
+          "original": 1631385520
+        },
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": {
+        "frame": 12900,
+        "web": [
+          65,
+          0
+        ],
+        "original": [
+          65,
+          81
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 12938,
+        "web": [
+          108.984375,
+          432,
+          115.875,
+          432
+        ],
+        "original": [
+          108.984375,
+          432,
+          0,
+          480
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 12968,
+        "side": 1,
+        "original": 0,
+        "web": 3
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1043,
+        "side": 1,
+        "kind": 12,
+        "color": 6,
+        "original": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.4123306274414,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ],
+        "web": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.41233825683594,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ]
+      },
+      "frameRollback": {
+        "frames": [
+          12635,
+          12660
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null
+    },
+    {
+      "label": "CPU input during hit grace, death and respawn",
+      "capture": "th19-web-MpL3j6",
+      "comparedThrough": 13000,
+      "wasmSha256": "c9f19232d2646ab85e20f8e06bc38280ed07ff693afb11db1200d6ee46d05cdd",
+      "nativeTraceSha256": "030aeb7eb8ce8a3a60f0eec40fb45d47b6439a702a18b7e8d5445dde4d3d52dd",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": false,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 12938,
+          "web": 1701151363,
+          "original": 1631385520
+        },
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": {
+        "frame": 12951,
+        "web": [
+          17,
+          147
+        ],
+        "original": [
+          17,
+          83
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 12938,
+        "web": [
+          108.984375,
+          432,
+          115.875,
+          432
+        ],
+        "original": [
+          108.984375,
+          432,
+          0,
+          480
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 12968,
+        "side": 1,
+        "original": 0,
+        "web": 3
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1043,
+        "side": 1,
+        "kind": 12,
+        "color": 6,
+        "original": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.4123306274414,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ],
+        "web": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.41233825683594,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ]
+      },
+      "frameRollback": {
+        "frames": [
+          12890,
+          12945
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null
+    },
+    {
+      "label": "Death timer and respawn invulnerability",
+      "capture": "th19-web-fYd2Nm",
+      "comparedThrough": 12970,
+      "wasmSha256": "77b1ab7604b029ba6d49dd3081c46d17eec44bd1df74ea8594574b6eca9e38e3",
+      "nativeTraceSha256": "53fd873796d6a5c86e0cf1c84de12d9c3b924e35b9a4522002a88e7e34d80539",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": false,
+      "firstDifferentRngByStream": {
+        "primary": null,
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": null,
+      "firstDifferentPlayerPosition": null,
+      "firstDifferentBulletCount": {
+        "frame": 12968,
+        "side": 1,
+        "original": 0,
+        "web": 3
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1043,
+        "side": 1,
+        "kind": 12,
+        "color": 6,
+        "original": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.4123306274414,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ],
+        "web": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.41233825683594,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ]
+      },
+      "frameRollback": {
+        "frames": [
+          12895,
+          12960
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null
+    },
+    {
+      "label": "Respawn recovery, combined positions and converted-spirit ECL",
+      "capture": "th19-web-sXsN3m",
+      "comparedThrough": 18000,
+      "wasmSha256": "a3dabe6433c8e31fd6fc53ab72a5fcdb9db47d5e730faf1ff81286ff5935cbdb",
+      "nativeTraceSha256": "030aeb7eb8ce8a3a60f0eec40fb45d47b6439a702a18b7e8d5445dde4d3d52dd",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": false,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 13921,
+          "web": 915989316,
+          "original": 1774022551
+        },
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": {
+        "frame": 13980,
+        "web": [
+          33,
+          161
+        ],
+        "original": [
+          33,
+          97
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 13980,
+        "web": [
+          -108.828125,
+          409.4453125,
+          99.75,
+          432
+        ],
+        "original": [
+          -108.828125,
+          409.4453125,
+          92.6875,
+          432
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 13885,
+        "side": 0,
+        "original": 64,
+        "web": 62
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1043,
+        "side": 1,
+        "kind": 12,
+        "color": 6,
+        "original": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.4123306274414,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ],
+        "web": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.41233825683594,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ]
+      },
+      "frameRollback": {
+        "frames": [
+          13820,
+          13840
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null
+    },
+    {
+      "label": "Marisa bomb duration gate",
+      "capture": "th19-web-fClk8k",
+      "comparedThrough": 18000,
+      "wasmSha256": "13a94f340f13789525ce18e8b5f82791dafa2600e6792ddbf794621fbce5c7f7",
+      "nativeTraceSha256": "030aeb7eb8ce8a3a60f0eec40fb45d47b6439a702a18b7e8d5445dde4d3d52dd",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": false,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 14660,
+          "web": 1381798347,
+          "original": 1316570142
+        },
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": {
+        "frame": 14894,
+        "web": [
+          17,
+          161
+        ],
+        "original": [
+          17,
+          129
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 14894,
+        "web": [
+          -140,
+          412.875,
+          140,
+          403.75
+        ],
+        "original": [
+          -140,
+          412.875,
+          140,
+          400.21875
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 14761,
+        "side": 1,
+        "original": 179,
+        "web": 178
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1043,
+        "side": 1,
+        "kind": 12,
+        "color": 6,
+        "original": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.4123306274414,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ],
+        "web": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.41233825683594,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ]
+      },
+      "frameRollback": {
+        "frames": [
+          14640,
+          14680
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null
+    },
+    {
+      "label": "Polar movement product precision, 36000 frames",
+      "capture": "th19-web-Xa9nTs",
+      "comparedThrough": 36000,
+      "wasmSha256": "fb1269cd716c5140b76c011e1d81cb74795997ddeadc6130dd5761ef395c4270",
+      "nativeTraceSha256": "030aeb7eb8ce8a3a60f0eec40fb45d47b6439a702a18b7e8d5445dde4d3d52dd",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": true,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 15207,
+          "web": 1958514237,
+          "original": 362950782
+        },
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": {
+        "frame": 15188,
+        "web": [
+          25,
+          67
+        ],
+        "original": [
+          73,
+          67
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 15188,
+        "web": [
+          118.2578125,
+          375.6171875,
+          61.125,
+          432
+        ],
+        "original": [
+          116.2578125,
+          377.6171875,
+          61.125,
+          432
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 15228,
+        "side": 0,
+        "original": 58,
+        "web": 59
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1043,
+        "side": 1,
+        "kind": 12,
+        "color": 6,
+        "original": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.4123306274414,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ],
+        "web": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.41233825683594,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ]
+      },
+      "frameRollback": null,
+      "browserErrors": [],
+      "failure": null
+    },
+    {
+      "label": "Moving laser remnants, 36000 frames",
+      "capture": "th19-web-VLgYlv",
+      "comparedThrough": 36000,
+      "wasmSha256": "f78c8204b1c9abce14277dee50df31df060b8ca2f75e423057c7ef7f313eaa9d",
+      "nativeTraceSha256": "030aeb7eb8ce8a3a60f0eec40fb45d47b6439a702a18b7e8d5445dde4d3d52dd",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": true,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 15306,
+          "web": 1811337433,
+          "original": 952438490
+        },
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": {
+        "frame": 15406,
+        "web": [
+          65,
+          161
+        ],
+        "original": [
+          65,
+          65
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 15398,
+        "web": [
+          140,
+          280.1015625,
+          -41.4140625,
+          432
+        ],
+        "original": [
+          140,
+          280.1015625,
+          -41.40625,
+          432
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 15323,
+        "side": 0,
+        "original": 108,
+        "web": 107
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1043,
+        "side": 1,
+        "kind": 12,
+        "color": 6,
+        "original": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.4123306274414,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ],
+        "web": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.41233825683594,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ]
+      },
+      "frameRollback": {
+        "frames": [
+          15180,
+          15215
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null
+    },
+    {
+      "label": "Constructor position quantization, 36000 frames",
+      "capture": "th19-web-9TuBSC",
+      "comparedThrough": 36000,
+      "wasmSha256": "1257722f033d2d2e84c80570b3e21890bef3f95b48dfe8f355fa9180e9be1317",
+      "nativeTraceSha256": "030aeb7eb8ce8a3a60f0eec40fb45d47b6439a702a18b7e8d5445dde4d3d52dd",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": true,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 15447,
+          "web": 1257750822,
+          "original": 1732794764
+        },
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": {
+        "frame": 15406,
+        "web": [
+          65,
+          161
+        ],
+        "original": [
+          65,
+          65
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 15441,
+        "web": [
+          100.28125,
+          237.7265625,
+          -32.0390625,
+          410.8125
+        ],
+        "original": [
+          100.28125,
+          237.7265625,
+          -39.1015625,
+          410.8125
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 15403,
+        "side": 1,
+        "original": 88,
+        "web": 89
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1043,
+        "side": 1,
+        "kind": 12,
+        "color": 6,
+        "original": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.4123306274414,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ],
+        "web": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.41233825683594,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ]
+      },
+      "frameRollback": {
+        "frames": [
+          15300,
+          15315
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null
+    },
+    {
+      "label": "Invulnerable contact cancellation and drift, 36000 frames",
+      "capture": "th19-web-UkGwr0",
+      "comparedThrough": 36000,
+      "wasmSha256": "52d828acd7884ff9f2c7fafc3dbd6bc5c2def39b3cd13719730cb15308af8458",
+      "nativeTraceSha256": "030aeb7eb8ce8a3a60f0eec40fb45d47b6439a702a18b7e8d5445dde4d3d52dd",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": true,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 18010,
+          "web": 22027722,
+          "original": 323651331
+        },
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": {
+        "frame": 18001,
+        "web": [
+          11,
+          9
+        ],
+        "original": [
+          139,
+          9
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 18001,
+        "web": [
+          -95.5703125,
+          379.03125,
+          36.796875,
+          391.0625
+        ],
+        "original": [
+          -93.5703125,
+          379.03125,
+          36.796875,
+          391.0625
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 18074,
+        "side": 0,
+        "original": 15,
+        "web": 14
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1043,
+        "side": 1,
+        "kind": 12,
+        "color": 6,
+        "original": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.4123306274414,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ],
+        "web": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.41233825683594,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ]
+      },
+      "frameRollback": {
+        "frames": [
+          15400,
+          15450
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null
+    },
+    {
+      "label": "Aura position interpolation clock, 36000 frames",
+      "capture": "th19-web-9SQ4w0",
+      "comparedThrough": 36000,
+      "wasmSha256": "4aad20bf38b4987eb875fa57d7a845cb9f3eed029bf5ce268d6912614b9d070c",
+      "nativeTraceSha256": "030aeb7eb8ce8a3a60f0eec40fb45d47b6439a702a18b7e8d5445dde4d3d52dd",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": true,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 18323,
+          "web": 1348939556,
+          "original": 1157322397
+        },
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": {
+        "frame": 18432,
+        "web": [
+          3,
+          155
+        ],
+        "original": [
+          3,
+          147
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 18432,
+        "web": [
+          11.578125,
+          289.125,
+          -120.75,
+          402.328125
+        ],
+        "original": [
+          11.578125,
+          289.125,
+          -118.6328125,
+          400.2109375
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 18446,
+        "side": 0,
+        "original": 86,
+        "web": 85
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1043,
+        "side": 1,
+        "kind": 12,
+        "color": 6,
+        "original": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.4123306274414,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ],
+        "web": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.41233825683594,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ]
+      },
+      "frameRollback": {
+        "frames": [
+          17985,
+          18025
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null
+    },
+    {
+      "label": "Previous ANM vertices for ordinary shot culling, 36000 frames",
+      "capture": "th19-web-k60XVw",
+      "comparedThrough": 36000,
+      "wasmSha256": "94dba5e914eb09a77caddbfe0574d0f03c1ef9fc089674b7f48acd8661d8aa1d",
+      "nativeTraceSha256": "030aeb7eb8ce8a3a60f0eec40fb45d47b6439a702a18b7e8d5445dde4d3d52dd",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": true,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 20380,
+          "web": 324497684,
+          "original": 18814090
+        },
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": {
+        "frame": 20397,
+        "web": [
+          75,
+          145
+        ],
+        "original": [
+          139,
+          145
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 20362,
+        "web": [
+          26.828125,
+          290.75,
+          -71.5625,
+          393.5234375
+        ],
+        "original": [
+          26.7265625,
+          294.734375,
+          -71.5625,
+          393.5234375
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 20398,
+        "side": 1,
+        "original": 112,
+        "web": 111
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1043,
+        "side": 1,
+        "kind": 12,
+        "color": 6,
+        "original": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.4123306274414,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ],
+        "web": [
+          [
+            84.02338409423828,
+            214.5484619140625
+          ],
+          [
+            84.5876693725586,
+            203.35433959960938
+          ],
+          [
+            93.43572998046875,
+            220.63412475585938
+          ],
+          [
+            94.56427001953125,
+            198.24588012695312
+          ],
+          [
+            103.41233825683594,
+            215.52566528320312
+          ],
+          [
+            103.97661590576172,
+            204.33154296875
+          ]
+        ]
+      },
+      "frameRollback": {
+        "frames": [
+          18310,
+          18330
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null
+    },
+    {
+      "label": "Current verification",
+      "capture": "th19-web-zMkQkQ",
+      "comparedThrough": 36000,
+      "wasmSha256": "057517cc31b284e5a4a01dfc3cb76d30435b438292dc8c37993e599a15d68e4b",
+      "nativeTraceSha256": "f325187f08ec5edaccbd1c65552d366500fe904b1c0f7a0c56608e655d230f15",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": true,
+      "firstDifferentRngByStream": {
+        "primary": null,
+        "animation": {
+          "frame": 832,
+          "web": 260091410,
+          "original": 1364699115
+        }
+      },
+      "firstDifferentPlayerControls": null,
+      "firstDifferentPlayerPosition": null,
+      "firstDifferentBulletCount": null,
+      "firstDifferentBulletPosition": null,
+      "frameRollback": {
+        "frames": [
+          5395,
+          5420
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null
+    }
+  ]
+}

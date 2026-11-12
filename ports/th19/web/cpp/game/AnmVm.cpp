@@ -3,7 +3,21 @@
 #include "NativeRandom.hpp"
 #include <cmath>
 #include <algorithm>
+#include <cstdio>
 namespace th19 {
+bool traceOpeningRng = false;
+u32 openingRngRows[4096][7]{}, openingRngCount=0;
+void traceOpeningDraw(u32 kind, const AnmVm* vm=nullptr, bool primary=false) {
+    if(!traceOpeningRng||openingRngCount>=4096)return;
+    auto& row=openingRngRows[openingRngCount++];
+    row[0]=kind;row[1]=AnmVm::random_checkpoint(primary);
+    row[2]=vm?vm->time:0;
+    row[3]=vm?vm->ip:0;
+    row[4]=vm?vm->sprite:0;
+    row[5]=primary;
+    row[6]=vm?vm->registration:0;
+}
+
 u32 AnmVm::next_u16(){if(ip+2>stream_len)return 0;u32 v=u16(stream[ip])|(u16(stream[ip+1])<<8);ip+=2;return v;}
 i32 AnmVm::next_i16(){return i32(i16(next_u16()));}
 u32 AnmVm::next_u32(){if(ip+4>stream_len)return 0;u32 v=u32(stream[ip])|(u32(stream[ip+1])<<8)|(u32(stream[ip+2])<<16)|(u32(stream[ip+3])<<24);ip+=4;return v;}
@@ -27,14 +41,16 @@ void AnmVm::restore_random(u32 state,bool primary){(primary?primary_animation_ra
 // The web match still supplies one seed; native replay import must provide both
 // original object states separately and align other gameplay consumers.
 void AnmVm::seed_random(u32 seed){animation_random.state=primary_animation_random.state=seed;}
-u32 AnmVm::rand_integer(bool primary){return (primary?primary_animation_random:animation_random).next();}
+u32 AnmVm::rand_integer(bool primary){traceOpeningDraw(1,nullptr,primary);return (primary?primary_animation_random:animation_random).next();}
 float AnmVm::rand_unit(bool primary){
-    return (primary?primary_animation_random:animation_random).unit();
+    traceOpeningDraw(2,nullptr,primary); return (primary?primary_animation_random:animation_random).unit();
 }
 float AnmVm::rand_signed_unit(float scale,bool primary){
-    return (primary?primary_animation_random:animation_random).signedUnit(scale);
+    traceOpeningDraw(3,nullptr,primary); return (primary?primary_animation_random:animation_random).signedUnit(scale);
 }
 float AnmVm::read_var_f(i32 id) const{
+    if(id==10010||id==10011||id==10012||id==10022)traceOpeningDraw(id,this);
+    if(id>=10030&&id<=10032)traceOpeningDraw(id,this,true);
     switch(id){
         case 10023: return rot_x;
         case 10024: return rot_y;
@@ -90,6 +106,7 @@ void AnmVm::write_var_f(i32 id, float v){
     }
 }
 i32 AnmVm::read_var_i(i32 id) const{
+    if(id==10022&&extra_ivar[2])traceOpeningDraw(100000+id,this);
     switch(id){
         case 10008: return extra_ivar[0];
         case 10009: return extra_ivar[1];
@@ -500,6 +517,11 @@ void AnmVm::run_instruction(u16 op,u32 instr_start,i16 instruction_time){
                     if(op==504){child.detached_spawn=true;child.spawn_x=x+child_x;child.spawn_y=y+child_y;
                         child.spawn_rot_x=rot_x;child.spawn_rot_y=rot_y;child.spawn_rot_z=rot_z;}
                     if(op==505||op==510){child.child_x=cx;child.child_y=cy;}
+                    if(traceOpeningRng&&sid==104){
+                        int parentScript=-1;
+                        for(const auto& script:*global_scripts)if(script.second.stream==stream){parentScript=script.first;break;}
+                        std::printf("ENEMYDBG {\"event\":\"anm-child\",\"script\":%u,\"registration\":%u,\"parent\":%u,\"parentScript\":%d,\"parentTime\":%d}\n",sid,child.registration,registration,parentScript,time);
+                    }
                     if(op==502||op==510) children.insert(children.begin(), std::move(child));
                     else children.push_back(std::move(child));
                 }

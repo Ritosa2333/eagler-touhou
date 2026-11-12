@@ -25,7 +25,10 @@ struct PlayerDamage {
  }
  Event tick(int& lives,int& invulnerable,bool deathPrevented=false){
   if(state==Pending&&frame>=8&&!deathPrevented){
-   return die(lives,invulnerable);
+   die(lives,invulnerable);
+   // The player update advances the newly reset timer on the death tick.
+   ++frame;
+   return Death;
   }
   if(state==Dead&&frame==30){
    if(lives>0){state=Respawning;frame=0;return Respawn;}
