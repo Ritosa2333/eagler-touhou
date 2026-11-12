@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <array>
 #if defined(TH12_ENABLE_THPRAC) && TH12_ENABLE_THPRAC
 #include <eagler/thprac/PracticeInput.hpp>
 #include <eagler/thprac/PracticeKeyMonitor.hpp>
@@ -17,6 +18,10 @@ struct ToolSettings {
   eagler::thprac::PracticeKeyMonitor key_monitor;
 #endif
 };
+using ReplayToolState = std::array<int32_t,3>;
+ReplayToolState replayToolState();
+void applyReplayToolState(const ReplayToolState&);
+bool replayToolsActive();
 ToolSettings& toolSettings();
 void resetToolInput();
 void applyToolInput(int& held,int& pressed);

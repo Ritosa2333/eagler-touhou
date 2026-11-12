@@ -26,6 +26,10 @@ node ports/th12-mp/scripts/check-sdl-multiplayer-browser.mjs
 
 `test:sdl` 检查浏览器边界与适配模块。原生 CTest 的 `th12_native_smoke`、`th12_multiplayer_menu_safety` 检查席位菜单、回滚和输入编码。共有 `ports:mp` 的 `--lifecycle --restart=both --recover --wait-end` 检查真实连接、重开、旁观恢复、尾帧和原生录像保存。
 
+飞向 UFO 的道具在移动后重新核对各席位的接触拾取范围。吸收期间释放先前的自机吸附归属，实际接触者取得道具；未接触时继续向 UFO 移动。`th12_native_smoke` 覆盖双人、三人、点道具与 P 点的接触拾取及随机数一致性。
+
+普通练习宿主的 THPrac 辅助录像沿 `TH12WEB1` 版本 2 逐帧恢复工具开关与 Boss 移动范围。标题确认返回保留 20 个菜单帧的音效与动画，Q 快速退出保留 12 帧。普通版与 MP 的 SDL 精灵按原版像素中心显示细激光预警，并用所有者位置修订号处理村纱瞬移残像。二面摇镜按余弦起步，对照原版采样。
+
 ## 呈现性能验证
 
 多人前端与普通前端共用动画缓存代次、静止轨道年龄快进、背景裁剪缓冲复用的实现。轨道回退按原始绑定重算；优化不修改 Session、确认帧、输入预测或世界快照。稀疏年龄、移动中的停止 VM、中断和显示随机数通过 `tests/sdl-animation.test.mjs` 与原版 ANM 基准验证；延迟 RTC、观战及录像重建通过 `scripts/check-sdl-multiplayer-browser.mjs` 验证。方法与数据见[迁移版性能验证](../../../archive/th12-sdl-performance-20261029/README.md)。
