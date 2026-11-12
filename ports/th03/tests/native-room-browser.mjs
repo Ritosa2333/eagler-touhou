@@ -17,6 +17,18 @@ async function navigate(page,url){
 async function open(seat,url){
   const context=sharedContext??await browser.createBrowserContext(),page=await context.newPage();pages.push(page);await page.setViewport({width:Number(process.env.TH03_TEST_WIDTH||1400),height:900});
   page.on('pageerror',e=>errors.push(e.message));
+  if(process.env.TH03_MUSIC_QA==='1')await page.evaluateOnNewDocument(()=>{
+    const Original=window.AudioWorkletNode;
+    window.AudioWorkletNode=class extends Original{
+      constructor(context,name,options){
+        super(context,name,options);
+        if(name!=='pc98-pmd')return;
+        const source=this,script=`class Monitor extends AudioWorkletProcessor{constructor(){super();this.n=0;this.sum=0;this.blocks=0}process(inputs){const input=inputs[0];for(const channel of input)for(const v of channel){this.sum+=v*v;this.n++}if(++this.blocks===Math.round(sampleRate/128/10)){this.port.postMessage({time:currentTime,rms:this.n?Math.sqrt(this.sum/this.n):0});this.blocks=0;this.sum=0;this.n=0}return true}}registerProcessor('th03-monitor',Monitor);`;
+        const url=URL.createObjectURL(new Blob([script],{type:'text/javascript'}));
+        context.audioWorklet.addModule(url).then(()=>{URL.revokeObjectURL(url);const monitor=new Original(context,'th03-monitor',{numberOfInputs:1,numberOfOutputs:1});const silence=context.createGain();silence.gain.value=0;source.connect(monitor);monitor.connect(silence);silence.connect(context.destination);const samples=[];monitor.port.onmessage=e=>samples.push(e.data);window.__th03MusicProbe={context,samples};});
+      }
+    };
+  });
   if(touchQa)await page.evaluateOnNewDocument(()=>{Object.defineProperty(navigator,'maxTouchPoints',{value:5,configurable:true});localStorage.setItem('eagler-touhou-game-options-v1-th03',JSON.stringify({options:{touchEnabled:true,touchMovementMode:'touch',th03RapidFire:true}}));});
   await page.exposeFunction('recordRuntimeEvent',m=>events[seat].push(m));
   await page.evaluateOnNewDocument(()=>{addEventListener('message',e=>{if(e.data?.protocol==='eagler-touhou/1')window.recordRuntimeEvent(e.data);});});
@@ -103,6 +115,17 @@ try{
     }
     try { await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(()=>window.th03SyncState?.phase===1)))).every(Boolean),'both players select and enter battle',45000); }
     catch(error){console.log('native state',await Promise.all(frames.map(frame=>frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health()))));throw error;}
+    if(process.env.TH03_MUSIC_QA==='1'){
+      await frames[0].waitForFunction(()=>window.__th03MusicProbe?.samples.length>10,{timeout:10000});
+      const result=await frames[0].evaluate(async()=>{
+        const {context,samples}=window.__th03MusicProbe,start=context.currentTime,end=performance.now()+1200;
+        while(performance.now()<end){}
+        const finish=context.currentTime;await new Promise(resolve=>setTimeout(resolve,300));
+        return {duration:finish-start,windows:samples.filter(sample=>sample.time>=start&&sample.time<finish).map(sample=>sample.rms)};
+      });
+      assert(result.duration>1&&result.windows.length>=9&&result.windows.filter(value=>value>0.00001).length>=result.windows.length-1,'battle music continues through a blocked game thread: '+JSON.stringify(result));
+      console.log('PASS battle music remains audible during main-thread stall',result);
+    }
     for(let i=0;i<20;i++){
       await new Promise(resolve=>setTimeout(resolve,50));
       for(const frame of frames){const state=await frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health());
