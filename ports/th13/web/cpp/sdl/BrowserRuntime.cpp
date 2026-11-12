@@ -1410,6 +1410,9 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_replay_entities() {
     auto state = th13::sample_replay_entities(app->run->battle);
     state.frame = app->replay_active ? app->replay_consumed - 1 : app->progress.stage_frame - 1;
     report = state.json();
+    report.pop_back();
+    report += ",\"boss_main_serial\":" +
+        std::to_string(app->run->battle.sim.boss_main_serial) + "}";
     return report.c_str();
 }
 
