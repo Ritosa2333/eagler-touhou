@@ -30,6 +30,11 @@
 #include <cstdlib>
 #include <cstring>
 #include <regex>
+#include <filesystem>
+#include "game/Practice.hpp"
+#include "game/PracticeTools.hpp"
+#include "game/StageFlow.hpp"
+#include <chrono>
 #include <string>
 extern "C" const double* th12_host_state_values();
 namespace {
@@ -68,7 +73,76 @@ void compare(Game& game){
     require(field(json,"gestureScope")=="\""+std::to_string(int(v[HostStage]))+"\"","gestureScope");
 }
 }
+#ifndef TH12_MULTIPLAYER
+void practice_replay_flow(){
+    using namespace th12host;
+    const auto folder=std::filesystem::path("th12-practice-save-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+    std::filesystem::create_directories(folder);
+    Game game;game.profile.load(folder.string());
+    game.menus=std::make_unique<TitleScenes>(game.profile,std::vector<MusicTrackInfo>{},folder.string());
+    game.session.emplace();auto& session=*game.session;session.run.mode=ModePractice;session.run.stage=session.stage=4;
+    game.menus->run=session.run;
+    session.recorder=std::make_unique<ReplayRecorder>(0,0,1,true,std::array<u8,60>{});
+    session.recorder->begin_stage(4,123,{});
+    session.recorder->tools({int(th12::practice::Invulnerable|th12::practice::InfiniteBombs),0,0x3f000000});session.recorder->push(1,1,0,60);
+    th12::fullGameFlow.continueCount=0;
+    game.complete_run(true);
+    require(game.menus->state.scene==MenuScene::ResultMenu,"Practice clear result menu");
+    require(!game.menus->state.choices[1].disabled,"Practice Save Replay enabled");
+    for(int i=0;i<11;++i)game.menus->tick(0);
+    game.menus->state.selection=1;game.menus->tick(InShot);
+    require(game.menus->state.scene==MenuScene::ReplaySave,"Practice replay slots");
+    game.menus->tick(0);for(int i=0;i<11;++i)game.menus->tick(0);
+    game.menus->tick(InShot);
+    require(game.menus->state.scene==MenuScene::Name,"Practice replay name");
+    game.menus->tick(0);for(int i=0;i<11;++i)game.menus->tick(0);
+    game.menus->tick(InShot);game.actions();
+    std::vector<u8> data;Replay replay;std::string why;
+    require(host::read_file((folder/"th12_01.rpy").string(),data,1024*1024),"Practice replay file written");
+    require(parse_replay(data,replay,why),"Practice replay parses");
+    require(replay.info.practice&&replay.stage(4)&&replay.input(4,1)->end(),"Practice identity, stage and end marker");
+    require(replay.extension.tool_state(4,0)[0]==int(th12::practice::Invulnerable|th12::practice::InfiniteBombs),"Saved practice retains auxiliary tools");
+    const auto previous_name=game.profile.last_name();
+    game.menus=std::make_unique<TitleScenes>(game.profile,std::vector<MusicTrackInfo>{},(folder/"th12_01.rpy"/"invalid").string());
+    MenuContext result;game.save_replay(1,"FAILED",result);
+    require(game.error=="Replay could not be saved"&&game.profile.last_name()==previous_name,"Failed replay write is reported without committing name");
+    for(const auto* name:{"th12_01.rpy","th12.cfg","scoreth12.dat"})std::filesystem::remove(folder/name);
+    std::filesystem::remove(folder);
+}
+#endif
+void replay_tools(){
+    using namespace th12::practice;
+    setEnabled(true);reset(true);setTools(Invulnerable|InfiniteBombs);
+    toolSettings().force_boss_move_down=true;toolSettings().boss_move_down_range=.5f;
+    const auto saved=replayToolState();setReplay(true);
+    require(!tool(Invulnerable),"Live tools do not leak into original replays");
+    applyReplayToolState({int(InfiniteLives|InfinitePower|TimeLock),3,0x3e800000});
+    require(tool(InfiniteLives)&&tool(InfinitePower)&&tool(TimeLock)&&!tool(Invulnerable),"Recorded tools active during replay");
+    float center=100,range=80;bossMoveRange(center,range);
+    require(center==110&&range==60,"Recorded boss movement range applied during replay");
+    require(toolSettings().map_inf_life_to_no_continue,"Recorded infinite-life behavior");
+    applyReplayToolState({0,0,0x3f000000});require(!tool(TimeLock),"Mid-replay tool disable");
+    setReplay(false);require(replayToolState()==saved,"Live settings restored after replay");
+    reset(true);setEnabled(false);
+}
+void pause_transitions(){
+    using namespace th12host;
+    Profile profile;profile.load("__pause_no_profile__");TitleScenes menu(profile,{},"__pause_no_replays__");
+    MenuContext context;context.run.mode=ModePractice;context.can_save_replay=true;
+    menu.open_pause(context);menu.drain();for(int i=0;i<11;++i)menu.tick(0);
+    menu.state.selection=1;menu.tick(InShot);menu.drain();for(int i=0;i<30;++i)menu.tick(0);
+    menu.state.selection=0;menu.tick(InShot);
+    auto actions=menu.drain();require(actions.size()==1&&actions[0].type==MenuAction::Sound&&actions[0].id==7,"Yes confirmation sound retained");
+    require(menu.state.scene==MenuScene::PauseConfirm&&menu.state.phase==MenuState::Phase::Out,"Yes animates before title");
+    for(int i=0;i<19;++i)menu.tick(0);require(!menu.has_actions(),"Yes waits twenty ticks");
+    menu.tick(0);require(menu.state.scene==MenuScene::Title,"Yes returns after twenty ticks");
+    menu.open_pause(context);menu.drain();for(int i=0;i<11;++i)menu.tick(0);
+    menu.tick(InQuit);actions=menu.drain();require(actions.size()==1&&actions[0].type==MenuAction::Sound&&actions[0].id==7,"Q confirmation sound");
+    for(int i=0;i<11;++i)menu.tick(0);require(!menu.has_actions(),"Q waits twelve ticks");
+    menu.tick(0);require(menu.state.scene==MenuScene::Title,"Q returns after twelve ticks");
+}
 int main(){
+    replay_tools();pause_transitions();
     static_assert(HostVersion==0&&HostLength==1&&HostScene==2&&HostKind==3&&HostReady==4
         &&HostFps==5&&HostMenuSerial==6&&HostMenuReady==7&&HostMenuAge==8&&HostSelection==9
         &&HostStage==10&&HostCharacter==11&&HostShot==12&&HostCursor==13&&HostInstance==14

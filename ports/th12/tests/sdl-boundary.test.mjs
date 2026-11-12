@@ -41,6 +41,8 @@ test('pagehide releases keyboard and held touch before saving; pageshow permits 
   await new Promise(resolve=>setImmediate(resolve));assert.equal(f.flushes(),1);
   f.handlers.get('pageshow')();assert.equal(f.audio.at(-1),0);
   f.entry.key('ArrowRight',true);assert.deepEqual(f.keys.at(-1),[39,1]);
+  f.entry.key('KeyQ',true);assert.deepEqual(f.keys.at(-1),[81,1]);
+  f.entry.key('KeyQ',false);assert.deepEqual(f.keys.at(-1),[81,0]);
   f.context.document.hidden=true;f.handlers.get('pageshow')();assert.equal(f.audio.length,2);
 });
 
