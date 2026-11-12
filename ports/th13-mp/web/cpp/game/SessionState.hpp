@@ -191,6 +191,9 @@ inline void trance_reset_fresh_entry(SessionState& state) noexcept {
 // threshold=0x4bb994[be7fc]）、灵击 (pieces*6)/8+7（0x42af60:38）；script30/38
 // 标签 2=满、3=空、7..12=碎片档，不是「5 碎片一整」。
 struct HudPlayerState {
+    // R-A: multiplayer extend progress belongs to this seat. Single-player
+    // keeps the original SessionState field as its retail address projection.
+    i32 life_piece_threshold_index = 0;
     i32 extra_lives = 2, life_pieces = 0;
     i32 bombs = 2, bomb_pieces = 0;
     i32 power = 100, max_power = 400, power_step = 100;

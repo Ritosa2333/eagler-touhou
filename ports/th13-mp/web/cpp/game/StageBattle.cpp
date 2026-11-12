@@ -2,6 +2,7 @@
 // event-contract.md §7.2 定点模型（0x442960 / pl02a.sht / 0x446870 同式）。
 #include "StageBattle.hpp"
 #include "StageMath.hpp"
+#include <eagler/gameplay/CooperativeRules.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -246,6 +247,28 @@ bool StageBattle::load(EclResourceProvider& provider, const char* stage_file, i3
         if (!host_->bomb_hud(stock, pieces)) error_ = "Item bomb HUD refresh failed";
     };
     item_manager.option_power_changed = [this] {
+        if (seat_count >= 2) {
+            const i32 saved = active_seat;
+            for (i32 seat = 0; seat < seat_count; ++seat) {
+                auto& state = seats[size_t(seat)];
+                const auto& hud = seat_huds[size_t(seat)];
+                const i32 level = std::max(0, std::min(hud.power / hud.power_step, 4));
+                if (state.ghost || state.option_power == level) continue;
+                player_state_ = state;
+                player_ = &seat_huds[size_t(seat)];
+                character_ = seat_characters[size_t(seat)];
+                active_seat = seat;
+                rebuild_options_for_power();
+                if (option_power_changed && !option_power_changed(*this))
+                    error_ = "Player option presentation failed";
+                state = player_state_;
+            }
+            active_seat = saved;
+            player_ = &seat_huds[size_t(saved)];
+            character_ = seat_characters[size_t(saved)];
+            player_state_ = seats[size_t(saved)];
+            return;
+        }
         rebuild_options_for_power();
         if (option_power_changed && !option_power_changed(*this))
             error_ = "Player option presentation failed";
@@ -288,7 +311,24 @@ bool StageBattle::load(EclResourceProvider& provider, const char* stage_file, i3
         if (!error_.empty()) sim.error_ = error_;
     };
     sim.enemy_body_collision = [this](StageEnemy& enemy) {
-        collide_enemy_body(enemy);
+        if (seat_count < 2) collide_enemy_body(enemy);
+        else {
+            const i32 saved_seat = active_seat;
+            for (i32 seat = 0; seat < seat_count; ++seat) {
+                if (seats[size_t(seat)].ghost) continue;
+                player_state_ = seats[size_t(seat)];
+                player_ = &seat_huds[size_t(seat)];
+                character_ = seat_characters[size_t(seat)];
+                active_seat = seat;
+                collide_enemy_body(enemy);
+                seats[size_t(seat)] = player_state_;
+                if (!error_.empty()) break;
+            }
+            player_ = &seat_huds[size_t(saved_seat)];
+            character_ = seat_characters[size_t(saved_seat)];
+            active_seat = saved_seat;
+            player_state_ = seats[size_t(saved_seat)];
+        }
         if (!error_.empty()) sim.error_ = error_;
     };
     sim.bullet_player_collision = [this](StageBullet& bullet) {
@@ -296,7 +336,31 @@ bool StageBattle::load(EclResourceProvider& provider, const char* stage_file, i3
         if (!error_.empty()) sim.error_ = error_;
     };
     sim.laser_collision = [this](const StageLaser& laser) {
-        const i32 result = collide_laser(laser);
+        sim.laser_collision_count = 0;
+        i32 result = 0;
+        if (seat_count < 2) result = collide_laser(laser);
+        else {
+            const i32 saved_seat = active_seat;
+            for (i32 seat = 0; seat < seat_count; ++seat) {
+                if (seats[size_t(seat)].ghost) continue;
+                player_state_ = seats[size_t(seat)];
+                player_ = &seat_huds[size_t(seat)];
+                character_ = seat_characters[size_t(seat)];
+                active_seat = seat;
+                const i32 contact = collide_laser(laser);
+                if (contact == 1) {
+                    sim.laser_collision_centers[size_t(sim.laser_collision_count++)] =
+                        {player_x, player_y, 0};
+                    result = 1;
+                } else if (result == 0) result = contact;
+                seats[size_t(seat)] = player_state_;
+                if (!error_.empty()) break;
+            }
+            player_ = &seat_huds[size_t(saved_seat)];
+            character_ = seat_characters[size_t(saved_seat)];
+            active_seat = saved_seat;
+            player_state_ = seats[size_t(saved_seat)];
+        }
         if (!error_.empty()) sim.error_ = error_;
         return result;
     };
@@ -1286,10 +1350,11 @@ bool StageBattle::query_enemy_bomb_hit(const StageEnemy& enemy) const {
     // 419b31..419b74 calls446870(param5=1): query only, with the Bomb
     // marker separate from damage. All four Bomb vtable+0xc methods return0;
     // the marker therefore comes from a live registration's flags bit2.
-    if (player_phase_clock_.current == player_phase_clock_.previous) return false;
+    const auto hit = [&](const StagePlayerState& player) {
+    if (player.phase_clock.current == player.phase_clock.previous) return false;
     i32 damage = 0;
     bool bomb_hit = false;
-    for (const auto& registration : damage_registrations) {
+    for (const auto& registration : player.damage_registrations) {
         if (!registration.active || !(registration.flags & 1u) ||
             registration.clock.current == registration.clock.previous ||
             registration.interval <= 0 || registration.clock.current % registration.interval != 0)
@@ -1311,6 +1376,11 @@ bool StageBattle::query_enemy_bomb_hit(const StageEnemy& enemy) const {
     // param5=1 does not invoke shot callbacks, accrue damage, score, or
     // write the last-hit position; ordinary damage queries still do so below.
     return damage != 0 && bomb_hit;
+    };
+    if (seat_count < 2) return hit(player_state_);
+    for (i32 seat = 0; seat < seat_count; ++seat)
+        if (!seats[size_t(seat)].ghost && hit(seats[size_t(seat)])) return true;
+    return false;
 }
 
 void StageBattle::collide_shots(StageEnemy& state) {
@@ -1324,7 +1394,52 @@ void StageBattle::collide_shots(StageEnemy& state) {
     //419a90 gates the query by flags, not HP. BossDead keeps its entity
     // alive with bit80/10 and still consumes shots/awards hit points/spirits.
     if (enemy->dead || (enemy->flags & 0x21u)) return;
-    float damage = enemy->hurtbox[0] > 0
+    float damage = 0;
+    if (seat_count >= 2) {
+        // R-G: the shared enemy manager runs after the player loop has
+        // restored an observation window. Query every canonical seat here;
+        // shot retirement, beam contact and registration counters belong to
+        // their source seat. Apply shared life/spirit/phase effects once.
+        const i32 saved_seat = active_seat;
+        const auto& card = sim.spell.state();
+        i32 forwarded = 0;
+        for (i32 seat = 0; seat < seat_count; ++seat) {
+            if (seats[size_t(seat)].ghost) continue;
+            player_state_ = seats[size_t(seat)];
+            player_ = &seat_huds[size_t(seat)];
+            character_ = seat_characters[size_t(seat)];
+            active_seat = seat;
+            float contribution = enemy->hurtbox[0] > 0
+                ? query_enemy_damage(*enemy, enemy->hurtbox[0], enemy->hurtbox[1]) : 0;
+            i32 returned = 0;
+            if (enemy->damage_function == 1) {
+                returned = i32(contribution) + i32(query_enemy_damage(*enemy, 160, 32));
+                contribution = float(i32(contribution) + returned);
+            }
+            // The SP reductions depend on the projectile owner's phase and
+            // protection, never on the local observer's selected window.
+            const auto owner_reduction = [&](float amount) {
+                if (player_phase == PlayerPhase::Entering || player_phase == PlayerPhase::Dying)
+                    amount = float(i32(amount) / 5);
+                if (card.active() && card.id >= 102 && card.id <= 105 && enemy->life < 1651.f &&
+                    (sim.bomb_active || invulnerable > 0 || (progress_ && trance_active(*progress_))))
+                    amount = float(i32(amount) / 5);
+                return amount;
+            };
+            damage += owner_reduction(contribution);
+            forwarded += i32(owner_reduction(float(returned)));
+            seats[size_t(seat)] = player_state_;
+            if (!error_.empty()) break;
+        }
+        player_ = &seat_huds[size_t(saved_seat)];
+        character_ = seat_characters[size_t(saved_seat)];
+        active_seat = saved_seat;
+        player_state_ = seats[size_t(saved_seat)];
+        if (!error_.empty()) return;
+        if (enemy->damage_function == 1)
+            if (auto* boss = sim.boss()) boss->pending_damage = forwarded;
+    } else {
+    damage = enemy->hurtbox[0] > 0
         ? query_enemy_damage(*enemy, enemy->hurtbox[0], enemy->hurtbox[1]) : 0;
     if (enemy->damage_function == 1) {
         // 00419a90:108-110 calls the +0x40f0 callback and 00419be0 (add esi,eax)
@@ -1337,6 +1452,7 @@ void StageBattle::collide_shots(StageEnemy& state) {
             i32(damage) + i32(query_enemy_damage(*enemy, 160, 32));
         if (auto* boss = sim.boss()) boss->pending_damage = returned;
         damage = float(i32(damage) + returned);
+    }
     }
     // 00419a90:112-114 (00419be2..00419bee) adds the enemy's +0x3fb0 pending
     // damage after the geometric query and the +0x40f0 callback, then clears
@@ -1357,13 +1473,13 @@ void StageBattle::collide_shots(StageEnemy& state) {
     if (damage <= 0) return;
     // 00419a90：出生/死亡演出期间伤害除5。
     float applied = damage;
-    if (player_phase == PlayerPhase::Entering || player_phase == PlayerPhase::Dying)
+    if (seat_count < 2 && (player_phase == PlayerPhase::Entering || player_phase == PlayerPhase::Dying))
         applied = float(i32(applied) / 5);
     // 419c76..419ccc: Miko's final spell (102..105) reduces damage
     // below 1651 HP while a bomb, player protection or Trance is active.
     // This precedes both the life update and the spirit accumulator.
     const auto& spell = sim.spell.state();
-    if (spell.active() && spell.id >= 102 && spell.id <= 105 &&
+    if (seat_count < 2 && spell.active() && spell.id >= 102 && spell.id <= 105 &&
         enemy->life < 1651.f &&
         (sim.bomb_active || invulnerable > 0 || (progress_ && trance_active(*progress_))))
         applied = float(i32(applied) / 5);
@@ -1388,6 +1504,20 @@ void StageBattle::collide_shots(StageEnemy& state) {
     // hit_anim_timer=30），因此本处不新增 return。
     if (spell.active() && (spell.flags & kSpellBombProtection) != 0)
         applied = float(i32(applied) / 30);
+    if (seat_count >= 2 && (enemy->flags & 0x1000000u) &&
+        !(enemy->flags & 0x31u) && enemy->invulnerable <= 0) {
+        // R-G: ordinary enemies retain SP damage. Bosses receive the team
+        // coefficient after each owner's SP reductions, with exact credit
+        // across hits and changing live counts. Ghosts cannot operate.
+        i32 operable = 0;
+        for (i32 seat = 0; seat < seat_count; ++seat)
+            if (!seats[size_t(seat)].ghost && seat_huds[size_t(seat)].extra_lives >= 0)
+                ++operable;
+        const i32 numerator = operable >= 3 ? 8 : operable == 2 ? 9 : 12;
+        const i32 scaled = i32(applied) * numerator + enemy->mp_boss_damage_remainder;
+        applied = float(scaled / 12);
+        enemy->mp_boss_damage_remainder = scaled % 12;
+    }
     // 临时只读探针（TH13_DAMAGE_PROBE=1 复用门控）：对比原生 0x419d2f 的
     // (serial, damage, accum) 序列；只打印，不改变数值。
     if (damage_probe_enabled) {
@@ -1405,8 +1535,10 @@ void StageBattle::collide_shots(StageEnemy& state) {
     // spirit_accum >= spirit_threshold；阈值按距离递增不看 hit timer，
     // 只有 spawn 本身要求 +0x4004>19 且 +0x4034 bit1==0。
     if (enemy->spirit_accum >= enemy->spirit_threshold) {
-        const float sdx = enemy->position[0] - player_x;
-        const float sdy = enemy->position[1] - player_y;
+        float target_x, target_y;
+        sim.nearest_player(enemy->position[0], enemy->position[1], target_x, target_y);
+        const float sdx = enemy->position[0] - target_x;
+        const float sdy = enemy->position[1] - target_y;
         const float dist2 = sdx * sdx + sdy * sdy;
         i32 step = 1000;
         if (dist2 < 2304.0f) step = 200;
@@ -1499,9 +1631,10 @@ void StageBattle::step_bomb() {
         return; // 40a860/40c2c0/40cb50 terminate before geometry/cancellation.
     }
     if (character_ == 0) {
-        // 40b590 creates all eight 40b1b0 registrations before the separate
-        // movement loop, preserving their original slot allocation order.
-        if (bomb_age == 0)
+        // 40b714..40b721 requires age != previous && age == 0 before
+        // 40b750 creates all eight 40b1b0 registrations. Fractional time may
+        // retain age zero for several updates; those updates reuse the orbs.
+        if (age_advanced && bomb_age == 0)
             for (int i = 0; i < 8; ++i) {
                 auto& orb = bomb_orbs[i];
                 if (reimu_bomb_orb_birth && !reimu_bomb_orb_birth(*this, i)) {
@@ -1948,7 +2081,7 @@ bool StageBattle::commit_death_normal() {
     return true;
 }
 
-bool StageBattle::update_player(const GameInput& input) {
+bool StageBattle::update_player(const GameInput& input, bool deathbomb_prepared) {
     if (player_dead) return true;
     // 00443240 case1：Bomb 分派(0040a540)先于移动(00442960)，但 0xa2b4 的
     // 0.2 倍率由 Bomb 自己的逐帧更新(0040a860，param_1[7] < 0x12d)写入，
@@ -1959,9 +2092,11 @@ bool StageBattle::update_player(const GameInput& input) {
     player_state_.startup_clock.tick(&startup_rate);
     if (player_phase_clock_.current != player_phase_frame)
         player_phase_clock_.set(player_phase_frame);
-    // 00443240 case4 在 timer>=8 时先确定死亡，不再接受该帧的迟到 Bomb。
-    const bool deathbomb_expired = player_phase == PlayerPhase::Deathbomb && player_phase_frame >= 8;
-    if (deathbomb_expired && !commit_death()) return false;
+    // Retail expires at eight; MP RULES R-G doubles the logical input window.
+    const bool deathbomb_expired = deathbomb_prepared ||
+        (player_phase == PlayerPhase::Deathbomb &&
+         player_phase_frame >= (seat_count >= 2 ? 16 : 8));
+    if (deathbomb_expired && !deathbomb_prepared && !commit_death()) return false;
     //443240 case4 jumps into case2 even when protection changed state to1.
     // No same-frame movement; that shared body still creates a kind3 spirit.
     if (player_phase == PlayerPhase::Dying || deathbomb_expired) {
@@ -1979,6 +2114,8 @@ bool StageBattle::update_player(const GameInput& input) {
                 const float angle=float(double(i)*double(3.1415927f)/28.0+base-double(.3926991f));
                 item_manager.spawn_item(player_x,player_y,0,1,angle,3.f);
             }
+            if (seat_count >= 2)  // R-T6: one large P in addition to seven small P.
+                item_manager.spawn_item(player_x, player_y, 0, ItemBigPower, base, 3.f);
         }
         item_manager.spawn_value_item(3,player_x,player_y,0,2.f,false);
         if (player_phase_frame >= 30) {
@@ -2346,7 +2483,10 @@ bool StageBattle::end_trance() {
     // 死亡（R-T7，SP -200 同式）。单席（seat_count==0）owner=0=窗口。
     const i32 death_seat = trance_owner_seat;
     const i32 saved_seat = active_seat;
-    const bool mp_redirect = seat_count >= 2 && death_seat != active_seat;
+    // Trance runs before step_mp copies each canonical seat into the window.
+    // Flush the owner even when it is already the observer seat, otherwise
+    // its life is spent but the next copy-in erases the Dying phase.
+    const bool mp_redirect = seat_count >= 2;
     if (mp_redirect) {
         player_state_ = seats[size_t(death_seat)];   // 纯拷贝入 owner
         player_ = &seat_huds[size_t(death_seat)];
@@ -2378,7 +2518,7 @@ bool StageBattle::end_trance() {
         if (!commit_death_normal()) return false;
     }
     // 405b80 always finishes with405440(0x46), including normal exit.
-    invulnerable = 70;
+    invulnerable = seat_count >= 2 ? std::max(invulnerable, 70) : 70;
     trance_task_frame_ = 0;
     if (mp_redirect) {
         // owner 席的死亡终态写回权威槽位，窗口恢复调用方席位。
@@ -2455,6 +2595,10 @@ bool StageBattle::update_trance_mp() {
     for (i32 seat = 0; seat < seat_count; ++seat) {
         const GameInput& input = seat_inputs[size_t(seat)];
         if ((input.pressed & 0x800) == 0) continue;
+        const auto& requester = seats[size_t(seat)];
+        if (requester.ghost || requester.dead ||
+            (requester.phase != PlayerPhase::Active &&
+             requester.phase != PlayerPhase::Deathbomb)) continue;
         player_state_ = seats[size_t(seat)];   // 纯拷贝入
         player_ = &seat_huds[size_t(seat)];
         character_ = seat_characters[size_t(seat)];
@@ -2520,7 +2664,8 @@ void StageBattle::on_bomb_key() {
     if (sim.dialog_host && sim.dialog_host->dialog_active()) return;
     if (player_->bombs <= 0 || bomb_timer > 0 || player_dead ||
         (player_phase != PlayerPhase::Active && player_phase != PlayerPhase::Deathbomb)) return;
-    if (player_phase == PlayerPhase::Deathbomb && player_phase_frame >= 8) return;
+    if (player_phase == PlayerPhase::Deathbomb &&
+        player_phase_frame >= (seat_count >= 2 ? 16 : 8)) return;
     player_->bombs--;
     if (!host_->bomb_hud(player_->bombs, player_->bomb_pieces)) error_ = "bomb hud";
     // Bomb vtables @004aa5bc：Reimu200、Marisa301、Sanae/Youmu261。
@@ -2582,6 +2727,29 @@ bool StageBattle::continue_player() {
     return error_.empty();
 }
 
+bool StageBattle::prepare_expired_deathbombs(std::array<bool, 3>& prepared) {
+    // MP R-T2: a later seat's protection must affect every seat's shot type
+    // before firing starts. Keep the ordinary expiry body in update_player.
+    const i32 saved_seat = active_seat;
+    for (i32 seat = 0; seat < seat_count; ++seat) {
+        const auto& state = seats[size_t(seat)];
+        if (state.ghost || state.dead || state.phase != PlayerPhase::Deathbomb ||
+            state.phase_frame < 16) continue;
+        player_state_ = state;
+        player_ = &seat_huds[size_t(seat)];
+        character_ = seat_characters[size_t(seat)];
+        active_seat = seat;
+        if (!commit_death()) return false;
+        seats[size_t(seat)] = player_state_;
+        prepared[size_t(seat)] = true;
+    }
+    player_ = &seat_huds[size_t(saved_seat)];
+    character_ = seat_characters[size_t(saved_seat)];
+    active_seat = saved_seat;
+    player_state_ = seats[size_t(saved_seat)];
+    return true;
+}
+
 bool StageBattle::step_transition(const GameInput& input) {
     // 42bfa0 retains player update/draw while enemy/bullet callbacks stop.
     // Input remains the old Replay slot until 448ec0 at startup age 30.
@@ -2590,6 +2758,8 @@ bool StageBattle::step_transition(const GameInput& input) {
     //（联机会话的 LocalSeat——seat 0 硬编码会令 seat1 端席位输入错位）。
     if (seat_count >= 2) {
         seat_inputs[size_t(mp_local_seat)] = input;
+        std::array<bool, 3> deathbomb_prepared{};
+        if (!prepare_expired_deathbombs(deathbomb_prepared)) return false;
         const i32 saved_seat = active_seat;
         for (i32 seat = 0; seat < seat_count; ++seat) {
             if (seats[size_t(seat)].ghost) continue;  // R-I8：幽灵不推进
@@ -2600,7 +2770,7 @@ bool StageBattle::step_transition(const GameInput& input) {
             const GameInput& seat_input = seat_inputs[size_t(seat)];
             input_state = seat_input.held;
             option_movement_tick_ = false;
-            if (!update_player(seat_input)) return false;
+            if (!update_player(seat_input, deathbomb_prepared[size_t(seat)])) return false;
             update_options();
             update_firing((seat_input.held & 1u) != 0);
             step_shots();
@@ -2667,6 +2837,62 @@ void StageBattle::restore_seat_context(i32 restore_seat) {
 //   共享帧尾：sim.player_x/y（M3 目标选择落地前的过渡口径 = seat 0 位置；
 //   M3 起改为按消费者时点选择最近合格玩家）→ sim.step_frame 一次 →
 //   item_side（M3 拆分逐席收集/一份结算，当前保持 seat 0 收集面）。
+void StageBattle::update_transfers() {
+    bool life_changed = false, rescued = false;
+    const bool dialog = sim.dialog_host && sim.dialog_host->dialog_active();
+    for (i32 donor = 0; donor < seat_count; ++donor) {
+        auto& state = seats[size_t(donor)];
+        auto& hud = seat_huds[size_t(donor)];
+        const auto& input = seat_inputs[size_t(donor)];
+        const bool active = !dialog && !state.ghost && !state.dead &&
+            state.phase == StagePlayerState::Phase::Active;
+        i32 life_target = -1, power_target = -1;
+        for (i32 target = 0; active && target < seat_count; ++target) {
+            if (target == donor) continue;
+            const auto& other = seats[size_t(target)];
+            const auto& other_hud = seat_huds[size_t(target)];
+            const float dx = other.x - state.x, dy = other.y - state.y;
+            if (dx * dx + dy * dy > 400.f) continue;
+            const bool available = !other.dead &&
+                other.phase == StagePlayerState::Phase::Active;
+            if (other.ghost || (available && other_hud.extra_lives < 8)) {
+                if (life_target < 0 ||
+                    (other.ghost && !seats[size_t(life_target)].ghost) ||
+                    (other.ghost == seats[size_t(life_target)].ghost &&
+                     other_hud.extra_lives < seat_huds[size_t(life_target)].extra_lives))
+                    life_target = target;
+            }
+            if (!other.ghost && available && other_hud.power < other_hud.max_power) {
+                if (power_target < 0 ||
+                    i64(other_hud.power) * seat_huds[size_t(power_target)].power_step <
+                    i64(seat_huds[size_t(power_target)].power) * other_hud.power_step)
+                    power_target = target;
+            }
+        }
+        if (eagler::cooperative::AdvanceLifeTransfer(state.life_transfer_state,
+                (input.pressed & 8u) != 0,
+                active && !(input.held & 1u) && hud.extra_lives > 0 && life_target >= 0)) {
+            if (seats[size_t(life_target)].ghost) {
+                rescued |= rescue_seat(donor, life_target);
+                life_changed = true;
+            } else if (item_manager.spawn_targeted_item(state.x, state.y,
+                            ItemExtraLife, life_target)) {
+                --hud.extra_lives;
+                life_changed = true;
+            }
+        }
+        if (eagler::cooperative::AdvanceLifeTransfer(state.power_transfer_state,
+                (input.pressed & 1u) != 0,
+                active && hud.power >= hud.power_step && power_target >= 0) &&
+            item_manager.spawn_targeted_item(state.x, state.y, ItemBigPower, power_target))
+            hud.power -= hud.power_step;
+    }
+    if (life_changed && item_manager.life_changed)
+        item_manager.life_changed(std::max(0, seat_huds[0].extra_lives), seat_huds[0].life_pieces);
+    if (rescued && item_manager.bombs_changed)
+        item_manager.bombs_changed(seat_huds[0].bombs, seat_huds[0].bomb_pieces);
+}
+
 bool StageBattle::step_mp() {
     if (seat_count < 2 || seat_count > 3) {
         error_ = "Multi-seat step requires 2..3 seats";
@@ -2677,6 +2903,12 @@ bool StageBattle::step_mp() {
     // M4/R-T8：灵界团队帧——Manual 请求逐席仲裁（席位升序第一个有效者），
     // 槽消耗全场一次（step_mp 每帧恰调一次 update_trance_mp）。
     if (!update_trance_mp()) return false;
+    // R-T2/R-T8: resolve this frame's expired collision windows after Manual
+    // arbitration, before any seat fires. A later owner's protection must
+    // change the earlier seats' shot type in this same logical frame.
+    const i32 saved_seat = active_seat;
+    std::array<bool, 3> deathbomb_prepared{};
+    if (!prepare_expired_deathbombs(deathbomb_prepared)) return false;
     // ---- 席位循环（固定席位序） ----
     // 不变式：权威数据永远在 seats[]；窗口（player_state_，引用别名的
     // 绑定存储）只在单席 update 期间持有该席数据。帧首把窗口内容写回
@@ -2684,7 +2916,6 @@ bool StageBattle::step_mp() {
     // saved 席的等值副本，写回幂等无害），逐席对称 swap-in/swap-out，
     // 帧尾把窗口恢复为 saved 席的**拷贝**（观察面；不用 swap——swap 会
     // 把空态换入权威槽位，每帧覆盖 seats[saved] 的真实数据）。
-    const i32 saved_seat = active_seat;
     youmu_slash_spawns_.clear();  // 席位聚合：每帧一次，表现层按序消费
     for (i32 seat = 0; seat < seat_count; ++seat) {
         // M5/R-I8：幽灵席不推进玩家面（不操作/不射击/不擦弹）；共享
@@ -2700,7 +2931,9 @@ bool StageBattle::step_mp() {
         const GameInput& input = seat_inputs[size_t(seat)];
         input_state = input.held;
         option_movement_tick_ = false;
-        if (!update_player(input)) return false;
+        // The ordinary expiry body still runs once (including its no-move
+        // rule); only commit_death was prepared above. No extra timer tick.
+        if (!update_player(input, deathbomb_prepared[size_t(seat)])) return false;
         if (events_) sim.sink.player(player_x, player_y, input_state);
         update_options();
         update_firing((input.held & 0x01) != 0);
@@ -2709,6 +2942,9 @@ bool StageBattle::step_mp() {
         seats[size_t(seat)] = player_state_;
         if (!error_.empty()) return false;
     }
+    // R-I9/R-G: all positions are final for this frame. Transactions use
+    // each seat's deterministic press edges in ascending donor order.
+    update_transfers();
     // 帧尾：窗口 = saved 席观察面（拷贝；权威数据保留在 seats[saved]）。
     player_ = &seat_huds[size_t(saved_seat)];
     character_ = seat_characters[size_t(saved_seat)];
