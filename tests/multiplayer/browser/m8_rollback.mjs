@@ -407,23 +407,31 @@ export async function run(ctx) {
   const syncFrames = async (clients, maxRounds = 400) => {
     let rounds = 0, stalls = 0;
     for (;;) {
+      const now = Date.now();
+      for (const client of clients) {
+        ctx.assert(await netPump(client, now) === 1, 'sync pump');
+      }
+      // Pump may rewind either peer. Compare its resulting frontiers, and
+      // wait for the whole simulated prefix to become authoritative.
       const states = [];
       for (const client of clients) states.push(await netState(client));
       if (states[0].sim_frame === states[1].sim_frame) {
         const rollbacks = [];
         for (const client of clients) rollbacks.push(await netRollback(client));
-        if (rollbacks.every(rollback =>
-              rollback.rollback_pending === 0 && rollback.last_error === 0))
+        if (rollbacks.every((rollback, index) =>
+              rollback.rollback_pending === 0 && rollback.last_error === 0 &&
+              rollback.records === 0 && rollback.committed === states[index].sim_frame) &&
+            states.every(state => state.confirmed >= state.sim_frame - 1))
           return states;
+        // Neither peer needs a new logical frame while confirmation is in
+        // flight. CanSimulate would grant a frame that this loop won't use.
+        if (++rounds > maxRounds)
+          ctx.assert(false, `确认同步超时（states=${JSON.stringify(states)}）`);
+        await new Promise(resolve => setTimeout(resolve, 1));
+        continue;
       }
       if (++rounds > maxRounds) {
         ctx.assert(false, `帧号同步超时（states=${JSON.stringify(states)}）`);
-      }
-      const now = Date.now();
-      for (const client of clients) {
-        if (await netPump(client, now) !== 1) {
-          ctx.assert(false, `sync pump（states=${JSON.stringify(states)}）`);
-        }
       }
       const laggard = states[0].sim_frame < states[1].sim_frame ? clients[0] : clients[1];
       if (await netCanSimulate(laggard) === 1) {

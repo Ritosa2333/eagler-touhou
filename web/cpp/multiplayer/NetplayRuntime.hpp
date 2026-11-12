@@ -109,6 +109,9 @@ public:
 
     // 帧泵：信道收发 + 门推进。world_ready = 宿主世界可用（frame0 后）。
     bool Pump(bool world_ready, std::uint64_t now_ms);
+    // Keep the final input/ACK answerable while the room is displayed. A
+    // slower peer must be able to finish before the next launch closes it.
+    bool PumpTerminal(std::uint64_t now_ms);
 
     // 本地输入采集：capture_frame 的物理输入 → 延迟窗（frame+delay 生效）。
     bool Capture(std::uint32_t capture_frame, const Netplay::FrameInput& input,
@@ -267,7 +270,9 @@ private:
     std::uint32_t spectator_recorded_ = 0;     // 发布端已 Record 前沿
     std::uint32_t receive_frame_ = 0;           // 旧输入流帧号（无 stage 事件前）
     Netplay::SpectatorStagePublisher stage_publisher_{};
-    Netplay::SpectatorStagePlayback stage_playback_{};
+    Netplay::SpectatorStagePlayback stage_playback_{
+        Netplay::SpectatorStagePlayback::RestoreMode::Run,
+        Netplay::SpectatorStageHistory::FullRunMaxFrames};
     Netplay::SpectatorStageView stage_view_{};
     std::deque<Netplay::SpectatorFramePacket> spectator_frames_{};  // 旧输入流缓冲
 };

@@ -196,11 +196,14 @@ export function createMultiplayerBridge({core, getOptions, manifest, emit, onErr
     if (active && getOptions().replayViewer !== true && !getOptions().netplaySpectator &&
         !core._th13_mp_replay_save()) throw Error(error());
   }
-  function close() {
+  function retire() {
     detachWake();
-    core._th13_mp_close();
     active = false;
     target.__eaglerNetplayLanActive = false;
+  }
+  function close() {
+    retire();
+    core._th13_mp_close();
   }
   // 录像回放入口：th15 从 FS 读档；TH13 的 Replay 由宿主 localStorage 持有，
   // 因此第三参可直传字节。stage 仅在 C++ 提供可选 select_stage 导出时转发
@@ -222,5 +225,5 @@ export function createMultiplayerBridge({core, getOptions, manifest, emit, onErr
     target.__eaglerNetplayFailed = false;
     target.__eaglerNetplaySpectator = true;
   }
-  return {launch, frame, save, close, openReplay, get active() { return active; }};
+  return {launch, frame, save, retire, close, openReplay, get active() { return active; }};
 }

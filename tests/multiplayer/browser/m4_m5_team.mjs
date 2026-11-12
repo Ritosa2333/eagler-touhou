@@ -100,6 +100,7 @@ export async function run(ctx) {
           .map(m => ({x: +m[1], y: +m[2]}));
       });
       let protection = null;
+      let deathbombFrame = null;
       for (let frame = 1100; frame < 1800 && !protection; ++frame) {
         // 朝最近来弹移动（y 在自机上方 60px 带内；只横移 + 下压）。
         const s1 = await seatState(client, 1);
@@ -111,10 +112,13 @@ export async function run(ctx) {
           if (d < best) { best = d; target = h; }
         }
         let held = 0;
-        if (target) {
+        if (s1.phase === 4 && deathbombFrame === null) deathbombFrame = frame;
+        // Once the real hit opens Deathbomb, release every key. Down is
+        // 0x20; 0x02 is Bomb and would cancel this very collision window.
+        if (s1.phase === 1 && target) {
           if (target.x > s1.x + 2) held |= 0x80;
           else if (target.x < s1.x - 2) held |= 0x40;
-          if (target.y > s1.y + 2) held |= 0x02;
+          if (target.y > s1.y + 2) held |= 0x20;
         }
         await client.page.evaluate(h => window.mod._th13_debug_mp_seat_input(1, h), held);
         const ok = await client.page.evaluate(() => window.mod._th13_debug_frame());
@@ -126,9 +130,12 @@ export async function run(ctx) {
         ctx.assert(false, '700 帧拦截窗内 seat 1 未触发 DeathProtection');
         return;
       }
+      ctx.assert(deathbombFrame !== null, '先由真实受击进入决死窗');
+      const activated1 = await seatState(client, 1);
+      ctx.assert(activated1.bombs === start1.bombs, '拦截与决死期间没有使用 Bomb');
       ctx.assert(protection.owner === 1, `owner=撞弹席（${protection.owner}）`);
       ctx.assert(protection.generation === 1, 'generation=1');
-      ctx.evidence.push(`撞弹于 f${protection.slot}（激活时槽值）`);
+      ctx.evidence.push(`真实决死窗 f${deathbombFrame}，保护激活槽=${protection.slot}，Bomb=${activated1.bombs}`);
       // 槽耗尽（激活时槽值帧；上限 600 兜底）：保护结束 → seat 1 死亡
       // 责任、seat 0 存活。撞弹后停输入（决死窗内不按 X）。
       const budget = Math.min(600, protection.slot) + 40;

@@ -7,6 +7,7 @@
 #include "../game/TitleSpellPracticeMenu.hpp"
 #include "../game/SpellCatalog.hpp"
 #include "../game/SpellElapsedTime.hpp"
+#include "../multiplayer/HostState.hpp"
 
 namespace th13::sdl {
 
@@ -631,6 +632,14 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // audio_device.apply_request；条目回填 Session::NoteApplied 调试面）。
     // defer_output=false（单人）恒空转，逐字节等价原 commit 序。
     bool commit_pending_multiplayer_audio();
+    std::function<bool()> capture_multiplayer_host();
+    bool capture_multiplayer_host_state(multiplayer::HostState&);
+    u64 digest_multiplayer_host();
+    std::function<bool()> capture_dialogue_rollback();
+    u64 digest_dialogue_rollback();
+    std::function<bool()> multiplayer_replay_available;
+    std::function<bool(i32, const std::string&)> multiplayer_replay_save;
+    void queue_multiplayer_outputs();
     // MP 音频接线（会话观察器链 + defer_output；幂等——begin_run 与
     // Configure 后补接线共用）。
     void wire_multiplayer_audio();
@@ -653,6 +662,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // M7：本地席位号（联机会话 LocalSeat；battle.step 的 effective_input
     // 写入本席输入沿。默认 0 = 单席/本地多席零变化）。
     i32 mp_local_seat = 0;
+    bool mp_history_playback = false;
     // M2：席位输入沿（浏览器侧逐席注入面；seat 0 由 step 参数携带——
     // Application::step 的单一 GameInput 即本席）。M7 Runtime 接线前，
     // 其余席由宿主直接写 run->battle.seat_inputs。
@@ -673,6 +683,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
         mp_seat_count = count;
         mp_characters = characters;
         mp_local_seat = local_seat;
+        mp_history_playback = false;
         return true;
     }
     // 回放会话直入：解码 .rpy → 按录像头配置 → begin_run（跳过标题与装载挡板）。
@@ -921,7 +932,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool result_screen_data(TitleResultScreenData&) const override;
     // EndingPlatform（0x416570 场景宿主面；read_asset/request_destination/
     // queue_music 复用既有同型 override，这里只声明新增面）
-    EndingSaveBytes* save_bytes() override { return &ending_save_view; }
+    EndingSaveBytes* save_bytes() override;
     bool fade_out_music(i32 frames) override;
     bool record_music_unlocked(i32 index) override;
     bool advance_sound() override;

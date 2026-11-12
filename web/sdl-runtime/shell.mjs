@@ -13,8 +13,9 @@ let multiplayerBridge = null;
 let spectatorPlayback = null;
 // 房间预览（launcher prepare-room）：正式多人页在房间内先呈现标题面，
 // launch 时停掉预览泵再交给桥进局（th15 shell 同型）。
-let roomPreview = false;
-const emit = (event, fields = {}) => parent.postMessage({protocol, game, epoch, event, ...fields}, location.origin);
+let roomPreview = false, roomOwned = false, launchSerial = 0;
+const emit = (event, fields = {}) => parent.postMessage({protocol, game, epoch, event,
+  ...((event === 'first-frame' || event === 'room-menu') ? {launchSerial} : {}), ...fields}, location.origin);
 // 触摸坐标换算的 canvas 包围盒缓存：resize/视口变化时失效，避免每次
 // pointermove 消息都强制布局（getBoundingClientRect）。
 let canvasBox = null;
@@ -235,14 +236,57 @@ const replayIndexKey = replayStem + '.replays', replayBlobPrefix = replayStem + 
 const replayNamePattern = runtimeBuild.multiplayer
   ? /^th13(?:mp)?_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?$/
   : /^th13_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?$/;
-const replaySingleMax = 1024 * 1024, replayTotalMax = 5 * 1024 * 1024;
+const replaySingleMax = runtimeBuild.multiplayer ? 16 * 1024 * 1024 : 1024 * 1024;
+const replayTotalMax = 5 * 1024 * 1024;
+// All-seat recordings exceed localStorage's quota during a normal full run.
+// Keep synchronous native reads in memory; sync/close await durable IDB writes.
+const multiplayerReplays = new Map();
+let multiplayerReplayDatabase, multiplayerReplayWrites = Promise.resolve();
+let multiplayerReplayWriteError;
+async function initializeMultiplayerReplays() {
+  if (!runtimeBuild.multiplayer) return;
+  multiplayerReplayDatabase = await new Promise((resolve, reject) => {
+    const request = indexedDB.open('th13mp.replays.v1', 1);
+    request.onupgradeneeded = () => request.result.createObjectStore('files', {keyPath: 'name'});
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  const files = await new Promise((resolve, reject) => {
+    const request = multiplayerReplayDatabase.transaction('files').objectStore('files').getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  core.FS.mkdirTree('/save/replay');
+  for (const file of files) multiplayerReplays.set(file.name, file);
+  // Native slot selection must see the same files after a new iframe starts.
+  for (const entry of replayIndex()) {
+    const bytes = readReplayFile(entry.name);
+    if (bytes) core.FS.writeFile('/save/replay/' + entry.name, bytes);
+  }
+}
+function writeMultiplayerReplay(record, remove = false) {
+  multiplayerReplayWrites = multiplayerReplayWrites.then(() => new Promise((resolve, reject) => {
+    const transaction = multiplayerReplayDatabase.transaction('files', 'readwrite');
+    const store = transaction.objectStore('files');
+    if (remove) store.delete(record.name); else store.put(record);
+    transaction.oncomplete = resolve;
+    // Explicit abort() leaves IDBTransaction.error null.
+    transaction.onabort = () => reject(transaction.error || new DOMException('Replay transaction aborted', 'AbortError'));
+  })).catch(error => { multiplayerReplayWriteError = error; });
+}
+async function flushMultiplayerReplays() {
+  await multiplayerReplayWrites;
+  if (multiplayerReplayWriteError) throw multiplayerReplayWriteError;
+}
 function replayIndex() {
+  const stored = [...multiplayerReplays.values()].map(({name, size, ts}) => ({name, size, ts}));
   try {
     const list = JSON.parse(localStorage.getItem(replayIndexKey) || '[]');
-    return Array.isArray(list)
-      ? list.filter(entry => entry && typeof entry.name === 'string' && replayNamePattern.test(entry.name)) : [];
+    return stored.concat(Array.isArray(list)
+      ? list.filter(entry => entry && typeof entry.name === 'string' && replayNamePattern.test(entry.name) &&
+          !multiplayerReplays.has(entry.name)) : []);
   } catch {
-    return [];
+    return stored;
   }
 }
 function replayWriteIndex(list) {
@@ -260,6 +304,7 @@ function replayFromBase64(text) {
   return bytes;
 }
 function readReplayFile(name) {
+  if (multiplayerReplays.has(name)) return multiplayerReplays.get(name).bytes;
   try {
     const text = localStorage.getItem(replayBlobPrefix + name);
     return text === null ? null : replayFromBase64(text);
@@ -270,6 +315,12 @@ function readReplayFile(name) {
 function writeReplayFile(name, bytes) {
   try {
     if (!replayNamePattern.test(name) || !bytes || !bytes.length || bytes.length > replaySingleMax) return false;
+    if (runtimeBuild.multiplayer) {
+      const record = {name, bytes: bytes.slice(), size: bytes.length, ts: Date.now()};
+      multiplayerReplays.set(name, record);
+      writeMultiplayerReplay(record);
+      return true;
+    }
     const list = replayIndex().filter(entry => entry.name !== name);
     list.push({name, size: bytes.length, ts: Date.now()});
     const weight = entry => Math.ceil((entry.size || 0) * 4 / 3);  // base64 账面
@@ -306,6 +357,13 @@ function writeReplayFile(name, bytes) {
   }
 }
 function removeReplayFile(name) {
+  if (multiplayerReplays.has(name)) {
+    multiplayerReplays.delete(name);
+    writeMultiplayerReplay({name}, true);
+    localStorage.removeItem(replayBlobPrefix + name);
+    replayWriteIndex(replayIndex().filter(entry => entry.name !== name));
+    return true;
+  }
   if (localStorage.getItem(replayBlobPrefix + name) === null &&
       !replayIndex().some(entry => entry.name === name)) return false;
   localStorage.removeItem(replayBlobPrefix + name);
@@ -383,9 +441,21 @@ function startPlaybackReports(path) {
   playbackReportTimer = setInterval(publishPlaybackState, 250);
   publishPlaybackState();
 }
-const save = () => { multiplayerBridge?.save(); };
+const save = async () => {
+  multiplayerBridge?.save();
+  await flushMultiplayerReplays();
+};
 async function stop() {
   if (stopping) return;
+  if (roomOwned && !options.replayViewer) {
+    stopping = true;
+    try {
+      await save();
+      await command({command: 'return-room'});
+      emit('room-menu');
+    } finally { stopping = false; }
+    return;
+  }
   stopping = true;
   try {
     core._th13_loop_stop();
@@ -470,12 +540,14 @@ async function initializeTitle() {
 async function command(m) {
   switch (m.command) {
     case 'prepare-room':
+      roomOwned = true;
       // 正式房间预载：呈现原生标题面后才允许 READY（launcher 以
       // response.presented===true 作为 ACK）。
       if (!runtimeBuild.multiplayer || launched || options.netplayMode === 'lan' ||
           options.replayViewer) throw Error('房间预览需要未启动的多人标题页');
       if (!roomPreview) {
         await initializeTitle();
+        if (!core._th13_room_preview()) throw Error(err() || '房间标题呈现失败');
         roomPreview = true;
         core._th13_loop_start();
         await new Promise(requestAnimationFrame);
@@ -522,7 +594,24 @@ async function command(m) {
         t.bombSerial >>> 0, t.escapeSerial >>> 0, Number(t.joystickX) || 0, Number(t.joystickY) || 0);
       return {};
     }
+    case 'return-room':
+      if (!runtimeBuild.multiplayer) throw Error('此 Runtime 不支持返回房间');
+      roomOwned = true;
+      spectatorPlayback?.stop();
+      clearKeyboard();
+      core._th13_loop_stop();
+      // Retain the terminal input/ACK cache until the next launch. The other
+      // client can still be completing its last frame when this room appears.
+      multiplayerBridge.retire();
+      if (!core._th13_room_return() || !core._th13_room_preview())
+        throw Error(err() || '返回房间失败');
+      roomPreview = true;
+      launched = first = false;
+      core._th13_loop_start();
+      await new Promise(requestAnimationFrame);
+      return {presented: true};
     case 'launch':
+      launchSerial = Number(m.launchSerial) || 0;
       if (!launched) {
         if (roomPreview) core._th13_loop_stop();
         else await initializeTitle();
@@ -643,6 +732,7 @@ async function command(m) {
       if (target.startsWith('replay/')) {
         if (bytes.length > replaySingleMax) throw Error('录像文件过大');
         if (!writeReplayFile(target.slice(7), bytes)) throw Error('保存 localStorage 失败');
+        await flushMultiplayerReplays();
         return {};
       }
       throw Error('不支持写入此文件');
@@ -658,6 +748,7 @@ async function command(m) {
       }
       if (target.startsWith('replay/')) {
         if (!removeReplayFile(target.slice(7))) throw Error('文件不存在');
+        await flushMultiplayerReplays();
         return {};
       }
       throw Error('不支持删除此文件');
@@ -775,7 +866,9 @@ const initialized = (async () => {
         presents = 0;
         maxFrameMs = 0;
       }
-      if (core._th13_phase() === 4) void stop().catch(fatal);
+      if (launched && (core._th13_phase() === 4 ||
+          (roomOwned && !options.replayViewer && core._th13_room_return_ready())))
+        void stop().catch(fatal);
     }
   });
 
@@ -784,14 +877,16 @@ const initialized = (async () => {
   window.Module = core;
   window.FS = core.FS;
   core.resetBrowserKeyboard = () => keyboard.clear();
+  await initializeMultiplayerReplays();
   // 游戏内保存录像（save_replay_slot → 下载 EM_JS 钩子）：catalog 已由
   // C++ 侧 import_replay_bytes 入槽，这里只补 localStorage 持久化。自吞
   // 异常——持久化失败不影响游戏内保存/下载流程。
   core.onReplaySaved = (name, bytes) => {
     try {
-      writeReplayFile(String(name).toLowerCase(), bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
+      return writeReplayFile(String(name).toLowerCase(), bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
     } catch (error) {
       console.warn('[th13] replay persist failed:', error);
+      return false;
     }
   };
 
@@ -878,7 +973,7 @@ const initialized = (async () => {
     });
   }
 
-  emit('ready');
+  emit('ready', {roomPreview: runtimeBuild.multiplayer === true, roomReturn: runtimeBuild.multiplayer === true});
   if (query.get('standalone') === '1' || (!validEpoch && parent === window)) {
     await command({command: 'launch'});
   }

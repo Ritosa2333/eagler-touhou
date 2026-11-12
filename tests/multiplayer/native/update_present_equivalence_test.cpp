@@ -17,10 +17,10 @@
 //      装载幕 present=complete_loading→begin_run）+ battle f0..f11 caption 窗；
 //   3) live-run NextStage(0xc) transition 门全程（destination 帧→door→
 //      start_transition→30 帧门→activate→新关）——scenery 淡入/退场倒计时
-//      为已确认 present 耦合面（decomp 0x406d90:98-141 / 0x407310:87-94，
-//      原版即 Draw 侧逐 present 推进），耦合段三臂按单 present 纪律一致
+//      在固定逻辑帧绘制中按原单趟顺序推进（decomp 0x406d90 / 0x407310），
+//      基线段三臂按单 present 纪律一致
 //      驱动 + 时序钉，door 帧与淡入完成后的新关帧保持标准三臂差分；
-//      另设 present_coupling 块以 1 vs 2 present/帧 钉逐 present 语义；
+//      另设 present_coupling 块以 0/1/2 present 钉完整状态与原单趟时序；
 //   4) replay 对局暂停开/关（Esc 开 →24 暂停帧→Esc 关→24 恢复帧）；
 //   5) replay 对局长窗 600+1200 帧连续（同一三臂实例跑满 1200 帧）。
 // 比较集 = tests/multiplayer/native/state_digest.hpp 的 FrameDigest 全部分量
@@ -31,6 +31,7 @@
 #include "game/GameInput.hpp"
 #include "sdl/ApplicationState.hpp"
 #include "state_digest.hpp"
+#include "multiplayer/WorldState.hpp"
 
 #include <cstdio>
 #include <cstdlib>
@@ -443,75 +444,58 @@ TEST(update_present_equivalence_transition_gate) {
     }
 }
 
-// ---- 窗 3b：已确认 present 耦合语义的反例钉（1 present/帧 vs 2 present/帧）----
-// 双臂同门穿过 0xc 转换：淡入/退场倒计时逐 present 递减（decomp 0x407310:87-94）
-// ⇒ 2 present/帧臂的倒计时以精确 2 倍速率走完，digest 分叉起点随速率减半
-// （旧 scenery retired 卸载于第 15 帧 present 后 vs 第 30 帧；新 scenery 图元
-// VM 解冻同理）。断言：分叉前两臂逐帧全等；分叉起点落在确认窗
-// [start_transition+13, +19]（update 侧倒计时会是 ~+31 → 本块红）。
+// ---- 窗 3b：换关全状态不受 0/1/2 次呈现影响 ----
+// 原版每逻辑帧的一趟 Draw 写回已固定到 commit；继续钉住原单趟
+// 相位（old 第30帧退场、第31帧卸载；new 第32帧可见）。
 TEST(update_present_equivalence_transition_gate_present_coupling) {
-    App arm_slow, arm_fast;
-    CHECK(boot_live_run(arm_slow, "t7upe-cplA-save.bin"));
-    CHECK(boot_live_run(arm_fast, "t7upe-cplB-save.bin"));
-    if (arm_slow.failure.empty() && arm_fast.failure.empty()) {
-        GameInput in_slow, in_fast;
-        // 屏障帧 + battle f0..f5（一致单 present 基线）。
-        for (int step = 0; step <= 5; ++step) {
-            mpdigest::FrameDigest da, db;
-            CHECK(drive_sync(arm_slow, in_slow, 0, da));
-            CHECK(drive_sync(arm_fast, in_fast, 0, db));
-            CHECK(da == db);
+    App arms[3];
+    GameInput inputs[3];
+    for (int arm=0;arm<3;++arm) {
+        CHECK(boot_live_run(arms[arm], ("t7upe-present-"+std::to_string(arm)+".bin").c_str()));
+        for(int frame=0;frame<=5;++frame) {
+            mpdigest::FrameDigest value;
+            CHECK(drive_sync(arms[arm],inputs[arm],0,value));
         }
-        arm_slow.pending_destination = i32(Destination::NextStage);
-        arm_fast.pending_destination = i32(Destination::NextStage);
-        {
-            mpdigest::FrameDigest da, db;
-            CHECK(drive_sync(arm_slow, in_slow, 0, da));
-            CHECK(drive_sync(arm_fast, in_fast, 0, db));
-            CHECK(da == db);  // destination 帧一致单 present
+        arms[arm].pending_destination=i32(Destination::NextStage);
+        for(int frame=0;frame<2;++frame) {
+            mpdigest::FrameDigest value;
+            CHECK(drive_sync(arms[arm],inputs[arm],0,value));
         }
-        // door 帧：一致单 present（present-pure）。
-        {
-            mpdigest::FrameDigest da, db;
-            CHECK(drive_sync(arm_slow, in_slow, 0, da));
-            CHECK(drive_sync(arm_fast, in_fast, 0, db));
-            CHECK(da == db);
-            CHECK(arm_slow.stage_transition_active);
-        }
-        // i=1（start_transition）起差分：slow=1 present/帧、fast=2 present/帧。
-        int divergence = -1;  // 相对 start_transition 帧的偏移
-        for (int i = 1; i <= 45; ++i) {
-            mpdigest::FrameDigest da, db;
-            // slow 臂单 present。
-            in_slow.update(0);
-            CHECK(arm_slow.update(in_slow, false));
-            CHECK(arm_slow.commit(kFps));
-            CHECK(arm_slow.present());
-            // fast 臂双 present。
-            in_fast.update(0);
-            CHECK(arm_fast.update(in_fast, false));
-            CHECK(arm_fast.commit(kFps));
-            CHECK(arm_fast.present());
-            CHECK(arm_fast.present());
-            CHECK(arm_slow.failure.empty());
-            CHECK(arm_fast.failure.empty());
-            da = mpdigest::capture(arm_slow);
-            db = mpdigest::capture(arm_fast);
-            if (divergence < 0 && !(da == db)) divergence = i;
-        }
-        CHECK(divergence > 0);  // 倒计时逐 present：两臂必然分叉
-        if (divergence > 0) {
-            std::printf("# present-coupling: 分叉起点 = start_transition+%d（确认语义 15±2）\n",
-                        divergence - 1);
-            // 确认窗：旧 scenery 卸载（第 15 帧 present 后 retired→@13 unload）
-            // 先于新 scenery VM 解冻（第 17 帧 update）。update 侧倒计时会给
-            // ~+31（两臂同拍、永不在此窗分叉）→ 本断言红。
-            if (divergence - 1 < 13 || divergence - 1 > 19) {
-                std::printf("  失败 present-coupling: 分叉起点 %d 越出确认窗 [13,19]\n",
-                            divergence - 1);
+        CHECK(arms[arm].stage_transition_active);
+    }
+    auto full=[](App& app) {
+        th13::multiplayer::WorldState value;
+        CHECK(app.run!=nullptr);
+        CHECK(value.capture(app.run->battle,app.visual,nullptr,
+            app.run->presentation.get(),app.run.get(),app.run_transition.handle()));
+        return value.digest();
+    };
+    for(int frame=1;frame<=45;++frame) {
+        uint64_t values[3]{};
+        for(int arm=0;arm<3;++arm) {
+            inputs[arm].update(0);
+            CHECK(arms[arm].update(inputs[arm],false));
+            CHECK(arms[arm].commit(kFps));
+            const auto before=full(arms[arm]);
+            for(int present=0;present<arm;++present) CHECK(arms[arm].present());
+            values[arm]=full(arms[arm]);
+            CHECK_EQ(before,values[arm]);
+            CHECK(arms[arm].failure.empty());
+            if(frame==1) {
+                CHECK(arms[arm].run->scenery!=nullptr);
+                CHECK_EQ(arms[arm].run->scenery->capture_extra().lifecycle_timer.current,59);
+                CHECK(!arms[arm].run->scenery->draw_geometry_enabled());
             }
-            CHECK(divergence - 1 >= 13 && divergence - 1 <= 19);
+            if(frame==30) {
+                CHECK(arms[arm].run->previous_scenery!=nullptr);
+                CHECK(arms[arm].run->previous_scenery->retired());
+            }
+            if(frame==31) CHECK(arms[arm].run->previous_scenery==nullptr);
+            if(frame==32) CHECK(arms[arm].run->scenery->draw_geometry_enabled());
         }
+        CHECK_EQ(values[0],values[1]);CHECK_EQ(values[1],values[2]);
+        CHECK(mpdigest::capture(arms[0])==mpdigest::capture(arms[1]));
+        CHECK(mpdigest::capture(arms[1])==mpdigest::capture(arms[2]));
     }
 }
 

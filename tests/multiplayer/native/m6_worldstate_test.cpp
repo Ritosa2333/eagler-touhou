@@ -37,11 +37,14 @@
 #include "game/FrameScheduler.hpp"
 #include "game/StageBattle.hpp"
 #include "multiplayer/WorldState.hpp"
+#include "multiplayer/Session.hpp"
+#include "multiplayer/StageEntry.hpp"
 // P3.2 宿主域 case：ApplicationState 真实对局（boot/帧体与
 // scheduler_order_test 同模式——update/commit/present 三段序）。
 #include "sdl/ApplicationState.hpp"
 #include <cmath>
 #include <cstdlib>
+#include <sstream>
 
 using namespace th13;
 using namespace th13test;
@@ -210,6 +213,11 @@ TEST(snapshot_mutation_sensitivity) {
     multiplayer::WorldState snapshot;
     CHECK(snapshot.capture(dual.battle, visual));
     const uint64_t before = snapshot.digest();
+    dual.battle.seat_huds[1].life_piece_threshold_index=3;
+    multiplayer::WorldState mutated;
+    CHECK(mutated.capture(dual.battle,visual)); CHECK(mutated.digest()!=before);
+    CHECK(snapshot.restore(dual.battle,visual));
+    CHECK_EQ(dual.battle.seat_huds[1].life_piece_threshold_index,0);
     // capture 时刻的观测值（restore 应回到这些值）。
     const float seat0_x = dual.battle.seats[0].x;
     const i32 seat0_power = dual.battle.seat_huds[0].power;
@@ -245,6 +253,45 @@ TEST(snapshot_mutation_sensitivity) {
     CHECK(snapshot.ready());
 }
 
+// R-A/R-I9: transfer progress and a gift's recipient affect later frames.
+TEST(transfer_snapshot_and_digest) {
+    Fixture world; CHECK(world.init()); world.enable(3, {0, 0, 0});
+    auto& battle = world.battle;
+    battle.seats[0].life_transfer_state = 0x43;
+    battle.seats[1].power_transfer_state = 0x62;
+    CHECK(battle.item_manager.spawn_targeted_item(0, 300, ItemExtraLife, 2));
+    GameRandom visual(0xbeef);
+    multiplayer::WorldState saved, changed;
+    CHECK(saved.capture(battle, visual));
+    const auto original = saved.digest(), core = saved.digest_core();
+    char domains[4096]{}, mutated[4096]{};
+    saved.digest_domains(domains, sizeof(domains));
+    battle.seats[1].power_transfer_state ^= 1;
+    CHECK(changed.capture(battle, visual));
+    CHECK(changed.digest() != original); CHECK(changed.digest_core() != core);
+    changed.digest_domains(mutated, sizeof(mutated));
+    CHECK(std::string(domains) != mutated);
+    CHECK(saved.restore(battle, visual));
+    CHECK_EQ(battle.seats[1].power_transfer_state, 0x62);
+    Item* gift = nullptr;
+    for (auto& item : battle.item_manager.items())
+        if (item.alive && item.target_seat == 2) gift = &item;
+    CHECK(gift != nullptr); if (!gift) return;
+    gift->target_seat = 1;
+    CHECK(changed.capture(battle, visual));
+    CHECK(changed.digest() != original); CHECK(changed.digest_core() != core);
+    changed.digest_domains(mutated, sizeof(mutated));
+    CHECK(std::string(domains) != mutated);
+    CHECK(saved.restore(battle, visual));
+    CHECK(changed.capture(battle, visual)); CHECK_EQ(changed.digest(), original);
+    CHECK_EQ(battle.seats[0].life_transfer_state, 0x43);
+    multiplayer::StageEntry entry;
+    entry.Capture(battle, world.progress, world.score, 1, 0, 2, 0);
+    entry.RestoreBattleCarry(battle);
+    CHECK_EQ(battle.seats[0].life_transfer_state, 0);
+    CHECK_EQ(battle.seats[1].power_transfer_state, 0);
+}
+
 // ---- pools_ids_free_order：池/ID/自由槽表恢复 ----
 TEST(pools_ids_free_order) {
     Fixture dual;
@@ -267,6 +314,14 @@ TEST(pools_ids_free_order) {
     CHECK(dual.battle.mp_registry() == nullptr);
     multiplayer::WorldState snapshot;
     CHECK(snapshot.capture(dual.battle, visual));
+    const auto captured_digest = snapshot.digest();
+    // Record the actual next allocation, including its slot, serial and RNG.
+    // Both seats now deal real damage, so capture may already contain spirits.
+    dual.battle.item_manager.spawn_value_item(1, 0.0f, 0.0f, 0.0f, 1.0f);
+    multiplayer::WorldState next_allocation;
+    CHECK(next_allocation.capture(dual.battle, visual));
+    const auto next_digest = next_allocation.digest();
+    CHECK(snapshot.restore(dual.battle, visual));
     // 消耗/扰动：再走 20 帧 + 手动产件（池计数推进）。
     for (int frame = 0; frame < 20; ++frame) {
         fire.update(0x01);
@@ -279,18 +334,14 @@ TEST(pools_ids_free_order) {
     CHECK(snapshot.restore(dual.battle, visual));
     // 计数恢复。
     CHECK_EQ(dual.battle.sim.spawn_count(), spawned);
-    // 池恢复：restore 后池应回到 capture 态（扰动产的两件被清）——
-    // 再产一件的 serial 与 capture 前推进序衔接（行为面：首件 serial=1）。
+    multiplayer::WorldState restored;
+    CHECK(restored.capture(dual.battle, visual));
+    CHECK_EQ(restored.digest(), captured_digest);
+    // The same allocation after restore must reproduce the complete pool and
+    // RNG state, including all pre-existing drops and the reused slot order.
     dual.battle.item_manager.spawn_value_item(1, 0.0f, 0.0f, 0.0f, 1.0f);
-    bool first_serial_seen = false;
-    for (const Spirit& spirit : dual.battle.item_manager.spirits())
-        if (spirit.alive && spirit.serial == 1u) first_serial_seen = true;
-    CHECK(first_serial_seen);
-    // 扰动两件确已不在池（restore 清场）。
-    bool stale_seen = false;
-    for (const Spirit& spirit : dual.battle.item_manager.spirits())
-        if (spirit.alive && spirit.serial >= 2u && spirit.serial <= 3u) stale_seen = true;
-    CHECK(!stale_seen);
+    CHECK(restored.capture(dual.battle, visual));
+    CHECK_EQ(restored.digest(), next_digest);
 }
 
 // ---- anm_borrowed_parent_chains：ANM 父子链与 borrowed 根恢复 ----
@@ -743,4 +794,542 @@ TEST(rollback_across_stage_transition) {
     CHECK_EQ(a.digest_core(), b.digest_core());
 }
 
+
+// The confirmed state must include scene owners, not only StageBattle.
+TEST(scene_restore_full_one_three_twelve) {
+    for (int distance : {1, 3, 12}) {
+        App app;
+        CHECK(p32_enter_run(app, "scene-full-restore.bin"));
+        if (!app.run) return;
+        for (int i=0;i<6;++i) CHECK(p32_frame(app,0));
+        multiplayer::WorldState snapshot;
+        CHECK(snapshot.capture(app.run->battle,app.visual,nullptr,
+            app.run->presentation.get(),app.run.get(),app.run_transition.handle()));
+        GameInput input;const auto saved_input=input;
+        const auto frame=[&] { input.update(1);return app.update(input,false)&&app.commit(60.f)&&app.present(); };
+        std::vector<uint64_t> expected;
+        std::vector<std::string> expected_domains;
+        std::vector<std::string> expected_details;
+        for(int i=0;i<distance;++i) {
+            CHECK(frame());
+            multiplayer::WorldState state;
+            CHECK(state.capture(app.run->battle,app.visual,nullptr,
+                app.run->presentation.get(),app.run.get(),app.run_transition.handle()));
+            expected.push_back(state.digest());
+            char domains[2048];state.digest_domains(domains,sizeof domains);expected_domains.emplace_back(domains);expected_details.push_back(state.diagnostic_detail());
+        }
+        u32 transition=0;
+        CHECK(snapshot.restore(app.run->battle,app.visual,nullptr,
+            app.run->presentation.get(),app.run.get(),&transition));
+        multiplayer::WorldState restored;
+        CHECK(restored.capture(app.run->battle,app.visual,nullptr,
+            app.run->presentation.get(),app.run.get(),transition));
+        CHECK_EQ(restored.digest(),snapshot.digest());
+        input=saved_input;
+        for(int i=0;i<distance;++i) {
+            CHECK(frame());
+            multiplayer::WorldState state;
+            CHECK(state.capture(app.run->battle,app.visual,nullptr,
+                app.run->presentation.get(),app.run.get(),app.run_transition.handle()));
+            if(state.digest()!=expected[i]) {
+                char domains[2048];state.digest_domains(domains,sizeof domains);
+                std::printf("distance=%d frame=%d\nexpected %s\nactual   %s\n",distance,i,expected_domains[i].c_str(),domains);
+                std::printf("expected detail %s\nactual detail %s\n",expected_details[i].c_str(),state.diagnostic_detail().c_str());
+            }
+            CHECK_EQ(state.digest(),expected[i]);
+        }
+    }
+}
+
+TEST(scene_digest_mutation_controls) {
+    App app;
+    CHECK(p32_enter_run(app,"scene-mutation.bin"));
+    if(!app.run)return;
+    const auto capture=[&] { multiplayer::WorldState state;
+        CHECK(state.capture(app.run->battle,app.visual,nullptr,
+            app.run->presentation.get(),app.run.get(),app.run_transition.handle()));
+        return state;
+    };
+    auto initial=capture();
+    const auto state=app.run->capture_rollback();
+    std::unordered_map<const AnmVm*,AnmVm*> remapped;
+    auto changed=state; ++changed.post.clear_frame_;
+    app.run->restore_rollback(changed,remapped);
+    CHECK(capture().digest_core()!=initial.digest_core());
+    app.run->restore_rollback(state,remapped);
+    changed=state;changed.player_activation_pending=!changed.player_activation_pending;
+    app.run->restore_rollback(changed,remapped);
+    CHECK(capture().digest_core()!=initial.digest_core());
+    app.run->restore_rollback(state,remapped);
+    changed=state; changed.camera_origin.x+=1;
+    app.run->restore_rollback(changed,remapped);
+    CHECK(capture().digest_core()!=initial.digest_core());
+    app.run->restore_rollback(state,remapped);
+    changed=state;++changed.hud.boss.warn_state_;
+    app.run->restore_rollback(changed,remapped);
+    CHECK(capture().digest()!=initial.digest());
+    app.run->restore_rollback(state,remapped);
+    changed=state;changed.spell.anchor_[0]+=1;
+    app.run->restore_rollback(changed,remapped);
+    CHECK(capture().digest()!=initial.digest());
+    app.run->restore_rollback(state,remapped);
+    changed=state;++changed.popups.cursor;
+    app.run->restore_rollback(changed,remapped);
+    CHECK(capture().digest()!=initial.digest());
+    app.run->restore_rollback(state,remapped);
+    CHECK(app.run->inject_shake(ScreenShake::bomb(12,4,30,20)));
+    CHECK(capture().digest_core()!=initial.digest_core());
+    CHECK(initial.restore(app.run->battle,app.visual,nullptr,
+        app.run->presentation.get(),app.run.get(),nullptr));
+    CHECK_EQ(capture().digest(),initial.digest());
+    if(app.run->scenery) {
+        ++app.run->scenery->script.state.instruction_offset;
+        CHECK(capture().digest_core()!=initial.digest_core());
+    }
+}
+
+TEST(scene_present_does_not_advance_state) {
+    App app;CHECK(p32_enter_run(app,"draw-repeat-state.bin"));
+    for(int i=0;i<6;++i) CHECK(p32_frame(app,0));
+    CHECK(app.run->scenery!=nullptr);app.run->scenery->begin_exit();
+    const auto capture=[&] { multiplayer::WorldState s;
+        CHECK(s.capture(app.run->battle,app.visual,nullptr,app.run->presentation.get(),app.run.get(),app.run_transition.handle()));
+        return s; };
+    const auto a=capture();CHECK(app.present());const auto b=capture();
+    CHECK(app.present());const auto c=capture();
+    if(a.digest()!=b.digest() || b.digest()!=c.digest())
+        std::printf("draw A %s\ndraw B %s\ndraw C %s\n",a.diagnostic_detail().c_str(),b.diagnostic_detail().c_str(),c.diagnostic_detail().c_str());
+    CHECK_EQ(a.digest(),b.digest());CHECK_EQ(b.digest(),c.digest());
+}
+
+TEST(scene_update_then_present_preserves_full_state) {
+    App app;CHECK(p32_enter_run(app,"update-draw-state.bin"));
+    for(int i=0;i<6;++i) CHECK(p32_frame(app,0));
+    for(int frame=0;frame<12;++frame) {
+        GameInput input;input.update(1);CHECK(app.update(input,false));CHECK(app.commit(60.f));
+        multiplayer::WorldState before,after;
+        CHECK(before.capture(app.run->battle,app.visual,nullptr,app.run->presentation.get(),app.run.get(),app.run_transition.handle()));
+        CHECK(app.present());
+        CHECK(after.capture(app.run->battle,app.visual,nullptr,app.run->presentation.get(),app.run.get(),app.run_transition.handle()));
+        if(before.digest()!=after.digest()) {
+            char a[2048],b[2048];before.digest_domains(a,sizeof a);after.digest_domains(b,sizeof b);
+            std::printf("update-draw frame=%d before %s\nafter %s\n",frame,a,b);
+        }
+        CHECK_EQ(before.digest(),after.digest());
+    }
+}
+
+TEST(registry_restore_removes_speculative_high_water_slots) {
+    AnmRegistry registry;AnmRegistry::SnapshotData before,after;
+    CHECK(registry.capture(before));
+    auto* vm=registry.allocate();CHECK(vm!=nullptr);CHECK(registry.submit(*vm)!=0);
+    CHECK(registry.restore(before));CHECK(registry.capture(after));
+    CHECK_EQ(after.entries.size(),before.entries.size());
+    CHECK(after.free_slots==before.free_slots);CHECK_EQ(after.generation,before.generation);
+    vm=registry.allocate();CHECK(vm!=nullptr);CHECK(registry.submit(*vm)!=0);
+}
+
+TEST(new_network_world_ignores_local_title_allocation_history) {
+    using namespace th13::multiplayer;
+    std::uint64_t expected=0;
+    for(unsigned preview_frames : {0u,37u,143u}) {
+        session.Stop();App app;CHECK(p32_pin_boot(app,"world-epoch.bin"));
+        for(unsigned i=0;i<preview_frames;++i) CHECK(p32_frame(app,0));
+        CHECK(app.configure_multiplayer(2,{0,0,0},0));
+        SessionSetup setup;setup.version=2;setup.mode=2;setup.seed=1234;setup.session_id=42;setup.build[0]=1;
+        const auto words=EncodeSessionSetup(setup);CHECK(session.Configure(words.data(),words.size()));
+        CHECK(session.BeginLocalSimulation());
+        app.progress.difficulty=1;CHECK(app.start_game(1));app.pending_destination=-1;
+        app.game_random.reseed_restore(1234);app.visual.reseed_restore(1234);
+        CHECK(app.begin_run());
+        WorldState state;CHECK(state.capture(app.run->battle,app.visual,nullptr,
+            app.run->presentation.get(),app.run.get(),app.run_transition.handle()));
+        if(preview_frames==0) expected=state.digest();
+        else CHECK_EQ(state.digest(),expected);
+        session.Stop();
+    }
+}
+
+TEST(scene_laser_retire_restore_update_only) {
+    for (int distance : {1,3,12}) {
+        App app; CHECK(p32_enter_run(app,"scene-laser-restore.bin"));
+        if(!app.run)return;
+        auto& sim=app.run->battle.sim;
+        StageEt et;et.reset();et.sprite=8;et.subtype=6;
+        et.spawn[0]=et.spawn[1]=480;et.laser_width=16;et.speed1=8;et.sound=-1;
+        et.laser_timing[0]=20;et.laser_timing[1]=8;
+        et.laser_timing[2]=140;et.laser_timing[3]=10;
+        StageEnemy enemy;enemy.position[0]=96;enemy.position[1]=144;
+        sim.emit_infinite_laser(et,enemy,257);
+        CHECK(sim.error().empty()); CHECK(!sim.lasers.empty());
+        multiplayer::WorldState snapshot;
+        CHECK(snapshot.capture(app.run->battle,app.visual,nullptr,
+            app.run->presentation.get(),app.run.get(),app.run_transition.handle()));
+        std::vector<uint64_t> expected;
+        for(int i=0;i<distance;++i) {
+            sim.advance_lasers();CHECK(sim.error().empty());
+            multiplayer::WorldState state;
+            CHECK(state.capture(app.run->battle,app.visual,nullptr,
+                app.run->presentation.get(),app.run.get(),app.run_transition.handle()));
+            expected.push_back(state.digest());
+        }
+        // The future owner is destroyed; a restore must recreate its values
+        // without re-running animation birth or consuming RNG.
+        sim.lasers.front().phase=1;sim.advance_lasers();CHECK(sim.lasers.empty());
+        CHECK(snapshot.restore(app.run->battle,app.visual,nullptr,
+            app.run->presentation.get(),app.run.get(),nullptr));
+        for(int i=0;i<distance;++i) {
+            sim.advance_lasers();CHECK(sim.error().empty());
+            multiplayer::WorldState state;
+            CHECK(state.capture(app.run->battle,app.visual,nullptr,
+                app.run->presentation.get(),app.run.get(),app.run_transition.handle()));
+            CHECK_EQ(state.digest(),expected[i]);
+        }
+    }
+}
+
+TEST(stage6_clear_flow_restore_179_379) {
+    struct Host final : PostGamePlatform {
+        int tick=0;std::vector<int> fades,ends;
+        void request_destination(i32 raw) override { CHECK_EQ(raw,15);ends.push_back(tick); }
+        bool request_stage6_fade() override { fades.push_back(tick);return true; }
+        void bgm(i32) override {}
+    } host;
+    SessionState progress;progress.stage=6;
+    HudPlayerState player;HudScoreState score;
+    PostGameFlow flow(progress,player,score,host);
+    flow.on_stage_clear();CHECK(flow.clear_sequence());
+    for(int boundary:{179,379}) {
+        auto state=flow.capture_rollback();
+        state.clear_sequence_=true;state.clear_frame_=u32(boundary);
+        state.age_=u32(boundary);flow.restore_rollback(state);
+        const auto saved_progress=progress;
+        std::vector<int> expected_fades,expected_ends;
+        for(int pass=0;pass<2;++pass) {
+            host.fades.clear();host.ends.clear();
+            flow.restore_rollback(state);progress=saved_progress;
+            for(host.tick=0;host.tick<3;++host.tick)flow.update();
+            if(pass==0){expected_fades=host.fades;expected_ends=host.ends;}
+            else {CHECK(host.fades==expected_fades);CHECK(host.ends==expected_ends);}
+        }
+        if(boundary==179){CHECK(expected_fades==std::vector<int>{0});CHECK(expected_ends.empty());}
+        else {CHECK(expected_fades.empty());CHECK(expected_ends==std::vector<int>{0});}
+    }
+}
+
 int main() { return th13test::run_all("m6.world_state"); }
+
+TEST(host_outputs_and_handoff_rollback_one_three_twelve) {
+    using namespace th13::multiplayer;
+    for (unsigned distance : {1u,3u,12u}) {
+        session.Stop();
+        App app; CHECK(p32_enter_run(app,"host-commit-restore.bin"));
+        if (!app.run) return;
+        CHECK(app.run->enable_multiplayer(2,{0,0,0}));
+        SessionSetup setup;setup.version=2;setup.mode=2;setup.automatic=false;
+        setup.session_id=42;setup.build[0]=1;
+        const auto words=EncodeSessionSetup(setup);
+        CHECK(session.Configure(words.data(),words.size()));
+        session.BindWorld(&app.run->battle,&app.visual,app.run->presentation.get(),app.run.get(),&app.mp_transition_handle_);
+        session.capture_host=[&] { return app.capture_multiplayer_host(); };
+        app.run->playback_input=[] { return session.LocalDelayedInput(); };
+        CHECK(session.BeginLocalSimulation());
+        const auto step=[&] { CHECK(session.CanSimulate());
+            CHECK(app.update(session.MenuInput(),false));CHECK(app.commit(60.f));session.OnFrameSimulated(); };
+        CHECK(session.CaptureLocal(0,0));session.AdvanceCapturePhase();
+        CHECK(session.SubmitRemote(1,0,{})==Netplay::RemoteInputResult::Accepted);
+        step();
+        const auto base_frames=app.frames;
+        const auto base_fades=app.ending_fades.size();
+        const auto base_play=app.files.ordinary_records[0].total_frames;
+        CHECK(app.loading_prayer!=0);
+        auto* caption=app.loading_animations.registry.find(app.loading_prayer);
+        CHECK(caption!=nullptr);
+        const auto base_caption_time=caption->timer.current;
+        app.slow_window_time_=.98;app.slow_window_frames_=49;
+        const auto base_slow=app.slow_num_;
+        for(unsigned i=1;i<=distance;++i) {
+            CHECK(session.CaptureLocal(1,i));session.AdvanceCapturePhase();
+            step();
+        }
+        CHECK_EQ(app.files.ordinary_records[0].total_frames,base_play);
+        CHECK(!session.AllFramesCommitted());
+        CHECK(!session.FinishWorldSimulation());
+        CHECK(session.Simulating());
+        app.pending_destination=i32(th13::sdl::Destination::NextStage);
+        CHECK(app.request_stage6_fade());
+        auto* old=app.run.get();
+        CHECK(app.present());CHECK(app.run.get()==old);
+        CHECK_EQ(app.pending_destination,i32(th13::sdl::Destination::NextStage));
+        for(unsigned i=1;i<=distance;++i) {
+            Netplay::FrameInput input;if(i==1) input.buttons=0x2;
+            const auto result=session.SubmitRemote(1,i,input);
+            CHECK(result==Netplay::RemoteInputResult::Accepted || result==Netplay::RemoteInputResult::RollbackRequired || result==Netplay::RemoteInputResult::PredictionCorrect);
+        }
+        CHECK(session.Pump(distance+1));
+        CHECK_EQ(session.Restores(),1u);CHECK_EQ(session.SimFrame(),1u);
+        CHECK_EQ(app.frames,base_frames);CHECK_EQ(app.pending_destination,-1);
+        CHECK_EQ(app.ending_fades.size(),base_fades);
+        CHECK_EQ(app.slow_window_time_,.98);CHECK_EQ(app.slow_window_frames_,49u);
+        CHECK_EQ(app.slow_num_,base_slow);
+        CHECK(app.loading_prayer!=0);
+        caption=app.loading_animations.registry.find(app.loading_prayer);
+        CHECK(caption!=nullptr);CHECK_EQ(caption->timer.current,base_caption_time);
+        CHECK_EQ(app.files.ordinary_records[0].total_frames,base_play);
+        while(session.Correcting()) step();
+        CHECK(session.AllFramesCommitted());
+        CHECK_EQ(app.frames,base_frames+distance);
+        CHECK_EQ(app.files.ordinary_records[0].total_frames,base_play+distance);
+        CHECK(session.FinishWorldSimulation());CHECK(!session.Simulating());
+        // R-G: ending/result input runs locally after the confirmed battle tail.
+        CHECK(app.begin_title(3));CHECK(app.run==nullptr);CHECK(app.title!=nullptr);
+        CHECK(app.step(GameInput{},60.f,false));CHECK(!session.Simulating());
+        session.Stop();
+    }
+}
+
+// A stage activates inside an already granted network frame. The new battle
+// must receive every seat's saved input before its first scheduler update.
+TEST(network_stage_activation_inputs_and_resources) {
+    using namespace th13::multiplayer;
+    for (bool ghost : {false, true}) {
+    std::uint64_t expected = 0;
+    for (unsigned local : {0u, 1u}) {
+        session.Stop();
+        App app; CHECK(p32_pin_boot(app, "network-stage-activation.bin"));
+        CHECK(app.configure_multiplayer(2, {0, 1, 0}, int(local)));
+        SessionSetup setup; setup.version=2; setup.mode=2; setup.automatic=false;
+        setup.session_id=42; setup.seed=1234; setup.build[0]=1; setup.local_player=local;
+        setup.selections={0,1,0};
+        const auto words=EncodeSessionSetup(setup);
+        CHECK(session.Configure(words.data(),words.size()));
+        CHECK(app.start_game(1)); CHECK(app.complete_loading());
+        CHECK(app.apply_destination()); CHECK(app.run != nullptr);
+        if (!app.run) return;
+        CHECK(session.BeginLocalSimulation());
+        auto& old=app.run->battle;
+        old.seat_huds[0].extra_lives=4; old.seat_huds[0].bombs=1;
+        old.seat_huds[0].power=173; old.seat_huds[0].life_pieces=2;
+        old.seat_huds[1].extra_lives=0; old.seat_huds[1].bombs=0;
+        old.seat_huds[1].power=249; old.seat_huds[1].bomb_pieces=3;
+        old.seats[1].ghost=ghost;
+        old.trance_generation=7;
+        const std::array<u32,2> held{0x49u,0x81u};
+        CHECK(session.CaptureLocal(held[local],0));session.AdvanceCapturePhase();
+        CHECK(session.SubmitRemote(1-local,0,Netplay::FrameInput(held[1-local])) == Netplay::RemoteInputResult::Accepted);
+        CHECK(session.CanSimulate());
+        app.progress.stage=2; app.stage_transition_active=true; app.stage_startup_age=30;
+        CHECK(app.update(session.MenuInput(),false));CHECK(app.commit(60.f));
+        session.OnFrameSimulated();
+        CHECK_EQ(app.progress.stage_frame,1);
+        auto& next=app.run->battle;
+        CHECK_EQ(next.seat_inputs[0].held,held[0]);
+        CHECK_EQ(next.seat_inputs[1].held,held[1]);
+        CHECK(next.seats[0].x<0);CHECK(next.seats[1].x>0);
+        CHECK_EQ(next.seat_huds[0].extra_lives,4);CHECK_EQ(next.seat_huds[0].bombs,1);
+        CHECK_EQ(next.seat_huds[0].power,173);CHECK_EQ(next.seat_huds[0].life_pieces,2);
+        CHECK_EQ(next.seat_huds[1].extra_lives,0);CHECK_EQ(next.seat_huds[1].bombs,ghost ? 2 : 0);
+        // R-G stage-clear revival restores half max Power; live seats carry
+        // their current Power unchanged. This update already consumed the
+        // first new-stage player tick, so the 120-frame protection is now119.
+        CHECK_EQ(next.seat_huds[1].power,ghost ? next.seat_huds[1].max_power / 2 : 249);
+        CHECK_EQ(next.seat_huds[1].bomb_pieces,ghost ? 0 : 3);
+        if (ghost) CHECK_EQ(next.seats[1].invulnerable,119);
+        CHECK(!next.seats[1].ghost);CHECK(!next.seats[1].dead);
+        CHECK_EQ(next.trance_generation,7u);
+        WorldState state;CHECK(state.capture(next,app.visual,nullptr,app.run->presentation.get(),app.run.get(),app.mp_transition_handle_));
+        if (local==0) expected=state.digest(); else CHECK_EQ(state.digest(),expected);
+        session.Stop();
+    }
+    }
+}
+
+TEST(audit_epoch_and_timing_bounds) {
+    using namespace th13::multiplayer;
+    DialogueText::RollbackState dialogue{};
+    dialogue.pixels = std::make_shared<std::vector<u8>>(16, 0);
+    const auto original_host = WorldState::digest_dialogue(dialogue);
+    auto mutated_host = dialogue;
+    mutated_host.box = 42;
+    CHECK(WorldState::digest_dialogue(mutated_host) != original_host);
+    mutated_host = dialogue;
+    mutated_host.cached[0] = true;
+    CHECK(WorldState::digest_dialogue(mutated_host) != original_host);
+    mutated_host = dialogue;
+    mutated_host.pixels = std::make_shared<std::vector<u8>>(16, 1);
+    CHECK(WorldState::digest_dialogue(mutated_host) != original_host);
+    session.Stop();
+    Fixture world;CHECK(world.init());CHECK(world.battle.enable_seats(world.provider,2,{0,0,0}));
+    GameRandom visual{1234};
+    SessionSetup setup;setup.version=2;setup.mode=2;setup.automatic=false;
+    setup.session_id=42;setup.build[0]=1;
+    const auto words=EncodeSessionSetup(setup);CHECK(session.Configure(words.data(),words.size()));
+    session.BindWorld(&world.battle,&visual,nullptr);CHECK(session.BeginLocalSimulation());
+    session.SetAudit(true);
+    CHECK(session.CaptureLocal(0,0));session.AdvanceCapturePhase();CHECK(session.CanSimulate());
+    CHECK(world.battle.step(*session.LocalDelayedInput()));session.OnFrameSimulated();
+    CHECK_EQ(session.RecordCount(),1u);
+    session.SetAudit(false);
+    CHECK(session.SubmitRemote(1,0,{})==Netplay::RemoteInputResult::PredictionCorrect);
+    CHECK(session.Pump(1));CHECK_EQ(session.RecordCount(),0u);
+    CHECK(session.TakeAuditJson().find("\"frames\":[]")!=std::string::npos);
+    session.SetAudit(true);
+    WorldState before;CHECK(before.capture(world.battle,visual));
+    for(unsigned i=0;i<4097;++i)session.TraceTiming("probe",i);
+    const auto timing=session.TakeTimingJson();
+    CHECK(timing.find("\"overflow\":1")!=std::string::npos);
+    std::size_t events=0,at=0;
+    while((at=timing.find("\"kind\":",at))!=std::string::npos){++events;++at;}
+    CHECK_EQ(events,4096u);
+    WorldState after;CHECK(after.capture(world.battle,visual));CHECK_EQ(after.digest(),before.digest());
+    CHECK(session.FinishWorldSimulation(true));
+    const auto terminal=session.TakeAuditJson();
+    std::ostringstream expected;
+    expected << "\"full\":\"" << std::hex << after.digest() << "\"";
+    CHECK(terminal.find(expected.str())!=std::string::npos);
+    CHECK(terminal.find("\"frames\":1,\"completed\":true")!=std::string::npos);
+    CHECK(session.TakeAuditJson().find(expected.str())!=std::string::npos);
+    session.Stop();CHECK(session.TakeTimingJson().find("\"events\":[]")!=std::string::npos);
+    CHECK(session.TakeAuditJson().find("\"terminal\":null")!=std::string::npos);
+}
+
+TEST(network_dialog_prediction_one_three_twelve) {
+    using namespace th13::multiplayer;
+    for (unsigned distance : {1u, 3u, 12u}) {
+        std::vector<u64> expected;
+        for (bool prediction : {false, true}) {
+            session.Stop();
+            App app; CHECK(p32_pin_boot(app, "network-dialog-prediction.bin"));
+            CHECK(app.configure_multiplayer(2, {0,0,0}, 0));
+            SessionSetup setup; setup.version=2; setup.mode=2; setup.automatic=false;
+            setup.session_id=42; setup.seed=1234; setup.build[0]=1;
+            const auto words=EncodeSessionSetup(setup); CHECK(session.Configure(words.data(),words.size()));
+            CHECK(session.BeginLocalSimulation());
+            app.progress.difficulty=1; CHECK(app.start_game(1)); app.pending_destination=-1;
+            app.game_random.reseed_restore(1234); app.visual.reseed_restore(1234);
+            CHECK(app.begin_run()); CHECK(app.complete_loading());
+            const auto step=[&] {
+                CHECK(session.CanSimulate());
+                CHECK(app.update(session.MenuInput(),false)); CHECK(app.commit(60.f));
+                session.OnFrameSimulated(); CHECK(app.present());
+            };
+            // Confirm the launch, then enter the real MSG interpreter and let
+            // ApplicationState publish its prediction policy for this scene.
+            for(unsigned frame=0;frame<2;++frame) {
+                CHECK(session.CaptureLocal(0,frame)); session.AdvanceCapturePhase();
+                CHECK(session.SubmitRemote(1,frame,{})==Netplay::RemoteInputResult::Accepted);
+                step(); CHECK(session.Pump(frame));
+                if(frame==0) app.run->open_dialog(0);
+            }
+            CHECK(app.run->dialog_active()); CHECK(!session.PredictionBarrier());
+            const auto observe=[&](unsigned index) {
+                WorldState state; CHECK(state.capture(app.run->battle,app.visual,nullptr,
+                    app.run->presentation.get(),app.run.get(),app.mp_transition_handle_));
+                if(prediction) CHECK_EQ(state.digest(),expected[index]);
+                else expected.push_back(state.digest());
+            };
+            for(unsigned index=0;index<distance;++index) {
+                const unsigned frame=index+2;
+                CHECK(session.CaptureLocal(0,frame)); session.AdvanceCapturePhase();
+                if(!prediction) CHECK(session.SubmitRemote(1,frame,
+                    Netplay::FrameInput(InputLanes::Confirm | InputLanes::Dialogue | 1))==Netplay::RemoteInputResult::Accepted);
+                step();
+                if(!prediction) { CHECK(session.Pump(frame)); observe(index); }
+            }
+            if(prediction) {
+                for(unsigned index=0;index<distance;++index) {
+                    const auto result=session.SubmitRemote(1,index+2,
+                        Netplay::FrameInput(InputLanes::Confirm | InputLanes::Dialogue | 1));
+                    CHECK(result==Netplay::RemoteInputResult::RollbackRequired ||
+                          result==Netplay::RemoteInputResult::Accepted);
+                }
+                CHECK(session.Pump(distance+2)); CHECK_EQ(session.SimFrame(),2u);
+                for(unsigned index=0;index<distance;++index) { step(); observe(index); }
+                CHECK_EQ(session.Restores(),1u); CHECK(!session.Correcting());
+            }
+            session.Stop();
+        }
+    }
+}
+
+TEST(history_remote_menu_edges) {
+    using namespace th13::multiplayer;
+    session.Stop();
+    App app; CHECK(p32_pin_boot(app, "history-remote-menu.bin"));
+    CHECK(app.configure_multiplayer(3, {0, 0, 0}, 0));
+    SessionSetup setup; setup.version=2; setup.mode=2; setup.automatic=false;
+    setup.session_id=42; setup.build[0]=1; setup.player_count=3;
+    const auto words=EncodeSessionSetup(setup); CHECK(session.Configure(words.data(), words.size()));
+    app.mp_history_playback = true;
+    CHECK(app.start_game(1)); CHECK(app.apply_destination()); CHECK(app.complete_loading());
+    std::array<Netplay::FrameInput, 3> inputs{};
+    inputs[0].buttons=InputLanes::Dialogue;
+    inputs[2].buttons=InputLanes::Pause | InputLanes::Dialogue | 1;
+    auto menu=InputLanes::AdvanceHistory(app.run->battle, inputs.data(), inputs.size());
+    CHECK(menu.pressed & 0x100u); CHECK(menu.pressed & 1);
+    CHECK(app.run->playback_input() == &app.run->battle.seat_inputs[0]);
+    CHECK(app.update(menu, false)); CHECK(app.commit(60)); CHECK(app.pause->active());
+    inputs[2].buttons=0;
+    for (int i=0;i<12;++i) {
+        menu=InputLanes::AdvanceHistory(app.run->battle,inputs.data(),inputs.size());
+        CHECK(app.update(menu,false));CHECK(app.commit(60));
+    }
+    CHECK_EQ(app.pause->state.phase,6);
+    inputs[2].buttons=InputLanes::Pause | InputLanes::Dialogue;
+    menu=InputLanes::AdvanceHistory(app.run->battle,inputs.data(),inputs.size());
+    CHECK(menu.pressed & 0x100u);
+    CHECK(menu.pressed & 0x200u); // P1's held Ctrl must not hide P3's press.
+    CHECK(app.update(menu,false));CHECK(app.commit(60));
+    inputs[2].buttons=0;
+    for(int i=0;i<15;++i) {
+        menu=InputLanes::AdvanceHistory(app.run->battle,inputs.data(),inputs.size());
+        CHECK(app.update(menu,false));CHECK(app.commit(60));
+    }
+    CHECK(!app.pause->active());
+    session.Stop();
+}
+
+TEST(network_pause_restart_and_terminal_save) {
+    using namespace th13::multiplayer;
+    session.Stop();
+    App app;CHECK(p32_pin_boot(app,"network-menu-restart.bin"));
+    CHECK(app.configure_multiplayer(2,{0,0,0},0));
+    SessionSetup setup;setup.version=2;setup.mode=2;setup.automatic=false;
+    setup.session_id=42;setup.build[0]=1;
+    const auto words=EncodeSessionSetup(setup);CHECK(session.Configure(words.data(),words.size()));
+    CHECK(app.start_game(1));CHECK(app.apply_destination());CHECK(session.BeginLocalSimulation());
+    unsigned frame=0;
+    const auto tick=[&](u32 remote) {
+        CHECK(app.complete_loading());
+        CHECK(session.CaptureLocal(0,frame));session.AdvanceCapturePhase();
+        CHECK(session.SubmitRemote(1,frame,Netplay::FrameInput(remote))==Netplay::RemoteInputResult::Accepted);
+        CHECK(session.CanSimulate());
+        CHECK(session.Pump(frame));CHECK_EQ(session.RecordCount(),1u);
+        CHECK(app.update(session.MenuInput(),false));CHECK(app.commit(60.f));
+        session.OnFrameSimulated();CHECK(app.present());++frame;
+    };
+    tick(InputLanes::Pause);
+    CHECK(app.pause->active());
+    for(int i=0;i<12;++i)tick(0);
+    CHECK_EQ(app.pause->state.phase,6);
+    app.run->battle.seat_huds[0].bombs=0;
+    tick(InputLanes::Restart);
+    for(int i=0;i<35;++i)tick(0);
+    CHECK_EQ(app.progress.stage,1);CHECK(!app.pause->active());
+    CHECK_EQ(app.run->battle.seat_huds[0].bombs,2);
+    CHECK_EQ(app.run->battle.seat_huds[1].bombs,2);
+    Netplay::FrameInput input;
+    CHECK(session.CaptureLocal(0x200000u | 0x10000u,frame));
+    const auto captured=session.Runtime().Prepare(frame);
+    CHECK_EQ(captured.inputs[0].buttons,InputLanes::Restart | InputLanes::Quit);
+    bool available=false;unsigned saved=0;
+    app.multiplayer_replay_available=[&]{return available;};
+    app.multiplayer_replay_save=[&](i32 slot,const std::string& name){
+        CHECK_EQ(slot,3);CHECK(name=="NETPLAY");++saved;return true;
+    };
+    CHECK(!app.can_save_replay());CHECK(!app.result_replay_save_available());
+    available=true;CHECK(app.can_save_replay());CHECK(app.result_replay_save_available());
+    CHECK(app.save_replay_slot(3,"NETPLAY"));CHECK_EQ(saved,1u);
+    CHECK(session.FinishWorldSimulation(true));CHECK(session.WorldCompleted());
+    session.Stop();CHECK(!session.WorldCompleted());
+}

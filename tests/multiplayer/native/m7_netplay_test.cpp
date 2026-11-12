@@ -211,9 +211,13 @@ TEST(device_seat_isolation) {
     CHECK(held[0] == 0x001);
     CHECK(held[1] == 0x008);
     CHECK(held[2] == 0);
-    // 非法：脏位（Pause 之外的未定义高位）拒绝。
+    // Defined menu actions stay outside gameplay; unused bit 10 is rejected.
+    frames[1].buttons |= InputLanes::Restart | InputLanes::Quit;
+    CHECK(InputLanes::Decode(frames.data(), 2, held));
+    CHECK(held[1] == 0x008);
+    CHECK((InputLanes::Controls(frames[1]) & 0x210000u) == 0x210000u);
     Netplay::FrameInput dirty = input_a;
-    dirty.buttons |= 0x4000;
+    dirty.buttons |= 0x400;
     std::array<Netplay::FrameInput, 3> bad{dirty, input_b, Netplay::FrameInput{}};
     CHECK(!InputLanes::Decode(bad.data(), 2, held));
 }

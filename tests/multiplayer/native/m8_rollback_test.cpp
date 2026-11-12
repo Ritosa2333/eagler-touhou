@@ -1342,4 +1342,76 @@ TEST(snapshot_cost) {
     CHECK(second_avg <= capture_avg * 3.0 + 1.0);
 }
 
+TEST(unconsumed_prediction_grant_receives_actual_input) {
+    struct Result {
+        uint64_t core = 0, full = 0;
+        std::string domains;
+        std::vector<unsigned> confirmed_frames;
+    };
+    const auto run = [](bool interleave) {
+        Result result;
+        Fixture world;
+        CHECK(world.init());
+        CHECK(world.battle.enable_seats(world.provider, 2, {0, 0}));
+        auto setup = p2_setup();
+        setup.requested_delay = setup.input_delay = 0;
+        CHECK(p2_begin(world, setup));
+        auto& session = multiplayer::session;
+        session.confirmed_sink = [&](unsigned frame, unsigned,
+                const std::array<Netplay::FrameInput, 3>&) {
+            result.confirmed_frames.push_back(frame);
+        };
+        const auto submit = [&](unsigned frame, unsigned held) {
+            Netplay::FrameInput input;
+            CHECK(InputLanes::Capture(held, false, input));
+            CHECK(session.SubmitRemote(1, frame, input) ==
+                  Netplay::RemoteInputResult::Accepted);
+        };
+        for (unsigned frame = 0; frame < 41; ++frame) {
+            CHECK(session.CaptureLocal(0, frame));
+            session.AdvanceCapturePhase();
+            if (!interleave || frame != 17) submit(frame, frame >= 17 ? 1 : 0);
+            CHECK(session.Pump(frame * 2));
+            CHECK(session.CanSimulate());
+            if (interleave && frame == 17) {
+                // The peer stalls after this grant. Actual input arrives
+                // before any UsedSlot exists, so it cannot request rollback.
+                CHECK_EQ(world.battle.seat_inputs[1].held, 0u);
+                submit(frame, 1);
+                CHECK(!session.HasRollbackRequest());
+                CHECK(session.Pump(frame * 2 + 1));
+                CHECK(session.CanSimulate());
+                CHECK_EQ(world.battle.seat_inputs[1].held, 1u);
+                CHECK_EQ(world.battle.seat_inputs[1].duration[0], 1u);
+            }
+            const auto* local = session.LocalDelayedInput();
+            CHECK(local != nullptr);
+            CHECK(world.battle.step(*local));
+            session.OnFrameSimulated();
+            CHECK_EQ(session.SimFrame(), frame + 1);
+            CHECK_EQ(session.Committed(), frame + 1);
+            CHECK_EQ(session.RecordCount(), size_t(0));
+            CHECK(!session.RecordOverflow());
+        }
+        CHECK_EQ(result.confirmed_frames.size(), size_t(41));
+        for (unsigned frame = 0; frame < result.confirmed_frames.size(); ++frame)
+            CHECK_EQ(result.confirmed_frames[frame], frame);
+        WorldState final;
+        CHECK(final.capture(world.battle, world.visual));
+        result.core = final.digest_core();
+        result.full = final.digest();
+        char domains[4096];
+        final.digest_domains(domains, sizeof domains);
+        result.domains = domains;
+        session.confirmed_sink = nullptr;
+        session.Stop();
+        return result;
+    };
+    const auto baseline = run(false), interleaved = run(true);
+    CHECK_EQ(interleaved.core, baseline.core);
+    CHECK_EQ(interleaved.full, baseline.full);
+    CHECK_EQ(interleaved.domains, baseline.domains);
+    CHECK_EQ(interleaved.confirmed_frames, baseline.confirmed_frames);
+}
+
 int main() { return th13test::run_all("m8.rollback"); }

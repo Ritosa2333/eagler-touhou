@@ -7,6 +7,7 @@
 #include "game/VisualBootstrap.hpp"
 #include "game/ReplayFastForward.hpp"
 #include "multiplayer/Session.hpp"  // M7：联机会话接缝（playback_input 延迟窗）
+#include "multiplayer/StageEntry.hpp"
 
 #include <SDL3/SDL.h>
 
@@ -41,8 +42,6 @@ constexpr i32 kStageLogoBank = 27;
 // P3.3：确认帧门同步（Session::SetPredictionBarrier）。只在 MP 会话 Active
 // 时写门（非 Active 保持 Configure/Stop 的清零值）。门源取实际参与模拟
 // 推进的两个权威位：
-//   - MSG 对话激活：RunScene::dialog_active()（MsgPlayer::active 的只读面，
-//     与 P3.2 对话快照域同一权威位）；
 //   - 换关过渡：stage_transition_loading（present 尾 apply_destination(
 //     NextStage) 置位 → 下一次 update 的 prepare_next_stage 消费）与
 //     stage_transition_active（装载门 start_transition → activate_next_stage，
@@ -52,9 +51,12 @@ constexpr i32 kStageLogoBank = 27;
 // 转场同样命中，且可在装载门期间提前退休，与模拟推进不同拍，不作判据。
 void sync_mp_prediction_barrier(ApplicationState& app) {
     if (!multiplayer::session.Active()) return;
-    const bool transition = app.stage_transition_loading || app.stage_transition_active;
-    const bool dialog = app.run && app.run->dialog_active();
-    multiplayer::session.SetPredictionBarrier(dialog || transition);
+    const bool transition = app.stage_transition_loading || app.stage_transition_active ||
+        app.pending_destination >= 0;
+    const bool paused = app.pause && app.pause->active();
+    // Dialogue cursor, portraits, text VMs and input edges share the world
+    // snapshot. It remains predictable within this scene's resource lifetime.
+    multiplayer::session.SetPredictionBarrier(transition || paused);
 }
 }  // namespace
 
@@ -627,6 +629,11 @@ void ApplicationState::release_run(bool preserve_hud) {
     graphics.presentation.reset();
     pause.reset();
     playfield_targets.reset();
+    if (multiplayer::session.Active()) {
+        multiplayer::session.BindWorld(nullptr, nullptr, nullptr);
+        multiplayer::session.capture_host = {};
+        multiplayer::session.digest_host = {};
+    }
     run.reset();  // ~RunScene 先释放战斗 ANM 子树（外部 VM 归还 registry）
     if (!preserve_hud) {
         run_hud.reset();
@@ -684,10 +691,13 @@ bool ApplicationState::preload_scenery_animation(i32 bank, const std::string& na
 }
 
 bool ApplicationState::begin_title(i32 reason) {
+    if (run && multiplayer::session.Simulating() &&
+        !multiplayer::session.FinishWorldSimulation())
+        return fail("Unconfirmed multiplayer title handoff");
     if (!release_run_transition()) return false;
     // 0042bfa0 saves before destroying a battle, including Replay. Ending
     // teardown alone (43c1c0 case 10) is not a score save point.
-    if (run || ordinary_records_dirty) {
+    if (mp_seat_count < 2 && (run || ordinary_records_dirty)) {
         if (!(run ? files.save_score() : files.save())) return fail(files.error);
         ordinary_records_dirty = false;
     }
@@ -774,11 +784,20 @@ bool ApplicationState::begin_run() {
     // new_run and must take the release_run path even if a transition was
     // pending when the pause menu opened.
     const bool continuing = stage_transition_active && !new_run;
+    const bool carry_multiplayer = continuing && run && run->battle.seat_count >= 2;
+    multiplayer::StageEntry carry;
+    const u32 carry_death_generation = carry_multiplayer ? run->battle.death_trance_generation : 0;
+    if (carry_multiplayer) {
+        carry.Capture(run->battle, progress, selection_score, game_random.seed(),
+            game_random.index(), visual.seed(), visual.index());
+        selection_player = run->battle.seat_huds[0];
+        carry.PrepareStageClear(selection_player);
+    }
     std::unique_ptr<RunScene> previous_run;
     // 回放会话（0x42b990 恢复序挂点在下方消费 pending_replay_stage，先留存）：
     // 原版回放无 BGM（0x4dc8a8&0x10 时 0x43ae40/0x43af40 的曲命令退化为停曲）。
     const bool replay_session = pending_replay_stage != nullptr;
-    if (run) {
+    if (mp_seat_count < 2 && run) {
         if (!files.save_score()) return fail(files.error);
         ordinary_records_dirty = false;
     }
@@ -801,6 +820,24 @@ bool ApplicationState::begin_run() {
     } else {
         release_run(preserve_hud);
         next_scenery_bank = 26;
+    }
+    if (mp_seat_count >= 2 && multiplayer::session.Active() &&
+        multiplayer::session.SimFrame() == 0 && !continuing) {
+        // Room previews have different local lifetimes. Their allocation order
+        // and retired VM values must not seed the shared battle's handle pool.
+        if (!release_run_transition()) return false;
+        clear_ending_windows();
+        animations.registry = AnmRegistry{};
+        animations.collect_resources();
+        // The startup caption belongs to this device's boot/title lifetime.
+        // Direct room entry skips draw_loading(), so its retired roots and
+        // still-live children otherwise survive the shared seed reset. Keep
+        // the loaded banks, but start this unused pool with the new world.
+        loading_animations.registry = AnmRegistry{};
+        loading_signature = loading_prayer = 0;
+        loading_animations.collect_resources();
+        mp_transition_handle_ = 0;
+        if (!begin_run_transition()) return false;
     }
     // 对局数值通道预置（0x42b990:103-110 dcc30!=0 新局/Retry 分支的关首语义子集，
     // DAT_004be7c0/0x4be7d0/0x4be7dc/0x4be7e4；0xc 换关延续 dcc30==0 分支 :54-78
@@ -951,6 +988,13 @@ bool ApplicationState::begin_run() {
     // mp_seat_count==0 时零变化）。
     if (mp_seat_count >= 2 && !run->enable_multiplayer(mp_seat_count, mp_characters))
         return fail(run->error.empty() ? "Multiplayer seat enable failed" : run->error);
+    if (carry_multiplayer) {
+        auto& battle = run->battle;
+        carry.RestoreBattleCarry(battle);
+        battle.death_trance_generation = carry_death_generation;
+        battle.revive_all_on_stage_clear();
+        selection_player = battle.seat_huds[0];
+    }
     // M7：本地席位接线（battle.step 的 effective_input 写入目标席）。
     run->battle.mp_local_seat = mp_local_seat;
     // M7：联机会话接缝——本地席位输入走 Runtime 延迟窗（与回放
@@ -961,10 +1005,13 @@ bool ApplicationState::begin_run() {
         // P3.2：宿主域接线——RunScene（震动/对话/STD 快照面）+ 转场句柄
         //（run_transition 的 handle_ 读写面；句柄值快照/回写经 Session 的
         // transition_handle_ 指针，VM 本体在 AnmRegistry 域内恢复）。
+        multiplayer::session.capture_host = [this] { return capture_multiplayer_host(); };
+        multiplayer::session.digest_host = [this] { return digest_multiplayer_host(); };
         multiplayer::session.BindWorld(&run->battle, &visual, run->presentation.get(),
                                        run.get(), &mp_transition_handle_);
-        run->playback_input = []() -> const GameInput* {
-            return multiplayer::session.LocalDelayedInput();
+        run->playback_input = [this]() -> const GameInput* {
+            return mp_history_playback ? &run->battle.seat_inputs[0]
+                                       : multiplayer::session.LocalDelayedInput();
         };
         // P3.1：音频观察器链 + defer 冲账（幂等；Configure 后补接线共用
         // wire_multiplayer_audio 的同一安装点）。
@@ -1059,7 +1106,7 @@ bool ApplicationState::begin_run() {
     }
     // 0x42b990:70-72: entering an ordinary stage marks its played byte, not
     // its clear byte. Record only after successful asset/scene initialization.
-    if (records_practice_stage(progress, replay_session) &&
+    if (mp_seat_count < 2 && records_practice_stage(progress, replay_session) &&
         !files.practice_stage_played(progress.character, progress.difficulty, progress.stage)) {
         const auto previous = files.practice_played;
         files.mark_practice_stage_played(progress.character, progress.difficulty, progress.stage);
@@ -1070,7 +1117,7 @@ bool ApplicationState::begin_run() {
     }
     // 0042b990: a fresh GameInf(.74==0), including Spell Practice, records
     // a play start. Stage transitions and replay restoration do not.
-    if (new_run && !replay_session && progress.practice_mode == 0) {
+    if (mp_seat_count < 2 && new_run && !replay_session && progress.practice_mode == 0) {
         if (!files.record_run_start(progress.character) || !files.save())
             return fail(files.error.empty() ? "Invalid play start record" : files.error);
         ordinary_records_dirty = false;
@@ -1133,7 +1180,7 @@ bool ApplicationState::prepare_next_stage() {
     transition_gate_active = true;
     transition_gate_frames = 0;
     progress.scene_flags |= 4u;
-    if (!files.save_score()) return fail(files.error);
+    if (mp_seat_count < 2 && !files.save_score()) return fail(files.error);
     run_hud->prepare_stage_assets();
     // 0042bfa0's 0xc branch (0x42bffd/0x42c02e/0x42c061) calls 00417370
     // before 00418b50/00438520 retire the old managers. 00417370 ->
@@ -1322,8 +1369,11 @@ bool ApplicationState::apply_destination() {
         return true;
     }
     if (next == i32(Destination::Ending)) {
+        if (multiplayer::session.Simulating() &&
+            !multiplayer::session.FinishWorldSimulation(true))
+            return fail("Unconfirmed multiplayer ending handoff");
         // 0x42cd40 records no-continue clears; replay sessions must not persist records.
-        if (!replay_active) {
+        if (mp_seat_count < 2 && !replay_active) {
             if (progress.continues == 0)
                 files.set_cleared(progress.character & 3,
                                   std::clamp(progress.difficulty, 0, kSaveDifficulties - 1));
@@ -1331,7 +1381,7 @@ bool ApplicationState::apply_destination() {
                 files.set_extra_unlocked(progress.character & 3);
         }
         // 0042c500 -> 0042bfa0 -> 00449e50 precedes 00416130's new ending bits.
-        if (!files.save_score()) return fail(files.error);
+        if (mp_seat_count < 2 && !files.save_score()) return fail(files.error);
         ordinary_records_dirty = false;
         // 0x416570 → 0x416130：Ending 场景（结局索引/落档位/e##.msg/滚屏）。
         current_destination = next;
@@ -1353,7 +1403,7 @@ bool ApplicationState::apply_destination() {
         // 原版结局位在内存、下一次 0x449e50 才落盘；网页版 begin_title(3)
         // 此刻 run 与 records 均净、无下一次保存点，这里显式提交一次
         //（EndingScene::initialize 已写入 files.ending_seen_bytes）。
-        if (!replay_active && !files.save_score()) return fail(files.error);
+        if (mp_seat_count < 2 && !replay_active && !files.save_score()) return fail(files.error);
         return begin_title(3);
     }
     if (next == i32(Destination::Title) || next == i32(Destination::TitleFromGameOver) ||
@@ -1371,7 +1421,7 @@ bool ApplicationState::apply_destination() {
 bool ApplicationState::quit() {
     if (exiting) return true;
     // 0043a390 -> 004399e0 saves the shared score, including ending bits.
-    if (!files.save_score()) return fail(files.error);
+    if (mp_seat_count < 2 && !files.save_score()) return fail(files.error);
     ordinary_records_dirty = false;
     exiting = true;
     return true;
@@ -1537,10 +1587,11 @@ bool ApplicationState::update(const GameInput& input, bool lost_focus) {
     // pause->controls（转发同门）。显式 Esc（pressed&0x100）暂停不受该门
     // 影响；PauseFrame 只消费 pressed/repeated，SP 下同门转发零行为变化。
     const bool local_pause_allowed = !multiplayer::session.Active();
+    const bool deterministic_pause = multiplayer::session.Simulating() || mp_history_playback;
     const bool focus_pause = local_pause_allowed && lost_focus && focus_pause_enabled;
     if (run && pause) {
         if (pause->active()) pause->controls({input.pressed, input.repeated, focus_pause});
-        else if (local_pause_allowed && ((input.pressed & 0x100u) || focus_pause))
+        else if (((local_pause_allowed || deterministic_pause) && (input.pressed & 0x100u)) || focus_pause)
             if (!pause->open(PauseEntrance::Pause)) return fail(pause->error);
     }
     physical_input = &input;
@@ -1607,6 +1658,10 @@ bool ApplicationState::commit_pending_file_events() {
     while (!pending_file_events_.empty()) {
         const PendingFileEvent entry = pending_file_events_.front();
         pending_file_events_.erase(pending_file_events_.begin());
+        // R-X: confirmed MP output may persist device options, but never
+        // single-player records or unlocks, including queued older events.
+        if (mp_seat_count >= 2 && entry.kind != PendingFileEvent::Kind::PauseOption &&
+            entry.kind != PendingFileEvent::Kind::PersistOptions) continue;
         switch (entry.kind) {
         case PendingFileEvent::Kind::SpellEvent: {
             // 原 record_spell_event 变更+save 表达式原样迁移（消息 :50-51）。
@@ -1746,11 +1801,136 @@ bool ApplicationState::commit_pending_play_frames() {
     if (pending_play_frames_ == 0) return true;
     const u32 count = pending_play_frames_;
     pending_play_frames_ = 0;
+    if (mp_seat_count >= 2) return true;  // R-X: MP play time is not a SP record.
     for (u32 i = 0; i < count; ++i)
         if (!files.record_play_frame(progress.character))
             return fail("Invalid play time record");
     ordinary_records_dirty = true;
     return true;
+}
+
+// Host state participates in the same checkpoint as the world. Output batches
+// belong to Session records and are discarded with an incorrect prediction.
+bool ApplicationState::capture_multiplayer_host_state(multiplayer::HostState& state) {
+    auto& fields = state.state_fields;
+    fields.frames = frames;
+    fields.pending_destination = pending_destination;
+    fields.pending_load = pending_load;
+    fields.record_edge_reset_pending = record_edge_reset_pending_;
+    fields.spell_time_stage = spell_time_stage;
+    fields.spell_clock_active = spell_time_clock.active();
+    fields.spell_clock_index = spell_time_clock.index();
+    fields.stage_transition_loading = stage_transition_loading;
+    fields.stage_transition_active = stage_transition_active;
+    fields.stage_startup_age = stage_startup_age;
+    fields.transition_gate_active = transition_gate_active;
+    fields.transition_gate_frames = transition_gate_frames;
+    fields.selection_player = selection_player;
+    fields.game_over_music = game_over_music;
+    fields.loading_environment = loading_environment;
+    fields.loading_animation_rate = loading_animations.rate;
+    fields.loading_signature = loading_signature;
+    fields.loading_prayer = loading_prayer;
+    fields.loading_registry = std::make_shared<AnmRegistry::SnapshotData>();
+    if (!loading_animations.registry.capture(*fields.loading_registry))
+        return fail(loading_animations.registry.error);
+    fields.has_pause = pause != nullptr;
+    fields.pause = pause ? pause->state : PauseState{};
+    fields.pause_frame = pause ? pause->frame.capture_rollback() : PauseFrame::RollbackState{};
+    fields.fades.clear();
+    for (const auto& fade : ending_fades)
+        fields.fades.push_back({fade->kind, fade->duration, fade->time, fade->alpha, fade->playfield_only});
+    auto& local = state.local_fields;
+    local.spell_time_clock = spell_time_clock;
+    local.spell_time_packed = spell_time_packed;
+    local.game_over_music_cursor = game_over_music_cursor;
+    local.last_fps = last_fps_;
+    local.slow_window_time = slow_window_time_;
+    local.slow_window_frames = slow_window_frames_;
+    local.slow_window_fps = slow_window_fps_;
+    local.slow_actual = slow_actual_;
+    local.slow_budget = slow_budget_;
+    local.slow_num = slow_num_;
+    local.slow_den = slow_den_;
+    state.dialogue_digest = digest_dialogue_rollback();
+    return true;
+}
+
+u64 ApplicationState::digest_multiplayer_host() {
+    multiplayer::HostState state;
+    return capture_multiplayer_host_state(state) ? multiplayer::WorldState::digest_host(state) : 0;
+}
+
+std::function<bool()> ApplicationState::capture_multiplayer_host() {
+    multiplayer::HostState state;
+    if (!capture_multiplayer_host_state(state)) return [] { return false; };
+    const auto restore_dialogue = capture_dialogue_rollback();
+    return [this, state = std::move(state), restore_dialogue] {
+        const auto& fields = state.state_fields;
+        frames = fields.frames;
+        pending_destination = fields.pending_destination;
+        pending_load = fields.pending_load;
+        record_edge_reset_pending_ = fields.record_edge_reset_pending;
+        spell_time_stage = fields.spell_time_stage;
+        stage_transition_loading = fields.stage_transition_loading;
+        stage_transition_active = fields.stage_transition_active;
+        stage_startup_age = fields.stage_startup_age;
+        transition_gate_active = fields.transition_gate_active;
+        transition_gate_frames = fields.transition_gate_frames;
+        selection_player = fields.selection_player;
+        game_over_music = fields.game_over_music;
+        loading_environment = fields.loading_environment;
+        loading_animations.rate = fields.loading_animation_rate;
+        loading_signature = fields.loading_signature;
+        loading_prayer = fields.loading_prayer;
+        const auto& local = state.local_fields;
+        spell_time_clock = local.spell_time_clock;
+        spell_time_packed = local.spell_time_packed;
+        game_over_music_cursor = local.game_over_music_cursor;
+        last_fps_ = local.last_fps;
+        slow_window_time_ = local.slow_window_time;
+        slow_window_frames_ = local.slow_window_frames;
+        slow_window_fps_ = local.slow_window_fps;
+        slow_actual_ = local.slow_actual;
+        slow_budget_ = local.slow_budget;
+        slow_num_ = local.slow_num;
+        slow_den_ = local.slow_den;
+        if (!loading_animations.registry.restore(*fields.loading_registry))
+            return fail(loading_animations.registry.error);
+        if (pause) { pause->state = fields.pause; pause->frame.restore_rollback(fields.pause_frame); }
+        if (!restore_dialogue()) return false;
+        clear_ending_windows();
+        for (const auto& fade : fields.fades) {
+            if (!open_game_fade(fade.kind == 0, fade.duration, fade.playfield_only)) return false;
+            ending_fades.back()->time = fade.time;
+            ending_fades.back()->alpha = fade.alpha;
+        }
+        sync_mp_prediction_barrier(*this);
+        return true;
+    };
+}
+
+void ApplicationState::queue_multiplayer_outputs() {
+    auto inputs = std::move(recorder.pending_inputs);
+    auto spells = std::move(recorder.pending_spell_times);
+    auto events = std::move(pending_file_events_);
+    auto pans = std::move(pending_voice_pans_);
+    auto play_frames = pending_play_frames_;
+    recorder.pending_inputs.clear(); recorder.pending_spell_times.clear();
+    pending_file_events_.clear(); pending_voice_pans_.clear(); pending_play_frames_ = 0;
+    multiplayer::session.SetConfirmedOutput([this, inputs = std::move(inputs),
+        spells = std::move(spells), events = std::move(events), pans = std::move(pans), play_frames]() mutable {
+        recorder.pending_inputs.swap(inputs); recorder.pending_spell_times.swap(spells);
+        pending_file_events_.swap(events); pending_voice_pans_.swap(pans);
+        std::swap(pending_play_frames_, play_frames);
+        const bool ok = commit_pending_replay_records() && commit_pending_file_events();
+        if (ok) commit_pending_voice_pans();
+        const bool committed = ok && commit_pending_play_frames();
+        recorder.pending_inputs.swap(inputs); recorder.pending_spell_times.swap(spells);
+        pending_file_events_.swap(events); pending_voice_pans_.swap(pans);
+        std::swap(pending_play_frames_, play_frames);
+        return committed;
+    });
 }
 
 // commit：待确认副作用提交（固定序，见 ApplicationState.hpp 分类表）：
@@ -1761,10 +1941,14 @@ bool ApplicationState::commit_pending_play_frames() {
 // 恰一次、与 present 次数无关）。存档队列/pan 队在播放帧之前＝旧帧内序
 // （场景 Update 期 save 点先于帧尾 record_play_frame 镜像）。
 bool ApplicationState::commit(float presentation_fps) {
-    if (!commit_pending_replay_records()) return false;
-    if (!commit_pending_file_events()) return false;
-    commit_pending_voice_pans();
-    if (!commit_pending_play_frames()) return false;
+    if (multiplayer::session.RecordingAudio()) {
+        queue_multiplayer_outputs();
+    } else {
+        if (!commit_pending_replay_records()) return false;
+        if (!commit_pending_file_events()) return false;
+        commit_pending_voice_pans();
+        if (!commit_pending_play_frames()) return false;
+    }
     // P3.1：MP 会话冲账（defer_output=false 时空转——单人 commit 序不变）。
     if (!commit_pending_multiplayer_audio()) return fail(audio_device.error);
     audio_device.update();
@@ -1797,7 +1981,18 @@ bool ApplicationState::commit(float presentation_fps) {
     // P3.3：本帧 update 已结算对话/换关过渡权威位——下一次 CanSimulate 前
     // 同步确认帧门（commit 在每个模拟帧后、下一次放行前运行）。
     sync_mp_prediction_barrier(*this);
-    return commit_loading_battle_caption();
+    if (!commit_loading_battle_caption()) return false;
+    // The original draw schedule writes ANM transforms, inherited colors,
+    // scenery visibility and laser poses. Replay it once per logical frame,
+    // in production order, before taking the next checkpoint. Displaying the
+    // completed framebuffer must not run those operations again.
+    if (run && run->presentation) run->presentation->prepare_player_opacity();
+    else renderer.player_opacity.fill(255);
+    if (ending && (!graphics.select_target(nullptr, 0) ||
+                   !graphics.clear_target(0xff000000, nullptr)))
+        return fail(graphics.error);
+    if (pause && !pause->draw_overlay(static_cast<RunSceneServices&>(*this))) return fail(pause->error);
+    return display->prepare() || fail(display->error);
 }
 
 // present：一次呈现 + 确认屏障尾（原 step 帧尾 :1414-1421 零重排）。
@@ -1806,15 +2001,17 @@ bool ApplicationState::commit(float presentation_fps) {
 // 段；restart 循环可多次触发 update_scene_pass，中途 clear 无任何像素消费者
 // （绘制只在帧尾一次），设备可见帧序不变。
 bool ApplicationState::present() {
-    if (run && run->presentation) run->presentation->prepare_player_opacity();
-    else renderer.player_opacity.fill(255);
-    if (ending) {
-        if (!graphics.select_target(nullptr, 0) ||
-            !graphics.clear_target(0xff000000, nullptr))
-            return fail(graphics.error);
+    if (!display->present()) return fail(display->error);
+    if (multiplayer::session.Simulating() && pause &&
+        (pause->state.screen == PauseScreen::ExtraEnd || pause->state.screen == PauseScreen::GameOver ||
+         pause->state.screen == PauseScreen::BGameOver) && multiplayer::session.AllFramesCommitted()) {
+        multiplayer::session.FinishWorldSimulation(pause->state.screen == PauseScreen::ExtraEnd);
+        if (run) run->playback_input = {};
     }
-    if (pause && !pause->draw_overlay(static_cast<RunSceneServices&>(*this))) return fail(pause->error);
-    if (!display->draw()) return fail(display->error);
+    // Resource owners stay alive until every speculative frame before the
+    // handoff has retired. Repeated presents cannot consume the destination.
+    if (pending_destination >= 0 && multiplayer::session.Simulating() &&
+        !multiplayer::session.AllFramesCommitted()) return true;
     if (pending_destination == i32(Destination::Run) || pending_destination == i32(Destination::Ending)) {
         if (!draw_loading(false)) return false;
         pending_load = 1;
@@ -1871,6 +2068,12 @@ const i32* ApplicationState::projection() {
 }
 
 // ---- EndingPlatform（0x416570 场景宿主面）----
+EndingSaveBytes* ApplicationState::save_bytes() {
+    // R-X: keep the ending script's save view without touching SP unlocks.
+    ending_save_view.bytes = mp_seat_count >= 2 ? nullptr : &files.ending_seen_bytes;
+    return &ending_save_view;
+}
+
 bool ApplicationState::fade_out_music(i32 frames) {
     // op11 0x43af70(3.0f) → 生产音乐命令 5（淡出 value*60 帧）。
     return audio_device.queue_music(5, frames / 60, "") || fail(audio_device.error);
