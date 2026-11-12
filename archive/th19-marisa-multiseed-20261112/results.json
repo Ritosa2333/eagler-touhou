@@ -1,0 +1,731 @@
+{
+  "sourceCommit": "9c0eb6512b610ebcaa291724e8e64ba658371a3f",
+  "framesPerSeed": 36000,
+  "seedCount": 5,
+  "totalComparedFrames": 180000,
+  "runs": [
+    {
+      "primarySeed": 1,
+      "animationSeed": 7,
+      "nativeCapture": "present-52phuhbu",
+      "webCapture": "th19-web-uCXaok",
+      "wasmSha256": "057517cc31b284e5a4a01dfc3cb76d30435b438292dc8c37993e599a15d68e4b",
+      "nativeTraceSha256": "d82f12a75221fb89db80fc7cf196fbedd92ec23b0b9a6aee1946d828cc3d9dc1",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": true,
+      "playerControlCoverage": 35999,
+      "playerPositionCoverage": 35999,
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 35686,
+        "originalBulletSamples": 4085458,
+        "webBulletSamples": 4690463,
+        "missingFrames": [
+          0,
+          33776
+        ]
+      },
+      "differentBulletPositionFrames": 33397,
+      "firstDifferentPlayerControls": {
+        "frame": 2448,
+        "web": [
+          33,
+          137
+        ],
+        "original": [
+          33,
+          81
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 2448,
+        "web": [
+          23.3515625,
+          310.9375,
+          -1.90625,
+          393.8515625
+        ],
+        "original": [
+          23.3515625,
+          310.9375,
+          -7.4375,
+          390.3203125
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 2497,
+        "side": 1,
+        "original": 8,
+        "web": 9
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 2497,
+        "side": 1,
+        "kind": 1,
+        "color": 11,
+        "original": [
+          [
+            -30.41836929321289,
+            135.92652893066406
+          ]
+        ],
+        "web": [
+          [
+            -59.32126235961914,
+            140.31394958496094
+          ],
+          [
+            -30.41836929321289,
+            135.92652893066406
+          ]
+        ]
+      },
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 2492,
+          "web": 1195287512,
+          "original": 1280347803
+        },
+        "animation": {
+          "frame": 406,
+          "web": 1391184678,
+          "original": 393706518
+        }
+      },
+      "frameRollback": {
+        "frames": [
+          5395,
+          5420
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null,
+      "nativeDiagnosticNote": "Trace window 1..1 contained no RNG calls; capture identity, CPU fixture, rules and >=36000 continuous frames verified before that diagnostic check.",
+      "comparedThrough": 36000
+    },
+    {
+      "primarySeed": 42,
+      "animationSeed": 2026,
+      "nativeCapture": "present-ypkh2_50",
+      "webCapture": "th19-web-p5fOaP",
+      "wasmSha256": "057517cc31b284e5a4a01dfc3cb76d30435b438292dc8c37993e599a15d68e4b",
+      "nativeTraceSha256": "a46391466d2e94c320811f886b5b17ecbcb88cd1d99f78a79c220f4809266334",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": true,
+      "playerControlCoverage": 36000,
+      "playerPositionCoverage": 36000,
+      "bulletPositionCoverage": {
+        "frames": 36000,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 35593,
+        "originalBulletSamples": 5072425,
+        "webBulletSamples": 4573358,
+        "missingFrames": [
+          0
+        ]
+      },
+      "differentBulletPositionFrames": 31802,
+      "firstDifferentPlayerControls": {
+        "frame": 4380,
+        "web": [
+          171,
+          163
+        ],
+        "original": [
+          171,
+          147
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 4380,
+        "web": [
+          4.625,
+          391.09375,
+          -84.3203125,
+          158.3125
+        ],
+        "original": [
+          4.625,
+          391.09375,
+          -84.3203125,
+          151.25
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 781,
+        "side": 1,
+        "original": 6,
+        "web": 7
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 598,
+        "side": 1,
+        "kind": 1,
+        "color": 3,
+        "original": [
+          [
+            -8.259964942932129,
+            12.555103302001953
+          ]
+        ],
+        "web": [
+          [
+            -7.9191060066223145,
+            11.295191764831543
+          ]
+        ]
+      },
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 4402,
+          "web": 1804259086,
+          "original": 155894567
+        },
+        "animation": {
+          "frame": 362,
+          "web": 749524945,
+          "original": 569634120
+        }
+      },
+      "frameRollback": {
+        "frames": [
+          5395,
+          5420
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null,
+      "nativeDiagnosticNote": "Trace window 1..1 contained no RNG calls; capture identity, CPU fixture, rules and >=36000 continuous frames verified before that diagnostic check.",
+      "comparedThrough": 36000
+    },
+    {
+      "primarySeed": 20261112,
+      "animationSeed": 424182232,
+      "nativeCapture": "present-yxxfs6du",
+      "webCapture": "th19-web-jCD6Dv",
+      "wasmSha256": "057517cc31b284e5a4a01dfc3cb76d30435b438292dc8c37993e599a15d68e4b",
+      "nativeTraceSha256": "85c9a07b42246c7535114d1748aedb42a33fc4798e7f0027eea74fe509340444",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": true,
+      "playerControlCoverage": 35999,
+      "playerPositionCoverage": 35999,
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 35722,
+        "originalBulletSamples": 3725652,
+        "webBulletSamples": 4641144,
+        "missingFrames": [
+          0,
+          27900
+        ]
+      },
+      "differentBulletPositionFrames": 29331,
+      "firstDifferentPlayerControls": {
+        "frame": 7017,
+        "web": [
+          65,
+          97
+        ],
+        "original": [
+          1,
+          97
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 7017,
+        "web": [
+          113.3984375,
+          196.3203125,
+          -109.046875,
+          372.109375
+        ],
+        "original": [
+          118.3984375,
+          196.3203125,
+          -109.046875,
+          372.109375
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 4782,
+        "side": 1,
+        "original": 43,
+        "web": 44
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 4618,
+        "side": 1,
+        "kind": 1,
+        "color": 13,
+        "original": [
+          [
+            -51.61849594116211,
+            20.792434692382812
+          ],
+          [
+            -40.050872802734375,
+            96.40579223632812
+          ],
+          [
+            -27.935009002685547,
+            54.66849899291992
+          ],
+          [
+            -27.45246696472168,
+            100.31608581542969
+          ],
+          [
+            -22.949905395507812,
+            170.48045349121094
+          ],
+          [
+            -21.067594528198242,
+            14.644829750061035
+          ],
+          [
+            -20.60714340209961,
+            34.91337585449219
+          ],
+          [
+            -15.68610954284668,
+            39.76948547363281
+          ],
+          [
+            -13.559442520141602,
+            55.764739990234375
+          ],
+          [
+            -7.28843879699707,
+            37.784759521484375
+          ],
+          [
+            -3.0266807079315186,
+            33.58582305908203
+          ],
+          [
+            1.5798310041427612,
+            24.024293899536133
+          ],
+          [
+            1.915502667427063,
+            54.44866180419922
+          ],
+          [
+            4.807464599609375,
+            48.393638610839844
+          ],
+          [
+            5.645722389221191,
+            32.549495697021484
+          ],
+          [
+            6.46627140045166,
+            25.98004150390625
+          ],
+          [
+            11.134126663208008,
+            17.88655662536621
+          ],
+          [
+            13.975858688354492,
+            19.34090805053711
+          ],
+          [
+            14.382708549499512,
+            19.99862289428711
+          ],
+          [
+            33.39166259765625,
+            56.38174819946289
+          ],
+          [
+            69.7551498413086,
+            23.495872497558594
+          ]
+        ],
+        "web": [
+          [
+            -51.61849594116211,
+            20.792434692382812
+          ],
+          [
+            -40.050872802734375,
+            96.40579223632812
+          ],
+          [
+            -27.935009002685547,
+            54.66849899291992
+          ],
+          [
+            -27.45246696472168,
+            100.31608581542969
+          ],
+          [
+            -22.949905395507812,
+            170.48045349121094
+          ],
+          [
+            -21.067594528198242,
+            14.644829750061035
+          ],
+          [
+            -20.60714340209961,
+            34.91337585449219
+          ],
+          [
+            -15.68610954284668,
+            39.76948547363281
+          ],
+          [
+            -13.559442520141602,
+            55.764739990234375
+          ],
+          [
+            -7.28843879699707,
+            37.784759521484375
+          ],
+          [
+            -3.0266807079315186,
+            33.58582305908203
+          ],
+          [
+            1.5798310041427612,
+            24.024293899536133
+          ],
+          [
+            1.915502667427063,
+            54.44866180419922
+          ],
+          [
+            4.807464599609375,
+            48.393638610839844
+          ],
+          [
+            5.645722389221191,
+            32.549495697021484
+          ],
+          [
+            6.46627140045166,
+            25.98004150390625
+          ],
+          [
+            11.134126663208008,
+            17.88655662536621
+          ],
+          [
+            13.975858688354492,
+            19.34090805053711
+          ],
+          [
+            14.762661933898926,
+            18.65379524230957
+          ],
+          [
+            33.39166259765625,
+            56.38174819946289
+          ],
+          [
+            69.7551498413086,
+            23.495872497558594
+          ]
+        ]
+      },
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 6970,
+          "web": 1747809171,
+          "original": 956875156
+        },
+        "animation": {
+          "frame": 865,
+          "web": 176280824,
+          "original": 1550462142
+        }
+      },
+      "frameRollback": {
+        "frames": [
+          5395,
+          5420
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null,
+      "nativeDiagnosticNote": "Trace window 1..1 contained no RNG calls; capture identity, CPU fixture, rules and >=36000 continuous frames verified before that diagnostic check.",
+      "comparedThrough": 36000
+    },
+    {
+      "primarySeed": 123456789,
+      "animationSeed": 987654321,
+      "nativeCapture": "present-n5uaa1rq",
+      "webCapture": "th19-web-J3ofK7",
+      "wasmSha256": "057517cc31b284e5a4a01dfc3cb76d30435b438292dc8c37993e599a15d68e4b",
+      "nativeTraceSha256": "150f3fedffa8209e164b9e8b741f391a9b7634da849346d34a4479edad53f665",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": true,
+      "playerControlCoverage": 35999,
+      "playerPositionCoverage": 35999,
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 35735,
+        "originalBulletSamples": 3856839,
+        "webBulletSamples": 4501909,
+        "missingFrames": [
+          0,
+          26822
+        ]
+      },
+      "differentBulletPositionFrames": 35385,
+      "firstDifferentPlayerControls": {
+        "frame": 648,
+        "web": [
+          11,
+          91
+        ],
+        "original": [
+          11,
+          83
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 648,
+        "web": [
+          20.46875,
+          393.75,
+          -15.9140625,
+          376.90625
+        ],
+        "original": [
+          20.46875,
+          393.75,
+          -18.03125,
+          374.7890625
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 646,
+        "side": 1,
+        "original": 8,
+        "web": 9
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 615,
+        "side": 0,
+        "kind": 1,
+        "color": 0,
+        "original": [
+          [
+            -3.6260292530059814,
+            9.426087379455566
+          ]
+        ],
+        "web": [
+          [
+            -3.012561082839966,
+            9.594457626342773
+          ]
+        ]
+      },
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 564,
+          "web": 1726018490,
+          "original": 1012850447
+        },
+        "animation": {
+          "frame": 321,
+          "web": 1646528914,
+          "original": 352438177
+        }
+      },
+      "frameRollback": {
+        "frames": [
+          5395,
+          5420
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null,
+      "nativeDiagnosticNote": "Trace window 1..1 contained no RNG calls; capture identity, CPU fixture, rules and >=36000 continuous frames verified before that diagnostic check.",
+      "comparedThrough": 36000
+    },
+    {
+      "primarySeed": 987654321,
+      "animationSeed": 1357911,
+      "nativeCapture": "present-bbw08eh8",
+      "webCapture": "th19-web-ZBkrXF",
+      "wasmSha256": "057517cc31b284e5a4a01dfc3cb76d30435b438292dc8c37993e599a15d68e4b",
+      "nativeTraceSha256": "9e312a3a0bf602897e3d31da8ba91fff77ae94578d4bd2f3bea32a48b811bc4e",
+      "fixture": {
+        "difficulty": 3,
+        "characters": [
+          1,
+          1
+        ],
+        "cardMode": 0,
+        "cards": [
+          0,
+          0
+        ],
+        "lives": 2,
+        "timeRule": 4
+      },
+      "continuous": true,
+      "playerControlCoverage": 35999,
+      "playerPositionCoverage": 35999,
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 35745,
+        "originalBulletSamples": 4449999,
+        "webBulletSamples": 4572867,
+        "missingFrames": [
+          0,
+          35835
+        ]
+      },
+      "differentBulletPositionFrames": 28509,
+      "firstDifferentPlayerControls": {
+        "frame": 7770,
+        "web": [
+          33,
+          81
+        ],
+        "original": [
+          145,
+          81
+        ]
+      },
+      "firstDifferentPlayerPosition": {
+        "frame": 7770,
+        "web": [
+          75.96875,
+          68.78125,
+          -140,
+          392.0078125
+        ],
+        "original": [
+          79.5,
+          60.25,
+          -140,
+          392.0078125
+        ]
+      },
+      "firstDifferentBulletCount": {
+        "frame": 7818,
+        "side": 0,
+        "original": 31,
+        "web": 30
+      },
+      "firstDifferentBulletPosition": {
+        "frame": 1423,
+        "side": 0,
+        "kind": 1,
+        "color": 3,
+        "original": [
+          [
+            100.78837585449219,
+            8.322589874267578
+          ]
+        ],
+        "web": [
+          [
+            101.06437683105469,
+            7.605776786804199
+          ]
+        ]
+      },
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 7784,
+          "web": 1857934491,
+          "original": 1066189164
+        },
+        "animation": {
+          "frame": 374,
+          "web": 130420130,
+          "original": 854744046
+        }
+      },
+      "frameRollback": {
+        "frames": [
+          5395,
+          5420
+        ],
+        "differences": [],
+        "image": true
+      },
+      "browserErrors": [],
+      "failure": null,
+      "nativeDiagnosticNote": "Trace window 1..1 contained no RNG calls; capture identity, CPU fixture, rules and >=36000 continuous frames verified before that diagnostic check.",
+      "comparedThrough": 36000
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # 文档总表
 
-共 528 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 529 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -385,6 +385,7 @@
 | 历史记录 | [archive/th19-gameplay-20261105/story-rank-and-replay-audit.md](../archive/th19-gameplay-20261105/story-rank-and-replay-audit.md) | Story difficulty ranks and replay audit |
 | 历史记录 | [archive/th19-integration-20261105/README.md](../archive/th19-integration-20261105/README.md) | TH19 接入验收 |
 | 历史记录 | [archive/th19-junowen-interop-20261106/README.md](../archive/th19-junowen-interop-20261106/README.md) | Ju.N.Owen static interoperability audit |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/README.md](../archive/th19-marisa-multiseed-20261112/README.md) | 魔理沙镜像五种子长程验证 |
 | 历史记录 | [archive/th19-marisa-parity-20261111/README.md](../archive/th19-marisa-parity-20261111/README.md) | 魔理沙镜像本地对拍 |
 | 历史记录 | [archive/th19-match-policy-20261105/README.md](../archive/th19-match-policy-20261105/README.md) | TH19 统一生命与固定对局规则 |
 | 历史记录 | [archive/th19-menu-20261106/README.md](../archive/th19-menu-20261106/README.md) | TH19 menu navigation parity |

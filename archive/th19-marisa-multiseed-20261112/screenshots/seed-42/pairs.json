@@ -1,0 +1,30 @@
+{
+  "wasmSha256": "057517cc31b284e5a4a01dfc3cb76d30435b438292dc8c37993e599a15d68e4b",
+  "nativeTraceSha256": "95932e4713b1fc5783a6a9ad632318198438939a15cb96a3fca5260cf3687560",
+  "pairs": [
+    {
+      "frame": 597,
+      "status": "所列状态一致",
+      "differentFramesThroughCurrent": 15,
+      "image": "frame-597.png",
+      "webImageSha256": "037d31fdc6b98e3585623c0862792e0b4fecde68887cffd70efd1362c8143f7d",
+      "nativeImageSha256": "5a40d75baf4ab13155c0d2a750bc00c26b713c48f624dc99d895cf4307014fc3"
+    },
+    {
+      "frame": 598,
+      "status": "敌弹状态不一致",
+      "differentFramesThroughCurrent": 16,
+      "image": "frame-598.png",
+      "webImageSha256": "387aaa227080058bef1e1198544d6461c19cfddeb6f5a658a5591d8fc20895db",
+      "nativeImageSha256": "bd3dc8e59bf5a0786f508118b243ff89fd788316c665dd2b18a39868f96f0e79"
+    },
+    {
+      "frame": 600,
+      "status": "敌弹状态不一致",
+      "differentFramesThroughCurrent": 18,
+      "image": "frame-600.png",
+      "webImageSha256": "ce7aa730e4d729c5181b7a9e53a77eecea4882a00cef0beb9a18a8fe099b33a2",
+      "nativeImageSha256": "93eb825865eb30f2161a9b7a34b883593074da238c2609dd93589ff012a28c4c"
+    }
+  ]
+}
