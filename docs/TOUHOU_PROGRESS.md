@@ -82,17 +82,15 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++／SDL3／Wasm 实现进行中，整作 1:1 尚未完成。[当前游戏源码 84b8741a](https://github.com/AdingApkgg/thp/commit/84b8741af5b7ca617cc4046fe697d3cbfebbf4ad)和[网站源码 2eeb8db4](https://github.com/AdingApkgg/eagler-touhou/commit/2eeb8db4b6f2ef337656d4d979c60abfaca579be)已部署至[TH14 测试站](https://wth.saop.cc/)，[网站接入 PR #233](https://github.com/Ritosa2333/eagler-touhou/pull/233)待合入。原作数据、音乐和生成运行包不加入源码 Git。
+独立 C++／SDL3／Wasm 实现进行中，整作 1:1 尚未完成。[当前游戏源码 b8e36ef2](https://github.com/AdingApkgg/thp/commit/b8e36ef27d96238352f5edaf9b368ca23394ceb3)已部署至[TH14 测试站](https://wth.saop.cc/)，[网站接入 PR #233](https://github.com/Ritosa2333/eagler-touhou/pull/233)待合入。网站运行逻辑为2eeb8db4，fork的bd9badc9只更新TH14核心构建指针，Arch检出同步。原作数据、音乐和生成运行包不加入源码Git。
 
-已整合 Goan114 的 ANM 速度／插值、界面、按原版显示档选择字库和纹理、短输入、Ogg／浏览器调度修复；原样和整合候选独立通过 349 组 ANM、69 项界面、12 组纹理对照。配置保留 640×480、960×720、1280×960。另修复无纹理绘制保留旧 sampler 的反馈回路：64 个真实 GLES 序列的两项整图归零反例消失，三个其他作品渲染对象同字节。协作者新延迟颜色清屏／alpha 优化仍为独立候选，未计作生产核心通过。
+2026-11-13修正Player激活前的transition时钟，以及TH14 tick的空速率语义。完整原版构造／初始化在六种自机上执行；规范映射后的18个时钟字差异消失，3,024字一致。240组原版时钟输入在四种Wasm零地址哨兵下共960次比较通过，旧实现64例失败保留。SDK141／浏览器146单元全量重编，六对其他作品优化对象相同。新对象的加载13组、2,093帧／2,928,024字回归通过；实际静音普通菜单灵梦B Normal在540个宿主更新后到达首个Player，已测线程／GPU／文件／时钟资源回收。该有限入口使用旧FLAC，没有当作当前浏览器Vorbis播放验收。
 
-本次网站更新包含缓存页面／worker 的隔离头修复、默认 TH14 JPEG 封面准备登记、只针对 TH14 字体的 HTTP 压缩及 18 首真实质量 5 Vorbis。原点 font4 从 30,524,029 字节压缩为 2,947,524 字节，解压哈希不变。音乐由已核验的无损 FLAC 转换，295,272,965 字节降至 46,560,471 字节，FFprobe 的 18 个流帧数和原循环元数据一致；最终 PCM 与浏览器播放仍待验收。
+协作者Goan114的ANM速度／插值、界面、按显示档选择字库和纹理、短输入、Ogg与浏览器提交修复已整合；保留640×480、960×720、1280×960配置。当前浏览器游戏对象重新链接的349组ANM共3,571帧、121,414所选字一致；69项界面和12组纹理为此前冻结版本的独立组件结果。sampler反馈回路修复保持；协作者延迟颜色清屏／alpha优化仍是独立候选，未计作生产通过。
 
-[交付与验证收据](https://github.com/AdingApkgg/thp/blob/919debbf6217233c6f90b929ec27ca73fdf6a958/docs/porting/TH14_RELEASE_NOV13.md)：generation `f91cdcec13bf2a6579f7da7288cb08665f6d74eac2cd8f205dcea0907c70b815`，Wasm `f4026156b7449c8186fb0c6b4c77a46024451eb79b9078fac39faa3c77e3dd5a`。原点和公网同代 39 个完整运行响应体均与清单相同，含 HTML、加载器和 Wasm，并保留隔离头／no-transform／完整性检查。超时失败保留，仅补验失败项；最后一个旧字体缓存只清除该 URL 后完整验证，无分段或校验放宽。369 个游戏构建源码 blob 与公开提交一致，正式浏览器重编 1／核验复用 145。当前缓存 worker、站点清单及第一首 Ogg 的公网完整正文也核验相同。
+[当前发布收据](https://github.com/AdingApkgg/thp/blob/61622c82bbb37406ed4fc0ad7634b85dd29e3931/docs/porting/TH14_PLAYER_CLOCK_RELEASE_NOV13.md)：generation `d417e12111318aef5b8cc92eb5c9f479fdb9b93e861fe06a826590abb8d66821`，Wasm `5a1badbd123a966e78a22efbd8e64e3c0dbf553f50afcd39a2d81e6305a749fe`。369个构建源码blob与公开提交相同，原点和公网同代39个完整Runtime响应体均与清单一致，含HTML／loader／Wasm／字体，隔离头与no-transform保留；此次首次全部通过，无Range、缓存清除或完整性绕过。18首既有Vorbis、字体HTTP压缩、默认封面和缓存worker隔离修复保留；本次只上传5个运行文件约3.48MB，无原作资产复制或音乐重编码。
 
-加载／动画 RNG 仍是首要缺口。针对当前源码的静音 SDK Application 普通菜单灵梦 B Normal 开局在 542 个宿主帧后到达首个 Player，已测资源全部回收；该次使用之前的 FLAC，未当作本次浏览器 Ogg 验收。其 ASCII16 的 65 次初始化、1,560 条实际 RNG 调用边界，与未改写的原版脚本和 46fe50 更新执行的指令位置／seed／count 相同，每次 12 个 Next32／计数增加 24。cookie、精灵选择和组件初始几何是声明边界，原版工厂／初始化频率／物理时间线仍未闭合。既有 24 次加载差异、弹状态和相机反例继续保留，不填充种子、调用或帧数。
-
-剩余范围包括完整机体／难度和录像、普通完整流程与存档、整帧、最终 PCM 及当前浏览器实玩验收。组件和有限开局结果不计作整作完成；历史证据见[持续验收清单](https://github.com/AdingApkgg/thp/blob/919debbf6217233c6f90b929ec27ca73fdf6a958/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。
+加载／动画RNG与弹状态仍是首要缺口。原版完整Player构造／初始化无RNG写入；此修复没有关闭旧No1 Replay的24次SCRIPT差异或相机／画面反例。普通启动样本的时钟与该Replay不同，不能混作配对。完整机体／难度、完整录像、普通完整流程与存档、整帧、最终PCM及当前浏览器实玩验收继续开放。组件或有限首帧通过不计作整作完成，详见[持续验收清单](https://github.com/AdingApkgg/thp/blob/61622c82bbb37406ed4fc0ad7634b85dd29e3931/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。
 
 ## [th15] 東方紺珠伝 v1.00b
 
