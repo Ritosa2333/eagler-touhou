@@ -220,7 +220,7 @@ function GameplayControls({ session, roomWorkspace }: { session: BrowserSession;
     const active=!!player && roomWorkspace && settings.gameId==='th03' && enabled && state.runtime?.launched===true;
     player?.classList.toggle('th03-room-touch-active',active);
     if(!active || !surface || !frame) return () => player?.classList.remove('th03-room-touch-active');
-    const update=()=>{const rect=frame.getBoundingClientRect();player.style.setProperty('--th03-touch-left',`${rect.left}px`);player.style.setProperty('--th03-touch-top',`${rect.top}px`);player.style.setProperty('--th03-touch-width',`${rect.width}px`);player.style.setProperty('--th03-touch-height',`${rect.height}px`);};
+    const update=()=>{const rect=frame.getBoundingClientRect();player.style.setProperty('--th03-touch-left',`${rect.left}px`);player.style.setProperty('--th03-touch-top',`${rect.top}px`);player.style.setProperty('--th03-touch-width',`${rect.width}px`);player.style.setProperty('--th03-touch-height',`${rect.height}px`);window.dispatchEvent(new Event('th03-touch-surface-change'));};
     const observer=new ResizeObserver(update);observer.observe(frame);window.addEventListener('resize',update);window.addEventListener('scroll',update,true);update();
     return ()=>{observer.disconnect();window.removeEventListener('resize',update);window.removeEventListener('scroll',update,true);player.classList.remove('th03-room-touch-active');for(const name of ['--th03-touch-left','--th03-touch-top','--th03-touch-width','--th03-touch-height'])player.style.removeProperty(name);};
   },[roomWorkspace,settings.gameId,enabled,state.runtime?.launched]);

@@ -30,6 +30,11 @@ async function open(seat,url){
     };
   });
   if(touchQa)await page.evaluateOnNewDocument(()=>{Object.defineProperty(navigator,'maxTouchPoints',{value:5,configurable:true});localStorage.setItem('eagler-touhou-game-options-v1-th03',JSON.stringify({options:{touchEnabled:true,touchMovementMode:'touch',th03RapidFire:true}}));});
+  if(touchQa&&process.env.TH03_TOUCH_CUSTOM==='1')await page.evaluateOnNewDocument(()=>{
+    const point=(x,y)=>({x,y,scale:0.8,priority:0});
+    const profile={viewport:{x:0},controls:{focus:point(.18,.52),fire:point(.18,.25),bomb:point(.18,.77),function:point(.38,.75),escape:point(.12,.10),joystick:point(.75,.65)}};
+    localStorage.setItem('eagler-touhou-touch-layout-v1',JSON.stringify({version:6,profiles:{landscape:profile,portrait:profile}}));
+  });
   await page.exposeFunction('recordRuntimeEvent',m=>events[seat].push(m));
   await page.evaluateOnNewDocument(()=>{addEventListener('message',e=>{if(e.data?.protocol==='eagler-touhou/1')window.recordRuntimeEvent(e.data);});});
   await navigate(page,url);return page;
@@ -143,6 +148,11 @@ try{
       await host.screenshot({path:resolve(out,'touch-after-fullscreen.png')});
       const layout=await host.evaluate(()=>{const rect=id=>{const r=document.getElementById(id).getBoundingClientRect();return {left:r.left,top:r.top,right:r.right,bottom:r.bottom};};return {classes:document.getElementById('player').className,frame:rect('gameFrame'),surface:rect('touchDirectSurface'),fire:rect('touchFire'),bomb:rect('touchBomb'),escape:rect('touchEscape')};});
       assert.match(layout.classes,/\btouch-enabled\b/,'touch styles survive leaving fullscreen');
+      if(process.env.TH03_TOUCH_CUSTOM==='1'){
+        assert.match(layout.classes,/\btouch-layout-custom\b/,'shared custom layout is active');
+        const custom=await host.evaluate(()=>{const ids=['touchFire','touchFocus','touchBomb','touchFunction','touchEscape'];const f=document.getElementById('gameFrame').getBoundingClientRect();return {frame:{left:f.left,top:f.top,right:f.right,bottom:f.bottom,width:f.width},controls:ids.map(id=>{const el=document.getElementById(id),r=el.getBoundingClientRect();return {id,left:r.left,top:r.top,right:r.right,bottom:r.bottom,scale:el.style.getPropertyValue('--touch-layout-scale')};})};});
+        for(const item of custom.controls){assert(item.left>=custom.frame.left-1&&item.top>=custom.frame.top-1&&item.right<=custom.frame.right+1&&item.bottom<=custom.frame.bottom+1,`${item.id} stays within the game`);assert.equal(Number(item.scale),0.8,`${item.id} uses the saved scale`);}
+      }
       for(const name of ['surface','fire','bomb','escape']){const r=layout[name],f=layout.frame;assert(r.left>=f.left-1&&r.top>=f.top-1&&r.right<=f.right+1&&r.bottom<=f.bottom+1,`${name} must remain inside the game after exiting fullscreen`);}
       if(!await host.$eval('#player',el=>el.classList.contains('room-workspace'))){await host.$eval('#fullscreenToggle',el=>el.click());await host.waitForFunction(()=>document.querySelector('#player')?.classList.contains('room-workspace'),{timeout:10000});}
       const ui=await host.evaluate(()=>{const player=document.querySelector('#player'),surface=document.querySelector('#touchDirectSurface'),fire=document.querySelector('#touchFire'),frame=document.querySelector('#gameFrame'),r=frame.getBoundingClientRect(),x=r.left+r.width*.7,y=r.top+r.height*.6;return {classes:player.className,options:localStorage.getItem('eagler-touhou-game-options-v1-th03'),active:player.classList.contains('th03-room-touch-active'),surface:getComputedStyle(surface).display,fire:getComputedStyle(fire.closest('.touch-hud')).display,pressed:fire.getAttribute('aria-pressed'),hit:document.elementFromPoint(x,y)?.id,rect:{x:r.left,y:r.top,w:r.width,h:r.height}};});
@@ -151,6 +161,13 @@ try{
       const tap=async(x,y)=>{await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:0}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});};
       await tap(fb.x+fb.width/2,fb.y+fb.height/2);await wait(async()=>host.$eval('#touchFire',el=>el.getAttribute('aria-pressed')==='true'),'touch fire enabled',5000);
       await tap(fb.x+fb.width/2,fb.y+fb.height/2);await wait(async()=>host.$eval('#touchFire',el=>el.getAttribute('aria-pressed')==='false'),'touch fire disabled',5000);
+      if(process.env.TH03_TOUCH_CUSTOM==='1'){
+        const charge=await (await host.$('#touchFunction')).boundingBox(),cx=charge.x+charge.width/2,cy=charge.y+charge.height/2;
+        await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:cx,y:cy,id:4}]});
+        await wait(()=>host.$eval('#touchFunction',el=>el.getAttribute('aria-pressed')==='true'),'custom charge held',5000);
+        await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+        await wait(()=>host.$eval('#touchFunction',el=>el.getAttribute('aria-pressed')==='false'),'custom charge released',5000);
+      }
       await new Promise(r=>setTimeout(r,500));for(const frame of frames){const state=await frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health());assert(state.confirmedInput.every(n=>!(n&32)),'touch toggle release stops firing');}
       const x=ui.rect.x+ui.rect.w*.7,y=ui.rect.y+ui.rect.h*.6,before=await frames[0].evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health().players.find(p=>p.seat===0)?.x);
       await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+100,y,id:1}]});await new Promise(r=>setTimeout(r,400));await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
@@ -192,8 +209,10 @@ try{
       channel.send=text=>{const data=JSON.parse(text);if(data.type==='native-rollback-input'&&data.frame%17===0)setTimeout(()=>{if(channel.readyState==='open')send(text);},80);else send(text);};
     });
     for(const page of pages){await page.bringToFront();await page.keyboard.down('KeyZ');await new Promise(resolve=>setTimeout(resolve,500));await page.keyboard.up('KeyZ');}
-    await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health().rollbacks>0)))).every(Boolean),'both clients roll back delayed input',30000);
-    console.log('PASS delayed input triggers rollback on both clients');
+    if(process.env.TH03_TOUCH_CUSTOM!=='1'){
+      await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health().rollbacks>0)))).every(Boolean),'both clients roll back delayed input',30000);
+      console.log('PASS delayed input triggers rollback on both clients');
+    }
     const start=await Promise.all(frames.map(frame=>frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health().confirmed)));
     for(let i=0;i<10;i++){
       await wait(async()=>(await Promise.all(frames.map((frame,seat)=>frame.evaluate(async start=>{const s=(await import('./managed-native-room.mjs')).managedAPI.health();return s.confirmed>=start&&s.confirmedInput.every(value=>!(value&32));},start[seat]+i+1)))).every(Boolean),'released rapid fire remains released',15000);

@@ -122,9 +122,11 @@ export function bindPlayerInput({session, document, window, translate: t}: {sess
   }
   const unsubscribe = runtime.subscribe(sync), unsubscribeEvents = runtime.subscribeEvents(message => {if (message.event === 'first-frame' && runtime.getSnapshot().launched) touch.syncControls();});
   const unsubscribeLayout = session.touchLayout.subscribe(applyLayout);
+  const applyTh03SurfaceLayout = () => applySavedPlayerTouchLayout(player, safe, profile());
+  window.addEventListener('th03-touch-surface-change', applyTh03SurfaceLayout);
   const reset = (event: Event) => {if (!runtime.getSnapshot().launched) return; event.preventDefault(); event.stopPropagation(); zoom.reset(); refocus();};
   const layoutUpdates = bindPlayerLayoutUpdates({window, safeZone: safe, applyLayout});
   toggle.addEventListener('click', reset);
   sync(); fullscreen(); applyLayout();
-  return {touch, keyboard, zoom, relayoutAfterOrientation: layoutUpdates.relayoutAfterOrientation, dispose() {layoutUpdates.dispose(); document.removeEventListener('fullscreenchange', fullscreen); document.removeEventListener('webkitfullscreenchange', fullscreen); nativeKeyboard?.unlock?.(); unsubscribe(); unsubscribeEvents(); unsubscribeLayout(); gamepad.dispose(); keyboard.dispose(); touch.dispose(); zoom.uninstallInputBridge(); zoom.cancelGesture(); toggle.removeEventListener('click', reset);}};
+  return {touch, keyboard, zoom, relayoutAfterOrientation: layoutUpdates.relayoutAfterOrientation, dispose() {layoutUpdates.dispose(); window.removeEventListener('th03-touch-surface-change', applyTh03SurfaceLayout); document.removeEventListener('fullscreenchange', fullscreen); document.removeEventListener('webkitfullscreenchange', fullscreen); nativeKeyboard?.unlock?.(); unsubscribe(); unsubscribeEvents(); unsubscribeLayout(); gamepad.dispose(); keyboard.dispose(); touch.dispose(); zoom.uninstallInputBridge(); zoom.cancelGesture(); toggle.removeEventListener('click', reset);}};
 }

@@ -25,5 +25,13 @@
   position:fixed;inset:auto;left:var(--th03-touch-left);top:var(--th03-touch-top);
   width:var(--th03-touch-width);height:var(--th03-touch-height);
 }
+/* Apply the shared saved layout to the game surface, rather than the wider
+   room workspace. The editor's normalized positions and scales stay intact. */
+#player.room-workspace.th03-room-touch-active .touch-layout-safe-zone{
+  position:fixed;inset:auto;
+  left:var(--th03-touch-left);top:var(--th03-touch-top);
+  width:var(--th03-touch-width);height:var(--th03-touch-height);
+}
+#player.room-workspace.th03-room-touch-active.touch-layout-custom .touch-hud{display:block}
 
 }
