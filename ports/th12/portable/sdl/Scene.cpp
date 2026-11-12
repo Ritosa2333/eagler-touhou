@@ -6,6 +6,7 @@
 #include "game/BossHud.hpp"
 #include "game/CameraEffects.hpp"
 #include "game/PresentationGeometry.hpp"
+#include "game/PresentationTracking.hpp"
 #include "wasm/Api.hpp"
 #include <algorithm>
 #include <cmath>
@@ -250,7 +251,7 @@ void Scene::capture(const Options& o){
         a.visible=(r.flags&3)==3;
         // Original 45c93e/45c95b tests primary alpha even when flag10000 selects secondary.
         if((a.mode==0||a.mode==1)&&primary.a==0)a.visible=false;
-        p.x=r.x;p.y=r.y;p.alpha=r.alpha;p.id=r.id;p.owner=r.owner;p.logical=true;p.has_order=true;p.order=i;p.continuity=(u64(1)<<63)|r.id;
+        p.x=r.x;p.y=r.y;p.alpha=r.alpha;p.id=r.id;p.owner=r.owner;p.logical=true;p.has_order=true;p.order=i;p.continuity=(u64(1)<<63)|r.id;p.continuity_revision=presentation::revision(r.owner);
         owners.push_back(r.owner);logical_poses.push_back(p);
     }
     const auto* mesh_records=meshDrawState.data();
@@ -440,7 +441,7 @@ void Scene::capture(const Options& o){
     if(!runtime_options.limit_presentation){
         current_motion.reserve(poses.size());
         for(const auto& p:poses)if(p.continuity&&p.kind==Pose::State&&p.priority<42&&p.a.mode<4&&p.a.bank!=BankStage)
-            current_motion.emplace_back(p.continuity,Motion{p.x,p.y,p.a.x,p.a.y,p.a.rotation,p.a.bank,p.a.mode});
+            current_motion.emplace_back(p.continuity,Motion{p.x,p.y,p.a.x,p.a.y,p.a.rotation,p.a.bank,p.a.mode,p.continuity_revision});
         std::sort(current_motion.begin(),current_motion.end(),[](const auto& a,const auto& b){return a.first<b.first;});
     }
 }
@@ -614,9 +615,11 @@ void Scene::render(float alpha,float live_fps){
             if(old!=previous_motion.end()&&old->first==captured.continuity){
                 const auto& m=old->second;const auto& p=captured;
                 // Identity is persistent; jumps such as Murasa's teleport use the
-                // destination immediately. Presentation never writes core state.
+                // destination immediately. ECL setters change continuity via the
+                // owner revision, including the small departure/arrival jitter.
+                // Presentation never writes core state.
                 const float dx=p.x+p.a.x-m.x-m.ax,dy=p.y+p.a.y-m.y-m.ay;
-                if(m.bank==p.a.bank&&m.mode==p.a.mode&&dx*dx+dy*dy<4096){
+                if(m.revision==p.continuity_revision&&m.bank==p.a.bank&&m.mode==p.a.mode&&dx*dx+dy*dy<4096){
                     const auto mix=[alpha](float a,float b){return b+(b-a)*alpha;};
                     interpolated=p;interpolated.x=mix(m.x,p.x);interpolated.y=mix(m.y,p.y);
                     interpolated.a.x=mix(m.ax,p.a.x);interpolated.a.y=mix(m.ay,p.a.y);

@@ -39,7 +39,7 @@ bool NetplayRuntime::Configure(const SessionSetup& setup,unsigned delay){
     core.inputDelay=std::uint8_t(delay);core.allowPrediction=setup.mode!=1;
     // Common core requires a positive retained-decision window even in
     // lockstep. This is input/ACK history only, never a prediction allowance.
-    core.maxRollbackFrames=12;core.predictableButtons=setup.mode!=1?0xf9:0;core.maxDirectionPredictionFrames=setup.mode!=1?2:0;core.directTouchIsAbsolute=true;
+    core.maxRollbackFrames=12;core.predictableButtons=setup.mode!=1?0xf9:0;core.directionButtons=0xf0;core.prediction=Netplay::InputPrediction::ConfirmedHold;core.directTouchIsAbsolute=true;
     if(!gate_.Reset(gate)||!core_.Reset(core))return Fail("TH15 lockstep core rejected setup");
     setup_=setup;configured_=true;retired_=local_results_=false;
     next_capture_=0;capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;return true;

@@ -125,6 +125,13 @@ void ReplayRecorder::begin_stage(i32 number,i32 seed,const ReplayInitial& initia
     if(active)finish_stage();
     Stage s;s.number=number;s.seed=seed&0xffff;s.initial=initial;s.spell_times=default_replay_spell_times();active=std::move(s);extension.motion[number]={};
 }
+void ReplayRecorder::tools(const std::array<i32,3>& state){
+    if(!active)return;
+    auto& rows=extension.tools[active->number];
+    if(rows.empty()&&!state[0]&&!state[1])return;
+    if(!rows.empty()&&rows.back().state==state)return;
+    rows.push_back({u32(active->inputs.size()),state});extension.assisted=true;
+}
 void ReplayRecorder::push(u32 held,u32 pressed,u32 released,float fps){
     if(!active||active->inputs.size()>=10000000)return;
     ReplayInput in{u16(held),u16(pressed),u16(released)};if(in.end())return;

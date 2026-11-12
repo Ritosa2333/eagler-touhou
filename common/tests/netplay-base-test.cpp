@@ -231,6 +231,234 @@ void TestNativeWebSocketStub()
     assert(transport.BufferedAmount() == 0);
 #endif
 }
+
+void TestConfirmedHoldThroughReorderedInput()
+{
+    RollbackCore core;
+    CoreConfig config;
+    config.playerCount = 3;
+    config.maxRollbackFrames = 8;
+    config.predictableButtons = 0xf1;
+    config.directionButtons = 0xf0;
+    config.maxDirectionPredictionFrames = 2; // Legacy cutoff must not apply.
+    config.prediction = InputPrediction::ConfirmedHold;
+    assert(core.Reset(config));
+    for (unsigned f = 0; f <= 9; ++f) assert(core.ScheduleLocalInput(f, 0));
+
+    assert(core.SubmitRemoteInput(1, 0, 0x10) == RemoteInputResult::Accepted);
+    assert(core.SubmitRemoteInput(1, 2, 0x20) == RemoteInputResult::Accepted);
+    assert(core.SubmitRemoteInput(2, 0, 0x40) == RemoteInputResult::Accepted);
+    assert(core.SubmitRemoteInput(2, 5, 0x80) == RemoteInputResult::Accepted);
+    for (unsigned f = 0; f <= 8; ++f)
+    {
+        const auto d = core.PrepareFrame(f);
+        assert(d.canAdvance);
+        assert(d.inputs[1].buttons == (f == 2 ? 0x20 : 0x10));
+        assert(d.inputs[2].buttons == (f == 5 ? 0x80 : 0x40));
+        assert(core.MarkSimulated(f, d));
+    }
+    assert(!core.PrepareFrame(9).canAdvance);
+    // Frame 1 matches and frame 2 was simulated exactly. The new confirmed
+    // direction still changes frame 3 onward, only for the affected seat.
+    assert(core.SubmitRemoteInput(1, 1, 0x10) == RemoteInputResult::RollbackRequired);
+    assert(core.RollbackFrame() == 3 && core.RewindSimulationTo(3));
+    for (unsigned f = 3; f <= 8; ++f)
+    {
+        const auto d = core.PrepareFrame(f);
+        assert(d.inputs[1].buttons == 0x20);
+        assert(d.inputs[2].buttons == (f == 5 ? 0x80 : 0x40));
+        assert(core.MarkSimulated(f, d));
+    }
+    for (unsigned f = 1; f <= 8; ++f)
+    {
+        if (f >= 3) assert(core.SubmitRemoteInput(1, f, 0x20) == RemoteInputResult::PredictionCorrect);
+        if (f != 5) core.SubmitRemoteInput(2, f, f < 5 ? 0x40 : 0x80);
+    }
+    assert(core.RollbackFrame() == 6 && core.RewindSimulationTo(6));
+    for (unsigned f = 6; f <= 8; ++f)
+        assert(core.MarkSimulated(f, core.PrepareFrame(f)));
+    for (unsigned f = 0; f <= 8; ++f)
+    {
+        std::array<FrameInput, MAX_PLAYERS> exact;
+        assert(core.ConfirmedInputs(f, &exact));
+        assert(exact[1].buttons == (f < 2 ? 0x10 : 0x20));
+        assert(exact[2].buttons == (f < 5 ? 0x40 : 0x80));
+    }
+}
+
+void TestConfirmedHoldTouchSemantics()
+{
+    for (const auto mode : {AnalogMode::Joystick, AnalogMode::DirectTouch,
+                            AnalogMode::DirectTouchBegin, AnalogMode::DirectTouchDelta})
+        for (const bool absolute : {false, true})
+        {
+            RollbackCore core;
+            CoreConfig config;
+            config.prediction = InputPrediction::ConfirmedHold;
+            config.predictableButtons = 0xf1;
+            config.directTouchIsAbsolute = absolute;
+            config.maxDirectTouchDeltaPredictionFrames = 6;
+            assert(core.Reset(config));
+            assert(core.ScheduleLocalInput(0, 0) && core.ScheduleLocalInput(1, 0));
+            auto sample = FrameInput(0x15);
+            sample.analogMode = mode;
+            sample.x = 0.75f; sample.y = -0.5f;
+            sample.touchUsed = sample.touchBomb = true;
+            assert(core.SubmitRemoteInput(1, 0, sample) == RemoteInputResult::Accepted);
+            const auto exact = core.PrepareFrame(0);
+            assert(exact.inputs[1] == sample && core.MarkSimulated(0, exact));
+            const auto d = core.PrepareFrame(1);
+            assert(d.canAdvance && d.predictedMask == 2);
+            const auto& held = d.inputs[1];
+            const bool holdAxes = mode == AnalogMode::Joystick || (mode == AnalogMode::DirectTouch && absolute);
+            assert(held.x == (holdAxes ? sample.x : 0) && held.y == (holdAxes ? sample.y : 0));
+            assert(held.buttons == 0x11 && held.touchUsed && !held.touchBomb);
+            assert(held.analogMode == (mode == AnalogMode::DirectTouchBegin ? AnalogMode::DirectTouchDelta : mode));
+        }
+}
+
+void TestAbsoluteTouchTrajectory()
+{
+    RollbackCore core;
+    CoreConfig config;
+    config.prediction = InputPrediction::ConfirmedHold;
+    config.directTouchIsAbsolute = true;
+    config.absoluteTouchForecastFrames = 6;
+    assert(core.Reset(config));
+    const auto touch = [](float x) {
+        FrameInput sample(1);
+        sample.analogMode = AnalogMode::DirectTouch;
+        sample.unlimited = true;
+        sample.x = x;
+        sample.y = 350;
+        return sample;
+    };
+    for (unsigned frame=0; frame<=12; ++frame)
+        assert(core.ScheduleLocalInput(frame,0));
+    for (unsigned frame=0; frame<5; ++frame) {
+        assert(core.SubmitRemoteInput(1,frame,touch(float(frame)*2)) == RemoteInputResult::Accepted);
+        assert(core.MarkSimulated(frame,core.PrepareFrame(frame)));
+    }
+    assert(core.PrepareFrame(5).inputs[1].x == 10);
+    assert(core.PrepareFrame(10).inputs[1].x == 20);
+    assert(core.PrepareFrame(12).inputs[1].x == 20);
+    // A later packet cannot affect the forecast across a gap.
+    assert(core.SubmitRemoteInput(1,6,touch(6)) == RemoteInputResult::Accepted);
+    assert(core.PrepareFrame(7).inputs[1].x == 14);
+    assert(core.MarkSimulated(5,core.PrepareFrame(5)));
+    assert(core.MarkSimulated(6,core.PrepareFrame(6)));
+    assert(core.MarkSimulated(7,core.PrepareFrame(7)));
+    // Closing the gap confirms the prediction at frame 5, but exposes a
+    // turn in the contiguous trajectory and invalidates the frame 7 tail.
+    assert(core.SubmitRemoteInput(1,5,touch(10)) == RemoteInputResult::RollbackRequired);
+    assert(core.RollbackFrame() == 7);
+    assert(core.PrepareFrame(7).inputs[1].x == 6);
+    assert(core.RewindSimulationTo(7));
+    assert(core.MarkSimulated(7,core.PrepareFrame(7)));
+    assert(core.SubmitRemoteInput(1,7,touch(60)) == RemoteInputResult::RollbackRequired);
+    assert(core.RollbackFrame() == 7);
+    assert(core.PrepareFrame(8).inputs[1].x == 60); // discontinuous drag
+    assert(core.SubmitRemoteInput(1,8,FrameInput(0)) == RemoteInputResult::Accepted);
+    assert(core.PrepareFrame(9).inputs[1].analogMode == AnalogMode::None);
+}
+
+void TestConfirmedTapPatternReturnsToHold()
+{
+    RollbackCore core;
+    CoreConfig config;
+    config.prediction = InputPrediction::ConfirmedHold;
+    config.directionButtons = 0xf0;
+    config.predictableButtons = 0xf1;
+    assert(core.Reset(config));
+    constexpr std::uint16_t words[]{16,16,0,32,32,0,16,16,0,17};
+    for (unsigned f = 0; f <= 13; ++f)
+    {
+        assert(core.ScheduleLocalInput(f, 0));
+        if (f < std::size(words)) core.SubmitRemoteInput(1, f, words[f]);
+        const auto d = core.PrepareFrame(f);
+        assert(d.canAdvance && core.MarkSimulated(f, d));
+        if (f >= std::size(words)) assert(d.inputs[1].buttons == (f < 12 ? 17 : 1));
+    }
+    for (unsigned f = 10; f < 12; ++f)
+        assert(core.SubmitRemoteInput(1, f, 17) == RemoteInputResult::PredictionCorrect);
+    assert(core.SubmitRemoteInput(1, 12, 17) == RemoteInputResult::RollbackRequired);
+    assert(core.RollbackFrame() == 12 && core.RewindSimulationTo(12));
+    assert(core.MarkSimulated(12, core.PrepareFrame(12)));
+    const auto repaired = core.PrepareFrame(13);
+    assert(repaired.canAdvance && repaired.inputs[1].buttons == 17);
+}
+
+void TestConfirmedHoldIgnoresIntermediatePacketAnchors()
+{
+    RollbackCore core;
+    CoreConfig config;
+    config.sessionId = 44;
+    config.prediction = InputPrediction::ConfirmedHold;
+    assert(core.Reset(config));
+    core.SubmitRemoteInput(1, 0, 16);
+    core.SubmitRemoteInput(1, 2, 32);
+    for (unsigned f = 0; f <= 3; ++f)
+    {
+        assert(core.ScheduleLocalInput(f, 0));
+        assert(core.MarkSimulated(f, core.PrepareFrame(f)));
+    }
+    InputPacket packet;
+    packet.sessionId = 44;
+    packet.senderPlayer = 1;
+    packet.playerCount = 2;
+    packet.firstInputFrame = 1;
+    packet.latestFrame = 3;
+    packet.inputCount = 3;
+    packet.inputs[0] = FrameInput(16);
+    packet.inputs[1] = FrameInput(32);
+    packet.inputs[2] = FrameInput(16);
+    assert(core.ApplyInputPacket(packet) && !core.HasRollbackRequest());
+    std::array<FrameInput, MAX_PLAYERS> confirmed;
+    assert(core.ConfirmedInputs(3, &confirmed) && confirmed[1].buttons == 16);
+}
+
+void TestForecastRewindCanBeSupersededAcrossPackets()
+{
+    for (bool consultBetweenPackets : {false, true})
+        for (bool matches : {false, true})
+        {
+            RollbackCore core;
+            CoreConfig config;
+            config.sessionId = 44;
+            config.playerCount = 3;
+            config.prediction = InputPrediction::ConfirmedHold;
+            assert(core.Reset(config));
+            core.SubmitRemoteInput(1, 0, 16);
+            core.SubmitRemoteInput(1, 2, 32);
+            for (unsigned f = 0; f <= 3; ++f)
+            {
+                assert(core.ScheduleLocalInput(f, 0));
+                core.SubmitRemoteInput(2, f, 0);
+                assert(core.MarkSimulated(f, core.PrepareFrame(f)));
+            }
+            auto packet = [&](unsigned frame, std::uint16_t buttons) {
+                InputPacket p;
+                p.sessionId = 44; p.senderPlayer = 1; p.playerCount = 3;
+                p.firstInputFrame = p.latestFrame = frame;
+                p.inputCount = 1; p.inputs[0] = FrameInput(buttons);
+                return p;
+            };
+            assert(core.ApplyInputPacket(packet(1, 16)));
+            if (consultBetweenPackets) assert(core.RollbackFrame() == 3);
+            assert(core.ApplyInputPacket(packet(3, matches ? 16 : 32)));
+            // A diagnostic read between packets must not promote a forecast
+            // to a hard mismatch or block the confirmed replay stream.
+            assert(core.RollbackFrame() == (matches ? INVALID_FRAME : 3));
+            std::array<FrameInput, MAX_PLAYERS> confirmed;
+            assert(core.ConfirmedInputs(3, &confirmed) == matches);
+            if (!matches)
+            {
+                assert(core.RewindSimulationTo(3));
+                assert(core.MarkSimulated(3, core.PrepareFrame(3)));
+                assert(core.ConfirmedInputs(3, &confirmed) && confirmed[1].buttons == 32);
+            }
+        }
+}
 } // namespace
 
 int main()
@@ -240,6 +468,12 @@ int main()
     TestAbsoluteTargetPrediction();
     TestEquivalentPredictionConfirmationDoesNotRollback();
     TestAggregateConfirmedRemoteFrontier();
+    TestConfirmedHoldThroughReorderedInput();
+    TestConfirmedHoldTouchSemantics();
+    TestAbsoluteTouchTrajectory();
+    TestConfirmedTapPatternReturnsToHold();
+    TestConfirmedHoldIgnoresIntermediatePacketAnchors();
+    TestForecastRewindCanBeSupersededAcrossPackets();
     TestSessionGate();
     TestNativeWebSocketStub();
     std::cout << "eagler-common netplay base: PASS\n";

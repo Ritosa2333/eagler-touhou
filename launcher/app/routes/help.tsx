@@ -4,6 +4,8 @@ import { findNeighbour, type Root } from 'fumadocs-core/page-tree';
 import { RootProvider } from '@fumadocs/base-ui/provider/react-router';
 import { DocsLayout } from '@fumadocs/base-ui/layouts/spacious';
 import { DocsPage, DocsTitle, DocsBody } from '@fumadocs/base-ui/layouts/spacious/page';
+import { marked } from 'marked';
+import progressMarkdown from '../../../docs/TOUHOU_PROGRESS.md?raw';
 import { StandalonePageShell } from '../standalone-pages';
 import { useLocale, translate } from '../i18n';
 import { withUiLanguage } from '../../src/launcher/i18n.mts';
@@ -14,6 +16,19 @@ import { helpDocuments, helpDocumentAtPath, helpDocumentLocale, type HelpDocumen
 import { prepareHelpDocument, prepareMultiplayerRules } from '../components/documents/content';
 import { guideTitle, multiplayerGuideTree, MultiplayerExceptions, MultiplayerGuidePicker, MultiplayerOverviewTable, MultiplayerScope, MultiplayerStart, type GuideTopic } from '../components/documents/multiplayer';
 import '../components/documents/documents.css';
+
+const progressAnchors = new Map<string, string>();
+let progressHeadingCount = 0;
+for (const token of marked.lexer(progressMarkdown)) {
+  if (token.type !== 'heading' || token.depth < 2) continue;
+  progressHeadingCount++;
+  const slug = token.text.toLowerCase().replace(/[^\p{L}\p{N}\s_-]/gu, '').replace(/\s/g, '-');
+  if (!progressAnchors.has(slug)) progressAnchors.set(slug, `section-${progressHeadingCount}`);
+}
+const progressHtml = marked.parse(progressMarkdown
+  .replaceAll('../launcher/docs/assets/', 'https://raw.githubusercontent.com/Ritosa2333/eagler-touhou/main/launcher/docs/assets/')
+  .replaceAll('(adaptation/README.md)', '(https://github.com/Ritosa2333/eagler-touhou/blob/main/docs/adaptation/README.md)')
+  .replace(/\]\(#([^)]*)\)/g, (original, slug: string) => progressAnchors.has(slug) ? `](#${progressAnchors.get(slug)})` : original), {async: false});
 
 export const meta = ({ location }: { location: { pathname: string } }) => {
   const topic = multiplayerGuideTopic(location.pathname);
@@ -46,15 +61,17 @@ function DocumentLink({ href = '', prefetch, ...props }: ComponentProps<'a'> & {
   );
 }
 function Documentation({ page, topic }: { page: HelpDocument; topic?: GuideTopic }) {
-  const { pathname } = useLocation(),
+  const { pathname, search } = useLocation(),
     { locale, t } = useLocale(),
     base = useHref('/'),
+    progress = page.id === 'faq' && new URLSearchParams(search).get('view') === 'progress',
     contentLocale = helpDocumentLocale(page, locale);
   const { body, toc } = useMemo(() => {
+    if (progress) return prepareHelpDocument(progressHtml, base, 'zh-CN');
     if (!topic) return prepareHelpDocument(translate(contentLocale, page.content), base, locale);
     if (topic === 'start' || topic === 'th09' || topic === 'th19') return {body:null, toc:[]};
     return prepareMultiplayerRules(t('content.multiplayer'), base, locale, topic, t('guide.specific'));
-  }, [page.content, contentLocale, locale, t, base, topic]);
+  }, [page.content, contentLocale, locale, t, base, topic, progress]);
   const helpTree: Root = {
     $id: `help-${locale}`,
     name: t('document.title'),
@@ -99,7 +116,7 @@ function Documentation({ page, topic }: { page: HelpDocument; topic?: GuideTopic
         tabs={false}
       >
         <DocsPage
-          key={(topic ?? page.id) + locale}
+          key={(progress ? 'progress' : topic ?? page.id) + locale}
           className="pt-4"
           toc={toc}
           breadcrumb={{ enabled: false }}
@@ -109,8 +126,8 @@ function Documentation({ page, topic }: { page: HelpDocument; topic?: GuideTopic
         >
           {topic ? <div className="documentation-guide-heading">
             <DocsTitle>{t(guideTitle(topic))}</DocsTitle><MultiplayerGuidePicker topic={topic} />
-          </div> : <DocsTitle>{t(page.title)}</DocsTitle>}
-          <DocsBody data-help-page={page.id} data-guide-topic={topic} lang={contentLocale}>
+          </div> : <DocsTitle>{progress ? '东方作品进度' : t(page.title)}</DocsTitle>}
+          <DocsBody data-help-page={page.id} data-guide-topic={topic} lang={progress ? 'zh-CN' : contentLocale}>
             {topic === 'start' && <MultiplayerStart />}
             {topic === 'coop' && <>
               <MultiplayerOverviewTable />
@@ -121,7 +138,7 @@ function Documentation({ page, topic }: { page: HelpDocument; topic?: GuideTopic
             {body}
             {topic === 'coop' && <MultiplayerExceptions />}
           </DocsBody>
-          <DocumentRevision page={page} />
+          {!progress && <DocumentRevision page={page} />}
         </DocsPage>
       </DocsLayout>
     </RootProvider>
