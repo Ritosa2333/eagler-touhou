@@ -973,7 +973,7 @@
     "th12": {
       "normal": "ports/th12",
       "multiplayer": "ports/th12-mp",
-      "base": "1c4f2c11bc3bae77d627f098d6336673448d6f4f",
+      "base": "555fa3f382c0f601e5d5906bae5cc7b1f18f222c",
       "origin": {
         "normalCommit": "5e5081a1d2a434b2f8d785ebbd6b965f1058d828",
         "multiplayerCommit": "02e3a62a7ff38ca5ec1f3ad2007c117534e9ba26",
@@ -1581,6 +1581,43 @@
             "ports/th12-mp/tests/sdl-clock.test.mjs"
           ],
           "note": "共享的绘制、激光和道具优化已在两种模式中处理，多人版采用观战时钟与回滚专用路径，练习筛选由普通版维护。"
+        },
+        {
+          "kind": "manual",
+          "base": "1c4f2c11bc3bae77d627f098d6336673448d6f4f",
+          "source": "555fa3f382c0f601e5d5906bae5cc7b1f18f222c",
+          "targetHead": "3d4a183369c0f5880ff83732cf7367e21f1357fa",
+          "paths": [
+            "ports/th12-mp/CMakeLists.txt",
+            "ports/th12-mp/docs/DEVELOPMENT.md",
+            "ports/th12-mp/portable/sdl/Application.cpp",
+            "ports/th12-mp/portable/sdl/Game.cpp",
+            "ports/th12-mp/portable/sdl/Game.hpp",
+            "ports/th12-mp/portable/sdl/Host.cmake",
+            "ports/th12-mp/portable/sdl/Renderer.cpp",
+            "ports/th12-mp/portable/sdl/Replay.cpp",
+            "ports/th12-mp/portable/sdl/Replay.hpp",
+            "ports/th12-mp/portable/sdl/ReplayExtension.cpp",
+            "ports/th12-mp/portable/sdl/ReplayExtension.hpp",
+            "ports/th12-mp/portable/sdl/Scene.cpp",
+            "ports/th12-mp/portable/sdl/Scene.hpp",
+            "ports/th12-mp/portable/sdl/TitlePresentation.cpp",
+            "ports/th12-mp/portable/sdl/TitleScenes.cpp",
+            "ports/th12-mp/portable/sdl/TitleScenes.hpp",
+            "ports/th12-mp/src/game/Practice.cpp",
+            "ports/th12-mp/src/game/PracticeTools.cpp",
+            "ports/th12-mp/src/game/PracticeTools.hpp",
+            "ports/th12-mp/src/replay-motion.mjs",
+            "ports/th12-mp/src/stage_logic.hpp",
+            "ports/th12-mp/tests/fixtures/stage2-camera-original.json",
+            "ports/th12-mp/tests/native/sdl-host-state.cpp",
+            "ports/th12-mp/tests/native/sdl-order-performance.cpp",
+            "ports/th12-mp/tests/native/sdl-replay.cpp",
+            "ports/th12-mp/tests/native/stage2-camera.cpp",
+            "ports/th12-mp/tests/replay-tools.test.mjs",
+            "ports/th12-mp/tests/sdl-boundary.test.mjs"
+          ],
+          "note": "已同步残像连续性、细激光预警、二面摇镜、暂停退出及THPrac辅助录像；保留多人录像格式，飞碟吸附道具接触拾取按多人席位单独修复。"
         }
       ],
       "watches": {
