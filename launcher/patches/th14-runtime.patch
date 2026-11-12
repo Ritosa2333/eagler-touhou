@@ -33,10 +33,10 @@ index 0000000000000000000000000000000000000000..25fc1a71c6a044f980e895c3db674984
 +加 `--strict` 时，VM 差异、缺失操作码或字库选择不符都会返回非零。报告记录每个不同字段的原版和移植 32 位原始值。修复前的 120 组对照中有 31 组不同、3 组未映射。修复后扩展至 349 组全部相同；另有 69 组[界面对照](TH14_UI_ORACLE.md)通过。父子 VM 管理、绘制队列、完整战斗和最终像素未由这份组件对照覆盖。
 diff --git a/docs/porting/TH14_BROWSER_PERFORMANCE.md b/docs/porting/TH14_BROWSER_PERFORMANCE.md
 new file mode 100644
-index 0000000000000000000000000000000000000000..b1b15f0a743202835ec7aeb91e653c5ecb73fe9d
+index 0000000000000000000000000000000000000000..10f7eb931d2a4588783f75875ffdea51c70c24dd
 --- /dev/null
 +++ b/docs/porting/TH14_BROWSER_PERFORMANCE.md
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,50 @@
 +# TH14 browser frame pacing
 +
 +The browser accumulates refresh time separately from the retail deadline
@@ -67,6 +67,14 @@ index 0000000000000000000000000000000000000000..b1b15f0a743202835ec7aeb91e653c5e
 +scratch; batches that can cross W still use the exact clipper. The color-only
 +shader omits unused fragment depth exports. D16 comparisons or writes still
 +use the original quantization path.
++
++TH14 compares clamped fragment alpha with the measured RGBA8 transitions
++around the D3D9 reference byte. This preserves the byte comparison and
++avoids quantizing each fragment and indexing the full boundary table in GLSL.
++
++The two TH14 opening compositor clears apply depth immediately. Each color
++clear waits until that surface is drawn to, sampled, copied, presented or
++read. A later color clear can replace it if it covers the whole rectangle.
 +
 +Run `node --test tools/tests/test-th14-frame-scheduler.mjs` for the async
 +frame queue and compile `runtimes/th12/th12_web/tests/cpp/th14-browser-cadence.cpp`
@@ -155,8 +163,21 @@ index a53fbc3b90b344febae9e9b81619c0ea548eae9c..4591ba821d7f94647dfd9dc3b065a2c5
  #else
      // Other titles retain their existing bounded catch-up policy.
      double debt=0;
+diff --git a/runtimes/th12/portable/sdl/GraphicsState.hpp b/runtimes/th12/portable/sdl/GraphicsState.hpp
+index a5d5362aa17f9a9e6333c483780d4e7b4d90ca6f..ffc21aeff45f269cbaa129e5bfaa4684f2b77bc1 100644
+--- a/runtimes/th12/portable/sdl/GraphicsState.hpp
++++ b/runtimes/th12/portable/sdl/GraphicsState.hpp
+@@ -5,6 +5,8 @@
+ 
+ namespace touhou::graphics {
+ using u32 = std::uint32_t;
++// A pass may defer its color clear until the surface is used or overwritten.
++inline constexpr u32 DeferColorClear = 1u << 3;
+ enum class Compare : u32 { Never, Less, Equal, LessEqual, Greater, NotEqual, GreaterEqual, Always };
+ enum class BlendFactor : u32 { Zero, One, SourceColor, InverseSourceColor, SourceAlpha, InverseSourceAlpha, DestinationAlpha, InverseDestinationAlpha, DestinationColor, InverseDestinationColor, SourceAlphaSaturate };
+ enum class BlendEquation : u32 { Add, Subtract, ReverseSubtract, Minimum, Maximum };
 diff --git a/runtimes/th12/portable/sdl/Renderer.cpp b/runtimes/th12/portable/sdl/Renderer.cpp
-index 086076dbaa745c3b3874633575e322e4bd6a6e83..ac3118fe9a8f556a853b1e61e1b12f4b0bd1fd4a 100644
+index 086076dbaa745c3b3874633575e322e4bd6a6e83..3367389a9cd886657f5612fd7129f1bd7f7bad07 100644
 --- a/runtimes/th12/portable/sdl/Renderer.cpp
 +++ b/runtimes/th12/portable/sdl/Renderer.cpp
 @@ -88,6 +88,16 @@ bool Renderer::initialize(){
@@ -187,7 +208,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..ac3118fe9a8f556a853b1e61e1b12f4b
  for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);if(context)SDL_GL_DestroyContext(context);if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
  void Renderer::bind_texture(GLuint id){if(boundTexture!=id){glBindTexture(GL_TEXTURE_2D,id);boundTexture=id;++stats.textureBinds;}}
  void Renderer::bind_framebuffer(GLenum target,GLuint id){
-@@ -114,13 +128,21 @@ void Renderer::transform(MatrixKind kind,const void* p){auto& m=state.matrix[u32
+@@ -114,20 +128,40 @@ void Renderer::transform(MatrixKind kind,const void* p){auto& m=state.matrix[u32
  void Renderer::viewport(const Viewport& v){state.viewport=v;}
  void Renderer::select(const State& s){
   const auto& p=s.pipeline;auto arg=[](Argument a){return u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u);};
@@ -209,9 +230,21 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..ac3118fe9a8f556a853b1e61e1b12f4b
 -  for(int i=0;i<10;i++)defs+="const "+std::string(i<3?"bool ":"int ")+constants[i]+"="+(i<3?(key[i]?"true":"false"):std::to_string(key[i]))+";\n";
 +  for(int i=0;i<10;i++)defs+="const "+std::string(i<3?"bool ":"int ")+constants[i]+"="+(i<3?((i==0?(key[i]&1u):key[i])?"true":"false"):std::to_string(key[i]))+";\n";
    replace(source,"precision highp float;","precision highp float;\n"+defs);}
-   // Match byte alpha after the measured RGBA8 conversion. Float32 arithmetic
-   // alone differs at rounding boundaries on some devices.
-@@ -128,6 +150,8 @@ void Renderer::select(const State& s){
+-  // Match byte alpha after the measured RGBA8 conversion. Float32 arithmetic
+-  // alone differs at rounding boundaries on some devices.
++  // Byte alpha is monotonic after clamping. TH14 compares against the two
++  // measured transitions surrounding the reference byte instead of rebuilding
++  // the byte and looking up its neighbours for every fragment.
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++  if(version==10){
++   replace(source,"uniform float alphaRef;","uniform vec2 alphaRange;");
++   replace(source,"float a=c.a*255.0,ref=floor(alphaRef*255.0+.5);","float a=c.a,lo=alphaRange.x,hi=alphaRange.y;");
++   replace(source,"(alphaFunc==1&&a<ref)||(alphaFunc==2&&a==ref)||(alphaFunc==3&&a<=ref)||(alphaFunc==4&&a>ref)||(alphaFunc==5&&a!=ref)||(alphaFunc==6&&a>=ref)",
++    "(alphaFunc==1&&a<lo)||(alphaFunc==2&&a>=lo&&a<hi)||(alphaFunc==3&&a<hi)||(alphaFunc==4&&a>=hi)||(alphaFunc==5&&(a<lo||a>=hi))||(alphaFunc==6&&a>=lo)");
++  }
++#else
+   if(version==10){replace(source,"uniform float alphaRef;","uniform float alphaRef;\nuniform vec4 alphaBoundary[64];\nfloat alpha_boundary(int n){return alphaBoundary[n/4][n%4];}");replace(source,"float a=c.a*255.0,ref=floor(alphaRef*255.0+.5);","int byteAlpha=clamp(int(floor(c.a*255.0+.5)),0,255);if(c.a<alpha_boundary(byteAlpha))--byteAlpha;else if(byteAlpha<255&&c.a>=alpha_boundary(byteAlpha+1))++byteAlpha;float a=float(byteAlpha),ref=floor(alphaRef*255.0+.5);");}
++#endif
    if(version==8)replace(source,"float a=c.a*255.0","float a=floor(c.a*255.0+.5)");
    if(version==8)replace(source,"gl_FragDepth=depth16?(floor(scaled)+floor(fract(scaled)-gl_FragCoord.z+0.5))/65535.0:gl_FragCoord.z;","");
  #if defined(PORT_TITLE) && PORT_TITLE == 14
@@ -220,7 +253,58 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..ac3118fe9a8f556a853b1e61e1b12f4b
    // Installed D3D9 D16 conversion: truncate to twenty fractional bits,
    // then round the sixteen-bit result to nearest with ties downward.
    if(version==10){replace(source,"float scaled=gl_FragCoord.z*65536.0;","float quantized=floor(gl_FragCoord.z*1048576.0)/1048576.0;float scaled=quantized*65536.0;");replace(source,"floor(fract(scaled)-gl_FragCoord.z+0.5)","ceil(fract(scaled)-quantized-0.5)");}
-@@ -204,15 +228,47 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
+@@ -136,9 +170,12 @@ void Renderer::select(const State& s){
+   if(version==10)replace(source,"c.rgb=mix(fogColor.rgb,c.rgb,clamp(vFog,0.0,1.0));","{float f=clamp(vFog,0.0,1.0);vec3 rest=fogColor.rgb-fogColor.rgb*f;c.rgb=c.rgb*f+rest;}");
+ #endif
+   Program p;p.id=glCreateProgram();GLuint fs=shader(GL_FRAGMENT_SHADER,source);glAttachShader(p.id,vertex);glAttachShader(p.id,fs);glLinkProgram(p.id);glDeleteShader(fs);GLint linked=0;glGetProgramiv(p.id,GL_LINK_STATUS,&linked);if(!linked){char log[2048];glGetProgramInfoLog(p.id,sizeof(log),nullptr,log);std::fprintf(stderr,"SDL program: %s\n",log);std::abort();}
++#if !defined(PORT_TITLE) || PORT_TITLE != 14
+   if(version==10){glUseProgram(p.id);glUniform4fv(glGetUniformLocation(p.id,"alphaBoundary[0]"),64,alphaBoundaries.data());glUseProgram(currentProgram);}
++#endif
+ #if defined(PORT_TITLE) && PORT_TITLE == 14
+   const char* names[]{"viewport","transformed","textureTransform","instanced","world","view","projection","textureMatrix","fogEnabled","rangeFog","fogMode","fogParams","fogColor","hasTexture","factor","colorOp","colorArg1","colorArg2","alphaOp","alphaArg1","alphaArg2","alphaTest","alphaRef","alphaFunc","depth16","tex","clipMatrix","fogLinear"};
++  if(version==10)names[22]="alphaRange";
+   for(int i=0;i<28;i++)p.uniforms[i].location=glGetUniformLocation(p.id,names[i]);it=programs.emplace(key,p).first;
+ #else
+   const char* names[]{"viewport","transformed","textureTransform","instanced","world","view","projection","textureMatrix","fogEnabled","rangeFog","fogMode","fogParams","fogColor","hasTexture","factor","colorOp","colorArg1","colorArg2","alphaOp","alphaArg1","alphaArg2","alphaTest","alphaRef","alphaFunc","depth16","tex"};
+@@ -147,7 +184,7 @@ void Renderer::select(const State& s){
+  }
+  program=&it->second;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}
+ }
+-void Renderer::uniform(int i,int n,const float* p){auto& u=program->uniforms[i];if(u.location<0)return;if(u.count==n&&!std::memcmp(u.value.data(),p,n*4))return;std::memcpy(u.value.data(),p,n*4);u.count=n;if(n==16)glUniformMatrix4fv(u.location,1,false,p);else if(n==4)glUniform4fv(u.location,1,p);else if(n==3)glUniform3fv(u.location,1,p);else glUniform1f(u.location,*p);}
++void Renderer::uniform(int i,int n,const float* p){auto& u=program->uniforms[i];if(u.location<0)return;if(u.count==n&&!std::memcmp(u.value.data(),p,n*4))return;std::memcpy(u.value.data(),p,n*4);u.count=n;if(n==16)glUniformMatrix4fv(u.location,1,false,p);else if(n==4)glUniform4fv(u.location,1,p);else if(n==3)glUniform3fv(u.location,1,p);else if(n==2)glUniform2fv(u.location,1,p);else glUniform1f(u.location,*p);}
+ void Renderer::integer(int i,int n){auto& u=program->uniforms[i];if(u.location<0)return;float f=float(n);if(u.count==1&&u.value[0]==f)return;u.count=1;u.value[0]=f;glUniform1i(u.location,n);}
+ u32 Renderer::upload(Stream& s,GLenum target,const void* bytes,u32 count,u32 minimum){
+  glBindBuffer(target,s.id);stats.vertexUploadBytes+=count;
+@@ -162,7 +199,7 @@ u32 Renderer::upload(Stream& s,GLenum target,const void* bytes,u32 count,u32 min
+  glBufferSubData(target,offset,count,bytes);stats.bufferSubUpdates++;s.used=offset+count;return offset;
+ #endif
+ }
+-Renderer::GPU& Renderer::surface(u32 h){
++Renderer::GPU& Renderer::surface(u32 h,bool resolveColor){
+  auto s=resolve(owner,h);if(!s.handle||!s.width||!s.height){std::fprintf(stderr,"SDL invalid surface %u\n",h);std::abort();}auto& g=surfaces[h];if(!g.texture){glGenTextures(1,&g.texture);glGenFramebuffers(1,&g.framebuffer);bind_texture(g.texture);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,g.texture,0);}
+  if(g.version!=s.version){
+   stats.uploadBytes+=s.size;bind_texture(g.texture);glPixelStorei(GL_UNPACK_ALIGNMENT,1);GLenum format=GL_RGBA,type=GL_UNSIGNED_BYTE,internal=GL_RGBA8;
+@@ -178,9 +215,17 @@ Renderer::GPU& Renderer::surface(u32 h){
+    }format=rgb?GL_RGB:GL_RGBA;internal=s.format==PixelFormat::Rgb565?GL_RGB565:(s.format==PixelFormat::Xrgb1555||s.format==PixelFormat::Argb1555)?GL_RGB5_A1:rgb?GL_RGB8:GL_RGBA8;
+   }
+   if(g.version==~0u)glTexImage2D(GL_TEXTURE_2D,0,internal,s.width,s.height,0,format,type,pixels.data());else glTexSubImage2D(GL_TEXTURE_2D,0,0,0,s.width,s.height,format,type,pixels.data());g.version=s.version;g.rendered=false;
+- }return g;
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++  // A texture upload replaces the full surface, including any deferred clear.
++  g.colorClear.pending=false;
++#endif
++ }
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++ if(resolveColor)resolve_color_clear(g);
++#endif
++ return g;
+ }
+-Renderer::GPU& Renderer::target(u32 id,u32 depthId){auto& g=surface(id);GLuint buffer=0;bool stencil=false;if(depthId){auto& d=depths[depthId];if(!d.buffer){auto s=resolve(owner,depthId);d.stencil=s.format==PixelFormat::Depth24Stencil8;glGenRenderbuffers(1,&d.buffer);glBindRenderbuffer(GL_RENDERBUFFER,d.buffer);glRenderbufferStorage(GL_RENDERBUFFER,d.stencil?GL_DEPTH24_STENCIL8:s.format==PixelFormat::Depth16?GL_DEPTH_COMPONENT16:GL_DEPTH_COMPONENT24,s.width,s.height);}buffer=d.buffer;stencil=d.stencil;}bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);if(g.attached!=buffer){glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,buffer);glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_STENCIL_ATTACHMENT,GL_RENDERBUFFER,stencil?buffer:0);g.attached=buffer;}return g;}
++Renderer::GPU& Renderer::target(u32 id,u32 depthId,bool resolveColor){auto& g=surface(id,resolveColor);GLuint buffer=0;bool stencil=false;if(depthId){auto& d=depths[depthId];if(!d.buffer){auto s=resolve(owner,depthId);d.stencil=s.format==PixelFormat::Depth24Stencil8;glGenRenderbuffers(1,&d.buffer);glBindRenderbuffer(GL_RENDERBUFFER,d.buffer);glRenderbufferStorage(GL_RENDERBUFFER,d.stencil?GL_DEPTH24_STENCIL8:s.format==PixelFormat::Depth16?GL_DEPTH_COMPONENT16:GL_DEPTH_COMPONENT24,s.width,s.height);}buffer=d.buffer;stencil=d.stencil;}bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);if(g.attached!=buffer){glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,buffer);glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_STENCIL_ATTACHMENT,GL_RENDERBUFFER,stencil?buffer:0);g.attached=buffer;}return g;}
+ void Renderer::prepare(u32 h){
+ #ifdef TH14_WEBGPU_BACKEND
+  if(webGpu){webGpu->prepare(h);return;}
+@@ -204,29 +249,64 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
   if(webGpu){webGpu->issue(d,primitive,count,data,index,indexFormat,instance,instanceSize);return;}
  #endif
  #if defined(PORT_TITLE) && PORT_TITLE == 14
@@ -273,8 +357,10 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..ac3118fe9a8f556a853b1e61e1b12f4b
 -  }
   }
  #endif
++ GPU* texture=d.texture?&surface(d.texture):nullptr;auto& g=target(d.target,d.depth);const auto& v=d.viewport;
   const auto& p=d.pipeline;auto& cached=drawState.pipeline;const bool all=!drawState.valid;
-@@ -221,12 +277,15 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
+  if(all||cached.dither!=p.dither)p.dither?glEnable(GL_DITHER):glDisable(GL_DITHER);
+- GPU* texture=d.texture?&surface(d.texture):nullptr;auto& g=target(d.target,d.depth);const auto& v=d.viewport;
   if(!drawState.has_viewport||std::memcmp(&drawState.viewport,&v,sizeof(v))){glViewport(v.x,v.y,v.width,v.height);glDepthRangef(v.min,v.max);drawState.viewport=v;drawState.has_viewport=true;}select(d);
   float vp[]{float(v.x),float(v.y),float(v.width),float(v.height)};uniform(0,4,vp);const bool transformed=d.layout.screen;
  #if defined(PORT_TITLE) && PORT_TITLE == 14
@@ -293,7 +379,26 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..ac3118fe9a8f556a853b1e61e1b12f4b
   else {for(int i=0;i<4;i++)uniform(4+i,16,d.matrix[i].data());}
   float fogLinear[3]{};if(nativeFog){volatile float range=p.fogFar-p.fogNear;volatile float scale=1.f/range;volatile float bias=p.fogFar*scale;fogLinear[0]=bias;fogLinear[1]=scale;fogLinear[2]=1.f;}uniform(27,3,fogLinear);
  #else
-@@ -275,14 +334,14 @@ integer(13,!!texture);uniform(14,4,color(p.textureFactor).data());
+@@ -240,7 +320,17 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
+ #endif
+ integer(13,!!texture);uniform(14,4,color(p.textureFactor).data());
+  auto arg=[](Argument a){return int(u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u));};
+- integer(15,u32(p.color.operation));integer(16,arg(p.color.first));integer(17,arg(p.color.second));integer(18,u32(p.alpha.operation));integer(19,arg(p.alpha.first));integer(20,arg(p.alpha.second));integer(21,p.alphaTest);float alpha=float(p.alphaReference)/255;uniform(22,1,&alpha);integer(23,u32(p.alphaCompare));integer(24,version==10&&p.depthTest&&d.depth&&resolve(owner,d.depth).format==PixelFormat::Depth16);
++ integer(15,u32(p.color.operation));integer(16,arg(p.color.first));integer(17,arg(p.color.second));integer(18,u32(p.alpha.operation));integer(19,arg(p.alpha.first));integer(20,arg(p.alpha.second));integer(21,p.alphaTest);
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++ if(version==10){
++  const auto threshold=[&](u32 n){return n<256?alphaBoundaries[n]:2.f;};
++  const u32 ref=std::min(p.alphaReference,256u);
++  const float range[]{threshold(ref),threshold(ref+1)};
++  uniform(22,2,range);
++ }else
++#endif
++ {const float alpha=float(p.alphaReference)/255;uniform(22,1,&alpha);}
++ integer(23,u32(p.alphaCompare));integer(24,version==10&&p.depthTest&&d.depth&&resolve(owner,d.depth).format==PixelFormat::Depth16);
+  if(texture){
+   glActiveTexture(GL_TEXTURE0);bind_texture(texture->texture);
+   constexpr GLint address[]{GL_REPEAT,GL_MIRRORED_REPEAT,GL_CLAMP_TO_EDGE};GLint sampler[]{address[u32(p.addressU)],address[u32(p.addressV)],p.minFilter==Filter::Nearest?GL_NEAREST:GL_LINEAR,p.magFilter==Filter::Nearest?GL_NEAREST:GL_LINEAR};
+@@ -275,14 +365,14 @@ integer(13,!!texture);uniform(14,4,color(p.textureFactor).data());
   if(!instance){
    if(clippedGeometry){glDisableVertexAttribArray(13);glVertexAttrib1f(13,-1.f);glVertexAttribDivisor(13,0);}
    else if(!transformed&&!index&&primitive==Topology::Triangles){
@@ -310,7 +415,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..ac3118fe9a8f556a853b1e61e1b12f4b
     glVertexAttrib1f(13,eligible);glVertexAttribDivisor(13,0);
    }
   }
-@@ -308,16 +367,6 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,(transformed||clippedGeomet
+@@ -308,16 +398,6 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,(transformed||clippedGeomet
  #if defined(PORT_TITLE) && PORT_TITLE == 14
   // Keep each original world/factor record and append its derived clip matrix.
   // The queue remains 68B; only the submitted instance buffer gains the matrix.
@@ -327,7 +432,99 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..ac3118fe9a8f556a853b1e61e1b12f4b
   u32 b=upload(instances,GL_ARRAY_BUFFER,expanded.data(),u32(expanded.size()),65536);
  #else
   u32 b=upload(instances,GL_ARRAY_BUFFER,instance,instanceSize,65536);
-@@ -387,6 +436,24 @@ void Renderer::release(u32 id){flush();
+@@ -337,11 +417,75 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,(transformed||clippedGeomet
+  else glDrawArrays(mode,0,n);g.rendered=true;
+ 
+ }
+-void Renderer::clear(u32 flags,u32 c,float depth,u32 stencil,const i32* rects,u32 count){flush();
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++void Renderer::resolve_color_clear(GPU& surface){
++ auto& clear=surface.colorClear;
++ if(!clear.pending)return;
++ bind_framebuffer(GL_DRAW_FRAMEBUFFER,surface.framebuffer);
++ const bool dither=drawState.valid?drawState.pipeline.dither:bool(glIsEnabled(GL_DITHER));
++ if(dither!=clear.dither)clear.dither?glEnable(GL_DITHER):glDisable(GL_DITHER);
++ const auto rgba=color(clear.color);
++ const auto& rect=clear.rect;
++ glEnable(GL_SCISSOR_TEST);
++ glScissor(rect[0],rect[1],rect[2]-rect[0],rect[3]-rect[1]);
++ glColorMask(true,true,true,true);
++ glClearColor(rgba[0],rgba[1],rgba[2],rgba[3]);
++ glClear(GL_COLOR_BUFFER_BIT);
++ glDisable(GL_SCISSOR_TEST);
++ if(dither!=clear.dither)dither?glEnable(GL_DITHER):glDisable(GL_DITHER);
++ // The next draw re-establishes its mask. Depth was cleared at the original pass.
++ drawState.valid=false;
++ clear.pending=false;
++}
++#endif
++
++void Renderer::clear(u32 flags,u32 c,float depth,u32 stencil,const i32* rects,u32 count){
++ flush();
+ #ifdef TH14_WEBGPU_BACKEND
+- if(webGpu){webGpu->clear(flags,c,depth,stencil,rects,count);return;}
++ if(webGpu){webGpu->clear(flags&~DeferColorClear,c,depth,stencil,rects,count);return;}
+ #endif
+-auto& g=target(state.target,state.depth);const auto& v=state.viewport;i32 box[]{i32(v.x),i32(v.y),i32(v.x+v.width),i32(v.y+v.height)};if(!rects){rects=box;count=1;}glEnable(GL_SCISSOR_TEST);glColorMask(true,true,true,true);glDepthMask(true);drawState.pipeline.colorMask=15;drawState.pipeline.depthWrite=true;auto rgba=color(c);glClearColor(rgba[0],rgba[1],rgba[2],rgba[3]);glClearDepthf(depth);glClearStencil(stencil);glStencilMask(255);GLbitfield bits=(flags&1?GL_COLOR_BUFFER_BIT:0)|(flags&2?GL_DEPTH_BUFFER_BIT:0)|(flags&4?GL_STENCIL_BUFFER_BIT:0);for(u32 i=0;i<count;i++){const i32* p=rects+i*4;glScissor(p[0],p[1],p[2]-p[0],p[3]-p[1]);glClear(bits);}glDisable(GL_SCISSOR_TEST);g.rendered=true;}
++ auto& g=target(state.target,state.depth,false);
++ const auto& v=state.viewport;
++ const i32 box[]{i32(v.x),i32(v.y),i32(v.x+v.width),i32(v.y+v.height)};
++ if(!rects){rects=box;count=1;}
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++ if(flags&1){
++  const bool singleRect=count==1&&rects[2]>rects[0]&&rects[3]>rects[1];
++  auto& pendingColor=g.colorClear;
++  if(pendingColor.pending){
++   const auto& old=pendingColor.rect;
++   const bool covers=singleRect&&rects[0]<=old[0]&&rects[1]<=old[1]&&rects[2]>=old[2]&&rects[3]>=old[3];
++   if(covers)pendingColor.pending=false;
++   else resolve_color_clear(g);
++  }
++  if((flags&DeferColorClear)&&singleRect){
++   std::copy_n(rects,4,pendingColor.rect.begin());
++   pendingColor.color=c;
++   pendingColor.dither=drawState.valid?drawState.pipeline.dither:bool(glIsEnabled(GL_DITHER));
++   pendingColor.pending=true;
++   flags&=~1u;
++  }
++ }
++#endif
++ glEnable(GL_SCISSOR_TEST);
++ glColorMask(true,true,true,true);
++ glDepthMask(true);
++ drawState.pipeline.colorMask=15;
++ drawState.pipeline.depthWrite=true;
++ const auto rgba=color(c);
++ glClearColor(rgba[0],rgba[1],rgba[2],rgba[3]);
++ glClearDepthf(depth);
++ glClearStencil(stencil);
++ glStencilMask(255);
++ const GLbitfield bits=(flags&1?GL_COLOR_BUFFER_BIT:0)|(flags&2?GL_DEPTH_BUFFER_BIT:0)|(flags&4?GL_STENCIL_BUFFER_BIT:0);
++ for(u32 i=0;i<count;i++){
++  const i32* p=rects+i*4;
++  glScissor(p[0],p[1],p[2]-p[0],p[3]-p[1]);
++  glClear(bits);
++ }
++ glDisable(GL_SCISSOR_TEST);
++ g.rendered=true;
++}
+ void Renderer::copy(u32 src,const i32* rect,u32 dst,const i32* point){flush();
+ #ifdef TH14_WEBGPU_BACKEND
+  if(webGpu){webGpu->copy(src,rect,dst,point);return;}
+@@ -376,7 +520,11 @@ void Renderer::read(u32 id){flush();
+ #ifdef TH14_WEBGPU_BACKEND
+  if(webGpu){webGpu->read(id);return;}
+ #endif
+-auto it=surfaces.find(id);if(it==surfaces.end()||!it->second.rendered)return;auto s=resolve(owner,id);auto& g=it->second;stats.readBytes+=s.size;pixels.resize(s.width*s.height*4);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glPixelStorei(GL_PACK_ALIGNMENT,1);glReadPixels(0,0,s.width,s.height,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
++auto it=surfaces.find(id);if(it==surfaces.end()||!it->second.rendered)return;auto s=resolve(owner,id);auto& g=it->second;
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++resolve_color_clear(g);
++#endif
++stats.readBytes+=s.size;pixels.resize(s.width*s.height*4);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glPixelStorei(GL_PACK_ALIGNMENT,1);glReadPixels(0,0,s.width,s.height,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
+  for(u32 y=0;y<s.height;y++)for(u32 x=0;x<s.width;x++){const auto* p=pixels.data()+(y*s.width+x)*4;u32 r=p[0],gc=p[1],b=p[2],a=p[3];auto* out=s.data+y*s.pitch;
+   if(s.format==PixelFormat::Bgra8||s.format==PixelFormat::Bgrx8){out+=x*4;out[0]=b;out[1]=gc;out[2]=r;out[3]=s.format==PixelFormat::Bgra8?a:255;}else if((s.format==PixelFormat::Rgb565||s.format==PixelFormat::Xrgb1555||s.format==PixelFormat::Argb1555||s.format==PixelFormat::Argb4444)){uint16_t n=s.format==PixelFormat::Argb4444?(a>>4)<<12|(r>>4)<<8|(gc>>4)<<4|(b>>4):s.format==PixelFormat::Rgb565?(r>>3)<<11|(gc>>2)<<5|(b>>3):(s.format==PixelFormat::Argb1555&&a>=128?0x8000:0)|(r>>3)<<10|(gc>>3)<<5|(b>>3);std::memcpy(out+x*2,&n,2);}else if(s.format==PixelFormat::Alpha8)out[x]=a;else if(s.format==PixelFormat::Luminance8)out[x]=r;else std::abort();
+  }g.rendered=false;
+@@ -387,6 +535,24 @@ void Renderer::release(u32 id){flush();
  #endif
  auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);depths.erase(d);}auto it=surfaces.find(id);if(it==surfaces.end())return;glDeleteTextures(1,&it->second.texture);glDeleteFramebuffers(1,&it->second.framebuffer);surfaces.erase(it);boundTexture=readFramebuffer=drawFramebuffer=~0u;}
  void Renderer::present(u32 id){flush();pending=id;stats.frames++;if(!defer)commit();}
@@ -352,7 +549,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..ac3118fe9a8f556a853b1e61e1b12f4b
  bool Renderer::commit(){if(!pending)return false;
  #ifdef TH14_WEBGPU_BACKEND
   if(webGpu){const auto id=pending;pending=0;webGpu->present(id);++stats.presentations;return true;}
-@@ -397,7 +464,15 @@ glBlitFramebuffer(0,0,s.width,s.height,0,s.height,s.width,0,GL_COLOR_BUFFER_BIT,
+@@ -397,7 +563,15 @@ glBlitFramebuffer(0,0,s.width,s.height,0,s.height,s.width,0,GL_COLOR_BUFFER_BIT,
  #else
  glBlitFramebuffer(0,0,s.width,s.height,0,480,640,0,GL_COLOR_BUFFER_BIT,GL_NEAREST);
  #endif
@@ -370,7 +567,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..ac3118fe9a8f556a853b1e61e1b12f4b
  extern "C" {
  const touhou::sdl::Statistics* sdl_stats(){static touhou::sdl::Statistics zero{};return touhou::sdl::current()?&touhou::sdl::current()->stats:&zero;}
 diff --git a/runtimes/th12/portable/sdl/Renderer.hpp b/runtimes/th12/portable/sdl/Renderer.hpp
-index 05807cb86614061d707a87336b4bc6fee7a09cfb..37ffcdd600ccc7d2558fe02b6f27d63bce6c6ebc 100644
+index 05807cb86614061d707a87336b4bc6fee7a09cfb..64d968de1f331e17b778e71c6d6d96533fa2eab3 100644
 --- a/runtimes/th12/portable/sdl/Renderer.hpp
 +++ b/runtimes/th12/portable/sdl/Renderer.hpp
 @@ -29,6 +29,9 @@ public:
@@ -383,17 +580,46 @@ index 05807cb86614061d707a87336b4bc6fee7a09cfb..37ffcdd600ccc7d2558fe02b6f27d63b
      PipelineState& pipeline() override { return state.pipeline; }
      void transform(MatrixKind,const void*);void viewport(const Viewport&);
      void draw(Topology primitive,u32 count,const void*,u32 stride,const void* indices=nullptr,IndexType indexFormat=IndexType::UInt16);
-@@ -60,6 +63,10 @@ private:
+@@ -45,7 +48,20 @@ private:
+ #ifdef TH14_WEBGPU_BACKEND
+     WebGpuRenderer* webGpu=nullptr;
+ #endif
+-    struct GPU {GLuint texture=0,framebuffer=0;u32 version=~0u;bool rendered=false;GLuint attached=~0u;std::array<GLint,4> sampler{};};
++    struct GPU {
++        GLuint texture=0,framebuffer=0;
++        u32 version=~0u;
++        bool rendered=false;
++        GLuint attached=~0u;
++        std::array<GLint,4> sampler{};
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++        struct ColorClear {
++            std::array<i32,4> rect{};
++            u32 color=0;
++            bool pending=false,dither=false;
++        } colorClear;
++#endif
++    };
+     struct Depth {GLuint buffer=0;bool stencil=false;};
+     struct Uniform {GLint location=-1;std::array<float,16> value{};int count=-1;};
+     struct Program {GLuint id=0;std::array<Uniform,28> uniforms{};};
+@@ -60,7 +76,16 @@ private:
      Stream vertices{},indices{},instances{};State batchState{};
      std::vector<u8> batchBytes,quad,worlds,pixels;bool batching=false,instancing=false;
      u32 batchCount=0,pending=0;std::string failure;
+-    GPU& surface(u32);GPU& target(u32,u32);void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32,bool clippedGeometry=false);
 +#if defined(__EMSCRIPTEN__) && defined(PORT_TITLE) && PORT_TITLE == 14
 +    GLsync previousBrowserFrame=nullptr,latestBrowserFrame=nullptr;
 +    void fence_browser_frame();
 +#endif
-     GPU& surface(u32);GPU& target(u32,u32);void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32,bool clippedGeometry=false);
++    GPU& surface(u32,bool resolveColor=true);
++    GPU& target(u32,u32,bool resolveColor=true);
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++    void resolve_color_clear(GPU&);
++#endif
++    void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32,bool clippedGeometry=false);
      void bind_texture(GLuint);void bind_framebuffer(GLenum,GLuint);
      void select(const State&);void uniform(int,int,const float*);void integer(int,int);
+     u32 upload(Stream&,GLenum,const void*,u32,u32);
 diff --git a/runtimes/th12/portable/sdl/Th14AsyncRuntime.mjs b/runtimes/th12/portable/sdl/Th14AsyncRuntime.mjs
 index 326dd35435272e49a0524bc50646b06e4803cec6..8a7b91ab31346b715c360c386ea0f6fab7a654fd 100644
 --- a/runtimes/th12/portable/sdl/Th14AsyncRuntime.mjs
@@ -1099,6 +1325,25 @@ index a3e63fe228287890e69b17af24edfea2684474b2..a7d4cf12bf221720e07b639c8c933962
  #endif
      auto name=[&](float x,float y){
          add(entered_name.data(),x,y);style.color=0xffffff00;add("_",x+9*(name_length==8?7:name_length),y);
+diff --git a/runtimes/th12/th12_web/cpp/game/SceneCompositor.cpp b/runtimes/th12/th12_web/cpp/game/SceneCompositor.cpp
+index cdf1db8bf7eb6652a542954133550d4741f6001e..8cf00880b669633484676c9702d137419b49aab3 100644
+--- a/runtimes/th12/th12_web/cpp/game/SceneCompositor.cpp
++++ b/runtimes/th12/th12_web/cpp/game/SceneCompositor.cpp
+@@ -114,8 +114,12 @@ bool SceneCompositor::draw(AnmRenderer& renderer,SceneDrawKind kind){
+     if(kind==SceneDrawKind::End){renderer.flush();world_camera.offset={};if constexpr(kPortTitle==14)scaled_play_camera.offset={};return true;}
+     if(kind==SceneDrawKind::Begin){
+         renderer.invalidate();
+-        if(!renderer.clear_target(resource?0xffffffff:clear_color))return false;
+-        if(resource&&(!renderer.select_target(resource,2)||!renderer.clear_target(clear_color,&region)))return false;
++        // The screen pass or the stage background often replaces these colors.
++        // The backend still applies the depth clears here and resolves the
++        // color before any pass that uses it.
++        const u32 clear_flags=3u | (kPortTitle==14&&resource?touhou::graphics::DeferColorClear:0u);
++        if(!renderer.clear_target(resource?0xffffffff:clear_color,nullptr,clear_flags))return false;
++        if(resource&&(!renderer.select_target(resource,2)||!renderer.clear_target(clear_color,&region,clear_flags)))return false;
+ #if PORT_TITLE == 14
+         // Retail446c72..446cb1 writes play origin after target/clear only
+         // when the intermediate render target exists. Reset retains it.
 diff --git a/runtimes/th12/th12_web/cpp/game/TextureImage.cpp b/runtimes/th12/th12_web/cpp/game/TextureImage.cpp
 index f83ed09512d920a0fb22346e059407acaf7cf3f8..fae2765c213860249768619fde2002da118bf8e1 100644
 --- a/runtimes/th12/th12_web/cpp/game/TextureImage.cpp
