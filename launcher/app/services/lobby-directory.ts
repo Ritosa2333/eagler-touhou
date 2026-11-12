@@ -51,6 +51,7 @@ export interface DirectoryRoom {
   seats: readonly (DirectorySeat | null)[];
   disableCheatMovement: boolean;
   challengeMode: boolean;
+  unrated?: boolean;
 }
 export interface DirectoryMembership {
   product: MultiplayerProductId;
@@ -65,6 +66,7 @@ export interface DirectoryForm {
   code: string;
   visibility: 'public' | 'private';
   disableCheatMovement: boolean;
+  unrated?: boolean;
   validationMessage: string;
 }
 export interface DirectorySnapshot {
@@ -337,6 +339,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       seats: Object.freeze(seats),
       disableCheatMovement: row.disableCheatMovement === true,
       challengeMode: row.challengeMode === true,
+      ...(row.unrated === true && row.product === 'th09mp' ? {unrated: true} : {}),
       players: seats.filter(Boolean).length,
       ready: bounded(row.ready, capacity),
       spectators: bounded(row.spectators, 999),
@@ -583,7 +586,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     patch: Partial<
       Pick<
         DirectoryForm,
-        'product' | 'capacity' | 'difficulty' | 'code' | 'visibility' | 'disableCheatMovement'
+        'product' | 'capacity' | 'difficulty' | 'code' | 'visibility' | 'disableCheatMovement' | 'unrated'
       >
     >,
   ) {
@@ -614,6 +617,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     }
     if (patch.disableCheatMovement !== undefined)
       next.disableCheatMovement = patch.disableCheatMovement;
+    if (patch.unrated !== undefined) next.unrated = patch.unrated;
     publish({ form: Object.freeze(next) });
   }
   function enterRoom(
@@ -625,6 +629,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     visibility: 'public' | 'private' = 'public',
     disableCheatMovement = false,
     spectator = false,
+    unrated = false,
   ) {
     if (disposed || snapshot.leaving || snapshot.connection !== 'live') return;
     if (snapshot.mine) {
@@ -642,6 +647,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
           created: true,
           visibility,
           disableCheatMovement,
+          ...(product === 'th09mp' && unrated ? {unrated: true} : {}),
         },
         seat: 0,
         ready: false,
@@ -664,6 +670,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
               d: difficulty,
               v: visibility,
               c: disableCheatMovement,
+              u: unrated,
             }
           : {}),
       }),
@@ -709,6 +716,8 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
           form.difficulty,
           form.visibility,
           form.disableCheatMovement,
+          false,
+          form.unrated,
         ),
     };
     return 'close';

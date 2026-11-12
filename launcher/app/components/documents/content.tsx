@@ -70,6 +70,7 @@ function renderHelpNodes(nodes: Node[], base:URL, locale:UiLocale, toc?:TOCItemT
     const children = tableContainers.has(tag)
       ? node.childNodes.filter(child => child.nodeName !== '#text')
       : node.childNodes;
+    if(tag==='table')return createElement('div',{key,className:'documentation-table-scroll'},createElement(tag,{},...children.map((child,index)=>render(child,index,depth+1))));
     return createElement(tag,props,...children.map((child,index)=>render(child,index,depth+1)));
   };
   return nodes.map((node,index)=>render(node,index));

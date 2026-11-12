@@ -26,6 +26,7 @@ export interface RoomInvite {
   v?: 'public' | 'private';
   /** Initial disable-cheat-movement flag for a freshly created room. */
   c?: boolean;
+  u?: boolean;
 }
 
 function toBase64Url(value: string): string {
@@ -53,6 +54,7 @@ export function encodeRoomInvite(invite: RoomInvite): string {
   if (invite.d !== undefined) payload.d = invite.d;
   if (invite.v) payload.v = invite.v;
   if (invite.c) payload.c = true;
+  if (invite.g === 'th09mp' && invite.a === 'create' && invite.u) payload.u = true;
   return toBase64Url(JSON.stringify(payload));
 }
 
@@ -74,6 +76,7 @@ export function decodeRoomInvite(token: string): RoomInvite | null {
       d: typeof record.d === 'number' ? record.d : undefined,
       v: record.v === 'public' || record.v === 'private' ? record.v : undefined,
       c: record.c === true,
+      ...(g === 'th09mp' && record.a === 'create' && record.u === true ? {u: true} : {}),
     };
   } catch {
     return null;

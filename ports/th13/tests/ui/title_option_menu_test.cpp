@@ -27,6 +27,23 @@ std::vector<u8> option_title_fixture() {
     for (i32 child = 23; child <= 48; child++) scripts[1].push_back(spawn(child));
     scripts[1].push_back(wait());
     scripts[1].push_back(stop());
+    // 行条/数字子脚本按真机 label 空间建模（title.anm 实读）：首指令 op300
+    // （bit0 置位），随后 label3（熄灭）与所属行的 label 7+行 / 17+行（选中）；
+    // 行条 23-27/28-32 对应行 0..4，BGM 数字 33-40 属行 0，SE 数字 41-48 属行 1。
+    // 行切换广播的 label3 命中即跳转并置 bit0（0x46265d）——fixture 不带
+    // label 就复现不了「bit0 被广播复活」这一机制。
+    for (i32 child = 23; child <= 48; child++) {
+        const i32 row = child <= 27 ? child - 23 : child <= 32 ? child - 28 : child <= 40 ? 0 : 1;
+        auto& script = scripts[u32(child)];
+        script.clear();
+        script.push_back(sprite(0));
+        script.push_back(wait());
+        for (const i32 id : {3, 7 + row, 17 + row}) {
+            script.push_back(label(id));
+            script.push_back(wait());
+        }
+        script.push_back(stop());
+    }
     return synthetic_anm(72, scripts);
 }
 
@@ -118,12 +135,40 @@ TEST(option_digits_sprite_and_leading_zero_visibility) {
         {45, true}, {46, true}, {47, true},
     };
     // 补一帧使 root1 spawn 完成，全量核对可见位（sprite 选择失败会进 error）。
+    // 0044ed70 尾段经 +0x18 bit1（port flags bit1，0x44f3e0 and ~2 / 0x44f640
+    // or 2）隐藏前导零；bit0 归脚本 op300/label 跳转（0x46356a/0x46265d），
+    // 0044ed70 不触碰 —— 绘制门 = flags&3==3，故以 (flags&3)==3 断言。
     CHECK(h.frame());
     for (const auto& e : expects) {
         auto* vm = h.child(e.script);
         CHECK(vm != nullptr);
         if (!vm) continue;
-        CHECK_EQ(vm->visible, e.visible);
+        CHECK_EQ((vm->visual.flags & 3u) == 3u, e.visible);
+    }
+    CHECK(h.menu->error.empty());
+}
+
+TEST(option_cursor_move_never_reveals_leading_zero_digits) {
+    // 用户报告回归（2026-11-11）：行切换广播 0x46fca0(label3,immediate) +
+    // 0x46fc30(7+行) 会把子体 VM+0x18 bit0 置位（0x46265d）；前导零隐藏在
+    // bit1 上，bit0 置位不得复活百位 0（此前误用 bit0 隐藏曾闪「060」）。
+    OptionHarness h;
+    h.volumes.bgm = 42;   // 百位隐
+    h.volumes.effect = 7; // 百位隐、十位隐
+    CHECK(h.frame());
+    h.advance(8);          // 进交互态（>6）
+    for (i32 frame_index = 0; frame_index < 12; ++frame_index) {
+        if (frame_index == 2) h.frame(0x20);  // ↓ 行切换（BGM → SE）
+        else h.frame();
+        for (const i32 script : {33, 37, 41, 45}) {   // 四个百位
+            auto* vm = h.child(script);
+            CHECK(vm != nullptr);
+            if (!vm) continue;
+            CHECK((vm->visual.flags & 3u) != 3u);
+        }
+        auto* se_tens = h.child(42);  // se=7：十位也隐藏
+        CHECK(se_tens != nullptr);
+        if (se_tens) CHECK((se_tens->visual.flags & 3u) != 3u);
     }
     CHECK(h.menu->error.empty());
 }

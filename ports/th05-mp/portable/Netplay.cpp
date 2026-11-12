@@ -95,10 +95,7 @@ EMSCRIPTEN_KEEPALIVE int th05_net_reset(int delay,int limit){
  active=false;audioOpen=false;audio.clear();hashes.clear();nextFrame=frontier=rollbacks=resimulated=predicted=lastBytes=worldRevision=0;
  Netplay::CoreConfig config;config.playerCount=Run().count;config.localPlayer=Run().local;config.inputDelay=delay;
  config.maxRollbackFrames=limit?limit:MaxPredictionFrames;config.allowPrediction=limit!=0;
- // Directions are held input, like shot and focus. Keep the latest direction
- // through the allowed window so a steady hold does not force a correction
- // every frame when the peer is more than two frames behind.
- config.predictableButtons=15|32|64;config.directionButtons=15;config.maxDirectionPredictionFrames=limit;
+ config.predictableButtons=15|32|64;config.directionButtons=15;config.prediction=Netplay::InputPrediction::ConfirmedHold;
  config.directTouchIsAbsolute=true;
  Netplay::RollbackJournalConfig storage;storage.maxFrames=10;storage.maxBytesPerFrame=1024*1024;storage.maxBlocksPerFrame=64;storage.coalesceRestore=true;storage.fastBulkCopy=true;
  if(!core.Reset(config)||!journal.Reset(storage))return 0;

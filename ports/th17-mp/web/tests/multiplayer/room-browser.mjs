@@ -30,6 +30,8 @@ const verifyReplay=process.argv.includes('--replay');
 const checkPresentation=process.argv.includes('--check-presentation');
 const verifyTransfer=process.argv.includes('--life-transfer');
 const verifyGhost=process.argv.includes('--ghost-revive');
+const challenge=process.argv.includes('--challenge');
+const spectatorState=words=>challenge?[...words.slice(0,39),...words.slice(51)]:words;
 const independent=process.argv.includes('--independent-pages');
 const cpuProfile=process.argv.includes('--cpu-profile');
 const traceGaps=process.argv.includes('--trace-gaps');
@@ -82,6 +84,8 @@ const directInput=touchDrag&&!!JSON.parse(await readFile(resolve(runtime,'runtim
 if(extraBoss)assert.ok(manifest.features.roomBenchmark&&rollback&&difficulty===4,'Extra boss profiling needs the dedicated Extra rollback benchmark build');
 if(verifyGhost)assert.ok(manifest.features.roomBenchmark&&throughStageTwo&&roomSeatCounts[0]===3,
  'Ghost revival requires a three-seat benchmark room through Stage 2');
+if(challenge)assert.ok(manifest.features.roomBenchmark&&difficulty!==4&&!verifyGhost&&!fixtureStage,
+ 'Challenge fixture requires the story benchmark runtime');
 const baseline=process.env.TH17_ROOM_BASELINE?JSON.parse(await readFile(process.env.TH17_ROOM_BASELINE,'utf8')):null;
 const priorMemory=extraFinale&&baseline?JSON.parse(await readFile(resolve(dirname(process.env.TH17_ROOM_BASELINE),'heap-samples.json'),'utf8')):null;
 const baselineBoss=baseline?.reports[0]?.bossPatterns?.find(pattern=>pattern.spell>=91)?.boss;
@@ -203,14 +207,16 @@ try{
    await lobby(socket,null,value=>!!value.room);
    await lobby(socket,{type:'take-seat',seat,loadout:seat*3+seat},value=>!!value.room?.seats[seat]);
   }
+  if(challenge)await lobby(members[0],{type:'settings',playerCount:seats,difficulty,challengeMode:true},value=>value.room?.challengeMode===true);
   for(const [seat,socket] of members.entries())
    await lobby(socket,{type:'set-ready',ready:true},value=>value.room?.seats[seat]?.ready);
   const timing={adonisMode:rollback?0:1,inputDelay:rollback?0:2,inputDelayAuto:false};
   const start=await lobby(members[0],{type:'start',...timing},value=>value.type==='start');
+  assert.equal(start.room.challengeMode,challenge);
   options=Array.from({length:seats},(_,seat)=>({
    ...(touchDrag?{touchEnabled:true,touchMovementMode:'touch-unlimited'}:{}),
    netplayMode:'lan',netplayAdonisMode:timing.adonisMode,netplayInputDelay:timing.inputDelay,netplayAllowWebsocketFallback:!extraBoss,
-   netplayPlayer:seat,netplayPlayerCount:seats,netplaySeed:1234,netplayDifficulty:difficulty,netplayLoadouts:loadouts,
+   netplayChallengeMode:challenge,netplayPlayer:seat,netplayPlayerCount:seats,netplaySeed:1234,netplayDifficulty:difficulty,netplayLoadouts:loadouts,
    ...(seatRenderScales||requestedRenderScale?{renderScale:seatRenderScales?.[seat]??renderScale}:{}),
    netplayUrl:endpoint+new URLSearchParams({room,run:String(start.serial),member:room+'-private-'+seat}),
   }));
@@ -289,8 +295,9 @@ try{
     assert.equal(event.event,'audio-health',JSON.stringify(event));
    }));
    const frames=pages.flatMap(current=>current.frames().filter(frame=>frame.url().includes('/runtime/')));
-   if(verifyGhost)for(const frame of frames)
-    assert.equal(await frame.evaluate(()=>Module._th17_room_fixture_ghost(2)),1,'schedule the same last-life hit on each peer');
+   if(verifyGhost||challenge)for(const frame of frames)
+    assert.equal(await frame.evaluate(seat=>Module._th17_room_fixture_ghost(seat),seats-1),1,
+     'schedule the same last-life hit on each peer');
    if(touchDrag&&directInput)for(const [seat,frame] of frames.entries())await checkDirectInput(frame,seat+1);
    if(touchDrag)for(const touchSeat of touchSeats)await pageFor(touchSeat).evaluate(({seat,touchWindow,touchComparison,stagger})=>{
     let active=false,established=false,sent=0,lastDown=-100,downs=0,direct=0,fallback=0;
@@ -319,7 +326,7 @@ try{
     },1000/120);
    },{seat:touchSeat,touchWindow,touchComparison,stagger:touchSeats.length>1?1:0});
    for(const [seat,frame] of frames.entries()){
-    await frame.evaluate(({seat,rollback,extended,throughStageTwo,storyStage,fixtureStage,storyBulletFloor,denseExtra,extraBoss,extraFinale,storyTiming,traceGaps,tracePhases,verifyTransfer,verifyGhost,touchDrag,touchSeats,touchWindow,symmetricDelay,observeDisplay})=>{
+    await frame.evaluate(({seat,rollback,extended,throughStageTwo,storyStage,fixtureStage,storyBulletFloor,denseExtra,extraBoss,extraFinale,storyTiming,traceGaps,tracePhases,verifyTransfer,verifyGhost,challenge,touchDrag,touchSeats,touchWindow,symmetricDelay,observeDisplay})=>{
      const callback=Module.onGameFrame;
      if(traceGaps&&!Module._th17_room_wait_state)throw Error('Gap trace requires a runtime with room wait state');
      globalThis.stopRoomMeasurement=()=>{Module.onGameFrame=callback;};
@@ -559,7 +566,7 @@ try{
       globalThis.delayInput=rollback&&(symmetricDelay||seat===1)&&n>=115;
       for(let number=Math.max(recorded+1,committed-15);number<=committed;number++){
        const p=Module._th17_room_confirmed(number)>>>2;
-       const words=Array.from(Module.HEAPU32.subarray(p,p+(storyStatusSize||(verifyGhost?44:extraBoss?43:optimized?39:38))));
+       const words=Array.from(Module.HEAPU32.subarray(p,p+(storyStatusSize||(challenge?54:verifyGhost?44:extraBoss?43:optimized?39:38))));
        words[2]=0;
        if(words[0]===number&&number>120&&words[3]){
         samples.set(number,words);
@@ -598,7 +605,7 @@ try{
       Module._th17_key(45,+(seat===1&&n>=185&&n<193||extended&&n>=1800&&(n+seat*420)%840<9||
        denseExtra&&n>=1500&&(n+seat*420)%720<9));
      };
-    },{seat,rollback,extended,throughStageTwo,storyStage,fixtureStage,storyBulletFloor,denseExtra,extraBoss,extraFinale,traceGaps,tracePhases,verifyTransfer,verifyGhost,touchDrag,touchSeats,touchWindow,symmetricDelay,observeDisplay,storyTiming:checkPresentation&&difficulty!==4});
+    },{seat,rollback,extended,throughStageTwo,storyStage,fixtureStage,storyBulletFloor,denseExtra,extraBoss,extraFinale,traceGaps,tracePhases,verifyTransfer,verifyGhost,challenge,touchDrag,touchSeats,touchWindow,symmetricDelay,observeDisplay,storyTiming:checkPresentation&&difficulty!==4});
    }
    const viewers=[];
    let matchedOpening=false;
@@ -619,7 +626,8 @@ try{
     await view.waitForFunction(epoch=>ready.has(epoch),seat+1,{timeout:45000});
     const frame=view.frames().at(-1);
     await view.evaluate(seat=>startRuntime(seat),seat);
-    await frame.evaluate(()=>{
+    if(challenge)assert.equal(await frame.evaluate(seat=>Module._th17_room_fixture_ghost(seat),seats-1),1);
+    await frame.evaluate(challenge=>{
      const callback=Module.onGameFrame;
      const decoder=new TextDecoder();
      globalThis.spectatorSamples=new Map();
@@ -633,11 +641,11 @@ try{
       const timeline=spectatorTimeline();
       if(!timeline||timeline.seeking||spectatorSamples.has(timeline.position))return;
       const p=Module._th17_room_status()>>>2;
-      const words=Array.from(Module.HEAPU32.subarray(p,p+39));
+      const words=Array.from(Module.HEAPU32.subarray(p,p+(challenge?54:39)));
       words[0]=timeline.position;words[2]=0;
       if(words[3])spectatorSamples.set(timeline.position,words);
      };
-    });
+    },challenge);
     viewers.push({label,view,frame});
    };
    if(verifySpectators){
@@ -670,7 +678,7 @@ try{
        const hosts=await frames[0].evaluate(numbers=>numbers.map(number=>samples.get(number)),opening.map(([number])=>number));
        let compared=0;
        for(const [index,[number,words]] of opening.entries())if(hosts[index]){
-        assert.deepEqual(words,hosts[index],'opening spectator world at frame '+number);
+        assert.deepEqual(spectatorState(words),spectatorState(hosts[index]),'opening spectator world at frame '+number);
         ++compared;
        }
        assert.ok(compared>=50);
@@ -916,7 +924,7 @@ try{
      for(const [number,actual] of values){
       const expected=first.get(number);
       if(!expected)continue;
-      assert.deepEqual(actual,expected,label+' spectator world at frame '+number);
+      assert.deepEqual(spectatorState(actual),spectatorState(expected),label+' spectator world at frame '+number);
       ++counts[actual[3]];
      }
      if(label==='early')assert.ok(counts[1]>=100,'early spectator matches Stage 1');
@@ -966,8 +974,16 @@ try{
      assert.deepEqual(reports.at(-1).bossPatterns,prior.bossPatterns,'boss patterns and projectile peaks agree with baseline');
     }
    }
-   assert.equal(initial[19],4,'Otter starts with four bombs');
-   assert.ok(agreed.some(([,state])=>state[19]===3&&state[15]===initial[15]),'guest spends their own bomb');
+   if(challenge){
+    assert.ok(agreed.every(([,state])=>!state[43]&&loadouts.every((_,seat)=>state[15+seat*4]===0)),
+     'challenge pilots have no bombs and never become ghosts');
+    const seat=seats-1;
+    assert.ok(agreed.some(([frame,state])=>frame>=920&&state[51+seat]>0&&state[14+seat*4]===0&&state[13+seat*4]<480*128),
+     'the last-life hit increments this pilot’s Miss count and the pilot respawns');
+   }else{
+    assert.equal(initial[19],4,'Otter starts with four bombs');
+    assert.ok(agreed.some(([,state])=>state[19]===3&&state[15]===initial[15]),'guest spends their own bomb');
+   }
    assert.ok(agreed.some(([,state])=>(state[12]|0)<(state[16]|0)),'left and right belong to different pilots');
    if(seats===3)assert.ok(agreed.some(([,state])=>state[21]<state[13]),'third pilot moved up independently');
    if(independent)await Promise.all(pages.map((current,seat)=>current.screenshot({path:resolve(out,seats+'p-seat'+(seat+1)+'.png')})));
@@ -994,6 +1010,8 @@ try{
      return Module.HEAPU32[pointer]>=target;
     },frame,{timeout:15000});
     await waitReplay(120);
+    if(challenge)assert.equal(await viewer.evaluate(()=>Module.HEAPU32[(Module._th17_room_status()>>>2)+19]),0,
+     'the saved challenge replay starts without bombs');
     const canvas=viewer.locator('canvas');
     const firstImage=await canvas.screenshot();
     await waitReplay(220);

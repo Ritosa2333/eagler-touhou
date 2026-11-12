@@ -85,6 +85,7 @@ export function createRoomDirectory({
       startedAt: room.lobby.startedAt || 0,
       host: publicNames ? seats[0]?.name || '' : initial(seats[0]?.name),
       disableCheatMovement: room.lobby.disableCheatMovement === true,
+      ...(match[1] === 'th09mp' && room.lobby.unrated ? {unrated: true} : {}),
       challengeMode: room.lobby.challengeMode === true,
       prankMode: room.lobby.prankMode === true,
       spectators,

@@ -8,11 +8,11 @@
  .workspace-product-heading .workspace-product-trigger{width:44px;height:44px;min-height:44px;margin-inline:-6px -9px}
 }
 /* Desktop uses the available width/height; stacked layouts follow image height. */
-#player:is(.room-workspace,.replay-workspace) #gameViewport:not(:fullscreen,:-webkit-full-screen){
+#player:is(.room-workspace,.replay-workspace) #gameViewport:not(:is(:fullscreen,:-webkit-full-screen)){
   flex:1;box-sizing:border-box;min-height:0;min-width:0;width:100%!important;
   height:auto!important;max-height:var(--workspace-game-height,none);aspect-ratio:auto;
 }
-#player:is(.room-workspace,.replay-workspace) #gameViewport[data-workspace-stacked]:not(:fullscreen,:-webkit-full-screen){
+#player:is(.room-workspace,.replay-workspace) #gameViewport[data-workspace-stacked]:not(:is(:fullscreen,:-webkit-full-screen)){
   flex:none;
   height:var(--workspace-game-height,auto)!important;
   aspect-ratio:4/3;

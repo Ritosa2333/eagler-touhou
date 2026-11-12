@@ -52,7 +52,7 @@ function RoomChatLog({model, mobile, decisions}: {
     return () => observer.disconnect();
   }, [entries, muted, mobile]);
   const messages = entries.filter(entry => !muted.includes(entry.clientId)).map(entry => (
-    <p key={entry.id} className="room-chat-entry" data-speaker={entry.spectator?'spectator':'player'}>
+    <p key={entry.id} className="room-chat-entry" data-speaker={entry.rating ? 'rating' : entry.spectator?'spectator':'player'}>
       <ChatAvatar entry={entry} model={model}/>
       <ChatMessageContent entry={entry} model={model} label={locale === 'en' ? entry.phrase.en : entry.phrase.zh}
         confirmReport={decisions ? confirmReport : undefined} directReport={mobile}/>

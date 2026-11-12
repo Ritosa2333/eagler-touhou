@@ -314,6 +314,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
             optionsOpen={presence.open}
             roomOpen={roomOpen}
             roomDrawer={host.roomDrawer}
+            onDonation={() => navigation.openInfoDialog('donationDialog')}
           >
             {host.roomSurface}
           </LibrarySurface>

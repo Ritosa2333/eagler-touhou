@@ -12,7 +12,7 @@ Netplay::CoreConfig core_config(const SessionSetup& setup,std::uint8_t input_del
     core.maxRollbackFrames=std::uint8_t(setup.prediction_limit);
     core.allowPrediction=setup.adonis_mode!=unsigned(Netplay::AdonisMode::Delay);
     core.predictableButtons=1|4|16|32|64|128;
-    core.directionButtons=16|32|64|128;core.maxDirectionPredictionFrames=2;
+    core.directionButtons=0xf0;core.prediction=Netplay::InputPrediction::ConfirmedHold;
     return core;
 }
 }

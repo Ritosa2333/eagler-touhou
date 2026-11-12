@@ -34,7 +34,7 @@ try {
       }
     }
   }
-  await page.click('.account-tabs button:last-child');
+  await page.click('.account-switch');
   await page.waitForSelector('[name=username]');
   assert.equal(await page.$eval('.account-mode-content', el => getComputedStyle(el).animationName), 'account-mode-enter');
   await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);

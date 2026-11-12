@@ -586,7 +586,10 @@ export class Renderer {
     return this.renderPresentation(null,this.capturePresentation(core,{...fps,presentationContinuity:false}),1);
   }
   renderPresentation(previous,current,interpolationAlpha=1,live={}){
-    const endpoint=(live.extrapolate?extrapolatePresentation:interpolatePresentation)(previous,current,interpolationAlpha),{hud:h,backgroundVisible,screenShake,hasStageSurface}=endpoint,
+    const endpoint=live.extrapolate
+      ?extrapolatePresentation(previous,current,interpolationAlpha,live.localPredictionSeat)
+      :interpolatePresentation(previous,current,interpolationAlpha);
+    const {hud:h,backgroundVisible,screenShake,hasStageSurface}=endpoint,
       source=this.stageBackgrounds.get(endpoint.stage),background=source&&endpoint.logicalBackground!==current.logicalBackground&&endpoint.logicalBackground?.loaded
         ?source.geometry(endpoint.logicalBackground.frame,endpoint.logicalBackground):endpoint.background;
     this.begin();const g=this.gl;g.enable(g.SCISSOR_TEST);g.scissor(32,16,384,448);

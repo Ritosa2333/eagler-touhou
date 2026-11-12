@@ -1,0 +1,19 @@
+@layer components {
+  html[data-ui-home] body:not(.mp-room-active) .main.library-layout {min-height: 100svh;}
+  .site-footer {margin-top: 64px; background: var(--kit-card); color: var(--kit-foreground);}
+  body.mp-room-active .site-footer {display: none;}
+  .site-footer-grid {max-width: 1120px; margin: auto; padding: 32px var(--launcher-layout-gutter) 36px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 24px;}
+  .site-footer-brand {grid-column: 1 / -1; display: flex; align-items: flex-start; width: 132px;}
+  .site-footer-brand .site-brand {width: 100%;}
+  .site-footer h2 {margin: 0 0 8px; font: 500 15px / 24px var(--kit-font);}
+  .site-footer nav {min-width: 0;}
+  .site-footer nav :is(a, button) {display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 0; border: 0; background: transparent; color: var(--kit-muted-foreground); font: 400 14px / 20px var(--kit-font); text-decoration: none; text-align: left; overflow-wrap: anywhere; cursor: pointer;}
+  .site-footer nav svg {width: 15px; height: 15px; flex: none; stroke-width: 1.7;}
+  .site-footer nav .site-footer-social-icon {fill: currentColor; stroke: none;}
+  .site-footer nav .site-footer-external {width: 12px; height: 12px; margin-left: -4px; opacity: .65;}
+  .site-footer nav span .site-footer-external {display: inline; margin-left: 0; vertical-align: -1px;}
+  .site-footer nav :is(a, button):hover {color: var(--kit-foreground); text-decoration: underline; text-underline-offset: 4px;}
+  .site-footer :is(a, button):focus-visible {outline: 2px solid var(--kit-ring); outline-offset: 3px;}
+  @media (min-width: 720px) {.site-footer {margin-top: 96px;}.site-footer-grid {grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; padding-block: 40px 44px;}}
+  @media (min-width: 960px) {.site-footer-grid {grid-template-columns: 160px repeat(3, minmax(100px, 1fr)) minmax(190px, 1.25fr); gap: 32px;}.site-footer-brand {grid-column: auto; padding-top: 2px;}}
+}

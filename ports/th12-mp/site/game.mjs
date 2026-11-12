@@ -67,7 +67,8 @@ function drawGamePresentation(interpolate=true){
   const extrapolate=interpolate&&interpolateGamePresentation();
   const alpha=extrapolate?Math.min(1,accumulator/logicalStep):1;
   const fps=gameMeter.frame(performance.now(),previousPresentation,currentPresentation,extrapolate?1+alpha:1,['playing','demo'].includes(model.state.scene));
-  renderer.renderPresentation(previousPresentation,currentPresentation,alpha,{currentFps:fps,extrapolate});
+  const localPredictionSeat=extrapolate&&multiplayer?.active&&!runtimeOptions.netplaySpectator&&!runtimeOptions.replayViewer?(runtimeOptions.netplayPlayer??0):null;
+  renderer.renderPresentation(previousPresentation,currentPresentation,alpha,{currentFps:fps,extrapolate,localPredictionSeat});
 }
 function updatePracticeUI(){
   if(!practiceUI||!model)return;

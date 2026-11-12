@@ -3,7 +3,6 @@ import {OverflowText} from '../../ui/overflow-text';
 import {Ellipsis, Plus, UserRound} from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { multiplayerDisplayInitial } from '../../../src/launcher/multiplayer-identity.mts';
-import { formatTh09WinRate } from '../../../src/launcher/th09-room-stats.mts';
 import type { MultiplayerRoomService, RoomOwnerSnapshot } from '../../services/multiplayer-room';
 import { useLocale } from '../../i18n';
 import {accountsEnabled} from '../../release-features';
@@ -12,6 +11,8 @@ import {RoomActionMenu} from './RoomActionMenu';
 import {ParticipantAvatar} from './ParticipantAvatar';
 import {animateSurface, animateUiFrames, type SurfaceAnimation} from '../../ui/surface-motion';
 import type { RoomNetworkPresentation, RoomPanelKind, RoomViewContext } from './types';
+import {useTh09Ratings, type Th09Rating} from '../../services/th09-ratings';
+import {Th09RatingText} from './Th09RatingText';
 export interface RoomSeatsProps {
   state: RoomOwnerSnapshot;
   service: Pick<MultiplayerRoomService, 'takeSeat' | 'movePlayerToSpectator' | 'removePlayer' | 'getSnapshot'>;
@@ -20,6 +21,7 @@ export interface RoomSeatsProps {
   openPanel(kind: RoomPanelKind, trigger: HTMLElement, peerId?: string): void;
 }
 export function RoomSeats(props: RoomSeatsProps) {
+  const {players, mine} = useTh09Ratings(props.state.product === 'th09mp');
   return (
     <div
       className="mp-seat-stage"
@@ -27,7 +29,7 @@ export function RoomSeats(props: RoomSeatsProps) {
       data-player-count={props.state.room?.playerCount}
     >
       {[0, 1, 2].map((index) => (
-        <RoomSeat {...props} index={index} key={index} />
+        <RoomSeat {...props} index={index} ratings={players} myRating={mine} key={index} />
       ))}
     </div>
   );
@@ -39,8 +41,10 @@ function RoomSeat({
   context,
   openPanel,
   index,
-}: RoomSeatsProps & { index: number }) {
-  const { t, locale } = useLocale(),
+  ratings,
+  myRating,
+}: RoomSeatsProps & { index: number; ratings: Readonly<Record<string, Th09Rating>>; myRating?: Th09Rating }) {
+  const { t } = useLocale(),
     presentation = roomPresentation(state, t)!;
   const { room, ready, owner, label } = presentation;
   const node = useRef<HTMLElement>(null), watermark = useRef<HTMLSpanElement>(null),
@@ -130,11 +134,8 @@ function RoomSeat({
                 : t('room.peerDownloading', { percent: resource.percent });
   const resourceStopped = resource?.status === 'failed' || resource?.status === 'cancelled';
   const duel = state.product === 'th09mp';
-  const record = duel && accountsEnabled ? seat?.profile?.th09 : undefined;
-  const mainCaption = duel
-    ? record ? t('th09.accountCard', {games:record.games,rate:formatTh09WinRate(record, locale) ?? '—'}) : ''
-    : seatLabel;
-  const caption = resourceStopped ? resourceLabel : [mainCaption, controlLabel && `(${controlLabel})`].filter(Boolean).join(' ');
+  const ratingProfile = duel && accountsEnabled && !resourceStopped ? seat?.profile : undefined;
+  const caption = resourceStopped ? resourceLabel : [duel ? '' : seatLabel, controlLabel && `(${controlLabel})`].filter(Boolean).join(' ');
   const resourceReady = !resourceStopped && (resource?.status === 'ready' || seat?.ready === true);
   const canManage = index > 0 && ready && owner && room.phase === 'lobby' && !!seat;
   const base = resourceStopped ? 0 : resourceReady || resource?.stage === 'runtime' ? 100 : resource?.basePercent ?? resource?.percent;
@@ -227,8 +228,8 @@ function RoomSeat({
         <div className="mp-seat-identity">
           {name}
           <span className="mp-seat-details">
-            <span className="mp-seat-loadout" hidden={!caption} title={caption} role={resourceStopped ? 'status' : undefined}>
-              {caption}
+            <span className="mp-seat-loadout" hidden={!caption && !ratingProfile} title={caption || undefined} role={resourceStopped ? 'status' : undefined}>
+              {ratingProfile ? <><Th09RatingText player={ratings[ratingProfile.username]} mine={myRating} games={ratingProfile.th09?.games}/>{caption && ` ${caption}`}</> : caption}
             </span>
             {!resourceStopped && <span className="sr-only" role="status">{status}</span>}
           </span>
