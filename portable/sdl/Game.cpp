@@ -206,6 +206,7 @@ bool Game::start_replay_stage(const Replay& replay,const ReplayStage& stage,bool
         auto params=*replay.extension.practice;params[19]=1;
         if(params[2]+1!=stage.number||th12_practice_configure(params.data(),int(params.size()))!=1||th12_practice_prepare_replay(replay.info.difficulty)!=1){error=th12::practice::lastError();return false;}
     }
+    th12::practice::applyReplayToolState(replay.extension.tool_state(stage.number,0));
     std::array<i32,38> words{};const auto initial=stage.initial.words();
     std::copy(initial.begin(),initial.end(),words.begin());std::copy(stage.spell_times.begin(),stage.spell_times.end(),words.begin()+17);
     if(th12_start_replay(replay.info.character,replay.info.shot,replay.info.difficulty,stage.seed,words.data(),38)!=1)return false;
