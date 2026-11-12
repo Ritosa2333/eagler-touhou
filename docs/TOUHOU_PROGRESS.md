@@ -104,6 +104,8 @@ TH14文字样式布局改变，因此重新编译全部141个游戏单元、146�
 
 原版相机角色校正：[实际reset参数及Stage复制／绘制指令](https://github.com/AdingApkgg/thp/blob/bd2f4d966e2e82a0e16dc98d4898c3ade83d4178/docs/porting/TH14_CAMERA_ROLES_NOV12.md)确认full=`0x4d93e8`、play=`0x4d9190`、scaled=`0x4d92bc`、world=`0x4d9514`。此前将`0x4d9190`写成world并称其原始XY自然8字节对齐的说明错误，已更正并保留原记录；实际world的XY在`0x4d9544`，非自然8字节对齐，但落在同一实测64字节缓存行内。原子性依据明确限定普通缓存映射下P6及后续CPU的缓存行内非对齐访问规则，未实测历史页保护；不能从Unicorn写钩子推导硬件原子性。C++的world角色及8字节对齐实现不变，仅校正误导性注释，SDK／浏览器compositor对象逐字节相同，其他对象未重复编译。当前运行包仍为`572751a8`／Wasm`9b17c2e2…`，本次未重新部署、未启动游戏或GPU，也未新增验收模式。新浏览器页已创建并被inventory确认，但Chrome仍未附加调试器，未进行游戏UI输入或要求人工恢复；24次RNG差异及完整图像／流程等未完成项继续保留。
 
+mode8非零三轴旋转：[当前实现与原版矩阵分支对照](https://github.com/AdingApkgg/thp/blob/bb4804701153694d9e5dc31d298b4ea160847c1d/docs/porting/TH14_MODE8_ROTATION_ORDER_NOV12.md)补上此前零旋转样本以外的范围。矩阵生产及实际renderer分支各3,456组、114,048个字均为0差异，覆盖非零XYZ、父级、3种显示宽度、4种分辨率字段及order0..7；改变角度及次序的负对照均能检出变化。原版矩阵片段采用合成VM／sprite输入，旋转与乘法由固定的Windows x86 D3DX DLL服务执行，未继承游戏进程FPU环境；实际renderer路径只记录矩阵，不包含材质／几何提交或GPU像素验收。本次未启动游戏／GPU／录像，未改引擎行为或重新部署。当前运行包仍为572751a8／Wasm9b17c2e2；24次RNG差异、整帧像素、完整模式／流程等未完成项继续保留。
+
 ## [th15] 東方紺珠伝 v1.00b
 
 ### th15 多人联机
