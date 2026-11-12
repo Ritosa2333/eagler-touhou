@@ -1,0 +1,2216 @@
+diff --git a/docs/porting/TH14_ANM_VM_ORACLE.md b/docs/porting/TH14_ANM_VM_ORACLE.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..25fc1a71c6a044f980e895c3db674984195049c5
+--- /dev/null
++++ b/docs/porting/TH14_ANM_VM_ORACLE.md
+@@ -0,0 +1,27 @@
++# TH14 ANM VM 原版对照
++
++原版基线为 TH14 日文 1.00b。Oracle 执行原版 VM 更新入口 46fe50，并与 Web/GLES 构建的生产对象逐帧比较指令位置、时钟、标志、旋转、缩放、四角 UV、颜色和 RNG 状态。测试输入、全局显示参数和随机种子固定；原版安全 cookie 检查替换为直接返回。字库选择另执行原版 40b530，到实际资源加载调用前读取文件名。
++
++| 对照项目 | 修复后 |
++| --- | --- |
++| 时钟、减速、延时、等待、中断、删除和停止 | 27 组相同 |
++| 向量、颜色和缩放插值 | 32 组相同 |
++| 速度更新与浮点参数引用 | 28 组相同 |
++| 滚动速度插值，双轴各测全部 32 种模式 | 128 组相同 |
++| ANM 411 的 Z 轴角度插值，含跨 ±π、与向量插值重叠、零时长 | 130 组相同 |
++| ANM 418／419 一次性及持续屏幕 UV | 4 组相同 |
++
++归档扫描通过生产 PBG 和 ANM 加载器。57 个文件共 1,906 个脚本、40,091 条指令（不含结束标记），实际使用的 90 个操作码均有映射。原版有 128 个非默认操作码（不含结束标记），本次补齐其中缺少的 411、418、419。零售归档未使用这三条。
++
++- **字库。** 同步加载、C++ 启动 worker 和 WebGPU 后台预读均按实际显示尺寸选用 ascii.anm、ascii_960.anm 或 ascii_1280.anm。Web 的内部尺寸固定为 1280×960，使用原版高清素材并按素材尺寸绘制。继续保留队列坐标、文字步进及原版分辨率标志的处理。抽查的数字／标点槽尺寸由 16×16 变为 32×32；回退精灵槽 258 从 6×6 变为 14×14。
++- **速度更新。** 和原版 472ae9 一样，只有 flags2 的 0x800000 开启时才更新角速度、缩放速度和 UV。X 缩放速度只置缩放脏位，ANM 415 写入全零角速度不再置旋转脏位；归档里有 13 处全零角速度。Y 缩放先舍入乘法再相加。
++- **滚动插值。** ANM 427／428 只设置速度插值；UV 是否滚动仍由速度更新标志决定。标志开启时按原版 414140 分步舍入。
++
++复查命令（依赖 Python Unicorn、Node 和 Emscripten；原版文件留在本地）：
++
++```powershell
++python tools/th14-build-gles.py --emsdk "<sdk>" --out artifacts/anm-vm-build --jobs 3
++python tools/th14-anm-vm-oracle.py --exe "<retail>/th14.exe" --archive "<retail>/th14.dat" --build artifacts/anm-vm-build --emsdk "<sdk>" --report artifacts/anm-vm-report.json
++```
++
++加 `--strict` 时，VM 差异、缺失操作码或字库选择不符都会返回非零。报告记录每个不同字段的原版和移植 32 位原始值。修复前的 120 组对照中有 31 组不同、3 组未映射。修复后扩展至 349 组全部相同；另有 69 组[界面对照](TH14_UI_ORACLE.md)通过。父子 VM 管理、绘制队列、完整战斗和最终像素未由这份组件对照覆盖。
+diff --git a/docs/porting/TH14_BROWSER_PERFORMANCE.md b/docs/porting/TH14_BROWSER_PERFORMANCE.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..aed12841c77356413562ceffd4f99cb17767b06f
+--- /dev/null
++++ b/docs/porting/TH14_BROWSER_PERFORMANCE.md
+@@ -0,0 +1,26 @@
++# TH14 browser frame pacing
++
++The browser accumulates refresh time separately from the retail deadline
++model. Fractional credit survives timestamp jitter; each callback executes
++at most two updates. When the refresh is slow, steady live gameplay may run
++both updates and submit only the latest scene. Each update still processes
++input, collisions, animation, sound and game time. Loading, menus, dialogue,
++replay playback, user-configured frame skip and capture requests retain
++their existing update and presentation boundaries.
++
++The implicit WebGL canvas presents when the RAF host returns. The TH14
++browser backend therefore skips SDL's extra Asyncify sleep after the blit.
++The host reserves its next RAF before entering its serialized Wasm callback
++and keeps at most one frame in flight.
++
++GLES reuses the same eye/clip matrices for fog, projectability and vertex
++submission. The ordinary positive-W world batch bypasses the near-clip
++scratch; batches that can cross W still use the exact clipper. The color-only
++shader omits unused fragment depth exports. D16 comparisons or writes still
++use the original quantization path.
++
++Run `node --test tools/tests/test-th14-frame-scheduler.mjs` for the async
++frame queue and compile `runtimes/th12/th12_web/tests/cpp/th14-browser-cadence.cpp`
++with `-DPORT_TITLE=14` for the browser clock. Measure Stage 1 separately as
++logical updates and presentations: on a slow device these are intentionally
++different. The game backbuffer and UI remain 1280×960.
+diff --git a/docs/porting/TH14_UI_ORACLE.md b/docs/porting/TH14_UI_ORACLE.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..82e762598ebfb6f125e7844ade222b0f09b42fb4
+--- /dev/null
++++ b/docs/porting/TH14_UI_ORACLE.md
+@@ -0,0 +1,13 @@
++# TH14 界面 Oracle
++
++使用日文 1.00b 的原版 `th14.exe`、启用 SDL3 的 Emscripten SDK、Node.js 和安装了 Unicorn 的 Python。先用当前源码构建 GLES Runtime，再用同一构建的游戏对象运行对照。
++
++```sh
++python -m pip install unicorn
++python tools/th14-build-gles.py --emsdk /path/to/emsdk --out artifacts/th14-ui
++python tools/th14-ui-oracle.py --exe /path/to/th14.exe --emsdk /path/to/emsdk --build artifacts/th14-ui --report artifacts/th14-ui/oracle.json
++```
++
++Oracle 执行原版暂停截图矩形、曲线激光顶点、位图四边形和续关次数初始化，并读取原版菜单音效调用与 WAV 映射。位图对照为两边提供相同的各分辨率素材尺寸，验证位置缩放不会再次放大位图。实际字库的选择由 [ANM VM Oracle](TH14_ANM_VM_ORACLE.md) 验证。曲线激光在两边使用同一中间画面坐标原点。候选侧还验证旧配置中的各个显示模式在网页里都使用 1280×960。
++
++对照使用受控的菜单状态、几何和截图接口。浏览器像素、纹理采样和实际 PCM 需要在游戏内验证。出现差异时命令返回非零退出码，JSON 同时保留原版预期和候选输出。
+diff --git a/runtimes/th12/portable/sdl/FrameCadence.hpp b/runtimes/th12/portable/sdl/FrameCadence.hpp
+index a53fbc3b90b344febae9e9b81619c0ea548eae9c..4591ba821d7f94647dfd9dc3b065a2c508066d29 100644
+--- a/runtimes/th12/portable/sdl/FrameCadence.hpp
++++ b/runtimes/th12/portable/sdl/FrameCadence.hpp
+@@ -11,12 +11,23 @@ struct FrameCadence {
+     // Retail46a720 advances expired deadlines without replaying their outer
+     // update/draw chains. Host display opportunities still own the polling.
+     FrameDispatchTh14 dispatch;
+-    double now=0;
+-    void reset(){now=0;dispatch.reset();}
++    double now=0,display_debt=0;
++    void reset(){now=display_debt=0;dispatch.reset();}
+     unsigned advance(double seconds){
+         now+=seconds;
+         return dispatch.begin(now,false).update?1u:0u;
+     }
++    unsigned advance_display(double seconds,bool stable_gameplay){
++        if(!std::isfinite(seconds)||seconds<0){display_debt=0;return 0;}
++        // Retain the fractional time across RAF jitter. A small early
++        // update is paid back from the next interval, including at 120 Hz.
++        display_debt=std::min(2*interval,display_debt+seconds);
++        const auto due=unsigned(std::floor(std::max(0.,display_debt+.00125)/interval));
++        display_debt-=due*interval;
++        // The original update policy remains for loading and menus. Only
++        // steady play may take one extra update after a missed refresh.
++        return stable_gameplay?due:std::min(1u,due);
++    }
+ #else
+     // Other titles retain their existing bounded catch-up policy.
+     double debt=0;
+diff --git a/runtimes/th12/portable/sdl/Renderer.cpp b/runtimes/th12/portable/sdl/Renderer.cpp
+index 086076dbaa745c3b3874633575e322e4bd6a6e83..55e80993ad6e7cb907a1ec38b34619b84383eab4 100644
+--- a/runtimes/th12/portable/sdl/Renderer.cpp
++++ b/runtimes/th12/portable/sdl/Renderer.cpp
+@@ -88,6 +88,16 @@ bool Renderer::initialize(){
+    warm.texture=texture;auto& p=warm.pipeline;p.alphaTest=alpha;p.fog=fog;p.alphaCompare=Compare::GreaterEqual;
+    p.color.operation=p.alpha.operation=op;p.color.first=p.alpha.first={op==ColorOperation::First?ArgumentSource::Diffuse:ArgumentSource::Texture};p.color.second=p.alpha.second={second};select(warm);
+  }
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++ // The fogged world and ordinary textured sprites use the depth variants.
++ // Other uncommon combinations can still use the prelinked generic shader.
++ warm.depth=1;warm.texture=1;
++ for(bool fog:{false,true})for(bool alpha:{false,true})for(auto second:{ArgumentSource::Diffuse,ArgumentSource::Factor}){
++   auto& p=warm.pipeline;p.fog=fog;p.alphaTest=alpha;
++   p.color.operation=p.alpha.operation=ColorOperation::Multiply;p.color.first=p.alpha.first={ArgumentSource::Texture};
++   p.color.second=p.alpha.second={second};select(warm);
++ }
++#endif
+  resampleProgram=glCreateProgram();const auto rv=shader(GL_VERTEX_SHADER,resampleVertex),rf=shader(GL_FRAGMENT_SHADER,resampleFragment);
+  glAttachShader(resampleProgram,rv);glAttachShader(resampleProgram,rf);glLinkProgram(resampleProgram);glDeleteShader(rv);glDeleteShader(rf);
+  GLint linked=0;glGetProgramiv(resampleProgram,GL_LINK_STATUS,&linked);if(!linked){failure="Resample program link failed";return false;}
+@@ -114,13 +124,21 @@ void Renderer::transform(MatrixKind kind,const void* p){auto& m=state.matrix[u32
+ void Renderer::viewport(const Viewport& v){state.viewport=v;}
+ void Renderer::select(const State& s){
+  const auto& p=s.pipeline;auto arg=[](Argument a){return u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u);};
+- std::array<u32,10> key{u32(!!s.texture),u32(p.alphaTest),u32(p.fog),u32(p.color.operation),u32(p.alpha.operation),arg(p.color.first),arg(p.color.second),arg(p.alpha.first),arg(p.alpha.second),u32(p.alphaCompare)};auto it=programs.find(key);
++ u32 textureAndDepth=u32(!!s.texture);
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++ // If the depth comparison always passes and writes are off, the depth
++ // output is unused. The colour-only variant never exports gl_FragDepth.
++ const bool depthOutput=version==10&&(warming?bool(s.depth):
++   p.depthTest&&s.depth&&(p.depthWrite||p.depthCompare!=Compare::Always)&&resolve(owner,s.depth).format==PixelFormat::Depth16);
++ textureAndDepth|=u32(depthOutput)<<1;
++#endif
++ std::array<u32,10> key{textureAndDepth,u32(p.alphaTest),u32(p.fog),u32(p.color.operation),u32(p.alpha.operation),arg(p.color.first),arg(p.color.second),arg(p.alpha.first),arg(p.alpha.second),u32(p.alphaCompare)};auto it=programs.find(key);
+  if(it==programs.end()&&!warming){program=&generic;++stats.genericBatches;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}return;}
+  if(it==programs.end()){
+   ++stats.programCompiles;
+   static const char* constants[]{"hasTexture","alphaTest","fogEnabled","colorOp","alphaOp","colorArg1","colorArg2","alphaArg1","alphaArg2","alphaFunc"};
+   std::string source=fragmentSource,defs;if(!buildingGeneric){replace(source,"uniform bool hasTexture,alphaTest,fogEnabled;","");replace(source,"uniform int colorOp,alphaOp,colorArg1,colorArg2,alphaArg1,alphaArg2,alphaFunc;","");
+-  for(int i=0;i<10;i++)defs+="const "+std::string(i<3?"bool ":"int ")+constants[i]+"="+(i<3?(key[i]?"true":"false"):std::to_string(key[i]))+";\n";
++  for(int i=0;i<10;i++)defs+="const "+std::string(i<3?"bool ":"int ")+constants[i]+"="+(i<3?((i==0?(key[i]&1u):key[i])?"true":"false"):std::to_string(key[i]))+";\n";
+   replace(source,"precision highp float;","precision highp float;\n"+defs);}
+   // Match byte alpha after the measured RGBA8 conversion. Float32 arithmetic
+   // alone differs at rounding boundaries on some devices.
+@@ -128,6 +146,8 @@ void Renderer::select(const State& s){
+   if(version==8)replace(source,"float a=c.a*255.0","float a=floor(c.a*255.0+.5)");
+   if(version==8)replace(source,"gl_FragDepth=depth16?(floor(scaled)+floor(fract(scaled)-gl_FragCoord.z+0.5))/65535.0:gl_FragCoord.z;","");
+ #if defined(PORT_TITLE) && PORT_TITLE == 14
++  if(version==10&&!buildingGeneric&&!depthOutput)
++    replace(source,"gl_FragDepth=depth16?(floor(scaled)+floor(fract(scaled)-gl_FragCoord.z+0.5))/65535.0:gl_FragCoord.z;","");
+   // Installed D3D9 D16 conversion: truncate to twenty fractional bits,
+   // then round the sixteen-bit result to nearest with ties downward.
+   if(version==10){replace(source,"float scaled=gl_FragCoord.z*65536.0;","float quantized=floor(gl_FragCoord.z*1048576.0)/1048576.0;float scaled=quantized*65536.0;");replace(source,"floor(fract(scaled)-gl_FragCoord.z+0.5)","ceil(fract(scaled)-quantized-0.5)");}
+@@ -204,15 +224,47 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
+  if(webGpu){webGpu->issue(d,primitive,count,data,index,indexFormat,instance,instanceSize);return;}
+ #endif
+ #if defined(PORT_TITLE) && PORT_TITLE == 14
+- if(!clippedGeometry&&!index&&!d.layout.screen&&d.layout==attributes(VertexLayout::WorldUv)&&d.stride==20){
+-  if(instance){
+-   bool needsClip=false;const auto* records=static_cast<const u8*>(instance);
+-   for(u32 i=0;i<instanceSize/68;i++){State one=d;std::memcpy(one.matrix[0].data(),records+i*68,64);std::vector<Th14ClipVertex> temp;if(th14_clip_world_uv(one,primitive,count,data,temp)==1){needsClip=true;break;}}
++ const auto& p14=d.pipeline;
++ const bool nativeFog=version==10&&p14.fog&&!p14.rangeFog&&p14.fogMode==FogMode::Linear&&std::isfinite(p14.fogNear)&&std::isfinite(p14.fogFar)&&p14.fogNear!=p14.fogFar;
++ const bool worldClip=!clippedGeometry&&!index&&!d.layout.screen&&d.layout==attributes(VertexLayout::WorldUv)&&d.stride==20;
++ auto may_cross_w=[&](const std::array<float,16>& clip){
++   // The exact CPU clipper can only take ownership when at least one
++   // vertex has non-positive W. Do not build its UV/fog scratch for
++   // the ordinary in-front world quads.
++   if(!count)return false;
++   if(!data||count>65536||
++      (primitive!=Topology::Triangles&&primitive!=Topology::Strip&&primitive!=Topology::Fan))return true;
++   for(u32 i=0,n=vertex_count(primitive,count);i<n;++i){
++    float position[3];std::memcpy(position,static_cast<const u8*>(data)+i*d.stride,12);
++    if(!(th14_dot(clip,3,position)>0))return true;
++   }
++   return false;
++ };
++ std::array<float,16> eye{},clip{};
++ if(!d.layout.screen&&!instance){eye=th14_multiply(d.matrix[1],d.matrix[0]);clip=th14_multiply(d.matrix[2],eye);}
++ std::vector<u8> expanded;
++ if(instance){
++   const auto* records=static_cast<const u8*>(instance);
++   const u32 total=instanceSize/68;expanded.resize(total*136);
++   bool needsClip=false;
++   for(u32 i=0;i<total;++i){
++    std::array<float,16> model;std::memcpy(model.data(),records+i*68,64);
++    const auto view=th14_multiply(d.matrix[1],model), projected=th14_multiply(d.matrix[2],view);
++    if(worldClip&&may_cross_w(projected)){
++     State one=d;one.matrix[0]=model;std::vector<Th14ClipVertex> temp;
++     if(th14_clip_world_uv(one,primitive,count,data,temp)==1){needsClip=true;break;}
++    }
++    auto* destination=expanded.data()+i*136;
++    std::memcpy(destination,records+i*68,68);
++    if(nativeFog)std::memcpy(destination,view.data(),64);
++    std::memcpy(destination+68,projected.data(),64);
++    const float eligible=th14_primitive_projectable(static_cast<const float*>(data),d.stride,0,4,projected,d.viewport)?1.f:0.f;
++    std::memcpy(destination+132,&eligible,4);
++   }
+    if(needsClip){for(u32 i=0;i<instanceSize/68;i++){State one=d;std::memcpy(one.matrix[0].data(),records+i*68,64);std::memcpy(&one.pipeline.textureFactor,records+i*68+64,4);std::vector<Th14ClipVertex> temp;if(th14_clip_world_uv(one,primitive,count,data,temp)==1)issue(one,primitive,count,data,size,nullptr,indexFormat,nullptr,0);else issue(d,primitive,count,data,size,nullptr,indexFormat,records+i*68,68);}return;}
+-  }else{
++ }else if(worldClip&&may_cross_w(clip)){
+    std::vector<Th14ClipVertex> clipped;const int status=th14_clip_world_uv(d,primitive,count,data,clipped);
+    if(status==1){if(!clipped.empty()){State one=d;one.stride=88;one.layout.uv=44;issue(one,Topology::Triangles,u32(clipped.size()/3),clipped.data(),u32(clipped.size()*88),nullptr,indexFormat,nullptr,0,true);}return;}
+-  }
+  }
+ #endif
+  const auto& p=d.pipeline;auto& cached=drawState.pipeline;const bool all=!drawState.valid;
+@@ -221,12 +273,15 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
+  if(!drawState.has_viewport||std::memcmp(&drawState.viewport,&v,sizeof(v))){glViewport(v.x,v.y,v.width,v.height);glDepthRangef(v.min,v.max);drawState.viewport=v;drawState.has_viewport=true;}select(d);
+  float vp[]{float(v.x),float(v.y),float(v.width),float(v.height)};uniform(0,4,vp);const bool transformed=d.layout.screen;
+ #if defined(PORT_TITLE) && PORT_TITLE == 14
+- if(!transformed&&!instance){auto clip=th14_clip(d.matrix[0],d.matrix[1],d.matrix[2]);uniform(26,16,clip.data());}
++ if(!transformed&&!instance)uniform(26,16,clip.data());
+ #endif
+  integer(1,transformed);integer(2,p.textureTransform);integer(3,!!instance);
+ #if defined(PORT_TITLE) && PORT_TITLE == 14
+- const bool nativeFog=version==10&&p.fog&&!p.rangeFog&&p.fogMode==FogMode::Linear&&std::isfinite(p.fogNear)&&std::isfinite(p.fogFar)&&p.fogNear!=p.fogFar;
+- if(nativeFog){const auto eye=th14_multiply(d.matrix[1],d.matrix[0]);uniform(4,16,eye.data());uniform(5,16,identity.data());uniform(6,16,d.matrix[2].data());uniform(7,16,d.matrix[3].data());}
++ if(nativeFog){
++  // The uniform model is unused for instancing; preserve the old model
++  // for transformed vertices, including the CPU-clipped layout.
++  if(transformed||instance)eye=th14_multiply(d.matrix[1],d.matrix[0]);
++  uniform(4,16,eye.data());uniform(5,16,identity.data());uniform(6,16,d.matrix[2].data());uniform(7,16,d.matrix[3].data());}
+  else {for(int i=0;i<4;i++)uniform(4+i,16,d.matrix[i].data());}
+  float fogLinear[3]{};if(nativeFog){volatile float range=p.fogFar-p.fogNear;volatile float scale=1.f/range;volatile float bias=p.fogFar*scale;fogLinear[0]=bias;fogLinear[1]=scale;fogLinear[2]=1.f;}uniform(27,3,fogLinear);
+ #else
+@@ -275,14 +330,14 @@ integer(13,!!texture);uniform(14,4,color(p.textureFactor).data());
+  if(!instance){
+   if(clippedGeometry){glDisableVertexAttribArray(13);glVertexAttrib1f(13,-1.f);glVertexAttribDivisor(13,0);}
+   else if(!transformed&&!index&&primitive==Topology::Triangles){
+-   const u32 submitted=vertex_count(primitive,count);std::vector<float> eligibility(submitted,0.f);const auto clip=th14_clip(d.matrix[0],d.matrix[1],d.matrix[2]);
++   const u32 submitted=vertex_count(primitive,count);std::vector<float> eligibility(submitted,0.f);
+    for(u32 i=0;i+2<submitted;i+=3)if(th14_primitive_projectable(static_cast<const float*>(data),d.stride,i,3,clip,d.viewport))eligibility[i]=eligibility[i+1]=eligibility[i+2]=1.f;
+    const u32 flagBase=upload(instances,GL_ARRAY_BUFFER,eligibility.data(),u32(eligibility.size()*4),65536);glEnableVertexAttribArray(13);glVertexAttribPointer(13,1,GL_FLOAT,false,4,reinterpret_cast<void*>(flagBase));glVertexAttribDivisor(13,0);
+   }else{
+    glDisableVertexAttribArray(13);float eligible=0.f;
+    // A non-instanced four-vertex strip is the same complete quad tested by
+    // the instanced path. Preserve its projection rounding as well.
+-   if(!transformed&&!index&&primitive==Topology::Strip&&count==2){const auto clip=th14_clip(d.matrix[0],d.matrix[1],d.matrix[2]);eligible=th14_primitive_projectable(static_cast<const float*>(data),d.stride,0,4,clip,d.viewport)?1.f:0.f;}
++   if(!transformed&&!index&&primitive==Topology::Strip&&count==2)eligible=th14_primitive_projectable(static_cast<const float*>(data),d.stride,0,4,clip,d.viewport)?1.f:0.f;
+    glVertexAttrib1f(13,eligible);glVertexAttribDivisor(13,0);
+   }
+  }
+@@ -308,16 +363,6 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,(transformed||clippedGeomet
+ #if defined(PORT_TITLE) && PORT_TITLE == 14
+  // Keep each original world/factor record and append its derived clip matrix.
+  // The queue remains 68B; only the submitted instance buffer gains the matrix.
+- const u32 records=instanceSize/68;std::vector<u8> expanded(records*136);
+- const auto* input=static_cast<const u8*>(instance);
+- for(u32 record=0;record<records;++record){
+-  std::array<float,16> model{};std::memcpy(model.data(),input+record*68,64);
+-  auto clip=th14_clip(model,d.matrix[1],d.matrix[2]);
+-  std::memcpy(expanded.data()+record*136,input+record*68,68);
+-  if(nativeFog){const auto eye=th14_multiply(d.matrix[1],model);std::memcpy(expanded.data()+record*136,eye.data(),64);}
+-  std::memcpy(expanded.data()+record*136+68,clip.data(),64);
+-  const float eligible=th14_primitive_projectable(static_cast<const float*>(data),d.stride,0,4,clip,d.viewport)?1.f:0.f;std::memcpy(expanded.data()+record*136+132,&eligible,4);
+- }
+  u32 b=upload(instances,GL_ARRAY_BUFFER,expanded.data(),u32(expanded.size()),65536);
+ #else
+  u32 b=upload(instances,GL_ARRAY_BUFFER,instance,instanceSize,65536);
+@@ -397,7 +442,13 @@ glBlitFramebuffer(0,0,s.width,s.height,0,s.height,s.width,0,GL_COLOR_BUFFER_BIT,
+ #else
+ glBlitFramebuffer(0,0,s.width,s.height,0,480,640,0,GL_COLOR_BUFFER_BIT,GL_NEAREST);
+ #endif
+-SDL_GL_SwapWindow(window);stats.presentations++;return true;}
++#if !defined(__EMSCRIPTEN__) || !defined(PORT_TITLE) || PORT_TITLE != 14
++SDL_GL_SwapWindow(window);
++#endif
++// SDL's browser GLES swap has no buffer swap: it sleeps through Asyncify.
++// TH14 uses an implicitly presented WebGL canvas, so returning to its RAF
++// host after the blit is enough. Sleeping here can miss the next refresh.
++stats.presentations++;return true;}
+ }
+ extern "C" {
+ const touhou::sdl::Statistics* sdl_stats(){static touhou::sdl::Statistics zero{};return touhou::sdl::current()?&touhou::sdl::current()->stats:&zero;}
+diff --git a/runtimes/th12/portable/sdl/Th14AsyncRuntime.mjs b/runtimes/th12/portable/sdl/Th14AsyncRuntime.mjs
+index 326dd35435272e49a0524bc50646b06e4803cec6..8a7b91ab31346b715c360c386ea0f6fab7a654fd 100644
+--- a/runtimes/th12/portable/sdl/Th14AsyncRuntime.mjs
++++ b/runtimes/th12/portable/sdl/Th14AsyncRuntime.mjs
+@@ -43,9 +43,16 @@ export class Th14AsyncRuntime {
+   }
+   startFrames(callback,data) {
+     if(!this.requestFrame)throw new Error('requestAnimationFrame unavailable');
++    let active=true,busy=false;
+     const tick=time=>{
++      if(!active)return;
++      // Reserve the next refresh before the Promise chain runs. Do not
++      // accumulate stale frame callbacks while an Asyncify stack is busy.
++      this.requestFrame(tick);
++      if(busy)return;
++      busy=true;
+       void this.run(()=>this.call('th14_async_frame','number',['number','number','number'],[callback,time,data]))
+-        .then(again=>{if(again&&!this.failure)this.requestFrame(tick);},()=>{});
++        .then(again=>{active=!!again&&!this.failure;busy=false;},()=>{active=false;busy=false;});
+     };
+     return this.requestFrame(tick);
+   }
+diff --git a/runtimes/th12/th12_web/cpp/game/AnmGeometry.cpp b/runtimes/th12/th12_web/cpp/game/AnmGeometry.cpp
+index bf44f2f320c9e5705be29f9e094775947a3931b2..e5afe67fa7a21e56e196ccc1bac2f87a6bd4de26 100644
+--- a/runtimes/th12/th12_web/cpp/game/AnmGeometry.cpp
++++ b/runtimes/th12/th12_web/cpp/game/AnmGeometry.cpp
+@@ -134,6 +134,10 @@ bool anm_th14_draw_quad_positions(const AnmVm& vm,Vec3 (&out)[4],const AnmRender
+     const u32 mode=vm.drawing_mode();
+     return anm_quad_positions_impl(vm,out,space,mode==3?1:mode);
+ }
++bool anm_th14_ascii_quad_positions(const AnmVm& vm,Vec3 (&out)[4],const AnmRenderSpace& space) noexcept {
++    // The selected ASCII atlas already contains display-sized sprites.
++    return anm_quad_positions(vm,out,space);
++}
+ #endif
+ Vec2 anm_screen_uv(Vec3 p) noexcept {Vec2 uv{float(double(p.x)/640),float(double(p.y)/480)};if(uv.x<0)uv.x=0;if(uv.y<0)uv.y=0;return uv;}
+ bool anm_ring_vertices(const AnmVm& vm,AnmVertex* out,u32 capacity,const AnmRenderSpace& space) noexcept {
+diff --git a/runtimes/th12/th12_web/cpp/game/AnmGeometry.hpp b/runtimes/th12/th12_web/cpp/game/AnmGeometry.hpp
+index cced51f4fd7ad86ea9889aafccf2942780335dfb..1cd308441da5446b7cabdc4cb4776d5eaeb07db2 100644
+--- a/runtimes/th12/th12_web/cpp/game/AnmGeometry.hpp
++++ b/runtimes/th12/th12_web/cpp/game/AnmGeometry.hpp
+@@ -10,6 +10,7 @@ static_assert(sizeof(AnmVertex)==28);
+ bool anm_quad_positions(const AnmVm& vm,Vec3 (&out)[4],const AnmRenderSpace& space={}) noexcept;
+ #if PORT_TITLE == 14
+ bool anm_th14_draw_quad_positions(const AnmVm&,Vec3 (&out)[4],const AnmRenderSpace& space={}) noexcept;
++bool anm_th14_ascii_quad_positions(const AnmVm&,Vec3 (&out)[4],const AnmRenderSpace& space) noexcept;
+ #endif
+ Vec2 anm_vertex_uv(const AnmVm& vm,u32 vertex) noexcept;
+ Vec2 anm_screen_uv(Vec3 position) noexcept;
+diff --git a/runtimes/th12/th12_web/cpp/game/AnmInterpreter.cpp b/runtimes/th12/th12_web/cpp/game/AnmInterpreter.cpp
+index 6e1f793120ed0998df3be1b7fd89dd52103ec87e..deaa96f0f951d349cebaec6a6d1a30f8016209da 100644
+--- a/runtimes/th12/th12_web/cpp/game/AnmInterpreter.cpp
++++ b/runtimes/th12/th12_web/cpp/game/AnmInterpreter.cpp
+@@ -93,23 +93,45 @@ bool animate(AnmVm& vm,AnmEnvironment& env){
+             auto scroll=[&](float& pos,float speed){if(speed==0)return;const float delta=float(env.rate*speed);float next=float(delta+pos);if(next>=2)next=float(next-2);else if(next<0)next=float(next+2);pos=next;};
+             scroll(vm.uv_offset.x,vm.scroll_velocity.x);scroll(vm.uv_offset.y,vm.scroll_velocity.y);
+         }
+-    }else{
++    }
++#if PORT_TITLE == 14
++    else{
++        // 472ae9 calls 473110 only with the velocity enable bit set.
++        if(vm.flags2&0x800000u){
++            float* axes[]={&vm.rotation.x,&vm.rotation.y,&vm.rotation.z};
++            const float speeds[]={vm.angular_velocity.x,vm.angular_velocity.y,vm.angular_velocity.z};
++            for(u32 i=0;i<3;++i)if(speeds[i]!=0){
++                const float delta=env.rate*speeds[i];
++                *axes[i]=anm_th14_wrap_angle(*axes[i]+delta);vm.flags|=4;
++            }
++            auto scale=[&](float& value,float speed){
++                if(speed==0)return;
++                const float delta=env.rate*speed;
++                value+=delta;vm.flags|=8;
++            };
++            scale(vm.scale.y,vm.scale_velocity.y);scale(vm.scale.x,vm.scale_velocity.x);
++            auto scroll=[&](float& value,float speed){
++                if(speed==0)return;
++                const float delta=env.rate*speed;
++                float next=value+delta;
++                if(next>=2)next-=2;else if(next<0)next+=2;
++                value=next;
++            };
++            scroll(vm.uv_offset.x,vm.scroll_velocity.x);scroll(vm.uv_offset.y,vm.scroll_velocity.y);
++        }
++    }
++#else
++    else{
+     float* axes[]={&vm.rotation.x,&vm.rotation.y,&vm.rotation.z};const float speeds[]={vm.angular_velocity.x,vm.angular_velocity.y,vm.angular_velocity.z};
+     for(u32 i=0;i<3;++i)if(speeds[i]!=0){*axes[i]=add_angle(*axes[i],float(double(env.rate)*speeds[i]));vm.flags|=4;}
+     if(vm.scale_velocity.y!=0){vm.scale.y=float(double(env.rate)*vm.scale_velocity.y+vm.scale.y);vm.flags|=8;}
+     if(vm.scale_velocity.x!=0){const float delta=float(double(env.rate)*vm.scale_velocity.x);vm.scale.x=float(double(delta)+vm.scale.x);vm.flags|=12;}
+     auto scroll=[&](float pos,float speed){
+-        if constexpr(kPortTitle==14){
+-            // 473272..47330b skips zero velocity and rounds mulss/addss
+-            // separately before the single wrap at a period of two.
+-            if(speed==0)return pos;
+-            const float delta=float(env.rate*speed);float next=float(delta+pos);
+-            if(next>=2)next=float(next-2);else if(next<0)next=float(next+2);return next;
+-        }
+         constexpr double period=kPortTitle==13?2:1;float next=float(double(env.rate)*speed+pos);if(next>=period)next=float(double(next)-period);else if(next<0)next=float(double(next)+period);return next;
+     };
+     vm.uv_offset.x=scroll(vm.uv_offset.x,vm.scroll_velocity.x);vm.uv_offset.y=scroll(vm.uv_offset.y,vm.scroll_velocity.y);
+     }
++#endif
+     if((kPortTitle==13||kPortTitle==14)?(vm.th13_native_flags&0x8000):(vm.flags&0x2000)){vm.position.x=float(double(vm.position.x)+env.camera_delta.x);vm.position.y=float(double(vm.position.y)+env.camera_delta.y);vm.position.z=float(double(vm.position.z)+env.camera_delta.z);}
+     if(vm.flags2&(kPortTitle==13?0x2000:kPortTitle==14?0x1000:4))if(!env.screen_uv(vm))return false;
+     if(vm.position_interpolation.duration)(vm.flags&0x100?vm.child_position:vm.script_position)=sample_vector_stack(vm.position_interpolation,env);
+@@ -121,6 +143,9 @@ bool animate(AnmVm& vm,AnmEnvironment& env){
+     if(vm.texture_scale_interpolation.duration){vm.texture_scale=sample_vec2_stack(vm.texture_scale_interpolation,env);vm.th13_native_flags|=0x10;}
+ #endif
+     if(vm.rotation_interpolation.duration){vm.rotation=sample_vector_stack(vm.rotation_interpolation,env);vm.flags|=4;}
++#if PORT_TITLE == 14
++    if(vm.rotation_z_interpolation.duration){vm.rotation.z=anm_th14_sample_angle(vm.rotation_z_interpolation,&env.rate);vm.flags|=4;}
++#endif
+     if(vm.color2_interpolation.duration)vm.secondary_color=(vm.secondary_color&0xff000000)|rgb_bits(sample_rgb_stack(vm.color2_interpolation,env));
+     if(vm.alpha2_interpolation.duration)vm.secondary_color=(vm.secondary_color&0xffffff)|(u32(sample(vm.alpha2_interpolation,&env.rate))<<24);
+     if(vm.scroll_x_interpolation.duration)vm.scroll_velocity.x=sample(vm.scroll_x_interpolation,&env.rate);
+@@ -480,8 +505,8 @@ int AnmVm::update(AnmEnvironment& env){
+                 // Random references consume their own draws in that order.
+                 const float z=float(floating(2)),y=float(floating(1)),x=float(floating(0));
+                 angular_velocity={x,y,z};flags2|=0x800000u;
+-            }else{angular_velocity.x=float(floating(0));angular_velocity.y=float(floating(1));angular_velocity.z=float(floating(2));}
+-            flags|=4;break;
++            }else{angular_velocity.x=float(floating(0));angular_velocity.y=float(floating(1));angular_velocity.z=float(floating(2));flags|=4;}
++            break;
+         case 54:
+             if constexpr(kPortTitle==14){
+                 // Retail4716bf resolves Y before X and enables velocity updates.
+@@ -495,6 +520,16 @@ int AnmVm::update(AnmEnvironment& env){
+         case 57:case 78:{const u32 from=op==57?color:secondary_color;const u32 b=u32(integer(4))&255,g=u32(integer(3))&255,r=u32(integer(2))&255;const i32 duration=integer(0);rgb_start(op==57?color_interpolation:color2_interpolation,duration,current->argument<u8>(1),from,b|(g<<8)|(r<<16),&env.rate);if constexpr(kPortTitle==14)if(op==78)th13_native_flags=(th13_native_flags&~0x60000u)|0x20000u;break;}
+         case 58:case 79:{const u8 to=u8(integer(2));const i32 duration=integer(0);alpha_start(op==58?alpha_interpolation:alpha2_interpolation,duration,current->argument<u8>(1),(op==58?color:secondary_color)>>24,to,&env.rate,op==58);if constexpr(kPortTitle==14)if(op==79)th13_native_flags=(th13_native_flags&~0x60000u)|0x20000u;break;}
+         case 59:{const float z=float(floating(4)),y=float(floating(3)),x=float(floating(2));auto& v=rotation_interpolation;v.duration=integer(0);v.mode=InterpolationMode(current->argument<i32>(1));std::memcpy(v.initial_tangent,&env.default_tangent,12);std::memcpy(v.final_tangent,&env.default_tangent,12);std::memcpy(v.start,&rotation,12);v.end[0]=x;v.end[1]=y;v.end[2]=z;v.timer.set(0,&env.rate);flags|=4;break;}
++#if PORT_TITLE == 14
++        case anm_th14_rotation_z_interpolate:{
++            const float to=anm_th14_wrap_angle(float(floating(2)));
++            auto& v=rotation_z_interpolation;
++            v.start[0]=anm_th14_wrap_angle(rotation.z);v.end[0]=to;
++            v.initial_tangent[0]=v.final_tangent[0]=0;
++            v.duration=integer(0);v.mode=InterpolationMode(current->argument<i32>(1));
++            v.timer.set(0,&env.rate);flags|=4;break;
++        }
++#endif
+         case 60:{const float y=float(floating(3)),x=float(floating(2));auto& v=scale_interpolation;v.duration=integer(0);v.mode=InterpolationMode(current->argument<u8>(1));std::memcpy(v.start,&scale,8);v.end[0]=x;v.end[1]=y;v.timer.set(0,&env.rate);flags|=8;break;}
+         case 61:flags=(flags^0x200)|8;scale.x=-scale.x;break;
+         case 62:flags=(flags^0x400)|8;scale.y=-scale.y;break;
+@@ -546,7 +581,7 @@ int AnmVm::update(AnmEnvironment& env){
+         }
+         case 93:case 94:{const float to=float(floating(2));const i32 duration=integer(0);auto& v=op==93?scroll_x_interpolation:scroll_y_interpolation;v.duration=duration;v.mode=InterpolationMode(current->argument<i32>(1));v.start[0]=op==93?scroll_velocity.x:scroll_velocity.y;v.end[0]=to;v.initial_tangent[0]=v.final_tangent[0]=0;v.timer.set(0,&env.rate);break;}
+         case 98:if(!env.screen_uv(*this))return -1;break;
+-        case 99:{constexpr u32 shift=kPortTitle==13?13:2,mask=1u<<shift;flags2=(flags2&~mask)|((u32(integer(0))<<shift)&mask);break;}
++        case 99:{constexpr u32 shift=kPortTitle==14?12:kPortTitle==13?13:2,mask=1u<<shift;flags2=(flags2&~mask)|((u32(integer(0))<<shift)&mask);break;}
+         case 100:{const float ax=float(floating(1)),ay=float(floating(2)),az=float(floating(3)),bx=float(floating(7)),by=float(floating(8)),bz=float(floating(9));auto& v=position_interpolation;v.duration=integer(0);v.mode=InterpolationMode::Hermite;v.initial_tangent[0]=ax;v.initial_tangent[1]=ay;v.initial_tangent[2]=az;v.final_tangent[0]=bx;v.final_tangent[1]=by;v.final_tangent[2]=bz;const auto from=flags&0x100?child_position:script_position;std::memcpy(v.start,&from,12);const float z=float(floating(6)),y=float(floating(5)),x=float(floating(4));v.end[0]=x;v.end[1]=y;v.end[2]=z;v.timer.set(0,&env.rate);break;}
+         case 102:{flags|=1;const i32 first=integer(0);const u32 range=u32(integer(1));if(!range)return -1;const i32 value=wrapping_add(first,signed_bits(env.script_rng.next32()%range));if(!bind_sprite(sprite_callback?sprite_callback(*this,value):value))return -1;sprite_frame=timer.current;break;}
+         default:break;
+diff --git a/runtimes/th12/th12_web/cpp/game/AnmOpcodes.hpp b/runtimes/th12/th12_web/cpp/game/AnmOpcodes.hpp
+index aa47690d5583854408b037374ebab06a7382a462..d7932c4cf1b62a991b407df3e25157639ebb41ab 100644
+--- a/runtimes/th12/th12_web/cpp/game/AnmOpcodes.hpp
++++ b/runtimes/th12/th12_web/cpp/game/AnmOpcodes.hpp
+@@ -104,6 +104,7 @@ constexpr u16 anm_th16_field2_bit7 = 0x7134;
+ constexpr u16 anm_th16_field2_bit8 = 0x7135;
+ constexpr u16 anm_th16_field2_bit9 = 0x7136;
+ constexpr u16 anm_th16_visible = 0x7137;
++constexpr u16 anm_th14_rotation_z_interpolate = 0x7138;
+ constexpr AnmOpcodeRow th13_anm_opcodes[] = {
+ 
+ // >>> th13 rows
+@@ -299,8 +300,10 @@ constexpr AnmOpcodeRow th14_anm_opcodes[] = {
+     {400,48,0,"native"}, {401,49,0,"native"}, {402,50,0,"native"},
+     {404,52,0,"native"}, {406,76,0,"native"},
+     {407,56,0,"native"}, {408,57,0,"native"}, {409,58,0,"native"},
+-    {410,59,0,"native"}, {412,60,0,"native"}, {413,78,0,"native"}, {414,79,0,"native"},
+-    {415,53,0,"native"}, {416,54,0,"native"}, {417,55,0,"native"}, {422,83,0,"native"},
++    {410,59,0,"native"}, {411,anm_th14_rotation_z_interpolate,0,"native"},
++    {412,60,0,"native"}, {413,78,0,"native"}, {414,79,0,"native"},
++    {415,53,0,"native"}, {416,54,0,"native"}, {417,55,0,"native"},
++    {418,98,0,"native"}, {419,99,0,"native"}, {422,83,0,"native"},
+     {425,70,0,"native"}, {426,71,0,"native"}, {427,93,0,"native"}, {428,94,0,"native"},
+     {429,anm_th13_texture_scale,0,"native"}, {430,anm_th13_texture_scale_interpolate,0,"native"},
+     {433,anm_th13_polar_interpolate,0,"native"}, {434,anm_th13_extra_scale,0,"native"},
+diff --git a/runtimes/th12/th12_web/cpp/game/AnmRenderer.cpp b/runtimes/th12/th12_web/cpp/game/AnmRenderer.cpp
+index fa946777637a7819d6ab6703d767791534921fc9..b47b3c8d48c67356a4ff8db381e8a26ebdf1df7c 100644
+--- a/runtimes/th12/th12_web/cpp/game/AnmRenderer.cpp
++++ b/runtimes/th12/th12_web/cpp/game/AnmRenderer.cpp
+@@ -251,6 +251,14 @@ int AnmRenderer::submit_quad(AnmVm& vm,Vec3 (&positions)[4],bool pixel,const u32
+ 
+ }
+ 
++#if PORT_TITLE == 14
++AnmRenderSpace AnmRenderer::render_space_th14()const noexcept{
++    const float scale=float(render_width)/640.f;
++    const float center=float(i32(render_width)/2);
++    return {scale,{center,float((i32(render_height)-448)/2)},{center,float(i32(scale*16.f))}};
++}
++#endif
++
+ int AnmRenderer::draw_ascii_sprite(AnmVm& vm){
+ 
+     // 401670 submits 44fe30/44f880 directly, including zero-alpha glyphs.
+@@ -258,8 +266,7 @@ int AnmRenderer::draw_ascii_sprite(AnmVm& vm){
+     if(!vm.sprite||!vm.resource)return -2;
+ 
+     #if PORT_TITLE == 14
+-    const float display_scale=float(render_width)/640.f;const AnmRenderSpace space{display_scale,{float(i32(render_width)/2),float((i32(render_height)-448)/2)},{float(i32(render_width)/2),float(i32(float(display_scale*16.f)))}};
+-    Vec3 positions[4];if(!anm_quad_positions(vm,positions,space))return -2;
++    Vec3 positions[4];if(!anm_th14_ascii_quad_positions(vm,positions,render_space_th14()))return -2;
+ #else
+     Vec3 positions[4];if(!anm_quad_positions(vm,positions))return -2;
+ #endif
+@@ -398,13 +405,23 @@ int AnmRenderer::draw(AnmVm& vm){
+ 
+         // Extra scale and pivot do not participate in this native path.
+ 
+-        flush();const auto center=vm.render_position();
++        flush();
++#if PORT_TITLE == 14
++        const auto space=render_space_th14();
++        const auto center=vm.render_position(space);
++#else
++        const auto center=vm.render_position();
++#endif
+ 
+         float width=float(double(vm.sprite_size.x)*vm.scale.x),height=float(double(vm.sprite_size.y)*vm.scale.y),angle=vm.rotation.z;
+ 
+         if(vm.parent&&!(vm.flags2&(kPortTitle==14?0x8000:0x10000))){width=float(double(width)*vm.parent->scale.x);height=float(double(height)*vm.parent->scale.y);angle=float(double(angle)+vm.parent->rotation.z);}
+ 
+-        if constexpr(kPortTitle==14)if(((vm.flags2>>19)&7)==2){width=float(width*.5f);height=float(height*.5f);}
++#if PORT_TITLE == 14
++        const u32 resolution=(vm.flags2>>19)&7;
++        const float factor=resolution==1?space.scale:resolution==2?float(space.scale*.5f):1.f;
++        width*=factor;height*=factor;
++#endif
+ 
+         const u32 ax=(vm.flags>>18)&3,ay=(vm.flags>>20)&3;if(ax==3||ay==3)return -2;
+ 
+@@ -492,7 +509,7 @@ int AnmRenderer::draw(AnmVm& vm){
+ 
+ #if PORT_TITLE == 14
+ 
+-        const float display_scale=float(render_width)/640.f;const AnmRenderSpace space{display_scale,{float(i32(render_width)/2),float((i32(render_height)-448)/2)},{float(i32(render_width)/2),float(i32(float(display_scale*16.f)))}};
++        const auto space=render_space_th14();
+         Vec3 positions[4];if(!anm_th14_draw_quad_positions(vm,positions,space))return -2;
+ 
+         return submit_quad(vm,positions,mode==0);
+@@ -617,12 +634,7 @@ int AnmRenderer::draw(AnmVm& vm){
+ 
+         flush();
+ #if PORT_TITLE == 14
+-        const float display_scale=float(render_width)/640.f;
+-        // Native446905/446910 and446c8f/446cb1 use distinct origins.
+-        const AnmRenderSpace space{display_scale,
+-            {float(i32(render_width)/2),float((i32(render_height)-448)/2)},
+-            {float(i32(render_width)/2),float(i32(float(display_scale*16.f)))}};
+-        const auto world=anm_world_matrix_th14(vm,false,space);
++        const auto world=anm_world_matrix_th14(vm,false,render_space_th14());
+ #else
+         const auto world=anm_world_matrix(vm,kPortTitle!=13&&kPortTitle!=14);
+ #endif
+diff --git a/runtimes/th12/th12_web/cpp/game/AnmRenderer.hpp b/runtimes/th12/th12_web/cpp/game/AnmRenderer.hpp
+index 544cff09eb7c18ecddc69f6a1ceb7eff4d98693f..7d5f890ad4f640ae0e3af9fd5688e61903492e8e 100644
+--- a/runtimes/th12/th12_web/cpp/game/AnmRenderer.hpp
++++ b/runtimes/th12/th12_web/cpp/game/AnmRenderer.hpp
+@@ -19,6 +19,7 @@ public:
+ #if PORT_TITLE == 14
+     u32 render_width=640,render_height=480;
+     int draw_transition_type0(AnmVm& vm);
++    AnmRenderSpace render_space_th14()const noexcept;
+ #endif
+     int draw_ascii_sprite(AnmVm& vm);
+     int draw_ripple(AnmVm& vm);
+diff --git a/runtimes/th12/th12_web/cpp/game/AnmVm.hpp b/runtimes/th12/th12_web/cpp/game/AnmVm.hpp
+index fe6a4d48c0c4713fa9f25aca71fc12435bf78154..e1364b42476922700391a148df2f407d8c332121 100644
+--- a/runtimes/th12/th12_web/cpp/game/AnmVm.hpp
++++ b/runtimes/th12/th12_web/cpp/game/AnmVm.hpp
+@@ -94,6 +94,7 @@ struct AnmVm {
+     // Retail +4f8..524: last quad submitted, written before visibility clipping.
+     Vec3 screen_quad_positions[4];
+     void* dialogue_owner;
++    FloatInterpolator rotation_z_interpolation;
+ #endif
+     void initialize() noexcept;
+     bool bind_sprite(i32 index) noexcept;
+@@ -140,7 +141,7 @@ struct AnmVm {
+ };
+ // Layout assertions apply to the 32-bit comparison/WebAssembly target only.
+ #if UINTPTR_MAX == UINT32_MAX
+-inline constexpr u32 kAnmVmExtensionBytes=((kPortTitle==13||kPortTitle==14)?3*sizeof(Vec2)+2*sizeof(Vec2Interpolator)+sizeof(Vec3):0)+(kPortTitle==16?3*sizeof(Vec2)+sizeof(Vec2Interpolator)+12*sizeof(u32)+sizeof(float)+sizeof(AnmVm*):0)+((kPortTitle==14||kPortTitle==16)?sizeof(AnmResource*):0)+(kPortTitle==14?sizeof(Vec3)+sizeof(Vec2)+sizeof(i32)+sizeof(float)+sizeof(Timer)+sizeof(u32)+sizeof(void*)+4*sizeof(Vec3):0)+sizeof(AnmTraceEntry)*anm_trace_size+sizeof(u32);
++inline constexpr u32 kAnmVmExtensionBytes=((kPortTitle==13||kPortTitle==14)?3*sizeof(Vec2)+2*sizeof(Vec2Interpolator)+sizeof(Vec3):0)+(kPortTitle==16?3*sizeof(Vec2)+sizeof(Vec2Interpolator)+12*sizeof(u32)+sizeof(float)+sizeof(AnmVm*):0)+((kPortTitle==14||kPortTitle==16)?sizeof(AnmResource*):0)+(kPortTitle==14?sizeof(Vec3)+sizeof(Vec2)+sizeof(i32)+sizeof(float)+sizeof(Timer)+sizeof(u32)+sizeof(void*)+4*sizeof(Vec3)+sizeof(FloatInterpolator):0)+sizeof(AnmTraceEntry)*anm_trace_size+sizeof(u32);
+ static_assert(sizeof(AnmVm)==0x434+kAnmVmExtensionBytes);
+ static_assert(offsetof(AnmVm,uv)==0x70);
+ static_assert(offsetof(AnmVm,position_interpolation)==0x90);
+diff --git a/runtimes/th12/th12_web/cpp/game/BootCppResourcesTh14.hpp b/runtimes/th12/th12_web/cpp/game/BootCppResourcesTh14.hpp
+index e6f4c227aa2656646b4d9eed7335a3a33cf9af4d..a129d83085cf5810d2701ab01e6c8e100c1e29b0 100644
+--- a/runtimes/th12/th12_web/cpp/game/BootCppResourcesTh14.hpp
++++ b/runtimes/th12/th12_web/cpp/game/BootCppResourcesTh14.hpp
+@@ -10,6 +10,7 @@ class BootCppResourcesTh14 {
+     GameSession& session;
+     GameResources reader;
+     const std::array<AnmResource*,6> files;
++    const char* const ascii_name;
+     BootFileMailboxTh14 mailbox;
+     StageCppWorkerTh14 worker;
+     std::atomic<u32> signature_callback{0},signature_ready{0},ascii_ready{0},common_ready{0},stopping{0};
+@@ -17,10 +18,10 @@ class BootCppResourcesTh14 {
+     std::string error;
+     std::function<bool(GameResources&,std::string&)> after_text;
+ public:
+-    static constexpr const char* names[]={"sig.anm","ascii.anm","text.anm","front.anm","bullet.anm","effect.anm"};
+     static constexpr u16 ids[]={1,2,0,5,7,8};
+     BootCppResourcesTh14(GameSession& value,std::array<AnmResource*,6> resources,
+-        std::function<bool(GameResources&,std::string&)> audio_finish={}):session(value),files(resources),mailbox(value.stage_load_host_flags),after_text(std::move(audio_finish)){}
++        std::function<bool(GameResources&,std::string&)> audio_finish={}):session(value),files(resources),
++        ascii_name(value.resources.ascii_anm_name()),mailbox(value.stage_load_host_flags),after_text(std::move(audio_finish)){}
+     ~BootCppResourcesTh14(){cancel_and_join();}
+     bool begin(const u8* bytes,u32 size){
+         if(started)return false;
+@@ -28,6 +29,7 @@ public:
+         started=true;
+         return worker.start([this,bytes,size](){
+             if(!reader.open_archive(bytes,size)){error=reader.error();return false;}
++            const char* names[]={"sig.anm",ascii_name,"text.anm","front.anm","bullet.anm","effect.anm"};
+             for(u32 i=0;i<files.size();++i){
+                 if(stopping.load(std::memory_order_acquire))return false;
+                 if(!reader.open_anm(names[i],*files[i])){error=reader.error();return false;}
+diff --git a/runtimes/th12/th12_web/cpp/game/GameConfig.hpp b/runtimes/th12/th12_web/cpp/game/GameConfig.hpp
+index f3b7f3a6c650cee5ff119d445d2cd22e9fef877a..fe311063fd4a8192ee826b4fd9ff87ae81a093b6 100644
+--- a/runtimes/th12/th12_web/cpp/game/GameConfig.hpp
++++ b/runtimes/th12/th12_web/cpp/game/GameConfig.hpp
+@@ -15,10 +15,19 @@ struct GameConfig {
+     i32 sound_volume()const noexcept{return bytes[volume_offset+1];}
+     bool auto_focus()const noexcept{return bytes[volume_offset+2]!=0;}
+ #if PORT_TITLE == 14
++    static constexpr u32 browser_render_width=1280;
++    static constexpr const char* ascii_anm_for_width(u32 width) noexcept{
++        return width==1280?"ascii_1280.anm":width==960?"ascii_960.anm":"ascii.anm";
++    }
+     // Retail46af64 selects the mode;46ae40 supplies the internal pixel size.
+     u32 render_width()const noexcept{
++#if defined(__EMSCRIPTEN__)
++        // The browser host scales the presentation to fit its container.
++        return browser_render_width;
++#else
+         const u32 mode=bytes[0x1f];
+         return mode==1||mode==4?960:mode==2||mode==5?1280:640;
++#endif
+     }
+     u32 render_height()const noexcept{return render_width()*3/4;}
+ #endif
+diff --git a/runtimes/th12/th12_web/cpp/game/GameSession.cpp b/runtimes/th12/th12_web/cpp/game/GameSession.cpp
+index 296457d06c7e7d5478acd4a0c029230add6fef70..195b80f4ebeccd1c5ebfd40a78d2aa6b3816cfa3 100644
+--- a/runtimes/th12/th12_web/cpp/game/GameSession.cpp
++++ b/runtimes/th12/th12_web/cpp/game/GameSession.cpp
+@@ -387,6 +387,9 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
+     this->source=&source;
+     if(!player_selection_valid(character,subtype)||difficulty<0||difficulty>4)
+         return fail("invalid TH11 session selection");
++#if PORT_TITLE == 14
++    resources.ascii_display_width=persistent_config().render_width();
++#endif
+     if(!resources.load_core(source)) return fail(resources.error.c_str());
+ #if PORT_TITLE == 14
+     if(!resources.select_player(u32(character),u32(subtype)))return fail(resources.error.c_str());
+@@ -1409,6 +1412,9 @@ bool GameSession::open_title(GameResources& data,bool first,TitleScreen screen){
+ #endif
+     if(!title)scores.write_records(spell_records,clear_records);
+     reset_state();source=&data;interactive=true;
++#if PORT_TITLE == 14
++    resources.ascii_display_width=persistent_config().render_width();
++#endif
+     if(!resources.load_core(data))return fail(resources.error.c_str());
+     if constexpr(kPortTitle==14||kPortTitle==16)animations.fallback_sprites=&resources.core.ascii;
+ #if PORT_TITLE == 14
+diff --git a/runtimes/th12/th12_web/cpp/game/GameSessionResources.cpp b/runtimes/th12/th12_web/cpp/game/GameSessionResources.cpp
+index 6058214788fe6678bbba4f4a6319031711f20bb4..85be081a7383a8d7d31e6bc58516a7a94a5730ea 100644
+--- a/runtimes/th12/th12_web/cpp/game/GameSessionResources.cpp
++++ b/runtimes/th12/th12_web/cpp/game/GameSessionResources.cpp
+@@ -35,13 +35,17 @@ bool GameSessionResources::load_core(GameResources& source) {
+             core_source=&source;return true;
+         }
+ #endif
+-        if(!anm("ascii ANM","ascii.anm",core.ascii)||!anm("text ANM","text.anm",core.text))return false;
++        if(!anm("ascii ANM",ascii_anm_name(),core.ascii)||!anm("text ANM","text.anm",core.text))return false;
+         if(animation_manager){auto& a=*animation_manager;a.fallback_sprites=&core.ascii;
+             if(!a.prepare_resource(core.ascii,2)||!a.prepare_resource(core.text,0))return core_error(error,a.last_error_text().c_str());}
+         core_source=&source;return true;
+     }
+ #endif
++#if PORT_TITLE == 14
++    if(!anm("ascii ANM",ascii_anm_name(),core.ascii))return false;
++#else
+     if(!anm("ascii ANM","ascii.anm",core.ascii))return false;
++#endif
+     if(!anm("bullet ANM","bullet.anm",core.bullet))return false;
+     if(!anm("enemy ANM","enemy.anm",core.enemy))return false;
+ #if PORT_TITLE == 14 || PORT_TITLE == 16
+@@ -78,7 +82,7 @@ bool GameSessionResources::load_core(GameResources& source) {
+ bool GameSessionResources::load_core_bootstrap(){
+     if(!core_deferred||(core_loaded_jobs&(1u<<9)))return true;
+     if(!core_source)return core_error(error,"TH14 bootstrap resource source missing");
+-    if(!core_source->open_anm("ascii.anm",core.ascii))return core_error(error,(std::string("ascii ANM: ")+core.ascii.detail).c_str());
++    if(!core_source->open_anm(ascii_anm_name(),core.ascii))return core_error(error,(std::string("ascii ANM: ")+core.ascii.detail).c_str());
+     if(!core_source->open_anm("text.anm",core.text))return core_error(error,(std::string("text ANM: ")+core.text.detail).c_str());
+     if(animation_manager){auto& a=*animation_manager;a.fallback_sprites=&core.ascii;
+         if(!a.prepare_resource(core.ascii,2)||!a.prepare_resource(core.text,0))return core_error(error,a.last_error_text().c_str());}
+diff --git a/runtimes/th12/th12_web/cpp/game/GameSessionResources.hpp b/runtimes/th12/th12_web/cpp/game/GameSessionResources.hpp
+index 16dfa66a2c4699c36ac08bc3615a73a730cd9ced..6c30f7a033ec9f73ef282312563c765d0b1135a9 100644
+--- a/runtimes/th12/th12_web/cpp/game/GameSessionResources.hpp
++++ b/runtimes/th12/th12_web/cpp/game/GameSessionResources.hpp
+@@ -4,6 +4,7 @@
+ #include <memory>
+ 
+ #if PORT_TITLE == 14
++#include "GameConfig.hpp"
+ #include "ReplayRngRestoreTh14.hpp"
+ #endif
+ namespace th11 {
+@@ -133,6 +134,13 @@ public:
+ #if PORT_TITLE == 14
+     AnmManager* animation_manager=nullptr;
+     LoadingTh14* loading_owner=nullptr;
++    u32 ascii_display_width=
++#if defined(__EMSCRIPTEN__)
++        GameConfig::browser_render_width;
++#else
++        640;
++#endif
++    const char* ascii_anm_name()const noexcept{return GameConfig::ascii_anm_for_width(ascii_display_width);}
+ #endif
+     u32 stage_number=0;
+     std::string error;
+diff --git a/runtimes/th12/th12_web/cpp/game/Interpolation.cpp b/runtimes/th12/th12_web/cpp/game/Interpolation.cpp
+index 1cdbb16ada559cbc73aec40bfb6b084540fbf81f..35649e7c1349afaa0bcc1aa5154ede2247dca253 100644
+--- a/runtimes/th12/th12_web/cpp/game/Interpolation.cpp
++++ b/runtimes/th12/th12_web/cpp/game/Interpolation.cpp
+@@ -61,7 +61,7 @@ template<class T,u32 N> bool step(Interpolator<T,N>& v,T* out,const float* rate)
+     return true;
+ }
+ template<class T,u32 N> void weights(const Interpolator<T,N>& v,float* w){
+-    if constexpr(kPortTitle==14&&((std::is_same_v<T,float>&&(N==2||N==3))||(std::is_same_v<T,i32>&&(N==1||N==3)))){
++    if constexpr(kPortTitle==14&&((std::is_same_v<T,float>&&(N>=1&&N<=3))||(std::is_same_v<T,i32>&&(N==1||N==3)))){
+         // 409dcc..409e52: preserve each SSE product and its association.
+         const float t=v.timer.fractional/float(v.duration),m=t-1.f,r=1.f-t,twice=t*2.f;
+         w[0]=(m*m)*(twice+1.f);w[1]=(3.f-twice)*(t*t);w[2]=(r*r)*t;w[3]=(m*t)*t;return;
+@@ -84,9 +84,56 @@ Vec2 sample(Vec2Interpolator& v,const float* rate) noexcept {float out[2];vector
+ Vec3 sample(Vec3Interpolator& v,const float* rate) noexcept {float out[3];vector_sample(v,out,rate);return {out[0],out[1],out[2]};}
+ float sample(FloatInterpolator& v,const float* rate) noexcept {
+     float out;if(step(v,&out,rate))return out;
++    if constexpr(kPortTitle==14){
++        // 414140: round each subtraction, multiplication and addition.
++        if(v.mode==InterpolationMode::Hermite){
++            float w[4];weights(v,w);
++            float result=w[1]*v.end[0];result+=w[0]*v.start[0];
++            result+=w[2]*v.initial_tangent[0];result+=w[3]*v.final_tangent[0];return result;
++        }
++        const float difference=v.end[0]-v.start[0];
++        return easing(v.timer.fractional,v.duration,v.mode)*difference+v.start[0];
++    }
+     if(v.mode==InterpolationMode::Hermite){float w[4];weights(v,w);return float(double(w[1])*v.end[0]+double(w[0])*v.start[0]+double(w[2])*v.initial_tangent[0]+double(w[3])*v.final_tangent[0]);}
+     return float((double(v.end[0])-v.start[0])*easing(v.timer.fractional,v.duration,v.mode)+v.start[0]);
+ }
++#if PORT_TITLE == 14
++float anm_th14_wrap_angle(float angle) noexcept {
++    constexpr float pi=3.1415927410125732421875f,tau=6.283185482025146484375f;
++    unsigned iterations=0;
++    while(angle>pi){angle-=tau;if(iterations++>32)break;}
++    while(angle<-pi){angle+=tau;if(iterations++>32)break;}
++    return angle;
++}
++float anm_th14_sample_angle(FloatInterpolator& v,const float* rate) noexcept {
++    constexpr float pi=3.1415927410125732421875f,tau=6.283185482025146484375f;
++    if(v.duration>0){
++        v.timer.tick();
++        if(v.timer.current>=v.duration){v.timer.set(v.duration,rate);v.duration=0;}
++    }
++    const bool relative=v.mode==InterpolationMode::Velocity||v.mode==InterpolationMode::Acceleration;
++    if(!v.duration)return relative?v.start[0]:v.end[0];
++    if(relative){
++        const bool acceleration=v.mode==InterpolationMode::Acceleration;
++        v.start[0]=anm_th14_wrap_angle(v.start[0]+(acceleration?v.final_tangent[0]:v.end[0]));
++        if(acceleration)v.final_tangent[0]=anm_th14_wrap_angle(v.end[0]+v.final_tangent[0]);
++        return v.start[0];
++    }
++    if(v.mode==InterpolationMode::Hermite){
++        float w[4];weights(v,w);
++        const float d=anm_th14_wrap_angle(v.final_tangent[0]*w[3]);
++        const float c=anm_th14_wrap_angle(v.initial_tangent[0]*w[2]);
++        const float b=anm_th14_wrap_angle(v.end[0]*w[1]);
++        const float a=anm_th14_wrap_angle(v.start[0]*w[0]);
++        return anm_th14_wrap_angle(anm_th14_wrap_angle(anm_th14_wrap_angle(a+b)+c)+d);
++    }
++    // 407210 takes the shortest signed angular displacement before easing.
++    const float from=v.start[0],to=v.end[0],difference=to-from;
++    const float delta=anm_th14_wrap_angle(difference>pi?to-(from+tau):from-to>pi?to-(from-tau):difference);
++    const float weighted=anm_th14_wrap_angle(delta*easing(v.timer.fractional,v.duration,v.mode));
++    return anm_th14_wrap_angle(weighted+from);
++}
++#endif
+ Rgb sample(RgbInterpolator& v,const float* rate) noexcept {
+     i32 out[3];if(!step(v,out,rate)){
+         if constexpr(kPortTitle==14){
+diff --git a/runtimes/th12/th12_web/cpp/game/Interpolation.hpp b/runtimes/th12/th12_web/cpp/game/Interpolation.hpp
+index 7de3118bc267559f82abdcd82b4eb62992b19384..d7cebc6fdfdd6d392528f89f3ebabe9e447f8c7f 100644
+--- a/runtimes/th12/th12_web/cpp/game/Interpolation.hpp
++++ b/runtimes/th12/th12_web/cpp/game/Interpolation.hpp
+@@ -23,6 +23,10 @@ struct Rgb {i32 blue,green,red;};
+ Vec2 sample(Vec2Interpolator& value,const float* rate) noexcept;
+ Vec3 sample(Vec3Interpolator& value,const float* rate) noexcept;
+ float sample(FloatInterpolator& value,const float* rate) noexcept;
++#if PORT_TITLE == 14
++float anm_th14_wrap_angle(float angle) noexcept;
++float anm_th14_sample_angle(FloatInterpolator& value,const float* rate) noexcept;
++#endif
+ Rgb sample(RgbInterpolator& value,const float* rate) noexcept;
+ i32 sample(AlphaInterpolator& value,const float* rate) noexcept;
+ }
+diff --git a/runtimes/th12/th12_web/cpp/game/LaserCurveTh14Runtime.cpp b/runtimes/th12/th12_web/cpp/game/LaserCurveTh14Runtime.cpp
+index 6c5781a2f346c0a8f08f9d00c4f97b4beb119646..62584b103f8ff8a09cb7e73207a1328626eb7d36 100644
+--- a/runtimes/th12/th12_web/cpp/game/LaserCurveTh14Runtime.cpp
++++ b/runtimes/th12/th12_web/cpp/game/LaserCurveTh14Runtime.cpp
+@@ -63,7 +63,10 @@ i32 laser_th14_curve_update(Th14LaserCurve& curve,AnmEnvironment& animations,Las
+     curve.curve_timer.tick();return 0;
+ }
+ bool laser_th14_curve_draw(Th14LaserCurve& curve,AnmRenderer& renderer){
+-    th14_curve_mesh(curve.path.samples.data(),curve.path.samples.size(),field(curve.path.request+0x10),curve.body.uv[0].y,curve.body.uv[2].y,{224,16},curve.vertices.data());
++    // The strip is submitted before the playfield is copied to the final screen.
++    // Use the same intermediate origin as the beam's source sprite and bullets.
++    th14_curve_mesh(curve.path.samples.data(),curve.path.samples.size(),curve.base.width,
++                    curve.body.uv[0].y,curve.body.uv[2].y,renderer.render_space_th14().play_origin,curve.vertices.data());
+     static_assert(sizeof(Th14CurveVertex)==sizeof(AnmVertex));
+     if(renderer.draw_th14_screen_strip(curve.body,reinterpret_cast<const AnmVertex*>(curve.vertices.data()),curve.vertices.size())==-2)return false;
+     if(i32(curve.path.samples.size())>=curve.curve_timer.current){curve.origin.script_position=curve.path.samples.back().position;if(renderer.draw(curve.origin)==-2)return false;}
+diff --git a/runtimes/th12/th12_web/cpp/game/PauseEnd.cpp b/runtimes/th12/th12_web/cpp/game/PauseEnd.cpp
+index cf2697d3116bfbe4aab0f9e3dd982daa56fe5d76..fc88f3e1555ccb11a54584e90219b305a0b9d497 100644
+--- a/runtimes/th12/th12_web/cpp/game/PauseEnd.cpp
++++ b/runtimes/th12/th12_web/cpp/game/PauseEnd.cpp
+@@ -24,6 +24,11 @@ bool PauseMenu::th16_end_choices(){
+ }
+ #endif
+ #if PORT_TITLE == 14
++i32 PauseMenu::remaining_credits_th14()const{
++    constexpr i32 limits[]={3,3,4,5};
++    if(stage==7||difficulty<0||difficulty>=4)return 0;
++    return continues<limits[difficulty]?limits[difficulty]-continues:0;
++}
+ bool PauseMenu::create_deferred_backdrop_th14(){
+  auto& queue=animations.deferred_captures;
+  if(!create_backdrop(false))return false;
+@@ -32,7 +37,8 @@ bool PauseMenu::create_deferred_backdrop_th14(){
+  const auto& sprite=*vm->sprite;
+  DeferredCaptureRequestTh14 request;
+  request.file_index=i32(vm->file_index);request.texture_index=i32(sprite.texture);
+- request.source={32,16,384,448};
++ const float scale=animations.render_space.scale;
++ request.source={i32(32.f*scale),i32(16.f*scale),i32(384.f*scale),i32(448.f*scale)};
+  request.destination={i32(sprite.x),i32(sprite.y),i32(sprite.width),i32(sprite.height)};
+  queue.enqueue(request);return true;
+ }
+@@ -94,8 +100,9 @@ void PauseMenu::show_end_choices(i32 script,i32 next,i32 count){
+         // 435cef initializes the remaining continues by difficulty.
+         if(!compact){
+             if(continues>0)cursor.disabled[cursor.disabled_count++]=2;
+-            constexpr i32 limits[]={3,3,4,5,0};
+-            if(difficulty<0||difficulty>=5||continues>=limits[difficulty]){cursor.disabled[cursor.disabled_count++]=0;selected=1;}
++#if PORT_TITLE == 14
++            if(!remaining_credits_th14()){cursor.disabled[cursor.disabled_count++]=0;selected=1;}
++#endif
+         }else if(practice&&!completed)selected=2;
+     }
+     cursor.select(selected);family(menu_animation,3);family(menu_animation,cursor.selected+7);
+@@ -104,7 +111,7 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
+     const bool practice_states=state>=20;const i32 list=practice_states?23:16,name=practice_states?24:17;
+     switch(state){
+     case 12:case 20:
+-        if(timer.current>=10&&(pressed&0x80001)){sounds.push_back(10);family(menu_animation,2);transition(state+1);}break;
++        if(timer.current>=10&&(pressed&0x80001)){sounds.push_back(kPortTitle==14?7:10);family(menu_animation,2);transition(state+1);}break;
+     case 13:case 21:
+ #if PORT_TITLE == 14
+         if(practice&&completed&&spell_practice_id<0){
+@@ -138,7 +145,6 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
+     case 14:case 22:{
+         const bool compact=state==22;const i32 save=compact?1:2,back=compact?0:1;
+         move(pressed|repeat,7);
+-        if constexpr(kPortTitle==14)if(cursor.previous!=cursor.selected)sounds.back()=10;
+         if(pressed&0x80001){
+             choose(cursor.selected+(kPortTitle==14?134:94));sounds.push_back(kPortTitle==14?7:10);transition(compact?26:19);
+             if(cursor.selected==save){transition(compact?23:16);visible(false);cursor.push();cursor.count=25;cursor.wrap=1;cursor.select(0);scan_requested=true;}
+@@ -151,35 +157,44 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
+     case 16:case 23:
+         if(timer.current<10)break;
+         cursor.previous=cursor.selected;if((pressed|repeat)&16)cursor.move(-1);if((pressed|repeat)&32)cursor.move(1);
+-        if(cursor.previous!=cursor.selected)sounds.push_back(12);
+-        if(pressed&0x80001){transition(name);recording_metadata_requested=true;name_begin();sounds.push_back(10);return;}
++        if(cursor.previous!=cursor.selected)sounds.push_back(kPortTitle==14?10:12);
++        if(pressed&0x80001){transition(name);recording_metadata_requested=true;name_begin();sounds.push_back(kPortTitle==14?7:10);return;}
+         if(pressed&0x102){transition(practice_states?22:14);visible(true);cursor.pop();cursor.count=practice_states?3:(kPortTitle==14?5:4);cursor.wrap=1;
+-            if constexpr(kPortTitle==14)if(!practice_states&&continues>0)cursor.disabled[cursor.disabled_count++]=2;
+-            family(menu_animation,cursor.selected+7);replay_files.fill(nullptr);sounds.push_back(11);}break;
++#if PORT_TITLE == 14
++            // MenuCursor::pop restores selection/count and clears its disabled entries.
++            if(!practice_states){
++                if(continues>0)cursor.disabled[cursor.disabled_count++]=2;
++                if(!remaining_credits_th14())cursor.disabled[cursor.disabled_count++]=0;
++            }
++#endif
++            family(menu_animation,cursor.selected+7);replay_files.fill(nullptr);sounds.push_back(kPortTitle==14?9:11);}break;
+     case 17:case 24:
+         if(timer.current<10)break;
+         name_move(pressed|repeat);
+         if(pressed&0x80001){const i32 choice=name_cursor.selected,edit=name_confirm();if(edit<0)return;
+-            if(edit==1){sounds.push_back(44);save_requested=true;transition(list);std::memcpy(scores.settings.data()+12,entered_name.data(),9);return;}
+-            sounds.push_back(choice==89?11:10);if(choice==89)return;
++            if(edit==1){sounds.push_back(kPortTitle==14?17:44);save_requested=true;transition(list);std::memcpy(scores.settings.data()+12,entered_name.data(),9);return;}
++            sounds.push_back(choice==89?(kPortTitle==14?9:11):(kPortTitle==14?7:10));if(choice==89)return;
+         }
+-        if(pressed&0x102){sounds.push_back(11);if(name_length)entered_name[--name_length]=' ';else transition(list);}break;
++        if(pressed&0x102){sounds.push_back(kPortTitle==14?9:11);if(name_length)entered_name[--name_length]=' ';else transition(list);}break;
+     case 18:case 25:
+         if(timer.current<10)break;
+         if(!unranked)name_move(pressed|repeat);
+         if(pressed&0x80001){
+             if(!unranked){const i32 edit=name_confirm();if(edit<0)return;
+-                if(edit!=1){sounds.push_back(10);return;}
++                if(edit!=1){sounds.push_back(kPortTitle==14?7:10);return;}
+                 scores.score_name(selection,difficulty,cursor.selected,entered_name.data());
+             }
+             show_end_choices(practice_states?103:98,practice_states?22:14,practice_states?3:4);visible(true);return;
+         }
+         if(pressed&0x102){if(cursor.selected<0){show_end_choices(practice_states?103:98,practice_states?22:14,practice_states?3:4);visible(true);return;}
+-            if(name_length){sounds.push_back(11);entered_name[--name_length]=' ';}
++            if(name_length){sounds.push_back(kPortTitle==14?9:11);entered_name[--name_length]=' ';}
+         }break;
+     case 19:case 26:
+         if(timer.current>=12){family(background_animation,1);family(menu_animation,1);transition(27);
+             if(practice_states)action=cursor.selected==2?PauseAction::Restart:PauseAction::Title;
++#if PORT_TITLE == 14
++            else if(cursor.selected==0&&!completed&&!remaining_credits_th14())action=PauseAction::Title;
++#endif
+             else action=cursor.selected==0?(completed?PauseAction::Restart:PauseAction::Continue):cursor.selected==(kPortTitle==14?4:3)?PauseAction::Restart:PauseAction::Title;
+         }break;
+     case 15:
+diff --git a/runtimes/th12/th12_web/cpp/game/PauseMenu.hpp b/runtimes/th12/th12_web/cpp/game/PauseMenu.hpp
+index b59f7e709d9764453d1549699fa1de46f6a2e7fc..a36e6f9f007e7bcde0c777744cdb34a468138337 100644
+--- a/runtimes/th12/th12_web/cpp/game/PauseMenu.hpp
++++ b/runtimes/th12/th12_web/cpp/game/PauseMenu.hpp
+@@ -78,6 +78,7 @@ private:
+     void show_end_choices(i32 script,i32 next,i32 count);
+     void visible(bool value);
+ #if PORT_TITLE == 14
++    i32 remaining_credits_th14()const;
+     bool create_deferred_backdrop_th14();
+     void manual_choices();
+     bool manual_create(i32);
+diff --git a/runtimes/th12/th12_web/cpp/game/PauseReplay.cpp b/runtimes/th12/th12_web/cpp/game/PauseReplay.cpp
+index 31e8692a237fe154ec93a7cafbf2e79a20232fed..4c35cbf73136215d19e1d81a68a50fb658e4934c 100644
+--- a/runtimes/th12/th12_web/cpp/game/PauseReplay.cpp
++++ b/runtimes/th12/th12_web/cpp/game/PauseReplay.cpp
+@@ -12,7 +12,7 @@ void PauseMenu::name_move(u32 input){
+     if(input&16)c.move(-13);if(input&32)c.move(13);
+     if(input&64)c.move(c.selected%13==0?12:-1);
+     if(input&128)c.move(c.selected%13==12?-12:1);
+-    if(c.previous!=c.selected)sounds.push_back(12);
++    if(c.previous!=c.selected)sounds.push_back(kPortTitle==14?10:12);
+ }
+ i32 PauseMenu::name_confirm(){
+     static constexpr char letters[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-=.,!?@:;[]()_/{}|~^#$%&*   ";
+@@ -33,19 +33,19 @@ void PauseMenu::save_menu(u32 pressed,u32 repeat){
+     case 9:
+         if(timer.current<10)break;
+         cursor.previous=cursor.selected;if((pressed|repeat)&16)cursor.move(-1);if((pressed|repeat)&32)cursor.move(1);
+-        if(cursor.previous!=cursor.selected)sounds.push_back(12);
+-        if(pressed&0x80001){transition(10);recording_metadata_requested=true;name_begin();sounds.push_back(10);return;}
++        if(cursor.previous!=cursor.selected)sounds.push_back(kPortTitle==14?10:12);
++        if(pressed&0x80001){transition(10);recording_metadata_requested=true;name_begin();sounds.push_back(kPortTitle==14?7:10);return;}
+         if(pressed&0x102){cursor.pop();cursor.count=kPortTitle==14?5:4;cursor.wrap=1;family(menu_animation,cursor.selected+7);
+-            replay_files.fill(nullptr);transition(4);cursor.select(1);sounds.push_back(11);
++            replay_files.fill(nullptr);transition(4);cursor.select(1);sounds.push_back(kPortTitle==14?9:11);
+         }break;
+     case 10:
+         if(timer.current<10)break;
+         name_move(pressed|repeat);
+         if(pressed&0x80001){const i32 choice=name_cursor.selected,edit=name_confirm();if(edit<0)return;
+-            if(edit==1){sounds.push_back(44);save_requested=true;transition(9);std::memcpy(scores.settings.data()+12,entered_name.data(),9);return;}
+-            sounds.push_back(choice==89?11:10);if(choice==89)return;
++            if(edit==1){sounds.push_back(kPortTitle==14?17:44);save_requested=true;transition(9);std::memcpy(scores.settings.data()+12,entered_name.data(),9);return;}
++            sounds.push_back(choice==89?(kPortTitle==14?9:11):(kPortTitle==14?7:10));if(choice==89)return;
+         }
+-        if(pressed&0x102){sounds.push_back(11);if(name_length)entered_name[--name_length]=' ';else transition(9);}break;
++        if(pressed&0x102){sounds.push_back(kPortTitle==14?9:11);if(name_length)entered_name[--name_length]=' ';else transition(9);}break;
+     }
+ }
+ }
+diff --git a/runtimes/th12/th12_web/cpp/game/PauseText.cpp b/runtimes/th12/th12_web/cpp/game/PauseText.cpp
+index a3e63fe228287890e69b17af24edfea2684474b2..a7d4cf12bf221720e07b639c8c93396296bd2257 100644
+--- a/runtimes/th12/th12_web/cpp/game/PauseText.cpp
++++ b/runtimes/th12/th12_web/cpp/game/PauseText.cpp
+@@ -42,8 +42,8 @@ void PauseMenu::queue_ascii(AsciiText& out)const{
+ #endif
+ #if PORT_TITLE == 14
+     // Retail4485d0 state15 draws the remaining credits below the ANM choices.
+-    if(state==14){constexpr i32 limits[]={3,3,4,5,0};const i32 credit=difficulty>=0&&difficulty<5?limits[difficulty]-continues:0;
+-        std::snprintf(line,sizeof line,"Credit %d",credit);add(line,184,448);return;}
++    if(state==14){
++        std::snprintf(line,sizeof line,"Credit %d",remaining_credits_th14());add(line,184,448);return;}
+ #endif
+     auto name=[&](float x,float y){
+         add(entered_name.data(),x,y);style.color=0xffffff00;add("_",x+9*(name_length==8?7:name_length),y);
+diff --git a/runtimes/th12/th12_web/cpp/game/TitleResults.cpp b/runtimes/th12/th12_web/cpp/game/TitleResults.cpp
+index c91062f77f39cdc37dac75bbe8d697d98b1ee72c..44601056b63271565f978c23429449315ddbf456 100644
+--- a/runtimes/th12/th12_web/cpp/game/TitleResults.cpp
++++ b/runtimes/th12/th12_web/cpp/game/TitleResults.cpp
+@@ -80,7 +80,7 @@ void TitleMenu::replay_save(u32 pressed,u32 repeat){
+     case 3:
+         name_move(pressed|repeat);
+         if(pressed&0x80001){const i32 action=name_confirm();if(action<0)break;
+-            if(action==1){sounds.push_back(10);replay_save_requested=true;std::memcpy(scores.settings.data()+12,entered_name.data(),9);step(2);}
++            if(action==1){sounds.push_back(kPortTitle==14?17:10);replay_save_requested=true;std::memcpy(scores.settings.data()+12,entered_name.data(),9);step(2);}
+             sounds.push_back(10);
+         }
+         if(pressed&0x102){if(name_length){sounds.push_back(11);entered_name[--name_length]=' ';}else step(2);}break;
+diff --git a/runtimes/th12/th12_web/cpp/sdl/Application.cpp b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
+index bae5d17e65ee2a98f46cb063007b05d43941077d..d5348bbbed144d595e556731c24dad3a9349fba8 100644
+--- a/runtimes/th12/th12_web/cpp/sdl/Application.cpp
++++ b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
+@@ -306,7 +306,18 @@ struct Application:StageResourceEffects
+ #endif
+ #if PORT_TITLE == 14
+     bool frame_statistics_sampled=false;
++    bool coalesce_browser_draw=false;
+     u8 frame_skip_counter=0;
++    bool can_coalesce_browser_draw()const noexcept{
++        const auto* b=session.battle.get();
++        if(session.state.phase!=GameSessionPhase::stage||session.state.replay||session.state.demo||
++           !b||!session.battle_callbacks_attached()||!b->stage_active||!b->stage||b->pending_stage||
++           b->transitioning||b->completion.state.exit!=StageExit::None||
++           (b->dialogue&&b->dialogue->active)||session.persistent_config().bytes[0x20])return false;
++        for(const auto& slot:session.animations.deferred_captures.slots)
++            if(__atomic_load_n(&slot.file_index,__ATOMIC_ACQUIRE)>=0)return false;
++        return true;
++    }
+     bool present_this_update(){
+         // Retail46a833 increments a byte, then compares its signed value.
+         ++frame_skip_counter;
+@@ -1103,7 +1114,7 @@ struct Application:StageResourceEffects
+             // Bootstrap all three before the first upload, preserving Sig,
+             // ASCII and text template order without holding an Asyncify stack
+             // open while their CPU decoding runs in the independent worker.
+-            const char* names[]={"sig.anm","ascii.anm","text.anm"};
++            const char* names[]={"sig.anm",session.resources.ascii_anm_name(),"text.anm"};
+             th14_webgpu_archive_schedule(run_boot_work,new BootWorkToken{this,boot_worker_generation,work,index},names,3);
+             return;
+         }
+@@ -2010,7 +2021,7 @@ struct Application:StageResourceEffects
+                 const auto& sprite=*vm->sprite;const u32 target=graphics.texture(*vm->resource,sprite.texture);renderer.flush();
+                 i32 from[]={32,16,416,464};u32 source=GraphicsDevice::screen;
+ #if PORT_TITLE == 14
+-                const auto capture=th14_immediate_capture_source(session);
++                const auto capture=th14_immediate_capture_source(session,float(session.config.render_width())/640.f);
+                 std::copy(capture.rectangle,capture.rectangle+4,from);
+                 if(capture.text_intermediate){source=graphics.texture(session.resources.core.text,3);if(!source){error="Pause capture source texture missing";return false;}}
+ #endif
+@@ -2055,6 +2066,13 @@ struct Application:StageResourceEffects
+ #endif
+ #if PORT_TITLE == 14
+         if(!present_this_update())return true;
++        // Under a slow browser refresh the next update will submit the
++        // current scene. Keep this update's input, effects, audio and clock.
++        if(coalesce_browser_draw&&before==GameSessionPhase::stage&&can_coalesce_browser_draw()){
++            sample_frame_statistics();
++            if(!session.sample_spell_clock(double(SDL_GetTicksNS())*1e-9)){error="Invalid spell timing state";return false;}
++            return true;
++        }
+ #endif
+         frame_text.clear();
+ #if PORT_TITLE == 14
+@@ -2295,8 +2313,23 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
+         if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
+         const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
+         if(suspended){cadence.reset();return EM_TRUE;}
+-        const auto ticks=cadence.advance(delta);bool ok=true;app.graphics.backend.defer=true;
+-        for(unsigned n=0;n<ticks&&ok;++n)ok=sample_and_tick();
++#if PORT_TITLE == 14
++        const auto limit=cadence.advance_display(delta,app.can_coalesce_browser_draw());
++#else
++        const auto limit=cadence.advance(delta);
++#endif
++        bool ok=true;app.graphics.backend.defer=true;
++        unsigned ticks=0;
++        for(;ticks<limit&&ok;++ticks){
++#if PORT_TITLE == 14
++            if(ticks&&!app.can_coalesce_browser_draw())break;
++            app.coalesce_browser_draw=ticks+1<limit;
++#endif
++            ok=sample_and_tick();
++        }
++#if PORT_TITLE == 14
++        app.coalesce_browser_draw=false;
++#endif
+         app.graphics.backend.commit();app.graphics.backend.defer=false;
+         app.audio.pump();
+         if(ticks)th11_browser_frame(ok?1:0,emscripten_get_now()-begin,ticks);
+diff --git a/runtimes/th12/th12_web/cpp/sdl/ApplicationCaptureTh14.hpp b/runtimes/th12/th12_web/cpp/sdl/ApplicationCaptureTh14.hpp
+index 997267a818ce8545c62c3cf262c5982e00972c05..b1c158592be72316d6d65db725a0ac60a2bf905f 100644
+--- a/runtimes/th12/th12_web/cpp/sdl/ApplicationCaptureTh14.hpp
++++ b/runtimes/th12/th12_web/cpp/sdl/ApplicationCaptureTh14.hpp
+@@ -2,11 +2,12 @@
+ #include "../game/AnmManager.hpp"
+ namespace th11::sdl {
+ struct ImmediateCaptureSourceTh14 {bool text_intermediate=false;i32 rectangle[4]{};};
+-template<class Session> ImmediateCaptureSourceTh14 th14_immediate_capture_source(const Session& session){
++template<class Session> ImmediateCaptureSourceTh14 th14_immediate_capture_source(const Session& session,float scale=1.f){
+  // Native448bf0 tests GUI+194 after both448d80 Pause and449d30 death.
+  // It does not test the public session phase. Normal Pause remains unchanged.
+  const bool dialogue=session.battle&&session.battle->dialogue&&session.battle->dialogue->active;
+- return {dialogue,{dialogue?128:32,16,dialogue?512:416,464}};
++ return {dialogue,{i32((dialogue?128.f:32.f)*scale),i32(16.f*scale),
++                   i32((dialogue?512.f:416.f)*scale),i32(464.f*scale)}};
+ }
+ template<class Session> AnmResource* th14_deferred_capture_target(Session& session,const DeferredCaptureRequestTh14& request){
+  // Both actual44be40 callers use text52 from Supervisor+71c/slot0.
+diff --git a/runtimes/th12/th12_web/tests/cpp/th14-anm-vm-oracle.cpp b/runtimes/th12/th12_web/tests/cpp/th14-anm-vm-oracle.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..b9a59a804a81f032197649748b8c56300fc3cfb7
+--- /dev/null
++++ b/runtimes/th12/th12_web/tests/cpp/th14-anm-vm-oracle.cpp
+@@ -0,0 +1,160 @@
++#include "AnmOpcodes.hpp"
++#include "AnmVm.hpp"
++#include "Archive.hpp"
++#include "GameSessionResources.hpp"
++#include <cstdio>
++
++using namespace th11;
++static_assert(kPortTitle == 14);
++
++namespace {
++u32 word(float value) { u32 bits; std::memcpy(&bits, &value, 4); return bits; }
++float real(u32 bits) { float value; std::memcpy(&value, &bits, 4); return value; }
++
++bool file_bytes(const char* name, std::vector<u8>& data) {
++    FILE* file = std::fopen(name, "rb");
++    if (!file) return false;
++    std::fseek(file, 0, SEEK_END);
++    const long size = std::ftell(file);
++    std::rewind(file);
++    if (size < 0) { std::fclose(file); return false; }
++    data.resize(size);
++    const bool ok = std::fread(data.data(), 1, data.size(), file) == data.size();
++    std::fclose(file);
++    return ok;
++}
++
++bool scan_archive(const char* name) {
++    std::vector<u8> bytes;
++    Archive archive;
++    if (!file_bytes(name, bytes) || !archive.open(bytes.data(), bytes.size(), 14)) return false;
++    for (u32 index = 0; index < archive.entries.size(); ++index) {
++        const auto& entry = archive.entries[index].name;
++        if (entry.size() < 4 || entry.substr(entry.size() - 4) != ".anm") continue;
++        std::vector<u8> data;
++        if (!archive.read(index, data)) return false;
++        AnmResource anm;
++        if (!anm.open(data.data(), data.size())) {
++            std::fprintf(stderr, "%s: ANM loader error %d\n", entry.c_str(), anm.last_error);
++            return false;
++        }
++        std::printf("asset %s %zu\n", entry.c_str(), anm.scripts.size());
++        if (entry == "ascii.anm" || entry == "ascii_960.anm" || entry == "ascii_1280.anm") {
++            for (u32 slot : {239u, 240u, 249u, 253u, 258u}) {
++                if (slot >= anm.sprites.size()) return false;
++                const auto& sprite = anm.sprites[slot];
++                std::printf("glyph %s %u %u %u\n", entry.c_str(), slot,
++                            word(sprite.width), word(sprite.height));
++            }
++        }
++        for (u32 slot = 0; slot < anm.scripts.size(); ++slot) {
++            const auto& script = anm.scripts[slot];
++            for (u32 at = script.file_offset; at + 8 <= data.size();) {
++                AnmInstruction raw;
++                std::memcpy(&raw, data.data() + at, sizeof raw);
++                if (raw.opcode == -1) break;
++                if (raw.length < 8 || at + raw.length > data.size()) return false;
++                // For interpolators with a mode operand, record the original mode as well.
++                i32 mode = -1;
++                switch (raw.opcode) {
++                case 407: case 408: case 409: case 410: case 411: case 412: case 413:
++                case 414: case 427: case 428: case 430: case 433: case 435:
++                    if (raw.length >= 16) std::memcpy(&mode, data.data() + at + 12, 4);
++                    break;
++                }
++                std::printf("op %s %u %d %d\n", entry.c_str(), slot, raw.opcode, mode);
++                if (raw.opcode == 415 && !raw.references && raw.length == 20) {
++                    float speed[3];
++                    std::memcpy(speed, data.data() + at + 8, sizeof speed);
++                    if (speed[0] == 0 && speed[1] == 0 && speed[2] == 0)
++                        std::printf("zero-angular %s %u\n", entry.c_str(), slot);
++                }
++                at += raw.length;
++            }
++        }
++    }
++    return true;
++}
++
++bool run_case(unsigned index, const u32 (&args)[19], std::vector<u8>& bytes) {
++    auto* code = bytes.data();
++    for (size_t offset = 0;;) {
++        if (offset + 8 > bytes.size()) return false;
++        auto& instruction = *reinterpret_cast<AnmInstruction*>(code + offset);
++        if (instruction.opcode == -1) break;
++        if (instruction.length < 8 || offset + instruction.length > bytes.size()) return false;
++        const u16 op = anm_canonical_opcode(u16(instruction.opcode));
++        if (op == anm_opcode_unmapped) {
++            std::printf("unmapped %u %d\n", index, instruction.opcode);
++            return true;
++        }
++        instruction.opcode = i16(op);
++        offset += instruction.length;
++    }
++    AnmEnvironment env;
++    env.rate = real(args[0]);
++    env.script_rng.seed = 12345;
++    env.visual_rng.seed = 54321;
++    AnmVm vm{};
++    vm.initialize();
++    vm.flags = 3;
++    vm.flags2 = args[1];
++    vm.scale = {real(args[2]), real(args[3])};
++    vm.scale_velocity = {real(args[4]), real(args[5])};
++    vm.rotation = {real(args[6]), real(args[7]), real(args[8])};
++    vm.angular_velocity = {real(args[9]), real(args[10]), real(args[11])};
++    vm.uv_offset = {real(args[12]), real(args[13])};
++    vm.scroll_velocity = {real(args[14]), real(args[15])};
++    vm.slowdown_factor = real(args[16]);
++    vm.sprite_size = {16, 24};
++    vm.script_position = {120, 140, 0};
++    vm.color = 0xffffffff;
++    vm.secondary_color = 0x88334455;
++    vm.timer.set(0, &env.rate);
++    vm.age.set(0, &env.rate);
++    vm.script_begin = vm.instruction = reinterpret_cast<AnmInstruction*>(code);
++    for (u32 frame = 0; frame < args[17]; ++frame) {
++        if (frame == args[18]) vm.interrupt(42);
++        const int status = vm.update(env);
++        const u32 observed[] = {
++            u32(status), vm.instruction ? u32(reinterpret_cast<u8*>(vm.instruction) - code) : ~u32(0),
++            u32(vm.timer.previous), u32(vm.timer.current), word(vm.timer.fractional),
++            u32(vm.age.current), word(vm.age.fractional), u32(vm.flags) & 0xf, vm.flags2,
++            word(vm.rotation.x), word(vm.rotation.y), word(vm.rotation.z),
++            word(vm.scale.x), word(vm.scale.y), word(vm.uv_offset.x), word(vm.uv_offset.y),
++            word(vm.scroll_velocity.x), word(vm.scroll_velocity.y), word(vm.script_position.x),
++            word(vm.script_position.y), word(vm.uv[0].x), word(vm.uv[0].y),
++            word(vm.uv[1].x), word(vm.uv[1].y), word(vm.uv[2].x), word(vm.uv[2].y),
++            word(vm.uv[3].x), word(vm.uv[3].y),
++            vm.color, vm.secondary_color, env.script_rng.seed, env.script_rng.calls,
++            env.visual_rng.seed, env.visual_rng.calls,
++        };
++        std::printf("frame %u %u", index, frame);
++        for (u32 value : observed) std::printf(" %u", value);
++        std::putchar('\n');
++        if (status) break;
++    }
++    return true;
++}
++}
++
++int main(int argc, char** argv) {
++    if (argc != 2 && argc != 3) return 2;
++    const GameSessionResources resources;
++    std::printf("boot-atlas %s\n", resources.ascii_anm_name());
++    for (u32 width : {640u, 960u, 1280u})
++        std::printf("atlas-width %u %s\n", width, GameConfig::ascii_anm_for_width(width));
++    for (u32 i = 0; i <= 634; ++i) std::printf("map %u %u\n", i, anm_canonical_opcode(i));
++    if (argc == 3 && !scan_archive(argv[2])) return 3;
++    FILE* input = std::fopen(argv[1], "rb");
++    if (!input) return 4;
++    u32 size;
++    for (unsigned index = 0; std::fread(&size, sizeof size, 1, input) == 1; ++index) {
++        u32 args[19];
++        if (size > 4096 || std::fread(args, sizeof args, 1, input) != 1) return 5;
++        std::vector<u8> bytes(size);
++        if (std::fread(bytes.data(), 1, size, input) != size || !run_case(index, args, bytes)) return 5;
++    }
++    std::fclose(input);
++    return 0;
++}
+diff --git a/runtimes/th12/th12_web/tests/cpp/th14-bootstrap-worker-fixture.cpp b/runtimes/th12/th12_web/tests/cpp/th14-bootstrap-worker-fixture.cpp
+index 443582536f0d0c3760c558c89984fb5a30df38d1..ec17c4cc768187098936523c3bdcd793dc26789d 100644
+--- a/runtimes/th12/th12_web/tests/cpp/th14-bootstrap-worker-fixture.cpp
++++ b/runtimes/th12/th12_web/tests/cpp/th14-bootstrap-worker-fixture.cpp
+@@ -19,7 +19,7 @@ EMSCRIPTEN_KEEPALIVE int fixture_reset(){
+ }
+ EMSCRIPTEN_KEEPALIVE int fixture_open(const u8* bytes,u32 size){
+     return source.open_archive(bytes,size)&&source.open_anm("sig.anm",expected_signature)
+-        &&source.open_anm("ascii.anm",expected_ascii)&&source.open_anm("text.anm",expected_text)&&fixture_reset();
++        &&source.open_anm("ascii_1280.anm",expected_ascii)&&source.open_anm("text.anm",expected_text)&&fixture_reset();
+ }
+ EMSCRIPTEN_KEEPALIVE int fixture_signature(){return source.open_anm("sig.anm",signature);}
+ EMSCRIPTEN_KEEPALIVE int fixture_load(){return actual.load_core_bootstrap();}
+diff --git a/runtimes/th12/th12_web/tests/cpp/th14-browser-cadence.cpp b/runtimes/th12/th12_web/tests/cpp/th14-browser-cadence.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..f31f097a18c39d6ece52dd696629cc2e004fca15
+--- /dev/null
++++ b/runtimes/th12/th12_web/tests/cpp/th14-browser-cadence.cpp
+@@ -0,0 +1,24 @@
++#include "../../../portable/sdl/FrameCadence.hpp"
++#include <cassert>
++
++int main() {
++    using touhou::sdl::FrameCadence;
++    FrameCadence clock;
++    constexpr double interval = FrameCadence::interval;
++    assert(clock.advance_display(0, true) == 0);
++    for (int i = 0; i < 120; ++i)
++        assert(clock.advance_display(interval + (i % 2 ? .001 : -.001), true) == 1);
++    clock.reset();
++    for (int i = 0; i < 60; ++i)
++        assert(clock.advance_display(2 * interval, true) == 2);
++    assert(clock.advance_display(1, true) == 2);
++    assert(clock.advance_display(2 * interval, false) == 1);
++    clock.reset();
++    unsigned updates = 0;
++    for (int i = 0; i < 120; ++i) {
++        const auto ticks = clock.advance_display(interval / 2, true);
++        assert(ticks <= 1);
++        updates += ticks;
++    }
++    assert(updates >= 59 && updates <= 61);
++}
+diff --git a/runtimes/th12/th12_web/tests/cpp/th14-ui-oracle.cpp b/runtimes/th12/th12_web/tests/cpp/th14-ui-oracle.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..1accf3d4a58cc3b8dbf0ce8b483e1cc2d9998e25
+--- /dev/null
++++ b/runtimes/th12/th12_web/tests/cpp/th14-ui-oracle.cpp
+@@ -0,0 +1,193 @@
++#include "AnmGeometry.hpp"
++#include "ApplicationCaptureTh14.hpp"
++#include "GameConfig.hpp"
++#include "LaserState.hpp"
++#include "PauseMenu.hpp"
++#include "TitleMenu.hpp"
++
++#include <cassert>
++#include <cstdio>
++
++using namespace th11;
++
++namespace {
++struct CaptureSession {
++    struct Dialogue { bool active = true; };
++    struct Battle { Dialogue* dialogue; };
++    Battle* battle;
++};
++
++struct StripObserver final : ZunGraphics {
++    touhou::graphics::PipelineState state{};
++    std::vector<AnmVertex> vertices;
++
++    touhou::graphics::PipelineState& pipeline() override { return state; }
++    u32 texture(const AnmResource&, u32) override { return 1; }
++    void bind_texture(u32) override {}
++    void set_layout(touhou::graphics::VertexLayout) override {}
++    void set_matrix(touhou::graphics::MatrixKind, const Matrix4&) override {}
++    void triangles(u32, const void*, u32) override { assert(false); }
++    void primitives(touhou::graphics::Topology topology, u32 count, const void* data, u32 stride) override {
++        assert(topology == touhou::graphics::Topology::Strip && stride == sizeof(AnmVertex));
++        const auto* first = static_cast<const AnmVertex*>(data);
++        vertices.assign(first, first + count + 2);
++    }
++};
++
++void print_sounds(const char* action, const std::vector<i32>& sounds) {
++    std::printf("%s", action);
++    for (i32 sound : sounds) std::printf(" %d", sound);
++    std::puts("");
++}
++
++void observe_menus() {
++    AnmManager animations;
++    AnmResource unused;
++    ScoreFile scores;
++
++    PauseMenu pause(animations, unused, unused, scores);
++    pause.state = 18;
++    pause.timer.set(15, &animations.rate);
++    pause.name_cursor.count = 91;
++    pause.name_cursor.wrap = 1;
++    assert(pause.update(128, 0));
++    print_sounds("score_move", pause.sounds);
++    assert(pause.update(1, 0));
++    print_sounds("score_accept", pause.sounds);
++
++    const char* labels[] = {"pause_save", "game_over_save", "practice_save"};
++    const i32 states[] = {10, 17, 24};
++    for (i32 i = 0; i < 3; ++i) {
++        pause.state = states[i];
++        pause.name_cursor.select(90);
++        pause.timer.set(15, &animations.rate);
++        pause.save_requested = false;
++        assert(pause.update(1, 0) && pause.save_requested);
++        print_sounds(labels[i], pause.sounds);
++    }
++
++    TitleMenu title(animations, unused, unused, unused, scores);
++    title.screen = TitleScreen::ReplaySave;
++    title.substate = 3;
++    title.name_cursor.count = 91;
++    title.name_cursor.select(90);
++    assert(title.update(1, 0) && title.replay_save_requested);
++    print_sounds("title_save", title.sounds);
++
++    for (i32 difficulty = 0; difficulty < 5; ++difficulty) {
++        for (i32 used = 0; used <= 5; ++used) {
++            PauseMenu end(animations, unused, unused, scores);
++            end.stage = difficulty == 4 ? 7 : 1;
++            end.difficulty = difficulty;
++            end.continues = used;
++            // Enter the replay list from an existing result menu and cancel it.
++            end.state = 16;
++            end.cursor.count = 5;
++            end.cursor.select(2);
++            end.cursor.push();
++            end.cursor.count = 25;
++            end.cursor.select(0);
++            end.timer.set(15, &animations.rate);
++            assert(end.update(2, 0) && end.state == 14);
++            assert(end.update(16, 0) && end.cursor.selected == 1);
++            assert(end.update(16, 0));
++            const bool selectable = end.cursor.selected == 0;
++
++            end.state = 19;
++            end.cursor.select(0);
++            end.timer.set(15, &animations.rate);
++            assert(end.update(0, 0));
++            const bool continued = end.action == PauseAction::Continue;
++            std::printf("continue_%d_%d %d %d\n", difficulty, used, selectable, continued);
++        }
++    }
++}
++
++void observe_geometry() {
++    CaptureSession::Dialogue message;
++    CaptureSession::Battle battle{&message};
++    StripObserver graphics;
++    AnmRenderer renderer(graphics);
++    AnmResource resource;
++    AnmSprite sprite{};
++    Th14LaserCurve curve;
++    curve.base.width = 14;
++    curve.body.initialize();
++    curve.body.sprite = &sprite;
++    curve.body.resource = &resource;
++    curve.body.uv[0].y = .25f;
++    curve.body.uv[2].y = .5f;
++    curve.path.samples.resize(2);
++    curve.path.samples[0].position = {-50, 80, 0};
++    curve.path.samples[1].position = {50, 80, 0};
++    curve.vertices.resize(4);
++    curve.curve_timer.current = 3;
++
++    for (u32 width : {640u, 960u, 1280u}) {
++        renderer.render_width = width;
++        renderer.render_height = width * 3 / 4;
++        const auto space = renderer.render_space_th14();
++
++        for (i32 dialogue : {0, 1}) {
++            const auto copy = sdl::th14_immediate_capture_source(CaptureSession{dialogue ? &battle : nullptr}, space.scale);
++            std::printf("capture_%u_%d %d", width, dialogue, copy.text_intermediate);
++            for (i32 value : copy.rectangle) std::printf(" %d", value);
++            std::puts("");
++        }
++
++        assert(laser_th14_curve_draw(curve, renderer));
++        assert(graphics.vertices.size() == 4);
++        std::printf("curve_%u", width);
++        for (const auto& v : graphics.vertices) {
++            std::printf(" %u %u %u %u", float_bits(v.position.x), float_bits(v.position.y),
++                        float_bits(v.uv.x), float_bits(v.uv.y));
++        }
++        std::puts("");
++
++        AnmVm vm;
++        vm.initialize();
++        // The authored size comes from the display-matched atlas.
++        vm.sprite_size = {10 * space.scale, 16 * space.scale};
++        Vec3 quad[4];
++        auto dimensions = [&](const char* label) {
++            std::printf("%s_%u %u %u\n", label, width,
++                        float_bits(quad[1].x - quad[0].x), float_bits(quad[2].y - quad[0].y));
++        };
++        assert(anm_th14_ascii_quad_positions(vm, quad, space));
++        dimensions("queued_glyph");
++        vm.flags2 = 3u << 19;
++        assert(anm_th14_ascii_quad_positions(vm, quad, space));
++        dimensions("popup_glyph");
++        vm.file_index = 2;
++        vm.script_index = 1;
++        assert(anm_th14_draw_quad_positions(vm, quad, space));
++        dimensions("spell_labels");
++        vm.script_index = 2;
++        assert(anm_th14_draw_quad_positions(vm, quad, space));
++        dimensions("boss_timer");
++        vm.script_index = 4;
++        assert(anm_th14_draw_quad_positions(vm, quad, space));
++        dimensions("spell_award");
++        vm.file_index = 5;
++        vm.sprite_size = {10, 16};
++        assert(anm_th14_draw_quad_positions(vm, quad, space));
++        dimensions("other_sprite");
++    }
++}
++
++void observe_display() {
++    GameConfig config;
++    for (u8 mode = 0; mode < 6; ++mode) {
++        auto bytes = config.bytes;
++        bytes[0x1f] = mode;
++        assert(config.open(bytes.data(), bytes.size()));
++        std::printf("display_%u %u %u %u\n", u32(mode), config.render_width(), config.render_height(), u32(config.bytes[0x1f]));
++    }
++}
++}
++
++int main() {
++    observe_menus();
++    observe_geometry();
++    observe_display();
++}
+diff --git a/runtimes/th14/th14_web/sdl-runtime/th14.html b/runtimes/th14/th14_web/sdl-runtime/th14.html
+index 6d02af54e424cf763ad050ca656749046b30642e..0e1d19f968c58caca18890bb14b66d5cb54533b8 100644
+--- a/runtimes/th14/th14_web/sdl-runtime/th14.html
++++ b/runtimes/th14/th14_web/sdl-runtime/th14.html
+@@ -1,3 +1,3 @@
+ <!doctype html>
+ <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>东方辉针城 · 移植验证</title><link rel="stylesheet" href="/app/style.css"></head>
+-<body data-port-title="14"><main id="stage"><canvas id="canvas" width="640" height="480" tabindex="0" aria-label="东方辉针城画面"></canvas><div id="touch" hidden><button id="shoot">射击</button><button id="focus">低速</button><button id="bomb">B</button><button id="pause">暂停</button></div><div id="welcome"><h1>东方辉针城</h1><p>移植验证版 · 完整游戏尚未完成</p><button id="start">启动验证</button><progress id="progress" hidden></progress><p id="status" role="status">加载本机原版资源。</p></div><div id="pause-panel" hidden><h2>暂停</h2><button id="resume">继续游戏</button><button id="return-title">返回标题</button></div></main><footer><button id="fullscreen">全屏</button><button id="touch-toggle">显示触控</button><span id="health"></span></footer><div id="error" role="alert" hidden></div><script type="module" src="/app/shell.mjs"></script></body></html>
++<body data-port-title="14"><main id="stage"><canvas id="canvas" width="1280" height="960" tabindex="0" aria-label="东方辉针城画面"></canvas><div id="touch" hidden><button id="shoot">射击</button><button id="focus">低速</button><button id="bomb">B</button><button id="pause">暂停</button></div><div id="welcome"><h1>东方辉针城</h1><p>移植验证版 · 完整游戏尚未完成</p><button id="start">启动验证</button><progress id="progress" hidden></progress><p id="status" role="status">加载本机原版资源。</p></div><div id="pause-panel" hidden><h2>暂停</h2><button id="resume">继续游戏</button><button id="return-title">返回标题</button></div></main><footer><button id="fullscreen">全屏</button><button id="touch-toggle">显示触控</button><span id="health"></span></footer><div id="error" role="alert" hidden></div><script type="module" src="/app/shell.mjs"></script></body></html>
+diff --git a/tools/tests/test-th14-frame-scheduler.mjs b/tools/tests/test-th14-frame-scheduler.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec0cdeda1efb855feb55d1ddde5e2e20e190a832
+--- /dev/null
++++ b/tools/tests/test-th14-frame-scheduler.mjs
+@@ -0,0 +1,35 @@
++import assert from 'node:assert/strict';
++import test from 'node:test';
++import {Th14AsyncRuntime} from '../../runtimes/th12/portable/sdl/Th14AsyncRuntime.mjs';
++
++test('TH14 reserves the next refresh and never queues stale simulation frames', async () => {
++  const frames = [], calls = [];
++  let finish;
++  const module = {ccall(name, _type, _types, args) {
++    calls.push([name, ...args]);
++    return new Promise(resolve => { finish = resolve; });
++  }};
++  const runtime = new Th14AsyncRuntime(module, {requestFrame(fn) { frames.push(fn); }});
++  const refresh = time => {
++    assert.equal(frames.length, 1);
++    frames.shift()(time);
++  };
++  runtime.startFrames(5, 7);
++  refresh(10);
++  await Promise.resolve();
++  assert.equal(runtime.pendingCallbacks, 1);
++  refresh(27);
++  refresh(44);
++  assert.deepEqual(calls, [['th14_async_frame', 5, 10, 7]]);
++  finish(1);
++  await runtime.tail;
++  refresh(61);
++  await Promise.resolve();
++  assert.deepEqual(calls.at(-1), ['th14_async_frame', 5, 61, 7]);
++  finish(0);
++  await runtime.tail;
++  refresh(78);
++  assert.equal(frames.length, 0);
++  assert.equal(calls.length, 2);
++  assert.equal(runtime.pendingCallbacks, 0);
++});
+diff --git a/tools/th-anm-handlers.py b/tools/th-anm-handlers.py
+index f481ff68e23477cdb29bec1e8376df8c142108b2..f28d5f902ac2d22fe760d129e3ff2bcc308ea7c1 100644
+--- a/tools/th-anm-handlers.py
++++ b/tools/th-anm-handlers.py
+@@ -13,11 +13,11 @@ Image = importlib.import_module('th12-pe').Image
+ ROOT = Path(__file__).resolve().parents[1]
+ 
+ 
+-def handlers(title):
++def handlers(title, executable=None):
+     folder = ROOT / f'runtimes/th{title}'
+     target_file = folder / ('th12_web/target.json' if title == 12 else 'target.json')
+     target = json.loads(target_file.read_text(encoding='utf-8'))
+-    img = Image(str((target_file.parent / target['executable']).resolve()))
++    img = Image(str(executable if executable is not None else (target_file.parent / target['executable']).resolve()))
+     if hashlib.sha256(img.data).hexdigest() != target['sha256']:
+         raise ValueError(f'th{title}: executable digest differs from target.json')
+     if title == 12:
+diff --git a/tools/th14-anm-vm-oracle.py b/tools/th14-anm-vm-oracle.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..7a41e1d7e5911fe4aa29966ec64cb214876998c9
+--- /dev/null
++++ b/tools/th14-anm-vm-oracle.py
+@@ -0,0 +1,320 @@
++"""Compare TH14 1.00b ANM VM update traces and retail archive opcode usage."""
++import argparse
++from collections import Counter, defaultdict
++import importlib
++import json
++import os
++from pathlib import Path
++import struct
++import subprocess
++import sys
++import tempfile
++
++from unicorn.x86_const import UC_X86_REG_EAX, UC_X86_REG_ESP
++
++from_ui = importlib.import_module('th14-ui-oracle')
++Retail, ROOT, RUNTIME, digest, f = (from_ui.Retail, from_ui.ROOT, from_ui.RUNTIME,
++                                    from_ui.digest, from_ui.float_word)
++VM, CODE = from_ui.VM, from_ui.DATA
++RATE = 0x4d8f58
++ARCHIVE_SHA = '57d84a5cbe82460931cca26f090a0fde7aef180889ce5bfe8315851fc97b0233'
++FIELDS = ('status instruction timer.previous timer.frame timer.fraction age.frame age.fraction '
++          'flags.low flags2 rotation.x rotation.y rotation.z scale.x scale.y uv.offsetX '
++          'uv.offsetY scroll.x scroll.y position.x position.y uv0.x uv0.y uv1.x uv1.y '
++          'uv2.x uv2.y uv3.x uv3.y primary secondary '
++          'scriptRng.seed scriptRng.calls visualRng.seed visualRng.calls').split()
++OFFSETS = (0x548, 0x54c, 0x550, 0x560, 0x564, 0x18, 0x1c, 0x48, 0x4c, 0x50, 0x60,
++           0x64, 0x88, 0x8c, 0x3d8, 0x3dc, 0x3c, 0x40, *range(0x3b8, 0x3d8, 4), 0x534, 0x538,
++           0x4db508 - VM, 0x4db50c - VM, 0x4db510 - VM, 0x4db514 - VM)
++VELOCITY = 0x800000
++
++
++def instruction(op, *args, time=0, refs=0):
++    return struct.pack('<hHhH', op, 8 + 4 * len(args), time, refs) + struct.pack(
++        '<' + 'I' * len(args), *(arg & 0xffffffff for arg in args))
++
++
++def scenarios():
++    cases = {}
++
++    def add(name, *ops, rate=1, flags=0, scale=(1, 1), size_velocity=(0, 0),
++            rotation=(0, 0, 0), angle_velocity=(0, 0, 0), uv=(0, 0), scroll=(0, 0),
++            slowdown=0, frames=5, interrupt=0xffffffff):
++        words = [f(rate), flags, *map(f, (*scale, *size_velocity, *rotation, *angle_velocity,
++                                          *uv, *scroll, slowdown)), frames, interrupt]
++        cases[name] = words, b''.join((*ops, instruction(0, time=256), instruction(-1, time=32767)))
++
++    for rate in (.6, .99, 1, 1.01, 1.25):
++        add(f'clock/{rate}', rate=rate)
++        add(f'clock/slow/{rate}', rate=rate, flags=0x100, slowdown=.375)
++        add(f'clock/delay/{rate}', instruction(6, 2), rate=rate)
++        add(f'clock/hold/{rate}', instruction(3), rate=rate)
++        add(f'clock/interrupt/{rate}', instruction(4, time=1),
++            instruction(5, 42, time=10), instruction(403, 127, time=10),
++            instruction(7, time=10), rate=rate, interrupt=3)
++    add('lifecycle/delete', instruction(1))
++    add('lifecycle/stop', instruction(2))
++    add('velocity/flag-clear', size_velocity=(.25, -.125), angle_velocity=(0, 0, .25),
++        scroll=(.125, -.5))
++    add('velocity/flag-set', flags=VELOCITY, size_velocity=(.25, -.125),
++        angle_velocity=(0, 0, .25), scroll=(.125, -.5))
++    add('velocity/dirty-x', instruction(416, f(.25), f(0)))
++    add('velocity/dirty-angular-zero', instruction(415, f(0), f(0), f(0)))
++    add('velocity/round-y', instruction(416, f(0), f(-.114719)), scale=(1, .2713), rate=.6)
++    add('velocity/wrap', instruction(415, f(0), f(0), f(.7)),
++        rotation=(0, 0, 3.1), rate=.6)
++    add('velocity/zero-scroll', flags=VELOCITY, uv=(2, -1))
++    add('velocity/vertical', instruction(426, f(-.25)), uv=(0, .1))
++
++    for axis in (0, 1):
++        for mode in range(32):
++            for seed in (False, True):
++                op = 427 + axis
++                before = (instruction(425 + axis, f(.107)),) if seed else ()
++                add(f'scroll/{op}/{mode}/' + ('with-velocity' if seed else 'alone'),
++                    *before, instruction(op, 6, mode, f(.631), time=1), rate=.6, frames=13)
++
++    for mode in range(32):
++        add(f'interpolation/{mode}', instruction(407, 7, mode, f(9.3), f(28.7), f(0)),
++            instruction(408, 7, mode, 21, 109, 221), instruction(409, 7, mode, 21),
++            instruction(410, 7, mode, f(-.29), f(2.18), f(.17)),
++            instruction(412, 7, mode, f(2.13), f(-.56)), instruction(413, 7, mode, 23, 147, 8),
++            instruction(414, 7, mode, 7), rate=.75, rotation=(.25, .5, -.75), frames=12)
++
++    for refs in (0, 1, 3, 7):
++        for op, length in [(401, 3), (402, 2), (415, 3), (416, 2), (429, 2), (434, 2)]:
++            if refs >= (1 << length):
++                continue
++            operands = [f(10011) if refs & (1 << i) else f(.25 + .25 * i) for i in range(length)]
++            add(f'references/{op}/{refs}', instruction(op, *operands, refs=refs), frames=2)
++
++    add('screen-uv/flag', flags=0x1000)
++    add('screen-uv/flag-and-movement', instruction(407, 4, 0, f(64), f(32), f(0)), flags=0x1000)
++    for mode in range(32):
++        for start, end in ((.75, -.5), (3.05, -3.05), (-3.05, 3.05), (7.5, -12.1)):
++            add(f'rotation-z/{mode}/{start}/{end}', instruction(411, 5, mode, f(end)),
++                rotation=(.25, -.5, start), rate=.6, frames=10)
++    add('rotation-z/overrides-vector', instruction(410, 5, 0, f(.5), f(.75), f(2)),
++        instruction(411, 5, 0, f(-1)), frames=7)
++    add('rotation-z/zero-duration', instruction(411, 0, 0, f(.75)))
++    add('screen-uv/418-once', instruction(418), instruction(400, f(80), f(24), f(0), time=1))
++    add('screen-uv/419-toggle', instruction(419, 1), instruction(400, f(80), f(24), f(0), time=1),
++        instruction(419, 0, time=2), instruction(400, f(26), f(30), f(0), time=3))
++    return cases
++
++
++def native_rows(retail, args, code):
++    rate, flags, *values, frames, interrupt = args
++    retail.machine.mem_write(VM, bytes(0x5cc))
++    retail.machine.mem_write(CODE, code)
++    retail.put(RATE, rate)
++    retail.put(VM + 0x18, 3, flags)
++    retail.put(VM + 0x28, CODE)
++    retail.put(VM + 0x38, CODE, f(120), f(140), 0)
++    retail.put(VM + 0x48, *values[4:10])
++    retail.put(VM + 0x60, *values[0:2], f(1), f(1), *values[2:4], f(1), f(1), f(16), f(24),
++               *values[10:12])
++    retail.put(VM + 0x3d8, *values[12:14])
++    retail.put(VM + 0x4e0, f(1), f(3.141592653589793), 65536)
++    retail.put(VM + 0x534, 0xffffffff, 0x88334455)
++    retail.put(VM + 0x548, 0xffffffff, 0, 0, RATE, 1, 0xffffffff, 0, 0, RATE, 1)
++    retail.put(VM + 0x598, values[14])
++    retail.put(0x4f7a6c, f(1))
++    retail.put(0x4f7a80, 320, 16, 320, 16)
++    retail.put(0x4db508, 12345, 0, 54321, 0)
++    result = []
++    for frame in range(frames):
++        if frame == interrupt:
++            retail.put(VM + 0x4a0, 42)
++        retail.run(0x46fe50)
++        status = retail.machine.reg_read(UC_X86_REG_EAX)
++        address, = retail.words(VM + 0x28, 1)
++        state = [retail.words(VM + offset, 1)[0] for offset in OFFSETS]
++        state[5] &= 0xf
++        result.append([status, address - CODE if address else 0xffffffff, *state])
++        if status:
++            break
++    return result
++
++
++def native_atlas_names(retail, image):
++    names = {}
++    for mode in range(6):
++        retail.machine.mem_write(0x4d9153, bytes([mode]))
++        retail.run(0x40b530, stop=0x40b564)
++        resource_id, address = retail.words(retail.machine.reg_read(UC_X86_REG_ESP), 2)
++        if resource_id != 2:
++            raise RuntimeError('Unexpected ASCII resource ID')
++        names[mode] = image.cstring(address)
++    return names
++
++
++def observe_candidate(build, sdk, cases, archive):
++    build_data = json.loads((build / 'build.json').read_bytes())
++    if digest((build / 'th14-sdl.wasm').read_bytes()) != build_data['sha256']:
++        raise RuntimeError('Wasm differs from build.json')
++    for name, expected in build_data['sourceBindings'].items():
++        if digest((ROOT / name).read_bytes()) != expected:
++            raise RuntimeError(f'Build is stale for {name}')
++    objects = []
++    for name, expected in build_data['objects'].items():
++        if name.replace('\\', '/').startswith('objects/th12_web_cpp_game_'):
++            obj = build / name
++            if digest(obj.read_bytes()) != expected:
++                raise RuntimeError(f'Build object differs from build.json: {name}')
++            objects.append(obj)
++    if not objects:
++        raise RuntimeError('No game objects in the GLES build')
++    flags = [flag for flag in build_data['flags'] if flag not in ('--profiling-funcs', '--use-port=sdl3')]
++    fixture = RUNTIME / 'th12_web/tests/cpp/th14-anm-vm-oracle.cpp'
++    with tempfile.TemporaryDirectory(prefix='anm-vm-oracle-', dir=build) as temp:
++        env = {**os.environ, 'EMSDK': str(sdk), 'EM_CONFIG': str(sdk / '.emscripten'),
++               'TEMP': temp, 'TMP': temp, 'TMPDIR': temp}
++        module = Path(temp) / 'probe.mjs'
++        input_path = Path(temp) / 'cases.bin'
++        with input_path.open('wb') as output:
++            for args, code in cases.values():
++                output.write(struct.pack('<20I', len(code), *args))
++                output.write(code)
++        subprocess.run([
++            sys.executable, str(sdk / 'upstream/emscripten/emcc.py'), *flags,
++            '-Ith12_web/cpp/game', str(fixture), *map(str, objects), '-sDEFAULT_TO_CXX=1',
++            '-sENVIRONMENT=node', '-sNODERAWFS=1', '-sEXIT_RUNTIME=1',
++            '-sSTACK_SIZE=1048576', '-sINITIAL_MEMORY=134217728', '-sALLOW_MEMORY_GROWTH=1', '-o', str(module),
++        ], check=True, cwd=RUNTIME, env=env)
++        runner = module.with_name('run.mjs')
++        runner.write_text("import make from './probe.mjs';\nawait make({arguments: process.argv.slice(2)});\n",
++                          encoding='utf-8')
++        return subprocess.check_output(['node', str(runner), str(input_path),
++                                        *([str(archive)] if archive else [])], text=True)
++
++
++def audit(args):
++    image, table, default = importlib.import_module('th-anm-handlers').handlers(14, args.exe)
++    archive_sha = None
++    if args.archive:
++        with args.archive.open('rb') as stream:
++            from hashlib import file_digest
++            archive_sha = file_digest(stream, 'sha256').hexdigest()
++        if archive_sha != ARCHIVE_SHA:
++            raise ValueError('Archive must be the Japanese TH14 1.00b th14.dat')
++    cases = scenarios()
++    retail = Retail(image)
++    native = {name: native_rows(retail, inputs, code) for name, (inputs, code) in cases.items()}
++    atlas_names = native_atlas_names(retail, image)
++    build = args.build.resolve()
++    observed = observe_candidate(build, args.emsdk.resolve(), cases, args.archive)
++    names = list(cases)
++    assets, mapping, unmapped = {}, {}, {}
++    frequency, modes = Counter(), defaultdict(Counter)
++    locations, candidate = defaultdict(Counter), defaultdict(list)
++    atlas_glyphs, atlas_by_width = defaultdict(dict), {}
++    boot_atlas, zero_angular = None, []
++    for line in observed.splitlines():
++        kind, *words = line.split()
++        if kind == 'map':
++            op, value = map(int, words)
++            mapping[op] = value
++        elif kind == 'asset':
++            asset, count = words
++            assets[asset] = int(count)
++        elif kind == 'boot-atlas':
++            boot_atlas, = words
++        elif kind == 'atlas-width':
++            width, atlas = words
++            atlas_by_width[int(width)] = atlas
++        elif kind == 'glyph':
++            atlas, slot, width, height = words
++            atlas_glyphs[atlas][int(slot)] = [
++                struct.unpack('<f', struct.pack('<I', int(value)))[0] for value in (width, height)
++            ]
++        elif kind == 'zero-angular':
++            asset, slot = words
++            zero_angular.append([asset, int(slot)])
++        elif kind == 'op':
++            asset, slot, opcode, mode = words
++            op = int(opcode)
++            frequency[op] += 1
++            locations[op][asset] += 1
++            if mode != '-1':
++                modes[op][int(mode)] += 1
++        elif kind == 'unmapped':
++            index, op = map(int, words)
++            unmapped[names[index]] = op
++        elif kind == 'frame':
++            index, frame, *values = map(int, words)
++            rows = candidate[names[index]]
++            if frame != len(rows) or len(values) != len(FIELDS):
++                raise RuntimeError('Malformed candidate frame')
++            rows.append(values)
++        else:
++            raise RuntimeError(f'Unexpected candidate output: {line}')
++    if not boot_atlas or set(atlas_by_width) != {640, 960, 1280} or set(mapping) != set(range(635)) or candidate.keys() | unmapped.keys() != set(cases):
++        raise RuntimeError('Incomplete candidate observations')
++    missing = {op: hex(address) for op, address in table.items()
++               if op >= 0 and address != default and mapping[op] == 65535}
++    routed_defaults = sorted(op for op, value in mapping.items()
++                             if table.get(op, default) == default and value not in (0, 65535) and op != 5)
++    differences = {}
++    groups = defaultdict(Counter)
++    for name, reference in native.items():
++        group = groups[name.split('/')[0]]
++        group['cases'] += 1
++        if name in unmapped:
++            group['unmapped'] += 1
++            differences[name] = {'unmapped': unmapped[name], 'native': reference}
++            continue
++        actual = candidate[name]
++        result = {}
++        for frame, (want, got) in enumerate(zip(reference, actual)):
++            diff = {field: [a, b] for field, a, b in zip(FIELDS, want, got) if a != b}
++            if diff:
++                result[str(frame)] = diff
++        if result or len(reference) != len(actual):
++            group['different'] += 1
++            differences[name] = {'frameCounts': [len(reference), len(actual)], 'frames': result}
++        else:
++            group['equal'] += 1
++
++    return {
++        'retailExecutableSha256': digest(image.data),
++        'candidateWasmSha256': json.loads((build / 'build.json').read_bytes())['sha256'],
++        'archiveSha256': archive_sha,
++        'archiveAssets': assets, 'shippedOpcodes': dict(sorted(frequency.items())),
++        'opcodeLocations': dict(sorted(locations.items())), 'interpolationModes': dict(sorted(modes.items())),
++        'literalZeroAngularVelocity': zero_angular,
++        'atlas': {'retailByMode': atlas_names, 'browserBootResource': boot_atlas, 'candidateByWidth': atlas_by_width,
++                  'displayResourcesMatch': all(atlas_by_width[w] == atlas_names[mode]
++                                               for mode, w in enumerate((640, 960, 1280))),
++                  'retail1280ResourceMatchesBrowserBoot': atlas_names[2] == boot_atlas,
++                  'decodedSpriteSizes': dict(atlas_glyphs)},
++        'retailNonDefaultOpcodes': sum(op >= 0 and addr != default for op, addr in table.items()),
++        'missingHandlers': missing, 'wronglyRoutedDefaults': routed_defaults,
++        'groups': dict(groups), 'nativeFrames': sum(map(len, native.values())),
++        'comparedFrames': sum(min(len(native[name]), len(rows)) for name, rows in candidate.items()),
++        'fields': FIELDS, 'differences': differences,
++    }
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--exe', required=True, type=Path)
++    parser.add_argument('--archive', type=lambda path: Path(path).resolve(), help='Japanese 1.00b th14.dat')
++    parser.add_argument('--build', required=True, type=Path, help='Output of th14-build-gles.py')
++    parser.add_argument('--emsdk', required=True, type=Path)
++    parser.add_argument('--report', required=True, type=Path)
++    parser.add_argument('--strict', action='store_true', help='Exit 1 if the oracle finds a difference')
++    args = parser.parse_args()
++    report = audit(args)
++    args.report.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
++    print(json.dumps({key: report[key] for key in ('missingHandlers', 'wronglyRoutedDefaults', 'groups')}, indent=2))
++    print(f"{len(report['archiveAssets'])} ANM files, {sum(report['archiveAssets'].values())} scripts, "
++          f"{len(report['shippedOpcodes'])} shipped opcodes")
++    if args.strict and (report['differences'] or report['missingHandlers'] or report['wronglyRoutedDefaults']
++                        or not report['atlas']['displayResourcesMatch']
++                        or not report['atlas']['retail1280ResourceMatchesBrowserBoot']):
++        raise SystemExit(1)
++
++
++if __name__ == '__main__':
++    main()
+diff --git a/tools/th14-bootstrap-worker-check-oct29.mjs b/tools/th14-bootstrap-worker-check-oct29.mjs
+index 60d5183dffe1480f4a228efbba8db66ecff408d3..b5b6badc34f874463868c963f2ecb0f53fbc45dc 100644
+--- a/tools/th14-bootstrap-worker-check-oct29.mjs
++++ b/tools/th14-bootstrap-worker-check-oct29.mjs
+@@ -18,7 +18,7 @@ await import(${JSON.stringify(pathToFileURL(resolve(build,'Th14ArchiveDecodeWork
+ let invoke=()=>{},worker,pointer=0,report,copies=0;const corruptControls=[];
+ const runtime=new Th14WebGpuRuntime({ccall:()=>invoke()},{createArchiveWorker:()=>worker=new Worker(pathToFileURL(adapter),{type:'module'})});module.th14WebGpuRuntime=runtime;
+ const copy=runtime.archiveAnmCopy.bind(runtime);runtime.archiveAnmCopy=(name,bytes)=>{const result=copy(name,bytes);if(result===1)++copies;return result;};
+-const ordinaryCopy=runtime.archiveAnmCopy,names=['sig.anm','ascii.anm','text.anm'];
++const ordinaryCopy=runtime.archiveAnmCopy,names=['sig.anm','ascii_1280.anm','text.anm'];
+ const deadline=setTimeout(()=>void worker?.terminate(),60000);
+ async function valid(){
+     invoke=()=>{assert.equal(runtime.archiveStatus(),1);assert.equal(module._fixture_signature(),1);assert.equal(module._fixture_load(),1,module.UTF8ToString(module._fixture_error()));
+@@ -26,7 +26,7 @@ async function valid(){
+     await runtime.scheduleArchive(1,0,names).delivered;
+ }
+ try{
+-    const bytes=new Uint8Array(await readFile('H:/Games/th/14/th14.dat'));assert.equal(sha(bytes),'57d84a5cbe82460931cca26f090a0fde7aef180889ce5bfe8315851fc97b0233');
++    const bytes=new Uint8Array(await readFile(process.env.TH_DAT??'H:/Games/th/14/th14.dat'));assert.equal(sha(bytes),'57d84a5cbe82460931cca26f090a0fde7aef180889ce5bfe8315851fc97b0233');
+     pointer=module._malloc(bytes.length);module.HEAPU8.set(bytes,pointer);assert.equal(module._fixture_open(pointer,bytes.length),1);assert.equal(module._fixture_empty(),1,'Caller must leave initial resources unparsed');
+     runtime.openArchive(bytes);assert.equal(await runtime.archiveOpening,227);await valid();assert.equal(copies,3);
+     assert.equal(module._fixture_reset(),1);assert.equal(module._fixture_empty(),1);const before=copies;
+diff --git a/tools/th14-build-gles.py b/tools/th14-build-gles.py
+index 0721fa9d26730472f580751ef017daacce2324a0..16a1ff3a5a8c806cb92459334cd49ebd49130144 100644
+--- a/tools/th14-build-gles.py
++++ b/tools/th14-build-gles.py
+@@ -64,11 +64,15 @@ def main():
+         if hashlib.sha256((repo / name).read_bytes()).hexdigest() != expected:
+             raise RuntimeError('Source changed during build: ' + name)
+     wasm = output / 'th14-sdl.wasm'
++    runtime_files = {}
++    for name in ['th14-sdl.mjs', 'th14-sdl.wasm', *profile['helpers']]:
++        data = (output / name).read_bytes()
++        runtime_files[name] = dict(bytes=len(data), sha256=hashlib.sha256(data).hexdigest())
+     report = dict(module=str(wasm), units=len(compiled), sourceBindings=source_bindings,
+                   objects={str(Path(p).relative_to(output)): hashlib.sha256(Path(p).read_bytes()).hexdigest()
+                            for p in compiled}, flags=profile['flags'], linkFlags=link_flags,
+-                  sha256=hashlib.sha256(wasm.read_bytes()).hexdigest(),
+-                  loaderSha256=hashlib.sha256((output / 'th14-sdl.mjs').read_bytes()).hexdigest())
++                  runtimeFiles=runtime_files, sha256=runtime_files[wasm.name]['sha256'],
++                  loaderSha256=runtime_files['th14-sdl.mjs']['sha256'])
+     (output / 'build.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+     print(json.dumps(dict(module=str(wasm), units=len(compiled), sha256=report['sha256'])))
+ 
+diff --git a/tools/th14-ui-oracle.py b/tools/th14-ui-oracle.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..8daa8dd2d50259684a999ea37e476a54b730365a
+--- /dev/null
++++ b/tools/th14-ui-oracle.py
+@@ -0,0 +1,256 @@
++"""Compare the TH14 Web UI against Japanese 1.00b executable components.
++
++The oracle executes the original capture rectangle, curve strip, sprite quad,
++and credit initialization code in Unicorn. It reads the original menu sound
++call sites and sample table. The candidate is linked from the current GLES
++build objects. Render surfaces, menu state and input geometry are controlled.
++"""
++import argparse
++import hashlib
++import importlib
++import json
++import os
++from pathlib import Path
++import struct
++import subprocess
++import sys
++import tempfile
++
++from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
++from unicorn.x86_const import (
++    UC_X86_REG_EAX, UC_X86_REG_ECX, UC_X86_REG_EDX, UC_X86_REG_EIP,
++    UC_X86_REG_ESP, UC_X86_REG_FPCW, UC_X86_REG_FPSW, UC_X86_REG_FPTAG,
++    UC_X86_REG_MXCSR,
++)
++
++ROOT = Path(__file__).resolve().parents[1]
++RUNTIME = ROOT / 'runtimes/th12'
++BASE = 0x70000000
++VM = BASE + 0x1000
++DATA = BASE + 0x4000
++OUTPUT = BASE + 0x8000
++STACK = BASE + 0xff000
++STOP = BASE + 0xfe000
++
++
++def digest(data):
++    return hashlib.sha256(data).hexdigest()
++
++
++def float_word(value):
++    return struct.unpack('<I', struct.pack('<f', value))[0]
++
++
++class Retail:
++    def __init__(self, image):
++        self.machine = Uc(UC_ARCH_X86, UC_MODE_32)
++        for _, address, size, offset, raw_size in image.sections:
++            first = address & ~4095
++            self.machine.mem_map(first, ((address + size + 4095) & ~4095) - first)
++            self.machine.mem_write(address, image.data[offset:offset + raw_size])
++        self.machine.mem_map(BASE, 0x100000)
++        self.stub(0x4854a0, 0)
++
++    def words(self, address, count):
++        return struct.unpack('<' + 'I' * count, self.machine.mem_read(address, count * 4))
++
++    def put(self, address, *values):
++        self.machine.mem_write(address, struct.pack('<' + 'I' * len(values), *values))
++
++    def stub(self, address, stack_bytes, callback=None):
++        instruction = b'\xc2' + struct.pack('<H', stack_bytes) if stack_bytes else b'\xc3'
++        self.machine.mem_write(address, instruction)
++        if callback is not None:
++            def hook(machine, _address, _size, _user):
++                callback(machine.reg_read(UC_X86_REG_ESP))
++            self.machine.hook_add(UC_HOOK_CODE, hook, begin=address, end=address)
++
++    def run(self, entry, *args, ecx=VM, edx=0, stop=STOP):
++        self.put(STACK, STOP, *args)
++        for register, value in (
++            (UC_X86_REG_ESP, STACK), (UC_X86_REG_ECX, ecx), (UC_X86_REG_EDX, edx),
++            (UC_X86_REG_FPCW, 0x37f), (UC_X86_REG_FPSW, 0), (UC_X86_REG_FPTAG, 0xffff),
++            (UC_X86_REG_MXCSR, 0x1f80),
++        ):
++            self.machine.reg_write(register, value)
++        self.machine.emu_start(entry, stop, count=100000)
++        if self.machine.reg_read(UC_X86_REG_EIP) != stop:
++            raise RuntimeError(f'Retail component {entry:#x} did not reach {stop:#x}')
++
++
++def capture_cases(retail):
++    # 448bf0 builds the rectangles and calls 47e070. ANM creation/lookup
++    # and the final surface copy are declared services.
++    copies = []
++    sprite, resource, gui, handle = (DATA + 0x1000 * i for i in range(4))
++    retail.put(VM + 0x2c, sprite, resource)
++    retail.put(sprite + 0x34, float_word(448), float_word(384))
++    retail.put(0x4db550, gui)
++    retail.put(0x4d9110, 1, 0)
++    retail.stub(0x44c1a0, 8, lambda _: retail.machine.reg_write(UC_X86_REG_EAX, handle))
++    retail.stub(0x47f0a0, 4, lambda _: retail.machine.reg_write(UC_X86_REG_EAX, VM))
++
++    def observe_copy(stack):
++        _, _, _, surface, _, rectangle = retail.words(stack, 6)
++        copies.append([surface, *retail.words(rectangle, 4)])
++
++    retail.stub(0x47e070, 20, observe_copy)
++    result = {}
++    for width in (640, 960, 1280):
++        scale = width / 640
++        retail.put(0x4f7a6c, float_word(scale))
++        retail.put(0x4f7a80, width // 2, int(16 * scale))
++        for dialogue in (0, 1):
++            copies.clear()
++            retail.put(gui + 0x194, dialogue)
++            retail.run(0x448bf0, ecx=OUTPUT)
++            if len(copies) != 1:
++                raise RuntimeError('Retail pause did not deliver one surface copy')
++            result[f'capture_{width}_{dialogue}'] = copies[0]
++    return result
++
++
++def geometry_cases(retail):
++    result = {}
++    # Give both engines the same authored size from a synthetic atlas at
++    # each display width. Position-only modes must not scale the bitmap again.
++    for width in (640, 960, 1280):
++        scale = width / 640
++        for label in ('queued_glyph', 'popup_glyph', 'spell_labels', 'boss_timer', 'spell_award', 'other_sprite'):
++            retail.machine.mem_write(VM, bytes(0x5cc))
++            retail.put(0x4f7a6c, float_word(scale))
++            retail.put(VM + 0x18, 3, 0 if label == 'queued_glyph' else 3 << 19)
++            retail.put(VM + 0x60, *([float_word(1)] * 4))
++            factor = 1 if label == 'other_sprite' else scale
++            retail.put(VM + 0x80, float_word(10 * factor), float_word(16 * factor))
++            retail.run(0x476100, VM, OUTPUT, OUTPUT + 12, OUTPUT + 24, OUTPUT + 36)
++            quad = struct.unpack('<12f', retail.machine.mem_read(OUTPUT, 48))
++            result[f'{label}_{width}'] = [float_word(quad[3] - quad[0]), float_word(quad[7] - quad[1])]
++
++    retail.machine.mem_write(VM, bytes(0x1600))
++    retail.put(VM + 0x14ac, DATA, OUTPUT)
++    retail.put(VM + 0x5d0, float_word(14))
++    retail.put(VM + 0x5e0, 2)
++    retail.put(VM + 0xcd0, float_word(.25))
++    retail.put(VM + 0xce0, float_word(.5))
++    retail.put(DATA, float_word(-50), float_word(80), 0, 0, 0, 0, 0, 0)
++    retail.put(DATA + 32, float_word(50), float_word(80), 0, 0, 0, 0, 0, 0)
++
++    for width in (640, 960, 1280):
++        # Supply both engines the intermediate playfield origin. The browser
++        # composites that surface into the final window after laser drawing.
++        retail.put(0x4f7a88, width // 2)
++        retail.put(0x4f7a74, (width * 3 // 4 - 448) // 2)
++        retail.machine.mem_write(OUTPUT, bytes(112))
++        retail.run(0x4418e0, stop=0x441dd3)
++        result[f'curve_{width}'] = [
++            word for i in range(4)
++            for n, word in enumerate(retail.words(OUTPUT + i * 28, 7))
++            if n in (0, 1, 5, 6)
++        ]
++    return result
++
++
++def menu_cases(retail, image):
++    call_sites = {
++        'score_move': (0x44aba8,),
++        'score_accept': (0x44a778,),
++        'pause_save': (0x4499f1,),
++        'game_over_save': (0x44aa22,),
++        'practice_save': (0x44b93b,),
++        'title_save': (0x461780, 0x4617f8),
++    }
++    voices = {}
++    for n in range(76):
++        voice, sample = struct.unpack('<2I', image.read(0x4d61b8 + 20 * n, 8))
++        voices[voice] = image.cstring(image.u32(0x4d60b0 + 4 * sample))
++
++    result = {}
++    for label, sites in call_sites.items():
++        result[label] = []
++        for site in sites:
++            push, voice, call, relative = struct.unpack('<BBBi', image.read(site - 2, 7))
++            if push != 0x6a or call != 0xe8 or site + 5 + relative != 0x46e3d0:
++                raise RuntimeError(f'Unexpected menu sound call at {site:#x}')
++            result[label].append(voice)
++    for difficulty in range(5):
++        retail.run(0x435cef, edx=difficulty, stop=0x435cfb)
++        limit, = retail.words(0x4f58c8, 1)
++        for used in range(6):
++            allowed = int(used < limit)
++            result[f'continue_{difficulty}_{used}'] = [allowed, allowed]
++    return result, {label: [voices[voice] for voice in result[label]] for label in call_sites}
++
++
++def observe_candidate(build, sdk):
++    build_data = json.loads((build / 'build.json').read_bytes())
++    for name, expected in build_data['sourceBindings'].items():
++        if digest((ROOT / name).read_bytes()) != expected:
++            raise RuntimeError(f'Build is stale for {name}')
++    objects = []
++    for name, expected in build_data['objects'].items():
++        if name.replace('\\', '/').startswith('objects/th12_web_cpp_game_'):
++            obj = build / name
++            if digest(obj.read_bytes()) != expected:
++                raise RuntimeError(f'Build object differs from build.json: {name}')
++            objects.append(obj)
++    if not objects:
++        raise RuntimeError('No game objects in the GLES build')
++    flags = [flag for flag in build_data['flags'] if flag not in ('--profiling-funcs', '--use-port=sdl3')]
++    fixture = RUNTIME / 'th12_web/tests/cpp/th14-ui-oracle.cpp'
++    with tempfile.TemporaryDirectory(prefix='ui-oracle-', dir=build) as temp:
++        env = {**os.environ, 'EMSDK': str(sdk), 'EM_CONFIG': str(sdk / '.emscripten'),
++               'TEMP': temp, 'TMP': temp, 'TMPDIR': temp}
++        module = Path(temp) / 'ui-oracle.mjs'
++        subprocess.run([
++            sys.executable, str(sdk / 'upstream/emscripten/emcc.py'), *flags,
++            '-Ith12_web/cpp/game', '-Ith12_web/cpp/sdl', str(fixture), *map(str, objects),
++            '-sDEFAULT_TO_CXX=1', '-sENVIRONMENT=node', '-sINITIAL_MEMORY=33554432',
++            '-sALLOW_MEMORY_GROWTH=1', '-o', str(module),
++        ], check=True, cwd=RUNTIME, env=env)
++        runner = module.with_name('run.mjs')
++        runner.write_text("import make from './ui-oracle.mjs';\nawait make();\n", encoding='utf-8')
++        observed = subprocess.check_output(['node', str(runner)], text=True)
++    return {label: list(map(int, values)) for label, *values in map(str.split, observed.splitlines())}
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--exe', required=True, type=Path, help='Japanese TH14 v1.00b th14.exe')
++    parser.add_argument('--build', required=True, type=Path, help='Output of tools/th14-build-gles.py')
++    parser.add_argument('--emsdk', required=True, type=Path, help='Activated SDK used for the GLES build')
++    parser.add_argument('--report', type=Path, help='Write expected and observed values as JSON')
++    args = parser.parse_args()
++
++    image = importlib.import_module('th12-pe').Image(str(args.exe))
++    executable_sha = digest(image.data)
++    target = json.loads((ROOT / 'runtimes/th14/target.json').read_bytes())
++    if executable_sha != target['sha256']:
++        parser.error('Executable must be the Japanese TH14 1.00b listed in runtimes/th14/target.json')
++
++    retail = Retail(image)
++    expected = capture_cases(retail)
++    expected.update(geometry_cases(retail))
++    menus, samples = menu_cases(retail, image)
++    expected.update(menus)
++    for mode in range(6):
++        expected[f'display_{mode}'] = [1280, 960, mode]
++
++    actual = observe_candidate(args.build.resolve(), args.emsdk.resolve())
++    differences = {
++        case: {'expected': expected.get(case), 'actual': actual.get(case)}
++        for case in sorted(expected.keys() | actual.keys()) if expected.get(case) != actual.get(case)
++    }
++    if args.report:
++        args.report.write_text(json.dumps({
++            'nativeExecutableSha256': executable_sha, 'samples': samples,
++            'expected': expected, 'actual': actual, 'differences': differences,
++        }, indent=2) + '\n', encoding='utf-8')
++    if differences:
++        print(json.dumps(differences, indent=2))
++        raise SystemExit(1)
++    print(f'TH14 UI oracle passed {len(expected)} cases')
++
++
++if __name__ == '__main__':
++    main()
