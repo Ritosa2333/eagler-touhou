@@ -23,14 +23,15 @@ export function AccountMenu({interactive,assetUrl}:{interactive:boolean;assetUrl
   useEffect(() => {
     if (!user) return;
     let current:AbortController|undefined;
-    const refresh = () => {
+    const load = (fresh = false) => {
       current?.abort();
       const controller=new AbortController();current=controller;
-      void accountRequest<{nickname:string;details?:{avatar?:string}}>('v1/profiles/'+encodeURIComponent(user.username),undefined,{signal:controller.signal})
+      void accountRequest<{nickname:string;details?:{avatar?:string}}>('v1/profiles/'+encodeURIComponent(user.username),undefined,{signal:controller.signal,fresh})
         .then(profile => {if (!controller.signal.aborted) setIdentity({username:user.username,nickname:profile.nickname,avatar:profile.details?.avatar || ''});})
         .catch(() => {if (!controller.signal.aborted) setIdentity(previous => previous?.username === user.username ? previous : {username:user.username,nickname:user.name,avatar:''});});
     };
-    refresh(); window.addEventListener('account-profile-change',refresh);
+    const refresh = () => load(true);
+    load(); window.addEventListener('account-profile-change',refresh);
     return () => {current?.abort();window.removeEventListener('account-profile-change',refresh);};
   },[user]);
   if (state.status==='loading') return <span className="masthead-action account-loading" aria-busy="true"><span className="account-avatar account-avatar-loading"/></span>;

@@ -109,17 +109,6 @@
     border-radius: 8px;
     background: var(--kit-card);
   }
-  .settings-preview-cover {
-    aspect-ratio: 2.9;
-    overflow: hidden;
-    background: var(--kit-secondary);
-  }
-  .settings-preview-cover img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
   .settings-preview-identity {
     --account-avatar-size: 64px;
     --account-avatar-radius: 15px;
@@ -228,6 +217,14 @@
   }
   .settings-switch-row .ui-field-content {
     flex: none;
+  }
+  .account-settings .settings-section-controls {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+  }
+  .settings-section-controls > .ui-switch {
+    margin-inline-start: 6px;
   }
   .settings-form-actions {
     margin: 16px 0 0 136px;

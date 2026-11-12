@@ -19,7 +19,7 @@ const saveStatistics={game:'th06',parserVersion:1,format:'classic',complete:true
 const ownerStatistics={career:true,records:true,playtimeSeconds:3661,games:[{product:'th06',uploadedAt:'2025-01-01T00:00:00.000Z',statistics:saveStatistics}]};
 const visitorStatistics={career:false,records:true,playtimeSeconds:3661,games:[{product:'th06',uploadedAt:'2025-01-01T00:00:00.000Z',
   statistics:{...saveStatistics,progress:[]}}]};
-function remoteProfile(username){return {username,nickname:'Reimu',joinedAt:'2024-01-01T00:00:00.000Z',details:profileDetails};}
+function remoteProfile(username){return {username,nickname:'Reimu',joinedAt:'2024-01-01T00:00:00.000Z',countryCode:'CN',regionCode:'TW',details:profileDetails};}
 beforeAll(async()=>{
   env=installMountedDom();React=await import('react');({createRoot}=await import('react-dom/client'));
   env.window.scrollTo=()=>{};
@@ -42,19 +42,23 @@ beforeAll(async()=>{
     context.onLoad({filter:/.*/,namespace:'fixture'},()=>({loader:'js',contents:`
       export class AccountRequestError extends Error {constructor(code,status){super(code);this.name='AccountRequestError';this.code=code;this.status=status;}}
       export function cancelAccountRequests() {}
+      export function mailCaptchaError() {}
       export async function accountRequest(path,body,options){const request=globalThis.__profileAccountRequest;if(!request)throw Error('profile API fixture is missing');return request(path,body,options);}
     `}));
   }},authoredSourcesPlugin(project)],logLevel:'silent'});
   owners=await import(pathToFileURL(resolve(work,'owners.mjs')).href);
 });
-beforeEach(()=>{globalThis.__profileAccountRequest=async path=>{
+beforeEach(()=>{globalThis.__profileAccountRequest=async (path,body,options)=>{
   if(path==='auth/get-session')return {user:{username:'player'}};
   if(/^v1\/profiles\/[^/]+\/th09-duels$/.test(path))return {summary:{games:0,wins:0},duels:[]};
   const profile=path.match(/^v1\/profiles\/([^/]+)$/);
   if(profile)return remoteProfile(decodeURIComponent(profile[1]));
   const statistics=path.match(/^v1\/profiles\/([^/]+)\/statistics$/);
   if(statistics)return decodeURIComponent(statistics[1])==='visitor'?visitorStatistics:ownerStatistics;
-  if(/^v1\/profiles\/[^/]+\/social$/.test(path))return {visible:true,following:null,friends:[],followingUsers:[]};
+  if(/^v1\/profiles\/[^/]+\/social$/.test(path))return {
+    visible:true,following:null,followerCount:1,followingCount:0,friends:[],followingUsers:[],
+    followers:options?.query?.get('summary') ? [] : [{username:'marisa',nickname:'Marisa'}],
+  };
   throw Error(`Unexpected profile API request: ${path}`);
 };});
 afterEach(async()=>{delete globalThis.__profileAccountRequest;if(root)await React.act(async()=>root.unmount());root=null;env.document.body.replaceChildren();env.window.localStorage.clear();assert.deepEqual(env.errors.splice(0),[]);});
@@ -94,18 +98,105 @@ test('the editor keeps the saved draft while the public profile waits for approv
   } finally {timers.mockRestore();}
 });
 
+test('lays out the page before any API and renders sections without waiting for the session or each other',async()=>{
+  const pending = () => {let resolve;const promise=new Promise(done=>{resolve=done;});return {promise,resolve};};
+  const auth=pending(), profile=pending(), statistics=pending(), duels=pending(), social=pending();
+  const calls=[];
+  globalThis.__profileAccountRequest=async(path,body,options)=>{
+    calls.push({path,options});
+    if(path==='auth/get-session')return auth.promise;
+    if(path==='v1/profiles/visitor')return profile.promise;
+    if(path.endsWith('/statistics'))return statistics.promise;
+    if(path.endsWith('/th09-duels'))return duels.promise;
+    if(path.endsWith('/social'))return social.promise;
+    throw Error(`Unexpected profile API request: ${path}`);
+  };
+  await mount(owners.ProfilePage,{},['/u/visitor?lang=en']);
+  await waitForProfile(()=>calls.some(({path})=>path==='v1/profiles/visitor'));
+  assert.ok(env.document.querySelector('.profile-loading-banner'));
+  await React.act(async()=>profile.resolve(remoteProfile('visitor')));
+  await waitForProfile(()=>calls.filter(({path})=>/\/(statistics|th09-duels|social)$/.test(path)).length===3);
+  assert.ok(calls.filter(({path})=>/\/(statistics|th09-duels|social)$/.test(path)).every(({options})=>options.anonymous));
+  const header=env.document.querySelector('#profile-name');
+  assert.equal(header.textContent,'Reimu');
+  assert.equal(env.document.querySelectorAll('.profile-content .profile-loading-panel').length,3);
+  await React.act(async()=>duels.resolve({summary:{games:1,wins:1},durationFrames:null,duels:[]}));
+  await waitForProfile(()=>!!env.document.getElementById('profile-versus'));
+  assert.equal(env.document.querySelector('#profile-records'),null);
+  await React.act(async()=>{auth.resolve(null);statistics.resolve(visitorStatistics);social.resolve({visible:true,following:null,followers:[],friends:[],followingUsers:[]});});
+  await waitForProfile(()=>!!env.document.getElementById('profile-records'));
+  assert.equal(env.document.querySelector('#profile-name'),header);
+  assert.equal(calls.filter(({path})=>path==='v1/profiles/visitor').length,1);
+});
+
+test('saves section order and visibility and previews two duel rows across dates',async()=>{
+  const request = globalThis.__profileAccountRequest;
+  const BaseResizeObserver = globalThis.ResizeObserver;
+  let resizeDuels, savedDisplay;
+  globalThis.ResizeObserver = class extends BaseResizeObserver {
+    constructor(callback){super();this.callback=callback;}
+    observe(element){if(element.id==='profile-versus')resizeDuels=width=>this.callback([{contentRect:{width}}]);}
+  };
+  const duels = [0,1,1,1,2,2].map((day,index)=>({
+    duelId:`00000000-0000-4000-8000-${String(index).padStart(12,'0')}`,
+    playedAt:Date.UTC(2026,10,10-day,12),wins:1,losses:0,durationFrames:null,opponent:null,
+  }));
+  globalThis.__profileAccountRequest = async (path,body,options) => {
+    if(path==='v1/profiles/player/th09-duels')return {summary:{games:6,wins:6},durationFrames:null,duels};
+    if(path==='v1/me/profile'&&body){savedDisplay=body.display;return {saved:true};}
+    return request(path,body,options);
+  };
+  const sectionOrder = () => [...env.document.querySelectorAll('.profile-content > section')].map(section=>section.id);
+  const duelItems = () => env.document.querySelectorAll('.profile-th09-history li').length;
+  try {
+    await mount(owners.ProfilePage,{},['/u/player?lang=en']);
+    await waitForProfile(()=>sectionOrder().length===3&&!!resizeDuels);
+    assert.deepEqual(sectionOrder(),['profile-career','profile-versus','profile-records']);
+    assert.equal(duelItems(),2);
+    await React.act(async()=>resizeDuels(720));
+    assert.equal(duelItems(),3,'a short date group still uses a whole row');
+    await React.act(async()=>env.document.querySelector('.profile-th09-duels button[aria-expanded]').click());
+    assert.equal(duelItems(),6);
+
+    await React.act(async()=>moveHistory('/u/player?lang=en#edit'));
+    const moveUp = owners.translate('en','profile.moveUp',{name:owners.translate('en','profile.versusCareer')});
+    await React.act(async()=>[...env.document.querySelectorAll('button')].find(button=>button.getAttribute('aria-label')===moveUp).click());
+    await React.act(async()=>env.document.querySelector('#settings-records').click());
+    await React.act(async()=>env.document.querySelector('.settings-save-profile').click());
+    assert.deepEqual(savedDisplay.order.slice(0,3),['versus','career','records']);
+    assert.equal(savedDisplay.visible.records,false);
+
+    await React.act(async()=>moveHistory('/u/player?lang=en'));
+    await waitForProfile(()=>sectionOrder().length===2);
+    assert.deepEqual(sectionOrder(),['profile-versus','profile-career']);
+    assert.deepEqual([...env.document.querySelectorAll('.profile-nav-mobile a')].map(link=>link.hash),
+      ['#profile-overview','#profile-versus','#profile-career']);
+  } finally {globalThis.ResizeObserver=BaseResizeObserver;}
+});
+
 test('public navigation locates sections already present on the page',async()=>{
   await mount();
-  await waitForProfile(()=>['career','records','friends'].every(key=>env.document.getElementById('profile-'+key)));
-  const sections=['career','records','friends'].map(key=>env.document.getElementById('profile-'+key));
+  await waitForProfile(()=>['career','versus','records'].every(key=>env.document.getElementById('profile-'+key)));
+  const sections=['career','versus','records'].map(key=>env.document.getElementById('profile-'+key));
   assert.ok(sections.every(Boolean));
   const links=[...env.document.querySelectorAll('.profile-nav-mobile a')];
-  assert.deepEqual(links.map(link=>link.hash),['#profile-overview','#profile-career','#profile-records','#profile-friends']);
+  assert.deepEqual(links.map(link=>link.hash),['#profile-overview','#profile-career','#profile-versus','#profile-records']);
   assert.ok(links.every(link=>new URL(link.href).searchParams.get('lang')==='en'));
   await React.act(async()=>links.find(link=>link.hash==='#profile-records').click());
   for(const node of sections)assert.equal(env.document.getElementById(node.id),node,'anchor selection must not swap sections');
   assert.equal(env.document.querySelector('.profile-header-details .profile-bio').textContent,'Profile text');
   assert.ok(env.document.querySelector('.profile-aside .profile-bio'));
+  assert.equal(env.document.querySelector('.profile-country').textContent,'China');
+  assert.equal(env.document.querySelector('.profile-country').getAttribute('lang'),'en');
+  await waitForProfile(()=>!!env.document.querySelector('.profile-social-counts a'));
+  await React.act(async()=>env.document.querySelector('.profile-social-counts a').click());
+  await waitForProfile(()=>!!env.document.querySelector('.profile-social-users a'));
+  assert.equal(env.document.querySelector('.profile-social-tabs [aria-current="page"]').textContent,'Followers');
+  assert.equal(env.document.querySelector('.profile-social-users a').textContent,'Marisa');
+  assert.equal(env.document.querySelector('.profile-page-banner'),null);
+  await React.act(async()=>env.document.querySelector('.profile-social-back').click());
+  await waitForProfile(()=>!!env.document.querySelector('.profile-page-banner'));
+
 });
 
 test('profile deep links and Back/Forward select their actual anchor',async()=>{
@@ -127,8 +218,8 @@ test('public profile statistics omit career data hidden by the profile privacy s
   assert.equal(env.document.getElementById('profile-career'),null);
   assert.equal(env.document.getElementById('profile-content'),null);
   assert.ok(env.document.getElementById('profile-records'));
-  assert.ok(env.document.getElementById('profile-friends'));
-  assert.deepEqual([...env.document.querySelectorAll('.profile-nav-mobile a')].map(link=>link.hash),['#profile-overview','#profile-records','#profile-friends']);
+  assert.equal(env.document.getElementById('profile-friends'),null);
+  assert.deepEqual([...env.document.querySelectorAll('.profile-nav-mobile a')].map(link=>link.hash),['#profile-overview','#profile-records']);
   assert.equal(env.document.querySelector('.profile-social-tools label'),null);
 });
 
@@ -149,7 +240,8 @@ test('profile ownership and private statistics refresh when the signed-in accoun
   const previousProfiles=profileCalls,previousStatistics=statisticsCalls;
   viewer='visitor';
   await React.act(async()=>owners.notifyAccountChange());
-  await waitForProfile(()=>profileCalls>previousProfiles&&statisticsCalls>previousStatistics&&!!env.document.getElementById('profile-records'));
+  await waitForProfile(()=>statisticsCalls>previousStatistics&&!!env.document.getElementById('profile-records'));
+  assert.equal(profileCalls,previousProfiles,'the public profile remains mounted across viewer changes');
   assert.equal(env.document.getElementById('profile-career'),null,'the new viewer receives only public career data');
   assert.equal(env.document.getElementById('profile-records')?.querySelector('.profile-flight-total')?.textContent,'Total flight time 1h 1m');
   assert.equal(env.document.querySelector('.profile-actions button'),null,'owner editing controls disappear after the session changes');
@@ -258,17 +350,25 @@ test('visitor chart exposes viewing and export controls without a write path',as
   assert.equal(saves,0);
 });
 
-test('profile shows all-time TH09 results and keeps paginated duels in the same panel',async()=>{
+test('profile shows all-time TH09 results and keeps paginated duels in the same panel',async({onTestFinished})=>{
+  env.document.body.classList.add('less-motion');
+  onTestFinished(()=>env.document.body.classList.remove('less-motion'));
   const original=globalThis.__profileAccountRequest;
   const requests=[];
   const endpoint='v1/profiles/player/th09-duels';
   globalThis.__profileAccountRequest=async (path,body,options)=>{
-    if (!path.startsWith(endpoint)) return original(path,body,options);
-    requests.push(path);
+    if (path!==endpoint) return original(path,body,options);
+    const cursor=options?.query?.get('cursor');
+    requests.push({path,cursor});
     const playedAt=Date.UTC(2026,10,6);
-    return path===endpoint ? {
+    return !cursor ? {
       summary:{games:9,wins:5},nextCursor:'later',
-      duels:[{duelId:'a1c12a01-195d-49f3-b229-15aac5260704',wins:5,losses:4,playedAt,opponent:{username:'marisa',displayName:'Marisa'}}],
+      ratingHistory:[{at:playedAt-86_400_000,rating:1470},{at:playedAt,rating:1530}],
+      rankHistory:[{at:playedAt-86_400_000,rank:14},{at:playedAt,rank:8}],
+      characters:[{character:1,games:4,wins:3}],
+      characterRatings:[{character:1,rating:1410,interval:120,games:4,days:2,rank:7,
+        history:[{at:playedAt-43_200_000,rating:1390},{at:playedAt,rating:1410}]}],
+      duels:[{duelId:'a1c12a01-195d-49f3-b229-15aac5260704',wins:5,losses:4,playedAt,opponent:{username:'marisa',displayName:'Marisa',avatar:'0123456789abcdef'}}],
     } : {
       summary:{games:9,wins:5},nextCursor:null,
       duels:[{duelId:'a1c12a01-195d-49f3-b229-15aac5260705',wins:0,losses:1,playedAt,opponent:null}],
@@ -277,11 +377,46 @@ test('profile shows all-time TH09 results and keeps paginated duels in the same 
   await mount(owners.ProfilePage,{},['/u/player?lang=en']);
   await waitForProfile(()=>!!env.document.querySelector('.profile-th09-history li'));
   const panel=env.document.querySelector('.profile-th09');
-  assert.deepEqual([...panel.querySelectorAll('dd')].map(node=>node.textContent),['9','5','56%']);
-  assert.equal(panel.querySelector('li strong').textContent,'5:4');
-  assert.equal(panel.querySelector('li a').getAttribute('href'),'/u/marisa');
+  assert.deepEqual([...panel.querySelectorAll('dd')].map(node=>node.textContent),['5/9 (56%)']);
+  assert.equal(panel.querySelector('.profile-th09-whr figcaption strong').textContent,'1,530');
+  assert.equal(panel.querySelector('.profile-th09-whr polyline').getAttribute('points'),'0,80 1000,20');
+  const scrubber=panel.querySelector('.profile-th09-whr [role="slider"]');
+  await React.act(async()=>scrubber.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'Home',bubbles:true})));
+  assert.equal(panel.querySelector('.profile-th09-whr figcaption strong').textContent,'1,530');
+  assert.equal(panel.querySelector('.profile-th09-whr-tooltip strong').textContent,'1,470');
+  await React.act(async()=>scrubber.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'End',bubbles:true})));
+  await React.act(async()=>panel.querySelector('.profile-th09-series [data-slot="choice-item"]:last-child').click());
+  assert.equal(panel.querySelector('.profile-th09-current > div:last-child strong').textContent,'#8');
+  assert.equal(panel.querySelector('.profile-th09-whr polyline').getAttribute('points'),'0,100 1000,100 1000,0');
+  await React.act(async()=>panel.querySelector('.profile-th09-series [data-slot="choice-item"]:first-child').click());
+  const chart=panel.querySelector('.profile-th09-whr');
+  const whrLine=chart.querySelector('polyline');
+  await React.act(async()=>panel.querySelector('button.profile-th09-rating-toggle').click());
+  assert.deepEqual([...panel.querySelectorAll('.profile-th09-whr')],[chart]);
+  assert.deepEqual([...chart.querySelectorAll('.profile-th09-current strong')].map(node=>node.textContent),['1,530','#8']);
+  assert.equal(chart.querySelector('.profile-th09-comparison-character strong').textContent,'1,410');
+  assert.equal(chart.querySelector('.profile-th09-comparison-rank').textContent.trim(),'#7');
+  assert.deepEqual([...chart.querySelectorAll('polyline')].map(line=>line.getAttribute('points')),['0,40 1000,10','500,80 1000,70']);
+  assert.equal(chart.querySelector('polyline[data-muted]'),whrLine);
+  await React.act(async()=>chart.querySelector('.profile-th09-series [data-slot="choice-item"]:last-child').click());
+  assert.equal(chart.querySelector('polyline[data-muted]').getAttribute('points'),'0,100 1000,100 1000,0');
+  assert.equal(chart.querySelector('polyline:not([data-muted])').getAttribute('points'),'500,60 1000,40');
+  const rankScrubber=chart.querySelector('[role="slider"]');
+  await React.act(async()=>rankScrubber.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'Home',bubbles:true})));
+  assert.equal(chart.querySelector('.profile-th09-whr-tooltip strong').textContent,'#14');
+  assert.ok(panel.querySelector('.profile-th09-character[data-selected]'));
+  assert.equal(panel.querySelector('.profile-th09-history li strong').textContent,'5:4');
+  assert.equal(panel.querySelector('.profile-th09-history li a').getAttribute('href'),'/u/marisa');
+  assert.equal(panel.querySelector('.profile-th09-history li a img').getAttribute('src'),'/api/v1/profiles/marisa/avatar/0123456789abcdef');
   await React.act(async()=>panel.querySelector('.profile-th09-actions button').click());
-  await waitForProfile(()=>panel.querySelectorAll('li').length===2);
-  assert.equal(panel.querySelector('li:last-child>span').textContent,'Guest');
-  assert.deepEqual(requests,[endpoint,endpoint+'?cursor=later']);
+  await waitForProfile(()=>panel.querySelectorAll('.profile-th09-history li').length===2);
+  assert.equal(panel.querySelectorAll('.profile-th09-day').length,1,'pagination keeps the same date together');
+  assert.equal(panel.querySelector('li:last-child .profile-th09-opponent').textContent,'Guest');
+  assert.equal(chart.querySelector('figcaption strong').textContent,'1,410');
+  await React.act(async()=>chart.querySelector('.profile-th09-comparison-back').click());
+  assert.equal(chart.querySelector('figcaption strong').textContent,'1,530');
+  assert.equal(chart.querySelectorAll('polyline').length,1);
+  assert.equal(chart.querySelector('polyline').getAttribute('points'),'0,100 1000,100 1000,0');
+  assert.equal(panel.querySelector('.profile-th09-character[data-selected]'),null);
+  assert.deepEqual(requests,[{path:endpoint,cursor:undefined},{path:endpoint,cursor:'later'}]);
 });

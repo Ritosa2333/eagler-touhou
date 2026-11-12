@@ -8,6 +8,10 @@ Host 读取 `runtime-release/`、Product Catalog 中每个注册游戏的 `games
 
 th05 使用已有的普通版与多人 Runtime Release，以及 `games/th05/assets-eagler/` 中的完整预制内容。该目录须包含 `th05.data`、全部声明的 `music/` 文件和 `artwork/th05-card.webp`。当前前端接入不包含 th05 的原生编译器与原始音源制作链；更新界面时沿用已发布的 Runtime 和内容。
 
+花映塚个人主页和排行榜共用 `private-assets/th09-portraits/` 中的 `0.webp` 至 `15.webp`。把获准公开使用的立绘放在这里，Host 会将其发布到 `assets/th09-portraits/`，由页面按需加载。
+
+排行榜和个人主页使用的机体立绘取自《東方花映塚 ～ Phantasmagoria of Flower View.》。原作及立绘版权归 ZUN（上海爱丽丝幻乐团）所有，本站用于标识机体。
+
 配置 schema 为 `eagler-touhou/host-config/1`：
 
 ```json

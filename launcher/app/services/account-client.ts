@@ -14,9 +14,51 @@ function configuredAccountOrigins() {
   return edgeOrigin === `https://api.${domain}` && directOrigin === `https://direct-api.${domain}`
     ? {edge: edgeOrigin, direct: directOrigin} : null;
 }
-type RequestOptions = {signal?: AbortSignal; responseType?: 'json' | 'blob'; timeoutMs?: number; emailCaptcha?: boolean};
+type RequestOptions = {signal?: AbortSignal; query?: URLSearchParams; responseType?: 'json' | 'blob'; timeoutMs?: number; emailCaptcha?: boolean; anonymous?: boolean; fresh?: boolean};
 type AccountReady = {origin: string; region?: AccountRegion; captchaAppId?: string};
+type SharedRead<T> = {controller: AbortController; result: Promise<T>; waiters: number};
 const activeRequests = new Set<AbortController>();
+const readiness = new Map<string, SharedRead<AccountReady | null>>();
+const readyOrigins = new Map<string, {value: AccountReady; until: number}>();
+const publicProfiles = new Map<string, SharedRead<unknown>>();
+const readinessTtlMs = 30_000;
+const cancelRead = () => new DOMException('Request cancelled', 'AbortError');
+
+function sharedRead<T>(pending: Map<string, SharedRead<T>>, key: string, load: (signal: AbortSignal) => Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (signal?.aborted) return Promise.reject(cancelRead());
+  let read = pending.get(key);
+  if (!read) {
+    const controller = new AbortController();
+    const result = load(controller.signal).finally(() => {
+      if (pending.get(key)?.controller === controller) pending.delete(key);
+    });
+    read = {controller, result, waiters:0};
+    pending.set(key, read);
+  }
+  const current = read;
+  current.waiters++;
+  return new Promise((resolve, reject) => {
+    let waiting = true;
+    const finish = () => {
+      if (!waiting) return false;
+      waiting = false;
+      signal?.removeEventListener('abort', abort);
+      if (--current.waiters === 0 && pending.get(key) === current) {
+        // React can replace a subscriber in the same turn during hydration.
+        queueMicrotask(() => {
+          if (current.waiters || pending.get(key) !== current) return;
+          pending.delete(key);
+          current.controller.abort();
+        });
+      }
+      return true;
+    };
+    const abort = () => {if (finish()) reject(cancelRead());};
+    signal?.addEventListener('abort', abort, {once:true});
+    void current.result.then(value => {if (finish()) resolve(value);}, error => {if (finish()) reject(error);});
+    if (signal?.aborted) abort();
+  });
+}
 
 export function cancelAccountRequests() {
   for (const controller of activeRequests) controller.abort();
@@ -47,7 +89,7 @@ function accountErrorCode(value: unknown) {
   return typeof code === 'string' && /^[A-Z0-9_]+$/.test(code) ? code : 'ACCOUNT_REQUEST_FAILED';
 }
 
-async function accountReady(origin: string, signal?: AbortSignal): Promise<AccountReady | null> {
+async function probeAccountOrigin(origin: string, signal: AbortSignal): Promise<AccountReady | null> {
   const controller = new AbortController();
   const abort = () => controller.abort();
   signal?.addEventListener('abort', abort, {once: true});
@@ -69,6 +111,17 @@ async function accountReady(origin: string, signal?: AbortSignal): Promise<Accou
     clearTimeout(timeout);
     signal?.removeEventListener('abort', abort);
   }
+}
+
+function accountReady(origin: string, signal?: AbortSignal): Promise<AccountReady | null> {
+  if (signal?.aborted) return Promise.reject(cancelRead());
+  const cached = readyOrigins.get(origin);
+  if (cached && cached.until > Date.now()) return Promise.resolve(cached.value);
+  return sharedRead(readiness, origin, async probeSignal => {
+    const value = await probeAccountOrigin(origin, probeSignal);
+    if (value && !probeSignal.aborted) readyOrigins.set(origin, {value, until:Date.now() + readinessTtlMs});
+    return value;
+  }, signal);
 }
 
 async function selectAccountEndpoint(signal?: AbortSignal) {
@@ -110,13 +163,19 @@ async function selectAccountEndpoint(signal?: AbortSignal) {
 }
 
 export async function accountRequest<T = unknown>(path: string, body?: Record<string, unknown> | FormData, options: RequestOptions = {}): Promise<T> {
+  const publicProfile = body === undefined && !options.query && !options.responseType && /^v1\/profiles\/[a-z0-9._-]+$/i.test(path);
+  if (publicProfile && !options.fresh) {
+    return sharedRead(publicProfiles, path.toLowerCase(), signal => sendAccountRequest(path, undefined,
+      {...options, signal, anonymous:true}), options.signal) as Promise<T>;
+  }
+  const anonymous = body === undefined && (publicProfile || options.anonymous);
   const controller = new AbortController();
   const abort = () => controller.abort();
   options.signal?.addEventListener('abort', abort, {once: true});
   if (options.signal?.aborted) controller.abort();
-  activeRequests.add(controller);
+  if (!anonymous) activeRequests.add(controller);
   try {
-    const result = await sendAccountRequest<T>(path, body, {...options, signal: controller.signal});
+    const result = await sendAccountRequest<T>(path, body, {...options, anonymous, signal: controller.signal});
     if (controller.signal.aborted) throw new DOMException('Request cancelled', 'AbortError');
     return result;
   } finally {
@@ -151,6 +210,7 @@ async function sendAccountRequest<T>(path: string, body: Record<string, unknown>
   try {
     return await fetchAccount<T>(origin, path, body, options);
   } catch (error) {
+    if (error instanceof AccountRequestError && error.code === 'ACCOUNT_API_UNAVAILABLE') readyOrigins.delete(origin);
     const origins = configuredAccountOrigins();
     // A write can reach the server even when the client never sees the response.
     if (!origins || origin !== origins.edge || body !== undefined || !(error instanceof AccountRequestError)
@@ -167,8 +227,9 @@ async function fetchAccount<T>(origin: string, path: string, body: Record<string
   const timeout = setTimeout(abort, options.timeoutMs ?? 20000);
   try {
     const multipart = body instanceof FormData;
-    const response = await fetch(`${origin}/api/${path}`, {
-      credentials: 'include',
+    const query = options.query?.toString();
+    const response = await fetch(`${origin}/api/${path}${query ? '?' + query : ''}`, {
+      credentials: options.anonymous ? 'omit' : 'include',
       cache: 'no-store',
       method: hasBody ? 'POST' : 'GET',
       headers: hasBody && !multipart ? {'Content-Type': 'application/json'} : undefined,

@@ -1,11 +1,13 @@
 import {useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties} from 'react';
-import {AnimatePresence, motion, useReducedMotion} from 'motion/react';
+import {AnimatePresence, motion} from 'motion/react';
 import {ArrowLeft, CloudUpload} from 'lucide-react';
 import {Link} from 'react-router';
 import {PRODUCT_GAMES, multiplayerConfigForProduct, multiplayerProductIdForGame, type GameId} from '../../../src/contracts/product-catalog.mts';
 import {Button} from '../../ui/button';
+import {useSiteReducedMotion} from '../../ui/use-site-reduced-motion';
 import {useLocale, type Translate, type UiMessageKey} from '../../i18n';
 import {formatPlaytime, type ProfileStatistics, type SaveProgress} from '../../services/cloud-saves';
+import type {ProfileSaveSection} from '../../models/profile-display';
 import {bookGameArtwork} from './book-artwork';
 import {bookGameShortTitle} from './products';
 import './profile-game-data.css';
@@ -26,23 +28,21 @@ function WorkArtwork({game}:{game:GameId}) {
   const source=bookGameArtwork(game);
   return source?<img src={source} alt="" loading="lazy" decoding="async"/>:<span className="profile-work-art-fallback" aria-hidden="true">{bookGameShortTitle(game)}</span>;
 }
-export default function ProfileGameData({data,order,owner,settingsHref}: {data:ProfileStatistics;order:string[];owner:boolean;settingsHref:string}) {
+export default function ProfileGameData({data,section,owner,settingsHref}: {data:ProfileStatistics;section:ProfileSaveSection;owner:boolean;settingsHref:string}) {
   const {locale,t}=useLocale();
-  return <>{order.map(key=>key==='career'&&data.career&&data.games.some(game=>game.statistics.progress.length)?<section key={key} id="profile-career" className="profile-panel profile-public-section profile-game-data">
+  return section === 'career' ? <section id="profile-career" className="profile-panel profile-public-section profile-game-data">
     <div className="profile-section-title"><h2>{t('profile.tab.career')}</h2>{owner&&<Button variant="ghost" size="sm" asChild><Link to={settingsHref}><CloudUpload/>{t('cloudSave.title')}</Link></Button>}</div>
     <ClearMatrix data={data}/>
-  </section>:key==='records'&&data.records&&data.games.some(game=>game.statistics.playtimeSeconds!==null||game.statistics.playCount!==null)?<section key={key} id="profile-records" className="profile-panel profile-public-section profile-game-data">
+  </section> : <section id="profile-records" className="profile-panel profile-public-section profile-game-data">
     <div className="profile-section-title"><h2>{t('profile.tab.records')}</h2>{data.playtimeSeconds!==null&&<span className="profile-flight-total">{t('profile.flightTime')} <strong>{formatPlaytime(data.playtimeSeconds,locale)}</strong></span>}</div>
     <div className="profile-playtime-list">{data.games.filter(game=>game.statistics.playtimeSeconds!==null||game.statistics.playCount!==null).sort((a,b)=>(b.statistics.playtimeSeconds??-1)-(a.statistics.playtimeSeconds??-1)).map(game=><div key={game.statistics.game} className="profile-playtime-game">
       <WorkArtwork game={game.statistics.game}/><strong>{PRODUCT_GAMES[game.statistics.game].title}</strong>
       <span>{game.statistics.playtimeSeconds!==null?formatPlaytime(game.statistics.playtimeSeconds,locale):t('profile.playCount',{count:game.statistics.playCount??0})}</span>
     </div>)}</div>
-  </section>:null)}</>;
+  </section>;
 }
 function ClearMatrix({data}: {data:ProfileStatistics}) {
-  const {t}=useLocale(),systemReduced=useReducedMotion();
-  const [lessMotion,setLessMotion]=useState(()=>typeof document!=='undefined'&&document.body.classList.contains('less-motion'));
-  useEffect(()=>{const observer=new MutationObserver(()=>setLessMotion(document.body.classList.contains('less-motion')));observer.observe(document.body,{attributes:true,attributeFilter:['class']});return()=>observer.disconnect();},[]);
+  const {t}=useLocale(),lessMotion=useSiteReducedMotion();
   const [selected,setSelected]=useState<GameId|null>(null),[mode,setMode]=useState<'pointdevice'|'legacy'>('legacy');
   const plot=useRef<HTMLDivElement>(null),[tilted,setTilted]=useState(false);
   const chart=useRef<HTMLDivElement>(null),[chartHeight,setChartHeight]=useState<number>();
@@ -50,7 +50,7 @@ function ClearMatrix({data}: {data:ProfileStatistics}) {
   const statistics=data.games.find(item=>item.statistics.game===selected)?.statistics;
   const active=useMemo(()=>statistics?.progress.filter(item=>!item.mode||item.mode===mode)??[],[statistics,mode]);
   const rows=difficulties.filter(difficulty=>selected?active.some(item=>item.difficulty===difficulty):data.games.some(game=>game.statistics.progress.some(item=>item.difficulty===difficulty)));
-  const transition={duration:systemReduced||lessMotion?0:0.18,ease:[0.2,0,0,1] as const};
+  const transition={duration:lessMotion?0:0.18,ease:[0.2,0,0,1] as const};
   const statusLabel=(state:string)=>t(state==='one-credit'?'profile.clear.oneCredit':state==='cleared'?'profile.clear.cleared':state==='uncleared'?'profile.clear.uncleared':state==='unavailable'?'profile.clear.unavailable':'profile.clear.unread');
   const cells=(items:SaveProgress[],game:GameId)=>rows.map(difficulty=>{
     if(difficulty==='phantasm'&&game!=='th07'||difficulty==='extra'&&game==='th075'||difficulty==='overdrive'&&!items.some(item=>item.difficulty===difficulty))return <span key={difficulty} className="profile-clear-cell" data-status="not-applicable" aria-hidden="true"/>;

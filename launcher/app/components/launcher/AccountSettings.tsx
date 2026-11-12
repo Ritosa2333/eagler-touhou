@@ -1,7 +1,7 @@
 import type {CloudSaveSync} from '../../services/cloud-save-sync';
-import {useEffect, useLayoutEffect, useRef, useState, type FormEvent} from 'react';
+import {useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent} from 'react';
 import {Link, useLocation} from 'react-router';
-import {ChevronLeft, ChevronRight, Gamepad2, ImagePlus, LoaderCircle, Plus, Save, ShieldCheck, Trash2, UserRound} from 'lucide-react';
+import {ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Gamepad2, ImagePlus, LoaderCircle, Plus, Save, ShieldCheck, Trash2, UserRound} from 'lucide-react';
 import {Input, Textarea} from '../../ui/input';
 import {Button} from '../../ui/button';
 import {Toggle} from '../../ui/controls';
@@ -17,11 +17,14 @@ import {useSurfaceLayerState} from '../../navigation/surface-layer';
 import {CloudSaves} from './CloudSaves';
 import type {LocalSaveReader} from '../../services/local-save-storage';
 import ProfileImageCropDialog from './ProfileImageCropDialog';
-import type {Profile, ProfileDisplay, ProfileReview} from './ProfilePreview';
+import {ProfileCover} from './ProfileCover';
+import {ProfilePanelLoading} from './ProfileLoading';
+import type {Profile, ProfileReview} from './ProfilePreview';
+import {isProfileSection, normalizeProfileDisplay, profileSectionLabels, type ProfileDisplay, type ProfileSection} from '../../models/profile-display';
 import './account-settings.css';
 
 type SaveProfile = (profile:Profile, display:ProfileDisplay, review?:ProfileReview) => void;
-type ProfileDraft = {draft:Profile & {display:ProfileDisplay}; review:ProfileReview};
+type ProfileDraft = {draft:Profile & {display:unknown}; review:ProfileReview};
 
 export function AccountSettings({initialProfile, initialDisplay, reviewPending, panel, onSave,readLocalSaves,cloudSync}: {
   initialProfile:Profile; initialDisplay:ProfileDisplay; panel:string;
@@ -80,8 +83,9 @@ function ProfileDraftSettings({pending,onSave}:{pending:boolean;onSave:SaveProfi
     }).catch(() => {if (!controller.signal.aborted) setFailed(true);});
     return () => controller.abort();
   }, [pending,attempt]);
-  if (!draft) return <section aria-busy={!failed}>{failed && <p role="alert">{t('account.requestFailed')}{' '}
-    <Button type="button" variant="outline" onClick={() => setAttempt(value=>value+1)}>{t('action.retry')}</Button></p>}</section>;
+  if (!draft) return failed ? <p role="alert">{t('account.requestFailed')}{' '}
+    <Button type="button" variant="outline" onClick={() => setAttempt(value=>value+1)}>{t('action.retry')}</Button></p> :
+    <ProfilePanelLoading label={t('profile.personalSettings')}/>;
   const {display,...profile} = draft.draft;
   return <ProfileSettings initialProfile={profile} initialDisplay={display} review={draft.review}
     onSave={(next,visibility,review) => {
@@ -91,12 +95,15 @@ function ProfileDraftSettings({pending,onSave}:{pending:boolean;onSave:SaveProfi
 }
 
 function ProfileSettings({initialProfile,initialDisplay,review,onSave}: {
-  initialProfile:Profile;initialDisplay:ProfileDisplay;review?:ProfileReview;onSave:SaveProfile;
+  initialProfile:Profile;initialDisplay:unknown;review?:ProfileReview;onSave:SaveProfile;
 }) {
   const {t} = useLocale();
   const [profile,setProfile] = useState(initialProfile);
   const [roomThumbnail,setRoomThumbnail] = useState<string>();
-  const [visible,setVisible] = useState(initialDisplay.visible);
+  const baseline = useMemo(() => normalizeProfileDisplay(initialDisplay), [initialDisplay]);
+  const [visible,setVisible] = useState(baseline.visible);
+  const [order,setOrder] = useState(baseline.order);
+  const sections = order.filter(isProfileSection);
   const [busy,setBusy] = useState(false);
   const [processing,setProcessing] = useState<Partial<Record<ProfileImageKind,boolean>>>({});
   const uploadTasks = useRef<Partial<Record<ProfileImageKind,AbortController>>>({});
@@ -114,14 +121,23 @@ function ProfileSettings({initialProfile,initialDisplay,review,onSave}: {
   }, []);
   const dirty = cropOpen || processingImages || profile.name !== initialProfile.name || profile.bio !== initialProfile.bio ||
     profile.avatar !== initialProfile.avatar || !!roomThumbnail || profile.cover !== initialProfile.cover ||
-    Object.keys(visible).some(key=>visible[key as keyof typeof visible]!==initialDisplay.visible[key as keyof typeof visible]) || profile.links.length !== initialProfile.links.length ||
+    Object.keys(visible).some(key=>visible[key as keyof typeof visible]!==baseline.visible[key as keyof typeof visible]) ||
+    order.some((key,index)=>key!==baseline.order[index]) || profile.links.length !== initialProfile.links.length ||
     profile.links.some((link,index) => link.label !== initialProfile.links[index]?.label || link.url !== initialProfile.links[index]?.url);
   useUnsavedChanges(dirty, () => {
     for (const task of Object.values(uploadTasks.current)) task?.abort();
     uploadTasks.current = {};setProcessing({});setError(undefined);
-    setProfile(initialProfile);setRoomThumbnail(undefined);setVisible(initialDisplay.visible);setSaved(false);setCropOpen(false);setCropRequest(undefined);
+    setProfile(initialProfile);setRoomThumbnail(undefined);setVisible(baseline.visible);setOrder(baseline.order);setSaved(false);setCropOpen(false);setCropRequest(undefined);
     setLinkIds(initialProfile.links.map(() => nextId.current++));
   });
+  const showSection = (key: ProfileSection | 'friends', value: boolean) => {
+    setVisible(current=>({...current,[key]:value}));setSaved(false);
+  };
+  const moveSection = (key: ProfileSection, neighbor: ProfileSection | undefined) => {
+    if (!neighbor) return;
+    setOrder(current=>current.map(item=>item===key ? neighbor : item===neighbor ? key : item));
+    setSaved(false);
+  };
   const change = (next:Profile) => {setProfile(next);setSaved(false);setError(undefined);};
   const chooseImage = (file:File|undefined,key:ProfileImageKind) => {
     if(!file)return;
@@ -166,7 +182,7 @@ function ProfileSettings({initialProfile,initialDisplay,review,onSave}: {
     setBusy(true);setError(undefined);setSaved(false);
     const {roomAvatarReady, ...fields} = profile;
     const next = {...fields,name:profile.name.trim(),links};
-    const display = {...initialDisplay,visible};
+    const display = {visible,order};
     try {
       let avatarThumbnail = roomThumbnail ?? (next.avatar && roomAvatarReady === false
         ? await prepareStoredAvatarThumbnail(next.avatar).catch(() => undefined)
@@ -186,7 +202,7 @@ function ProfileSettings({initialProfile,initialDisplay,review,onSave}: {
       onSave(savedProfile,display,result?.review);setSaved(true);
       window.dispatchEvent(new Event('account-profile-change'));
       if (next.name !== initialProfile.name || next.avatar !== initialProfile.avatar || avatarThumbnail ||
-          visible.records !== initialDisplay.visible.records) notifyRoomProfileChange();
+          visible.records !== baseline.visible.records) notifyRoomProfileChange();
     } catch(error) {setError(error instanceof AccountRequestError && error.code==='CONTENT_REJECTED'?'profile.contentRejected':error instanceof AccountRequestError && error.code==='REVIEW_UNAVAILABLE'?'profile.reviewUnavailable':error instanceof AccountRequestError && error.code==='SAVE_QUOTA_EXCEEDED'?'cloudSave.quota':'account.requestFailed');}
     finally {setBusy(false);}
   }
@@ -203,7 +219,7 @@ function ProfileSettings({initialProfile,initialDisplay,review,onSave}: {
       <div className="profile-settings-editor">
         <div className="settings-artwork">
           <div className="settings-profile-preview" aria-hidden="true">
-            <div className="settings-preview-cover">{profile.cover && <img src={profile.cover} alt=""/>}</div>
+            <ProfileCover src={profile.cover} className="settings-preview-cover"/>
             <div className="settings-preview-identity"><AccountAvatar src={profile.avatar}/><strong>{profile.name || t('profile.name.missing')}</strong>
               {profile.bio && <p>{profile.bio}</p>}
             </div>
@@ -245,11 +261,24 @@ function ProfileSettings({initialProfile,initialDisplay,review,onSave}: {
               <Button variant="outline" size="sm" type="button" disabled={profile.links.length>=12} onClick={()=>{change({...profile,links:[...profile.links,{label:'',url:''}]});setLinkIds([...linkIds,nextId.current++]);}}><Plus aria-hidden="true"/>{t('profile.links.add')}</Button>
             </FieldContent></Field>
           </FieldGroup>
-          <section className="settings-section" aria-labelledby="settings-privacy-title">
-            <h3 id="settings-privacy-title">{t('profile.displayTab')}</h3>
-            {(['career','records','friends'] as const).map(key=><Field key={key} orientation="horizontal" className="settings-switch-row"><FieldLabel htmlFor={'settings-'+key}>{t(key==='friends'?'profile.friendsVisibility':key==='career'?'profile.careerVisibility':'profile.recordsVisibility')}</FieldLabel><FieldContent>
-              <Toggle id={'settings-'+key} checked={visible[key]} onCheckedChange={value=>{setVisible(current=>({...current,[key]:value}));setSaved(false);}}/>
-            </FieldContent></Field>)}
+          <section className="settings-section" aria-labelledby="settings-display-title">
+            <h3 id="settings-display-title">{t('profile.display')}</h3>
+            {sections.map((key,index)=>{
+              const name = t(profileSectionLabels[key]);
+              return <Field key={key} orientation="horizontal" className="settings-switch-row">
+                <FieldLabel htmlFor={'settings-'+key}>{name}</FieldLabel>
+                <FieldContent className="settings-section-controls">
+                  <Button type="button" variant="ghost" size="icon-sm" disabled={busy || index === 0}
+                    aria-label={t('profile.moveUp',{name})} onClick={()=>moveSection(key,sections[index-1])}><ArrowUp aria-hidden="true"/></Button>
+                  <Button type="button" variant="ghost" size="icon-sm" disabled={busy || index === sections.length-1}
+                    aria-label={t('profile.moveDown',{name})} onClick={()=>moveSection(key,sections[index+1])}><ArrowDown aria-hidden="true"/></Button>
+                  <Toggle id={'settings-'+key} checked={visible[key]} disabled={busy} onCheckedChange={value=>showSection(key,value)}/>
+                </FieldContent>
+              </Field>;
+            })}
+            <Field orientation="horizontal" className="settings-switch-row"><FieldLabel htmlFor="settings-friends">{t('profile.friendsVisibility')}</FieldLabel><FieldContent>
+              <Toggle id="settings-friends" checked={visible.friends} disabled={busy} onCheckedChange={value=>showSection('friends',value)}/>
+            </FieldContent></Field>
           </section>
         </div>
       </div>

@@ -67,6 +67,7 @@ beforeAll(async () => {
           constructor(code, status) { super(code); this.name = 'AccountRequestError'; this.code = code; this.status = status; }
         }
         export function cancelAccountRequests() {}
+        export function mailCaptchaError() {}
         export async function accountRequest(path, body) {
           const request = globalThis.__accountRequest;
           if (!request) throw new Error('account request fixture is not installed');

@@ -14,6 +14,7 @@ export function uiReviewEnabled(environment = globalThis.process?.env ?? {}) {
 }
 
 export const UI_REVIEW_DOCUMENT = Object.freeze({path: '/ui-review.html', file: 'ui-review.html', source: 'app/routes/ui-review.tsx'});
+export const TH09_RATINGS_DOCUMENT = Object.freeze({path: '/ratings.html', file: 'ratings.html'});
 
 /** @param {Record<string, {src?: string, isEntry?: boolean}>} manifest */
 export function hasUiReviewEntry(manifest) {
@@ -25,6 +26,7 @@ export const REACT_DOCUMENTS = Object.freeze([
   {path: '/en.html', file: 'en.html'},
   {path: '/ja.html', file: 'ja.html'},
   {path: '/lobby.html', file: 'lobby.html'},
+  TH09_RATINGS_DOCUMENT,
   {path: '/profile.html', file: 'profile.html'},
   {path: '/login.html', file: 'login.html'},
   {path: '/u/account-profile-template', file: 'profile-entry.html'},
