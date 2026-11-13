@@ -72,17 +72,20 @@ inline void report_mismatch(const char* file, int line, const char* a_text, cons
     if constexpr (std::is_arithmetic_v<A>)
         std::printf("    实际 %lld 期望 %lld\n", static_cast<long long>(a), static_cast<long long>(e));
 }
+
+template <typename A, typename E>
+inline void check_eq(const char* file, int line, const char* a_text, const char* e_text, const A& a, const E& e) {
+    if (!(a == e)) {
+        report_mismatch(file, line, a_text, e_text, a, e);
+        current_failed() = true;
+    }
+}
 }  // namespace th13test
 
-#define CHECK_EQ(actual, expected)                                                                     \
-    do {                                                                                               \
-        const auto& a_value = (actual);                                                                \
-        const auto& e_value = (expected);                                                              \
-        if (!(a_value == e_value)) {                                                                   \
-            ::th13test::report_mismatch(__FILE__, __LINE__, #actual, #expected, a_value, e_value);     \
-            ::th13test::current_failed() = true;                                                       \
-        }                                                                                              \
-    } while (0)
+// 实参在同一个完整表达式里求值并传给 check_eq：形如 v()[0].x 的临时对象
+// 活到比较结束。旧写法 const auto& a_value = (actual); 会悬垂。
+#define CHECK_EQ(actual, expected) \
+    do { ::th13test::check_eq(__FILE__, __LINE__, #actual, #expected, (actual), (expected)); } while (0)
 
 #define CHECK_NEAR(actual, expected, tolerance)                                                         \
     do {                                                                                                \
