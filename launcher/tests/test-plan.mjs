@@ -31,6 +31,7 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-th075-english-static.mjs",
   "tests/test-th075-thcrap.mjs",
   "tests/test-library-index-scrub.mjs",
+  "tests/test-th14-thcrap.mjs",
   "tests/test-th15-thcrap.mjs",
   "tests/test-thcrap-patch-precedence.mjs",
   "tests/test-browser-support.mjs",

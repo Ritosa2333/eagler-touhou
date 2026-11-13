@@ -22,6 +22,17 @@ const game = {
   features: { thprac: true, focusHitbox: true },
 };
 
+// Recorded-music packages can retain lossless FLAC without renaming the codec.
+const flac = structuredClone(game);
+flac.music.ogg = {files: ["th14_01.flac"], sizes: [42], sha256: ["c".repeat(64)], version: "sha256-" + "d".repeat(64)};
+const manifestFor = entry => ({schema: SITE_MANIFEST_SCHEMA, protocol: "eagler-touhou/1",
+  profile: "web-validation-music", shared: {resourceMode: "hosted", vanillaFont: "shared/msgothic.ttc", unicodeFont: "shared/unifont.otf"}, games: {th06: entry}});
+assert.doesNotThrow(() => validateSiteManifest(manifestFor(flac)));
+for (const filename of ["../th14_01.flac", "th14_01.exe", "th14_01.flac/escape"]) {
+  const invalid = structuredClone(flac); invalid.music.ogg.files = [filename];
+  assert.throws(() => validateSiteManifest(manifestFor(invalid)), /invalid Site Manifest games/);
+}
+
 const languagePack = {
   url: "games/th06/language/lang_en.zip",
   bytes: 42,
