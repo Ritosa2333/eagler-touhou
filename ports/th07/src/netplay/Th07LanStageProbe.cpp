@@ -316,10 +316,6 @@ constexpr std::uint32_t SPECTATOR_REPLAY_SCHEMA = SpectatorReplayStart::Schema;
 void ApplyLifecycleFixtureStart();
 bool RequestedStageFixture(int stage);
 
-bool EncodeSpectatorReplayStart(std::vector<std::uint8_t>* bytes) {
-    return SpectatorReplayStart::Encode(bytes);
-}
-
 bool RestoreSpectatorReplayStart(const SpectatorStageEvent& event) {
     if(event.game!='7'||event.schema!=SPECTATOR_REPLAY_SCHEMA||
        !SpectatorReplayStart::Prepare(event.state,event.stage,event.playerCount))return false;
@@ -345,11 +341,19 @@ bool RestoreSpectatorReplayStart(const SpectatorStageEvent& event) {
     if(!constructed||!initialized||!SpectatorReplayStart::BeginStream())return false;
     g_Supervisor.curState=SUPERVISOR_STATE_GAMEMANAGER;
     g_Supervisor.wantedState=SUPERVISOR_STATE_GAMEMANAGER;
+    // The native stage transition clears input history during registration.
+    // A seek can arrive here with a previous scene's held buttons still set.
+    g_CurFrameRawInput=g_LastFrameRawInput=g_IsEighthFrameOfHeldInput=g_NumOfFramesInputsWereHeld=0;
+    for(unsigned seat=0;seat<3;++seat)g_CurFrameGameInputs[seat]=g_LastFrameGameInputs[seat]=0;
     SideEffects::SetSpeculative(true);
     for(u32 f=0;f<SpectatorReplayStart::prepared.leadInFrames;++f){
         const auto& inputs=SpectatorReplayStart::prepared.leadIn[f];u16 buttons=0;
         for(unsigned seat=0;seat<event.playerCount;++seat)buttons|=inputs[seat].buttons;
         Input::SetReplayOverride(buttons);Input::SetPlayerInputOverrides(inputs.data(),event.playerCount);
+        // The first tick of a later stage was already run inside the old
+        // scene's transition tick. Player::RegisterChain reset incremental
+        // touch after the overrides arrived. Don't apply those deltas again.
+        if(event.frame!=0&&f==0)Input::ResetDirectTouchStates();
         const int result=g_Chain.RunCalcChain();
         Input::ClearPlayerButtonOverrides();Input::ClearReplayOverride();
         if(result==0||result==-1){SideEffects::SetSpeculative(false);return false;}
@@ -1424,10 +1428,12 @@ bool Initialize()
         const value = Module.eaglerOptions?.netplayInputDelayFrames;
         return Number.isInteger(value) && value >= 0 && value <= 12 ? value : $0;
     }, coreConfig.inputDelay));
-    coreConfig.maxDirectTouchDeltaPredictionFrames = static_cast<std::uint8_t>(EM_ASM_INT({
-        const value = Module.eaglerOptions?.netplayTouchDeltaPredictionFrames;
-        return Number.isInteger(value) && value >= 0 && value <= 6 ? value : 0;
-    }));
+    // Keep explicit displacement extrapolation in the old benchmark only.
+    if (ProbeMode())
+        coreConfig.maxDirectTouchDeltaPredictionFrames = static_cast<std::uint8_t>(EM_ASM_INT({
+            const value = Module.eaglerOptions?.netplayTouchDeltaPredictionFrames;
+            return Number.isInteger(value) && value >= 0 && value <= 6 ? value : 0;
+        }));
     g_TouchQuantizationStep = static_cast<float>(EM_ASM_DOUBLE({
         const value = Number(Module.eaglerOptions?.netplayTouchQuantization || 0);
         return Number.isFinite(value) && value >= 0 && value <= 2 ? value : 0;
@@ -1539,7 +1545,9 @@ bool Initialize()
     coreConfig.predictableButtons =
         TH_BUTTON_DIRECTION | TH_BUTTON_FOCUS | TH_BUTTON_SHOOT | TH_BUTTON_SKIP;
     coreConfig.directionButtons = TH_BUTTON_DIRECTION;
-    coreConfig.maxDirectionPredictionFrames = 3;
+    if (coreConfig.maxDirectTouchDeltaPredictionFrames)
+        coreConfig.maxDirectionPredictionFrames = 3;
+    else coreConfig.prediction = InputPrediction::ConfirmedHold;
     if (!g_SpectatorMode && !g_Core.Reset(coreConfig))
         return false;
 
@@ -2243,7 +2251,7 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
         ReportSpectatorCheckpointHash(frame, Th07CanonicalHash::Capture().composite);
     if (g_SpectatorPublisherReady && publisherCheckpointDue)
     {
-        if (EncodeSpectatorReplayStart(&spectatorInitializer))
+        if (SpectatorReplayStart::Encode(frame==0,&spectatorInitializer))
             spectatorSchema = SPECTATOR_REPLAY_SCHEMA;
         else
             DisableSpectatorPublisher(frame, "replay-stage-start-unavailable");
@@ -2345,9 +2353,11 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
     }
 #endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if (UseStageTransitionTest() && frame >= 3000u && g_GameManager.currentStage == 1)
+    if (UseStageTransitionTest() && frame >= 3000u &&
+        (g_GameManager.currentStage == 1 ||
+         (g_GameManager.currentStage == 5 && RequestedStageFixture(5))))
     {
-        // Stage-transition smoke fixture: once the real Stage 1 boss can take
+        // Stage-transition smoke fixture: once the real boss can take
         // damage, deplete its remaining life and let the normal ECL death,
         // results, Supervisor, and GameManager::RegisterChain flow advance.
         // This never writes currentStage or the GUI completion flags.
@@ -2413,6 +2423,8 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
     const bool stageChangedDuringCalc =
         static_cast<std::uint8_t>(g_GameManager.currentStage) != stageBeforeCalc;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (g_SpectatorPublisherReady && stageChangedDuringCalc)
+        SpectatorReplayStart::RecordTransition(decision.inputs);
     if (g_GameManager.currentStage > g_HighestStageObserved)
     {
         g_HighestStageObserved = static_cast<std::uint8_t>(g_GameManager.currentStage);

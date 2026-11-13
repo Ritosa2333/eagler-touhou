@@ -1573,7 +1573,7 @@ bool Initialize()
     coreConfig.predictableButtons =
         TH_BUTTON_DIRECTION | TH_BUTTON_FOCUS | TH_BUTTON_SHOOT | TH_BUTTON_SKIP;
     coreConfig.directionButtons = TH_BUTTON_DIRECTION;
-    coreConfig.maxDirectionPredictionFrames = 3;
+    coreConfig.prediction = InputPrediction::ConfirmedHold;
     if (!g_SpectatorMode && !g_Core.Reset(coreConfig))
         return false;
 

@@ -246,6 +246,50 @@ test('chat uses and updates the matching participant profile avatar', async () =
   await act(()=>model.update(changed));
   assert.match(query('#mpRoomChat .chat-avatar img').getAttribute('src'), /abcdef1234567890$/);
 });
+test('settlement chat uses a plain bot until the published account is available', async () => {
+  const {model}=fixture();
+  const room='th09mp-1234';
+  model.update({...context(),room});
+  const original=owner; owner=ownerAccounts;
+  try {await mount(model,{room:true});} finally {owner=original;}
+  const settlement={id:1,author:'ritosa',settledAt:100,changes:[]};
+  await act(()=>model.receive({type:'th09-rating',room,settlement}));
+  const row=query('#mpRoomChat .room-chat-entry');
+  assert.equal(row.querySelector('.chat-sender').textContent,'bot');
+  assert.equal(row.querySelector('.chat-avatar, a'),null);
+
+  const authorProfile={name:'Ritosa',avatar:'1234567890abcdef'};
+  await act(()=>model.receive({type:'chat-history',room,throughId:0,entries:[],ratings:[{...settlement,authorProfile}]}));
+  assert.equal(env.document.querySelectorAll('#mpRoomChat .room-chat-entry').length,1);
+  for (const view of ['#mpRoomChat','.mp-quick-chat-log']) {
+    assert.equal(query(`${view} .chat-role`).textContent,'bot');
+    assert.equal(query(`${view} .chat-sender a`).textContent,'Ritosa');
+    assert.match(query(`${view} .chat-sender a`).getAttribute('href'), /^\/u\/ritosa(?:\?|$)/);
+    assert.match(query(`${view} a.chat-avatar`).getAttribute('href'), /^\/u\/ritosa(?:\?|$)/);
+    assert.equal(query(`${view} .chat-avatar img`).getAttribute('src'),'/api/v1/profiles/ritosa/avatar/1234567890abcdef');
+  }
+});
+test('account-enabled chat gives guests the same input with a sign-in hint', async () => {
+  const {model,calls}=fixture();
+  const original=owner; owner=ownerAccounts;
+  try {await mount(model,{room:true});} finally {owner=original;}
+  const views=['#mpRoomChat','.mp-quick-chat-picker'];
+  const inputs=views.map(view=>query(`${view} input[aria-label="Message"]`));
+  for (const input of inputs) {
+    assert.equal(input.placeholder,'Sign in to chat');
+    assert.equal(input.disabled,true);
+    const form=input.closest('form');
+    assert.equal(form.querySelector('button[aria-label="Send"]').disabled,true);
+    await act(()=>form.dispatchEvent(new env.window.Event('submit',{bubbles:true,cancelable:true})));
+  }
+  assert.deepEqual(calls,[]);
+  assert.equal(query('#mpRoomChat button[aria-label="Quick chat"]').disabled,false);
+  await act(()=>model.receive({type:'chat-status',registered:true,authorId:'account-1',bannedUntil:0}));
+  for (const [index,view] of views.entries()) {
+    assert.equal(query(`${view} input[aria-label="Message"]`),inputs[index]);
+    assert.equal(inputs[index].disabled,false);
+  }
+});
 test('room messages stay above the controls and sending closes the upward picker', async () => {
   const {model,clock,calls}=fixture();model.update({...context(),inRoom:true});
   await mount(model,{room:'split',strict:true});
@@ -559,6 +603,32 @@ function animations() {
     globalThis.matchMedia = media; env.window.matchMedia = windowMedia;
   }};
 }
+test('gameplay free text and bot fade after ten seconds and remain readable in the room', async () => {
+  const native=animations();
+  try {
+    const {model,clock}=fixture();
+    await mount(model,{room:true,strict:true});
+    await act(()=>model.receive({type:'free-chat',room:'th06mp-1234',serial:7,seat:1,clientId:'b',authorId:'account-2',messageId:10,name:'Marisa',text:'hello'}));
+    await act(()=>model.receive({type:'th09-rating',room:'th06mp-1234',settlement:{id:1,author:'ritosa',settledAt:100,changes:[]}}));
+    assert.equal([...query('.mp-quick-chat-log').children].filter(row=>!row.hidden).length,2);
+    await act(()=>clock.tick(9999));
+    assert.equal(native.records.filter(expiryAnimation).length,0);
+    await act(()=>clock.tick(1));
+    const fades=native.records.filter(expiryAnimation);
+    assert.equal(fades.length,2);
+    await act(()=>fades.forEach(animation=>animation.finish()));
+    assert.equal([...query('.mp-quick-chat-log').children].filter(row=>!row.hidden).length,0);
+    assert.equal(model.getSnapshot().entries.length,2);
+    await act(()=>model.update({...context(),inRoom:true}));
+    assert.equal([...query('#mpRoomChat .mp-room-chat-log').children].filter(row=>!row.hidden).length,2);
+    assert.match(query('#mpRoomChat .mp-room-chat-log').textContent,/hello/);
+    assert.match(query('#mpRoomChat .mp-room-chat-log').textContent,/The match has ended/);
+    await act(()=>model.receive({type:'free-chat',room:'th06mp-1234',serial:7,seat:1,clientId:'b',authorId:'account-2',messageId:11,name:'Marisa',text:'room message'}));
+    await act(()=>clock.tick(10000));
+    assert.equal([...query('#mpRoomChat .mp-room-chat-log').children].filter(row=>!row.hidden).length,3);
+  } finally {native.restore();}
+});
+
 test('StrictMode expiry waits fade completion; reset, unmount and dispose cancel owned animation/timer work', async () => {
   const native = animations();
   try {

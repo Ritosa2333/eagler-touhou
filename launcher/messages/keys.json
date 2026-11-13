@@ -1277,6 +1277,26 @@
       "minutes"
     ]
   },
+  "room.unrated": {
+    "id": "room_unrated",
+    "params": []
+  },
+  "th09.ratingGames": {
+    "id": "th09_ratingGames",
+    "params": ["games"]
+  },
+  "th09.matchEnded": {
+    "id": "th09_matchEnded",
+    "params": []
+  },
+  "th09.matchUnrated": {
+    "id": "th09_matchUnrated",
+    "params": []
+  },
+  "th09.firstRating": {
+    "id": "th09_firstRating",
+    "params": ["rating"]
+  },
   "th09.matchInformation": {
     "id": "th09_matchInformation",
     "params": []
@@ -8775,6 +8795,18 @@
     "id": "account_username",
     "params": []
   },
+  "account.usernameHelp": {
+    "id": "account_usernameHelp",
+    "params": []
+  },
+  "account.nickname": {
+    "id": "account_nickname",
+    "params": []
+  },
+  "account.nicknameHelp": {
+    "id": "account_nicknameHelp",
+    "params": []
+  },
   "account.usernamePlaceholder": {
     "id": "account_usernamePlaceholder",
     "params": []
@@ -8793,6 +8825,18 @@
   },
   "account.requestCode": {
     "id": "account_requestCode",
+    "params": []
+  },
+  "account.resendCode": {
+    "id": "account_resendCode",
+    "params": []
+  },
+  "account.captchaInvalid": {
+    "id": "account_captchaInvalid",
+    "params": []
+  },
+  "account.captchaUnavailable": {
+    "id": "account_captchaUnavailable",
     "params": []
   },
   "account.identity": {
@@ -9089,6 +9133,10 @@
   },
   "chat.freeInputHint": {
     "id": "chat_freeInputHint",
+    "params": []
+  },
+  "chat.signInToChat": {
+    "id": "chat_signInToChat",
     "params": []
   },
   "chat.send": {
@@ -9938,13 +9986,6 @@
   "th09.moreDuels": {
     "id": "th09_moreDuels",
     "params": []
-  },
-  "th09.accountCard": {
-    "id": "th09_accountCard",
-    "params": [
-      "games",
-      "rate"
-    ]
   },
   "cloudSave.browserVersion": {
     "id": "cloudSave_browserVersion",

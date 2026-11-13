@@ -4,6 +4,8 @@
 @import "@fumadocs/base-ui/css/preset.css";
 @reference "../../ui/tailwind.css";
 
+.documentation-table-scroll {max-width: 100%; overflow-x: auto;}
+
 /* Fumadocs expects Tailwind's reset. Limit its base rules to the docs shell. */
 @layer base {
   :where(.documentation-shell *) {

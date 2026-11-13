@@ -5,7 +5,7 @@ import {createServer} from 'node:net';
 import {resolve} from 'node:path';
 const cliArgs=process.argv.slice(2);
 const cliFlags=new Set(['--fixtures','--spectator-stage-two-controls','--spectator-first-diff-only',
- '--spectator-old-viewer-cross-stage','--spectator-lifecycle-reentry','--fresh-touch','--background-index','--bomb-lazy',
+ '--spectator-old-viewer-cross-stage','--spectator-stage-five','--spectator-lifecycle-reentry','--fresh-touch','--background-index','--bomb-lazy',
  '--bomb-lifecycle','--shot-sparse','--record-sparse','--texture-coalesce','--world-instancing',
  '--skip-resim-visual','--skip-resim-geometry','--title-spells-lazy','--projection-reuse',
  '--back-metadata-only','--analog']);
@@ -29,12 +29,14 @@ const count=process.argv.find(s=>s.startsWith('--players='))?.slice(10)||'all';
 const spectatorStageTwo=process.argv.includes('--spectator-stage-two-controls');
 const spectatorFirstDiffOnly=process.argv.includes('--spectator-first-diff-only');
 const spectatorOldViewerCrossStage=process.argv.includes('--spectator-old-viewer-cross-stage');
+const spectatorStageFive=process.argv.includes('--spectator-stage-five');
 const spectatorLifecycleReentry=process.argv.includes('--spectator-lifecycle-reentry');
 const spectatorFrames=process.argv.find(s=>s.startsWith('--spectator-frames='))?.slice(19);
 if(spectatorStageTwo&&!fixtures)throw Error('Stage-two spectator controls require the fixture-enabled TH08 native test build');
 if(spectatorStageTwo&&!modes.includes('spectator-relay'))throw Error('Stage-two spectator controls require --only=spectator-relay');
 if(spectatorFirstDiffOnly&&(!spectatorStageTwo||!fixtures))throw Error('First-difference probe requires --spectator-stage-two-controls and a fixture-enabled build');
 if(spectatorOldViewerCrossStage&&(!fixtures||spectatorStageTwo||!modes.includes('spectator-relay')))throw Error('Old-viewer cross-stage proof requires a fixture-enabled standalone spectator-relay case');
+if(spectatorStageFive&&(!fixtures||spectatorStageTwo||spectatorOldViewerCrossStage||spectatorLifecycleReentry||!modes.every(mode=>mode.startsWith('spectator-'))))throw Error('Stage five requires a separate fixture-enabled spectator case');
 if(spectatorLifecycleReentry&&(count!=='2'||spectatorStageTwo||spectatorOldViewerCrossStage||
  !modes.includes('spectator-relay')||modes.length!==1))throw Error('Lifecycle reentry requires a standalone two-player spectator-relay case');
 const inputDelay=Number(process.argv.find(s=>s.startsWith('--input-delay='))?.slice(14)||0);
@@ -58,9 +60,10 @@ const projectionReuse=process.argv.includes('--projection-reuse');
 const backMetadataOnly=process.argv.includes('--back-metadata-only');
 const analog=process.argv.includes('--analog')||freshTouch;
 if(freshTouch&&hostMode)throw Error('--fresh-touch selects packet/RTC/relay tests; Replay includes its own mixed input formats');
-const spectatorCase=spectatorLifecycleReentry?'lifecycle-reentry':spectatorOldViewerCrossStage?'old-viewer-cross-stage':spectatorStageTwo?'stage-two-controls':'default';
+const spectatorCase=spectatorLifecycleReentry?'lifecycle-reentry':spectatorOldViewerCrossStage?'old-viewer-cross-stage':spectatorStageFive?'stage-five':spectatorStageTwo?'stage-two-controls':'default';
 const spectatorExpectedPhase=spectatorLifecycleReentry?'repeated-runtime-admission-and-idle-pause':
  spectatorOldViewerCrossStage?'old-viewer-stage-one-admission':
+ spectatorStageFive?'stage-five-matched':
  spectatorStageTwo?'stage-two-late-admission':modes.some(m=>m.startsWith('spectator-'))?'delayed-admission':null;
 const browserBlocked=new Set([2049,3659,4045,5060,5061,6000,6566,6665,6666,6667,6668,6669,6697,10080]);
 const free=async()=>{for(let tries=0;tries<32;++tries){const p=await new Promise((ok,fail)=>{const s=createServer();s.once('error',fail);s.listen(0,'127.0.0.1',()=>{const port=s.address().port;s.close(e=>e?fail(e):ok(port));});});if(p>=1024&&!browserBlocked.has(p))return p;}throw Error('No browser-safe loopback port');};
@@ -98,8 +101,9 @@ try{
  server=fork(resolve(import.meta.dirname,'serve.mjs'),[],{cwd:root,env:{...process.env,PORT:String(port),TH08_MP_FIXTURES:fixtures?'1':'0'},stdio:['ignore','pipe','pipe','ipc']});await ready(server);
  for(const mode of modes){
   const output=resolve(out,mode+'.json');console.log('BEGIN TH08 '+mode+' players='+count);
+  const stageFiveArgs=spectatorStageFive?['--stage-five','--timing','hybrid','--frames',spectatorFrames||'1300']:[];
   const code=await new Promise((done,reject)=>{
-   const c=spawn(process.env.TH_PYTHON||'python',['-u',resolve(import.meta.dirname,mode==='host'?'check-runtime-host.py':mode==='replay'?'check-replay.py':mode.startsWith('spectator-')?'check-spectator.py':'check-network.py'),'--url','http://127.0.0.1:'+port+'/','--relay','ws://127.0.0.1:'+relayPort,'--mode',mode,'--players',count,'--output',output,...(mode==='host'?['--input-delay',String(inputDelay),'--adonis-mode',String(adonisMode)]:[]),...(spectatorStageTwo&&mode.startsWith('spectator-')?['--stage-two-controls','--frames',spectatorFrames||'900']:[]),...(spectatorFirstDiffOnly&&mode.startsWith('spectator-')?['--first-diff-only']:[]),...(spectatorOldViewerCrossStage&&mode.startsWith('spectator-')?['--old-viewer-cross-stage']:[]),...(spectatorLifecycleReentry&&mode.startsWith('spectator-')?['--lifecycle-reentry']:[]),...(analog?['--analog']:[]),...(freshTouch?['--fresh-touch']:[]),...(backgroundIndex&&['packets','rtc','relay'].includes(mode)?['--background-index']:[]),...(bombLazy&&['packets','rtc','relay'].includes(mode)?['--bomb-lazy']:[]),...(shotSparse&&['packets','rtc','relay'].includes(mode)?['--shot-sparse']:[]),...(recordSparse&&['packets','rtc','relay'].includes(mode)?['--record-sparse']:[]),...(titleSpellsLazy&&['packets','rtc','relay'].includes(mode)?['--title-spells-lazy']:[]),...(projectionReuse&&mode==='packets'?['--projection-reuse']:[]),...(textureCoalesce&&mode==='packets'?['--texture-coalesce']:[]),...(backMetadataOnly&&mode==='packets'?['--back-metadata-only']:[]),...(worldInstancing&&mode==='packets'?['--world-instancing']:[]),...(skipResimVisual&&mode==='packets'?['--skip-resim-visual']:[]),...(skipResimGeometry&&mode==='packets'?['--skip-resim-geometry']:[]),...(bombLifecycle&&mode==='packets'?['--bomb-lifecycle']:[]),...(mode==='replay'&&replayFrames?['--frames',replayFrames]:[])],{cwd:root,stdio:['ignore','pipe','pipe'],windowsHide:true});
+   const c=spawn(process.env.TH_PYTHON||'python',['-u',resolve(import.meta.dirname,mode==='host'?'check-runtime-host.py':mode==='replay'?'check-replay.py':mode.startsWith('spectator-')?'check-spectator.py':'check-network.py'),'--url','http://127.0.0.1:'+port+'/','--relay','ws://127.0.0.1:'+relayPort,'--mode',mode,'--players',count,'--output',output,...stageFiveArgs,...(mode==='host'?['--input-delay',String(inputDelay),'--adonis-mode',String(adonisMode)]:[]),...(spectatorStageTwo&&mode.startsWith('spectator-')?['--stage-two-controls','--frames',spectatorFrames||'900']:[]),...(spectatorFirstDiffOnly&&mode.startsWith('spectator-')?['--first-diff-only']:[]),...(spectatorOldViewerCrossStage&&mode.startsWith('spectator-')?['--old-viewer-cross-stage']:[]),...(spectatorLifecycleReentry&&mode.startsWith('spectator-')?['--lifecycle-reentry']:[]),...(analog?['--analog']:[]),...(freshTouch?['--fresh-touch']:[]),...(backgroundIndex&&['packets','rtc','relay'].includes(mode)?['--background-index']:[]),...(bombLazy&&['packets','rtc','relay'].includes(mode)?['--bomb-lazy']:[]),...(shotSparse&&['packets','rtc','relay'].includes(mode)?['--shot-sparse']:[]),...(recordSparse&&['packets','rtc','relay'].includes(mode)?['--record-sparse']:[]),...(titleSpellsLazy&&['packets','rtc','relay'].includes(mode)?['--title-spells-lazy']:[]),...(projectionReuse&&mode==='packets'?['--projection-reuse']:[]),...(textureCoalesce&&mode==='packets'?['--texture-coalesce']:[]),...(backMetadataOnly&&mode==='packets'?['--back-metadata-only']:[]),...(worldInstancing&&mode==='packets'?['--world-instancing']:[]),...(skipResimVisual&&mode==='packets'?['--skip-resim-visual']:[]),...(skipResimGeometry&&mode==='packets'?['--skip-resim-geometry']:[]),...(bombLifecycle&&mode==='packets'?['--bomb-lifecycle']:[]),...(mode==='replay'&&replayFrames?['--frames',replayFrames]:[])],{cwd:root,stdio:['ignore','pipe','pipe'],windowsHide:true});
    children.push(c);c.stdout.on('data',b=>process.stdout.write(b));c.stderr.on('data',b=>process.stderr.write(b));c.once('error',reject);c.once('exit',done);
   });
   const produced=JSON.parse(readFileSync(output));

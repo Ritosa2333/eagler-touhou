@@ -104,6 +104,7 @@ async function openRoom(){
  const relay=new URL(o.netplayUrl),room=relay.searchParams.get('room'),run=relay.searchParams.get('run');
  const delay=o.netplayInputDelay??0,mode=o.netplayAdonisMode??0;
  if(o.netplayMode!=='lan'||![0,1].includes(mode)||o.netplayInputDelayAuto||
+    (o.netplayChallengeMode!==undefined&&typeof o.netplayChallengeMode!=='boolean')||
     o.replayPath||o.thpracEnabled||!['ws:','wss:'].includes(relay.protocol)||relay.username||relay.password||
     relay.hash||!room?.startsWith('th17mp-')||!/^[1-9]\d*$/.test(run??'')||
     ![2,3].includes(count)||!Number.isInteger(seat)||seat<0||seat>=count||
@@ -120,10 +121,10 @@ async function openRoom(){
  if(manifest.product!=='th17mp'||manifest.features?.multiplayer!==true||!/^[a-f\d]{64}$/i.test(build??''))
   throw Error('TH17 多人运行包身份无效');
  const digest=new DataView(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('th17mp:'+room+':'+run)));
- const words=[2,count,seat,o.netplayDifficulty,o.netplaySeed,digest.getUint32(0,true),digest.getUint32(4,true)||1,delay];
+ const words=[3,count,seat,o.netplayDifficulty,o.netplaySeed,digest.getUint32(0,true),digest.getUint32(4,true)||1,delay];
  for(let i=0;i<3;i++)words.push(loadouts[i]?.character??0,loadouts[i]?.shot??0);
  for(let i=0;i<4;i++)words.push(parseInt(build.slice(i*8,i*8+8),16));
- words.push(+(mode===0));
+ words.push(+(mode===0),+(o.netplayChallengeMode===true));
  const url=new TextEncoder().encode(relay.href+'\0'),identity=new TextEncoder().encode((spectator?o.netplaySpectatorId:'')+'\0');
  const params=core._malloc(words.length*4),address=core._malloc(url.length),viewer=spectator?core._malloc(identity.length):0;
  try{

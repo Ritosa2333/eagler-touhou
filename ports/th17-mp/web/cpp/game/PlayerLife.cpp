@@ -8,7 +8,8 @@ bool PlayerLife::hit(){
     if(!visuals.pose(0)){error="Player hit animation failed";return false;}return true;
 }
 bool PlayerLife::commit_death(){
-    effects.tracked(28,motion.position);if(!effects.error.empty()){error=effects.error;return false;}if(!(session.practice_tools&PracticeInfiniteLives))session.extra_lives=wrapping_sub(session.extra_lives,1);
+    effects.tracked(28,motion.position);if(!effects.error.empty()){error=effects.error;return false;}
+    if(!session.challenge&&!(session.practice_tools&PracticeInfiniteLives))session.extra_lives=wrapping_sub(session.extra_lives,1);
     session.bombs=std::clamp(session.initial_bombs,0,8);
     if(!bomb_hud||!bomb_hud(session.bombs,session.bomb_pieces)){error="Player bomb display unavailable";return false;}
     if(session.extra_lives>=0&&(!life_hud||!life_hud(session.extra_lives,session.life_pieces))){error="Player life display unavailable";return false;}

@@ -30,6 +30,7 @@ bool Hud::layout_stock(AnmVm& root,u32 seat){
         auto* vm=seat?animations.spawn_child(root,row.script,4):animations.registry.find_child_script(root,row.script,0);
         if(!check(vm!=nullptr,"HUD stock label unavailable"))return false;
         move_row(*vm,row.target-row.original);
+        if(session.challenge&&(row.script==8||row.script==9)&&!visible(animations.registry.handle(*vm),false))return false;
     }
     return true;
 }
@@ -42,6 +43,7 @@ bool Hud::layout_team(AnmVm& root){
     return true;
 }
 bool Hud::stock(u32 seat,i32 count,i32 pieces,bool bomb){
+    if(session.challenge&&!bomb)return true;
     auto& handles=stock_handles(seat,bomb);
     if(!handles[0])return true;if(count<0)count=0;if(count>(bomb?8:9))return check(false,"HUD stock outside TH17 range");
     static constexpr i32 life_labels[]={0,2,3},bomb_labels[]={0,2,4};if(count<8&&(pieces<0||pieces>=3))return check(false,"HUD piece count outside TH17 range");
@@ -60,6 +62,7 @@ bool Hud::create_stock(u32 seat){
             auto* vm=animations.registry.find(handles[i]);
             if(!check(vm!=nullptr,"HUD stock icon creation failed"))return false;
             if(seats>1)move_row(*vm,delta);
+            if(session.challenge&&!bomb&&!visible(handles[i],false))return false;
         }
     }
     return true;

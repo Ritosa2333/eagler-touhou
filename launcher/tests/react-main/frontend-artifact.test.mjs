@@ -10,6 +10,19 @@ import {fileURLToPath, pathToFileURL} from 'node:url';
 import {STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES} from '../../lib/frontend-static-manifest.mjs';
 import {readReactFrontendArtifact, reactFrontendArtifactDirectory} from '../../lib/react-frontend-artifact.mjs';
 import {SITE_BRAND_DEFAULT, SITE_BRAND_FACES} from '../../lib/site-brand.mjs';
+import {QUICK_CHAT_PHRASES} from '../../../common/contracts/multiplayer-quick-chat.mjs';
+
+test('every quick-chat phrase has a published and precached voice clip', async () => {
+  const expected = QUICK_CHAT_PHRASES.map(({id}) => `assets/quick-chat/${id}.wav`).sort();
+  const voiceClips = files => files.filter(path => path.startsWith('assets/quick-chat/')).sort();
+  assert.deepEqual(voiceClips(STATIC_FRONTEND_PACKAGE_FILES), expected);
+  assert.deepEqual(voiceClips(STATIC_APP_SHELL_FILES), expected);
+  await Promise.all(expected.map(async path => {
+    const clip = await readFile(new URL(`../../public/${path}`, import.meta.url));
+    assert.equal(clip.toString('ascii', 0, 4), 'RIFF', path);
+    assert.equal(clip.toString('ascii', 8, 12), 'WAVE', path);
+  }));
+});
 
 async function fixture(run, {appShell = null, mountPath = '/review/'} = {}) {
   const work = await mkdtemp(resolve(tmpdir(), 'react-publication-'));

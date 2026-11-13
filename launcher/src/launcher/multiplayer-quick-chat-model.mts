@@ -40,6 +40,32 @@ export interface QuickChatEntry {
   readonly phrase: QuickChatPhrase;
   readonly messageId?: number;
   readonly authorId?: string;
+  readonly at?: number;
+  readonly rating?: RatingAnnouncement;
+  readonly expiredInGame?: boolean;
+}
+export interface RatingAnnouncement {
+  id: number;
+  author: string;
+  authorProfile?: {name: string; avatar?: string};
+  settledAt: number;
+  changes: {username: string; before: number | null; after: number}[];
+}
+function ratingAnnouncement(value: unknown): RatingAnnouncement | undefined {
+  if (!value || typeof value !== 'object') return;
+  const item = value as Partial<RatingAnnouncement>;
+  const username = /^[a-z0-9_.]{3,12}$/i;
+  if (!Number.isSafeInteger(item.id) || item.id! <= 0 || !Number.isSafeInteger(item.settledAt) ||
+      typeof item.author !== 'string' || !username.test(item.author) || !Array.isArray(item.changes) ||
+      item.changes.length > 2 || !item.changes.every(change => change &&
+        typeof change.username === 'string' && username.test(change.username) &&
+        (change.before === null || Number.isSafeInteger(change.before)) && Number.isSafeInteger(change.after))) return;
+  const profile = item.authorProfile;
+  const authorProfile = profile && typeof profile.name === 'string' && profile.name.length > 0 && profile.name.length <= 32
+    ? {name: profile.name, ...(typeof profile.avatar === 'string' && /^[a-f0-9]{16}$/.test(profile.avatar) ? {avatar: profile.avatar} : {})}
+    : undefined;
+  return {id: item.id!, author: item.author, settledAt: item.settledAt!, changes: item.changes,
+    ...(authorProfile ? {authorProfile} : {})};
 }
 export interface QuickChatSnapshot {
   readonly context: QuickChatContext | null;
@@ -93,35 +119,47 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
     submittedDraft = '';
   const now = ports.now ?? Date.now;
   const listeners = new Set<() => void>(),
-    timers = new Map<QuickChatEntry, number>(),
-    expiring = new Set<QuickChatEntry>();
+    timers = new Map<number, number>(),
+    expiring = new Set<number>();
   function publish(next: QuickChatSnapshot, silent = false) {
     snapshot = next;
     if (silent) return;
     for (const listener of listeners) listener();
   }
   function cancel(entry: QuickChatEntry) {
-    const timer = timers.get(entry);
+    const timer = timers.get(entry.id);
     if (timer !== undefined) ports.timers.clearTimeout(timer);
-    timers.delete(entry);
-    expiring.delete(entry);
+    timers.delete(entry.id);
+    expiring.delete(entry.id);
   }
-  function remove(entry: QuickChatEntry) {
-    if (disposed || !snapshot.entries.includes(entry)) return;
+  function finishExpiry(id: number) {
+    const entry = snapshot.entries.find(item => item.id === id);
+    if (disposed || !entry) return;
     cancel(entry);
-    publish({ ...snapshot, entries: snapshot.entries.filter((item) => item !== entry) });
+    const entries = entry.messageId !== undefined || entry.rating
+      ? snapshot.entries.map(item => item.id === id ? {...item, expiredInGame: true} : item)
+      : snapshot.entries.filter(item => item.id !== id);
+    publish({...snapshot, entries});
   }
-  function expire(entry: QuickChatEntry) {
-    timers.delete(entry);
-    if (disposed || !snapshot.entries.includes(entry)) return;
-    expiring.add(entry);
-    const pending = presenter?.(entry);
+  function expire(id: number) {
+    timers.delete(id);
+    const entry = snapshot.entries.find(item => item.id === id);
+    if (disposed || !entry) return;
+    expiring.add(id);
+    const pending = !snapshot.context?.inRoom && presenter?.(entry);
     if (pending)
       void pending.then(
-        () => remove(entry),
+        () => finishExpiry(id),
         () => {},
       );
-    else remove(entry);
+    else finishExpiry(id);
+  }
+  function append(entry: QuickChatEntry, silent: boolean) {
+    const entries = [...snapshot.entries, entry];
+    if (entries.length > 50) cancel(entries.shift()!);
+    publish({...snapshot, entries}, silent);
+    if (!entry.expiredInGame && !disposed && snapshot.entries.some(item => item.id === entry.id))
+      timers.set(entry.id, ports.timers.setTimeout(() => expire(entry.id), 10000));
   }
   function update(next: QuickChatContext) {
     if (disposed) return;
@@ -150,7 +188,7 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
     }
     if (reset) {
       historyThrough = 0;
-      for (const entry of snapshot.entries) cancel(entry);
+      for (const entry of snapshot.entries) if (previous?.room !== next.room || !entry.rating) cancel(entry);
     }
     const context = {
       ...next,
@@ -160,13 +198,34 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
     publish({
       ...snapshot,
       context,
-      ...(reset ? { entries: [], muted: [], draft: '', sending: false } : {}),
+      ...(reset ? { entries: previous?.room === next.room ? snapshot.entries.filter(entry => entry.rating) : [], muted: [], draft: '', sending: false } : {}),
       ...(reset || next.inRoom || !next.visible || !next.connected ? { pickerOpen: false, editingText: false } : {}),
       ...(!next.connected ? { registered: false, authorId: '', bannedUntil: 0, sending: false } : {}),
     });
   }
   function receive(message: Record<string, unknown>, silent = false) {
     if (disposed) return;
+    if (message.type === 'th09-rating') {
+      const rating = ratingAnnouncement(message.settlement);
+      if (!rating || !snapshot.context?.visible || message.room !== snapshot.context.room) return;
+      const name = rating.authorProfile?.name ?? 'bot';
+      const index = snapshot.entries.findIndex(entry => entry.rating?.id === rating.id);
+      if (index >= 0) {
+        const entry = snapshot.entries[index];
+        const previous = entry.rating!;
+        if (previous.author === rating.author && previous.authorProfile?.name === rating.authorProfile?.name &&
+            previous.authorProfile?.avatar === rating.authorProfile?.avatar) return;
+        const entries = [...snapshot.entries];
+        entries[index] = {...entry, name, rating: {...previous, author: rating.author, authorProfile: rating.authorProfile}};
+        publish({...snapshot, entries}, silent);
+        return;
+      }
+      const entry: QuickChatEntry = {id: ++sequence, clientId: 'th09-rating', seat: -1, spectator: false,
+        name, phrase: {id: 'th09-rating', zh: '', en: ''}, rating, at: rating.settledAt,
+        ...(silent ? {expiredInGame: true} : {})};
+      append(entry, silent);
+      return;
+    }
     if (message.type === 'chat-status') {
       const registered = message.registered === true && typeof message.authorId === 'string';
       const bannedUntil =
@@ -244,6 +303,12 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
       }
       const history = [...snapshot.entries].sort((left, right) => left.messageId! - right.messageId!);
       const entries = [...history, ...retained];
+      if (Array.isArray(message.ratings) && message.room === snapshot.context?.room) {
+        publish({...snapshot, entries}, true);
+        for (const settlement of message.ratings.slice(-50)) receive({type: 'th09-rating', room: message.room, settlement}, true);
+        entries.splice(0, entries.length, ...snapshot.entries);
+        entries.sort((left, right) => (left.at ?? 0) - (right.at ?? 0));
+      }
       for (const entry of entries.slice(0, -50)) cancel(entry);
       publish({ ...snapshot, entries: entries.slice(-50) });
       return;
@@ -294,6 +359,8 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
       name: free ? String(message.name) : seat!.name,
       phrase,
       ...(free ? { messageId: Number(message.messageId), authorId: String(message.authorId) } : {}),
+      ...(Number.isSafeInteger(message.createdAt) ? {at: Number(message.createdAt)} : {}),
+      ...(silent ? {expiredInGame: true} : {}),
     };
     if (
       !free &&
@@ -302,14 +369,7 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
       (!spectator || context.localSeat == null)
     )
       ports.voice(phrase.id);
-    const entries = [...snapshot.entries, entry];
-    if (entries.length > 50) cancel(entries.shift()!);
-    publish({ ...snapshot, entries }, silent);
-    if (!free && !disposed && snapshot.entries.includes(entry))
-      timers.set(
-        entry,
-        ports.timers.setTimeout(() => expire(entry), 10000),
-      );
+    append(entry, silent);
   }
   function sendPhrase(id: unknown) {
     const context = snapshot.context,
@@ -418,7 +478,7 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
       return () => {
         if (presenter !== next) return;
         presenter = null;
-        for (const entry of [...expiring]) remove(entry);
+        for (const id of [...expiring]) finishExpiry(id);
       };
     },
     dispose() {
