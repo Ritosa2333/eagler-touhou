@@ -33,10 +33,10 @@ index 0000000000000000000000000000000000000000..25fc1a71c6a044f980e895c3db674984
 +加 `--strict` 时，VM 差异、缺失操作码或字库选择不符都会返回非零。报告记录每个不同字段的原版和移植 32 位原始值。修复前的 120 组对照中有 31 组不同、3 组未映射。修复后扩展至 349 组全部相同；另有 69 组[界面对照](TH14_UI_ORACLE.md)通过。父子 VM 管理、绘制队列、完整战斗和最终像素未由这份组件对照覆盖。
 diff --git a/docs/porting/TH14_BROWSER_PERFORMANCE.md b/docs/porting/TH14_BROWSER_PERFORMANCE.md
 new file mode 100644
-index 0000000000000000000000000000000000000000..10f7eb931d2a4588783f75875ffdea51c70c24dd
+index 0000000000000000000000000000000000000000..9b7893618a84f212a383d99da8e3120b33af66f6
 --- /dev/null
 +++ b/docs/porting/TH14_BROWSER_PERFORMANCE.md
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,65 @@
 +# TH14 browser frame pacing
 +
 +The browser accumulates refresh time separately from the retail deadline
@@ -75,6 +75,21 @@ index 0000000000000000000000000000000000000000..10f7eb931d2a4588783f75875ffdea51
 +The two TH14 opening compositor clears apply depth immediately. Each color
 +clear waits until that surface is drawn to, sampled, copied, presented or
 +read. A later color clear can replace it if it covers the whole rectangle.
++
++TH14 reuses the same rounded world-to-clip matrix for the points of a
++background object or ANM quad. Background culling can accept the object
++as soon as its accumulated bounds intersect the playfield. Long screen
++strips and fans upload their original topology when isolated. Compatible
++draws still merge in the original triangle order.
++
++TH14 tracks occupied item slots in groups of 64. Updating, drawing and
++attracting items skip empty groups and visit the rest in slot order. The
++ordinary and cancel-item free lists retain their original allocation order.
++Bullet transform diagnostics snapshot the program only when it fails.
++Rectangular cancels share one inverse rotation across bullets and lasers.
++The ANM draw lists retain each VM's incoming link for constant-time removal.
++A generation counter invalidates old links when a list is rebuilt. Each VM
++records its published layer separately from the layer set by its script.
 +
 +Run `node --test tools/tests/test-th14-frame-scheduler.mjs` for the async
 +frame queue and compile `runtimes/th12/th12_web/tests/cpp/th14-browser-cadence.cpp`
@@ -177,7 +192,7 @@ index a5d5362aa17f9a9e6333c483780d4e7b4d90ca6f..ffc21aeff45f269cbaa129e5bfaa4684
  enum class BlendFactor : u32 { Zero, One, SourceColor, InverseSourceColor, SourceAlpha, InverseSourceAlpha, DestinationAlpha, InverseDestinationAlpha, DestinationColor, InverseDestinationColor, SourceAlphaSaturate };
  enum class BlendEquation : u32 { Add, Subtract, ReverseSubtract, Minimum, Maximum };
 diff --git a/runtimes/th12/portable/sdl/Renderer.cpp b/runtimes/th12/portable/sdl/Renderer.cpp
-index 086076dbaa745c3b3874633575e322e4bd6a6e83..3367389a9cd886657f5612fd7129f1bd7f7bad07 100644
+index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f241a764ffb 100644
 --- a/runtimes/th12/portable/sdl/Renderer.cpp
 +++ b/runtimes/th12/portable/sdl/Renderer.cpp
 @@ -88,6 +88,16 @@ bool Renderer::initialize(){
@@ -304,7 +319,73 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..3367389a9cd886657f5612fd7129f1bd
  void Renderer::prepare(u32 h){
  #ifdef TH14_WEBGPU_BACKEND
   if(webGpu){webGpu->prepare(h);return;}
-@@ -204,29 +249,64 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
+@@ -193,40 +238,128 @@ void Renderer::draw(Topology primitive,u32 count,const void* data,u32 stride,con
+  const bool instance=version==10&&state.layout==attributes(VertexLayout::WorldUv)&&stride==20&&primitive==Topology::Strip&&count==2;
+  if(instance){if(batching&&(!instancing||!equal(batchState,state,true)||quad.size()!=80||std::memcmp(quad.data(),data,80)))flush();if(!batching){batchState=state;quad.assign(static_cast<const u8*>(data),static_cast<const u8*>(data)+80);batching=instancing=true;}const auto old=worlds.size();worlds.resize(old+68);std::memcpy(worlds.data()+old,state.matrix[0].data(),64);std::memcpy(worlds.data()+old+64,&state.pipeline.textureFactor,4);if(worlds.size()>=1024*68)flush();return;}
+  if(batching&&(instancing||!equal(batchState,state)))flush();if(!batching){batchState=state;batching=true;instancing=false;}
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++ // Screen lasers and fans can upload the original strip. Keep the world path
++ // in triangles: its projection eligibility is computed per triangle.
++ if(!batchCount&&state.layout.screen&&count>=16&&primitive!=Topology::Triangles){
++  const auto* src=static_cast<const u8*>(data);
++  const size_t size=(size_t(count)+2)*stride;
++  batchTopology=primitive;
++  batchBytes.assign(src,src+size);
++  batchCount=count;
++  stats.copiedBytes+=size;
++  if(size>=1048576)flush();
++  return;
++ }
++ if(batchTopology!=Topology::Triangles){
++  // A compatible draw follows. Expand backwards so earlier source vertices
++  // stay intact, then append in the same draw order as the ordinary batch.
++  triangleScratch.resize(size_t(stride)*3);
++  batchBytes.resize(size_t(batchCount)*3*stride);
++  for(u32 i=batchCount;i-->0;){
++   const u32 first=batchTopology==Topology::Fan?0:(i&1)?i+1:i;
++   const u32 second=batchTopology==Topology::Fan||!(i&1)?i+1:i;
++   const u32 vertices[]{first,second,i+2};
++   for(u32 j=0;j<3;++j)
++    std::memcpy(triangleScratch.data()+j*stride,batchBytes.data()+vertices[j]*stride,stride);
++   std::memcpy(batchBytes.data()+size_t(i)*3*stride,triangleScratch.data(),triangleScratch.size());
++  }
++  stats.copiedBytes+=batchBytes.size();
++  batchTopology=Topology::Triangles;
++ }
++#endif
+  const auto* src=static_cast<const u8*>(data);const size_t start=batchBytes.size(),size=count*3*stride;stats.copiedBytes+=size;batchBytes.resize(start+size);auto* dest=batchBytes.data()+start;
+  if(primitive==Topology::Triangles)std::memcpy(dest,src,size);else if(count){std::memcpy(dest,src,3*stride);dest+=3*stride;for(u32 i=1;i<count;i++){u32 a=primitive==Topology::Fan?0:i&1?i+1:i,b=primitive==Topology::Fan?i+1:i&1?i:i+1,c=i+2;for(u32 v:{a,b,c}){std::memcpy(dest,src+v*stride,stride);dest+=stride;}}}batchCount+=count;if(batchBytes.size()>=1048576)flush();
+ }
+-void Renderer::flush(){if(!batching)return;batching=false;if(instancing)issue(batchState,Topology::Strip,2,quad.data(),quad.size(),nullptr,IndexType::UInt16,worlds.size()>68?worlds.data():nullptr,worlds.size()>68?worlds.size():0);else issue(batchState,Topology::Triangles,batchCount,batchBytes.data(),batchBytes.size(),nullptr,IndexType::UInt16,nullptr,0);batchBytes.clear();worlds.clear();batchCount=0;instancing=false;}
+-void Renderer::discard(){batching=instancing=false;batchBytes.clear();worlds.clear();batchCount=0;}
++void Renderer::flush(){
++ if(!batching)return;
++ batching=false;
++ if(instancing){
++  issue(batchState,Topology::Strip,2,quad.data(),quad.size(),nullptr,IndexType::UInt16,worlds.size()>68?worlds.data():nullptr,worlds.size()>68?worlds.size():0);
++ }else{
++  const auto topology=
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++   batchTopology;
++#else
++   Topology::Triangles;
++#endif
++  issue(batchState,topology,batchCount,batchBytes.data(),batchBytes.size(),nullptr,IndexType::UInt16,nullptr,0);
++ }
++ discard();
++}
++void Renderer::discard(){
++ batching=instancing=false;
++ batchBytes.clear();
++ worlds.clear();
++ batchCount=0;
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++ batchTopology=Topology::Triangles;
++#endif
++}
+ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* data,u32 size,const void* index,IndexType indexFormat,const void* instance,u32 instanceSize,bool clippedGeometry){
+  stats.batches++;
+ #ifdef TH14_WEBGPU_BACKEND
   if(webGpu){webGpu->issue(d,primitive,count,data,index,indexFormat,instance,instanceSize);return;}
  #endif
  #if defined(PORT_TITLE) && PORT_TITLE == 14
@@ -379,7 +460,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..3367389a9cd886657f5612fd7129f1bd
   else {for(int i=0;i<4;i++)uniform(4+i,16,d.matrix[i].data());}
   float fogLinear[3]{};if(nativeFog){volatile float range=p.fogFar-p.fogNear;volatile float scale=1.f/range;volatile float bias=p.fogFar*scale;fogLinear[0]=bias;fogLinear[1]=scale;fogLinear[2]=1.f;}uniform(27,3,fogLinear);
  #else
-@@ -240,7 +320,17 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
+@@ -240,13 +373,27 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  #endif
  integer(13,!!texture);uniform(14,4,color(p.textureFactor).data());
   auto arg=[](Argument a){return int(u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u));};
@@ -398,7 +479,17 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..3367389a9cd886657f5612fd7129f1bd
   if(texture){
    glActiveTexture(GL_TEXTURE0);bind_texture(texture->texture);
    constexpr GLint address[]{GL_REPEAT,GL_MIRRORED_REPEAT,GL_CLAMP_TO_EDGE};GLint sampler[]{address[u32(p.addressU)],address[u32(p.addressV)],p.minFilter==Filter::Nearest?GL_NEAREST:GL_LINEAR,p.magFilter==Filter::Nearest?GL_NEAREST:GL_LINEAR};
-@@ -275,14 +365,14 @@ integer(13,!!texture);uniform(14,4,color(p.textureFactor).data());
+   constexpr GLenum names[]{GL_TEXTURE_WRAP_S,GL_TEXTURE_WRAP_T,GL_TEXTURE_MIN_FILTER,GL_TEXTURE_MAG_FILTER};
+   for(int i=0;i<4;i++)if(texture->sampler[i]!=sampler[i]){glTexParameteri(GL_TEXTURE_2D,names[i],sampler[i]);texture->sampler[i]=sampler[i];}
+  }
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++ // The generic shader retains a sampler even during untextured draws.
++ else {glActiveTexture(GL_TEXTURE0);bind_texture(0);}
++#endif
+  constexpr GLenum compare[]{GL_NEVER,GL_LESS,GL_EQUAL,GL_LEQUAL,GL_GREATER,GL_NOTEQUAL,GL_GEQUAL,GL_ALWAYS};
+  if(all||cached.depthTest!=p.depthTest)p.depthTest?glEnable(GL_DEPTH_TEST):glDisable(GL_DEPTH_TEST);
+  if(all||cached.depthWrite!=p.depthWrite)glDepthMask(p.depthWrite);
+@@ -275,14 +422,14 @@ integer(13,!!texture);uniform(14,4,color(p.textureFactor).data());
   if(!instance){
    if(clippedGeometry){glDisableVertexAttribArray(13);glVertexAttrib1f(13,-1.f);glVertexAttribDivisor(13,0);}
    else if(!transformed&&!index&&primitive==Topology::Triangles){
@@ -415,7 +506,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..3367389a9cd886657f5612fd7129f1bd
     glVertexAttrib1f(13,eligible);glVertexAttribDivisor(13,0);
    }
   }
-@@ -308,16 +398,6 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,(transformed||clippedGeomet
+@@ -308,16 +455,6 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,(transformed||clippedGeomet
  #if defined(PORT_TITLE) && PORT_TITLE == 14
   // Keep each original world/factor record and append its derived clip matrix.
   // The queue remains 68B; only the submitted instance buffer gains the matrix.
@@ -432,7 +523,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..3367389a9cd886657f5612fd7129f1bd
   u32 b=upload(instances,GL_ARRAY_BUFFER,expanded.data(),u32(expanded.size()),65536);
  #else
   u32 b=upload(instances,GL_ARRAY_BUFFER,instance,instanceSize,65536);
-@@ -337,11 +417,75 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,(transformed||clippedGeomet
+@@ -337,11 +474,75 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,(transformed||clippedGeomet
   else glDrawArrays(mode,0,n);g.rendered=true;
  
  }
@@ -511,7 +602,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..3367389a9cd886657f5612fd7129f1bd
  void Renderer::copy(u32 src,const i32* rect,u32 dst,const i32* point){flush();
  #ifdef TH14_WEBGPU_BACKEND
   if(webGpu){webGpu->copy(src,rect,dst,point);return;}
-@@ -376,7 +520,11 @@ void Renderer::read(u32 id){flush();
+@@ -376,7 +577,11 @@ void Renderer::read(u32 id){flush();
  #ifdef TH14_WEBGPU_BACKEND
   if(webGpu){webGpu->read(id);return;}
  #endif
@@ -524,7 +615,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..3367389a9cd886657f5612fd7129f1bd
   for(u32 y=0;y<s.height;y++)for(u32 x=0;x<s.width;x++){const auto* p=pixels.data()+(y*s.width+x)*4;u32 r=p[0],gc=p[1],b=p[2],a=p[3];auto* out=s.data+y*s.pitch;
    if(s.format==PixelFormat::Bgra8||s.format==PixelFormat::Bgrx8){out+=x*4;out[0]=b;out[1]=gc;out[2]=r;out[3]=s.format==PixelFormat::Bgra8?a:255;}else if((s.format==PixelFormat::Rgb565||s.format==PixelFormat::Xrgb1555||s.format==PixelFormat::Argb1555||s.format==PixelFormat::Argb4444)){uint16_t n=s.format==PixelFormat::Argb4444?(a>>4)<<12|(r>>4)<<8|(gc>>4)<<4|(b>>4):s.format==PixelFormat::Rgb565?(r>>3)<<11|(gc>>2)<<5|(b>>3):(s.format==PixelFormat::Argb1555&&a>=128?0x8000:0)|(r>>3)<<10|(gc>>3)<<5|(b>>3);std::memcpy(out+x*2,&n,2);}else if(s.format==PixelFormat::Alpha8)out[x]=a;else if(s.format==PixelFormat::Luminance8)out[x]=r;else std::abort();
   }g.rendered=false;
-@@ -387,6 +535,24 @@ void Renderer::release(u32 id){flush();
+@@ -387,6 +592,24 @@ void Renderer::release(u32 id){flush();
  #endif
  auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);depths.erase(d);}auto it=surfaces.find(id);if(it==surfaces.end())return;glDeleteTextures(1,&it->second.texture);glDeleteFramebuffers(1,&it->second.framebuffer);surfaces.erase(it);boundTexture=readFramebuffer=drawFramebuffer=~0u;}
  void Renderer::present(u32 id){flush();pending=id;stats.frames++;if(!defer)commit();}
@@ -549,7 +640,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..3367389a9cd886657f5612fd7129f1bd
  bool Renderer::commit(){if(!pending)return false;
  #ifdef TH14_WEBGPU_BACKEND
   if(webGpu){const auto id=pending;pending=0;webGpu->present(id);++stats.presentations;return true;}
-@@ -397,7 +563,15 @@ glBlitFramebuffer(0,0,s.width,s.height,0,s.height,s.width,0,GL_COLOR_BUFFER_BIT,
+@@ -397,7 +620,15 @@ glBlitFramebuffer(0,0,s.width,s.height,0,s.height,s.width,0,GL_COLOR_BUFFER_BIT,
  #else
  glBlitFramebuffer(0,0,s.width,s.height,0,480,640,0,GL_COLOR_BUFFER_BIT,GL_NEAREST);
  #endif
@@ -567,7 +658,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..3367389a9cd886657f5612fd7129f1bd
  extern "C" {
  const touhou::sdl::Statistics* sdl_stats(){static touhou::sdl::Statistics zero{};return touhou::sdl::current()?&touhou::sdl::current()->stats:&zero;}
 diff --git a/runtimes/th12/portable/sdl/Renderer.hpp b/runtimes/th12/portable/sdl/Renderer.hpp
-index 05807cb86614061d707a87336b4bc6fee7a09cfb..64d968de1f331e17b778e71c6d6d96533fa2eab3 100644
+index 05807cb86614061d707a87336b4bc6fee7a09cfb..a6050ebc5230e71ee27d5fb644c22b6abd8231c4 100644
 --- a/runtimes/th12/portable/sdl/Renderer.hpp
 +++ b/runtimes/th12/portable/sdl/Renderer.hpp
 @@ -29,6 +29,9 @@ public:
@@ -602,9 +693,14 @@ index 05807cb86614061d707a87336b4bc6fee7a09cfb..64d968de1f331e17b778e71c6d6d9653
      struct Depth {GLuint buffer=0;bool stencil=false;};
      struct Uniform {GLint location=-1;std::array<float,16> value{};int count=-1;};
      struct Program {GLuint id=0;std::array<Uniform,28> uniforms{};};
-@@ -60,7 +76,16 @@ private:
+@@ -59,8 +75,21 @@ private:
+     std::array<float,256> alphaBoundaries{};
      Stream vertices{},indices{},instances{};State batchState{};
      std::vector<u8> batchBytes,quad,worlds,pixels;bool batching=false,instancing=false;
++#if defined(PORT_TITLE) && PORT_TITLE == 14
++    Topology batchTopology=Topology::Triangles;
++    std::vector<u8> triangleScratch;
++#endif
      u32 batchCount=0,pending=0;std::string failure;
 -    GPU& surface(u32);GPU& target(u32,u32);void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32,bool clippedGeometry=false);
 +#if defined(__EMSCRIPTEN__) && defined(PORT_TITLE) && PORT_TITLE == 14
@@ -774,6 +870,116 @@ index 6e1f793120ed0998df3be1b7fd89dd52103ec87e..deaa96f0f951d349cebaec6a6d1a30f8
          case 100:{const float ax=float(floating(1)),ay=float(floating(2)),az=float(floating(3)),bx=float(floating(7)),by=float(floating(8)),bz=float(floating(9));auto& v=position_interpolation;v.duration=integer(0);v.mode=InterpolationMode::Hermite;v.initial_tangent[0]=ax;v.initial_tangent[1]=ay;v.initial_tangent[2]=az;v.final_tangent[0]=bx;v.final_tangent[1]=by;v.final_tangent[2]=bz;const auto from=flags&0x100?child_position:script_position;std::memcpy(v.start,&from,12);const float z=float(floating(6)),y=float(floating(5)),x=float(floating(4));v.end[0]=x;v.end[1]=y;v.end[2]=z;v.timer.set(0,&env.rate);break;}
          case 102:{flags|=1;const i32 first=integer(0);const u32 range=u32(integer(1));if(!range)return -1;const i32 value=wrapping_add(first,signed_bits(env.script_rng.next32()%range));if(!bind_sprite(sprite_callback?sprite_callback(*this,value):value))return -1;sprite_frame=timer.current;break;}
          default:break;
+diff --git a/runtimes/th12/th12_web/cpp/game/AnmManager.cpp b/runtimes/th12/th12_web/cpp/game/AnmManager.cpp
+index c36029eddf09451d3559d8c1c7c059464b11ceff..7022bcae2b5cb335dd7f5c595827fb393c1f1fc2 100644
+--- a/runtimes/th12/th12_web/cpp/game/AnmManager.cpp
++++ b/runtimes/th12/th12_web/cpp/game/AnmManager.cpp
+@@ -237,6 +237,29 @@ AnmVm* AnmManager::create(AnmResource& file,i32 script,u16 file_id,u32 layer,boo
+     return vm;
+ }
+ AnmVm* AnmManager::spawn(AnmVm& parent,i32 script,u32 op){if(!parent.resource)return nullptr;const bool detached=op==95||op==97;return create(*parent.resource,script,parent.file_index,parent.layer,op==90||op==92,op==91||op==92,nullptr,(kPortTitle==13||kPortTitle==14||kPortTitle==16)&&detached?&parent:nullptr,(kPortTitle==14||kPortTitle==16)&&!detached?&parent:nullptr);}
++#if PORT_TITLE == 14
++void AnmManager::reset_draw_layers_th14(bool overlay) noexcept{
++    // Old links can point into VMs that are about to be recycled. Invalidate
++    // the whole registry's draw links before rebuilding, without walking it.
++    auto& epoch=th14_draw_epoch[overlay];
++    if(++epoch==0){
++        for(auto* node=heads[overlay];node;node=node->next)node->value->th14_draw_link=nullptr;
++        ++epoch;
++    }
++    const u32 first=overlay?th14_overlay_layer:0,last=overlay?layers.size():th14_overlay_layer;
++    for(u32 layer=first;layer<last;++layer){layers[layer]=nullptr;th14_draw_tail[layer]=nullptr;}
++}
++void AnmManager::unlink_draw_th14(AnmVm& vm) noexcept{
++    if(!vm.th14_draw_link)return;
++    const u32 layer=vm.th14_draw_layer;
++    if(vm.th14_draw_epoch==th14_draw_epoch[layer>=th14_overlay_layer]){
++        *vm.th14_draw_link=vm.draw_next;
++        if(vm.draw_next)vm.draw_next->th14_draw_link=vm.th14_draw_link;
++        else th14_draw_tail[layer]=vm.th14_draw_link;
++    }
++    vm.th14_draw_link=nullptr;
++}
++#endif
+ void AnmManager::destroy(AnmVm& vm){
+ #if defined(TH14_NATIVE_CRITICAL_SECTIONS)
+     th14_critical_sections::ContainerGuard guard(th14_critical_sections::containers);
+@@ -251,7 +274,11 @@ void AnmManager::destroy(AnmVm& vm){
+     if constexpr(kPortTitle==13||kPortTitle==14)if(!vm.child.previous)for(auto* node=vm.child.next;node;node=node->next){node->value->parent=nullptr;if constexpr(kPortTitle==14)node->value->flags2|=0x20;else node->value->flags|=0x4000000;}
+     // A destroyed VM may still be referenced by the previous draw traversal.
+     // Remove it there before initialize() resets its id and next pointer.
++#if PORT_TITLE == 14
++    unlink_draw_th14(vm);
++#else
+     for(auto& head:layers){auto** link=&head;while(*link){if(*link==&vm){*link=vm.draw_next;break;}link=&(*link)->draw_next;}}
++#endif
+     for(u32 i=0;i<2;++i){if(heads[i]==&vm.registry)heads[i]=vm.registry.next;if(tails[i]==&vm.registry)tails[i]=vm.registry.previous;}
+     auto unlink=[](AnmVm::Node& node){if(node.next)node.next->previous=node.previous;if(node.previous)node.previous->next=node.next;node.next=node.previous=nullptr;};
+     unlink(vm.registry);unlink(vm.child);active.erase(vm.id);if(auto it=geometry_sizes.find(&vm);it!=geometry_sizes.end()){std::free(vm.geometry);vm.geometry=nullptr;geometry_sizes.erase(it);}
+@@ -284,11 +311,13 @@ void AnmManager::clear(u32 keep_handle,u32 keep_family){
+         for(u32 retained_id:retained)if(id==retained_id)return true;
+         return false;
+     };
+-    layers.fill(nullptr);
+ #if PORT_TITLE == 14
++    reset_draw_layers_th14(false);reset_draw_layers_th14(true);
+     // Preserve registry order when returning slots; hash iteration would
+     // make the next allocation history depend on the host container.
+     for(u32 list=0;list<2;++list){auto* node=heads[list];while(node){auto* next=node->next;if(!keep(node->value->id))destroy(*node->value);node=next;}}
++#else
++    layers.fill(nullptr);
+ #endif
+     for(auto i=active.begin();i!=active.end();){auto* vm=i->second;++i;if(!keep(vm->id))destroy(*vm);}
+     last_error=0;
+@@ -333,7 +362,13 @@ bool AnmManager::update(bool overlay,const VmBoundaryCallbackTh14& boundary){
+ 
+ #endif
+     constexpr u32 overlay_first=kPortTitle==16?36:kPortTitle==14?34:kPortTitle==13?31:29;
+-    const u32 first=overlay?overlay_first:0,last=overlay?overlay_first+(kPortTitle==16?7:2):overlay_first;decltype(layers) end{};for(u32 i=first;i<last;++i)layers[i]=nullptr;
++    const u32 first=overlay?overlay_first:0,last=overlay?overlay_first+(kPortTitle==16?7:2):overlay_first;
++#if PORT_TITLE == 14
++    static_assert(overlay_first==th14_overlay_layer);
++    reset_draw_layers_th14(overlay);
++#else
++    decltype(layers) end{};for(u32 i=first;i<last;++i)layers[i]=nullptr;
++#endif
+     auto* cursor=heads[overlay?1:0];while(cursor){auto& vm=*cursor->value;cursor=cursor->next;
+         if((vm.flags&0x4000000)||(kPortTitle==14&&(vm.flags2&0x20))){destroy(vm);continue;}
+         if constexpr(kPortTitle==16){const u32 state=vm.flags2&0x60;if(state==0x20){destroy(vm);continue;}if(state)continue;}
+@@ -358,7 +393,16 @@ bool AnmManager::update(bool overlay,const VmBoundaryCallbackTh14& boundary){
+             // Reject that out-of-bounds request rather than corrupting memory.
+             if(vm.layer>=last){last_error=-1;last_error_layer=vm.layer;return false;}
+         }else if(overlay&&vm.layer!=overlay_first&&vm.layer!=overlay_first+1)vm.layer=overlay_first;
+-        if(vm.layer>=first&&vm.layer<last){if(end[vm.layer])end[vm.layer]->draw_next=&vm;else layers[vm.layer]=&vm;end[vm.layer]=&vm;vm.draw_next=nullptr;}
++        if(vm.layer>=first&&vm.layer<last){
++#if PORT_TITLE == 14
++            auto& tail=th14_draw_tail[vm.layer];
++            auto** link=tail?tail:&layers[vm.layer];
++            *link=&vm;vm.draw_next=nullptr;tail=&vm.draw_next;
++            vm.th14_draw_link=link;vm.th14_draw_layer=vm.layer;vm.th14_draw_epoch=th14_draw_epoch[overlay];
++#else
++            if(end[vm.layer])end[vm.layer]->draw_next=&vm;else layers[vm.layer]=&vm;end[vm.layer]=&vm;vm.draw_next=nullptr;
++#endif
++        }
+     }
+ #if PORT_TITLE == 14
+     if(overlay)th14_native_stack.controller_overlay_tail();
+diff --git a/runtimes/th12/th12_web/cpp/game/AnmManager.hpp b/runtimes/th12/th12_web/cpp/game/AnmManager.hpp
+index 472ff35ec1ce8accff82b8785200d3b27fb8d81b..c8e386bc4d049d353b28ce6ba1b74a140f434839 100644
+--- a/runtimes/th12/th12_web/cpp/game/AnmManager.hpp
++++ b/runtimes/th12/th12_web/cpp/game/AnmManager.hpp
+@@ -130,6 +130,11 @@ private:
+     std::array<AnmVm*,kPortTitle==16?43:kPortTitle==14?36:kPortTitle==13?33:31> layers{};
+     u32 next_id=0,spawn_depth=0;
+ #if PORT_TITLE == 14
++    static constexpr u32 th14_overlay_layer=34;
++    std::array<AnmVm**,36> th14_draw_tail{};
++    u32 th14_draw_epoch[2]{};
++    void reset_draw_layers_th14(bool overlay) noexcept;
++    void unlink_draw_th14(AnmVm&) noexcept;
+     // 47fcb0 uses8191 pool slots;8191 identifies a heap allocation.
+     // Preserve a pooled VM's slot across its LIFO retire/reuse cycle.
+     std::unordered_map<AnmVm*,u32> th14_native_slots;
 diff --git a/runtimes/th12/th12_web/cpp/game/AnmOpcodes.hpp b/runtimes/th12/th12_web/cpp/game/AnmOpcodes.hpp
 index aa47690d5583854408b037374ebab06a7382a462..d7932c4cf1b62a991b407df3e25157639ebb41ab 100644
 --- a/runtimes/th12/th12_web/cpp/game/AnmOpcodes.hpp
@@ -799,8 +1005,37 @@ index aa47690d5583854408b037374ebab06a7382a462..d7932c4cf1b62a991b407df3e2515763
      {425,70,0,"native"}, {426,71,0,"native"}, {427,93,0,"native"}, {428,94,0,"native"},
      {429,anm_th13_texture_scale,0,"native"}, {430,anm_th13_texture_scale_interpolate,0,"native"},
      {433,anm_th13_polar_interpolate,0,"native"}, {434,anm_th13_extra_scale,0,"native"},
+diff --git a/runtimes/th12/th12_web/cpp/game/AnmProjection.cpp b/runtimes/th12/th12_web/cpp/game/AnmProjection.cpp
+index 25f980ef939bb3244216efd51309a91c8c8b942d..9edbcbd72f2a53aa3b719057ac7c57e8c8f0a709 100644
+--- a/runtimes/th12/th12_web/cpp/game/AnmProjection.cpp
++++ b/runtimes/th12/th12_web/cpp/game/AnmProjection.cpp
+@@ -95,12 +95,24 @@ bool anm_projected_quad(AnmVm& vm,const AnmCamera& camera,Vec3 (&out)[4],Matrix4
+     const Matrix4 world=anm_world_matrix(vm,false);if(result)*result=world;
+     const float left=ax==0?-128:ax==1?0:-256,right=ax==0?128:ax==1?256:0,top=ay==0?-128:ay==1?0:-256,bottom=ay==0?128:ay==1?256:0;
+     const Vec3 quad[]={{left,top,0},{right,top,0},{left,bottom,0},{right,bottom,0}};
++#if PORT_TITLE == 14
++    const auto world_to_clip=GraphicsMath::multiply(GraphicsMath::multiply(world,camera.view),camera.projection);
++    for(u32 i=0;i<4;++i)out[i]=GraphicsMath::project(quad[i],camera.viewport,world_to_clip);
++    return true;
++#else
+     for(u32 i=0;i<4;++i)out[i]=GraphicsMath::project(quad[i],camera.viewport,camera.projection,camera.view,world);return true;
++#endif
+ }
+ bool anm_billboard_quad(const AnmVm& vm,const AnmCamera& camera,Vec3 (&out)[4])noexcept{
+     Matrix4 world;world.identity();world.m[12]=float(double(vm.position.x)+vm.script_position.x+vm.child_position.x);world.m[13]=float(double(vm.position.y)+vm.script_position.y+vm.child_position.y);world.m[14]=float(double(vm.position.z)+vm.script_position.z+vm.child_position.z);
++#if PORT_TITLE == 14
++    const auto world_to_clip=GraphicsMath::multiply(GraphicsMath::multiply(world,camera.view),camera.projection);
++    const Vec3 center=GraphicsMath::project({},camera.viewport,world_to_clip);if(center.z<0||center.z>1)return false;
++    const Vec3 right=GraphicsMath::project(camera.right,camera.viewport,world_to_clip);
++#else
+     const Vec3 center=GraphicsMath::project({},camera.viewport,camera.projection,camera.view,world);if(center.z<0||center.z>1)return false;
+     const Vec3 right=GraphicsMath::project(camera.right,camera.viewport,camera.projection,camera.view,world);
++#endif
+     const float dx=float(double(right.x)-center.x),dy=float(double(right.y)-center.y),dz=float(double(right.z)-center.z);
+     const float squared=float((double(dx)*dx+double(dy)*dy)+double(dz)*dz),half=float(double(float(std::sqrt(double(squared))))*.5);
+     const float width=float(double(vm.sprite_size.x)*half*vm.scale.x),height=float(double(half)*vm.sprite_size.y*vm.scale.y);
 diff --git a/runtimes/th12/th12_web/cpp/game/AnmRenderer.cpp b/runtimes/th12/th12_web/cpp/game/AnmRenderer.cpp
-index fa946777637a7819d6ab6703d767791534921fc9..b47b3c8d48c67356a4ff8db381e8a26ebdf1df7c 100644
+index fa946777637a7819d6ab6703d767791534921fc9..ec5c51e753621bab371e95a4086d72e095b8e19b 100644
 --- a/runtimes/th12/th12_web/cpp/game/AnmRenderer.cpp
 +++ b/runtimes/th12/th12_web/cpp/game/AnmRenderer.cpp
 @@ -251,6 +251,14 @@ int AnmRenderer::submit_quad(AnmVm& vm,Vec3 (&positions)[4],bool pixel,const u32
@@ -877,6 +1112,16 @@ index fa946777637a7819d6ab6703d767791534921fc9..b47b3c8d48c67356a4ff8db381e8a26e
  #else
          const auto world=anm_world_matrix(vm,kPortTitle!=13&&kPortTitle!=14);
  #endif
+@@ -750,7 +762,8 @@ int AnmRenderer::draw_world_strip(AnmVm& vm,const AnmWorldVertex* data,u32 count
+ 
+     world.m[12]=float(float(vm.position.x+vm.script_position.x)+vm.child_position.x);
+ 
+-    if((vm.flags2&0x60000)&&!vm.parent)world.m[12]=float(world.m[12]+320.f);
++    // Retail4785ed reads the play origin; resource-present Begin sets it to width/2.
++    if((vm.flags2&0x60000)&&!vm.parent)world.m[12]=float(world.m[12]+float(i32(render_width)/2));
+ 
+     world.m[13]=float(float(vm.position.y+vm.script_position.y)+vm.child_position.y);world.m[14]=float(float(vm.position.z+vm.script_position.z)+vm.child_position.z);
+ 
 diff --git a/runtimes/th12/th12_web/cpp/game/AnmRenderer.hpp b/runtimes/th12/th12_web/cpp/game/AnmRenderer.hpp
 index 544cff09eb7c18ecddc69f6a1ceb7eff4d98693f..7d5f890ad4f640ae0e3af9fd5688e61903492e8e 100644
 --- a/runtimes/th12/th12_web/cpp/game/AnmRenderer.hpp
@@ -889,24 +1134,39 @@ index 544cff09eb7c18ecddc69f6a1ceb7eff4d98693f..7d5f890ad4f640ae0e3af9fd5688e619
  #endif
      int draw_ascii_sprite(AnmVm& vm);
      int draw_ripple(AnmVm& vm);
+diff --git a/runtimes/th12/th12_web/cpp/game/AnmVm.cpp b/runtimes/th12/th12_web/cpp/game/AnmVm.cpp
+index 54dccd8941023070840c0fa9cd078c9bc60d452f..b319164d90d8349a940358d0aeaf5b9cb479f6d9 100644
+--- a/runtimes/th12/th12_web/cpp/game/AnmVm.cpp
++++ b/runtimes/th12/th12_web/cpp/game/AnmVm.cpp
+@@ -108,6 +108,7 @@ bool AnmVm::copy_script(AnmResource& file,i32 script,u16 file_id,const float* ra
+         const auto origin=position;
+         *this=file.templates->scripts[u32(script)];
+         position=origin;id=0;registry={this,nullptr,nullptr};child={this,nullptr,nullptr};draw_next=nullptr;
++        th14_draw_link=nullptr;th14_draw_layer=th14_draw_epoch=0;
+         geometry=nullptr;parent=nullptr;slowdown_factor=0;inherited_color=0;
+         before_update=nullptr;draw_callback=nullptr;after_update=nullptr;sprite_callback=nullptr;th13_effect=0;
+         timer={};timer.set(0,rate);age={};age.set(0,rate);
 diff --git a/runtimes/th12/th12_web/cpp/game/AnmVm.hpp b/runtimes/th12/th12_web/cpp/game/AnmVm.hpp
-index fe6a4d48c0c4713fa9f25aca71fc12435bf78154..e1364b42476922700391a148df2f407d8c332121 100644
+index fe6a4d48c0c4713fa9f25aca71fc12435bf78154..5101f040d9a59aeecab9c134b6d42bc42299b4bf 100644
 --- a/runtimes/th12/th12_web/cpp/game/AnmVm.hpp
 +++ b/runtimes/th12/th12_web/cpp/game/AnmVm.hpp
-@@ -94,6 +94,7 @@ struct AnmVm {
+@@ -94,6 +94,10 @@ struct AnmVm {
      // Retail +4f8..524: last quad submitted, written before visibility clipping.
      Vec3 screen_quad_positions[4];
      void* dialogue_owner;
 +    FloatInterpolator rotation_z_interpolation;
++    // The live draw-list link, separate from the mutable script layer.
++    AnmVm** th14_draw_link;
++    u32 th14_draw_layer,th14_draw_epoch;
  #endif
      void initialize() noexcept;
      bool bind_sprite(i32 index) noexcept;
-@@ -140,7 +141,7 @@ struct AnmVm {
+@@ -140,7 +144,7 @@ struct AnmVm {
  };
  // Layout assertions apply to the 32-bit comparison/WebAssembly target only.
  #if UINTPTR_MAX == UINT32_MAX
 -inline constexpr u32 kAnmVmExtensionBytes=((kPortTitle==13||kPortTitle==14)?3*sizeof(Vec2)+2*sizeof(Vec2Interpolator)+sizeof(Vec3):0)+(kPortTitle==16?3*sizeof(Vec2)+sizeof(Vec2Interpolator)+12*sizeof(u32)+sizeof(float)+sizeof(AnmVm*):0)+((kPortTitle==14||kPortTitle==16)?sizeof(AnmResource*):0)+(kPortTitle==14?sizeof(Vec3)+sizeof(Vec2)+sizeof(i32)+sizeof(float)+sizeof(Timer)+sizeof(u32)+sizeof(void*)+4*sizeof(Vec3):0)+sizeof(AnmTraceEntry)*anm_trace_size+sizeof(u32);
-+inline constexpr u32 kAnmVmExtensionBytes=((kPortTitle==13||kPortTitle==14)?3*sizeof(Vec2)+2*sizeof(Vec2Interpolator)+sizeof(Vec3):0)+(kPortTitle==16?3*sizeof(Vec2)+sizeof(Vec2Interpolator)+12*sizeof(u32)+sizeof(float)+sizeof(AnmVm*):0)+((kPortTitle==14||kPortTitle==16)?sizeof(AnmResource*):0)+(kPortTitle==14?sizeof(Vec3)+sizeof(Vec2)+sizeof(i32)+sizeof(float)+sizeof(Timer)+sizeof(u32)+sizeof(void*)+4*sizeof(Vec3)+sizeof(FloatInterpolator):0)+sizeof(AnmTraceEntry)*anm_trace_size+sizeof(u32);
++inline constexpr u32 kAnmVmExtensionBytes=((kPortTitle==13||kPortTitle==14)?3*sizeof(Vec2)+2*sizeof(Vec2Interpolator)+sizeof(Vec3):0)+(kPortTitle==16?3*sizeof(Vec2)+sizeof(Vec2Interpolator)+12*sizeof(u32)+sizeof(float)+sizeof(AnmVm*):0)+((kPortTitle==14||kPortTitle==16)?sizeof(AnmResource*):0)+(kPortTitle==14?sizeof(Vec3)+sizeof(Vec2)+sizeof(i32)+sizeof(float)+sizeof(Timer)+sizeof(u32)+sizeof(void*)+4*sizeof(Vec3)+sizeof(FloatInterpolator)+sizeof(AnmVm**)+2*sizeof(u32):0)+sizeof(AnmTraceEntry)*anm_trace_size+sizeof(u32);
  static_assert(sizeof(AnmVm)==0x434+kAnmVmExtensionBytes);
  static_assert(offsetof(AnmVm,uv)==0x70);
  static_assert(offsetof(AnmVm,position_interpolation)==0x90);
@@ -943,6 +1203,107 @@ index e6f4c227aa2656646b4d9eed7335a3a33cf9af4d..a129d83085cf5810d2701ab01e6c8e10
              for(u32 i=0;i<files.size();++i){
                  if(stopping.load(std::memory_order_acquire))return false;
                  if(!reader.open_anm(names[i],*files[i])){error=reader.error();return false;}
+diff --git a/runtimes/th12/th12_web/cpp/game/BulletManager.hpp b/runtimes/th12/th12_web/cpp/game/BulletManager.hpp
+index d7c4be7c9c98662a62ecb90fe49caa91e1b85648..47d4bcf9a083bbba6bfa33983fcf8e67c71a1055 100644
+--- a/runtimes/th12/th12_web/cpp/game/BulletManager.hpp
++++ b/runtimes/th12/th12_web/cpp/game/BulletManager.hpp
+@@ -5,6 +5,7 @@
+ #include <memory>
+ namespace th11 {
+ class AnmRenderer;
++struct Th14RectangleRotation;
+ struct BulletCancelContext {
+     u32 spell_flags=0;i32 spell_id=0;
+     bool protected_spell()const noexcept{return (spell_flags&1)&&spell_id>=158&&spell_id<=161;}
+@@ -62,7 +63,7 @@ public:
+     i32 update_th14(BulletState&)noexcept;
+     bool cancel_th14(BulletState&,u32 rewards=0);
+     bool cancel_circle_th14(Vec3,float,u32 rewards=0,bool skip_delayed=false);
+-    bool cancel_rectangle_th14(Vec3,Vec2,float angle,u32 rewards=0);
++    bool cancel_rectangle_th14(Vec3,Vec2,const Th14RectangleRotation&,u32 rewards=0);
+     bool cancel_all_th14();
+     const BulletState* first_th14()const noexcept{return th14_active;}
+     BulletState* first_th14()noexcept{return th14_active;}
+diff --git a/runtimes/th12/th12_web/cpp/game/BulletTh14.cpp b/runtimes/th12/th12_web/cpp/game/BulletTh14.cpp
+index fd55dea28b5500eac427ba77b2decd4ff3b82b54..13e8ec3acd898f4d01c21c040e3e23e41273a783 100644
+--- a/runtimes/th12/th12_web/cpp/game/BulletTh14.cpp
++++ b/runtimes/th12/th12_web/cpp/game/BulletTh14.cpp
+@@ -25,14 +25,10 @@ void countdown(Timer& timer){
+     const float delta=rate>.99f&&rate<1.01f?1.f:rate;
+     timer.fractional-=delta;timer.current=truncate_int(timer.fractional);
+ }
+-}
+-i32 bullet_th14_start_transforms(BulletState& b,BulletEnvironment& e)noexcept{
+-    g_th14_bullet_sprite=b.sprite;
+-    for(u32 n=0;n<18;++n){g_th14_bullet_program[2*n]=b.th14_transforms[n].opcode;g_th14_bullet_program[2*n+1]=b.th14_transforms[n].concurrent;}
++i32 start_transforms(BulletState& b,BulletEnvironment& e)noexcept{
+     for(u32 budget=0;b.transform_index<18;++budget){
+         if(budget>=4096||b.transform_index<0)return -2;
+         const auto& t=b.th14_transforms[b.transform_index];const u32 op=t.opcode;
+-        g_th14_bullet_transform_index=b.transform_index;g_th14_bullet_transform_opcode=i32(op);
+         if(!op||(!t.concurrent&&(b.active_transforms&~0x100u))||(op&b.active_transforms))return 0;
+         switch(op){
+         // 0x418280: `or ecx,1; [bullet+0xc04]=ecx`, `timer.set(0, rate)` on the object at
+@@ -164,6 +160,21 @@ i32 bullet_th14_start_transforms(BulletState& b,BulletEnvironment& e)noexcept{
+         ++b.transform_index;
+     }return 0;
+ }
++}
++
++i32 bullet_th14_start_transforms(BulletState& b,BulletEnvironment& e)noexcept{
++    const auto result=start_transforms(b,e);
++    if(result<0){
++        g_th14_bullet_sprite=b.sprite;
++        g_th14_bullet_transform_index=b.transform_index;
++        g_th14_bullet_transform_opcode=u32(b.transform_index)<18?i32(b.th14_transforms[b.transform_index].opcode):-1;
++        for(u32 n=0;n<18;++n){
++            g_th14_bullet_program[2*n]=b.th14_transforms[n].opcode;
++            g_th14_bullet_program[2*n+1]=b.th14_transforms[n].concurrent;
++        }
++    }
++    return result;
++}
+ i32 bullet_th14_wrap_tick(BulletState& b,BulletEnvironment& e)noexcept{
+  if(!b.vm.sprite)return -2;const float width=b.vm.sprite->width,height=b.vm.sprite->height;
+  const float hx=width*.5f,hy=height*.5f;auto& p=b.position;
+@@ -355,14 +366,15 @@ bool BulletManager::cancel_all_th14(){
+     }
+     return true;
+ }
+-bool BulletManager::cancel_rectangle_th14(Vec3 center,Vec2 size,float angle,u32 rewards){
++bool BulletManager::cancel_rectangle_th14(Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards){
+     // 41b4f0 scans pool order and always skips collision-delayed bullets.
+     // A second circle/rectangle test clips cancellation to the playfield.
++    constexpr Th14RectangleRotation playfield{0.f};
+     cancel_center={center.x,center.y};cancel_size=size;
+     for(u32 n=0;n<capacity;++n){auto& b=storage[n];if((b.state!=1&&b.state!=2)||b.collision_delay)continue;
+         const float radius=b.hitbox.x*b.th14_size;
+-        if(th14_damage_circle_rectangle(center,size,angle,b.position,radius)&&
+-           th14_damage_circle_rectangle({0,224,0},{384,448},0,b.position,radius)&&!cancel_th14(b,rewards))return false;
++        if(th14_damage_circle_rectangle(center,size,rotation,b.position,radius)&&
++           th14_damage_circle_rectangle({0,224,0},{384,448},playfield,b.position,radius)&&!cancel_th14(b,rewards))return false;
+     }return true;
+ }
+ i32 BulletManager::spawn_th14(const Th14BulletEmitter& e,i32 index,i32 layer,float aim)noexcept{
+diff --git a/runtimes/th12/th12_web/cpp/game/GameBattle.hpp b/runtimes/th12/th12_web/cpp/game/GameBattle.hpp
+index 8faf43f2f58b3d846378959293a8fbf1c6d093a4..fbe6bdcbc5f919475a7fbabc8ce2a27585a9a10a 100644
+--- a/runtimes/th12/th12_web/cpp/game/GameBattle.hpp
++++ b/runtimes/th12/th12_web/cpp/game/GameBattle.hpp
+@@ -348,10 +348,12 @@ public:
+     bool th14_bomb_item(i32 type,Vec3 p,float angle,float speed)override{return items.spawn(type,p,0xffffffff,angle,speed)==0;}
+     bool th14_bomb_rectangle(Vec3 p,Vec2 size,float angle,i32 duration,i32 damage)override{return player&&player->shots.th14_bomb_rectangle(p,size,angle,duration,damage);}
+     bool th14_bomb_cancel_rectangle(Vec3 p,Vec2 size,float angle,u32 rewards)override{
+-        return bullets.cancel_rectangle_th14(p,size,angle,rewards)&&lasers.cancel_rectangle_th14(p,size,angle,rewards)>=0;
++        const Th14RectangleRotation rotation{angle};
++        return bullets.cancel_rectangle_th14(p,size,rotation,rewards)&&lasers.cancel_rectangle_th14(p,size,rotation,rewards)>=0;
+     }
+     bool th14_reimu_cancel_rectangle(Vec3 p,Vec2 size,float angle,u32 rewards)override{
+-        return bullets.cancel_rectangle_th14(p,size,angle,rewards)&&lasers.cancel_rectangle_th14(p,size,angle,rewards,true)>=0;
++        const Th14RectangleRotation rotation{angle};
++        return bullets.cancel_rectangle_th14(p,size,rotation,rewards)&&lasers.cancel_rectangle_th14(p,size,rotation,rewards,true)>=0;
+     }
+     bool th14_bomb_shake(i32 amplitude,i32 ramp,i32 hold,i32 fall)override{shakes.start_th14_hold(amplitude,ramp,hold,fall,&animations.rate);return true;}
+     bool th14_bomb_shake_short(i32 duration,i32 from,i32 to)override{shakes.start(duration,from,to,&animations.rate);return true;}
 diff --git a/runtimes/th12/th12_web/cpp/game/GameConfig.hpp b/runtimes/th12/th12_web/cpp/game/GameConfig.hpp
 index f3b7f3a6c650cee5ff119d445d2cd22e9fef877a..fe311063fd4a8192ee826b4fd9ff87ae81a093b6 100644
 --- a/runtimes/th12/th12_web/cpp/game/GameConfig.hpp
@@ -1049,6 +1410,34 @@ index 16dfa66a2c4699c36ac08bc3615a73a730cd9ced..6c30f7a033ec9f73ef282312563c765d
  #endif
      u32 stage_number=0;
      std::string error;
+diff --git a/runtimes/th12/th12_web/cpp/game/GraphicsMath.cpp b/runtimes/th12/th12_web/cpp/game/GraphicsMath.cpp
+index 0feeb83efd5b6ae8f26bf40aed008f9a5fa18013..5ede8e41b824cd1bb35fe9a714ae1a52b3625741 100644
+--- a/runtimes/th12/th12_web/cpp/game/GraphicsMath.cpp
++++ b/runtimes/th12/th12_web/cpp/game/GraphicsMath.cpp
+@@ -57,7 +57,10 @@ Matrix4 GraphicsMath::perspective(float fov,float aspect,float near_plane,float
+ }
+ void GraphicsMath::transform(Vec3 p,const Matrix4& m,float (&out)[4])noexcept{for(u32 c=0;c<4;++c)out[c]=float(((double(p.x)*m.m[c]+double(p.y)*m.m[4+c])+double(p.z)*m.m[8+c])+m.m[12+c]);}
+ Vec3 GraphicsMath::project(Vec3 p,const GraphicsViewport& v,const Matrix4& projection,const Matrix4& view,const Matrix4& world)noexcept{
+-    const auto m=multiply(multiply(world,view),projection);float q[4];transform(p,m,q);
++    return project(p,v,multiply(multiply(world,view),projection));
++}
++Vec3 GraphicsMath::project(Vec3 p,const GraphicsViewport& v,const Matrix4& world_to_clip)noexcept{
++    float q[4];transform(p,world_to_clip,q);
+     if(std::abs(float(double(q[3])-1))>0x1p-23f){const float inverse=float(1./q[3]);for(u32 c=0;c<3;++c)q[c]=float(double(q[c])*inverse);}
+     return {float((double(q[0])+1)*.5*v.width+v.x),float((1.-q[1])*.5*v.height+v.y),float((double(v.far_depth)-v.near_depth)*q[2]+v.near_depth)};
+ }
+diff --git a/runtimes/th12/th12_web/cpp/game/GraphicsMath.hpp b/runtimes/th12/th12_web/cpp/game/GraphicsMath.hpp
+index e2d65c9a3d1a4a2131ded4a1eaf62e4a83be78f9..15c880b2abb426e1782f6642d3ff5776366cb0ed 100644
+--- a/runtimes/th12/th12_web/cpp/game/GraphicsMath.hpp
++++ b/runtimes/th12/th12_web/cpp/game/GraphicsMath.hpp
+@@ -10,6 +10,7 @@ struct GraphicsMath {
+     static Matrix4 look_at(Vec3 eye,Vec3 target,Vec3 up) noexcept;
+     static Matrix4 perspective(float fov,float aspect,float near_plane,float far_plane) noexcept;
+     static void transform(Vec3,const Matrix4&,float (&out)[4]) noexcept;
++    static Vec3 project(Vec3,const GraphicsViewport&,const Matrix4& world_to_clip) noexcept;
+     static Vec3 project(Vec3,const GraphicsViewport&,const Matrix4& projection,const Matrix4& view,const Matrix4& world) noexcept;
+ };
+ }
 diff --git a/runtimes/th12/th12_web/cpp/game/Interpolation.cpp b/runtimes/th12/th12_web/cpp/game/Interpolation.cpp
 index 1cdbb16ada559cbc73aec40bfb6b084540fbf81f..35649e7c1349afaa0bcc1aa5154ede2247dca253 100644
 --- a/runtimes/th12/th12_web/cpp/game/Interpolation.cpp
@@ -1134,8 +1523,301 @@ index 7de3118bc267559f82abdcd82b4eb62992b19384..d7cebc6fdfdd6d392528f89f3ebabe9e
  Rgb sample(RgbInterpolator& value,const float* rate) noexcept;
  i32 sample(AlphaInterpolator& value,const float* rate) noexcept;
  }
+diff --git a/runtimes/th12/th12_web/cpp/game/ItemManager.cpp b/runtimes/th12/th12_web/cpp/game/ItemManager.cpp
+index 54397d015ace16268362289a50ef2c9cfb087465..961787e5891dd025d70ce252b08f78d97c01ed59 100644
+--- a/runtimes/th12/th12_web/cpp/game/ItemManager.cpp
++++ b/runtimes/th12/th12_web/cpp/game/ItemManager.cpp
+@@ -26,6 +26,7 @@ void ItemManager::reset()noexcept{std::memset(storage.get(),0,sizeof(ItemState)*
+ #endif
+ #if PORT_TITLE == 14
+     th14_spawn_count=th14_cancel_count=th14_generation=0;th14_cancel_free=nullptr;
++    th14_occupied.fill(0);
+     th14_ordinary_free=nullptr;
+     for(u32 n=0;n<ordinary_capacity;++n){storage[n].th14_free_next=th14_ordinary_free;th14_ordinary_free=&storage[n];}
+     for(u32 n=ordinary_capacity;n<capacity;++n){storage[n].th14_free_next=th14_cancel_free;th14_cancel_free=&storage[n];}
+@@ -87,10 +88,28 @@ void ItemManager::home(ItemState& item){
+     if(item.attraction_speed<12)item.attraction_speed=float(double(item.attraction_speed)+double(.2f));
+     if(player.state==4){item.state=1;item.velocity.x=item.velocity.y=0;}
+ }
+-void ItemManager::attract_all(){for(u32 i=0;i<capacity;++i)if(storage[i].state==1){storage[i].state=3;storage[i].attraction_speed=player.attraction_speed;}}
++void ItemManager::attract_all(){
++#if PORT_TITLE == 14
++    for(u32 page=0;page<th14_occupied.size();++page){
++        if(!th14_page_occupied(page))continue;
++        const u32 end=std::min((page+1)*th14_word_bits,capacity);
++        for(u32 i=page*th14_word_bits;i<end;++i){
++#else
++    for(u32 i=0;i<capacity;++i){
++#endif
++            auto& item=storage[i];
++            if(item.state==1){item.state=3;item.attraction_speed=player.attraction_speed;}
++#if PORT_TITLE == 14
++        }
++#endif
++    }
++}
+ bool ItemManager::convert_power_items(){
+     for(u32 i=0;i<ordinary_capacity;++i){auto& item=storage[i];if(item.state&&(item.type==1||item.type==4||item.type==10||item.type==11)){
+         const Vec3 position=item.position;item.state=0;
++#if PORT_TITLE == 14
++        mark_th14_slot(item,false);
++#endif
+         if(spawn(9,position)<0||!world.effect(position,0x73)){last_error=4;return false;}
+     }}return true;
+ }
+diff --git a/runtimes/th12/th12_web/cpp/game/ItemManager.hpp b/runtimes/th12/th12_web/cpp/game/ItemManager.hpp
+index 3e2e33b2001dbbc5839df425832d056504dc7acb..5ab966e063c9be514e4973b7ef24740bb4deea26 100644
+--- a/runtimes/th12/th12_web/cpp/game/ItemManager.hpp
++++ b/runtimes/th12/th12_web/cpp/game/ItemManager.hpp
+@@ -65,7 +65,13 @@ class ItemManager {
+ public:
+     static constexpr u32 ordinary_capacity=kPortTitle==14||kPortTitle==16?600:150,cancel_capacity=kPortTitle==14||kPortTitle==16?4096:2048,capacity=ordinary_capacity+cancel_capacity;
+     ItemManager(AnmResource&,AnmEnvironment&,ItemWorld&,u16 file_id=6);
+-    ItemState& at(u32 n){return storage[n];}
++    ItemState& at(u32 n){
++#if PORT_TITLE == 14
++        // A retained mutable slot reference can bypass spawn and release.
++        th14_slots_exposed=true;
++#endif
++        return storage[n];
++    }
+     const ItemState& at(u32 n)const{return storage[n];}
+     ItemPlayer player;u32 cancel_cursor=0,cancel_spawn_count=0,active_count=0;i32 last_error=0;
+     // 0 success/full pool, -2 unavailable resource or world dependency.
+@@ -121,6 +127,13 @@ private:
+ #endif
+ #if PORT_TITLE == 14
+     ItemState* th14_cancel_free=nullptr;ItemState* th14_ordinary_free=nullptr;
++    static constexpr u32 th14_word_bits=64;
++    std::array<uint64_t,(capacity+th14_word_bits-1)/th14_word_bits> th14_occupied{};
++    bool th14_slots_exposed=false;
++    void mark_th14_slot(const ItemState&,bool)noexcept;
++    bool th14_page_occupied(u32 page)const noexcept{
++        return th14_slots_exposed||th14_occupied[page];
++    }
+     bool update_th14();bool draw_th14(AnmRenderer&);
+ #endif
+ };
+diff --git a/runtimes/th12/th12_web/cpp/game/ItemTh14.cpp b/runtimes/th12/th12_web/cpp/game/ItemTh14.cpp
+index 2b87b7b4107db18af3bf2a26582736d1c7a9b454..4e09b584b81380c196afa236c9a19d861aa2cf2e 100644
+--- a/runtimes/th12/th12_web/cpp/game/ItemTh14.cpp
++++ b/runtimes/th12/th12_web/cpp/game/ItemTh14.cpp
+@@ -4,9 +4,18 @@
+ #include <cmath>
+ namespace th11 {
+ #if PORT_TITLE == 14
++void ItemManager::mark_th14_slot(const ItemState& item,bool occupied)noexcept{
++    const u32 index=u32(&item-storage.get());
++    auto& word=th14_occupied[index/th14_word_bits];
++    const auto bit=uint64_t{1}<<(index%th14_word_bits);
++    if(occupied)word|=bit;
++    else word&=~bit;
++}
++
+ i32 ItemManager::spawn_ordinary_th14(i32 type,Vec3 p,float angle,float speed,i32 delay){
+     if(last_error)return -2;++th14_spawn_count;auto* selected=th14_ordinary_free;if(!selected)return 0;
+     auto& i=*selected;i.state=1;i.position=p;
++    mark_th14_slot(i,true);
+     if(i.position.x<=-192.f)i.position.x=-192.f;else if(i.position.x>=192.f)i.position.x=192.f;
+     if(type==12){auto& count=world.item_th14_drop_counter();count=wrapping_add(count,1);type=count%5==0?4:6;}
+     const auto v=polar(angle,speed);i.velocity={v.x,v.y,0};i.lifetime.set(0,&animations.rate);
+@@ -38,6 +47,7 @@ i32 ItemManager::spawn_cancel_th14(i32 type,Vec3 p,float angle,float speed){
+     const i32 count=signed_bits(th14_spawn_count),load=signed_bits(th14_cancel_count);
+     item.delay=load>=1024?count%32+16:load>=512?count%16+8:load>=256?count%8+4:count%4;
+     item.state=5;item.type=item.display_type=type;item.position=p;
++    mark_th14_slot(item,true);
+     const auto v=polar(angle,speed);item.velocity={v.x,v.y,0};
+     item.lifetime.set(0,&animations.rate);item.reserved_44c=0;
+     th14_cancel_free=item.th14_free_next;item.th14_free_next=nullptr;return 0;
+@@ -60,6 +70,7 @@ bool ItemManager::cancel_reward_th14(Vec3 p,u32 rewards,u32 count,u32 spell_flag
+ void ItemManager::release_th14(ItemState& item)noexcept{
+     auto& free=(&item-storage.get())<ordinary_capacity?th14_ordinary_free:th14_cancel_free;
+     item.state=0;item.th14_free_next=free;free=&item;
++    mark_th14_slot(item,false);
+ }
+ bool ItemManager::update_th14(){
+     if(last_error)return false;active_count=0;th14_cancel_count=0;
+@@ -75,47 +86,55 @@ bool ItemManager::update_th14(){
+         if(i.attraction_speed<12.f)i.attraction_speed=i.attraction_speed+.2f;
+         if(player.state==4){i.velocity.x=i.velocity.y=0;i.state=1;}
+     };
+-    for(u32 n=0;n<capacity;++n){auto& i=storage[n];if(!i.state)continue;
+-        const bool ordinary=i.type>=1&&i.type<=8;
+-        const float line=player.character==1?148.f:128.f;
+-        const bool attract=(player.state!=2&&player.state!=4&&player.position.y<line)||player.bomb_attract||player.force_attract;
+-        if(!ordinary&&(i.type<9||i.type>11)){last_error=141;return false;}
+-        if(i.state==5){
+-            i.delay=wrapping_sub(i.delay,1);if(i.delay<0&&!activate(i))return false;
+-            // Activation skips movement, pickup, lifetime and active-count increment.
+-            continue;
+-        }
+-        if(i.state==1){
+-            if(i.delay>0){i.delay=wrapping_sub(i.delay,1);
+-                if(!i.delay&&(i.type==4||i.type==5||i.type==6||i.type==7)&&!world.item_th14_spawn_notice(i.position,i.type)){last_error=150;return false;}continue;}
+-            if(attract){
+-                i.attraction_speed=player.attraction_speed;i.state=3;home_item(i);
++    // Only skip an empty page when the scan reaches it. The ordinary ordered
++    // scan within the page still sees items a callback adds to later slots.
++    for(u32 page=0;page<th14_occupied.size();++page){
++        if(!th14_page_occupied(page))continue;
++        const u32 end=std::min((page+1)*th14_word_bits,capacity);
++        for(u32 n=page*th14_word_bits;n<end;++n){
++            auto& i=storage[n];
++            if(!i.state)continue;
++            const bool ordinary=i.type>=1&&i.type<=8;
++            const float line=player.character==1?148.f:128.f;
++            const bool attract=(player.state!=2&&player.state!=4&&player.position.y<line)||player.bomb_attract||player.force_attract;
++            if(!ordinary&&(i.type<9||i.type>11)){last_error=141;return false;}
++            if(i.state==5){
++                i.delay=wrapping_sub(i.delay,1);if(i.delay<0&&!activate(i))return false;
++                // Activation skips movement, pickup, lifetime and active-count increment.
++                continue;
+             }
+-            else{
++            if(i.state==1){
++                if(i.delay>0){i.delay=wrapping_sub(i.delay,1);
++                    if(!i.delay&&(i.type==4||i.type==5||i.type==6||i.type==7)&&!world.item_th14_spawn_notice(i.position,i.type)){last_error=150;return false;}continue;}
++                if(attract){
++                    i.attraction_speed=player.attraction_speed;i.state=3;home_item(i);
++                }
++                else{
++                    step(i);const float acceleration=animations.rate*.03f;i.velocity.y=i.velocity.y+acceleration;
++                    if(i.velocity.y>=0)i.velocity.x=0;
++                    const float terminal=player.character==2?1.9f:2.f;if(i.velocity.y>terminal)i.velocity.y=terminal;
++                    if(i.position.y>472){release_th14(i);continue;}
++                }
++            }else if(i.state==2){
+                 step(i);const float acceleration=animations.rate*.03f;i.velocity.y=i.velocity.y+acceleration;
+-                if(i.velocity.y>=0)i.velocity.x=0;
+-                const float terminal=player.character==2?1.9f:2.f;if(i.velocity.y>terminal)i.velocity.y=terminal;
+-                if(i.position.y>472){release_th14(i);continue;}
++                if(i.velocity.y>=0){i.attraction_speed=player.attraction_speed;i.state=3;home_item(i);}
++                else if(i.position.y>472){release_th14(i);continue;}
++            }else if(i.state==3)home_item(i);
++            else if(i.state==4){if(attract){i.attraction_speed=player.attraction_speed;i.state=3;}home_item(i);}
++            else{last_error=142;return false;}
++            if(player.state!=2&&player.pickup.contains(i.position)){
++                th14_last_collect_type=i.type;bool convert=false;if(!world.collect(i,convert)){last_error=143;return false;}
++                if(i.type!=9&&!world.sound(37,i.position.x)){last_error=144;return false;}
++                release_th14(i);continue;
+             }
+-        }else if(i.state==2){
+-            step(i);const float acceleration=animations.rate*.03f;i.velocity.y=i.velocity.y+acceleration;
+-            if(i.velocity.y>=0){i.attraction_speed=player.attraction_speed;i.state=3;home_item(i);}
+-            else if(i.position.y>472){release_th14(i);continue;}
+-        }else if(i.state==3)home_item(i);
+-        else if(i.state==4){if(attract){i.attraction_speed=player.attraction_speed;i.state=3;}home_item(i);}
+-        else{last_error=142;return false;}
+-        if(player.state!=2&&player.pickup.contains(i.position)){
+-            th14_last_collect_type=i.type;bool convert=false;if(!world.collect(i,convert)){last_error=143;return false;}
+-            if(i.type!=9&&!world.sound(37,i.position.x)){last_error=144;return false;}
+-            release_th14(i);continue;
+-        }
+-        if(player.state!=2&&i.state!=3&&i.state!=4&&ordinary){
+-            const auto& bounds=player.focused?player.focused_attract:player.unfocused_attract;
+-            if(bounds.contains(i.position)){i.state=4;i.attraction_speed=player.attraction_speed/3.f;}
++            if(player.state!=2&&i.state!=3&&i.state!=4&&ordinary){
++                const auto& bounds=player.focused?player.focused_attract:player.unfocused_attract;
++                if(bounds.contains(i.position)){i.state=4;i.attraction_speed=player.attraction_speed/3.f;}
++            }
++            if((i.vm.flags&1)&&i.vm.update(animations)<0){last_error=145;return false;}
++            if((i.th14_indicator.flags&1)&&i.th14_indicator.update(animations)<0){last_error=149;return false;}
++            i.lifetime.tick();++active_count;
+         }
+-        if((i.vm.flags&1)&&i.vm.update(animations)<0){last_error=145;return false;}
+-        if((i.th14_indicator.flags&1)&&i.th14_indicator.update(animations)<0){last_error=149;return false;}
+-        i.lifetime.tick();++active_count;
+     }
+     auto& combo=world.item_th14_combo_state();
+     if(combo.timer>0){combo.timer=wrapping_sub(combo.timer,1);if(!combo.timer&&!world.item_th14_combo_settle()){last_error=151;return false;}}
+@@ -123,21 +142,28 @@ bool ItemManager::update_th14(){
+ }
+ bool ItemManager::draw_th14(AnmRenderer& renderer){
+     // 439640 copies raw playfield coordinates; bound ANM scripts own the origin.
+-    for(u32 n=0;n<capacity;++n){auto& i=storage[n];if(!i.state||!(i.vm.flags&1)||i.delay>0)continue;
+-        i.vm.script_position=i.position;
+-        i.th14_indicator.script_position=i.position;
+-        if(i.position.y<-8){
+-            auto& vm=i.th14_indicator;
+-            if(vm.flags&1){
+-                const float distance=vm.script_position.y+8.f;vm.script_position.y=8.f;
+-                const float normalized=distance*.03125f,scaled=normalized*255.f;
+-                const u8 alpha=distance>=32.f?255:u8(truncate_int(scaled));vm.color=(vm.color&0xffffff)|(u32(alpha)<<24);
+-                if(renderer.draw(vm)==-2)return false;
++    for(u32 page=0;page<th14_occupied.size();++page){
++        if(!th14_page_occupied(page))continue;
++        const u32 end=std::min((page+1)*th14_word_bits,capacity);
++        for(u32 n=page*th14_word_bits;n<end;++n){
++            auto& i=storage[n];
++            if(!i.state||!(i.vm.flags&1)||i.delay>0)continue;
++            i.vm.script_position=i.position;
++            i.th14_indicator.script_position=i.position;
++            if(i.position.y<-8){
++                auto& vm=i.th14_indicator;
++                if(vm.flags&1){
++                    const float distance=vm.script_position.y+8.f;vm.script_position.y=8.f;
++                    const float normalized=distance*.03125f,scaled=normalized*255.f;
++                    const u8 alpha=distance>=32.f?255:u8(truncate_int(scaled));vm.color=(vm.color&0xffffff)|(u32(alpha)<<24);
++                    if(renderer.draw(vm)==-2)return false;
++                }
++                i.display_type=1;continue;
+             }
+-            i.display_type=1;continue;
++            if(renderer.draw(i.vm)==-2)return false;i.display_type=0;
+         }
+-        if(renderer.draw(i.vm)==-2)return false;i.display_type=0;
+-    }return true;
++    }
++    return true;
+ }
+ #endif
+ }
+diff --git a/runtimes/th12/th12_web/cpp/game/LaserCurveTh14.cpp b/runtimes/th12/th12_web/cpp/game/LaserCurveTh14.cpp
+index 408ca2e6b0f37500fd1e24012624d3b291ebae1e..d23ff83a26d7af9642142da657935c0ea5e015e5 100644
+--- a/runtimes/th12/th12_web/cpp/game/LaserCurveTh14.cpp
++++ b/runtimes/th12/th12_web/cpp/game/LaserCurveTh14.cpp
+@@ -153,12 +153,12 @@ i32 Th14CurvePath::cut_circle(Vec3 center,float radius,bool protection,bool skip
+     }
+     samples.erase(samples.begin(),samples.begin()+start);const i32 length=i32(samples.size());std::memcpy(request+0x20,&length,4);return count;
+ }
+-i32 Th14CurvePath::cut_rectangle(Vec3 center,Vec2 size,float angle,bool protection,bool skip,Timer& timer,std::vector<Vec3>& deliveries,bool& mark,std::vector<std::array<u8,0x354>>& fragments){
++i32 Th14CurvePath::cut_rectangle(Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,bool protection,bool skip,Timer& timer,std::vector<Vec3>& deliveries,bool& mark,std::vector<std::array<u8,0x354>>& fragments){
+     deliveries.clear();fragments.clear();mark=false;if(skip&&protection)return 0;
+     const u32 length=u32(samples.size());std::vector<u8> selected(length,0);i32 count=0;
+-    const float s=float(std::sin(double(-angle))),c=float(std::cos(double(-angle)));
++    const float s=rotation.sine,c=rotation.cosine;
+     for(u32 j=0;j<length;++j){const auto p=samples[j].position;float x=p.x-center.x,y=p.y-center.y;
+-        if(angle!=0){const float rx=x*c-y*s,ry=y*c+x*s;x=rx;y=ry;}
++        if(rotation.angle!=0){const float rx=x*c-y*s,ry=y*c+x*s;x=rx;y=ry;}
+         // 442a00 selects sample centers; laser width is not added to the rectangle.
+         if(!(size.x*.5f<std::fabs(x))&&!(size.y*.5f<std::fabs(y))){selected[j]=1;++count;if(j%3==0)deliveries.push_back(p);}
+     }
+diff --git a/runtimes/th12/th12_web/cpp/game/LaserCurveTh14.hpp b/runtimes/th12/th12_web/cpp/game/LaserCurveTh14.hpp
+index 8089d9afa7fcc0d0c4cacd102c75c436443ee42c..147dbe88dbbab6d6e5e4f2cef0175e0ff506e21d 100644
+--- a/runtimes/th12/th12_web/cpp/game/LaserCurveTh14.hpp
++++ b/runtimes/th12/th12_web/cpp/game/LaserCurveTh14.hpp
+@@ -1,6 +1,7 @@
+ #pragma once
+ #include "Types.hpp"
+ #if PORT_TITLE == 14
++#include "RectangleRotationTh14.hpp"
+ #include <vector>
+ #include <array>
+ #endif
+@@ -32,7 +33,10 @@ struct Th14CurvePath {
+     bool transforms();
+     void sample(float time,bool reset_negative=true)noexcept;
+     i32 cut_circle(Vec3 center,float radius,bool protection,bool skip,std::vector<Vec3>& deliveries,bool& mark);
+-    i32 cut_rectangle(Vec3 center,Vec2 size,float angle,bool protection,bool skip,Timer&,std::vector<Vec3>& deliveries,bool& mark,std::vector<std::array<u8,0x354>>& fragments);
++    i32 cut_rectangle(Vec3 center,Vec2 size,float angle,bool protection,bool skip,Timer& timer,std::vector<Vec3>& deliveries,bool& mark,std::vector<std::array<u8,0x354>>& fragments){
++        return cut_rectangle(center,size,Th14RectangleRotation{angle},protection,skip,timer,deliveries,mark,fragments);
++    }
++    i32 cut_rectangle(Vec3 center,Vec2 size,const Th14RectangleRotation&,bool protection,bool skip,Timer&,std::vector<Vec3>& deliveries,bool& mark,std::vector<std::array<u8,0x354>>& fragments);
+ };
+ struct Th14CurveVertex {float x,y,z,rhw;u32 color;float u,v;};
+ void th14_curve_mesh(const Th14CurveSample*,u32 count,float width,float top_v,float bottom_v,Vec2 origin,Th14CurveVertex*)noexcept;
 diff --git a/runtimes/th12/th12_web/cpp/game/LaserCurveTh14Runtime.cpp b/runtimes/th12/th12_web/cpp/game/LaserCurveTh14Runtime.cpp
-index 6c5781a2f346c0a8f08f9d00c4f97b4beb119646..62584b103f8ff8a09cb7e73207a1328626eb7d36 100644
+index 6c5781a2f346c0a8f08f9d00c4f97b4beb119646..c78bdfcb3714ff3d9d6194aeaa5e88e461bab178 100644
 --- a/runtimes/th12/th12_web/cpp/game/LaserCurveTh14Runtime.cpp
 +++ b/runtimes/th12/th12_web/cpp/game/LaserCurveTh14Runtime.cpp
 @@ -63,7 +63,10 @@ i32 laser_th14_curve_update(Th14LaserCurve& curve,AnmEnvironment& animations,Las
@@ -1150,6 +1832,192 @@ index 6c5781a2f346c0a8f08f9d00c4f97b4beb119646..62584b103f8ff8a09cb7e73207a13286
      static_assert(sizeof(Th14CurveVertex)==sizeof(AnmVertex));
      if(renderer.draw_th14_screen_strip(curve.body,reinterpret_cast<const AnmVertex*>(curve.vertices.data()),curve.vertices.size())==-2)return false;
      if(i32(curve.path.samples.size())>=curve.curve_timer.current){curve.origin.script_position=curve.path.samples.back().position;if(renderer.draw(curve.origin)==-2)return false;}
+@@ -81,8 +84,8 @@ i32 laser_th14_curve_cut_circle(Th14LaserCurve& curve,Vec3 center,float radius,u
+     if(mark)curve.native_flags=(curve.native_flags&~4u)|2;
+     curve.vertices.resize(curve.path.samples.size()*2);return count;
+ }
+-i32 laser_th14_curve_cut_rectangle(Th14LaserCurve& curve,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& fragments,LaserWorld& world){
+-    std::vector<Vec3> deliveries;bool mark=false;const i32 count=curve.path.cut_rectangle(center,size,angle,curve.base.protection!=0,skip,curve.curve_timer,deliveries,mark,fragments);
++i32 laser_th14_curve_cut_rectangle(Th14LaserCurve& curve,Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& fragments,LaserWorld& world){
++    std::vector<Vec3> deliveries;bool mark=false;const i32 count=curve.path.cut_rectangle(center,size,rotation,curve.base.protection!=0,skip,curve.curve_timer,deliveries,mark,fragments);
+     if(count<0)return count;
+     for(const auto p:deliveries){if(rewards&&!world.th14_curve_reward(p,rewards))return -2;if(!world.cancel_effect(p,integer(curve.path.request+0x1c)*2+181))return -2;}
+     if(mark)curve.native_flags=(curve.native_flags&~4u)|2;
+diff --git a/runtimes/th12/th12_web/cpp/game/LaserInfiniteTh14.cpp b/runtimes/th12/th12_web/cpp/game/LaserInfiniteTh14.cpp
+index 4a7b4c053f8bf9685d62d0d1e6e5cfc86aa95d5a..9cb3c3a5beb4b045b7d5ce02902cfde9f44ed3f6 100644
+--- a/runtimes/th12/th12_web/cpp/game/LaserInfiniteTh14.cpp
++++ b/runtimes/th12/th12_web/cpp/game/LaserInfiniteTh14.cpp
+@@ -137,14 +137,14 @@ i32 laser_th14_infinite_cut_circle(Th14LaserInfinite& l,Vec3 center,float radius
+         const i32 sprite=integer(l.request+0x50),color=integer(l.request+0x54);store(0x24,sprite);store(0x28,color);fragments.push_back(request);
+     }return selected;
+ }
+-i32 laser_th14_infinite_cut_rectangle(Th14LaserInfinite& l,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& fragments,LaserWorld& world){
++i32 laser_th14_infinite_cut_rectangle(Th14LaserInfinite& l,Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& fragments,LaserWorld& world){
+     // Retail 43e500 samples every 16 units, retaining the prefix in the
+     // infinite laser and constructing kind-0 requests for remaining runs.
+     fragments.clear();auto& b=l.base;if(skip&&b.protection)return 0;if(b.length<16.f)return 0;if(b.length>4096.f)return -2;
+     const Vec3 original=b.position;const auto half=polar(b.angle,8.f);const Vec2 step{half.x+half.x,half.y+half.y};
+     Vec3 p{original.x+half.x,original.y+half.y,0};
+-    const float x=original.x-center.x,y=original.y-center.y,sine=float(std::sin(-double(angle))),cosine=float(std::cos(-double(angle)));
+-    const auto v=polar(normalize_angle(b.angle-angle),8.f);Vec2 local{x*cosine-y*sine+v.x,y*cosine+x*sine+v.y};const Vec2 local_step{v.x+v.x,v.y+v.y};size.x*=.5f;size.y*=.5f;
++    const float x=original.x-center.x,y=original.y-center.y,sine=rotation.sine,cosine=rotation.cosine;
++    const auto v=polar(normalize_angle(b.angle-rotation.angle),8.f);Vec2 local{x*cosine-y*sine+v.x,y*cosine+x*sine+v.y};const Vec2 local_step{v.x+v.x,v.y+v.y};size.x*=.5f;size.y*=.5f;
+     std::array<u8,256> mask{};float distance=8.f;i32 count=0,selected=0;
+     do{
+         if(count>=256)return -2;
+diff --git a/runtimes/th12/th12_web/cpp/game/LaserLineTh14.cpp b/runtimes/th12/th12_web/cpp/game/LaserLineTh14.cpp
+index c5ecc81f99ff827f8e2f582768c95efe4500a17c..fdd0726b8539167c0cf85263dd52bf411075a6a8 100644
+--- a/runtimes/th12/th12_web/cpp/game/LaserLineTh14.cpp
++++ b/runtimes/th12/th12_web/cpp/game/LaserLineTh14.cpp
+@@ -132,17 +132,17 @@ i32 laser_th14_line_cancel(Th14LaserLine& l,bool reward,bool skip,LaserWorld& w)
+  }while(b.length>distance+8.f);
+  b.state=1;return count;
+ }
+-static i32 cut_samples(Th14LaserLine& l,Vec3 center,float radius,Vec2 size,float angle,bool rectangle,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& fragments,LaserWorld& w){
++static i32 cut_samples(Th14LaserLine& l,Vec3 center,float radius,Vec2 size,const Th14RectangleRotation* rotation,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& fragments,LaserWorld& w){
+  fragments.clear();auto& b=l.base;if(skip&&b.protection)return 0;if(b.length<16.f)return 0;if(b.length>4096.f)return -2;
+  const Vec3 original=b.position;const auto half=polar(b.angle,8.f);const Vec2 step{half.x+half.x,half.y+half.y};Vec3 p{original.x+half.x,original.y+half.y,0};
+  std::array<u8,256> mask{};const float squared=radius*radius;float distance=8.f;i32 count=0,selected=0;
+  Vec2 local{},local_step{};
+- if(rectangle){const float x=original.x-center.x,y=original.y-center.y,sine=float(std::sin(-double(angle))),cosine=float(std::cos(-double(angle)));
+-  const auto v=polar(normalize_angle(b.angle-angle),8.f);local={x*cosine-y*sine+v.x,y*cosine+x*sine+v.y};local_step={v.x+v.x,v.y+v.y};size.x*=.5f;size.y*=.5f;
++ if(rotation){const float x=original.x-center.x,y=original.y-center.y,sine=rotation->sine,cosine=rotation->cosine;
++  const auto v=polar(normalize_angle(b.angle-rotation->angle),8.f);local={x*cosine-y*sine+v.x,y*cosine+x*sine+v.y};local_step={v.x+v.x,v.y+v.y};size.x*=.5f;size.y*=.5f;
+  }
+  do{
+   if(count>=256)return -2;const float dx=center.x-p.x,dy=center.y-p.y;
+-  const bool inside=rectangle?!(local.x< -size.x||local.x>size.x||local.y< -size.y||local.y>size.y):!(dx*dx+dy*dy>squared);
++  const bool inside=rotation?!(local.x< -size.x||local.x>size.x||local.y< -size.y||local.y>size.y):!(dx*dx+dy*dy>squared);
+   if(inside){mask[count]=1;++selected;if(rewards&&!w.th14_curve_reward(p,rewards))return -2;
+    const i32 family=(b.sprite<=17||b.sprite==33||b.sprite==37)?181:b.sprite<=30?229:b.sprite<=32?253:-1;
+    if(family>=0&&!w.cancel_effect(p,b.color*2+family))return -2;
+@@ -167,7 +167,7 @@ static i32 cut_samples(Th14LaserLine& l,Vec3 center,float radius,Vec2 size,float
+  }
+  return selected;
+ }
+-i32 laser_th14_line_cut_circle(Th14LaserLine& l,Vec3 c,float r,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& f,LaserWorld& w){return cut_samples(l,c,r,{},0,false,rewards,skip,f,w);}
+-i32 laser_th14_line_cut_rectangle(Th14LaserLine& l,Vec3 c,Vec2 size,float angle,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& f,LaserWorld& w){return cut_samples(l,c,0,size,angle,true,rewards,skip,f,w);}
++i32 laser_th14_line_cut_circle(Th14LaserLine& l,Vec3 c,float r,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& f,LaserWorld& w){return cut_samples(l,c,r,{},nullptr,rewards,skip,f,w);}
++i32 laser_th14_line_cut_rectangle(Th14LaserLine& l,Vec3 c,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& f,LaserWorld& w){return cut_samples(l,c,0,size,&rotation,rewards,skip,f,w);}
+ #endif
+ }
+diff --git a/runtimes/th12/th12_web/cpp/game/LaserManager.cpp b/runtimes/th12/th12_web/cpp/game/LaserManager.cpp
+index 747f25459b7661ca96d9e64dd6c120b104ab7236..1cb60e1309a0b95adf417677c26f13385756a3e6 100644
+--- a/runtimes/th12/th12_web/cpp/game/LaserManager.cpp
++++ b/runtimes/th12/th12_web/cpp/game/LaserManager.cpp
+@@ -220,29 +220,38 @@ bool LaserManager::reset_th16(){
+ #endif
+ #if PORT_TITLE == 14
+ i32 LaserManager::th14_line_cut(Th14LaserLine& l,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip){
+-    std::vector<std::array<u8,0x354>> fragments;const i32 count=laser_th14_line_cut_rectangle(l,center,size,angle,rewards,skip,fragments,*this);if(count<0)return last_error=count;
++    return th14_line_cut(l,center,size,Th14RectangleRotation{angle},rewards,skip);
++}
++i32 LaserManager::th14_line_cut(Th14LaserLine& l,Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards,bool skip){
++    std::vector<std::array<u8,0x354>> fragments;const i32 count=laser_th14_line_cut_rectangle(l,center,size,rotation,rewards,skip,fragments,*this);if(count<0)return last_error=count;
+     for(const auto& request:fragments){if(active_count>=capacity)break;if(!spawn_th14_line(request.data()))return last_error=-2;}
+     return count;
+ }
+ i32 LaserManager::th14_infinite_cut(Th14LaserInfinite& l,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip){
+-    std::vector<std::array<u8,0x354>> fragments;const i32 count=laser_th14_infinite_cut_rectangle(l,center,size,angle,rewards,skip,fragments,*this);if(count<0)return last_error=count;
++    return th14_infinite_cut(l,center,size,Th14RectangleRotation{angle},rewards,skip);
++}
++i32 LaserManager::th14_infinite_cut(Th14LaserInfinite& l,Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards,bool skip){
++    std::vector<std::array<u8,0x354>> fragments;const i32 count=laser_th14_infinite_cut_rectangle(l,center,size,rotation,rewards,skip,fragments,*this);if(count<0)return last_error=count;
+     for(const auto& request:fragments){if(active_count>=capacity)break;if(!spawn_th14_line(request.data()))return last_error=-2;}return count;
+ }
+ i32 LaserManager::th14_curve_cut(Th14LaserCurve& curve,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip){
+-    std::vector<std::array<u8,0x354>> fragments;const i32 count=laser_th14_curve_cut_rectangle(curve,center,size,angle,rewards,skip,fragments,*this);if(count<0)return last_error=count;
++    return th14_curve_cut(curve,center,size,Th14RectangleRotation{angle},rewards,skip);
++}
++i32 LaserManager::th14_curve_cut(Th14LaserCurve& curve,Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards,bool skip){
++    std::vector<std::array<u8,0x354>> fragments;const i32 count=laser_th14_curve_cut_rectangle(curve,center,size,rotation,rewards,skip,fragments,*this);if(count<0)return last_error=count;
+     for(const auto& request:fragments){if(active_count>=capacity)break;if(!spawn_th14_curve(request.data(),&curve.path.nodes))return last_error=-2;}return count;
+ }
+-i32 LaserManager::cancel_rectangle_th14(Vec3 center,Vec2 size,float angle,u32 rewards,bool skip_infinite){
++i32 LaserManager::cancel_rectangle_th14(Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards,bool skip_infinite){
+     sync();last_center=center;last_size={size.x,size.y,0};
+     i32 total=0;for(auto* b=first();b;){auto* next=b->next;
+         if(!(skip_infinite&&b->type==1)&&b->type!=3&&b->state!=1&&b->rectangle_enabled&&!b->protection){
+-            if(b->type==0){const i32 count=th14_line_cut(*reinterpret_cast<Th14LaserLine*>(b),center,size,angle,rewards,true);if(count<0)return last_error=count;total=wrapping_add(total,count);b=next;continue;}
++            if(b->type==0){const i32 count=th14_line_cut(*reinterpret_cast<Th14LaserLine*>(b),center,size,rotation,rewards,true);if(count<0)return last_error=count;total=wrapping_add(total,count);b=next;continue;}
+             if(b->type==1){
+-                const i32 count=th14_infinite_cut(*reinterpret_cast<Th14LaserInfinite*>(b),center,size,angle,rewards,true);if(count<0)return last_error=count;
++                const i32 count=th14_infinite_cut(*reinterpret_cast<Th14LaserInfinite*>(b),center,size,rotation,rewards,true);if(count<0)return last_error=count;
+                 total=wrapping_add(total,count);b=next;continue;
+             }
+             if(b->type!=2)return last_error=-2;
+-            const i32 count=th14_curve_cut(*reinterpret_cast<Th14LaserCurve*>(b),center,size,angle,rewards,true);if(count<0)return last_error=count;
++            const i32 count=th14_curve_cut(*reinterpret_cast<Th14LaserCurve*>(b),center,size,rotation,rewards,true);if(count<0)return last_error=count;
+             total=wrapping_add(total,count);
+         }b=next;
+     }return total;
+diff --git a/runtimes/th12/th12_web/cpp/game/LaserManager.hpp b/runtimes/th12/th12_web/cpp/game/LaserManager.hpp
+index 3fa1f71897a004d7503faa5097e4bea00113d620..e6f89a3fe3b5eb6975bd207ac4e33c54bb1a4f72 100644
+--- a/runtimes/th12/th12_web/cpp/game/LaserManager.hpp
++++ b/runtimes/th12/th12_web/cpp/game/LaserManager.hpp
+@@ -47,7 +47,7 @@ public:
+     bool cancel_all(bool reward,bool skip_protected);
+     i32 cancel_rectangle(Vec3 center,Vec3 size,bool reward);
+ #if PORT_TITLE == 14
+-    i32 cancel_rectangle_th14(Vec3,Vec2,float,u32,bool skip_infinite=false);
++    i32 cancel_rectangle_th14(Vec3,Vec2,const Th14RectangleRotation&,u32,bool skip_infinite=false);
+ #endif
+     i32 cancel_circle(Vec3 center,float radius,u32 rewards,bool skip_protected);
+     bool sound(i32 id,float x,bool positional)override{return world.sound(id,x,positional);}
+@@ -73,6 +73,11 @@ public:
+     bool th14_line_spawn(const u8* request)override{spawn_th14_line(request);return !last_error;}
+ #endif
+ private:
++#if PORT_TITLE == 14
++    i32 th14_line_cut(Th14LaserLine&,Vec3,Vec2,const Th14RectangleRotation&,u32,bool);
++    i32 th14_infinite_cut(Th14LaserInfinite&,Vec3,Vec2,const Th14RectangleRotation&,u32,bool);
++    i32 th14_curve_cut(Th14LaserCurve&,Vec3,Vec2,const Th14RectangleRotation&,u32,bool);
++#endif
+     LaserState sentinel{};LaserState* tail=&sentinel;
+     AnmResource& resource;AnmEnvironment& animations;LaserWorld& world;u16 file_id;
+     bool updating=false;
+diff --git a/runtimes/th12/th12_web/cpp/game/LaserState.hpp b/runtimes/th12/th12_web/cpp/game/LaserState.hpp
+index 355046f22ee8a9b3552ab0ab388d6cc756284bfb..ec439ce4bc63c46489e41943f51df156d0932150 100644
+--- a/runtimes/th12/th12_web/cpp/game/LaserState.hpp
++++ b/runtimes/th12/th12_web/cpp/game/LaserState.hpp
+@@ -123,7 +123,11 @@ i32 laser_th14_line_update(Th14LaserLine&,AnmEnvironment&,LaserWorld&);
+ bool laser_th14_line_draw(Th14LaserLine&,AnmRenderer&);
+ i32 laser_th14_line_cancel(Th14LaserLine&,bool reward,bool skip,LaserWorld&)noexcept;
+ i32 laser_th14_line_cut_circle(Th14LaserLine&,Vec3,float,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
+-i32 laser_th14_line_cut_rectangle(Th14LaserLine&,Vec3,Vec2,float,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
++i32 laser_th14_line_cut_rectangle(Th14LaserLine&,Vec3,Vec2,const Th14RectangleRotation&,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
++inline i32 laser_th14_line_cut_rectangle(Th14LaserLine& laser,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip,
++    std::vector<std::array<u8,0x354>>& fragments,LaserWorld& world){
++    return laser_th14_line_cut_rectangle(laser,center,size,Th14RectangleRotation{angle},rewards,skip,fragments,world);
++}
+ bool laser_th14_infinite_initialize(Th14LaserInfinite&,const u8*,AnmResource&,AnmEnvironment&,LaserWorld&,u16);
+ void laser_th14_infinite_initialize_state(Th14LaserInfinite&,const u8*,LaserWorld&)noexcept;
+ // State/motion portion of retail 43e040; ANM and collision delivery follow it.
+@@ -133,14 +137,22 @@ i32 laser_th14_infinite_collision(Th14LaserInfinite&,LaserWorld&,bool probe=fals
+ bool laser_th14_infinite_draw(Th14LaserInfinite&,AnmRenderer&);
+ i32 laser_th14_infinite_cancel(Th14LaserInfinite&,bool,bool,LaserWorld&)noexcept;
+ i32 laser_th14_infinite_cut_circle(Th14LaserInfinite&,Vec3,float,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
+-i32 laser_th14_infinite_cut_rectangle(Th14LaserInfinite&,Vec3,Vec2,float,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
++i32 laser_th14_infinite_cut_rectangle(Th14LaserInfinite&,Vec3,Vec2,const Th14RectangleRotation&,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
++inline i32 laser_th14_infinite_cut_rectangle(Th14LaserInfinite& laser,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip,
++    std::vector<std::array<u8,0x354>>& fragments,LaserWorld& world){
++    return laser_th14_infinite_cut_rectangle(laser,center,size,Th14RectangleRotation{angle},rewards,skip,fragments,world);
++}
+ bool laser_th14_curve_initialize(Th14LaserCurve&,const u8*,AnmResource&,AnmEnvironment&,LaserWorld&,u16,const std::vector<Th14CurveNode>* inherited=nullptr);
+ i32 laser_th14_curve_update(Th14LaserCurve&,AnmEnvironment&,LaserWorld&);
+ i32 laser_th14_curve_collision(Th14LaserCurve&,LaserWorld&,bool probe=false);
+ bool laser_th14_curve_draw(Th14LaserCurve&,AnmRenderer&);
+ i32 laser_th14_curve_cancel(Th14LaserCurve&,bool reward,bool skip,LaserWorld&);
+ i32 laser_th14_curve_cut_circle(Th14LaserCurve&,Vec3,float,u32,bool,LaserWorld&);
+-i32 laser_th14_curve_cut_rectangle(Th14LaserCurve&,Vec3,Vec2,float,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
++i32 laser_th14_curve_cut_rectangle(Th14LaserCurve&,Vec3,Vec2,const Th14RectangleRotation&,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
++inline i32 laser_th14_curve_cut_rectangle(Th14LaserCurve& laser,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip,
++    std::vector<std::array<u8,0x354>>& fragments,LaserWorld& world){
++    return laser_th14_curve_cut_rectangle(laser,center,size,Th14RectangleRotation{angle},rewards,skip,fragments,world);
++}
+ #endif
+ bool laser_line_initialize(LaserLine&,const LaserLineParameters&,AnmResource&,AnmEnvironment&,LaserWorld&,u16 file_id=0);
+ bool laser_line_appearance(LaserLine&,i32,AnmResource&,AnmEnvironment&,u16 file_id=0);
 diff --git a/runtimes/th12/th12_web/cpp/game/PauseEnd.cpp b/runtimes/th12/th12_web/cpp/game/PauseEnd.cpp
 index cf2697d3116bfbe4aab0f9e3dd982daa56fe5d76..fc88f3e1555ccb11a54584e90219b305a0b9d497 100644
 --- a/runtimes/th12/th12_web/cpp/game/PauseEnd.cpp
@@ -1325,6 +2193,58 @@ index a3e63fe228287890e69b17af24edfea2684474b2..a7d4cf12bf221720e07b639c8c933962
  #endif
      auto name=[&](float x,float y){
          add(entered_name.data(),x,y);style.color=0xffffff00;add("_",x+9*(name_length==8?7:name_length),y);
+diff --git a/runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp b/runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp
+index a829a789d81446dd2913c8dd35061377a94a77ed..a96f915a0372b738d8f3054d7b0b480c4b5af991 100644
+--- a/runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp
++++ b/runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp
+@@ -73,7 +73,11 @@ bool player_th14_death_drops(GameEconomy& economy,Vec3 p,PlayerFrameWorld& world
+     return true;
+ }
+ #endif
+-PlayerFrame::PlayerFrame(ShtResource& s,AnmResource& p,AnmResource& b,AnmManager& a,GameEconomy& e,PlayerFrameWorld& w,u16 pf,u16 bf):motion(p,b,a,*this,pf,bf),shots(s,p,a,w,pf),resource(s),bullet_resource(b),animations(a),economy(e),world(w),bullet_file(bf){state.state_timer.set(0,&a.rate);state.transition_timer.set(0,&a.rate);state.invincibility.set(0,&a.rate);}
++PlayerFrame::PlayerFrame(ShtResource& s,AnmResource& p,AnmResource& b,AnmManager& a,GameEconomy& e,PlayerFrameWorld& w,u16 pf,u16 bf):motion(p,b,a,*this,pf,bf),shots(s,p,a,w,pf),resource(s),bullet_resource(b),animations(a),economy(e),world(w),bullet_file(bf){state.state_timer.set(0,&a.rate);
++    //44c350/44c4a0 leave+6a0 zeroed;44cc10 binds it at stage activation.
++    if constexpr(kPortTitle==14)state.transition_timer={0,0,0,nullptr,0};
++    else state.transition_timer.set(0,&a.rate);
++    state.invincibility.set(0,&a.rate);}
+ bool PlayerFrame::initialize(){
+     const i32 character=input.movement.character;
+     if(!player_selection_valid(character,input.movement.subtype)){last_error=4;return false;}
+@@ -103,7 +107,14 @@ bool PlayerFrame::initialize(){
+     state.hit=bounds(s.position,state.hit_half);state.pickup=bounds(s.position,state.pickup_size);
+     state.focused_attract=bounds(s.position,state.focused_half);state.unfocused_attract=state.focused_attract;
+     state.state_timer.set(0,&animations.rate);state.invincibility.set(kPortTitle==14?0:120,&animations.rate);
+-    s.option_count=0;s.option_lerp=30;return true;
++    s.option_count=0;s.option_lerp=30;
++#if PORT_TITLE == 14
++    //44cb80 fills the complete movement history before options are published.
++    for(auto& p:s.th14_history)p={s.x,s.y};
++    //44cb97..44cbdd initialize even inactive options to this fixed Y sentinel.
++    for(auto& option:motion.options)option.y=-0xc800;
++#endif
++    return true;
+ }
+ bool PlayerFrame::rebuild_options(){
+ #if PORT_TITLE == 16
+diff --git a/runtimes/th12/th12_web/cpp/game/RectangleRotationTh14.hpp b/runtimes/th12/th12_web/cpp/game/RectangleRotationTh14.hpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..f5a99985ba5c08615b28614e54daceb0cda453d9
+--- /dev/null
++++ b/runtimes/th12/th12_web/cpp/game/RectangleRotationTh14.hpp
+@@ -0,0 +1,13 @@
++#pragma once
++#include <cmath>
++
++namespace th11 {
++// One inverse rotation for all targets of a rectangular cancel. Keep the
++// original angle as the laser cutters also rotate their individual headings.
++struct Th14RectangleRotation {
++    float angle, sine, cosine;
++    constexpr explicit Th14RectangleRotation(float a) noexcept
++        :angle(a),sine(a==0.f?-a:float(std::sin(-double(a)))),
++         cosine(a==0.f?1.f:float(std::cos(-double(a)))){}
++};
++}
 diff --git a/runtimes/th12/th12_web/cpp/game/SceneCompositor.cpp b/runtimes/th12/th12_web/cpp/game/SceneCompositor.cpp
 index cdf1db8bf7eb6652a542954133550d4741f6001e..8cf00880b669633484676c9702d137419b49aab3 100644
 --- a/runtimes/th12/th12_web/cpp/game/SceneCompositor.cpp
@@ -1344,6 +2264,91 @@ index cdf1db8bf7eb6652a542954133550d4741f6001e..8cf00880b669633484676c9702d13741
  #if PORT_TITLE == 14
          // Retail446c72..446cb1 writes play origin after target/clear only
          // when the intermediate render target exists. Reset retains it.
+diff --git a/runtimes/th12/th12_web/cpp/game/ShotDamageTh14.cpp b/runtimes/th12/th12_web/cpp/game/ShotDamageTh14.cpp
+index 964ab91c3b0e2cf93f2a12eceb80ad6bcd4ab589..56379c5f22776188723f27ea891ffcc7f29b4502 100644
+--- a/runtimes/th12/th12_web/cpp/game/ShotDamageTh14.cpp
++++ b/runtimes/th12/th12_web/cpp/game/ShotDamageTh14.cpp
+@@ -62,9 +62,12 @@ bool th14_damage_rectangles(Vec3 p,Vec2 size,float angle,Vec3 q,Vec2 other,float
+     return false;
+ }
+ bool th14_damage_circle_rectangle(Vec3 rectangle,Vec2 size,float angle,Vec3 circle,float radius,NativeStackTh14* stack)noexcept{
++    return th14_damage_circle_rectangle(rectangle,size,Th14RectangleRotation{angle},circle,radius,stack);
++}
++bool th14_damage_circle_rectangle(Vec3 rectangle,Vec2 size,const Th14RectangleRotation& rotation,Vec3 circle,float radius,NativeStackTh14* stack)noexcept{
+     // 404ca0: SSE rounding, inclusive strips but strict corner comparisons.
+     const float dx=circle.x-rectangle.x,dy=circle.y-rectangle.y;
+-    const float sine=float(std::sin(-double(angle))),cosine=float(std::cos(-double(angle)));
++    const float sine=rotation.sine,cosine=rotation.cosine;
+     const float x=dx*cosine-dy*sine,y=dy*cosine+dx*sine,hx=size.x*.5f,hy=size.y*.5f;
+     const float ax=std::abs(x),ay=std::abs(y);
+     if(stack)stack->damage_circle_rectangle(ax);
+diff --git a/runtimes/th12/th12_web/cpp/game/ShotDamageTh14.hpp b/runtimes/th12/th12_web/cpp/game/ShotDamageTh14.hpp
+index 6594fadea8586e1728a73221cdf144f45372f0fa..8b96402156d62d6fd484701748b4a4b9c6a08586 100644
+--- a/runtimes/th12/th12_web/cpp/game/ShotDamageTh14.hpp
++++ b/runtimes/th12/th12_web/cpp/game/ShotDamageTh14.hpp
+@@ -2,6 +2,7 @@
+ #include "DamageArea.hpp"
+ #include "GameEconomy.hpp"
+ #include "NativeStackTh14.hpp"
++#include "RectangleRotationTh14.hpp"
+ namespace th11 {
+ #if PORT_TITLE == 14
+ // Normalized fields of retail +de18, stride a4. Pool allocation, movement and
+@@ -17,6 +18,7 @@ struct Th14DamageWorld {
+     virtual bool hit(u32 index,Th14DamageArea&,const Vec3&,const Vec2*,float,float,i32&)=0;
+ };
+ bool th14_damage_circle_rectangle(Vec3 rectangle,Vec2 size,float angle,Vec3 circle,float radius,NativeStackTh14* stack=nullptr)noexcept;
++bool th14_damage_circle_rectangle(Vec3 rectangle,Vec2 size,const Th14RectangleRotation&,Vec3 circle,float radius,NativeStackTh14* stack=nullptr)noexcept;
+ bool th14_damage_rectangles(Vec3,Vec2,float,Vec3,Vec2,float)noexcept;
+ bool th14_damage_circle(std::array<Th14DamageArea,256>&,u32& cursor,Vec3,float radius,float growth,i32 duration,i32 damage,const float* rate,u32& index)noexcept;
+ bool th14_damage_rectangle(std::array<Th14DamageArea,256>&,u32& cursor,Vec3,Vec2,float angle,i32 duration,i32 damage,const float* rate,u32& index)noexcept;
+diff --git a/runtimes/th12/th12_web/cpp/game/StageDraw.cpp b/runtimes/th12/th12_web/cpp/game/StageDraw.cpp
+index 00d894e3e27ce4db737f62144adf04c6c7fc5b07..ab4a1e896eeea5ecb9ec9967608b7ea56de53151 100644
+--- a/runtimes/th12/th12_web/cpp/game/StageDraw.cpp
++++ b/runtimes/th12/th12_web/cpp/game/StageDraw.cpp
+@@ -123,18 +123,31 @@ bool stage_visible(const StageObject& object,Vec3 instance,const SceneCamera& ca
+     // 40ef1e..40eff6 culls in that space before its final screen copy.
+     const float origin_x=kPortTitle==14?float((i32(camera.render_width)-384)/2):32.f;
+     const float origin_y=kPortTitle==14?float((i32(camera.render_height)-448)/2):16.f;
++    const auto world_to_clip=GraphicsMath::multiply(GraphicsMath::multiply(world,camera.view),camera.projection);
++    const auto intersects=[&](float min_x,float max_x,float min_y,float max_y){
++        return max_x>=origin_x&&min_x<=origin_x+384&&max_y>=origin_y&&min_y<=origin_y+448;
++    };
+     float min_x=kPortTitle==14?origin_x+392:kPortTitle==13?520:424;
+     float max_x=kPortTitle==14?origin_x-8:kPortTitle==13?120:24;
+     float min_y=kPortTitle==14?origin_y+456:472,max_y=kPortTitle==14?origin_y-8:8;
+ #else
+     float min_x=kPortTitle==13?520:424,max_x=kPortTitle==13?120:24,min_y=472,max_y=8;
+ #endif
+-    // TH14 40eeeb projects all sixteen points; 40ef97..40efbd updates both bounds.
+-    for(u32 i=0;i<(kPortTitle==13||kPortTitle==14?16:12);++i){const auto p=GraphicsMath::project(points[i],camera.viewport,camera.projection,camera.view,world);
++    // TH14 40eeeb uses sixteen points; 40ef97..40efbd updates both bounds.
++    for(u32 i=0;i<(kPortTitle==13||kPortTitle==14?16:12);++i){
++#if PORT_TITLE == 14
++        const auto p=GraphicsMath::project(points[i],camera.viewport,world_to_clip);
++#else
++        const auto p=GraphicsMath::project(points[i],camera.viewport,camera.projection,camera.view,world);
++#endif
+         if((kPortTitle==14?p.z>=0:p.z>0)&&p.z<=1){
+             if constexpr(kPortTitle==13||kPortTitle==14){
+                 if(p.x<min_x)min_x=p.x;if(p.x>max_x)max_x=p.x;
+                 if(p.y<min_y)min_y=p.y;if(p.y>max_y)max_y=p.y;
++#if PORT_TITLE == 14
++                // Remaining accepted points can only widen the bounds.
++                if(intersects(min_x,max_x,min_y,max_y))return true;
++#endif
+             }else{
+             // The original's mutually exclusive branches deliberately retain
+             // these initial bounds; replacing them by min/max changes culling.
+@@ -144,7 +157,7 @@ bool stage_visible(const StageObject& object,Vec3 instance,const SceneCamera& ca
+         }
+     }
+ #if PORT_TITLE == 14
+-    return max_x>=origin_x&&min_x<=origin_x+384&&max_y>=origin_y&&min_y<=origin_y+448;
++    return intersects(min_x,max_x,min_y,max_y);
+ #else
+     return max_x>=(kPortTitle==13?128:32)&&min_x<=(kPortTitle==13?512:416)&&max_y>=16&&min_y<=464;
+ #endif
 diff --git a/runtimes/th12/th12_web/cpp/game/TextureImage.cpp b/runtimes/th12/th12_web/cpp/game/TextureImage.cpp
 index f83ed09512d920a0fb22346e059407acaf7cf3f8..fae2765c213860249768619fde2002da118bf8e1 100644
 --- a/runtimes/th12/th12_web/cpp/game/TextureImage.cpp
@@ -1387,6 +2392,21 @@ index bbe1076cf69e41d72391da2b83937e0aa2a3c9a0..70bc629f77f5138cce049264de9ecd6a
  #endif
      // Populated by load() when it returns false, so callers can report which
      // precondition rejected the texture instead of just naming the file.
+diff --git a/runtimes/th12/th12_web/cpp/game/Timer.hpp b/runtimes/th12/th12_web/cpp/game/Timer.hpp
+index 571d6d05c66d64d498bfc871d8001ea702e4e96d..307a8e0d2f17cbd3a8015ab702f8bcc5f079b992 100644
+--- a/runtimes/th12/th12_web/cpp/game/Timer.hpp
++++ b/runtimes/th12/th12_web/cpp/game/Timer.hpp
+@@ -17,7 +17,9 @@ struct Timer {
+         previous=wrapping_add(frame,-1);current=frame;fractional=float(frame);
+     }
+     void tick() noexcept {
+-        previous=current;const float speed=th14_rate_load(rate);
++        previous=current;
++        // Retail408690 and the inline Player clocks treat a null rate as1.
++        const float speed=kPortTitle==14&&!rate?1.f:th14_rate_load(rate);
+         if(speed>0.99f&&speed<1.01f){current=wrapping_add(current,1);fractional=float(double(fractional)+1);}
+         else {fractional=float(double(fractional)+speed);current=truncate_int(fractional);}
+     }
 diff --git a/runtimes/th12/th12_web/cpp/game/TitleResults.cpp b/runtimes/th12/th12_web/cpp/game/TitleResults.cpp
 index c91062f77f39cdc37dac75bbe8d697d98b1ee72c..44601056b63271565f978c23429449315ddbf456 100644
 --- a/runtimes/th12/th12_web/cpp/game/TitleResults.cpp
@@ -1401,7 +2421,7 @@ index c91062f77f39cdc37dac75bbe8d697d98b1ee72c..44601056b63271565f978c2342944931
          }
          if(pressed&0x102){if(name_length){sounds.push_back(11);entered_name[--name_length]=' ';}else step(2);}break;
 diff --git a/runtimes/th12/th12_web/cpp/sdl/Application.cpp b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
-index bae5d17e65ee2a98f46cb063007b05d43941077d..4b8eeaf0e45eff019f05842f31ab3a10ff14feb4 100644
+index bae5d17e65ee2a98f46cb063007b05d43941077d..94ed06e2090ee8110b06be81306ff4f0528334bb 100644
 --- a/runtimes/th12/th12_web/cpp/sdl/Application.cpp
 +++ b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
 @@ -306,7 +306,18 @@ struct Application:StageResourceEffects
@@ -1432,7 +2452,16 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..4b8eeaf0e45eff019f05842f31ab3a10
              th14_webgpu_archive_schedule(run_boot_work,new BootWorkToken{this,boot_worker_generation,work,index},names,3);
              return;
          }
-@@ -2010,7 +2021,7 @@ struct Application:StageResourceEffects
+@@ -1526,6 +1537,8 @@ struct Application:StageResourceEffects
+ #endif
+             }else saved_config_state=std::move(saved);
+         }
++        // Retail40b530 selects ASCII before the boot worker starts loading it.
++        session.resources.ascii_display_width=session.config.render_width();
+         if(!graphics.initialize(session.config.render_width(),session.config.render_height())){error=graphics.error;return false;}
+ #else
+         if(!graphics.initialize()){error=graphics.error;return false;}
+@@ -2010,7 +2023,7 @@ struct Application:StageResourceEffects
                  const auto& sprite=*vm->sprite;const u32 target=graphics.texture(*vm->resource,sprite.texture);renderer.flush();
                  i32 from[]={32,16,416,464};u32 source=GraphicsDevice::screen;
  #if PORT_TITLE == 14
@@ -1441,7 +2470,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..4b8eeaf0e45eff019f05842f31ab3a10
                  std::copy(capture.rectangle,capture.rectangle+4,from);
                  if(capture.text_intermediate){source=graphics.texture(session.resources.core.text,3);if(!source){error="Pause capture source texture missing";return false;}}
  #endif
-@@ -2055,6 +2066,13 @@ struct Application:StageResourceEffects
+@@ -2055,6 +2068,13 @@ struct Application:StageResourceEffects
  #endif
  #if PORT_TITLE == 14
          if(!present_this_update())return true;
@@ -1455,11 +2484,11 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..4b8eeaf0e45eff019f05842f31ab3a10
  #endif
          frame_text.clear();
  #if PORT_TITLE == 14
-@@ -2107,7 +2125,34 @@ struct Application:StageResourceEffects
+@@ -2107,7 +2127,38 @@ struct Application:StageResourceEffects
      }
  };
  Application app;
--struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
++#if PORT_TITLE == 14
 +struct Key {
 +    const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;
 +#if PORT_TITLE == 14
@@ -1488,42 +2517,53 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..4b8eeaf0e45eff019f05842f31ab3a10
 +#endif
 +    }
 +};
++#else
+ struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
++#endif
  #include "../../../portable/input/KeyboardMap.inc"
  touhou::input::TouchController gestures;
  touhou::sdl::FrameCadence cadence;
-@@ -2145,7 +2190,7 @@ touhou::input::TouchState touch_state(){
+@@ -2145,7 +2196,11 @@ touhou::input::TouchState touch_state(){
      s.x=p.position.x;s.y=p.position.y;s.fast=float(p.normal_speed)/128;s.slow=float(p.focus_speed)/128;
      s.min_x=-184;s.max_x=184;s.min_y=32;s.max_y=432;return s;
  }
--void clear_inputs(){th11_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;previous_scans.fill(0);gestures.reset();if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;}
++#if PORT_TITLE == 14
 +void clear_inputs(){th11_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.clear();previous_scans.fill(0);gestures.reset();if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;}
++#else
+ void clear_inputs(){th11_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;previous_scans.fill(0);gestures.reset();if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;}
++#endif
  void touch_event(unsigned type,int id,float x,float y){
      if(std::isfinite(x)&&std::isfinite(y))gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);
  }
-@@ -2169,7 +2214,7 @@ bool sample_and_tick_once(){
+@@ -2169,7 +2224,11 @@ bool sample_and_tick_once(){
          else if(event.type==SDL_EVENT_JOYSTICK_REMOVED&&controller&&SDL_GetJoystickID(controller)==event.jdevice.which){SDL_CloseJoystick(controller);controller=nullptr;int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;++i)add_controller(ids[i]);SDL_free(ids);}
      }
      bool keys[256]{};std::array<u8,256> scans{};const auto* physical=th11_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
--    for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.scan<256)scans[k.scan]=128;if(k.vk<256)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
++#if PORT_TITLE == 14
 +    for(auto& k:keyboard_map)if(k.sample()||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.scan<256)scans[k.scan]=128;if(k.vk<256)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
++#else
+     for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.scan<256)scans[k.scan]=128;if(k.vk<256)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
++#endif
      if(app.session.title){auto& title=*app.session.title;for(u32 i=0;i<256;++i)title.key_edges[i]=scans[i]&~previous_scans[i];title.number_keys=0;for(u32 i=0;i<9;++i)if(keys[49+i])title.number_keys|=1u<<i;}
      previous_scans=scans;
      const auto sample=gestures.sample(touch_state(),SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
-@@ -2266,7 +2311,7 @@ EMSCRIPTEN_KEEPALIVE unsigned th11_heap_bytes(){return unsigned(emscripten_get_h
+@@ -2266,7 +2325,11 @@ EMSCRIPTEN_KEEPALIVE unsigned th11_heap_bytes(){return unsigned(emscripten_get_h
  EMSCRIPTEN_KEEPALIVE unsigned th11_dynamic_allocs(){return unsigned(mallinfo().uordblks);}
  EMSCRIPTEN_KEEPALIVE int th11_pause(){return th11::sdl::app.pause()?1:0;}
  EMSCRIPTEN_KEEPALIVE int th11_resume(){return th11::sdl::app.resume()?1:0;}
--EMSCRIPTEN_KEEPALIVE void th11_key(unsigned scan,unsigned down){for(auto& k:th11::sdl::keyboard_map)if(k.scan==scan)k.hosted=down!=0;}
++#if PORT_TITLE == 14
 +EMSCRIPTEN_KEEPALIVE void th11_key(unsigned scan,unsigned down){for(auto& k:th11::sdl::keyboard_map)if(k.scan==scan)k.event(down!=0);}
++#else
+ EMSCRIPTEN_KEEPALIVE void th11_key(unsigned scan,unsigned down){for(auto& k:th11::sdl::keyboard_map)if(k.scan==scan)k.hosted=down!=0;}
++#endif
  EMSCRIPTEN_KEEPALIVE void th11_keys_clear(){th11::sdl::clear_inputs();}
  EMSCRIPTEN_KEEPALIVE void th11_music_enabled(unsigned on){using namespace th11::sdl;app.audio.music_enabled=on!=0;app.audio.refresh_volume();}
  EMSCRIPTEN_KEEPALIVE const unsigned* th11_audio_statistics(){return th11::sdl::app.audio.statistics();}
-@@ -2295,8 +2340,25 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
+@@ -2295,8 +2358,30 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
          if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
          const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
          if(suspended){cadence.reset();return EM_TRUE;}
--        const auto ticks=cadence.advance(delta);bool ok=true;app.graphics.backend.defer=true;
--        for(unsigned n=0;n<ticks&&ok;++n)ok=sample_and_tick();
++#if PORT_TITLE == 14
 +#if PORT_TITLE == 14
 +        const bool can_coalesce=app.can_coalesce_browser_draw();
 +        const auto limit=cadence.advance_display(delta,can_coalesce);
@@ -1542,6 +2582,10 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..4b8eeaf0e45eff019f05842f31ab3a10
 +        }
 +#if PORT_TITLE == 14
 +        app.coalesce_browser_draw=false;
++#endif
++#else
+         const auto ticks=cadence.advance(delta);bool ok=true;app.graphics.backend.defer=true;
+         for(unsigned n=0;n<ticks&&ok;++n)ok=sample_and_tick();
 +#endif
          app.graphics.backend.commit();app.graphics.backend.defer=false;
          app.audio.pump();
@@ -1673,6 +2717,57 @@ index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..369fef8c5ab61a4dd8fdcc8b97414ccd
   return typeof path==='string'&&((new RegExp('^/music/'+game+'_(?:[0-9]{2})\\.ogg$').test(path)||/^\/music\/th10_17\.ogg$/.test(path))||/^\/fonts\/[a-z0-9_.-]+$/.test(path)||path==='/unifont.otf'||(new RegExp('^/thcrap/'+game+'/[a-z0-9_/.-]+$').test(path)&&!path.includes('..')&&!path.includes('//')));
  }
  export function ensureSharedFontAlias(Module,language){
+diff --git a/runtimes/th12/th12_web/tests/cpp/th14-anm-draw-removal-fixture.cpp b/runtimes/th12/th12_web/tests/cpp/th14-anm-draw-removal-fixture.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..f5bb471a23d20c393cad7455bb04ce54ab819abc
+--- /dev/null
++++ b/runtimes/th12/th12_web/tests/cpp/th14-anm-draw-removal-fixture.cpp
+@@ -0,0 +1,45 @@
++#include "../../cpp/game/AnmManager.hpp"
++#include "../../cpp/game/AnmOpcodes.hpp"
++using namespace th11;
++
++namespace {
++AnmManager manager;
++AnmResource resource;
++AnmVm* retire;
++void retire_during_update(AnmVm&) { manager.destroy(*retire); }
++bool layer_is(u32 layer,std::initializer_list<const AnmVm*> expected) {
++    const auto* vm=manager.layer_first(layer);
++    for(const auto* next:expected){if(vm!=next)return false;vm=vm->draw_next;}
++    return vm==nullptr;
++}
++}
++
++extern "C" __attribute__((export_name("check_draw_removal"))) int check_draw_removal() {
++    manager.clear();resource={};resource.scripts.resize(1);
++    const AnmInstruction code[]={{i16(anm_canonical_opcode(2)),8,0,0},{-1,8,0,0}};
++    resource.scripts[0].bytes.resize(sizeof code);
++    std::memcpy(resource.scripts[0].bytes.data(),code,sizeof code);
++    if(!manager.prepare_resource(resource,0))return 1;
++    const auto create=[](u32 layer,bool overlay=false){return manager.create(resource,0,0,layer,overlay);};
++    auto* head=create(3);auto* middle=create(3);auto* tail=create(3);auto* hud=create(35,true);
++    if(!head||!middle||!tail||!hud||!manager.update(false)||!manager.update(true))return 2;
++    if(!layer_is(3,{head,middle,tail})||!layer_is(35,{hud}))return 3;
++    middle->layer=9;manager.destroy(*middle);
++    if(!layer_is(3,{head,tail})||!layer_is(9,{})||!layer_is(35,{hud}))return 4;
++    manager.destroy(*head);
++    if(!layer_is(3,{tail}))return 5;
++    auto* trigger=create(3);auto* survivor=create(3);
++    if(!trigger||!survivor||trigger!=head)return 6;
++    // Rebuild the layer; the callback retires the current draw tail while a
++    // later registry entry still needs to be appended to that same layer.
++    retire=tail;trigger->before_update=retire_during_update;
++    if(!manager.update(false)||!layer_is(3,{trigger,survivor})||!layer_is(35,{hud}))return 7;
++    trigger->before_update=nullptr;
++    const u32 keep=survivor->id;manager.clear(keep);
++    if(!layer_is(3,{})||!layer_is(35,{})||manager.find(keep)!=survivor)return 8;
++    survivor->layer=7;
++    auto* next=create(7);
++    if(!next||!manager.update(false)||!layer_is(7,{survivor,next}))return 9;
++    manager.destroy(*next);manager.destroy(*survivor);
++    return layer_is(7,{})&&manager.active_count()==0?0:10;
++}
 diff --git a/runtimes/th12/th12_web/tests/cpp/th14-anm-vm-oracle.cpp b/runtimes/th12/th12_web/tests/cpp/th14-anm-vm-oracle.cpp
 new file mode 100644
 index 0000000000000000000000000000000000000000..b9a59a804a81f032197649748b8c56300fc3cfb7
@@ -1882,6 +2977,45 @@ index 0000000000000000000000000000000000000000..f31f097a18c39d6ece52dd696629cc2e
 +    }
 +    assert(updates >= 59 && updates <= 61);
 +}
+diff --git a/runtimes/th12/th12_web/tests/cpp/th14-bullet-cancel-fixture.cpp b/runtimes/th12/th12_web/tests/cpp/th14-bullet-cancel-fixture.cpp
+index 017951afbb68e3cb10c2f8c2689aa93dd9fe1fd5..363b99a85c75b866fdba43f53086450fb47e5e99 100644
+--- a/runtimes/th12/th12_web/tests/cpp/th14-bullet-cancel-fixture.cpp
++++ b/runtimes/th12/th12_web/tests/cpp/th14-bullet-cancel-fixture.cpp
+@@ -58,7 +58,7 @@ API(run_etex) i32 run_etex(i32 state,u32 flags,i32 parameter,i32 index,u32 activ
+ }
+ API(run_rectangle) i32 run_rectangle(i32 state,i32 delay,u32 slot,float scale,float angle,float x,float y){
+     if(run_case(0,0,1,x,y,false,slot))return -2;bullet->state=i16(state);bullet->collision_delay=delay;bullet->th14_size=scale;event_count=0;
+-    if(!manager->cancel_rectangle_th14({12,200,0},{64,256},angle,0))return -2;return bullet->state==4&&state!=4;
++    if(!manager->cancel_rectangle_th14({12,200,0},{64,256},Th14RectangleRotation{angle},0))return -2;return bullet->state==4&&state!=4;
+ }
+ API(value) u32 value(u32 n){auto& b=*bullet;const u32 values[]={b.flags,float_bits(b.position.x),float_bits(b.position.y),float_bits(b.position.z),u32(b.lifetime.previous),u32(b.lifetime.current),float_bits(b.lifetime.fractional),u32(b.vm.pending_interrupt),u32(b.state),u32(b.cancel_effect),u32(b.transform_index),b.active_transforms};return values[n];}
+ API(event_size) u32 event_size(){return event_count;}
+diff --git a/runtimes/th12/th12_web/tests/cpp/th14-laser-curve-manager-fixture.cpp b/runtimes/th12/th12_web/tests/cpp/th14-laser-curve-manager-fixture.cpp
+index 15799924f91113c692c8128709c79c24b4a9a833..e36366352e06904d8bfb5af5832484b5bc5fcdaf 100644
+--- a/runtimes/th12/th12_web/tests/cpp/th14-laser-curve-manager-fixture.cpp
++++ b/runtimes/th12/th12_web/tests/cpp/th14-laser-curve-manager-fixture.cpp
+@@ -30,7 +30,7 @@ __attribute__((export_name("rectangle"))) i32 rectangle(const u32* p,u32 count,c
+  world.rate=rate;world.effects.clear();world.rewards.clear();fragment_results.clear();resource.scripts.resize(300);for(auto& s:resource.scripts)s.bytes={2,0,8,0,0,0,0,0,255,255,0,0,0,0,0,0};
+  LaserManager manager(resource,animations,world,7);auto* curve=new Th14LaserCurve{};auto& b=curve->base;b.initialize(&world.rate);b.type=b.state=2;b.rectangle_enabled=1;b.protection=protection;curve->native_flags=1;std::memcpy(curve->path.request,request,0x354);curve->path.samples.resize(count);curve->path.nodes.resize(1);curve->path.nodes[0].end=0;
+  for(u32 j=0;j<count;++j){auto& s=curve->path.samples[j];s.position={float_bits(p[j*8]),float_bits(p[j*8+1]),float_bits(p[j*8+2])};s.auxiliary={float_bits(p[j*8+3]),float_bits(p[j*8+4]),float_bits(p[j*8+5])};s.angle=float_bits(p[j*8+6]);s.speed=float_bits(p[j*8+7]);}
+- curve->curve_timer={29,30,30.5f,&manager.rate,1};manager.append(b);const i32 selected=manager.cancel_rectangle_th14({float_bits(x),float_bits(y),float_bits(z)},{float_bits(width),float_bits(height)},float_bits(angle),1);
++ curve->curve_timer={29,30,30.5f,&manager.rate,1};manager.append(b);const i32 selected=manager.cancel_rectangle_th14({float_bits(x),float_bits(y),float_bits(z)},{float_bits(width),float_bits(height)},Th14RectangleRotation{float_bits(angle)},1);
+  result={curve->native_flags&2,u32(curve->path.samples.size()),u32(curve->curve_timer.previous),u32(curve->curve_timer.current),float_bits(curve->curve_timer.fractional),manager.active_count};
+  for(auto* child=b.next;child;child=child->next){const auto& c=*reinterpret_cast<Th14LaserCurve*>(child);std::vector<u32> values(213);std::memcpy(values.data(),c.path.request,0x354);values.push_back(u32(c.path.transform_index));values.push_back(u32(c.curve_timer.previous));values.push_back(u32(c.curve_timer.current));values.push_back(float_bits(c.curve_timer.fractional));fragment_results.push_back(values);}
+  return selected;
+diff --git a/runtimes/th12/th12_web/tests/cpp/th14-laser-infinite-fixture.cpp b/runtimes/th12/th12_web/tests/cpp/th14-laser-infinite-fixture.cpp
+index ea64fd6b473b55b306b87b7863ef93d41cb47808..cd5332b2db42e53ff8f9493ed52f4782f734c789 100644
+--- a/runtimes/th12/th12_web/tests/cpp/th14-laser-infinite-fixture.cpp
++++ b/runtimes/th12/th12_web/tests/cpp/th14-laser-infinite-fixture.cpp
+@@ -50,7 +50,7 @@ API(registry_rectangle) i32 registry_rectangle(i32 sprite,u32 length,u32 angle,u
+     resource.scripts.resize(300);for(auto& s:resource.scripts)s.bytes={2,0,8,0,0,0,0,0,255,255,0,0,0,0,0,0};
+     LaserManager manager(resource,animations,world,6);auto* parent=new Th14LaserInfinite(laser);parent->base.type=1;parent->base.state=2;parent->base.rectangle_enabled=1;manager.append(parent->base);
+     const Vec3 center=placement==1?Vec3{-180.25f,7.5f,0}:placement==2?Vec3{900,-500,0}:Vec3{-140.25f,7.5f,0};
+-    const i32 result=manager.cancel_rectangle_th14(center,{float_bits(width),float_bits(height)},float_bits(rotation),mode==1?1u:0u,false);
++    const i32 result=manager.cancel_rectangle_th14(center,{float_bits(width),float_bits(height)},Th14RectangleRotation{float_bits(rotation)},mode==1?1u:0u,false);
+     registry_result={float_bits(parent->base.length),manager.active_count,u32(manager.last_error)};
+     for(auto* node=parent->base.next;node;node=node->next){const auto& child=*reinterpret_cast<Th14LaserLine*>(node);std::array<u32,223> values{};std::memcpy(values.data(),child.request,0x354);
+         const auto& b=child.base;const u32 state[]={u32(b.type),u32(b.state),float_bits(b.position.x),float_bits(b.position.y),float_bits(b.position.z),float_bits(b.angle),float_bits(b.length),float_bits(b.width),float_bits(b.speed),u32(b.id)};std::memcpy(values.data()+213,state,sizeof state);factory_results.push_back(values);
 diff --git a/runtimes/th12/th12_web/tests/cpp/th14-texture-display-oracle.cpp b/runtimes/th12/th12_web/tests/cpp/th14-texture-display-oracle.cpp
 new file mode 100644
 index 0000000000000000000000000000000000000000..397588b382742fbd91da3ceb175b8d21a3d69d17
