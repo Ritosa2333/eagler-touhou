@@ -3,6 +3,7 @@ import { Fragment, type ReactNode, useEffect, useRef, useState, useSyncExternalS
 import {Link, useSearchParams} from 'react-router';
 import { z } from 'zod';
 import { AccountAvatar } from '../components/launcher/AccountAvatar';
+import { PlayerAvatarCard } from '../components/launcher/PlayerProfileCard';
 import { BookThemeToggle } from '../components/launcher/BookThemeToggle';
 import { MainSelect, MainSelectPrefix } from '../components/launcher/MainSelect';
 import { Th09CharacterPortrait } from '../components/launcher/Th09CharacterPortrait';
@@ -401,12 +402,15 @@ function PlayerIdentity({row}: {row: Entry}) {
   if (!profile) return <span className="rating-player"><AccountAvatar />{row.player}</span>;
   const query = new URLSearchParams({lang: locale});
   if (row.characterScore) query.set('character', String(row.characterScore.character));
-  return <Link className="rating-player" to={`/u/${encodeURIComponent(profile.username)}?${query}`}
-    target="_blank" rel="noreferrer">
-    <AccountAvatar src={profile.avatar} loading="lazy" /><span className="rating-player-name">
+  return <span className="rating-player">
+    <PlayerAvatarCard username={profile.username} name={profile.nickname} avatar={profile.avatar}>
+      <button className="player-card-avatar-button" aria-label={profile.nickname}><AccountAvatar src={profile.avatar} loading="lazy"/></button>
+    </PlayerAvatarCard>
+    <Link className="rating-player-name" to={`/u/${encodeURIComponent(profile.username)}?${query}`}
+      target="_blank" rel="noreferrer">
       <span className="rating-nickname">{profile.nickname}</span>{' '}<span className="rating-handle">@{profile.username}</span>
-    </span>
-  </Link>;
+    </Link>
+  </span>;
 }
 
 function RatingOverview({rows, matches, updatedAt, characterBoard}: {rows: Entry[]; matches: Entry[]; updatedAt: number; characterBoard: boolean}) {

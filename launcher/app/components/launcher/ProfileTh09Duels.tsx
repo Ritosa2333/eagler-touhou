@@ -1,6 +1,6 @@
 import {ArrowLeft, ChevronDown, UserRound} from 'lucide-react';
 import {AnimatePresence, motion} from 'motion/react';
-import {useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent} from 'react';
+import {useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode} from 'react';
 import {Link, useLocation} from 'react-router';
 import {z} from 'zod';
 import {formatTh09WinRate, parseTh09AccountSummary, th09CharacterLoadout, type Th09AccountSummary} from '../../../src/launcher/th09-room-stats.mjs';
@@ -12,8 +12,8 @@ import {ChoiceGroup, ChoiceItem} from '../../ui/choice-group';
 import {useSiteReducedMotion} from '../../ui/use-site-reduced-motion';
 import {AccountAvatar} from './AccountAvatar';
 import {ProfilePanelLoading} from './ProfileLoading';
+import {PlayerAvatarCard} from './PlayerProfileCard';
 import {Th09CharacterPortrait} from './Th09CharacterPortrait';
-import cover from './book-covers/th09.webp?url';
 import './profile-th09-duels.css';
 
 const initialCharacterCount = 3;
@@ -46,8 +46,8 @@ const page = z.object({summary: z.custom<Th09AccountSummary>(value => !!parseTh0
   characterRatingPreview:z.object({rating:z.number().int()}).optional(),
   ratingHistory: z.array(th09RatingPoint).optional(), rankHistory: z.array(rankPoint).optional(), duels: z.array(duel).max(30), nextCursor: z.string().max(256).nullable().optional()});
 
-export function ProfileTh09Duels({username, owner, onAvailabilityChange}: {
-  username: string; owner: boolean; onAvailabilityChange(available: boolean): void;
+export function ProfileTh09Duels({username, owner, icons}: {
+  username: string; owner: boolean; icons: ReactNode;
 }) {
   const {t, locale} = useLocale();
   const location = useLocation();
@@ -62,14 +62,10 @@ export function ProfileTh09Duels({username, owner, onAvailabilityChange}: {
   const [series, setSeries] = useState<ChartSeries>('whr');
   const [selectedCharacter, setSelectedCharacter] = useState<number | null>();
   const [duelsExpanded, setDuelsExpanded] = useState(false);
-  const section = useRef<HTMLElement>(null);
+  const section = useRef<HTMLDivElement>(null);
   const [duelColumns, setDuelColumns] = useState(1);
   const preview = import.meta.env?.DEV ? data?.characterRatingPreview : undefined;
   const available = data ? owner || data.summary.games > 0 || !!data.characterRatings?.length : failed;
-  useEffect(() => {
-    onAvailabilityChange(available);
-    return () => onAvailabilityChange(false);
-  }, [available, onAvailabilityChange]);
   useEffect(() => {
     if (!available || !section.current || typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(([entry]) => setDuelColumns(entry.contentRect.width >= 600 ? 2 : 1));
@@ -100,7 +96,8 @@ export function ProfileTh09Duels({username, owner, onAvailabilityChange}: {
     });
     return () => controller.abort();
   }, [username, request, owner]);
-  if (!available) return pending ? <ProfilePanelLoading label={t('profile.versusCareer')}/> : null;
+  if (!available) return <>{pending ? <ProfilePanelLoading label={t('th09.accountRecord')}/> :
+    <p className="profile-muted">{t('th09.noDuels')}</p>}{icons}</>;
   const numbers = new Intl.NumberFormat(locale);
   const ratings = new Map(data?.characterRatings?.map(rating => [rating.character, rating]));
   const characters = [...(data?.characters ?? (preview ? data?.characterRatings : undefined) ?? [])]
@@ -118,8 +115,7 @@ export function ProfileTh09Duels({username, owner, onAvailabilityChange}: {
 
   const durationLabel = data?.durationFrames == null ? undefined : formatDuelDuration(data.durationFrames, locale, true);
 
-  return <section id="profile-versus" className="profile-panel profile-public-section profile-th09" ref={section}
-    aria-labelledby="profile-th09-title" aria-busy={pending} data-duel-columns={duelColumns}>
+  return <div className="profile-th09" ref={section} aria-busy={pending} data-duel-columns={duelColumns}>
     <h2 id="profile-th09-title" className="sr-only">{t('th09.accountRecord')}</h2>
     {data && <div className="profile-th09-overview-data">
       {showChart &&
@@ -137,7 +133,7 @@ export function ProfileTh09Duels({username, owner, onAvailabilityChange}: {
           </div>
           {durationLabel && <div><dt>{t('th09.recordedDuration')}</dt><dd>{durationLabel}</dd></div>}
         </dl>
-        <img className="profile-th09-cover" src={cover} alt="" width={640} height={632} />
+        {icons}
       </div>}
     </div>}
     {data && <div className="profile-th09-records">
@@ -183,11 +179,12 @@ export function ProfileTh09Duels({username, owner, onAvailabilityChange}: {
         </div>}
       </div>}
     </div>}
+    {(!data || preview) && icons}
     {failed && <div className="profile-th09-actions" role="status">
       <span>{t('account.requestFailed')}</span>
       <Button variant="outline" size="sm" onClick={() => setRequest({...request})}>{t('action.retry')}</Button>
     </div>}
-  </section>;
+  </div>;
 }
 
 function formatDuelDuration(frames: number, locale: string, emphasize = false) {
@@ -253,15 +250,18 @@ function DuelHistory({groups}: {groups: DuelGroup[]}) {
           return <li key={item.duelId}>
             <DuelScore score={`${wins}:${losses}`} outcome={outcome}
               label={t('th09.score') + ' ' + wins + ' : ' + losses} />
-            {item.opponent ? <Link className="profile-th09-opponent" to={'/u/' + encodeURIComponent(item.opponent.username)}>
-              <AccountAvatar src={item.opponent.avatar
-                ? `/api/v1/profiles/${encodeURIComponent(item.opponent.username)}/avatar/${item.opponent.avatar}`
-                : undefined} loading="lazy" />
-              <span className="profile-th09-opponent-name">
+            {item.opponent ? <span className="profile-th09-opponent">
+              <PlayerAvatarCard username={item.opponent.username} name={item.opponent.displayName}
+                avatar={item.opponent.avatar ? `/api/v1/profiles/${encodeURIComponent(item.opponent.username)}/avatar/${item.opponent.avatar}` : undefined}>
+                <button className="player-card-avatar-button" aria-label={item.opponent.displayName}><AccountAvatar src={item.opponent.avatar
+                  ? `/api/v1/profiles/${encodeURIComponent(item.opponent.username)}/avatar/${item.opponent.avatar}`
+                  : undefined} loading="lazy"/></button>
+              </PlayerAvatarCard>
+              <Link className="profile-th09-opponent-name" to={'/u/' + encodeURIComponent(item.opponent.username)}>
                 <span>{item.opponent.displayName}</span>
                 {item.opponent.displayName.toLowerCase() !== item.opponent.username.toLowerCase() && <small>@{item.opponent.username}</small>}
-              </span>
-            </Link> : <span className="profile-th09-opponent">
+              </Link>
+            </span> : <span className="profile-th09-opponent">
               <span className="account-avatar profile-th09-guest-avatar" aria-hidden="true"><UserRound /></span>
               <span className="profile-th09-opponent-name">{t('th09.guestOpponent')}</span>
             </span>}

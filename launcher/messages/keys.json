@@ -10406,5 +10406,37 @@
   "multiplayer.loadout.th02_slow": {
     "id": "multiplayer_loadout_th02_slow",
     "params": []
+  },
+  "profile.gameData": {
+    "id": "profile_gameData",
+    "params": []
+  },
+  "profile.gameDataAll": {
+    "id": "profile_gameDataAll",
+    "params": []
+  },
+  "profile.gameDataDefault": {
+    "id": "profile_gameDataDefault",
+    "params": []
+  },
+  "profile.openHome": {
+    "id": "profile_openHome",
+    "params": []
+  },
+  "profile.gameDataEmpty": {
+    "id": "profile_gameDataEmpty",
+    "params": []
+  },
+  "profile.gameDataHide": {
+    "id": "profile_gameDataHide",
+    "params": []
+  },
+  "profile.gameDataShow": {
+    "id": "profile_gameDataShow",
+    "params": []
+  },
+  "profile.gameDataMakeDefault": {
+    "id": "profile_gameDataMakeDefault",
+    "params": []
   }
 }

@@ -13,18 +13,17 @@ import {Link, Navigate, useLocation, useNavigate} from 'react-router';
 import {useLocale, type UiMessageKey} from '../../i18n';
 import {withUiLanguage} from '../../../src/launcher/i18n.mts';
 import {ProfileLoading, ProfilePanelLoading} from './ProfileLoading';
-import {ProfileTh09Duels} from './ProfileTh09Duels';
+import {ProfileGameDataCard} from './ProfileGameDataCard';
 import {ProfileCover} from './ProfileCover';
 import {CountryFlag} from './CountryFlag';
 import {profileSocialTab, SocialCounts, SocialFollowControl, SocialProvider, SocialSection} from './SocialSection';
 import {getProfileStatistics, type ProfileStatistics} from '../../services/cloud-saves';
 import type {LocalSaveReader} from '../../services/local-save-storage';
-import {hasProfileSaveSection, isProfileSection, normalizeProfileDisplay, profileSectionLabels, type ProfileDisplay} from '../../models/profile-display';
-const ProfileGameData=lazy(()=>import('./ProfileGameData'));
+import {normalizeProfileDisplay, type ProfileDisplay} from '../../models/profile-display';
 const AccountSettings=lazy(()=>import('./AccountSettings').then(module=>({default:module.AccountSettings})));
 type SocialLink = {label: string; url: string};
 export type Profile = {name: string; bio: string; avatar: string; cover: string; links: SocialLink[]; roomAvatarReady?: boolean};
-const tabLabels = {overview:'profile.tab.overview', ...profileSectionLabels} as const;
+const tabLabels = {overview:'profile.tab.overview', versus:'profile.gameData'} as const;
 type ProfileTab = keyof typeof tabLabels;
 const blankProfile: Profile = {name: '', bio: '', avatar: '', cover: '', links: []};
 const imageData = (value: string) => /^data:image\/(png|jpeg|webp);base64,/i.test(value);
@@ -100,14 +99,14 @@ function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,clo
   const location=useLocation(),navigate=useNavigate();
   const socialTab=profileSocialTab(location.search,location.hash);
   const showingSocial=!!socialTab;
-  const anchor=location.hash.replace(/^#profile-/,''),tab:ProfileTab=Object.hasOwn(tabLabels,anchor)?anchor as ProfileTab:'overview';
+  const anchor=location.hash.replace(/^#profile-/,'');
+  const tab:ProfileTab = ['versus','career','records'].includes(anchor) ? 'versus' : 'overview';
   const sectionAddress=(key:ProfileTab)=>({pathname:location.pathname,search:location.search,hash:`#profile-${key}`});
   const [legacySaved, setLegacySaved] = useState<{source:RemoteProfile;profile:Profile;display:ProfileDisplay}>();
   const local = legacySaved?.source === remote ? legacySaved : undefined;
   const profile = local?.profile ?? {...blankProfile,...remote.details,name:remote.nickname,roomAvatarReady:remote.roomAvatarReady};
   const settings = owner && !!panel;
   const display = local?.display ?? normalizeProfileDisplay(remote.details?.display);
-  const [versusAvailable, setVersusAvailable] = useState(false);
   const showSaveStatistics = !showingSocial && !settings && (display.visible.career || display.visible.records);
   const [statistics,setStatistics]=useState<ProfileStatistics>(),[statisticsError,setStatisticsError]=useState(false);
   useEffect(()=>{
@@ -123,8 +122,8 @@ function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,clo
   const visitor = !owner;
   const characterPreview = import.meta.env?.DEV && remote.characterRatingPreview === true;
   const editProfile = () => navigate({pathname:location.pathname,search:location.search,hash:'#edit'});
-  const sections = display.order.filter(isProfileSection).filter(key => display.visible[key]);
-  const visibleTabs: ProfileTab[] = ['overview', ...sections.filter(key => key === 'versus' ? versusAvailable : hasProfileSaveSection(statistics,key))];
+  const showGameData = display.visible.versus || display.visible.career || display.visible.records;
+  const visibleTabs: ProfileTab[] = showGameData ? ['overview', 'versus'] : ['overview'];
   const links = [...new Map(profile.links.map(link => [link.url,link])).values()];
   const details = characterPreview ? null : <><p className="profile-bio">{profile.bio || t('profile.bio.missing')}</p>{remote.joinedAt && <dl className="profile-about-meta">
     <div><dt><CalendarDays/>{t('profile.registeredAt')}</dt><dd><time dateTime={remote.joinedAt}>{new Intl.DateTimeFormat(locale,{year:'numeric',month:'long',timeZone:'UTC'}).format(new Date(remote.joinedAt))}</time></dd></div>
@@ -134,7 +133,7 @@ function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,clo
       return <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer"><Icon aria-hidden="true"/><span>{link.label}</span><ArrowUpRight aria-hidden="true"/></a>;
     })}</div>}</>;
   const navigation = visibleTabs.map(item => <Link key={item} to={sectionAddress(item)} aria-current={tab===item ? 'location' : undefined}>{t(tabLabels[item])}</Link>);
-  if (settings) return <Suspense fallback={<ProfileLoading/>}><AccountSettings initialProfile={profile} initialDisplay={display} reviewPending={remote.reviewPending}
+  if (settings) return <Suspense fallback={<ProfileLoading/>}><AccountSettings username={remote.username} initialProfile={profile} initialDisplay={display} reviewPending={remote.reviewPending}
     panel={panel} readLocalSaves={readLocalSaves} cloudSync={cloudSync}
     onSave={(next,visibility) => {if (remote.reviewPending === undefined) setLegacySaved({source:remote,profile:next,display:visibility});}}/></Suspense>;
   return <main className="player-profile profile-page" aria-labelledby={socialTab ? "profile-social-title" : "profile-name"}>
@@ -171,15 +170,8 @@ function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,clo
       <nav className="profile-section-nav profile-nav-mobile" aria-label={t('profile.navigationSections')}>{navigation}</nav>
       <div className="profile-columns"><aside className="profile-aside"><div className="profile-sidebar-details">{details}</div><nav className="profile-section-nav profile-nav-desktop" aria-label={t('profile.navigationSections')}>{navigation}</nav></aside>
         <div className="profile-content">
-        {sections.map(key => {
-          if (key === 'versus') return <ProfileTh09Duels key={key} username={remote.username} owner={owner} onAvailabilityChange={setVersusAvailable}/>;
-          const loading = <ProfilePanelLoading key={key} label={t(tabLabels[key])}/>;
-          if (!statistics) return !statisticsError ? loading : null;
-          return hasProfileSaveSection(statistics,key) && <Suspense key={key} fallback={loading}>
-            <ProfileGameData data={statistics} section={key} owner={owner} settingsHref={location.pathname+location.search+'#game-settings'}/>
-          </Suspense>;
-        })}
-        {showSaveStatistics&&statisticsError&&<p role="alert">{t('cloudSave.statisticsFailed')} <UiButton variant="quiet" onClick={()=>window.dispatchEvent(new Event('cloud-save-change'))}>{t('cloudSave.refresh')}</UiButton></p>}
+        {showGameData && <ProfileGameDataCard key={remote.username} username={remote.username} owner={owner}
+          display={display} statistics={statistics} statisticsError={statisticsError}/>}
         <div className="profile-end-actions"><BackToTop/></div>
         </div></div>
     </>}

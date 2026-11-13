@@ -3,7 +3,11 @@ import type {UiMessageKey} from '../i18n';
 import type {ProfileStatistics} from '../services/cloud-saves';
 
 const overviewKeys = ['career', 'versus', 'records', 'content', 'friends', 'favorites'] as const;
+export const gameDataViews = ['all', 'th09'] as const;
+export type GameDataView = typeof gameDataViews[number];
+export const gameDataViewLabels = {all:'profile.gameDataAll', th09:'guide.th09'} as const;
 const display = z.object({
+  gameDataDefault: z.enum(gameDataViews).optional(),
   order: z.array(z.enum(overviewKeys)),
   visible: z.object({career:z.boolean(), versus:z.boolean().optional(), records:z.boolean(),
     content:z.boolean(), friends:z.boolean(), favorites:z.boolean().optional()}),
@@ -31,7 +35,7 @@ export function normalizeProfileDisplay(value: unknown): ProfileDisplay {
     (savedOrder.length === overviewKeys.length || savedOrder.length === overviewKeys.length - 1 && !savedOrder.includes('versus'))
     ? [...savedOrder] : [...overviewKeys];
   if (!order.includes('versus')) order.splice(order.indexOf('career') + 1, 0, 'versus');
-  return {visible:{...visible, versus:visible.versus ?? visible.records}, order};
+  return {visible:{...visible, versus:visible.versus ?? visible.records}, order, gameDataDefault: data?.gameDataDefault};
 }
 
 export function hasProfileSaveSection(data: ProfileStatistics | undefined, key: ProfileSaveSection) {

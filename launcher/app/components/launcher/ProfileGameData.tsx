@@ -1,13 +1,11 @@
 import {useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties} from 'react';
 import {AnimatePresence, motion} from 'motion/react';
-import {ArrowLeft, CloudUpload} from 'lucide-react';
-import {Link} from 'react-router';
+import {ArrowLeft} from 'lucide-react';
 import {PRODUCT_GAMES, multiplayerConfigForProduct, multiplayerProductIdForGame, type GameId} from '../../../src/contracts/product-catalog.mts';
 import {Button} from '../../ui/button';
 import {useSiteReducedMotion} from '../../ui/use-site-reduced-motion';
 import {useLocale, type Translate, type UiMessageKey} from '../../i18n';
 import {formatPlaytime, type ProfileStatistics, type SaveProgress} from '../../services/cloud-saves';
-import type {ProfileSaveSection} from '../../models/profile-display';
 import {bookGameArtwork} from './book-artwork';
 import {bookGameShortTitle} from './products';
 import './profile-game-data.css';
@@ -28,18 +26,24 @@ function WorkArtwork({game}:{game:GameId}) {
   const source=bookGameArtwork(game);
   return source?<img src={source} alt="" loading="lazy" decoding="async"/>:<span className="profile-work-art-fallback" aria-hidden="true">{bookGameShortTitle(game)}</span>;
 }
-export default function ProfileGameData({data,section,owner,settingsHref}: {data:ProfileStatistics;section:ProfileSaveSection;owner:boolean;settingsHref:string}) {
+export function ProfileAllGames({data, showCareer, showRecords}: {
+  data: ProfileStatistics; showCareer: boolean; showRecords: boolean;
+}) {
   const {locale,t}=useLocale();
-  return section === 'career' ? <section id="profile-career" className="profile-panel profile-public-section profile-game-data">
-    <div className="profile-section-title"><h2>{t('profile.tab.career')}</h2>{owner&&<Button variant="ghost" size="sm" asChild><Link to={settingsHref}><CloudUpload/>{t('cloudSave.title')}</Link></Button>}</div>
-    <ClearMatrix data={data}/>
-  </section> : <section id="profile-records" className="profile-panel profile-public-section profile-game-data">
-    <div className="profile-section-title"><h2>{t('profile.tab.records')}</h2>{data.playtimeSeconds!==null&&<span className="profile-flight-total">{t('profile.flightTime')} <strong>{formatPlaytime(data.playtimeSeconds,locale)}</strong></span>}</div>
-    <div className="profile-playtime-list">{data.games.filter(game=>game.statistics.playtimeSeconds!==null||game.statistics.playCount!==null).sort((a,b)=>(b.statistics.playtimeSeconds??-1)-(a.statistics.playtimeSeconds??-1)).map(game=><div key={game.statistics.game} className="profile-playtime-game">
-      <WorkArtwork game={game.statistics.game}/><strong>{PRODUCT_GAMES[game.statistics.game].title}</strong>
-      <span>{game.statistics.playtimeSeconds!==null?formatPlaytime(game.statistics.playtimeSeconds,locale):t('profile.playCount',{count:game.statistics.playCount??0})}</span>
-    </div>)}</div>
-  </section>;
+  const games = showRecords ? data.games.filter(game => game.statistics.playtimeSeconds !== null || game.statistics.playCount !== null)
+    .sort((a,b) => (b.statistics.playtimeSeconds ?? -1) - (a.statistics.playtimeSeconds ?? -1)) : [];
+  const total = showRecords ? data.playtimeSeconds : null;
+  return <>
+    {showCareer && <ClearMatrix data={data}/>}
+    {(total !== null || games.length > 0) && <div className="profile-game-data-flight">
+      {total !== null && <div className="profile-flight-total">{t('profile.flightTime')} <strong>{formatPlaytime(total,locale)}</strong></div>}
+      <div className="profile-playtime-list">{games.map(({statistics}) => <div key={statistics.game} className="profile-playtime-game">
+        <WorkArtwork game={statistics.game}/><strong>{PRODUCT_GAMES[statistics.game].title}</strong>
+        <span>{statistics.playtimeSeconds !== null ? formatPlaytime(statistics.playtimeSeconds,locale) : t('profile.playCount',{count:statistics.playCount ?? 0})}</span>
+      </div>)}</div>
+    </div>}
+    {!showCareer && total === null && games.length === 0 && <p className="profile-muted">{t('profile.gameDataEmpty')}</p>}
+  </>;
 }
 function ClearMatrix({data}: {data:ProfileStatistics}) {
   const {t}=useLocale(),lessMotion=useSiteReducedMotion();

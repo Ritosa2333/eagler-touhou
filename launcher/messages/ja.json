@@ -2473,5 +2473,13 @@
   "multiplayer_loadout_th01_reimu": "霊夢",
   "multiplayer_loadout_th02_fast": "高速型",
   "multiplayer_loadout_th02_balanced": "バランス型",
-  "multiplayer_loadout_th02_slow": "低速型"
+  "multiplayer_loadout_th02_slow": "低速型",
+  "profile_gameData": "ゲームデータ",
+  "profile_gameDataAll": "全作品",
+  "profile_gameDataDefault": "既定の表示",
+  "profile_openHome": "プロフィールを見る",
+  "profile_gameDataEmpty": "ゲームデータはまだありません",
+  "profile_gameDataHide": "非表示にする",
+  "profile_gameDataShow": "表示する",
+  "profile_gameDataMakeDefault": "既定にする"
 }

@@ -2473,5 +2473,13 @@
   "multiplayer_loadout_th01_reimu": "灵梦",
   "multiplayer_loadout_th02_fast": "高速型",
   "multiplayer_loadout_th02_balanced": "平衡型",
-  "multiplayer_loadout_th02_slow": "低速型"
+  "multiplayer_loadout_th02_slow": "低速型",
+  "profile_gameData": "游戏数据",
+  "profile_gameDataAll": "全作",
+  "profile_gameDataDefault": "默认展示",
+  "profile_openHome": "进入主页",
+  "profile_gameDataEmpty": "暂无游戏数据",
+  "profile_gameDataHide": "隐藏",
+  "profile_gameDataShow": "显示",
+  "profile_gameDataMakeDefault": "设为默认"
 }

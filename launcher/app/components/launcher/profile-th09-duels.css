@@ -1,6 +1,5 @@
 .profile-th09 {container-type:inline-size}
 
-.profile-th09-cover {display:block;flex:none;width:32px;height:auto;border-radius:5px}
 .profile-th09-overview-data {display:grid;gap:14px}
 .profile-th09-whr {
   --profile-th09-stat-size:clamp(21px,4.5cqi,31px);

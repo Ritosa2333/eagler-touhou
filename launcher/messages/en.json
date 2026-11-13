@@ -2473,5 +2473,13 @@
   "multiplayer_loadout_th01_reimu": "Reimu",
   "multiplayer_loadout_th02_fast": "Fast",
   "multiplayer_loadout_th02_balanced": "Balanced",
-  "multiplayer_loadout_th02_slow": "Slow"
+  "multiplayer_loadout_th02_slow": "Slow",
+  "profile_gameData": "Game data",
+  "profile_gameDataAll": "All games",
+  "profile_gameDataDefault": "Default view",
+  "profile_openHome": "Open profile",
+  "profile_gameDataEmpty": "No game data yet",
+  "profile_gameDataHide": "Hide",
+  "profile_gameDataShow": "Show",
+  "profile_gameDataMakeDefault": "Set default"
 }
