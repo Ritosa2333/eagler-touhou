@@ -211,7 +211,10 @@ function groupDuels(duels: z.infer<typeof duel>[]): DuelGroup[] {
   for (const item of duels) {
     const date = new Date(item.playedAt).toDateString();
     let items = days.get(date);
-    if (!items) days.set(date, items = []);
+    if (!items) {
+      items = [];
+      days.set(date, items);
+    }
     items.push(item);
   }
   return [...days];
@@ -253,7 +256,7 @@ function DuelHistory({groups}: {groups: DuelGroup[]}) {
             {item.opponent ? <span className="profile-th09-opponent">
               <PlayerAvatarCard username={item.opponent.username} name={item.opponent.displayName}
                 avatar={item.opponent.avatar ? `/api/v1/profiles/${encodeURIComponent(item.opponent.username)}/avatar/${item.opponent.avatar}` : undefined}>
-                <button className="player-card-avatar-button" aria-label={item.opponent.displayName}><AccountAvatar src={item.opponent.avatar
+                <button type="button" className="player-card-avatar-button" aria-label={item.opponent.displayName}><AccountAvatar src={item.opponent.avatar
                   ? `/api/v1/profiles/${encodeURIComponent(item.opponent.username)}/avatar/${item.opponent.avatar}`
                   : undefined} loading="lazy"/></button>
               </PlayerAvatarCard>
@@ -382,6 +385,7 @@ function RatingPlot({points, comparison, character, startAt, endAt, rank, title,
 }) {
   const {locale} = useLocale();
   const [selected, setSelected] = useState<number | null>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Switching series clears the selected point while keeping existing lines mounted.
   useEffect(() => setSelected(null), [rank, character]);
   const numbers = new Intl.NumberFormat(locale);
   const dates = new Intl.DateTimeFormat(locale, {dateStyle: 'medium', timeZone: 'UTC'});

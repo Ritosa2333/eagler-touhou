@@ -322,7 +322,7 @@ html[data-custom-background] body:not(.mp-room-active) .account-settings :is(.ac
   html[data-custom-background] body:not(.mp-room-active) .account-settings :is(.account-settings-nav,.account-settings-content) {padding:16px}
 }
 
-.settings-game-data{display:grid;gap:2px;padding:4px;border:1px solid var(--kit-border);border-radius:8px}
+.settings-game-data{display:grid;min-inline-size:0;margin:0;gap:2px;padding:4px;border:1px solid var(--kit-border);border-radius:8px}
 .settings-game-data-row{display:grid;grid-template-columns:30px minmax(0,1fr) auto 32px;align-items:center;gap:5px;min-height:42px;padding:0 3px}
 .settings-game-data-icon{display:grid;place-items:center}
 .settings-game-data-icon svg,.settings-game-data-icon img{width:20px;height:20px;border-radius:4px}

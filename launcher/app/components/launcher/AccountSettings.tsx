@@ -256,7 +256,7 @@ function ProfileSettings({initialProfile,initialDisplay,review,onSave,username}:
           </FieldGroup>
           <section className="settings-section" aria-labelledby="settings-display-title">
             <h3 id="settings-display-title">{t('profile.display')}</h3>
-            <div className="settings-game-data" role="group" aria-label={t('profile.gameData')}>
+            <fieldset className="settings-game-data" aria-label={t('profile.gameData')}>
               {gameDataViews.map(view => {
                 const label = t(gameDataViewLabels[view]);
                 const isDefault = defaultView === view;
@@ -277,7 +277,7 @@ function ProfileSettings({initialProfile,initialDisplay,review,onSave,username}:
                   </Button>
                 </div>;
               })}
-            </div>
+            </fieldset>
             <Field orientation="horizontal" className="settings-switch-row"><FieldLabel htmlFor="settings-friends">{t('profile.friendsVisibility')}</FieldLabel><FieldContent>
               <Toggle id="settings-friends" checked={visible.friends} disabled={busy} onCheckedChange={value=>{setVisible(current=>({...current,friends:value}));setSaved(false);}}/>
             </FieldContent></Field>

@@ -132,6 +132,7 @@ export function Th09RatingBoard() {
     return ()=>{document.title = previousTitle;};
   }, [t]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Manual retry starts a fresh request cycle.
   useEffect(() => {
     const controller = new AbortController();
     let pending = false;
@@ -229,7 +230,7 @@ function RatingBoard({rows, updatedAt, character, defaultMinimum, onCharacterCha
     if (!located) return;
     focusRow.current?.focus({ preventScroll: true });
     focusRow.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  }, [located, scope]);
+  }, [located]);
 
   function sortBy(next: Column) {
     setSort({ scope, key: next.key, direction: sort.key === next.key ? -sort.direction
@@ -273,7 +274,7 @@ function RatingBoard({rows, updatedAt, character, defaultMinimum, onCharacterCha
     <aside className="rating-overview" id="rating-overview" aria-label={t('th09.boardDistribution')} hidden={!distributionOpen}>
       {distributionOpen && updatedAt !== undefined && <RatingOverview rows={pool} matches={search ? found : []} updatedAt={updatedAt} characterBoard={characterBoard} />}
     </aside>
-    <div className="rating-tools" role="group" aria-label={t('th09.boardTools')}>
+    <fieldset className="rating-tools" aria-label={t('th09.boardTools')}>
       <div className="rating-character-select">
         <MainSelectPrefix prefix={<RatingCharacterThumbnail character={character} />}>
           <MainSelect id="rating-board-scope" aria-label={t('th09.boardSelect')} value={scope} onChange={event => {
@@ -330,7 +331,7 @@ function RatingBoard({rows, updatedAt, character, defaultMinimum, onCharacterCha
           </Field></>}
         </PopoverContent>
       </Popover>
-    </div>
+    </fieldset>
     {loading && <span className="sr-only" role="status">{t('th09.boardLoading')}</span>}
     {(!rows || visible.length > 0) ? <section className="rating-table-wrap" aria-label={boardTitle} aria-busy={loading}>
       <table className="rating-table" aria-label={character === undefined ? boardTitle : t('th09.boardCharacter', {name: th09CharacterName(character, t)})}>
@@ -347,7 +348,7 @@ function RatingBoard({rows, updatedAt, character, defaultMinimum, onCharacterCha
             </ActionMenuItem>)}
           </ActionMenu>
         </th></tr></thead>
-        <tbody>{loading && Array.from({length: 4}, (_, index) => <tr key={index} className="rating-placeholder-row" aria-hidden="true">
+        <tbody>{loading && ['first','second','third','fourth'].map(key => <tr key={key} className="rating-placeholder-row" inert>
           {columns.map(item => <td key={item.key} data-column={item.key} data-compact={item.compact || undefined}
             data-numeric={item.numeric || undefined}><Skeleton /></td>)}
           <td className="rating-mobile-cell" />
@@ -404,7 +405,7 @@ function PlayerIdentity({row}: {row: Entry}) {
   if (row.characterScore) query.set('character', String(row.characterScore.character));
   return <span className="rating-player">
     <PlayerAvatarCard username={profile.username} name={profile.nickname} avatar={profile.avatar}>
-      <button className="player-card-avatar-button" aria-label={profile.nickname}><AccountAvatar src={profile.avatar} loading="lazy"/></button>
+      <button type="button" className="player-card-avatar-button" aria-label={profile.nickname}><AccountAvatar src={profile.avatar} loading="lazy"/></button>
     </PlayerAvatarCard>
     <Link className="rating-player-name" to={`/u/${encodeURIComponent(profile.username)}?${query}`}
       target="_blank" rel="noreferrer">
