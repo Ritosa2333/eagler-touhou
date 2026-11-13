@@ -256,6 +256,8 @@ async function compilePool(jobs, limit) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+  const reportPath = path.resolve(args.report);
+  if (fs.existsSync(reportPath)) die(`refusing to overwrite existing report: ${reportPath}`);
   const mapping = loadMapping();
   const selected = selectCases(args, mapping);
 
@@ -334,16 +336,8 @@ async function main() {
   fs.mkdirSync(objDir, { recursive: true });
   fs.mkdirSync(binDir, { recursive: true });
 
-  // 过期键目录清理（同键前缀安全；只删 64hex 命名且 7 天未用）。
-  try {
-    const weekMs = 7 * 24 * 3600 * 1000;
-    for (const name of fs.readdirSync(cacheRoot)) {
-      if (!/^[0-9a-f]{64}$/.test(name) || name === key) continue;
-      const dir = path.join(cacheRoot, name);
-      const stat = fs.statSync(dir);
-      if (Date.now() - stat.mtimeMs > weekMs) fs.rmSync(dir, { recursive: true, force: true });
-    }
-  } catch { /* 清理失败不影响正确性 */ }
+  // Existing caches and evidence belong to earlier work. Never prune them as
+  // a side effect of verification; each invocation reserves fresh output paths.
 
   const objFor = (file) => {
     const rel = path.relative(PORT, file).replaceAll(path.sep, "__");
@@ -376,9 +370,11 @@ async function main() {
     for (const job of compileJobs) fs.renameSync(job.tmp, job.obj);
   }
 
-  const logsDir = path.join(PORT, "artifacts/workflow/native-logs");
+  const outputBase = process.env.TH13_NATIVE_OUTPUT_ROOT || path.join(OUTER, "artifacts/mp-native-run");
+  fs.mkdirSync(outputBase, { recursive: true });
+  const runRoot = fs.mkdtempSync(path.join(outputBase, "run-"));
+  const logsDir = path.join(runRoot, "logs");
   fs.mkdirSync(logsDir, { recursive: true });
-  const runRoot = path.join(OUTER, "artifacts/mp-native-run");
   const timeoutSeconds = Number.parseInt(process.env.TH13_NATIVE_TIMEOUT_SECONDS ?? "", 10) || 7200;
 
   const results = [];
@@ -398,8 +394,7 @@ async function main() {
 
     // 运行：独立 cwd（生产存档/导出写 CWD，不污染仓树），环境与 e2e 同义。
     const runDir = path.join(runRoot, id.replaceAll(/[^a-z0-9_]/gi, "_"));
-    fs.rmSync(runDir, { recursive: true, force: true });
-    fs.mkdirSync(runDir, { recursive: true });
+    fs.mkdirSync(runDir);
     const logPath = path.join(logsDir, `${id.replaceAll(/[^a-z0-9_]/gi, "_")}.log`);
     const env = {
       ...process.env,
@@ -468,9 +463,8 @@ async function main() {
     skipped: 0,
     cases: results,
   };
-  const reportPath = path.resolve(args.report);
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
-  fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+  fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, { flag: "wx" });
   console.error(`native-runner: report=${reportPath} passed=${results.filter((r) => r.passed).length}/${results.length}`);
   process.exit(allPassed ? 0 : 1);
 }
