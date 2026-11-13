@@ -108,6 +108,7 @@ bool AnmVm::copy_script(AnmResource& file,i32 script,u16 file_id,const float* ra
         const auto origin=position;
         *this=file.templates->scripts[u32(script)];
         position=origin;id=0;registry={this,nullptr,nullptr};child={this,nullptr,nullptr};draw_next=nullptr;
+        th14_draw_link=nullptr;th14_draw_layer=th14_draw_epoch=0;
         geometry=nullptr;parent=nullptr;slowdown_factor=0;inherited_color=0;
         before_update=nullptr;draw_callback=nullptr;after_update=nullptr;sprite_callback=nullptr;th13_effect=0;
         timer={};timer.set(0,rate);age={};age.set(0,rate);

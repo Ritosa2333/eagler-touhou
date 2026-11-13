@@ -18,7 +18,7 @@ await import(${JSON.stringify(pathToFileURL(resolve(build,'Th14ArchiveDecodeWork
 let invoke=()=>{},worker,pointer=0,report,copies=0;const corruptControls=[];
 const runtime=new Th14WebGpuRuntime({ccall:()=>invoke()},{createArchiveWorker:()=>worker=new Worker(pathToFileURL(adapter),{type:'module'})});module.th14WebGpuRuntime=runtime;
 const copy=runtime.archiveAnmCopy.bind(runtime);runtime.archiveAnmCopy=(name,bytes)=>{const result=copy(name,bytes);if(result===1)++copies;return result;};
-const ordinaryCopy=runtime.archiveAnmCopy,names=['sig.anm','ascii.anm','text.anm'];
+const ordinaryCopy=runtime.archiveAnmCopy,names=['sig.anm','ascii_1280.anm','text.anm'];
 const deadline=setTimeout(()=>void worker?.terminate(),60000);
 async function valid(){
     invoke=()=>{assert.equal(runtime.archiveStatus(),1);assert.equal(module._fixture_signature(),1);assert.equal(module._fixture_load(),1,module.UTF8ToString(module._fixture_error()));
@@ -26,7 +26,7 @@ async function valid(){
     await runtime.scheduleArchive(1,0,names).delivered;
 }
 try{
-    const bytes=new Uint8Array(await readFile('H:/Games/th/14/th14.dat'));assert.equal(sha(bytes),'57d84a5cbe82460931cca26f090a0fde7aef180889ce5bfe8315851fc97b0233');
+    const bytes=new Uint8Array(await readFile(process.env.TH_DAT??'H:/Games/th/14/th14.dat'));assert.equal(sha(bytes),'57d84a5cbe82460931cca26f090a0fde7aef180889ce5bfe8315851fc97b0233');
     pointer=module._malloc(bytes.length);module.HEAPU8.set(bytes,pointer);assert.equal(module._fixture_open(pointer,bytes.length),1);assert.equal(module._fixture_empty(),1,'Caller must leave initial resources unparsed');
     runtime.openArchive(bytes);assert.equal(await runtime.archiveOpening,227);await valid();assert.equal(copies,3);
     assert.equal(module._fixture_reset(),1);assert.equal(module._fixture_empty(),1);const before=copies;

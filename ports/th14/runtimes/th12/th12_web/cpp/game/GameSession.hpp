@@ -1,4 +1,8 @@
 #pragma once
+#include "PracticeTh14.hpp"
+#if PORT_TITLE == 14
+#include "PracticeLaserPurpleTh14.hpp"
+#endif
 
 #include "GameSessionResources.hpp"
 #include "AnmManager.hpp"
@@ -109,6 +113,13 @@ public:
 #if PORT_TITLE==14
     LoadingTh14 shared_loading;
     FontBitmapTh14 font_bitmap;
+    PracticeTh14 practice_request,practice_run;
+    PurpleLaserTh14 purple_laser;
+    bool purple_show_history=false,purple_fast_retry=false;
+    u32 purple_retry_misses=0;
+    bool practice_enabled=false,practice_input_captured=false;
+    u32 practice_tools=0;
+    size_t practice_event=0;
 #endif
     SceneCompositor compositor{animations};
     GameEconomy economy;

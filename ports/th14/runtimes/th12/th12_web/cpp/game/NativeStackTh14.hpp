@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <cstring>
+#include "PracticeLaserPurpleTh14.hpp"
 namespace th11 {
 // Explicit data for the reference Win32 call stack. These are virtual ABI
 // addresses, not pointers into Wasm memory or values derived from game RNG.
@@ -15,6 +16,7 @@ struct NativeStackTh14 {
     // stack word later read by a constructor's first-frame 45286f call.
     Word spawn_scratch=0,spawn_scratch_mask=0,enemy_spawn_depth=0,ecl_animation_factory_depth=0;
     bool spawn_scratch_known=false;
+    PurpleLaserTh14* practice_laser=nullptr;
     struct CounterScope {
         Word* counter;
         explicit CounterScope(Word* value)noexcept:counter(value){if(counter)++*counter;}

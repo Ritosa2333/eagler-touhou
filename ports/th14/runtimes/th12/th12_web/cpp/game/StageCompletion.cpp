@@ -1,4 +1,5 @@
 #include "StageCompletion.hpp"
+#include "PracticeTh14.hpp"
 
 namespace th11 {
 namespace {
@@ -21,6 +22,10 @@ bool StageCompletion::complete(){
     economy.add_score(state.displayed_bonus);state.hud_flags|=kStageResultFlag;
     state.result_timer.set(0,rate);effects.recall_player_options();
     if(mode.practice||mode.replay_practice){
+        if(mode.stage==6&&(economy.th14_practice_tools&PrAllClear)){
+            const i32 bonus=wrapping_add(multiply(economy.lives,10000000),multiply(economy.th14_bombs,3000000));
+            economy.add_score(bonus);state.displayed_bonus=wrapping_add(state.displayed_bonus,bonus);state.hud_flags|=0x10;
+        }
         if(mode.control_mode!=0){request(StageExit::ReplayEnd);return true;}
         records.stages[mode.selection][economy.difficulty*8+mode.stage][0]=1;
         request(StageExit::Results);return true;

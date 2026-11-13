@@ -78,6 +78,7 @@ private:
     void show_end_choices(i32 script,i32 next,i32 count);
     void visible(bool value);
 #if PORT_TITLE == 14
+    i32 remaining_credits_th14()const;
     bool create_deferred_backdrop_th14();
     void manual_choices();
     bool manual_create(i32);

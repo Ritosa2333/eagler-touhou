@@ -46,9 +46,16 @@ export class Th14AsyncRuntime {
   }
   startFrames(callback,data) {
     if(!this.requestFrame)throw new Error('requestAnimationFrame unavailable');
+    let active=true,busy=false;
     const tick=time=>{
+      if(!active)return;
+      // Reserve the next refresh before the Promise chain runs. Do not
+      // accumulate stale frame callbacks while an Asyncify stack is busy.
+      this.requestFrame(tick);
+      if(busy)return;
+      busy=true;
       void this.run(()=>this.call('th14_async_frame','number',['number','number','number'],[callback,time,data]))
-        .then(again=>{if(again&&!this.failure)this.requestFrame(tick);},()=>{});
+        .then(again=>{active=!!again&&!this.failure;busy=false;},()=>{active=false;busy=false;});
     };
     return this.requestFrame(tick);
   }

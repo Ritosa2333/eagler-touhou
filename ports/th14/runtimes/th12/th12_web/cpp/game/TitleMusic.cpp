@@ -86,7 +86,10 @@ void TitleMenu::music_room(u32 pressed,u32 repeat){
             create(171+i,music_title_base+i);const char* translated=Localization::MusicTitle(u32(i+1),music_entries[i].title.c_str());
             std::string name=translated;
             if(translated!=music_entries[i].title.c_str()){
-                char prefix[16];std::snprintf(prefix,sizeof prefix,"No.%2d ",i+1);name=prefix+name;
+                if constexpr(kPortTitle==14){
+                    char line[512];const char* format=Localization::FormatStringById("Music Room Numbered Title","No.%2d %s");
+                    std::snprintf(line,sizeof line,format,i+1,translated);name=line;
+                }else{char prefix[16];std::snprintf(prefix,sizeof prefix,"No.%2d ",i+1);name=prefix+name;}
             }
             if(!scores.settings[0x26+i]){
                 std::string fallback=kPortTitle==14?"No.%2d  ":"No.%2d ";for(i32 n=0;n<11;++n)fallback+="\x81\x48";

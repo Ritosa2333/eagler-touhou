@@ -1,8 +1,19 @@
 #pragma once
 
 namespace th11::sdl {
-// Reconstruct the retail raw PCM file address space from its lossless tracks.
-// Ordinary reads still use the existing decoder and its original loop points.
+// Prefer the published Ogg tracks. Old installations may still have FLAC files
+// mounted under their previous package revision.
+inline ma_result open_th14_music(std::string& path,const ma_decoder_config& config,ma_decoder& decoder){
+    const auto result=ma_decoder_init_file(path.c_str(),&config,&decoder);
+    if(result!=MA_DOES_NOT_EXIST)return result;
+    auto legacy=path.substr(0,path.size()-4)+".flac";
+    const auto fallback=ma_decoder_init_file(legacy.c_str(),&config,&decoder);
+    if(fallback==MA_SUCCESS)path=std::move(legacy);
+    return fallback;
+}
+
+// Reconstruct the retail PCM address space from the decoded tracks.
+// Original loop points and Continue offsets remain in retail sample frames.
 struct Th14MusicStream {
     ma_data_source_base base{};
     ma_decoder* primary;
@@ -53,9 +64,9 @@ struct Th14MusicStream {
                 else{
                     const auto end=std::find(p,p+16,u8(0));std::string name(reinterpret_cast<const char*>(p),size_t(end-p));
                     const auto dot=name.find_last_of('.');if(dot==std::string::npos)return MA_INVALID_DATA;
-                    name.resize(dot);const auto path=std::string("/music/")+name+".flac";
+                    name.resize(dot);auto path=std::string("/music/")+name+".ogg";
                     auto config=ma_decoder_config_init(ma_format_f32,half(p+34),word(p+36));
-                    const auto result=ma_decoder_init_file(path.c_str(),&config,&preceding);if(result!=MA_SUCCESS)return result;
+                    const auto result=open_th14_music(path,config,preceding);if(result!=MA_SUCCESS)return result;
                     preceding_ready=true;decoder=&preceding;
                 }
                 const auto result=ma_data_source_seek_to_pcm_frame(decoder,(physical-offset)/align());if(result!=MA_SUCCESS)return result;

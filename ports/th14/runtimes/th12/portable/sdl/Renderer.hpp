@@ -7,6 +7,9 @@
 #include <map>
 #include <vector>
 #include <string>
+#if defined(PORT_TITLE) && PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
+struct ImDrawData;
+#endif
 
 // Semantic GLES renderer shared by the two games. Matrices and vertices stay
 // in C++; only resource decoding knows the original file format codes.
@@ -29,6 +32,12 @@ public:
     Statistics stats{};State state{};bool defer=false;
     Renderer(int version,Resolve,void*);~Renderer();
     bool initialize();void flush();void discard();bool commit();
+#if defined(PORT_TITLE) && PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
+    void render_imgui(const ::ImDrawData*,u32);
+#endif
+#if defined(__EMSCRIPTEN__) && defined(PORT_TITLE) && PORT_TITLE == 14
+    bool browser_draw_backpressured();
+#endif
     PipelineState& pipeline() override { return state.pipeline; }
     void transform(MatrixKind,const void*);void viewport(const Viewport&);
     void draw(Topology primitive,u32 count,const void*,u32 stride,const void* indices=nullptr,IndexType indexFormat=IndexType::UInt16);
@@ -45,7 +54,20 @@ private:
 #ifdef TH14_WEBGPU_BACKEND
     WebGpuRenderer* webGpu=nullptr;
 #endif
-    struct GPU {GLuint texture=0,framebuffer=0;u32 version=~0u;bool rendered=false;GLuint attached=~0u;std::array<GLint,4> sampler{};};
+    struct GPU {
+        GLuint texture=0,framebuffer=0;
+        u32 version=~0u;
+        bool rendered=false;
+        GLuint attached=~0u;
+        std::array<GLint,4> sampler{};
+#if defined(PORT_TITLE) && PORT_TITLE == 14
+        struct ColorClear {
+            std::array<i32,4> rect{};
+            u32 color=0;
+            bool pending=false,dither=false;
+        } colorClear;
+#endif
+    };
     struct Depth {GLuint buffer=0;bool stencil=false;};
     struct Uniform {GLint location=-1;std::array<float,16> value{};int count=-1;};
     struct Program {GLuint id=0;std::array<Uniform,28> uniforms{};};
@@ -55,12 +77,29 @@ private:
     GLuint vertex=0,currentProgram=0,boundTexture=~0u,readFramebuffer=~0u,drawFramebuffer=~0u;
     std::map<std::array<u32,6>,GLuint> layouts;GLuint currentLayout=0;
     GLuint resampleProgram=0,resampleVao=0,weightTexture=0;
+#if defined(PORT_TITLE) && PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
+    GLuint imguiProgram=0,imguiVao=0,imguiVbo=0,imguiEbo=0,imguiFontTexture=0;
+    GLint imguiProjMtx=-1,imguiTexture=-1;
+#endif
     Program generic{};bool warming=true,buildingGeneric=false;Program* program=nullptr;
     std::array<float,256> alphaBoundaries{};
     Stream vertices{},indices{},instances{};State batchState{};
     std::vector<u8> batchBytes,quad,worlds,pixels;bool batching=false,instancing=false;
+#if defined(PORT_TITLE) && PORT_TITLE == 14
+    Topology batchTopology=Topology::Triangles;
+    std::vector<u8> triangleScratch;
+#endif
     u32 batchCount=0,pending=0;std::string failure;
-    GPU& surface(u32);GPU& target(u32,u32);void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32,bool clippedGeometry=false);
+#if defined(__EMSCRIPTEN__) && defined(PORT_TITLE) && PORT_TITLE == 14
+    GLsync previousBrowserFrame=nullptr,latestBrowserFrame=nullptr;
+    void fence_browser_frame();
+#endif
+    GPU& surface(u32,bool resolveColor=true);
+    GPU& target(u32,u32,bool resolveColor=true);
+#if defined(PORT_TITLE) && PORT_TITLE == 14
+    void resolve_color_clear(GPU&);
+#endif
+    void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32,bool clippedGeometry=false);
     void bind_texture(GLuint);void bind_framebuffer(GLenum,GLuint);
     void select(const State&);void uniform(int,int,const float*);void integer(int,int);
     u32 upload(Stream&,GLenum,const void*,u32,u32);

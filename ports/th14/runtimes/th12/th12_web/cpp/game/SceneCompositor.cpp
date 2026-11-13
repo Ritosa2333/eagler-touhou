@@ -114,15 +114,19 @@ bool SceneCompositor::draw(AnmRenderer& renderer,SceneDrawKind kind){
     if(kind==SceneDrawKind::End){renderer.flush();world_camera.offset={};if constexpr(kPortTitle==14)scaled_play_camera.offset={};return true;}
     if(kind==SceneDrawKind::Begin){
         renderer.invalidate();
-        if(!renderer.clear_target(resource?0xffffffff:clear_color))return false;
-        if(resource&&(!renderer.select_target(resource,2)||!renderer.clear_target(clear_color,&region)))return false;
+        // The screen pass or the stage background often replaces these colors.
+        // The backend still applies the depth clears here and resolves the
+        // color before any pass that uses it.
+        const u32 clear_flags=3u | (kPortTitle==14&&resource?touhou::graphics::DeferColorClear:0u);
+        if(!renderer.clear_target(resource?0xffffffff:clear_color,nullptr,clear_flags))return false;
+        if(resource&&(!renderer.select_target(resource,2)||!renderer.clear_target(clear_color,&region,clear_flags)))return false;
 #if PORT_TITLE == 14
         // Retail446c72..446cb1 writes play origin after target/clear only
         // when the intermediate render target exists. Reset retains it.
         if(resource)manager.render_space.play_origin={float(i32(world_camera.render_width)/2),float((i32(world_camera.render_height)-448)/2)};
 #endif
         renderer.offset={};renderer.tint_enabled=false;renderer.tint=0x80808080;
-        
+
 #if PORT_TITLE == 14
         renderer.upload_camera(full_camera);
 #else

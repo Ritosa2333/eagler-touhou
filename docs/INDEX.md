@@ -1,6 +1,6 @@
 # 文档总表
 
-共 567 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 572 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -181,6 +181,10 @@
 | 作品源码文档 | [ports/th13/docs/release-packaging.md](../ports/th13/docs/release-packaging.md) | th13 网页版发布打包排除清单（Pre-Release，2026-11-05） |
 | 作品源码文档 | [ports/th13/tools/replay-verifier/README.md](../ports/th13/tools/replay-verifier/README.md) | replay-verifier |
 | 作品源码文档 | [ports/th13/web/sdl-runtime/build-badge.txt](../ports/th13/web/sdl-runtime/build-badge.txt) | cea70e4f |
+| 作品源码文档 | [ports/th14/docs/porting/TH14_ANM_VM_ORACLE.md](../ports/th14/docs/porting/TH14_ANM_VM_ORACLE.md) | TH14 ANM VM 原版对照 |
+| 作品源码文档 | [ports/th14/docs/porting/TH14_BROWSER_PERFORMANCE.md](../ports/th14/docs/porting/TH14_BROWSER_PERFORMANCE.md) | TH14 browser frame pacing |
+| 作品源码文档 | [ports/th14/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md](../ports/th14/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md) | TH14 texture sizes |
+| 作品源码文档 | [ports/th14/docs/porting/TH14_UI_ORACLE.md](../ports/th14/docs/porting/TH14_UI_ORACLE.md) | TH14 界面 Oracle |
 | 作品源码文档 | [ports/th15-mp/docs/DEVELOPMENT.md](../ports/th15-mp/docs/DEVELOPMENT.md) | TH15 多人版开发指南 |
 | 作品源码文档 | [ports/th15/docs/DEVELOPMENT.md](../ports/th15/docs/DEVELOPMENT.md) | TH15 开发指南 |
 | 作品源码文档 | [ports/th15/web/docs/mobile-gpu-diagnostics.md](../ports/th15/web/docs/mobile-gpu-diagnostics.md) | TH15 移动端 GPU 诊断 |
@@ -547,6 +551,7 @@
 | 许可证与声明 | [ports/th13/LICENSE](../ports/th13/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th13/NOTICE.md](../ports/th13/NOTICE.md) | Source and asset notices |
 | 许可证与声明 | [ports/th13/portable/sdl/third_party/miniaudio.LICENSE](../ports/th13/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
+| 许可证与声明 | [ports/th14/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE](../ports/th14/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th15-mp/LICENSE](../ports/th15-mp/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th15-mp/portable/browser/LICENSE.eagler-common](../ports/th15-mp/portable/browser/LICENSE.eagler-common) | LICENSE |
 | 许可证与声明 | [ports/th15-mp/portable/sdl/third_party/miniaudio.LICENSE](../ports/th15-mp/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |

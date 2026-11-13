@@ -229,7 +229,7 @@ bool AudioDevice::consume_initial_music_request(bool native_direct_sound){
         if(native_direct_sound){a.music.reset();a.track=-1;a.music_paused=false;a.music_fade={};}
         if(a.preloaded_music[slot]&&a.preloaded_names[slot]==request.file)return Result::Done;
         a.preloaded_names[slot]=request.file;++a.preload_calls;
-        if(!native_direct_sound)return Result::Done;
+        if(!native_direct_sound||!music_enabled)return Result::Done;
         a.preloaded_music[slot].reset();
         const u8* format=nullptr;
         for(u32 n=0;n+52<=a.formats.size();n+=52)if(std::strncmp(reinterpret_cast<const char*>(a.formats.data()+n),request.file,16)==0){format=a.formats.data()+n;break;}
@@ -238,16 +238,16 @@ bool AudioDevice::consume_initial_music_request(bool native_direct_sound){
         const u32 bytes=word(format+20),total=word(format+28);
         if(!align||!rate||!channels||bits!=16||bytes%align||bytes!=total){error="Unsupported initial music PCM layout";return Result::Failed;}
         std::string stem=request.file;const auto dot=stem.find_last_of('.');if(dot!=std::string::npos)stem.erase(dot);
-        const auto path=std::string("/music/")+stem+".flac";
+        auto path=std::string("/music/")+stem+".ogg";
         ma_decoder decoder{};const auto config=ma_decoder_config_init(ma_format_s16,channels,rate);
-        if(ma_decoder_init_file(path.c_str(),&config,&decoder)!=MA_SUCCESS){error="Unable to preload "+path;return Result::Failed;}
+        if(open_th14_music(path,config,decoder)!=MA_SUCCESS){error="Unable to preload "+path;return Result::Failed;}
         auto pcm=std::make_shared<Impl::MusicPcm>();pcm->filename=request.file;pcm->format=format;pcm->wave.resize(44+bytes);
         ma_uint64 length=0,read=0;const bool ok=ma_decoder_get_length_in_pcm_frames(&decoder,&length)==MA_SUCCESS&&length==total/align&&
             ma_decoder_read_pcm_frames(&decoder,pcm->wave.data()+44,bytes/align,&read)==MA_SUCCESS&&read==bytes/align;
         ma_decoder_uninit(&decoder);
         if(!ok){error="Initial music PCM length differs from original: "+path;return Result::Failed;}
         // A 44-byte WAV view lets the existing streaming/Continue decoder
-        // read this exact s16 PCM without keeping a second payload copy.
+        // read the decoded s16 PCM without keeping a second payload copy.
         auto* w=pcm->wave.data();const auto put32=[&](u32 offset,u32 value){std::memcpy(w+offset,&value,4);};
         const auto put16=[&](u32 offset,u16 value){std::memcpy(w+offset,&value,2);};
         std::memcpy(w,"RIFF",4);put32(4,36+bytes);std::memcpy(w+8,"WAVEfmt ",8);put32(16,16);put16(20,1);put16(22,u16(channels));
@@ -267,6 +267,14 @@ bool AudioDevice::music(i32 track){
     if(a.native_direct_sound)for(u32 slot=0;slot<2;++slot)if(a.preloaded_music[slot]&&a.preloaded_names[slot]==filename){cached_music=a.preloaded_music[slot];format=cached_music->format;break;}
 #endif
 
+#if PORT_TITLE == 14
+    // The launcher can select no BGM while optional tracks are unavailable.
+    // Keep cue selection for Game Over/Continue without opening absent files.
+    if(!music_enabled&&!a.music){
+        a.track=track;a.music_paused=false;a.fade=a.fade_total=0;a.music_fade={};
+        return true;
+    }
+#endif
     if(a.track==track&&a.music){a.fade=0;a.music_paused=false;
 #if PORT_TITLE == 14
         a.music_fade={};
@@ -281,17 +289,13 @@ bool AudioDevice::music(i32 track){
 #endif
         ma_sound_set_volume(&a.music->sound,music_enabled?volume(SoundEffects::adjusted_volume(0,music_volume,true)):0.f);ma_sound_start(&a.music->sound);return true;}
     auto next=std::make_unique<Impl::Voice>();
-#if PORT_TITLE == 14
-    const auto path=std::string("/music/")+stem+".flac";
-#else
-    const auto path=std::string("/music/")+stem+".ogg";
-#endif
+    auto path=std::string("/music/")+stem+".ogg";
     const u32 rate=word(format+36),align=short_word(format+44),channels=short_word(format+34),total=word(format+28),intro=word(format+24);
     if(!align||!rate||!channels||intro>=total){error="Invalid music loop";return false;}
     auto config=ma_decoder_config_init(ma_format_f32,channels,rate);
 #if PORT_TITLE == 14
     next->cached_pcm=std::move(cached_music);
-    const auto decoded=next->cached_pcm?ma_decoder_init_memory(next->cached_pcm->wave.data(),next->cached_pcm->wave.size(),&config,&next->decoder):ma_decoder_init_file(path.c_str(),&config,&next->decoder);
+    const auto decoded=next->cached_pcm?ma_decoder_init_memory(next->cached_pcm->wave.data(),next->cached_pcm->wave.size(),&config,&next->decoder):open_th14_music(path,config,next->decoder);
     if(decoded!=MA_SUCCESS){error="Unable to decode "+path;return false;}next->decoded=true;
     if(next->cached_pcm)++a.preload_cache_hits;
 #else
@@ -349,7 +353,11 @@ void AudioDevice::pause_music(bool paused){auto& a=*impl;if(!a.music||a.music_pa
 #endif
     if(paused)ma_sound_stop(&a.music->sound);else ma_sound_start(&a.music->sound);}
 bool AudioDevice::save_music(){
-    auto& a=*impl;discard_saved_music();if(!a.music||a.track<0)return false;
+    auto& a=*impl;discard_saved_music();
+#if PORT_TITLE == 14
+    if(!music_enabled&&!a.music){a.saved_track=a.track;a.track=-1;return a.saved_track>=0;}
+#endif
+    if(!a.music||a.track<0)return false;
 #if PORT_TITLE == 14
     // Retail449e98 obtains wrapped clock time, independently of decoder read-ahead.
     a.saved_position=a.music->time.position(a.clock());
@@ -362,7 +370,13 @@ bool AudioDevice::save_music(){
     return true;
 }
 bool AudioDevice::restore_music(){
-    auto& a=*impl;if(!a.saved_music)return false;
+    auto& a=*impl;
+#if PORT_TITLE == 14
+    if(!music_enabled&&!a.saved_music&&a.saved_track>=0){
+        a.track=a.saved_track;a.saved_track=-1;a.music_paused=false;return true;
+    }
+#endif
+    if(!a.saved_music)return false;
 #if PORT_TITLE == 14
     // Retail481f3c..481f55 truncates sample time and subtracts one PCM frame.
     const double sample_time=a.saved_position*double(a.saved_music->time.rate);

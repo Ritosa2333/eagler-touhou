@@ -104,17 +104,18 @@ constexpr u16 anm_th16_field2_bit7 = 0x7134;
 constexpr u16 anm_th16_field2_bit8 = 0x7135;
 constexpr u16 anm_th16_field2_bit9 = 0x7136;
 constexpr u16 anm_th16_visible = 0x7137;
+constexpr u16 anm_th14_rotation_z_interpolate = 0x7138;
 constexpr AnmOpcodeRow th13_anm_opcodes[] = {
 
 // >>> th13 rows
-    { 0, 0, 53, "measured" },  // 
-    { 1, 1, 994, "measured" },  // 
+    { 0, 0, 53, "measured" },  //
+    { 1, 1, 994, "measured" },  //
     { 2, 2, 0, "native" },  // stop without hiding or retiring the VM
-    { 3, 63, 1388, "measured" },  // 
-    { 4, 69, 48, "measured" },  // 
+    { 3, 63, 1388, "measured" },  //
+    { 4, 69, 48, "measured" },  //
     { 5, 64, 2306, "measured" },  // S
     { 6, 75, 0, "native" },  // delay the script timer
-    { 7, 81, 541, "measured" },  // 
+    { 7, 81, 541, "measured" },  //
     { 100, 6, 138, "measured" },  // SS
     { 101, 7, 0, "family" },  // ff
     { 102, 8, 0, "family" },  // SS
@@ -168,7 +169,7 @@ constexpr AnmOpcodeRow th13_anm_opcodes[] = {
     { 305, 73, 4, "measured" },  // S
     { 306, anm_th13_flag15, 0, "native" },  // raw flags bit 15; never delays the timer
     { 307, 87, 368, "measured" },  // S
-    { 308, 61, 18, "measured" },  // 
+    { 308, 61, 18, "measured" },  //
     { 309, 62, 0, "native" },  // vertical flip
     { 310, 72, 0, "native" },  // visibility
     { 311, 89, 187, "measured" },  // S
@@ -197,7 +198,7 @@ constexpr AnmOpcodeRow th13_anm_opcodes[] = {
     { 415, 53, 26, "measured" },  // fff
     { 416, 54, 0, "shape" },  // ff
     { 417, 55, 0, "native" },  // raw alpha, duration
-    { 418, 98, 0, "context" },  // 
+    { 418, 98, 0, "context" },  //
     { 419, 99, 0, "context" },  // S
     { 420, 100, 0, "context" },  // Sfffffffff
     { 421, 65, 400, "measured" },  // ss
@@ -299,8 +300,10 @@ constexpr AnmOpcodeRow th14_anm_opcodes[] = {
     {400,48,0,"native"}, {401,49,0,"native"}, {402,50,0,"native"},
     {404,52,0,"native"}, {406,76,0,"native"},
     {407,56,0,"native"}, {408,57,0,"native"}, {409,58,0,"native"},
-    {410,59,0,"native"}, {412,60,0,"native"}, {413,78,0,"native"}, {414,79,0,"native"},
-    {415,53,0,"native"}, {416,54,0,"native"}, {417,55,0,"native"}, {422,83,0,"native"},
+    {410,59,0,"native"}, {411,anm_th14_rotation_z_interpolate,0,"native"},
+    {412,60,0,"native"}, {413,78,0,"native"}, {414,79,0,"native"},
+    {415,53,0,"native"}, {416,54,0,"native"}, {417,55,0,"native"},
+    {418,98,0,"native"}, {419,99,0,"native"}, {422,83,0,"native"},
     {425,70,0,"native"}, {426,71,0,"native"}, {427,93,0,"native"}, {428,94,0,"native"},
     {429,anm_th13_texture_scale,0,"native"}, {430,anm_th13_texture_scale_interpolate,0,"native"},
     {433,anm_th13_polar_interpolate,0,"native"}, {434,anm_th13_extra_scale,0,"native"},

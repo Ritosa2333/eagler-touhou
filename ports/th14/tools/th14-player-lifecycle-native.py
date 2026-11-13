@@ -54,6 +54,9 @@ def main():
  rows=[]
  for kind,flags,elapsed,active,scale_flags in itertools.product((5,6),(0,1,0x23),(0,59,60,120),(0,1),(0,8)):
   for lives in (-1,0,2):rows.append(run(kind,lives,2,7,100,7,0,1,active,flags,elapsed,scale_flags))
+ # Sakuya A's armed shield uses controller state 2, not the active Bomb state 1.
+ for kind,flags,elapsed in itertools.product((5,6),(1,0x23),(0,59,60,120)):
+  rows.append(run(kind,2,2,7,100,7,0,1,2,flags,elapsed,8))
  for fragments in (-1,32768,65537,2147483647):rows.append(run(6,2,2,fragments,100,7,0,1,0,0,0,0))
  for kind,frame,bombs,held,available,active,power in itertools.product((1,4),(0,7,8),(0,1,3,9),(0,2),(0,1),(0,1),(0,100)):
   rows.append(run(kind,2,bombs,5,power,frame,held,available,active,0,0,0))

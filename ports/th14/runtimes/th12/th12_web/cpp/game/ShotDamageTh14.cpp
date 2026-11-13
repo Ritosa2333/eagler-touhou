@@ -62,9 +62,12 @@ bool th14_damage_rectangles(Vec3 p,Vec2 size,float angle,Vec3 q,Vec2 other,float
     return false;
 }
 bool th14_damage_circle_rectangle(Vec3 rectangle,Vec2 size,float angle,Vec3 circle,float radius,NativeStackTh14* stack)noexcept{
+    return th14_damage_circle_rectangle(rectangle,size,Th14RectangleRotation{angle},circle,radius,stack);
+}
+bool th14_damage_circle_rectangle(Vec3 rectangle,Vec2 size,const Th14RectangleRotation& rotation,Vec3 circle,float radius,NativeStackTh14* stack)noexcept{
     // 404ca0: SSE rounding, inclusive strips but strict corner comparisons.
     const float dx=circle.x-rectangle.x,dy=circle.y-rectangle.y;
-    const float sine=float(std::sin(-double(angle))),cosine=float(std::cos(-double(angle)));
+    const float sine=rotation.sine,cosine=rotation.cosine;
     const float x=dx*cosine-dy*sine,y=dy*cosine+dx*sine,hx=size.x*.5f,hy=size.y*.5f;
     const float ax=std::abs(x),ay=std::abs(y);
     if(stack)stack->damage_circle_rectangle(ax);

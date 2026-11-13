@@ -251,6 +251,14 @@ int AnmRenderer::submit_quad(AnmVm& vm,Vec3 (&positions)[4],bool pixel,const u32
 
 }
 
+#if PORT_TITLE == 14
+AnmRenderSpace AnmRenderer::render_space_th14()const noexcept{
+    const float scale=float(render_width)/640.f;
+    const float center=float(i32(render_width)/2);
+    return {scale,{center,float((i32(render_height)-448)/2)},{center,float(i32(scale*16.f))}};
+}
+#endif
+
 int AnmRenderer::draw_ascii_sprite(AnmVm& vm){
 
     // 401670 submits 44fe30/44f880 directly, including zero-alpha glyphs.
@@ -258,8 +266,7 @@ int AnmRenderer::draw_ascii_sprite(AnmVm& vm){
     if(!vm.sprite||!vm.resource)return -2;
 
     #if PORT_TITLE == 14
-    const float display_scale=float(render_width)/640.f;const AnmRenderSpace space{display_scale,{float(i32(render_width)/2),float((i32(render_height)-448)/2)},{float(i32(render_width)/2),float(i32(float(display_scale*16.f)))}};
-    Vec3 positions[4];if(!anm_quad_positions(vm,positions,space))return -2;
+    Vec3 positions[4];if(!anm_th14_ascii_quad_positions(vm,positions,render_space_th14()))return -2;
 #else
     Vec3 positions[4];if(!anm_quad_positions(vm,positions))return -2;
 #endif
@@ -398,13 +405,23 @@ int AnmRenderer::draw(AnmVm& vm){
 
         // Extra scale and pivot do not participate in this native path.
 
-        flush();const auto center=vm.render_position();
+        flush();
+#if PORT_TITLE == 14
+        const auto space=render_space_th14();
+        const auto center=vm.render_position(space);
+#else
+        const auto center=vm.render_position();
+#endif
 
         float width=float(double(vm.sprite_size.x)*vm.scale.x),height=float(double(vm.sprite_size.y)*vm.scale.y),angle=vm.rotation.z;
 
         if(vm.parent&&!(vm.flags2&(kPortTitle==14?0x8000:0x10000))){width=float(double(width)*vm.parent->scale.x);height=float(double(height)*vm.parent->scale.y);angle=float(double(angle)+vm.parent->rotation.z);}
 
-        if constexpr(kPortTitle==14)if(((vm.flags2>>19)&7)==2){width=float(width*.5f);height=float(height*.5f);}
+#if PORT_TITLE == 14
+        const u32 resolution=(vm.flags2>>19)&7;
+        const float factor=resolution==1?space.scale:resolution==2?float(space.scale*.5f):1.f;
+        width*=factor;height*=factor;
+#endif
 
         const u32 ax=(vm.flags>>18)&3,ay=(vm.flags>>20)&3;if(ax==3||ay==3)return -2;
 
@@ -492,7 +509,7 @@ int AnmRenderer::draw(AnmVm& vm){
 
 #if PORT_TITLE == 14
 
-        const float display_scale=float(render_width)/640.f;const AnmRenderSpace space{display_scale,{float(i32(render_width)/2),float((i32(render_height)-448)/2)},{float(i32(render_width)/2),float(i32(float(display_scale*16.f)))}};
+        const auto space=render_space_th14();
         Vec3 positions[4];if(!anm_th14_draw_quad_positions(vm,positions,space))return -2;
 
         return submit_quad(vm,positions,mode==0);
@@ -577,7 +594,7 @@ int AnmRenderer::draw(AnmVm& vm){
 
 #endif
 
-            
+
 #if PORT_TITLE == 14
             const Vec3 corners[]={{-256,-256,0},{0,-256,0},{-256,0,0},{0,0,0}};
 #else
@@ -617,12 +634,7 @@ int AnmRenderer::draw(AnmVm& vm){
 
         flush();
 #if PORT_TITLE == 14
-        const float display_scale=float(render_width)/640.f;
-        // Native446905/446910 and446c8f/446cb1 use distinct origins.
-        const AnmRenderSpace space{display_scale,
-            {float(i32(render_width)/2),float((i32(render_height)-448)/2)},
-            {float(i32(render_width)/2),float(i32(float(display_scale*16.f)))}};
-        const auto world=anm_world_matrix_th14(vm,false,space);
+        const auto world=anm_world_matrix_th14(vm,false,render_space_th14());
 #else
         const auto world=anm_world_matrix(vm,kPortTitle!=13&&kPortTitle!=14);
 #endif
@@ -750,7 +762,8 @@ int AnmRenderer::draw_world_strip(AnmVm& vm,const AnmWorldVertex* data,u32 count
 
     world.m[12]=float(float(vm.position.x+vm.script_position.x)+vm.child_position.x);
 
-    if((vm.flags2&0x60000)&&!vm.parent)world.m[12]=float(world.m[12]+320.f);
+    // Retail4785ed reads the play origin; resource-present Begin sets it to width/2.
+    if((vm.flags2&0x60000)&&!vm.parent)world.m[12]=float(world.m[12]+float(i32(render_width)/2));
 
     world.m[13]=float(float(vm.position.y+vm.script_position.y)+vm.child_position.y);world.m[14]=float(float(vm.position.z+vm.script_position.z)+vm.child_position.z);
 
@@ -825,4 +838,3 @@ int AnmRenderer::draw_ripple(AnmVm& vm){
 int AnmRenderer::draw_layer(AnmVm* first){for(auto* vm=first;vm;vm=vm->draw_next){if((vm->flags&0x4000000)||(kPortTitle==14&&(vm->flags2&0x20)))continue;if(vm->before_update==anm_ripple_update&&draw_ripple(*vm)==-2)return -2;if(vm->draw_callback)vm->draw_callback(*vm);if(draw(*vm)==-2)return -2;}return 1;}
 
 }
-

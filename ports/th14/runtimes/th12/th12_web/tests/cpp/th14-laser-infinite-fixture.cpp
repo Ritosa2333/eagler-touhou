@@ -50,7 +50,7 @@ API(registry_rectangle) i32 registry_rectangle(i32 sprite,u32 length,u32 angle,u
     resource.scripts.resize(300);for(auto& s:resource.scripts)s.bytes={2,0,8,0,0,0,0,0,255,255,0,0,0,0,0,0};
     LaserManager manager(resource,animations,world,6);auto* parent=new Th14LaserInfinite(laser);parent->base.type=1;parent->base.state=2;parent->base.rectangle_enabled=1;manager.append(parent->base);
     const Vec3 center=placement==1?Vec3{-180.25f,7.5f,0}:placement==2?Vec3{900,-500,0}:Vec3{-140.25f,7.5f,0};
-    const i32 result=manager.cancel_rectangle_th14(center,{float_bits(width),float_bits(height)},float_bits(rotation),mode==1?1u:0u,false);
+    const i32 result=manager.cancel_rectangle_th14(center,{float_bits(width),float_bits(height)},Th14RectangleRotation{float_bits(rotation)},mode==1?1u:0u,false);
     registry_result={float_bits(parent->base.length),manager.active_count,u32(manager.last_error)};
     for(auto* node=parent->base.next;node;node=node->next){const auto& child=*reinterpret_cast<Th14LaserLine*>(node);std::array<u32,223> values{};std::memcpy(values.data(),child.request,0x354);
         const auto& b=child.base;const u32 state[]={u32(b.type),u32(b.state),float_bits(b.position.x),float_bits(b.position.y),float_bits(b.position.z),float_bits(b.angle),float_bits(b.length),float_bits(b.width),float_bits(b.speed),u32(b.id)};std::memcpy(values.data()+213,state,sizeof state);factory_results.push_back(values);

@@ -365,6 +365,13 @@ void GameSession::reset_state(bool retain_transition) noexcept {
 
 bool GameSession::begin_replay(GameResources& source,const u8* data,u32 size,u32 stage,bool demo){
     if(!playback.open(data,size))return fail(playback.error().c_str());
+#if PORT_TITLE == 14
+    if(practice_enabled&&!demo&&purple_laser.mode>=2){
+        purple_laser.playback=playback.purple_laser_records;
+        purple_laser.source.assign(data,data+size);
+        purple_laser.recovered.clear();
+    }
+#endif
     if(!stage)for(u32 n=1;n<=7;++n)if(playback.stage(n)){stage=n;break;}
     if(!playback.stage(stage))return fail("stage absent from replay");
     std::printf("[replay] %s: record stage %u, character %d subtype %d difficulty %d, %u bytes\n",
@@ -384,9 +391,25 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
 #endif
     reset_state(true);
     completed_run=false;
+#if PORT_TITLE == 14
+    practice_run=practice_enabled&&!demo?(replay?playback.practice:practice_request):PracticeTh14{};
+    if(!replay&&practice_enabled&&title&&title->th14_spell_phase_choice>0){
+        practice_run={};practice_run.stage=i32(stage);practice_run.phase=title->th14_spell_phase_choice;
+    }
+    practice_request={};practice_event=0;
+    purple_laser.stage=purple_laser.frame=purple_laser.ordinal=0;
+    purple_retry_misses=0;
+    if(!replay)purple_laser.recorded.clear();
+    animations.th14_native_stack.practice_laser=practice_enabled&&!demo?&purple_laser:nullptr;
+    if(practice_run&&u32(practice_run.stage)!=stage)practice_run={};
+    if(practice_run&&!replay&&!(menu_selection.flags&32)){practice=true;menu_selection.flags=(menu_selection.flags&~48u)|16u;}
+#endif
     this->source=&source;
     if(!player_selection_valid(character,subtype)||difficulty<0||difficulty>4)
         return fail("invalid TH11 session selection");
+#if PORT_TITLE == 14
+    resources.ascii_display_width=persistent_config().render_width();
+#endif
     if(!resources.load_core(source)) return fail(resources.error.c_str());
 #if PORT_TITLE == 14
     if(!resources.select_player(u32(character),u32(subtype)))return fail(resources.error.c_str());
@@ -403,6 +426,7 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
     if(replay){if(playback.decoded()[10]&2){u32 id;std::memcpy(&id,playback.decoded().data()+0x90,4);state.spell_practice_id=signed_bits(id);}}
     else if((menu_selection.flags&48)==32)state.spell_practice_id=menu_selection.spell_id;
     if((replay&&(playback.decoded()[10]&2)||!replay&&(menu_selection.flags&48)==32)&&(state.spell_practice_id<0||state.spell_practice_id>=120))return fail("invalid TH14 spell practice selection");
+    if(practice_run&&!practice_run.valid(difficulty,state.spell_practice_id))return fail("Invalid TH14 practice settings");
     if(state.spell_practice_id>=0){state.practice=true;economy.lives=0;economy.th14_bombs=0;}
 #endif
     initial_stage=stage;economy.rank=next_continues?-512:0;
@@ -414,7 +438,7 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
     economy.difficulty=difficulty;
     if(!replay&&!recording.begin(character,subtype,difficulty,practice,recording_timestamp))return fail("replay recorder initialization failed");
 #if PORT_TITLE == 14
-    if(!replay){std::memcpy(recording.header.data()+0x18,config.bytes.data(),config.bytes.size());if(state.spell_practice_id>=0){recording.header[10]=2;std::memcpy(recording.header.data()+0x90,&state.spell_practice_id,4);}}
+    if(!replay){recording.practice=practice_run;std::memcpy(recording.header.data()+0x18,config.bytes.data(),config.bytes.size());if(state.spell_practice_id>=0){recording.header[10]=2;std::memcpy(recording.header.data()+0x90,&state.spell_practice_id,4);}}
 #endif
     if(!replay){auto* counter=scores.characters[character*2+subtype].data()+ScoreFile::play_count_offset;i32 n;std::memcpy(&n,counter,4);if(n<99999){++n;std::memcpy(counter,&n,4);}}
     // TH14 own435caa reads 4d9cb8 / 4d9ca0, then scales by 100.
@@ -649,6 +673,14 @@ bool GameSession::activate_stage(){
 #endif
     battle->hud.score.continues=next_continues;next_continues=0;
     if(state.replay)battle->hud.score.continues=entry.continues;
+#if PORT_TITLE == 14
+    // Apply practice edits to the adopted timeline before the first ECL spawn.
+    if(practice_run&&!patch_practice_th14(resources.stage->timeline,practice_run,state.spell_practice_id,error))return false;
+    if(!state.replay&&practice_run&&state.spell_practice_id<0)practice_run.apply(economy);
+    economy.th14_practice_tools=practice_enabled&&!state.demo&&!state.replay?practice_tools:0;
+    battle->enemy_environment.th14_practice_fake_type=practice_run.stage==4?(practice_run.flags>>2)&3:0;
+    battle->enemy_environment.th14_practice_tools=economy.th14_practice_tools;
+#endif
     if(!battle->initialize(state.character,state.subtype,state.difficulty)) {
         error="stage battle initialization failed: "+battle->error;
         battle.reset();
@@ -693,19 +725,24 @@ bool GameSession::record_stage_entry(bool initial){
         u32(e.th14_combo.count),u32(e.th14_combo.timer),float_bits(e.th14_combo.position.x),float_bits(e.th14_combo.position.y),float_bits(e.th14_combo.position.z),u32(e.th14_special_drop_count)};
     // Native D8 carries 4d9658 bit 0; the ordinary port session uses 0.
     s.th14_stage_flags=0;
+    practice_event=0;
 #endif
     if(!recording.start_stage(state.stage,s,initial))return fail("replay stage recording failed");
     if(initial)for(u32 i=0;i<20;++i)battle->spell_timing.records[i]=i*0xdeaddeadu;
     recording_active=true;return true;
 }
 bool GameSession::save_replay(const char* name,std::vector<u8>& output,bool terminal,float slowdown){
-    if(!battle){if(!completed_run)return false;return recording.save(name,completed_score,8,completed_continues,slowdown,output);}
+    if(!battle){
+        if(!completed_run||!recording.save(name,completed_score,8,completed_continues,slowdown,output))return false;
+        append_purple_laser_block(output,purple_laser.recorded);return true;
+    }
     if(state.replay||!recording.selected)return false;
     recording.spell_times(battle->spell_timing.records);
     // Saving must not append multiple end markers or mutate an active run.
     auto snapshot=recording;if(terminal&&!snapshot.finish_stage(true))return false;
     const i32 reached=pause_menu&&pause_menu->completed&&!state.practice?8:i32(state.stage);
-    return snapshot.save(name,th14_hud_load(economy.score_units),reached,battle->hud.score.continues,slowdown,output);
+    if(!snapshot.save(name,th14_hud_load(economy.score_units),reached,battle->hud.score.continues,slowdown,output))return false;
+    append_purple_laser_block(output,purple_laser.recorded);return true;
 }
 
 #if PORT_TITLE == 14
@@ -955,7 +992,11 @@ bool GameSession::update(const GameSessionInput& input) {
         // Its state0 activation dispatches the first main-menu update later
         // in that callback. Our TitleMenu is constructed as Main, so its
         // first session frame must likewise leave the idle counter alone.
-        if(title->screen==TitleScreen::Main&&(kPortTitle!=14||state.frame!=0)){++title_idle;if(raw)title_idle=0;
+        if(title->screen==TitleScreen::Main&&(kPortTitle!=14||state.frame!=0)){++title_idle;if(raw
+#if PORT_TITLE == 14
+            ||practice_input_captured
+#endif
+        )title_idle=0;
 #if PORT_TITLE != 14
             if(title_idle>=1800){const DemoPlaylist playlist=demo_playlist();
                 const auto path=std::string(playlist.names[demo_index<playlist.step?demo_index:0]);
@@ -973,6 +1014,7 @@ bool GameSession::update(const GameSessionInput& input) {
         game_input.update(raw);title->held=raw;
 #if PORT_TITLE == 14
         if(title_manual)title->manual_finished=title_manual->manual_finished;
+        title->th14_practice_overlay_enabled=practice_enabled;
 #endif
         if(!title->update(game_input.pressed,game_input.long_repeat))return fail(title->error.c_str());
 #if PORT_TITLE == 14
@@ -1090,16 +1132,45 @@ bool GameSession::update(const GameSessionInput& input) {
             game_input.update_normalized(recorded.held);
             edges.pressed=game_input.pressed;edges.released=game_input.released;
 #endif
+#if PORT_TITLE == 14
+            if(practice_enabled&&!state.demo){
+                const auto& events=playback.practice_events[state.stage];
+                if(playback.frame()<=1)practice_event=0,economy.th14_practice_tools=0;
+                while(practice_event<events.size()&&events[practice_event].frame<playback.frame())
+                    economy.th14_practice_tools=events[practice_event++].tools;
+            }
+#endif
             auto& motion=battle->player_input.movement;motion.touch_mode=recorded.touch_mode;motion.touch_x=recorded.touch_x;motion.touch_y=recorded.touch_y;
             }
         }else{
+#if PORT_TITLE == 14
+            economy.th14_practice_tools=practice_enabled&&!state.demo?practice_tools:0;
+            u32 effective=input.held;
+            if(economy.th14_practice_tools&PrAutoShoot)effective|=1;
+            if(economy.th14_practice_tools&PrNoShoot)effective&=~1u;
+            if(economy.th14_practice_tools&PrNoBomb)effective&=~2u;
+            if(economy.th14_practice_tools&PrNoFocus)effective&=~8u;
+            if(economy.th14_practice_tools&PrForceFocus)effective|=8;
+            game_input.update(effective,config.auto_focus());
+#else
             game_input.update(input.held,config.auto_focus());
+#endif
             edges.held=game_input.held;edges.pressed=game_input.pressed;edges.released=game_input.released;
             if(battle->stage_active&&!recording_active){recording.finish_stage();if(!record_stage_entry(false))return false;}
             const auto& motion=battle->player_input.movement;
+#if PORT_TITLE == 14
+            recording.record_tools(economy.th14_practice_tools);
+#endif
             if(!recording.tick(edges.held,edges.pressed,edges.released,input.recording_fps,motion.touch_mode,motion.touch_x,motion.touch_y))return fail("replay recording limit reached");
         }
 #if PORT_TITLE == 14
+        if(animations.th14_native_stack.practice_laser){
+            const u32 frame=state.replay?playback.frame():u32(recording.stages[state.stage].frames);
+            purple_laser.tick(state.stage,frame,state.replay,state.character==1&&state.subtype==0,
+                              bool(economy.th14_practice_tools&PrMarisaFix));
+        }
+        battle->spells.show_full_capture_history=practice_enabled&&purple_show_history;
+        battle->enemy_environment.th14_practice_tools=economy.th14_practice_tools;
         edges.dialogue_skip_frames=game_input.held_frames[9];
         edges.dialogue_fire_frames=game_input.held_frames[0];
 #endif
@@ -1157,6 +1228,13 @@ bool GameSession::update(const GameSessionInput& input) {
         if(!state.replay&&battle->stage_active&&battle->th14_control_counted){auto* counter=scores.characters[state.character*2+state.subtype].data()+ScoreFile::play_time_offset;i32 n;std::memcpy(&n,counter,4);if(n<215999999){++n;std::memcpy(counter,&n,4);}}
 #else
         if(!state.replay&&battle->stage_active){auto* counter=scores.characters[state.character*2+state.subtype].data()+ScoreFile::play_time_offset;i32 n;std::memcpy(&n,counter,4);if(n<215999999){++n;std::memcpy(counter,&n,4);}}
+#endif
+#if PORT_TITLE == 14
+        if(battle->th14_practice_misses!=purple_retry_misses){
+            purple_retry_misses=battle->th14_practice_misses;
+            if(practice_enabled&&purple_fast_retry&&practice_run&&!state.replay&&!state.demo&&
+               state.phase==GameSessionPhase::stage)return restart_run(false);
+        }
 #endif
         if(battle->game_over_requested){
             if(state.phase==GameSessionPhase::paused||state.phase==GameSessionPhase::game_over)return true;
@@ -1342,7 +1420,12 @@ bool GameSession::restart_run(bool continuation){
     const i32 count=continuation&&previous.stage!=first?std::min(battle->hud.score.continues+1,9):0;
     scores.write_records(spell_records,clear_records);next_continues=count;
     if(previous.replay){if(!begin(*source,first,previous.character,previous.subtype,previous.difficulty,previous.demo,true,previous.practice))return false;}
-    else if(!begin(*source,continuation?previous.stage:first,previous.character,previous.subtype,previous.difficulty,false,false,previous.practice))return false;
+    else {
+#if PORT_TITLE == 14
+        if(!continuation)practice_request=practice_run;
+#endif
+        if(!begin(*source,continuation?previous.stage:first,previous.character,previous.subtype,previous.difficulty,false,false,previous.practice))return false;
+    }
     initial_stage=first;return true;
 }
 
@@ -1409,6 +1492,9 @@ bool GameSession::open_title(GameResources& data,bool first,TitleScreen screen){
 #endif
     if(!title)scores.write_records(spell_records,clear_records);
     reset_state();source=&data;interactive=true;
+#if PORT_TITLE == 14
+    resources.ascii_display_width=persistent_config().render_width();
+#endif
     if(!resources.load_core(data))return fail(resources.error.c_str());
     if constexpr(kPortTitle==14||kPortTitle==16)animations.fallback_sprites=&resources.core.ascii;
 #if PORT_TITLE == 14

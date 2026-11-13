@@ -26,6 +26,7 @@ void ItemManager::reset()noexcept{std::memset(storage.get(),0,sizeof(ItemState)*
 #endif
 #if PORT_TITLE == 14
     th14_spawn_count=th14_cancel_count=th14_generation=0;th14_cancel_free=nullptr;
+    th14_occupied.fill(0);
     th14_ordinary_free=nullptr;
     for(u32 n=0;n<ordinary_capacity;++n){storage[n].th14_free_next=th14_ordinary_free;th14_ordinary_free=&storage[n];}
     for(u32 n=ordinary_capacity;n<capacity;++n){storage[n].th14_free_next=th14_cancel_free;th14_cancel_free=&storage[n];}
@@ -87,10 +88,28 @@ void ItemManager::home(ItemState& item){
     if(item.attraction_speed<12)item.attraction_speed=float(double(item.attraction_speed)+double(.2f));
     if(player.state==4){item.state=1;item.velocity.x=item.velocity.y=0;}
 }
-void ItemManager::attract_all(){for(u32 i=0;i<capacity;++i)if(storage[i].state==1){storage[i].state=3;storage[i].attraction_speed=player.attraction_speed;}}
+void ItemManager::attract_all(){
+#if PORT_TITLE == 14
+    for(u32 page=0;page<th14_occupied.size();++page){
+        if(!th14_page_occupied(page))continue;
+        const u32 end=std::min((page+1)*th14_word_bits,capacity);
+        for(u32 i=page*th14_word_bits;i<end;++i){
+#else
+    for(u32 i=0;i<capacity;++i){
+#endif
+            auto& item=storage[i];
+            if(item.state==1){item.state=3;item.attraction_speed=player.attraction_speed;}
+#if PORT_TITLE == 14
+        }
+#endif
+    }
+}
 bool ItemManager::convert_power_items(){
     for(u32 i=0;i<ordinary_capacity;++i){auto& item=storage[i];if(item.state&&(item.type==1||item.type==4||item.type==10||item.type==11)){
         const Vec3 position=item.position;item.state=0;
+#if PORT_TITLE == 14
+        mark_th14_slot(item,false);
+#endif
         if(spawn(9,position)<0||!world.effect(position,0x73)){last_error=4;return false;}
     }}return true;
 }

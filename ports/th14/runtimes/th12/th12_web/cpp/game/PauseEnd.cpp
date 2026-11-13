@@ -24,6 +24,11 @@ bool PauseMenu::th16_end_choices(){
 }
 #endif
 #if PORT_TITLE == 14
+i32 PauseMenu::remaining_credits_th14()const{
+    constexpr i32 limits[]={3,3,4,5};
+    if(stage==7||difficulty<0||difficulty>=4)return 0;
+    return continues<limits[difficulty]?limits[difficulty]-continues:0;
+}
 bool PauseMenu::create_deferred_backdrop_th14(){
  auto& queue=animations.deferred_captures;
  if(!create_backdrop(false))return false;
@@ -32,7 +37,8 @@ bool PauseMenu::create_deferred_backdrop_th14(){
  const auto& sprite=*vm->sprite;
  DeferredCaptureRequestTh14 request;
  request.file_index=i32(vm->file_index);request.texture_index=i32(sprite.texture);
- request.source={32,16,384,448};
+ const float scale=animations.render_space.scale;
+ request.source={i32(32.f*scale),i32(16.f*scale),i32(384.f*scale),i32(448.f*scale)};
  request.destination={i32(sprite.x),i32(sprite.y),i32(sprite.width),i32(sprite.height)};
  queue.enqueue(request);return true;
 }
@@ -94,8 +100,9 @@ void PauseMenu::show_end_choices(i32 script,i32 next,i32 count){
         // 435cef initializes the remaining continues by difficulty.
         if(!compact){
             if(continues>0)cursor.disabled[cursor.disabled_count++]=2;
-            constexpr i32 limits[]={3,3,4,5,0};
-            if(difficulty<0||difficulty>=5||continues>=limits[difficulty]){cursor.disabled[cursor.disabled_count++]=0;selected=1;}
+#if PORT_TITLE == 14
+            if(!remaining_credits_th14()){cursor.disabled[cursor.disabled_count++]=0;selected=1;}
+#endif
         }else if(practice&&!completed)selected=2;
     }
     cursor.select(selected);family(menu_animation,3);family(menu_animation,cursor.selected+7);
@@ -104,7 +111,7 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
     const bool practice_states=state>=20;const i32 list=practice_states?23:16,name=practice_states?24:17;
     switch(state){
     case 12:case 20:
-        if(timer.current>=10&&(pressed&0x80001)){sounds.push_back(10);family(menu_animation,2);transition(state+1);}break;
+        if(timer.current>=10&&(pressed&0x80001)){sounds.push_back(kPortTitle==14?7:10);family(menu_animation,2);transition(state+1);}break;
     case 13:case 21:
 #if PORT_TITLE == 14
         if(practice&&completed&&spell_practice_id<0){
@@ -120,6 +127,11 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
             const i32 rank=scores.insert_score(selection,difficulty,result_score,stage==7&&completed?8:stage,continues,timestamp,slowdown);
             unranked=rank<0;timer.set(0,&animations.rate);
             if(!unranked){cursor.count=25;cursor.wrap=1;cursor.select(rank);name_begin();state=practice_states?25:18;visible(false);break;}
+#if PORT_TITLE == 14
+            // A full-run loss can still show the existing ranking without
+            // inserting a score or opening the name keyboard.
+            if(!completed&&difficulty<4){cursor.selected=-1;state=18;visible(false);break;}
+#endif
             show_end_choices(98,14,practice_states?3:4);
         }else{
 #if PORT_TITLE == 14
@@ -138,7 +150,6 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
     case 14:case 22:{
         const bool compact=state==22;const i32 save=compact?1:2,back=compact?0:1;
         move(pressed|repeat,7);
-        if constexpr(kPortTitle==14)if(cursor.previous!=cursor.selected)sounds.back()=10;
         if(pressed&0x80001){
             choose(cursor.selected+(kPortTitle==14?134:94));sounds.push_back(kPortTitle==14?7:10);transition(compact?26:19);
             if(cursor.selected==save){transition(compact?23:16);visible(false);cursor.push();cursor.count=25;cursor.wrap=1;cursor.select(0);scan_requested=true;}
@@ -151,35 +162,44 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
     case 16:case 23:
         if(timer.current<10)break;
         cursor.previous=cursor.selected;if((pressed|repeat)&16)cursor.move(-1);if((pressed|repeat)&32)cursor.move(1);
-        if(cursor.previous!=cursor.selected)sounds.push_back(12);
-        if(pressed&0x80001){transition(name);recording_metadata_requested=true;name_begin();sounds.push_back(10);return;}
+        if(cursor.previous!=cursor.selected)sounds.push_back(kPortTitle==14?10:12);
+        if(pressed&0x80001){transition(name);recording_metadata_requested=true;name_begin();sounds.push_back(kPortTitle==14?7:10);return;}
         if(pressed&0x102){transition(practice_states?22:14);visible(true);cursor.pop();cursor.count=practice_states?3:(kPortTitle==14?5:4);cursor.wrap=1;
-            if constexpr(kPortTitle==14)if(!practice_states&&continues>0)cursor.disabled[cursor.disabled_count++]=2;
-            family(menu_animation,cursor.selected+7);replay_files.fill(nullptr);sounds.push_back(11);}break;
+#if PORT_TITLE == 14
+            // MenuCursor::pop restores selection/count and clears its disabled entries.
+            if(!practice_states){
+                if(continues>0)cursor.disabled[cursor.disabled_count++]=2;
+                if(!remaining_credits_th14())cursor.disabled[cursor.disabled_count++]=0;
+            }
+#endif
+            family(menu_animation,cursor.selected+7);replay_files.fill(nullptr);sounds.push_back(kPortTitle==14?9:11);}break;
     case 17:case 24:
         if(timer.current<10)break;
         name_move(pressed|repeat);
         if(pressed&0x80001){const i32 choice=name_cursor.selected,edit=name_confirm();if(edit<0)return;
-            if(edit==1){sounds.push_back(44);save_requested=true;transition(list);std::memcpy(scores.settings.data()+12,entered_name.data(),9);return;}
-            sounds.push_back(choice==89?11:10);if(choice==89)return;
+            if(edit==1){sounds.push_back(kPortTitle==14?17:44);save_requested=true;transition(list);std::memcpy(scores.settings.data()+12,entered_name.data(),9);return;}
+            sounds.push_back(choice==89?(kPortTitle==14?9:11):(kPortTitle==14?7:10));if(choice==89)return;
         }
-        if(pressed&0x102){sounds.push_back(11);if(name_length)entered_name[--name_length]=' ';else transition(list);}break;
+        if(pressed&0x102){sounds.push_back(kPortTitle==14?9:11);if(name_length)entered_name[--name_length]=' ';else transition(list);}break;
     case 18:case 25:
         if(timer.current<10)break;
         if(!unranked)name_move(pressed|repeat);
         if(pressed&0x80001){
             if(!unranked){const i32 edit=name_confirm();if(edit<0)return;
-                if(edit!=1){sounds.push_back(10);return;}
+                if(edit!=1){sounds.push_back(kPortTitle==14?7:10);return;}
                 scores.score_name(selection,difficulty,cursor.selected,entered_name.data());
             }
             show_end_choices(practice_states?103:98,practice_states?22:14,practice_states?3:4);visible(true);return;
         }
         if(pressed&0x102){if(cursor.selected<0){show_end_choices(practice_states?103:98,practice_states?22:14,practice_states?3:4);visible(true);return;}
-            if(name_length){sounds.push_back(11);entered_name[--name_length]=' ';}
+            if(name_length){sounds.push_back(kPortTitle==14?9:11);entered_name[--name_length]=' ';}
         }break;
     case 19:case 26:
         if(timer.current>=12){family(background_animation,1);family(menu_animation,1);transition(27);
             if(practice_states)action=cursor.selected==2?PauseAction::Restart:PauseAction::Title;
+#if PORT_TITLE == 14
+            else if(cursor.selected==0&&!completed&&!remaining_credits_th14())action=PauseAction::Title;
+#endif
             else action=cursor.selected==0?(completed?PauseAction::Restart:PauseAction::Continue):cursor.selected==(kPortTitle==14?4:3)?PauseAction::Restart:PauseAction::Title;
         }break;
     case 15:

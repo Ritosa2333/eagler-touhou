@@ -1,5 +1,6 @@
 #include "TitleMenu.hpp"
 #include "SpellMenuTh14.hpp"
+#include "Localization.hpp"
 #include <cstdio>
 namespace th11 {
 #if PORT_TITLE == 14
@@ -210,7 +211,7 @@ bool TitleMenu::spell_seen_th14(i32 stage,i32 row)const{
 void TitleMenu::spell_choices_th14(){
     const i32 stage=selection.spell_stage,row=screen==TitleScreen::SpellRecords?cursor.selected:selection.spell_row;
     spell_choices.fill(-2);for(i32 n=240;n<247;++n)spell_hide_th14(n);
-    for(i32 n=0;n<5;++n){if(!exists(262+n)){create(193+n,262+n);if(auto* vm=animations.find(handles[262+n])){vm->flags2|=0x200;vm->position={};}}family(262+n,2,true);text_requests.push_back({handles[262+n],0x808080,0,0,0," Nothing ... ",false,true});}
+    for(i32 n=0;n<5;++n){if(!exists(262+n)){create(193+n,262+n);if(auto* vm=animations.find(handles[262+n])){vm->flags2|=0x200;vm->position={};}}family(262+n,2,true);text_requests.push_back({handles[262+n],0x808080,0,0,0,Localization::StringById("th13 spell nothing"," Nothing ... "),false,true});}
     if(stage!=6)for(i32 n=240;n<244;++n){create(n);family(n,3,true);}
     i32 last=0;
     for(i32 id:th14_spell_choices[stage][row]){
@@ -219,8 +220,14 @@ void TitleMenu::spell_choices_th14(){
         const auto* aggregate=scores.characters[6].data()+ScoreFile::spell_offset+id*ScoreFile::spell_stride;
         const auto* own=scores.characters[secondary.selected].data()+ScoreFile::spell_offset+id*ScoreFile::spell_stride;
         u32 seen,captures;std::memcpy(&seen,aggregate+0x88,4);std::memcpy(&captures,own+0x84,4);char line[512];u32 color;
-        if(!seen){spell_choices[slot]=-1;std::string unknown;for(i32 n=0;n<11;++n)unknown+="\x81\x48";std::snprintf(line,sizeof(line)," No.%3d  %s",id+1,unknown.c_str());color=0xb0b0b0;}
-        else{spell_choices[slot]=id;size_t length=0;while(length<128&&aggregate[length])++length;std::string name(reinterpret_cast<const char*>(aggregate),length);if(name.size()<42)name.resize(42,' ');std::snprintf(line,sizeof(line)," No.%3d  %s",id+1,name.c_str());color=captures?0xffff80:0xefefef;}
+        if(!seen){spell_choices[slot]=-1;std::string unknown;for(i32 n=0;n<11;++n)unknown+="\x81\x48";const char* untranslated=" No.%3d";
+            const char* format=Localization::FormatStringById("th13 practice spell name unknown",untranslated);
+            if(format==untranslated)std::snprintf(line,sizeof(line)," No.%3d  %s",id+1,unknown.c_str());
+            else std::snprintf(line,sizeof(line),format,id+1);color=0xb0b0b0;}
+        else{spell_choices[slot]=id;size_t length=0;while(length<128&&aggregate[length])++length;std::string name(reinterpret_cast<const char*>(aggregate),length);const char* translated=Localization::SpellName(u32(id),name.c_str());
+            if(translated==name.c_str()&&name.size()<42){name.resize(42,' ');translated=name.c_str();}
+            const char* format=Localization::FormatStringById("th13 practice spell name known"," No.%3d  %s");
+            std::snprintf(line,sizeof(line),format,id+1,translated);color=captures?0xffff80:0xefefef;}
         text_requests.push_back({handles[262+slot],color,0,0,0,line,false,true});family(262+slot,2,true);
     }
     // Native463600 resets text rows to interrupt3 after refreshing their texture.
@@ -254,6 +261,7 @@ void TitleMenu::spell_highlight_th14(){
 void TitleMenu::spell_difficulty_th14(u32 pressed,u32 repeat){
     switch(substate){
     case 0:
+        th14_spell_phase_choice=-1;
         cursor.count=5;for(i32 n=0;n<5;++n)if(spell_choices[n]<0&&cursor.disabled_count<16)cursor.disabled[cursor.disabled_count++]=n;
         // Retail41e820 skips disabled selections, like the later cursor helper.
         cursor.select_th16(0);if(selection.resume_spell_difficulty>=0){cursor.select_th16(selection.resume_spell_difficulty);selection.resume_spell_difficulty=-1;}spell_highlight_th14();step(1);[[fallthrough]];
@@ -261,7 +269,10 @@ void TitleMenu::spell_difficulty_th14(u32 pressed,u32 repeat){
     case 2:
         move(pressed|repeat,16,32);if(cursor.previous!=cursor.selected){sounds.push_back(12);spell_highlight_th14();}spell_character_th14(pressed,repeat);
         if(pressed&0x102){step(4);sounds.push_back(11);return;}
-        if(pressed&0x80001){family(262+cursor.selected,6);step(3);sounds.push_back(10);music_fade=0;sounds.push_back(50);}break;
+        if(th14_spell_phase_choice==-2){th14_spell_phase_choice=-1;break;}
+        if(pressed&0x80001||th14_spell_phase_choice>=0){
+            family(262+cursor.selected,6);step(3);sounds.push_back(10);music_fade=0;sounds.push_back(50);
+        }break;
     case 3:
         if(timer.current==10)fade_requested=true;
         if(timer.current>=40){const i32 id=spell_choices[cursor.selected];if(id<0||id>=120){error="invalid spell practice choice";return;}selection.spell_id=id;selection.stage=selection.spell_stage+1;selection.character=secondary.selected/2;selection.partner=secondary.selected%2;selection.difficulty=th14_spell_difficulty(id);selection.resume_spell_stage=selection.spell_stage;selection.resume_spell_row=selection.spell_row;selection.resume_spell_difficulty=cursor.selected;cursor.push();change(TitleScreen::Exit);start_requested=true;}break;

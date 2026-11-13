@@ -44,4 +44,3 @@ bool shot_th16_beam_hit(Th16ShotSpawn& shot,Th16DamageSource& area,const Th16Dam
 }
 }
 #endif
-

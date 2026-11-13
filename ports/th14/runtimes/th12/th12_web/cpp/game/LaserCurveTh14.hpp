@@ -1,6 +1,7 @@
 #pragma once
 #include "Types.hpp"
 #if PORT_TITLE == 14
+#include "RectangleRotationTh14.hpp"
 #include <vector>
 #include <array>
 #endif
@@ -32,7 +33,10 @@ struct Th14CurvePath {
     bool transforms();
     void sample(float time,bool reset_negative=true)noexcept;
     i32 cut_circle(Vec3 center,float radius,bool protection,bool skip,std::vector<Vec3>& deliveries,bool& mark);
-    i32 cut_rectangle(Vec3 center,Vec2 size,float angle,bool protection,bool skip,Timer&,std::vector<Vec3>& deliveries,bool& mark,std::vector<std::array<u8,0x354>>& fragments);
+    i32 cut_rectangle(Vec3 center,Vec2 size,float angle,bool protection,bool skip,Timer& timer,std::vector<Vec3>& deliveries,bool& mark,std::vector<std::array<u8,0x354>>& fragments){
+        return cut_rectangle(center,size,Th14RectangleRotation{angle},protection,skip,timer,deliveries,mark,fragments);
+    }
+    i32 cut_rectangle(Vec3 center,Vec2 size,const Th14RectangleRotation&,bool protection,bool skip,Timer&,std::vector<Vec3>& deliveries,bool& mark,std::vector<std::array<u8,0x354>>& fragments);
 };
 struct Th14CurveVertex {float x,y,z,rhw;u32 color;float u,v;};
 void th14_curve_mesh(const Th14CurveSample*,u32 count,float width,float top_v,float bottom_v,Vec2 origin,Th14CurveVertex*)noexcept;

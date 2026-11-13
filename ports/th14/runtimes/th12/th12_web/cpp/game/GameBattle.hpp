@@ -113,6 +113,8 @@ public:
 #endif
 #if PORT_TITLE == 14
     u32 th14_dialogue_skip_frames=0,th14_dialogue_fire_frames=0;
+    u32 th14_practice_misses=0,th14_practice_extends=0;
+    std::array<u32,5> th14_practice_collections{};
     u32 th14_spell_background=0;
     bool th14_spell_result_requested=false;
     i32 th14_current_music=-1;
@@ -233,6 +235,12 @@ public:
 #endif
         dialogue_text_requests.push_back(request);return true;
     }
+#if PORT_TITLE == 14
+    i32 dialogue_width(const std::string& text,i32 style)override{
+        if(resources.effects)if(auto* device=resources.effects->dialogue_text_device())return device->dialogue_width(text,style);
+        return -1;
+    }
+#endif
     bool dialogue_sound(i32 id)override{return sound(id,0,false);}
     bool hud_sound(i32 id)override{return sound(id,0,false);}
     bool dialogue_music()override{events.push_back({BattleEventKind::BossMusic,i32(resources.stage_number)});return true;}
@@ -338,6 +346,7 @@ public:
     bool th14_bomb_dialogue()const override{return dialogue&&dialogue->active;}
 #if PORT_TITLE == 14
     bool th14_damage_dialogue()const override{return dialogue&&dialogue->active;}
+    u32 th14_practice_flags()const override{return economy.th14_practice_tools;}
 #endif
     bool th14_reimu_bomb_hit_effect(Vec3 p,float angle)override{
         return animations.create(resources.core.effect,58,8,0,false,false,&p,nullptr,nullptr,false,&angle)!=nullptr;
@@ -348,10 +357,12 @@ public:
     bool th14_bomb_item(i32 type,Vec3 p,float angle,float speed)override{return items.spawn(type,p,0xffffffff,angle,speed)==0;}
     bool th14_bomb_rectangle(Vec3 p,Vec2 size,float angle,i32 duration,i32 damage)override{return player&&player->shots.th14_bomb_rectangle(p,size,angle,duration,damage);}
     bool th14_bomb_cancel_rectangle(Vec3 p,Vec2 size,float angle,u32 rewards)override{
-        return bullets.cancel_rectangle_th14(p,size,angle,rewards)&&lasers.cancel_rectangle_th14(p,size,angle,rewards)>=0;
+        const Th14RectangleRotation rotation{angle};
+        return bullets.cancel_rectangle_th14(p,size,rotation,rewards)&&lasers.cancel_rectangle_th14(p,size,rotation,rewards)>=0;
     }
     bool th14_reimu_cancel_rectangle(Vec3 p,Vec2 size,float angle,u32 rewards)override{
-        return bullets.cancel_rectangle_th14(p,size,angle,rewards)&&lasers.cancel_rectangle_th14(p,size,angle,rewards,true)>=0;
+        const Th14RectangleRotation rotation{angle};
+        return bullets.cancel_rectangle_th14(p,size,rotation,rewards)&&lasers.cancel_rectangle_th14(p,size,rotation,rewards,true)>=0;
     }
     bool th14_bomb_shake(i32 amplitude,i32 ramp,i32 hold,i32 fall)override{shakes.start_th14_hold(amplitude,ramp,hold,fall,&animations.rate);return true;}
     bool th14_bomb_shake_short(i32 duration,i32 from,i32 to)override{shakes.start(duration,from,to,&animations.rate);return true;}
@@ -446,7 +457,11 @@ public:
 #if PORT_TITLE == 14
     i32& item_th14_drop_counter()override{return economy.th14_special_drop_count;}
     Th14ItemCombo& item_th14_combo_state()override{return economy.th14_combo;}
-    bool item_th14_combo_settle()override{return item_rewards.th14_combo_settle(dialogue&&dialogue->active);}
+    bool item_th14_combo_settle()override{
+        const i32 count=economy.th14_combo.count;
+        if(count>=20)++th14_practice_collections[std::min(count/10-2,4)];
+        return item_rewards.th14_combo_settle(dialogue&&dialogue->active);
+    }
     bool th14_combo_drop(i32 type,Vec3 p,i32 delay)override{return items.spawn_ordinary_th14(type,p,-1.5707963705062866f,2.2f,delay)==0;}
     bool th14_combo_popup(Vec3 p,i32 value,u32 color,float multiplier)override{
         popups.add_bonus(p,value,color,multiplier,&animations.rate);

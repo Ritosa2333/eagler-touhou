@@ -1,5 +1,6 @@
 #include "ShotFiles.hpp"
 #include "Dialogue.hpp"
+#include <algorithm>
 #include <cstdlib>
 #include <string>
 namespace th11 {
@@ -81,13 +82,26 @@ bool Dialogue::write(u32 slot,const std::string& value,i32 offset,i32 font,i32 s
     auto* vm=find(state.animations[slot]);if(!vm)return fail("missing dialogue text animation");
     u32 color=state.colors[state.speaker];
     if constexpr(kPortTitle==14){if(slot>=5&&style==2){vm->flags2|=0x800;color=0x408080;}}
-    if(!effects.dialogue_text({state.animations[slot],color,offset,font,style<0?i32((state.flags>>1)&1):style,value}))return fail("dialogue glyph output");return true;
+    DialogueText request{state.animations[slot],color,offset,font,style<0?i32((state.flags>>1)&1):style,value};
+#if PORT_TITLE == 14
+    request.dialogue_body=slot<5&&request.style<2;
+#endif
+    if(!effects.dialogue_text(request))return fail("dialogue glyph output");return true;
 }
 bool Dialogue::th14_background(i32 layout){
     // 434020/4341e0 use front.anm, and write the children's float variable
     // +4bc (10004), which their ANM scripts consume on the following update.
     families.erase(th14_text_background);
-    const Vec3 p{text_pair_194.x,text_pair_194.y,0};
+    Vec3 p{text_pair_194.x,text_pair_194.y,0};
+#if PORT_TITLE == 14
+    if(th14_line_widths[0]>=0||th14_line_widths[1]>=0){
+        // The panel grows away from its speaker. Translations can be wider
+        // than the space left by the original MSG anchor.
+        constexpr float screen_width=1280.f;
+        const float reach=th14_text_width+112.f;
+        p.x=state.speaker<1?std::min(p.x,screen_width-reach):std::max(p.x,reach);
+    }
+#endif
     auto* vm=manager.create(front,216+layout,5,22,false,false,&p);
     if(!vm)return fail("TH14 dialogue background animation");
     th14_text_background=vm->id;th14_text_layout=layout;
@@ -104,6 +118,17 @@ void Dialogue::th14_text_position(AnmVm& line){
         if(d.state.speaker<1)p.x=float(p.x-36.f);
         else if(child->scale.x<1.f)p.x=float(p.x+float(float(child->scale.x*32.f)-6.f));
         else p.x=float(p.x+26.f);
+        // Both body lines use the widest rendered line as their shared center.
+        // The corresponding ruby VM follows that line and retains its own offset.
+        for(u32 slot=3;slot<7;++slot)if(d.state.animations[slot]==line.id){
+            const i32 width=d.th14_line_widths[(slot-3)&1];
+            if(width>=0){
+                const i32 widest=std::max(d.th14_line_widths[0],d.th14_line_widths[1]);
+                // Account for the asymmetric end caps and the minimum bubble width.
+                p.x+=float(std::max(widest,40)-width)*.5f+(d.state.speaker<1?8.f:12.f);
+            }
+            break;
+        }
         line.position=p;return;
     }
 #else
@@ -226,13 +251,24 @@ bool Dialogue::command(u8 op,const u8* p,u32 n){
     case 12:state.release_signal=1;break;
     case 13:case 14:if constexpr(kPortTitle==14){u32 handle=state.animations[0];if(op==14){if(n<8)return fail("truncated MSG expression");const i32 selection=read<i32>(p+4);if(u32(selection)>=4)return fail("invalid dialogue expression speaker");handle=th14_enemy_portraits[selection];}if(!families.interrupt_now(handle,wrapping_add(read<i32>(p),17)))return fail("TH14 expression interrupt");break;}return expression(op==14,read<i32>(p));
     case 15:case 16:case 17:{
-        if(op==17&&state.next_line==0&&!state.lines_initialized){if constexpr(kPortTitle==14)th14_text_width=0;for(u32 i=3;i<7;++i)if(!write(i,kPortTitle==14?"  ":" ",0,i>=5?1:0))return false;state.lines_initialized=1;for(u32 i=3;i<7;++i)families.interrupt(state.animations[i],3);}
+        if(op==17&&state.next_line==0&&!state.lines_initialized){
+#if PORT_TITLE == 14
+            th14_text_width=0;th14_line_widths[0]=th14_line_widths[1]=-1;
+#endif
+            for(u32 i=3;i<7;++i)if(!write(i,kPortTitle==14?"  ":" ",0,i>=5?1:0))return false;
+            state.lines_initialized=1;for(u32 i=3;i<7;++i)families.interrupt(state.animations[i],3);
+        }
         std::string value;if(!decode(p,n,value))return fail("unterminated MSG text");u32 slot=op==15?3:op==16?4:state.next_line?4:3;i32 offset=0,font=0;
         if(op==17&&!value.empty()&&value[0]=='|'){const auto a=value.find(',',1),b=a==std::string::npos?a:value.find(',',a+1);if(b==std::string::npos)return fail("invalid MSG ruby text");offset=std::atoi(value.c_str()+1);font=std::atoi(value.c_str()+a+1);value=value.substr(b+1);slot=state.next_line?6:5;}
         else if(op==17){
             if constexpr(kPortTitle==14){
                 // Retail deliberately converts the wrapped unsigned byte width.
-                const float width=float(u32((u32(value.size())*8u)&~15u)-28u)*2.f;
+                const i32 measured=effects.dialogue_width(value,i32((state.flags>>1)&1));
+#if PORT_TITLE == 14
+                if(measured>=0)th14_line_widths[state.next_line]=std::min(measured,DialogueText::th14_dialogue_line_limit);
+#endif
+                const float width=measured>=0?float(std::clamp(measured-40,0,DialogueText::th14_dialogue_line_limit-40)):
+                    float(u32((u32(value.size())*8u)&~15u)-28u)*2.f;
                 if(width>th14_text_width)th14_text_width=width;
                 const i32 layout=state.speaker+2*i32((state.flags>>2)&15)+(state.next_line?8:0);
                 if(!th14_background(layout))return false;

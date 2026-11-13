@@ -23,6 +23,10 @@ struct Rgb {i32 blue,green,red;};
 Vec2 sample(Vec2Interpolator& value,const float* rate) noexcept;
 Vec3 sample(Vec3Interpolator& value,const float* rate) noexcept;
 float sample(FloatInterpolator& value,const float* rate) noexcept;
+#if PORT_TITLE == 14
+float anm_th14_wrap_angle(float angle) noexcept;
+float anm_th14_sample_angle(FloatInterpolator& value,const float* rate) noexcept;
+#endif
 Rgb sample(RgbInterpolator& value,const float* rate) noexcept;
 i32 sample(AlphaInterpolator& value,const float* rate) noexcept;
 }

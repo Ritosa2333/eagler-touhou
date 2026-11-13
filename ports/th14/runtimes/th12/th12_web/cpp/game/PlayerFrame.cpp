@@ -1,4 +1,5 @@
 #include "ShotFiles.hpp"
+#include "PracticeTh14.hpp"
 #include "PlayerFrame.hpp"
 #include "AnmRenderer.hpp"
 #include "Replay.hpp"
@@ -60,7 +61,7 @@ bool player_th14_tick_clocks(PlayerFrameState& state,const PlayerFrameInput& inp
 bool player_th14_death_drops(GameEconomy& economy,Vec3 p,PlayerFrameWorld& world){
     // Retail 44dda3..44de94: lose half a power step, then emit seven
     // ordinary small-power items. Each angle operation is an SSE float.
-    th14_death_power_words([&](DeathPowerAccessTh14 access){
+    if(!(economy.th14_practice_tools&PrPower))th14_death_power_words([&](DeathPowerAccessTh14 access){
         return access==DeathPowerAccessTh14::Step?th14_hud_load(economy.power_step):th14_hud_load(economy.power);
     },[&](DeathPowerAccessTh14,i32 value){th14_hud_store(economy.power,value);});
     const float target_y=p.y-224.f,dy=target_y-p.y,dx=0.f-p.x;
@@ -73,7 +74,11 @@ bool player_th14_death_drops(GameEconomy& economy,Vec3 p,PlayerFrameWorld& world
     return true;
 }
 #endif
-PlayerFrame::PlayerFrame(ShtResource& s,AnmResource& p,AnmResource& b,AnmManager& a,GameEconomy& e,PlayerFrameWorld& w,u16 pf,u16 bf):motion(p,b,a,*this,pf,bf),shots(s,p,a,w,pf),resource(s),bullet_resource(b),animations(a),economy(e),world(w),bullet_file(bf){state.state_timer.set(0,&a.rate);state.transition_timer.set(0,&a.rate);state.invincibility.set(0,&a.rate);}
+PlayerFrame::PlayerFrame(ShtResource& s,AnmResource& p,AnmResource& b,AnmManager& a,GameEconomy& e,PlayerFrameWorld& w,u16 pf,u16 bf):motion(p,b,a,*this,pf,bf),shots(s,p,a,w,pf),resource(s),bullet_resource(b),animations(a),economy(e),world(w),bullet_file(bf){state.state_timer.set(0,&a.rate);
+    //44c350/44c4a0 leave+6a0 zeroed;44cc10 binds it at stage activation.
+    if constexpr(kPortTitle==14)state.transition_timer={0,0,0,nullptr,0};
+    else state.transition_timer.set(0,&a.rate);
+    state.invincibility.set(0,&a.rate);}
 bool PlayerFrame::initialize(){
     const i32 character=input.movement.character;
     if(!player_selection_valid(character,input.movement.subtype)){last_error=4;return false;}
@@ -103,7 +108,14 @@ bool PlayerFrame::initialize(){
     state.hit=bounds(s.position,state.hit_half);state.pickup=bounds(s.position,state.pickup_size);
     state.focused_attract=bounds(s.position,state.focused_half);state.unfocused_attract=state.focused_attract;
     state.state_timer.set(0,&animations.rate);state.invincibility.set(kPortTitle==14?0:120,&animations.rate);
-    s.option_count=0;s.option_lerp=30;return true;
+    s.option_count=0;s.option_lerp=30;
+#if PORT_TITLE == 14
+    //44cb80 fills the complete movement history before options are published.
+    for(auto& p:s.th14_history)p={s.x,s.y};
+    //44cb97..44cbdd initialize even inactive options to this fixed Y sentinel.
+    for(auto& option:motion.options)option.y=-0xc800;
+#endif
+    return true;
 }
 bool PlayerFrame::rebuild_options(){
 #if PORT_TITLE == 16
@@ -171,9 +183,11 @@ bool PlayerFrame::draw(AnmRenderer& renderer){
     return true;
 }
 bool PlayerFrame::cancel_all(bool spawning){return world.cancel_bullets(nullptr,0,spawning)&&world.cancel_lasers(nullptr,0,!spawning,spawning);}
-void PlayerFrame::fail_spell(){if(!(spell.flags&1))return;if(spell.elapsed>=60){spell.bonus=0;spell.flags&=~0x22u;}else if(input.special_active
-#if PORT_TITLE != 14
-    &&input.movement.character*2+input.movement.subtype!=5
+void PlayerFrame::fail_spell(){if(!(spell.flags&1))return;if(spell.elapsed>=60){spell.bonus=0;spell.flags&=~0x22u;}else if(
+#if PORT_TITLE == 14
+    input.special_active==1 // 44f807: the armed Sakuya A shield is state 2.
+#else
+    input.special_active&&input.movement.character*2+input.movement.subtype!=5
 #endif
     )spell.flags|=0x20;}
 bool PlayerFrame::hit(){
@@ -217,6 +231,9 @@ bool PlayerFrame::die(){
 #else
     economy.point_value=std::max(wrapping_add(economy.point_value,-10000000),state.minimum_point_value);economy.communication=0;
 #endif
+#if PORT_TITLE == 14
+    if(!(economy.th14_practice_tools&PrLives)||((economy.th14_practice_tools&PrLivesNoContinue)&&economy.lives>0))
+#endif
     economy.lives=wrapping_add(economy.lives,-1);
 #if PORT_TITLE == 14
     if(economy.lives>=0&&!world.display_lives(economy.lives,economy.life_fragments))return false;
@@ -237,7 +254,7 @@ bool PlayerFrame::start_special(){
     input.special_active=true;
 #if PORT_TITLE == 14
     // Retail 412110 consumes Bomb stock, preserving power and fragments.
-    economy.th14_bombs=std::clamp(wrapping_sub(economy.th14_bombs,1),0,8);
+    if(!(economy.th14_practice_tools&PrBombs))economy.th14_bombs=std::clamp(wrapping_sub(economy.th14_bombs,1),0,8);
     if(!world.bombs_changed(economy.th14_bombs,economy.th14_bomb_fragments)){last_error=78;return false;}
 #else
     economy.power=wrapping_sub(economy.power,economy.power_step);
@@ -247,7 +264,8 @@ bool PlayerFrame::start_special(){
 }
 bool PlayerFrame::active_frame(){
 #if PORT_TITLE == 14
-    const bool available=!input.movement.bomb&&input.special_available&&!input.special_active&&economy.th14_bombs>0;
+    const bool available=!input.movement.bomb&&input.special_available&&!input.special_active&&
+        (economy.th14_bombs>0||(economy.th14_practice_tools&PrBombs));
 #else
     const bool available=!input.movement.bomb&&input.special_available&&!input.special_active&&economy.power_step&&economy.power/economy.power_step;
 #endif
@@ -345,12 +363,17 @@ bool PlayerFrame::update(){
             if(!death_frame())return false;
         }else{
 #if PORT_TITLE == 14
-            const bool available=!input.movement.bomb&&input.special_available&&!input.special_active&&economy.th14_bombs>0;
+            const bool available=!input.movement.bomb&&input.special_available&&!input.special_active&&
+                (economy.th14_bombs>0||(economy.th14_practice_tools&PrBombs));
 #else
             const bool available=input.special_available&&!input.special_active&&economy.power_step&&economy.power/economy.power_step;
 #endif
             const u32 bomb_trigger=kPortTitle==14?input.movement.pressed:input.movement.held;
-            if(available&&(bomb_trigger&2)){
+            if(available&&((bomb_trigger&2)
+#if PORT_TITLE == 14
+                ||(economy.th14_practice_tools&PrAutoBomb)
+#endif
+            )){
                 if(start_special()){state.state_timer.set(60,&animations.rate);state.life_state=1;}
                 else if(last_error!=74)return false;
             }
@@ -410,7 +433,11 @@ bool PlayerFrame::update(){
     }
     return shots.update();
 }
-PlayerCollision PlayerFrame::collision()const noexcept {PlayerCollision p;p.position={motion.state.position.x,motion.state.position.y};p.minimum={state.hit.minimum.x,state.hit.minimum.y};p.maximum={state.hit.maximum.x,state.hit.maximum.y};p.radius=resource.header.hitbox;p.state=state.life_state;p.invincibility_frames=state.invincibility.current;p.flags=motion.state.flags;p.bomb_active=input.movement.bomb;
+PlayerCollision PlayerFrame::collision()const noexcept {PlayerCollision p;p.position={motion.state.position.x,motion.state.position.y};p.minimum={state.hit.minimum.x,state.hit.minimum.y};p.maximum={state.hit.maximum.x,state.hit.maximum.y};p.radius=resource.header.hitbox;p.state=state.life_state;p.invincibility_frames=state.invincibility.current;
+#if PORT_TITLE == 14
+    if(economy.th14_practice_tools&PrInvincible)p.invincibility_frames=std::max(1,p.invincibility_frames);
+#endif
+    p.flags=motion.state.flags;p.bomb_active=input.movement.bomb;
 #if PORT_TITLE == 14
     if(th14_scale.flags&0x10)p.radius=(th14_scale.factor*3.5999999046325684f)*p.radius;
 #endif

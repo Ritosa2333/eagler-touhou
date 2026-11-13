@@ -39,7 +39,7 @@ bool TextureImage::load(const AnmTexture& source,bool low_color){
 #if PORT_TITLE == 14
     return load(source,low_color,false);
 }
-bool TextureImage::load(const AnmTexture& source,bool low_color,bool high_precision){
+bool TextureImage::load(const AnmTexture& source,bool low_color,bool high_precision,u32 display_width){
 #endif
     failure.clear();
     char buffer[256];
@@ -82,10 +82,12 @@ bool TextureImage::load(const AnmTexture& source,bool low_color,bool high_precis
         }
     }
 #if PORT_TITLE == 14
-    if(embedded&&source.half_resolution){
-        // Retail47cb70: at the fixed640x480 logical scale1, flag+34 halves
-        // allocation and upload rectangles and selects TRIANGLE|MIRROR_U|MIRROR_V.
-        const u32 tw=w/2,th=h/2,pw=source.pixel_width/2,ph=source.pixel_height/2;
+    const float display_scale=float(display_width)/640.f;
+    if(embedded&&source.half_resolution&&display_scale<2.f){
+        // Retail 47cb70: flagged textures are reduced only below the 1280 mode.
+        // Apply the same factor to the surface and the embedded pixel rectangle.
+        const auto reduce=[display_scale](u32 n){return u32((float(n)*display_scale)*.5f);};
+        const u32 tw=reduce(w),th=reduce(h),pw=reduce(source.pixel_width),ph=reduce(source.pixel_height);
         if(!tw||!th||!pw||!ph)return reject("half-resolution texture is empty");
         TextureImage input,filtered;const auto& native_input=formats[source.pixel_format];
         input.width=source.pixel_width;input.height=source.pixel_height;input.pitch=input.width*native_input.bytes;

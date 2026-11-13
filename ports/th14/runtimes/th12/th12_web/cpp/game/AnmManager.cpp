@@ -237,6 +237,29 @@ AnmVm* AnmManager::create(AnmResource& file,i32 script,u16 file_id,u32 layer,boo
     return vm;
 }
 AnmVm* AnmManager::spawn(AnmVm& parent,i32 script,u32 op){if(!parent.resource)return nullptr;const bool detached=op==95||op==97;return create(*parent.resource,script,parent.file_index,parent.layer,op==90||op==92,op==91||op==92,nullptr,(kPortTitle==13||kPortTitle==14||kPortTitle==16)&&detached?&parent:nullptr,(kPortTitle==14||kPortTitle==16)&&!detached?&parent:nullptr);}
+#if PORT_TITLE == 14
+void AnmManager::reset_draw_layers_th14(bool overlay) noexcept{
+    // Old links can point into VMs that are about to be recycled. Invalidate
+    // the whole registry's draw links before rebuilding, without walking it.
+    auto& epoch=th14_draw_epoch[overlay];
+    if(++epoch==0){
+        for(auto* node=heads[overlay];node;node=node->next)node->value->th14_draw_link=nullptr;
+        ++epoch;
+    }
+    const u32 first=overlay?th14_overlay_layer:0,last=overlay?layers.size():th14_overlay_layer;
+    for(u32 layer=first;layer<last;++layer){layers[layer]=nullptr;th14_draw_tail[layer]=nullptr;}
+}
+void AnmManager::unlink_draw_th14(AnmVm& vm) noexcept{
+    if(!vm.th14_draw_link)return;
+    const u32 layer=vm.th14_draw_layer;
+    if(vm.th14_draw_epoch==th14_draw_epoch[layer>=th14_overlay_layer]){
+        *vm.th14_draw_link=vm.draw_next;
+        if(vm.draw_next)vm.draw_next->th14_draw_link=vm.th14_draw_link;
+        else th14_draw_tail[layer]=vm.th14_draw_link;
+    }
+    vm.th14_draw_link=nullptr;
+}
+#endif
 void AnmManager::destroy(AnmVm& vm){
 #if defined(TH14_NATIVE_CRITICAL_SECTIONS)
     th14_critical_sections::ContainerGuard guard(th14_critical_sections::containers);
@@ -251,7 +274,11 @@ void AnmManager::destroy(AnmVm& vm){
     if constexpr(kPortTitle==13||kPortTitle==14)if(!vm.child.previous)for(auto* node=vm.child.next;node;node=node->next){node->value->parent=nullptr;if constexpr(kPortTitle==14)node->value->flags2|=0x20;else node->value->flags|=0x4000000;}
     // A destroyed VM may still be referenced by the previous draw traversal.
     // Remove it there before initialize() resets its id and next pointer.
+#if PORT_TITLE == 14
+    unlink_draw_th14(vm);
+#else
     for(auto& head:layers){auto** link=&head;while(*link){if(*link==&vm){*link=vm.draw_next;break;}link=&(*link)->draw_next;}}
+#endif
     for(u32 i=0;i<2;++i){if(heads[i]==&vm.registry)heads[i]=vm.registry.next;if(tails[i]==&vm.registry)tails[i]=vm.registry.previous;}
     auto unlink=[](AnmVm::Node& node){if(node.next)node.next->previous=node.previous;if(node.previous)node.previous->next=node.next;node.next=node.previous=nullptr;};
     unlink(vm.registry);unlink(vm.child);active.erase(vm.id);if(auto it=geometry_sizes.find(&vm);it!=geometry_sizes.end()){std::free(vm.geometry);vm.geometry=nullptr;geometry_sizes.erase(it);}
@@ -284,11 +311,13 @@ void AnmManager::clear(u32 keep_handle,u32 keep_family){
         for(u32 retained_id:retained)if(id==retained_id)return true;
         return false;
     };
-    layers.fill(nullptr);
 #if PORT_TITLE == 14
+    reset_draw_layers_th14(false);reset_draw_layers_th14(true);
     // Preserve registry order when returning slots; hash iteration would
     // make the next allocation history depend on the host container.
     for(u32 list=0;list<2;++list){auto* node=heads[list];while(node){auto* next=node->next;if(!keep(node->value->id))destroy(*node->value);node=next;}}
+#else
+    layers.fill(nullptr);
 #endif
     for(auto i=active.begin();i!=active.end();){auto* vm=i->second;++i;if(!keep(vm->id))destroy(*vm);}
     last_error=0;
@@ -333,7 +362,13 @@ bool AnmManager::update(bool overlay,const VmBoundaryCallbackTh14& boundary){
 
 #endif
     constexpr u32 overlay_first=kPortTitle==16?36:kPortTitle==14?34:kPortTitle==13?31:29;
-    const u32 first=overlay?overlay_first:0,last=overlay?overlay_first+(kPortTitle==16?7:2):overlay_first;decltype(layers) end{};for(u32 i=first;i<last;++i)layers[i]=nullptr;
+    const u32 first=overlay?overlay_first:0,last=overlay?overlay_first+(kPortTitle==16?7:2):overlay_first;
+#if PORT_TITLE == 14
+    static_assert(overlay_first==th14_overlay_layer);
+    reset_draw_layers_th14(overlay);
+#else
+    decltype(layers) end{};for(u32 i=first;i<last;++i)layers[i]=nullptr;
+#endif
     auto* cursor=heads[overlay?1:0];while(cursor){auto& vm=*cursor->value;cursor=cursor->next;
         if((vm.flags&0x4000000)||(kPortTitle==14&&(vm.flags2&0x20))){destroy(vm);continue;}
         if constexpr(kPortTitle==16){const u32 state=vm.flags2&0x60;if(state==0x20){destroy(vm);continue;}if(state)continue;}
@@ -358,7 +393,16 @@ bool AnmManager::update(bool overlay,const VmBoundaryCallbackTh14& boundary){
             // Reject that out-of-bounds request rather than corrupting memory.
             if(vm.layer>=last){last_error=-1;last_error_layer=vm.layer;return false;}
         }else if(overlay&&vm.layer!=overlay_first&&vm.layer!=overlay_first+1)vm.layer=overlay_first;
-        if(vm.layer>=first&&vm.layer<last){if(end[vm.layer])end[vm.layer]->draw_next=&vm;else layers[vm.layer]=&vm;end[vm.layer]=&vm;vm.draw_next=nullptr;}
+        if(vm.layer>=first&&vm.layer<last){
+#if PORT_TITLE == 14
+            auto& tail=th14_draw_tail[vm.layer];
+            auto** link=tail?tail:&layers[vm.layer];
+            *link=&vm;vm.draw_next=nullptr;tail=&vm.draw_next;
+            vm.th14_draw_link=link;vm.th14_draw_layer=vm.layer;vm.th14_draw_epoch=th14_draw_epoch[overlay];
+#else
+            if(end[vm.layer])end[vm.layer]->draw_next=&vm;else layers[vm.layer]=&vm;end[vm.layer]=&vm;vm.draw_next=nullptr;
+#endif
+        }
     }
 #if PORT_TITLE == 14
     if(overlay)th14_native_stack.controller_overlay_tail();
@@ -395,4 +439,3 @@ bool AnmManager::update_geometry(AnmVm& vm){
 }
 bool AnmManager::change_draw_mode(AnmVm& vm){if(!allocate_geometry(vm,sizeof(AnmRipple)))return false;anm_ripple_initialize(vm,*static_cast<AnmRipple*>(vm.geometry),script_rng);return true;}
 }
-

@@ -25,14 +25,10 @@ void countdown(Timer& timer){
     const float delta=rate>.99f&&rate<1.01f?1.f:rate;
     timer.fractional-=delta;timer.current=truncate_int(timer.fractional);
 }
-}
-i32 bullet_th14_start_transforms(BulletState& b,BulletEnvironment& e)noexcept{
-    g_th14_bullet_sprite=b.sprite;
-    for(u32 n=0;n<18;++n){g_th14_bullet_program[2*n]=b.th14_transforms[n].opcode;g_th14_bullet_program[2*n+1]=b.th14_transforms[n].concurrent;}
+i32 start_transforms(BulletState& b,BulletEnvironment& e)noexcept{
     for(u32 budget=0;b.transform_index<18;++budget){
         if(budget>=4096||b.transform_index<0)return -2;
         const auto& t=b.th14_transforms[b.transform_index];const u32 op=t.opcode;
-        g_th14_bullet_transform_index=b.transform_index;g_th14_bullet_transform_opcode=i32(op);
         if(!op||(!t.concurrent&&(b.active_transforms&~0x100u))||(op&b.active_transforms))return 0;
         switch(op){
         // 0x418280: `or ecx,1; [bullet+0xc04]=ecx`, `timer.set(0, rate)` on the object at
@@ -163,6 +159,21 @@ i32 bullet_th14_start_transforms(BulletState& b,BulletEnvironment& e)noexcept{
         }
         ++b.transform_index;
     }return 0;
+}
+}
+
+i32 bullet_th14_start_transforms(BulletState& b,BulletEnvironment& e)noexcept{
+    const auto result=start_transforms(b,e);
+    if(result<0){
+        g_th14_bullet_sprite=b.sprite;
+        g_th14_bullet_transform_index=b.transform_index;
+        g_th14_bullet_transform_opcode=u32(b.transform_index)<18?i32(b.th14_transforms[b.transform_index].opcode):-1;
+        for(u32 n=0;n<18;++n){
+            g_th14_bullet_program[2*n]=b.th14_transforms[n].opcode;
+            g_th14_bullet_program[2*n+1]=b.th14_transforms[n].concurrent;
+        }
+    }
+    return result;
 }
 i32 bullet_th14_wrap_tick(BulletState& b,BulletEnvironment& e)noexcept{
  if(!b.vm.sprite)return -2;const float width=b.vm.sprite->width,height=b.vm.sprite->height;
@@ -355,14 +366,15 @@ bool BulletManager::cancel_all_th14(){
     }
     return true;
 }
-bool BulletManager::cancel_rectangle_th14(Vec3 center,Vec2 size,float angle,u32 rewards){
+bool BulletManager::cancel_rectangle_th14(Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards){
     // 41b4f0 scans pool order and always skips collision-delayed bullets.
     // A second circle/rectangle test clips cancellation to the playfield.
+    constexpr Th14RectangleRotation playfield{0.f};
     cancel_center={center.x,center.y};cancel_size=size;
     for(u32 n=0;n<capacity;++n){auto& b=storage[n];if((b.state!=1&&b.state!=2)||b.collision_delay)continue;
         const float radius=b.hitbox.x*b.th14_size;
-        if(th14_damage_circle_rectangle(center,size,angle,b.position,radius)&&
-           th14_damage_circle_rectangle({0,224,0},{384,448},0,b.position,radius)&&!cancel_th14(b,rewards))return false;
+        if(th14_damage_circle_rectangle(center,size,rotation,b.position,radius)&&
+           th14_damage_circle_rectangle({0,224,0},{384,448},playfield,b.position,radius)&&!cancel_th14(b,rewards))return false;
     }return true;
 }
 i32 BulletManager::spawn_th14(const Th14BulletEmitter& e,i32 index,i32 layer,float aim)noexcept{

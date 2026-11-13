@@ -93,23 +93,45 @@ bool animate(AnmVm& vm,AnmEnvironment& env){
             auto scroll=[&](float& pos,float speed){if(speed==0)return;const float delta=float(env.rate*speed);float next=float(delta+pos);if(next>=2)next=float(next-2);else if(next<0)next=float(next+2);pos=next;};
             scroll(vm.uv_offset.x,vm.scroll_velocity.x);scroll(vm.uv_offset.y,vm.scroll_velocity.y);
         }
-    }else{
+    }
+#if PORT_TITLE == 14
+    else{
+        // 472ae9 calls 473110 only with the velocity enable bit set.
+        if(vm.flags2&0x800000u){
+            float* axes[]={&vm.rotation.x,&vm.rotation.y,&vm.rotation.z};
+            const float speeds[]={vm.angular_velocity.x,vm.angular_velocity.y,vm.angular_velocity.z};
+            for(u32 i=0;i<3;++i)if(speeds[i]!=0){
+                const float delta=env.rate*speeds[i];
+                *axes[i]=anm_th14_wrap_angle(*axes[i]+delta);vm.flags|=4;
+            }
+            auto scale=[&](float& value,float speed){
+                if(speed==0)return;
+                const float delta=env.rate*speed;
+                value+=delta;vm.flags|=8;
+            };
+            scale(vm.scale.y,vm.scale_velocity.y);scale(vm.scale.x,vm.scale_velocity.x);
+            auto scroll=[&](float& value,float speed){
+                if(speed==0)return;
+                const float delta=env.rate*speed;
+                float next=value+delta;
+                if(next>=2)next-=2;else if(next<0)next+=2;
+                value=next;
+            };
+            scroll(vm.uv_offset.x,vm.scroll_velocity.x);scroll(vm.uv_offset.y,vm.scroll_velocity.y);
+        }
+    }
+#else
+    else{
     float* axes[]={&vm.rotation.x,&vm.rotation.y,&vm.rotation.z};const float speeds[]={vm.angular_velocity.x,vm.angular_velocity.y,vm.angular_velocity.z};
     for(u32 i=0;i<3;++i)if(speeds[i]!=0){*axes[i]=add_angle(*axes[i],float(double(env.rate)*speeds[i]));vm.flags|=4;}
     if(vm.scale_velocity.y!=0){vm.scale.y=float(double(env.rate)*vm.scale_velocity.y+vm.scale.y);vm.flags|=8;}
     if(vm.scale_velocity.x!=0){const float delta=float(double(env.rate)*vm.scale_velocity.x);vm.scale.x=float(double(delta)+vm.scale.x);vm.flags|=12;}
     auto scroll=[&](float pos,float speed){
-        if constexpr(kPortTitle==14){
-            // 473272..47330b skips zero velocity and rounds mulss/addss
-            // separately before the single wrap at a period of two.
-            if(speed==0)return pos;
-            const float delta=float(env.rate*speed);float next=float(delta+pos);
-            if(next>=2)next=float(next-2);else if(next<0)next=float(next+2);return next;
-        }
         constexpr double period=kPortTitle==13?2:1;float next=float(double(env.rate)*speed+pos);if(next>=period)next=float(double(next)-period);else if(next<0)next=float(double(next)+period);return next;
     };
     vm.uv_offset.x=scroll(vm.uv_offset.x,vm.scroll_velocity.x);vm.uv_offset.y=scroll(vm.uv_offset.y,vm.scroll_velocity.y);
     }
+#endif
     if((kPortTitle==13||kPortTitle==14)?(vm.th13_native_flags&0x8000):(vm.flags&0x2000)){vm.position.x=float(double(vm.position.x)+env.camera_delta.x);vm.position.y=float(double(vm.position.y)+env.camera_delta.y);vm.position.z=float(double(vm.position.z)+env.camera_delta.z);}
     if(vm.flags2&(kPortTitle==13?0x2000:kPortTitle==14?0x1000:4))if(!env.screen_uv(vm))return false;
     if(vm.position_interpolation.duration)(vm.flags&0x100?vm.child_position:vm.script_position)=sample_vector_stack(vm.position_interpolation,env);
@@ -121,6 +143,9 @@ bool animate(AnmVm& vm,AnmEnvironment& env){
     if(vm.texture_scale_interpolation.duration){vm.texture_scale=sample_vec2_stack(vm.texture_scale_interpolation,env);vm.th13_native_flags|=0x10;}
 #endif
     if(vm.rotation_interpolation.duration){vm.rotation=sample_vector_stack(vm.rotation_interpolation,env);vm.flags|=4;}
+#if PORT_TITLE == 14
+    if(vm.rotation_z_interpolation.duration){vm.rotation.z=anm_th14_sample_angle(vm.rotation_z_interpolation,&env.rate);vm.flags|=4;}
+#endif
     if(vm.color2_interpolation.duration)vm.secondary_color=(vm.secondary_color&0xff000000)|rgb_bits(sample_rgb_stack(vm.color2_interpolation,env));
     if(vm.alpha2_interpolation.duration)vm.secondary_color=(vm.secondary_color&0xffffff)|(u32(sample(vm.alpha2_interpolation,&env.rate))<<24);
     if(vm.scroll_x_interpolation.duration)vm.scroll_velocity.x=sample(vm.scroll_x_interpolation,&env.rate);
@@ -480,8 +505,8 @@ int AnmVm::update(AnmEnvironment& env){
                 // Random references consume their own draws in that order.
                 const float z=float(floating(2)),y=float(floating(1)),x=float(floating(0));
                 angular_velocity={x,y,z};flags2|=0x800000u;
-            }else{angular_velocity.x=float(floating(0));angular_velocity.y=float(floating(1));angular_velocity.z=float(floating(2));}
-            flags|=4;break;
+            }else{angular_velocity.x=float(floating(0));angular_velocity.y=float(floating(1));angular_velocity.z=float(floating(2));flags|=4;}
+            break;
         case 54:
             if constexpr(kPortTitle==14){
                 // Retail4716bf resolves Y before X and enables velocity updates.
@@ -495,6 +520,16 @@ int AnmVm::update(AnmEnvironment& env){
         case 57:case 78:{const u32 from=op==57?color:secondary_color;const u32 b=u32(integer(4))&255,g=u32(integer(3))&255,r=u32(integer(2))&255;const i32 duration=integer(0);rgb_start(op==57?color_interpolation:color2_interpolation,duration,current->argument<u8>(1),from,b|(g<<8)|(r<<16),&env.rate);if constexpr(kPortTitle==14)if(op==78)th13_native_flags=(th13_native_flags&~0x60000u)|0x20000u;break;}
         case 58:case 79:{const u8 to=u8(integer(2));const i32 duration=integer(0);alpha_start(op==58?alpha_interpolation:alpha2_interpolation,duration,current->argument<u8>(1),(op==58?color:secondary_color)>>24,to,&env.rate,op==58);if constexpr(kPortTitle==14)if(op==79)th13_native_flags=(th13_native_flags&~0x60000u)|0x20000u;break;}
         case 59:{const float z=float(floating(4)),y=float(floating(3)),x=float(floating(2));auto& v=rotation_interpolation;v.duration=integer(0);v.mode=InterpolationMode(current->argument<i32>(1));std::memcpy(v.initial_tangent,&env.default_tangent,12);std::memcpy(v.final_tangent,&env.default_tangent,12);std::memcpy(v.start,&rotation,12);v.end[0]=x;v.end[1]=y;v.end[2]=z;v.timer.set(0,&env.rate);flags|=4;break;}
+#if PORT_TITLE == 14
+        case anm_th14_rotation_z_interpolate:{
+            const float to=anm_th14_wrap_angle(float(floating(2)));
+            auto& v=rotation_z_interpolation;
+            v.start[0]=anm_th14_wrap_angle(rotation.z);v.end[0]=to;
+            v.initial_tangent[0]=v.final_tangent[0]=0;
+            v.duration=integer(0);v.mode=InterpolationMode(current->argument<i32>(1));
+            v.timer.set(0,&env.rate);flags|=4;break;
+        }
+#endif
         case 60:{const float y=float(floating(3)),x=float(floating(2));auto& v=scale_interpolation;v.duration=integer(0);v.mode=InterpolationMode(current->argument<u8>(1));std::memcpy(v.start,&scale,8);v.end[0]=x;v.end[1]=y;v.timer.set(0,&env.rate);flags|=8;break;}
         case 61:flags=(flags^0x200)|8;scale.x=-scale.x;break;
         case 62:flags=(flags^0x400)|8;scale.y=-scale.y;break;
@@ -546,7 +581,7 @@ int AnmVm::update(AnmEnvironment& env){
         }
         case 93:case 94:{const float to=float(floating(2));const i32 duration=integer(0);auto& v=op==93?scroll_x_interpolation:scroll_y_interpolation;v.duration=duration;v.mode=InterpolationMode(current->argument<i32>(1));v.start[0]=op==93?scroll_velocity.x:scroll_velocity.y;v.end[0]=to;v.initial_tangent[0]=v.final_tangent[0]=0;v.timer.set(0,&env.rate);break;}
         case 98:if(!env.screen_uv(*this))return -1;break;
-        case 99:{constexpr u32 shift=kPortTitle==13?13:2,mask=1u<<shift;flags2=(flags2&~mask)|((u32(integer(0))<<shift)&mask);break;}
+        case 99:{constexpr u32 shift=kPortTitle==14?12:kPortTitle==13?13:2,mask=1u<<shift;flags2=(flags2&~mask)|((u32(integer(0))<<shift)&mask);break;}
         case 100:{const float ax=float(floating(1)),ay=float(floating(2)),az=float(floating(3)),bx=float(floating(7)),by=float(floating(8)),bz=float(floating(9));auto& v=position_interpolation;v.duration=integer(0);v.mode=InterpolationMode::Hermite;v.initial_tangent[0]=ax;v.initial_tangent[1]=ay;v.initial_tangent[2]=az;v.final_tangent[0]=bx;v.final_tangent[1]=by;v.final_tangent[2]=bz;const auto from=flags&0x100?child_position:script_position;std::memcpy(v.start,&from,12);const float z=float(floating(6)),y=float(floating(5)),x=float(floating(4));v.end[0]=x;v.end[1]=y;v.end[2]=z;v.timer.set(0,&env.rate);break;}
         case 102:{flags|=1;const i32 first=integer(0);const u32 range=u32(integer(1));if(!range)return -1;const i32 value=wrapping_add(first,signed_bits(env.script_rng.next32()%range));if(!bind_sprite(sprite_callback?sprite_callback(*this,value):value))return -1;sprite_frame=timer.current;break;}
         default:break;

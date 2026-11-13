@@ -19,6 +19,7 @@ public:
 #if PORT_TITLE == 14
     u32 render_width=640,render_height=480;
     int draw_transition_type0(AnmVm& vm);
+    AnmRenderSpace render_space_th14()const noexcept;
 #endif
     int draw_ascii_sprite(AnmVm& vm);
     int draw_ripple(AnmVm& vm);

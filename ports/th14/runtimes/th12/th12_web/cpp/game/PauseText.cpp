@@ -42,8 +42,8 @@ void PauseMenu::queue_ascii(AsciiText& out)const{
 #endif
 #if PORT_TITLE == 14
     // Retail4485d0 state15 draws the remaining credits below the ANM choices.
-    if(state==14){constexpr i32 limits[]={3,3,4,5,0};const i32 credit=difficulty>=0&&difficulty<5?limits[difficulty]-continues:0;
-        std::snprintf(line,sizeof line,"Credit %d",credit);add(line,184,448);return;}
+    if(state==14){
+        std::snprintf(line,sizeof line,"Credit %d",remaining_credits_th14());add(line,184,448);return;}
 #endif
     auto name=[&](float x,float y){
         add(entered_name.data(),x,y);style.color=0xffffff00;add("_",x+9*(name_length==8?7:name_length),y);

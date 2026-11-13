@@ -45,6 +45,7 @@ public:
     bool replay=false,bomb_active=false;
 #if PORT_TITLE == 14 || PORT_TITLE == 16
     u32 run_flags=0;
+    bool show_full_capture_history=false;
 #endif
     bool begin(i32 id,i32 timeout,const char* name,Vec3 boss,bool bomb);
     bool update(float player_y,Vec3 boss,bool bomb);

@@ -17,7 +17,9 @@ struct Timer {
         previous=wrapping_add(frame,-1);current=frame;fractional=float(frame);
     }
     void tick() noexcept {
-        previous=current;const float speed=th14_rate_load(rate);
+        previous=current;
+        // Retail408690 and the inline Player clocks treat a null rate as1.
+        const float speed=kPortTitle==14&&!rate?1.f:th14_rate_load(rate);
         if(speed>0.99f&&speed<1.01f){current=wrapping_add(current,1);fractional=float(double(fractional)+1);}
         else {fractional=float(double(fractional)+speed);current=truncate_int(fractional);}
     }

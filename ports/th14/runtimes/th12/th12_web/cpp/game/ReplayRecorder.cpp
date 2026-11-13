@@ -1,5 +1,8 @@
 #include "ShotFiles.hpp"
 #include "ReplayRecorder.hpp"
+#if PORT_TITLE == 14
+#include "PracticeReplayPurpleTh14.hpp"
+#endif
 #include "Lzss.hpp"
 #include "ResourceCrypt.hpp"
 #include "Timer.hpp"
@@ -13,6 +16,9 @@ void dword(u8* p,u32 v){word(p,v);word(p+2,v>>16);}
 }
 bool ReplayRecorder::begin(i32 character,i32 subtype,i32 difficulty,bool practice,u64 timestamp){
     header={};stages={};selected=0;valid=false;
+#if PORT_TITLE == 14
+    this->practice={};practice_events={};
+#endif
     if(!player_selection_valid(character,subtype)||difficulty<0||difficulty>4)return false;
     header[10]=practice;dword(header.data()+12,u32(timestamp));dword(header.data()+16,u32(timestamp>>32));
 #if PORT_TITLE == 14
@@ -42,6 +48,13 @@ bool ReplayRecorder::start_stage(u32 number,const ReplayStageState& s,bool initi
 #endif
     return true;
 }
+#if PORT_TITLE == 14
+void ReplayRecorder::record_tools(u32 tools){
+    if(!selected)return;
+    auto& events=practice_events[selected];
+    if((events.empty()?0u:events.back().tools)!=tools)events.push_back({stages[selected].frames,tools});
+}
+#endif
 bool ReplayRecorder::uses_touch()const{for(const auto& s:stages)if(!s.touches.empty())return true;return false;}
 bool ReplayRecorder::tick(u32 held,u32 pressed,u32 released,float fps,i32 touch_mode,float x,float y){
     if(!valid||!selected||!std::isfinite(fps)||touch_mode<0||touch_mode>2||(touch_mode&&(!std::isfinite(x)||!std::isfinite(y))))return false;auto& s=stages[selected];
@@ -77,6 +90,20 @@ bool ReplayRecorder::save(const char* name,i32 score,i32 reached,i32 continues,f
     if(touch_count){const u32 start=u32(out.size()),length=32+touch_count*16;out.resize(start+length);auto* p=out.data()+start;dword(p,0x52455355);dword(p+4,length);dword(p+8,0x11);dword(p+12,0x54313154);dword(p+16,1);dword(p+20,touch_count);p+=32;
         for(u32 stage=1;stage<8;++stage)for(const auto& t:stages[stage].touches){word(p,stage);word(p+2,u32(t.mode));dword(p+4,t.frame);std::memcpy(p+8,&t.x,4);std::memcpy(p+12,&t.y,4);p+=16;}
     }
+#if PORT_TITLE == 14
+    append_purple_practice_block(out,practice,(header[10]&2)!=0);
+    u32 events=0;for(const auto& stream:practice_events)events+=u32(stream.size());
+    if(practice||events){
+        static_assert(sizeof(PracticeTh14)==56);
+        const u32 start=u32(out.size()),length=80+events*12;
+        out.resize(start+length);auto* p=out.data()+start;
+        dword(p,0x52455355);dword(p+4,length);dword(p+8,0x14);dword(p+12,0x34315250);dword(p+16,1);
+        std::memcpy(p+20,&practice,56);dword(p+76,events);p+=80;
+        for(u32 stage=1;stage<8;++stage)for(const auto& e:practice_events[stage]){
+            dword(p,stage);dword(p+4,e.frame);dword(p+8,e.tools);p+=12;
+        }
+    }
+#endif
     return true;
 }
 }

@@ -12,7 +12,7 @@ void PauseMenu::name_move(u32 input){
     if(input&16)c.move(-13);if(input&32)c.move(13);
     if(input&64)c.move(c.selected%13==0?12:-1);
     if(input&128)c.move(c.selected%13==12?-12:1);
-    if(c.previous!=c.selected)sounds.push_back(12);
+    if(c.previous!=c.selected)sounds.push_back(kPortTitle==14?10:12);
 }
 i32 PauseMenu::name_confirm(){
     static constexpr char letters[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-=.,!?@:;[]()_/{}|~^#$%&*   ";
@@ -33,19 +33,19 @@ void PauseMenu::save_menu(u32 pressed,u32 repeat){
     case 9:
         if(timer.current<10)break;
         cursor.previous=cursor.selected;if((pressed|repeat)&16)cursor.move(-1);if((pressed|repeat)&32)cursor.move(1);
-        if(cursor.previous!=cursor.selected)sounds.push_back(12);
-        if(pressed&0x80001){transition(10);recording_metadata_requested=true;name_begin();sounds.push_back(10);return;}
+        if(cursor.previous!=cursor.selected)sounds.push_back(kPortTitle==14?10:12);
+        if(pressed&0x80001){transition(10);recording_metadata_requested=true;name_begin();sounds.push_back(kPortTitle==14?7:10);return;}
         if(pressed&0x102){cursor.pop();cursor.count=kPortTitle==14?5:4;cursor.wrap=1;family(menu_animation,cursor.selected+7);
-            replay_files.fill(nullptr);transition(4);cursor.select(1);sounds.push_back(11);
+            replay_files.fill(nullptr);transition(4);cursor.select(1);sounds.push_back(kPortTitle==14?9:11);
         }break;
     case 10:
         if(timer.current<10)break;
         name_move(pressed|repeat);
         if(pressed&0x80001){const i32 choice=name_cursor.selected,edit=name_confirm();if(edit<0)return;
-            if(edit==1){sounds.push_back(44);save_requested=true;transition(9);std::memcpy(scores.settings.data()+12,entered_name.data(),9);return;}
-            sounds.push_back(choice==89?11:10);if(choice==89)return;
+            if(edit==1){sounds.push_back(kPortTitle==14?17:44);save_requested=true;transition(9);std::memcpy(scores.settings.data()+12,entered_name.data(),9);return;}
+            sounds.push_back(choice==89?(kPortTitle==14?9:11):(kPortTitle==14?7:10));if(choice==89)return;
         }
-        if(pressed&0x102){sounds.push_back(11);if(name_length)entered_name[--name_length]=' ';else transition(9);}break;
+        if(pressed&0x102){sounds.push_back(kPortTitle==14?9:11);if(name_length)entered_name[--name_length]=' ';else transition(9);}break;
     }
 }
 }

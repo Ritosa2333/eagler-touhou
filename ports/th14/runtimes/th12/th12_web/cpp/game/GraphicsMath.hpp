@@ -10,6 +10,7 @@ struct GraphicsMath {
     static Matrix4 look_at(Vec3 eye,Vec3 target,Vec3 up) noexcept;
     static Matrix4 perspective(float fov,float aspect,float near_plane,float far_plane) noexcept;
     static void transform(Vec3,const Matrix4&,float (&out)[4]) noexcept;
+    static Vec3 project(Vec3,const GraphicsViewport&,const Matrix4& world_to_clip) noexcept;
     static Vec3 project(Vec3,const GraphicsViewport&,const Matrix4& projection,const Matrix4& view,const Matrix4& world) noexcept;
 };
 }
