@@ -20,8 +20,8 @@
     "optionalPatchPublished": false,
     "completeGame": false
   },
-  "fullOptionalRuntimeBuilt": false,
-  "published": false,
+  "fullOptionalRuntimeBuilt": true,
+  "published": true,
   "completeGame": false,
   "linuxApplication": {
     "passed": true,
@@ -100,6 +100,101 @@
       "uiAcceptanceCompleted": false,
       "reason": "Two browser tool timeouts; no game launched through the public page."
     },
+    "completeGame": false
+  },
+  "currentOptionalRuntime": {
+    "passed": true,
+    "acceptanceStandard": "observable-behavior-alignment",
+    "siteSource": "a32c8c55bf5f90bd7c5da0a20229584561df109c",
+    "patchBase": "5eb4ac87d227027f390fa006e1126a094b820860",
+    "patchSha256": "f1d3190b5d0632f4ad982dc055190556378918c953da0b11b76a5114f2ea2c54",
+    "wasmSha256": "8905d1616a5b084cb1a6956e10d66bae5b0644f04d6dfeb0b8acb9c0d3c0ebba",
+    "runtimeGeneration": "1cc019c9f0ece3818caa95b9c1445acf76e454404aa076b168237e8108346699",
+    "units": 153,
+    "unitsRecompiled": 25,
+    "objectsVerifiedReused": 128,
+    "compilerReuseDependenciesChecked": true,
+    "sourceBindingsVerified": 387,
+    "commonBindingsVerified": 24,
+    "normalAccess": true,
+    "runtimeResponsesVerified": 32,
+    "cowAssets": true,
+    "fullOptionalRuntimeBuilt": true,
+    "privateValidationProfile": "web-validation-th14",
+    "actualBrowser": "Chrome 157 / SDL3 WebGL2 / C++",
+    "observedFps": 60,
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "ordinaryMusicMode": "ogg-stream",
+    "replayUiMusicModeObserved": "none",
+    "f12AdvancedOpenAndClose": true,
+    "liveJapaneseAndImGuiFontsRendered": true,
+    "practiceMenuEnteredThroughOriginalMenu": true,
+    "practice": {
+      "character": "Reimu A",
+      "difficulty": "Normal",
+      "stage": 1,
+      "warp": "Boss nonspell1",
+      "bossObserved": "Wakasagihime",
+      "initialLives": 8,
+      "initialBombs": 6,
+      "initialPower": "4.00"
+    },
+    "savedReplay": {
+      "file": "th14_01.rpy",
+      "slotObservedEmpty": true,
+      "name": "AA",
+      "bytes": 1691,
+      "sha256": "9fefe3ad0bc4786594ebf8c83c8bcd977e4e689b035b9c06f6366edd2c5c7353",
+      "wholePageReloadBeforeRead": true,
+      "practiceMetadataRecognized": true,
+      "pracBlockBytes": 268,
+      "fullPlaybackEnded": true,
+      "frames": 1435,
+      "retailCryptoLzssDecoded": true,
+      "decodedBytes": 9026,
+      "decodedSha256": "fd614d240204b4c24b160a11501b7e7a62237c0323dba88ec0eeb16127b70463"
+    },
+    "matchingObservedGameplay": {
+      "score": 520,
+      "lives": 7,
+      "bombs": 3,
+      "power": "3.52",
+      "graze": 24,
+      "pointValue": 10020
+    },
+    "separateDisplayObservation": {
+      "liveHighScore": 520,
+      "playbackHighScore": 1000000,
+      "originalBehaviorAlignmentVerified": false,
+      "timerLive": "12.80",
+      "timerPlayback": "12.78",
+      "scope": "These displays are excluded from the fields claimed equal and require original/current score-state comparison."
+    },
+    "nativeComponentCases": {
+      "validHits": 4032,
+      "negativeEdges": 48,
+      "invalidFallback": 30,
+      "journalCases": 21
+    },
+    "actualShellImportCommandCases": 12,
+    "observedConsoleWarningsAndErrors": [],
+    "screenshotsSha256": {
+      "optional-silent-settings.png": "25d20f702047f6dea6d02e2c8be5a7fc1501ad14ce7701e9e73b2e0a1c1558ab",
+      "optional-advanced-fonts.png": "cbad8b51984660f420601e5eb9a923ef34048e074b71519a7d642ac9a2a4995f",
+      "optional-practice-fonts.png": "47e85775fc55b66933f0d486bc68d3277a55d39ce77bc6bfdd68f07d8702726b",
+      "optional-boss-config.png": "bdca3a386a0439aefb2f6023b5b6f56c4edf9db53b4ec8e80f86e503b1af43f7",
+      "optional-boss-stage.png": "9fd8fcc40bcb5d177ba7eb5495c98e4eae0e9429fd1f5a6de81f8ef124f10d3d",
+      "optional-live-end.png": "164476e7cdd8e8eea397a0c33a320aa3c11d640030db1f255fe78fe5d54ffbfb",
+      "optional-empty-replay-slot.png": "2251db98e442c415f43d9093bd803503cdc9835a5ba29f241472ca4ee0059af4",
+      "optional-ogg-zero.png": "a9a28dce7c8abfdd079d0c3732102576b6e2ea98abd880b83fe7d24b1b739f08",
+      "optional-replay-persisted.png": "39cdd2fffd9d198a25fa8fa3cf0f8501ef33ea7dcb292229ca20a08676ba6a3f",
+      "optional-replay-ended.png": "78a7fe49e2e1f9ca517b467c9aca67af997483b1e1648e93dc2e74098262d874"
+    },
+    "allPracticeFeaturesAccepted": false,
+    "mobileTouchAccepted": false,
+    "independentOriginalPurpleReplayAccepted": false,
+    "productionDeployed": false,
     "completeGame": false
   }
 }
