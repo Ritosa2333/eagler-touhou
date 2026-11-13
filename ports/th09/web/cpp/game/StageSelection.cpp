@@ -15,7 +15,7 @@ std::vector<StageRoute> StageSelection::candidates(const StageSelectionState& s)
     std::vector<StageRoute> out;if(s.mode==GameMode::versus||s.characters[0]<0||s.characters[0]>=14||s.stage<0||s.stage>8)return out;
     const auto& table=routes[s.characters[0]];for(u32 n=0;n<table.size;++n){const auto& r=table.rows[n];if(r.stage==s.stage&&r.opponent>=0&&r.opponent<16&&!s.visited[r.opponent])out.push_back(r);}return out;
 }
-bool StageSelection::select(StageSelectionState& s,Rng& random,StageSelectionActions& actions){
+bool StageSelection::select(StageSelectionState& s,Rng& random,StageSelectionActions& actions,bool replay){
     if(s.difficulty<0||s.difficulty>4)return false;
     if(s.mode!=GameMode::versus){
         if(s.characters[0]<0||s.characters[0]>=14||s.stage<0||s.stage>8)return false;
@@ -35,6 +35,9 @@ bool StageSelection::select(StageSelectionState& s,Rng& random,StageSelectionAct
         for(i32 i=0;i<16;++i)if(s.unlocked[i]||s.all_unlocked){if(!choice){character=i;break;}--choice;}
     }
     s.route=versusRoutes[0];for(const auto& route:versusRoutes)if(route.opponent==character){s.route=route;break;}
+    // Playback consumes the random stage draw but uses the saved background.
+    if(replay&&s.route.background!=s.background)
+        for(const auto& route:versusRoutes)if(route.background==s.background){s.route=route;break;}
     s.background=s.route.background;s.cpu_levels[0]=s.cpu_levels[1]=versusPolicies[s.difficulty];return true;
 }
 }
