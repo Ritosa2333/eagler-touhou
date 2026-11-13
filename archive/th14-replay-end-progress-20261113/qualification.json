@@ -1,0 +1,52 @@
+{
+  "websiteParent": "d9ac28cd800237e7caf5d12e732ad2c578a78291",
+  "coreBase": "5eb4ac87d227027f390fa006e1126a094b820860",
+  "beforeSha256": "39189e1042ab742cd22239006aa3d328e38e41425bde9730eef0287d6ba46bb2",
+  "afterSha256": "80255c6c18f5b816b76de0917d503881a51f7fea398b8661e0e66ff802d3f324",
+  "changedPatchSections": [
+    "diff --git a/runtimes/th12/th12_web/cpp/sdl/Application.cpp b/runtimes/th12/th12_web/cpp/sdl/Application.cpp",
+    "diff --git a/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs b/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs"
+  ],
+  "allOtherPatchSectionsBytePreserved": true,
+  "wholePatchReverseAndApplyCheckPassed": true,
+  "wholePatchAppliedSuccessfully": true,
+  "optionalWasmRebuilt": false,
+  "optionalBrowserAccepted": false,
+  "completeGame": false,
+  "nativeStatusMethodExactlyMatchesTestedNormalSource": true,
+  "controllerCheck": {
+    "passed": true,
+    "cases": [
+      {
+        "name": "early GameOver preserves actual native cursor",
+        "frame": 34783,
+        "ended": true,
+        "passed": true
+      },
+      {
+        "name": "completed stage retains full end position",
+        "frame": 35775,
+        "ended": true,
+        "passed": true
+      },
+      {
+        "name": "ordinary pause preserves cursor",
+        "frame": 21169,
+        "ended": false,
+        "passed": true
+      },
+      {
+        "name": "native terminal-marker position is retained",
+        "frame": 21793,
+        "ended": true,
+        "passed": true
+      }
+    ],
+    "actualSharedControllerExecuted": true,
+    "nativeStatusDeclaredBoundary": true,
+    "gameplayStateWrites": false,
+    "silent": true,
+    "completeGame": false
+  },
+  "optionalHostSha256": "984530455bb03ef2a15dc6a98e00526592d31bf4d418fe4357acfc3d6bc1494c"
+}
