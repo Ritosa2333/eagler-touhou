@@ -2908,7 +2908,7 @@ index a3e63fe228287890e69b17af24edfea2684474b2..a7d4cf12bf221720e07b639c8c933962
      auto name=[&](float x,float y){
          add(entered_name.data(),x,y);style.color=0xffffff00;add("_",x+9*(name_length==8?7:name_length),y);
 diff --git a/runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp b/runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp
-index a829a789d81446dd2913c8dd35061377a94a77ed..df57b8ffcbc525c8a441b4477a5dcdc2f25d733e 100644
+index a829a789d81446dd2913c8dd35061377a94a77ed..ddaf912268b044fd62f5530ad05d710f68eb7179 100644
 --- a/runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp
 +++ b/runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp
 @@ -1,4 +1,5 @@
@@ -2955,7 +2955,22 @@ index a829a789d81446dd2913c8dd35061377a94a77ed..df57b8ffcbc525c8a441b4477a5dcdc2
  }
  bool PlayerFrame::rebuild_options(){
  #if PORT_TITLE == 16
-@@ -216,6 +228,9 @@ bool PlayerFrame::die(){
+@@ -171,9 +183,11 @@ bool PlayerFrame::draw(AnmRenderer& renderer){
+     return true;
+ }
+ bool PlayerFrame::cancel_all(bool spawning){return world.cancel_bullets(nullptr,0,spawning)&&world.cancel_lasers(nullptr,0,!spawning,spawning);}
+-void PlayerFrame::fail_spell(){if(!(spell.flags&1))return;if(spell.elapsed>=60){spell.bonus=0;spell.flags&=~0x22u;}else if(input.special_active
+-#if PORT_TITLE != 14
+-    &&input.movement.character*2+input.movement.subtype!=5
++void PlayerFrame::fail_spell(){if(!(spell.flags&1))return;if(spell.elapsed>=60){spell.bonus=0;spell.flags&=~0x22u;}else if(
++#if PORT_TITLE == 14
++    input.special_active==1 // 44f807: the armed Sakuya A shield is state 2.
++#else
++    input.special_active&&input.movement.character*2+input.movement.subtype!=5
+ #endif
+     )spell.flags|=0x20;}
+ bool PlayerFrame::hit(){
+@@ -216,6 +230,9 @@ bool PlayerFrame::die(){
      if(!world.player_effect(motion.state.position,27))return false;
  #else
      economy.point_value=std::max(wrapping_add(economy.point_value,-10000000),state.minimum_point_value);economy.communication=0;
@@ -2965,7 +2980,7 @@ index a829a789d81446dd2913c8dd35061377a94a77ed..df57b8ffcbc525c8a441b4477a5dcdc2
  #endif
      economy.lives=wrapping_add(economy.lives,-1);
  #if PORT_TITLE == 14
-@@ -237,7 +252,7 @@ bool PlayerFrame::start_special(){
+@@ -237,7 +254,7 @@ bool PlayerFrame::start_special(){
      input.special_active=true;
  #if PORT_TITLE == 14
      // Retail 412110 consumes Bomb stock, preserving power and fragments.
@@ -2974,7 +2989,7 @@ index a829a789d81446dd2913c8dd35061377a94a77ed..df57b8ffcbc525c8a441b4477a5dcdc2
      if(!world.bombs_changed(economy.th14_bombs,economy.th14_bomb_fragments)){last_error=78;return false;}
  #else
      economy.power=wrapping_sub(economy.power,economy.power_step);
-@@ -247,7 +262,8 @@ bool PlayerFrame::start_special(){
+@@ -247,7 +264,8 @@ bool PlayerFrame::start_special(){
  }
  bool PlayerFrame::active_frame(){
  #if PORT_TITLE == 14
@@ -2984,7 +2999,7 @@ index a829a789d81446dd2913c8dd35061377a94a77ed..df57b8ffcbc525c8a441b4477a5dcdc2
  #else
      const bool available=!input.movement.bomb&&input.special_available&&!input.special_active&&economy.power_step&&economy.power/economy.power_step;
  #endif
-@@ -345,12 +361,17 @@ bool PlayerFrame::update(){
+@@ -345,12 +363,17 @@ bool PlayerFrame::update(){
              if(!death_frame())return false;
          }else{
  #if PORT_TITLE == 14
@@ -3004,7 +3019,7 @@ index a829a789d81446dd2913c8dd35061377a94a77ed..df57b8ffcbc525c8a441b4477a5dcdc2
                  if(start_special()){state.state_timer.set(60,&animations.rate);state.life_state=1;}
                  else if(last_error!=74)return false;
              }
-@@ -410,7 +431,11 @@ bool PlayerFrame::update(){
+@@ -410,7 +433,11 @@ bool PlayerFrame::update(){
      }
      return shots.update();
  }
@@ -3017,6 +3032,25 @@ index a829a789d81446dd2913c8dd35061377a94a77ed..df57b8ffcbc525c8a441b4477a5dcdc2
  #if PORT_TITLE == 14
      if(th14_scale.flags&0x10)p.radius=(th14_scale.factor*3.5999999046325684f)*p.radius;
  #endif
+diff --git a/runtimes/th12/th12_web/cpp/game/PlayerFrame.hpp b/runtimes/th12/th12_web/cpp/game/PlayerFrame.hpp
+index 1812910b418aa4cabdd629cad329651808e703d2..6700c30ee55b3ec143cab1c7fa6fbb2cf967816e 100644
+--- a/runtimes/th12/th12_web/cpp/game/PlayerFrame.hpp
++++ b/runtimes/th12/th12_web/cpp/game/PlayerFrame.hpp
+@@ -6,7 +6,13 @@ namespace th11 {
+ struct ReplayStageState;
+ struct PlayerFrameInput {
+     PlayerMotionInput movement;
+-    bool special_available=true,special_active=false,shooting_blocked=false;
++    bool special_available=true;
++#if PORT_TITLE == 14
++    i32 special_active=0;
++#else
++    bool special_active=false;
++#endif
++    bool shooting_blocked=false;
+     bool replay=false,hit_sound=true;
+ };
+ struct PlayerSpellState {u32 flags=0;i32 elapsed=0,bonus=0;};
 diff --git a/runtimes/th12/th12_web/cpp/game/PracticeCatalogTh14.inc b/runtimes/th12/th12_web/cpp/game/PracticeCatalogTh14.inc
 new file mode 100644
 index 0000000000000000000000000000000000000000..e1637f9df575ce4ff3b7f04f9fe2103970d18567
@@ -8894,6 +8928,20 @@ index c726b765a606b38b4b2eeff31c117c3aceebc737..1ed4a0c9b766661f1c7afa7f6bf3e984
 +    "Th14WebGpuHost.mjs"
 +  ]
 +}
+diff --git a/tools/th14-player-lifecycle-native.py b/tools/th14-player-lifecycle-native.py
+index f9cb7649ef75ded681d0d626542da6a604355f92..a5f836225e1e4f1df6accd842c5a3859bacc8525 100644
+--- a/tools/th14-player-lifecycle-native.py
++++ b/tools/th14-player-lifecycle-native.py
+@@ -54,6 +54,9 @@ def main():
+  rows=[]
+  for kind,flags,elapsed,active,scale_flags in itertools.product((5,6),(0,1,0x23),(0,59,60,120),(0,1),(0,8)):
+   for lives in (-1,0,2):rows.append(run(kind,lives,2,7,100,7,0,1,active,flags,elapsed,scale_flags))
++ # Sakuya A's armed shield uses controller state 2, not the active Bomb state 1.
++ for kind,flags,elapsed in itertools.product((5,6),(1,0x23),(0,59,60,120)):
++  rows.append(run(kind,2,2,7,100,7,0,1,2,flags,elapsed,8))
+  for fragments in (-1,32768,65537,2147483647):rows.append(run(6,2,2,fragments,100,7,0,1,0,0,0,0))
+  for kind,frame,bombs,held,available,active,power in itertools.product((1,4),(0,7,8),(0,1,3,9),(0,2),(0,1),(0,1),(0,100)):
+   rows.append(run(kind,2,bombs,5,power,frame,held,available,active,0,0,0))
 diff --git a/tools/th14-texture-display-oracle.py b/tools/th14-texture-display-oracle.py
 new file mode 100644
 index 0000000000000000000000000000000000000000..de24fee730a2cd08cc5c8538787c0f305561c4a2
