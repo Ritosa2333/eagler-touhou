@@ -177,7 +177,10 @@ public:
     std::function<void()> option_power_changed;
     // 43d2f0/43d330 -> 42ae90; 43d440/43d480 -> 42af60.
     // Fragment-only pickups also refresh the existing HUD VMs.
-    std::function<void(i32 stock, i32 pieces)> life_changed, bombs_changed;
+    // 回调签名：(席位, 值…）。席位 0 = 单席路径（SP 语义不变）；MP 下
+    // grant_resources / 死亡 / Bomb / 送残逐席触发（R-I3 广播发放 = 每席
+    // 各一次，携带该席资源值）。
+    std::function<void(i32 seat, i32 stock, i32 pieces)> life_changed, bombs_changed;
     // 原版槽量：0x42e380 循环上界 0xa57+1 = 2648（道具）；0x438ec0 扫描
     // 0x100 = 256 槽（步长 0x22 float）——满时静默丢弃（本函数返回不产件）。
     static constexpr i32 kItemCapacity = 2648;

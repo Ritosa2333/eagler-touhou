@@ -285,7 +285,11 @@
         "all_four_duplicate_characters_keep_separate_bomb_families",
         "mixed_character_options_focus_and_death_stay_with_their_seat",
         "reimu_slow_time_zero_age_births_once_and_replays_exactly",
-        "teammate_presentation_fields_are_captured_and_hashed"
+        "teammate_presentation_fields_are_captured_and_hashed",
+        "equal_generation_shot_fades_are_independent_for_every_seat",
+        "shot_fade_snapshot_order_and_restore_boundaries",
+        "shot_fade_history_preserves_unknown_high_words_and_future_reuse",
+        "ghost_ship_bodies_remain_visible_with_draw_only_opacity"
       ]
     },
     {
@@ -539,7 +543,8 @@
         "team_wipe_production_180",
         "team_wipe_pause_and_rescue",
         "team_wipe_restore_replay",
-        "team_wipe_single_seat_unchanged"
+        "team_wipe_single_seat_unchanged",
+        "team_wipe_terminal_delayed_confirmation_requires_handoff"
       ]
     },
     {
@@ -589,6 +594,35 @@
       ]
     },
     {
+      "id": "m5.bomb_window_audit",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/bomb_window_audit_test.cpp"
+      ],
+      "tests": [
+        "bomb_window_all_roles_all_seats_each_frame",
+        "bomb_window_overlap_ghost_and_death",
+        "bomb_tail_spell_damage_uses_teammate_protection",
+        "bomb_start_frame_real_world_collisions",
+        "transition_real_x_team_window_and_restore",
+        "transition_existing_bomb_team_window_and_restore"
+      ]
+    },
+    {
+      "id": "m5.mp_hud_seat_rows",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m5_mp_hud_test.cpp"
+      ],
+      "tests": [
+        "mp_hud_seat_icon_layout",
+        "mp_hud_text_rows",
+        "mp_hud_seat_callbacks",
+        "mp_hud_rollback_roundtrip",
+        "mp_hud_world_restore_immediate_draw"
+      ]
+    },
+    {
       "id": "m4.team_trance_shooting_four_roles",
       "layer": "browser",
       "files": [
@@ -624,6 +658,17 @@
       ]
     },
     {
+      "id": "m6.digest_interpolation_exact",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/digest_interpolation_test.cpp"
+      ],
+      "tests": [
+        "digest_interpolation_exact",
+        "digest_matrix_exact"
+      ]
+    },
+    {
       "id": "m6.full_state_restore_replay",
       "layer": "native",
       "files": [
@@ -637,7 +682,9 @@
         "host_and_world_restore_replay_future_frames_together",
         "new_session_discards_local_startup_loader_history",
         "transfer_snapshot_and_digest",
-        "history_remote_menu_edges"
+        "history_remote_menu_edges",
+        "scene_digest_mutation_controls",
+        "anm_draw_layers_restore_and_digest"
       ]
     },
     {
@@ -1065,6 +1112,17 @@
       "layer": "browser",
       "files": [
         "tests/multiplayer/browser/m9_lifecycle.mjs"
+      ]
+    },
+    {
+      "id": "m5.reimu_trance_boss_path",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/reimu_trance_path_test.cpp"
+      ],
+      "tests": [
+        "reimu_trance_shot_real_sht_to_boss_and_rollback",
+        "reimu_team_trance_nonowner_natural_boss_and_geometry_boundaries"
       ]
     }
   ]

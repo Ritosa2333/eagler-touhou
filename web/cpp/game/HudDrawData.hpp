@@ -4,6 +4,9 @@
 
 #include "HudFrameData.hpp"
 
+#include "SessionState.hpp"
+
+#include <array>
 #include <string>
 
 namespace th13 {
@@ -21,6 +24,16 @@ struct HudTextDraw {
     std::string text;
 };
 
+// M5：多人 HUD 每席视图（RunScene 每帧从 battle 装配；null = 单席，
+// 文本面走 SP 原位布局，零变化）。ghost 位图 bit k = 席 k 幽灵
+//（R-I8：幽灵不操作不拾取，但保留团队账面奖励——HUD 照常显示资源）。
+struct MpHudSeats {
+    i32 count = 0;
+    i32 local_seat = 0;
+    u8 ghost = 0;
+    std::array<const HudPlayerState*, 3> seats{};
+};
+
 struct HudDrawServices {
     virtual ~HudDrawServices() = default;
     virtual bool hud_text(const HudTextDraw&) = 0;
@@ -28,6 +41,7 @@ struct HudDrawServices {
 
 struct HudDrawContext {
     HudFrameContext frame;
+    const MpHudSeats* mp = nullptr;
 };
 
 // 千分位分组与带尾位 score 格式（th15 GameHudDraw.cpp 同族实现）。

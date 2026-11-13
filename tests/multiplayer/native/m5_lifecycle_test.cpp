@@ -18,6 +18,7 @@
 #include "game/StageBattle.hpp"
 #include "sdl/ApplicationState.hpp"
 #include "multiplayer/Session.hpp"
+#include "multiplayer/WorldState.hpp"
 #include "eagler/gameplay/CooperativeRules.hpp"
 #include <cmath>
 #include <cstdlib>
@@ -28,12 +29,13 @@ using namespace th13test;
 namespace {
 
 struct Host final : StageBattleServices {
+    std::vector<i32> stopped;
     bool life_hud(i32, i32) override { return true; }
     bool bomb_hud(i32, i32) override { return true; }
     bool request_game_over() override { return true; }
     bool hud_sound(i32) override { return true; }
     bool hud_sound(i32, float) override { return true; }
-    bool stop_sound(i32) override { return true; }
+    bool stop_sound(i32 id) override { stopped.push_back(id); return true; }
 };
 
 class Provider final : public EclResourceProvider {
@@ -104,18 +106,91 @@ struct Fixture {
 
 // ---- ghost_rescue_resources：幽灵全消费面 + 救援定向事务 ----
 TEST(ghost_rescue_resources) {
+    // Real last-life expiry retires all combat once, even if a later shared
+    // reward raises stock during the death animation. Restore repeats it.
+    {
+        Fixture final;
+        CHECK(final.init()); final.enable(2, {0, 1, 0});
+        final.progress.ending_points = 0;
+        auto& seat = final.battle.seats[1];
+        final.battle.seat_huds[1].extra_lives = 0;
+        seat.phase = StagePlayerState::Phase::Deathbomb;
+        seat.phase_frame = 16;
+        seat.bomb_timer = 50;
+        seat.bomb_protection = 12;
+        PlayerShot beam; beam.alive = true; beam.behavior = 2; beam.registration_slot = 0;
+        seat.shots.push_back(beam);
+        seat.damage_registrations[0].active = true;
+        seat.damage_registrations[0].flags = 1;
+        seat.damage_registrations[0].damage = 20;
+        GameRandom visual(7);
+        multiplayer::WorldState before, after, replayed;
+        CHECK(before.capture(final.battle, visual));
+        CHECK(final.battle.step(GameInput{}));
+        CHECK(seat.final_death);
+        CHECK_EQ(seat.bomb_timer, 0);
+        CHECK(!seat.shots[0].alive);
+        CHECK(!seat.damage_registrations[0].active);
+        CHECK(std::find(final.host.stopped.begin(), final.host.stopped.end(), 20) != final.host.stopped.end());
+        CHECK(after.capture(final.battle, visual));
+        CHECK(before.digest() != after.digest());
+        CHECK(before.restore(final.battle, visual));
+        CHECK(final.battle.step(GameInput{}));
+        CHECK(replayed.capture(final.battle, visual));
+        CHECK_EQ(after.digest(), replayed.digest());
+        CHECK_EQ(seat.bomb_protection, 11);
+        final.battle.seats[0].invulnerable = 0;
+        StageBullet hit; hit.alive = true; hit.collision_ready = true;
+        hit.flags = 0x12; hit.hit_size[0] = hit.hit_size[1] = 8;
+        hit.x = final.battle.seats[0].x; hit.y = final.battle.seats[0].y;
+        final.battle.sim.bullet_player_collision(hit);
+        CHECK_EQ(final.battle.seats[0].phase, StagePlayerState::Phase::Active);
+        seat.bomb_protection = 0;
+        StageBullet negative;
+        negative.alive = true; negative.collision_ready = true; negative.flags = 0x12;
+        negative.hit_size[0] = negative.hit_size[1] = 8;
+        negative.x = final.battle.seats[0].x; negative.y = final.battle.seats[0].y;
+        final.battle.sim.bullet_player_collision(negative);
+        CHECK_EQ(final.battle.seats[0].phase, StagePlayerState::Phase::Deathbomb);
+        CHECK(after.restore(final.battle, visual));
+        final.battle.seat_huds[1].extra_lives = 1;
+        for (int frame = 0; frame < 35 && !seat.ghost; ++frame)
+            CHECK(final.battle.step(GameInput{}));
+        CHECK(seat.ghost);
+        CHECK(seat.ghost_just_entered);
+        CHECK(!final.battle.rescue_seat(0, 1));
+        multiplayer::WorldState ghost_start, ghost_forward, ghost_replay;
+        CHECK(ghost_start.capture(final.battle, visual));
+        for (int frame = 0; frame < 95; ++frame) CHECK(final.battle.step(GameInput{}));
+        CHECK(ghost_forward.capture(final.battle, visual));
+        CHECK(ghost_start.digest_core() != ghost_forward.digest_core());
+        CHECK(ghost_start.restore(final.battle, visual));
+        for (int frame = 0; frame < 95; ++frame) CHECK(final.battle.step(GameInput{}));
+        CHECK(ghost_replay.capture(final.battle, visual));
+        CHECK_EQ(ghost_forward.digest(), ghost_replay.digest());
+        CHECK(final.battle.rescue_seat(0, 1));
+        CHECK(!seat.final_death);
+        CHECK_EQ(seat.bomb_timer, 0);
+        CHECK(!seat.shots[0].alive);
+    }
     Fixture dual;
     CHECK(dual.init());
     dual.enable(2, {0, 0, 0});
     auto& battle = dual.battle;
-    // ① 幽灵席不推进玩家面：seat 1 幽灵化后按 ← 不动。
+    // ① 幽灵忽略操作，按 th12 私有随机流作确定性漂移。
     battle.seats[1].ghost = true;
+    u32 rng = battle.seats[1].ghost_random;
+    auto next = [&]() { rng ^= rng << 13; rng ^= rng >> 17; rng ^= rng << 5; return rng; };
+    const i32 dx = i32(next() % 97) - 48;
+    const i32 dy = i32(next() % 81) - 40;
     GameInput left;
     for (int frame = 0; frame < 10; ++frame) {
         left.update(0x40);
+        battle.seat_inputs[1].update(0x40);
         CHECK(battle.step(left));
     }
-    CHECK_EQ(battle.seats[1].x, 0.0f);       // 幽灵不操作
+    CHECK_EQ(battle.seats[1].fixed_x, dx * 10);
+    CHECK_EQ(battle.seats[1].fixed_y, 51200 + dy * 10);
     CHECK(battle.seats[0].x < 0.0f);          // 可操作席照常
     // ② 幽灵不被瞄准：seat_eligible 排除（帧尾写入）。
     CHECK(!battle.sim.seat_eligible[1]);

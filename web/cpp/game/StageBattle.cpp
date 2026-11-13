@@ -240,11 +240,11 @@ bool StageBattle::load(EclResourceProvider& provider, const char* stage_file, i3
     player_prepared_ = false;
     // 道具/神霊管理器接线（R/E）：game RNG 共享实例 + StageItemHost 注入。
     item_manager.bind_random(sim.random);
-    item_manager.life_changed = [this](i32 stock, i32 pieces) {
-        if (!host_->life_hud(stock, pieces)) error_ = "Item life HUD refresh failed";
+    item_manager.life_changed = [this](i32 seat, i32 stock, i32 pieces) {
+        if (!host_->life_hud_seat(seat, stock, pieces)) error_ = "Item life HUD refresh failed";
     };
-    item_manager.bombs_changed = [this](i32 stock, i32 pieces) {
-        if (!host_->bomb_hud(stock, pieces)) error_ = "Item bomb HUD refresh failed";
+    item_manager.bombs_changed = [this](i32 seat, i32 stock, i32 pieces) {
+        if (!host_->bomb_hud_seat(seat, stock, pieces)) error_ = "Item bomb HUD refresh failed";
     };
     item_manager.option_power_changed = [this] {
         if (seat_count >= 2) {
@@ -1625,7 +1625,10 @@ void StageBattle::step_bomb() {
     bomb_timer = std::max(0, bomb_duration_ - bomb_age);
     // 四角色更新器0040b590/0040a860/0040c2c0/0040cb50均每帧刷新40无敌，
     // 不是原有统一240帧倒计时。
-    invulnerable = 40;
+    if (seat_count >= 2) {
+        invulnerable = std::max(invulnerable, 40);
+        player_state_.bomb_protection = std::max(player_state_.bomb_protection, 40);
+    } else invulnerable = 40;
     if(character_!=0&&bomb_timer==0) {
         if(character_==2&&!host_->hud_sound(0x1b))error_="Sanae Bomb end sound";
         return; // 40a860/40c2c0/40cb50 terminate before geometry/cancellation.
@@ -1893,7 +1896,7 @@ void StageBattle::collide_player_bullet_seat(StageBullet& bullet, i32 seat) {
             player_phase == PlayerPhase::Deathbomb) return;
         // 00444140/00443fd0 可先触发玩家受击；0040db10 随后才用
         // bullet+0x24 判断是否消弹，保护不等于玩家无敌。
-        if (invulnerable <= 0 && !in_trance) kill_player();
+        if (invulnerable <= 0 && !in_trance && !team_bomb_protected()) kill_player();
         if (bullet.cancel_protection == 0 &&
             !sim.cancel_bullet(bullet, bullet.state != 2, false)) error_ = sim.error();
         return;
@@ -1935,7 +1938,8 @@ i32 StageBattle::collide_laser(const StageLaser& laser) {
     if (contact == 1) {
         if (player_dead || player_phase == PlayerPhase::Dying ||
             player_phase == PlayerPhase::Deathbomb ||
-            invulnerable > 0 || (sim.dialog_host && sim.dialog_host->dialog_active())) return 0;
+            invulnerable > 0 || team_bomb_protected() ||
+            (sim.dialog_host && sim.dialog_host->dialog_active())) return 0;
         kill_player();
     } else if (contact == 2 && laser.kind == StageLaser::Kind::Line && laser.graze_timer % 3 == 0) {
         // 431957: line fragments alone award graze, every third graze query.
@@ -1992,7 +1996,7 @@ void StageBattle::collide_enemy_body(StageEnemy& enemy) {
     }
     if (contact == 1) {
         if (!player_dead && player_phase != PlayerPhase::Dying &&
-            player_phase != PlayerPhase::Deathbomb && invulnerable <= 0 &&
+            player_phase != PlayerPhase::Deathbomb && invulnerable <= 0 && !team_bomb_protected() &&
             !(sim.dialog_host && sim.dialog_host->dialog_active())) kill_player();
     } else if (contact == 2 && (enemy.flags & 0x200u) && i32(enemy.age) % 6 == 0) {
         if (progress_) {
@@ -2067,6 +2071,10 @@ bool StageBattle::commit_death() {
 bool StageBattle::commit_death_normal() {
     player_->deaths++;
     --player_->extra_lives;  // -1 是最后一命死亡；不能过早打开 GameOver。
+    if (seat_count >= 2 && player_->extra_lives < 0) {
+        player_state_.final_death = true;
+        if (!retire_final_death_combat()) return false;
+    }
     // R-T9：记录死亡时的灵界代数——重生清槽只作用于当前代。
     death_trance_generation = trance_generation;
     player_phase = PlayerPhase::Dying;
@@ -2074,7 +2082,7 @@ bool StageBattle::commit_death_normal() {
     player_phase_clock_.set(0);
     invulnerable = 180;
     if (player_->extra_lives >= 0 &&
-        !host_->life_hud(player_->extra_lives, player_->life_pieces)) {
+        !host_->life_hud_seat(active_seat, player_->extra_lives, player_->life_pieces)) {
         error_ = "Player death HUD failed";
         return false;
     }
@@ -2119,13 +2127,14 @@ bool StageBattle::update_player(const GameInput& input, bool deathbomb_prepared)
         }
         item_manager.spawn_value_item(3,player_x,player_y,0,2.f,false);
         if (player_phase_frame >= 30) {
-            if (player_->extra_lives < 0) {
+            if (player_->extra_lives < 0 || (seat_count >= 2 && player_state_.final_death)) {
                 // M5：MP 最后命死亡 → 转幽灵（R-I8：待救援；不触发单人
                 // GameOver——全队终局由 team_wipe 计数判定，180 逻辑帧
                 // 全灭等待在 RunScene/宿主层）。单席保持 SP GameOver。
                 if (seat_count >= 2) {
                     player_dead = true;
                     player_state_.ghost = true;
+                    player_state_.ghost_just_entered = true;
                 } else {
                 player_dead = true;
                 if (!host_->request_player_game_over()) {
@@ -2139,7 +2148,8 @@ bool StageBattle::update_player(const GameInput& input, bool deathbomb_prepared)
             } else {
                 if (player_->bombs < 2) {
                     player_->bombs = 2;
-                    if (!host_->bomb_hud(player_->bombs, player_->bomb_pieces)) {
+                    if (!host_->bomb_hud_seat(active_seat, player_->bombs,
+                                              player_->bomb_pieces)) {
                         error_ = "Player respawn bomb HUD failed";
                         return false;
                     }
@@ -2667,7 +2677,7 @@ void StageBattle::on_bomb_key() {
     if (player_phase == PlayerPhase::Deathbomb &&
         player_phase_frame >= (seat_count >= 2 ? 16 : 8)) return;
     player_->bombs--;
-    if (!host_->bomb_hud(player_->bombs, player_->bomb_pieces)) error_ = "bomb hud";
+    if (!host_->bomb_hud_seat(active_seat, player_->bombs, player_->bomb_pieces)) error_ = "bomb hud";
     // Bomb vtables @004aa5bc：Reimu200、Marisa301、Sanae/Youmu261。
     static constexpr i32 durations[4] = {200, 301, 261, 261};
     bomb_duration_ = durations[character_];
@@ -2697,7 +2707,11 @@ void StageBattle::on_bomb_key() {
     bomb_rotation_speed_ = 0;
     bomb_center_x_ = player_x;
     bomb_center_y_ = player_y;
-    invulnerable = character_ == 0 ? 40 : 120;
+    const i32 bomb_invulnerability = character_ == 0 ? 40 : 120;
+    if (seat_count >= 2) {
+        invulnerable = std::max(invulnerable, bomb_invulnerability);
+        player_state_.bomb_protection = bomb_invulnerability;
+    } else invulnerable = bomb_invulnerability;
     if (character_ == 0) {
         float angle = 0;
         for (auto& orb : bomb_orbs) {
@@ -2725,6 +2739,91 @@ bool StageBattle::continue_player() {
     option_reset_pending_ = true;
     update_options(true);
     return error_.empty();
+}
+
+bool StageBattle::team_bomb_protected() const {
+    if (seat_count < 2) return false;
+    for (i32 seat = 0; seat < seat_count; ++seat)
+        if (seats[size_t(seat)].bomb_protection > 0) return true;
+    return false;
+}
+
+void StageBattle::share_mp_bomb_protection() {
+    i32 shared = 0;
+    for (i32 seat = 0; seat < seat_count; ++seat)
+        shared = std::max(shared, seats[size_t(seat)].bomb_protection);
+    for (i32 seat = 0; seat < seat_count; ++seat) {
+        auto& state = seats[size_t(seat)];
+        if (!state.ghost && !state.dead && !state.final_death)
+            state.invulnerable = std::max(state.invulnerable, shared);
+    }
+}
+
+void StageBattle::advance_mp_protection_and_ghosts() {
+    for (i32 seat = 0; seat < seat_count; ++seat) {
+        auto& state = seats[size_t(seat)];
+        state.ghost_just_entered = false;
+        if (state.bomb_protection > 0) --state.bomb_protection;
+        if (!state.ghost) continue;
+        // th12-mp Multiplayer.cpp tickPlayers: private xorshift stream and
+        // fixed-point displacement, independent of the shared game RNG.
+        if (state.ghost_clock++ % 90 == 0) {
+            auto next = [&state]() {
+                state.ghost_random ^= state.ghost_random << 13;
+                state.ghost_random ^= state.ghost_random >> 17;
+                state.ghost_random ^= state.ghost_random << 5;
+                return state.ghost_random;
+            };
+            state.ghost_dx = i32(next() % 97) - 48;
+            state.ghost_dy = i32(next() % 81) - 40;
+        }
+        state.fixed_x = std::clamp(state.fixed_x + state.ghost_dx, -23552, 23552);
+        state.fixed_y = std::clamp(state.fixed_y + state.ghost_dy, 4096, 55296);
+        state.x = float(state.fixed_x) / 128.f;
+        state.y = float(state.fixed_y) / 128.f;
+    }
+}
+
+bool StageBattle::retire_final_death_combat() {
+    bool beam = false;
+    for (auto& shot : shots) {
+        if (shot.alive && shot.behavior == 2 && shot.state == 1) beam = true;
+        shot.alive = false;
+        retire_damage_registration(shot);
+    }
+    for (auto& registration : damage_registrations) {
+        registration.active = false;
+        registration.flags &= ~1u;
+        registration.damage = 0;
+    }
+    player_state_.respawn_damage.active = false;
+    bomb_timer = 0;
+    bomb_orbs = {};
+    youmu_bomb_.reset();
+    youmu_slash_spawns_.clear();
+    fire_clock_.set(-1);
+    player_state_.charge_clock.set(0);
+    // These sound IDs are global voices. Do not stop another seat's active
+    // beam or charge when retiring this seat's effects.
+    bool other_beam = false, other_charge = false;
+    for (i32 seat = 0; seat < seat_count; ++seat) {
+        if (seat == active_seat) continue;
+        const auto& other = seats[size_t(seat)];
+        if (other.ghost || other.final_death) continue;
+        for (const auto& shot : other.shots)
+            other_beam |= shot.alive && shot.behavior == 2 && shot.state == 1;
+        other_charge |= other.charge_clock.current > 0;
+    }
+    if (host_ && ((beam && !other_beam && !host_->stop_sound(20)) ||
+        (!other_charge && (!host_->stop_sound(30) || !host_->stop_sound(55))))) {
+        error_ = "Final death sound stop failed";
+        return false;
+    }
+    if (youmu_charge_effect && !youmu_charge_effect(2, {player_x, player_y, 0})) {
+        error_ = "Final death charge reset failed";
+        return false;
+    }
+    return true;
 }
 
 bool StageBattle::prepare_expired_deathbombs(std::array<bool, 3>& prepared) {
@@ -2758,6 +2857,7 @@ bool StageBattle::step_transition(const GameInput& input) {
     //（联机会话的 LocalSeat——seat 0 硬编码会令 seat1 端席位输入错位）。
     if (seat_count >= 2) {
         seat_inputs[size_t(mp_local_seat)] = input;
+        advance_mp_protection_and_ghosts();
         std::array<bool, 3> deathbomb_prepared{};
         if (!prepare_expired_deathbombs(deathbomb_prepared)) return false;
         const i32 saved_seat = active_seat;
@@ -2772,11 +2872,17 @@ bool StageBattle::step_transition(const GameInput& input) {
             option_movement_tick_ = false;
             if (!update_player(seat_input, deathbomb_prepared[size_t(seat)])) return false;
             update_options();
-            update_firing((seat_input.held & 1u) != 0);
-            step_shots();
+            if (!player_state_.final_death) {
+                update_firing((seat_input.held & 1u) != 0);
+                step_shots();
+            }
             seats[size_t(seat)] = player_state_;       // 拷回权威
             if (!error_.empty()) return false;
         }
+        // Transition player updates still accept X and advance protection.
+        // Publish the same complete team window before restoring the observer
+        // copy, including when the source is a later seat or only its tail remains.
+        share_mp_bomb_protection();
         player_ = &seat_huds[size_t(saved_seat)];
         character_ = seat_characters[size_t(saved_seat)];
         active_seat = saved_seat;
@@ -2838,7 +2944,7 @@ void StageBattle::restore_seat_context(i32 restore_seat) {
 //   M3 起改为按消费者时点选择最近合格玩家）→ sim.step_frame 一次 →
 //   item_side（M3 拆分逐席收集/一份结算，当前保持 seat 0 收集面）。
 void StageBattle::update_transfers() {
-    bool life_changed = false, rescued = false;
+    u8 life_seats = 0, bomb_seats = 0;  // M5：受赠/赠出席位位图（逐席 HUD 刷新）
     const bool dialog = sim.dialog_host && sim.dialog_host->dialog_active();
     for (i32 donor = 0; donor < seat_count; ++donor) {
         auto& state = seats[size_t(donor)];
@@ -2873,12 +2979,14 @@ void StageBattle::update_transfers() {
                 (input.pressed & 8u) != 0,
                 active && !(input.held & 1u) && hud.extra_lives > 0 && life_target >= 0)) {
             if (seats[size_t(life_target)].ghost) {
-                rescued |= rescue_seat(donor, life_target);
-                life_changed = true;
+                if (rescue_seat(donor, life_target)) {
+                    life_seats |= u8(1u << donor);
+                    bomb_seats |= u8(1u << life_target);  // 重生 Bomb=2（R-G）
+                }
             } else if (item_manager.spawn_targeted_item(state.x, state.y,
                             ItemExtraLife, life_target)) {
                 --hud.extra_lives;
-                life_changed = true;
+                life_seats |= u8(1u << donor);
             }
         }
         if (eagler::cooperative::AdvanceLifeTransfer(state.power_transfer_state,
@@ -2887,10 +2995,19 @@ void StageBattle::update_transfers() {
             item_manager.spawn_targeted_item(state.x, state.y, ItemBigPower, power_target))
             hud.power -= hud.power_step;
     }
-    if (life_changed && item_manager.life_changed)
-        item_manager.life_changed(std::max(0, seat_huds[0].extra_lives), seat_huds[0].life_pieces);
-    if (rescued && item_manager.bombs_changed)
-        item_manager.bombs_changed(seat_huds[0].bombs, seat_huds[0].bomb_pieces);
+    // M5：受影响席位逐席刷新（R-I9 定向事务：只刷资源确实变化的席位，
+    // 不重发无关席位的同标签——那会复位图标脚本的插值计时）。
+    if (life_seats && item_manager.life_changed)
+        for (i32 seat = 0; seat < seat_count; ++seat)
+            if ((life_seats >> seat) & 1)
+                item_manager.life_changed(seat,
+                                          std::max(0, seat_huds[size_t(seat)].extra_lives),
+                                          seat_huds[size_t(seat)].life_pieces);
+    if (bomb_seats && item_manager.bombs_changed)
+        for (i32 seat = 0; seat < seat_count; ++seat)
+            if ((bomb_seats >> seat) & 1)
+                item_manager.bombs_changed(seat, seat_huds[size_t(seat)].bombs,
+                                           seat_huds[size_t(seat)].bomb_pieces);
 }
 
 bool StageBattle::step_mp() {
@@ -2903,6 +3020,7 @@ bool StageBattle::step_mp() {
     // M4/R-T8：灵界团队帧——Manual 请求逐席仲裁（席位升序第一个有效者），
     // 槽消耗全场一次（step_mp 每帧恰调一次 update_trance_mp）。
     if (!update_trance_mp()) return false;
+    advance_mp_protection_and_ghosts();
     // R-T2/R-T8: resolve this frame's expired collision windows after Manual
     // arbitration, before any seat fires. A later owner's protection must
     // change the earlier seats' shot type in this same logical frame.
@@ -2936,12 +3054,19 @@ bool StageBattle::step_mp() {
         if (!update_player(input, deathbomb_prepared[size_t(seat)])) return false;
         if (events_) sim.sink.player(player_x, player_y, input_state);
         update_options();
-        update_firing((input.held & 0x01) != 0);
-        step_shots();
-        step_bomb();  // youmu_slash_spawns_ 聚合（append，不清）
+        if (!player_state_.final_death) {
+            update_firing((input.held & 0x01) != 0);
+            step_shots();
+            step_bomb();  // youmu_slash_spawns_ 聚合（append，不清）
+        }
         seats[size_t(seat)] = player_state_;
         if (!error_.empty()) return false;
     }
+    // Bomb protection is a team resource for its complete lifetime. Publish
+    // after every seat has updated, before any shared enemy/laser/bullet pass:
+    // this makes startup independent of seat order and preserves any longer
+    // personal protection. Ghosts and final-death seats cannot operate.
+    share_mp_bomb_protection();
     // R-I9/R-G: all positions are final for this frame. Transactions use
     // each seat's deterministic press edges in ascending donor order.
     update_transfers();
@@ -3111,6 +3236,12 @@ bool StageBattle::enable_seats(EclResourceProvider& provider, i32 count,
             state.damage_registrations = {};
             state.damage_registration_cursor = 0;
         }
+        auto& initialized_seat = seats[size_t(seat)];
+        initialized_seat.ghost_random = u32(sim.random.seed()) ^ (0x9e3779b9u * u32(seat + 1));
+        if (!initialized_seat.ghost_random) initialized_seat.ghost_random = 1;
+        initialized_seat.ghost_clock = 0;
+        initialized_seat.final_death = false;
+        initialized_seat.bomb_protection = 0;
         // 每席 HUD 资源（R-B：起飞资源 = SP 完全一致）。
         auto& hud = seat_huds[size_t(seat)];
         hud = HudPlayerState{};

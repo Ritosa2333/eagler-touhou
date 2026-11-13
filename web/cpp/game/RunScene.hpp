@@ -208,6 +208,10 @@ public:
     // 自机弹精灵（plXX.anm 内 16×16 御札帧；.sht 弹型表接入前的可玩化近似）。
     static constexpr i32 kPlayerShotSprite = 31;
     GameHud& hud;
+    // M5：多人 HUD 每席视图（update 内同步，draw 的 HudDrawContext 携带；
+    // battle.seat_count < 2 时 count==0，文本面走 SP 原位布局）。
+    MpHudSeats mp_hud_seats_;
+    void sync_mp_hud_view();
     // M9 观测面：团队分数 backing（StageEntry.Capture/Restore 的 score 参
     // 数——begin_run 装配时传入的 selection_score 引用）。
     HudScoreState& score_view() const { return score_state; }
@@ -260,6 +264,13 @@ public:
             if (error.empty()) error = battle.error();
             return false;
         }
+        // M5：HUD 图标集逐席化（席 0 复用单套，席 1/2 新建平移）+ 共享
+        // 标签行下移；随后建立文本面每席视图。
+        if (!hud.enable_multiplayer(seat_count)) {
+            if (error.empty()) error = hud.error;
+            return false;
+        }
+        sync_mp_hud_view();
         return true;
     }
     // 0x43e3f0/0x43e700（Esc 暂停激活/恢复）：对话立绘/名牌槽 VM+0x18 bit1

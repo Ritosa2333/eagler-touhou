@@ -1,6 +1,7 @@
 // M6：WorldState 实现——capture/restore/digest（头文件注释即契约）。
 #include "WorldState.hpp"
 #include "HostState.hpp"
+#include "DigestSink.hpp"
 
 #include <algorithm>
 #include <cstdio>
@@ -9,58 +10,6 @@
 
 namespace th13::multiplayer {
 
-// FNV-1a 64（与 tests/multiplayer/native/state_digest.hpp 的 DigestSink 同
-// 族：域分隔、顺序敏感；此处为生产侧 hash——回滚一致性与锁步确认帧共用。
-// 具名作用域（非匿名）：WorldState.hpp 的成员声明前向引用此类。
-class DigestSink {
-public:
-    void vm(const AnmVm& value);
-    void tag(const char* text) {
-        mix(0x9e3779b97f4a7c15ull ^ static_cast<uint64_t>(std::strlen(text)));
-        for (const char* p = text; *p; ++p) mix(static_cast<uint8_t>(*p));
-        mix(0);
-    }
-    void u8(uint8_t value) { mix(value); }
-    void u32(uint32_t value) {
-        // Four zero bytes multiply by P^4 modulo 2^64. Keep the exact
-        // serialized bytes while avoiding four dependent multiplies.
-        if (value == 0) { zero_bytes_ += 4; return; }
-        mix(value & 0xffu); mix((value >> 8) & 0xffu);
-        mix((value >> 16) & 0xffu); mix((value >> 24) & 0xffu);
-    }
-    void i32(int32_t value) { u32(static_cast<uint32_t>(value)); }
-    void u64(uint64_t value) {
-        u32(static_cast<uint32_t>(value));
-        u32(static_cast<uint32_t>(value >> 32));
-    }
-    void f32(float value) {
-        static_assert(sizeof(float) == 4, "digest requires float32");
-        uint32_t bits = 0;
-        std::memcpy(&bits, &value, sizeof bits);
-        u32(bits);
-    }
-    void boolean(bool value) { u8(value ? 1 : 0); }
-    uint64_t value() const { return with_zeros(state_, zero_bytes_); }
-private:
-    static uint64_t with_zeros(uint64_t state, uint64_t count) {
-        static const auto powers = [] {
-            std::array<uint64_t, 1025> result{};
-            result[0] = 1;
-            for (size_t i = 1; i < result.size(); ++i)
-                result[i] = result[i - 1] * 0x100000001b3ull;
-            return result;
-        }();
-        while (count > 1024) { state *= powers[1024]; count -= 1024; }
-        return state * powers[count];
-    }
-    void mix(uint8_t byte) {
-        if (!byte) { ++zero_bytes_; return; }
-        if (zero_bytes_) { state_ = with_zeros(state_, zero_bytes_); zero_bytes_ = 0; }
-        state_ ^= byte; state_ *= 0x100000001b3ull;
-    }
-    uint64_t zero_bytes_ = 0;
-    uint64_t state_ = 0xcbf29ce484222325ull;
-};
 
 } // namespace th13::multiplayer
 #include "WorldDigestValues.hpp"
@@ -122,6 +71,9 @@ void digest_player_state(DigestSink& d, const StagePlayerState& state) {
     d.boolean(state.initialized); d.f32(state.x); d.f32(state.y);
     d.i32(state.fixed_x); d.i32(state.fixed_y);
     d.boolean(state.focus); d.boolean(state.dead); d.boolean(state.ghost);
+    d.boolean(state.final_death); d.boolean(state.ghost_just_entered);
+    d.u32(state.ghost_random); d.u32(state.ghost_clock);
+    d.i32(state.ghost_dx); d.i32(state.ghost_dy);
     d.u8(state.life_transfer_state);
     d.u8(state.power_transfer_state);
     d.i32(static_cast<i32>(state.phase));
@@ -200,7 +152,7 @@ void digest_player_state(DigestSink& d, const StagePlayerState& state) {
     d.i32(state.respawn_damage.registration_slot);
     d.f32(state.respawn_origin.x); d.f32(state.respawn_origin.y);
     d.f32(state.respawn_origin.z);
-    d.i32(state.bomb_timer); d.i32(state.bomb_age);
+    d.i32(state.bomb_timer); d.i32(state.bomb_protection); d.i32(state.bomb_age);
     d.f32(state.bomb_age_accumulator); d.u32(state.bomb_generation);
     for (const StagePlayerState::BombRay& ray : state.bomb_rays) {
         d.f32(ray.origin.x); d.f32(ray.origin.y); d.f32(ray.origin.z);
@@ -651,6 +603,7 @@ void digest_ecl_threads(DigestSink& d, const EclThreadsSnapshot& threads) {
 bool WorldState::capture(StageBattle& battle, GameRandom& visual, const ReplayView* replay,
                          StagePresentation* presentation, RunScene* scene,
                          u32 transition_handle) {
+    ready_ = false;
     StageSim& sim = battle.sim;
     // ---- StageBattle 玩家面 ----
     battle_.seat_count = battle.seat_count;
@@ -742,13 +695,6 @@ bool WorldState::capture(StageBattle& battle, GameRandom& visual, const ReplayVi
     game_rng_.index = sim.random.index();
     visual_rng_.seed = visual.seed();
     visual_rng_.index = visual.index();
-    // ---- ANM registry（宿主注入 mp_registry_hook 时快照；无头路径空 =
-    // 快照空 registry，restore 同样跳过——敌机槽位句柄恒 0 两侧一致）----
-    if (battle.mp_registry()) {
-        if (!battle.mp_registry()->capture(anm_)) return false;
-    } else {
-        anm_ = AnmRegistry::SnapshotData{};
-    }
     // ---- 表现层手账（生产路径：registry 快照同批次的句柄映射 + 自有
     // VM 值。无头测试无 presentation → 空手账，restore 跳过）----
     has_present_ = presentation != nullptr;
@@ -756,6 +702,13 @@ bool WorldState::capture(StageBattle& battle, GameRandom& visual, const ReplayVi
         if (!presentation->capture_presentation(present_)) return false;
     } else {
         present_ = StagePresentation::SnapshotData{};
+    }
+    // Capture the owner identities first: draw-only item VMs have no registry
+    // node, but their semantic slot and restore binding belong to presentation.
+    if (battle.mp_registry()) {
+        if (!battle.mp_registry()->capture(anm_, present_.embedded_identities)) return false;
+    } else {
+        anm_ = AnmRegistry::SnapshotData{};
     }
     // ---- P3.2 宿主域（RunScene：震动/对话/STD；转场句柄由调用方供给）。
     // 无头测试不传 scene = 该组域为空，restore 跳过（与 presentation 同门）。
@@ -944,6 +897,9 @@ bool WorldState::restore(StageBattle& battle, GameRandom& visual, ReplayView* re
     // ---- 宿主回放面（capture 时带游标的会话才恢复——live run 的
     // replay_consumed/cursor 不在快照边界内）----
     if (replay && has_replay_) *replay = replay_;
+    // HUD pointers and draw opacity are views of the restored world. A render
+    // may follow restoration before any new update, including a paused frame.
+    if (scene && has_scene_) scene->sync_mp_hud_view();
     return true;
 }
 
@@ -967,6 +923,8 @@ const char* WorldState::field_ledger() {
     // M6 交付台账：快照覆盖的权威域（测试断言逐条引用；新权威域落地时
     // 必须同步登记——ledger 即快照完整性契约）。
     return "battle.seats|battle.seat_huds|battle.seat_characters|"
+           "battle.seats.bomb_protection|battle.seats.final_death|"
+           "battle.seats.ghost_drift|battle.seats.ghost_just_entered|"
            "battle.seat_inputs|battle.trance_mode|battle.trance_owner_seat|"
            "battle.trance_generation|battle.trance_task_frame|"
            "battle.death_trance_generation|"
@@ -991,6 +949,8 @@ size_t WorldState::retained_bytes() const noexcept {
     total += sim_.anm_effects.size() * sizeof(AnmEffectRequest);
     total += anm_.entries.size() * sizeof(AnmRegistry::SnapshotData::Entry);
     total += anm_.free_slots.size() * sizeof(u32);
+    for (const auto& layer : anm_.layers)
+        total += layer.size() * sizeof(AnmRegistry::SnapshotData::DrawReference);
     return total;
 }
 
@@ -1010,6 +970,76 @@ std::string WorldState::diagnostic_detail() const {
     },state_fields(scene_state_));
     return out.str();
 }
+
+
+namespace {
+struct ItemFixedStream {
+    uint64_t factor = 1;
+    std::array<uint64_t, 256> adjustment{};
+};
+// F_S(h) = h * P^|S| + C_S[h & 255]. XOR only changes the low byte;
+// multiplication makes the remaining high 56 input bits a linear contribution.
+const std::array<ItemFixedStream, 12>& default_item_streams() {
+    static const auto streams = [] {
+        std::array<ItemFixedStream, 12> result{};
+        std::array<uint8_t, 69> bytes{};
+        // The unchanged Item serializer has 17 little-endian 32-bit fields
+        // followed by alive. Only target, tracking and anm_frame_prev are -1.
+        for (size_t word : {size_t(3), size_t(4), size_t(14)})
+            for (size_t byte = 0; byte < 4; ++byte) bytes[word * 4 + byte] = 255;
+        auto& first = result[0];
+        for (uint8_t byte : bytes) { (void)byte; first.factor *= 0x100000001b3ull; }
+        for (size_t low = 0; low < 256; ++low) {
+            uint64_t h = low;
+            for (uint8_t byte : bytes) h = (h ^ byte) * 0x100000001b3ull;
+            first.adjustment[low] = h - uint64_t(low) * first.factor;
+        }
+        for (size_t power = 1; power < result.size(); ++power) {
+            const auto& old = result[power - 1];
+            auto& next = result[power];
+            next.factor = old.factor * old.factor;
+            for (size_t low = 0; low < 256; ++low) {
+                const auto after = uint8_t(uint64_t(low) * old.factor + old.adjustment[low]);
+                next.adjustment[low] = old.adjustment[low] * old.factor + old.adjustment[after];
+            }
+        }
+        return result;
+    }();
+    return streams;
+}
+bool is_default_item(const Item& item) {
+    auto float_bits = [](float value) { uint32_t bits = 0; std::memcpy(&bits, &value, sizeof bits); return bits; };
+    return item.state == 0 && item.type == 0 && item.type2 == 0 && item.target_seat == -1 && item.tracking_seat == -1 &&
+        float_bits(item.x) == 0 && float_bits(item.y) == 0 && float_bits(item.z) == 0 &&
+        float_bits(item.vx) == 0 && float_bits(item.vy) == 0 && float_bits(item.vz) == 0 &&
+        float_bits(item.homing_speed) == 0 && item.sprite == 0 && item.anm_frame == 0 &&
+        item.anm_frame_prev == -1 && float_bits(item.anm_time) == 0 && item.flags == 0 && !item.alive;
+}
+void append_default_items(DigestSink& d, size_t count) {
+    const auto& streams = default_item_streams();
+    for (size_t power = 0; count; ++power, count >>= 1)
+        if (count & 1) d.fixed_stream(streams[power].factor, streams[power].adjustment);
+}
+template<size_t N> void digest_items_exact(DigestSink& d, const std::array<Item, N>& items) {
+    static_assert(N < (size_t(1) << 12));
+    size_t defaults = 0;
+    for (const Item& item : items) {
+        if (is_default_item(item)) { ++defaults; continue; }
+        if (defaults) { append_default_items(d, defaults); defaults = 0; }
+
+            d.i32(item.state); d.i32(item.type); d.i32(item.type2);
+            d.i32(item.target_seat);
+            d.i32(item.tracking_seat);
+            d.f32(item.x); d.f32(item.y); d.f32(item.z);
+            d.f32(item.vx); d.f32(item.vy); d.f32(item.vz);
+            d.f32(item.homing_speed); d.i32(item.sprite);
+            d.i32(item.anm_frame); d.i32(item.anm_frame_prev);
+            d.f32(item.anm_time); d.u32(item.flags); d.boolean(item.alive);
+
+    }
+    if (defaults) append_default_items(d, defaults);
+}
+} // namespace
 
 uint64_t WorldState::digest_core() const {
     DigestSink d;
@@ -1235,16 +1265,7 @@ void WorldState::digest_domains(char* buffer, size_t capacity) const {
     }
     {
         DigestSink d; d.tag("items");
-        for (const Item& item : items_.items) {
-            d.i32(item.state); d.i32(item.type); d.i32(item.type2);
-            d.i32(item.target_seat);
-            d.i32(item.tracking_seat);
-            d.f32(item.x); d.f32(item.y); d.f32(item.z);
-            d.f32(item.vx); d.f32(item.vy); d.f32(item.vz);
-            d.f32(item.homing_speed); d.i32(item.sprite);
-            d.i32(item.anm_frame); d.i32(item.anm_frame_prev);
-            d.f32(item.anm_time); d.u32(item.flags); d.boolean(item.alive);
-        }
+        digest_items_exact(d, items_.items);
         for (const Spirit& spirit : items_.spirits) {
             d.i32(spirit.state); d.i32(spirit.kind); d.u32(spirit.serial);
             d.i32(spirit.tracking_seat);
@@ -1413,16 +1434,7 @@ void WorldState::digest_core_sink(DigestSink& d, bool include_animation_ids) con
     for (unsigned char value : sim_.spell.name) d.u8(value);
     // items 池摘要：只 digest 活跃槽（2648 全量按位也行——但池语义是
     // state!=0 即活；空槽是常量默认值，等价全量）。
-    for (const Item& item : items_.items) {
-        d.i32(item.state); d.i32(item.type); d.i32(item.type2);
-        d.i32(item.target_seat);
-        d.i32(item.tracking_seat);
-        d.f32(item.x); d.f32(item.y); d.f32(item.z);
-        d.f32(item.vx); d.f32(item.vy); d.f32(item.vz);
-        d.f32(item.homing_speed); d.i32(item.sprite);
-        d.i32(item.anm_frame); d.i32(item.anm_frame_prev);
-        d.f32(item.anm_time); d.u32(item.flags); d.boolean(item.alive);
-    }
+    digest_items_exact(d, items_.items);
     for (const Spirit& spirit : items_.spirits) {
         d.i32(spirit.state); d.i32(spirit.kind); d.u32(spirit.serial);
         d.i32(spirit.tracking_seat);
@@ -1502,6 +1514,12 @@ static void digest_registry(DigestSink& d, const AnmRegistry::SnapshotData& anm_
     }
     d.u64(anm_.free_slots.size());
     for (u32 value : anm_.free_slots) d.u32(value);
+    for (const auto& layer : anm_.layers) {
+        d.u64(layer.size());
+        for (const auto& reference : layer) {
+            d.u32(reference.entry); d.u32(reference.embedded);
+        }
+    }
 }
 
 }  // namespace th13::multiplayer

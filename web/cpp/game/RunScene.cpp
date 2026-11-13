@@ -655,6 +655,36 @@ bool RunScene::start_shake(ScreenShake effect) {
     return true;
 }
 
+// M5：多人 HUD 每席视图同步（update 内、hud.update 前调用；同一帧的
+// Draw pass 经 HudDrawContext 读到本视图）。单席 count==0 = SP 原位布局。
+void RunScene::sync_mp_hud_view() {
+    mp_hud_seats_ = MpHudSeats{};
+    std::array<std::array<u32, 21>, 3> icons{};
+    if (battle.seat_count < 2) {
+        AnmDrawSchedule::set_hud_ghost_icons(animations, icons, 0);
+        return;
+    }
+    mp_hud_seats_.count = battle.seat_count;
+    mp_hud_seats_.local_seat = battle.mp_local_seat;
+    for (i32 seat = 0; seat < battle.seat_count && seat < 3; ++seat) {
+        mp_hud_seats_.seats[size_t(seat)] = &battle.seat_huds[size_t(seat)];
+        if (battle.seats[size_t(seat)].ghost) mp_hud_seats_.ghost |= u8(1u << seat);
+        for (size_t i = 0; i < 8; ++i) {
+            icons[size_t(seat)][i] = seat == 0 ? hud.life_icons[i] : hud.mp_life_icons[size_t(seat)-1][i];
+            icons[size_t(seat)][i+8] = seat == 0 ? hud.bomb_icons[i] : hud.mp_bomb_icons[size_t(seat)-1][i];
+        }
+        constexpr i32 scripts[] = {8, 9, 10, 11, 12};
+        for (size_t i = 0; i < 5; ++i) {
+            if (seat) icons[size_t(seat)][16+i] = hud.mp_resource_labels[size_t(seat)-1][i];
+            else if (auto* root = animations.registry.find(hud.root)) {
+                if (auto* child = animations.registry.find_child_script(*root, scripts[i], 0))
+                    icons[0][16+i] = animations.registry.handle(*child);
+            }
+        }
+    }
+    AnmDrawSchedule::set_hud_ghost_icons(animations, icons, mp_hud_seats_.ghost);
+}
+
 bool RunScene::update() {
     dialogue_update_pending_ = false;
     shakes.erase(std::remove_if(shakes.begin(),shakes.end(),[this](const auto& shake) {
@@ -698,6 +728,7 @@ bool RunScene::update() {
     //（4fc0f57ce 接线，重写时丢失，2026-11-02 恢复）。
     const Vec3 player_position{battle.player_x, battle.player_y, 0};
     frame.player_position = &player_position;
+    sync_mp_hud_view();
     hud.update(frame, host);
         return hud.error.empty() || fail(hud.error);
     }
@@ -754,6 +785,7 @@ bool RunScene::update() {
     //（4fc0f57ce 接线，重写时丢失，2026-11-02 恢复）。
     const Vec3 player_position{battle.player_x, battle.player_y, 0};
     frame.player_position = &player_position;
+    sync_mp_hud_view();
     hud.update(frame, host);
     // 覆盖层/通关演出推进（0x43dbc0 行为子集 + GameInf 0x4000 路径）。
     post_flow.update();
@@ -1171,7 +1203,9 @@ bool RunScene::draw() {
     if (!error.empty()) return false;
     if (!spell_presentation->draw_capture_times(host, host.spell_elapsed_time()))
         return fail(spell_presentation->error);
-    hud.draw(HudDrawContext{}, host);
+    HudDrawContext context;
+    context.mp = battle.seat_count >= 2 ? &mp_hud_seats_ : nullptr;
+    hud.draw(context, host);
     // 对话正文已在 update 内写入 text.anm texture0；四条文本 VM 由
     // AnmDrawSchedule 层 26（Draw 优先级 59）生产绘制，故 draw 不补画文本。
     return hud.error.empty() || fail(hud.error);
