@@ -39,6 +39,8 @@ public:
         bool enabled = false;
         void begin() {} void finish() {} void reset() {}
     } presentation;
+    bool logical_drawing = false;
+    bool logical_frame() const noexcept override { return logical_drawing; }
     void presentation_offset(Vec2) override {}
     void presentation_range(const AnmVm&, u32, u32, u32 = 0) override {}
     void presentation_camera(bool) override {}
@@ -91,6 +93,6 @@ public:
     }
     void clear(u32 color, bool depth = true);
     void present();
-    void flush() { submit({RenderSubmission::Kind::Flush, backend.state}); }
+    void flush() { if (!logical_drawing) submit({RenderSubmission::Kind::Flush, backend.state}); }
 };
 }

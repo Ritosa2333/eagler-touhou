@@ -684,7 +684,8 @@
         "transfer_snapshot_and_digest",
         "history_remote_menu_edges",
         "scene_digest_mutation_controls",
-        "anm_draw_layers_restore_and_digest"
+        "anm_draw_layers_restore_and_digest",
+        "v2_dead_slot_poison_and_negative_controls"
       ]
     },
     {

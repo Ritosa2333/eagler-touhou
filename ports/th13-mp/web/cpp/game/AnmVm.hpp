@@ -41,9 +41,8 @@ public:
     bool hide_hit_projectile = false;
     inline static u64 presentation_counter=0;
     u64 presentation_generation=++presentation_counter;bool presentation_motion=false;u32 presentation_part=0;
-    AnmVariables variables;AnmVisualState visual;AnmInterpolators interpolators;Timer timer,age;i32 instruction_offset=-1;bool visible=false;std::string error;
+    AnmVariables variables;AnmVisualState visual;AnmInterpolators interpolators;Timer timer,age;i32 instruction_offset=-1;bool visible=false;
     i32 pending_interrupt=0;
-    AnmGeometry geometry;
     float slowdown=0;
     // 前置回调（原版 vm+0x590）：tick 入口最先调用，非零返回则本帧不执行任何指令。
     i32 (*pre_tick)(AnmVm&)=nullptr;
@@ -72,6 +71,26 @@ public:
         return index<source->sprites.size()?&source->sprites[index]:nullptr;
     }
     u32 ordering=0;
+    std::string error;
+    AnmGeometry geometry;
+    AnmVm()=default;
+    AnmVm(const AnmVm&)=default;
+    AnmVm(AnmVm&&)noexcept=default;
+    AnmVm& operator=(AnmVm&&)noexcept=default;
+    AnmVm& operator=(const AnmVm& other){
+        if(this==&other)return *this;
+        script=other.script;saved_offset=other.saved_offset;saved_timer=other.saved_timer;
+        shot_effect_owner=other.shot_effect_owner;hide_hit_projectile=other.hide_hit_projectile;
+        presentation_generation=other.presentation_generation;presentation_motion=other.presentation_motion;presentation_part=other.presentation_part;
+        variables=other.variables;visual=other.visual;interpolators=other.interpolators;timer=other.timer;age=other.age;
+        instruction_offset=other.instruction_offset;visible=other.visible;pending_interrupt=other.pending_interrupt;slowdown=other.slowdown;
+        pre_tick=other.pre_tick;environment=other.environment;rotation_parent=other.rotation_parent;creation_parent=other.creation_parent;
+        object_host=other.object_host;sprite_source=other.sprite_source;resource=other.resource;sprite=other.sprite;sprite_resource=other.sprite_resource;
+        source_script=other.source_script;ordering=other.ordering;
+        if(!error.empty()||!other.error.empty())error=other.error;
+        geometry=other.geometry;
+        return *this;
+    }
     void copy_checkpoint(const AnmVm& source){*this=source;timer.set(source.timer.current);age.set(source.age.current);rotation_parent=creation_parent=nullptr;}
     bool bind(AnmScript&);int tick(GameRandom&,float rate=1);
 private:

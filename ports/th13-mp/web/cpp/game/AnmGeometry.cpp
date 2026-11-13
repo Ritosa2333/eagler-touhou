@@ -4,8 +4,28 @@
 namespace th13 {
 AnmGeometry::AnmGeometry()=default;AnmGeometry::~AnmGeometry()=default;
 AnmGeometry::AnmGeometry(AnmGeometry&&)noexcept=default;AnmGeometry& AnmGeometry::operator=(AnmGeometry&&)noexcept=default;
-AnmGeometry::AnmGeometry(const AnmGeometry& other){*this=other;}
-AnmGeometry& AnmGeometry::operator=(const AnmGeometry& other){if(this!=&other){screen_vertices=other.screen_vertices;world_vertices=other.world_vertices;allocation_bytes=other.allocation_bytes;distortion=other.distortion?std::make_unique<AnmDistortion>(*other.distortion):nullptr;trail=other.trail?std::make_unique<AnmTrail>(*other.trail):nullptr;circle=other.circle?std::make_unique<AnmCircle>(*other.circle):nullptr;wind=other.wind?std::make_unique<AnmWindTrail>(*other.wind):nullptr;ribbon=other.ribbon?std::make_unique<AnmRibbon>(*other.ribbon):nullptr;gather=other.gather?std::make_unique<AnmGatherEffect>(*other.gather):nullptr;overlay=other.overlay?std::make_unique<AnmOverlay>(*other.overlay):nullptr;}return *this;}
+AnmGeometry::AnmGeometry(const AnmGeometry& other){if(!other.empty())assign_slow(other);}
+AnmGeometry& AnmGeometry::assign_slow(const AnmGeometry& other){
+    if(this!=&other){
+        screen_vertices.assign(other.screen_vertices.begin(),other.screen_vertices.end());
+        world_vertices.assign(other.world_vertices.begin(),other.world_vertices.end());
+        allocation_bytes=other.allocation_bytes;
+        const auto copy_ptr=[](auto& dst,const auto& src){
+            using T=typename std::decay_t<decltype(dst)>::element_type;
+            if(src){if(!dst)dst=std::make_unique<T>(*src);else *dst=*src;}
+            else if(dst)dst.reset();
+        };
+        copy_ptr(distortion,other.distortion);
+        copy_ptr(trail,other.trail);
+        copy_ptr(circle,other.circle);
+        copy_ptr(wind,other.wind);
+        copy_ptr(ribbon,other.ribbon);
+        copy_ptr(gather,other.gather);
+        if(other.overlay)overlay=std::make_unique<AnmOverlay>(*other.overlay);
+        else if(overlay)overlay.reset();
+    }
+    return *this;
+}
 namespace {Vec2 radial(float angle,float radius){return {float(std::cos(double(angle))*double(radius)),float(std::sin(double(angle))*double(radius))};}}
 bool AnmGeometry::allocate(i32 count,bool world){if(count<0||count>0x100000)return false;clear();allocation_bytes=u32(count)*(world?48:56);if(world)world_vertices.resize(u32(count)*2);else screen_vertices.resize(u32(count)*2);return true;}
 void AnmGeometry::clear(){screen_vertices.clear();world_vertices.clear();distortion.reset();trail.reset();circle.reset();gather.reset();ribbon.reset();wind.reset();overlay.reset();allocation_bytes=0;}

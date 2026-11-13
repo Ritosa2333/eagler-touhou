@@ -934,17 +934,19 @@ TEST(anm_draw_layers_restore_and_digest) {
         registry.append_draw(*vms[0]);
         AnmRegistry::SnapshotData snapshot;
         CHECK(registry.capture(snapshot));
-        CHECK_EQ(snapshot.entries.size(), 0x2002u);
-        CHECK(!snapshot.entries[42].active);
-        CHECK(snapshot.entries[0x1fff].in_overflow);
-        CHECK_EQ(snapshot.entries[0x1fff].parent, 100u);
-        CHECK_EQ(snapshot.entries[0x1fff].creation_parent, 100u);
-        CHECK(snapshot.entries[0x2001].borrowed);
-        CHECK_EQ(snapshot.entries[0x2000].parent, 0x2001u);
-        CHECK_EQ(snapshot.entries[0x2000].rotation_parent, 0x2001u);
+        CHECK_EQ(snapshot.version, AnmRegistry::SnapshotData::kContractVersion);
+        CHECK_EQ(snapshot.entries.size(), 0x2001u);  // v2: 0x1fff-1 live pool + 1 overflow + 1 borrowed; dead slot 42 omitted
+        CHECK_EQ(snapshot.entries[41].slot, 41u);
+        CHECK_EQ(snapshot.entries[42].slot, 43u);
+        CHECK(snapshot.entries[0x1ffe].in_overflow);
+        CHECK_EQ(snapshot.entries[0x1ffe].parent, 99u);
+        CHECK_EQ(snapshot.entries[0x1ffe].creation_parent, 99u);
+        CHECK(snapshot.entries[0x2000].borrowed);
+        CHECK_EQ(snapshot.entries[0x1fff].parent, 0x2000u);
+        CHECK_EQ(snapshot.entries[0x1fff].rotation_parent, 0x2000u);
         CHECK_EQ(snapshot.layers[0].size(), 4u);
-        CHECK_EQ(snapshot.layers[0][1].entry, 0x1fffu);
-        CHECK_EQ(snapshot.layers[0][2].entry, 0x2001u);
+        CHECK_EQ(snapshot.layers[0][1].entry, 0x1ffeu);
+        CHECK_EQ(snapshot.layers[0][2].entry, 0x2000u);
         CHECK_EQ(snapshot.layers[0][0].entry, snapshot.layers[0][3].entry);
         Fixture fixture; CHECK(fixture.init());
         fixture.battle.mp_registry_hook = &registry;
@@ -1514,3 +1516,120 @@ TEST(network_pause_restart_and_terminal_save) {
     CHECK(session.FinishWorldSimulation(true));CHECK(session.WorldCompleted());
     session.Stop();CHECK(!session.WorldCompleted());
 }
+
+TEST(v2_dead_slot_poison_and_negative_controls) {
+    using namespace th13::multiplayer;
+    App app;
+    CHECK(p32_enter_run(app, "v2-dead-slot-poison.bin"));
+    if (!app.run) return;
+    auto& battle = app.run->battle;
+    auto& registry = app.animations.registry;
+
+    // 1. Dead-slot poison invariance: allocate, submit, and discard several VMs
+    //    and spawn/retire enemy bullets, then verify poisoning dead slots does
+    //    not affect full/core/host digests or rollback replay.
+    std::vector<u32> temp_handles;
+    for (int i = 0; i < 64; ++i) {
+        auto* vm = registry.allocate();
+        CHECK(vm != nullptr);
+        vm->visual.translation = {float(i * 10), float(-i * 5), 1.f};
+        vm->variables.integers[0] = 100 + i;
+        temp_handles.push_back(registry.submit(*vm, 0));
+    }
+    for (int i = 0; i < 48; ++i) {
+        if (auto* vm = registry.find(temp_handles[size_t(i)])) {
+            CHECK(registry.discard(*vm));
+        }
+    }
+    GameInput fire;
+    for (int f = 0; f < 10; ++f) {
+        fire.update(1);
+        CHECK(app.update(fire, false) && app.commit(60.f));
+    }
+    WorldState clean_snap, poisoned_snap;
+    CHECK(clean_snap.capture(battle, app.visual, nullptr, app.run->presentation.get(),
+                             app.run.get(), app.run_transition.handle()));
+    const auto clean_full = clean_snap.digest();
+    const auto clean_core = clean_snap.digest_core();
+
+    registry.poison_dead_slots_for_test();
+    if (app.run->presentation) app.run->presentation->poison_dead_slots_for_test();
+    CHECK(poisoned_snap.capture(battle, app.visual, nullptr, app.run->presentation.get(),
+                                app.run.get(), app.run_transition.handle()));
+    CHECK_EQ(poisoned_snap.digest(), clean_full);
+    CHECK_EQ(poisoned_snap.digest_core(), clean_core);
+
+    // Advance 6 frames from poisoned memory, then restore clean_snap and replay
+    // 6 frames: end state must match bit-for-bit.
+    for (int f = 0; f < 6; ++f) {
+        fire.update(1 | 64);
+        CHECK(app.update(fire, false) && app.commit(60.f));
+    }
+    WorldState expected_end;
+    CHECK(expected_end.capture(battle, app.visual, nullptr, app.run->presentation.get(),
+                               app.run.get(), app.run_transition.handle()));
+    CHECK(clean_snap.restore(battle, app.visual, nullptr, app.run->presentation.get(),
+                             app.run.get(), &app.mp_transition_handle_));
+    fire = GameInput{};
+    for (int f = 0; f < 10; ++f) fire.update(1);
+    for (int f = 0; f < 6; ++f) {
+        fire.update(1 | 64);
+        CHECK(app.update(fire, false) && app.commit(60.f));
+    }
+    WorldState replayed_end;
+    CHECK(replayed_end.capture(battle, app.visual, nullptr, app.run->presentation.get(),
+                               app.run.get(), app.run_transition.handle()));
+    CHECK_EQ(replayed_end.digest(), expected_end.digest());
+    CHECK_EQ(replayed_end.digest_core(), expected_end.digest_core());
+
+    // 2. Negative control A: omitting a live VM from snapshot MUST alter digest
+    //    and cause replay divergence (detected by digest).
+    {
+        AnmRegistry reg;
+        auto* live0 = reg.allocate();
+        auto* live1 = reg.allocate();
+        CHECK(live0 && live1);
+        const u32 h0 = reg.submit(*live0, 0);
+        const u32 h1 = reg.submit(*live1, 0);
+        CHECK(h0 && h1);
+        live1->variables.integers[0] = 999;
+        AnmRegistry::SnapshotData valid, corrupted;
+        CHECK(reg.capture(valid));
+        corrupted = valid;
+        corrupted.entries.pop_back();  // deliberately drop live1
+        CHECK(reg.restore(corrupted));
+        CHECK(reg.find(h1) == nullptr);  // live1 missing after faulty restore
+        AnmRegistry::SnapshotData after_corrupt;
+        CHECK(reg.capture(after_corrupt));
+        CHECK(after_corrupt.entries.size() != valid.entries.size());
+    }
+
+    // 3. Negative control B: corrupting free_slots order MUST alter next allocation
+    //    handle/slot and be caught by full digest.
+    {
+        AnmRegistry reg_a, reg_b;
+        auto* a0 = reg_a.allocate(); reg_a.submit(*a0);
+        auto* a1 = reg_a.allocate(); reg_a.submit(*a1);
+        reg_a.discard(*a0);
+        reg_a.discard(*a1);
+        AnmRegistry::SnapshotData snap_ok, snap_bad_free;
+        CHECK(reg_a.capture(snap_ok));
+        snap_bad_free = snap_ok;
+        std::swap(snap_bad_free.free_slots.back(), snap_bad_free.free_slots[snap_bad_free.free_slots.size() - 2]);
+        CHECK(reg_a.restore(snap_ok));
+        CHECK(reg_b.restore(snap_bad_free));
+        auto* next_a = reg_a.allocate(); const u32 ha = reg_a.submit(*next_a);
+        auto* next_b = reg_b.allocate(); const u32 hb = reg_b.submit(*next_b);
+        CHECK(ha != hb);  // slot bitfield differs immediately
+    }
+
+    // 4. Negative control C: mismatched contract version MUST fail restore explicitly.
+    {
+        AnmRegistry reg;
+        AnmRegistry::SnapshotData snap;
+        CHECK(reg.capture(snap));
+        snap.version = 1;
+        CHECK(!reg.restore(snap));
+    }
+}
+

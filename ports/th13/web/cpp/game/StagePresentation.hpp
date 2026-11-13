@@ -17,6 +17,7 @@
 #include <memory>
 #include <deque>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace th13 {
@@ -205,6 +206,11 @@ private:
     std::vector<EnemyVisual> enemies_;
     // VMs retain a pointer to Slot::source; growing the pool must not move it.
     std::deque<BulletSlot> bullets_;
+    // bullet_slot 的 generation 加速索引与 sync 存活判定的排序缓冲（见 .cpp）。
+    std::vector<std::pair<u32, u32>> bullet_lookup_;
+    std::vector<u32> live_bullet_generations_;
+    std::vector<BulletSlot*> draw_bullet_order_;
+    void rebuild_bullet_lookup();
     // 自机弹 VM = registry 主链正式成员（0x445c40）：池分配 → 0x403800 模板
     // 拷贝 → 0x462450 首 tick → 0x46f3f0 主链尾插（flags=0）。此后每帧只写
     // 位姿（0x4464d0 LAB_00446619），tick 由 0x46f170 主链遍历完成

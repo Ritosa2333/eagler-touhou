@@ -69,6 +69,16 @@ InputLanes/NetplayRuntime/SessionSetup）与 `ports/th12-mp/docs/ROLLBACK_CADENC
 - `FrameScheduler`（外部 callback 侵入链）按稳定 callback 身份恢复；
   `AnmRegistry`（裸指针/迭代器/borrowed/父子链）专用 capture/restore，
   恢复分配顺序；句柄 generation 一致。
+- **契约 v2（存活态快照，`SnapshotData::kContractVersion == 2`）**：
+  - `AnmRegistry::allocate()` 在槽位出借时将 `vm.visual.translation` 归零，阻断
+    `AnmManager::bind_template` 跨代继承退役槽残留平移；
+  - `AnmRegistry::capture` 只保存活跃节点（`active`）、本帧绘制层桶引用的节点、
+    overflow/external 节点及父子/`creation_parent`/`rotation_parent` 闭包，加上完整
+    `free_slots` 回收栈与 `generation` 计数器；`restore` 对未捕获池内槽位就地规范化为空闲空态；
+  - `StagePresentation::capture_presentation` 对弹槽仅保存活跃或仍被 `external` 表引用的
+    `bullet_vms`（失活槽只存手账标量）；
+  - `WorldState::digest()` 与 `field_ledger()` 同步覆盖契约 v2 精确保存集合（`anm.registry.v2_live`、
+    `present.bullets.v2_live`），死槽位毒化不得改变 `digest_core`/`digest`/回滚重演结果。
 - 资源（ANM bank/ECL/STD/SHT）在未确认快照存活期不卸载；换关只在确认栅栏后。
 - hash：显式序列化全权威状态（稳定顺序，float 按 bit）；不 hash 指针/padding/
   unordered_map 顺序/localSeat/墙钟。

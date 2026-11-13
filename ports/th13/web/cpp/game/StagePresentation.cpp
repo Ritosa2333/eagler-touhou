@@ -102,10 +102,30 @@ StagePresentation::~StagePresentation() {
     }
 }
 
+// generation → 槽位下标（按 generation、下标升序）。只收录重建时 active 的
+// 槽位；bullet_slot 逐次复核，故重建之后的出生/回收/恢复不影响正确性。
+void StagePresentation::rebuild_bullet_lookup() {
+    bullet_lookup_.clear();
+    for (size_t index = 0; index < bullets_.size(); ++index)
+        if (bullets_[index].active)
+            bullet_lookup_.emplace_back(bullets_[index].generation, u32(index));
+    std::sort(bullet_lookup_.begin(), bullet_lookup_.end());
+}
+
 StagePresentation::BulletSlot* StagePresentation::bullet_slot(StageBullet& bullet) {
     BulletSlot* slot = nullptr;
-    for (auto& entry : bullets_)
-        if (entry.active && entry.generation == bullet.generation) { slot = &entry; break; }
+    // 加速索引（纯提示）：命中必须复核槽位 active/generation；未命中或
+    // 失效一律回落到下方原有的有序线性扫描，槽位分配结果不变。
+    const auto hint = std::lower_bound(bullet_lookup_.begin(), bullet_lookup_.end(),
+                                       std::pair<u32, u32>{bullet.generation, 0u});
+    if (hint != bullet_lookup_.end() && hint->first == bullet.generation &&
+        hint->second < bullets_.size()) {
+        BulletSlot& entry = bullets_[hint->second];
+        if (entry.active && entry.generation == bullet.generation) slot = &entry;
+    }
+    if (!slot)
+        for (auto& entry : bullets_)
+            if (entry.active && entry.generation == bullet.generation) { slot = &entry; break; }
     if (!slot) {
         for (auto& entry : bullets_) if (!entry.active) { slot = &entry; break; }
         if (!slot) { bullets_.emplace_back(); slot = &bullets_.back(); }
@@ -1544,12 +1564,16 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
     // Production bullet ANM is advanced by StageSim at birth/update time.
     // Standalone presentation clients retain the existing sync entry point.
     if (battle.sim.bullet_animation) {
-        for (auto& slot : bullets_) {
-            bool live = false;
-            for (const auto& bullet : battle.sim.bullets)
-                if (bullet.alive && slot.generation == bullet.generation) { live = true; break; }
-            slot.active = live;
-        }
+        // 同一谓词（存在 alive 且 generation 相同的弹），由逐槽全表扫描
+        // 改为排序后二分：千弹时原 O(槽×弹) 扫描是 sync 的主要开销。
+        live_bullet_generations_.clear();
+        for (const auto& bullet : battle.sim.bullets)
+            if (bullet.alive) live_bullet_generations_.push_back(bullet.generation);
+        std::sort(live_bullet_generations_.begin(), live_bullet_generations_.end());
+        for (auto& slot : bullets_)
+            slot.active = std::binary_search(live_bullet_generations_.begin(),
+                                             live_bullet_generations_.end(), slot.generation);
+        rebuild_bullet_lookup();
     } else {
     // ---- 敌弹：bullet.anm 脚本 + 外观表精灵源（出生中断 2，0x40e840 尾）----
     if (bullets_.size() < battle.sim.bullets.size()) {
@@ -2016,15 +2040,14 @@ bool StagePresentation::draw(u32 pass) {
     case 3: {
         // 原版敌弹按池/链序（新生在前 = generation 降序）绘制；port 旧实现
         // 按 bullets_ 槽位序，同一 UP 批内两精灵顺序反转（f0-47 48 帧）。
-        std::vector<BulletSlot*> order;
-        order.reserve(bullets_.size());
+        draw_bullet_order_.clear();
         for (auto& slot : bullets_)
-            if (slot.active && slot.vm) order.push_back(&slot);
-        std::stable_sort(order.begin(), order.end(),
+            if (slot.active && slot.vm) draw_bullet_order_.push_back(&slot);
+        std::sort(draw_bullet_order_.begin(), draw_bullet_order_.end(),
             [](const BulletSlot* a, const BulletSlot* b) {
                 return a->generation > b->generation;
             });
-        for (auto* slot : order) one(*slot->vm);
+        for (auto* slot : draw_bullet_order_) one(*slot->vm);
         break;
     }
     default:

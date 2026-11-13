@@ -657,6 +657,8 @@ private:
     // M3：单席弹-玩家碰撞体（collide_player_bullet 的 MP 分派按席位循环
     // 调用；seat = 判定席号，擦弹 mask 用）。
     void collide_player_bullet_seat(StageBullet& bullet, i32 seat);
+    // 上述席位体的纯查询半体：0 无交互 / 1 命中 / 2 擦弹（不写状态）。
+    int classify_player_bullet(const StagePlayerState& state, const StageBullet& bullet) const;
     // M2：按角色装载 .sht 定标域到当前窗口席（enable_seats 逐席调用；
     // 与 prepare_player 的 SHT 段同源语义：移速/卫星偏移/弹型表，缺文件
     // 或布局异常即失败，不静默降级）。
