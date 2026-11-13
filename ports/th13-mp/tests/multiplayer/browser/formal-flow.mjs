@@ -17,6 +17,17 @@ import { runRoomLifecycle } from "./formal-lifecycle.mjs";
 import { runDirectedGift } from "./formal-cooperation.mjs";
 import { runInputEdges } from "./formal-input.mjs";
 import { startCpuProfiles } from "./formal-profile.mjs";
+import { evaluateFrameWork } from "./frame-work.mjs";
+import { assertHardwareIdentity } from "./hardware-identity.mjs";
+import { installFormalAudit, persistAuditCapture } from "./formal-audit.mjs";
+import { installFramebufferCapture } from "./formal-framebuffer.mjs";
+import { persistIndependent, terminalStream } from "./persist-independent.mjs";
+import { boundedOperation } from "./bounded-operation.mjs";
+import { freezeFrameWork } from "./freeze-frame-work.mjs";
+import { createInspectionGuard, settleInspections } from "./inspection-serialization.mjs";
+import { persistFramebufferCapture, finishFramebufferAck } from "./formal-framebuffer-persist.mjs";
+import { assertBuildDelivery } from "./formal-delivery.mjs";
+import { assertRuntimeBuildBinding, evaluateRequiredAcceptance } from "./formal-required-acceptance.mjs";
 import { appendFile, mkdir } from "node:fs/promises";
 const workspace = fileURLToPath(new URL("../../../../../../", import.meta.url));
 const dir = resolve(
@@ -27,18 +38,8 @@ const dir = resolve(
 const origin = process.env.TH13_ORIGIN || "http://127.0.0.1:18760";
 await mkdir(resolve(dir, ".."), { recursive: true });
 await mkdir(dir); // A rerun must not append to evidence from a previous run.
-const expectedFiles = await Promise.all(
-  ["th13-sdl.mjs", "th13-sdl.wasm"].map(async (name) => {
-    const bytes = await readFile(
-      new URL("../../../build-eagler-multiplayer/" + name, import.meta.url),
-    );
-    return {
-      name,
-      bytes: bytes.length,
-      sha256: createHash("sha256").update(bytes).digest("hex"),
-    };
-  }),
-);
+const expectedFiles = [];
+let runtimeManifestBytes;
 const report = {
   started: new Date().toISOString(),
   errors: [],
@@ -50,10 +51,7 @@ const report = {
     "TH13_DUPLICATE_EVERY", "TH13_BURST_EVERY", "TH13_BURST_MS", "TH13_DIFFICULTY"]
     .map(key => [key, process.env[key] || "0"])),
 };
-await Promise.all(["formal-flow.mjs", "formal-pilot.mjs", "formal-network.mjs", "formal-lifecycle.mjs", "formal-cooperation.mjs", "formal-input.mjs", "formal-profile.mjs"].map(async name => {
-  const bytes = await readFile(new URL(name, import.meta.url));
-  await writeFile(resolve(dir, name), bytes);
-}));
+const helperFiles = ["formal-flow.mjs", "formal-delivery.mjs", "formal-required-acceptance.mjs", "formal-pilot.mjs", "formal-network.mjs", "formal-lifecycle.mjs", "formal-cooperation.mjs", "formal-input.mjs", "formal-profile.mjs", "formal-audit.mjs", "formal-framebuffer.mjs", "formal-framebuffer-persist.mjs", "frame-work.mjs", "hardware-identity.mjs", "persist-independent.mjs", "bounded-operation.mjs", "freeze-frame-work.mjs", "inspection-serialization.mjs"];
 const launchOptions = {
   headless: process.env.TH13_HEADFUL !== "1",
   channel: "chromium",
@@ -62,10 +60,9 @@ const launchOptions = {
     "--disable-dev-shm-usage",
     "--ignore-gpu-blocklist",
     "--disable-gpu-sandbox",
-    process.env.TH13_ANGLE === "gl"
-      ? "--use-angle=gl"
-      : "--use-angle=swiftshader",
-    "--enable-unsafe-swiftshader",
+    "--use-angle=" + (process.env.TH13_ANGLE || "gl-egl"),
+    "--disable-software-rasterizer",
+    "--enable-gpu",
     "--autoplay-policy=no-user-gesture-required",
     "--enable-logging=stderr",
     "--disable-background-timer-throttling",
@@ -73,12 +70,56 @@ const launchOptions = {
     "--disable-renderer-backgrounding",
   ],
 };
-const PLAYER_COUNT = Number(process.env.TH13_PLAYERS || 2);
-if (![2, 3].includes(PLAYER_COUNT)) throw Error("TH13_PLAYERS must be 2 or 3");
+const PLAYER_COUNT = Number(process.env.TH13_PLAYERS || 3);
 const sharedBrowser = process.env.TH13_SHARED_BROWSER === "1";
 const browsers = [];
 report.browserTopology = { sharedBrowser, launchOptions, seats: [], snapshots: [] };
 const pages = [];
+const cpuSessions = [];
+const workCaptures = [];
+const workErrors = [];
+const deliveryTasks = new Set();
+const deliveryRequests = new Set();
+const deliveryRequestIdentity = new WeakMap();
+const deliveryFrames = new WeakMap();
+const deliveryEpochs = new WeakMap();
+const gameFrames = [];
+const gameFrameGuids = [];
+const gameDocumentEpochs = [];
+report.playerCount = PLAYER_COUNT;
+report.frameGuids = gameFrameGuids;
+report.documentEpochs = gameDocumentEpochs;
+let deliveryFrameSequence = 0;
+const deliveryFrameGuid = frame => {
+  if (!deliveryFrames.has(frame)) deliveryFrames.set(frame, `frame-${++deliveryFrameSequence}`);
+  return deliveryFrames.get(frame);
+};
+const runtimeResponse = url => {
+  try { return /\/th13-sdl\.(mjs|wasm)$/.test(new URL(url).pathname); }
+  catch { return false; }
+};
+async function settleRuntimeDelivery(label) {
+  await boundedOperation(label, async () => {
+    // New responses may arrive while an earlier body is being read. Drain
+    // the live request and task sets, rather than a single promise snapshot.
+    while (deliveryTasks.size || deliveryRequests.size) {
+      await Promise.all([...deliveryTasks]);
+      if (deliveryRequests.size) await new Promise(resolve => setTimeout(resolve, 10));
+    }
+  }, 15000);
+}
+const inspectTimedOut = new Set();
+const guardInspection = createInspectionGuard();
+let closingBrowsers = false;
+const defaultFlow = !process.env.TH13_ROOM_REENTRIES && process.env.TH13_COOP_GIFT !== "1" && process.env.TH13_INPUT_EDGES !== "1";
+const auditCursors = Array.from({length: PLAYER_COUNT}, () => ({next:1,rawPending:0,errorsWritten:false}));
+const workCursors = Array.from({length: PLAYER_COUNT}, () => ({failure:null}));
+const framebufferEvidence = Array.from({length: PLAYER_COUNT}, () => []);
+const framebufferCursors = Array.from({length: PLAYER_COUNT}, () => ({next:1,rawPending:0,failure:null}));
+const framebufferObservations = Array(PLAYER_COUNT).fill(null);
+const requireRollback = Number(process.env.TH13_REQUIRE_ROLLBACK || 0) > 0;
+report.cpuThrottlingRate = 4;
+report.requestedCharacters = [0, 1, 3].slice(0, PLAYER_COUNT);
 let profileCapture;
 async function captureBrowserIdentity(browser, browserIndex, phase) {
   const session = await browser.newBrowserCDPSession();
@@ -96,11 +137,23 @@ async function captureBrowserIdentity(browser, browserIndex, phase) {
         arguments: (await readFile(`/proc/${info.id}/cmdline`, "utf8"))
           .split("\0").filter(Boolean),
       })));
+    const contexts = await Promise.all(report.browserTopology.seats
+      .filter(row => row.browserIndex === browserIndex)
+      .map(async ({seat}) => ({seat, ...await pages[seat].evaluate(() => {
+        const w = document.querySelector("#gameFrame")?.contentWindow;
+        const canvas = w?.document.querySelector("canvas");
+        const gl = canvas?.getContext("webgl2");
+        if (!gl) return {error: "Game has no WebGL2 context"};
+        const info = gl.getExtension("WEBGL_debug_renderer_info");
+        return {version: gl.getParameter(gl.VERSION),
+          renderer: info && gl.getParameter(info.UNMASKED_RENDERER_WEBGL),
+          vendor: info && gl.getParameter(info.UNMASKED_VENDOR_WEBGL)};
+      })})));
     const identity = {
       phase, at: new Date().toISOString(), browserIndex,
       seats: report.browserTopology.seats.filter(row => row.browserIndex === browserIndex)
         .map(row => row.seat),
-      version, gpu: system.gpu, processes,
+      version, gpu: system.gpu, processes, contexts,
     };
     report.browserTopology.snapshots.push(identity);
     await appendFile(dir + "/browser-identity.ndjson", JSON.stringify(identity) + "\n");
@@ -109,8 +162,8 @@ async function captureBrowserIdentity(browser, browserIndex, phase) {
     await session.detach();
   }
 }
-const inspect = (page) =>
-  page.evaluate((playerCount) => {
+const inspect = async (page, {expired = () => false} = {}) => {
+  const state = await page.evaluate(({playerCount, freeze}) => {
     const frame = document.querySelector("#gameFrame"),
       w = frame?.contentWindow,
       m = w?.Module;
@@ -120,7 +173,18 @@ const inspect = (page) =>
       return text ? JSON.parse(text) : { empty: true };
     };
     const tail = w?.__formalTail;
-    const audit = read("_th13_mp_audit_take"), timing = read("_th13_mp_timing_take");
+    const drain = w?.__formalAudit;
+    if (drain) drain.drain();
+    const captured = drain?.snapshot();
+    const audit = drain ? {frames: [], overflow: 0, terminal: null} : read("_th13_mp_audit_take");
+    const timing = drain ? {clock: "steady-microseconds", events: [], overflow: 0} : read("_th13_mp_timing_take");
+    if (captured) for (const batch of captured.batches) {
+      audit.frames.push(...batch.audit.frames);
+      audit.overflow = Math.max(audit.overflow, batch.audit.overflow);
+      audit.terminal ||= batch.audit.terminal;
+      timing.events.push(...batch.timing.events);
+      timing.overflow = Math.max(timing.overflow, batch.timing.overflow);
+    }
     if (tail) {
       audit.frames = [...tail.audit.frames, ...audit.frames];
       audit.overflow += tail.audit.overflow;
@@ -130,6 +194,11 @@ const inspect = (page) =>
       w.__formalTail = null;
     }
     return {
+      auditDrain: captured || null,
+      framebuffer: w?.__framebufferCapture?.snapshot() || null,
+      work: w?.__frameWork ? {capture: {...w.__frameWork.capture},
+        samples: w.__frameWork.samples.slice(), errors: [...w.__frameWork.errors],
+        attached: !m || m.onGameWorkFrame === w.__frameWork.observer} : null,
       url: location.href,
       frame: frame?.src,
       visibility: document.visibilityState,
@@ -148,15 +217,15 @@ const inspect = (page) =>
             ),
           }
         : null,
-      raf: w.__rafProbe,
-      health: w.__health,
-      canvas: w.document.querySelector("canvas")
+      raf: w?.__rafProbe,
+      health: w?.__health,
+      canvas: w?.document.querySelector("canvas")
         ? {
             width: w.document.querySelector("canvas").width,
             height: w.document.querySelector("canvas").height,
           }
         : null,
-      pilot: w.__pilot,
+      pilot: w?.__pilot,
       probe: m
         ? Array.from(
             m.HEAP32.subarray(
@@ -198,7 +267,83 @@ const inspect = (page) =>
           }
         : null,
     };
-  }, PLAYER_COUNT);
+  }, {playerCount:PLAYER_COUNT});
+  if (expired()) throw Error('Evidence inspection expired before persistence');
+  const seat = pages.indexOf(page);
+  await persistIndependent([
+  ["framebuffer",async()=>{
+  if (state.framebuffer) {
+    const capture=state.framebuffer;
+    framebufferObservations[seat]={observeCalls:capture.observeCalls,observeMs:capture.observeMs,
+      pendingReasons:capture.pendingReasons, failures:capture.failures};
+    const cursor=framebufferCursors[seat];
+    const accepted=await persistFramebufferCapture(dir,seat,capture,cursor,framebufferEvidence[seat]);
+    try { if (capture.captures.length) await page.evaluate(({first,last,count}) => {
+      const capture=document.querySelector('#gameFrame')?.contentWindow?.__framebufferCapture;
+      if (!capture) throw Error('Framebuffer collector disappeared before acknowledgement');
+      capture.ack(first,last,count);
+    },{first:capture.captures[0].sequence,last:capture.captures.at(-1).sequence,count:capture.captures.length}); }
+    catch(error) { cursor.failure=`Framebuffer acknowledgement failed: ${error}`; throw error; }
+    finishFramebufferAck(cursor,framebufferEvidence[seat],accepted);
+    state.framebuffer={observeCalls:capture.observeCalls,observeMs:capture.observeMs,
+      pendingReasons:capture.pendingReasons, count:framebufferEvidence[seat].length};
+  }
+  }],
+  ["audit",async()=>{
+  if (state.auditDrain) {
+    const {batches} = state.auditDrain;
+    const cursor = auditCursors[seat];
+    await terminalStream(cursor,'Audit',async()=>{
+    await persistAuditCapture(dir + `/audit-raw-${seat}.ndjson`, state.auditDrain, cursor);
+    if (batches.length) {
+      await appendFile(dir + `/audit-batches-${seat}.ndjson`, batches.map(row => JSON.stringify(row) + "\n").join(""));
+      await page.evaluate(({first,last,count}) => {
+        const audit = document.querySelector("#gameFrame")?.contentWindow?.__formalAudit;
+        if (!audit) throw Error("Audit drain disappeared before acknowledgement");
+        audit.ack(first,last,count);
+      }, {first:batches[0].sequence,last:batches.at(-1).sequence,count:batches.length});
+      cursor.rawPending = 0;
+    }
+    state.auditDrain = {calls:state.auditDrain.calls, elapsedMs:state.auditDrain.elapsedMs};
+    });
+  }
+  }],
+  ["work",async()=>{
+  if (state.work) {
+    const cursor=workCursors[seat];
+    await terminalStream(cursor,'Work',async()=>{
+    await appendFile(dir + `/work-${seat}.ndjson`,
+      state.work.samples.map(row => JSON.stringify(row) + "\n").join(""));
+    const rows = state.work.samples;
+    if (rows.length) await page.evaluate(({count, first, last}) => {
+      const work = document.querySelector("#gameFrame")?.contentWindow?.__frameWork;
+      if (!work || work.samples[0]?.sequence !== first || work.samples[count - 1]?.sequence !== last)
+        throw Error("Work evidence changed before persistence acknowledgement");
+      work.samples.splice(0, count);
+    }, {count: rows.length, first: rows[0].sequence, last: rows.at(-1).sequence});
+    workCaptures[seat] = state.work.capture;
+    if (!state.work.attached) workErrors.push({seat, error: "Work observer was replaced"});
+    workErrors.push(...state.work.errors.map(error => ({seat, error})));
+    state.work = {capture: state.work.capture, count: rows.length,
+      errors: state.work.errors, attached: state.work.attached};
+    });
+  }
+  }],
+  ]);
+  return state;
+};
+const inspectBounded = async page => {
+  const seat=pages.indexOf(page);
+  if (inspectTimedOut.has(seat)) throw Error(`Seat ${seat} prior inspection timed out; tail incomplete`);
+  try {
+    return await boundedOperation(`seat ${seat} inspect`,
+      expired => guardInspection(seat,()=>inspect(page,{expired})), 15000);
+  } catch (error) {
+    if (String(error).includes('timed out')) inspectTimedOut.add(seat);
+    throw error;
+  }
+};
+const inspectAll = () => settleInspections(pages.map(page=>()=>inspectBounded(page)));
 async function dismiss(page) {
   await page.waitForFunction(
     () =>
@@ -209,10 +354,31 @@ async function dismiss(page) {
     await page.locator("#decisionConfirm").click();
 }
 try {
+  if (![2, 3].includes(PLAYER_COUNT)) throw Error("TH13_PLAYERS must be 2 or 3");
+  await Promise.all(helperFiles.map(async name => {
+    await writeFile(resolve(dir, name), await readFile(new URL(name, import.meta.url)));
+  }));
+  expectedFiles.push(...await Promise.all(["th13-sdl.mjs", "th13-sdl.wasm"].map(async name => {
+    const bytes = await readFile(process.env.TH13_MP_BUILD
+      ? resolve(process.env.TH13_MP_BUILD, name)
+      : new URL("../../../build-eagler-multiplayer/" + name, import.meta.url));
+    return {name, bytes:bytes.length, sha256:createHash("sha256").update(bytes).digest("hex")};
+  })));
+  // Retain the actual build artifact before launching any client. Delivered
+  // response hashes below bind each document to these exact output bytes.
+  runtimeManifestBytes = await readFile(process.env.TH13_MP_BUILD
+    ? resolve(process.env.TH13_MP_BUILD, "build.json")
+    : new URL("../../../build-eagler-multiplayer/build.json", import.meta.url));
+  const binding = assertRuntimeBuildBinding({expectedFiles, runtimeManifestBytes});
+  await writeFile(resolve(dir, "runtime-build.json"), runtimeManifestBytes);
+  report.runtimeBuild = {path:"runtime-build.json", sha256:binding.sha256};
   for (let seat = 0; seat < PLAYER_COUNT; seat++) {
     const browser = sharedBrowser && browsers.length
       ? browsers[0] : await chromium.launch(launchOptions);
-    if (!browsers.includes(browser)) browsers.push(browser);
+    if (!browsers.includes(browser)) {
+      browsers.push(browser);
+      browser.on('disconnected',()=>{if(!closingBrowsers)report.errors.push({message:'Browser disconnected',browserIndex:browsers.indexOf(browser)});});
+    }
     const browserIndex = browsers.indexOf(browser);
     report.browserTopology.seats.push({ seat, browserIndex });
     const context = await browser.newContext({
@@ -239,7 +405,29 @@ try {
       burstEvery: +(process.env.TH13_BURST_EVERY || 0),
       burstMs: +(process.env.TH13_BURST_MS || 0),
     });
+    if (defaultFlow) await context.addInitScript(installFormalAudit);
+    if (defaultFlow) await context.addInitScript(installFramebufferCapture);
     await context.addInitScript(() => {
+      // Install before the managed runtime publishes Module, so loading and
+      // the first callback cannot disappear from the performance evidence.
+      const work = globalThis.__frameWork = {samples: [], errors: [],
+        capture: {first: null, last: null, count: 0}};
+      let moduleValue;
+      Object.defineProperty(globalThis, "Module", {configurable: true,
+        get: () => moduleValue,
+        set: value => {
+          moduleValue = value;
+          if (!value || typeof value !== "object") return;
+          const previous = value.onGameWorkFrame;
+          work.observer = value.onGameWorkFrame = row => {
+            work.samples.push({...row});
+            if (!work.capture.count) work.capture.first = row.sequence;
+            work.capture.last = row.sequence;
+            ++work.capture.count;
+            globalThis.__framebufferCapture?.onWork(row);
+            previous?.(row);
+          };
+        }});
       localStorage.setItem(
         "eagler-touhou-game-options-v1-th13mp",
         JSON.stringify({ options: { renderScale: 1, thpracEnabled: false } }),
@@ -273,16 +461,44 @@ try {
     });
     const page = await context.newPage();
     pages.push(page);
+    page.on('crash',()=>report.errors.push({seat,message:'Browser page crashed'}));
+    page.on('close',()=>{if(!closingBrowsers)report.errors.push({seat,message:'Browser page closed'});});
+    page.on('framenavigated', frame => {
+      deliveryEpochs.set(frame, (deliveryEpochs.get(frame) || 0) + 1);
+      if (gameFrames[seat] === frame)
+        report.errors.push({seat,message:'Runtime iframe navigated after room identity binding'});
+    });
+    const cpu = await context.newCDPSession(page);
+    await cpu.send("Emulation.setCPUThrottlingRate", {rate: 4});
+    cpuSessions.push(cpu);
     page.setDefaultTimeout(10000);
     await page.addLocatorHandler(page.locator("#firstUseNoticeDialog[open]"),
       async () => { await page.locator("#firstUseNoticeClose").click(); });
+    await page.addLocatorHandler(page.locator("#decisionDialog[open]:not(.closing)"),
+      async () => { await page.locator("#decisionConfirm").click(); });
     page.on("requestfailed", (r) =>
+      {
+      deliveryRequests.delete(r);
       report.errors.push({
         seat,
         url: r.url(),
         message: r.failure()?.errorText,
-      }),
+      });
+      },
     );
+    page.on('request', request => {
+      if (runtimeResponse(request.url())) {
+        deliveryRequests.add(request);
+        try {
+          const frame = request.frame();
+          deliveryRequestIdentity.set(request, {frameGuid:deliveryFrameGuid(frame),
+            documentEpoch:deliveryEpochs.get(frame) || 0});
+        } catch (error) {
+          report.errors.push({seat,url:request.url(),message:`Runtime request frame: ${error}`});
+        }
+      }
+    });
+    page.on('requestfinished', request => deliveryRequests.delete(request));
     page.on("response", (r) => {
       if (r.status() >= 400)
         report.errors.push({ seat, url: r.url(), status: r.status() });
@@ -293,15 +509,33 @@ try {
     page.on("console", (m) => {
       if (m.type() === "error") report.errors.push({ seat, message: m.text() });
     });
-    page.on("response", async (response) => {
-      if (/th13-sdl\.(mjs|wasm)(\?|$)/.test(response.url())) {
+    page.on("response", (response) => {
+      if (runtimeResponse(response.url())) {
+        const task = (async () => {
+        const identity = deliveryRequestIdentity.get(response.request());
+        assert(identity, 'Runtime response has no observed request identity');
         const bytes = await response.body();
-        report.delivery.push({
+        const row = {
           seat,
           url: response.url(),
+          ...identity,
           bytes: bytes.length,
           sha256: createHash("sha256").update(bytes).digest("hex"),
+        };
+        report.delivery.push(row);
+        const expected = expectedFiles.find(file => new URL(row.url).pathname.endsWith('/' + file.name));
+        assert(expected, 'Unexpected runtime response filename');
+        assert.equal(row.bytes, expected.bytes, `Seat ${seat}: runtime response size`);
+        assert.equal(row.sha256, expected.sha256, `Seat ${seat}: runtime response hash`);
+        if (gameFrameGuids[seat])
+          assert.equal(row.frameGuid, gameFrameGuids[seat], `Seat ${seat}: runtime iframe changed`);
+        if (gameDocumentEpochs[seat] !== undefined)
+          assert.equal(row.documentEpoch, gameDocumentEpochs[seat], `Seat ${seat}: runtime document changed`);
+        })().catch(error => {
+          report.errors.push({seat,url:response.url(),message:`Runtime delivery body: ${error}`});
         });
+        deliveryTasks.add(task);
+        task.finally(() => deliveryTasks.delete(task));
       }
     });
     await page.addInitScript(() => {
@@ -335,6 +569,28 @@ try {
     await page.locator("#submitRoom").click();
     await page.waitForSelector("#mpRoomView:not([hidden])", { timeout: 60000 });
     await dismiss(page);
+    await page.waitForFunction(() => {
+      if (document.querySelector("#decisionDialog[open]:not(.closing)"))
+        document.querySelector("#decisionConfirm").click();
+      return !!document.querySelector("#mpReady:not(:disabled)") &&
+        !!document.querySelector("#gameFrame")?.contentWindow?.Module?._th13_probe_state;
+    }, {}, {timeout: 120000});
+    const desired = report.requestedCharacters[seat];
+    const characterField = page.locator("#mpLoadoutField0");
+    if (await characterField.count()) {
+      await characterField.selectOption(String(desired));
+      await page.waitForFunction(value =>
+        document.querySelector("#mpLoadoutField0")?.value === String(value) &&
+        !document.querySelector("#mpLoadoutField0")?.disabled, desired);
+    } else {
+      // TH13 has one shot per character, with the room's normal next control.
+      await page.locator(`[data-mp-seat="${seat}"] .mp-seat-edit`).click();
+      for (let step = 0; step < desired; ++step) {
+        await page.locator("#mpLoadoutNextSeat").click();
+        await page.waitForTimeout(100);
+      }
+      await page.locator("#mpRoomPanelClose").click();
+    }
     await page.evaluate(() => {
       const m = document.querySelector("#gameFrame")?.contentWindow?.Module;
       m?._th13_mp_audit?.(1);
@@ -342,7 +598,13 @@ try {
       u.searchParams.set("renderScale", "1");
       history.replaceState(null, "", u);
     });
-    const state = await inspect(page);
+    const state = await inspectBounded(page);
+    const frameElement = await page.locator('#gameFrame').elementHandle();
+    const gameFrame = await frameElement.contentFrame();
+    assert(gameFrame && gameFrame !== page.mainFrame(), `Seat ${seat}: missing game iframe`);
+    gameFrames[seat] = gameFrame;
+    gameFrameGuids[seat] = deliveryFrameGuid(gameFrame);
+    gameDocumentEpochs[seat] = deliveryEpochs.get(gameFrame) || 0;
     report.events.push({ seat, at: "room", state });
     if (!seat)
       report.room = (await page.locator("#mpRoomCode").innerText()).trim();
@@ -378,18 +640,30 @@ try {
   }
   report.events.push({
     at: "ready",
-    states: await Promise.all(pages.map(inspect)),
+    states: await inspectAll(),
   });
   for (const page of pages)
-    await page.evaluate(() => {
-      const m = document.querySelector("#gameFrame").contentWindow.Module;
+    await page.evaluate(({enableDrain,seatCount}) => {
+      const w = document.querySelector("#gameFrame").contentWindow;
+      const m = w.Module;
       if (!m?._th13_mp_audit) throw Error("Missing audit");
+      if (enableDrain) {
+        if (!w.__installFormalAudit) throw Error("Missing audit drain installer");
+        w.__installFormalAudit(m);
+        if (!w.__installFramebufferCapture) throw Error("Missing framebuffer installer");
+        w.__installFramebufferCapture(m, seatCount);
+      }
       m._th13_mp_audit(1);
-    });
+    }, {enableDrain:defaultFlow,seatCount:PLAYER_COUNT});
   await writeFile(
     dir + "/formal-smoke-progress.json",
     JSON.stringify(report, null, 2),
   );
+  await settleRuntimeDelivery('Initial runtime response bodies');
+  report.initialDelivery = assertBuildDelivery({expectedFiles,
+    delivery:report.delivery,playerCount:PLAYER_COUNT,frameGuids:gameFrameGuids,
+    documentEpochs:gameDocumentEpochs});
+  assert.equal(report.errors.length, 0, 'Browser errors before starting');
   await pages[0].locator("#mpStartGame").click({ timeout: 30000 });
   console.log("started");
   await writeFile(
@@ -424,7 +698,7 @@ try {
           if (w.__health.length > 100) w.__health.shift();
           // Capture the final confirmed tail before the normal shell closes
           // its session on room return. Read-only, once per finished world.
-          if (!w.__formalTail && m._th13_room_return_ready()) {
+          if (!w.__formalAudit && !w.__formalTail && m._th13_room_return_ready()) {
             w.__formalTail = {
               audit: JSON.parse(m.UTF8ToString(m._th13_mp_audit_take())),
               timing: JSON.parse(m.UTF8ToString(m._th13_mp_timing_take())),
@@ -437,6 +711,15 @@ try {
   );
   await Promise.all(browsers.map((browser, index) =>
     captureBrowserIdentity(browser, index, "gameplay")));
+  for (const identity of report.browserTopology.snapshots.filter(row => row.phase === "gameplay")) {
+    identity.hardwareVerification = assertHardwareIdentity(identity);
+  }
+  assert.equal(report.browserTopology.snapshots.filter(row => row.phase === "gameplay").length,
+    browsers.length, "Every browser has a gameplay identity");
+  const activeStates = await inspectAll();
+  for (const state of activeStates) assert.deepEqual(
+    state.runtime.seats.map(player => player.character), report.requestedCharacters,
+    "Actual runtime character seats");
 
   if (process.env.TH13_ROOM_REENTRIES) {
     report.scope = "Production room pause/resume/save/return/reentry";
@@ -463,7 +746,7 @@ try {
   } else {
   for (let seat = 0; seat < pages.length; seat++)
     await pages[seat].evaluate(installPilot, { seat });
-  profileCapture = await startCpuProfiles({pages, directory: dir});
+  profileCapture = await startCpuProfiles({pages, sessions:cpuSessions, directory: dir});
   const next = Array(PLAYER_COUNT).fill(0),
     pending = Array.from({length: PLAYER_COUNT}, () => new Map());
   let compared = -1,
@@ -475,6 +758,7 @@ try {
     seenExtraEnd = false;
   const routes = Array.from({length: PLAYER_COUNT}, () => new Set()), maxCorrections = Array(PLAYER_COUNT).fill(0);
   const terminals = Array(PLAYER_COUNT).fill(null);
+  let initialStates = activeStates;
   for (const page of pages)
     assert.equal(
       await page.evaluate(
@@ -489,8 +773,11 @@ try {
     Date.now() - start <
     Number(process.env.TH13_TIMEOUT_MINUTES || 90) * 60 * 1000
   ) {
-    await new Promise((r) => setTimeout(r, 2000));
-    const states = await Promise.all(pages.map(inspect));
+    if (!initialStates) await new Promise((r) => setTimeout(r, 2000));
+    // inspect drains the confirmed audit. The identity/character check above
+    // already took the first batch; consume it before requesting another.
+    const states = initialStates || await inspectAll();
+    initialStates = null;
     for (let seat = 0; seat < PLAYER_COUNT; seat++) {
       const state = states[seat],
         runtime = state.runtime;
@@ -617,18 +904,14 @@ try {
   assert.equal(terminals[0].completed, true, "Final world must be a clear");
   assert(next.every((frame) => frame === terminals[0].frames), "Missing confirmed audit tail");
   report.terminal = terminals[0];
-  for (let seat = 0; seat < PLAYER_COUNT; seat++)
-    for (const file of expectedFiles) {
-      const rows = report.delivery.filter(
-        (r) =>
-          r.seat === seat && new URL(r.url).pathname.endsWith("/" + file.name),
-      );
-      assert(rows.length, "Missing delivered " + file.name);
-      for (const row of rows) {
-        assert.equal(row.bytes, file.bytes);
-        assert.equal(row.sha256, file.sha256, "Delivered build identity");
-      }
-    }
+  await settleRuntimeDelivery('Final runtime response bodies');
+  for (const [seat, page] of pages.entries()) {
+    const element = await page.locator('#gameFrame').elementHandle();
+    assert.equal(await element.contentFrame(), gameFrames[seat], `Seat ${seat}: game iframe replaced`);
+  }
+  report.finalDelivery = assertBuildDelivery({expectedFiles,
+    delivery:report.delivery,playerCount:PLAYER_COUNT,frameGuids:gameFrameGuids,
+    documentEpochs:gameDocumentEpochs});
   report.saved = [];
   for (let seat = 0; seat < PLAYER_COUNT; seat++) {
     const saved = await pages[seat].evaluate(async () => {
@@ -735,30 +1018,113 @@ try {
   report.passed = false;
   report.failure = error.stack;
   console.error(error.stack);
-  for (let i = 0; i < pages.length; i++) {
-    report.events.push({
-      seat: i,
-      at: "failure",
-      state: await inspect(pages[i]).catch((e) => ({ error: String(e) })),
-    });
-    await pages[i]
-      .screenshot({ path: dir + `/formal-failure-${i}.png` })
-      .catch(() => {});
-  }
 } finally {
-  if (profileCapture) report.cpuProfiles = await profileCapture.finish();
+  // Freeze every reachable client before any profile finalization, file IO or
+  // analysis; a failed client is still an incomplete observation, and cannot
+  // prevent the others from saving their independently bounded tails.
+  const freezes=await Promise.allSettled(pages.map((page,seat)=>
+    inspectTimedOut.has(seat) ? Promise.reject(Error('Prior inspection timed out; tail incomplete')) :
+      boundedOperation(`seat ${seat} freeze`,()=>page.evaluate(freezeFrameWork),15000)));
+  const boundaries=freezes.map((result,seat)=>{
+    if(result.status==='fulfilled')return result.value;
+    workErrors.push({seat,error:`Final evidence freeze: ${result.reason}`});return null;
+  });
+  if (profileCapture) {
+    try {
+      report.cpuProfiles = await boundedOperation('finish CPU profiles',()=>profileCapture.finish(),35000);
+      if (!report.cpuProfiles.passed) workErrors.push({error:'CPU profiling incomplete'});
+    }
+    catch (error) { report.profileError = String(error); workErrors.push({error: String(error)}); }
+  }
+  report.performance = [];
+  const finalFlushes=await Promise.allSettled(pages.map(async (page,seat)=>{
+      const boundary=boundaries[seat];
+      // Even if freeze failed, attempt to preserve reachable raw observations;
+      // it cannot qualify as a complete boundary.
+      const final = await inspectBounded(page);
+      if (!boundary || boundary.unmatchedCandidate || !final.work || boundary.count!==final.work.capture.count || boundary.first!==final.work.capture.first ||
+          boundary.last!==final.work.capture.last)
+        throw Error('Frozen work boundary differs from persisted capture');
+      (report.finalBoundaries ||= [])[seat]=boundary;
+  }));
+  for (let seat = 0; seat < pages.length; ++seat) {
+    if(finalFlushes[seat].status==='rejected')
+      workErrors.push({seat,error:`Final evidence flush: ${finalFlushes[seat].reason}`});
+    try {
+      const samples = (await readFile(dir + `/work-${seat}.ndjson`, "utf8"))
+        .split("\n").filter(Boolean).map(JSON.parse);
+      report.performance.push({seat, ...evaluateFrameWork(samples, {
+        capture: workCaptures[seat], expectedFirstSequence: 1,
+        expectedStages: process.env.TH13_DIFFICULTY === "4" ? [7] : [1, 2, 3, 4, 5, 6],
+        expectedPhases: ["menu", "loading", "active"], requireZero: true,
+        requireCatchup: true, requireRollback,
+      })});
+    } catch (error) { report.performance.push({seat, passed: false, error: String(error)}); }
+  }
+  report.gameplayPassed = report.passed === true;
+  report.workErrors = workErrors;
+  report.passed = report.gameplayPassed && report.performance.length === PLAYER_COUNT &&
+    report.performance.every(row => row.passed) && !sharedBrowser && !workErrors.length && !report.errors.length;
+  if (defaultFlow) {
+    const expectedStages=process.env.TH13_DIFFICULTY === "4" ? [7] : [1,2,3,4,5,6];
+    report.framebuffer = framebufferEvidence.map((captures,seat) => {
+      const reasons=[...new Set(captures.flatMap(row => row.reasons))];
+      const missing=[...expectedStages.filter(stage=>!reasons.includes(`stage:${stage}`)).map(stage=>`stage:${stage}`),
+        ...['ghost:', 'rescue:', 'laser-start'].filter(reason=>!reasons.some(value=>value.startsWith(reason)))];
+      return {seat, captures, ...framebufferObservations[seat], failure:framebufferCursors[seat].failure,
+        missing, observationTiming:'inside onGameFrame before work end; capture follows event observation at the next submission',
+        stateComparison:'read-only host/core/entities/network/seat projections before and after readPixels'};
+    });
+    report.framebufferLimitations=[
+      ...report.framebuffer.flatMap(row=>row.missing.map(reason=>`seat ${row.seat}: missing ${reason}`)),
+      ...report.framebuffer.filter(row=>row.failure).map(row=>`seat ${row.seat}: ${row.failure}`)];
+  }
   report.finished = new Date().toISOString();
   try {
     const identityResults = await Promise.allSettled(browsers.map((browser, index) =>
-      captureBrowserIdentity(browser, index, "final")));
+      boundedOperation(`browser ${index} final identity`,()=>captureBrowserIdentity(browser, index, "final"),15000)));
     report.browserTopology.finalIdentityErrors = identityResults.flatMap((result, browserIndex) =>
       result.status === "rejected" ? [{ browserIndex, error: String(result.reason) }] : []);
-    await writeFile(
-      dir + "/formal-smoke.json",
-      JSON.stringify(report, null, 2) + "\n",
-    );
+    if (report.browserTopology.finalIdentityErrors.length) report.passed=false;
   } finally {
-    await Promise.allSettled(browsers.map(browser => browser.close()));
+    closingBrowsers=true;
+    const closed = await Promise.allSettled(browsers.map((browser,index) =>
+      boundedOperation(`browser ${index} close`,()=>browser.close(),15000)));
+    for (const [index,result] of closed.entries())
+      if (result.status === 'rejected') {
+        report.errors.push({browserIndex:index,message:`Browser close failed: ${result.reason}`});
+        report.passed=false;
+      }
+    // A response may finish during final identity collection or browser close.
+    // Persist after the observation sources close and all body reads settle.
+    try {
+      await settleRuntimeDelivery('Closed runtime response bodies');
+      report.closedDelivery = assertBuildDelivery({expectedFiles,delivery:report.delivery,
+        playerCount:PLAYER_COUNT,frameGuids:gameFrameGuids,documentEpochs:gameDocumentEpochs});
+      report.deliveryBoundary = {
+        closed:closed.length===(sharedBrowser ? 1 : PLAYER_COUNT) &&
+          closed.every(result=>result.status==='fulfilled'),
+        settled:true, pendingRequests:deliveryRequests.size, pendingBodies:deliveryTasks.size,
+      };
+    } catch (error) {
+      report.errors.push({message:`Final runtime delivery: ${error}`});
+      report.passed=false;
+    }
+    if (report.errors.length) report.passed=false;
+    if (defaultFlow) {
+      try {
+        report.requiredAcceptance = await evaluateRequiredAcceptance({
+          formalReport:report, runtimeManifestBytes,
+        });
+      } catch (error) {
+        report.errors.push({message:`Required acceptance evaluation: ${error}`});
+        report.requiredAcceptance = {passed:false,status:'BLOCKED',error:String(error)};
+      }
+      report.requiredAcceptance.limitations = report.framebufferLimitations || [];
+      report.passed = report.passed && report.requiredAcceptance.passed;
+    }
+    report.finished = new Date().toISOString();
+    await writeFile(dir + '/formal-smoke.json', JSON.stringify(report,null,2) + '\n');
   }
 }
 if (!report.passed) process.exitCode = 1;
