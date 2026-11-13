@@ -9143,6 +9143,10 @@
     "id": "chat_freeInputHint",
     "params": []
   },
+  "chat.roomChatUnavailable": {
+    "id": "chat_roomChatUnavailable",
+    "params": []
+  },
   "chat.signInToChat": {
     "id": "chat_signInToChat",
     "params": []
@@ -9271,10 +9275,6 @@
   },
   "profile.image.useCrop": {
     "id": "profile_image_useCrop",
-    "params": []
-  },
-  "profile.image.coverSafeArea": {
-    "id": "profile_image_coverSafeArea",
     "params": []
   },
   "profile.careerVisibility": {

@@ -67,6 +67,49 @@ try {
   await page.reload({waitUntil:'networkidle2'});
   await page.waitForFunction(() => document.documentElement.dataset.backgroundMode === 'grid');
   assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-custom-background')), true, 'built-in background persists');
+  const rankings = await page.$eval('body', body => body.querySelector('.lobby-support-links a[href*="ratings.html"]')?.href);
+  if (rankings) {
+    await page.setViewport({width:1280, height:820});
+    await page.goto(rankings, {waitUntil:'networkidle2'});
+    await page.click('.book-theme-toggle');
+    await page.waitForSelector('.custom-background-dialog');
+    const sliderNames = () => page.$$eval('.custom-background-dialog input[type=range]', sliders => sliders.map(slider => slider.name));
+    const appearance = () => page.evaluate(() => ({
+      background: getComputedStyle(document.body).backgroundImage,
+      shell: getComputedStyle(document.querySelector('.standalone-page-shell')).backgroundColor,
+      navigation: getComputedStyle(document.querySelector('.book-masthead')).backgroundColor,
+      panel: getComputedStyle(document.querySelector('.rating-table-wrap')).backgroundColor,
+    }));
+    assert.deepEqual(await sliderNames(), ['shade', 'navigation', 'panel']);
+    assert.equal(await page.$('.custom-background-dialog select[name="background-fit"]'), null);
+    const before = await appearance();
+    assert.equal(before.shell, 'rgba(0, 0, 0, 0)');
+    assert.match(before.background, /linear-gradient/);
+    await page.$$eval('.custom-background-dialog input[type=range]', sliders => {
+      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+      for (const slider of sliders) {
+        set.call(slider, '20');
+        slider.dispatchEvent(new Event('input', {bubbles:true}));
+      }
+    });
+    const after = await appearance();
+    for (const surface of ['background', 'navigation', 'panel']) assert.notEqual(after[surface], before[surface], `${surface} responds on the rankings page`);
+    await page.click('.background-preset[data-preset="image"]');
+    await page.select('.custom-background-dialog select[name="background-fit"]', 'contain');
+    assert.match(await page.evaluate(() => getComputedStyle(document.body).backgroundSize), /contain/);
+    await page.click('.background-preset[data-preset="plain"]');
+    assert.deepEqual(await sliderNames(), []);
+    assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-custom-background')), false);
+    await page.click('.background-preset[data-preset="grid"]');
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.custom-background-dialog', {hidden:true});
+    await page.setViewport({width:390, height:844});
+    await page.click('#mastheadMenuToggle');
+    await page.waitForSelector('.masthead-overview-theme', {visible:true});
+    await page.click('.masthead-overview-theme');
+    await page.waitForSelector('.custom-background-dialog');
+    assert.deepEqual(await sliderNames(), ['shade', 'navigation', 'panel']);
+  }
   console.log('PASS: continuous background adjustment and persistence');
 } finally {
   await browser.close();

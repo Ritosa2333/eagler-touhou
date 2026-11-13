@@ -1,5 +1,5 @@
 import {relayFailureDetail} from './network-failure';
-import {accountRequest} from './account-client';
+import {AccountRequestError, accountRequest} from './account-client';
 import {TH19_VERSUS_RULES,validTh19VersusRules} from '../../src/launcher/th19-versus-rules.mts';
 import {normalizePublicNickname, parsePublicNicknameState, type PublicNicknameState} from '../../src/contracts/public-nickname.mts';
 import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from '../../src/launcher/th05-initial-stock.mts';
@@ -165,6 +165,14 @@ const record = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
+const roomIdentityRetryDelays = [350, 1100];
+
+function isTemporaryRoomIdentityFailure(error: unknown) {
+  return isAbortError(error) || (error instanceof AccountRequestError && (
+    error.code === 'ACCOUNT_API_UNAVAILABLE' ||
+    (error.code === 'ACCOUNT_REQUEST_FAILED' && error.status === undefined)
+  ));
+}
 
 /** Extracted business ownership from main app.mts440–780,974–1091,6796–6849,
  * 7552–7940. Native/Router ports retain their original owners; no DOM/history. */
@@ -586,6 +594,24 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       publish();
     });
     let accountIdentityRequested = false;
+    const accountRequestController = new AbortController();
+    let accountRetryTimer: ReturnType<typeof setTimeout> | null = null;
+    const ownsAccountRequest = () => socket === next && next.readyState === 1 && current(ownedEpoch)
+      && !accountRequestController.signal.aborted;
+    function requestAccountIdentity(challenge: string, attempt = 0) {
+      if (!ownsAccountRequest()) return;
+      // This endpoint only signs the socket's challenge, so retries have no account side effects.
+      void accountRequest<{ticket?: string}>('v1/me/room-nickname', {challenge}, {signal:accountRequestController.signal}).then(result => {
+        if (result?.ticket && ownsAccountRequest()) next.send(JSON.stringify({type:'account-nickname',ticket:result.ticket}));
+      }).catch(error => {
+        const delay = roomIdentityRetryDelays[attempt];
+        if (delay === undefined || !ownsAccountRequest() || !isTemporaryRoomIdentityFailure(error)) return;
+        accountRetryTimer = later(() => {
+          accountRetryTimer = null;
+          requestAccountIdentity(challenge, attempt + 1);
+        }, delay);
+      });
+    }
     next.addEventListener('message', (event) => {
       if (socket !== next || !current(ownedEpoch)) return;
       let message: Record<string, unknown> | null;
@@ -651,10 +677,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       if (message.type === 'state') {
         if (!accountIdentityRequested && typeof message.accountChallenge === 'string') {
           accountIdentityRequested = true;
-          void accountRequest<{ticket?: string}>('v1/me/room-nickname', {challenge:message.accountChallenge}).then(result => {
-            if (result?.ticket && socket === next && next.readyState === 1)
-              next.send(JSON.stringify({type:'account-nickname',ticket:result.ticket}));
-          }).catch(() => { /* Guest nicknames are provided by the relay. */ });
+          requestAccountIdentity(message.accountChallenge);
         }
         if (message.listenTogether === 2) state.listenTogetherSupported = true;
         if (message.roomActions === 1) state.roomActionsSupported = true;
@@ -719,6 +742,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       }
     });
     next.addEventListener('close', (event) => {
+      accountRequestController.abort();
+      if (accountRetryTimer !== null) cancel(accountRetryTimer);
       if (socket !== next || !current(ownedEpoch)) return;
       const wasConnected = state.connected;
       ports.network.reset(true);
