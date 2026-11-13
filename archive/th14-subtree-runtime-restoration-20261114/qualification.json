@@ -1,0 +1,86 @@
+{
+  "schema": "th14/upstream-runtime-restoration/1",
+  "upstreamCommit": "1ded667e982e3c55643d397b962a0bcc7883b9a0",
+  "runtimeFilesPinned": 352,
+  "directMatchesEitherBaseline": 261,
+  "normalizedAdditionalMatches": 75,
+  "whitespaceOnlyDifferences": 6,
+  "upstreamDialogueChangesPreserved": 5,
+  "practiceLicensePreserved": true,
+  "changes": [
+    "runtimes/th12/th12_web/cpp/game/ShotCallbacksTh14.cpp",
+    "runtimes/th12/th12_web/cpp/sdl/Application.cpp",
+    "runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs",
+    "runtimes/th12/th12_web/sdl-runtime/shell.mjs"
+  ],
+  "sourceSha256": {
+    "runtimes/th12/th12_web/cpp/game/ShotCallbacksTh14.cpp": "38ee92a45d8c480c9646feb7d5eb50753a0a2e6ce2c4203cc42547ea565ddf8a",
+    "runtimes/th12/th12_web/cpp/sdl/Application.cpp": "0a34da4ef0b0b4e265849f483018901d9129cb82719dbe4e18660d6e4eb7e5bd",
+    "runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs": "984530455bb03ef2a15dc6a98e00526592d31bf4d418fe4357acfc3d6bc1494c",
+    "runtimes/th12/th12_web/sdl-runtime/shell.mjs": "c70f5a3d3a78a2cda12ec8874e9ef0ffe7bc492dcbc7bbc8e6d08a310c1eb3d3"
+  },
+  "beam": {
+    "passed": true,
+    "nativeValidCases": 4032,
+    "nativeNegativeEdges": 48,
+    "ordinaryGuardCases": 30,
+    "journalRecordPlaybackCases": 21,
+    "normalAccess": true,
+    "optionalWasmSha256": "0270332908d5206c9d4f26d0f63467a6dabd56800bf00b35a3a145de9108d12c",
+    "optionalFullRuntimeBuilt": false,
+    "optionalPatchPublished": false,
+    "completeGame": false
+  },
+  "progressCases": 4,
+  "shellImportCases": 12,
+  "negativeControls": {
+    "passed": true,
+    "upstreamBeforeRejected": [
+      {
+        "name": "beam",
+        "exitCode": 1,
+        "rejectedByBehaviorAssertion": true
+      },
+      {
+        "name": "progress",
+        "exitCode": 1,
+        "rejectedByBehaviorAssertion": true
+      },
+      {
+        "name": "import",
+        "exitCode": 1,
+        "rejectedByBehaviorAssertion": true
+      }
+    ]
+  },
+  "patchSha256": "ba0112db84ae52fbce97228cc5c6b3ccac0c3bdd3506ee586b509881661765a3",
+  "fullRuntimeBuilt": false,
+  "productionChanged": false,
+  "completeGame": false,
+  "compilerFrontend": {
+    "passed": true,
+    "rows": [
+      {
+        "source": "cpp/sdl/Application.cpp",
+        "passed": true,
+        "normalAccessControl": true
+      },
+      {
+        "source": "cpp/sdl/FontDevice.cpp",
+        "passed": true,
+        "normalAccessControl": true
+      },
+      {
+        "source": "cpp/game/Dialogue.cpp",
+        "passed": true,
+        "normalAccessControl": true
+      },
+      {
+        "source": "cpp/game/GameBattle.cpp",
+        "passed": true,
+        "normalAccessControl": true
+      }
+    ],
+    "fullRuntimeBuilt": false
+  }
+}

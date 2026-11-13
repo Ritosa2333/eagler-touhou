@@ -187,7 +187,7 @@ export function createReplayViewerHostTh14({read,describe,open,status,step,rate,
   const entry=owner.timeline.find(s=>s.id===native.stage);
   if(!entry||!native.active)return;
   owner.state.stage=native.stage;owner.state.frame=entry.start+Math.min(native.frame,entry.frames);owner.state.ended=!!native.ended;
-  if(native.ended){owner.state.frame=entry.start+entry.frames;owner.state.paused=true;await pause(true);}
+  if(native.ended){owner.state.paused=true;await pause(true);}
   if(owner===active)publish();
  }
  function poll(){
