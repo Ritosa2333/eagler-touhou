@@ -1659,7 +1659,7 @@
     "th13": {
       "normal": "ports/th13",
       "multiplayer": "ports/th13-mp",
-      "base": "d19f1b0a8919ea6d40413e97821433c934638519",
+      "base": "b3384bb1ab57805a8c1d37b73dae8eb578d771a5",
       "history": [
         {
           "kind": "manual",
@@ -1759,6 +1759,23 @@
             "ports/th13-mp/web/cpp/sdl/BrowserRuntime.cpp"
           ],
           "note": "接收 c76a79a1b 与 d19f1b0a8：菜单实现和三套测试逐字节同步；StagePresentation 在 MP 多席绘制路径保留同样的自机临时状态恢复，MP generation/ghost 快照按自身规则保留，SP 专用重复呈现测试由单席对照及 MP 席位表现回归补充；两侧 TH13_OUTPUT 隔离与 build.test 同源；完整帧观测在 MP 额外计入回滚和终局交接。原生56+3、单席五组7200帧与RTC六面终局诊断分别验证，不扩展成全游戏/性能/像素认证。"
+        },
+        {
+          "kind": "manual",
+          "base": "d19f1b0a8919ea6d40413e97821433c934638519",
+          "source": "b3384bb1ab57805a8c1d37b73dae8eb578d771a5",
+          "targetHead": "b3384bb1ab57805a8c1d37b73dae8eb578d771a5",
+          "paths": [
+            "ports/th13-mp/tests/ui/bgameover_retry_test.cpp",
+            "ports/th13-mp/tests/ui/pause_name_entry_overlay_test.cpp",
+            "ports/th13-mp/web/cpp/game/PauseMenu.cpp",
+            "ports/th13-mp/web/cpp/game/PauseMenu.hpp",
+            "ports/th13-mp/web/cpp/game/RunPause.cpp",
+            "ports/th13-mp/web/cpp/game/RunPause.hpp",
+            "ports/th13-mp/web/cpp/game/TitleResultEntry.cpp",
+            "ports/th13-mp/web/cpp/game/TitleResultView.hpp"
+          ],
+          "note": "接收 b3384bb1a（AgentMystia/th13 PR#3 疮痍菜单保存 Replay 选槽与命名流程）：8 个文件（6 个实现、2 个测试）在同一提交内落到两端口，逐字节相同，MP 无适配差异；bgameover_retry_test 期望按 0x440960 光标压栈/出栈（0x440df6/0x44100f）证据在两侧一并更正。提交内容树 08dcd583d 独立导出验证：MP 原生 M1-M9 56/56、78442 断言；两侧 tests/ui 各 540 ok，余 curve_laser 两例缺参考数据的既有环境失败；两端 wasm 构建通过。浏览器与实际联机未验证。"
         }
       ]
     },
