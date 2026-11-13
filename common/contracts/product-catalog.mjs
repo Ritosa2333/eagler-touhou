@@ -653,6 +653,7 @@ export const PRODUCT_GAMES = Object.freeze({
     }),
     th14: Object.freeze({
         testOnly: true,
+        buildOptIn: true,
         number: "14",
         title: "東方輝針城",
         subtitle: "Double Dealing Character",

@@ -831,6 +831,7 @@ export declare const PRODUCT_GAMES: Readonly<{
     th14: Readonly<{
         number: "14"; title: "東方輝針城"; subtitle: "Double Dealing Character"; cardArtwork: "th14-card.jpg";
         testOnly: true;
+        buildOptIn: true;
         runtime: "./runtime/th14/th14.html"; runtimeFileLayout: "directory"; dataProvider: "retail-memory";
         storage: Readonly<{saveRoot: "/savesth14"; scoreFile: "scoreth14.dat"; configFiles: readonly string[]}>;
         runtimeAssets: readonly string[]; requiredShared: readonly string[];
