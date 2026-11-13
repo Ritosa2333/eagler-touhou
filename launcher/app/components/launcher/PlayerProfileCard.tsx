@@ -4,7 +4,7 @@ import {z} from 'zod';
 import {withUiLanguage} from '../../../src/launcher/i18n.mts';
 import {useLocale} from '../../i18n';
 import {normalizeProfileDisplay} from '../../models/profile-display';
-import {th09CharacterName, th09CharacterRating} from '../../models/th09-character-ratings';
+import {th09CharacterName, th09CharacterRating, th09RatingPoint} from '../../models/th09-character-ratings';
 import {accountRequest} from '../../services/account-client';
 import {Button} from '../../ui/button';
 import {PlayerCardPopover, type PlayerCardTrigger} from './PlayerCardPopover';
@@ -18,44 +18,55 @@ const dataImage = /^data:image\/(?:webp|png|jpeg);base64,/;
 const publicProfile = z.object({nickname:z.string(), details:z.object({
   avatar:z.string().optional(), cover:z.string().optional(), display:z.unknown(),
 }).nullish()});
-const score = z.object({rating:z.number().int(), games:z.number().int().nonnegative()});
-const scoreSnapshot = z.object({players:z.record(z.string(),score)});
-const versusScores = z.object({characterRatings:z.array(th09CharacterRating).optional(),
-  characters:z.array(z.object({character:z.number().int().min(0).max(15),games:z.number().int().positive()})).optional()});
-type Summary = {total?: z.infer<typeof score>; characters: z.infer<typeof th09CharacterRating>[]};
+const characterGames = z.object({character:z.number().int().min(0).max(15),games:z.number().int().positive()});
+const versusScores = z.object({
+  ratingHistory:z.array(th09RatingPoint).optional(),
+  characterRatings:z.array(th09CharacterRating).optional(),
+  characters:z.array(characterGames).optional(),
+});
+type CharacterRating = z.infer<typeof th09CharacterRating>;
+type RatingSummary = {total?: number; characters: CharacterRating[]};
+type BoardRating = {rating:number; top_characters?: z.infer<typeof characterGames>[]; character_ratings?: CharacterRating[]};
+
+function favoriteRatedCharacters(scores: CharacterRating[], favorites: z.infer<typeof characterGames>[]) {
+  const byCharacter = new Map(scores.map(row=>[row.character,row]));
+  return favorites.flatMap(row=>byCharacter.get(row.character) ?? []).slice(0,3);
+}
 
 function useRatingSummary(username: string | undefined, enabled: boolean) {
-  const [result, setResult] = useState<{username: string; summary: Summary}>();
+  const [result, setResult] = useState<{username: string; summary: RatingSummary}>();
   useEffect(() => {
     if (!username || !enabled) return;
     const controller = new AbortController();
-    const options = {signal:controller.signal, anonymous:true};
-    void Promise.allSettled([
-      accountRequest('v1/th09/ratings', undefined, options),
-      accountRequest('v1/profiles/'+encodeURIComponent(username)+'/th09-duels', undefined, options),
-    ]).then(([overall, versus]) => {
-      if (controller.signal.aborted) return;
-      const snapshot = overall.status === 'fulfilled' ? scoreSnapshot.safeParse(overall.value).data : undefined;
-      const detail = versus.status === 'fulfilled' ? versusScores.safeParse(versus.value).data : undefined;
-      const scores = detail?.characterRatings ?? [];
-      const byCharacter = new Map(scores.map(row=>[row.character,row]));
-      const characters = [...(detail?.characters ?? scores)].sort((a,b)=>b.games-a.games || a.character-b.character)
-        .flatMap(item=>byCharacter.get(item.character) ?? []).slice(0,3);
-      const total = snapshot && Object.hasOwn(snapshot.players,username) ? snapshot.players[username] : undefined;
-      setResult({username,summary:{total,characters}});
-    });
+    void accountRequest('v1/profiles/'+encodeURIComponent(username)+'/th09-duels', undefined,
+      {signal:controller.signal, anonymous:true}).then(value => {
+      const detail = versusScores.safeParse(value).data;
+      if (controller.signal.aborted || !detail) return;
+      const scores = detail.characterRatings ?? [];
+      const favorites = [...(detail.characters ?? scores)].sort((a,b)=>b.games-a.games || a.character-b.character);
+      setResult({username,summary:{
+        total:detail.ratingHistory?.at(-1)?.rating,
+        characters:favoriteRatedCharacters(scores,favorites),
+      }});
+    }).catch(()=>{});
     return () => controller.abort();
   }, [username,enabled]);
   return enabled && result?.username === username ? result?.summary : undefined;
 }
 
-export function PlayerProfileCard({username,name,avatar,cover:banner,showRating=true}: {
+export function PlayerProfileCard({username,name,avatar,cover:banner,showRating=true,showTotal=true,boardRating}: {
   username?: string; name: string; avatar?: string; cover?: string; showRating?: boolean;
+  showTotal?: boolean; boardRating?: BoardRating;
 }) {
   const {t,locale} = useLocale();
-  const rating = useRatingSummary(username,showRating);
+  // The public board omits character_ratings when the player hides versus data.
+  const scores = boardRating?.character_ratings;
+  const favorites = scores && favoriteRatedCharacters(scores, boardRating?.top_characters ?? []);
+  const needsDetails = !boardRating || !!scores && (favorites?.length ?? 0) < Math.min(3,scores.length);
+  const details = useRatingSummary(username,showRating && needsDetails);
+  const characterScores = showRating ? details?.characters ?? favorites ?? [] : [];
+  const total = showRating && showTotal ? (scores ? boardRating?.rating : details?.total) : undefined;
   const number = new Intl.NumberFormat(locale);
-  const characterScores = rating?.characters ?? [];
   return <article className="player-profile-card" aria-label={name}>
     <header className="player-profile-card-identity">
       <ProfileCover className="player-profile-card-cover" src={banner && dataImage.test(banner) ? banner : undefined}/>
@@ -67,12 +78,12 @@ export function PlayerProfileCard({username,name,avatar,cover:banner,showRating=
         </a>
       </Button>}
     </header>
-    {(rating?.total || characterScores.length > 0) && <div className="player-profile-card-body">
+    {(total !== undefined || characterScores.length > 0) && <div className="player-profile-card-body">
       <section className="player-profile-card-scores" aria-label={t('guide.th09')}>
         <div className="player-profile-card-total">
           <img src={cover} alt="" width={24} height={24}/>
           <h4>{t('guide.th09')} <small>WHR</small></h4>
-          {rating?.total && <strong>{number.format(rating.total.rating)}</strong>}
+          {total !== undefined && <strong>{number.format(total)}</strong>}
         </div>
         {characterScores.length > 0 && <ul className="player-profile-card-characters">
           {characterScores.map(item=><li key={item.character}>
@@ -85,7 +96,7 @@ export function PlayerProfileCard({username,name,avatar,cover:banner,showRating=
   </article>;
 }
 
-function PlayerCardDetails({username,name,avatar}: {username:string;name:string;avatar?:string}) {
+function PlayerCardDetails({username,name,avatar,boardRating}: {username:string;name:string;avatar?:string;boardRating?:BoardRating}) {
   const [profile, setProfile] = useState<z.infer<typeof publicProfile>>();
   useEffect(() => {
     const controller = new AbortController();
@@ -93,14 +104,16 @@ function PlayerCardDetails({username,name,avatar}: {username:string;name:string;
       .then(value=>{if (!controller.signal.aborted) setProfile(publicProfile.parse(value));}).catch(()=>{});
     return () => controller.abort();
   }, [username]);
+  const visibility = profile && normalizeProfileDisplay(profile.details?.display).visible;
   return <PlayerProfileCard username={username} name={profile?.nickname || name} cover={profile?.details?.cover}
-    avatar={profile?.details?.avatar || avatar} showRating={!!profile && normalizeProfileDisplay(profile.details?.display).visible.versus}/>;
+    avatar={profile?.details?.avatar || avatar} boardRating={boardRating}
+    showRating={visibility?.versus ?? true} showTotal={visibility?.records ?? !!boardRating}/>;
 }
 
-export function PlayerAvatarCard({username,name,avatar,children}: {
-  username:string; name:string; avatar?:string; children: PlayerCardTrigger;
+export function PlayerAvatarCard({username,name,avatar,boardRating,children}: {
+  username:string; name:string; avatar?:string; boardRating?:BoardRating; children: PlayerCardTrigger;
 }) {
   return <PlayerCardPopover trigger={children} label={name}>
-    <PlayerCardDetails key={username} username={username} name={name} avatar={avatar}/>
+    <PlayerCardDetails key={username} username={username} name={name} avatar={avatar} boardRating={boardRating}/>
   </PlayerCardPopover>;
 }

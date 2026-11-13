@@ -92,9 +92,11 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 当前Application另完成六次关卡完成边界→结局/staff→结果→保存→新进程读回，通关和无续关计数及灵梦B的Extra可用性保留，原版解密/解压核对149,076字节通过。边界由测试入口直接调用，不算自然完整通关或自然解锁验收。[交接与保存范围](https://github.com/AdingApkgg/thp/blob/main/docs/porting/TH14_ORDINARY_COMPLETION_FLOW_NOV13.md)。
 
+普通灵梦B Normal现已在明确固定启动时钟、仅供给按键的实际普通游戏中完成六关→结局/staff→结果保存→新进程解锁读取；不调用完成方法或写入RNG、位置、残机和完成状态。122,385次Player观测，成绩914,525,760，通关／无续关计数各1，仅灵梦B的Extra解锁；原版解码代码核对149,076字节成绩载荷通过。这是单个受控开局病例，不代表任意种子或其他完整模式。[普通通关与保存范围](https://github.com/AdingApkgg/thp/blob/main/docs/porting/TH14_ORDINARY_CONTROLLED_CLEAR_NOV13.md)。
+
 普通灵梦B Normal另已走通自然Game Over→高分名字→录像保存→标题→新进程原生Replay菜单播放；2,808次实测玩法回调的输入、位置、分数、残机、Bomb及HUD对齐，保留动画RNG和一次自机弹数量差异。原版解码代码读取2,816字节录像并核对完整载荷通过；这不代表自然完整通关或这份文件的原版整机播放。[普通录像流程范围](https://github.com/AdingApkgg/thp/blob/main/docs/porting/TH14_ORDINARY_GAMEOVER_RECORDING_NOV13.md)。
 
-[测试站](https://wth.saop.cc/)在TS Arch部署5c52c939，Wasm `e4cb2ed3…`，39个公网完整运行文件及线程隔离响应头通过。实际浏览器保持音乐／音效0%，已验证同一持久化录像的信息读取、第一关播放至结束（分数4370）、进度条回起点和0.5×播放后暂停；共享内存文本解码错误已修复。跨关、六档倍率及退出等另有真实C++线程本地集成证据，尚未全部在浏览器操作复验。普通完整通关／解锁、其他完整模式、剩余音画等缺口继续补齐。录像卡片现已在静音浏览器正确显示灵梦B；普通源码构建已补齐启动壳输出及录像导出，网站组装器的旧模板替换与损坏壳拒绝检查通过。详见[浏览器录像记录](https://github.com/AdingApkgg/thp/blob/main/docs/porting/TH14_NATIVE_VIEWER_NOV13.md)。
+[测试站](https://wth.saop.cc/)在TS Arch部署5c52c939，Wasm `e4cb2ed3…`，39个公网完整运行文件及线程隔离响应头通过。实际浏览器保持音乐／音效0%，已验证同一持久化录像的信息读取、第一关播放至结束（分数4370）、进度条回起点和0.5×播放后暂停；共享内存文本解码错误已修复。跨关、六档倍率及退出等另有真实C++线程本地集成证据，尚未全部在浏览器操作复验。其他开局条件、自机／难度的完整普通通关与解锁、剩余音画等缺口继续补齐。录像卡片现已在静音浏览器正确显示灵梦B；普通源码构建已补齐启动壳输出及录像导出，网站组装器的旧模板替换与损坏壳拒绝检查通过。详见[浏览器录像记录](https://github.com/AdingApkgg/thp/blob/main/docs/porting/TH14_NATIVE_VIEWER_NOV13.md)。
 
 ## [th15] 東方紺珠伝 v1.00b
 

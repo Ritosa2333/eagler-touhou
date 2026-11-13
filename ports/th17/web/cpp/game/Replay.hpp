@@ -19,7 +19,7 @@ class Replay {
     bool historical_web=false;u32 web_rules=0;
     PracticePatch practice_patch;
     PracticeSettings native_practice;
-    std::vector<PracticeToolChange> practice_changes;
+    std::array<std::vector<PracticeToolChange>,8> practice_changes;
     std::vector<PracticeSpiritEvent> practice_spirits;
     u32 practice_cursor=0,spirit_cursor=0;
     std::string failure;

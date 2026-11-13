@@ -591,7 +591,7 @@ bool render(ApplicationState& app){
         mobile::expanded[mobile::Advanced]=false;
         drain_navigation=true;
     }
-    const bool live_practice=app.scene()&&state.active&&!app.progress.practice_record;
+    const bool live_practice=app.can_use_practice_tools();
     if((cheats||mobile::visible)&&live_practice&&!ImGui::IsAnyItemActive()){
         for(i32 i=0;i<8;++i)if(edge[112+i])state.tools^=1u<<i;
         if(edge[120])state.everlasting_bgm=!state.everlasting_bgm;
@@ -618,7 +618,7 @@ bool render(ApplicationState& app){
     if(advanced_open)std::fill(std::begin(io.NavInputs),std::end(io.NavInputs),0.f);
     nav::prepare(state.menu&&!advanced_open);
     ImGui::NewFrame();
-    spirit_pointer=live_practice&&spirit_tool.kind&&!advanced_open&&!state.menu&&
+    spirit_pointer=live_practice&&state.active&&spirit_tool.kind&&!advanced_open&&!state.menu&&
         !(app.progress.scene_flags&0x4004)&&!app.scene()->battle.dialogue_present();
     if(spirit_pointer&&app.run_input&&ImGui::IsMouseClicked(ImGuiMouseButton_Left)&&!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)){
         auto spawn=spirit_tool;spawn.x=io.MousePos.x-224;spawn.y=io.MousePos.y-16;spawn.force&=!spawn.random;
