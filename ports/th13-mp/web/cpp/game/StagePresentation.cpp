@@ -558,10 +558,11 @@ bool StagePresentation::restore_presentation(const SnapshotData& source,
             it = shot_faded_generations_.erase(it);
             continue;
         }
-        if (!std::is_sorted(keys.begin(), keys.end())) {
+        // is_sorted 对重复元素仍为真。已排序的重复代（同一席 8,8）也必须去重，
+        // 否则恢复后再捕获会把同一代记两次。
+        if (!std::is_sorted(keys.begin(), keys.end()))
             std::sort(keys.begin(), keys.end());
-            keys.erase(std::unique(keys.begin(), keys.end()), keys.end());
-        }
+        keys.erase(std::unique(keys.begin(), keys.end()), keys.end());
         ++it;
     }
     if (source.has_player) {
