@@ -1,10 +1,18 @@
 .player-profile-card{overflow:hidden;border:1px solid var(--kit-border);border-radius:10px;background:var(--kit-card);color:var(--kit-foreground)}
-.player-profile-popover.ui-menu{width:min(328px,calc(100vw - 24px));padding:0;border:0;background:transparent}
+.player-profile-popover.ui-menu{
+  width:min(328px,calc(100vw - 24px));
+  padding:0;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  overflow:auto;
+  overscroll-behavior:contain;
+}
 .player-profile-card-body{padding:0 14px 10px}
 .player-profile-card-identity{
   position:relative;
   display:grid;
-  grid-template-columns:auto minmax(0,1fr);
+  grid-template-columns:auto minmax(0,1fr) auto;
   align-items:center;
   gap:9px;
   min-height:70px;
@@ -42,6 +50,18 @@
 .player-profile-card-characters li>span{grid-column:2}
 .player-profile-card-characters li>strong{color:var(--kit-foreground)}
 .player-profile-card-characters .th09-character-portrait{position:static;width:20px;height:20px;object-fit:contain}
-.player-profile-card footer{display:flex;justify-content:flex-end;margin-top:4px}
+.player-profile-card-home{
+  position:relative;
+  z-index:1;
+  white-space:nowrap;
+  padding-inline:7px;
+  gap:4px;
+}
+.player-profile-card-home:not(:hover){
+  color:#fff;
+  text-shadow:0 0 3px rgb(0 0 0 / .85),0 0 8px rgb(0 0 0 / .7);
+}
+.player-profile-card-home svg{width:14px;height:14px}
+.player-profile-card-home:not(:hover) svg{filter:drop-shadow(0 0 2px rgb(0 0 0 / .85))}
 .settings-artwork>.player-profile-card{margin-bottom:10px}
 .player-card-avatar-button{display:inline-flex;flex:none;border:0;padding:0;border-radius:inherit;background:none;color:inherit;cursor:pointer}

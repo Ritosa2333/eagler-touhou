@@ -61,9 +61,14 @@ export function PlayerProfileCard({username,name,avatar,cover:banner,showRating=
       <ProfileCover className="player-profile-card-cover" src={banner && dataImage.test(banner) ? banner : undefined}/>
       <AccountAvatar src={avatar}/>
       <div className="player-profile-card-name"><h3>{name}</h3>{username && <span>@{username}</span>}</div>
+      {username && <Button variant="ghost" size="sm" className="player-profile-card-home" asChild>
+        <a href={withUiLanguage('/u/'+encodeURIComponent(username),locale)} target="_blank" rel="noopener">
+          {t('profile.openHome')}<ArrowUpRight aria-hidden="true"/>
+        </a>
+      </Button>}
     </header>
-    <div className="player-profile-card-body">
-      {(rating?.total || characterScores.length > 0) && <section className="player-profile-card-scores" aria-label={t('guide.th09')}>
+    {(rating?.total || characterScores.length > 0) && <div className="player-profile-card-body">
+      <section className="player-profile-card-scores" aria-label={t('guide.th09')}>
         <div className="player-profile-card-total">
           <img src={cover} alt="" width={24} height={24}/>
           <h4>{t('guide.th09')} <small>WHR</small></h4>
@@ -75,13 +80,8 @@ export function PlayerProfileCard({username,name,avatar,cover:banner,showRating=
             <span>{th09CharacterName(item.character,t)}</span><strong>{number.format(item.rating)}</strong>
           </li>)}
         </ul>}
-      </section>}
-      {username && <footer><Button variant="ghost" size="sm" asChild>
-        <a href={withUiLanguage('/u/'+encodeURIComponent(username),locale)} target="_blank" rel="noopener">
-          {t('profile.openHome')}<ArrowUpRight aria-hidden="true"/>
-        </a>
-      </Button></footer>}
-    </div>
+      </section>
+    </div>}
   </article>;
 }
 
