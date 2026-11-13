@@ -8,8 +8,8 @@ import { assertRuntimeProtocolSources } from '../lib/runtime-protocol-shell.mjs'
 
 const args = Object.create(null);
 for (const argument of process.argv.slice(2)) {
-  const match = /^--(template|core-build|output|max-file-bytes)=(.+)$/.exec(argument);
-  if (!match || args[match[1]]) throw Error('Use --template=DIR --core-build=DIR --output=NEW_DIRECTORY [--max-file-bytes=N]');
+  const match = /^--(template|core-build|output|max-file-bytes|practice-font)=(.+)$/.exec(argument);
+  if (!match || args[match[1]]) throw Error('Use --template=DIR --core-build=DIR --output=NEW_DIRECTORY [--practice-font=FILE] [--max-file-bytes=N]');
   args[match[1]] = match[1] === 'max-file-bytes' ? match[2] : resolve(match[2]);
 }
 const template = args.template, core = args['core-build'], output = args.output;
@@ -81,6 +81,16 @@ replacements.set('th14.html', Buffer.from(html));
 
 const changedFonts = new Map();
 const resources = JSON.parse(await readTemplate('resources.json'));
+if (thprac) {
+  const name = 'fonts/unifont.otf';
+  const existing = templateManifest.files[name];
+  const font = args['practice-font'] ? await readFile(args['practice-font']) : existing ? await readTemplate(name) : null;
+  if (!font?.length || font.length > maxBytes) throw Error('Supply --practice-font with the shared TH15/TH17 Unifont');
+  const fontId = identity(font);
+  replacements.set(name, font);
+  resources.resources = resources.resources.filter(resource => resource.path !== '/unifont.otf');
+  resources.resources.push({path:'/unifont.otf',url:'./'+name,...fontId});
+}
 for (const resource of resources.resources) {
   const name = resource.url?.slice(2);
   if (!/^fonts\/font[0-7]\.bin$/.test(name) || !names.includes(name) || templateManifest.files[name].bytes <= maxBytes) continue;
@@ -92,11 +102,12 @@ for (const resource of resources.resources) {
   replacements.set(name + '.gz', compressed);
   Object.assign(resource, identity(bytes), {url: './' + name + '.gz', encoding: 'gzip'});
 }
-if (changedFonts.size) replacements.set('resources.json', Buffer.from(JSON.stringify(resources, null, 2) + '\n'));
+if (changedFonts.size || thprac) replacements.set('resources.json', Buffer.from(JSON.stringify(resources, null, 2) + '\n'));
 
 for (const name of names) await readTemplate(name);
 const obsoletePracticeFiles = new Set(['Th14PracticeUi.mjs', 'Th14PracticeCatalog.mjs']);
 const outputNames = names.filter(name => !obsoletePracticeFiles.has(name)).map(name => changedFonts.get(name) ?? name);
+if (thprac && !outputNames.includes('fonts/unifont.otf')) outputNames.push('fonts/unifont.otf');
 for (const name of outputNames) {
   const size = replacements.get(name)?.length ?? templateManifest.files[name]?.bytes;
   if (!(size <= maxBytes)) throw Error('TH14 runtime exceeds file size limit: ' + name);

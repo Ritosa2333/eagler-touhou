@@ -4990,10 +4990,10 @@ index 0000000000000000000000000000000000000000..58ee74fff49eccfd3f4a9293b269e1b8
 +};
 diff --git a/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp b/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp
 new file mode 100644
-index 0000000000000000000000000000000000000000..02b4af59aec6efd79d7e1b07b6cf954ae9f469d6
+index 0000000000000000000000000000000000000000..59697604b2e20c83a465f2de144b8f8355caf2e8
 --- /dev/null
 +++ b/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp
-@@ -0,0 +1,255 @@
+@@ -0,0 +1,292 @@
 +#include "PracticeUiTh14.hpp"
 +#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
 +#include "../game/GameSession.hpp"
@@ -5023,7 +5023,7 @@ index 0000000000000000000000000000000000000000..02b4af59aec6efd79d7e1b07b6cf954a
 + {"灵力","Power","霊力"},{"最大得点","Point value","最大得点"},{"擦弹","Graze","グレイズ"},{"得分","Score","スコア"},
 + {"收集循环","Collection cycle","回収周期"},{"弹幕角度","Pattern angle","弾幕角度"},{"开始练习","Start practice","練習開始"},
 + {"关闭","Close","閉じる"},{"帧","Frame","フレーム"},{"关底音乐","Boss BGM","ボス曲"},{"状态信息","Tracker","詳細情報"},
-+ {"作弊菜单","Cheats","チートメニュー"},
++    {"作弊菜单","Cheats","チートメニュー"},{"高级设置","Advanced settings","詳細設定"},
 +};
 +constexpr const char* cheat_text[][3]={
 + {"无敌","Invincible","無敵"},{"无限残机","Infinite lives","残機無限"},{"无限炸弹","Infinite bombs","ボム無限"},
@@ -5042,7 +5042,7 @@ index 0000000000000000000000000000000000000000..02b4af59aec6efd79d7e1b07b6cf954a
 +ImGuiContext* context=nullptr;
 +PracticeTh14 params;
 +int locale=2,rank=1,character=0,shot=0;
-+bool setup=false,cheats=false,tracker=false,announced=false,armed=false;
++bool setup=false,cheats=false,advanced=false,tracker=false,announced=false,armed=false;
 +bool bgm_request=false;
 +std::array<bool,256> held{},pressed{};
 +struct PointerEdge{bool down;float x,y;};
@@ -5060,7 +5060,7 @@ index 0000000000000000000000000000000000000000..02b4af59aec6efd79d7e1b07b6cf954a
 +bool on_title(){return game->state.phase==GameSessionPhase::title&&game->title;}
 +bool on_stage(){return game->state.phase==GameSessionPhase::stage||game->state.phase==GameSessionPhase::paused;}
 +bool editable(){return on_stage()&&!game->state.replay&&!game->state.demo;}
-+bool visible(){return setup||cheats||tracker||Mobile::visible;}
++bool visible(){return setup||cheats||advanced||tracker||Mobile::visible;}
 +void reset_section(){params.section=params.phase=params.flags=0;}
 +void start(){
 +    if(!on_title()||!params.valid(rank))return;
@@ -5139,26 +5139,49 @@ index 0000000000000000000000000000000000000000..02b4af59aec6efd79d7e1b07b6cf954a
 +    ImGui::SetNextWindowPos({8,8},ImGuiCond_Always);
 +    ImGui::SetNextWindowSize({0,0});ImGui::SetNextWindowBgAlpha(.65f);
 +    if(Mobile::begin(Mobile::Cheats,"Mod Menu###th14-purple-overlay",panel_flags|ImGuiWindowFlags_AlwaysAutoResize,locale)){
-+        for(int i=0;i<11;++i){
++        for(int i=0;i<7;++i){
 +            const u32 mask=1u<<i;bool value=!!(game->practice_tools&mask);
 +            ImGui::BeginDisabled(!editable());
-+            const bool change=i<7?Mobile::checkbox(shortcuts[i],label(cheat_text[i]),value):ImGui::Checkbox(label(cheat_text[i]),&value);
++            const bool change=Mobile::checkbox(shortcuts[i],label(cheat_text[i]),value);
 +            if(change)game->practice_tools^=mask;
 +            ImGui::EndDisabled(!editable());
 +        }
 +        ImGui::BeginDisabled(!editable());
 +        if(ImGui::Button((std::string("F7: ")+t(24)).c_str()))bgm_request=true;
 +        ImGui::EndDisabled(!editable());
-+        Mobile::checkbox("Tab",t(25),tracker);
 +        if(!Mobile::enabled&&ImGui::Button(t(22)))close();
 +    }
 +    ImGui::End();
++}
++void advanced_options(){
++    ImGui::SetNextWindowPos({226,8},ImGuiCond_Always);
++    ImGui::SetNextWindowSize({298,0});ImGui::SetNextWindowBgAlpha(.8f);
++    if(advanced)Mobile::expanded[Mobile::Advanced]=true;
++    if(Mobile::begin(Mobile::Advanced,"Advanced###th14-purple-advanced",panel_flags|ImGuiWindowFlags_AlwaysAutoResize,locale)){
++        ImGui::TextUnformatted(t(27));ImGui::Separator();
++        if(on_title()){
++            if(ImGui::Button(t(0))){setup=true;armed=false;}
++        }else{
++            ImGui::BeginDisabled(!editable());
++            for(int i=7;i<11;++i){
++                const u32 mask=1u<<i;bool value=!!(game->practice_tools&mask);
++                if(ImGui::Checkbox(label(cheat_text[i]),&value))game->practice_tools^=mask;
++            }
++            ImGui::EndDisabled(!editable());
++        }
++        if(!Mobile::enabled&&ImGui::Button(t(22)))close();
++    }
++    ImGui::End();
++    if(Mobile::enabled&&!Mobile::expanded[Mobile::Advanced])advanced=false;
 +}
 +void information(){
 +    ImGui::SetNextWindowPos({444,255},ImGuiCond_Always);
 +    ImGui::SetNextWindowSize({180,0});ImGui::SetNextWindowBgAlpha(.9f);
 +    auto flags=panel_flags|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoNav|ImGuiWindowFlags_NoFocusOnAppearing;
-+    if(Mobile::begin(Mobile::Information,"Info###th14-purple-info",flags|ImGuiWindowFlags_NoInputs,locale)){
++    const bool standalone=tracker&&!Mobile::visible;
++    const bool body=standalone?ImGui::Begin("Info###th14-purple-info",nullptr,flags|ImGuiWindowFlags_NoInputs):
++        Mobile::begin(Mobile::Information,"Info###th14-purple-info",flags|ImGuiWindowFlags_NoInputs,locale);
++    if(body){
 +        ImGui::Columns(2);
 +        auto field=[](const char* title,long long value){ImGui::TextUnformatted(title);ImGui::NextColumn();ImGui::Text("%lld",value);ImGui::NextColumn();};
 +        field(t(1),game->state.stage);field(t(23),game->state.frame);field(t(17),game->economy.graze);field(t(18),i64(game->economy.score_units)*10);
@@ -5196,23 +5219,34 @@ index 0000000000000000000000000000000000000000..02b4af59aec6efd79d7e1b07b6cf954a
 +}
 +void mobile(bool enabled,bool open){
 +    if(!game||!game->practice_enabled)return;
++    open=enabled&&open;
 +    const bool changed=enabled!=Mobile::enabled||open!=Mobile::visible;
 +    Mobile::update(enabled,open);
 +    if(!changed)return;
-+    if(!open){setup=cheats=false;clear_input();}
++    if(!open){setup=cheats=advanced=false;clear_input();}
 +    else if(on_title()){setup=true;armed=false;}
 +    publish(setup||cheats||Mobile::visible);
 +}
-+bool captures() noexcept {return game&&game->practice_enabled&&(setup||cheats||Mobile::visible);}
++bool captures() noexcept {return game&&game->practice_enabled&&(setup||cheats||advanced||Mobile::visible);}
 +bool key(unsigned vk,bool down){
 +    if(!game||!game->practice_enabled||vk>=held.size())return false;
 +    const bool was_captured=captures();
 +    const bool edge=down&&!held[vk];held[vk]=down;pressed[vk]|=edge;
 +    const bool special=vk==8||vk==9||vk==123||vk==85||(vk>=112&&vk<=118);
 +    if(edge){
-+        if(vk==123&&on_title()){setup=!setup;armed=false;publish(captures());}
++        if(vk==123){
++            if(on_title()){setup=!setup;armed=false;}
++            else if(on_stage()){
++                if(Mobile::enabled)Mobile::expanded[Mobile::Advanced]=!Mobile::expanded[Mobile::Advanced];
++                advanced=!advanced;
++            }
++            publish(captures());
++        }
 +        else if(vk==8&&!setup){cheats=!cheats;publish(captures());}
-+        else if(vk==9&&on_stage())tracker=!tracker;
++        else if(vk==9&&on_stage()){
++            tracker=!tracker;
++            if(Mobile::enabled)Mobile::expanded[Mobile::Information]=tracker;
++        }
 +        else if(vk==27&&captures())close();
 +        else if(editable()&&vk>=112&&vk<=117)game->practice_tools^=1u<<(vk-112);
 +        else if(editable()&&vk==85)game->practice_tools^=PrEnemy;
@@ -5232,7 +5266,7 @@ index 0000000000000000000000000000000000000000..02b4af59aec6efd79d7e1b07b6cf954a
 +void clear_input(){held.fill(false);pressed.fill(false);edges.clear();owned_pointer=mouse_down=false;mouse_x=mouse_y=-FLT_MAX;}
 +void mouse_motion(float x,float y){if(captures()){mouse_x=x*640;mouse_y=y*480;}}
 +bool take_bgm_request(){const bool value=bgm_request;bgm_request=false;return value;}
-+void close(){setup=cheats=tracker=bgm_request=false;Mobile::update(Mobile::enabled,false);clear_input();publish(false);}
++void close(){setup=cheats=advanced=tracker=bgm_request=false;Mobile::update(Mobile::enabled,false);clear_input();publish(false);}
 +void draw(GameSession& s,touhou::sdl::Renderer& renderer){
 +    if(!s.practice_enabled||!visible()||!ensure_context())return;
 +    auto& io=ImGui::GetIO();io.DeltaTime=1.f/60;io.MousePos={mouse_x,mouse_y};
@@ -5241,8 +5275,11 @@ index 0000000000000000000000000000000000000000..02b4af59aec6efd79d7e1b07b6cf954a
 +    for(unsigned i=0;i<held.size();++i)io.KeysDown[i]=held[i];
 +    ImGui::NewFrame();
 +    if(setup)practice_options();
-+    else if(cheats||Mobile::visible)cheat_options();
-+    if(tracker&&on_stage())information();
++    else{
++        if(cheats||Mobile::visible)cheat_options();
++        if(advanced||Mobile::visible)advanced_options();
++    }
++    if(on_stage()&&(tracker||Mobile::visible))information();
 +    ImGui::Render();
 +    renderer.render_imgui(ImGui::GetDrawData(),1);
 +    pressed.fill(false);
