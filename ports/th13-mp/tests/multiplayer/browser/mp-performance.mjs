@@ -77,6 +77,8 @@ const report = {
     'TH13_DUPLICATE_EVERY', 'TH13_BURST_EVERY', 'TH13_BURST_MS', 'TH13_DIFFICULTY',
   ].map(key => [key, process.env[key] || '0'])),
 };
+report.conditions.TH13_ROUTE = process.env.TH13_ROUTE || 'rtc';
+report.conditions.TH13_DIFFICULTY = process.env.TH13_DIFFICULTY || '3';
 
 const helperFiles = [
   'mp-performance.mjs', 'mp-performance-eval.mjs', 'frame-work.mjs',
@@ -216,6 +218,7 @@ const inspect = async (page, {expired = () => false} = {}) => {
       pilotDeferred: w?.__pilotDeferred ? {
         executed: w.__pilotDeferred.executed,
         hasPending: w.__pilotDeferred.pending !== null,
+        attached: m?.onGameFrame === w.__pilotDeferred.wrapper,
       } : null,
       url: location.href,
       frame: frame?.src,
@@ -326,6 +329,8 @@ async function dismiss(page) {
 
 try {
   if (![2, 3].includes(PLAYER_COUNT)) throw Error('TH13_PLAYERS must be 2 or 3');
+  if (!['0', '1', '2', '3', '4'].includes(report.conditions.TH13_DIFFICULTY))
+    throw Error('TH13_DIFFICULTY must be 0, 1, 2, 3 or 4');
   report.helperHashes = {};
   await Promise.all(helperFiles.map(async name => {
     const bytes = await readFile(new URL(name, import.meta.url));
@@ -458,6 +463,10 @@ try {
     });
     const cpu = await context.newCDPSession(page);
     await cpu.send('Emulation.setCPUThrottlingRate', {rate: 4});
+    cpu.on('disconnected', () => {
+      if (!closingBrowsers)
+        report.errors.push({seat, message: 'CPU throttle session disconnected'});
+    });
     cpuSessions.push(cpu);
     page.setDefaultTimeout(10000);
     await page.addLocatorHandler(page.locator('#firstUseNoticeDialog[open]'),
@@ -697,7 +706,7 @@ try {
       assert.equal(state.nativeError, '', 'Native game error');
       assert(!state.contextLoss, 'WebGL context lost');
 
-      const wireCheck = verifyProductionWireDigest({runtime, seat});
+      const wireCheck = verifyProductionWireDigest({runtime, seat, playerCount: PLAYER_COUNT});
       assert(wireCheck.passed, wireCheck.errors.join('; '));
       const wd = runtime.diagnostic?.wireDigest;
       if (wd) {
@@ -753,8 +762,11 @@ try {
     const expectedRoute = process.env.TH13_ROUTE || 'rtc';
     assert.deepEqual([...routes[seat]], [expectedRoute], 'Actual transport route');
     assert(wire.sent > 0 && wire.delivered > 0, 'Transport must carry real packets');
-    assert(maxWireDigests[seat].sent > 0 && maxWireDigests[seat].received > 0,
-      `Seat ${seat}: production wire digests must be exchanged`);
+    const expectedSent = Math.floor(maxWireDigests[seat].confirmed / 60);
+    assert(maxWireDigests[seat].sent >= expectedSent,
+      `Seat ${seat}: wire digests sent ${maxWireDigests[seat].sent} below ${expectedSent}`);
+    assert(maxWireDigests[seat].received >= (PLAYER_COUNT - 1) * Math.max(1, expectedSent - 1),
+      `Seat ${seat}: wire digests received ${maxWireDigests[seat].received} below the 60-frame cadence`);
     if (+process.env.TH13_LOSS > 0 && expectedRoute === 'rtc') assert(wire.dropped > 0, 'Input loss must occur');
     if (+process.env.TH13_DUPLICATE_EVERY > 0) assert(wire.duplicated > 0, 'Duplicates must occur');
     if (+process.env.TH13_BURST_EVERY > 0) assert(wire.bursts > 0, 'Burst delay must occur');
@@ -843,6 +855,8 @@ try {
       assert(inputFrames > 5000, 'Saved replay input history is non-trivial');
       if (referenceInputFrames === null) referenceInputFrames = inputFrames;
       assert.equal(inputFrames, referenceInputFrames, 'Saved replay input history matches across seats');
+      assert(maxWireDigests[seat].sent >= Math.floor(referenceInputFrames / 60),
+        `Seat ${seat}: wire digests do not cover the saved input history`);
       assert.equal(bytes.readUInt32LE(12 + words * 4 + 8 + 4), 1, 'Replay must contain completed clear');
       const nameLength = bytes.readUInt32LE(12 + words * 4 + 8 + 4 + 4);
       let offset = 12 + words * 4 + 8 + 4 + 4 + 4 + nameLength;
@@ -901,6 +915,9 @@ try {
     if (final.pilotDeferred?.hasPending) {
       throw Error('Unconsumed deferred pilot tick at freeze boundary');
     }
+    if (!final.pilotDeferred?.attached || !(final.pilotDeferred.executed > 0)) {
+      throw Error('Untimed pilot was not attached outside the timed window');
+    }
     (report.finalBoundaries ||= [])[seat] = boundary;
   }));
 
@@ -922,6 +939,7 @@ try {
           requireCatchup: true,
           requireRollback,
           minForwardFps: 55,
+          minForwardFramesPerStage: 1000,
         }),
       });
     } catch (error) {
@@ -944,6 +962,14 @@ try {
     report.browserTopology.finalIdentityErrors = identityResults.flatMap((result, browserIndex) =>
       result.status === 'rejected' ? [{browserIndex, error: String(result.reason)}] : []);
     if (report.browserTopology.finalIdentityErrors.length) report.passed = false;
+    for (const identity of report.browserTopology.snapshots.filter(row => row.phase === 'final')) {
+      try {
+        identity.hardwareVerification = assertHardwareIdentity(identity);
+      } catch (error) {
+        report.errors.push({message: `Final hardware identity: ${error}`});
+        report.passed = false;
+      }
+    }
   } finally {
     closingBrowsers = true;
     const closed = await Promise.allSettled(browsers.map((browser, index) =>

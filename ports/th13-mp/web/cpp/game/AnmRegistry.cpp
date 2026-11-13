@@ -21,7 +21,7 @@ AnmVm* AnmRegistry::allocate(){
     // "no registry node"（M8 回滚重放实证）。operator[] 对已有键幂等。
     Node* entry=nullptr;if(!free_slots.empty()){const u32 slot=free_slots.back();free_slots.pop_back();if(!pool[slot]){pool[slot]=std::make_unique<Node>();pool[slot]->slot=slot;}entry=pool[slot].get();nodes[&entry->vm]=entry;}
     else{auto extra=std::make_unique<Node>();entry=extra.get();entry->serialization_ordinal=next_serialization_ordinal++;nodes[&entry->vm]=entry;overflow.emplace(entry,std::move(extra));}
-    entry->active=true;entry->queued_deletion=false;entry->registered=false;entry->handle=0;entry->parent=nullptr;entry->children.clear();entry->vm.rotation_parent=entry->vm.creation_parent=nullptr;entry->vm.visual.translation={};active_count++;return &entry->vm;
+    entry->active=true;entry->queued_deletion=false;entry->registered=false;entry->handle=0;entry->parent=nullptr;entry->children.clear();entry->vm.rotation_parent=entry->vm.creation_parent=nullptr;entry->vm.visual.translation={};entry->alternate=false;active_count++;return &entry->vm;
 }
 u32 AnmRegistry::submit(AnmVm& vm,u32 ordering){
     auto* entry=node(vm);
@@ -85,7 +85,7 @@ void AnmRegistry::erase(Node& entry){
     if(entry.parent)entry.parent->children.remove(&entry);
     // 0x46f690：子链全体摘父指针并标待回收（0x20），下帧由链扫描回收。
     for(auto* child:entry.children){child->parent=nullptr;child->vm.rotation_parent=child->vm.creation_parent=nullptr;child->vm.visual.render_flags=child->vm.visual.render_flags|32u;}entry.children.clear();
-    entry.vm.rotation_parent=entry.vm.creation_parent=nullptr;entry.vm.instruction_offset=-1;entry.active=entry.registered=entry.queued_deletion=false;entry.handle=0;active_count--;
+    entry.vm.rotation_parent=entry.vm.creation_parent=nullptr;entry.vm.instruction_offset=-1;entry.active=entry.registered=entry.queued_deletion=entry.alternate=false;entry.handle=0;active_count--;
     // A freed pool slot owns no script, sprite or allocated geometry. Keeping
     // these bindings after the bank unloads makes a later snapshot dereference
     // released storage. allocate callers install a complete template on reuse.

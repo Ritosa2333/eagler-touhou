@@ -1541,6 +1541,26 @@ TEST(v2_dead_slot_poison_and_negative_controls) {
             CHECK(registry.discard(*vm));
         }
     }
+    // A reused pool slot must not keep the previous occupant's alternate
+    // chain. submit() is the only writer; allocate() starts from the main chain.
+    {
+        auto* chain = registry.allocate();
+        CHECK(chain != nullptr);
+        CHECK(registry.submit(*chain, 4) != 0);
+        CHECK(registry.ordered_count(true) >= 1u);
+        CHECK(registry.discard(*chain));
+        auto* reused = registry.allocate();
+        CHECK(reused != nullptr);
+        reused->source_script = 0x13572468;
+        AnmRegistry::SnapshotData snap;
+        std::vector<const AnmVm*> embedded;
+        CHECK(registry.capture(snap, embedded));
+        const AnmRegistry::SnapshotData::Entry* fresh = nullptr;
+        for (const auto& entry : snap.entries)
+            if (entry.vm.source_script == 0x13572468) fresh = &entry;
+        CHECK(fresh && fresh->active && !fresh->alternate);
+        CHECK(registry.discard(*reused));
+    }
     GameInput fire;
     for (int f = 0; f < 10; ++f) {
         fire.update(1);

@@ -217,4 +217,109 @@ test('verifyProductionWireDigest enforces audit off and active mismatch-free wir
     runtime: {...okRuntime, diagnostic: {confirmedThrough: 240, wireDigest: {sent: 0, received: 0}}},
     seat: 2,
   }).passed, false);
+
+  const stalled = verifyProductionWireDigest({
+    runtime: {
+      error: '',
+      audit: {frames: [], overflow: 0},
+      diagnostic: {confirmedThrough: 3000, wireDigest: {sent: 1, received: 2}},
+    },
+    seat: 0,
+    playerCount: 3,
+  });
+  assert.equal(stalled.passed, false);
+  assert.ok(stalled.errors.some(error => error.includes('wire digests sent 1 below 50')));
+  assert.ok(stalled.errors.some(error => error.includes('wire digests received 2 below 98')));
+});
+
+test('negative control: menu frames cannot dilute active simulated-only p95', () => {
+  const {rows, options} = makeStream({
+    stages: [1],
+    activePerStage: 30,
+    zeroEvery: 0,
+    workMs: 20,
+  });
+  const menu = [];
+  let seq = rows.length;
+  let now = rows.at(-1).end + 1;
+  for (let i = 0; i < 1600; ++i) {
+    menu.push({
+      sequence: ++seq, begin: now, end: now + 0.4, milliseconds: 0.4,
+      stage: 1, endStage: 1, phase: 'menu', source: 1,
+      simulated: 1, rollback: 0, restores: 0, presentations: 1,
+      presentationAt: now + 0.2, ok: true,
+    });
+    now += 16.6;
+  }
+  const sample = [...rows, ...menu];
+  const res = evaluateMpPerformance(sample, {
+    ...options,
+    requireZero: false,
+    capture: {first: 1, last: sample.length, count: sample.length},
+    minActiveCallbacksPerStage: 20,
+    minForwardFramesPerStage: 20,
+  });
+  assert.equal(res.frameWork.passed, true, JSON.stringify(res.frameWork.errors));
+  assert.equal(res.passed, false);
+  assert.ok(res.simulatedOnly.total.p95 > 16.67);
+  assert.ok(res.errors.some(error => error.includes('simulated-only')));
+});
+
+test('negative control: same-stage pauses count as progression wall time', () => {
+  const rows = [];
+  let seq = 0;
+  let now = 0;
+  const push = fields => {
+    const ms = fields.milliseconds;
+    rows.push({
+      sequence: ++seq, begin: now, end: now + ms, milliseconds: ms,
+      stage: 1, endStage: 1, phase: 'active', source: 1,
+      simulated: 1, rollback: 0, restores: 0, presentations: 1,
+      presentationAt: now + ms * 0.5, ok: true,
+      ...fields,
+    });
+    now = rows.at(-1).end + (fields.gapAfter ?? 1);
+  };
+  push({stage: 0, endStage: 1, phase: 'loading', source: 4, simulated: 0,
+    rollback: 0, restores: 0, presentations: 0, presentationAt: null, milliseconds: 2, gapAfter: 16});
+  for (let i = 0; i < 40; ++i) {
+    push({milliseconds: 4, gapAfter: 1});
+    push({
+      phase: 'paused', source: 1, simulated: 0, rollback: 0, restores: 0,
+      presentations: 0, presentationAt: null, milliseconds: 1, gapAfter: 100,
+    });
+  }
+  const res = evaluateMpPerformance(rows, {
+    expectedStages: [1],
+    expectedPhases: ['loading', 'active', 'paused'],
+    expectedFirstSequence: 1,
+    requireZero: true,
+    requireCatchup: false,
+    requireRollback: false,
+    capture: {first: 1, last: rows.length, count: rows.length},
+    minActiveCallbacksPerStage: 20,
+    minForwardFramesPerStage: 20,
+  });
+  assert.equal(res.frameWork.passed, true, JSON.stringify(res.frameWork.errors));
+  assert.ok(res.progression.stages[1].forwardFps < 55);
+  assert.equal(res.passed, false);
+  assert.ok(res.errors.some(error => error.includes('forward progression FPS')));
+});
+
+test('negative control: zero-sim callbacks cannot satisfy a stage frame floor', () => {
+  const {rows, options} = makeStream({
+    stages: [1, 2],
+    activePerStage: 120,
+    zeroEvery: 1,
+    workMs: 4,
+  });
+  const res = evaluateMpPerformance(rows, {
+    ...options,
+    requireCatchup: false,
+    requireRollback: false,
+    minForwardFramesPerStage: 100,
+  });
+  assert.equal(res.frameWork.passed, true, JSON.stringify(res.frameWork.errors));
+  assert.equal(res.passed, false);
+  assert.ok(res.errors.some(error => error.includes('forward frames below 100')));
 });

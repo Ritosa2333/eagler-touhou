@@ -1,13 +1,14 @@
 // Production multiplayer performance evaluation and untimed pilot bridge.
 // Wraps unmodified evaluateFrameWork with anti-dilution gates:
-//   1. Callbacks with simulated > 0 must independently satisfy P95 <= 16.67ms
-//      overall and in every required stage (prevents zero-sim wakeups from
-//      diluting the P95 percentile).
-//   2. Active gameplay forward progression rate ((simulated - rollback) / wall)
-//      must stay >= minForwardFps overall and per stage (prevents passing P95
-//      by starving simulation throughput).
-//   3. Production wire digests (every 60 confirmed frames) must remain active
-//      and mismatch-free while per-frame audit stays disabled.
+//   1. Active callbacks with simulated > 0 must independently satisfy
+//      P95 <= 16.67ms overall and in every observed stage. Menu, loading and
+//      ending rows stay out of this distribution.
+//   2. Active gameplay forward progression ((simulated - rollback) / wall)
+//      must stay >= minForwardFps, and each required stage must advance at
+//      least minForwardFramesPerStage. Wall time keeps same-stage pauses
+//      inside the active segment.
+//   3. Production wire digests stay on the 60-frame cadence and mismatch-free
+//      while per-frame audit stays disabled.
 import {evaluateFrameWork} from './frame-work.mjs';
 
 const LIMIT_MS = 16.67;
@@ -27,9 +28,9 @@ export function distribution(values) {
 }
 
 function computeActiveProgression(samples) {
-  // Accumulate contiguous phase === 'active' segments per stage > 0 so pauses,
-  // loading screens and menus between stages are excluded, while every stall or
-  // frame drop during active gameplay is included in wall time.
+  // Same-stage pause, suspend and loading rows stay inside the open active
+  // segment, so a stall is charged as wall time. A menu or another stage
+  // closes the segment.
   const byStage = new Map();
   let current = null;
   const flush = () => {
@@ -44,6 +45,9 @@ function computeActiveProgression(samples) {
       flush();
       continue;
     }
+    const holdsStageOpen = current && row.stage === current.stage &&
+      (row.phase === 'paused' || row.phase === 'suspended' || row.phase === 'loading');
+    if (holdsStageOpen) continue;
     if (row.phase === 'active' && row.stage > 0) {
       if (!byStage.has(row.stage)) {
         byStage.set(row.stage, {
@@ -128,6 +132,7 @@ export function evaluateMpPerformance(samples, {
   capture,
   minForwardFps = 55,
   minActiveCallbacksPerStage = 120,
+  minForwardFramesPerStage = 100,
 } = {}) {
   const frameWork = evaluateFrameWork(samples, {
     expectedStages,
@@ -148,7 +153,7 @@ export function evaluateMpPerformance(samples, {
   const simDurations = [];
   const simStageMap = new Map();
   for (const row of validRows) {
-    if (row.simulated > 0) {
+    if (row.phase === 'active' && row.simulated > 0) {
       simDurations.push(row.milliseconds);
       if (!simStageMap.has(row.stage)) simStageMap.set(row.stage, []);
       simStageMap.get(row.stage).push(row.milliseconds);
@@ -165,12 +170,14 @@ export function evaluateMpPerformance(samples, {
     errors.push('Simulated-only overall work p95 exceeds limit');
   }
 
-  for (const stage of expectedStages ?? []) {
-    const stats = simulatedStages[stage];
-    if (!stats?.count) {
-      errors.push(`Missing simulated-only work in stage ${stage}`);
-    } else if (+stage > 0 && stats.p95 > LIMIT_MS) {
+  for (const [stage, stats] of Object.entries(simulatedStages)) {
+    if (+stage > 0 && stats.p95 > LIMIT_MS) {
       errors.push(`Stage ${stage} simulated-only work p95 exceeds limit`);
+    }
+  }
+  for (const stage of expectedStages ?? []) {
+    if (+stage > 0 && !simulatedStages[stage]?.count) {
+      errors.push(`Missing simulated-only work in stage ${stage}`);
     }
   }
 
@@ -183,6 +190,8 @@ export function evaluateMpPerformance(samples, {
       const stageProg = progression.stages[stage];
       if (!stageProg || stageProg.activeCallbacks < minActiveCallbacksPerStage) {
         errors.push(`Stage ${stage} active callback coverage below ${minActiveCallbacksPerStage}`);
+      } else if (stageProg.forwardFrames < minForwardFramesPerStage) {
+        errors.push(`Stage ${stage} forward frames below ${minForwardFramesPerStage}`);
       } else if (stageProg.forwardFrames <= 0 || stageProg.wallSeconds <= 0) {
         errors.push(`Stage ${stage} has no forward progression`);
       } else if (stageProg.forwardFps < minForwardFps) {
@@ -216,7 +225,12 @@ export function evaluateMpPerformance(samples, {
   };
 }
 
-export function verifyProductionWireDigest({runtime, seat, minConfirmedForWireDigest = 180} = {}) {
+export function verifyProductionWireDigest({
+  runtime,
+  seat,
+  playerCount = 3,
+  minConfirmedForWireDigest = 180,
+} = {}) {
   const errors = [];
   if (!runtime || typeof runtime !== 'object') {
     return {passed: false, errors: [`Seat ${seat}: missing runtime state`]};
@@ -236,11 +250,13 @@ export function verifyProductionWireDigest({runtime, seat, minConfirmedForWireDi
     }
     const confirmed = runtime.diagnostic?.confirmedThrough;
     if (Number.isInteger(confirmed) && confirmed >= minConfirmedForWireDigest) {
-      if (!(wireDigest.sent > 0)) {
-        errors.push(`Seat ${seat}: no wire digests sent by confirmed frame ${confirmed}`);
+      const expectedSent = Math.floor(confirmed / 60);
+      const expectedReceived = (playerCount - 1) * Math.max(1, expectedSent - 1);
+      if (!(wireDigest.sent >= expectedSent)) {
+        errors.push(`Seat ${seat}: wire digests sent ${wireDigest.sent} below ${expectedSent} by confirmed frame ${confirmed}`);
       }
-      if (!(wireDigest.received > 0)) {
-        errors.push(`Seat ${seat}: no wire digests received by confirmed frame ${confirmed}`);
+      if (!(wireDigest.received >= expectedReceived)) {
+        errors.push(`Seat ${seat}: wire digests received ${wireDigest.received} below ${expectedReceived} by confirmed frame ${confirmed}`);
       }
     }
   }
@@ -272,12 +288,14 @@ export function installUntimedPilot({seat, pilotSource}) {
     pending: null,
     executed: 0,
     run: pilotOnGameFrame,
+    wrapper: null,
   });
-  m.onGameFrame = (ok, ms, ticks) => {
+  deferred.wrapper = (ok, ms, ticks) => {
     if (deferred.pending !== null) {
       w.__frameWork.errors.push('Unconsumed deferred pilot tick before next onGameFrame');
     }
     deferred.pending = [ok, ms, ticks];
     return prodOnGameFrame?.(ok, ms, ticks);
   };
+  m.onGameFrame = deferred.wrapper;
 }

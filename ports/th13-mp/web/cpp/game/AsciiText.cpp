@@ -33,5 +33,9 @@ bool AsciiText::draw_entry(const AsciiTextEntry& entry,AsciiGlyphServices& servi
  return true;
 }
 bool AsciiText::draw(i32 space,AsciiGlyphServices& services){for(const auto& entry:entries)if(entry.text.style.coordinate_space==space&&!draw_entry(entry,services))return false;return true;}
-bool AsciiText::draw(i32 space,AnmRenderer& renderer){struct Services final:AsciiGlyphServices{AnmRenderer& renderer;explicit Services(AnmRenderer& r):renderer(r){}bool ascii_glyph(AnmVm& vm)override{return renderer.draw_glyph(vm)!=-2;}}services(renderer);if(!draw(space,services)){if(error.empty())error=renderer.error;return false;}renderer.flush();return true;}
+bool AsciiText::draw(i32 space,AnmRenderer& renderer){
+ // 重放帧不呈现。字形 VM 只服务本队列，寿命 0 的条目由下一帧 AsciiFrame
+ // 更新拍清掉，呈现帧会重新入队。跳过字形展开不改变摘要。
+ if(renderer.logical_frame())return true;
+ struct Services final:AsciiGlyphServices{AnmRenderer& renderer;explicit Services(AnmRenderer& r):renderer(r){}bool ascii_glyph(AnmVm& vm)override{return renderer.draw_glyph(vm)!=-2;}}services(renderer);if(!draw(space,services)){if(error.empty())error=renderer.error;return false;}renderer.flush();return true;}
 }

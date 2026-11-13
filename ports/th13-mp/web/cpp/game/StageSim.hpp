@@ -330,8 +330,8 @@ struct StageEnemy {
     // ---- M6：值域快照面（web/cpp/multiplayer/WorldState 专用）----
     // StageEnemy 因 unique_ptr（threads/fog）不可整体拷贝；快照按值域逐
     // 字段走（threads/fog 由 WorldState 单独经 EclThreadsSnapshot/值拷贝
-    // 处理）。新增值域字段时必须同步登记（编译器会强制——missing field
-    // 在 restore 侧漏拷即静默漂移，故 restore_fields 用显示全量赋值）。
+    // 处理）。capture_fields 不再整对象重置，漏登记的字段会留下上一帧
+    // 快照。新增字段必须在 capture_fields 里显式赋值。
     void capture_fields(StageEnemy& out) const;
     void restore_fields(const StageEnemy& source);
 };
@@ -824,6 +824,10 @@ private:
     u32 next_serial_ = 1;
     u32 next_bullet_generation_ = 0;
     std::vector<i32> bullet_free_slots_;
+    // advance_bullets 持有向量内引用时为真。此窗口内 emit 不得把 bullets 重分配。
+    bool bullet_inplace_ = false;
+    std::vector<size_t> bullet_order_;
+    bool advance_one_bullet(StageBullet& bullet, size_t index, float global_rate, bool writeback);
     std::vector<size_t> bullet_pool_order() const;
     void release_bullet_slot(StageBullet& bullet);
 
