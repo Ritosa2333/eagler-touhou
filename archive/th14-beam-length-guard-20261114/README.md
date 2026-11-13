@@ -10,4 +10,4 @@
 
 普通核心对应模块在 Arch 私有预览中通过实际 WebGL2 魔理沙 A Normal 开局、射击、暂停及返回标题，约 60 FPS；OGG 流式模式音乐和音效均为 0。39 个运行响应经完整大小、SHA256 与线程隔离及 no-transform 核验。详见 [核心浏览器证据](https://github.com/AdingApkgg/thp/blob/6649cb53657e22bd8b56b17d5c9cfd4dd654b9f0/docs/porting/TH14_BEAM_BROWSER_PREVIEW_NOV14.md)。
 
-可选完整运行包尚未重编，普通版短流程不代替可选版浏览器或完整游戏验收。生产仍为 c407a169／47743edb，本记录不表示生产已经切换。[机器记录](qualification.json)。[当前适配说明](../../docs/adaptation/th14.md)。
+可选完整运行包尚未重编，普通版短流程不代替可选版浏览器或完整游戏验收。生产已采用核心 85a60542／generation fd54b847；39 个公网运行文件完整响应、哈希与隔离检查通过，旧版本、18 首 Vorbis 和回滚目录保留，服务进程保持。相同运行版本的静音预览短流程通过；公网浏览器工具两次超时，公网画面操作复验继续。[机器记录](qualification.json)。[当前适配说明](../../docs/adaptation/th14.md)。

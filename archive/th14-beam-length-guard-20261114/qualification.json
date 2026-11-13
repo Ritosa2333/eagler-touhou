@@ -29,5 +29,77 @@
     "filesReadFromGitBlobs": 98,
     "patchSha256": "f1d3190b5d0632f4ad982dc055190556378918c953da0b11b76a5114f2ea2c54",
     "linuxWholePatchCheckAndApply": true
+  },
+  "delivery": {
+    "deployed": {
+      "coreSource": "85a60542924834aaa8e8ddda00d52e80b44ef686",
+      "frontendSource": "c7468a29f7f4da2616c0166eea05dd8012f72d80",
+      "runtimeGeneration": "fd54b8473646f6cbd1b10017594fb003dc69c7013f13c5383c5bc8b56c77b341",
+      "previousGeneration": "47743edb2c1865d0c4f14f4f3b0104efb83ddb66c02b1ce14f669ffc06ebe888",
+      "previousGenerationPreserved": true,
+      "runtimeFiles": 39,
+      "realOggTracks": 18,
+      "wasmSha256": "afed096d2403cb387c4d2094198198e5e0c5ec6f6714a7ec0fdb3958dc89ae40",
+      "service": "active",
+      "rollback": "/home/i/Code/th14-release/hosted-before-beam-85a60542",
+      "atomicDirectoryExchange": true,
+      "serviceRestartRequested": false,
+      "servicePidPreserved": true,
+      "mainPid": 443019,
+      "productionDeployed": true,
+      "productionBrowserAccepted": false,
+      "completeGame": false
+    },
+    "publicHttp": {
+      "passed": true,
+      "generation": "fd54b8473646f6cbd1b10017594fb003dc69c7013f13c5383c5bc8b56c77b341",
+      "filesVerified": 39,
+      "allWholeFileHashesVerified": true,
+      "coiAndNoTransformAccepted": true,
+      "failed": []
+    },
+    "silentPreview": {
+      "schema": "th14/beam-browser-preview/1",
+      "coreSource": "85a60542924834aaa8e8ddda00d52e80b44ef686",
+      "browserWasmSha256": "afed096d2403cb387c4d2094198198e5e0c5ec6f6714a7ec0fdb3958dc89ae40",
+      "generation": "fd54b8473646f6cbd1b10017594fb003dc69c7013f13c5383c5bc8b56c77b341",
+      "runtimeFilesVerified": 39,
+      "sourceBindingsVerified": 372,
+      "actualWebGL2": true,
+      "scenario": "Marisa A Normal stage1 ordinary start, held fire, pause, confirmed return to title",
+      "musicMode": "ogg-stream",
+      "bgmVolume": 0,
+      "sfxVolume": 0,
+      "observedFps": 60,
+      "consoleWarningsOrErrors": [],
+      "cachedRuntimeUpdateAccepted": true,
+      "musicControlAvailableAfterUpdate": true,
+      "cacheCleared": false,
+      "integrityChecksBypassed": false,
+      "completeGame": false,
+      "fullGpuCampaign": false,
+      "productionDeployed": false,
+      "screenshots": {
+        "silent-ogg-settings.png": "69bebf261052fff55f0e76bd5fc18d7cbed01ebfcc27dcb7c38da411ae285976",
+        "browser-marisaa-normal.png": "72ac9cc4efceef5523f12819d455d3e70b108df03cbdb76ee4c3f92ade2f02ec",
+        "browser-return-title.png": "0ace63c5025754d9fd004a34fb38da25686f73298fca4b0c93e62d75d86878b7"
+      }
+    },
+    "optionalPatch": {
+      "commit": "6c65ed26931296cc3de852156e3787ff493677da",
+      "patchSha256": "f1d3190b5d0632f4ad982dc055190556378918c953da0b11b76a5114f2ea2c54",
+      "wholePatchLinuxApplied": true,
+      "nativeValidCases": 4032,
+      "nativeNegativeEdges": 48,
+      "ordinaryGuardCases": 30,
+      "journalCases": 21,
+      "completeRuntimeBuilt": false
+    },
+    "publicBrowser": {
+      "pageListed": true,
+      "uiAcceptanceCompleted": false,
+      "reason": "Two browser tool timeouts; no game launched through the public page."
+    },
+    "completeGame": false
   }
 }
