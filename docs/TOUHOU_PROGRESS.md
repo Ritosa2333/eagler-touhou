@@ -82,17 +82,13 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-2026-11-13最新：[核心59a8cc4c](https://github.com/AdingApkgg/thp/commit/59a8cc4cc5ae404d8439019b35f4915f75c03c5d)的Player历史／僚机初值修正已上线。当前源码35,000回调的状态、RNG、弹数、HUD及游标相同，123个弹槽点／4,275个VM实测字一致，1,590个未测链接仍未知；三个历史弹数点在本病例一致，严格113字仍从三面30,828回调出现十个缓存字段差异。新增原版复制／重置与实际C++加载线程联合对照72任务、10,800字相同，未强制screen。18首线上Vorbis另以当前实际生产解码函数完成99,457,880立体声帧的独立FFmpeg比较、54个寻址窗口和18个循环边界；没有音频输出，不代替浏览器播放、最终混音或整作验收。[发布收据](https://github.com/AdingApkgg/thp/blob/fb75f80824c0eb954e57a8d2c7e7b1f771d958bb/docs/porting/TH14_OPTION_INITIAL_STATE_RELEASE_NOV13.md)。
+### th14 行为级验收与 Web 适配
 
-独立 C++／SDL3／Wasm 实现进行中，整作 1:1 尚未完成。[线上游戏源码 59a8cc4c](https://github.com/AdingApkgg/thp/commit/59a8cc4cc5ae404d8439019b35f4915f75c03c5d)已部署至[TH14 测试站](https://wth.saop.cc/)，[网站接入 PR #233](https://github.com/Ritosa2333/eagler-touhou/pull/233)待合入。网站运行逻辑为2eeb8db4，fork的9e3f5f17只更新TH14核心构建指针与文档，Arch检出同步。原作数据、音乐和生成运行包不加入源码Git。
+独立 C++／Wasm 核心：[AdingApkgg/thp](https://github.com/AdingApkgg/thp)，当前源码 [336a1ff0](https://github.com/AdingApkgg/thp/commit/336a1ff0f9fdd197eba3ff5d8e7f94f1e31c34b4)。以原作可观察行为对齐推进，内部缓存／调度／像素一致性保留为诊断，整作仍在进行中。
 
-2026-11-13修正Player激活前的transition时钟，以及TH14 tick的空速率语义。完整原版构造／初始化在六种自机上执行；规范映射后的18个时钟字差异消失，3,024字一致。240组原版时钟输入在四种Wasm零地址哨兵下共960次比较通过，旧实现64例失败保留。SDK141／浏览器146单元全量重编，六对其他作品优化对象相同。新对象的加载13组、2,093帧／2,928,024字回归通过；实际静音普通菜单灵梦B Normal在540个宿主更新后到达首个Player，已测线程／GPU／文件／时钟资源回收。该有限入口使用旧FLAC，没有当作当前浏览器Vorbis播放验收。
+灵梦 B Normal 当前版本六关完成 122,005 次 Player 回调并稳定进入录像结束菜单；所测玩法状态（含两组 RNG）、HUD、录像游标及完整成绩文件与原版相同。六种自机×四种普通难度的24个菜单／移动／射击／低速／暂停／Bomb功能用例通过；六种Extra入口亦通过，但使用明确的外部已解锁测试存档，不代表已验证普通通关解锁。六个Normal自机另完成实际离屏GPU短流程和Bomb生命周期检查。详见[范围与验收记录](https://github.com/AdingApkgg/thp/blob/main/docs/porting/TH14_BEHAVIOR_MATRIX_NOV13.md)。
 
-协作者Goan114的ANM速度／插值、界面、按显示档选择字库和纹理、短输入、Ogg与浏览器提交修复已整合；保留640×480、960×720、1280×960配置。当前浏览器游戏对象重新链接的349组ANM共3,571帧、121,414所选字一致；69项界面和12组纹理为此前冻结版本的独立组件结果。sampler反馈回路修复保持；协作者延迟颜色清屏／alpha优化仍是独立候选，未计作生产通过。
-
-[当前发布收据](https://github.com/AdingApkgg/thp/blob/fb75f80824c0eb954e57a8d2c7e7b1f771d958bb/docs/porting/TH14_OPTION_INITIAL_STATE_RELEASE_NOV13.md)：generation `988ce3cedb28d0cd7519dbfaadb2341bf05ca140e94a87377ed0e3bf62dbdeb8`，Wasm `e367ee01f323d9ced76959574a3a530762ee0fee91b692adb41151eb291359e3`。369个构建源码blob匹配公开提交；浏览器只重编一单元、核验复用145。原点39个完整HTTP响应通过，公网首轮37个通过，font6／Wasm的连接重置各完整重取一次后通过，初次失败保留。隔离头和no-transform保持，无Range、缓存清除或完整性绕过。仅上传四个运行文件约3.15MB，loader未变，18首既有Vorbis复用。网站fork文档与Arch检出9e3f5f17同步，运行代码仍2eeb8db4。
-
-旧No1 Replay的24次SCRIPT加载差异与物理相机缓存／画面差异继续开放；原版完整Player初始化没有RNG写入。当前35,000回调不能替代所有加载时序。完整机体／难度、完整录像、普通完整流程／存档、整帧、最终PCM和浏览器实玩验收仍需继续。不将组件通过视为整作完成，见[验收清单](https://github.com/AdingApkgg/thp/blob/fb75f80824c0eb954e57a8d2c7e7b1f771d958bb/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。
+[测试站点](https://wth.saop.cc/)当前仍为已部署的59a8cc4c；新版浏览器包已构建，Wasm `e7492a19…`，尚未部署或完成该新包的浏览器入口验收。其他完整机体／难度录像、普通流程与保存、全部音画及发布入口的缺失覆盖继续补齐，不将上述有限通过记为整作完成。
 
 ## [th15] 東方紺珠伝 v1.00b
 
