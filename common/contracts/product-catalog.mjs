@@ -322,7 +322,6 @@ export const PRODUCT_GAMES = Object.freeze({
         features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
     }),
     th075: Object.freeze({
-        testOnly: true,
         number: "07.5", title: "東方萃夢想", subtitle: "Immaterial and Missing Power", cardArtwork: "th075-card.webp",
         storage: Object.freeze({saveRoot:"/savesth075",scoreFile:"score.dat",configFiles:Object.freeze(["config.dat"])}),
         runtime: "./runtime/th075/th075.html", inputProfile: "fighting",
@@ -751,7 +750,6 @@ export const PRODUCT_GAMES = Object.freeze({
         features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
     }),
     th17: Object.freeze({
-        testOnly: true,
         number: "17", title: "東方鬼形獣", subtitle: "Wily Beast and Weakest Creature", cardArtwork: "th17-card.webp",
         renderScales: Object.freeze([2, 1]),
         thpracRuntime: Object.freeze({session: "native"}),
