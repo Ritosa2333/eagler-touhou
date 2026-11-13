@@ -10,6 +10,14 @@ export function authoredSources(): Plugin {
     resolveId(source, importer) {
       return resolveAuthoredSource(root, source, importer);
     },
+    transform(source, id) {
+      // 7z ships a universal Emscripten loader. This graph runs in browsers;
+      // compile out its Node loader instead of publishing a Node shim.
+      if (!id.replaceAll('\\', '/').endsWith('/7z-wasm/7zz.es6.js')) return;
+      const nodeEnvironment = 'typeof process=="object"&&process.versions?.node&&process.type!=="renderer"';
+      if (!source.includes(nodeEnvironment)) this.error('7z browser loader environment guard changed');
+      return {code: source.replace(nodeEnvironment, 'false'), map: null};
+    },
     generateBundle(_options, bundle) {
       if (this.environment.config.consumer !== 'client') return;
       for (const chunk of Object.values(bundle)) {

@@ -16,3 +16,6 @@
 [submodule "runtimes/th07/vendored/SDL_ttf"]
 	path = ports/th07/vendored/SDL_ttf
 	url = https://github.com/libsdl-org/SDL_ttf.git
+[submodule "th14"]
+	path = ports/th14
+	url = https://github.com/AdingApkgg/thp.git

@@ -1,6 +1,6 @@
 # 文档总表
 
-共 566 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 567 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -31,6 +31,7 @@
 | 适配指南 | [docs/adaptation/th12-dense-bomb-performance-20261023.md](adaptation/th12-dense-bomb-performance-20261023.md) | TH12 密集弹幕与 Bomb 展示管线 |
 | 适配指南 | [docs/adaptation/th12-mobile-collision-performance-20261023.md](adaptation/th12-mobile-collision-performance-20261023.md) | TH12 手机低速、判定点及无敌收符修复 |
 | 适配指南 | [docs/adaptation/th12-mobile-information-20261020.md](adaptation/th12-mobile-information-20261020.md) | 星莲船手机信息面板与通关排行 |
+| 适配指南 | [docs/adaptation/th14.md](adaptation/th14.md) | TH14 网站接入 |
 | 适配指南 | [docs/adaptation/th15-pointdevice-issue113-20261020.md](adaptation/th15-pointdevice-issue113-20261020.md) | TH15 无欠检查点与完整存档导出 |
 | 适配指南 | [docs/adaptation/validation.md](adaptation/validation.md) | 验证与交付 |
 | 作品入口 | [ports/README.md](../ports/README.md) | 选择游戏 |

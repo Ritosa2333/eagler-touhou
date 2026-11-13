@@ -401,6 +401,12 @@ export const THCRAP_STRING_CONTRACT = Object.freeze({
     "th10 Result Unknown Spell", "th11_replay_format",
     "th11_replay_user_find", "th11_scorefile_fn",
   ].map(id => Object.freeze({ id }))),
+  th14: Object.freeze([
+    "Music Room Unknown Title", "Music Room Numbered Title",
+    "th10 Result Known Spell", "th10 Result Unknown Spell", "th13 spell nothing",
+    "th13 practice spell name known", "th13 practice spell name unknown",
+    ...Array.from({length: 5}, (_, i) => `th10 Music Room spoiler ${i + 1}`),
+  ].map(id => Object.freeze({id}))),
   // Runtime consumers correspond to base_tsa/th15/stringlocs.js and music hooks.
   th15: Object.freeze([
     "Music Room Unknown Title", "Music Room Numbered Title", "Music Room Note Title",

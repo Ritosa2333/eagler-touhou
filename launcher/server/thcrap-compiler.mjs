@@ -4,7 +4,7 @@ import {Th12ThcrapCompiler} from "./th12-thcrap-compiler.mjs";
 import { legacyAsciiPrintfSignature, validateAsciiContract } from "./thcrap-ascii-contract.mjs";
 import { validateStringContract } from "./thcrap-string-contract.mjs";
 
-const GAME_VERSION = Object.freeze({ th06: 6, th07: 7, th08: 8, th09: 9, th10: 10, th11: 11, th12: 12, th15: 15, th17: 17 });
+const GAME_VERSION = Object.freeze({ th06: 6, th07: 7, th08: 8, th09: 9, th10: 10, th11: 11, th12: 12, th14: 14, th15: 15, th17: 17 });
 export const THCRAP_RUNTIME_COMPILER_GAMES = Object.freeze([...Object.keys(GAME_VERSION), "th075"]);
 const GAME_PATTERN = `(?:${THCRAP_RUNTIME_COMPILER_GAMES.join("|")})`;
 const MESSAGE_DIFF = new RegExp(`^${GAME_PATTERN}\\/(msg[1-8][a-z]{0,2}\\.dat)\\.jdiff$`, "i");
@@ -15,9 +15,9 @@ const TH10_ENDING_DIFF = /^th10\/(e\d+\.msg)\.jdiff$/i;
 // TH11 uses MSG_TH11 (auto line 17) and END_TH10, as defined by thcrap_tsa.
 const TH11_DIALOGUE_DIFF = /^th11\/(st\d{2}_\d{2}[a-c]\.msg)\.jdiff$/i;
 const TH11_ENDING_DIFF = /^th11\/(e\d{2}\.msg)\.jdiff$/i;
-// Both releases use thcrap's MSG_TH14 and END_TH10 formats.
-const LATE_DIALOGUE_DIFF = /^(th15|th17)\/(st\d{2}([a-i])\.msg)\.jdiff$/i;
-const LATE_ENDING_DIFF = /^(th15|th17)\/(e\d{2}\.msg)\.jdiff$/i;
+// These releases use thcrap's MSG_TH14 and END_TH10 formats.
+const LATE_DIALOGUE_DIFF = /^(th14|th15|th17)\/(st\d{2}([a-i])\.msg)\.jdiff$/i;
+const LATE_ENDING_DIFF = /^(th14|th15|th17)\/(e\d{2}\.msg)\.jdiff$/i;
 // TH09 uses the same encrypted MSG_TH09 command format for both story and
 // versus scripts. Ending scripts are the older .end format handled below.
 const TH09_DIALOGUE_DIFF = /^th09\/(pl\d{2}(?:_match)?\.msg)\.jdiff$/i;
@@ -355,7 +355,7 @@ const ENDING_LINE_FORMAT = Object.freeze({
 });
 
 function msgLineFormat(version) {
-  if (version === 15 || version === 17) return MSG_LINE_FORMAT[15];
+  if (version === 14 || version === 15 || version === 17) return MSG_LINE_FORMAT[15];
   if (version === 11) return MSG_LINE_FORMAT[11];
   if (version === 10) return MSG_LINE_FORMAT[10];
   if (version === 9) return MSG_LINE_FORMAT[9];
@@ -365,7 +365,7 @@ function msgLineFormat(version) {
 }
 
 function endingLineFormat(version) {
-  if (version === 15 || version === 17) return ENDING_LINE_FORMAT[15];
+  if (version === 14 || version === 15 || version === 17) return ENDING_LINE_FORMAT[15];
   if (version === 11) return ENDING_LINE_FORMAT[11];
   if (version === 10) return ENDING_LINE_FORMAT[10];
   throw new TypeError(`unsupported ending version: ${version}`);
@@ -502,7 +502,7 @@ export function patchThmsgDump(source, diff, version = 6, { ending = false } = {
   for (let index = 0; index < lines.length; index++) {
     // MSG_TH11 marks opcode 25 as OP_DELETE: thcrap_tsa/process_op omits
     // it from the patched output even when this message has no text diff.
-    if (!ending && (version === 11 || version === 15 || version === 17) && /^\t25;/.test(lines[index].toString("latin1", 0, 8))) continue;
+    if (!ending && (version === 11 || version === 14 || version === 15 || version === 17) && /^\t25;/.test(lines[index].toString("latin1", 0, 8))) continue;
     if (replacements.has(index)) {
       const replacement = replacements.get(index);
       if (replacement) output.push(replacement);
@@ -708,6 +708,38 @@ export class ThcrapRuntimeCompiler {
     if (resource.sourceRole === "stringdefs") {
       throw new TypeError(`${resource.path}: stringdefs is a pack-level merge source; use processPack()`);
     }
+    if (resource.path === "th14/text.v1.00b.anm") {
+      return {bytes: Buffer.from(resource.bytes), extension: ".anm", format: "binary", targetPath: "/thcrap/th14/text.anm"};
+    }
+    if (resource.path === "th14/front.anm.jdiff") {
+      const diff = parseThcrapJson(resource);
+      const bytes = Buffer.from(await this.readBaseFile("th14", "front.anm"));
+      const sprites = new Map(Object.entries(diff.sprites ?? {}));
+      for (let chunk = 0; chunk < bytes.length;) {
+        if (bytes.length - chunk < 64 || bytes.readUInt32LE(chunk) !== 8) throw new Error('Invalid TH14 ANM header');
+        const next = bytes.readUInt32LE(chunk + 36);
+        const end = next ? chunk + next : bytes.length;
+        const count = bytes.readUInt16LE(chunk + 4);
+        const first = chunk + 64 + 4 * count + 8 * bytes.readUInt16LE(chunk + 6);
+        if (end > bytes.length || end < first) throw new Error('Invalid TH14 ANM tables');
+        for (let i = 0; i < count; i++) {
+          const start = chunk + bytes.readUInt32LE(chunk + 64 + 4 * i);
+          if (start < first || start + 20 > end) throw new Error('Invalid TH14 ANM sprite offset');
+          const id = String(bytes.readUInt32LE(start));
+          if (!sprites.has(id)) continue;
+          const rect = sprites.get(id);
+          if (!Array.isArray(rect) || rect.length !== 4 || !rect.every(value => Number.isFinite(value) && value >= 0 && value <= 16384)) {
+            throw new TypeError(`Invalid TH14 sprite ${id}`);
+          }
+          rect.forEach((value, index) => bytes.writeFloatLE(value, start + 4 + 4 * index));
+          sprites.delete(id);
+        }
+        if (!next) break;
+        chunk += next;
+      }
+      if (sprites.size) throw new Error(`TH14 front.anm is missing sprites: ${[...sprites.keys()]}`);
+      return {bytes, extension: ".anm", format: "binary", targetPath: "/thcrap/th14/front.anm"};
+    }
     if (resource.kind !== "jdiff" && resource.kind !== "table") {
       return {
         bytes: Buffer.from(resource.bytes),
@@ -787,7 +819,8 @@ export class ThcrapRuntimeCompiler {
     }
     const th10Dialogue = TH10_DIALOGUE_DIFF.exec(resource.path);
     const lateDialogue = LATE_DIALOGUE_DIFF.exec(resource.path);
-    if (lateDialogue && (lateDialogue[1].toLowerCase() === "th17" || /^[a-d]$/i.test(lateDialogue[3]))) {
+    if (lateDialogue && (lateDialogue[1].toLowerCase() === "th17" ||
+        (lateDialogue[1].toLowerCase() === "th14" ? /^[a-f]$/i.test(lateDialogue[3]) : /^[a-d]$/i.test(lateDialogue[3])))) {
       const [, gameId, entry] = lateDialogue;
       const game = gameId.toLowerCase(), version = GAME_VERSION[game];
       const base = await this.readBaseFile(game, entry);
