@@ -106,6 +106,13 @@ export async function run(ctx) {
           }
           const e0 = await seatState(client, 0), e1 = await seatState(client, 1);
           ctx.assert(Math.abs(e0.x - start.x0) < 1e-3, `seat 0 零输入不动（${start.x0}→${e0.x}）`);
+          // R-A: the guest's right input must not tilt the idle first seat.
+          const scripts = await client.page.evaluate(() => {
+            const report = window.mod.UTF8ToString(window.mod._th13_debug_stage_report());
+            return [...report.matchAll(/^\s+player script=(\d+)/gm)].map(match => Number(match[1]));
+          });
+          ctx.assert(scripts.length === 2 && scripts[0] === 0 && scripts[1] === 3,
+            `组合(${a},${b}) 行走动画独立（${scripts.join(',')}，预期 0,3）`);
           const moved = e1.x - start.x1;
           ctx.assert(moved > 100, `seat 1 右移（${start.x1}→${e1.x}）`);
           const expectedPerFrame = b === 1 ? 640 / 128 : 576 / 128;

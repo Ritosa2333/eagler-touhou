@@ -41,6 +41,10 @@ int main() {
     assert(unseen.initialize());
     assert(unseen.update(ctrl));
     assert(!unseen.should_restart(ctrl)); // 00416637: first good ending, even in staff.
+    Host multiplayer;
+    EndingScene mp_staff(progress, multiplayer, true);
+    assert(mp_staff.initialize() && mp_staff.update(ctrl));
+    assert(mp_staff.should_restart(ctrl));
     Host known;
     known.save.bytes[12] = 1;
     EndingScene staff(progress, known);

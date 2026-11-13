@@ -247,11 +247,10 @@ bool ApplicationState::bomb_hud(i32 stock, i32 pieces) {
 
 bool ApplicationState::life_hud_seat(i32 seat, i32 lives, i32 pieces) {
     if (!run) return fail("Life HUD has no scene");
-    if (seat > 0 && run->hud.mp_seat_count >= 2) {
+    if (run->hud.mp_seat_count >= 2) {
         const HudPlayerState* seat_state = run->battle.seat_hud(seat);
-        return run->hud.life_seat(
-                   seat, lives, pieces,
-                   seat_state ? seat_state->life_piece_threshold_index : 0) ||
+        if (!seat_state) return fail("Multiplayer seat HUD state missing");
+        return run->hud.life_seat(seat, lives, pieces, seat_state->life_piece_threshold_index) ||
                fail(run->hud.error);
     }
     return life_hud(lives, pieces);

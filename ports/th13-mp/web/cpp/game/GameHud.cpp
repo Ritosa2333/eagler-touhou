@@ -173,9 +173,9 @@ bool GameHud::bombs(i32 stock, i32 pieces) {
 }
 
 bool GameHud::life_seat(i32 seat, i32 lives, i32 pieces, i32 threshold_index) {
-    if (seat <= 0 || seat >= mp_seat_count)
-        return life(lives, pieces);  // seat 0 / 单席：单套图标 + SP 阈值投影
-    return interrupt_life_set(*this, animations, mp_life_icons[size_t(seat) - 1], lives,
+    if (seat < 0 || seat >= mp_seat_count) return life(lives, pieces);
+    const auto& icons = seat == 0 ? life_icons : mp_life_icons[size_t(seat) - 1];
+    return interrupt_life_set(*this, animations, icons, lives,
                               pieces, life_piece_threshold(threshold_index));
 }
 

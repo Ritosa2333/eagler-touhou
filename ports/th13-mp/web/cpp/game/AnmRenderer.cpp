@@ -241,6 +241,10 @@ void AnmRenderer::submit_colored(AnmVm& vm, Topology kind, u32 count, const Vert
 }
 
 int AnmRenderer::draw_vm(AnmVm& vm){
+    if (vm.shot_effect_owner) {
+        for (const auto* part = &vm; part; part = part->creation_parent)
+            if (part->hide_hit_projectile) return -1;
+    }
     if(anm_draw_probe.enabled){
         ++anm_draw_probe.calls;
         const auto& v0=vm.visual;

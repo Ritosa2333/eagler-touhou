@@ -2666,9 +2666,8 @@ bool StageBattle::open_event_sink(const char* path) {
 void StageBattle::on_bomb_key() {
     // 0x4433dc/0x443525 的 Bomb 分派在扣弹前调用 0x40a540；其 :8 明确要求
     // (DAT_004be830 & 0x100)==0，即灵界激活时拒绝 Bomb（不扣弹、不启动）。
-    // M4/R-T2 个人 Bomb 许可与团队灵界是不同查询：owner 遵 SP 灵界拒 Bomb，
-    // 队友在灵界期间仍可用 Bomb（不向队友写永久无敌，不重复放大伤害）。
-    if (!player_ || !progress_ || !seat_bomb_allowed(active_seat)) return;
+    // R-T2：联机灵界期间全员禁雷，普通 Bomb 和决死 Bomb 共用此入口。
+    if (!player_ || !progress_ || !bomb_allowed()) return;
     // 同一 0040a540 共享门还要求 stagectx+0x198 == 0。对话期间按 X
     // 不扣弹、不启 Bomb，也不以清屏或 HUD 更新消耗这次输入。
     if (sim.dialog_host && sim.dialog_host->dialog_active()) return;

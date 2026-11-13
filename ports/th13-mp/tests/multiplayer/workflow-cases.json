@@ -1002,7 +1002,8 @@
         "stage_clear_revives_first_seat_ghost_before_hud",
         "stage_clear_revives_inflight_last_death_before_hud",
         "stage_clear_revives_remote_ghost_preserving_survivors",
-        "stage_clear_revives_remote_inflight_last_death"
+        "stage_clear_revives_remote_inflight_last_death",
+        "marisa_beams_stop_after_stage_clear_reuses_shot_generations"
       ]
     },
     {
