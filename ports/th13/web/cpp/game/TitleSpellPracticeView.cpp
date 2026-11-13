@@ -122,13 +122,17 @@ bool TitleSpellPracticeView::update(const TitleSpellPracticeMenu& menu,
     }
     if (level != level_) {
         if (level == SpellPracticeLevel::Stage) {
-            // 00456650 case4：取消退场对 names(+0x694×5)/103 徽章/188 卡表/187
-            // 关卡表发 label1 并清后三者句柄；0x4560a0 case0 以 0046fb90 判 187
-            // 句柄失效后整表重建，case1 再发 label3+label(7+cursor)。对已
-            // label6 锁定的旧 187 VM 重发 select 不会恢复列表——这正是
+            // 00456650 case4（0x45697e-0x456a3b，age≥6）：names(+0x694×5)
+            // 发 label1（句柄不清）；rank 族 7 柄（+0x65c×7）不发 label，
+            // 经 0046fb90 取 VM 后 render_flags|=0x20 连同子体整树硬回收
+            //（0x4569b6-0x4569f6，= AnmManager::retire），图标当帧离屏而不播
+            // 脚本的 label1 淡出；103/188/187 各发 label1 并清句柄
+            //（0x456a04/0x456a16/0x456a28）。0x4560a0 case0 以 0046fb90
+            // 判 187 句柄失效后整表重建，case1 再发 label3+label(7+cursor)。
+            // 对已 label6 锁定的旧 187 VM 重发 select 不会恢复列表——这正是
             // 「退回 STAGE SELECT 后列表只剩选中行」的成因。
             for (u32& handle : names_) { interrupt(handle, 1); handle = 0; }
-            for (u32& handle : ranks_) { interrupt(handle, 1); handle = 0; }
+            for (u32& handle : ranks_) animations_.retire(handle);
             interrupt(badge_, 1); badge_ = 0;
             interrupt(cards_, 1); cards_ = 0;
             interrupt(stage_, 1); stage_ = 0;
@@ -138,22 +142,42 @@ bool TitleSpellPracticeView::update(const TitleSpellPracticeMenu& menu,
         } else if (level == SpellPracticeLevel::Difficulty &&
                    level_ == SpellPracticeLevel::Stage) {
             // [H-SP2] 对局返回级联（0x4561bf→0x45673a）：0x11 重建 187 后
-            // label3/label(7+stage)/label6 立即锁定；0x12 建 188 并
-            // label3/label(7+slot)/label6 立即（0x456204-0x456249、
-            // 0x456774-0x4567a2 全 0x46fca0），直达难度层。
+            // label3/label(7+stage)/label6 三连发全部 immediate（0x46fca0，
+            // 0x456204-0x456238）；0x12 建 188 同构（0x456774-0x4567a2）。
+            // 选中行必须先经 label(7+X) 的选中分支再被 label6 锁定——
+            // 旧实现借 select() 把 7+X 挂 pending，被紧随的 label6 立即拍
+            // 覆盖，选中行的 label7 状态从未生效。
             interrupt(badge_, 1);
             if (!create(badge_, 103) || !create(cards_, 188)) return false;
             const i32 count = platform.spell_count(menu.selected_stage());
             for (i32 absent = 0; absent < 13 - count; ++absent)
                 if (!interrupt(cards_, 39 - absent, true)) return false;
-            if (!select(stage_, menu.selected_stage() - 1) ||
+            if (!interrupt(stage_, 3, true) ||
+                !interrupt(stage_, 7 + (menu.selected_stage() - 1), true) ||
                 !interrupt(stage_, 6, true) ||
-                !select(cards_, menu.selected_slot()) ||
+                !interrupt(cards_, 3, true) ||
+                !interrupt(cards_, 7 + menu.selected_slot(), true) ||
                 !interrupt(cards_, 6, true)) return false;
         } else if (level == SpellPracticeLevel::Spell) {
-            if (level_ == SpellPracticeLevel::Stage) {
-                interrupt(badge_, 1);
-                if (!create(badge_, 103) || !create(cards_, 188)) return false;
+            if (level_ == SpellPracticeLevel::Difficulty) {
+                // 0x4576c0 case4（0x457941-0x457977，age≥6）：难度层取消对
+                // 188 发 label1 并清零句柄（0x457960），names/ranks/103 不动；
+                // 重入 0x12 由 0x456650 case0 以 0046fb90 判 [esi+0x5b8] 失效
+                //（0x4566ca-0x4566e6）经 0044bb80 整表重建。不重建则级联
+                // label6 锁定过的旧 188 只剩选中行（a 层行已随 label6 退场）。
+                interrupt(cards_, 1);
+                cards_ = 0;
+            }
+            if (cards_ == 0) {
+                // 0x456650 case0 重建段（0x4566ab-0x456738）：103、188 各自
+                // 判句柄失效才重建，随后对缺席槽发 label(39-i)；Stage 确认
+                // 来路先收 109（0x4563f3 label1、0x456409 清柄）。
+                if (level_ == SpellPracticeLevel::Stage) {
+                    interrupt(badge_, 1);
+                    badge_ = 0;
+                }
+                if (badge_ == 0 && !create(badge_, 103)) return false;
+                if (!create(cards_, 188)) return false;
                 // 00456650 disables nonexistent stage slots through labels39.. .
                 const i32 count = platform.spell_count(menu.selected_stage());
                 for (i32 absent = 0; absent < 13 - count; ++absent)
