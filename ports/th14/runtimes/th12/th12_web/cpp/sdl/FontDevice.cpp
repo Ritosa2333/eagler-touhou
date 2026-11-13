@@ -1,0 +1,214 @@
+#include "FontDevice.hpp"
+#include "../game/AnmManager.hpp"
+#include "../game/TextLayoutTh14.hpp"
+#include <SDL3/SDL.h>
+#include <algorithm>
+#include <cstring>
+#include <utility>
+namespace th11::sdl {
+// Positions and addresses print in one shape here, the same four-digit form an ANM report uses for
+// its own offsets and this device uses for a byte count too wide for four digits.
+namespace {
+std::string hex32(u32 value){
+    std::string out;
+    for(i32 shift=28;shift>=0;shift-=4)out+="0123456789abcdef"[(value>>shift)&15];
+    return out;
+}
+}
+#if defined(TH_ENABLE_THCRAP)
+namespace {
+bool valid_utf8(const std::string& text){
+    for(size_t p=0;p<text.size();){
+        const u8 first=u8(text[p++]);if(first<0x80)continue;
+        const int trailing=first>=0xc2&&first<=0xdf?1:first>=0xe0&&first<=0xef?2:first>=0xf0&&first<=0xf4?3:-1;
+        if(trailing<0||p+size_t(trailing)>text.size())return false;
+        for(int j=0;j<trailing;++j)if((u8(text[p++])&0xc0)!=0x80)return false;
+    }
+    return true;
+}
+std::string pack_font_file(){
+    size_t size=0;auto* raw=static_cast<char*>(SDL_LoadFile("/thcrap/th11/localization/options.json",&size));
+    if(!raw)return {};
+    std::string options(raw,size);SDL_free(raw);
+    const auto key=options.find("\"fontFile\"");if(key==std::string::npos)return {};
+    const auto colon=options.find(':',key+10),open=colon==std::string::npos?colon:options.find('"',colon+1);
+    const auto close=open==std::string::npos?open:options.find('"',open+1);
+    if(close==std::string::npos)return {};
+    const auto name=options.substr(open+1,close-open-1);
+    if(name.empty()||name.size()>128||name.find("..")!=std::string::npos||
+       name.find('/')!=std::string::npos||name.find('\\')!=std::string::npos||
+       name.find(':')!=std::string::npos)return {};
+    return "/thcrap/th11/fonts/"+name;
+}
+u16 blend_pixel(u16 before,u32 color,u8 alpha){
+    const u32 r=color&255,g=(color>>8)&255,b=(color>>16)&255;
+    // TextRaster keeps alpha inverted while drawing and XORs it back before
+    // resampling. 0xf000 is an untouched transparent scratch pixel here.
+    const u32 a=255-(before>>12)*17,old_r=((before>>8)&15)*17,old_g=((before>>4)&15)*17,old_b=(before&15)*17;
+    const u32 out_a=alpha+(a*(255-alpha)+127)/255;
+    const u32 out_r=(r*alpha+old_r*(255-alpha)+127)/255;
+    const u32 out_g=(g*alpha+old_g*(255-alpha)+127)/255;
+    const u32 out_b=(b*alpha+old_b*(255-alpha)+127)/255;
+    return u16(((255-out_a+8)/17)<<12|((out_r+8)/17)<<8|((out_g+8)/17)<<4|((out_b+8)/17));
+}
+}
+#endif
+FontDevice::~FontDevice(){
+#if defined(TH_ENABLE_THCRAP)
+    for(auto* font:localized)if(font)TTF_CloseFont(font);
+#endif
+}
+bool FontDevice::initialize(const FontBitmapTh14* bitmap){
+    if(ready)return true;
+#if PORT_TITLE==14
+    if(!bitmap||bitmap->format!=26){error="TH14 original font bitmap format unavailable";return false;}
+    raster.scratch.width=bitmap->width;raster.scratch.height=bitmap->height;raster.scratch.pitch=bitmap->pitch;
+    raster.scratch.pixels.resize(size_t(bitmap->pitch)*bitmap->height);
+#endif
+    const char* files[]={"font0.bin","font1.bin","font2.bin","font3.bin","cp932.bin","blend4444.bin"
+#if PORT_TITLE==14
+        ,"font4.bin","font5.bin","font6.bin","font7.bin"
+#endif
+    };
+    for(u32 n=0;n<sizeof(files)/sizeof(*files);++n){const std::string path=std::string("/fonts/")+files[n];size_t size=0;auto* data=static_cast<u8*>(SDL_LoadFile(path.c_str(),&size));const bool valid=data&&size<=UINT32_MAX&&raster.glyphs.load(n,data,u32(size));SDL_free(data);if(!valid){error="Invalid original font data: "+path;return false;}}
+    ready=raster.glyphs.ready();
+#if defined(TH_ENABLE_THCRAP)
+    const auto path=pack_font_file();
+    if(!path.empty()){
+        if(!TTF_Init()){error="Unable to initialize THCRAP font renderer";return false;}
+        constexpr float heights[]={32.f,32.f,15.f,15.f};
+        for(u32 n=0;n<4;++n)if(!(localized[n]=TTF_OpenFont(path.c_str(),heights[n]))){
+            error="Missing THCRAP font: "+path;return false;
+        }
+    }
+#endif
+    return ready;
+}
+#if defined(TH_ENABLE_THCRAP)
+void FontDevice::font_style(int index,const std::string& commands){
+    TTF_FontStyleFlags flags=TTF_STYLE_NORMAL;
+    for(char c:commands){if(c=='b')flags|=TTF_STYLE_BOLD;else if(c=='i')flags|=TTF_STYLE_ITALIC;else if(c=='u')flags|=TTF_STYLE_UNDERLINE;}
+    TTF_SetFontStyle(localized[index],flags);
+}
+LayoutLine FontDevice::layout(const std::string& text,int index){
+    auto line=thcrap_layout(text,layout_tabs,1024,[&](const std::string& value,const std::string& commands){
+        font_style(index,commands);int width=0,height=0;
+        if(!value.empty())TTF_GetStringSize(localized[index],value.c_str(),value.size(),&width,&height);
+        return width;
+    });
+    font_style(index,"");return line;
+}
+bool FontDevice::write_unicode(TextureImage& output,const ImageRect& rect,const std::string& text,const TextStyle& style){
+    const i32 height=std::max(8,style.height),index=style.font>=0&&style.font<=2?style.font:3;
+    const u32 rows=u32(height*2+6);if(rows>raster.scratch.height||text.size()>1024)return false;
+    auto& scratch=raster.scratch;
+    const u16 background=style.plain?u16(((style.color>>4)&15)|((style.color>>8)&0xf0)|((style.color>>12)&0xf00)):0;
+    auto* pixels=reinterpret_cast<u16*>(scratch.pixels.data());
+    std::fill(pixels,pixels+scratch.pixels.size()/2,background);
+    for(u32 n=0;n<rows*1024;++n)pixels[n]^=0xf000;
+    const auto line=layout(text,index);
+    for(const auto& run:line.runs){
+    font_style(index,run.commands);
+    auto* rendered=TTF_RenderText_Blended(localized[index],run.text.c_str(),run.text.size(),SDL_Color{255,255,255,255});
+    font_style(index,"");
+    if(!rendered)return false;
+    auto* rgba=SDL_ConvertSurface(rendered,SDL_PIXELFORMAT_RGBA32);SDL_DestroySurface(rendered);
+    if(!rgba)return false;
+    auto stamp=[&](i32 ox,i32 oy,u32 color){
+        for(i32 y=0;y<rgba->h;++y){const i32 dy=y+oy;if(dy<0||dy>=i32(rows))continue;
+            const auto* row=static_cast<const u8*>(rgba->pixels)+size_t(y)*rgba->pitch;
+            for(i32 x=0;x<rgba->w;++x){const i32 dx=x+ox;if(dx<0||dx>=1024)continue;
+                const u8 alpha=row[x*4+3];if(alpha)pixels[size_t(dy)*1024+dx]=blend_pixel(pixels[size_t(dy)*1024+dx],color,alpha);
+            }
+        }
+    };
+    const i32 x=style.offset*2+run.x;
+    if(!style.plain){for(const auto [dx,dy]:{std::pair<int,int>{2,4},{-2,4},{2,0},{-2,0}})stamp(x+dx,dy,style.outline);stamp(x,2,style.color);}
+    else stamp(x,0,style.color);
+    SDL_DestroySurface(rgba);
+    }
+    for(u32 n=0;n<rows*1024;++n)pixels[n]^=0xf000;
+    TextRaster::bleed(scratch,rows);
+    return ImageResample::triangle(output,rect,scratch,{0,0,std::min(1024,(rect.right-rect.left)*2+22),height*2+2});
+}
+#endif
+bool FontDevice::text(AnmVm& vm,const DialogueText& request){
+    // Three different gaps used to share one sentence. The caller passes the animation the text was
+    // asked for, so the report can name it and the side of it that is missing.
+    waiting=false;
+    if(!ready){error="text animation: font device not ready";return false;}
+    if(!vm.sprite||!vm.resource){
+        // A plate whose own walk has not reached its sprite command yet is not a failure: the caller
+        // can hold the request and try again, which is what a dialogue line of the generation needs
+        // (its plate binds no sprite before plate time 8, and the first line arrives at time 1).
+        waiting=!vm.sprite&&vm.resource!=nullptr;
+        error="Missing text animation: vm "+std::to_string(vm.id)+" on layer "+std::to_string(vm.layer)
+            +(vm.sprite?"":" without a sprite")+(vm.resource?"":" without a resource")
+            +", flags "+std::to_string(vm.flags);
+        // What the animation was bound to, and where its own script stands: the compositor's wall
+        // has to name the resource and the position the same way an update failure does, or the two
+        // reports of one animation cannot be read together.
+        if(vm.resource){
+            const u32 count=u32(vm.resource->scripts.size());
+            const u32 index=u32(i32(vm.script_index));
+            error+="; file "+std::to_string(vm.file_index)+", script "+std::to_string(vm.script_index)
+                +" of "+std::to_string(count)+" slot(s)";
+            if(index<count){
+                const AnmScript& script=vm.resource->scripts[index];
+                error+=", "+std::to_string(script.bytes.size())+" bytes at 0x"
+                    +hex32(u32(uintptr_t(script.bytes.data())));
+            }else error+=", past the resource's own table";
+            // What the call that made this animation asked for, beside what it is bound to now: a
+            // difference is the whole of the next question, and a report that omits it cannot ask.
+            i32 made_script=0;u32 made_layer=0,made_file=0;
+            if(anm_creation_of(vm.id,made_script,made_layer,made_file)){
+                error+="; created as file "+std::to_string(made_file)+", script "
+                    +std::to_string(made_script)+", layer "+std::to_string(made_layer);
+            }
+            error+="; the text was queued for animation "+std::to_string(request.animation);
+            const i32 at=vm.instruction&&vm.script_begin
+                ?i32(reinterpret_cast<const u8*>(vm.instruction)-reinterpret_cast<const u8*>(vm.script_begin))
+                :-1;
+            error+="; position ";error+=at<0?std::string("none"):"+0x"+hex32(u32(at));
+            // What the walk is waiting for: the command it stopped on is due at its own time, and
+            // the animation's timer is the other half of that comparison.
+            if(vm.instruction){
+                error+=" (due at t="+std::to_string(i32(vm.instruction->time))
+                    +", timer t="+std::to_string(i32(vm.timer.current))+")";
+            }
+            error+="; sprite ";error+=vm.sprite?std::to_string(vm.sprite_index):std::string("unset");
+            const u32 entries=vm.trace_count<anm_trace_size?vm.trace_count:anm_trace_size;
+            error+="; steps";
+            for(u32 i=0;i<entries;++i){
+                const AnmTraceEntry& step=vm.trace[(vm.trace_count-entries+i)&(anm_trace_size-1)];
+                error+=" 0x"+hex32(step.offset)+":"+std::to_string(step.opcode)+"(len "
+                      +std::to_string(step.length)+")";
+            }
+        }
+        return false;
+    }
+    const u32 handle=graphics.texture(*vm.resource,vm.sprite->texture);auto* image=graphics.pixels(handle);if(!image){error="Missing text texture";return false;}
+    const auto& s=*vm.sprite;TextStyle style;style.offset=request.offset;style.height=vm.rectangle_columns?vm.rectangle_columns:17;style.font=request.style;
+    style.color=request.color;style.spacing=u32(request.font);style.plain=(vm.flags2&(PORT_TITLE==14?0x800:2))!=0;
+    i32 text_width=i32((style.height-1)*request.bytes.size()/2);
+#if defined(TH_ENABLE_THCRAP)
+    const bool unicode=localized[0]&&valid_utf8(request.bytes);
+    if(unicode){
+        const i32 index=style.font>=0&&style.font<=2?style.font:3;
+        if(request.right_aligned||request.centered)text_width=layout(request.bytes,index).width/2;
+    }
+#endif
+    if constexpr(PORT_TITLE==14)style=th14_text_style(style,s.width,u32(request.bytes.size()),vm.flags2,request.right_aligned,request.centered);
+    else {if(request.right_aligned)style.offset=i32(s.width)-text_width;
+        if(request.centered)style.offset=i32(s.width)/2-text_width/2;}
+    const ImageRect rect{i32(s.x),i32(s.y),i32(s.x+s.width),i32(s.y+s.height)};
+    bool written=false;
+#if defined(TH_ENABLE_THCRAP)
+    if(unicode)written=write_unicode(*image,rect,request.bytes,style);
+    else
+#endif
+    written=raster.write(*image,rect,request.bytes,style);
+    if(!written){error="Text raster bounds: "+std::to_string(style.height);return false;}
+    graphics.changed(handle);vm.flags|=1;++writes;return true;
+}
+}

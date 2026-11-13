@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {spawnSync} from 'node:child_process';
+import {readFileSync,mkdirSync,writeFileSync,existsSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {WASI} from 'node:wasi';
+const root=resolve(import.meta.dirname,'../..'),out=resolve(root,'artifacts/touch-bomb');mkdirSync(out,{recursive:true});
+const compiler=[process.env.WASI_SDK_BIN&&resolve(process.env.WASI_SDK_BIN,'clang++.exe'),resolve(root,'../toolchains/wasi-sdk-34.0-x86_64-windows/bin/clang++.exe'),resolve(root,'th10_web/tools/wasi-sdk-34.0-x86_64-windows/bin/clang++.exe')].filter(Boolean).find(existsSync);
+if(!compiler)throw Error('WASI clang++ not found; set WASI_SDK_BIN or install the workspace wasi-sdk-34.0 toolchain');
+const built=spawnSync(compiler,['--target=wasm32-wasip1','-O2','-std=c++17','-fno-exceptions','-fno-rtti','-mexec-model=reactor','-Wl,--no-entry','-Wl,--export-memory',resolve(import.meta.dirname,'touch-bomb-check.cpp'),'-o',resolve(out,'verify.wasm')],{encoding:'utf8',windowsHide:true});
+if(built.status||built.error)throw built.error??Error(built.stdout+built.stderr);
+const wasi=new WASI({version:'preview1',args:[],env:{}}),{instance}=await WebAssembly.instantiate(readFileSync(resolve(out,'verify.wasm')),{wasi_snapshot_preview1:wasi.wasiImport});wasi.initialize(instance);
+const failure=instance.exports.verify(),report={passed:failure===0,failure,checks:['touch bomb while immobile','focus preserved','movement suppressed during hit','held movement target survives deathbomb','pulse expiry before respawn','double tap across hit','double tap during deathbomb','no menu/dialogue/replay bomb carryover','movement recovery']};
+writeFileSync(resolve(out,'report.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));assert.equal(failure,0);
