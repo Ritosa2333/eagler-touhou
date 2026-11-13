@@ -158,7 +158,11 @@ async function command(m){switch(m.command){
  case 'list':{const files=[];for(const dir of ['','/replay'])for(const name of Module.FS.readdir('/savesth11'+dir)){const n=(dir+'/'+name).replace(/^\//,'');try{path(n);}catch{continue;}const s=Module.FS.stat('/savesth11/'+n);if(Module.FS.isFile(s.mode)){files.push({path:n,size:s.size});}}return {files};}
  case 'read':return {bytes:Array.from(Module.FS.readFile('/savesth11/'+path(m.path)))};
  case 'write':{
-  if(launched)throw Error('请先退出游戏');const target=path(m.path),bytes=new Uint8Array(m.bytes||[]);
+  const target=path(m.path),bytes=new Uint8Array(m.bytes||[]);
+  // A new replay does not replace the active viewer's owned byte buffer.
+  const viewerImport=game==='th14'&&options.replayViewer===true&&target.startsWith('replay/');
+  if(launched&&!viewerImport)throw Error('请先退出游戏');
+  if(launched&&Module.FS.analyzePath('/savesth11/'+target).exists)throw Error('录像文件已存在，请使用其他文件名');
   if(!bytes.length||bytes.length>64*1024*1024)throw Error('文件大小无效');
   const p=core.malloc(bytes.length);if(!p)throw Error('文件导入内存不足');let valid=false;try{Module.HEAPU8.set(bytes,p);valid=!!await callCore('th11_validate_file',target==='scoreth11.dat'?0:target==='th11.cfg'?2:1,p,bytes.length);}finally{core.free(p);}
   if(!valid)throw Error('文件不是有效的地灵殿存档或录像');
