@@ -997,8 +997,7 @@ bool ApplicationState::begin_run() {
         selection_player = battle.seat_huds[0];
     }
     // M5：图标 interrupt 是事件驱动的——新建席位图标集需要一次显式初值；
-    // carry 恢复/过关复活后各席资源已变，全席刷新一次（席 0 走单套面
-    // life()/bombs()，阈值 = progress 投影，与 SP 同源）。
+    // carry 恢复/过关复活后各席资源已变，全席按各自库存和阈值刷新一次。
     if (mp_seat_count >= 2) {
         for (i32 seat = 0; seat < mp_seat_count; ++seat) {
             const HudPlayerState* seat_state = run->battle.seat_hud(seat);
@@ -1400,7 +1399,7 @@ bool ApplicationState::apply_destination() {
         // 0x416570 → 0x416130：Ending 场景（结局索引/落档位/e##.msg/滚屏）。
         current_destination = next;
         release_run();
-        ending = std::make_unique<EndingScene>(progress, *this);
+        ending = std::make_unique<EndingScene>(progress, *this, mp_seat_count >= 2);
         if (!ending->initialize()) return fail(ending->error);
         return initialize_ending_text();
     }

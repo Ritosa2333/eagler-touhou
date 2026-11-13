@@ -601,6 +601,22 @@ void StagePresentation::reset_snapshot_caches() {
     frame_synced_ = false;
 }
 
+void StagePresentation::release_player_shots() {
+    for (u32 handle : shot_handles_) {
+        if (auto* vm = animations.registry.find(handle)) animations.release_tree(*vm);
+    }
+    shot_handles_.clear();
+    for (auto& shot : shots_)
+        if (shot && shot->resource) animations.release_tree(*shot);
+    shots_.clear();
+    shot_generations_.clear();
+    for (auto& corpse : shot_fades_) {
+        if (auto* vm = animations.registry.find(corpse.handle)) animations.release_tree(*vm);
+    }
+    shot_fades_.clear();
+    shot_faded_generations_.clear();
+}
+
 void StagePresentation::release() {
     battle_ = nullptr;  // 主链 update 钩子不再读取已释放的弹体槽位
     frame_synced_ = false;
@@ -615,21 +631,7 @@ void StagePresentation::release() {
     for (auto& bullet : bullets_)
         if (bullet.vm) animations.release_tree(*bullet.vm);
     bullets_.clear();
-    for (u32& handle : shot_handles_) {
-        if (auto* vm = animations.registry.find(handle)) animations.release_tree(*vm);
-        handle = 0;
-    }
-    shot_handles_.clear();
-    for (auto& shot : shots_)
-        if (shot && shot->resource) animations.release_tree(*shot);
-    shots_.clear();
-    shot_generations_.clear();
-    for (auto& corpse : shot_fades_) {
-        if (auto* vm = animations.registry.find(corpse.handle)) animations.release_tree(*vm);
-        corpse.handle = 0;
-    }
-    shot_fades_.clear();
-    shot_faded_generations_.clear();
+    release_player_shots();
     if (player_) {
         animations.release_tree(*player_);
         player_.reset();
@@ -2114,6 +2116,10 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
             // （th13_udMy25 5521-5530 链 dump：原生子 5521 起收缩 t16 自灭，
             // port 子 5522 回绕 t=1）。脚本无 label 的普通弹净效果不变
             // （interrupt 扫描失败即清除 pending），旧回退路径保持直写。
+            // MP hides the spent projectile at impact. Its ANM still ticks
+            // for normal cleanup and separate effects. Beams use state 2 for
+            // their shutdown animation; piercing shots stay in state 1.
+            vm->hide_hit_projectile = multi_shots && shot.state == 2 && shot.behavior != 2;
             if (shot.state == 2 && insert_fade_key(fade_key(shot.generation))) {
                 // 446bf0, once per hit generation.
                 if (shot.script >= 0) {

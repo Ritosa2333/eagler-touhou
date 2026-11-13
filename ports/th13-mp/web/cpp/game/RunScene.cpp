@@ -776,7 +776,9 @@ bool RunScene::update() {
     dialogue_advance_.ctrl_frames = dialogue_input.duration[9];
     dialogue_update_pending_ = true;
 
-    if (!presentation->sync(battle, dialogue_input.held)) return fail(presentation->error());
+    // The merged input advances dialogue. Seat zero's animation uses its own lane.
+    const u32 player_held = battle.seat_count >= 2 ? battle.seat_inputs[0].held : input.held;
+    if (!presentation->sync(battle, player_held)) return fail(presentation->error());
     // Boss HUD（0x4265a0）已拆出为独立任务 update_boss_hud（Update 0x1c=28，
     // 晚于道具 24/神霊 25，原版 0x424f46/0x424f4b）——视图装配随之迁移。
     HudFrameContext frame;
@@ -1131,7 +1133,12 @@ void RunScene::preserve_presentation_from(RunScene& old) {
     //（其析构按 owner 检查清掉自己安装的钩子），移入的旧对象从未在新
     // RunScene 上重装钩子，且 battle_ 仍指向已析构的旧 RunScene。不重装会
     // 使换关后自机弹四角快照/自灭检出整段失效（伤害注册池耗尽）。
-    if (presentation) presentation->install_main_update_hook();
+    if (presentation) {
+        // A new MP battle starts each seat's shot generations over.
+        // Drop the old shot trees and their consumed shutdown labels together.
+        if (old.battle.seat_count >= 2) presentation->release_player_shots();
+        presentation->install_main_update_hook();
+    }
     scenery = std::move(old.scenery);
     previous_scenery = std::move(old.previous_scenery);
     previous_scenery_bank = old.previous_scenery_bank;

@@ -234,9 +234,10 @@ TEST(mp_hud_seat_icon_layout) {
     CHECK_EQ(pending(harness.manager, harness.hud.life_icons[0]), 2);
     CHECK_EQ(pending(harness.manager, harness.hud.life_icons[3]), 7);
 
-    // seat 0 /越界席位回落单套面（life()/bombs() 语义）。
-    CHECK(harness.hud.life_seat(0, 3, 0, 0));
-    CHECK_EQ(pending(harness.manager, harness.hud.life_icons[3]), 7);
+    // 1P 图标与数字都应使用该席阈值，即使单人兼容字段仍为初值。
+    CHECK_EQ(harness.progress.life_piece_threshold_index, 0);
+    CHECK(harness.hud.life_seat(0, 3, 5, 2));
+    CHECK_EQ(pending(harness.manager, harness.hud.life_icons[3]), 9);
 
     // 3 席：席 2 组平移 = 2*pitch。
     CHECK(harness.hud.enable_multiplayer(3));
@@ -252,6 +253,7 @@ TEST(mp_hud_text_rows) {
     CHECK(harness.hud.enable_multiplayer(2));
     HudPlayerState seat0, seat1;
     seat0.life_pieces=5; seat0.bomb_pieces=4; seat0.power=100; seat0.max_power=400; seat0.power_step=100;
+    seat0.life_piece_threshold_index=2;
     seat1.life_pieces=0; seat1.bomb_pieces=0; seat1.power=200; seat1.max_power=400; seat1.power_step=100;
     seat1.life_piece_threshold_index=1;
     harness.progress.graze=7; harness.progress.max_point=123456;
@@ -270,7 +272,7 @@ TEST(mp_hud_text_rows) {
         CHECK_EQ(label0->style.font,1);
         CHECK_EQ(label0->style.scale.x,1.f);
     }
-    CHECK(harness.sink.find("  5/8",628,117));
+    CHECK(harness.sink.find("  5/12",628,117));
     CHECK(harness.sink.find("  4/8",628,145));
     CHECK(harness.sink.find("1.",540,156));
     CHECK(harness.sink.find("  0/10",628,197));

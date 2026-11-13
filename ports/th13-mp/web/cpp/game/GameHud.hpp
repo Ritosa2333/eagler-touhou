@@ -59,9 +59,7 @@ public:
     static constexpr float kMpRowPitch = 80.f;
     bool enable_multiplayer(i32 seat_count);
     // 席位图标刷新（值变化事件驱动，不逐帧重发——重发同标签会复位图标
-    // 脚本的计时/颜色插值）。seat 0 / 单席回落单套 life()/bombs()。
-    // threshold_index 取该席权威源：seat 0 = progress.life_piece_threshold_
-    // index（SP 投影，grant_resources 同步），seat>=1 = 各席 HudPlayerState。
+    // 脚本的计时/颜色插值）。联机每席从自己的 HudPlayerState 读取阈值。
     bool life_seat(i32 seat, i32 lives, i32 pieces, i32 threshold_index);
     bool bombs_seat(i32 seat, i32 stock, i32 pieces);
     u32 root = 0, difficulty_notice = 0, difficulty_label = 0;
