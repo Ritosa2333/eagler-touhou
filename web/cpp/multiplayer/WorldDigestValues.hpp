@@ -45,7 +45,7 @@ inline auto state_fields(const RunScene::RollbackState& v) { return std::tie(v.p
 inline auto state_fields(const PostGameFlow::RollbackState& v) { return std::tie(v.state_, v.age_, v.clear_sequence_, v.clear_frame_); }
 inline auto state_fields(const SpellPresentation::RollbackState& v) { return std::tie(v.flags_, v.spell_id_, v.name_, v.bonus_base_, v.bonus_cap_, v.duration_, v.background_, v.anchor_, v.snapshot_, v.displays_, v.stage_background_, v.decoration_, v.banner_, v.notice_, v.spirit_notice_, v.spirit_notices_, v.bonus_digits_, v.bonus_million_, v.bonus_thousand_, v.bonus_capture_effect_, v.capture_frames_, v.production_, v.retiring_displays_); }
 inline auto state_fields(const BossPresentation::RollbackState& v) { return std::tie(v.gate_, v.displayed_ratio_, v.target_ratio_, v.timer_seconds_, v.timer_displayed_, v.timer_frames_, v.timer_centiseconds_, v.remaining_star_handles_, v.warn_state_, v.move_state_, v.escalate_state_, v.proximity_hidden_, v.stars_created_, v.ring_created_, v.marker_glyph_, v.digit_tens_, v.digit_ones_, v.ring_arc_, v.ring_overlays_, v.star_handles_, v.marker_handle_, v.name_handle_); }
-inline auto state_fields(const GameHud::RollbackState& v) { return std::tie(v.life_icons, v.bomb_icons, v.root, v.difficulty_notice, v.difficulty_label, v.flags, v.intro_age, v.frame_age, v.clear_age, v.clear_banner, v.displayed_score, v.score_increment, v.gauge_main, v.trance_skull_label, v.opening_signature, v.opening_signature_right, v.stage_logo_bank, v.boss, v.spell); }
+inline auto state_fields(const GameHud::RollbackState& v) { return std::tie(v.life_icons, v.bomb_icons, v.mp_seat_count, v.mp_life_icons, v.mp_bomb_icons, v.mp_resource_labels, v.mp_shared_labels, v.root, v.difficulty_notice, v.difficulty_label, v.flags, v.intro_age, v.frame_age, v.clear_age, v.clear_banner, v.displayed_score, v.score_increment, v.gauge_main, v.trance_skull_label, v.opening_signature, v.opening_signature_right, v.stage_logo_bank, v.boss, v.spell); }
 inline auto state_fields(const MsgPresentation::RollbackState& v) { return std::tie(v.player_, v.side_, v.nameplate_); }
 inline auto state_fields(const StagePresentation::SnapshotData::EnemyVisualData& v) { return std::tie(v.serial, v.script, v.has_vm, v.vm); }
 inline auto state_fields(const StagePresentation::SnapshotData::BulletSlotData& v) { return std::tie(v.has_vm, v.vm, v.script, v.color, v.source_type, v.source_color, v.generation, v.active); }
@@ -65,6 +65,41 @@ inline auto state_fields(const StageMover& v) {
     return std::tie(v.pos,v.speed,v.angle,v.radius,v.growth,v.ellipse_angle,v.ellipse_ratio,
                     v.origin,v.sine_phase,v.aux,v.mode,v.polar,v.radial,v.postime);
 }
+template<class T> struct IsInterpolation : std::false_type {};
+template<u32 N, bool A> struct IsInterpolation<FloatInterpolation<N, A>> : std::true_type {
+    static constexpr u32 width = N;
+};
+template<u32 N> struct IsInterpolation<IntegerInterpolation<N>> : std::true_type {
+    static constexpr u32 width = N;
+};
+template<class T> bool interpolation_zero(const T& v) {
+    using Array = std::array<typename std::decay_t<decltype(v.start)>::value_type,
+                             IsInterpolation<T>::width>;
+    using Fields = std::tuple<const Array&, const Array&, const Array&, const Array&,
+                              const Array&, const Timer&, const i32&, const i32&>;
+    static_assert(std::is_same_v<decltype(state_fields(v)), Fields>,
+                  "Interpolation serialization fields changed");
+    static_assert(sizeof(typename Array::value_type) == 4 && sizeof(i32) == 4 && sizeof(u32) == 4,
+                  "Interpolation serialization requires 32-bit fields");
+    using TimerFields = std::tuple<const i32&, const i32&, const float&, const u32&, const u32&>;
+    static_assert(std::is_same_v<decltype(state_fields(v.timer)), TimerFields> && sizeof(float) == 4,
+                  "Timer serialization fields changed");
+    u32 fractional;
+    std::memcpy(&fractional, &v.timer.fractional, sizeof fractional);
+    if (v.timer.previous || v.timer.current || fractional || v.timer.rate_index ||
+        v.timer.flags || v.duration || v.mode) return false;
+    const auto array_zero = [](const Array& values) {
+        u32 combined = 0;
+        for (const auto& value : values) {
+            u32 bits;
+            std::memcpy(&bits, &value, sizeof bits);
+            combined |= bits;
+        }
+        return combined == 0;
+    };
+    return array_zero(v.start) && array_zero(v.end) && array_zero(v.control1) &&
+           array_zero(v.control2) && array_zero(v.current);
+}
 template<class T> void digest_value(DigestSink& d, const T& v);
 template<class A,class B> void digest_value(DigestSink&,const std::pair<A,B>&);
 template<class K,class V> void digest_value(DigestSink&,const std::unordered_map<K,V>&);
@@ -78,7 +113,44 @@ template<class T> struct IsOwned<std::unique_ptr<T>> : std::true_type {};
 template<class T, class=void> struct IsRange : std::false_type {};
 template<class T> struct IsRange<T,std::void_t<decltype(std::declval<T>().begin())>> : std::true_type {};
 template<class T> void digest_value(DigestSink& d, const T& v) {
-    if constexpr(std::is_same_v<T,bool>) d.boolean(v);
+    if constexpr(IsInterpolation<T>::value) {
+        // Default ANM channels are entirely zero. Preserve all five array
+        // lengths, their elements and every Timer/duration/mode byte. Test
+        // the bits so negative zero and NaN retain their original encoding.
+        if (interpolation_zero(v)) {
+            for (unsigned i = 0; i < 5; ++i) {
+                d.u64(IsInterpolation<T>::width);
+                d.zero_bytes(uint64_t(IsInterpolation<T>::width) * 4);
+            }
+            d.zero_bytes(28);
+        } else {
+            std::apply([&](const auto&... fields) { (digest_value(d,fields),...); },state_fields(v));
+        }
+    }
+    else if constexpr(std::is_same_v<T,Matrix4>) {
+        using Fields = std::tuple<const float (&)[16]>;
+        static_assert(std::is_same_v<decltype(state_fields(v)), Fields> && sizeof(float) == 4,
+                      "Matrix serialization fields changed");
+        // Preserve the array length and all sixteen float bit patterns. Most
+        // ANM matrices are diagonal; only positive zero can take this path.
+        constexpr unsigned off_diagonal[]{1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14};
+        bool diagonal = true;
+        for (unsigned index : off_diagonal) {
+            u32 bits;
+            std::memcpy(&bits, &v.m[index], sizeof bits);
+            if (bits != 0) { diagonal = false; break; }
+        }
+        d.u64(16);
+        if (diagonal) {
+            d.f32(v.m[0]); d.zero_bytes(16);
+            d.f32(v.m[5]); d.zero_bytes(16);
+            d.f32(v.m[10]); d.zero_bytes(16);
+            d.f32(v.m[15]);
+        } else {
+            for (float element : v.m) d.f32(element);
+        }
+    }
+    else if constexpr(std::is_same_v<T,bool>) d.boolean(v);
     else if constexpr(std::is_enum_v<T>) d.u32(static_cast<u32>(v));
     else if constexpr(std::is_integral_v<T>) {
         if constexpr(sizeof(T)>4) d.u64(v); else d.u32(v);

@@ -153,11 +153,12 @@ u32 AnmRegistry::pool_slot(const AnmVm& vm) const noexcept {
     // 返回 0x1fff 与 slot() 同义。
     return slot(const_cast<AnmVm&>(vm));
 }
-bool AnmRegistry::capture(SnapshotData& out) const {
+bool AnmRegistry::capture(SnapshotData& out,
+                          const std::vector<const AnmVm*>& embedded) const {
     // 全节点序遍历：池内（pool 下标序）+ overflow + external。
     // 池外两类按可恢复的创建序排序；指针序在不同客户端/restore 后不稳定。
     // 快照内序号 = entries 下标。
-    out.entries.clear();
+    for (auto& layer : out.layers) layer.clear();
     out.free_slots = free_slots;
     out.generation = generation;
     out.active_count = active_count;
@@ -179,25 +180,47 @@ bool AnmRegistry::capture(SnapshotData& out) const {
     std::sort(external_nodes.begin(), external_nodes.end(), by_ordinal);
     ordered.insert(ordered.end(), external_nodes.begin(), external_nodes.end());
     // 节点 → 快照序号映射（指针比较，仅本函数内使用，不落盘）。
-    std::unordered_map<const Node*, u32> index_of;
-    index_of.reserve(ordered.size());
-    for (u32 i = 0; i < ordered.size(); ++i) index_of[ordered[i]] = i;
+    // Pool slots already give stable direct lookup. Only overflow and
+    // borrowed nodes need pointer lookup while translating this snapshot.
+    std::array<u32, 0x1fff> pool_indices;
+    pool_indices.fill(SnapshotData::kNoVm);
+    std::unordered_map<const Node*, u32> external_indices;
+    external_indices.reserve(overflow_nodes.size() + external_nodes.size());
+    for (u32 i = 0; i < ordered.size(); ++i) {
+        const auto* node = ordered[i];
+        if (node->slot < pool.size()) pool_indices[node->slot] = i;
+        else external_indices.emplace(node, i);
+    }
+    const auto index_of = [&](const Node* node) {
+        if (!node) return SnapshotData::kNoVm;
+        if (node->slot < pool.size() && pool[node->slot].get() == node)
+            return pool_indices[node->slot];
+        const auto found = external_indices.find(node);
+        return found == external_indices.end() ? SnapshotData::kNoVm : found->second;
+    };
     // Record each chain once. Scanning both chains for every pool slot makes
     // a checkpoint quadratic in the number of live effects/bullets.
     std::vector<std::array<u32, 2>> chain_indices(
         ordered.size(), {0xFFFFFFFFu, 0xFFFFFFFFu});
     for (u32 chain = 0; chain < 2; ++chain) {
         u32 position = 0;
-        for (const Node* member : groups[chain])
-            chain_indices[index_of.at(member)][chain] = position++;
+        for (const Node* member : groups[chain]) {
+            const auto index = index_of(member);
+            if (index == SnapshotData::kNoVm) return false;
+            chain_indices[index][chain] = position++;
+        }
     }
     const auto vm_ref = [&](const AnmVm* vm) {
         if (!vm) return SnapshotData::kNoVm;
-        const auto it = index_of.find(node(*const_cast<AnmVm*>(vm)));
-        return it == index_of.end() ? SnapshotData::kNoVm : it->second;
+        return index_of(node(*const_cast<AnmVm*>(vm)));
     };
-    for (const Node* node : ordered) {
-        SnapshotData::Entry entry;
+    // Checkpoint ring slots are reused. Assign into their existing entries so
+    // ANM geometry and child vectors keep capacity across captures, including
+    // inactive nodes; resize still removes entries when the source shrinks.
+    out.entries.resize(ordered.size());
+    for (u32 index = 0; index < ordered.size(); ++index) {
+        const Node* node = ordered[index];
+        SnapshotData::Entry& entry = out.entries[index];
         entry.vm = node->vm;
         entry.creation_parent = vm_ref(entry.vm.creation_parent);
         entry.rotation_parent = vm_ref(entry.vm.rotation_parent);
@@ -212,24 +235,54 @@ bool AnmRegistry::capture(SnapshotData& out) const {
         entry.frozen_root = node->frozen_root;
         entry.queued_deletion = node->queued_deletion;
         entry.in_overflow = node->slot >= pool.size();
+        entry.parent = SnapshotData::kNoVm;
         if (node->parent) {
-            const auto it = index_of.find(node->parent);
-            entry.parent = it != index_of.end() ? it->second : 0xFFFFFFFFu;
+            entry.parent = index_of(node->parent);
         }
+        entry.children.clear();
         for (const Node* child : node->children) {
-            const auto it = index_of.find(child);
-            if (it != index_of.end()) entry.children.push_back(it->second);
+            const auto child_index = index_of(child);
+            if (child_index != SnapshotData::kNoVm) entry.children.push_back(child_index);
         }
         // 链序号：groups[alternate] 的列表位置（restore 按序重插）。
-        entry.chain_index[0] = chain_indices[index_of.at(node)][0];
-        entry.chain_index[1] = chain_indices[index_of.at(node)][1];
+        entry.chain_index[0] = chain_indices[index][0];
+        entry.chain_index[1] = chain_indices[index][1];
         if (node->borrowed) out.borrowed_roots.push_back(node->borrowed);
-        out.entries.push_back(std::move(entry));
+    }
+    std::unordered_map<const AnmVm*, u32> embedded_index;
+    for (u32 i = 0; i < embedded.size(); ++i)
+        if (embedded[i]) embedded_index.emplace(embedded[i], i);
+    for (size_t layer = 0; layer < layers.size(); ++layer) {
+        for (const auto* vm : layers[layer]) {
+            SnapshotData::DrawReference reference;
+            const auto found = index_of(node(*const_cast<AnmVm*>(vm)));
+            if (found != SnapshotData::kNoVm) reference.entry = found;
+            else {
+                const auto owned = embedded_index.find(vm);
+                if (owned == embedded_index.end()) return false;
+                reference.embedded = owned->second;
+                reference.original = vm;
+            }
+            out.layers[layer].push_back(reference);
+        }
     }
     return true;
 }
 bool AnmRegistry::restore(const SnapshotData& source,
                           const std::unordered_map<const AnmVm*, AnmVm*>& remapped) {
+    // Validate every draw binding before replacing the live registry.
+    for (const auto& layer : source.layers) for (const auto& reference : layer) {
+        if (reference.entry != SnapshotData::kNoVm) {
+            if (reference.embedded != SnapshotData::kNoVm || reference.entry >= source.entries.size()) {
+                error = "Animation snapshot draw entry invalid"; return false;
+            }
+        } else {
+            const auto binding = remapped.find(reference.original);
+            if (reference.embedded == SnapshotData::kNoVm || binding == remapped.end() || !binding->second) {
+                error = "Animation snapshot embedded draw binding missing"; return false;
+            }
+        }
+    }
     // 前置：清空当前全部节点（直毁语义，无 0x20 延迟——快照恢复是确认
     // 栅栏后的整场替换，不走帧内回收路径）。
     for (const auto& slot_node : pool) if (slot_node) { slot_node->active=false; slot_node->registered=false; slot_node->handle=0; slot_node->parent=nullptr; slot_node->children.clear(); slot_node->vm=AnmVm{}; }
@@ -345,6 +398,26 @@ bool AnmRegistry::restore(const SnapshotData& source,
                   [](const auto& a, const auto& b) { return a.first < b.first; });
         for (auto& [position, node] : members) {
             node->position = groups[chain].insert(groups[chain].end(), node);
+        }
+    }
+    for (size_t layer = 0; layer < source.layers.size(); ++layer) {
+        for (const auto& reference : source.layers[layer]) {
+            AnmVm* vm = nullptr;
+            if (reference.entry != SnapshotData::kNoVm) {
+                if (reference.embedded != SnapshotData::kNoVm ||
+                    reference.entry >= restored.size() || !restored[reference.entry]) {
+                    error = "Animation snapshot draw entry invalid"; return false;
+                }
+                const auto* entry = restored[reference.entry];
+                vm = entry->borrowed ? entry->borrowed : const_cast<AnmVm*>(&entry->vm);
+            } else {
+                const auto binding = remapped.find(reference.original);
+                if (reference.embedded == SnapshotData::kNoVm || binding == remapped.end() || !binding->second) {
+                    error = "Animation snapshot embedded draw binding missing"; return false;
+                }
+                vm = binding->second;
+            }
+            layers[layer].push_back(vm);
         }
     }
     free_slots = source.free_slots;

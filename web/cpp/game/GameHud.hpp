@@ -31,7 +31,7 @@ class GameHud {
     i32 front, ascii;
 
     bool check(bool);
-    u32 create(i32 bank, i32 script, u32 ordering = 0);
+    u32 create(i32 bank, i32 script, u32 ordering = 0, const Vec3& translation = {});
     u32 widget(i32 script);
     bool direct_interrupt(u32, i32);
 
@@ -41,6 +41,29 @@ public:
     // 2026-11-05 从 update()（RunScene 聚合优先级 20）拆出，恢复同帧内序。
     bool update_boss(BossFrameInput& view, HudFrameServices& services);
     std::array<u32, 8> life_icons{}, bomb_icons{};
+    // ---- M5：多人 HUD（右侧资源区逐席化；docs/MP-DEVELOPMENT.md M5，
+    // 布局语言参照 th12-mp MultiplayerPresentation.cpp）----
+    // 席位数（0 = 单席，本类全部 SP 路径零变化）。seat 0 复用上面的
+    // life_icons/bomb_icons 且保持 SP 位置（front.anm 29–36/37–44，脚本位
+    // x=514..605、y=100/138）；席 k>=1 另建同脚本 VM 组，创建时以
+    // translation.y = k*kMpRowPitch 落 visual.translation（AnmManager::create
+    // 先写 translation 再 initial_tick；图标脚本 ins_400 只写
+    // variables.position，两者相加为最终位置且此后不被 tick 改写）。
+    i32 mp_seat_count = 0;
+    std::array<std::array<u32, 8>, 2> mp_life_icons{}, mp_bomb_icons{};
+    std::array<std::array<u32, 5>, 2> mp_resource_labels{};
+    // root script0 的 ins_500 子体 26/27/28（得点/Graze 标签，脚本位
+    // (540,256)/(540,278)，与数字行 238/260 配对）：MP 下随共享数字行
+    // 整体下移（只调 translation，不新建不退役）。
+    std::array<u32, 3> mp_shared_labels{};
+    static constexpr float kMpRowPitch = 80.f;
+    bool enable_multiplayer(i32 seat_count);
+    // 席位图标刷新（值变化事件驱动，不逐帧重发——重发同标签会复位图标
+    // 脚本的计时/颜色插值）。seat 0 / 单席回落单套 life()/bombs()。
+    // threshold_index 取该席权威源：seat 0 = progress.life_piece_threshold_
+    // index（SP 投影，grant_resources 同步），seat>=1 = 各席 HudPlayerState。
+    bool life_seat(i32 seat, i32 lives, i32 pieces, i32 threshold_index);
+    bool bombs_seat(i32 seat, i32 stock, i32 pieces);
     u32 root = 0, difficulty_notice = 0, difficulty_label = 0;
     u32 flags = 0;
     Timer intro_age{0, 0, 0, 0, 0};
@@ -76,6 +99,11 @@ public:
     struct RollbackState {
         std::array<u32, 8> life_icons;
         std::array<u32, 8> bomb_icons;
+        i32 mp_seat_count;
+        std::array<std::array<u32, 8>, 2> mp_life_icons;
+        std::array<std::array<u32, 8>, 2> mp_bomb_icons;
+        std::array<std::array<u32, 5>, 2> mp_resource_labels;
+        std::array<u32, 3> mp_shared_labels;
         u32 root;
         u32 difficulty_notice;
         u32 difficulty_label;
@@ -94,10 +122,15 @@ public:
         BossPresentation::RollbackState boss;
         SpellPresentation::RollbackState spell;
     };
-    RollbackState capture_rollback() const { return {life_icons, bomb_icons, root, difficulty_notice, difficulty_label, flags, intro_age, frame_age, clear_age, clear_banner, displayed_score, score_increment, gauge_main, trance_skull_label, opening_signature, opening_signature_right, stage_logo_bank, boss_hud.capture_rollback(), spell_hud.capture_rollback()}; }
+    RollbackState capture_rollback() const { return {life_icons, bomb_icons, mp_seat_count, mp_life_icons, mp_bomb_icons, mp_resource_labels, mp_shared_labels, root, difficulty_notice, difficulty_label, flags, intro_age, frame_age, clear_age, clear_banner, displayed_score, score_increment, gauge_main, trance_skull_label, opening_signature, opening_signature_right, stage_logo_bank, boss_hud.capture_rollback(), spell_hud.capture_rollback()}; }
     void restore_rollback(const RollbackState& state) {
         life_icons = state.life_icons;
         bomb_icons = state.bomb_icons;
+        mp_seat_count = state.mp_seat_count;
+        mp_life_icons = state.mp_life_icons;
+        mp_bomb_icons = state.mp_bomb_icons;
+        mp_resource_labels = state.mp_resource_labels;
+        for (u32 i = 0; i < 3; ++i) mp_shared_labels[i] = state.mp_shared_labels[i];
         root = state.root;
         difficulty_notice = state.difficulty_notice;
         difficulty_label = state.difficulty_label;

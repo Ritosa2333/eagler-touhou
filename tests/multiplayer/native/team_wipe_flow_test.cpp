@@ -2,6 +2,7 @@
 #include "../../harness/test_framework.hpp"
 #include "sdl/ApplicationState.hpp"
 #include "multiplayer/Session.hpp"
+#include "multiplayer/TerminalHandoff.hpp"
 #include "multiplayer/WorldState.hpp"
 
 #include <cstdlib>
@@ -129,6 +130,8 @@ TEST(team_wipe_pause_and_rescue) {
     battle.seat_huds[0].extra_lives = 2;
     battle.seats[1].x = battle.seats[0].x;
     battle.seats[1].y = battle.seats[0].y;
+    battle.seats[1].fixed_x = battle.seats[0].fixed_x;
+    battle.seats[1].fixed_y = battle.seats[0].fixed_y;
     for (unsigned tap = 0; tap < 5; ++tap) {
         CHECK(frame(app, input, 8));
         CHECK(frame(app, input));
@@ -231,6 +234,139 @@ TEST(team_wipe_single_seat_unchanged) {
     CHECK(frame(app, input));
     CHECK(app.pause->state.screen == PauseScreen::GameOver);
     CHECK(!app.game_over_music.empty());
+}
+
+TEST(team_wipe_terminal_delayed_confirmation_requires_handoff) {
+    using namespace th13::multiplayer;
+    for (const auto screen : {PauseScreen::BGameOver, PauseScreen::GameOver,
+                              PauseScreen::ExtraEnd}) {
+    for (const bool pending_title : {false, true}) {
+    for (const bool fail_audio : {false, true}) {
+    App app;
+    const bool booted = boot(app, 3, "team-wipe-delayed-terminal.bin");
+    CHECK(booted); if (!booted || !app.run) return;
+    exhaust(app);
+    GameInput input;
+    for (unsigned i = 0; i < 179; ++i) {
+        const bool ok = frame(app, input); CHECK(ok); if (!ok) return;
+    }
+    CHECK(!app.pause->active());
+    SessionSetup setup; setup.version = 2; setup.mode = 2; setup.automatic = false;
+    setup.session_id = 42; setup.build[0] = 1; setup.player_count = 3;
+    const auto words = EncodeSessionSetup(setup);
+    const bool configured = session.Configure(words.data(), words.size());
+    CHECK(configured); if (!configured) return;
+    session.BindWorld(&app.run->battle, &app.visual, app.run->presentation.get(),
+                      app.run.get(), &app.mp_transition_handle_);
+    session.capture_host = [&] { return app.capture_multiplayer_host(); };
+    app.run->playback_input = [] { return session.LocalDelayedInput(); };
+    const bool started = session.BeginLocalSimulation();
+    CHECK(started); if (!started) { session.Stop(); return; }
+    app.wire_multiplayer_audio();
+    // No terminal overlay: even an empty record ledger must not end gameplay.
+    CHECK(session.AllFramesCommitted());
+    CHECK(complete_terminal_handoff(app, session) == TerminalHandoff::NotReady);
+    CHECK(session.Simulating());
+    CHECK(session.CaptureLocal(0, 0)); session.AdvanceCapturePhase();
+    const bool granted = session.CanSimulate(); CHECK(granted);
+    if (!granted) { session.Stop(); return; }
+    CHECK(app.update(session.MenuInput(), false)); CHECK(app.commit(60.f));
+    // Final-frame requests are deferred until the remote inputs arrive.
+    // Use the real device observer/validation and capture all applied events.
+    CHECK(app.audio_device.stop(-1));
+    CHECK(app.audio_device.observe_voice_pan(55, 192.f));
+    CHECK(app.audio_device.queue_music(2, -1, "th128_08.wav"));
+    session.OnFrameSimulated();
+    CHECK(app.pause->state.screen == PauseScreen::BGameOver);
+    // Each terminal screen uses the same existing present-tail handoff.
+    // The team-wipe fixture reaches BGameOver; the other two screens are
+    // selected here solely to exercise that common handoff boundary.
+    app.pause->state.screen = screen;
+    CHECK(!session.AllFramesCommitted());
+    CHECK(complete_terminal_handoff(app, session) == TerminalHandoff::NotReady);
+    CHECK(app.present()); CHECK(session.Simulating());
+    for (unsigned seat = 1; seat < 3; ++seat) {
+        const auto result = session.SubmitRemote(seat, 0, {});
+        CHECK(result == Netplay::RemoteInputResult::Accepted ||
+              result == Netplay::RemoteInputResult::PredictionCorrect);
+        if (seat == 1) {
+            CHECK(session.Pump(1));
+            CHECK(!session.AllFramesCommitted());
+            CHECK(complete_terminal_handoff(app, session) == TerminalHandoff::NotReady);
+            CHECK(session.Simulating());
+        }
+    }
+    CHECK(session.Pump(2));
+    CHECK(session.AllFramesCommitted()); CHECK(session.Simulating());
+    using Kind = sdl::AudioDevice::RequestObservation::Kind;
+    // The production game-over update queued its own music before our three
+    // requests; it must survive and stay first in the confirmed sequence.
+    const std::array<Kind, 4> audio_kinds{Kind::Music, Kind::Stop, Kind::Pan, Kind::Music};
+    CHECK_EQ(session.AudioOut().size(), audio_kinds.size());
+    const auto applied_before = session.AppliedAudio().size();
+    const auto stopped_before = app.audio_device.statistics().stopped;
+    const auto music_before = session.MusicApplied();
+    const auto before_frame = app.progress.stage_frame;
+    const auto before_app_frames = app.frames;
+    const auto before_phase = app.pause->state.phase;
+    multiplayer::WorldState before; CHECK(world(app, before));
+    if (pending_title) app.pending_destination = i32(sdl::Destination::TitleFromGameOver);
+    if (fail_audio) {
+        // A device failure must propagate without presenting or tearing down
+        // the world; confirmed requests remain queued for the failed frame.
+        CHECK(!app.audio_device.stop(99999));
+        CHECK(complete_terminal_handoff(app, session) == TerminalHandoff::Failed);
+        CHECK(!app.failure.empty()); CHECK(session.Simulating());
+        CHECK_EQ(session.AudioOut().size(), audio_kinds.size());
+        CHECK_EQ(session.AppliedAudio().size(), applied_before);
+        CHECK_EQ(app.frames, before_app_frames);
+        CHECK(app.run != nullptr);
+        if (pending_title) CHECK_EQ(app.pending_destination, i32(sdl::Destination::TitleFromGameOver));
+        session.Stop();
+        continue;
+    }
+    // This is the terminal handoff required after a receive-only callback;
+    // no next gameplay input is available or needed.
+    CHECK(complete_terminal_handoff(app, session) == TerminalHandoff::Finished);
+    CHECK(!session.Simulating());
+    CHECK(session.AudioOut().empty());
+    CHECK_EQ(session.AppliedAudio().size(), applied_before + audio_kinds.size());
+    if (session.AppliedAudio().size() == applied_before + audio_kinds.size()) {
+        for (size_t i = 0; i < audio_kinds.size(); ++i) {
+            const auto& applied = session.AppliedAudio()[applied_before + i];
+            CHECK(applied.observation.kind == audio_kinds[i]);
+            CHECK_EQ(applied.frame, 0u);
+        }
+    }
+    // Returning to title also performs its own immediate stop-all.
+    CHECK_EQ(app.audio_device.statistics().stopped, stopped_before + (pending_title ? 2 : 1));
+    CHECK_EQ(session.MusicApplied(), music_before + 2);
+    CHECK_EQ(session.WorldCompleted(), screen == PauseScreen::ExtraEnd);
+    CHECK_EQ(app.frames, before_app_frames);
+    if (pending_title) {
+        CHECK(app.run == nullptr); CHECK(app.title != nullptr);
+        CHECK_EQ(app.pending_destination, -1);
+    } else {
+        CHECK_EQ(app.progress.stage_frame, before_frame);
+        CHECK_EQ(app.pause->state.phase, before_phase);
+        multiplayer::WorldState after; CHECK(world(app, after));
+        CHECK_EQ(after.digest(), before.digest());
+    }
+    CHECK(complete_terminal_handoff(app, session) == TerminalHandoff::NotReady);
+    CHECK(session.AudioOut().empty());
+    CHECK_EQ(session.AppliedAudio().size(), applied_before + audio_kinds.size());
+    CHECK_EQ(app.audio_device.statistics().stopped, stopped_before + (pending_title ? 2 : 1));
+    CHECK_EQ(session.MusicApplied(), music_before + 2);
+    CHECK(app.present()); CHECK_EQ(app.frames, before_app_frames);
+    if (!pending_title) {
+        CHECK_EQ(app.pause->state.phase, before_phase);
+        multiplayer::WorldState repeated; CHECK(world(app, repeated));
+        CHECK_EQ(repeated.digest(), before.digest());
+    }
+    session.Stop();
+    }
+    }
+    }
 }
 
 int __attribute__((weak)) main() { return run_all("MP production team wipe"); }

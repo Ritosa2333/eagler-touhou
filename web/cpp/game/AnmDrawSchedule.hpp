@@ -22,6 +22,7 @@ class AnmDrawSchedule {
  struct Callback {FrameCallback callback;AnmDrawSchedule* owner=nullptr;u32 index=0;};
  std::array<Callback,31> callbacks;FrameScheduler& scheduler;AnmManager& animations;AnmRenderer& renderer;ZunGraphics& graphics;AnmDrawServices& services;bool draw(u32);
 public:
+ static void set_hud_ghost_icons(AnmManager&, const std::array<std::array<u32, 21>, 3>&, u8 ghost);
  std::string error;AnmDrawSchedule(FrameScheduler&,AnmManager&,AnmRenderer&,ZunGraphics&,AnmDrawServices&);~AnmDrawSchedule();
  AnmDrawSchedule(const AnmDrawSchedule&)=delete;AnmDrawSchedule& operator=(const AnmDrawSchedule&)=delete;
 };
