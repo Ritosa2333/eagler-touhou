@@ -88,7 +88,7 @@ export function sharedResources({game, generation, host, language, thprac, baseU
   language: string; thprac: boolean; baseUrl: string; translate: Translate;
 }) {
   const product = PRODUCT_GAMES[game];
-  if ('requiredShared' in product && product.requiredShared.length === 0) return [];
+  if ('requiredShared' in product && product.requiredShared.length === 0 && !(game === 'th14' && thprac)) return [];
   const targets = new Set(generation?.descriptor.base.files.filter(id => !!generation.files[id]?.objectId).map(id => generation.descriptor.files[id]?.target) ?? []);
   const result: {url: string; path: string}[] = [];
   function add(path: string, source: unknown) {

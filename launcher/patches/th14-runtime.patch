@@ -191,11 +191,85 @@ index a5d5362aa17f9a9e6333c483780d4e7b4d90ca6f..ffc21aeff45f269cbaa129e5bfaa4684
  enum class Compare : u32 { Never, Less, Equal, LessEqual, Greater, NotEqual, GreaterEqual, Always };
  enum class BlendFactor : u32 { Zero, One, SourceColor, InverseSourceColor, SourceAlpha, InverseSourceAlpha, DestinationAlpha, InverseDestinationAlpha, DestinationColor, InverseDestinationColor, SourceAlphaSaturate };
  enum class BlendEquation : u32 { Add, Subtract, ReverseSubtract, Minimum, Maximum };
+diff --git a/runtimes/th12/portable/sdl/ImguiRendererTh14.inc b/runtimes/th12/portable/sdl/ImguiRendererTh14.inc
+new file mode 100644
+index 0000000000000000000000000000000000000000..93d1d0d93937331dde4c09e5888ac625985c493f
+--- /dev/null
++++ b/runtimes/th12/portable/sdl/ImguiRendererTh14.inc
+@@ -0,0 +1,60 @@
++// ImGui GPU adapter reused from TH11; only render-scale handling differs.
++namespace {
++constexpr const char* imguiVertexSource=R"(#version 300 es
++precision mediump float;
++uniform mat4 u_ProjMtx;
++layout(location=0) in vec2 Position;
++layout(location=1) in vec2 UV;
++layout(location=2) in vec4 Color;
++out vec2 Frag_UV;
++out vec4 Frag_Color;
++void main(){Frag_UV=UV;Frag_Color=Color.bgra;gl_Position=u_ProjMtx*vec4(Position.xy,0.0,1.0);}
++)";
++constexpr const char* imguiFragmentSource=R"(#version 300 es
++precision mediump float;
++in vec2 Frag_UV;
++in vec4 Frag_Color;
++uniform sampler2D Texture;
++out vec4 Out_Color;
++void main(){Out_Color=Frag_Color*texture(Texture,Frag_UV.st);}
++)";
++
++}
++void Renderer::render_imgui(const ImDrawData* data,u32 targetHandle){
++ if(!data||data->CmdListsCount<=0||data->TotalVtxCount<=0||data->TotalIdxCount<=0)return;
++ // TH11's backbuffer is handle 1 and depth buffer is handle 2. The TH10
++ // sentinel 0xffffffff is not a valid TH11 surface; ImGui needs no depth.
++ flush();auto& output=target(targetHandle,0);
++ if(!imguiProgram){
++  const auto vs=shader(GL_VERTEX_SHADER,imguiVertexSource),fs=shader(GL_FRAGMENT_SHADER,imguiFragmentSource);imguiProgram=glCreateProgram();glAttachShader(imguiProgram,vs);glAttachShader(imguiProgram,fs);glLinkProgram(imguiProgram);glDeleteShader(vs);glDeleteShader(fs);
++  GLint linked=0;glGetProgramiv(imguiProgram,GL_LINK_STATUS,&linked);if(!linked){char log[1024]{};glGetProgramInfoLog(imguiProgram,sizeof(log),nullptr,log);failure=std::string("ImGui program: ")+log;return;}
++  imguiProjMtx=glGetUniformLocation(imguiProgram,"u_ProjMtx");imguiTexture=glGetUniformLocation(imguiProgram,"Texture");
++  glGenVertexArrays(1,&imguiVao);glGenBuffers(1,&imguiVbo);glGenBuffers(1,&imguiEbo);glBindVertexArray(imguiVao);glBindBuffer(GL_ARRAY_BUFFER,imguiVbo);glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,imguiEbo);
++  glEnableVertexAttribArray(0);glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,sizeof(ImDrawVert),reinterpret_cast<void*>(offsetof(ImDrawVert,pos)));
++  glEnableVertexAttribArray(1);glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,sizeof(ImDrawVert),reinterpret_cast<void*>(offsetof(ImDrawVert,uv)));
++  glEnableVertexAttribArray(2);glVertexAttribPointer(2,4,GL_UNSIGNED_BYTE,GL_TRUE,sizeof(ImDrawVert),reinterpret_cast<void*>(offsetof(ImDrawVert,col)));
++ }
++ auto& io=ImGui::GetIO();if(imguiFontTexture&&io.Fonts->TexID==nullptr){glDeleteTextures(1,&imguiFontTexture);imguiFontTexture=0;}
++ if(!imguiFontTexture){unsigned char* pixels=nullptr;int width=0,height=0;io.Fonts->GetTexDataAsRGBA32(&pixels,&width,&height);if(!pixels||width<=0||height<=0)return;
++  glGenTextures(1,&imguiFontTexture);glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D,imguiFontTexture);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);glPixelStorei(GL_UNPACK_ALIGNMENT,1);glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels);io.Fonts->TexID=reinterpret_cast<ImTextureID>(static_cast<uintptr_t>(imguiFontTexture));io.Fonts->ClearTexData();
++ }
++ bind_framebuffer(GL_FRAMEBUFFER,output.framebuffer);const auto surfaceInfo=resolve(owner,targetHandle);glViewport(0,0,surfaceInfo.width,surfaceInfo.height);glEnable(GL_BLEND);glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_ONE,GL_ONE_MINUS_SRC_ALPHA);glDisable(GL_CULL_FACE);glDisable(GL_DEPTH_TEST);glDepthMask(GL_FALSE);glEnable(GL_SCISSOR_TEST);glColorMask(true,true,true,true);glUseProgram(imguiProgram);glActiveTexture(GL_TEXTURE0);glBindVertexArray(imguiVao);glBindBuffer(GL_ARRAY_BUFFER,imguiVbo);glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,imguiEbo);glUniform1i(imguiTexture,0);
++ const ImVec2 clipOffset=data->DisplayPos,clipScale=data->FramebufferScale;const float displayWidth=data->DisplaySize.x*clipScale.x,displayHeight=data->DisplaySize.y*clipScale.y,left=data->DisplayPos.x,right=left+data->DisplaySize.x,top=data->DisplayPos.y,bottom=top+data->DisplaySize.y;
++ // The backbuffer is presented with a vertical flip (see commit()), so draw
++ // ImGui pre-flipped: mirror the projection Y and skip the GL-origin scissor
++ // conversion below. The two flips compose to identity for the overlay.
++ const float projection[4][4]={{2.0f/(right-left),0,0,0},{0,2.0f/(bottom-top),0,0},{0,0,-1,0},{(right+left)/(left-right),(top+bottom)/(top-bottom),0,1}};glUniformMatrix4fv(imguiProjMtx,1,GL_FALSE,&projection[0][0]);
++ glBufferData(GL_ARRAY_BUFFER,GLsizeiptr(data->TotalVtxCount*sizeof(ImDrawVert)),nullptr,GL_STREAM_DRAW);glBufferData(GL_ELEMENT_ARRAY_BUFFER,GLsizeiptr(data->TotalIdxCount*sizeof(ImDrawIdx)),nullptr,GL_STREAM_DRAW);GLsizeiptr vertexOffset=0,indexOffset=0;
++ for(int listIndex=0;listIndex<data->CmdListsCount;++listIndex){const auto* list=data->CmdLists[listIndex];const GLsizeiptr vertexBytes=GLsizeiptr(list->VtxBuffer.Size*sizeof(ImDrawVert)),indexBytes=GLsizeiptr(list->IdxBuffer.Size*sizeof(ImDrawIdx));glBufferSubData(GL_ARRAY_BUFFER,vertexOffset,vertexBytes,list->VtxBuffer.Data);glBufferSubData(GL_ELEMENT_ARRAY_BUFFER,indexOffset,indexBytes,list->IdxBuffer.Data);
++  for(int commandIndex=0;commandIndex<list->CmdBuffer.Size;++commandIndex){const auto& command=list->CmdBuffer[commandIndex];if(command.UserCallback){if(command.UserCallback==ImDrawCallback_ResetRenderState){glUseProgram(imguiProgram);glBindVertexArray(imguiVao);glUniformMatrix4fv(imguiProjMtx,1,GL_FALSE,&projection[0][0]);}else command.UserCallback(list,&command);continue;}
++   ImVec4 clip{(command.ClipRect.x-clipOffset.x)*clipScale.x,(command.ClipRect.y-clipOffset.y)*clipScale.y,(command.ClipRect.z-clipOffset.x)*clipScale.x,(command.ClipRect.w-clipOffset.y)*clipScale.y};if(clip.x>=clip.z||clip.y>=clip.w||clip.z<=0||clip.w<=0||clip.x>=displayWidth||clip.y>=displayHeight)continue;
++   const GLint x=GLint(std::floor(std::max(clip.x,0.0f))),y=GLint(std::floor(std::max(clip.y,0.0f)));const GLsizei width=GLsizei(std::ceil(std::min(clip.z,displayWidth))-x),height=GLsizei(std::ceil(std::min(clip.w,displayHeight))-y);if(width<=0||height<=0)continue;glScissor(x,y,width,height);
++   const GLuint texture=command.TextureId?GLuint(reinterpret_cast<uintptr_t>(command.TextureId)):imguiFontTexture;glBindTexture(GL_TEXTURE_2D,texture);const auto base=vertexOffset+GLsizeiptr(command.VtxOffset*sizeof(ImDrawVert));glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,sizeof(ImDrawVert),reinterpret_cast<void*>(base+offsetof(ImDrawVert,pos)));glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,sizeof(ImDrawVert),reinterpret_cast<void*>(base+offsetof(ImDrawVert,uv)));glVertexAttribPointer(2,4,GL_UNSIGNED_BYTE,GL_TRUE,sizeof(ImDrawVert),reinterpret_cast<void*>(base+offsetof(ImDrawVert,col)));glDrawElements(GL_TRIANGLES,GLsizei(command.ElemCount),sizeof(ImDrawIdx)==2?GL_UNSIGNED_SHORT:GL_UNSIGNED_INT,reinterpret_cast<void*>(indexOffset+GLsizeiptr(command.IdxOffset*sizeof(ImDrawIdx))));
++  }vertexOffset+=vertexBytes;indexOffset+=indexBytes;
++ }
++ // ImGui is an end-of-frame overlay on the existing GPU backbuffer.  Keep the
++ // GPU copy synchronized with the current CPU revision: advancing the private
++ // GPU version here makes surface() treat the unchanged CPU pixels as newer on
++ // the next paused/menu frame and upload them over the overlay/game image.
++ glDisable(GL_SCISSOR_TEST);output.rendered=true;drawState=DrawStateCache{};currentProgram=0;currentLayout=0;boundTexture=readFramebuffer=drawFramebuffer=~0u;glDepthMask(GL_TRUE);
++}
 diff --git a/runtimes/th12/portable/sdl/Renderer.cpp b/runtimes/th12/portable/sdl/Renderer.cpp
-index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f241a764ffb 100644
+index 086076dbaa745c3b3874633575e322e4bd6a6e83..5a7f838dce2d1efaa7b3348e6e436be48f3fbd60 100644
 --- a/runtimes/th12/portable/sdl/Renderer.cpp
 +++ b/runtimes/th12/portable/sdl/Renderer.cpp
-@@ -88,6 +88,16 @@ bool Renderer::initialize(){
+@@ -1,4 +1,7 @@
+ #include "Renderer.hpp"
++#if defined(PORT_TITLE) && PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
++#include "imgui.h"
++#endif
+ #include "Shaders.hpp"
+ #include "ResampleShader.hpp"
+ #include "AlphaConversion.hpp"
+@@ -88,6 +91,16 @@ bool Renderer::initialize(){
     warm.texture=texture;auto& p=warm.pipeline;p.alphaTest=alpha;p.fog=fog;p.alphaCompare=Compare::GreaterEqual;
     p.color.operation=p.alpha.operation=op;p.color.first=p.alpha.first={op==ColorOperation::First?ArgumentSource::Diffuse:ArgumentSource::Texture};p.color.second=p.alpha.second={second};select(warm);
   }
@@ -212,7 +286,17 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f24
   resampleProgram=glCreateProgram();const auto rv=shader(GL_VERTEX_SHADER,resampleVertex),rf=shader(GL_FRAGMENT_SHADER,resampleFragment);
   glAttachShader(resampleProgram,rv);glAttachShader(resampleProgram,rf);glLinkProgram(resampleProgram);glDeleteShader(rv);glDeleteShader(rf);
   GLint linked=0;glGetProgramiv(resampleProgram,GL_LINK_STATUS,&linked);if(!linked){failure="Resample program link failed";return false;}
-@@ -98,6 +108,10 @@ Renderer::~Renderer(){discard();
+@@ -95,9 +108,20 @@ bool Renderer::initialize(){
+  warming=false;set_current(this);return true;
+ }
+ Renderer::~Renderer(){discard();
++#if defined(PORT_TITLE) && PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
++ if(imguiProgram)glDeleteProgram(imguiProgram);
++ if(imguiFontTexture)glDeleteTextures(1,&imguiFontTexture);
++ if(imguiVao)glDeleteVertexArrays(1,&imguiVao);
++ if(imguiVbo)glDeleteBuffers(1,&imguiVbo);
++ if(imguiEbo)glDeleteBuffers(1,&imguiEbo);
++#endif
  #ifdef TH14_WEBGPU_BACKEND
   if(webGpu){delete webGpu;if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();return;}
  #endif
@@ -223,7 +307,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f24
  for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);if(context)SDL_GL_DestroyContext(context);if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
  void Renderer::bind_texture(GLuint id){if(boundTexture!=id){glBindTexture(GL_TEXTURE_2D,id);boundTexture=id;++stats.textureBinds;}}
  void Renderer::bind_framebuffer(GLenum target,GLuint id){
-@@ -114,20 +128,40 @@ void Renderer::transform(MatrixKind kind,const void* p){auto& m=state.matrix[u32
+@@ -114,20 +138,40 @@ void Renderer::transform(MatrixKind kind,const void* p){auto& m=state.matrix[u32
  void Renderer::viewport(const Viewport& v){state.viewport=v;}
  void Renderer::select(const State& s){
   const auto& p=s.pipeline;auto arg=[](Argument a){return u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u);};
@@ -268,7 +352,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f24
    // Installed D3D9 D16 conversion: truncate to twenty fractional bits,
    // then round the sixteen-bit result to nearest with ties downward.
    if(version==10){replace(source,"float scaled=gl_FragCoord.z*65536.0;","float quantized=floor(gl_FragCoord.z*1048576.0)/1048576.0;float scaled=quantized*65536.0;");replace(source,"floor(fract(scaled)-gl_FragCoord.z+0.5)","ceil(fract(scaled)-quantized-0.5)");}
-@@ -136,9 +170,12 @@ void Renderer::select(const State& s){
+@@ -136,9 +180,12 @@ void Renderer::select(const State& s){
    if(version==10)replace(source,"c.rgb=mix(fogColor.rgb,c.rgb,clamp(vFog,0.0,1.0));","{float f=clamp(vFog,0.0,1.0);vec3 rest=fogColor.rgb-fogColor.rgb*f;c.rgb=c.rgb*f+rest;}");
  #endif
    Program p;p.id=glCreateProgram();GLuint fs=shader(GL_FRAGMENT_SHADER,source);glAttachShader(p.id,vertex);glAttachShader(p.id,fs);glLinkProgram(p.id);glDeleteShader(fs);GLint linked=0;glGetProgramiv(p.id,GL_LINK_STATUS,&linked);if(!linked){char log[2048];glGetProgramInfoLog(p.id,sizeof(log),nullptr,log);std::fprintf(stderr,"SDL program: %s\n",log);std::abort();}
@@ -281,7 +365,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f24
    for(int i=0;i<28;i++)p.uniforms[i].location=glGetUniformLocation(p.id,names[i]);it=programs.emplace(key,p).first;
  #else
    const char* names[]{"viewport","transformed","textureTransform","instanced","world","view","projection","textureMatrix","fogEnabled","rangeFog","fogMode","fogParams","fogColor","hasTexture","factor","colorOp","colorArg1","colorArg2","alphaOp","alphaArg1","alphaArg2","alphaTest","alphaRef","alphaFunc","depth16","tex"};
-@@ -147,7 +184,7 @@ void Renderer::select(const State& s){
+@@ -147,7 +194,7 @@ void Renderer::select(const State& s){
   }
   program=&it->second;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}
  }
@@ -290,7 +374,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f24
  void Renderer::integer(int i,int n){auto& u=program->uniforms[i];if(u.location<0)return;float f=float(n);if(u.count==1&&u.value[0]==f)return;u.count=1;u.value[0]=f;glUniform1i(u.location,n);}
  u32 Renderer::upload(Stream& s,GLenum target,const void* bytes,u32 count,u32 minimum){
   glBindBuffer(target,s.id);stats.vertexUploadBytes+=count;
-@@ -162,7 +199,7 @@ u32 Renderer::upload(Stream& s,GLenum target,const void* bytes,u32 count,u32 min
+@@ -162,7 +209,7 @@ u32 Renderer::upload(Stream& s,GLenum target,const void* bytes,u32 count,u32 min
   glBufferSubData(target,offset,count,bytes);stats.bufferSubUpdates++;s.used=offset+count;return offset;
  #endif
  }
@@ -299,7 +383,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f24
   auto s=resolve(owner,h);if(!s.handle||!s.width||!s.height){std::fprintf(stderr,"SDL invalid surface %u\n",h);std::abort();}auto& g=surfaces[h];if(!g.texture){glGenTextures(1,&g.texture);glGenFramebuffers(1,&g.framebuffer);bind_texture(g.texture);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,g.texture,0);}
   if(g.version!=s.version){
    stats.uploadBytes+=s.size;bind_texture(g.texture);glPixelStorei(GL_UNPACK_ALIGNMENT,1);GLenum format=GL_RGBA,type=GL_UNSIGNED_BYTE,internal=GL_RGBA8;
-@@ -178,9 +215,17 @@ Renderer::GPU& Renderer::surface(u32 h){
+@@ -178,9 +225,17 @@ Renderer::GPU& Renderer::surface(u32 h){
     }format=rgb?GL_RGB:GL_RGBA;internal=s.format==PixelFormat::Rgb565?GL_RGB565:(s.format==PixelFormat::Xrgb1555||s.format==PixelFormat::Argb1555)?GL_RGB5_A1:rgb?GL_RGB8:GL_RGBA8;
    }
    if(g.version==~0u)glTexImage2D(GL_TEXTURE_2D,0,internal,s.width,s.height,0,format,type,pixels.data());else glTexSubImage2D(GL_TEXTURE_2D,0,0,0,s.width,s.height,format,type,pixels.data());g.version=s.version;g.rendered=false;
@@ -319,7 +403,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f24
  void Renderer::prepare(u32 h){
  #ifdef TH14_WEBGPU_BACKEND
   if(webGpu){webGpu->prepare(h);return;}
-@@ -193,40 +238,128 @@ void Renderer::draw(Topology primitive,u32 count,const void* data,u32 stride,con
+@@ -193,40 +248,128 @@ void Renderer::draw(Topology primitive,u32 count,const void* data,u32 stride,con
   const bool instance=version==10&&state.layout==attributes(VertexLayout::WorldUv)&&stride==20&&primitive==Topology::Strip&&count==2;
   if(instance){if(batching&&(!instancing||!equal(batchState,state,true)||quad.size()!=80||std::memcmp(quad.data(),data,80)))flush();if(!batching){batchState=state;quad.assign(static_cast<const u8*>(data),static_cast<const u8*>(data)+80);batching=instancing=true;}const auto old=worlds.size();worlds.resize(old+68);std::memcpy(worlds.data()+old,state.matrix[0].data(),64);std::memcpy(worlds.data()+old+64,&state.pipeline.textureFactor,4);if(worlds.size()>=1024*68)flush();return;}
   if(batching&&(instancing||!equal(batchState,state)))flush();if(!batching){batchState=state;batching=true;instancing=false;}
@@ -460,7 +544,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f24
   else {for(int i=0;i<4;i++)uniform(4+i,16,d.matrix[i].data());}
   float fogLinear[3]{};if(nativeFog){volatile float range=p.fogFar-p.fogNear;volatile float scale=1.f/range;volatile float bias=p.fogFar*scale;fogLinear[0]=bias;fogLinear[1]=scale;fogLinear[2]=1.f;}uniform(27,3,fogLinear);
  #else
-@@ -240,13 +373,27 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
+@@ -240,13 +383,27 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  #endif
  integer(13,!!texture);uniform(14,4,color(p.textureFactor).data());
   auto arg=[](Argument a){return int(u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u));};
@@ -489,7 +573,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f24
   constexpr GLenum compare[]{GL_NEVER,GL_LESS,GL_EQUAL,GL_LEQUAL,GL_GREATER,GL_NOTEQUAL,GL_GEQUAL,GL_ALWAYS};
   if(all||cached.depthTest!=p.depthTest)p.depthTest?glEnable(GL_DEPTH_TEST):glDisable(GL_DEPTH_TEST);
   if(all||cached.depthWrite!=p.depthWrite)glDepthMask(p.depthWrite);
-@@ -275,14 +422,14 @@ integer(13,!!texture);uniform(14,4,color(p.textureFactor).data());
+@@ -275,14 +432,14 @@ integer(13,!!texture);uniform(14,4,color(p.textureFactor).data());
   if(!instance){
    if(clippedGeometry){glDisableVertexAttribArray(13);glVertexAttrib1f(13,-1.f);glVertexAttribDivisor(13,0);}
    else if(!transformed&&!index&&primitive==Topology::Triangles){
@@ -506,7 +590,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f24
     glVertexAttrib1f(13,eligible);glVertexAttribDivisor(13,0);
    }
   }
-@@ -308,16 +455,6 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,(transformed||clippedGeomet
+@@ -308,16 +465,6 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,(transformed||clippedGeomet
  #if defined(PORT_TITLE) && PORT_TITLE == 14
   // Keep each original world/factor record and append its derived clip matrix.
   // The queue remains 68B; only the submitted instance buffer gains the matrix.
@@ -523,7 +607,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f24
   u32 b=upload(instances,GL_ARRAY_BUFFER,expanded.data(),u32(expanded.size()),65536);
  #else
   u32 b=upload(instances,GL_ARRAY_BUFFER,instance,instanceSize,65536);
-@@ -337,11 +474,75 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,(transformed||clippedGeomet
+@@ -337,11 +484,75 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,(transformed||clippedGeomet
   else glDrawArrays(mode,0,n);g.rendered=true;
  
  }
@@ -602,7 +686,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f24
  void Renderer::copy(u32 src,const i32* rect,u32 dst,const i32* point){flush();
  #ifdef TH14_WEBGPU_BACKEND
   if(webGpu){webGpu->copy(src,rect,dst,point);return;}
-@@ -376,7 +577,11 @@ void Renderer::read(u32 id){flush();
+@@ -376,7 +587,11 @@ void Renderer::read(u32 id){flush();
  #ifdef TH14_WEBGPU_BACKEND
   if(webGpu){webGpu->read(id);return;}
  #endif
@@ -615,7 +699,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f24
   for(u32 y=0;y<s.height;y++)for(u32 x=0;x<s.width;x++){const auto* p=pixels.data()+(y*s.width+x)*4;u32 r=p[0],gc=p[1],b=p[2],a=p[3];auto* out=s.data+y*s.pitch;
    if(s.format==PixelFormat::Bgra8||s.format==PixelFormat::Bgrx8){out+=x*4;out[0]=b;out[1]=gc;out[2]=r;out[3]=s.format==PixelFormat::Bgra8?a:255;}else if((s.format==PixelFormat::Rgb565||s.format==PixelFormat::Xrgb1555||s.format==PixelFormat::Argb1555||s.format==PixelFormat::Argb4444)){uint16_t n=s.format==PixelFormat::Argb4444?(a>>4)<<12|(r>>4)<<8|(gc>>4)<<4|(b>>4):s.format==PixelFormat::Rgb565?(r>>3)<<11|(gc>>2)<<5|(b>>3):(s.format==PixelFormat::Argb1555&&a>=128?0x8000:0)|(r>>3)<<10|(gc>>3)<<5|(b>>3);std::memcpy(out+x*2,&n,2);}else if(s.format==PixelFormat::Alpha8)out[x]=a;else if(s.format==PixelFormat::Luminance8)out[x]=r;else std::abort();
   }g.rendered=false;
-@@ -387,6 +592,24 @@ void Renderer::release(u32 id){flush();
+@@ -387,6 +602,24 @@ void Renderer::release(u32 id){flush();
  #endif
  auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);depths.erase(d);}auto it=surfaces.find(id);if(it==surfaces.end())return;glDeleteTextures(1,&it->second.texture);glDeleteFramebuffers(1,&it->second.framebuffer);surfaces.erase(it);boundTexture=readFramebuffer=drawFramebuffer=~0u;}
  void Renderer::present(u32 id){flush();pending=id;stats.frames++;if(!defer)commit();}
@@ -640,7 +724,7 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f24
  bool Renderer::commit(){if(!pending)return false;
  #ifdef TH14_WEBGPU_BACKEND
   if(webGpu){const auto id=pending;pending=0;webGpu->present(id);++stats.presentations;return true;}
-@@ -397,7 +620,15 @@ glBlitFramebuffer(0,0,s.width,s.height,0,s.height,s.width,0,GL_COLOR_BUFFER_BIT,
+@@ -397,7 +630,18 @@ glBlitFramebuffer(0,0,s.width,s.height,0,s.height,s.width,0,GL_COLOR_BUFFER_BIT,
  #else
  glBlitFramebuffer(0,0,s.width,s.height,0,480,640,0,GL_COLOR_BUFFER_BIT,GL_NEAREST);
  #endif
@@ -654,24 +738,40 @@ index 086076dbaa745c3b3874633575e322e4bd6a6e83..005aad602f56b6830e136c1287628f24
 +// TH14 uses an implicitly presented WebGL canvas, so returning to its RAF
 +// host after the blit is enough. Sleeping here can miss the next refresh.
 +stats.presentations++;return true;}
++#if defined(PORT_TITLE) && PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
++#include "ImguiRendererTh14.inc"
++#endif
  }
  extern "C" {
  const touhou::sdl::Statistics* sdl_stats(){static touhou::sdl::Statistics zero{};return touhou::sdl::current()?&touhou::sdl::current()->stats:&zero;}
 diff --git a/runtimes/th12/portable/sdl/Renderer.hpp b/runtimes/th12/portable/sdl/Renderer.hpp
-index 05807cb86614061d707a87336b4bc6fee7a09cfb..a6050ebc5230e71ee27d5fb644c22b6abd8231c4 100644
+index 05807cb86614061d707a87336b4bc6fee7a09cfb..fe4781108fc73566134a9dcd0974e04076ee9bd5 100644
 --- a/runtimes/th12/portable/sdl/Renderer.hpp
 +++ b/runtimes/th12/portable/sdl/Renderer.hpp
-@@ -29,6 +29,9 @@ public:
+@@ -7,6 +7,9 @@
+ #include <map>
+ #include <vector>
+ #include <string>
++#if defined(PORT_TITLE) && PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
++struct ImDrawData;
++#endif
+ 
+ // Semantic GLES renderer shared by the two games. Matrices and vertices stay
+ // in C++; only resource decoding knows the original file format codes.
+@@ -29,6 +32,12 @@ public:
      Statistics stats{};State state{};bool defer=false;
      Renderer(int version,Resolve,void*);~Renderer();
      bool initialize();void flush();void discard();bool commit();
++#if defined(PORT_TITLE) && PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
++    void render_imgui(const ::ImDrawData*,u32);
++#endif
 +#if defined(__EMSCRIPTEN__) && defined(PORT_TITLE) && PORT_TITLE == 14
 +    bool browser_draw_backpressured();
 +#endif
      PipelineState& pipeline() override { return state.pipeline; }
      void transform(MatrixKind,const void*);void viewport(const Viewport&);
      void draw(Topology primitive,u32 count,const void*,u32 stride,const void* indices=nullptr,IndexType indexFormat=IndexType::UInt16);
-@@ -45,7 +48,20 @@ private:
+@@ -45,7 +54,20 @@ private:
  #ifdef TH14_WEBGPU_BACKEND
      WebGpuRenderer* webGpu=nullptr;
  #endif
@@ -693,7 +793,15 @@ index 05807cb86614061d707a87336b4bc6fee7a09cfb..a6050ebc5230e71ee27d5fb644c22b6a
      struct Depth {GLuint buffer=0;bool stencil=false;};
      struct Uniform {GLint location=-1;std::array<float,16> value{};int count=-1;};
      struct Program {GLuint id=0;std::array<Uniform,28> uniforms{};};
-@@ -59,8 +75,21 @@ private:
+@@ -55,12 +77,29 @@ private:
+     GLuint vertex=0,currentProgram=0,boundTexture=~0u,readFramebuffer=~0u,drawFramebuffer=~0u;
+     std::map<std::array<u32,6>,GLuint> layouts;GLuint currentLayout=0;
+     GLuint resampleProgram=0,resampleVao=0,weightTexture=0;
++#if defined(PORT_TITLE) && PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
++    GLuint imguiProgram=0,imguiVao=0,imguiVbo=0,imguiEbo=0,imguiFontTexture=0;
++    GLint imguiProjMtx=-1,imguiTexture=-1;
++#endif
+     Program generic{};bool warming=true,buildingGeneric=false;Program* program=nullptr;
      std::array<float,256> alphaBoundaries{};
      Stream vertices{},indices{},instances{};State batchState{};
      std::vector<u8> batchBytes,quad,worlds,pixels;bool batching=false,instancing=false;
@@ -2251,7 +2359,7 @@ index 355046f22ee8a9b3552ab0ab388d6cc756284bfb..ec439ce4bc63c46489e41943f51df156
  bool laser_line_initialize(LaserLine&,const LaserLineParameters&,AnmResource&,AnmEnvironment&,LaserWorld&,u16 file_id=0);
  bool laser_line_appearance(LaserLine&,i32,AnmResource&,AnmEnvironment&,u16 file_id=0);
 diff --git a/runtimes/th12/th12_web/cpp/game/PauseEnd.cpp b/runtimes/th12/th12_web/cpp/game/PauseEnd.cpp
-index cf2697d3116bfbe4aab0f9e3dd982daa56fe5d76..fc88f3e1555ccb11a54584e90219b305a0b9d497 100644
+index cf2697d3116bfbe4aab0f9e3dd982daa56fe5d76..17960689334942777f123250cfb8e2c86464aaa6 100644
 --- a/runtimes/th12/th12_web/cpp/game/PauseEnd.cpp
 +++ b/runtimes/th12/th12_web/cpp/game/PauseEnd.cpp
 @@ -24,6 +24,11 @@ bool PauseMenu::th16_end_choices(){
@@ -2297,7 +2405,19 @@ index cf2697d3116bfbe4aab0f9e3dd982daa56fe5d76..fc88f3e1555ccb11a54584e90219b305
      case 13:case 21:
  #if PORT_TITLE == 14
          if(practice&&completed&&spell_practice_id<0){
-@@ -138,7 +145,6 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
+@@ -120,6 +127,11 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
+             const i32 rank=scores.insert_score(selection,difficulty,result_score,stage==7&&completed?8:stage,continues,timestamp,slowdown);
+             unranked=rank<0;timer.set(0,&animations.rate);
+             if(!unranked){cursor.count=25;cursor.wrap=1;cursor.select(rank);name_begin();state=practice_states?25:18;visible(false);break;}
++#if PORT_TITLE == 14
++            // A full-run loss can still show the existing ranking without
++            // inserting a score or opening the name keyboard.
++            if(!completed&&difficulty<4){cursor.selected=-1;state=18;visible(false);break;}
++#endif
+             show_end_choices(98,14,practice_states?3:4);
+         }else{
+ #if PORT_TITLE == 14
+@@ -138,7 +150,6 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
      case 14:case 22:{
          const bool compact=state==22;const i32 save=compact?1:2,back=compact?0:1;
          move(pressed|repeat,7);
@@ -2305,7 +2425,7 @@ index cf2697d3116bfbe4aab0f9e3dd982daa56fe5d76..fc88f3e1555ccb11a54584e90219b305
          if(pressed&0x80001){
              choose(cursor.selected+(kPortTitle==14?134:94));sounds.push_back(kPortTitle==14?7:10);transition(compact?26:19);
              if(cursor.selected==save){transition(compact?23:16);visible(false);cursor.push();cursor.count=25;cursor.wrap=1;cursor.select(0);scan_requested=true;}
-@@ -151,35 +157,44 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
+@@ -151,35 +162,44 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
      case 16:case 23:
          if(timer.current<10)break;
          cursor.previous=cursor.selected;if((pressed|repeat)&16)cursor.move(-1);if((pressed|repeat)&32)cursor.move(1);
@@ -4306,11 +4426,14 @@ index c91062f77f39cdc37dac75bbe8d697d98b1ee72c..44601056b63271565f978c2342944931
          }
          if(pressed&0x102){if(name_length){sounds.push_back(11);entered_name[--name_length]=' ';}else step(2);}break;
 diff --git a/runtimes/th12/th12_web/cpp/sdl/Application.cpp b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
-index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e637a871250 100644
+index bae5d17e65ee2a98f46cb063007b05d43941077d..8110caac81429db0f024460e7cd008a5768ca82a 100644
 --- a/runtimes/th12/th12_web/cpp/sdl/Application.cpp
 +++ b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
-@@ -12,6 +12,10 @@
+@@ -10,8 +10,13 @@
+ #endif
+ #include "AudioDevice.hpp"
  #include "FontDevice.hpp"
++#include "PracticeUiTh14.hpp"
  #include "../game/MusicCatalog.hpp"
  #include "../game/GameSession.hpp"
 +#if PORT_TITLE == 14
@@ -4320,7 +4443,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
  #include "../game/FrameStatistics.hpp"
  #if defined(TH14_CPP_STAGE_DECODE)
  #include "../game/StageWorkerTailTh14.hpp"
-@@ -305,8 +309,20 @@ struct Application:StageResourceEffects
+@@ -305,8 +310,20 @@ struct Application:StageResourceEffects
      }
  #endif
  #if PORT_TITLE == 14
@@ -4341,7 +4464,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
      bool present_this_update(){
          // Retail46a833 increments a byte, then compares its signed value.
          ++frame_skip_counter;
-@@ -419,7 +435,11 @@ struct Application:StageResourceEffects
+@@ -419,7 +436,11 @@ struct Application:StageResourceEffects
          // -3/-1 requests remain responsible for selecting a track.
          if(activation&&session.state.spell_practice_id>=0)return true;
  #endif
@@ -4354,7 +4477,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
          audio.pause_music(kPortTitle!=14&&stage==6);return true;
      }
      bool pause(){if(!session.pause())return false;
-@@ -1103,7 +1123,7 @@ struct Application:StageResourceEffects
+@@ -1103,7 +1124,7 @@ struct Application:StageResourceEffects
              // Bootstrap all three before the first upload, preserving Sig,
              // ASCII and text template order without holding an Asyncify stack
              // open while their CPU decoding runs in the independent worker.
@@ -4363,7 +4486,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
              th14_webgpu_archive_schedule(run_boot_work,new BootWorkToken{this,boot_worker_generation,work,index},names,3);
              return;
          }
-@@ -1526,6 +1546,8 @@ struct Application:StageResourceEffects
+@@ -1526,6 +1547,8 @@ struct Application:StageResourceEffects
  #endif
              }else saved_config_state=std::move(saved);
          }
@@ -4372,7 +4495,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
          if(!graphics.initialize(session.config.render_width(),session.config.render_height())){error=graphics.error;return false;}
  #else
          if(!graphics.initialize()){error=graphics.error;return false;}
-@@ -1636,7 +1658,11 @@ struct Application:StageResourceEffects
+@@ -1636,7 +1659,11 @@ struct Application:StageResourceEffects
          initialized=true;return audio_events()&&text_events();
      }
  
@@ -4384,7 +4507,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
  #if PORT_TITLE == 14
          audio.discard_paused_sounds();
  #endif
-@@ -1673,7 +1699,12 @@ struct Application:StageResourceEffects
+@@ -1673,7 +1700,12 @@ struct Application:StageResourceEffects
  #if PORT_TITLE == 14 || PORT_TITLE == 16
          if(session.resources.stage)for(auto& file:session.resources.stage->ecl_animations)graphics.unload(file);
  #endif
@@ -4397,7 +4520,17 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
  #if PORT_TITLE == 14
          // begin() clears the previous session's VMs. An interrupted cold boot
          // can still own sig textures; release them only after those references
-@@ -2010,7 +2041,7 @@ struct Application:StageResourceEffects
+@@ -1935,6 +1967,9 @@ struct Application:StageResourceEffects
+             if(!present_this_update())return true;
+             if(!session.draw(renderer,&frame_text)){error=session.error;return false;}
+             th14_consume_deferred_captures(session.animations.deferred_captures,session,graphics,renderer);
++#if defined(TH14_ENABLE_THPRAC)
++            PracticeUiTh14::draw(session,graphics.backend);
++#endif
+             graphics.present();
+             sample_frame_statistics();
+             if(!session.sample_spell_clock(double(SDL_GetTicksNS())*1e-9)){error="Invalid spell timing state";return false;}
+@@ -2010,7 +2045,7 @@ struct Application:StageResourceEffects
                  const auto& sprite=*vm->sprite;const u32 target=graphics.texture(*vm->resource,sprite.texture);renderer.flush();
                  i32 from[]={32,16,416,464};u32 source=GraphicsDevice::screen;
  #if PORT_TITLE == 14
@@ -4406,7 +4539,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
                  std::copy(capture.rectangle,capture.rectangle+4,from);
                  if(capture.text_intermediate){source=graphics.texture(session.resources.core.text,3);if(!source){error="Pause capture source texture missing";return false;}}
  #endif
-@@ -2055,6 +2086,13 @@ struct Application:StageResourceEffects
+@@ -2055,6 +2090,13 @@ struct Application:StageResourceEffects
  #endif
  #if PORT_TITLE == 14
          if(!present_this_update())return true;
@@ -4420,7 +4553,17 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
  #endif
          frame_text.clear();
  #if PORT_TITLE == 14
-@@ -2086,8 +2124,49 @@ struct Application:StageResourceEffects
+@@ -2067,6 +2109,9 @@ struct Application:StageResourceEffects
+         if(!session.draw(renderer,show_frame_statistics?&frame_text:nullptr)){error=session.error;return false;}
+ #if PORT_TITLE == 14
+         th14_consume_deferred_captures(session.animations.deferred_captures,session,graphics,renderer);
++#if defined(TH14_ENABLE_THPRAC)
++        PracticeUiTh14::draw(session,graphics.backend);
++#endif
+ #endif
+         graphics.present();
+ #if PORT_TITLE == 14
+@@ -2086,8 +2131,49 @@ struct Application:StageResourceEffects
          return tick_once(held,pause_key);
  #endif
      }
@@ -4470,7 +4613,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
          audio.discard_paused_sounds();
  #endif
          if(!save_scores())return false;
-@@ -2107,7 +2186,38 @@ struct Application:StageResourceEffects
+@@ -2107,7 +2193,38 @@ struct Application:StageResourceEffects
      }
  };
  Application app;
@@ -4509,7 +4652,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
  #include "../../../portable/input/KeyboardMap.inc"
  touhou::input::TouchController gestures;
  touhou::sdl::FrameCadence cadence;
-@@ -2145,8 +2255,15 @@ touhou::input::TouchState touch_state(){
+@@ -2145,18 +2262,41 @@ touhou::input::TouchState touch_state(){
      s.x=p.position.x;s.y=p.position.y;s.fast=float(p.normal_speed)/128;s.slow=float(p.focus_speed)/128;
      s.min_x=-184;s.max_x=184;s.min_y=32;s.max_y=432;return s;
  }
@@ -4519,13 +4662,15 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
  void clear_inputs(){th11_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;previous_scans.fill(0);gestures.reset();if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;}
 +#endif
  void touch_event(unsigned type,int id,float x,float y){
+-    if(std::isfinite(x)&&std::isfinite(y))gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);
++    if(!std::isfinite(x)||!std::isfinite(y))return;
 +#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
-+    if(app.session.practice_input_captured)return;
++    if(PracticeUiTh14::pointer(type,id,x,y))return;
 +#endif
-     if(std::isfinite(x)&&std::isfinite(y))gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);
++    gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);
  }
  void cancel_touch(){
-@@ -2154,6 +2271,9 @@ void cancel_touch(){
+     gestures.cancel_transient();
      if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;
  }
  bool sample_and_tick_once(){
@@ -4535,11 +4680,33 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
      SDL_Event event;while(SDL_PollEvent(&event)){
  #if PORT_TITLE == 14
          if(event.type==SDL_EVENT_WINDOW_CLOSE_REQUESTED||event.type==SDL_EVENT_QUIT)app.session.request_host_close();
-@@ -2168,8 +2288,15 @@ bool sample_and_tick_once(){
++#endif
++#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
++        if(PracticeUiTh14::captures()){
++            int w=0,h=0;SDL_GetWindowSize(app.graphics.backend.native_window(),&w,&h);
++            if(w>0&&h>0){
++                if(event.type==SDL_EVENT_MOUSE_MOTION&&event.motion.which!=SDL_TOUCH_MOUSEID)
++                    PracticeUiTh14::mouse_motion(event.motion.x/w,event.motion.y/h);
++                if((event.type==SDL_EVENT_MOUSE_BUTTON_DOWN||event.type==SDL_EVENT_MOUSE_BUTTON_UP)
++                    &&event.button.which!=SDL_TOUCH_MOUSEID&&event.button.button==SDL_BUTTON_LEFT)
++                    PracticeUiTh14::pointer(event.type==SDL_EVENT_MOUSE_BUTTON_DOWN?0:2,-1,event.button.x/w,event.button.y/h);
++            }
++        }
+ #endif
+         // SDL owns gestures that start on the canvas; the browser bridge only
+         // forwards gestures originating outside it, avoiding double delivery.
+@@ -2168,8 +2308,22 @@ bool sample_and_tick_once(){
          else if(event.type==SDL_EVENT_JOYSTICK_ADDED)add_controller(event.jdevice.which);
          else if(event.type==SDL_EVENT_JOYSTICK_REMOVED&&controller&&SDL_GetJoystickID(controller)==event.jdevice.which){SDL_CloseJoystick(controller);controller=nullptr;int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;++i)add_controller(ids[i]);SDL_free(ids);}
      }
 +#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
++    if(PracticeUiTh14::take_bgm_request()&&app.session.state.phase==GameSessionPhase::stage){
++        const auto stage=app.session.state.stage,boss=unsigned(stage_music(stage,true));
++        if(!app.audio.music(unsigned(app.audio.current_music())==boss?stage_music(stage):i32(boss)))return false;
++    }
++    const bool capture=PracticeUiTh14::captures();
++    if(capture!=app.session.practice_input_captured)cancel_touch();
++    app.session.practice_input_captured=capture;
 +    if(app.session.practice_input_captured)return app.tick_once(0,false);
 +#endif
      bool keys[256]{};std::array<u8,256> scans{};const auto* physical=th11_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
@@ -4551,7 +4718,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
      if(app.session.title){auto& title=*app.session.title;for(u32 i=0;i<256;++i)title.key_edges[i]=scans[i]&~previous_scans[i];title.number_keys=0;for(u32 i=0;i<9;++i)if(keys[49+i])title.number_keys|=1u<<i;}
      previous_scans=scans;
      const auto sample=gestures.sample(touch_state(),SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
-@@ -2198,7 +2325,59 @@ EMSCRIPTEN_KEEPALIVE int th11_validate_file(unsigned kind,const unsigned char* d
+@@ -2198,7 +2352,45 @@ EMSCRIPTEN_KEEPALIVE int th11_validate_file(unsigned kind,const unsigned char* d
      if(kind==2){th11::GameConfig config;return config.open(data,size);}
      return 0;
  }
@@ -4579,39 +4746,25 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
 +EMSCRIPTEN_KEEPALIVE unsigned th14_practice_state(unsigned query,unsigned value){
 +    auto& app=th11::sdl::app;
 +    auto& s=app.session;
-+    if(query==0){s.practice_enabled=value!=0;if(!value){s.practice_tools=0;s.practice_input_captured=false;}return 1;}
++    if(query==0){th11::sdl::PracticeUiTh14::configure(s,value!=0,value?int(value-1):2);return 1;}
 +    if(query==1)return s.practice_tools;
 +    if(query==2){if(s.practice_enabled&&!s.state.replay&&!s.state.demo)s.practice_tools=value&th11::practice_mask_th14;return s.practice_tools;}
 +    if(query==3)return s.state.replay||s.state.demo?0:1;
-+    if(query==4){
-+        if(!s.practice_enabled||s.state.phase!=th11::GameSessionPhase::stage||s.state.demo)return 0;
-+        const auto boss=th11::stage_music(s.state.stage,true);
-+        return app.audio.music(app.audio.current_music()==boss?th11::stage_music(s.state.stage):boss)?1:0;
-+    }
-+    if(query==5){s.practice_input_captured=s.practice_enabled&&value!=0;th11::sdl::clear_inputs();return 1;}
++    if(query==5){th11::sdl::PracticeUiTh14::mobile(value&1,value&2);return 1;}
 +    if(query==6)return s.economy.graze;
 +    if(query==7)return s.economy.score_units;
++    if(query==8)return th11::sdl::PracticeUiTh14::captures();
++    if(query==9){th11::sdl::PracticeUiTh14::clear_input();return 1;}
++    if(query==10){th11::sdl::PracticeUiTh14::close();return 1;}
++    if(query==11)return s.pause_menu?unsigned(s.pause_menu->state):0;
 +    return 0;
 +}
-+EMSCRIPTEN_KEEPALIVE int th14_practice_start(const int* values,unsigned character,unsigned shot,unsigned difficulty){
-+    auto& app=th11::sdl::app;auto& s=app.session;
-+    if(!values||!s.practice_enabled||character>2||shot>1||difficulty>4)return 0;
-+    th11::PracticeTh14 p;
-+    static_assert(sizeof p==56);
-+    std::memcpy(&p,values,sizeof p);
-+    if(!p.valid(difficulty))return 0;
-+    if(!s.title||s.state.phase!=th11::GameSessionPhase::title)return 0;
-+    auto& choice=s.title->selection;
-+    choice.stage=p.stage;choice.character=character;choice.partner=shot;choice.difficulty=difficulty;
-+    choice.flags=(choice.flags&~48u)|16u;
-+    s.practice_request=p;s.title->start_requested=true;
-+    return 1;
-+}
++EMSCRIPTEN_KEEPALIVE int th14_practice_key(unsigned key,unsigned down){return th11::sdl::PracticeUiTh14::key(key,down!=0);}
 +#endif
  EMSCRIPTEN_KEEPALIVE int th11_save_replay(unsigned slot,const char* name){return th11::sdl::app.save_replay(slot,name);}
  EMSCRIPTEN_KEEPALIVE int th11_initialize(){if(!th11::sdl::app.initialize())return 0;for(auto& k:th11::sdl::keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);th11::sdl::initialize_controller();return 1;}
  // Readable while a load is in flight, which is the point: it is the only way to see where a load that never
-@@ -2266,7 +2445,11 @@ EMSCRIPTEN_KEEPALIVE unsigned th11_heap_bytes(){return unsigned(emscripten_get_h
+@@ -2266,7 +2458,11 @@ EMSCRIPTEN_KEEPALIVE unsigned th11_heap_bytes(){return unsigned(emscripten_get_h
  EMSCRIPTEN_KEEPALIVE unsigned th11_dynamic_allocs(){return unsigned(mallinfo().uordblks);}
  EMSCRIPTEN_KEEPALIVE int th11_pause(){return th11::sdl::app.pause()?1:0;}
  EMSCRIPTEN_KEEPALIVE int th11_resume(){return th11::sdl::app.resume()?1:0;}
@@ -4623,7 +4776,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e63
  EMSCRIPTEN_KEEPALIVE void th11_keys_clear(){th11::sdl::clear_inputs();}
  EMSCRIPTEN_KEEPALIVE void th11_music_enabled(unsigned on){using namespace th11::sdl;app.audio.music_enabled=on!=0;app.audio.refresh_volume();}
  EMSCRIPTEN_KEEPALIVE const unsigned* th11_audio_statistics(){return th11::sdl::app.audio.statistics();}
-@@ -2294,9 +2477,37 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
+@@ -2294,9 +2490,37 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
      request_frames([](double time,void* epoch)->EM_BOOL{
          if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
          const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
@@ -4738,6 +4891,391 @@ index 214e6394474a90211b061d09f30c059f005dca88..4dc7b8a2611477ce18f5963e88463e13
  #endif
      );
      if(!loaded){error="Unable to prepare ANM texture: "+source.name+" ("+texture.image.failure+")";return false;}
+diff --git a/runtimes/th12/th12_web/cpp/sdl/PracticeLabelsTh14.inc b/runtimes/th12/th12_web/cpp/sdl/PracticeLabelsTh14.inc
+new file mode 100644
+index 0000000000000000000000000000000000000000..58ee74fff49eccfd3f4a9293b269e1b80c2084ef
+--- /dev/null
++++ b/runtimes/th12/th12_web/cpp/sdl/PracticeLabelsTh14.inc
+@@ -0,0 +1,91 @@
++// Generated by tools/generate-th14-practice.mjs.
++constexpr Item practice_labels[]={
++    {1,1,0,1,false,false,false,{{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"","",""}}},
++    {2,1,0,1,false,false,false,{{"","",""},{"","",""},{"冰符「Ultimate Blizzard」","Ice Sign \"Ultimate Blizzard\"","氷符「アルティメットブリザード」"},{"冰符「Ultimate Blizzard」","Ice Sign \"Ultimate Blizzard\"","氷符「アルティメットブリザード」"},{"","",""}}},
++    {3,1,0,1,true,false,false,{{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"","",""}}},
++    {4,1,0,1,false,false,false,{{"水符「尾鳍拍击」","Water Sign \"Tail Fin Slap\"","水符「テイルフィンスラップ」"},{"水符「尾鳍拍击」","Water Sign \"Tail Fin Slap\"","水符「テイルフィンスラップ」"},{"水符「尾鳍拍击」","Water Sign \"Tail Fin Slap\"","水符「テイルフィンスラップ」"},{"水符「尾鳍拍击」","Water Sign \"Tail Fin Slap\"","水符「テイルフィンスラップ」"},{"","",""}}},
++    {5,1,0,1,false,true,false,{{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"","",""}}},
++    {6,1,0,1,false,false,false,{{"鳞符「鳞之波」","Scale Sign \"Scale Wave\"","鱗符「スケールウェイブ」"},{"鳞符「鳞之波」","Scale Sign \"Scale Wave\"","鱗符「スケールウェイブ」"},{"鳞符「逆鳞的惊涛」","Scale Sign \"Raging Waves of the Reversed Scale\"","鱗符「逆鱗の荒波」"},{"鳞符「逆鳞的大惊涛」","Scale Sign \"Great Raging Waves of the Reversed Scale\"","鱗符「逆鱗の大荒波」"},{"","",""}}},
++    {7,2,0,1,false,false,false,{{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"","",""}}},
++    {8,2,0,1,false,false,false,{{"飞符「飞行之头」","Flight Sign \"Flying Head\"","飛符「フライングヘッド」"},{"飞符「飞行之头」","Flight Sign \"Flying Head\"","飛符「フライングヘッド」"},{"飞符「飞行之头」","Flight Sign \"Flying Head\"","飛符「フライングヘッド」"},{"飞符「飞行之头」","Flight Sign \"Flying Head\"","飛符「フライングヘッド」"},{"","",""}}},
++    {9,2,0,1,true,false,false,{{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"","",""}}},
++    {10,2,0,1,false,false,false,{{"首符「闭目射击」","Neck Sign \"Close-Eye Shot\"","首符「クローズアイショット」"},{"首符「闭目射击」","Neck Sign \"Close-Eye Shot\"","首符「クローズアイショット」"},{"首符「辘轳首飞来」","Neck Sign \"Rokurokubi Flight\"","首符「ろくろ首飛来」"},{"首符「辘轳首飞来」","Neck Sign \"Rokurokubi Flight\"","首符「ろくろ首飛来」"},{"","",""}}},
++    {11,2,0,1,false,true,false,{{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"","",""}}},
++    {12,2,0,1,false,false,false,{{"飞头「倍增之头」","Flying Head \"Multiplicative Head\"","飛頭「マルチプリケイティブヘッド」"},{"飞头「倍增之头」","Flying Head \"Multiplicative Head\"","飛頭「マルチプリケイティブヘッド」"},{"飞头「第七个头」","Flying Head \"Seventh Head\"","飛頭「セブンズヘッド」"},{"飞头「第九个头」","Flying Head \"Ninth Head\"","飛頭「ナインズヘッド」"},{"","",""}}},
++    {13,2,0,1,false,false,false,{{"飞头「杜拉罕之夜」","Flying Head \"Dullahan Night\"","飛頭「デュラハンナイト」"},{"飞头「杜拉罕之夜」","Flying Head \"Dullahan Night\"","飛頭「デュラハンナイト」"},{"飞头「杜拉罕之夜」","Flying Head \"Dullahan Night\"","飛頭「デュラハンナイト」"},{"飞头「杜拉罕之夜」","Flying Head \"Dullahan Night\"","飛頭「デュラハンナイト」"},{"","",""}}},
++    {14,3,0,1,false,false,false,{{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"","",""}}},
++    {15,3,0,1,false,true,false,{{"道中二非","Mid Nonspell 2","道中 通常2"},{"道中二非","Mid Nonspell 2","道中 通常2"},{"","",""},{"","",""},{"","",""}}},
++    {16,3,0,2,false,false,false,{{"","",""},{"","",""},{"牙符「月下的犬齿」","Fang Sign \"Moonlit Canine Teeth\"","牙符「月下の犬歯」"},{"牙符「月下的犬齿」","Fang Sign \"Moonlit Canine Teeth\"","牙符「月下の犬歯」"},{"","",""}}},
++    {17,3,0,1,true,false,false,{{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"","",""}}},
++    {18,3,0,1,false,false,false,{{"变身「三角齿」","Transformation \"Triangle Fang\"","変身「トライアングルファング」"},{"变身「三角齿」","Transformation \"Triangle Fang\"","変身「トライアングルファング」"},{"变身「星形齿」","Transformation \"Star Fang\"","変身「スターファング」"},{"变身「星形齿」","Transformation \"Star Fang\"","変身「スターファング」"},{"","",""}}},
++    {19,3,0,1,false,true,false,{{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"","",""}}},
++    {20,3,0,1,false,false,false,{{"咆哮「陌生的咆哮」","Roar \"Strange Roar\"","咆哮「ストレンジロア」"},{"咆哮「陌生的咆哮」","Roar \"Strange Roar\"","咆哮「ストレンジロア」"},{"咆哮「満月的远吠」","Roar \"Full Moon Howling\"","咆哮「満月の遠吠え」"},{"咆哮「満月的远吠」","Roar \"Full Moon Howling\"","咆哮「満月の遠吠え」"},{"","",""}}},
++    {21,3,0,1,false,true,false,{{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"","",""}}},
++    {22,3,0,1,false,false,false,{{"狼符「星环猛扑」","Wolf Sign \"Star Ring Pounce\"","狼符「スターリングパウンス」"},{"狼符「星环猛扑」","Wolf Sign \"Star Ring Pounce\"","狼符「スターリングパウンス」"},{"天狼「高速猛扑」","Sirius \"High-Speed Pounce\"","天狼「ハイスピードパウンス」"},{"天狼「高速猛扑」","Sirius \"High-Speed Pounce\"","天狼「ハイスピードパウンス」"},{"","",""}}},
++    {23,4,0,1,false,false,false,{{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"","",""}}},
++    {24,4,0,1,false,true,false,{{"道中二非","Mid Nonspell 2","道中 通常2"},{"道中二非","Mid Nonspell 2","道中 通常2"},{"道中二非","Mid Nonspell 2","道中 通常2"},{"道中二非","Mid Nonspell 2","道中 通常2"},{"","",""}}},
++    {25,4,0,1,true,false,false,{{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"","",""}}},
++    {26,4,0,1,false,false,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"","",""}}},
++    {27,4,0,1,false,true,false,{{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"","",""}}},
++    {28,4,0,1,false,false,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"","",""}}},
++    {29,4,0,1,false,true,false,{{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"","",""}}},
++    {30,4,0,1,false,false,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"","",""}}},
++    {31,5,0,1,false,false,false,{{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"","",""}}},
++    {32,5,0,1,false,false,false,{{"欺符「逆针击」","Deceit Sign \"Reverse Needle Attack\"","欺符「逆針撃」"},{"欺符「逆针击」","Deceit Sign \"Reverse Needle Attack\"","欺符「逆針撃」"},{"欺符「逆针击」","Deceit Sign \"Reverse Needle Attack\"","欺符「逆針撃」"},{"欺符「逆针击」","Deceit Sign \"Reverse Needle Attack\"","欺符「逆針撃」"},{"","",""}}},
++    {33,5,0,1,true,false,false,{{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"","",""}}},
++    {34,5,0,1,false,false,false,{{"逆符「镜之国的弹幕」","Reverse Sign \"Danmaku Through the Looking-Glass\"","逆符「鏡の国の弾幕」"},{"逆符「镜之国的弹幕」","Reverse Sign \"Danmaku Through the Looking-Glass\"","逆符「鏡の国の弾幕」"},{"逆符「镜中的邪恶」","Reverse Sign \"Evil in the Mirror\"","逆符「イビルインザミラー」"},{"逆符「镜中的邪恶」","Reverse Sign \"Evil in the Mirror\"","逆符「イビルインザミラー」"},{"","",""}}},
++    {35,5,0,1,false,true,false,{{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"","",""}}},
++    {36,5,0,1,false,false,false,{{"逆符「天地有用」","Reverse Sign \"This Side Down\"","逆符「天地有用」"},{"逆符「天地有用」","Reverse Sign \"This Side Down\"","逆符「天地有用」"},{"逆符「天下翻覆」","Reverse Sign \"Overturning All Under Heaven\"","逆符「天下転覆」"},{"逆符「天下翻覆」","Reverse Sign \"Overturning All Under Heaven\"","逆符「天下転覆」"},{"","",""}}},
++    {37,5,0,1,false,true,false,{{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"","",""}}},
++    {38,5,0,1,false,false,false,{{"逆弓「天壤梦弓」","Reverse Bow \"Dream Bow of Heaven & Earth\"","逆弓「天壌夢弓」"},{"逆弓「天壤梦弓」","Reverse Bow \"Dream Bow of Heaven & Earth\"","逆弓「天壌夢弓」"},{"逆弓「天壤梦弓的诏敕」","Reverse Bow \n\"Decree of the Dream Bow of Heaven & Earth\"","逆弓「天壌夢弓の詔勅」"},{"逆弓「天壤梦弓的诏敕」","Reverse Bow \n\"Decree of the Dream Bow of Heaven & Earth\"","逆弓「天壌夢弓の詔勅」"},{"","",""}}},
++    {39,5,0,1,false,true,false,{{"逆转「阶级反转」","Turnabout \"Reverse Hierarchy\"","逆転「リバースヒエラルキー」"},{"逆转「阶级反转」","Turnabout \"Reverse Hierarchy\"","逆転「リバースヒエラルキー」"},{"逆转「变革空勇士」","Turnabout \"Change Air Brave\"","逆転「チェンジエアブレイブ」"},{"逆转「变革空勇士」","Turnabout \"Change Air Brave\"","逆転「チェンジエアブレイブ」"},{"","",""}}},
++    {40,6,0,1,false,false,false,{{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"","",""}}},
++    {41,6,0,1,false,true,false,{{"道中二非","Mid Nonspell 2","道中 通常2"},{"道中二非","Mid Nonspell 2","道中 通常2"},{"道中二非","Mid Nonspell 2","道中 通常2"},{"道中二非","Mid Nonspell 2","道中 通常2"},{"","",""}}},
++    {42,6,0,1,true,false,false,{{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"","",""}}},
++    {43,6,0,1,false,false,false,{{"小弹「小人的道路」","Small Bullet \"Inchling's Path\"","小弾「小人の道」"},{"小弹「小人的道路」","Small Bullet \"Inchling's Path\"","小弾「小人の道」"},{"小弹「小人的荆棘路」","Small Bullet \"Inchling's Thorny Path\"","小弾「小人の茨道」"},{"小弹「小人的荆棘路」","Small Bullet \"Inchling's Thorny Path\"","小弾「小人の茨道」"},{"","",""}}},
++    {44,6,0,1,false,true,false,{{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"","",""}}},
++    {45,6,0,1,false,false,false,{{"小槌「变大吧」","Mallet \"Grow Bigger!\"","小槌「大きくなあれ」"},{"小槌「变大吧」","Mallet \"Grow Bigger!\"","小槌「大きくなあれ」"},{"小槌「变得更大吧」","Mallet \"Grow Even Bigger!\"","小槌「もっと大きくなあれ」"},{"小槌「变得更大吧」","Mallet \"Grow Even Bigger!\"","小槌「もっと大きくなあれ」"},{"","",""}}},
++    {46,6,0,1,false,true,false,{{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"","",""}}},
++    {47,6,0,1,false,false,false,{{"妖剑「辉针剑」","Bewitched Sword \"Shining Needle Sword\"","妖剣「輝針剣」"},{"妖剑「辉针剑」","Bewitched Sword \"Shining Needle Sword\"","妖剣「輝針剣」"},{"妖剑「辉针剑」","Bewitched Sword \"Shining Needle Sword\"","妖剣「輝針剣」"},{"妖剑「辉针剑」","Bewitched Sword \"Shining Needle Sword\"","妖剣「輝針剣」"},{"","",""}}},
++    {48,6,0,1,false,true,false,{{"关底四非","Boss Nonspell 4","ボス 通常4"},{"关底四非","Boss Nonspell 4","ボス 通常4"},{"关底四非","Boss Nonspell 4","ボス 通常4"},{"关底四非","Boss Nonspell 4","ボス 通常4"},{"","",""}}},
++    {49,6,0,2,false,false,true,{{"小槌「你给我变大吧」","Mallet \"You Grow Bigger!\"","小槌「お前が大きくなあれ」"},{"小槌「你给我变大吧」","Mallet \"You Grow Bigger!\"","小槌「お前が大きくなあれ」"},{"小槌「你给我变大吧」","Mallet \"You Grow Bigger!\"","小槌「お前が大きくなあれ」"},{"小槌「你给我变大吧」","Mallet \"You Grow Bigger!\"","小槌「お前が大きくなあれ」"},{"","",""}}},
++    {50,6,0,2,false,true,false,{{"「进击的小人」","\"Attack on Dwarf\"","「進撃の小人」"},{"「进击的小人」","\"Attack on Dwarf\"","「進撃の小人」"},{"「一寸之壁」","\"Wall of Issun\"","「ウォールオブイッスン」"},{"「一寸之壁」","\"Wall of Issun\"","「ウォールオブイッスン」"},{"","",""}}},
++    {51,6,0,4,false,true,false,{{"「七个小拇指」","\"Hop-o'-My-Thumb Seven\"","「ホップオマイサムセブン」"},{"「七个小拇指」","\"Hop-o'-My-Thumb Seven\"","「ホップオマイサムセブン」"},{"「七个一寸法师」","\"The Seven Issun-Boshi\"","「七人の一寸法師」"},{"「七个一寸法师」","\"The Seven Issun-Boshi\"","「七人の一寸法師」"},{"","",""}}},
++    {52,7,0,1,true,false,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"道中一非","Mid Nonspell 1","道中 通常1"}}},
++    {53,7,0,1,false,false,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"弦乐「风暴的合奏」","String Music \"Storm Ensemble\"","弦楽「嵐のアンサンブル」"}}},
++    {54,7,0,1,false,true,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"弦乐「净琉璃世界」","String Music \"Joururi World\"","弦楽「浄瑠璃世界」"}}},
++    {55,7,0,1,true,false,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"关底一非","Boss Nonspell 1","ボス 通常1"}}},
++    {56,7,0,1,false,false,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"一鼓「暴乱宫太鼓」","First Drum \"Raging Temple Taiko\"","一鼓「暴れ宮太鼓」"}}},
++    {57,7,0,1,false,true,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"关底二非","Boss Nonspell 2","ボス 通常2"}}},
++    {58,7,0,1,false,false,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"二鼓「怨灵绫鼓」","Second Drum \"Vengeful Spirit Aya-no-Tsuzumi\"","二鼓「怨霊アヤノツヅミ」"}}},
++    {59,7,0,1,false,true,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"关底三非","Boss Nonspell 3","ボス 通常3"}}},
++    {60,7,0,1,false,false,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"三鼓「午夜零时的三振」","Third Drum \"Three Strikes at Midnight\"","三鼓「午前零時のスリーストライク」"}}},
++    {61,7,0,1,false,true,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"关底四非","Boss Nonspell 4","ボス 通常4"}}},
++    {62,7,0,1,false,false,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"死鼓「轻敲大地」","Death Drum \"Land Percuss\"","死鼓「ランドパーカス」"}}},
++    {63,7,0,1,false,true,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"关底五非","Boss Nonspell 5","ボス 通常5"}}},
++    {64,7,0,1,false,false,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"五鼓「雷电拨浪鼓」","Fifth Drum \"Den-Den Daiko\"","五鼓「デンデン太鼓」"}}},
++    {65,7,0,1,false,true,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"关底六非","Boss Nonspell 6","ボス 通常6"}}},
++    {66,7,0,1,false,false,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"六鼓「交替打击法」","Sixth Drum \"Alternate Sticking\"","六鼓「オルタネイトスティッキング」"}}},
++    {67,7,0,1,false,true,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"关底七非","Boss Nonspell 7","ボス 通常7"}}},
++    {68,7,0,1,false,false,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"七鼓「高速和太鼓火箭」","Seventh Drum \"High Speed Taiko Rocket\"","七鼓「高速和太鼓ロケット」"}}},
++    {69,7,0,1,false,true,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"关底八非","Boss Nonspell 8","ボス 通常8"}}},
++    {70,7,0,1,false,false,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"八鼓「雷神之怒」","Eighth Drum \"Thunder God's Anger\"","八鼓「雷神の怒り」"}}},
++    {71,7,0,2,false,true,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"「蓝色佳人的演出」","\"Blue Lady Show\"","「ブルーレディショー」"}}},
++    {72,7,0,5,false,false,false,{{"","",""},{"","",""},{"","",""},{"","",""},{"「原初的节拍」","\"Pristine Beat\"","「プリスティンビート」"}}},
++    {73,4,1,1,false,false,false,{{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"","",""}}},
++    {74,4,1,1,false,true,false,{{"道中二非","Mid Nonspell 2","道中 通常2"},{"道中二非","Mid Nonspell 2","道中 通常2"},{"道中二非","Mid Nonspell 2","道中 通常2"},{"道中二非","Mid Nonspell 2","道中 通常2"},{"","",""}}},
++    {75,4,1,1,true,false,false,{{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"","",""}}},
++    {76,4,1,1,false,false,false,{{"平曲「祗园精舍的钟声」","Heikyoku \"Sounds of Jetavana's Bell\"","平曲「祇園精舎の鐘の音」"},{"平曲「祗园精舍的钟声」","Heikyoku \"Sounds of Jetavana's Bell\"","平曲「祇園精舎の鐘の音」"},{"平曲「祗园精舍的钟声」","Heikyoku \"Sounds of Jetavana's Bell\"","平曲「祇園精舎の鐘の音」"},{"平曲「祗园精舍的钟声」","Heikyoku \"Sounds of Jetavana's Bell\"","平曲「祇園精舎の鐘の音」"},{"","",""}}},
++    {77,4,1,1,false,true,false,{{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"","",""}}},
++    {78,4,1,1,false,false,false,{{"怨灵「无耳芳一」","Vengeful Spirit \"Hoichi the Earless\"","怨霊「耳無し芳一」"},{"怨灵「无耳芳一」","Vengeful Spirit \"Hoichi the Earless\"","怨霊「耳無し芳一」"},{"怨灵「平家的大怨灵」","Vengeful Spirit \"Great Vengeful Spirit of Taira\"","怨霊「平家の大怨霊」"},{"怨灵「平家的大怨灵」","Vengeful Spirit \"Great Vengeful Spirit of Taira\"","怨霊「平家の大怨霊」"},{"","",""}}},
++    {79,4,1,1,false,true,false,{{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"","",""}}},
++    {80,4,1,1,false,false,false,{{"乐符「邪恶的五线谱」","Music Sign \"Wicked Musical Score\"","楽符「邪悪な五線譜」"},{"乐符「邪恶的五线谱」","Music Sign \"Wicked Musical Score\"","楽符「邪悪な五線譜」"},{"乐符「凶恶的五线谱」","Music Sign \"Malicious Musical Score\"","楽符「凶悪な五線譜」"},{"乐符「双重乐谱」","Music Sign \"Double Score\"","楽符「ダブルスコア」"},{"","",""}}},
++    {81,4,2,1,false,false,false,{{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"道中一非","Mid Nonspell 1","道中 通常1"},{"","",""}}},
++    {82,4,2,1,false,true,false,{{"道中二非","Mid Nonspell 2","道中 通常2"},{"道中二非","Mid Nonspell 2","道中 通常2"},{"道中二非","Mid Nonspell 2","道中 通常2"},{"道中二非","Mid Nonspell 2","道中 通常2"},{"","",""}}},
++    {83,4,2,1,true,false,false,{{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"关底一非","Boss Nonspell 1","ボス 通常1"},{"","",""}}},
++    {84,4,2,1,false,false,false,{{"琴符「诸行无常的琴声」","Koto Sign \"Sounds of Anicca's Koto\"","琴符「諸行無常の琴の音」"},{"琴符「诸行无常的琴声」","Koto Sign \"Sounds of Anicca's Koto\"","琴符「諸行無常の琴の音」"},{"琴符「诸行无常的琴声」","Koto Sign \"Sounds of Anicca's Koto\"","琴符「諸行無常の琴の音」"},{"琴符「诸行无常的琴声」","Koto Sign \"Sounds of Anicca's Koto\"","琴符「諸行無常の琴の音」"},{"","",""}}},
++    {85,4,2,1,false,true,false,{{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"关底二非","Boss Nonspell 2","ボス 通常2"},{"","",""}}},
++    {86,4,2,1,false,false,false,{{"响符「平安的残响」","Echo Sign \"Heian's Reverberation\"","響符「平安の残響」"},{"响符「平安的残响」","Echo Sign \"Heian's Reverberation\"","響符「平安の残響」"},{"响符「回音之庭」","Echo Sign \"Echo Chamber\"","響符「エコーチェンバー」"},{"响符「回音之庭」","Echo Sign \"Echo Chamber\"","響符「エコーチェンバー」"},{"","",""}}},
++    {87,4,2,1,false,true,false,{{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"关底三非","Boss Nonspell 3","ボス 通常3"},{"","",""}}},
++    {88,4,2,1,false,false,false,{{"筝曲「下克上送筝曲」","Koto Music \"Social Upheaval Koto Music Complement\"","箏曲「下克上送箏曲」"},{"筝曲「下克上送筝曲」","Koto Music \"Social Upheaval Koto Music Complement\"","箏曲「下克上送箏曲」"},{"筝曲「下克上安魂曲」","Koto Music \"Social Upheaval Requiem\"","箏曲「下克上レクイエム」"},{"筝曲「下克上安魂曲」","Koto Music \"Social Upheaval Requiem\"","箏曲「下克上レクイエム」"},{"","",""}}},
++};
+diff --git a/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp b/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..02b4af59aec6efd79d7e1b07b6cf954ae9f469d6
+--- /dev/null
++++ b/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp
+@@ -0,0 +1,255 @@
++#include "PracticeUiTh14.hpp"
++#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
++#include "../game/GameSession.hpp"
++#include "../../../portable/sdl/Renderer.hpp"
++#include <eagler/thprac/PracticeMobilePanels.hpp>
++#include "imgui_freetype.h"
++#include <emscripten.h>
++#include <algorithm>
++#include <array>
++#include <cfloat>
++#include <cstdio>
++#include <deque>
++#include <vector>
++
++namespace th11::sdl::PracticeUiTh14 {
++namespace {
++namespace Mobile=eagler::thprac::mobile;
++using Labels=const char* const[3];
++struct Item {int id,stage,variant,phases;bool dialogue,drops,angle;const char* names[5][3];};
++#include "PracticeLabelsTh14.inc"
++constexpr int waves[]={5,6,6,7,6,4,9};
++constexpr const char* setup_text[][3]={
++ {"练习设置","Practice setup","練習設定"},{"关卡","Stage","ステージ"},{"难度","Difficulty","難易度"},
++ {"角色","Character","自機"},{"机体","Shot","装備"},{"起点","Start at","開始地点"},{"从头开始","Stage start","ステージ開始"},
++ {"波次","Wave","区間"},{"阶段","Phase","フェーズ"},{"保留对话","Keep dialogue","会話あり"},{"保留掉落","Keep drops","アイテム維持"},
++ {"残机","Lives","残機"},{"残机碎片","Life pieces","残機のかけら"},{"炸弹","Bombs","ボム"},{"炸弹碎片","Bomb pieces","ボムのかけら"},
++ {"灵力","Power","霊力"},{"最大得点","Point value","最大得点"},{"擦弹","Graze","グレイズ"},{"得分","Score","スコア"},
++ {"收集循环","Collection cycle","回収周期"},{"弹幕角度","Pattern angle","弾幕角度"},{"开始练习","Start practice","練習開始"},
++ {"关闭","Close","閉じる"},{"帧","Frame","フレーム"},{"关底音乐","Boss BGM","ボス曲"},{"状态信息","Tracker","詳細情報"},
++ {"作弊菜单","Cheats","チートメニュー"},
++};
++constexpr const char* cheat_text[][3]={
++ {"无敌","Invincible","無敵"},{"无限残机","Infinite lives","残機無限"},{"无限炸弹","Infinite bombs","ボム無限"},
++ {"锁定火力","Keep power","霊力維持"},{"锁定计时","Lock timer","タイマー停止"},{"自动决死","Auto deathbomb","自動喰らいボム"},
++ {"敌人无敌","Enemy invincible","敵無敵"},{"自动射击","Auto shoot","自動射撃"},{"禁用射击","Disable shoot","射撃無効"},
++ {"禁用炸弹","Disable bomb","ボム無効"},{"强制低速","Force focus","低速固定"},
++};
++constexpr const char* shortcuts[]={"F1","F2","F3","F4","F5","F6","U"};
++constexpr const char* chars[][3]={{"灵梦","Reimu","霊夢"},{"魔理沙","Marisa","魔理沙"},{"咲夜","Sakuya","咲夜"}};
++constexpr const char* stages[]={"1","2","3","4","5","6","Extra"};
++constexpr const char* difficulties[]={"Easy","Normal","Hard","Lunatic","Extra"};
++constexpr const char* shots[]={"A","B"};
++constexpr int keys[]={9,37,39,38,40,33,34,36,35,45,46,8,32,13,27,13,65,67,86,88,89,90};
++constexpr ImGuiWindowFlags panel_flags=ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoCollapse|ImGuiWindowFlags_NoTitleBar;
++GameSession* game=nullptr;
++ImGuiContext* context=nullptr;
++PracticeTh14 params;
++int locale=2,rank=1,character=0,shot=0;
++bool setup=false,cheats=false,tracker=false,announced=false,armed=false;
++bool bgm_request=false;
++std::array<bool,256> held{},pressed{};
++struct PointerEdge{bool down;float x,y;};
++std::deque<PointerEdge> edges;
++int active_pointer=0;
++bool owned_pointer=false,mouse_down=false;
++float mouse_x=-FLT_MAX,mouse_y=-FLT_MAX;
++const char* label(Labels& text){return text[locale];}
++const char* t(int i){return label(setup_text[i]);}
++void publish(bool open){
++    if(announced==open)return;
++    announced=open;
++    EM_ASM({window.dispatchEvent(new CustomEvent('eagler-thprac-menu',{detail:{open:!!$0}}));},int(open));
++}
++bool on_title(){return game->state.phase==GameSessionPhase::title&&game->title;}
++bool on_stage(){return game->state.phase==GameSessionPhase::stage||game->state.phase==GameSessionPhase::paused;}
++bool editable(){return on_stage()&&!game->state.replay&&!game->state.demo;}
++bool visible(){return setup||cheats||tracker||Mobile::visible;}
++void reset_section(){params.section=params.phase=params.flags=0;}
++void start(){
++    if(!on_title()||!params.valid(rank))return;
++    auto& choice=game->title->selection;
++    choice.stage=params.stage;choice.character=character;choice.partner=shot;choice.difficulty=rank;
++    choice.flags=(choice.flags&~48u)|16u;
++    game->practice_request=params;game->title->start_requested=true;
++    close();
++}
++void practice_options(){
++    if(!on_title()){setup=false;return;}
++    const auto flags=panel_flags;
++    ImGui::SetNextWindowPos({220,48},ImGuiCond_Always);
++    ImGui::SetNextWindowSize({402,425},ImGuiCond_Always);
++    ImGui::SetNextWindowBgAlpha(.8f);
++    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,0);
++    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0);
++    if(ImGui::Begin("Option###th14-purple-practice",nullptr,flags)){
++        ImGui::PushItemWidth(-105);
++        ImGui::TextUnformatted(t(0));ImGui::Separator();
++        int stage=params.stage-1;
++        if(ImGui::Combo(t(1),&stage,stages,7)){params.stage=stage+1;rank=stage==6?4:std::min(rank,3);reset_section();}
++        if(ImGui::Combo(t(2),&rank,difficulties,5)){
++            if(rank==4)params.stage=7;else if(params.stage==7)params.stage=6;
++            reset_section();
++        }
++        const char* names[]={label(chars[0]),label(chars[1]),label(chars[2])};
++        ImGui::Combo(t(3),&character,names,3);
++        if(ImGui::Combo(t(4),&shot,shots,2))reset_section();
++        const Item* item=nullptr;
++        std::array<char,48> wave{};
++        const char* preview=t(6);
++        if(params.section>=10000){std::snprintf(wave.data(),wave.size(),"%s %d",t(7),params.section%100);preview=wave.data();}
++        auto eligible=[&](const Item& s){return s.stage==params.stage&&*s.names[rank][locale]&&
++            (params.stage!=4||s.variant==shot+1);};
++        for(const auto& s:practice_labels)if(s.id==params.section&&eligible(s)){item=&s;preview=s.names[rank][locale];break;}
++        if(ImGui::BeginCombo(t(5),preview)){
++            auto option=[&](int id,const char* title,const Item* selected){
++                ImGui::PushID(id);
++                if(ImGui::Selectable(title,id==params.section)){reset_section();params.section=id;item=selected;}
++                ImGui::PopID();
++            };
++            option(0,t(6),nullptr);
++            for(int i=1;i<=waves[params.stage-1];++i){
++                char text[48];std::snprintf(text,sizeof text,"%s %d",t(7),i);
++                option(10000+params.stage*100+i,text,nullptr);
++            }
++            for(const auto& s:practice_labels)if(eligible(s))option(s.id,s.names[rank][locale],&s);
++            ImGui::EndCombo();
++        }
++        if(item&&item->phases>1)ImGui::SliderInt(t(8),&params.phase,0,item->phases-1);
++        auto flag=[&](int bit,int i){bool value=(params.flags&bit)!=0;if(ImGui::Checkbox(t(i),&value))params.flags^=bit;};
++        if(item&&item->dialogue)flag(1,9);
++        if(item&&item->drops)flag(2,10);
++        ImGui::SliderInt(t(11),&params.life,0,8);
++        ImGui::SliderInt(t(12),&params.life_fragment,0,2);
++        ImGui::SliderInt(t(13),&params.bomb,0,8);
++        ImGui::SliderInt(t(14),&params.bomb_fragment,0,7);
++        char power[24];std::snprintf(power,sizeof power,"%.2f",params.power/100.);
++        ImGui::SliderInt(t(15),&params.power,0,400,power);
++        ImGui::DragInt(t(16),&params.value,10,0,999990);
++        ImGui::DragInt(t(17),&params.graze,1,0,999999);
++        i64 score=i64(params.score)*10;const i64 lo=0,hi=9999999990LL;
++        if(ImGui::DragScalar(t(18),ImGuiDataType_S64,&score,10,&lo,&hi,"%lld"))params.score=i32(score/10);
++        ImGui::SliderInt(t(19),&params.cycle,0,4);
++        if(item&&item->angle)ImGui::SliderInt(t(20),&params.angle,-100,100);
++        if(ImGui::Button(t(21),{116,30}))start();
++        ImGui::SameLine();if(ImGui::Button(t(22),{88,30}))close();
++        ImGui::PopItemWidth();
++    }
++    ImGui::End();ImGui::PopStyleVar(2);
++    if(!held[90]&&!held[13])armed=true;
++    if(setup&&armed&&(pressed[90]||pressed[13])&&!ImGui::IsAnyItemActive()&&!ImGui::IsPopupOpen(nullptr,ImGuiPopupFlags_AnyPopupId|ImGuiPopupFlags_AnyPopupLevel))start();
++}
++void cheat_options(){
++    ImGui::SetNextWindowPos({8,8},ImGuiCond_Always);
++    ImGui::SetNextWindowSize({0,0});ImGui::SetNextWindowBgAlpha(.65f);
++    if(Mobile::begin(Mobile::Cheats,"Mod Menu###th14-purple-overlay",panel_flags|ImGuiWindowFlags_AlwaysAutoResize,locale)){
++        for(int i=0;i<11;++i){
++            const u32 mask=1u<<i;bool value=!!(game->practice_tools&mask);
++            ImGui::BeginDisabled(!editable());
++            const bool change=i<7?Mobile::checkbox(shortcuts[i],label(cheat_text[i]),value):ImGui::Checkbox(label(cheat_text[i]),&value);
++            if(change)game->practice_tools^=mask;
++            ImGui::EndDisabled(!editable());
++        }
++        ImGui::BeginDisabled(!editable());
++        if(ImGui::Button((std::string("F7: ")+t(24)).c_str()))bgm_request=true;
++        ImGui::EndDisabled(!editable());
++        Mobile::checkbox("Tab",t(25),tracker);
++        if(!Mobile::enabled&&ImGui::Button(t(22)))close();
++    }
++    ImGui::End();
++}
++void information(){
++    ImGui::SetNextWindowPos({444,255},ImGuiCond_Always);
++    ImGui::SetNextWindowSize({180,0});ImGui::SetNextWindowBgAlpha(.9f);
++    auto flags=panel_flags|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoNav|ImGuiWindowFlags_NoFocusOnAppearing;
++    if(Mobile::begin(Mobile::Information,"Info###th14-purple-info",flags|ImGuiWindowFlags_NoInputs,locale)){
++        ImGui::Columns(2);
++        auto field=[](const char* title,long long value){ImGui::TextUnformatted(title);ImGui::NextColumn();ImGui::Text("%lld",value);ImGui::NextColumn();};
++        field(t(1),game->state.stage);field(t(23),game->state.frame);field(t(17),game->economy.graze);field(t(18),i64(game->economy.score_units)*10);
++        ImGui::Columns(1);
++    }
++    ImGui::End();
++}
++bool ensure_context(){
++    if(context)return true;
++    IMGUI_CHECKVERSION();context=ImGui::CreateContext();
++    auto& io=ImGui::GetIO();io.DisplaySize={640,480};io.DisplayFramebufferScale={2,2};io.IniFilename=nullptr;
++    io.ConfigFlags|=ImGuiConfigFlags_NavEnableKeyboard;
++    static_assert(std::size(keys)==ImGuiKey_COUNT);
++    for(int i=0;i<ImGuiKey_COUNT;++i)io.KeyMap[i]=keys[i];
++    ImGui::StyleColorsDark();
++    ImFontGlyphRangesBuilder glyphs;
++    glyphs.AddRanges(io.Fonts->GetGlyphRangesDefault());
++    for(const auto& row:setup_text)for(const auto* text:row)glyphs.AddText(text);
++    for(const auto& row:cheat_text)for(const auto* text:row)glyphs.AddText(text);
++    for(const auto& row:chars)for(const auto* text:row)glyphs.AddText(text);
++    for(const auto& item:practice_labels)for(const auto& row:item.names)for(const auto* text:row)glyphs.AddText(text);
++    for(const auto* text:{"作弊菜单高级设置高级状态信息","チートメニュー詳細設定詳細情報"})glyphs.AddText(text);
++    static ImVector<ImWchar> ranges;glyphs.BuildRanges(&ranges);
++    ImFontConfig cfg;cfg.RasterizerMultiply=1.25f;
++    if(SDL_GetPathInfo("/unifont.otf",nullptr))io.FontDefault=io.Fonts->AddFontFromFileTTF("/unifont.otf",16,&cfg,ranges.Data);
++    if(!io.FontDefault)io.FontDefault=io.Fonts->AddFontDefault();
++    if(ImGuiFreeType::BuildFontAtlas(io.Fonts,0))return true;
++    ImGui::DestroyContext(context);context=nullptr;return false;
++}
++}
++void configure(GameSession& s,bool enabled,int language){
++    close();game=&s;s.practice_enabled=enabled;s.practice_tools=0;
++    locale=std::clamp(language,0,2);
++    params={};params.stage=1;rank=1;character=shot=0;
++}
++void mobile(bool enabled,bool open){
++    if(!game||!game->practice_enabled)return;
++    const bool changed=enabled!=Mobile::enabled||open!=Mobile::visible;
++    Mobile::update(enabled,open);
++    if(!changed)return;
++    if(!open){setup=cheats=false;clear_input();}
++    else if(on_title()){setup=true;armed=false;}
++    publish(setup||cheats||Mobile::visible);
++}
++bool captures() noexcept {return game&&game->practice_enabled&&(setup||cheats||Mobile::visible);}
++bool key(unsigned vk,bool down){
++    if(!game||!game->practice_enabled||vk>=held.size())return false;
++    const bool was_captured=captures();
++    const bool edge=down&&!held[vk];held[vk]=down;pressed[vk]|=edge;
++    const bool special=vk==8||vk==9||vk==123||vk==85||(vk>=112&&vk<=118);
++    if(edge){
++        if(vk==123&&on_title()){setup=!setup;armed=false;publish(captures());}
++        else if(vk==8&&!setup){cheats=!cheats;publish(captures());}
++        else if(vk==9&&on_stage())tracker=!tracker;
++        else if(vk==27&&captures())close();
++        else if(editable()&&vk>=112&&vk<=117)game->practice_tools^=1u<<(vk-112);
++        else if(editable()&&vk==85)game->practice_tools^=PrEnemy;
++        else if(editable()&&vk==118)bgm_request=true;
++    }
++    return special||was_captured||captures();
++}
++bool pointer(unsigned type,int id,float x,float y){
++    if(!captures()||type>2)return false;
++    if(type==0){if(owned_pointer)return true;owned_pointer=true;active_pointer=id;}
++    if(!owned_pointer||active_pointer!=id)return true;
++    mouse_x=x*640;mouse_y=y*480;
++    if(type!=1&&edges.size()<32)edges.push_back({type==0,mouse_x,mouse_y});
++    if(type==2)owned_pointer=false;
++    return true;
++}
++void clear_input(){held.fill(false);pressed.fill(false);edges.clear();owned_pointer=mouse_down=false;mouse_x=mouse_y=-FLT_MAX;}
++void mouse_motion(float x,float y){if(captures()){mouse_x=x*640;mouse_y=y*480;}}
++bool take_bgm_request(){const bool value=bgm_request;bgm_request=false;return value;}
++void close(){setup=cheats=tracker=bgm_request=false;Mobile::update(Mobile::enabled,false);clear_input();publish(false);}
++void draw(GameSession& s,touhou::sdl::Renderer& renderer){
++    if(!s.practice_enabled||!visible()||!ensure_context())return;
++    auto& io=ImGui::GetIO();io.DeltaTime=1.f/60;io.MousePos={mouse_x,mouse_y};
++    if(!edges.empty()){auto e=edges.front();edges.pop_front();mouse_down=e.down;io.MousePos={e.x,e.y};}
++    io.MouseDown[0]=mouse_down;io.KeyCtrl=held[17];io.KeyShift=held[16];io.KeyAlt=held[18];
++    for(unsigned i=0;i<held.size();++i)io.KeysDown[i]=held[i];
++    ImGui::NewFrame();
++    if(setup)practice_options();
++    else if(cheats||Mobile::visible)cheat_options();
++    if(tracker&&on_stage())information();
++    ImGui::Render();
++    renderer.render_imgui(ImGui::GetDrawData(),1);
++    pressed.fill(false);
++}
++}
++#endif
+diff --git a/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.hpp b/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.hpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..b95bbe1612a079e81d6cd4da9aa2f9ff7ad516c7
+--- /dev/null
++++ b/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.hpp
+@@ -0,0 +1,21 @@
++#pragma once
++#include "../game/PortTitle.hpp"
++#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
++#include "../game/Types.hpp"
++namespace touhou::sdl {class Renderer;}
++namespace th11 {
++class GameSession;
++namespace sdl::PracticeUiTh14 {
++void configure(GameSession&,bool enabled,int locale);
++void mobile(bool enabled,bool visible);
++bool key(unsigned vk,bool down);
++bool pointer(unsigned type,int id,float x,float y);
++void mouse_motion(float x,float y);
++bool take_bgm_request();
++bool captures() noexcept;
++void clear_input();
++void close();
++void draw(GameSession&,touhou::sdl::Renderer&);
++}
++}
++#endif
 diff --git a/runtimes/th12/th12_web/cpp/sdl/Th14MusicStream.hpp b/runtimes/th12/th12_web/cpp/sdl/Th14MusicStream.hpp
 index c61edb9701f1e14af6c58e0c7cbabfa029daff5e..224266022445e77587f899b64929598692d261f7 100644
 --- a/runtimes/th12/th12_web/cpp/sdl/Th14MusicStream.hpp
@@ -4776,172 +5314,6 @@ index c61edb9701f1e14af6c58e0c7cbabfa029daff5e..224266022445e77587f899b649295986
                      preceding_ready=true;decoder=&preceding;
                  }
                  const auto result=ma_data_source_seek_to_pcm_frame(decoder,(physical-offset)/align());if(result!=MA_SUCCESS)return result;
-diff --git a/runtimes/th12/th12_web/sdl-runtime/Th14PracticeCatalog.mjs b/runtimes/th12/th12_web/sdl-runtime/Th14PracticeCatalog.mjs
-new file mode 100644
-index 0000000000000000000000000000000000000000..7f0a6e4be61cc6130c16af12bc81832cf921c9c2
---- /dev/null
-+++ b/runtimes/th12/th12_web/sdl-runtime/Th14PracticeCatalog.mjs
-@@ -0,0 +1,3 @@
-+// Adapted from rueee/thprac master_2 (MIT, copyright Ack). See PracticeLicenseTh14.txt.
-+// thprac_th14.cpp SHA-256 (LF): eacc80f94d1716dd2b2c26080ce54ec5871463de4318b1b2984e8c90585760a7
-+export const sections = [{"id":1,"stage":1,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":2,"stage":1,"variant":0,"bgm":0,"group":1,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["冰符「Ultimate Blizzard」","Ice Sign \"Ultimate Blizzard\"","氷符「アルティメットブリザード」"],["冰符「Ultimate Blizzard」","Ice Sign \"Ultimate Blizzard\"","氷符「アルティメットブリザード」"],["","",""]]},{"id":3,"stage":1,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":4,"stage":1,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["水符「尾鳍拍击」","Water Sign \"Tail Fin Slap\"","水符「テイルフィンスラップ」"],["水符「尾鳍拍击」","Water Sign \"Tail Fin Slap\"","水符「テイルフィンスラップ」"],["水符「尾鳍拍击」","Water Sign \"Tail Fin Slap\"","水符「テイルフィンスラップ」"],["水符「尾鳍拍击」","Water Sign \"Tail Fin Slap\"","水符「テイルフィンスラップ」"],["","",""]]},{"id":5,"stage":1,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":6,"stage":1,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["鳞符「鳞之波」","Scale Sign \"Scale Wave\"","鱗符「スケールウェイブ」"],["鳞符「鳞之波」","Scale Sign \"Scale Wave\"","鱗符「スケールウェイブ」"],["鳞符「逆鳞的惊涛」","Scale Sign \"Raging Waves of the Reversed Scale\"","鱗符「逆鱗の荒波」"],["鳞符「逆鳞的大惊涛」","Scale Sign \"Great Raging Waves of the Reversed Scale\"","鱗符「逆鱗の大荒波」"],["","",""]]},{"id":7,"stage":2,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":8,"stage":2,"variant":0,"bgm":0,"group":1,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["飞符「飞行之头」","Flight Sign \"Flying Head\"","飛符「フライングヘッド」"],["飞符「飞行之头」","Flight Sign \"Flying Head\"","飛符「フライングヘッド」"],["飞符「飞行之头」","Flight Sign \"Flying Head\"","飛符「フライングヘッド」"],["飞符「飞行之头」","Flight Sign \"Flying Head\"","飛符「フライングヘッド」"],["","",""]]},{"id":9,"stage":2,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":10,"stage":2,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["首符「闭目射击」","Neck Sign \"Close-Eye Shot\"","首符「クローズアイショット」"],["首符「闭目射击」","Neck Sign \"Close-Eye Shot\"","首符「クローズアイショット」"],["首符「辘轳首飞来」","Neck Sign \"Rokurokubi Flight\"","首符「ろくろ首飛来」"],["首符「辘轳首飞来」","Neck Sign \"Rokurokubi Flight\"","首符「ろくろ首飛来」"],["","",""]]},{"id":11,"stage":2,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":12,"stage":2,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["飞头「倍增之头」","Flying Head \"Multiplicative Head\"","飛頭「マルチプリケイティブヘッド」"],["飞头「倍增之头」","Flying Head \"Multiplicative Head\"","飛頭「マルチプリケイティブヘッド」"],["飞头「第七个头」","Flying Head \"Seventh Head\"","飛頭「セブンズヘッド」"],["飞头「第九个头」","Flying Head \"Ninth Head\"","飛頭「ナインズヘッド」"],["","",""]]},{"id":13,"stage":2,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["飞头「杜拉罕之夜」","Flying Head \"Dullahan Night\"","飛頭「デュラハンナイト」"],["飞头「杜拉罕之夜」","Flying Head \"Dullahan Night\"","飛頭「デュラハンナイト」"],["飞头「杜拉罕之夜」","Flying Head \"Dullahan Night\"","飛頭「デュラハンナイト」"],["飞头「杜拉罕之夜」","Flying Head \"Dullahan Night\"","飛頭「デュラハンナイト」"],["","",""]]},{"id":14,"stage":3,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":15,"stage":3,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["","",""],["","",""],["","",""]]},{"id":16,"stage":3,"variant":0,"bgm":0,"group":1,"spell":true,"dialogue":false,"drops":false,"phases":2,"angle":false,"labels":[["","",""],["","",""],["牙符「月下的犬齿」","Fang Sign \"Moonlit Canine Teeth\"","牙符「月下の犬歯」"],["牙符「月下的犬齿」","Fang Sign \"Moonlit Canine Teeth\"","牙符「月下の犬歯」"],["","",""]]},{"id":17,"stage":3,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":18,"stage":3,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["变身「三角齿」","Transformation \"Triangle Fang\"","変身「トライアングルファング」"],["变身「三角齿」","Transformation \"Triangle Fang\"","変身「トライアングルファング」"],["变身「星形齿」","Transformation \"Star Fang\"","変身「スターファング」"],["变身「星形齿」","Transformation \"Star Fang\"","変身「スターファング」"],["","",""]]},{"id":19,"stage":3,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":20,"stage":3,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["咆哮「陌生的咆哮」","Roar \"Strange Roar\"","咆哮「ストレンジロア」"],["咆哮「陌生的咆哮」","Roar \"Strange Roar\"","咆哮「ストレンジロア」"],["咆哮「満月的远吠」","Roar \"Full Moon Howling\"","咆哮「満月の遠吠え」"],["咆哮「満月的远吠」","Roar \"Full Moon Howling\"","咆哮「満月の遠吠え」"],["","",""]]},{"id":21,"stage":3,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["","",""]]},{"id":22,"stage":3,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["狼符「星环猛扑」","Wolf Sign \"Star Ring Pounce\"","狼符「スターリングパウンス」"],["狼符「星环猛扑」","Wolf Sign \"Star Ring Pounce\"","狼符「スターリングパウンス」"],["天狼「高速猛扑」","Sirius \"High-Speed Pounce\"","天狼「ハイスピードパウンス」"],["天狼「高速猛扑」","Sirius \"High-Speed Pounce\"","天狼「ハイスピードパウンス」"],["","",""]]},{"id":23,"stage":4,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":24,"stage":4,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["","",""]]},{"id":25,"stage":4,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":26,"stage":4,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["","",""]]},{"id":27,"stage":4,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":28,"stage":4,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["","",""]]},{"id":29,"stage":4,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["","",""]]},{"id":30,"stage":4,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["","",""]]},{"id":31,"stage":5,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":32,"stage":5,"variant":0,"bgm":0,"group":1,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["欺符「逆针击」","Deceit Sign \"Reverse Needle Attack\"","欺符「逆針撃」"],["欺符「逆针击」","Deceit Sign \"Reverse Needle Attack\"","欺符「逆針撃」"],["欺符「逆针击」","Deceit Sign \"Reverse Needle Attack\"","欺符「逆針撃」"],["欺符「逆针击」","Deceit Sign \"Reverse Needle Attack\"","欺符「逆針撃」"],["","",""]]},{"id":33,"stage":5,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":34,"stage":5,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["逆符「镜之国的弹幕」","Reverse Sign \"Danmaku Through the Looking-Glass\"","逆符「鏡の国の弾幕」"],["逆符「镜之国的弹幕」","Reverse Sign \"Danmaku Through the Looking-Glass\"","逆符「鏡の国の弾幕」"],["逆符「镜中的邪恶」","Reverse Sign \"Evil in the Mirror\"","逆符「イビルインザミラー」"],["逆符「镜中的邪恶」","Reverse Sign \"Evil in the Mirror\"","逆符「イビルインザミラー」"],["","",""]]},{"id":35,"stage":5,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":36,"stage":5,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["逆符「天地有用」","Reverse Sign \"This Side Down\"","逆符「天地有用」"],["逆符「天地有用」","Reverse Sign \"This Side Down\"","逆符「天地有用」"],["逆符「天下翻覆」","Reverse Sign \"Overturning All Under Heaven\"","逆符「天下転覆」"],["逆符「天下翻覆」","Reverse Sign \"Overturning All Under Heaven\"","逆符「天下転覆」"],["","",""]]},{"id":37,"stage":5,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["","",""]]},{"id":38,"stage":5,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["逆弓「天壤梦弓」","Reverse Bow \"Dream Bow of Heaven & Earth\"","逆弓「天壌夢弓」"],["逆弓「天壤梦弓」","Reverse Bow \"Dream Bow of Heaven & Earth\"","逆弓「天壌夢弓」"],["逆弓「天壤梦弓的诏敕」","Reverse Bow \n\"Decree of the Dream Bow of Heaven & Earth\"","逆弓「天壌夢弓の詔勅」"],["逆弓「天壤梦弓的诏敕」","Reverse Bow \n\"Decree of the Dream Bow of Heaven & Earth\"","逆弓「天壌夢弓の詔勅」"],["","",""]]},{"id":39,"stage":5,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["逆转「阶级反转」","Turnabout \"Reverse Hierarchy\"","逆転「リバースヒエラルキー」"],["逆转「阶级反转」","Turnabout \"Reverse Hierarchy\"","逆転「リバースヒエラルキー」"],["逆转「变革空勇士」","Turnabout \"Change Air Brave\"","逆転「チェンジエアブレイブ」"],["逆转「变革空勇士」","Turnabout \"Change Air Brave\"","逆転「チェンジエアブレイブ」"],["","",""]]},{"id":40,"stage":6,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":41,"stage":6,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["","",""]]},{"id":42,"stage":6,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":43,"stage":6,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["小弹「小人的道路」","Small Bullet \"Inchling's Path\"","小弾「小人の道」"],["小弹「小人的道路」","Small Bullet \"Inchling's Path\"","小弾「小人の道」"],["小弹「小人的荆棘路」","Small Bullet \"Inchling's Thorny Path\"","小弾「小人の茨道」"],["小弹「小人的荆棘路」","Small Bullet \"Inchling's Thorny Path\"","小弾「小人の茨道」"],["","",""]]},{"id":44,"stage":6,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":45,"stage":6,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["小槌「变大吧」","Mallet \"Grow Bigger!\"","小槌「大きくなあれ」"],["小槌「变大吧」","Mallet \"Grow Bigger!\"","小槌「大きくなあれ」"],["小槌「变得更大吧」","Mallet \"Grow Even Bigger!\"","小槌「もっと大きくなあれ」"],["小槌「变得更大吧」","Mallet \"Grow Even Bigger!\"","小槌「もっと大きくなあれ」"],["","",""]]},{"id":46,"stage":6,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["","",""]]},{"id":47,"stage":6,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["妖剑「辉针剑」","Bewitched Sword \"Shining Needle Sword\"","妖剣「輝針剣」"],["妖剑「辉针剑」","Bewitched Sword \"Shining Needle Sword\"","妖剣「輝針剣」"],["妖剑「辉针剑」","Bewitched Sword \"Shining Needle Sword\"","妖剣「輝針剣」"],["妖剑「辉针剑」","Bewitched Sword \"Shining Needle Sword\"","妖剣「輝針剣」"],["","",""]]},{"id":48,"stage":6,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底四非","Boss Nonspell 4","ボス 通常4"],["关底四非","Boss Nonspell 4","ボス 通常4"],["关底四非","Boss Nonspell 4","ボス 通常4"],["关底四非","Boss Nonspell 4","ボス 通常4"],["","",""]]},{"id":49,"stage":6,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":2,"angle":true,"labels":[["小槌「你给我变大吧」","Mallet \"You Grow Bigger!\"","小槌「お前が大きくなあれ」"],["小槌「你给我变大吧」","Mallet \"You Grow Bigger!\"","小槌「お前が大きくなあれ」"],["小槌「你给我变大吧」","Mallet \"You Grow Bigger!\"","小槌「お前が大きくなあれ」"],["小槌「你给我变大吧」","Mallet \"You Grow Bigger!\"","小槌「お前が大きくなあれ」"],["","",""]]},{"id":50,"stage":6,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":true,"phases":2,"angle":false,"labels":[["「进击的小人」","\"Attack on Dwarf\"","「進撃の小人」"],["「进击的小人」","\"Attack on Dwarf\"","「進撃の小人」"],["「一寸之壁」","\"Wall of Issun\"","「ウォールオブイッスン」"],["「一寸之壁」","\"Wall of Issun\"","「ウォールオブイッスン」"],["","",""]]},{"id":51,"stage":6,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":true,"phases":4,"angle":false,"labels":[["「七个小拇指」","\"Hop-o'-My-Thumb Seven\"","「ホップオマイサムセブン」"],["「七个小拇指」","\"Hop-o'-My-Thumb Seven\"","「ホップオマイサムセブン」"],["「七个一寸法师」","\"The Seven Issun-Boshi\"","「七人の一寸法師」"],["「七个一寸法师」","\"The Seven Issun-Boshi\"","「七人の一寸法師」"],["","",""]]},{"id":52,"stage":7,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["道中一非","Mid Nonspell 1","道中 通常1"]]},{"id":53,"stage":7,"variant":0,"bgm":0,"group":1,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["弦乐「风暴的合奏」","String Music \"Storm Ensemble\"","弦楽「嵐のアンサンブル」"]]},{"id":54,"stage":7,"variant":0,"bgm":0,"group":1,"spell":true,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["弦乐「净琉璃世界」","String Music \"Joururi World\"","弦楽「浄瑠璃世界」"]]},{"id":55,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底一非","Boss Nonspell 1","ボス 通常1"]]},{"id":56,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["一鼓「暴乱宫太鼓」","First Drum \"Raging Temple Taiko\"","一鼓「暴れ宮太鼓」"]]},{"id":57,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底二非","Boss Nonspell 2","ボス 通常2"]]},{"id":58,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["二鼓「怨灵绫鼓」","Second Drum \"Vengeful Spirit Aya-no-Tsuzumi\"","二鼓「怨霊アヤノツヅミ」"]]},{"id":59,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底三非","Boss Nonspell 3","ボス 通常3"]]},{"id":60,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["三鼓「午夜零时的三振」","Third Drum \"Three Strikes at Midnight\"","三鼓「午前零時のスリーストライク」"]]},{"id":61,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底四非","Boss Nonspell 4","ボス 通常4"]]},{"id":62,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["死鼓「轻敲大地」","Death Drum \"Land Percuss\"","死鼓「ランドパーカス」"]]},{"id":63,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底五非","Boss Nonspell 5","ボス 通常5"]]},{"id":64,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["五鼓「雷电拨浪鼓」","Fifth Drum \"Den-Den Daiko\"","五鼓「デンデン太鼓」"]]},{"id":65,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底六非","Boss Nonspell 6","ボス 通常6"]]},{"id":66,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["六鼓「交替打击法」","Sixth Drum \"Alternate Sticking\"","六鼓「オルタネイトスティッキング」"]]},{"id":67,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底七非","Boss Nonspell 7","ボス 通常7"]]},{"id":68,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["七鼓「高速和太鼓火箭」","Seventh Drum \"High Speed Taiko Rocket\"","七鼓「高速和太鼓ロケット」"]]},{"id":69,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底八非","Boss Nonspell 8","ボス 通常8"]]},{"id":70,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["八鼓「雷神之怒」","Eighth Drum \"Thunder God's Anger\"","八鼓「雷神の怒り」"]]},{"id":71,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":true,"phases":2,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["「蓝色佳人的演出」","\"Blue Lady Show\"","「ブルーレディショー」"]]},{"id":72,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":5,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["「原初的节拍」","\"Pristine Beat\"","「プリスティンビート」"]]},{"id":73,"stage":4,"variant":1,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":74,"stage":4,"variant":1,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["","",""]]},{"id":75,"stage":4,"variant":1,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":76,"stage":4,"variant":1,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["平曲「祗园精舍的钟声」","Heikyoku \"Sounds of Jetavana's Bell\"","平曲「祇園精舎の鐘の音」"],["平曲「祗园精舍的钟声」","Heikyoku \"Sounds of Jetavana's Bell\"","平曲「祇園精舎の鐘の音」"],["平曲「祗园精舍的钟声」","Heikyoku \"Sounds of Jetavana's Bell\"","平曲「祇園精舎の鐘の音」"],["平曲「祗园精舍的钟声」","Heikyoku \"Sounds of Jetavana's Bell\"","平曲「祇園精舎の鐘の音」"],["","",""]]},{"id":77,"stage":4,"variant":1,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":78,"stage":4,"variant":1,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["怨灵「无耳芳一」","Vengeful Spirit \"Hoichi the Earless\"","怨霊「耳無し芳一」"],["怨灵「无耳芳一」","Vengeful Spirit \"Hoichi the Earless\"","怨霊「耳無し芳一」"],["怨灵「平家的大怨灵」","Vengeful Spirit \"Great Vengeful Spirit of Taira\"","怨霊「平家の大怨霊」"],["怨灵「平家的大怨灵」","Vengeful Spirit \"Great Vengeful Spirit of Taira\"","怨霊「平家の大怨霊」"],["","",""]]},{"id":79,"stage":4,"variant":1,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["","",""]]},{"id":80,"stage":4,"variant":1,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["乐符「邪恶的五线谱」","Music Sign \"Wicked Musical Score\"","楽符「邪悪な五線譜」"],["乐符「邪恶的五线谱」","Music Sign \"Wicked Musical Score\"","楽符「邪悪な五線譜」"],["乐符「凶恶的五线谱」","Music Sign \"Malicious Musical Score\"","楽符「凶悪な五線譜」"],["乐符「双重乐谱」","Music Sign \"Double Score\"","楽符「ダブルスコア」"],["","",""]]},{"id":81,"stage":4,"variant":2,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":82,"stage":4,"variant":2,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["","",""]]},{"id":83,"stage":4,"variant":2,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":84,"stage":4,"variant":2,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["琴符「诸行无常的琴声」","Koto Sign \"Sounds of Anicca's Koto\"","琴符「諸行無常の琴の音」"],["琴符「诸行无常的琴声」","Koto Sign \"Sounds of Anicca's Koto\"","琴符「諸行無常の琴の音」"],["琴符「诸行无常的琴声」","Koto Sign \"Sounds of Anicca's Koto\"","琴符「諸行無常の琴の音」"],["琴符「诸行无常的琴声」","Koto Sign \"Sounds of Anicca's Koto\"","琴符「諸行無常の琴の音」"],["","",""]]},{"id":85,"stage":4,"variant":2,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":86,"stage":4,"variant":2,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["响符「平安的残响」","Echo Sign \"Heian's Reverberation\"","響符「平安の残響」"],["响符「平安的残响」","Echo Sign \"Heian's Reverberation\"","響符「平安の残響」"],["响符「回音之庭」","Echo Sign \"Echo Chamber\"","響符「エコーチェンバー」"],["响符「回音之庭」","Echo Sign \"Echo Chamber\"","響符「エコーチェンバー」"],["","",""]]},{"id":87,"stage":4,"variant":2,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["","",""]]},{"id":88,"stage":4,"variant":2,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["筝曲「下克上送筝曲」","Koto Music \"Social Upheaval Koto Music Complement\"","箏曲「下克上送箏曲」"],["筝曲「下克上送筝曲」","Koto Music \"Social Upheaval Koto Music Complement\"","箏曲「下克上送箏曲」"],["筝曲「下克上安魂曲」","Koto Music \"Social Upheaval Requiem\"","箏曲「下克上レクイエム」"],["筝曲「下克上安魂曲」","Koto Music \"Social Upheaval Requiem\"","箏曲「下克上レクイエム」"],["","",""]]}];
-diff --git a/runtimes/th12/th12_web/sdl-runtime/Th14PracticeUi.mjs b/runtimes/th12/th12_web/sdl-runtime/Th14PracticeUi.mjs
-new file mode 100644
-index 0000000000000000000000000000000000000000..08741b6e2faf356aaf4dad2a09fd9cab4f99d639
---- /dev/null
-+++ b/runtimes/th12/th12_web/sdl-runtime/Th14PracticeUi.mjs
-@@ -0,0 +1,151 @@
-+import {sections} from './Th14PracticeCatalog.mjs';
-+const labels = {
-+  zh: ['练习设置','作弊与设置','关卡','难度','角色','机体','起点','从头开始','波次','阶段','保留对话','保留掉落','残机','残机碎片','炸弹','炸弹碎片','灵力','最大得点','擦弹','得分','收集循环','弹幕角度','开始练习','关闭','无敌','无限残机','无限炸弹','锁定火力','锁定计时','自动决死','敌人无敌','自动射击','禁用射击','禁用炸弹','强制低速','请在标题或暂停时开始练习。'],
-+  en: ['Practice setup','Cheats and settings','Stage','Difficulty','Character','Shot','Start at','Stage start','Wave','Phase','Keep dialogue','Keep drops','Lives','Life pieces','Bombs','Bomb pieces','Power','Point value','Graze','Score','Collection cycle','Pattern angle','Start practice','Close','Invincible','Infinite lives','Infinite bombs','Keep power','Lock timer','Auto deathbomb','Enemy invincible','Auto shoot','Disable shoot','Disable bomb','Force focus','Start practice from the title screen or pause menu.'],
-+  ja: ['練習設定','チート・設定','ステージ','難易度','自機','装備','開始地点','ステージ開始','区間','フェーズ','会話あり','アイテムを維持','残機','残機のかけら','ボム','ボムのかけら','霊力','最大得点','グレイズ','スコア','回収周期','弾幕角度','練習開始','閉じる','無敵','残機無限','ボム無限','霊力維持','タイマー停止','自動喰らいボム','敵無敵','自動射撃','射撃無効','ボム無効','低速固定','タイトル画面かポーズ画面で開始してください。']
-+};
-+const keys = {F1:1,F2:2,F3:4,F4:8,F5:16,F6:32,KeyU:64};
-+const trackerLabels={zh:['关卡','帧','擦弹','得分','切换关底 BGM'],en:['Stage','Frame','Graze','Score','Switch boss BGM'],ja:['ステージ','フレーム','グレイズ','スコア','ボス曲切り替え']};
-+const titleOnly={zh:'请在标题画面开始练习。',en:'Start practice from the title screen.',ja:'タイトル画面で開始してください。'};
-+const waves = [5,6,6,7,6,4,9];
-+export function createTh14Practice({core,invoke,start,cancelInput,emit,canvas}){
-+  let enabled=false, mode='', touchEnabled=false, touchMenu=false, lang='ja', tools=0, busy=false, generation=0;
-+  const captured=new Set(), pressed=new Set();
-+  const state={stage:1,rank:1,character:0,shot:0,section:0,phase:0,dlg:false,drops:false,life:8,life_fragment:0,bomb:8,bomb_fragment:0,power:400,value:10000,graze:0,score:0,cycle:0,angle:0};
-+  const root=document.createElement('section'); root.className='th14-practice'; root.hidden=true; root.setAttribute('aria-label','thprac');
-+  const tracker=document.createElement('aside');tracker.className='th14-practice-tracker';tracker.hidden=true;
-+  let tracking=null;
-+  const style=document.createElement('style');style.textContent=`
-+    .th14-practice{position:fixed;z-index:30;inset:5% 4% auto auto;width:min(32rem,92vw);max-height:90%;overflow:auto;box-sizing:border-box;padding:1rem;background:#1d1727f2;color:#fff;border:1px solid #8c739e;border-radius:.65rem;font:15px system-ui;touch-action:pan-y;overscroll-behavior:contain;pointer-events:auto;user-select:auto}
-+    .th14-practice[hidden]{display:none}.th14-practice h2{margin:0 0 .55rem;font-size:1.18rem}.th14-practice form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.48rem}.th14-practice label{display:flex;gap:.3rem;flex-direction:column;min-width:0}.th14-practice label:has(input[type=checkbox]){flex-direction:row;align-items:center;min-height:34px}.th14-practice .wide{grid-column:1/-1}
-+    .th14-practice :is(select,input[type=number],button){font:inherit;min-height:36px;color:inherit;background:#342742;border:1px solid #9a85ac;border-radius:.3rem;padding:.25rem;min-width:0;box-sizing:border-box}.th14-practice button{cursor:pointer}.th14-practice input[type=checkbox]{width:1.25rem;height:1.25rem}.th14-practice button:disabled{opacity:.5}.th14-practice output{display:block;color:#ffc9bb}
-+    .th14-practice-tracker{position:fixed;z-index:29;top:.5rem;left:.5rem;padding:.25rem .55rem;color:white;background:#1d1727e8;border-radius:.3rem;font:13px system-ui;pointer-events:none}
-+  `; document.head.append(style);document.body.append(root,tracker);
-+  const t=i=>labels[lang][i];
-+  const idx=()=>lang==='zh'?0:lang==='en'?1:2;
-+  function setMode(next){if(mode===next)return;cancelInput();mode=next;void invoke('th14_practice_state',5,+!!mode);render();emit('thprac-menu',{open:!!mode});if(mode)root.querySelector('select,button,input')?.focus({preventScroll:true});else canvas.focus({preventScroll:true});}
-+  function toggleTracker(open=tracking===null){
-+    if(!open){clearInterval(tracking);tracking=null;tracker.hidden=true;return;}
-+    const refresh=()=>{
-+      const c=core();if(!c)return;
-+      tracker.hidden=![1,2].includes(c.th11_phase());
-+      if(!tracker.hidden)tracker.textContent=[c.th11_stage(),c.th11_frame(),c.th14_practice_state(6,0),c.th14_practice_state(7,0)*10]
-+        .map((v,i)=>trackerLabels[lang][i]+' '+v).join(' · ');
-+    };
-+    refresh();tracking=setInterval(refresh,150);
-+  }
-+  function control(tag,props){return Object.assign(document.createElement(tag),props);}
-+  function render(){
-+    root.hidden=!enabled||!mode;root.replaceChildren();
-+    if(root.hidden)return;
-+    const h=control('h2',{textContent:t(mode==='setup'?0:1)}), form=document.createElement('form');
-+    root.append(h,form);
-+    const close=control('button',{type:'button',textContent:t(23)});close.className='wide';close.onclick=()=>setMode('');
-+    function row(label,input,wide=false){
-+      const element=control('label',{textContent:label});if(wide)element.className='wide';element.append(input);form.append(element);
-+    }
-+    function select(k,label,choices,refresh=false,wide=false){
-+      const field=control('select',{name:k}); for(const [value,title] of choices)field.add(new Option(title,value));
-+      field.value=String(state[k]);field.onchange=()=>{state[k]=Number(field.value);if(refresh){
-+        if(k==='stage'){if(state.stage===7)state.rank=4;else if(state.rank===4)state.rank=1;}
-+        if(k==='rank'&&state.rank===4)state.stage=7;else if(k==='rank'&&state.stage===7)state.stage=6;
-+        if(k==='section'||k==='stage'||k==='rank'||k==='shot'){state.phase=0;state.dlg=state.drops=false;if(k!=='section')state.section=0;}
-+        render();root.querySelector('[name='+k+']')?.focus({preventScroll:true});
-+      }};row(t(label),field,wide);
-+    }
-+    function integer(k,label,min,max,step=1){
-+      const field=control('input',{type:'number',inputMode:'numeric',name:k,min,max,step,value:state[k]});
-+      field.oninput=()=>{if(Number.isFinite(field.valueAsNumber))state[k]=Math.min(max,Math.max(min,Math.trunc(field.valueAsNumber)));};row(t(label),field);
-+    }
-+    function toggle(k,label){
-+      const field=control('input',{type:'checkbox',name:k,checked:state[k]});field.onchange=()=>state[k]=field.checked;row(t(label),field);
-+    }
-+    if(mode==='tools'){
-+      for(let n=0;n<11;n++){
-+        const mask=1<<n, field=control('input',{type:'checkbox',checked:!!(tools&mask),disabled:!core()?.th14_practice_state(3,0)});
-+        field.onchange=()=>void setTools(field.checked?tools|mask:tools&~mask);
-+        const hotkey=Object.keys(keys).find(k=>keys[k]===mask);
-+        row(t(24+n)+(hotkey?' ('+hotkey.replace('Key','')+')':''),field);
-+      }
-+      const bgm=control('button',{type:'button',textContent:trackerLabels[lang][4]+' (F7)'});
-+      bgm.onclick=()=>void invoke('th14_practice_state',4,0);form.append(bgm);
-+    }else{
-+      const stageChoices=Array.from({length:7},(_,i)=>[i+1,i===6?'Extra':String(i+1)]);
-+      select('stage',2,stageChoices,true);select('rank',3,['Easy','Normal','Hard','Lunatic','Extra'].map((s,i)=>[i,s]),true);
-+      select('character',4,(lang==='zh'?['灵梦','魔理沙','咲夜']:lang==='ja'?['霊夢','魔理沙','咲夜']:['Reimu','Marisa','Sakuya']).map((s,i)=>[i,s]));
-+      select('shot',5,[[0,'A'],[1,'B']],true);
-+      const items=sections.filter(s=>s.stage===state.stage&&s.labels[state.rank][idx()]&&
-+        (state.stage!==4||s.variant===state.shot+1));
-+      const names=[[0,t(7)],...Array.from({length:waves[state.stage-1]},(_,i)=>[10000+state.stage*100+i+1,t(8)+' '+(i+1)]),
-+        ...items.map(s=>[s.id,s.labels[state.rank][idx()]])];
-+      select('section',6,names,true,true);
-+      const current=items.find(s=>s.id===state.section);
-+      if(current?.phases>1)select('phase',9,Array.from({length:current.phases},(_,i)=>[i,i+1]));
-+      if(current?.dialogue)toggle('dlg',10);
-+      if(current?.drops)toggle('drops',11);
-+      integer('life',12,0,8);integer('life_fragment',13,0,2);integer('bomb',14,0,8);integer('bomb_fragment',15,0,7);
-+      integer('power',16,0,400);integer('value',17,0,999990,10);integer('graze',18,0,999999);integer('score',19,0,9999999990,10);
-+      integer('cycle',20,0,4);if(current?.angle)integer('angle',21,-100,100);
-+      const go=control('button',{type:'submit',textContent:t(22)}), out=control('output',{});go.className=out.className='wide';
-+      form.append(go,out);
-+      form.onsubmit=async event=>{
-+        event.preventDefault();if(busy)return;
-+        busy=true;go.disabled=true;const ticket=generation;
-+        const flags=(state.dlg?1:0)|(state.drops?2:0);
-+        try{
-+          const result=await start([state.stage,state.section,state.phase,flags,state.life,state.life_fragment,state.bomb,state.bomb_fragment,
-+            state.power,state.value,state.graze,Math.floor(state.score/10),state.cycle,state.angle],state.character,state.shot,state.rank);
-+          if(ticket!==generation)return;
-+          if(result>0)setMode('');else out.textContent=titleOnly[lang];
-+        }catch(e){out.textContent=e.message;}
-+        finally{busy=false;go.disabled=false;}
-+      };
-+    }
-+    form.append(close);
-+  }
-+  async function setTools(value){tools=value;const previous=value;const result=await invoke('th14_practice_state',2,value);
-+    if(tools===previous){tools=result;if(mode==='tools')render();}}
-+  root.addEventListener('keydown',e=>{if(e.code==='Escape'||e.code==='F12'||e.code==='Backspace'&&!e.target.matches('input')){e.preventDefault();e.stopPropagation();setMode('');}});
-+  function handle(event,down,hosted=false){
-+    if(!enabled)return false;
-+    const code=event.code;
-+    if(!down){pressed.delete(code);return captured.delete(code);}
-+    if(!hosted&&root.contains(event.target)&&code!=='F12')return true;
-+    const special=code==='F12'||code==='Backspace'||code==='Tab'||code==='F7'||Object.hasOwn(keys,code);
-+    if(!special){
-+      if(!mode)return false;
-+      if(hosted&&['ArrowDown','ArrowUp','ArrowLeft','ArrowRight','KeyZ','Enter','Escape','KeyX'].includes(code)){
-+        if(code==='Escape'||code==='KeyX')setMode('');
-+        else if(code==='KeyZ'||code==='Enter'){const a=document.activeElement;if(a?.matches('button,input[type=checkbox]'))a.click();else if(mode==='setup')root.querySelector('form')?.requestSubmit();}
-+        else {const all=[...root.querySelectorAll('select,input,button:not(:disabled)')], at=all.indexOf(document.activeElement);
-+          if(code==='ArrowDown'||code==='ArrowUp')all[(at+(code==='ArrowDown'?1:all.length-1)+all.length)%all.length]?.focus({preventScroll:true});
-+          else if(document.activeElement?.matches('select,input[type=number]')){
-+            const a=document.activeElement, dir=code==='ArrowRight'?1:-1;
-+            if(a.matches('select')){a.selectedIndex=Math.max(0,Math.min(a.options.length-1,a.selectedIndex+dir));a.dispatchEvent(new Event('change'));}
-+            else {a[dir>0?'stepUp':'stepDown']();a.dispatchEvent(new Event('input'));}
-+          }
-+        }
-+      }
-+      captured.add(code);return true;
-+    }
-+    captured.add(code);
-+    if(pressed.has(code)||event.repeat)return true;pressed.add(code);
-+    if(code==='F12'||code==='Backspace'){
-+      const next=code==='F12'?'setup':'tools';
-+      if(next==='setup'&&core()?.th11_phase()!==0)return true;
-+      setMode(mode===next?'':next);
-+    }else if(code==='Tab')toggleTracker();
-+    else if(code==='F7')void invoke('th14_practice_state',4,0);
-+    else if(core()?.th14_practice_state(3,0))void setTools(tools^keys[code]);
-+    return true;
-+  }
-+  return {
-+    configure(options){enabled=!!options.thpracEnabled;lang=/^zh(?:-|$)/i.test(options.thpracLocale)?'zh':/^en(?:-|$)/i.test(options.thpracLocale)?'en':'ja';tools=0;generation++;touchMenu=false;toggleTracker(false);setMode('');return invoke('th14_practice_state',0,+enabled);},
-+    touch(message){const c=message.controls??message;const next=enabled&&!!c.thpracMobilePanelsEnabled&&!!c.thpracMobilePanelsVisible;
-+      touchEnabled=enabled&&!!c.thpracMobilePanelsEnabled;
-+      if(next!==touchMenu){touchMenu=next;setMode(next?(core()?.th11_phase()===0?'setup':'tools'):'');}},
-+    clear(){pressed.clear();captured.clear();},
-+    close(){setMode('');}, handle,
-+    captures(){return enabled&&!!mode;}, touchEntry(){return touchEnabled;},
-+  };
-+}
 diff --git a/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs b/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
 index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..7226a3edf1f50c35790d96df26cecc9660d482f2 100644
 --- a/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
@@ -5076,7 +5448,7 @@ index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..7226a3edf1f50c35790d96df26cecc96
 + };
 +}
 diff --git a/runtimes/th12/th12_web/sdl-runtime/shell.mjs b/runtimes/th12/th12_web/sdl-runtime/shell.mjs
-index e3d66641e600d1b3251caf778b96812d5bd03a70..1d42673b70284dc386919ca20ab0ba0d84dd3835 100644
+index e3d66641e600d1b3251caf778b96812d5bd03a70..413c59d47074b24a24db547d6e7f17a5cd0b64b0 100644
 --- a/runtimes/th12/th12_web/sdl-runtime/shell.mjs
 +++ b/runtimes/th12/th12_web/sdl-runtime/shell.mjs
 @@ -6,13 +6,14 @@ import createModule from './th11-sdl.mjs';
@@ -5095,24 +5467,27 @@ index e3d66641e600d1b3251caf778b96812d5bd03a70..1d42673b70284dc386919ca20ab0ba0d
  let Module,core,app=0,launched=false,first=false,stopping=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true,musicMode='none';
  const keyboard=createBrowserKeyboard({
   accept:code=>!!scanCodes[code],
-@@ -30,6 +31,16 @@ async function callCore(name,...args){
+@@ -30,6 +31,19 @@ async function callCore(name,...args){
   const runtime=Module.th14AsyncRuntime??Module.th14WebGpuRuntime;return runtime?runtime.run(call):call();
  }
  const save=async()=>{if(launched&&!await callCore('th11_save_scores'))throw Error(coreError());return sync(false);};
-+const practice=game==='th14'?createTh14Practice({core:()=>core,invoke:callCore,
-+ start:async(values,character,shot,rank)=>{
-+  const run=async()=>{const p=core.malloc(56);if(!p)return 0;
-+   try{Module.HEAP32.set(values,p/4);return await Module.ccall('th14_practice_start','number',['number','number','number','number'],[p,character,shot,rank],{async:true});}
-+   finally{core.free(p);}};
-+  const runtime=Module.th14AsyncRuntime??Module.th14WebGpuRuntime;
-+  return runtime?runtime.run(run):run();
-+ },
-+ cancelInput:()=>{keyboard.clear();core?.th11_keys_clear();cancelTouches();},
-+ emit:(event,detail)=>window.dispatchEvent(new CustomEvent('eagler-'+event,{detail})),canvas}):null;
++const practiceKeys={Tab:9,Enter:13,NumpadEnter:13,Escape:27,Backspace:8,Space:32,ArrowLeft:37,ArrowUp:38,ArrowRight:39,ArrowDown:40,KeyU:85,KeyX:88,KeyZ:90,F1:112,F2:113,F3:114,F4:115,F5:116,F6:117,F7:118,F12:123};
++function practiceKey(event,down){
++ const key=practiceKeys[event.code];
++ return key!==undefined&&!!core?.th14_practice_key?.(key,+down);
++}
++function configurePractice(){
++ const locale=String(options.thpracLocale??'ja');
++ return core.th14_practice_state?.(0,options.thpracEnabled?(locale.startsWith('zh')?1:locale.startsWith('en')?2:3):0);
++}
++function practiceTouchControls(message){
++ const c=message.controls??message;
++ core.th14_practice_state?.(5,(c.thpracMobilePanelsEnabled?1:0)|(c.thpracMobilePanelsVisible?2:0));
++}
  async function installResources(resources=[]){return installHostResources(Module,resources,{game,emit});}
  // The Launcher has already verified the ZIP identity. Match TH10's Runtime
  // manifest/path/size checks before exposing any file to the native game.
-@@ -67,6 +78,7 @@ async function installRuntimePack(pack){
+@@ -67,6 +81,7 @@ async function installRuntimePack(pack){
  }
  function apply(){applyTouchOptions(core,options);core.th11_music_enabled(+music);}
  async function resumeForegroundAudio(forcePause=false){
@@ -5120,16 +5495,16 @@ index e3d66641e600d1b3251caf778b96812d5bd03a70..1d42673b70284dc386919ca20ab0ba0d
   if(!Module||!core||!launched||document.hidden)return false;
   if(forcePause)core.sdl_loop_pause(1);
   return resumeRuntimeAudio(Module,core,()=>!!core&&launched&&!document.hidden);
-@@ -79,7 +91,7 @@ async function closeAudio(){
+@@ -79,7 +94,7 @@ async function closeAudio(){
    try{core.th11_audio_close();}finally{if(borrowed)s.audioContext=context;}};
   const runtime=Module.th14AsyncRuntime??Module.th14WebGpuRuntime;if(runtime)await runtime.run(close);else close();
  }
 -async function stop(){if(stopping)return;stopping=true;clearKeyboard();try{core.th11_loop_stop();await save();await closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
-+async function stop(){if(stopping)return;stopping=true;practice?.close();clearKeyboard();try{core.th11_loop_stop();if(replayViewer)await replayViewer.close();await save();await closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
++async function stop(){if(stopping)return;stopping=true;core?.th14_practice_state?.(10,0);clearKeyboard();try{core.th11_loop_stop();if(replayViewer)await replayViewer.close();await save();await closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
  function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth11\//,'').replace(/^\//,'');if(!/^(?:scoreth11\.dat|th11\.cfg|replay\/th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(name))throw Error('存档路径无效');return name;}
  async function launch(){
   if(launched)return;clearKeyboard();
-@@ -92,15 +104,50 @@ async function launch(){
+@@ -92,15 +107,50 @@ async function launch(){
   canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();core.th11_loop_start();
   emit('runtime-info',{renderer:Module.th14WebGpuRuntime?'SDL3 / WebGPU / C++':'SDL3 / WebGL2 / C++',architecture:protocol,version:runtimeBuild.version});
  }
@@ -5169,28 +5544,27 @@ index e3d66641e600d1b3251caf778b96812d5bd03a70..1d42673b70284dc386919ca20ab0ba0d
 +}
  async function command(m){switch(m.command){
 - case 'configure':if(launched)throw Error('不能配置正在运行的游戏');language=m.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(m.options);music=m.music!=='none';musicMode=m.music;await installResources(m.sharedResources);await installResources(m.runtimeResources);await installResources(m.resources);if(m.runtimePack)await installRuntimePack(m.runtimePack);apply();return {};
-+ case 'configure':if(launched)throw Error('不能配置正在运行的游戏');language=m.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(m.options);music=m.music!=='none';musicMode=m.music;await installResources(m.sharedResources);await installResources(m.runtimeResources);await installResources(m.resources);if(m.runtimePack)await installRuntimePack(m.runtimePack);await practice?.configure(options);apply();return {};
++ case 'configure':if(launched)throw Error('不能配置正在运行的游戏');language=m.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(m.options);music=m.music!=='none';musicMode=m.music;await installResources(m.sharedResources);await installResources(m.runtimeResources);await installResources(m.resources);if(m.runtimePack)await installRuntimePack(m.runtimePack);configurePractice();apply();return {};
   case 'resources':await installResources(m.resources);return {};
 - case 'keyboard':if(launched&&!document.hidden&&!stopping)keyboard.event(m,!!m.down,'hosted');return {};
 - case 'keyboard-clear':clearKeyboard();return {};
-+ case 'keyboard':if(launched&&!document.hidden&&!stopping&&!practice?.handle(m,!!m.down,true))keyboard.event(m,!!m.down,'hosted');return {};
-+ case 'keyboard-clear':practice?.clear();clearKeyboard();return {};
++ case 'keyboard':if(launched&&!document.hidden&&!stopping&&!practiceKey(m,!!m.down))keyboard.event(m,!!m.down,'hosted');return {};
++ case 'keyboard-clear':core?.th14_practice_state?.(9,0);clearKeyboard();return {};
   case 'touch-cancel':cancelTouches();return {};
-- case 'direct-touch':directTouch(core,canvas,m,{width:innerWidth,height:innerHeight});return {};
+  case 'direct-touch':directTouch(core,canvas,m,{width:innerWidth,height:innerHeight});return {};
 - case 'touch-controls':touchControls(core,options,m);return {};
-+ case 'direct-touch':if(!practice?.captures())directTouch(core,canvas,m,{width:innerWidth,height:innerHeight});return {};
-+ case 'touch-controls':practice?.touch(m);touchControls(core,options,practice?.captures()?{controls:{...(m.controls??m),fireEnabled:false,focusEnabled:false,joystickX:0,joystickY:0}}:m);return {};
++ case 'touch-controls':practiceTouchControls(m);touchControls(core,options,m);return {};
   case 'launch':await launch();return {};
 + case 'playback':if(game!=='th14')throw Error('不支持的录像操作');return replayPlayback().command(m);
   case 'sync':await save();return {};
   case 'list':{const files=[];for(const dir of ['','/replay'])for(const name of Module.FS.readdir('/savesth11'+dir)){const n=(dir+'/'+name).replace(/^\//,'');try{path(n);}catch{continue;}const s=Module.FS.stat('/savesth11/'+n);if(Module.FS.isFile(s.mode)){files.push({path:n,size:s.size});}}return {files};}
   case 'read':return {bytes:Array.from(Module.FS.readFile('/savesth11/'+path(m.path)))};
-@@ -125,14 +172,14 @@ window.addEventListener('message',event=>{
+@@ -125,14 +175,14 @@ window.addEventListener('message',event=>{
   queue=queue.then(async()=>{if(await initialized===false)return;await dispatchCommand(m);}).catch(error);
  });
  document.addEventListener('visibilitychange',()=>{if(!core||!launched)return;clearKeyboard();cancelTouches();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(save).catch(error);}else void resumeForegroundAudio(true);});
 -window.addEventListener('blur',()=>{if(core){clearKeyboard();cancelTouches();}});
-+window.addEventListener('blur',()=>{if(core){practice?.clear();clearKeyboard();cancelTouches();}});
++window.addEventListener('blur',()=>{if(core){core?.th14_practice_state?.(9,0);clearKeyboard();cancelTouches();}});
  window.addEventListener('pagehide',()=>{if(game==='th14')th14PageLeaving=true;clearKeyboard();cancelTouches();if(core&&launched){suspendRuntimeAudio(Module,core);void save().catch(console.error);}});
  window.addEventListener('pageshow',()=>{if(game==='th14')th14PageLeaving=false;if(core&&launched&&!document.hidden)void resumeForegroundAudio(true);});
  canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearKeyboard();core?.sdl_loop_pause(1);error('图形环境已失效，请退出后重新开始。');});
@@ -5198,7 +5572,7 @@ index e3d66641e600d1b3251caf778b96812d5bd03a70..1d42673b70284dc386919ca20ab0ba0d
  for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
   if(!core||!launched||stopping||document.hidden)return;
 - keyboard.event(event,name==='keydown');
-+ if(!practice?.handle(event,name==='keydown'))keyboard.event(event,name==='keydown');
++ if(practiceKey(event,name==='keydown'))event.preventDefault();else keyboard.event(event,name==='keydown');
  },{capture:true});
  // A mobile browser may terminate a hidden page before pagehide's IDB callback.
  // Persist during play as well, with writes serialized by the sync chain.
@@ -5751,15 +6125,15 @@ index 6d02af54e424cf763ad050ca656749046b30642e..0e1d19f968c58caca18890bb14b66d5c
 +<body data-port-title="14"><main id="stage"><canvas id="canvas" width="1280" height="960" tabindex="0" aria-label="东方辉针城画面"></canvas><div id="touch" hidden><button id="shoot">射击</button><button id="focus">低速</button><button id="bomb">B</button><button id="pause">暂停</button></div><div id="welcome"><h1>东方辉针城</h1><p>移植验证版 · 完整游戏尚未完成</p><button id="start">启动验证</button><progress id="progress" hidden></progress><p id="status" role="status">加载本机原版资源。</p></div><div id="pause-panel" hidden><h2>暂停</h2><button id="resume">继续游戏</button><button id="return-title">返回标题</button></div></main><footer><button id="fullscreen">全屏</button><button id="touch-toggle">显示触控</button><span id="health"></span></footer><div id="error" role="alert" hidden></div><script type="module" src="/app/shell.mjs"></script></body></html>
 diff --git a/tools/generate-th14-practice.mjs b/tools/generate-th14-practice.mjs
 new file mode 100644
-index 0000000000000000000000000000000000000000..a7b8ea25253c39f15a448603fe7b00d85fc7f472
+index 0000000000000000000000000000000000000000..0fd73bf4f55845932ea096eadefd57a18c8a923e
 --- /dev/null
 +++ b/tools/generate-th14-practice.mjs
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,46 @@
 +import {readFileSync as read,writeFileSync as write} from 'node:fs';
 +import {resolve} from 'node:path';
 +import {createHash} from 'node:crypto';
 +const [source,defs,license,retail,cpp,js]=process.argv.slice(2);
-+if(!js)throw Error('Usage: generate-th14-practice.mjs THPRAC_TH14_CPP GAMES_JSON LICENSE RETAIL_ECL_DIR CPP_OUTPUT_DIR CATALOG_MJS');
++if(!js)throw Error('Usage: generate-th14-practice.mjs THPRAC_TH14_CPP GAMES_JSON LICENSE RETAIL_ECL_DIR CPP_OUTPUT_DIR UI_LABELS_INC');
 +const s=read(source,'utf8').replaceAll('\r\n','\n'), d=JSON.parse(read(defs,'utf8').replace(/^\uFEFF/,'')), g=d.th14;
 +const sectionKeys=Object.keys(g.sections), glossary=Object.assign({},...Object.values(d).map(x=>x.glossary));
 +const cases=(a,b)=>new Set([...s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)+1)).matchAll(/case (TH14_\w+):/g)].map(x=>x[1]));
@@ -5797,7 +6171,10 @@ index 0000000000000000000000000000000000000000..a7b8ea25253c39f15a448603fe7b00d8
 +write(resolve(cpp,'PracticeCatalogTh14.inc'),banner+'enum {\n'+used.map(k=>'    '+k+' = '+index.get(k)+',').join('\n')+'\n};\n'+
 + 'constexpr u64 retail_ecl[7][6] = {\n    '+tables.join(',\n    ')+'\n};\n'+
 + 'constexpr Section sections[] = {\n'+catalog.map(v=>'    {'+[v.id,v.native,v.stage,v.bgm,v.phases,v.dialogue,v.drops,[...v.labels].reduce((a,l,i)=>a|(+!!l[0]<<i),0)].join(',')+'},').join('\n')+'\n};\n');
-+write(js,banner+'export const sections = '+JSON.stringify(catalog.map(({key,native,...v})=>v))+';\n');
++write(js,'// Generated by tools/generate-th14-practice.mjs.\nconstexpr Item practice_labels[]={\n'+catalog.map(s=>{
++ const labels='{'+s.labels.map(names=>'{'+names.map(x=>JSON.stringify(x)).join(',')+'}').join(',')+'}';
++ return '    {'+[s.id,s.stage,s.variant,s.phases,s.dialogue,s.drops,s.angle,labels].join(',')+'},';
++}).join('\n')+'\n};\n');
 diff --git a/tools/tests/test-th14-frame-scheduler.mjs b/tools/tests/test-th14-frame-scheduler.mjs
 new file mode 100644
 index 0000000000000000000000000000000000000000..ec0cdeda1efb855feb55d1ddde5e2e20e190a832
@@ -6206,10 +6583,10 @@ index 60d5183dffe1480f4a228efbba8db66ecff408d3..b5b6badc34f874463868c963f2ecb0f5
      runtime.openArchive(bytes);assert.equal(await runtime.archiveOpening,227);await valid();assert.equal(copies,3);
      assert.equal(module._fixture_reset(),1);assert.equal(module._fixture_empty(),1);const before=copies;
 diff --git a/tools/th14-build-gles.py b/tools/th14-build-gles.py
-index 0721fa9d26730472f580751ef017daacce2324a0..5552f3c422293eea98e311ae0548d7d03c7455ee 100644
+index 0721fa9d26730472f580751ef017daacce2324a0..e6cb3dc857ba8a0a130cfc6981fc6f3638e643b4 100644
 --- a/tools/th14-build-gles.py
 +++ b/tools/th14-build-gles.py
-@@ -11,6 +11,27 @@ import sys
+@@ -11,10 +11,31 @@ import sys
  import tempfile
  
  
@@ -6221,7 +6598,6 @@ index 0721fa9d26730472f580751ef017daacce2324a0..5552f3c422293eea98e311ae0548d7d0
 +                          (r'th11\.cfg', r'th14\.cfg'), ('th11_(?:', 'th14_(?:'),
 +                          ('TH11', 'TH14'), ('地灵殿', '辉针城')]:
 +        source = source.replace(before, after)
-+    source = "import {createTh14Practice} from './Th14PracticeUi.mjs';\n" + source
 +    anchor = 'const runtimeBuild=/*TH14_BUILD_INFO*/'
 +    assert source.count(anchor) == 1
 +    start = source.index(anchor) + len(anchor)
@@ -6237,50 +6613,91 @@ index 0721fa9d26730472f580751ef017daacce2324a0..5552f3c422293eea98e311ae0548d7d0
  def main():
      repo = Path(__file__).resolve().parents[1]
      parser = argparse.ArgumentParser(description=__doc__)
-@@ -38,7 +59,10 @@ def main():
+     parser.add_argument('--emsdk', type=Path, default=os.environ.get('EMSDK', repo / 'tools/emsdk'))
++    parser.add_argument('--common', type=Path, default=os.environ.get('EAGLER_COMMON', repo / 'common'))
+     parser.add_argument('--out', type=Path, required=True)
+     parser.add_argument('--jobs', type=int, choices=range(1, 17), default=3)
+     args = parser.parse_args()
+@@ -34,11 +55,24 @@ def main():
+     profile = json.loads((repo / 'tools/th14-gles-profile.json').read_bytes())
+     sources = [portable / 'Renderer.cpp', *sorted((cpp / 'game').glob('*.cpp'), key=lambda p: p.name),
+                *sorted((cpp / 'sdl').glob('*.cpp'), key=lambda p: p.name)]
+-    tracked = set(sources)
++    flags = profile['flags'][:]
++    common = args.common.resolve()
++    imgui = common / 'third_party/imgui'
++    shared = common / 'include'
++    if not (imgui / 'imgui.cpp').is_file() or not (shared / 'eagler/thprac/PracticeMobilePanels.hpp').is_file():
++        parser.error('Pass --common pointing to the launcher common directory')
++    sources += [imgui / name for name in ('imgui.cpp','imgui_draw.cpp','imgui_tables.cpp','imgui_widgets.cpp','imgui_freetype.cpp')]
++    flags += ['-I' + str(imgui), '-I' + str(shared), '-DIMGUI_DISABLE_WIN32_FUNCTIONS']
++    tracked = set(source for source in sources if source.is_relative_to(repo))
++    common_files = [*sorted(imgui.glob('*.h')), *sorted(imgui.glob('*.inl')), *sorted(imgui.glob('*.cpp')),
++                    shared / 'eagler/thprac/PracticeMobilePanels.hpp']
++    common_bindings = {p.relative_to(common).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in common_files}
      for directory in (cpp, runtime / 'portable'):
          tracked.update(p for p in directory.rglob('*')
                         if p.is_file() and p.suffix in {'.hpp', '.h', '.inc', '.js', '.mjs'})
 -    tracked.update((Path(__file__).resolve(), repo / 'tools/th14-gles-profile.json'))
 +    host = runtime / 'th12_web/sdl-runtime/eagler-host.mjs'
 +    host_shell = host.with_name('shell.mjs')
-+    practice = [host.with_name(n) for n in ('Th14PracticeUi.mjs', 'Th14PracticeCatalog.mjs')]
-+    tracked.update((Path(__file__).resolve(), repo / 'tools/th14-gles-profile.json', host, host_shell, *practice))
++    tracked.update((Path(__file__).resolve(), repo / 'tools/th14-gles-profile.json', host, host_shell))
      source_bindings = {p.relative_to(repo).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
                         for p in sorted(tracked)}
  
-@@ -60,15 +84,24 @@ def main():
-         run([*profile['flags'], *compiled, *link_flags, '-o', str(output / 'th14-sdl.mjs')])
+@@ -46,9 +80,9 @@ def main():
+         subprocess.run([sys.executable, str(compiler), *flags], check=True, cwd=runtime, env=env)
+ 
+     def compile_source(source):
+-        obj = objects / (source.relative_to(runtime).as_posix().replace('/', '_') + '.o')
++        obj = objects / ((source.relative_to(runtime).as_posix().replace('/', '_') if source.is_relative_to(runtime) else source.name) + '.o')
+         # Profiling function names are a linker option.
+-        run([f for f in profile['flags'] if f != '--profiling-funcs'] + ['-c', str(source), '-o', str(obj)])
++        run([f for f in flags if f != '--profiling-funcs'] + ['-c', str(source), '-o', str(obj)])
+         return str(obj)
+ 
+     link_flags = [str(portable / 'Th14WebGpuLibrary.js') if f == 'portable/sdl/Th14WebGpuLibrary.js' else f
+@@ -57,18 +91,31 @@ def main():
+         env.update(TMP=temp, TMPDIR=temp, TEMP=temp)
+         with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+             compiled = list(pool.map(compile_source, sources))
+-        run([*profile['flags'], *compiled, *link_flags, '-o', str(output / 'th14-sdl.mjs')])
++        response = Path(temp) / 'link.rsp'
++        response.write_text('\n'.join(json.dumps(x.replace('\\','/')) for x in [*flags, *compiled, *link_flags, '-o', str(output / 'th14-sdl.mjs')]),encoding='utf8')
++        run(['@'+str(response)])
      for helper in profile['helpers']:
          shutil.copyfile(portable / helper, output / helper)
-+    for item in [host, *practice]:
-+        shutil.copyfile(item, output / item.name)
++    shutil.copyfile(host, output / host.name)
 +    wasm_hash = hashlib.sha256((output / 'th14-sdl.wasm').read_bytes()).hexdigest()
 +    shell = prepare_host_shell(host_shell.read_text(encoding='utf8'), dict(version='1.00b-thp-' + wasm_hash[:12], completeGame=False, nativeEquivalent=False, sha256=wasm_hash))
 +    (output / 'shell.mjs').write_text(shell, encoding='utf8', newline='\n')
      for name, expected in source_bindings.items():
          if hashlib.sha256((repo / name).read_bytes()).hexdigest() != expected:
              raise RuntimeError('Source changed during build: ' + name)
++    for name, expected in common_bindings.items():
++        if hashlib.sha256((common / name).read_bytes()).hexdigest() != expected:
++            raise RuntimeError('Shared source changed during build: ' + name)
      wasm = output / 'th14-sdl.wasm'
 +    runtime_files = {}
-+    for name in ['th14-sdl.mjs', 'th14-sdl.wasm', host.name, 'shell.mjs', *[p.name for p in practice], *profile['helpers']]:
++    for name in ['th14-sdl.mjs', 'th14-sdl.wasm', host.name, 'shell.mjs', *profile['helpers']]:
 +        data = (output / name).read_bytes()
 +        runtime_files[name] = dict(bytes=len(data), sha256=hashlib.sha256(data).hexdigest())
      report = dict(module=str(wasm), units=len(compiled), sourceBindings=source_bindings,
                    objects={str(Path(p).relative_to(output)): hashlib.sha256(Path(p).read_bytes()).hexdigest()
-                            for p in compiled}, flags=profile['flags'], linkFlags=link_flags,
+-                           for p in compiled}, flags=profile['flags'], linkFlags=link_flags,
 -                  sha256=hashlib.sha256(wasm.read_bytes()).hexdigest(),
 -                  loaderSha256=hashlib.sha256((output / 'th14-sdl.mjs').read_bytes()).hexdigest())
++                           for p in compiled}, flags=flags, linkFlags=link_flags, commonBindings=common_bindings,
 +                  runtimeFiles=runtime_files, sha256=runtime_files[wasm.name]['sha256'],
 +                  loaderSha256=runtime_files['th14-sdl.mjs']['sha256'])
      (output / 'build.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
      print(json.dumps(dict(module=str(wasm), units=len(compiled), sha256=report['sha256'])))
  
 diff --git a/tools/th14-gles-profile.json b/tools/th14-gles-profile.json
-index c726b765a606b38b4b2eeff31c117c3aceebc737..f14ab90927426261af18300139a27ced9f0d79db 100644
+index c726b765a606b38b4b2eeff31c117c3aceebc737..17b3fa065a06dc85f75921468ba6dd694db77795 100644
 --- a/tools/th14-gles-profile.json
 +++ b/tools/th14-gles-profile.json
-@@ -1,69 +1,70 @@
+@@ -1,69 +1,71 @@
 -{
 -  "flags": [
 -    "-DTH14_CPP_BOOT_WORKER=1",
@@ -6366,6 +6783,7 @@ index c726b765a606b38b4b2eeff31c117c3aceebc737..f14ab90927426261af18300139a27ced
 +    "-DTH_NATIVE_PLATFORM=1",
 +    "-DTH11_DEVELOPMENT_HARNESS=0",
 +    "--use-port=sdl3",
++    "--use-port=freetype",
 +    "-DTH14_STAGE_RESTORE_DELIVERY=1",
 +    "-pthread",
 +    "-DTH14_SHARED_SCENE_COPY=1",

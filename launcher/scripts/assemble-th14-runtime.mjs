@@ -36,10 +36,9 @@ if (!build.flags?.includes('-DPORT_TITLE=14') || !build.runtimeFiles ||
     build.loaderSha256 !== build.runtimeFiles['th14-sdl.mjs']?.sha256)
   throw Error('Expected a TH14 GLES core build with verified runtime files');
 
-const practiceFiles = ['Th14PracticeUi.mjs', 'Th14PracticeCatalog.mjs'];
 const replacements = new Map();
 for (const [name, expected] of Object.entries(build.runtimeFiles)) {
-  if ((!names.includes(name) && !practiceFiles.includes(name)) || !/^(?:th14-sdl\.(?:mjs|wasm)|Th14[A-Za-z0-9]+\.mjs|eagler-host\.mjs|shell\.mjs)$/.test(name))
+  if (!names.includes(name) || !/^(?:th14-sdl\.(?:mjs|wasm)|Th14[A-Za-z0-9]+\.mjs|eagler-host\.mjs|shell\.mjs)$/.test(name))
     throw Error('Unexpected TH14 core output: ' + name);
   replacements.set(name, await checked(core, name, expected));
 }
@@ -53,8 +52,8 @@ if (manifest.game !== 'th14' || manifest.protocol !== 'eagler-touhou/1' || manif
 const version = '1.00b-thp-' + build.sha256.slice(0, 12);
 manifest.version = version;
 const thprac = build.flags.includes('-DTH14_ENABLE_THPRAC=1');
-if (thprac && !['shell.mjs', ...practiceFiles].every(name => replacements.has(name)))
-  throw Error('Missing TH14 practice host shell or UI modules');
+if (thprac && (!replacements.has('shell.mjs') || !build.commonBindings?.['third_party/imgui/imgui.cpp']))
+  throw Error('Missing TH14 ImGui build identity or host shell');
 manifest.features = {...manifest.features, thprac};
 manifest.execution.sha256 = build.sha256;
 manifest.execution.loaderSha256 = build.loaderSha256;
@@ -96,7 +95,8 @@ for (const resource of resources.resources) {
 if (changedFonts.size) replacements.set('resources.json', Buffer.from(JSON.stringify(resources, null, 2) + '\n'));
 
 for (const name of names) await readTemplate(name);
-const outputNames = [...new Set([...names.map(name => changedFonts.get(name) ?? name), ...replacements.keys()])];
+const obsoletePracticeFiles = new Set(['Th14PracticeUi.mjs', 'Th14PracticeCatalog.mjs']);
+const outputNames = names.filter(name => !obsoletePracticeFiles.has(name)).map(name => changedFonts.get(name) ?? name);
 for (const name of outputNames) {
   const size = replacements.get(name)?.length ?? templateManifest.files[name]?.bytes;
   if (!(size <= maxBytes)) throw Error('TH14 runtime exceeds file size limit: ' + name);
