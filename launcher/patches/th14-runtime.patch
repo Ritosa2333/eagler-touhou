@@ -1729,18 +1729,9 @@ index 3425c4a2923b28ea3bbe4cca3a2de0c6a8583a5b..71443c0455935cf5d724358b935f1d1e
          void* bytes = SDL_LoadFile(path.c_str(), &length);
          if (bytes) {
 diff --git a/runtimes/th12/th12_web/cpp/game/GameSession.cpp b/runtimes/th12/th12_web/cpp/game/GameSession.cpp
-index 296457d06c7e7d5478acd4a0c029230add6fef70..e1168420461d0fd5af0dace979196967deb25443 100644
 --- a/runtimes/th12/th12_web/cpp/game/GameSession.cpp
 +++ b/runtimes/th12/th12_web/cpp/game/GameSession.cpp
-@@ -245,6 +245,7 @@ bool GameSession::start_cpp_stage_worker(){
-                     return battle->enemies.initialize_empty(owner.timeline);
-                 }
-                 if(phase!=2)return true;
-+                if(!patch_practice_th14(owner.timeline,practice_run,state.spell_practice_id,owner.timeline.error))return false;
-                 if(!battle->enemies.finish_stage_owner())return false;
-                 if(!battle->prepare_next_tail_owners(state.character,state.subtype))return false;
-                 if(!resources.effects||!resources.effects->finish_cpp_stage_tail(
-@@ -365,6 +366,13 @@ void GameSession::reset_state(bool retain_transition) noexcept {
+@@ -365,6 +365,13 @@
  
  bool GameSession::begin_replay(GameResources& source,const u8* data,u32 size,u32 stage,bool demo){
      if(!playback.open(data,size))return fail(playback.error().c_str());
@@ -1754,7 +1745,7 @@ index 296457d06c7e7d5478acd4a0c029230add6fef70..e1168420461d0fd5af0dace979196967
      if(!stage)for(u32 n=1;n<=7;++n)if(playback.stage(n)){stage=n;break;}
      if(!playback.stage(stage))return fail("stage absent from replay");
      std::printf("[replay] %s: record stage %u, character %d subtype %d difficulty %d, %u bytes\n",
-@@ -384,9 +392,25 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
+@@ -384,9 +391,25 @@
  #endif
      reset_state(true);
      completed_run=false;
@@ -1780,7 +1771,7 @@ index 296457d06c7e7d5478acd4a0c029230add6fef70..e1168420461d0fd5af0dace979196967
      if(!resources.load_core(source)) return fail(resources.error.c_str());
  #if PORT_TITLE == 14
      if(!resources.select_player(u32(character),u32(subtype)))return fail(resources.error.c_str());
-@@ -403,6 +427,7 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
+@@ -403,6 +426,7 @@
      if(replay){if(playback.decoded()[10]&2){u32 id;std::memcpy(&id,playback.decoded().data()+0x90,4);state.spell_practice_id=signed_bits(id);}}
      else if((menu_selection.flags&48)==32)state.spell_practice_id=menu_selection.spell_id;
      if((replay&&(playback.decoded()[10]&2)||!replay&&(menu_selection.flags&48)==32)&&(state.spell_practice_id<0||state.spell_practice_id>=120))return fail("invalid TH14 spell practice selection");
@@ -1788,7 +1779,7 @@ index 296457d06c7e7d5478acd4a0c029230add6fef70..e1168420461d0fd5af0dace979196967
      if(state.spell_practice_id>=0){state.practice=true;economy.lives=0;economy.th14_bombs=0;}
  #endif
      initial_stage=stage;economy.rank=next_continues?-512:0;
-@@ -414,7 +439,7 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
+@@ -414,7 +438,7 @@
      economy.difficulty=difficulty;
      if(!replay&&!recording.begin(character,subtype,difficulty,practice,recording_timestamp))return fail("replay recorder initialization failed");
  #if PORT_TITLE == 14
@@ -1797,12 +1788,13 @@ index 296457d06c7e7d5478acd4a0c029230add6fef70..e1168420461d0fd5af0dace979196967
  #endif
      if(!replay){auto* counter=scores.characters[character*2+subtype].data()+ScoreFile::play_count_offset;i32 n;std::memcpy(&n,counter,4);if(n<99999){++n;std::memcpy(counter,&n,4);}}
      // TH14 own435caa reads 4d9cb8 / 4d9ca0, then scales by 100.
-@@ -649,6 +674,13 @@ bool GameSession::activate_stage(){
+@@ -649,6 +673,14 @@
  #endif
      battle->hud.score.continues=next_continues;next_continues=0;
      if(state.replay)battle->hud.score.continues=entry.continues;
 +#if PORT_TITLE == 14
-+    if(!initial_worker_owner&&practice_run&&!patch_practice_th14(resources.stage->timeline,practice_run,state.spell_practice_id,error))return false;
++    // Apply practice edits to the adopted timeline before the first ECL spawn.
++    if(practice_run&&!patch_practice_th14(resources.stage->timeline,practice_run,state.spell_practice_id,error))return false;
 +    if(!state.replay&&practice_run&&state.spell_practice_id<0)practice_run.apply(economy);
 +    economy.th14_practice_tools=practice_enabled&&!state.demo&&!state.replay?practice_tools:0;
 +    battle->enemy_environment.th14_practice_fake_type=practice_run.stage==4?(practice_run.flags>>2)&3:0;
@@ -1811,7 +1803,7 @@ index 296457d06c7e7d5478acd4a0c029230add6fef70..e1168420461d0fd5af0dace979196967
      if(!battle->initialize(state.character,state.subtype,state.difficulty)) {
          error="stage battle initialization failed: "+battle->error;
          battle.reset();
-@@ -693,19 +725,24 @@ bool GameSession::record_stage_entry(bool initial){
+@@ -693,19 +725,24 @@
          u32(e.th14_combo.count),u32(e.th14_combo.timer),float_bits(e.th14_combo.position.x),float_bits(e.th14_combo.position.y),float_bits(e.th14_combo.position.z),u32(e.th14_special_drop_count)};
      // Native D8 carries 4d9658 bit 0; the ordinary port session uses 0.
      s.th14_stage_flags=0;
@@ -1838,7 +1830,7 @@ index 296457d06c7e7d5478acd4a0c029230add6fef70..e1168420461d0fd5af0dace979196967
  }
  
  #if PORT_TITLE == 14
-@@ -955,7 +992,11 @@ bool GameSession::update(const GameSessionInput& input) {
+@@ -955,7 +992,11 @@
          // Its state0 activation dispatches the first main-menu update later
          // in that callback. Our TitleMenu is constructed as Main, so its
          // first session frame must likewise leave the idle counter alone.
@@ -1851,7 +1843,7 @@ index 296457d06c7e7d5478acd4a0c029230add6fef70..e1168420461d0fd5af0dace979196967
  #if PORT_TITLE != 14
              if(title_idle>=1800){const DemoPlaylist playlist=demo_playlist();
                  const auto path=std::string(playlist.names[demo_index<playlist.step?demo_index:0]);
-@@ -973,6 +1014,7 @@ bool GameSession::update(const GameSessionInput& input) {
+@@ -973,6 +1014,7 @@
          game_input.update(raw);title->held=raw;
  #if PORT_TITLE == 14
          if(title_manual)title->manual_finished=title_manual->manual_finished;
@@ -1859,11 +1851,10 @@ index 296457d06c7e7d5478acd4a0c029230add6fef70..e1168420461d0fd5af0dace979196967
  #endif
          if(!title->update(game_input.pressed,game_input.long_repeat))return fail(title->error.c_str());
  #if PORT_TITLE == 14
-@@ -1089,17 +1131,46 @@ bool GameSession::update(const GameSessionInput& input) {
-             // can refer to a preceding stage when playback starts mid-run.
+@@ -1090,16 +1132,45 @@
              game_input.update_normalized(recorded.held);
              edges.pressed=game_input.pressed;edges.released=game_input.released;
-+#endif
+ #endif
 +#if PORT_TITLE == 14
 +            if(practice_enabled&&!state.demo){
 +                const auto& events=playback.practice_events[state.stage];
@@ -1871,7 +1862,7 @@ index 296457d06c7e7d5478acd4a0c029230add6fef70..e1168420461d0fd5af0dace979196967
 +                while(practice_event<events.size()&&events[practice_event].frame<playback.frame())
 +                    economy.th14_practice_tools=events[practice_event++].tools;
 +            }
- #endif
++#endif
              auto& motion=battle->player_input.movement;motion.touch_mode=recorded.touch_mode;motion.touch_x=recorded.touch_x;motion.touch_y=recorded.touch_y;
              }
          }else{
@@ -1906,7 +1897,7 @@ index 296457d06c7e7d5478acd4a0c029230add6fef70..e1168420461d0fd5af0dace979196967
          edges.dialogue_skip_frames=game_input.held_frames[9];
          edges.dialogue_fire_frames=game_input.held_frames[0];
  #endif
-@@ -1157,6 +1228,13 @@ bool GameSession::update(const GameSessionInput& input) {
+@@ -1157,6 +1228,13 @@
          if(!state.replay&&battle->stage_active&&battle->th14_control_counted){auto* counter=scores.characters[state.character*2+state.subtype].data()+ScoreFile::play_time_offset;i32 n;std::memcpy(&n,counter,4);if(n<215999999){++n;std::memcpy(counter,&n,4);}}
  #else
          if(!state.replay&&battle->stage_active){auto* counter=scores.characters[state.character*2+state.subtype].data()+ScoreFile::play_time_offset;i32 n;std::memcpy(&n,counter,4);if(n<215999999){++n;std::memcpy(counter,&n,4);}}
@@ -1920,7 +1911,7 @@ index 296457d06c7e7d5478acd4a0c029230add6fef70..e1168420461d0fd5af0dace979196967
  #endif
          if(battle->game_over_requested){
              if(state.phase==GameSessionPhase::paused||state.phase==GameSessionPhase::game_over)return true;
-@@ -1342,7 +1420,12 @@ bool GameSession::restart_run(bool continuation){
+@@ -1342,7 +1420,12 @@
      const i32 count=continuation&&previous.stage!=first?std::min(battle->hud.score.continues+1,9):0;
      scores.write_records(spell_records,clear_records);next_continues=count;
      if(previous.replay){if(!begin(*source,first,previous.character,previous.subtype,previous.difficulty,previous.demo,true,previous.practice))return false;}
@@ -1934,7 +1925,7 @@ index 296457d06c7e7d5478acd4a0c029230add6fef70..e1168420461d0fd5af0dace979196967
      initial_stage=first;return true;
  }
  
-@@ -1409,6 +1492,9 @@ bool GameSession::open_title(GameResources& data,bool first,TitleScreen screen){
+@@ -1409,6 +1492,9 @@
  #endif
      if(!title)scores.write_records(spell_records,clear_records);
      reset_state();source=&data;interactive=true;
