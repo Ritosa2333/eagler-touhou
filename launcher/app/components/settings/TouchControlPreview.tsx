@@ -35,7 +35,7 @@ export function TouchControlPreview({settings, live, spectator = false, fireEnab
     <UiButton variant="unstyled" className="touch-escape" id="touchEscape" data-touch-layout-control="escape" type="button" aria-label={t('touch.escapeAria')} title={t('touch.escapeTitle')}>ESC<Resize/></UiButton>
     <UiButton variant="unstyled" className="touch-restart" id="touchRestart" data-touch-layout-control="restart" type="button" aria-label="R" title={t('touch.restartTitle')} hidden={!options.restartButtonEnabled}>R<Resize/></UiButton>
     <UiButton variant="unstyled" className="touch-thprac-tab" id="touchThpracTab" data-touch-layout-control="thpracTab" data-thprac-key="Tab" type="button" hidden={!(settings.gameId === 'th14' && thpracVisible)}><strong>Tab</strong><small>Tracker</small><Resize/></UiButton>
-    <div className="touch-thprac-menu" id="touchThpracMenu" data-touch-layout-control="thpracMenu" hidden={!thpracVisible}>
+    <div className="touch-thprac-menu" id="touchThpracMenu" data-touch-layout-control="thpracMenu" hidden={!thpracVisible || (!editing && !!live?.thpracPracticeOpen)}>
       <UiButton variant="unstyled" className="touch-thprac-backspace" id="touchThpracBackspace" type="button" aria-expanded={live?.thpracMenuOpen ?? false}>{t('touch.cheatsAndSettings')}</UiButton>
       {settings.gameId === 'th14' && <UiButton variant="unstyled" className="touch-thprac-backspace mt-1" data-thprac-key="F12" type="button" aria-label={t('touch.advancedMenu')}>F12 · {t('touch.advancedMenu')}</UiButton>}
       <div className="touch-thprac-function-keys" id="touchThpracFunctionKeys" hidden>
