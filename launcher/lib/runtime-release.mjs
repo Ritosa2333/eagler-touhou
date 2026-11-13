@@ -62,7 +62,7 @@ export function runtimeFileNames(game, files) {
       /^[a-z0-9._-]+\.wasm$/i.test(name) ||
       /^[a-z0-9._-]+\.json$/i.test(name) ||
       /^fonts\/[a-z0-9._-]+\.(?:bin|woff2?)$/i.test(name) ||
-      (game === "th14" && (/^fonts\/font[0-7]\.bin\.gz$/.test(name) || name === "fonts/unifont.otf"))
+      (game === "th14" && (/^fonts\/font[0-7]\.bin\.gz$/.test(name) || name === "fonts/unifont.otf" || name === "fonts/msgothic.ttc"))
     )) throw new Error(`${game}: forbidden directory Runtime file: ${name}`);
   }
   return names;

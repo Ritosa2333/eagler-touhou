@@ -1418,6 +1418,48 @@ index fd55dea28b5500eac427ba77b2decd4ff3b82b54..13e8ec3acd898f4d01c21c040e3e23e4
      }return true;
  }
  i32 BulletManager::spawn_th14(const Th14BulletEmitter& e,i32 index,i32 layer,float aim)noexcept{
+diff --git a/runtimes/th12/th12_web/cpp/game/Dialogue.cpp b/runtimes/th12/th12_web/cpp/game/Dialogue.cpp
+index 52a00c76c7d70020412b2bf70b87d756442d4bbd..4b940071fae85a53ad07d783abfffdce6cd57936 100644
+--- a/runtimes/th12/th12_web/cpp/game/Dialogue.cpp
++++ b/runtimes/th12/th12_web/cpp/game/Dialogue.cpp
+@@ -1,5 +1,6 @@
+ #include "ShotFiles.hpp"
+ #include "Dialogue.hpp"
++#include <algorithm>
+ #include <cstdlib>
+ #include <string>
+ namespace th11 {
+@@ -232,7 +233,9 @@ bool Dialogue::command(u8 op,const u8* p,u32 n){
+         else if(op==17){
+             if constexpr(kPortTitle==14){
+                 // Retail deliberately converts the wrapped unsigned byte width.
+-                const float width=float(u32((u32(value.size())*8u)&~15u)-28u)*2.f;
++                const i32 localized_width=effects.dialogue_width(value,i32((state.flags>>1)&1));
++                const float width=localized_width>=0?float(std::clamp(localized_width-40,0,650)):
++                    float(u32((u32(value.size())*8u)&~15u)-28u)*2.f;
+                 if(width>th14_text_width)th14_text_width=width;
+                 const i32 layout=state.speaker+2*i32((state.flags>>2)&15)+(state.next_line?8:0);
+                 if(!th14_background(layout))return false;
+diff --git a/runtimes/th12/th12_web/cpp/game/Dialogue.hpp b/runtimes/th12/th12_web/cpp/game/Dialogue.hpp
+index 991989a6636d3f4fd2d1df02445e14bd1ad1e18a..7df758c459ed24fd233ad1e9ea1636d1edea542a 100644
+--- a/runtimes/th12/th12_web/cpp/game/Dialogue.hpp
++++ b/runtimes/th12/th12_web/cpp/game/Dialogue.hpp
+@@ -15,13 +15,14 @@ static_assert(offsetof(DialogueState,instruction)==0x64);
+ #endif
+ struct DialogueText {
+     u32 animation=0,color=0;i32 offset=0,font=0,style=0;
+-    std::string bytes; // Original Shift-JIS bytes; no lossy UTF-8 conversion.
++    std::string bytes; // Original Shift-JIS or localized UTF-8.
+     bool right_aligned=false;
+     bool centered=false;
+ };
+ struct DialogueEffects {
+     virtual ~DialogueEffects()=default;
+     virtual bool dialogue_text(const DialogueText&){return false;}
++    virtual i32 dialogue_width(const std::string&,i32){return -1;}
+     virtual bool dialogue_sound(i32){return false;}
+     virtual bool dialogue_music(){return false;}
+     virtual bool dialogue_boss_name(){return false;}
 diff --git a/runtimes/th12/th12_web/cpp/game/EnemyFrame.cpp b/runtimes/th12/th12_web/cpp/game/EnemyFrame.cpp
 index 4b451321c3a2c24a2257dcdc76739bf2c58090d0..edec700409fa2a7e65575f443fc92adb32d1f186 100644
 --- a/runtimes/th12/th12_web/cpp/game/EnemyFrame.cpp
@@ -1530,6 +1572,31 @@ index babb4d7713b7ffe364fc62b4ce2e67456edda8ce..6df8058d84d95025ec0cb647c44a30dc
      i32 th14_point_items=0;
      i32 th14_special_drop_count=0;
      // Snapshot +0x54 is retained by the native replay memcpy; its reset is
+diff --git a/runtimes/th12/th12_web/cpp/game/GameResources.cpp b/runtimes/th12/th12_web/cpp/game/GameResources.cpp
+index 3425c4a2923b28ea3bbe4cca3a2de0c6a8583a5b..71443c0455935cf5d724358b935f1d1e8c953210 100644
+--- a/runtimes/th12/th12_web/cpp/game/GameResources.cpp
++++ b/runtimes/th12/th12_web/cpp/game/GameResources.cpp
+@@ -1,4 +1,5 @@
+ #include "GameResources.hpp"
++#include "Localization.hpp"
+ #include "StageFiles.hpp"
+ #include "PortTitle.hpp"
+ #include <cstdio>
+@@ -68,11 +69,11 @@ bool GameResources::read(const std::string& name, std::vector<u8>& data) {
+     const auto found = lookup.find(name);
+     if (found == lookup.end()) return fail("missing archive resource");
+ #if defined(TH_NATIVE_PLATFORM) && defined(TH_ENABLE_THCRAP)
+-    // Same boundary as TH10 ResourceFiles: a prepared /thcrap/th11/<entry>
++    // Same boundary as TH10 ResourceFiles: a prepared language-pack entry
+     // overrides one original archive entry; absent files use the retail DAT.
+-    if (!name.empty() && name.front() != '/' && name.find("..") == std::string::npos &&
++    if (Localization::Enabled() && !name.empty() && name.front() != '/' && name.find("..") == std::string::npos &&
+         name.find('\\') == std::string::npos && name.find(':') == std::string::npos) {
+-        const std::string path = "/thcrap/th11/" + name;
++        const std::string path = std::string(Localization::Root()) + name;
+         size_t length = 0;
+         void* bytes = SDL_LoadFile(path.c_str(), &length);
+         if (bytes) {
 diff --git a/runtimes/th12/th12_web/cpp/game/GameSession.cpp b/runtimes/th12/th12_web/cpp/game/GameSession.cpp
 index 296457d06c7e7d5478acd4a0c029230add6fef70..fba70738aa2ea9c58698fd4bd2bbc7d17a4203ba 100644
 --- a/runtimes/th12/th12_web/cpp/game/GameSession.cpp
@@ -2366,6 +2433,78 @@ index 355046f22ee8a9b3552ab0ab388d6cc756284bfb..ec439ce4bc63c46489e41943f51df156
  #endif
  bool laser_line_initialize(LaserLine&,const LaserLineParameters&,AnmResource&,AnmEnvironment&,LaserWorld&,u16 file_id=0);
  bool laser_line_appearance(LaserLine&,i32,AnmResource&,AnmEnvironment&,u16 file_id=0);
+diff --git a/runtimes/th12/th12_web/cpp/game/Localization.cpp b/runtimes/th12/th12_web/cpp/game/Localization.cpp
+index be9535768dc14427d06583a55a5773ec6461a160..1e93ce77a95acda8c3a1b2b76d9d32e4a4f081cb 100644
+--- a/runtimes/th12/th12_web/cpp/game/Localization.cpp
++++ b/runtimes/th12/th12_web/cpp/game/Localization.cpp
+@@ -1,4 +1,8 @@
+ #include "Localization.hpp"
++#include "PortTitle.hpp"
++#if PORT_TITLE == 14
++#include "SpellMenuTh14.hpp"
++#endif
+ #include <cstring>
+ #include <unordered_map>
+ #include <vector>
+@@ -6,12 +10,24 @@
+ #include <SDL3/SDL.h>
+ #endif
+ namespace th11::Localization {
++const char* Root() noexcept { return PORT_TITLE==14?"/thcrap/th14/":"/thcrap/th11/"; }
++namespace {
++// Published before boot/stage workers start; the mounted pack is immutable for this runtime.
++bool enabled=PORT_TITLE!=14;
++}
++void Initialize() noexcept {
++#if defined(TH_NATIVE_PLATFORM) && defined(TH_ENABLE_THCRAP) && PORT_TITLE == 14
++    enabled=SDL_GetPathInfo("/thcrap/th14/localization/options.json",nullptr);
++#endif
++}
++bool Enabled() noexcept { return enabled; }
+ namespace {
+ #if defined(TH_NATIVE_PLATFORM) && defined(TH_ENABLE_THCRAP)
+ u16 u16le(const u8* p){return u16(p[0])|u16(p[1])<<8;}
+ u32 u32le(const u8* p){return u32(p[0])|u32(p[1])<<8|u32(p[2])<<16|u32(p[3])<<24;}
+ std::vector<u8> load(const char* name){
+-    const std::string path=std::string("/thcrap/th11/localization/")+name;
++    if(!Enabled())return {};
++    const std::string path=std::string(Root())+"localization/"+name;
+     size_t size=0;auto* p=static_cast<u8*>(SDL_LoadFile(path.c_str(),&size));
+     if(!p)return {};
+     std::vector<u8> bytes;if(size<=2u*1024u*1024u)bytes.assign(p,p+size);
+@@ -110,6 +126,18 @@ Strings strings;
+ }
+ const char* SpellName(u32 id,const char* fallback){
+ #if defined(TH_NATIVE_PLATFORM) && defined(TH_ENABLE_THCRAP)
++#if PORT_TITLE == 14
++    if(!Enabled())return fallback;
++    // Upstream omits difficulty variants with the same title. Search back
++    // only within the original spell's row (Extra cards are separate rows).
++    for(u32 stage=0;stage<7;++stage)for(i32 row=0;row<th14_spell_counts[stage];++row){
++        const auto& ids=th14_spell_choices[stage][row];
++        for(i32 rank=0;rank<5&&ids[rank]>=0;++rank)if(u32(ids[rank])==id){
++            for(i32 n=rank;n>=0;--n)if(const char* name=spells.lookup("spells.etl",u32(ids[n]),0,nullptr))return name;
++            return fallback;
++        }
++    }
++#endif
+     return spells.lookup("spells.etl",id,0,fallback);
+ #else
+     (void)id;return fallback;
+diff --git a/runtimes/th12/th12_web/cpp/game/Localization.hpp b/runtimes/th12/th12_web/cpp/game/Localization.hpp
+index bb0cf8cfb5b67d75ea0cdbca02786a70ee1df248..73e49867370a90225d5a7adccb984c9447fecaa6 100644
+--- a/runtimes/th12/th12_web/cpp/game/Localization.hpp
++++ b/runtimes/th12/th12_web/cpp/game/Localization.hpp
+@@ -2,6 +2,9 @@
+ #include "Types.hpp"
+ #include <string>
+ namespace th11::Localization {
++const char* Root() noexcept;
++bool Enabled() noexcept;
++void Initialize() noexcept;
+ // Prepared thcrap ETL1 tables share the TH10 Runtime format. All missing
+ // entries fall back to the unmodified Japanese archive or score file.
+ const char* SpellName(u32 id,const char* fallback);
 diff --git a/runtimes/th12/th12_web/cpp/game/PauseEnd.cpp b/runtimes/th12/th12_web/cpp/game/PauseEnd.cpp
 index cf2697d3116bfbe4aab0f9e3dd982daa56fe5d76..17960689334942777f123250cfb8e2c86464aaa6 100644
 --- a/runtimes/th12/th12_web/cpp/game/PauseEnd.cpp
@@ -4434,6 +4573,22 @@ index 2ac0b95d5b6e5ed2f39e51f4859cefd10f2ebeaa..a3fc5d7718eaebd1e6d21968431aa5aa
  #endif
      bool volume_changed=false;
      u32 number_keys=0;
+diff --git a/runtimes/th12/th12_web/cpp/game/TitleMusic.cpp b/runtimes/th12/th12_web/cpp/game/TitleMusic.cpp
+index c68142ce48ea5ea1bd3f649ac512e4fdf33a318e..702d6fcb03468f03c326ca431d63023ee6809221 100644
+--- a/runtimes/th12/th12_web/cpp/game/TitleMusic.cpp
++++ b/runtimes/th12/th12_web/cpp/game/TitleMusic.cpp
+@@ -86,7 +86,10 @@ void TitleMenu::music_room(u32 pressed,u32 repeat){
+             create(171+i,music_title_base+i);const char* translated=Localization::MusicTitle(u32(i+1),music_entries[i].title.c_str());
+             std::string name=translated;
+             if(translated!=music_entries[i].title.c_str()){
+-                char prefix[16];std::snprintf(prefix,sizeof prefix,"No.%2d ",i+1);name=prefix+name;
++                if constexpr(kPortTitle==14){
++                    char line[512];const char* format=Localization::FormatStringById("Music Room Numbered Title","No.%2d %s");
++                    std::snprintf(line,sizeof line,format,i+1,translated);name=line;
++                }else{char prefix[16];std::snprintf(prefix,sizeof prefix,"No.%2d ",i+1);name=prefix+name;}
+             }
+             if(!scores.settings[0x26+i]){
+                 std::string fallback=kPortTitle==14?"No.%2d  ":"No.%2d ";for(i32 n=0;n<11;++n)fallback+="\x81\x48";
 diff --git a/runtimes/th12/th12_web/cpp/game/TitleOptions.cpp b/runtimes/th12/th12_web/cpp/game/TitleOptions.cpp
 index 7e149464ad898beba936705dd67f31a518eb6452..00029a10a7d0e23dc488d9bcd8f1faf4997de7ac 100644
 --- a/runtimes/th12/th12_web/cpp/game/TitleOptions.cpp
@@ -4496,14 +4651,52 @@ index c91062f77f39cdc37dac75bbe8d697d98b1ee72c..44601056b63271565f978c2342944931
              sounds.push_back(10);
          }
          if(pressed&0x102){if(name_length){sounds.push_back(11);entered_name[--name_length]=' ';}else step(2);}break;
+diff --git a/runtimes/th12/th12_web/cpp/game/TitleTh14.cpp b/runtimes/th12/th12_web/cpp/game/TitleTh14.cpp
+index 02b4c71f268e8920d63cdb377f54ce66efee47a2..33e3736ebe94a5a4174e16f16ed9badfe7bd605c 100644
+--- a/runtimes/th12/th12_web/cpp/game/TitleTh14.cpp
++++ b/runtimes/th12/th12_web/cpp/game/TitleTh14.cpp
+@@ -1,5 +1,6 @@
+ #include "TitleMenu.hpp"
+ #include "SpellMenuTh14.hpp"
++#include "Localization.hpp"
+ #include <cstdio>
+ namespace th11 {
+ #if PORT_TITLE == 14
+@@ -210,7 +211,7 @@ bool TitleMenu::spell_seen_th14(i32 stage,i32 row)const{
+ void TitleMenu::spell_choices_th14(){
+     const i32 stage=selection.spell_stage,row=screen==TitleScreen::SpellRecords?cursor.selected:selection.spell_row;
+     spell_choices.fill(-2);for(i32 n=240;n<247;++n)spell_hide_th14(n);
+-    for(i32 n=0;n<5;++n){if(!exists(262+n)){create(193+n,262+n);if(auto* vm=animations.find(handles[262+n])){vm->flags2|=0x200;vm->position={};}}family(262+n,2,true);text_requests.push_back({handles[262+n],0x808080,0,0,0," Nothing ... ",false,true});}
++    for(i32 n=0;n<5;++n){if(!exists(262+n)){create(193+n,262+n);if(auto* vm=animations.find(handles[262+n])){vm->flags2|=0x200;vm->position={};}}family(262+n,2,true);text_requests.push_back({handles[262+n],0x808080,0,0,0,Localization::StringById("th13 spell nothing"," Nothing ... "),false,true});}
+     if(stage!=6)for(i32 n=240;n<244;++n){create(n);family(n,3,true);}
+     i32 last=0;
+     for(i32 id:th14_spell_choices[stage][row]){
+@@ -219,8 +220,14 @@ void TitleMenu::spell_choices_th14(){
+         const auto* aggregate=scores.characters[6].data()+ScoreFile::spell_offset+id*ScoreFile::spell_stride;
+         const auto* own=scores.characters[secondary.selected].data()+ScoreFile::spell_offset+id*ScoreFile::spell_stride;
+         u32 seen,captures;std::memcpy(&seen,aggregate+0x88,4);std::memcpy(&captures,own+0x84,4);char line[512];u32 color;
+-        if(!seen){spell_choices[slot]=-1;std::string unknown;for(i32 n=0;n<11;++n)unknown+="\x81\x48";std::snprintf(line,sizeof(line)," No.%3d  %s",id+1,unknown.c_str());color=0xb0b0b0;}
+-        else{spell_choices[slot]=id;size_t length=0;while(length<128&&aggregate[length])++length;std::string name(reinterpret_cast<const char*>(aggregate),length);if(name.size()<42)name.resize(42,' ');std::snprintf(line,sizeof(line)," No.%3d  %s",id+1,name.c_str());color=captures?0xffff80:0xefefef;}
++        if(!seen){spell_choices[slot]=-1;std::string unknown;for(i32 n=0;n<11;++n)unknown+="\x81\x48";const char* untranslated=" No.%3d";
++            const char* format=Localization::FormatStringById("th13 practice spell name unknown",untranslated);
++            if(format==untranslated)std::snprintf(line,sizeof(line)," No.%3d  %s",id+1,unknown.c_str());
++            else std::snprintf(line,sizeof(line),format,id+1);color=0xb0b0b0;}
++        else{spell_choices[slot]=id;size_t length=0;while(length<128&&aggregate[length])++length;std::string name(reinterpret_cast<const char*>(aggregate),length);const char* translated=Localization::SpellName(u32(id),name.c_str());
++            if(translated==name.c_str()&&name.size()<42){name.resize(42,' ');translated=name.c_str();}
++            const char* format=Localization::FormatStringById("th13 practice spell name known"," No.%3d  %s");
++            std::snprintf(line,sizeof(line),format,id+1,translated);color=captures?0xffff80:0xefefef;}
+         text_requests.push_back({handles[262+slot],color,0,0,0,line,false,true});family(262+slot,2,true);
+     }
+     // Native463600 resets text rows to interrupt3 after refreshing their texture.
 diff --git a/runtimes/th12/th12_web/cpp/sdl/Application.cpp b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
-index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e53bad902 100644
+index bae5d17e65ee2a98f46cb063007b05d43941077d..a0c943511cda340a3ef99ce04b3f20640878add7 100644
 --- a/runtimes/th12/th12_web/cpp/sdl/Application.cpp
 +++ b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
-@@ -10,8 +10,13 @@
+@@ -10,8 +10,14 @@
  #endif
  #include "AudioDevice.hpp"
  #include "FontDevice.hpp"
++#include "../game/Localization.hpp"
 +#include "PracticeUiTh14.hpp"
  #include "../game/MusicCatalog.hpp"
  #include "../game/GameSession.hpp"
@@ -4514,7 +4707,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
  #include "../game/FrameStatistics.hpp"
  #if defined(TH14_CPP_STAGE_DECODE)
  #include "../game/StageWorkerTailTh14.hpp"
-@@ -305,8 +310,20 @@ struct Application:StageResourceEffects
+@@ -305,8 +311,20 @@ struct Application:StageResourceEffects
      }
  #endif
  #if PORT_TITLE == 14
@@ -4535,7 +4728,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
      bool present_this_update(){
          // Retail46a833 increments a byte, then compares its signed value.
          ++frame_skip_counter;
-@@ -419,7 +436,11 @@ struct Application:StageResourceEffects
+@@ -419,7 +437,11 @@ struct Application:StageResourceEffects
          // -3/-1 requests remain responsible for selecting a track.
          if(activation&&session.state.spell_practice_id>=0)return true;
  #endif
@@ -4548,7 +4741,15 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
          audio.pause_music(kPortTitle!=14&&stage==6);return true;
      }
      bool pause(){if(!session.pause())return false;
-@@ -1103,7 +1124,7 @@ struct Application:StageResourceEffects
+@@ -519,6 +541,7 @@ struct Application:StageResourceEffects
+     }
+ #if PORT_TITLE == 14
+     DialogueEffects* dialogue_text_device()override{return this;}
++    i32 dialogue_width(const std::string& value,i32 style)override{return fonts.measure(value,style);}
+     bool dialogue_text(const DialogueText& request)override{
+         renderer.flush();
+         auto* vm=session.animations.find(request.animation);
+@@ -1103,7 +1126,7 @@ struct Application:StageResourceEffects
              // Bootstrap all three before the first upload, preserving Sig,
              // ASCII and text template order without holding an Asyncify stack
              // open while their CPU decoding runs in the independent worker.
@@ -4557,7 +4758,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
              th14_webgpu_archive_schedule(run_boot_work,new BootWorkToken{this,boot_worker_generation,work,index},names,3);
              return;
          }
-@@ -1526,6 +1547,8 @@ struct Application:StageResourceEffects
+@@ -1526,6 +1549,8 @@ struct Application:StageResourceEffects
  #endif
              }else saved_config_state=std::move(saved);
          }
@@ -4566,7 +4767,15 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
          if(!graphics.initialize(session.config.render_width(),session.config.render_height())){error=graphics.error;return false;}
  #else
          if(!graphics.initialize()){error=graphics.error;return false;}
-@@ -1636,7 +1659,11 @@ struct Application:StageResourceEffects
+@@ -1539,6 +1564,7 @@ struct Application:StageResourceEffects
+         graphics.texture_high_precision=&session.animations.texture_high_precision;
+         std::printf("[clock14] monotonic ticks=%u; initial seed=%u\n",initial_ticks,u32(u16(initial_ticks)));
+ #endif
++        Localization::Initialize();
+         if(!read_archive()){if(error.empty())error=resources.error();return false;}
+ #if PORT_TITLE == 14 && defined(TH14_WEBGPU_BACKEND) && defined(TH14_ARCHIVE_WORKER)
+         if(!th14_webgpu_archive_open(archive.data(),u32(archive.size()))){error="Unable to start TH14 background archive decoder";return false;}
+@@ -1636,7 +1662,11 @@ struct Application:StageResourceEffects
          initialized=true;return audio_events()&&text_events();
      }
  
@@ -4578,7 +4787,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
  #if PORT_TITLE == 14
          audio.discard_paused_sounds();
  #endif
-@@ -1673,7 +1700,12 @@ struct Application:StageResourceEffects
+@@ -1673,7 +1703,12 @@ struct Application:StageResourceEffects
  #if PORT_TITLE == 14 || PORT_TITLE == 16
          if(session.resources.stage)for(auto& file:session.resources.stage->ecl_animations)graphics.unload(file);
  #endif
@@ -4591,7 +4800,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
  #if PORT_TITLE == 14
          // begin() clears the previous session's VMs. An interrupted cold boot
          // can still own sig textures; release them only after those references
-@@ -1935,6 +1967,9 @@ struct Application:StageResourceEffects
+@@ -1935,6 +1970,9 @@ struct Application:StageResourceEffects
              if(!present_this_update())return true;
              if(!session.draw(renderer,&frame_text)){error=session.error;return false;}
              th14_consume_deferred_captures(session.animations.deferred_captures,session,graphics,renderer);
@@ -4601,7 +4810,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
              graphics.present();
              sample_frame_statistics();
              if(!session.sample_spell_clock(double(SDL_GetTicksNS())*1e-9)){error="Invalid spell timing state";return false;}
-@@ -2010,7 +2045,7 @@ struct Application:StageResourceEffects
+@@ -2010,7 +2048,7 @@ struct Application:StageResourceEffects
                  const auto& sprite=*vm->sprite;const u32 target=graphics.texture(*vm->resource,sprite.texture);renderer.flush();
                  i32 from[]={32,16,416,464};u32 source=GraphicsDevice::screen;
  #if PORT_TITLE == 14
@@ -4610,7 +4819,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
                  std::copy(capture.rectangle,capture.rectangle+4,from);
                  if(capture.text_intermediate){source=graphics.texture(session.resources.core.text,3);if(!source){error="Pause capture source texture missing";return false;}}
  #endif
-@@ -2055,6 +2090,13 @@ struct Application:StageResourceEffects
+@@ -2055,6 +2093,13 @@ struct Application:StageResourceEffects
  #endif
  #if PORT_TITLE == 14
          if(!present_this_update())return true;
@@ -4624,7 +4833,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
  #endif
          frame_text.clear();
  #if PORT_TITLE == 14
-@@ -2067,6 +2109,9 @@ struct Application:StageResourceEffects
+@@ -2067,6 +2112,9 @@ struct Application:StageResourceEffects
          if(!session.draw(renderer,show_frame_statistics?&frame_text:nullptr)){error=session.error;return false;}
  #if PORT_TITLE == 14
          th14_consume_deferred_captures(session.animations.deferred_captures,session,graphics,renderer);
@@ -4634,7 +4843,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
  #endif
          graphics.present();
  #if PORT_TITLE == 14
-@@ -2086,8 +2131,49 @@ struct Application:StageResourceEffects
+@@ -2086,8 +2134,49 @@ struct Application:StageResourceEffects
          return tick_once(held,pause_key);
  #endif
      }
@@ -4684,7 +4893,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
          audio.discard_paused_sounds();
  #endif
          if(!save_scores())return false;
-@@ -2107,7 +2193,38 @@ struct Application:StageResourceEffects
+@@ -2107,7 +2196,38 @@ struct Application:StageResourceEffects
      }
  };
  Application app;
@@ -4723,7 +4932,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
  #include "../../../portable/input/KeyboardMap.inc"
  touhou::input::TouchController gestures;
  touhou::sdl::FrameCadence cadence;
-@@ -2145,18 +2262,44 @@ touhou::input::TouchState touch_state(){
+@@ -2145,18 +2265,44 @@ touhou::input::TouchState touch_state(){
      s.x=p.position.x;s.y=p.position.y;s.fast=float(p.normal_speed)/128;s.slow=float(p.focus_speed)/128;
      s.min_x=-184;s.max_x=184;s.min_y=32;s.max_y=432;return s;
  }
@@ -4769,7 +4978,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
  #endif
          // SDL owns gestures that start on the canvas; the browser bridge only
          // forwards gestures originating outside it, avoiding double delivery.
-@@ -2168,8 +2311,22 @@ bool sample_and_tick_once(){
+@@ -2168,8 +2314,22 @@ bool sample_and_tick_once(){
          else if(event.type==SDL_EVENT_JOYSTICK_ADDED)add_controller(event.jdevice.which);
          else if(event.type==SDL_EVENT_JOYSTICK_REMOVED&&controller&&SDL_GetJoystickID(controller)==event.jdevice.which){SDL_CloseJoystick(controller);controller=nullptr;int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;++i)add_controller(ids[i]);SDL_free(ids);}
      }
@@ -4792,7 +5001,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
      if(app.session.title){auto& title=*app.session.title;for(u32 i=0;i<256;++i)title.key_edges[i]=scans[i]&~previous_scans[i];title.number_keys=0;for(u32 i=0;i<9;++i)if(keys[49+i])title.number_keys|=1u<<i;}
      previous_scans=scans;
      const auto sample=gestures.sample(touch_state(),SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
-@@ -2198,7 +2355,45 @@ EMSCRIPTEN_KEEPALIVE int th11_validate_file(unsigned kind,const unsigned char* d
+@@ -2198,7 +2358,45 @@ EMSCRIPTEN_KEEPALIVE int th11_validate_file(unsigned kind,const unsigned char* d
      if(kind==2){th11::GameConfig config;return config.open(data,size);}
      return 0;
  }
@@ -4838,7 +5047,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
  EMSCRIPTEN_KEEPALIVE int th11_save_replay(unsigned slot,const char* name){return th11::sdl::app.save_replay(slot,name);}
  EMSCRIPTEN_KEEPALIVE int th11_initialize(){if(!th11::sdl::app.initialize())return 0;for(auto& k:th11::sdl::keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);th11::sdl::initialize_controller();return 1;}
  // Readable while a load is in flight, which is the point: it is the only way to see where a load that never
-@@ -2266,7 +2461,11 @@ EMSCRIPTEN_KEEPALIVE unsigned th11_heap_bytes(){return unsigned(emscripten_get_h
+@@ -2266,7 +2464,11 @@ EMSCRIPTEN_KEEPALIVE unsigned th11_heap_bytes(){return unsigned(emscripten_get_h
  EMSCRIPTEN_KEEPALIVE unsigned th11_dynamic_allocs(){return unsigned(mallinfo().uordblks);}
  EMSCRIPTEN_KEEPALIVE int th11_pause(){return th11::sdl::app.pause()?1:0;}
  EMSCRIPTEN_KEEPALIVE int th11_resume(){return th11::sdl::app.resume()?1:0;}
@@ -4850,7 +5059,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..7a56d3ba32a7cfa1c889aba8ac3bed0e
  EMSCRIPTEN_KEEPALIVE void th11_keys_clear(){th11::sdl::clear_inputs();}
  EMSCRIPTEN_KEEPALIVE void th11_music_enabled(unsigned on){using namespace th11::sdl;app.audio.music_enabled=on!=0;app.audio.refresh_volume();}
  EMSCRIPTEN_KEEPALIVE const unsigned* th11_audio_statistics(){return th11::sdl::app.audio.statistics();}
-@@ -2294,9 +2493,37 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
+@@ -2294,9 +2496,37 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
      request_frames([](double time,void* epoch)->EM_BOOL{
          if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
          const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
@@ -4952,11 +5161,325 @@ index 321fecd7cffb71035a9a3681dc32577ae2dc8215..ae8d1ba432544320b9856f3ebabac395
      if(decoded!=MA_SUCCESS){error="Unable to decode "+path;return false;}next->decoded=true;
      if(next->cached_pcm)++a.preload_cache_hits;
  #else
+diff --git a/runtimes/th12/th12_web/cpp/sdl/FontDevice.cpp b/runtimes/th12/th12_web/cpp/sdl/FontDevice.cpp
+index 34599c5a5718d9233835faddbccc0988ffa653b1..0b2ff71ab1420294be2c2dc514729c4f81d606f4 100644
+--- a/runtimes/th12/th12_web/cpp/sdl/FontDevice.cpp
++++ b/runtimes/th12/th12_web/cpp/sdl/FontDevice.cpp
+@@ -1,5 +1,6 @@
+ #include "FontDevice.hpp"
+ #include "../game/AnmManager.hpp"
++#include "../game/Localization.hpp"
+ #include "../game/TextLayoutTh14.hpp"
+ #include <SDL3/SDL.h>
+ #include <algorithm>
+@@ -26,8 +27,9 @@ bool valid_utf8(const std::string& text){
+     }
+     return true;
+ }
++#if PORT_TITLE != 14
+ std::string pack_font_file(){
+-    size_t size=0;auto* raw=static_cast<char*>(SDL_LoadFile("/thcrap/th11/localization/options.json",&size));
++    size_t size=0;auto* raw=static_cast<char*>(SDL_LoadFile((std::string(Localization::Root())+"localization/options.json").c_str(),&size));
+     if(!raw)return {};
+     std::string options(raw,size);SDL_free(raw);
+     const auto key=options.find("\"fontFile\"");if(key==std::string::npos)return {};
+@@ -38,8 +40,9 @@ std::string pack_font_file(){
+     if(name.empty()||name.size()>128||name.find("..")!=std::string::npos||
+        name.find('/')!=std::string::npos||name.find('\\')!=std::string::npos||
+        name.find(':')!=std::string::npos)return {};
+-    return "/thcrap/th11/fonts/"+name;
++    return std::string(Localization::Root())+"fonts/"+name;
+ }
++#endif
+ u16 blend_pixel(u16 before,u32 color,u8 alpha){
+     const u32 r=color&255,g=(color>>8)&255,b=(color>>16)&255;
+     // TextRaster keeps alpha inverted while drawing and XORs it back before
+@@ -56,6 +59,9 @@ u16 blend_pixel(u16 before,u32 color,u8 alpha){
+ FontDevice::~FontDevice(){
+ #if defined(TH_ENABLE_THCRAP)
+     for(auto* font:localized)if(font)TTF_CloseFont(font);
++#if PORT_TITLE == 14
++    for(auto* font:fallback)if(font)TTF_CloseFont(font);
++#endif
+ #endif
+ }
+ bool FontDevice::initialize(const FontBitmapTh14* bitmap){
+@@ -65,6 +71,28 @@ bool FontDevice::initialize(const FontBitmapTh14* bitmap){
+     raster.scratch.width=bitmap->width;raster.scratch.height=bitmap->height;raster.scratch.pitch=bitmap->pitch;
+     raster.scratch.pixels.resize(size_t(bitmap->pitch)*bitmap->height);
+ #endif
++#if PORT_TITLE == 14 && defined(TH_ENABLE_THCRAP)
++    size_t length=0;
++    void* codes=SDL_LoadFile("/fonts/cp932.bin",&length);
++    if(!codes||length!=65536*2){SDL_free(codes);error="Missing TH14 CP932 decoding table";return false;}
++    const auto* bytes=static_cast<const u8*>(codes);
++    cp932.resize(65536);
++    for(size_t i=0;i<cp932.size();++i)cp932[i]=u16(bytes[i*2])|(u16(bytes[i*2+1])<<8);
++    SDL_free(codes);
++    if(!TTF_Init()){error="Unable to initialize TH14 fonts";return false;}
++    constexpr float heights[]={32,32,15,15,40,40,15,15};
++    const bool translation=Localization::Enabled();
++    const char* primary=translation?"/unifont.otf":"/msgothic.ttc";
++    const char* secondary=translation?"/msgothic.ttc":"/unifont.otf";
++    for(size_t i=0;i<localized.size();++i){
++        localized[i]=TTF_OpenFont(primary,heights[i]);
++        fallback[i]=TTF_OpenFont(secondary,heights[i]);
++        if(!localized[i]||!fallback[i]||!TTF_AddFallbackFont(localized[i],fallback[i])){
++            error="Unable to load TH14 MS Gothic and Unifont";return false;
++        }
++    }
++    return ready=true;
++#else
+     const char* files[]={"font0.bin","font1.bin","font2.bin","font3.bin","cp932.bin","blend4444.bin"
+ #if PORT_TITLE==14
+         ,"font4.bin","font5.bin","font6.bin","font7.bin"
+@@ -73,20 +101,39 @@ bool FontDevice::initialize(const FontBitmapTh14* bitmap){
+     for(u32 n=0;n<sizeof(files)/sizeof(*files);++n){const std::string path=std::string("/fonts/")+files[n];size_t size=0;auto* data=static_cast<u8*>(SDL_LoadFile(path.c_str(),&size));const bool valid=data&&size<=UINT32_MAX&&raster.glyphs.load(n,data,u32(size));SDL_free(data);if(!valid){error="Invalid original font data: "+path;return false;}}
+     ready=raster.glyphs.ready();
+ #if defined(TH_ENABLE_THCRAP)
+-    const auto path=pack_font_file();
++    const auto path=Localization::Enabled()?pack_font_file():std::string{};
+     if(!path.empty()){
+         if(!TTF_Init()){error="Unable to initialize THCRAP font renderer";return false;}
+-        constexpr float heights[]={32.f,32.f,15.f,15.f};
+-        for(u32 n=0;n<4;++n)if(!(localized[n]=TTF_OpenFont(path.c_str(),heights[n]))){
++        constexpr float heights[]={32.f,32.f,15.f,15.f,32.f,32.f};
++        for(u32 n=0;n<localized.size();++n)if(!(localized[n]=TTF_OpenFont(path.c_str(),heights[n]))){
+             error="Missing THCRAP font: "+path;return false;
+         }
+     }
+ #endif
+     return ready;
++#endif
+ }
+ #if defined(TH_ENABLE_THCRAP)
++#if PORT_TITLE == 14
++std::string FontDevice::decode(const std::string& text) const {
++    if(valid_utf8(text))return text;
++    std::string out;
++    out.reserve(text.size()*2);
++    for(size_t i=0;i<text.size();){
++        unsigned code=u8(text[i++]);
++        if((code>=0x81&&code<=0x9f)||(code>=0xe0&&code<=0xfc))
++            if(i<text.size())code=(code<<8)|u8(text[i++]);
++        code=cp932[code];if(!code)code=0xfffd;
++        if(code<0x80)out+=char(code);
++        else if(code<0x800){out+=char(0xc0|(code>>6));out+=char(0x80|(code&63));}
++        else{out+=char(0xe0|(code>>12));out+=char(0x80|((code>>6)&63));out+=char(0x80|(code&63));}
++    }
++    return out;
++}
++#endif
+ void FontDevice::font_style(int index,const std::string& commands){
+     TTF_FontStyleFlags flags=TTF_STYLE_NORMAL;
++    if constexpr(PORT_TITLE==14)if(index==1||index==5)flags|=TTF_STYLE_BOLD;
+     for(char c:commands){if(c=='b')flags|=TTF_STYLE_BOLD;else if(c=='i')flags|=TTF_STYLE_ITALIC;else if(c=='u')flags|=TTF_STYLE_UNDERLINE;}
+     TTF_SetFontStyle(localized[index],flags);
+ }
+@@ -99,14 +146,26 @@ LayoutLine FontDevice::layout(const std::string& text,int index){
+     font_style(index,"");return line;
+ }
+ bool FontDevice::write_unicode(TextureImage& output,const ImageRect& rect,const std::string& text,const TextStyle& style){
+-    const i32 height=std::max(8,style.height),index=style.font>=0&&style.font<=2?style.font:3;
+-    const u32 rows=u32(height*2+6);if(rows>raster.scratch.height||text.size()>1024)return false;
++    const i32 height=std::max(8,style.height),index=font_index(style.font);
++    const u32 rows=u32(height*2+6);if(rows>raster.scratch.height||text.size()>4096)return false;
+     auto& scratch=raster.scratch;
+-    const u16 background=style.plain?u16(((style.color>>4)&15)|((style.color>>8)&0xf0)|((style.color>>12)&0xf00)):0;
++    const u16 background=PORT_TITLE!=14&&style.plain?u16(((style.color>>4)&15)|((style.color>>8)&0xf0)|((style.color>>12)&0xf00)):0;
+     auto* pixels=reinterpret_cast<u16*>(scratch.pixels.data());
+     std::fill(pixels,pixels+scratch.pixels.size()/2,background);
+     for(u32 n=0;n<rows*1024;++n)pixels[n]^=0xf000;
+     const auto line=layout(text,index);
++    float horizontal_scale=1.f;
++    if constexpr(PORT_TITLE==14){
++        i32 extent=0;
++        for(const auto& run:line.runs){
++            int width=0; font_style(index,run.commands);
++            TTF_GetStringSize(localized[index],run.text.c_str(),run.text.size(),&width,nullptr);
++            extent=std::max(extent,run.x+width);
++        }
++        font_style(index,"");
++        const i32 available=std::max(1,std::min(1024,rect.right-rect.left)-4);
++        if(extent>available)horizontal_scale=float(available)/float(extent);
++    }
+     for(const auto& run:line.runs){
+     font_style(index,run.commands);
+     auto* rendered=TTF_RenderText_Blended(localized[index],run.text.c_str(),run.text.size(),SDL_Color{255,255,255,255});
+@@ -117,21 +176,35 @@ bool FontDevice::write_unicode(TextureImage& output,const ImageRect& rect,const
+     auto stamp=[&](i32 ox,i32 oy,u32 color){
+         for(i32 y=0;y<rgba->h;++y){const i32 dy=y+oy;if(dy<0||dy>=i32(rows))continue;
+             const auto* row=static_cast<const u8*>(rgba->pixels)+size_t(y)*rgba->pitch;
+-            for(i32 x=0;x<rgba->w;++x){const i32 dx=x+ox;if(dx<0||dx>=1024)continue;
+-                const u8 alpha=row[x*4+3];if(alpha)pixels[size_t(dy)*1024+dx]=blend_pixel(pixels[size_t(dy)*1024+dx],color,alpha);
++            const i32 width=std::max(1,i32(rgba->w*horizontal_scale+.5f));
++            for(i32 x=0;x<width;++x){const i32 dx=x+ox;if(dx<0||dx>=1024)continue;
++                const i32 sample=std::min(rgba->w-1,i32(x/horizontal_scale));
++                const u8 alpha=row[sample*4+3];if(alpha)pixels[size_t(dy)*1024+dx]=blend_pixel(pixels[size_t(dy)*1024+dx],color,alpha);
+             }
+         }
+     };
+-    const i32 x=style.offset*2+run.x;
++    const i32 offset=style.offset_in_pixels?style.offset:style.offset*2;
++    const i32 x=(horizontal_scale<1.f?std::max(0,offset):offset)+i32(run.x*horizontal_scale+.5f);
+     if(!style.plain){for(const auto [dx,dy]:{std::pair<int,int>{2,4},{-2,4},{2,0},{-2,0}})stamp(x+dx,dy,style.outline);stamp(x,2,style.color);}
+     else stamp(x,0,style.color);
+     SDL_DestroySurface(rgba);
+     }
+     for(u32 n=0;n<rows*1024;++n)pixels[n]^=0xf000;
+     TextRaster::bleed(scratch,rows);
++    if constexpr(PORT_TITLE==14)return ImageResample::copy(output,rect,scratch,{0,0,std::min(1024,rect.right-rect.left),rect.bottom-rect.top});
+     return ImageResample::triangle(output,rect,scratch,{0,0,std::min(1024,(rect.right-rect.left)*2+22),height*2+2});
+ }
+ #endif
++i32 FontDevice::measure(const std::string& text,int index){
++#if defined(TH_ENABLE_THCRAP)
++    if(localized[0]&&valid_utf8(text)){
++        auto tabs=layout_tabs;
++        const i32 width=layout(text,font_index(index)).width;
++        layout_tabs=std::move(tabs);return width;
++    }
++#endif
++    return -1;
++}
+ bool FontDevice::text(AnmVm& vm,const DialogueText& request){
+     // Three different gaps used to share one sentence. The caller passes the animation the text was
+     // asked for, so the report can name it and the side of it that is missing.
+@@ -192,19 +265,27 @@ bool FontDevice::text(AnmVm& vm,const DialogueText& request){
+     style.color=request.color;style.spacing=u32(request.font);style.plain=(vm.flags2&(PORT_TITLE==14?0x800:2))!=0;
+     i32 text_width=i32((style.height-1)*request.bytes.size()/2);
+ #if defined(TH_ENABLE_THCRAP)
+-    const bool unicode=localized[0]&&valid_utf8(request.bytes);
++#if PORT_TITLE == 14
++    const auto utf8=decode(request.bytes);
++    const bool unicode=true;
++#else
++    const auto& utf8=request.bytes;
++    const bool unicode=localized[0]&&valid_utf8(utf8);
++#endif
+     if(unicode){
+-        const i32 index=style.font>=0&&style.font<=2?style.font:3;
+-        if(request.right_aligned||request.centered)text_width=layout(request.bytes,index).width/2;
++        if(request.right_aligned||request.centered){auto tabs=layout_tabs;text_width=layout(utf8,font_index(style.font)).width;layout_tabs=std::move(tabs);if constexpr(PORT_TITLE!=14)text_width/=2;}
+     }
+ #endif
+     if constexpr(PORT_TITLE==14)style=th14_text_style(style,s.width,u32(request.bytes.size()),vm.flags2,request.right_aligned,request.centered);
+     else {if(request.right_aligned)style.offset=i32(s.width)-text_width;
+         if(request.centered)style.offset=i32(s.width)/2-text_width/2;}
++#if defined(TH_ENABLE_THCRAP) && PORT_TITLE == 14
++    if(unicode){if(request.right_aligned)style.offset=i32(s.width)-text_width;if(request.centered)style.offset=(i32(s.width)-text_width)/2;}
++#endif
+     const ImageRect rect{i32(s.x),i32(s.y),i32(s.x+s.width),i32(s.y+s.height)};
+     bool written=false;
+ #if defined(TH_ENABLE_THCRAP)
+-    if(unicode)written=write_unicode(*image,rect,request.bytes,style);
++    if(unicode)written=write_unicode(*image,rect,utf8,style);
+     else
+ #endif
+     written=raster.write(*image,rect,request.bytes,style);
+diff --git a/runtimes/th12/th12_web/cpp/sdl/FontDevice.hpp b/runtimes/th12/th12_web/cpp/sdl/FontDevice.hpp
+index 16d55e6bed119e13091c829f43209d994b644073..af26a1428fdce7666c3735cf73b0718d170c10d8 100644
+--- a/runtimes/th12/th12_web/cpp/sdl/FontDevice.hpp
++++ b/runtimes/th12/th12_web/cpp/sdl/FontDevice.hpp
+@@ -12,7 +12,13 @@ namespace th11::sdl {
+ class FontDevice {
+     GraphicsDevice& graphics;TextRaster raster;bool ready=false;
+ #if defined(TH_ENABLE_THCRAP)
+-    std::array<TTF_Font*,4> localized{};
++    std::array<TTF_Font*,PORT_TITLE==14?8:4> localized{};
++    static constexpr int font_index(int n){return n>=0&&n<(PORT_TITLE==14?8:3)?n:3;}
++#if PORT_TITLE == 14
++    std::array<TTF_Font*,8> fallback{};
++    std::vector<u16> cp932;
++    std::string decode(const std::string&) const;
++#endif
+     std::vector<int> layout_tabs;
+     LayoutLine layout(const std::string&,int);
+     void font_style(int,const std::string&);
+@@ -28,5 +34,6 @@ public:
+     bool waiting=false;
+     bool initialize(const FontBitmapTh14* bitmap=nullptr);
+     bool text(AnmVm&,const DialogueText&);
++    i32 measure(const std::string&,int);
+ };
+ }
 diff --git a/runtimes/th12/th12_web/cpp/sdl/GraphicsDevice.cpp b/runtimes/th12/th12_web/cpp/sdl/GraphicsDevice.cpp
-index 214e6394474a90211b061d09f30c059f005dca88..4dc7b8a2611477ce18f5963e88463e137e53b42f 100644
+index 214e6394474a90211b061d09f30c059f005dca88..955eb6155919ffb01acbdf6cc3f0e9065cc35d3e 100644
 --- a/runtimes/th12/th12_web/cpp/sdl/GraphicsDevice.cpp
 +++ b/runtimes/th12/th12_web/cpp/sdl/GraphicsDevice.cpp
-@@ -139,7 +139,7 @@ bool GraphicsDevice::prepare_texture(AnmResource& file,u32 index,u32& handle,boo
+@@ -1,4 +1,5 @@
+ #include "GraphicsDevice.hpp"
++#include "../game/Localization.hpp"
+ #if defined(TH_ENABLE_THCRAP) || PORT_TITLE == 14
+ #include <SDL3/SDL.h>
+ #define STB_IMAGE_IMPLEMENTATION
+@@ -36,15 +37,15 @@ namespace {
+ // with transparency are replaced (including transparent pixels). Keep all
+ // unmentioned atlas regions from the retail THTX bitmap.
+ bool patched_texture(const AnmResource& file,const AnmTexture& source,u32 index,AnmTexture& result){
+-    if(source.kind!=AnmTexture::Kind::Embedded||source.name.empty()||
++    if(!Localization::Enabled()||source.kind!=AnmTexture::Kind::Embedded||source.name.empty()||
+        source.name.front()=='/'||source.name.find("..")!=std::string::npos||
+        source.name.find(':')!=std::string::npos)return false;
+     std::string name=source.name;
+     for(char& c:name)if(c=='\\')c='/';
+-    // The original ASCII glyph atlas has fixed codepoint slots; translating
+-    // its PNG directly would invalidate those indices.
+-    if(name=="ascii/ascii.png")return false;
+-    const std::string path="/thcrap/th11/"+name;
++    // TH14 ships layout-compatible atlases for each display scale. TH11's
++    // ASCII overlay continues to use the original fixed glyph slots.
++    if(kPortTitle!=14&&name=="ascii/ascii.png")return false;
++    const std::string path=std::string(Localization::Root())+name;
+     size_t bytes=0;auto* input=static_cast<u8*>(SDL_LoadFile(path.c_str(),&bytes));
+     if(!input)return false;
+     int width=0,height=0,channels=0;
+@@ -54,29 +55,37 @@ bool patched_texture(const AnmResource& file,const AnmTexture& source,u32 index,
+     std::vector<u8> original;
+     if(!source.rgba(original)){stbi_image_free(image);return false;}
+     const u32 atlas_width=source.pixel_width,atlas_height=source.pixel_height;
++    const i32 ox=kPortTitle==14?source.source_x:0,oy=kPortTitle==14?source.source_y:0;
++    if(ox<0||oy<0){stbi_image_free(image);return false;}
+     bool changed=false;
+     for(const auto& sprite:file.sprites){
+         if(sprite.texture!=index)continue;
+-        const i32 left=i32(std::lround(sprite.x)),top=i32(std::lround(sprite.y));
++        i32 left=i32(std::lround(sprite.x)),top=i32(std::lround(sprite.y));
++        if constexpr(PORT_TITLE==14){
++            // The second pause chunk stores Manual at U=1..1+160/512;
++            // the retail sampler wraps it to the first 160 pixels.
++            if(left>=source.width)left%=source.width;
++            if(top>=source.height)top%=source.height;
++        }
+         const i32 sw=i32(std::lround(sprite.width)),sh=i32(std::lround(sprite.height));
+-        if(left<0||top<0||sw<=0||sh<=0||left>=width||top>=height||
++        if(left<0||top<0||sw<=0||sh<=0||left+ox>=width||top+oy>=height||
+            left>=i32(atlas_width)||top>=i32(atlas_height))continue;
+-        const i32 w=std::min({sw,width-left,i32(atlas_width)-left});
+-        const i32 h=std::min({sh,height-top,i32(atlas_height)-top});
++        const i32 w=std::min({sw,width-left-ox,i32(atlas_width)-left});
++        const i32 h=std::min({sh,height-top-oy,i32(atlas_height)-top});
+         bool empty=true,opaque=true;
+         for(i32 y=0;y<h;++y)for(i32 x=0;x<w;++x){
+-            const auto* patch=image+(size_t(top+y)*width+left+x)*4;
++            const auto* patch=image+(size_t(top+y+oy)*width+left+x+ox)*4;
+             const auto* base=original.data()+(size_t(top+y)*atlas_width+left+x)*4;
+             if(patch[3])empty=false;
+             if(base[3]!=255)opaque=false;
+         }
+         if(empty)continue;
+         for(i32 y=0;y<h;++y)for(i32 x=0;x<w;++x){
+-            const auto* patch=image+(size_t(top+y)*width+left+x)*4;
++            const auto* patch=image+(size_t(top+y+oy)*width+left+x+ox)*4;
+             auto* base=original.data()+(size_t(top+y)*atlas_width+left+x)*4;
+             if(!opaque){std::copy(patch,patch+4,base);continue;}
+             const i32 alpha=patch[3];if(!alpha)continue;
+-            for(int c=0;c<3;++c)base[c]=u8((base[c]*(255-alpha)+patch[c]*alpha)>>8);
++            for(int c=0;c<3;++c)base[c]=alpha==255?patch[c]:u8((base[c]*(255-alpha)+patch[c]*alpha)/255);
+             base[3]=alpha==255?u8(255):u8(std::min<i32>(base[3]+alpha,255));
+         }
+         changed=true;
+@@ -139,7 +148,7 @@ bool GraphicsDevice::prepare_texture(AnmResource& file,u32 index,u32& handle,boo
  #endif
      const bool loaded=texture.image.load(selected,low_color
  #if PORT_TITLE == 14
@@ -5445,19 +5968,20 @@ index c61edb9701f1e14af6c58e0c7cbabfa029daff5e..224266022445e77587f899b649295986
                  }
                  const auto result=ma_data_source_seek_to_pcm_frame(decoder,(physical-offset)/align());if(result!=MA_SUCCESS)return result;
 diff --git a/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs b/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
-index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..7226a3edf1f50c35790d96df26cecc9660d482f2 100644
+index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..41477b9709e504c8c92e7838d83a04844166ebb6 100644
 --- a/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
 +++ b/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
-@@ -97,7 +97,7 @@ export function directTouch(core,canvas,message,viewport) {
+@@ -97,7 +97,8 @@ export function directTouch(core,canvas,message,viewport) {
   core.sdl_touch(type,id,(x*viewport.width-rect.left)/rect.width,(y*viewport.height-rect.top)/rect.height);
  }
  export function resourcePath(path,game) {
 - if(game==='th14'&&typeof path==='string'&&/^\/music\/(?:th14_[0-9]{2}|th128_08)\.flac$/.test(path))return true;
++ if(game==='th14'&&path==='/msgothic.ttc')return true;
 + if(game==='th14'&&typeof path==='string'&&/^\/music\/(?:th14_[0-9]{2}|th128_08)\.(?:ogg|flac)$/.test(path))return true;
   return typeof path==='string'&&((new RegExp('^/music/'+game+'_(?:[0-9]{2})\\.ogg$').test(path)||/^\/music\/th10_17\.ogg$/.test(path))||/^\/fonts\/[a-z0-9_.-]+$/.test(path)||path==='/unifont.otf'||(new RegExp('^/thcrap/'+game+'/[a-z0-9_/.-]+$').test(path)&&!path.includes('..')&&!path.includes('//')));
  }
  export function ensureSharedFontAlias(Module,language){
-@@ -116,9 +116,19 @@ export async function installResources(Module,resources=[],{game,emit=()=>{},bas
+@@ -116,9 +117,19 @@ export async function installResources(Module,resources=[],{game,emit=()=>{},bas
    if(!resourcePath(resource.path,game))throw Error('Invalid runtime resource path');
    const url=new URL(resource.url,base);if(url.origin!==new URL(base).origin||!['http:','https:','blob:'].includes(url.protocol))throw Error('Resource must be same-origin');
    const response=await fetcher(url);if(!response.ok)throw Error('Resource download failed: '+resource.path);
@@ -5478,7 +6002,7 @@ index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..7226a3edf1f50c35790d96df26cecc96
    Module.FS.mkdirTree(resource.path.slice(0,resource.path.lastIndexOf('/')));
    Module.FS.writeFile(resource.path,bytes,{canOwn:true});
    // Native FLAC assets are part of Runtime preparation. Only the optional
-@@ -151,3 +161,98 @@ export async function mountManagedData(Module,{game,parentWindow,query,fetcher=g
+@@ -151,3 +162,98 @@ export async function mountManagedData(Module,{game,parentWindow,query,fetcher=g
   const manifest=await response.json();if(manifest.game!==game||manifest.schema!=='eagler-sdl-resources/1')throw Error('Invalid Runtime resource manifest');
   await installResources(Module,manifest.resources,{game,emit,base,fetcher});
  }
@@ -5578,7 +6102,7 @@ index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..7226a3edf1f50c35790d96df26cecc96
 + };
 +}
 diff --git a/runtimes/th12/th12_web/sdl-runtime/shell.mjs b/runtimes/th12/th12_web/sdl-runtime/shell.mjs
-index e3d66641e600d1b3251caf778b96812d5bd03a70..136285accb9a19500d8a066de6155b4bb76c11d4 100644
+index e3d66641e600d1b3251caf778b96812d5bd03a70..3268348bc8b9ebd6803f4a0baba36c615c251491 100644
 --- a/runtimes/th12/th12_web/sdl-runtime/shell.mjs
 +++ b/runtimes/th12/th12_web/sdl-runtime/shell.mjs
 @@ -6,13 +6,14 @@ import createModule from './th11-sdl.mjs';
@@ -5617,6 +6141,38 @@ index e3d66641e600d1b3251caf778b96812d5bd03a70..136285accb9a19500d8a066de6155b4b
  async function installResources(resources=[]){return installHostResources(Module,resources,{game,emit});}
  // The Launcher has already verified the ZIP identity. Match TH10's Runtime
  // manifest/path/size checks before exposing any file to the native game.
+@@ -37,23 +51,23 @@ let runtimePackFiles=[];
+ function assertRuntimePackManifest(manifest,pack){
+  if(manifest?.schema!=='eagler-touhou/thcrap-static-pack/1'||manifest.game!==game||
+     manifest.language!==pack.language||typeof manifest.runtimeVersion!=='string'||
+-    !Array.isArray(manifest.files)||manifest.files.length>256)throw Error('Invalid TH11 language pack manifest');
++    !Array.isArray(manifest.files)||manifest.files.length>256)throw Error('Invalid TH14 language pack manifest');
+  for(const file of manifest.files)
+-  if(typeof file?.path!=='string'||!file.path.startsWith('/thcrap/th11/')||file.path.includes('\\')||file.path.includes('..')||
+-     !Number.isInteger(file.bytes)||file.bytes<0)throw Error('Invalid TH11 language pack file');
++  if(typeof file?.path!=='string'||!file.path.startsWith('/thcrap/'+game+'/')||file.path.includes('\\')||file.path.includes('..')||
++     !Number.isInteger(file.bytes)||file.bytes<0)throw Error('Invalid TH14 language pack file');
+ }
+ async function installRuntimePack(pack){
+  if(launched)throw Error('Runtime resources cannot be changed after launch');
+  if(typeof pack?.url!=='string'||typeof pack.language!=='string'||
+-    !Number.isInteger(pack.bytes)||pack.bytes<=0||!pack.manifest||!Array.isArray(pack.files))throw Error('Invalid TH11 language pack');
+- if(new URL(pack.url,location.href).origin!==location.origin)throw Error('Cross-origin TH11 language pack');
++    !Number.isInteger(pack.bytes)||pack.bytes<=0||!pack.manifest||!Array.isArray(pack.files))throw Error('Invalid TH14 language pack');
++ if(new URL(pack.url,location.href).origin!==location.origin)throw Error('Cross-origin TH14 language pack');
+  assertRuntimePackManifest(pack.manifest,pack);
+  const expected=new Map(pack.manifest.files.map(file=>[file.path,file]));
+- if(pack.files.length!==expected.size)throw Error('TH11 language pack file count mismatch');
++ if(pack.files.length!==expected.size)throw Error('TH14 language pack file count mismatch');
+  const verified=[];
+  for(const file of pack.files){
+-  if(typeof file?.path!=='string'||!file.path.startsWith('/thcrap/th11/')||file.path.includes('\\')||file.path.includes('..')||
+-     !(file.bytes instanceof Uint8Array))throw Error('Invalid TH11 language pack path');
++  if(typeof file?.path!=='string'||!file.path.startsWith('/thcrap/'+game+'/')||file.path.includes('\\')||file.path.includes('..')||
++     !(file.bytes instanceof Uint8Array))throw Error('Invalid TH14 language pack path');
+   const declaration=expected.get(file.path);
+   if(!declaration||file.bytes.length!==declaration.bytes)throw Error(file.path+': size mismatch');
+   verified.push({path:file.path,bytes:file.bytes});
 @@ -67,6 +81,7 @@ async function installRuntimePack(pack){
  }
  function apply(){applyTouchOptions(core,options);core.th11_music_enabled(+music);}
@@ -6830,10 +7386,10 @@ index 0721fa9d26730472f580751ef017daacce2324a0..e6cb3dc857ba8a0a130cfc6981fc6f36
      print(json.dumps(dict(module=str(wasm), units=len(compiled), sha256=report['sha256'])))
  
 diff --git a/tools/th14-gles-profile.json b/tools/th14-gles-profile.json
-index c726b765a606b38b4b2eeff31c117c3aceebc737..17b3fa065a06dc85f75921468ba6dd694db77795 100644
+index c726b765a606b38b4b2eeff31c117c3aceebc737..1ed4a0c9b766661f1c7afa7f6bf3e9845ad6d1aa 100644
 --- a/tools/th14-gles-profile.json
 +++ b/tools/th14-gles-profile.json
-@@ -1,69 +1,71 @@
+@@ -1,69 +1,73 @@
 -{
 -  "flags": [
 -    "-DTH14_CPP_BOOT_WORKER=1",
@@ -6920,6 +7476,8 @@ index c726b765a606b38b4b2eeff31c117c3aceebc737..17b3fa065a06dc85f75921468ba6dd69
 +    "-DTH11_DEVELOPMENT_HARNESS=0",
 +    "--use-port=sdl3",
 +    "--use-port=freetype",
++    "--use-port=sdl3_ttf",
++    "-DTH_ENABLE_THCRAP=1",
 +    "-DTH14_STAGE_RESTORE_DELIVERY=1",
 +    "-pthread",
 +    "-DTH14_SHARED_SCENE_COPY=1",

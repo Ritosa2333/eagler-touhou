@@ -361,6 +361,14 @@ export const PRODUCT_CONTENT = Object.freeze({
       }),
       ogg: Object.freeze({kind: "prepared-content"}),
       dataAssets: Object.freeze({kind: "prepared-content"}),
+      languagePack: Object.freeze({
+        kind: "thcrap-runtime-compiler",
+        inputMode: "archive",
+        archive: "th14.dat",
+        developmentEnv: "EAGLER_TH14_ARCHIVES",
+        developmentFiles: Object.freeze(["th14.dat", "assets-eagler/th14.data"]),
+        preparedArchive: "assets-eagler/th14.data",
+      }),
     }),
   }),
   th15: Object.freeze({

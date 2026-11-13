@@ -218,6 +218,7 @@ export const THCRAP_ASCII_CONTRACT = Object.freeze({
   // th11-specific ASCII aliases; PNG/ANM resources own the visible labels.
   th11: Object.freeze([]),
   // TH15 renders translated glyphs through its native FontDevice, not ASCII hooks.
+  th14: Object.freeze([]),
   th15: Object.freeze([])
 });
 

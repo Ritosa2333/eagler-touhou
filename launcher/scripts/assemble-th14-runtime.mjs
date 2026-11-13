@@ -8,8 +8,8 @@ import { assertRuntimeProtocolSources } from '../lib/runtime-protocol-shell.mjs'
 
 const args = Object.create(null);
 for (const argument of process.argv.slice(2)) {
-  const match = /^--(template|core-build|output|max-file-bytes|practice-font)=(.+)$/.exec(argument);
-  if (!match || args[match[1]]) throw Error('Use --template=DIR --core-build=DIR --output=NEW_DIRECTORY [--practice-font=FILE] [--max-file-bytes=N]');
+  const match = /^--(template|core-build|output|max-file-bytes|practice-font|vanilla-font)=(.+)$/.exec(argument);
+  if (!match || args[match[1]]) throw Error('Use --template=DIR --core-build=DIR --output=NEW_DIRECTORY [--practice-font=FILE] [--vanilla-font=FILE] [--max-file-bytes=N]');
   args[match[1]] = match[1] === 'max-file-bytes' ? match[2] : resolve(match[2]);
 }
 const template = args.template, core = args['core-build'], output = args.output;
@@ -54,7 +54,8 @@ manifest.version = version;
 const thprac = build.flags.includes('-DTH14_ENABLE_THPRAC=1');
 if (thprac && (!replacements.has('shell.mjs') || !build.commonBindings?.['third_party/imgui/imgui.cpp']))
   throw Error('Missing TH14 ImGui build identity or host shell');
-manifest.features = {...manifest.features, thprac};
+const languages = build.flags.includes('-DTH_ENABLE_THCRAP=1');
+manifest.features = {...manifest.features, thprac, languages};
 manifest.execution.sha256 = build.sha256;
 manifest.execution.loaderSha256 = build.loaderSha256;
 replacements.set('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2) + '\n'));
@@ -81,15 +82,18 @@ replacements.set('th14.html', Buffer.from(html));
 
 const changedFonts = new Map();
 const resources = JSON.parse(await readTemplate('resources.json'));
-if (thprac) {
-  const name = 'fonts/unifont.otf';
-  const existing = templateManifest.files[name];
-  const font = args['practice-font'] ? await readFile(args['practice-font']) : existing ? await readTemplate(name) : null;
-  if (!font?.length || font.length > maxBytes) throw Error('Supply --practice-font with the shared TH15/TH17 Unifont');
-  const fontId = identity(font);
+const baked = /^fonts\/(?:font[0-7]\.bin(?:\.gz)?|blend4444\.bin)$/;
+if (languages) resources.resources = resources.resources.filter(resource => !baked.test(resource.url?.slice(2)));
+for (const [mount, name, option, needed] of [
+  ['/unifont.otf', 'fonts/unifont.otf', 'practice-font', thprac || languages],
+  ['/msgothic.ttc', 'fonts/msgothic.ttc', 'vanilla-font', languages],
+]) {
+  if (!needed) continue;
+  const font = args[option] ? await readFile(args[option]) : templateManifest.files[name] ? await readTemplate(name) : null;
+  if (!font?.length || font.length > maxBytes) throw Error('Supply --' + option + ' with the shared font: ' + mount);
   replacements.set(name, font);
-  resources.resources = resources.resources.filter(resource => resource.path !== '/unifont.otf');
-  resources.resources.push({path:'/unifont.otf',url:'./'+name,...fontId});
+  resources.resources = resources.resources.filter(resource => resource.path !== mount);
+  resources.resources.push({path: mount, url: './'+name, ...identity(font)});
 }
 for (const resource of resources.resources) {
   const name = resource.url?.slice(2);
@@ -102,12 +106,13 @@ for (const resource of resources.resources) {
   replacements.set(name + '.gz', compressed);
   Object.assign(resource, identity(bytes), {url: './' + name + '.gz', encoding: 'gzip'});
 }
-if (changedFonts.size || thprac) replacements.set('resources.json', Buffer.from(JSON.stringify(resources, null, 2) + '\n'));
+if (changedFonts.size || thprac || languages) replacements.set('resources.json', Buffer.from(JSON.stringify(resources, null, 2) + '\n'));
 
 for (const name of names) await readTemplate(name);
 const obsoletePracticeFiles = new Set(['Th14PracticeUi.mjs', 'Th14PracticeCatalog.mjs']);
-const outputNames = names.filter(name => !obsoletePracticeFiles.has(name)).map(name => changedFonts.get(name) ?? name);
-if (thprac && !outputNames.includes('fonts/unifont.otf')) outputNames.push('fonts/unifont.otf');
+const outputNames = names.filter(name => !obsoletePracticeFiles.has(name) && !(languages && baked.test(name))).map(name => changedFonts.get(name) ?? name);
+for (const font of ['fonts/unifont.otf', 'fonts/msgothic.ttc'])
+  if (replacements.has(font) && !outputNames.includes(font)) outputNames.push(font);
 for (const name of outputNames) {
   const size = replacements.get(name)?.length ?? templateManifest.files[name]?.bytes;
   if (!(size <= maxBytes)) throw Error('TH14 runtime exceeds file size limit: ' + name);

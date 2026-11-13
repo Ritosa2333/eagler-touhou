@@ -158,6 +158,7 @@ export function createThcrapClient({
       if (!isGameAsset && !isSharedThemes && !isStringDefs && !isRootGameOptions && !isFont && !isGlobalOptions) continue;
       // The TH15 adapter targets Japanese 1.00b and must not mount 1.00a's bank.
       if (gameId === "th15" && rawPath === "th15/text.v1.00a.anm") continue;
+      if (gameId === "th14" && /^th14\/text\.v(?!1\.00b\.anm$)/i.test(rawPath)) continue;
       // A language patch can contain thcrap-only executable tables such as
       // stringlocs/binhacks. They cannot be interpreted by the native port and
       // must not make an otherwise complete runtime pack look half-supported.
