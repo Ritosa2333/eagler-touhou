@@ -169,7 +169,10 @@
       "originalBehaviorAlignmentVerified": false,
       "timerLive": "12.80",
       "timerPlayback": "12.78",
-      "scope": "These displays are excluded from the fields claimed equal and require original/current score-state comparison."
+      "scope": "High-score source selection follows retail mode initialization and ranking/practice branches; exact screenshot score-file contents and the terminal timer remain unverified. The two modes are not expected to display the same high score.",
+      "highScoreModeSelectionVerified": true,
+      "highScoreModeSelectionCases": 600,
+      "highScoreEvidence": "th14-practice-high-score-nov14.json"
     },
     "nativeComponentCases": {
       "validHits": 4032,
@@ -195,6 +198,176 @@
     "mobileTouchAccepted": false,
     "independentOriginalPurpleReplayAccepted": false,
     "productionDeployed": false,
+    "completeGame": false,
+    "terminalCountdownComponentEvidence": "th14-practice-replay-terminal-nov14.json",
+    "terminalDispatchRetailCases": 12,
+    "currentOptionalCountdownRetailCases": 9
+  },
+  "ordinaryFlowMatrixNov14": {
+    "coreEvidenceCommit": "748e975c201651552ecc6ea634e6ebe5be259d1b",
+    "declaredFlows": 30,
+    "freshReads": 30,
+    "aggregateAcrossDeclaredBuilds": true,
+    "newCases": [
+      {
+        "key": "marisaa-hard",
+        "writer": "artifacts/th14/ordinary-difficulties-nov14/marisaa-hard-full-alternate-k-g-v1",
+        "reader": "artifacts/th14/ordinary-difficulties-nov14/marisaa-hard-alternate-k-g-fresh-v1",
+        "score": 1069240990,
+        "sourceArchiveScore": 1069240990,
+        "scoreDifference": 0,
+        "referenceScoreEqual": true,
+        "sourceReplaySha256": "cf6c0a0896d18cac70457c466770ae0debdf45489a530ac127ea845a25ff80c7",
+        "sourceUrl": "https://maribelhearn.com/replays/royalflare/th14/th14_ud0778.rpy",
+        "callbacks": 120807,
+        "encodedSha256": "bdca33f664cbfa3fbce8a512e75c4a03294acebd15c7fe74b4ffa1319fc926c0",
+        "decodedSha256": "fe51e98ed1558693d18bc9edf41dae4c3a4dc6ac85038a18cba65c1867ec1399",
+        "completeOrdinaryFlowAndFreshSavePassed": true,
+        "graphicsRecordingOnly": true,
+        "hardwareVisualAccepted": false
+      },
+      {
+        "key": "marisab-lunatic",
+        "writer": "artifacts/th14/ordinary-difficulties-nov14/marisab-lunatic-full-alternate-hachiji-v1",
+        "reader": "artifacts/th14/ordinary-difficulties-nov14/marisab-lunatic-alternate-hachiji-fresh-v1",
+        "score": 1508072320,
+        "sourceArchiveScore": 1508067960,
+        "scoreDifference": 4360,
+        "referenceScoreEqual": false,
+        "sourceReplaySha256": "e452a97814aecdb9480540761dfaed979c865be62d57a32a616720a6114913af",
+        "sourceUrl": "https://maribelhearn.com/replays/royalflare/th14/th14_ud0988.rpy",
+        "callbacks": 120192,
+        "encodedSha256": "1dca2c2f7f0e7ac5fbe6b05f7308102e15a3b37b876339ac76499dd2820a8bc4",
+        "decodedSha256": "2c10e2b16eb45e1cdf401263fb6751f6ba8a44b6dd6b27d07d0d6094e2618cd9",
+        "completeOrdinaryFlowAndFreshSavePassed": true,
+        "graphicsRecordingOnly": true,
+        "hardwareVisualAccepted": false
+      },
+      {
+        "key": "marisaa-easy",
+        "writer": "artifacts/th14/ordinary-difficulties-nov14/marisaa-easy-full-alternate-k-g-v4",
+        "reader": "artifacts/th14/ordinary-difficulties-nov14/marisaa-easy-alternate-k-g-fresh-v4",
+        "score": 828938670,
+        "sourceArchiveScore": 828938670,
+        "scoreDifference": 0,
+        "referenceScoreEqual": true,
+        "sourceReplaySha256": "89e6c94c688228e9536bc5fd07caa6bd17c41174061a55d8602a96ed681aba29",
+        "sourceUrl": "https://maribelhearn.com/replays/royalflare/th14/th14_ud08c5.rpy",
+        "callbacks": 120240,
+        "encodedSha256": "ba1b8406009673ebab02af3fcfd6276163f577a9149e1f677d8e9bca37f608bc",
+        "decodedSha256": "0793500e1327a6328ce31c926de666c0dd3d03fed7bb178e61c1d6bde4a4e90b",
+        "completeOrdinaryFlowAndFreshSavePassed": true,
+        "graphicsRecordingOnly": true,
+        "hardwareVisualAccepted": false
+      }
+    ],
+    "newScoreRecordChecksums": 24,
+    "newLunaticStageEntryDiagnostic": {
+      "postRunReadoutBaselineTerminalGameplayUnchanged": true,
+      "baselineCallbacks": 120192,
+      "stageEntryRows": [
+        {
+          "stage": 1,
+          "sourceFrames": 14886,
+          "referenceScore": 0,
+          "ordinaryScore": 0,
+          "scoreDifference": 0,
+          "selectedGameplayDifferences": {}
+        },
+        {
+          "stage": 2,
+          "sourceFrames": 17507,
+          "referenceScore": 35756000,
+          "ordinaryScore": 35756000,
+          "scoreDifference": 0,
+          "selectedGameplayDifferences": {}
+        },
+        {
+          "stage": 3,
+          "sourceFrames": 17501,
+          "referenceScore": 141189710,
+          "ordinaryScore": 141189710,
+          "scoreDifference": 0,
+          "selectedGameplayDifferences": {}
+        },
+        {
+          "stage": 4,
+          "sourceFrames": 21943,
+          "referenceScore": 308060850,
+          "ordinaryScore": 308061050,
+          "scoreDifference": 200,
+          "selectedGameplayDifferences": {
+            "scoreUnits": {
+              "reference": 30806085,
+              "ordinary": 30806105
+            },
+            "graze": {
+              "reference": 24875,
+              "ordinary": 24876
+            },
+            "pointValue": {
+              "reference": 9332300,
+              "ordinary": 9332400
+            }
+          }
+        },
+        {
+          "stage": 5,
+          "sourceFrames": 21483,
+          "referenceScore": 641869210,
+          "ordinaryScore": 641871250,
+          "scoreDifference": 2040,
+          "selectedGameplayDifferences": {
+            "scoreUnits": {
+              "reference": 64186921,
+              "ordinary": 64187125
+            },
+            "graze": {
+              "reference": 33517,
+              "ordinary": 33518
+            },
+            "pointValue": {
+              "reference": 15106700,
+              "ordinary": 15106800
+            }
+          }
+        },
+        {
+          "stage": 6,
+          "sourceFrames": 26872,
+          "referenceScore": 1012810360,
+          "ordinaryScore": 1012814130,
+          "scoreDifference": 3770,
+          "selectedGameplayDifferences": {
+            "scoreUnits": {
+              "reference": 101281036,
+              "ordinary": 101281413
+            },
+            "graze": {
+              "reference": 39120,
+              "ordinary": 39121
+            },
+            "pointValue": {
+              "reference": 18311600,
+              "ordinary": 18311700
+            }
+          }
+        }
+      ],
+      "firstDifferentScoreEntryStage": 4,
+      "finalOrdinaryScore": 1508072320,
+      "decodedSha256": "900e7e4822cf084e8946574ca746a25c58cccd00f0593f3c6013bb4072e1c42d",
+      "recordedHeadersSha256": "9ec31f714a56079ff9cac920165070318cf179af16f18f67b8f6ac2aeec081d3",
+      "baselineReportSha256": "b8e1b8da9c97f6d8673ecfd241ce1779041b976913c546a2717299100fa62f5a",
+      "observedReportSha256": "729401554efcbf088000ae42475a380b9ea223a2d17b8b5e82e657c0807260ca",
+      "firstDivergentInStageFrameLocated": false,
+      "originalWholeGameReplayed": false,
+      "runtimeReferenceFeedback": false,
+      "gameLogicChanged": false,
+      "completeGame": false,
+      "toolSha256": "f602f2ecb3dbde76f5009723441b05daca03d5acdda243b803fe49820449678a"
+    },
+    "allGameplayAccepted": false,
     "completeGame": false
   }
 }
