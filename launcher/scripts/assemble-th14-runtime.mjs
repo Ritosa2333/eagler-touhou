@@ -38,7 +38,7 @@ if (!build.flags?.includes('-DPORT_TITLE=14') || !build.runtimeFiles ||
 
 const replacements = new Map();
 for (const [name, expected] of Object.entries(build.runtimeFiles)) {
-  if (!names.includes(name) || !/^(?:th14-sdl\.(?:mjs|wasm)|Th14[A-Za-z0-9]+\.mjs|eagler-host\.mjs)$/.test(name))
+  if (!names.includes(name) || !/^(?:th14-sdl\.(?:mjs|wasm)|Th14[A-Za-z0-9]+\.mjs|eagler-host\.mjs|shell\.mjs)$/.test(name))
     throw Error('Unexpected TH14 core output: ' + name);
   replacements.set(name, await checked(core, name, expected));
 }
@@ -55,7 +55,9 @@ manifest.execution.sha256 = build.sha256;
 manifest.execution.loaderSha256 = build.loaderSha256;
 replacements.set('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2) + '\n'));
 
-const originalShell = (await readTemplate('shell.mjs')).toString('utf8');
+// Current core builds carry their source-derived host shell. Legacy core
+// receipts can still use the verified template for older releases.
+const originalShell = (replacements.get('shell.mjs') ?? await readTemplate('shell.mjs')).toString('utf8');
 const buildInfo = /\/\*TH14_BUILD_INFO\*\/\{[^\n]+?\}(?=;)/g;
 if ([...originalShell.matchAll(buildInfo)].length !== 1) throw Error('Missing TH14 shell build identity');
 const shell = originalShell.replace(buildInfo, '/*TH14_BUILD_INFO*/' + JSON.stringify({
