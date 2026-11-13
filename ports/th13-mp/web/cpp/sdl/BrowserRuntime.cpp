@@ -578,6 +578,20 @@ bool mp_tick_playback(float fps, unsigned& simulated, unsigned& attempted) {
 // 菜单等待期 1 帧，停等 0）。
 bool mp_tick(float fps, unsigned& simulated, unsigned& attempted, unsigned& rollback) {
     if (!app) return false;
+    const auto tick_started = std::chrono::steady_clock::now();
+    const auto elapsed_ms = [&]() {
+        return std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - tick_started).count();
+    };
+    constexpr double kMpCallbackBudgetMs = 11.5;
+    constexpr double kMpCatchupBudgetMs = 8.5;
+    struct LogicalDrawReset {
+        GraphicsDevice& graphics;
+        ~LogicalDrawReset() { graphics.logical_drawing = false; }
+    } reset_logical_draw{app->graphics};
+    const auto can_logical_draw = [&]() {
+        return !(app->pause && app->pause->active()) && !app->graphics.capture_active();
+    };
     const std::uint64_t now_ms = static_cast<std::uint64_t>(emscripten_get_now());
     if (!multiplayer::session.Pump(now_ms)) return false;
     // M9/P6：观众模式——收流在 Pump 内完成；世界由 StagePlayback 推进
@@ -629,8 +643,7 @@ bool mp_tick(float fps, unsigned& simulated, unsigned& attempted, unsigned& roll
     if (!capture_due_input()) return false;
     if (app->exiting) return true;
     // 1) 追帧：Pump 已消化回滚请求；重模拟到纠正终点（不采集、不 present）。
-    // 预算守卫（10ms）把余下重放留给后续 tick，避免一次 rAF 超时。
-    const auto correction_started = std::chrono::steady_clock::now();
+    // 整回调共用预算（含 Pump 内的 restore 耗时），未追完的历史重放留给下一回调续做。
     mp_network_wait = false;
     while (multiplayer::session.Correcting()) {
         if (!multiplayer::CompleteConfirmedStageHandoff(
@@ -645,27 +658,39 @@ bool mp_tick(float fps, unsigned& simulated, unsigned& attempted, unsigned& roll
             break;
         }
         const std::uint32_t before = multiplayer::session.SimFrame();
+        const std::uint32_t corr_end = multiplayer::session.Runtime().CorrectionEnd();
+        const bool more_replay = before + 1 < corr_end;
+        const bool will_run_forward = !more_replay &&
+            corr_end < multiplayer::session.CaptureFrame() &&
+            elapsed_ms() < kMpCallbackBudgetMs;
         trace_applied_touch();
         ++attempted;
         ++rollback;
-        if (!app->update(multiplayer::session.MenuInput(), false) || !app->commit(fps)) return false;
+        if (!app->update(multiplayer::session.MenuInput(), false)) return false;
+        app->graphics.logical_drawing = can_logical_draw() && (more_replay || will_run_forward);
+        const bool committed = app->commit(fps);
+        app->graphics.logical_drawing = false;
+        if (!committed) return false;
         multiplayer::session.OnFrameSimulated();
         if (multiplayer::session.SimFrame() == before) { last_error = "MP frame did not commit"; return false; }  // 落账被拒
         ++simulated;
         if (app->exiting) break;
-        const double elapsed_ms = std::chrono::duration<double, std::milli>(
-            std::chrono::steady_clock::now() - correction_started).count();
-        if (elapsed_ms > 10.0) break;
+        if (multiplayer::session.Correcting() && elapsed_ms() >= kMpCallbackBudgetMs) break;
     }
+    if (multiplayer::session.Correcting() && !mp_network_wait && !mp_tasks_remaining)
+        mp_tasks_remaining = 1;
     // A pending handoff may have been produced by the last predicted frame.
     // Pump can still correct it, but no later frame may cross its resource epoch.
     if (app->pending_destination >= 0 && !multiplayer::session.Correcting()) {
         mp_schedule.cpu_yield();
         return app->present();
     }
-    // 2) Drain saved, due inputs independently of the replay/clock frontiers.
+    // 2) Drain saved, due inputs independently of the replay/clock frontiers,
+    // sharing the same callback time budget so rollback + forward work stays <= 16.67ms.
     unsigned steps = 0;
     while (steps < 2 && !multiplayer::session.Correcting() && !app->exiting) {
+        if (steps == 0 && simulated > 0 && elapsed_ms() >= kMpCallbackBudgetMs) break;
+        if (steps == 1 && elapsed_ms() >= kMpCatchupBudgetMs) break;
         // After consuming the saved input, the next already-due input can
         // run in this same callback. This keeps the two-frame work budget
         // without sampling future inputs while historical work is pending.
@@ -678,9 +703,17 @@ bool mp_tick(float fps, unsigned& simulated, unsigned& attempted, unsigned& roll
             break;
         }
         const std::uint32_t before = multiplayer::session.SimFrame();
+        const bool can_run_second = steps == 0 &&
+            (before + 1 < multiplayer::session.CaptureFrame() || mp_schedule.owed() > 0) &&
+            elapsed_ms() < kMpCatchupBudgetMs;
         trace_applied_touch();
         ++attempted;
-        if (!app->update(multiplayer::session.MenuInput(), false) || !app->commit(fps)) return false;
+        if (!app->update(multiplayer::session.MenuInput(), false)) return false;
+        app->graphics.logical_drawing = can_logical_draw() &&
+            can_run_second && app->pending_load == 0 && app->pending_destination < 0;
+        const bool committed = app->commit(fps);
+        app->graphics.logical_drawing = false;
+        if (!committed) return false;
         multiplayer::session.OnFrameSimulated();
         if (multiplayer::session.SimFrame() == before) { last_error = "MP frame did not commit"; return false; }  // 落账被拒
         ++steps;
@@ -3279,6 +3312,7 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_anm_chain() {
 
 // 主链 walk 入口只读 dump（alternate=false 的 AnmRegistry::tick_chain 入口，
 // 即本帧子体追加之前）：与 th13_debug_anm_chain 同字段，附 entry:true。
+}  // extern "C"
 namespace {
 std::string chain_walk_rows;
 int chain_walk_first = 0, chain_walk_last = -1;
@@ -3318,7 +3352,8 @@ void observe_chain_walk(const th13::AnmRegistry&, bool alternate) {
     if (frame < chain_walk_first || frame > chain_walk_last) return;
     chain_walk_rows += build_chain_walk_json();
 }
-}
+}  // namespace
+extern "C" {
 EMSCRIPTEN_KEEPALIVE void th13_debug_anm_chain_walk_observe(int first, int last) {
     chain_walk_rows.clear();
     chain_walk_first = first;

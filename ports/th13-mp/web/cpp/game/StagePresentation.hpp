@@ -18,6 +18,7 @@
 #include <memory>
 #include <deque>
 #include <map>
+#include <utility>
 #include <vector>
 
 namespace th13 {
@@ -150,12 +151,15 @@ public:
         u32 bomb_generation = 0, bomb_background = 0, bomb_beam = 0;
     };
     struct SnapshotData {
+        static constexpr u32 kContractVersion = 2;
+        u32 version = kContractVersion;
         struct EnemyVisualData { u32 serial = 0; i32 script = -1; bool has_vm = false; AnmVm vm; };
-        struct BulletSlotData { bool has_vm = false; AnmVm vm; i32 script = -1, color = -1, source_type = 0, source_color = 0; u32 generation = 0; bool active = false; };
+        struct BulletSlotData { bool has_vm = false; i32 script = -1, color = -1, source_type = 0, source_color = 0; u32 generation = 0; bool active = false; };
         struct ShotFadeData { u32 handle = 0, generation = 0; float x = 0, y = 0, angle = 0, drift = 0; bool sine_moving = false; i32 age = 0; StageMover sine_motion; };
         std::vector<const AnmVm*> embedded_identities;
         std::vector<EnemyVisualData> enemies;
-        std::deque<BulletSlotData> bullets;
+        std::vector<BulletSlotData> bullets;
+        std::vector<AnmVm> bullet_vms;     // 契约 v2：仅保存存活/被外部链引用的弹槽 VM
         std::vector<u32> shot_handles;
         std::vector<AnmVm> shots;          // 回退精灵直贴 VM（script<0）
         std::vector<u32> shot_generations;
@@ -190,10 +194,12 @@ public:
         std::array<PlayerEffectsState, 2> teammate_effects{};
     };
     bool capture_presentation(SnapshotData& out) const;
-    // Recreate embedded VMs and return the old-to-new identity map so the
-    // registry can restore their child chains afterward.
+    // Recreate or reuse embedded VMs in place, populate embedded_out in slot
+    // order, and record any changed addresses in remapped.
     bool restore_presentation(const SnapshotData& source,
-                              std::unordered_map<const AnmVm*, AnmVm*>* remapped = nullptr);
+                              std::unordered_map<const AnmVm*, AnmVm*>* remapped = nullptr,
+                              std::vector<AnmVm*>* embedded_out = nullptr);
+    void poison_dead_slots_for_test();
     // M6 快照恢复：手账缓存重置（WorldState::restore 后由宿主调用）。
     // 敌机视觉缓存/弹体槽/自机弹句柄池/留尸池是「权威态 → 表现层」的
     // 派生缓存：restore 恢复权威态与 registry VM 池后，这些句柄映射手账
@@ -291,6 +297,11 @@ private:
     std::vector<EnemyVisual> enemies_;
     // VMs retain a pointer to Slot::source; growing the pool must not move it.
     std::deque<BulletSlot> bullets_;
+    // bullet_slot 的 generation 加速索引与 sync 存活判定的排序缓冲（见 .cpp）。
+    std::vector<std::pair<u32, u32>> bullet_lookup_;
+    std::vector<u32> live_bullet_generations_;
+    std::vector<BulletSlot*> draw_bullet_order_;
+    void rebuild_bullet_lookup();
     // 自机弹 VM = registry 主链正式成员（0x445c40）：池分配 → 0x403800 模板
     // 拷贝 → 0x462450 首 tick → 0x46f3f0 主链尾插（flags=0）。此后每帧只写
     // 位姿（0x4464d0 LAB_00446619），tick 由 0x46f170 主链遍历完成

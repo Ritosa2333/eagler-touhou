@@ -21,7 +21,7 @@ AnmVm* AnmRegistry::allocate(){
     // "no registry node"（M8 回滚重放实证）。operator[] 对已有键幂等。
     Node* entry=nullptr;if(!free_slots.empty()){const u32 slot=free_slots.back();free_slots.pop_back();if(!pool[slot]){pool[slot]=std::make_unique<Node>();pool[slot]->slot=slot;}entry=pool[slot].get();nodes[&entry->vm]=entry;}
     else{auto extra=std::make_unique<Node>();entry=extra.get();entry->serialization_ordinal=next_serialization_ordinal++;nodes[&entry->vm]=entry;overflow.emplace(entry,std::move(extra));}
-    entry->active=true;entry->queued_deletion=false;entry->registered=false;entry->handle=0;entry->parent=nullptr;entry->children.clear();entry->vm.rotation_parent=entry->vm.creation_parent=nullptr;active_count++;return &entry->vm;
+    entry->active=true;entry->queued_deletion=false;entry->registered=false;entry->handle=0;entry->parent=nullptr;entry->children.clear();entry->vm.rotation_parent=entry->vm.creation_parent=nullptr;entry->vm.visual.translation={};active_count++;return &entry->vm;
 }
 u32 AnmRegistry::submit(AnmVm& vm,u32 ordering){
     auto* entry=node(vm);
@@ -147,67 +147,140 @@ u32 AnmRegistry::slot(const AnmVm& vm)const noexcept{auto* entry=node(const_cast
 u32 AnmRegistry::ordered_handle(bool alternate,u32 index)const noexcept{for(auto* entry:groups[alternate])if(index--==0)return entry->handle;return 0;}
 void AnmRegistry::append_draw(AnmVm& vm){i32 layer=vm.visual.layer;if(layer<0||layer>30)return;layers[u32(layer)].push_back(&vm);}
 
-// ---- M6：回滚快照面（capture/restore 专用实现）----
+// ---- M6 / Contract v2：回滚快照面（存活态 + 绘制引用 + 回收栈专用实现）----
 u32 AnmRegistry::pool_slot(const AnmVm& vm) const noexcept {
-    // node() 查 nodes/external 两表；池内节点回 slot，池外（overflow/borrowed）
-    // 返回 0x1fff 与 slot() 同义。
     return slot(const_cast<AnmVm&>(vm));
+}
+bool AnmRegistry::is_embedded_referenced(const AnmVm* vm) const noexcept {
+    if (!vm || external.empty()) return false;
+    return external.find(const_cast<AnmVm*>(vm)) != external.end();
+}
+void AnmRegistry::compute_live_pool_mask(std::array<bool, 0x1fff>& keep) const noexcept {
+    keep.fill(false);
+    auto& queue = capture_scratch_.closure_queue;
+    queue.clear();
+    for (u32 slot_idx = 0; slot_idx < pool.size(); ++slot_idx) {
+        if (pool[slot_idx] && pool[slot_idx]->active) {
+            keep[slot_idx] = true;
+            queue.push_back(pool[slot_idx].get());
+        }
+    }
+    for (const auto& bucket : layers) {
+        for (const auto* vm : bucket) {
+            if (!vm) continue;
+            if (auto* n = node(*const_cast<AnmVm*>(vm)); n && !n->borrowed && n->slot < pool.size()) {
+                if (!keep[n->slot] && pool[n->slot].get() == n) {
+                    keep[n->slot] = true;
+                    queue.push_back(n);
+                }
+            }
+        }
+    }
+    for (const auto& entry : overflow) queue.push_back(entry.second.get());
+    for (const auto& entry : external) queue.push_back(entry.second.get());
+    const auto mark_node = [&](const Node* target) {
+        if (!target || target->borrowed || target->slot >= pool.size()) return;
+        if (!keep[target->slot] && pool[target->slot].get() == target) {
+            keep[target->slot] = true;
+            queue.push_back(target);
+        }
+    };
+    const auto mark_vm = [&](const AnmVm* vm) {
+        if (!vm) return;
+        mark_node(node(*const_cast<AnmVm*>(vm)));
+    };
+    for (size_t head = 0; head < queue.size(); ++head) {
+        const Node* cur = queue[head];
+        mark_node(cur->parent);
+        for (const Node* child : cur->children) mark_node(child);
+        if (!cur->borrowed || cur->frozen_root) {
+            mark_vm(cur->vm.creation_parent);
+            mark_vm(cur->vm.rotation_parent);
+        } else if (cur->borrowed) {
+            mark_vm(cur->borrowed->creation_parent);
+            mark_vm(cur->borrowed->rotation_parent);
+        }
+    }
+}
+void AnmRegistry::poison_dead_slots_for_test() {
+    std::array<bool, 0x1fff> keep{};
+    compute_live_pool_mask(keep);
+    for (u32 slot_idx = 0; slot_idx < pool.size(); ++slot_idx) {
+        if (!pool[slot_idx] || keep[slot_idx]) continue;
+        AnmVm& vm = pool[slot_idx]->vm;
+        vm.visual.translation = {float(10000 + slot_idx), float(-20000 - i32(slot_idx)), 777.f};
+        vm.variables.position = {-9999.f, 8888.f, -333.f};
+        vm.variables.rotation = {1.23f, -2.34f, 3.11f};
+        for (i32& v : vm.variables.integers) v = 0x13572468;
+        vm.visual.color = 0xdeadbeefu;
+        vm.visual.secondary_color = 0xcafebabeu;
+        vm.visual.flags = 0x55aa55aau;
+        vm.visual.render_flags = 0x12345678u;
+        vm.timer.set(9876);
+        vm.age.set(5432);
+    }
 }
 bool AnmRegistry::capture(SnapshotData& out,
                           const std::vector<const AnmVm*>& embedded) const {
-    // 全节点序遍历：池内（pool 下标序）+ overflow + external。
-    // 池外两类按可恢复的创建序排序；指针序在不同客户端/restore 后不稳定。
-    // 快照内序号 = entries 下标。
+    // 契约 v2：仅保存存活或仍被绘制层/父子链引用的池内节点 + overflow + external，
+    // 回收栈与代计数原样保存；死槽位内容不属于回滚权威状态。
+    out.version = SnapshotData::kContractVersion;
     for (auto& layer : out.layers) layer.clear();
-    out.free_slots = free_slots;
+    out.free_slots.assign(free_slots.begin(), free_slots.end());
     out.generation = generation;
     out.active_count = active_count;
     out.next_serialization_ordinal = next_serialization_ordinal;
     out.borrowed_roots.clear();
-    // 收集全部 Node*（池内 + overflow + external borrowed）。
-    std::vector<const Node*> ordered;
-    for (const auto& slot_node : pool)
-        if (slot_node) ordered.push_back(slot_node.get());
-    std::vector<const Node*> overflow_nodes;
-    for (const auto& entry : overflow) overflow_nodes.push_back(entry.second.get());
-    const auto by_ordinal=[](const Node* a,const Node* b) {
+    std::array<bool, 0x1fff> keep_pool{};
+    compute_live_pool_mask(keep_pool);
+    auto& s = capture_scratch_;
+    s.ordered.clear();
+    for (u32 slot_idx = 0; slot_idx < pool.size(); ++slot_idx)
+        if (keep_pool[slot_idx]) s.ordered.push_back(pool[slot_idx].get());
+    s.overflow_nodes.clear();
+    for (const auto& entry : overflow) s.overflow_nodes.push_back(entry.second.get());
+    const auto by_ordinal = [](const Node* a, const Node* b) {
         return a->serialization_ordinal < b->serialization_ordinal;
     };
-    std::sort(overflow_nodes.begin(), overflow_nodes.end(), by_ordinal);
-    ordered.insert(ordered.end(), overflow_nodes.begin(), overflow_nodes.end());
-    std::vector<const Node*> external_nodes;
-    for (const auto& entry : external) external_nodes.push_back(entry.second.get());
-    std::sort(external_nodes.begin(), external_nodes.end(), by_ordinal);
-    ordered.insert(ordered.end(), external_nodes.begin(), external_nodes.end());
+    std::sort(s.overflow_nodes.begin(), s.overflow_nodes.end(), by_ordinal);
+    s.ordered.insert(s.ordered.end(), s.overflow_nodes.begin(), s.overflow_nodes.end());
+    s.external_nodes.clear();
+    for (const auto& entry : external) s.external_nodes.push_back(entry.second.get());
+    std::sort(s.external_nodes.begin(), s.external_nodes.end(), by_ordinal);
+    s.ordered.insert(s.ordered.end(), s.external_nodes.begin(), s.external_nodes.end());
     // 节点 → 快照序号映射（指针比较，仅本函数内使用，不落盘）。
-    // Pool slots already give stable direct lookup. Only overflow and
-    // borrowed nodes need pointer lookup while translating this snapshot.
+    // Pool slots already give stable direct lookup. Overflow and borrowed
+    // nodes use a flat sorted scratch array instead of per-capture hash nodes.
     std::array<u32, 0x1fff> pool_indices;
     pool_indices.fill(SnapshotData::kNoVm);
-    std::unordered_map<const Node*, u32> external_indices;
-    external_indices.reserve(overflow_nodes.size() + external_nodes.size());
-    for (u32 i = 0; i < ordered.size(); ++i) {
-        const auto* node = ordered[i];
+    s.external_indices.clear();
+    for (u32 i = 0; i < s.ordered.size(); ++i) {
+        const auto* node = s.ordered[i];
         if (node->slot < pool.size()) pool_indices[node->slot] = i;
-        else external_indices.emplace(node, i);
+        else s.external_indices.emplace_back(node, i);
     }
+    std::sort(s.external_indices.begin(), s.external_indices.end(),
+              [](const auto& a, const auto& b) { return a.first < b.first; });
     const auto index_of = [&](const Node* node) {
         if (!node) return SnapshotData::kNoVm;
         if (node->slot < pool.size() && pool[node->slot].get() == node)
             return pool_indices[node->slot];
-        const auto found = external_indices.find(node);
-        return found == external_indices.end() ? SnapshotData::kNoVm : found->second;
+        const auto found = std::lower_bound(
+            s.external_indices.begin(), s.external_indices.end(),
+            std::pair<const Node*, u32>{node, 0u},
+            [](const auto& a, const auto& b) { return a.first < b.first; });
+        return (found != s.external_indices.end() && found->first == node)
+            ? found->second : SnapshotData::kNoVm;
     };
     // Record each chain once. Scanning both chains for every pool slot makes
     // a checkpoint quadratic in the number of live effects/bullets.
-    std::vector<std::array<u32, 2>> chain_indices(
-        ordered.size(), {0xFFFFFFFFu, 0xFFFFFFFFu});
+    s.chain_indices.assign(s.ordered.size(), {0xFFFFFFFFu, 0xFFFFFFFFu});
     for (u32 chain = 0; chain < 2; ++chain) {
         u32 position = 0;
         for (const Node* member : groups[chain]) {
             const auto index = index_of(member);
             if (index == SnapshotData::kNoVm) return false;
-            chain_indices[index][chain] = position++;
+            s.chain_indices[index][chain] = position++;
         }
     }
     const auto vm_ref = [&](const AnmVm* vm) {
@@ -217,9 +290,9 @@ bool AnmRegistry::capture(SnapshotData& out,
     // Checkpoint ring slots are reused. Assign into their existing entries so
     // ANM geometry and child vectors keep capacity across captures, including
     // inactive nodes; resize still removes entries when the source shrinks.
-    out.entries.resize(ordered.size());
-    for (u32 index = 0; index < ordered.size(); ++index) {
-        const Node* node = ordered[index];
+    out.entries.resize(s.ordered.size());
+    for (u32 index = 0; index < s.ordered.size(); ++index) {
+        const Node* node = s.ordered[index];
         SnapshotData::Entry& entry = out.entries[index];
         entry.vm = node->vm;
         entry.creation_parent = vm_ref(entry.vm.creation_parent);
@@ -245,22 +318,35 @@ bool AnmRegistry::capture(SnapshotData& out,
             if (child_index != SnapshotData::kNoVm) entry.children.push_back(child_index);
         }
         // 链序号：groups[alternate] 的列表位置（restore 按序重插）。
-        entry.chain_index[0] = chain_indices[index][0];
-        entry.chain_index[1] = chain_indices[index][1];
+        entry.chain_index[0] = s.chain_indices[index][0];
+        entry.chain_index[1] = s.chain_indices[index][1];
         if (node->borrowed) out.borrowed_roots.push_back(node->borrowed);
     }
-    std::unordered_map<const AnmVm*, u32> embedded_index;
-    for (u32 i = 0; i < embedded.size(); ++i)
-        if (embedded[i]) embedded_index.emplace(embedded[i], i);
+    bool embedded_built = false;
+    const auto find_embedded = [&](const AnmVm* vm) -> u32 {
+        if (!embedded_built) {
+            embedded_built = true;
+            s.embedded_index.clear();
+            for (u32 i = 0; i < embedded.size(); ++i)
+                if (embedded[i]) s.embedded_index.emplace_back(embedded[i], i);
+            std::sort(s.embedded_index.begin(), s.embedded_index.end());
+        }
+        const auto it = std::lower_bound(
+            s.embedded_index.begin(), s.embedded_index.end(),
+            std::pair<const AnmVm*, u32>{vm, 0u},
+            [](const auto& a, const auto& b) { return a.first < b.first; });
+        return (it != s.embedded_index.end() && it->first == vm)
+            ? it->second : SnapshotData::kNoVm;
+    };
     for (size_t layer = 0; layer < layers.size(); ++layer) {
         for (const auto* vm : layers[layer]) {
             SnapshotData::DrawReference reference;
             const auto found = index_of(node(*const_cast<AnmVm*>(vm)));
             if (found != SnapshotData::kNoVm) reference.entry = found;
             else {
-                const auto owned = embedded_index.find(vm);
-                if (owned == embedded_index.end()) return false;
-                reference.embedded = owned->second;
+                const u32 owned = find_embedded(vm);
+                if (owned == SnapshotData::kNoVm) return false;
+                reference.embedded = owned;
                 reference.original = vm;
             }
             out.layers[layer].push_back(reference);
@@ -269,12 +355,17 @@ bool AnmRegistry::capture(SnapshotData& out,
     return true;
 }
 bool AnmRegistry::restore(const SnapshotData& source,
-                          const std::unordered_map<const AnmVm*, AnmVm*>& remapped) {
+                          const std::unordered_map<const AnmVm*, AnmVm*>& remapped,
+                          const std::vector<AnmVm*>* embedded_vms) {
     // Validate every draw binding before replacing the live registry.
     for (const auto& layer : source.layers) for (const auto& reference : layer) {
         if (reference.entry != SnapshotData::kNoVm) {
             if (reference.embedded != SnapshotData::kNoVm || reference.entry >= source.entries.size()) {
                 error = "Animation snapshot draw entry invalid"; return false;
+            }
+        } else if (embedded_vms) {
+            if (reference.embedded >= embedded_vms->size() || !(*embedded_vms)[reference.embedded]) {
+                error = "Animation snapshot embedded draw binding missing"; return false;
             }
         } else {
             const auto binding = remapped.find(reference.original);
@@ -283,28 +374,59 @@ bool AnmRegistry::restore(const SnapshotData& source,
             }
         }
     }
-    // 前置：清空当前全部节点（直毁语义，无 0x20 延迟——快照恢复是确认
-    // 栅栏后的整场替换，不走帧内回收路径）。
-    for (const auto& slot_node : pool) if (slot_node) { slot_node->active=false; slot_node->registered=false; slot_node->handle=0; slot_node->parent=nullptr; slot_node->children.clear(); slot_node->vm=AnmVm{}; }
+    // Contract v2: remove speculative overflow and canonicalize uncaptured
+    // pool slots in place so allocate() reuses existing Node allocations with
+    // zero heap churn while dead slots hold no speculative resources or state.
+    if (source.version != SnapshotData::kContractVersion) {
+        error = "Animation snapshot contract version mismatch";
+        return false;
+    }
+    for (const auto& kv : overflow) nodes.erase(&kv.first->vm);
+    overflow.clear();
     std::array<bool, 0x1fff> captured_slots{};
     for (const auto& entry : source.entries)
         if (!entry.borrowed && !entry.in_overflow && entry.slot < pool.size())
             captured_slots[entry.slot] = true;
-    for (u32 slot = 0; slot < pool.size(); ++slot)
-        if (!captured_slots[slot]) pool[slot].reset();
-    nodes.clear();
-    overflow.clear();
+    for (u32 slot_idx = 0; slot_idx < pool.size(); ++slot_idx) {
+        if (captured_slots[slot_idx] || !pool[slot_idx]) continue;
+        Node& n = *pool[slot_idx];
+        nodes[&n.vm] = &n;
+        if (n.active || n.registered || n.queued_deletion || n.handle != 0 ||
+            n.parent != nullptr || !n.children.empty() || n.vm.resource != nullptr ||
+            n.vm.sprite_resource != nullptr || !n.vm.geometry.empty() || !n.vm.error.empty()) {
+            n.borrowed = nullptr;
+            n.slot = slot_idx;
+            n.handle = 0;
+            n.serialization_ordinal = 0;
+            n.active = false;
+            n.registered = false;
+            n.alternate = false;
+            n.frozen_root = false;
+            n.queued_deletion = false;
+            n.parent = nullptr;
+            n.children.clear();
+            n.vm.script = nullptr;
+            n.vm.resource = n.vm.sprite_resource = nullptr;
+            n.vm.sprite = nullptr;
+            n.vm.sprite_source = nullptr;
+            n.vm.pre_tick = nullptr;
+            n.vm.rotation_parent = n.vm.creation_parent = nullptr;
+            n.vm.instruction_offset = -1;
+            n.vm.visual.translation = {};
+            if (!n.vm.error.empty()) n.vm.error.clear();
+            if (!n.vm.geometry.empty()) n.vm.geometry.clear();
+        }
+    }
     external.clear();
     pending_deletion.clear();
     for (auto& bucket : layers) bucket.clear();
     for (auto& group : groups) group.clear();
-    free_slots.clear();
     generation = source.generation;
     next_serialization_ordinal = source.next_serialization_ordinal;
     active_count = 0;
-    // 第一遍：按快照重建节点存储（池内复用同槽位——分配顺序一致；
-    // 池外节点进 overflow；borrowed 根按指针身份回 external）。
-    std::vector<Node*> restored(source.entries.size(), nullptr);
+    auto& rs = restore_scratch_;
+    rs.restored.assign(source.entries.size(), nullptr);
+    auto& restored = rs.restored;
     // borrowed 根按 capture 时的宿主指针序（borrowed_roots 与 entries 中
     // borrowed=true 的条目按序对应）回 external 表——宿主对象由外层持有，
     // 快照存活期不卸载（红线）。
@@ -344,10 +466,15 @@ bool AnmRegistry::restore(const SnapshotData& source,
         if (entry.borrowed) continue;
         Node* node = nullptr;
         if (!entry.in_overflow && entry.slot < pool.size()) {
-            if (!pool[entry.slot]) pool[entry.slot] = std::make_unique<Node>();
+            if (!pool[entry.slot]) {
+                pool[entry.slot] = std::make_unique<Node>();
+                pool[entry.slot]->slot = entry.slot;
+                nodes.emplace(&pool[entry.slot]->vm, pool[entry.slot].get());
+            } else {
+                nodes[&pool[entry.slot]->vm] = pool[entry.slot].get();
+            }
             node = pool[entry.slot].get();
             node->slot = entry.slot;
-            nodes[&node->vm] = node;
         } else {
             auto extra = std::make_unique<Node>();
             node = extra.get();
@@ -355,6 +482,9 @@ bool AnmRegistry::restore(const SnapshotData& source,
             nodes.emplace(&node->vm, node);
             overflow.emplace(node, std::move(extra));
         }
+        node->borrowed = nullptr;
+        node->parent = nullptr;
+        node->children.clear();
         node->vm = entry.vm;
         node->handle = entry.handle;
         node->serialization_ordinal = entry.serialization_ordinal;
@@ -387,16 +517,15 @@ bool AnmRegistry::restore(const SnapshotData& source,
     }
     // 第三遍：链表（按快照链序号重插；position 迭代器语义：insert(end)）。
     for (u32 chain = 0; chain < 2; ++chain) {
-        // 收集该链的全部节点并按 chain_index 排序（0xFFFFFFFF = 不在该链）。
-        std::vector<std::pair<u32, Node*>> members;
+        rs.chain_members.clear();
         for (u32 i = 0; i < source.entries.size(); ++i) {
             if (source.entries[i].chain_index[chain] == 0xFFFFFFFFu) continue;
             if (!restored[i]) continue;
-            members.emplace_back(source.entries[i].chain_index[chain], restored[i]);
+            rs.chain_members.emplace_back(source.entries[i].chain_index[chain], restored[i]);
         }
-        std::sort(members.begin(), members.end(),
+        std::sort(rs.chain_members.begin(), rs.chain_members.end(),
                   [](const auto& a, const auto& b) { return a.first < b.first; });
-        for (auto& [position, node] : members) {
+        for (auto& [position, node] : rs.chain_members) {
             node->position = groups[chain].insert(groups[chain].end(), node);
         }
     }
@@ -410,6 +539,8 @@ bool AnmRegistry::restore(const SnapshotData& source,
                 }
                 const auto* entry = restored[reference.entry];
                 vm = entry->borrowed ? entry->borrowed : const_cast<AnmVm*>(&entry->vm);
+            } else if (embedded_vms) {
+                vm = (*embedded_vms)[reference.embedded];
             } else {
                 const auto binding = remapped.find(reference.original);
                 if (reference.embedded == SnapshotData::kNoVm || binding == remapped.end() || !binding->second) {
@@ -420,7 +551,7 @@ bool AnmRegistry::restore(const SnapshotData& source,
             layers[layer].push_back(vm);
         }
     }
-    free_slots = source.free_slots;
+    free_slots.assign(source.free_slots.begin(), source.free_slots.end());
     return true;
 }
 }

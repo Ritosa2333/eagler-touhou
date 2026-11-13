@@ -15,7 +15,7 @@ AnmRegistry::Node* AnmRegistry::node(AnmVm& vm)const noexcept{const auto it=node
 AnmVm* AnmRegistry::allocate(){
     Node* entry=nullptr;if(!free_slots.empty()){const u32 slot=free_slots.back();free_slots.pop_back();if(!pool[slot]){pool[slot]=std::make_unique<Node>();pool[slot]->slot=slot;nodes.emplace(&pool[slot]->vm,pool[slot].get());}entry=pool[slot].get();}
     else{auto extra=std::make_unique<Node>();entry=extra.get();nodes.emplace(&entry->vm,entry);overflow.emplace(entry,std::move(extra));}
-    entry->active=true;entry->queued_deletion=false;entry->registered=false;entry->handle=0;entry->parent=nullptr;entry->children.clear();entry->vm.rotation_parent=entry->vm.creation_parent=nullptr;active_count++;return &entry->vm;
+    entry->active=true;entry->queued_deletion=false;entry->registered=false;entry->handle=0;entry->parent=nullptr;entry->children.clear();entry->vm.rotation_parent=entry->vm.creation_parent=nullptr;entry->vm.visual.translation={};active_count++;return &entry->vm;
 }
 u32 AnmRegistry::submit(AnmVm& vm,u32 ordering){
     auto* entry=node(vm);if(!entry||entry->borrowed||!entry->active||entry->registered){error="Animation instance cannot be registered";return 0;}

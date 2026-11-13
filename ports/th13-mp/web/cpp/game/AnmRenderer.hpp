@@ -56,6 +56,7 @@ public:
     int draw_with_opacity(AnmVm&, u8 opacity);
     int draw_glyph(AnmVm&);bool draw_layer(const std::vector<AnmVm*>&);
     int draw_screen_strip(AnmVm&,const AnmGeometryVertex*,u32 count);
+    bool logical_frame()const noexcept{return graphics.logical_frame();}
     const std::vector<AnmGeometryVertex>& pending()const noexcept{return vertices;}
 };
 }

@@ -38,6 +38,22 @@ class AnmRegistry {
     u32 generation=0;u32 active_count=0;
     // 池内按槽序列化；池外/内嵌根按创建序，不能依赖分配地址。
     u64 next_serialization_ordinal=1;
+    struct CaptureScratch {
+        std::vector<const Node*> closure_queue;
+        std::vector<const Node*> ordered;
+        std::vector<const Node*> overflow_nodes;
+        std::vector<const Node*> external_nodes;
+        std::vector<std::pair<const Node*, u32>> external_indices;
+        std::vector<std::array<u32, 2>> chain_indices;
+        std::vector<std::pair<const AnmVm*, u32>> embedded_index;
+    };
+    mutable CaptureScratch capture_scratch_;
+    void compute_live_pool_mask(std::array<bool, 0x1fff>& keep) const noexcept;
+    struct RestoreScratch {
+        std::vector<Node*> restored;
+        std::vector<std::pair<u32, Node*>> chain_members;
+    };
+    RestoreScratch restore_scratch_;
     void collect(Node&);void retire(Node&);void erase(Node&);Node* node(AnmVm&)const noexcept;
     bool tick_chain(u32 alternate,GameRandom&,float rate);
 public:
@@ -82,7 +98,9 @@ public:
     // RunPause overlay 面板）按其宿主对象在快照后仍存活的前提只记录
     // 指针身份（restore 校验仍可 find）。
     struct SnapshotData {
+        static constexpr u32 kContractVersion = 2;
         static constexpr u32 kNoVm = 0xffffffffu;
+        u32 version = kContractVersion;
         struct Entry {
             AnmVm vm;            // 值拷贝（含资源指针——bank 存活期稳定）
             u32 slot = 0x1fff;
@@ -112,10 +130,14 @@ public:
     bool capture(SnapshotData& out,
                  const std::vector<const AnmVm*>& embedded = {}) const;
     // Restore the actual draw order without ticking. Embedded draw-only VMs
-    // use their owner's semantic slot and must be rebound through remapped.
+    // use their owner's semantic slot and must be rebound through embedded_vms
+    // (O(1) slot lookup) or remapped (address map fallback).
     bool restore(const SnapshotData& source,
-                 const std::unordered_map<const AnmVm*, AnmVm*>& remapped = {});
+                 const std::unordered_map<const AnmVm*, AnmVm*>& remapped = {},
+                 const std::vector<AnmVm*>* embedded_vms = nullptr);
     // 快照辅助：VM 在池内的槽号（池外/未分配 = 0x1fff）。
     u32 pool_slot(const AnmVm& vm) const noexcept;
+    bool is_embedded_referenced(const AnmVm* vm) const noexcept;
+    void poison_dead_slots_for_test();
 };
 }

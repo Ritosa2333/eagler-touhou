@@ -104,10 +104,30 @@ StagePresentation::~StagePresentation() {
     }
 }
 
+// generation → 槽位下标（按 generation、下标升序）。只收录重建时 active 的
+// 槽位；bullet_slot 逐次复核，故重建之后的出生/回收/恢复不影响正确性。
+void StagePresentation::rebuild_bullet_lookup() {
+    bullet_lookup_.clear();
+    for (size_t index = 0; index < bullets_.size(); ++index)
+        if (bullets_[index].active)
+            bullet_lookup_.emplace_back(bullets_[index].generation, u32(index));
+    std::sort(bullet_lookup_.begin(), bullet_lookup_.end());
+}
+
 StagePresentation::BulletSlot* StagePresentation::bullet_slot(StageBullet& bullet) {
     BulletSlot* slot = nullptr;
-    for (auto& entry : bullets_)
-        if (entry.active && entry.generation == bullet.generation) { slot = &entry; break; }
+    // 加速索引（纯提示）：命中必须复核槽位 active/generation；未命中或
+    // 失效一律回落到下方原有的有序线性扫描，槽位分配结果不变。
+    const auto hint = std::lower_bound(bullet_lookup_.begin(), bullet_lookup_.end(),
+                                       std::pair<u32, u32>{bullet.generation, 0u});
+    if (hint != bullet_lookup_.end() && hint->first == bullet.generation &&
+        hint->second < bullets_.size()) {
+        BulletSlot& entry = bullets_[hint->second];
+        if (entry.active && entry.generation == bullet.generation) slot = &entry;
+    }
+    if (!slot)
+        for (auto& entry : bullets_)
+            if (entry.active && entry.generation == bullet.generation) { slot = &entry; break; }
     if (!slot) {
         for (auto& entry : bullets_) if (!entry.active) { slot = &entry; break; }
         if (!slot) { bullets_.emplace_back(); slot = &bullets_.back(); }
@@ -299,57 +319,90 @@ void StagePresentation::release_stage() {
 // M6 快照：手账 capture（头文件 SnapshotData 注释即契约）。自有 VM 按
 // 值拷贝（AnmVm 值语义，registry 快照同款）；有序集合（shot_faded_
 // generations_）按升序复制为 vector（同状态同字节序）。
+void StagePresentation::poison_dead_slots_for_test() {
+    for (size_t i = 0; i < bullets_.size(); ++i) {
+        auto& slot = bullets_[i];
+        const bool needed = slot.vm != nullptr &&
+            (slot.active || animations.registry.is_embedded_referenced(slot.vm.get()));
+        if (needed || !slot.vm) continue;
+        AnmVm& vm = *slot.vm;
+        vm.visual.translation = {float(50000 + i), float(-40000 - int(i)), 111.f};
+        vm.variables.position = {-7777.f, 6666.f, -222.f};
+        for (i32& v : vm.variables.integers) v = 0x24681357;
+        vm.visual.color = 0xfeedfaceu;
+        vm.visual.flags = 0xaa55aa55u;
+        vm.timer.set(4321);
+        vm.age.set(8765);
+    }
+}
+
 bool StagePresentation::capture_presentation(SnapshotData& out) const {
+    out.version = SnapshotData::kContractVersion;
     const auto& effects = player_effects_[0];
     for (size_t i = 0; i < out.teammate_effects.size(); ++i) out.teammate_effects[i] = player_effects_[i + 1];
     out.embedded_identities.clear();
+    out.embedded_identities.reserve(enemies_.size() + bullets_.size() + shots_.size() + 3 +
+                                    item_vms_.size() + item_side_vms_.size());
     const auto remember = [&](const auto& vm) { out.embedded_identities.push_back(vm.get()); };
     for (const auto& enemy : enemies_) remember(enemy.vm);
-    for (const auto& bullet : bullets_) remember(bullet.vm);
+    for (const auto& bullet : bullets_) {
+        const bool keep_vm = bullet.vm != nullptr &&
+            (bullet.active || animations.registry.is_embedded_referenced(bullet.vm.get()));
+        out.embedded_identities.push_back(keep_vm ? bullet.vm.get() : nullptr);
+    }
     for (const auto& shot : shots_) remember(shot);
     remember(player_);
     for (const auto& vm : teammate_players_) remember(vm);
     for (const auto& vm : item_vms_) remember(vm);
     for (const auto& vm : item_side_vms_) remember(vm);
-    out.enemies.clear();
-    out.enemies.reserve(enemies_.size());
-    for (const auto& enemy : enemies_) {
-        SnapshotData::EnemyVisualData data;
+    out.enemies.resize(enemies_.size());
+    for (size_t i = 0; i < enemies_.size(); ++i) {
+        const auto& enemy = enemies_[i];
+        auto& data = out.enemies[i];
         data.serial = enemy.serial;
         data.script = enemy.script;
         data.has_vm = enemy.vm != nullptr;
         if (enemy.vm) data.vm = *enemy.vm;
-        out.enemies.push_back(std::move(data));
+        else if (data.vm.resource || !data.vm.geometry.empty() || !data.vm.error.empty()) data.vm = AnmVm{};
     }
-    out.bullets.clear();
-    for (const auto& slot : bullets_) {
-        SnapshotData::BulletSlotData data;
-        data.has_vm = slot.vm != nullptr;
-        if (slot.vm) data.vm = *slot.vm;
+    out.bullets.resize(bullets_.size());
+    size_t live_bullet_vms = 0;
+    for (size_t i = 0; i < bullets_.size(); ++i) {
+        const auto& slot = bullets_[i];
+        auto& data = out.bullets[i];
+        const bool keep_vm = slot.vm != nullptr &&
+            (slot.active || animations.registry.is_embedded_referenced(slot.vm.get()));
+        data.has_vm = keep_vm;
+        live_bullet_vms += keep_vm;
         data.script = slot.script;
         data.color = slot.color;
         data.source_type = slot.source.type;
         data.source_color = slot.source.color;
         data.generation = slot.generation;
         data.active = slot.active;
-        out.bullets.push_back(std::move(data));
     }
-    out.shot_handles = shot_handles_;
-    out.shots.clear();
-    out.shots.reserve(shots_.size());
-    for (const auto& shot : shots_) out.shots.push_back(shot ? *shot : AnmVm{});
-    out.shot_generations = shot_generations_;
-    out.shot_fades.clear();
-    out.shot_fades.reserve(shot_fades_.size());
-    for (const auto& fade : shot_fades_) {
-        SnapshotData::ShotFadeData data;
+    out.bullet_vms.resize(live_bullet_vms);
+    size_t bullet_vm_out = 0;
+    for (size_t i = 0; i < bullets_.size(); ++i) {
+        if (out.bullets[i].has_vm) out.bullet_vms[bullet_vm_out++] = *bullets_[i].vm;
+    }
+    out.shot_handles.assign(shot_handles_.begin(), shot_handles_.end());
+    out.shots.resize(shots_.size());
+    for (size_t i = 0; i < shots_.size(); ++i) {
+        if (shots_[i]) out.shots[i] = *shots_[i];
+        else out.shots[i] = AnmVm{};
+    }
+    out.shot_generations.assign(shot_generations_.begin(), shot_generations_.end());
+    out.shot_fades.resize(shot_fades_.size());
+    for (size_t i = 0; i < shot_fades_.size(); ++i) {
+        const auto& fade = shot_fades_[i];
+        auto& data = out.shot_fades[i];
         data.handle = fade.handle;
         data.generation = fade.generation;
         data.x = fade.x; data.y = fade.y; data.angle = fade.angle;
         data.drift = fade.drift; data.sine_moving = fade.sine_moving;
         data.sine_motion = fade.sine_motion;
         data.age = fade.age;
-        out.shot_fades.push_back(data);
     }
     out.shot_faded_generations.clear();
     for (const auto& bucket : shot_faded_generations_)
@@ -358,7 +411,8 @@ bool StagePresentation::capture_presentation(SnapshotData& out) const {
     out.has_player = player_ != nullptr;
     // Reused snapshots can cross a confirmed scene boundary. An empty new
     // scene must not retain the previous player's retired ANM bindings.
-    out.player = player_ ? *player_ : AnmVm{};
+    if (player_) out.player = *player_;
+    else out.player = AnmVm{};
     out.player_script = player_script_;
     out.player_tilt = player_tilt_;
     for (size_t i = 0; i < teammate_players_.size(); ++i) {
@@ -369,18 +423,29 @@ bool StagePresentation::capture_presentation(SnapshotData& out) const {
     out.spirit_handles = spirit_handles_;
     out.spirit_serials = spirit_serials_;
     out.spirit_scripts = spirit_scripts_;
-    out.item_vms.clear();
-    out.item_side_vms.clear();
+    size_t body_count = 0, side_count = 0;
     for (size_t i = 0; i < item_vms_.size(); ++i) {
-        out.item_vm_present[i] = item_vms_[i] != nullptr;
-        if (item_vms_[i]) out.item_vms.push_back(*item_vms_[i]);
+        const bool present = item_vms_[i] != nullptr;
+        out.item_vm_present[i] = present;
+        body_count += present;
+    }
+    out.item_vms.resize(body_count);
+    size_t body_out = 0;
+    for (size_t i = 0; i < item_vms_.size(); ++i) {
+        if (item_vms_[i]) out.item_vms[body_out++] = *item_vms_[i];
     }
     for (size_t i = 0; i < item_side_vms_.size(); ++i) {
-        out.item_side_vm_present[i] = item_side_vms_[i] != nullptr;
-        if (item_side_vms_[i]) out.item_side_vms.push_back(*item_side_vms_[i]);
+        const bool present = item_side_vms_[i] != nullptr;
+        out.item_side_vm_present[i] = present;
+        side_count += present;
+    }
+    out.item_side_vms.resize(side_count);
+    size_t side_out = 0;
+    for (size_t i = 0; i < item_side_vms_.size(); ++i) {
+        if (item_side_vms_[i]) out.item_side_vms[side_out++] = *item_side_vms_[i];
     }
     out.youmu_slash_handles = effects.youmu_slash_handles;
-    out.youmu_slash_extra = effects.youmu_slash_extra;
+    out.youmu_slash_extra.assign(effects.youmu_slash_extra.begin(), effects.youmu_slash_extra.end());
     out.option_handles = effects.option_handles;
     out.full_option_handles = effects.full_option_handles;
     out.bomb_orb_handles = effects.bomb_orb_handles;
@@ -388,10 +453,10 @@ bool StagePresentation::capture_presentation(SnapshotData& out) const {
     out.bomb_ray_handles = effects.bomb_ray_handles;
     out.trance_handle = trance_handle_;
     out.trance_was_active = trance_was_active_;
-    out.bullet_cancel_handles = bullet_cancel_handles_;
+    out.bullet_cancel_handles.assign(bullet_cancel_handles_.begin(), bullet_cancel_handles_.end());
     out.focus_handle = effects.focus_handle;
     out.youmu_charge_handles = youmu_charge_handles_;
-    out.fog_handles = fog_handles_;
+    if (!fog_handles_.empty() || !out.fog_handles.empty()) out.fog_handles = fog_handles_;
     out.option_character = effects.option_character;
     out.option_count = effects.option_count;
     out.option_anchor_deferred = effects.option_anchor_deferred;
@@ -403,123 +468,149 @@ bool StagePresentation::capture_presentation(SnapshotData& out) const {
     out.bomb_generation = effects.bomb_generation;
     out.bomb_background = effects.bomb_background;
     out.bomb_beam = effects.bomb_beam;
-    out.player_effect_handles = player_effect_handles_;
+    out.player_effect_handles.assign(player_effect_handles_.begin(), player_effect_handles_.end());
     return true;
 }
 
-// M6 快照：手账 restore。自有 VM 重建后重绑宿主指针：environment/
+// M6 快照：手账 restore。自有 VM 就地复用后重绑宿主指针：environment/
 // object_host 指向 animations（快照存活期身份不变），bullets_ 槽 VM 的
-// sprite_source 指回**槽自身**的 Source（值拷贝后原指针悬垂——槽在
-// deque 尾部追加可能整体搬移）。registry 句柄原值写回（registry 已按
+// sprite_source 指回**槽自身**的 Source。registry 句柄原值写回（registry 已按
 // 同 generation 恢复，句柄值语义有效）。
 bool StagePresentation::restore_presentation(const SnapshotData& source,
-    std::unordered_map<const AnmVm*, AnmVm*>* remapped) {
+    std::unordered_map<const AnmVm*, AnmVm*>* remapped,
+    std::vector<AnmVm*>* embedded_out) {
+    if (source.version != SnapshotData::kContractVersion) {
+        return fail("Presentation snapshot contract version mismatch");
+    }
     auto& effects = player_effects_[0];
     for (size_t i = 0; i < source.teammate_effects.size(); ++i) player_effects_[i + 1] = source.teammate_effects[i];
-    enemies_.clear();
-    enemies_.reserve(source.enemies.size());
-    for (const auto& data : source.enemies) {
-        EnemyVisual visual;
+    enemies_.resize(source.enemies.size());
+    for (size_t i = 0; i < source.enemies.size(); ++i) {
+        const auto& data = source.enemies[i];
+        auto& visual = enemies_[i];
         visual.serial = data.serial;
         visual.script = data.script;
         if (data.has_vm) {
-            visual.vm = std::make_unique<AnmVm>(data.vm);
+            if (!visual.vm) visual.vm = std::make_unique<AnmVm>(data.vm);
+            else *visual.vm = data.vm;
             visual.vm->environment = &animations.scene_environment();
             visual.vm->object_host = &animations;
+        } else {
+            visual.vm.reset();
         }
-        enemies_.push_back(std::move(visual));
     }
-    bullets_.clear();
-    for (const auto& data : source.bullets) {
-        BulletSlot slot;
-        if (data.has_vm) {
-            slot.vm = std::make_unique<AnmVm>(data.vm);
-            slot.vm->environment = &animations.scene_environment();
-            slot.vm->object_host = &animations;
-        }
+    bullets_.resize(source.bullets.size());
+    size_t bullet_vm_cursor = 0;
+    for (size_t i = 0; i < source.bullets.size(); ++i) {
+        const auto& data = source.bullets[i];
+        auto& slot = bullets_[i];
         slot.script = data.script;
         slot.color = data.color;
         slot.source.type = data.source_type;
         slot.source.color = data.source_color;
         slot.generation = data.generation;
         slot.active = data.active;
-        bullets_.push_back(std::move(slot));
-        auto& restored = bullets_.back();
-        if (restored.vm) restored.vm->sprite_source = &restored.source;
+        if (data.has_vm) {
+            if (bullet_vm_cursor >= source.bullet_vms.size())
+                return fail("Presentation snapshot bullet VM missing");
+            const AnmVm& src_vm = source.bullet_vms[bullet_vm_cursor++];
+            if (!slot.vm) slot.vm = std::make_unique<AnmVm>(src_vm);
+            else *slot.vm = src_vm;
+            slot.vm->environment = &animations.scene_environment();
+            slot.vm->object_host = &animations;
+            slot.vm->sprite_source = &slot.source;
+        } else {
+            slot.vm.reset();
+        }
     }
-    shot_handles_ = source.shot_handles;
-    shots_.clear();
-    shots_.reserve(source.shots.size());
-    for (const auto& shot : source.shots) {
+    rebuild_bullet_lookup();  // 回滚重放首帧即可命中索引（否则整帧回落线性扫描）
+    shot_handles_.assign(source.shot_handles.begin(), source.shot_handles.end());
+    shots_.resize(source.shots.size());
+    for (size_t i = 0; i < source.shots.size(); ++i) {
+        const auto& shot = source.shots[i];
         if (!shot.resource) {
-            shots_.push_back(nullptr);
+            shots_[i].reset();
             continue;
         }
-        auto vm = std::make_unique<AnmVm>(shot);
-        vm->environment = &animations.scene_environment();
-        vm->object_host = &animations;
-        shots_.push_back(std::move(vm));
+        if (!shots_[i]) shots_[i] = std::make_unique<AnmVm>(shot);
+        else *shots_[i] = shot;
+        shots_[i]->environment = &animations.scene_environment();
+        shots_[i]->object_host = &animations;
     }
-    shot_generations_ = source.shot_generations;
-    shot_fades_.clear();
-    shot_fades_.reserve(source.shot_fades.size());
-    for (const auto& data : source.shot_fades) {
-        ShotFade fade;
+    shot_generations_.assign(source.shot_generations.begin(), source.shot_generations.end());
+    shot_fades_.resize(source.shot_fades.size());
+    for (size_t i = 0; i < source.shot_fades.size(); ++i) {
+        const auto& data = source.shot_fades[i];
+        auto& fade = shot_fades_[i];
         fade.handle = data.handle;
         fade.generation = data.generation;
-        fade.x = data.x; fade.y = data.y; fade.angle = data.angle;
+        fade.x = data.x; fade.y = data.y; fade.angle = fade.angle;
         fade.drift = data.drift; fade.sine_moving = data.sine_moving;
         fade.sine_motion = data.sine_motion;
         fade.age = data.age;
-        shot_fades_.push_back(fade);
     }
-    shot_faded_generations_.clear();
+    for (auto& bucket : shot_faded_generations_) bucket.second.clear();
     for (u64 key : source.shot_faded_generations)
         shot_faded_generations_[u32(key >> 32)].push_back(u32(key));
-    for (auto& bucket : shot_faded_generations_) {
-        auto& keys = bucket.second;
-        std::sort(keys.begin(), keys.end());
-        keys.erase(std::unique(keys.begin(), keys.end()), keys.end());
+    for (auto it = shot_faded_generations_.begin(); it != shot_faded_generations_.end(); ) {
+        auto& keys = it->second;
+        if (keys.empty()) {
+            it = shot_faded_generations_.erase(it);
+            continue;
+        }
+        if (!std::is_sorted(keys.begin(), keys.end())) {
+            std::sort(keys.begin(), keys.end());
+            keys.erase(std::unique(keys.begin(), keys.end()), keys.end());
+        }
+        ++it;
     }
-    player_.reset();
     if (source.has_player) {
-        player_ = std::make_unique<AnmVm>(source.player);
+        if (!player_) player_ = std::make_unique<AnmVm>(source.player);
+        else *player_ = source.player;
         player_->environment = &animations.scene_environment();
         player_->object_host = &animations;
+    } else {
+        player_.reset();
     }
     player_script_ = source.player_script;
     player_tilt_ = source.player_tilt;
     for (size_t i = 0; i < teammate_players_.size(); ++i) {
-        teammate_players_[i].reset();
-        if (!source.teammate_players[i]) continue;
-        auto vm = std::make_unique<AnmVm>(*source.teammate_players[i]);
-        vm->environment = &animations.scene_environment();
-        vm->object_host = &animations;
-        teammate_players_[i] = std::move(vm);
+        if (!source.teammate_players[i]) {
+            teammate_players_[i].reset();
+            continue;
+        }
+        if (!teammate_players_[i]) teammate_players_[i] = std::make_unique<AnmVm>(*source.teammate_players[i]);
+        else *teammate_players_[i] = *source.teammate_players[i];
+        teammate_players_[i]->environment = &animations.scene_environment();
+        teammate_players_[i]->object_host = &animations;
     }
     teammate_tilts_ = source.teammate_tilts;
     spirit_handles_ = source.spirit_handles;
     spirit_serials_ = source.spirit_serials;
     spirit_scripts_ = source.spirit_scripts;
-    for (size_t i = 0; i < item_vms_.size(); ++i) {
-        item_vms_[i].reset();
-        item_side_vms_[i].reset();
-    }
     size_t body_cursor = 0, side_cursor = 0;
     for (size_t i = 0; i < item_vms_.size(); ++i) {
         if (source.item_vm_present[i]) {
-            item_vms_[i] = std::make_unique<AnmVm>(source.item_vms[body_cursor++]);
+            const auto& src = source.item_vms[body_cursor++];
+            if (!item_vms_[i]) item_vms_[i] = std::make_unique<AnmVm>(src);
+            else *item_vms_[i] = src;
             item_vms_[i]->environment = &animations.scene_environment();
             item_vms_[i]->object_host = &animations;
+        } else if (item_vms_[i]) {
+            item_vms_[i].reset();
         }
         if (source.item_side_vm_present[i]) {
-            item_side_vms_[i] = std::make_unique<AnmVm>(source.item_side_vms[side_cursor++]);
+            const auto& src = source.item_side_vms[side_cursor++];
+            if (!item_side_vms_[i]) item_side_vms_[i] = std::make_unique<AnmVm>(src);
+            else *item_side_vms_[i] = src;
             item_side_vms_[i]->environment = &animations.scene_environment();
             item_side_vms_[i]->object_host = &animations;
+        } else if (item_side_vms_[i]) {
+            item_side_vms_[i].reset();
         }
     }
     effects.youmu_slash_handles = source.youmu_slash_handles;
-    effects.youmu_slash_extra = source.youmu_slash_extra;
+    effects.youmu_slash_extra.assign(source.youmu_slash_extra.begin(), source.youmu_slash_extra.end());
     effects.option_handles = source.option_handles;
     effects.full_option_handles = source.full_option_handles;
     effects.bomb_orb_handles = source.bomb_orb_handles;
@@ -527,10 +618,10 @@ bool StagePresentation::restore_presentation(const SnapshotData& source,
     effects.bomb_ray_handles = source.bomb_ray_handles;
     trance_handle_ = source.trance_handle;
     trance_was_active_ = source.trance_was_active;
-    bullet_cancel_handles_ = source.bullet_cancel_handles;
+    bullet_cancel_handles_.assign(source.bullet_cancel_handles.begin(), source.bullet_cancel_handles.end());
     effects.focus_handle = source.focus_handle;
     youmu_charge_handles_ = source.youmu_charge_handles;
-    fog_handles_ = source.fog_handles;
+    if (!source.fog_handles.empty() || !fog_handles_.empty()) fog_handles_ = source.fog_handles;
     effects.option_character = source.option_character;
     effects.option_count = source.option_count;
     effects.option_anchor_deferred = source.option_anchor_deferred;
@@ -542,12 +633,19 @@ bool StagePresentation::restore_presentation(const SnapshotData& source,
     effects.bomb_generation = source.bomb_generation;
     effects.bomb_background = source.bomb_background;
     effects.bomb_beam = source.bomb_beam;
-    player_effect_handles_ = source.player_effect_handles;
-    if (remapped) {
+    player_effect_handles_.assign(source.player_effect_handles.begin(), source.player_effect_handles.end());
+    if (remapped || embedded_out) {
+        if (embedded_out) {
+            embedded_out->clear();
+            embedded_out->reserve(source.embedded_identities.size());
+        }
         size_t i = 0;
         const auto restore_identity = [&](const auto& vm) {
             const auto* old = source.embedded_identities[i++];
-            if (old) remapped->emplace(old, vm.get());
+            if (embedded_out) embedded_out->push_back(vm.get());
+            if (remapped && old && (!embedded_out || old != vm.get())) {
+                remapped->emplace(old, vm.get());
+            }
         };
         for (const auto& enemy : enemies_) restore_identity(enemy.vm);
         for (const auto& bullet : bullets_) restore_identity(bullet.vm);
@@ -1918,12 +2016,16 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
     // Production bullet ANM is advanced by StageSim at birth/update time.
     // Standalone presentation clients retain the existing sync entry point.
     if (battle.sim.bullet_animation) {
-        for (auto& slot : bullets_) {
-            bool live = false;
-            for (const auto& bullet : battle.sim.bullets)
-                if (bullet.alive && slot.generation == bullet.generation) { live = true; break; }
-            slot.active = live;
-        }
+        // 同一谓词（存在 alive 且 generation 相同的弹），由逐槽全表扫描
+        // 改为排序后二分：千弹时原 O(槽×弹) 扫描是 sync 的主要开销。
+        live_bullet_generations_.clear();
+        for (const auto& bullet : battle.sim.bullets)
+            if (bullet.alive) live_bullet_generations_.push_back(bullet.generation);
+        std::sort(live_bullet_generations_.begin(), live_bullet_generations_.end());
+        for (auto& slot : bullets_)
+            slot.active = std::binary_search(live_bullet_generations_.begin(),
+                                             live_bullet_generations_.end(), slot.generation);
+        rebuild_bullet_lookup();
     } else {
     // ---- 敌弹：bullet.anm 脚本 + 外观表精灵源（出生中断 2，0x40e840 尾）----
     if (bullets_.size() < battle.sim.bullets.size()) {
@@ -2495,15 +2597,19 @@ bool StagePresentation::draw(u32 pass) {
     case 3: {
         // 原版敌弹按池/链序（新生在前 = generation 降序）绘制；port 旧实现
         // 按 bullets_ 槽位序，同一 UP 批内两精灵顺序反转（f0-47 48 帧）。
-        std::vector<BulletSlot*> order;
-        order.reserve(bullets_.size());
+        if (renderer.logical_frame()) {
+            for (auto& slot : bullets_)
+                if (slot.active && slot.vm) one(*slot.vm);
+            break;
+        }
+        draw_bullet_order_.clear();
         for (auto& slot : bullets_)
-            if (slot.active && slot.vm) order.push_back(&slot);
-        std::stable_sort(order.begin(), order.end(),
+            if (slot.active && slot.vm) draw_bullet_order_.push_back(&slot);
+        std::sort(draw_bullet_order_.begin(), draw_bullet_order_.end(),
             [](const BulletSlot* a, const BulletSlot* b) {
                 return a->generation > b->generation;
             });
-        for (auto* slot : order) one(*slot->vm);
+        for (auto* slot : draw_bullet_order_) one(*slot->vm);
         break;
     }
     default:

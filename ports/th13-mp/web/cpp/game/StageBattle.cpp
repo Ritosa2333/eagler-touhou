@@ -1804,27 +1804,46 @@ void StageBattle::collide_player_bullet(StageBullet& bullet) {
     // 席只代表 restore 席——逐席 swap-in 保证每席的判定盒/擦弹带独立。
     if (seat_count >= 2) {
         const i32 saved_seat = active_seat;
+        bool switched = false;
         for (i32 seat = 0; seat < seat_count && bullet.alive; ++seat) {
-            if (seats[size_t(seat)].ghost) continue;  // R-I8：幽灵不受击/不擦弹
-            player_state_ = seats[size_t(seat)];      // 纯拷贝入
+            const StagePlayerState& authority = seats[size_t(seat)];
+            if (authority.ghost) continue;  // R-I8：幽灵不受击/不擦弹
+            // 席位体只在「命中」或「本席首次擦弹」时才写状态；其余结果
+            // 对窗口/权威槽位/弹都是恒等。先对权威槽位做同一纯查询，
+            // 无交互的弹-席对不再整席拷入拷出（StagePlayerState 约 29KB
+            // 加三个 vector 深拷贝，千弹三席时占 update 一半以上）。
+            const int result = classify_player_bullet(authority, bullet);
+            if (result == 0) continue;
+            if (result == 2 &&
+                (bullet.grazed_seats & (u8(1u) << u32(seat < 8 ? seat : 7))) != 0) continue;
+            player_state_ = authority;                // 纯拷贝入
             player_ = &seat_huds[size_t(seat)];
             character_ = seat_characters[size_t(seat)];
             active_seat = seat;
+            switched = true;
             collide_player_bullet_seat(bullet, seat);
             seats[size_t(seat)] = player_state_;       // 拷回权威
             if (!error_.empty()) break;
         }
-        player_ = &seat_huds[size_t(saved_seat)];
-        character_ = seat_characters[size_t(saved_seat)];
-        active_seat = saved_seat;
-        player_state_ = seats[size_t(saved_seat)];
+        // 未换入任何席位时窗口仍是进入本回调时的 saved 席观察副本
+        //（不变式：每个逐席循环结束都以 seats[saved] 覆盖窗口）。
+        if (switched) {
+            player_ = &seat_huds[size_t(saved_seat)];
+            character_ = seat_characters[size_t(saved_seat)];
+            active_seat = saved_seat;
+            player_state_ = seats[size_t(saved_seat)];
+        }
         return;
     }
     collide_player_bullet_seat(bullet, 0);
 }
 
-void StageBattle::collide_player_bullet_seat(StageBullet& bullet, i32 seat) {
-    if (player_dead) return;
+// 弹-玩家判定的纯查询半体（0x444140 圆形 / 0x443fd0 矩形）：0 = 无交互，
+// 1 = 命中支路，2 = 擦弹支路。不写任何状态；席位体与多席快路径共用同一份
+// 表达式（同输入同结果）。
+int StageBattle::classify_player_bullet(const StagePlayerState& state,
+                                        const StageBullet& bullet) const {
+    if (state.dead) return 0;
     // 0x40db10 普通弹态：行为队列 → pos+=vel → 碰撞。
     // 0x40e840:183/188（asm 0x40ed43 or [ebx+0x20],0x10）出生置 bit1|bit4，
     // 标准弹走 0x444140 圆形分支；bit4=0 走 0x443fd0 矩形分支；bit6 时
@@ -1836,13 +1855,12 @@ void StageBattle::collide_player_bullet_seat(StageBullet& bullet, i32 seat) {
     // player_dead 近似 state4、invulnerable>0 近似 state2/0x14688。此映射
     // 未闭合（0x444a10 置 state2+0x14688=180，0x444ca0 置 state4+6），
     // 由 Application/HUD owner 提供真实玩家状态后替换。
-    const float p = player_hit_size_;
+    const float p = state.hit_size;
     const float half = p * 0.5f;  // 0x620/0x624（0x441dd0:70-84）
-    const float left = player_x - half, right = player_x + half;
-    const float top = player_y - half, bottom = player_y + half;
-    const bool dialog_gate = !(sim.dialog_host && sim.dialog_host->dialog_active());
+    const float left = state.x - half, right = state.x + half;
+    const float top = state.y - half, bottom = state.y + half;
     const bool in_trance = progress_ && trance_active(*progress_);
-    if (!bullet.alive || !bullet.collision_ready || (bullet.flags & 0x2u) == 0) return;
+    if (!bullet.alive || !bullet.collision_ready || (bullet.flags & 0x2u) == 0) return 0;
     const bool scaled = (bullet.flags & 0x40u) != 0;
     const float sx = scaled ? bullet.hit_scale * bullet.hit_size[0] : bullet.hit_size[0];
     const float sy = scaled ? bullet.hit_scale * bullet.hit_size[1] : bullet.hit_size[1];
@@ -1850,12 +1868,12 @@ void StageBattle::collide_player_bullet_seat(StageBullet& bullet, i32 seat) {
     if ((bullet.flags & 0x10u) != 0) {
         // 00444140 的灵界门覆盖整个圆形判定（命中和擦弹）。
         // 00443fd0 矩形分支没有这个门，不能把两分支合并成全局 return。
-        if (in_trance) return;
+        if (in_trance) return 0;
         // 0x444140：0x444181 fstp dword [ebp-8] 把 D 落为 f32；
         // 阈值在 x87 80 位内比较。此处 D 落 f32、阈值用 double 近似，
         // x87 尾差未认证，不得据此宣称逐位一致。
-        const double dx = double(player_x) - double(bullet.x);
-        const double dy = double(player_y) - double(bullet.y);
+        const double dx = double(state.x) - double(bullet.x);
+        const double dy = double(state.y) - double(bullet.y);
         const float distance2 = float(dx * dx + dy * dy);
         const double p2 = double(p) * p;
         // 0x4441a1 fcomp + 0x4441a5 test ah,0x41 / jp：命中分支仅当
@@ -1889,6 +1907,13 @@ void StageBattle::collide_player_bullet_seat(StageBullet& bullet, i32 seat) {
             result = 1;
         }
     }
+    return result;
+}
+
+void StageBattle::collide_player_bullet_seat(StageBullet& bullet, i32 seat) {
+    const int result = classify_player_bullet(player_state_, bullet);
+    const bool dialog_gate = !(sim.dialog_host && sim.dialog_host->dialog_active());
+    const bool in_trance = progress_ && trance_active(*progress_);
     if (result == 1) {
         //444140/443fd0 suppress only the hit branch in states2/4.
         // Their graze branch remains live during the deathbomb window.

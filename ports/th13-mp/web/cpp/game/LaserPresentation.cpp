@@ -32,17 +32,23 @@ void LaserPresentation::restore(const SnapshotData& state,
         std::unordered_map<const AnmVm*, AnmVm*>& remapped) {
     // Registry ownership is restored next. Do not run release/birth/tick:
     // those mutate the live chains and consume RNG during restoration.
-    visuals.clear();
+    auto it = visuals.begin();
+    size_t idx = 0;
+    while (it != visuals.end()) {
+        while (idx < state.entries.size() && state.entries[idx].generation < it->first) ++idx;
+        if (idx < state.entries.size() && state.entries[idx].generation == it->first) ++it;
+        else it = visuals.erase(it);
+    }
     for (const auto& entry : state.entries) {
-        auto v = std::make_unique<Visual>();
+        auto& v = visuals[entry.generation];
+        if (!v) v = std::make_unique<Visual>();
         v->source.type = entry.type; v->source.color = entry.color;
         v->source.curve = entry.curve;
         v->body = entry.body; v->orb = entry.orb; v->tip = entry.tip;
         v->body.sprite_source = &v->source;
-        remapped[entry.identities[0]] = &v->body;
-        remapped[entry.identities[1]] = &v->orb;
-        remapped[entry.identities[2]] = &v->tip;
-        visuals.emplace(entry.generation, std::move(v));
+        if (entry.identities[0] != &v->body) remapped[entry.identities[0]] = &v->body;
+        if (entry.identities[1] != &v->orb) remapped[entry.identities[1]] = &v->orb;
+        if (entry.identities[2] != &v->tip) remapped[entry.identities[2]] = &v->tip;
     }
 }
 bool LaserPresentation::fail(const std::string& message) {

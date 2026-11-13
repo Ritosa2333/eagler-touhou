@@ -227,7 +227,15 @@ private:
     ReplayView replay_;
     bool has_replay_ = false;
     bool ready_ = false;
-    // digest 的两段实现（core=权威模拟面；anm=表现层 registry 面仅全量）。
+    std::unordered_map<const AnmVm*, AnmVm*> remapped_;
+    std::vector<AnmVm*> restored_embedded_;
+    // digest 的分段共用实现（core=权威模拟面；domains=分域诊断面；anm=表现层 registry 面）。
+    void digest_battle_fields(DigestSink& d) const;
+    void digest_sim_tail(DigestSink& d, bool include_boss_markers) const;
+    void digest_items_fields(DigestSink& d) const;
+    void digest_progress_fields(DigestSink& d) const;
+    void digest_score_fields(DigestSink& d) const;
+    void digest_rng_fields(DigestSink& d) const;
     void digest_scene_sink(DigestSink& d, bool full) const;
     void digest_core_sink(DigestSink&, bool include_animation_ids) const;
     void digest_anm_sink(DigestSink&) const;

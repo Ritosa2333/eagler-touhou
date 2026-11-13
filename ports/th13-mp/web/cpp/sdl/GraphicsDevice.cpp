@@ -255,6 +255,7 @@ void GraphicsDevice::submit(const RenderSubmission& c) {
 }
 
 void GraphicsDevice::triangles(u32 count, const void* data, u32 stride) {
+    if (logical_drawing) return;
     backend.state.stride = stride;
     RenderSubmission c{RenderSubmission::Kind::Draw, backend.state};
     c.count = count; c.vertices = data; c.stride = stride; c.direct = true;
@@ -262,6 +263,7 @@ void GraphicsDevice::triangles(u32 count, const void* data, u32 stride) {
 }
 
 void GraphicsDevice::primitives(touhou::graphics::Topology topology, u32 count, const void* data, u32 stride) {
+    if (logical_drawing) return;
     backend.state.stride = stride;
     RenderSubmission c{RenderSubmission::Kind::Draw, backend.state};
     c.topology = topology; c.count = count; c.vertices = data; c.stride = stride;
@@ -334,6 +336,11 @@ bool GraphicsDevice::select_target(const AnmResource* file, u32 index) {
     const u32 handle = file ? texture(*file, index) : screen;
     if (!handle) return false;
     const auto& image = textures.at(handle).image;
+    if (logical_drawing) {
+        backend.state.target = handle;
+        backend.state.viewport = {0, 0, image.width, image.height, 0, 1};
+        return true;
+    }
     RenderSubmission c{RenderSubmission::Kind::Target, backend.state};
     c.state.target = handle;
     c.state.viewport = {0, 0, image.width, image.height, 0, 1};
@@ -342,6 +349,7 @@ bool GraphicsDevice::select_target(const AnmResource* file, u32 index) {
 }
 
 bool GraphicsDevice::clear_target(u32 color, const GraphicsViewport* rect) {
+    if (logical_drawing) return true;
     if (rect) {
         const i32 box[] = {i32(rect->x), i32(rect->y), i32(rect->x + rect->width),
                            i32(rect->y + rect->height)};
@@ -354,6 +362,7 @@ bool GraphicsDevice::clear_target(u32 color, const GraphicsViewport* rect) {
 }
 
 bool GraphicsDevice::clear_depth(const GraphicsViewport* rect) {
+    if (logical_drawing) return true;
     if (rect) {
         const i32 box[] = {i32(rect->x), i32(rect->y), i32(rect->x + rect->width),
                            i32(rect->y + rect->height)};
@@ -367,12 +376,14 @@ bool GraphicsDevice::clear_depth(const GraphicsViewport* rect) {
 }
 
 void GraphicsDevice::clear(u32 color, bool depth) {
+    if (logical_drawing) return;
     RenderSubmission c{RenderSubmission::Kind::Clear, backend.state};
     c.flags = depth ? 3 : 1; c.color = color;
     submit(c);
 }
 
 void GraphicsDevice::present() {
+    if (logical_drawing) return;
     RenderSubmission c{RenderSubmission::Kind::Present, backend.state};
     c.resource = screen;
     submit(c);
