@@ -107,7 +107,7 @@ std::string cp932_to_utf8(const u8* data, u32 size) {
         const u8 trail = data[index + 1];
         u32 code = 0xFFFD;
         if (row != 0xFF && trail >= kCp932TrailBase &&
-            trail < kCp932TrailBase + kCp932TrailCols) {
+            u32(trail) < u32(kCp932TrailBase) + u32(kCp932TrailCols)) {
             const u16 mapped = kCp932ToUnicode[row][trail - kCp932TrailBase];
             if (mapped != 0) code = mapped;
         }

@@ -31,6 +31,7 @@ bool SceneDisplay::initialize() {
 }
 
 void SceneDisplay::detach() noexcept {
+    playfield_active = false;
     renderer.flush();
     graphics.select_target(nullptr, 0);
 }
@@ -39,6 +40,16 @@ bool SceneDisplay::prepare() {
     if (!error.empty() || !animation_drawing) return false;
     graphics.presentation.begin();
     if (!graphics.select_target(nullptr, 0)) return fail(graphics.error);
+    if (!playfield_active) {
+        // 0x43c4b0 -> 0x43c548..0x43c5d8（Supervisor 常驻 Draw 0，无战场 RT 态）：
+        // 标题/结局场景每帧先将后台缓冲整屏清黑（0xff000000，color+depth）并复位
+        // 全屏相机；战场态由 PlayfieldTargets::draw(0)（Draw 1）接管清屏与离屏目标。
+        if (!graphics.clear_target(0xff000000, nullptr)) return fail(graphics.error);
+        renderer.invalidate();
+        renderer.offset = {};
+        if (!views.camera(DrawCamera::Fullscreen, false))
+            return fail("Scene display full-screen camera unavailable");
+    }
     if (scheduler.draw() < 0) {
         if (!animation_drawing->error.empty()) return fail(animation_drawing->error);
         if (!captions.error.empty()) return fail(captions.error);

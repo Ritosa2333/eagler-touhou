@@ -161,6 +161,20 @@ bool TitleScene::restore_spell_practice_selection() {
                 spell_restore_.spell_id = progress.selected_spell_id;
                 spell_restore_pending_ = true;
                 settings.preferred_character = progress.character;
+                // 0x44c8d4-0x44c8e9（0x44c570 case0 dc670==5）：对局返回标题新建实例
+                // 无残留背景，先建 background_root(89) 并立即触发 label3（0x46fca0）。
+                if (!animations.registry.find(state.handles[resources.background_root])) {
+                    state.handles[resources.background_root] =
+                        animations.create(resources.title, resources.background_root, -1, 0);
+                    if (!state.handles[resources.background_root])
+                        return check(false, animations.error.empty()
+                                                ? "Spell Practice return background unavailable"
+                                                : animations.error);
+                }
+                if (!animations.interrupt(state.handles[resources.background_root], 3, true))
+                    return check(false, animations.error.empty()
+                                            ? "Spell Practice return background interrupt failed"
+                                            : animations.error);
                 // 主菜单进符卡练习同构光标栈（TitleMainMenu SpellPractice 分支）。
                 state.flags |= 2u;
                 state.menu.depth = state.menu.disabled_count = 0;

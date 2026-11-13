@@ -1088,6 +1088,7 @@ bool ApplicationState::begin_run() {
                                                               graphics, views);
         if (!playfield_targets->initialize(0)) return fail(playfield_targets->error);
     }
+    if (display) display->playfield_active = true;
     pause = std::make_unique<RunPause>(progress, animations, environment, *this, scheduler, kFrontBank);
     if (!pause->prepare()) return fail(pause->error);
     // 关首曲序（stage 表 0x4bb4f0 行 +0xc/+0x10，EXE .data 实读 dump；本任务

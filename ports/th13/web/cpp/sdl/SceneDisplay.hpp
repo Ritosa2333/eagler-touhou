@@ -27,6 +27,7 @@ class SceneDisplay {
 
 public:
     std::string error;
+    bool playfield_active = false;
     SceneDisplay(FrameScheduler&, AnmManager&, AnmEnvironment&, GraphicsDevice&, AnmRenderer&,
                  ScreenViews&, AsciiText&, i32 ascii_bank);
     ~SceneDisplay();
