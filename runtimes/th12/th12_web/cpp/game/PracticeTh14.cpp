@@ -74,7 +74,7 @@ bool PracticeTh14::valid(i32 difficulty,i32 spell)const noexcept{
 void PracticeTh14::apply(GameEconomy& e)const noexcept{
     e.score_units=score;e.lives=life;e.life_fragments=life_fragment;e.th14_bombs=bomb;e.th14_bomb_fragments=bomb_fragment;
     e.power=std::min(power,e.max_power);e.point_value=value*100;e.max_point_value=std::max(e.max_point_value,e.point_value);
-    e.graze=graze;e.th14_life_awards=cycle;
+    e.graze=graze;e.th14_special_drop_count=cycle;
 }
 i32 PracticeTh14::bgm()const noexcept{const auto* s=section_at(section);return s&&!(flags&1)?s->bgm:0;}
 bool patch_practice_th14(EclProgram& program,const PracticeTh14& p,i32 spell,std::string& error){
