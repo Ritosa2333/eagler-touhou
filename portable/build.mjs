@@ -18,7 +18,7 @@ const root = resolve(workspace, 'web');
 // 钩子，产物落 artifacts/sdl3-capture/（独立对象缓存；供 th13-debug.html
 // ?artifact= 指定加载，做 web 语义清单确定性导出）。
 const captureBuild = process.env.TH13_WEB_CAPTURE === '1';
-const out = resolve(root, 'artifacts', captureBuild ? 'sdl3-capture' : 'sdl3');
+const out = resolve(root, 'artifacts', process.env.TH13_OUTPUT || (captureBuild ? 'sdl3-capture' : 'sdl3'));
 const output = resolve(out, game + '-sdl.mjs');
 const wasmOutput = output.replace('.mjs', '.wasm');
 const manifest = resolve(out, 'build.json');
