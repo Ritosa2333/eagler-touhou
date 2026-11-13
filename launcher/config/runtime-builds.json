@@ -152,6 +152,19 @@
         }
       }
     },
+    "th14": {
+      "builder": "prebuilt",
+      "workspaceRepository": "th14",
+      "variants": {
+        "normal": {
+          "features": {
+            "thcrap": false,
+            "thprac": false
+          },
+          "cache": {}
+        }
+      }
+    },
     "th15": {
       "builder": "prebuilt",
       "sourceBuild": { "kind": "node", "build": ["web/scripts/build-sdl-application.mjs", "--release"], "practiceFlag": "--thprac", "commonInputs": ["include/eagler/text/RuntimeFontRaster.hpp"] },

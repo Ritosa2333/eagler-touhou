@@ -85,6 +85,7 @@ for (const required of [
   "scripts/verify-deployed-site.mjs",
   "scripts/verify-server-build.mjs",
   "scripts/prepare-th06-language-pack.mjs",
+  "docs/assets/game-covers/thumbnails/th14.jpg",
   "SELF-HOSTING.md",
   "SELF-HOSTING-REFERENCE.md",
   "EXTERNAL_RESOURCE_MODE.md",

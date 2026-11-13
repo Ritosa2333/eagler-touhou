@@ -1,7 +1,8 @@
 import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { createPublicationHostSeed } from "../lib/publication-host-seed.mjs";
-import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
+import { normalizeProductSelection } from "../lib/product-selection.mjs";
 
 test("publication host seed", async () => {
 /** L0 release/dev isolation contract.
@@ -14,7 +15,13 @@ test("publication host seed", async () => {
 
 const seed = createPublicationHostSeed("web-release-test");
 assert.equal(seed.profile, "web-release-test");
-assert.deepEqual(Object.keys(seed.games), Object.keys(PRODUCT_GAMES));
+assert.deepEqual(Object.keys(seed.games), Object.keys(PRODUCT_CONTENT));
+assert.ok(!normalizeProductSelection().includes("th14"));
+assert.deepEqual(normalizeProductSelection("th14"), ["th14"]);
+const selected = createPublicationHostSeed("web-release-test", ["th14"]);
+assert.deepEqual(Object.keys(selected.games), ["th14"]);
+assert.equal(selected.games.th14.gameData.path, "th14.dat");
+assert.throws(() => createPublicationHostSeed("web-release-test", ["hsob"]), /content declaration is missing/);
 const serialized = JSON.stringify(seed);
 for (const forbidden of ["../", "build-web", "artifacts/", "archive/", "dist/"]) {
   assert.ok(!serialized.includes(forbidden), `publication seed contains local path: ${forbidden}`);

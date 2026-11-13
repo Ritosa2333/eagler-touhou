@@ -24,6 +24,11 @@ const etag = info => `\"${createHash("sha1").update(`${info.size}:${info.mtimeMs
 
 const server = createServer(async (request, response) => {
   try {
+    if (process.env.EAGLER_TOUHOU_CROSS_ORIGIN_ISOLATION === '1') {
+      response.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+      response.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+      response.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+    }
     const url = new URL(request.url || "/", `http://${host}:${port}`);
     if (url.pathname === "/eagler-touhou" || url.pathname === "/eagler-touhou/") {
       response.writeHead(302, { Location: "/", "Cache-Control": "no-store" });

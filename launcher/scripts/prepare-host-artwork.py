@@ -49,6 +49,9 @@ ARTWORK_BY_GAME = {
     "th15": ("th15-card.webp",),
     "th12": ("th12-card.webp",),
     "th13": ("th13-card.webp",),
+    # TH14 already has a small Launcher JPEG card. Materialize it through the
+    # same host artwork workflow and allow an explicit same-name override.
+    "th14": ("th14-card.jpg",),
     "th17": ("th17-card.webp",),
     "th19": (),
 }
@@ -72,6 +75,14 @@ def _validate_artwork(name: str, data: bytes) -> None:
     if name.endswith(".webp"):
         if len(data) < 16 or data[:4] != b"RIFF" or data[8:12] != b"WEBP":
             raise ValueError(f"{name}: expected a WebP file")
+    elif name.endswith((".jpg", ".jpeg")):
+        try:
+            with Image.open(BytesIO(data)) as image:
+                if image.format != "JPEG" or image.width <= 0 or image.height <= 0:
+                    raise ValueError(f"{name}: expected a JPEG image")
+                image.verify()
+        except OSError as error:
+            raise ValueError(f"{name}: invalid JPEG image") from error
     elif name.endswith(".ico"):
         if len(data) < 22 or data[:4] != b"\x00\x00\x01\x00":
             raise ValueError(f"{name}: expected a Windows ICO file")
@@ -362,6 +373,8 @@ def _extract_th17_title(root: Path, thdat: str, thanm: str) -> bytes:
 def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = "thdat", thanm: str = "thanm") -> bytes:
     if name == "favicon.ico":
         return (Path(__file__).resolve().parent.parent / "favicon.ico").read_bytes()
+    if game == "th14" and name == "th14-card.jpg":
+        return (Path(__file__).resolve().parent.parent / "docs/assets/game-covers/thumbnails/th14.jpg").read_bytes()
     root = roots.get(game)
     if root is None:
         raise FileNotFoundError(
@@ -479,7 +492,7 @@ def prepare_host_artwork(
                     else:
                         data = raw
                         _validate_artwork(name, data)
-                    source = "prepared-content" if prepared_root is not None else "site-brand" if name == "favicon.ico" else "original-extraction"
+                    source = "prepared-content" if prepared_root is not None else "site-brand" if name == "favicon.ico" else "bundled-card" if game == "th14" and name == "th14-card.jpg" else "original-extraction"
                     source_bytes = len(raw)
                 except (FileNotFoundError, ValueError, EOFError, OSError) as error:
                     entries.append({
@@ -575,3 +588,4 @@ def _main() -> None:
 
 if __name__ == "__main__":
     _main()
+

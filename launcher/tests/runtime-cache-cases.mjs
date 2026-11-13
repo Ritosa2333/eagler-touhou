@@ -23,7 +23,8 @@ class MemoryCache {
   async delete(input) { return this.entries.delete(this.key(input)); }
 }
 const root="runtime/th08/";
-function harness() {
+function harness(groupRoot=root) {
+  const root=groupRoot;
   const stores=new Map(), clients=new Map(), requests=[], cacheModes=[];
   const state={files:{},catalog:null,outage:false,corrupt:false,slow:false,quota:false,allWritesFail:false};
   const scopeUrl=new URL("https://example.test/game/");
@@ -137,6 +138,20 @@ handoff.state.outage=true;
 const imported=await handoffWorker.importLaunch(root,handoff.a,importedFiles);
 assert.equal(imported.generation,handoff.a.generation);assert.equal(handoff.requests.length,0,'verified buffers commit without network');
 assert.equal(await(await handoff.resource(handoffWorker,imported,'game.wasm')).text(),'wasm a');
+assert.equal((await handoff.resource(handoffWorker,imported,'worker.mjs')).headers.get('Cross-Origin-Embedder-Policy'),null);
+
+const th14Root="runtime/th14/", th14=harness(th14Root), th14Worker=th14.worker();
+const th14Base=runtimeGenerationBase(th14Root,th14.a.generation);
+const th14Files=th14.a.files.map(({path})=>({path,buffer:new TextEncoder().encode(th14.state.files[th14Base+path]).buffer}));
+th14.state.outage=true;
+const importedTh14=await th14Worker.importLaunch(th14Root,th14.a,th14Files);
+for(const name of ["game.html","shell.mjs","worker.mjs"]){
+  const response=await th14.resource(th14Worker,importedTh14,name);
+  assert.equal(response.headers.get("Cross-Origin-Embedder-Policy"),"require-corp",name);
+  assert.equal(response.headers.get("Cross-Origin-Opener-Policy"),"same-origin",name);
+  assert.equal(response.headers.get("Cross-Origin-Resource-Policy"),"same-origin",name);
+}
+assert.equal(th14.requests.length,0);
 const broken=harness(),brokenWorker=broken.worker();broken.state.outage=true;
 const damagedFiles=importedFiles.map(file=>file.path==='game.wasm'?{...file,buffer:new TextEncoder().encode('bad').buffer}:file);
 await assert.rejects(brokenWorker.importLaunch(root,broken.a,damagedFiles),/integrity mismatch/);

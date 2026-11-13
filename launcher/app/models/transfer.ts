@@ -194,8 +194,9 @@ export function createTransferModel({translate: t, context, ports, frames,
     beginRuntime(plan: Readonly<RuntimePlan>) {
       if (disposed) return;
       local = null;
-      ports.playerStatus(t(plan.generation ? 'runtime.preparingLocal' : 'runtime.loadingGameData'));
-      show({kind: 'game', mode: 'runtime', title: t(plan.generation ? 'runtime.preparingLocal' : 'runtime.requestingComponent'),
+      const preparing = plan.game === 'th14' ? t('runtime.preparingResources', {resource: 'TH14'}) : t('runtime.preparingLocal');
+      ports.playerStatus(plan.generation ? preparing : t('runtime.loadingGameData'));
+      show({kind: 'game', mode: 'runtime', title: plan.generation ? preparing : t('runtime.requestingComponent'),
         label: t(plan.generation ? 'runtime.localGameLabel' : 'runtime.requestingComponentLabel', {game: plan.game}),
         phase: plan.generation ? 'preparing' : 'requesting', indeterminate: true});
     },
