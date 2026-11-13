@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { gzipSync } from 'node:zlib';
 import { dirname, resolve } from 'node:path';
 import { runtimeFileNames } from '../lib/runtime-release.mjs';
 import { assertRuntimeDataShell } from '../lib/runtime-data-provider.mjs';
@@ -7,13 +8,15 @@ import { assertRuntimeProtocolSources } from '../lib/runtime-protocol-shell.mjs'
 
 const args = Object.create(null);
 for (const argument of process.argv.slice(2)) {
-  const match = /^--(template|core-build|output)=(.+)$/.exec(argument);
-  if (!match || args[match[1]]) throw Error('Use --template=DIR --core-build=DIR --output=NEW_DIRECTORY');
-  args[match[1]] = resolve(match[2]);
+  const match = /^--(template|core-build|output|max-file-bytes)=(.+)$/.exec(argument);
+  if (!match || args[match[1]]) throw Error('Use --template=DIR --core-build=DIR --output=NEW_DIRECTORY [--max-file-bytes=N]');
+  args[match[1]] = match[1] === 'max-file-bytes' ? match[2] : resolve(match[2]);
 }
 const template = args.template, core = args['core-build'], output = args.output;
 if (!template || !core || !output || new Set([template, core, output]).size !== 3)
   throw Error('Supply distinct template, core build and output directories');
+const maxBytes = args['max-file-bytes'] == null ? Infinity : Number(args['max-file-bytes']);
+if (args['max-file-bytes'] != null && (!Number.isSafeInteger(maxBytes) || maxBytes < 1)) throw Error('Invalid file size limit');
 
 const identity = bytes => ({ bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') });
 async function checked(directory, name, expected) {
@@ -70,17 +73,37 @@ assertRuntimeProtocolSources([shell, host.toString('utf8'),
 replacements.set('shell.mjs', Buffer.from(shell));
 replacements.set('th14.html', Buffer.from(html));
 
+const changedFonts = new Map();
+const resources = JSON.parse(await readTemplate('resources.json'));
+for (const resource of resources.resources) {
+  const name = resource.url?.slice(2);
+  if (!/^fonts\/font[0-7]\.bin$/.test(name) || !names.includes(name) || templateManifest.files[name].bytes <= maxBytes) continue;
+  if (resource.url !== './' + name || resource.path !== '/' + name) throw Error('Invalid TH14 font descriptor: ' + name);
+  const bytes = await readTemplate(name);
+  const compressed = gzipSync(bytes, { level: 6 });
+  if (compressed.length > maxBytes) throw Error('TH14 compressed font exceeds file size limit: ' + name);
+  changedFonts.set(name, name + '.gz');
+  replacements.set(name + '.gz', compressed);
+  Object.assign(resource, identity(bytes), {url: './' + name + '.gz', encoding: 'gzip'});
+}
+if (changedFonts.size) replacements.set('resources.json', Buffer.from(JSON.stringify(resources, null, 2) + '\n'));
+
 for (const name of names) await readTemplate(name);
+const outputNames = names.map(name => changedFonts.get(name) ?? name);
+for (const name of outputNames) {
+  const size = replacements.get(name)?.length ?? templateManifest.files[name]?.bytes;
+  if (!(size <= maxBytes)) throw Error('TH14 runtime exceeds file size limit: ' + name);
+}
 await mkdir(output);
 const files = {};
-for (const name of names) {
-  const original = await readTemplate(name);
-  const bytes = replacements.get(name) ?? original;
+for (const name of outputNames) {
+  const bytes = replacements.get(name) ?? await readTemplate(name);
   const target = resolve(output, name);
   await mkdir(dirname(target), { recursive: true });
   await writeFile(target, bytes, { flag: 'wx' });
   files[name] = identity(bytes);
 }
+runtimeFileNames('th14', files);
 await writeFile(resolve(output, 'runtime-files.json'), JSON.stringify({
   schema: templateManifest.schema, game: 'th14', files,
 }, null, 2) + '\n', { flag: 'wx' });

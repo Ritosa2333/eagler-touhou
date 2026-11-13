@@ -2705,7 +2705,7 @@ index c61edb9701f1e14af6c58e0c7cbabfa029daff5e..224266022445e77587f899b649295986
                  }
                  const auto result=ma_data_source_seek_to_pcm_frame(decoder,(physical-offset)/align());if(result!=MA_SUCCESS)return result;
 diff --git a/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs b/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
-index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..369fef8c5ab61a4dd8fdcc8b97414ccd7630a9dc 100644
+index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..09ac3c945ad3b3ea66abb88b5f5c2111e03907ac 100644
 --- a/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
 +++ b/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
 @@ -97,7 +97,7 @@ export function directTouch(core,canvas,message,viewport) {
@@ -2717,6 +2717,27 @@ index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..369fef8c5ab61a4dd8fdcc8b97414ccd
   return typeof path==='string'&&((new RegExp('^/music/'+game+'_(?:[0-9]{2})\\.ogg$').test(path)||/^\/music\/th10_17\.ogg$/.test(path))||/^\/fonts\/[a-z0-9_.-]+$/.test(path)||path==='/unifont.otf'||(new RegExp('^/thcrap/'+game+'/[a-z0-9_/.-]+$').test(path)&&!path.includes('..')&&!path.includes('//')));
  }
  export function ensureSharedFontAlias(Module,language){
+@@ -116,9 +116,19 @@ export async function installResources(Module,resources=[],{game,emit=()=>{},bas
+   if(!resourcePath(resource.path,game))throw Error('Invalid runtime resource path');
+   const url=new URL(resource.url,base);if(url.origin!==new URL(base).origin||!['http:','https:','blob:'].includes(url.protocol))throw Error('Resource must be same-origin');
+   const response=await fetcher(url);if(!response.ok)throw Error('Resource download failed: '+resource.path);
+-  const bytes=new Uint8Array(await response.arrayBuffer());
+   const expected=resource.bytes??resource.size;
++  const compressed=resource.encoding==='gzip';
++  if(compressed&&(game!=='th14'||!/^\/fonts\/font[0-7]\.bin$/.test(resource.path)||
++      !url.pathname.endsWith(resource.path+'.gz')||!Number.isSafeInteger(expected)||expected<1||expected>64*1024*1024||
++      !/^[a-f0-9]{64}$/.test(resource.sha256)))throw Error('Invalid TH14 compressed font descriptor');
++  const bytes=new Uint8Array(await (compressed
++    ? new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer()
++    : response.arrayBuffer()));
+   if(bytes.length>64*1024*1024||(expected!=null&&bytes.length!==Number(expected)))throw Error('Resource size mismatch: '+resource.path);
++  if(compressed){
++   const hash=new Uint8Array(await crypto.subtle.digest('SHA-256',bytes));
++   if(Array.from(hash,n=>n.toString(16).padStart(2,'0')).join('')!==resource.sha256)throw Error('Resource hash mismatch: '+resource.path);
++  }
+   Module.FS.mkdirTree(resource.path.slice(0,resource.path.lastIndexOf('/')));
+   Module.FS.writeFile(resource.path,bytes,{canOwn:true});
+   // Native FLAC assets are part of Runtime preparation. Only the optional
 diff --git a/runtimes/th12/th12_web/tests/cpp/th14-anm-draw-removal-fixture.cpp b/runtimes/th12/th12_web/tests/cpp/th14-anm-draw-removal-fixture.cpp
 new file mode 100644
 index 0000000000000000000000000000000000000000..f5bb471a23d20c393cad7455bb04ce54ab819abc
