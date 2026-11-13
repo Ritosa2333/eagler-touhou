@@ -2,7 +2,6 @@ import {BookButton} from '../launcher/BookButton';
 import { Fragment, useRef, useState } from 'react';
 import {Music2, UsersRound} from 'lucide-react';
 import {OverflowText} from '../../ui/overflow-text';
-import {formatTh09WinRate} from '../../../src/launcher/th09-room-stats.mjs';
 import {
   PRODUCT_GAMES,
   gameIdForProduct,
@@ -21,6 +20,8 @@ import {accountsEnabled} from '../../release-features';
 import { RoomElapsed } from '../room/RoomElapsed';
 import {ParticipantAvatar} from '../room/ParticipantAvatar';
 import {bookGameArtwork} from '../launcher/book-artwork';
+import {Th09RatingText} from '../room/Th09RatingText';
+import type {Th09Rating} from '../../services/th09-ratings';
 import './directory-room-list.css';
 
 export interface DirectoryRoomRowsProps {
@@ -31,6 +32,8 @@ export interface DirectoryRoomRowsProps {
   initialRows?: boolean;
   arrivals?: ReadonlySet<string>;
   exiting?: ReadonlySet<string>;
+  ratings?: Readonly<Record<string, Th09Rating>>;
+  myRating?: Th09Rating;
 }
 /** Original public/lobby.html165–177 row template + lobby.mts260–347 renderer. */
 export function DirectoryRoomRows({
@@ -40,6 +43,8 @@ export function DirectoryRoomRows({
   initialRows = false,
   arrivals,
   exiting,
+  ratings,
+  myRating,
 }: DirectoryRoomRowsProps) {
   return (
     <>
@@ -49,6 +54,8 @@ export function DirectoryRoomRows({
           room={room}
           snapshot={snapshot}
           service={service}
+          ratings={ratings}
+          myRating={myRating}
           assetUrl={assetUrl}
           initial={initialRows}
           arriving={arrivals?.has(`${room.product}-${room.code}`) ?? false}
@@ -66,6 +73,8 @@ function RoomRow({
   initial,
   arriving,
   exiting,
+  ratings,
+  myRating,
 }: {
   room: DirectoryRoom;
   snapshot: DirectorySnapshot;
@@ -74,6 +83,8 @@ function RoomRow({
   initial: boolean;
   arriving: boolean;
   exiting: boolean;
+  ratings?: Readonly<Record<string, Th09Rating>>;
+  myRating?: Th09Rating;
 }) {
   const { t, locale } = useLocale(),
     initiallyHiddenMotion = useRef(initial).current;
@@ -100,16 +111,14 @@ function RoomRow({
     return compact.length <= 4 ? compact : value.toExponential(0).replace('e+', 'e');
   };
   const duelRecords = room.product === 'th09mp' && accountsEnabled ? room.seats.slice(0, 2).map((seat, side) => {
-    const record = seat?.profile?.th09;
-    const rate = record && formatTh09WinRate(record, locale);
-    const games = record && rate ? record.games : '?';
-    const label = t('th09.accountCard', {games, rate: rate ?? '?'});
-    const caption = typeof games === 'number' && games >= 1000000
-      ? t('th09.accountCard', {games: abbreviate(games), rate: rate ?? '?'}) : label;
-    return <span key={side === 0 ? "left" : "right"} className="book-room-duel-summary" data-side={side} title={label}><span>{caption}</span></span>;
+    if (!seat) return <span key={side === 0 ? 'left' : 'right'} className="book-room-duel-summary" data-side={side} aria-hidden="true"><span>&nbsp;</span></span>;
+    const profile = seat.profile;
+    return <span key={side === 0 ? 'left' : 'right'} className="book-room-duel-summary" data-side={side}>
+      <span><Th09RatingText player={profile && ratings?.[profile.username]} mine={myRating} games={profile?.th09?.games}/></span>
+    </span>;
   }) : [];
   const minutes = Math.max(...room.seats.map(seat => seat?.stats?.minutes ?? 0), 0);
-  const difficulty = policy.inGameSelection ? '' : policy.difficulties[room.difficulty];
+  const difficulty = policy.inGameSelection && room.product !== 'th03mp' ? '' : policy.difficulties[room.difficulty];
   const state = directoryRoomState(room);
   const statusLabel = t(`lobby.${state}`);
   const spectating = directoryRoomSpectatorEntry(room);
@@ -166,8 +175,8 @@ function RoomRow({
         </div>
       </div>
       <div className="lobby-room-rules">
-        {!room.disableCheatMovement && !room.challengeMode ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
-          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
+        {!room.disableCheatMovement && !room.challengeMode && !room.unrated ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
+          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : '', room.unrated ? t('room.unrated') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
       </div>
       <fieldset className="lobby-party" aria-label={count}>
         <div

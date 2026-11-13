@@ -263,7 +263,7 @@ void scenario(unsigned seats, bool rollback) {
     }
 }
 
-void incompatible_loadout() {
+void incompatible_room(bool challenge_mismatch) {
     Link a, b;
     a.links[1] = &b;
     b.links[0] = &a;
@@ -273,10 +273,11 @@ void incompatible_loadout() {
     setup.build[1] = 14;
     require(p1.begin(setup, 0), "first contract valid");
     setup.local = 1;
-    setup.loadouts[1].animal = 1;
+    if (challenge_mismatch) setup.challenge = true;
+    else setup.loadouts[1].animal = 1;
     require(p2.begin(setup, 0), "second contract valid");
     require(p1.pump(1), "first sends HELLO");
-    require(!p2.pump(2), "animal mismatch fails HELLO");
+    require(!p2.pump(2), "room rules or loadout mismatch fails HELLO");
 }
 
 void confirmed_input_pipeline() {
@@ -323,7 +324,8 @@ int main() {
     scenario(2, true);
     scenario(3, true);
     scenario(2, false);
-    incompatible_loadout();
+    incompatible_room(false);
+    incompatible_room(true);
     confirmed_input_pipeline();
     std::cout << "TH17 session transport, late correction and confirmed output passed\n";
 }

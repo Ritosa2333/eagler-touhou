@@ -90,3 +90,13 @@ test('account history needs the same final report from both admitted seats, in e
   assert.notEqual(rematch.th09Duel.id,run.th09Duel.id);
   assert.deepEqual(stats(room,'host'),{wins:0,losses:0,minutes:0});
 });
+
+test('two guests can confirm one unrated result for the room', () => {
+  const room = {id:'th09mp-1234',lobby:{startSerial:1}};
+  const run = start(room, ['host','guest'], [null,null]);
+  const recorded = [];
+  const report = {serial:1,start:0,frames:3600,winner:0};
+  for (const side of ['host','guest','guest']) accept(room,run,side,report,value=>recorded.push(value));
+  assert.equal(recorded.length,1);
+  assert.deepEqual(recorded[0].players,[null,null]);
+});
