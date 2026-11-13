@@ -36,9 +36,10 @@ if (!build.flags?.includes('-DPORT_TITLE=14') || !build.runtimeFiles ||
     build.loaderSha256 !== build.runtimeFiles['th14-sdl.mjs']?.sha256)
   throw Error('Expected a TH14 GLES core build with verified runtime files');
 
+const practiceFiles = ['Th14PracticeUi.mjs', 'Th14PracticeCatalog.mjs'];
 const replacements = new Map();
 for (const [name, expected] of Object.entries(build.runtimeFiles)) {
-  if (!names.includes(name) || !/^(?:th14-sdl\.(?:mjs|wasm)|Th14[A-Za-z0-9]+\.mjs|eagler-host\.mjs|shell\.mjs)$/.test(name))
+  if ((!names.includes(name) && !practiceFiles.includes(name)) || !/^(?:th14-sdl\.(?:mjs|wasm)|Th14[A-Za-z0-9]+\.mjs|eagler-host\.mjs|shell\.mjs)$/.test(name))
     throw Error('Unexpected TH14 core output: ' + name);
   replacements.set(name, await checked(core, name, expected));
 }
@@ -51,6 +52,10 @@ if (manifest.game !== 'th14' || manifest.protocol !== 'eagler-touhou/1' || manif
   throw Error('Expected a TH14 GLES template');
 const version = '1.00b-thp-' + build.sha256.slice(0, 12);
 manifest.version = version;
+const thprac = build.flags.includes('-DTH14_ENABLE_THPRAC=1');
+if (thprac && !['shell.mjs', ...practiceFiles].every(name => replacements.has(name)))
+  throw Error('Missing TH14 practice host shell or UI modules');
+manifest.features = {...manifest.features, thprac};
 manifest.execution.sha256 = build.sha256;
 manifest.execution.loaderSha256 = build.loaderSha256;
 replacements.set('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2) + '\n'));
@@ -91,7 +96,7 @@ for (const resource of resources.resources) {
 if (changedFonts.size) replacements.set('resources.json', Buffer.from(JSON.stringify(resources, null, 2) + '\n'));
 
 for (const name of names) await readTemplate(name);
-const outputNames = names.map(name => changedFonts.get(name) ?? name);
+const outputNames = [...new Set([...names.map(name => changedFonts.get(name) ?? name), ...replacements.keys()])];
 for (const name of outputNames) {
   const size = replacements.get(name)?.length ?? templateManifest.files[name]?.bytes;
   if (!(size <= maxBytes)) throw Error('TH14 runtime exceeds file size limit: ' + name);
@@ -109,4 +114,4 @@ runtimeFileNames('th14', files);
 await writeFile(resolve(output, 'runtime-files.json'), JSON.stringify({
   schema: templateManifest.schema, game: 'th14', files,
 }, null, 2) + '\n', { flag: 'wx' });
-console.log(JSON.stringify({ game: 'th14', version, files: names.length, wasm: files['th14-sdl.wasm'] }));
+console.log(JSON.stringify({ game: 'th14', version, files: outputNames.length, wasm: files['th14-sdl.wasm'] }));

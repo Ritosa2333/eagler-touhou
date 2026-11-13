@@ -286,7 +286,7 @@ function GameplayControls({ session }: { session: BrowserSession }) {
         className="touch-direct-surface"
         id="touchDirectSurface"
         aria-hidden="true"
-        hidden={!(state.runtime?.launched && enabled && hostDirect && !wheel)}
+        hidden={!(state.runtime?.launched && enabled && hostDirect && !wheel) || touch.thpracPanelOpen}
       />
       <TouchControlPreview settings={settings} live={touch} spectator={spectator} />
     </>

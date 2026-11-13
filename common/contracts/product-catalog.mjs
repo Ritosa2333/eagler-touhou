@@ -688,7 +688,9 @@ export const PRODUCT_GAMES = Object.freeze({
             musicMounts: Object.freeze({ogg: "/music"}),
         }),
         replay: Object.freeze({prefix: "th14"}),
-        features: Object.freeze({thprac: false, languages: false, focusHitbox: false}),
+        thpracRuntime: Object.freeze({session: "native"}),
+        thpracExtraFunctionKeys: Object.freeze(["U"]),
+        features: Object.freeze({thprac: true, languages: true, focusHitbox: false}),
     }),
     th15: Object.freeze({
         number: "15",

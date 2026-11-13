@@ -828,6 +828,23 @@ export declare const PRODUCT_GAMES: Readonly<{
             focusHitbox: false;
         }>;
     }>;
+    th14: Readonly<{
+        number: "14"; title: "東方輝針城"; subtitle: "Double Dealing Character"; cardArtwork: "th14-card.jpg";
+        testOnly: true;
+        runtime: "./runtime/th14/th14.html"; runtimeFileLayout: "directory"; dataProvider: "retail-memory";
+        storage: Readonly<{saveRoot: "/savesth14"; scoreFile: "scoreth14.dat"; configFiles: readonly string[]}>;
+        runtimeAssets: readonly string[]; requiredShared: readonly string[];
+        musicCapabilities: Readonly<{midi: false}>;
+        musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"}>;
+        touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;
+        support: Readonly<{highRefreshRate: false; sourceRepository: string; adaptationNotice: "early-test"}>;
+        package: Readonly<{dataFileId:"game-data";dataTarget:"/th14.dat";rawDataImport:Readonly<{fileNames:readonly string[]}>;
+            musicSourceDirectories:Readonly<{ogg:"music"}>;musicMounts:Readonly<{ogg:"/music"}>}>;
+        replay: Readonly<{prefix: "th14"}>;
+        thpracRuntime: Readonly<{session: "native"}>;
+        thpracExtraFunctionKeys: readonly ["U"];
+        features: Readonly<{thprac:true;languages:true;focusHitbox:false}>;
+    }>;
     th15: Readonly<{
         number: "15";
         title: "東方紺珠伝";

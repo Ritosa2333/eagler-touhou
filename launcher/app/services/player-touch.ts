@@ -14,7 +14,7 @@ export interface PlayerTouchElements {
   thpracBackspace: HTMLElement; thpracKeys: readonly HTMLElement[];
 }
 export interface PlayerTouchSnapshot extends Readonly<TouchControlsSnapshot> {
-  heldFire: boolean; functionDown: boolean; thpracMenuOpen: boolean;
+  heldFire: boolean; functionDown: boolean; thpracMenuOpen: boolean; thpracPanelOpen?: boolean;
 }
 /** Main1874/8983: one document-lived auto-fire choice, not durable preferences.
  * Gesture owners may be recreated; reset/dispose must leave this value intact. */
@@ -49,6 +49,7 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
   const timers = new Set<number>();
   let disposed = false, muted = false, heldFire = false, firePointer: number | null = null;
   let heldFireKey: Readonly<HostedKeySpec> | null = null, functionDown = false, thpracMenuOpen = false;
+  let thpracPanelOpen = false;
   let raf: number | null = null;
   let native: RuntimeMidiEventContext | null = null, unbindNative: (() => void) | null = null;
   let identity = runtime.getInputContext();
@@ -57,7 +58,7 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
   let actionUiFrame: number | null = null;
   function notify() {for (const listener of listeners) listener();}
   function publish(deferActionUi = false) {
-    const next = {...controls, heldFire, functionDown, thpracMenuOpen};
+    const next = {...controls, heldFire, functionDown, thpracMenuOpen, thpracPanelOpen};
     const changed = !(Object.keys(next) as (keyof typeof next)[]).every(key => next[key] === snapshot[key]);
     if (changed) snapshot = Object.freeze(next);
     if (!changed && (deferActionUi || actionUiFrame === null)) return;
@@ -214,7 +215,7 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
     clearCustomActions(); releaseHeldTouchFire(); cancelTouchFunction(); direct.cancel(notify); joystick.reset(false);
     if (raf !== null) win.cancelAnimationFrame(raf); raf = null;
     for (const timer of timers) win.clearTimeout(timer); timers.clear();
-    controls.focusEnabled = false; controls.bombSerial = 0; controls.escapeSerial = 0; thpracMenuOpen = false;
+    controls.focusEnabled = false; controls.bombSerial = 0; controls.escapeSerial = 0; thpracMenuOpen = false; thpracPanelOpen = false;
     muted = previousMuted; publish();
   }
   function sync() {
@@ -228,8 +229,13 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
       if (next) {
         const handler: EventListener = event => {
           const now = runtime.getMidiEventContext(); if (now?.epoch !== next.epoch || now.document !== next.document || now.target !== next.target) return;
-          // Native Backspace state does not own the mobile panel entry.
-          void event;
+          if (now.game !== 'th14') return;
+          const open = (event as CustomEvent<{open?: unknown}>).detail?.open;
+          if (typeof open !== 'boolean' || thpracPanelOpen === open) return;
+          thpracPanelOpen = open;
+          if (open) direct.cancel(false);
+          else if (thpracMenuOpen) {thpracMenuOpen = false; syncControls();}
+          publish();
         };
         next.target.addEventListener('eagler-thprac-menu', handler); unbindNative = () => next.target.removeEventListener('eagler-thprac-menu', handler);
       }

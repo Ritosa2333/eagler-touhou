@@ -716,6 +716,31 @@ index 05807cb86614061d707a87336b4bc6fee7a09cfb..a6050ebc5230e71ee27d5fb644c22b6a
      void bind_texture(GLuint);void bind_framebuffer(GLenum,GLuint);
      void select(const State&);void uniform(int,int,const float*);void integer(int,int);
      u32 upload(Stream&,GLenum,const void*,u32,u32);
+diff --git a/runtimes/th12/portable/sdl/ReplayViewerClockTh14.hpp b/runtimes/th12/portable/sdl/ReplayViewerClockTh14.hpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..1ff329793574a39c20c1db935b48ae2c947cc020
+--- /dev/null
++++ b/runtimes/th12/portable/sdl/ReplayViewerClockTh14.hpp
+@@ -0,0 +1,19 @@
++#pragma once
++#include <algorithm>
++#include <cmath>
++namespace touhou::sdl {
++// Only the explicitly opened browser replay viewer uses this clock. Ordinary
++// play, the title's replay menu and loading retain their existing dispatch.
++struct ReplayViewerClockTh14 {
++    double debt=0;
++    void reset()noexcept{debt=0;}
++    static bool valid_rate(double rate)noexcept{return rate==0||rate==.5||rate==1||rate==2||rate==4||rate==8;}
++    unsigned advance(double seconds,double rate)noexcept{
++        if(!std::isfinite(seconds)||seconds<0||!valid_rate(rate)){reset();return 0;}
++        if(rate==0)return 16; // Full speed remains bounded so commands can run.
++        debt=std::min(16./60.,debt+std::min(seconds,.25)*rate);
++        const auto ticks=unsigned(std::floor((debt+1e-9)*60.));
++        debt=std::max(0.,debt-double(ticks)/60.);return ticks;
++    }
++};
++}
 diff --git a/runtimes/th12/portable/sdl/Th14AsyncRuntime.mjs b/runtimes/th12/portable/sdl/Th14AsyncRuntime.mjs
 index 326dd35435272e49a0524bc50646b06e4803cec6..8a7b91ab31346b715c360c386ea0f6fab7a654fd 100644
 --- a/runtimes/th12/portable/sdl/Th14AsyncRuntime.mjs
@@ -1285,11 +1310,68 @@ index fd55dea28b5500eac427ba77b2decd4ff3b82b54..13e8ec3acd898f4d01c21c040e3e23e4
      }return true;
  }
  i32 BulletManager::spawn_th14(const Th14BulletEmitter& e,i32 index,i32 layer,float aim)noexcept{
+diff --git a/runtimes/th12/th12_web/cpp/game/EnemyFrame.cpp b/runtimes/th12/th12_web/cpp/game/EnemyFrame.cpp
+index 4b451321c3a2c24a2257dcdc76739bf2c58090d0..edec700409fa2a7e65575f443fc92adb32d1f186 100644
+--- a/runtimes/th12/th12_web/cpp/game/EnemyFrame.cpp
++++ b/runtimes/th12/th12_web/cpp/game/EnemyFrame.cpp
+@@ -1,4 +1,5 @@
+ #include "EnemyFrame.hpp"
++#include "PracticeTh14.hpp"
+ #include "Trace.hpp"
+ #include <cmath>
+ #include <algorithm>
+@@ -98,7 +99,7 @@ i32 enemy_frame(EnemyScriptServices& script,EnemyFrameWorld& world){
+     if(e.flags&0x800){
+         i32 probe_damage=0;bool bomb_contact=false;
+         if(!world.th14_probe_damage(e,probe_damage,bomb_contact))return -2;
+-        if(probe_damage&&bomb_contact){result=enemy_death(e,*animations,world,&script);if(result)return result;}
++        if(probe_damage&&bomb_contact&&!(world.th14_practice_flags()&PrEnemy)){result=enemy_death(e,*animations,world,&script);if(result)return result;}
+     }
+ #endif
+     e.flags&=~u32(kPortTitle==14||kPortTitle==16?0x200000:0x20000);
+@@ -123,7 +124,7 @@ i32 enemy_frame(EnemyScriptServices& script,EnemyFrameWorld& world){
+ #if PORT_TITLE == 14
+         // Retail423ad2..423ae2 collects hits/callbacks first, then zeroes
+         // damage while the live dialogue owner at4db550+194 is present.
+-        if(world.th14_damage_dialogue())damage=0;
++        if(world.th14_damage_dialogue()||(world.th14_practice_flags()&PrEnemy))damage=0;
+ #endif
+         if((world.spell_flags&1)&&world.spell_id>=0x9e&&world.spell_id<=0xa1&&(world.special_active||world.special_ending)&&!(world.player_flags&4))damage/=5;
+         if constexpr(kPortTitle==14){
+@@ -190,7 +191,7 @@ i32 enemy_frame(EnemyScriptServices& script,EnemyFrameWorld& world){
+     if(e.damage_immunity.current>0)e.damage_immunity.advance(-1);
+     if(e.collision_immunity.current>0)e.collision_immunity.advance(-1);
+ #if PORT_TITLE == 14
+-    e.timer_2bc.tick();
++    if(!(world.th14_practice_flags()&PrTime)||!(e.flags&0x800000))e.timer_2bc.tick();
+ #endif
+ #if PORT_TITLE == 16
+     e.th16_phase_timer.tick();enemy_th16_time_drop_tick(e);
+diff --git a/runtimes/th12/th12_web/cpp/game/EnemyFrame.hpp b/runtimes/th12/th12_web/cpp/game/EnemyFrame.hpp
+index 94b85ba9cac9c71edc7ef38ceca47599233b8cb0..b4530586c4ef067d95901dd24d21885a9b92002b 100644
+--- a/runtimes/th12/th12_web/cpp/game/EnemyFrame.hpp
++++ b/runtimes/th12/th12_web/cpp/game/EnemyFrame.hpp
+@@ -14,6 +14,7 @@ struct EnemyFrameWorld {
+     virtual ~EnemyFrameWorld()=default;
+     virtual bool shot_damage(EnemyState&,i32&){return false;}
+ #if PORT_TITLE == 14
++    virtual u32 th14_practice_flags()const{return 0;}
+     virtual bool th14_damage_dialogue()const{return false;}
+ #endif
+     virtual bool player_collision(EnemyState&,float,i32&){return false;}
 diff --git a/runtimes/th12/th12_web/cpp/game/GameBattle.hpp b/runtimes/th12/th12_web/cpp/game/GameBattle.hpp
-index 8faf43f2f58b3d846378959293a8fbf1c6d093a4..fbe6bdcbc5f919475a7fbabc8ce2a27585a9a10a 100644
+index 8faf43f2f58b3d846378959293a8fbf1c6d093a4..c68fb74a0a07ebb84946f6b1f500d148cfe8bbf5 100644
 --- a/runtimes/th12/th12_web/cpp/game/GameBattle.hpp
 +++ b/runtimes/th12/th12_web/cpp/game/GameBattle.hpp
-@@ -348,10 +348,12 @@ public:
+@@ -338,6 +338,7 @@ public:
+     bool th14_bomb_dialogue()const override{return dialogue&&dialogue->active;}
+ #if PORT_TITLE == 14
+     bool th14_damage_dialogue()const override{return dialogue&&dialogue->active;}
++    u32 th14_practice_flags()const override{return economy.th14_practice_tools;}
+ #endif
+     bool th14_reimu_bomb_hit_effect(Vec3 p,float angle)override{
+         return animations.create(resources.core.effect,58,8,0,false,false,&p,nullptr,nullptr,false,&angle)!=nullptr;
+@@ -348,10 +349,12 @@ public:
      bool th14_bomb_item(i32 type,Vec3 p,float angle,float speed)override{return items.spawn(type,p,0xffffffff,angle,speed)==0;}
      bool th14_bomb_rectangle(Vec3 p,Vec2 size,float angle,i32 duration,i32 damage)override{return player&&player->shots.th14_bomb_rectangle(p,size,angle,duration,damage);}
      bool th14_bomb_cancel_rectangle(Vec3 p,Vec2 size,float angle,u32 rewards)override{
@@ -1328,11 +1410,40 @@ index f3b7f3a6c650cee5ff119d445d2cd22e9fef877a..fe311063fd4a8192ee826b4fd9ff87ae
      }
      u32 render_height()const noexcept{return render_width()*3/4;}
  #endif
+diff --git a/runtimes/th12/th12_web/cpp/game/GameEconomy.hpp b/runtimes/th12/th12_web/cpp/game/GameEconomy.hpp
+index babb4d7713b7ffe364fc62b4ce2e67456edda8ce..6df8058d84d95025ec0cb647c44a30dcf0549fb6 100644
+--- a/runtimes/th12/th12_web/cpp/game/GameEconomy.hpp
++++ b/runtimes/th12/th12_web/cpp/game/GameEconomy.hpp
+@@ -24,6 +24,7 @@ struct GameEconomy {
+     float th16_cancel_energy=0;
+ #endif
+ #if PORT_TITLE == 14
++    u32 th14_practice_tools=0;
+     i32 th14_point_items=0;
+     i32 th14_special_drop_count=0;
+     // Snapshot +0x54 is retained by the native replay memcpy; its reset is
 diff --git a/runtimes/th12/th12_web/cpp/game/GameSession.cpp b/runtimes/th12/th12_web/cpp/game/GameSession.cpp
-index 296457d06c7e7d5478acd4a0c029230add6fef70..195b80f4ebeccd1c5ebfd40a78d2aa6b3816cfa3 100644
+index 296457d06c7e7d5478acd4a0c029230add6fef70..ce9e0e77e2f5cbd8a7951e0d6b8d7762807bc25f 100644
 --- a/runtimes/th12/th12_web/cpp/game/GameSession.cpp
 +++ b/runtimes/th12/th12_web/cpp/game/GameSession.cpp
-@@ -387,6 +387,9 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
+@@ -245,6 +245,7 @@ bool GameSession::start_cpp_stage_worker(){
+                     return battle->enemies.initialize_empty(owner.timeline);
+                 }
+                 if(phase!=2)return true;
++                if(!patch_practice_th14(owner.timeline,practice_run,state.spell_practice_id,owner.timeline.error))return false;
+                 if(!battle->enemies.finish_stage_owner())return false;
+                 if(!battle->prepare_next_tail_owners(state.character,state.subtype))return false;
+                 if(!resources.effects||!resources.effects->finish_cpp_stage_tail(
+@@ -384,9 +385,18 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
+ #endif
+     reset_state(true);
+     completed_run=false;
++#if PORT_TITLE == 14
++    practice_run=practice_enabled&&!demo?(replay?playback.practice:practice_request):PracticeTh14{};
++    practice_request={};practice_event=0;
++    if(practice_run&&u32(practice_run.stage)!=stage)practice_run={};
++    if(practice_run&&!replay&&!(menu_selection.flags&32)){practice=true;menu_selection.flags=(menu_selection.flags&~48u)|16u;}
++#endif
      this->source=&source;
      if(!player_selection_valid(character,subtype)||difficulty<0||difficulty>4)
          return fail("invalid TH11 session selection");
@@ -1342,7 +1453,107 @@ index 296457d06c7e7d5478acd4a0c029230add6fef70..195b80f4ebeccd1c5ebfd40a78d2aa6b
      if(!resources.load_core(source)) return fail(resources.error.c_str());
  #if PORT_TITLE == 14
      if(!resources.select_player(u32(character),u32(subtype)))return fail(resources.error.c_str());
-@@ -1409,6 +1412,9 @@ bool GameSession::open_title(GameResources& data,bool first,TitleScreen screen){
+@@ -403,6 +413,7 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
+     if(replay){if(playback.decoded()[10]&2){u32 id;std::memcpy(&id,playback.decoded().data()+0x90,4);state.spell_practice_id=signed_bits(id);}}
+     else if((menu_selection.flags&48)==32)state.spell_practice_id=menu_selection.spell_id;
+     if((replay&&(playback.decoded()[10]&2)||!replay&&(menu_selection.flags&48)==32)&&(state.spell_practice_id<0||state.spell_practice_id>=120))return fail("invalid TH14 spell practice selection");
++    if(practice_run&&!practice_run.valid(difficulty,state.spell_practice_id))return fail("Invalid TH14 practice settings");
+     if(state.spell_practice_id>=0){state.practice=true;economy.lives=0;economy.th14_bombs=0;}
+ #endif
+     initial_stage=stage;economy.rank=next_continues?-512:0;
+@@ -414,7 +425,7 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
+     economy.difficulty=difficulty;
+     if(!replay&&!recording.begin(character,subtype,difficulty,practice,recording_timestamp))return fail("replay recorder initialization failed");
+ #if PORT_TITLE == 14
+-    if(!replay){std::memcpy(recording.header.data()+0x18,config.bytes.data(),config.bytes.size());if(state.spell_practice_id>=0){recording.header[10]=2;std::memcpy(recording.header.data()+0x90,&state.spell_practice_id,4);}}
++    if(!replay){recording.practice=practice_run;std::memcpy(recording.header.data()+0x18,config.bytes.data(),config.bytes.size());if(state.spell_practice_id>=0){recording.header[10]=2;std::memcpy(recording.header.data()+0x90,&state.spell_practice_id,4);}}
+ #endif
+     if(!replay){auto* counter=scores.characters[character*2+subtype].data()+ScoreFile::play_count_offset;i32 n;std::memcpy(&n,counter,4);if(n<99999){++n;std::memcpy(counter,&n,4);}}
+     // TH14 own435caa reads 4d9cb8 / 4d9ca0, then scales by 100.
+@@ -649,6 +660,11 @@ bool GameSession::activate_stage(){
+ #endif
+     battle->hud.score.continues=next_continues;next_continues=0;
+     if(state.replay)battle->hud.score.continues=entry.continues;
++#if PORT_TITLE == 14
++    if(!initial_worker_owner&&practice_run&&!patch_practice_th14(resources.stage->timeline,practice_run,state.spell_practice_id,error))return false;
++    if(!state.replay&&practice_run&&state.spell_practice_id<0)practice_run.apply(economy);
++    economy.th14_practice_tools=practice_enabled&&!state.demo&&!state.replay?practice_tools:0;
++#endif
+     if(!battle->initialize(state.character,state.subtype,state.difficulty)) {
+         error="stage battle initialization failed: "+battle->error;
+         battle.reset();
+@@ -693,6 +709,7 @@ bool GameSession::record_stage_entry(bool initial){
+         u32(e.th14_combo.count),u32(e.th14_combo.timer),float_bits(e.th14_combo.position.x),float_bits(e.th14_combo.position.y),float_bits(e.th14_combo.position.z),u32(e.th14_special_drop_count)};
+     // Native D8 carries 4d9658 bit 0; the ordinary port session uses 0.
+     s.th14_stage_flags=0;
++    practice_event=0;
+ #endif
+     if(!recording.start_stage(state.stage,s,initial))return fail("replay stage recording failed");
+     if(initial)for(u32 i=0;i<20;++i)battle->spell_timing.records[i]=i*0xdeaddeadu;
+@@ -955,7 +972,11 @@ bool GameSession::update(const GameSessionInput& input) {
+         // Its state0 activation dispatches the first main-menu update later
+         // in that callback. Our TitleMenu is constructed as Main, so its
+         // first session frame must likewise leave the idle counter alone.
+-        if(title->screen==TitleScreen::Main&&(kPortTitle!=14||state.frame!=0)){++title_idle;if(raw)title_idle=0;
++        if(title->screen==TitleScreen::Main&&(kPortTitle!=14||state.frame!=0)){++title_idle;if(raw
++#if PORT_TITLE == 14
++            ||practice_input_captured
++#endif
++        )title_idle=0;
+ #if PORT_TITLE != 14
+             if(title_idle>=1800){const DemoPlaylist playlist=demo_playlist();
+                 const auto path=std::string(playlist.names[demo_index<playlist.step?demo_index:0]);
+@@ -1089,14 +1110,35 @@ bool GameSession::update(const GameSessionInput& input) {
+             // can refer to a preceding stage when playback starts mid-run.
+             game_input.update_normalized(recorded.held);
+             edges.pressed=game_input.pressed;edges.released=game_input.released;
++#endif
++#if PORT_TITLE == 14
++            if(practice_enabled&&!state.demo){
++                const auto& events=playback.practice_events[state.stage];
++                if(playback.frame()<=1)practice_event=0,economy.th14_practice_tools=0;
++                while(practice_event<events.size()&&events[practice_event].frame<playback.frame())
++                    economy.th14_practice_tools=events[practice_event++].tools;
++            }
+ #endif
+             auto& motion=battle->player_input.movement;motion.touch_mode=recorded.touch_mode;motion.touch_x=recorded.touch_x;motion.touch_y=recorded.touch_y;
+             }
+         }else{
++#if PORT_TITLE == 14
++            economy.th14_practice_tools=practice_enabled&&!state.demo?practice_tools:0;
++            u32 effective=input.held;
++            if(economy.th14_practice_tools&PrAutoShoot)effective|=1;
++            if(economy.th14_practice_tools&PrNoShoot)effective&=~1u;
++            if(economy.th14_practice_tools&PrNoBomb)effective&=~2u;
++            if(economy.th14_practice_tools&PrForceFocus)effective|=8;
++            game_input.update(effective,config.auto_focus());
++#else
+             game_input.update(input.held,config.auto_focus());
++#endif
+             edges.held=game_input.held;edges.pressed=game_input.pressed;edges.released=game_input.released;
+             if(battle->stage_active&&!recording_active){recording.finish_stage();if(!record_stage_entry(false))return false;}
+             const auto& motion=battle->player_input.movement;
++#if PORT_TITLE == 14
++            recording.record_tools(economy.th14_practice_tools);
++#endif
+             if(!recording.tick(edges.held,edges.pressed,edges.released,input.recording_fps,motion.touch_mode,motion.touch_x,motion.touch_y))return fail("replay recording limit reached");
+         }
+ #if PORT_TITLE == 14
+@@ -1342,7 +1384,12 @@ bool GameSession::restart_run(bool continuation){
+     const i32 count=continuation&&previous.stage!=first?std::min(battle->hud.score.continues+1,9):0;
+     scores.write_records(spell_records,clear_records);next_continues=count;
+     if(previous.replay){if(!begin(*source,first,previous.character,previous.subtype,previous.difficulty,previous.demo,true,previous.practice))return false;}
+-    else if(!begin(*source,continuation?previous.stage:first,previous.character,previous.subtype,previous.difficulty,false,false,previous.practice))return false;
++    else {
++#if PORT_TITLE == 14
++        if(!continuation)practice_request=practice_run;
++#endif
++        if(!begin(*source,continuation?previous.stage:first,previous.character,previous.subtype,previous.difficulty,false,false,previous.practice))return false;
++    }
+     initial_stage=first;return true;
+ }
+ 
+@@ -1409,6 +1456,9 @@ bool GameSession::open_title(GameResources& data,bool first,TitleScreen screen){
  #endif
      if(!title)scores.write_records(spell_records,clear_records);
      reset_state();source=&data;interactive=true;
@@ -1352,6 +1563,27 @@ index 296457d06c7e7d5478acd4a0c029230add6fef70..195b80f4ebeccd1c5ebfd40a78d2aa6b
      if(!resources.load_core(data))return fail(resources.error.c_str());
      if constexpr(kPortTitle==14||kPortTitle==16)animations.fallback_sprites=&resources.core.ascii;
  #if PORT_TITLE == 14
+diff --git a/runtimes/th12/th12_web/cpp/game/GameSession.hpp b/runtimes/th12/th12_web/cpp/game/GameSession.hpp
+index a613b275d06de6c173c7cda8ea88fda9970e8c35..8e6ce60966b2b12da957c1d4dfac929069f1edc3 100644
+--- a/runtimes/th12/th12_web/cpp/game/GameSession.hpp
++++ b/runtimes/th12/th12_web/cpp/game/GameSession.hpp
+@@ -1,4 +1,5 @@
+ #pragma once
++#include "PracticeTh14.hpp"
+ 
+ #include "GameSessionResources.hpp"
+ #include "AnmManager.hpp"
+@@ -109,6 +110,10 @@ public:
+ #if PORT_TITLE==14
+     LoadingTh14 shared_loading;
+     FontBitmapTh14 font_bitmap;
++    PracticeTh14 practice_request,practice_run;
++    bool practice_enabled=false,practice_input_captured=false;
++    u32 practice_tools=0;
++    size_t practice_event=0;
+ #endif
+     SceneCompositor compositor{animations};
+     GameEconomy economy;
 diff --git a/runtimes/th12/th12_web/cpp/game/GameSessionResources.cpp b/runtimes/th12/th12_web/cpp/game/GameSessionResources.cpp
 index 6058214788fe6678bbba4f4a6319031711f20bb4..85be081a7383a8d7d31e6bc58516a7a94a5730ea 100644
 --- a/runtimes/th12/th12_web/cpp/game/GameSessionResources.cpp
@@ -2194,10 +2426,25 @@ index a3e63fe228287890e69b17af24edfea2684474b2..a7d4cf12bf221720e07b639c8c933962
      auto name=[&](float x,float y){
          add(entered_name.data(),x,y);style.color=0xffffff00;add("_",x+9*(name_length==8?7:name_length),y);
 diff --git a/runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp b/runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp
-index a829a789d81446dd2913c8dd35061377a94a77ed..a96f915a0372b738d8f3054d7b0b480c4b5af991 100644
+index a829a789d81446dd2913c8dd35061377a94a77ed..b84eb5da84af2670e1a1949425924e3684ab5013 100644
 --- a/runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp
 +++ b/runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp
-@@ -73,7 +73,11 @@ bool player_th14_death_drops(GameEconomy& economy,Vec3 p,PlayerFrameWorld& world
+@@ -1,4 +1,5 @@
+ #include "ShotFiles.hpp"
++#include "PracticeTh14.hpp"
+ #include "PlayerFrame.hpp"
+ #include "AnmRenderer.hpp"
+ #include "Replay.hpp"
+@@ -60,7 +61,7 @@ bool player_th14_tick_clocks(PlayerFrameState& state,const PlayerFrameInput& inp
+ bool player_th14_death_drops(GameEconomy& economy,Vec3 p,PlayerFrameWorld& world){
+     // Retail 44dda3..44de94: lose half a power step, then emit seven
+     // ordinary small-power items. Each angle operation is an SSE float.
+-    th14_death_power_words([&](DeathPowerAccessTh14 access){
++    if(!(economy.th14_practice_tools&PrPower))th14_death_power_words([&](DeathPowerAccessTh14 access){
+         return access==DeathPowerAccessTh14::Step?th14_hud_load(economy.power_step):th14_hud_load(economy.power);
+     },[&](DeathPowerAccessTh14,i32 value){th14_hud_store(economy.power,value);});
+     const float target_y=p.y-224.f,dy=target_y-p.y,dx=0.f-p.x;
+@@ -73,7 +74,11 @@ bool player_th14_death_drops(GameEconomy& economy,Vec3 p,PlayerFrameWorld& world
      return true;
  }
  #endif
@@ -2210,7 +2457,7 @@ index a829a789d81446dd2913c8dd35061377a94a77ed..a96f915a0372b738d8f3054d7b0b480c
  bool PlayerFrame::initialize(){
      const i32 character=input.movement.character;
      if(!player_selection_valid(character,input.movement.subtype)){last_error=4;return false;}
-@@ -103,7 +107,14 @@ bool PlayerFrame::initialize(){
+@@ -103,7 +108,14 @@ bool PlayerFrame::initialize(){
      state.hit=bounds(s.position,state.hit_half);state.pickup=bounds(s.position,state.pickup_size);
      state.focused_attract=bounds(s.position,state.focused_half);state.unfocused_attract=state.focused_attract;
      state.state_timer.set(0,&animations.rate);state.invincibility.set(kPortTitle==14?0:120,&animations.rate);
@@ -2226,6 +2473,1449 @@ index a829a789d81446dd2913c8dd35061377a94a77ed..a96f915a0372b738d8f3054d7b0b480c
  }
  bool PlayerFrame::rebuild_options(){
  #if PORT_TITLE == 16
+@@ -216,6 +228,9 @@ bool PlayerFrame::die(){
+     if(!world.player_effect(motion.state.position,27))return false;
+ #else
+     economy.point_value=std::max(wrapping_add(economy.point_value,-10000000),state.minimum_point_value);economy.communication=0;
++#endif
++#if PORT_TITLE == 14
++    if(!(economy.th14_practice_tools&PrLives))
+ #endif
+     economy.lives=wrapping_add(economy.lives,-1);
+ #if PORT_TITLE == 14
+@@ -237,7 +252,7 @@ bool PlayerFrame::start_special(){
+     input.special_active=true;
+ #if PORT_TITLE == 14
+     // Retail 412110 consumes Bomb stock, preserving power and fragments.
+-    economy.th14_bombs=std::clamp(wrapping_sub(economy.th14_bombs,1),0,8);
++    if(!(economy.th14_practice_tools&PrBombs))economy.th14_bombs=std::clamp(wrapping_sub(economy.th14_bombs,1),0,8);
+     if(!world.bombs_changed(economy.th14_bombs,economy.th14_bomb_fragments)){last_error=78;return false;}
+ #else
+     economy.power=wrapping_sub(economy.power,economy.power_step);
+@@ -247,7 +262,8 @@ bool PlayerFrame::start_special(){
+ }
+ bool PlayerFrame::active_frame(){
+ #if PORT_TITLE == 14
+-    const bool available=!input.movement.bomb&&input.special_available&&!input.special_active&&economy.th14_bombs>0;
++    const bool available=!input.movement.bomb&&input.special_available&&!input.special_active&&
++        (economy.th14_bombs>0||(economy.th14_practice_tools&PrBombs));
+ #else
+     const bool available=!input.movement.bomb&&input.special_available&&!input.special_active&&economy.power_step&&economy.power/economy.power_step;
+ #endif
+@@ -345,12 +361,17 @@ bool PlayerFrame::update(){
+             if(!death_frame())return false;
+         }else{
+ #if PORT_TITLE == 14
+-            const bool available=!input.movement.bomb&&input.special_available&&!input.special_active&&economy.th14_bombs>0;
++            const bool available=!input.movement.bomb&&input.special_available&&!input.special_active&&
++                (economy.th14_bombs>0||(economy.th14_practice_tools&PrBombs));
+ #else
+             const bool available=input.special_available&&!input.special_active&&economy.power_step&&economy.power/economy.power_step;
+ #endif
+             const u32 bomb_trigger=kPortTitle==14?input.movement.pressed:input.movement.held;
+-            if(available&&(bomb_trigger&2)){
++            if(available&&((bomb_trigger&2)
++#if PORT_TITLE == 14
++                ||(economy.th14_practice_tools&PrAutoBomb)
++#endif
++            )){
+                 if(start_special()){state.state_timer.set(60,&animations.rate);state.life_state=1;}
+                 else if(last_error!=74)return false;
+             }
+@@ -410,7 +431,11 @@ bool PlayerFrame::update(){
+     }
+     return shots.update();
+ }
+-PlayerCollision PlayerFrame::collision()const noexcept {PlayerCollision p;p.position={motion.state.position.x,motion.state.position.y};p.minimum={state.hit.minimum.x,state.hit.minimum.y};p.maximum={state.hit.maximum.x,state.hit.maximum.y};p.radius=resource.header.hitbox;p.state=state.life_state;p.invincibility_frames=state.invincibility.current;p.flags=motion.state.flags;p.bomb_active=input.movement.bomb;
++PlayerCollision PlayerFrame::collision()const noexcept {PlayerCollision p;p.position={motion.state.position.x,motion.state.position.y};p.minimum={state.hit.minimum.x,state.hit.minimum.y};p.maximum={state.hit.maximum.x,state.hit.maximum.y};p.radius=resource.header.hitbox;p.state=state.life_state;p.invincibility_frames=state.invincibility.current;
++#if PORT_TITLE == 14
++    if(economy.th14_practice_tools&PrInvincible)p.invincibility_frames=std::max(1,p.invincibility_frames);
++#endif
++    p.flags=motion.state.flags;p.bomb_active=input.movement.bomb;
+ #if PORT_TITLE == 14
+     if(th14_scale.flags&0x10)p.radius=(th14_scale.factor*3.5999999046325684f)*p.radius;
+ #endif
+diff --git a/runtimes/th12/th12_web/cpp/game/PracticeCatalogTh14.inc b/runtimes/th12/th12_web/cpp/game/PracticeCatalogTh14.inc
+new file mode 100644
+index 0000000000000000000000000000000000000000..94e4a200974ca8bd07f73c05e85c11acde0cb435
+--- /dev/null
++++ b/runtimes/th12/th12_web/cpp/game/PracticeCatalogTh14.inc
+@@ -0,0 +1,175 @@
++// Adapted from rueee/thprac master_2 (MIT, copyright Ack). See PracticeLicenseTh14.txt.
++// thprac_th14.cpp SHA-256 (LF): eacc80f94d1716dd2b2c26080ce54ec5871463de4318b1b2984e8c90585760a7
++enum {
++    TH14_ST1_MID1 = 1,
++    TH14_ST1_MID2 = 2,
++    TH14_ST1_BOSS1 = 3,
++    TH14_ST1_BOSS2 = 4,
++    TH14_ST1_BOSS3 = 5,
++    TH14_ST1_BOSS4 = 6,
++    TH14_ST2_MID1 = 7,
++    TH14_ST2_MID2 = 8,
++    TH14_ST2_BOSS1 = 9,
++    TH14_ST2_BOSS2 = 10,
++    TH14_ST2_BOSS3 = 11,
++    TH14_ST2_BOSS4 = 12,
++    TH14_ST2_BOSS5 = 13,
++    TH14_ST3_MID1 = 14,
++    TH14_ST3_MID2_EN = 15,
++    TH14_ST3_MID2_HL = 16,
++    TH14_ST3_BOSS1 = 17,
++    TH14_ST3_BOSS2 = 18,
++    TH14_ST3_BOSS3 = 19,
++    TH14_ST3_BOSS4 = 20,
++    TH14_ST3_BOSS5 = 21,
++    TH14_ST3_BOSS6 = 22,
++    TH14_ST4_MID1 = 23,
++    TH14_ST4_MID2 = 24,
++    TH14_ST4_BOSS1 = 25,
++    TH14_ST4_BOSS2 = 26,
++    TH14_ST4_BOSS3 = 27,
++    TH14_ST4_BOSS4 = 28,
++    TH14_ST4_BOSS5 = 29,
++    TH14_ST4_BOSS6 = 30,
++    TH14_ST5_MID1 = 31,
++    TH14_ST5_MID2 = 32,
++    TH14_ST5_BOSS1 = 33,
++    TH14_ST5_BOSS2 = 34,
++    TH14_ST5_BOSS3 = 35,
++    TH14_ST5_BOSS4 = 36,
++    TH14_ST5_BOSS5 = 37,
++    TH14_ST5_BOSS6 = 38,
++    TH14_ST5_BOSS7 = 39,
++    TH14_ST6_MID1 = 40,
++    TH14_ST6_MID2 = 41,
++    TH14_ST6_BOSS1 = 42,
++    TH14_ST6_BOSS2 = 43,
++    TH14_ST6_BOSS3 = 44,
++    TH14_ST6_BOSS4 = 45,
++    TH14_ST6_BOSS5 = 46,
++    TH14_ST6_BOSS6 = 47,
++    TH14_ST6_BOSS7 = 48,
++    TH14_ST6_BOSS8 = 49,
++    TH14_ST6_BOSS9 = 50,
++    TH14_ST6_BOSS10 = 51,
++    TH14_ST7_MID1 = 52,
++    TH14_ST7_MID2 = 53,
++    TH14_ST7_MID3 = 54,
++    TH14_ST7_END_NS1 = 55,
++    TH14_ST7_END_S1 = 56,
++    TH14_ST7_END_NS2 = 57,
++    TH14_ST7_END_S2 = 58,
++    TH14_ST7_END_NS3 = 59,
++    TH14_ST7_END_S3 = 60,
++    TH14_ST7_END_NS4 = 61,
++    TH14_ST7_END_S4 = 62,
++    TH14_ST7_END_NS5 = 63,
++    TH14_ST7_END_S5 = 64,
++    TH14_ST7_END_NS6 = 65,
++    TH14_ST7_END_S6 = 66,
++    TH14_ST7_END_NS7 = 67,
++    TH14_ST7_END_S7 = 68,
++    TH14_ST7_END_NS8 = 69,
++    TH14_ST7_END_S8 = 70,
++    TH14_ST7_END_S9 = 71,
++    TH14_ST7_END_S10 = 72,
++};
++constexpr u64 retail_ecl[7][6] = {
++    {0xefaacd0029287c82ull,0x12936dc462213c35ull,0x17060290d2d34e26ull,0x4a47a8cada5edb1aull},
++    {0x57400ed2ab9b02daull,0x12936dc462213c35ull,0x1adecc9dd560f840ull,0x574b84119d01acf3ull},
++    {0x1252556eae4da76dull,0x12936dc462213c35ull,0x7459596849b4642ull,0x5bf3ed06c83f4db4ull},
++    {0xff169ec556bf9200ull,0x12936dc462213c35ull,0x28e10139e89d1348ull,0xd8ee6e8f4ad56c06ull,0xf2a90faf0c639f50ull,0x91e64407eb91b7bbull},
++    {0x8b0bcb6e51873188ull,0x12936dc462213c35ull,0xf5f669b1b35049d5ull,0xc17e2bd7c71ff8d8ull},
++    {0xefaf3226fbf4dcd1ull,0x12936dc462213c35ull,0x65700ab29c50c705ull,0xddf0679032ecabc0ull},
++    {0x66709cbfc47aaaf6ull,0x12936dc462213c35ull,0xdc0d0afb570f3500ull,0xb0b4d7369e720775ull}
++};
++constexpr Section sections[] = {
++    {1,1,1,0,1,false,false,15},
++    {2,2,1,0,1,false,false,12},
++    {3,3,1,1,1,true,false,15},
++    {4,4,1,1,1,false,false,15},
++    {5,5,1,1,1,false,true,15},
++    {6,6,1,1,1,false,false,15},
++    {7,7,2,0,1,false,false,15},
++    {8,8,2,0,1,false,false,15},
++    {9,9,2,1,1,true,false,15},
++    {10,10,2,1,1,false,false,15},
++    {11,11,2,1,1,false,true,15},
++    {12,12,2,1,1,false,false,15},
++    {13,13,2,1,1,false,false,15},
++    {14,14,3,0,1,false,false,15},
++    {15,15,3,0,1,false,true,3},
++    {16,16,3,0,2,false,false,12},
++    {17,17,3,1,1,true,false,15},
++    {18,18,3,1,1,false,false,15},
++    {19,19,3,1,1,false,true,15},
++    {20,20,3,1,1,false,false,15},
++    {21,21,3,1,1,false,true,15},
++    {22,22,3,1,1,false,false,15},
++    {23,23,4,0,1,false,false,15},
++    {24,24,4,0,1,false,true,15},
++    {25,25,4,1,1,true,false,15},
++    {26,26,4,1,1,false,false,0},
++    {27,27,4,1,1,false,true,15},
++    {28,28,4,1,1,false,false,0},
++    {29,29,4,1,1,false,true,15},
++    {30,30,4,1,1,false,false,0},
++    {31,31,5,0,1,false,false,15},
++    {32,32,5,0,1,false,false,15},
++    {33,33,5,1,1,true,false,15},
++    {34,34,5,1,1,false,false,15},
++    {35,35,5,1,1,false,true,15},
++    {36,36,5,1,1,false,false,15},
++    {37,37,5,1,1,false,true,15},
++    {38,38,5,1,1,false,false,15},
++    {39,39,5,1,1,false,true,15},
++    {40,40,6,0,1,false,false,15},
++    {41,41,6,0,1,false,true,15},
++    {42,42,6,1,1,true,false,15},
++    {43,43,6,1,1,false,false,15},
++    {44,44,6,1,1,false,true,15},
++    {45,45,6,1,1,false,false,15},
++    {46,46,6,1,1,false,true,15},
++    {47,47,6,1,1,false,false,15},
++    {48,48,6,1,1,false,true,15},
++    {49,49,6,1,2,false,false,15},
++    {50,50,6,1,2,false,true,15},
++    {51,51,6,1,4,false,true,15},
++    {52,52,7,0,1,true,false,16},
++    {53,53,7,0,1,false,false,16},
++    {54,54,7,0,1,false,true,16},
++    {55,55,7,1,1,true,false,16},
++    {56,56,7,1,1,false,false,16},
++    {57,57,7,1,1,false,true,16},
++    {58,58,7,1,1,false,false,16},
++    {59,59,7,1,1,false,true,16},
++    {60,60,7,1,1,false,false,16},
++    {61,61,7,1,1,false,true,16},
++    {62,62,7,1,1,false,false,16},
++    {63,63,7,1,1,false,true,16},
++    {64,64,7,1,1,false,false,16},
++    {65,65,7,1,1,false,true,16},
++    {66,66,7,1,1,false,false,16},
++    {67,67,7,1,1,false,true,16},
++    {68,68,7,1,1,false,false,16},
++    {69,69,7,1,1,false,true,16},
++    {70,70,7,1,1,false,false,16},
++    {71,71,7,1,2,false,true,16},
++    {72,72,7,1,5,false,false,16},
++    {73,23,4,0,1,false,false,15},
++    {74,24,4,0,1,false,true,15},
++    {75,25,4,1,1,true,false,15},
++    {76,26,4,1,1,false,false,15},
++    {77,27,4,1,1,false,true,15},
++    {78,28,4,1,1,false,false,15},
++    {79,29,4,1,1,false,true,15},
++    {80,30,4,1,1,false,false,15},
++    {81,23,4,0,1,false,false,15},
++    {82,24,4,0,1,false,true,15},
++    {83,25,4,1,1,true,false,15},
++    {84,26,4,1,1,false,false,15},
++    {85,27,4,1,1,false,true,15},
++    {86,28,4,1,1,false,false,15},
++    {87,29,4,1,1,false,true,15},
++    {88,30,4,1,1,false,false,15},
++};
+diff --git a/runtimes/th12/th12_web/cpp/game/PracticeLicenseTh14.txt b/runtimes/th12/th12_web/cpp/game/PracticeLicenseTh14.txt
+new file mode 100644
+index 0000000000000000000000000000000000000000..f128f70763f62f889df8744131a7c6ad5e8dae8e
+--- /dev/null
++++ b/runtimes/th12/th12_web/cpp/game/PracticeLicenseTh14.txt
+@@ -0,0 +1,21 @@
++MIT License
++
++Copyright (c) 2022 Ack
++
++Permission is hereby granted, free of charge, to any person obtaining a copy
++of this software and associated documentation files (the "Software"), to deal
++in the Software without restriction, including without limitation the rights
++to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++copies of the Software, and to permit persons to whom the Software is
++furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in all
++copies or substantial portions of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++SOFTWARE.
+\ No newline at end of file
+diff --git a/runtimes/th12/th12_web/cpp/game/PracticePatchesTh14.inc b/runtimes/th12/th12_web/cpp/game/PracticePatchesTh14.inc
+new file mode 100644
+index 0000000000000000000000000000000000000000..216d6fbaef5709ab60c2054771d57fef7ee43f43
+--- /dev/null
++++ b/runtimes/th12/th12_web/cpp/game/PracticePatchesTh14.inc
+@@ -0,0 +1,1032 @@
++// Adapted from rueee/thprac master_2 (MIT, copyright Ack). See PracticeLicenseTh14.txt.
++// thprac_th14.cpp SHA-256 (LF): eacc80f94d1716dd2b2c26080ce54ec5871463de4318b1b2984e8c90585760a7
++    void ECLJump(ECLHelper& ecl, unsigned int start, unsigned int dest, int at_frame, int ecl_time = 0)
++    {
++        ecl.Jump(start, dest);
++        ecl.SetPos(start);
++        ecl << ecl_time << 0x0018000C << 0x02ff0000 << 0x00000000 << dest - start << at_frame;
++    }
++    static constexpr unsigned int st7PostMaple = 0x7778;
++    void THStageWarp(ECLHelper& ecl, int stage, int portion)
++    {
++        if (stage == 1) {
++            switch (portion) {
++            case 1:
++                break;
++            case 2:
++                ECLJump(ecl, 0x689c, 0x6ae8, 60, 90); // 0x6b4c
++                ECLJump(ecl, 0x40e4, 0x4118, 0, 0);
++                break;
++            case 3:
++                ECLJump(ecl, 0x689c, 0x6ae8, 60, 90); // 0x6b4c
++                ECLJump(ecl, 0x40e4, 0x414c, 0, 0);
++                break;
++            case 4:
++                ECLJump(ecl, 0x689c, 0x6b4c, 60, 90);
++                break;
++            case 5:
++                ECLJump(ecl, 0x689c, 0x6b4c, 60, 90);
++                ECLJump(ecl, 0x41e8, 0x4218, 0, 0);
++                break;
++            default:
++                break;
++            }
++        } else if (stage == 2) {
++            switch (portion) {
++            case 1:
++                break;
++            case 2:
++                ECLJump(ecl, 0x4f30, 0x51c4, 60, 90); // 0x51e4, 0x5218
++                ECLJump(ecl, 0x3004, 0x3038, 0, 0);
++                break;
++            case 3:
++                ECLJump(ecl, 0x4f30, 0x51c4, 60, 90); // 0x51e4, 0x5218
++                ECLJump(ecl, 0x3004, 0x306c, 0, 0);
++                break;
++            case 4:
++                ECLJump(ecl, 0x4f30, 0x51e4, 60, 90); // 0x5218
++                ECLJump(ecl, 0x31c8, 0x3220, 0, 0);
++                break;
++            case 5:
++                ECLJump(ecl, 0x4f30, 0x5218, 60, 30);
++                break;
++            case 6:
++                ECLJump(ecl, 0x4f30, 0x5218, 60, 90);
++                ECLJump(ecl, 0x3118, 0x3160, 0, 0);
++                break;
++            default:
++                break;
++            }
++        } else if (stage == 3) {
++            switch (portion) {
++            case 1:
++                break;
++            case 2:
++                ECLJump(ecl, 0x648c, 0x6720, 60, 90); // 0x6740, 0x6774
++                ECLJump(ecl, 0x21f4, 0x2228, 0, 0);
++                break;
++            case 3:
++                ECLJump(ecl, 0x648c, 0x6720, 60, 30); // 0x6740, 0x6774
++                ECLJump(ecl, 0x21f4, 0x2290, 0, 0);
++                break;
++            case 4:
++                ECLJump(ecl, 0x648c, 0x6740, 60, 90); // 0x6774
++                ECLJump(ecl, 0x23c4, 0x241c, 0, 0);
++                break;
++            case 5:
++                ECLJump(ecl, 0x648c, 0x6774, 60, 30);
++                break;
++            case 6:
++                ECLJump(ecl, 0x648c, 0x6774, 60, 90);
++                ECLJump(ecl, 0x22f8, 0x233c, 0, 0);
++                break;
++            default:
++                break;
++            }
++        } else if (stage == 4) {
++            switch (portion) {
++            case 1:
++                break;
++            case 2:
++                ECLJump(ecl, 0x97f8, 0x9ab4, 60, 90); // 0x9ae4, 0x9b18
++                ECLJump(ecl, 0x5090, 0x50c4, 0, 0);
++                break;
++            case 3:
++                ECLJump(ecl, 0x97f8, 0x9ab4, 60, 90); // 0x9ae4, 0x9b18
++                ECLJump(ecl, 0x5090, 0x50f8, 0, 0);
++                break;
++            case 4:
++                ECLJump(ecl, 0x97f8, 0x9ab4, 60, 90); // 0x9ae4, 0x9b18
++                ECLJump(ecl, 0x5090, 0x512c, 0, 0);
++                break;
++            case 5:
++                ECLJump(ecl, 0x97f8, 0x9ae4, 60, 90); // 0x9b18
++                ECLJump(ecl, 0x5240, 0x53c0, 0, 0);
++                break;
++            case 6:
++                ECLJump(ecl, 0x97f8, 0x9b18, 60, 30);
++                break;
++            case 7:
++                ECLJump(ecl, 0x97f8, 0x9b18, 60, 90);
++                ECLJump(ecl, 0x5194, 0x51d8, 0, 0);
++                break;
++            default:
++                break;
++            }
++        } else if (stage == 5) {
++            switch (portion) {
++            case 1:
++                break;
++            case 2:
++                ECLJump(ecl, 0x8654, 0x8910, 60, 90); // 0x8940, 0x8988
++                ECLJump(ecl, 0x2784, 0x27b8, 0, 0);
++                break;
++            case 3:
++                ECLJump(ecl, 0x8654, 0x8910, 60, 90); // 0x8940, 0x8988
++                ECLJump(ecl, 0x2784, 0x27ec, 0, 0);
++                break;
++            case 4:
++                ECLJump(ecl, 0x8654, 0x8910, 60, 90); // 0x8940, 0x8988
++                ECLJump(ecl, 0x2784, 0x2820, 0, 0);
++                break;
++            case 5:
++                ECLJump(ecl, 0x8654, 0x8988, 60, 90);
++                break;
++            case 6:
++                ECLJump(ecl, 0x8654, 0x8988, 60, 90);
++                ECLJump(ecl, 0x2888, 0x28dc, 0, 0);
++                break;
++            default:
++                break;
++            }
++        } else if (stage == 6) {
++            switch (portion) {
++            case 1:
++                break;
++            case 2:
++                ECLJump(ecl, 0x79d0, 0x7bb8, 60, 90);
++                ECLJump(ecl, 0x2bc0, 0x2bf4, 0, 0);
++                break;
++            case 3:
++                ECLJump(ecl, 0x79d0, 0x7bb8, 60, 90);
++                ECLJump(ecl, 0x2bc0, 0x2c28, 0, 0);
++                break;
++            case 4:
++                ECLJump(ecl, 0x79d0, 0x7bb8, 60, 90);
++                ECLJump(ecl, 0x2bc0, 0x2c5c, 0, 0);
++                break;
++            default:
++                break;
++            }
++        } else if (stage == 7) {
++            switch (portion) {
++            case 1:
++                break;
++            case 2:
++                ECLJump(ecl, st7PostMaple, 0x7a34, 60, 90); // 0x7aac, 0x7acc
++                ECLJump(ecl, 0x36ac, 0x36e0, 0, 0);
++                break;
++            case 3:
++                ECLJump(ecl, st7PostMaple, 0x7a34, 60, 50); // 0x7aac, 0x7acc
++                ECLJump(ecl, 0x36ac, 0x3714, 0, 0);
++                break;
++            case 4:
++                ECLJump(ecl, st7PostMaple, 0x7a34, 60, 90); // 0x7aac, 0x7acc
++                ECLJump(ecl, 0x36ac, 0x3748, 0, 0);
++                break;
++            case 5:
++                ECLJump(ecl, st7PostMaple, 0x7aac, 60, 90); // 0x7acc
++                ecl << pair{0x4cf8, 0};
++                break;
++            case 6:
++                ECLJump(ecl, st7PostMaple, 0x7acc, 60, 90);
++                break;
++            case 7:
++                ECLJump(ecl, st7PostMaple, 0x7acc, 60, 10);
++                ECLJump(ecl, 0x37b0, 0x37f4, 0, 0);
++                break;
++            case 8:
++                ECLJump(ecl, st7PostMaple, 0x7acc, 60, 90);
++                ECLJump(ecl, 0x37b0, 0x3828, 0, 0);
++                break;
++            case 9:
++                ECLJump(ecl, st7PostMaple, 0x7acc, 60, 90);
++                ECLJump(ecl, 0x37b0, 0x385c, 0, 0);
++                break;
++            default:
++                break;
++            }
++        }
++    }
++    void THPatch(ECLHelper& ecl, i32 section)
++    {
++        auto st6_boss = [&](int std_id) {
++            ECLJump(ecl, 0x79d0, 0x2aa0, 0); // Jump to 630
++            ecl << pair{0x2ab0, std_id}; // 630 Param
++            ECLJump(ecl, 0x2ab4, 0x7c68, 60); // Jump to MainBoss
++            ecl.SetFile(3);
++            ecl << pair{0x4a0, (int16_t)0}; // Disable 630
++        };
++
++        constexpr unsigned int st7BossCreateCall = 0x7b38;
++        constexpr unsigned int st7bsPrePushSpellID = 0x790;
++        constexpr unsigned int st7bsPostNotSpellPracCheck = 0x830;
++        constexpr unsigned int st7bsSpellHealthVal = 0x830 + 0x10;
++        constexpr unsigned int st7bsSpellSubCallOrd = 0x844 + 0x1c;
++
++        switch (section) {
++        case TH14_ST1_MID1:
++            ECLJump(ecl, 0x689c, 0x6b08, 60);
++            break;
++        case TH14_ST1_MID2:
++            ECLJump(ecl, 0x689c, 0x6b08, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, 0x478, 0x560, 0);
++            ecl << pair{0x38c, (int16_t)0};
++            break;
++        case TH14_ST1_BOSS1:
++            if (thPracParam.dlg)
++                ECLJump(ecl, 0x689c, 0x6b94, 60);
++            else
++                ECLJump(ecl, 0x689c, 0x6bbc, 60);
++            break;
++        case TH14_ST1_BOSS2:
++            ECLJump(ecl, 0x689c, 0x6bbc, 60);
++            ecl.SetFile(2);
++            ECLJump(ecl, 0x400, 0x4e8, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x4f8, 1500}; // Set Health
++            ecl << pair{0x518, (int8_t)0x31}; // Set Spell Ordinal
++            ecl << pair{0x1aa4, (int16_t)0}; // Disable Item Drops
++            break;
++        case TH14_ST1_BOSS3:
++            ECLJump(ecl, 0x689c, 0x6bbc, 60);
++            ecl.SetFile(2);
++            ecl << pair{0x638, (int8_t)0x32}; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x1028, (int16_t)0 } << pair { 0x1158, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair{0x12e4, 0} << pair{0x12d0, 0}; // Change Wait Time & Inv. Time
++            break;
++        case TH14_ST1_BOSS4:
++            ECLJump(ecl, 0x689c, 0x6bbc, 60);
++            ecl.SetFile(2);
++            ECLJump(ecl, 0x400, 0x4e8, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x4f8, 1900}; // Set Health
++            ecl << pair{0x518, (int8_t)0x32}; // Set Spell Ordinal
++            ecl << pair{0x2cbc, (int16_t)0}; // Disable Item Drops
++            break;
++        case TH14_ST2_MID1:
++            ECLJump(ecl, 0x4f30, 0x51e4, 60);
++            break;
++        case TH14_ST2_MID2:
++            ECLJump(ecl, 0x4f30, 0x51e4, 60);
++            ecl.SetFile(2);
++            ECLJump(ecl, 0x3fc, 0x4e4, 0);
++            ecl << pair{0xdf8, (int16_t)0};
++            break;
++        case TH14_ST2_BOSS1:
++            if (thPracParam.dlg)
++                ECLJump(ecl, 0x4f30, 0x524c, 60);
++            else
++                ECLJump(ecl, 0x4f30, 0x5274, 60);
++            break;
++        case TH14_ST2_BOSS2:
++            ECLJump(ecl, 0x4f30, 0x5274, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, 0x4e4, 0x5cc, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x5dc, 1400}; // Set Health
++            ecl << pair{0x5fc, (int8_t)0x31}; // Set Spell Ordinal
++            ecl << pair{0x2678, (int16_t)0}; // Disable Item Drops
++            break;
++        case TH14_ST2_BOSS3:
++            ECLJump(ecl, 0x4f30, 0x5274, 60);
++            ecl.SetFile(3);
++            ecl << pair{0x800, (int8_t)0x32}; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x13d4, (int16_t)0 } << pair { 0x1518, (int16_t)0 }; // Disable Item Drops & SE
++            break;
++        case TH14_ST2_BOSS4:
++            ECLJump(ecl, 0x4f30, 0x5274, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, 0x4e4, 0x5cc, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x5dc, 1900}; // Set Health
++            ecl << pair{0x5fc, (int8_t)0x32}; // Set Spell Ordinal
++            ecl << pair{0x3410, (int16_t)0}; // Disable Item Drops
++            break;
++        case TH14_ST2_BOSS5:
++            ECLJump(ecl, 0x4f30, 0x5274, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, 0x4e4, 0x5cc, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x5dc, 2100}; // Set Health
++            ecl << pair{0x5fc, (int8_t)0x33}; // Set Spell Ordinal
++            break;
++        case TH14_ST3_MID1:
++            ECLJump(ecl, 0x648c, 0x6740, 60);
++            break;
++        case TH14_ST3_MID2_EN:
++            ECLJump(ecl, 0x648c, 0x6740, 60);
++            ecl.SetFile(2);
++            ECLJump(ecl, 0x520, 0x614, 0);
++            ECLJump(ecl, 0x664, 0xc88, 0);
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0xcc8, (int16_t)0 } << pair { 0xe24, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair{0xf68, 0} << pair{0xf54, 0}; // Change Wait Time & Inv. Time
++            break;
++        case TH14_ST3_MID2_HL:
++            ECLJump(ecl, 0x648c, 0x6740, 60);
++            ecl.SetFile(2);
++            switch (thPracParam.phase) {
++            default:
++            case 0:
++                break;
++            case 1:
++                ecl << pair { 0x1718,(int16_t)542};
++                break;
++            }
++            ECLJump(ecl, 0x404, 0x4ec, 0);
++            break;
++        case TH14_ST3_BOSS1:
++            if (thPracParam.dlg)
++                ECLJump(ecl, 0x648c, 0x67a8, 60);
++            else
++                ECLJump(ecl, 0x648c, 0x67d0, 60);
++            break;
++        case TH14_ST3_BOSS2:
++            ECLJump(ecl, 0x648c, 0x67d0, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, 0x458, 0x540, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x550, 1600}; // Set Health
++            ecl << pair{0x570, (int8_t)0x31}; // Set Spell Ordinal
++            ecl << pair{0x20f0, (int16_t)0}; // Disable Item Drops
++            break;
++        case TH14_ST3_BOSS3:
++            ECLJump(ecl, 0x648c, 0x67d0, 60);
++            ecl.SetFile(3);
++            ecl << pair{0x774, (int8_t)0x32}; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0xe7c, (int16_t)0 } << pair { 0xfc0, (int16_t)0 } << pair { 0x1134, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair{0x10b0, 59} << pair{0x1154, 20} << pair{0x112c, 0}; // Change Move Time, Wait Time & Inv. Time
++            break;
++        case TH14_ST3_BOSS4:
++            ECLJump(ecl, 0x648c, 0x67d0, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, 0x458, 0x540, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x550, 2100}; // Set Health
++            ecl << pair{0x570, (int8_t)0x32}; // Set Spell Ordinal
++            ecl << pair{0x38c4, (int16_t)0}; // Disable Item Drops
++            break;
++        case TH14_ST3_BOSS5:
++            ECLJump(ecl, 0x648c, 0x67d0, 60);
++            ecl.SetFile(3);
++            ecl << pair{0x774, (int8_t)0x33}; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x1790, (int16_t)0 } << pair { 0x18d4, (int16_t)0 } << pair { 0x1a48, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair{0x19c4, 59} << pair{0x1a68, 20} << pair{0x1a40, 0}; // Change Move Time, Wait Time & Inv. Time
++            break;
++        case TH14_ST3_BOSS6:
++            ECLJump(ecl, 0x648c, 0x67d0, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, 0x458, 0x540, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x550, 1800}; // Set Health
++            ecl << pair{0x570, (int8_t)0x33}; // Set Spell Ordinal
++            ecl << pair{0x47e4, (int16_t)0}; // Disable Item Drops
++            break;
++        case TH14_ST4_MID1:
++            ECLJump(ecl, 0x97f8, 0x9ae4, 60);
++            break;
++        case TH14_ST4_MID2:
++            ECLJump(ecl, 0x97f8, 0x9ae4, 60);
++
++            // BossA
++            ecl.SetFile(2);
++            ecl << pair{0x439, (int8_t)0x32};
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x143c, (int16_t)0 } << pair { 0x1598, (int16_t)0 };
++            ecl << pair{0x16c8, 0} << pair{0x16dc, (int16_t)0};
++
++            // BossB
++            ecl.SetFile(3);
++            ecl << pair{0x542, (int8_t)0x32};
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0xca8, (int16_t)0 } << pair { 0xe04, (int16_t)0 };
++            ecl << pair{0xf34, 0} << pair{0xf48, (int16_t)0};
++            break;
++        case TH14_ST4_BOSS1:
++            if (thPracParam.dlg)
++                ECLJump(ecl, 0x97f8, 0x9b4c, 60);
++            else {
++                ECLJump(ecl, 0x97f8, 0x9b74, 60);
++
++                // BossA
++                ecl.SetFile(4);
++                ECLJump(ecl, 0x9950, 0x9ab4, 0); // Skip Dummy Boss
++                ecl << pair{0x3e8, 0}; // Cancel Msg Invi.
++
++                // BossB
++                ecl.SetFile(5);
++                ECLJump(ecl, 0x4dcc, 0x4f30, 0); // Skip Dummy Boss
++                ecl << pair{0x358, 0}; // Cancel Msg Invi.
++            }
++            break;
++        case TH14_ST4_BOSS2:
++            ECLJump(ecl, 0x97f8, 0x9b74, 60);
++
++            // BossA
++            ecl.SetFile(4);
++            ECLJump(ecl, 0x9950, 0x9ab4, 0); // Skip Dummy Boss
++            ECLJump(ecl, 0x4e8, 0x5d0, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x5e0, 2300}; // Set Health
++            ecl << pair{0x600, (int8_t)0x31}; // Set Spell Ordinal
++            ecl << pair{0x6370, (int16_t)0}; // Disable Item Drops
++
++            // BossB
++            ecl.SetFile(5);
++            ECLJump(ecl, 0x4dcc, 0x4f30, 0); // Skip Dummy Boss
++            ECLJump(ecl, 0x458, 0x540, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x550, 2300}; // Set Health
++            ecl << pair{0x571, (int8_t)0x31}; // Set Spell Ordinal
++            ecl << pair{0x1e98, (int16_t)0}; // Disable Item Drops
++            break;
++        case TH14_ST4_BOSS3:
++            ECLJump(ecl, 0x97f8, 0x9b74, 60);
++
++            // BossA
++            ecl.SetFile(4);
++            ECLJump(ecl, 0x9950, 0x9ab4, 0); // Skip Dummy Boss
++            ecl << pair{0x3e8, 0}; // Cancel Msg Invi.
++            ecl << pair{0x804, (int8_t)0x32}; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x24e4, (int16_t)0 } << pair { 0x2628, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair{0x2718, 59} << pair{0x2794, 0}; // Change Move Time & Wait Time
++
++            // BossB
++            ecl.SetFile(5);
++            ECLJump(ecl, 0x4dcc, 0x4f30, 0); // Skip Dummy Boss
++            ecl << pair{0x358, 0}; // Cancel Msg Invi.
++            ecl << pair{0x775, (int8_t)0x32}; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0xf0c, (int16_t)0 } << pair { 0x1050, (int16_t)0 } << pair { 0x11e4, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair{0x1140, 59} << pair{0x1204, 0} << pair{0x11dc, 0}; // Change Move Time, Wait Time & Inv. Time
++            break;
++        case TH14_ST4_BOSS4:
++            ECLJump(ecl, 0x97f8, 0x9b74, 60);
++
++            // BossA
++            ecl.SetFile(4);
++            ECLJump(ecl, 0x9950, 0x9ab4, 0); // Skip Dummy Boss
++            ECLJump(ecl, 0x4e8, 0x5d0, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x5e0, 2300}; // Set Health
++            ecl << pair{0x600, (int8_t)0x32}; // Set Spell Ordinal
++            ecl << pair{0x6c98, (int16_t)0}; // Disable Item Drops
++
++            // BossB
++            ecl.SetFile(5);
++            ECLJump(ecl, 0x4dcc, 0x4f30, 0); // Skip Dummy Boss
++            ECLJump(ecl, 0x458, 0x540, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x550, 2300}; // Set Health
++            ecl << pair{0x571, (int8_t)0x32}; // Set Spell Ordinal
++            ecl << pair{0x2ddc, (int16_t)0}; // Disable Item Drops
++            break;
++        case TH14_ST4_BOSS5:
++            ECLJump(ecl, 0x97f8, 0x9b74, 60);
++
++            // BossA
++            ecl.SetFile(4);
++            ECLJump(ecl, 0x9950, 0x9ab4, 0); // Skip Dummy Boss
++            ecl << pair{0x3e8, 0}; // Cancel Msg Invi.
++            ecl << pair{0x804, (int8_t)0x33}; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x44dc, (int16_t)0 } << pair { 0x4634, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair{0x4724, 59} << pair{0x478c, 0}; // Change Move Time & Wait Time
++
++            // BossB
++            ecl.SetFile(5);
++            ECLJump(ecl, 0x4dcc, 0x4f30, 0); // Skip Dummy Boss
++            ecl << pair{0x358, 0}; // Cancel Msg Invi.
++            ecl << pair{0x775, (int8_t)0x33}; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x1678, (int16_t)0 } << pair { 0x17dc, (int16_t)0 } << pair { 0x1950, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair{0x18cc, 59} << pair{0x1948, 0} << pair{0x1970, 0}; // Change Move Time, Wait Time & Inv. Time
++            break;
++        case TH14_ST4_BOSS6:
++            ECLJump(ecl, 0x97f8, 0x9b74, 60);
++
++            // BossA
++            ecl.SetFile(4);
++            ECLJump(ecl, 0x9950, 0x9ab4, 0); // Skip Dummy Boss
++            ECLJump(ecl, 0x4e8, 0x5d0, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x5e0, 2800}; // Set Health
++            ecl << pair{0x600, (int8_t)0x33}; // Set Spell Ordinal
++            ecl << pair{0x7db4, (int16_t)0}; // Disable Item Drops
++
++            // BossB
++            ecl.SetFile(5);
++            ECLJump(ecl, 0x4dcc, 0x4f30, 0); // Skip Dummy Boss
++            ECLJump(ecl, 0x458, 0x540, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x550, 2500}; // Set Health
++            ecl << pair{0x571, (int8_t)0x33}; // Set Spell Ordinal
++            ecl << pair{0x3598, (int16_t)0}; // Disable Item Drops
++            break;
++        case TH14_ST5_MID1:
++            ECLJump(ecl, 0x8654, 0x8940, 60);
++            break;
++        case TH14_ST5_MID2:
++            ECLJump(ecl, 0x8654, 0x8940, 60);
++            ecl.SetFile(2);
++            ECLJump(ecl, 0x3c4, 0x4ac, 0);
++            ecl << pair{0xd38, (int16_t)0};
++            break;
++        case TH14_ST5_BOSS1:
++            if (thPracParam.dlg)
++                ECLJump(ecl, 0x8654, 0x89bc, 60);
++            else
++                ECLJump(ecl, 0x8654, 0x89e4, 60);
++            break;
++        case TH14_ST5_BOSS2:
++            ECLJump(ecl, 0x8654, 0x89e4, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, 0x43c, 0x524, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x534, 2600}; // Set Health
++            ecl << pair{0x554, (int8_t)0x31}; // Set Spell Ordinal
++            ecl << pair{0x334c, (int16_t)0}; // Disable Item Drops
++            break;
++        case TH14_ST5_BOSS3:
++            ECLJump(ecl, 0x8654, 0x89e4, 60);
++            ecl.SetFile(3);
++            ecl << pair{0x83c, (int8_t)0x32}; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x14b8, (int16_t)0 } << pair { 0x1638, (int16_t)0 } << pair { 0x17ac, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair{0x1728, 59} << pair{0x17cc, 20} << pair{0x17a4, 0}; // Change Move Time, Wait Time & Inv. Time
++            break;
++        case TH14_ST5_BOSS4:
++            ECLJump(ecl, 0x8654, 0x89e4, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, 0x43c, 0x524, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x534, 2100}; // Set Health
++            ecl << pair{0x554, (int8_t)0x32}; // Set Spell Ordinal
++            ecl << pair{0x4350, (int16_t)0}; // Disable Item Drops
++            break;
++        case TH14_ST5_BOSS5:
++            ECLJump(ecl, 0x8654, 0x89e4, 60);
++            ecl.SetFile(3);
++            ecl << pair{0x83c, (int8_t)0x33}; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x239c, (int16_t)0 } << pair { 0x2530, (int16_t)0 } << pair { 0x26c0, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair{0x2620, 59} << pair{0x26e0, 20} << pair{0x26b8, 0}; // Change Move Time, Wait Time & Inv. Time
++            break;
++        case TH14_ST5_BOSS6:
++            ECLJump(ecl, 0x8654, 0x89e4, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, 0x43c, 0x524, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x534, 5700}; // Set Health
++            ecl << pair{0x554, (int8_t)0x33}; // Set Spell Ordinal
++            ecl << pair{0x59ec, (int16_t)0}; // Disable Item Drops
++
++            ECLJump(ecl, 0x538, 0x265c, 0);
++            ECLJump(ecl, 0x2694, 0x59d4, 0);
++            break;
++        case TH14_ST5_BOSS7:
++            ECLJump(ecl, 0x8654, 0x89e4, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, 0x43c, 0x524, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x534, 2700}; // Set Health
++            ecl << pair{0x554, (int8_t)0x34}; // Set Spell Ordinal
++
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x604c, (int16_t)0 } << pair { 0x5f3c, (int16_t)0 } << pair { 0x6168, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair{0x6094, 59} << pair{0x60c8, 0} << pair{0x60b4, 0}; // Change Move Time, Wait Time & Inv. Time
++            ecl << pair{0x3b0, (int16_t)0}; // Disable 504
++            break;
++        case TH14_ST6_MID1:
++            ECLJump(ecl, 0x79d0, 0x7bd8, 60);
++            break;
++        case TH14_ST6_MID2:
++            ECLJump(ecl, 0x79d0, 0x7bd8, 60);
++            ecl.SetFile(2);
++            ecl << pair{0x3d5, (int8_t)0x32}; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0xda0, (int16_t)0 } << pair { 0xee4, (int16_t)0 } << pair { 0x103c, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair{0xfd4, 59} << pair{0x105c, 20} << pair{0x1034, 0}; // Change Move Time, Wait Time & Inv. Time
++            break;
++        case TH14_ST6_BOSS1:
++            if (thPracParam.dlg)
++                ECLJump(ecl, 0x7988, 0x7c40, 60);
++            else
++                st6_boss(2);
++            break;
++        case TH14_ST6_BOSS2:
++            st6_boss(2);
++            ECLJump(ecl, 0x540, 0x628, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x638, 3000}; // Set Health
++            ecl << pair{0x658, (int8_t)0x31}; // Set Spell Ordinal
++            ecl << pair{0x4ac0, (int16_t)0}; // Disable Item Drops
++            break;
++        case TH14_ST6_BOSS3:
++            st6_boss(3);
++            ecl << pair{0xb3c, (int8_t)0x32}; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x166c, (int16_t)0 } << pair { 0x17e0, (int16_t)0 } << pair { 0x1940, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair{0x18d0, 59} << pair{0x1960, 0} << pair{0x1938, 60}; // Change Move Time, Wait Time & Inv. Time
++            ecl << pair{0x16c4, (int16_t)0}; // Disable 630
++            break;
++        case TH14_ST6_BOSS4:
++            st6_boss(3);
++            ECLJump(ecl, 0x540, 0x628, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x638, 2800}; // Set Health
++            ecl << pair{0x658, (int8_t)0x32}; // Set Spell Ordinal
++            ecl << pair{0x58bc, (int16_t)0}; // Disable Item Drops
++            break;
++        case TH14_ST6_BOSS5:
++            st6_boss(4);
++            ecl << pair{0xb3c, (int8_t)0x33}; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x27cc, (int16_t)0 } << pair { 0x2924, (int16_t)0 } << pair { 0x2a98, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair{0x2a14, 59} << pair{0x2ab8, 0} << pair{0x2a90, 60}; // Change Move Time, Wait Time & Inv. Time
++            ecl << pair{0x2808, (int16_t)0}; // Disable 630
++            break;
++        case TH14_ST6_BOSS6:
++            st6_boss(4);
++            ECLJump(ecl, 0x540, 0x7f0, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x6928, (int16_t)0}; // Disable Item Drops
++            break;
++        case TH14_ST6_BOSS7:
++            st6_boss(4);
++            ecl << pair{0xb3c, (int8_t)0x34}; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x37f8, (int16_t)0 } << pair { 0x3970, (int16_t)0 } << pair { 0x3ae4, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair{0x3a60, 59} << pair{0x3b04, 0} << pair{0x3adc, 60}; // Change Move Time, Wait Time & Inv. Time
++            ecl << pair{0x3834, (int16_t)0}; // Disable 630
++            ecl << pair{0x385c, (int16_t)0}; // Disable BossCupEnd
++            break;
++        case TH14_ST6_BOSS8:
++            st6_boss(4);
++            ECLJump(ecl, 0x540, 0x628, 0); // Utilize Spell Practice Jump
++            ecl << pair{0x638, 1}; // Set Health
++            ecl << pair{0x658, (int8_t)0x34}; // Set Spell Ordinal
++            ecl << pair{0x75e0, (int16_t)0}; // Disable Item Drops
++            if (thPracParam.phase)
++            {
++                ecl << pair { 0x7CBC, (int16_t)0 };
++                ecl << pair { 0x7CE4, (int16_t)0 };
++                ecl << pair { 0x7CDC, (float)0.0174533f * thPracParam.st6bs8_phase };
++
++                ecl << pair { 0x7E00, (int16_t)0 };
++                ecl << pair { 0x7E28, (int16_t)0 };
++                ecl << pair { 0x7E20, (float)-0.0174533f * thPracParam.st6bs8_phase };
++            }
++            break;
++        case TH14_ST6_BOSS9:
++            st6_boss(4);
++
++            if (thPracParam.keepSpellDrops) {
++                ecl << pair { 0xb3c, (int8_t)0x35 }; // Change Nonspell
++
++            } else {
++                ECLJump(ecl, 0x540, 0x628, 0); // Utilize Spell Practice Jump
++                ecl << pair { 0x638, 3000 }; // Set Health
++                ecl << pair { 0x658, (int8_t)0x35 }; // Set Spell Ordinal
++            }
++            if (thPracParam.phase == 1) {
++                ecl.SetPos(0x8cdc);
++                ecl << 30 << 30 << 30 << 30;
++            }
++            break;
++        case TH14_ST6_BOSS10:
++            st6_boss(4);
++            if (thPracParam.keepSpellDrops) {
++                ecl << pair { 0xb3c, (int8_t)0x36 }; // Change Nonspell
++
++            } else {
++                ECLJump(ecl, 0x540, 0x628, 0); // Utilize Spell Practice Jump
++                ecl << pair { 0x638, 8000 }; // Set Health
++                ecl << pair { 0x658, (int8_t)0x36 }; // Set Spell Ordinal
++                ECLJump(ecl, 0x63c, 0x4790, 0);
++                ECLJump(ecl, 0x47c8, 0x9c18, 0);
++            }
++            switch (thPracParam.phase) {
++            case 1:
++                ecl << pair{0x638, 6500};
++                ecl << pair{0x9fb0, 0};
++                ECLJump(ecl, 0xa188, 0xa2cc, 120);
++                break;
++            case 2:
++                ecl << pair{0x638, 3300};
++                ecl << pair{0x9fb0, 0};
++                ECLJump(ecl, 0xa188, 0xa2cc, 120);
++                ECLJump(ecl, 0xa4a8, 0xa5ec, 120);
++                break;
++            case 3:
++                ecl << pair{0x638, 3300};
++                ecl << pair{0x9fb0, 0};
++                ECLJump(ecl, 0xa188, 0xa2cc, 120);
++                ECLJump(ecl, 0xa4a8, 0xa5ec, 120);
++                ECLJump(ecl, 0xa7b4, 0xa828, 120);
++                break;
++            default:
++                break;
++            }
++            break;
++        case TH14_ST7_MID1:
++            ECLJump(ecl, st7PostMaple, 0x7a64, 60);
++            if (!thPracParam.dlg)
++                ecl << pair{0x390c, (int16_t)0};
++            break;
++        case TH14_ST7_MID2:
++            ECLJump(ecl, st7PostMaple, 0x7a64, 60);
++            ecl << pair{0x390c, (int16_t)0};
++            ecl.SetFile(2);
++
++            ECLJump(ecl, 0x528, 0x590, 0); // Disable Effect
++            ecl << pair{0x3b4, -32.0f} << pair{0x3b8, 128.0f}; // Change Pos
++            ecl << pair{0x801, (int8_t)0x32}; // Change Nonspell
++            ecl << pair{0x1efc, (int16_t)0} << pair{0x2028, (int16_t)0}; // Disable SE
++            ecl << pair{0x2048, 0} << pair{0x2020, 0}; // Change Wait Time & Inv. Time
++            ecl << pair{0x1fe0, (int16_t)0}; // Void 401
++
++            ECLJump(ecl, 0x2d80, 0x2de8, 0); // Disable Effect
++            ecl << pair{0x2c0c, 32.0f} << pair{0x2c10, 128.0f}; // Change Pos
++            ecl << pair{0x30b5, (int8_t)0x32}; // Change Nonspell
++            ecl << pair{0x2260, (int16_t)0}; // Disable SE
++            ecl << pair{0x2370, 0} << pair{0x2164, 0}; // Change Wait Time & Inv. Time
++            ecl << pair{0x2344, (int16_t)0}; // Void 401
++            break;
++        case TH14_ST7_MID3:
++            ECLJump(ecl, st7PostMaple, 0x7a64, 60);
++            ecl << pair{0x390c, (int16_t)0};
++            ecl.SetFile(2);
++
++             if (thPracParam.keepSpellDrops) {
++                ECLJump(ecl, 0x528, 0x590 - 0x3c, 0); // Disable Effect
++                ecl.SetPos(0x590 - 0x3c); // write custom BossItemPhase call for drops
++                ecl << 0 << 0x003c000b << 0x04ff0000 << 0
++                    << 0x00000010 << 0x73736f42 << 0x6d657449 << 0x73616850
++                    << 0x00000065 << 0x00006969 << 0x0000000f << 0x00006969
++                    << 0x0000000f << 0x00006669 << 0x00000040;
++                ecl << pair { 0x3b4, -32.0f } << pair { 0x3b8, 160.0f }; // Change Pos
++
++            } else {
++                ECLJump(ecl, 0x528, 0x590, 0); // Disable Effect
++                ecl << pair { 0x3b4, -128.0f } << pair { 0x3b8, 160.0f }; // Change Pos
++                ecl << pair { 0x26c0, 0 } << pair { 0x2698, 0 }; // Change Wait Time & Inv. Time
++                ecl << pair { 0x2658, (int16_t)0 }; // Void 401
++            }
++            ecl << pair{0x801, (int8_t)0x33}; // Change Nonspell
++            ecl << pair{0x2574, (int16_t)0} << pair{0x26a0, (int16_t)0}; // Disable SE
++            if (thPracParam.keepSpellDrops) {
++                ECLJump(ecl, 0x2d80, 0x2de8 - 0x3c, 0); // Disable Effect
++                ecl.SetPos(0x2de8 - 0x3c); // write custom BossItemPhase call for drops
++                ecl << 0 << 0x003c000b << 0x04ff0000 << 0
++                    << 0x00000010 << 0x73736f42 << 0x6d657449 << 0x73616850
++                    << 0x00000065 << 0x00006969 << 0x0000000f << 0x00006969
++                    << 0x0000000f << 0x00006669 << 0x00000040;
++                ecl << pair { 0x2c0c, 32.0f } << pair { 0x2c10, 160.0f }; // Change Pos
++
++            } else {
++                ECLJump(ecl, 0x2d80, 0x2de8, 0); // Disable Effect
++                ecl << pair { 0x2c0c, 128.0f } << pair { 0x2c10, 160.0f }; // Change Pos
++                ecl << pair { 0x29e8, 0 } << pair { 0x27dc, 0 }; // Change Wait Time & Inv. Time
++                ecl << pair { 0x29bc, (int16_t)0 }; // Void 401
++            }
++            ecl << pair{0x30b5, (int8_t)0x33}; // Change Nonspell
++            ecl << pair{0x28d8, (int16_t)0}; // Disable SE
++            break;
++        case TH14_ST7_END_NS1:
++            if (thPracParam.dlg)
++                ECLJump(ecl, st7PostMaple, 0x7b10, 60);
++            else
++                ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            break;
++        case TH14_ST7_END_S1:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, st7bsPrePushSpellID, st7bsPostNotSpellPracCheck, 0); // Utilize Spell Practice Jump
++            ecl << pair { st7bsSpellHealthVal, 2100 }; // Set Health
++            ecl << pair { st7bsSpellSubCallOrd, (int8_t)0x31 }; // Set Spell Ordinal
++            ecl << pair { 0x691c, (int16_t)0 }; // Disable Item Drops
++            break;
++        case TH14_ST7_END_NS2:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ecl << pair { 0xf08, (int8_t)0x32 }; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x190c, (int16_t)0 } << pair { 0x1ab0, (int16_t)0 } << pair { 0x1c48, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair { 0x1ba0, 59 } << pair { 0x1c68, 0 } << pair { 0x1c40, 60 }; // Change Move Time, Wait Time & Inv. Time
++            break;
++        case TH14_ST7_END_S2:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, st7bsPrePushSpellID, st7bsPostNotSpellPracCheck, 0); // Utilize Spell Practice Jump
++            ecl << pair { st7bsSpellHealthVal, 3000 }; // Set Health
++            ecl << pair { st7bsSpellSubCallOrd, (int8_t)0x32 }; // Set Spell Ordinal
++            ecl << pair { 0x9520, (int16_t)0 }; // Disable Item Drops
++            break;
++        case TH14_ST7_END_NS3:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ecl << pair { 0xf08, (int8_t)0x33 }; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x22b4, (int16_t)0 } << pair { 0x2460, (int16_t)0 } << pair { 0x25f8, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair { 0x2550, 59 } << pair { 0x2618, 0 } << pair { 0x25f0, 60 }; // Change Move Time, Wait Time & Inv. Time
++            break;
++        case TH14_ST7_END_S3:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, st7bsPrePushSpellID, st7bsPostNotSpellPracCheck, 0); // Utilize Spell Practice Jump
++            ecl << pair { st7bsSpellHealthVal, 2300 }; // Set Health
++            ecl << pair { st7bsSpellSubCallOrd, (int8_t)0x33 }; // Set Spell Ordinal
++            ecl << pair { 0xa670, (int16_t)0 }; // Disable Item Drops
++            break;
++        case TH14_ST7_END_NS4:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ecl << pair { 0xf08, (int8_t)0x34 }; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x2c00, (int16_t)0 } << pair { 0x2da4, (int16_t)0 } << pair { 0x2f3c, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair { 0x2e94, 59 } << pair { 0x2f5c, 0 } << pair { 0x2f34, 60 }; // Change Move Time, Wait Time & Inv. Time
++            break;
++        case TH14_ST7_END_S4:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, st7bsPrePushSpellID, st7bsPostNotSpellPracCheck, 0); // Utilize Spell Practice Jump
++            ecl << pair { st7bsSpellHealthVal, 3500 }; // Set Health
++            ecl << pair { st7bsSpellSubCallOrd, (int8_t)0x34 }; // Set Spell Ordinal
++            ecl << pair { 0xae74, (int16_t)0 }; // Disable Item Drops
++            break;
++        case TH14_ST7_END_NS5:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ecl << pair { 0xf08, (int8_t)0x35 }; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x34ec, (int16_t)0 } << pair { 0x3690, (int16_t)0 } << pair { 0x3828, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair { 0x3780, 59 } << pair { 0x3848, 0 } << pair { 0x3820, 60 }; // Change Move Time, Wait Time & Inv. Time
++            break;
++        case TH14_ST7_END_S5:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, st7bsPrePushSpellID, st7bsPostNotSpellPracCheck, 0); // Utilize Spell Practice Jump
++            ecl << pair { st7bsSpellHealthVal, 3300 }; // Set Health
++            ecl << pair { st7bsSpellSubCallOrd, (int8_t)0x35 }; // Set Spell Ordinal
++            ecl << pair { 0xb558, (int16_t)0 }; // Disable Item Drops
++            break;
++        case TH14_ST7_END_NS6:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ecl << pair { 0xf08, (int8_t)0x36 }; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x4300, (int16_t)0 } << pair { 0x44ac, (int16_t)0 } << pair { 0x4644, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair { 0x459c, 59 } << pair { 0x4664, 0 } << pair { 0x463c, 60 }; // Change Move Time, Wait Time & Inv. Time
++            break;
++        case TH14_ST7_END_S6:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, st7bsPrePushSpellID, st7bsPostNotSpellPracCheck, 0); // Utilize Spell Practice Jump
++            ecl << pair { st7bsSpellHealthVal, 3000 }; // Set Health
++            ecl << pair { st7bsSpellSubCallOrd, (int8_t)0x36 }; // Set Spell Ordinal
++            ecl << pair { 0xc5f0, (int16_t)0 }; // Disable Item Drops
++            break;
++        case TH14_ST7_END_NS7:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ecl << pair { 0xf08, (int8_t)0x37 }; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x4c3c, (int16_t)0 } << pair { 0x4de0, (int16_t)0 } << pair { 0x4f78, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair { 0x4ed0, 59 } << pair { 0x4f98, 0 } << pair { 0x4f70, 60 }; // Change Move Time, Wait Time & Inv. Time
++            break;
++        case TH14_ST7_END_S7:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, st7bsPrePushSpellID, st7bsPostNotSpellPracCheck, 0); // Utilize Spell Practice Jump
++            ecl << pair { st7bsSpellHealthVal, 3500 }; // Set Health
++            ecl << pair { st7bsSpellSubCallOrd, (int8_t)0x37 }; // Set Spell Ordinal
++            ecl << pair { 0xd538, (int16_t)0 }; // Disable Item Drops
++            break;
++        case TH14_ST7_END_NS8:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ecl << pair { 0xf08, (int8_t)0x38 }; // Change Nonspell
++            if (!thPracParam.keepSpellDrops)
++                ecl << pair { 0x5938, (int16_t)0 } << pair { 0x5ae4, (int16_t)0 } << pair { 0x5c7c, (int16_t)0 }; // Disable Item Drops & SE
++            ecl << pair { 0x5bd4, 59 } << pair { 0x5c9c, 0 } << pair { 0x5c74, 60 }; // Change Move Time, Wait Time & Inv. Time
++            break;
++        case TH14_ST7_END_S8:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, st7bsPrePushSpellID, st7bsPostNotSpellPracCheck, 0); // Utilize Spell Practice Jump
++            ecl << pair { st7bsSpellHealthVal, 3500 }; // Set Health
++            ecl << pair { st7bsSpellSubCallOrd, (int8_t)0x38 }; // Set Spell Ordinal
++            ecl << pair { 0xe638, (int16_t)0 }; // Disable Item Drops
++            break;
++        case TH14_ST7_END_S9:
++        {
++            constexpr unsigned int st7BossSpell9Duration = 0xf4f8 + 0x10;
++            constexpr unsigned int st7BossSpell9BLSAtk1 = 0xf924;
++            constexpr unsigned int st7BossSpell9BLSAtk2 = 0xf984;
++            constexpr unsigned int st7BossSpell9BLSAtk3 = 0xf9e4;
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            if (thPracParam.keepSpellDrops) {
++                ecl << pair { 0xf08, (int8_t)0x39 }; // Change Nonspell
++
++            } else {
++                ECLJump(ecl, st7bsPrePushSpellID, st7bsPostNotSpellPracCheck, 0); // Utilize Spell Practice Jump
++                ecl << pair { st7bsSpellHealthVal, 4000 }; // Set Health
++                ecl << pair { st7bsSpellSubCallOrd, (int8_t)0x39 }; // Set Spell ID in sub call to 9
++            }
++
++            switch (thPracParam.phase) {
++            case 1:
++                ecl << pair { st7BossSpell9Duration, 75 - 22 }; // Adjust duration (skipping 1200f atk 1 + 120f wait)
++                ECLJump(ecl, st7BossSpell9BLSAtk1, st7BossSpell9BLSAtk2, 120);
++                break;
++            case 2:
++                ecl << pair { st7BossSpell9Duration, 75 - 44 }; // Adjust duration (idem + 1200f atk2 + 120f wait)
++                ECLJump(ecl, st7BossSpell9BLSAtk1, st7BossSpell9BLSAtk3, 120 * 2);
++                break;
++            default:
++                break;
++            }
++        }
++
++            break;
++        case TH14_ST7_END_S10:
++            ECLJump(ecl, st7PostMaple, st7BossCreateCall, 60);
++            ecl.SetFile(3);
++            ECLJump(ecl, 0x790, st7bsPostNotSpellPracCheck, 0); // Utilize Spell Practice Jump
++            ecl << pair{st7bsSpellHealthVal, 8000}; // Set Health
++            ecl << pair{st7bsSpellHealthVal, (int8_t)0x31} << pair{0x861, (int8_t)0x30}; // Set Spell Ordinal
++            ecl << pair{0x6d64, (int16_t)0}; // Disable Item Drops
++
++            switch (thPracParam.phase) {
++            case 1:
++                ecl << pair{0x840, 6200};
++                ECLJump(ecl, 0x70e4, 0x7344, 60);
++                break;
++            case 2:
++                ecl << pair{0x840, 4400};
++                ECLJump(ecl, 0x70e4, 0x75b8, 60);
++                break;
++            case 3:
++                ecl << pair{0x840, 2600};
++                ECLJump(ecl, 0x70e4, 0x78a0, 60);
++                break;
++            case 4:
++                ecl << pair{0x840, 800};
++                ECLJump(ecl, 0x70e4, 0x78a0, 60);
++                ECLJump(ecl, 0x78f0, 0x7ba0, 60);
++                break;
++            default:
++                break;
++            }
++            break;
++        default:
++            break;
++        }
++    }
++    void THPatchSP(ECLHelper& ecl, i32 spell_id)
++    {
++        switch (spell_id) {
++        case 100:
++        case 101:
++        case 102:
++        case 103:
++            ecl.SetFile(3);
++            if (thPracParam.phase == 1) {
++                ecl.SetPos(0x8cdc);
++                ecl << 30 << 30 << 30 << 30;
++            }
++            break;
++        case 104:
++        case 105:
++        case 106:
++        case 107:
++            ecl.SetFile(3);
++            switch (thPracParam.phase) {
++            case 1:
++                ecl << pair{0xae0, 6500};
++                ecl << pair{0x9fb0, 0};
++                ECLJump(ecl, 0xa188, 0xa2cc, 120);
++                break;
++            case 2:
++                ecl << pair{0xae0, 3300};
++                ecl << pair{0x9fb0, 0};
++                ECLJump(ecl, 0xa188, 0xa2cc, 120);
++                ECLJump(ecl, 0xa4a8, 0xa5ec, 120);
++                break;
++            case 3:
++                ecl << pair{0xae0, 3300};
++                ecl << pair{0x9fb0, 0};
++                ECLJump(ecl, 0xa188, 0xa2cc, 120);
++                ECLJump(ecl, 0xa4a8, 0xa5ec, 120);
++                ECLJump(ecl, 0xa7b4, 0xa828, 120);
++                break;
++            default:
++                break;
++            }
++            break;
++        case 119:
++            ecl.SetFile(3);
++            switch (thPracParam.phase) {
++            case 1:
++                ecl << pair{0xe94, 6200};
++                ECLJump(ecl, 0x70e4, 0x7344, 60);
++                break;
++            case 2:
++                ecl << pair{0xe94, 4400};
++                ECLJump(ecl, 0x70e4, 0x75b8, 60);
++                break;
++            case 3:
++                ecl << pair{0xe94, 2600};
++                ECLJump(ecl, 0x70e4, 0x78a0, 60);
++                break;
++            case 4:
++                ecl << pair{0xe94, 800};
++                ECLJump(ecl, 0x70e4, 0x78a0, 60);
++                ECLJump(ecl, 0x78f0, 0x7ba0, 60);
++                break;
++            default:
++                break;
++            }
++            break;
++        default:
++            break;
++        }
++    }
+diff --git a/runtimes/th12/th12_web/cpp/game/PracticeTh14.cpp b/runtimes/th12/th12_web/cpp/game/PracticeTh14.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..bdc6f426a0427f4a0cae597a47993dad6237685c
+--- /dev/null
++++ b/runtimes/th12/th12_web/cpp/game/PracticeTh14.cpp
+@@ -0,0 +1,98 @@
++#include "PortTitle.hpp"
++#include "PracticeTh14.hpp"
++#if PORT_TITLE == 14
++#include "EclResource.hpp"
++#include "GameEconomy.hpp"
++#include <algorithm>
++#include <array>
++#include <utility>
++namespace th11 {
++namespace {
++struct Section {i32 id,native,stage,bgm,phases;bool dialogue,drops;i32 ranks;};
++#include "PracticeCatalogTh14.inc"
++constexpr i32 chapters[]={5,6,6,7,6,4,9};
++const Section* section_at(i32 id){
++    for(const auto& s:sections)if(s.id==id)return &s;
++    return nullptr;
++}
++i32 spell_phases(i32 spell){
++    if(spell>=100&&spell<=103)return 2;
++    if(spell>=104&&spell<=107)return 4;
++    if(spell==118)return 2;
++    return spell==119?5:1;
++}
++u64 fingerprint(const std::vector<u8>& bytes){
++    u64 value=14695981039346656037ull;
++    for(const u8 b:bytes)value=(value^b)*1099511628211ull;
++    return value;
++}
++using std::pair;
++class ECLHelper {
++    std::array<std::vector<u8>,6>& files;
++    u32 file=0,pos=0;
++public:
++    bool valid=true;
++    explicit ECLHelper(std::array<std::vector<u8>,6>& f):files(f){}
++    void SetFile(u32 n){file=n;pos=0;valid=valid&&n<files.size()&&!files[n].empty();}
++    void SetPos(u32 offset){pos=offset;}
++    void Jump(u32 from,u32 to){
++        if(valid){const auto n=files[file].size();valid=from<=n&&n-from>=24&&to<n&&n-to>=16;}
++    }
++    template<class T>ECLHelper& operator<<(T v){
++        static_assert(sizeof(T)==1||sizeof(T)==2||sizeof(T)==4);
++        if(valid){auto& b=files[file];if(pos>b.size()||sizeof(T)>b.size()-pos)valid=false;
++            else {std::memcpy(b.data()+pos,&v,sizeof v);pos+=sizeof v;}}
++        return *this;
++    }
++    template<class K,class T>ECLHelper& operator<<(pair<K,T> v){SetPos(u32(v.first));return *this<<v.second;}
++};
++class Patcher {
++    struct Params{bool dlg,keepSpellDrops;i32 phase;float st6bs8_phase;} thPracParam;
++#include "PracticePatchesTh14.inc"
++public:
++    explicit Patcher(const PracticeTh14& p):thPracParam{bool(p.flags&1),bool(p.flags&2),p.phase,float(p.angle)/100.f}{}
++    void apply(ECLHelper& h,const PracticeTh14& p,i32 spell){
++        if(spell>=0)THPatchSP(h,spell);
++        else if(p.section>=10000)THStageWarp(h,p.stage,p.section%100);
++        else if(const auto* s=section_at(p.section))THPatch(h,s->native);
++    }
++};
++}
++bool PracticeTh14::valid(i32 difficulty,i32 spell)const noexcept{
++    if(stage<1||stage>7||difficulty<0||difficulty>4||(stage==7)!=(difficulty==4)||
++        flags<0||flags>3||phase<0||angle<-100||angle>100||life<0||life>8||life_fragment<0||life_fragment>2||
++        bomb<0||bomb>8||bomb_fragment<0||bomb_fragment>7||power<0||power>400||value<0||value>999990||
++        graze<0||graze>999999||score<0||score>999999999||cycle<0||cycle>4)return false;
++    if(spell>=0)return !section&&!flags&&phase<spell_phases(spell);
++    if(!section)return !phase&&!flags;
++    if(section>=10000)return !phase&&!flags&&section/100==100+stage&&section%100>=1&&section%100<=chapters[stage-1];
++    const auto* s=section_at(section);
++    return s&&s->stage==stage&&(s->ranks&(1<<difficulty))&&phase<s->phases&&
++        (!(flags&1)||s->dialogue)&&(!(flags&2)||s->drops);
++}
++void PracticeTh14::apply(GameEconomy& e)const noexcept{
++    e.score_units=score;e.lives=life;e.life_fragments=life_fragment;e.th14_bombs=bomb;e.th14_bomb_fragments=bomb_fragment;
++    e.power=std::min(power,e.max_power);e.point_value=value*100;e.max_point_value=std::max(e.max_point_value,e.point_value);
++    e.graze=graze;e.th14_life_awards=cycle;
++}
++i32 PracticeTh14::bgm()const noexcept{const auto* s=section_at(section);return s&&!(flags&1)?s->bgm:0;}
++bool patch_practice_th14(EclProgram& program,const PracticeTh14& p,i32 spell,std::string& error){
++    if(!p||(!p.section&&!p.phase))return true;
++    const auto& hashes=retail_ecl[p.stage-1];const size_t count=p.stage==4?6:4;
++    if(program.files.size()!=count){error="TH14 practice requires retail 1.00b ECL includes";return false;}
++    std::array<std::vector<u8>,6> buffers;
++    std::array<size_t,6> slots{};
++    for(size_t i=0;i<count;++i){
++        const size_t slot=i;
++        slots[i]=slot;
++        const auto& b=program.files[slot]->bytes;
++        if(fingerprint(b)!=hashes[i]){error="TH14 practice ECL fingerprint mismatch";return false;}
++        buffers[i]=b;
++    }
++    ECLHelper edit(buffers);Patcher(p).apply(edit,p,spell);
++    if(!edit.valid){error="TH14 practice ECL write outside retail script";return false;}
++    for(size_t i=0;i<count;++i)program.files[slots[i]]->bytes.swap(buffers[i]);
++    return true;
++}
++}
++#endif
+diff --git a/runtimes/th12/th12_web/cpp/game/PracticeTh14.hpp b/runtimes/th12/th12_web/cpp/game/PracticeTh14.hpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..7d6483624bc60ae4ed24b485a0260a6c142aa3cb
+--- /dev/null
++++ b/runtimes/th12/th12_web/cpp/game/PracticeTh14.hpp
+@@ -0,0 +1,24 @@
++#pragma once
++#include "Types.hpp"
++#include <string>
++namespace th11 {
++#if PORT_TITLE == 14
++class EclProgram;
++struct GameEconomy;
++enum PracticeToolTh14 : u32 {
++    PrInvincible=1, PrLives=2, PrBombs=4, PrPower=8, PrTime=16, PrAutoBomb=32,
++    PrEnemy=64, PrAutoShoot=128, PrNoShoot=256, PrNoBomb=512, PrForceFocus=1024,
++};
++inline constexpr u32 practice_mask_th14=2047;
++struct PracticeTh14 {
++    i32 stage=0,section=0,phase=0,flags=0,life=8,life_fragment=0,bomb=8,bomb_fragment=0,
++        power=400,value=10000,graze=0,score=0,cycle=0,angle=0;
++    bool valid(i32 difficulty,i32 spell=-1)const noexcept;
++    explicit operator bool()const noexcept{return stage!=0;}
++    void apply(GameEconomy&)const noexcept;
++    i32 bgm()const noexcept;
++};
++bool patch_practice_th14(EclProgram&,const PracticeTh14&,i32 spell,std::string&);
++struct PracticeEventTh14 {u32 frame,tools;};
++#endif
++}
 diff --git a/runtimes/th12/th12_web/cpp/game/RectangleRotationTh14.hpp b/runtimes/th12/th12_web/cpp/game/RectangleRotationTh14.hpp
 new file mode 100644
 index 0000000000000000000000000000000000000000..f5a99985ba5c08615b28614e54daceb0cda453d9
@@ -2245,6 +3935,181 @@ index 0000000000000000000000000000000000000000..f5a99985ba5c08615b28614e54daceb0
 +         cosine(a==0.f?1.f:float(std::cos(-double(a)))){}
 +};
 +}
+diff --git a/runtimes/th12/th12_web/cpp/game/Replay.cpp b/runtimes/th12/th12_web/cpp/game/Replay.cpp
+index dff6093741d0a922e8083ce683bc1dbfc60e37fc..d643aafe2cfc4136615893328b83ecb9228fee41 100644
+--- a/runtimes/th12/th12_web/cpp/game/Replay.cpp
++++ b/runtimes/th12/th12_web/cpp/game/Replay.cpp
+@@ -81,7 +81,7 @@ void ReplayStageState::restore_position(PlayerMotionState& s)const{
+ bool Replay::open(const u8* data,u32 size){
+     bytes.clear();stages={};touches={};count=selected=cursor=touch_cursor=0;input={};failure.clear();metadata_only=false;
+ #if PORT_TITLE == 14
+-    callback_cursor=0;
++    callback_cursor=0;practice={};practice_events={};bool practice_seen=false;
+ #endif
+     auto fail=[&](const char* why){failure=why;return false;};
+     // The replay magic and version are the title's, and every demo a title ships is the reading:
+@@ -180,6 +180,21 @@ bool Replay::open(const u8* data,u32 size){
+                 touches[st].push_back({frame,i32(mode),x,y});
+             }
+         }
++#if PORT_TITLE == 14
++        if(dword(data+tail+8)==0x14&&length>=16&&dword(data+tail+12)==0x34315250){
++            if(practice_seen||length<80||dword(data+tail+16)!=1)return fail("invalid TH14 practice replay header");
++            practice_seen=true;std::memcpy(&practice,data+tail+20,56);
++            const i32 spell=decoded[10]&2?signed_bits(dword(decoded.data()+0x90)):-1;
++            if(practice&&(!practice.valid(i32(dword(decoded.data()+selection+12)),spell)||!parsed[practice.stage].number))
++                return fail("invalid TH14 practice replay settings");
++            const u32 events=dword(data+tail+76);if(events!=(length-80)/12||(length-80)%12)return fail("invalid TH14 practice replay length");
++            for(u32 i=0;i<events;++i){const auto* p=data+tail+80+i*12;const u32 st=dword(p),frame=dword(p+4),tools=dword(p+8);
++                if(st<1||st>7||!parsed[st].number||frame>=parsed[st].frames||tools&~practice_mask_th14||
++                   (!practice_events[st].empty()&&frame<=practice_events[st].back().frame))return fail("invalid TH14 practice replay event");
++                practice_events[st].push_back({frame,tools});
++            }
++        }
++#endif
+         tail+=length;
+     }
+     bytes.swap(decoded);stages=parsed;count=n;return true;
+@@ -194,7 +209,11 @@ void Replay::retain_metadata(){
+     if(metadata_only||bytes.empty())return;
+     std::vector<u8> headers(bytes.begin(),bytes.begin()+kReplayFileHeader);
+     for(auto& stage:stages)if(stage.number){const u32 offset=u32(headers.size());headers.insert(headers.end(),bytes.begin()+stage.offset,bytes.begin()+stage.offset+kReplayStageHeader);stage.offset=offset;}
+-    bytes.swap(headers);touches={};selected=cursor=touch_cursor=0;input={};metadata_only=true;
++    bytes.swap(headers);touches={};
++#if PORT_TITLE == 14
++    practice_events={};
++#endif
++    selected=cursor=touch_cursor=0;input={};metadata_only=true;
+ }
+ bool Replay::select(u32 number){if(metadata_only||!stage(number))return false;selected=number;cursor=touch_cursor=0;
+ #if PORT_TITLE == 14
+diff --git a/runtimes/th12/th12_web/cpp/game/Replay.hpp b/runtimes/th12/th12_web/cpp/game/Replay.hpp
+index 9d3e0c3ae4680c6a1665b42382bff393e250bcc6..223fe63efc95a766bbdd24fadeea65e0469cef5e 100644
+--- a/runtimes/th12/th12_web/cpp/game/Replay.hpp
++++ b/runtimes/th12/th12_web/cpp/game/Replay.hpp
+@@ -1,4 +1,5 @@
+ #pragma once
++#include "PracticeTh14.hpp"
+ #include "PortTitle.hpp"
+ #include "Types.hpp"
+ #include <array>
+@@ -138,6 +139,8 @@ public:
+     u32 frame() const {return cursor;}
+ #if PORT_TITLE == 14
+     // Playback+210 starts at zero;455ed0 resets it at stage activation.
++    PracticeTh14 practice;
++    std::array<std::vector<PracticeEventTh14>,8> practice_events;
+     u32 callback_frame() const {return callback_cursor;}
+ #endif
+     // The input the last tick consumed. Read-only, so a diagnostic can line the recording's own bits up against
+diff --git a/runtimes/th12/th12_web/cpp/game/ReplayDescriptionTh14.hpp b/runtimes/th12/th12_web/cpp/game/ReplayDescriptionTh14.hpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..65dba481c943497e0e7e05c8a28815f0d87bdbff
+--- /dev/null
++++ b/runtimes/th12/th12_web/cpp/game/ReplayDescriptionTh14.hpp
+@@ -0,0 +1,38 @@
++#pragma once
++#include "Replay.hpp"
++#include <cmath>
++#include <cstring>
++#include <string>
++
++namespace th11 {
++#if PORT_TITLE == 14
++// Launcher metadata comes from the same native decoder used for actual play.
++// Never mutate an active session or infer stages from unvalidated JS bytes.
++inline bool describe_replay_th14(const u8* data,u32 size,std::string& output,std::string& error){
++    output.clear();error.clear();Replay replay;
++    if(!replay.open(data,size)){error=replay.error();return false;}
++    if(replay.character()>2||replay.subtype()>1||replay.difficulty()>4){error="invalid TH14 replay selection";return false;}
++    const auto& bytes=replay.decoded();
++    const auto word=[&](u32 offset){return u32(bytes[offset])|u32(bytes[offset+1])<<8|u32(bytes[offset+2])<<16|u32(bytes[offset+3])<<24;};
++    float slowdown;std::memcpy(&slowdown,bytes.data()+0x74,4);
++    if(!std::isfinite(slowdown)){error="invalid TH14 replay slowdown";return false;}
++    const u64 timestamp=u64(word(12))|u64(word(16))<<32;
++    output="{\"nameBytes\":[";
++    for(u32 i=0;i<8;++i){if(i)output+=',';output+=std::to_string(bytes[i]);}
++    output+="],\"timestamp\":"+std::to_string(timestamp)+",\"score\":"+std::to_string(u64(word(20))*10);
++    output+=",\"slowdown\":"+std::to_string(slowdown)+",\"character\":"+std::to_string(replay.character());
++    output+=",\"shot\":"+std::to_string(replay.subtype())+",\"difficulty\":"+std::to_string(replay.difficulty());
++    output+=",\"lastStage\":"+std::to_string(word(0x88))+",\"mode\":\"";
++    output+=(bytes[10]&2)?"spell-practice":(bytes[10]&1)?"practice":"normal";
++    output+="\",\"stages\":[";bool first=true;
++    for(u32 stage=1;stage<=7;++stage){
++        const auto* entry=replay.stage(stage);if(!entry)continue;
++        ReplayStageState snapshot;snapshot.read(replay.header(stage));
++        if(!first)output+=',';first=false;
++        output+="{\"id\":"+std::to_string(stage)+",\"score\":"+std::to_string(u64(u32(snapshot.score))*10);
++        output+=",\"frames\":"+std::to_string(entry->frames)+"}";
++    }
++    output+="]}";return true;
++}
++#endif
++}
+diff --git a/runtimes/th12/th12_web/cpp/game/ReplayRecorder.cpp b/runtimes/th12/th12_web/cpp/game/ReplayRecorder.cpp
+index 2ec32fdfe1e8b2b2f4921fcba99bdf2a85a3684a..f1174bf8baf8b57ff7350850f72781a0c3e8d203 100644
+--- a/runtimes/th12/th12_web/cpp/game/ReplayRecorder.cpp
++++ b/runtimes/th12/th12_web/cpp/game/ReplayRecorder.cpp
+@@ -13,6 +13,9 @@ void dword(u8* p,u32 v){word(p,v);word(p+2,v>>16);}
+ }
+ bool ReplayRecorder::begin(i32 character,i32 subtype,i32 difficulty,bool practice,u64 timestamp){
+     header={};stages={};selected=0;valid=false;
++#if PORT_TITLE == 14
++    practice={};practice_events={};
++#endif
+     if(!player_selection_valid(character,subtype)||difficulty<0||difficulty>4)return false;
+     header[10]=practice;dword(header.data()+12,u32(timestamp));dword(header.data()+16,u32(timestamp>>32));
+ #if PORT_TITLE == 14
+@@ -42,6 +45,13 @@ bool ReplayRecorder::start_stage(u32 number,const ReplayStageState& s,bool initi
+ #endif
+     return true;
+ }
++#if PORT_TITLE == 14
++void ReplayRecorder::record_tools(u32 tools){
++    if(!selected)return;
++    auto& events=practice_events[selected];
++    if((events.empty()?0u:events.back().tools)!=tools)events.push_back({stages[selected].frames,tools});
++}
++#endif
+ bool ReplayRecorder::uses_touch()const{for(const auto& s:stages)if(!s.touches.empty())return true;return false;}
+ bool ReplayRecorder::tick(u32 held,u32 pressed,u32 released,float fps,i32 touch_mode,float x,float y){
+     if(!valid||!selected||!std::isfinite(fps)||touch_mode<0||touch_mode>2||(touch_mode&&(!std::isfinite(x)||!std::isfinite(y))))return false;auto& s=stages[selected];
+@@ -77,6 +87,19 @@ bool ReplayRecorder::save(const char* name,i32 score,i32 reached,i32 continues,f
+     if(touch_count){const u32 start=u32(out.size()),length=32+touch_count*16;out.resize(start+length);auto* p=out.data()+start;dword(p,0x52455355);dword(p+4,length);dword(p+8,0x11);dword(p+12,0x54313154);dword(p+16,1);dword(p+20,touch_count);p+=32;
+         for(u32 stage=1;stage<8;++stage)for(const auto& t:stages[stage].touches){word(p,stage);word(p+2,u32(t.mode));dword(p+4,t.frame);std::memcpy(p+8,&t.x,4);std::memcpy(p+12,&t.y,4);p+=16;}
+     }
++#if PORT_TITLE == 14
++    u32 events=0;for(const auto& stream:practice_events)events+=u32(stream.size());
++    if(practice||events){
++        static_assert(sizeof(PracticeTh14)==56);
++        const u32 start=u32(out.size()),length=80+events*12;
++        out.resize(start+length);auto* p=out.data()+start;
++        dword(p,0x52455355);dword(p+4,length);dword(p+8,0x14);dword(p+12,0x34315250);dword(p+16,1);
++        std::memcpy(p+20,&practice,56);dword(p+76,events);p+=80;
++        for(u32 stage=1;stage<8;++stage)for(const auto& e:practice_events[stage]){
++            dword(p,stage);dword(p+4,e.frame);dword(p+8,e.tools);p+=12;
++        }
++    }
++#endif
+     return true;
+ }
+ }
+diff --git a/runtimes/th12/th12_web/cpp/game/ReplayRecorder.hpp b/runtimes/th12/th12_web/cpp/game/ReplayRecorder.hpp
+index 26bba650e0b4c8a92fe274a68ebcdb791fa6d139..1029681db2fd461e7ecbaf99a1c5e594c6cd4f38 100644
+--- a/runtimes/th12/th12_web/cpp/game/ReplayRecorder.hpp
++++ b/runtimes/th12/th12_web/cpp/game/ReplayRecorder.hpp
+@@ -14,6 +14,11 @@ public:
+     bool finish_stage(bool terminal=false);
+     bool save(const char* name,i32 score,i32 reached,i32 continues,float slowdown,std::vector<u8>& output)const;
+     u32 selected=0;
++#if PORT_TITLE == 14
++    PracticeTh14 practice;
++    std::array<std::vector<PracticeEventTh14>,8> practice_events;
++    void record_tools(u32 tools);
++#endif
+     bool uses_touch()const;
+ private:
+     bool valid=false;
 diff --git a/runtimes/th12/th12_web/cpp/game/SceneCompositor.cpp b/runtimes/th12/th12_web/cpp/game/SceneCompositor.cpp
 index cdf1db8bf7eb6652a542954133550d4741f6001e..8cf00880b669633484676c9702d137419b49aab3 100644
 --- a/runtimes/th12/th12_web/cpp/game/SceneCompositor.cpp
@@ -2302,6 +4167,26 @@ index 6594fadea8586e1728a73221cdf144f45372f0fa..8b96402156d62d6fd484701748b4a4b9
  bool th14_damage_rectangles(Vec3,Vec2,float,Vec3,Vec2,float)noexcept;
  bool th14_damage_circle(std::array<Th14DamageArea,256>&,u32& cursor,Vec3,float radius,float growth,i32 duration,i32 damage,const float* rate,u32& index)noexcept;
  bool th14_damage_rectangle(std::array<Th14DamageArea,256>&,u32& cursor,Vec3,Vec2,float angle,i32 duration,i32 damage,const float* rate,u32& index)noexcept;
+diff --git a/runtimes/th12/th12_web/cpp/game/SpellController.cpp b/runtimes/th12/th12_web/cpp/game/SpellController.cpp
+index 83cb85f81798a5e9362348510764f8492b927adf..18588881ed8aa65933d2ae270421729bc32a6b8f 100644
+--- a/runtimes/th12/th12_web/cpp/game/SpellController.cpp
++++ b/runtimes/th12/th12_web/cpp/game/SpellController.cpp
+@@ -1,4 +1,5 @@
+ #include "SpellController.hpp"
++#include "PracticeTh14.hpp"
+ #include "EnemyFrame.hpp"
+ #include "AsciiText.hpp"
+ #include "PortTitle.hpp"
+@@ -56,6 +57,9 @@ bool SpellController::update(float player_y,Vec3 boss,bool bomb){
+         const i32 value=wrapping_sub(world.spell_bonus,numerator/denominator);world.spell_bonus=wrapping_sub(value,value%10);
+     }
+     if constexpr(kPortTitle!=14&&kPortTitle!=16){if(!effects.spell_update_visuals())return false;}
++#if PORT_TITLE == 14
++    if(!(economy.th14_practice_tools&PrTime))
++#endif
+     timer.tick();world.spell_elapsed=timer.current;
+     if(timer.current>=120){
+         const bool inverted=(kPortTitle==14||kPortTitle==16)&&(world.spell_flags&0x100);
 diff --git a/runtimes/th12/th12_web/cpp/game/StageDraw.cpp b/runtimes/th12/th12_web/cpp/game/StageDraw.cpp
 index 00d894e3e27ce4db737f62144adf04c6c7fc5b07..ab4a1e896eeea5ecb9ec9967608b7ea56de53151 100644
 --- a/runtimes/th12/th12_web/cpp/game/StageDraw.cpp
@@ -2421,12 +4306,25 @@ index c91062f77f39cdc37dac75bbe8d697d98b1ee72c..44601056b63271565f978c2342944931
          }
          if(pressed&0x102){if(name_length){sounds.push_back(11);entered_name[--name_length]=' ';}else step(2);}break;
 diff --git a/runtimes/th12/th12_web/cpp/sdl/Application.cpp b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
-index bae5d17e65ee2a98f46cb063007b05d43941077d..94ed06e2090ee8110b06be81306ff4f0528334bb 100644
+index bae5d17e65ee2a98f46cb063007b05d43941077d..e69b45c695662260469ced89d4a30e637a871250 100644
 --- a/runtimes/th12/th12_web/cpp/sdl/Application.cpp
 +++ b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
-@@ -306,7 +306,18 @@ struct Application:StageResourceEffects
+@@ -12,6 +12,10 @@
+ #include "FontDevice.hpp"
+ #include "../game/MusicCatalog.hpp"
+ #include "../game/GameSession.hpp"
++#if PORT_TITLE == 14
++#include "../game/ReplayDescriptionTh14.hpp"
++#include "../../../portable/sdl/ReplayViewerClockTh14.hpp"
++#endif
+ #include "../game/FrameStatistics.hpp"
+ #if defined(TH14_CPP_STAGE_DECODE)
+ #include "../game/StageWorkerTailTh14.hpp"
+@@ -305,8 +309,20 @@ struct Application:StageResourceEffects
+     }
  #endif
  #if PORT_TITLE == 14
++    bool hosted_replay=false;double hosted_replay_rate=1;touhou::sdl::ReplayViewerClockTh14 hosted_cadence;
      bool frame_statistics_sampled=false;
 +    bool coalesce_browser_draw=false;
      u8 frame_skip_counter=0;
@@ -2443,7 +4341,20 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..94ed06e2090ee8110b06be81306ff4f0
      bool present_this_update(){
          // Retail46a833 increments a byte, then compares its signed value.
          ++frame_skip_counter;
-@@ -1103,7 +1114,7 @@ struct Application:StageResourceEffects
+@@ -419,7 +435,11 @@ struct Application:StageResourceEffects
+         // -3/-1 requests remain responsible for selecting a track.
+         if(activation&&session.state.spell_practice_id>=0)return true;
+ #endif
+-        if(!audio.music(stage_music(stage))){error=audio.error;return false;}
++        if(!audio.music(stage_music(stage
++#if PORT_TITLE == 14
++            ,activation&&session.practice_run.bgm()!=0
++#endif
++        ))){error=audio.error;return false;}
+         audio.pause_music(kPortTitle!=14&&stage==6);return true;
+     }
+     bool pause(){if(!session.pause())return false;
+@@ -1103,7 +1123,7 @@ struct Application:StageResourceEffects
              // Bootstrap all three before the first upload, preserving Sig,
              // ASCII and text template order without holding an Asyncify stack
              // open while their CPU decoding runs in the independent worker.
@@ -2452,7 +4363,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..94ed06e2090ee8110b06be81306ff4f0
              th14_webgpu_archive_schedule(run_boot_work,new BootWorkToken{this,boot_worker_generation,work,index},names,3);
              return;
          }
-@@ -1526,6 +1537,8 @@ struct Application:StageResourceEffects
+@@ -1526,6 +1546,8 @@ struct Application:StageResourceEffects
  #endif
              }else saved_config_state=std::move(saved);
          }
@@ -2461,7 +4372,32 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..94ed06e2090ee8110b06be81306ff4f0
          if(!graphics.initialize(session.config.render_width(),session.config.render_height())){error=graphics.error;return false;}
  #else
          if(!graphics.initialize()){error=graphics.error;return false;}
-@@ -2010,7 +2023,7 @@ struct Application:StageResourceEffects
+@@ -1636,7 +1658,11 @@ struct Application:StageResourceEffects
+         initialized=true;return audio_events()&&text_events();
+     }
+ 
++#if PORT_TITLE == 14
++    bool restart(u32 stage=1,i32 character=0,i32 subtype=0,i32 difficulty=1,const u8* replay_data=nullptr,u32 replay_size=0) {
++#else
+     bool restart(u32 stage=1,i32 character=0,i32 subtype=0,i32 difficulty=1) {
++#endif
+ #if PORT_TITLE == 14
+         audio.discard_paused_sounds();
+ #endif
+@@ -1673,7 +1699,12 @@ struct Application:StageResourceEffects
+ #if PORT_TITLE == 14 || PORT_TITLE == 16
+         if(session.resources.stage)for(auto& file:session.resources.stage->ecl_animations)graphics.unload(file);
+ #endif
++#if PORT_TITLE == 14
++        hosted_replay=replay_data!=nullptr;
++        if(!(replay_data?session.begin_replay(resources,replay_data,replay_size,stage,false):session.begin(resources,stage,character,subtype,difficulty,false))){error=session.error;return false;}
++#else
+         if(!session.begin(resources,stage,character,subtype,difficulty,false)){error=session.error;return false;}
++#endif
+ #if PORT_TITLE == 14
+         // begin() clears the previous session's VMs. An interrupted cold boot
+         // can still own sig textures; release them only after those references
+@@ -2010,7 +2041,7 @@ struct Application:StageResourceEffects
                  const auto& sprite=*vm->sprite;const u32 target=graphics.texture(*vm->resource,sprite.texture);renderer.flush();
                  i32 from[]={32,16,416,464};u32 source=GraphicsDevice::screen;
  #if PORT_TITLE == 14
@@ -2470,7 +4406,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..94ed06e2090ee8110b06be81306ff4f0
                  std::copy(capture.rectangle,capture.rectangle+4,from);
                  if(capture.text_intermediate){source=graphics.texture(session.resources.core.text,3);if(!source){error="Pause capture source texture missing";return false;}}
  #endif
-@@ -2055,6 +2068,13 @@ struct Application:StageResourceEffects
+@@ -2055,6 +2086,13 @@ struct Application:StageResourceEffects
  #endif
  #if PORT_TITLE == 14
          if(!present_this_update())return true;
@@ -2484,7 +4420,57 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..94ed06e2090ee8110b06be81306ff4f0
  #endif
          frame_text.clear();
  #if PORT_TITLE == 14
-@@ -2107,7 +2127,38 @@ struct Application:StageResourceEffects
+@@ -2086,8 +2124,49 @@ struct Application:StageResourceEffects
+         return tick_once(held,pause_key);
+ #endif
+     }
++#if PORT_TITLE == 14
++    bool set_hosted_replay_rate(double rate){
++        if(!touhou::sdl::ReplayViewerClockTh14::valid_rate(rate))return false;
++        hosted_replay_rate=rate;hosted_cadence.reset();return true;
++    }
++    void close_hosted_replay(){hosted_replay=false;hosted_replay_rate=1;hosted_cadence.reset();}
++    bool hosted_replay_open_ready()const{
++        if(!initialized||!core_loading_done||boot_signature_active||boot_stage_owner||session.state.phase==GameSessionPhase::loading)return false;
++#if defined(TH14_CPP_STAGE_WORKER)
++        if(session.has_cpp_stage_worker()&&!session.stage_cpp_worker_joined())return false;
++#endif
++        return true;
++    }
++    bool open_hosted_replay(const u8* data,u32 size,u32 stage){
++        Replay check;
++        if(!check.open(data,size)){error=check.error();return false;}
++        if(check.character()>2||check.subtype()>1||check.difficulty()>4){error="invalid TH14 replay selection";return false;}
++        if(!stage)for(u32 n=1;n<=7;++n)if(check.stage(n)){stage=n;break;}
++        if(!check.stage(stage)){error="stage absent from replay";return false;}
++        hosted_cadence.reset();return restart(stage,check.character(),check.subtype(),check.difficulty(),data,size);
++    }
++    const u32* hosted_replay_status()const{
++        static u32 words[6];const auto& s=session;const auto* entry=s.playback.stage(s.state.stage);
++        const bool ended=hosted_replay&&s.state.replay&&s.state.phase==GameSessionPhase::paused&&s.pause_menu&&s.pause_menu->forced_exit;
++        words[0]=s.state.stage;words[1]=ended&&entry?entry->frames:s.playback.frame();words[2]=entry?entry->frames:0;
++        words[3]=ended;words[4]=u32(s.state.phase);words[5]=hosted_replay&&s.state.replay;return words;
++    }
++    int hosted_replay_seek_step(u32 target,u32 budget){
++        if(!hosted_replay||!session.state.replay){error="no hosted replay";return -1;}
++        budget=std::min(budget,16u);
++        for(u32 n=0;n<budget;++n){
++            const auto* status=hosted_replay_status();
++            if(status[3])return 1;
++            if(status[1]>=target&&session.state.phase==GameSessionPhase::stage&&session.battle_callbacks_attached())return 1;
++            if(!tick_once(0))return -1;
++        }
++        const auto* status=hosted_replay_status();
++        return status[3]||(status[1]>=target&&session.state.phase==GameSessionPhase::stage&&session.battle_callbacks_attached())?1:0;
++    }
++#endif
+     bool return_to_title(){
+ #if PORT_TITLE == 14
++        close_hosted_replay();
+         audio.discard_paused_sounds();
+ #endif
+         if(!save_scores())return false;
+@@ -2107,7 +2186,38 @@ struct Application:StageResourceEffects
      }
  };
  Application app;
@@ -2523,7 +4509,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..94ed06e2090ee8110b06be81306ff4f0
  #include "../../../portable/input/KeyboardMap.inc"
  touhou::input::TouchController gestures;
  touhou::sdl::FrameCadence cadence;
-@@ -2145,7 +2196,11 @@ touhou::input::TouchState touch_state(){
+@@ -2145,8 +2255,15 @@ touhou::input::TouchState touch_state(){
      s.x=p.position.x;s.y=p.position.y;s.fast=float(p.normal_speed)/128;s.slow=float(p.focus_speed)/128;
      s.min_x=-184;s.max_x=184;s.min_y=32;s.max_y=432;return s;
  }
@@ -2533,11 +4519,29 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..94ed06e2090ee8110b06be81306ff4f0
  void clear_inputs(){th11_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;previous_scans.fill(0);gestures.reset();if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;}
 +#endif
  void touch_event(unsigned type,int id,float x,float y){
++#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
++    if(app.session.practice_input_captured)return;
++#endif
      if(std::isfinite(x)&&std::isfinite(y))gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);
  }
-@@ -2169,7 +2224,11 @@ bool sample_and_tick_once(){
+ void cancel_touch(){
+@@ -2154,6 +2271,9 @@ void cancel_touch(){
+     if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;
+ }
+ bool sample_and_tick_once(){
++#if PORT_TITLE == 14
++    if(app.hosted_replay&&app.session.state.replay)return app.tick_once(0);
++#endif
+     SDL_Event event;while(SDL_PollEvent(&event)){
+ #if PORT_TITLE == 14
+         if(event.type==SDL_EVENT_WINDOW_CLOSE_REQUESTED||event.type==SDL_EVENT_QUIT)app.session.request_host_close();
+@@ -2168,8 +2288,15 @@ bool sample_and_tick_once(){
+         else if(event.type==SDL_EVENT_JOYSTICK_ADDED)add_controller(event.jdevice.which);
          else if(event.type==SDL_EVENT_JOYSTICK_REMOVED&&controller&&SDL_GetJoystickID(controller)==event.jdevice.which){SDL_CloseJoystick(controller);controller=nullptr;int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;++i)add_controller(ids[i]);SDL_free(ids);}
      }
++#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
++    if(app.session.practice_input_captured)return app.tick_once(0,false);
++#endif
      bool keys[256]{};std::array<u8,256> scans{};const auto* physical=th11_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
 +#if PORT_TITLE == 14
 +    for(auto& k:keyboard_map)if(k.sample()||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.scan<256)scans[k.scan]=128;if(k.vk<256)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
@@ -2547,7 +4551,67 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..94ed06e2090ee8110b06be81306ff4f0
      if(app.session.title){auto& title=*app.session.title;for(u32 i=0;i<256;++i)title.key_edges[i]=scans[i]&~previous_scans[i];title.number_keys=0;for(u32 i=0;i<9;++i)if(keys[49+i])title.number_keys|=1u<<i;}
      previous_scans=scans;
      const auto sample=gestures.sample(touch_state(),SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
-@@ -2266,7 +2325,11 @@ EMSCRIPTEN_KEEPALIVE unsigned th11_heap_bytes(){return unsigned(emscripten_get_h
+@@ -2198,7 +2325,59 @@ EMSCRIPTEN_KEEPALIVE int th11_validate_file(unsigned kind,const unsigned char* d
+     if(kind==2){th11::GameConfig config;return config.open(data,size);}
+     return 0;
+ }
++#if PORT_TITLE == 14
++EMSCRIPTEN_KEEPALIVE const char* th14_replay_description(const unsigned char* data,unsigned size){
++    static std::string description,error;
++    if(!th11::describe_replay_th14(data,size,description,error))return nullptr;
++    return description.c_str();
++}
++#endif
++#if PORT_TITLE == 14
++EMSCRIPTEN_KEEPALIVE int th14_replay_open_ready(){return th11::sdl::app.hosted_replay_open_ready();}
++EMSCRIPTEN_KEEPALIVE int th14_open_replay(const unsigned char* data,unsigned size,unsigned stage){
++    return th11::sdl::app.open_hosted_replay(data,size,stage);
++}
++EMSCRIPTEN_KEEPALIVE const unsigned* th14_replay_status(){return th11::sdl::app.hosted_replay_status();}
++EMSCRIPTEN_KEEPALIVE int th14_replay_seek_step(unsigned target,unsigned budget){return th11::sdl::app.hosted_replay_seek_step(target,budget);}
++EMSCRIPTEN_KEEPALIVE int th14_replay_rate(double rate){
++    return th11::sdl::app.set_hosted_replay_rate(rate);
++}
++EMSCRIPTEN_KEEPALIVE void th14_replay_close(){th11::sdl::app.close_hosted_replay();}
++#endif
+ EMSCRIPTEN_KEEPALIVE int th11_save_scores(){return th11::sdl::app.save_scores();}
++#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
++EMSCRIPTEN_KEEPALIVE unsigned th14_practice_state(unsigned query,unsigned value){
++    auto& app=th11::sdl::app;
++    auto& s=app.session;
++    if(query==0){s.practice_enabled=value!=0;if(!value){s.practice_tools=0;s.practice_input_captured=false;}return 1;}
++    if(query==1)return s.practice_tools;
++    if(query==2){if(s.practice_enabled&&!s.state.replay&&!s.state.demo)s.practice_tools=value&th11::practice_mask_th14;return s.practice_tools;}
++    if(query==3)return s.state.replay||s.state.demo?0:1;
++    if(query==4){
++        if(!s.practice_enabled||s.state.phase!=th11::GameSessionPhase::stage||s.state.demo)return 0;
++        const auto boss=th11::stage_music(s.state.stage,true);
++        return app.audio.music(app.audio.current_music()==boss?th11::stage_music(s.state.stage):boss)?1:0;
++    }
++    if(query==5){s.practice_input_captured=s.practice_enabled&&value!=0;th11::sdl::clear_inputs();return 1;}
++    if(query==6)return s.economy.graze;
++    if(query==7)return s.economy.score_units;
++    return 0;
++}
++EMSCRIPTEN_KEEPALIVE int th14_practice_start(const int* values,unsigned character,unsigned shot,unsigned difficulty){
++    auto& app=th11::sdl::app;auto& s=app.session;
++    if(!values||!s.practice_enabled||character>2||shot>1||difficulty>4)return 0;
++    th11::PracticeTh14 p;
++    static_assert(sizeof p==56);
++    std::memcpy(&p,values,sizeof p);
++    if(!p.valid(difficulty))return 0;
++    if(!s.title||s.state.phase!=th11::GameSessionPhase::title)return 0;
++    auto& choice=s.title->selection;
++    choice.stage=p.stage;choice.character=character;choice.partner=shot;choice.difficulty=difficulty;
++    choice.flags=(choice.flags&~48u)|16u;
++    s.practice_request=p;s.title->start_requested=true;
++    return 1;
++}
++#endif
+ EMSCRIPTEN_KEEPALIVE int th11_save_replay(unsigned slot,const char* name){return th11::sdl::app.save_replay(slot,name);}
+ EMSCRIPTEN_KEEPALIVE int th11_initialize(){if(!th11::sdl::app.initialize())return 0;for(auto& k:th11::sdl::keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);th11::sdl::initialize_controller();return 1;}
+ // Readable while a load is in flight, which is the point: it is the only way to see where a load that never
+@@ -2266,7 +2445,11 @@ EMSCRIPTEN_KEEPALIVE unsigned th11_heap_bytes(){return unsigned(emscripten_get_h
  EMSCRIPTEN_KEEPALIVE unsigned th11_dynamic_allocs(){return unsigned(mallinfo().uordblks);}
  EMSCRIPTEN_KEEPALIVE int th11_pause(){return th11::sdl::app.pause()?1:0;}
  EMSCRIPTEN_KEEPALIVE int th11_resume(){return th11::sdl::app.resume()?1:0;}
@@ -2559,14 +4623,22 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..94ed06e2090ee8110b06be81306ff4f0
  EMSCRIPTEN_KEEPALIVE void th11_keys_clear(){th11::sdl::clear_inputs();}
  EMSCRIPTEN_KEEPALIVE void th11_music_enabled(unsigned on){using namespace th11::sdl;app.audio.music_enabled=on!=0;app.audio.refresh_volume();}
  EMSCRIPTEN_KEEPALIVE const unsigned* th11_audio_statistics(){return th11::sdl::app.audio.statistics();}
-@@ -2295,8 +2358,30 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
+@@ -2294,9 +2477,37 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
+     request_frames([](double time,void* epoch)->EM_BOOL{
          if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
          const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
-         if(suspended){cadence.reset();return EM_TRUE;}
+-        if(suspended){cadence.reset();return EM_TRUE;}
++        if(suspended){cadence.reset();
++#if PORT_TITLE == 14
++            app.hosted_cadence.reset();
++#endif
++            return EM_TRUE;}
 +#if PORT_TITLE == 14
 +#if PORT_TITLE == 14
 +        const bool can_coalesce=app.can_coalesce_browser_draw();
-+        const auto limit=cadence.advance_display(delta,can_coalesce);
++        const bool viewer=app.hosted_replay&&app.session.state.replay&&app.session.state.phase==th11::GameSessionPhase::stage;
++        if(!viewer)app.hosted_cadence.reset();
++        const auto limit=viewer?app.hosted_cadence.advance(delta,app.hosted_replay_rate):cadence.advance_display(delta,can_coalesce);
 +        const bool backpressured=limit&&can_coalesce&&app.graphics.backend.browser_draw_backpressured();
 +#else
 +        const auto limit=cadence.advance(delta);
@@ -2575,8 +4647,8 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..94ed06e2090ee8110b06be81306ff4f0
 +        unsigned ticks=0;
 +        for(;ticks<limit&&ok;++ticks){
 +#if PORT_TITLE == 14
-+            if(ticks&&!app.can_coalesce_browser_draw())break;
-+            app.coalesce_browser_draw=backpressured||ticks+1<limit;
++            if(ticks&&!(viewer&&app.hosted_replay&&app.session.state.replay&&app.session.state.phase==th11::GameSessionPhase::stage)&&!app.can_coalesce_browser_draw())break;
++            app.coalesce_browser_draw=!viewer&&(backpressured||ticks+1<limit);
 +#endif
 +            ok=sample_and_tick();
 +        }
@@ -2704,8 +4776,174 @@ index c61edb9701f1e14af6c58e0c7cbabfa029daff5e..224266022445e77587f899b649295986
                      preceding_ready=true;decoder=&preceding;
                  }
                  const auto result=ma_data_source_seek_to_pcm_frame(decoder,(physical-offset)/align());if(result!=MA_SUCCESS)return result;
+diff --git a/runtimes/th12/th12_web/sdl-runtime/Th14PracticeCatalog.mjs b/runtimes/th12/th12_web/sdl-runtime/Th14PracticeCatalog.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..7f0a6e4be61cc6130c16af12bc81832cf921c9c2
+--- /dev/null
++++ b/runtimes/th12/th12_web/sdl-runtime/Th14PracticeCatalog.mjs
+@@ -0,0 +1,3 @@
++// Adapted from rueee/thprac master_2 (MIT, copyright Ack). See PracticeLicenseTh14.txt.
++// thprac_th14.cpp SHA-256 (LF): eacc80f94d1716dd2b2c26080ce54ec5871463de4318b1b2984e8c90585760a7
++export const sections = [{"id":1,"stage":1,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":2,"stage":1,"variant":0,"bgm":0,"group":1,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["冰符「Ultimate Blizzard」","Ice Sign \"Ultimate Blizzard\"","氷符「アルティメットブリザード」"],["冰符「Ultimate Blizzard」","Ice Sign \"Ultimate Blizzard\"","氷符「アルティメットブリザード」"],["","",""]]},{"id":3,"stage":1,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":4,"stage":1,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["水符「尾鳍拍击」","Water Sign \"Tail Fin Slap\"","水符「テイルフィンスラップ」"],["水符「尾鳍拍击」","Water Sign \"Tail Fin Slap\"","水符「テイルフィンスラップ」"],["水符「尾鳍拍击」","Water Sign \"Tail Fin Slap\"","水符「テイルフィンスラップ」"],["水符「尾鳍拍击」","Water Sign \"Tail Fin Slap\"","水符「テイルフィンスラップ」"],["","",""]]},{"id":5,"stage":1,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":6,"stage":1,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["鳞符「鳞之波」","Scale Sign \"Scale Wave\"","鱗符「スケールウェイブ」"],["鳞符「鳞之波」","Scale Sign \"Scale Wave\"","鱗符「スケールウェイブ」"],["鳞符「逆鳞的惊涛」","Scale Sign \"Raging Waves of the Reversed Scale\"","鱗符「逆鱗の荒波」"],["鳞符「逆鳞的大惊涛」","Scale Sign \"Great Raging Waves of the Reversed Scale\"","鱗符「逆鱗の大荒波」"],["","",""]]},{"id":7,"stage":2,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":8,"stage":2,"variant":0,"bgm":0,"group":1,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["飞符「飞行之头」","Flight Sign \"Flying Head\"","飛符「フライングヘッド」"],["飞符「飞行之头」","Flight Sign \"Flying Head\"","飛符「フライングヘッド」"],["飞符「飞行之头」","Flight Sign \"Flying Head\"","飛符「フライングヘッド」"],["飞符「飞行之头」","Flight Sign \"Flying Head\"","飛符「フライングヘッド」"],["","",""]]},{"id":9,"stage":2,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":10,"stage":2,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["首符「闭目射击」","Neck Sign \"Close-Eye Shot\"","首符「クローズアイショット」"],["首符「闭目射击」","Neck Sign \"Close-Eye Shot\"","首符「クローズアイショット」"],["首符「辘轳首飞来」","Neck Sign \"Rokurokubi Flight\"","首符「ろくろ首飛来」"],["首符「辘轳首飞来」","Neck Sign \"Rokurokubi Flight\"","首符「ろくろ首飛来」"],["","",""]]},{"id":11,"stage":2,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":12,"stage":2,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["飞头「倍增之头」","Flying Head \"Multiplicative Head\"","飛頭「マルチプリケイティブヘッド」"],["飞头「倍增之头」","Flying Head \"Multiplicative Head\"","飛頭「マルチプリケイティブヘッド」"],["飞头「第七个头」","Flying Head \"Seventh Head\"","飛頭「セブンズヘッド」"],["飞头「第九个头」","Flying Head \"Ninth Head\"","飛頭「ナインズヘッド」"],["","",""]]},{"id":13,"stage":2,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["飞头「杜拉罕之夜」","Flying Head \"Dullahan Night\"","飛頭「デュラハンナイト」"],["飞头「杜拉罕之夜」","Flying Head \"Dullahan Night\"","飛頭「デュラハンナイト」"],["飞头「杜拉罕之夜」","Flying Head \"Dullahan Night\"","飛頭「デュラハンナイト」"],["飞头「杜拉罕之夜」","Flying Head \"Dullahan Night\"","飛頭「デュラハンナイト」"],["","",""]]},{"id":14,"stage":3,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":15,"stage":3,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["","",""],["","",""],["","",""]]},{"id":16,"stage":3,"variant":0,"bgm":0,"group":1,"spell":true,"dialogue":false,"drops":false,"phases":2,"angle":false,"labels":[["","",""],["","",""],["牙符「月下的犬齿」","Fang Sign \"Moonlit Canine Teeth\"","牙符「月下の犬歯」"],["牙符「月下的犬齿」","Fang Sign \"Moonlit Canine Teeth\"","牙符「月下の犬歯」"],["","",""]]},{"id":17,"stage":3,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":18,"stage":3,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["变身「三角齿」","Transformation \"Triangle Fang\"","変身「トライアングルファング」"],["变身「三角齿」","Transformation \"Triangle Fang\"","変身「トライアングルファング」"],["变身「星形齿」","Transformation \"Star Fang\"","変身「スターファング」"],["变身「星形齿」","Transformation \"Star Fang\"","変身「スターファング」"],["","",""]]},{"id":19,"stage":3,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":20,"stage":3,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["咆哮「陌生的咆哮」","Roar \"Strange Roar\"","咆哮「ストレンジロア」"],["咆哮「陌生的咆哮」","Roar \"Strange Roar\"","咆哮「ストレンジロア」"],["咆哮「満月的远吠」","Roar \"Full Moon Howling\"","咆哮「満月の遠吠え」"],["咆哮「満月的远吠」","Roar \"Full Moon Howling\"","咆哮「満月の遠吠え」"],["","",""]]},{"id":21,"stage":3,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["","",""]]},{"id":22,"stage":3,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["狼符「星环猛扑」","Wolf Sign \"Star Ring Pounce\"","狼符「スターリングパウンス」"],["狼符「星环猛扑」","Wolf Sign \"Star Ring Pounce\"","狼符「スターリングパウンス」"],["天狼「高速猛扑」","Sirius \"High-Speed Pounce\"","天狼「ハイスピードパウンス」"],["天狼「高速猛扑」","Sirius \"High-Speed Pounce\"","天狼「ハイスピードパウンス」"],["","",""]]},{"id":23,"stage":4,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":24,"stage":4,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["","",""]]},{"id":25,"stage":4,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":26,"stage":4,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["","",""]]},{"id":27,"stage":4,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":28,"stage":4,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["","",""]]},{"id":29,"stage":4,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["","",""]]},{"id":30,"stage":4,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["","",""]]},{"id":31,"stage":5,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":32,"stage":5,"variant":0,"bgm":0,"group":1,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["欺符「逆针击」","Deceit Sign \"Reverse Needle Attack\"","欺符「逆針撃」"],["欺符「逆针击」","Deceit Sign \"Reverse Needle Attack\"","欺符「逆針撃」"],["欺符「逆针击」","Deceit Sign \"Reverse Needle Attack\"","欺符「逆針撃」"],["欺符「逆针击」","Deceit Sign \"Reverse Needle Attack\"","欺符「逆針撃」"],["","",""]]},{"id":33,"stage":5,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":34,"stage":5,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["逆符「镜之国的弹幕」","Reverse Sign \"Danmaku Through the Looking-Glass\"","逆符「鏡の国の弾幕」"],["逆符「镜之国的弹幕」","Reverse Sign \"Danmaku Through the Looking-Glass\"","逆符「鏡の国の弾幕」"],["逆符「镜中的邪恶」","Reverse Sign \"Evil in the Mirror\"","逆符「イビルインザミラー」"],["逆符「镜中的邪恶」","Reverse Sign \"Evil in the Mirror\"","逆符「イビルインザミラー」"],["","",""]]},{"id":35,"stage":5,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":36,"stage":5,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["逆符「天地有用」","Reverse Sign \"This Side Down\"","逆符「天地有用」"],["逆符「天地有用」","Reverse Sign \"This Side Down\"","逆符「天地有用」"],["逆符「天下翻覆」","Reverse Sign \"Overturning All Under Heaven\"","逆符「天下転覆」"],["逆符「天下翻覆」","Reverse Sign \"Overturning All Under Heaven\"","逆符「天下転覆」"],["","",""]]},{"id":37,"stage":5,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["","",""]]},{"id":38,"stage":5,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["逆弓「天壤梦弓」","Reverse Bow \"Dream Bow of Heaven & Earth\"","逆弓「天壌夢弓」"],["逆弓「天壤梦弓」","Reverse Bow \"Dream Bow of Heaven & Earth\"","逆弓「天壌夢弓」"],["逆弓「天壤梦弓的诏敕」","Reverse Bow \n\"Decree of the Dream Bow of Heaven & Earth\"","逆弓「天壌夢弓の詔勅」"],["逆弓「天壤梦弓的诏敕」","Reverse Bow \n\"Decree of the Dream Bow of Heaven & Earth\"","逆弓「天壌夢弓の詔勅」"],["","",""]]},{"id":39,"stage":5,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["逆转「阶级反转」","Turnabout \"Reverse Hierarchy\"","逆転「リバースヒエラルキー」"],["逆转「阶级反转」","Turnabout \"Reverse Hierarchy\"","逆転「リバースヒエラルキー」"],["逆转「变革空勇士」","Turnabout \"Change Air Brave\"","逆転「チェンジエアブレイブ」"],["逆转「变革空勇士」","Turnabout \"Change Air Brave\"","逆転「チェンジエアブレイブ」"],["","",""]]},{"id":40,"stage":6,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":41,"stage":6,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["","",""]]},{"id":42,"stage":6,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":43,"stage":6,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["小弹「小人的道路」","Small Bullet \"Inchling's Path\"","小弾「小人の道」"],["小弹「小人的道路」","Small Bullet \"Inchling's Path\"","小弾「小人の道」"],["小弹「小人的荆棘路」","Small Bullet \"Inchling's Thorny Path\"","小弾「小人の茨道」"],["小弹「小人的荆棘路」","Small Bullet \"Inchling's Thorny Path\"","小弾「小人の茨道」"],["","",""]]},{"id":44,"stage":6,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":45,"stage":6,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["小槌「变大吧」","Mallet \"Grow Bigger!\"","小槌「大きくなあれ」"],["小槌「变大吧」","Mallet \"Grow Bigger!\"","小槌「大きくなあれ」"],["小槌「变得更大吧」","Mallet \"Grow Even Bigger!\"","小槌「もっと大きくなあれ」"],["小槌「变得更大吧」","Mallet \"Grow Even Bigger!\"","小槌「もっと大きくなあれ」"],["","",""]]},{"id":46,"stage":6,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["","",""]]},{"id":47,"stage":6,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["妖剑「辉针剑」","Bewitched Sword \"Shining Needle Sword\"","妖剣「輝針剣」"],["妖剑「辉针剑」","Bewitched Sword \"Shining Needle Sword\"","妖剣「輝針剣」"],["妖剑「辉针剑」","Bewitched Sword \"Shining Needle Sword\"","妖剣「輝針剣」"],["妖剑「辉针剑」","Bewitched Sword \"Shining Needle Sword\"","妖剣「輝針剣」"],["","",""]]},{"id":48,"stage":6,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底四非","Boss Nonspell 4","ボス 通常4"],["关底四非","Boss Nonspell 4","ボス 通常4"],["关底四非","Boss Nonspell 4","ボス 通常4"],["关底四非","Boss Nonspell 4","ボス 通常4"],["","",""]]},{"id":49,"stage":6,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":2,"angle":true,"labels":[["小槌「你给我变大吧」","Mallet \"You Grow Bigger!\"","小槌「お前が大きくなあれ」"],["小槌「你给我变大吧」","Mallet \"You Grow Bigger!\"","小槌「お前が大きくなあれ」"],["小槌「你给我变大吧」","Mallet \"You Grow Bigger!\"","小槌「お前が大きくなあれ」"],["小槌「你给我变大吧」","Mallet \"You Grow Bigger!\"","小槌「お前が大きくなあれ」"],["","",""]]},{"id":50,"stage":6,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":true,"phases":2,"angle":false,"labels":[["「进击的小人」","\"Attack on Dwarf\"","「進撃の小人」"],["「进击的小人」","\"Attack on Dwarf\"","「進撃の小人」"],["「一寸之壁」","\"Wall of Issun\"","「ウォールオブイッスン」"],["「一寸之壁」","\"Wall of Issun\"","「ウォールオブイッスン」"],["","",""]]},{"id":51,"stage":6,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":true,"phases":4,"angle":false,"labels":[["「七个小拇指」","\"Hop-o'-My-Thumb Seven\"","「ホップオマイサムセブン」"],["「七个小拇指」","\"Hop-o'-My-Thumb Seven\"","「ホップオマイサムセブン」"],["「七个一寸法师」","\"The Seven Issun-Boshi\"","「七人の一寸法師」"],["「七个一寸法师」","\"The Seven Issun-Boshi\"","「七人の一寸法師」"],["","",""]]},{"id":52,"stage":7,"variant":0,"bgm":0,"group":1,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["道中一非","Mid Nonspell 1","道中 通常1"]]},{"id":53,"stage":7,"variant":0,"bgm":0,"group":1,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["弦乐「风暴的合奏」","String Music \"Storm Ensemble\"","弦楽「嵐のアンサンブル」"]]},{"id":54,"stage":7,"variant":0,"bgm":0,"group":1,"spell":true,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["弦乐「净琉璃世界」","String Music \"Joururi World\"","弦楽「浄瑠璃世界」"]]},{"id":55,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底一非","Boss Nonspell 1","ボス 通常1"]]},{"id":56,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["一鼓「暴乱宫太鼓」","First Drum \"Raging Temple Taiko\"","一鼓「暴れ宮太鼓」"]]},{"id":57,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底二非","Boss Nonspell 2","ボス 通常2"]]},{"id":58,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["二鼓「怨灵绫鼓」","Second Drum \"Vengeful Spirit Aya-no-Tsuzumi\"","二鼓「怨霊アヤノツヅミ」"]]},{"id":59,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底三非","Boss Nonspell 3","ボス 通常3"]]},{"id":60,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["三鼓「午夜零时的三振」","Third Drum \"Three Strikes at Midnight\"","三鼓「午前零時のスリーストライク」"]]},{"id":61,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底四非","Boss Nonspell 4","ボス 通常4"]]},{"id":62,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["死鼓「轻敲大地」","Death Drum \"Land Percuss\"","死鼓「ランドパーカス」"]]},{"id":63,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底五非","Boss Nonspell 5","ボス 通常5"]]},{"id":64,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["五鼓「雷电拨浪鼓」","Fifth Drum \"Den-Den Daiko\"","五鼓「デンデン太鼓」"]]},{"id":65,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底六非","Boss Nonspell 6","ボス 通常6"]]},{"id":66,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["六鼓「交替打击法」","Sixth Drum \"Alternate Sticking\"","六鼓「オルタネイトスティッキング」"]]},{"id":67,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底七非","Boss Nonspell 7","ボス 通常7"]]},{"id":68,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["七鼓「高速和太鼓火箭」","Seventh Drum \"High Speed Taiko Rocket\"","七鼓「高速和太鼓ロケット」"]]},{"id":69,"stage":7,"variant":0,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["关底八非","Boss Nonspell 8","ボス 通常8"]]},{"id":70,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["八鼓「雷神之怒」","Eighth Drum \"Thunder God's Anger\"","八鼓「雷神の怒り」"]]},{"id":71,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":true,"phases":2,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["「蓝色佳人的演出」","\"Blue Lady Show\"","「ブルーレディショー」"]]},{"id":72,"stage":7,"variant":0,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":5,"angle":false,"labels":[["","",""],["","",""],["","",""],["","",""],["「原初的节拍」","\"Pristine Beat\"","「プリスティンビート」"]]},{"id":73,"stage":4,"variant":1,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":74,"stage":4,"variant":1,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["","",""]]},{"id":75,"stage":4,"variant":1,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":76,"stage":4,"variant":1,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["平曲「祗园精舍的钟声」","Heikyoku \"Sounds of Jetavana's Bell\"","平曲「祇園精舎の鐘の音」"],["平曲「祗园精舍的钟声」","Heikyoku \"Sounds of Jetavana's Bell\"","平曲「祇園精舎の鐘の音」"],["平曲「祗园精舍的钟声」","Heikyoku \"Sounds of Jetavana's Bell\"","平曲「祇園精舎の鐘の音」"],["平曲「祗园精舍的钟声」","Heikyoku \"Sounds of Jetavana's Bell\"","平曲「祇園精舎の鐘の音」"],["","",""]]},{"id":77,"stage":4,"variant":1,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":78,"stage":4,"variant":1,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["怨灵「无耳芳一」","Vengeful Spirit \"Hoichi the Earless\"","怨霊「耳無し芳一」"],["怨灵「无耳芳一」","Vengeful Spirit \"Hoichi the Earless\"","怨霊「耳無し芳一」"],["怨灵「平家的大怨灵」","Vengeful Spirit \"Great Vengeful Spirit of Taira\"","怨霊「平家の大怨霊」"],["怨灵「平家的大怨灵」","Vengeful Spirit \"Great Vengeful Spirit of Taira\"","怨霊「平家の大怨霊」"],["","",""]]},{"id":79,"stage":4,"variant":1,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["","",""]]},{"id":80,"stage":4,"variant":1,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["乐符「邪恶的五线谱」","Music Sign \"Wicked Musical Score\"","楽符「邪悪な五線譜」"],["乐符「邪恶的五线谱」","Music Sign \"Wicked Musical Score\"","楽符「邪悪な五線譜」"],["乐符「凶恶的五线谱」","Music Sign \"Malicious Musical Score\"","楽符「凶悪な五線譜」"],["乐符「双重乐谱」","Music Sign \"Double Score\"","楽符「ダブルスコア」"],["","",""]]},{"id":81,"stage":4,"variant":2,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["道中一非","Mid Nonspell 1","道中 通常1"],["","",""]]},{"id":82,"stage":4,"variant":2,"bgm":0,"group":1,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["道中二非","Mid Nonspell 2","道中 通常2"],["","",""]]},{"id":83,"stage":4,"variant":2,"bgm":1,"group":2,"spell":false,"dialogue":true,"drops":false,"phases":1,"angle":false,"labels":[["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["关底一非","Boss Nonspell 1","ボス 通常1"],["","",""]]},{"id":84,"stage":4,"variant":2,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["琴符「诸行无常的琴声」","Koto Sign \"Sounds of Anicca's Koto\"","琴符「諸行無常の琴の音」"],["琴符「诸行无常的琴声」","Koto Sign \"Sounds of Anicca's Koto\"","琴符「諸行無常の琴の音」"],["琴符「诸行无常的琴声」","Koto Sign \"Sounds of Anicca's Koto\"","琴符「諸行無常の琴の音」"],["琴符「诸行无常的琴声」","Koto Sign \"Sounds of Anicca's Koto\"","琴符「諸行無常の琴の音」"],["","",""]]},{"id":85,"stage":4,"variant":2,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["关底二非","Boss Nonspell 2","ボス 通常2"],["","",""]]},{"id":86,"stage":4,"variant":2,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["响符「平安的残响」","Echo Sign \"Heian's Reverberation\"","響符「平安の残響」"],["响符「平安的残响」","Echo Sign \"Heian's Reverberation\"","響符「平安の残響」"],["响符「回音之庭」","Echo Sign \"Echo Chamber\"","響符「エコーチェンバー」"],["响符「回音之庭」","Echo Sign \"Echo Chamber\"","響符「エコーチェンバー」"],["","",""]]},{"id":87,"stage":4,"variant":2,"bgm":1,"group":2,"spell":false,"dialogue":false,"drops":true,"phases":1,"angle":false,"labels":[["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["关底三非","Boss Nonspell 3","ボス 通常3"],["","",""]]},{"id":88,"stage":4,"variant":2,"bgm":1,"group":2,"spell":true,"dialogue":false,"drops":false,"phases":1,"angle":false,"labels":[["筝曲「下克上送筝曲」","Koto Music \"Social Upheaval Koto Music Complement\"","箏曲「下克上送箏曲」"],["筝曲「下克上送筝曲」","Koto Music \"Social Upheaval Koto Music Complement\"","箏曲「下克上送箏曲」"],["筝曲「下克上安魂曲」","Koto Music \"Social Upheaval Requiem\"","箏曲「下克上レクイエム」"],["筝曲「下克上安魂曲」","Koto Music \"Social Upheaval Requiem\"","箏曲「下克上レクイエム」"],["","",""]]}];
+diff --git a/runtimes/th12/th12_web/sdl-runtime/Th14PracticeUi.mjs b/runtimes/th12/th12_web/sdl-runtime/Th14PracticeUi.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..08741b6e2faf356aaf4dad2a09fd9cab4f99d639
+--- /dev/null
++++ b/runtimes/th12/th12_web/sdl-runtime/Th14PracticeUi.mjs
+@@ -0,0 +1,151 @@
++import {sections} from './Th14PracticeCatalog.mjs';
++const labels = {
++  zh: ['练习设置','作弊与设置','关卡','难度','角色','机体','起点','从头开始','波次','阶段','保留对话','保留掉落','残机','残机碎片','炸弹','炸弹碎片','灵力','最大得点','擦弹','得分','收集循环','弹幕角度','开始练习','关闭','无敌','无限残机','无限炸弹','锁定火力','锁定计时','自动决死','敌人无敌','自动射击','禁用射击','禁用炸弹','强制低速','请在标题或暂停时开始练习。'],
++  en: ['Practice setup','Cheats and settings','Stage','Difficulty','Character','Shot','Start at','Stage start','Wave','Phase','Keep dialogue','Keep drops','Lives','Life pieces','Bombs','Bomb pieces','Power','Point value','Graze','Score','Collection cycle','Pattern angle','Start practice','Close','Invincible','Infinite lives','Infinite bombs','Keep power','Lock timer','Auto deathbomb','Enemy invincible','Auto shoot','Disable shoot','Disable bomb','Force focus','Start practice from the title screen or pause menu.'],
++  ja: ['練習設定','チート・設定','ステージ','難易度','自機','装備','開始地点','ステージ開始','区間','フェーズ','会話あり','アイテムを維持','残機','残機のかけら','ボム','ボムのかけら','霊力','最大得点','グレイズ','スコア','回収周期','弾幕角度','練習開始','閉じる','無敵','残機無限','ボム無限','霊力維持','タイマー停止','自動喰らいボム','敵無敵','自動射撃','射撃無効','ボム無効','低速固定','タイトル画面かポーズ画面で開始してください。']
++};
++const keys = {F1:1,F2:2,F3:4,F4:8,F5:16,F6:32,KeyU:64};
++const trackerLabels={zh:['关卡','帧','擦弹','得分','切换关底 BGM'],en:['Stage','Frame','Graze','Score','Switch boss BGM'],ja:['ステージ','フレーム','グレイズ','スコア','ボス曲切り替え']};
++const titleOnly={zh:'请在标题画面开始练习。',en:'Start practice from the title screen.',ja:'タイトル画面で開始してください。'};
++const waves = [5,6,6,7,6,4,9];
++export function createTh14Practice({core,invoke,start,cancelInput,emit,canvas}){
++  let enabled=false, mode='', touchEnabled=false, touchMenu=false, lang='ja', tools=0, busy=false, generation=0;
++  const captured=new Set(), pressed=new Set();
++  const state={stage:1,rank:1,character:0,shot:0,section:0,phase:0,dlg:false,drops:false,life:8,life_fragment:0,bomb:8,bomb_fragment:0,power:400,value:10000,graze:0,score:0,cycle:0,angle:0};
++  const root=document.createElement('section'); root.className='th14-practice'; root.hidden=true; root.setAttribute('aria-label','thprac');
++  const tracker=document.createElement('aside');tracker.className='th14-practice-tracker';tracker.hidden=true;
++  let tracking=null;
++  const style=document.createElement('style');style.textContent=`
++    .th14-practice{position:fixed;z-index:30;inset:5% 4% auto auto;width:min(32rem,92vw);max-height:90%;overflow:auto;box-sizing:border-box;padding:1rem;background:#1d1727f2;color:#fff;border:1px solid #8c739e;border-radius:.65rem;font:15px system-ui;touch-action:pan-y;overscroll-behavior:contain;pointer-events:auto;user-select:auto}
++    .th14-practice[hidden]{display:none}.th14-practice h2{margin:0 0 .55rem;font-size:1.18rem}.th14-practice form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.48rem}.th14-practice label{display:flex;gap:.3rem;flex-direction:column;min-width:0}.th14-practice label:has(input[type=checkbox]){flex-direction:row;align-items:center;min-height:34px}.th14-practice .wide{grid-column:1/-1}
++    .th14-practice :is(select,input[type=number],button){font:inherit;min-height:36px;color:inherit;background:#342742;border:1px solid #9a85ac;border-radius:.3rem;padding:.25rem;min-width:0;box-sizing:border-box}.th14-practice button{cursor:pointer}.th14-practice input[type=checkbox]{width:1.25rem;height:1.25rem}.th14-practice button:disabled{opacity:.5}.th14-practice output{display:block;color:#ffc9bb}
++    .th14-practice-tracker{position:fixed;z-index:29;top:.5rem;left:.5rem;padding:.25rem .55rem;color:white;background:#1d1727e8;border-radius:.3rem;font:13px system-ui;pointer-events:none}
++  `; document.head.append(style);document.body.append(root,tracker);
++  const t=i=>labels[lang][i];
++  const idx=()=>lang==='zh'?0:lang==='en'?1:2;
++  function setMode(next){if(mode===next)return;cancelInput();mode=next;void invoke('th14_practice_state',5,+!!mode);render();emit('thprac-menu',{open:!!mode});if(mode)root.querySelector('select,button,input')?.focus({preventScroll:true});else canvas.focus({preventScroll:true});}
++  function toggleTracker(open=tracking===null){
++    if(!open){clearInterval(tracking);tracking=null;tracker.hidden=true;return;}
++    const refresh=()=>{
++      const c=core();if(!c)return;
++      tracker.hidden=![1,2].includes(c.th11_phase());
++      if(!tracker.hidden)tracker.textContent=[c.th11_stage(),c.th11_frame(),c.th14_practice_state(6,0),c.th14_practice_state(7,0)*10]
++        .map((v,i)=>trackerLabels[lang][i]+' '+v).join(' · ');
++    };
++    refresh();tracking=setInterval(refresh,150);
++  }
++  function control(tag,props){return Object.assign(document.createElement(tag),props);}
++  function render(){
++    root.hidden=!enabled||!mode;root.replaceChildren();
++    if(root.hidden)return;
++    const h=control('h2',{textContent:t(mode==='setup'?0:1)}), form=document.createElement('form');
++    root.append(h,form);
++    const close=control('button',{type:'button',textContent:t(23)});close.className='wide';close.onclick=()=>setMode('');
++    function row(label,input,wide=false){
++      const element=control('label',{textContent:label});if(wide)element.className='wide';element.append(input);form.append(element);
++    }
++    function select(k,label,choices,refresh=false,wide=false){
++      const field=control('select',{name:k}); for(const [value,title] of choices)field.add(new Option(title,value));
++      field.value=String(state[k]);field.onchange=()=>{state[k]=Number(field.value);if(refresh){
++        if(k==='stage'){if(state.stage===7)state.rank=4;else if(state.rank===4)state.rank=1;}
++        if(k==='rank'&&state.rank===4)state.stage=7;else if(k==='rank'&&state.stage===7)state.stage=6;
++        if(k==='section'||k==='stage'||k==='rank'||k==='shot'){state.phase=0;state.dlg=state.drops=false;if(k!=='section')state.section=0;}
++        render();root.querySelector('[name='+k+']')?.focus({preventScroll:true});
++      }};row(t(label),field,wide);
++    }
++    function integer(k,label,min,max,step=1){
++      const field=control('input',{type:'number',inputMode:'numeric',name:k,min,max,step,value:state[k]});
++      field.oninput=()=>{if(Number.isFinite(field.valueAsNumber))state[k]=Math.min(max,Math.max(min,Math.trunc(field.valueAsNumber)));};row(t(label),field);
++    }
++    function toggle(k,label){
++      const field=control('input',{type:'checkbox',name:k,checked:state[k]});field.onchange=()=>state[k]=field.checked;row(t(label),field);
++    }
++    if(mode==='tools'){
++      for(let n=0;n<11;n++){
++        const mask=1<<n, field=control('input',{type:'checkbox',checked:!!(tools&mask),disabled:!core()?.th14_practice_state(3,0)});
++        field.onchange=()=>void setTools(field.checked?tools|mask:tools&~mask);
++        const hotkey=Object.keys(keys).find(k=>keys[k]===mask);
++        row(t(24+n)+(hotkey?' ('+hotkey.replace('Key','')+')':''),field);
++      }
++      const bgm=control('button',{type:'button',textContent:trackerLabels[lang][4]+' (F7)'});
++      bgm.onclick=()=>void invoke('th14_practice_state',4,0);form.append(bgm);
++    }else{
++      const stageChoices=Array.from({length:7},(_,i)=>[i+1,i===6?'Extra':String(i+1)]);
++      select('stage',2,stageChoices,true);select('rank',3,['Easy','Normal','Hard','Lunatic','Extra'].map((s,i)=>[i,s]),true);
++      select('character',4,(lang==='zh'?['灵梦','魔理沙','咲夜']:lang==='ja'?['霊夢','魔理沙','咲夜']:['Reimu','Marisa','Sakuya']).map((s,i)=>[i,s]));
++      select('shot',5,[[0,'A'],[1,'B']],true);
++      const items=sections.filter(s=>s.stage===state.stage&&s.labels[state.rank][idx()]&&
++        (state.stage!==4||s.variant===state.shot+1));
++      const names=[[0,t(7)],...Array.from({length:waves[state.stage-1]},(_,i)=>[10000+state.stage*100+i+1,t(8)+' '+(i+1)]),
++        ...items.map(s=>[s.id,s.labels[state.rank][idx()]])];
++      select('section',6,names,true,true);
++      const current=items.find(s=>s.id===state.section);
++      if(current?.phases>1)select('phase',9,Array.from({length:current.phases},(_,i)=>[i,i+1]));
++      if(current?.dialogue)toggle('dlg',10);
++      if(current?.drops)toggle('drops',11);
++      integer('life',12,0,8);integer('life_fragment',13,0,2);integer('bomb',14,0,8);integer('bomb_fragment',15,0,7);
++      integer('power',16,0,400);integer('value',17,0,999990,10);integer('graze',18,0,999999);integer('score',19,0,9999999990,10);
++      integer('cycle',20,0,4);if(current?.angle)integer('angle',21,-100,100);
++      const go=control('button',{type:'submit',textContent:t(22)}), out=control('output',{});go.className=out.className='wide';
++      form.append(go,out);
++      form.onsubmit=async event=>{
++        event.preventDefault();if(busy)return;
++        busy=true;go.disabled=true;const ticket=generation;
++        const flags=(state.dlg?1:0)|(state.drops?2:0);
++        try{
++          const result=await start([state.stage,state.section,state.phase,flags,state.life,state.life_fragment,state.bomb,state.bomb_fragment,
++            state.power,state.value,state.graze,Math.floor(state.score/10),state.cycle,state.angle],state.character,state.shot,state.rank);
++          if(ticket!==generation)return;
++          if(result>0)setMode('');else out.textContent=titleOnly[lang];
++        }catch(e){out.textContent=e.message;}
++        finally{busy=false;go.disabled=false;}
++      };
++    }
++    form.append(close);
++  }
++  async function setTools(value){tools=value;const previous=value;const result=await invoke('th14_practice_state',2,value);
++    if(tools===previous){tools=result;if(mode==='tools')render();}}
++  root.addEventListener('keydown',e=>{if(e.code==='Escape'||e.code==='F12'||e.code==='Backspace'&&!e.target.matches('input')){e.preventDefault();e.stopPropagation();setMode('');}});
++  function handle(event,down,hosted=false){
++    if(!enabled)return false;
++    const code=event.code;
++    if(!down){pressed.delete(code);return captured.delete(code);}
++    if(!hosted&&root.contains(event.target)&&code!=='F12')return true;
++    const special=code==='F12'||code==='Backspace'||code==='Tab'||code==='F7'||Object.hasOwn(keys,code);
++    if(!special){
++      if(!mode)return false;
++      if(hosted&&['ArrowDown','ArrowUp','ArrowLeft','ArrowRight','KeyZ','Enter','Escape','KeyX'].includes(code)){
++        if(code==='Escape'||code==='KeyX')setMode('');
++        else if(code==='KeyZ'||code==='Enter'){const a=document.activeElement;if(a?.matches('button,input[type=checkbox]'))a.click();else if(mode==='setup')root.querySelector('form')?.requestSubmit();}
++        else {const all=[...root.querySelectorAll('select,input,button:not(:disabled)')], at=all.indexOf(document.activeElement);
++          if(code==='ArrowDown'||code==='ArrowUp')all[(at+(code==='ArrowDown'?1:all.length-1)+all.length)%all.length]?.focus({preventScroll:true});
++          else if(document.activeElement?.matches('select,input[type=number]')){
++            const a=document.activeElement, dir=code==='ArrowRight'?1:-1;
++            if(a.matches('select')){a.selectedIndex=Math.max(0,Math.min(a.options.length-1,a.selectedIndex+dir));a.dispatchEvent(new Event('change'));}
++            else {a[dir>0?'stepUp':'stepDown']();a.dispatchEvent(new Event('input'));}
++          }
++        }
++      }
++      captured.add(code);return true;
++    }
++    captured.add(code);
++    if(pressed.has(code)||event.repeat)return true;pressed.add(code);
++    if(code==='F12'||code==='Backspace'){
++      const next=code==='F12'?'setup':'tools';
++      if(next==='setup'&&core()?.th11_phase()!==0)return true;
++      setMode(mode===next?'':next);
++    }else if(code==='Tab')toggleTracker();
++    else if(code==='F7')void invoke('th14_practice_state',4,0);
++    else if(core()?.th14_practice_state(3,0))void setTools(tools^keys[code]);
++    return true;
++  }
++  return {
++    configure(options){enabled=!!options.thpracEnabled;lang=/^zh(?:-|$)/i.test(options.thpracLocale)?'zh':/^en(?:-|$)/i.test(options.thpracLocale)?'en':'ja';tools=0;generation++;touchMenu=false;toggleTracker(false);setMode('');return invoke('th14_practice_state',0,+enabled);},
++    touch(message){const c=message.controls??message;const next=enabled&&!!c.thpracMobilePanelsEnabled&&!!c.thpracMobilePanelsVisible;
++      touchEnabled=enabled&&!!c.thpracMobilePanelsEnabled;
++      if(next!==touchMenu){touchMenu=next;setMode(next?(core()?.th11_phase()===0?'setup':'tools'):'');}},
++    clear(){pressed.clear();captured.clear();},
++    close(){setMode('');}, handle,
++    captures(){return enabled&&!!mode;}, touchEntry(){return touchEnabled;},
++  };
++}
 diff --git a/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs b/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
-index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..09ac3c945ad3b3ea66abb88b5f5c2111e03907ac 100644
+index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..8abf0ab91cc9cfb706333c31cb5dd33b8558fc32 100644
 --- a/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
 +++ b/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
 @@ -97,7 +97,7 @@ export function directTouch(core,canvas,message,viewport) {
@@ -2717,12 +4955,12 @@ index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..09ac3c945ad3b3ea66abb88b5f5c2111
   return typeof path==='string'&&((new RegExp('^/music/'+game+'_(?:[0-9]{2})\\.ogg$').test(path)||/^\/music\/th10_17\.ogg$/.test(path))||/^\/fonts\/[a-z0-9_.-]+$/.test(path)||path==='/unifont.otf'||(new RegExp('^/thcrap/'+game+'/[a-z0-9_/.-]+$').test(path)&&!path.includes('..')&&!path.includes('//')));
  }
  export function ensureSharedFontAlias(Module,language){
-@@ -116,9 +116,19 @@ export async function installResources(Module,resources=[],{game,emit=()=>{},bas
+@@ -116,9 +116,18 @@ export async function installResources(Module,resources=[],{game,emit=()=>{},bas
    if(!resourcePath(resource.path,game))throw Error('Invalid runtime resource path');
    const url=new URL(resource.url,base);if(url.origin!==new URL(base).origin||!['http:','https:','blob:'].includes(url.protocol))throw Error('Resource must be same-origin');
    const response=await fetcher(url);if(!response.ok)throw Error('Resource download failed: '+resource.path);
 -  const bytes=new Uint8Array(await response.arrayBuffer());
-   const expected=resource.bytes??resource.size;
+-  const expected=resource.bytes??resource.size;
 +  const compressed=resource.encoding==='gzip';
 +  if(compressed&&(game!=='th14'||!/^\/fonts\/font[0-7]\.bin$/.test(resource.path)||
 +      !url.pathname.endsWith(resource.path+'.gz')||!Number.isSafeInteger(expected)||expected<1||expected>64*1024*1024||
@@ -2738,6 +4976,232 @@ index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..09ac3c945ad3b3ea66abb88b5f5c2111
    Module.FS.mkdirTree(resource.path.slice(0,resource.path.lastIndexOf('/')));
    Module.FS.writeFile(resource.path,bytes,{canOwn:true});
    // Native FLAC assets are part of Runtime preparation. Only the optional
+@@ -151,3 +160,98 @@ export async function mountManagedData(Module,{game,parentWindow,query,fetcher=g
+  const manifest=await response.json();if(manifest.game!==game||manifest.schema!=='eagler-sdl-resources/1')throw Error('Invalid Runtime resource manifest');
+  await installResources(Module,manifest.resources,{game,emit,base,fetcher});
+ }
++
++// Host ownership and transport only. C++ validates files, creates the real
++// Application replay, consumes recorded inputs and advances every game tick.
++export function createReplayViewerHostTh14({read,describe,open,status,step,rate,pause,close,emit,
++ schedule=(f,ms)=>setTimeout(f,ms),cancel=id=>clearTimeout(id),visible=()=>true,onError=()=>{}}) {
++ let active=null,revision=0,pollTimer=null,seekTimer=null;
++ const rates=[0,.5,1,2,4,8];
++ const publish=()=>{if(active)emit({...active.state});};
++ const stopTimer=name=>{if(name==='poll'&&pollTimer!==null){cancel(pollTimer);pollTimer=null;}
++  if(name==='seek'&&seekTimer!==null){cancel(seekTimer);seekTimer=null;}};
++ const stopSeek=()=>{++revision;stopTimer('seek');if(active){active.state.seeking=false;active.state.target=null;}};
++ const readValidated=async path=>{
++  const file=await read(path);if(!(file.bytes instanceof Uint8Array)||!file.bytes.length||file.bytes.length>64*1024*1024)throw Error('录像大小无效');
++  const bytes=new Uint8Array(file.bytes),description=await describe(bytes);
++  if(!description?.stages?.length)throw Error('录像信息无效');return {path:file.path,bytes,description};
++ };
++ const timeline=description=>{
++  let total=0;return description.stages.map(stage=>{const item={...stage,start:total};total+=stage.frames;return item;});
++ };
++ async function update(owner=active){
++  if(!owner||owner!==active)return;
++  const native=await status();if(owner!==active)return;
++  const entry=owner.timeline.find(s=>s.id===native.stage);
++  if(!entry||!native.active)return;
++  owner.state.stage=native.stage;owner.state.frame=entry.start+Math.min(native.frame,entry.frames);owner.state.ended=!!native.ended;
++  if(native.ended){owner.state.frame=entry.start+entry.frames;owner.state.paused=true;await pause(true);}
++  if(owner===active)publish();
++ }
++ function poll(){
++  pollTimer=schedule(async()=>{pollTimer=null;const owner=active;
++   try{if(owner&&!owner.state.seeking)await update(owner);}catch(e){onError(e);}
++   if(active)poll();
++  },250);
++ }
++ async function begin(file,stage,paused=false,playRate=1){
++  const entries=timeline(file.description),selected=entries.find(s=>s.id===stage);
++  if(!selected)throw Error('录像中没有该关卡');
++  stopSeek();stopTimer('poll');const ticket=revision;
++  await pause(true);await open(file.bytes,stage);await rate(playRate);
++  if(ticket!==revision)return null;
++  const owner={...file,timeline:entries,selectedStage:stage,state:{kind:'replay',path:file.path,description:file.description,
++   left:file.description.character,right:file.description.shot??0,difficulty:file.description.difficulty,stage,
++   frame:selected.start,startFrame:selected.start,total:entries.reduce((n,s)=>n+s.frames,0),
++   paused,rate:playRate,seeking:false,target:null,ended:false}};
++  active=owner;await pause(paused||!visible());publish();poll();return owner;
++ }
++ async function seek(value){
++  const owner=active;if(!owner)throw Error('没有正在播放的录像');
++  if(!Number.isSafeInteger(value)||value<owner.state.startFrame||value>owner.state.total)throw Error('录像位置无效');
++  const entry=[...owner.timeline].reverse().find(s=>s.start<=value);
++  stopSeek();const ticket=revision;await pause(true);await open(owner.bytes,entry.id);await rate(owner.state.rate);
++  if(owner!==active||ticket!==revision)return;
++  owner.state.seeking=true;owner.state.target=value;owner.state.ended=false;publish();
++  const pump=async()=>{
++   seekTimer=null;if(owner!==active||ticket!==revision)return;
++   if(!visible()){seekTimer=schedule(pump,250);return;}
++   try{
++    const result=await step(value-entry.start,16);
++    if(owner!==active||ticket!==revision)return;
++    if(result<0)throw Error('录像跳转失败');
++    await update(owner);if(owner!==active||ticket!==revision)return;
++    if(result){owner.state.seeking=false;owner.state.target=null;await pause(owner.state.paused||owner.state.ended||!visible());publish();}
++    else seekTimer=schedule(pump,0);
++   }catch(e){if(owner===active&&ticket===revision){owner.state.seeking=false;owner.state.target=null;owner.state.paused=true;publish();onError(e);}}
++  };
++  seekTimer=schedule(pump,0);
++ }
++ return {
++  get state(){return active?{...active.state}:null;},
++  async foreground(){if(active)await pause(active.state.paused||active.state.seeking||active.state.ended||!visible());},
++  async close(){stopSeek();stopTimer('poll');active=null;await close();},
++  async command(message){
++   const action=message.action;
++   if(action==='inspect'){const file=await readValidated(message.path);return {description:file.description};}
++   if(action==='open'){
++    const file=await readValidated(message.path),stage=message.stage??file.description.stages[0].id;
++    if(!Number.isSafeInteger(stage))throw Error('录像关卡无效');await begin(file,stage);return {playback:this.state};
++   }
++   const owner=active;if(!owner)throw Error('没有正在播放的录像');
++   if(action==='pause'){stopSeek();owner.state.paused=true;await pause(true);await update(owner);}
++   else if(action==='play'){
++    if(owner.state.ended)await begin(owner,owner.selectedStage,false,owner.state.rate);
++    else{owner.state.paused=false;await pause(owner.state.seeking||!visible());publish();}
++   }else if(action==='rate'){
++    if(!rates.includes(message.value))throw Error('录像倍率无效');await rate(message.value);owner.state.rate=message.value;publish();
++   }else if(action==='seek')await seek(message.value);
++   else if(action==='relocate'){
++    if(message.path!==owner.path)throw Error('录像路径已变化');const next=await readValidated(message.target);
++    if(next.bytes.length!==owner.bytes.length||!next.bytes.every((b,i)=>b===owner.bytes[i]))throw Error('目标不是同一份录像');
++    owner.path=next.path;owner.state.path=next.path;publish();
++   }else throw Error('不支持的录像操作');
++   return {playback:this.state};
++  }
++ };
++}
+diff --git a/runtimes/th12/th12_web/sdl-runtime/shell.mjs b/runtimes/th12/th12_web/sdl-runtime/shell.mjs
+index e3d66641e600d1b3251caf778b96812d5bd03a70..1d42673b70284dc386919ca20ab0ba0d84dd3835 100644
+--- a/runtimes/th12/th12_web/sdl-runtime/shell.mjs
++++ b/runtimes/th12/th12_web/sdl-runtime/shell.mjs
+@@ -6,13 +6,14 @@ import createModule from './th11-sdl.mjs';
+ import {scanCodes} from './keyboard.mjs';
+ import {validateMotionReplay} from './motion-replay.mjs';
+ import {runtimeEpochContract} from './runtime-epoch.mjs';
+-import {bindOutsideTouches,normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError} from './eagler-host.mjs';
++import {bindOutsideTouches,normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError,createReplayViewerHostTh14} from './eagler-host.mjs';
+ const runtimeBuild=/*TH11_BUILD_INFO*/{version:'development-incomplete',completeGame:false};
+ const protocol='eagler-touhou/1',game='th11',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas');
+ const navigation=runtimeEpochContract(game,query.get('runtimeEpoch'));
+ const emit=(event,fields={})=>parent.postMessage({protocol,game,...navigation.fields,event,...fields},location.origin);
+ const $=s=>document.querySelector(s);
+ let th14PageLeaving=false;
++let replayViewer=null;
+ let Module,core,app=0,launched=false,first=false,stopping=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true,musicMode='none';
+ const keyboard=createBrowserKeyboard({
+  accept:code=>!!scanCodes[code],
+@@ -30,6 +31,16 @@ async function callCore(name,...args){
+  const runtime=Module.th14AsyncRuntime??Module.th14WebGpuRuntime;return runtime?runtime.run(call):call();
+ }
+ const save=async()=>{if(launched&&!await callCore('th11_save_scores'))throw Error(coreError());return sync(false);};
++const practice=game==='th14'?createTh14Practice({core:()=>core,invoke:callCore,
++ start:async(values,character,shot,rank)=>{
++  const run=async()=>{const p=core.malloc(56);if(!p)return 0;
++   try{Module.HEAP32.set(values,p/4);return await Module.ccall('th14_practice_start','number',['number','number','number','number'],[p,character,shot,rank],{async:true});}
++   finally{core.free(p);}};
++  const runtime=Module.th14AsyncRuntime??Module.th14WebGpuRuntime;
++  return runtime?runtime.run(run):run();
++ },
++ cancelInput:()=>{keyboard.clear();core?.th11_keys_clear();cancelTouches();},
++ emit:(event,detail)=>window.dispatchEvent(new CustomEvent('eagler-'+event,{detail})),canvas}):null;
+ async function installResources(resources=[]){return installHostResources(Module,resources,{game,emit});}
+ // The Launcher has already verified the ZIP identity. Match TH10's Runtime
+ // manifest/path/size checks before exposing any file to the native game.
+@@ -67,6 +78,7 @@ async function installRuntimePack(pack){
+ }
+ function apply(){applyTouchOptions(core,options);core.th11_music_enabled(+music);}
+ async function resumeForegroundAudio(forcePause=false){
++ if(replayViewer?.state&&(replayViewer.state.paused||replayViewer.state.seeking||replayViewer.state.ended)){await replayViewer.foreground();return false;}
+  if(!Module||!core||!launched||document.hidden)return false;
+  if(forcePause)core.sdl_loop_pause(1);
+  return resumeRuntimeAudio(Module,core,()=>!!core&&launched&&!document.hidden);
+@@ -79,7 +91,7 @@ async function closeAudio(){
+   try{core.th11_audio_close();}finally{if(borrowed)s.audioContext=context;}};
+  const runtime=Module.th14AsyncRuntime??Module.th14WebGpuRuntime;if(runtime)await runtime.run(close);else close();
+ }
+-async function stop(){if(stopping)return;stopping=true;clearKeyboard();try{core.th11_loop_stop();await save();await closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
++async function stop(){if(stopping)return;stopping=true;practice?.close();clearKeyboard();try{core.th11_loop_stop();if(replayViewer)await replayViewer.close();await save();await closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
+ function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth11\//,'').replace(/^\//,'');if(!/^(?:scoreth11\.dat|th11\.cfg|replay\/th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(name))throw Error('存档路径无效');return name;}
+ async function launch(){
+  if(launched)return;clearKeyboard();
+@@ -92,15 +104,50 @@ async function launch(){
+  canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();core.th11_loop_start();
+  emit('runtime-info',{renderer:Module.th14WebGpuRuntime?'SDL3 / WebGPU / C++':'SDL3 / WebGL2 / C++',architecture:protocol,version:runtimeBuild.version});
+ }
++function replayPlayback(){
++ if(replayViewer)return replayViewer;
++ const withBytes=async(bytes,name,...args)=>{
++  const pointer=core.malloc(bytes.length);if(!pointer)throw Error('录像内存不足');
++  try{Module.HEAPU8.set(bytes,pointer);return await callCore(name,pointer,bytes.length,...args);}finally{core.free(pointer);}
++ };
++ replayViewer=createReplayViewerHostTh14({
++  read:value=>{const target=path(value);if(!target.startsWith('replay/'))throw Error('录像路径无效');return {path:target,bytes:Module.FS.readFile('/savesth11/'+target)};},
++  describe:async bytes=>{
++   const result=await withBytes(bytes,'th14_replay_description');if(!result)throw Error('录像数据无效');
++   const end=Module.HEAPU8.indexOf(0,result);if(end<result)throw Error('录像信息无效');
++   return JSON.parse(new TextDecoder().decode(new Uint8Array(Module.HEAPU8.subarray(result,end))));
++  },
++  open:async(bytes,stage)=>{
++   await launch();const until=performance.now()+60000;
++   while(!await callCore('th14_replay_open_ready')){
++    if(performance.now()>until)throw Error('等待录像加载交接超时');
++    await callCore('th11_loop_pause',0);await new Promise(resolve=>setTimeout(resolve,16));
++   }
++   await callCore('th11_loop_pause',1);if(!await withBytes(bytes,'th14_open_replay',stage))throw Error(coreError());
++  },
++  status:async()=>{const p=await callCore('th14_replay_status'),w=Array.from(u32(p,6));return {stage:w[0],frame:w[1],frames:w[2],ended:!!w[3],phase:w[4],active:!!w[5]};},
++  step:(target,budget)=>callCore('th14_replay_seek_step',target,budget),
++  rate:async value=>{if(!await callCore('th14_replay_rate',value))throw Error('录像倍率无效');},
++  pause:async on=>{
++   if(!launched)return;
++   if(!on&&!document.hidden)await resumeRuntimeAudio(Module,core,()=>launched&&!document.hidden);
++   await callCore('th11_loop_pause',on||document.hidden?1:0);
++  },
++  close:async()=>{if(core)await callCore('th14_replay_close');},
++  visible:()=>!document.hidden&&!th14PageLeaving,
++  emit:playback=>emit('runtime-info',{playback}),onError:error,
++ });return replayViewer;
++}
+ async function command(m){switch(m.command){
+- case 'configure':if(launched)throw Error('不能配置正在运行的游戏');language=m.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(m.options);music=m.music!=='none';musicMode=m.music;await installResources(m.sharedResources);await installResources(m.runtimeResources);await installResources(m.resources);if(m.runtimePack)await installRuntimePack(m.runtimePack);apply();return {};
++ case 'configure':if(launched)throw Error('不能配置正在运行的游戏');language=m.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(m.options);music=m.music!=='none';musicMode=m.music;await installResources(m.sharedResources);await installResources(m.runtimeResources);await installResources(m.resources);if(m.runtimePack)await installRuntimePack(m.runtimePack);await practice?.configure(options);apply();return {};
+  case 'resources':await installResources(m.resources);return {};
+- case 'keyboard':if(launched&&!document.hidden&&!stopping)keyboard.event(m,!!m.down,'hosted');return {};
+- case 'keyboard-clear':clearKeyboard();return {};
++ case 'keyboard':if(launched&&!document.hidden&&!stopping&&!practice?.handle(m,!!m.down,true))keyboard.event(m,!!m.down,'hosted');return {};
++ case 'keyboard-clear':practice?.clear();clearKeyboard();return {};
+  case 'touch-cancel':cancelTouches();return {};
+- case 'direct-touch':directTouch(core,canvas,m,{width:innerWidth,height:innerHeight});return {};
+- case 'touch-controls':touchControls(core,options,m);return {};
++ case 'direct-touch':if(!practice?.captures())directTouch(core,canvas,m,{width:innerWidth,height:innerHeight});return {};
++ case 'touch-controls':practice?.touch(m);touchControls(core,options,practice?.captures()?{controls:{...(m.controls??m),fireEnabled:false,focusEnabled:false,joystickX:0,joystickY:0}}:m);return {};
+  case 'launch':await launch();return {};
++ case 'playback':if(game!=='th14')throw Error('不支持的录像操作');return replayPlayback().command(m);
+  case 'sync':await save();return {};
+  case 'list':{const files=[];for(const dir of ['','/replay'])for(const name of Module.FS.readdir('/savesth11'+dir)){const n=(dir+'/'+name).replace(/^\//,'');try{path(n);}catch{continue;}const s=Module.FS.stat('/savesth11/'+n);if(Module.FS.isFile(s.mode)){files.push({path:n,size:s.size});}}return {files};}
+  case 'read':return {bytes:Array.from(Module.FS.readFile('/savesth11/'+path(m.path)))};
+@@ -125,14 +172,14 @@ window.addEventListener('message',event=>{
+  queue=queue.then(async()=>{if(await initialized===false)return;await dispatchCommand(m);}).catch(error);
+ });
+ document.addEventListener('visibilitychange',()=>{if(!core||!launched)return;clearKeyboard();cancelTouches();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(save).catch(error);}else void resumeForegroundAudio(true);});
+-window.addEventListener('blur',()=>{if(core){clearKeyboard();cancelTouches();}});
++window.addEventListener('blur',()=>{if(core){practice?.clear();clearKeyboard();cancelTouches();}});
+ window.addEventListener('pagehide',()=>{if(game==='th14')th14PageLeaving=true;clearKeyboard();cancelTouches();if(core&&launched){suspendRuntimeAudio(Module,core);void save().catch(console.error);}});
+ window.addEventListener('pageshow',()=>{if(game==='th14')th14PageLeaving=false;if(core&&launched&&!document.hidden)void resumeForegroundAudio(true);});
+ canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearKeyboard();core?.sdl_loop_pause(1);error('图形环境已失效，请退出后重新开始。');});
+ for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});
+ for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
+  if(!core||!launched||stopping||document.hidden)return;
+- keyboard.event(event,name==='keydown');
++ if(!practice?.handle(event,name==='keydown'))keyboard.event(event,name==='keydown');
+ },{capture:true});
+ // A mobile browser may terminate a hidden page before pagehide's IDB callback.
+ // Persist during play as well, with writes serialized by the sync chain.
 diff --git a/runtimes/th12/th12_web/tests/cpp/th14-anm-draw-removal-fixture.cpp b/runtimes/th12/th12_web/tests/cpp/th14-anm-draw-removal-fixture.cpp
 new file mode 100644
 index 0000000000000000000000000000000000000000..f5bb471a23d20c393cad7455bb04ce54ab819abc
@@ -3285,6 +5749,55 @@ index 6d02af54e424cf763ad050ca656749046b30642e..0e1d19f968c58caca18890bb14b66d5c
  <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>东方辉针城 · 移植验证</title><link rel="stylesheet" href="/app/style.css"></head>
 -<body data-port-title="14"><main id="stage"><canvas id="canvas" width="640" height="480" tabindex="0" aria-label="东方辉针城画面"></canvas><div id="touch" hidden><button id="shoot">射击</button><button id="focus">低速</button><button id="bomb">B</button><button id="pause">暂停</button></div><div id="welcome"><h1>东方辉针城</h1><p>移植验证版 · 完整游戏尚未完成</p><button id="start">启动验证</button><progress id="progress" hidden></progress><p id="status" role="status">加载本机原版资源。</p></div><div id="pause-panel" hidden><h2>暂停</h2><button id="resume">继续游戏</button><button id="return-title">返回标题</button></div></main><footer><button id="fullscreen">全屏</button><button id="touch-toggle">显示触控</button><span id="health"></span></footer><div id="error" role="alert" hidden></div><script type="module" src="/app/shell.mjs"></script></body></html>
 +<body data-port-title="14"><main id="stage"><canvas id="canvas" width="1280" height="960" tabindex="0" aria-label="东方辉针城画面"></canvas><div id="touch" hidden><button id="shoot">射击</button><button id="focus">低速</button><button id="bomb">B</button><button id="pause">暂停</button></div><div id="welcome"><h1>东方辉针城</h1><p>移植验证版 · 完整游戏尚未完成</p><button id="start">启动验证</button><progress id="progress" hidden></progress><p id="status" role="status">加载本机原版资源。</p></div><div id="pause-panel" hidden><h2>暂停</h2><button id="resume">继续游戏</button><button id="return-title">返回标题</button></div></main><footer><button id="fullscreen">全屏</button><button id="touch-toggle">显示触控</button><span id="health"></span></footer><div id="error" role="alert" hidden></div><script type="module" src="/app/shell.mjs"></script></body></html>
+diff --git a/tools/generate-th14-practice.mjs b/tools/generate-th14-practice.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..a7b8ea25253c39f15a448603fe7b00d85fc7f472
+--- /dev/null
++++ b/tools/generate-th14-practice.mjs
+@@ -0,0 +1,43 @@
++import {readFileSync as read,writeFileSync as write} from 'node:fs';
++import {resolve} from 'node:path';
++import {createHash} from 'node:crypto';
++const [source,defs,license,retail,cpp,js]=process.argv.slice(2);
++if(!js)throw Error('Usage: generate-th14-practice.mjs THPRAC_TH14_CPP GAMES_JSON LICENSE RETAIL_ECL_DIR CPP_OUTPUT_DIR CATALOG_MJS');
++const s=read(source,'utf8').replaceAll('\r\n','\n'), d=JSON.parse(read(defs,'utf8').replace(/^\uFEFF/,'')), g=d.th14;
++const sectionKeys=Object.keys(g.sections), glossary=Object.assign({},...Object.values(d).map(x=>x.glossary));
++const cases=(a,b)=>new Set([...s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)+1)).matchAll(/case (TH14_\w+):/g)].map(x=>x[1]));
++const dialogue=cases('bool SectionHasDlg','bool SectionHasSpellDrops'), drops=cases('bool SectionHasSpellDrops','void SectionWidget');
++const alias=key=>key.replace(/^TH14_ST4[AB]_/, 'TH14_ST4_');
++const sha=createHash('sha256').update(s).digest('hex');
++const banner='// Adapted from rueee/thprac master_2 (MIT, copyright Ack). See PracticeLicenseTh14.txt.\n// thprac_th14.cpp SHA-256 (LF): '+sha+'\n';
++let code=s.slice(s.indexOf('    void ECLJump('),s.indexOf('    __declspec(noinline) void THSectionPatch()'))
++ .replaceAll('        ecl.SetPos(start);','        ecl.Jump(start, dest);\n        ecl.SetPos(start);')
++ .replace('    constexpr unsigned int st7PostMaple','    static constexpr unsigned int st7PostMaple')
++ .replaceAll('__declspec(noinline) ','').replaceAll('THPrac::TH14::','').replaceAll('th_sections_t','i32')
++ .replace('void THPatchSP(ECLHelper& ecl)\n    {\n        uint32_t spell_id = *(int32_t*)(0x4f5844);','void THPatchSP(ECLHelper& ecl, i32 spell_id)\n    {');
++if(/GetMem|0x4f5844|__declspec|THPrac::/.test(code))throw Error('Unmapped platform dependency');
++write(resolve(cpp,'PracticePatchesTh14.inc'),banner+code.replace(/[ \t]+$/gm,'').trimEnd()+'\n');
++write(resolve(cpp,'PracticeLicenseTh14.txt'),read(license));
++const phase={TH14_ST3_MID2_HL:2,TH14_ST6_BOSS8:2,TH14_ST6_BOSS9:2,TH14_ST6_BOSS10:4,TH14_ST7_END_S9:2,TH14_ST7_END_S10:5};
++let catalog=sectionKeys.map((key,i)=>{const v=g.sections[key], stage=v.appearance[0];return {
++ id:i+1,key,stage:stage>7?4:stage,variant:stage>7?stage-7:0,bgm:v.bgm||0,group:v.appearance[1],spell:!!v.spell,
++ dialogue:dialogue.has(alias(key)),drops:drops.has(alias(key)),phases:phase[alias(key)]??1,angle:key==='TH14_ST6_BOSS8',
++ labels:[...'ENHLX'].map(rank=>{const entry=Object.entries(v).find(([k])=>k[0]==='!'&&k.includes(rank))?.[1];return Array.isArray(entry)?entry:glossary[entry]??['','',''];})
++}});
++const index=new Map(sectionKeys.map((k,i)=>[k,i+1]));
++const used=[...new Set([...code.matchAll(/case (TH14_\w+):/g)].map(x=>x[1]))];
++for(const k of used)if(!index.has(k)){const a=sectionKeys.find(x=>alias(x)===k);if(!a)throw Error(k);index.set(k,index.get(a));}
++const normalize=id=>{const v=catalog[id-1], k=alias(v.key); return used.includes(k)?index.get(k):0};
++catalog=catalog.map(v=>({...v,native:normalize(v.id)})).filter(v=>v.native);
++const fnv=b=>{let x=14695981039346656037n;for(const a of b)x=BigInt.asUintN(64,(x^BigInt(a))*1099511628211n);return '0x'+x.toString(16)+'ull'};
++let tables=[];
++for(let n=1;n<=7;n++){
++ const base='st0'+n+'.ecl', b=read(resolve(retail,base)), off=b.indexOf('ECLI'), count=b.readUInt32LE(off+4);
++ const inc=b.subarray(off+8).toString('latin1').split('\0').slice(0,count);
++ const names=[base,...inc];
++ tables.push('{'+names.map(name=>fnv(read(resolve(retail,name)))).join(',')+'}');
++}
++write(resolve(cpp,'PracticeCatalogTh14.inc'),banner+'enum {\n'+used.map(k=>'    '+k+' = '+index.get(k)+',').join('\n')+'\n};\n'+
++ 'constexpr u64 retail_ecl[7][6] = {\n    '+tables.join(',\n    ')+'\n};\n'+
++ 'constexpr Section sections[] = {\n'+catalog.map(v=>'    {'+[v.id,v.native,v.stage,v.bgm,v.phases,v.dialogue,v.drops,[...v.labels].reduce((a,l,i)=>a|(+!!l[0]<<i),0)].join(',')+'},').join('\n')+'\n};\n');
++write(js,banner+'export const sections = '+JSON.stringify(catalog.map(({key,native,...v})=>v))+';\n');
 diff --git a/tools/tests/test-th14-frame-scheduler.mjs b/tools/tests/test-th14-frame-scheduler.mjs
 new file mode 100644
 index 0000000000000000000000000000000000000000..ec0cdeda1efb855feb55d1ddde5e2e20e190a832
@@ -3693,30 +6206,64 @@ index 60d5183dffe1480f4a228efbba8db66ecff408d3..b5b6badc34f874463868c963f2ecb0f5
      runtime.openArchive(bytes);assert.equal(await runtime.archiveOpening,227);await valid();assert.equal(copies,3);
      assert.equal(module._fixture_reset(),1);assert.equal(module._fixture_empty(),1);const before=copies;
 diff --git a/tools/th14-build-gles.py b/tools/th14-build-gles.py
-index 0721fa9d26730472f580751ef017daacce2324a0..60fdfff1071d3042f50642d05aafdeaa2729a798 100644
+index 0721fa9d26730472f580751ef017daacce2324a0..5552f3c422293eea98e311ae0548d7d03c7455ee 100644
 --- a/tools/th14-build-gles.py
 +++ b/tools/th14-build-gles.py
-@@ -38,7 +38,8 @@ def main():
+@@ -11,6 +11,27 @@ import sys
+ import tempfile
+ 
+ 
++def prepare_host_shell(source, identity):
++    """Specialize host paths without renaming the shared native C exports."""
++    for before, after in [('./th11-sdl.', './th14-sdl.'), ("game='th11'", "game='th14'"),
++                          ('/savesth11', '/savesth14'), ('/thcrap/th11/', '/thcrap/th14/'),
++                          ('scoreth11', 'scoreth14'), ('th11.cfg', 'th14.cfg'),
++                          (r'th11\.cfg', r'th14\.cfg'), ('th11_(?:', 'th14_(?:'),
++                          ('TH11', 'TH14'), ('地灵殿', '辉针城')]:
++        source = source.replace(before, after)
++    source = "import {createTh14Practice} from './Th14PracticeUi.mjs';\n" + source
++    anchor = 'const runtimeBuild=/*TH14_BUILD_INFO*/'
++    assert source.count(anchor) == 1
++    start = source.index(anchor) + len(anchor)
++    end = source.index(';', start)
++    source = source[:start] + json.dumps(identity, ensure_ascii=False) + source[end:]
++    anchor = ' await mountData();'
++    assert source.count(anchor) == 1
++    source = source.replace(anchor, anchor + "\n Module.FS.symlink('/th14.dat','/th11.dat');", 1)
++    assert "game='th14'" in source and "core?.th11_key(" in source
++    return source
++
++
+ def main():
+     repo = Path(__file__).resolve().parents[1]
+     parser = argparse.ArgumentParser(description=__doc__)
+@@ -38,7 +59,10 @@ def main():
      for directory in (cpp, runtime / 'portable'):
          tracked.update(p for p in directory.rglob('*')
                         if p.is_file() and p.suffix in {'.hpp', '.h', '.inc', '.js', '.mjs'})
 -    tracked.update((Path(__file__).resolve(), repo / 'tools/th14-gles-profile.json'))
 +    host = runtime / 'th12_web/sdl-runtime/eagler-host.mjs'
-+    tracked.update((Path(__file__).resolve(), repo / 'tools/th14-gles-profile.json', host))
++    host_shell = host.with_name('shell.mjs')
++    practice = [host.with_name(n) for n in ('Th14PracticeUi.mjs', 'Th14PracticeCatalog.mjs')]
++    tracked.update((Path(__file__).resolve(), repo / 'tools/th14-gles-profile.json', host, host_shell, *practice))
      source_bindings = {p.relative_to(repo).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
                         for p in sorted(tracked)}
  
-@@ -60,15 +61,20 @@ def main():
+@@ -60,15 +84,24 @@ def main():
          run([*profile['flags'], *compiled, *link_flags, '-o', str(output / 'th14-sdl.mjs')])
      for helper in profile['helpers']:
          shutil.copyfile(portable / helper, output / helper)
-+    shutil.copyfile(host, output / host.name)
++    for item in [host, *practice]:
++        shutil.copyfile(item, output / item.name)
++    wasm_hash = hashlib.sha256((output / 'th14-sdl.wasm').read_bytes()).hexdigest()
++    shell = prepare_host_shell(host_shell.read_text(encoding='utf8'), dict(version='1.00b-thp-' + wasm_hash[:12], completeGame=False, nativeEquivalent=False, sha256=wasm_hash))
++    (output / 'shell.mjs').write_text(shell, encoding='utf8', newline='\n')
      for name, expected in source_bindings.items():
          if hashlib.sha256((repo / name).read_bytes()).hexdigest() != expected:
              raise RuntimeError('Source changed during build: ' + name)
      wasm = output / 'th14-sdl.wasm'
 +    runtime_files = {}
-+    for name in ['th14-sdl.mjs', 'th14-sdl.wasm', host.name, *profile['helpers']]:
++    for name in ['th14-sdl.mjs', 'th14-sdl.wasm', host.name, 'shell.mjs', *[p.name for p in practice], *profile['helpers']]:
 +        data = (output / name).read_bytes()
 +        runtime_files[name] = dict(bytes=len(data), sha256=hashlib.sha256(data).hexdigest())
      report = dict(module=str(wasm), units=len(compiled), sourceBindings=source_bindings,
@@ -3729,6 +6276,150 @@ index 0721fa9d26730472f580751ef017daacce2324a0..60fdfff1071d3042f50642d05aafdeaa
      (output / 'build.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
      print(json.dumps(dict(module=str(wasm), units=len(compiled), sha256=report['sha256'])))
  
+diff --git a/tools/th14-gles-profile.json b/tools/th14-gles-profile.json
+index c726b765a606b38b4b2eeff31c117c3aceebc737..f14ab90927426261af18300139a27ced9f0d79db 100644
+--- a/tools/th14-gles-profile.json
++++ b/tools/th14-gles-profile.json
+@@ -1,69 +1,70 @@
+-{
+-  "flags": [
+-    "-DTH14_CPP_BOOT_WORKER=1",
+-    "-O2",
+-    "-g0",
+-    "--profiling-funcs",
+-    "-std=c++17",
+-    "-ffp-contract=off",
+-    "-fno-strict-aliasing",
+-    "-fno-exceptions",
+-    "-fno-rtti",
+-    "-DPORT_TITLE=14",
+-    "-DTH_NATIVE_PLATFORM=1",
+-    "-DTH11_DEVELOPMENT_HARNESS=0",
+-    "--use-port=sdl3",
+-    "-DTH14_STAGE_RESTORE_DELIVERY=1",
+-    "-pthread",
+-    "-DTH14_SHARED_SCENE_COPY=1",
+-    "-DTH14_CPP_STAGE_WORKER=1",
+-    "-DTH14_CPP_STAGE_DECODE=1",
+-    "-DTH14_CPP_STAGE_RESOURCE_HANDSHAKE=1"
+-  ],
+-  "linkFlags": [
+-    "--no-entry",
+-    "-sDEFAULT_TO_CXX=1",
+-    "-sMODULARIZE=1",
+-    "-sEXPORT_ES6=1",
+-    "-sENVIRONMENT=web,worker",
+-    "-sALLOW_MEMORY_GROWTH=1",
+-    "-sSTACK_SIZE=1048576",
+-    "-sINITIAL_MEMORY=536870912",
+-    "-sMAXIMUM_MEMORY=1073741824",
+-    "-sFILESYSTEM=1",
+-    "-lidbfs.js",
+-    "-sEXIT_RUNTIME=0",
+-    "-sINVOKE_RUN=0",
+-    "-sASSERTIONS=1",
+-    "-sASYNCIFY=1",
+-    "-sASYNCIFY_STACK_SIZE=65536",
+-    "-sINCOMING_MODULE_JS_API=canvas,instantiateWasm,noInitialRun,locateFile,print,printErr,onRuntimeInitialized,onAbort,wasmBinary,wasmMemory,preRun,postRun",
+-    "-sEXPORTED_RUNTIME_METHODS=FS,IDBFS,HEAPU8,HEAP32,HEAPU32,ccall,requestFullscreen",
+-    "-sMIN_WEBGL_VERSION=2",
+-    "-sMAX_WEBGL_VERSION=2",
+-    "-sGL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0",
+-    "-sEXPORTED_FUNCTIONS=_malloc,_free,_th11_validate_file,_th11_save_scores,_th11_save_replay,_th11_initialize,_th11_last_resource,_th11_music_enabled,_th11_audio_statistics,_th11_return_title,_th11_restart,_th11_error,_th11_frame,_th11_phase,_th11_pause,_th11_resume,_th11_loop_start,_th11_loop_stop,_th11_loop_pause,_th11_key,_th11_keys_clear,_th11_touch,_th11_touch_cancel,_th11_touch_options,_th11_touch_controls,_th11_touch_stick,_th14_async_invoke,_th14_async_frame",
+-    "--js-library",
+-    "portable/sdl/Th14WebGpuLibrary.js",
+-    "-sPTHREAD_POOL_SIZE=2",
+-    "-sPTHREAD_POOL_SIZE_STRICT=2",
+-    "-sPTHREAD_POOL_DELAY_LOAD=0",
+-    "-sALLOW_BLOCKING_ON_MAIN_THREAD=1"
+-  ],
+-  "helpers": [
+-    "Th14ArchiveDecodeClient.mjs",
+-    "Th14ArchiveDecodeEndpoint.mjs",
+-    "Th14ArchiveDecodeWorker.mjs",
+-    "Th14ArchiveReadAhead.mjs",
+-    "Th14AsyncRuntime.mjs",
+-    "Th14SharedSceneCopy.mjs",
+-    "Th14SharedSceneWorker.mjs",
+-    "Th14StageMemoryClient.mjs",
+-    "Th14StageMemoryWorker.mjs",
+-    "Th14StageRestoreDelivery.mjs",
+-    "Th14StageRestoreProtocol.mjs",
+-    "Th14StageRestoreWorker.mjs",
+-    "Th14WebGpuCore.mjs",
+-    "Th14WebGpuHost.mjs"
+-  ]
+-}
++{
++  "flags": [
++    "-DTH14_CPP_BOOT_WORKER=1",
++    "-O2",
++    "-g0",
++    "--profiling-funcs",
++    "-std=c++17",
++    "-ffp-contract=off",
++    "-fno-strict-aliasing",
++    "-fno-exceptions",
++    "-fno-rtti",
++    "-DPORT_TITLE=14",
++    "-DTH14_ENABLE_THPRAC=1",
++    "-DTH_NATIVE_PLATFORM=1",
++    "-DTH11_DEVELOPMENT_HARNESS=0",
++    "--use-port=sdl3",
++    "-DTH14_STAGE_RESTORE_DELIVERY=1",
++    "-pthread",
++    "-DTH14_SHARED_SCENE_COPY=1",
++    "-DTH14_CPP_STAGE_WORKER=1",
++    "-DTH14_CPP_STAGE_DECODE=1",
++    "-DTH14_CPP_STAGE_RESOURCE_HANDSHAKE=1"
++  ],
++  "linkFlags": [
++    "--no-entry",
++    "-sDEFAULT_TO_CXX=1",
++    "-sMODULARIZE=1",
++    "-sEXPORT_ES6=1",
++    "-sENVIRONMENT=web,worker",
++    "-sALLOW_MEMORY_GROWTH=1",
++    "-sSTACK_SIZE=1048576",
++    "-sINITIAL_MEMORY=536870912",
++    "-sMAXIMUM_MEMORY=1073741824",
++    "-sFILESYSTEM=1",
++    "-lidbfs.js",
++    "-sEXIT_RUNTIME=0",
++    "-sINVOKE_RUN=0",
++    "-sASSERTIONS=1",
++    "-sASYNCIFY=1",
++    "-sASYNCIFY_STACK_SIZE=65536",
++    "-sINCOMING_MODULE_JS_API=canvas,instantiateWasm,noInitialRun,locateFile,print,printErr,onRuntimeInitialized,onAbort,wasmBinary,wasmMemory,preRun,postRun",
++    "-sEXPORTED_RUNTIME_METHODS=FS,IDBFS,HEAPU8,HEAP32,HEAPU32,ccall,requestFullscreen",
++    "-sMIN_WEBGL_VERSION=2",
++    "-sMAX_WEBGL_VERSION=2",
++    "-sGL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0",
++    "-sEXPORTED_FUNCTIONS=_malloc,_free,_th11_validate_file,_th11_save_scores,_th11_save_replay,_th11_initialize,_th11_last_resource,_th11_music_enabled,_th11_audio_statistics,_th11_return_title,_th11_restart,_th11_error,_th11_frame,_th11_phase,_th11_pause,_th11_resume,_th11_loop_start,_th11_loop_stop,_th11_loop_pause,_th11_key,_th11_keys_clear,_th11_touch,_th11_touch_cancel,_th11_touch_options,_th11_touch_controls,_th11_touch_stick,_th14_async_invoke,_th14_async_frame,_th14_replay_description,_th14_replay_open_ready,_th14_open_replay,_th14_replay_status,_th14_replay_seek_step,_th14_replay_rate,_th14_replay_close",
++    "--js-library",
++    "portable/sdl/Th14WebGpuLibrary.js",
++    "-sPTHREAD_POOL_SIZE=2",
++    "-sPTHREAD_POOL_SIZE_STRICT=2",
++    "-sPTHREAD_POOL_DELAY_LOAD=0",
++    "-sALLOW_BLOCKING_ON_MAIN_THREAD=1"
++  ],
++  "helpers": [
++    "Th14ArchiveDecodeClient.mjs",
++    "Th14ArchiveDecodeEndpoint.mjs",
++    "Th14ArchiveDecodeWorker.mjs",
++    "Th14ArchiveReadAhead.mjs",
++    "Th14AsyncRuntime.mjs",
++    "Th14SharedSceneCopy.mjs",
++    "Th14SharedSceneWorker.mjs",
++    "Th14StageMemoryClient.mjs",
++    "Th14StageMemoryWorker.mjs",
++    "Th14StageRestoreDelivery.mjs",
++    "Th14StageRestoreProtocol.mjs",
++    "Th14StageRestoreWorker.mjs",
++    "Th14WebGpuCore.mjs",
++    "Th14WebGpuHost.mjs"
++  ]
++}
 diff --git a/tools/th14-texture-display-oracle.py b/tools/th14-texture-display-oracle.py
 new file mode 100644
 index 0000000000000000000000000000000000000000..de24fee730a2cd08cc5c8538787c0f305561c4a2
