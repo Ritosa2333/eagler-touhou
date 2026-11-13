@@ -14,11 +14,11 @@
 @media(min-width:781px){
   .profile-cover[data-responsive]:not([data-default]) .profile-cover-frame {
     inset:0 auto 0 50%;
-    width:min(100%,calc(100cqh * var(--profile-cover-aspect)));
+    width:calc(100cqh * var(--profile-cover-aspect));
     transform:translateX(-50%);
     overflow:visible;
   }
-  .profile-cover[data-responsive][data-wide] .profile-cover-frame {--profile-cover-aspect-wide:calc(var(--profile-cover-aspect) * 2);width:min(100%,calc(100cqh * var(--profile-cover-aspect-wide)))}
+  .profile-cover[data-responsive][data-wide] .profile-cover-frame {--profile-cover-aspect-wide:calc(var(--profile-cover-aspect) * 2);width:calc(100cqh * var(--profile-cover-aspect-wide))}
   .profile-cover[data-responsive][data-wide] .profile-cover-frame > img {left:0;width:100%;object-fit:contain}
   .profile-cover-reflection:is([data-side=left],[data-side=right]) {inset-block:0;display:block;width:100%}
   .profile-cover-reflection[data-side=left] {right:100%;--profile-cover-outward:to left}
