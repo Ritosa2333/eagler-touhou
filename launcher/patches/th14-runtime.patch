@@ -4689,7 +4689,7 @@ index 02b4c71f268e8920d63cdb377f54ce66efee47a2..33e3736ebe94a5a4174e16f16ed9badf
      }
      // Native463600 resets text rows to interrupt3 after refreshing their texture.
 diff --git a/runtimes/th12/th12_web/cpp/sdl/Application.cpp b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
-index bae5d17e65ee2a98f46cb063007b05d43941077d..a0c943511cda340a3ef99ce04b3f20640878add7 100644
+index bae5d17e65ee2a98f46cb063007b05d43941077d..6503b6f02dd6aedf332d7580154cab55bea3ef02 100644
 --- a/runtimes/th12/th12_web/cpp/sdl/Application.cpp
 +++ b/runtimes/th12/th12_web/cpp/sdl/Application.cpp
 @@ -10,8 +10,14 @@
@@ -4932,7 +4932,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..a0c943511cda340a3ef99ce04b3f2064
  #include "../../../portable/input/KeyboardMap.inc"
  touhou::input::TouchController gestures;
  touhou::sdl::FrameCadence cadence;
-@@ -2145,18 +2265,44 @@ touhou::input::TouchState touch_state(){
+@@ -2145,18 +2265,46 @@ touhou::input::TouchState touch_state(){
      s.x=p.position.x;s.y=p.position.y;s.fast=float(p.normal_speed)/128;s.slow=float(p.focus_speed)/128;
      s.min_x=-184;s.max_x=184;s.min_y=32;s.max_y=432;return s;
  }
@@ -4945,7 +4945,9 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..a0c943511cda340a3ef99ce04b3f2064
 -    if(std::isfinite(x)&&std::isfinite(y))gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);
 +    if(!std::isfinite(x)||!std::isfinite(y))return;
 +#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
-+    if(PracticeUiTh14::pointer(type,id,x,y))return;
++    float start_x=NAN,start_y=NAN;
++    if(PracticeUiTh14::pointer(type,id,x,y,&start_x,&start_y))return;
++    if(std::isfinite(start_x))gestures.pointer(0,id,start_x,start_y,SDL_GetTicks(),touch_state(),false);
 +#endif
 +    gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);
  }
@@ -4965,7 +4967,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..a0c943511cda340a3ef99ce04b3f2064
          if(event.type==SDL_EVENT_WINDOW_CLOSE_REQUESTED||event.type==SDL_EVENT_QUIT)app.session.request_host_close();
 +#endif
 +#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
-+        if(PracticeUiTh14::captures()){
++        if(app.session.practice_enabled){
 +            int w=0,h=0;SDL_GetWindowSize(app.graphics.backend.native_window(),&w,&h);
 +            if(w>0&&h>0){
 +                if(event.type==SDL_EVENT_MOUSE_MOTION&&event.motion.which!=SDL_TOUCH_MOUSEID)
@@ -4978,7 +4980,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..a0c943511cda340a3ef99ce04b3f2064
  #endif
          // SDL owns gestures that start on the canvas; the browser bridge only
          // forwards gestures originating outside it, avoiding double delivery.
-@@ -2168,8 +2314,22 @@ bool sample_and_tick_once(){
+@@ -2168,8 +2316,22 @@ bool sample_and_tick_once(){
          else if(event.type==SDL_EVENT_JOYSTICK_ADDED)add_controller(event.jdevice.which);
          else if(event.type==SDL_EVENT_JOYSTICK_REMOVED&&controller&&SDL_GetJoystickID(controller)==event.jdevice.which){SDL_CloseJoystick(controller);controller=nullptr;int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;++i)add_controller(ids[i]);SDL_free(ids);}
      }
@@ -5001,7 +5003,17 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..a0c943511cda340a3ef99ce04b3f2064
      if(app.session.title){auto& title=*app.session.title;for(u32 i=0;i<256;++i)title.key_edges[i]=scans[i]&~previous_scans[i];title.number_keys=0;for(u32 i=0;i<9;++i)if(keys[49+i])title.number_keys|=1u<<i;}
      previous_scans=scans;
      const auto sample=gestures.sample(touch_state(),SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
-@@ -2198,7 +2358,45 @@ EMSCRIPTEN_KEEPALIVE int th11_validate_file(unsigned kind,const unsigned char* d
+@@ -2177,6 +2339,9 @@ bool sample_and_tick_once(){
+     if(auto* b=app.session.battle.get()){b->player_input.movement.touch_mode=sample.motion;b->player_input.movement.touch_x=sample.x;b->player_input.movement.touch_y=sample.y;}
+     const u32 raw=sample_controller()|keyboard_keys(keys);
+     const u32 held=(raw&~0x80100u)|((raw&0x80000)?256:0);
++#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
++    PracticeUiTh14::sample_keys(held);
++#endif
+     return app.tick_once(held,(raw&256)!=0);
+ }
+ bool sample_and_tick(){
+@@ -2198,7 +2363,45 @@ EMSCRIPTEN_KEEPALIVE int th11_validate_file(unsigned kind,const unsigned char* d
      if(kind==2){th11::GameConfig config;return config.open(data,size);}
      return 0;
  }
@@ -5047,7 +5059,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..a0c943511cda340a3ef99ce04b3f2064
  EMSCRIPTEN_KEEPALIVE int th11_save_replay(unsigned slot,const char* name){return th11::sdl::app.save_replay(slot,name);}
  EMSCRIPTEN_KEEPALIVE int th11_initialize(){if(!th11::sdl::app.initialize())return 0;for(auto& k:th11::sdl::keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);th11::sdl::initialize_controller();return 1;}
  // Readable while a load is in flight, which is the point: it is the only way to see where a load that never
-@@ -2266,7 +2464,11 @@ EMSCRIPTEN_KEEPALIVE unsigned th11_heap_bytes(){return unsigned(emscripten_get_h
+@@ -2266,7 +2469,11 @@ EMSCRIPTEN_KEEPALIVE unsigned th11_heap_bytes(){return unsigned(emscripten_get_h
  EMSCRIPTEN_KEEPALIVE unsigned th11_dynamic_allocs(){return unsigned(mallinfo().uordblks);}
  EMSCRIPTEN_KEEPALIVE int th11_pause(){return th11::sdl::app.pause()?1:0;}
  EMSCRIPTEN_KEEPALIVE int th11_resume(){return th11::sdl::app.resume()?1:0;}
@@ -5059,7 +5071,7 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..a0c943511cda340a3ef99ce04b3f2064
  EMSCRIPTEN_KEEPALIVE void th11_keys_clear(){th11::sdl::clear_inputs();}
  EMSCRIPTEN_KEEPALIVE void th11_music_enabled(unsigned on){using namespace th11::sdl;app.audio.music_enabled=on!=0;app.audio.refresh_volume();}
  EMSCRIPTEN_KEEPALIVE const unsigned* th11_audio_statistics(){return th11::sdl::app.audio.statistics();}
-@@ -2294,9 +2496,37 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
+@@ -2294,9 +2501,42 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
      request_frames([](double time,void* epoch)->EM_BOOL{
          if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
          const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
@@ -5074,7 +5086,12 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..a0c943511cda340a3ef99ce04b3f2064
 +        const bool can_coalesce=app.can_coalesce_browser_draw();
 +        const bool viewer=app.hosted_replay&&app.session.state.replay&&app.session.state.phase==th11::GameSessionPhase::stage;
 +        if(!viewer)app.hosted_cadence.reset();
-+        const auto limit=viewer?app.hosted_cadence.advance(delta,app.hosted_replay_rate):cadence.advance_display(delta,can_coalesce);
++        #if defined(TH14_ENABLE_THPRAC)
++        const double simulation_delta=delta*(can_coalesce?PracticeUiTh14::speed_scale():1.);
++#else
++        const double simulation_delta=delta;
++#endif
++        const auto limit=viewer?app.hosted_cadence.advance(delta,app.hosted_replay_rate):cadence.advance_display(simulation_delta,can_coalesce);
 +        const bool backpressured=limit&&can_coalesce&&app.graphics.backend.browser_draw_backpressured();
 +#else
 +        const auto limit=cadence.advance(delta);
@@ -5098,6 +5115,20 @@ index bae5d17e65ee2a98f46cb063007b05d43941077d..a0c943511cda340a3ef99ce04b3f2064
          app.graphics.backend.commit();app.graphics.backend.defer=false;
          app.audio.pump();
          if(ticks)th11_browser_frame(ok?1:0,emscripten_get_now()-begin,ticks);
+@@ -2304,7 +2544,12 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
+     },reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
+ }
+ EMSCRIPTEN_KEEPALIVE void th11_touch(unsigned type,int id,float x,float y){th11::sdl::touch_event(type,id,x,y);}
+-EMSCRIPTEN_KEEPALIVE void th11_touch_cancel(){th11::sdl::cancel_touch();}
++EMSCRIPTEN_KEEPALIVE void th11_touch_cancel(){
++#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
++    th11::sdl::PracticeUiTh14::cancel_pointer();
++#endif
++    th11::sdl::cancel_touch();
++}
+ EMSCRIPTEN_KEEPALIVE void th11_touch_options(unsigned enabled,unsigned mode,float sensitivity,unsigned two_finger,unsigned double_tap){using namespace th11::sdl;gestures.enabled=enabled!=0;gestures.unlimited=mode==1;gestures.sensitivity=std::isfinite(sensitivity)?std::clamp(sensitivity,1.f,3.f):1;gestures.two_finger=two_finger!=0;gestures.double_tap=double_tap!=0;if(gestures.set_mode(mode<=3?int(mode):0))if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;if(!enabled)gestures.cancel();}
+ EMSCRIPTEN_KEEPALIVE void th11_touch_controls(unsigned enabled,unsigned fire,unsigned focus,unsigned bomb,unsigned escape){using namespace th11::sdl;gestures.enabled=enabled!=0;gestures.controls(fire!=0,focus!=0,bomb,escape,0,0);}
+ EMSCRIPTEN_KEEPALIVE void th11_touch_stick(float x,float y){using namespace th11::sdl;gestures.stick_x=std::isfinite(x)?std::clamp(x/32767.f,-1.f,1.f):0;gestures.stick_y=std::isfinite(y)?std::clamp(y/32767.f,-1.f,1.f):0;}
 diff --git a/runtimes/th12/th12_web/cpp/sdl/ApplicationCaptureTh14.hpp b/runtimes/th12/th12_web/cpp/sdl/ApplicationCaptureTh14.hpp
 index 997267a818ce8545c62c3cf262c5982e00972c05..b1c158592be72316d6d65db725a0ac60a2bf905f 100644
 --- a/runtimes/th12/th12_web/cpp/sdl/ApplicationCaptureTh14.hpp
@@ -5488,6 +5519,43 @@ index 214e6394474a90211b061d09f30c059f005dca88..955eb6155919ffb01acbdf6cc3f0e906
  #endif
      );
      if(!loaded){error="Unable to prepare ANM texture: "+source.name+" ("+texture.image.failure+")";return false;}
+diff --git a/runtimes/th12/th12_web/cpp/sdl/PracticeAdvancedLabelsTh14.inc b/runtimes/th12/th12_web/cpp/sdl/PracticeAdvancedLabelsTh14.inc
+new file mode 100644
+index 0000000000000000000000000000000000000000..b4fb67a0a5254ac1a3deb9609871be76c64b2510
+--- /dev/null
++++ b/runtimes/th12/th12_web/cpp/sdl/PracticeAdvancedLabelsTh14.inc
+@@ -0,0 +1,31 @@
++inline constexpr const char* practice_THPRAC_INGAMEINFO[3] = {"更多游戏信息", "in game info", "in game info"};
++inline constexpr const char* practice_TH_GAME_SPEED[3] = {"游戏速度", "Game Speed", "ゲームの速度"};
++inline constexpr const char* practice_TH_GAMEPLAY[3] = {"游戏进行", "Gameplay", "ゲームプレイ"};
++inline constexpr const char* practice_TH_FPS_ERR[3] = {"FPS调整相关的功能已禁用，你必须满足以下条件之一以使用这些功能：\n1. 使用VsyncPatch，且在vpatch.ini中将”Vsync“一项的值设为0。\n2. 在游戏的custom.exe中将输入方式设置为”高速“。（仅限地灵殿及之后的游戏）", "FPS Adjustment related features has been disabled. To enable them, satisfy either of the following requirements:\n1. Use VsyncPatch, and make sure the \"Vsync\" value in vpatch.ini is set to 0.\n2. In the game's custom.exe, set the input method to \"Fast\". (Only applies to SA and after)", "FPS調整関連のオプションは無効になっています。 それらを有効にするには、次の要件のいずれかを満たします：\n\n1. VsyncPatchを使用し、vpatch.iniの「Vsync」値を0に設定します。\n2. ゲームのcustom.exeで、入力のレイテンシを「高速」に設定します。 （地霊殿以降のみに適用）"};
++inline constexpr const char* practice_TH_FPS_UNSUPPORTED[3] = {"不支持的VsyncPatch版本。", "Unsupported VsyncPatch version.", "このバージョンのVsyncPatchはサポートされていません。"};
++inline constexpr const char* practice_TH_FPS_ADJ[3] = {"FPS调整", "FPS Adjustment", "FPS調整"};
++inline constexpr const char* practice_TH_FPS_FREE_ADJ[3] = {"自由调整", "Adjust freely", "自由調整"};
++inline constexpr const char* practice_TH_ADV_OPT_APPLY[3] = {"应用", "Apply", "変更を適用"};
++inline constexpr const char* practice_TH_FPS_LOWERING[3] = {"使用VsyncPatch时降低FPS可能会导致游戏冻结一小段时间，请耐心等待。", "When using VsyncPatch, lowering FPS may freeze the game for a brief time. Please wait patiently.", "VsyncPatchを使用している場合、FPSを下げるとゲームが一時的にフリーズする可能性がありますので、しばらくお待ちください。"};
++inline constexpr const char* practice_TH_ABOUT_THPRAC[3] = {"关于thprac", "About thprac", "thpracのバージョン情報"};
++inline constexpr const char* practice_TH_ABOUT_AUTHOR[3] = {"作者：Ack", "Author: Ack", "作者：Ack"};
++inline constexpr const char* practice_THPRAC_KB_OPEN[3] = {"打开按键显示", "open key monitor", "open key monitor"};
++inline constexpr const char* practice_THPRAC_KB_RECORD_START[3] = {"开始记录APS", "start to record APS", "start to record APS"};
++inline constexpr const char* practice_THPRAC_KB_RECORD_STOP[3] = {"停止记录APS", "stop recording", "stop recording"};
++inline constexpr const char* practice_THPRAC_BACK[3] = {"返回", "Back", "戻る"};
++inline constexpr const char* practice_THPRAC_TOOLS_REACTION_MODE[3] = {"模式", "mode", "mode"};
++inline constexpr const char* practice_THPRAC_TOOLS_REACTION_MODE_DOWN[3] = {"按下测试", "press time test", "press time test"};
++inline constexpr const char* practice_THPRAC_TOOLS_REACTION_MODE_NORMAL[3] = {"不显示进度条", "no progress bar", "no progress bar"};
++inline constexpr const char* practice_THPRAC_TOOLS_REACTION_MODE_PROGRESSBAR[3] = {"显示进度条", "with progress bar", "with progress bar"};
++inline constexpr const char* practice_THPRAC_TOOLS_REACTION_MODE_UP[3] = {"弹起测试", "release time test", "release time test"};
++inline constexpr const char* practice_THPRAC_TOOLS_REACTION_SHOW_PROC_BAR[3] = {"显示等待时间进度条", "show wait time progress bar", "show wait time progress bar"};
++inline constexpr const char* practice_THPRAC_TOOLS_REACTION_TEST[3] = {"反应力测试", "reaction test", "reaction test"};
++inline constexpr const char* practice_THPRAC_TOOLS_REACTION_TEST_BEGIN[3] = {"开始测试(快捷键z/shift)", "start(hotkey z/shift)", "start(hotkey z/shift)"};
++inline constexpr const char* practice_THPRAC_TOOLS_REACTION_TEST_DOWN[3] = {"按下反应测试(等待变色后按下方向键)", "keydown test(wait for color changed then press arrow key)", "keydown test(wait for color changed then press arrow key)"};
++inline constexpr const char* practice_THPRAC_TOOLS_REACTION_TEST_NEXT_TEST[3] = {"再测一次(快捷键z/shift)", "next test(hotkey z/shift)", "next test(hotkey z/shift)"};
++inline constexpr const char* practice_THPRAC_TOOLS_REACTION_TEST_RESULT[3] = {"结果", "result", "result"};
++inline constexpr const char* practice_THPRAC_TOOLS_REACTION_TEST_RESULT_AVG[3] = {"结果(平均值)", "result(avg)", "result(avg)"};
++inline constexpr const char* practice_THPRAC_TOOLS_REACTION_TEST_TIME[3] = {"测试次数", "times for test", "times for test"};
++inline constexpr const char* practice_THPRAC_TOOLS_REACTION_TEST_TOO_EARLY[3] = {"按太快了", "too early", "too early"};
++inline constexpr const char* practice_THPRAC_TOOLS_REACTION_TEST_UP[3] = {"弹起反应测试(按下方向键后,等待变色时弹起)", "keyup test(press arrow key until color changes)", "keyup test(press arrow key until color changes)"};
++constexpr const char* practice_THPRAC_SHOW_BULLET_HITBOX[3]={"显示弹幕判定","Show bullet hitboxes","弾の当たり判定を表示"};
 diff --git a/runtimes/th12/th12_web/cpp/sdl/PracticeLabelsTh14.inc b/runtimes/th12/th12_web/cpp/sdl/PracticeLabelsTh14.inc
 new file mode 100644
 index 0000000000000000000000000000000000000000..58ee74fff49eccfd3f4a9293b269e1b80c2084ef
@@ -5587,15 +5655,20 @@ index 0000000000000000000000000000000000000000..58ee74fff49eccfd3f4a9293b269e1b8
 +};
 diff --git a/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp b/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp
 new file mode 100644
-index 0000000000000000000000000000000000000000..67a79d1437678e6673de8669ccb5e00b88b8f44e
+index 0000000000000000000000000000000000000000..712f91e79eba9e551ef9b5d880d9c1518a4d1df1
 --- /dev/null
 +++ b/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp
-@@ -0,0 +1,310 @@
+@@ -0,0 +1,493 @@
 +#include "PracticeUiTh14.hpp"
 +#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
 +#include "../game/GameSession.hpp"
 +#include "../../../portable/sdl/Renderer.hpp"
 +#include <eagler/thprac/PracticeMobilePanels.hpp>
++#include <eagler/thprac/PracticePointer.hpp>
++#include <eagler/thprac/PracticeKeyMonitor.hpp>
++#include <eagler/thprac/PracticeSpeed.hpp>
++#include <functional>
++#include <random>
 +#include "imgui_freetype.h"
 +#include <emscripten.h>
 +#include <algorithm>
@@ -5645,11 +5718,39 @@ index 0000000000000000000000000000000000000000..67a79d1437678e6673de8669ccb5e00b
 +std::array<bool,256> held{},pressed{};
 +struct PointerEdge{bool down;float x,y;};
 +std::deque<PointerEdge> edges;
++eagler::thprac::PracticePointer touch_routes;
 +int active_pointer=0;
 +bool owned_pointer=false,mouse_down=false;
 +float mouse_x=-FLT_MAX,mouse_y=-FLT_MAX;
 +const char* label(Labels& text){return text[locale];}
 +const char* t(int i){return label(setup_text[i]);}
++#include "PracticeAdvancedLabelsTh14.inc"
++eagler::thprac::PracticeSpeed speed;
++eagler::thprac::PracticeKeyMonitor key_monitor;
++#include <eagler/thprac/PracticeKeyHud.inc>
++struct PracticeCounter {int64_t QuadPart=0;};
++void practice_counter_frequency(PracticeCounter* c){c->QuadPart=1000000000;}
++void practice_counter_now(PracticeCounter* c){c->QuadPart=int64_t(SDL_GetTicksNS());}
++std::function<unsigned()> practice_random_generator(unsigned minimum,unsigned maximum){
++    return std::bind(std::uniform_int_distribution<unsigned>(minimum,maximum),std::mt19937(std::random_device{}()));
++}
++#include <eagler/thprac/PracticeReaction.inc>
++#include <eagler/thprac/PracticeSpeed.inc>
++THGuiTestReactionTest reaction_test;
++bool key_monitor_on=false,show_lock_timer=false,show_items=false,show_bonus=false,show_hitboxes=false;
++bool lock_running=false,reset_speed_ui=false;
++u32 lock_frames=0,last_sample_stage=0,last_sample_frame=0;
++constexpr const char* extra_text[][3]={
++    {"显示锁时计时","Show lock timer","時間停止カウンター"},
++    {"显示道具数量","Show active items","アイテム数"},
++    {"显示回收奖励","Show collection bonus","回収ボーナス"},
++    {"导出按键统计","Export key statistics","キー統計を保存"},
++    {"魔理沙激光录像","Marisa laser replays","魔理沙レーザーのリプレイ"},
++    {"网页移植版使用自己的录像记录；不提供原版 Windows 激光录像修复。","The web port has its own recorder. The Windows laser replay repair is unavailable.","Web版は独自の記録方式です。Windows版のレーザーリプレイ修復には対応していません。"},
++    {"道具","Items","アイテム"},{"回收循环","Collection cycle","回収周期"},
++    {"当前连收","Current collection","回収中"},{"炸弹次数","Bombs used","ボム使用数"},
++    {"最大得点","Point value","最大得点"}
++};
 +void publish(){
 +    const unsigned state=unsigned(captures())|(unsigned(setup)<<1)|(unsigned(Mobile::visible)<<2);
 +    if(announced==state)return;
@@ -5661,6 +5762,15 @@ index 0000000000000000000000000000000000000000..67a79d1437678e6673de8669ccb5e00b
 +bool on_stage(){return game->state.phase==GameSessionPhase::stage||game->state.phase==GameSessionPhase::paused;}
 +bool editable(){return on_stage()&&!game->state.replay&&!game->state.demo;}
 +bool visible(){return setup||cheats||advanced||tracker||Mobile::visible;}
++bool modal(){return setup||advanced||(Mobile::visible&&Mobile::expanded[Mobile::Advanced]);}
++bool pointer_hit(float x,float y){
++    if(modal())return true;
++    if(!context||!visible())return false;
++    for(const auto* window:context->Windows)
++        if(window->Active&&!window->Hidden&&!(window->Flags&ImGuiWindowFlags_NoMouseInputs)&&
++           window->OuterRectClipped.Contains({x,y}))return true;
++    return false;
++}
 +bool awaiting_setup(){
 +    return on_title()&&game->title->screen==TitleScreen::Practice&&game->title->substate==2&&
 +        game->title->th14_practice_overlay_enabled&&game->title->th14_practice_stage_choice==0;
@@ -5748,27 +5858,72 @@ index 0000000000000000000000000000000000000000..67a79d1437678e6673de8669ccb5e00b
 +        ImGui::BeginDisabled(!editable());
 +        if(ImGui::Button((std::string("F7: ")+t(24)).c_str()))bgm_request=true;
 +        ImGui::EndDisabled(!editable());
++        ImGui::BeginDisabled(!on_stage());
++        bool& info=Mobile::visible&&!cheats?Mobile::expanded[Mobile::Information]:tracker;
++        if(Mobile::checkbox("Tab",label(practice_THPRAC_INGAMEINFO),info)&&Mobile::visible&&!cheats)
++            tracker=false;
++        ImGui::EndDisabled(!on_stage());
 +        if(!Mobile::enabled&&ImGui::Button(t(22)))close();
 +    }
 +    ImGui::End();
 +}
++void export_keys(){
++    const auto csv=key_monitor.csv();
++    EM_ASM({
++        const url=URL.createObjectURL(new Blob([UTF8ToString($0)],{type:'text/csv;charset=utf-8'}));
++        const a=document.createElement('a');a.href=url;a.download='APS.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
++    },csv.c_str());
++}
 +void advanced_options(){
-+    ImGui::SetNextWindowPos({226,8},ImGuiCond_Always);
-+    ImGui::SetNextWindowSize({298,0});ImGui::SetNextWindowBgAlpha(.8f);
-+    if(advanced)Mobile::expanded[Mobile::Advanced]=true;
-+    if(Mobile::begin(Mobile::Advanced,"Advanced###th14-purple-advanced",panel_flags|ImGuiWindowFlags_AlwaysAutoResize,locale)){
-+        ImGui::TextUnformatted(t(27));ImGui::Separator();
-+        const bool disabled=!on_title()&&!editable();
-+        ImGui::BeginDisabled(disabled);
-+        for(int i=7;i<11;++i){
-+            const u32 mask=1u<<i;bool value=!!(game->practice_tools&mask);
-+            if(ImGui::Checkbox(label(cheat_text[i]),&value))game->practice_tools^=mask;
++    ImGui::SetNextWindowPos({0,0},ImGuiCond_Always);
++    ImGui::SetNextWindowSize({640,480},ImGuiCond_Always);ImGui::SetNextWindowBgAlpha(.8f);
++
++    const char* window="Advanced###th14-purple-advanced";
++    if(advanced?ImGui::Begin(window,nullptr,panel_flags):Mobile::begin(Mobile::Advanced,window,panel_flags,locale)){
++        ImGui::TextUnformatted(t(27));ImGui::SameLine();
++        if(ImGui::Button(t(22))){
++            advanced=false;Mobile::expanded[Mobile::Advanced]=false;
 +        }
-+        ImGui::EndDisabled(disabled);
-+        if(!Mobile::enabled&&ImGui::Button(t(22)))close();
++        ImGui::Separator();
++        ImGui::BeginChild("Adv. Options");
++        if(ImGui::CollapsingHeader(label(practice_TH_GAME_SPEED)))GameFPSOpt(speed,false,&reset_speed_ui);
++        if(ImGui::CollapsingHeader(label(practice_TH_GAMEPLAY))){
++            const bool disabled=!on_title()&&!editable();
++            ImGui::BeginDisabled(disabled);
++            for(int i=7;i<11;++i){
++                const u32 mask=1u<<i;bool value=!!(game->practice_tools&mask);
++                if(ImGui::Checkbox(label(cheat_text[i]),&value))game->practice_tools^=mask;
++            }
++            ImGui::EndDisabled(disabled);
++            ImGui::Checkbox(label(practice_THPRAC_KB_OPEN),&key_monitor_on);
++            if(key_monitor_on){
++                if(!key_monitor.g_record_key_aps){
++                    if(ImGui::Button(label(practice_THPRAC_KB_RECORD_START))){key_monitor.clear_record();key_monitor.g_record_key_aps=true;}
++                }else if(ImGui::Button(label(practice_THPRAC_KB_RECORD_STOP)))key_monitor.g_record_key_aps=false;
++                ImGui::SameLine();if(ImGui::Button(label(extra_text[3])))export_keys();
++                const auto& values=key_monitor.g_recorded_aps;
++                if(values.size()>1)ImGui::PlotLines("##APS",[](void* ptr,int i){
++                    const auto& v=*static_cast<std::vector<int>*>(ptr);
++                    return float(v[v.size()-std::min<size_t>(600,v.size())+i]);
++                },&key_monitor.g_recorded_aps,int(std::min<size_t>(600,values.size())));
++            }else key_monitor.g_record_key_aps=false;
++            ImGui::Checkbox(label(extra_text[0]),&show_lock_timer);
++            ImGui::Checkbox(label(extra_text[1]),&show_items);
++            ImGui::Checkbox(label(extra_text[2]),&show_bonus);
++            ImGui::Checkbox(label(practice_THPRAC_SHOW_BULLET_HITBOX),&show_hitboxes);
++        }
++        if(ImGui::CollapsingHeader(label(extra_text[4])))ImGui::TextWrapped("%s",label(extra_text[5]));
++        if(ImGui::CollapsingHeader(label(practice_THPRAC_TOOLS_REACTION_TEST)))reaction_test.GuiUpdate(true);
++        else reaction_test.Reset();
++        if(ImGui::CollapsingHeader(label(practice_TH_ABOUT_THPRAC))){
++            ImGui::TextUnformatted("thprac / TH14 Web");
++            ImGui::TextUnformatted(label(practice_TH_ABOUT_AUTHOR));
++            ImGui::TextUnformatted("MIT");
++        }
++        ImGui::EndChild();
 +    }
 +    ImGui::End();
-+    if(Mobile::enabled&&!Mobile::expanded[Mobile::Advanced])advanced=false;
++
 +}
 +void information(){
 +    ImGui::SetNextWindowPos({444,255},ImGuiCond_Always);
@@ -5780,7 +5935,11 @@ index 0000000000000000000000000000000000000000..67a79d1437678e6673de8669ccb5e00b
 +    if(body){
 +        ImGui::Columns(2);
 +        auto field=[](const char* title,long long value){ImGui::TextUnformatted(title);ImGui::NextColumn();ImGui::Text("%lld",value);ImGui::NextColumn();};
-+        field(t(1),game->state.stage);field(t(23),game->state.frame);field(t(17),game->economy.graze);field(t(18),i64(game->economy.score_units)*10);
++        field(t(1),game->state.stage);field(t(23),game->state.frame);field(t(17),game->economy.graze);
++        field(t(18),i64(game->economy.score_units)*10);field(label(extra_text[10]),game->economy.point_value/100);
++        if(game->battle)field(label(extra_text[9]),game->battle->bomb_count());
++        if(show_items&&game->battle)field(label(extra_text[6]),game->battle->items.active_count);
++        if(show_bonus){field(label(extra_text[7]),game->economy.th14_combo.total);field(label(extra_text[8]),game->economy.th14_combo.count);}
 +        ImGui::Columns(1);
 +    }
 +    ImGui::End();
@@ -5797,6 +5956,38 @@ index 0000000000000000000000000000000000000000..67a79d1437678e6673de8669ccb5e00b
 +    glyphs.AddRanges(io.Fonts->GetGlyphRangesDefault());
 +    for(const auto& row:setup_text)for(const auto* text:row)glyphs.AddText(text);
 +    for(const auto& row:cheat_text)for(const auto* text:row)glyphs.AddText(text);
++    for(const auto& row:extra_text)for(const auto* text:row)glyphs.AddText(text);
++    glyphs.AddText(label(practice_THPRAC_INGAMEINFO));
++    glyphs.AddText(label(practice_TH_GAME_SPEED));
++    glyphs.AddText(label(practice_TH_GAMEPLAY));
++    glyphs.AddText(label(practice_TH_FPS_ERR));
++    glyphs.AddText(label(practice_TH_FPS_UNSUPPORTED));
++    glyphs.AddText(label(practice_TH_FPS_ADJ));
++    glyphs.AddText(label(practice_TH_FPS_FREE_ADJ));
++    glyphs.AddText(label(practice_TH_ADV_OPT_APPLY));
++    glyphs.AddText(label(practice_TH_FPS_LOWERING));
++    glyphs.AddText(label(practice_TH_ABOUT_THPRAC));
++    glyphs.AddText(label(practice_TH_ABOUT_AUTHOR));
++    glyphs.AddText(label(practice_THPRAC_KB_OPEN));
++    glyphs.AddText(label(practice_THPRAC_KB_RECORD_START));
++    glyphs.AddText(label(practice_THPRAC_KB_RECORD_STOP));
++    glyphs.AddText(label(practice_THPRAC_BACK));
++    glyphs.AddText(label(practice_THPRAC_TOOLS_REACTION_MODE));
++    glyphs.AddText(label(practice_THPRAC_TOOLS_REACTION_MODE_DOWN));
++    glyphs.AddText(label(practice_THPRAC_TOOLS_REACTION_MODE_NORMAL));
++    glyphs.AddText(label(practice_THPRAC_TOOLS_REACTION_MODE_PROGRESSBAR));
++    glyphs.AddText(label(practice_THPRAC_TOOLS_REACTION_MODE_UP));
++    glyphs.AddText(label(practice_THPRAC_TOOLS_REACTION_SHOW_PROC_BAR));
++    glyphs.AddText(label(practice_THPRAC_TOOLS_REACTION_TEST));
++    glyphs.AddText(label(practice_THPRAC_TOOLS_REACTION_TEST_BEGIN));
++    glyphs.AddText(label(practice_THPRAC_TOOLS_REACTION_TEST_DOWN));
++    glyphs.AddText(label(practice_THPRAC_TOOLS_REACTION_TEST_NEXT_TEST));
++    glyphs.AddText(label(practice_THPRAC_TOOLS_REACTION_TEST_RESULT));
++    glyphs.AddText(label(practice_THPRAC_TOOLS_REACTION_TEST_RESULT_AVG));
++    glyphs.AddText(label(practice_THPRAC_TOOLS_REACTION_TEST_TIME));
++    glyphs.AddText(label(practice_THPRAC_TOOLS_REACTION_TEST_TOO_EARLY));
++    glyphs.AddText(label(practice_THPRAC_TOOLS_REACTION_TEST_UP));
++    glyphs.AddText(label(practice_THPRAC_SHOW_BULLET_HITBOX));
 +    for(const auto& row:chars)for(const auto* text:row)glyphs.AddText(text);
 +    for(const auto& item:practice_labels)for(const auto& row:item.names)for(const auto* text:row)glyphs.AddText(text);
 +    for(const auto* text:{"作弊菜单高级设置高级状态信息","チートメニュー詳細設定詳細情報"})glyphs.AddText(text);
@@ -5812,20 +6003,29 @@ index 0000000000000000000000000000000000000000..67a79d1437678e6673de8669ccb5e00b
 +    close();game=&s;s.practice_enabled=enabled;s.practice_tools=0;
 +    locale=std::clamp(language,0,2);
 +    params={};params.stage=1;rank=1;character=shot=0;
++    speed={};reset_speed_ui=true;reaction_test.Reset();
++    key_monitor={};key_monitor_on=show_lock_timer=show_items=show_bonus=show_hitboxes=false;
++    lock_running=false;lock_frames=last_sample_stage=last_sample_frame=0;
 +}
 +void mobile(bool enabled,bool open){
 +    if(!game||!game->practice_enabled)return;
 +    open=enabled&&open&&!setup;
-+    const bool was_open=Mobile::visible;
 +    Mobile::update(enabled,open);
-+    if(was_open!=open){
-+        if(open)Mobile::expanded[Mobile::Cheats]=true;
-+        else cheats=advanced=false;
-+        clear_input();
-+    }
 +    publish();
 +}
-+bool captures() noexcept {return game&&game->practice_enabled&&(setup||cheats||advanced||Mobile::visible);}
++double speed_scale() noexcept{
++    return game&&game->practice_enabled&&game->state.phase==GameSessionPhase::stage&&
++        !game->state.replay&&!game->state.demo&&!modal()?std::clamp(speed.fps,60,240)/60.:1.;
++}
++void sample_keys(u32 bits){
++    if(!game||!game->practice_enabled||game->state.phase!=GameSessionPhase::stage)return;
++    if(key_monitor_on)key_monitor.record(14,bits);
++    if(game->state.stage!=last_sample_stage||game->state.frame<last_sample_frame)lock_running=false;
++    last_sample_stage=game->state.stage;last_sample_frame=game->state.frame;
++    if(game->practice_tools&PrTime){if(!lock_running)lock_frames=0;++lock_frames;lock_running=true;}
++    else lock_running=false;
++}
++bool captures() noexcept {return game&&game->practice_enabled&&modal();}
 +bool key(unsigned vk,bool down){
 +    if(!game||!game->practice_enabled||vk>=held.size())return false;
 +    const bool was_captured=captures();
@@ -5835,7 +6035,7 @@ index 0000000000000000000000000000000000000000..67a79d1437678e6673de8669ccb5e00b
 +    if(edge){
 +        if(vk==123&&!setup&&(on_title()||on_stage())){
 +            advanced=!advanced;
-+            if(Mobile::enabled)Mobile::expanded[Mobile::Advanced]=advanced;
++            if(!advanced)Mobile::expanded[Mobile::Advanced]=false;
 +            publish();
 +        }
 +        else if(vk==8&&!setup&&on_stage()){cheats=!cheats;publish();}
@@ -5847,24 +6047,45 @@ index 0000000000000000000000000000000000000000..67a79d1437678e6673de8669ccb5e00b
 +            if(!setup_popup)finish_setup(false);
 +            else if(vk==88)held[27]=true;
 +        }
-+        else if(vk==27&&captures())close();
++        else if(vk==27&&(advanced||Mobile::expanded[Mobile::Advanced])){
++            advanced=false;Mobile::expanded[Mobile::Advanced]=false;publish();
++        }
 +        else if(editable()&&vk>=112&&vk<=117)game->practice_tools^=1u<<(vk-112);
 +        else if(editable()&&vk==85)game->practice_tools^=PrEnemy;
 +        else if(editable()&&vk==118)bgm_request=true;
 +    }
 +    return special||was_captured||captures();
 +}
-+bool pointer(unsigned type,int id,float x,float y){
-+    if(!captures()||type>2)return false;
++bool pointer(unsigned type,int id,float x,float y,float* restart_x,float* restart_y){
++    if(!game||!game->practice_enabled||type>2)return false;
++    const float px=x*640,py=y*480;
++    if(type==0&&owned_pointer&&id==active_pointer)cancel_pointer();
++    using Route=eagler::thprac::PracticePointer::TouchRoute;
++    const bool hit=type==0&&pointer_hit(px,py);
++    // TH14 receives mobile state through its host export; do not poll the
++    // other ports' Module.eaglerControls transport and clear that state.
++    const auto* info=type==0&&restart_x&&context&&Mobile::visible&&!modal()&&Mobile::information_window?
++        ImGui::FindWindowByID(Mobile::information_window):nullptr;
++    const bool passive=info&&info->Active&&!info->Hidden&&info->OuterRectClipped.Contains({px,py})&&
++        !ImGui::IsPopupOpen(nullptr,ImGuiPopupFlags_AnyPopupId|ImGuiPopupFlags_AnyPopupLevel);
++    const auto decision=touch_routes.route_touch(type,id,hit,passive,px,py);
++    if(decision.route==Route::Game)return false;
++    if(decision.route==Route::BeginGame){*restart_x=decision.x/640;*restart_y=decision.y/480;return false;}
++    if(decision.route==Route::Pending)return true;
++    if(decision.route==Route::Tap){
++        if(!owned_pointer&&edges.size()<31){edges.push_back({true,decision.x,decision.y});edges.push_back({false,px,py});}
++        return true;
++    }
 +    if(type==0){if(owned_pointer)return true;owned_pointer=true;active_pointer=id;}
 +    if(!owned_pointer||active_pointer!=id)return true;
-+    mouse_x=x*640;mouse_y=y*480;
-+    if(type!=1&&edges.size()<32)edges.push_back({type==0,mouse_x,mouse_y});
++    mouse_x=px;mouse_y=py;
++    if(type!=1&&edges.size()<32)edges.push_back({type==0,px,py});
 +    if(type==2)owned_pointer=false;
 +    return true;
 +}
-+void clear_input(){held.fill(false);pressed.fill(false);edges.clear();owned_pointer=mouse_down=false;mouse_x=mouse_y=-FLT_MAX;}
-+void mouse_motion(float x,float y){if(captures()){mouse_x=x*640;mouse_y=y*480;}}
++void cancel_pointer(){touch_routes.reset();edges.clear();owned_pointer=mouse_down=false;mouse_x=mouse_y=-FLT_MAX;}
++void clear_input(){held.fill(false);pressed.fill(false);cancel_pointer();}
++void mouse_motion(float x,float y){if(visible()&&!owned_pointer){mouse_x=x*640;mouse_y=y*480;}}
 +bool take_bgm_request(){const bool value=bgm_request;bgm_request=false;return value;}
 +void close(){setup=setup_popup=cheats=advanced=tracker=bgm_request=false;Mobile::update(Mobile::enabled,false);clear_input();publish();}
 +void sync_setup(){
@@ -5893,8 +6114,38 @@ index 0000000000000000000000000000000000000000..67a79d1437678e6673de8669ccb5e00b
 +    else{
 +        if(cheats||Mobile::visible)cheat_options();
 +        if(advanced||Mobile::visible)advanced_options();
++        if(on_stage()&&key_monitor_on&&(!Mobile::enabled||Mobile::visible)){
++            KeyRectStyle style;style.text_color_press=style.text_color_release=IM_COL32(32,32,32,255);
++            if(!Mobile::enabled||Mobile::expanded[Mobile::Keyboard])KeysHUD(14,{1280,0},{840,0},style,true,false);
++            if(Mobile::visible){
++                ImGui::SetNextWindowPos({420,65},ImGuiCond_Always);ImGui::SetNextWindowSize({0,0});
++                Mobile::begin(Mobile::Keyboard,"Keys###th14-mobile-keys",panel_flags|ImGuiWindowFlags_AlwaysAutoResize,locale);ImGui::End();
++            }
++        }
++        if(on_stage()&&show_lock_timer&&lock_running){
++            auto* draw=ImGui::GetOverlayDrawList();char seconds[32];
++            std::snprintf(seconds,sizeof seconds,"%.2f s",lock_frames/60.);
++            draw->AddRectFilled({31,0},{110,20},IM_COL32(255,255,255,255));
++            draw->AddText({36,1},IM_COL32(0,0,0,255),seconds);
++        }
++        if(on_stage()&&show_hitboxes&&game->battle){
++            auto* draw=ImGui::GetOverlayDrawList();draw->PushClipRect({32,16},{416,464},true);
++            for(auto* b=game->battle->bullets.first_th14();b;b=b->th14_active_next)
++                if((b->state==1||b->state==2)&&(b->flags&2)&&!b->collision_delay&&b->hitbox.x>0){
++                    const float scale=b->flags&0x40?b->th14_size:1.f;
++                    const ImVec2 center{224+b->position.x,16+b->position.y};
++                    const u32 color=IM_COL32(255,80,80,255);
++                    if(b->flags&0x10)draw->AddCircle(center,b->hitbox.x*scale,color,12);
++                    else{
++                        const float x=b->hitbox.x*scale*.5f,y=b->hitbox.y*scale*.5f;
++                        draw->AddRect({center.x-x,center.y-y},{center.x+x,center.y+y},color);
++                    }
++                }
++            draw->PopClipRect();
++        }
 +    }
-+    if(on_stage()&&(tracker||Mobile::visible))information();
++    if(on_stage()&&!modal()&&(tracker||Mobile::visible))information();
++    publish();
 +    ImGui::Render();
 +    renderer.render_imgui(ImGui::GetDrawData(),1);
 +    pressed.fill(false);
@@ -5903,10 +6154,10 @@ index 0000000000000000000000000000000000000000..67a79d1437678e6673de8669ccb5e00b
 +#endif
 diff --git a/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.hpp b/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.hpp
 new file mode 100644
-index 0000000000000000000000000000000000000000..b4a3f44daa37eeffa21e54fb99b78e01e191b297
+index 0000000000000000000000000000000000000000..a40f87f8b4410700a8e0c79eb7358e77b48501bd
 --- /dev/null
 +++ b/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.hpp
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,25 @@
 +#pragma once
 +#include "../game/PortTitle.hpp"
 +#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
@@ -5918,7 +6169,10 @@ index 0000000000000000000000000000000000000000..b4a3f44daa37eeffa21e54fb99b78e01
 +void configure(GameSession&,bool enabled,int locale);
 +void mobile(bool enabled,bool visible);
 +bool key(unsigned vk,bool down);
-+bool pointer(unsigned type,int id,float x,float y);
++bool pointer(unsigned type,int id,float x,float y,float* restart_x=nullptr,float* restart_y=nullptr);
++void cancel_pointer();
++double speed_scale() noexcept;
++void sample_keys(u32 held);
 +void mouse_motion(float x,float y);
 +bool take_bgm_request();
 +bool captures() noexcept;
@@ -7275,7 +7529,7 @@ index 60d5183dffe1480f4a228efbba8db66ecff408d3..b5b6badc34f874463868c963f2ecb0f5
      runtime.openArchive(bytes);assert.equal(await runtime.archiveOpening,227);await valid();assert.equal(copies,3);
      assert.equal(module._fixture_reset(),1);assert.equal(module._fixture_empty(),1);const before=copies;
 diff --git a/tools/th14-build-gles.py b/tools/th14-build-gles.py
-index 0721fa9d26730472f580751ef017daacce2324a0..e6cb3dc857ba8a0a130cfc6981fc6f3638e643b4 100644
+index 0721fa9d26730472f580751ef017daacce2324a0..1950236e0c092b74cf92af28d7d71ccd18a0eb24 100644
 --- a/tools/th14-build-gles.py
 +++ b/tools/th14-build-gles.py
 @@ -11,10 +11,31 @@ import sys
@@ -7325,7 +7579,7 @@ index 0721fa9d26730472f580751ef017daacce2324a0..e6cb3dc857ba8a0a130cfc6981fc6f36
 +    flags += ['-I' + str(imgui), '-I' + str(shared), '-DIMGUI_DISABLE_WIN32_FUNCTIONS']
 +    tracked = set(source for source in sources if source.is_relative_to(repo))
 +    common_files = [*sorted(imgui.glob('*.h')), *sorted(imgui.glob('*.inl')), *sorted(imgui.glob('*.cpp')),
-+                    shared / 'eagler/thprac/PracticeMobilePanels.hpp']
++                    *sorted((shared / 'eagler/thprac').glob('Practice*'))]
 +    common_bindings = {p.relative_to(common).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in common_files}
      for directory in (cpp, runtime / 'portable'):
          tracked.update(p for p in directory.rglob('*')

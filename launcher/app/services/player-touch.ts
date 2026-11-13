@@ -235,7 +235,7 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
           const detail = (event as CustomEvent<{open?: unknown; practice?: unknown; mobile?: unknown}>).detail;
           if (typeof detail?.open !== 'boolean') return;
           const {open} = detail;
-          if (open && !thpracPanelOpen) direct.cancel(false);
+          if (open && !thpracPanelOpen) direct.cancel();
           thpracPanelOpen = open;
           thpracPracticeOpen = detail.practice === true;
           // The practice selector and F12 both capture input, independently
