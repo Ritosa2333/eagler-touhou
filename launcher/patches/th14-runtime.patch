@@ -4167,7 +4167,7 @@ index 0000000000000000000000000000000000000000..65dba481c943497e0e7e05c8a28815f0
 +#endif
 +}
 diff --git a/runtimes/th12/th12_web/cpp/game/ReplayRecorder.cpp b/runtimes/th12/th12_web/cpp/game/ReplayRecorder.cpp
-index 2ec32fdfe1e8b2b2f4921fcba99bdf2a85a3684a..f1174bf8baf8b57ff7350850f72781a0c3e8d203 100644
+index 2ec32fdfe1e8b2b2f4921fcba99bdf2a85a3684a..1baf9a1ab1d02a28b0851eb63a82caa7a1869996 100644
 --- a/runtimes/th12/th12_web/cpp/game/ReplayRecorder.cpp
 +++ b/runtimes/th12/th12_web/cpp/game/ReplayRecorder.cpp
 @@ -13,6 +13,9 @@ void dword(u8* p,u32 v){word(p,v);word(p+2,v>>16);}
@@ -4175,7 +4175,7 @@ index 2ec32fdfe1e8b2b2f4921fcba99bdf2a85a3684a..f1174bf8baf8b57ff7350850f72781a0
  bool ReplayRecorder::begin(i32 character,i32 subtype,i32 difficulty,bool practice,u64 timestamp){
      header={};stages={};selected=0;valid=false;
 +#if PORT_TITLE == 14
-+    practice={};practice_events={};
++    this->practice={};practice_events={};
 +#endif
      if(!player_selection_valid(character,subtype)||difficulty<0||difficulty>4)return false;
      header[10]=practice;dword(header.data()+12,u32(timestamp));dword(header.data()+16,u32(timestamp>>32));
