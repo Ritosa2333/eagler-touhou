@@ -778,6 +778,10 @@ private:
     u32 next_serial_ = 1;
     u32 next_bullet_generation_ = 0;
     std::vector<i32> bullet_free_slots_;
+    // advance_bullets 持有向量内引用时为真。此窗口内 emit 不得把 bullets 重分配。
+    bool bullet_inplace_ = false;
+    std::vector<size_t> bullet_order_;
+    bool advance_one_bullet(StageBullet& bullet, size_t index, float global_rate, bool writeback);
     std::vector<size_t> bullet_pool_order() const;
     void release_bullet_slot(StageBullet& bullet);
 };

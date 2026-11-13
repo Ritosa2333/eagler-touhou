@@ -1388,170 +1388,182 @@ void StageSim::step_bullet_behaviors(StageBullet& bullet) {
     }
 }
 
-void StageSim::advance_bullets() {
-    const float global_rate = time_rate();
-    // 0x40db10 每弹一帧（队列在管理器链序 = 新弹在头的插入序；行为不抽
-    // RNG，序不影响同步）：
-    //   state 2（种子 op==2 的延迟弹）：pos += vel×0.5（0x40dbf9 分支）；
-    //   随后与普通弹同路（0x40dd8d 门 0x4d4 默认 1.0f 恒过）。
-    //   state 1：0x40f030 队列消费 → 行为派发 → pos += vel（0x40dec1）。
-    //   出界回收：游戏区外扩（保持既有 ±256/-64..512 缓冲带）。
-    // 帧首快照弹数：本帧中途 0x2000 新产弹不入当帧更新（原版头插在游标
-    // 之后再到达）。逐弹以本地副本推进再写回：队列内 0x2000 的递归
-    // push_back 会使 vector 重分配，禁止持有跨调用引用。
-    const size_t count = bullets.size();
-    std::vector<size_t> active_order;
-    active_order.reserve(count);
-    for (size_t i = count; i > 0; --i) active_order.push_back(i - 1);
-    // 40e840 links each node at the head *before* processing birth-time
-    // recursive children. Vector insertion happens after that processing,
-    // so generation order, rather than reverse vector order, represents the
-    // native active chain when a parent creates children during its birth.
-    std::stable_sort(active_order.begin(), active_order.end(), [this](size_t a, size_t b) {
-        return bullets[a].generation > bullets[b].generation;
-    });
-    for (size_t i : active_order) {
-        StageBullet bullet = bullets[i];
-        if (!bullet.alive) {
-            release_bullet_slot(bullets[i]);
-            continue;
-        }
-        // 0x40db10 的 switch(+0xbbe) 用帧首状态选分支：本帧进入 case1 的弹
-        // 会后处理队列/位移，末尾只按 +0x20 的碰撞位调用 0x444140/0x443fd0。
-        // 0x411380 把 bbe 置 3 但不清 +0x20 bit1，所以淡出同帧仍擦弹/命中；
-        // 下一帧才走 case3（仅半速位移、无碰撞）。
-        const u16 entered_state = bullet.state;
-        const bool entered_fade = entered_state == 3;
-        bool delayed_contact = false;
-        if (bullet.state == 2) {
-            bullet.x += float(bullet.vel[0] * global_rate) * 0.5f;
-            bullet.y += float(bullet.vel[1] * global_rate) * 0.5f;
-            bullet.z += float(bullet.vel[2] * global_rate) * 0.5f;
-            bullet.collision_ready = bullet.state_age > 7;
-            if (bullet.collision_ready && bullet_player_collision) {
-                bullet_player_collision(bullet);
-                if (!error_.empty()) return;
-                delayed_contact = bullet.state == 3;
-            }
-            // 40db10 enters the state1 path in the same tick after the
-            // delayed VM signals readiness, unless the delayed hit canceled it.
-            if (bullet.state == 2 && bullet.animation_ready) bullet.state = 1;
-        } else {
-            bullet.collision_ready = true;
-        }
-        if (bullet.state == 1) {
-            // 40db10 repeats queue consumption in this update when a
-            // behavior returns completion; the next serial command starts
-            // before movement, not on the next frame.
-            u32 finished;
-            do {
-                process_bullet_queue(bullet, false);
-                if (!error_.empty()) return;
-                const u32 previous = bullet.behavior_flags;
-                if (!previous) break;
-                step_bullet_behaviors(bullet);
-                if (!error_.empty()) return;
-                if (bullet.cancel_protection != 0) --bullet.cancel_protection;
-                finished = previous & ~bullet.behavior_flags;
-            } while (finished);
-        }
-        if (bullet.state != 2 && bullet.state != 4 && !delayed_contact) {
-            // 40db10 selects case1 before queue processing.411380 may set
-            // state3 within that queue, but this already-entered case still
-            // moves at full speed; the following update selects case3/half.
-            const float rate = entered_fade ? .5f : 1.f;
-            bullet.x += float(bullet.vel[0] * global_rate) * rate;
-            bullet.y += float(bullet.vel[1] * global_rate) * rate;
-            bullet.z += float(bullet.vel[2] * global_rate) * rate;
-        }
-        // 帧首 case1（含 2→1 的 goto 复用）在末尾调用碰撞；本帧由 1 变 3
-        // 的弹仍要碰撞，下一帧进入 case3 才停止。
-        const bool collide_now = entered_state == 1 || bullet.state == 1;
-        if (collide_now) bullet.collision_ready = true;
-        if (collide_now && bullet.collision_ready && bullet_player_collision) {
+bool StageSim::advance_one_bullet(StageBullet& bullet, size_t index, float global_rate, bool writeback) {
+
+    if (!bullet.alive) {
+        release_bullet_slot(bullets[index]);
+        return true;
+    }
+    // 0x40db10 的 switch(+0xbbe) 用帧首状态选分支：本帧进入 case1 的弹
+    // 会后处理队列/位移，末尾只按 +0x20 的碰撞位调用 0x444140/0x443fd0。
+    // 0x411380 把 bbe 置 3 但不清 +0x20 bit1，所以淡出同帧仍擦弹/命中；
+    // 下一帧才走 case3（仅半速位移、无碰撞）。
+    const u16 entered_state = bullet.state;
+    const bool entered_fade = entered_state == 3;
+    bool delayed_contact = false;
+    if (bullet.state == 2) {
+        bullet.x += float(bullet.vel[0] * global_rate) * 0.5f;
+        bullet.y += float(bullet.vel[1] * global_rate) * 0.5f;
+        bullet.z += float(bullet.vel[2] * global_rate) * 0.5f;
+        bullet.collision_ready = bullet.state_age > 7;
+        if (bullet.collision_ready && bullet_player_collision) {
             bullet_player_collision(bullet);
-            if (!error_.empty()) return;
+            if (!error_.empty()) return false;
+            delayed_contact = bullet.state == 3;
         }
-        // 0x40db10:330-334：switch(+0xbbe) 的位移分支结束后，先调用
-        // 0x410be0（op 0x1000 环绕），再调用 0x40da30 出界回收——顺序在
-        // 同一帧内可决定去留。op 0x1000（00410be0）：出界时按 +0x10dc 掩码
-        // 把位置整幅平移（环绕，不反射速度），计满 +0x10d8 清位；每次反弹
-        // 播 +0xbcc。出界判定 = 0040daa0：精灵盒 [x±w/2]×[y±h/2] 与
-        // [-192,192]×[0,448] 相交才算界内（严格 x+w/2>-192、x-w/2<192、
-        // y+h/2>0、y-h/2<448；0040daa0 反汇编 fcomp 后 jnp 走「大于」分支，
-        // 等号落在出界侧）。原版 0x40db10:330 要求 bullet+0x54（ANM
-        // 对象）非空才调用；无几何时端口同样跳过（不报错、不清位）。
-        if (bullet.behavior_flags & 0x1000u) {
-            if (bullet.animation_geometry) {
-                // 0040daa0 的 x87 链：fld w; fmul 0.5(double); fadd x;
-                // fcomp -192.0(double)——float 输入在 double 下精确可表示，
-                // 与 80-bit 扩展结果一致；float 加法会在 x+w/2 处先行舍入，
-                // 故与回收块同用 double。
-                const double hw = double(bullet.sprite_width) * 0.5;
-                const double hh = double(bullet.sprite_height) * 0.5;
-                const bool inside = double(bullet.x) + hw > -192.0 &&
-                                    double(bullet.x) - hw < 192.0 &&
-                                    double(bullet.y) + hh > 0.0 &&
-                                    double(bullet.y) - hh < 448.0;
-                if (!inside) {
-                    const u32 mask = bullet.ex1000_mask;
-                    bool bounced = false;
-                    if ((mask & 1u) && bullet.y < 0.0f) {
-                        bullet.y = bullet.sprite_height + 448.0f + bullet.y;
-                        bounced = true;
-                    } else if ((mask & 2u) && bullet.y > 448.0f) {
-                        bullet.y = bullet.y - (bullet.sprite_height + 448.0f);
-                        bounced = true;
-                    } else if ((mask & 4u) && bullet.x < -192.0f) {
-                        bullet.x = bullet.sprite_width + 384.0f + bullet.x;
-                        bounced = true;
-                    } else if ((mask & 8u) && bullet.x > 192.0f) {
-                        bullet.x = bullet.x - (bullet.sprite_width + 384.0f);
-                        bounced = true;
+        // 40db10 enters the state1 path in the same tick after the
+        // delayed VM signals readiness, unless the delayed hit canceled it.
+        if (bullet.state == 2 && bullet.animation_ready) bullet.state = 1;
+    } else {
+        bullet.collision_ready = true;
+    }
+    if (bullet.state == 1) {
+        // 40db10 repeats queue consumption in this update when a
+        // behavior returns completion; the next serial command starts
+        // before movement, not on the next frame.
+        u32 finished;
+        do {
+            process_bullet_queue(bullet, false);
+            if (!error_.empty()) return false;
+            const u32 previous = bullet.behavior_flags;
+            if (!previous) break;
+            step_bullet_behaviors(bullet);
+            if (!error_.empty()) return false;
+            if (bullet.cancel_protection != 0) --bullet.cancel_protection;
+            finished = previous & ~bullet.behavior_flags;
+        } while (finished);
+    }
+    if (bullet.state != 2 && bullet.state != 4 && !delayed_contact) {
+        // 40db10 selects case1 before queue processing.411380 may set
+        // state3 within that queue, but this already-entered case still
+        // moves at full speed; the following update selects case3/half.
+        const float rate = entered_fade ? .5f : 1.f;
+        bullet.x += float(bullet.vel[0] * global_rate) * rate;
+        bullet.y += float(bullet.vel[1] * global_rate) * rate;
+        bullet.z += float(bullet.vel[2] * global_rate) * rate;
+    }
+    // 帧首 case1（含 2→1 的 goto 复用）在末尾调用碰撞；本帧由 1 变 3
+    // 的弹仍要碰撞，下一帧进入 case3 才停止。
+    const bool collide_now = entered_state == 1 || bullet.state == 1;
+    if (collide_now) bullet.collision_ready = true;
+    if (collide_now && bullet.collision_ready && bullet_player_collision) {
+        bullet_player_collision(bullet);
+        if (!error_.empty()) return false;
+    }
+    // 0x40db10:330-334：switch(+0xbbe) 的位移分支结束后，先调用
+    // 0x410be0（op 0x1000 环绕），再调用 0x40da30 出界回收——顺序在
+    // 同一帧内可决定去留。op 0x1000（00410be0）：出界时按 +0x10dc 掩码
+    // 把位置整幅平移（环绕，不反射速度），计满 +0x10d8 清位；每次反弹
+    // 播 +0xbcc。出界判定 = 0040daa0：精灵盒 [x±w/2]×[y±h/2] 与
+    // [-192,192]×[0,448] 相交才算界内（严格 x+w/2>-192、x-w/2<192、
+    // y+h/2>0、y-h/2<448；0040daa0 反汇编 fcomp 后 jnp 走「大于」分支，
+    // 等号落在出界侧）。原版 0x40db10:330 要求 bullet+0x54（ANM
+    // 对象）非空才调用；无几何时端口同样跳过（不报错、不清位）。
+    if (bullet.behavior_flags & 0x1000u) {
+        if (bullet.animation_geometry) {
+            // 0040daa0 的 x87 链：fld w; fmul 0.5(double); fadd x;
+            // fcomp -192.0(double)——float 输入在 double 下精确可表示，
+            // 与 80-bit 扩展结果一致；float 加法会在 x+w/2 处先行舍入，
+            // 故与回收块同用 double。
+            const double hw = double(bullet.sprite_width) * 0.5;
+            const double hh = double(bullet.sprite_height) * 0.5;
+            const bool inside = double(bullet.x) + hw > -192.0 &&
+                                double(bullet.x) - hw < 192.0 &&
+                                double(bullet.y) + hh > 0.0 &&
+                                double(bullet.y) - hh < 448.0;
+            if (!inside) {
+                const u32 mask = bullet.ex1000_mask;
+                bool bounced = false;
+                if ((mask & 1u) && bullet.y < 0.0f) {
+                    bullet.y = bullet.sprite_height + 448.0f + bullet.y;
+                    bounced = true;
+                } else if ((mask & 2u) && bullet.y > 448.0f) {
+                    bullet.y = bullet.y - (bullet.sprite_height + 448.0f);
+                    bounced = true;
+                } else if ((mask & 4u) && bullet.x < -192.0f) {
+                    bullet.x = bullet.sprite_width + 384.0f + bullet.x;
+                    bounced = true;
+                } else if ((mask & 8u) && bullet.x > 192.0f) {
+                    bullet.x = bullet.x - (bullet.sprite_width + 384.0f);
+                    bounced = true;
+                }
+                if (bounced) {
+                    bullet.ex1000_count += 1;
+                    if (bullet.transform_sound >= 0 && enemy_sound &&
+                        !enemy_sound(bullet.transform_sound)) {
+                        error_ = "Bullet wrap sound failed";
+                        return false;
                     }
-                    if (bounced) {
-                        bullet.ex1000_count += 1;
-                        if (bullet.transform_sound >= 0 && enemy_sound &&
-                            !enemy_sound(bullet.transform_sound)) {
-                            error_ = "Bullet wrap sound failed";
-                            return;
-                        }
-                        if (bullet.ex1000_limit <= bullet.ex1000_count)
-                            bullet.behavior_flags ^= 0x1000u;
-                    }
+                    if (bullet.ex1000_limit <= bullet.ex1000_count)
+                        bullet.behavior_flags ^= 0x1000u;
                 }
             }
         }
-        if (!(bullet.behavior_flags & 0x100u)) {
-            if (bullet.animation_geometry && bullet.cull_grace <= 0) {
-                // 40db10 -> 40da30 reads the current sprite dimensions
-                // before this update's ANM tick. Boundary contact is out.
-                const double half_w = double(bullet.sprite_width) * .5;
-                const double half_h = double(bullet.sprite_height) * .5;
-                if (double(bullet.x) + half_w <= -192 || double(bullet.x) - half_w >= 192 ||
-                    double(bullet.y) + half_h <= -64 || double(bullet.y) - half_h >= 448)
-                    bullet.alive = false;
-            } else if (!bullet_animation &&
-                (bullet.x < -256.f || bullet.x > 256.f || bullet.y < -64.f || bullet.y > 512.f)) {
-                bullet.alive = false; // animation-free diagnostic boundary
-            }
-        }
-        if (bullet.cull_grace > 0) --bullet.cull_grace;
-        if (bullet.alive && bullet_animation && !bullet_animation(bullet, false)) return;
-        if (!bullet.alive) release_bullet_slot(bullet);
-        if (truncate_int(bullet.state_time) != bullet.state_age)
-            bullet.state_time = float(bullet.state_age);
-        bullet.state_time += global_rate > .99f && global_rate < 1.01f ? 1.f : global_rate;
-        bullet.state_age = truncate_int(bullet.state_time);
-        bullets[i] = bullet;
     }
-    // 尾部压缩：存活弹前移（稳定序，逐帧 O(n)）。
+    if (!(bullet.behavior_flags & 0x100u)) {
+        if (bullet.animation_geometry && bullet.cull_grace <= 0) {
+            // 40db10 -> 40da30 reads the current sprite dimensions
+            // before this update's ANM tick. Boundary contact is out.
+            const double half_w = double(bullet.sprite_width) * .5;
+            const double half_h = double(bullet.sprite_height) * .5;
+            if (double(bullet.x) + half_w <= -192 || double(bullet.x) - half_w >= 192 ||
+                double(bullet.y) + half_h <= -64 || double(bullet.y) - half_h >= 448)
+                bullet.alive = false;
+        } else if (!bullet_animation &&
+            (bullet.x < -256.f || bullet.x > 256.f || bullet.y < -64.f || bullet.y > 512.f)) {
+            bullet.alive = false; // animation-free diagnostic boundary
+        }
+    }
+    if (bullet.cull_grace > 0) --bullet.cull_grace;
+    if (bullet.alive && bullet_animation && !bullet_animation(bullet, false)) return false;
+    if (!bullet.alive) release_bullet_slot(bullet);
+    if (truncate_int(bullet.state_time) != bullet.state_age)
+        bullet.state_time = float(bullet.state_age);
+    bullet.state_time += global_rate > .99f && global_rate < 1.01f ? 1.f : global_rate;
+    bullet.state_age = truncate_int(bullet.state_time);
+    
+    if (writeback) bullets[index] = bullet;
+    return true;
+}
+
+void StageSim::advance_bullets() {
+    const float global_rate = time_rate();
+    const size_t count = bullets.size();
+    // 交互模式每次出生拿走一个空闲槽。本趟最多归还 count 个（向量里已有的弹
+    // 各一次）；新生弹下一帧才更新，不会在本趟再次还槽。留出这些 append 后，
+    // 就地更新期间 push_back 不重分配。非交互路径仍整颗拷贝。
+    const size_t birth_room = interactive ? bullet_free_slots_.size() + count : 0;
+    if (birth_room != 0 && bullets.capacity() < count + birth_room)
+        bullets.reserve(count + birth_room);
+    const bool inplace = interactive && birth_room != 0 && bullets.capacity() >= count + birth_room;
+    if (inplace) bullet_inplace_ = true;
+    struct InplaceClear { bool* flag; ~InplaceClear() { if (flag) *flag = false; } } clear{inplace ? &bullet_inplace_ : nullptr};
+    bullet_order_.clear();
+    if (bullet_order_.capacity() < count) bullet_order_.reserve(count);
+    for (size_t i = count; i > 0; --i) bullet_order_.push_back(i - 1);
+    // 40e840 在处理出生递归子弹之前把头结点链上。向量要等处理完才 push，
+    // 父弹生成序号小于其子弹，却排在子弹后面。更新序按 generation 降序。
+    std::stable_sort(bullet_order_.begin(), bullet_order_.end(), [this](size_t a, size_t b) {
+        return bullets[a].generation > bullets[b].generation;
+    });
+    for (size_t index : bullet_order_) {
+        if (inplace) {
+            if (!advance_one_bullet(bullets[index], index, global_rate, false)) return;
+        } else {
+            StageBullet bullet = bullets[index];
+            if (!advance_one_bullet(bullet, index, global_rate, true)) return;
+        }
+    }
+    // 尾部压缩：存活弹前移。已经在位的不自我赋值。
     size_t keep = 0;
     for (size_t i = 0; i < bullets.size(); ++i) {
-        if (bullets[i].alive) bullets[keep++] = bullets[i];
+        if (!bullets[i].alive) continue;
+        if (keep != i) bullets[keep] = bullets[i];
+        ++keep;
     }
     bullets.resize(keep);
 }
+
 
 void StageSim::release_bullet_slot(StageBullet& bullet) {
     if (bullet.pool_slot < 0) return;
@@ -1997,6 +2009,10 @@ void StageSim::emit_et(const StageEt& et, u32 enemy_serial, u32 slot, const floa
                 process_bullet_queue(bullet, true);
                 if (!error_.empty()) return;
                 if (bullet_animation && !bullet_animation(bullet, true)) return;
+                if (bullet_inplace_ && bullets.size() == bullets.capacity()) {
+                    error_ = "Bullet birth exceeded in-place reserve";
+                    return;
+                }
                 bullets.push_back(bullet);
             }
         }
