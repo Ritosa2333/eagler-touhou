@@ -54,33 +54,49 @@
     ]
   },
   "patchSha256": "ba0112db84ae52fbce97228cc5c6b3ccac0c3bdd3506ee586b509881661765a3",
-  "fullRuntimeBuilt": false,
+  "fullRuntimeBuilt": true,
   "productionChanged": false,
   "completeGame": false,
-  "compilerFrontend": {
+  "runtimePackage": {
     "passed": true,
-    "rows": [
+    "wasmValid": true,
+    "wasmSha256": "922619d27585e1bdd8e7c4e0e7b1c20832792d2c818018999f75129c532d679a",
+    "runtimeFiles": 18,
+    "sourceFiles": 387,
+    "commonFiles": 24,
+    "compiledUnits": 153,
+    "packagedControllerCases": [
       {
-        "source": "cpp/sdl/Application.cpp",
-        "passed": true,
-        "normalAccessControl": true
+        "name": "early-end",
+        "frame": 34783
       },
       {
-        "source": "cpp/sdl/FontDevice.cpp",
-        "passed": true,
-        "normalAccessControl": true
+        "name": "complete-stage",
+        "frame": 35775
       },
       {
-        "source": "cpp/game/Dialogue.cpp",
-        "passed": true,
-        "normalAccessControl": true
+        "name": "pause",
+        "frame": 21169
       },
       {
-        "source": "cpp/game/GameBattle.cpp",
-        "passed": true,
-        "normalAccessControl": true
+        "name": "terminal-marker",
+        "frame": 21793
       }
     ],
-    "fullRuntimeBuilt": false
-  }
+    "packagedImportCases": 12,
+    "normalAccessControl": true,
+    "fullRuntimeBuilt": true,
+    "browserAccepted": false,
+    "productionDeployed": false,
+    "completeGame": false
+  },
+  "sourceHistory": {
+    "passed": true,
+    "head": "f0bbd8b3124278012f3d7a0f0f79d03025663659",
+    "exportedSubtree": "420fed252212e1964cf91509d37068daa65810a2",
+    "scope": "ports/th14",
+    "sourceAnchorsChecked": 13
+  },
+  "separateNormalMpProjection": "not applicable: only normal TH14 directory exists",
+  "pr": "https://github.com/Ritosa2333/eagler-touhou/pull/254"
 }
