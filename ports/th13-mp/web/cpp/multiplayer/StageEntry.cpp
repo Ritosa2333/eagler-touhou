@@ -226,11 +226,14 @@ void StageEntry::Restore(StageBattle& battle, SessionState& progress,
     visual_index = this->visual_index;
 }
 
-void StageEntry::PrepareStageClear(HudPlayerState& first_player) {
+void StageEntry::PrepareStageClear(HudPlayerState& first_player, const StageBattle& previous) {
     for (std::uint32_t seat = 0; seat < seat_count && seat < MaxSeats; ++seat) {
         // The last life is deducted at death commit, before the 30-frame
         // animation marks the seat as a ghost. Clear revives both phases.
-        if (seats[seat].extra_lives < 0) seats[seat].ghost = true;
+        // Shared rewards may increase stock during the final death animation.
+        // Its committed death remains final until explicit rescue or clear.
+        if (seats[seat].extra_lives < 0 || previous.seats[seat].final_death)
+            seats[seat].ghost = true;
     }
     if (seats[0].ghost) {
         first_player.extra_lives = std::max(0, first_player.extra_lives);

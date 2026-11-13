@@ -8,6 +8,7 @@
 #include "game/ReplayFastForward.hpp"
 #include "multiplayer/Session.hpp"  // M7：联机会话接缝（playback_input 延迟窗）
 #include "multiplayer/StageEntry.hpp"
+#include <eagler/input/LocalPlayerCue.hpp>  // M5：多人本地席位提示（Ctrl 长按）
 
 #include <SDL3/SDL.h>
 
@@ -791,7 +792,7 @@ bool ApplicationState::begin_run() {
         carry.Capture(run->battle, progress, selection_score, game_random.seed(),
             game_random.index(), visual.seed(), visual.index());
         selection_player = run->battle.seat_huds[0];
-        carry.PrepareStageClear(selection_player);
+        carry.PrepareStageClear(selection_player, run->battle);
     }
     std::unique_ptr<RunScene> previous_run;
     // 回放会话（0x42b990 恢复序挂点在下方消费 pending_replay_stage，先留存）：
@@ -994,6 +995,19 @@ bool ApplicationState::begin_run() {
         battle.death_trance_generation = carry_death_generation;
         battle.revive_all_on_stage_clear();
         selection_player = battle.seat_huds[0];
+    }
+    // M5：图标 interrupt 是事件驱动的——新建席位图标集需要一次显式初值；
+    // carry 恢复/过关复活后各席资源已变，全席刷新一次（席 0 走单套面
+    // life()/bombs()，阈值 = progress 投影，与 SP 同源）。
+    if (mp_seat_count >= 2) {
+        for (i32 seat = 0; seat < mp_seat_count; ++seat) {
+            const HudPlayerState* seat_state = run->battle.seat_hud(seat);
+            if (!seat_state) return fail("Multiplayer seat HUD state missing");
+            const i32 lives = std::max(0, seat_state->extra_lives);
+            if (!life_hud_seat(seat, lives, seat_state->life_pieces) ||
+                !bomb_hud_seat(seat, seat_state->bombs, seat_state->bomb_pieces))
+                return false;
+        }
     }
     // M7：本地席位接线（battle.step 的 effective_input 写入目标席）。
     run->battle.mp_local_seat = mp_local_seat;
@@ -1988,6 +2002,18 @@ bool ApplicationState::commit(float presentation_fps) {
     // completed framebuffer must not run those operations again.
     if (run && run->presentation) run->presentation->prepare_player_opacity();
     else renderer.player_opacity.fill(255);
+    // M5：本地席位提示（th12-mp/th17-mp 同款 LocalPlayerCue：按住 Ctrl 时
+    // DOM 层在自机上方显示本地席位标签；EMSCRIPTEN 专用，原生/无头 no-op。
+    // 世界坐标→屏幕：+320/+16（0x4ae9f0/0x4ae8e0）。旁观/回放由 helper
+    // 自身经 eaglerOptions 门控）。
+    if (run && run->battle.seat_count >= 2) {
+        const i32 seat = run->battle.mp_local_seat;
+        if (seat >= 0 && seat < run->battle.seat_count) {
+            const auto& state = run->battle.seats[size_t(seat)];
+            eagler::presentation::local_player_cue(unsigned(seat), state.x + 320.f,
+                                                   state.y + 16.f);
+        }
+    }
     if (ending && (!graphics.select_target(nullptr, 0) ||
                    !graphics.clear_target(0xff000000, nullptr)))
         return fail(graphics.error);

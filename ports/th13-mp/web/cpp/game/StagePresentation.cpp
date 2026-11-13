@@ -297,8 +297,8 @@ void StagePresentation::release_stage() {
 }
 
 // M6 快照：手账 capture（头文件 SnapshotData 注释即契约）。自有 VM 按
-// 值拷贝（AnmVm 值语义，registry 快照同款）；unordered_set（shot_faded_
-// generations_）排序为 vector 钉死顺序（同状态同字节序）。
+// 值拷贝（AnmVm 值语义，registry 快照同款）；有序集合（shot_faded_
+// generations_）按升序复制为 vector（同状态同字节序）。
 bool StagePresentation::capture_presentation(SnapshotData& out) const {
     const auto& effects = player_effects_[0];
     for (size_t i = 0; i < out.teammate_effects.size(); ++i) out.teammate_effects[i] = player_effects_[i + 1];
@@ -351,9 +351,10 @@ bool StagePresentation::capture_presentation(SnapshotData& out) const {
         data.age = fade.age;
         out.shot_fades.push_back(data);
     }
-    out.shot_faded_generations.assign(shot_faded_generations_.begin(),
-                                      shot_faded_generations_.end());
-    std::sort(out.shot_faded_generations.begin(), out.shot_faded_generations.end());
+    out.shot_faded_generations.clear();
+    for (const auto& bucket : shot_faded_generations_)
+        for (u32 generation : bucket.second)
+            out.shot_faded_generations.push_back((u64(bucket.first) << 32) | generation);
     out.has_player = player_ != nullptr;
     // Reused snapshots can cross a confirmed scene boundary. An empty new
     // scene must not retain the previous player's retired ANM bindings.
@@ -473,8 +474,13 @@ bool StagePresentation::restore_presentation(const SnapshotData& source,
         shot_fades_.push_back(fade);
     }
     shot_faded_generations_.clear();
-    shot_faded_generations_.insert(source.shot_faded_generations.begin(),
-                                    source.shot_faded_generations.end());
+    for (u64 key : source.shot_faded_generations)
+        shot_faded_generations_[u32(key >> 32)].push_back(u32(key));
+    for (auto& bucket : shot_faded_generations_) {
+        auto& keys = bucket.second;
+        std::sort(keys.begin(), keys.end());
+        keys.erase(std::unique(keys.begin(), keys.end()), keys.end());
+    }
     player_.reset();
     if (source.has_player) {
         player_ = std::make_unique<AnmVm>(source.player);
@@ -2020,6 +2026,19 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
             ? banks.teammate_player[size_t(seat - 1)] : banks.player;
         auto* player_resource = animations.resource(bank);
         const auto fade_key = [seat](u32 generation) { return (u64(u32(seat)) << 32) | generation; };
+        const auto insert_fade_key = [this](u64 key) {
+            auto& keys = shot_faded_generations_[u32(key >> 32)];
+            const u32 generation = u32(key);
+            if (keys.empty() || keys.back() < generation) { keys.push_back(generation); return true; }
+            const auto it = std::lower_bound(keys.begin(), keys.end(), generation);
+            if (it != keys.end() && *it == generation) return false;
+            keys.insert(it, generation); return true;
+        };
+        const auto contains_fade_key = [this](u64 key) {
+            const auto bucket = shot_faded_generations_.find(u32(key >> 32));
+            return bucket != shot_faded_generations_.end() &&
+                std::binary_search(bucket->second.begin(), bucket->second.end(), u32(key));
+        };
         if (shot_at(i) != nullptr && (*shot_at(i)).alive) {
             auto& shot = (*shot_at(i));
             // Compaction changes slots, not ANM identity. Preserve a survivor's
@@ -2095,7 +2114,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
             // （th13_udMy25 5521-5530 链 dump：原生子 5521 起收缩 t16 自灭，
             // port 子 5522 回绕 t=1）。脚本无 label 的普通弹净效果不变
             // （interrupt 扫描失败即清除 pending），旧回退路径保持直写。
-            if (shot.state == 2 && shot_faded_generations_.insert(shot.generation).second) {
+            if (shot.state == 2 && insert_fade_key(fade_key(shot.generation))) {
                 // 446bf0, once per hit generation.
                 if (shot.script >= 0) {
                     if (!animations.interrupt(shot_handles_[i], 1, false))
@@ -2165,8 +2184,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                                               corner.y <= 16.0f || corner.y >= 464.0f);
                 }
                 fade = !outside && vm && shot.script >= 0 &&
-                       shot_faded_generations_.find(fade_key(shot.generation)) ==
-                           shot_faded_generations_.end() &&
+                       !contains_fade_key(fade_key(shot.generation)) &&
                        shot_script_has_interrupt(*player_resource, u32(shot.script), 1);
             }
             if (fade) {
@@ -2189,7 +2207,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                                           corpse.y + kGameToScreenY,
                                           corpse.sine_moving ? 0.0f : 0.1f};
                 vm->variables.rotation.z = corpse.angle;
-                shot_faded_generations_.insert(fade_key(corpse.generation));
+                insert_fade_key(fade_key(corpse.generation));
                 shot_fades_.push_back(corpse);
                 shot_handles_[i] = 0;
                 shot_generations_[i] = 0;
@@ -2245,8 +2263,9 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
     }
 
     // ---- 自机：00442960，0直立、1左倾、2左倾回正、3右倾、4右倾回正 ----
-    if (battle.player_visible()) {
-        const i32 tilt = ((held & 0x80) ? 1 : 0) - ((held & 0x40) ? 1 : 0);
+    const bool first_ghost = battle.seat_count >= 2 && battle.seats[0].ghost;
+    if (battle.player_visible() || first_ghost) {
+        const i32 tilt = first_ghost ? 0 : ((held & 0x80) ? 1 : 0) - ((held & 0x40) ? 1 : 0);
         if (!player_) player_ = std::make_unique<AnmVm>();
         bool rebound = false;
         if (!player_->resource || tilt != player_tilt_) {
@@ -2295,14 +2314,14 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
         auto& vm = teammate_players_[seat - 1];
         auto& old_tilt = teammate_tilts_[seat - 1];
         const auto& state = battle.seats[seat];
-        if (state.ghost || state.dead || state.phase == StagePlayerState::Phase::Dying) {
+        if (!state.ghost && (state.dead || state.phase == StagePlayerState::Phase::Dying)) {
             if (vm) animations.release_tree(*vm);
             vm.reset();
             old_tilt = 0;
             continue;
         }
         const auto buttons = battle.seat_inputs[seat].held;
-        const i32 tilt = ((buttons & 0x80) ? 1 : 0) - ((buttons & 0x40) ? 1 : 0);
+        const i32 tilt = state.ghost ? 0 : ((buttons & 0x80) ? 1 : 0) - ((buttons & 0x40) ? 1 : 0);
         if (!vm) vm = std::make_unique<AnmVm>();
         const bool rebound = !vm->resource || tilt != old_tilt;
         if (rebound) {
@@ -2398,8 +2417,12 @@ void StagePresentation::prepare_player_opacity() {
     const i32 local = battle_->mp_local_seat;
     const auto& viewer = battle_->seats[size_t(local)];
     for (i32 seat = 0; seat < battle_->seat_count; ++seat) {
-        if (seat == local) continue;
         const auto& player = battle_->seats[size_t(seat)];
+        if (player.ghost) {
+            renderer.player_opacity[size_t(seat + 1)] = 140;
+            continue;
+        }
+        if (seat == local) continue;
         const float x = player.x - viewer.x, y = player.y - viewer.y;
         renderer.player_opacity[size_t(seat + 1)] = x * x + y * y < 48.f * 48.f ? 72 : 160;
     }
@@ -2431,7 +2454,18 @@ bool StagePresentation::draw(u32 pass) {
             if (shot) one(*shot);
         break;
     case 1: {
-        if (!battle_ || battle_->seat_count < 2) return !player_ || one(*player_);
+        // Ship transforms and inherited colors are draw scratch; preserve the
+        // update snapshot across first and repeated presentation alike.
+        const auto draw_ship = [&](AnmVm& vm, u8 opacity) {
+            const auto visual = vm.visual;
+            const auto rotation = vm.variables.rotation;
+            const int result = renderer.draw_with_opacity(vm, opacity);
+            vm.visual = visual;
+            vm.variables.rotation = rotation;
+            return result != -2 || fail(renderer.error.empty() ? "Stage draw failed" : renderer.error);
+        };
+        if (!battle_ || battle_->seat_count < 2)
+            return !player_ || !player_->visible || draw_ship(*player_, 255);
         const i32 local = battle_->mp_local_seat;
         const auto ship = [&](i32 seat) -> AnmVm* {
             return seat == 0 ? player_.get() : teammate_players_[size_t(seat - 1)].get();
@@ -2443,11 +2477,10 @@ bool StagePresentation::draw(u32 pass) {
             auto* vm = ship(seat);
             if (!vm || !vm->visible) continue;
             const u8 opacity = renderer.player_opacity[size_t(seat + 1)];
-            if (renderer.draw_with_opacity(*vm, opacity) == -2)
-                return fail(renderer.error.empty() ? "Stage draw failed" : renderer.error);
+            if (!draw_ship(*vm, opacity)) return false;
         }
         auto* vm = ship(local);
-        return !vm || one(*vm);
+        return !vm || !vm->visible || draw_ship(*vm, renderer.player_opacity[size_t(local + 1)]);
     }
     case 2:
         for (auto& enemy : enemies_)

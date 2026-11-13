@@ -963,6 +963,10 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // 对局期平台服务（battle 分期前的 HUD 直通；StageBattleServices 直通面）
     bool life_hud(i32, i32) override;
     bool bomb_hud(i32, i32) override;
+    // M5：席位感知 HUD 刷新（MP 席 1/2 写各自图标集；席 0 /单席回落
+    // 单套面。阈值取该席 HudPlayerState 权威值）。
+    bool life_hud_seat(i32 seat, i32 lives, i32 pieces) override;
+    bool bomb_hud_seat(i32 seat, i32 stock, i32 pieces) override;
     bool game_over();
 };
 

@@ -86,7 +86,7 @@ struct StageEntry {
     // Seed its first player with the revival resources, and include a final
     // death still in its animation among the seats revived after restoration.
     // Capture/Restore alone retain the raw chapter snapshot for replay seeks.
-    void PrepareStageClear(HudPlayerState& first_player);
+    void PrepareStageClear(HudPlayerState& first_player, const th13::StageBattle& previous);
     // Live activation keeps the new stage's clocks and constructor RNG draws.
     void RestoreBattleCarry(th13::StageBattle& battle) const;
 };

@@ -28,7 +28,7 @@ bool boot(sdl::ApplicationState& app, const char* name) {
     return app.begin_run();
 }
 
-void cross_stage(unsigned exhausted_seat, bool ghost, const char* name) {
+void cross_stage(unsigned exhausted_seat, bool ghost, const char* name, bool rewarded = false) {
     sdl::ApplicationState app;
     CHECK(boot(app, name));
     if (!app.run) return;
@@ -39,8 +39,13 @@ void cross_stage(unsigned exhausted_seat, bool ghost, const char* name) {
     exhausted.phase = StagePlayerState::Phase::Dying;
     exhausted.phase_frame = ghost ? 31 : 17;
     exhausted.invulnerable = 143;
+    exhausted.final_death = rewarded;
     auto& hud = old.seat_huds[exhausted_seat];
-    hud.extra_lives = -1;
+    const i32 stock = rewarded ? 1 : -1;
+    // CHECK_EQ binds references; materialize max() to avoid retaining its
+    // reference to a temporary zero when stock is negative.
+    const i32 expected_stock = std::max(0, stock);
+    hud.extra_lives = stock;
     hud.life_pieces = 2;
     hud.life_piece_threshold_index = 4;
     hud.bombs = 0;
@@ -56,15 +61,15 @@ void cross_stage(unsigned exhausted_seat, bool ghost, const char* name) {
     // only the explicit stage-clear activation is allowed to revive them.
     multiplayer::StageEntry raw;
     raw.Capture(old, app.progress, app.selection_score, 1234, 0, 1234, 0);
-    CHECK_EQ(raw.seats[exhausted_seat].extra_lives, -1);
+    CHECK_EQ(raw.seats[exhausted_seat].extra_lives, stock);
     CHECK_EQ(raw.seats[exhausted_seat].ghost, ghost);
     const auto bytes = raw.Encode();
     multiplayer::StageEntry decoded;
     CHECK(multiplayer::StageEntry::Decode(bytes.data(), bytes.size(), decoded));
-    CHECK_EQ(decoded.seats[exhausted_seat].extra_lives, -1);
+    CHECK_EQ(decoded.seats[exhausted_seat].extra_lives, stock);
     CHECK_EQ(decoded.seats[exhausted_seat].ghost, ghost);
     decoded.RestoreBattleCarry(old);
-    CHECK_EQ(old.seat_huds[exhausted_seat].extra_lives, -1);
+    CHECK_EQ(old.seat_huds[exhausted_seat].extra_lives, stock);
     CHECK_EQ(old.seats[exhausted_seat].ghost, ghost);
 
     app.progress.stage = 2;
@@ -81,7 +86,8 @@ void cross_stage(unsigned exhausted_seat, bool ghost, const char* name) {
     CHECK(next.seats[exhausted_seat].phase == StagePlayerState::Phase::Active);
     CHECK_EQ(next.seats[exhausted_seat].phase_frame, 0);
     CHECK_EQ(next.seats[exhausted_seat].invulnerable, 120);
-    CHECK_EQ(next.seat_huds[exhausted_seat].extra_lives, 0);
+    CHECK(!next.seats[exhausted_seat].final_death);
+    CHECK_EQ(next.seat_huds[exhausted_seat].extra_lives, expected_stock);
     CHECK_EQ(next.seat_huds[exhausted_seat].bombs, 2);
     CHECK_EQ(next.seat_huds[exhausted_seat].bomb_pieces, 0);
     CHECK_EQ(next.seat_huds[exhausted_seat].power, next.seat_huds[exhausted_seat].max_power / 2);
@@ -102,7 +108,7 @@ void cross_stage(unsigned exhausted_seat, bool ghost, const char* name) {
         CHECK(app.update(input, false) && app.commit(60.f) && app.present());
         CHECK(!next.seats[exhausted_seat].ghost);
         CHECK(!next.seats[exhausted_seat].dead);
-        CHECK_EQ(next.seat_huds[exhausted_seat].extra_lives, 0);
+        CHECK_EQ(next.seat_huds[exhausted_seat].extra_lives, expected_stock);
     }
 }
 }
@@ -118,6 +124,8 @@ TEST(stage_clear_revives_remote_ghost_preserving_survivors) {
 }
 TEST(stage_clear_revives_remote_inflight_last_death) {
     cross_stage(1, false, "stage-clear-remote-dying.bin");
+    cross_stage(1, false, "stage-clear-remote-reward.bin", true);
+    cross_stage(0, false, "stage-clear-first-reward.bin", true);
 }
 
 int __attribute__((weak)) main() { return run_all("MP stage-clear carry"); }

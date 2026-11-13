@@ -12,6 +12,7 @@
 #include "../multiplayer/ReplayArchive.hpp"  // M9：多人 Replay 归档面
 #include "../multiplayer/Session.hpp"  // M7：联机会话驱动面
 #include "../multiplayer/FrameSchedule.hpp"
+#include "../multiplayer/TerminalHandoff.hpp"
 #include "../multiplayer/SpectatorJournal.hpp"  // M9：旁观接缝
 #include "../multiplayer/StageEntry.hpp"  // M9：关头延续
 #include "../multiplayer/WorldState.hpp"
@@ -47,6 +48,19 @@ extern void (*anm_tick_observer)(const AnmVm&, float);
 EM_JS(void, th13_browser_frame, (int ok, double milliseconds, unsigned ticks), {
     Module["onGameFrame"]?.(ok, milliseconds, ticks);
 });
+EM_JS(void, th13_browser_work_frame,
+      (double sequence, double begin, double end, int stage, int end_stage,
+       int phase, unsigned source, unsigned simulated, unsigned rollback,
+       unsigned restores, unsigned presentations, double presentation_at, int ok), {
+    const callback = Module["onGameWorkFrame"];
+    if (!callback) return;
+    try {
+        callback({sequence, begin, end, milliseconds: end - begin, stage,
+                  endStage: end_stage, phase: ["active", "menu", "loading", "suspended", "paused"][phase],
+                  source, simulated, rollback, restores, presentations,
+                  presentationAt: presentation_at < 0 ? null : presentation_at, ok: !!ok});
+    } catch (error) { console.error("onGameWorkFrame callback failed", error); }
+});
 
 // [R3-M] 标题 Replay 菜单：文件选择触发钩子（页面壳 th13.html 注册
 // onReplayImportRequest → 隐藏 <input type=file> / 拖放承接）。
@@ -57,6 +71,35 @@ EM_JS(void, th13_browser_replay_request, (), {
 namespace th13::sdl {
 namespace {
 std::unique_ptr<ApplicationState> app;
+// One sequence across RAF, manual pumps and synchronous startup callbacks.
+// Capture the entire exported call, including initialization and presentation.
+double work_sequence = 0;
+struct LoadingWork {
+    double begin = emscripten_get_now(), sequence = ++work_sequence;
+    ApplicationState* before = app.get();
+    int stage = app ? app->progress.stage : 0;
+    unsigned presentations = app ? app->graphics.backend.stats.presentations : 0;
+    unsigned source, retired_presentations = 0;
+    void replacing_app() {
+        if (app) {
+            const unsigned now = app->graphics.backend.stats.presentations;
+            retired_presentations += before == app.get() && now >= presentations
+                ? now - presentations : now;
+        }
+        before = nullptr; presentations = 0;
+    }
+    explicit LoadingWork(unsigned value) : source(value) {}
+    int finish(int result, bool ok) const {
+        const int end_stage = app ? app->progress.stage : stage;
+        const unsigned after = app ? app->graphics.backend.stats.presentations : 0;
+        const unsigned submitted = retired_presentations +
+            (app && app.get() == before && after >= presentations ? after - presentations : after);
+        const double end = emscripten_get_now();
+        th13_browser_work_frame(sequence, begin, end, stage, end_stage, 2, source,
+                                0, 0, 0, submitted, -1, ok);
+        return result;
+    }
+};
 std::string last_error;
 std::string audio_observations;
 unsigned audio_sequence = 0;
@@ -325,12 +368,13 @@ SampledFrame sample_input() {
     return sampled;
 }
 
-bool sample_and_tick(float fps = 60.f) {
+bool sample_and_tick(float fps = 60.f, unsigned* simulated = nullptr) {
     if (!app) return false;
     if (mp_room_preview && !multiplayer::session.PumpTerminal(
             static_cast<std::uint64_t>(emscripten_get_now()))) return false;
     const SampledFrame sampled = sample_input();
     if (sampled.skip) return true;
+    if (simulated) ++*simulated;
     // Physical held/edge/repeat state drives the application and its menus.
     // For replay gameplay RunScene selects the frozen recorded history.
     // M1/T2：帧体三段拆分后的第一处生产接线（M7 Runtime 宿主侧驱动接口），
@@ -407,7 +451,7 @@ bool mp_restore_history_root(const multiplayer::SessionSetup& setup, unsigned st
 // restore：StageEntry 解码重建（全席资源/共享态/双 RNG/灵界生命周期）；
 // tick：packet 输入注入全席 seat_inputs + 一次 update/commit/present。
 // 未 Ready（bootstrap 未到/下载中）时保持标题/等待面，不推进游戏帧。
-bool mp_tick_spectator(float fps, unsigned& simulated) {
+bool mp_tick_spectator(float fps, unsigned& simulated, unsigned& attempted) {
     auto& runtime = multiplayer::session.Runtime();
     auto& playback = runtime.StagePlayback();
     const auto begin = std::chrono::steady_clock::now();
@@ -444,6 +488,7 @@ bool mp_tick_spectator(float fps, unsigned& simulated) {
             app->run->playback_input = []() -> const th13::GameInput* {
                 return &app->run->battle.seat_inputs[0];
             };
+            ++attempted;
             if (!app->update(menu, false) || !app->commit(fps)) return false;
             ++simulated;
             return true;
@@ -465,7 +510,7 @@ bool mp_tick_spectator(float fps, unsigned& simulated) {
 // M9/P6：回放模式单 tick——ReplayArchive 确认输入流逐帧直驱。
 // 帧号单调（录制只收确认帧）；暂停门/速率（1..8 帧/tick）由导出面控制；
 // 章节 seek 经 th13_mp_replay_seek_stage（世界重建，不伪切帧号）。
-bool mp_tick_playback(float fps, unsigned& simulated) {
+bool mp_tick_playback(float fps, unsigned& simulated, unsigned& attempted) {
     const auto* archive = mp_replay_loaded.get();
     if (!archive || !archive->Loaded()) return false;
     const bool seeking = mp_playback_seek_target != Netplay::INVALID_FRAME;
@@ -491,6 +536,7 @@ bool mp_tick_playback(float fps, unsigned& simulated) {
         app->run->playback_input = []() -> const th13::GameInput* {
                 return &app->run->battle.seat_inputs[0];
             };
+        ++attempted;
         if (!app->update(menu, false) || !app->commit(fps)) return false;
         ++mp_playback_frame;
         ++steps;
@@ -510,20 +556,29 @@ bool mp_tick_playback(float fps, unsigned& simulated) {
 // 单个逻辑 tick（production rAF / 手动帧泵共用）。返回 false = 硬失败。
 // simulated = 本 tick 实际 update+commit 的帧数（追帧 + 新进度；READY/
 // 菜单等待期 1 帧，停等 0）。
-bool mp_tick(float fps, unsigned& simulated) {
+bool mp_tick(float fps, unsigned& simulated, unsigned& attempted, unsigned& rollback) {
     if (!app) return false;
     const std::uint64_t now_ms = static_cast<std::uint64_t>(emscripten_get_now());
     if (!multiplayer::session.Pump(now_ms)) return false;
     // M9/P6：观众模式——收流在 Pump 内完成；世界由 StagePlayback 推进
     //（restore = StageEntry 重建；tick = 全席输入 update+commit）。
-    if (multiplayer::session.Spectator()) return mp_tick_spectator(fps, simulated);
+    if (multiplayer::session.Spectator()) return mp_tick_spectator(fps, simulated, attempted);
     // M9/P6：回放模式——ReplayArchive 确认输入流直驱（每 tick 一帧）。
-    if (mp_playback_pending && mp_started) return mp_tick_playback(fps, simulated);
+    if (mp_playback_pending && mp_started) return mp_tick_playback(fps, simulated, attempted);
+    // The final world frame can become confirmed during Pump, without a new
+    // frame being runnable. In particular, peers can already have consumed
+    // the terminal frame while waiting for another peer's last input. Revisit
+    // the existing present-tail handoff before capturing a subsequent input;
+    // otherwise those peers can wait for a frame that will never be sent.
+    const auto terminal = multiplayer::complete_terminal_handoff(*app, multiplayer::session);
+    if (terminal != multiplayer::TerminalHandoff::NotReady)
+        return terminal == multiplayer::TerminalHandoff::Finished;
     if (!multiplayer::session.Simulating()) {
         const SampledFrame sampled = sample_input();
         if (sampled.skip) return true;
         // frame0 屏障/READY 等待：菜单与装载后的等待照常推进，不推进
         // 网络模拟帧（与 drive_one_frame 原路径逐操作同序）。
+        ++attempted;
         if (!(app->update(controls, sampled.focus) && app->commit(fps))) return false;
         ++simulated;
         return app->present();
@@ -571,6 +626,8 @@ bool mp_tick(float fps, unsigned& simulated) {
         }
         const std::uint32_t before = multiplayer::session.SimFrame();
         trace_applied_touch();
+        ++attempted;
+        ++rollback;
         if (!app->update(multiplayer::session.MenuInput(), false) || !app->commit(fps)) return false;
         multiplayer::session.OnFrameSimulated();
         if (multiplayer::session.SimFrame() == before) { last_error = "MP frame did not commit"; return false; }  // 落账被拒
@@ -602,6 +659,7 @@ bool mp_tick(float fps, unsigned& simulated) {
         }
         const std::uint32_t before = multiplayer::session.SimFrame();
         trace_applied_touch();
+        ++attempted;
         if (!app->update(multiplayer::session.MenuInput(), false) || !app->commit(fps)) return false;
         multiplayer::session.OnFrameSimulated();
         if (multiplayer::session.SimFrame() == before) { last_error = "MP frame did not commit"; return false; }  // 落账被拒
@@ -631,19 +689,38 @@ bool mp_tick(float fps, unsigned& simulated) {
 // 重模拟 + 时间同步），否则原 sample_and_tick 路径）。
 bool drive_one_frame(double delta, unsigned source = 0) {
     const double begin = emscripten_get_now();
+    const double current_sequence = ++work_sequence;
+    const int stage = app->progress.stage;
+    const int phase = suspended ? 3 : app->loading_waiting() ? 2 :
+        app->pause && app->pause->active() ? 4 : app->run ? 0 : 1;
+    const auto before_presentations = app->graphics.backend.stats.presentations;
+    const auto before_restores = multiplayer::session.Restores();
+    unsigned simulated = 0, attempted = 0, rollback = 0;
+    double presentation_at = -1;
+    const auto finish = [&](bool result, bool ok) {
+        const auto presentations = app->graphics.backend.stats.presentations - before_presentations;
+        const auto after_restores = multiplayer::session.Restores();
+        const unsigned restores = after_restores >= before_restores
+            ? after_restores - before_restores : after_restores;
+        const int end_stage = app->progress.stage;
+        const double end = emscripten_get_now();
+        th13_browser_work_frame(current_sequence, begin, end, stage, end_stage,
+                                phase, source, attempted, rollback, restores, presentations, presentation_at, ok);
+        return result;
+    };
     if (suspended) {
         cadence.reset();
-        return true;
+        return finish(true, true);
     }
     if (app->loading_waiting()) {
         cadence.reset();
         if (!(app->loading_startup ? app->advance_loading(delta) : app->complete_loading())) {
             running = false;
             th13_browser_frame(0, emscripten_get_now() - begin, 0);
-            return false;
+            return finish(false, false);
         }
         app->audio_device.pump();
-        return true;
+        return finish(true, true);
     }
     const bool live_mp = multiplayer::session.Active() && multiplayer::session.Simulating()
         && !multiplayer::session.Spectator() && !mp_playback_pending;
@@ -666,15 +743,15 @@ bool drive_one_frame(double delta, unsigned source = 0) {
         presentation_count = 0;
     }
     bool ok = true;
-    unsigned simulated = 0;
     const bool mp_active = multiplayer::session.Active();
     app->graphics.backend.defer = true;
     for (unsigned i = 0; i < ticks && ok; i++) {
-        ok = mp_active ? mp_tick(presentation_fps, simulated)
-                       : sample_and_tick(presentation_fps);
+        ok = mp_active ? mp_tick(presentation_fps, simulated, attempted, rollback)
+                       : sample_and_tick(presentation_fps, &attempted);
         if (app->exiting || app->pending_load) break;
     }
     if (app->graphics.backend.commit()) {
+        presentation_at = emscripten_get_now();
         ++presentation_count;
         if (live_mp && multiplayer::session.SimFrame())
             multiplayer::session.TraceTiming("present", multiplayer::session.SimFrame() - 1);
@@ -690,7 +767,7 @@ bool drive_one_frame(double delta, unsigned source = 0) {
                                         simulated, mp_schedule.owed());
     if (!ok || app->exiting) running = false;
     if (live_mp) queue_mp_work();
-    return running;
+    return finish(running, ok);
 }
 
 namespace {
@@ -792,26 +869,37 @@ extern "C" {
 
 EMSCRIPTEN_KEEPALIVE int th13_prepare_loading() {
     using namespace th13::sdl;
-    if (running) return 0;
-    app = std::make_unique<ApplicationState>();
-    app->graphics.render_scale = render_scale;
-    return app->prepare_loading();
+    LoadingWork work(4);  // th13_prepare_loading
+    const int result = [&]() -> int {
+        if (running) return 0;
+        work.replacing_app();
+        app = std::make_unique<ApplicationState>();
+        app->graphics.render_scale = render_scale;
+        return app->prepare_loading();
+    }();
+    return work.finish(result, result != 0);
 }
 
 EMSCRIPTEN_KEEPALIVE int th13_draw_startup(unsigned frames) {
     using namespace th13::sdl;
-    // 共享外壳的启动品牌动画期间推进装载 ANM（独立时钟），最多 120 帧。
-    if (!app || running) return 0;
-    for (unsigned frame = 0; frame < std::min(frames, 120u); ++frame) {
-        if (!app->loading_animations.update(false) || !app->loading_animations.update(true))
-            return 0;
-        ++app->loading_frames;
-    }
-    return app->render_loading();
+    LoadingWork work(6);  // th13_draw_startup
+    const int result = [&]() -> int {
+        // 共享外壳的启动品牌动画期间推进装载 ANM（独立时钟），最多 120 帧。
+        if (!app || running) return 0;
+        for (unsigned frame = 0; frame < std::min(frames, 120u); ++frame) {
+            if (!app->loading_animations.update(false) || !app->loading_animations.update(true))
+                return 0;
+            ++app->loading_frames;
+        }
+        return app->render_loading();
+    }();
+    return work.finish(result, result != 0);
 }
 
 EMSCRIPTEN_KEEPALIVE int th13_initialize() {
     using namespace th13::sdl;
+    LoadingWork work(5);  // th13_initialize
+    const int result = [&]() -> int {
     if (running) return 1;
     clear_inputs();
     if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK)) {
@@ -820,11 +908,13 @@ EMSCRIPTEN_KEEPALIVE int th13_initialize() {
     }
     initialize_controller();
     if (!app || !app->platform_prepared || app->initialized) {
+        work.replacing_app();
         app = std::make_unique<ApplicationState>();
         app->graphics.render_scale = render_scale;
     }
     if (!app->initialize(true)) {
         last_error = app->failure;
+        work.replacing_app();
         app.reset();
         return 0;
     }
@@ -833,6 +923,8 @@ EMSCRIPTEN_KEEPALIVE int th13_initialize() {
     previous_frame = -1;
     cadence.reset();
     return 1;
+    }();
+    return work.finish(result, result != 0);
 }
 
 EMSCRIPTEN_KEEPALIVE void th13_music_enabled(unsigned enabled) {
@@ -858,10 +950,14 @@ EMSCRIPTEN_KEEPALIVE unsigned th13_phase() {
 // Room ownership is local UI state. It never enters the synchronized world.
 EMSCRIPTEN_KEEPALIVE int th13_room_preview() {
     using namespace th13::sdl;
+    LoadingWork work(7);  // th13_room_preview
+    const int result = [&]() -> int {
     if (running || !app || !app->initialized || !app->title || mp_started) return 0;
     clear_inputs();
     mp_room_preview = true;
     return app->commit(60.f) && app->present();
+    }();
+    return work.finish(result, result != 0);
 }
 
 EMSCRIPTEN_KEEPALIVE int th13_room_return_ready() {
@@ -873,6 +969,8 @@ EMSCRIPTEN_KEEPALIVE int th13_room_return_ready() {
 
 EMSCRIPTEN_KEEPALIVE int th13_room_return() {
     using namespace th13::sdl;
+    LoadingWork work(9);  // th13_room_return
+    const int result = [&]() -> int {
     if (running || !app || !app->initialized || th13::multiplayer::session.Simulating()) return 0;
     th13::multiplayer::session.Stop(true);
     mp_started = false;
@@ -882,6 +980,8 @@ EMSCRIPTEN_KEEPALIVE int th13_room_return() {
     if (!app->begin_title(1)) return 0;
     mp_room_preview = true;
     return 1;
+    }();
+    return work.finish(result, result != 0);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned th13_frame() { return th13::sdl::app ? th13::sdl::app->frames : 0; }
@@ -1770,6 +1870,9 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_pump(double now_ms) {
 // start 返回 0 = 未就绪（桥轮询）；错误经 th13_mp_error 读。
 EMSCRIPTEN_KEEPALIVE int th13_mp_start() {
     using namespace th13::sdl;
+    LoadingWork work(8);  // th13_mp_start
+    bool waiting = false;
+    const int result = [&]() -> int {
     if (!app || !app->initialized || running) return 0;
     auto& session = th13::multiplayer::session;
     if (!session.Active()) {
@@ -1794,7 +1897,14 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_start() {
         return 0;
     }
     session.MarkLocalReady();
-    if (!session.CanStart()) return 0;  // frame0 屏障未闭合：桥轮询
+    if (!session.CanStart()) {
+        // A closed READY barrier is expected; a reported session or host
+        // error is a failed call even when CanStart remains false.
+        const char* error = session.Error();
+        waiting = (!error || !*error) && last_error.empty() && app->failure.empty();
+        if (waiting) work.source = 10;  // READY polling, no world initialization
+        return 0;
+    }
     if (!session.Start()) return 0;
     mp_room_preview = false;
     session.diagnostic_host = [] {
@@ -1907,6 +2017,8 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_start() {
         };
     mp_started = true;
     return 1;
+    }();
+    return work.finish(result, result != 0 || waiting);
 }
 
 // Rebuild the recorded root. Intermediate StageEntry carries do not contain
@@ -2879,6 +2991,51 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_anm_state() {
     return result.c_str();
 }
 
+// Multiplayer-only read-only inspection. Walk the same layer buckets used by
+// production drawing, including focus VMs already released from seat handles.
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_focus_state() {
+    using namespace th13::sdl;
+    static std::string result;
+    if (!app || !app->run) return "";
+    const auto& battle = app->run->battle;
+    auto& registry = app->animations.registry;
+    result = "{\"stageFrame\":" + std::to_string(app->progress.stage_frame) +
+             ",\"simFrame\":" + std::to_string(battle.sim.frame) +
+             ",\"seatCount\":" + std::to_string(battle.seat_count) +
+             ",\"localSeat\":" + std::to_string(battle.mp_local_seat) + ",\"seats\":[";
+    char row[512];
+    for (int seat = 0; seat < battle.seat_count && seat < 3; ++seat) {
+        const auto& player = battle.seats[size_t(seat)];
+        if (seat) result += ',';
+        std::snprintf(row, sizeof row,
+            "{\"seat\":%d,\"character\":%d,\"x\":%.6f,\"y\":%.6f,\"focus\":%s,\"phase\":%d,\"ghost\":%s}",
+            seat, player.character, double(player.x), double(player.y), player.focus ? "true" : "false",
+            int(player.phase), player.ghost ? "true" : "false");
+        result += row;
+    }
+    result += "],\"vms\":[";
+    bool first = true;
+    for (th13::u32 bucket = 0; bucket < 33; ++bucket) {
+        for (const auto* vm : registry.layer(bucket)) {
+            if (!vm || !vm->shot_effect_owner || (vm->source_script != 21 && vm->source_script != 22)) continue;
+            if (!first) result += ',';
+            first = false;
+            const auto* parent = vm->creation_parent;
+            std::snprintf(row, sizeof row,
+                "{\"bank\":%d,\"script\":%d,\"handle\":%u,\"parent\":%u,\"owner\":%u,\"bucket\":%u,\"layer\":%u,\"sprite\":%d,\"color\":%u,\"pending\":%d,\"timer\":%d,\"position\":[%.9g,%.9g,%.9g],\"translation\":[%.9g,%.9g,%.9g]}",
+                app->animations.resource_id(vm->resource), vm->source_script, registry.handle(*vm),
+                parent ? registry.handle(*parent) : 0u, unsigned(vm->shot_effect_owner), bucket,
+                unsigned(vm->visual.layer), vm->visual.sprite, vm->visual.color,
+                vm->pending_interrupt, vm->timer.current, double(vm->variables.position.x),
+                double(vm->variables.position.y), double(vm->variables.position.z),
+                double(vm->visual.translation.x), double(vm->visual.translation.y), double(vm->visual.translation.z));
+            result += row;
+        }
+    }
+    result += "]}";
+    return result.c_str();
+}
+
 EMSCRIPTEN_KEEPALIVE void th13_debug_anm_random_observe(int first, int last) {
     using namespace th13::sdl;
     anm_random_observations.clear();
@@ -3445,6 +3602,100 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_mp_laser_contact(float x, float y, float rad
         if (laser.active && laser.collision_enabled() &&
             laser.player_contact(x, y, radius, radius) == 1) return 1;
     return 0;
+}
+
+// Read-only ECL and ANM observations for a running multiplayer stage.
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_phase_state() {
+    static std::string report;
+    const auto& app = th13::sdl::app;
+    if (!app || !app->run) {
+        report = "{\"available\":false}";
+        return report.c_str();
+    }
+    const auto& sim = app->run->battle.sim;
+    const auto& registry = app->animations.registry;
+    constexpr size_t enemy_limit = 1024, thread_limit = 64, name_limit = 256;
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    out.precision(std::numeric_limits<double>::max_digits10);
+    const auto number = [&](double value) {
+        if (std::isfinite(value)) out << value;
+        else out << "null";
+    };
+    const auto name = [&](const std::string& value) {
+        static constexpr char hex[] = "0123456789abcdef";
+        out << '"';
+        for (size_t i = 0; i < std::min(value.size(), name_limit); ++i) {
+            const auto c = static_cast<unsigned char>(value[i]);
+            if (c == '"' || c == '\\') out << '\\' << char(c);
+            else if (c < 0x20 || c >= 0x7f)
+                out << "\\u00" << hex[c >> 4] << hex[c & 15];
+            else out << char(c);
+        }
+        out << '"';
+    };
+    out << "{\"available\":true,\"stage\":" << app->progress.stage
+        << ",\"stage_frame\":" << app->progress.stage_frame
+        << ",\"sim_frame\":" << sim.frame << ",\"boss_main_serial\":" << sim.boss_main_serial
+        << ",\"enemy_count\":" << sim.enemies.size()
+        << ",\"enemy_limit\":" << enemy_limit
+        << ",\"enemies_truncated\":" << (sim.enemies.size() > enemy_limit ? "true" : "false")
+        << ",\"enemies\":[";
+    for (size_t index = 0; index < std::min(sim.enemies.size(), enemy_limit); ++index) {
+        if (index) out << ',';
+        const auto& ptr = sim.enemies[index];
+        if (!ptr) { out << "null"; continue; }
+        const auto& enemy = *ptr;
+        out << "{\"serial\":" << enemy.serial << ",\"spawn_routine\":";
+        name(enemy.routine);
+        out << ",\"spawn_routine_truncated\":" << (enemy.routine.size() > name_limit ? "true" : "false")
+            << ",\"life\":"; number(enemy.life);
+        out << ",\"flags\":" << enemy.flags << ",\"dead\":" << (enemy.dead ? "true" : "false")
+            << ",\"age\":"; number(enemy.age);
+        out << ",\"position\":["; number(enemy.position[0]); out << ',';
+        number(enemy.position[1]); out << ','; number(enemy.position[2]);
+        out << "],\"mirror_dir\":" << enemy.mirror_dir << ",\"mirror_velocity_x\":";
+        number(enemy.mirror_velocity_x);
+        out << ",\"anm_file\":" << enemy.anm_file << ",\"anm_base_script\":" << enemy.anm_base_script
+            << ",\"anm_slot0_bank\":" << enemy.anm_slot0_bank
+            << ",\"anm_slot0_script_offset\":" << enemy.anm_slot0_script_offset;
+        const size_t count = enemy.threads ? enemy.threads->count() : 0;
+        out << ",\"thread_count\":" << count << ",\"thread_limit\":" << thread_limit
+            << ",\"threads_truncated\":" << (count > thread_limit ? "true" : "false") << ",\"threads\":[";
+        for (size_t i = 0; i < std::min(count, thread_limit); ++i) {
+            if (i) out << ',';
+            const auto* thread = enemy.threads->at(static_cast<th13::u32>(i));
+            if (!thread) { out << "null"; continue; }
+            const auto* program = thread->program;
+            const bool valid = program && thread->routine >= 0 && size_t(thread->routine) < program->definitions.size();
+            out << "{\"index\":" << i << ",\"routine\":" << thread->routine
+                << ",\"routine_valid\":" << (valid ? "true" : "false") << ",\"routine_name\":";
+            if (valid) name(program->subroutine(static_cast<th13::u32>(thread->routine)).name);
+            else out << "null";
+            out << ",\"routine_name_truncated\":"
+                << (valid && program->subroutine(static_cast<th13::u32>(thread->routine)).name.size() > name_limit ? "true" : "false")
+                << ",\"instruction_offset\":" << thread->instruction_offset << ",\"time\":";
+            number(thread->time);
+            out << ",\"id\":" << thread->thread_id << ",\"state\":" << thread->thread_state
+                << ",\"flags\":" << thread->thread_flags << '}';
+        }
+        out << "],\"slots\":[";
+        for (int i = 0; i < th13::StageEnemy::kAnimationSlots; ++i) {
+            if (i) out << ',';
+            const auto handle = enemy.anm_slot_handle[i];
+            const auto* vm = registry.find(handle);
+            out << "{\"index\":" << i << ",\"script\":" << enemy.anm_script[size_t(i)]
+                << ",\"handle\":" << handle << ",\"resolved\":" << (vm ? "true" : "false");
+            if (vm) out << ",\"source_script\":" << vm->source_script
+                << ",\"pending_interrupt\":" << vm->pending_interrupt
+                << ",\"timer\":" << vm->timer.current << ",\"age\":" << vm->age.current;
+            out << '}';
+        }
+        out << "]}";
+    }
+    out << "]}";
+    report = out.str();
+    return report.c_str();
 }
 
 // Read the actual collision geometry for input-only browser controllers.

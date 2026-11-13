@@ -147,6 +147,9 @@ TEST(full_state_restore_replay) {
     multiplayer::WorldState snapshot;
     CHECK(snapshot.capture(dual.battle, visual));
     const uint64_t digest_at_capture = snapshot.digest();
+    std::printf("# digest-baseline full=%016llx core=%016llx\n",
+        static_cast<unsigned long long>(digest_at_capture),
+        static_cast<unsigned long long>(snapshot.digest_core()));
     CHECK(snapshot.ready());
     // 台账非空（快照完整性契约面）。
     CHECK(std::string(multiplayer::WorldState::field_ledger()).size() > 32);
@@ -869,6 +872,18 @@ TEST(scene_digest_mutation_controls) {
     app.run->restore_rollback(changed,remapped);
     CHECK(capture().digest()!=initial.digest());
     app.run->restore_rollback(state,remapped);
+    const auto hud_change = [&](auto mutate) {
+        auto updated=state; mutate(updated.hud);
+        app.run->restore_rollback(updated,remapped);
+        CHECK(capture().digest()!=initial.digest());
+        app.run->restore_rollback(state,remapped);
+        CHECK_EQ(capture().digest(),initial.digest());
+    };
+    hud_change([](auto& hud){++hud.mp_seat_count;});
+    hud_change([](auto& hud){++hud.mp_life_icons[0][0];});
+    hud_change([](auto& hud){++hud.mp_bomb_icons[1][7];});
+    hud_change([](auto& hud){++hud.mp_resource_labels[0][0];});
+    hud_change([](auto& hud){++hud.mp_shared_labels[2];});
     changed=state;changed.spell.anchor_[0]+=1;
     app.run->restore_rollback(changed,remapped);
     CHECK(capture().digest()!=initial.digest());
@@ -886,6 +901,172 @@ TEST(scene_digest_mutation_controls) {
         ++app.run->scenery->script.state.instruction_offset;
         CHECK(capture().digest_core()!=initial.digest_core());
     }
+}
+
+// The draw buckets are part of the captured frame: a paused renderer may
+// consume them before another update. Ordering and embedded item identity
+// must survive capture/restore without advancing the game or either RNG.
+TEST(anm_draw_layers_restore_and_digest) {
+    // Pool lookup must also serialize sparse/inactive slots, overflow nodes,
+    // borrowed roots and repeated draw references in the original order.
+    {
+        AnmRegistry registry;
+        std::vector<AnmVm*> vms;
+        std::vector<u32> handles;
+        bool allocated = true;
+        for (u32 i = 0; i < 0x2001; ++i) {
+            auto* vm = registry.allocate();
+            const auto handle = vm ? registry.submit(*vm, i & 1 ? 4 : 0) : 0;
+            if (!handle) { allocated = false; break; }
+            vm->visual.translation.x = float(i);
+            vms.push_back(vm); handles.push_back(handle);
+        }
+        CHECK(allocated); if (!allocated) return;
+        CHECK(registry.discard(*vms[42]));
+        CHECK(registry.attach(*vms[0x1fff], *vms[100]));
+        AnmVm borrowed;
+        CHECK(registry.attach(*vms[0x2000], borrowed));
+        vms[0x1fff]->creation_parent = vms[100];
+        vms[0x2000]->rotation_parent = &borrowed;
+        registry.append_draw(*vms[0]);
+        registry.append_draw(*vms[0x1fff]);
+        registry.append_draw(borrowed);
+        registry.append_draw(*vms[0]);
+        AnmRegistry::SnapshotData snapshot;
+        CHECK(registry.capture(snapshot));
+        CHECK_EQ(snapshot.entries.size(), 0x2002u);
+        CHECK(!snapshot.entries[42].active);
+        CHECK(snapshot.entries[0x1fff].in_overflow);
+        CHECK_EQ(snapshot.entries[0x1fff].parent, 100u);
+        CHECK_EQ(snapshot.entries[0x1fff].creation_parent, 100u);
+        CHECK(snapshot.entries[0x2001].borrowed);
+        CHECK_EQ(snapshot.entries[0x2000].parent, 0x2001u);
+        CHECK_EQ(snapshot.entries[0x2000].rotation_parent, 0x2001u);
+        CHECK_EQ(snapshot.layers[0].size(), 4u);
+        CHECK_EQ(snapshot.layers[0][1].entry, 0x1fffu);
+        CHECK_EQ(snapshot.layers[0][2].entry, 0x2001u);
+        CHECK_EQ(snapshot.layers[0][0].entry, snapshot.layers[0][3].entry);
+        Fixture fixture; CHECK(fixture.init());
+        fixture.battle.mp_registry_hook = &registry;
+        GameRandom visual(123);
+        multiplayer::WorldState saved, restored;
+        CHECK(saved.capture(fixture.battle, visual));
+        const auto full = saved.digest(), core = saved.digest_core();
+        CHECK(registry.discard(*vms[0x1fff]));
+        CHECK(saved.restore(fixture.battle, visual));
+        CHECK(restored.capture(fixture.battle, visual));
+        CHECK_EQ(restored.digest(), full); CHECK_EQ(restored.digest_core(), core);
+        std::printf("capture-pool-overflow full=%016llx core=%016llx\n",
+                    (unsigned long long)full, (unsigned long long)core);
+        CHECK_EQ(registry.layer(0).size(), 4u);
+        CHECK(registry.layer(0)[0] == registry.layer(0)[3]);
+        CHECK_EQ(registry.find(handles[0x1fff])->creation_parent, registry.find(handles[100]));
+        CHECK_EQ(registry.find(handles[0x2000])->rotation_parent, &borrowed);
+    }
+    // Reusing a checkpoint for a different registry must replace deep values
+    // and remove old parent/child links, rather than retaining the last frame.
+    {
+        AnmRegistry first_registry, second_registry;
+        auto* parent = first_registry.allocate();
+        auto* child = first_registry.allocate();
+        CHECK(parent && child); if (!parent || !child) return;
+        CHECK(first_registry.submit(*parent)); CHECK(first_registry.submit(*child));
+        CHECK(first_registry.attach(*child, *parent));
+        parent->geometry.screen_vertices.resize(24);
+        parent->geometry.screen_vertices.back().position.x = 17;
+        child->geometry.world_vertices.resize(12);
+        AnmRegistry::SnapshotData reused;
+        CHECK(first_registry.capture(reused));
+        const auto original = reused;
+        auto* root0 = second_registry.allocate();
+        auto* root1 = second_registry.allocate();
+        CHECK(root0 && root1); if (!root0 || !root1) return;
+        const auto handle0 = second_registry.submit(*root0);
+        const auto handle1 = second_registry.submit(*root1);
+        CHECK(handle0 && handle1);
+        root0->geometry.screen_vertices.resize(1);
+        root0->geometry.screen_vertices[0].position.x = -23;
+        CHECK(second_registry.capture(reused));
+        CHECK_EQ(reused.entries.size(), 2u);
+        CHECK(reused.entries[0].children.empty());
+        CHECK(reused.entries[1].parent == AnmRegistry::SnapshotData::kNoVm);
+        CHECK_EQ(reused.entries[0].vm.geometry.screen_vertices.size(), 1u);
+        CHECK_EQ(reused.entries[0].vm.geometry.screen_vertices[0].position.x, -23.f);
+        CHECK(reused.entries[1].vm.geometry.world_vertices.empty());
+        CHECK_EQ(original.entries[0].vm.geometry.screen_vertices.size(), 24u);
+        CHECK_EQ(original.entries[0].vm.geometry.screen_vertices.back().position.x, 17.f);
+        root0->geometry.screen_vertices[0].position.x = 101;
+        CHECK(second_registry.restore(reused));
+        CHECK_EQ(second_registry.find(handle0)->geometry.screen_vertices[0].position.x, -23.f);
+        CHECK(second_registry.children(*second_registry.find(handle0)).empty());
+        CHECK(second_registry.children(*second_registry.find(handle1)).empty());
+        AnmRegistry empty_registry;
+        CHECK(empty_registry.capture(reused));
+        CHECK(reused.entries.empty());
+    }
+    App app;
+    CHECK(p32_pin_boot(app, "anm-layer-restore.bin"));
+    CHECK(app.configure_multiplayer(3, {0, 1, 3}, 0));
+    CHECK(app.start_game(1)); app.pending_destination = -1;
+    CHECK(app.begin_run()); if (!app.run) return;
+    auto& battle = app.run->battle;
+    battle.item_manager.spawn_item(-80, 260, 0, ItemPower, 0, 0);
+    battle.item_manager.spawn_item(80, 260, 0, ItemPower, 0, 0);
+    GameInput input;
+    for (int frame = 0; frame < 8; ++frame) {
+        input.update(0);
+        CHECK(app.update(input, false) && app.commit(60.f) && app.present());
+    }
+    const AnmVm* first = nullptr;
+    const AnmVm* second = nullptr;
+    u32 first_slot = 0, second_slot = 0;
+    for (u32 slot = 0; slot < ItemManager::kItemCapacity; ++slot) {
+        const auto* item = app.run->presentation->item_body_vm(slot);
+        if (!item) continue;
+        if (!first) { first = item; first_slot = slot; }
+        else if (!second) { second = item; second_slot = slot; break; }
+    }
+    CHECK(first && second); if (!first || !second) return;
+    const auto& items = app.animations.registry.layer(15);
+    CHECK(std::find(items.begin(), items.end(), first) != items.end());
+    CHECK(std::find(items.begin(), items.end(), second) != items.end());
+    const auto capture = [&] {
+        multiplayer::WorldState state;
+        CHECK(state.capture(battle, app.visual, nullptr, app.run->presentation.get(),
+                            app.run.get(), app.run_transition.handle()));
+        return state;
+    };
+    auto saved = capture();
+    const u32 game_seed = app.game_random.seed(), game_index = app.game_random.index();
+    const u32 visual_seed = app.visual.seed(), visual_index = app.visual.index();
+    // A duplicate is an observable extra draw even when VM values match.
+    app.animations.registry.append_draw(*const_cast<AnmVm*>(first));
+    const auto duplicate = capture();
+    CHECK(duplicate.digest() != saved.digest());
+    app.animations.registry.append_draw(*const_cast<AnmVm*>(second));
+    const auto first_then_second = capture();
+    CHECK(saved.restore(battle, app.visual, nullptr, app.run->presentation.get(), app.run.get()));
+    first = app.run->presentation->item_body_vm(first_slot);
+    second = app.run->presentation->item_body_vm(second_slot);
+    CHECK(first && second); if (!first || !second) return;
+    app.animations.registry.append_draw(*const_cast<AnmVm*>(second));
+    app.animations.registry.append_draw(*const_cast<AnmVm*>(first));
+    const auto second_then_first = capture();
+    CHECK(first_then_second.digest() != second_then_first.digest());
+    CHECK(saved.restore(battle, app.visual, nullptr, app.run->presentation.get(), app.run.get()));
+    CHECK_EQ(app.game_random.seed(), game_seed); CHECK_EQ(app.game_random.index(), game_index);
+    CHECK_EQ(app.visual.seed(), visual_seed); CHECK_EQ(app.visual.index(), visual_index);
+    const auto restored = capture();
+    CHECK_EQ(restored.digest(), saved.digest());
+    CHECK(app.present());
+    CHECK_EQ(capture().digest(), saved.digest());
+    // Unknown, draw-only VM has no stable identity and must fail capture.
+    AnmVm unknown;
+    unknown.visual.layer = 15;
+    app.animations.registry.append_draw(unknown);
+    CHECK(!saved.capture(battle, app.visual, nullptr, app.run->presentation.get(), app.run.get()));
+    CHECK(!saved.ready());
+    CHECK(!saved.restore(battle, app.visual, nullptr, app.run->presentation.get(), app.run.get()));
 }
 
 TEST(scene_present_does_not_advance_state) {

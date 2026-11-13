@@ -17,7 +17,7 @@
 
 #include <memory>
 #include <deque>
-#include <unordered_set>
+#include <map>
 #include <vector>
 
 namespace th13 {
@@ -159,7 +159,7 @@ public:
         std::vector<AnmVm> shots;          // 回退精灵直贴 VM（script<0）
         std::vector<u32> shot_generations;
         std::vector<ShotFadeData> shot_fades;
-        std::vector<u64> shot_faded_generations;  // unordered_set → 排序值
+        std::vector<u64> shot_faded_generations;  // 递增、去重的稳定快照
         bool has_player = false;
         AnmVm player;
         i32 player_script = -1, player_tilt = 0;
@@ -318,7 +318,9 @@ private:
     std::vector<ShotFade> shot_fades_;
     // 已入留尸池的弹代（防同一死亡被重复消费：battle 向量里的死弹要到下一次
     // step_shots 才被压实，若调用方在两次 step 之间重复 sync 仍会看到它）。
-    std::unordered_set<u64> shot_faded_generations_;
+    // Keep every consumed generation. Group by the entire high word so
+    // snapshot restore also retains keys outside the currently active seats.
+    std::map<u32, std::vector<u32>> shot_faded_generations_;
     std::unique_ptr<AnmVm> player_;
     std::array<std::unique_ptr<AnmVm>, 2> teammate_players_{};
     std::array<i32, 2> teammate_tilts_{};

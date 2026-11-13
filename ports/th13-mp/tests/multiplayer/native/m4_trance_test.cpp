@@ -18,6 +18,7 @@
 //   peer_bomb_policy               → 灵界期间队友 Bomb 许可
 #include "../../ecl/ecl_test_fixtures.hpp"
 #include "game/StageBattle.hpp"
+#include "multiplayer/WorldState.hpp"
 #include <cmath>
 
 using namespace th13;
@@ -536,6 +537,104 @@ TEST(protection_owner_only_death) {
 
 // ---- all_collision_invulnerability：灵界期间全席免疫三类受击 ----
 TEST(all_collision_invulnerability) {
+    for (i32 character = 0; character < 4; ++character) {
+        Fixture startup;
+        CHECK(startup.init()); startup.enable(3, {0, 0, character}); startup.arm_trance();
+        startup.battle.seat_inputs[2].update(2);
+        CHECK(startup.battle.step(GameInput{}));
+        CHECK_EQ(startup.battle.seats[2].bomb_protection, character == 0 ? 40 : 120);
+        startup.battle.seats[0].invulnerable = 0;
+        startup.battle.seats[1].invulnerable = 0;
+        for (i32 target : {0, 1}) {
+            separate_seats(startup, target);
+            auto hit = bullet_at(-120, 400);
+            startup.battle.sim.bullet_player_collision(hit);
+            CHECK_EQ(startup.battle.seats[size_t(target)].phase, StagePlayerState::Phase::Active);
+        }
+    }
+    // Overlapping sources survive either owner's termination and round-trip
+    // independently through the rollback snapshot and digest.
+    {
+        Fixture overlap;
+        CHECK(overlap.init()); overlap.enable(2, {0, 0, 0}); overlap.arm_trance();
+        GameInput both; both.update(2);
+        overlap.battle.seat_inputs[1].update(2);
+        CHECK(overlap.battle.step(both));
+        CHECK(overlap.battle.seats[0].bomb_protection > 0);
+        CHECK(overlap.battle.seats[1].bomb_protection > 0);
+        GameRandom visual(4);
+        multiplayer::WorldState saved, changed, restored;
+        CHECK(saved.capture(overlap.battle, visual));
+        overlap.battle.seats[0].bomb_timer = 0;
+        overlap.battle.seats[0].bomb_protection = 0;
+        CHECK(changed.capture(overlap.battle, visual));
+        CHECK(saved.digest_core() != changed.digest_core());
+        CHECK(overlap.battle.seats[1].bomb_protection > 0);
+        CHECK(saved.restore(overlap.battle, visual));
+        CHECK(restored.capture(overlap.battle, visual));
+        CHECK_EQ(restored.digest(), saved.digest());
+    }
+    {
+        Fixture staggered;
+        CHECK(staggered.init()); staggered.enable(2, {0, 0, 0}); staggered.arm_trance();
+        GameInput first; first.update(2);
+        CHECK(staggered.battle.step(first));
+        for (int frame = 0; frame < 100; ++frame) CHECK(staggered.battle.step(GameInput{}));
+        staggered.battle.seat_inputs[1].update(2);
+        CHECK(staggered.battle.step(GameInput{}));
+        staggered.battle.seat_inputs[1].update(0);
+        for (int frame = 0; frame < 140; ++frame) CHECK(staggered.battle.step(GameInput{}));
+        CHECK_EQ(staggered.battle.seats[0].bomb_protection, 0);
+        CHECK(staggered.battle.seats[1].bomb_protection > 0);
+        separate_seats(staggered, 0);
+        auto hit = bullet_at(-120, 400);
+        staggered.battle.sim.bullet_player_collision(hit);
+        CHECK_EQ(staggered.battle.seats[0].phase, StagePlayerState::Phase::Active);
+        staggered.battle.seats[1].bomb_protection = 0;
+        auto unprotected = bullet_at(-120, 400);
+        staggered.battle.sim.bullet_player_collision(unprotected);
+        CHECK_EQ(staggered.battle.seats[0].phase, StagePlayerState::Phase::Deathbomb);
+    }
+    // Bomb sources apply to every seat after the complete player pass. Test
+    // both seat orders, all collision consumers, startup, active and tail;
+    // clearing the sole source is the matching vulnerable negative control.
+    for (i32 owner : {0, 1}) for (i32 kind : {0, 1, 2})
+        for (i32 when : {0, 20, 220, 240}) {
+        Fixture bomb;
+        CHECK(bomb.init());
+        bomb.enable(2, {0, 0, 0});
+        bomb.arm_trance();
+        bomb.progress.ending_points = 0;
+        separate_seats(bomb, 1 - owner);
+        bomb.battle.seats[size_t(owner)].invulnerable = 500;
+        GameInput local;
+        if (owner == 0) local.update(2);
+        else bomb.battle.seat_inputs[1].update(2);
+        CHECK(bomb.battle.step(local));
+        CHECK(bomb.battle.seats[size_t(owner)].invulnerable >= 499);
+        bomb.battle.seat_inputs[1].update(0);
+        for (i32 frame = 0; frame < when; ++frame) CHECK(bomb.battle.step(GameInput{}));
+        const i32 target = 1 - owner;
+        bomb.battle.seats[size_t(target)].invulnerable = 0;
+        const bool protected_now = bomb.battle.seats[size_t(owner)].bomb_protection > 0;
+        CHECK_EQ(protected_now, when < 240);
+        if (kind == 0) {
+            auto hit = bullet_at(-120, 400);
+            bomb.battle.sim.bullet_player_collision(hit);
+        } else if (kind == 1) {
+            StageLaser laser;
+            laser.origin[0] = -168; laser.origin[1] = 400;
+            laser.length = laser.target_length = 96; laser.width = 20; laser.phase = 2;
+            bomb.battle.sim.laser_collision(laser);
+        } else {
+            StageEnemy enemy;
+            enemy.position[0] = -120; enemy.position[1] = 400;
+            enemy.hitbox[0] = enemy.hitbox[1] = 24;
+            bomb.battle.sim.enemy_body_collision(enemy);
+        }
+        CHECK_EQ(bomb.battle.seats[size_t(target)].phase, protected_now
+            ? StagePlayerState::Phase::Active : StagePlayerState::Phase::Deathbomb);
+    }
     // R-T2: the production shared-world callbacks must traverse every seat.
     // Non-trance controls prove these exact laser/body geometries really hit.
     for (bool trance : {false, true}) for (i32 target = 0; target < 3; ++target)

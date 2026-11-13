@@ -245,6 +245,25 @@ bool ApplicationState::bomb_hud(i32 stock, i32 pieces) {
            fail(run ? run->hud.error : "Bomb HUD has no scene");
 }
 
+bool ApplicationState::life_hud_seat(i32 seat, i32 lives, i32 pieces) {
+    if (!run) return fail("Life HUD has no scene");
+    if (seat > 0 && run->hud.mp_seat_count >= 2) {
+        const HudPlayerState* seat_state = run->battle.seat_hud(seat);
+        return run->hud.life_seat(
+                   seat, lives, pieces,
+                   seat_state ? seat_state->life_piece_threshold_index : 0) ||
+               fail(run->hud.error);
+    }
+    return life_hud(lives, pieces);
+}
+
+bool ApplicationState::bomb_hud_seat(i32 seat, i32 stock, i32 pieces) {
+    if (!run) return fail("Bomb HUD has no scene");
+    if (seat > 0 && run->hud.mp_seat_count >= 2)
+        return run->hud.bombs_seat(seat, stock, pieces) || fail(run->hud.error);
+    return bomb_hud(stock, pieces);
+}
+
 bool ApplicationState::game_over() {
     // 0043f570: mode0 → 0xe (GameOver/continue, script 142); mode≠0 → 0x18
     // (BGameOver, script 147, three items, default cursor 2, no Continue).
