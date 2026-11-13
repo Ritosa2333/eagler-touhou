@@ -1388,7 +1388,7 @@ void StageSim::step_bullet_behaviors(StageBullet& bullet) {
     }
 }
 
-bool StageSim::advance_one_bullet(StageBullet& bullet, size_t index, float global_rate, bool writeback) {
+bool StageSim::advance_one_bullet(StageBullet& bullet, size_t index, float global_rate) {
 
     if (!bullet.alive) {
         release_bullet_slot(bullets[index]);
@@ -1522,37 +1522,25 @@ bool StageSim::advance_one_bullet(StageBullet& bullet, size_t index, float globa
     bullet.state_time += global_rate > .99f && global_rate < 1.01f ? 1.f : global_rate;
     bullet.state_age = truncate_int(bullet.state_time);
     
-    if (writeback) bullets[index] = bullet;
+    bullets[index] = bullet;
     return true;
 }
 
 void StageSim::advance_bullets() {
     const float global_rate = time_rate();
     const size_t count = bullets.size();
-    // 交互模式每次出生拿走一个空闲槽。本趟最多归还 count 个（向量里已有的弹
-    // 各一次）；新生弹下一帧才更新，不会在本趟再次还槽。留出这些 append 后，
-    // 就地更新期间 push_back 不重分配。非交互路径仍整颗拷贝。
-    const size_t birth_room = interactive ? bullet_free_slots_.size() + count : 0;
-    if (birth_room != 0 && bullets.capacity() < count + birth_room)
-        bullets.reserve(count + birth_room);
-    const bool inplace = interactive && birth_room != 0 && bullets.capacity() >= count + birth_room;
-    if (inplace) bullet_inplace_ = true;
-    struct InplaceClear { bool* flag; ~InplaceClear() { if (flag) *flag = false; } } clear{inplace ? &bullet_inplace_ : nullptr};
     bullet_order_.clear();
     if (bullet_order_.capacity() < count) bullet_order_.reserve(count);
     for (size_t i = count; i > 0; --i) bullet_order_.push_back(i - 1);
     // 40e840 在处理出生递归子弹之前把头结点链上。向量要等处理完才 push，
     // 父弹生成序号小于其子弹，却排在子弹后面。更新序按 generation 降序。
+    // 每弹先拷到本地再写回：0x2000 递归 push_back 会重分配向量。
     std::stable_sort(bullet_order_.begin(), bullet_order_.end(), [this](size_t a, size_t b) {
         return bullets[a].generation > bullets[b].generation;
     });
     for (size_t index : bullet_order_) {
-        if (inplace) {
-            if (!advance_one_bullet(bullets[index], index, global_rate, false)) return;
-        } else {
-            StageBullet bullet = bullets[index];
-            if (!advance_one_bullet(bullet, index, global_rate, true)) return;
-        }
+        StageBullet bullet = bullets[index];
+        if (!advance_one_bullet(bullet, index, global_rate)) return;
     }
     // 尾部压缩：存活弹前移。已经在位的不自我赋值。
     size_t keep = 0;
@@ -2009,10 +1997,6 @@ void StageSim::emit_et(const StageEt& et, u32 enemy_serial, u32 slot, const floa
                 process_bullet_queue(bullet, true);
                 if (!error_.empty()) return;
                 if (bullet_animation && !bullet_animation(bullet, true)) return;
-                if (bullet_inplace_ && bullets.size() == bullets.capacity()) {
-                    error_ = "Bullet birth exceeded in-place reserve";
-                    return;
-                }
                 bullets.push_back(bullet);
             }
         }

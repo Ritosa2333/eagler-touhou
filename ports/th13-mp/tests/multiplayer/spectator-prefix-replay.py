@@ -45,7 +45,7 @@ def main():
     runtime = args.runtime_source or port / "web/cpp/sdl/BrowserRuntime.cpp"
     fixture_source = port / "tests/multiplayer/native/mp_spectator_prefix_replay_probe.cpp"
     source = runtime.read_text()
-    signatures = ["bool mp_tick_spectator(float fps, unsigned& simulated) {"]
+    signatures = ["bool mp_tick_spectator(float fps, unsigned& simulated, unsigned& attempted) {"]
     if "bool mp_restore_history_root(" in source:
         signatures.insert(0, "bool mp_restore_history_root(")
     extracted = out / "production-spectator.inc"
