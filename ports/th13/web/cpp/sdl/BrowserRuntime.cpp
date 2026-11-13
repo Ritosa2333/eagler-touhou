@@ -1157,6 +1157,7 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_anm_chain() {
 
 // 主链 walk 入口只读 dump（alternate=false 的 AnmRegistry::tick_chain 入口，
 // 即本帧子体追加之前）：与 th13_debug_anm_chain 同字段，附 entry:true。
+}  // extern "C"
 namespace {
 std::string chain_walk_rows;
 int chain_walk_first = 0, chain_walk_last = -1;
@@ -1196,7 +1197,8 @@ void observe_chain_walk(const th13::AnmRegistry&, bool alternate) {
     if (frame < chain_walk_first || frame > chain_walk_last) return;
     chain_walk_rows += build_chain_walk_json();
 }
-}
+}  // namespace
+extern "C" {
 EMSCRIPTEN_KEEPALIVE void th13_debug_anm_chain_walk_observe(int first, int last) {
     chain_walk_rows.clear();
     chain_walk_first = first;

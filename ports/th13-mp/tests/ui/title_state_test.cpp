@@ -133,7 +133,7 @@ std::vector<u8> title_anm_fixture() {
         scripts[123].push_back(spawn(child));
     scripts[123].push_back(wait());
     scripts[123].push_back(stop());
-    return synthetic_anm(8, scripts);
+    return synthetic_anm(72, scripts);
 }
 
 struct TitleHarness {
@@ -161,7 +161,7 @@ struct TitleHarness {
         CHECK(scheduler.add(animation_updates[0], FramePass::Update, 9) >= 0);
         CHECK(scheduler.add(animation_updates[1], FramePass::Update, 34) >= 0);
         CHECK(load_bank(manager, 16, title_anm_fixture()));
-        CHECK(load_bank(manager, 17, synthetic_anm(1, trivial_scripts(1))));   // title_v
+        CHECK(load_bank(manager, 17, synthetic_anm(1, {{wait(), label(1), stop()}})));  // title_v
         CHECK(load_bank(manager, 2, synthetic_anm(8, trivial_scripts(20))));   // ascii
         CHECK(load_bank(manager, 19, synthetic_anm(4, trivial_scripts(4))));   // help
         CHECK(load_bank(manager, 8, synthetic_anm(4, trivial_scripts(4))));    // effect 转场
@@ -616,6 +616,28 @@ TEST(title_extra_character_selective_unlock_disables_locked_characters) {
     // 只有魔理沙解锁，向左仍选中该角色。
     harness.frame(0x40);
     CHECK_EQ(harness.scene->state.menu.cursor, 1);
+    CHECK(harness.scene->error.empty());
+}
+
+// 0x44d9a6（0x44dcac case 7 = オプション）：进入 Option 屏只播 sound(7) 与
+// 切 substate 4，不退场 LOGO（handles[94]/handles[95]）与版本条（version_bar）。
+TEST(title_option_entry_preserves_logo_and_version_bar) {
+    TitleHarness harness;
+    harness.reach_menu();
+    const u32 logo = harness.scene->state.handles[94];
+    const u32 ver = harness.scene->state.version_bar;
+    CHECK(logo != 0);
+    CHECK(ver != 0);
+    for (int i = 0; harness.scene->state.menu.cursor != 7 && i < 12; ++i)
+        harness.frame(0x20);
+    CHECK_EQ(harness.scene->state.menu.cursor, 7);
+    harness.frame(0x01);  // Z on Option(7)
+    harness.advance(25);
+    CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Option));
+    CHECK_EQ(harness.scene->state.handles[94], logo);
+    CHECK_EQ(harness.scene->state.version_bar, ver);
+    CHECK(harness.manager.registry.find(logo) != nullptr);
+    CHECK(harness.manager.registry.find(ver) != nullptr);
     CHECK(harness.scene->error.empty());
 }
 

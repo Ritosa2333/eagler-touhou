@@ -37,18 +37,18 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
       scheduler(f),
       player_state(player),
       score_state(score),
+      ascii_bank(ascii),
+      scenery_bank(scenery_bank),
+      scenery_std(std_name),
+      msg_presentation(std::make_unique<MsgPresentation>(
+          animations, MsgPresentation::Banks{banks.player, banks.stage})),
+      post_flow(p, player, score, *this),
       owned_hud(shared_hud ? nullptr :
           std::make_unique<GameHud>(animations, p, player, score, front, ascii)),
       hud(shared_hud ? *shared_hud : *owned_hud),
       battle(shared_random, shared_player),
       presentation(std::make_unique<StagePresentation>(animations, scene_renderer, banks,
-                                                       kPlayerShotSprite)),
-      msg_presentation(std::make_unique<MsgPresentation>(
-          animations, MsgPresentation::Banks{banks.player, banks.stage})),
-      ascii_bank(ascii),
-      scenery_bank(scenery_bank),
-      scenery_std(std_name),
-      post_flow(p, player, score, *this) {
+                                                       kPlayerShotSprite)) {
     // ECL 表达式 rand 走 game 流（0x4dc324）：-9987 双视图
     // 0x4203cc/0x420d5b 与 RandomPolar 0x478b22 均为 `mov ecx,0x4dc324`；
     // 0x4012xx 的 0x4dc31c 调用属 ANM 轨迹处理器。round-22 的 ecl_random

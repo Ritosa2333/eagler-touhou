@@ -32,10 +32,10 @@
 // 都返回 false —— 失败可见，不吞。
 EM_JS(bool, th13_save_write_js, (const char* data, int length), {
     try {
-        let binary = '';
+        let binary = "";
         const bytes = new Uint8Array(HEAPU8.buffer, data, length);
         for (let i = 0; i < length; ++i) binary += String.fromCharCode(bytes[i]);
-        localStorage.setItem('th13.save', btoa(binary));
+        localStorage.setItem("th13.save", btoa(binary));
         return true;
     } catch (e) {
         return false;
@@ -43,8 +43,8 @@ EM_JS(bool, th13_save_write_js, (const char* data, int length), {
 });
 EM_JS(int, th13_save_read_js, (char* out, int capacity), {
     try {
-        const text = localStorage.getItem('th13.save');
-        if (text === null || text === '') return 0;
+        const text = localStorage.getItem("th13.save");
+        if (text === null || text === "") return 0;
         const binary = atob(text);
         if (binary.length > capacity) return 0;
         const bytes = new Uint8Array(HEAPU8.buffer, out, binary.length);
@@ -59,10 +59,10 @@ EM_JS(int, th13_save_read_js, (char* out, int capacity), {
 // scoreth13.dat 原版格式通道（base64，同上语义）。
 EM_JS(bool, th13_scoredat_write_js, (const char* data, int length), {
     try {
-        let binary = '';
+        let binary = "";
         const bytes = new Uint8Array(HEAPU8.buffer, data, length);
         for (let i = 0; i < length; ++i) binary += String.fromCharCode(bytes[i]);
-        localStorage.setItem('th13.scoredat', btoa(binary));
+        localStorage.setItem("th13.scoredat", btoa(binary));
         return true;
     } catch (e) {
         return false;
@@ -70,8 +70,8 @@ EM_JS(bool, th13_scoredat_write_js, (const char* data, int length), {
 });
 EM_JS(int, th13_scoredat_read_js, (char* out, int capacity), {
     try {
-        const text = localStorage.getItem('th13.scoredat');
-        if (text === null || text === '') return 0;
+        const text = localStorage.getItem("th13.scoredat");
+        if (text === null || text === "") return 0;
         const binary = atob(text);
         if (binary.length > capacity) return 0;
         const bytes = new Uint8Array(HEAPU8.buffer, out, binary.length);

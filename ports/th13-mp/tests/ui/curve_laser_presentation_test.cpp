@@ -27,7 +27,7 @@ void real_card(const char* file,const char* routine,i32 samples,i32 color) {
     LaserPresentation presentation{manager,renderer,sim,5};
     std::vector<u8> bytes;CHECK(th13test::TestFileReader{}.read("artifacts/reference/raw/bullet.anm",bytes));
     CHECK(manager.load(5,bytes.data(),u32(bytes.size())));
-    CHECK(sim.load("artifacts/reference/raw","artifacts/verification/curve-production-20261027/card-draw-events.jsonl",file));
+    CHECK(sim.load("artifacts/reference/raw","/tmp/th13-mp-curve-card-draw-events.jsonl",file));
     StageSpawnArguments args;args.integers[1]=16;
     sim.spawn_enemy(routine,0,128,100,nullptr,false,false,&args);
     CHECK(sim.error().empty());CHECK(!sim.lasers.empty());if(sim.lasers.empty())return;
