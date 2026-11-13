@@ -11,7 +11,7 @@ class RunInput {
  PracticeSpiritSpawn pending_spirit;
  bool fail(const std::string&);i32 scheduled();i32 accelerate_replay();
 public:
- GameInput input;bool auto_focus=false;u8 recorded_fps=60;u32 lock_frames=0;std::string error;
+ GameInput input;bool auto_focus=false,apply_recorded_practice=true;u8 recorded_fps=60;u32 lock_frames=0;std::string error;
  RunInput(StageGameplay&,GameRun&,RunInputServices&,Replay*,ReplayRecording*,u16 seed,bool fresh);
  ~RunInput();bool activate();void controls(u32 held,float rate,PlayerTouch value={},u32 tools=0)noexcept{physical=held;fps=rate;touch=value;practice_tools=tools;}
  void save_rollback(multiplayer::FrameImage&);
