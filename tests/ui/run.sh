@@ -16,42 +16,40 @@ out_dir="$port_dir/tests/ui/build"
 mkdir -p "$out_dir"
 
 # 游戏源与套件均自动发现，使任意历史提交点可独立构建当时的测试。
-sources=(eagler-touhou/ports/th13/web/cpp/game/*.cpp)
+sources=(eagler-touhou/ports/th13-mp/web/cpp/game/*.cpp)
 
-# 本轮新编译一组游戏对象供所有套件复用，不读取旧对象缓存。
-object_dir="$(mktemp -d "$out_dir/objects.XXXXXX")"
-trap 'rm -rf -- "$object_dir"' EXIT
+# 每次运行使用独立目录，新编译对象与套件，不读取旧产物。
+run_dir="$(mktemp -d "$out_dir/run.XXXXXX")"
+object_dir="$run_dir/objects"
+mkdir -p "$object_dir"
+echo "tests/ui/run.sh: 本次产物 $run_dir"
 objects=()
 status=0
 for source in "${sources[@]}"; do
   object="$object_dir/$(basename "${source%.cpp}").o"
   g++ -std=c++17 $flags -fno-exceptions -fno-rtti -ffp-contract=off \
-    -Ieagler-touhou/ports/th13/web/cpp -Ieagler-touhou/common/include \
+    -Ieagler-touhou/ports/th13-mp/web/cpp -Ieagler-touhou/common/include \
     -c "$source" -o "$object" || status=1
   objects+=("$object")
 done
 (( status )) && exit 1
 
+# 仅记录本轮链接成功的套件；失败不能回退执行旧二进制。
+built=()
 for suite in "$script_dir"/*_test.cpp; do
   name="$(basename "$suite" .cpp)"
-  if ! g++ -std=c++17 $flags -fno-exceptions -fno-rtti -ffp-contract=off \
-      -Ieagler-touhou/ports/th13/web/cpp -Ieagler-touhou/common/include \
+  if g++ -std=c++17 $flags -fno-exceptions -fno-rtti -ffp-contract=off \
+      -Ieagler-touhou/ports/th13-mp/web/cpp -Ieagler-touhou/common/include \
       "${objects[@]}" "$suite" \
-      -o "$out_dir/$name"; then
+      -o "$run_dir/$name"; then
+    built+=("$run_dir/$name")
+  else
     echo "tests/ui/run.sh: 套件 $name 构建失败（其余套件继续）" >&2
     status=1
   fi
 done
 
-# 所有 suite 均运行（构建失败的缺可执行计为失败），退出码聚合。
-for suite in "$script_dir"/*_test.cpp; do
-  name="$(basename "$suite" .cpp)"
-  bin="$out_dir/$name"
-  if [[ -x "$bin" ]]; then
-    "$bin" || status=1
-  else
-    echo "tests/ui/run.sh: 缺少 $name 可执行（构建失败），计为失败" >&2
-    status=1
-  fi
+for bin in "${built[@]}"; do
+  "$bin" || status=1
 done
 exit $status
