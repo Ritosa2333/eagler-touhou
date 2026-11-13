@@ -6816,7 +6816,7 @@ index 0000000000000000000000000000000000000000..080fa34302cb95b9118f7be12d429d8a
 +}
 diff --git a/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp b/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp
 new file mode 100644
-index 0000000000000000000000000000000000000000..d812343fe6e91098f60bc406a5e9c1d20dbdcd9b
+index 0000000000000000000000000000000000000000..bd6f448c538dda6f4d0f38b69dbe4b0140fe826c
 --- /dev/null
 +++ b/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp
 @@ -0,0 +1,326 @@
@@ -6911,7 +6911,7 @@ index 0000000000000000000000000000000000000000..d812343fe6e91098f60bc406a5e9c1d2
 +}
 +#include "PracticeMenuPurpleTh14.inc"
 +void cheat_options(){
-+    ImGui::SetNextWindowPos({5,5},ImGuiCond_Always);
++    ImGui::SetNextWindowPos(Mobile::visible?ImVec2{8,8}:ImVec2{5,5},ImGuiCond_Always);
 +    ImGui::SetNextWindowSize({0,0});ImGui::SetNextWindowBgAlpha(.5f);
 +    if(Mobile::begin(Mobile::Cheats,"Mod Menu###th14-purple-overlay",panel_flags|ImGuiWindowFlags_AlwaysAutoResize,locale)){
 +        const Labels* mods[]={&practice_TH_MUTEKI,&practice_TH_INFLIVES2,&practice_TH_INFBOMBS,&practice_TH_INFPOWER,&practice_TH_TIMELOCK,&practice_TH_AUTOBOMB};
@@ -7138,7 +7138,7 @@ index 0000000000000000000000000000000000000000..d812343fe6e91098f60bc406a5e9c1d2
 +            draw->PopClipRect();
 +        }
 +    }
-+    if(on_stage()&&!modal()&&(tracker||(Mobile::visible&&Mobile::expanded[Mobile::Information])))information();
++    if(on_stage()&&!modal()&&(tracker||Mobile::visible))information();
 +    publish();
 +    ImGui::Render();
 +    renderer.render_imgui(ImGui::GetDrawData(),1);
