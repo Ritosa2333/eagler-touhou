@@ -28,16 +28,86 @@ export function installPilot({ seat }) {
     decisions: 0,
     movementDecisions: 0,
   });
+  // Keep the SHT movement estimate inside installPilot
+  // so Playwright page.evaluate's function serialization has no free imports.
+  function createMovementModel(m, w) {
+    const identities = [
+      '41efe8effa3b0a591ed8bf3db646c2a8d3e8d37d35cd744d1687778068a93769',
+      '083c815505f09bfc5cd26daa3caaa35a568d3d2f67f182aa076c08c48597fed3',
+      'b851026d26d3522784025c863037cb66bb19bb031cbbbe9e720c07c835c0dc6e',
+      '146b690e7b98850091e39778b3fb7481fb87453b8f0a92fb5491a2d3c202f7b7',
+    ];
+    const cache = new Map();
+    function request(character) {
+      if (!Number.isInteger(character) || character < 0 || character >= identities.length)
+        return { status:'fallback', reason:'invalid-character' };
+      if (cache.has(character)) return cache.get(character);
+      const record = { status:'fallback', reason:'sht-loading', character };
+      cache.set(character, record);
+      try {
+        const file = `/assets/pl0${character}a.sht`;
+        const bytes = new Uint8Array(m.FS.readFile(file)); // immutable snapshot
+        if (bytes.byteLength < 32) throw Error('sht-short');
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        const speeds128 = Array.from({length:4}, (_, i) => {
+          const v = view.getFloat32(16 + 4 * i, true);
+          if (!Number.isFinite(v) || v <= 0 || v * 128 > 2147483647) throw Error('sht-speed-invalid');
+          return Math.trunc(v * 128);
+        });
+        if (speeds128.some(x => x <= 0)) throw Error('sht-speed-invalid');
+        if (!w.crypto?.subtle) throw Error('sha256-unavailable');
+        w.crypto.subtle.digest('SHA-256', bytes).then(digest => {
+          const sha = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2,'0')).join('');
+          if (sha !== identities[character]) Object.assign(record, {reason:'sht-role-sha-mismatch', sha});
+          else Object.assign(record, {status:'ready', reason:null, file, sha, speeds128});
+        }).catch(() => { record.reason = 'sha256-failed'; });
+      } catch (error) {
+        record.reason = `sht-read:${error.message}`;
+        // An asset may not yet be mounted when the pilot installs.
+        // Retry on the next observation instead of caching an early read failure.
+        cache.delete(character);
+      }
+      return record;
+    }
+    function path({character, s, hazards, team, shift, dx, dy, horizons}) {
+      const record = request(character);
+      if (record.status !== 'ready') return {mode:'fallback', reason:record.reason};
+      // Browser x/y are printed to six decimals. Reconstruct the 1/128 grid;
+      // refuse inconsistent or missing observations. phase_frame and the list of
+      // live hazards are proxies, not the production startup/enemy gates.
+      if (!s || s.character !== character || !Number.isFinite(s.x) || !Number.isFinite(s.y) ||
+          s.phase !== 1 || s.ghost || s.dead || !Number.isInteger(s.phase_frame) || s.phase_frame < 0 ||
+          !Array.isArray(hazards?.enemies) || !team || ![0,1,false,true].includes(team.active) || team.active ||
+          ![true,false].includes(shift) ||
+          ![-1,0,1].includes(dx) || ![-1,0,1].includes(dy) ||
+          !Array.isArray(horizons) || horizons.some(t => !Number.isInteger(t) || t < 0))
+        return {mode:'fallback',reason:'known-special-or-invalid-observation',sha:record.sha};
+      const fixedX = Math.round(s.x * 128), fixedY = Math.round(s.y * 128);
+      if (fixedX < -23552 || fixedX > 23552 || fixedY < 4096 || fixedY > 55296 ||
+          Math.abs(s.x - fixedX / 128) > 0.00000051 || Math.abs(s.y - fixedY / 128) > 0.00000051)
+        return {mode:'fallback',reason:'position-not-on-fixed-grid',sha:record.sha};
+      const focus = shift && s.phase_frame >= 4 && hazards.enemies.length > 0;
+      const speed = record.speeds128[(dx && dy ? 2 : 0) + (focus ? 1 : 0)];
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const points = horizons.map(t => [clamp(fixedX + dx * speed * t, -23552, 23552) / 128,
+                                        clamp(fixedY + dy * speed * t, 4096, 55296) / 128]);
+      return {mode:'normal-sht-estimate', sha:record.sha, points, focus,
+        unknown:['active-bomb','exact-time-rate','touch','future-gates-and-special-states']};
+    }
+    return {request, path};
+  }
+
+  const movementModel = createMovementModel(m, w);
   let bombAt = -1000, rescue = null, rescueCooldown = 0;
   let move = 0, nextMoveCapture = -1;
   const emit = (event) => {
     state.events.push(event);
     if (state.events.length > 256) state.events.shift();
   };
-  const set = (mask) => {
+  const set = (mask, dialogue = true) => {
     // A dialogue opened while Z/Ctrl were already held needs a new press to
     // arm skip. Supply ordinary release/press edges without changing its state.
-    if (state.lastFrame % 60 < 10) mask &= ~(1 | 512);
+    if (dialogue && state.lastFrame % 60 < 10) mask &= ~(1 | 512);
     for (const [bit, scan] of keys)
       if ((mask ^ state.mask) & bit) m._th13_key(scan, +!!(mask & bit));
     state.mask = mask;
@@ -77,7 +147,10 @@ export function installPilot({ seat }) {
       }
     })();
     if (probe[0] !== 1) {
-      set(probe[0] === 0 && probe[8] === 1 ? 0 : pulse ? 1 : 0);
+      const title = json(m._th13_debug_pending);
+      const exitSavedSlot = title.has_title && title.title_screen === 15 &&
+        title.title_substate === 2 && saved;
+      set(probe[0] === 0 && probe[8] === 1 ? 0 : pulse ? (exitSavedSlot ? 2 : 1) : 0);
       return;
     }
     const pause = json(m._th13_debug_pause_state);
@@ -102,7 +175,7 @@ export function installPilot({ seat }) {
       team = json(m._th13_debug_mp_trance_state);
     const dialogueMask = hazards.dialogue ? 512 : 0;
     if (!Number.isFinite(s.x)) {
-      set(1 | dialogueMask);
+      set(1 | dialogueMask, Boolean(hazards.dialogue));
       return;
     }
     if (state.resources !== `${s.extra_lives}/${s.bombs}/${s.phase}`) {
@@ -235,9 +308,11 @@ export function installPilot({ seat }) {
           const scale = dx && dy ? Math.SQRT1_2 : 1,
             vx = dx * speed * scale,
             vy = dy * speed * scale;
-          const path = horizons.map(t => [
-            Math.max(-184, Math.min(184, s.x + vx * t)),
-            Math.max(32, Math.min(432, s.y + vy * t))]);
+          const prediction = movementModel.path({character:s.character, s, hazards, team,
+            shift:speed === 2, dx, dy, horizons:[...horizons, 8]});
+          const fallbackPath = t => [Math.max(-184, Math.min(184, s.x + vx * t)),
+            Math.max(32, Math.min(432, s.y + vy * t))];
+          const path = prediction.points ? prediction.points.slice(0, horizons.length) : horizons.map(fallbackPath);
           let nearestSquared = 200 * 200;
           for (let k = 0; k < predicted.length; ++k)
             for (let point = 0; point < horizons.length; ++point) {
@@ -249,8 +324,7 @@ export function installPilot({ seat }) {
                     Math.max(0, Math.abs(dy) - b.ry));
               nearestSquared = Math.min(nearestSquared, Math.max(0, clearance) ** 2);
             }
-          const px = Math.max(-184, Math.min(184, s.x + vx * 8)),
-            py = Math.max(32, Math.min(432, s.y + vy * 8));
+          const [px, py] = prediction.points ? prediction.points[horizons.length] : fallbackPath(8);
           let cost =
             10000 / Math.max(1, nearestSquared) +
             Math.hypot(px - targetX, (py - targetY) * 1.5) * 0.007;
@@ -296,8 +370,13 @@ export function installPilot({ seat }) {
             cost += Math.hypot(px - targetX, py - targetY) * 0.05;
           if (state.direction === (dx + 1) * 3 + dy + 1) cost -= 0.03;
           if (!best || cost < best.cost)
-            best = { cost, nearest: Math.sqrt(nearestSquared), laserDanger, bodyDanger, dx, dy, speed };
+            best = { cost, nearest: Math.sqrt(nearestSquared), laserDanger, bodyDanger, dx, dy, speed,
+              prediction: {mode:prediction.mode, reason:prediction.reason || null,
+                sha:prediction.sha || null, unknown:prediction.unknown || [],
+                focus:prediction.focus ?? null, dx, dy, shift:speed === 2,
+                scope:"normal-SHT trajectory estimate; future gates and special states not guaranteed"} };
         }
+    state.movementPrediction = best.prediction;
     if (chooseMovement) {
       state.direction = (best.dx + 1) * 3 + best.dy + 1;
       move = (best.speed === 2 ? 8 : 0) |
@@ -325,7 +404,7 @@ export function installPilot({ seat }) {
     }
     if (rescue && rescue.phase !== "approach")
       mask = (rescue.down ? 8 : 0) | (mask & (2 | 2048));
-    set(mask);
+    set(mask, Boolean(hazards.dialogue));
     ++state.decisions;
   };
   set(1);
