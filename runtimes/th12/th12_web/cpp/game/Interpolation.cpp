@@ -61,7 +61,7 @@ template<class T,u32 N> bool step(Interpolator<T,N>& v,T* out,const float* rate)
     return true;
 }
 template<class T,u32 N> void weights(const Interpolator<T,N>& v,float* w){
-    if constexpr(kPortTitle==14&&((std::is_same_v<T,float>&&(N==2||N==3))||(std::is_same_v<T,i32>&&(N==1||N==3)))){
+    if constexpr(kPortTitle==14&&((std::is_same_v<T,float>&&(N>=1&&N<=3))||(std::is_same_v<T,i32>&&(N==1||N==3)))){
         // 409dcc..409e52: preserve each SSE product and its association.
         const float t=v.timer.fractional/float(v.duration),m=t-1.f,r=1.f-t,twice=t*2.f;
         w[0]=(m*m)*(twice+1.f);w[1]=(3.f-twice)*(t*t);w[2]=(r*r)*t;w[3]=(m*t)*t;return;
@@ -84,9 +84,56 @@ Vec2 sample(Vec2Interpolator& v,const float* rate) noexcept {float out[2];vector
 Vec3 sample(Vec3Interpolator& v,const float* rate) noexcept {float out[3];vector_sample(v,out,rate);return {out[0],out[1],out[2]};}
 float sample(FloatInterpolator& v,const float* rate) noexcept {
     float out;if(step(v,&out,rate))return out;
+    if constexpr(kPortTitle==14){
+        // 414140: round each subtraction, multiplication and addition.
+        if(v.mode==InterpolationMode::Hermite){
+            float w[4];weights(v,w);
+            float result=w[1]*v.end[0];result+=w[0]*v.start[0];
+            result+=w[2]*v.initial_tangent[0];result+=w[3]*v.final_tangent[0];return result;
+        }
+        const float difference=v.end[0]-v.start[0];
+        return easing(v.timer.fractional,v.duration,v.mode)*difference+v.start[0];
+    }
     if(v.mode==InterpolationMode::Hermite){float w[4];weights(v,w);return float(double(w[1])*v.end[0]+double(w[0])*v.start[0]+double(w[2])*v.initial_tangent[0]+double(w[3])*v.final_tangent[0]);}
     return float((double(v.end[0])-v.start[0])*easing(v.timer.fractional,v.duration,v.mode)+v.start[0]);
 }
+#if PORT_TITLE == 14
+float anm_th14_wrap_angle(float angle) noexcept {
+    constexpr float pi=3.1415927410125732421875f,tau=6.283185482025146484375f;
+    unsigned iterations=0;
+    while(angle>pi){angle-=tau;if(iterations++>32)break;}
+    while(angle<-pi){angle+=tau;if(iterations++>32)break;}
+    return angle;
+}
+float anm_th14_sample_angle(FloatInterpolator& v,const float* rate) noexcept {
+    constexpr float pi=3.1415927410125732421875f,tau=6.283185482025146484375f;
+    if(v.duration>0){
+        v.timer.tick();
+        if(v.timer.current>=v.duration){v.timer.set(v.duration,rate);v.duration=0;}
+    }
+    const bool relative=v.mode==InterpolationMode::Velocity||v.mode==InterpolationMode::Acceleration;
+    if(!v.duration)return relative?v.start[0]:v.end[0];
+    if(relative){
+        const bool acceleration=v.mode==InterpolationMode::Acceleration;
+        v.start[0]=anm_th14_wrap_angle(v.start[0]+(acceleration?v.final_tangent[0]:v.end[0]));
+        if(acceleration)v.final_tangent[0]=anm_th14_wrap_angle(v.end[0]+v.final_tangent[0]);
+        return v.start[0];
+    }
+    if(v.mode==InterpolationMode::Hermite){
+        float w[4];weights(v,w);
+        const float d=anm_th14_wrap_angle(v.final_tangent[0]*w[3]);
+        const float c=anm_th14_wrap_angle(v.initial_tangent[0]*w[2]);
+        const float b=anm_th14_wrap_angle(v.end[0]*w[1]);
+        const float a=anm_th14_wrap_angle(v.start[0]*w[0]);
+        return anm_th14_wrap_angle(anm_th14_wrap_angle(anm_th14_wrap_angle(a+b)+c)+d);
+    }
+    // 407210 takes the shortest signed angular displacement before easing.
+    const float from=v.start[0],to=v.end[0],difference=to-from;
+    const float delta=anm_th14_wrap_angle(difference>pi?to-(from+tau):from-to>pi?to-(from-tau):difference);
+    const float weighted=anm_th14_wrap_angle(delta*easing(v.timer.fractional,v.duration,v.mode));
+    return anm_th14_wrap_angle(weighted+from);
+}
+#endif
 Rgb sample(RgbInterpolator& v,const float* rate) noexcept {
     i32 out[3];if(!step(v,out,rate)){
         if constexpr(kPortTitle==14){

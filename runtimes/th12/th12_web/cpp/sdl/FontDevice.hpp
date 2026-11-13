@@ -12,11 +12,18 @@ namespace th11::sdl {
 class FontDevice {
     GraphicsDevice& graphics;TextRaster raster;bool ready=false;
 #if defined(TH_ENABLE_THCRAP)
-    std::array<TTF_Font*,4> localized{};
+    static constexpr int th14_font_count=DialogueText::th14_spell_title_style+1;
+    std::array<TTF_Font*,PORT_TITLE==14?th14_font_count:4> localized{};
+    static constexpr int font_index(int n){return n>=0&&n<(PORT_TITLE==14?th14_font_count:3)?n:3;}
+#if PORT_TITLE == 14
+    std::array<TTF_Font*,th14_font_count> fallback{};
+    std::vector<u16> cp932;
+    std::string decode(const std::string&) const;
+#endif
     std::vector<int> layout_tabs;
     LayoutLine layout(const std::string&,int);
     void font_style(int,const std::string&);
-    bool write_unicode(TextureImage&,const ImageRect&,const std::string&,const TextStyle&);
+    bool write_unicode(TextureImage&,const ImageRect&,const std::string&,const TextStyle&,i32 width_limit);
 #endif
 public:
     explicit FontDevice(GraphicsDevice& g):graphics(g){}
@@ -28,5 +35,6 @@ public:
     bool waiting=false;
     bool initialize(const FontBitmapTh14* bitmap=nullptr);
     bool text(AnmVm&,const DialogueText&);
+    i32 measure(const std::string&,int);
 };
 }

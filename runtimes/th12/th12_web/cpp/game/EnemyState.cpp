@@ -262,7 +262,12 @@ double EnemyGlobals::floating(i32 id){
     case -9957:return 1;case -9956:return player_aim_angle(enemy.absolute.position,environment.player_position);
     case -9955:return player_aim_angle(enemy.relative.position,environment.player_position);case -9954:return enemy.health;
     case -9953:case -9952:case -9951:case -9950:return environment.difficulty==id+9953;
-    case -9946:return environment.enemy_count;case -9945:return signed_bits(u32(environment.character)*2+u32(environment.subtype));
+    case -9946:return environment.enemy_count;
+    case -9945:
+#if PORT_TITLE == 14
+        if(environment.th14_practice_fake_type)return environment.character*2+environment.th14_practice_fake_type-1;
+#endif
+        return signed_bits(u32(environment.character)*2+u32(environment.subtype));
     case -9944:return position_distance(enemy.current.position,environment.player_position);
     default:return 0;
     }

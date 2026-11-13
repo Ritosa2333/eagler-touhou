@@ -94,6 +94,10 @@ struct AnmVm {
     // Retail +4f8..524: last quad submitted, written before visibility clipping.
     Vec3 screen_quad_positions[4];
     void* dialogue_owner;
+    FloatInterpolator rotation_z_interpolation;
+    // The live draw-list link, separate from the mutable script layer.
+    AnmVm** th14_draw_link;
+    u32 th14_draw_layer,th14_draw_epoch;
 #endif
     void initialize() noexcept;
     bool bind_sprite(i32 index) noexcept;
@@ -140,7 +144,7 @@ struct AnmVm {
 };
 // Layout assertions apply to the 32-bit comparison/WebAssembly target only.
 #if UINTPTR_MAX == UINT32_MAX
-inline constexpr u32 kAnmVmExtensionBytes=((kPortTitle==13||kPortTitle==14)?3*sizeof(Vec2)+2*sizeof(Vec2Interpolator)+sizeof(Vec3):0)+(kPortTitle==16?3*sizeof(Vec2)+sizeof(Vec2Interpolator)+12*sizeof(u32)+sizeof(float)+sizeof(AnmVm*):0)+((kPortTitle==14||kPortTitle==16)?sizeof(AnmResource*):0)+(kPortTitle==14?sizeof(Vec3)+sizeof(Vec2)+sizeof(i32)+sizeof(float)+sizeof(Timer)+sizeof(u32)+sizeof(void*)+4*sizeof(Vec3):0)+sizeof(AnmTraceEntry)*anm_trace_size+sizeof(u32);
+inline constexpr u32 kAnmVmExtensionBytes=((kPortTitle==13||kPortTitle==14)?3*sizeof(Vec2)+2*sizeof(Vec2Interpolator)+sizeof(Vec3):0)+(kPortTitle==16?3*sizeof(Vec2)+sizeof(Vec2Interpolator)+12*sizeof(u32)+sizeof(float)+sizeof(AnmVm*):0)+((kPortTitle==14||kPortTitle==16)?sizeof(AnmResource*):0)+(kPortTitle==14?sizeof(Vec3)+sizeof(Vec2)+sizeof(i32)+sizeof(float)+sizeof(Timer)+sizeof(u32)+sizeof(void*)+4*sizeof(Vec3)+sizeof(FloatInterpolator)+sizeof(AnmVm**)+2*sizeof(u32):0)+sizeof(AnmTraceEntry)*anm_trace_size+sizeof(u32);
 static_assert(sizeof(AnmVm)==0x434+kAnmVmExtensionBytes);
 static_assert(offsetof(AnmVm,uv)==0x70);
 static_assert(offsetof(AnmVm,position_interpolation)==0x90);

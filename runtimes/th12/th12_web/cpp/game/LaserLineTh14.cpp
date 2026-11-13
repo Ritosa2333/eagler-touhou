@@ -132,17 +132,17 @@ i32 laser_th14_line_cancel(Th14LaserLine& l,bool reward,bool skip,LaserWorld& w)
  }while(b.length>distance+8.f);
  b.state=1;return count;
 }
-static i32 cut_samples(Th14LaserLine& l,Vec3 center,float radius,Vec2 size,float angle,bool rectangle,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& fragments,LaserWorld& w){
+static i32 cut_samples(Th14LaserLine& l,Vec3 center,float radius,Vec2 size,const Th14RectangleRotation* rotation,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& fragments,LaserWorld& w){
  fragments.clear();auto& b=l.base;if(skip&&b.protection)return 0;if(b.length<16.f)return 0;if(b.length>4096.f)return -2;
  const Vec3 original=b.position;const auto half=polar(b.angle,8.f);const Vec2 step{half.x+half.x,half.y+half.y};Vec3 p{original.x+half.x,original.y+half.y,0};
  std::array<u8,256> mask{};const float squared=radius*radius;float distance=8.f;i32 count=0,selected=0;
  Vec2 local{},local_step{};
- if(rectangle){const float x=original.x-center.x,y=original.y-center.y,sine=float(std::sin(-double(angle))),cosine=float(std::cos(-double(angle)));
-  const auto v=polar(normalize_angle(b.angle-angle),8.f);local={x*cosine-y*sine+v.x,y*cosine+x*sine+v.y};local_step={v.x+v.x,v.y+v.y};size.x*=.5f;size.y*=.5f;
+ if(rotation){const float x=original.x-center.x,y=original.y-center.y,sine=rotation->sine,cosine=rotation->cosine;
+  const auto v=polar(normalize_angle(b.angle-rotation->angle),8.f);local={x*cosine-y*sine+v.x,y*cosine+x*sine+v.y};local_step={v.x+v.x,v.y+v.y};size.x*=.5f;size.y*=.5f;
  }
  do{
   if(count>=256)return -2;const float dx=center.x-p.x,dy=center.y-p.y;
-  const bool inside=rectangle?!(local.x< -size.x||local.x>size.x||local.y< -size.y||local.y>size.y):!(dx*dx+dy*dy>squared);
+  const bool inside=rotation?!(local.x< -size.x||local.x>size.x||local.y< -size.y||local.y>size.y):!(dx*dx+dy*dy>squared);
   if(inside){mask[count]=1;++selected;if(rewards&&!w.th14_curve_reward(p,rewards))return -2;
    const i32 family=(b.sprite<=17||b.sprite==33||b.sprite==37)?181:b.sprite<=30?229:b.sprite<=32?253:-1;
    if(family>=0&&!w.cancel_effect(p,b.color*2+family))return -2;
@@ -167,7 +167,7 @@ static i32 cut_samples(Th14LaserLine& l,Vec3 center,float radius,Vec2 size,float
  }
  return selected;
 }
-i32 laser_th14_line_cut_circle(Th14LaserLine& l,Vec3 c,float r,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& f,LaserWorld& w){return cut_samples(l,c,r,{},0,false,rewards,skip,f,w);}
-i32 laser_th14_line_cut_rectangle(Th14LaserLine& l,Vec3 c,Vec2 size,float angle,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& f,LaserWorld& w){return cut_samples(l,c,0,size,angle,true,rewards,skip,f,w);}
+i32 laser_th14_line_cut_circle(Th14LaserLine& l,Vec3 c,float r,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& f,LaserWorld& w){return cut_samples(l,c,r,{},nullptr,rewards,skip,f,w);}
+i32 laser_th14_line_cut_rectangle(Th14LaserLine& l,Vec3 c,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& f,LaserWorld& w){return cut_samples(l,c,0,size,&rotation,rewards,skip,f,w);}
 #endif
 }

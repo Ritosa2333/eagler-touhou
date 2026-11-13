@@ -1,4 +1,8 @@
 #include "Localization.hpp"
+#include "PortTitle.hpp"
+#if PORT_TITLE == 14
+#include "SpellMenuTh14.hpp"
+#endif
 #include <cstring>
 #include <unordered_map>
 #include <vector>
@@ -6,12 +10,24 @@
 #include <SDL3/SDL.h>
 #endif
 namespace th11::Localization {
+const char* Root() noexcept { return PORT_TITLE==14?"/thcrap/th14/":"/thcrap/th11/"; }
+namespace {
+// Published before boot/stage workers start; the mounted pack is immutable for this runtime.
+bool enabled=PORT_TITLE!=14;
+}
+void Initialize() noexcept {
+#if defined(TH_NATIVE_PLATFORM) && defined(TH_ENABLE_THCRAP) && PORT_TITLE == 14
+    enabled=SDL_GetPathInfo("/thcrap/th14/localization/options.json",nullptr);
+#endif
+}
+bool Enabled() noexcept { return enabled; }
 namespace {
 #if defined(TH_NATIVE_PLATFORM) && defined(TH_ENABLE_THCRAP)
 u16 u16le(const u8* p){return u16(p[0])|u16(p[1])<<8;}
 u32 u32le(const u8* p){return u32(p[0])|u32(p[1])<<8|u32(p[2])<<16|u32(p[3])<<24;}
 std::vector<u8> load(const char* name){
-    const std::string path=std::string("/thcrap/th11/localization/")+name;
+    if(!Enabled())return {};
+    const std::string path=std::string(Root())+"localization/"+name;
     size_t size=0;auto* p=static_cast<u8*>(SDL_LoadFile(path.c_str(),&size));
     if(!p)return {};
     std::vector<u8> bytes;if(size<=2u*1024u*1024u)bytes.assign(p,p+size);
@@ -110,6 +126,18 @@ Strings strings;
 }
 const char* SpellName(u32 id,const char* fallback){
 #if defined(TH_NATIVE_PLATFORM) && defined(TH_ENABLE_THCRAP)
+#if PORT_TITLE == 14
+    if(!Enabled())return fallback;
+    // Upstream omits difficulty variants with the same title. Search back
+    // only within the original spell's row (Extra cards are separate rows).
+    for(u32 stage=0;stage<7;++stage)for(i32 row=0;row<th14_spell_counts[stage];++row){
+        const auto& ids=th14_spell_choices[stage][row];
+        for(i32 rank=0;rank<5&&ids[rank]>=0;++rank)if(u32(ids[rank])==id){
+            for(i32 n=rank;n>=0;--n)if(const char* name=spells.lookup("spells.etl",u32(ids[n]),0,nullptr))return name;
+            return fallback;
+        }
+    }
+#endif
     return spells.lookup("spells.etl",id,0,fallback);
 #else
     (void)id;return fallback;

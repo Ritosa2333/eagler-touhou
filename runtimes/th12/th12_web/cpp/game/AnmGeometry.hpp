@@ -10,6 +10,7 @@ static_assert(sizeof(AnmVertex)==28);
 bool anm_quad_positions(const AnmVm& vm,Vec3 (&out)[4],const AnmRenderSpace& space={}) noexcept;
 #if PORT_TITLE == 14
 bool anm_th14_draw_quad_positions(const AnmVm&,Vec3 (&out)[4],const AnmRenderSpace& space={}) noexcept;
+bool anm_th14_ascii_quad_positions(const AnmVm&,Vec3 (&out)[4],const AnmRenderSpace& space) noexcept;
 #endif
 Vec2 anm_vertex_uv(const AnmVm& vm,u32 vertex) noexcept;
 Vec2 anm_screen_uv(Vec3 position) noexcept;

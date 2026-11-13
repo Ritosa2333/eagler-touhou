@@ -1266,7 +1266,12 @@ bool GameBattle::item_th16_collect(ItemState& item){
 #endif
 bool GameBattle::sound(i32 id,float x,bool positional) {events.push_back({BattleEventKind::Sound,id,0,{x,0,0},0,positional});return true;}
 bool GameBattle::popup(Vec3 p,i32 value,u32 color) {popups.add(p,value,color,&animations.rate);events.push_back({BattleEventKind::Popup,value,0,p,color});return true;}
-bool GameBattle::notify(i32 value) {events.push_back({BattleEventKind::Notification,value});return hud.notice(value);}
+bool GameBattle::notify(i32 value) {
+#if PORT_TITLE == 14
+    if(value==4)++th14_practice_extends;
+#endif
+    events.push_back({BattleEventKind::Notification,value});return hud.notice(value);
+}
 bool GameBattle::display_lives(i32 lives,i32 fragments) {hud.display_lives(lives,fragments);events.push_back({BattleEventKind::Lives,lives,fragments});return true;}
 bool GameBattle::power_changed() {
 #if PORT_TITLE == 16
@@ -1279,6 +1284,9 @@ bool GameBattle::record_death() {events.push_back({BattleEventKind::Death});retu
 bool GameBattle::enemy_death() {
     // 0x431307 increments manager +0x10 and resets +0x18. This is a player
     // death counter visible to ECL, not the erase-all-enemies operation.
+#if PORT_TITLE == 14
+    ++th14_practice_misses;
+#endif
     enemy_environment.shared_integers[0]=wrapping_add(enemy_environment.shared_integers[0],1);
     enemy_environment.shared_integers[2]=0;return true;
 }
@@ -1335,7 +1343,15 @@ bool GameBattle::spell_begin_visuals(i32 id,i32 timeout,const char* name){
     spells.run_flags=enemy_commands.th14_run_flags;
     return spell_th14_create_visuals(animations,enemy_animations,resources.core.ascii,resources.core.text,resources.core.effect,
         resources.stage_number,enemy_commands.stage_section,id,timeout,spells.circle_position,spell_titles,spell_circle,th14_spell_background,
-        [&](u32 title){dialogue_text_requests.push_back({title,0xffffff,0,0,0,Localization::SpellName(u32(id),name?name:""),true});events.push_back({BattleEventKind::SpellTitle,i32(title),id});return true;},
+        [&](u32 title){
+            DialogueText text{title,0xffffff,0,0,0,Localization::SpellName(u32(id),name?name:""),true};
+#if defined(TH_ENABLE_THCRAP)
+            text.style=DialogueText::th14_spell_title_style;
+#endif
+            dialogue_text_requests.push_back(std::move(text));
+            events.push_back({BattleEventKind::SpellTitle,i32(title),id});
+            return true;
+        },
         [&](i32 sound_id){return sound(sound_id,0,false);});
 #endif
     auto create=[&](AnmResource& resource,i32 script,u16 file,u32* result=nullptr){auto* vm=animations.create(resource,script,file,22,false,false);if(result)*result=vm?vm->id:0;return vm;};

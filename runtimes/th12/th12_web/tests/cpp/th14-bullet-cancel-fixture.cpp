@@ -58,7 +58,7 @@ API(run_etex) i32 run_etex(i32 state,u32 flags,i32 parameter,i32 index,u32 activ
 }
 API(run_rectangle) i32 run_rectangle(i32 state,i32 delay,u32 slot,float scale,float angle,float x,float y){
     if(run_case(0,0,1,x,y,false,slot))return -2;bullet->state=i16(state);bullet->collision_delay=delay;bullet->th14_size=scale;event_count=0;
-    if(!manager->cancel_rectangle_th14({12,200,0},{64,256},angle,0))return -2;return bullet->state==4&&state!=4;
+    if(!manager->cancel_rectangle_th14({12,200,0},{64,256},Th14RectangleRotation{angle},0))return -2;return bullet->state==4&&state!=4;
 }
 API(value) u32 value(u32 n){auto& b=*bullet;const u32 values[]={b.flags,float_bits(b.position.x),float_bits(b.position.y),float_bits(b.position.z),u32(b.lifetime.previous),u32(b.lifetime.current),float_bits(b.lifetime.fractional),u32(b.vm.pending_interrupt),u32(b.state),u32(b.cancel_effect),u32(b.transform_index),b.active_transforms};return values[n];}
 API(event_size) u32 event_size(){return event_count;}

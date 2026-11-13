@@ -14,6 +14,7 @@ struct EnemyFrameWorld {
     virtual ~EnemyFrameWorld()=default;
     virtual bool shot_damage(EnemyState&,i32&){return false;}
 #if PORT_TITLE == 14
+    virtual u32 th14_practice_flags()const{return 0;}
     virtual bool th14_damage_dialogue()const{return false;}
 #endif
     virtual bool player_collision(EnemyState&,float,i32&){return false;}

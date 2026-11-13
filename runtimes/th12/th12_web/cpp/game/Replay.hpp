@@ -1,4 +1,8 @@
 #pragma once
+#include "PracticeTh14.hpp"
+#if PORT_TITLE == 14
+#include "PracticeLaserPurpleTh14.hpp"
+#endif
 #include "PortTitle.hpp"
 #include "Types.hpp"
 #include <array>
@@ -138,6 +142,9 @@ public:
     u32 frame() const {return cursor;}
 #if PORT_TITLE == 14
     // Playback+210 starts at zero;455ed0 resets it at stage activation.
+    PracticeTh14 practice;
+    std::array<std::vector<PracticeEventTh14>,8> practice_events;
+    std::vector<PurpleLaserRecordTh14> purple_laser_records;
     u32 callback_frame() const {return callback_cursor;}
 #endif
     // The input the last tick consumed. Read-only, so a diagnostic can line the recording's own bits up against

@@ -19,7 +19,7 @@ EMSCRIPTEN_KEEPALIVE int fixture_reset(){
 }
 EMSCRIPTEN_KEEPALIVE int fixture_open(const u8* bytes,u32 size){
     return source.open_archive(bytes,size)&&source.open_anm("sig.anm",expected_signature)
-        &&source.open_anm("ascii.anm",expected_ascii)&&source.open_anm("text.anm",expected_text)&&fixture_reset();
+        &&source.open_anm("ascii_1280.anm",expected_ascii)&&source.open_anm("text.anm",expected_text)&&fixture_reset();
 }
 EMSCRIPTEN_KEEPALIVE int fixture_signature(){return source.open_anm("sig.anm",signature);}
 EMSCRIPTEN_KEEPALIVE int fixture_load(){return actual.load_core_bootstrap();}

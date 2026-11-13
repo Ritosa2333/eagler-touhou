@@ -123,7 +123,11 @@ i32 laser_th14_line_update(Th14LaserLine&,AnmEnvironment&,LaserWorld&);
 bool laser_th14_line_draw(Th14LaserLine&,AnmRenderer&);
 i32 laser_th14_line_cancel(Th14LaserLine&,bool reward,bool skip,LaserWorld&)noexcept;
 i32 laser_th14_line_cut_circle(Th14LaserLine&,Vec3,float,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
-i32 laser_th14_line_cut_rectangle(Th14LaserLine&,Vec3,Vec2,float,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
+i32 laser_th14_line_cut_rectangle(Th14LaserLine&,Vec3,Vec2,const Th14RectangleRotation&,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
+inline i32 laser_th14_line_cut_rectangle(Th14LaserLine& laser,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip,
+    std::vector<std::array<u8,0x354>>& fragments,LaserWorld& world){
+    return laser_th14_line_cut_rectangle(laser,center,size,Th14RectangleRotation{angle},rewards,skip,fragments,world);
+}
 bool laser_th14_infinite_initialize(Th14LaserInfinite&,const u8*,AnmResource&,AnmEnvironment&,LaserWorld&,u16);
 void laser_th14_infinite_initialize_state(Th14LaserInfinite&,const u8*,LaserWorld&)noexcept;
 // State/motion portion of retail 43e040; ANM and collision delivery follow it.
@@ -133,14 +137,22 @@ i32 laser_th14_infinite_collision(Th14LaserInfinite&,LaserWorld&,bool probe=fals
 bool laser_th14_infinite_draw(Th14LaserInfinite&,AnmRenderer&);
 i32 laser_th14_infinite_cancel(Th14LaserInfinite&,bool,bool,LaserWorld&)noexcept;
 i32 laser_th14_infinite_cut_circle(Th14LaserInfinite&,Vec3,float,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
-i32 laser_th14_infinite_cut_rectangle(Th14LaserInfinite&,Vec3,Vec2,float,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
+i32 laser_th14_infinite_cut_rectangle(Th14LaserInfinite&,Vec3,Vec2,const Th14RectangleRotation&,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
+inline i32 laser_th14_infinite_cut_rectangle(Th14LaserInfinite& laser,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip,
+    std::vector<std::array<u8,0x354>>& fragments,LaserWorld& world){
+    return laser_th14_infinite_cut_rectangle(laser,center,size,Th14RectangleRotation{angle},rewards,skip,fragments,world);
+}
 bool laser_th14_curve_initialize(Th14LaserCurve&,const u8*,AnmResource&,AnmEnvironment&,LaserWorld&,u16,const std::vector<Th14CurveNode>* inherited=nullptr);
 i32 laser_th14_curve_update(Th14LaserCurve&,AnmEnvironment&,LaserWorld&);
 i32 laser_th14_curve_collision(Th14LaserCurve&,LaserWorld&,bool probe=false);
 bool laser_th14_curve_draw(Th14LaserCurve&,AnmRenderer&);
 i32 laser_th14_curve_cancel(Th14LaserCurve&,bool reward,bool skip,LaserWorld&);
 i32 laser_th14_curve_cut_circle(Th14LaserCurve&,Vec3,float,u32,bool,LaserWorld&);
-i32 laser_th14_curve_cut_rectangle(Th14LaserCurve&,Vec3,Vec2,float,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
+i32 laser_th14_curve_cut_rectangle(Th14LaserCurve&,Vec3,Vec2,const Th14RectangleRotation&,u32,bool,std::vector<std::array<u8,0x354>>&,LaserWorld&);
+inline i32 laser_th14_curve_cut_rectangle(Th14LaserCurve& laser,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip,
+    std::vector<std::array<u8,0x354>>& fragments,LaserWorld& world){
+    return laser_th14_curve_cut_rectangle(laser,center,size,Th14RectangleRotation{angle},rewards,skip,fragments,world);
+}
 #endif
 bool laser_line_initialize(LaserLine&,const LaserLineParameters&,AnmResource&,AnmEnvironment&,LaserWorld&,u16 file_id=0);
 bool laser_line_appearance(LaserLine&,i32,AnmResource&,AnmEnvironment&,u16 file_id=0);

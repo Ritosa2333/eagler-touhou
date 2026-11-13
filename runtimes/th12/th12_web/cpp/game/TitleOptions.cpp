@@ -51,10 +51,25 @@ void TitleMenu::options(u32 pressed,u32 repeat){
     }
 }
 void TitleMenu::practice(u32 pressed,u32 repeat){
+#if PORT_TITLE == 14
+    if(substate==0)th14_practice_stage_choice=0;
+#endif
     switch(substate){
     case 0:cursor.count=6;cursor.select(selection.last_practice);if constexpr(kPortTitle==14)create(102);else{create(104);create(105+selection.character);}step(1);[[fallthrough]];
     case 1:if(timer.current>10)step(2);break;
     case 2:
+#if PORT_TITLE == 14
+        // The retail thprac hooks open over script 102 here, after shot selection.
+        if(th14_practice_overlay_enabled){
+            if(th14_practice_stage_choice<0){step(4);sounds.push_back(11);}
+            else if(th14_practice_stage_choice>0){
+                cursor.select(std::min(th14_practice_stage_choice-1,5));
+                selection.practice_start=0;
+                step(3);sounds.push_back(10);sounds.push_back(50);music_fade=0;
+            }
+            break;
+        }
+#endif
         move(pressed|repeat,16,32);if(cursor.previous!=cursor.selected)sounds.push_back(12);
         if(pressed&0x102){step(4);sounds.push_back(11);selection.last_practice=cursor.selected;return;}
         if(pressed&0x80001){
@@ -66,7 +81,17 @@ void TitleMenu::practice(u32 pressed,u32 repeat){
         }break;
     case 3:
         if(timer.current==10)fade_requested=true;
-        if(timer.current>=40){cursor.push();change(TitleScreen::Exit);selection.stage=cursor.selected+1;if constexpr(kPortTitle==14)selection.last_practice=cursor.selected;start_requested=true;}break;
+        if(timer.current>=40){
+            cursor.push();change(TitleScreen::Exit);selection.stage=cursor.selected+1;
+#if PORT_TITLE == 14
+            selection.last_practice=cursor.selected;
+            if(th14_practice_stage_choice>0){
+                selection.stage=th14_practice_stage_choice;
+                if(selection.stage==7)selection.difficulty=4;
+            }
+#endif
+            start_requested=true;
+        }break;
     case 4:
         if(timer.current>=6){if constexpr(kPortTitle==14)close(102);else{close(104);close(105+selection.character);}change(TitleScreen::Partner);cursor.pop();}break;
     }

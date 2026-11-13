@@ -80,7 +80,7 @@ void TitleMenu::replay_save(u32 pressed,u32 repeat){
     case 3:
         name_move(pressed|repeat);
         if(pressed&0x80001){const i32 action=name_confirm();if(action<0)break;
-            if(action==1){sounds.push_back(10);replay_save_requested=true;std::memcpy(scores.settings.data()+12,entered_name.data(),9);step(2);}
+            if(action==1){sounds.push_back(kPortTitle==14?17:10);replay_save_requested=true;std::memcpy(scores.settings.data()+12,entered_name.data(),9);step(2);}
             sounds.push_back(10);
         }
         if(pressed&0x102){if(name_length){sounds.push_back(11);entered_name[--name_length]=' ';}else step(2);}break;

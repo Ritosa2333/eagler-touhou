@@ -233,6 +233,10 @@ struct EnemyEnvironment {
     Rng random;float rate=1;Vec3 player_position,camera_delta;
     i32 rank=0,difficulty=0,character=0,subtype=0,shared_integers[3]{},enemy_count=0;
 #if PORT_TITLE == 14
+    u32 th14_practice_tools=0;
+    i32 th14_practice_fake_type=0;
+#endif
+#if PORT_TITLE == 14
     // Retail enemy manager +2c..38 and +3c..58, shared by all owners.
     i32 th14_shared_integers[4]{};float th14_shared_floats[8]{};
     EnemyLink* const* th14_enemy_list=nullptr;

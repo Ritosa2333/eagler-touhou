@@ -1,4 +1,5 @@
 #include "EnemyCommands.hpp"
+#include "PracticeTh14.hpp"
 #include "EnemyManager.hpp"
 #include "ScreenDeformation.hpp"
 #include "Stage.hpp"
@@ -471,7 +472,17 @@ i32 enemy_th14_state_command(EnemyState& e,EclContext& c,EnemyGlobals& g,EnemyCo
     case 500:e.hitbox.x=f(0);e.hitbox.y=f(1);return 0;
     case 501:e.collision_box.x=f(0);e.collision_box.y=f(1);return 0;
     case 502:case 503:return enemy_th14_flags(e,op,u32(i(0)),world);
-    case 504:e.flags|=0x20000;e.clamp_center.x=f(0);e.clamp_center.y=f(1);e.clamp_size.x=f(2);e.clamp_size.y=f(3);return 0;
+    case 504:{
+        e.flags|=0x20000;e.clamp_center.x=f(0);e.clamp_center.y=f(1);e.clamp_size.x=f(2);e.clamp_size.y=f(3);
+        // Purple's hook adjusts the bounds when opcode 504 sets them.
+        const u32 tools=g.environment.th14_practice_tools;
+        if(tools&PrBossDown){
+            const float ymax=e.clamp_center.y+e.clamp_size.y*.5f;
+            const float ymin=ymax-e.clamp_size.y*(1.f-float((tools&PrBossRange)>>16)/500.f);
+            e.clamp_center.y=(ymax+ymin)*.5f;e.clamp_size.y=ymax-ymin;
+        }
+        return 0;
+    }
     case 505:e.flags&=~0x20000u;return 0;
     case 506:std::memset(e.drops.counts,0,13*4);return 0;
     case 507:{const i32 index=i(0),value=i(1);if(u32(index)>13)return -2;if(index==0)e.drops.primary=value;else e.drops.counts[index-1]=value;return 0;}

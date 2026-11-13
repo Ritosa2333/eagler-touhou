@@ -153,12 +153,12 @@ i32 Th14CurvePath::cut_circle(Vec3 center,float radius,bool protection,bool skip
     }
     samples.erase(samples.begin(),samples.begin()+start);const i32 length=i32(samples.size());std::memcpy(request+0x20,&length,4);return count;
 }
-i32 Th14CurvePath::cut_rectangle(Vec3 center,Vec2 size,float angle,bool protection,bool skip,Timer& timer,std::vector<Vec3>& deliveries,bool& mark,std::vector<std::array<u8,0x354>>& fragments){
+i32 Th14CurvePath::cut_rectangle(Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,bool protection,bool skip,Timer& timer,std::vector<Vec3>& deliveries,bool& mark,std::vector<std::array<u8,0x354>>& fragments){
     deliveries.clear();fragments.clear();mark=false;if(skip&&protection)return 0;
     const u32 length=u32(samples.size());std::vector<u8> selected(length,0);i32 count=0;
-    const float s=float(std::sin(double(-angle))),c=float(std::cos(double(-angle)));
+    const float s=rotation.sine,c=rotation.cosine;
     for(u32 j=0;j<length;++j){const auto p=samples[j].position;float x=p.x-center.x,y=p.y-center.y;
-        if(angle!=0){const float rx=x*c-y*s,ry=y*c+x*s;x=rx;y=ry;}
+        if(rotation.angle!=0){const float rx=x*c-y*s,ry=y*c+x*s;x=rx;y=ry;}
         // 442a00 selects sample centers; laser width is not added to the rectangle.
         if(!(size.x*.5f<std::fabs(x))&&!(size.y*.5f<std::fabs(y))){selected[j]=1;++count;if(j%3==0)deliveries.push_back(p);}
     }

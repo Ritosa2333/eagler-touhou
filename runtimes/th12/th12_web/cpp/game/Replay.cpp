@@ -1,4 +1,7 @@
 #include "Replay.hpp"
+#if PORT_TITLE == 14
+#include "PracticeReplayPurpleTh14.hpp"
+#endif
 #include "PortTitle.hpp"
 #include "ShotFiles.hpp"
 #include "ResourceCrypt.hpp"
@@ -81,7 +84,8 @@ void ReplayStageState::restore_position(PlayerMotionState& s)const{
 bool Replay::open(const u8* data,u32 size){
     bytes.clear();stages={};touches={};count=selected=cursor=touch_cursor=0;input={};failure.clear();metadata_only=false;
 #if PORT_TITLE == 14
-    callback_cursor=0;
+    callback_cursor=0;practice={};practice_events={};purple_laser_records.clear();bool practice_seen=false;
+    PracticeTh14 purple_practice;
 #endif
     auto fail=[&](const char* why){failure=why;return false;};
     // The replay magic and version are the title's, and every demo a title ships is the reading:
@@ -180,8 +184,47 @@ bool Replay::open(const u8* data,u32 size){
                 touches[st].push_back({frame,i32(mode),x,y});
             }
         }
+#if PORT_TITLE == 14
+        if((decoded[10]&3)&&dword(data+tail+8)==purple_practice_user&&length>12&&length<=4108){
+            const char* start=reinterpret_cast<const char*>(data+tail+12);
+            const auto* end=std::find(start,start+length-12,'\0');
+            int stage=1;while(stage<7&&!parsed[stage].number)++stage;
+            const i32 spell=decoded[10]&2?signed_bits(dword(decoded.data()+0x90)):-1;
+            if(parse_purple_practice({start,size_t(end-start)},stage,i32(dword(decoded.data()+selection+12)),spell,purple_practice)
+               &&!parsed[purple_practice.stage].number)purple_practice={};
+        }
+        if(dword(data+tail+8)==purple_laser_user){
+            purple_laser_records.clear();
+            if((length-12)%20==0&&(length-12)/20<=purple_laser_limit){
+                for(u32 at=12;at<length;at+=20){
+                    const auto* p=data+tail+at;
+                    PurpleLaserRecordTh14 r{dword(p),dword(p+4),dword(p+8),dword(p+12),dword(p+16)};
+                    if(r.stage>=1&&r.stage<=7&&(r.fix&0xffff)<10&&(r.fix>>16)<=38)purple_laser_records.push_back(r);
+                }
+                std::stable_sort(purple_laser_records.begin(),purple_laser_records.end());
+                const auto end=std::unique(purple_laser_records.begin(),purple_laser_records.end(),[](auto& a,auto& b){return a.key()==b.key();});
+                purple_laser_records.erase(end,purple_laser_records.end());
+            }
+        }
+        if(dword(data+tail+8)==0x14&&length>=16&&dword(data+tail+12)==0x34315250){
+            if(practice_seen||length<80||dword(data+tail+16)!=1)return fail("invalid TH14 practice replay header");
+            practice_seen=true;std::memcpy(&practice,data+tail+20,56);
+            const i32 spell=decoded[10]&2?signed_bits(dword(decoded.data()+0x90)):-1;
+            if(practice&&(!practice.valid(i32(dword(decoded.data()+selection+12)),spell)||!parsed[practice.stage].number))
+                return fail("invalid TH14 practice replay settings");
+            const u32 events=dword(data+tail+76);if(events!=(length-80)/12||(length-80)%12)return fail("invalid TH14 practice replay length");
+            for(u32 i=0;i<events;++i){const auto* p=data+tail+80+i*12;const u32 st=dword(p),frame=dword(p+4),tools=dword(p+8);
+                if(st<1||st>7||!parsed[st].number||frame>=parsed[st].frames||tools&~practice_mask_th14||
+                   (!practice_events[st].empty()&&frame<=practice_events[st].back().frame))return fail("invalid TH14 practice replay event");
+                practice_events[st].push_back({frame,tools});
+            }
+        }
+#endif
         tail+=length;
     }
+#if PORT_TITLE == 14
+    if(!practice_seen)practice=purple_practice;
+#endif
     bytes.swap(decoded);stages=parsed;count=n;return true;
 }
 const ReplayStage* Replay::stage(u32 number)const{return number<stages.size()&&stages[number].number?&stages[number]:nullptr;}
@@ -194,7 +237,11 @@ void Replay::retain_metadata(){
     if(metadata_only||bytes.empty())return;
     std::vector<u8> headers(bytes.begin(),bytes.begin()+kReplayFileHeader);
     for(auto& stage:stages)if(stage.number){const u32 offset=u32(headers.size());headers.insert(headers.end(),bytes.begin()+stage.offset,bytes.begin()+stage.offset+kReplayStageHeader);stage.offset=offset;}
-    bytes.swap(headers);touches={};selected=cursor=touch_cursor=0;input={};metadata_only=true;
+    bytes.swap(headers);touches={};
+#if PORT_TITLE == 14
+    practice_events={};
+#endif
+    selected=cursor=touch_cursor=0;input={};metadata_only=true;
 }
 bool Replay::select(u32 number){if(metadata_only||!stage(number))return false;selected=number;cursor=touch_cursor=0;
 #if PORT_TITLE == 14

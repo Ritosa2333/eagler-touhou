@@ -269,4 +269,3 @@ i32 EnemyScriptServices::command(EclContext& context){
 void* EnemyScriptServices::allocate(u32 bytes){return std::calloc(1,bytes);}
 void EnemyScriptServices::release(void* p){std::free(p);}
 }
-

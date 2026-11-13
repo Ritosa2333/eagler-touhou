@@ -10,6 +10,7 @@ class BootCppResourcesTh14 {
     GameSession& session;
     GameResources reader;
     const std::array<AnmResource*,6> files;
+    const char* const ascii_name;
     BootFileMailboxTh14 mailbox;
     StageCppWorkerTh14 worker;
     std::atomic<u32> signature_callback{0},signature_ready{0},ascii_ready{0},common_ready{0},stopping{0};
@@ -17,10 +18,10 @@ class BootCppResourcesTh14 {
     std::string error;
     std::function<bool(GameResources&,std::string&)> after_text;
 public:
-    static constexpr const char* names[]={"sig.anm","ascii.anm","text.anm","front.anm","bullet.anm","effect.anm"};
     static constexpr u16 ids[]={1,2,0,5,7,8};
     BootCppResourcesTh14(GameSession& value,std::array<AnmResource*,6> resources,
-        std::function<bool(GameResources&,std::string&)> audio_finish={}):session(value),files(resources),mailbox(value.stage_load_host_flags),after_text(std::move(audio_finish)){}
+        std::function<bool(GameResources&,std::string&)> audio_finish={}):session(value),files(resources),
+        ascii_name(value.resources.ascii_anm_name()),mailbox(value.stage_load_host_flags),after_text(std::move(audio_finish)){}
     ~BootCppResourcesTh14(){cancel_and_join();}
     bool begin(const u8* bytes,u32 size){
         if(started)return false;
@@ -28,6 +29,7 @@ public:
         started=true;
         return worker.start([this,bytes,size](){
             if(!reader.open_archive(bytes,size)){error=reader.error();return false;}
+            const char* names[]={"sig.anm",ascii_name,"text.anm","front.anm","bullet.anm","effect.anm"};
             for(u32 i=0;i<files.size();++i){
                 if(stopping.load(std::memory_order_acquire))return false;
                 if(!reader.open_anm(names[i],*files[i])){error=reader.error();return false;}

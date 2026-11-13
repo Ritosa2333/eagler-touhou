@@ -6,13 +6,14 @@ import createModule from './th11-sdl.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {validateMotionReplay} from './motion-replay.mjs';
 import {runtimeEpochContract} from './runtime-epoch.mjs';
-import {bindOutsideTouches,normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError} from './eagler-host.mjs';
+import {bindOutsideTouches,normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError,createReplayViewerHostTh14} from './eagler-host.mjs';
 const runtimeBuild=/*TH11_BUILD_INFO*/{version:'development-incomplete',completeGame:false};
 const protocol='eagler-touhou/1',game='th11',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas');
 const navigation=runtimeEpochContract(game,query.get('runtimeEpoch'));
 const emit=(event,fields={})=>parent.postMessage({protocol,game,...navigation.fields,event,...fields},location.origin);
 const $=s=>document.querySelector(s);
 let th14PageLeaving=false;
+let replayViewer=null;
 let Module,core,app=0,launched=false,first=false,stopping=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true,musicMode='none';
 const keyboard=createBrowserKeyboard({
  accept:code=>!!scanCodes[code],
@@ -30,6 +31,19 @@ async function callCore(name,...args){
  const runtime=Module.th14AsyncRuntime??Module.th14WebGpuRuntime;return runtime?runtime.run(call):call();
 }
 const save=async()=>{if(launched&&!await callCore('th11_save_scores'))throw Error(coreError());return sync(false);};
+const practiceKeys={Tab:9,Enter:13,NumpadEnter:13,Escape:27,Backspace:8,Space:32,ShiftLeft:16,ShiftRight:16,ControlLeft:17,ControlRight:17,KeyA:65,KeyS:83,KeyD:68,KeyF:70,Backquote:192,ArrowLeft:37,ArrowUp:38,ArrowRight:39,ArrowDown:40,KeyU:85,KeyX:88,KeyZ:90,F1:112,F2:113,F3:114,F4:115,F5:116,F6:117,F7:118,F12:123};
+function practiceKey(event,down){
+ const key=practiceKeys[event.code];
+ return key!==undefined&&!!core?.th14_practice_key?.(key,+down);
+}
+function configurePractice(){
+ const locale=String(options.thpracLocale??'ja');
+ return core.th14_practice_state?.(0,options.thpracEnabled?(locale.startsWith('zh')?1:locale.startsWith('en')?2:3):0);
+}
+function practiceTouchControls(message){
+ const c=message.controls??message;
+ core.th14_practice_state?.(5,(c.thpracMobilePanelsEnabled?1:0)|(c.thpracMobilePanelsVisible?2:0));
+}
 async function installResources(resources=[]){return installHostResources(Module,resources,{game,emit});}
 // The Launcher has already verified the ZIP identity. Match TH10's Runtime
 // manifest/path/size checks before exposing any file to the native game.
@@ -37,23 +51,23 @@ let runtimePackFiles=[];
 function assertRuntimePackManifest(manifest,pack){
  if(manifest?.schema!=='eagler-touhou/thcrap-static-pack/1'||manifest.game!==game||
     manifest.language!==pack.language||typeof manifest.runtimeVersion!=='string'||
-    !Array.isArray(manifest.files)||manifest.files.length>256)throw Error('Invalid TH11 language pack manifest');
+    !Array.isArray(manifest.files)||manifest.files.length>256)throw Error('Invalid TH14 language pack manifest');
  for(const file of manifest.files)
-  if(typeof file?.path!=='string'||!file.path.startsWith('/thcrap/th11/')||file.path.includes('\\')||file.path.includes('..')||
-     !Number.isInteger(file.bytes)||file.bytes<0)throw Error('Invalid TH11 language pack file');
+  if(typeof file?.path!=='string'||!file.path.startsWith('/thcrap/'+game+'/')||file.path.includes('\\')||file.path.includes('..')||
+     !Number.isInteger(file.bytes)||file.bytes<0)throw Error('Invalid TH14 language pack file');
 }
 async function installRuntimePack(pack){
  if(launched)throw Error('Runtime resources cannot be changed after launch');
  if(typeof pack?.url!=='string'||typeof pack.language!=='string'||
-    !Number.isInteger(pack.bytes)||pack.bytes<=0||!pack.manifest||!Array.isArray(pack.files))throw Error('Invalid TH11 language pack');
- if(new URL(pack.url,location.href).origin!==location.origin)throw Error('Cross-origin TH11 language pack');
+    !Number.isInteger(pack.bytes)||pack.bytes<=0||!pack.manifest||!Array.isArray(pack.files))throw Error('Invalid TH14 language pack');
+ if(new URL(pack.url,location.href).origin!==location.origin)throw Error('Cross-origin TH14 language pack');
  assertRuntimePackManifest(pack.manifest,pack);
  const expected=new Map(pack.manifest.files.map(file=>[file.path,file]));
- if(pack.files.length!==expected.size)throw Error('TH11 language pack file count mismatch');
+ if(pack.files.length!==expected.size)throw Error('TH14 language pack file count mismatch');
  const verified=[];
  for(const file of pack.files){
-  if(typeof file?.path!=='string'||!file.path.startsWith('/thcrap/th11/')||file.path.includes('\\')||file.path.includes('..')||
-     !(file.bytes instanceof Uint8Array))throw Error('Invalid TH11 language pack path');
+  if(typeof file?.path!=='string'||!file.path.startsWith('/thcrap/'+game+'/')||file.path.includes('\\')||file.path.includes('..')||
+     !(file.bytes instanceof Uint8Array))throw Error('Invalid TH14 language pack path');
   const declaration=expected.get(file.path);
   if(!declaration||file.bytes.length!==declaration.bytes)throw Error(file.path+': size mismatch');
   verified.push({path:file.path,bytes:file.bytes});
@@ -67,6 +81,7 @@ async function installRuntimePack(pack){
 }
 function apply(){applyTouchOptions(core,options);core.th11_music_enabled(+music);}
 async function resumeForegroundAudio(forcePause=false){
+ if(replayViewer?.state&&(replayViewer.state.paused||replayViewer.state.seeking||replayViewer.state.ended)){await replayViewer.foreground();return false;}
  if(!Module||!core||!launched||document.hidden)return false;
  if(forcePause)core.sdl_loop_pause(1);
  return resumeRuntimeAudio(Module,core,()=>!!core&&launched&&!document.hidden);
@@ -79,7 +94,7 @@ async function closeAudio(){
   try{core.th11_audio_close();}finally{if(borrowed)s.audioContext=context;}};
  const runtime=Module.th14AsyncRuntime??Module.th14WebGpuRuntime;if(runtime)await runtime.run(close);else close();
 }
-async function stop(){if(stopping)return;stopping=true;clearKeyboard();try{core.th11_loop_stop();await save();await closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
+async function stop(){if(stopping)return;stopping=true;core?.th14_practice_state?.(10,0);clearKeyboard();try{core.th11_loop_stop();if(replayViewer)await replayViewer.close();await save();await closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth11\//,'').replace(/^\//,'');if(!/^(?:scoreth11\.dat|th11\.cfg|replay\/th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(name))throw Error('存档路径无效');return name;}
 async function launch(){
  if(launched)return;clearKeyboard();
@@ -92,15 +107,53 @@ async function launch(){
  canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();core.th11_loop_start();
  emit('runtime-info',{renderer:Module.th14WebGpuRuntime?'SDL3 / WebGPU / C++':'SDL3 / WebGL2 / C++',architecture:protocol,version:runtimeBuild.version});
 }
+function replayPlayback(){
+ if(replayViewer)return replayViewer;
+ const withBytes=async(bytes,name,...args)=>{
+  const pointer=core.malloc(bytes.length);if(!pointer)throw Error('录像内存不足');
+  try{Module.HEAPU8.set(bytes,pointer);return await callCore(name,pointer,bytes.length,...args);}finally{core.free(pointer);}
+ };
+ replayViewer=createReplayViewerHostTh14({
+  read:value=>{const target=path(value);if(!target.startsWith('replay/'))throw Error('录像路径无效');return {path:target,bytes:Module.FS.readFile('/savesth11/'+target)};},
+  describe:async bytes=>{
+   const result=await withBytes(bytes,'th14_replay_description');if(!result)throw Error('录像数据无效');
+   const end=Module.HEAPU8.indexOf(0,result);if(end<result)throw Error('录像信息无效');
+   return JSON.parse(new TextDecoder().decode(new Uint8Array(Module.HEAPU8.subarray(result,end))));
+  },
+  open:async(bytes,stage)=>{
+   await launch();const until=performance.now()+60000;
+   while(!await callCore('th14_replay_open_ready')){
+    if(performance.now()>until)throw Error('等待录像加载交接超时');
+    await callCore('th11_loop_pause',0);await new Promise(resolve=>setTimeout(resolve,16));
+   }
+   await callCore('th11_loop_pause',1);if(!await withBytes(bytes,'th14_open_replay',stage))throw Error(coreError());
+  },
+  status:async()=>{const p=await callCore('th14_replay_status'),w=Array.from(u32(p,6));return {stage:w[0],frame:w[1],frames:w[2],ended:!!w[3],phase:w[4],active:!!w[5]};},
+  step:(target,budget)=>callCore('th14_replay_seek_step',target,budget),
+  rate:async value=>{if(!await callCore('th14_replay_rate',value))throw Error('录像倍率无效');},
+  pause:async on=>{
+   if(!launched)return;
+   if(!on&&!document.hidden)await resumeRuntimeAudio(Module,core,()=>launched&&!document.hidden);
+   await callCore('th11_loop_pause',on||document.hidden?1:0);
+  },
+  close:async()=>{if(core)await callCore('th14_replay_close');},
+  visible:()=>!document.hidden&&!th14PageLeaving,
+  emit:playback=>emit('runtime-info',{playback}),onError:error,
+ });return replayViewer;
+}
 async function command(m){switch(m.command){
- case 'configure':if(launched)throw Error('不能配置正在运行的游戏');language=m.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(m.options);music=m.music!=='none';musicMode=m.music;await installResources(m.sharedResources);await installResources(m.runtimeResources);await installResources(m.resources);if(m.runtimePack)await installRuntimePack(m.runtimePack);apply();return {};
+ case 'configure':if(launched)throw Error('不能配置正在运行的游戏');language=m.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(m.options);music=m.music!=='none';musicMode=m.music;await installResources(m.sharedResources);await installResources(m.runtimeResources);await installResources(m.resources);if(m.runtimePack)await installRuntimePack(m.runtimePack);configurePractice();apply();return {};
  case 'resources':await installResources(m.resources);return {};
- case 'keyboard':if(launched&&!document.hidden&&!stopping)keyboard.event(m,!!m.down,'hosted');return {};
- case 'keyboard-clear':clearKeyboard();return {};
+ case 'keyboard':if(launched&&!document.hidden&&!stopping){
+  const down=!!m.down, captured=practiceKey(m,down);
+  if(!down||!captured)keyboard.event(m,down,'hosted');
+ }return {};
+ case 'keyboard-clear':core?.th14_practice_state?.(9,0);clearKeyboard();return {};
  case 'touch-cancel':cancelTouches();return {};
  case 'direct-touch':directTouch(core,canvas,m,{width:innerWidth,height:innerHeight});return {};
- case 'touch-controls':touchControls(core,options,m);return {};
+ case 'touch-controls':practiceTouchControls(m);touchControls(core,options,m);return {};
  case 'launch':await launch();return {};
+ case 'playback':if(game!=='th14')throw Error('不支持的录像操作');return replayPlayback().command(m);
  case 'sync':await save();return {};
  case 'list':{const files=[];for(const dir of ['','/replay'])for(const name of Module.FS.readdir('/savesth11'+dir)){const n=(dir+'/'+name).replace(/^\//,'');try{path(n);}catch{continue;}const s=Module.FS.stat('/savesth11/'+n);if(Module.FS.isFile(s.mode)){files.push({path:n,size:s.size});}}return {files};}
  case 'read':return {bytes:Array.from(Module.FS.readFile('/savesth11/'+path(m.path)))};
@@ -125,14 +178,20 @@ window.addEventListener('message',event=>{
  queue=queue.then(async()=>{if(await initialized===false)return;await dispatchCommand(m);}).catch(error);
 });
 document.addEventListener('visibilitychange',()=>{if(!core||!launched)return;clearKeyboard();cancelTouches();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(save).catch(error);}else void resumeForegroundAudio(true);});
-window.addEventListener('blur',()=>{if(core){clearKeyboard();cancelTouches();}});
+canvas.addEventListener('wheel',event=>{
+ if(core?.th14_practice_wheel?.(-Math.sign(event.deltaY)))event.preventDefault();
+},{passive:false});
+window.addEventListener('blur',()=>{if(core){core?.th14_practice_state?.(9,0);clearKeyboard();cancelTouches();}});
 window.addEventListener('pagehide',()=>{if(game==='th14')th14PageLeaving=true;clearKeyboard();cancelTouches();if(core&&launched){suspendRuntimeAudio(Module,core);void save().catch(console.error);}});
 window.addEventListener('pageshow',()=>{if(game==='th14')th14PageLeaving=false;if(core&&launched&&!document.hidden)void resumeForegroundAudio(true);});
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearKeyboard();core?.sdl_loop_pause(1);error('图形环境已失效，请退出后重新开始。');});
 for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});
 for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
  if(!core||!launched||stopping||document.hidden)return;
- keyboard.event(event,name==='keydown');
+ const down=name==='keydown', captured=practiceKey(event,down);
+ if(captured)event.preventDefault();
+ // A key pressed by the native menu may be released over the practice panel.
+ if(!down||!captured)keyboard.event(event,down);
 },{capture:true});
 // A mobile browser may terminate a hidden page before pagehide's IDB callback.
 // Persist during play as well, with writes serialized by the sync chain.

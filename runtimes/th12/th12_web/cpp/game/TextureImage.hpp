@@ -9,7 +9,7 @@ struct TextureImage {
     std::vector<u8> pixels;
     bool load(const AnmTexture&,bool low_color=false);
 #if PORT_TITLE == 14
-    bool load(const AnmTexture&,bool low_color,bool high_precision);
+    bool load(const AnmTexture&,bool low_color,bool high_precision,u32 display_width=640);
 #endif
     // Populated by load() when it returns false, so callers can report which
     // precondition rejected the texture instead of just naming the file.

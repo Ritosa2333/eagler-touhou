@@ -14,14 +14,18 @@ static_assert(sizeof(DialogueState)==0xac);
 static_assert(offsetof(DialogueState,instruction)==0x64);
 #endif
 struct DialogueText {
+    static constexpr i32 th14_spell_title_style=8;
+    static constexpr i32 th14_dialogue_line_limit=650;
     u32 animation=0,color=0;i32 offset=0,font=0,style=0;
-    std::string bytes; // Original Shift-JIS bytes; no lossy UTF-8 conversion.
+    std::string bytes; // Original Shift-JIS or localized UTF-8.
     bool right_aligned=false;
     bool centered=false;
+    bool dialogue_body=false;
 };
 struct DialogueEffects {
     virtual ~DialogueEffects()=default;
     virtual bool dialogue_text(const DialogueText&){return false;}
+    virtual i32 dialogue_width(const std::string&,i32){return -1;}
     virtual bool dialogue_sound(i32){return false;}
     virtual bool dialogue_music(){return false;}
     virtual bool dialogue_boss_name(){return false;}
@@ -53,6 +57,9 @@ public:
     u32 th14_text_background=0;
     float th14_text_width=0;
     i32 th14_text_layout=0;
+#if PORT_TITLE == 14
+    i32 th14_line_widths[2]={-1,-1};
+#endif
     u32 th14_enemy_portraits[4]{};
     DialogueState state;bool active=false;i32 character=0,stage=1,last_opcode=-1;
     std::string error;

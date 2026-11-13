@@ -123,18 +123,31 @@ bool stage_visible(const StageObject& object,Vec3 instance,const SceneCamera& ca
     // 40ef1e..40eff6 culls in that space before its final screen copy.
     const float origin_x=kPortTitle==14?float((i32(camera.render_width)-384)/2):32.f;
     const float origin_y=kPortTitle==14?float((i32(camera.render_height)-448)/2):16.f;
+    const auto world_to_clip=GraphicsMath::multiply(GraphicsMath::multiply(world,camera.view),camera.projection);
+    const auto intersects=[&](float min_x,float max_x,float min_y,float max_y){
+        return max_x>=origin_x&&min_x<=origin_x+384&&max_y>=origin_y&&min_y<=origin_y+448;
+    };
     float min_x=kPortTitle==14?origin_x+392:kPortTitle==13?520:424;
     float max_x=kPortTitle==14?origin_x-8:kPortTitle==13?120:24;
     float min_y=kPortTitle==14?origin_y+456:472,max_y=kPortTitle==14?origin_y-8:8;
 #else
     float min_x=kPortTitle==13?520:424,max_x=kPortTitle==13?120:24,min_y=472,max_y=8;
 #endif
-    // TH14 40eeeb projects all sixteen points; 40ef97..40efbd updates both bounds.
-    for(u32 i=0;i<(kPortTitle==13||kPortTitle==14?16:12);++i){const auto p=GraphicsMath::project(points[i],camera.viewport,camera.projection,camera.view,world);
+    // TH14 40eeeb uses sixteen points; 40ef97..40efbd updates both bounds.
+    for(u32 i=0;i<(kPortTitle==13||kPortTitle==14?16:12);++i){
+#if PORT_TITLE == 14
+        const auto p=GraphicsMath::project(points[i],camera.viewport,world_to_clip);
+#else
+        const auto p=GraphicsMath::project(points[i],camera.viewport,camera.projection,camera.view,world);
+#endif
         if((kPortTitle==14?p.z>=0:p.z>0)&&p.z<=1){
             if constexpr(kPortTitle==13||kPortTitle==14){
                 if(p.x<min_x)min_x=p.x;if(p.x>max_x)max_x=p.x;
                 if(p.y<min_y)min_y=p.y;if(p.y>max_y)max_y=p.y;
+#if PORT_TITLE == 14
+                // Remaining accepted points can only widen the bounds.
+                if(intersects(min_x,max_x,min_y,max_y))return true;
+#endif
             }else{
             // The original's mutually exclusive branches deliberately retain
             // these initial bounds; replacing them by min/max changes culling.
@@ -144,7 +157,7 @@ bool stage_visible(const StageObject& object,Vec3 instance,const SceneCamera& ca
         }
     }
 #if PORT_TITLE == 14
-    return max_x>=origin_x&&min_x<=origin_x+384&&max_y>=origin_y&&min_y<=origin_y+448;
+    return intersects(min_x,max_x,min_y,max_y);
 #else
     return max_x>=(kPortTitle==13?128:32)&&min_x<=(kPortTitle==13?512:416)&&max_y>=16&&min_y<=464;
 #endif

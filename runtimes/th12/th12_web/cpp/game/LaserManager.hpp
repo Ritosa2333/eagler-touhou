@@ -47,7 +47,7 @@ public:
     bool cancel_all(bool reward,bool skip_protected);
     i32 cancel_rectangle(Vec3 center,Vec3 size,bool reward);
 #if PORT_TITLE == 14
-    i32 cancel_rectangle_th14(Vec3,Vec2,float,u32,bool skip_infinite=false);
+    i32 cancel_rectangle_th14(Vec3,Vec2,const Th14RectangleRotation&,u32,bool skip_infinite=false);
 #endif
     i32 cancel_circle(Vec3 center,float radius,u32 rewards,bool skip_protected);
     bool sound(i32 id,float x,bool positional)override{return world.sound(id,x,positional);}
@@ -73,6 +73,11 @@ public:
     bool th14_line_spawn(const u8* request)override{spawn_th14_line(request);return !last_error;}
 #endif
 private:
+#if PORT_TITLE == 14
+    i32 th14_line_cut(Th14LaserLine&,Vec3,Vec2,const Th14RectangleRotation&,u32,bool);
+    i32 th14_infinite_cut(Th14LaserInfinite&,Vec3,Vec2,const Th14RectangleRotation&,u32,bool);
+    i32 th14_curve_cut(Th14LaserCurve&,Vec3,Vec2,const Th14RectangleRotation&,u32,bool);
+#endif
     LaserState sentinel{};LaserState* tail=&sentinel;
     AnmResource& resource;AnmEnvironment& animations;LaserWorld& world;u16 file_id;
     bool updating=false;

@@ -65,7 +65,13 @@ class ItemManager {
 public:
     static constexpr u32 ordinary_capacity=kPortTitle==14||kPortTitle==16?600:150,cancel_capacity=kPortTitle==14||kPortTitle==16?4096:2048,capacity=ordinary_capacity+cancel_capacity;
     ItemManager(AnmResource&,AnmEnvironment&,ItemWorld&,u16 file_id=6);
-    ItemState& at(u32 n){return storage[n];}
+    ItemState& at(u32 n){
+#if PORT_TITLE == 14
+        // A retained mutable slot reference can bypass spawn and release.
+        th14_slots_exposed=true;
+#endif
+        return storage[n];
+    }
     const ItemState& at(u32 n)const{return storage[n];}
     ItemPlayer player;u32 cancel_cursor=0,cancel_spawn_count=0,active_count=0;i32 last_error=0;
     // 0 success/full pool, -2 unavailable resource or world dependency.
@@ -121,6 +127,13 @@ private:
 #endif
 #if PORT_TITLE == 14
     ItemState* th14_cancel_free=nullptr;ItemState* th14_ordinary_free=nullptr;
+    static constexpr u32 th14_word_bits=64;
+    std::array<uint64_t,(capacity+th14_word_bits-1)/th14_word_bits> th14_occupied{};
+    bool th14_slots_exposed=false;
+    void mark_th14_slot(const ItemState&,bool)noexcept;
+    bool th14_page_occupied(u32 page)const noexcept{
+        return th14_slots_exposed||th14_occupied[page];
+    }
     bool update_th14();bool draw_th14(AnmRenderer&);
 #endif
 };

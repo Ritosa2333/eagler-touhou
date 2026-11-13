@@ -134,6 +134,10 @@ bool anm_th14_draw_quad_positions(const AnmVm& vm,Vec3 (&out)[4],const AnmRender
     const u32 mode=vm.drawing_mode();
     return anm_quad_positions_impl(vm,out,space,mode==3?1:mode);
 }
+bool anm_th14_ascii_quad_positions(const AnmVm& vm,Vec3 (&out)[4],const AnmRenderSpace& space) noexcept {
+    // The selected ASCII atlas already contains display-sized sprites.
+    return anm_quad_positions(vm,out,space);
+}
 #endif
 Vec2 anm_screen_uv(Vec3 p) noexcept {Vec2 uv{float(double(p.x)/640),float(double(p.y)/480)};if(uv.x<0)uv.x=0;if(uv.y<0)uv.y=0;return uv;}
 bool anm_ring_vertices(const AnmVm& vm,AnmVertex* out,u32 capacity,const AnmRenderSpace& space) noexcept {

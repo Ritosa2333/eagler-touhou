@@ -40,6 +40,10 @@ public:
 #if PORT_TITLE == 14
     bool manual_requested=false,manual_finished=false,manual_release_requested=false;
     float manual_origin_x=0;
+    bool th14_practice_overlay_enabled=false;
+    // The practice overlay supplies a stage number, or -1 to go back.
+    i32 th14_practice_stage_choice=0,th14_spell_phase_choice=-1;
+    i32 th14_selected_spell()const{return spell_choices[cursor.selected];}
 #endif
     bool volume_changed=false;
     u32 number_keys=0;

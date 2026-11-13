@@ -220,29 +220,38 @@ bool LaserManager::reset_th16(){
 #endif
 #if PORT_TITLE == 14
 i32 LaserManager::th14_line_cut(Th14LaserLine& l,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip){
-    std::vector<std::array<u8,0x354>> fragments;const i32 count=laser_th14_line_cut_rectangle(l,center,size,angle,rewards,skip,fragments,*this);if(count<0)return last_error=count;
+    return th14_line_cut(l,center,size,Th14RectangleRotation{angle},rewards,skip);
+}
+i32 LaserManager::th14_line_cut(Th14LaserLine& l,Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards,bool skip){
+    std::vector<std::array<u8,0x354>> fragments;const i32 count=laser_th14_line_cut_rectangle(l,center,size,rotation,rewards,skip,fragments,*this);if(count<0)return last_error=count;
     for(const auto& request:fragments){if(active_count>=capacity)break;if(!spawn_th14_line(request.data()))return last_error=-2;}
     return count;
 }
 i32 LaserManager::th14_infinite_cut(Th14LaserInfinite& l,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip){
-    std::vector<std::array<u8,0x354>> fragments;const i32 count=laser_th14_infinite_cut_rectangle(l,center,size,angle,rewards,skip,fragments,*this);if(count<0)return last_error=count;
+    return th14_infinite_cut(l,center,size,Th14RectangleRotation{angle},rewards,skip);
+}
+i32 LaserManager::th14_infinite_cut(Th14LaserInfinite& l,Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards,bool skip){
+    std::vector<std::array<u8,0x354>> fragments;const i32 count=laser_th14_infinite_cut_rectangle(l,center,size,rotation,rewards,skip,fragments,*this);if(count<0)return last_error=count;
     for(const auto& request:fragments){if(active_count>=capacity)break;if(!spawn_th14_line(request.data()))return last_error=-2;}return count;
 }
 i32 LaserManager::th14_curve_cut(Th14LaserCurve& curve,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip){
-    std::vector<std::array<u8,0x354>> fragments;const i32 count=laser_th14_curve_cut_rectangle(curve,center,size,angle,rewards,skip,fragments,*this);if(count<0)return last_error=count;
+    return th14_curve_cut(curve,center,size,Th14RectangleRotation{angle},rewards,skip);
+}
+i32 LaserManager::th14_curve_cut(Th14LaserCurve& curve,Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards,bool skip){
+    std::vector<std::array<u8,0x354>> fragments;const i32 count=laser_th14_curve_cut_rectangle(curve,center,size,rotation,rewards,skip,fragments,*this);if(count<0)return last_error=count;
     for(const auto& request:fragments){if(active_count>=capacity)break;if(!spawn_th14_curve(request.data(),&curve.path.nodes))return last_error=-2;}return count;
 }
-i32 LaserManager::cancel_rectangle_th14(Vec3 center,Vec2 size,float angle,u32 rewards,bool skip_infinite){
+i32 LaserManager::cancel_rectangle_th14(Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards,bool skip_infinite){
     sync();last_center=center;last_size={size.x,size.y,0};
     i32 total=0;for(auto* b=first();b;){auto* next=b->next;
         if(!(skip_infinite&&b->type==1)&&b->type!=3&&b->state!=1&&b->rectangle_enabled&&!b->protection){
-            if(b->type==0){const i32 count=th14_line_cut(*reinterpret_cast<Th14LaserLine*>(b),center,size,angle,rewards,true);if(count<0)return last_error=count;total=wrapping_add(total,count);b=next;continue;}
+            if(b->type==0){const i32 count=th14_line_cut(*reinterpret_cast<Th14LaserLine*>(b),center,size,rotation,rewards,true);if(count<0)return last_error=count;total=wrapping_add(total,count);b=next;continue;}
             if(b->type==1){
-                const i32 count=th14_infinite_cut(*reinterpret_cast<Th14LaserInfinite*>(b),center,size,angle,rewards,true);if(count<0)return last_error=count;
+                const i32 count=th14_infinite_cut(*reinterpret_cast<Th14LaserInfinite*>(b),center,size,rotation,rewards,true);if(count<0)return last_error=count;
                 total=wrapping_add(total,count);b=next;continue;
             }
             if(b->type!=2)return last_error=-2;
-            const i32 count=th14_curve_cut(*reinterpret_cast<Th14LaserCurve*>(b),center,size,angle,rewards,true);if(count<0)return last_error=count;
+            const i32 count=th14_curve_cut(*reinterpret_cast<Th14LaserCurve*>(b),center,size,rotation,rewards,true);if(count<0)return last_error=count;
             total=wrapping_add(total,count);
         }b=next;
     }return total;

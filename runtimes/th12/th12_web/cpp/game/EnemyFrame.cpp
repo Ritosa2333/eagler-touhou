@@ -1,4 +1,5 @@
 #include "EnemyFrame.hpp"
+#include "PracticeTh14.hpp"
 #include "Trace.hpp"
 #include <cmath>
 #include <algorithm>
@@ -98,7 +99,7 @@ i32 enemy_frame(EnemyScriptServices& script,EnemyFrameWorld& world){
     if(e.flags&0x800){
         i32 probe_damage=0;bool bomb_contact=false;
         if(!world.th14_probe_damage(e,probe_damage,bomb_contact))return -2;
-        if(probe_damage&&bomb_contact){result=enemy_death(e,*animations,world,&script);if(result)return result;}
+        if(probe_damage&&bomb_contact&&!(world.th14_practice_flags()&PrEnemy)){result=enemy_death(e,*animations,world,&script);if(result)return result;}
     }
 #endif
     e.flags&=~u32(kPortTitle==14||kPortTitle==16?0x200000:0x20000);
@@ -123,7 +124,7 @@ i32 enemy_frame(EnemyScriptServices& script,EnemyFrameWorld& world){
 #if PORT_TITLE == 14
         // Retail423ad2..423ae2 collects hits/callbacks first, then zeroes
         // damage while the live dialogue owner at4db550+194 is present.
-        if(world.th14_damage_dialogue())damage=0;
+        if(world.th14_damage_dialogue()||(world.th14_practice_flags()&PrEnemy))damage=0;
 #endif
         if((world.spell_flags&1)&&world.spell_id>=0x9e&&world.spell_id<=0xa1&&(world.special_active||world.special_ending)&&!(world.player_flags&4))damage/=5;
         if constexpr(kPortTitle==14){
@@ -190,7 +191,7 @@ i32 enemy_frame(EnemyScriptServices& script,EnemyFrameWorld& world){
     if(e.damage_immunity.current>0)e.damage_immunity.advance(-1);
     if(e.collision_immunity.current>0)e.collision_immunity.advance(-1);
 #if PORT_TITLE == 14
-    e.timer_2bc.tick();
+    if(!(world.th14_practice_flags()&PrTime)||!(e.flags&0x800000))e.timer_2bc.tick();
 #endif
 #if PORT_TITLE == 16
     e.th16_phase_timer.tick();enemy_th16_time_drop_tick(e);

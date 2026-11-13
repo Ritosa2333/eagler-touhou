@@ -104,7 +104,10 @@ bool shot_th14_beam_hit(ShotState& shot,ShotPlayer& player,Th14DamageArea& area,
         const float x=dx*c-dy*s,y=dy*c+dx*s;
         if(r==0)return false;
         if(std::abs(y)>r||x<-r||(x<0&&x*x+y*y>r*r)){
-            const u32 bits=NativeStackTh14::fallback_bits(player.th14_native_stack->beam_fallback_scratch());
+            auto& stack=*player.th14_native_stack;
+            u32 scratch=stack.beam_fallback_scratch();
+            if(stack.practice_laser)scratch=stack.practice_laser->access(scratch);
+            const u32 bits=NativeStackTh14::fallback_bits(scratch);
             std::memcpy(&shot.th14_beam_length,&bits,4);
         }else{
             const float t=y/r;shot.th14_beam_length=std::max(0.f,x-float(std::sqrt(double(1.f-t*t)))*r+8.f);

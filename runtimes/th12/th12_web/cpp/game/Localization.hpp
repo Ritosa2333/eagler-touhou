@@ -2,6 +2,9 @@
 #include "Types.hpp"
 #include <string>
 namespace th11::Localization {
+const char* Root() noexcept;
+bool Enabled() noexcept;
+void Initialize() noexcept;
 // Prepared thcrap ETL1 tables share the TH10 Runtime format. All missing
 // entries fall back to the unmodified Japanese archive or score file.
 const char* SpellName(u32 id,const char* fallback);

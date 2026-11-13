@@ -13,11 +13,11 @@ Image = importlib.import_module('th12-pe').Image
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def handlers(title):
+def handlers(title, executable=None):
     folder = ROOT / f'runtimes/th{title}'
     target_file = folder / ('th12_web/target.json' if title == 12 else 'target.json')
     target = json.loads(target_file.read_text(encoding='utf-8'))
-    img = Image(str((target_file.parent / target['executable']).resolve()))
+    img = Image(str(executable if executable is not None else (target_file.parent / target['executable']).resolve()))
     if hashlib.sha256(img.data).hexdigest() != target['sha256']:
         raise ValueError(f'th{title}: executable digest differs from target.json')
     if title == 12:

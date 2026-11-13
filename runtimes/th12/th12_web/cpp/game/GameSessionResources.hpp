@@ -4,6 +4,7 @@
 #include <memory>
 
 #if PORT_TITLE == 14
+#include "GameConfig.hpp"
 #include "ReplayRngRestoreTh14.hpp"
 #endif
 namespace th11 {
@@ -133,6 +134,13 @@ public:
 #if PORT_TITLE == 14
     AnmManager* animation_manager=nullptr;
     LoadingTh14* loading_owner=nullptr;
+    u32 ascii_display_width=
+#if defined(__EMSCRIPTEN__)
+        GameConfig::browser_render_width;
+#else
+        640;
+#endif
+    const char* ascii_anm_name()const noexcept{return GameConfig::ascii_anm_for_width(ascii_display_width);}
 #endif
     u32 stage_number=0;
     std::string error;

@@ -2,11 +2,12 @@
 #include "../game/AnmManager.hpp"
 namespace th11::sdl {
 struct ImmediateCaptureSourceTh14 {bool text_intermediate=false;i32 rectangle[4]{};};
-template<class Session> ImmediateCaptureSourceTh14 th14_immediate_capture_source(const Session& session){
+template<class Session> ImmediateCaptureSourceTh14 th14_immediate_capture_source(const Session& session,float scale=1.f){
  // Native448bf0 tests GUI+194 after both448d80 Pause and449d30 death.
  // It does not test the public session phase. Normal Pause remains unchanged.
  const bool dialogue=session.battle&&session.battle->dialogue&&session.battle->dialogue->active;
- return {dialogue,{dialogue?128:32,16,dialogue?512:416,464}};
+ return {dialogue,{i32((dialogue?128.f:32.f)*scale),i32(16.f*scale),
+                   i32((dialogue?512.f:416.f)*scale),i32(464.f*scale)}};
 }
 template<class Session> AnmResource* th14_deferred_capture_target(Session& session,const DeferredCaptureRequestTh14& request){
  // Both actual44be40 callers use text52 from Supervisor+71c/slot0.

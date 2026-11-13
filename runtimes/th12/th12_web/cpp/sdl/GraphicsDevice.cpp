@@ -1,4 +1,5 @@
 #include "GraphicsDevice.hpp"
+#include "../game/Localization.hpp"
 #if defined(TH_ENABLE_THCRAP) || PORT_TITLE == 14
 #include <SDL3/SDL.h>
 #define STB_IMAGE_IMPLEMENTATION
@@ -36,15 +37,15 @@ namespace {
 // with transparency are replaced (including transparent pixels). Keep all
 // unmentioned atlas regions from the retail THTX bitmap.
 bool patched_texture(const AnmResource& file,const AnmTexture& source,u32 index,AnmTexture& result){
-    if(source.kind!=AnmTexture::Kind::Embedded||source.name.empty()||
+    if(!Localization::Enabled()||source.kind!=AnmTexture::Kind::Embedded||source.name.empty()||
        source.name.front()=='/'||source.name.find("..")!=std::string::npos||
        source.name.find(':')!=std::string::npos)return false;
     std::string name=source.name;
     for(char& c:name)if(c=='\\')c='/';
-    // The original ASCII glyph atlas has fixed codepoint slots; translating
-    // its PNG directly would invalidate those indices.
-    if(name=="ascii/ascii.png")return false;
-    const std::string path="/thcrap/th11/"+name;
+    // TH14 ships layout-compatible atlases for each display scale. TH11's
+    // ASCII overlay continues to use the original fixed glyph slots.
+    if(kPortTitle!=14&&name=="ascii/ascii.png")return false;
+    const std::string path=std::string(Localization::Root())+name;
     size_t bytes=0;auto* input=static_cast<u8*>(SDL_LoadFile(path.c_str(),&bytes));
     if(!input)return false;
     int width=0,height=0,channels=0;
@@ -54,29 +55,37 @@ bool patched_texture(const AnmResource& file,const AnmTexture& source,u32 index,
     std::vector<u8> original;
     if(!source.rgba(original)){stbi_image_free(image);return false;}
     const u32 atlas_width=source.pixel_width,atlas_height=source.pixel_height;
+    const i32 ox=kPortTitle==14?source.source_x:0,oy=kPortTitle==14?source.source_y:0;
+    if(ox<0||oy<0){stbi_image_free(image);return false;}
     bool changed=false;
     for(const auto& sprite:file.sprites){
         if(sprite.texture!=index)continue;
-        const i32 left=i32(std::lround(sprite.x)),top=i32(std::lround(sprite.y));
+        i32 left=i32(std::lround(sprite.x)),top=i32(std::lround(sprite.y));
+        if constexpr(PORT_TITLE==14){
+            // The second pause chunk stores Manual at U=1..1+160/512;
+            // the retail sampler wraps it to the first 160 pixels.
+            if(left>=source.width)left%=source.width;
+            if(top>=source.height)top%=source.height;
+        }
         const i32 sw=i32(std::lround(sprite.width)),sh=i32(std::lround(sprite.height));
-        if(left<0||top<0||sw<=0||sh<=0||left>=width||top>=height||
+        if(left<0||top<0||sw<=0||sh<=0||left+ox>=width||top+oy>=height||
            left>=i32(atlas_width)||top>=i32(atlas_height))continue;
-        const i32 w=std::min({sw,width-left,i32(atlas_width)-left});
-        const i32 h=std::min({sh,height-top,i32(atlas_height)-top});
+        const i32 w=std::min({sw,width-left-ox,i32(atlas_width)-left});
+        const i32 h=std::min({sh,height-top-oy,i32(atlas_height)-top});
         bool empty=true,opaque=true;
         for(i32 y=0;y<h;++y)for(i32 x=0;x<w;++x){
-            const auto* patch=image+(size_t(top+y)*width+left+x)*4;
+            const auto* patch=image+(size_t(top+y+oy)*width+left+x+ox)*4;
             const auto* base=original.data()+(size_t(top+y)*atlas_width+left+x)*4;
             if(patch[3])empty=false;
             if(base[3]!=255)opaque=false;
         }
         if(empty)continue;
         for(i32 y=0;y<h;++y)for(i32 x=0;x<w;++x){
-            const auto* patch=image+(size_t(top+y)*width+left+x)*4;
+            const auto* patch=image+(size_t(top+y+oy)*width+left+x+ox)*4;
             auto* base=original.data()+(size_t(top+y)*atlas_width+left+x)*4;
             if(!opaque){std::copy(patch,patch+4,base);continue;}
             const i32 alpha=patch[3];if(!alpha)continue;
-            for(int c=0;c<3;++c)base[c]=u8((base[c]*(255-alpha)+patch[c]*alpha)>>8);
+            for(int c=0;c<3;++c)base[c]=alpha==255?patch[c]:u8((base[c]*(255-alpha)+patch[c]*alpha)/255);
             base[3]=alpha==255?u8(255):u8(std::min<i32>(base[3]+alpha,255));
         }
         changed=true;
@@ -139,7 +148,7 @@ bool GraphicsDevice::prepare_texture(AnmResource& file,u32 index,u32& handle,boo
 #endif
     const bool loaded=texture.image.load(selected,low_color
 #if PORT_TITLE == 14
-            ,texture_high_precision&&*texture_high_precision
+            ,texture_high_precision&&*texture_high_precision,textures.at(screen).image.width
 #endif
     );
     if(!loaded){error="Unable to prepare ANM texture: "+source.name+" ("+texture.image.failure+")";return false;}

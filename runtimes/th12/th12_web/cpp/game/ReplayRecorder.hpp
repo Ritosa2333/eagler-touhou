@@ -14,6 +14,11 @@ public:
     bool finish_stage(bool terminal=false);
     bool save(const char* name,i32 score,i32 reached,i32 continues,float slowdown,std::vector<u8>& output)const;
     u32 selected=0;
+#if PORT_TITLE == 14
+    PracticeTh14 practice;
+    std::array<std::vector<PracticeEventTh14>,8> practice_events;
+    void record_tools(u32 tools);
+#endif
     bool uses_touch()const;
 private:
     bool valid=false;

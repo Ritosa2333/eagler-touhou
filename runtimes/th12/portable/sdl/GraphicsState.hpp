@@ -5,6 +5,8 @@
 
 namespace touhou::graphics {
 using u32 = std::uint32_t;
+// A pass may defer its color clear until the surface is used or overwritten.
+inline constexpr u32 DeferColorClear = 1u << 3;
 enum class Compare : u32 { Never, Less, Equal, LessEqual, Greater, NotEqual, GreaterEqual, Always };
 enum class BlendFactor : u32 { Zero, One, SourceColor, InverseSourceColor, SourceAlpha, InverseSourceAlpha, DestinationAlpha, InverseDestinationAlpha, DestinationColor, InverseDestinationColor, SourceAlphaSaturate };
 enum class BlendEquation : u32 { Add, Subtract, ReverseSubtract, Minimum, Maximum };

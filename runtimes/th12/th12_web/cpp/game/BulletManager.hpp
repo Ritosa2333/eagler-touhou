@@ -5,6 +5,7 @@
 #include <memory>
 namespace th11 {
 class AnmRenderer;
+struct Th14RectangleRotation;
 struct BulletCancelContext {
     u32 spell_flags=0;i32 spell_id=0;
     bool protected_spell()const noexcept{return (spell_flags&1)&&spell_id>=158&&spell_id<=161;}
@@ -62,7 +63,7 @@ public:
     i32 update_th14(BulletState&)noexcept;
     bool cancel_th14(BulletState&,u32 rewards=0);
     bool cancel_circle_th14(Vec3,float,u32 rewards=0,bool skip_delayed=false);
-    bool cancel_rectangle_th14(Vec3,Vec2,float angle,u32 rewards=0);
+    bool cancel_rectangle_th14(Vec3,Vec2,const Th14RectangleRotation&,u32 rewards=0);
     bool cancel_all_th14();
     const BulletState* first_th14()const noexcept{return th14_active;}
     BulletState* first_th14()noexcept{return th14_active;}

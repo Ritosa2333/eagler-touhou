@@ -63,7 +63,10 @@ i32 laser_th14_curve_update(Th14LaserCurve& curve,AnmEnvironment& animations,Las
     curve.curve_timer.tick();return 0;
 }
 bool laser_th14_curve_draw(Th14LaserCurve& curve,AnmRenderer& renderer){
-    th14_curve_mesh(curve.path.samples.data(),curve.path.samples.size(),field(curve.path.request+0x10),curve.body.uv[0].y,curve.body.uv[2].y,{224,16},curve.vertices.data());
+    // The strip is submitted before the playfield is copied to the final screen.
+    // Use the same intermediate origin as the beam's source sprite and bullets.
+    th14_curve_mesh(curve.path.samples.data(),curve.path.samples.size(),curve.base.width,
+                    curve.body.uv[0].y,curve.body.uv[2].y,renderer.render_space_th14().play_origin,curve.vertices.data());
     static_assert(sizeof(Th14CurveVertex)==sizeof(AnmVertex));
     if(renderer.draw_th14_screen_strip(curve.body,reinterpret_cast<const AnmVertex*>(curve.vertices.data()),curve.vertices.size())==-2)return false;
     if(i32(curve.path.samples.size())>=curve.curve_timer.current){curve.origin.script_position=curve.path.samples.back().position;if(renderer.draw(curve.origin)==-2)return false;}
@@ -81,8 +84,8 @@ i32 laser_th14_curve_cut_circle(Th14LaserCurve& curve,Vec3 center,float radius,u
     if(mark)curve.native_flags=(curve.native_flags&~4u)|2;
     curve.vertices.resize(curve.path.samples.size()*2);return count;
 }
-i32 laser_th14_curve_cut_rectangle(Th14LaserCurve& curve,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& fragments,LaserWorld& world){
-    std::vector<Vec3> deliveries;bool mark=false;const i32 count=curve.path.cut_rectangle(center,size,angle,curve.base.protection!=0,skip,curve.curve_timer,deliveries,mark,fragments);
+i32 laser_th14_curve_cut_rectangle(Th14LaserCurve& curve,Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& fragments,LaserWorld& world){
+    std::vector<Vec3> deliveries;bool mark=false;const i32 count=curve.path.cut_rectangle(center,size,rotation,curve.base.protection!=0,skip,curve.curve_timer,deliveries,mark,fragments);
     if(count<0)return count;
     for(const auto p:deliveries){if(rewards&&!world.th14_curve_reward(p,rewards))return -2;if(!world.cancel_effect(p,integer(curve.path.request+0x1c)*2+181))return -2;}
     if(mark)curve.native_flags=(curve.native_flags&~4u)|2;

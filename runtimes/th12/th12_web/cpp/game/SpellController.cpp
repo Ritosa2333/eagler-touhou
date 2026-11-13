@@ -1,4 +1,5 @@
 #include "SpellController.hpp"
+#include "PracticeTh14.hpp"
 #include "EnemyFrame.hpp"
 #include "AsciiText.hpp"
 #include "PortTitle.hpp"
@@ -56,6 +57,9 @@ bool SpellController::update(float player_y,Vec3 boss,bool bomb){
         const i32 value=wrapping_sub(world.spell_bonus,numerator/denominator);world.spell_bonus=wrapping_sub(value,value%10);
     }
     if constexpr(kPortTitle!=14&&kPortTitle!=16){if(!effects.spell_update_visuals())return false;}
+#if PORT_TITLE == 14
+    if(!(economy.th14_practice_tools&PrTime))
+#endif
     timer.tick();world.spell_elapsed=timer.current;
     if(timer.current>=120){
         const bool inverted=(kPortTitle==14||kPortTitle==16)&&(world.spell_flags&0x100);
@@ -124,8 +128,8 @@ bool SpellController::queue_text(AsciiText& output,u32 title_color)const{
 #if PORT_TITLE == 14 || PORT_TITLE == 16
     const i32 captures=(run_flags&0x30)==0x20?record.practice_captures:record.captures;
     const i32 attempts=(run_flags&0x30)==0x20?record.practice_attempts:record.attempts;
-    if(captures>=100)std::snprintf(text,sizeof(text),"MASTER");
-    else if(attempts>=100)std::snprintf(text,sizeof(text),"%.2d/99+",captures);
+    if(!show_full_capture_history&&captures>=100)std::snprintf(text,sizeof(text),"MASTER");
+    else if(!show_full_capture_history&&attempts>=100)std::snprintf(text,sizeof(text),"%.2d/99+",captures);
     else std::snprintf(text,sizeof(text),"%.2d/%.2d",captures,attempts);
     return output.add(text,{360,35,0},style);
 #else

@@ -1,5 +1,6 @@
 #include "FontDevice.hpp"
 #include "../game/AnmManager.hpp"
+#include "../game/Localization.hpp"
 #include "../game/TextLayoutTh14.hpp"
 #include <SDL3/SDL.h>
 #include <algorithm>
@@ -26,8 +27,9 @@ bool valid_utf8(const std::string& text){
     }
     return true;
 }
+#if PORT_TITLE != 14
 std::string pack_font_file(){
-    size_t size=0;auto* raw=static_cast<char*>(SDL_LoadFile("/thcrap/th11/localization/options.json",&size));
+    size_t size=0;auto* raw=static_cast<char*>(SDL_LoadFile((std::string(Localization::Root())+"localization/options.json").c_str(),&size));
     if(!raw)return {};
     std::string options(raw,size);SDL_free(raw);
     const auto key=options.find("\"fontFile\"");if(key==std::string::npos)return {};
@@ -38,8 +40,9 @@ std::string pack_font_file(){
     if(name.empty()||name.size()>128||name.find("..")!=std::string::npos||
        name.find('/')!=std::string::npos||name.find('\\')!=std::string::npos||
        name.find(':')!=std::string::npos)return {};
-    return "/thcrap/th11/fonts/"+name;
+    return std::string(Localization::Root())+"fonts/"+name;
 }
+#endif
 u16 blend_pixel(u16 before,u32 color,u8 alpha){
     const u32 r=color&255,g=(color>>8)&255,b=(color>>16)&255;
     // TextRaster keeps alpha inverted while drawing and XORs it back before
@@ -56,6 +59,9 @@ u16 blend_pixel(u16 before,u32 color,u8 alpha){
 FontDevice::~FontDevice(){
 #if defined(TH_ENABLE_THCRAP)
     for(auto* font:localized)if(font)TTF_CloseFont(font);
+#if PORT_TITLE == 14
+    for(auto* font:fallback)if(font)TTF_CloseFont(font);
+#endif
 #endif
 }
 bool FontDevice::initialize(const FontBitmapTh14* bitmap){
@@ -65,6 +71,29 @@ bool FontDevice::initialize(const FontBitmapTh14* bitmap){
     raster.scratch.width=bitmap->width;raster.scratch.height=bitmap->height;raster.scratch.pitch=bitmap->pitch;
     raster.scratch.pixels.resize(size_t(bitmap->pitch)*bitmap->height);
 #endif
+#if PORT_TITLE == 14 && defined(TH_ENABLE_THCRAP)
+    size_t length=0;
+    void* codes=SDL_LoadFile("/fonts/cp932.bin",&length);
+    if(!codes||length!=65536*2){SDL_free(codes);error="Missing TH14 CP932 decoding table";return false;}
+    const auto* bytes=static_cast<const u8*>(codes);
+    cp932.resize(65536);
+    for(size_t i=0;i<cp932.size();++i)cp932[i]=u16(bytes[i*2])|(u16(bytes[i*2+1])<<8);
+    SDL_free(codes);
+    if(!TTF_Init()){error="Unable to initialize TH14 fonts";return false;}
+    const bool translation=Localization::Enabled();
+    // Match TH15's localized spell-title font and measured Japanese size.
+    const std::array<float,th14_font_count> heights={32,32,15,15,40,40,15,15,translation?26.f:28.f};
+    const char* primary=translation?"/unifont.otf":"/msgothic.ttc";
+    const char* secondary=translation?"/msgothic.ttc":"/unifont.otf";
+    for(size_t i=0;i<localized.size();++i){
+        localized[i]=TTF_OpenFont(primary,heights[i]);
+        fallback[i]=TTF_OpenFont(secondary,heights[i]);
+        if(!localized[i]||!fallback[i]||!TTF_AddFallbackFont(localized[i],fallback[i])){
+            error="Unable to load TH14 MS Gothic and Unifont";return false;
+        }
+    }
+    return ready=true;
+#else
     const char* files[]={"font0.bin","font1.bin","font2.bin","font3.bin","cp932.bin","blend4444.bin"
 #if PORT_TITLE==14
         ,"font4.bin","font5.bin","font6.bin","font7.bin"
@@ -73,20 +102,39 @@ bool FontDevice::initialize(const FontBitmapTh14* bitmap){
     for(u32 n=0;n<sizeof(files)/sizeof(*files);++n){const std::string path=std::string("/fonts/")+files[n];size_t size=0;auto* data=static_cast<u8*>(SDL_LoadFile(path.c_str(),&size));const bool valid=data&&size<=UINT32_MAX&&raster.glyphs.load(n,data,u32(size));SDL_free(data);if(!valid){error="Invalid original font data: "+path;return false;}}
     ready=raster.glyphs.ready();
 #if defined(TH_ENABLE_THCRAP)
-    const auto path=pack_font_file();
+    const auto path=Localization::Enabled()?pack_font_file():std::string{};
     if(!path.empty()){
         if(!TTF_Init()){error="Unable to initialize THCRAP font renderer";return false;}
-        constexpr float heights[]={32.f,32.f,15.f,15.f};
-        for(u32 n=0;n<4;++n)if(!(localized[n]=TTF_OpenFont(path.c_str(),heights[n]))){
+        constexpr float heights[]={32.f,32.f,15.f,15.f,32.f,32.f};
+        for(u32 n=0;n<localized.size();++n)if(!(localized[n]=TTF_OpenFont(path.c_str(),heights[n]))){
             error="Missing THCRAP font: "+path;return false;
         }
     }
 #endif
     return ready;
+#endif
 }
 #if defined(TH_ENABLE_THCRAP)
+#if PORT_TITLE == 14
+std::string FontDevice::decode(const std::string& text) const {
+    if(valid_utf8(text))return text;
+    std::string out;
+    out.reserve(text.size()*2);
+    for(size_t i=0;i<text.size();){
+        unsigned code=u8(text[i++]);
+        if((code>=0x81&&code<=0x9f)||(code>=0xe0&&code<=0xfc))
+            if(i<text.size())code=(code<<8)|u8(text[i++]);
+        code=cp932[code];if(!code)code=0xfffd;
+        if(code<0x80)out+=char(code);
+        else if(code<0x800){out+=char(0xc0|(code>>6));out+=char(0x80|(code&63));}
+        else{out+=char(0xe0|(code>>12));out+=char(0x80|((code>>6)&63));out+=char(0x80|(code&63));}
+    }
+    return out;
+}
+#endif
 void FontDevice::font_style(int index,const std::string& commands){
     TTF_FontStyleFlags flags=TTF_STYLE_NORMAL;
+    if constexpr(PORT_TITLE==14)if(index==1||index==5)flags|=TTF_STYLE_BOLD;
     for(char c:commands){if(c=='b')flags|=TTF_STYLE_BOLD;else if(c=='i')flags|=TTF_STYLE_ITALIC;else if(c=='u')flags|=TTF_STYLE_UNDERLINE;}
     TTF_SetFontStyle(localized[index],flags);
 }
@@ -98,15 +146,27 @@ LayoutLine FontDevice::layout(const std::string& text,int index){
     });
     font_style(index,"");return line;
 }
-bool FontDevice::write_unicode(TextureImage& output,const ImageRect& rect,const std::string& text,const TextStyle& style){
-    const i32 height=std::max(8,style.height),index=style.font>=0&&style.font<=2?style.font:3;
-    const u32 rows=u32(height*2+6);if(rows>raster.scratch.height||text.size()>1024)return false;
+bool FontDevice::write_unicode(TextureImage& output,const ImageRect& rect,const std::string& text,const TextStyle& style,i32 width_limit){
+    const i32 height=std::max(8,style.height),index=font_index(style.font);
+    const u32 rows=u32(height*2+6);if(rows>raster.scratch.height||text.size()>4096)return false;
     auto& scratch=raster.scratch;
-    const u16 background=style.plain?u16(((style.color>>4)&15)|((style.color>>8)&0xf0)|((style.color>>12)&0xf00)):0;
+    const u16 background=PORT_TITLE!=14&&style.plain?u16(((style.color>>4)&15)|((style.color>>8)&0xf0)|((style.color>>12)&0xf00)):0;
     auto* pixels=reinterpret_cast<u16*>(scratch.pixels.data());
     std::fill(pixels,pixels+scratch.pixels.size()/2,background);
     for(u32 n=0;n<rows*1024;++n)pixels[n]^=0xf000;
     const auto line=layout(text,index);
+    float horizontal_scale=1.f;
+    if constexpr(PORT_TITLE==14){
+        i32 extent=0;
+        for(const auto& run:line.runs){
+            int width=0; font_style(index,run.commands);
+            TTF_GetStringSize(localized[index],run.text.c_str(),run.text.size(),&width,nullptr);
+            extent=std::max(extent,run.x+width);
+        }
+        font_style(index,"");
+        const i32 available=std::max(1,std::min(width_limit,std::min(1024,rect.right-rect.left)-4));
+        if(extent>available)horizontal_scale=float(available)/float(extent);
+    }
     for(const auto& run:line.runs){
     font_style(index,run.commands);
     auto* rendered=TTF_RenderText_Blended(localized[index],run.text.c_str(),run.text.size(),SDL_Color{255,255,255,255});
@@ -117,21 +177,39 @@ bool FontDevice::write_unicode(TextureImage& output,const ImageRect& rect,const 
     auto stamp=[&](i32 ox,i32 oy,u32 color){
         for(i32 y=0;y<rgba->h;++y){const i32 dy=y+oy;if(dy<0||dy>=i32(rows))continue;
             const auto* row=static_cast<const u8*>(rgba->pixels)+size_t(y)*rgba->pitch;
-            for(i32 x=0;x<rgba->w;++x){const i32 dx=x+ox;if(dx<0||dx>=1024)continue;
-                const u8 alpha=row[x*4+3];if(alpha)pixels[size_t(dy)*1024+dx]=blend_pixel(pixels[size_t(dy)*1024+dx],color,alpha);
+            const i32 width=std::max(1,i32(rgba->w*horizontal_scale+.5f));
+            for(i32 x=0;x<width;++x){const i32 dx=x+ox;if(dx<0||dx>=1024)continue;
+                const i32 sample=std::min(rgba->w-1,i32(x/horizontal_scale));
+                const u8 alpha=row[sample*4+3];if(alpha)pixels[size_t(dy)*1024+dx]=blend_pixel(pixels[size_t(dy)*1024+dx],color,alpha);
             }
         }
     };
-    const i32 x=style.offset*2+run.x;
+    const i32 offset=style.offset_in_pixels?style.offset:style.offset*2;
+    const i32 x=(horizontal_scale<1.f?std::max(0,offset):offset)+i32(run.x*horizontal_scale+.5f);
     if(!style.plain){for(const auto [dx,dy]:{std::pair<int,int>{2,4},{-2,4},{2,0},{-2,0}})stamp(x+dx,dy,style.outline);stamp(x,2,style.color);}
     else stamp(x,0,style.color);
     SDL_DestroySurface(rgba);
     }
     for(u32 n=0;n<rows*1024;++n)pixels[n]^=0xf000;
     TextRaster::bleed(scratch,rows);
+    if constexpr(PORT_TITLE==14)return ImageResample::copy(output,rect,scratch,{0,0,std::min(1024,rect.right-rect.left),rect.bottom-rect.top});
     return ImageResample::triangle(output,rect,scratch,{0,0,std::min(1024,(rect.right-rect.left)*2+22),height*2+2});
 }
 #endif
+i32 FontDevice::measure(const std::string& text,int index){
+#if defined(TH_ENABLE_THCRAP)
+    if(localized[0]){
+        auto tabs=layout_tabs;
+#if PORT_TITLE == 14
+        const i32 width=layout(decode(text),font_index(index)).width;
+#else
+        const i32 width=valid_utf8(text)?layout(text,font_index(index)).width:-1;
+#endif
+        layout_tabs=std::move(tabs);return width;
+    }
+#endif
+    return -1;
+}
 bool FontDevice::text(AnmVm& vm,const DialogueText& request){
     // Three different gaps used to share one sentence. The caller passes the animation the text was
     // asked for, so the report can name it and the side of it that is missing.
@@ -192,19 +270,27 @@ bool FontDevice::text(AnmVm& vm,const DialogueText& request){
     style.color=request.color;style.spacing=u32(request.font);style.plain=(vm.flags2&(PORT_TITLE==14?0x800:2))!=0;
     i32 text_width=i32((style.height-1)*request.bytes.size()/2);
 #if defined(TH_ENABLE_THCRAP)
-    const bool unicode=localized[0]&&valid_utf8(request.bytes);
+#if PORT_TITLE == 14
+    const auto utf8=decode(request.bytes);
+    const bool unicode=true;
+#else
+    const auto& utf8=request.bytes;
+    const bool unicode=localized[0]&&valid_utf8(utf8);
+#endif
     if(unicode){
-        const i32 index=style.font>=0&&style.font<=2?style.font:3;
-        if(request.right_aligned||request.centered)text_width=layout(request.bytes,index).width/2;
+        if(request.right_aligned||request.centered){auto tabs=layout_tabs;text_width=layout(utf8,font_index(style.font)).width;layout_tabs=std::move(tabs);if constexpr(PORT_TITLE!=14)text_width/=2;}
     }
 #endif
     if constexpr(PORT_TITLE==14)style=th14_text_style(style,s.width,u32(request.bytes.size()),vm.flags2,request.right_aligned,request.centered);
     else {if(request.right_aligned)style.offset=i32(s.width)-text_width;
         if(request.centered)style.offset=i32(s.width)/2-text_width/2;}
+#if defined(TH_ENABLE_THCRAP) && PORT_TITLE == 14
+    if(unicode){if(request.right_aligned)style.offset=i32(s.width)-text_width;if(request.centered)style.offset=(i32(s.width)-text_width)/2;}
+#endif
     const ImageRect rect{i32(s.x),i32(s.y),i32(s.x+s.width),i32(s.y+s.height)};
     bool written=false;
 #if defined(TH_ENABLE_THCRAP)
-    if(unicode)written=write_unicode(*image,rect,request.bytes,style);
+    if(unicode)written=write_unicode(*image,rect,utf8,style,request.dialogue_body?DialogueText::th14_dialogue_line_limit:1024);
     else
 #endif
     written=raster.write(*image,rect,request.bytes,style);

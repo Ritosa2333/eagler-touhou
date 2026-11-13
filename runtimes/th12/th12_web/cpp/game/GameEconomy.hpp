@@ -24,6 +24,7 @@ struct GameEconomy {
     float th16_cancel_energy=0;
 #endif
 #if PORT_TITLE == 14
+    u32 th14_practice_tools=0;
     i32 th14_point_items=0;
     i32 th14_special_drop_count=0;
     // Snapshot +0x54 is retained by the native replay memcpy; its reset is

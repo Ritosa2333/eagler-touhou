@@ -6,7 +6,13 @@ namespace th11 {
 struct ReplayStageState;
 struct PlayerFrameInput {
     PlayerMotionInput movement;
-    bool special_available=true,special_active=false,shooting_blocked=false;
+    bool special_available=true;
+#if PORT_TITLE == 14
+    i32 special_active=0;
+#else
+    bool special_active=false;
+#endif
+    bool shooting_blocked=false;
     bool replay=false,hit_sound=true;
 };
 struct PlayerSpellState {u32 flags=0;i32 elapsed=0,bonus=0;};

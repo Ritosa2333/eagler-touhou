@@ -35,13 +35,17 @@ bool GameSessionResources::load_core(GameResources& source) {
             core_source=&source;return true;
         }
 #endif
-        if(!anm("ascii ANM","ascii.anm",core.ascii)||!anm("text ANM","text.anm",core.text))return false;
+        if(!anm("ascii ANM",ascii_anm_name(),core.ascii)||!anm("text ANM","text.anm",core.text))return false;
         if(animation_manager){auto& a=*animation_manager;a.fallback_sprites=&core.ascii;
             if(!a.prepare_resource(core.ascii,2)||!a.prepare_resource(core.text,0))return core_error(error,a.last_error_text().c_str());}
         core_source=&source;return true;
     }
 #endif
+#if PORT_TITLE == 14
+    if(!anm("ascii ANM",ascii_anm_name(),core.ascii))return false;
+#else
     if(!anm("ascii ANM","ascii.anm",core.ascii))return false;
+#endif
     if(!anm("bullet ANM","bullet.anm",core.bullet))return false;
     if(!anm("enemy ANM","enemy.anm",core.enemy))return false;
 #if PORT_TITLE == 14 || PORT_TITLE == 16
@@ -78,7 +82,7 @@ bool GameSessionResources::load_core(GameResources& source) {
 bool GameSessionResources::load_core_bootstrap(){
     if(!core_deferred||(core_loaded_jobs&(1u<<9)))return true;
     if(!core_source)return core_error(error,"TH14 bootstrap resource source missing");
-    if(!core_source->open_anm("ascii.anm",core.ascii))return core_error(error,(std::string("ascii ANM: ")+core.ascii.detail).c_str());
+    if(!core_source->open_anm(ascii_anm_name(),core.ascii))return core_error(error,(std::string("ascii ANM: ")+core.ascii.detail).c_str());
     if(!core_source->open_anm("text.anm",core.text))return core_error(error,(std::string("text ANM: ")+core.text.detail).c_str());
     if(animation_manager){auto& a=*animation_manager;a.fallback_sprites=&core.ascii;
         if(!a.prepare_resource(core.ascii,2)||!a.prepare_resource(core.text,0))return core_error(error,a.last_error_text().c_str());}

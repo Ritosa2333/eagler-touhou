@@ -1,4 +1,5 @@
 #include "GameResources.hpp"
+#include "Localization.hpp"
 #include "StageFiles.hpp"
 #include "PortTitle.hpp"
 #include <cstdio>
@@ -68,11 +69,11 @@ bool GameResources::read(const std::string& name, std::vector<u8>& data) {
     const auto found = lookup.find(name);
     if (found == lookup.end()) return fail("missing archive resource");
 #if defined(TH_NATIVE_PLATFORM) && defined(TH_ENABLE_THCRAP)
-    // Same boundary as TH10 ResourceFiles: a prepared /thcrap/th11/<entry>
+    // Same boundary as TH10 ResourceFiles: a prepared language-pack entry
     // overrides one original archive entry; absent files use the retail DAT.
-    if (!name.empty() && name.front() != '/' && name.find("..") == std::string::npos &&
+    if (Localization::Enabled() && !name.empty() && name.front() != '/' && name.find("..") == std::string::npos &&
         name.find('\\') == std::string::npos && name.find(':') == std::string::npos) {
-        const std::string path = "/thcrap/th11/" + name;
+        const std::string path = std::string(Localization::Root()) + name;
         size_t length = 0;
         void* bytes = SDL_LoadFile(path.c_str(), &length);
         if (bytes) {

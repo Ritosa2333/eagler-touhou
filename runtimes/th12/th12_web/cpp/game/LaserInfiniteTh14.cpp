@@ -137,14 +137,14 @@ i32 laser_th14_infinite_cut_circle(Th14LaserInfinite& l,Vec3 center,float radius
         const i32 sprite=integer(l.request+0x50),color=integer(l.request+0x54);store(0x24,sprite);store(0x28,color);fragments.push_back(request);
     }return selected;
 }
-i32 laser_th14_infinite_cut_rectangle(Th14LaserInfinite& l,Vec3 center,Vec2 size,float angle,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& fragments,LaserWorld& world){
+i32 laser_th14_infinite_cut_rectangle(Th14LaserInfinite& l,Vec3 center,Vec2 size,const Th14RectangleRotation& rotation,u32 rewards,bool skip,std::vector<std::array<u8,0x354>>& fragments,LaserWorld& world){
     // Retail 43e500 samples every 16 units, retaining the prefix in the
     // infinite laser and constructing kind-0 requests for remaining runs.
     fragments.clear();auto& b=l.base;if(skip&&b.protection)return 0;if(b.length<16.f)return 0;if(b.length>4096.f)return -2;
     const Vec3 original=b.position;const auto half=polar(b.angle,8.f);const Vec2 step{half.x+half.x,half.y+half.y};
     Vec3 p{original.x+half.x,original.y+half.y,0};
-    const float x=original.x-center.x,y=original.y-center.y,sine=float(std::sin(-double(angle))),cosine=float(std::cos(-double(angle)));
-    const auto v=polar(normalize_angle(b.angle-angle),8.f);Vec2 local{x*cosine-y*sine+v.x,y*cosine+x*sine+v.y};const Vec2 local_step{v.x+v.x,v.y+v.y};size.x*=.5f;size.y*=.5f;
+    const float x=original.x-center.x,y=original.y-center.y,sine=rotation.sine,cosine=rotation.cosine;
+    const auto v=polar(normalize_angle(b.angle-rotation.angle),8.f);Vec2 local{x*cosine-y*sine+v.x,y*cosine+x*sine+v.y};const Vec2 local_step{v.x+v.x,v.y+v.y};size.x*=.5f;size.y*=.5f;
     std::array<u8,256> mask{};float distance=8.f;i32 count=0,selected=0;
     do{
         if(count>=256)return -2;
