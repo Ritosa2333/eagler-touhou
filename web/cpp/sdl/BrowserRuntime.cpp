@@ -32,6 +32,19 @@ extern void (*anm_tick_observer)(const AnmVm&, float);
 EM_JS(void, th13_browser_frame, (int ok, double milliseconds, unsigned ticks), {
     Module["onGameFrame"]?.(ok, milliseconds, ticks);
 });
+EM_JS(void, th13_browser_work_frame,
+      (double sequence, double begin, double end, int stage, int end_stage,
+       int phase, unsigned source, unsigned simulated, unsigned rollback,
+       unsigned restores, unsigned presentations, double presentation_at, int ok), {
+    const callback = Module["onGameWorkFrame"];
+    if (!callback) return;
+    try {
+        callback({sequence, begin, end, milliseconds: end - begin, stage,
+                  endStage: end_stage, phase: ["active", "menu", "loading", "suspended", "paused"][phase],
+                  source, simulated, rollback, restores, presentations,
+                  presentationAt: presentation_at < 0 ? null : presentation_at, ok: !!ok});
+    } catch (error) { console.error("onGameWorkFrame callback failed", error); }
+});
 
 // [R3-M] 标题 Replay 菜单：文件选择触发钩子（页面壳 th13.html 注册
 // onReplayImportRequest → 隐藏 <input type=file> / 拖放承接）。
@@ -42,6 +55,35 @@ EM_JS(void, th13_browser_replay_request, (), {
 namespace th13::sdl {
 namespace {
 std::unique_ptr<ApplicationState> app;
+// One sequence across RAF, manual pumps and synchronous startup callbacks.
+// Capture the entire exported call, including initialization and presentation.
+double work_sequence = 0;
+struct LoadingWork {
+    double begin = emscripten_get_now(), sequence = ++work_sequence;
+    ApplicationState* before = app.get();
+    int stage = app ? app->progress.stage : 0;
+    unsigned presentations = app ? app->graphics.backend.stats.presentations : 0;
+    unsigned source, retired_presentations = 0;
+    void replacing_app() {
+        if (app) {
+            const unsigned now = app->graphics.backend.stats.presentations;
+            retired_presentations += before == app.get() && now >= presentations
+                ? now - presentations : now;
+        }
+        before = nullptr; presentations = 0;
+    }
+    explicit LoadingWork(unsigned value) : source(value) {}
+    int finish(int result, bool ok) const {
+        const int end_stage = app ? app->progress.stage : stage;
+        const unsigned after = app ? app->graphics.backend.stats.presentations : 0;
+        const unsigned submitted = retired_presentations +
+            (app && app.get() == before && after >= presentations ? after - presentations : after);
+        const double end = emscripten_get_now();
+        th13_browser_work_frame(sequence, begin, end, stage, end_stage, 2, source,
+                                0, 0, 0, submitted, -1, ok);
+        return result;
+    }
+};
 std::string last_error;
 std::string audio_observations;
 unsigned audio_sequence = 0;
@@ -171,7 +213,7 @@ void clear_inputs() {
     controls = {};
 }
 
-bool sample_and_tick(float fps = 60.f) {
+bool sample_and_tick(float fps = 60.f, unsigned* simulated = nullptr) {
     if (!app) return false;
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -222,25 +264,41 @@ bool sample_and_tick(float fps = 60.f) {
     lost_focus = false;
     // Physical held/edge/repeat state drives the application and its menus.
     // For replay gameplay RunScene selects the frozen recorded history.
+    if (simulated) ++*simulated;
     return app->step(controls, fps, focus);
 }
 
 // 单帧驱动（rAF 回调与 th13_frame_tick 手动泵共用）：装载挡板 → 帧钟 → 提交。
-bool drive_one_frame(double delta) {
+bool drive_one_frame(double delta, unsigned source) {
     const double begin = emscripten_get_now();
+    const double current_sequence = ++work_sequence;
+    const int stage = app->progress.stage;
+    const int phase = suspended ? 3 : app->loading_waiting() ? 2 :
+        app->pause && app->pause->active() ? 4 : app->run ? 0 : 1;
+    const auto before_presentations = app->graphics.backend.stats.presentations;
+    unsigned simulated = 0;
+    double presentation_at = -1;
+    const auto finish = [&](bool result, bool ok) {
+        const auto presentations = app->graphics.backend.stats.presentations - before_presentations;
+        const int end_stage = app->progress.stage;
+        const double end = emscripten_get_now();
+        th13_browser_work_frame(current_sequence, begin, end, stage, end_stage,
+                                phase, source, simulated, 0, 0, presentations, presentation_at, ok);
+        return result;
+    };
     if (suspended) {
         cadence.reset();
-        return true;
+        return finish(true, true);
     }
     if (app->loading_waiting()) {
         cadence.reset();
         if (!(app->loading_startup ? app->advance_loading(delta) : app->complete_loading())) {
             running = false;
             th13_browser_frame(0, emscripten_get_now() - begin, 0);
-            return false;
+            return finish(false, false);
         }
         app->audio_device.pump();
-        return true;
+        return finish(true, true);
     }
     const auto ticks = cadence.advance(delta);
     presentation_elapsed += std::max(0., delta);
@@ -252,15 +310,18 @@ bool drive_one_frame(double delta) {
     bool ok = true;
     app->graphics.backend.defer = true;
     for (unsigned i = 0; i < ticks && ok; i++) {
-        ok = sample_and_tick(presentation_fps);
+        ok = sample_and_tick(presentation_fps, &simulated);
         if (app->exiting || app->pending_load) break;
     }
-    if (app->graphics.backend.commit()) ++presentation_count;
+    if (app->graphics.backend.commit()) {
+        presentation_at = emscripten_get_now();
+        ++presentation_count;
+    }
     app->graphics.backend.defer = false;
     app->audio_device.pump();
     th13_browser_frame(ok ? 1 : 0, emscripten_get_now() - begin, ticks);
     if (!ok || app->exiting) running = false;
-    return running;
+    return finish(running, ok);
 }
 }  // namespace
 }  // namespace th13::sdl
@@ -269,26 +330,37 @@ extern "C" {
 
 EMSCRIPTEN_KEEPALIVE int th13_prepare_loading() {
     using namespace th13::sdl;
-    if (running) return 0;
-    app = std::make_unique<ApplicationState>();
-    app->graphics.render_scale = render_scale;
-    return app->prepare_loading();
+    LoadingWork work(4);  // th13_prepare_loading
+    const int result = [&]() -> int {
+        if (running) return 0;
+        work.replacing_app();
+        app = std::make_unique<ApplicationState>();
+        app->graphics.render_scale = render_scale;
+        return app->prepare_loading();
+    }();
+    return work.finish(result, result != 0);
 }
 
 EMSCRIPTEN_KEEPALIVE int th13_draw_startup(unsigned frames) {
     using namespace th13::sdl;
-    // 共享外壳的启动品牌动画期间推进装载 ANM（独立时钟），最多 120 帧。
-    if (!app || running) return 0;
-    for (unsigned frame = 0; frame < std::min(frames, 120u); ++frame) {
-        if (!app->loading_animations.update(false) || !app->loading_animations.update(true))
-            return 0;
-        ++app->loading_frames;
-    }
-    return app->render_loading();
+    LoadingWork work(6);  // th13_draw_startup
+    const int result = [&]() -> int {
+        // 共享外壳的启动品牌动画期间推进装载 ANM（独立时钟），最多 120 帧。
+        if (!app || running) return 0;
+        for (unsigned frame = 0; frame < std::min(frames, 120u); ++frame) {
+            if (!app->loading_animations.update(false) || !app->loading_animations.update(true))
+                return 0;
+            ++app->loading_frames;
+        }
+        return app->render_loading();
+    }();
+    return work.finish(result, result != 0);
 }
 
 EMSCRIPTEN_KEEPALIVE int th13_initialize() {
     using namespace th13::sdl;
+    LoadingWork work(5);  // th13_initialize
+    const int result = [&]() -> int {
     if (running) return 1;
     clear_inputs();
     if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK)) {
@@ -297,11 +369,13 @@ EMSCRIPTEN_KEEPALIVE int th13_initialize() {
     }
     initialize_controller();
     if (!app || !app->platform_prepared || app->initialized) {
+        work.replacing_app();
         app = std::make_unique<ApplicationState>();
         app->graphics.render_scale = render_scale;
     }
     if (!app->initialize(true)) {
         last_error = app->failure;
+        work.replacing_app();
         app.reset();
         return 0;
     }
@@ -310,6 +384,8 @@ EMSCRIPTEN_KEEPALIVE int th13_initialize() {
     previous_frame = -1;
     cadence.reset();
     return 1;
+    }();
+    return work.finish(result, result != 0);
 }
 
 EMSCRIPTEN_KEEPALIVE void th13_music_enabled(unsigned enabled) {
@@ -451,7 +527,7 @@ EMSCRIPTEN_KEEPALIVE void th13_loop_start() {
             if (!running || uintptr_t(epoch) != loop_epoch) return EM_FALSE;
             const double delta = previous_frame < 0 ? 0 : (time - previous_frame) / 1000.;
             previous_frame = time;
-            return drive_one_frame(delta) ? EM_TRUE : EM_FALSE;
+            return drive_one_frame(delta, 1) ? EM_TRUE : EM_FALSE;
         },
         reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
@@ -461,7 +537,7 @@ EMSCRIPTEN_KEEPALIVE void th13_loop_start() {
 EMSCRIPTEN_KEEPALIVE int th13_frame_tick(double delta_milliseconds) {
     using namespace th13::sdl;
     if (!running) return -1;  // 循环未开/已停：不泵
-    return drive_one_frame(delta_milliseconds < 0 ? 0 : delta_milliseconds / 1000.) ? 1 : 0;
+    return drive_one_frame(delta_milliseconds < 0 ? 0 : delta_milliseconds / 1000., 3) ? 1 : 0;
 }
 
 // ---- [R3-M] 标题 Replay 菜单：本地 .rpy 导入 ----
