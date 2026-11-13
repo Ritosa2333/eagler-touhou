@@ -369,5 +369,529 @@
     },
     "allGameplayAccepted": false,
     "completeGame": false
+  },
+  "currentAudioMixerNov14": {
+    "acceptanceStandard": "observable-behavior-alignment",
+    "passed": true,
+    "actualCurrentMixer": true,
+    "soundCases": 76,
+    "loopingSoundIds": [
+      20,
+      55
+    ],
+    "fadeNativeTimelines": 48,
+    "musicStateCases": [
+      {
+        "track": 0,
+        "firstSecond": {
+          "energy": 0,
+          "peak": 0
+        },
+        "normal": {
+          "energy": 10470.951057969301,
+          "peak": 1
+        },
+        "pausedCursorPreserved": true,
+        "muteZeroPcm": true,
+        "restoreTrackPreserved": true
+      },
+      {
+        "track": 1,
+        "firstSecond": {
+          "energy": 317.7668208045542,
+          "peak": 0.5598120093345642
+        },
+        "normal": {
+          "energy": 5791.055434255804,
+          "peak": 0.588603675365448
+        },
+        "pausedCursorPreserved": true,
+        "muteZeroPcm": true,
+        "restoreTrackPreserved": true
+      },
+      {
+        "track": 17,
+        "firstSecond": {
+          "energy": 49.89474867232091,
+          "peak": 0.12734685838222504
+        },
+        "normal": {
+          "energy": 3088.168786211058,
+          "peak": 0.5619469285011292
+        },
+        "pausedCursorPreserved": true,
+        "muteZeroPcm": true,
+        "restoreTrackPreserved": true
+      }
+    ],
+    "musicLoopCases": [
+      {
+        "track": 0,
+        "totalFrames": 5196760,
+        "loopStart": 715636,
+        "whole": {
+          "energy": 656637.9128728121,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 22037.754048771945,
+          "peak": 1
+        },
+        "cursor": 892316
+      },
+      {
+        "track": 1,
+        "totalFrames": 4082240,
+        "loopStart": 357936,
+        "whole": {
+          "energy": 616003.7255582013,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 10632.21018315403,
+          "peak": 0.8462637662887573
+        },
+        "cursor": 534512
+      },
+      {
+        "track": 2,
+        "totalFrames": 3951616,
+        "loopStart": 103520,
+        "whole": {
+          "energy": 522980.29430190613,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 9643.003060708032,
+          "peak": 0.9274342060089111
+        },
+        "cursor": 280160
+      },
+      {
+        "track": 3,
+        "totalFrames": 4498076,
+        "loopStart": 674080,
+        "whole": {
+          "energy": 555960.1565368611,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 22096.101904260842,
+          "peak": 1
+        },
+        "cursor": 850564
+      },
+      {
+        "track": 4,
+        "totalFrames": 4768888,
+        "loopStart": 92236,
+        "whole": {
+          "energy": 547003.446286375,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 13047.639245254144,
+          "peak": 1
+        },
+        "cursor": 268756
+      },
+      {
+        "track": 5,
+        "totalFrames": 6386020,
+        "loopStart": 245948,
+        "whole": {
+          "energy": 706477.2970739891,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 11940.828925657479,
+          "peak": 1
+        },
+        "cursor": 422744
+      },
+      {
+        "track": 6,
+        "totalFrames": 4671648,
+        "loopStart": 586704,
+        "whole": {
+          "energy": 511983.8390737341,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 16031.061246208721,
+          "peak": 1
+        },
+        "cursor": 763184
+      },
+      {
+        "track": 7,
+        "totalFrames": 8157076,
+        "loopStart": 1820156,
+        "whole": {
+          "energy": 797803.1359372899,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 15272.085881450388,
+          "peak": 1
+        },
+        "cursor": 1996904
+      },
+      {
+        "track": 8,
+        "totalFrames": 6343824,
+        "loopStart": 1347640,
+        "whole": {
+          "energy": 620901.9673692029,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 20520.43405288494,
+          "peak": 1
+        },
+        "cursor": 1524136
+      },
+      {
+        "track": 9,
+        "totalFrames": 6494216,
+        "loopStart": 915378,
+        "whole": {
+          "energy": 627803.0225311292,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 19671.28435578902,
+          "peak": 1
+        },
+        "cursor": 1092010
+      },
+      {
+        "track": 10,
+        "totalFrames": 5788116,
+        "loopStart": 231504,
+        "whole": {
+          "energy": 566461.9425319458,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 15107.714337480467,
+          "peak": 1
+        },
+        "cursor": 408188
+      },
+      {
+        "track": 11,
+        "totalFrames": 4511040,
+        "loopStart": 830016,
+        "whole": {
+          "energy": 440755.23592599866,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 19840.740908010546,
+          "peak": 1
+        },
+        "cursor": 1006848
+      },
+      {
+        "track": 12,
+        "totalFrames": 10099936,
+        "loopStart": 290304,
+        "whole": {
+          "energy": 1089815.0621207545,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 12684.135529280613,
+          "peak": 1
+        },
+        "cursor": 466720
+      },
+      {
+        "track": 13,
+        "totalFrames": 6488496,
+        "loopStart": 459608,
+        "whole": {
+          "energy": 663709.746207779,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 11455.83016319521,
+          "peak": 0.7354163527488708
+        },
+        "cursor": 636328
+      },
+      {
+        "track": 14,
+        "totalFrames": 9210688,
+        "loopStart": 636208,
+        "whole": {
+          "energy": 996056.1314010514,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 12782.24906199627,
+          "peak": 0.8107748627662659
+        },
+        "cursor": 813040
+      },
+      {
+        "track": 15,
+        "totalFrames": 3734248,
+        "loopStart": 131392,
+        "whole": {
+          "energy": 211055.48043887533,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 9923.289023047208,
+          "peak": 1
+        },
+        "cursor": 307800
+      },
+      {
+        "track": 16,
+        "totalFrames": 3389696,
+        "loopStart": 780816,
+        "whole": {
+          "energy": 291227.88716076704,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 17766.546206696454,
+          "peak": 1
+        },
+        "cursor": 957712
+      },
+      {
+        "track": 17,
+        "totalFrames": 1685296,
+        "loopStart": 469810,
+        "whole": {
+          "energy": 152961.66742151717,
+          "peak": 1
+        },
+        "tail": {
+          "energy": 19556.364156585016,
+          "peak": 1
+        },
+        "cursor": 646658
+      }
+    ],
+    "musicLoopCaseCount": 18,
+    "mixedFrames": 110275914,
+    "providersVerified": 145,
+    "virtualAudioClock": true,
+    "sdlBoundaryDeclared": true,
+    "silent": true,
+    "audibleOutput": false,
+    "newGameAssetCopies": false,
+    "sourceWasmSha256": "0de4bab905fdb93fe5ccc98bef3bb310de4a8d4fca7594f804b99ddfd670dfa0",
+    "archiveSha256": "57d84a5cbe82460931cca26f090a0fde7aef180889ce5bfe8315851fc97b0233",
+    "buildSha256": "762338ee3f80e6a36e4559cb77129c519d5d6447ed30b1d6884381857b07ec43",
+    "reportSha256": "8e5a76e2ce906536f5e262abb533759f77db4568a002c40b7ab127f022b0433e",
+    "nativeFadeReportSha256": "f5c47da748dd30f0ce5117bbc0ccade7810e5a3f5f0e3ba60b1635184b237c08",
+    "titleFirstSecondHasSourceSilence": true,
+    "titleSilenceFfmpegLogSha256": "d2d92141d928e539a053bdd6f7d4fdec1fd6acca0d3712821f8ffb2b726029f2",
+    "originalDirectSoundPcmCompared": false,
+    "completeBrowserAudioAccepted": false,
+    "gameLogicChanged": false,
+    "newRuntimeDeployed": false,
+    "completeGame": false
+  },
+  "currentStage3GrazeQueriesNov14": {
+    "acceptanceStandard": "observable-behavior-alignment",
+    "selectedTerminalGameplayUnchanged": true,
+    "callbacks": 120192,
+    "nearBoundaryQueries": 393,
+    "eligibleGrazeQueries": 196,
+    "queryCaptureBytes": 66024,
+    "retailQueryMismatches": 0,
+    "retailInstructionsModified": false,
+    "actualProductionPolarCases": 393,
+    "productionPolarVsFreshRetailDifferences": 0,
+    "storedVelocityVsFreshHeadingDifferences": 100,
+    "storedVelocityHistoryDifferenceDoesNotAloneProveBug": true,
+    "currentCollisionRecheckCases": 10800,
+    "currentCollisionModuleByteEqualToRetained": true,
+    "closestQueries": [
+      {
+        "index": 143,
+        "controlFrame": 9980,
+        "slot": 1473,
+        "bulletAge": 8,
+        "portResult": 0,
+        "nativeResult": 0,
+        "circle": true,
+        "margin": -0.0919189453125,
+        "position": [
+          -66.16584777832031,
+          279.9875793457031
+        ],
+        "player": [
+          -23.0078125,
+          278.4140625
+        ],
+        "velocity": [
+          1.556164264678955,
+          -2.07094669342041
+        ],
+        "speed": 2.590456962585449,
+        "angle": -0.9263830184936523,
+        "radiusOrWidth": 4.0,
+        "sprite": 5,
+        "color": 2,
+        "activeTransforms": 0
+      },
+      {
+        "index": 336,
+        "controlFrame": 15134,
+        "slot": 1696,
+        "bulletAge": 64,
+        "portResult": 2,
+        "nativeResult": 2,
+        "circle": true,
+        "margin": 0.13525390625,
+        "position": [
+          -41.50804138183594,
+          301.37603759765625
+        ],
+        "player": [
+          -6.1796875,
+          326.2109375
+        ],
+        "velocity": [
+          -1.9007856845855713,
+          1.9873383045196533
+        ],
+        "speed": 2.75,
+        "angle": 2.333937406539917,
+        "radiusOrWidth": 4.0,
+        "sprite": 5,
+        "color": 6,
+        "activeTransforms": 0
+      },
+      {
+        "index": 226,
+        "controlFrame": 11959,
+        "slot": 1670,
+        "bulletAge": 27,
+        "portResult": 0,
+        "nativeResult": 0,
+        "circle": true,
+        "margin": -0.152099609375,
+        "position": [
+          10.027275085449219,
+          216.77182006835938
+        ],
+        "player": [
+          -14.2578125,
+          252.484375
+        ],
+        "velocity": [
+          -1.5364091396331787,
+          1.9721680879592896
+        ],
+        "speed": 2.5,
+        "angle": 2.2326290607452393,
+        "radiusOrWidth": 4.0,
+        "sprite": 5,
+        "color": 4,
+        "activeTransforms": 0
+      },
+      {
+        "index": 316,
+        "controlFrame": 14458,
+        "slot": 1463,
+        "bulletAge": 18,
+        "portResult": 2,
+        "nativeResult": 2,
+        "circle": true,
+        "margin": 0.1922607421875,
+        "position": [
+          -25.213293075561523,
+          27.568944931030273
+        ],
+        "player": [
+          17.7421875,
+          32.0
+        ],
+        "velocity": [
+          2.4889206886291504,
+          -1.6748950481414795
+        ],
+        "speed": 3.0,
+        "angle": -0.5923333168029785,
+        "radiusOrWidth": 4.0,
+        "sprite": 5,
+        "color": 2,
+        "activeTransforms": 0
+      },
+      {
+        "index": 194,
+        "controlFrame": 11238,
+        "slot": 1906,
+        "bulletAge": 26,
+        "portResult": 2,
+        "nativeResult": 2,
+        "circle": true,
+        "margin": 0.287353515625,
+        "position": [
+          -28.790973663330078,
+          31.381811141967773
+        ],
+        "player": [
+          -2.6875,
+          65.78125
+        ],
+        "velocity": [
+          1.4985311031341553,
+          -2.001100778579712
+        ],
+        "speed": 2.5,
+        "angle": -0.928029477596283,
+        "radiusOrWidth": 4.0,
+        "sprite": 5,
+        "color": 6,
+        "activeTransforms": 0
+      },
+      {
+        "index": 383,
+        "controlFrame": 16167,
+        "slot": 951,
+        "bulletAge": 46,
+        "portResult": 2,
+        "nativeResult": 2,
+        "circle": true,
+        "margin": 0.3443603515625,
+        "position": [
+          -9.582167625427246,
+          369.10150146484375
+        ],
+        "player": [
+          2.453125,
+          410.8125
+        ],
+        "velocity": [
+          1.3978246450424194,
+          0.8670861124992371
+        ],
+        "speed": 1.6449170112609863,
+        "angle": 0.5552204251289368,
+        "radiusOrWidth": 6.0,
+        "sprite": 24,
+        "color": 0,
+        "activeTransforms": 0
+      }
+    ],
+    "captureSha256": "cf2061bd33358a132038f33fbf70967ccb9662965997d6351387d388313fa17a",
+    "oracleReportSha256": "1877f3eb6b25df85366d13bc5d4be5a627119ac3886da85117a69c176a09046b",
+    "neutralReportSha256": "a23b3f4ce608597a4d06a50956264687acc5404aa9ac330b26c7955294c9ba44",
+    "polarReportSha256": "4ec4246ace5636f1c08c42f121678e4502aec52dd4b6749d791c3b56a263d74e",
+    "oneExtraGrazeCauseEstablished": false,
+    "firstDivergentInStageFrameLocated": false,
+    "originalTrajectoriesOrPlayerTimelineAccepted": false,
+    "gameLogicChanged": false,
+    "completeGame": false
   }
 }
