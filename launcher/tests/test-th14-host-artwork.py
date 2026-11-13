@@ -27,16 +27,8 @@ class Th14Artwork(unittest.TestCase):
     def test_default_card_without_retail_reader(self):
         with TemporaryDirectory(prefix='th14-artwork-') as directory:
             root = Path(directory).resolve()
-            card = root / 'public/assets/th14-card.jpg'
-            card.parent.mkdir(parents=True)
-            data = picture()
-            card.write_bytes(data)
-            previous = module.__file__
-            module.__file__ = str(root / 'scripts/prepare-host-artwork.py')
-            try:
-                report = module.prepare_host_artwork(root / 'output', ['th14'], {})
-            finally:
-                module.__file__ = previous
+            data = (PROJECT / 'docs/assets/game-covers/thumbnails/th14.jpg').read_bytes()
+            report = module.prepare_host_artwork(root / 'output', ['th14'], {})
             self.assertEqual(report['games'], ['th14'])
             self.assertEqual(len(report['files']), 1)
             entry = report['files'][0]

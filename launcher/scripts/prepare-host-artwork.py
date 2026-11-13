@@ -374,7 +374,7 @@ def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = 
     if name == "favicon.ico":
         return (Path(__file__).resolve().parent.parent / "favicon.ico").read_bytes()
     if game == "th14" and name == "th14-card.jpg":
-        return (Path(__file__).resolve().parent.parent / "public/assets/th14-card.jpg").read_bytes()
+        return (Path(__file__).resolve().parent.parent / "docs/assets/game-covers/thumbnails/th14.jpg").read_bytes()
     root = roots.get(game)
     if root is None:
         raise FileNotFoundError(
