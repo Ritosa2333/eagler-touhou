@@ -177,12 +177,31 @@
 | M2 一套世界多席 | 已验证 | `--through M2`（含单席 SP 等价 case） |
 | M3 目标/碰撞/共享资源 | 已验证 | `--through M3`（8 case） |
 | M4 全队灵界（RULES v2） | 已验证 | `--through M4`（8 case，含 R-T9 代数守卫负控） |
-| M5 表现/幽灵/团队生命周期 | 已验证 | `--through M5`（6 case） |
+| M5 表现/幽灵/团队生命周期 | 已验证 | 原有 6 case；追加 Bomb 完整保护窗口、逐席 HUD 和灵梦灵界弹路径，原生回归与正负控见下方功能基线记录 |
 | M6 结构化快照 | 已验证（有登记缺口） | `--through M6`；缺口见下 |
 | M7 确认输入联机 | 已验证 | browser `m7.*`（RTC/relay 路径断言 + 3 席真实会话） |
 | M8 12 帧回滚 | 已验证 | browser `m8.rollback_one_three_twelve` + `m8.rollback_full_window_raf`（正式页 rAF 自然泵满窗实测 maxDistance=12；通道自检 th13-input、线上 digest 零失配） |
 | M9 Replay/旁观/生命周期 | 已验证（debug 页闭环） | browser `m9.*`（10 case，含 `m9.runtime_page_soak`） |
 | M10 launcher 正式接入 | 已验证（真实房间开局） | `tools/ports/room-browser.mjs`：rtc×2 / relay×2 / relay×3 全 PASS；th13 直入对局 |
+
+### 功能基线验证范围
+
+2026-11-13 的功能基线包含逐席原作风格 HUD、幽灵漂移和射击退役、Bomb
+完整保护共享、灵梦灵界弹淡出身份、全场上收及确认终局交接。生产入口仍从
+第一面开始；定点六面产物只放 ignored 目录，未进入源码。
+
+- 原生 M1–M9 累计 56 项及 Bomb/HUD/灵梦追加 3 项通过；席位表现完整
+  16 块另行通过，包含旧焦点位置不碰撞、当前位置受击的正负控。
+- 普通版与多人单席四角色及 Extra 各 7200 帧共同导出状态精确一致，20 个
+  投影突变负控被拒绝；该门不比较全部内部状态或最终 framebuffer。
+- 三个独立 Chromium 的 Lunatic 六面定点流程完成 Ending、各席持久化录像
+  和返回房间，36758 帧审计一致。该次使用普通 X 输入包装退出已保存槽页；
+  仓内 pilot 对应修复另有 20 项离线测试。完整一至六面和扰动回滚仍待验收。
+- HUD 实际 WebGL 布局与 blit 数值检查有界通过；幽灵完整像素数值证明、
+  芳香死亡阶段自然路径及独立原版最终输出尚未认证。4× CPU 性能验收暂缓。
+- 证据保存在外层 ignored `artifacts/functional-baseline-cumulative-r3-20261113/`、
+  `artifacts/functional-single-seat-current-20261113/reference-r3/`、
+  `artifacts/stage6-ending-targeted-20261113/` 和 `artifacts/baseline-commit-20261113/`。
 
 ### 已知缺口（如实登记）
 
@@ -204,8 +223,9 @@
    `TH13_SOAK_REQUIRE_FPS_58=1` 环境启用该断言。
 7. **音频恰播一次的感知残余（P3.1）**：SFX Voice 首播即真响，错误预测多产生的
    声音无法回收；Stop/Pan 延迟一确认窗冲账。native 脚本化 case 覆盖 BGM 恰一次。
-8. SP `curve_laser_presentation_test` 2 case 因 fixture 缺失而红（预存、与 MP
-   无关）。
+8. SP `curve_laser_presentation_test` 2 case 的历史 fixture 缺口没有在本轮重验。
+   标题音量前导零、符卡难度取消和练习退出修复已同步两侧；当前三个菜单
+   套件通过，替换回修复前实现的对应负控失败。
 
 ### 验证命令（容器内，cwd=ports/th13-mp）
 
