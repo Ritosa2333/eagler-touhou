@@ -1,6 +1,7 @@
 import type {UiMessageKey} from '../../i18n.tsx';
 import type {UiLocale} from '../../../src/launcher/i18n.mts';
 import {multiplayerGuideTopic} from '../../../lib/multiplayer-guide.mjs';
+import {TH09_RATINGS_DOCUMENT} from '../../../lib/frontend-static-manifest.mjs';
 
 export const helpDocuments = [
   {id:'firstUse', path:'guide.html', title:'firstUseNotice.title', content:'content.firstUse',source:'content/FIRST_USE_NOTICE.md'},
@@ -17,4 +18,5 @@ export function helpDocumentAtPath(pathname:string) {
   if (multiplayerGuideTopic(pathname)) return helpDocuments[2];
   return helpDocuments.find(document=>pathname.replace(/\/$/,'').endsWith('/'+document.path));
 }
-export const isStandalonePage=(pathname:string)=>/\/uptime(?:\/(?:index\.html)?)?$/.test(pathname)||!!helpDocumentAtPath(pathname);
+export const isTh09RatingPage=(pathname:string)=>pathname.replace(/\/$/,'').endsWith(TH09_RATINGS_DOCUMENT.path);
+export const isStandalonePage=(pathname:string)=>isTh09RatingPage(pathname)||/\/uptime(?:\/(?:index\.html)?)?$/.test(pathname)||!!helpDocumentAtPath(pathname);

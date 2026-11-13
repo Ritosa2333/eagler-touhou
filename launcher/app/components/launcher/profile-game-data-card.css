@@ -1,0 +1,10 @@
+.profile-game-data-switch{display:flex;justify-content:flex-end;gap:4px;margin-top:12px}
+.profile-game-data-switch .ui-kit-choice{width:42px;height:42px;padding:0}
+.profile-game-data-switch .ui-kit-choice svg{width:22px;height:22px}
+.profile-game-data-switch img{display:block;object-fit:cover;border-radius:4px}
+.profile-game-data-flight{display:grid;gap:9px}
+.profile-game-data-flight .profile-flight-total{justify-content:space-between}
+.profile-game-data-card>.profile-loading-panel{margin:0}
+
+.profile-th09-summary-row .profile-game-data-switch{flex:none;margin:0 0 0 auto}
+.profile-th09-summary-row .profile-th09-summary{flex-wrap:wrap}

@@ -1,0 +1,14 @@
+.profile-cover {
+  position:relative;
+  overflow:hidden;
+  background:var(--book-raised);
+}
+.profile-cover-frame {position:absolute;inset:0;overflow:hidden}
+.profile-cover-frame > img,.profile-cover-backdrop {position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain}
+.profile-cover[data-wide] .profile-cover-frame > img {left:-50%;right:auto;width:200%;object-fit:fill}
+.profile-cover[data-default] .profile-cover-frame > img {object-fit:cover;object-position:50% 18%}
+.profile-cover-backdrop {display:none}
+@media(min-width:781px){
+  .profile-cover[data-responsive][data-wide] .profile-cover-frame > img {left:0;width:100%;object-fit:contain}
+  .profile-cover[data-responsive]:not([data-default]) > .profile-cover-backdrop {display:block;object-fit:cover;filter:blur(14px);transform:scale(1.05)}
+}

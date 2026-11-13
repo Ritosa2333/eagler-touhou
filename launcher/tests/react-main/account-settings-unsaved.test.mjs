@@ -67,6 +67,7 @@ beforeAll(async () => {
           constructor(code, status) { super(code); this.name = 'AccountRequestError'; this.code = code; this.status = status; }
         }
         export function cancelAccountRequests() {}
+        export function mailCaptchaError() {}
         export async function accountRequest(path, body) {
           const request = globalThis.__accountRequest;
           if (!request) throw new Error('account request fixture is not installed');
@@ -301,7 +302,7 @@ test('avatar and cover compression run independently and block save until both f
   await settle(() => pending.get(1).resolve(compressedFile('saved-avatar.webp')));
   assert.equal(save.disabled, false);
   assert.equal(env.document.querySelectorAll('button[aria-busy="true"]').length, 0);
-  assert.equal(input('.settings-preview-cover img').getAttribute('src'), 'data:image/webp;base64,saved-cover.webp');
+  assert.equal(input('.settings-artwork .player-profile-card .profile-cover img').getAttribute('src'), 'data:image/webp;base64,saved-cover.webp');
   await click(save);
   await settle();
   assert.deepEqual(requests.map(request => request.path), ['v1/me/profile']);
