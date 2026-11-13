@@ -2598,7 +2598,7 @@ void draw_charge_gauge(float cx,const th19::ChargeGauge& gauge){
     const auto& emitter=g_gauge_particles[side];
     for(const auto&v:emitter.children){
         auto mesh=presentation_geometry(v);if(mesh.empty())continue;
-        DrawCmd q;q.layer=34;q.handle=g_white_tex.handle;q.mesh_blend=v.blend_mode;
+        DrawCmd q{};q.layer=34;q.handle=g_white_tex.handle;q.additive=v.blend_mode==1;q.mesh_blend=v.blend_mode;
         for(const auto&p:mesh)q.mesh.push_back(SpriteVertex{{left+452.f*gauge.charge/2500+v.x*GAME_SCALE+p.x,y+4+v.y*GAME_SCALE+p.y,0},1,p.color,{.5f,.5f}});
         g_draw.push_back(std::move(q));
     }
@@ -2606,7 +2606,7 @@ void draw_charge_gauge(float cx,const th19::ChargeGauge& gauge){
         float x=cx+th19::ChargeGauge::marker(gauge.thresholds[i])-2;
         // Native 0x4e95c0 drives the foreground/glow pair in aura.anm.
         for(int j=0;j<2;++j){const auto&v=g_gauge_markers[side][i*2+j];auto mesh=presentation_geometry(v);
-            if(mesh.empty())continue;DrawCmd q;q.layer=34;q.handle=g_white_tex.handle;q.additive=v.blend_mode==1;q.mesh_blend=v.blend_mode;
+            if(mesh.empty())continue;DrawCmd q{};q.layer=34;q.handle=g_white_tex.handle;q.additive=v.blend_mode==1;q.mesh_blend=v.blend_mode;
             for(const auto&p:mesh)q.mesh.push_back(SpriteVertex{{cx+th19::ChargeGauge::marker(gauge.thresholds[i])+(v.x+p.x)*GAME_SCALE,y+(v.y+p.y)*GAME_SCALE,0},1,p.color,{.5f,.5f}});
             g_draw.push_back(std::move(q));
         }
@@ -5040,7 +5040,7 @@ void draw_player_shots(){
     // pl16 ordinal 9 is already in full-screen pixels (native render mode 2).
     for(int side=0;side<2;++side){
     if(g_attacks[side].chiyari_skill.frame>=0&&g_attacks[side].chiyari_skill.vm.visible){const auto&v=g_attacks[side].chiyari_skill.vm;auto mesh=presentation_geometry(v);
-        if(!mesh.empty()){DrawCmd q;q.layer=v.layer;q.handle=g_white_tex.handle;q.mesh_blend=v.blend_mode;
+        if(!mesh.empty()){DrawCmd q{};q.layer=v.layer;q.handle=g_white_tex.handle;q.additive=v.blend_mode==1;q.mesh_blend=v.blend_mode;
             for(const auto&p:mesh)q.mesh.push_back(SpriteVertex{{g_attacks[side].chiyari_skill.x+p.x,g_attacks[side].chiyari_skill.y+p.y,0},1,p.color,{.5f,.5f}});
             g_draw.push_back(std::move(q));}}
     }
