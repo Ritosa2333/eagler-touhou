@@ -1419,7 +1419,7 @@ index fd55dea28b5500eac427ba77b2decd4ff3b82b54..13e8ec3acd898f4d01c21c040e3e23e4
  }
  i32 BulletManager::spawn_th14(const Th14BulletEmitter& e,i32 index,i32 layer,float aim)noexcept{
 diff --git a/runtimes/th12/th12_web/cpp/game/Dialogue.cpp b/runtimes/th12/th12_web/cpp/game/Dialogue.cpp
-index 52a00c76c7d70020412b2bf70b87d756442d4bbd..4b940071fae85a53ad07d783abfffdce6cd57936 100644
+index 52a00c76c7d70020412b2bf70b87d756442d4bbd..c7b63288d58a39bd126b5ca6d130b0cdce58ee31 100644
 --- a/runtimes/th12/th12_web/cpp/game/Dialogue.cpp
 +++ b/runtimes/th12/th12_web/cpp/game/Dialogue.cpp
 @@ -1,5 +1,6 @@
@@ -1429,31 +1429,96 @@ index 52a00c76c7d70020412b2bf70b87d756442d4bbd..4b940071fae85a53ad07d783abfffdce
  #include <cstdlib>
  #include <string>
  namespace th11 {
-@@ -232,7 +233,9 @@ bool Dialogue::command(u8 op,const u8* p,u32 n){
+@@ -81,13 +82,26 @@ bool Dialogue::write(u32 slot,const std::string& value,i32 offset,i32 font,i32 s
+     auto* vm=find(state.animations[slot]);if(!vm)return fail("missing dialogue text animation");
+     u32 color=state.colors[state.speaker];
+     if constexpr(kPortTitle==14){if(slot>=5&&style==2){vm->flags2|=0x800;color=0x408080;}}
+-    if(!effects.dialogue_text({state.animations[slot],color,offset,font,style<0?i32((state.flags>>1)&1):style,value}))return fail("dialogue glyph output");return true;
++    DialogueText request{state.animations[slot],color,offset,font,style<0?i32((state.flags>>1)&1):style,value};
++#if PORT_TITLE == 14
++    request.dialogue_body=slot<5&&request.style<2;
++#endif
++    if(!effects.dialogue_text(request))return fail("dialogue glyph output");return true;
+ }
+ bool Dialogue::th14_background(i32 layout){
+     // 434020/4341e0 use front.anm, and write the children's float variable
+     // +4bc (10004), which their ANM scripts consume on the following update.
+     families.erase(th14_text_background);
+-    const Vec3 p{text_pair_194.x,text_pair_194.y,0};
++    Vec3 p{text_pair_194.x,text_pair_194.y,0};
++#if PORT_TITLE == 14
++    if(th14_line_widths[0]>=0||th14_line_widths[1]>=0){
++        // The panel grows away from its speaker. Translations can be wider
++        // than the space left by the original MSG anchor.
++        constexpr float screen_width=1280.f;
++        const float reach=th14_text_width+112.f;
++        p.x=state.speaker<1?std::min(p.x,screen_width-reach):std::max(p.x,reach);
++    }
++#endif
+     auto* vm=manager.create(front,216+layout,5,22,false,false,&p);
+     if(!vm)return fail("TH14 dialogue background animation");
+     th14_text_background=vm->id;th14_text_layout=layout;
+@@ -104,6 +118,17 @@ void Dialogue::th14_text_position(AnmVm& line){
+         if(d.state.speaker<1)p.x=float(p.x-36.f);
+         else if(child->scale.x<1.f)p.x=float(p.x+float(float(child->scale.x*32.f)-6.f));
+         else p.x=float(p.x+26.f);
++        // Both body lines use the widest rendered line as their shared center.
++        // The corresponding ruby VM follows that line and retains its own offset.
++        for(u32 slot=3;slot<7;++slot)if(d.state.animations[slot]==line.id){
++            const i32 width=d.th14_line_widths[(slot-3)&1];
++            if(width>=0){
++                const i32 widest=std::max(d.th14_line_widths[0],d.th14_line_widths[1]);
++                // Account for the asymmetric end caps and the minimum bubble width.
++                p.x+=float(std::max(widest,40)-width)*.5f+(d.state.speaker<1?8.f:12.f);
++            }
++            break;
++        }
+         line.position=p;return;
+     }
+ #else
+@@ -226,13 +251,24 @@ bool Dialogue::command(u8 op,const u8* p,u32 n){
+     case 12:state.release_signal=1;break;
+     case 13:case 14:if constexpr(kPortTitle==14){u32 handle=state.animations[0];if(op==14){if(n<8)return fail("truncated MSG expression");const i32 selection=read<i32>(p+4);if(u32(selection)>=4)return fail("invalid dialogue expression speaker");handle=th14_enemy_portraits[selection];}if(!families.interrupt_now(handle,wrapping_add(read<i32>(p),17)))return fail("TH14 expression interrupt");break;}return expression(op==14,read<i32>(p));
+     case 15:case 16:case 17:{
+-        if(op==17&&state.next_line==0&&!state.lines_initialized){if constexpr(kPortTitle==14)th14_text_width=0;for(u32 i=3;i<7;++i)if(!write(i,kPortTitle==14?"  ":" ",0,i>=5?1:0))return false;state.lines_initialized=1;for(u32 i=3;i<7;++i)families.interrupt(state.animations[i],3);}
++        if(op==17&&state.next_line==0&&!state.lines_initialized){
++#if PORT_TITLE == 14
++            th14_text_width=0;th14_line_widths[0]=th14_line_widths[1]=-1;
++#endif
++            for(u32 i=3;i<7;++i)if(!write(i,kPortTitle==14?"  ":" ",0,i>=5?1:0))return false;
++            state.lines_initialized=1;for(u32 i=3;i<7;++i)families.interrupt(state.animations[i],3);
++        }
+         std::string value;if(!decode(p,n,value))return fail("unterminated MSG text");u32 slot=op==15?3:op==16?4:state.next_line?4:3;i32 offset=0,font=0;
+         if(op==17&&!value.empty()&&value[0]=='|'){const auto a=value.find(',',1),b=a==std::string::npos?a:value.find(',',a+1);if(b==std::string::npos)return fail("invalid MSG ruby text");offset=std::atoi(value.c_str()+1);font=std::atoi(value.c_str()+a+1);value=value.substr(b+1);slot=state.next_line?6:5;}
          else if(op==17){
              if constexpr(kPortTitle==14){
                  // Retail deliberately converts the wrapped unsigned byte width.
 -                const float width=float(u32((u32(value.size())*8u)&~15u)-28u)*2.f;
-+                const i32 localized_width=effects.dialogue_width(value,i32((state.flags>>1)&1));
-+                const float width=localized_width>=0?float(std::clamp(localized_width-40,0,650)):
++                const i32 measured=effects.dialogue_width(value,i32((state.flags>>1)&1));
++#if PORT_TITLE == 14
++                if(measured>=0)th14_line_widths[state.next_line]=std::min(measured,DialogueText::th14_dialogue_line_limit);
++#endif
++                const float width=measured>=0?float(std::clamp(measured-40,0,DialogueText::th14_dialogue_line_limit-40)):
 +                    float(u32((u32(value.size())*8u)&~15u)-28u)*2.f;
                  if(width>th14_text_width)th14_text_width=width;
                  const i32 layout=state.speaker+2*i32((state.flags>>2)&15)+(state.next_line?8:0);
                  if(!th14_background(layout))return false;
 diff --git a/runtimes/th12/th12_web/cpp/game/Dialogue.hpp b/runtimes/th12/th12_web/cpp/game/Dialogue.hpp
-index 991989a6636d3f4fd2d1df02445e14bd1ad1e18a..7cc986ac75352ec6e2d38ea585be2cba3bcd9722 100644
+index 991989a6636d3f4fd2d1df02445e14bd1ad1e18a..b9dd70adc42af7dabbe7f8266bf5a5249517379d 100644
 --- a/runtimes/th12/th12_web/cpp/game/Dialogue.hpp
 +++ b/runtimes/th12/th12_web/cpp/game/Dialogue.hpp
-@@ -14,14 +14,16 @@ static_assert(sizeof(DialogueState)==0xac);
+@@ -14,14 +14,18 @@ static_assert(sizeof(DialogueState)==0xac);
  static_assert(offsetof(DialogueState,instruction)==0x64);
  #endif
  struct DialogueText {
 +    static constexpr i32 th14_spell_title_style=8;
++    static constexpr i32 th14_dialogue_line_limit=650;
      u32 animation=0,color=0;i32 offset=0,font=0,style=0;
 -    std::string bytes; // Original Shift-JIS bytes; no lossy UTF-8 conversion.
 +    std::string bytes; // Original Shift-JIS or localized UTF-8.
      bool right_aligned=false;
      bool centered=false;
++    bool dialogue_body=false;
  };
  struct DialogueEffects {
      virtual ~DialogueEffects()=default;
@@ -1462,6 +1527,16 @@ index 991989a6636d3f4fd2d1df02445e14bd1ad1e18a..7cc986ac75352ec6e2d38ea585be2cba
      virtual bool dialogue_sound(i32){return false;}
      virtual bool dialogue_music(){return false;}
      virtual bool dialogue_boss_name(){return false;}
+@@ -53,6 +57,9 @@ public:
+     u32 th14_text_background=0;
+     float th14_text_width=0;
+     i32 th14_text_layout=0;
++#if PORT_TITLE == 14
++    i32 th14_line_widths[2]={-1,-1};
++#endif
+     u32 th14_enemy_portraits[4]{};
+     DialogueState state;bool active=false;i32 character=0,stage=1,last_opcode=-1;
+     std::string error;
 diff --git a/runtimes/th12/th12_web/cpp/game/EnemyFrame.cpp b/runtimes/th12/th12_web/cpp/game/EnemyFrame.cpp
 index 4b451321c3a2c24a2257dcdc76739bf2c58090d0..edec700409fa2a7e65575f443fc92adb32d1f186 100644
 --- a/runtimes/th12/th12_web/cpp/game/EnemyFrame.cpp
@@ -1619,7 +1694,7 @@ index 97286260f07206c5731286326ba117a38eefedcb..bbd4a732217c810b3ef1a9ff98e3ca7f
  #endif
      auto create=[&](AnmResource& resource,i32 script,u16 file,u32* result=nullptr){auto* vm=animations.create(resource,script,file,22,false,false);if(result)*result=vm?vm->id:0;return vm;};
 diff --git a/runtimes/th12/th12_web/cpp/game/GameBattle.hpp b/runtimes/th12/th12_web/cpp/game/GameBattle.hpp
-index 8faf43f2f58b3d846378959293a8fbf1c6d093a4..f9095b1aed737355c047ef0838d34a67171b1aa0 100644
+index 8faf43f2f58b3d846378959293a8fbf1c6d093a4..0c71c08f0286e1350f55d40328f92d1d71d9bbbe 100644
 --- a/runtimes/th12/th12_web/cpp/game/GameBattle.hpp
 +++ b/runtimes/th12/th12_web/cpp/game/GameBattle.hpp
 @@ -113,6 +113,8 @@ public:
@@ -1631,7 +1706,20 @@ index 8faf43f2f58b3d846378959293a8fbf1c6d093a4..f9095b1aed737355c047ef0838d34a67
      u32 th14_spell_background=0;
      bool th14_spell_result_requested=false;
      i32 th14_current_music=-1;
-@@ -338,6 +340,7 @@ public:
+@@ -233,6 +235,12 @@ public:
+ #endif
+         dialogue_text_requests.push_back(request);return true;
+     }
++#if PORT_TITLE == 14
++    i32 dialogue_width(const std::string& text,i32 style)override{
++        if(resources.effects)if(auto* device=resources.effects->dialogue_text_device())return device->dialogue_width(text,style);
++        return -1;
++    }
++#endif
+     bool dialogue_sound(i32 id)override{return sound(id,0,false);}
+     bool hud_sound(i32 id)override{return sound(id,0,false);}
+     bool dialogue_music()override{events.push_back({BattleEventKind::BossMusic,i32(resources.stage_number)});return true;}
+@@ -338,6 +346,7 @@ public:
      bool th14_bomb_dialogue()const override{return dialogue&&dialogue->active;}
  #if PORT_TITLE == 14
      bool th14_damage_dialogue()const override{return dialogue&&dialogue->active;}
@@ -1639,7 +1727,7 @@ index 8faf43f2f58b3d846378959293a8fbf1c6d093a4..f9095b1aed737355c047ef0838d34a67
  #endif
      bool th14_reimu_bomb_hit_effect(Vec3 p,float angle)override{
          return animations.create(resources.core.effect,58,8,0,false,false,&p,nullptr,nullptr,false,&angle)!=nullptr;
-@@ -348,10 +351,12 @@ public:
+@@ -348,10 +357,12 @@ public:
      bool th14_bomb_item(i32 type,Vec3 p,float angle,float speed)override{return items.spawn(type,p,0xffffffff,angle,speed)==0;}
      bool th14_bomb_rectangle(Vec3 p,Vec2 size,float angle,i32 duration,i32 damage)override{return player&&player->shots.th14_bomb_rectangle(p,size,angle,duration,damage);}
      bool th14_bomb_cancel_rectangle(Vec3 p,Vec2 size,float angle,u32 rewards)override{
@@ -1654,7 +1742,7 @@ index 8faf43f2f58b3d846378959293a8fbf1c6d093a4..f9095b1aed737355c047ef0838d34a67
      }
      bool th14_bomb_shake(i32 amplitude,i32 ramp,i32 hold,i32 fall)override{shakes.start_th14_hold(amplitude,ramp,hold,fall,&animations.rate);return true;}
      bool th14_bomb_shake_short(i32 duration,i32 from,i32 to)override{shakes.start(duration,from,to,&animations.rate);return true;}
-@@ -446,7 +451,11 @@ public:
+@@ -446,7 +457,11 @@ public:
  #if PORT_TITLE == 14
      i32& item_th14_drop_counter()override{return economy.th14_special_drop_count;}
      Th14ItemCombo& item_th14_combo_state()override{return economy.th14_combo;}
@@ -5855,7 +5943,7 @@ diff --git a/runtimes/th12/th12_web/cpp/sdl/AudioDevice.cpp b/runtimes/th12/th12
      // Retail481f3c..481f55 truncates sample time and subtracts one PCM frame.
      const double sample_time=a.saved_position*double(a.saved_music->time.rate);
 diff --git a/runtimes/th12/th12_web/cpp/sdl/FontDevice.cpp b/runtimes/th12/th12_web/cpp/sdl/FontDevice.cpp
-index 34599c5a5718d9233835faddbccc0988ffa653b1..bb0361dd172c4bfcc4c18ffd61f43bb1efcbb93c 100644
+index 34599c5a5718d9233835faddbccc0988ffa653b1..c0902c0acbd7ca6d1fdf32095b14a8a4e14d3af9 100644
 --- a/runtimes/th12/th12_web/cpp/sdl/FontDevice.cpp
 +++ b/runtimes/th12/th12_web/cpp/sdl/FontDevice.cpp
 @@ -1,5 +1,6 @@
@@ -5970,12 +6058,14 @@ index 34599c5a5718d9233835faddbccc0988ffa653b1..bb0361dd172c4bfcc4c18ffd61f43bb1
      for(char c:commands){if(c=='b')flags|=TTF_STYLE_BOLD;else if(c=='i')flags|=TTF_STYLE_ITALIC;else if(c=='u')flags|=TTF_STYLE_UNDERLINE;}
      TTF_SetFontStyle(localized[index],flags);
  }
-@@ -99,14 +147,26 @@ LayoutLine FontDevice::layout(const std::string& text,int index){
+@@ -98,15 +146,27 @@ LayoutLine FontDevice::layout(const std::string& text,int index){
+     });
      font_style(index,"");return line;
  }
- bool FontDevice::write_unicode(TextureImage& output,const ImageRect& rect,const std::string& text,const TextStyle& style){
+-bool FontDevice::write_unicode(TextureImage& output,const ImageRect& rect,const std::string& text,const TextStyle& style){
 -    const i32 height=std::max(8,style.height),index=style.font>=0&&style.font<=2?style.font:3;
 -    const u32 rows=u32(height*2+6);if(rows>raster.scratch.height||text.size()>1024)return false;
++bool FontDevice::write_unicode(TextureImage& output,const ImageRect& rect,const std::string& text,const TextStyle& style,i32 width_limit){
 +    const i32 height=std::max(8,style.height),index=font_index(style.font);
 +    const u32 rows=u32(height*2+6);if(rows>raster.scratch.height||text.size()>4096)return false;
      auto& scratch=raster.scratch;
@@ -5994,13 +6084,13 @@ index 34599c5a5718d9233835faddbccc0988ffa653b1..bb0361dd172c4bfcc4c18ffd61f43bb1
 +            extent=std::max(extent,run.x+width);
 +        }
 +        font_style(index,"");
-+        const i32 available=std::max(1,std::min(1024,rect.right-rect.left)-4);
++        const i32 available=std::max(1,std::min(width_limit,std::min(1024,rect.right-rect.left)-4));
 +        if(extent>available)horizontal_scale=float(available)/float(extent);
 +    }
      for(const auto& run:line.runs){
      font_style(index,run.commands);
      auto* rendered=TTF_RenderText_Blended(localized[index],run.text.c_str(),run.text.size(),SDL_Color{255,255,255,255});
-@@ -117,21 +177,35 @@ bool FontDevice::write_unicode(TextureImage& output,const ImageRect& rect,const
+@@ -117,21 +177,39 @@ bool FontDevice::write_unicode(TextureImage& output,const ImageRect& rect,const
      auto stamp=[&](i32 ox,i32 oy,u32 color){
          for(i32 y=0;y<rgba->h;++y){const i32 dy=y+oy;if(dy<0||dy>=i32(rows))continue;
              const auto* row=static_cast<const u8*>(rgba->pixels)+size_t(y)*rgba->pitch;
@@ -6028,9 +6118,13 @@ index 34599c5a5718d9233835faddbccc0988ffa653b1..bb0361dd172c4bfcc4c18ffd61f43bb1
  #endif
 +i32 FontDevice::measure(const std::string& text,int index){
 +#if defined(TH_ENABLE_THCRAP)
-+    if(localized[0]&&valid_utf8(text)){
++    if(localized[0]){
 +        auto tabs=layout_tabs;
-+        const i32 width=layout(text,font_index(index)).width;
++#if PORT_TITLE == 14
++        const i32 width=layout(decode(text),font_index(index)).width;
++#else
++        const i32 width=valid_utf8(text)?layout(text,font_index(index)).width:-1;
++#endif
 +        layout_tabs=std::move(tabs);return width;
 +    }
 +#endif
@@ -6039,7 +6133,7 @@ index 34599c5a5718d9233835faddbccc0988ffa653b1..bb0361dd172c4bfcc4c18ffd61f43bb1
  bool FontDevice::text(AnmVm& vm,const DialogueText& request){
      // Three different gaps used to share one sentence. The caller passes the animation the text was
      // asked for, so the report can name it and the side of it that is missing.
-@@ -192,19 +266,27 @@ bool FontDevice::text(AnmVm& vm,const DialogueText& request){
+@@ -192,19 +270,27 @@ bool FontDevice::text(AnmVm& vm,const DialogueText& request){
      style.color=request.color;style.spacing=u32(request.font);style.plain=(vm.flags2&(PORT_TITLE==14?0x800:2))!=0;
      i32 text_width=i32((style.height-1)*request.bytes.size()/2);
  #if defined(TH_ENABLE_THCRAP)
@@ -6067,15 +6161,15 @@ index 34599c5a5718d9233835faddbccc0988ffa653b1..bb0361dd172c4bfcc4c18ffd61f43bb1
      bool written=false;
  #if defined(TH_ENABLE_THCRAP)
 -    if(unicode)written=write_unicode(*image,rect,request.bytes,style);
-+    if(unicode)written=write_unicode(*image,rect,utf8,style);
++    if(unicode)written=write_unicode(*image,rect,utf8,style,request.dialogue_body?DialogueText::th14_dialogue_line_limit:1024);
      else
  #endif
      written=raster.write(*image,rect,request.bytes,style);
 diff --git a/runtimes/th12/th12_web/cpp/sdl/FontDevice.hpp b/runtimes/th12/th12_web/cpp/sdl/FontDevice.hpp
-index 16d55e6bed119e13091c829f43209d994b644073..8d55d62669a1f8b8dbad0db8dce9fda7084aa899 100644
+index 16d55e6bed119e13091c829f43209d994b644073..2191314485f7430a8a05ca4270bfcda2d3e0526c 100644
 --- a/runtimes/th12/th12_web/cpp/sdl/FontDevice.hpp
 +++ b/runtimes/th12/th12_web/cpp/sdl/FontDevice.hpp
-@@ -12,7 +12,14 @@ namespace th11::sdl {
+@@ -12,11 +12,18 @@ namespace th11::sdl {
  class FontDevice {
      GraphicsDevice& graphics;TextRaster raster;bool ready=false;
  #if defined(TH_ENABLE_THCRAP)
@@ -6091,6 +6185,11 @@ index 16d55e6bed119e13091c829f43209d994b644073..8d55d62669a1f8b8dbad0db8dce9fda7
      std::vector<int> layout_tabs;
      LayoutLine layout(const std::string&,int);
      void font_style(int,const std::string&);
+-    bool write_unicode(TextureImage&,const ImageRect&,const std::string&,const TextStyle&);
++    bool write_unicode(TextureImage&,const ImageRect&,const std::string&,const TextStyle&,i32 width_limit);
+ #endif
+ public:
+     explicit FontDevice(GraphicsDevice& g):graphics(g){}
 @@ -28,5 +35,6 @@ public:
      bool waiting=false;
      bool initialize(const FontBitmapTh14* bitmap=nullptr);
