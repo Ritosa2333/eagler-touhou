@@ -118,6 +118,7 @@ before(async () => {
         export {cloudSaveEnabled as accountsEnabled};
       ` : `
         import {readCurrentPackageGeneration as readCurrent} from './package/package-store.mjs';
+        export * from './package/package-store.mjs';
         let gate; export function setPackageReadGate(value) {gate = value;}
         export function readCurrentPackageGeneration(game) {const wait = gate?.(game); return wait ? Promise.resolve(wait).then(() => readCurrent(game)) : readCurrent(game);}
       `}));
@@ -349,6 +350,36 @@ async function start() {
   assert.equal(playerOpen(), false, 'Player stays closed before original input/music confirmation');
   await click('#decisionConfirm');
 }
+
+for (const {game, touchDevice, rail} of [
+  {game: 'th13', touchDevice: false, rail: true},
+  {game: 'th06', touchDevice: false, rail: false},
+  {game: 'th13', touchDevice: true, rail: false},
+]) test(`TH13 desktop tool rail follows ${game}, touch=${touchDevice} and player lifetime`, async () => {
+  const host = developmentAcquisitionHost(game === 'th13' && !touchDevice ? ['th13', 'th06'] : [game]);
+  host.shared.testBuild = true;
+  const f = await mountBrowser({initial: `/?game=${game}`, host, touchDevice,
+    fetchBoundary(url) {
+      return /\/fixture-th(?:06|13)\.data$/.test(url.pathname) ? new Response(new Uint8Array([1, 2, 3])) : null;
+    },
+    seedStorage(storage) {
+      storage.values.set(api.gamePreferenceStorageKey(game), JSON.stringify({music: 'none', options: {touchEnabled: false, thpracEnabled: false}}));
+    }});
+  assert.equal(node('#player').classList.contains('th13-desktop-tool-rail'), false);
+  await start();
+  await until(() => commands().includes('launch'), 'runtime launched');
+  assert.equal(node('#player').classList.contains('th13-desktop-tool-rail'), rail);
+  await React.act(async () => {f.native.emit('exit', {status: 'success'});});
+  await until(() => !playerOpen(), 'player closes after runtime exit');
+  assert.equal(node('#player').classList.contains('th13-desktop-tool-rail'), false);
+  assert.equal(node('#player').style.getPropertyValue('--th13-rail-offset'), '');
+  if (game === 'th13' && !touchDevice) {
+    await click('.book-game-link[data-game="th06"]');
+    await start();
+    await until(() => api.getTestSession().getRuntime()?.getSnapshot().game === 'th06', 'new game starts');
+    assert.equal(node('#player').classList.contains('th13-desktop-tool-rail'), false);
+  }
+});
 
 for (const exitScenario of ['success', 'error', 'error-on-exit', 'error-without-reason', 'success-with-error-code']) test(`actual BrowserLauncher: original warning, fullscreen, ready/configure/ACK launch and native ${exitScenario} Exit preserve one frame`, async () => {
   const exitStatus=exitScenario.startsWith('success')?'success':'error';
