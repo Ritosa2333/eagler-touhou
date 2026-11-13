@@ -1659,7 +1659,7 @@
     "th13": {
       "normal": "ports/th13",
       "multiplayer": "ports/th13-mp",
-      "base": "dc9a747eee712649f8b06b5d31120cd4da300ec0",
+      "base": "d19f1b0a8919ea6d40413e97821433c934638519",
       "history": [
         {
           "kind": "manual",
@@ -1739,6 +1739,26 @@
             "ports/th13-mp/web/sdl-runtime/shell.mjs"
           ],
           "note": "接收 dc9a747 的25个通用文件：17个同blob，8个保留多人适配；动画资源身份/退役绑定、对话/HUD/Boss/激光/符卡恢复及绘制准备拆分已随 ec57e3c 与 3da0ed775 迁入。保留多人世界/宿主快照、全席位输入、Run前缀旁观、存档隔离和网络唤醒。目录投影合并154f31df、双亲写回724446c 保持已验证内容树不变；SP原有六个未提交菜单文件未纳入。M1–M9 56/56、69987断言，旁观/录像及Relay定向回归通过；正式整场网络与GPU未认证。"
+        },
+        {
+          "kind": "manual",
+          "base": "dc9a747eee712649f8b06b5d31120cd4da300ec0",
+          "source": "d19f1b0a8919ea6d40413e97821433c934638519",
+          "targetHead": "b22af1836ffa3648764865fc8a346a23e41f7d14",
+          "paths": [
+            "ports/th13-mp/portable/build.mjs",
+            "ports/th13-mp/portable/build.test.mjs",
+            "ports/th13-mp/tests/ui/stage_presentation_repeat_draw_test.cpp",
+            "ports/th13-mp/tests/ui/title_option_menu_test.cpp",
+            "ports/th13-mp/tests/ui/title_spell_practice_esc_flow_test.cpp",
+            "ports/th13-mp/tests/ui/title_spell_practice_view_test.cpp",
+            "ports/th13-mp/web/cpp/game/StagePresentation.cpp",
+            "ports/th13-mp/web/cpp/game/TitleOptionsMenu.cpp",
+            "ports/th13-mp/web/cpp/game/TitleOptionsMenu.hpp",
+            "ports/th13-mp/web/cpp/game/TitleSpellPracticeView.cpp",
+            "ports/th13-mp/web/cpp/sdl/BrowserRuntime.cpp"
+          ],
+          "note": "接收 c76a79a1b 与 d19f1b0a8：菜单实现和三套测试逐字节同步；StagePresentation 在 MP 多席绘制路径保留同样的自机临时状态恢复，MP generation/ghost 快照按自身规则保留，SP 专用重复呈现测试由单席对照及 MP 席位表现回归补充；两侧 TH13_OUTPUT 隔离与 build.test 同源；完整帧观测在 MP 额外计入回滚和终局交接。原生56+3、单席五组7200帧与RTC六面终局诊断分别验证，不扩展成全游戏/性能/像素认证。"
         }
       ]
     },
