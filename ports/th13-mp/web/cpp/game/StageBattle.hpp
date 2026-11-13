@@ -40,6 +40,16 @@ struct StageBattleServices {
     virtual ~StageBattleServices() = default;
     virtual bool life_hud(i32 lives, i32 pieces) = 0;
     virtual bool bomb_hud(i32 bombs, i32 pieces) = 0;
+    // M5：席位感知 HUD 刷新（MP 每席图标集；seat 0 /单席回落单套面）。
+    // 默认实现忽略席位，与旧宿主/测试 stub 完全兼容。
+    virtual bool life_hud_seat(i32 seat, i32 lives, i32 pieces) {
+        (void)seat;
+        return life_hud(lives, pieces);
+    }
+    virtual bool bomb_hud_seat(i32 seat, i32 bombs, i32 pieces) {
+        (void)seat;
+        return bomb_hud(bombs, pieces);
+    }
     virtual bool request_game_over() = 0;
     // 443240 distinguishes Replay death from ordinary Game Over. The host
     // owns Replay mode; other callers of request_game_over keep their route.
@@ -224,6 +234,11 @@ struct StagePlayerState {
     // 被瞄准；可获得团队账面奖励但不因此复活。救援（送残 5 点按）/
     // 过关复活清除本位。单席恒 false（SP 无幽灵语义）。
     bool ghost = false;
+    // MP final-death latch prevents later shared rewards from causing a respawn.
+    bool final_death = false;
+    bool ghost_just_entered = false;
+    u32 ghost_random = 1, ghost_clock = 0;
+    i32 ghost_dx = 0, ghost_dy = 0;
     // M5/R-I9：送残/送 P 计数（AdvanceLifeTransfer 状态字节：taps*32+剩余窗）。
     u8 life_transfer_state = 0;
     u8 power_transfer_state = 0;
@@ -262,6 +277,8 @@ struct StagePlayerState {
     Vec3 respawn_origin{};  // player+644：入场激光清除用的死亡位置快照
     // Bomb 域（0x40a270 上下文；四角色共享布局，逐席独立库存/相位）。
     i32 bomb_timer = 0;          // 炸弹作用剩余帧
+    // Remaining protection supplied by this seat's Bomb, including its tail.
+    i32 bomb_protection = 0;
     i32 bomb_age = -1;           // ctx+0x1c；未施放=-1
     // 0040a270:292 `add esi,0x18` → 00401400 的 +0x20 浮点累加器。
     float bomb_age_accumulator = 0;
@@ -584,12 +601,14 @@ public:
             return false;
         auto& donor_hud = seat_huds[size_t(donor)];
         auto& recipient_hud = seat_huds[size_t(recipient)];
-        if (!seats[size_t(recipient)].ghost) return false;   // 非幽灵不可救
+        if (!seats[size_t(recipient)].ghost || seats[size_t(recipient)].ghost_just_entered)
+            return false;   // 非幽灵或刚进入幽灵的同一帧不可救
         if (seats[size_t(donor)].ghost || seats[size_t(donor)].dead) return false;
         if (donor_hud.extra_lives <= 0) return false;         // 无命可送
         --donor_hud.extra_lives;
         seats[size_t(recipient)].ghost = false;
         seats[size_t(recipient)].dead = false;
+        seats[size_t(recipient)].final_death = false;
         // SP 重生资源（R-G：救援数值用本作 SP 上限与初始 Bomb）。
         recipient_hud.bombs = 2;
         recipient_hud.bomb_pieces = 0;
@@ -609,6 +628,7 @@ public:
             if (!seats[size_t(seat)].ghost) continue;
             seats[size_t(seat)].ghost = false;
             seats[size_t(seat)].dead = false;
+            seats[size_t(seat)].final_death = false;
             seat_huds[size_t(seat)].bombs = 2;
             seat_huds[size_t(seat)].bomb_pieces = 0;
             seat_huds[size_t(seat)].extra_lives = std::max(0, seat_huds[size_t(seat)].extra_lives);
@@ -627,6 +647,10 @@ public:
     }
 
 private:
+    bool team_bomb_protected() const;
+    void advance_mp_protection_and_ghosts();
+    void share_mp_bomb_protection();
+    bool retire_final_death_combat();
     void update_transfers();
     bool player_prepared_ = false;
     void rebuild_options_for_power();

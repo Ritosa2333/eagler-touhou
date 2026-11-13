@@ -97,6 +97,11 @@ public:
             u32 chain_index[2] = {0xFFFFFFFFu, 0xFFFFFFFFu};  // 主/副链序号
         };
         std::vector<Entry> entries;
+        struct DrawReference {
+            u32 entry = kNoVm, embedded = kNoVm;
+            const AnmVm* original = nullptr; // restore binding only, never hashed
+        };
+        std::array<std::vector<DrawReference>, 33> layers;
         std::vector<u32> free_slots;
         u32 generation = 0, active_count = 0;
         u64 next_serialization_ordinal = 1;
@@ -104,9 +109,10 @@ public:
         // 仍指向同一宿主对象——外部 VM 由宿主对象持有，快照不拥有）。
         std::vector<AnmVm*> borrowed_roots;
     };
-    bool capture(SnapshotData& out) const;
-    // restore 后层桶为空：下一次 update()/update_chain() 重建（每帧开头
-    // clear+归桶，AnmRegistry.cpp tick_chain 语义——快照不含层桶派生缓存）。
+    bool capture(SnapshotData& out,
+                 const std::vector<const AnmVm*>& embedded = {}) const;
+    // Restore the actual draw order without ticking. Embedded draw-only VMs
+    // use their owner's semantic slot and must be rebound through remapped.
     bool restore(const SnapshotData& source,
                  const std::unordered_map<const AnmVm*, AnmVm*>& remapped = {});
     // 快照辅助：VM 在池内的槽号（池外/未分配 = 0x1fff）。

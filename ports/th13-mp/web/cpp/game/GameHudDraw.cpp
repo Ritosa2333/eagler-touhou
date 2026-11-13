@@ -122,7 +122,6 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
         error = "HUD text draw service failed";
         return false;
     };
-    (void)context;
     // hi-score / score：右对齐，尾位为 continues / hi_score_extra。
     // 0x427D35 mov [edi+0x19160],0xff808080（decomp 00427910.c:142）。
     // 原版此处不读 life_icons[0]（front.anm script29）的 visual.color；该 VM 的
@@ -137,6 +136,72 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
     // 0x427D87 mov [eax+0x19160],0xffffffff；残机/灵击沿用该色（decomp 00427910.c:151）。
     style.color = 0xffffffff;
     if (!text(620, 66, score_number(u32(displayed_score), progress.continues))) return false;
+    if (const MpHudSeats* seats = context.mp) {
+        // Use native coloured labels and large outlined numerals, with the
+        // same 80px rhythm as the supplied th12 multiplayer reference.
+        for (i32 seat = 0; seat < seats->count; ++seat) {
+            const HudPlayerState* seat_player = seats->seats[size_t(seat)];
+            if (!seat_player) {
+                error = "MP HUD seat view missing";
+                return false;
+            }
+            const float row = 100.f + GameHud::kMpRowPitch * float(seat);
+            style.font = 1;
+            style.alignment = style.vertical_alignment = 1;
+            style.scale = {1, 1};
+            const bool ghost = (seats->ghost >> seat) & 1;
+            const u32 opacity = ghost ? 0x8c000000u : 0xff000000u;
+            style.color = opacity | (seat == seats->local_seat ? 0x00ffff00u : 0x00ffffffu);
+            if (!text(488, row - 10, std::to_string(seat + 1) + "P")) return false;
+            if (ghost && !text(428, row - 10, "GHOST")) return false;
+            style.font = 2;
+            style.alignment = 2;
+            style.color = opacity | 0x00ffffffu;
+            const i32 threshold_index = seat == 0 ? progress.life_piece_threshold_index
+                                                  : seat_player->life_piece_threshold_index;
+            const i32 life_threshold = life_piece_threshold(threshold_index);
+            if (life_threshold >= 999999) {
+                style.alignment = 2;
+                if (!text(628, row + 17, "---/---")) return false;
+            } else {
+                style.alignment = 2;
+                if (!text(628, row + 17, format("%3d/%d", seat_player->life_pieces, life_threshold))) return false;
+            }
+            if (!text(628, row + 45, format("%3d/8", seat_player->bomb_pieces))) return false;
+            if (!seat_player->power_step) {
+                error = "HUD power step is zero";
+                return false;
+            }
+            style.color = opacity | 0x00ff8030u;
+            style.font = 4;
+            style.alignment = 1;
+            style.scale = {1, 1};
+            if (!text(540, row + 56, format("%d.", seat_player->power / seat_player->power_step))) return false;
+            style.scale = {.6f, .6f};
+            if (!text(560, row + 63, format("%.2d",
+                wrapping_mul(seat_player->power % seat_player->power_step, 100) / seat_player->power_step))) return false;
+            style.scale = {1, 1};
+            if (!text(574, row + 56, format("/%d.", seat_player->max_power / seat_player->power_step))) return false;
+            style.scale = {.6f, .6f};
+            if (!text(606, row + 63, format("%.2d",
+                wrapping_mul(seat_player->max_power % seat_player->power_step, 100) / seat_player->power_step))) return false;
+        }
+        // Shared artwork is relocated by enable_multiplayer; values occur once.
+        const float shared = 100.f + GameHud::kMpRowPitch * float(seats->count) + 8.f;
+        style.font = 4;
+        style.alignment = 2;
+        style.scale = {1, 1};
+        style.color = 0xff40c0ff;
+        if (!text(620, shared,
+                  grouped_number(u32(progress.max_point / 100 - (progress.max_point / 100) % 10))))
+            return false;
+        style.color = 0xffc0c0c0;
+        const auto graze = grouped_number(u32(progress.graze));
+        // Preserve every digit at the numeric boundary, inside the fixed HUD
+        // column; normal inventories keep the original full-size numerals.
+        if (graze.size() > 12) { style.font = 5; style.scale = {.85f, .85f}; }
+        if (!text(620, shared + 22, graze)) return false;
+    } else {
     // 残机/灵击碎片：0x427910:156-194。残机分母 = 0x4bb994[be7fc]
     //（首命 8，0x43d330 每命递增）；灵击分母固定 8（0x427f02 push $8）。
     // 哨兵 9999999 → "---/---"（0x427910:170/187），且残机 x 左移 7
@@ -184,6 +249,7 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
     // 0x428111 mov [edx+0x19160],0xff808080（decomp 00427910.c:241）。
     style.color = 0xff808080;
     if (!text(620, 260, grouped_number(u32(progress.graze)))) return false;
+    }
     // Boss 计时文本（0x427910:253-274）：'.' 与百分秒锚定数字 VM 位置
     //（ascii script2/3 dump：208/220,39）+16/-7；'.' 字体 4、百分秒 0.6 缩放。
     if (boss_hud.timer_visible()) {

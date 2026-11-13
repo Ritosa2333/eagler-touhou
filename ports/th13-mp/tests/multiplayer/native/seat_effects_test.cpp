@@ -12,12 +12,18 @@ using namespace th13test;
 namespace {
 struct NullGraphics final : ZunGraphics {
     touhou::graphics::PipelineState state;
+    std::vector<AnmGeometryVertex> submitted;
     touhou::graphics::PipelineState& pipeline() override { return state; }
     u32 texture(const AnmResource&,u32) override { return 1; }
     void bind_texture(u32) override {}
     void set_layout(touhou::graphics::VertexLayout) override {}
     void set_matrix(touhou::graphics::MatrixKind,const Matrix4&) override {}
-    void triangles(u32,const void*,u32) override {}
+    void triangles(u32 count,const void* data,u32 stride) override {
+        if(stride==sizeof(AnmGeometryVertex)) {
+            const auto* first=static_cast<const AnmGeometryVertex*>(data);
+            submitted.insert(submitted.end(),first,first+count*3);
+        }
+    }
     void primitives(touhou::graphics::Topology,u32,const void*,u32) override {}
     bool select_target(const AnmResource*,u32) override { return true; }
     bool clear_target(u32,const GraphicsViewport*) override { return true; }
@@ -277,5 +283,216 @@ TEST(teammate_presentation_fields_are_captured_and_hashed) {
     check_mutation([](auto& v){v.bomb_generation++;});
     check_mutation([](auto& v){v.bomb_background++;});
     check_mutation([](auto& v){v.bomb_beam++;});
+}
+
+TEST(equal_generation_shot_fades_are_independent_for_every_seat) {
+    Fixture f; CHECK(f.load()); CHECK(f.boot({0,0,0},3));
+    const auto stage=asset("st01enm.anm");
+    CHECK(!stage.empty() && f.animations.load(4,stage.data(),stage.size()));
+    f.presentation.enemies_from_ecl=true;
+    f.battle.defer_item_side=true;
+    // Real pl00 script10 carries the hit interrupt. Equal generations are
+    // legal because every seat owns its own projectile generation counter.
+    for(i32 seat=0;seat<3;++seat) {
+        PlayerShot shot; shot.alive=true; shot.state=2; shot.script=10;
+        shot.generation=7; shot.owner_seat=seat; shot.x=float(seat*40); shot.y=250;
+        f.battle.seats[size_t(seat)].shots.push_back(shot);
+    }
+    CHECK(f.presentation.sync(f.battle,0));
+    StagePresentation::SnapshotData snapshot;
+    CHECK(f.presentation.capture_presentation(snapshot));
+    CHECK_EQ(snapshot.shot_faded_generations.size(),size_t(3));
+    std::set<u32> handles;
+    for(size_t seat=0;seat<3;++seat) {
+        const u32 handle=snapshot.shot_handles[seat]; handles.insert(handle);
+        const auto* vm=f.animations.registry.find(handle); CHECK(vm);
+        if(!vm)return;
+        CHECK_EQ(vm->pending_interrupt,1);
+        CHECK_EQ(vm->shot_effect_owner,u8(seat+1));
+        CHECK(vm->resource==f.animations.resource(seat==0?6:seat==1?7:9));
+    }
+    CHECK_EQ(handles.size(),size_t(3));
+    // Repeating sync must not enqueue another fade for the same seat/generation.
+    CHECK(f.animations.update(false));
+    CHECK(f.presentation.sync(f.battle,0));
+    CHECK(f.presentation.capture_presentation(snapshot));
+    CHECK_EQ(snapshot.shot_faded_generations.size(),size_t(3));
+    for(size_t seat=0;seat<3;++seat) {
+        const auto* vm=f.animations.registry.find(snapshot.shot_handles[seat]); CHECK(vm);
+        if(vm) CHECK_EQ(vm->pending_interrupt,0);
+    }
+}
+
+TEST(shot_fade_snapshot_order_and_restore_boundaries) {
+    Fixture f;
+    StagePresentation::SnapshotData state;
+    CHECK(f.presentation.capture_presentation(state));
+    CHECK(state.shot_faded_generations.empty());
+    // Simulated accumulated generations, including equal generations across
+    // seats and the full 32-bit generation boundary. Deliberately unordered
+    // input and duplicates exercise restore semantics rather than assuming a
+    // pre-sorted capture.
+    const std::vector<u64> input = {
+        (u64(2)<<32)|0xffffffffu, 7, (u64(1)<<32)|7,
+        0, (u64(2)<<32)|7, (u64(1)<<32)|7, 0xffffffffu,
+        (u64(1)<<32), (u64(2)<<32)|0xffffffffu
+    };
+    state.shot_faded_generations=input;
+    CHECK(f.presentation.restore_presentation(state));
+    StagePresentation::SnapshotData captured;
+    CHECK(f.presentation.capture_presentation(captured));
+    const std::set<u64> expected(input.begin(),input.end());
+    CHECK(captured.shot_faded_generations==std::vector<u64>(expected.begin(),expected.end()));
+    CHECK_EQ(captured.shot_faded_generations.size(),size_t(7));
+    // Capture remains a deep value even after replacement and a second restore.
+    const auto retained=captured.shot_faded_generations;
+    state.shot_faded_generations={(u64(2)<<32)|9, 8, 8};
+    CHECK(f.presentation.restore_presentation(state));
+    CHECK(f.presentation.capture_presentation(captured));
+    CHECK(captured.shot_faded_generations==std::vector<u64>({8,(u64(2)<<32)|9}));
+    CHECK_EQ(retained.size(),size_t(7));
+    f.presentation.reset_snapshot_caches();
+    CHECK(f.presentation.capture_presentation(captured));
+    CHECK(captured.shot_faded_generations.empty());
+}
+
+TEST(shot_fade_history_preserves_unknown_high_words_and_future_reuse) {
+    for(i32 seat=0;seat<3;++seat) for(bool consumed : {false,true}) {
+        Fixture f; CHECK(f.load()); CHECK(f.boot({0,0,0},3));
+        const auto stage=asset("st01enm.anm");
+        CHECK(!stage.empty() && f.animations.load(4,stage.data(),stage.size()));
+        f.presentation.enemies_from_ecl=true; f.battle.defer_item_side=true;
+        StagePresentation::SnapshotData history;
+        CHECK(f.presentation.capture_presentation(history));
+        // All u64 values accepted by restore remain observable, even when the
+        // high word is outside the three current seats. No live shot or fade
+        // owns these historical keys. The same generation can recur after
+        // the seat's counter wraps; it must retain the old consumption result.
+        history.shot_faded_generations={~u64(0),u64(0xffffffffu)<<32,
+            (u64(3)<<32)|7,0xffffffffu,0,~u64(0)};
+        const u64 key=(u64(u32(seat))<<32)|7;
+        if(consumed) history.shot_faded_generations.push_back(key);
+        const std::set<u64> restored(history.shot_faded_generations.begin(),
+                                     history.shot_faded_generations.end());
+        CHECK(f.presentation.restore_presentation(history));
+        StagePresentation::SnapshotData captured;
+        CHECK(f.presentation.capture_presentation(captured));
+        CHECK(captured.shot_faded_generations==std::vector<u64>(restored.begin(),restored.end()));
+        PlayerShot shot; shot.alive=true; shot.state=2; shot.script=10;
+        shot.generation=7; shot.owner_seat=seat; shot.x=0; shot.y=250;
+        f.battle.seats[size_t(seat)].shots.push_back(shot);
+        CHECK(f.presentation.sync(f.battle,0));
+        CHECK(f.presentation.capture_presentation(captured));
+        CHECK(captured.shot_handles.size()>size_t(seat));
+        if(captured.shot_handles.size()<=size_t(seat)) return;
+        const auto* vm=f.animations.registry.find(captured.shot_handles[size_t(seat)]);
+        CHECK(vm);
+        if(vm) CHECK_EQ(vm->pending_interrupt,consumed ? 0 : 1);
+        auto expected=restored; expected.insert(key);
+        CHECK(captured.shot_faded_generations==std::vector<u64>(expected.begin(),expected.end()));
+        // Restoring the older snapshot must replace the later branch deeply.
+        CHECK(f.presentation.restore_presentation(history));
+        CHECK(f.presentation.capture_presentation(captured));
+        CHECK(captured.shot_faded_generations==std::vector<u64>(restored.begin(),restored.end()));
+    }
+}
+
+TEST(ghost_ship_bodies_remain_visible_with_draw_only_opacity) {
+    for(i32 ghost=0;ghost<3;++ghost) {
+        Fixture f; CHECK(f.load()); CHECK(f.boot({0,0,0},3));
+        const auto stage=asset("st01enm.anm");
+        CHECK(!stage.empty() && f.animations.load(4,stage.data(),stage.size()));
+        f.presentation.enemies_from_ecl=true; f.battle.defer_item_side=true;
+        // Production centered playfield offsets; a zeroed environment would
+        // incorrectly cull the negative-x ship in this draw-only fixture.
+        f.environment.screen_offsets={320,240,320,16};
+        GameInput idle;
+        for(i32 frame=0;frame<32;++frame) CHECK(f.battle.step(idle));
+        for(i32 seat=0;seat<3;++seat) {
+            auto& player=f.battle.seats[size_t(seat)];
+            player.x=float((seat-1)*80); player.fixed_x=i32(player.x*128);
+        }
+        f.battle.mp_local_seat=ghost;
+        auto& state=f.battle.seats[size_t(ghost)];
+        state.ghost=true; state.dead=true; state.phase=StagePlayerState::Phase::Dying;
+        CHECK(f.battle.step(idle));
+        CHECK(f.presentation.sync(f.battle,0));
+        f.presentation.prepare_player_opacity();
+        CHECK_EQ(f.renderer.player_opacity[size_t(ghost+1)],140);
+        StagePresentation::SnapshotData snapshot;
+        CHECK(f.presentation.capture_presentation(snapshot));
+        CHECK(snapshot.has_player);
+        CHECK(snapshot.teammate_players[0].has_value());
+        CHECK(snapshot.teammate_players[1].has_value());
+        CHECK(snapshot.player.visible);
+        CHECK(snapshot.teammate_players[0]->visible);
+        CHECK(snapshot.teammate_players[1]->visible);
+        multiplayer::WorldState before, after;
+        CHECK(before.capture(f.battle,f.random,nullptr,&f.presentation));
+        for(i32 draw=0;draw<2;++draw) {
+            f.graphics.submitted.clear();
+            CHECK(f.presentation.draw(1)); f.renderer.flush();
+            // Two remote ships and the local ghost: actual production quad
+            // submission, including alpha, rather than the opacity setting.
+            CHECK_EQ(f.graphics.submitted.size(),size_t(18));
+            for(size_t vertex=0;vertex<f.graphics.submitted.size();++vertex)
+                CHECK_EQ(f.graphics.submitted[vertex].color>>24,vertex<12?160u:140u);
+        }
+        CHECK(after.capture(f.battle,f.random,nullptr,&f.presentation));
+        CHECK_EQ(before.digest(),after.digest());
+    }
+}
+TEST(focus_exit_tree_does_not_create_an_extra_bullet_collision) {
+    // Diagnostic fixture: production input and ANM lifecycle, then inject one
+    // stationary enemy bullet into each of the two separated positions.
+    Fixture f; const bool loaded=f.load(); CHECK(loaded); if(!loaded)return;
+    const bool booted=f.boot(); CHECK(booted); if(!booted)return;
+    GameInput input;
+    const auto step=[&](u32 held) {
+        input.update(held);
+        f.battle.seat_inputs[1].update(0);
+        return f.battle.step(input) && f.presentation.initialize_player_effects(f.battle) &&
+               f.animations.update(false);
+    };
+    // Wait out the normal entry invulnerability before testing contact.
+    for(int i=0;i<110;++i) { const bool ok=step(0); CHECK(ok); if(!ok)return; }
+    // Keep the second seat away from both test locations.
+    auto& other=f.battle.seats[1]; other.x=120; other.fixed_x=120*128;
+    for(int i=0;i<24;++i) { const bool ok=step(8); CHECK(ok); if(!ok)return; }
+    StagePresentation::SnapshotData before;
+    CHECK(f.presentation.capture_presentation(before));
+    const u32 old_handle=before.focus_handle;
+    const auto* old=f.animations.registry.find(old_handle);
+    CHECK(old); if(!old)return;
+    const float old_x=old->visual.translation.x, old_y=old->visual.translation.y;
+    for(int i=0;i<4;++i) { const bool ok=step(128); CHECK(ok); if(!ok)return; }
+    { const bool ok=step(128|8); CHECK(ok); if(!ok)return; }
+    StagePresentation::SnapshotData after;
+    CHECK(f.presentation.capture_presentation(after));
+    const auto* old_after=f.animations.registry.find(old_handle);
+    const auto* current=f.animations.registry.find(after.focus_handle);
+    CHECK(old_after && current && after.focus_handle!=old_handle);
+    if(!old_after || !current || after.focus_handle==old_handle)return;
+    CHECK_EQ(old_after->source_script,22); CHECK_EQ(current->source_script,22);
+    CHECK_EQ(old_after->shot_effect_owner,u8(1)); CHECK_EQ(current->shot_effect_owner,u8(1));
+    CHECK_EQ(old_after->visual.translation.x,old_x); CHECK_EQ(old_after->visual.translation.y,old_y);
+    const auto& player=f.battle.seats[0];
+    CHECK(player.focus); CHECK_EQ(current->visual.translation.x,player.x);
+    CHECK_EQ(current->visual.translation.y,player.y);
+    CHECK(player.x-old_x>16.f); CHECK_EQ(player.phase,StagePlayerState::Phase::Active);
+    CHECK_EQ(player.invulnerable,0);
+    StageBullet old_bullet; old_bullet.x=old_x; old_bullet.y=old_y;
+    old_bullet.flags=0x12u; old_bullet.hit_size[0]=old_bullet.hit_size[1]=8.f;
+    f.battle.sim.bullet_player_collision(old_bullet);
+    CHECK_EQ(f.battle.seats[0].phase,StagePlayerState::Phase::Active);
+    CHECK_EQ(f.battle.seats[1].phase,StagePlayerState::Phase::Active);
+    CHECK(old_bullet.alive);
+    CHECK(f.animations.registry.find(old_handle));
+    StageBullet current_bullet; current_bullet.x=player.x; current_bullet.y=player.y;
+    current_bullet.flags=0x12u; current_bullet.hit_size[0]=current_bullet.hit_size[1]=8.f;
+    f.battle.sim.bullet_player_collision(current_bullet);
+    CHECK_EQ(f.battle.seats[0].phase,StagePlayerState::Phase::Deathbomb);
+    CHECK_EQ(f.battle.seats[1].phase,StagePlayerState::Phase::Active);
+    CHECK(f.battle.error().empty());
 }
 int __attribute__((weak)) main(){return run_all("MP per-seat player effects");}

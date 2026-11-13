@@ -284,6 +284,14 @@ void ItemManager::update_seats(const ItemCollector* seats, i32 seat_count) {
     const ItemCollector& fallback = seats[0];
     last_player_ = fallback;
     const float rate = fallback.progress ? fallback.progress->rate : 1.f;
+    bool has_collector = false;
+    bool team_autocollect = false;
+    for (i32 seat = 0; seat < seat_count; ++seat) {
+        const auto& candidate = seats[seat];
+        has_collector |= candidate.eligible;
+        team_autocollect |= candidate.eligible && !candidate.dialog &&
+            candidate.state != 2 && candidate.state != 4 && candidate.y < 128.0f;
+    }
     cancel_wave_ = 0;  // 0x42e380:74（type9 出场延迟的每帧波数）
     for (Item& item : items_) {
         if (!item.alive) continue;
@@ -304,9 +312,9 @@ void ItemManager::update_seats(const ItemCollector* seats, i32 seat_count) {
         // R-I7 selects the physical collector; R-I3 broadcasts only personal
         // rewards. Shared score/gauge and item retirement still occur once.
         last_player_ = player;
-        const bool magnet =
+        const bool magnet = !has_collector || (!team_autocollect &&
             player.eligible && !player.dialog && (player.state == 2 || player.state == 4 ||
-                               player.y >= 128.0f);
+                               player.y >= 128.0f));
         switch (item.state) {
         case 1: {
             if (magnet) {
@@ -333,10 +341,10 @@ void ItemManager::update_seats(const ItemCollector* seats, i32 seat_count) {
             item.y += float(item.vy * rate);
             item.z += float(item.vz * rate);
             item.vy += float(0.03f * rate);
-            if (item.vy >= 0.0f) {
+            if (item.vy >= 0.0f && has_collector) {
                 item.homing_speed = player.homing_speed;
                 item.state = 3;
-                home_step(item, player);  // LAB_0042e621→e661：转态帧即追踪
+                if (has_collector) home_step(item, player);  // LAB_0042e621→e661
                 collect_check(item, player, seats, seat_count);
                 break;
             }
@@ -349,7 +357,7 @@ void ItemManager::update_seats(const ItemCollector* seats, i32 seat_count) {
         }
         case 3:
         case 4:
-            home_step(item, player);
+            if (has_collector) home_step(item, player);
             collect_check(item, player, seats, seat_count);
             break;
         case 5: {
@@ -431,11 +439,11 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
     HudScoreState& score_state = *player.score;
     if (item.target_seat >= 0) {
         // R-I9: debit happened at the fifth press; only this recipient owns
-        // the delivered resource. The common HUD still observes seat zero.
+        // the delivered resource and its HUD update.
         if (item.type == ItemExtraLife) {
             hud.extra_lives = std::min(8, hud.extra_lives + 1);
             if (life_changed)
-                life_changed(std::max(0, seats[0].player->extra_lives), seats[0].player->life_pieces);
+                life_changed(item.target_seat, std::max(0, hud.extra_lives), hud.life_pieces);
         } else if (collect_power_big(hud.power_step)) {
             if (option_power_changed) option_power_changed();
             push_level_up(item);
@@ -613,12 +621,16 @@ bool ItemManager::grant_resources(const ResourceGrant& grant,
     // while each seat's own threshold remains authoritative.
     if (grant.life_pieces)
         seats[0].progress->life_piece_threshold_index = seats[0].player->life_piece_threshold_index;
+    // R-I3 广播发放：每席各触发一次，携带该席权威值（幽灵席照发——
+    // 团队账面奖励保留，R-I8）。仅在该类资源确实入账时触发，避免无关
+    // 席位重发同标签复位图标插值。
     if ((grant.lives || grant.life_pieces) && life_changed)
-        // Ghost stock may remain -1 while team rewards accumulate. The HUD
-        // displays zero spare lives without changing that authoritative stock.
-        life_changed(std::max(0, seats[0].player->extra_lives), seats[0].player->life_pieces);
+        for (i32 seat = 0; seat < seat_count; ++seat)
+            life_changed(seat, std::max(0, seats[seat].player->extra_lives),
+                         seats[seat].player->life_pieces);
     if ((grant.bombs || grant.bomb_pieces) && bombs_changed)
-        bombs_changed(seats[0].player->bombs, seats[0].player->bomb_pieces);
+        for (i32 seat = 0; seat < seat_count; ++seat)
+            bombs_changed(seat, seats[seat].player->bombs, seats[seat].player->bomb_pieces);
     return level_up;
 }
 
@@ -691,12 +703,12 @@ void ItemManager::collect_life_piece(i32 amount) {
         if (hud.extra_lives < 8) {
             hud.extra_lives += 1;
             if (hud.extra_lives > 8) hud.extra_lives = 8;
-            if (life_changed) life_changed(hud.extra_lives, hud.life_pieces);
+            if (life_changed) life_changed(0, hud.extra_lives, hud.life_pieces);
             events_.push_back({ItemEvent::Kind::Extend, 1, c.x, c.y});
         }
         progress.life_piece_threshold_index += 1;
     }
-    if (life_changed) life_changed(hud.extra_lives, hud.life_pieces);
+    if (life_changed) life_changed(0, hud.extra_lives, hud.life_pieces);
 }
 
 // 0x0043d480 灵击碎片 +amount：be800(+0x48) > 8 → be804=0 收；
@@ -715,9 +727,9 @@ void ItemManager::collect_bomb_piece(i32 amount) {
         hud.bombs += 1;
         if (hud.bombs > 9) hud.bombs = 9;
         else events_.push_back({ItemEvent::Kind::BombGained, hud.bombs, c.x, c.y});
-        if (bombs_changed) bombs_changed(hud.bombs, hud.bomb_pieces);
+        if (bombs_changed) bombs_changed(0, hud.bombs, hud.bomb_pieces);
     }
-    if (bombs_changed) bombs_changed(hud.bombs, hud.bomb_pieces);
+    if (bombs_changed) bombs_changed(0, hud.bombs, hud.bomb_pieces);
 }
 
 // 0x0043d2f0 1UP：be7f4 > 7 → 收；否则 +1、>8 钳 8。
@@ -726,7 +738,7 @@ void ItemManager::collect_extra_life() {
     if (hud.extra_lives > 7) return;
     hud.extra_lives += 1;
     if (hud.extra_lives > 8) hud.extra_lives = 8;
-    if (life_changed) life_changed(hud.extra_lives, hud.life_pieces);
+    if (life_changed) life_changed(0, hud.extra_lives, hud.life_pieces);
 }
 
 // 0x0043d440 灵击：be7f4(+0x48) += 1；< 10 → sound 0x2e；否则钳 9。
@@ -739,7 +751,7 @@ void ItemManager::collect_bomb() {
     } else {
         hud.bombs = 9;
     }
-    if (bombs_changed) bombs_changed(hud.bombs, hud.bomb_pieces);
+    if (bombs_changed) bombs_changed(0, hud.bombs, hud.bomb_pieces);
 }
 
 // 0x0043d530 灵界值：be808 += amount（cap 600）；跨 200 段 → sound 0x44 +
@@ -879,6 +891,7 @@ void ItemManager::update_spirits_seats(const ItemCollector* seats, i32 seat_coun
         // ③ 状态机。
         switch (s.state) {
         case 1: {
+            if (!player.eligible) break;
             const float dx = player.x - s.x, dy = player.y - s.y;
             const float dist2 = dx * dx + dy * dy;
             if (dist2 >= 9216.0f || player.state == 2) {
@@ -889,6 +902,7 @@ void ItemManager::update_spirits_seats(const ItemCollector* seats, i32 seat_coun
             break;
         }
         case 2: {
+            if (!player.eligible) { s.move_speed = 0.0f; break; }
             s.angle = wrap_angle(angle_to_player(s, player));
             s.move_speed = s.speed;
             if (s.speed < 12.0f) s.speed += 0.3f;
@@ -901,6 +915,7 @@ void ItemManager::update_spirits_seats(const ItemCollector* seats, i32 seat_coun
             break;
         }
         case 4: {
+            if (!player.eligible) { s.move_speed = 0.0f; break; }
             s.angle = wrap_angle(angle_to_player(s, player));
             s.move_speed = s.speed;
             if (s.speed < 4.0f) s.speed += 0.05f;
@@ -920,7 +935,7 @@ void ItemManager::update_spirits_seats(const ItemCollector* seats, i32 seat_coun
             else s.angle=wrap_angle(float(std::atan2(double(player.boss_y-s.y),double(player.boss_x-s.x))));
             s.move_speed=s.speed;
             if(s.speed<4)s.speed=float(double(s.speed)+.035f);
-            if(player.state!=2) {
+            if(player.eligible && player.state!=2) {
                 const float dx=s.x-player.x,dy=s.y-player.y;
                 if(float(double(dx)*dx+double(dy)*dy)<900)s.state=2;
             }
@@ -955,7 +970,7 @@ void ItemManager::update_spirits_seats(const ItemCollector* seats, i32 seat_coun
             }
         }
         const float dx = player.x - s.x, dy = player.y - s.y;
-        if (player.state == 2 || dx * dx + dy * dy >= 400.0f) {
+        if (!player.eligible || player.state == 2 || dx * dx + dy * dy >= 400.0f) {
             // 0x4736a0 先落 f32 速度，0x473780 累加后逐轴向下量化到 0.01。
             const float speed = float(s.move_speed * rate);
             const float vx = float(std::cos(double(s.angle)) * double(speed));
