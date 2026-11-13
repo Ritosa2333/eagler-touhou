@@ -196,9 +196,29 @@ touhou::sdl::FrameCadence cadence;
 bool running = false, suspended = false, lost_focus = false;
 u32 render_scale = 1, loop_epoch = 0;
 double previous_frame = -1;
-double presentation_elapsed = 0;
+double presentation_window_start = -1;
 u32 presentation_count = 0;
 float presentation_fps = 60;
+
+void reset_presentation_window() {
+    presentation_window_start = -1;
+    presentation_count = 0;
+    presentation_fps = 60;
+}
+
+void sample_presentation_rate(double now_ms) {
+    if (presentation_window_start < 0) {
+        presentation_window_start = now_ms;
+        return;
+    }
+    // Count completed submissions in [window start, this callback).
+    // Manual frame pumps can supply a simulation delta unrelated to wall time.
+    const double elapsed_ms = now_ms - presentation_window_start;
+    if (elapsed_ms + 1.e-6 < 1000.) return;
+    presentation_fps = float(1000. * presentation_count / elapsed_ms);
+    presentation_window_start = now_ms;
+    presentation_count = 0;
+}
 
 void add_controller(SDL_JoystickID id) {
     if (controller) return;
@@ -714,6 +734,7 @@ bool drive_one_frame(double delta, unsigned source = 0) {
     }
     if (app->loading_waiting()) {
         cadence.reset();
+        reset_presentation_window();
         if (!(app->loading_startup ? app->advance_loading(delta) : app->complete_loading())) {
             running = false;
             th13_browser_frame(0, emscripten_get_now() - begin, 0);
@@ -736,12 +757,7 @@ bool drive_one_frame(double delta, unsigned source = 0) {
     } else {
         ticks = cadence.advance(delta);
     }
-    presentation_elapsed += std::max(0., delta);
-    if (presentation_elapsed >= 1.) {
-        presentation_fps = float(presentation_count / presentation_elapsed);
-        presentation_elapsed = 0;
-        presentation_count = 0;
-    }
+    sample_presentation_rate(begin);
     bool ok = true;
     const bool mp_active = multiplayer::session.Active();
     app->graphics.backend.defer = true;
@@ -2534,6 +2550,7 @@ EMSCRIPTEN_KEEPALIVE void th13_loop_stop() {
     ++loop_epoch;
     previous_frame = -1;
     cadence.reset();
+    reset_presentation_window();
     reset_mp_accumulator();
     clear_inputs();
     if (controller) {
@@ -2557,6 +2574,7 @@ EMSCRIPTEN_KEEPALIVE void th13_loop_pause(unsigned enabled) {
     suspended = enabled != 0;
     previous_frame = -1;
     cadence.reset();
+    reset_presentation_window();
     reset_mp_accumulator();
     if (app) app->audio_device.suspend(suspended);
 }
@@ -2573,6 +2591,7 @@ EMSCRIPTEN_KEEPALIVE void th13_loop_start() {
     suspended = false;
     previous_frame = -1;
     cadence.reset();
+    reset_presentation_window();
     mp_clock.reset();
     clear_inputs();
     initialize_controller();

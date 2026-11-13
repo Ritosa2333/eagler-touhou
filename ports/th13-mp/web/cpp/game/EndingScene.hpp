@@ -95,7 +95,8 @@ struct EndingPlatform {
 
 class EndingScene {
 public:
-    EndingScene(SessionState& progress, EndingPlatform& platform);
+    EndingScene(SessionState& progress, EndingPlatform& platform,
+                bool allow_first_view_fast_forward = false);
 
     // 0x416570→0x416130：结局索引、落档位、msg 装载、滚屏对象初始化。
     // 失败（msg 读不到 = 原版 return -1 族）置 error 返回 false。
@@ -154,6 +155,7 @@ private:
 
     SessionState& progress_;
     EndingPlatform& platform_;
+    bool allow_first_view_fast_forward_;
 
     // ---- 0x4c2184 场景对象面 ----
     i32 ending_index_ = 0;

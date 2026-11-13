@@ -540,7 +540,7 @@ public:
     // 单席（seat_count==0）不改变任何 SP 语义——查询三分类：
     //   team_trance_active()  团队全场查询（神霊/BGM/HUD/槽显示/槽消耗）；
     //   seat_trance_active()  可操作席位的灵界射击/伤害/三类免疫查询；
-    //   seat_bomb_allowed()   个人 Bomb 许可（R-T2：owner 拒、队友可用）。
+    //   bomb_allowed()        团队灵界对新 Bomb 的限制（R-T2）。
     enum class TranceMode : i32 { Idle = 0, Manual = 1, DeathProtection = 2 };
     TranceMode trance_mode = TranceMode::Idle;
     i32 trance_owner_seat = 0;   // 发动者（仲裁序与死亡责任归属）
@@ -555,9 +555,9 @@ public:
     }
     // 可操作席位的灵界射击查询：灵界期间全体可操作席（R-T2）。
     bool seat_trance_active() const { return team_trance_active(); }
-    // 个人 Bomb 许可（R-T2/R-T8）：owner 遵 SP 灵界拒 Bomb；队友可用。
-    bool seat_bomb_allowed(i32 seat) const {
-        return !(team_trance_active() && seat == trance_owner_seat);
+    // R-T2：团队灵界激活期间，所有席位禁止发动新 Bomb。
+    bool bomb_allowed() const {
+        return !team_trance_active();
     }
     // 把 seats[seat] 的内容换入 player_state_ 窗口（当前窗口内容先写回
     // 其权威槽位）。引用别名自动跟随；席位切换不触碰共享世界/RNG。
