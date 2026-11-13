@@ -21,10 +21,13 @@ const stageIndex = Number(process.env.TH13_EQ_STAGE || 0);
 assert(Number.isSafeInteger(stageIndex) && stageIndex >= 0, 'Nonnegative replay stage index');
 const bootSeed = 47932;
 const cases = [
-  {character: 0, replay: 'th13_01.rpy'},
-  {character: 1, replay: 'th13_udMy25.rpy'},
-  {character: 2, replay: 'th13_udSr01.rpy'},
-  {character: 3, replay: 'th13_udN01.rpy'},
+  {id: 'character-0', character: 0, replay: 'th13_01.rpy'},
+  {id: 'character-1', character: 1, replay: 'th13_udMy25.rpy'},
+  {id: 'character-2', character: 2, replay: 'th13_udSr01.rpy'},
+  {id: 'character-3', character: 3, replay: 'th13_udN01.rpy'},
+  // Extra replay contains an actual X press within the fixed window. Its
+  // header, difficulty, seed and all six input bytes still come from the file.
+  {id: 'character-2-extra', character: 2, replay: 'th13_udWi11.rpy', requiresBomb: true},
 ].filter(value => process.env.TH13_EQ_CHARACTER === undefined ||
   value.character === Number(process.env.TH13_EQ_CHARACTER));
 assert(cases.length > 0, 'Requested character exists');
@@ -81,10 +84,15 @@ await new Promise(done => server.listen(0, '127.0.0.1', done));
 const origin = `http://127.0.0.1:${server.address().port}`;
 const require = createRequire(import.meta.url);
 const {chromium} = require(process.env.PLAYWRIGHT_MODULE || '/opt/shot/node_modules/playwright-core');
-const browser = await chromium.launch({headless: process.env.TH13_HEADFUL !== '1', channel: 'chromium', args: [
+const angle = process.env.TH13_ANGLE || 'gl-egl';
+assert(['gl-egl', 'gl', 'swiftshader'].includes(angle), 'Supported ANGLE backend');
+const browserArgs = [
   '--no-sandbox', '--disable-dev-shm-usage', '--ignore-gpu-blocklist', '--disable-gpu-sandbox',
-  process.env.TH13_ANGLE === 'gl' ? '--use-angle=gl' : '--use-angle=swiftshader',
-  '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required']});
+  `--use-angle=${angle}`, ...(angle === 'swiftshader' ? ['--enable-unsafe-swiftshader'] : ['--disable-software-rasterizer']),
+  '--autoplay-policy=no-user-gesture-required'];
+const browser = await chromium.launch({headless: process.env.TH13_HEADFUL !== '1', channel: 'chromium', args: browserArgs});
+report.browser = {version: browser.version(), channel: 'chromium', headless: process.env.TH13_HEADFUL !== '1',
+  args: browserArgs, angle};
 const exports = ['_th13_debug_replay_progress', '_th13_debug_replay_core',
   '_th13_debug_replay_entities', '_th13_debug_anm_state'];
 const projectionNames = ['progress', 'core', 'entities', 'anm'];
@@ -112,9 +120,9 @@ try {
     const replay = JSON.parse(raw.stdout), inputs = Buffer.from(replay.input, 'base64');
     assert.equal(replay.character, spec.character, 'Actual replay character');
     assert.equal(inputs.length, replay.frames * 6, 'Complete six-byte input history');
-    await writeFile(resolve(output, `character-${spec.character}-input.bin`), inputs);
+    await writeFile(resolve(output, `${spec.id}-input.bin`), inputs);
     const row = {...spec, replay: {...replay, input: undefined}, comparedFrames: 0,
-      projections: projectionNames, delivery: [], coverage: {bombFrames: 0, dialogueFrames: 0}, passed: false};
+      projections: projectionNames, delivery: [], coverage: {bombFrames: 0, dialogueFrames: 0, bombPressFrames: [], firstBombFrame: null}, passed: false};
     report.cases.push(row);
     const clients = [], deliveries = [];
     for (const variant of ['sp', 'mp']) {
@@ -132,6 +140,16 @@ try {
         `replay=${spec.replay}&sht=pl0${spec.character}a.sht&stage=${stageIndex}`);
       await page.waitForFunction(() => !!window.__th13_debug || !!window.__th13_debug_failed, null, {timeout: 120000});
       assert.equal(await page.evaluate(() => window.__th13_debug_failed || null), null, 'Real replay page boot');
+      const gpu = await page.evaluate(() => {
+        const gl = document.getElementById('canvas').getContext('webgl2');
+        if (!gl) throw Error('Production canvas has no WebGL2 context');
+        const debug = gl.getExtension('WEBGL_debug_renderer_info');
+        return {version: gl.getParameter(gl.VERSION), vendor: gl.getParameter(gl.VENDOR),
+          renderer: gl.getParameter(gl.RENDERER),
+          unmaskedVendor: debug ? gl.getParameter(debug.UNMASKED_VENDOR_WEBGL) : null,
+          unmaskedRenderer: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : null};
+      });
+      (row.gpu ??= {})[variant] = gpu;
       const ready = await page.evaluate(names => ({seed: window.mod._th13_boot_seed(),
         exports: names.map(name => [name, typeof window.mod[name]]), total: window.__th13_debug.total,
         initial: names.map(name => window.mod.UTF8ToString(window.mod[name]()))}), exports);
@@ -140,7 +158,7 @@ try {
       assert(ready.exports.every(([, type]) => type === 'function'), 'All common exports must exist');
       clients.push({variant, context, page, logs, initial: ready.initial});
     }
-    await writeFile(resolve(output, `character-${spec.character}-initial.json`), JSON.stringify({
+    await writeFile(resolve(output, `${spec.id}-initial.json`), JSON.stringify({
       sp: clients[0].initial.map(JSON.parse), mp: clients[1].initial.map(JSON.parse)}, null, 2));
     assert.deepEqual(clients[0].initial, clients[1].initial, 'All shared pre-input projections');
     for (const client of clients)
@@ -151,7 +169,7 @@ try {
       const steps = Math.min(30, count - first);
       const batches = await Promise.all(clients.map(client => client.page.evaluate(snapshot, {steps, exports})));
       for (let variant = 0; variant < 2; ++variant)
-        await appendFile(resolve(output, `character-${spec.character}-${clients[variant].variant}.ndjson.gz`),
+        await appendFile(resolve(output, `${spec.id}-${clients[variant].variant}.ndjson.gz`),
           gzipSync(batches[variant].map((values, offset) => JSON.stringify({frame: first + offset,
             values: Object.fromEntries(projectionNames.map((name, index) => [name, values[index]]))}) + '\n').join(''), {level: 1}));
       for (let offset = 0; offset < steps; ++offset) {
@@ -181,11 +199,15 @@ try {
           const sixBytes = [0, 2, 4].map(at => inputs.readUInt16LE(frame * 6 + at));
           assert.deepEqual([core.input.held, core.input.pressed, core.input.released], sixBytes,
             'All six recorded input bytes consumed in their original phase');
-          if (entities.timers.bomb > 0) ++row.coverage.bombFrames;
+          if (core.input.pressed & 2) row.coverage.bombPressFrames.push(frame);
+          if (entities.timers.bomb > 0) {
+            ++row.coverage.bombFrames;
+            if (row.coverage.firstBombFrame === null) row.coverage.firstBombFrame = frame;
+          }
           if (anm.dialogue.active) ++row.coverage.dialogueFrames;
           ++row.comparedFrames;
         } catch (error) {
-          await writeFile(resolve(output, `character-${spec.character}-first-difference.json`),
+          await writeFile(resolve(output, `${spec.id}-first-difference.json`),
             JSON.stringify({frame, reason: error.message, sp: batches[0][offset].map(JSON.parse),
               mp: batches[1][offset].map(JSON.parse)}, null, 2));
           throw error;
@@ -204,14 +226,16 @@ try {
       assert.equal(delivered[0].sha256, expected.sha256, 'Executable response identity');
     }
     for (const client of clients) {
-      await writeFile(resolve(output, `character-${spec.character}-${client.variant}-console.json`), JSON.stringify(client.logs));
+      await writeFile(resolve(output, `${spec.id}-${client.variant}-console.json`), JSON.stringify(client.logs));
       await client.context.close();
     }
     row.passed = true;
   }
   assert.equal(report.errors.length, 0, 'No browser errors');
   report.projectionComparisonPassed = report.cases.every(row => row.passed);
-  report.requiredCoverage = {fourCharacters: report.cases.length === 4,
+  report.requiredCoverage = {fourCharacters: [0,1,2,3].every(character => report.cases.some(row => row.character === character)),
+    allCasesFullWindow: report.cases.every(row => row.comparedFrames === limit),
+    extraReplayBomb: report.cases.some(row => row.requiresBomb && row.coverage.bombFrames > 0 && row.coverage.bombPressFrames.length > 0),
     bomb: report.cases.some(row => row.coverage.bombFrames > 0),
     dialogue: report.cases.some(row => row.coverage.dialogueFrames > 0)};
   report.passed = report.projectionComparisonPassed && Object.values(report.requiredCoverage).every(Boolean);
