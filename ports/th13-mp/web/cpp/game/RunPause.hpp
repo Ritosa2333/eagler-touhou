@@ -10,6 +10,7 @@
 
 namespace th13 {
 struct HudDrawServices;
+struct ReplayFile;
 
 // GameOver = 0x43f570 mode0（0x43fa90/142）；BGameOver = 0x43f570 mode≠0
 // （0x440960 态 0x18/147，三项：标题/录像/重试，无续关）。
@@ -27,6 +28,7 @@ struct RunPausePlatform {
     virtual bool open_pause_options() { return false; }
     virtual bool can_open_pause_options() const { return false; }
     virtual bool save_replay_slot(i32, const std::string&) { return false; }
+    virtual const ReplayFile* replay_entry(i32) const { return nullptr; }
     virtual bool change_pause_option(i32, i32) { return false; }
     virtual i32 pause_option_value(i32) const { return 0; }
     virtual bool record_result_name(const std::string&) { return false; }

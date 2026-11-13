@@ -79,6 +79,17 @@ bool PauseMenu::close() {
            interrupt(state.snapshot_animation, 1);
 }
 
+bool PauseMenu::open_replay_slots() {
+    // 0043fd04: hide the Game Over menu tree while the replay overlay owns input.
+    if (!check(animations.pause(state.menu_animation, true), "Replay menu hide failed"))
+        return false;
+    state.replay_slot = 1;
+    state.replay_name.clear();
+    state.name_is_result = false;
+    state.select_phase(17);
+    return true;
+}
+
 bool PauseMenu::update(u32 pressed, u32 repeated) {
     if (!error.empty()) return false;
     auto& menu = state.menu;
@@ -102,10 +113,13 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
             if (state.screen == PauseScreen::ExtraEnd || state.screen == PauseScreen::BGameOver) {
                 // 440960 state19: title, replay, retry (shared by 0x17/0x18).
                 state.selected_action = menu.cursor == 0 ? 1 : menu.cursor == 1 ? 2 : 4;
-                if (menu.cursor != 1 && !close()) return false;
+                if (menu.cursor == 1) return open_replay_slots();
+                if (!close()) return false;
                 phase(16); return true;
             }
             state.selected_action = menu.cursor;
+            if (state.screen == PauseScreen::GameOver && menu.cursor == 2)
+                return open_replay_slots();
             if (menu.cursor == 0 || state.screen == PauseScreen::GameOver) {
                 if (menu.cursor != 2 && menu.cursor != 3 && !close()) return false;
                 phase(16);
@@ -177,8 +191,7 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
     case 16:  // 动画收场后执行所选动作
         if (age < 12) break;
         if (state.selected_action == 2) {
-            state.replay_slot = 1; state.replay_name.clear(); state.name_cursor = 90; state.name_is_result=false;
-            phase(17); break;
+            return open_replay_slots();
         }
         if (state.selected_action == 3) {
             state.option_row = 0; phase(19); break;
@@ -195,22 +208,33 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
         }
         state.select(PauseScreen::Inactive);
         break;
-    case 17: // 43e780 state9: select one of 25 replay slots.
+    case 17: { // 43e780 state9: select one of 25 replay slots.
         if (age <= 9) break;
+        const i32 previous_slot = state.replay_slot;
         if ((pressed | repeated) & 0x10) state.replay_slot = (state.replay_slot + 23) % 25 + 1;
         if ((pressed | repeated) & 0x20) state.replay_slot = state.replay_slot % 25 + 1;
-        if (pressed & 0x80001) { state.replay_name.clear(); state.name_cursor=90; phase(18); }
+        if (state.replay_slot != previous_slot && !host.sound(10)) return false;
+        if (pressed & 0x80001) {
+            if (!host.sound(7)) return false;
+            state.replay_name.clear(); state.name_cursor=0; phase(18);
+        }
         else if (pressed & 0x102) {
+            if (!host.sound(9)) return false;
             if (state.screen == PauseScreen::ExtraEnd ||
                 state.screen == PauseScreen::BGameOver ||
                 state.screen == PauseScreen::GameOver) {
-                if (!interrupt(state.menu_animation,3,true) || !configure_entries()) return false;
+                // 0043ff97: restore the same menu and its Save Replay selection.
+                if (!check(animations.pause(state.menu_animation, false), "Replay menu restore failed"))
+                    return false;
+                menu.select(state.screen == PauseScreen::GameOver ? 2 : 1);
+                if (!interrupt(state.menu_animation, 7 + menu.cursor)) return false;
                 phase(6); break;
             }
             if (!close()) return false;
             state.selected_action=1; phase(16);
         }
         break;
+    }
     case 18: { // Name entry, up to eight characters.
         if (age <= 9) break;
         constexpr i32 count = 91;
