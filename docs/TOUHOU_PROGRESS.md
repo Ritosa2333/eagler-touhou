@@ -84,11 +84,11 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 行为级验收与 Web 适配
 
-独立 C++／Wasm 核心：[AdingApkgg/thp](https://github.com/AdingApkgg/thp)，当前源码 [336a1ff0](https://github.com/AdingApkgg/thp/commit/336a1ff0f9fdd197eba3ff5d8e7f94f1e31c34b4)。以原作可观察行为对齐推进，内部缓存／调度／像素一致性保留为诊断，整作仍在进行中。
+独立 C++／Wasm 核心：[AdingApkgg/thp](https://github.com/AdingApkgg/thp)，测试站运行源码 [5c52c939](https://github.com/AdingApkgg/thp/commit/5c52c93910f919c5651d6db0cdde55f775b26fb2)。按原作可观察行为对齐推进，不要求内部状态或逐像素1:1；整作仍在进行中。
 
-灵梦 B Normal 当前版本六关完成 122,005 次 Player 回调并稳定进入录像结束菜单；所测玩法状态（含两组 RNG）、HUD、录像游标及完整成绩文件与原版相同。六种自机×四种普通难度的24个菜单／移动／射击／低速／暂停／Bomb功能用例通过；六种Extra入口亦通过，但使用明确的外部已解锁测试存档，不代表已验证普通通关解锁。六个Normal自机另完成实际离屏GPU短流程和Bomb生命周期检查。详见[范围与验收记录](https://github.com/AdingApkgg/thp/blob/main/docs/porting/TH14_BEHAVIOR_MATRIX_NOV13.md)。
+灵梦B Normal六关122,005回调的所测玩法／RNG／HUD／录像游标和成绩文件比较通过。六自机×四普通难度24个入口及操作用例、六Extra外部解锁存档用例、六Normal机体实际离屏GPU短流程已有有限证据，不能代替其他模式全程或自然通关解锁。另完成普通菜单配置／成绩跨启动、录像保存与原版播放病例；详见[行为验收范围](https://github.com/AdingApkgg/thp/blob/main/docs/porting/TH14_BEHAVIOR_ACCEPTANCE_NOV13.md)。
 
-[测试站点](https://wth.saop.cc/)已在TS Arch部署336a1ff0，Wasm `e7492a19…`；39个公网完整运行文件均匹配清单，线程隔离响应头通过。实际浏览器UI验收尚未完成，不能以HTTP检查代替。其他完整机体／难度录像、普通流程与保存、全部音画及发布入口的缺失覆盖继续补齐，不将上述有限通过记为整作完成。
+[测试站](https://wth.saop.cc/)在TS Arch部署5c52c939，Wasm `e4cb2ed3…`，39个公网完整运行文件及线程隔离响应头通过。实际浏览器保持音乐／音效0%，已验证同一持久化录像的信息读取、第一关播放至结束（分数4370）、进度条回起点和0.5×播放后暂停；共享内存文本解码错误已修复。跨关、六档倍率及退出等另有真实C++线程本地集成证据，尚未全部在浏览器操作复验。普通完整通关／解锁、其他完整模式、剩余音画与录像卡片自机名称等缺口继续补齐。详见[浏览器录像记录](https://github.com/AdingApkgg/thp/blob/main/docs/porting/TH14_NATIVE_VIEWER_NOV13.md)。
 
 ## [th15] 東方紺珠伝 v1.00b
 

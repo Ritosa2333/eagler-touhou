@@ -97,6 +97,9 @@ const allowed=new Set([...STATIC_FRONTEND_PACKAGE_FILES,'bootstrap/index.html','
 for(const path of publicFiles) assert.ok(allowed.has(path),`undeclared public source ${path}`);
 assert.equal(new Set(PRIVATE_FRONTEND_ASSETS.map(asset => asset.target)).size, PRIVATE_FRONTEND_ASSETS.length,
   "private frontend publication targets must be unique");
+const th09Portraits = PRIVATE_FRONTEND_ASSETS.filter(asset => asset.target.startsWith('assets/th09-portraits/'));
+assert.deepEqual(th09Portraits.map(asset => asset.target), Array.from({length: 16}, (_, id) => `assets/th09-portraits/${id}.webp`));
+assert.ok(th09Portraits.every(asset => !APP_SHELL_FILES.includes(asset.target)), 'character portraits load on demand');
 for (const asset of PRIVATE_FRONTEND_ASSETS) {
   assert.match(asset.source, /^private-assets\/[a-z0-9][a-z0-9._/-]*$/,
     "private frontend sources must stay inside the ignored private-assets directory");

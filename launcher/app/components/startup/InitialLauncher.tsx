@@ -1,11 +1,12 @@
 import { MainSelect } from '../launcher/MainSelect';
-import { useLocation } from 'react-router';
+import { useHref, useLocation } from 'react-router';
 import { lazy, Suspense, useRef, type ReactNode } from 'react';
 import { PRODUCT_IDS, productEnabledForBuild } from '../../../src/contracts/product-catalog.mts';
 import { LocaleProvider, useLocale, translate } from '../../i18n';
 import { LibrarySurface } from '../launcher/LibrarySurface';
 import { LobbySurface } from '../launcher/LobbySurface';
 import { LauncherMasthead } from '../launcher/LauncherMasthead';
+import { ProfileLoading } from '../launcher/ProfileLoading';
 import { createLibraryProducts } from '../launcher/products';
 import { LobbyRoomTools } from '../directory/LobbyRoomTools';
 import {
@@ -17,6 +18,7 @@ import {
   type UiLocale,
 } from '../../../src/launcher/i18n.mts';
 import { accountsEnabled } from '../../release-features';
+import { TH09_RATINGS_DOCUMENT } from '../../../lib/frontend-static-manifest.mjs';
 
 const AccountPage = lazy(() => import('../launcher/AccountPage').then(module => ({default:module.AccountPage})));
 const ProfilePage = lazy(() => import('../launcher/ProfilePreview').then(module => ({default:module.ProfilePage})));
@@ -48,14 +50,16 @@ export function InitialLauncher() {
 
 function InitialSurface({ lobby, profile, account }: { lobby: boolean; profile: boolean; account: boolean }) {
   const { locale, t } = useLocale();
+  const base = useHref('/');
+  const mastheadUrl = profile ? (path: string) => `${base.replace(/\/$/,'')}/${path.replace(/^\.\//,'')}` : assetUrl;
   const masthead = (
     <LauncherMasthead
       interactive={false}
       variant={lobby ? 'lobby' : 'library'}
-      assetUrl={assetUrl}
-      launcherHref={localeHome(locale)}
-      faqHref={withUiLanguage('faq.html', locale)}
-      aboutHref={withUiLanguage('about.html', locale)}
+      assetUrl={mastheadUrl}
+      launcherHref={mastheadUrl(localeHome(locale))}
+      faqHref={withUiLanguage(mastheadUrl('faq.html'), locale)}
+      aboutHref={withUiLanguage(mastheadUrl('about.html'), locale)}
       menuOpen={false}
       onMenuOpenChange={inactive}
       lessMotion={false}
@@ -90,7 +94,7 @@ function InitialSurface({ lobby, profile, account }: { lobby: boolean; profile: 
   ) : profile ? (
     <>
       {masthead}
-      <Suspense fallback={<main className="player-profile" aria-busy="true"/>}><ProfilePage /></Suspense>
+      <Suspense fallback={<ProfileLoading/>}><ProfilePage /></Suspense>
     </>
   ) : lobby ? (
     <LobbySurface
@@ -100,6 +104,7 @@ function InitialSurface({ lobby, profile, account }: { lobby: boolean; profile: 
       onSelect={inactive}
       onActivate={inactive}
       guideHref={null}
+      rankingsHref={base + TH09_RATINGS_DOCUMENT.file}
       onNetwork={inactive}
       roomTools={<LobbyRoomTools disabled />}
       roomList={null}

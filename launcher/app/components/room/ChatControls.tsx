@@ -14,6 +14,7 @@ import type { DecisionStore } from '../../models/decisions';
 import { useLocale } from '../../i18n';
 import { shallowEqual, useStoreSelector } from '../../shared/react-store';
 import { accountsEnabled } from '../../release-features';
+import { useAccountSession } from '../../services/account-session';
 import './chat-controls.css';
 import {ParticipantAvatar} from './ParticipantAvatar';
 import {withUiLanguage} from '../../../src/launcher/i18n.mts';
@@ -24,6 +25,7 @@ export function ChatComposer({ model, gameplay = false, openOnClick = false }: {
   openOnClick?: boolean;
 }) {
   const { t, locale } = useLocale();
+  const { state: account } = useAccountSession(accountsEnabled);
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot),
     context = state.context;
   const enabled = !!context?.connected && (context.localSeat != null || context.localSpectator === true);
@@ -32,7 +34,7 @@ export function ChatComposer({ model, gameplay = false, openOnClick = false }: {
   const canSend = state.registered && enabled && !banned;
   const placeholder =
     !state.registered
-      ? t('chat.signInToChat')
+      ? t(account.status === 'guest' ? 'chat.signInToChat' : 'chat.roomChatUnavailable')
       : state.bannedUntil === -1
       ? t('chat.permanentlyBanned')
       : banned

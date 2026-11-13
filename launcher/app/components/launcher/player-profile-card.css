@@ -1,0 +1,47 @@
+.player-profile-card{overflow:hidden;border:1px solid var(--kit-border);border-radius:10px;background:var(--kit-card);color:var(--kit-foreground)}
+.player-profile-popover.ui-menu{width:min(328px,calc(100vw - 24px));padding:0;border:0;background:transparent}
+.player-profile-card-body{padding:0 14px 10px}
+.player-profile-card-identity{
+  position:relative;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:9px;
+  min-height:70px;
+  padding:12px 14px;
+  overflow:hidden;
+}
+.player-profile-card-cover{
+  position:absolute;
+  inset:0 0 auto auto;
+  width:min(100%,210px);
+  pointer-events:none;
+  mask-image:linear-gradient(to right,transparent,#000 46%);
+}
+.player-profile-card-identity::after{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(to right,var(--kit-card) 20%,color-mix(in srgb,var(--kit-card) 66%,transparent) 62%,transparent);
+  pointer-events:none;
+  content:'';
+}
+.player-profile-card-identity>.account-avatar,.player-profile-card-name{position:relative;z-index:1}
+.player-profile-card-identity>.account-avatar{--account-avatar-size:44px;--account-avatar-radius:10px}
+.player-profile-card-name{min-width:0}
+.player-profile-card-name :is(h3,span){overflow-wrap:anywhere}
+.player-profile-card-name h3{margin:0;font-size:16px;line-height:1.35}
+.player-profile-card-name>span{display:block;margin-top:1px;color:var(--kit-muted-foreground);font-size:11px}
+.player-profile-card-scores{padding-top:8px;border-top:1px solid var(--kit-border);font-size:12px;font-variant-numeric:tabular-nums}
+.player-profile-card-total,.player-profile-card-characters li{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:26px}
+.player-profile-card-total>img{border-radius:4px}
+.player-profile-card-total h4{margin:0;font-size:13px;font-weight:600}
+.player-profile-card-total small{margin-left:4px;color:var(--kit-muted-foreground);font-size:10px}
+.player-profile-card-total strong{font-size:16px}
+.player-profile-card-characters{display:grid;gap:1px;margin:4px 0 0 11px;padding:0 0 0 9px;border-inline-start:1px solid var(--kit-border);list-style:none}
+.player-profile-card-characters li{grid-template-columns:20px minmax(0,1fr) auto;color:var(--kit-muted-foreground)}
+.player-profile-card-characters li>span{grid-column:2}
+.player-profile-card-characters li>strong{color:var(--kit-foreground)}
+.player-profile-card-characters .th09-character-portrait{position:static;width:20px;height:20px;object-fit:contain}
+.player-profile-card footer{display:flex;justify-content:flex-end;margin-top:4px}
+.settings-artwork>.player-profile-card{margin-bottom:10px}
+.player-card-avatar-button{display:inline-flex;flex:none;border:0;padding:0;border-radius:inherit;background:none;color:inherit;cursor:pointer}

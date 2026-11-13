@@ -23,6 +23,8 @@ import { useCompactNavigation } from '../../navigation/navigation-motion';
 import { useSurfaceLayerState } from '../../navigation/surface-layer';
 import { AppLink } from './AppLink';
 import { BookThemeToggle } from './BookThemeToggle';
+import type { BackgroundSurface } from './CustomBackground';
+import { isTh09RatingPage } from '../documents/catalog';
 import { MastheadOverview, type MastheadSiteLink } from './MastheadOverview';
 import { useLocation } from 'react-router';
 import { AccountMenu } from './AccountMenu';
@@ -64,8 +66,12 @@ export interface LauncherMastheadProps {
 
 export function LauncherMasthead(props: LauncherMastheadProps) {
   const { t, locale } = useLocale();
-  const profileOpen = /^(?:\/(?:profile|login)\.html|\/u\/[^/]+)\/?$/.test(useLocation().pathname);
+  const { pathname } = useLocation();
+  const profileOpen = /^(?:\/(?:profile|login)\.html|\/u\/[^/]+)\/?$/.test(pathname);
   const { variant, menuOpen, onMenuOpenChange, interactive = true } = props;
+  const themeSurfaces: readonly BackgroundSurface[] | undefined = variant === 'help'
+    ? isTh09RatingPage(pathname) ? ['navigation', 'panel'] : ['navigation']
+    : undefined;
   const currentPage = profileOpen || props.replayActive || variant === 'help' ? undefined : variant;
   const compact = useCompactNavigation();
   const [overviewOpen, setOverviewOpen] = useSurfaceLayerState<boolean>('masthead-overview', false);
@@ -215,11 +221,11 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
             </Button>
           </MastheadTooltip>
         )}
-        <BookThemeToggle interactive={interactive} tooltip />
+        <BookThemeToggle interactive={interactive} surfaces={themeSurfaces} tooltip />
         {!compact && <div hidden ref={language}>
           {props.languageControl}
         </div>}
-        {compact ? <MastheadOverview host={props} open={interactive && overviewOpen} onOpenChange={setOverviewOpen} trigger={menuTrigger} lobbyHref={lobbyHref} currentPage={currentPage} helpLinks={helpLinks} statusLink={statusLink} aboutLinks={aboutLinks} testFeatures={testFeatures}/> : <DropdownMenu.Root
+        {compact ? <MastheadOverview host={props} open={interactive && overviewOpen} onOpenChange={setOverviewOpen} trigger={menuTrigger} lobbyHref={lobbyHref} currentPage={currentPage} helpLinks={helpLinks} statusLink={statusLink} aboutLinks={aboutLinks} testFeatures={testFeatures} themeSurfaces={themeSurfaces}/> : <DropdownMenu.Root
           modal={false}
           open={interactive && menuOpen}
           onOpenChange={(open) => {

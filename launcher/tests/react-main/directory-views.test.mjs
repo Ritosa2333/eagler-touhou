@@ -315,7 +315,6 @@ for (const locale of ['zh-CN', 'en']) test(`Lobby real loading/live/empty/list c
   const doc = baselineDoc(locale);
   for (const selector of ['.lobby-intro']) {
     const intro = n(selector).cloneNode(true);
-    intro.querySelector('.lobby-survey-link')?.remove();
     assert.equal(intro.querySelector('h1').className,'visually-hidden');
     intro.querySelector('h1').removeAttribute('class');
     const guide = n('#lobbyGuideOpen', intro);
@@ -325,9 +324,7 @@ for (const locale of ['zh-CN', 'en']) test(`Lobby real loading/live/empty/list c
     n('#lobbyGuideOpen', doc).remove();
     assert.deepEqual(normalize(intro), normalize(n(selector, doc)), `Pinned DOM: ${selector}`);
   }
-  assert.ok(n('.lobby-support-links .lobby-survey-link').textContent.includes(t(locale,'lobby.surveyAction')));
-  assert.equal(n('.lobby-survey-link').getAttribute('href'),'https://v.wjx.cn/vm/QqmTdwh.aspx#');
-  assert.equal(n('.lobby-survey-link').getAttribute('target'),'_blank');
+  assert.equal(env.document.querySelector('.lobby-support-links a[href*="ratings.html"]'), null);
   assert.equal(env.document.querySelector('.book-room-view-toggle'),null);
   await click('#emptyAction'); await click('#createButton'); await click('#codeButton'); assert.deepEqual(opens, ['create', 'create', 'join']);
   assert.equal(n('#refreshRooms').getAttribute('aria-label'), t(locale, 'lobby.refresh'));
@@ -436,10 +433,14 @@ test('Lobby defaults to live ratings and shows no-rating games without a win-rat
       seats:[{initial:'R',online:true,profile:{username,th09:{games:26,wins:13}}},null],
     })));
     const props = {service:f.service,assetUrl,masthead:null,products:[],onSelect:()=>{},onActivate:()=>{},
-      guideHref:null,onNetwork:null,onOpenForm:()=>{}};
+      guideHref:null,rankingsHref:'/review/ratings.html',onNetwork:null,onOpenForm:()=>{}};
     const m = await mount(ownersAccounts.LobbyDirectoryView,props,{locale:'zh-CN',localeOwner:ownersAccounts});
     await React.act(async () => {await new Promise(resolve=>setTimeout(resolve,0));});
     assert.ok(requests.includes('/api/v1/th09/ratings'));
+    const rankings = n('.lobby-support-links a[href*="ratings.html"]');
+    assert.equal(rankings.getAttribute('href'), '/review/ratings.html?lang=zh-CN');
+    assert.equal(rankings.firstElementChild.textContent, '排行榜');
+    assert.equal(env.document.querySelector('.lobby-support-links .lobby-survey-link'), null);
     assert.deepEqual(all('.book-room-duel-summary[data-side="0"]').map(node=>node.textContent),['1438 (局数 26)','— (局数 26)']);
     await m.unmount();
     requests.length = 0;

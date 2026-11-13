@@ -24,7 +24,7 @@ test('All shipped demonstration replays retain full world state through the C++ 
  m.replace(0x42c970,'world-read',()=>{const bytes=source(m.string(m.reg('ECX'),128)),p=alloc(bytes.length);m.write(p,bytes);if(m.reg('EDX'))m.u32(m.reg('EDX'),bytes.length);return p;},1);
  const imports=m.onImport;m.onImport=e=>{if(e.name==='timeGetTime'){m.ret(1000,0);return;}imports(e);};
  for(const [a,n] of [[0x41a796,0],[0x41a8a2,0],[0x415910,0],[0x4217e0,0],[0x4307c0,0],[0x41cde0,0],[0x4316b0,0],[0x4304a0,0],[0x4343e0,0],[0x42b130,1],[0x42b160,1],[0x42fc20,1],[0x42fd90,1],[0x43be50,0],[0x43bdc0,0],[0x4346a0,4],[0x43e380,2],[0x43e2f0,2],[0x42fe20,1],[0x43bf30,1],[0x40e3d0,1]])m.replace(a,'world-platform',()=>0,n);
- m.replace(0x431930,'world-music',()=>{for(let n=0;n<19;++n)if(m.i32(0x4a21d0+n*16)===(arg(0)|0)){m.i32(0x4dc690,m.i32(0x4a21d8+n*16));break;}return 0;},1);m.replace(0x42fd30,'world-stop-music',()=>{return 0;});
+ m.replace(0x431930,'world-music',()=>{for(let n=0;n<19;++n)if(m.i32(0x4a21d0+n*16)===(arg(0)|0)){m.i32(0x4dc690,m.i32(0x4a21d8+n*16));break;}return 0;},2);m.replace(0x42fd30,'world-stop-music',()=>{return 0;});
  function compareAnimation(cpp,native,slot,label){const a=anms[slot]??{file:0,source:0,sprites:0},p=[0,1,2].map(i=>c.session_resource(f,slot,i));assert.deepEqual(normalizedAnm(memory(c,cpp,676),...p),normalizedAnm(m.bytes(native,676),a.file,a.source,a.sprites),label);}
  // The oracle uses a bump allocator; each independent world can reuse it.
  const heapBase=m.heap;

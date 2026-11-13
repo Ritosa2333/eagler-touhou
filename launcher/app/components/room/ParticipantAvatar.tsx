@@ -3,6 +3,7 @@ import type {RoomAccountProfile} from '../../../src/launcher/room-account-profil
 import {withUiLanguage} from '../../../src/launcher/i18n.mts';
 import {useLocale} from '../../i18n';
 import {accountsEnabled} from '../../release-features';
+import {PlayerAvatarCard} from '../launcher/PlayerProfileCard';
 import './participant-avatar.css';
 
 export function ParticipantAvatar({
@@ -15,10 +16,11 @@ export function ParticipantAvatar({
   const url = profile.avatar ? '/api/v1/profiles/' + username + '/avatar/' + profile.avatar : '';
   const label = t('room.viewProfile', {name: name || profile.username});
   const description = props['aria-label'] ? label + ' | ' + props['aria-label'] : label;
-  return <a {...props} className={className ? className + ' participant-avatar' : 'participant-avatar'} data-registered="true"
+  return <PlayerAvatarCard username={profile.username} name={name || profile.username} avatar={url || undefined}>
+  <a {...props} className={className ? className + ' participant-avatar' : 'participant-avatar'} data-registered="true"
     href={withUiLanguage('/u/' + username, locale)} target="_blank" rel="noopener"
     aria-label={description} title={label}>
     {url && failed !== url ? <img className="participant-avatar-image" src={url} alt="" loading="lazy" decoding="async"
       width={64} height={64} onError={() => setFailed(url)}/> : children}
-  </a>;
+  </a></PlayerAvatarCard>;
 }

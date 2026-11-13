@@ -14,7 +14,7 @@ test('All original dialogue resources, text, portrait control and victory select
     m.replace(0x436f30,'dialogue-animation-update',()=>{event(2,index(arg(0)));m.i32(arg(0)+0x100,m.i32(arg(0)+0x100)+1);return 0;},1);
     for(const [fn,right] of [[0x43a950,0],[0x43aa50,1]])m.replace(fn,'dialogue-animation-draw',()=>{event(3,index(arg(0)),right);return 0;},1);
     m.replace(0x43bdc0,'dialogue-text',()=>{const a=[];for(let p=arg(4),n=0;n<512;++p,++n){const ch=m.bytes(p,1)[0];if(!ch)break;a.push(ch);}event(4,index(arg(1)),arg(2),arg(3),a.length);texts.push(...a,0);++lines;return 0;});
-    m.replace(0x431930,'dialogue-music',()=>{event(5,arg(0));return 0;},1);m.replace(0x42fd30,'dialogue-stop-music',()=>{event(5,-1);return 0;});
+    m.replace(0x431930,'dialogue-music',()=>{event(5,arg(0));return 0;},2);m.replace(0x42fd30,'dialogue-stop-music',()=>{event(5,-1);return 0;});
     m.replace(0x42fe20,'dialogue-music-fade',()=>{event(6);return 0;},1);m.replace(0x415e50,'dialogue-results',()=>{event(7);return 0;});
     m.replace(0x422d20,'dialogue-transition',()=>{assert.equal(m.reg('ECX'),5);assert.equal(m.reg('EDX'),300);assert.deepEqual(Array.from({length:5},(_,i)=>arg(i)),[0xffffff,0,0,35,2]);event(9);return 0;},5);
     m.replace(0x403c20,'dialogue-enter-player',()=>{const s=players.indexOf(m.reg('ECX'));assert.equal(arg(0),1);event(10,s);return 0;},1);
