@@ -43,6 +43,7 @@ const boardSchema = z.object({
       nickname: z.string().min(1),
       avatar: z.string().max(11_000).regex(/^(?:data:image\/(?:webp|jpeg);base64,[A-Za-z0-9+/]+={0,2}|\/api\/v1\/profiles\/[A-Za-z0-9._]{3,12}\/avatar\/[a-f0-9]{16})$/).optional(),
     }).optional(),
+    top_characters: z.array(z.object({character:count.max(15),games:count.positive()})).max(3).optional(),
     character_ratings: z.array(th09CharacterRating).max(16).optional(),
   })),
 });
@@ -404,7 +405,7 @@ function PlayerIdentity({row}: {row: Entry}) {
   const query = new URLSearchParams({lang: locale});
   if (row.characterScore) query.set('character', String(row.characterScore.character));
   return <span className="rating-player">
-    <PlayerAvatarCard username={profile.username} name={profile.nickname} avatar={profile.avatar}>
+    <PlayerAvatarCard username={profile.username} name={profile.nickname} avatar={profile.avatar} boardRating={row}>
       <button type="button" className="player-card-avatar-button" aria-label={profile.nickname}><AccountAvatar src={profile.avatar} loading="lazy"/></button>
     </PlayerAvatarCard>
     <Link className="rating-player-name" to={`/u/${encodeURIComponent(profile.username)}?${query}`}
