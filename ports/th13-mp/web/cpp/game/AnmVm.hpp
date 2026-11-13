@@ -38,6 +38,7 @@ class AnmVm {
 public:
     // One-based owner of a shot or shooting effect. Zero is unowned.
     u8 shot_effect_owner = 0;
+    bool hide_hit_projectile = false;
     inline static u64 presentation_counter=0;
     u64 presentation_generation=++presentation_counter;bool presentation_motion=false;u32 presentation_part=0;
     AnmVariables variables;AnmVisualState visual;AnmInterpolators interpolators;Timer timer,age;i32 instruction_offset=-1;bool visible=false;std::string error;

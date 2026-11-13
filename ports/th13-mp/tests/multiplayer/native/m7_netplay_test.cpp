@@ -4,7 +4,7 @@
 // + common netplay 栈——零测试分支）：
 //   - SessionSetup：Words 编解码 / valid 域校验（难度 0..5、角色 0..3
 //     允许重复、2..3 席、session_id 非零、构建身份非零）/ GameplayAbi
-//     （'TH13' + 线格式 + RULES v2 + 构建身份的 FNV-1a 32）；
+//     （'TH13' + 线格式 + 规则版本 + 构建身份的 FNV-1a 32）；
 //   - InputLanes：C=0xa00 键盘位归一化（0x200 剥离、0x800 保留）、
 //     未知位拒绝、Decode 往返；
 //   - NetplayRuntime：RollbackCore 纯延迟窗（allowPrediction=false）、

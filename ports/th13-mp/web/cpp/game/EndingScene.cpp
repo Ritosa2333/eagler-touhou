@@ -40,8 +40,10 @@ i32 ending_index_for(const SessionState& progress, const EndingSaveBytes& save) 
     return index;
 }
 
-EndingScene::EndingScene(SessionState& progress, EndingPlatform& platform)
-    : progress_(progress), platform_(platform) {}
+EndingScene::EndingScene(SessionState& progress, EndingPlatform& platform,
+                         bool allow_first_view_fast_forward)
+    : progress_(progress), platform_(platform),
+      allow_first_view_fast_forward_(allow_first_view_fast_forward) {}
 
 void EndingScene::interp_set(Interp& it, i32 param) {
     // 0x4016c0（fild 实证：int→float 转换，非位重解释）。
@@ -104,8 +106,11 @@ bool EndingScene::initialize() {
     ending_index_ = ending_index_for(progress_, *save);
     // scene+0x20：bit0 = 该结局首见（save[idx+0x1b26a]==0）、bit1 = 好结局
     // 全未见过（save[0x1b276]==0）——op5/6 的跳过许可门与 0x416610 节拍消费。
-    if (save->read(ending_index_) == 0) scene_flags_ |= 1u;
-    if (save->read(0x1b276 - kEndingByteBase) == 0) scene_flags_ |= 2u;
+    // MP does not persist ending history, so it allows fast-forward on first viewing.
+    if (!allow_first_view_fast_forward_) {
+        if (save->read(ending_index_) == 0) scene_flags_ |= 1u;
+        if (save->read(0x1b276 - kEndingByteBase) == 0) scene_flags_ |= 2u;
+    }
     // save[idx+0x1b26a] |= 1；难度>0 → |= 0x10；idx<8 → save[0x1b276]=1。
     {
         const u8 seen = u8(save->read(ending_index_) | 1);

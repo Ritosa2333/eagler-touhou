@@ -15,7 +15,7 @@ namespace th13::multiplayer {
 #include "WorldDigestValues.hpp"
 namespace th13::multiplayer {
 void DigestSink::vm(const AnmVm& v) {
-    digest_value(*this,std::tie(v.shot_effect_owner,v.presentation_motion,v.presentation_part,
+    digest_value(*this,std::tie(v.shot_effect_owner,v.hide_hit_projectile,v.presentation_motion,v.presentation_part,
         v.variables,v.visual,v.interpolators,v.timer,v.age,v.instruction_offset,v.visible,
         v.pending_interrupt,v.geometry,v.slowdown,v.source_script,v.ordering,v.saved_offset,v.saved_timer));
     tag("anm.bindings");

@@ -10,7 +10,8 @@ using namespace th13;
 using namespace th13test;
 
 namespace {
-bool boot(sdl::ApplicationState& app, const char* name) {
+bool boot(sdl::ApplicationState& app, const char* name, i32 seats = 3,
+          std::array<i32, 3> characters = {0, 1, 3}) {
     multiplayer::session.Stop();
     const char* assets = std::getenv("TH13_NATIVE_ASSET_ROOT");
     const char* root = std::getenv("TH13_NATIVE_REPO_ROOT");
@@ -20,7 +21,8 @@ bool boot(sdl::ApplicationState& app, const char* name) {
             std::string(root) + "/games/th13/thbgmogg.dat") || !app.initialize(false))
         return false;
     app.progress.difficulty = 3;
-    if (!app.configure_multiplayer(3, {0, 1, 3}, 0) || !app.start_game(1)) return false;
+    app.progress.character = characters[0];
+    if (!app.configure_multiplayer(seats, characters, 0) || !app.start_game(1)) return false;
     app.pending_destination = -1;
     app.frames = 0;
     app.game_random.reseed_restore(1234);
@@ -126,6 +128,79 @@ TEST(stage_clear_revives_remote_inflight_last_death) {
     cross_stage(1, false, "stage-clear-remote-dying.bin");
     cross_stage(1, false, "stage-clear-remote-reward.bin", true);
     cross_stage(0, false, "stage-clear-first-reward.bin", true);
+}
+
+TEST(marisa_beams_stop_after_stage_clear_reuses_shot_generations) {
+    struct Dialogue final : StageDialogHost {
+        bool active = false;
+        void open_dialog(i32) override {}
+        bool dialog_active() const override { return active; }
+    };
+    for (i32 count : {2, 3}) {
+        Dialogue dialogue;
+        sdl::ApplicationState app;
+        CHECK(boot(app, "stage-clear-marisa.bin", count, {1, 1, 1}));
+        if (!app.run) return;
+        GameInput input;
+        const auto step = [&](u32 held) {
+            input.update(held);
+            for (i32 seat = 1; seat < count; ++seat)
+                app.run->battle.seat_inputs[size_t(seat)].update(held);
+            return app.update(input, false) && app.commit(60.f) && app.present();
+        };
+        const auto frames = [&](u32 held, i32 count) {
+            for (i32 frame = 0; frame < count; ++frame)
+                if (!step(held)) return false;
+            return true;
+        };
+        const auto set_power = [&] {
+            for (i32 seat = 0; seat < count; ++seat)
+                app.run->battle.seat_huds[size_t(seat)].power = 400;
+        };
+        const auto beam_vms = [&](i32 script) {
+            i32 total = 0;
+            for (u32 i = 0; const u32 handle = app.animations.registry.ordered_handle(false, i); ++i) {
+                const auto* vm = app.animations.registry.find(handle);
+                if (vm && vm->shot_effect_owner && vm->source_script == script) ++total;
+            }
+            return total;
+        };
+        const auto shots = [&] {
+            i32 total = 0;
+            for (i32 seat = 0; seat < count; ++seat)
+                for (const auto& shot : app.run->battle.seats[size_t(seat)].shots)
+                    if (shot.behavior == 2) ++total;
+            return total;
+        };
+        set_power();
+        CHECK(frames(0, 40));
+        CHECK(frames(1, 60));
+        CHECK_EQ(beam_vms(13), 4 * count);
+        CHECK(frames(9, 30));
+        CHECK_EQ(beam_vms(13), 0);
+
+        app.progress.stage = 2;
+        CHECK(app.prepare_next_stage());
+        const bool activated = app.activate_next_stage();
+        CHECK(activated);
+        if (!activated) return;
+        auto& battle = app.run->battle;
+        battle.sim.dialog_host = &dialogue;
+        CHECK(frames(0, 40));
+        for (i32 cycle = 0; cycle < 3; ++cycle) {
+            set_power();
+            // Keep stage hazards from interrupting the scripted firing cycles.
+            for (i32 seat = 0; seat < count; ++seat)
+                battle.seats[size_t(seat)].invulnerable = 180;
+            CHECK(frames(1, 60));
+            CHECK_EQ(beam_vms(13), 4 * count);
+            dialogue.active = cycle == 2;
+            CHECK(frames(cycle == 0 ? 9 : cycle == 1 ? 0 : 1, 40));
+            CHECK_EQ(beam_vms(13), 0);
+            CHECK_EQ(beam_vms(14), 0);
+            CHECK_EQ(shots(), 0);
+        }
+    }
 }
 
 int __attribute__((weak)) main() { return run_all("MP stage-clear carry"); }

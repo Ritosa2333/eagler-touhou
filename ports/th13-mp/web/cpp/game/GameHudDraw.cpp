@@ -157,9 +157,7 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
             style.font = 2;
             style.alignment = 2;
             style.color = opacity | 0x00ffffffu;
-            const i32 threshold_index = seat == 0 ? progress.life_piece_threshold_index
-                                                  : seat_player->life_piece_threshold_index;
-            const i32 life_threshold = life_piece_threshold(threshold_index);
+            const i32 life_threshold = life_piece_threshold(seat_player->life_piece_threshold_index);
             if (life_threshold >= 999999) {
                 style.alignment = 2;
                 if (!text(628, row + 17, "---/---")) return false;

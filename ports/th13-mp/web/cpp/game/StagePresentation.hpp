@@ -118,6 +118,7 @@ public:
     void prepare_player_opacity();
     void release_stage();
     void release();  // 场景卸载：销毁敌机子树（外部 VM 归还 registry 外部表）
+    void release_player_shots();
     // M6 快照：表现层手账的值快照（与 AnmRegistry::SnapshotData 同批次
     // 消费）。手账是「权威态 → 表现层」的句柄映射与自有 VM 值：
     //   * registry 句柄（shot_handles_/spirit_handles_/option 树/特效/

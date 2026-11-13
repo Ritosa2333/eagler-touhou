@@ -4,7 +4,7 @@
 //   - update_trance_mp（R-T8 Manual 请求逐席仲裁：席位升序第一个有效者）；
 //   - commit_death 的 DeathProtection owner 记录（R-T5/R-T9）；
 //   - end_trance owner 定向死亡（R-T5：owner 死一次，队友不进死亡演出）；
-//   - seat_bomb_allowed（R-T2：owner 拒 Bomb、队友可用）；
+//   - Bomb 入口（R-T2：灵界期间全员禁雷）；
 //   - 槽消耗全场一次（R-T3：step_mp 每帧恰一次）。
 //
 // 固定 case 映射（workflow-cases.json m4.*）：
@@ -15,7 +15,7 @@
 //   simultaneous_requests          → 同帧多席 C 请求仲裁（席位升序）
 //   deathbomb_manual_c             → 决死窗内 C 开启记 Manual（结束 -200 不死）
 //   generation_respawn_pause_stage → owner 重生/暂停/跨关不清新代灵界
-//   peer_bomb_policy               → 灵界期间队友 Bomb 许可
+//   peer_bomb_policy               → 灵界期间全席禁雷、结束后恢复
 #include "../../ecl/ecl_test_fixtures.hpp"
 #include "game/StageBattle.hpp"
 #include "multiplayer/WorldState.hpp"
@@ -297,50 +297,74 @@ TEST(simultaneous_requests) {
     CHECK_EQ(triple2.battle.trance_owner_seat, 1);  // 跳过 Bomb 席
 }
 
-// ---- peer_bomb_policy：灵界期间队友 Bomb 许可 ----
+// ---- peer_bomb_policy：主动和保护灵界期间全员禁雷 ----
 TEST(peer_bomb_policy) {
-    // 分类查询单元：owner 拒、队友可用（R-T2）。
-    {
-        Fixture dual;
-        CHECK(dual.init());
-        dual.enable(2, {0, 0, 0});
-        dual.battle.trance_mode = StageBattle::TranceMode::Manual;
-        dual.battle.trance_owner_seat = 0;
-        // 模拟已激活（backing 位）。
-        dual.progress.run_mode_flags |= 0x100u;
-        CHECK(!dual.battle.seat_bomb_allowed(0));  // owner 拒
-        CHECK(dual.battle.seat_bomb_allowed(1));   // 队友可用
-        CHECK(dual.battle.seat_bomb_allowed(2));
-        dual.battle.trance_owner_seat = 1;
-        CHECK(dual.battle.seat_bomb_allowed(0));
-        CHECK(!dual.battle.seat_bomb_allowed(1));
-    }
-    // 行为面：灵界期间队友按 X 扣 Bomb（owner 不扣）。
-    {
-        Fixture dual;
-        CHECK(dual.init());
-        dual.enable(2, {0, 0, 0});
-        dual.arm_trance();
-        GameInput trigger;
-        trigger.update(kCKey);
-        CHECK(dual.battle.step(trigger));
-        CHECK(dual.battle.team_trance_active());
-        const i32 bombs0 = dual.battle.seat_huds[0].bombs;
-        const i32 bombs1 = dual.battle.seat_huds[1].bombs;
-        // seat 1 按 X（Bomb 键 0x02）若干帧：bombs 递减（队友可用）。
-        GameInput none;
-        for (int frame = 0; frame < 3; ++frame) {
-            dual.battle.seat_inputs[1].update(0x02);
-            CHECK(dual.battle.step(none));
+    constexpr u32 kBombKey = 0x02;
+    using Mode = StageBattle::TranceMode;
+    using Phase = StagePlayerState::Phase;
+    for (const Mode mode : {Mode::Manual, Mode::DeathProtection}) {
+        Fixture triple;
+        CHECK(triple.init());
+        triple.enable(3, {0, 0, 0});
+        triple.arm_trance();
+
+        GameInput host;
+        const auto step = [&](u32 seat0, u32 seat1, u32 seat2) {
+            host.update(seat0);
+            triple.battle.seat_inputs[1].update(seat1);
+            triple.battle.seat_inputs[2].update(seat2);
+            CHECK(triple.battle.step(host));
+        };
+        std::array<i32, 3> stock{};
+        for (size_t seat = 0; seat < stock.size(); ++seat)
+            stock[seat] = triple.battle.seat_huds[seat].bombs;
+        const auto check_no_bombs = [&] {
+            for (size_t seat = 0; seat < stock.size(); ++seat) {
+                CHECK_EQ(triple.battle.seat_huds[seat].bombs, stock[seat]);
+                CHECK_EQ(triple.battle.seats[seat].bomb_timer, 0);
+            }
+            CHECK(!triple.battle.sim.bomb_active);
+        };
+
+        separate_seats(triple, 1);
+        auto bullet = bullet_at(-120, 400);
+        triple.battle.sim.bullet_player_collision(bullet);
+        CHECK_EQ(triple.battle.seats[1].phase, Phase::Deathbomb);
+        if (mode == Mode::Manual) {
+            // 同帧 C 先于 X；发动者在决死窗内也不能扔雷。
+            step(kBombKey, kCKey | kBombKey, kBombKey);
+        } else {
+            for (i32 frame = 0; frame < 20 && !triple.battle.team_trance_active(); ++frame)
+                step(0, 0, 0);
         }
-        CHECK_EQ(dual.battle.seat_huds[1].bombs, bombs1 - 1);  // 队友扣 1
-        // owner（seat 0）按 X：不扣（灵界拒 Bomb）。
-        for (int frame = 0; frame < 3; ++frame) {
-            GameInput owner_x;
-            owner_x.update(0x02);
-            CHECK(dual.battle.step(owner_x));
+        CHECK(triple.battle.team_trance_active());
+        CHECK_EQ(triple.battle.trance_mode, mode);
+        CHECK_EQ(triple.battle.trance_owner_seat, 1);
+        check_no_bombs();
+        step(0, 0, 0);
+        step(kBombKey, kBombKey, kBombKey);
+        check_no_bombs();
+
+        for (i32 frame = 0; frame < 20 && triple.battle.seats[1].phase == Phase::Deathbomb; ++frame)
+            step(0, 0, 0);
+        CHECK_EQ(triple.battle.seats[1].phase, Phase::Active);
+        // 走正常的槽耗尽路径，再验证每个恢复可操作的席位能发动 Bomb。
+        triple.progress.ending_points = 1;
+        step(0, 0, 0);
+        CHECK(!triple.battle.team_trance_active());
+        if (mode == Mode::DeathProtection) {
+            CHECK_EQ(triple.battle.seats[1].phase, Phase::Dying);
+            for (i32 frame = 0; frame < 110; ++frame) step(0, 0, 0);
         }
-        CHECK_EQ(dual.battle.seat_huds[0].bombs, bombs0);  // owner 不扣
+        for (size_t seat = 0; seat < stock.size(); ++seat) {
+            CHECK_EQ(triple.battle.seats[seat].phase, Phase::Active);
+            stock[seat] = triple.battle.seat_huds[seat].bombs;
+        }
+        step(kBombKey, kBombKey, kBombKey);
+        for (size_t seat = 0; seat < stock.size(); ++seat) {
+            CHECK_EQ(triple.battle.seat_huds[seat].bombs, stock[seat] - 1);
+            CHECK(triple.battle.seats[seat].bomb_timer > 0);
+        }
     }
 }
 
