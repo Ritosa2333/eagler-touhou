@@ -67,7 +67,8 @@ def main():
     flags += ['-I' + str(imgui), '-I' + str(shared), '-DIMGUI_DISABLE_WIN32_FUNCTIONS']
     tracked = set(source for source in sources if source.is_relative_to(repo))
     common_files = [*sorted(imgui.glob('*.h')), *sorted(imgui.glob('*.inl')), *sorted(imgui.glob('*.cpp')),
-                    *sorted((shared / 'eagler/thprac').glob('Practice*'))]
+                    *sorted((shared / 'eagler/thprac').glob('Practice*')),
+                    shared / 'eagler/input/DialogueGesture.hpp']
     common_bindings = {p.relative_to(common).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in common_files}
     for directory in (cpp, runtime / 'portable'):
         tracked.update(p for p in directory.rglob('*')
