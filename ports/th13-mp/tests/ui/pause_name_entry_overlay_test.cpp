@@ -25,6 +25,7 @@ struct NameEntryHost final : RunPausePlatform {
     bool restart_run() override { return true; }
     bool return_to_title() override { return true; }
     bool result_needs_name() const override { return true; }
+    bool can_save_replay() const override { return true; }
     bool record_result_name(const std::string&) override { ++record_calls; return true; }
     bool save_replay_slot(i32 slot, const std::string&) override {
         saved_slots.push_back(slot);
@@ -291,12 +292,56 @@ TEST(replay_save_name_entry_uses_slot_face) {
     harness.frame(1);                       // Z → phase 18（回放保存变体）
     CHECK_EQ(harness.pause->state.phase, 18);
     CHECK(!harness.pause->state.name_is_result);
+    harness.advance(10);
     harness.draw();
     GlyphSink sink;
     CHECK(harness.ascii.draw(0, sink));
     CHECK(find_glyph(sink, 102, 224) != nullptr);
     CHECK(find_glyph(sink, 112, 320) != nullptr);
-    CHECK(find_glyph(sink, 48, 64) == nullptr);  // 无 Score Ranking 头
+    CHECK(find_glyph(sink, 48, 224) != nullptr);  // selected replay slot
+}
+
+TEST(game_over_replay_save_switches_faces_and_restores_menu_on_cancel) {
+    OverlayHarness harness;
+    CHECK(harness.pause->open(PauseEntrance::GameOver));
+    harness.advance(24);
+    harness.frame(1);  // finish entering the high-score name
+    CHECK_EQ(harness.pause->state.phase, 6);
+    auto* menu = harness.manager.registry.find(harness.pause->state.menu_animation);
+    CHECK(menu != nullptr);
+    if (!menu) return;
+    menu->visual.flags |= 2u;
+    harness.frame(0x20);
+    harness.frame(0x20);
+    CHECK_EQ(harness.pause->state.menu.cursor, 2);
+    harness.frame(1);  // Save Replay
+    CHECK_EQ(harness.pause->state.phase, 17);
+    CHECK_EQ(menu->visual.flags & 2u, 0u);
+    harness.draw();
+    GlyphSink sink;
+    CHECK(harness.ascii.draw(0, sink));
+    CHECK(find_glyph(sink, 48, 64) != nullptr);
+    CHECK(find_glyph(sink, 48, 424) != nullptr);
+
+    harness.advance(10);
+    harness.frame(0x20);
+    CHECK_EQ(harness.pause->state.replay_slot, 2);
+    harness.frame(1);
+    CHECK_EQ(harness.pause->state.phase, 18);
+    CHECK_EQ(menu->visual.flags & 2u, 0u);
+    harness.advance(10);
+    harness.frame(1);  // enter A at the initial cursor
+    CHECK_EQ(harness.pause->state.replay_name, std::string("A"));
+    harness.pause->state.name_cursor = 90;
+    harness.frame(1);  // END saves and returns to slot selection
+    CHECK_EQ(harness.host.saved_slots, std::vector<i32>{2});
+    CHECK_EQ(harness.pause->state.phase, 17);
+    CHECK_EQ(menu->visual.flags & 2u, 0u);
+    harness.advance(10);
+    harness.frame(2);
+    CHECK_EQ(harness.pause->state.phase, 6);
+    CHECK_EQ(harness.pause->state.menu.cursor, 2);
+    CHECK_EQ(menu->visual.flags & 2u, 2u);
 }
 
 int main() { return th13test::run_all("暂停名前录入覆盖层"); }

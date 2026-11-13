@@ -39,6 +39,7 @@ class PauseMenu {
     bool child(i32, i32);
     bool navigate(u32, u32, i32);
     bool close();
+    bool open_replay_slots();
     bool configure_entries();
     i32 entry_script(i32) const;
 

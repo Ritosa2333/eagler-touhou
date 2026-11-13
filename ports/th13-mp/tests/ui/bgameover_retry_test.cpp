@@ -161,13 +161,16 @@ TEST(bgameover_retry_survives_escape_and_cursor_zero_returns_to_title) {
     harness.advance(13);
     CHECK_EQ(harness.pause->state.phase, 17);
     CHECK_EQ(harness.host.restarts, 0);
-    // 选槽界面 X 返回菜单；三项菜单重新配置后仍默认重试。
+    // 选槽界面 X 返回菜单：0x440fe0 取消支路经 0x44100f（0x4731d0 光标出栈，
+    // 与进入选槽时 0x440df6 的 0x473190 压栈成对）恢复“保存录像”项，再以
+    // 光标+7 发菜单中断（0x441014/0x441033），项数回 3（0x44101e）；
+    // 不重置为默认重试。
     harness.advance(10);
     harness.frame(0x102);
     CHECK_EQ(harness.pause->state.phase, 6);
-    CHECK_EQ(harness.pause->state.menu.cursor, 2);
-    // ↑↑ 到标题项并确认。
-    harness.frame(0x10);
+    CHECK_EQ(harness.pause->state.menu.count, 3);
+    CHECK_EQ(harness.pause->state.menu.cursor, 1);
+    // ↑ 到标题项并确认。
     harness.frame(0x10);
     CHECK_EQ(harness.pause->state.menu.cursor, 0);
     harness.frame(1);
