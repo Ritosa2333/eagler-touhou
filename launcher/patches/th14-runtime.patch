@@ -7453,10 +7453,9 @@ index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..41477b9709e504c8c92e7838d83a0484
 + };
 +}
 diff --git a/runtimes/th12/th12_web/sdl-runtime/shell.mjs b/runtimes/th12/th12_web/sdl-runtime/shell.mjs
-index e3d66641e600d1b3251caf778b96812d5bd03a70..a4ea40d76e983c38ef17a1ddd693910631742118 100644
 --- a/runtimes/th12/th12_web/sdl-runtime/shell.mjs
 +++ b/runtimes/th12/th12_web/sdl-runtime/shell.mjs
-@@ -6,13 +6,14 @@ import createModule from './th11-sdl.mjs';
+@@ -6,13 +6,14 @@
  import {scanCodes} from './keyboard.mjs';
  import {validateMotionReplay} from './motion-replay.mjs';
  import {runtimeEpochContract} from './runtime-epoch.mjs';
@@ -7472,7 +7471,7 @@ index e3d66641e600d1b3251caf778b96812d5bd03a70..a4ea40d76e983c38ef17a1ddd6939106
  let Module,core,app=0,launched=false,first=false,stopping=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true,musicMode='none';
  const keyboard=createBrowserKeyboard({
   accept:code=>!!scanCodes[code],
-@@ -30,6 +31,19 @@ async function callCore(name,...args){
+@@ -30,6 +31,19 @@
   const runtime=Module.th14AsyncRuntime??Module.th14WebGpuRuntime;return runtime?runtime.run(call):call();
  }
  const save=async()=>{if(launched&&!await callCore('th11_save_scores'))throw Error(coreError());return sync(false);};
@@ -7492,7 +7491,7 @@ index e3d66641e600d1b3251caf778b96812d5bd03a70..a4ea40d76e983c38ef17a1ddd6939106
  async function installResources(resources=[]){return installHostResources(Module,resources,{game,emit});}
  // The Launcher has already verified the ZIP identity. Match TH10's Runtime
  // manifest/path/size checks before exposing any file to the native game.
-@@ -37,23 +51,23 @@ let runtimePackFiles=[];
+@@ -37,23 +51,23 @@
  function assertRuntimePackManifest(manifest,pack){
   if(manifest?.schema!=='eagler-touhou/thcrap-static-pack/1'||manifest.game!==game||
      manifest.language!==pack.language||typeof manifest.runtimeVersion!=='string'||
@@ -7524,7 +7523,7 @@ index e3d66641e600d1b3251caf778b96812d5bd03a70..a4ea40d76e983c38ef17a1ddd6939106
    const declaration=expected.get(file.path);
    if(!declaration||file.bytes.length!==declaration.bytes)throw Error(file.path+': size mismatch');
    verified.push({path:file.path,bytes:file.bytes});
-@@ -67,6 +81,7 @@ async function installRuntimePack(pack){
+@@ -67,6 +81,7 @@
  }
  function apply(){applyTouchOptions(core,options);core.th11_music_enabled(+music);}
  async function resumeForegroundAudio(forcePause=false){
@@ -7532,7 +7531,7 @@ index e3d66641e600d1b3251caf778b96812d5bd03a70..a4ea40d76e983c38ef17a1ddd6939106
   if(!Module||!core||!launched||document.hidden)return false;
   if(forcePause)core.sdl_loop_pause(1);
   return resumeRuntimeAudio(Module,core,()=>!!core&&launched&&!document.hidden);
-@@ -79,7 +94,7 @@ async function closeAudio(){
+@@ -79,7 +94,7 @@
    try{core.th11_audio_close();}finally{if(borrowed)s.audioContext=context;}};
   const runtime=Module.th14AsyncRuntime??Module.th14WebGpuRuntime;if(runtime)await runtime.run(close);else close();
  }
@@ -7541,7 +7540,7 @@ index e3d66641e600d1b3251caf778b96812d5bd03a70..a4ea40d76e983c38ef17a1ddd6939106
  function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth11\//,'').replace(/^\//,'');if(!/^(?:scoreth11\.dat|th11\.cfg|replay\/th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(name))throw Error('存档路径无效');return name;}
  async function launch(){
   if(launched)return;clearKeyboard();
-@@ -92,15 +107,53 @@ async function launch(){
+@@ -92,20 +107,63 @@
   canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();core.th11_loop_start();
   emit('runtime-info',{renderer:Module.th14WebGpuRuntime?'SDL3 / WebGPU / C++':'SDL3 / WebGL2 / C++',architecture:protocol,version:runtimeBuild.version});
  }
@@ -7599,7 +7598,18 @@ index e3d66641e600d1b3251caf778b96812d5bd03a70..a4ea40d76e983c38ef17a1ddd6939106
   case 'sync':await save();return {};
   case 'list':{const files=[];for(const dir of ['','/replay'])for(const name of Module.FS.readdir('/savesth11'+dir)){const n=(dir+'/'+name).replace(/^\//,'');try{path(n);}catch{continue;}const s=Module.FS.stat('/savesth11/'+n);if(Module.FS.isFile(s.mode)){files.push({path:n,size:s.size});}}return {files};}
   case 'read':return {bytes:Array.from(Module.FS.readFile('/savesth11/'+path(m.path)))};
-@@ -125,14 +178,20 @@ window.addEventListener('message',event=>{
+  case 'write':{
+-  if(launched)throw Error('请先退出游戏');const target=path(m.path),bytes=new Uint8Array(m.bytes||[]);
++  const target=path(m.path),bytes=new Uint8Array(m.bytes||[]);
++  // TH14's replay browser initializes its viewer before offering import.
++  // A new replay file cannot replace the active reader's owned byte buffer.
++  const viewerImport=game==='th14'&&options.replayViewer===true&&target.startsWith('replay/');
++  if(launched&&!viewerImport)throw Error('请先退出游戏');
++  if(launched&&Module.FS.analyzePath('/savesth11/'+target).exists)throw Error('录像文件已存在，请使用其他文件名');
+   if(!bytes.length||bytes.length>64*1024*1024)throw Error('文件大小无效');
+   const p=core.malloc(bytes.length);if(!p)throw Error('文件导入内存不足');let valid=false;try{Module.HEAPU8.set(bytes,p);valid=!!await callCore('th11_validate_file',target==='scoreth11.dat'?0:target==='th11.cfg'?2:1,p,bytes.length);}finally{core.free(p);}
+   if(!valid)throw Error('文件不是有效的地灵殿存档或录像');
+@@ -125,14 +183,20 @@
   queue=queue.then(async()=>{if(await initialized===false)return;await dispatchCommand(m);}).catch(error);
  });
  document.addEventListener('visibilitychange',()=>{if(!core||!launched)return;clearKeyboard();cancelTouches();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(save).catch(error);}else void resumeForegroundAudio(true);});

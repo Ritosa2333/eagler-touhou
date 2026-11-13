@@ -1,0 +1,339 @@
+{
+  "parent": "5acb40c88bd04a589b7216bd9061761a4c7c3ed6",
+  "path": "launcher/patches/th14-runtime.patch",
+  "beforeBlob": "2530ec510f1c1f9fd5b086de4cd516f4e96e8774",
+  "baseCore": "5eb4ac87d227027f390fa006e1126a094b820860",
+  "changedSource": "runtimes/th12/th12_web/sdl-runtime/shell.mjs",
+  "beforeSha256": "9a02eb174482800bf36b0ed2eddf63af854e4e56603ed3de1cb907264568de53",
+  "afterSha256": "39189e1042ab742cd22239006aa3d328e38e41425bde9730eef0287d6ba46bb2",
+  "allOtherPatchBytesPreserved": true,
+  "wholePatchApplyCheckPassed": true,
+  "wholePatchAppliedSuccessfully": true,
+  "baseVerification": {
+    "baseCore": "5eb4ac87d227027f390fa006e1126a094b820860",
+    "requiredOldFilesVerified": 98,
+    "newFilePathsAbsentFromBase": 33,
+    "fetchedMissingBaseInputs": [
+      "tools/th14-player-lifecycle-native.py"
+    ],
+    "allRequiredOldBlobHashesVerified": true
+  },
+  "optionalShellSha256": "1de197583c43c5109738e5db2695ccabdd1007ac54de8b0ba30a25e2694c97db",
+  "optionalFullRuntimeRebuilt": false,
+  "completeGame": false,
+  "sharedPolicy": {
+    "passed": true,
+    "cases": 12,
+    "rows": [
+      {
+        "name": "live-th14-viewer-new-file",
+        "passed": true,
+        "error": null,
+        "calls": [
+          [
+            "malloc",
+            8
+          ],
+          [
+            "validate",
+            1
+          ],
+          [
+            "free",
+            32
+          ],
+          [
+            "write",
+            "/savesth11/replay/th11_ud0001.rpy"
+          ],
+          [
+            "sync"
+          ]
+        ]
+      },
+      {
+        "name": "live-th14-viewer-existing-file",
+        "passed": true,
+        "error": "Error: 录像文件已存在，请使用其他文件名",
+        "calls": []
+      },
+      {
+        "name": "live-normal-game",
+        "passed": true,
+        "error": "Error: 请先退出游戏",
+        "calls": []
+      },
+      {
+        "name": "live-truthy-viewer-is-not-capability",
+        "passed": true,
+        "error": "Error: 请先退出游戏",
+        "calls": []
+      },
+      {
+        "name": "live-other-title",
+        "passed": true,
+        "error": "Error: 请先退出游戏",
+        "calls": []
+      },
+      {
+        "name": "live-score-import-remains-blocked",
+        "passed": true,
+        "error": "Error: 请先退出游戏",
+        "calls": []
+      },
+      {
+        "name": "live-config-import-remains-blocked",
+        "passed": true,
+        "error": "Error: 请先退出游戏",
+        "calls": []
+      },
+      {
+        "name": "live-invalid-native-replay",
+        "passed": true,
+        "error": "Error: 文件不是有效的地灵殿存档或录像",
+        "calls": [
+          [
+            "malloc",
+            8
+          ],
+          [
+            "validate",
+            1
+          ],
+          [
+            "free",
+            32
+          ]
+        ]
+      },
+      {
+        "name": "live-invalid-motion-data",
+        "passed": true,
+        "error": "Error: 录像数据无效",
+        "calls": [
+          [
+            "malloc",
+            8
+          ],
+          [
+            "validate",
+            1
+          ],
+          [
+            "free",
+            32
+          ]
+        ]
+      },
+      {
+        "name": "live-empty-file",
+        "passed": true,
+        "error": "Error: 文件大小无效",
+        "calls": []
+      },
+      {
+        "name": "live-traversal-rejected",
+        "passed": true,
+        "error": "Error: 存档路径无效",
+        "calls": []
+      },
+      {
+        "name": "not-started-import-preserved",
+        "passed": true,
+        "error": null,
+        "calls": [
+          [
+            "malloc",
+            8
+          ],
+          [
+            "validate",
+            1
+          ],
+          [
+            "free",
+            32
+          ],
+          [
+            "write",
+            "/savesth11/replay/th11_ud0001.rpy"
+          ],
+          [
+            "sync"
+          ]
+        ]
+      }
+    ],
+    "input": "artifacts/th14/shield-state-nov13/optional-import-sync/optional-shell-after.mjs",
+    "sourceSha256": "1de197583c43c5109738e5db2695ccabdd1007ac54de8b0ba30a25e2694c97db",
+    "actualShellCommandAndPathExecuted": true,
+    "declaredBoundaries": [
+      "FS",
+      "malloc/free",
+      "native validation result",
+      "motion validation result",
+      "syncfs"
+    ],
+    "fullNativeReplayValidationAccepted": false,
+    "browserImportAccepted": false,
+    "completeGame": false
+  },
+  "specializedPolicy": {
+    "passed": true,
+    "cases": 12,
+    "rows": [
+      {
+        "name": "live-th14-viewer-new-file",
+        "passed": true,
+        "error": null,
+        "calls": [
+          [
+            "malloc",
+            8
+          ],
+          [
+            "validate",
+            1
+          ],
+          [
+            "free",
+            32
+          ],
+          [
+            "write",
+            "/savesth14/replay/th14_ud0001.rpy"
+          ],
+          [
+            "sync"
+          ]
+        ]
+      },
+      {
+        "name": "live-th14-viewer-existing-file",
+        "passed": true,
+        "error": "Error: 录像文件已存在，请使用其他文件名",
+        "calls": []
+      },
+      {
+        "name": "live-normal-game",
+        "passed": true,
+        "error": "Error: 请先退出游戏",
+        "calls": []
+      },
+      {
+        "name": "live-truthy-viewer-is-not-capability",
+        "passed": true,
+        "error": "Error: 请先退出游戏",
+        "calls": []
+      },
+      {
+        "name": "live-other-title",
+        "passed": true,
+        "error": "Error: 请先退出游戏",
+        "calls": []
+      },
+      {
+        "name": "live-score-import-remains-blocked",
+        "passed": true,
+        "error": "Error: 请先退出游戏",
+        "calls": []
+      },
+      {
+        "name": "live-config-import-remains-blocked",
+        "passed": true,
+        "error": "Error: 请先退出游戏",
+        "calls": []
+      },
+      {
+        "name": "live-invalid-native-replay",
+        "passed": true,
+        "error": "Error: 文件不是有效的辉针城存档或录像",
+        "calls": [
+          [
+            "malloc",
+            8
+          ],
+          [
+            "validate",
+            1
+          ],
+          [
+            "free",
+            32
+          ]
+        ]
+      },
+      {
+        "name": "live-invalid-motion-data",
+        "passed": true,
+        "error": "Error: 录像数据无效",
+        "calls": [
+          [
+            "malloc",
+            8
+          ],
+          [
+            "validate",
+            1
+          ],
+          [
+            "free",
+            32
+          ]
+        ]
+      },
+      {
+        "name": "live-empty-file",
+        "passed": true,
+        "error": "Error: 文件大小无效",
+        "calls": []
+      },
+      {
+        "name": "live-traversal-rejected",
+        "passed": true,
+        "error": "Error: 存档路径无效",
+        "calls": []
+      },
+      {
+        "name": "not-started-import-preserved",
+        "passed": true,
+        "error": null,
+        "calls": [
+          [
+            "malloc",
+            8
+          ],
+          [
+            "validate",
+            1
+          ],
+          [
+            "free",
+            32
+          ],
+          [
+            "write",
+            "/savesth14/replay/th14_ud0001.rpy"
+          ],
+          [
+            "sync"
+          ]
+        ]
+      }
+    ],
+    "input": "artifacts/th14/shield-state-nov13/optional-import-sync/optional-specialized-shell.mjs",
+    "sourceSha256": "eb9d81fe2530796f091e66904434e8235565403639dc47afee7aa9c58315cd14",
+    "actualShellCommandAndPathExecuted": true,
+    "declaredBoundaries": [
+      "FS",
+      "malloc/free",
+      "native validation result",
+      "motion validation result",
+      "syncfs"
+    ],
+    "fullNativeReplayValidationAccepted": false,
+    "browserImportAccepted": false,
+    "completeGame": false
+  },
+  "acceptanceStandard": "observable behavioral alignment"
+}
