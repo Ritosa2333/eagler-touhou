@@ -22,12 +22,16 @@ const game = {
   features: { thprac: true, focusHitbox: true },
 };
 
-// Recorded-music packages can retain lossless FLAC without renaming the codec.
+// Existing TH14 packages may still contain FLAC in their recorded-music component.
 const flac = structuredClone(game);
+flac.runtime = "runtime/th14/th14.html?hosted=1";
+delete flac.multiplayerRuntime;
+flac.gameData.path = "th14.dat";
 flac.music.ogg = {files: ["th14_01.flac"], sizes: [42], sha256: ["c".repeat(64)], version: "sha256-" + "d".repeat(64)};
 const manifestFor = entry => ({schema: SITE_MANIFEST_SCHEMA, protocol: "eagler-touhou/1",
-  profile: "web-validation-music", shared: {resourceMode: "hosted", vanillaFont: "shared/msgothic.ttc", unicodeFont: "shared/unifont.otf"}, games: {th06: entry}});
+  profile: "web-validation-music", shared: {resourceMode: "hosted", vanillaFont: "shared/msgothic.ttc", unicodeFont: "shared/unifont.otf"}, games: {th14: entry}});
 assert.doesNotThrow(() => validateSiteManifest(manifestFor(flac)));
+assert.throws(() => validateSiteManifest({...manifestFor(flac), games: {th06: {...game, music: flac.music}}}), /invalid Site Manifest games/);
 for (const filename of ["../th14_01.flac", "th14_01.exe", "th14_01.flac/escape"]) {
   const invalid = structuredClone(flac); invalid.music.ogg.files = [filename];
   assert.throws(() => validateSiteManifest(manifestFor(invalid)), /invalid Site Manifest games/);

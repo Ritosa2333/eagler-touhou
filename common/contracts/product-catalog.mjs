@@ -196,7 +196,6 @@ export const PRODUCT_GAMES = Object.freeze({
     // the required presentation-cadence acceptance gate.
     hsob: Object.freeze({
         testOnly: true,
-        buildOptIn: true,
         importOnly: true,
         runtimeResourceTransport: "resources",
         cardArtwork: "hsob-card.webp",

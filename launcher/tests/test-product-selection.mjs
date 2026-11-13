@@ -6,7 +6,7 @@ import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { assertProductEntriesRegistered, normalizeProductSelection, selectProductEntries } from "../lib/product-selection.mjs";
 
 test("product selection", async () => {
-assert.deepEqual(normalizeProductSelection(), Object.keys(PRODUCT_GAMES).filter(game => PRODUCT_GAMES[game].buildOptIn !== true));
+assert.deepEqual(normalizeProductSelection(), Object.keys(PRODUCT_GAMES).filter(game => PRODUCT_GAMES[game].buildOptIn !== true && !("importOnly" in PRODUCT_GAMES[game])));
 assert.equal(normalizeProductSelection().includes('th13'), false, 'Production defaults do not require th13 assets');
 assert.deepEqual(normalizeProductSelection('th13'), ['th13'], 'Validation builds explicitly select th13');
 assert.deepEqual(normalizeProductSelection(["th13"]), ["th13"]);

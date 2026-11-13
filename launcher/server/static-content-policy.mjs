@@ -48,8 +48,10 @@ export function staticContentCacheControl(path) {
   const contentAddressedPack = extension === ".zip" && /[a-f0-9]{24}\.zip$/i.test(path);
   // Generation files are verified byte-for-byte by the launcher. CDN HTML
   // injections or optimizations must not rewrite this authenticated code set.
-  if (immutableRuntime) return "public, max-age=31536000, immutable, no-transform";
-  return contentAddressedPack
+  if (immutableRuntime && /(?:^|\/)runtime\/th14\//.test(path)) {
+    return "public, max-age=31536000, immutable, no-transform";
+  }
+  return immutableRuntime || contentAddressedPack
     ? "public, max-age=31536000, immutable"
     : "public, max-age=0, must-revalidate";
 }

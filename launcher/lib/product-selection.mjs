@@ -1,6 +1,6 @@
-import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
+import { PRODUCT_GAMES, productRequiresImport } from "./contracts/product-catalog.mjs";
 
-export const DEFAULT_BUILD_GAMES = Object.freeze(Object.keys(PRODUCT_GAMES).filter(game => !PRODUCT_GAMES[game].buildOptIn));
+export const DEFAULT_BUILD_GAMES = Object.freeze(Object.keys(PRODUCT_GAMES).filter(game => !PRODUCT_GAMES[game].buildOptIn && !productRequiresImport(game)));
 
 export function normalizeProductSelection(value) {
   const registered = Object.keys(PRODUCT_GAMES);
