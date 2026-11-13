@@ -18,6 +18,7 @@ import {
 import { buildAppShell } from "../lib/app-shell-build.mjs";
 import { APP_SHELL_RETIREMENT_WORKER } from "../lib/app-shell-retirement.mjs";
 import { createDevelopmentSiteManifest } from "../lib/development-site-manifest.mjs";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { developmentResourceRoutes } from "../lib/development-resource-routes.mjs";
 import { DEVELOPMENT_CONTENT } from "../lib/development-content.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
@@ -66,7 +67,9 @@ if (process.env.EAGLER_TOUHOU_ARTWORK_DIR && !existsSync(configuredArtworkDirect
   throw new Error(`EAGLER_TOUHOU_ARTWORK_DIR does not exist: ${configuredArtworkDirectory}`);
 }
 const configuredNetplayRelay = process.env.EAGLER_TOUHOU_NETPLAY_RELAY?.trim() || undefined;
-const hostArtwork = new Set(hostArtworkFiles(Object.keys(DEVELOPMENT_CONTENT.games)));
+// Library cards include registered import-only and opt-in products even when
+// their Runtime is absent from this development assembly.
+const hostArtwork = new Set(hostArtworkFiles(Object.keys(PRODUCT_GAMES)));
 const selectedDevelopmentGames = process.env.EAGLER_DEVELOPMENT_GAMES?.split(",").map(value => value.trim()).filter(Boolean);
 // Optional operator-owned local manifest lets UI previews reuse packaged
 // Runtimes without requiring every source repository to have build outputs.

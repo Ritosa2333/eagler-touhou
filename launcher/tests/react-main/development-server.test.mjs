@@ -84,6 +84,27 @@ test('source server resolves workspace URLs consistently from a nested Launcher 
   } finally {await server.stop();}
 });
 
+test('host artwork covers registered cards without a development Runtime and rejects unrelated files', async () => {
+  const artwork = resolve(work, 'host-artwork');
+  await mkdir(artwork);
+  const bytes = Buffer.from('host-supplied artwork fixture');
+  for (const name of ['th01-card.webp', 'hsob-card.webp', 'unregistered-card.webp'])
+    await writeFile(resolve(artwork, name), bytes);
+  const server = await start({env: {...environment, EAGLER_TOUHOU_ARTWORK_DIR: artwork}});
+  try {
+    // These cards belong to the Product Catalog while this server's Runtime
+    // assembly only selects TH10. Artwork has an independent Host owner.
+    for (const name of ['th01-card.webp', 'hsob-card.webp']) {
+      const response = await fetch(server.base + '/assets/' + name);
+      assert.equal(response.status, 200, name);
+      assert.match(response.headers.get('content-type'), /image\/webp/);
+      assert.deepEqual(Buffer.from(await response.arrayBuffer()), bytes);
+    }
+    assert.equal((await fetch(server.base + '/assets/unregistered-card.webp')).status, 404);
+    assert.equal((await fetch(server.base + '/assets/absent-card.webp')).status, 404);
+  } finally {await server.stop();}
+});
+
 test('explicit isolated root serves canonical worker only at its configured loopback origin', async () => {
   const selected = await port();
   const env = {...environment, EAGLER_REACT_BUILD_DIRECTORY: resolve(work, 'isolated'),
