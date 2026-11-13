@@ -130,10 +130,20 @@ TEST(spell_cancel_rebuilds_stage_list_vm) {
     CHECK_EQ(i32(harness.menu.level()), i32(SpellPracticeLevel::Spell));
     CHECK(harness.frame(confirm_key()));  // 解锁卡进难度层，188 仍在
     CHECK_EQ(i32(harness.menu.level()), i32(SpellPracticeLevel::Difficulty));
-    // 难度层取消回卡表：0x457630 case4 拆台不重建 188（句柄仍活）。
+    // 难度层取消回卡表：0x4576c0 case4（0x457941-0x457977）对 188 发
+    // label1 并清句柄；重入 0x12 由 0x456650 case0 判 [esi+0x5b8] 失效
+    // 整表重建（0x4566ca-0x4566e6）。旧 VM 退场（pending=1）+ 新 VM 同帧共存。
     CHECK(harness.frame(cancel_key()));
     CHECK_EQ(i32(harness.menu.level()), i32(SpellPracticeLevel::Spell));
-    CHECK(harness.unique(188) != nullptr);
+    const auto cards_pair = harness.by_script(188);
+    CHECK_EQ(cards_pair.size(), 2u);
+    bool cards_old_exiting = false, cards_fresh = false;
+    for (AnmVm* vm : cards_pair) {
+        cards_old_exiting = cards_old_exiting || vm->pending_interrupt == 1;
+        cards_fresh = cards_fresh || vm->pending_interrupt != 1;
+    }
+    CHECK(cards_old_exiting);
+    CHECK(cards_fresh);
     // 卡表取消回关卡层：0x456650 case4 label1 清 187 句柄 + 0x4560a0 case0 重建。
     CHECK(harness.frame(cancel_key()));
     CHECK_EQ(i32(harness.menu.level()), i32(SpellPracticeLevel::Stage));
@@ -179,8 +189,10 @@ TEST(stage_confirm_then_immediate_cancel_restores_list) {
     CHECK(selected);
 }
 
-TEST(spell_level_entries_keep_single_cards_vm) {
-    // Stage→Spell 正向路径不受影响：188 只建一次，禁用槽 label39… 发往 188。
+TEST(spell_difficulty_cancel_rebuilds_cards_vm) {
+    // Stage→Spell 正向路径：188 只建一次，禁用槽 label39… 发往 188；难度层
+    // 退回卡表时 0x4576c0 case4（0x457941-0x457977）对旧 188 发 label1 并
+    // 清句柄（0x457960 `mov [esi+0x5b8],0`），0x456650 case0 判失效重建。
     Harness harness;
     CHECK(harness.frame());
     CHECK(harness.frame(confirm_key()));
@@ -190,8 +202,11 @@ TEST(spell_level_entries_keep_single_cards_vm) {
     CHECK(harness.frame(confirm_key()));
     CHECK(harness.frame(cancel_key()));  // 难度层退回卡表
     CHECK_EQ(i32(harness.menu.level()), i32(SpellPracticeLevel::Spell));
-    CHECK(harness.unique(188) == cards_vm);  // 0x456650 case0 句柄仍活不重建
-    CHECK(cards_vm->pending_interrupt != 1);
+    CHECK_EQ(cards_vm->pending_interrupt, 1);  // 旧 188 label1 退场
+    bool rebuilt = false;
+    for (AnmVm* vm : harness.by_script(188))
+        rebuilt = rebuilt || (vm != cards_vm && vm->pending_interrupt != 1);
+    CHECK(rebuilt);  // 0x456650 case0 整表重建的新 188
 }
 
 TEST(run_return_cascade_opens_difficulty_level_stack) {

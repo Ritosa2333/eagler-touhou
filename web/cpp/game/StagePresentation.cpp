@@ -1998,7 +1998,16 @@ bool StagePresentation::draw(u32 pass) {
             if (shot) one(*shot);
         break;
     case 1:
-        if (player_) one(*player_);
+        if (player_) {
+            // Ship transforms are presentation scratch. Repeated presentation
+            // must leave the snapshot consumed by simulation unchanged.
+            const auto visual = player_->visual;
+            const auto rotation = player_->variables.rotation;
+            const bool ok = one(*player_);
+            player_->visual = visual;
+            player_->variables.rotation = rotation;
+            return ok;
+        }
         break;
     case 2:
         for (auto& enemy : enemies_)
