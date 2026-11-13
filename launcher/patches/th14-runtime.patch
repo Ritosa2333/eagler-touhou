@@ -4943,7 +4943,7 @@ index 0000000000000000000000000000000000000000..08741b6e2faf356aaf4dad2a09fd9cab
 +  };
 +}
 diff --git a/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs b/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
-index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..8abf0ab91cc9cfb706333c31cb5dd33b8558fc32 100644
+index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..7226a3edf1f50c35790d96df26cecc9660d482f2 100644
 --- a/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
 +++ b/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
 @@ -97,7 +97,7 @@ export function directTouch(core,canvas,message,viewport) {
@@ -4955,12 +4955,12 @@ index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..8abf0ab91cc9cfb706333c31cb5dd33b
   return typeof path==='string'&&((new RegExp('^/music/'+game+'_(?:[0-9]{2})\\.ogg$').test(path)||/^\/music\/th10_17\.ogg$/.test(path))||/^\/fonts\/[a-z0-9_.-]+$/.test(path)||path==='/unifont.otf'||(new RegExp('^/thcrap/'+game+'/[a-z0-9_/.-]+$').test(path)&&!path.includes('..')&&!path.includes('//')));
  }
  export function ensureSharedFontAlias(Module,language){
-@@ -116,9 +116,18 @@ export async function installResources(Module,resources=[],{game,emit=()=>{},bas
+@@ -116,9 +116,19 @@ export async function installResources(Module,resources=[],{game,emit=()=>{},bas
    if(!resourcePath(resource.path,game))throw Error('Invalid runtime resource path');
    const url=new URL(resource.url,base);if(url.origin!==new URL(base).origin||!['http:','https:','blob:'].includes(url.protocol))throw Error('Resource must be same-origin');
    const response=await fetcher(url);if(!response.ok)throw Error('Resource download failed: '+resource.path);
 -  const bytes=new Uint8Array(await response.arrayBuffer());
--  const expected=resource.bytes??resource.size;
+   const expected=resource.bytes??resource.size;
 +  const compressed=resource.encoding==='gzip';
 +  if(compressed&&(game!=='th14'||!/^\/fonts\/font[0-7]\.bin$/.test(resource.path)||
 +      !url.pathname.endsWith(resource.path+'.gz')||!Number.isSafeInteger(expected)||expected<1||expected>64*1024*1024||
@@ -4976,7 +4976,7 @@ index 66c8e0a05cd03d6a7d926ec13f9e0d7a30087c29..8abf0ab91cc9cfb706333c31cb5dd33b
    Module.FS.mkdirTree(resource.path.slice(0,resource.path.lastIndexOf('/')));
    Module.FS.writeFile(resource.path,bytes,{canOwn:true});
    // Native FLAC assets are part of Runtime preparation. Only the optional
-@@ -151,3 +160,98 @@ export async function mountManagedData(Module,{game,parentWindow,query,fetcher=g
+@@ -151,3 +161,98 @@ export async function mountManagedData(Module,{game,parentWindow,query,fetcher=g
   const manifest=await response.json();if(manifest.game!==game||manifest.schema!=='eagler-sdl-resources/1')throw Error('Invalid Runtime resource manifest');
   await installResources(Module,manifest.resources,{game,emit,base,fetcher});
  }
