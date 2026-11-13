@@ -45,6 +45,7 @@ before(async () => {
     export * from './app/components/launcher/products.ts';
     export * from './src/contracts/product-catalog.mts';
     export * from './src/launcher/room-invite.mts';
+    export {MemoryRouter} from 'react-router';
   `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', loader: {'.webp': 'dataurl'}, outfile: resolve(work, 'actual-bundle.mjs'), logLevel: 'silent',
     plugins: [{name: 'installed-deps-original-mts', setup(ctx) {
       ctx.onResolve({filter: /^[^./]/}, args => ({path: args.path, external: true}));
@@ -111,9 +112,10 @@ function fixture({locale = 'en', selectedProduct = 'th06mp', host = {}, loadErro
 function room(patch = {}) {return {product: 'th06mp', code: '1234', capacity: 3, players: 2, ready: 1, difficulty: 1, spectators: 0,
   phase: 'lobby', joinable: true, seats: [{initial: '霊', online: true, ready: true, controlMode: 'normal'}, {initial: 'M', online: false, ready: false, controlMode: 'touch'}, null],
   disableCheatMovement: false, challengeMode: false, ...patch};}
-async function mount(Component, initial, {locale = 'en', strict = false, localeOwner = owners} = {}) {
+async function mount(Component, initial, {locale = 'en', strict = false, localeOwner = owners, router = false} = {}) {
   let props = initial; const container = env.document.createElement('div'); env.document.body.append(container); const root = createRoot(container);
   async function render() {let tree = React.createElement(localeOwner.LocaleProvider, {locale}, React.createElement(Component, props));
+    if (router) tree = React.createElement(localeOwner.MemoryRouter, null, tree);
     if (strict) tree = React.createElement(React.StrictMode, null, tree); await React.act(async () => root.render(tree));}
   const m = {root, container, async update(patch) {props = {...props, ...patch}; await render();}, async setLocale(next) {locale = next; await render();},
     async unmount() {await React.act(async () => root.unmount()); mounts.delete(m);}};
@@ -418,11 +420,15 @@ test('Lobby defaults to live ratings and shows no-rating games without a win-rat
   const originalFetch = globalThis.fetch;
   const requests = [];
   globalThis.fetch = async input => {
-    const path = new URL(String(input), 'https://launcher.invalid').pathname;
-    requests.push(path);
+    const url = new URL(String(input), 'https://launcher.invalid');
+    const path = url.pathname;
+    requests.push(path + url.search);
     const responses = {
       '/api/ready': {ready:true}, '/api/auth/get-session': null,
-      '/api/v1/th09/ratings': {sequence:1,players:{rated:{rating:1438,interval:120,games:18,group:1}}},
+      '/api/v1/th09/ratings': {sequence:1,players:{rated:{rating:1438,interval:120,games:18,group:1}},
+        cards:{rated:{rating:1438,characters:[[0,1410],[2,1380],[4,1290]]}}},
+      '/api/v1/profiles/rated': {nickname:'Rated'},
+      '/api/v1/profiles/unrated': {nickname:'Unrated'},
     };
     assert.ok(path in responses, path);
     return new Response(JSON.stringify(responses[path]), {headers:{'Content-Type':'application/json'}});
@@ -434,14 +440,24 @@ test('Lobby defaults to live ratings and shows no-rating games without a win-rat
     })));
     const props = {service:f.service,assetUrl,masthead:null,products:[],onSelect:()=>{},onActivate:()=>{},
       guideHref:null,rankingsHref:'/review/ratings.html',onNetwork:null,onOpenForm:()=>{}};
-    const m = await mount(ownersAccounts.LobbyDirectoryView,props,{locale:'zh-CN',localeOwner:ownersAccounts});
+    const m = await mount(ownersAccounts.LobbyDirectoryView,props,{locale:'zh-CN',localeOwner:ownersAccounts,router:true});
     await React.act(async () => {await new Promise(resolve=>setTimeout(resolve,0));});
-    assert.ok(requests.includes('/api/v1/th09/ratings'));
+    assert.deepEqual(requests.filter(path=>path.startsWith('/api/v1/th09/ratings')),
+      ['/api/v1/th09/ratings?cards=rated%2Cunrated']);
     const rankings = n('.lobby-support-links a[href*="ratings.html"]');
     assert.equal(rankings.getAttribute('href'), '/review/ratings.html?lang=zh-CN');
     assert.equal(rankings.firstElementChild.textContent, '排行榜');
     assert.equal(env.document.querySelector('.lobby-support-links .lobby-survey-link'), null);
     assert.deepEqual(all('.book-room-duel-summary[data-side="0"]').map(node=>node.textContent),['1438 (局数 26)','— (局数 26)']);
+    assert.equal(env.document.querySelector('.lobby-room-list .player-profile-card-scores'),null);
+    await click('.lobby-seat[data-registered]');
+    assert.equal(n('.player-profile-card-total strong').textContent,'1,438');
+    assert.deepEqual(all('.player-profile-card-characters strong').map(node=>node.textContent),['1,410','1,380','1,290']);
+    await click('.lobby-seat[data-registered]');
+    await click('.lobby-room-row:nth-child(2) .lobby-seat[data-registered]');
+    assert.equal(n('.player-profile-card-name h3').textContent,'Unrated');
+    assert.equal(env.document.querySelector('.player-profile-card-scores'),null);
+    assert.ok(requests.every(path=>!path.endsWith('/th09-duels')));
     await m.unmount();
     requests.length = 0;
     await mount(ownersAccounts.LobbyDirectoryView,{...props,interactive:false},{localeOwner:ownersAccounts});

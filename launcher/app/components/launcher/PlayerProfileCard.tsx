@@ -6,6 +6,7 @@ import {useLocale} from '../../i18n';
 import {normalizeProfileDisplay} from '../../models/profile-display';
 import {th09CharacterName, th09CharacterRating, th09RatingPoint} from '../../models/th09-character-ratings';
 import {accountRequest} from '../../services/account-client';
+import type {Th09RatingCard} from '../../services/th09-ratings';
 import {Button} from '../../ui/button';
 import {PlayerCardPopover, type PlayerCardTrigger} from './PlayerCardPopover';
 import {AccountAvatar} from './AccountAvatar';
@@ -54,18 +55,19 @@ function useRatingSummary(username: string | undefined, enabled: boolean) {
   return enabled && result?.username === username ? result?.summary : undefined;
 }
 
-export function PlayerProfileCard({username,name,avatar,cover:banner,showRating=true,showTotal=true,boardRating}: {
+export function PlayerProfileCard({username,name,avatar,cover:banner,showRating=true,showTotal=true,boardRating,ratingCard}: {
   username?: string; name: string; avatar?: string; cover?: string; showRating?: boolean;
-  showTotal?: boolean; boardRating?: BoardRating;
+  showTotal?: boolean; boardRating?: BoardRating; ratingCard?: Th09RatingCard | null;
 }) {
   const {t,locale} = useLocale();
   // The public board omits character_ratings when the player hides versus data.
   const scores = boardRating?.character_ratings;
   const favorites = scores && favoriteRatedCharacters(scores, boardRating?.top_characters ?? []);
   const needsDetails = !boardRating || !!scores && (favorites?.length ?? 0) < Math.min(3,scores.length);
-  const details = useRatingSummary(username,showRating && needsDetails);
-  const characterScores = showRating ? details?.characters ?? favorites ?? [] : [];
-  const total = showRating && showTotal ? (scores ? boardRating?.rating : details?.total) : undefined;
+  const details = useRatingSummary(username,showRating && ratingCard === undefined && needsDetails);
+  const characterScores = showRating ? ratingCard?.characters.map(([character,rating])=>({character,rating}))
+    ?? details?.characters ?? favorites ?? [] : [];
+  const total = showRating && showTotal ? ratingCard?.rating ?? (scores ? boardRating?.rating : details?.total) : undefined;
   const number = new Intl.NumberFormat(locale);
   return <article className="player-profile-card" aria-label={name}>
     <header className="player-profile-card-identity">
@@ -96,7 +98,9 @@ export function PlayerProfileCard({username,name,avatar,cover:banner,showRating=
   </article>;
 }
 
-function PlayerCardDetails({username,name,avatar,boardRating}: {username:string;name:string;avatar?:string;boardRating?:BoardRating}) {
+function PlayerCardDetails({username,name,avatar,boardRating,ratingCard}: {
+  username:string;name:string;avatar?:string;boardRating?:BoardRating;ratingCard?:Th09RatingCard | null;
+}) {
   const [profile, setProfile] = useState<z.infer<typeof publicProfile>>();
   useEffect(() => {
     const controller = new AbortController();
@@ -106,14 +110,14 @@ function PlayerCardDetails({username,name,avatar,boardRating}: {username:string;
   }, [username]);
   const visibility = profile && normalizeProfileDisplay(profile.details?.display).visible;
   return <PlayerProfileCard username={username} name={profile?.nickname || name} cover={profile?.details?.cover}
-    avatar={profile?.details?.avatar || avatar} boardRating={boardRating}
-    showRating={visibility?.versus ?? true} showTotal={visibility?.records ?? !!boardRating}/>;
+    avatar={profile?.details?.avatar || avatar} boardRating={boardRating} ratingCard={ratingCard}
+    showRating={visibility?.versus ?? true} showTotal={visibility?.records ?? !!(boardRating || ratingCard)}/>;
 }
 
-export function PlayerAvatarCard({username,name,avatar,boardRating,children}: {
-  username:string; name:string; avatar?:string; boardRating?:BoardRating; children: PlayerCardTrigger;
+export function PlayerAvatarCard({username,name,avatar,boardRating,ratingCard,children}: {
+  username:string; name:string; avatar?:string; boardRating?:BoardRating; ratingCard?:Th09RatingCard | null; children: PlayerCardTrigger;
 }) {
   return <PlayerCardPopover trigger={children} label={name}>
-    <PlayerCardDetails key={username} username={username} name={name} avatar={avatar} boardRating={boardRating}/>
+    <PlayerCardDetails key={username} username={username} name={name} avatar={avatar} boardRating={boardRating} ratingCard={ratingCard}/>
   </PlayerCardPopover>;
 }

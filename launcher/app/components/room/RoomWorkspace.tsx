@@ -6,6 +6,7 @@ import {ChevronDown} from 'lucide-react';
 import {useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';
 import {useLocale} from '../../i18n';
+import {Th09RatingCardsContext, useTh09Ratings} from '../../services/th09-ratings';
 import type {RoomViewProps, RoomPanelKind} from './types';
 import {roomPresentation, roomConnectionMessage} from './presentation';
 import {RoomSeats} from './RoomSeats';
@@ -29,6 +30,9 @@ const noMusicSubscription = () => () => {};
 export function RoomWorkspace(props: RoomViewProps) {
   const {t} = useLocale(), {service, network, context, assetUrl} = props;
   const state = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot);
+  const {players, mine, cards} = useTh09Ratings(
+    props.visible !== false && !!props.workspaceHost && !!props.workspaceStage && state.product === 'th09mp' && !!state.room,
+    [...(state.room?.seats ?? []), ...(state.room?.spectators ?? [])].map(entry => entry?.profile?.username));
   useSyncExternalStore(network.subscribe, network.getSnapshot, network.getSnapshot);
   const [tab, setTab] = useState<'chat'|'game'>('chat');
   const [musicOpen,setMusicOpen]=useState(false);
@@ -74,8 +78,8 @@ export function RoomWorkspace(props: RoomViewProps) {
   const loadingText = t(context.launchStage ? 'room.preparingRuntime' : loading ? 'room.workspaceLoading' : preparation?.status === 'ready' ? selecting ? 'room.workspaceReady' : state.spectatorRequested ? 'room.workspaceSpectating' : 'multiplayer.chooseSeatOrSpectate' : preparation?.status === 'cancelled' ? 'room.resourcesCancelled' : 'room.resourcesUnavailable');
   const icon = (name:string)=><img className="room-icon" src={assetUrl(`assets/${name}.svg`)} alt=""/>;
   const lounge = <RoomSpectatorPreview state={state} service={service} assetUrl={assetUrl} open={props.panel?.kind==='spectators'} onOpen={element=>openPanel('spectators',element)}/>;
-  const roster = <div className="room-workspace-roster" data-side-lounge={sideLounge} data-player-count={room.playerCount}><RoomSeats state={state} service={service} network={network} context={context} openPanel={openPanel}/><div className="room-workspace-lounge-host" ref={setLoungeHost}/></div>;
-  return <>
+  const roster = <div className="room-workspace-roster" data-side-lounge={sideLounge} data-player-count={room.playerCount}><RoomSeats state={state} service={service} network={network} context={context} openPanel={openPanel} ratings={players} myRating={mine}/><div className="room-workspace-lounge-host" ref={setLoungeHost}/></div>;
+  return <Th09RatingCardsContext.Provider value={state.product === 'th09mp' ? cards : undefined}>
     {createPortal(<section id="mpRoomView" className="mp-room-view room-workspace-view" data-public-names={state.nickname ? 'true' : undefined} data-roster-identities="true" aria-label={`${game.title} ${t('multiplayer.roomAria')}`} inert={props.settingsOpen}>
       <header className="mp-room-head room-workspace-header">
         <UiButton variant="icon" className="mp-room-back mp-room-top-action" id="mpLeaveRoom" type="button" aria-label={t('action.back')} onClick={()=>{void props.onLeave();}}>{icon('room-caret-left')}</UiButton>
@@ -147,5 +151,5 @@ export function RoomWorkspace(props: RoomViewProps) {
         {props.playerSettings}
       </div>
     </>,viewport)}
-  </>;
+  </Th09RatingCardsContext.Provider>;
 }
