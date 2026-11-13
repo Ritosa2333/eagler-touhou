@@ -9,6 +9,7 @@ struct BombWorld {
     virtual bool bomb_stop_sound(i32)=0;
     virtual bool bomb_cancel(Vec3,float,u32,bool)=0;
     virtual i32& bomb_count()=0;
+    virtual void bomb_used(){}
     virtual bool bomb_background_color(u32)=0;
     virtual bool bomb_refund_power()=0;
     virtual bool bomb_cancel_beam(Vec3,bool)=0;
