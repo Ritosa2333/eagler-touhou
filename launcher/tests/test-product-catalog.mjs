@@ -111,7 +111,7 @@ assert.deepEqual(PRODUCT_GAMES.th07.multiplayer.loadouts.slice(-2).map(item => [
 ]);
 assert.deepEqual(PRODUCT_GAMES.th07.multiplayer.difficulties, ["Easy", "Normal", "Hard", "Lunatic", "Extra", "Phantasm"]);
 assert.equal(PRODUCT_GAMES.th07.multiplayer.peerTransportGlobal, "__th07PeerTransport");
-assert.equal(PRODUCT_GAMES.th09.multiplayerRuntime, "./runtime/th09/multiplayer/th09.html");
+assert.equal(PRODUCT_GAMES.th09.multiplayerRuntime, "./runtime/th09/th09.html");
 assert.deepEqual(PRODUCT_GAMES.th09.multiplayer.playerCounts, [2]);
 assert.deepEqual(PRODUCT_GAMES.th09.multiplayer.difficulties, ["Easy", "Normal", "Hard", "Lunatic"]);
 assert.deepEqual(PRODUCT_GAMES.th09.multiplayer.loadouts.map(item => item.character), Array.from({ length: 16 }, (_, index) => index));

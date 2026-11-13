@@ -445,7 +445,7 @@ export const PRODUCT_GAMES = Object.freeze({
             musicMounts: Object.freeze({ ogg: "/music" }),
         }),
         replay: Object.freeze({ prefix: "th9" }),
-        multiplayerRuntime: "./runtime/th09/multiplayer/th09.html",
+        multiplayerRuntime: "./runtime/th09/th09.html",
         multiplayer: Object.freeze({
             titleKey: "game.title.th09mp",
             gameplay: "versus",

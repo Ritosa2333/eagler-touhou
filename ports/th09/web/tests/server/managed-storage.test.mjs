@@ -13,9 +13,7 @@ import {createAutoReplay} from '../../sdl-runtime/auto-replay.mjs';
 
 // Execute the generated shells, with persistence keyed by the actual IDBFS
 // mount point. This checks file ownership and reload ordering, not game logic.
-async function openRuntime(directory, databases) {
-  const html = await readFile(join(directory, 'th09.html'), 'utf8');
-  const variant = /name="eagler-runtime-variant" content="([^"]+)"/.exec(html)?.[1];
+async function openRuntime(directory, databases, mode) {
   const files = new Map(), links = new Map();
   let mount;
   const normalize = path => path.startsWith('/save/') ? links.get('/save') + path.slice(5) : path;
@@ -56,9 +54,9 @@ async function openRuntime(directory, databases) {
     console, URLSearchParams, Uint8Array, ArrayBuffer, TextDecoder, performance,
     exportReplayName, importReplayName, createBrowserKeyboard, createAutoReplay, scanCodes: {},
     createModule: async () => core,
-    location: {search: '?managedData=1&runtimeEpoch=1', origin: 'https://test.invalid'},
+    location: {search: '?managedData=1&runtimeEpoch=1' + (mode ? '&runtimeVariant=' + mode : ''), origin: 'https://test.invalid'},
     window: {addEventListener() {}},
-    document: {querySelector: selector => selector.startsWith('meta[') ? {content: variant} : element,
+    document: {querySelector: () => element,
       body: element, addEventListener() {}},
     parent: {postMessage() {}, __eaglerPrepareManagedRuntimeDataV1: async () => ({buffer: new ArrayBuffer(1000000)})},
     fetch: async () => ({ok: true, arrayBuffer: async () => new ArrayBuffer(1)}),
@@ -71,7 +69,7 @@ async function openRuntime(directory, databases) {
   return {command, FS, mount, links};
 }
 
-test('packaged normal and multiplayer shells isolate saves and Replay across reloads', async () => {
+test('one packaged shell isolates normal and multiplayer saves and Replay across reloads', async () => {
   const temporary = await mkdtemp(join(tmpdir(), 'th09-storage-'));
   try {
     await mkdir(join(temporary, 'scripts'));
@@ -86,18 +84,17 @@ test('packaged normal and multiplayer shells isolate saves and Replay across rel
     await writeFile(join(compiled, 'build.json'), JSON.stringify({kind: 'th09-native-web-release-candidate',
       builtAt: new Date().toISOString(), sha256: createHash('sha256').update(wasm).digest('hex')}));
     for (const name of ['cp932.bin', 'blend.bin']) await writeFile(join(fonts, name), 'fixture');
-    for (const args of [[], ['--multiplayer']]) {
-      const env = {...process.env}; delete env.TH09_OUTPUT; delete env.TH09_RUNTIME_ASSETS;
-      delete env.TH09_PACKAGE_OUTPUT; delete env.EAGLER_RUNTIME_OUTPUT;
-      // This fixture copies only web, without its parent submodule layout.
-      env.EAGLER_COMMON_ROOT = fileURLToPath(new URL('../../../../../common/',import.meta.url));
-      const result = spawnSync(process.execPath, [join(temporary, 'scripts/build-eagler.mjs'), ...args],
-        {encoding: 'utf8', windowsHide: true, env});
-      assert.equal(result.status, 0, result.stderr);
-    }
-    const normalPath = join(temporary, 'build-eagler'), multiplayerPath = join(temporary, 'build-eagler-multiplayer');
+    const env = {...process.env}; delete env.TH09_OUTPUT; delete env.TH09_RUNTIME_ASSETS;
+    delete env.TH09_PACKAGE_OUTPUT; delete env.EAGLER_RUNTIME_OUTPUT;
+    env.EAGLER_COMMON_ROOT = fileURLToPath(new URL('../../../../../common/',import.meta.url));
+    const result = spawnSync(process.execPath, [join(temporary, 'scripts/build-eagler.mjs')],
+      {encoding: 'utf8', windowsHide: true, env});
+    assert.equal(result.status, 0, result.stderr);
+    const directory = join(temporary, 'build-eagler');
     const databases = new Map();
-    const normal = await openRuntime(normalPath, databases), multiplayer = await openRuntime(multiplayerPath, databases);
+    const normal = await openRuntime(directory, databases);
+    const multiplayer = await openRuntime(directory, databases, 'multiplayer');
+    await assert.rejects(openRuntime(directory, databases, 'invalid'), /Invalid TH09 Runtime variant/);
     assert.equal(normal.mount, '/savesth09'); assert.equal(multiplayer.mount, '/savesth09mp');
     assert.equal(normal.links.get('/save'), normal.mount);
     assert.equal(multiplayer.links.get('/save'), multiplayer.mount);
@@ -107,8 +104,8 @@ test('packaged normal and multiplayer shells isolate saves and Replay across rel
       // Native C++ uses /save, while Launcher file commands use the mounted root.
       assert.equal(runtime.FS.readFile('/save/score.dat')[0], marker);
     }
-    for (const [directory, marker] of [[normalPath, 1], [multiplayerPath, 2]]) {
-      const runtime = await openRuntime(directory, databases);
+    for (const [mode, marker] of [['normal', 1], ['multiplayer', 2]]) {
+      const runtime = await openRuntime(directory, databases, mode);
       const listed = await runtime.command({command: 'list'});
       assert.deepEqual(Array.from(listed.files, file => file.path).sort(), [...names].sort());
       for (const path of names) {
@@ -119,9 +116,9 @@ test('packaged normal and multiplayer shells isolate saves and Replay across rel
     await assert.rejects(multiplayer.command({command: 'read', path: '/savesth09/score.dat'}), /存档路径无效/);
     await multiplayer.command({command: 'remove', path: 'replay/th9_01.rpy'});
     await multiplayer.command({command: 'sync'});
-    const reloadedNormal = await openRuntime(normalPath, databases);
+    const reloadedNormal = await openRuntime(directory, databases, 'normal');
     assert.equal((await reloadedNormal.command({command: 'read', path: 'replay/th9_01.rpy'})).bytes[0], 1);
-    const reloadedMultiplayer = await openRuntime(multiplayerPath, databases);
+    const reloadedMultiplayer = await openRuntime(directory, databases, 'multiplayer');
     await assert.rejects(reloadedMultiplayer.command({command: 'read', path: 'replay/th9_01.rpy'}), /ENOENT/);
   } finally { await rm(temporary, {recursive: true, force: true}); }
 });

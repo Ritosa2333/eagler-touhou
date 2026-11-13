@@ -3,6 +3,7 @@ import { RUNTIME_GENERATION_FILE } from "./contracts/runtime-generations.mjs";
 import { createHash } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { relative, resolve } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { PRODUCT_CONTENT } from "./content-definition.mjs";
 import { PRODUCT_FEATURE_IDS, PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
 import { extractGameDataLayout } from "./runtime-data-layout.mjs";
@@ -19,6 +20,17 @@ function isCanonicalRelativePath(value) {
   if (typeof value !== "string" || !value || value.startsWith("/") || value.includes("\\") || value.includes(":")) return false;
   const parts = value.split("/");
   return parts.every(part => part && part !== "." && part !== "..");
+}
+
+export function sharesRuntime(game) {
+  const product = PRODUCT_GAMES[game];
+  return !!product?.multiplayerRuntime && product.multiplayerRuntime === product.runtime;
+}
+
+export function assertSharedRuntimeShell(html, game) {
+  if (/<meta\b[^>]*\bname=["']eagler-runtime-variant["']/i.test(html)) {
+    throw new Error(`${game}: shared Runtime shell must take its mode at launch`);
+  }
 }
 
 export function runtimeStem(game) {
@@ -87,7 +99,13 @@ export function validateRuntimeReleaseManifest(manifest) {
       if (!entry.multiplayerRuntime || typeof entry.multiplayerRuntime !== "object") {
         throw new Error(`${game}: multiplayer Runtime is missing`);
       }
-      variants.push(["multiplayerRuntime", entry.multiplayerRuntime]);
+      if (entry.multiplayerRuntime.root === entry.runtime.root) {
+        if (!sharesRuntime(game) || !isDeepStrictEqual(entry.multiplayerRuntime, entry.runtime)) {
+          throw new Error(`${game}: invalid shared Runtime identity`);
+        }
+      } else {
+        variants.push(["multiplayerRuntime", entry.multiplayerRuntime]);
+      }
     } else if (entry.multiplayerRuntime != null) {
       throw new Error(`${game}: unexpected multiplayer Runtime`);
     }
@@ -125,7 +143,7 @@ export async function verifyRuntimeRelease(root) {
   const expectedFiles = new Set(["runtime-release.json"]);
   for (const [game, entry] of Object.entries(manifest.games)) {
     const product = PRODUCT_GAMES[game];
-    const variants = [["normal", entry.runtime], ...(entry.multiplayerRuntime ? [["multiplayer", entry.multiplayerRuntime]] : [])];
+    const variants = [["normal", entry.runtime], ...(entry.multiplayerRuntime && entry.multiplayerRuntime.root !== entry.runtime.root ? [["multiplayer", entry.multiplayerRuntime]] : [])];
     let normalLayout = null;
     for (const [variant, runtime] of variants) {
       const stem = runtimeStem(game);
@@ -140,6 +158,7 @@ export async function verifyRuntimeRelease(root) {
       }
       const htmlSource = await readFile(resolve(base, runtime.root, `${stem}.html`), "utf8");
       assertRuntimeDataShell(htmlSource, game, variant);
+      if (entry.multiplayerRuntime?.root === entry.runtime.root) assertSharedRuntimeShell(htmlSource, game);
       const protocolSources = [{ name: `${stem}.html`, source: htmlSource }];
       if (product.runtimeFileLayout === "directory") {
         for (const name of runtimeFileNames(game, runtime.files)) {

@@ -488,7 +488,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         replay: Readonly<{
             prefix: "th9";
         }>;
-        multiplayerRuntime: "./runtime/th09/multiplayer/th09.html";
+        multiplayerRuntime: "./runtime/th09/th09.html";
         multiplayer: Readonly<{
             titleKey: "game.title.th09mp";
             gameplay: "versus";
@@ -1493,7 +1493,7 @@ export declare function createLocalProductManifest(): {
             replay: Readonly<{
                 prefix: "th9";
             }>;
-            multiplayerRuntime: "./runtime/th09/multiplayer/th09.html";
+            multiplayerRuntime: "./runtime/th09/th09.html";
             multiplayer: Readonly<{
                 titleKey: "game.title.th09mp";
                 gameplay: "versus";

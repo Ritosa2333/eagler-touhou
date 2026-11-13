@@ -21,12 +21,11 @@ $env:EAGLER_COMMON_ROOT=(Resolve-Path 'common').Path
 $env:EAGLER_TOUHOU_NETPLAY_RELAY='ws://127.0.0.1:18142/'
 node launcher/scripts/build-runtime.mjs --game=th09 --variant=normal --emsdk='C:\tools\emsdk'
 node ports/th09/web/scripts/build-eagler.mjs
-node ports/th09/web/scripts/build-eagler.mjs --multiplayer
 bun --bun run --cwd launcher build
 npm --prefix launcher run dev:workspace
 ```
 
-资源准备入口为 [`prepare-retail-assets.mjs`](../web/scripts/prepare-retail-assets.mjs) 和 [`prepare-th09-content.mjs`](../../../launcher/scripts/prepare-th09-content.mjs)。准备的游戏内容在 `ports/th09/assets-ogg/`，包括 `th09.data` 和 19 首 `music/*.ogg`。Runtime 内容目录还需 `ports/th09/web/assets/sdl-native/cp932.bin`、`blend.bin`。编译产物在 `ports/th09/web/artifacts/sdl-release/`；两种模式的打包产物在 `ports/th09/web/build-eagler/`、`ports/th09/web/build-eagler-multiplayer/`。Launcher 地址为 <http://127.0.0.1:8130/>。房间联调另开终端：首次运行 `npm --prefix services/relay ci --ignore-scripts`，之后运行 `npm --prefix services/relay start`。
+资源准备入口为 [`prepare-retail-assets.mjs`](../web/scripts/prepare-retail-assets.mjs) 和 [`prepare-th09-content.mjs`](../../../launcher/scripts/prepare-th09-content.mjs)。准备的游戏内容在 `ports/th09/assets-ogg/`，包括 `th09.data` 和 19 首 `music/*.ogg`。Runtime 内容目录还需 `ports/th09/web/assets/sdl-native/cp932.bin`、`blend.bin`。编译产物在 `ports/th09/web/artifacts/sdl-release/`；普通和多人入口共用 `ports/th09/web/build-eagler/`。Launcher 通过 `runtimeVariant` 选择模式和存档目录。Launcher 地址为 <http://127.0.0.1:8130/>。房间联调另开终端：首次运行 `npm --prefix services/relay ci --ignore-scripts`，之后运行 `npm --prefix services/relay start`。
 
 ## 源码与验证
 

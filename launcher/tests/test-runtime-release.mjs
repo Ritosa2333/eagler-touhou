@@ -20,6 +20,19 @@ test("runtime release", async () => {
 const root = await mkdtemp(join(tmpdir(), "eagler-runtime-release-"));
 const manifest = await writeSyntheticRuntimeRelease(root);
 await verifyRuntimeRelease(root);
+assert.deepEqual(manifest.games.th09.multiplayerRuntime, manifest.games.th09.runtime);
+const wrongAlias = structuredClone(manifest);
+wrongAlias.games.th09.multiplayerRuntime = structuredClone(wrongAlias.games.th09.runtime);
+wrongAlias.games.th09.multiplayerRuntime.files["th09.wasm"].bytes++;
+assert.throws(() => validateRuntimeReleaseManifest(wrongAlias), /invalid shared Runtime identity/);
+const legacyRoot = await mkdtemp(join(tmpdir(), "eagler-runtime-release-legacy-"));
+try {
+  const legacy = await writeSyntheticRuntimeRelease(legacyRoot, {legacyTh09: true});
+  assert.notEqual(legacy.games.th09.multiplayerRuntime.root, legacy.games.th09.runtime.root);
+  await verifyRuntimeRelease(legacyRoot);
+} finally {
+  await rm(legacyRoot, {recursive: true, force: true});
+}
 
 const wasmName = Object.keys(manifest.games.th08.runtime.files).find(name => name.endsWith('.wasm'));
 assert.ok(wasmName);
