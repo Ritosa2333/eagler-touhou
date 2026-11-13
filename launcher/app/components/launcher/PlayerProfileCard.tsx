@@ -57,12 +57,12 @@ export function PlayerProfileCard({username,name,avatar,cover:banner,showRating=
   const number = new Intl.NumberFormat(locale);
   const characterScores = rating?.characters ?? [];
   return <article className="player-profile-card" aria-label={name}>
-    <ProfileCover src={banner && dataImage.test(banner) ? banner : undefined}/>
+    <header className="player-profile-card-identity">
+      <ProfileCover className="player-profile-card-cover" src={banner && dataImage.test(banner) ? banner : undefined}/>
+      <AccountAvatar src={avatar}/>
+      <div className="player-profile-card-name"><h3>{name}</h3>{username && <span>@{username}</span>}</div>
+    </header>
     <div className="player-profile-card-body">
-      <header className="player-profile-card-identity">
-        <AccountAvatar src={avatar}/>
-        <div><h3>{name}</h3>{username && <span>@{username}</span>}</div>
-      </header>
       {(rating?.total || characterScores.length > 0) && <section className="player-profile-card-scores" aria-label={t('guide.th09')}>
         <div className="player-profile-card-total">
           <img src={cover} alt="" width={24} height={24}/>

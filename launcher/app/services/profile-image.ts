@@ -56,18 +56,33 @@ function drawProfileCrop(image: HTMLImageElement, crop: ProfileImageCrop, aspect
   return canvas;
 }
 
-function drawCoverPadding(context: CanvasRenderingContext2D, sample: HTMLCanvasElement, image: HTMLImageElement,
-  source: ProfileImageCrop, x: number, width: number) {
+function drawCoverPadding(context: CanvasRenderingContext2D, strip: HTMLCanvasElement, sample: HTMLCanvasElement,
+  image: HTMLImageElement, source: ProfileImageCrop, width: number, side: 'left' | 'right') {
   const height = context.canvas.height;
-  // Resample a reflected strip at low resolution for a soft edge on all canvas implementations.
+  strip.height = height;
+  strip.width = Math.max(1, Math.ceil(width));
   sample.height = Math.min(16, height);
-  sample.width = Math.max(1, Math.round(width * sample.height / height));
-  const preview = sample.getContext('2d');
-  if (!preview) throw new ProfileImageError('readFailed');
-  preview.imageSmoothingQuality = 'high';
-  preview.setTransform(-1, 0, 0, 1, sample.width, 0);
-  preview.drawImage(image, source.x, source.y, source.width, source.height, 0, 0, sample.width, sample.height);
-  context.drawImage(sample, x, 0, width, height);
+  sample.width = Math.max(1, Math.round(strip.width * sample.height / height));
+  const reflection = strip.getContext('2d');
+  const softened = sample.getContext('2d');
+  if (!reflection || !softened) throw new ProfileImageError('readFailed');
+  const seam = side === 'left' ? strip.width : 0;
+  const transition = Math.min(strip.width, height / 2);
+  const mask = reflection.createLinearGradient(seam, 0, seam + (side === 'left' ? -transition : transition), 0);
+  mask.addColorStop(0, 'transparent');
+  mask.addColorStop(1, 'black');
+  softened.imageSmoothingQuality = reflection.imageSmoothingQuality = 'high';
+  softened.setTransform(-1, 0, 0, 1, sample.width, 0);
+  softened.drawImage(image, source.x, source.y, source.width, source.height, 0, 0, sample.width, sample.height);
+  reflection.drawImage(sample, 0, 0, strip.width, height);
+  reflection.globalCompositeOperation = 'destination-in';
+  reflection.fillStyle = mask;
+  reflection.fillRect(0, 0, strip.width, height);
+  reflection.globalCompositeOperation = 'destination-over';
+  reflection.setTransform(-1, 0, 0, 1, strip.width, 0);
+  reflection.drawImage(image, source.x, source.y, source.width, source.height, 0, 0, strip.width, height);
+  const x = side === 'left' ? 0 : context.canvas.width - width;
+  context.drawImage(strip, x, 0, width, height);
 }
 
 /** The central half of this 6:1 canvas is the selected 3:1 crop. */
@@ -95,9 +110,10 @@ export function drawProfileCover(canvas: HTMLCanvasElement, image: HTMLImageElem
   context.imageSmoothingQuality = 'high';
   const scale = outputHeight / height;
   if (leftPadding > 0 || rightPadding > 0) {
+    const strip = document.createElement('canvas');
     const sample = document.createElement('canvas');
-    if (leftPadding > 0) drawCoverPadding(context, sample, image, {x:0, y, width:leftPadding, height}, 0, leftPadding * scale);
-    if (rightPadding > 0) drawCoverPadding(context, sample, image, {x:image.naturalWidth-rightPadding, y, width:rightPadding, height}, outputWidth - rightPadding * scale, rightPadding * scale);
+    if (leftPadding > 0) drawCoverPadding(context, strip, sample, image, {x:0, y, width:leftPadding, height}, leftPadding * scale, 'left');
+    if (rightPadding > 0) drawCoverPadding(context, strip, sample, image, {x:image.naturalWidth-rightPadding, y, width:rightPadding, height}, rightPadding * scale, 'right');
   }
   context.drawImage(image, sourceLeft, y, sourceRight - sourceLeft, height,
     leftPadding * scale, 0, (sourceRight - sourceLeft) * scale, outputHeight);

@@ -7,8 +7,26 @@
 .profile-cover-frame > img,.profile-cover-backdrop {position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain}
 .profile-cover[data-wide] .profile-cover-frame > img {left:-50%;right:auto;width:200%;object-fit:fill}
 .profile-cover[data-default] .profile-cover-frame > img {object-fit:cover;object-position:50% 18%}
-.profile-cover-backdrop {display:none}
+.profile-cover-backdrop,.profile-cover-reflection {display:none}
+.profile-cover-reflection {position:absolute;overflow:hidden}
+.profile-cover-reflection > img {position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.profile-cover-reflection-blur {filter:blur(14px);mask-image:linear-gradient(var(--profile-cover-outward),transparent,#000 min(96px,22%))}
 @media(min-width:781px){
+  .profile-cover[data-responsive]:not([data-default]) .profile-cover-frame {
+    inset:0 auto 0 50%;
+    width:min(100%,calc(100cqh * var(--profile-cover-aspect)));
+    transform:translateX(-50%);
+    overflow:visible;
+  }
+  .profile-cover[data-responsive][data-wide] .profile-cover-frame {--profile-cover-aspect-wide:calc(var(--profile-cover-aspect) * 2);width:min(100%,calc(100cqh * var(--profile-cover-aspect-wide)))}
   .profile-cover[data-responsive][data-wide] .profile-cover-frame > img {left:0;width:100%;object-fit:contain}
-  .profile-cover[data-responsive]:not([data-default]) > .profile-cover-backdrop {display:block;object-fit:cover;filter:blur(14px);transform:scale(1.05)}
+  .profile-cover-reflection:is([data-side=left],[data-side=right]) {inset-block:0;display:block;width:100%}
+  .profile-cover-reflection[data-side=left] {right:100%;--profile-cover-outward:to left}
+  .profile-cover-reflection[data-side=right] {left:100%;--profile-cover-outward:to right}
+  .profile-cover-reflection > img {transform:scaleX(-1)}
+}
+@media(max-width:780px){
+  .profile-cover-reflection[data-side=bottom] {inset:100% 0 auto;display:block;height:100%;--profile-cover-outward:to bottom}
+  .profile-cover-reflection[data-side=bottom] > img {transform:scaleY(-1)}
+  .profile-cover[data-wide] .profile-cover-reflection[data-side=bottom] > img {left:-50%;right:auto;width:200%;object-fit:fill}
 }

@@ -7,15 +7,20 @@ import {PROFILE_DESKTOP_COVER_ASPECT, PROFILE_IMAGE_ASPECT} from '../../services
 export function ProfileCover({src, className, responsive}: {src?: string; className?: string; responsive?: boolean}) {
   const backgroundUrl = useHref('/assets/launcher-background.webp');
   const [wideSource, setWideSource] = useState<string>();
+  const image = src || backgroundUrl;
   return <div className={className ? `profile-cover ${className}` : 'profile-cover'}
     data-default={!src || undefined} data-responsive={responsive || undefined} data-wide={src && src === wideSource ? true : undefined}
     style={{
       aspectRatio: PROFILE_IMAGE_ASPECT.cover,
       '--profile-cover-aspect': PROFILE_IMAGE_ASPECT.cover,
     } as CSSProperties}>
-    {responsive && <img className="profile-cover-backdrop" src={src || backgroundUrl} alt="" decoding="async" />}
+    {responsive && <img className="profile-cover-backdrop" src={image} alt="" decoding="async" />}
     <div className="profile-cover-frame">
-      <img src={src || backgroundUrl} alt="" decoding="async" onLoad={event => {
+      {responsive && src && (['left', 'right', 'bottom'] as const).map(side => <div key={side} className="profile-cover-reflection" data-side={side}>
+        <img src={src} alt="" decoding="async" />
+        <img className="profile-cover-reflection-blur" src={src} alt="" decoding="async" />
+      </div>)}
+      <img src={image} alt="" decoding="async" onLoad={event => {
         const {naturalWidth, naturalHeight} = event.currentTarget;
         if (src && Math.abs(naturalWidth / naturalHeight - PROFILE_DESKTOP_COVER_ASPECT) < .15) setWideSource(src);
       }} />

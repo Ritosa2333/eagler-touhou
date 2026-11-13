@@ -23,8 +23,6 @@ import {normalizeProfileDisplay, type ProfileDisplay} from '../../models/profile
 const AccountSettings=lazy(()=>import('./AccountSettings').then(module=>({default:module.AccountSettings})));
 type SocialLink = {label: string; url: string};
 export type Profile = {name: string; bio: string; avatar: string; cover: string; links: SocialLink[]; roomAvatarReady?: boolean};
-const tabLabels = {overview:'profile.tab.overview', versus:'profile.gameData'} as const;
-type ProfileTab = keyof typeof tabLabels;
 const blankProfile: Profile = {name: '', bio: '', avatar: '', cover: '', links: []};
 const imageData = (value: string) => /^data:image\/(png|jpeg|webp);base64,/i.test(value);
 const safeUrl = (value: string) => {try {const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url : null;} catch {return null;}};
@@ -99,9 +97,6 @@ function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,clo
   const location=useLocation(),navigate=useNavigate();
   const socialTab=profileSocialTab(location.search,location.hash);
   const showingSocial=!!socialTab;
-  const anchor=location.hash.replace(/^#profile-/,'');
-  const tab:ProfileTab = ['versus','career','records'].includes(anchor) ? 'versus' : 'overview';
-  const sectionAddress=(key:ProfileTab)=>({pathname:location.pathname,search:location.search,hash:`#profile-${key}`});
   const [legacySaved, setLegacySaved] = useState<{source:RemoteProfile;profile:Profile;display:ProfileDisplay}>();
   const local = legacySaved?.source === remote ? legacySaved : undefined;
   const profile = local?.profile ?? {...blankProfile,...remote.details,name:remote.nickname,roomAvatarReady:remote.roomAvatarReady};
@@ -123,7 +118,6 @@ function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,clo
   const characterPreview = import.meta.env?.DEV && remote.characterRatingPreview === true;
   const editProfile = () => navigate({pathname:location.pathname,search:location.search,hash:'#edit'});
   const showGameData = display.visible.versus || display.visible.career || display.visible.records;
-  const visibleTabs: ProfileTab[] = showGameData ? ['overview', 'versus'] : ['overview'];
   const links = [...new Map(profile.links.map(link => [link.url,link])).values()];
   const details = characterPreview ? null : <><p className="profile-bio">{profile.bio || t('profile.bio.missing')}</p>{remote.joinedAt && <dl className="profile-about-meta">
     <div><dt><CalendarDays/>{t('profile.registeredAt')}</dt><dd><time dateTime={remote.joinedAt}>{new Intl.DateTimeFormat(locale,{year:'numeric',month:'long',timeZone:'UTC'}).format(new Date(remote.joinedAt))}</time></dd></div>
@@ -132,7 +126,6 @@ function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,clo
       const Icon = /(^|\.)github\.com$/.test(host) ? CodeXml : /(^|\.)(discord\.com|discord\.gg)$/.test(host) ? MessageCircle : /(^|\.)(bilibili\.com|b23\.tv)$/.test(host) ? TvMinimal : Link2;
       return <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer"><Icon aria-hidden="true"/><span>{link.label}</span><ArrowUpRight aria-hidden="true"/></a>;
     })}</div>}</>;
-  const navigation = visibleTabs.map(item => <Link key={item} to={sectionAddress(item)} aria-current={tab===item ? 'location' : undefined}>{t(tabLabels[item])}</Link>);
   if (settings) return <Suspense fallback={<ProfileLoading/>}><AccountSettings username={remote.username} initialProfile={profile} initialDisplay={display} reviewPending={remote.reviewPending}
     panel={panel} readLocalSaves={readLocalSaves} cloudSync={cloudSync}
     onSave={(next,visibility) => {if (remote.reviewPending === undefined) setLegacySaved({source:remote,profile:next,display:visibility});}}/></Suspense>;
@@ -167,8 +160,7 @@ function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,clo
       <SocialSection username={remote.username} tab={socialTab}/>
     </SocialProvider> : <>
       <div className="profile-header-details">{details}</div>
-      <nav className="profile-section-nav profile-nav-mobile" aria-label={t('profile.navigationSections')}>{navigation}</nav>
-      <div className="profile-columns"><aside className="profile-aside"><div className="profile-sidebar-details">{details}</div><nav className="profile-section-nav profile-nav-desktop" aria-label={t('profile.navigationSections')}>{navigation}</nav></aside>
+      <div className="profile-columns"><aside className="profile-aside"><div className="profile-sidebar-details">{details}</div></aside>
         <div className="profile-content">
         {showGameData && <ProfileGameDataCard key={remote.username} username={remote.username} owner={owner}
           display={display} statistics={statistics} statisticsError={statisticsError}/>}

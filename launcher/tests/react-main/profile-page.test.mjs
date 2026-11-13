@@ -174,16 +174,11 @@ test('saves default view and visibility and previews two duel rows across dates'
   } finally {globalThis.ResizeObserver=BaseResizeObserver;}
 });
 
-test('public navigation locates sections already present on the page',async()=>{
+test('profile overview and game data are visible without section navigation',async()=>{
   await mount();
   await waitForProfile(()=>['versus'].every(key=>env.document.getElementById('profile-'+key)));
-  const sections=['versus'].map(key=>env.document.getElementById('profile-'+key));
-  assert.ok(sections.every(Boolean));
-  const links=[...env.document.querySelectorAll('.profile-nav-mobile a')];
-  assert.deepEqual(links.map(link=>link.hash),['#profile-overview','#profile-versus']);
-  assert.ok(links.every(link=>new URL(link.href).searchParams.get('lang')==='en'));
-  await React.act(async()=>links.find(link=>link.hash==='#profile-versus').click());
-  for(const node of sections)assert.equal(env.document.getElementById(node.id),node,'anchor selection must not swap sections');
+  assert.ok(env.document.getElementById('profile-overview'));
+  assert.equal(env.document.querySelector('.profile-section-nav'),null);
   assert.equal(env.document.querySelector('.profile-header-details .profile-bio').textContent,'Profile text');
   assert.ok(env.document.querySelector('.profile-aside .profile-bio'));
   assert.equal(env.document.querySelector('.profile-country').textContent,'China');
@@ -199,17 +194,14 @@ test('public navigation locates sections already present on the page',async()=>{
 
 });
 
-test('profile deep links and Back/Forward select their actual anchor',async()=>{
+test('legacy profile deep links and history navigation preserve game data',async()=>{
   await mount(owners.ProfilePage,{},['/profile.html?lang=en#profile-career']);
-  await waitForProfile(()=>!!env.document.querySelector('.profile-nav-mobile a[aria-current="location"]'));
-  const current=()=>env.document.querySelector('.profile-nav-mobile [aria-current=location]')?.hash;
-  assert.equal(current(),'#profile-versus');
   await waitForProfile(()=>!!env.document.querySelector('.profile-clear-chart'));
   const card=env.document.getElementById('profile-versus');
   await React.act(async()=>moveHistory('/u/player?lang=en#profile-versus'));
-  assert.equal(current(),'#profile-versus');
+  assert.equal(env.document.getElementById('profile-versus'),card);
   await React.act(async()=>moveHistory(-1));
-  assert.equal(current(),'#profile-versus');
+  assert.equal(env.document.getElementById('profile-versus'),card);
   await React.act(async()=>moveHistory(1));
   assert.equal(env.document.getElementById('profile-versus'),card);
 });
@@ -221,7 +213,7 @@ test('public profile statistics omit career data hidden by the profile privacy s
   assert.equal(env.document.getElementById('profile-content'),null);
   assert.ok(env.document.querySelector('.profile-flight-total'));
   assert.equal(env.document.getElementById('profile-friends'),null);
-  assert.deepEqual([...env.document.querySelectorAll('.profile-nav-mobile a')].map(link=>link.hash),['#profile-overview','#profile-versus']);
+  assert.equal(env.document.querySelector('.profile-section-nav'),null);
   assert.equal(env.document.querySelector('.profile-social-tools label'),null);
 });
 

@@ -47,7 +47,7 @@ beforeAll(async () => {
   Object.defineProperty(env.window.HTMLCanvasElement.prototype,'getContext',{configurable:true,value:function () {
     const draws = canvasDraws.get(this) ?? [];
     canvasDraws.set(this, draws);
-    return {canvas:this, clearRect(){draws.length=0;}, setTransform(){}, drawImage(source, ...rect){draws.push({source,rect});}};
+    return {canvas:this, clearRect(){draws.length=0;}, setTransform(){}, createLinearGradient(){return {addColorStop(){}};}, fillRect(){}, drawImage(source, ...rect){draws.push({source,rect});}};
   }});
   Object.defineProperty(env.window.HTMLCanvasElement.prototype,'toBlob',{configurable:true,value(callback,type){callback(new env.window.Blob([Uint8Array.of(1)],{type:type||'image/png'}));}});
   env.window.scrollTo = () => {};

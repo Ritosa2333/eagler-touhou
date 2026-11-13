@@ -1,12 +1,37 @@
 .player-profile-card{overflow:hidden;border:1px solid var(--kit-border);border-radius:10px;background:var(--kit-card);color:var(--kit-foreground)}
 .player-profile-popover.ui-menu{width:min(328px,calc(100vw - 24px));padding:0;border:0;background:transparent}
 .player-profile-card-body{padding:0 14px 10px}
-.player-profile-card-identity{position:relative;display:grid;grid-template-columns:56px minmax(0,1fr);align-items:center;gap:9px;min-width:0}
-.player-profile-card-identity>.account-avatar{--account-avatar-size:56px;--account-avatar-radius:13px;display:block;width:56px;height:56px;margin-top:-19px;align-self:start;border:3px solid var(--kit-card);border-radius:13px}
-.player-profile-card-identity>div{padding-top:6px}
-.player-profile-card-identity h3{margin:0;font-size:16px;line-height:1.35;overflow-wrap:anywhere}
-.player-profile-card-identity div>span{display:block;margin-top:1px;color:var(--kit-muted-foreground);font-size:11px;overflow-wrap:anywhere}
-.player-profile-card-scores{margin-top:11px;padding-top:8px;border-top:1px solid var(--kit-border);font-size:12px;font-variant-numeric:tabular-nums}
+.player-profile-card-identity{
+  position:relative;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:9px;
+  min-height:70px;
+  padding:12px 14px;
+  overflow:hidden;
+}
+.player-profile-card-cover{
+  position:absolute;
+  inset:0 0 auto auto;
+  width:min(100%,210px);
+  pointer-events:none;
+  mask-image:linear-gradient(to right,transparent,#000 46%);
+}
+.player-profile-card-identity::after{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(to right,var(--kit-card) 20%,color-mix(in srgb,var(--kit-card) 66%,transparent) 62%,transparent);
+  pointer-events:none;
+  content:'';
+}
+.player-profile-card-identity>.account-avatar,.player-profile-card-name{position:relative;z-index:1}
+.player-profile-card-identity>.account-avatar{--account-avatar-size:44px;--account-avatar-radius:10px}
+.player-profile-card-name{min-width:0}
+.player-profile-card-name :is(h3,span){overflow-wrap:anywhere}
+.player-profile-card-name h3{margin:0;font-size:16px;line-height:1.35}
+.player-profile-card-name>span{display:block;margin-top:1px;color:var(--kit-muted-foreground);font-size:11px}
+.player-profile-card-scores{padding-top:8px;border-top:1px solid var(--kit-border);font-size:12px;font-variant-numeric:tabular-nums}
 .player-profile-card-total,.player-profile-card-characters li{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:26px}
 .player-profile-card-total>img{border-radius:4px}
 .player-profile-card-total h4{margin:0;font-size:13px;font-weight:600}

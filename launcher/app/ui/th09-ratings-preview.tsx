@@ -28,7 +28,6 @@ const timestamp = count.max(8.64e15);
 const status = z.enum(['active', 'provisional', 'inactive']);
 const boardSchema = z.object({
   as_of: timestamp,
-  default_min_games: count,
   board: z.array(z.object({
     player: z.string(),
     rating: z.number(),
@@ -53,11 +52,13 @@ type Entry = Board['board'][number] & { characterScore?: z.infer<typeof th09Char
 type RankedEntry = Entry & { position: number };
 const statusLabels = { active: 'th09.boardActive', provisional: 'th09.boardProvisional', inactive: 'th09.boardInactive' } as const;
 const filters = ['active', 'provisional', 'inactive', 'all'] as const;
+const defaultMinimum = 11;
 const numbers = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
 const percentages = new Intl.NumberFormat('zh-CN', { style: 'percent', maximumFractionDigits: 1 });
 const winRate = (row: Entry) => row.wins / row.games;
 const playerName = (row: Entry) => row.profile?.nickname ?? row.player;
 const subscribeHydration = () => () => {};
+const boardGames = (row: Entry) => row.characterScore?.games ?? row.games;
 const boardRating = (row: Entry) => row.characterScore?.rating ?? row.rating;
 const boardDeviation = (row: Entry) => row.characterScore?.interval ?? row.interval_halfwidth;
 
@@ -87,7 +88,7 @@ function useRatingColumns(characterBoard: boolean): Column[] {
     { key: 'position', title: '#', compact: true, numeric: true, value: row => row.position },
     { key: 'player', title: 'th09.boardPlayer', compact: true, value: playerName },
     ...scoreColumns,
-    { key: 'games', title: 'th09.boardGames', numeric: true, value: row => row.games },
+    { key: 'games', title: 'th09.boardGames', numeric: true, value: boardGames },
     { key: 'winRate', title: 'th09.winRate', numeric: true, value: winRate, render: row => percentages.format(winRate(row)) },
     { key: 'community', title: 'th09.boardGroup', value: row => row.connected_group,
       render: row => t('th09.boardGroupNumber', {number: row.connected_group}) },
@@ -180,21 +181,20 @@ export function Th09RatingBoard() {
   }
   return <div className="rating-preview" id="rating-main">
     <RatingBoard rows={rows} updatedAt={board?.as_of} character={character}
-      defaultMinimum={character === undefined ? board?.default_min_games ?? 10 : 1}
       onCharacterChange={changeCharacter} failed={failed && !board} retry={retry} />
   </div>;
 }
 
 const defaultSort = {key:'rating', direction:-1};
 
-function RatingBoard({rows, updatedAt, character, defaultMinimum, onCharacterChange, failed, retry}: {
+function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, retry}: {
   rows?: Entry[]; updatedAt?: number; character?: number; onCharacterChange(value: number | undefined): void;
-  defaultMinimum: number; failed: boolean; retry(): void;
+  failed: boolean; retry(): void;
 }) {
   const {t, locale} = useLocale();
   const characterBoard = character !== undefined;
   const columns = useRatingColumns(characterBoard);
-  const [filter, setFilter] = useState<Filter>('all');
+  const [filter, setFilter] = useState<Filter>('active');
   const [group, setGroup] = useState('all');
   const [minimum, setMinimum] = useState<string>();
   const [query, setQuery] = useState('');
@@ -211,9 +211,9 @@ function RatingBoard({rows, updatedAt, character, defaultMinimum, onCharacterCha
   const groups = [...new Set(rows?.map(row => row.connected_group))].sort((a, b) => a - b);
   const minGames = Math.max(1, Math.trunc(Number(minimum ?? defaultMinimum)) || 1);
   const search = query.trim().toLowerCase();
-  const pool = (rows ?? []).filter(row => row.games >= minGames && (characterBoard || (
-    (group === 'all' || row.connected_group === Number(group)) && (filter === 'all' || row.status === filter)
-  ))).map((row, index) => ({ ...row, position: row.rank ?? index + 1 }));
+  const pool = (rows ?? []).map((row, index) => ({ ...row, position: row.rank ?? index + 1 }))
+    .filter(row => boardGames(row) >= minGames && (filter === 'all' || row.status === filter)
+      && (characterBoard || group === 'all' || row.connected_group === Number(group)));
   const nameQuery = search.replace(/^@/, '');
   const found = search ? pool.filter(row => playerName(row).toLowerCase().includes(nameQuery)
     || (row.profile && `@${row.profile.username.toLowerCase()}`.includes(search))) : pool;
@@ -239,7 +239,7 @@ function RatingBoard({rows, updatedAt, character, defaultMinimum, onCharacterCha
 
   function clearFilters() {
     setQuery('');
-    setMinimum(undefined);
+    setMinimum('1');
     setFilter('all');
     setGroup('all');
     setContextScope(null);
@@ -250,7 +250,7 @@ function RatingBoard({rows, updatedAt, character, defaultMinimum, onCharacterCha
     return sort.direction === 1 ? <ArrowUp aria-hidden="true" /> : <ArrowDown aria-hidden="true" />;
   }
 
-  const filtered = minGames !== defaultMinimum || (!characterBoard && (filter !== 'all' || group !== 'all'));
+  const filtered = minGames > 1 || filter !== 'all' || (!characterBoard && group !== 'all');
   const loading = !rows && !failed;
   const boardTitle = t('th09.ratingBoard');
   const columnTitle = (item: Column) => item.title === '#' ? item.title : t(item.title);
@@ -313,13 +313,13 @@ function RatingBoard({rows, updatedAt, character, defaultMinimum, onCharacterCha
             <Input id="rating-minimum" type="number" min={1} step={1} value={minimum ?? defaultMinimum}
               onChange={event => { setMinimum(event.currentTarget.value); setContextScope(null); }} />
           </Field>
-          {!characterBoard && <><Field>
+          {!characterBoard && <Field>
             <FieldLabel htmlFor="rating-group-trigger">{t('th09.boardGroup')}</FieldLabel>
             <MainSelect id="rating-group" aria-label={t('th09.boardGroup')} value={group} onChange={event => { setGroup(event.currentTarget.value); setContextScope(null); }}>
               <option value="all">{t('lobby.all')}</option>
               {groups.map(value => <option key={value} value={String(value)}>{t('th09.boardGroupNumber', {number: value})}</option>)}
             </MainSelect>
-          </Field>
+          </Field>}
           <Field>
             <FieldLabel htmlFor="rating-status-trigger">{t('th09.boardStatus')}</FieldLabel>
             <MainSelect id="rating-status" aria-label={t('th09.boardStatus')} value={filter}
@@ -328,7 +328,7 @@ function RatingBoard({rows, updatedAt, character, defaultMinimum, onCharacterCha
                 {value === 'all' ? t('lobby.all') : t(statusLabels[value])}
               </option>)}
             </MainSelect>
-          </Field></>}
+          </Field>
         </PopoverContent>
       </Popover>
     </fieldset>
