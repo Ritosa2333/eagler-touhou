@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "baseCore": "5eb4ac87d227027f390fa006e1126a094b820860",
+  "beforePatchSha256": "80255c6c18f5b816b76de0917d503881a51f7fea398b8661e0e66ff802d3f324",
+  "afterPatchSha256": "f1d3190b5d0632f4ad982dc055190556378918c953da0b11b76a5114f2ea2c54",
+  "changedSections": [
+    "runtimes/th12/th12_web/cpp/game/ShotCallbacksTh14.cpp"
+  ],
+  "otherSectionsBytePreserved": true,
+  "wholePatchReverseAndApplyChecked": true,
+  "fixture": {
+    "passed": true,
+    "nativeValidCases": 4032,
+    "nativeNegativeEdges": 48,
+    "ordinaryGuardCases": 30,
+    "journalRecordPlaybackCases": 21,
+    "normalAccess": true,
+    "optionalWasmSha256": "0270332908d5206c9d4f26d0f63467a6dabd56800bf00b35a3a145de9108d12c",
+    "optionalFullRuntimeBuilt": false,
+    "optionalPatchPublished": false,
+    "completeGame": false
+  },
+  "fullOptionalRuntimeBuilt": false,
+  "published": false,
+  "completeGame": false,
+  "linuxApplication": {
+    "passed": true,
+    "baseline": "5eb4ac87d227027f390fa006e1126a094b820860",
+    "filesReadFromGitBlobs": 98,
+    "patchSha256": "f1d3190b5d0632f4ad982dc055190556378918c953da0b11b76a5114f2ea2c54",
+    "linuxWholePatchCheckAndApply": true
+  }
+}

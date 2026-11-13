@@ -4891,21 +4891,29 @@ index cdf1db8bf7eb6652a542954133550d4741f6001e..8cf00880b669633484676c9702d13741
          // Retail446c72..446cb1 writes play origin after target/clear only
          // when the intermediate render target exists. Reset retains it.
 diff --git a/runtimes/th12/th12_web/cpp/game/ShotCallbacksTh14.cpp b/runtimes/th12/th12_web/cpp/game/ShotCallbacksTh14.cpp
-index cbf7d610dfe8bcb50c5bd5afc5558ce95dc63661..42a88c4b0e51def1bca32f7922aa62f8fed4e3ac 100644
 --- a/runtimes/th12/th12_web/cpp/game/ShotCallbacksTh14.cpp
 +++ b/runtimes/th12/th12_web/cpp/game/ShotCallbacksTh14.cpp
-@@ -104,7 +104,10 @@ bool shot_th14_beam_hit(ShotState& shot,ShotPlayer& player,Th14DamageArea& area,
+@@ -104,8 +104,18 @@
          const float x=dx*c-dy*s,y=dy*c+dx*s;
          if(r==0)return false;
          if(std::abs(y)>r||x<-r||(x<0&&x*x+y*y>r*r)){
 -            const u32 bits=NativeStackTh14::fallback_bits(player.th14_native_stack->beam_fallback_scratch());
+-            std::memcpy(&shot.th14_beam_length,&bits,4);
 +            auto& stack=*player.th14_native_stack;
 +            u32 scratch=stack.beam_fallback_scratch();
 +            if(stack.practice_laser)scratch=stack.practice_laser->access(scratch);
 +            const u32 bits=NativeStackTh14::fallback_bits(scratch);
-             std::memcpy(&shot.th14_beam_length,&bits,4);
++            float fallback;std::memcpy(&fallback,&bits,4);
++            // Explicit thprac journals retain their recorded correction semantics.
++            // Ordinary mode uses the same bounded fallback as the normal Runtime.
++            const bool traced=stack.practice_laser&&stack.practice_laser->mode!=0;
++            constexpr float maximum_length=512.f+18.f;
++            if(!traced&&(!std::isfinite(fallback)||fallback>maximum_length))
++                fallback=std::isfinite(shot.th14_beam_length)?std::clamp(shot.th14_beam_length,0.f,maximum_length):0.f;
++            shot.th14_beam_length=fallback;
          }else{
              const float t=y/r;shot.th14_beam_length=std::max(0.f,x-float(std::sqrt(double(1.f-t*t)))*r+8.f);
+         }
 diff --git a/runtimes/th12/th12_web/cpp/game/ShotDamageTh14.cpp b/runtimes/th12/th12_web/cpp/game/ShotDamageTh14.cpp
 index 964ab91c3b0e2cf93f2a12eceb80ad6bcd4ab589..56379c5f22776188723f27ea891ffcc7f29b4502 100644
 --- a/runtimes/th12/th12_web/cpp/game/ShotDamageTh14.cpp
