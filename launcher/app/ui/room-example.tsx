@@ -92,6 +92,7 @@ function initial(): DemoState {
 /** Chinese maintainer examples use production views with document-local state. */
 export function RoomExample({
   announce,
+  chatDemo = false,
   renderRegion = (id, children) => (
     <section id={`page-room-${id}`} key={id}>
       {children}
@@ -99,11 +100,12 @@ export function RoomExample({
   ),
 }: {
   announce(message: string): void;
+  chatDemo?: boolean;
   renderRegion?(id: string, children: ReactNode): ReactNode;
 }) {
   const [state, setState] = useState(initial);
   const [chatSerial, setChatSerial] = useState(0);
-  const [chatMember,setChatMember]=useState(false);
+  const [chatMember,setChatMember]=useState(chatDemo);
   const [networkState, setNetworkState] = useState<'connected' | 'checking' | 'unavailable'>('connected');
   const [networkPeer, setNetworkPeer] = useState<string | undefined>();
   const [personalOpen, setPersonalOpen] = useState(false),
@@ -111,6 +113,7 @@ export function RoomExample({
   const trigger = useRef<HTMLElement | null>(null);
   useEffect(() => {
     let messageId=1;
+    const pending = new Set<number>();
     const model = createMultiplayerQuickChatModel({
       send: (message) => {
         const current = model.getSnapshot().context;
@@ -120,7 +123,7 @@ export function RoomExample({
           model.receive({type:'chat-result',action:'chat-report',ok:true});
           return;
         }
-        model.receive({
+        const deliver = () => model.receive({
           ...message,
           ...(message.type==='free-chat'?{messageId:messageId++,authorId:'handbook-member',name:'演示房主'}:{}),
           room: current?.room,
@@ -128,7 +131,10 @@ export function RoomExample({
           spectator: current?.localSpectator,
           clientId: current?.localClientId ?? 'handbook-host',
         });
-        if(message.type==='free-chat')model.receive({type:'chat-result',action:'free-chat',ok:true});
+        if(message.type==='free-chat') {
+          const timer=window.setTimeout(()=>{pending.delete(timer);deliver();model.receive({type:'chat-result',action:'free-chat',ok:true});}, 1500);
+          pending.add(timer);
+        } else deliver();
       },
       voice() {},
       notify:code=>announce(code==='reported'?'示例发言已撤回':'操作未完成'),
@@ -138,7 +144,7 @@ export function RoomExample({
       },
     });
     setChat(model);
-    return () => model.dispose();
+    return () => {pending.forEach(timer=>{window.clearTimeout(timer);});model.dispose();};
   }, [announce]);
   useEffect(() => {
     chat?.update({
@@ -528,7 +534,7 @@ export function RoomExample({
           )}
           {renderRegion('chat', chat && <><ChoiceGroup type="single" value={chatMember?'member':'guest'} onValueChange={value=>setChatMember(value==='member')} aria-label="聊天身份示例">
             <ChoiceItem value="guest">游客</ChoiceItem><ChoiceItem value="member">注册用户</ChoiceItem>
-          </ChoiceGroup><RoomQuickChat model={chat}/></>)}
+          </ChoiceGroup>{chatDemo ? <div className="room-workspace-chat" style={{height:300}}><RoomQuickChat model={chat} part="log"/><RoomQuickChat model={chat} part="actions"/></div> : <RoomQuickChat model={chat}/>}</>)}
           {renderRegion('spectators', <RoomSpectators state={state} service={actions} hidden={false} />)}
           {renderRegion('settings', <RoomGameSettings state={state} service={actions} hidden={false} />)}
           {renderRegion(

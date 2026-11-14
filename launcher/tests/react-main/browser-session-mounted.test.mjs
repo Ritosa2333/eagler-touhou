@@ -117,7 +117,8 @@ before(async () => {
         import {cloudSaveEnabled} from 'captured-cloud-save-sync';
         export {cloudSaveEnabled as accountsEnabled};
       ` : `
-        import {readCurrentPackageGeneration as readCurrent} from './package/package-store.mjs';
+        import {readCurrentPackageGeneration as readCurrent, readPackageObject} from './package/package-store.mjs';
+        export {readPackageObject};
         let gate; export function setPackageReadGate(value) {gate = value;}
         export function readCurrentPackageGeneration(game) {const wait = gate?.(game); return wait ? Promise.resolve(wait).then(() => readCurrent(game)) : readCurrent(game);}
       `}));
@@ -2224,9 +2225,19 @@ for (const locale of ['en', 'zh-CN']) for (const code of [4004, 4007, 4008, 4009
     assert.equal(f.sessionStorage.removals.slice(removesBefore).filter(key => key === 'eagler-touhou-th06mp-room-v1').length, 1);
     assert.deepEqual(feedback.toasts, expected.toasts, 'one feedback owner; directory departure has no transient toast');
     assert.equal(session.feedback.getSnapshot().toastRevision - feedback.initial.toastRevision, expected.toasts.length);
-    assert.deepEqual(f.sessionStorage.writes.slice(writesBefore).filter(([key]) => key === 'eagler-lobby-message'), expected.storageWrites);
     const message = expected.storageWrites[0][1];
-    assert.equal(session.directory.getSnapshot().notice, message); assert.equal(node('#notice').textContent, message); assert.equal(node('#notice').hidden, false);
+    if (code === 4010) {
+      assert.deepEqual(f.sessionStorage.writes.slice(writesBefore).filter(([key]) => key === 'eagler-lobby-message'), []);
+      await until(() => node('#decisionDialog').open, 'removed player sees a modal');
+      assert.equal(node('#decisionTitle').textContent, message);
+      assert.equal(node('#decisionDialog').dataset.tone, 'danger');
+      assert.ok(node('#decisionConfirm').className.includes('bg-destructive'));
+      assert.equal(node('#notice').hidden, true);
+      await click('#decisionConfirm');
+    } else {
+      assert.deepEqual(f.sessionStorage.writes.slice(writesBefore).filter(([key]) => key === 'eagler-lobby-message'), expected.storageWrites);
+      assert.equal(session.directory.getSnapshot().notice, message); assert.equal(node('#notice').textContent, message); assert.equal(node('#notice').hidden, false);
+    }
     assert.equal(f.sessionStorage.getItem('eagler-lobby-message'), null, 'directory consumes the committed return message once');
     assert.equal(session.feedback.getSnapshot().toastOpen, feedback.initial.toastOpen);
     const socketCount = f.sockets.filter(value => new URL(value.url).searchParams.has('lobby')).length;
@@ -2275,6 +2286,17 @@ for (const fromDirectory of [false, true]) test(`actual BrowserLauncher terminal
   await React.act(async () => {f.native.emit('exit', {status: 'error'});});
   await until(() => !session.getSnapshot().playerOpen && !session.getRuntime().getSnapshot().launched, 'authenticated Runtime Exit finishes the synthetic preflight');
   assert.equal(node('#player').classList.contains('room-workspace'), true);
+});
+test('removed player receives a warning modal while a game is running', async () => {
+  const {session, socket} = await actualTerminalRoom({fromDirectory:true});
+  await click('[data-mp-seat="0"] .mp-seat-edit'); await click('#mpCheckGame');
+  await until(() => session.getRuntime().getSnapshot().launched, 'multiplayer Runtime has launched');
+  await React.act(async () => {socket.close(4010);});
+  await until(() => node('#decisionDialog').open, 'removed player sees a modal');
+  assert.equal(node('#decisionTitle').textContent, api.translate('en','lobby.removed'));
+  assert.equal(node('#decisionDialog').dataset.tone, 'danger');
+  assert.ok(node('#decisionConfirm').className.includes('bg-destructive'));
+  await click('#decisionConfirm');
 });
 for (const strictMode of [false, true]) test(`actual BrowserLauncher terminal warm directory return preserves notice (StrictMode=${strictMode})`, async () => {
   const {f, session, directorySocket} = await liveActualDirectory({strictMode});
@@ -2800,6 +2822,22 @@ for (const localSeat of [0,1]) test(`room title switch reuses the room code and 
   assert.equal(session.room.service.getSnapshot().product,'th07mp');
   assert.equal(session.room.service.getSnapshot().room.code,'1234');
   assert.equal(session.room.service.getSnapshot().seat,localSeat);
+});
+
+test('room title menu offers published PC-98 multiplayer and sends its switch request', async () => {
+  const host=subsetHost(['th06','th03']); host.shared.netplayRelay='wss://relay.invalid/socket';
+  const f=await mountBrowser({initial:'/?game=th06mp&mpRoom=1234',host,socketBoundary:true,seedPackages:['th06']});
+  const session=api.getTestSession(); await until(()=>f.sockets.length>0,'room socket');
+  const socket=f.sockets[0],clientId=new URL(socket.url).searchParams.get('lobby');
+  const room={code:'1234',playerCount:2,difficulty:1,phase:'lobby',startSerial:0,seats:[{clientId,name:'Local',loadout:0,ready:false},null],spectators:[]};
+  await React.act(async()=>{socket.open();socket.message({type:'state',roomDirectory:{version:1,globalRoomCodes:true},room});});
+  await until(()=>session.metadata.getSnapshot().products.includes('th03mp'),'published PC-98 runtime is available');
+  await until(()=>!!env.document.querySelector('#roomProductSelect'),'host game selector');
+  await React.act(async()=>node('#roomProductSelect').dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true})));
+  await until(()=>!!env.document.querySelector('[data-product-choice="th03mp"]'),'PC-98 game appears in switch menu');
+  assert.equal(node('[data-product-choice="th03mp"]').closest('[data-lobby-category]').dataset.lobbyCategory,'versus');
+  await click('[data-product-choice="th03mp"]');
+  assert.deepEqual(socket.sent.at(-1),{type:'switch-product',product:'th03mp'});
 });
 
 test('actual BrowserLauncher: spectator toolbar exits playback into the existing room', async () => {

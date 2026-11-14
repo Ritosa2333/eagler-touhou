@@ -55,8 +55,11 @@ body:has(#player.room-workspace) :is(.ui-kit-select-content,.ui-menu)[data-ui-su
 .room-workspace-panels fieldset{padding:0;margin:0;border:0;min-width:0}
 .room-workspace-panels #mpRoomGuideOpen{padding:8px 0;border:0;background:none;color:var(--muted);font:600 14px var(--ui-font);cursor:pointer}
 .room-workspace-chat{height:100%;display:flex;flex-direction:column;min-height:0}
-#mpRoomView.room-workspace-view .mp-room-chat-log{position:static!important;display:flex!important;flex-direction:column;justify-content:flex-end;flex:1;min-height:0;overflow:auto;max-height:none!important;margin:0 0 12px;padding:0;background:none!important;font-size:15px;line-height:1.65}
-#mpRoomView.room-workspace-view .mp-room-chat-log p{margin:6px 0;overflow-wrap:anywhere}
+#mpRoomView.room-workspace-view .mp-room-chat-log{position:static!important;display:flex!important;flex-direction:column;justify-content:flex-start;flex:1;min-height:0;overflow:auto;overflow-anchor:none;overscroll-behavior:contain;max-height:none!important;margin:0 0 12px;padding:0;background:none!important;font-size:15px;line-height:1.65}
+#mpRoomView.room-workspace-view .mp-room-chat-log p{flex:none;margin:6px 0;overflow-wrap:anywhere}
+@media (min-width:761px) and (orientation:landscape){#mpRoomView.room-workspace-view .mp-room-chat-log p:first-child{margin-top:auto}}
+.room-workspace-chat>.room-chat-desktop-history{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 24px;gap:4px;flex:1;min-height:0;margin:0 0 12px}
+#mpRoomView.room-workspace-view .room-chat-desktop-history>.mp-room-chat-log{min-width:0;margin:0;scrollbar-width:none}
 #mpRoomView.room-workspace-view .mp-room-quick-chat{display:block!important;position:relative;min-width:0}
 #mpRoomView.room-workspace-view #mpRoomChat{flex:none;padding:0;margin:0;background:none;border:0}
 .room-quick-chat-chevron{transition:transform var(--ui-feedback-duration) var(--ui-feedback-easing)}
@@ -244,19 +247,27 @@ body:has(#player.room-workspace) :is(.ui-kit-select-content,.ui-menu)[data-ui-su
 #mpRoomView .mp-room-code strong{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
 #mpRoomView .mp-room-panel{position:fixed;inset:0;box-sizing:border-box;width:min(520px,calc(100vw - 32px));max-width:none;max-height:calc(100dvh - 32px);margin:auto;padding:20px;border:1px solid var(--kit-border);border-radius:10px;background:var(--kit-card);color:var(--kit-foreground);box-shadow:var(--ui-window-shadow);overflow:auto;font:400 13px/1.5 var(--kit-font)}
 #mpRoomView .mp-room-panel:not([open]){display:none}
-/* Only the slider changes the history position on a narrow room layout. */
-.room-chat-history{display:grid;grid-template-columns:minmax(0,1fr) 32px;gap:4px;height:152px;margin-bottom:12px}
-.room-chat-history-viewport{min-height:0;overflow:hidden;overflow-anchor:none;touch-action:pan-y;font-size:14px;line-height:1.65}
+/* The history viewport and slider share the same scroll position. */
+.room-chat-history{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 32px;gap:4px;height:152px;margin-bottom:12px}
+.room-chat-unread.ui-kit-button {position:absolute;right:32px;bottom:8px;z-index:1;gap:3px;width:auto;height:auto;min-height:0;max-width:calc(100% - 48px);padding:3px 6px;border-radius:999px;box-shadow:0 2px 8px #0003;font-size:12px;line-height:1.25}
+.room-chat-unread svg {width:14px;height:14px;flex:none}
+.room-chat-history-viewport{min-height:0;overflow-y:auto;overflow-x:hidden;overflow-anchor:none;overscroll-behavior-y:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;font-size:14px;line-height:1.65}
 .room-chat-history-rows{display:grid;align-content:end;gap:6px;min-height:100%}
 .room-chat-history-rows>p{margin:0;overflow-wrap:anywhere}
 .room-chat-history .chat-report-trigger{padding:0}
 .room-chat-history-empty{color:var(--kit-muted-foreground)}
 .room-workspace-chat:has(>.room-chat-history) .ui-kit-input{font-size:16px}
 .room-chat-history-slider.ui-kit-slider{justify-content:center;width:100%;height:100%;padding-block:5px;cursor:ns-resize}
+.room-chat-desktop-history .room-chat-history-slider.ui-kit-slider{min-height:0;box-sizing:border-box}
 .room-chat-history-slider[data-disabled]{visibility:hidden}
 .room-chat-history-slider .ui-kit-slider-track{flex:none;width:4px;height:100%}
 .room-chat-history-slider .ui-kit-slider-range{width:100%;height:auto}
 .room-chat-history-slider .ui-kit-slider-thumb::before{inset:-8px -9px}
+.room-chat-desktop-history .room-chat-history-slider .ui-kit-slider-range {transition:top 220ms cubic-bezier(.22,.7,.2,1)}
+.room-chat-desktop-history .room-chat-history-slider>span:has(>.ui-kit-slider-thumb) {transition:bottom 220ms cubic-bezier(.22,.7,.2,1)}
+.room-chat-desktop-history .room-chat-history-slider[data-dragging] :is(.ui-kit-slider-range,span:has(>.ui-kit-slider-thumb)) {transition:none}
+@media(prefers-reduced-motion:reduce) {.room-chat-desktop-history .room-chat-history-slider :is(.ui-kit-slider-range,span:has(>.ui-kit-slider-thumb)) {transition:none}}
+.less-motion .room-chat-desktop-history .room-chat-history-slider :is(.ui-kit-slider-range,span:has(>.ui-kit-slider-thumb)) {transition:none}
 #mpRoomView .mp-panel-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 16px}
 #mpRoomView .mp-panel-head h3{margin:0;color:var(--kit-foreground);font:600 16px/1.4 var(--kit-font)}
 #mpRoomView .mp-name-editor{display:grid;gap:6px;margin:0 0 16px;font-size:12px;color:var(--kit-muted-foreground)}
@@ -307,3 +318,8 @@ body:has(#player.room-workspace) :is(.ui-kit-select-content,.ui-menu)[data-ui-su
  #mpRoomView .room-workspace-actions button{min-height:48px;height:48px;font-size:14px}
 }
 }
+/* The global scrollbar theme must not add a second bar beside the chat slider. */
+.room-chat-desktop-history>.mp-room-chat-log {scrollbar-width:none}
+.room-chat-desktop-history>.mp-room-chat-log::-webkit-scrollbar {display:none}
+.room-chat-history-viewport {scrollbar-width:none}
+.room-chat-history-viewport::-webkit-scrollbar {display:none}

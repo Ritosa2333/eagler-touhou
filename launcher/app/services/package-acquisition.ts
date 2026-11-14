@@ -10,6 +10,7 @@ import {parsePackageZip} from '../../package/package-zip.mjs';
 import {readCurrentPackageGeneration, readPackageObject} from '../../package/package-store.mjs';
 import {adaptLegacyGamePackToPackage} from '../../compat/legacy-package-adapter.mjs';
 import {parseStoredGameDataPack} from '../../compat/legacy-game-pack.mjs';
+import {publishedPc98Multiplayer} from './published-multiplayer';
 import {HOST_PROTOCOL, PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, productEnabledForBuild, productFeatureAvailable,
   productRequiresImport, type GameId, type ProductId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest, SiteGameData} from '../../src/contracts/site-manifest.mts';
@@ -183,7 +184,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     const gameVersion = request.gameVersion ?? getGameVersion(game);
     request = {...request, gameVersion};
     let metadataSnapshot = metadata.getSnapshot();
-    if (!productEnabledForBuild(request.productId, testBuild || metadataSnapshot.siteManifest?.shared.testBuild === true)) throw new Error('该游戏仅在测试版开启');
+    if (!productEnabledForBuild(request.productId, testBuild || metadataSnapshot.siteManifest?.shared.testBuild === true) && !publishedPc98Multiplayer(request.productId, metadataSnapshot.siteManifest)) throw new Error('该游戏仅在测试版开启');
     if (gameVersion === 'beauty') {
       // Keep both committed installations. Cached beauty launches are offline
       // and never consult or install an original publication.

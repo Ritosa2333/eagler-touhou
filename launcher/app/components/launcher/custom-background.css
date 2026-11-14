@@ -3,8 +3,8 @@
     --custom-background-shade-color:color-mix(in srgb,var(--kit-background) var(--custom-background-shade),transparent);
     --custom-background-mask:linear-gradient(var(--custom-background-shade-color),var(--custom-background-shade-color));
   }
-  html[data-custom-background] body:not(.mp-room-active):has(.book-masthead),
-  html[data-custom-background][data-ui-home] body:not(.mp-room-active) {
+  html[data-custom-background][data-background-mode="image"] body:not(.mp-room-active):has(.book-masthead),
+  html[data-custom-background][data-background-mode="image"][data-ui-home] body:not(.mp-room-active) {
     background-image:var(--custom-background-mask),var(--custom-background-image);
     background-size:cover,var(--custom-background-fit);
     background-position:center;
@@ -16,17 +16,20 @@
   html[data-background-mode="dots"][data-ui-home] body:not(.mp-room-active) {background-image:var(--custom-background-mask),radial-gradient(circle, color-mix(in srgb,var(--kit-foreground) 18%,transparent) 1px, transparent 1.5px);background-size:28px 28px;background-repeat:repeat}
   html[data-background-mode="grid"] body:not(.mp-room-active):has(.book-masthead),
   html[data-background-mode="grid"][data-ui-home] body:not(.mp-room-active) {background-image:var(--custom-background-mask),linear-gradient(color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px, transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px,transparent 1px);background-size:36px 36px;background-repeat:repeat}
+  :root {
+    --seigaiha-pattern:radial-gradient(circle at 50% 100%,transparent 0 18px,color-mix(in srgb,var(--kit-foreground) 28%,transparent) 18px 20px,transparent 20px 32px,color-mix(in srgb,var(--kit-foreground) 22%,transparent) 32px 34px,transparent 34px 46px,color-mix(in srgb,var(--kit-foreground) 16%,transparent) 46px 48px,transparent 48px 60px,color-mix(in srgb,var(--kit-foreground) 10%,transparent) 60px 62px,transparent 62px);
+  }
+  html[data-background-mode="seigaiha"] body:not(.mp-room-active):has(.book-masthead),
+  html[data-background-mode="seigaiha"][data-ui-home] body:not(.mp-room-active) {background-image:var(--custom-background-mask),var(--seigaiha-pattern),var(--seigaiha-pattern);background-size:auto,144px 72px,144px 72px;background-position:0 0,0 0,72px 36px;background-repeat:repeat}
   html[data-custom-background] body:not(.mp-room-active) :is(.lobby-list-surface,.profile-panel) {background-color:color-mix(in srgb,var(--book-surface) var(--custom-panel-opacity),transparent)}
   html[data-custom-background] body:not(.mp-room-active) .book-masthead {background-color:color-mix(in srgb,var(--book-surface) var(--custom-navigation-opacity),transparent)}
   html[data-custom-background] body:not(.mp-room-active) .book-card {background-color:color-mix(in srgb,var(--book-surface) var(--custom-card-opacity),transparent)}
   html[data-custom-background] body:not(.mp-room-active) .book-directory .book-lobby-item {background-color:color-mix(in srgb,var(--book-surface) var(--custom-category-opacity),transparent)}
   html[data-custom-background] body:not(.mp-room-active) .book-directory .book-lobby-item[data-selected="true"] {background-color:color-mix(in srgb,var(--kit-accent) var(--custom-category-opacity),transparent)}
   html[data-custom-background] body:not(.mp-room-active) .book-view-covers .book-card .book-identity {background:transparent}
-  .custom-background-dialog {width:min(440px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow-y:auto}
+  .ui-kit-dialog.custom-background-dialog {top:calc(50% + 20px);width:min(440px,calc(100vw - 32px));max-height:calc(100dvh - 48px);overflow-y:auto;background:color-mix(in srgb,var(--kit-card) 75%,transparent)}
+  .custom-background-drag-handle {margin:-24px 32px 0 -24px;padding:24px 0 0 24px;cursor:move;touch-action:none;user-select:none}
   .ui-kit-dialog-overlay.custom-background-overlay {background:transparent;animation:none}
-  @media (min-width: 781px) {
-    .ui-kit-dialog.custom-background-dialog {--ui-window-placement:translateY(-50%);left:auto;right:24px;transform:var(--ui-window-placement)}
-  }
   .custom-background-dialog p {color:var(--kit-muted-foreground);font-size:13px}
   .custom-background-dialog h3 {font-size:14px;font-weight:600;margin:20px 0 0}
   .background-presets {min-width:0;padding:0;border:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:8px;margin-top:10px}
@@ -37,6 +40,7 @@
   .background-preset[data-preset="image"] .background-preset-preview {background-image:var(--custom-background-image);background-size:cover;background-position:center}
   .background-preset[data-preset="dots"] .background-preset-preview {background-image:radial-gradient(circle,color-mix(in srgb,var(--kit-foreground) 25%,transparent) 1px,transparent 1.5px);background-size:14px 14px}
   .background-preset[data-preset="grid"] .background-preset-preview {background-image:linear-gradient(color-mix(in srgb,var(--kit-foreground) 12%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--kit-foreground) 12%,transparent) 1px,transparent 1px);background-size:18px 18px}
+  .background-preset[data-preset="seigaiha"] .background-preset-preview {background-image:var(--seigaiha-pattern),var(--seigaiha-pattern);background-size:144px 72px;background-position:center bottom,calc(50% + 72px) calc(100% + 36px)}
   .custom-background-dialog .custom-theme-base {display:grid;gap:8px;margin-top:16px;font-size:13px;font-weight:600}
   .custom-theme-switch {position:relative;isolation:isolate;display:flex;gap:3px;padding:3px;border:1px solid var(--kit-border);border-radius:7px;background:var(--kit-muted)}
   .custom-theme-switch::before {content:"";position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 9px)/2);border-radius:6px;background:var(--kit-card);box-shadow:0 1px 3px #00000012;transition:translate 420ms cubic-bezier(.22,.7,.2,1);pointer-events:none}
@@ -59,7 +63,7 @@ html[data-custom-background] body:not(.mp-room-active) .book-sidebar [data-book-
 
 /* The room workspace covers the launcher, so it paints the same background itself. */
 @layer foundation {
-html[data-custom-background] #player.room-workspace {
+html[data-custom-background][data-background-mode="image"] #player.room-workspace {
   background:var(--custom-background-mask),var(--custom-background-image),var(--kit-background)!important;
   background-size:cover,var(--custom-background-fit),auto!important;
   background-position:center!important;
@@ -68,5 +72,6 @@ html[data-custom-background] #player.room-workspace {
 }
 html[data-background-mode="dots"] #player.room-workspace {background:var(--custom-background-mask),radial-gradient(circle,color-mix(in srgb,var(--kit-foreground) 18%,transparent) 1px,transparent 1.5px) 0 0/28px 28px repeat,var(--kit-background)!important}
 html[data-background-mode="grid"] #player.room-workspace {background:var(--custom-background-mask),linear-gradient(color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px,transparent 1px) 0 0/36px 36px repeat,linear-gradient(90deg,color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px,transparent 1px) 0 0/36px 36px repeat,var(--kit-background)!important}
+html[data-background-mode="seigaiha"] #player.room-workspace {background:var(--custom-background-mask),var(--seigaiha-pattern) 0 0/144px 72px repeat,var(--seigaiha-pattern) 72px 36px/144px 72px repeat,var(--kit-background)!important}
 html[data-custom-background] #player.room-workspace :is(.room-workspace-sidebar,.room-workspace-spectators) {background-color:color-mix(in srgb,var(--kit-card) var(--custom-panel-opacity),transparent)}
 }

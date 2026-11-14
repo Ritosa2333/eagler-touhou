@@ -1809,6 +1809,16 @@
     "id": "lobby_stale",
     "params": []
   },
+  "lobby.longWait": {
+    "id": "lobby_longWait",
+    "params": []
+  },
+  "lobby.waitTime": {
+    "id": "lobby_waitTime",
+    "params": [
+      "time"
+    ]
+  },
   "lobby.recruiting": {
     "id": "lobby_recruiting",
     "params": []
@@ -9133,6 +9143,20 @@
   },
   "chat.title": {
     "id": "chat_title",
+    "params": []
+  },
+  "chat.newMessages": {
+    "id": "chat_newMessages",
+    "params": [
+      "count"
+    ]
+  },
+  "chat.sending": {
+    "id": "chat_sending",
+    "params": []
+  },
+  "chat.sendFailed": {
+    "id": "chat_sendFailed",
     "params": []
   },
   "chat.historyScroll": {

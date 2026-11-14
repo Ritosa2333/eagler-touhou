@@ -43,6 +43,7 @@ export interface QuickChatEntry {
   readonly at?: number;
   readonly rating?: RatingAnnouncement;
   readonly expiredInGame?: boolean;
+  readonly delivery?: 'pending' | 'failed';
 }
 export interface RatingAnnouncement {
   id: number;
@@ -80,6 +81,7 @@ export interface QuickChatSnapshot {
   readonly bannedUntil: number;
   readonly draft: string;
   readonly sending: boolean;
+  readonly sendError?: string;
 }
 interface Ports {
   send(message: Record<string, unknown>): void;
@@ -116,7 +118,7 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
   let historyThrough = 0;
   let banTimer: number | undefined,
     sendTimer: number | undefined,
-    submittedDraft = '';
+    pendingId: number | undefined;
   const now = ports.now ?? Date.now;
   const listeners = new Set<() => void>(),
     timers = new Map<number, number>(),
@@ -125,6 +127,12 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
     snapshot = next;
     if (silent) return;
     for (const listener of listeners) listener();
+  }
+  function failPending(code = 'service-unavailable') {
+    const id = pendingId;
+    pendingId = undefined;
+    if (id === undefined) return;
+    publish({...snapshot, sending:false, sendError:code, entries:snapshot.entries.map(entry => entry.id === id ? {...entry, delivery:'failed'} : entry)});
   }
   function cancel(entry: QuickChatEntry) {
     const timer = timers.get(entry.id);
@@ -186,6 +194,8 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
       ports.timers.clearTimeout(sendTimer);
       sendTimer = undefined;
     }
+    if (!next.connected && !reset) failPending();
+    if (reset) pendingId = undefined;
     if (reset) {
       historyThrough = 0;
       for (const entry of snapshot.entries) if (previous?.room !== next.room || !entry.rating) cancel(entry);
@@ -198,7 +208,7 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
     publish({
       ...snapshot,
       context,
-      ...(reset ? { entries: previous?.room === next.room ? snapshot.entries.filter(entry => entry.rating) : [], muted: [], draft: '', sending: false } : {}),
+      ...(reset ? { entries: previous?.room === next.room ? snapshot.entries.filter(entry => entry.rating) : [], muted: [], draft: '', sending: false, sendError: undefined } : {}),
       ...(reset || next.inRoom || !next.visible || !next.connected ? { pickerOpen: false, editingText: false } : {}),
       ...(!next.connected ? { registered: false, authorId: '', bannedUntil: 0, sending: false } : {}),
     });
@@ -234,6 +244,7 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
         ports.timers.clearTimeout(sendTimer);
         sendTimer = undefined;
       }
+      if (!registered) failPending();
       if (banTimer !== undefined) ports.timers.clearTimeout(banTimer);
       banTimer = undefined;
       publish({ ...snapshot, registered, authorId: registered ? String(message.authorId) : '', bannedUntil,
@@ -268,19 +279,15 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
       return;
     }
     if (message.type === 'chat-result') {
-      if (message.action === 'free-chat' && sendTimer !== undefined) {
+      if (message.action === 'free-chat' && message.ok !== true && sendTimer !== undefined) {
         ports.timers.clearTimeout(sendTimer);
         sendTimer = undefined;
       }
-      if (message.action === 'free-chat')
-        publish({
-          ...snapshot,
-          sending: false,
-          ...(message.ok === true && snapshot.draft === submittedDraft ? { draft: '' } : {}),
-        });
+      const code = typeof message.code === 'string' ? message.code : 'service-unavailable';
+      if (message.action === 'free-chat' && message.ok !== true) failPending(code);
       if (message.ok !== true) {
         if (message.code === 'sign-in-required') publish({ ...snapshot, registered: false, editingText: false });
-        ports.notify?.(typeof message.code === 'string' ? message.code : 'service-unavailable');
+        if (message.action !== 'free-chat') ports.notify?.(code);
       } else if (message.action === 'chat-report') ports.notify?.('reported');
       return;
     }
@@ -362,6 +369,17 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
       ...(Number.isSafeInteger(message.createdAt) ? {at: Number(message.createdAt)} : {}),
       ...(silent ? {expiredInGame: true} : {}),
     };
+    const pending = free && !silent && pendingId !== undefined && message.clientId === context.localClientId &&
+      message.authorId === snapshot.authorId && snapshot.entries.find(item => item.id === pendingId && item.phrase.zh === message.text);
+    if (pending) {
+      if (sendTimer !== undefined) ports.timers.clearTimeout(sendTimer);
+      sendTimer = undefined;
+      pendingId = undefined;
+      const confirmed = {...entry, id: pending.id};
+      publish({...snapshot, sending:false, entries:snapshot.entries.map(item => item.id === pending.id ? confirmed : item)});
+      timers.set(confirmed.id, ports.timers.setTimeout(() => expire(confirmed.id), 10000));
+      return;
+    }
     if (
       !free &&
       !snapshot.muted.includes(entry.clientId) &&
@@ -414,14 +432,16 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
       }
       const text = snapshot.draft.trim();
       if (!text) return;
-      submittedDraft = snapshot.draft;
-      publish({ ...snapshot, sending: true });
+      const local = context.localSeat == null ? context.spectators?.find(member => member.clientId === context.localClientId) : context.seats[context.localSeat];
+      const entry:QuickChatEntry = {id:++sequence, clientId:context.localClientId ?? '', seat:context.localSeat ?? -1,
+        spectator:context.localSeat == null, name:local?.name ?? '', authorId:snapshot.authorId, phrase:{id:'free-chat', zh:text, en:text}, delivery:'pending'};
+      pendingId = entry.id;
+      const entries = [...snapshot.entries, entry];
+      if (entries.length > 50) cancel(entries.shift()!);
+      publish({ ...snapshot, draft:'', sending:true, sendError:undefined, entries });
       sendTimer = ports.timers.setTimeout(() => {
         sendTimer = undefined;
-        if (!disposed) {
-          publish({ ...snapshot, sending: false });
-          ports.notify?.('service-unavailable');
-        }
+        if (!disposed) failPending();
       }, 12000);
       ports.send({ type: 'free-chat', text, serial: context.serial });
     },

@@ -91,7 +91,6 @@ export function LobbySurface({
             </BookButton>}
           </nav>
         </header>
-        {connectionWarning}
         <p className="lobby-notice" id="notice" role="status" hidden={!notice}>
           {notice}
         </p>
@@ -110,6 +109,7 @@ export function LobbySurface({
           aria-label={t('lobby.rooms')}
           data-has-rooms={hasRooms}
         >
+          {connectionWarning}
           <ul className="lobby-room-list" id="roomList" aria-busy={loading} hidden={!hasRooms}>
             {roomList}
           </ul>

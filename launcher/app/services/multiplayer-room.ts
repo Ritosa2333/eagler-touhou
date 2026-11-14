@@ -144,7 +144,7 @@ export interface MultiplayerRoomPorts {
     enter(input: { product: MultiplayerProductId; code: string; created: boolean }): void;
     settleInvite(): void;
     switchProduct?(input: {product: MultiplayerProductId; code: string; fromDirectory: boolean; spectator: boolean}): void;
-    leave(input: { product: MultiplayerProductId; fromDirectory: boolean; message?: string }): void;
+    leave(input: { product: MultiplayerProductId; fromDirectory: boolean; message?: string; removed?: boolean }): void;
   };
   network: {
     reset(reconnecting?: boolean): void;
@@ -770,11 +770,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         // Main750–769: departure owns destination feedback; a live Runtime
         // retains the room and gets its explanation here instead.
         if (!ports.isLaunched()) {
-          leave(message);
+          leave(message, event.code === 4010);
           return;
         }
         publish();
-        ports.notify(message);
+        if (event.code === 4010) void ports.decisions.askDecision({title:message, confirmText:ports.translate('action.confirm'), tone:'danger', hideCancel:true});
+        else ports.notify(message);
         return;
       }
       if (room?.code === ownedRoom.code) {
@@ -913,12 +914,13 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     connect();
     void prepareResources();
   }
-  function leave(message?: string) {
+  function leave(message?: string, removed = false) {
     if (!room || !product) return;
     const destination = {
       product,
       fromDirectory: state.fromDirectory,
       ...(message ? { message } : {}),
+      ...(removed ? {removed:true} : {}),
     };
     resetRoom();
     publish();
