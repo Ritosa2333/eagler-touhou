@@ -284,6 +284,8 @@ struct ReplayRunSession {
         environment.screen_offsets = {32, 16, 320, 16};
         environment.playfield_origin = {32, 16};
         environment.camera_origin = {0, 0, 1000};
+        // 0x4620fc：变量 10030–10032 的 ecx 是 0x4dc324（战斗流）。
+        environment.shared_game_rng = &game_random;
     }
     bool read_bank(const char* name, th13::i32 bank, th13::i32 identity_slot = -100) {
         std::vector<th13::u8> bytes;
