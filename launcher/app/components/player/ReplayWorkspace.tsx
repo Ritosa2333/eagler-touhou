@@ -168,6 +168,10 @@ function ReplaySummary({description: d, game}: {description: ReplayDescription; 
 const replayRank = (difficulty: number) => ['Easy','Normal','Hard','Lunatic','Extra','Phantasm'][difficulty] ?? difficulty;
 const replayDate = (d: ReplayDescription, locale: string) => d.date || (d.timestamp && d.timestamp <= 8.64e12 ? new Date(d.timestamp * 1000).toLocaleDateString(locale) : '—');
 function replayLoadout(d: ReplayDescription, game: keyof typeof PRODUCT_GAMES, t: (key: UiMessageKey) => string) {
+  if (game === 'th14' && Number.isInteger(d.character) && d.character >= 0 && d.character < 3 && [0, 1].includes(d.shot ?? 0)) {
+    const keys = ['multiplayer.loadout.reimuA', 'multiplayer.loadout.reimuB', 'multiplayer.loadout.marisaA', 'multiplayer.loadout.marisaB', 'multiplayer.loadout.sakuyaA', 'multiplayer.loadout.sakuyaB'] as const;
+    return t(keys[d.character * 2 + (d.shot ?? 0)]);
+  }
   const product = PRODUCT_GAMES[game], loadouts = 'multiplayer' in product ? product.multiplayer.loadouts : [];
   return (game === 'th05' && d.characters ? d.characters : [d.character]).map(character => {
     const loadout = loadouts.find(item => item.character === character && item.shot === (d.shot ?? 0));

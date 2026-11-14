@@ -93,6 +93,26 @@ const developmentMetadata = sourceDevelopmentServer ? new Map([
 if (developmentMetadata) developmentMetadata.set(LEGACY_HOST_MANIFEST_FILE,
   JSON.stringify(legacyHostManifestResponse(JSON.parse(developmentMetadata.get(SITE_MANIFEST_FILE)))) + '\n');
 
+// Development builds can replace DATA while the server is running. Refresh
+// identities on metadata requests so a new file is never advertised with the
+// size and digest captured when this process started.
+let metadataRefresh = null;
+async function refreshDevelopmentMetadata() {
+  if (!developmentMetadata || localManifest) return;
+  metadataRefresh ??= createDevelopmentSiteManifest({
+    netplayRelay: configuredNetplayRelay,
+    games: selectedDevelopmentGames,
+    publishManifest: manifest => {
+      developmentResources = developmentResourceRoutes(manifest, {sourceRoot:project});
+      return developmentResources.manifest;
+    },
+  }).then(manifest => {
+    developmentMetadata.set(SITE_MANIFEST_FILE, `${JSON.stringify(manifest, null, 2)}\n`);
+    developmentMetadata.set(LEGACY_HOST_MANIFEST_FILE, JSON.stringify(legacyHostManifestResponse(manifest)) + '\n');
+  }).finally(() => {metadataRefresh = null;});
+  await metadataRefresh;
+}
+
 const localAppShellOptions = {
   quiet: true,
   globDirectory: servedApp,
@@ -195,6 +215,7 @@ createServer(async (request, response) => {
     }
     if (developmentMetadata && pathname.startsWith("/")) {
       const name = pathname.slice(1);
+      if (name === SITE_MANIFEST_FILE || name === LEGACY_HOST_MANIFEST_FILE) await refreshDevelopmentMetadata();
       const body = developmentMetadata.get(name);
       if (body != null) {
         response.writeHead(200, {

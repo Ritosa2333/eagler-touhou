@@ -1,8 +1,8 @@
 import { Button as UiButton } from '../ui/controls';
 import { InputGroup, InputGroupInput } from '../ui/input-group';
+import { Progress } from '../ui/progress';
 import { TriangleAlert } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { useLocale } from '../i18n';
 import { closeMainSelectMenus } from './launcher/MainSelect';
 import type { DecisionInput, DecisionComparison } from '../models/decisions';
 import { animateSurface, type SurfaceAnimation } from '../ui/surface-motion';
@@ -23,6 +23,7 @@ export function ConfirmationDialog({
   confirmOnEnter = false,
   input,
   comparison,
+  progress,
   onConfirm,
   onCancel,
   onSecondary,
@@ -40,12 +41,12 @@ export function ConfirmationDialog({
   confirmOnEnter?: boolean;
   input?: DecisionInput;
   comparison?: DecisionComparison;
+  progress?: boolean;
   onConfirm(value?: string): void;
   onCancel(): void;
   onSecondary?(): void;
   idPrefix?: string;
 }) {
-  const { t } = useLocale();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
@@ -170,6 +171,7 @@ export function ConfirmationDialog({
             <strong id={`${idPrefix}Title`}>{title}</strong>
           </header>
           {(message || input) && <p className="decision-message" id={`${idPrefix}Message`}>{message}</p>}
+          {progress && <Progress className="decision-progress" value={null} aria-labelledby={`${idPrefix}Title`}/>}
           {comparison && <SaveComparisonCards value={comparison}/>}
           {input && (
             <div className="decision-input">
@@ -200,26 +202,24 @@ export function ConfirmationDialog({
           )}
         </div>
         <footer>
-          <UiButton
+          {!hideCancel && <UiButton
             type="submit"
             ref={cancelRef}
             className={`decision-cancel ${decisionActionClass}`}
             id={`${idPrefix}Cancel`}
             value="cancel"
-            hidden={hideCancel}
           >
             {cancelText}
-          </UiButton>
-          <UiButton
+          </UiButton>}
+          {secondaryText && <UiButton
             variant={variant === 'browser-warning' ? 'primary' : 'action'}
             type="submit"
             className={`decision-secondary ${decisionActionClass}`}
             id={`${idPrefix}Secondary`}
             value="secondary"
-            hidden={!secondaryText}
           >
-            {secondaryText || t('action.backgroundDownload')}
-          </UiButton>
+            {secondaryText}
+          </UiButton>}
           <UiButton
             variant={variant === 'browser-warning' ? 'action' : tone === 'danger' ? 'danger' : 'primary'}
             type="submit"

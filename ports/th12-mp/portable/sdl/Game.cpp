@@ -166,7 +166,7 @@ void Game::begin(MenuRun run,std::shared_ptr<const Replay> replay){
     after_jobs=[this,run,stage,difficulty,replay]{
         translation_context("st"+two(stage)+"_0"+std::to_string(run.character)+(run.shot?"b":"a")+".msg");
         th12_practice_reset(0);th12_practice_replay(replay?1:0);
-        if(replay&&((replay->extension.practice&&(*replay->extension.practice)[1])||!replay->extension.damage.empty())&&!runtime_options.thprac){error="Enable THPrac to play this extended replay";return;}
+        if(replay&&((replay->extension.practice&&(*replay->extension.practice)[1])||!replay->extension.damage.empty()||!replay->extension.tools.empty())&&!runtime_options.thprac){error="Enable THPrac to play this extended replay";return;}
         th12_practice_damage_begin(replay?1:0,(replay?replay->info.practice:run.mode==ModePractice)?1:0,run.character,run.shot);
         if(replay)for(const auto& [stage,data]:replay->extension.damage)if(th12_practice_damage_load(data.data(),int(data.size()))!=1){error=th12::practice::damage::lastError();return;}
         if(!load_core_stage(stage))return;
@@ -206,6 +206,7 @@ bool Game::start_replay_stage(const Replay& replay,const ReplayStage& stage,bool
         auto params=*replay.extension.practice;params[19]=1;
         if(params[2]+1!=stage.number||th12_practice_configure(params.data(),int(params.size()))!=1||th12_practice_prepare_replay(replay.info.difficulty)!=1){error=th12::practice::lastError();return false;}
     }
+    th12::practice::applyReplayToolState(replay.extension.tool_state(stage.number,0));
     std::array<i32,38> words{};const auto initial=stage.initial.words();
     std::copy(initial.begin(),initial.end(),words.begin());std::copy(stage.spell_times.begin(),stage.spell_times.end(),words.begin()+17);
     if(th12_start_replay(replay.info.character,replay.info.shot,replay.info.difficulty,stage.seed,words.data(),38)!=1)return false;
@@ -409,13 +410,14 @@ void Game::save_replay(i32 slot,const std::string& name,const MenuContext& r){
     if(assisted&&!params){params=std::array<i32,20>{1,0,session->stage-1,0,0,0,0,0,9,0,9,0,400,10000,0,0,0,0,0,0};}
     session->recorder->metadata(params,assisted,std::move(damage));
     const auto bytes=session->recorder->encode(name,r.timestamp,r.score_stored,r.continues,r.clear?8:r.stage,r.slowdown);
-    if(bytes.empty())return;
+    if(bytes.empty()){error="Replay could not be encoded";return;}
     const std::string folder=menus->replay_folder();host::make_directory(folder);char file[16];std::snprintf(file,sizeof file,"th12_%02d.rpy",slot);
     const bool ok=host::write_file(folder+"/"+file,bytes);host::log("replay %s: %s (%zu bytes)",file,ok?"saved":"not saved",bytes.size());
+    if(!ok){error="Replay could not be saved";return;}
     profile.set_last_name(name);profile.save();menus->rescan_replays();
 }
 void Game::return_title(){
-    prefetch.reset();
+    prefetch.reset();th12::practice::setReplay(false);
     if(session&&session->run.mode!=ModeDemo)audio.stop_music();
     show_indicator();if(session&&!session->replay)save_profile();session.reset();ending.reset();pending_result.reset();audio.stop_effects();clear_keys();
     retire_indicator();
@@ -430,14 +432,12 @@ void Game::game_tick(u32 held,double now,u32 pulses){
         const auto recorded=s.replay->input(s.stage,s.cursor);
         if(!recorded||recorded->end()){next_stage();return;}
         held=recorded->held;pressed=recorded->pressed;
+        th12::practice::applyReplayToolState(s.replay->extension.tool_state(s.stage,s.cursor));
         const auto delta=s.replay->extension.delta(s.stage,s.cursor);mode=(delta[0]||delta[1])?4:0;x=delta[0];y=delta[1];++s.cursor;
     }
+    if(s.recorder)s.recorder->tools(th12::practice::replayToolState());
     th12_motion(mode,x,y);th12_tick(int(held),int(pressed));++s.hud_age;
     if(!s.replay){
-        // Auto-Bomb is represented by resolved keys. Direct state-mutation
-        // cheats have no replay event contract and must not produce false files.
-        const auto& tools=th12::practice::toolSettings();
-        if((th12::practice::tools()&(447u&~32u))||tools.force_boss_move_down||tools.chromatic_ufo)s.recorder.reset();
         const int32_t* resolved=th12_practice_input();held=u32(resolved[0]);pressed=u32(resolved[1]);
         if(s.recorder){
             s.recorder->push(held,pressed,s.previous&~held,std::clamp(fps_value>0?fps_value:60.f,0.f,60.f));

@@ -474,7 +474,7 @@
     "th08": {
       "normal": "ports/th08",
       "multiplayer": "ports/th08-mp",
-      "base": "0b53caf56004cd2dd53695d8e9097fc73f9b5064",
+      "base": "4907be17b806e3b76d25e86b50ba6976e138de95",
       "history": [
         {
           "kind": "manual",
@@ -549,6 +549,16 @@
             "ports/th08-mp/web/cpp/game/GameplayScene.cpp"
           ],
           "note": "普通版和多人版都使用关卡背景动画的色值为萤火虫着色。多人版构建指南已采用 Bun 安装和构建命令，保留该模式的启动说明。"
+        },
+        {
+          "kind": "manual",
+          "base": "0b53caf56004cd2dd53695d8e9097fc73f9b5064",
+          "source": "4907be17b806e3b76d25e86b50ba6976e138de95",
+          "targetHead": "0400256361e0f67b8e27aa87026913fe78ad3d70",
+          "paths": [
+            "ports/th08-mp/web/cpp/platform/BrowserRuntime.hpp"
+          ],
+          "note": "同步原版方形摇杆死区到多人端的浏览器手柄路径。"
         }
       ],
       "origin": {
@@ -973,7 +983,7 @@
     "th12": {
       "normal": "ports/th12",
       "multiplayer": "ports/th12-mp",
-      "base": "1c4f2c11bc3bae77d627f098d6336673448d6f4f",
+      "base": "4245da6eeaeb9ab06b67e9f9938c1c39cca8bb92",
       "origin": {
         "normalCommit": "5e5081a1d2a434b2f8d785ebbd6b965f1058d828",
         "multiplayerCommit": "02e3a62a7ff38ca5ec1f3ad2007c117534e9ba26",
@@ -1581,6 +1591,53 @@
             "ports/th12-mp/tests/sdl-clock.test.mjs"
           ],
           "note": "共享的绘制、激光和道具优化已在两种模式中处理，多人版采用观战时钟与回滚专用路径，练习筛选由普通版维护。"
+        },
+        {
+          "kind": "manual",
+          "base": "1c4f2c11bc3bae77d627f098d6336673448d6f4f",
+          "source": "555fa3f382c0f601e5d5906bae5cc7b1f18f222c",
+          "targetHead": "3d4a183369c0f5880ff83732cf7367e21f1357fa",
+          "paths": [
+            "ports/th12-mp/CMakeLists.txt",
+            "ports/th12-mp/docs/DEVELOPMENT.md",
+            "ports/th12-mp/portable/sdl/Application.cpp",
+            "ports/th12-mp/portable/sdl/Game.cpp",
+            "ports/th12-mp/portable/sdl/Game.hpp",
+            "ports/th12-mp/portable/sdl/Host.cmake",
+            "ports/th12-mp/portable/sdl/Renderer.cpp",
+            "ports/th12-mp/portable/sdl/Replay.cpp",
+            "ports/th12-mp/portable/sdl/Replay.hpp",
+            "ports/th12-mp/portable/sdl/ReplayExtension.cpp",
+            "ports/th12-mp/portable/sdl/ReplayExtension.hpp",
+            "ports/th12-mp/portable/sdl/Scene.cpp",
+            "ports/th12-mp/portable/sdl/Scene.hpp",
+            "ports/th12-mp/portable/sdl/TitlePresentation.cpp",
+            "ports/th12-mp/portable/sdl/TitleScenes.cpp",
+            "ports/th12-mp/portable/sdl/TitleScenes.hpp",
+            "ports/th12-mp/src/game/Practice.cpp",
+            "ports/th12-mp/src/game/PracticeTools.cpp",
+            "ports/th12-mp/src/game/PracticeTools.hpp",
+            "ports/th12-mp/src/replay-motion.mjs",
+            "ports/th12-mp/src/stage_logic.hpp",
+            "ports/th12-mp/tests/fixtures/stage2-camera-original.json",
+            "ports/th12-mp/tests/native/sdl-host-state.cpp",
+            "ports/th12-mp/tests/native/sdl-order-performance.cpp",
+            "ports/th12-mp/tests/native/sdl-replay.cpp",
+            "ports/th12-mp/tests/native/stage2-camera.cpp",
+            "ports/th12-mp/tests/replay-tools.test.mjs",
+            "ports/th12-mp/tests/sdl-boundary.test.mjs"
+          ],
+          "note": "已同步残像连续性、细激光预警、二面摇镜、暂停退出及THPrac辅助录像；保留多人录像格式，飞碟吸附道具接触拾取按多人席位单独修复。"
+        },
+        {
+          "kind": "manual",
+          "base": "555fa3f382c0f601e5d5906bae5cc7b1f18f222c",
+          "source": "4245da6eeaeb9ab06b67e9f9938c1c39cca8bb92",
+          "targetHead": "4245da6eeaeb9ab06b67e9f9938c1c39cca8bb92",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md"
+          ],
+          "note": "普通版生成的ADAPTATION记录为9/10，失败来自上游hsob工作区配置；多人版9/9，保留其独立适配表。共同代码已完成来源历史合并，本次验证元数据按模式分别维护。"
         }
       ],
       "watches": {
@@ -1782,7 +1839,7 @@
     "th17": {
       "normal": "ports/th17",
       "multiplayer": "ports/th17-mp",
-      "base": "2dc8e0603d8fef1ed85ba485a18ce88f889e9c1c",
+      "base": "1ce3e9544e4e82f4a032b890e7e643220ddba51d",
       "history": [
         {
           "kind": "manual",
@@ -1963,6 +2020,28 @@
             "ports/th17-mp/portable/sdl/Renderer.hpp"
           ],
           "note": "普通版与多人版都接收 #208 的绘制绑定优化，成就提示属于单机版。"
+        },
+        {
+          "kind": "manual",
+          "base": "2dc8e0603d8fef1ed85ba485a18ce88f889e9c1c",
+          "source": "1ce3e9544e4e82f4a032b890e7e643220ddba51d",
+          "targetHead": "0400256361e0f67b8e27aa87026913fe78ad3d70",
+          "paths": [
+            "ports/th17-mp/web/cpp/game/BombController.cpp",
+            "ports/th17-mp/web/cpp/game/GameStart.cpp",
+            "ports/th17-mp/web/cpp/game/PlayerLife.hpp",
+            "ports/th17-mp/web/cpp/game/Replay.cpp",
+            "ports/th17-mp/web/cpp/game/Replay.hpp",
+            "ports/th17-mp/web/cpp/game/ReplayRecording.cpp",
+            "ports/th17-mp/web/cpp/game/RoaringSystem.cpp",
+            "ports/th17-mp/web/cpp/game/RunInput.cpp",
+            "ports/th17-mp/web/cpp/game/RunInput.hpp",
+            "ports/th17-mp/web/cpp/sdl/Application.cpp",
+            "ports/th17-mp/web/cpp/sdl/ApplicationState.hpp",
+            "ports/th17-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th17-mp/web/cpp/sdl/ThpracUi.cpp"
+          ],
+          "note": "练习计数接入多人端本地练习，联机房间保持既有面板和检查点格式；保留多人端现有作弊权限及录像规则。"
         }
       ]
     }

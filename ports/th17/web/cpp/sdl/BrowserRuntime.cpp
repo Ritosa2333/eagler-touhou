@@ -433,7 +433,7 @@ bool sample_and_tick(){
  ThpracUi::update_input(*app,keys);
  practice_fast=keys[85];practice_slow=keys[16];practice_debug=keys[32];
  u32 held=keyboard_keys(keys)|controller_keys;
- if(app->practice.enabled&&app->scene()&&!app->progress.practice_record){
+ if(app->can_use_practice_tools()){
   std::array<u8,256> virtual_keys{};
   for(u32 i=0;i<256;++i)virtual_keys[i]=keys[i]?0x80:0;
   if(held&1)virtual_keys[90]=0x80;

@@ -21,7 +21,9 @@ export function createRuntimeAudioMix() {
   let levels: AudioLevels = { music: 1, effects: 1 };
   let binding: ReturnType<typeof bind> | null = null;
 
-  function bind(runtime: RuntimeAudioWindow, th05: boolean) {
+  function bind(runtime: RuntimeAudioWindow, game: string) {
+    const th05 = game === 'th05';
+    const combinedGain = () => game === 'th14' && levels.music === 0 && levels.effects === 0 ? 0 : 1;
     const outputs = new Map<AudioContext, AudioOutputs>();
     const routed = new WeakSet<AudioNode>();
     const cleanup: (() => void)[] = [];
@@ -57,6 +59,7 @@ export function createRuntimeAudioMix() {
       const existing = outputs.get(context);
       if (existing) return existing;
       const gains = { music: context.createGain(), effects: context.createGain(), separated: false };
+      gains.music.gain.value = combinedGain();
       gains.effects.gain.value = levels.effects;
       for (const channel of ['music', 'effects'] as const) {
         gains[channel].connect(context.destination);
@@ -130,7 +133,7 @@ export function createRuntimeAudioMix() {
       if (music) route(music, gains.music, true);
       const pool = module?.eaglerSfxOutput;
       // Older Runtime generations can mix music and effects into one stream.
-      // Only change the SDL gain once the independent WebSfx output exists.
+      // Keep channel-specific changes behind confirmed separation.
       if (!gains.separated && pool?.context === context && pool.voices.size > 0) {
         gains.separated = true;
         gains.music.gain.value = levels.music;
@@ -144,7 +147,9 @@ export function createRuntimeAudioMix() {
       refresh,
       apply(previous: AudioLevels) {
         for (const gains of outputs.values()) {
-          if (gains.separated && previous.music !== levels.music) gains.music.gain.value = levels.music;
+          if (previous.music !== levels.music || previous.effects !== levels.effects) {
+            gains.music.gain.value = gains.separated ? levels.music : combinedGain();
+          }
           if (previous.effects !== levels.effects) gains.effects.gain.value = levels.effects;
         }
         if (previous.music !== levels.music) setTh05Music?.(levels.music);
@@ -161,7 +166,7 @@ export function createRuntimeAudioMix() {
   return {
     attach(runtime: RuntimeAudioWindow, game: string) {
       binding?.dispose();
-      binding = bind(runtime, game === 'th05');
+      binding = bind(runtime, game);
       binding.refresh();
     },
     refresh() { binding?.refresh(); },

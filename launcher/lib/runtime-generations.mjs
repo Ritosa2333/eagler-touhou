@@ -213,12 +213,21 @@ export async function publishRuntimeManifest(site, inputs, { previousSite = site
 export async function freezeHostRuntimes(site, manifest, { previousSite = site } = {}) {
   const { runtimeFileNames } = await import("./runtime-release.mjs");
   const groups = [];
+  const entries = new Map();
   for (const [game, host] of Object.entries(manifest.games)) {
     for (const field of ["runtime", "multiplayerRuntime"]) {
       if (!host[field]) continue;
       const url = new URL(host[field], "https://runtime.invalid/");
       if (url.origin !== "https://runtime.invalid") throw new Error("Published Runtime must be same-origin");
-      const path = url.pathname.slice(1), parsed = parseRuntimeGenerationPath(path);
+      const path = url.pathname.slice(1);
+      const existing = entries.get(path);
+      if (existing) {
+        url.pathname = existing;
+        url.searchParams.delete("v");
+        host[field] = url.pathname.slice(1) + url.search;
+        continue;
+      }
+      const parsed = parseRuntimeGenerationPath(path);
       let root, current;
       if (parsed) {
         root = parsed.root;
@@ -236,6 +245,7 @@ export async function freezeHostRuntimes(site, manifest, { previousSite = site }
         if (directory) await rm(resolve(source, "runtime-files.json"));
       }
       url.pathname = "/" + runtimeGenerationEntry(root, current);
+      entries.set(path, url.pathname);
       url.searchParams.delete("v");
       host[field] = url.pathname.slice(1) + url.search;
       groups.push({ root, current });

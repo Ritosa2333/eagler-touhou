@@ -11,17 +11,18 @@ import {RoomActionMenu} from './RoomActionMenu';
 import {ParticipantAvatar} from './ParticipantAvatar';
 import {animateSurface, animateUiFrames, type SurfaceAnimation} from '../../ui/surface-motion';
 import type { RoomNetworkPresentation, RoomPanelKind, RoomViewContext } from './types';
-import {useTh09Ratings, type Th09Rating} from '../../services/th09-ratings';
+import type {Th09Rating} from '../../services/th09-ratings';
 import {Th09RatingText} from './Th09RatingText';
 export interface RoomSeatsProps {
   state: RoomOwnerSnapshot;
   service: Pick<MultiplayerRoomService, 'takeSeat' | 'movePlayerToSpectator' | 'removePlayer' | 'getSnapshot'>;
   network: Pick<RoomNetworkPresentation, 'metric'>;
   context: RoomViewContext;
+  ratings?: Readonly<Record<string, Th09Rating>>;
+  myRating?: Th09Rating;
   openPanel(kind: RoomPanelKind, trigger: HTMLElement, peerId?: string): void;
 }
 export function RoomSeats(props: RoomSeatsProps) {
-  const {players, mine} = useTh09Ratings(props.state.product === 'th09mp');
   return (
     <div
       className="mp-seat-stage"
@@ -29,7 +30,7 @@ export function RoomSeats(props: RoomSeatsProps) {
       data-player-count={props.state.room?.playerCount}
     >
       {[0, 1, 2].map((index) => (
-        <RoomSeat {...props} index={index} ratings={players} myRating={mine} key={index} />
+        <RoomSeat {...props} index={index} key={index} />
       ))}
     </div>
   );
@@ -43,7 +44,7 @@ function RoomSeat({
   index,
   ratings,
   myRating,
-}: RoomSeatsProps & { index: number; ratings: Readonly<Record<string, Th09Rating>>; myRating?: Th09Rating }) {
+}: RoomSeatsProps & { index: number }) {
   const { t } = useLocale(),
     presentation = roomPresentation(state, t)!;
   const { room, ready, owner, label } = presentation;
@@ -229,7 +230,7 @@ function RoomSeat({
           {name}
           <span className="mp-seat-details">
             <span className="mp-seat-loadout" hidden={!caption && !ratingProfile} title={caption || undefined} role={resourceStopped ? 'status' : undefined}>
-              {ratingProfile ? <><Th09RatingText player={ratings[ratingProfile.username]} mine={myRating} games={ratingProfile.th09?.games}/>{caption && ` ${caption}`}</> : caption}
+              {ratingProfile ? <><Th09RatingText player={ratings?.[ratingProfile.username]} mine={myRating} games={ratingProfile.th09?.games}/>{caption && ` ${caption}`}</> : caption}
             </span>
             {!resourceStopped && <span className="sr-only" role="status">{status}</span>}
           </span>

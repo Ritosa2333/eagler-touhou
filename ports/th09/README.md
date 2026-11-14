@@ -16,7 +16,7 @@ th09 支持网页运行与双人联机对战，普通版和多人版共用同一
 
 ## 构建
 
-在 `web/` 执行 `npm run web:build`，再分别执行 `npm run web:eagler`、`npm run web:eagler:multiplayer` 生成普通和多人 Runtime。两种产品包使用同一份 release WASM，通过独立变体元数据区分。
+在 `web/` 执行 `npm run web:build` 和 `npm run web:eagler`。普通和多人入口共用这份 Runtime，Launcher 启动时传入模式。
 
 资源准备、构建步骤与源码布局见[开发指南](docs/DEVELOPMENT.md)。源码编译后，由仓库根目录发布流程组装启动器包。
 

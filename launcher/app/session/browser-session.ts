@@ -1,4 +1,4 @@
-import {collectLocalSaveFiles} from '../services/local-save-storage';
+import {collectLocalSaveFiles, readLocalSaveFiles} from '../services/local-save-storage';
 import {accountsEnabled} from '../release-features';
 import type {CloudSaveSync} from '../services/cloud-save-sync';
 import {createRelayEntryRouting} from '../../src/launcher/relay-entry-routing.mts';
@@ -1059,21 +1059,82 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       assertCurrent();
       const launchedProduct = intent.product;
       activeSettings = capturedSettings(launchedProduct);
-      await configuredLaunch(launchedProduct, {signal: intent.controller.signal,
-        async beforeStart() {
-          await cloudSyncReady;
-          assertCurrent();
-          const result = await cloudSync?.beforeStart(launchedProduct, intent.controller.signal) ?? 'continue';
-          if (result === 'cancel') intent.controller.abort(new RuntimeSessionSupersededError());
-          return result;
-        },
-        onStarted(epoch) {
-        void cloudSyncReady.then(() => {
-          const current = owner.getSnapshot();
-          if (!disposed && !intent.controller.signal.aborted && current.launched && current.epoch === epoch)
-            cloudSync?.started(launchedProduct);
+      const localChoice = new AbortController();
+      const cloud = linkAbortSignals(intent.controller.signal, localChoice.signal);
+      const progress = new AbortController();
+      const progressSignal = linkAbortSignals(cloud.signal, progress.signal);
+      let ready!: () => void;
+      const runtimeReady = new Promise<void>(resolve => {ready = resolve;});
+      let initialChoice: Promise<void> | undefined;
+      let waiting: Promise<void> | undefined;
+      let showProgress = true;
+      function offerLocalLaunch() {
+        if (!showProgress) return;
+        initialChoice = askCloudDecision({
+          title: t('cloudSave.waitingTitle'), message: t('cloudSave.waitingMessage'),
+          confirmText: t('cloudSave.keepWaiting'), cancelText: t('cloudSave.playBrowserOnly'), progress: true,
+        }, progressSignal.signal).then(choice => {
+          if (progress.signal.aborted) return;
+          if (choice !== 'confirm') {localChoice.abort(); return;}
+          waiting = askCloudDecision({
+            title: t('cloudSave.waitingTitle'), confirmText: t('cloudSave.playBrowserOnly'),
+            hideCancel: true, progress: true,
+          }, progressSignal.signal).then(() => {
+            if (!progress.signal.aborted) localChoice.abort();
+          });
         });
-      }});
+      }
+      async function finishProgress() {
+        showProgress = false;
+        progress.abort();
+        await initialChoice;
+        await waiting;
+      }
+      const deadline = performance.now() + 2000;
+      const cloudResult = cloudSyncReady.then(() => {
+        if (cloud.signal.aborted) return;
+        const awaitRuntime = async () => {
+          await waitWithAbort(runtimeReady, cloud.signal);
+          await finishProgress();
+          cloud.signal.throwIfAborted();
+        };
+        return cloudSync?.beforeStart(launchedProduct, cloud.signal, {
+          beforeDecision: awaitRuntime,
+          beforeRestore: awaitRuntime,
+        });
+      }).catch(() => 'continue' as const).finally(finishProgress);
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await configuredLaunch(launchedProduct, {
+          signal: intent.controller.signal,
+          async beforeStart() {
+            ready();
+            timeout = setTimeout(offerLocalLaunch, Math.max(0, deadline - performance.now()));
+            try {
+              const result = await waitWithAbort(cloudResult, cloud.signal) ?? 'continue';
+              if (result === 'cancel') intent.controller.abort(new RuntimeSessionSupersededError());
+              return result;
+            } catch {
+              // Choosing local cancels the preflight before it can write files.
+              cloudSync?.deferLaunch(launchedProduct);
+              return 'continue';
+            }
+          },
+          onStarted(epoch) {
+            void cloudSyncReady.then(() => {
+              const current = owner.getSnapshot();
+              if (!disposed && !intent.controller.signal.aborted && current.launched && current.epoch === epoch)
+                cloudSync?.started(launchedProduct);
+            });
+          },
+        });
+      } finally {
+        clearTimeout(timeout);
+        progress.abort();
+        localChoice.abort();
+        progressSignal.dispose();
+        cloud.dispose();
+      }
     }).catch(error=>{
       if(!disposed && !singleLaunch?.controller.signal.aborted && !(error instanceof RuntimeSessionSupersededError))throw error;
     }).finally(async () => {
@@ -1305,19 +1366,21 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     return initializationPromise;
   }
   const readLocalSaves=(product:ProductId,names:readonly string[])=>collectLocalSaveFiles({product,names,language:capturedSettings(product).language,indexedDB:window.indexedDB,runtime});
+  async function askCloudDecision(options: DecisionOptions, signal?: AbortSignal) {
+    if (signal?.aborted) return 'cancel';
+    const previous = decisions.getSnapshot();
+    const answer = decisions.askDecision(options);
+    const requestId = decisions.getSnapshot()?.requestId;
+    const cancel = () => { if (!previous && requestId !== undefined && decisions.getSnapshot()?.requestId === requestId) decisions.resolve('cancel'); };
+    signal?.addEventListener('abort', cancel, {once: true});
+    if (signal?.aborted) cancel();
+    try { return await answer; }
+    finally { signal?.removeEventListener('abort', cancel); }
+  }
   const cloudSyncReady=accountsEnabled&&storage ? import('../services/cloud-save-sync').then(({createCloudSaveSync})=>{
     if(disposed)return;
-    async function askCloudDecision(options: DecisionOptions, signal?: AbortSignal) {
-      if (signal?.aborted) return 'cancel';
-      const answer = decisions.askDecision(options);
-      const requestId = decisions.getSnapshot()?.requestId;
-      const cancel = () => { if (decisions.getSnapshot()?.requestId === requestId) decisions.resolve('cancel'); };
-      signal?.addEventListener('abort', cancel, {once: true});
-      if (signal?.aborted) cancel();
-      try { return await answer; }
-      finally { signal?.removeEventListener('abort', cancel); }
-    }
     cloudSync=createCloudSaveSync({storage:storage!,read:readLocalSaves,isRunning:()=>!!runtime?.getSnapshot().launched||!!launchPending,isPlaying:()=>!!runtime?.getSnapshot().launched,notify:key=>feedback.toast(t(key)),
+      readForLaunch:(product,names)=>readLocalSaveFiles(product,names,capturedSettings(product).language,window.indexedDB),
       async decideStart(kind, signal) {
         const remote = kind === 'other-device';
         return await askCloudDecision({
@@ -1343,9 +1406,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         if (current.launched || current.game !== gameIdForProduct(product) || current.runtimeVariant !== 'normal') return false;
         return runtime.close({discardUnsaved: true});
       },
-      async restore(product,snapshot,signal,allowedFiles,preparing=false){
+      async restore(product,snapshot,signal,allowedFiles,preparing=false,beforeWrite){
         const {readCloudSaveArchive,writeCloudSaveArchive}=await import('../services/cloud-save-restore');
         const archive=await readCloudSaveArchive(snapshot,signal,allowedFiles);
+        await beforeWrite?.();
         if (runtime?.getSnapshot().launched || !preparing&&launchPending || signal.aborted) throw new RuntimeSessionSupersededError();
         try{
           await prepareFiles(product,{signal});

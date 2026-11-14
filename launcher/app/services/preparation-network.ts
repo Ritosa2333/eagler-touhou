@@ -18,7 +18,7 @@ export function packageNetworkMetadata(gameId: GameId, input: RequestInfo | URL,
   if (/\.wasm$/i.test(pathname)) return {title: t('transfer.runtimeDownloading'), label: `${game} WebAssembly`, kind: 'runtime'};
   if (/\.m?js$/i.test(pathname)) return {title: t('transfer.runtimeDownloading'), label: t('transfer.runtimeScript', {game}), kind: 'runtime'};
   if (/\.html$/i.test(pathname)) return {title: t('transfer.runtimeDownloading'), label: t('transfer.runtimePage', {game}), kind: 'runtime'};
-  if (/\.ogg$/i.test(pathname)) return {title: t('transfer.musicDownloading'), label: file, kind: 'music'};
+  if (/\.ogg$/i.test(pathname) || (gameId === 'th14' && /\.flac$/i.test(pathname))) return {title: t('transfer.musicDownloading'), label: file, kind: 'music'};
   if (/\.(?:ttc|otf|woff2?)$/i.test(pathname)) return {title: t('transfer.resourceDownloading'), label: t('transfer.font', {file}), kind: 'font'};
   if (/\.zip$/i.test(pathname)) return {title: t('transfer.packageDownloading'), label: file, kind: 'package'};
   return {title: t('transfer.serverRequesting'), label: `${game} ${file}`, kind: 'network'};

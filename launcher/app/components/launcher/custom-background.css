@@ -1,7 +1,11 @@
 @layer components {
+  html[data-custom-background] {
+    --custom-background-shade-color:color-mix(in srgb,var(--kit-background) var(--custom-background-shade),transparent);
+    --custom-background-mask:linear-gradient(var(--custom-background-shade-color),var(--custom-background-shade-color));
+  }
   html[data-custom-background] body:not(.mp-room-active):has(.book-masthead),
   html[data-custom-background][data-ui-home] body:not(.mp-room-active) {
-    background-image:linear-gradient(color-mix(in srgb,var(--kit-background) var(--custom-background-shade),transparent),color-mix(in srgb,var(--kit-background) var(--custom-background-shade),transparent)),var(--custom-background-image);
+    background-image:var(--custom-background-mask),var(--custom-background-image);
     background-size:cover,var(--custom-background-fit);
     background-position:center;
     background-repeat:no-repeat;
@@ -9,10 +13,10 @@
   }
   html[data-custom-background][data-ui-home] body:not(.mp-room-active) .sheet {background:transparent}
   html[data-background-mode="dots"] body:not(.mp-room-active):has(.book-masthead),
-  html[data-background-mode="dots"][data-ui-home] body:not(.mp-room-active) {background-image:radial-gradient(circle, color-mix(in srgb,var(--kit-foreground) 18%,transparent) 1px, transparent 1.5px);background-size:28px 28px;background-repeat:repeat}
+  html[data-background-mode="dots"][data-ui-home] body:not(.mp-room-active) {background-image:var(--custom-background-mask),radial-gradient(circle, color-mix(in srgb,var(--kit-foreground) 18%,transparent) 1px, transparent 1.5px);background-size:28px 28px;background-repeat:repeat}
   html[data-background-mode="grid"] body:not(.mp-room-active):has(.book-masthead),
-  html[data-background-mode="grid"][data-ui-home] body:not(.mp-room-active) {background-image:linear-gradient(color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px, transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px,transparent 1px);background-size:36px 36px;background-repeat:repeat}
-  html[data-custom-background] body:not(.mp-room-active) :is(.lobby-list-surface,.profile-hero,.profile-panel) {background-color:color-mix(in srgb,var(--book-surface) var(--custom-panel-opacity),transparent)}
+  html[data-background-mode="grid"][data-ui-home] body:not(.mp-room-active) {background-image:var(--custom-background-mask),linear-gradient(color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px, transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px,transparent 1px);background-size:36px 36px;background-repeat:repeat}
+  html[data-custom-background] body:not(.mp-room-active) :is(.lobby-list-surface,.profile-panel) {background-color:color-mix(in srgb,var(--book-surface) var(--custom-panel-opacity),transparent)}
   html[data-custom-background] body:not(.mp-room-active) .book-masthead {background-color:color-mix(in srgb,var(--book-surface) var(--custom-navigation-opacity),transparent)}
   html[data-custom-background] body:not(.mp-room-active) .book-card {background-color:color-mix(in srgb,var(--book-surface) var(--custom-card-opacity),transparent)}
   html[data-custom-background] body:not(.mp-room-active) .book-directory .book-lobby-item {background-color:color-mix(in srgb,var(--book-surface) var(--custom-category-opacity),transparent)}
@@ -56,13 +60,13 @@ html[data-custom-background] body:not(.mp-room-active) .book-sidebar [data-book-
 /* The room workspace covers the launcher, so it paints the same background itself. */
 @layer foundation {
 html[data-custom-background] #player.room-workspace {
-  background:linear-gradient(color-mix(in srgb,var(--kit-background) var(--custom-background-shade),transparent),color-mix(in srgb,var(--kit-background) var(--custom-background-shade),transparent)),var(--custom-background-image),var(--kit-background)!important;
+  background:var(--custom-background-mask),var(--custom-background-image),var(--kit-background)!important;
   background-size:cover,var(--custom-background-fit),auto!important;
   background-position:center!important;
   background-repeat:no-repeat!important;
   background-attachment:fixed!important;
 }
-html[data-background-mode="dots"] #player.room-workspace {background:radial-gradient(circle,color-mix(in srgb,var(--kit-foreground) 18%,transparent) 1px,transparent 1.5px) 0 0/28px 28px repeat,var(--kit-background)!important}
-html[data-background-mode="grid"] #player.room-workspace {background:linear-gradient(color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px,transparent 1px) 0 0/36px 36px repeat,linear-gradient(90deg,color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px,transparent 1px) 0 0/36px 36px repeat,var(--kit-background)!important}
+html[data-background-mode="dots"] #player.room-workspace {background:var(--custom-background-mask),radial-gradient(circle,color-mix(in srgb,var(--kit-foreground) 18%,transparent) 1px,transparent 1.5px) 0 0/28px 28px repeat,var(--kit-background)!important}
+html[data-background-mode="grid"] #player.room-workspace {background:var(--custom-background-mask),linear-gradient(color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px,transparent 1px) 0 0/36px 36px repeat,linear-gradient(90deg,color-mix(in srgb,var(--kit-foreground) 8%,transparent) 1px,transparent 1px) 0 0/36px 36px repeat,var(--kit-background)!important}
 html[data-custom-background] #player.room-workspace :is(.room-workspace-sidebar,.room-workspace-spectators) {background-color:color-mix(in srgb,var(--kit-card) var(--custom-panel-opacity),transparent)}
 }

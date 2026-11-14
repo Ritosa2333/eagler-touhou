@@ -5,7 +5,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { PRODUCT_CONTENT } from "../../lib/content-definition.mjs";
 import { PRODUCT_GAMES } from "../../lib/contracts/product-catalog.mjs";
-import { RUNTIME_RELEASE_SCHEMA, runtimeStem, validateRuntimeReleaseManifest } from "../../lib/runtime-release.mjs";
+import { RUNTIME_RELEASE_SCHEMA, runtimeStem, sharesRuntime, validateRuntimeReleaseManifest } from "../../lib/runtime-release.mjs";
 import { readFile } from "node:fs/promises";
 import { extractGameDataLayout } from "../../lib/runtime-data-layout.mjs";
 
@@ -50,16 +50,17 @@ return parentWindow.__eaglerPrepareManagedRuntimeDataV1({game,generation:"fixtur
 
 // Workspace Host integration may substitute real preload programs. Other
 // registered products remain synthetic and are never presented as game proof.
-export async function writeSyntheticRuntimeRelease(root, {preloadBuilds = {}} = {}) {
+export async function writeSyntheticRuntimeRelease(root, {preloadBuilds = {}, legacyTh09 = false} = {}) {
   const games = {};
   for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
+    if (!PRODUCT_CONTENT[game]) continue;
     const stem = runtimeStem(game);
     const preload = product.dataProvider === "emscripten-preload" ? preloadFixture(game) : null;
     const dataLayout = preloadBuilds[game]
       ? extractGameDataLayout(await readFile(resolve(preloadBuilds[game].runtime, `${stem}.js`), "utf8"), game).layout
       : preload?.layout || PRODUCT_CONTENT[game].dataLayout;
     const variants = [["runtime", `runtime/${game}`, "normal"]];
-    if (product.multiplayerRuntime) variants.push(["multiplayerRuntime", `runtime/${game}/multiplayer`, "multiplayer"]);
+    if (product.multiplayerRuntime && (!sharesRuntime(game) || legacyTh09)) variants.push(["multiplayerRuntime", `runtime/${game}/multiplayer`, "multiplayer"]);
     const entry = {
       dataProvider: product.dataProvider,
       dataLayout,
@@ -109,6 +110,7 @@ export async function writeSyntheticRuntimeRelease(root, {preloadBuilds = {}} = 
         files: Object.fromEntries(Object.entries(payloads).map(([name, bytes]) => [name, identity(bytes)])),
       };
     }
+    if (sharesRuntime(game) && !legacyTh09) entry.multiplayerRuntime = entry.runtime;
     games[game] = entry;
   }
   const manifest = validateRuntimeReleaseManifest({

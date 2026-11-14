@@ -403,7 +403,20 @@ void information(ApplicationState& app){
             ImGui::TextUnformatted(name);ImGui::NextColumn();
             ImGui::Text(format,values...);ImGui::NextColumn();
         };
-        row(label(practice_THPRAC_INGAMEINFO_MISS_COUNT),"%7d",battle.session.deaths);
+        const auto& session=battle.session;
+        row(label(practice_THPRAC_INGAMEINFO_MISS_COUNT),"%7d",session.deaths);
+        // thprac_th17.cpp TH17InGameInfo rows.
+        row(tr("bomb:","bomb:","bomb:"),"%7u",session.practice_bombs);
+        row(tr("隐藏灵:","special spirits:","special spirits:"),"%7u",session.practice_special_spirits);
+        ImGui::TextUnformatted(tr("咆哮:","roar:","roar:"));ImGui::NextColumn();
+        ImGui::Text("%7u(",session.practice_roars);ImGui::SameLine(0,0);
+        ImGui::TextColored({.9f,.4f,.4f,1},"%u",session.practice_roar_animals[0]);ImGui::SameLine(0,0);
+        ImGui::TextUnformatted("/");ImGui::SameLine(0,0);
+        ImGui::TextColored({.6f,.9f,.6f,1},"%u",session.practice_roar_animals[1]);ImGui::SameLine(0,0);
+        ImGui::TextUnformatted("/");ImGui::SameLine(0,0);
+        ImGui::TextColored({.8f,.6f,1,1},"%u",session.practice_roar_animals[2]);ImGui::SameLine(0,0);
+        ImGui::TextUnformatted(")");ImGui::NextColumn();
+        row(tr("撞咆哮:","roar break:","roar break:"),"%7u",session.practice_roar_breaks);
         row(label(practice_TH_GRAZE),"%7d",battle.graze_total);
         row(label(practice_TH_VALUE),"%7d",battle.score.point_value/100);
         const auto& roaring=battle.items->roaring.state;
@@ -591,7 +604,7 @@ bool render(ApplicationState& app){
         mobile::expanded[mobile::Advanced]=false;
         drain_navigation=true;
     }
-    const bool live_practice=app.scene()&&state.active&&!app.progress.practice_record;
+    const bool live_practice=app.can_use_practice_tools();
     if((cheats||mobile::visible)&&live_practice&&!ImGui::IsAnyItemActive()){
         for(i32 i=0;i<8;++i)if(edge[112+i])state.tools^=1u<<i;
         if(edge[120])state.everlasting_bgm=!state.everlasting_bgm;
@@ -618,7 +631,7 @@ bool render(ApplicationState& app){
     if(advanced_open)std::fill(std::begin(io.NavInputs),std::end(io.NavInputs),0.f);
     nav::prepare(state.menu&&!advanced_open);
     ImGui::NewFrame();
-    spirit_pointer=live_practice&&spirit_tool.kind&&!advanced_open&&!state.menu&&
+    spirit_pointer=live_practice&&state.active&&spirit_tool.kind&&!advanced_open&&!state.menu&&
         !(app.progress.scene_flags&0x4004)&&!app.scene()->battle.dialogue_present();
     if(spirit_pointer&&app.run_input&&ImGui::IsMouseClicked(ImGuiMouseButton_Left)&&!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)){
         auto spawn=spirit_tool;spawn.x=io.MousePos.x-224;spawn.y=io.MousePos.y-16;spawn.force&=!spawn.random;

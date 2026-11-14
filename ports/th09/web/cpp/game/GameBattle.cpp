@@ -40,17 +40,21 @@ void GameBattle::sync_players(){
     animations.timing=state.timing;
     for(i32 side=0;side<2;++side){auto& f=fields[side];if(!f.player)continue;auto& p=*f.player;
         f.script.player=p.motion.position;for(u32 n=0;n<2;++n)f.script.attack_levels[n]=p.attack_levels[n];
-        f.enemy_player.state=p.control.player_state;f.enemy_player.focus=f.focus_aura!=nullptr;f.enemy_player.protection=p.control.protection;
-        f.enemy_player.nearest_position=p.shots.target;f.enemy_player.target=f.targeted_enemy;
+        f.enemy_player.focus=f.focus_aura!=nullptr;
         if(f.capture_effect)f.enemy_player.capture={f.capture_effect->radius,f.capture_effect->angle,f.capture_effect->spread};else f.enemy_player.capture={};
     }
     services->effects.sync();services->attacks.sync();
 }
 bool GameBattle::update_enemies(i32 side){
     auto& f=fields[side];auto& m=*f.enemies;sync_players();m.timing=state.timing;m.frame_step=state.ecl_step;m.difficulty_mask=state.difficulty_mask;
+    auto& p=*f.player;auto& enemy_player=f.enemy_player;
+    // A spell can spawn an enemy and sync both fields during this step.
+    enemy_player.state=p.control.player_state;enemy_player.protection=p.control.protection;
+    enemy_player.nearest_position=p.shots.target;enemy_player.target=f.targeted_enemy;
     EnemyFrameSettings settings;settings.game_flags=state.flags;settings.timeline_blocked=state.scene_phase;settings.dialogue=state.dialogue;settings.patterns=patterns;
     if(!m.step_frame(settings))return fail("Enemy frame");
-    f.player->control.player_state=f.enemy_player.state;f.player->control.protection=f.enemy_player.protection;f.player->shots.target=f.enemy_player.nearest_position;f.targeted_enemy=f.enemy_player.target;
+    p.control.player_state=enemy_player.state;p.control.protection=enemy_player.protection;
+    p.shots.target=enemy_player.nearest_position;f.targeted_enemy=enemy_player.target;
     return error.empty();
 }
 bool GameBattle::update_bullets(i32 side){

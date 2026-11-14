@@ -1,7 +1,7 @@
 import type {CloudSaveSync} from '../../services/cloud-save-sync';
-import {useEffect, useLayoutEffect, useRef, useState, type FormEvent} from 'react';
+import {useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent} from 'react';
 import {Link, useLocation} from 'react-router';
-import {ChevronLeft, ChevronRight, Gamepad2, ImagePlus, LoaderCircle, Plus, Save, ShieldCheck, Trash2, UserRound} from 'lucide-react';
+import {ChevronLeft, ChevronRight, Eye, EyeOff, Gamepad2, Star, ImagePlus, LoaderCircle, Plus, Save, ShieldCheck, Trash2, UserRound} from 'lucide-react';
 import {Input, Textarea} from '../../ui/input';
 import {Button} from '../../ui/button';
 import {Toggle} from '../../ui/controls';
@@ -11,21 +11,24 @@ import {AccountRequestError,accountRequest,mailCaptchaError} from '../../service
 import {notifyRoomProfileChange} from '../../services/account-session';
 import {prepareCroppedProfileImage, prepareStoredAvatarThumbnail, validateProfileImage, ProfileImageError, type ProfileImageCrop, type ProfileImageKind} from '../../services/profile-image';
 import {useLocale, type UiMessageKey} from '../../i18n';
-import {AccountAvatar} from './AccountAvatar';
 import {useUnsavedChanges} from '../../navigation/unsaved-changes';
 import {useSurfaceLayerState} from '../../navigation/surface-layer';
 import {CloudSaves} from './CloudSaves';
 import type {LocalSaveReader} from '../../services/local-save-storage';
 import ProfileImageCropDialog from './ProfileImageCropDialog';
-import type {Profile, ProfileDisplay, ProfileReview} from './ProfilePreview';
+import {PlayerProfileCard} from './PlayerProfileCard';
+import {GameDataIcon} from './ProfileGameDataCard';
+import {ProfilePanelLoading} from './ProfileLoading';
+import type {Profile, ProfileReview} from './ProfilePreview';
+import {gameDataViews, gameDataViewLabels, normalizeProfileDisplay, type ProfileDisplay, type GameDataView} from '../../models/profile-display';
 import './account-settings.css';
 
 type SaveProfile = (profile:Profile, display:ProfileDisplay, review?:ProfileReview) => void;
-type ProfileDraft = {draft:Profile & {display:ProfileDisplay}; review:ProfileReview};
+type ProfileDraft = {draft:Profile & {display:unknown}; review:ProfileReview};
 
-export function AccountSettings({initialProfile, initialDisplay, reviewPending, panel, onSave,readLocalSaves,cloudSync}: {
+export function AccountSettings({initialProfile, initialDisplay, reviewPending, panel, onSave,readLocalSaves,cloudSync,username}: {
   initialProfile:Profile; initialDisplay:ProfileDisplay; panel:string;
-  reviewPending?:boolean; onSave:SaveProfile;
+  reviewPending?:boolean; onSave:SaveProfile; username?: string;
   readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null;
 }) {
   const {t} = useLocale();
@@ -55,14 +58,14 @@ export function AccountSettings({initialProfile, initialDisplay, reviewPending, 
     <div className="account-settings-content" ref={content}>
       <Link className="account-settings-back" to={address('#settings')}><ChevronLeft aria-hidden="true"/>{t('profile.settings')}</Link>
       {editing ? reviewPending === undefined
-        ? <ProfileSettings initialProfile={initialProfile} initialDisplay={initialDisplay} onSave={onSave}/>
-        : <ProfileDraftSettings pending={reviewPending} onSave={onSave}/>
+        ? <ProfileSettings username={username} initialProfile={initialProfile} initialDisplay={initialDisplay} onSave={onSave}/>
+        : <ProfileDraftSettings username={username} pending={reviewPending} onSave={onSave}/>
         : gameSettings ? <CloudSaves readLocalSaves={readLocalSaves} sync={cloudSync}/> : <SecuritySettings/>}
     </div>
   </main>;
 }
 
-function ProfileDraftSettings({pending,onSave}:{pending:boolean;onSave:SaveProfile}) {
+function ProfileDraftSettings({pending,onSave,username}:{pending:boolean;onSave:SaveProfile;username?:string}) {
   const {t} = useLocale();
   const [draft,setDraft] = useState<ProfileDraft>();
   const [failed,setFailed] = useState(false);
@@ -80,23 +83,28 @@ function ProfileDraftSettings({pending,onSave}:{pending:boolean;onSave:SaveProfi
     }).catch(() => {if (!controller.signal.aborted) setFailed(true);});
     return () => controller.abort();
   }, [pending,attempt]);
-  if (!draft) return <section aria-busy={!failed}>{failed && <p role="alert">{t('account.requestFailed')}{' '}
-    <Button type="button" variant="outline" onClick={() => setAttempt(value=>value+1)}>{t('action.retry')}</Button></p>}</section>;
+  if (!draft) return failed ? <p role="alert">{t('account.requestFailed')}{' '}
+    <Button type="button" variant="outline" onClick={() => setAttempt(value=>value+1)}>{t('action.retry')}</Button></p> :
+    <ProfilePanelLoading label={t('profile.personalSettings')}/>;
   const {display,...profile} = draft.draft;
-  return <ProfileSettings initialProfile={profile} initialDisplay={display} review={draft.review}
+  return <ProfileSettings username={username} initialProfile={profile} initialDisplay={display} review={draft.review}
     onSave={(next,visibility,review) => {
       setDraft({draft:{...next,display:visibility},review:review ?? {}});
       onSave(next,visibility,review);
     }}/>;
 }
 
-function ProfileSettings({initialProfile,initialDisplay,review,onSave}: {
-  initialProfile:Profile;initialDisplay:ProfileDisplay;review?:ProfileReview;onSave:SaveProfile;
+function ProfileSettings({initialProfile,initialDisplay,review,onSave,username}: {
+  initialProfile:Profile;initialDisplay:unknown;review?:ProfileReview;onSave:SaveProfile;username?:string;
 }) {
   const {t} = useLocale();
   const [profile,setProfile] = useState(initialProfile);
   const [roomThumbnail,setRoomThumbnail] = useState<string>();
-  const [visible,setVisible] = useState(initialDisplay.visible);
+  const baseline = useMemo(() => normalizeProfileDisplay(initialDisplay), [initialDisplay]);
+  const [visible,setVisible] = useState(baseline.visible);
+  const [gameDataDefault,setGameDataDefault] = useState(baseline.gameDataDefault ?? 'th09');
+  const enabled = {all: visible.career || visible.records, th09: visible.versus};
+  const defaultView = enabled[gameDataDefault] ? gameDataDefault : gameDataViews.find(view => enabled[view]);
   const [busy,setBusy] = useState(false);
   const [processing,setProcessing] = useState<Partial<Record<ProfileImageKind,boolean>>>({});
   const uploadTasks = useRef<Partial<Record<ProfileImageKind,AbortController>>>({});
@@ -114,14 +122,19 @@ function ProfileSettings({initialProfile,initialDisplay,review,onSave}: {
   }, []);
   const dirty = cropOpen || processingImages || profile.name !== initialProfile.name || profile.bio !== initialProfile.bio ||
     profile.avatar !== initialProfile.avatar || !!roomThumbnail || profile.cover !== initialProfile.cover ||
-    Object.keys(visible).some(key=>visible[key as keyof typeof visible]!==initialDisplay.visible[key as keyof typeof visible]) || profile.links.length !== initialProfile.links.length ||
+    Object.keys(visible).some(key=>visible[key as keyof typeof visible]!==baseline.visible[key as keyof typeof visible]) ||
+    gameDataDefault !== (baseline.gameDataDefault ?? 'th09') || profile.links.length !== initialProfile.links.length ||
     profile.links.some((link,index) => link.label !== initialProfile.links[index]?.label || link.url !== initialProfile.links[index]?.url);
   useUnsavedChanges(dirty, () => {
     for (const task of Object.values(uploadTasks.current)) task?.abort();
     uploadTasks.current = {};setProcessing({});setError(undefined);
-    setProfile(initialProfile);setRoomThumbnail(undefined);setVisible(initialDisplay.visible);setSaved(false);setCropOpen(false);setCropRequest(undefined);
+    setProfile(initialProfile);setRoomThumbnail(undefined);setVisible(baseline.visible);setGameDataDefault(baseline.gameDataDefault ?? 'th09');setSaved(false);setCropOpen(false);setCropRequest(undefined);
     setLinkIds(initialProfile.links.map(() => nextId.current++));
   });
+  const showGameData = (view: GameDataView, value: boolean) => {
+    setVisible(current => view === 'all' ? {...current, career:value, records:value} : {...current, versus:value});
+    setSaved(false);
+  };
   const change = (next:Profile) => {setProfile(next);setSaved(false);setError(undefined);};
   const chooseImage = (file:File|undefined,key:ProfileImageKind) => {
     if(!file)return;
@@ -166,7 +179,7 @@ function ProfileSettings({initialProfile,initialDisplay,review,onSave}: {
     setBusy(true);setError(undefined);setSaved(false);
     const {roomAvatarReady, ...fields} = profile;
     const next = {...fields,name:profile.name.trim(),links};
-    const display = {...initialDisplay,visible};
+    const display = {visible,order:baseline.order,gameDataDefault:defaultView ?? gameDataDefault};
     try {
       let avatarThumbnail = roomThumbnail ?? (next.avatar && roomAvatarReady === false
         ? await prepareStoredAvatarThumbnail(next.avatar).catch(() => undefined)
@@ -186,7 +199,7 @@ function ProfileSettings({initialProfile,initialDisplay,review,onSave}: {
       onSave(savedProfile,display,result?.review);setSaved(true);
       window.dispatchEvent(new Event('account-profile-change'));
       if (next.name !== initialProfile.name || next.avatar !== initialProfile.avatar || avatarThumbnail ||
-          visible.records !== initialDisplay.visible.records) notifyRoomProfileChange();
+          visible.records !== baseline.visible.records) notifyRoomProfileChange();
     } catch(error) {setError(error instanceof AccountRequestError && error.code==='CONTENT_REJECTED'?'profile.contentRejected':error instanceof AccountRequestError && error.code==='REVIEW_UNAVAILABLE'?'profile.reviewUnavailable':error instanceof AccountRequestError && error.code==='SAVE_QUOTA_EXCEEDED'?'cloudSave.quota':'account.requestFailed');}
     finally {setBusy(false);}
   }
@@ -202,12 +215,8 @@ function ProfileSettings({initialProfile,initialDisplay,review,onSave}: {
     <form onSubmit={save}>
       <div className="profile-settings-editor">
         <div className="settings-artwork">
-          <div className="settings-profile-preview" aria-hidden="true">
-            <div className="settings-preview-cover">{profile.cover && <img src={profile.cover} alt=""/>}</div>
-            <div className="settings-preview-identity"><AccountAvatar src={profile.avatar}/><strong>{profile.name || t('profile.name.missing')}</strong>
-              {profile.bio && <p>{profile.bio}</p>}
-            </div>
-          </div>
+          <PlayerProfileCard username={username} name={profile.name || t('profile.name.missing')}
+            avatar={profile.avatar} cover={profile.cover} showRating={visible.versus}/>
           <FieldGroup>
             <Field orientation="horizontal" className="settings-artwork-upload"><FieldLabel htmlFor="settings-avatar">{t('profile.avatar')}</FieldLabel><FieldContent>
               <div className="settings-media-actions">
@@ -245,11 +254,33 @@ function ProfileSettings({initialProfile,initialDisplay,review,onSave}: {
               <Button variant="outline" size="sm" type="button" disabled={profile.links.length>=12} onClick={()=>{change({...profile,links:[...profile.links,{label:'',url:''}]});setLinkIds([...linkIds,nextId.current++]);}}><Plus aria-hidden="true"/>{t('profile.links.add')}</Button>
             </FieldContent></Field>
           </FieldGroup>
-          <section className="settings-section" aria-labelledby="settings-privacy-title">
-            <h3 id="settings-privacy-title">{t('profile.displayTab')}</h3>
-            {(['career','records','friends'] as const).map(key=><Field key={key} orientation="horizontal" className="settings-switch-row"><FieldLabel htmlFor={'settings-'+key}>{t(key==='friends'?'profile.friendsVisibility':key==='career'?'profile.careerVisibility':'profile.recordsVisibility')}</FieldLabel><FieldContent>
-              <Toggle id={'settings-'+key} checked={visible[key]} onCheckedChange={value=>{setVisible(current=>({...current,[key]:value}));setSaved(false);}}/>
-            </FieldContent></Field>)}
+          <section className="settings-section" aria-labelledby="settings-display-title">
+            <h3 id="settings-display-title">{t('profile.display')}</h3>
+            <fieldset className="settings-game-data" aria-label={t('profile.gameData')}>
+              {gameDataViews.map(view => {
+                const label = t(gameDataViewLabels[view]);
+                const isDefault = defaultView === view;
+                const visibilityLabel = t(enabled[view] ? 'profile.gameDataHide' : 'profile.gameDataShow');
+                return <div className="settings-game-data-row" key={view} data-hidden={!enabled[view] || undefined}>
+                  <span className="settings-game-data-icon"><GameDataIcon view={view}/></span>
+                  <span className="settings-game-data-label">{label}</span>
+                  <Button type="button" variant="ghost" size="sm" className="settings-game-data-default"
+                    id={'settings-game-data-default-'+view} disabled={busy || !enabled[view]} aria-pressed={isDefault}
+                    aria-label={label + ' | ' + t('profile.gameDataDefault')}
+                    onClick={()=>{setGameDataDefault(view);setSaved(false);}}>
+                    <Star aria-hidden="true"/>{isDefault ? t('profile.gameDataDefault') : t('profile.gameDataMakeDefault')}
+                  </Button>
+                  <Button type="button" variant="ghost" size="icon-sm" id={'settings-game-data-'+view}
+                    disabled={busy} title={visibilityLabel} aria-label={label + ' | ' + visibilityLabel}
+                    onClick={()=>showGameData(view,!enabled[view])}>
+                    {enabled[view] ? <Eye aria-hidden="true"/> : <EyeOff aria-hidden="true"/>}
+                  </Button>
+                </div>;
+              })}
+            </fieldset>
+            <Field orientation="horizontal" className="settings-switch-row"><FieldLabel htmlFor="settings-friends">{t('profile.friendsVisibility')}</FieldLabel><FieldContent>
+              <Toggle id="settings-friends" checked={visible.friends} disabled={busy} onCheckedChange={value=>{setVisible(current=>({...current,friends:value}));setSaved(false);}}/>
+            </FieldContent></Field>
           </section>
         </div>
       </div>

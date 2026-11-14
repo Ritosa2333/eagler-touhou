@@ -3013,7 +3013,7 @@
       "game": "th12",
       "variant": "multiplayer",
       "directory": "ports/th12-mp",
-      "sourceDigest": "c389a93e421c14f8285d7b1ec4efaef6aa9646cca5a8c54a110a1e7566faf87d",
+      "sourceDigest": "47c8671d6dbe30db9703bfbdf6e7e3b5429613e6285787dbb3c62f61e5120ae1",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 95,
@@ -3173,7 +3173,7 @@
       "game": "th12",
       "variant": "normal",
       "directory": "ports/th12",
-      "sourceDigest": "caa8aba44a2faab498ff9a610436a27fc0f08456900d33d8d3a98a704202fb9e",
+      "sourceDigest": "08d10a0a396f343b6cf5f8160277e6231bbabb6c7b9426bac97baecbb436b957",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 81,
@@ -3349,7 +3349,8 @@
             "launcher/tests/test-presentation-contract-coverage.mjs"
           ],
           "complete": true,
-          "status": "passed"
+          "status": "failed",
+          "error": "Executable checks failed; see normal-presentation.log"
         }
       ]
     },

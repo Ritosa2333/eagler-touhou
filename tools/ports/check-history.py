@@ -56,7 +56,10 @@ class Repository:
     def directories(self, head):
         if not self.git("ls-tree", "-d", "--name-only", head, "ports"):
             return set()
-        return {f"ports/{name}" for name in self.git("ls-tree", "-d", "--name-only", f"{head}:ports").splitlines()}
+        # Gitlinks retain their own repository history. This list is for imported trees.
+        entries = self.git("ls-tree", "-d", f"{head}:ports").splitlines()
+        trees = [entry.split("\t", 1)[1] for entry in entries if entry.startswith("040000 tree ")]
+        return {f"ports/{name}" for name in trees}
 
 
 def sha(value, label):

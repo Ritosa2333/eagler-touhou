@@ -1,0 +1,18 @@
+{
+  "schema": "eagler-touhou/source-import/1",
+  "repository": "https://github.com/AdingApkgg/thp",
+  "branch": "main",
+  "sourceCommit": "5eb4ac87d227027f390fa006e1126a094b820860",
+  "sourceScope": "TH14 runtime source, shared engine files and build inputs",
+  "commit": "b36956a726f0727a3dedef5fe53094e2798e8b21",
+  "destination": "ports/th14",
+  "mode": "git-subtree",
+  "currentMode": "git-subtree",
+  "subtree": {
+    "upstreamCommit": "b36956a726f0727a3dedef5fe53094e2798e8b21",
+    "initialJoin": "adc436cabc4b2174e63538714d8ccef8c1250507",
+    "initialSplit": "b36956a726f0727a3dedef5fe53094e2798e8b21",
+    "latestJoin": "adc436cabc4b2174e63538714d8ccef8c1250507",
+    "currentSplit": "b36956a726f0727a3dedef5fe53094e2798e8b21"
+  }
+}

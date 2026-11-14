@@ -197,6 +197,7 @@ export const PRODUCT_GAMES = Object.freeze({
     // the required presentation-cadence acceptance gate.
     hsob: Object.freeze({
         testOnly: true,
+        buildOptIn: true,
         importOnly: true,
         runtimeResourceTransport: "resources",
         cardArtwork: "hsob-card.webp",
@@ -322,7 +323,6 @@ export const PRODUCT_GAMES = Object.freeze({
         features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
     }),
     th075: Object.freeze({
-        testOnly: true,
         number: "07.5", title: "東方萃夢想", subtitle: "Immaterial and Missing Power", cardArtwork: "th075-card.webp",
         storage: Object.freeze({saveRoot:"/savesth075",scoreFile:"score.dat",configFiles:Object.freeze(["config.dat"])}),
         runtime: "./runtime/th075/th075.html", inputProfile: "fighting",
@@ -446,7 +446,7 @@ export const PRODUCT_GAMES = Object.freeze({
             musicMounts: Object.freeze({ ogg: "/music" }),
         }),
         replay: Object.freeze({ prefix: "th9" }),
-        multiplayerRuntime: "./runtime/th09/multiplayer/th09.html",
+        multiplayerRuntime: "./runtime/th09/th09.html",
         multiplayer: Object.freeze({
             titleKey: "game.title.th09mp",
             gameplay: "versus",
@@ -659,6 +659,48 @@ export const PRODUCT_GAMES = Object.freeze({
         }),
         features: Object.freeze({ thprac: false, languages: false, focusHitbox: false }),
     }),
+    th14: Object.freeze({
+        testOnly: true,
+        buildOptIn: true,
+        number: "14",
+        title: "東方輝針城",
+        subtitle: "Double Dealing Character",
+        cardArtwork: "th14-card.jpg",
+        storage: Object.freeze({
+            saveRoot: "/savesth14",
+            scoreFile: "scoreth14.dat",
+            configFiles: Object.freeze(["th14.cfg"]),
+        }),
+        runtime: "./runtime/th14/th14.html",
+        musicCapabilities: Object.freeze({midi: false}),
+        musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection"}),
+        touchFire: TOGGLE_TOUCH_FIRE,
+        support: Object.freeze({
+            highRefreshRate: false,
+            sourceRepository: "https://github.com/AdingApkgg/thp",
+            adaptationNotice: "early-test",
+        }),
+        runtimeFileLayout: "directory",
+        requiredShared: Object.freeze([]),
+        runtimeAssets: Object.freeze([
+            "th14.html", "manifest.json", "shell.mjs", "managed.css",
+            "keyboard.mjs", "directory-keyboard.mjs", "eagler-host.mjs",
+            "runtime-epoch.mjs", "th14-sdl.mjs", "th14-sdl.wasm",
+            "resources.json", "fonts/cp932.bin",
+        ]),
+        dataProvider: "retail-memory",
+        package: Object.freeze({
+            dataFileId: "game-data",
+            dataTarget: "/th14.dat",
+            rawDataImport: Object.freeze({fileNames: Object.freeze(["th14.dat"])}),
+            musicSourceDirectories: Object.freeze({ogg: "music"}),
+            musicMounts: Object.freeze({ogg: "/music"}),
+        }),
+        replay: Object.freeze({prefix: "th14"}),
+        thpracRuntime: Object.freeze({session: "native"}),
+        thpracExtraFunctionKeys: Object.freeze(["U"]),
+        features: Object.freeze({thprac: true, languages: true, focusHitbox: false}),
+    }),
     th15: Object.freeze({
         number: "15",
         title: "東方紺珠伝",
@@ -717,7 +759,6 @@ export const PRODUCT_GAMES = Object.freeze({
         features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
     }),
     th17: Object.freeze({
-        testOnly: true,
         number: "17", title: "東方鬼形獣", subtitle: "Wily Beast and Weakest Creature", cardArtwork: "th17-card.webp",
         renderScales: Object.freeze([2, 1]),
         thpracRuntime: Object.freeze({session: "native"}),

@@ -21,7 +21,7 @@ import { RoomElapsed } from '../room/RoomElapsed';
 import {ParticipantAvatar} from '../room/ParticipantAvatar';
 import {bookGameArtwork} from '../launcher/book-artwork';
 import {Th09RatingText} from '../room/Th09RatingText';
-import type {Th09Rating} from '../../services/th09-ratings';
+import {Th09RatingCardsContext, type Th09Rating, type Th09RatingCards} from '../../services/th09-ratings';
 import './directory-room-list.css';
 
 export interface DirectoryRoomRowsProps {
@@ -34,6 +34,7 @@ export interface DirectoryRoomRowsProps {
   exiting?: ReadonlySet<string>;
   ratings?: Readonly<Record<string, Th09Rating>>;
   myRating?: Th09Rating;
+  cards?: Th09RatingCards;
 }
 /** Original public/lobby.html165–177 row template + lobby.mts260–347 renderer. */
 export function DirectoryRoomRows({
@@ -45,22 +46,24 @@ export function DirectoryRoomRows({
   exiting,
   ratings,
   myRating,
+  cards,
 }: DirectoryRoomRowsProps) {
   return (
     <>
       {snapshot.visibleRooms.map((room) => (
-        <RoomRow
-          key={`${room.product}-${room.code}`}
-          room={room}
-          snapshot={snapshot}
-          service={service}
-          ratings={ratings}
-          myRating={myRating}
-          assetUrl={assetUrl}
-          initial={initialRows}
-          arriving={arrivals?.has(`${room.product}-${room.code}`) ?? false}
-          exiting={exiting?.has(`${room.product}-${room.code}`) ?? false}
-        />
+        <Th09RatingCardsContext.Provider key={`${room.product}-${room.code}`} value={room.product === 'th09mp' ? cards : undefined}>
+          <RoomRow
+            room={room}
+            snapshot={snapshot}
+            service={service}
+            ratings={ratings}
+            myRating={myRating}
+            assetUrl={assetUrl}
+            initial={initialRows}
+            arriving={arrivals?.has(`${room.product}-${room.code}`) ?? false}
+            exiting={exiting?.has(`${room.product}-${room.code}`) ?? false}
+          />
+        </Th09RatingCardsContext.Provider>
       ))}
     </>
   );

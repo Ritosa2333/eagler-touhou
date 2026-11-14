@@ -7,8 +7,8 @@ import {exportReplayName,importReplayName} from './motion-replay.mjs';
 import {createAutoReplay} from './auto-replay.mjs';
 import {createReplayPlayer} from './replay-player.mjs';
 const game='th09',protocol='eagler-touhou/1',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas'),$=s=>document.querySelector(s);
-// Variant identity is stamped by the builder, including offline Replay viewers.
-const runtimeVariant=document.querySelector('meta[name="eagler-runtime-variant"]')?.content;
+// The Launcher supplies the session mode for play and offline Replay viewers.
+const runtimeVariant=query.get('runtimeVariant')??'normal';
 if(!['normal','multiplayer'].includes(runtimeVariant))throw Error('Invalid TH09 Runtime variant');
 const saveRoot=runtimeVariant==='multiplayer'?'/savesth09mp':'/savesth09';
 const epoch=Number(query.get('runtimeEpoch')),validEpoch=Number.isSafeInteger(epoch)&&epoch>0;

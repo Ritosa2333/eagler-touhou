@@ -1,0 +1,58 @@
+# ---------------------------------------------------------------------------
+# 原始游戏数据绝不入库。这些文件只存在于本机，任何情况下不得提交或上传。
+# ---------------------------------------------------------------------------
+*.dat
+*.exe
+*.dll
+*.rpy
+!tools/**/*.exe
+th*.dat
+thbgm.dat
+
+# 构建产物与提取出来的游戏数据
+artifacts/
+**/artifacts/
+runtimes/*/th*_web/artifacts/
+runtimes/*/th*_web/reference/native/
+
+# 由本机 Windows 字体经 GDI 烘焙出的字形图集（16MB+，且含字体厂商字形数据）。
+# 用 `node scripts/prepare-fonts.mjs` 现场重建，不入库。
+runtimes/*/th*_web/assets/sdl-native/fonts/
+
+# 由原作 thbgm.dat 转出的 OGG（60MB+，是原作的音频内容）。
+# 用 `python scripts/prepare-music-th12.py` 现场重建，不入库。
+runtimes/*/th*_web/assets/sdl-native/music/
+runtimes/*/th*_web/assets/sdl-native/music-verification.json
+
+# 工具链二进制（体积大、可复现安装，脚本负责下载）
+tools/emsdk/
+tools/wasi-sdk-*/
+tools/unicorn/node_modules/
+tools/thtk/
+tools/tmp/
+tools/node/
+
+# 只读参考仓库
+reference/
+
+# 运行时里的软链接/交接目录（老的一层结构）
+runtimes/*/tools/
+# 运行时自己的 tools 目录：探针、目标文件与链接日志。
+# 实际路径是 runtimes/<标题>/<运行时>/tools/，比上面一行多一层，所以上面那条匹配不到它。
+runtimes/*/th*_web/tools/
+
+# 编辑器与系统
+.DS_Store
+Thumbs.db
+*.log
+node_modules/
+
+__pycache__/
+*.pyc
+
+# Full private per-callback traces stay local; publish the digest/count summary.
+/docs/porting/th14-staged-loader-integration-object-verified-oct14.json
+
+*.tar.gz
+
+/docs/porting/th14-session-reference-progress-oct10.json

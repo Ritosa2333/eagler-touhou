@@ -55,8 +55,10 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows =
     : surface.productFilters !== undefined ? snapshot.rooms : snapshot.visibleRooms;
   const filteredRooms = surface.productFilters?.length ? visibleRooms.filter(room => surface.productFilters!.includes(room.product))
     : surface.viewingProduct ? visibleRooms.filter(room => room.product === surface.viewingProduct) : visibleRooms;
-  const {players, mine} = useTh09Ratings(surface.interactive !== false && filteredRooms.some(room => room.product === 'th09mp'));
   const filtered = filterDirectoryRooms(filteredRooms, roomFilter).sort((a, b) => Number(favorites.includes(b.product)) - Number(favorites.includes(a.product)));
+  const th09Rooms = filtered.filter(room => room.product === 'th09mp');
+  const {players, mine, cards} = useTh09Ratings(surface.interactive !== false && th09Rooms.length > 0,
+    th09Rooms.flatMap(room => room.seats.map(seat => seat?.profile?.username)));
   const state = {...snapshot, loading: snapshot.loading && !snapshot.connectionInterrupted,
     visibleRooms: orderTh09OpenRooms(filtered, players, mine)};
   const previousVisible = useRef<readonly DirectoryRoom[]>([]);
@@ -103,7 +105,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows =
     action: state.connection === 'loading' || (state.connection === 'live' && !!state.mine) ? undefined : {label: state.connection === 'live' && filtering ? (t('directory.clearFilters')) : t(state.connection === 'live' ? 'lobby.create' : 'lobby.retry'), onClick: () => {if (state.connection !== 'live') service.retry(); else if (filtering) {beginFilterReorder(); setRoomFilter('all'); if (surface.onProductFiltersChange) surface.onProductFiltersChange([]); else surface.onSelect('');} else onOpenForm('create');}},
   };
   return <LobbySurface {...surface} selectedProduct={surface.viewingProduct || state.selectedProduct} connectionWarning={warning} membership={membership} notice={state.notice} roomTools={roomTools} roomFilters={roomFilters}
-    roomList={<DirectoryRoomRows snapshot={rows} service={service} assetUrl={assetUrl} ratings={players} myRating={mine} initialRows={initialRows} arrivals={arrivals} exiting={exitingKeys}/>}
+    roomList={<DirectoryRoomRows snapshot={rows} service={service} assetUrl={assetUrl} ratings={players} myRating={mine} cards={cards} initialRows={initialRows} arrivals={arrivals} exiting={exitingKeys}/>}
     hasRooms={!!rows.visibleRooms.length} loading={state.loading} emptyState={rows.visibleRooms.length ? null : empty} roomCount={state.loading && !state.visibleRooms.length ? '' : t('lobby.roomCount', {count: state.visibleRooms.length})}
     viewingProduct={surface.viewingProduct} roomUsersArtwork={assetUrl('assets/room-users.svg')}/>;
 }

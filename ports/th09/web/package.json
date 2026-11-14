@@ -10,7 +10,6 @@
     "test:archive-oracle": "node --test tests/oracle/archive.test.mjs",
     "web:build": "node scripts/build-sdl.mjs --release",
     "web:eagler": "node scripts/build-eagler.mjs",
-    "web:eagler:multiplayer": "node scripts/build-eagler.mjs --multiplayer",
     "test:spectator-timeline": "node --test tests/multiplayer/spectator-timeline-adapter.test.mjs",
     "test:server": "node --test tests/server/*.test.mjs",
     "test:rollback": "node tests/multiplayer/run-tests.mjs",
