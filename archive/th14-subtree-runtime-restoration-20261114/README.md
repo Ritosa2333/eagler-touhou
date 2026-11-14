@@ -17,3 +17,5 @@
 静态服务独立检查：`node launcher/scripts/check-static-isolation.mjs launcher/scripts/serve-static.mjs`。完整记录：[THP 新包浏览器复验](https://github.com/AdingApkgg/thp/blob/76cefb6a6816ec021d1b0d15b87e96511aa210eb/docs/porting/TH14_SUBTREE_BROWSER_PREVIEW_NOV14.md)。
 
 当前普通版 85a60542 已在相同前端、相同输入及 8 倍速下复验，第三关终态也是 32,637 帧、73,218,790 分，与整合包 thprac 开／关相同。本次整合不是该差异的必要条件；与旧 c407a169 的播放差异继续保留，唯一生产运行源码变化为异常激光长度保护，未证明完整因果，也未计全部录像通过。目标采用可观察行为级对齐，全部预览静音。
+
+相同 Application 夹具、144 个对象保持，只替换激光回调的静音对照复现两种终态分数。关卡／Control 帧诊断投影将首个计分差缩小到三面 2,957 帧（10 分），2,975 帧起敌机数量不同，5,281 帧起生死不同。换关等待及原始回调差异保留，尚不证明完整因果或时序等价。该输入没有 RECR 激光记录；继续核对首差附近的命中、血量和长度，完整录像仍未通过。

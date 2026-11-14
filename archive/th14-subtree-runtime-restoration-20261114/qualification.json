@@ -317,5 +317,626 @@
     "fullReplayAlignmentAccepted": false,
     "productionChanged": false,
     "completeGame": false
+  },
+  "beamProviderDifferential": {
+    "schema": "th14/beam-provider-differential/1",
+    "sameFixture": true,
+    "unchangedProviderObjects": 144,
+    "changedProvider": "ShotCallbacksTh14.cpp",
+    "pairedCallbacks": 32988,
+    "baselineCallbacks": 35092,
+    "candidateCallbacks": 32988,
+    "firstAnyDifference": {
+      "field": "scriptSeed",
+      "callback": 9488,
+      "baselineStage": 2,
+      "candidateStage": 2,
+      "baselineControlFrame": 0,
+      "candidateControlFrame": 0,
+      "baseline": 45250,
+      "candidate": 26255
+    },
+    "firstObservableStateDifference": {
+      "field": "controlFrame",
+      "callback": 9664,
+      "baselineStage": 2,
+      "candidateStage": 2,
+      "baselineControlFrame": 0,
+      "candidateControlFrame": 1,
+      "baseline": 0,
+      "candidate": 1
+    },
+    "firstByField": {
+      "scriptSeed": {
+        "callback": 9488,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 0,
+        "candidateControlFrame": 0,
+        "baseline": 45250,
+        "candidate": 26255
+      },
+      "visualCalls": {
+        "callback": 9488,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 0,
+        "candidateControlFrame": 0,
+        "baseline": 0,
+        "candidate": 74844
+      },
+      "controlFrame": {
+        "callback": 9664,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 0,
+        "candidateControlFrame": 1,
+        "baseline": 0,
+        "candidate": 1
+      },
+      "scriptCalls": {
+        "callback": 9664,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 0,
+        "candidateControlFrame": 1,
+        "baseline": 177088,
+        "candidate": 177110
+      },
+      "stateTimer": {
+        "callback": 9694,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 30,
+        "candidateControlFrame": 1,
+        "baseline": 9693,
+        "candidate": 0
+      },
+      "transitionTimer": {
+        "callback": 9694,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 30,
+        "candidateControlFrame": 1,
+        "baseline": 9693,
+        "candidate": 0
+      },
+      "shootingAge": {
+        "callback": 9694,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 30,
+        "candidateControlFrame": 1,
+        "baseline": 9693,
+        "candidate": 0
+      },
+      "enemies": {
+        "callback": 9694,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 30,
+        "candidateControlFrame": 1,
+        "baseline": 0,
+        "candidate": 2
+      },
+      "scaleFlags": {
+        "callback": 9694,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 30,
+        "candidateControlFrame": 1,
+        "baseline": 2,
+        "candidate": 0
+      },
+      "movementHeld": {
+        "callback": 9789,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 95,
+        "candidateControlFrame": 96,
+        "baseline": 0,
+        "candidate": 1
+      },
+      "movementPressed": {
+        "callback": 9789,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 95,
+        "candidateControlFrame": 96,
+        "baseline": 0,
+        "candidate": 1
+      },
+      "shotTimer": {
+        "callback": 9790,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 96,
+        "candidateControlFrame": 97,
+        "baseline": 4294967295,
+        "candidate": 1
+      },
+      "playerShots": {
+        "callback": 9790,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 96,
+        "candidateControlFrame": 97,
+        "baseline": 0,
+        "candidate": 3
+      },
+      "x": {
+        "callback": 9794,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 100,
+        "candidateControlFrame": 101,
+        "baseline": 4294966642,
+        "candidate": 4294966190
+      },
+      "y": {
+        "callback": 9794,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 100,
+        "candidateControlFrame": 101,
+        "baseline": 19096,
+        "candidate": 19548
+      },
+      "scoreUnits": {
+        "callback": 9814,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 120,
+        "candidateControlFrame": 121,
+        "baseline": 1057772,
+        "candidate": 1057773
+      },
+      "visualSeed": {
+        "callback": 9817,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 123,
+        "candidateControlFrame": 124,
+        "baseline": 45250,
+        "candidate": 18642
+      },
+      "weaponMode": {
+        "callback": 9824,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 130,
+        "candidateControlFrame": 131,
+        "baseline": 0,
+        "candidate": 1
+      },
+      "pointValue": {
+        "callback": 9890,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 196,
+        "candidateControlFrame": 197,
+        "baseline": 1208600,
+        "candidate": 1208800
+      },
+      "power": {
+        "callback": 10228,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 534,
+        "candidateControlFrame": 535,
+        "baseline": 333,
+        "candidate": 334
+      },
+      "graze": {
+        "callback": 10244,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 550,
+        "candidateControlFrame": 551,
+        "baseline": 304,
+        "candidate": 305
+      },
+      "bombFragments": {
+        "callback": 10304,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 610,
+        "candidateControlFrame": 611,
+        "baseline": 1,
+        "candidate": 2
+      },
+      "lifeFragments": {
+        "callback": 11630,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 1936,
+        "candidateControlFrame": 1937,
+        "baseline": 1,
+        "candidate": 2
+      },
+      "bombs": {
+        "callback": 13113,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 3419,
+        "candidateControlFrame": 3420,
+        "baseline": 5,
+        "candidate": 6
+      },
+      "lives": {
+        "callback": 13351,
+        "baselineStage": 2,
+        "candidateStage": 2,
+        "baselineControlFrame": 3657,
+        "candidateControlFrame": 3658,
+        "baseline": 3,
+        "candidate": 4
+      },
+      "stage": {
+        "callback": 21126,
+        "baselineStage": 2,
+        "candidateStage": 3,
+        "baselineControlFrame": 11432,
+        "candidateControlFrame": 0,
+        "baseline": 2,
+        "candidate": 3
+      },
+      "lifeState": {
+        "callback": 26681,
+        "baselineStage": 3,
+        "candidateStage": 3,
+        "baselineControlFrame": 5323,
+        "candidateControlFrame": 5281,
+        "baseline": 1,
+        "candidate": 4
+      },
+      "invincibility": {
+        "callback": 26681,
+        "baselineStage": 3,
+        "candidateStage": 3,
+        "baselineControlFrame": 5323,
+        "candidateControlFrame": 5281,
+        "baseline": 0,
+        "candidate": 6
+      }
+    },
+    "differenceCounts": {
+      "scriptSeed": 23491,
+      "visualCalls": 17123,
+      "controlFrame": 23123,
+      "scriptCalls": 23071,
+      "stateTimer": 23295,
+      "transitionTimer": 23295,
+      "shootingAge": 23295,
+      "enemies": 5932,
+      "scaleFlags": 44,
+      "movementHeld": 9551,
+      "movementPressed": 1739,
+      "shotTimer": 20104,
+      "playerShots": 17122,
+      "x": 13631,
+      "y": 13684,
+      "scoreUnits": 17226,
+      "visualSeed": 17092,
+      "weaponMode": 1513,
+      "pointValue": 12203,
+      "power": 6343,
+      "graze": 8906,
+      "bombFragments": 4858,
+      "lifeFragments": 4310,
+      "bombs": 3856,
+      "lives": 6385,
+      "stage": 1,
+      "lifeState": 1194,
+      "invincibility": 3082
+    },
+    "stageFrameProjection": {
+      "policy": "last occurrence of (stage, controlFrame); diagnostic only, preserves raw callback differences",
+      "duplicateKeys": [
+        607,
+        649
+      ],
+      "pairedKeys": 32339,
+      "firstByField": {
+        "stateTimer": {
+          "stage": 2,
+          "controlFrame": 0,
+          "baselineCallback": 9664,
+          "candidateCallback": 9663,
+          "baseline": 9663,
+          "candidate": 9662
+        },
+        "transitionTimer": {
+          "stage": 2,
+          "controlFrame": 0,
+          "baselineCallback": 9664,
+          "candidateCallback": 9663,
+          "baseline": 9663,
+          "candidate": 9662
+        },
+        "shootingAge": {
+          "stage": 2,
+          "controlFrame": 0,
+          "baselineCallback": 9664,
+          "candidateCallback": 9663,
+          "baseline": 9663,
+          "candidate": 9662
+        },
+        "scriptSeed": {
+          "stage": 2,
+          "controlFrame": 0,
+          "baselineCallback": 9664,
+          "candidateCallback": 9663,
+          "baseline": 29390,
+          "candidate": 54577
+        },
+        "scriptCalls": {
+          "stage": 2,
+          "controlFrame": 1,
+          "baselineCallback": 9695,
+          "candidateCallback": 9694,
+          "baseline": 177322,
+          "candidate": 177298
+        },
+        "scoreUnits": {
+          "stage": 3,
+          "controlFrame": 2957,
+          "baselineCallback": 24315,
+          "candidateCallback": 24357,
+          "baseline": 6206290,
+          "candidate": 6206291
+        },
+        "visualSeed": {
+          "stage": 3,
+          "controlFrame": 2970,
+          "baselineCallback": 24328,
+          "candidateCallback": 24370,
+          "baseline": 9603,
+          "candidate": 10617
+        },
+        "visualCalls": {
+          "stage": 3,
+          "controlFrame": 2970,
+          "baselineCallback": 24328,
+          "candidateCallback": 24370,
+          "baseline": 3654,
+          "candidate": 3656
+        },
+        "enemies": {
+          "stage": 3,
+          "controlFrame": 2975,
+          "baselineCallback": 24333,
+          "candidateCallback": 24375,
+          "baseline": 8,
+          "candidate": 7
+        },
+        "playerShots": {
+          "stage": 3,
+          "controlFrame": 2987,
+          "baselineCallback": 24345,
+          "candidateCallback": 24387,
+          "baseline": 20,
+          "candidate": 19
+        },
+        "pointValue": {
+          "stage": 3,
+          "controlFrame": 3048,
+          "baselineCallback": 24406,
+          "candidateCallback": 24448,
+          "baseline": 1922600,
+          "candidate": 1922800
+        },
+        "graze": {
+          "stage": 3,
+          "controlFrame": 3629,
+          "baselineCallback": 24987,
+          "candidateCallback": 25029,
+          "baseline": 1121,
+          "candidate": 1120
+        },
+        "lifeState": {
+          "stage": 3,
+          "controlFrame": 5281,
+          "baselineCallback": 26639,
+          "candidateCallback": 26681,
+          "baseline": 1,
+          "candidate": 4
+        },
+        "invincibility": {
+          "stage": 3,
+          "controlFrame": 5281,
+          "baselineCallback": 26639,
+          "candidateCallback": 26681,
+          "baseline": 0,
+          "candidate": 6
+        },
+        "x": {
+          "stage": 3,
+          "controlFrame": 5282,
+          "baselineCallback": 26640,
+          "candidateCallback": 26682,
+          "baseline": 4294967128,
+          "candidate": 472
+        },
+        "shotTimer": {
+          "stage": 3,
+          "controlFrame": 5282,
+          "baselineCallback": 26640,
+          "candidateCallback": 26682,
+          "baseline": 6,
+          "candidate": 5
+        },
+        "lives": {
+          "stage": 3,
+          "controlFrame": 5290,
+          "baselineCallback": 26648,
+          "candidateCallback": 26690,
+          "baseline": 7,
+          "candidate": 6
+        },
+        "power": {
+          "stage": 3,
+          "controlFrame": 5293,
+          "baselineCallback": 26651,
+          "candidateCallback": 26693,
+          "baseline": 400,
+          "candidate": 350
+        },
+        "y": {
+          "stage": 3,
+          "controlFrame": 5320,
+          "baselineCallback": 26678,
+          "candidateCallback": 26720,
+          "baseline": 33609,
+          "candidate": 61440
+        },
+        "bombs": {
+          "stage": 3,
+          "controlFrame": 5320,
+          "baselineCallback": 26678,
+          "candidateCallback": 26720,
+          "baseline": 8,
+          "candidate": 3
+        },
+        "lifeFragments": {
+          "stage": 3,
+          "controlFrame": 5584,
+          "baselineCallback": 26942,
+          "candidateCallback": 26984,
+          "baseline": 2,
+          "candidate": 1
+        },
+        "bombFragments": {
+          "stage": 3,
+          "controlFrame": 6877,
+          "baselineCallback": 28235,
+          "candidateCallback": 28277,
+          "baseline": 0,
+          "candidate": 1
+        },
+        "weaponMode": {
+          "stage": 3,
+          "controlFrame": 7089,
+          "baselineCallback": 28447,
+          "candidateCallback": 28489,
+          "baseline": 0,
+          "candidate": 1
+        }
+      },
+      "differenceCounts": {
+        "stateTimer": 6310,
+        "transitionTimer": 2,
+        "shootingAge": 2,
+        "scriptSeed": 23018,
+        "scriptCalls": 23017,
+        "scoreUnits": 8151,
+        "visualSeed": 8158,
+        "visualCalls": 8158,
+        "enemies": 2441,
+        "playerShots": 6844,
+        "pointValue": 8020,
+        "graze": 7304,
+        "lifeState": 1110,
+        "invincibility": 2998,
+        "x": 6258,
+        "shotTimer": 3562,
+        "lives": 6299,
+        "power": 6296,
+        "y": 6172,
+        "bombs": 3854,
+        "lifeFragments": 4009,
+        "bombFragments": 4712,
+        "weaponMode": 113
+      }
+    },
+    "terminal": {
+      "baseline": {
+        "afterFinalCallback": true,
+        "scope": "continuous full replay",
+        "outcome": [
+          8243413,
+          8243413,
+          4294967295,
+          0,
+          3,
+          0,
+          100,
+          1353,
+          6000000,
+          4,
+          3,
+          2
+        ],
+        "declaredFinalScore": 572056580,
+        "observedFinalScore": 82434130,
+        "scoreDelta": -489622450,
+        "displayedScore": 82434130,
+        "clearBonus": 6000000,
+        "scoreMatches": false
+      },
+      "candidate": {
+        "afterFinalCallback": true,
+        "scope": "continuous full replay",
+        "outcome": [
+          7321879,
+          7321879,
+          4294967295,
+          2,
+          3,
+          2,
+          109,
+          1278,
+          6000000,
+          4,
+          3,
+          2
+        ],
+        "declaredFinalScore": 572056580,
+        "observedFinalScore": 73218790,
+        "scoreDelta": -498837790,
+        "displayedScore": 73218790,
+        "clearBonus": 6000000,
+        "scoreMatches": false
+      }
+    },
+    "ordinaryVsOptionalBrowserResultsRetained": true,
+    "originalProcessRerun": false,
+    "causeScope": "single-provider component control; not full GPU/native trajectory equivalence",
+    "silent": true,
+    "fullReplayAlignmentAccepted": false,
+    "completeGame": false
+  },
+  "replayLaserMetadata": {
+    "schema": "th14/replay-laser-metadata-audit/1",
+    "passed": true,
+    "inputSha256": "aec3b3045be9a0ddd4e7e4005182a9561e97f9d3f66f7f93a81397a1b614ec92",
+    "bytes": 81793,
+    "userOffset": 81585,
+    "userBytes": 208,
+    "chunks": [
+      {
+        "offset": 81585,
+        "bytes": 176,
+        "kind": 0,
+        "laserJournal": false,
+        "payloadSha256": "fd7511930fa5fbc47373e9410adad5413727af0307410d30320a873141bab6ee"
+      },
+      {
+        "offset": 81761,
+        "bytes": 32,
+        "kind": 1,
+        "laserJournal": false,
+        "payloadSha256": "424c4a6182c1c638259bb55242c0fe61a991c2967376bec2a4712e58e499ad4c"
+      }
+    ],
+    "unparsedTailBytes": 0,
+    "explicitLaserJournalPresent": false,
+    "referenceSourceSha256": "286871426407e6efa4f4a2b8a0563f6a57ede3c9562294479c11af02adb3c75b",
+    "reference": "https://github.com/touhouworldcup/thprac/blob/master/thprac/src/thprac_th14.cpp",
+    "interpretation": "No RECR journal is present in this input; this alone does not establish the cause of replay divergence.",
+    "inputModified": false,
+    "runtimeModified": false,
+    "fullReplayAlignmentAccepted": false,
+    "completeGame": false
   }
 }
