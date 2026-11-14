@@ -111,7 +111,7 @@ test('Meting resolves the requested track and rejects previews and unrelated hos
   expect(await provider.stream(qq,signal)).toEqual(['https://aqqmusic.tc.qq.com/track.mp3']);
   expect(request).toHaveBeenCalledWith(
     'https://meting.example/music?server=tencent&type=url&id=000PRyI71e12gl&br=320',
-    expect.objectContaining({signal:expect.any(AbortSignal),credentials:'omit'}),
+    expect.objectContaining({signal:expect.any(AbortSignal),credentials:'omit',cache:'no-store'}),
   );
   body={...body,freeTrialInfo:{start:0,end:30}};
   await expect(provider.stream(qq,signal)).rejects.toThrow('trial');

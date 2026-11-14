@@ -56,6 +56,8 @@ export function createMetingProvider(endpoint: string, request: typeof fetch = f
     try {
       const response = await request(url.href, {
         signal: lookup.signal, credentials: 'omit', referrerPolicy: 'no-referrer',
+        // Playback URLs expire even if the metadata endpoint caches its response.
+        cache: params.type === 'url' ? 'no-store' : 'default',
       });
       if (!response.ok) throw Error('unavailable');
       return await response.json();
