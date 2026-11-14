@@ -144,6 +144,7 @@ bool ensure_context(){
     ImGui::StyleColorsDark();
     ImFontGlyphRangesBuilder glyphs;
     glyphs.AddRanges(io.Fonts->GetGlyphRangesDefault());
+    glyphs.AddText("↑←↓→ΔΣ");
     for(const auto* row:purple_glyphs)glyphs.AddText(label(*row));
     for(const auto& row:browser_text)glyphs.AddText(label(row));
     for(const auto& item:practice_labels)for(const auto& row:item.names)for(const auto* text:row)glyphs.AddText(text);

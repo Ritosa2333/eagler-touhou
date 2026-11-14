@@ -8461,5 +8461,56 @@
       "browser-hosted-recording.png": "8f32d9f365803f171faea7c1a66c0c4ecdaa7bd41df2cffee2092a0b39e227cc",
       "browser-blocked-z.png": "b78348a71db8194ebb6c1dbd69f00540287f9b320775872c68fa963867110dd9"
     }
+  },
+  "keyHudGlyphsNov15": {
+    "passed": true,
+    "onlyGlyphRangeAddition": true,
+    "codepoints": [
+      "U+2191",
+      "U+2190",
+      "U+2193",
+      "U+2192",
+      "U+0394",
+      "U+03A3"
+    ],
+    "samplingRecordingAndSharedDrawSourceUnchanged": true,
+    "unitsRecompiled": 1,
+    "objectsVerifiedReused": 152,
+    "wasm": "3b382c09519f39809f9d32f34e9d05c23fb0c0d700126cbfefa4b640a81022af",
+    "browserAccepted": true,
+    "productionChanged": false,
+    "completeGame": false,
+    "schema": "th14/key-hud-glyphs/1",
+    "sourceParent": "6fa94b0725ba125c715e4ae2e219f651c87e9b83",
+    "sourceFile": "ports/th14/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp",
+    "sourceSha256": "8ea9f22ba5c764b163e7ad9c19f889e78eec0602d95bdd961dceeff8e25771f4",
+    "generation": "94923087b13165a355d436f55535c395302b3de9b3b783f46d16a52f319b8cdc",
+    "sourceBindings": 387,
+    "commonBindings": 25,
+    "runtimeFiles": 32,
+    "actualDisplayedCodepoints": [
+      "U+2191",
+      "U+2190",
+      "U+2193",
+      "U+2192",
+      "U+0394",
+      "U+03A3"
+    ],
+    "nativeReplayShortFragment": true,
+    "actualFullReplayAccepted": false,
+    "audio": {
+      "music": 0,
+      "sfx": 0,
+      "selectedMode": "none"
+    },
+    "firstOrdinaryAttemptEndedWithoutHudAcceptance": true,
+    "browserErrors": [],
+    "previousMonitorEvidenceReusedFrom": "53a4ac1c1af9ce4866b17fd56275dfe749084bb1ac5a05efa34f5be981ff4856",
+    "csvRetestedInGlyphBuild": false,
+    "localProofHashes": {
+      "browser-replay-hud.png": "034160feb109e1e36636713ac41b6631ab7b8c3b89de0af2fbf2a4a4bef870db",
+      "browser-paused-hud.png": "1fe95ba6372899d4e054db7a7fc4a4df343aeaa000a434d285ba8f6855923365"
+    },
+    "newFontAssetAdded": false
   }
 }
