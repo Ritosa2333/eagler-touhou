@@ -292,7 +292,7 @@ export function createCloudSaveSync(ports: Ports) {
       const uploadKey = JSON.stringify([record.owner, record.product]);
       const rejected = rejectedUploads.get(uploadKey);
       if (rejected?.fingerprint === fingerprint) throw rejected.error;
-      let saved;
+      let saved: CloudSaveSnapshot;
       try {
         saved = await uploadCloudSave(record.product, revision, files, signal);
       } catch (error) {
