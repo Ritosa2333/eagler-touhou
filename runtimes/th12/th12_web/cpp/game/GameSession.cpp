@@ -367,9 +367,13 @@ bool GameSession::begin_replay(GameResources& source,const u8* data,u32 size,u32
     if(!playback.open(data,size))return fail(playback.error().c_str());
 #if PORT_TITLE == 14
     if(practice_enabled&&!demo&&purple_laser.mode>=2){
+        // Reopening the same replay (including backward seek) retains edits.
+        // A different input starts a fresh recovery workspace.
+        const bool same_source=purple_laser.source.size()==size&&
+            std::equal(purple_laser.source.begin(),purple_laser.source.end(),data);
         purple_laser.playback=playback.purple_laser_records;
         purple_laser.source.assign(data,data+size);
-        purple_laser.recovered.clear();
+        if(!same_source)purple_laser.recovered.clear();
     }
 #endif
     if(!stage)for(u32 n=1;n<=7;++n)if(playback.stage(n)){stage=n;break;}
