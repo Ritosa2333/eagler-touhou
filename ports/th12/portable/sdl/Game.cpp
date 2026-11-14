@@ -538,6 +538,10 @@ u32 Game::map_buttons(const PadSample& pad)const{
 double Game::logical_interval()const{
     return runtime_options.thprac&&session&&!session->replay&&menus&&menus->state.scene==MenuScene::Playing&&!practice_ui.captures()?th12_practice_interval(0,0,0,0):1./60.;
 }
+bool Game::draw_on_game_tick()const{
+    return phase==Phase::Menu&&session&&!session->replay&&!ending&&
+           menus->state.scene==MenuScene::Playing&&!practice_ui.captures()&&jobs.empty();
+}
 bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha,bool draw_frame){
     const bool replay_control=session&&session->replay&&(external_paused||external_rate!=1||seek_target>=0||((map_buttons(pad)|pad.keyboard)&(InShot|InSkip|InFocus)));
     presentation_alpha=runtime_options.limit_presentation||!session||replay_control||phase!=Phase::Menu||menus->state.scene!=MenuScene::Playing?1:std::clamp(alpha,0.f,1.f);

@@ -21,6 +21,12 @@ public:
         debt-=count*period;return count;
     }
     float alpha(double period=interval)const{return float(std::clamp(debt/period,0.,1.));}
+    bool present_after_tick(double now,unsigned ticks){
+        if(!ticks)return false;
+        // Anchor the display deadline when an overlay or menu takes over.
+        last_present=now;
+        return true;
+    }
     bool present(double now,bool limited){
         const double elapsed=now-last_present;
         // A display callback can arrive just ahead of its target deadline.

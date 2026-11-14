@@ -159,7 +159,11 @@ extern "C" SDL_AppResult SDL_AppIterate(void* state){
     if(th12::multiplayer::active)pace=[](double elapsed){return th12::multiplayer::session.network.PacedElapsed(elapsed*1000)/1000;};
 #endif
     const unsigned ticks=app.clock.advance(now,period,pace);
-    const bool draw_frame=app.clock.present(now,runtime_options.limit_presentation);
+    const bool limited=runtime_options.limit_presentation;
+    // At the normal 60 Hz game rate, submit on the callback that advances
+    // the world. Independent deadlines can draw twice and skip a new world.
+    const bool draw_frame=limited&&!pace&&period==FrameClock::interval&&app.game->draw_on_game_tick()
+        ?app.clock.present_after_tick(now,ticks):app.clock.present(now,limited);
     if(!ticks&&!draw_frame){
 #ifndef __EMSCRIPTEN__
         SDL_Delay(1);
