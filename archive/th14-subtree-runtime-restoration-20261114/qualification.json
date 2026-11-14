@@ -2986,5 +2986,333 @@
     "independentOriginalCompared": false,
     "completeCampaignAcceptedByThisCase": false,
     "completeGame": false
+  },
+  "viewerScoreHistoryPreserved": {
+    "rows": [
+      {
+        "file": "before-viewer.dat",
+        "bytes": 21634,
+        "sha256": "14beccdfa2695b5bf6ae65eec5a2f87278fc15a6b8647972c6e0a5c2766b7ce2",
+        "selections": [
+          {
+            "selection": 0,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 1,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 2,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 3,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 4,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 5,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 6,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          }
+        ]
+      },
+      {
+        "file": "after-idle-manager.dat",
+        "bytes": 21634,
+        "sha256": "14beccdfa2695b5bf6ae65eec5a2f87278fc15a6b8647972c6e0a5c2766b7ce2",
+        "selections": [
+          {
+            "selection": 0,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 1,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 2,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 3,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 4,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 5,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 6,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          }
+        ]
+      },
+      {
+        "file": "after-normal-replay.dat",
+        "bytes": 21634,
+        "sha256": "14beccdfa2695b5bf6ae65eec5a2f87278fc15a6b8647972c6e0a5c2766b7ce2",
+        "selections": [
+          {
+            "selection": 0,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 1,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 2,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 3,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 4,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 5,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 6,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          }
+        ]
+      },
+      {
+        "file": "after-practice-replay.dat",
+        "bytes": 21634,
+        "sha256": "14beccdfa2695b5bf6ae65eec5a2f87278fc15a6b8647972c6e0a5c2766b7ce2",
+        "selections": [
+          {
+            "selection": 0,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 1,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 2,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 3,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 4,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 5,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 6,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          }
+        ]
+      },
+      {
+        "file": "after-reload.dat",
+        "bytes": 21634,
+        "sha256": "14beccdfa2695b5bf6ae65eec5a2f87278fc15a6b8647972c6e0a5c2766b7ce2",
+        "selections": [
+          {
+            "selection": 0,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 1,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 2,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 3,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 4,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 5,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          },
+          {
+            "selection": 6,
+            "playCount": 0,
+            "playTime": 0,
+            "normalHighScoreUnits": 100000,
+            "lunaticHighScoreUnits": 100000
+          }
+        ]
+      }
+    ],
+    "parserSha256": "e01a89267ce8a8205219069bec99ba19ff3625271b2af4a383cbd9d261f2b3ef",
+    "completeGame": false,
+    "passed": true,
+    "allWholeFilesIdentical": true,
+    "allObservedCountersUnchanged": true,
+    "actualOrdinaryUiStarted": false,
+    "musicVolume": 0,
+    "effectsVolume": 0,
+    "productionChanged": false,
+    "schema": "th14/viewer-history/1",
+    "websiteRuntimeSource": "f9a67c7c5a031ef18c46f00fbc8559df8193c64a",
+    "site": "http://localhost:8229/?game=th14",
+    "generation": "ea975a7d3a1e59deff6f444aaff347ba8eada33bfb0f37c5424fe75dcc802a47",
+    "wasmSha256": "45128444b76701aa49c9fedd19c8388cb19d8fecd5de197dd81742392861284a",
+    "reusedSameHostedDirectory": true,
+    "noNewGameAssetCopies": true,
+    "noUserStorageReset": true,
+    "noScoreOrRngRewrites": true,
+    "ordinaryReplay": {
+      "sha256": "e08a4420a91e6638abebfc371544724e383baa5490b8bf6142a3eac5ae245783",
+      "frames": 1538,
+      "role": "Reimu B",
+      "difficulty": "Lunatic",
+      "rate": 1,
+      "naturalEnded": true,
+      "score": 11310
+    },
+    "practiceReplay": {
+      "sha256": "ff76b7ba4703d47cddee9ad962286348fa421db78893ceecb12fada73ed8d819",
+      "frames": 1435,
+      "role": "Reimu A",
+      "difficulty": "Normal",
+      "rate": 1,
+      "naturalEnded": true,
+      "score": 520
+    },
+    "proofHashes": {
+      "idle-before-watch.jpg": "4f60a158af4d43e240c968930951f075f6381952779359aa2a2f2c1d8859d858",
+      "normal-ended.jpg": "9204da72baae09aaa4410e934aa63c95ae6082e5392d128539568ae74920e239",
+      "practice-ended.jpg": "68f9e1b404b3321fb6449646aa76efe8417699bef387bbd7ab47ddb29d21f54a",
+      "reloaded-export.jpg": "9164cb90c4cd7b6e274e822ff9efcb5124d0087f1a313619a0b6214bdacaa616"
+    },
+    "independentOriginalCompared": false,
+    "allHistoricalReplaysAccepted": false
   }
 }
