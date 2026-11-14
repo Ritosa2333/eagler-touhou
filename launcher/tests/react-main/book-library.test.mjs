@@ -129,7 +129,7 @@ test('HSoB is listed with doujin games and not with official spin-offs', async (
 test('TH05 is discoverable through the PC98 category in the current library', async () => {
   const products = api.createLibraryProducts(['th05', 'th06'], p => p, id => '?game=' + id);
   await mount(products);
-  assert.deepEqual(ids(), ['th05', 'th06']);
+  assert.deepEqual(ids(), ['th06', 'th05']);
   await click('[data-book-category="pc98"]');
   assert.deepEqual(ids(), ['th05']);
   await click('[data-book-category="windows"]');
@@ -158,6 +158,14 @@ test('unavailable history IDs are ignored, search is case insensitive, numeric s
   assert.deepEqual(api.filterBookProducts(products, 'all', [], '', 'reverse').map(p => p.id), ['th10', 'th075', 'th07', 'th06']);
   env.window.localStorage.setItem('eagler.book.favorites', '{"bad":true}');
   assert.deepEqual(api.readBookPreference('favorites', [], api.stringArray), []);
+});
+
+test('all single-player works put favorites first and PC-98 last at equal priority', () => {
+  const products = api.createLibraryProducts(['th01', 'th06', 'th07'], p => p, id => '?game=' + id);
+  const order = favorites => api.filterBookProducts(products, 'all', favorites, '', 'number').map(p => p.id);
+  assert.deepEqual(order([]), ['th06', 'th07', 'th01']);
+  assert.deepEqual(order(['th01']), ['th01', 'th06', 'th07']);
+  assert.deepEqual(order(['th01', 'th07']), ['th07', 'th01', 'th06']);
 });
 
 test('number sorting places numeric works including decimals before lettered fan works', () => {
