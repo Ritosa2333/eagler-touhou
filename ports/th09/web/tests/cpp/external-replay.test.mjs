@@ -5,14 +5,80 @@ import {resolve} from 'node:path';
 import {oracle,core,memory,report,root,d3dxScalar} from './helpers.mjs';
 import {installAnm,normalizedAnm} from './anm-oracle.mjs';
 
-test('Supplied campaign replay matches the original world frame by frame',{skip:!process.env.TH09_REPLAY_FILE},async()=>{
+const replayPath = process.env.TH09_REPLAY_FILE;
+const rngTracePath = process.env.TH09_RNG_TRACE_FILE;
+
+function loadSessionFiles(c, session, name, data, source) {
+ for (const filename of readdirSync(resolve(root, 'reference/assets'))) {
+  if (!/\.(anm|sht|ecl|msg|std|bmp|png)$/.test(filename)) continue;
+  const bytes = source(filename);
+  memory(c, name, 128).fill(0);
+  memory(c, name, 128).set(new TextEncoder().encode(filename));
+  memory(c, data, bytes.length).set(bytes);
+  c.session_file(session, name, data, bytes.length);
+ }
+}
+
+function* rngFrames(trace) {
+ assert.ok(trace.length >= 18 && trace.toString('ascii', 0, 8) === 'TH09RNG2', 'Original RNG trace header');
+ const frames = trace.readUInt32LE(8);
+ let offset = 18, tick = 0, seed = trace.readUInt16LE(12), calls = trace.readUInt32LE(14);
+ function readDelta() {
+  let value = 0;
+  for (let shift = 0; shift <= 28; shift += 7) {
+   const byte = trace.readUInt8(offset++);
+   value += (byte & 127) * 2 ** shift;
+   if (byte < 128 && value <= 0xffffffff) return value;
+  }
+  throw new Error('Invalid original RNG trace integer');
+ }
+ while (offset < trace.length) {
+  const advance = readDelta();
+  assert.ok(advance > 0 && tick + advance <= frames, 'Original RNG trace frame bounds');
+  const nextTick = tick + advance;
+  while (tick < nextTick) yield {tick: tick++, seed, calls};
+  seed = trace.readUInt16LE(offset);
+  offset += 2;
+  calls = (calls + readDelta()) >>> 0;
+ }
+ while (tick <= frames) yield {tick: tick++, seed, calls};
+}
+
+test('Supplied versus replay matches the saved original RNG trace', {skip: !replayPath || !rngTracePath}, async () => {
+ const c = await core(), session = c.session_create(), name = c.allocate(128), data = c.allocate(16000000);
+ try {
+  loadSessionFiles(c, session, name, data, filename => readFileSync(resolve(root, 'reference/assets', filename)));
+  const replay = readFileSync(replayPath);
+  memory(c, data, replay.length).set(replay);
+  assert.equal(c.session_play(session, data, replay.length, 9), 1, 'Web replay starts');
+  for (const {tick, seed, calls} of rngFrames(readFileSync(rngTracePath))) {
+   if (tick) {
+    assert.equal(c.session_value(session, 0), 1, 'Web replay active at frame ' + tick);
+    assert.equal(c.session_step(session, 0, 0, 0), 1, 'Web replay update at frame ' + tick);
+   }
+   const rng = c.session_part(session, 0, 6);
+   assert.ok(rng, 'Web RNG state at frame ' + tick);
+   const view = new DataView(c.memory.buffer);
+   assert.equal(view.getUint16(rng, true), seed, 'RNG seed at frame ' + tick);
+   assert.equal(view.getUint32(rng + 4, true), calls, 'RNG call count at frame ' + tick);
+  }
+ } finally {
+  c.session_delete(session);
+  c.release(name);
+  c.release(data);
+ }
+});
+
+test('Supplied replay matches the original world frame by frame',{skip:!replayPath||!!rngTracePath},async()=>{
+ const rngCheck=process.env.TH09_RNG_CHECK==='1';
  const m=await oracle(),routeOracle=await oracle(),c=await core(),f=c.session_create(),name=c.allocate(128),data=c.allocate(16000000),scratch=c.allocate(88),files=new Map();
  const source=n=>{if(!files.has(n))files.set(n,readFileSync(resolve(root,'reference/assets',n)));return files.get(n);};
- for(const n of readdirSync(resolve(root,'reference/assets')).filter(n=>/\.(anm|sht|ecl|msg|std|bmp|png)$/.test(n))){const b=source(n);memory(c,name,128).fill(0);memory(c,name,128).set(new TextEncoder().encode(n));memory(c,data,b.length).set(b);c.session_file(f,name,data,b.length);}
+ loadSessionFiles(c,f,name,data,source);
  const arg=i=>m.u32(m.reg('ESP')+4+i*4),alloc=n=>{const p=m.allocate(n);m.view(p,n).fill(0);return p;};
  if(process.env.TH09_TRACE==='1')c.hazard_trace_enable(1);
  const fields=(fn,count,width=3)=>Array.from({length:count()},(_,i)=>Array.from({length:width},(_,j)=>new DataView(c.memory.buffer).getUint32(fn()+i*width*4+j*4,true)));
  const motion=fields(c.motion_fields,c.motion_field_count),control=fields(c.shot_control_fields,c.shot_control_field_count),sceneFields=fields(c.match_scene_fields,c.match_scene_field_count),dialogueFields=fields(c.dialogue_fields,c.dialogue_field_count).filter(x=>x[0]!==0x14),bgFields=fields(c.background_fields,c.background_field_count).filter(x=>![0x2c,0xce0].includes(x[0])),progressFields=fields(c.match_rules_fields,c.match_rules_field_count,2),selectionFields=fields(c.stage_selection_fields,c.stage_selection_field_count);
+ const settlementFields=sceneFields.filter(([address])=>[0x1095c,0x10960,0x10964].includes(address));
  const sceneOffsets=[...Array.from({length:7},(_,i)=>12+i*676),0x123f4,0x12698,0x106b4,...Array.from({length:7},(_,i)=>0x10968+i*676),0x11eac,0x12150];
  const err=()=>{const p=c.session_error(f),bytes=memory(c,p,256);return new TextDecoder().decode(bytes.subarray(0,bytes.indexOf(0)));};
  let anms=[],checks=0,frames=0,playerDefeats=0,stageComplete=false;const external=process.env.TH09_REPLAY_FILE,stage=Number(process.env.TH09_REPLAY_STAGE??0);const scenarios=external?['external']:process.env.TH09_DEMO_CASE?[Number(process.env.TH09_DEMO_CASE)]:[0,1,2];
@@ -23,7 +89,7 @@ test('Supplied campaign replay matches the original world frame by frame',{skip:
  m.replace(0x42c970,'world-read',()=>{const bytes=source(m.string(m.reg('ECX'),128)),p=alloc(bytes.length);m.write(p,bytes);if(m.reg('EDX'))m.u32(m.reg('EDX'),bytes.length);return p;},1);
  const imports=m.onImport;m.onImport=e=>{if(e.name==='timeGetTime'){m.ret(1000,0);return;}imports(e);};
  for(const [a,n] of [[0x41a796,0],[0x41a8a2,0],[0x415910,0],[0x4217e0,0],[0x4307c0,0],[0x41cde0,0],[0x4316b0,0],[0x4304a0,0],[0x4343e0,0],[0x42b130,1],[0x42b160,1],[0x42fc20,1],[0x42fd90,1],[0x43be50,0],[0x43bdc0,0],[0x4346a0,4],[0x43e380,2],[0x43e2f0,2],[0x42fe20,1],[0x43bf30,1],[0x40e3d0,1]])m.replace(a,'world-platform',()=>0,n);
- m.replace(0x431930,'world-music',()=>{for(let n=0;n<19;++n)if(m.i32(0x4a21d0+n*16)===(arg(0)|0)){m.i32(0x4dc690,m.i32(0x4a21d8+n*16));break;}return 0;},1);m.replace(0x42fd30,'world-stop-music',()=>{return 0;});
+ m.replace(0x431930,'world-music',()=>{for(let n=0;n<19;++n)if(m.i32(0x4a21d0+n*16)===(arg(0)|0)){m.i32(0x4dc690,m.i32(0x4a21d8+n*16));break;}return 0;},2);m.replace(0x42fd30,'world-stop-music',()=>{return 0;});
  function compareAnimation(cpp,native,slot,label){if(process.env.TH09_GAMEPLAY_ONLY)return;const a=anms[slot]??{file:0,source:0,sprites:0},p=[0,1,2].map(i=>c.session_resource(f,slot,i));assert.deepEqual(normalizedAnm(memory(c,cpp,676),...p),normalizedAnm(m.bytes(native,676),a.file,a.source,a.sprites),label);}
  const heap=m.heap;
  try{
@@ -40,7 +106,8 @@ test('Supplied campaign replay matches the original world frame by frame',{skip:
    routeOracle.call(0x415910,{ecx:0x4a7d90});
    for(const [address,,size] of selectionFields)m.write(address,routeOracle.bytes(address,size));m.write(0x4ace0c,routeOracle.bytes(0x4ace0c,8));m.u32(0x4a7e80,routeOracle.u32(0x4a7e80));
    const chars=[m.u32(0x4a7db0),m.u32(0x4a7de8)],bg=m.u32(0x4a7e84),bgName=m.string(m.u32(0x4a11b8+bg*8),64),enemyName=[0,3,7].includes(bg)?'enemy1.anm':[12,15].includes(bg)?'enemy13.anm':'enemy.anm';
-   for(const [slot,n] of [[0,'text.anm'],[1,'ascii.anm'],[3,'capture.anm'],[4,bgName],[5,`pl${String(chars[0]).padStart(2,'0')}.anm`],[6,`pl${String(chars[1]).padStart(2,'0')}.anm`],[8,'etama.anm'],[9,enemyName],[10,'front.anm']])anms[slot]=installAnm(m,source(n),slot);
+   const characterAnimation=side=>`pl${String(chars[side]).padStart(2,'0')}${m.bytes(decoded+0x1e8+side,1)[0]?'b':''}.anm`;
+   for(const [slot,n] of [[0,'text.anm'],[1,'ascii.anm'],[3,'capture.anm'],[4,bgName],[5,characterAnimation(0)],[6,characterAnimation(1)],[8,'etama.anm'],[9,enemyName],[10,'front.anm']])anms[slot]=installAnm(m,source(n),slot);
    const manager=alloc(0x12900);m.u32(0x4dc550,manager);m.u32(0x4b36cc,anms[0].file);m.u32(0x4d66e0,anms[1].file);m.call(0x41a9b8,{ecx:0x4a7d90});
    for(let s=0;s<2;++s){m.u32(0x4b3178+s*0xf0+0xcc,16+s*320);m.u32(0x4b3178+s*0xf0+0xd0,16);}
    if(mode!==2)m.i32(0x4a7e8c,round-1);
@@ -49,6 +116,8 @@ test('Supplied campaign replay matches the original world frame by frame',{skip:
    m.reg('FPCW',Number(process.env.TH09_ORACLE_FPCW??0x7f));
    if(process.env.TH09_ORACLE_ONLY){for(const head of [0x4acfc8,0x4acfe8]){const callbacks=[];for(let n=m.u32(head+20);n;n=m.u32(n+20))callbacks.push({priority:m.bytes(n,1)[0],callback:m.u32(n+4).toString(16),object:m.u32(n+28).toString(16)});console.log({head:head.toString(16),callbacks});}}
    memory(c,data,raw.length).set(raw);assert.equal(c.session_play(f,data,raw.length,round),1,err());
+   const backgroundOffset=selectionFields.find(([address])=>address===0x4a7e84)[1];
+   assert.equal(new DataView(c.memory.buffer).getInt32(c.session_part(f,0,21)+backgroundOffset,true),m.i32(0x4a7e84),'recorded background');
    const scene=m.u32(0x4a7e38),players=[m.u32(0x4a7d94),m.u32(0x4a7dcc)],enemies=[m.u32(0x4a7da0),m.u32(0x4a7dd8)],bullets=[m.u32(0x4a7d98),m.u32(0x4a7dd0)],backgrounds=[m.u32(0x4a7d90),m.u32(0x4a7dc8)],huds=[m.u32(0x4a7da8),m.u32(0x4a7de0)],controllers=[m.u32(0x4a7da4),m.u32(0x4a7ddc)],effects=[m.u32(0x4a7d9c),m.u32(0x4a7dd4),m.u32(0x4a7e0c)];
    const hex=b=>Buffer.from(b).toString('hex'),trace=process.env.TH09_TRACE==='1',traceRing=[];
    const cppU32=(p,o)=>p?new DataView(c.memory.buffer).getUint32(p+o,true):-1;
@@ -81,6 +150,13 @@ test('Supplied campaign replay matches the original world frame by frame',{skip:
     if(process.env.TH09_ORACLE_ONLY)return;
     try{
     assert.deepEqual(memory(c,c.session_part(f,0,6),8),m.bytes(0x4ace0c,8),label+' RNG');
+    if(rngCheck){
+     assert.equal(c.session_value(f,2),m.u32(replayManager),label+' replay position');
+     const webScene=c.session_part(f,0,17);
+     for(const [o,a,n] of settlementFields)assert.deepEqual(memory(c,webScene+a,n),m.bytes(scene+o,n),label+' settlement '+o.toString(16));
+     ++checks;
+     return;
+    }
     for(const [a,o] of progressFields)assert.equal(new DataView(c.memory.buffer).getUint32(c.session_part(f,0,19)+o,true),m.u32(a),label+' rules '+a.toString(16));
     for(const [o,a,n] of sceneFields)assert.deepEqual(memory(c,c.session_part(f,0,17)+a,n),m.bytes(scene+o,n),label+' scene '+o.toString(16));
     for(const [o,a,n] of dialogueFields)assert.deepEqual(memory(c,c.session_part(f,0,18)+a,n),m.bytes(scene+0xe944+o,n),label+' dialogue '+o.toString(16));
@@ -90,6 +166,7 @@ test('Supplied campaign replay matches the original world frame by frame',{skip:
      assert.deepEqual(memory(c,c.session_part(f,s,3),88),m.bytes(0x4ace18+s*0x8e,88),label+' input'+s);
      for(const [kind,fields] of [[0,motion],[1,control]])for(const [o,a,n] of fields)assert.deepEqual(memory(c,c.session_part(f,s,kind)+a,n),m.bytes(p+o,n),label+' player'+s+'/'+o.toString(16));
      assert.deepEqual(memory(c,c.session_part(f,s,4),120),m.bytes(p+0x24,120),label+' cpu'+s);
+     assert.deepEqual(memory(c,c.session_part(f,s,11),12),m.bytes(p+0x30364,12),label+' shot target '+s);
      assert.deepEqual(memory(c,c.session_part(f,s,14),8),m.bytes(p+0x30f64,8),label+' item-target'+s);
      assert.deepEqual(memory(c,c.session_part(f,s,5),60),m.bytes(p+0x30414,60),label+' combo');assert.deepEqual(memory(c,c.session_part(f,0,20)+s*20,20),m.bytes(scores[s],20),label+' score');compareAnimation(c.session_part(f,s,2),p+0xc0,5+s,label+' body');
      for(let n=0;n<65;++n)compareAnimation(c.session_hud(f,s,n),n<63?huds[s]+n*676:huds[s]+0xa684+(n-63)*676,n<63?10:5+s,label+' HUD'+s+'/'+n);
@@ -117,6 +194,6 @@ test('Supplied campaign replay matches the original world frame by frame',{skip:
     snapshot(frame);compare(`replay stage ${stage} frame ${frame}`);if(c.session_value(f,0)!==1){stageComplete=c.session_value(f,2)===c.session_value(f,3);break;}
    }
   }
-  report(external?'external-replay-stage-'+stage:'session-replays',{checks,frames,stage,playerDefeats,stageComplete,scenarios,animationComparison:!process.env.TH09_GAMEPLAY_ONLY,laserComparison:!!process.env.TH09_COMPARE_LASERS,scope:'Supplied original replay: original constructors and update chain versus C++ RNG, inputs, CPU decisions, player motion, collisions, score, dialogue, background and scene state. Animation bytes compared unless gameplay-only is selected. No forced battle outcome.'});
+  report(external?'external-replay-stage-'+stage:'session-replays',{checks,frames,stage,playerDefeats,stageComplete,scenarios,rngCheck,animationComparison:!rngCheck&&!process.env.TH09_GAMEPLAY_ONLY,laserComparison:!!process.env.TH09_COMPARE_LASERS,scope:rngCheck?'RNG seed and call count, replay position, and round settlement compared with the original each frame.':'Supplied original replay: original constructors and update chain versus C++ RNG, inputs, CPU decisions, player motion, collisions, score, dialogue, background and scene state. Animation bytes compared unless gameplay-only is selected. No forced battle outcome.'});
  }finally{c.session_delete(f);c.release(name);c.release(data);c.release(scratch);m.close();routeOracle.close();}
 });

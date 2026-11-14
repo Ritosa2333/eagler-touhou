@@ -22,4 +22,5 @@ export const {
   multiplayerProductIdForGame,
   productFeatureAvailable,
   productEnabledForBuild,
+  productRequiresImport,
 } = contract;

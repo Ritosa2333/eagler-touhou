@@ -294,13 +294,20 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
       html:'text/html',json:'application/json',css:'text/css',woff:'font/woff',woff2:'font/woff2'};
     return Object.hasOwn(types, extension) ? types[extension] : undefined;
   }
-  function deliver(response, path) {
+  function deliver(response, path, root) {
     const headers = new Headers(response.headers);
     // These responses have already passed descriptor/hash verification. MIME
     // headers are not part of that byte identity and can survive an origin fix
     // in older snapshots; derive executable types from the declared file path.
     const type = runtimeContentType(path);
     if (type) headers.set("Content-Type", type);
+    // TH14 imports verified files as buffers, without their origin headers.
+    // Both the game document and its Wasm worker scripts need isolation.
+    if (root === "runtime/th14/" && (type === "text/html" || type === "text/javascript")) {
+      headers.set("Cross-Origin-Embedder-Policy", "require-corp");
+      headers.set("Cross-Origin-Opener-Policy", "same-origin");
+      headers.set("Cross-Origin-Resource-Policy", "same-origin");
+    }
     headers.set("Cache-Control", "public, max-age=31536000, immutable");
     headers.delete("Content-Encoding"); headers.delete("Content-Length");
     return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
@@ -316,12 +323,12 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
         try {
           const verified = await checked(cached, file);
           if (file.path === snapshot.descriptor.entry) console.info('[EAGLER|Runtime]', {source:'cache', root:parsed.root, generation:parsed.generation});
-          return deliver(verified, file.path);
+          return deliver(verified, file.path, parsed.root);
         } catch { /* Repair this exact immutable address. */ }
       }
       const fetched = await runtimeFile(absolute(path), file);
       await cache.put(absolute(path), fetched.clone()).catch(() => {});
-      return deliver(fetched, file.path);
+      return deliver(fetched, file.path, parsed.root);
     }
     // Explicit immutable requests never follow latest or change generation. In
     // a storage-restricted browser they remain ordinary same-origin HTTP loads.
@@ -337,9 +344,9 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
     descriptor = await verifyGeneration(descriptor);
     const file = descriptor.files.find(file => file.path === parsed.file);
     if (parsed.file === C.RUNTIME_GENERATION_FILE) return deliver(json({ schema: C.RUNTIME_GENERATION_SCHEMA,
-      protocol: C.RUNTIME_PROTOCOL, root: parsed.root, ...descriptor }), parsed.file);
+      protocol: C.RUNTIME_PROTOCOL, root: parsed.root, ...descriptor }), parsed.file, parsed.root);
     if (!file) return new Response("Unknown Runtime resource", { status: 404 });
-    return deliver(await runtimeFile(absolute(path), file), file.path);
+    return deliver(await runtimeFile(absolute(path), file), file.path, parsed.root);
   }
   async function selectForLaunch(path, options) {
     const snapshot = await prepare(path, options);

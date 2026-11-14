@@ -138,9 +138,9 @@ bool ApplicationState::bind_display(StageGameplay* previous){
 }
 bool ApplicationState::begin_game(bool playback){
  if(!save_settings())return false;scene_effects.reset();reset_graphics();progress.scene_flags=0;progress.ending_age=0;progress.practice_record=playback;
- if(playback)practice.active=selected_replay?selected_replay->practice():PracticePatch{};
+ if(playback)practice.active=practice.enabled&&selected_replay?selected_replay->practice():PracticePatch{};
  progress.enhanced_practice=bool(practice.active);
- practice.tools=0;
+ if(flow.fresh)practice.tools=0;
  progress.historical_web_replay=playback&&selected_replay&&selected_replay->historical_web_recording();
  if(flow.fresh&&progress.historical_web_replay&&progress.stage!=1)return fail("This early WEB recording needs continuous playback from Stage 1");
  ReplayStageState entry;const ReplayStageState* initial=nullptr;if(playback){
@@ -177,7 +177,7 @@ bool ApplicationState::begin_game(bool playback){
    }
   }
  }else if(!run||!run->next(progress.stage,camera,initial))return fail(run?run->error:"Retained run unavailable");
- if(!preload_run())return false;if(!(progress.scoring.mode_flags&0x40)&&(!audio_device.queue_music_track(0,practice.active&&!practice.active.dialogue&&practice_bgm(practice.active.section)?assets()->definition->boss_music:assets()->definition->stage_music)||!audio_device.queue_music_track(1,assets()->definition->boss_music)||!audio_device.finish_music_requests()))return fail(audio_device.error);run_input=std::make_unique<RunInput>(*scene(),progress,*this,playback?selected_replay.get():nullptr,recording.get(),stage_seed,flow.fresh);run_input->auto_focus=config.auto_focus();
+ if(!preload_run())return false;if(!(progress.scoring.mode_flags&0x40)&&(!audio_device.queue_music_track(0,practice.active&&!practice.active.dialogue&&practice_bgm(practice.active.section)?assets()->definition->boss_music:assets()->definition->stage_music)||!audio_device.queue_music_track(1,assets()->definition->boss_music)||!audio_device.finish_music_requests()))return fail(audio_device.error);run_input=std::make_unique<RunInput>(*scene(),progress,*this,playback?selected_replay.get():nullptr,recording.get(),stage_seed,flow.fresh);run_input->auto_focus=config.auto_focus();run_input->apply_recorded_practice=practice.enabled;
 #if TH17_MULTIPLAYER
  if(room_seats)run_input->auto_focus=false;
 #endif
@@ -213,7 +213,7 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
  if(scene()){
   ThpracUi::record_keys(*this,held);
   if(scene()->battle.spell_card)scene()->battle.spell_card->hide_master=practice.hide_master;
-  if(pause)pause->controls({pressed,repeated,lost_focus,true});run_input->controls(held,fps,touch,practice.active&&!progress.practice_record?practice.active_tools(progress.scoring.continues):0);StageGameplayFrame input;input.battle.held=held;input.battle.pressed=pressed;input.battle.rate=progress.rate;input.battle.practice=(progress.scoring.mode_flags&0x30)!=0;
+  if(pause)pause->controls({pressed,repeated,lost_focus,true});run_input->controls(held,fps,touch,can_use_practice_tools()?practice.active_tools(progress.scoring.continues):0);StageGameplayFrame input;input.battle.held=held;input.battle.pressed=pressed;input.battle.rate=progress.rate;input.battle.practice=(progress.scoring.mode_flags&0x30)!=0;
 #if TH17_MULTIPLAYER
   input.battle.partners=room_partners;
 #endif

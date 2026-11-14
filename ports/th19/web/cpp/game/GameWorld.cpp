@@ -82,7 +82,10 @@ bool GameWorld::queue_extra_attack(int character,float x,float y,int variant,con
 int GameWorld::send_native_extra_credit(GameWorld& target,const std::vector<const EclProgram*>& source,int character){
     if(character<0||character>=19)return 0;
     static constexpr int costs[]={100,90,90,80},ranCosts[]={75,65,65,55},aunnCosts[]={50,45,45,40},animalCosts[]={80,70,70,60};
-    const int cost=(character==3?ranCosts:character==4?aunnCosts:(character==9||character==14)?animalCosts:costs)[std::clamp(difficulty,0,3)];int sent=0;
+    // The index is computed first: GCC 13 miscompiles a conditional array
+    // subscripted by std::clamp's returned reference (it reads element 0).
+    const int rank=std::clamp(difficulty,0,3);
+    const int cost=(character==3?ranCosts:character==4?aunnCosts:(character==9||character==14)?animalCosts:costs)[rank];int sent=0;
     while(pending_native_attack_credit>=cost){
         pending_native_attack_credit-=cost;
         if(native_extra_reservations.size()>=20)break;

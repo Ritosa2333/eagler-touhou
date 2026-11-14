@@ -5,7 +5,7 @@ import {BOOK_PREFERENCES_EVENT, readBookPreference, writeBookPreference} from '.
 import {NavigationIcon} from './NavigationIcon';
 import {impressTheme} from './ink-feedback';
 import {MastheadTooltip} from './MastheadTooltip';
-import {BackgroundSettings} from './CustomBackground';
+import {BackgroundSettings, type BackgroundSurface} from './CustomBackground';
 
 let themeTransitionTimer: number | undefined;
 let pendingTheme: 'light' | 'dark' | undefined;
@@ -45,7 +45,9 @@ function applyTheme(value: 'light' | 'dark', animate: boolean) {
   }, 180);
 }
 
-export function BookThemeToggle({interactive = true, row = false, tooltip = false}: {interactive?: boolean; row?: boolean; tooltip?: boolean}) {
+export function BookThemeToggle({interactive = true, row = false, tooltip = false, surfaces}: {
+  interactive?: boolean; row?: boolean; tooltip?: boolean; surfaces?: readonly BackgroundSurface[];
+}) {
   const {locale} = useLocale();
   const [dark, setDark] = useState(true);
   const [open, setOpen] = useState(false);
@@ -64,6 +66,6 @@ export function BookThemeToggle({interactive = true, row = false, tooltip = fals
   const button = <UiButton ref={trigger} type="button" variant="ghost" size={row ? "row" : "icon"} className={row ? "masthead-overview-theme" : "masthead-action book-theme-toggle [&_svg]:size-5"} disabled={!interactive || !ready}
     aria-label={label} aria-haspopup="dialog" onClick={() => setOpen(true)} title={tooltip ? undefined : label}><NavigationIcon name={dark ? 'moon' : 'sun'}/>{row && <span>{label}</span>}</UiButton>;
   return <>{tooltip ? <MastheadTooltip label={label}>{button}</MastheadTooltip> : button}
-    <BackgroundSettings open={open} onOpenChange={setOpen} dark={dark} onThemeChange={value=>{if ((value==='dark')===dark) return; setDark(value==='dark');applyTheme(value,true);writeBookPreference('theme',value);if(trigger.current)impressTheme(trigger.current);}}/>
+    <BackgroundSettings open={open} onOpenChange={setOpen} dark={dark} surfaces={surfaces} onThemeChange={value=>{if ((value==='dark')===dark) return; setDark(value==='dark');applyTheme(value,true);writeBookPreference('theme',value);if(trigger.current)impressTheme(trigger.current);}}/>
   </>;
 }

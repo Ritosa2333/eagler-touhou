@@ -409,6 +409,37 @@ test('launch cloud choice restores before native start and requests fresh native
  assert.equal(restores,1);assert.equal(f.uploaded.length,0);assert.equal(journal(f).revision,2);assert.equal(journal(f).runId,null);
 });
 
+test('choosing local while a cloud archive is being staged prevents the restore and upload', async () => {
+  const f = environment();
+  f.current = listing({revision: 2, files: [manifestFile(scoreName, [1])]});
+  const choice = new AbortController();
+  let staging = false;
+  let finishStaging;
+  const staged = new Promise(resolve => {finishStaging = resolve;});
+  let wrote = false;
+  const sync = f.makeSync({restore: async (_product, _snapshot, _signal, _files, _preparing, beforeWrite) => {
+    staging = true;
+    await staged;
+    await beforeWrite();
+    wrote = true;
+  }});
+  sync.prepareLocalLaunch();
+  const launch = sync.beforeStart('th06', choice.signal, {
+    beforeDecision: async () => {},
+    beforeRestore: async () => {choice.signal.throwIfAborted();},
+  });
+  await until(() => staging);
+  choice.abort();
+  sync.deferLaunch('th06');
+  finishStaging();
+  await assert.rejects(launch, {name: 'AbortError'});
+  assert.equal(wrote, false);
+  sync.started('th06');
+  sync.finished();
+  await sync.flush();
+  assert.equal(f.uploaded.length, 0);
+});
+
 test('skipping launch comparison plays browser bytes and never overwrites cloud on exit',async()=>{
  const f=environment();f.current=listing({revision:2,files:[manifestFile(scoreName,[1])]});
  const sync=f.makeSync({files:[makeFile(scoreName,[2])],decide:async()=> 'cancel'});

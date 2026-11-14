@@ -1,0 +1,29 @@
+{
+  "game": "th14",
+  "version": "1.00b",
+  "language": "Japanese",
+  "executable": "H:/Games/th/14/th14.exe",
+  "sha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+  "size": 897536,
+  "imageBase": "0x00400000",
+  "evidence": "Executable title string: 'Double Dealing Character. ver 1.00b'.",
+  "dataArchives": {
+    "th14.dat": {
+      "path": "H:/Games/th/14/th14.dat",
+      "bytes": 90776747,
+      "pbgVersion": 14,
+      "entries": 227
+    },
+    "thbgm.dat": {
+      "path": "H:/Games/th/14/thbgm.dat",
+      "bytes": 397831536
+    }
+  },
+  "completeGame": false,
+  "localized": {
+    "executable": {
+      "file": "H:/Games/th/14/th14c.exe",
+      "sha256": "ec04fc884f658eee5096a3cff97688634216e23a52e29e77e0c272d5c069b2af"
+    }
+  }
+}

@@ -32,7 +32,7 @@ bool ReplayRecording::tick(ReplayInput input,float fps,bool suspended,PlayerTouc
  if(!touch.valid())return fail("Invalid recording touch target");
  if(!suspended){auto& s=stages[current];if(s.inputs.size()>=2*1024*1024)return fail("Replay recording exceeds input limit");
   if(touch.mode)s.touches.push_back({u32(s.inputs.size()),touch});
-  if(practice_patch&&practice_patch.stage==current&&input.practice_tools!=(s.practice_changes.empty()?0:s.practice_changes.back().tools))
+  if(input.practice_tools!=(s.practice_changes.empty()?0:s.practice_changes.back().tools))
    s.practice_changes.push_back({u32(s.inputs.size()),input.practice_tools});
   if(input.spirit){
    if(!practice_patch||practice_patch.stage!=current||!input.spirit.valid())return fail("Invalid practice spirit recording");
@@ -116,6 +116,19 @@ bool ReplayRecording::serialize(const char* name,const ReplayExportDetails& deta
     const auto& s=event.spawn;
     put(out,event.frame);put(out+4,s.kind);put(out+8,s.x);put(out+12,s.y);put(out+16,s.angle);
     put(out+20,u32(s.force)|(u32(s.random)<<1));out+=24;
+   }
+  }
+ }else{
+  // Version 2 carries the stage per event, without a practice start patch.
+  u64 count=0;for(const auto& stage:stages)count+=stage.practice_changes.size();
+  if(count){
+   if(u64(file.size())+20+count*12>128*1024*1024)return fail("Replay practice tools exceed file limit");
+   const u32 length=20+u32(count)*12,at=file.size();
+   file.resize(at+length,0);auto* out=file.data()+at;
+   const u32 header[]{0x52455355,length,0x1a,0x43373154,2};
+   std::memcpy(out,header,sizeof header);out+=sizeof header;
+   for(u32 stage=1;stage<8;++stage)for(const auto& event:stages[stage].practice_changes){
+    put(out,stage);put(out+4,event.frame);put(out+8,event.tools);out+=12;
    }
   }
  }

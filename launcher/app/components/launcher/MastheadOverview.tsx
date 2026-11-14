@@ -7,6 +7,7 @@ import {Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger} from '..
 import {reloadTestFeatures} from '../../../src/launcher/test-features.mts';
 import {AppLink} from './AppLink';
 import {BookThemeToggle} from './BookThemeToggle';
+import type {BackgroundSurface} from './CustomBackground';
 import {MastheadTooltip} from './MastheadTooltip';
 import type {LauncherMastheadProps} from './LauncherMasthead';
 import {NavigationIcon} from './NavigationIcon';
@@ -20,7 +21,7 @@ export interface MastheadSiteLink {
 }
 type OverviewAction = 'onDonation' | 'onFirstUse' | 'onReplay';
 
-export function MastheadOverview({host, open, onOpenChange, trigger, lobbyHref, currentPage, helpLinks, statusLink, aboutLinks, testFeatures}: {
+export function MastheadOverview({host, open, onOpenChange, trigger, lobbyHref, currentPage, helpLinks, statusLink, aboutLinks, testFeatures, themeSurfaces}: {
   host: LauncherMastheadProps;
   open: boolean;
   onOpenChange(open: boolean): void;
@@ -31,6 +32,7 @@ export function MastheadOverview({host, open, onOpenChange, trigger, lobbyHref, 
   statusLink: MastheadSiteLink;
   aboutLinks: readonly MastheadSiteLink[];
   testFeatures: boolean;
+  themeSurfaces?: readonly BackgroundSurface[];
 }) {
   const {t} = useLocale();
   const afterClose = useRef<OverviewAction | null>(null);
@@ -111,7 +113,7 @@ export function MastheadOverview({host, open, onOpenChange, trigger, lobbyHref, 
         </section>
         <section className="masthead-overview-group" aria-labelledby="masthead-overview-settings">
           <h3 id="masthead-overview-settings">{t('nav.settings')}</h3>
-          <BookThemeToggle row/>
+          <BookThemeToggle surfaces={themeSurfaces} row/>
           <Button variant="ghost" size="row" id={host.variant === 'lobby' ? 'lobbyLessMotion' : 'lessMotionToggle'} aria-pressed={host.lessMotion} onClick={host.onToggleMotion}>
             <Activity aria-hidden="true"/><span>{t('nav.lessMotion')}</span>{host.lessMotion && <Check aria-hidden="true"/>}
           </Button>

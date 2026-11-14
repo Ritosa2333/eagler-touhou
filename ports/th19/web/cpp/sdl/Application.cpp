@@ -822,6 +822,38 @@ void decode_textures(std::vector<th19::AnmEntry>& entries, const std::vector<u8>
         if (alloc.handle) out[ei] = alloc;
     }
 }
+// Character portraits (plXXf.anm, 19 characters) decode to about 240 MB of
+// textures. Decode each image the first time it is drawn and keep the
+// textures of the few most recently drawn characters only.
+const TextureAllocation* plf_texture(int ch, int ei) {
+    auto& textures = g_plf_tex[ch];
+    static std::uint64_t clock = 0, last_use[19]{};
+    last_use[ch] = ++clock;
+    auto it = textures.find(ei);
+    if (it == textures.end()) {
+        constexpr int kept_characters = 4;
+        int loaded = 0;
+        for (int c = 0; c < 19; ++c) loaded += !g_plf_tex[c].empty();
+        while (textures.empty() && loaded >= kept_characters) {
+            int oldest = -1;
+            for (int c = 0; c < 19; ++c)
+                if (c != ch && !g_plf_tex[c].empty() && (oldest < 0 || last_use[c] < last_use[oldest])) oldest = c;
+            if (oldest < 0) break;
+            for (auto& [index, texture] : g_plf_tex[oldest]) if (texture.handle) gfx.destroy(texture.handle);
+            g_plf_tex[oldest].clear(); --loaded;
+        }
+        TextureAllocation alloc{};
+        const auto& entries = g_plf[ch];
+        const auto& bytes = g_plf_bytes[ch];
+        if (ei >= 0 && ei < i32(entries.size())) {
+            const auto& e = entries[ei];
+            if (e.thtx_size && e.data_offset + e.thtx_size <= bytes.size())
+                alloc = gfx.create_texture(bytes.data() + e.data_offset, e.thtx_size);
+        }
+        it = textures.emplace(ei, alloc).first;   // a failed decode is not retried
+    }
+    return it->second.handle ? &it->second : nullptr;
+}
 
 bool load_help() {
     if (!load_anm("/help.anm", g_help_bytes, g_help)) return false;
@@ -839,15 +871,6 @@ bool load_help() {
             loc.len = u32(g_help_bytes.size()) - e.base - sc.offset;
             loc.table = &e.scripts;
             g_help_scripts[sc.id] = loc;
-        }
-    }
-    for (i32 i = 0; i < 13; ++i) {
-        char path[64];
-        std::snprintf(path, sizeof path, "/help_%02d.png", i + 1);
-        std::vector<u8> bytes;
-        if (read_asset(path, bytes)) {
-            auto alloc = gfx.create_texture(bytes.data(), u32(bytes.size()));
-            if (alloc.handle) g_help_page_tex[i] = alloc;
         }
     }
     return true;
@@ -1889,11 +1912,26 @@ void collect_help_vm(const th19::AnmVm& vm, bool selected) {
     for (const auto& c : vm.children) collect_help_vm(c, selected);
 }
 
+// The 13 Manual pages are about 4 MB of texture each: keep only the page on
+// screen.
+void help_page_texture(i32 page) {
+    static i32 missing = -1;
+    if (g_help_page_tex.count(page) || page == missing) return;
+    for (auto& [index, texture] : g_help_page_tex) if (texture.handle) gfx.destroy(texture.handle);
+    g_help_page_tex.clear();
+    char path[64];
+    std::snprintf(path, sizeof path, "/help_%02d.png", page + 1);
+    std::vector<u8> bytes;
+    TextureAllocation alloc{};
+    if (read_asset(path, bytes)) alloc = gfx.create_texture(bytes.data(), u32(bytes.size()));
+    if (alloc.handle) g_help_page_tex[page] = alloc; else missing = page;
+}
 void draw_help() {
     if (g_help_mode == 0) {
         for (i32 i = 0; i < (i32)g_help_vms.size(); ++i)
             collect_help_vm(g_help_vms[i], i == g_help_sel);
     } else {
+        help_page_texture(g_help_page);
         auto ti = g_help_page_tex.find(g_help_page);
         if (ti != g_help_page_tex.end()) {
             // 详情页内容 sprite 13 = 768×896（位于 1024×1024 纹理左上角 0,0），layer 45
@@ -2598,7 +2636,7 @@ void draw_charge_gauge(float cx,const th19::ChargeGauge& gauge){
     const auto& emitter=g_gauge_particles[side];
     for(const auto&v:emitter.children){
         auto mesh=presentation_geometry(v);if(mesh.empty())continue;
-        DrawCmd q;q.layer=34;q.handle=g_white_tex.handle;q.mesh_blend=v.blend_mode;
+        DrawCmd q{};q.layer=34;q.handle=g_white_tex.handle;q.additive=v.blend_mode==1;q.mesh_blend=v.blend_mode;
         for(const auto&p:mesh)q.mesh.push_back(SpriteVertex{{left+452.f*gauge.charge/2500+v.x*GAME_SCALE+p.x,y+4+v.y*GAME_SCALE+p.y,0},1,p.color,{.5f,.5f}});
         g_draw.push_back(std::move(q));
     }
@@ -2606,7 +2644,7 @@ void draw_charge_gauge(float cx,const th19::ChargeGauge& gauge){
         float x=cx+th19::ChargeGauge::marker(gauge.thresholds[i])-2;
         // Native 0x4e95c0 drives the foreground/glow pair in aura.anm.
         for(int j=0;j<2;++j){const auto&v=g_gauge_markers[side][i*2+j];auto mesh=presentation_geometry(v);
-            if(mesh.empty())continue;DrawCmd q;q.layer=34;q.handle=g_white_tex.handle;q.additive=v.blend_mode==1;q.mesh_blend=v.blend_mode;
+            if(mesh.empty())continue;DrawCmd q{};q.layer=34;q.handle=g_white_tex.handle;q.additive=v.blend_mode==1;q.mesh_blend=v.blend_mode;
             for(const auto&p:mesh)q.mesh.push_back(SpriteVertex{{cx+th19::ChargeGauge::marker(gauge.thresholds[i])+(v.x+p.x)*GAME_SCALE,y+(v.y+p.y)*GAME_SCALE,0},1,p.color,{.5f,.5f}});
             g_draw.push_back(std::move(q));
         }
@@ -3351,8 +3389,8 @@ void draw_dialogue() {
     auto name=[&](auto&& self,const th19::AnmVm&v,float x,float y)->void{
         if(!v.visible)return;x+=v.x;y+=v.y;
         if(v.alpha>0)for(int ei=0;ei<int(g_plf[g_opp_sel].size());++ei)for(const auto&sp:g_plf[g_opp_sel][ei].sprites)if(int(sp.id)==v.sprite){
-            auto t=g_plf_tex[g_opp_sel].find(ei);if(t!=g_plf_tex[g_opp_sel].end())
-                emit_quad(v.layer+4,t->second,sp,x,y,v.sx,v.sy,v.anchor_x,v.anchor_y,(u32(v.alpha)<<24)|(u32(v.r)<<16)|(u32(v.g)<<8)|v.b,v.rot_z,v.blend_mode==1);
+            if(const auto* t=plf_texture(g_opp_sel,ei))
+                emit_quad(v.layer+4,*t,sp,x,y,v.sx,v.sy,v.anchor_x,v.anchor_y,(u32(v.alpha)<<24)|(u32(v.r)<<16)|(u32(v.g)<<8)|v.b,v.rot_z,v.blend_mode==1);
         }
         for(const auto&c:v.children)self(self,c,x,y);
     };
@@ -3361,8 +3399,8 @@ void draw_dialogue() {
         for(const auto*v:{&p.body,&p.face}){
             if(!v->visible||v->alpha<=0)continue;
             for(int ei=0;ei<int(g_plf[ch].size());++ei)for(const auto&sp:g_plf[ch][ei].sprites)if(int(sp.id)==v->sprite){
-                auto t=g_plf_tex[ch].find(ei);if(t==g_plf_tex[ch].end())continue;
-                emit_quad(v->layer+4,t->second,sp,(side?1280.f:0.f)+v->x,v->y,side?-v->sx:v->sx,v->sy,
+                const auto* t=plf_texture(ch,ei);if(!t)continue;
+                emit_quad(v->layer+4,*t,sp,(side?1280.f:0.f)+v->x,v->y,side?-v->sx:v->sx,v->sy,
                     v->anchor_x,v->anchor_y,(u32(v->alpha)<<24)|(u32(v->r)<<16)|(u32(v->g)<<8)|v->b,v->rot_z);
             }
         }
@@ -5040,7 +5078,7 @@ void draw_player_shots(){
     // pl16 ordinal 9 is already in full-screen pixels (native render mode 2).
     for(int side=0;side<2;++side){
     if(g_attacks[side].chiyari_skill.frame>=0&&g_attacks[side].chiyari_skill.vm.visible){const auto&v=g_attacks[side].chiyari_skill.vm;auto mesh=presentation_geometry(v);
-        if(!mesh.empty()){DrawCmd q;q.layer=v.layer;q.handle=g_white_tex.handle;q.mesh_blend=v.blend_mode;
+        if(!mesh.empty()){DrawCmd q{};q.layer=v.layer;q.handle=g_white_tex.handle;q.additive=v.blend_mode==1;q.mesh_blend=v.blend_mode;
             for(const auto&p:mesh)q.mesh.push_back(SpriteVertex{{g_attacks[side].chiyari_skill.x+p.x,g_attacks[side].chiyari_skill.y+p.y,0},1,p.color,{.5f,.5f}});
             g_draw.push_back(std::move(q));}}
     }
@@ -5204,7 +5242,7 @@ void draw_attack_warning(){
     };draw(draw,g_attack_warning_vm,0,0,1,1);
     const auto&v=g_warning_portrait;const int ch=g_warning_portrait_character;
     if(ch>=0&&v.visible&&v.alpha>0)for(int ei=0;ei<int(g_plf[ch].size());++ei)for(const auto&sp:g_plf[ch][ei].sprites)if(int(sp.id)==v.sprite){
-        auto t=g_plf_tex[ch].find(ei);if(t!=g_plf_tex[ch].end())emit_quad(41,t->second,sp,v.x,v.y,v.sx,v.sy,v.anchor_x,v.anchor_y,v.color(),v.rot_z);
+        if(const auto* t=plf_texture(ch,ei))emit_quad(41,*t,sp,v.x,v.y,v.sx,v.sy,v.anchor_x,v.anchor_y,v.color(),v.rot_z);
     }
     if(g_attack_warning.visible()){
     const float x=g_attack_warning.x()*2;
@@ -6324,8 +6362,7 @@ __attribute__((export_name("th19_game_open"))) u32 th19_game_open(u32 seed) {
     decode_textures(g_front, g_front_bytes, g_front_tex);
     for (i32 i = 0; i < 19; ++i) {
         char path[32]; std::snprintf(path, sizeof path, "/pl%02df.anm", i);
-        if (!load_anm(path, g_plf_bytes[i], g_plf[i])) return 0;
-        decode_textures(g_plf[i], g_plf_bytes[i], g_plf_tex[i]);
+        if (!load_anm(path, g_plf_bytes[i], g_plf[i])) return 0;   // textures: plf_texture()
     }
     load_native_score();
     load_web_clears();
@@ -6334,10 +6371,6 @@ __attribute__((export_name("th19_game_open"))) u32 th19_game_open(u32 seed) {
     build_script_map();
     build_white_texture();
     build_select_box_texture();
-    g_music_tex = gfx.create_texture(g_music_names, g_music_names_len);
-    g_music_locked_tex = gfx.create_texture(g_music_locked, g_music_locked_len);
-    g_music_dialog_tex = gfx.create_texture(g_music_dialog, g_music_dialog_len);
-    g_music_comment_tex = gfx.create_texture(g_music_comment, g_music_comment_len);
     if (read_asset("/msgothic.ttc", g_font_bytes) || read_asset("/msgothic.ttf", g_font_bytes)) {const int offset=stbtt_GetFontOffsetForIndex(g_font_bytes.data(),0);g_font_ok=offset>=0&&stbtt_InitFont(&g_font,g_font_bytes.data(),offset)!=0;}
     start_animation();
     build_loading();

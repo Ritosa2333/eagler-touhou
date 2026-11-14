@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, closeSel
 
 export type MainSelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   'data-trigger-i18n'?: string;
+  renderOption?(option: { value: string; label: string }): ReactNode;
   renderPicker?(change: (value: string) => void, ref: Ref<HTMLButtonElement>): ReactNode;
 };
 const Prefix = createContext<ReactNode>(null);
@@ -17,7 +18,7 @@ export function MainSelectPrefix({ children, prefix }: { children: ReactNode; pr
 export const closeMainSelectMenus = closeSelectMenus;
 
 /** The native element owns forms, refs and change events; shared Select owns the popup. */
-export const MainSelect = forwardRef<HTMLSelectElement, MainSelectProps>(function MainSelect({renderPicker, ...props}, ref) {
+export const MainSelect = forwardRef<HTMLSelectElement, MainSelectProps>(function MainSelect({renderOption, renderPicker, ...props}, ref) {
   const { t } = useLocale();
   const native = useRef<HTMLSelectElement | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -95,8 +96,9 @@ export const MainSelect = forwardRef<HTMLSelectElement, MainSelectProps>(functio
               value={option.value || emptyValue}
               disabled={option.disabled}
               data-value={option.value}
+              textValue={option.label}
             >
-              {option.label}
+              {renderOption ? renderOption(option) : option.label}
             </SelectItem>
           ))}
         </SelectContent>

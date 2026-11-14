@@ -26,6 +26,7 @@ before(async () => {
       contents: `
     export {createLobbyDirectory,directoryRoomCanEnter} from './app/services/lobby-directory.ts';
     export {createMultiplayerRoom} from './app/services/multiplayer-room.ts';
+    export {AccountRequestError} from './app/services/account-client.ts';
     export {createRoomPreparation} from './app/services/room-preparation.ts';
     export {createPackageAcquisition} from './app/services/package-acquisition.ts';
     export {createNetworkActivityTracker} from './src/launcher/network-activity.mts';
@@ -507,9 +508,11 @@ test('account refresh replaces only the lobby socket and fences late nickname ti
   let resolveOldTicket;
   const oldTicket=new Promise(resolve=>{resolveOldTicket=resolve;});
   let nicknameCalls=0;
-  globalThis.__multiplayerAccountRequest=path=>{
+  let oldSignal;
+  globalThis.__multiplayerAccountRequest=(path, _body, {signal})=>{
     assert.equal(path,'v1/me/room-nickname');
     nicknameCalls++;
+    if (nicknameCalls===1) oldSignal=signal;
     return nicknameCalls===1?oldTicket:Promise.resolve({ticket:'current-ticket'});
   };
   const f=await joinedRoom({isLaunched:()=>true}), oldSocket=f.sockets[0], id=f.identity.lobbyClientId('th06mp');
@@ -520,6 +523,7 @@ test('account refresh replaces only the lobby socket and fences late nickname ti
     f.service.refreshAccount();
     assert.equal(f.sockets.length,2);
     assert.equal(oldSocket.readyState,3);
+    assert.equal(oldSignal.aborted,true);
     assert.equal(f.service.getSnapshot().room.code,'1234');
     assert.equal(f.service.getSnapshot().room.phase,'running');
     assert.equal(f.service.getSnapshot().seat,0);
@@ -540,6 +544,54 @@ test('account refresh replaces only the lobby socket and fences late nickname ti
     assert.equal(f.service.getSnapshot().room.code,'1234');
   }finally{
     globalThis.__multiplayerAccountRequest=undefined;
+    f.service.dispose();
+  }
+});
+
+test('room identity recovers from a temporary account API failure on the same connection', async () => {
+  const challenges = [];
+  globalThis.__multiplayerAccountRequest = (path, {challenge}) => {
+    assert.equal(path, 'v1/me/room-nickname');
+    challenges.push(challenge);
+    if (challenges.length === 1) throw new owner.AccountRequestError('ACCOUNT_API_UNAVAILABLE', 503);
+    return {ticket:'room-ticket'};
+  };
+  const f = await joinedRoom();
+  const socket = f.sockets[0];
+  const state = {type:'state', accountChallenge:'room-challenge', room:roomState(f.identity.lobbyClientId('th06mp'))};
+  try {
+    socket.message(state);
+    await flush();
+    socket.message(state);
+    assert.deepEqual(challenges, ['room-challenge']);
+    f.clock.tick(1000);
+    await flush();
+    assert.deepEqual(challenges, ['room-challenge', 'room-challenge']);
+    assert.deepEqual(socket.sent.filter(message => message.type === 'account-nickname'), [{type:'account-nickname', ticket:'room-ticket'}]);
+    assert.equal(f.sockets.length, 1);
+    assert.equal(f.service.getSnapshot().seat, 0);
+  } finally {
+    delete globalThis.__multiplayerAccountRequest;
+    f.service.dispose();
+  }
+});
+
+test.each([401, 503])('room identity stops retrying after denial or disconnect (%s)', async status => {
+  let requests = 0;
+  globalThis.__multiplayerAccountRequest = () => {
+    requests++;
+    throw new owner.AccountRequestError(status === 401 ? 'SIGN_IN_REQUIRED' : 'ACCOUNT_API_UNAVAILABLE', status);
+  };
+  const f = await joinedRoom();
+  try {
+    f.sockets[0].message({type:'state', accountChallenge:'room-challenge', room:roomState(f.identity.lobbyClientId('th06mp'))});
+    await flush();
+    if (status === 503) f.service.pageHide();
+    f.clock.tick(2000);
+    await flush();
+    assert.equal(requests, 1);
+  } finally {
+    delete globalThis.__multiplayerAccountRequest;
     f.service.dispose();
   }
 });

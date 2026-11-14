@@ -60,8 +60,10 @@ import { Skeleton } from '../ui/skeleton';
 import '../components/player/replay-workspace.css';
 import '../ui/review.css';
 import { sitePageTitle } from '../navigation/document-locale';
+import ratingStyles from '../ui/th09-ratings-preview.css?url';
 
 export function meta() {return [{title:sitePageTitle('UI 手册')}];}
+export const links = () => import.meta.env.DEV ? [{rel:'stylesheet', href:ratingStyles}] : [];
 
 const Th09RatingsPreview = import.meta.env.DEV ? lazy(() => import('../ui/th09-ratings-preview')) : null;
 

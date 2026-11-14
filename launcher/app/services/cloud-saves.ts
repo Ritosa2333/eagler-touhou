@@ -42,7 +42,7 @@ export async function deleteCloudSave(product:string,baseRevision:number,signal?
 export async function downloadCloudSave(product:string,revision:number,signal?:AbortSignal) {
   return accountRequest<Blob>(`v1/me/cloud-saves/${product}/${revision}/download`,undefined,{signal,responseType:'blob',timeoutMs:90_000});
 }
-export async function getProfileStatistics(username:string,signal?:AbortSignal) {return parse(profile,await accountRequest(`v1/profiles/${encodeURIComponent(username)}/statistics`,undefined,{signal}));}
+export async function getProfileStatistics(username:string,signal?:AbortSignal,anonymous=false) {return parse(profile,await accountRequest(`v1/profiles/${encodeURIComponent(username)}/statistics`,undefined,{signal,anonymous}));}
 export function formatPlaytime(seconds:number,locale:string) {
   const minutes=Math.floor(seconds/60),hours=Math.floor(minutes/60),formatter=new Intl.NumberFormat(locale);
   if(minutes===0)return seconds>0&&seconds<1?'<1s':formatter.format(Math.floor(seconds))+'s';

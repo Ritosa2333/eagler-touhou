@@ -71,6 +71,19 @@ test('selected React root serves real routes and retirement worker and rejects o
   } finally {await server.stop();}
 });
 
+test('development manifest refreshes DATA identity after a rebuild', async () => {
+  const fixture=resolve(work,'th05-data');await mkdir(fixture,{recursive:true});
+  await writeFile(resolve(fixture,'th05.data'),'first');
+  const server=await start({env:{...environment,EAGLER_DEVELOPMENT_GAMES:'th05',EAGLER_TH05_CONTENT_DIR:fixture}});
+  try {
+    const getManifest=async()=>(await (await fetch(server.base+'/site-manifest.json')).json()).games.th05.gameData;
+    const first=await getManifest();assert.equal(first.bytes,5);
+    await writeFile(resolve(fixture,'th05.data'),'replacement');
+    const next=await getManifest();assert.equal(next.bytes,11);assert.notEqual(next.sha256,first.sha256);
+    const response=await fetch(server.base+next.source);assert.equal(await response.text(),'replacement');
+  } finally {await server.stop();}
+});
+
 test('source server resolves workspace URLs consistently from a nested Launcher worktree', async () => {
   const fixture=resolve(work,'workspace-runtime.js'),body='export const workspaceRuntime = true;\n';
   await writeFile(fixture,body);

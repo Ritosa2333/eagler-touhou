@@ -5,6 +5,18 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { validateRuntimeReleaseManifest, verifyRuntimeRelease } from "../lib/runtime-release.mjs";
 import { writeSyntheticRuntimeRelease } from "../tests/support/runtime-release-fixture.mjs";
+import {assertRuntimeProtocolSources} from '../lib/runtime-protocol-shell.mjs';
+
+test('directory epoch helper stays inside the declared protocol sources', () => {
+  const shell = `const navigation=runtimeEpochContract(game,query.get('runtimeEpoch'));
+parent.postMessage({protocol,game,...navigation.fields,event:'ready'},location.origin);
+window.parent.__eaglerPrepareManagedRuntimeDataV1({game,epoch});`;
+  const helper = `function runtimeEpochContract(game,epoch) {
+return {fields:{epoch},accepts(message){return message.epoch===epoch}};}`;
+  assert.doesNotThrow(() => assertRuntimeProtocolSources([shell, helper], 'th14', 'normal'));
+  assert.throws(() => assertRuntimeProtocolSources([shell], 'th14', 'normal'), /navigation epoch protocol contract is missing/);
+  assert.throws(() => assertRuntimeProtocolSources([helper], 'th14', 'normal'), /navigation epoch protocol contract is missing/);
+});
 
 test("runtime release", async () => {
 /** L2 artifact contract. Builds a synthetic all-products Runtime Release and
@@ -20,6 +32,19 @@ test("runtime release", async () => {
 const root = await mkdtemp(join(tmpdir(), "eagler-runtime-release-"));
 const manifest = await writeSyntheticRuntimeRelease(root);
 await verifyRuntimeRelease(root);
+assert.deepEqual(manifest.games.th09.multiplayerRuntime, manifest.games.th09.runtime);
+const wrongAlias = structuredClone(manifest);
+wrongAlias.games.th09.multiplayerRuntime = structuredClone(wrongAlias.games.th09.runtime);
+wrongAlias.games.th09.multiplayerRuntime.files["th09.wasm"].bytes++;
+assert.throws(() => validateRuntimeReleaseManifest(wrongAlias), /invalid shared Runtime identity/);
+const legacyRoot = await mkdtemp(join(tmpdir(), "eagler-runtime-release-legacy-"));
+try {
+  const legacy = await writeSyntheticRuntimeRelease(legacyRoot, {legacyTh09: true});
+  assert.notEqual(legacy.games.th09.multiplayerRuntime.root, legacy.games.th09.runtime.root);
+  await verifyRuntimeRelease(legacyRoot);
+} finally {
+  await rm(legacyRoot, {recursive: true, force: true});
+}
 
 const wasmName = Object.keys(manifest.games.th08.runtime.files).find(name => name.endsWith('.wasm'));
 assert.ok(wasmName);

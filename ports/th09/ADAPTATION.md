@@ -2,7 +2,7 @@
 
 [开发入口](README.md) · [检查方法](../../docs/adaptation/README.md) · [全部作品](../README.md)
 
-源码目录：`ports/th09`。构建模式：`normal`、`multiplayer`。
+源码目录：`ports/th09`。普通和多人入口共用同一个 Web Runtime。
 
 实现情况与实际验收分别记录。源码接口和模块检查通过后记为“已实现”；完成对应操作并附执行记录后记为“已验证”。
 

@@ -3,6 +3,8 @@ import type {ReactNode} from 'react';
 import { useLocale } from '../../i18n';
 import type { LibraryCardsProps } from './LibraryCards';
 import {BookDirectoryGames} from './BookDirectoryGames';
+import {accountsEnabled} from '../../release-features';
+import {withUiLanguage} from '../../../src/launcher/i18n.mts';
 
 export interface LobbySurfaceProps extends Omit<
   LibraryCardsProps,
@@ -10,6 +12,7 @@ export interface LobbySurfaceProps extends Omit<
 > {
   masthead: ReactNode;
   guideHref: string | null;
+  rankingsHref: string;
   onNetwork: (() => void) | null;
   networkRunning?: boolean;
   connectionWarning?: ReactNode;
@@ -36,6 +39,7 @@ export interface LobbySurfaceProps extends Omit<
 export function LobbySurface({
   masthead,
   guideHref,
+  rankingsHref,
   onNetwork,
   networkRunning = false,
   connectionWarning,
@@ -52,7 +56,7 @@ export function LobbySurface({
   children,
   ...rail
 }: LobbySurfaceProps) {
-  const {t} = useLocale();
+  const {t, locale} = useLocale();
   return (
     <>
       <main className="lobby-main book-directory" inert={rail.interactive === false}>
@@ -79,9 +83,12 @@ export function LobbySurface({
               <span>{t('networkCheck.action')}</span>
               <span aria-hidden="true">›</span>
             </BookButton>
-            <BookButton variant="quiet" size="sm" className="lobby-support-link lobby-survey-link h-9 px-0 max-[780px]:h-11" asChild><a href="https://v.wjx.cn/vm/QqmTdwh.aspx#" target="_blank" rel="noopener noreferrer" title={t('lobby.surveyNotice')}>
-              <span>{t('lobby.surveyAction')}</span><span aria-hidden="true">›</span>
-            </a></BookButton>
+            {accountsEnabled && <BookButton variant="quiet" size="sm" asChild
+              className="lobby-support-link h-9 px-0 max-[780px]:h-11">
+              <a href={withUiLanguage(rankingsHref, locale)}>
+                <span>{t('th09.ratingBoard')}</span><span aria-hidden="true">›</span>
+              </a>
+            </BookButton>}
           </nav>
         </header>
         {connectionWarning}

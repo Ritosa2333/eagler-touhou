@@ -2,6 +2,7 @@ import {TH05_DATA_LAYOUT,TH05_MUSIC_FILES} from "./th05-content-layout.mjs";
 import {TH17_MUSIC_FILES} from "./th17-content-layout.mjs";
 import { TH12_DATA_LAYOUT, TH12_MUSIC_FILES } from "./th12-content-layout.mjs";
 import { TH13_DATA_LAYOUT, TH13_MUSIC_FILES } from "./th13-content-layout.mjs";
+import { TH14_DATA_LAYOUT, TH14_MUSIC_FILES } from "./th14-content-layout.mjs";
 import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
 import { TH15_MUSIC_FILES } from "./th15-content-layout.mjs";
 import { TH11_MUSIC_FILES } from "./th11-content-layout.mjs";
@@ -336,6 +337,38 @@ export const PRODUCT_CONTENT = Object.freeze({
       }),
       ogg: Object.freeze({ kind: "prepared-content" }),
       dataAssets: Object.freeze({ kind: "prepared-content" }),
+    }),
+  }),
+  th14: Object.freeze({
+    original: Object.freeze({
+      files: Object.freeze(["th14.dat"]),
+      oggSourceFiles: Object.freeze(["thbgm.dat"]),
+      preparedAlternative: Object.freeze({
+        directory: "assets-eagler",
+        markerFiles: Object.freeze(["th14.data", "music/th14_01.ogg"]),
+      }),
+    }),
+    dataLayout: TH14_DATA_LAYOUT,
+    music: Object.freeze({
+      ogg: Object.freeze({mount: PRODUCT_GAMES.th14.package.musicMounts.ogg, files: TH14_MUSIC_FILES}),
+    }),
+    hostPreparation: Object.freeze({
+      artwork: Object.freeze({kind: "retail-memory-title-no-reader"}),
+      preparedContent: Object.freeze({
+        directory: "assets-eagler",
+        markerFiles: Object.freeze(["th14.data", "music/th14_01.ogg"]),
+        script: "scripts/prepare-th14-content.mjs",
+      }),
+      ogg: Object.freeze({kind: "prepared-content"}),
+      dataAssets: Object.freeze({kind: "prepared-content"}),
+      languagePack: Object.freeze({
+        kind: "thcrap-runtime-compiler",
+        inputMode: "archive",
+        archive: "th14.dat",
+        developmentEnv: "EAGLER_TH14_ARCHIVES",
+        developmentFiles: Object.freeze(["th14.dat", "assets-eagler/th14.data"]),
+        preparedArchive: "assets-eagler/th14.data",
+      }),
     }),
   }),
   th15: Object.freeze({

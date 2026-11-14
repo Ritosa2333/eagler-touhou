@@ -20,11 +20,11 @@ beforeAll(async()=>{
   Object.defineProperty(globalThis,'crypto',{configurable:true,value:{randomUUID:()=>`social-${Math.random()}`}});
   work=await mkdtemp(resolve(project,'.cache/social-section-'));
   await build({absWorkingDir:project,stdin:{resolveDir:project,loader:'ts',contents:`
-    export {SocialProvider,SocialSection,SocialFollowControl} from './app/components/launcher/SocialSection.tsx';
+    export {SocialProvider,SocialSection,SocialFollowControl,profileSocialTab} from './app/components/launcher/SocialSection.tsx';
     export {notifyAccountChange} from './app/services/account-session.ts';
     export {useAccountSession} from './app/services/account-session.ts';
     export {LocaleProvider} from './app/i18n.tsx';
-    export {MemoryRouter} from 'react-router';
+    export {MemoryRouter,useLocation} from 'react-router';
   `},bundle:true,platform:'node',format:'esm',jsx:'automatic',packages:'external',
     define:{'import.meta.env':JSON.stringify({VITE_ACCOUNTS_ENABLED:'true'})},
     outfile:resolve(work,'social.mjs'),plugins:[authoredSourcesPlugin(project)],logLevel:'silent'});
@@ -51,10 +51,10 @@ function json(data,status=200){return new Response(JSON.stringify(data),{status,
 function useApi(snapshot){
   const calls=[],reads=[];globalThis.__socialViewer={username:'alice',name:'Alice'};
   globalThis.fetch=async(url,init={})=>{
-    const path=new URL(String(url),env.window.location.href).pathname;
+    const address=new URL(String(url),env.window.location.href),path=address.pathname;
     if(path==='/api/ready')return json({ready:true});
     if(path==='/api/auth/get-session')return json({user:globalThis.__socialViewer});
-    if(path==='/api/v1/profiles/alice/social'&&init.method!=='POST'){reads.push(path);return json(snapshot);}
+    if(path==='/api/v1/profiles/alice/social'&&init.method!=='POST'){reads.push(address.searchParams.get('list'));return json(snapshot);}
     if(path==='/api/v1/me/following'&&init.method==='POST'){
       const body=JSON.parse(init.body);calls.push(body);snapshot.following=body.follow;return json({following:body.follow});
     }
@@ -73,20 +73,24 @@ async function mount(children){
 test('friends and following switch to server lists and the profile action persists follow state',async()=>{
   const snapshot={visible:true,following:false,friends:[{username:'bob',nickname:'Bob'}],followingUsers:[{username:'carol',nickname:'Carol'}]};
   const {calls,reads}=useApi(snapshot);
-  function ProfileSocial(){return React.createElement(React.Fragment,null,
-    React.createElement(components.SocialProvider,{username:'alice'},React.createElement(React.Fragment,null,
+  function ProfileSocial(){
+    const {search,hash}=components.useLocation();
+    const tab=components.profileSocialTab(search,hash)??'friends';
+    return React.createElement(components.SocialProvider,{username:'alice',includeLists:true,list:tab},React.createElement(React.Fragment,null,
       React.createElement(components.SocialFollowControl,{username:'alice'}),
-      React.createElement(components.SocialSection,{username:'alice'}))));}
+      React.createElement(components.SocialSection,{username:'alice',tab})));
+  }
   const page=await mount(React.createElement(ProfileSocial));
   await waitFor(()=>reads.length===1,'the shared provider fetches one snapshot');
-  assert.equal(reads.length,1,'the profile section and follow action share one social request');
+  assert.deepEqual(reads,['friends'],'the profile section and follow action share one request for the active list');
   assert.match(page.textContent,/Bob/);
   const follow=page.querySelector('button[aria-pressed="false"]');
   assert.ok(follow);
   await React.act(async()=>follow.dispatchEvent(new env.window.MouseEvent('click',{bubbles:true})));
   assert.deepEqual(calls,[{username:'alice',follow:true}]);
   assert.equal(page.querySelector('button[aria-pressed="true"]')?.textContent,'Following');
-  await React.act(async()=>page.querySelectorAll('.profile-social-tools button')[1].dispatchEvent(new env.window.MouseEvent('click',{bubbles:true})));
+  await React.act(async()=>page.querySelector('.profile-social-tabs a[href*="social=following"]').click());
+  await waitFor(()=>reads.at(-1)==='following'&&page.textContent.includes('Carol'),'following loads only after its tab opens');
   assert.match(page.textContent,/Carol/);
   assert.doesNotMatch(page.textContent,/Bob/);
 });
@@ -95,9 +99,9 @@ test('hidden relationships are omitted and signed-out visitors get the login act
   const snapshot={visible:false,following:null,friends:[],followingUsers:[]};
   useApi(snapshot);
   function ProfileSocial(){return React.createElement(React.Fragment,null,
-    React.createElement(components.SocialProvider,{username:'alice'},React.createElement(React.Fragment,null,
+    React.createElement(components.SocialProvider,{username:'alice',includeLists:true,list:'friends'},React.createElement(React.Fragment,null,
       React.createElement(components.SocialFollowControl,{username:'alice'}),
-      React.createElement(components.SocialSection,{username:'alice'}))));}
+      React.createElement(components.SocialSection,{username:'alice',tab:'friends'}))));}
   const page=await mount(React.createElement(ProfileSocial));
   assert.match(page.textContent,/This list is private/);
   assert.match(page.textContent,/Sign in to follow/);
@@ -126,7 +130,7 @@ test('refreshes deduplicated social requests, ignores late results, and reloads 
     const {state}=components.useAccountSession();
     if(state.status==='loading')return null;
     const viewer=state.status==='member'?state.user.username:state.status;
-    return React.createElement(components.SocialProvider,{key:viewer,username:'alice'},React.createElement(components.SocialSection,{username:'alice'}));
+    return React.createElement(components.SocialProvider,{key:viewer,username:'alice',includeLists:true,list:'friends'},React.createElement(components.SocialSection,{username:'alice',tab:'friends'}));
   }
   const page=await mount(React.createElement(ViewerBoundSocial));
   await waitFor(()=>requests.length===1,`the signed-in viewer loads one social snapshot (sessions=${sessions.join(',')}, requests=${requests.length})`);

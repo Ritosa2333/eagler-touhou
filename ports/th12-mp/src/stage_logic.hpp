@@ -91,7 +91,8 @@ struct State {
     if(shakeMode==0||shakeMode==3||shakeMode==4||shakeMode>7)return;
     auto normalized=[](double n){return wrapAngle(float(n));};constexpr double pi=3.1415927410125732;
     float value;
-    if(shakeMode==1){const float a=normalized(shakeTime*pi*2*.001953125),s=float(std::sin(double(a)));value=float(double(s)-1);camera.offset[0]=float(double(value)*-50);camera.up[0]=float(double(value)*-.10000000149011612);}
+    // Native40532b calls the cosine helper4939f0. At entry, cos(0)-1 is zero.
+    if(shakeMode==1){const float a=normalized(shakeTime*pi*2*.001953125),s=float(std::cos(double(a)));value=float(double(s)-1);camera.offset[0]=float(double(value)*-50);camera.up[0]=float(double(value)*-.10000000149011612);}
     else if(shakeMode==2){const float a=normalized(shakeTime*pi*2*.00048828125),s=float(std::cos(double(a)));camera.offset[0]=float(double(s)*5);const float b=normalized(float(double(a)*2));camera.offset[2]=float(std::cos(double(b))*5);camera.up[0]=float(-double(s)*.05000000074505806);}
     else {const double rate=shakeMode==5?.00048828125:shakeMode==6?.0009765625:.001953125;const float a=float(pi-shakeTime*pi*2*rate),s=float(std::cos(double(a)));camera.offset[0]=float(double(s)*(shakeMode==5?70:shakeMode==6?-50:-15));camera.up[0]=float(-double(s)*(shakeMode==7?.009999999776482582:.10000000149011612));if(shakeMode==5)camera.offset[2]=float(std::cos(double(normalized(float(double(s)*2))))*200);}
     shakeTime=float(double(shakeTime)+delta);shakeAge=int(shakeTime);const int period=shakeMode==2||shakeMode==5?2048:shakeMode==6?1024:512;if(shakeAge>=period){shakeAge=0;shakeTime=0;}

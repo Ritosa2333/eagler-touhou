@@ -23,7 +23,7 @@ export function resolveReleaseFeatures(environment: ReleaseFeatureEnvironment) {
     listenTogetherEnabled: environment.VITE_LISTEN_TOGETHER_ENABLED !== 'false',
     isPreviewOnlyPage(pathname: string) {
       const previewPage = /\/ui-review\.html\/?$/.test(pathname);
-      const accountPage = /^(?:\/(?:login|profile)\.html|\/u\/[^/]+)\/?$/.test(pathname);
+      const accountPage = /^(?:\/(?:login|profile|ratings)\.html|\/u\/[^/]+)\/?$/.test(pathname);
       return (previewPage && !uiReviewEnabled) || (accountPage && !accountsEnabled);
     },
   };

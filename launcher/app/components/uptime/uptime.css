@@ -1,4 +1,5 @@
 .standalone-page-shell{min-height:100dvh;background:var(--kit-background);color:var(--kit-foreground);font-family:var(--kit-font)}
+html[data-custom-background] .standalone-page-shell{background-color:transparent}
 .uptime-page{width:min(1160px,100%);margin:0 auto;padding:32px 24px max(48px,var(--ui-safe-bottom))}
 .uptime-heading{display:flex;align-items:center;justify-content:space-between;gap:20px}
 .uptime-heading h1{margin:0;font-size:28px;line-height:1.25;font-weight:600;letter-spacing:-.025em}

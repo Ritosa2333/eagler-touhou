@@ -24,7 +24,7 @@ constexpr int WebCanvasWidth=640,WebCanvasHeight=480;
 u32 input_bit(int key){
     switch(key){case 90:return InShot;case 88:return InBomb;case 16:return InFocus;case 17:return InSkip;
     case 37:return InLeft;case 38:return InUp;case 39:return InRight;case 40:return InDown;
-    case 27:return InPause;case 13:return InEnter;case 82:return InRetry;default:return 0;}
+    case 27:return InPause;case 13:return InEnter;case 82:return InRetry;case 81:return InQuit;default:return 0;}
 }
 int virtual_key(SDL_Keycode key){
     if(key>=SDLK_A&&key<=SDLK_Z)return int(key-SDLK_A)+'A';
@@ -62,7 +62,7 @@ struct Application {
         if(k[SDL_SCANCODE_Z])held|=InShot;if(k[SDL_SCANCODE_X])held|=InBomb;
         if(k[SDL_SCANCODE_LSHIFT]||k[SDL_SCANCODE_RSHIFT])held|=InFocus;
         if(k[SDL_SCANCODE_LCTRL]||k[SDL_SCANCODE_RCTRL])held|=InSkip;
-        if(k[SDL_SCANCODE_ESCAPE])held|=InPause;if(k[SDL_SCANCODE_R])held|=InRetry;
+        if(k[SDL_SCANCODE_ESCAPE])held|=InPause;if(k[SDL_SCANCODE_R])held|=InRetry;if(k[SDL_SCANCODE_Q])held|=InQuit;
         if(k[SDL_SCANCODE_RETURN]&&!k[SDL_SCANCODE_LALT]&&!k[SDL_SCANCODE_RALT])held|=InEnter;
         for(auto* pad:pads)if(SDL_GamepadConnected(pad)){
             const float px=SDL_GetGamepadAxis(pad,SDL_GAMEPAD_AXIS_LEFTX)/32768.f,py=SDL_GetGamepadAxis(pad,SDL_GAMEPAD_AXIS_LEFTY)/32768.f;

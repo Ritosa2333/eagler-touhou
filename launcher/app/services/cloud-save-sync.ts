@@ -31,15 +31,21 @@ type IdentityStatus = 'member' | 'guest' | 'unknown' | 'expired';
 type ProductLock = { signal: AbortSignal; assert(): boolean; release(): void };
 type ActiveRun = { product: ProductId; owner: string; lease?: ProductLock };
 type LaunchCloudState = { product: ProductId; user: string; revision: number; pending: CloudSaveList['pending'] };
+type LaunchReview = {
+  beforeDecision(): Promise<void>;
+  beforeRestore(): Promise<void>;
+};
 type Ports = {
   storage: Storage;
   read: LocalSaveReader;
+  readForLaunch?: LocalSaveReader;
   restore(
     product: ProductId,
     snapshot: CloudSaveSnapshot,
     signal: AbortSignal,
     allowedFiles: readonly string[],
     preparing?: boolean,
+    beforeWrite?: () => Promise<void>,
   ): Promise<void>;
   decide(
     kind: 'conflict' | 'claim',
@@ -71,6 +77,8 @@ export function createCloudSaveSync(ports: Ports) {
     status: CloudSyncStatus = null;
   let markerTask: Promise<void> | null = null;
   let launchData: LaunchCloudState | null = null;
+  const rejectedUploads = new Map<string, {fingerprint: string; error: AccountRequestError}>();
+  let retryAfter = 0;
   let launchLease: {product: ProductId; lease: ProductLock} | null = null;
   const handoff = typeof window.BroadcastChannel === 'function' ? new window.BroadcastChannel(prefix + 'handoff') : null;
   let closingForHandoff = false;
@@ -115,12 +123,14 @@ export function createCloudSaveSync(ports: Ports) {
       window.dispatchEvent(new Event('cloud-save-change'));
     }
   };
-  const errorKey = (error: unknown): UiMessageKey =>
-    error instanceof AccountRequestError && error.code === 'SAVE_CONFLICT'
-      ? 'cloudSave.syncConflict'
-      : error instanceof AccountRequestError && error.code === 'SAVE_QUOTA_EXCEEDED'
-        ? 'cloudSave.quota'
-        : 'cloudSave.syncPending';
+  function errorKey(error: unknown): UiMessageKey {
+    if (!(error instanceof AccountRequestError)) return 'cloudSave.syncPending';
+    if (error.code === 'SAVE_CONFLICT') return 'cloudSave.syncConflict';
+    if (error.code === 'SAVE_QUOTA_EXCEEDED') return 'cloudSave.quota';
+    if (error.code === 'UNSUPPORTED_SAVE_VERSION') return 'cloudSave.unsupportedVersion';
+    if (error.status === 429) return 'cloudSave.busy';
+    return 'cloudSave.syncPending';
+  }
 
   function validAccount() {
     const state = accountSession.getSnapshot();
@@ -279,7 +289,18 @@ export function createCloudSaveSync(ports: Ports) {
       if (!product.requiredFiles.some(name => files.some(file => file.name === name)))
         throw new AccountRequestError('MAIN_SAVE_REQUIRED');
       // Compare-and-set at upload is the concurrency guard. A marker says nothing about saved bytes.
-      const saved = await uploadCloudSave(record.product, revision, files, signal);
+      const uploadKey = JSON.stringify([record.owner, record.product]);
+      const rejected = rejectedUploads.get(uploadKey);
+      if (rejected?.fingerprint === fingerprint) throw rejected.error;
+      let saved: CloudSaveSnapshot;
+      try {
+        saved = await uploadCloudSave(record.product, revision, files, signal);
+      } catch (error) {
+        if (error instanceof AccountRequestError && error.status === 400)
+          rejectedUploads.set(uploadKey, {fingerprint, error});
+        throw error;
+      }
+      rejectedUploads.delete(uploadKey);
       verify();
       revision = saved.revision;
       clean(record, revision, fingerprint, true, lease);
@@ -288,6 +309,7 @@ export function createCloudSaveSync(ports: Ports) {
   }
 
   async function flush(): Promise<void> {
+    if (Date.now() < retryAfter) return;
     if (task || !enabled || !owner || disposed || active || ports.isRunning() || !validAccount()) return task ?? undefined;
     if (markerTask) return markerTask.then(flush);
     const signal = controller.signal,
@@ -327,6 +349,11 @@ export function createCloudSaveSync(ports: Ports) {
         } catch (error) {
           if (!operationSignal.aborted && !isAbortError(error) && !sessionExpired(error, user)) {
             const key = errorKey(error);
+            if (error instanceof AccountRequestError && error.status === 429) {
+              retryAfter = Date.now() + 60_000;
+              publish({product: record.product, error: key});
+              break;
+            }
             if (key === 'cloudSave.syncConflict') {
               flagReview(record.product);
               warn(record.product, key);
@@ -468,7 +495,7 @@ export function createCloudSaveSync(ports: Ports) {
     return previous?.owner === user && !previous.unclaimed ? previous : undefined;
   }
 
-  async function review(product: ProductId, externalSignal: AbortSignal, context: 'launch' | 'manual', reserved?: ProductLock): Promise<'continue' | 'reload' | 'cancel'> {
+  async function review(product: ProductId, externalSignal: AbortSignal, context: 'launch' | 'manual', reserved?: ProductLock, launch?: LaunchReview): Promise<'continue' | 'reload' | 'cancel'> {
     const preparing = context === 'launch';
     if (!owner || disposed || active || (!preparing && ports.isRunning()) || ports.isPlaying?.() ||
         isMultiplayerProductId(product) || !validAccount() || (preparing && !enabled)) return 'continue';
@@ -486,7 +513,7 @@ export function createCloudSaveSync(ports: Ports) {
     };
     try {
       verify();
-      let data = await bounded(listCloudSaves, linked.signal);
+      let data = await bounded(listCloudSaves, linked.signal, launch ? 15_000 : undefined);
       verify();
       while (true) {
         const current = data.products.find(item => item.id === product && !item.multiplayer);
@@ -500,9 +527,14 @@ export function createCloudSaveSync(ports: Ports) {
         const approved = new Set(ports.storage.getItem(key)?.split('|'));
         const confirmOverwrite = pendingRuns.some(id => !approved.has(id));
         if (confirmOverwrite) {
+          await launch?.beforeDecision();
+          verify();
           const proceed = await ports.decideStart('other-device', linked.signal);
           verify();
-          if (!proceed) return 'cancel';
+          if (!proceed) {
+            if (launch) {flagReview(product); return 'continue';}
+            return 'cancel';
+          }
           const checked = await bounded(listCloudSaves, linked.signal);
           verify();
           const confirmed = new Set([...approved, ...pendingRuns]);
@@ -516,7 +548,8 @@ export function createCloudSaveSync(ports: Ports) {
           rememberMarkers();
         }
         const latest = data.saves.find(item => item.product === product && item.revision === current.revision) ?? null;
-        const files = await bounded(() => ports.read(product, current.files), linked.signal);
+        const read = launch ? ports.readForLaunch ?? ports.read : ports.read;
+        const files = await bounded(() => read(product, current.files), linked.signal);
         verify();
         const fingerprint = await localSaveFingerprint(files);
         verify();
@@ -532,6 +565,8 @@ export function createCloudSaveSync(ports: Ports) {
         } else if (!preparing || (relation !== 'same' && relation !== 'cloud-ahead' &&
           (quarantined || unowned || deleted || (!!latest && relation !== 'browser-ahead')))) {
           const comparison = await compareSaveVersions(product, files, latest, relation, linked.signal);
+          verify();
+          await launch?.beforeDecision();
           verify();
           choice = await ports.decide(latest ? 'conflict' : 'claim', product, linked.signal, comparison, context);
           verify();
@@ -555,9 +590,9 @@ export function createCloudSaveSync(ports: Ports) {
           // Let the archive writer finish rolling back before continuing with local files.
           const deadline = new AbortController();
           const restoreSignal = linkAbortSignals(linked.signal, deadline.signal);
-          const timer = setTimeout(() => deadline.abort(new Error('Cloud restore timed out')), 4000);
+          const timer = setTimeout(() => deadline.abort(new Error('Cloud restore timed out')), launch ? 30_000 : 4000);
           try {
-            await ports.restore(product, latest, restoreSignal.signal, current.files, preparing);
+            await ports.restore(product, latest, restoreSignal.signal, current.files, preparing, launch?.beforeRestore);
           } catch (error) {
             if (linked.signal.aborted) throw error;
             if (preparing) {
@@ -592,7 +627,10 @@ export function createCloudSaveSync(ports: Ports) {
         return preparing && restoring ? 'reload' : 'continue';
       }
     } catch (error) {
-      if (preparing) launchData = null;
+      if (preparing) {
+        launchData = null;
+        if (launch && !externalSignal.aborted) flagReview(product);
+      }
       if (externalSignal.aborted) throw error;
       if (!linked.signal.aborted && !isAbortError(error) && !sessionExpired(error, user))
         warn(product, errorKey(error));
@@ -608,7 +646,7 @@ export function createCloudSaveSync(ports: Ports) {
     launchLease = null;
   }
 
-  async function beforeStart(product: ProductId, signal: AbortSignal): Promise<'continue' | 'reload' | 'cancel'> {
+  async function beforeStart(product: ProductId, signal: AbortSignal, launch?: LaunchReview): Promise<'continue' | 'reload' | 'cancel'> {
     if (disposed || active || ports.isPlaying?.() || isMultiplayerProductId(product)) return 'continue';
     releaseLaunchLease();
     let lease: ProductLock | null;
@@ -619,7 +657,7 @@ export function createCloudSaveSync(ports: Ports) {
       return 'continue';
     }
     const occupied = lease === null;
-    if (occupied && handoff && !signal.aborted) {
+    if (occupied && handoff && !signal.aborted && !launch) {
       handoff.postMessage(product);
       const deadline = Date.now() + 5000;
       while (!lease && !disposed && Date.now() < deadline) {
@@ -632,6 +670,7 @@ export function createCloudSaveSync(ports: Ports) {
       return 'cancel';
     }
     if (!lease) {
+      await launch?.beforeDecision();
       await ports.decideStart('tab-unavailable', signal);
       return 'cancel';
     }
@@ -642,7 +681,7 @@ export function createCloudSaveSync(ports: Ports) {
       // Discard this tab's preloaded view so all reads use those committed files.
       if (occupied && !await ports.retirePrepared(product)) return 'cancel';
       if (signal.aborted) return 'cancel';
-      const result = await review(product, signal, 'launch', lease);
+      const result = await review(product, signal, 'launch', lease, launch);
       accepted = result !== 'cancel';
       return occupied && result === 'continue' ? 'reload' : result;
     } finally {
@@ -654,6 +693,10 @@ export function createCloudSaveSync(ports: Ports) {
 
   return {
     prepareLocalLaunch() { launchData = null; releaseLaunchLease(); interruptSync(); },
+    deferLaunch(product: ProductId) {
+      launchData = null;
+      flagReview(product);
+    },
     beforeStart,
     started(product: ProductId) {
       if (disposed || active || isMultiplayerProductId(product)) return;

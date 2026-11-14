@@ -51,7 +51,21 @@ void bounds(){
     assert(parse_replay(recorder.encode("REPLAY",1770000000,1234,0,1,0),replay,error));
     assert(replay.stages.size()==1&&replay.stage(1)->frames==32&&replay.stage(1)->fps_count==2);
     assert(replay.input(1,31)->end());assert(!replay.input(1,32));
-    std::puts("truncated headers rejected; valid recording round-trip passed");
+    ReplayRecorder assisted(0,1,2,true,{});
+    assisted.begin_stage(4,123,initial);
+    const std::array<i32,3> on{511,3,0x3e800000},off{0,0,0x3f000000};
+    assisted.tools(on);assisted.push(1,1,0,60);
+    assisted.tools(on);assisted.push(1,0,0,60);
+    assisted.tools(off);assisted.push(0,0,1,60);
+    assisted.finish_stage(true);assisted.begin_stage(5,456,initial);assisted.push(0,0,0,60);
+    assert(parse_replay(assisted.encode("TOOLS",1770000000,0,0,5,100),replay,error));
+    assert(replay.extension.tools.at(4).size()==2);
+    assert(replay.extension.tool_state(4,0)==on&&replay.extension.tool_state(4,1)==on);
+    assert(replay.extension.tool_state(4,2)==off&&replay.extension.tool_state(5,0)==off);
+    auto invalid=replay.extension;invalid.tools[4][0].state[0]=512;
+    std::vector<u8> trailer;append_replay_extension(trailer,invalid);
+    ReplayExtension rejected;assert(!read_replay_extension(trailer,0,{{4,4},{5,2}},rejected,error));
+    std::puts("truncated headers rejected; valid recording round-trip passed; sparse THPrac changes and bounds passed");
 }
 void fps(){
     Replay replay;ReplayStage stage;stage.number=1;stage.frames=91;stage.fps_count=4;

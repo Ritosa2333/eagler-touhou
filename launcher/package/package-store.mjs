@@ -645,6 +645,7 @@ export function packageMimeType(source, fallback = "application/octet-stream") {
   if (lower.endsWith(".wasm")) return "application/wasm";
   if (lower.endsWith(".json")) return "application/json; charset=utf-8";
   if (lower.endsWith(".ogg")) return "audio/ogg";
+  if (lower.endsWith(".flac")) return "audio/flac";
   if (lower.endsWith(".ttc")) return "font/ttf";
   if (lower.endsWith(".ttf")) return "font/ttf";
   if (lower.endsWith(".otf")) return "font/otf";

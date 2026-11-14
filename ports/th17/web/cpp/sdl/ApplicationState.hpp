@@ -85,6 +85,9 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  void remember_title()noexcept;bool fail(const std::string&);bool initialize(bool);~ApplicationState();bool step(u32,u32,u32,float,bool);const i32* projection();
  FrameScheduler& active_scheduler()noexcept{return scene()?scene()->frame_scheduler():scheduler;}
  StageGameplay* scene()const noexcept{return run?run->scene():nullptr;}StageAssets* assets()const noexcept{return run?run->scene_assets():nullptr;}
+ bool can_use_practice_tools()const noexcept{
+  return practice.enabled&&scene()&&!progress.practice_record&&progress.demo_slot<0;
+ }
  bool save_settings();bool preload_run();bool bind_display(StageGameplay* previous=nullptr);bool draw_global();bool screen_fade(i32,i32,i32,bool,bool,u32=0);void reset_graphics();
  bool advance_flow();bool step_loading();bool draw_loading();
  bool read(const std::string&,std::vector<u8>&)override;

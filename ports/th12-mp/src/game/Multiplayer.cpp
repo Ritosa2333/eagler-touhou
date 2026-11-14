@@ -360,6 +360,30 @@ void collectSharedPiece(int type) {
 }
 void itemPlayer(item_system::Entity& item, item_system::PlayerView& out) {
   using S=item_system::State;
+  if (item.state == S::Absorbing) {
+    // A UFO owns the motion, but any touching pilot can still collect the item.
+    // An earlier attraction recipient must not reserve it during absorption.
+    int seat = -1;
+    double best = 0;
+    for (unsigned s = 0; s < options.count; ++s) if (alive(s)) {
+      const auto& p = pilots[s];
+      const auto view = item_system::PlayerView::native(
+          p.character, {p.px / 128.f, p.py / 128.f}, p.playerFocused, p.playerState);
+      if (std::abs(item.position.x - view.position.x) > view.pickupHalfWidth ||
+          std::abs(item.position.y - view.position.y) > view.pickupHalfHeight)
+        continue;
+      const double distance = distance2(p, item.position.x, item.position.y);
+      if (seat < 0 || distance < best) {
+        seat = int(s);
+        best = distance;
+        out = view;
+      }
+    }
+    item.recipient = -1;
+    item.collector = seat;
+    if (seat < 0) { out = {}; out.state = 2; out.position = {10000, 10000}; }
+    return;
+  }
   const bool power=item.type==1||item.type==3||item.type==8||item.type==16||item.type==18;
   const bool homing=item.state==S::DelayedPoint||item.state==S::Automatic||item.state==S::Aggregate||
     item.state==S::CollectedAbove||item.state==S::CollectedNear;

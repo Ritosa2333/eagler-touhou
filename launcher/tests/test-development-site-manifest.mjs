@@ -73,7 +73,7 @@ const multiplayerRuntimeOwners = {
   th07: "../ports/th07/build/web/multiplayer/th07.html",
   th075: "../ports/th075-mp/build-eagler-multiplayer/th075.html",
   th08: "../ports/th08-mp/build-eagler-multiplayer/th08.html",
-  th09: "../ports/th09/web/build-eagler-multiplayer/th09.html",
+  th09: "../ports/th09/web/build-eagler/th09.html",
   th10: "../ports/th10-mp/build-eagler-multiplayer/th10.html",
   th11: "../ports/th11-mp/build-eagler-multiplayer/th11.html",
   th12: "../ports/th12-mp/build-eagler-multiplayer/th12.html",
