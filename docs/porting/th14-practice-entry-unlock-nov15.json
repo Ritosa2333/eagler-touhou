@@ -1,0 +1,3733 @@
+{
+  "schema": "th14/practice-entry-unlock/1",
+  "passedWithinDeclaredScope": true,
+  "standard": "observable behavior alignment",
+  "source": {
+    "key": "runtimes/th12/th12_web/cpp/game/GameSession.cpp",
+    "before": "d738474d88f168b2a415de3d25aa3adaa573ab7c64bd9c587cfb9f39db0bda93",
+    "after": "a3b8a95569d83362539ff51ad808c553b17bde1620e6e78d23ad9f323b466fcf",
+    "sourceParent": "a247160dcb3b27c9393dbc147ce4e5d5fade1bba",
+    "changedFiles": 1,
+    "rootSharedGameSessionNotModified": true,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "nativeOracle": {
+    "schema": "th14/practice-unlock-native/1",
+    "passed": true,
+    "caseCount": 450,
+    "ordinaryWrites": 150,
+    "nonzeroControlNoWrites": 300,
+    "executableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+    "instructionAddress": "0x435b6c",
+    "instructionBytes": 56,
+    "instructionSha256": "2904ce695514cb9a1b5d2b408ba487e02870d4cd8eef915c650050267cc08fae",
+    "decodedInputSha256": "9ac2db2808224a9f8ba4c70e1a37c8d7a68db63c09c0d3afadd090545244c4ac",
+    "cases": [
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 0,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 0,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 1,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 1,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 2,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 2,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 3,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 3,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 4,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 4,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 0,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 2,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 1,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 2,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 3,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 4,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 5,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 3,
+        "stage": 6,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 0,
+        "enteredFlag": 1,
+        "changedDecodedBytes": 1
+      },
+      {
+        "selection": 5,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 1,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      },
+      {
+        "selection": 5,
+        "difficulty": 4,
+        "stage": 7,
+        "controlMode": 2,
+        "enteredFlag": 0,
+        "changedDecodedBytes": 0
+      }
+    ],
+    "onlyExpectedEnteredFlagChanged": true,
+    "stageCompletedFlagNotWritten": true,
+    "originalInstructionsModified": false,
+    "originalProcessLaunched": false,
+    "virtualScoreAndControlPorts": true,
+    "browserAccepted": false,
+    "completeGame": false
+  },
+  "build": {
+    "built": true,
+    "unitsRecompiled": 1,
+    "objectsVerifiedReused": 152,
+    "sourceBindingsVerified": 387,
+    "commonBindingsVerified": 25,
+    "runtimeFiles": 18,
+    "wasm": "d53df8cfdaaca6ba02b522a91cc8840eaf3d3b4e2176faa640a8b85345f54944",
+    "sourceBefore": "d738474d88f168b2a415de3d25aa3adaa573ab7c64bd9c587cfb9f39db0bda93",
+    "sourceAfter": "a3b8a95569d83362539ff51ad808c553b17bde1620e6e78d23ad9f323b466fcf",
+    "browserAccepted": false,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "browser": {
+    "qualified": true,
+    "generation": "77230ead1bcaacd6bb52bc9e04f88c6a1c1c1653d090622c1be7d708fcd1552f",
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "noUnlockOrStateInjected": true,
+    "actualOrdinaryReimuANormalStartAccepted": true,
+    "ordinaryInventory": {
+      "lives": 2,
+      "bombs": 3,
+      "power": 100,
+      "score": 50,
+      "graze": 0
+    },
+    "nativeFirstStagePracticeBecameSelectable": true,
+    "nativeSecondStageStillRejected": true,
+    "nativeFirstStagePracticeStartedAndPaused": true,
+    "nativeQuitAccepted": true,
+    "naturalViewerEndFrames": 1737,
+    "naturalViewerHudScore": 3179620,
+    "viewerRate": 1,
+    "viewerSeeks": 0,
+    "wholeEncodedWatcherScoreEqual": true,
+    "watcherScoreBytes": 21642,
+    "watcherScoreSha256": "3c75fea0fade0f336944344088e43faeede469b17b2f1fdd73b546c4d4da80f4",
+    "allOtherLoadoutUnlocksProtected": true,
+    "actualPublicBrowserAccepted": false,
+    "completeGame": false,
+    "wholePageReloadScoreEqual": true
+  },
+  "nativeSave": {
+    "scoreBytes": 21642,
+    "scoreSha256": "3c75fea0fade0f336944344088e43faeede469b17b2f1fdd73b546c4d4da80f4",
+    "decodedBytes": 149076,
+    "decodedSha256": "abcd3a71ebcd1ef76a00e20fceb6a14a4e2541069a64dfacfce0bf598ef5b46c",
+    "normalStageAvailability": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "stage1CompletedFlag": 0,
+    "onlyVisitedStageUnlocked": true,
+    "otherSixWholeCharacterRecordsAndSettingsEqual": true,
+    "changedDecodedBytes": 5,
+    "changes": [
+      {
+        "offset": "0x4",
+        "before": 136,
+        "after": 132
+      },
+      {
+        "offset": "0x7b8",
+        "before": 3,
+        "after": 5
+      },
+      {
+        "offset": "0x7bc",
+        "before": 68,
+        "after": 60
+      },
+      {
+        "offset": "0x7bd",
+        "before": 3,
+        "after": 4
+      },
+      {
+        "offset": "0x83d",
+        "before": 0,
+        "after": 1
+      }
+    ],
+    "playCountBefore": 3,
+    "playCountAfter": 5,
+    "playFramesBefore": 836,
+    "playFramesAfter": 1084
+  },
+  "legacyBadUnlocksInferredOrBackfilled": false,
+  "allLoadoutsActualBrowserAccepted": false,
+  "productionChanged": false,
+  "completeGame": false
+}

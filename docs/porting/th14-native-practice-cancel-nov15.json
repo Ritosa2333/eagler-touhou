@@ -140,5 +140,13 @@
   "newProductionDeployment": false,
   "publicBrowserAccepted": false,
   "allPracticeStagesAndLoadoutsAccepted": false,
-  "completeGame": false
+  "completeGame": false,
+  "followupRetailAudit": {
+    "caseCount": 450,
+    "ordinaryEntryShouldSetPracticeAvailable": true,
+    "currentOrdinaryVisitDoesNotWriteEnteredFlag": true,
+    "ordinaryVisitUnlockCompatibilityAccepted": false,
+    "candidateImplementedNotBrowserAccepted": true,
+    "productionChanged": false
+  }
 }
