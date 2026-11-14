@@ -590,6 +590,8 @@ public:
     i32 laser_collision_count = 0;
     std::function<void(StageBullet&)> bullet_player_collision;
     bool defer_laser_update = false; // RunScene schedules the laser manager at22.
+    // 0x40d1ff 把弹幕管理器登记在 Update 0x17=23（回调 0x40e780），晚于激光 22。
+    bool defer_bullet_update = false;
     StageEnemy* current = nullptr;  // 正在步进的敌机（gvars/commands 用）
     u32 frame = 0;
     float player_x = 192.0f, player_y = 420.0f;  // 契约常量（交互模式每帧覆写）
