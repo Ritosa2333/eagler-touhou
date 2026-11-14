@@ -422,15 +422,29 @@ test('favorite multiplayer rooms sort first, update immediately and retain order
   }
 });
 
-test('all games lists Windows rooms before favorited PC-98 rooms', async () => {
+test('all games puts favorites first and PC-98 last within each priority', async () => {
   const rooms = [room({product:'th03mp', code:'1111', capacity:2, seats:[{initial:'A',online:true},null]}), room({code:'2222'})];
   const f = await fixture({selectedProduct:'', host:{games:['th03','th06']}}).live(rooms);
-  env.window.localStorage.setItem('eagler.book.multiplayer-favorites', '["th03mp"]');
+  const key = 'eagler.book.multiplayer-favorites';
+  const saved = env.window.localStorage.getItem(key);
+  const order = () => all('#roomList .lobby-room-row').map(el => el.dataset.key);
+  async function setFavorites(products) {
+    await React.act(async () => {
+      env.window.localStorage.setItem(key, JSON.stringify(products));
+      env.window.dispatchEvent(new env.window.CustomEvent('eagler-book-preferences'));
+    });
+  }
   try {
+    await setFavorites([]);
     await mountLobby(f);
-    assert.deepEqual(all('#roomList .lobby-room-row').map(el => el.dataset.key), ['th06mp-2222','th03mp-1111']);
+    assert.deepEqual(order(), ['th06mp-2222','th03mp-1111']);
+    await setFavorites(['th03mp']);
+    assert.deepEqual(order(), ['th03mp-1111','th06mp-2222']);
+    await setFavorites(['th03mp','th06mp']);
+    assert.deepEqual(order(), ['th06mp-2222','th03mp-1111']);
   } finally {
-    env.window.localStorage.removeItem('eagler.book.multiplayer-favorites');
+    if (saved === null) env.window.localStorage.removeItem(key);
+    else env.window.localStorage.setItem(key,saved);
   }
 });
 

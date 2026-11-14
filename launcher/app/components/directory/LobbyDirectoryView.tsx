@@ -60,8 +60,8 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows =
   const allGames = !surface.productFilters?.length && !surface.viewingProduct && !snapshot.selectedProduct;
   const oldGame = (room: DirectoryRoom) => multiplayerGroup({gameId: gameIdForProduct(room.product)}) === 'pc98';
   const filtered = filterDirectoryRooms(filteredRooms, roomFilter).sort((a, b) =>
-    (allGames ? Number(oldGame(a)) - Number(oldGame(b)) : 0) ||
-    Number(favorites.includes(b.product)) - Number(favorites.includes(a.product)));
+    Number(favorites.includes(b.product)) - Number(favorites.includes(a.product)) ||
+    (allGames ? Number(oldGame(a)) - Number(oldGame(b)) : 0));
   const th09Rooms = filtered.filter(room => room.product === 'th09mp');
   const {players, mine, cards} = useTh09Ratings(surface.interactive !== false && th09Rooms.length > 0,
     th09Rooms.flatMap(room => room.seats.map(seat => seat?.profile?.username)));
