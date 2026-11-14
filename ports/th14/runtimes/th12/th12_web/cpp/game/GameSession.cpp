@@ -1187,6 +1187,9 @@ bool GameSession::update(const GameSessionInput& input) {
         edges.dialogue_skip_frames=game_input.held_frames[9];
         edges.dialogue_fire_frames=game_input.held_frames[0];
 #endif
+#if PORT_TITLE == 14
+        battle->practice_key_sample=practice_key_sample;
+#endif
         battle->set_input(edges);return true;
         }
 #if PORT_TITLE == 14

@@ -8190,5 +8190,276 @@
       "browser-download.json": "b209ec8de293e4103b1c29ffceddc6484f7fa23c4d257627c968444867a81eee"
     },
     "publicRawReplayIncluded": false
+  },
+  "effectiveKeyMonitorNov15": {
+    "schema": "th14/effective-key-monitor/1",
+    "passed": true,
+    "sourceParent": "f64207e05ac73cd82e7a5086f7a7aea544232ed9",
+    "sourceFiles": {
+      "runtimes/th12/th12_web/cpp/game/GameSession.hpp": {
+        "before": "495f7a54f77e9f2c3f2b0ac59ab1cb33014a0f78a81f746aa436e75a65028de9",
+        "after": "451af274da133bf61b6385ae2dde8affcbd331409c8fcb9a56288c734093135e"
+      },
+      "runtimes/th12/th12_web/cpp/game/GameSession.cpp": {
+        "before": "f50634ec0fafb86b1d2ce581d71ba8c1a6a974b495d4fa87a53f59b9661cd7e5",
+        "after": "d738474d88f168b2a415de3d25aa3adaa573ab7c64bd9c587cfb9f39db0bda93"
+      },
+      "runtimes/th12/th12_web/cpp/game/GameBattle.hpp": {
+        "before": "8fe764e06e4d7162f4f542d7a17685b8209a3007d04ed95a3b89666b656da99d",
+        "after": "09a2e88c2a70abd00415b8e58bcd40683f2ba3f0bcc58d32534864456938fc2d"
+      },
+      "runtimes/th12/th12_web/cpp/game/GameBattle.cpp": {
+        "before": "51bbea2903bd99b9e571aca9cd09c99c787b5741183ae95390d52aeb7678dc71",
+        "after": "9a2e4950b1a837859d7a1940bf060d56512597d03a6f93f5d5c10840f367ed23"
+      },
+      "runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp": {
+        "before": "b292316272732e213c07e281ea177fcc3c9924eb36f7c12d6716c62f67561c2b",
+        "after": "6c810fa1b46261b255f65a272f2a68c3682339fb70f0498c6cc3f5a6c9f0b156"
+      }
+    },
+    "wasm": "53a4ac1c1af9ce4866b17fd56275dfe749084bb1ac5a05efa34f5be981ff4856",
+    "generation": "2d5f9f8bc9bf50a171c9f0f8d9f16558db9b3100e26536840d1ea6be331beba9",
+    "sourceBindings": 387,
+    "commonBindings": 25,
+    "compilerDependencyUnits": 153,
+    "unitsRecompiled": 4,
+    "objectsVerifiedReused": 149,
+    "runtimeFiles": 32,
+    "component": {
+      "passed": true,
+      "candidateCases": 12,
+      "baselineRejected": 8,
+      "unchangedControls": 4,
+      "actualAuthoredCppSamplerAndHookFragments": true,
+      "realSharedKeyMonitorAlgorithm": true,
+      "sessionAndPlayerStandIns": true,
+      "fullGameSessionAccepted": false,
+      "diagnosticObserverPreserved": true,
+      "lockTimerControlsUnchanged": true,
+      "browserAccepted": false,
+      "productionChanged": false,
+      "completeGame": false,
+      "results": [
+        {
+          "name": "ordinary unchanged",
+          "baseline": true,
+          "lockFrames": 0,
+          "candidate": true
+        },
+        {
+          "name": "auto shoot effective",
+          "baseline": false,
+          "lockFrames": 0,
+          "candidate": true
+        },
+        {
+          "name": "force focus effective",
+          "baseline": false,
+          "lockFrames": 0,
+          "candidate": true
+        },
+        {
+          "name": "native replay effective",
+          "baseline": false,
+          "lockFrames": 0,
+          "candidate": true
+        },
+        {
+          "name": "hosted replay effective",
+          "baseline": false,
+          "lockFrames": 0,
+          "candidate": true
+        },
+        {
+          "name": "player absent",
+          "baseline": false,
+          "lockFrames": 0,
+          "candidate": true
+        },
+        {
+          "name": "player callback disabled",
+          "baseline": false,
+          "lockFrames": 0,
+          "candidate": true
+        },
+        {
+          "name": "paused no player update",
+          "baseline": true,
+          "lockFrames": 0,
+          "candidate": true
+        },
+        {
+          "name": "practice disabled",
+          "baseline": true,
+          "lockFrames": 0,
+          "candidate": true
+        },
+        {
+          "name": "monitor disabled",
+          "baseline": true,
+          "lockFrames": 0,
+          "candidate": true
+        },
+        {
+          "name": "lock timer unchanged",
+          "baseline": false,
+          "lockFrames": 96,
+          "candidate": true
+        },
+        {
+          "name": "captured input actual updates",
+          "baseline": false,
+          "lockFrames": 0,
+          "candidate": true
+        }
+      ],
+      "moduleHashes": {
+        "baseline": "a3e62312a8ca2bdb277ece97be8673ca9e117b36b4439f69dbf5035035e34ce1",
+        "candidate": "6a5b02ef657110848462ee150b4b85326e273d4554a8202c853dbe25b5e64ca6"
+      }
+    },
+    "actualNativeReplayCsv": {
+      "passed": true,
+      "csvBytes": 58478,
+      "sha256": "f7353d22a9408e7026cf97de33914ad4ed3f574ae35b908b5d8370ada30b07ca",
+      "dataRows": 2202,
+      "stage": 1,
+      "declaredInputStartIndex": 0,
+      "originalFileSha256": "aec3b3045be9a0ddd4e7e4005182a9561e97f9d3f66f7f93a81397a1b614ec92",
+      "originalCodecVerified": true,
+      "keysMismatchCount": 0,
+      "firstKeysMismatches": [],
+      "apsMismatchCount": 0,
+      "firstApsMismatches": [],
+      "nonzeroKeyRows": 1922,
+      "maxAps": 14,
+      "pressedRows": {
+        "up": 314,
+        "down": 290,
+        "left": 377,
+        "right": 381,
+        "Z": 1433,
+        "X": 0,
+        "C": 0,
+        "D": 0,
+        "Ctrl": 0,
+        "Shift": 154
+      },
+      "rawCsvAndReplayRemainPrivate": true,
+      "productionChanged": false,
+      "completeGame": false
+    },
+    "actualNativePause": {
+      "passed": true,
+      "bothDownloadedFilesIdentical": true,
+      "bytes": 58478,
+      "sha256": "f7353d22a9408e7026cf97de33914ad4ed3f574ae35b908b5d8370ada30b07ca",
+      "rows": 2202,
+      "recordingActiveBetweenTwoPauseExports": true,
+      "productionChanged": false
+    },
+    "actualHostedReplayCsv": {
+      "passed": true,
+      "csvBytes": 23468,
+      "sha256": "0c5ee43fbadbaa8e1a01fee3e1c3ca82acf77a46eb630477af766c8ae3614c0a",
+      "dataRows": 903,
+      "stage": 1,
+      "declaredInputStartIndex": 455,
+      "originalFileSha256": "aec3b3045be9a0ddd4e7e4005182a9561e97f9d3f66f7f93a81397a1b614ec92",
+      "originalCodecVerified": true,
+      "keysMismatchCount": 0,
+      "firstKeysMismatches": [],
+      "apsMismatchCount": 0,
+      "firstApsMismatches": [],
+      "nonzeroKeyRows": 782,
+      "maxAps": 14,
+      "pressedRows": {
+        "up": 111,
+        "down": 134,
+        "left": 171,
+        "right": 197,
+        "Z": 542,
+        "X": 0,
+        "C": 0,
+        "D": 0,
+        "Ctrl": 0,
+        "Shift": 131
+      },
+      "rawCsvAndReplayRemainPrivate": true,
+      "productionChanged": false,
+      "completeGame": false
+    },
+    "hostedFrameRange": {
+      "start": 455,
+      "end": 1358,
+      "rowsEqualFrameDelta": true,
+      "liveRightLeftShiftZDeliveredDuringPlayback": true
+    },
+    "actualOrdinaryBlockedZ": {
+      "passed": true,
+      "dataRows": 138,
+      "csvBytes": 3528,
+      "sha256": "da39e4b6a896c1fac6f26db110b392572bd5b65932cd3f02bcfd6993b4ab732f",
+      "mode": "ordinary Normal Reimu A",
+      "disableZChecked": true,
+      "explicitZHoldMs": 800,
+      "allRecordedZRowsZero": true,
+      "movementAndFocusNonzero": true,
+      "pressedRows": {
+        "up": 0,
+        "down": 0,
+        "left": 48,
+        "right": 4,
+        "Z": 0,
+        "X": 0,
+        "C": 0,
+        "D": 0,
+        "Ctrl": 0,
+        "Shift": 31
+      },
+      "apsMismatches": 0,
+      "initialUnrecordedRunNaturallyGameOver": true,
+      "completeStageAccepted": false,
+      "rawCsvPrivate": true,
+      "productionChanged": false,
+      "completeGame": false
+    },
+    "reference": {
+      "schema": "th14/key-monitor-input-audit/1",
+      "sourceRepository": "RUEEE/thprac",
+      "th14SourceBlob": "ad0c277ff946c8e4df8356885714fa54440a00fc",
+      "referenceSampleHook": "0x44dbd0",
+      "referenceInputGlobal": "0x4d6a90",
+      "referenceCallIsNotReplayGated": true,
+      "originalExeSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+      "originalReplayReaderLoadsWordIntoSameGlobal": "0x455245..0x455247",
+      "directOriginalGlobalReferences": 19,
+      "privateDisassemblySha256": "53f9bf609f26fe3971c03d7cc9c8b892d8845f36d29f80a6c10c83a802cd22ed",
+      "currentSdlSamplesPhysicalHeldBeforeSessionUpdate": true,
+      "currentHostedReplayReturnsBeforeMonitorSampling": true,
+      "currentSessionSelectsEffectiveInputAfterThatSample": true,
+      "candidateImplementationAccepted": true,
+      "runtimeCallOrderIndependentlyObserved": false,
+      "nextAction": "Integrate monitor sampling at actual player update after effective replay/practice input selection; preserve lock timer semantics; test ordinary, replay, pause and captured-input controls. Existing before_player_update hook needs path coverage audit before use.",
+      "productionChanged": false,
+      "completeGame": false
+    },
+    "audio": {
+      "music": 0,
+      "sfx": 0,
+      "selectedMode": "none"
+    },
+    "knownGlyphGap": "Direction arrows and Greek key symbols render as question marks; TH14 font atlas glyph range still needs correction.",
+    "rawCsvReplayAndScreenshotsPublic": false,
+    "completeStageAccepted": false,
+    "fullReplayAccepted": false,
+    "browserAllModesAccepted": false,
+    "productionChanged": false,
+    "completeGame": false,
+    "localProofHashes": {
+      "browser-native-recording.png": "5ac28c8c246e872821ee973b2ed5246ecf376d05b09f2a905cd247c227dcd3c0",
+      "browser-hosted-recording.png": "8f32d9f365803f171faea7c1a66c0c4ecdaa7bd41df2cffee2092a0b39e227cc",
+      "browser-blocked-z.png": "b78348a71db8194ebb6c1dbd69f00540287f9b320775872c68fa963867110dd9"
+    }
   }
 }
