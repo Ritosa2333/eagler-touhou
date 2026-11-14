@@ -34,7 +34,7 @@ export function validateMultiplayerOptions(options = {}) {
   const seat = spectator ? 0 : options.netplayPlayer;
   // TH13 没有 Adonis：adonisMode 1 = 纯延迟（wire mode 1），其余 = 回滚（wire mode 2）。
   const mode = options.netplayAdonisMode === ADONIS_MODE_DELAY ? WIRE_MODE_DELAY : WIRE_MODE_ROLLBACK;
-  const delay = options.netplayInputDelay ?? 2;
+  const delay = options.netplayInputDelay ?? (mode === WIRE_MODE_DELAY ? 2 : 0);
   const automatic = options.netplayInputDelayAuto ?? false;
   const reserve = options.netplayPredictionReserve ?? 2;
   if (!['ws:', 'wss:'].includes(url.protocol) || url.username || url.password || url.hash ||

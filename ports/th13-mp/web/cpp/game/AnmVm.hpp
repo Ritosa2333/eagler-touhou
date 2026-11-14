@@ -38,7 +38,6 @@ class AnmVm {
 public:
     // One-based owner of a shot or shooting effect. Zero is unowned.
     u8 shot_effect_owner = 0;
-    bool hide_hit_projectile = false;
     inline static u64 presentation_counter=0;
     u64 presentation_generation=++presentation_counter;bool presentation_motion=false;u32 presentation_part=0;
     AnmVariables variables;AnmVisualState visual;AnmInterpolators interpolators;Timer timer,age;i32 instruction_offset=-1;bool visible=false;
@@ -80,7 +79,7 @@ public:
     AnmVm& operator=(const AnmVm& other){
         if(this==&other)return *this;
         script=other.script;saved_offset=other.saved_offset;saved_timer=other.saved_timer;
-        shot_effect_owner=other.shot_effect_owner;hide_hit_projectile=other.hide_hit_projectile;
+        shot_effect_owner=other.shot_effect_owner;
         presentation_generation=other.presentation_generation;presentation_motion=other.presentation_motion;presentation_part=other.presentation_part;
         variables=other.variables;visual=other.visual;interpolators=other.interpolators;timer=other.timer;age=other.age;
         instruction_offset=other.instruction_offset;visible=other.visible;pending_interrupt=other.pending_interrupt;slowdown=other.slowdown;

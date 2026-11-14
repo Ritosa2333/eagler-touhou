@@ -530,4 +530,87 @@ TEST(post_chain_geometry_failure_forwards_the_presentation_error) {
           std::string::npos);
 }
 
+// 没有上一帧四角时，中心已经离开 script<0 那只盒子的 SHT 弹必须退休。
+// 龄门与四角相同：步进前 age==9 留下，age==10 出界后退休。
+TEST(missing_quad_retires_only_after_the_quad_age_gate) {
+    for (i32 age : {9, 10}) {
+        Fixture fixture;
+        CHECK(fixture.init());
+        auto shot = Fixture::shot(91, age);
+        shot.y = -40;
+        fixture.battle.shots.push_back(shot);
+        CHECK(fixture.battle.step(fixture.idle));
+        CHECK_EQ(fixture.battle.shots.size(), age == 9 ? size_t(1) : size_t(0));
+    }
+}
+
+TEST(missing_quad_retires_each_center_bound_and_keeps_the_interior) {
+    const float outside[][2] = {{-230.f, 200.f}, {230.f, 200.f}, {0.f, -40.f}, {0.f, 490.f}};
+    for (const auto& point : outside) {
+        Fixture fixture;
+        CHECK(fixture.init());
+        auto shot = Fixture::shot(92, 10);
+        shot.x = point[0];
+        shot.y = point[1];
+        fixture.battle.shots.push_back(shot);
+        CHECK(fixture.battle.step(fixture.idle));
+        CHECK(fixture.battle.shots.empty());
+    }
+    Fixture fixture;
+    CHECK(fixture.init());
+    auto shot = Fixture::shot(93, 10);
+    shot.x = 180;
+    shot.y = 400;
+    fixture.battle.shots.push_back(shot);
+    CHECK(fixture.battle.step(fixture.idle));
+    CHECK_EQ(fixture.battle.shots.size(), size_t(1));
+}
+
+// 中心已出盒，但匹配到的四角仍有一角在场内：零售保留，兜底不得覆盖。
+TEST(center_bound_does_not_override_a_matching_inside_quad) {
+    Fixture fixture;
+    CHECK(fixture.init());
+    auto shot = Fixture::shot(94, 10);
+    shot.x = 230;
+    fixture.battle.shots.push_back(shot);
+    fixture.snapshot(0, {{{128.f, 200.f, 0}, {512.f, 200.f, 0},
+                          {200.f, 16.f, 0}, {200.f, 463.75f, 0}}});
+    CHECK(fixture.battle.step(fixture.idle));
+    CHECK_EQ(fixture.battle.shots.size(), size_t(1));
+}
+
+// 连续射击、不提供任何四角快照：飞出中心盒的弹必须离开向量。
+// 修前这一路径一发不删，120 帧后向量与出膛数同阶。
+TEST(sustained_fire_without_quads_stays_bounded) {
+    Fixture fixture;
+    CHECK(fixture.init());
+    ShtShotRecord record;
+    record.interval = 1;
+    record.phase = 0;
+    record.script = 10;
+    record.angle = -1.5707964f;
+    record.speed = 24;
+    record.damage = 1;
+    record.width = 8;
+    record.height = 8;
+    fixture.battle.sht_shots_loaded = true;
+    fixture.battle.sht_shots[0].push_back(record);
+    GameInput fire;
+    fire.update(1);
+    for (int frame = 0; frame < 120; ++frame) CHECK(fixture.battle.step(fire));
+    CHECK(fixture.battle.shots.size() > 0u);
+    CHECK(fixture.battle.shots.size() < 40u);
+}
+
+TEST(center_bound_does_not_retire_a_beam) {
+    Fixture fixture;
+    CHECK(fixture.init());
+    auto shot = Fixture::shot(95, 10);
+    shot.type = 2;
+    shot.y = -40;
+    fixture.battle.shots.push_back(shot);
+    CHECK(fixture.battle.step(fixture.idle));
+    CHECK_EQ(fixture.battle.shots.size(), size_t(1));
+}
+
 int main() { return th13test::run_all("player shot culling and ANM identity"); }

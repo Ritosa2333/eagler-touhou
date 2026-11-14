@@ -329,4 +329,32 @@ TEST(next_stage_activation_resets_frame_and_loads_stage_two_assets) {
     }
 }
 
+// 0x42c550 activation destroys the outgoing scene while the shared scheduler
+// keeps running. Every node it registered (Update 20/22/23/24/25/28, draw
+// passes) must leave the chain: its storage is reused immediately by the
+// next stage's allocations, so a stale node is a walk through garbage.
+TEST(next_stage_activation_unlinks_every_outgoing_scene_callback) {
+    TransitionHarness h;
+    h.register_animation_updates();
+    h.progress.stage = 2;
+    h.progress.stage_frame = 11975;
+    CHECK(h.scene->prepare_transition(26, "st02.std"));
+    h.progress.stage_frame = 0;
+    h.progress.scene_flags = 0;
+    h.progress.rate = 1;
+    StagePresentation::Banks banks{4, 5, 6};
+    auto next = std::make_unique<RunScene>(h.progress, h.player, h.score, h.manager,
+                                           h.renderer, h.environment, h.host, h.scheduler,
+                                           banks, 3, 2, 7, "st02.std");
+    next->preserve_presentation_from(*h.scene);
+    RunScene* outgoing = h.scene.release();
+    outgoing->~RunScene();
+    std::memset(static_cast<void*>(outgoing), 0xa5, sizeof(RunScene));
+    CHECK(next->initialize());
+    for (int tick = 0; tick < 4; ++tick) CHECK(h.scheduler.update() >= 0);
+    CHECK(h.scheduler.draw() >= 0);
+    next.reset();
+    ::operator delete(static_cast<void*>(outgoing));
+}
+
 int main() { return th13test::run_all("跨关过渡生命周期"); }

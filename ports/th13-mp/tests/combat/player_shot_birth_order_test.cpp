@@ -783,4 +783,60 @@ TEST(retail4471b7_beam_termination_keeps_stale_slot_for_retirement) {
     CHECK_EQ(new_reg.flags & 1u, 0u);
 }
 
+// Two seats firing together fill the 256-slot damage table. The native
+// allocator hands back one past the end; indexing that pointer is the
+// Wasm trap "memory access out of bounds". Reuse must stay inside 0..255.
+TEST(full_damage_pool_reuses_a_slot_inside_the_table) {
+    Fixture f; CHECK(f.init());
+    for (int i = 0; i < 19; ++i) CHECK(f.battle.step(f.idle));
+    for (i32 i = 0; i < 256; ++i) {
+        auto& area = f.battle.damage_registrations[size_t(i)];
+        area = DamageRegistration{};
+        area.active = true;
+        area.flags = 1;
+        area.owner = DamageRegistration::Owner::Area;
+        area.center_x = area.center_y = -100000.f;
+    }
+    f.battle.damage_registration_cursor = 17;
+    ShtShotRecord record;
+    record.interval = 255;
+    record.phase = 0;
+    record.angle = 0;
+    record.speed = 0;
+    record.damage = 10;
+    record.width = record.height = 16;
+    f.battle.sht_shots_loaded = true;
+    f.battle.sht_shots[0].push_back(record);
+    GameInput fire;
+    fire.update(1);
+    CHECK(f.battle.step(fire));
+    bool found = false;
+    for (const auto& shot : f.battle.shots) {
+        if (!shot.alive || shot.state != 1) continue;
+        CHECK(shot.registration_slot >= 0);
+        CHECK(shot.registration_slot < 256);
+        CHECK_EQ(shot.registration_slot, 17);
+        found = true;
+    }
+    CHECK(found);
+    CHECK(f.battle.damage_registrations[17].active);
+}
+
+// registration_slot defaults to -1. Indexing that as size_t is a Wasm trap
+// the moment the respawn aura is marked active.
+TEST(respawn_damage_with_a_stale_slot_does_not_index_past_the_table) {
+    Fixture f; CHECK(f.init());
+    f.battle.respawn_damage.active = true;
+    f.battle.respawn_damage.registration_slot = -1;
+    f.battle.respawn_damage.center = {1234.f, 5678.f, 9.f};
+    f.battle.respawn_damage.radius = 42.f;
+    CHECK(f.battle.step(f.idle));
+    CHECK(!f.battle.respawn_damage.active);
+    // Indexing slot -1 reads off the table and copies that word back.
+    // A rejected slot leaves the aura where the caller put it, then clears it.
+    CHECK_EQ(f.battle.respawn_damage.center.x, 1234.f);
+    CHECK_EQ(f.battle.respawn_damage.center.y, 5678.f);
+    CHECK_EQ(f.battle.respawn_damage.radius, 42.f);
+}
+
 int main() { return th13test::run_all("player shot birth order"); }

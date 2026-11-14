@@ -15,7 +15,7 @@ namespace th13::multiplayer {
 #include "WorldDigestValues.hpp"
 namespace th13::multiplayer {
 void DigestSink::vm(const AnmVm& v) {
-    digest_value(*this,std::tie(v.shot_effect_owner,v.hide_hit_projectile,v.presentation_motion,v.presentation_part,
+    digest_value(*this,std::tie(v.shot_effect_owner,v.presentation_motion,v.presentation_part,
         v.variables,v.visual,v.interpolators,v.timer,v.age,v.instruction_offset,v.visible,
         v.pending_interrupt,v.geometry,v.slowdown,v.source_script,v.ordering,v.saved_offset,v.saved_timer));
     tag("anm.bindings");
@@ -986,7 +986,22 @@ std::string WorldState::diagnostic_detail() const {
     std::apply([&](const auto&... fields) {
         (write("scene", index++, fields), ...);
     }, state_fields(scene_state_));
-    return std::string(buf, pos);
+    std::string out(buf, pos);
+    for (size_t seat = 0; seat < battle_.seats.size() && seat < size_t(battle_.seat_count); ++seat) {
+        const auto& player = battle_.seats[seat];
+        char line[160];
+        std::snprintf(line, sizeof line, "| s%zu n=%zu ", seat, player.shots.size());
+        out += line;
+        for (size_t slot = 0; slot < player.shots.size(); ++slot) {
+            const auto& shot = player.shots[slot];
+            const bool geometry = slot < player.shot_geometry.size() && player.shot_geometry[slot].valid;
+            std::snprintf(line, sizeof line, "%zu:%u:%d:%d:%d%d%d:%g,%g ", slot, shot.generation,
+                          shot.age, shot.state, shot.alive ? 1 : 0, shot.animation_finished ? 1 : 0,
+                          geometry ? 1 : 0, double(shot.x), double(shot.y));
+            out += line;
+        }
+    }
+    return out;
 }
 
 

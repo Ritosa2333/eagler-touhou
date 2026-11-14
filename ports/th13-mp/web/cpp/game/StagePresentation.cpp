@@ -544,7 +544,7 @@ bool StagePresentation::restore_presentation(const SnapshotData& source,
         auto& fade = shot_fades_[i];
         fade.handle = data.handle;
         fade.generation = data.generation;
-        fade.x = data.x; fade.y = data.y; fade.angle = fade.angle;
+        fade.x = data.x; fade.y = data.y; fade.angle = data.angle;
         fade.drift = data.drift; fade.sine_moving = data.sine_moving;
         fade.sine_motion = data.sine_motion;
         fade.age = data.age;
@@ -2219,10 +2219,8 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
             // （th13_udMy25 5521-5530 链 dump：原生子 5521 起收缩 t16 自灭，
             // port 子 5522 回绕 t=1）。脚本无 label 的普通弹净效果不变
             // （interrupt 扫描失败即清除 pending），旧回退路径保持直写。
-            // MP hides the spent projectile at impact. Its ANM still ticks
-            // for normal cleanup and separate effects. Beams use state 2 for
-            // their shutdown animation; piercing shots stay in state 1.
-            vm->hide_hit_projectile = multi_shots && shot.state == 2 && shot.behavior != 2;
+            // Label 1 is the impact spark (pl00 script14: alpha 192 → 0) and
+            // draws like single-player; the spent VM is never hidden.
             if (shot.state == 2 && insert_fade_key(fade_key(shot.generation))) {
                 // 446bf0, once per hit generation.
                 if (shot.script >= 0) {

@@ -359,7 +359,7 @@ bool Session::CanSimulate() {
         if (!record.has_snapshot) {
             record.wire_digest = state->digest_core();
             state->digest_domains(record.domains.data(), record.domains.size());
-            if (record.has_wire_digest) record.detail = state->diagnostic_detail();
+            if (record.has_wire_digest || record.audited) record.detail = state->diagnostic_detail();
             if (record.audited) record.full_digest = state->digest();
         }
         if (record.audited) {
@@ -474,7 +474,8 @@ void Session::Commit() {
         if (record.has_snapshot && (record.audited || record.has_wire_digest)) {
             record.wire_digest = record.snapshot.digest_core();
             record.snapshot.digest_domains(record.domains.data(), record.domains.size());
-            if (record.has_wire_digest) record.detail = record.snapshot.diagnostic_detail();
+            if (record.has_wire_digest || record.audited)
+                record.detail = record.snapshot.diagnostic_detail();
             if (record.audited) record.full_digest = record.snapshot.digest();
         }
         for (const auto& observation : record.audio) {
@@ -512,7 +513,8 @@ void Session::Commit() {
                 << "\",\"full\":\"" << record.full_digest
                 << "\",\"host\":\"" << record.host_digest << std::dec
                 << "\",\"hostDetail\":\"" << record.host_detail
-                << "\",\"domains\":\"" << record.domains.data() << "\",\"inputs\":[";
+                << "\",\"domains\":\"" << record.domains.data()
+                << "\",\"detail\":\"" << record.detail << "\",\"inputs\":[";
             for (unsigned seat = 0; seat < PlayerCount(); ++seat) {
                 if (seat) row << ',';
                 row << record.inputs[seat].buttons;

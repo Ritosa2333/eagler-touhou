@@ -307,6 +307,7 @@ RunScene::~RunScene() {
     battle.sim.enemy_animation_interrupt = {};
     battle.sim.flush_anm_slots = {};
     scheduler.remove(laser_update);
+    scheduler.remove(bullet_update);
     scheduler.remove(scenery_update);
     // 0x42efb0 @ Update 24 / 0x438e70 @ Update 25 的 port 回调随场景析构
     // 一并摘链（与 laser_update/scenery_update 同契约）。漏摘会让共享
