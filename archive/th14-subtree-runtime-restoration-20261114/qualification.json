@@ -169,7 +169,7 @@
       "endFrame": 34783,
       "endScore": 82434130
     },
-    "currentNormal85ComparisonPending": true,
+    "currentNormal85ComparisonPending": false,
     "uiThpracToggleDoesNotExplainObservedDifference": true,
     "gameplayDivergenceCauseEstablished": false,
     "consoleScope": "up to 8 warnings/errors after second case; observed empty",
@@ -221,6 +221,100 @@
     },
     "fullReplayAlignmentAccepted": false,
     "fullGpuCampaignAccepted": false,
+    "productionChanged": false,
+    "completeGame": false,
+    "currentNormal85Comparison": {
+      "schema": "th14/current-normal-browser-comparison/1",
+      "acceptanceStandard": "observable-behavior-alignment",
+      "normalCore": "85a60542924834aaa8e8ddda00d52e80b44ef686",
+      "generation": "fd54b8473646f6cbd1b10017594fb003dc69c7013f13c5383c5bc8b56c77b341",
+      "wasmSha256": "afed096d2403cb387c4d2094198198e5e0c5ec6f6714a7ec0fdb3958dc89ae40",
+      "url": "http://localhost:8226/?game=th14",
+      "browserTab": "25",
+      "actualNormalRuntimeUrlObserved": true,
+      "sameFrontend": true,
+      "fromStage": 1,
+      "playbackRate": 8,
+      "musicVolume": 0,
+      "sfxVolume": 0,
+      "musicMode": "ogg-stream",
+      "inputSha256": "aec3b3045be9a0ddd4e7e4005182a9561e97f9d3f66f7f93a81397a1b614ec92",
+      "inputBytes": 81793,
+      "endFrame": 32637,
+      "endScore": 73218790,
+      "endedStage": 3,
+      "matchesOptionalOnAndOffTerminal": true,
+      "priorCore": "c407a1693cce55fa9f4ffea6f687ea2ac61c137e",
+      "priorEndFrame": 34783,
+      "priorEndScore": 82434130,
+      "sourceComparison": {
+        "base": "c407a1693cce55fa9f4ffea6f687ea2ac61c137e",
+        "head": "85a60542924834aaa8e8ddda00d52e80b44ef686",
+        "aheadBy": 6,
+        "changedFiles": 56,
+        "productionRuntimeFiles": [
+          {
+            "path": "runtimes/th12/th12_web/cpp/game/ShotCallbacksTh14.cpp",
+            "changes": 10,
+            "patch": "@@ -105,7 +105,15 @@ bool shot_th14_beam_hit(ShotState& shot,ShotPlayer& player,Th14DamageArea& area,\n         if(r==0)return false;\r\n         if(std::abs(y)>r||x<-r||(x<0&&x*x+y*y>r*r)){\r\n             const u32 bits=NativeStackTh14::fallback_bits(player.th14_native_stack->beam_fallback_scratch());\r\n-            std::memcpy(&shot.th14_beam_length,&bits,4);\r\n+            float fallback;std::memcpy(&fallback,&bits,4);\n+            // The growth branch admits at most 512+18 units. A stale Win32\n+            // temporary can instead contain an ANM handle or a NaN; treating\n+            // it as geometry poisons later hit queries and depends on drawing.\n+            // Keep the last bounded length when that fallback is not physical.\n+            constexpr float maximum_length=512.f+18.f;\n+            if(!std::isfinite(fallback)||fallback>maximum_length)\n+                fallback=std::isfinite(shot.th14_beam_length)?std::clamp(shot.th14_beam_length,0.f,maximum_length):0.f;\n+            shot.th14_beam_length=fallback;\r\n         }else{\r\n             const float t=y/r;shot.th14_beam_length=std::max(0.f,x-float(std::sqrt(double(1.f-t*t)))*r+8.f);\r\n         }\r"
+          }
+        ]
+      },
+      "screenshot": {
+        "path": "artifacts/th14/current-concurrent-mixer-nov14/normal-comparison/current-normal-end.jpg",
+        "bytes": 107669,
+        "sha256": "0670570c667ef341083ec164907b7bf9f28f8eb6e965fcd1d260d10298456ffa"
+      },
+      "wholeRunGuardCausalityEstablished": false,
+      "fullReplayAlignmentAccepted": false,
+      "productionChanged": false,
+      "completeGame": false
+    }
+  },
+  "currentNormalBrowserComparison": {
+    "schema": "th14/current-normal-browser-comparison/1",
+    "acceptanceStandard": "observable-behavior-alignment",
+    "normalCore": "85a60542924834aaa8e8ddda00d52e80b44ef686",
+    "generation": "fd54b8473646f6cbd1b10017594fb003dc69c7013f13c5383c5bc8b56c77b341",
+    "wasmSha256": "afed096d2403cb387c4d2094198198e5e0c5ec6f6714a7ec0fdb3958dc89ae40",
+    "url": "http://localhost:8226/?game=th14",
+    "browserTab": "25",
+    "actualNormalRuntimeUrlObserved": true,
+    "sameFrontend": true,
+    "fromStage": 1,
+    "playbackRate": 8,
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "musicMode": "ogg-stream",
+    "inputSha256": "aec3b3045be9a0ddd4e7e4005182a9561e97f9d3f66f7f93a81397a1b614ec92",
+    "inputBytes": 81793,
+    "endFrame": 32637,
+    "endScore": 73218790,
+    "endedStage": 3,
+    "matchesOptionalOnAndOffTerminal": true,
+    "priorCore": "c407a1693cce55fa9f4ffea6f687ea2ac61c137e",
+    "priorEndFrame": 34783,
+    "priorEndScore": 82434130,
+    "sourceComparison": {
+      "base": "c407a1693cce55fa9f4ffea6f687ea2ac61c137e",
+      "head": "85a60542924834aaa8e8ddda00d52e80b44ef686",
+      "aheadBy": 6,
+      "changedFiles": 56,
+      "productionRuntimeFiles": [
+        {
+          "path": "runtimes/th12/th12_web/cpp/game/ShotCallbacksTh14.cpp",
+          "changes": 10,
+          "patch": "@@ -105,7 +105,15 @@ bool shot_th14_beam_hit(ShotState& shot,ShotPlayer& player,Th14DamageArea& area,\n         if(r==0)return false;\r\n         if(std::abs(y)>r||x<-r||(x<0&&x*x+y*y>r*r)){\r\n             const u32 bits=NativeStackTh14::fallback_bits(player.th14_native_stack->beam_fallback_scratch());\r\n-            std::memcpy(&shot.th14_beam_length,&bits,4);\r\n+            float fallback;std::memcpy(&fallback,&bits,4);\n+            // The growth branch admits at most 512+18 units. A stale Win32\n+            // temporary can instead contain an ANM handle or a NaN; treating\n+            // it as geometry poisons later hit queries and depends on drawing.\n+            // Keep the last bounded length when that fallback is not physical.\n+            constexpr float maximum_length=512.f+18.f;\n+            if(!std::isfinite(fallback)||fallback>maximum_length)\n+                fallback=std::isfinite(shot.th14_beam_length)?std::clamp(shot.th14_beam_length,0.f,maximum_length):0.f;\n+            shot.th14_beam_length=fallback;\r\n         }else{\r\n             const float t=y/r;shot.th14_beam_length=std::max(0.f,x-float(std::sqrt(double(1.f-t*t)))*r+8.f);\r\n         }\r"
+        }
+      ]
+    },
+    "screenshot": {
+      "path": "artifacts/th14/current-concurrent-mixer-nov14/normal-comparison/current-normal-end.jpg",
+      "bytes": 107669,
+      "sha256": "0670570c667ef341083ec164907b7bf9f28f8eb6e965fcd1d260d10298456ffa"
+    },
+    "wholeRunGuardCausalityEstablished": false,
+    "fullReplayAlignmentAccepted": false,
     "productionChanged": false,
     "completeGame": false
   }

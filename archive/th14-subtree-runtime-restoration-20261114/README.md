@@ -15,3 +15,5 @@
 新包魔理沙 A Easy 同文件在 thprac 开／关时均于 32,637 帧、73,218,790 分提前结束，与旧普通版参考 34,783 帧、82,434,130 分不同。进度显示没有拉满，但播放行为未据此对齐。继续与当前普通版 85 做同环境对照，PR 保持草稿，生产仍为 fd54b847。
 
 静态服务独立检查：`node launcher/scripts/check-static-isolation.mjs launcher/scripts/serve-static.mjs`。完整记录：[THP 新包浏览器复验](https://github.com/AdingApkgg/thp/blob/76cefb6a6816ec021d1b0d15b87e96511aa210eb/docs/porting/TH14_SUBTREE_BROWSER_PREVIEW_NOV14.md)。
+
+当前普通版 85a60542 已在相同前端、相同输入及 8 倍速下复验，第三关终态也是 32,637 帧、73,218,790 分，与整合包 thprac 开／关相同。本次整合不是该差异的必要条件；与旧 c407a169 的播放差异继续保留，唯一生产运行源码变化为异常激光长度保护，未证明完整因果，也未计全部录像通过。目标采用可观察行为级对齐，全部预览静音。
