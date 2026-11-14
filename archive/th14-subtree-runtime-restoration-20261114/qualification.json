@@ -98,5 +98,130 @@
     "sourceAnchorsChecked": 13
   },
   "separateNormalMpProjection": "not applicable: only normal TH14 directory exists",
-  "pr": "https://github.com/Ritosa2333/eagler-touhou/pull/254"
+  "pr": "https://github.com/Ritosa2333/eagler-touhou/pull/254",
+  "staticServerIsolation": {
+    "schema": "th14/static-server-isolation/1",
+    "passed": true,
+    "optInEnvironment": "EAGLER_TOUHOU_CROSS_ORIGIN_ISOLATION=1",
+    "serverSourceSha256": "52c7265e9771f54ba225a0cfc20a21b2a7a745a4c7750fade8e6ce1714d5796b",
+    "positiveHttpCases": 12,
+    "unfixedServerRejected": true,
+    "headers": [
+      "Cross-Origin-Opener-Policy: same-origin",
+      "Cross-Origin-Embedder-Policy: require-corp",
+      "Cross-Origin-Resource-Policy: same-origin"
+    ],
+    "defaultHeaderBehaviorUnchanged": true,
+    "generation": "3f01b5a310e65f6cf62eda77bd1ea4d6642b8884b71564e99194440e91c959a9",
+    "wholeRuntimeResponsesVerified": 32,
+    "wholeRuntimeHashChecksPassed": true,
+    "noTransformPassed": true,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "browserPreview": {
+    "schema": "th14/subtree-browser-preview/1",
+    "acceptanceStandard": "observable-behavior-alignment",
+    "url": "http://localhost:8225/?game=th14",
+    "browserTab": "24",
+    "generation": "3f01b5a310e65f6cf62eda77bd1ea4d6642b8884b71564e99194440e91c959a9",
+    "wasmSha256": "922619d27585e1bdd8e7c4e0e7b1c20832792d2c818018999f75129c532d679a",
+    "actualGenerationObservedInFrameAxUrl": true,
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "musicMode": "ogg-stream",
+    "initialNoMusicLaunchRetained": true,
+    "approvedBackgroundUpdateRestartObserved": true,
+    "titleRendered": true,
+    "ordinaryCase": "Reimu B Normal",
+    "pauseMenuObserved": true,
+    "resumeGameplayObserved": true,
+    "returnToTitleObserved": true,
+    "normalQuitToLauncherObserved": true,
+    "siteVolumesPersistAfterPageReload": true,
+    "explicitOggSelectionPersistAfterPageReload": true,
+    "liveViewerImportObserved": true,
+    "importedReplayVisibleAfterViewerReopen": true,
+    "replayInputSha256": "aec3b3045be9a0ddd4e7e4005182a9561e97f9d3f66f7f93a81397a1b614ec92",
+    "replayInputBytes": 81793,
+    "replayCases": [
+      {
+        "thprac": true,
+        "rate": 8,
+        "fromStage": 1,
+        "endedStage": 3,
+        "endFrame": 32637,
+        "endScore": 73218790,
+        "alignedWithPriorReference": false
+      },
+      {
+        "thprac": false,
+        "rate": 8,
+        "fromStage": 1,
+        "endedStage": 3,
+        "endFrame": 32637,
+        "endScore": 73218790,
+        "alignedWithPriorReference": false
+      }
+    ],
+    "priorReference": {
+      "core": "c407a1693cce55fa9f4ffea6f687ea2ac61c137e",
+      "endFrame": 34783,
+      "endScore": 82434130
+    },
+    "currentNormal85ComparisonPending": true,
+    "uiThpracToggleDoesNotExplainObservedDifference": true,
+    "gameplayDivergenceCauseEstablished": false,
+    "consoleScope": "up to 8 warnings/errors after second case; observed empty",
+    "screenshots": {
+      "current-title.jpg": {
+        "bytes": 295052,
+        "sha256": "2c8ce7221be02dcb18ba177fc125de58c9c6ba51c3525871ea8e1f78ba4ebd07"
+      },
+      "early-replay-ended.jpg": {
+        "bytes": 109669,
+        "sha256": "79dd4418b33a8c3ea227cbcf32f49b561644810739faa43ee0b379822a79819b"
+      },
+      "early-replay-thprac-disabled.jpg": {
+        "bytes": 110572,
+        "sha256": "231ada9a33389cc10e91d3b7d32f117fb3b1b6648e6463844c64d34ce1093e59"
+      },
+      "normal-rank.jpg": {
+        "bytes": 247981,
+        "sha256": "8876d48291bad4b2b5367b2cbc3e369fd44f4f6f69cba291e945be0465d280bd"
+      },
+      "quit-to-launcher.jpg": {
+        "bytes": 53468,
+        "sha256": "cf6462514fbd5004987a1ef397131958be958a613a2cdb823ef2bec53dd4a8d4"
+      },
+      "reimu-b-game-over.jpg": {
+        "bytes": 279676,
+        "sha256": "c3ae911b60599d8cd28239f4d9edc01a55707c645fc6f3243f4d05515b6faf8b"
+      },
+      "reimu-b-paused.jpg": {
+        "bytes": 260474,
+        "sha256": "8da51a2bb1a9002df2d0ff62a67133823b1e6bd6e4703c48eafff68778e4a52e"
+      },
+      "reimu-b-resumed.jpg": {
+        "bytes": 283374,
+        "sha256": "5dc346e3bbcaa79914660b41716f93301ba2ae7aa6372e39db5a8ee31fb1e0bc"
+      },
+      "reimu-b-weapon.jpg": {
+        "bytes": 261532,
+        "sha256": "2a98ee732bd2931b67a76805fd3b33319c2e4d83ac44bd6269da6a15b152ae59"
+      },
+      "returned-title.jpg": {
+        "bytes": 298415,
+        "sha256": "b2fbc18c236137dabf22609eacc98231928aa6ae618eed0d65cfd6867c2232c6"
+      },
+      "settings-persisted.jpg": {
+        "bytes": 53491,
+        "sha256": "131702546845c227ae3cc39fa7f35eec433b4493ab5dc21cbc76f7347bb9d6f4"
+      }
+    },
+    "fullReplayAlignmentAccepted": false,
+    "fullGpuCampaignAccepted": false,
+    "productionChanged": false,
+    "completeGame": false
+  }
 }

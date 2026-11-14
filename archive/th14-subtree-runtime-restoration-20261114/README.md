@@ -9,3 +9,9 @@
 [机器记录](qualification.json)。
 
 整包：153 个单元完成编译链接，24 个公共库文件与当前上游对齐，18 个运行文件／387 个源码绑定通过校验，打包后控制器四例与 shell 导入 12 例通过。Wasm `922619d2…`。TH14 子树导出与来源校验通过，导出提交 `420fed25`；实际浏览器验收继续。
+
+静态服务器补齐显式跨源隔离开关，开关两种状态的 GET／HEAD／304／404／302／308 共 12 例通过；原实现被负对照拒绝。预览 32 个运行响应通过哈希、隔离头与 no-transform 核验。灵梦 B Normal 实际浏览器完成暂停／恢复、返回标题及 Quit；显式 OGG／零音量通过页面重载。
+
+新包魔理沙 A Easy 同文件在 thprac 开／关时均于 32,637 帧、73,218,790 分提前结束，与旧普通版参考 34,783 帧、82,434,130 分不同。进度显示没有拉满，但播放行为未据此对齐。继续与当前普通版 85 做同环境对照，PR 保持草稿，生产仍为 fd54b847。
+
+静态服务独立检查：`node launcher/scripts/check-static-isolation.mjs launcher/scripts/serve-static.mjs`。完整记录：[THP 新包浏览器复验](https://github.com/AdingApkgg/thp/blob/76cefb6a6816ec021d1b0d15b87e96511aa210eb/docs/porting/TH14_SUBTREE_BROWSER_PREVIEW_NOV14.md)。
