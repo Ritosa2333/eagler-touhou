@@ -46,6 +46,46 @@
     "formalThpracAvailable": false,
     "copyOnWriteForced": true
   },
-  "productionChanged": false,
-  "completeGame": false
+  "productionChanged": true,
+  "completeGame": false,
+  "release": {
+    "frontendSource": "6cf284bf3fd2201e52361494b69fbda467392f12",
+    "runtimeCodeSource": "7a83c3eeba3ff6c15c8559d14ec175e4b92bad93",
+    "generation": "55696f7fc59af78c3c91fb87bae0e4a3cde4d890b126cc04e1af643a0b37eda8",
+    "runtimeUnchanged": true,
+    "originRuntimeFilesVerified": 32,
+    "publicRuntimeFilesVerified": 32,
+    "frontendModulesVerified": [
+      {
+        "path": "assets/root-BO8Y8Wk0.js",
+        "bytes": 654754,
+        "sha256": "922b478529f495ac3563171ba44cf8404ef64f07bf8c1d8f4404cddcbe01ce12"
+      },
+      {
+        "path": "assets/replays-BtyfSDvq.js",
+        "bytes": 135543,
+        "sha256": "12a7af920b17e37250ec25010152f7221874d1d11c1452b5c0a849a0b2f8b1ba"
+      }
+    ],
+    "entryHtml": {
+      "originSha256": "114a36103041b614731968bfe95c7e8cbf3b15c564caa54f7c16128ba8d700f6",
+      "publicSha256": "7a7c9cef562c096904c98de70be89feb6f5784ba51d504bd7b5eace6e7815f89",
+      "wholeFileHashAccepted": false,
+      "applicationByteRegionsPreserved": true,
+      "applicationReferenceSetPreserved": true,
+      "additionalScripts": [
+        "WebMCP bridge",
+        "Cloudflare JSD"
+      ],
+      "insertionsSha256": [
+        "e2cb14b5fa9e0c60dda83a94781294bd2f17a9eb48a314e93061bcc5b7c7cca2",
+        "397bc16fd3507ddbf629b654e21460196363400b7b8330a5dfb57f9a51dc912c"
+      ],
+      "browserOrResponseContentModified": false
+    },
+    "servicePidPreserved": true,
+    "serviceConfigurationUnchanged": true,
+    "completeRollbackRetained": true,
+    "productionBrowserAfterActivationAccepted": false
+  }
 }
