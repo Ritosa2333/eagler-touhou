@@ -1,0 +1,295 @@
+{
+  "status": "candidate-native-and-browser-qualified",
+  "goal": "TH14 behavior-level alignment",
+  "nativeEvidence": {
+    "status": "native-candidate-qualified",
+    "cases": {
+      "baseline-v3-0": {
+        "reportSha256": "5acfd9dfbf4e6a78d660a42e3fce854d70bdd00435477fbba6030273b55a0d84",
+        "frames": 1435,
+        "score": 7460,
+        "appliedPractice": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "baseline-v3-1": {
+        "reportSha256": "2fc74ecc066b41a0ed0a6875bde5f51c1eeb7d45ffdfa69c665762a57efd3efb",
+        "frames": 1435,
+        "score": 520,
+        "appliedPractice": [
+          1,
+          3,
+          0,
+          0
+        ]
+      },
+      "candidate-v1-0": {
+        "reportSha256": "caceeab60e67822c2fb8d475b02f858be06d672c5884ff8818117c5520c71f03",
+        "frames": 1435,
+        "score": 520,
+        "appliedPractice": [
+          1,
+          3,
+          0,
+          0
+        ]
+      },
+      "candidate-v1-1": {
+        "reportSha256": "977acd00330d4951d41281a06d0b94decccfaac29825f7232d4afcad4e1c6b74",
+        "frames": 1435,
+        "score": 520,
+        "appliedPractice": [
+          1,
+          3,
+          0,
+          0
+        ]
+      },
+      "baseline-ordinary-v1-0": {
+        "reportSha256": "8f7fb93efb3466fb60976c0475fb43bae2fe932917168eb14566d63c5f990086",
+        "frames": 1538,
+        "score": 11310,
+        "appliedPractice": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "baseline-ordinary-v1-1": {
+        "reportSha256": "bc1e23e147140844eeba81f3e777c1d29cbbe95aedc6c09e64e196b6667893c8",
+        "frames": 1538,
+        "score": 11310,
+        "appliedPractice": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "candidate-ordinary-v1-0": {
+        "reportSha256": "d4241728b6158f4c46132993dc509fc8998304bf711a0e9583990c8b44c27b3d",
+        "frames": 1538,
+        "score": 11310,
+        "appliedPractice": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "candidate-ordinary-v1-1": {
+        "reportSha256": "7b46239febf0f97b43e2b9d2d68a4ffc791070b1da64a41ce42cd5c8bdd45c83",
+        "frames": 1538,
+        "score": 11310,
+        "appliedPractice": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "baseline-events-v2-0": {
+        "reportSha256": "cbe9f187b9598b1359050fc6d627e85d6d1543f0fa28fe2bdfd8a2c0723b4f09",
+        "frames": 1435,
+        "score": 7460,
+        "appliedPractice": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "baseline-events-v2-1": {
+        "reportSha256": "aebe8ecb8e360452ec981d3f5a107b2e04d4c7452f0d0a8555473ca502390622",
+        "frames": 1435,
+        "score": 0,
+        "appliedPractice": [
+          1,
+          3,
+          0,
+          0
+        ]
+      },
+      "candidate-events-v2-0": {
+        "reportSha256": "42cb47c821769fc0843065ac5a78225ba963d72bef9ffa914334f2ef7e88d96b",
+        "frames": 1435,
+        "score": 0,
+        "appliedPractice": [
+          1,
+          3,
+          0,
+          0
+        ]
+      },
+      "candidate-events-v2-1": {
+        "reportSha256": "6f12ea41f197b3016d905a0866e4557700875c20e7b36102fa895b7b30dbb384",
+        "frames": 1435,
+        "score": 0,
+        "appliedPractice": [
+          1,
+          3,
+          0,
+          0
+        ]
+      }
+    },
+    "toolEventObservations": {
+      "baseline-events-v2-0": {
+        "1": 0,
+        "2": 0,
+        "20": 0,
+        "21": 0,
+        "22": 0,
+        "30": 0,
+        "31": 0,
+        "32": 0,
+        "40": 0
+      },
+      "baseline-events-v2-1": {
+        "1": 1,
+        "2": 1,
+        "20": 1,
+        "21": 0,
+        "22": 0,
+        "30": 0,
+        "31": 5,
+        "32": 5,
+        "40": 5
+      },
+      "candidate-events-v2-0": {
+        "1": 1,
+        "2": 1,
+        "20": 1,
+        "21": 0,
+        "22": 0,
+        "30": 0,
+        "31": 5,
+        "32": 5,
+        "40": 5
+      },
+      "candidate-events-v2-1": {
+        "1": 1,
+        "2": 1,
+        "20": 1,
+        "21": 0,
+        "22": 0,
+        "30": 0,
+        "31": 5,
+        "32": 5,
+        "40": 5
+      }
+    },
+    "syntheticToolEvents": {
+      "syntheticMetadataFixture": true,
+      "originalUntouched": true,
+      "sourceSha256": "ff76b7ba4703d47cddee9ad962286348fa421db78893ceecb12fada73ed8d819",
+      "sha256": "f45b27fad3e062c0fc287869693bdaa04d07b75a0ba1b3c2077eedc9a1254da3",
+      "events": [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          1,
+          20,
+          0
+        ],
+        [
+          1,
+          30,
+          5
+        ]
+      ],
+      "encryptedGameplayPayloadUnchanged": true,
+      "notOriginalRecordingEvidence": true
+    },
+    "candidateBuild": {
+      "compiled": true,
+      "sourceBefore": "550ef744947a95164988bcb7d843dea6c10a6b46607f875f26de81323444382a",
+      "sourceAfter": "65741ae836e3e1573b9fec078e6cf759e5763a1a9664d5fd88080c5f9a9d5d02",
+      "sha256": "41ab53f7cdd928812561919938c89862f3123f927b6a8504708187252f02c5fd",
+      "gameplayUnitsRecompiled": 1,
+      "otherVerifiedObjectsReused": 145,
+      "normalGameplayAccessControl": true,
+      "changes": [
+        "recorded practice setup independent of live UI switch",
+        "recorded tool events independent of live UI switch",
+        "laser tool provider available during replay"
+      ],
+      "productionChanged": false,
+      "completeGame": false
+    },
+    "ordinaryFullObservedOutcomeUnchanged": true,
+    "browserAccepted": false,
+    "productionChanged": false,
+    "completeGame": false,
+    "remaining": [
+      "browser module build and actual silent browser acceptance",
+      "laser tool provider effect beyond event mask",
+      "remaining whole-game behavior acceptance"
+    ]
+  },
+  "browser": {
+    "site": "http://localhost:8234/?game=th14",
+    "backend": "actual WebGL2",
+    "practiceUiEnabled": false,
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "runtimeVariant": "normal",
+    "runtimeGeneration": "34f6e4b183b57e273555cae385ad12338484102a3a4517600662fb0784dc909c",
+    "wasmSha256": "2f08791345cb2574b8c4199e813354d5251797bd043e793a1bf293aab8e705ad",
+    "practiceReplay": {
+      "frames": 1435,
+      "visibleScore": 520,
+      "endedNaturally": true,
+      "originalFileUnchanged": true
+    },
+    "ordinaryReplay": {
+      "frames": 1538,
+      "visibleScore": 11310,
+      "endedNaturally": true,
+      "originalFileUnchanged": true
+    },
+    "versionUpdateDialog": "accepted normal verified restart; integrity not bypassed",
+    "screenshots": {
+      "practice-ended.jpg": "678c77760c596e9eb3fc441efb004bd2efa9cc5fbe2cfd23f37cc48400c11b58",
+      "ordinary-ended.jpg": "20b8972beb148abf99b3da0b9f42ae830faecdef6596be99d7eea6db2d6a98b5",
+      "ordinary-frame1399.jpg": "4899c12b6f1a8f7746b6f74f606630173763ced082aaa015eff646dfe65dd55e"
+    },
+    "prematureCaptureRetained": "ordinary-frame1399.jpg is explicitly not an ended replay"
+  },
+  "build": {
+    "unitsRecompiled": 1,
+    "objectsVerifiedReused": 152,
+    "normalAccessControl": true,
+    "sourceIsolatedFromBaseline": true
+  },
+  "httpResponsesVerified": 32,
+  "productionChanged": false,
+  "sourcePublicationPending": true,
+  "completeGame": false,
+  "remaining": [
+    "recorded laser tool effect beyond masks",
+    "source publication and production delivery",
+    "remaining whole-game behavior acceptance"
+  ],
+  "canonicalLfRebuild": {
+    "passed": true,
+    "canonicalSourceSha256": "018e8095acb4a095878dbb27d2c24590da41237833f3e21b869a6ab3e88a8eac",
+    "historicalCrlfSourceSha256": "65741ae836e3e1573b9fec078e6cf759e5763a1a9664d5fd88080c5f9a9d5d02",
+    "sourceChange": "CRLF to LF only",
+    "oneGameplayUnitRecompiled": true,
+    "completeRuntimeFilesByteIdentical": 18,
+    "wasmSha256": "2f08791345cb2574b8c4199e813354d5251797bd043e793a1bf293aab8e705ad",
+    "existingActualBrowserEvidenceAppliesToIdenticalRuntime": true,
+    "failedCandidateRetained": "7655d8c3cdc5449f8315d0520bb0c12ab83a9561",
+    "failedCandidateBranchPublished": false,
+    "productionChanged": false,
+    "completeGame": false
+  }
+}
