@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include "../game/GameApplication.hpp"
 #include "../game/AnmText.hpp"
 #include <map>
@@ -149,7 +150,19 @@ public:
         ;}
     bool visual_capture_pending()const{return pending_capture.target!=0;}
     u8* keyboard_state(){return keys;}
-    void controller_state(i32 x,i32 y,const u8* b,u32 n,bool available){pad={};pad.x=x;pad.y=y;pad.available=available;if(b)std::memcpy(pad.buttons,b,std::min<u32>(128,n));InputController::bindings(pad,app.title.context.controller_state);}
+    // Browsers have no DirectInput joystick, so the pad takes TH08's joyGetPosEx
+    // branch, as the TH06 and TH10 ports do. That branch triggers a direction
+    // past a quarter of the axis range (half of full tilt), the original's square
+    // dead zone (issue #166); the DirectInput branch's pad_x/pad_y of 600/1000
+    // made it 60%. x and y arrive in -1000..1000.
+    void controller_state(i32 x,i32 y,const u8* b,u32 n,bool available){
+        pad={};pad.x=x;pad.y=y;pad.available=available;if(b)std::memcpy(pad.buttons,b,std::min<u32>(128,n));
+        pad.direct=false;
+        const auto legacy=[](i32 v){return u32((std::clamp(v,-1000,1000)+1000)*65535/2000);};
+        pad.x=i32(legacy(x));pad.y=i32(legacy(y));
+        for(u32 i=0;i<32;++i)if(pad.buttons[i]&128)pad.legacy_buttons|=1u<<i;
+        InputController::bindings(pad,app.title.context.controller_state);
+    }
     std::vector<u8> read(const char*)override;std::vector<u8> read_prefix(const char*,u32)override;
     bool write(const char*,const u8*,u32)override;std::vector<std::string> user_replays()override;
     void calendar(char[6],char[20])override;u32 milliseconds()override;u64 performance_counter()override;
