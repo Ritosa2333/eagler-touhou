@@ -1,6 +1,6 @@
 # 文档总表
 
-共 586 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 587 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -348,6 +348,7 @@
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/replay-laser-recovery-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/replay-laser-recovery-nov14.md) | TH14 同一录像重播保留激光修复编辑 · 2026-11-14 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/replay-practice-gate-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/replay-practice-gate-nov14.md) | TH14 录像练习设置独立于观看者开关 · 2026-11-14 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/replay-practice-release-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/replay-practice-release-nov14.md) | TH14 录像练习兼容修复交付 · 2026-11-14 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/spell-viewer-browser-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/spell-viewer-browser-nov14.md) | 成功符卡录像浏览器验收 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/spell-viewer-completion-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/spell-viewer-completion-nov14.md) | 成功符卡录像结束修复 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/statistics-ui-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/statistics-ui-nov14.md) | TH14 跨关统计界面 · 2026-11-14 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/upstream-touch-stats-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/upstream-touch-stats-nov14.md) | TH14 上游触控与练习统计修复 |
