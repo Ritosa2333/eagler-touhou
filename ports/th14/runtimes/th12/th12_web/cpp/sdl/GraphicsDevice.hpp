@@ -46,5 +46,13 @@ public:
     void clear(u32 color,bool clear_depth=true){backend.clear(clear_depth?3:1,color,1,0);}
     bool backbuffer_has_alpha()const noexcept override{auto i=textures.find(screen);return i!=textures.end()&&i->second.image.format==touhou::graphics::PixelFormat::Bgra8;}
     void present(){backend.present(screen);}
+#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
+    // Pause captures the last game frame, before the optional ImGui overlay.
+    bool preserve_capture_screen(bool overlay_visible);
+    u32 capture_screen()const{return overlay_capture_valid?overlay_capture:screen;}
+private:
+    u32 overlay_capture=0;
+    bool overlay_capture_valid=false;
+#endif
 };
 }

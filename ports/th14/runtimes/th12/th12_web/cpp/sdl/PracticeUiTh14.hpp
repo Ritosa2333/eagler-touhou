@@ -5,6 +5,7 @@
 namespace touhou::sdl {class Renderer;}
 namespace th11 {
 class GameSession;
+namespace sdl {class GraphicsDevice;}
 namespace sdl::PracticeUiTh14 {
 void configure(GameSession&,bool enabled,int locale);
 void mobile(bool enabled,bool visible);
@@ -20,7 +21,7 @@ bool captures() noexcept;
 void clear_input();
 void close();
 void sync_setup();
-void draw(GameSession&,touhou::sdl::Renderer&);
+bool draw(GameSession&,GraphicsDevice&);
 }
 }
 #endif
