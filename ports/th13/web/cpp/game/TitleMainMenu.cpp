@@ -298,21 +298,12 @@ bool TitleMainMenu::update(u32 pressed, u32 repeated) {
             // [f469 复验] oracle Z 当帧 ver 走 label 1 淡出（f469 alpha 229 =
             // 淡出第 1 帧值）——Z 分支内当帧发 interrupt（immediate=false：
             // pending 由本帧 AnmManager.update 的 tick 消费恰 1 步）。
-            if (state.version_bar && selected != kTitleMainEntries - 1)
-                animations.interrupt(state.version_bar, 1, false);
-            // 0x44d954-0x44d97b（th13.exe 反汇编）：跳转表 case 0-6/8 共用
-            // 0x44d947——label1 同时发给两个 LOGO 根槽（+0x440 = handles[94]
-            // 首入场根 script94、+0x444 = handles[95] 复位根 script95），随后
-            // 两槽清 0。返回主菜单路径（0x44ce26：两槽皆空才建 95）之后只有
-            // 95 存活；旧实现只发 94，95 的 LOGO 树（99/96/100）跨难度/角色屏
-            // 残留（2026-11-03 用户截图：PLAYER SELECT 上仍有東方神霊廟 LOGO）。
-            // 脚本各自拥有退场时序与生命周期（script94/95 的 ins_5(1)→ins_1
-            // 销毁整棵树）。
             // case 7（オプション）走 0x44d9a6：原版只 sound7 + substate4，不
-            // 触碰 LOGO/版本条；端口此处沿既有行为只发 94（已知偏差，Option
-            // 屏无 oracle 窗，待后续对拍后按原版收口）。
-            if (!interrupt(resources.logo_root, 1, false)) return false;
+            // 触碰 LOGO（+0x440=handles[94] / +0x444=handles[95]）与版本条（+0x744）。
             if (selected != i32(TitleMainEntry::Option)) {
+                if (state.version_bar && selected != kTitleMainEntries - 1)
+                    animations.interrupt(state.version_bar, 1, false);
+                if (!interrupt(resources.logo_root, 1, false)) return false;
                 if (!interrupt(resources.logo_restore_root, 1, false)) return false;
                 state.handles[resources.logo_root] = 0;
                 state.handles[resources.logo_restore_root] = 0;

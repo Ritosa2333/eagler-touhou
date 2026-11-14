@@ -2484,5 +2484,10 @@
   "profile_gameDataEmpty": "No game data yet",
   "profile_gameDataHide": "Hide",
   "profile_gameDataShow": "Show",
-  "profile_gameDataMakeDefault": "Set default"
+  "profile_gameDataMakeDefault": "Set default",
+  "game_title_th13mp": "Touhou 13 Multiplayer",
+  "multiplayer_loadout_th13_reimu": "Reimu Hakurei",
+  "multiplayer_loadout_th13_marisa": "Marisa Kirisame",
+  "multiplayer_loadout_th13_sanae": "Sanae Kochiya",
+  "multiplayer_loadout_th13_youmu": "Youmu Konpaku"
 }

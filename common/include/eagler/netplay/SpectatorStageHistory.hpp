@@ -11,6 +11,11 @@ namespace Netplay {
 class SpectatorStageHistory {
 public:
     static constexpr std::size_t MaxFrames = 108000, MaxBytes = 16 * 1024 * 1024;
+    // A full-run title may use the existing byte budget instead of the
+    // default stage-length cap. Three-seat packets are the largest inputs.
+    static constexpr std::size_t FullRunMaxFrames = MaxBytes / (24 + 12 * 3);
+    explicit SpectatorStageHistory(std::size_t frame_limit = MaxFrames)
+        : frame_limit_(frame_limit) {}
     struct Segment {
         SpectatorStageEvent checkpoint;
         std::vector<SpectatorFramePacket> inputs;
@@ -46,7 +51,7 @@ public:
     }
     bool Accept(const SpectatorFramePacket& input) {
         if (segments_.empty() || ended_ || input.frame != next_ || input.frame == INVALID_FRAME ||
-            frames_ >= MaxFrames || std::size_t(24 + 12 * input.playerCount) > MaxBytes - bytes_) return false;
+            frames_ >= frame_limit_ || std::size_t(24 + 12 * input.playerCount) > MaxBytes - bytes_) return false;
         const auto& checkpoint = segments_.back().checkpoint;
         if (input.sessionId != checkpoint.sessionId || input.gameplayAbi != checkpoint.gameplayAbi ||
             input.playerCount != checkpoint.playerCount) return false;
@@ -64,6 +69,7 @@ public:
     std::uint32_t Received() const { return next_; }
     std::uint32_t Serial() const { return serial_; }
     std::size_t Bytes() const { return bytes_; }
+    std::size_t FrameLimit() const { return frame_limit_; }
     bool Ended() const { return ended_; }
     bool BootstrapMatches(const SpectatorStageEvent& event) const {
         if (segments_.empty() || event.kind != SpectatorEventKind::Bootstrap) return false;
@@ -75,6 +81,7 @@ public:
     }
     void Clear() { segments_.clear(); next_ = serial_ = 0; bytes_ = frames_ = 0; ended_ = false; }
 private:
+    std::size_t frame_limit_;
     std::vector<Segment> segments_;
     std::uint32_t next_ = 0, serial_ = 0;
     std::size_t bytes_ = 0, frames_ = 0;

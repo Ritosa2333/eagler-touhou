@@ -4,6 +4,7 @@
 #include "BulletAppearance.hpp"
 #include "StageSim.hpp"
 #include <map>
+#include <unordered_map>
 #include <memory>
 
 namespace th13 {
@@ -32,6 +33,18 @@ class LaserPresentation {
     bool tick(AnmVm&);
     bool fail(const std::string& message);
 public:
+    struct SnapshotData {
+        struct Entry {
+            u32 generation;
+            i32 type, color;
+            bool curve;
+            AnmVm body, orb, tip;
+            std::array<const AnmVm*, 3> identities;
+        };
+        std::vector<Entry> entries;
+    };
+    SnapshotData capture() const;
+    void restore(const SnapshotData&, std::unordered_map<const AnmVm*, AnmVm*>& remapped);
     std::string error;
     LaserPresentation(AnmManager&, AnmRenderer&, StageSim&, i32 bullet_bank);
     ~LaserPresentation();

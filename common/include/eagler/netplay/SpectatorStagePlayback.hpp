@@ -12,7 +12,9 @@ public:
     enum class Action { Pause, Play, Seek, Live };
     enum class RestoreMode { Stage, Run };
     SpectatorStagePlayback() = default;
-    explicit SpectatorStagePlayback(RestoreMode mode) : mode_(mode) {}
+    explicit SpectatorStagePlayback(RestoreMode mode,
+            std::size_t frame_limit = SpectatorStageHistory::MaxFrames)
+        : history_(frame_limit), mode_(mode) {}
     bool Receive(const SpectatorStageEvent& event) {
         if (event.kind == SpectatorEventKind::Bootstrap) {
             if (bootstrapped_ || !history_.BootstrapMatches(event)) return false;
@@ -135,7 +137,7 @@ public:
     }
     bool Failed() const {return failed_;}
     const SpectatorStageHistory& History() const {return history_;}
-    void Clear() {*this = SpectatorStagePlayback(mode_);}
+    void Clear() {*this = SpectatorStagePlayback(mode_, history_.FrameLimit());}
 private:
     const SpectatorStageHistory::Segment* RestoreSegment(std::uint32_t frame) const {
         return mode_ == RestoreMode::Run ? &history_.Segments().front() : history_.Locate(frame);

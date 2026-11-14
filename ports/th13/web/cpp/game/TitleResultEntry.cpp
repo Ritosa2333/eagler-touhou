@@ -448,21 +448,33 @@ bool TitleResultEntry::draw_name_editor(HudDrawServices& draw, float name_x, flo
     return true;
 }
 
-std::string TitleResultEntry::slot_row_text(i32 index) const {
-    const ReplayFile* file = host.replay_entry(index);
-    if (!file) return format(kEmptySlotRow, index + 1);
+std::string replay_save_slot_row(i32 slot, const ReplayFile* file, bool compact) {
+    const char* empty = compact ? "No.%.2d -------- --/--/-- ------- -- St-" : kEmptySlotRow;
     i32 year = 0, month = 0, day = 0, hour = 0, minute = 0;
-    if (!replay_date(*file, year, month, day, hour, minute) ||
-        file->top_header.size() < 0x6C)
-        return format(kEmptySlotRow, index + 1);
+    if (!file || file->top_header.size() < 0x6C ||
+        !replay_date(*file, year, month, day, hour, minute))
+        return format(empty, slot);
     const u8* top = file->top_header.data();
     const i32 character = std::clamp(read_i32(top + 0x5C) + read_i32(top + 0x60), 0, 3);
     const i32 difficulty = std::clamp(read_i32(top + 0x64), 0, 5);
     const i32 route = std::clamp(read_i32(top + 0x68), 0, 9);
+    if (compact) {
+        if ((top[0xA] & 2) && file->top_header.size() >= 0x74)
+            return format("No.%.2d %s %.2d/%.2d/%.2d %s Sp %3d", slot,
+                          file->player_name.c_str(), year, month, day,
+                          kCharacterNames[character], wrapping_add(read_i32(top + 0x70), 1));
+        return format("No.%.2d %s %.2d/%.2d/%.2d %s %s %s", slot,
+                      file->player_name.c_str(), year, month, day,
+                      kCharacterNames[character], kDifficultyNames[difficulty], kRouteNames[route]);
+    }
     return format("No.%.2d %s %.2d/%.2d/%.2d %.2d:%.2d %s %s %s %2.1f%%",
-                  index + 1, file->player_name.c_str(), year, month, day, hour, minute,
+                  slot, file->player_name.c_str(), year, month, day, hour, minute,
                   kCharacterNames[character], kDifficultyNames[difficulty],
                   kRouteNames[route], double(file->slow_rate));
+}
+
+std::string TitleResultEntry::slot_row_text(i32 index) const {
+    return replay_save_slot_row(index + 1, host.replay_entry(index), false);
 }
 
 bool TitleResultEntry::draw_slot_list(HudDrawServices& draw) {

@@ -71,8 +71,18 @@ struct AnmGeometry {
     std::unique_ptr<AnmRibbon> ribbon;
     std::unique_ptr<AnmWindTrail> wind;
     std::unique_ptr<AnmOverlay> overlay;
-    AnmGeometry();~AnmGeometry();AnmGeometry(const AnmGeometry&);AnmGeometry& operator=(const AnmGeometry&);
+    AnmGeometry();~AnmGeometry();AnmGeometry(const AnmGeometry&);
+    AnmGeometry& operator=(const AnmGeometry& other){
+        if(this==&other||(empty()&&other.empty()))return *this;
+        return assign_slow(other);
+    }
     AnmGeometry(AnmGeometry&&)noexcept;AnmGeometry& operator=(AnmGeometry&&)noexcept;
+    bool empty()const noexcept{
+        return allocation_bytes==0&&screen_vertices.empty()&&world_vertices.empty()&&
+               !distortion&&!trail&&!circle&&!gather&&!ribbon&&!wind&&!overlay;
+    }
     bool allocate(i32 segments,bool world);void clear();
+private:
+    AnmGeometry& assign_slow(const AnmGeometry&);
 };
 }

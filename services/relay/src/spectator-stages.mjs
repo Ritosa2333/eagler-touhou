@@ -1,9 +1,10 @@
 // Each run retains its E?SV version while published v1 and v2 clients coexist.
 export const COOPERATIVE_SPECTATOR_MARKERS = Object.freeze({
-  th05mp: 0x35, th06mp: 0x36, th07mp: 0x37, th08mp: 0x38, th10mp: 0x41, th11mp: 0x42, th12mp: 0x43, th15mp: 0x46, th17mp: 0x47,
+  th05mp: 0x35, th06mp: 0x36, th07mp: 0x37, th08mp: 0x38, th10mp: 0x41, th11mp: 0x42, th12mp: 0x43, th13mp: 0x4d, th15mp: 0x46, th17mp: 0x47,
 });
 const markers = new Set(Object.values(COOPERATIVE_SPECTATOR_MARKERS));
 export const SPECTATOR_STAGE_LIMITS = Object.freeze({ stateBytes: 4 * 1024, historyBytes: 16 * 1024 * 1024, historyFrames: 108000 });
+export const TH13_SPECTATOR_RUN_FRAMES = Math.floor(SPECTATOR_STAGE_LIMITS.historyBytes / (24 + 12 * 3));
 
 export function parseSpectatorStageEvent(payload, marker, count) {
   if (!markers.has(marker) || !(payload instanceof Uint8Array) || payload.length < 32 || payload.length > 40 + (payload[4] === 1 ? 60 * 1024 : SPECTATOR_STAGE_LIMITS.stateBytes) ||
@@ -32,6 +33,7 @@ export class SpectatorStageRelay {
     this.session = 0n; this.version = 0; this.abi = this.next = this.stage = this.serial = this.checkpoint = 0;
     this.timing = null; this.ended = false;
     this.retainsRun = false;
+    this.frameLimit = limits.historyFrames;
   }
   accept(payload) {
     if (this.ended) throw Error('spectator stage stream already ended');
@@ -50,10 +52,14 @@ export class SpectatorStageRelay {
           if (timing.getBigUint64(12, true) !== event.session || timing.getUint32(20, true) !== event.abi)
             throw Error('spectator stage timing mismatch');
         }
-        // TH17 carries live animation and combat owners across stages.
+        // TH13 and TH17 carry live animation and combat owners across stages.
         // Keep the same tape so both new and downloading viewers can replay it.
-        const retainsRun = this.marker === COOPERATIVE_SPECTATOR_MARKERS.th17mp &&
+        const th13Run = this.marker === COOPERATIVE_SPECTATOR_MARKERS.th13mp &&
+          event.version === 2 && event.schema === 2;
+        const retainsRun = th13Run || this.marker === COOPERATIVE_SPECTATOR_MARKERS.th17mp &&
           event.version === 2 && event.schema === 3;
+        if (!this.session && th13Run && (event.frame !== 0 || ![1, 7].includes(event.stage)))
+          throw Error('TH13 spectator run root missing');
         if (this.session && retainsRun !== this.retainsRun) throw Error('spectator stage restore mode changed');
         if (this.retainsRun) {
           this.append(payload);
@@ -66,6 +72,8 @@ export class SpectatorStageRelay {
         const bytes = replacement.reduce((sum, row) => sum + row.length, 0);
         if (bytes > this.limits.historyBytes) throw Error('spectator stage history limit');
         this.history = replacement; this.bytes = bytes; this.frames = 0; this.retainsRun = retainsRun;
+        this.frameLimit = th13Run && this.limits === SPECTATOR_STAGE_LIMITS
+          ? TH13_SPECTATOR_RUN_FRAMES : this.limits.historyFrames;
         this.session = event.session; this.version = event.version; this.abi = event.abi; this.next = event.frame;
         this.stage = event.stage; this.serial = this.checkpoint = event.serial;
         this.checkpointFrame = event.frame;
@@ -88,7 +96,7 @@ export class SpectatorStageRelay {
           !Number.isFinite(input.getFloat32(at + 4, true)) || !Number.isFinite(input.getFloat32(at + 8, true)))
         throw Error('invalid spectator movement');
     }
-    if (this.frames >= this.limits.historyFrames) throw Error('spectator stage frame limit');
+    if (this.frames >= this.frameLimit) throw Error('spectator stage frame limit');
     this.append(payload); ++this.next; ++this.frames;
     return 'input';
   }

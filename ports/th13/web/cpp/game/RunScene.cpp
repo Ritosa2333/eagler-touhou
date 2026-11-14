@@ -37,18 +37,18 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
       scheduler(f),
       player_state(player),
       score_state(score),
+      ascii_bank(ascii),
+      scenery_bank(scenery_bank),
+      scenery_std(std_name),
+      msg_presentation(std::make_unique<MsgPresentation>(
+          animations, MsgPresentation::Banks{banks.player, banks.stage})),
+      post_flow(p, player, score, *this),
       owned_hud(shared_hud ? nullptr :
           std::make_unique<GameHud>(animations, p, player, score, front, ascii)),
       hud(shared_hud ? *shared_hud : *owned_hud),
       battle(shared_random, shared_player),
       presentation(std::make_unique<StagePresentation>(animations, scene_renderer, banks,
-                                                       kPlayerShotSprite)),
-      msg_presentation(std::make_unique<MsgPresentation>(
-          animations, MsgPresentation::Banks{banks.player, banks.stage})),
-      ascii_bank(ascii),
-      scenery_bank(scenery_bank),
-      scenery_std(std_name),
-      post_flow(p, player, score, *this) {
+                                                       kPlayerShotSprite)) {
     // ECL 表达式 rand 走 game 流（0x4dc324）：-9987 双视图
     // 0x4203cc/0x420d5b 与 RandomPolar 0x478b22 均为 `mov ecx,0x4dc324`；
     // 0x4012xx 的 0x4dc31c 调用属 ANM 轨迹处理器。round-22 的 ecl_random
@@ -89,6 +89,8 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
     laser_presentation = std::make_unique<LaserPresentation>(manager, scene_view,
                                                             battle.sim, banks.bullet);
     battle.sim.defer_laser_update = true;
+    // 0x40d1ff：弹幕 Update 23，晚于激光 22、早于道具 24。
+    battle.sim.defer_bullet_update = true;
     // 0x42e380/0x438730 是 Update 24/25 的独立任务（objdump 0x42e0e0/
     // 0x438400 优先级 0x18/0x19），晚于激光 0x16=22 与子弹 0x17=23。
     battle.defer_item_side = true;
@@ -209,6 +211,13 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
     };
     if (scheduler.add(laser_update, FramePass::Update, 22) < 0)
         fail("Laser update registration failed");
+    bullet_update.owner = this;
+    bullet_update.enabled = true;
+    bullet_update.run = [](void* owner) -> i32 {
+        return static_cast<RunScene*>(owner)->update_bullets() ? 1 : 5;
+    };
+    if (scheduler.add(bullet_update, FramePass::Update, 23) < 0)
+        fail("Bullet update registration failed");
     // 0x42efb0 @ Update 0x18=24 / 0x438e70 @ Update 0x19=25：道具与神霊
     // 管理器各自独立任务。拆出 battle.step 内联路径后，激光擦弹（22）的
     // max_point+100 先于 kind3 收集（25），与原生同帧内序一致。
@@ -298,6 +307,7 @@ RunScene::~RunScene() {
     battle.sim.enemy_animation_interrupt = {};
     battle.sim.flush_anm_slots = {};
     scheduler.remove(laser_update);
+    scheduler.remove(bullet_update);
     scheduler.remove(scenery_update);
     // 0x42efb0 @ Update 24 / 0x438e70 @ Update 25 的 port 回调随场景析构
     // 一并摘链（与 laser_update/scenery_update 同契约）。漏摘会让共享
@@ -530,18 +540,34 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
 bool RunScene::update_spell() {
     if (transition_wait) return true;
     if (!error.empty()) return false;
+    const bool hold = environment.paused || (progress.scene_flags & 0x70u);
+    if (!hold) {
+        if (!battle.sim.spell.step(battle.bomb_timer > 0, &progress.rate))
+            return fail(battle.sim.spell.error);
+        battle.sim.spell.update_visibility(battle.player_y);
+        // Spell time starts/ends on the Begin/End events consumed above, not by
+        // sampling active() here (same-tick begin+end would be lost).
+        spell_presentation->sync(battle.sim.spell.state());
+        // 00412dfe follows boss slot0 once in Update26, after spell state/timer
+        // update and before ANM Update34. Draw-time sync must not move the ring.
+        if (const auto* boss = battle.sim.boss();
+            boss && boss->script_id == battle.sim.boss_slot[0])
+            spell_presentation->update_background(boss->position);
+    }
+    // 0x4131e2 在绘制回调里：灵界激活且符卡年龄 ≥60 时清 bonus 和收取位。
+    // 回放驱动只跑 Update，不走 Draw，所以这里在步进之后再做一次。
+    if (trance_active(progress))
+        battle.sim.spell.trance_active(battle.bomb_timer > 0);
+    return true;
+}
+
+bool RunScene::update_bullets() {
+    if (transition_wait) return true;
+    if (!error.empty()) return false;
     if (environment.paused || (progress.scene_flags & 0x70u)) return true;
-    if (!battle.sim.spell.step(battle.bomb_timer > 0, &progress.rate))
-        return fail(battle.sim.spell.error);
-    battle.sim.spell.update_visibility(battle.player_y);
-    // Spell time starts/ends on the Begin/End events consumed above, not by
-    // sampling active() here (same-tick begin+end would be lost).
-    spell_presentation->sync(battle.sim.spell.state());
-    // 00412dfe follows boss slot0 once in Update26, after spell state/timer
-    // update and before ANM Update34. Draw-time sync must not move the ring.
-    if (const auto* boss = battle.sim.boss();
-        boss && boss->script_id == battle.sim.boss_slot[0])
-        spell_presentation->update_background(boss->position);
+    // 0x40e780 @ Update 23。激光 22 先擦弹/消弹，弹体本帧位移才开始。
+    if (battle.sim.interactive) battle.sim.advance_bullets();
+    if (!battle.sim.error().empty()) return fail(battle.sim.error());
     return true;
 }
 
@@ -660,7 +686,13 @@ bool RunScene::update() {
     // 0042c562..0042c57c: only the combined clear/result flags return before
     // score convergence. Other 0x70 overlays return after 0042cacd's call.
     if ((progress.scene_flags & 0x4010u) == 0x4010u) return true;
-    if (!(progress.scene_flags & 4u)) hud.update_score();
+    // 0x42c678..0x42c6d3：HUD+0x180 bit0x100 且 +0x188 < 0x78，场景 +0x60
+    // 没有 bit0x10 时直接返回，不调用 0x42a370。通关条出生帧的 tick 在
+    // 置位之后，下一帧读到的计数仍是 0；灵梦第 6 关因此从帧 23791 停滚
+    // 到 23910，23911 才按差额>>5 续滚。
+    const bool clear_roll_frozen = (hud.flags & 0x100u) != 0 && hud.clear_age.current < 120 &&
+                                   (progress.scene_flags & 0x10u) == 0;
+    if (!(progress.scene_flags & 4u) && !clear_roll_frozen) hud.update_score();
     if (progress.scene_flags & 0x70u) return true;
     const GameInput* effective_input = input_frame;
     // Playback consumes the active cursor here, including transition ticks.

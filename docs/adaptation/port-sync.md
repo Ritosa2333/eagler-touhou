@@ -1,6 +1,6 @@
 # 普通版与多人版同步
 
-每对独立源码目录拥有自己的同步基线和历史。普通版持续演进，多人版通过三方合并吸收对应修改，并保留联机专属实现。同步关系来自 `launcher/config/workspace.json`，th05、th08、th10、th11、th12、th15、th17 和 th075 分别管理。
+每对独立源码目录拥有自己的同步基线和历史。普通版持续演进，多人版通过三方合并吸收对应修改，并保留联机专属实现。同步关系来自 `launcher/config/workspace.json`，th05、th08、th10、th11、th12、th13、th15、th17 和 th075 分别管理（th13-mp 为仓内派生，登记见 [migration/th13mp-derivation-20261108.md](../migration/th13mp-derivation-20261108.md)）。
 
 ## 下一次提交与同步
 

@@ -8,7 +8,7 @@
 
 using namespace Netplay;
 int main() {
-    for (const auto game : {'6', '7', '8', 'A', 'B', 'F'}) {
+    for (const auto game : {'6', '7', '8', 'A', 'B', 'C', 'D', 'F', 'G'}) {
         SpectatorStageEvent begin;
         begin.game = game; begin.playerCount = 3; begin.sessionId = 0x123456789abcdef0ull;
         begin.gameplayAbi = 0x10203040; begin.frame = 600; begin.stage = 4; begin.serial = 1;
@@ -66,6 +66,48 @@ int main() {
     excluded.frame = 0; excluded.serial = excluded.schema = 1; excluded.state = {1};
     std::vector<std::uint8_t> wire = {9};
     assert(!EncodeSpectatorStageEvent(excluded, &wire) && wire == std::vector<std::uint8_t>{9});
+    {
+        // The TH13 six-stage tape exceeds the legacy 108000-frame stage cap.
+        // Full-run retention keeps the same 16 MiB bound, including events.
+        SpectatorStageHistory stage;
+        SpectatorStagePlayback run{SpectatorStagePlayback::RestoreMode::Run,
+            SpectatorStageHistory::FullRunMaxFrames};
+        run.Clear();
+        assert(stage.FrameLimit() == 108000);
+        assert(run.History().FrameLimit() == SpectatorStageHistory::FullRunMaxFrames);
+        SpectatorStageEvent root;
+        root.game = 'M'; root.playerCount = 3; root.frame = 0; root.stage = 1;
+        root.sessionId = root.gameplayAbi = root.serial = 1;
+        root.schema = 2; root.state = {1};
+        assert(stage.Accept(root) && run.Receive(root));
+        SpectatorFramePacket input;
+        input.playerCount = 3; input.sessionId = input.gameplayAbi = 1;
+        for (unsigned frame = 0; frame < 136004; ++frame) {
+            input.frame = frame;
+            assert(run.Receive(input));
+            if (frame < 108000) assert(stage.Accept(input));
+            else assert(!stage.Accept(input));
+        }
+        assert(run.History().Received() == 136004 && stage.Received() == 108000);
+        for (unsigned frame = 136004; frame < SpectatorStageHistory::FullRunMaxFrames - 1; ++frame) {
+            input.frame = frame;
+            assert(run.Receive(input));
+        }
+        input.frame = run.History().Received();
+        const auto before = run.History().Bytes();
+        assert(!run.Receive(input)); // Event bytes consume part of the byte budget.
+        assert(run.History().Bytes() == before && before <= SpectatorStageHistory::MaxBytes);
+        run.Clear();
+        assert(run.History().FrameLimit() == SpectatorStageHistory::FullRunMaxFrames);
+        assert(run.Receive(root));
+        input.frame = 0;
+        assert(run.Receive(input));
+        SpectatorStageHistory tiny{2};
+        assert(tiny.Accept(root));
+        assert(tiny.Accept(input)); input.frame = 1; assert(tiny.Accept(input));
+        input.frame = 2; assert(!tiny.Accept(input));
+        tiny.Clear(); assert(tiny.FrameLimit() == 2 && tiny.Accept(root));
+    }
     {
         SpectatorStagePlayback playback{SpectatorStagePlayback::RestoreMode::Run};
         playback.Clear();

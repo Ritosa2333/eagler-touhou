@@ -1,7 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {COOPERATIVE_SPECTATOR_MARKERS, SPECTATOR_STAGE_LIMITS, parseSpectatorStageEvent, SpectatorStageRelay} from '../src/spectator-stages.mjs';
+import {COOPERATIVE_SPECTATOR_MARKERS, SPECTATOR_STAGE_LIMITS, TH13_SPECTATOR_RUN_FRAMES, parseSpectatorStageEvent, SpectatorStageRelay} from '../src/spectator-stages.mjs';
 import {isSpectatorFrameForRoom} from '../src/spectator-frame.mjs';
+
+test('TH13 uses its own protocol for confirmed spectator input and stage headers',()=>{
+  const marker=COOPERATIVE_SPECTATOR_MARKERS.th13mp;
+  assert.equal(marker,0x4d);
+  assert.notEqual(marker,COOPERATIVE_SPECTATOR_MARKERS.th12mp);
+  for(const count of [2,3]){
+    assert.equal(isSpectatorFrameForRoom('th13mp-1234',input(marker,count,0),count),true);
+    assert.equal(isSpectatorFrameForRoom('th13mp-1234',input(COOPERATIVE_SPECTATOR_MARKERS.th12mp,count,0),count),false);
+    const stream=new SpectatorStageRelay(marker,count);
+    assert.equal(stream.accept(event(marker,count,{frame:0,stage:1,schema:1})),'checkpoint');
+    stream.accept(input(marker,count,0));
+    assert.equal(stream.next,1);
+  }
+});
 
 function event(marker, count, {kind = 1, frame = 600, stage = 4, serial = 1, checkpoint = 1, node = 2, slots = 1, schema = 7} = {}) {
   const b = Buffer.alloc(kind === 1 ? 44 : kind === 2 ? 40 : 32);
@@ -71,6 +85,52 @@ test('history limits fail before evicting a still-needed input prefix', () => {
   stream.accept(event(55, 2)); stream.accept(input(55, 2, 600));
   assert.throws(() => stream.accept(input(55, 2, 601)), /frame limit/);
   assert.equal(stream.history.length, 2); assert.equal(stream.next, 601);
+});
+test('TH13 schema2 keeps the root and exact whole-run inputs for late join', () => {
+  const marker = COOPERATIVE_SPECTATOR_MARKERS.th13mp;
+  for (const count of [2, 3]) {
+    const stream = new SpectatorStageRelay(marker, count);
+    for (const root of [{frame: 1, stage: 1}, {frame: 0, stage: 2}]) {
+      assert.throws(() => stream.accept(event(marker, count, {...root, schema: 2})), /root missing/);
+      assert.equal(stream.history.length, 0);
+    }
+    const root = event(marker, count, {frame: 0, stage: 1, schema: 2});
+    stream.accept(root);
+    assert.equal(stream.frameLimit, TH13_SPECTATOR_RUN_FRAMES);
+    assert.equal(stream.limits.historyBytes, 16 * 1024 * 1024);
+    const tape = stream.history;
+    let serial = 1, stage = 1;
+    for (let frame = 0; frame < 136004; ++frame) {
+      if (frame === 50000 || frame === 100000) {
+        ++stage; ++serial;
+        assert.equal(stream.accept(event(marker, count, {frame, stage, serial, schema: 2})), 'stage-bookmark');
+      }
+      stream.accept(input(marker, count, frame));
+    }
+    assert.equal(stream.history, tape);
+    assert.deepEqual(stream.history[0], root);
+    assert.equal(stream.frames, 136004);
+    assert.equal(stream.next, 136004);
+    assert.equal(stream.history.length, 136007);
+    assert.equal(stream.bootstrap().readUInt32LE(20), 136004);
+    assert.equal(stream.bootstrap().readUInt32LE(24), 3);
+    assert.throws(() => stream.accept(event(marker, count, {frame: 136004, stage: 4, serial: 4, schema: 1})), /restore mode/);
+    stream.accept(event(marker, count, {kind: 3, frame: 136004, stage: 3, serial: 4}));
+    assert.equal(stream.ended, true);
+  }
+});
+test('TH13 run retention respects explicit frame and byte limits without dropping the prefix', () => {
+  const marker = COOPERATIVE_SPECTATOR_MARKERS.th13mp;
+  for (const limits of [{historyBytes: 512, historyFrames: 2}, {historyBytes: 163, historyFrames: 1000}]) {
+    const stream = new SpectatorStageRelay(marker, 3, limits);
+    stream.accept(event(marker, 3, {frame: 0, stage: 7, schema: 2}));
+    stream.accept(input(marker, 3, 0));
+    if (limits.historyFrames === 2) stream.accept(input(marker, 3, 1));
+    const history = stream.history, size = history.length, bytes = stream.bytes, next = stream.next;
+    assert.throws(() => stream.accept(input(marker, 3, next)), /limit/);
+    assert.equal(stream.history, history); assert.equal(history.length, size);
+    assert.equal(stream.bytes, bytes); assert.equal(stream.next, next);
+  }
 });
 test('TH17 continuous spectators keep earlier confirmed inputs through stage changes', () => {
   const marker = COOPERATIVE_SPECTATOR_MARKERS.th17mp;

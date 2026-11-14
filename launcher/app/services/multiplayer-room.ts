@@ -46,6 +46,7 @@ import type { DirectorySocket } from './lobby-directory';
 import { errorText } from './error-text';
 import {isAbortError} from './abort-signals';
 import type {RoomActionSound} from './room-action-audio';
+import type {RuntimeService} from './runtime';
 
 export type RoomSocket = DirectorySocket & {
   addEventListener(type: 'open', listener: () => void): void;
@@ -139,6 +140,7 @@ export interface MultiplayerRoomPorts {
   ): void | Promise<void>;
   isLaunched(): boolean;
   canReuseRuntime?(): boolean;
+  runtime?(): RuntimeService | null;
   routes: {
     restore(input: { product: MultiplayerProductId; code: string; fromDirectory: boolean }): void;
     enter(input: { product: MultiplayerProductId; code: string; created: boolean }): void;
@@ -218,6 +220,23 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   let movementDecision: Promise<boolean> | null = null;
   let preparedRuntimeGeneration: string | undefined;
   let runtimeVersionsSupported = false;
+  let runReturnSupported = false;
+  let unsubscribeRoomReturn: (() => void) | null = null;
+  let returnedRun: {epoch: number; serial: number; clientId: string; player: number; returned: boolean; sentSocket: RoomSocket | null} | null = null;
+  function clearRoomReturn() {
+    unsubscribeRoomReturn?.();
+    unsubscribeRoomReturn = null;
+    returnedRun = null;
+  }
+  function reportRoomReturn() {
+    const run = returnedRun;
+    if (!run?.returned || !room || !current(run.epoch) || !runReturnSupported || !state.connected ||
+        !socket || socket.readyState !== 1 || run.sentSocket === socket ||
+        state.startSerial !== run.serial || room?.phase === 'lobby' ||
+        clientId !== run.clientId || room.seats?.[run.player]?.clientId !== run.clientId) return;
+    socket.send(JSON.stringify({type: 'run-returned', serial: run.serial}));
+    run.sentSocket = socket;
+  }
   let pendingLoadout: { socket: RoomSocket | null; seat: number; index: number } | null = null;
   let reportedSocket: RoomSocket | null = null,
     reportedResourceKey = '',
@@ -561,6 +580,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     state.controlModesSupported = false;
     state.globalRoomCodes = false;
     runtimeVersionsSupported = false;
+    runReturnSupported = false;
     ports.network.reset(reconnecting);
     registeredName = false;
     socket = next;
@@ -686,6 +706,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         if (record(message.roomDirectory)?.controlModes === true)
           state.controlModesSupported = true;
         if (record(message.roomDirectory)?.runtimeVersions === true) runtimeVersionsSupported = true;
+        if (record(message.roomDirectory)?.runReturn === true) runReturnSupported = true;
         intent = 'join';
         ports.routes.settleInvite();
         const probe = record(message.roomProbe);
@@ -693,6 +714,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           void ports.network.receive({ type: 'room-probe-config', iceServers: probe.iceServers });
         state.startSerial = Math.max(state.startSerial, Number(record(message.room)?.startSerial) || 0);
         applySnapshot(message.room);
+        reportRoomReturn();
         // Reconnecting players may have missed the one-shot start message.
         // A spectator still needs explicit admission before loading its stream.
         if (room?.phase === 'starting' && state.seat != null) void launch(state.startSerial);
@@ -789,6 +811,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     next.addEventListener('error', () => {});
   }
   function resetRoom() {
+    clearRoomReturn();
     state.connectionDetail = undefined;
     settingsReloadPending = false;
     ownerController.abort();
@@ -1333,6 +1356,10 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         iceServers: ports.settings().iceServers,
         preferTurn: state.preferTurn,
         loadouts,
+        // Relay-decided runs may only fall back to the WebSocket gameplay
+        // relay when this deployment advertised the capability in its lobby
+        // snapshot; the transport rejects a relay route otherwise.
+        allowWebsocketFallback: room.gameplayRelayFallback === true,
       },
       config,
     );
@@ -1369,6 +1396,18 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       if (state.seat != null && !(await ensureMovementAllowed())) return;
       if (!owned.isCurrent()) return;
       const options = runtimeOptions();
+      clearRoomReturn();
+      const runtime = ports.runtime?.(), runtimeEpoch = runtime?.getSnapshot().epoch;
+      if (runtime && runtimeEpoch != null && state.seat != null && !state.spectatorRequested) {
+        const run = {epoch, serial: state.startSerial, clientId, player: state.seat, returned: false, sentSocket: null as RoomSocket | null};
+        returnedRun = run;
+        unsubscribeRoomReturn = runtime.subscribeRoomReturns(returned => {
+          if (returnedRun !== run || !owned.isCurrent() || returned.epoch !== runtimeEpoch ||
+              returned.netplayUrl !== options.netplayUrl || returned.player !== run.player || returned.spectator) return;
+          run.returned = true;
+          reportRoomReturn();
+        });
+      }
       await ports.launch({ ...owned, runtimeOptions: options, snapshot });
       if (owned.isCurrent() && state.spectatorRequested)
         launchedSpectatorSerial =
@@ -1758,6 +1797,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     },
     dispose() {
       if (disposed) return;
+      clearRoomReturn();
       // Document teardown must retain the room session for reload, like main's
       // pagehide disconnect. Explicit leave/reset owns session deletion.
       ownerController.abort();

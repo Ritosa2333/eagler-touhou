@@ -447,6 +447,7 @@ function getRun(room, runId) {
       playerCount: 0,
       route: null,
       ended: false,
+      returnedLobbyClients: new Set(),
       routeTimer: null,
       admittedSpectators: new Set(),
       claimedSpectators: new Set(),
@@ -957,6 +958,10 @@ function lobbySnapshot(room) {
     timing: room.lobby.timing,
     predictionLimit: room.lobby.predictionLimit,
     settingsVersion: room.lobby.settingsVersion,
+    // Server truth for the optional runtime capability "netplayAllowWebsocketFallback":
+    // a relay route can only be selected when this deployment actually enables the
+    // gameplay relay fallback. Clients mirror it so the launcher can opt the run in.
+    gameplayRelayFallback: allowGameplayRelayFallback,
     phase: room.lobby.phase,
     ...(room.lobby.phase !== 'lobby' && room.runs.get(String(room.lobby.startSerial))?.runtimeGeneration
       ? {runtimeGeneration: room.runs.get(String(room.lobby.startSerial)).runtimeGeneration} : {}),
@@ -1204,7 +1209,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
   sendLobby(socket, {
     type: 'state',
     room: lobbySnapshot(room),
-    roomDirectory: { version: 1, controlModes: true, runtimeVersions: true, globalRoomCodes: !!code },
+    roomDirectory: { version: 1, controlModes: true, runtimeVersions: true, runReturn: true, globalRoomCodes: !!code },
     roomActions: 1,
     ...(listenTogether ? { listenTogether: 2 } : {}),
     roomProbe: { iceServers: iceServersFor(roomId, 'lobby-probe', 0) },
@@ -1421,6 +1426,18 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     }
 
     const seat = lobbySeatOf(room, clientId);
+    if (message.type === 'run-returned') {
+      const run = room.runs.get(String(message.serial));
+      if (!Number.isSafeInteger(message.serial) || message.serial <= 0 ||
+          message.serial !== room.lobby.startSerial || room.lobby.phase === 'lobby' ||
+          !run?.lobbyClientIds || run.lobbyClientIds[seat] !== clientId ||
+          run.memberIds?.get(clientId) !== memberId || roomDirectory.memberIdFor(roomId, clientId) !== memberId) return;
+      run.returnedLobbyClients.add(clientId);
+      // Logical return is independent of the transports that still echo the
+      // final input ACK and serve completed history to slower spectators.
+      if (run.lobbyClientIds.every(id => run.returnedLobbyClients.has(id))) resetLobbyAfterRun(room);
+      return;
+    }
     if (message.type === 'switch-product') {
       if (seat !== 0 || room.lobby.phase !== 'lobby') return;
       if (!switchLobbyProduct(room, message.product))

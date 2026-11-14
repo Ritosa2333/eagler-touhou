@@ -2484,5 +2484,10 @@
   "profile_gameDataEmpty": "ゲームデータはまだありません",
   "profile_gameDataHide": "非表示にする",
   "profile_gameDataShow": "表示する",
-  "profile_gameDataMakeDefault": "既定にする"
+  "profile_gameDataMakeDefault": "既定にする",
+  "game_title_th13mp": "東方神霊廟 マルチプレイ",
+  "multiplayer_loadout_th13_reimu": "博麗霊夢",
+  "multiplayer_loadout_th13_marisa": "霧雨魔理沙",
+  "multiplayer_loadout_th13_sanae": "東風谷早苗",
+  "multiplayer_loadout_th13_youmu": "魂魄妖夢"
 }

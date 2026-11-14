@@ -29,7 +29,7 @@ inline constexpr std::size_t SpectatorStageMaxStateBytes = 4 * 1024;
 
 inline bool IsCooperativeSpectatorGame(std::uint8_t game) {
     return game == '5' || game == '6' || game == '7' || game == '8' ||
-           game == 'A' || game == 'B' || game == 'C' || game == 'F' || game == 'G';
+           game == 'A' || game == 'B' || game == 'C' || game == 'D' || game == 'M' || game == 'F' || game == 'G';
 }
 
 inline bool IsSpectatorStageEvent(const std::uint8_t* data, std::size_t size) {

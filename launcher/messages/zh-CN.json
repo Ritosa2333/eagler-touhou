@@ -2484,5 +2484,10 @@
   "profile_gameDataEmpty": "暂无游戏数据",
   "profile_gameDataHide": "隐藏",
   "profile_gameDataShow": "显示",
-  "profile_gameDataMakeDefault": "设为默认"
+  "profile_gameDataMakeDefault": "设为默认",
+  "game_title_th13mp": "东方神灵庙 联机版",
+  "multiplayer_loadout_th13_reimu": "博丽灵梦",
+  "multiplayer_loadout_th13_marisa": "雾雨魔理沙",
+  "multiplayer_loadout_th13_sanae": "东风谷早苗",
+  "multiplayer_loadout_th13_youmu": "魂魄妖梦"
 }

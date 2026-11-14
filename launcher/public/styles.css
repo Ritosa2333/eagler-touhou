@@ -1149,3 +1149,53 @@ body.mp-room-active #mpRoomView.mp-room-view{animation:mp-room-surface-in .18s c
 .input-settings-collapse{display:grid;grid-template-rows:0fr;opacity:0;visibility:hidden;transition:grid-template-rows .24s cubic-bezier(.2,.8,.2,1),opacity .18s ease,visibility 0s .24s}
 .input-settings[data-open="true"] .input-settings-collapse{grid-template-rows:1fr;opacity:1;visibility:visible;transition-delay:0s}
 .input-settings-content{min-height:0;overflow:hidden}
+
+/* TH13 desktop gameplay keeps its right HUD clear of launcher controls. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .player.th13-desktop-tool-rail:not(.touch-enabled):not(.room-workspace):not(.replay-workspace) #gameViewport {
+    left: max(0px, calc(-1 * var(--th13-rail-offset, 0px)));
+    right: calc(64px + max(0px, var(--th13-rail-offset, 0px)));
+  }
+  .player.th13-desktop-tool-rail:not(.touch-enabled):not(.room-workspace):not(.replay-workspace) .touch-utility-row {
+    right: 10px;
+    flex-direction: column;
+  }
+  .player.th13-desktop-tool-rail:not(.touch-enabled):not(.room-workspace):not(.replay-workspace) .netplay-player-status {
+    right: 0;
+    width: 64px;
+    max-width: 64px;
+    box-sizing: border-box;
+    padding: 4px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+    justify-items: center;
+  }
+  .player.th13-desktop-tool-rail:not(.touch-enabled):not(.room-workspace):not(.replay-workspace) .netplay-peer-status {
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .player.th13-desktop-tool-rail:not(.touch-enabled):not(.room-workspace):not(.replay-workspace) .player-information-column {
+    right: 0;
+    width: 64px;
+    max-width: 64px;
+  }
+  .player.th13-desktop-tool-rail:not(.touch-enabled):not(.room-workspace):not(.replay-workspace) .runtime-diagnostics {
+    right: 0;
+    width: 64px;
+    max-width: 64px;
+    max-height: calc(100% - 340px);
+    box-sizing: border-box;
+    bottom: 150px;
+    overflow: auto;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    pointer-events: auto;
+  }
+  .player.th13-desktop-tool-rail:not(.touch-enabled):not(.room-workspace):not(.replay-workspace) .runtime-diagnostics span {
+    overflow: visible;
+    text-overflow: clip;
+  }
+}

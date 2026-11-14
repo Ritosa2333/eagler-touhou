@@ -70,6 +70,7 @@ export interface NormalizedMultiplayerLobbySnapshot {
   predictionLimit: number;
   settingsVersion: number;
   phase: 'lobby' | 'starting' | 'running';
+  gameplayRelayFallback: boolean;
   runtimeGeneration?: string;
   spectators: MultiplayerLobbySpectator[];
   spectatorCount: number;
@@ -247,6 +248,10 @@ export function normalizeMultiplayerLobbySnapshot(
     predictionLimit,
     settingsVersion,
     phase,
+    // Relay-server capability mirror: only a deployment that enables the
+    // gameplay relay fallback may select a relay route. Absent (older relay)
+    // normalizes to false; runtime options only opt in on server truth.
+    gameplayRelayFallback: source.gameplayRelayFallback === true,
     ...(typeof source.runtimeGeneration === 'string' && /^[a-f0-9]{64}$/.test(source.runtimeGeneration)
       ? {runtimeGeneration: source.runtimeGeneration} : {}),
     spectators,

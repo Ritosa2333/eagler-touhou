@@ -73,6 +73,50 @@ public:
           boss_hud(a, {front_bank, ascii_bank, 8}), spell_hud(a, {4}) {
         frame_age.set(0);
     }
+    struct RollbackState {
+        std::array<u32, 8> life_icons;
+        std::array<u32, 8> bomb_icons;
+        u32 root;
+        u32 difficulty_notice;
+        u32 difficulty_label;
+        u32 flags;
+        Timer intro_age;
+        Timer frame_age;
+        Timer clear_age;
+        u32 clear_banner;
+        i32 displayed_score;
+        i32 score_increment;
+        u32 gauge_main;
+        i32 trance_skull_label;
+        u32 opening_signature;
+        u32 opening_signature_right;
+        i32 stage_logo_bank;
+        BossPresentation::RollbackState boss;
+        SpellPresentation::RollbackState spell;
+    };
+    RollbackState capture_rollback() const { return {life_icons, bomb_icons, root, difficulty_notice, difficulty_label, flags, intro_age, frame_age, clear_age, clear_banner, displayed_score, score_increment, gauge_main, trance_skull_label, opening_signature, opening_signature_right, stage_logo_bank, boss_hud.capture_rollback(), spell_hud.capture_rollback()}; }
+    void restore_rollback(const RollbackState& state) {
+        life_icons = state.life_icons;
+        bomb_icons = state.bomb_icons;
+        root = state.root;
+        difficulty_notice = state.difficulty_notice;
+        difficulty_label = state.difficulty_label;
+        flags = state.flags;
+        intro_age = state.intro_age;
+        frame_age = state.frame_age;
+        clear_age = state.clear_age;
+        clear_banner = state.clear_banner;
+        displayed_score = state.displayed_score;
+        score_increment = state.score_increment;
+        gauge_main = state.gauge_main;
+        trance_skull_label = state.trance_skull_label;
+        opening_signature = state.opening_signature;
+        opening_signature_right = state.opening_signature_right;
+        stage_logo_bank = state.stage_logo_bank;
+        boss_hud.restore_rollback(state.boss);
+        spell_hud.restore_rollback(state.spell);
+    }
+
     // Bank 1 (sig.anm) is resident, so the opening signature VMs survive the
     // per-run bank unload in ApplicationState::release_run; they must be
     // retired with the HUD or they keep drawing into the title.
@@ -107,7 +151,9 @@ public:
     bool reset_for_retry();
     void prepare_stage_assets() noexcept {
         frame_age.set(0);
-        displayed_score = score.score;
+        // 0042a370 从当前滚动值追 004be7c0，不在关首把滚动值拉成当前分。
+        // 新关 004be810 因此保持默认，直到滚动值超过它（udSr01 第 2 关
+        // 帧 -1..2 为 100000，帧 3 起按 score>>5 步进）。
         boss_hud.prepare_stage_assets();
     }
     bool update_trance(bool force_label = false);  // 0x42b030 值→172/173/175 显示映射

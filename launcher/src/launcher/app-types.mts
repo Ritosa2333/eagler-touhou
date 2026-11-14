@@ -90,6 +90,7 @@ export interface MultiplayerRoomState {
   predictionLimit?: number;
   settingsVersion?: number;
   phase?: 'lobby' | 'starting' | 'running';
+  gameplayRelayFallback?: boolean;
   created: boolean;
   connection?: MultiplayerConnectionState;
   seats?: NormalizedMultiplayerLobbySnapshot['seats'] | null;

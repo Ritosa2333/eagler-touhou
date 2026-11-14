@@ -4,6 +4,7 @@ import {mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, exists
 import {tmpdir} from 'node:os';
 import {resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
 import {checkProcess, checkWasm} from './build-harness.mjs';
 const wasm = Buffer.from([0,97,115,109,1,0,0,0]);
 function fixture(t) {
@@ -88,4 +89,39 @@ test('web cache invalidates on portable headers and compiler identity', t => {
   failed({env: {}, error: /Missing fresh object/});
   f.put('sdk/upstream/emscripten/emcc.py', "import os, signal\nos.kill(os.getpid(), signal.SIGTERM)\n");
   failed({env: {}, error: /SIGTERM/});
+});
+
+test('TH13_OUTPUT isolates outputs and failure invalidates only its own proof', t => {
+  const f = fixture(t);
+  f.put('sdk/upstream/emscripten/emcc.py', `import sys, pathlib\nif '--version' in sys.argv: print('synthetic isolated compiler')\nelse:\n p=pathlib.Path(sys.argv[sys.argv.index('-o')+1]); p.write_bytes(bytes([0,97,115,109,1,0,0,0]))\n if p.suffix == '.mjs': p.with_suffix('.wasm').write_bytes(bytes([0,97,115,109,1,0,0,0]))\n`);
+  const env = {EMSDK: resolve(f.dir, 'sdk'), TH_PYTHON: 'python3', TH13_WEB_CAPTURE: '0'};
+  const defaultDir = resolve(f.port, 'web/artifacts/sdl3');
+  const proofNames = ['build.json', 'th13-sdl.wasm', 'th13-sdl.mjs'];
+  let result = f.run('build.mjs', {...env, TH13_OUTPUT: ''});
+  assert.equal(result.status, 0, result.stderr);
+  const defaults = proofNames.map(name => readFileSync(resolve(defaultDir, name)));
+  const checkDefaults = () => proofNames.forEach((name, index) =>
+    assert.deepEqual(readFileSync(resolve(defaultDir, name)), defaults[index]));
+  const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+  for (const [setting, out] of [
+    ['isolated-relative', resolve(f.port, 'web/artifacts/isolated-relative')],
+    [resolve(f.dir, 'isolated-absolute'), resolve(f.dir, 'isolated-absolute')],
+  ]) {
+    result = f.run('build.mjs', {...env, TH13_OUTPUT: setting});
+    assert.equal(result.status, 0, result.stderr);
+    const manifest = JSON.parse(readFileSync(resolve(out, 'build.json')));
+    assert.equal(manifest.sha256, hash(readFileSync(resolve(out, 'th13-sdl.wasm'))));
+    assert.equal(manifest.loaderSha256, hash(readFileSync(resolve(out, 'th13-sdl.mjs'))));
+    checkDefaults();
+    const proofBeforePrint = proofNames.map(name => readFileSync(resolve(out, name)));
+    const printed = f.run('build.mjs', {...env, TH13_OUTPUT: setting}, ['--print-inputs']);
+    assert.equal(printed.status, 0, printed.stderr);
+    proofNames.forEach((name, index) =>
+      assert.deepEqual(readFileSync(resolve(out, name)), proofBeforePrint[index]));
+    result = f.run('build.mjs', {...env, TH13_OUTPUT: setting, TH_PYTHON: resolve(f.dir, 'missing-python')});
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /ENOENT/);
+    for (const name of proofNames) assert.equal(existsSync(resolve(out, name)), false, name);
+    checkDefaults();
+  }
 });
