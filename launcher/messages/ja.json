@@ -2481,5 +2481,10 @@
   "profile_gameDataEmpty": "ゲームデータはまだありません",
   "profile_gameDataHide": "非表示にする",
   "profile_gameDataShow": "表示する",
-  "profile_gameDataMakeDefault": "既定にする"
+  "profile_gameDataMakeDefault": "既定にする",
+  "replay_th14BeamCopy": "初期Web移植版向けの互換コピーをダウンロード",
+  "replay_th14BeamCopyConfirm": "このリプレイは初期のTH14 Web移植版で録画したものですか？録画元を確認してから互換コピーをダウンロードしてください。元のリプレイは保持されます。",
+  "replay_th14BeamCopyDownload": "互換コピーをダウンロード",
+  "replay_th14BeamAlreadyTagged": "このリプレイには再生ルールが記録されているため、変換は不要です。",
+  "replay_th14BeamCopyInvalid": "このリプレイの互換コピーを作成できませんでした。"
 }

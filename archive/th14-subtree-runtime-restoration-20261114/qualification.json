@@ -2723,5 +2723,67 @@
     "productionChanged": false,
     "silent": true,
     "completeGame": false
+  },
+  "beamCompatibilityWebMenu": {
+    "schema": "th14/replay-beam-web-menu/1",
+    "modelTests": 45,
+    "newCompatibilityCases": 7,
+    "typecheckPassed": true,
+    "completeFrontendBuildPassed": true,
+    "lineEndingNormalizedFrontendFilesIdentical": 134,
+    "sourceBindings": {
+      "launcher/messages/en.json": "df66411170e201b4774ec8886c95e808dbfe244794091c89d999420370034e3e",
+      "launcher/messages/ja.json": "ac55296bd9a41d5d366051b39506df7857a8071079a0e2254112361704d0196c",
+      "launcher/messages/keys.json": "6d62d50224f52398db24e1321dbca08e1227e9f47ff5e8eaa45c2db8dcfd9bf6",
+      "launcher/messages/zh-CN.json": "73a8a4093ea4f03019dadbee0983a35c41cb72cb113c9436aac8f781df637091",
+      "launcher/tests/react-main/replays-model.test.mjs": "1def31fb325e4f490019690ab2256bfc8640c27d384fa129ec6c86730440531b",
+      "launcher/src/launcher/th14-replay-beam-rules.mts": "31f817178a969aec1c3e252e3038c6dc816fa4aab44d292bc40c3bdf94501a8c",
+      "launcher/app/models/replays.ts": "93fb260baff5f66b69579340b87a9acbfdf8b1caf7a97912aa42c2449744da13",
+      "launcher/app/components/player/ReplayWorkspace.tsx": "c047acb28a28972eb432ad160afd8f83801e2addcd650c58a15e2d99485b08a1"
+    },
+    "locales": [
+      "zh-CN",
+      "en",
+      "ja"
+    ],
+    "onlyProduct": "th14",
+    "sourceDecisionExplicit": true,
+    "automaticRuleGuessing": false,
+    "noOriginalStorageWrites": true,
+    "actualBrowser": {
+      "site": "http://localhost:8228/?game=th14",
+      "generation": "ea975a7d3a1e59deff6f444aaff347ba8eada33bfb0f37c5424fe75dcc802a47",
+      "musicVolumeBeforeLaunch": 0,
+      "effectsVolumeBeforeLaunch": 0,
+      "cancelObserved": true,
+      "download": {
+        "passed": true,
+        "sha256": "ff76b7ba4703d47cddee9ad962286348fa421db78893ceecb12fada73ed8d819",
+        "bytes": 1711,
+        "originalPrefixPreserved": true,
+        "matchesCliOutput": true,
+        "browserFileListRemainedOne": true
+      },
+      "reimportAllocatedSeparateSlot": true,
+      "frames": 1435,
+      "naturalReplayEnded": true,
+      "score": 520,
+      "lives": 7,
+      "bombs": 3,
+      "power": 3.52,
+      "graze": 24,
+      "pointValue": 10020,
+      "alreadyTaggedRejectionObserved": true,
+      "proofHashes": {
+        "browser-copy-ended.jpg": "183ecdd793a4f8b41dc6f007ff92c70b424f843534b7484a4af1641003f69065",
+        "browser-already-tagged.jpg": "a9520515a1f9a0e7a88a1ec3c7d12c6635d889127a4a0f039ca15cd1557c3b4d"
+      }
+    },
+    "runtimeWholeFilesVerified": 32,
+    "wasmChanged": false,
+    "wasmSha256": "45128444b76701aa49c9fedd19c8388cb19d8fecd5de197dd81742392861284a",
+    "productionChanged": false,
+    "allHistoricalRecordingsAccepted": false,
+    "completeGame": false
   }
 }

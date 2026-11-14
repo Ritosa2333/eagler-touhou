@@ -10438,5 +10438,10 @@
   "profile.gameDataMakeDefault": {
     "id": "profile_gameDataMakeDefault",
     "params": []
-  }
+  },
+  "replay.th14BeamCopy": {"id": "replay_th14BeamCopy", "params": []},
+  "replay.th14BeamCopyConfirm": {"id": "replay_th14BeamCopyConfirm", "params": []},
+  "replay.th14BeamCopyDownload": {"id": "replay_th14BeamCopyDownload", "params": []},
+  "replay.th14BeamAlreadyTagged": {"id": "replay_th14BeamAlreadyTagged", "params": []},
+  "replay.th14BeamCopyInvalid": {"id": "replay_th14BeamCopyInvalid", "params": []}
 }

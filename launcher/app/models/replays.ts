@@ -1,3 +1,4 @@
+import {annotateTh14ReplayBeamRule} from '../../src/launcher/th14-replay-beam-rules.mts';
 import {gameIdForProduct, isMultiplayerProductId, type ProductId} from '../../src/contracts/product-catalog.mts';
 import {createReplayMutationQueue, isReplayFilePath, isReplayTargetAvailable, replayStoragePathKey, allocateReplayName,
   type ReplayMutationQueue} from '../../src/launcher/replay-files.mts';
@@ -271,6 +272,28 @@ export function createReplayModel(options: ReplayModelOptions) {
       options.download(path.split('/').pop() || 'replay.rpy', bytes.buffer, 'application/octet-stream');
     } catch (error) {if (valid(token, product)) options.toast(t('replay.downloadFailed', {reason: errorMessage(error)}));}
   }
+  async function downloadBeamCompatibilityCopy(path: string): Promise<void> {
+    const product = snapshot.productId, token = generation;
+    if (product !== 'th14' || !valid(token, product) || !isReplayFilePath(path) || !snapshot.rows.some(row => row.path === path)) return;
+    try {
+      if (!await options.confirm({message: t('replay.th14BeamCopyConfirm'), confirmText: t('replay.th14BeamCopyDownload')})) return;
+      if (!valid(token, product)) return;
+      const content = await mutations.run(async () => {
+        if (options.storage) {
+          const file = (await options.storage.read(product, {path})).find(file => file.path === path);
+          if (!file) throw new Error(t('runtime.invalidFileEntry'));
+          return new Uint8Array(file.bytes);
+        }
+        return withFiles(product, async access => new Uint8Array(responseBytes(await access.send('read', {path}))));
+      });
+      if (!valid(token, product)) return;
+      let annotated: Uint8Array;
+      try {annotated = annotateTh14ReplayBeamRule(content, 1);}
+      catch (error) {throw new Error(t(error instanceof Error && error.message.includes('already declares') ? 'replay.th14BeamAlreadyTagged' : 'replay.th14BeamCopyInvalid'));}
+      const copy = new Uint8Array(annotated.length); copy.set(annotated);
+      options.download((path.split('/').pop() || 'th14_replay.rpy').replace(/\.rpy$/i, '-compat.rpy'), copy.buffer, 'application/octet-stream');
+    } catch (error) {if (valid(token, product)) options.toast(t('replay.downloadFailed', {reason: errorMessage(error)}));}
+  }
   async function relocateFile(access: RuntimeFileSession, product: ProductId, source: string, target: string, content: number[], replayMatch?: Th09ReplayMatch): Promise<void> {
     await access.send('write', {path: target, bytes: content, ...(replayMatch ? {replayMatch} : {})});
     await access.sync();
@@ -392,7 +415,7 @@ export function createReplayModel(options: ReplayModelOptions) {
   return {
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};},
     getSnapshot: () => snapshot, isOpen: () => snapshot.open,
-    open, refresh, reopenRetained, close, inspect, watch, download, downloadFolder, rename, move, remove, mutations,
+    open, refresh, reopenRetained, close, inspect, watch, download, downloadBeamCompatibilityCopy, downloadFolder, rename, move, remove, mutations,
     dispose() {disposed = true; generation++; retainedRead = null; listeners.clear();},
   };
 }
