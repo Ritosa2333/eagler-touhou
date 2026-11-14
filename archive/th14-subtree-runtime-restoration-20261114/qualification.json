@@ -1161,5 +1161,121 @@
     "silent": true,
     "fullReplayAlignmentAccepted": false,
     "completeGame": false
+  },
+  "marisabStage3ReplayCarry": {
+    "schema": "th14/marisab-stage3-replay-carry/1",
+    "auditQualificationPassed": true,
+    "inputSha256": "e452a97814aecdb9480540761dfaed979c865be62d57a32a616720a6114913af",
+    "sourceWasmSha256": "722e268140069cdd2f975396add0a364606fdb4c7498e0b9b4aa5965176a90eb",
+    "callbacks": 17712,
+    "naturalStage3ToStage4Observed": true,
+    "ordinaryModeOnlyCauseExcluded": true,
+    "extraGrazeReproducedInReplay": true,
+    "negativeCarryAudit": {
+      "schema": "th14/replay-carry-audit/1",
+      "auditCompleted": true,
+      "observedCarryAlignmentPassed": false,
+      "transitions": [
+        {
+          "fromStage": 3,
+          "toStage": 4,
+          "carryCallback": 17352,
+          "carryControlFrame": 0,
+          "differences": {
+            "scoreUnits": {
+              "reference": 30806085,
+              "carry": 30806105
+            },
+            "graze": {
+              "reference": 24875,
+              "carry": 24876
+            },
+            "pointValue": {
+              "reference": 9332300,
+              "carry": 9332400
+            }
+          },
+          "freshPlayerCallback": 17645,
+          "afterRestoreDifferences": {},
+          "differenceMaskedByHeaderRestore": true
+        }
+      ],
+      "comparedFields": [
+        "scoreUnits",
+        "graze",
+        "pointValue",
+        "power",
+        "lives",
+        "lifeFragments",
+        "bombs",
+        "bombFragments"
+      ],
+      "selectedTapeSha256": "b13c2eee91d2f02a09f7ef78e5390df56665e548ec02dfa466664ce25076113e",
+      "decodedSha256": "900e7e4822cf084e8946574ca746a25c58cccd00f0593f3c6013bb4072e1c42d",
+      "runReportSha256": "29208b358a299158dcacdde0bc900bd268ab32ae0a7608d12f5f4b34243ea867",
+      "inputSha256": "e452a97814aecdb9480540761dfaed979c865be62d57a32a616720a6114913af",
+      "scope": "declared selected Player/economy fields at observed natural transitions; not all replay state or full-game proof",
+      "recordingInterfaceGraphicsOnly": true,
+      "silent": true,
+      "gameStateModified": false,
+      "completeGame": false,
+      "toolSha256": "5686b8fa09c8086572dfbbb0ced1b08a5ee5bd0db8b22d2594dab84e7ec12332"
+    },
+    "positiveControlAudit": {
+      "schema": "th14/replay-carry-audit/1",
+      "auditCompleted": true,
+      "observedCarryAlignmentPassed": true,
+      "transitions": [
+        {
+          "fromStage": 1,
+          "toStage": 2,
+          "carryCallback": 9318,
+          "carryControlFrame": 0,
+          "differences": {},
+          "freshPlayerCallback": 9695,
+          "afterRestoreDifferences": {},
+          "differenceMaskedByHeaderRestore": false
+        },
+        {
+          "fromStage": 2,
+          "toStage": 3,
+          "carryCallback": 21127,
+          "carryControlFrame": 0,
+          "differences": {},
+          "freshPlayerCallback": 21359,
+          "afterRestoreDifferences": {},
+          "differenceMaskedByHeaderRestore": false
+        }
+      ],
+      "comparedFields": [
+        "scoreUnits",
+        "graze",
+        "pointValue",
+        "power",
+        "lives",
+        "lifeFragments",
+        "bombs",
+        "bombFragments"
+      ],
+      "selectedTapeSha256": "3004a404173bb893b8ba26092ceb1c190deed774b01d02756a3280a8b106ba98",
+      "decodedSha256": "3476802458ea6e872835576471452f3d976c197de21fdaceae9f782549a9b6e3",
+      "runReportSha256": "70e3525eb8aad034fd1bebcab3830d79f53b1c99b566bde6a793e922a352f3e3",
+      "inputSha256": "aec3b3045be9a0ddd4e7e4005182a9561e97f9d3f66f7f93a81397a1b614ec92",
+      "scope": "declared selected Player/economy fields at observed natural transitions; not all replay state or full-game proof",
+      "recordingInterfaceGraphicsOnly": true,
+      "silent": true,
+      "gameStateModified": false,
+      "completeGame": false,
+      "toolSha256": "5686b8fa09c8086572dfbbb0ced1b08a5ee5bd0db8b22d2594dab84e7ec12332"
+    },
+    "finalScoreOnlyCanMaskStageDivergence": true,
+    "fullReplayAlignmentAccepted": false,
+    "originalFullTrajectoryCompared": false,
+    "runtimeSourceModified": false,
+    "productionChanged": false,
+    "auditorToolSha256": "5686b8fa09c8086572dfbbb0ced1b08a5ee5bd0db8b22d2594dab84e7ec12332",
+    "driverSha256": "ab42fef98a89de5bdafac1dbc35fd777c9f8b195b80cad741326625bedd6fda5",
+    "silent": true,
+    "completeGame": false
   }
 }
