@@ -113,7 +113,7 @@ bool shot_th14_beam_hit(ShotState& shot,ShotPlayer& player,Th14DamageArea& area,
             // Ordinary mode uses the same bounded fallback as the normal Runtime.
             const bool traced=stack.practice_laser&&stack.practice_laser->mode!=0;
             constexpr float maximum_length=512.f+18.f;
-            if(!traced&&(!std::isfinite(fallback)||fallback>maximum_length))
+            if(!traced&&stack.bounded_beam_fallback&&(!std::isfinite(fallback)||fallback>maximum_length))
                 fallback=std::isfinite(shot.th14_beam_length)?std::clamp(shot.th14_beam_length,0.f,maximum_length):0.f;
             shot.th14_beam_length=fallback;
         }else{

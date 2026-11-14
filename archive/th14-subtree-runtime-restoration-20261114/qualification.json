@@ -2250,5 +2250,171 @@
     }
   },
   "normalBeamReplayRulesCandidateCorePr": "https://github.com/AdingApkgg/thp/pull/1",
-  "beamRulesIntegratedIntoThisWebsiteBranch": false
+  "beamRulesIntegratedIntoThisWebsiteBranch": true,
+  "optionalBeamReplayRules": {
+    "components": {
+      "passed": true,
+      "optionalLayoutEntries": [
+        "sizeof(th11::NativeStackTh14)",
+        "sizeof(th11::Replay)",
+        "offsetof(th11::NativeStackTh14,cookie)",
+        "offsetof(th11::NativeStackTh14,frame)",
+        "offsetof(th11::NativeStackTh14,scratch)",
+        "offsetof(th11::NativeStackTh14,damage_scratch)",
+        "offsetof(th11::NativeStackTh14,controller_scratch)",
+        "offsetof(th11::NativeStackTh14,controller_scratch_known)",
+        "offsetof(th11::NativeStackTh14,spawn_scratch)",
+        "offsetof(th11::NativeStackTh14,spawn_scratch_mask)",
+        "offsetof(th11::NativeStackTh14,enemy_spawn_depth)",
+        "offsetof(th11::NativeStackTh14,ecl_animation_factory_depth)",
+        "offsetof(th11::NativeStackTh14,spawn_scratch_known)",
+        "offsetof(th11::Replay,bytes)",
+        "offsetof(th11::Replay,stages)",
+        "offsetof(th11::Replay,touches)",
+        "offsetof(th11::Replay,touch_cursor)",
+        "offsetof(th11::Replay,count)",
+        "offsetof(th11::Replay,selected)",
+        "offsetof(th11::Replay,cursor)",
+        "offsetof(th11::Replay,input)",
+        "offsetof(th11::Replay,failure)",
+        "offsetof(th11::Replay,callback_cursor)",
+        "offsetof(th11::Replay,metadata_only)",
+        "offsetof(th11::NativeStackTh14,practice_laser)",
+        "offsetof(th11::Replay,practice)",
+        "offsetof(th11::Replay,practice_events)",
+        "offsetof(th11::Replay,purple_laser_records)"
+      ],
+      "optionalLayoutWords": [
+        48,
+        472,
+        0,
+        4,
+        8,
+        12,
+        16,
+        20,
+        24,
+        28,
+        32,
+        36,
+        40,
+        164,
+        176,
+        304,
+        400,
+        404,
+        408,
+        412,
+        416,
+        452,
+        464,
+        468,
+        44,
+        0,
+        56,
+        152
+      ],
+      "sameExistingLayout": true,
+      "metadataCases": 14,
+      "touchPracticeEventsRulesAndLaserJournalCoexist": true,
+      "replacingJournalPreservesRule": true,
+      "nativeValidCases": 8064,
+      "nativeNegativeEdges": 96,
+      "stableGuardCases": 36,
+      "nativeFallbackCases": 36,
+      "explicitJournalPriorityCases": 42,
+      "rules": [
+        0,
+        1
+      ],
+      "moduleSha256": {
+        "beam.wasm": "75235b968cd67fd33072d0d5c3ac624b03cf28513ff518a9eab6ec00ecefc031",
+        "layout-after.wasm": "9400f02e28ef72199b66a66fc3e81116ee74e9a7ae3d8ecdf4fd96d06bd45aa8",
+        "layout-before.wasm": "9400f02e28ef72199b66a66fc3e81116ee74e9a7ae3d8ecdf4fd96d06bd45aa8",
+        "metadata.wasm": "8263ceec904c4fc4248014f275dd085b6c9cde70e8027d9b02aa7846f546b86c"
+      },
+      "sourceBindings": {
+        "NativeStackTh14.hpp": {
+          "beforeSha256": "ed2724033220befedfc3b2dc851c38149bc969aa7f69efc22b2303832bf8a885",
+          "afterSha256": "0ff498ab5bcd8944c2d47f6f8d53d9f83811946f9b66c10ee468c73c818c78c9"
+        },
+        "Replay.hpp": {
+          "beforeSha256": "c9a34b16157bf344d91477b82ebd6b6be50cac683eda84b8357eb4cfabe9f8ac",
+          "afterSha256": "ffd6ffa9f2c5c242e92173edacc949284e3ac32f63c8fbf74c75a78f8c5a5caf"
+        },
+        "Replay.cpp": {
+          "beforeSha256": "229e16515cbb8c95a7a75c7ead60d6b97e93688a68a614820ba598c410f06c72",
+          "afterSha256": "88b3893488fcc00ec2e3b1ed949e5abf718defee706c4e71e07fb12c934d4dbd"
+        },
+        "ReplayRecorder.cpp": {
+          "beforeSha256": "09eb231447a187e0c952c3ea225ce24078771346b527e084516840c73d4d8422",
+          "afterSha256": "fa73ef3399c747040464a5906fe537eb7a6b8788083ae39191e327bbf8fe448c"
+        },
+        "GameSession.cpp": {
+          "beforeSha256": "071da6a9223f5e6db323c6d81459abeab439eab584b41f1e9df9f49f3712f337",
+          "afterSha256": "61e5fe00ad4042a2a183fdef4720c58ddd45e5412096c7a49959e0895a67671b"
+        },
+        "ShotCallbacksTh14.cpp": {
+          "beforeSha256": "38ee92a45d8c480c9646feb7d5eb50753a0a2e6ce2c4203cc42547ea565ddf8a",
+          "afterSha256": "825ca51ec977ec38ed86dc4369b84071d4d82d5d0e6a02fc940951e75bc230f8"
+        }
+      },
+      "actualFullApplicationAccepted": false,
+      "browserBuilt": false,
+      "productionChanged": false,
+      "silent": true,
+      "completeGame": false
+    },
+    "negativeControls": {
+      "passed": true,
+      "cases": [
+        {
+          "name": "unintegrated-rule",
+          "rejected": true,
+          "actual": 1134559232,
+          "expected": 2143294004
+        },
+        {
+          "name": "lost-journal-priority",
+          "rejected": true,
+          "actual": 1134559232,
+          "expected": 2143294004
+        }
+      ],
+      "actualProductionSourceModified": false,
+      "silent": true,
+      "completeGame": false
+    },
+    "sourceChanges": {
+      "NativeStackTh14.hpp": {
+        "beforeSha256": "ed2724033220befedfc3b2dc851c38149bc969aa7f69efc22b2303832bf8a885",
+        "afterSha256": "0ff498ab5bcd8944c2d47f6f8d53d9f83811946f9b66c10ee468c73c818c78c9"
+      },
+      "Replay.hpp": {
+        "beforeSha256": "c9a34b16157bf344d91477b82ebd6b6be50cac683eda84b8357eb4cfabe9f8ac",
+        "afterSha256": "ffd6ffa9f2c5c242e92173edacc949284e3ac32f63c8fbf74c75a78f8c5a5caf"
+      },
+      "Replay.cpp": {
+        "beforeSha256": "229e16515cbb8c95a7a75c7ead60d6b97e93688a68a614820ba598c410f06c72",
+        "afterSha256": "88b3893488fcc00ec2e3b1ed949e5abf718defee706c4e71e07fb12c934d4dbd"
+      },
+      "ReplayRecorder.cpp": {
+        "beforeSha256": "09eb231447a187e0c952c3ea225ce24078771346b527e084516840c73d4d8422",
+        "afterSha256": "fa73ef3399c747040464a5906fe537eb7a6b8788083ae39191e327bbf8fe448c"
+      },
+      "GameSession.cpp": {
+        "beforeSha256": "071da6a9223f5e6db323c6d81459abeab439eab584b41f1e9df9f49f3712f337",
+        "afterSha256": "61e5fe00ad4042a2a183fdef4720c58ddd45e5412096c7a49959e0895a67671b"
+      },
+      "ShotCallbacksTh14.cpp": {
+        "beforeSha256": "38ee92a45d8c480c9646feb7d5eb50753a0a2e6ce2c4203cc42547ea565ddf8a",
+        "afterSha256": "825ca51ec977ec38ed86dc4369b84071d4d82d5d0e6a02fc940951e75bc230f8"
+      }
+    },
+    "fullBrowserBuildUnits": 153,
+    "wasmSha256": "45128444b76701aa49c9fedd19c8388cb19d8fecd5de197dd81742392861284a",
+    "actualBrowserAccepted": false,
+    "productionChanged": false,
+    "completeGame": false
+  }
 }

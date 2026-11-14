@@ -421,6 +421,9 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
     state.difficulty=difficulty;
     state.demo=demo;
     state.replay=replay;
+#if PORT_TITLE == 14
+    animations.th14_native_stack.bounded_beam_fallback=!replay||playback.uses_bounded_th14_beams();
+#endif
     state.practice=practice;
 #if PORT_TITLE == 14
     if(replay){if(playback.decoded()[10]&2){u32 id;std::memcpy(&id,playback.decoded().data()+0x90,4);state.spell_practice_id=signed_bits(id);}}
