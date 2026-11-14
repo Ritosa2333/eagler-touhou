@@ -146,7 +146,10 @@
     "ordinaryEntryShouldSetPracticeAvailable": true,
     "currentOrdinaryVisitDoesNotWriteEnteredFlag": true,
     "ordinaryVisitUnlockCompatibilityAccepted": false,
-    "candidateImplementedNotBrowserAccepted": true,
-    "productionChanged": false
+    "candidateImplementedNotBrowserAccepted": false,
+    "productionChanged": false,
+    "candidateActualBrowserAccepted": true,
+    "subsequentReleasedRuntimeSource": "53ad371f30c9c6cb8c1e27c094d365663b774276",
+    "subsequentReleasedGeneration": "77230ead1bcaacd6bb52bc9e04f88c6a1c1c1653d090622c1be7d708fcd1552f"
   }
 }
