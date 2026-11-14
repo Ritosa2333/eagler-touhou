@@ -1,0 +1,116 @@
+{
+  "schema": "th14/spell-browser-persistence/1",
+  "passed": true,
+  "acceptanceStandard": "observable-behavior-alignment",
+  "site": "http://localhost:8239/?game=th14",
+  "wasmSha256": "4f9b87f190756fc38cc330eefbfe6e0a249503776963dbb5f4294998d0db2ebc",
+  "runtimeGeneration": "54f7034144fd94c0f4455c98e874d6ed33373bd9f9a614a2c1a76bd4ae9699fa",
+  "actualBrowserBackend": "SDL3 / WebGL2 / C++",
+  "musicVolume": 0,
+  "effectsVolume": 0,
+  "ordinaryLaunchMusicMode": "none",
+  "noGameStateOrRngWrites": true,
+  "successfulCaptureSaveImportedThroughUi": true,
+  "backupKept": true,
+  "allImportedAndReloadedBytesEqual": true,
+  "actualCppMenuAfterImport": {
+    "practiceCaptures": 1,
+    "practiceAttempts": 1,
+    "ordinaryCaptures": 1,
+    "ordinaryAttempts": 1,
+    "highScore": 3179600
+  },
+  "actualBrowserAttempt": {
+    "naturalFailure": true,
+    "saveReplayObserved": true,
+    "emptySlot": 1,
+    "name": "A",
+    "returnToTitleAndQuitObserved": true,
+    "replayBytes": 718,
+    "replaySha256": "2af8b0dde9247b4cfc92a3f349547533cf38f0d0227dcbb46b06c12019cd881d",
+    "declaredFrames": 592,
+    "score": 0,
+    "spellId": 3
+  },
+  "afterQuitAndReloadWholeBytesEqual": true,
+  "actualCppMenuAfterReload": {
+    "practiceCaptures": 1,
+    "practiceAttempts": 2,
+    "ordinaryCaptures": 1,
+    "ordinaryAttempts": 1,
+    "highScore": 3179600
+  },
+  "freshReaderAll149076BytesEqualRetailDecode": true,
+  "all840CaptureAndOrdinaryAttemptCountersPreserved": true,
+  "all840SpellHighScoresPreserved": true,
+  "other838PracticeAttemptCountersPreserved": true,
+  "changedRecords": [
+    {
+      "selection": 1,
+      "spellId": 3,
+      "before": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after": [
+        1,
+        1,
+        1,
+        2
+      ]
+    },
+    {
+      "selection": 6,
+      "spellId": 3,
+      "before": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "after": [
+        1,
+        1,
+        1,
+        2
+      ]
+    }
+  ],
+  "playCountDelta": 1,
+  "playTimeDelta": 591,
+  "allSixClearUnlockFieldsPreserved": true,
+  "changedDecodedBytes": 10,
+  "onlyDeclaredFieldsAndChecksumsChanged": true,
+  "sharedSettingsChange": "last entered name: eight spaces to A followed by seven spaces; checksum updated",
+  "scoreSha256": "ccf152ddc672d001f1bff3dfd5f335aa2b585e5d9140822ac854d262bcec7adf",
+  "decodedScoreSha256": "a1c92a47e12634aba06209a35bb42a7a91da0a369250a7d2a0287886681f0d21",
+  "replayNativeFormatAccepted": true,
+  "newReplayPlaybackAccepted": true,
+  "newReplayObservedTerminal": {
+    "viewerFrames": 591,
+    "score": 0,
+    "power": 3.5,
+    "graze": 6,
+    "pointValue": 10000,
+    "endedText": "录像已结束"
+  },
+  "watchingSpellReplayWholeScoreFileUnchanged": true,
+  "watchingSpellReplayDidNotIncrementAttempts": true,
+  "successViewerBackwardThenForwardSeekAccepted": true,
+  "successSeekEndFrames": 1737,
+  "successSeekScore": 3179620,
+  "seekScreenshotSha256": "783b6ee62936eca3d4f1dd9ff62a13071b97271a6def86b560f37a7ff4202ca1",
+  "proofHashes": {
+    "imported-spell-counters.png": "0aa1c86838c048bf7cb2a3bca730fbf6f814cff4f90921e7eab56c859306bb66",
+    "actual-attempt-result.png": "8d76a5246bf8ebc2afb662bc3da2de99d0cff49db5a545ce0bb60f2a2df12c96",
+    "replay-save-committed.png": "8945b7d5b9887c6fd6bb2e5ef4fa39e25b58926bd389e2af92130667aa1a8bfd",
+    "reloaded-spell-counters.png": "041c733adb97e4a3c21b2b93465b1507c6991921fd0bc2bdd2608401cdd419c9",
+    "browser-recorded-replay-ended.png": "3e1833a2d7cbff4f6388b8357d70aa59ad6e9cb6ff70f8fe8ef202588fc5658a"
+  },
+  "freshBrowserSuccessfulCaptureAccepted": false,
+  "allSpellCoverageAccepted": false,
+  "productionChanged": false,
+  "completeGame": false
+}
