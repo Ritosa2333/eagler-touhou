@@ -1983,7 +1983,7 @@ struct Application:StageResourceEffects
             if(!session.draw(renderer,&frame_text)){error=session.error;return false;}
             th14_consume_deferred_captures(session.animations.deferred_captures,session,graphics,renderer);
 #if defined(TH14_ENABLE_THPRAC)
-            PracticeUiTh14::draw(session,graphics.backend);
+            if(!PracticeUiTh14::draw(session,graphics)){error=graphics.error;return false;}
 #endif
             graphics.present();
             sample_frame_statistics();
@@ -2059,6 +2059,9 @@ struct Application:StageResourceEffects
                 auto* vm=session.animations.find(menu.background_animation);if(!vm||!vm->sprite||!vm->resource){error="Pause screenshot sprite missing";return false;}
                 const auto& sprite=*vm->sprite;const u32 target=graphics.texture(*vm->resource,sprite.texture);renderer.flush();
                 i32 from[]={32,16,416,464};u32 source=GraphicsDevice::screen;
+#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
+                source=graphics.capture_screen();
+#endif
 #if PORT_TITLE == 14
                 const auto capture=th14_immediate_capture_source(session,float(session.config.render_width())/640.f);
                 std::copy(capture.rectangle,capture.rectangle+4,from);
@@ -2125,7 +2128,7 @@ struct Application:StageResourceEffects
 #if PORT_TITLE == 14
         th14_consume_deferred_captures(session.animations.deferred_captures,session,graphics,renderer);
 #if defined(TH14_ENABLE_THPRAC)
-        PracticeUiTh14::draw(session,graphics.backend);
+        if(!PracticeUiTh14::draw(session,graphics)){error=graphics.error;return false;}
 #endif
 #endif
         graphics.present();

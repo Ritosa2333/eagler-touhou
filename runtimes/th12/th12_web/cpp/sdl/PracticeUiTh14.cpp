@@ -1,6 +1,7 @@
 #include "PracticeUiTh14.hpp"
 #if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
 #include "../game/GameSession.hpp"
+#include "GraphicsDevice.hpp"
 #include "../../../portable/sdl/Renderer.hpp"
 #include <eagler/thprac/PracticeMobilePanels.hpp>
 #include <eagler/thprac/PracticePointer.hpp>
@@ -270,10 +271,12 @@ void sync_setup(){
     }else spell_setup=-1;
     setup=active;setup_popup=false;publish();
 }
-void draw(GameSession& s,touhou::sdl::Renderer& renderer){
+bool draw(GameSession& s,GraphicsDevice& graphics){
+    graphics.preserve_capture_screen(false);
+    auto& renderer=graphics.backend;
     sync_setup();
     const bool hud=s.practice_enabled&&on_stage()&&(key_monitor_on||show_drop_bar||show_hitboxes||(show_lock_timer&&lock_running));
-    if(!s.practice_enabled||(!visible()&&!hud)||!ensure_context())return;
+    if(!s.practice_enabled||(!visible()&&!hud)||!ensure_context())return true;
     auto& io=ImGui::GetIO();io.DeltaTime=1.f/60;io.MousePos={mouse_x,mouse_y};
     if(!edges.empty()){auto e=edges.front();edges.pop_front();mouse_down=e.down;io.MousePos={e.x,e.y};}
     io.MouseWheel=mouse_wheel;mouse_wheel=0;
@@ -319,8 +322,13 @@ void draw(GameSession& s,touhou::sdl::Renderer& renderer){
     if(on_stage()&&!modal()&&(tracker||Mobile::visible))information();
     publish();
     ImGui::Render();
-    renderer.render_imgui(ImGui::GetDrawData(),1);
+    const auto* data=ImGui::GetDrawData();
+    if(data&&data->CmdListsCount>0&&data->TotalVtxCount>0&&data->TotalIdxCount>0){
+        if(!graphics.preserve_capture_screen(true))return false;
+        renderer.render_imgui(data,GraphicsDevice::screen);
+    }
     pressed.fill(false);
+    return true;
 }
 }
 #endif
