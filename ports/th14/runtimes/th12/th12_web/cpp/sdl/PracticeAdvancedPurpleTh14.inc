@@ -83,9 +83,12 @@ void marisa_laser_options(){
             auto result=laser.source;
             append_purple_laser_block(result,laser.recovered);
             EM_ASM({
-                const blob=new Blob([HEAPU8.slice($0,$0+$1)],{type:'application/octet-stream'});
-                const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='th14-recovered.rpy';
-                link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+                let owner=window;
+                try{if(window.parent!==window&&window.parent.document)owner=window.parent;}catch{}
+                const blob=new owner.Blob([HEAPU8.slice($0,$0+$1)],{type:'application/octet-stream'});
+                const url=owner.URL.createObjectURL(blob);
+                const link=owner.document.createElement('a');link.href=url;link.download='th14-recovered.rpy';
+                link.click();owner.setTimeout(()=>owner.URL.revokeObjectURL(url),1000);
             },result.data(),result.size());
         }
         ImGui::EndDisabled(cannot_save);

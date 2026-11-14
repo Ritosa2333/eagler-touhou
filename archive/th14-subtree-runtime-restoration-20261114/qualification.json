@@ -8086,5 +8086,109 @@
       "browser-candidate-nonzero-aps.png": "6b8755d414ae2965a39f452e037678913896b0bae0d11ba70296e95a6a75e6f7",
       "PracticeUiTh14.patch": "0cecccbf6ae24af8e444fcd53c5550523939b489c402542c5dfd74f2537b409f"
     }
+  },
+  "recoveredDownloadNov15": {
+    "schema": "th14/recovered-download-readback/1",
+    "sourceParent": "c7f04a13d38d93de5abf934053e31285afc0df20",
+    "sourceFile": "ports/th14/runtimes/th12/th12_web/cpp/sdl/PracticeAdvancedPurpleTh14.inc",
+    "sourceSha256": "2b77e8b03e7ea5c1a568f8ce84fc68b84ee43c88efe839c3535b3a3cd1efc7ca",
+    "wasm": "5000888ef18e5fe4fa666794574a8fa96545cf02b42d4b8f1aaeb9ea665fdc08",
+    "generation": "e4d5d321397c3f7b3bcc824c2687ee606dd31b23fc9075008568ca6584563326",
+    "unitsRecompiled": 1,
+    "objectsVerifiedReused": 152,
+    "sourceBindings": 387,
+    "runtimeFiles": 32,
+    "componentCheck": {
+      "passed": true,
+      "cases": 16,
+      "oldHostedOwnerRejected": 4,
+      "unchangedFallbackControls": 12,
+      "actualAuthoredJsExtracted": true,
+      "binarySlicesAndInputHeapPreserved": true,
+      "mockedBrowserRealms": true,
+      "actualRecoveredReplayDownloadAccepted": false,
+      "productionChanged": false
+    },
+    "initialLinkTimedOutSeconds": 300,
+    "linkRetryDeadlineSeconds": 900,
+    "linkRetrySucceeded": true,
+    "packageVerificationPassed": true,
+    "browserNewGenerationObserved": true,
+    "audioMusicVolume": 0,
+    "audioSfxVolume": 0,
+    "actualRecoveredDownloadAccepted": true,
+    "browserPlaybackReadbackAccepted": true,
+    "productionChanged": false,
+    "completeGame": false,
+    "download": {
+      "passed": true,
+      "fileBytes": 81845,
+      "sha256": "22cf6ff399e06ff44636c3e9c95fc28a82c921120e8ec5c0a8633ded5ac5a0a4",
+      "originalSha256": "aec3b3045be9a0ddd4e7e4005182a9561e97f9d3f66f7f93a81397a1b614ec92",
+      "originalPrefixUnchanged": true,
+      "userBlocks": [
+        {
+          "kind": 0,
+          "bytes": 176
+        },
+        {
+          "kind": 1,
+          "bytes": 32
+        },
+        {
+          "kind": 1380140370,
+          "bytes": 52
+        }
+      ],
+      "recoveredRecords": [
+        [
+          3,
+          1280,
+          0,
+          68132770,
+          0
+        ],
+        [
+          3,
+          2935,
+          0,
+          2147483646,
+          1
+        ]
+      ],
+      "actualDownloadedFileInspected": true,
+      "browserPlaybackReadbackAccepted": false,
+      "productionChanged": false,
+      "completeGame": false
+    },
+    "browserDownloadProofSha256": "251e15a6a40818fb07eff111f9269947b5ed3bf7b7c6370e46b7ee19f52f7cf0",
+    "oldOriginRemainedOnPriorGeneration": true,
+    "newOriginSiteUpdatePromptAccepted": true,
+    "newRuntimeVerifiedViaIframeUrl": true,
+    "passed": true,
+    "actualReadback": {
+      "downloadedFileReimported": true,
+      "newGameSession": true,
+      "nativeUserSlot": "th14_ud0002.rpy",
+      "playbackMode": 2,
+      "stage": 3,
+      "recordsShown": 2,
+      "secondFrame": 2935,
+      "secondCorrectionShown": "0",
+      "scoreBeforeResume": 55114330,
+      "scoreAfterResume": 70718410,
+      "recordsRetainedAfterResume": true,
+      "browserConsoleErrors": [],
+      "exactPlaybackFrameObserved": false,
+      "geometryValueReadInThisBrowser": false,
+      "fullReplayAccepted": false
+    },
+    "localProofHashes": {
+      "browser-edited.png": "251e15a6a40818fb07eff111f9269947b5ed3bf7b7c6370e46b7ee19f52f7cf0",
+      "browser-readback.png": "fcb67d33afe2f15682b1b5e7fe1da6a0d6da2ff39e16e961b0804843f14c0b29",
+      "browser-readback-after.png": "920358ef3aa0bc6b225c6b07e3c2a616c288eda54699d23501910af29b3f8664",
+      "browser-download.json": "b209ec8de293e4103b1c29ffceddc6484f7fa23c4d257627c968444867a81eee"
+    },
+    "publicRawReplayIncluded": false
   }
 }
