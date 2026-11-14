@@ -249,6 +249,17 @@ async function fetchAccount<T>(origin: string, path: string, body: Record<string
     if (transient && accountErrorCode(data) !== 'CAPTCHA_UNAVAILABLE')
       throw new AccountRequestError('ACCOUNT_API_UNAVAILABLE', response.status);
     if (!response.ok) throw new AccountRequestError(accountErrorCode(data), response.status);
+    if (origin && path.endsWith('?media=urls') && data && typeof data === 'object' && 'media' in data) {
+      const media = data.media;
+      if (media && typeof media === 'object') {
+        for (const kind of ['avatar', 'cover'] as const) {
+          const fields = media as Record<string, unknown>;
+          const value = fields[kind];
+          if (typeof value === 'string' && /^\/api\/v1\/profiles\/[\w.-]+\/media\/(avatar|cover)\/[a-f0-9]{32}$/.test(value))
+            fields[kind] = origin + value;
+        }
+      }
+    }
     return data as T;
   } catch (error) {
     if (options.signal?.aborted) throw new DOMException('Request cancelled', 'AbortError');
