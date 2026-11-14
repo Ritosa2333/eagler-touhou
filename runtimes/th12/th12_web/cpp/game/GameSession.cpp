@@ -1264,7 +1264,13 @@ bool GameSession::update(const GameSessionInput& input) {
             return open_result(false);
         }
 #if PORT_TITLE == 14
-        if(battle->th14_spell_result_requested){if(state.replay){if(interactive)return return_to_title();state.phase=GameSessionPhase::finished;return true;}return open_result(true);}
+        if(battle->th14_spell_result_requested){
+            if(state.replay){
+                if(interactive)return input.hold_replay_result?pause():return_to_title();
+                state.phase=GameSessionPhase::finished;return true;
+            }
+            return open_result(true);
+        }
 #endif
         if(battle->completion.state.exit==StageExit::Results)return open_result(true);
 #if PORT_TITLE != 14
@@ -1356,7 +1362,7 @@ bool GameSession::pause() {
 #endif
     paused_rate=animations.rate;
 #if PORT_TITLE == 14
-    const bool replay_end=state.replay&&battle&&(battle->game_over_requested||battle->completion.state.exit==StageExit::ReplayEnd);
+    const bool replay_end=state.replay&&battle&&(battle->game_over_requested||battle->th14_spell_result_requested||battle->completion.state.exit==StageExit::ReplayEnd);
     if(replay_end){
         if(!pause_menu->begin_replay_end())return fail(pause_menu->error.c_str());
         // This entry has no physical Pause edge to initialize menu input.

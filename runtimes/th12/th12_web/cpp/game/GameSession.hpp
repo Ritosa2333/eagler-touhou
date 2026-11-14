@@ -53,6 +53,8 @@ struct GameSessionInput {
     float recording_fps=60;
 #if PORT_TITLE == 14
     u32 dialogue_skip_frames=0,dialogue_fire_frames=0;
+    // A hosted viewer holds completed spell playback for its end-state API.
+    bool hold_replay_result=false;
 #endif
 };
 

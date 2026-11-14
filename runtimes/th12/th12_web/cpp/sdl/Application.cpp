@@ -1905,7 +1905,10 @@ struct Application:StageResourceEffects
                 }
                 if(session.state.phase==GameSessionPhase::title){
                     boot_loading.finish(session.animations);
-                    const GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
+                    GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
+#if PORT_TITLE == 14
+        input.hold_replay_result=hosted_replay;
+#endif
                     if(!session.update(input)){error=session.error;return false;}
                     if(!audio_events()||!text_events())return false;
                     title_entry_advanced=true;
@@ -1937,7 +1940,10 @@ struct Application:StageResourceEffects
                 if(!session.finish_loading(true)){error=session.error;return false;}
                 reset_entry_frame_statistics();audio.effects.reset();
                 if(!play_stage_music(session.state.stage,true))return false;
-                const GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
+                GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
+#if PORT_TITLE == 14
+        input.hold_replay_result=hosted_replay;
+#endif
                 const bool updated=initial_stage_overlay_updated?session.update_after_initial_overlay(input):session.update(input);
                 if(!updated){error=session.error;return false;}
                 session.battle->th14_current_music=audio.current_music();
@@ -1995,7 +2001,10 @@ struct Application:StageResourceEffects
 #if PORT_TITLE == 14
         const bool ending_load_pending=session.ending&&session.ending->resource_loading();
 #endif
-        const GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
+        GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
+#if PORT_TITLE == 14
+        input.hold_replay_result=hosted_replay;
+#endif
 #if PORT_TITLE == 14
         if(session.battle)session.battle->th14_current_music=audio.current_music();
 #endif
