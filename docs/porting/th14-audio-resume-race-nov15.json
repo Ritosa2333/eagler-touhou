@@ -1,0 +1,548 @@
+{
+  "schema": "th14/audio-resume-race/1",
+  "source": {
+    "schema": "th14/audio-resume-race-source/1",
+    "sourceParent": "81939159c7c43ac3bb2cfe667bfaa8c0a670e2f0",
+    "before": {
+      "eagler-host.mjs": "984530455bb03ef2a15dc6a98e00526592d31bf4d418fe4357acfc3d6bc1494c",
+      "shell.mjs": "c70f5a3d3a78a2cda12ec8874e9ef0ffe7bc492dcbc7bbc8e6d08a310c1eb3d3"
+    },
+    "after": {
+      "eagler-host.mjs": "5020a976b152551fdd1073f5f77516a71c9efc50bbbbc048db164eb6db5e64ba",
+      "shell.mjs": "d2ea66cecdecc5a2c69f6167fbedee23db0dcbcc9730cd916d6337afd71b3a3b"
+    },
+    "baselineCounterexample": {
+      "resumed": true,
+      "pauses": [
+        1,
+        1,
+        0
+      ],
+      "connections": [
+        "disconnect",
+        "connect"
+      ],
+      "latestPausePreserved": false
+    },
+    "sourceChangedFiles": 2,
+    "gameplayCppChanged": false,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "baseline": {
+    "schema": "th14/audio-resume-race-check/1",
+    "hostSha256": "984530455bb03ef2a15dc6a98e00526592d31bf4d418fe4357acfc3d6bc1494c",
+    "shellSha256": "c70f5a3d3a78a2cda12ec8874e9ef0ffe7bc492dcbc7bbc8e6d08a310c1eb3d3",
+    "cases": [
+      {
+        "name": "running context ordinary resume",
+        "passed": true
+      },
+      {
+        "name": "suspend then successful reconnect",
+        "passed": true
+      },
+      {
+        "name": "new pause cancels pending resume",
+        "passed": false,
+        "error": "Expected values to be strictly equal:\n\ntrue !== false\n"
+      },
+      {
+        "name": "repeated pause still cancels pending resume",
+        "passed": false,
+        "error": "Expected values to be strictly equal:\n\ntrue !== false\n"
+      },
+      {
+        "name": "foreground lost while awaiting context",
+        "passed": true
+      },
+      {
+        "name": "resume rejection preserves suspended loop",
+        "passed": true
+      },
+      {
+        "name": "reconnect failure preserves suspended loop",
+        "passed": true
+      },
+      {
+        "name": "silent no-context control remains resumable",
+        "passed": true
+      },
+      {
+        "name": "detached node without context remains paused",
+        "passed": true
+      },
+      {
+        "name": "only newest concurrent resume commits",
+        "passed": false,
+        "error": "Expected values to be strictly equal:\n\ntrue !== false\n"
+      },
+      {
+        "name": "independent runtime cancellation stays independent",
+        "passed": false,
+        "error": "Expected values to be strictly equal:\n\ntrue !== false\n"
+      },
+      {
+        "name": "actual shell newer viewer pause wins",
+        "passed": false,
+        "error": "[1,0,0]"
+      },
+      {
+        "name": "actual shell denied resume does not unpause",
+        "passed": false,
+        "error": "[1,0]\n\n0 !== 1\n"
+      },
+      {
+        "name": "actual shell hidden document stays paused",
+        "passed": true
+      },
+      {
+        "name": "actual shell normal viewer resume works",
+        "passed": true
+      },
+      {
+        "name": "actual shell stop cancels pending viewer resume",
+        "passed": false,
+        "error": "[\"stop\",0]"
+      },
+      {
+        "name": "actual viewer foreground resume cannot override newer pause command",
+        "passed": false,
+        "error": "[1,0,0,1,0,0]\n\n0 !== 1\n"
+      }
+    ],
+    "passed": 9,
+    "failed": 8,
+    "realBrowserAudioAccepted": false,
+    "audibleOutput": false,
+    "completeGame": false
+  },
+  "candidate": {
+    "schema": "th14/audio-resume-race-check/1",
+    "hostSha256": "5020a976b152551fdd1073f5f77516a71c9efc50bbbbc048db164eb6db5e64ba",
+    "shellSha256": "d2ea66cecdecc5a2c69f6167fbedee23db0dcbcc9730cd916d6337afd71b3a3b",
+    "cases": [
+      {
+        "name": "running context ordinary resume",
+        "passed": true
+      },
+      {
+        "name": "suspend then successful reconnect",
+        "passed": true
+      },
+      {
+        "name": "new pause cancels pending resume",
+        "passed": true
+      },
+      {
+        "name": "repeated pause still cancels pending resume",
+        "passed": true
+      },
+      {
+        "name": "foreground lost while awaiting context",
+        "passed": true
+      },
+      {
+        "name": "resume rejection preserves suspended loop",
+        "passed": true
+      },
+      {
+        "name": "reconnect failure preserves suspended loop",
+        "passed": true
+      },
+      {
+        "name": "silent no-context control remains resumable",
+        "passed": true
+      },
+      {
+        "name": "detached node without context remains paused",
+        "passed": true
+      },
+      {
+        "name": "only newest concurrent resume commits",
+        "passed": true
+      },
+      {
+        "name": "independent runtime cancellation stays independent",
+        "passed": true
+      },
+      {
+        "name": "actual shell newer viewer pause wins",
+        "passed": true
+      },
+      {
+        "name": "actual shell denied resume does not unpause",
+        "passed": true
+      },
+      {
+        "name": "actual shell hidden document stays paused",
+        "passed": true
+      },
+      {
+        "name": "actual shell normal viewer resume works",
+        "passed": true
+      },
+      {
+        "name": "actual shell stop cancels pending viewer resume",
+        "passed": true
+      },
+      {
+        "name": "actual viewer foreground resume cannot override newer pause command",
+        "passed": true
+      }
+    ],
+    "passed": 17,
+    "failed": 0,
+    "realBrowserAudioAccepted": false,
+    "audibleOutput": false,
+    "completeGame": false
+  },
+  "preparedShell": {
+    "schema": "th14/audio-resume-race-check/1",
+    "hostSha256": "5020a976b152551fdd1073f5f77516a71c9efc50bbbbc048db164eb6db5e64ba",
+    "shellSha256": "13be039212651f6b3ce11b453a41aeb236a1bdae3dbef4a1760f83a19654b475",
+    "cases": [
+      {
+        "name": "running context ordinary resume",
+        "passed": true
+      },
+      {
+        "name": "suspend then successful reconnect",
+        "passed": true
+      },
+      {
+        "name": "new pause cancels pending resume",
+        "passed": true
+      },
+      {
+        "name": "repeated pause still cancels pending resume",
+        "passed": true
+      },
+      {
+        "name": "foreground lost while awaiting context",
+        "passed": true
+      },
+      {
+        "name": "resume rejection preserves suspended loop",
+        "passed": true
+      },
+      {
+        "name": "reconnect failure preserves suspended loop",
+        "passed": true
+      },
+      {
+        "name": "silent no-context control remains resumable",
+        "passed": true
+      },
+      {
+        "name": "detached node without context remains paused",
+        "passed": true
+      },
+      {
+        "name": "only newest concurrent resume commits",
+        "passed": true
+      },
+      {
+        "name": "independent runtime cancellation stays independent",
+        "passed": true
+      },
+      {
+        "name": "actual shell newer viewer pause wins",
+        "passed": true
+      },
+      {
+        "name": "actual shell denied resume does not unpause",
+        "passed": true
+      },
+      {
+        "name": "actual shell hidden document stays paused",
+        "passed": true
+      },
+      {
+        "name": "actual shell normal viewer resume works",
+        "passed": true
+      },
+      {
+        "name": "actual shell stop cancels pending viewer resume",
+        "passed": true
+      },
+      {
+        "name": "actual viewer foreground resume cannot override newer pause command",
+        "passed": true
+      }
+    ],
+    "passed": 17,
+    "failed": 0,
+    "realBrowserAudioAccepted": false,
+    "audibleOutput": false,
+    "completeGame": false
+  },
+  "runtime": {
+    "generation": "55696f7fc59af78c3c91fb87bae0e4a3cde4d890b126cc04e1af643a0b37eda8",
+    "filesVerified": 32,
+    "files": [
+      {
+        "path": "Th14ArchiveDecodeClient.mjs",
+        "bytes": 3920,
+        "sha256": "a696dd2daaf079cf989aebca69d493144e2f66db509107a919e8e38f70f3d450",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "Th14ArchiveDecodeEndpoint.mjs",
+        "bytes": 5322,
+        "sha256": "940f0277f4418cd231fda388c5c4a39c84969e26552923971f2006c256a1569f",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "Th14ArchiveDecodeWorker.mjs",
+        "bytes": 302,
+        "sha256": "a4c0c8983b03705d31cc7cec77e15205226aa2e1888181d338fb35d19bcd1239",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "Th14ArchiveReadAhead.mjs",
+        "bytes": 3637,
+        "sha256": "f08632bf558312b725b2b271a0fdb5ea3ed9ff95078bdd57c985dcf1caf37dee",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "Th14AsyncRuntime.mjs",
+        "bytes": 3326,
+        "sha256": "4abcd2a1aadc554c3da8fa11e55ce1ea5299866ee6f7a9729db6e09228c6fbb7",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "Th14SharedSceneCopy.mjs",
+        "bytes": 4985,
+        "sha256": "d00125f52b38ad642cc3f97be1513450bcd8f5a975e86f2854ac2062d06d86e0",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "Th14SharedSceneWorker.mjs",
+        "bytes": 369,
+        "sha256": "423ce2d8734b973726dfb2251a8d3cdd2fce777771c13be9b4889f0766e4d444",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "Th14StageMemoryClient.mjs",
+        "bytes": 10352,
+        "sha256": "8a3c0fc627fa88d79cd2427b6e54a91d320ed7529f0988163849907704224698",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "Th14StageMemoryWorker.mjs",
+        "bytes": 689,
+        "sha256": "05b7415ae808c5d5f05129890f3a9b2ac16a498ce7b5920cadb76f9c9a14cbde",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "Th14StageMemoryWorker.wasm",
+        "bytes": 1027,
+        "sha256": "050f8025cbc84be9447be48775ac8bacda98487355acb4b20e3d9986879f77f1",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "Th14StageRestoreDelivery.mjs",
+        "bytes": 2997,
+        "sha256": "56a8b4e7acd5ccf2f6900c707751d66e91de9b524febf9b41e825df3b1845697",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "Th14StageRestoreProtocol.mjs",
+        "bytes": 1701,
+        "sha256": "a451e36b430ec5c3ca80557eda7e48300b8dbfe504e9b4eba63efcdce52d9870",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "Th14StageRestoreWorker.mjs",
+        "bytes": 257,
+        "sha256": "416f723b2503471d7f4b3be154e172200e8575a9d807fb3cc67634ba6ce62909",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "Th14WebGpuCore.mjs",
+        "bytes": 1004,
+        "sha256": "646af08f35857c92772daf3dfb93bab8a0f7732745df014dc9230773d8223745",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "Th14WebGpuHost.mjs",
+        "bytes": 19989,
+        "sha256": "fd4ee2922cd976548a8425433767dc055ffb9f028603eccebc0522d98a3329b7",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "archive-decoder.mjs",
+        "bytes": 11199,
+        "sha256": "88ad1781faf24be04002cb36d39f70998d2c17ecfc8e208ea951050859920a5e",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "archive-decoder.wasm",
+        "bytes": 96991,
+        "sha256": "b1967b96e9d8c5e484c9f008fb3b31b81889dec33a6e48876e7373f4541cae28",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "directory-keyboard.mjs",
+        "bytes": 6345,
+        "sha256": "77394cea8730d203f95ba4c38daaf542a78a4219985ce4f1cee65a4351250243",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "eagler-host.mjs",
+        "bytes": 16339,
+        "sha256": "5020a976b152551fdd1073f5f77516a71c9efc50bbbbc048db164eb6db5e64ba",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "fonts/cp932.bin",
+        "bytes": 131072,
+        "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "fonts/msgothic.ttc",
+        "bytes": 8990160,
+        "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "fonts/unifont.otf",
+        "bytes": 5105508,
+        "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "keyboard.mjs",
+        "bytes": 1297,
+        "sha256": "df5ff6e6ed6bd2921a09d50c236741a05a73d39c9ac906428c10bc8043e87334",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "managed.css",
+        "bytes": 733,
+        "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "manifest.json",
+        "bytes": 636,
+        "sha256": "5509357d48464205b6044b2a88c15e81c5482c21f5d9682eaae8486aa4b97387",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "motion-replay.mjs",
+        "bytes": 815,
+        "sha256": "3643a3cf65aa7e2340a498a6da03b976875b63570b74c583c13169d57fd8dc5d",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "resources.json",
+        "bytes": 641,
+        "sha256": "0ff33492b98202aadb740594348023e706609f98865528178146397896c33cbd",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "runtime-epoch.mjs",
+        "bytes": 340,
+        "sha256": "e82fecd59b600c3978a516389c159b1a0a2c6b551b949dca3a82de5d5c505b4f",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "shell.mjs",
+        "bytes": 18505,
+        "sha256": "76b3ca32d0a6a0d2f7a238b5c1396e979b6106c937f1015027549a0639a9a6aa",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "th14-sdl.mjs",
+        "bytes": 337430,
+        "sha256": "e327ad6c32f0db1095a4edfb2e1d3b8cc6e105ce0a0344b354605af2d5c67b08",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "th14-sdl.wasm",
+        "bytes": 5458277,
+        "sha256": "3f7ff5a2cd11fc28acb0b70168b5253a985d8368768b2e8db604341a1994971f",
+        "isolationAndNoTransform": true
+      },
+      {
+        "path": "th14.html",
+        "bytes": 507,
+        "sha256": "68c187a4359d43f874e5062d483cab4925b68cdfc69680fe4533ea49ed019053",
+        "isolationAndNoTransform": true
+      }
+    ],
+    "formalThpracAvailable": false,
+    "base": "http://localhost:8252/",
+    "initialPrivatePreviewMissingIsolationHeaders": true,
+    "privatePreviewCorrectedBeforeBrowserLaunch": true,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "zeroGainReconnectComponent": {
+    "passed": 1,
+    "skippedUnrelated": 2,
+    "source": "launcher/tests/react-main/runtime-audio-mix.test.mjs",
+    "syntheticAudioNodeBoundary": true
+  },
+  "browserAccepted": true,
+  "browserEvidencePending": false,
+  "productionChanged": false,
+  "completeGame": false,
+  "browser": {
+    "qualified": true,
+    "generation": "55696f7fc59af78c3c91fb87bae0e4a3cde4d890b126cc04e1af643a0b37eda8",
+    "music": "ogg-stream",
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "normalReimuAStartPauseResumeRightPauseTitleQuitAccepted": true,
+    "normalUpdatePromptUsed": true,
+    "viewerInputBytes": 1734,
+    "viewerInputSha256": "02ec75303e6c0a3a5de003569aad923fb96cf677e7d493124d753d68639c64b7",
+    "viewerPauseFrames": [
+      0,
+      26,
+      84
+    ],
+    "pauseAt26HeldAcrossObservation": true,
+    "naturalEndFrames": 1737,
+    "naturalEndHudScore": 3179620,
+    "naturalEndGraze": 39,
+    "naturalEndPower": 400,
+    "seekUsed": false,
+    "scoreBeforeBytes": 21641,
+    "scoreAfterBytes": 21641,
+    "wholeEncodedEqual": true,
+    "allSevenCharacterRecordsEqual": true,
+    "settingsDifferences": [],
+    "decodedBytes": 149076,
+    "scoreBeforeSha256": "21cad13473a17c44064412e8a5302e3c1597330cedaa2a5d6d0072cd9dc4c55b",
+    "scoreAfterSha256": "21cad13473a17c44064412e8a5302e3c1597330cedaa2a5d6d0072cd9dc4c55b",
+    "actualDelayedAudioResumeRaceInjected": false,
+    "actualHiddenTestAccepted": false,
+    "realHardwareAudibleAccepted": false,
+    "productionChanged": false,
+    "completeGame": false,
+    "proofHashes": {
+      "after-viewer-settings.png": "80d0ac19d2559baf3a825b1fad5bb9dc0ba463086110e59e92d8eaa48700ec75",
+      "after-viewer-settings.txt": "05169e3dc99ec3a24670930fc957832710fac7a6e7feac0933c4b71eefc7a9c6",
+      "ordinary-initial-pause.png": "505937a6b1abd6e9544617c4fadfbdacb1e21259ab94aebd91b867365dddfaed",
+      "ordinary-quit.png": "237d41760c0fc1bca64b9b4627a3e8207d6aa3e4a0ba5ba6b7df8ca58a452c12",
+      "ordinary-quit.txt": "01e792d5580d0125d7be184d6a1ed9505144933ea173c1882a7626f5ca747a0f",
+      "ordinary-resumed-pause.png": "503dbf34f7d75d37626dd051f758746d9d105c787e22fdbe3e5845bdd6e597eb",
+      "ordinary-resumed-pause.txt": "3c8898e74f45a9c8c24db3f15bfcc7b891baff615eb9f3296c6f6398d638080d",
+      "ordinary-return-title.png": "c7dddb9c838474321ff5033efceb0088f92c782ddcdabcc779f9ed71716716be",
+      "update-ready.txt": "8083075f4fdf065480dc6caecdf1a5ffad1da6e6b34f296e4e9ada7bfc106507",
+      "viewer-end.png": "555c1d797de036b8abd78581980799d9a3b3276cc3e9ae0db62e9ca61911b99d",
+      "viewer-end.txt": "261cc80113427c30b3a91960e2f855ada8d16ba7c69ed56ba80766478d04e935",
+      "viewer-paused-26-later.txt": "408e4ceff28cbb8fbb0017187e4b7f4283b0129e76327448d6f62f197ee2fc0b",
+      "viewer-paused-26.png": "a04068c776b3c3af6a457b323e451419fbd42f221f89f6c479d3b6bda0d98e47",
+      "viewer-paused-26.txt": "408e4ceff28cbb8fbb0017187e4b7f4283b0129e76327448d6f62f197ee2fc0b",
+      "viewer-paused-84.png": "b598c1738b5382f008f77a2eb9302cfb77483656338a6e07bc16b6f66bb04494",
+      "viewer-paused-84.txt": "a65e4a6f7f263a71cc7f7796b0c27c64e098d9047e26e010b541a63e5a909166",
+      "viewer-paused-zero.txt": "b00d38f1f81b616dcb43bbe13f9cb82d091d04434decaf6a8912ff8fd5a444b0"
+    }
+  }
+}

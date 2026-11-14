@@ -94,7 +94,7 @@ async function closeAudio(){
   try{core.th11_audio_close();}finally{if(borrowed)s.audioContext=context;}};
  const runtime=Module.th14AsyncRuntime??Module.th14WebGpuRuntime;if(runtime)await runtime.run(close);else close();
 }
-async function stop(){if(stopping)return;stopping=true;core?.th14_practice_state?.(10,0);clearKeyboard();try{core.th11_loop_stop();if(replayViewer)await replayViewer.close();await save();await closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
+async function stop(){if(stopping)return;stopping=true;core?.th14_practice_state?.(10,0);clearKeyboard();try{suspendRuntimeAudio(Module,core);core.th11_loop_stop();if(replayViewer)await replayViewer.close();await save();await closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth11\//,'').replace(/^\//,'');if(!/^(?:scoreth11\.dat|th11\.cfg|replay\/th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(name))throw Error('存档路径无效');return name;}
 async function launch(){
  if(launched)return;clearKeyboard();
@@ -133,8 +133,10 @@ function replayPlayback(){
   rate:async value=>{if(!await callCore('th14_replay_rate',value))throw Error('录像倍率无效');},
   pause:async on=>{
    if(!launched)return;
-   if(!on&&!document.hidden)await resumeRuntimeAudio(Module,core,()=>launched&&!document.hidden);
-   await callCore('th11_loop_pause',on||document.hidden?1:0);
+   if(on||document.hidden){suspendRuntimeAudio(Module,core);await callCore('th11_loop_pause',1);return;}
+   const owner=core;
+   if(await resumeRuntimeAudio(Module,owner,()=>launched&&!stopping&&core===owner&&!document.hidden))
+    await callCore('th11_loop_pause',0);
   },
   close:async()=>{if(core)await callCore('th14_replay_close');},
   visible:()=>!document.hidden&&!th14PageLeaving,
