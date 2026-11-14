@@ -1,6 +1,6 @@
 # 文档总表
 
-共 593 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 594 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -341,6 +341,7 @@
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_FULL_BROWSER_REPLAY_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_FULL_BROWSER_REPLAY_NOV14.md) | TH14 当前版本完整录像浏览器验收 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_LEGACY_BROWSER_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_LEGACY_BROWSER_NOV14.md) | TH14 魔理沙 A Easy 当前浏览器终态 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_FILE_CANCELLATION_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_FILE_CANCELLATION_NOV14.md) | TH14 文件操作取消提示修正候选 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_FILE_CANCELLATION_RELEASE_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_FILE_CANCELLATION_RELEASE_NOV14.md) | TH14 文件取消提示修正交付 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_PUBLIC_SPELL_BROWSER_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_PUBLIC_SPELL_BROWSER_NOV14.md) | TH14 公网成功符卡录像实际验收 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/behavior-release-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/behavior-release-nov14.md) | TH14 行为修复测试站更新 · 2026-11-14 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/current-legacy-marisaa-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/current-legacy-marisaa-nov14.md) | 魔理沙 A Easy 旧录像当前核心复验 |
