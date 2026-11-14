@@ -1,6 +1,6 @@
 # 文档总表
 
-共 583 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 584 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -340,6 +340,7 @@
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/README.md](../archive/th14-subtree-runtime-restoration-20261114/README.md) | TH14 子树运行时修复接续 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/behavior-release-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/behavior-release-nov14.md) | TH14 行为修复测试站更新 · 2026-11-14 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/current-legacy-marisaa-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/current-legacy-marisaa-nov14.md) | 魔理沙 A Easy 旧录像当前核心复验 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/current-spell-flow-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/current-spell-flow-nov14.md) | 当前核心符卡练习流程 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/dialogue-touch-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/dialogue-touch-nov14.md) | TH14 对话截图、周期显示与触控取消 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/overlay-capture-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/overlay-capture-nov14.md) | TH14 练习界面与暂停截图分离 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/replay-laser-geometry-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/replay-laser-geometry-nov14.md) | TH14 录像激光修正的实际几何效果 · 2026-11-14 |
