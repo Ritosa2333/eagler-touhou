@@ -302,8 +302,8 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
     const type = runtimeContentType(path);
     if (type) headers.set("Content-Type", type);
     // TH14 imports verified files as buffers, without their origin headers.
-    // Both the game document and its Wasm worker scripts need isolation.
-    if (root === "runtime/th14/" && (type === "text/html" || type === "text/javascript")) {
+    // All Runtime documents and the imported TH14 worker scripts need isolation.
+    if (type === "text/html" || (root === "runtime/th14/" && type === "text/javascript")) {
       headers.set("Cross-Origin-Embedder-Policy", "require-corp");
       headers.set("Cross-Origin-Opener-Policy", "same-origin");
       headers.set("Cross-Origin-Resource-Policy", "same-origin");
