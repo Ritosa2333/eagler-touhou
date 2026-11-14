@@ -1,0 +1,267 @@
+{
+  "schema": "th14/spell-release/1",
+  "status": "deployed-and-public-http-verified-public-ui-pending",
+  "source": "6417e0287fd1288ad1d97650f507630059d8ea76",
+  "runtimeCodeSource": "300c3eeca331fd830925e14e1d5decb4bcdff138",
+  "wasm": "4f9b87f190756fc38cc330eefbfe6e0a249503776963dbb5f4294998d0db2ebc",
+  "generation": "54f7034144fd94c0f4455c98e874d6ed33373bd9f9a614a2c1a76bd4ae9699fa",
+  "ready": {
+    "prepared": true,
+    "source": "6417e0287fd1288ad1d97650f507630059d8ea76",
+    "runtimeCodeSource": "300c3eeca331fd830925e14e1d5decb4bcdff138",
+    "wasm": "4f9b87f190756fc38cc330eefbfe6e0a249503776963dbb5f4294998d0db2ebc",
+    "runtimeGeneration": "54f7034144fd94c0f4455c98e874d6ed33373bd9f9a614a2c1a76bd4ae9699fa",
+    "runtimeFiles": 32,
+    "sourceBindingsVerified": 387,
+    "commonBindingsVerified": 25,
+    "allRuntimeFilesIdenticalToActualBrowserQualifiedPreview": true,
+    "previousGeneration": "34f6e4b183b57e273555cae385ad12338484102a3a4517600662fb0784dc909c",
+    "previousGenerationPreserved": true,
+    "copyOnWriteForced": true,
+    "frontendReusedThroughSupportedEnvironment": true,
+    "launcherTreeIdenticalToFrozenFrontend": true,
+    "profile": "web-validation-th14",
+    "testBuild": true,
+    "practiceUiEnabled": false,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "deployed": {
+    "productionDeployed": true,
+    "source": "6417e0287fd1288ad1d97650f507630059d8ea76",
+    "wasm": "4f9b87f190756fc38cc330eefbfe6e0a249503776963dbb5f4294998d0db2ebc",
+    "generation": "54f7034144fd94c0f4455c98e874d6ed33373bd9f9a614a2c1a76bd4ae9699fa",
+    "runtimeFilesOriginVerified": 32,
+    "runtimeFilesIdenticalToActualBrowserQualifiedPreview": true,
+    "profile": "web-validation-th14",
+    "testBuild": true,
+    "practiceUiEnabled": false,
+    "previousGenerationPreserved": true,
+    "rollback": "/home/i/Code/th14-release/hosted-before-spell-completion-nov14",
+    "serviceConfigurationUnchanged": true,
+    "servicePidPreserved": true,
+    "publicHttpAccepted": false,
+    "productionBrowserAccepted": false,
+    "completeGame": false
+  },
+  "publicHttp": {
+    "passed": true,
+    "port": 443,
+    "generation": "54f7034144fd94c0f4455c98e874d6ed33373bd9f9a614a2c1a76bd4ae9699fa",
+    "files": [
+      {
+        "path": "Th14ArchiveDecodeClient.mjs",
+        "bytes": 3920,
+        "sha256": "a696dd2daaf079cf989aebca69d493144e2f66db509107a919e8e38f70f3d450"
+      },
+      {
+        "path": "Th14ArchiveDecodeEndpoint.mjs",
+        "bytes": 5322,
+        "sha256": "940f0277f4418cd231fda388c5c4a39c84969e26552923971f2006c256a1569f"
+      },
+      {
+        "path": "Th14ArchiveDecodeWorker.mjs",
+        "bytes": 302,
+        "sha256": "a4c0c8983b03705d31cc7cec77e15205226aa2e1888181d338fb35d19bcd1239"
+      },
+      {
+        "path": "Th14ArchiveReadAhead.mjs",
+        "bytes": 3637,
+        "sha256": "f08632bf558312b725b2b271a0fdb5ea3ed9ff95078bdd57c985dcf1caf37dee"
+      },
+      {
+        "path": "Th14AsyncRuntime.mjs",
+        "bytes": 3326,
+        "sha256": "4abcd2a1aadc554c3da8fa11e55ce1ea5299866ee6f7a9729db6e09228c6fbb7"
+      },
+      {
+        "path": "Th14SharedSceneCopy.mjs",
+        "bytes": 4985,
+        "sha256": "d00125f52b38ad642cc3f97be1513450bcd8f5a975e86f2854ac2062d06d86e0"
+      },
+      {
+        "path": "Th14SharedSceneWorker.mjs",
+        "bytes": 369,
+        "sha256": "423ce2d8734b973726dfb2251a8d3cdd2fce777771c13be9b4889f0766e4d444"
+      },
+      {
+        "path": "Th14StageMemoryClient.mjs",
+        "bytes": 10352,
+        "sha256": "8a3c0fc627fa88d79cd2427b6e54a91d320ed7529f0988163849907704224698"
+      },
+      {
+        "path": "Th14StageMemoryWorker.mjs",
+        "bytes": 689,
+        "sha256": "05b7415ae808c5d5f05129890f3a9b2ac16a498ce7b5920cadb76f9c9a14cbde"
+      },
+      {
+        "path": "Th14StageMemoryWorker.wasm",
+        "bytes": 1027,
+        "sha256": "050f8025cbc84be9447be48775ac8bacda98487355acb4b20e3d9986879f77f1"
+      },
+      {
+        "path": "Th14StageRestoreDelivery.mjs",
+        "bytes": 2997,
+        "sha256": "56a8b4e7acd5ccf2f6900c707751d66e91de9b524febf9b41e825df3b1845697"
+      },
+      {
+        "path": "Th14StageRestoreProtocol.mjs",
+        "bytes": 1701,
+        "sha256": "a451e36b430ec5c3ca80557eda7e48300b8dbfe504e9b4eba63efcdce52d9870"
+      },
+      {
+        "path": "Th14StageRestoreWorker.mjs",
+        "bytes": 257,
+        "sha256": "416f723b2503471d7f4b3be154e172200e8575a9d807fb3cc67634ba6ce62909"
+      },
+      {
+        "path": "Th14WebGpuCore.mjs",
+        "bytes": 1004,
+        "sha256": "646af08f35857c92772daf3dfb93bab8a0f7732745df014dc9230773d8223745"
+      },
+      {
+        "path": "Th14WebGpuHost.mjs",
+        "bytes": 19989,
+        "sha256": "fd4ee2922cd976548a8425433767dc055ffb9f028603eccebc0522d98a3329b7"
+      },
+      {
+        "path": "archive-decoder.mjs",
+        "bytes": 11199,
+        "sha256": "88ad1781faf24be04002cb36d39f70998d2c17ecfc8e208ea951050859920a5e"
+      },
+      {
+        "path": "archive-decoder.wasm",
+        "bytes": 96991,
+        "sha256": "b1967b96e9d8c5e484c9f008fb3b31b81889dec33a6e48876e7373f4541cae28"
+      },
+      {
+        "path": "directory-keyboard.mjs",
+        "bytes": 6345,
+        "sha256": "77394cea8730d203f95ba4c38daaf542a78a4219985ce4f1cee65a4351250243"
+      },
+      {
+        "path": "eagler-host.mjs",
+        "bytes": 15908,
+        "sha256": "984530455bb03ef2a15dc6a98e00526592d31bf4d418fe4357acfc3d6bc1494c"
+      },
+      {
+        "path": "fonts/cp932.bin",
+        "bytes": 131072,
+        "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+      },
+      {
+        "path": "fonts/msgothic.ttc",
+        "bytes": 8990160,
+        "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db"
+      },
+      {
+        "path": "fonts/unifont.otf",
+        "bytes": 5105508,
+        "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1"
+      },
+      {
+        "path": "keyboard.mjs",
+        "bytes": 1297,
+        "sha256": "df5ff6e6ed6bd2921a09d50c236741a05a73d39c9ac906428c10bc8043e87334"
+      },
+      {
+        "path": "managed.css",
+        "bytes": 733,
+        "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+      },
+      {
+        "path": "manifest.json",
+        "bytes": 636,
+        "sha256": "fe156af2b2975823336158b7fed5ea02ad1aaca4d417bc004997bd32deaeb5bb"
+      },
+      {
+        "path": "motion-replay.mjs",
+        "bytes": 815,
+        "sha256": "3643a3cf65aa7e2340a498a6da03b976875b63570b74c583c13169d57fd8dc5d"
+      },
+      {
+        "path": "resources.json",
+        "bytes": 641,
+        "sha256": "0ff33492b98202aadb740594348023e706609f98865528178146397896c33cbd"
+      },
+      {
+        "path": "runtime-epoch.mjs",
+        "bytes": 340,
+        "sha256": "e82fecd59b600c3978a516389c159b1a0a2c6b551b949dca3a82de5d5c505b4f"
+      },
+      {
+        "path": "shell.mjs",
+        "bytes": 18363,
+        "sha256": "78a85b7c32ec9edacf08e9a033af2e5b8c25f2dfa7c21fc622c4ff769fe8d546"
+      },
+      {
+        "path": "th14-sdl.mjs",
+        "bytes": 337166,
+        "sha256": "033a72b1bda8451fb2868805a8599453ffdc69031dc82d1f5f7e3cfdb685ea6b"
+      },
+      {
+        "path": "th14-sdl.wasm",
+        "bytes": 5456991,
+        "sha256": "4f9b87f190756fc38cc330eefbfe6e0a249503776963dbb5f4294998d0db2ebc"
+      },
+      {
+        "path": "th14.html",
+        "bytes": 507,
+        "sha256": "68c187a4359d43f874e5062d483cab4925b68cdfc69680fe4533ea49ed019053"
+      }
+    ],
+    "wholeFileHashesAndIsolationHeadersAccepted": true,
+    "productionChanged": true,
+    "completeGame": false
+  },
+  "releasePreview": {
+    "actualWebGL2": true,
+    "site": "http://localhost:8240/?game=th14",
+    "generation": "54f7034144fd94c0f4455c98e874d6ed33373bd9f9a614a2c1a76bd4ae9699fa",
+    "wasm": "4f9b87f190756fc38cc330eefbfe6e0a249503776963dbb5f4294998d0db2ebc",
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "musicMode": "ogg-stream",
+    "practiceUiEnabled": false,
+    "ordinaryNormalReimuAStarted": true,
+    "naturalGameOverObserved": true,
+    "continueObserved": true,
+    "pauseResume": true,
+    "movementAndShootingObserved": true,
+    "returnedTitleAndQuit": true,
+    "verifiedRuntimeUpdateAccepted": true,
+    "integrityBypassed": false,
+    "initialMusicWarningResolvedAfterNormalVerifiedRestart": true,
+    "firstPausedNamedScreenshotActuallyGameOver": {
+      "retained": true,
+      "sha256": "30fe82ccaa08ee4374ba6d12ff4ea3c310cb007ef9f950ae28fe4acb34fbd5f6"
+    },
+    "proofHashes": {
+      "preview-paused-v2.png": "86303bc5cc6c05a6ad9a89baca8881aa9c07682e1a24f32d7afc161d0c71d176",
+      "preview-resumed-paused.png": "8527d4069332ff2f91959971ae66ed0b7a294c2deafe56d0f4080d46bcc3af07",
+      "preview-return-title.png": "4de2626a06fe4441cb415a56b32457ac0876cf5a62ea296191606f8b05842ee4",
+      "preview-quit.png": "2f5dea409c967cfcf9da9d26d0f0d9709d4bca194b16cfd48dddd8d50fed276f"
+    },
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "productionBrowserAccepted": false,
+  "publicBrowser": {
+    "tab": "46",
+    "initialGamePanelObserved": true,
+    "fullZeroVolumeStateObservedThroughDom": true,
+    "recordedOperation": "open volume settings; later replay-manager click result unobserved",
+    "observationFailures": [
+      "native click/state read timed out and kernel reset",
+      "same-tab DOM snapshot returned expanded volume settings with both sliders at 0%",
+      "same-tab replay-manager click/state read timed out and kernel reset",
+      "same-tab getTab observation timed out and kernel reset"
+    ],
+    "sameTabRetained": true,
+    "serviceNotRestartedForObservationTimeout": true,
+    "gameFailureProven": false,
+    "successReplayEndAccepted": false
+  },
+  "productionChanged": true,
+  "completeGame": false
+}
