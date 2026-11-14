@@ -1,4 +1,16 @@
 {
+  "cloudSave.waitingTitle": {
+    "id": "cloudSave_waitingTitle",
+    "params": []
+  },
+  "cloudSave.waitingMessage": {
+    "id": "cloudSave_waitingMessage",
+    "params": []
+  },
+  "cloudSave.keepWaiting": {
+    "id": "cloudSave_keepWaiting",
+    "params": []
+  },
   "document.multiplayer.title": {
     "id": "document_multiplayer_title",
     "params": []
@@ -1283,7 +1295,9 @@
   },
   "th09.ratingGames": {
     "id": "th09_ratingGames",
-    "params": ["games"]
+    "params": [
+      "games"
+    ]
   },
   "th09.matchEnded": {
     "id": "th09_matchEnded",
@@ -1295,7 +1309,9 @@
   },
   "th09.firstRating": {
     "id": "th09_firstRating",
-    "params": ["rating"]
+    "params": [
+      "rating"
+    ]
   },
   "th09.matchInformation": {
     "id": "th09_matchInformation",
@@ -10439,9 +10455,24 @@
     "id": "profile_gameDataMakeDefault",
     "params": []
   },
-  "replay.th14BeamCopy": {"id": "replay_th14BeamCopy", "params": []},
-  "replay.th14BeamCopyConfirm": {"id": "replay_th14BeamCopyConfirm", "params": []},
-  "replay.th14BeamCopyDownload": {"id": "replay_th14BeamCopyDownload", "params": []},
-  "replay.th14BeamAlreadyTagged": {"id": "replay_th14BeamAlreadyTagged", "params": []},
-  "replay.th14BeamCopyInvalid": {"id": "replay_th14BeamCopyInvalid", "params": []}
+  "replay.th14BeamCopy": {
+    "id": "replay_th14BeamCopy",
+    "params": []
+  },
+  "replay.th14BeamCopyConfirm": {
+    "id": "replay_th14BeamCopyConfirm",
+    "params": []
+  },
+  "replay.th14BeamCopyDownload": {
+    "id": "replay_th14BeamCopyDownload",
+    "params": []
+  },
+  "replay.th14BeamAlreadyTagged": {
+    "id": "replay_th14BeamAlreadyTagged",
+    "params": []
+  },
+  "replay.th14BeamCopyInvalid": {
+    "id": "replay_th14BeamCopyInvalid",
+    "params": []
+  }
 }

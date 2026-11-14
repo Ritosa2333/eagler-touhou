@@ -31,12 +31,15 @@ void information(){
         auto field=[](const Labels& title,int value){
             ImGui::TextUnformatted(label(title));ImGui::NextColumn();ImGui::Text("%8d",value);ImGui::NextColumn();
         };
-        field(practice_THPRAC_INGAMEINFO_MISS_COUNT,battle.th14_practice_misses);
-        field(practice_THPRAC_INGAMEINFO_BOMB_COUNT,battle.bomb_count());
+        const auto& economy=game->economy;
+        field(practice_THPRAC_INGAMEINFO_MISS_COUNT,economy.th14_practice_misses);
+        field(practice_THPRAC_INGAMEINFO_BOMB_COUNT,economy.th14_practice_bombs);
         if(show_items)field(practice_THPRAC_INGAMEINFO_TH14_ITEMS_CNT,count_items());
         if(show_bonus){
-            const auto& tiers=battle.th14_practice_collections;
-            const int cycle=game->economy.th14_life_awards;
+            // thprac: total and next bonus from 0x4f5894 (special drop
+            // counter), extends from 0x4f586c (life awards).
+            const auto& tiers=economy.th14_practice_collections;
+            const int cycle=economy.th14_special_drop_count;
             const ImVec4 colors[]={{.6f,.9f,1,1},{.8f,1,.8f,1},{.7f,.9f,.4f,1},{1,.85f,.5f,1},{1,.95f,.5f,1}};
             ImGui::TextUnformatted(label(practice_THPRAC_INGAMEINFO_TH14_BONUS_NORMAL));ImGui::NextColumn();
             for(int i=0;i<4;++i){
@@ -47,7 +50,7 @@ void information(){
             ImGui::TextColored(colors[4],"%8u",tiers[4]);ImGui::NextColumn();
             field(practice_THPRAC_INGAMEINFO_TH14_BONUS_TOTAL,cycle);
             ImGui::TextUnformatted(label(practice_THPRAC_INGAMEINFO_TH14_EXTEND_COUNT));ImGui::NextColumn();
-            ImGui::TextColored(battle.th14_practice_extends>=49?ImVec4(.5f,.5f,.5f,1):ImVec4(1,1,1,1),"%8u",battle.th14_practice_extends);
+            ImGui::TextColored(economy.th14_life_awards>=49?ImVec4(.5f,.5f,.5f,1):ImVec4(1,1,1,1),"%8d",economy.th14_life_awards);
             ImGui::NextColumn();ImGui::TextUnformatted(label(practice_THPRAC_INGAMEINFO_TH14_BONUS_NEXT));ImGui::NextColumn();
             for(int i=0;i<5;++i){
                 if(i)ImGui::SameLine(0,3);

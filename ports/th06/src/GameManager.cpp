@@ -425,6 +425,9 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
         mgr->maxRank = g_DifficultyInfo[g_GameManager.difficulty].maxRank;
         mgr->deaths = 0;
         mgr->bombsUsed = 0;
+        // thprac th06_enter_game (0x41BDE8) zeroes its miss count on a new run
+        // only; stage changes come back here through REINIT and keep it.
+        PracticeRuntime::ResetTracker();
         mgr->spellcardsCaptured = 0;
     }
     else
@@ -437,7 +440,6 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
     mgr->grazeInStage = 0;
     mgr->isInGameMenu = 0;
     mgr->currentStage = mgr->currentStage + 1;
-    PracticeRuntime::ResetTracker();
     PracticeRuntime::ResetBgmTracking();
     if (g_GameManager.isInReplay == 0)
     {

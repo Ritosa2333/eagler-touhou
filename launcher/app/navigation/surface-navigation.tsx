@@ -1105,6 +1105,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
       confirmOnEnter={applicationDecision?.confirmOnEnter || false}
       input={applicationDecision?.input}
       comparison={applicationDecision?.comparison}
+      progress={applicationDecision?.progress}
       onSecondary={() => {if (applicationDecision) decisions?.resolve('secondary');}}
       onCancel={() => {
         if (applicationDecision) decisions?.resolve('cancel');

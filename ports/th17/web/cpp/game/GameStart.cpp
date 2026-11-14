@@ -16,6 +16,8 @@ bool GameStart::begin(bool fresh){
     player.bombs=run.animal==1?4:3;player.power_step=1;player.initial_bombs=player.bombs;
     if(!check(host.previous_bomb_display(player.bombs,player.bomb_pieces),"Previous bomb display unavailable"))return false;
     player.bomb_pieces=player.life_pieces=score.life_piece_tier=player.deaths=0;
+    player.practice_bombs=player.practice_roars=player.practice_roar_breaks=player.practice_special_spirits=0;
+    for(auto& count:player.practice_roar_animals)count=0;
     roaring.count=0;roaring.reward_age.set(0);roaring.countdown.set(0);roaring.duration=roaring.kind=roaring.extension=0;
     run.initial_point_value=1000000;score.max_point_value=50000000;
     score.point_value=truncate_int(float(float(run.initial_point_value)/100.f)*100.f);

@@ -1,4 +1,7 @@
 {
+  "cloudSave_waitingTitle": "Preparing cloud save",
+  "cloudSave_waitingMessage": "You can keep waiting or start with this browser’s save.",
+  "cloudSave_keepWaiting": "Keep waiting",
   "document_multiplayer_title": "Multiplayer",
   "document_multiplayer_common": "Co-op rules",
   "document_multiplayer_coop": "Co-op",
