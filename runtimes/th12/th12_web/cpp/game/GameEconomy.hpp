@@ -32,6 +32,11 @@ struct GameEconomy {
     i32 th14_reserved_54=0;
     i32 th14_bombs=3,th14_bomb_fragments=0,th14_life_awards=0;
     Th14ItemCombo th14_combo;
+    // thprac in-game info counters. They count the whole run, like thprac's
+    // own counters (reset by its game-start hook only); GameBattle is rebuilt
+    // at every stage, so they cannot live there.
+    u32 th14_practice_misses=0,th14_practice_bombs=0;
+    u32 th14_practice_collections[5]{};
 #endif
     void add_score(i32 amount) noexcept;
     void add_point_value(i32 amount) noexcept;
