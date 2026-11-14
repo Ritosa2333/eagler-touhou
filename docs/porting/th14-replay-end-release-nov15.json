@@ -50,5 +50,10 @@
     "deployed.json": "dd2dadb7b425dc57f36bec38999ee567a70cba1189c96b777517a793ed1ef61e",
     "public-http-verified.json": "6ef324eb45fb031526457d1537f52e893367fc89cf7394c180fcf83d7252878f",
     "browser-formal-qualified.json": "b244804e0cedca200b6a2a634cc8bd25aae953a4d7a11f0922fbe88a60b06b3e"
-  }
+  },
+  "docsIndexAndCheckPassed": true,
+  "documentsChecked": 605,
+  "sourceDirectoriesChecked": 22,
+  "priorMissingReferenceFailuresPreserved": 2,
+  "codeOrDeploymentChangedByDocumentationRepair": false
 }

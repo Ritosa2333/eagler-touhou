@@ -1,6 +1,6 @@
 # 文档总表
 
-共 601 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 605 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -606,4 +606,8 @@
 | CI 与协作模板 | [.github/PULL_REQUEST_TEMPLATE.md](../.github/PULL_REQUEST_TEMPLATE.md) | 改动 |
 | 项目文档 | [docs/README.md](README.md) | 文档 |
 | 项目文档 | [docs/TOUHOU_PROGRESS.md](TOUHOU_PROGRESS.md) | 东方作品进度 |
+| 项目文档 | [docs/porting/TH14_CURRENT_AUDIO_EXTRA_NOV09.md](porting/TH14_CURRENT_AUDIO_EXTRA_NOV09.md) | TH14 当前提供者的六机体完整 Extra 回归 · 2026-11-09 |
+| 项目文档 | [docs/porting/TH14_CURRENT_EXTRA_BROWSER_NOV15.md](porting/TH14_CURRENT_EXTRA_BROWSER_NOV15.md) | TH14 当前构建 Extra 浏览器自然结束与成绩保护 · 2026-11-15 |
+| 项目文档 | [docs/porting/TH14_REPLAY_END_PRESENTATION_NOV15.md](porting/TH14_REPLAY_END_PRESENTATION_NOV15.md) | TH14 网页录像结束后的完整分数动画 · 2026-11-15 |
+| 项目文档 | [docs/porting/TH14_REPLAY_END_RELEASE_NOV15.md](porting/TH14_REPLAY_END_RELEASE_NOV15.md) | TH14 录像终点分数显示修复交付 · 2026-11-15 |
 | 项目文档 | [docs/th075-thcrap.md](th075-thcrap.md) | th075 语言资源准备 |
