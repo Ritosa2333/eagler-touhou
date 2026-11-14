@@ -1,7 +1,7 @@
 import {synchronizedMainAuthority} from './source-text.mjs';
 /** Independent pinned-main component/service regression. SYNTHETIC DOM + MEMORY
  * ROUTER ONLY: not production-host wiring, browser top layer, CSS, relay or runtime QA. */
-import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
+import {test, beforeAll as before, afterAll as after, afterEach, vi} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -168,13 +168,6 @@ function expectedDialog(f, locale) {
   n('#closeDialog', doc).replaceChildren();
   n('#submitRoom', doc).textContent = t(locale, create ? 'lobby.create' : 'lobby.joinRoom');
   n('#createFields', doc).hidden = n('#policyFields', doc).hidden = !create; n('#codeField', doc).hidden = create;
-  const rules = doc.createElement('details'), summary = doc.createElement('summary');
-  rules.className = 'lobby-create-rules';
-  rules.hidden = !create;
-  summary.textContent = t(locale, 'room.ruleSettings');
-  const fields = n('#policyFields', doc);
-  fields.before(rules);
-  rules.append(summary, fields);
   n('#roomCodeInput', doc).required = !create;
   n('#codeField span', doc).className = 'sr-only';
   if (create && form.visibility === 'private') n('#formNote', doc).textContent = t(locale, 'room.privateHint');
@@ -297,6 +290,19 @@ test('Running cooperative room admits an observer even when its engine must wait
   }
 });
 
+test('versus rooms show elapsed waiting time and become long-wait at fifteen minutes', async () => {
+  const f=await fixture({selectedProduct:'th09mp',host:{games:['th09']}}).live([room({product:'th09mp',capacity:2,seats:[{initial:'A',online:true},null],createdAt:Date.now()-14*60_000})]);
+  assert.ok(f.service.getSnapshot().visibleRooms[0].createdAt);
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
+  assert.match(n('.lobby-room-duration').textContent,/Waiting 14:/);
+  assert.equal(n('.lobby-room-state').textContent,t('en','lobby.recruiting'));
+  await f.receive([room({product:'th09mp',capacity:2,seats:[{initial:'A',online:true},null],createdAt:Date.now()-15*60_000})]);
+  await m.update({snapshot:f.service.getSnapshot()});
+  assert.equal(n('.lobby-room-state').textContent,t('en','lobby.longWait'));
+  assert.ok(n('.lobby-room-row').hasAttribute('data-long-wait'));
+  assert.equal(n('.lobby-join').textContent,t('en','lobby.join'));
+});
+
 for (const locale of ['zh-CN', 'en']) test(`Lobby real loading/live/empty/list conditions and original static sections: ${locale}`, async () => {
   const f = fixture({locale}); const {opens} = await mountLobby(f, {}, {locale});
   assert.equal(n('#roomList').getAttribute('aria-busy'), 'true'); assert.equal(n('#listLoading').hidden, false);
@@ -378,7 +384,7 @@ for (const [kind, title, hint] of [['offline', 'lobby.offline', 'lobby.refreshHi
     const detail = kind === 'offline' ? t('en', 'network.manifestUnavailable')
       : kind === 'unsupported' ? t('en', 'network.relayClosed', {code: 1008}) : '';
     assert.equal(n('#connectionWarningHint').textContent, [t('en', hint), detail].filter(Boolean).join(' | '));
-    assert.equal(n('#connectionWarning').getAttribute('role'), 'alert'); assert.equal(env.document.querySelector('#emptyState'), null);
+    assert.equal(n('#connectionWarning').getAttribute('role'), 'alert'); assert.ok(n('.lobby-list-surface').contains(n('#connectionWarning'))); assert.equal(env.document.querySelector('#emptyState'), null);
     assert.equal(n('#createButton').disabled, true); assert.equal(n('#codeButton').disabled, true);
     const before = f.sockets.length; await click('#connectionRefresh'); await flush();
     if (kind === 'unsupported') assert.equal(f.sockets.length, before + 1);
@@ -416,6 +422,32 @@ test('favorite multiplayer rooms sort first, update immediately and retain order
   }
 });
 
+test('all games puts favorites first and PC-98 last within each priority', async () => {
+  const rooms = [room({product:'th03mp', code:'1111', capacity:2, seats:[{initial:'A',online:true},null]}), room({code:'2222'})];
+  const f = await fixture({selectedProduct:'', host:{games:['th03','th06']}}).live(rooms);
+  const key = 'eagler.book.multiplayer-favorites';
+  const saved = env.window.localStorage.getItem(key);
+  const order = () => all('#roomList .lobby-room-row').map(el => el.dataset.key);
+  async function setFavorites(products) {
+    await React.act(async () => {
+      env.window.localStorage.setItem(key, JSON.stringify(products));
+      env.window.dispatchEvent(new env.window.CustomEvent('eagler-book-preferences'));
+    });
+  }
+  try {
+    await setFavorites([]);
+    await mountLobby(f);
+    assert.deepEqual(order(), ['th06mp-2222','th03mp-1111']);
+    await setFavorites(['th03mp']);
+    assert.deepEqual(order(), ['th03mp-1111','th06mp-2222']);
+    await setFavorites(['th03mp','th06mp']);
+    assert.deepEqual(order(), ['th06mp-2222','th03mp-1111']);
+  } finally {
+    if (saved === null) env.window.localStorage.removeItem(key);
+    else env.window.localStorage.setItem(key,saved);
+  }
+});
+
 test('Lobby defaults to live ratings and shows no-rating games without a win-rate fallback', async () => {
   const originalFetch = globalThis.fetch;
   const requests = [];
@@ -430,7 +462,7 @@ test('Lobby defaults to live ratings and shows no-rating games without a win-rat
       '/api/v1/profiles/rated': {nickname:'Rated'},
       '/api/v1/profiles/unrated': {nickname:'Unrated'},
     };
-    assert.ok(path in responses, path);
+    assert.ok(path in responses, path); if (path.startsWith('/api/v1/profiles/')) assert.equal(url.searchParams.get('media'), 'urls');
     return new Response(JSON.stringify(responses[path]), {headers:{'Content-Type':'application/json'}});
   };
   try {
@@ -455,7 +487,7 @@ test('Lobby defaults to live ratings and shows no-rating games without a win-rat
     assert.deepEqual(all('.player-profile-card-characters strong').map(node=>node.textContent),['1,410','1,380','1,290']);
     await click('.lobby-seat[data-registered]');
     await click('.lobby-room-row:nth-child(2) .lobby-seat[data-registered]');
-    assert.equal(n('.player-profile-card-name h3').textContent,'Unrated');
+    await React.act(async () => vi.waitFor(() => assert.equal(n('.player-profile-card-name h3').textContent,'Unrated')));
     assert.equal(env.document.querySelector('.player-profile-card-scores'),null);
     assert.ok(requests.every(path=>!path.endsWith('/th09-duels')));
     await m.unmount();
@@ -518,9 +550,8 @@ for (const locale of ['zh-CN', 'en']) for (const mode of ['create', 'join']) tes
   const dialog = n('#roomDialog').cloneNode(true);
   assert.ok(n('#closeDialog svg[aria-hidden="true"]', dialog));
   n('#closeDialog', dialog).replaceChildren();
-  assert.equal(n('.lobby-create-rules', dialog).open, false);
-  assert.ok(n('.lobby-create-rules summary svg[aria-hidden="true"]', dialog));
-  n('.lobby-create-rules summary', dialog).textContent = t(locale, 'room.ruleSettings');
+  assert.equal(dialog.querySelector('.lobby-create-rules'), null);
+  assert.equal(n('#policyFields', dialog).hidden, mode !== 'create');
   assert.deepEqual(normalize(dialog), normalize(expectedDialog(f, locale)));
   assert.equal(n('#roomDialog').open, true); assert.equal(n('#roomDialog').getAttribute('aria-labelledby'), 'dialogTitle');
   assert.deepEqual(all('#roomDialog select.custom-select-native').map(s => s.id), ['gameSelect', 'capacitySelect', 'difficultySelect', 'visibilitySelect', 'cheatSelect']);

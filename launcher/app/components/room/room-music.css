@@ -1,5 +1,13 @@
 @property --music-tint-a { syntax: "<color>"; inherits: false; initial-value: #88725c; }
 @property --music-tint-b { syntax: "<color>"; inherits: false; initial-value: #8e929c; }
+@layer components {
+  #mpRoomView .room-workspace-music-toggle {position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;min-width:40px;height:40px;padding:6px}
+  .room-workspace-music-toggle .room-music-record {width:26px;height:26px;flex:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .room-music-tonearm {transform-origin:26px 5px;transform:rotate(-24deg);transition:transform 420ms cubic-bezier(.22,.7,.2,1)}
+  .room-workspace-music-toggle[data-playing="true"] .room-music-tonearm {transform:rotate(0deg)}
+  @media(prefers-reduced-motion:reduce) {.room-music-tonearm {transition:none}}
+  .less-motion .room-music-tonearm {transition:none}
+}
 @layer utilities {
   #player.room-workspace .room-workspace-column > .room-music-strip {
     order: 1;

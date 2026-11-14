@@ -585,20 +585,29 @@ test('verified member sends trimmed text and waits for server results before ena
   model.sendText();
   assert.deepEqual(sends,[{type:'free-chat',text:'hello everyone',serial:7}]);
   assert.equal(model.getSnapshot().sending,true);
+  assert.equal(model.getSnapshot().draft,'');
+  assert.equal(model.getSnapshot().entries.at(-1).delivery,'pending');
 
   model.setDraft('typed while sending');
   model.receive({type:'chat-result',action:'free-chat',ok:true});
+  assert.equal(model.getSnapshot().sending,true);
+  model.receive({type:'free-chat',room:'ROOM',serial:7,seat:0,clientId:'local',authorId:'account-1',messageId:42,name:'Local',text:'hello everyone'});
   assert.equal(model.getSnapshot().sending,false);
+  assert.equal(model.getSnapshot().entries.length,1);
+  assert.equal(model.getSnapshot().entries[0].messageId,42);
   assert.equal(model.getSnapshot().draft,'typed while sending');
   model.sendText();
   assert.deepEqual(sends.at(-1),{type:'free-chat',text:'typed while sending',serial:7});
   model.receive({type:'chat-result',action:'free-chat',ok:false,code:'send-rate-limited'});
   assert.equal(model.getSnapshot().sending,false);
-  assert.equal(model.getSnapshot().draft,'typed while sending');
-  assert.deepEqual(notifications,['send-rate-limited']);
+  assert.equal(model.getSnapshot().draft,'');
+  assert.equal(model.getSnapshot().entries.at(-1).delivery,'failed');
+  assert.equal(model.getSnapshot().entries.at(-1).phrase.zh,'typed while sending');
+  assert.equal(model.getSnapshot().sendError,'send-rate-limited');
+  assert.deepEqual(notifications,[]);
   model.receive({type:'chat-result',action:'free-chat',ok:false,code:'sign-in-required'});
   assert.equal(model.getSnapshot().registered,false);
-  assert.deepEqual(notifications,['send-rate-limited','sign-in-required']);
+  assert.deepEqual(notifications,[]);
 });
 test('send timeout releases pending state, then disconnect clears verification and its timer', (t) => {
   const {model,clock,sends,notifications}=fixture(t,context({localClientId:'local'}));
@@ -610,10 +619,13 @@ test('send timeout releases pending state, then disconnect clears verification a
   assert.equal(model.getSnapshot().sending,true);
   clock.advance(1);
   assert.equal(model.getSnapshot().sending,false);
-  assert.equal(model.getSnapshot().draft,'keep this text');
-  assert.deepEqual(notifications,['service-unavailable']);
+  assert.equal(model.getSnapshot().draft,'');
+  assert.equal(model.getSnapshot().entries.at(-1).delivery,'failed');
+  assert.equal(model.getSnapshot().sendError,'service-unavailable');
+  assert.deepEqual(notifications,[]);
 
-  model.sendText();
+  model.setDraft('keep this text'); model.sendText();
+  assert.equal(model.getSnapshot().sendError,undefined);
   assert.equal(clock.jobs.size,1);
   model.update(context({localClientId:'local',connected:false}));
   assert.equal(model.getSnapshot().registered,false);

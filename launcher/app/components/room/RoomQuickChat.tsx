@@ -1,5 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
+import { ChevronsDown } from 'lucide-react';
 import { Slider } from '../../ui/slider';
+import { Button } from '../../ui/button';
 import { ChatAvatar, ChatComposer, ChatMessageContent, useChatReportConfirmation } from './ChatControls';
 import type { MultiplayerQuickChatModel } from '../../../src/launcher/multiplayer-quick-chat-model.mts';
 import type { DecisionStore } from '../../models/decisions';
@@ -22,10 +24,15 @@ function RoomChatLog({model, mobile, decisions}: {
   const rows = useRef<HTMLDivElement>(null);
   const position = useRef({max: 0, offset: 0});
   const [scroll, setScroll] = useState(position.current);
+  const [unread, setUnread] = useState(0);
+  const lastEntry = useRef<number | null>(null);
+  const pointerStart = useRef<number | null>(null);
+  const [dragging, setDragging] = useState(false);
   const confirmReport = useChatReportConfirmation(model, decisions);
   function readScroll(element: HTMLDivElement) {
     const max = Math.max(0, element.scrollHeight - element.clientHeight);
     const offset = Math.min(max, Math.max(0, Math.round(element.scrollTop)));
+    if (max - offset <= 2) setUnread(0);
     if (max === position.current.max && offset === position.current.offset) return;
     position.current = {max, offset};
     setScroll(position.current);
@@ -34,10 +41,13 @@ function RoomChatLog({model, mobile, decisions}: {
   useLayoutEffect(() => {
     const element = log.current;
     if (!element) return;
-    if (!mobile) {
-      element.scrollTop = element.scrollHeight;
-      return;
-    }
+    const previous = lastEntry.current;
+    const previousIndex = previous === null ? -1 : entries.findIndex(entry => entry.id === previous);
+    if (previous !== null && previousIndex >= 0 && position.current.max - position.current.offset > 2) {
+      const count = entries.slice(previousIndex + 1).filter(entry => !muted.includes(entry.clientId)).length;
+      if (count) setUnread(value => value + count);
+    } else if (previous !== null && previousIndex < 0) setUnread(0);
+    lastEntry.current = entries.at(-1)?.id ?? null;
     const update = () => {
       if (!element.clientHeight) return;
       const {max, offset} = position.current;
@@ -45,10 +55,10 @@ function RoomChatLog({model, mobile, decisions}: {
       readScroll(element);
     };
     update();
-    if (typeof ResizeObserver === 'undefined' || !rows.current) return;
+    if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(update);
     observer.observe(element);
-    observer.observe(rows.current);
+    if (rows.current) observer.observe(rows.current);
     return () => observer.disconnect();
   }, [entries, muted, mobile]);
   const messages = entries.filter(entry => !muted.includes(entry.clientId)).map(entry => (
@@ -58,7 +68,30 @@ function RoomChatLog({model, mobile, decisions}: {
         confirmReport={decisions ? confirmReport : undefined} directReport={mobile}/>
     </p>
   ));
-  if (!mobile) return <div className="mp-room-chat-log" ref={log} role="log" aria-live="polite" aria-label={t('chat.players')}>{messages}</div>;
+  const unreadLabel = t('chat.newMessages', {count:unread});
+  const unreadButton = unread > 0 && <Button type="button" variant="default" className="room-chat-unread" aria-label={unreadLabel} title={unreadLabel} onClick={() => {
+    if (!log.current) return;
+    log.current.scrollTop = log.current.scrollHeight;
+    readScroll(log.current);
+    setUnread(0);
+  }}><span>{unread}</span><ChevronsDown aria-hidden="true"/></Button>;
+  if (!mobile) return <div className="room-chat-desktop-history">
+    <div className="mp-room-chat-log" ref={log} role="log" aria-live="polite" aria-label={t('chat.players')}
+      onScroll={event => {if (event.currentTarget.clientHeight) readScroll(event.currentTarget);}}>{messages}</div>
+    <Slider orientation="vertical" className="room-chat-history-slider" disabled={!scroll.max} data-dragging={dragging || undefined}
+      onPointerDownCapture={event => {pointerStart.current=event.clientY;}}
+      onPointerMove={event => {if(pointerStart.current !== null && Math.abs(event.clientY-pointerStart.current)>3)setDragging(true);}}
+      onPointerUp={() => {pointerStart.current=null;setDragging(false);}}
+      onPointerCancelCapture={() => {pointerStart.current=null;setDragging(false);}}
+      onLostPointerCapture={() => {pointerStart.current=null;setDragging(false);}}
+      aria-label={t('chat.historyScroll')} value={scroll.max - scroll.offset} max={Math.max(1, scroll.max)}
+      onValueChange={value => {
+        if (!log.current) return;
+        log.current.scrollTop = scroll.max - value;
+        readScroll(log.current);
+      }}/>
+    {unreadButton}
+  </div>;
 
   return <div className="room-chat-history">
     <div className="room-chat-history-viewport" ref={log} role="log" aria-live="polite" aria-label={t('chat.players')}
@@ -74,6 +107,7 @@ function RoomChatLog({model, mobile, decisions}: {
         log.current.scrollTop = offset;
         readScroll(log.current);
       }}/>
+    {unreadButton}
   </div>;
 }
 

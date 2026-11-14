@@ -94,7 +94,7 @@ async function probeAccountOrigin(origin: string, signal: AbortSignal): Promise<
   const abort = () => controller.abort();
   signal?.addEventListener('abort', abort, {once: true});
   if (signal?.aborted) controller.abort();
-  const timeout = setTimeout(abort, 3500);
+  const timeout = setTimeout(abort, import.meta.env?.DEV ? 15000 : 3500);
   try {
     const response = await fetch(`${origin}/api/ready`, {
       credentials: 'include', cache: 'no-store', signal: controller.signal,

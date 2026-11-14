@@ -23,7 +23,14 @@
   .book-directory .lobby-empty h2 {margin:0;font-size:17px;color:var(--book-ink)}
   .book-directory .lobby-empty p {margin:0;max-width:36em}
   .book-directory .lobby-directory-count {flex:none;margin:0;margin-top:auto;padding:8px 14px;font-size:12px;line-height:1.5;color:var(--book-muted);text-align:right}
-  .book-directory>.lobby-notice,.book-directory>.lobby-membership,.book-directory>.lobby-connection-warning {margin:0 0 12px;padding:12px;border:1px solid var(--book-border);border-radius:8px;background:var(--book-surface);color:var(--book-ink);font-size:12px}
+  .book-directory>.lobby-notice,.book-directory>.lobby-membership {margin:0 0 12px;padding:12px;border:1px solid var(--book-border);border-radius:8px;background:var(--book-surface);color:var(--book-ink);font-size:12px}
+  .book-directory .lobby-list-surface .lobby-connection-warning:not([hidden]) {box-sizing:border-box;width:100%;max-width:none;flex:none;margin:0;padding:16px 20px;border:0;border-radius:0;border-bottom:1px solid var(--book-border);background:transparent;color:var(--book-ink);font-size:13px}
+  .book-directory .lobby-list-surface[data-has-rooms='false'] .lobby-connection-warning:not([hidden]) {flex:1;align-content:center;justify-content:center;flex-direction:column;gap:16px;border:0;text-align:center}
+  .book-directory .lobby-list-surface[data-has-rooms='false'] .lobby-connection-warning>div {flex:0 1 auto}
+  .book-directory .lobby-list-surface[data-has-rooms='false'] .lobby-connection-warning strong {justify-content:center}
+  .book-directory .lobby-list-surface .lobby-connection-icon {display:block;width:36px;height:36px;margin:0 0 10px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+  .book-directory .lobby-list-surface[data-has-rooms='false'] .lobby-connection-icon {margin-inline:auto}
+  .book-directory .lobby-list-surface .lobby-connection-warning p {overflow-wrap:anywhere;color:var(--book-muted)}
   .book-lobby-games {min-width:0}
   .book-lobby-full-list {display:flex;flex-direction:column;gap:4px;min-width:0}
   .book-lobby-group {display:flex;flex-direction:column;gap:4px;min-width:0}

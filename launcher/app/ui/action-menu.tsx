@@ -10,24 +10,27 @@ const MenuAction = createContext<((action: () => void) => void) | null>(null);
 const MenuVariant=createContext<'action'|'selection'>('action');
 
 /** Menus share placement, keyboard navigation, theme scope and focus return. */
-export function ActionMenu({label, trigger, children, className, minimumWidth = 200, side = 'bottom', align = 'end', sideOffset = 6,variant='action',openOnClick=false}: {
+export function ActionMenu({label, trigger, children, className, minimumWidth = 200, side = 'bottom', align = 'end', sideOffset = 6,variant='action',openOnClick=false, open:controlledOpen, onOpenChange}: {
   label: string; trigger: ReactElement; children: ReactNode; className?: string; minimumWidth?: number;
   side?: 'top' | 'right' | 'bottom' | 'left'; align?: 'start' | 'center' | 'end'; sideOffset?: number;
-  variant?: 'action'|'selection'; openOnClick?: boolean;
+  variant?: 'action'|'selection'; openOnClick?: boolean; open?:boolean; onOpenChange?(open:boolean):void;
 }) {
   const anchor = useRef<HTMLButtonElement>(null);
   const afterClose = useRef<(() => void) | null>(null);
-  const [open, setOpen] = useState(false), [host, setHost] = useState<HTMLElement>(), [surface, setSurface] = useState<string>();
+  const [internalOpen, setOpen] = useState(false), [host, setHost] = useState<HTMLElement>(), [surface, setSurface] = useState<string>();
+  const open = controlledOpen ?? internalOpen;
   const padding = usePopupPadding(open);
+  useEffect(() => {if (open) {setHost(uiPortalHost(anchor.current));setSurface(anchor.current?.closest('[data-ui-surface]')?.getAttribute('data-ui-surface') ?? undefined);}}, [open]);
   useEffect(() => {
     if (!open) return;
-    const close = () => setOpen(false);
+    const close = () => {setOpen(false); onOpenChange?.(false);};
     document.addEventListener('fullscreenchange', close); document.addEventListener('webkitfullscreenchange', close);
     return () => {document.removeEventListener('fullscreenchange', close);document.removeEventListener('webkitfullscreenchange', close);};
-  }, [open]);
+  }, [open, onOpenChange]);
   function changeOpen(next: boolean) {
     if (next) {setHost(uiPortalHost(anchor.current));setSurface(anchor.current?.closest('[data-ui-surface]')?.getAttribute('data-ui-surface') ?? undefined);}
     setOpen(next);
+    onOpenChange?.(next);
   }
   return <MenuVariant value={variant}><MenuAction.Provider value={action=>{afterClose.current=action;}}><DropdownMenu.Root modal={false} open={open} onOpenChange={changeOpen}>
     <DropdownMenu.Trigger asChild ref={anchor}

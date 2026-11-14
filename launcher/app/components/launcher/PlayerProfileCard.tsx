@@ -118,7 +118,7 @@ function PlayerCardDetails({username,name,avatar,boardRating,ratingCard}: {
   const [profile, setProfile] = useState<z.infer<typeof publicProfile>>();
   useEffect(() => {
     const controller = new AbortController();
-    void accountRequest('v1/profiles/'+encodeURIComponent(username)+'?media=urls',undefined,{signal:controller.signal,anonymous:true})
+    void accountRequest('v1/profiles/'+encodeURIComponent(username),undefined,{query:new URLSearchParams({media:'urls'}),signal:controller.signal,anonymous:true})
       .then(value=>{if (!controller.signal.aborted) setProfile(publicProfile.parse(value));}).catch(()=>{});
     return () => controller.abort();
   }, [username]);
