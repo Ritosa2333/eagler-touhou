@@ -489,7 +489,7 @@
   },
   "browserAccepted": true,
   "browserEvidencePending": false,
-  "productionChanged": false,
+  "productionChanged": true,
   "completeGame": false,
   "browser": {
     "qualified": true,
@@ -544,5 +544,38 @@
       "viewer-paused-84.txt": "a65e4a6f7f263a71cc7f7796b0c27c64e098d9047e26e010b541a63e5a909166",
       "viewer-paused-zero.txt": "b00d38f1f81b616dcb43bbe13f9cb82d091d04434decaf6a8912ff8fd5a444b0"
     }
-  }
+  },
+  "release": {
+    "productionDeployed": true,
+    "codeSource": "7a83c3eeba3ff6c15c8559d14ec175e4b92bad93",
+    "generation": "55696f7fc59af78c3c91fb87bae0e4a3cde4d890b126cc04e1af643a0b37eda8",
+    "wasm": "3f7ff5a2cd11fc28acb0b70168b5253a985d8368768b2e8db604341a1994971f",
+    "originRuntimeFiles": 32,
+    "publicRuntimeFiles": 32,
+    "publicFrontendModules": 2,
+    "entryHtml": {
+      "originSha256": "b32fba7a7dfe7068dcb9a8feba5574bb697944c6f566e4f6e0227ac082c71764",
+      "publicSha256": "2ade872f825c6b511f788ee986c94deebbc28f413639aa71b8094ef66b2d23bd",
+      "wholeFileHashAccepted": false,
+      "applicationByteRegionsPreserved": true,
+      "applicationReferenceSetPreserved": true,
+      "additionalScripts": [
+        "WebMCP bridge",
+        "Cloudflare JSD"
+      ],
+      "insertionsSha256": [
+        "e2cb14b5fa9e0c60dda83a94781294bd2f17a9eb48a314e93061bcc5b7c7cca2",
+        "455a25a0695ac2de3b8771ac91c757c200be9292d6d6aac29b1484ed2e705d8f"
+      ],
+      "browserOrResponseContentModified": false
+    },
+    "rollback": "/home/i/Code/th14-release/hosted-before-audio-resume-nov15",
+    "previousGenerationFilesRetained": 32,
+    "servicePid": 443019,
+    "serviceConfigurationUnchanged": true,
+    "publicBrowserAfterActivationAccepted": false,
+    "deployedProofSha256": "756242248bd9372e39c67cc34792a1128249a8636209fd88cbd8ab8aa41f194e",
+    "publicHttpProofSha256": "297b77dac9b3203ea83fff442cf777834bfcc5e534fda76f4bc30b3d593dff3f"
+  },
+  "productionDeployed": true
 }
