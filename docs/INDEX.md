@@ -1,6 +1,6 @@
 # 文档总表
 
-共 572 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 596 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -337,6 +337,30 @@
 | 历史记录 | [archive/th12-web-adaptation-20261020/README.md](../archive/th12-web-adaptation-20261020/README.md) | th12 旧网页前端接入记录 |
 | 历史记录 | [archive/th12mp-public-20261028/README.md](../archive/th12mp-public-20261028/README.md) | 星莲船正式发布 |
 | 历史记录 | [archive/th12mp-public-20261028/cn129.md](../archive/th12mp-public-20261028/cn129.md) | 原主站入口同步 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/README.md](../archive/th14-subtree-runtime-restoration-20261114/README.md) | TH14 子树运行时修复接续 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_FULL_BROWSER_REPLAY_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_FULL_BROWSER_REPLAY_NOV14.md) | TH14 当前版本完整录像浏览器验收 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_LEGACY_BROWSER_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_LEGACY_BROWSER_NOV14.md) | TH14 魔理沙 A Easy 当前浏览器终态 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_FILE_CANCELLATION_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_FILE_CANCELLATION_NOV14.md) | TH14 文件操作取消提示修正候选 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_FILE_CANCELLATION_RELEASE_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_FILE_CANCELLATION_RELEASE_NOV14.md) | TH14 文件取消提示修正交付 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_HOSTED_PANEL_INPUT_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_HOSTED_PANEL_INPUT_NOV14.md) | TH14 托管录像练习面板输入修复候选 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_PAUSED_PANEL_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_PAUSED_PANEL_NOV14.md) | TH14 托管录像暂停练习面板候选 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_PUBLIC_SPELL_BROWSER_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_PUBLIC_SPELL_BROWSER_NOV14.md) | TH14 公网成功符卡录像实际验收 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/behavior-release-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/behavior-release-nov14.md) | TH14 行为修复测试站更新 · 2026-11-14 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/current-legacy-marisaa-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/current-legacy-marisaa-nov14.md) | 魔理沙 A Easy 旧录像当前核心复验 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/current-spell-flow-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/current-spell-flow-nov14.md) | 当前核心符卡练习流程 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/current-spell-score-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/current-spell-score-nov14.md) | 符卡练习成绩跨启动保存 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/dialogue-touch-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/dialogue-touch-nov14.md) | TH14 对话截图、周期显示与触控取消 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/overlay-capture-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/overlay-capture-nov14.md) | TH14 练习界面与暂停截图分离 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/replay-laser-geometry-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/replay-laser-geometry-nov14.md) | TH14 录像激光修正的实际几何效果 · 2026-11-14 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/replay-laser-recovery-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/replay-laser-recovery-nov14.md) | TH14 同一录像重播保留激光修复编辑 · 2026-11-14 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/replay-practice-gate-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/replay-practice-gate-nov14.md) | TH14 录像练习设置独立于观看者开关 · 2026-11-14 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/replay-practice-release-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/replay-practice-release-nov14.md) | TH14 录像练习兼容修复交付 · 2026-11-14 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/spell-browser-persistence-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/spell-browser-persistence-nov14.md) | 浏览器符卡实际尝试、成绩与录像保存 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/spell-release-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/spell-release-nov14.md) | 成功符卡结束修复交付 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/spell-viewer-browser-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/spell-viewer-browser-nov14.md) | 成功符卡录像浏览器验收 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/spell-viewer-completion-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/spell-viewer-completion-nov14.md) | 成功符卡录像结束修复 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/statistics-ui-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/statistics-ui-nov14.md) | TH14 跨关统计界面 · 2026-11-14 |
+| 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/upstream-touch-stats-nov14.md](../archive/th14-subtree-runtime-restoration-20261114/upstream-touch-stats-nov14.md) | TH14 上游触控与练习统计修复 |
 | 历史记录 | [archive/th15-bomb-snapshot-memory-20261028/README.md](../archive/th15-bomb-snapshot-memory-20261028/README.md) | TH15 多人放雷快照内存峰值 |
 | 历史记录 | [archive/th15-boss-transfer-20261027/README.md](../archive/th15-boss-transfer-20261027/README.md) | TH15 多人：共享碎片与 Boss 入场输入 |
 | 历史记录 | [archive/th15-input-latency-20261105/README.md](../archive/th15-input-latency-20261105/README.md) | th15 MP 输入时序 |

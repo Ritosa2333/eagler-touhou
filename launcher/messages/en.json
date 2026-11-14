@@ -2484,5 +2484,10 @@
   "profile_gameDataEmpty": "No game data yet",
   "profile_gameDataHide": "Hide",
   "profile_gameDataShow": "Show",
-  "profile_gameDataMakeDefault": "Set default"
+  "profile_gameDataMakeDefault": "Set default",
+  "replay_th14BeamCopy": "Download early web-port compatibility copy",
+  "replay_th14BeamCopyConfirm": "Was this replay recorded by an early TH14 web port? If its source is known, download a compatibility copy. The original replay is kept.",
+  "replay_th14BeamCopyDownload": "Download compatibility copy",
+  "replay_th14BeamAlreadyTagged": "This replay already declares its playback rules and does not need conversion.",
+  "replay_th14BeamCopyInvalid": "A compatibility copy could not be created for this replay."
 }

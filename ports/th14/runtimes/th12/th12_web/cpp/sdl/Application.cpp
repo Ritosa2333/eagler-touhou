@@ -1905,7 +1905,10 @@ struct Application:StageResourceEffects
                 }
                 if(session.state.phase==GameSessionPhase::title){
                     boot_loading.finish(session.animations);
-                    const GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
+                    GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
+#if PORT_TITLE == 14
+        input.hold_replay_result=hosted_replay;
+#endif
                     if(!session.update(input)){error=session.error;return false;}
                     if(!audio_events()||!text_events())return false;
                     title_entry_advanced=true;
@@ -1937,7 +1940,10 @@ struct Application:StageResourceEffects
                 if(!session.finish_loading(true)){error=session.error;return false;}
                 reset_entry_frame_statistics();audio.effects.reset();
                 if(!play_stage_music(session.state.stage,true))return false;
-                const GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
+                GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
+#if PORT_TITLE == 14
+        input.hold_replay_result=hosted_replay;
+#endif
                 const bool updated=initial_stage_overlay_updated?session.update_after_initial_overlay(input):session.update(input);
                 if(!updated){error=session.error;return false;}
                 session.battle->th14_current_music=audio.current_music();
@@ -1983,7 +1989,7 @@ struct Application:StageResourceEffects
             if(!session.draw(renderer,&frame_text)){error=session.error;return false;}
             th14_consume_deferred_captures(session.animations.deferred_captures,session,graphics,renderer);
 #if defined(TH14_ENABLE_THPRAC)
-            PracticeUiTh14::draw(session,graphics.backend);
+            if(!PracticeUiTh14::draw(session,graphics)){error=graphics.error;return false;}
 #endif
             graphics.present();
             sample_frame_statistics();
@@ -1995,7 +2001,10 @@ struct Application:StageResourceEffects
 #if PORT_TITLE == 14
         const bool ending_load_pending=session.ending&&session.ending->resource_loading();
 #endif
-        const GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
+        GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
+#if PORT_TITLE == 14
+        input.hold_replay_result=hosted_replay;
+#endif
 #if PORT_TITLE == 14
         if(session.battle)session.battle->th14_current_music=audio.current_music();
 #endif
@@ -2059,6 +2068,9 @@ struct Application:StageResourceEffects
                 auto* vm=session.animations.find(menu.background_animation);if(!vm||!vm->sprite||!vm->resource){error="Pause screenshot sprite missing";return false;}
                 const auto& sprite=*vm->sprite;const u32 target=graphics.texture(*vm->resource,sprite.texture);renderer.flush();
                 i32 from[]={32,16,416,464};u32 source=GraphicsDevice::screen;
+#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
+                source=graphics.capture_screen();
+#endif
 #if PORT_TITLE == 14
                 const auto capture=th14_immediate_capture_source(session,float(session.config.render_width())/640.f);
                 std::copy(capture.rectangle,capture.rectangle+4,from);
@@ -2125,7 +2137,7 @@ struct Application:StageResourceEffects
 #if PORT_TITLE == 14
         th14_consume_deferred_captures(session.animations.deferred_captures,session,graphics,renderer);
 #if defined(TH14_ENABLE_THPRAC)
-        PracticeUiTh14::draw(session,graphics.backend);
+        if(!PracticeUiTh14::draw(session,graphics)){error=graphics.error;return false;}
 #endif
 #endif
         graphics.present();
@@ -2170,7 +2182,10 @@ struct Application:StageResourceEffects
     const u32* hosted_replay_status()const{
         static u32 words[6];const auto& s=session;const auto* entry=s.playback.stage(s.state.stage);
         const bool ended=hosted_replay&&s.state.replay&&s.state.phase==GameSessionPhase::paused&&s.pause_menu&&s.pause_menu->forced_exit;
-        words[0]=s.state.stage;words[1]=ended&&entry?entry->frames:s.playback.frame();words[2]=entry?entry->frames:0;
+        // A forced menu can be an early replay GameOver. Preserve its real
+        // cursor; successful stage clears still include the recorded ending tail.
+        const bool early_game_over=ended&&s.battle&&s.battle->game_over_requested;
+        words[0]=s.state.stage;words[1]=ended&&entry&&!early_game_over?entry->frames:s.playback.frame();words[2]=entry?entry->frames:0;
         words[3]=ended;words[4]=u32(s.state.phase);words[5]=hosted_replay&&s.state.replay;return words;
     }
     int hosted_replay_seek_step(u32 target,u32 budget){
@@ -2295,13 +2310,7 @@ void cancel_touch(){
     gestures.cancel_transient();
     if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;
 }
-bool sample_and_tick_once(){
-#if PORT_TITLE == 14
-    if(app.hosted_replay&&app.session.state.replay)return app.tick_once(0);
-#endif
-#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
-    PracticeUiTh14::sync_setup();
-#endif
+void pump_platform_events(){
     SDL_Event event;while(SDL_PollEvent(&event)){
 #if PORT_TITLE == 14
         if(event.type==SDL_EVENT_WINDOW_CLOSE_REQUESTED||event.type==SDL_EVENT_QUIT)app.session.request_host_close();
@@ -2328,6 +2337,17 @@ bool sample_and_tick_once(){
         else if(event.type==SDL_EVENT_JOYSTICK_ADDED)add_controller(event.jdevice.which);
         else if(event.type==SDL_EVENT_JOYSTICK_REMOVED&&controller&&SDL_GetJoystickID(controller)==event.jdevice.which){SDL_CloseJoystick(controller);controller=nullptr;int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;++i)add_controller(ids[i]);SDL_free(ids);}
     }
+}
+bool sample_and_tick_once(){
+#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
+    PracticeUiTh14::sync_setup();
+#endif
+    pump_platform_events();
+#if PORT_TITLE == 14
+    // Hosted playback ignores live gameplay input, but must still consume
+    // platform events for the practice UI, focus loss and host close.
+    if(app.hosted_replay&&app.session.state.replay)return app.tick_once(0);
+#endif
 #if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
     const bool capture=PracticeUiTh14::captures();
     if(capture!=app.session.practice_input_captured)cancel_touch();
@@ -2513,6 +2533,17 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
         if(suspended){cadence.reset();
 #if PORT_TITLE == 14
             app.hosted_cadence.reset();
+#if defined(TH14_ENABLE_THPRAC)
+            // A paused viewer presents only the retained game image plus UI.
+            // Never tick or redraw GameSession here: draw may service loading.
+            if(app.hosted_replay&&app.session.state.replay&&app.session.practice_enabled){
+                pump_platform_events();
+                if(!app.graphics.restore_capture_screen()||!PracticeUiTh14::draw(app.session,app.graphics)){
+                    app.error=app.graphics.error;running=false;return EM_FALSE;
+                }
+                app.graphics.present();
+            }
+#endif
 #endif
             return EM_TRUE;}
 #if PORT_TITLE == 14

@@ -136,6 +136,7 @@ export function ReplayWorkspace({session, products = []}: {session: BrowserSessi
             metadata={!versus && files.descriptions[row.path] ? <ReplaySummary description={files.descriptions[row.path]!} game={game}/> : <small title={row.replayMatch?.startedAt ? t('replay.ui.matchStarted') : t('replay.ui.modified')}>{timestamp(row.replayMatch?.startedAt || row.modifiedAt)}</small>}
             actions={[
               {label: t('replay.ui.download'), run: () => {void model.download(row.path);}},
+              ...(files.productId === 'th14' ? [{label: t('replay.th14BeamCopy'), run: () => {setBusy(true); void model.downloadBeamCompatibilityCopy(row.path).finally(() => setBusy(false));}}] : []),
               ...(!fileOnly ? [
                 {label: t('replay.ui.move'), run: () => {setMoving(row.path); setDestination('replay'); setNewFolder('');}},
                 {label: t('replay.ui.rename'), run: () => {void model.rename(row.path);}},

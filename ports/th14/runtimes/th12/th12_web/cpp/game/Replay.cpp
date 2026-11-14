@@ -84,7 +84,7 @@ void ReplayStageState::restore_position(PlayerMotionState& s)const{
 bool Replay::open(const u8* data,u32 size){
     bytes.clear();stages={};touches={};count=selected=cursor=touch_cursor=0;input={};failure.clear();metadata_only=false;
 #if PORT_TITLE == 14
-    callback_cursor=0;practice={};practice_events={};purple_laser_records.clear();bool practice_seen=false;
+    callback_cursor=0;th14_beam_rules=0;practice={};practice_events={};purple_laser_records.clear();bool practice_seen=false;
     PracticeTh14 purple_practice;
 #endif
     auto fail=[&](const char* why){failure=why;return false;};
@@ -173,6 +173,9 @@ bool Replay::open(const u8* data,u32 size){
     if(offset!=unpacked)return fail("unexpected replay data after stages");
     // Optional browser continuous-motion data lives in a USER block, outside
     // the original encrypted payload. Ordinary original files need no block.
+#if PORT_TITLE == 14
+    bool th14_rules_seen=false;
+#endif
     for(u32 tail=0x24+packed;size-tail>=12;){
         if(dword(data+tail)!=0x52455355)break;
         const u32 length=dword(data+tail+4);if(length<12||length>size-tail)return fail("invalid replay USER block");
@@ -185,6 +188,12 @@ bool Replay::open(const u8* data,u32 size){
             }
         }
 #if PORT_TITLE == 14
+        // T14B rule selection is independent of explicit thprac laser journals.
+        if(dword(data+tail+8)==0x42343154){
+            if(th14_rules_seen||length!=20||dword(data+tail+12)!=1||dword(data+tail+16)>1)
+                return fail("invalid TH14 replay beam rules");
+            th14_beam_rules=u8(dword(data+tail+16));th14_rules_seen=true;
+        }
         if((decoded[10]&3)&&dword(data+tail+8)==purple_practice_user&&length>12&&length<=4108){
             const char* start=reinterpret_cast<const char*>(data+tail+12);
             const auto* end=std::find(start,start+length-12,'\0');

@@ -2484,5 +2484,10 @@
   "profile_gameDataEmpty": "暂无游戏数据",
   "profile_gameDataHide": "隐藏",
   "profile_gameDataShow": "显示",
-  "profile_gameDataMakeDefault": "设为默认"
+  "profile_gameDataMakeDefault": "设为默认",
+  "replay_th14BeamCopy": "下载早期移植版兼容副本",
+  "replay_th14BeamCopyConfirm": "此录像由早期 TH14 网页移植版录制吗？确认来源后可下载兼容副本，原录像保留。",
+  "replay_th14BeamCopyDownload": "下载兼容副本",
+  "replay_th14BeamAlreadyTagged": "录像已记录播放规则，无需转换。",
+  "replay_th14BeamCopyInvalid": "无法为这份录像生成兼容副本。"
 }

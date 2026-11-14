@@ -9,13 +9,13 @@ import {resolve, dirname} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
 const project = fileURLToPath(new URL('../../', import.meta.url));
-let work, createFileActions, createReplayMutationQueue;
+let work, createFileActions, createReplayMutationQueue, RuntimeSessionSupersededError;
 before(async () => {
   await mkdir(resolve(project, '.cache'), {recursive: true});
   work = await mkdtemp(resolve(project, '.cache/files-main-'));
   const outfile = resolve(work, 'files.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents:
-    `export {createFileActions} from './app/services/files.ts'; export {createReplayMutationQueue} from './src/launcher/replay-files.mts';`},
+    `export {createFileActions} from './app/services/files.ts'; export {RuntimeSessionSupersededError} from './app/services/runtime.ts'; export {createReplayMutationQueue} from './src/launcher/replay-files.mts';`},
     bundle: true, platform: 'node', format: 'esm', packages: 'external', outfile, logLevel: 'silent',
     plugins: [{name: 'main-authored-siblings', setup(ctx) {
       ctx.onResolve({filter: /^\.\.?\/.*\.mjs$/}, args => {
@@ -23,7 +23,7 @@ before(async () => {
         if (path.startsWith(resolve(project, 'src') + '/') && existsSync(authored)) return {path: authored};
       });
     }}]});
-  ({createFileActions, createReplayMutationQueue} = await import(pathToFileURL(outfile).href));
+  ({createFileActions, createReplayMutationQueue, RuntimeSessionSupersededError} = await import(pathToFileURL(outfile).href));
 });
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 function fixture({ready = true, launched = false, confirm = true, corrupt = false, keepHint = false, prepareReady = Promise.resolve(), assertImportOwnership = () => {}, capturePresentation = false} = {}) {
@@ -244,4 +244,31 @@ test('ordinary TH09 retains archive directories without importing multiplayer ma
   assert.deepEqual(f.stored.get('replay/收藏/th9_ud0000.rpy'),[1,2,3]);assert.equal(f.storedMatches.size,0);
   await f.actions.run('export-replay','th09');const entries=unzipSync(new Uint8Array(f.downloads[0].bytes));
   assert.deepEqual(Object.keys(entries),['replay/收藏/th9_ud0000.rpy']);
+});
+
+for (const ready of [false, true]) test(`TH14 superseded ${ready ? 'ready' : 'cold'} file export does not report a failure over its successor`, async () => {
+  let cancel;
+  const prepareReady = new Promise((_, reject) => {cancel = reject;});
+  const f = fixture({ready, prepareReady});
+  const pending = f.actions.run('export-save', 'th14');
+  cancel(new RuntimeSessionSupersededError());
+  await pending;
+  assert.equal(f.downloads.length, 0);
+  assert.equal(f.decisions.length, 0);
+  assert.equal(f.feedback.some(([kind, value]) => kind !== 'toast' || !value.startsWith('file.exportPreparing')), false,
+    'retired work must not publish player status, export failure or global error');
+  assert.equal(f.events.includes('release:th14'), !ready, 'temporary preparation cleanup remains');
+});
+
+for (const error of [new Error('read failed'), Object.assign(new Error('other cancellation'), {name: 'AbortError'})])
+test(`TH14 genuine file error remains visible: ${error.message}`, async () => {
+  let rejectRead;
+  const prepareReady = new Promise((_, reject) => {rejectRead = reject;});
+  const f = fixture({prepareReady});
+  const pending = f.actions.run('export-save', 'th14');
+  rejectRead(error);
+  await pending;
+  assert(f.feedback.some(([kind, value]) => kind === 'status' && value.includes(error.message)));
+  assert(f.feedback.some(([kind, value]) => kind === 'toast' && value.startsWith('file.exportFailed')));
+  assert.equal(f.downloads.length, 0);
 });

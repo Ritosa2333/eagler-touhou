@@ -1,0 +1,53 @@
+{
+  "schema": "th14-hosted-panel-input/1",
+  "status": "candidate-qualified-for-playing-modal-only",
+  "game": "th14",
+  "behaviorAlignment": true,
+  "goalComplete": false,
+  "productionChanged": false,
+  "silentMusic": 0,
+  "silentSfx": 0,
+  "generation": "c44584c6bbedbec56d42addc164519e9646c54e95f5bb392892d9fd0bbb3f29b",
+  "wasmSha256": "3baf232e2c157ec3a0cd3c80e7eb89517860ad68363e046b87fbc59fa9362c6d",
+  "nativeComponent": {
+    "cases": 144,
+    "oldRejected": 24,
+    "unchangedControls": 120,
+    "sdlAndGamePortsMocked": true
+  },
+  "frameGate": {
+    "cases": 7,
+    "emptySrcBaselineRejected": 2,
+    "mockedLifecycle": true,
+    "actualBrowserPassed": true
+  },
+  "actualBrowser": {
+    "replay": "existing-original-ReimuB-Normal",
+    "startStage": 1,
+    "speed": 1,
+    "noSeek": true,
+    "fullReplayAcceptance": false,
+    "modalOpened": true,
+    "openPointerEvents": "auto",
+    "keyMonitorCheckedAndUncheckedByMouse": true,
+    "modalClosed": true,
+    "closedPointerEvents": "none",
+    "stoppedPausedAtFrame": 1706
+  },
+  "rejectedCandidates": [
+    "touch-service is absent in replay workspace despite 32 fixture tests passing",
+    "iframe src attribute is empty; src-based document identification missed current game"
+  ],
+  "remaining": [
+    "paused native loop does not pump or redraw practice UI",
+    "broader optional-tool and whole-game behavior coverage remains open"
+  ],
+  "localProofHashes": {
+    "browser-mouse-qualified.png": "ab8969c43883f4db82ee7b896552e2cf7106b413c8078a311ad99b0e7fb9b528",
+    "browser-frame-gate-stop.png": "b6ca4ea65a4e26d33c1338787097a61bd3bd8ca85033b247369840318331da80",
+    "replay-practice-pointer.ts": "946658bf3b99ba2bec8f5a0505f4f5c31b7bc39a54eb0a0a821cf1fb0ca16d99",
+    "PlayerSurface.tsx": "4c3d2e798af122c54e9e9cc242ea0d61904586834c90b7f27e5a85c832f65259",
+    "replay-workspace.css": "279b548f4b63dc7c47c3494eaff50dfde508dca78cf34d1a0c544e61b0464a8b",
+    "Application.cpp": "f364878c466219fac291c5196c1e7d9a4d470acc55b52b5785393f50bd2172b5"
+  }
+}

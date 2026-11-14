@@ -1,0 +1,523 @@
+{
+  "schema": "th14/recorded-marisa-fix-geometry/1",
+  "passed": true,
+  "productionSource": "098f642b2a360b05768f66fe481387c2022475e1",
+  "sourceBinding": {
+    "runtimes/th12/th12_web/cpp/game/GameSession.cpp": "018e8095acb4a095878dbb27d2c24590da41237833f3e21b869a6ab3e88a8eac"
+  },
+  "normalGameplayAccessControl": true,
+  "actualApplicationAndCppWorkers": true,
+  "observerOnly": true,
+  "syntheticToolMetadata": {
+    "input": "H:\\code\\thp\\artifacts\\th14\\current-concurrent-mixer-nov14\\replay-laser-observer-v2\\controlled-marisaa-stage3-laser-events.rpy",
+    "inputSha256": "5e94a21bcc2fc3d2b59f64832945bce6a98217efc7bdb60b292d038ec9a4258b",
+    "originalSha256": "aec3b3045be9a0ddd4e7e4005182a9561e97f9d3f66f7f93a81397a1b614ec92",
+    "startStage": 3,
+    "syntheticToolMetadata": true,
+    "originalPayloadAndUserBlocksUnchanged": true,
+    "clipFrames": 3600,
+    "events": [
+      [
+        3,
+        0,
+        0
+      ],
+      [
+        3,
+        300,
+        8192
+      ],
+      [
+        3,
+        600,
+        0
+      ],
+      [
+        3,
+        900,
+        8192
+      ],
+      [
+        3,
+        1200,
+        0
+      ],
+      [
+        3,
+        1500,
+        8192
+      ],
+      [
+        3,
+        1800,
+        0
+      ],
+      [
+        3,
+        2100,
+        8192
+      ],
+      [
+        3,
+        2400,
+        0
+      ],
+      [
+        3,
+        2700,
+        8192
+      ],
+      [
+        3,
+        3000,
+        0
+      ],
+      [
+        3,
+        3300,
+        8192
+      ]
+    ],
+    "invertedToCorrectNanAtFrame2935": true,
+    "purpose": "known original stage-three beam fallback scenario; first-stage discovery clips had zero fallback calls"
+  },
+  "qualifiedCases": {
+    "baseline-stage3-v1-0": {
+      "reportSha256": "114e6f4c85e604134ba0c12205dda6679615a988bb6b4fc906b4c5317b80c76a",
+      "frames": 3600,
+      "score": 64383460,
+      "geometry": [
+        {
+          "frame": 1280,
+          "row": [
+            0,
+            0,
+            0,
+            0,
+            1090519040,
+            0
+          ],
+          "value": 8,
+          "finite": true,
+          "bits": "41000000"
+        },
+        {
+          "frame": 2935,
+          "row": [
+            0,
+            0,
+            0,
+            0,
+            2147483646,
+            0
+          ],
+          "value": null,
+          "finite": false,
+          "bits": "7ffffffe"
+        }
+      ],
+      "laserAccess": [
+        {
+          "frame": 1280,
+          "row": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            53649031,
+            53649031
+          ]
+        },
+        {
+          "frame": 2935,
+          "row": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2147483646,
+            2147483646
+          ]
+        }
+      ],
+      "laserStreamSha256": "5de9cb639617c2e614cca99b3c0a449627bf96cbf41f42cb81d33a6689d82400",
+      "geometryStreamSha256": "6cfa738644af5f5e837f2e615da5ada81b4927401c7a58435fa63664bce02ea8",
+      "naturallyEnded": false
+    },
+    "baseline-stage3-v1-1": {
+      "reportSha256": "3c01124b9e9f729ecfd723e7df965e3adf2656ea1ab96b4ffa2ca2277f378098",
+      "frames": 3600,
+      "score": 64383430,
+      "geometry": [
+        {
+          "frame": 1280,
+          "row": [
+            1,
+            0,
+            3,
+            1280,
+            1090519040,
+            0
+          ],
+          "value": 8,
+          "finite": true,
+          "bits": "41000000"
+        },
+        {
+          "frame": 2935,
+          "row": [
+            1,
+            1,
+            3,
+            2935,
+            1090519040,
+            0
+          ],
+          "value": 8,
+          "finite": true,
+          "bits": "41000000"
+        }
+      ],
+      "laserAccess": [
+        {
+          "frame": 1280,
+          "row": [
+            1,
+            0,
+            1,
+            0,
+            3,
+            1280,
+            53649031,
+            53649031
+          ]
+        },
+        {
+          "frame": 2935,
+          "row": [
+            1,
+            1,
+            1,
+            0,
+            3,
+            2935,
+            2147483646,
+            0
+          ]
+        }
+      ],
+      "laserStreamSha256": "f46db2aa18a7cd09138bb1d76cb880a593de69959d2b29233334211e21d8dbdf",
+      "geometryStreamSha256": "7ce8b432f7d8e60c9ad4314a8079104928d9f16619461f00a5c93037271bf1fb",
+      "naturallyEnded": false
+    },
+    "candidate-stage3-v1-0": {
+      "reportSha256": "122d809c9d83e3140cf173c52011f02d701ebf0d640740f0ed62981008752360",
+      "frames": 3600,
+      "score": 64383430,
+      "geometry": [
+        {
+          "frame": 1280,
+          "row": [
+            1,
+            0,
+            3,
+            1280,
+            1090519040,
+            0
+          ],
+          "value": 8,
+          "finite": true,
+          "bits": "41000000"
+        },
+        {
+          "frame": 2935,
+          "row": [
+            1,
+            1,
+            3,
+            2935,
+            1090519040,
+            0
+          ],
+          "value": 8,
+          "finite": true,
+          "bits": "41000000"
+        }
+      ],
+      "laserAccess": [
+        {
+          "frame": 1280,
+          "row": [
+            1,
+            0,
+            1,
+            0,
+            3,
+            1280,
+            53649031,
+            53649031
+          ]
+        },
+        {
+          "frame": 2935,
+          "row": [
+            1,
+            1,
+            1,
+            0,
+            3,
+            2935,
+            2147483646,
+            0
+          ]
+        }
+      ],
+      "laserStreamSha256": "f46db2aa18a7cd09138bb1d76cb880a593de69959d2b29233334211e21d8dbdf",
+      "geometryStreamSha256": "7ce8b432f7d8e60c9ad4314a8079104928d9f16619461f00a5c93037271bf1fb",
+      "naturallyEnded": false
+    },
+    "candidate-stage3-v1-1": {
+      "reportSha256": "9fcf9c1ccd78c8f5434fabfc3c0d3131e85ad01befa6e5c4b995afac2ebc8f04",
+      "frames": 3600,
+      "score": 64383430,
+      "geometry": [
+        {
+          "frame": 1280,
+          "row": [
+            1,
+            0,
+            3,
+            1280,
+            1090519040,
+            0
+          ],
+          "value": 8,
+          "finite": true,
+          "bits": "41000000"
+        },
+        {
+          "frame": 2935,
+          "row": [
+            1,
+            1,
+            3,
+            2935,
+            1090519040,
+            0
+          ],
+          "value": 8,
+          "finite": true,
+          "bits": "41000000"
+        }
+      ],
+      "laserAccess": [
+        {
+          "frame": 1280,
+          "row": [
+            1,
+            0,
+            1,
+            0,
+            3,
+            1280,
+            53649031,
+            53649031
+          ]
+        },
+        {
+          "frame": 2935,
+          "row": [
+            1,
+            1,
+            1,
+            0,
+            3,
+            2935,
+            2147483646,
+            0
+          ]
+        }
+      ],
+      "laserStreamSha256": "f46db2aa18a7cd09138bb1d76cb880a593de69959d2b29233334211e21d8dbdf",
+      "geometryStreamSha256": "7ce8b432f7d8e60c9ad4314a8079104928d9f16619461f00a5c93037271bf1fb",
+      "naturallyEnded": false
+    },
+    "baseline-original-stage3-v1-0": {
+      "reportSha256": "84a0ac1115d289a576c70877c8dce62dde3535c12e25f671744eb75e35e78a12",
+      "frames": 3600,
+      "score": 64383460,
+      "geometry": [
+        {
+          "frame": 1280,
+          "row": [
+            0,
+            0,
+            0,
+            0,
+            1090519040,
+            0
+          ],
+          "value": 8,
+          "finite": true,
+          "bits": "41000000"
+        },
+        {
+          "frame": 2935,
+          "row": [
+            0,
+            0,
+            0,
+            0,
+            2147483646,
+            0
+          ],
+          "value": null,
+          "finite": false,
+          "bits": "7ffffffe"
+        }
+      ],
+      "laserAccess": [
+        {
+          "frame": 1280,
+          "row": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            53649031,
+            53649031
+          ]
+        },
+        {
+          "frame": 2935,
+          "row": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2147483646,
+            2147483646
+          ]
+        }
+      ],
+      "laserStreamSha256": "5de9cb639617c2e614cca99b3c0a449627bf96cbf41f42cb81d33a6689d82400",
+      "geometryStreamSha256": "6cfa738644af5f5e837f2e615da5ada81b4927401c7a58435fa63664bce02ea8",
+      "naturallyEnded": false
+    },
+    "candidate-original-stage3-v1-0": {
+      "reportSha256": "fe49ad18e8a020ecd81d06789f05dffe31e04afabd9eff2e63283cf1d495afd7",
+      "frames": 3600,
+      "score": 64383460,
+      "geometry": [
+        {
+          "frame": 1280,
+          "row": [
+            1,
+            0,
+            3,
+            1280,
+            1090519040,
+            0
+          ],
+          "value": 8,
+          "finite": true,
+          "bits": "41000000"
+        },
+        {
+          "frame": 2935,
+          "row": [
+            1,
+            0,
+            3,
+            2935,
+            2147483646,
+            0
+          ],
+          "value": null,
+          "finite": false,
+          "bits": "7ffffffe"
+        }
+      ],
+      "laserAccess": [
+        {
+          "frame": 1280,
+          "row": [
+            1,
+            0,
+            1,
+            0,
+            3,
+            1280,
+            53649031,
+            53649031
+          ]
+        },
+        {
+          "frame": 2935,
+          "row": [
+            1,
+            0,
+            1,
+            0,
+            3,
+            2935,
+            2147483646,
+            2147483646
+          ]
+        }
+      ],
+      "laserStreamSha256": "538568c002ae4d3088d1672e6576481574872d0b0aa35052ca39cf8ede0a6627",
+      "geometryStreamSha256": "e48ddb7218b504ccb02b8321d1477dca32933c7c7f0f7c262e9a1c6a37b84f50",
+      "naturallyEnded": false
+    }
+  },
+  "actualFallbackFrames": [
+    1280,
+    2935
+  ],
+  "toolOnFrame2935": {
+    "recordedFlag": 8192,
+    "scratchBefore": "7ffffffe",
+    "scratchAfter": "00000000",
+    "actualBeamLengthBits": "41000000",
+    "actualBeamLength": 8,
+    "sameWithLiveUiOffAndOn": true
+  },
+  "toolOffOriginalInput": {
+    "geometryAndFullObservedTerminalUnchanged": true,
+    "score": 64383460,
+    "legacyNanPreserved": true
+  },
+  "toolAppliedClipScore": 64383430,
+  "originalClipScore": 64383460,
+  "firstStageDiscoveryWithoutCoverage": [
+    {
+      "path": "artifacts/th14/current-concurrent-mixer-nov14/replay-laser-observer/baseline-v1-0/report.json",
+      "frames": 1200,
+      "fallbackCalls": 0,
+      "acceptanceEvidence": false
+    },
+    {
+      "path": "artifacts/th14/current-concurrent-mixer-nov14/replay-laser-observer/baseline-discovery4800-v1-0/report.json",
+      "frames": 4800,
+      "fallbackCalls": 0,
+      "acceptanceEvidence": false
+    }
+  ],
+  "silent": true,
+  "graphicsRecordingOnly": true,
+  "actualBrowserToolEffectAccepted": false,
+  "fullReplayAccepted": false,
+  "journalModesTwoAndThreeAccepted": false,
+  "productionGameCodeChanged": false,
+  "productionGenerationUnchanged": "34f6e4b183b57e273555cae385ad12338484102a3a4517600662fb0784dc909c",
+  "completeGame": false
+}

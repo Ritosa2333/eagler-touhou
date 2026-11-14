@@ -1,0 +1,140 @@
+{
+  "schema": "th14/current-spell-practice-flow/1",
+  "passed": true,
+  "acceptanceStandard": "observable-behavior-alignment",
+  "moduleSha256": "db75647bb384a0d25f31c5fd026bba2186756924f8b3b3808ad34512d72d4b31",
+  "gameSessionNormalizedSourceSha256": "018e8095acb4a095878dbb27d2c24590da41237833f3e21b869a6ab3e88a8eac",
+  "gameplayUnitsRecompiled": 0,
+  "verifiedProviderObjects": 146,
+  "earnedSaveSha256": "f1d54c86327feb3ea10195386a8b545c90a8ae3bc9c899b723c3ece10de92506",
+  "menuFlow": "earned save -> Reimu B Normal spell 3 -> pause retry -> title -> resume spell selector -> ordinary Normal",
+  "unseenRowRemainsLocked": true,
+  "nativeShortcutRetryPreservesSpellAndResetsStocks": true,
+  "retryPlayerCallbackAdvancedAndLocalClockReset": true,
+  "titleReentryRestoresLoadoutRowAndDifficulty": true,
+  "ordinarySpellIdCleared": true,
+  "ordinaryInitialStocks": [
+    2,
+    3,
+    100
+  ],
+  "spellInitialStocks": [
+    0,
+    0,
+    400
+  ],
+  "naturalFailureResultMenuAccepted": true,
+  "ordinarySaveInterfaceAccepted": true,
+  "savedReplayBytes": 711,
+  "savedReplaySha256": "c460de45155f1e677d1553e94dedb1b3a12b8591c842f08f7346fe514f9646d6",
+  "savedReplayMode": "spell-practice",
+  "spellId": 3,
+  "declaredReplayFrames": 590,
+  "naturalFailureControlFrame": 589,
+  "freshProcessReplayUiEnabled": false,
+  "freshProcessReplayEndedNaturally": true,
+  "freshProcessReplayComparedBehaviorIndices": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    16,
+    17,
+    18,
+    19
+  ],
+  "freshProcessReplayComparedBehaviorWords": 17,
+  "nativeCodec": {
+    "passed": true,
+    "inputBytes": 711,
+    "inputSha256": "c460de45155f1e677d1553e94dedb1b3a12b8591c842f08f7346fe514f9646d6",
+    "packedBytes": 655,
+    "decodedBytes": 3928,
+    "decodedSha256": "b35e63b88ead436dbc52cde59818140974844f8d76551e112ee3208fbc333bd6",
+    "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+    "nativeEntryPoints": [
+      "0x4028e0",
+      "0x4028e0",
+      "0x465840"
+    ],
+    "actualRetailInstructionBodies": true,
+    "controlledCrtBoundaries": true,
+    "freshZeroDictionary": true,
+    "allDecodedBytesEqualIndependentPythonMirror": true,
+    "nameHex": "52554c4553202020",
+    "stageCount": 1,
+    "character": 0,
+    "subtype": 1,
+    "difficulty": 1,
+    "stages": [
+      {
+        "stage": 1,
+        "seed": 46539,
+        "frames": 590,
+        "payloadBytes": 3560,
+        "headerSha256": "038a551dae748c0cce023c5e684aa8a2885ce9c054d12420ebef73c594e7acfa",
+        "payloadSha256": "1f6b51949c110186499cdca3731b9b41d465b2506241dabc0b6e3e74dd96ebd5"
+      }
+    ],
+    "trailingBytes": 20,
+    "trailingSha256": "aeddfc6c57e207e3ff31b51acb3059d9552a83319449c606e706e79c361a559f",
+    "mirrorSha256": "b96b655447c3cae140062c2023beb6a98cbb6052cd0fd54707fc8150ebaa90d9",
+    "toolSha256": "717673b12060f02261c2e1af04b68de63227db65fd6f2cc96f98ccfc5cbecd8e",
+    "elapsedSeconds": 0.024062199983745813,
+    "nativeFilesystemOrPlaybackAcceptance": false,
+    "completeGame": false,
+    "nativeEquivalent": false
+  },
+  "currentFlowReportSha256": "707a49342b76673723eb13a752b9ffd01b4d6cf377b834b3ac789cf3f74a4c06",
+  "naturalFailureReportSha256": "139c8c239f68f5408acb93e576a3ec0757b8fda88fba0f31d9f295b4d71ea938",
+  "freshReplayReportSha256": "7927a078a14cb6070d0b204ab728b9de026a3fe278ccd2d92ad94e761bfa06b6",
+  "correctedTestAssumptions": {
+    "current-v1": {
+      "reportSha256": "4587317c25511878dbb8cd57207d817271d6b41ea02e123f7b0a098db9be9d6c",
+      "classification": "test-driver-assumption-corrected",
+      "reason": "test assumed unseen Hard/Lunatic row was selectable with a Normal-earned save",
+      "originalReportRetained": true
+    },
+    "current-v2": {
+      "reportSha256": "08003de7b6cf892fb5da60bfac8b89a518201d3fde45db61e491f0d3ed5ce589",
+      "classification": "test-driver-assumption-corrected",
+      "reason": "test used the paused enum value for stage phase",
+      "originalReportRetained": true
+    },
+    "current-v3": {
+      "reportSha256": "44b596c3578995119ab2ff9c8ce7b660688e4fd38dc5ec7bb2fb32e6f1567cfa",
+      "classification": "test-driver-assumption-corrected",
+      "reason": "test requested pause before the native 30-frame input gate",
+      "originalReportRetained": true
+    },
+    "current-v4": {
+      "reportSha256": "c89ac528ae380f3fa3d310c9d92de32d0f43c4798b035f95131d2ac4872d47b3",
+      "classification": "test-driver-assumption-corrected",
+      "reason": "test expected direct selector return instead of title plus reentry",
+      "originalReportRetained": true
+    },
+    "natural-save-v1": {
+      "reportSha256": "9519f689ef08bcb6bccbb1d8d45ef1c9ec6400bf4ac0835353ed51251177c7cf",
+      "classification": "test-driver-assumption-corrected",
+      "reason": "test confused compact result save and title menu indices",
+      "originalReportRetained": true
+    }
+  },
+  "silentMemoryAudio": true,
+  "graphicsRecordingOnly": true,
+  "originalFullSpellPlayAccepted": false,
+  "spellCaptureSuccessAccepted": false,
+  "allSpellsOrLoadoutsAccepted": false,
+  "browserAccepted": false,
+  "productionChanged": false,
+  "completeGame": false
+}

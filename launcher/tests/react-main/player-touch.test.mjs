@@ -3,7 +3,7 @@
 import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
-import {existsSync} from 'node:fs';
+import {existsSync, writeFileSync} from 'node:fs';
 import {resolve, dirname} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
@@ -191,4 +191,34 @@ for(const reason of ['pointercancel','lostpointercapture','editing','cancel'])te
  const f=fixture({game:'th19'});f.pointer('functionKey','pointerdown');
  if(reason==='editing')f.edit(true);else if(reason==='cancel')f.touch.cancelPointers();else f.pointer('functionKey',reason);
  assert.equal(f.touch.getSnapshot().functionDown,false);assert.deepEqual(f.sent.filter(m=>m.command==='keyboard').map(m=>[m.code,m.down]),[['KeyX',true],['KeyX',false]]);
+});
+
+const th14CancelCases=[];
+function keepTh14CancelCase(name,f){
+ const messages=f.sent.filter(m=>m.command==='direct-touch'||m.command==='touch-cancel');
+ th14CancelCases.push({name,messages});return messages;
+}
+after(()=>{if(process.env.TH14_TOUCH_CASES_OUTPUT)writeFileSync(process.env.TH14_TOUCH_CASES_OUTPUT,JSON.stringify(th14CancelCases,null,2)+'\n');});
+for(const reason of ['pointercancel','lostpointercapture'])test('TH14 cancelled dialogue contact emits cancellation: '+reason,()=>{
+ const f=fixture({game:'th14'});f.pointer('directSurface','pointerdown');f.pointer('directSurface',reason);f.pointer('directSurface','pointerup');
+ const messages=keepTh14CancelCase(reason,f);
+ assert.deepEqual(messages.map(m=>[m.command,m.type]),[['direct-touch','down'],['touch-cancel',undefined]]);
+});
+test('TH14 iOS cancelled dialogue contact emits cancellation, not tap release',()=>{
+ const f=fixture({game:'th14',ios:true}),p={identifier:7,clientX:210,clientY:320};
+ f.iosEvent('directSurface','touchstart',[p]);f.iosEvent('directSurface','touchcancel',[p]);f.iosEvent('directSurface','touchend',[p]);
+ const messages=keepTh14CancelCase('ios-touchcancel',f);
+ assert.deepEqual(messages.map(m=>[m.command,m.type]),[['direct-touch','down'],['touch-cancel',undefined]]);
+});
+for(const ios of [false,true])test('TH14 intentional dialogue tap retains normal release: '+ios,()=>{
+ const f=fixture({game:'th14',ios}),p={identifier:7,clientX:210,clientY:320};
+ if(ios){f.iosEvent('directSurface','touchstart',[p]);f.iosEvent('directSurface','touchend',[p]);}
+ else{f.pointer('directSurface','pointerdown');f.pointer('directSurface','pointerup');}
+ const messages=keepTh14CancelCase(ios?'ios-tap':'pointer-tap',f);
+ assert.deepEqual(messages.map(m=>[m.command,m.type]),[['direct-touch','down'],['direct-touch','up']]);
+});
+test('TH14 interrupted drag retires without a final confirmation release',()=>{
+ const f=fixture({game:'th14'});f.pointer('directSurface','pointerdown');f.pointer('directSurface','pointermove',{clientX:250});f.pointer('directSurface','pointercancel');
+ const messages=keepTh14CancelCase('drag-cancel',f);
+ assert.deepEqual(messages.map(m=>[m.command,m.type]),[['direct-touch','down'],['direct-touch','move'],['touch-cancel',undefined]]);
 });
