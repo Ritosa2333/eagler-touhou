@@ -742,7 +742,7 @@ bool StageSim::step_frame() {
     // 交互模式可能到达（合成脚本/全灭）——空转保步进可用。
     if (enemies.empty()) {
         if (!defer_laser_update) advance_lasers();
-        if (interactive) advance_bullets();
+        if (interactive && !defer_bullet_update) advance_bullets();
         return error_.empty();
     }
     // 0x418e00:16-30：游标在每个敌机处理前取其实时 next；0x41a8a0 返回
@@ -784,7 +784,7 @@ bool StageSim::step_frame() {
         if (!has_next) break;
         i = next;
     }
-    if (interactive) advance_bullets();
+    if (interactive && !defer_bullet_update) advance_bullets();
     if (!defer_laser_update) advance_lasers();
     return error_.empty();
 }

@@ -151,7 +151,9 @@ public:
     bool reset_for_retry();
     void prepare_stage_assets() noexcept {
         frame_age.set(0);
-        displayed_score = score.score;
+        // 0042a370 从当前滚动值追 004be7c0，不在关首把滚动值拉成当前分。
+        // 新关 004be810 因此保持默认，直到滚动值超过它（udSr01 第 2 关
+        // 帧 -1..2 为 100000，帧 3 起按 score>>5 步进）。
         boss_hud.prepare_stage_assets();
     }
     bool update_trance(bool force_label = false);  // 0x42b030 值→172/173/175 显示映射
