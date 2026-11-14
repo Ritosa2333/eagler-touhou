@@ -1867,5 +1867,388 @@
     "productionChanged": false,
     "silent": true,
     "completeGame": false
-  }
+  },
+  "normalBeamReplayRulesCandidate": {
+    "schema": "th14/replay-beam-rules/1",
+    "normalCandidateQualified": true,
+    "sourceChanges": {
+      "Replay.hpp": {
+        "beforeSha256": "b21aa12bda3486f7b4a5513fd343ad5edba09568626ca7e1ca563412968ba5cc",
+        "afterSha256": "dc5dc5fdfdae506e66eebb3a136586c89e1295b8da30b124055207ea0654dc35"
+      },
+      "Replay.cpp": {
+        "beforeSha256": "6fa7ab566d8ceb6ab60cd5265aca879b0af0c5b53f6a1783d43bc61ce68f2221",
+        "afterSha256": "b30835659024d2d82ce15edadbca5e0969600d0db31591845f31ef1840694959"
+      },
+      "ReplayRecorder.cpp": {
+        "beforeSha256": "609cd8ac701578aeeef1989345cd63e8c1b37d4575a85539fe173251756450b6",
+        "afterSha256": "c5585b2dc846adb72d94dc88a0be9c16a09f057fa38033cc18e9adbd5a8d25ee"
+      },
+      "NativeStackTh14.hpp": {
+        "beforeSha256": "e2a9cd975410d1afcbd342a18c2fb0afc71d0b74997970f7c2c069fdfc7cc123",
+        "afterSha256": "b80d2725f18a15aa1109ab898bef9bf7a392e01a3ef981cdc3eda6a7e72342c6"
+      },
+      "ShotCallbacksTh14.cpp": {
+        "beforeSha256": "7995a29572d562cab27cd94f69428ff7c912904ca1b930ed24a11d74664d42e5",
+        "afterSha256": "940a736332550df441e21f67b576e07a7f42e1c7d576624e99a857381b42cd64"
+      },
+      "GameSession.cpp": {
+        "beforeSha256": "0e0fb1e1d4174acbf13652f6118351f8732272f444882e57b690dcd63bce8be9",
+        "afterSha256": "2a9177a7dcae18a287e3d0a3735f5c7e2f633f3e6b413b75fd437eaad9ab4362"
+      }
+    },
+    "ruleBlock": {
+      "magic": "USER",
+      "type": "T14B",
+      "bytes": 20,
+      "version": 1,
+      "native": 0,
+      "bounded": 1,
+      "absentMeans": "native"
+    },
+    "rulesAreMetadataOnly": true,
+    "gameplayStateOrRngOverwrittenToMatchReference": false,
+    "ordinaryUsesBoundedRule": true,
+    "newRecorderWritesRule": true,
+    "legacyUntaggedUsesNativeRule": true,
+    "unknownOrDuplicateKnownRulesRejected": true,
+    "layout": {
+      "passed": true,
+      "entries": [
+        "sizeof(th11::NativeStackTh14)",
+        "sizeof(th11::Replay)",
+        "offsetof(th11::NativeStackTh14,cookie)",
+        "offsetof(th11::NativeStackTh14,frame)",
+        "offsetof(th11::NativeStackTh14,scratch)",
+        "offsetof(th11::NativeStackTh14,damage_scratch)",
+        "offsetof(th11::NativeStackTh14,controller_scratch)",
+        "offsetof(th11::NativeStackTh14,controller_scratch_known)",
+        "offsetof(th11::NativeStackTh14,spawn_scratch)",
+        "offsetof(th11::NativeStackTh14,spawn_scratch_mask)",
+        "offsetof(th11::NativeStackTh14,enemy_spawn_depth)",
+        "offsetof(th11::NativeStackTh14,ecl_animation_factory_depth)",
+        "offsetof(th11::NativeStackTh14,spawn_scratch_known)",
+        "offsetof(th11::Replay,bytes)",
+        "offsetof(th11::Replay,stages)",
+        "offsetof(th11::Replay,touches)",
+        "offsetof(th11::Replay,touch_cursor)",
+        "offsetof(th11::Replay,count)",
+        "offsetof(th11::Replay,selected)",
+        "offsetof(th11::Replay,cursor)",
+        "offsetof(th11::Replay,input)",
+        "offsetof(th11::Replay,failure)",
+        "offsetof(th11::Replay,callback_cursor)",
+        "offsetof(th11::Replay,metadata_only)"
+      ],
+      "words": [
+        44,
+        308,
+        0,
+        4,
+        8,
+        12,
+        16,
+        20,
+        24,
+        28,
+        32,
+        36,
+        40,
+        0,
+        12,
+        140,
+        236,
+        240,
+        244,
+        248,
+        252,
+        288,
+        300,
+        304
+      ],
+      "sameExistingSizeAndOffsets": true
+    },
+    "metadataCases": [
+      {
+        "name": "untagged retail stays native",
+        "expected": 0
+      },
+      {
+        "name": "explicit bounded rule",
+        "expected": 1
+      },
+      {
+        "name": "bounded rule survives metadata retention",
+        "expected": 1
+      },
+      {
+        "name": "open resets prior bounded rule",
+        "expected": 0
+      },
+      {
+        "name": "explicit native rule",
+        "expected": 0
+      },
+      {
+        "name": "unknown version",
+        "expected": -1
+      },
+      {
+        "name": "unknown rule",
+        "expected": -1
+      },
+      {
+        "name": "short known block",
+        "expected": -1
+      },
+      {
+        "name": "truncated known block",
+        "expected": -1
+      },
+      {
+        "name": "duplicate bounded blocks",
+        "expected": -1
+      },
+      {
+        "name": "conflicting blocks",
+        "expected": -1
+      },
+      {
+        "name": "unrelated USER extension stays native",
+        "expected": 0
+      },
+      {
+        "name": "real recorder tags keyboard input",
+        "expected": 1
+      },
+      {
+        "name": "real recorder tags touch input",
+        "expected": 1
+      }
+    ],
+    "recompiledNormalProviders": 4,
+    "reusedNormalProviders": 141,
+    "normalAccessCompilerChecksPassed": true,
+    "wasmSha256": "c944a6ca39fa235ee0ea821e19537a9ba25042d70b5a411286bf3c0ab2075fbc",
+    "legacyNativeComparison": {
+      "schema": "th14/stage-trajectory-comparison/1",
+      "auditCompleted": true,
+      "stage": 3,
+      "pairedStageFrames": 4886,
+      "frameRange": [
+        1,
+        4886
+      ],
+      "nativeCallbacks": 37279,
+      "portCallbacks": 4886,
+      "nativeDuplicateStageFrameKeys": 149,
+      "portDuplicateStageFrameKeys": 0,
+      "pairing": "last occurrence of stage/control frame, diagnostic only; raw tapes unchanged",
+      "firstObservableDifference": null,
+      "firstByField": {
+        "scriptSeed": {
+          "controlFrame": 1,
+          "nativeCallback": 32394,
+          "portCallback": 1,
+          "native": 64968,
+          "port": 56432
+        },
+        "scriptCalls": {
+          "controlFrame": 1,
+          "nativeCallback": 32394,
+          "portCallback": 1,
+          "native": 2348678,
+          "port": 1360
+        }
+      },
+      "differenceCounts": {
+        "scriptSeed": 4886,
+        "scriptCalls": 4886
+      },
+      "firstGrazeWindow": [],
+      "nativeCaptureBoundaryReached": false,
+      "portRequestedBoundaryPassed": true,
+      "portOriginalAssertionRetained": null,
+      "nativeInputSha256": "e452a97814aecdb9480540761dfaed979c865be62d57a32a616720a6114913af",
+      "portInputSha256": "e452a97814aecdb9480540761dfaed979c865be62d57a32a616720a6114913af",
+      "nativeTapeSha256": "c16da439a7f3875ec4454546ab25351273bfb5947afe0630c16a769adf19345a",
+      "portTapeSha256": "abb5d1d65ae309ee884048d7f7d958d6dc700c99956f5a241c66d4a4da89b6bf",
+      "nativeReportSha256": "85cb9a01f168dd9f7980faa4f4d113e44d98b42730b1fee22732665f47e7d1f0",
+      "portReportSha256": "2859dfcf320346f5e99149f2988394ecf84614dd62b1a79f54597a228731b158",
+      "originalInstructionBytesPatched": 0,
+      "runtimeReferenceFeedback": false,
+      "silent": true,
+      "allModesAccepted": false,
+      "fullGpuAccepted": false,
+      "completeGame": false,
+      "toolSha256": "7953027887edd88e23db61aaff7e6cfe06153cc216bc22df160b0c544c10e64f"
+    },
+    "ordinaryCallbacks": 120192,
+    "ordinaryScore": 1508072320,
+    "newRecordingSha256": "bc84805037acd036f478231353a006e3da4669dd7aec6f4840c44604fb1728b3",
+    "newRecordingBytes": 110207,
+    "selfReplayCallbacks": 120720,
+    "selfReplayScore": 1508072320,
+    "selfReplayCarryAudit": {
+      "schema": "th14/replay-carry-audit/1",
+      "auditCompleted": true,
+      "observedCarryAlignmentPassed": true,
+      "transitions": [
+        {
+          "fromStage": 1,
+          "toStage": 2,
+          "carryCallback": 14737,
+          "carryControlFrame": 0,
+          "differences": {},
+          "freshPlayerCallback": 15134,
+          "afterRestoreDifferences": {},
+          "differenceMaskedByHeaderRestore": false
+        },
+        {
+          "fromStage": 2,
+          "toStage": 3,
+          "carryCallback": 32491,
+          "carryControlFrame": 0,
+          "differences": {},
+          "freshPlayerCallback": 32759,
+          "afterRestoreDifferences": {},
+          "differenceMaskedByHeaderRestore": false
+        },
+        {
+          "fromStage": 3,
+          "toStage": 4,
+          "carryCallback": 50110,
+          "carryControlFrame": 0,
+          "differences": {},
+          "freshPlayerCallback": 50398,
+          "afterRestoreDifferences": {},
+          "differenceMaskedByHeaderRestore": false
+        },
+        {
+          "fromStage": 4,
+          "toStage": 5,
+          "carryCallback": 72191,
+          "carryControlFrame": 0,
+          "differences": {},
+          "freshPlayerCallback": 72494,
+          "afterRestoreDifferences": {},
+          "differenceMaskedByHeaderRestore": false
+        },
+        {
+          "fromStage": 5,
+          "toStage": 6,
+          "carryCallback": 93827,
+          "carryControlFrame": 0,
+          "differences": {},
+          "freshPlayerCallback": 94229,
+          "afterRestoreDifferences": {},
+          "differenceMaskedByHeaderRestore": false
+        }
+      ],
+      "comparedFields": [
+        "scoreUnits",
+        "graze",
+        "pointValue",
+        "power",
+        "lives",
+        "lifeFragments",
+        "bombs",
+        "bombFragments"
+      ],
+      "selectedTapeSha256": "55f90505bc3987ad34bb40fd2a31a6e602fff8d5907cc45772b418bec6d6089d",
+      "decodedSha256": "31526218414c03c48ea7a4c1ac3bfdb6b6bc87f8c715a53a2aef4c60cf160a32",
+      "runReportSha256": "62a1c1f0304829b7954ec966bad9f3d0f6e1a047adce2b5bb46b16ed0fcf2ea0",
+      "inputSha256": "bc84805037acd036f478231353a006e3da4669dd7aec6f4840c44604fb1728b3",
+      "scope": "declared selected Player/economy fields at observed natural transitions; not all replay state or full-game proof",
+      "recordingInterfaceGraphicsOnly": true,
+      "silent": true,
+      "gameStateModified": false,
+      "completeGame": false,
+      "toolSha256": "5686b8fa09c8086572dfbbb0ced1b08a5ee5bd0db8b22d2594dab84e7ec12332"
+    },
+    "nativeCodecFiles": 3,
+    "nativeCodecPassed": true,
+    "historicalUntaggedGuardedRecordingMigrationAccepted": false,
+    "optionalThpracIntegrated": false,
+    "browserModuleBuilt": false,
+    "actualGpuAccepted": false,
+    "productionChanged": false,
+    "silent": true,
+    "completeGame": false,
+    "standaloneFormatCheck": {
+      "passed": true,
+      "cases": [
+        {
+          "name": "untagged parser input stays native",
+          "expected": 0
+        },
+        {
+          "name": "explicit bounded rule",
+          "expected": 1
+        },
+        {
+          "name": "rule survives metadata retention",
+          "expected": 1
+        },
+        {
+          "name": "new open resets rule",
+          "expected": 0
+        },
+        {
+          "name": "explicit native rule",
+          "expected": 0
+        },
+        {
+          "name": "unknown version",
+          "expected": -1
+        },
+        {
+          "name": "unknown rule",
+          "expected": -1
+        },
+        {
+          "name": "short known block",
+          "expected": -1
+        },
+        {
+          "name": "truncated known block",
+          "expected": -1
+        },
+        {
+          "name": "duplicate blocks",
+          "expected": -1
+        },
+        {
+          "name": "conflicting blocks",
+          "expected": -1
+        },
+        {
+          "name": "unrelated USER block",
+          "expected": 0
+        },
+        {
+          "name": "real recorder keyboard",
+          "expected": 1
+        },
+        {
+          "name": "real recorder touch",
+          "expected": 1
+        }
+      ],
+      "sourceHashes": {
+        "runtimes/th12/th12_web/tests/cpp/th14-replay-beam-rules-fixture.cpp": "b0967c005ea61fcf4c2dc090eb1480c20fcfa720863493f322327932de1833fd",
+        "runtimes/th12/th12_web/cpp/game/Replay.cpp": "b30835659024d2d82ce15edadbca5e0969600d0db31591845f31ef1840694959",
+        "runtimes/th12/th12_web/cpp/game/ReplayRecorder.cpp": "c5585b2dc846adb72d94dc88a0be9c16a09f057fa38033cc18e9adbd5a8d25ee",
+        "runtimes/th12/th12_web/cpp/game/ResourceCrypt.cpp": "a291010053963e25dadef2be15ddb3c217110cd2377fc495402ef375150f8c45",
+        "runtimes/th12/th12_web/cpp/game/Lzss.cpp": "7bf9b34043ee21f6e23244369069b2807314f3d7ddf7f37a556b34780afa4e48"
+      },
+      "wasmSha256": "2de3287c1647164de79b3c57e59038c31e9d3802e02eb35fc7c86486c9c03cb6",
+      "syntheticParserControlsOnly": true,
+      "noGameAssetReads": true,
+      "silent": true,
+      "completeGame": false
+    }
+  },
+  "normalBeamReplayRulesCandidateCorePr": "https://github.com/AdingApkgg/thp/pull/1",
+  "beamRulesIntegratedIntoThisWebsiteBranch": false
 }
