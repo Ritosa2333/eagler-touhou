@@ -392,7 +392,13 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
     reset_state(true);
     completed_run=false;
 #if PORT_TITLE == 14
-    practice_run=practice_enabled&&!demo?(replay?playback.practice:practice_request):PracticeTh14{};
+    // Recorded practice data is part of replay semantics, independent of
+    // whether the live practice UI is enabled for this viewer.
+    practice_run={};
+    if(!demo){
+        if(replay)practice_run=playback.practice;
+        else if(practice_enabled)practice_run=practice_request;
+    }
     if(!replay&&practice_enabled&&title&&title->th14_spell_phase_choice>0){
         practice_run={};practice_run.stage=i32(stage);practice_run.phase=title->th14_spell_phase_choice;
     }
@@ -400,7 +406,7 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
     purple_laser.stage=purple_laser.frame=purple_laser.ordinal=0;
     purple_retry_misses=0;
     if(!replay)purple_laser.recorded.clear();
-    animations.th14_native_stack.practice_laser=practice_enabled&&!demo?&purple_laser:nullptr;
+    animations.th14_native_stack.practice_laser=!demo&&(practice_enabled||replay)?&purple_laser:nullptr;
     if(practice_run&&u32(practice_run.stage)!=stage)practice_run={};
     if(practice_run&&!replay&&!(menu_selection.flags&32)){practice=true;menu_selection.flags=(menu_selection.flags&~48u)|16u;}
 #endif
@@ -1136,7 +1142,7 @@ bool GameSession::update(const GameSessionInput& input) {
             edges.pressed=game_input.pressed;edges.released=game_input.released;
 #endif
 #if PORT_TITLE == 14
-            if(practice_enabled&&!state.demo){
+            if(!state.demo){
                 const auto& events=playback.practice_events[state.stage];
                 if(playback.frame()<=1)practice_event=0,economy.th14_practice_tools=0;
                 while(practice_event<events.size()&&events[practice_event].frame<playback.frame())
