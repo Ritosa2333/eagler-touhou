@@ -244,7 +244,10 @@ int AnmRenderer::trail(AnmVm& vm){
     flush();if(!material(vm,false))return -2;TH13_DRAW_SPRITE(vm);graphics.set_depth_mask(false);auto& state=graphics.pipeline();state.color.operation=state.alpha.operation=ColorOperation::First;state.color.first=state.alpha.first={ArgumentSource::Diffuse};shapes.clear();for(i32 i=0;i<count;i++)shapes.push_back({{float(center.x+data.points[u32(i)].x),float(center.y+data.points[u32(i)].y),0},1,apply_draw_opacity(data.colors[u32(i)])});graphics.set_layout(VertexLayout::ScreenColor);submit(vm,Topology::LineStrip,u32(count-1),shapes.data(),sizeof(ColorVertex));return 0;
 }
 int AnmRenderer::draw(AnmVm& vm) {
-    if (!vm.shot_effect_owner) return draw_vm(vm);
+    // shot_effect_owner is 1..seat count. Anything past the opacity table
+    // must not be used as an index.
+    if (!vm.shot_effect_owner || vm.shot_effect_owner >= player_opacity.size())
+        return draw_vm(vm);
     const u8 opacity = player_opacity[vm.shot_effect_owner];
     // Match TH17: teammates' shots are subtler than their ships.
     return draw_with_opacity(vm, opacity == 255 ? 255 : opacity / 4);
@@ -262,10 +265,8 @@ void AnmRenderer::submit_colored(AnmVm& vm, Topology kind, u32 count, const Vert
 }
 
 int AnmRenderer::draw_vm(AnmVm& vm){
-    if (vm.shot_effect_owner) {
-        for (const auto* part = &vm; part; part = part->creation_parent)
-            if (part->hide_hit_projectile) return -1;
-    }
+    // creation_parent is not a liveness-checked pointer; draw decides from
+    // this VM alone, for shots and everything else alike.
     if(anm_draw_probe.enabled){
         ++anm_draw_probe.calls;
         const auto& v0=vm.visual;

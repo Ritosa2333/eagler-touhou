@@ -569,6 +569,7 @@ ApplicationState::~ApplicationState() {
     }
     release_run();
     scheduler.remove(loading_battle_draw);
+    scheduler.remove(fps_text_draw);
     scheduler.remove(replay_fast_forward);
     scheduler.remove(ending_update);
     for (auto& callback : animation_updates) scheduler.remove(callback);

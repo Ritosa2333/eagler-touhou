@@ -21,7 +21,8 @@ struct Provider final : EclResourceProvider {
         emit(main,0,10,0,0xff,0,{}); stage=build_scpt({{"main",main}}, {"enemy.anm","st01enm.anm"}); }
     bool read(const std::string& name,std::vector<u8>& out) override {
         if(name=="transfer.ecl"){out=stage;return true;}
-        std::ifstream file("/work/artifacts/reference/raw/"+name,std::ios::binary);
+        const char* root=std::getenv("TH13_NATIVE_ASSET_ROOT");
+        std::ifstream file(std::string(root&&*root?root:"/work/artifacts/reference/raw")+"/"+name,std::ios::binary);
         if(!file)return false;out.assign(std::istreambuf_iterator<char>(file),{});return true;
     }
     bool animation(u32,const std::string& name) override{

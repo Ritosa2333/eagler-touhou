@@ -1716,7 +1716,7 @@
     "th13": {
       "normal": "ports/th13",
       "multiplayer": "ports/th13-mp",
-      "base": "b3384bb1ab57805a8c1d37b73dae8eb578d771a5",
+      "base": "31509984da4dee92d5bc0b2e4e95cfaddec8b0a1",
       "history": [
         {
           "kind": "manual",
@@ -1833,6 +1833,64 @@
             "ports/th13-mp/web/cpp/game/TitleResultView.hpp"
           ],
           "note": "接收 b3384bb1a（AgentMystia/th13 PR#3 疮痍菜单保存 Replay 选槽与命名流程）：8 个文件（6 个实现、2 个测试）在同一提交内落到两端口，逐字节相同，MP 无适配差异；bgameover_retry_test 期望按 0x440960 光标压栈/出栈（0x440df6/0x44100f）证据在两侧一并更正。提交内容树 08dcd583d 独立导出验证：MP 原生 M1-M9 56/56、78442 断言；两侧 tests/ui 各 540 ok，余 curve_laser 两例缺参考数据的既有环境失败；两端 wasm 构建通过。浏览器与实际联机未验证。"
+        },
+        {
+          "kind": "manual",
+          "base": "b3384bb1ab57805a8c1d37b73dae8eb578d771a5",
+          "source": "a053611f6a46ecd229f8d1954e2f6e1ca5cfbee4",
+          "targetHead": "ae315c6654e5588424c491b9b658373616e67281",
+          "paths": [
+            "ports/th13-mp/tests/combat/player_shot_birth_order_test.cpp",
+            "ports/th13-mp/tests/combat/player_shot_culling_test.cpp",
+            "ports/th13-mp/tests/harness/harness.cpp",
+            "ports/th13-mp/tests/harness/test_framework.hpp",
+            "ports/th13-mp/tests/ui/curve_laser_presentation_test.cpp",
+            "ports/th13-mp/tests/ui/stage_transition_lifecycle_test.cpp",
+            "ports/th13-mp/tests/ui/title_spell_practice_esc_flow_test.cpp",
+            "ports/th13-mp/tests/ui/title_state_test.cpp",
+            "ports/th13-mp/web/cpp/game/AnmGeometry.cpp",
+            "ports/th13-mp/web/cpp/game/AnmGeometry.hpp",
+            "ports/th13-mp/web/cpp/game/AnmRegistry.cpp",
+            "ports/th13-mp/web/cpp/game/AnmVm.hpp",
+            "ports/th13-mp/web/cpp/game/GameHud.hpp",
+            "ports/th13-mp/web/cpp/game/MsgPlayer.cpp",
+            "ports/th13-mp/web/cpp/game/RunScene.cpp",
+            "ports/th13-mp/web/cpp/game/RunScene.hpp",
+            "ports/th13-mp/web/cpp/game/StageBattle.cpp",
+            "ports/th13-mp/web/cpp/game/StagePresentation.cpp",
+            "ports/th13-mp/web/cpp/game/StagePresentation.hpp",
+            "ports/th13-mp/web/cpp/game/StageSim.cpp",
+            "ports/th13-mp/web/cpp/game/StageSim.hpp",
+            "ports/th13-mp/web/cpp/game/TitleMainMenu.cpp",
+            "ports/th13-mp/web/cpp/game/TitleScene.cpp",
+            "ports/th13-mp/web/cpp/game/ZunGraphics.hpp",
+            "ports/th13-mp/web/cpp/sdl/Application.cpp",
+            "ports/th13-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th13-mp/web/cpp/sdl/FileStore.cpp",
+            "ports/th13-mp/web/cpp/sdl/SceneDisplay.cpp",
+            "ports/th13-mp/web/cpp/sdl/SceneDisplay.hpp"
+          ],
+          "note": "abec186dc 至 a053611f6 的普通版修改均以 th13/th13-mp 成对提交落地：子弹优先级 23、回放台 ANM 随机、击中火花与复活槽位、四角缺失中心盒退休、换关析构摘下 bullet_update；多人版同提交同源码，无模式专属差异"
+        },
+        {
+          "kind": "manual",
+          "base": "a053611f6a46ecd229f8d1954e2f6e1ca5cfbee4",
+          "source": "8a59928db9c9a4d9d409d7e2df93c568406d8018",
+          "targetHead": "f0cfc4df78c77f1776b43ee2d65cf4fd9b3e44a6",
+          "paths": [
+            "ports/th13-mp/web/cpp/sdl/Application.cpp"
+          ],
+          "note": "fps_text_draw unlink mirrored in th13-mp Application teardown"
+        },
+        {
+          "kind": "manual",
+          "base": "8a59928db9c9a4d9d409d7e2df93c568406d8018",
+          "source": "31509984da4dee92d5bc0b2e4e95cfaddec8b0a1",
+          "targetHead": "31509984da4dee92d5bc0b2e4e95cfaddec8b0a1",
+          "paths": [
+            "ports/th13-mp/web/cpp/game/StageBattle.cpp"
+          ],
+          "note": "consume_player_shot_geometry 注释成对更新"
         }
       ]
     },
