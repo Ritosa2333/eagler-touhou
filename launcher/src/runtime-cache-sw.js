@@ -101,7 +101,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
       const text = await response.text();
       if (text.length > 4 * 1024 * 1024) throw new Error("Runtime Manifest too large");
       return C.validateRuntimeManifest(JSON.parse(text));
-    }, {onProgress});
+    }, {cache: 'no-cache', onProgress});
   }
   async function snapshots(root) {
     const result = [];
