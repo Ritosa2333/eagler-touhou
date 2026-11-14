@@ -138,8 +138,15 @@ export function createMetingProvider(endpoint: string, request: typeof fetch = f
       const urls: [string, ...string[]] = [url.href];
       const neteaseCdn = ref.platform === 'netease' && /^(m\d+)(c?)\.music\.126\.net$/.exec(url.hostname);
       if (neteaseCdn) {
-        url.hostname = `${neteaseCdn[1]}${neteaseCdn[2] ? '' : 'c'}.music.126.net`;
-        urls.push(url.href);
+        const host = neteaseCdn[1];
+        // Some numbered hosts serve audio without CORS. The first host in
+        // the same m7xx/m8xx group serves the same media path with CORS.
+        if (/^m[78]\d{2}$/.test(host)) {
+          url.hostname = `${host.slice(0, 2)}01.music.126.net`;
+          if (!urls.includes(url.href)) urls.push(url.href);
+        }
+        url.hostname = `${host}${neteaseCdn[2] ? '' : 'c'}.music.126.net`;
+        if (!urls.includes(url.href)) urls.push(url.href);
       }
       return urls;
     },
