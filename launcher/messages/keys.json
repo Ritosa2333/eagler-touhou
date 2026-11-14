@@ -1,4 +1,16 @@
 {
+  "cloudSave.waitingTitle": {
+    "id": "cloudSave_waitingTitle",
+    "params": []
+  },
+  "cloudSave.waitingMessage": {
+    "id": "cloudSave_waitingMessage",
+    "params": []
+  },
+  "cloudSave.keepWaiting": {
+    "id": "cloudSave_keepWaiting",
+    "params": []
+  },
   "document.multiplayer.title": {
     "id": "document_multiplayer_title",
     "params": []

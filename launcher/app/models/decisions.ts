@@ -30,6 +30,7 @@ export interface DecisionOptions {
   confirmOnEnter?: boolean;
   input?: DecisionInput;
   comparison?: DecisionComparison;
+  progress?: boolean;
 }
 export interface DecisionRequest extends Readonly<DecisionOptions> {readonly requestId: number;}
 export interface DecisionStore {

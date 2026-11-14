@@ -1,4 +1,7 @@
 {
+  "cloudSave_waitingTitle": "クラウドセーブを準備中",
+  "cloudSave_waitingMessage": "そのまま待つか、このブラウザーのセーブで開始できます。",
+  "cloudSave_keepWaiting": "クラウドセーブを待つ",
   "document_multiplayer_title": "マルチプレイ",
   "document_multiplayer_common": "協力プレイの共通ルール",
   "document_multiplayer_coop": "協力プレイ",

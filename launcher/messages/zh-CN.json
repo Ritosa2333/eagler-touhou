@@ -1,4 +1,7 @@
 {
+  "cloudSave_waitingTitle": "正在准备云存档",
+  "cloudSave_waitingMessage": "可以继续等待，也可以用此浏览器的存档启动。",
+  "cloudSave_keepWaiting": "继续等云存档",
   "document_multiplayer_title": "联机",
   "document_multiplayer_common": "协作通用规则",
   "document_multiplayer_coop": "协作",
