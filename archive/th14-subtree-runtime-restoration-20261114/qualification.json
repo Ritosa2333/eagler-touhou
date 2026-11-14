@@ -2785,5 +2785,206 @@
     "productionChanged": false,
     "allHistoricalRecordingsAccepted": false,
     "completeGame": false
+  },
+  "normalBrowserRecordingPersistence": {
+    "schema": "th14/browser-normal-persistence/1",
+    "websiteCandidate": "f9a67c7c5a031ef18c46f00fbc8559df8193c64a",
+    "wasmSha256": "45128444b76701aa49c9fedd19c8388cb19d8fecd5de197dd81742392861284a",
+    "generation": "ea975a7d3a1e59deff6f444aaff347ba8eada33bfb0f37c5424fe75dcc802a47",
+    "site": "http://localhost:8228/?game=th14",
+    "role": "Reimu B",
+    "difficulty": "Lunatic",
+    "thpracEnabled": false,
+    "musicModeSelected": "ogg-stream",
+    "musicVolume": 0,
+    "effectsVolume": 0,
+    "ordinaryMenuStartObserved": true,
+    "movementShotFocusBombObserved": true,
+    "pauseResumeObserved": true,
+    "naturalGameOverObserved": true,
+    "nativeEmptySlotBeforeSave": 1,
+    "nativeSavedName": "A",
+    "returnedToTitleAndQuitObserved": true,
+    "fullPageReloadObserved": true,
+    "settingsPersisted": true,
+    "existingTwoPracticeRecordingsRetained": true,
+    "recording": {
+      "passed": true,
+      "rawSha256": "e08a4420a91e6638abebfc371544724e383baa5490b8bf6142a3eac5ae245783",
+      "bytes": 1485,
+      "decodedBytes": 9654,
+      "name": "A",
+      "practice": false,
+      "rawScoreUnits": 1131,
+      "displayedScore": 11310,
+      "character": 0,
+      "subtype": 1,
+      "difficulty": 3,
+      "stages": 1,
+      "stage": 1,
+      "frameRecordsIncludingTerminal": 1539,
+      "playbackFramesExcludingTerminal": 1538,
+      "terminalRecordPresent": true,
+      "userBlocks": [
+        {
+          "type": 1110716756,
+          "length": 20
+        }
+      ],
+      "beamRuleVersion": 1,
+      "beamRule": 1,
+      "noPostSaveAnnotation": true,
+      "inputKeysOrStateRewritten": false,
+      "parserModuleSha256": "e01a89267ce8a8205219069bec99ba19ff3625271b2af4a383cbd9d261f2b3ef",
+      "actualBrowserModuleSha256": "45128444b76701aa49c9fedd19c8388cb19d8fecd5de197dd81742392861284a",
+      "sourceBindings": {
+        "artifacts\\th14\\current-concurrent-mixer-nov14\\beam-replay-rules\\optional-core\\runtimes\\th12\\th12_web\\cpp\\game\\ScoreFile.cpp": "d1a0e7305769386e9e48eaab60ad2882576cedcf49dea73d6cca6213a1692e48",
+        "artifacts\\th14\\current-concurrent-mixer-nov14\\beam-replay-rules\\optional-core\\runtimes\\th12\\th12_web\\cpp\\game\\Replay.cpp": "88b3893488fcc00ec2e3b1ed949e5abf718defee706c4e71e07fb12c934d4dbd",
+        "artifacts\\th14\\current-concurrent-mixer-nov14\\beam-replay-rules\\optional-core\\runtimes\\th12\\th12_web\\cpp\\game\\ResourceCrypt.cpp": "a291010053963e25dadef2be15ddb3c217110cd2377fc495402ef375150f8c45",
+        "artifacts\\th14\\current-concurrent-mixer-nov14\\beam-replay-rules\\optional-core\\runtimes\\th12\\th12_web\\cpp\\game\\Lzss.cpp": "7bf9b34043ee21f6e23244369069b2807314f3d7ddf7f37a556b34780afa4e48",
+        "artifacts\\th14\\current-concurrent-mixer-nov14\\beam-replay-rules\\optional-core\\runtimes\\th12\\th12_web\\cpp\\game\\PracticeTh14.cpp": "6ac230f5c4db84e020dd7136f6f3a1f223847d2006bb278b143c8f1a1e7cc31f"
+      }
+    },
+    "scoreBytePersistence": {
+      "passed": true,
+      "bytes": 21651,
+      "beforeSha256": "9bf78b4ca0316695bad4c7b0fb73ecca606f0a7c1e922092966c9b5cbe498bf4",
+      "afterSha256": "9bf78b4ca0316695bad4c7b0fb73ecca606f0a7c1e922092966c9b5cbe498bf4",
+      "wholeFileUnchangedAcrossReload": true,
+      "scoreContentsSemanticallyInspected": false
+    },
+    "scoreAndReplayCppReadback": {
+      "passed": true,
+      "actualScoreFileReaderAcceptedBoth": true,
+      "decodedBefore": [
+        {
+          "selection": 0,
+          "playCount": 1,
+          "playTime": 2464,
+          "lunaticHighScoreUnits": 100000
+        },
+        {
+          "selection": 1,
+          "playCount": 1,
+          "playTime": 1538,
+          "lunaticHighScoreUnits": 100000
+        },
+        {
+          "selection": 2,
+          "playCount": 0,
+          "playTime": 0,
+          "lunaticHighScoreUnits": 100000
+        },
+        {
+          "selection": 3,
+          "playCount": 0,
+          "playTime": 0,
+          "lunaticHighScoreUnits": 100000
+        },
+        {
+          "selection": 4,
+          "playCount": 0,
+          "playTime": 0,
+          "lunaticHighScoreUnits": 100000
+        },
+        {
+          "selection": 5,
+          "playCount": 0,
+          "playTime": 0,
+          "lunaticHighScoreUnits": 100000
+        },
+        {
+          "selection": 6,
+          "playCount": 0,
+          "playTime": 0,
+          "lunaticHighScoreUnits": 100000
+        }
+      ],
+      "decodedAfter": [
+        {
+          "selection": 0,
+          "playCount": 1,
+          "playTime": 2464,
+          "lunaticHighScoreUnits": 100000
+        },
+        {
+          "selection": 1,
+          "playCount": 1,
+          "playTime": 1538,
+          "lunaticHighScoreUnits": 100000
+        },
+        {
+          "selection": 2,
+          "playCount": 0,
+          "playTime": 0,
+          "lunaticHighScoreUnits": 100000
+        },
+        {
+          "selection": 3,
+          "playCount": 0,
+          "playTime": 0,
+          "lunaticHighScoreUnits": 100000
+        },
+        {
+          "selection": 4,
+          "playCount": 0,
+          "playTime": 0,
+          "lunaticHighScoreUnits": 100000
+        },
+        {
+          "selection": 5,
+          "playCount": 0,
+          "playTime": 0,
+          "lunaticHighScoreUnits": 100000
+        },
+        {
+          "selection": 6,
+          "playCount": 0,
+          "playTime": 0,
+          "lunaticHighScoreUnits": 100000
+        }
+      ],
+      "selectedPlayCount": 1,
+      "selectedPlayTime": 1538,
+      "replay": {
+        "rule": 1,
+        "character": 0,
+        "subtype": 1,
+        "difficulty": 3,
+        "frameRecordsIncludingTerminal": 1539
+      },
+      "fullScoreBytesPersisted": true,
+      "otherHistoryBeforeThisGameNotEstablished": true,
+      "initialEmptyOtherHistoryAssumptionRejected": true,
+      "independentOriginalCompared": false,
+      "silent": true,
+      "completeGame": false
+    },
+    "actualReplay": {
+      "frames": 1538,
+      "rate": 1,
+      "naturalEnded": true,
+      "score": 11310,
+      "bombs": 2,
+      "power": 1.0,
+      "graze": 140,
+      "pointValue": 10720,
+      "sameDeclaredHudBeforeSaveAndReplayEnd": true
+    },
+    "proofHashes": {
+      "before-save.jpg": "6df6f090fc1d95336bdfeaee76f6a0b4d466eee92a7b96eba9ee9b696d123332",
+      "gameover-before-save.jpg": "95fc0be053623894539aa257f982b6aa14c91360c9be70fe7b9b0038bf7f04cb",
+      "paused.jpg": "9620f8ecf01c5e844e28676c08de206543de1eb7fefc4bde996989a1ee3654ff",
+      "reloaded-settings.jpg": "d0a20aa6ae723b71c2d2020a40ec579a8e868ebce3e240f95597208027484d9f",
+      "replay-ended.jpg": "804fc2eb164a094c5dc1e00dcf75cec6ca56a3e73217f74817dedf21ac3fa892",
+      "saved-slot.jpg": "6a02dc20a4eafe490587cd29d4baa8bcdcd7e177f93fa57c2768d634d04fe0a6",
+      "title.jpg": "64cbaeb98f3c146bdf9eb93af0dd93112b0c5f8376481ad374cd4b57c5694c48",
+      "weapon.jpg": "fadedc434e1bef7fdca1f5e9ea5a1a07b1bf81cd8653a40cb6f3bf83b6692db2"
+    },
+    "noRawFilesPublished": true,
+    "productionChanged": false,
+    "independentOriginalCompared": false,
+    "completeCampaignAcceptedByThisCase": false,
+    "completeGame": false
   }
 }
