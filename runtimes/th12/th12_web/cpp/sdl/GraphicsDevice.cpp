@@ -121,6 +121,15 @@ bool GraphicsDevice::initialize(){
     SDL_SetWindowTitle(backend.native_window(),kPortTitle==16?"东方天空璋":kPortTitle==14?"东方辉针城 · 移植验证":"Touhou 11");backend.state.target=screen;backend.state.depth=depth;initialize_game_pipeline();return true;
 }
 #if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
+bool GraphicsDevice::restore_capture_screen(){
+    if(!overlay_capture_valid)return preserve_capture_screen(true);
+    const auto& display=textures.at(screen).image;
+    const i32 rectangle[]={0,0,i32(display.width),i32(display.height)};
+    if(!backend.resample(overlay_capture,rectangle,screen,rectangle,nullptr,0,0)){
+        error="TH14 paused practice scene restoration failed";return false;
+    }
+    changed(screen);return true;
+}
 bool GraphicsDevice::preserve_capture_screen(bool overlay_visible){
     overlay_capture_valid=false;
     if(!overlay_visible)return true;

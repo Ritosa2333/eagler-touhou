@@ -2310,13 +2310,7 @@ void cancel_touch(){
     gestures.cancel_transient();
     if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;
 }
-bool sample_and_tick_once(){
-#if PORT_TITLE == 14
-    if(app.hosted_replay&&app.session.state.replay)return app.tick_once(0);
-#endif
-#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
-    PracticeUiTh14::sync_setup();
-#endif
+void pump_platform_events(){
     SDL_Event event;while(SDL_PollEvent(&event)){
 #if PORT_TITLE == 14
         if(event.type==SDL_EVENT_WINDOW_CLOSE_REQUESTED||event.type==SDL_EVENT_QUIT)app.session.request_host_close();
@@ -2343,6 +2337,17 @@ bool sample_and_tick_once(){
         else if(event.type==SDL_EVENT_JOYSTICK_ADDED)add_controller(event.jdevice.which);
         else if(event.type==SDL_EVENT_JOYSTICK_REMOVED&&controller&&SDL_GetJoystickID(controller)==event.jdevice.which){SDL_CloseJoystick(controller);controller=nullptr;int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;++i)add_controller(ids[i]);SDL_free(ids);}
     }
+}
+bool sample_and_tick_once(){
+#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
+    PracticeUiTh14::sync_setup();
+#endif
+    pump_platform_events();
+#if PORT_TITLE == 14
+    // Hosted playback ignores live gameplay input, but must still consume
+    // platform events for the practice UI, focus loss and host close.
+    if(app.hosted_replay&&app.session.state.replay)return app.tick_once(0);
+#endif
 #if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
     const bool capture=PracticeUiTh14::captures();
     if(capture!=app.session.practice_input_captured)cancel_touch();
@@ -2528,6 +2533,17 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
         if(suspended){cadence.reset();
 #if PORT_TITLE == 14
             app.hosted_cadence.reset();
+#if defined(TH14_ENABLE_THPRAC)
+            // A paused viewer presents only the retained game image plus UI.
+            // Never tick or redraw GameSession here: draw may service loading.
+            if(app.hosted_replay&&app.session.state.replay&&app.session.practice_enabled){
+                pump_platform_events();
+                if(!app.graphics.restore_capture_screen()||!PracticeUiTh14::draw(app.session,app.graphics)){
+                    app.error=app.graphics.error;running=false;return EM_FALSE;
+                }
+                app.graphics.present();
+            }
+#endif
 #endif
             return EM_TRUE;}
 #if PORT_TITLE == 14
