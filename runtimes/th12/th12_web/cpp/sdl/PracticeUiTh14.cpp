@@ -123,8 +123,13 @@ void cheat_options(){
 void export_keys(){
     const auto csv=key_monitor.csv();
     EM_ASM({
-        const url=URL.createObjectURL(new Blob([UTF8ToString($0)],{type:'text/csv;charset=utf-8'}));
-        const a=document.createElement('a');a.href=url;a.download='APS.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+        // The same-origin launcher owns hosted downloads. Keep standalone and
+        // cross-origin embedding on the game's own document.
+        let owner=window;
+        try{if(window.parent!==window&&window.parent.document)owner=window.parent;}catch{}
+        const url=owner.URL.createObjectURL(new owner.Blob([UTF8ToString($0)],{type:'text/csv;charset=utf-8'}));
+        const a=owner.document.createElement('a');a.href=url;a.download='APS.csv';a.click();
+        owner.setTimeout(()=>owner.URL.revokeObjectURL(url),1000);
     },csv.c_str());
 }
 #include "PracticeAdvancedPurpleTh14.inc"
