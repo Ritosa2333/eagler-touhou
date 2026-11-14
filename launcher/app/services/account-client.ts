@@ -130,27 +130,27 @@ async function selectAccountEndpoint(signal?: AbortSignal) {
   const {edge, direct} = origins;
   let siteReady: ReturnType<typeof accountReady> | undefined;
   if (accountRegion === 'direct') {
-    siteReady = accountReady('', signal);
+    siteReady = accountReady(direct, signal);
     const ready = await siteReady;
-    if (ready?.region === 'direct') return ready;
+    return ready ?? accountReady('', signal);
   }
   if (accountRegion === 'edge') {
     const ready = await accountReady(edge, signal);
     if (ready?.region === 'direct') {
       accountRegion = 'direct';
-      return accountReady('', signal);
+      return (await accountReady(direct, signal)) ?? accountReady('', signal);
     }
     if (ready) return ready;
     const fallback = await accountReady(direct, signal);
     if (fallback?.region === 'direct') {
       accountRegion = 'direct';
-      return accountReady('', signal);
+      return fallback;
     }
     return fallback;
   }
 
   // The overseas site itself may be served by Cloudflare and have no same-origin API.
-  siteReady ??= accountReady('', signal);
+  siteReady = accountReady(direct, signal);
   const edgeReady = accountReady(edge, signal);
   const first = await Promise.any([siteReady, edgeReady].map(async probe => {
     const ready = await probe;
@@ -158,8 +158,8 @@ async function selectAccountEndpoint(signal?: AbortSignal) {
     return ready;
   })).catch(() => null);
   accountRegion = first?.region;
-  if (accountRegion === 'direct') return siteReady;
-  return (await edgeReady) ?? accountReady(direct, signal);
+  if (accountRegion === 'direct') return (await siteReady) ?? accountReady('', signal);
+  return (await edgeReady) ?? (await siteReady) ?? accountReady('', signal);
 }
 
 export async function accountRequest<T = unknown>(path: string, body?: Record<string, unknown> | FormData, options: RequestOptions = {}): Promise<T> {

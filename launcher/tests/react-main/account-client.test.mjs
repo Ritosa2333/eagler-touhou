@@ -171,7 +171,7 @@ const direct = 'https://direct-api.touhouonline.com';
 const readyOn = route => Response.json({ready: true}, {headers: {'X-Eagler-Account-Route': route}});
 
 it.each([
-  ['direct', true, ''],
+  ['direct', true, direct],
   ['edge', true, edge],
   ['edge', false, direct],
 ])('routes account writes by region %s and edge availability %s', async (route, edgeAvailable, expected) => {
@@ -180,7 +180,7 @@ it.each([
   const writes = [];
   const {accountRequest} = await loadAccountClient(vi.fn(async (url, init) => {
     if (url === '/api/ready') return route === 'direct' ? readyOn(route) : new Response(null, {status: 404});
-    if (url === direct + '/api/ready') return readyOn('edge');
+    if (url === direct + '/api/ready') return readyOn(route);
     if (url === edge + '/api/ready') {
       if (edgeAvailable) return readyOn(route);
       throw new TypeError('network error');
