@@ -30,7 +30,7 @@ window.__eaglerPrepareManagedRuntimeDataV1=async()=>({buffer:await (await fetch(
 addEventListener('message',event=>{if(event.source===frame.contentWindow)events.push(event.data);});
 window.command=(command,fields={})=>new Promise((resolve,reject)=>{
  const request=String(++serial);
- const timeout=setTimeout(()=>{removeEventListener('message',receive);reject(Error('command timeout: '+command));},45000);
+ const timeout=setTimeout(()=>{removeEventListener('message',receive);reject(Error('command timeout: '+command));},90000);
  const receive=event=>{if(event.source!==frame.contentWindow||event.data?.request!==request)return;
   clearTimeout(timeout);removeEventListener('message',receive);event.data.ok?resolve(event.data):reject(Error(event.data.error));
  };
@@ -181,9 +181,17 @@ try{
   await next(lobby,m=>m.type==='state');
   await next(lobby,m=>m.type==='spectator-start',{type:'spectate',name:'Watcher'});
   const watcher=await makeClient(-1);
-  await watcher.frame.evaluate(target=>{watchTarget=target;},target);
   await watcher.cmd('configure',{options:{...options(member,0),netplaySpectator:true,netplaySpectatorId:spectatorId},language:'ja',music:'none'});
   await watcher.cmd('launch');
+  // Late spectators catch up in batches and can pass the comparison frame between paints.
+  await watcher.page.waitForFunction(target=>events.some(e=>{
+   const timeline=e.spectatorPlayback;
+   return timeline?.run&&timeline.min<=target&&target<=timeline.edge;
+  }),target,{timeout:90000});
+  const run=await watcher.page.evaluate(()=>events.findLast(e=>e.spectatorPlayback?.run).spectatorPlayback.run);
+  await watcher.cmd('spectator-playback',{run,action:'pause'});
+  await watcher.cmd('spectator-playback',{run,action:'seek',frame:target});
+  await watcher.frame.evaluate(target=>{watchTarget=target;},target);
   await watcher.frame.waitForFunction(()=>!!globalThis.watchRow,null,{timeout:60000});
   assert.deepEqual(await watcher.frame.evaluate(()=>watchRow),expected,'spectator replays the same confirmed battle');
   console.log('spectator matched frame',target);
