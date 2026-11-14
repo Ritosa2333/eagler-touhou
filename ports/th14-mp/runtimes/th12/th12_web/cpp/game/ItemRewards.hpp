@@ -21,6 +21,10 @@ struct ItemRewardEffects {
 class ItemRewards {
 public:
     ItemRewards(GameEconomy& s,ItemRewardEffects& e):state(s),effects(e){}
+#if PORT_TITLE == 14
+    ItemRewards(GameEconomy& stock,ItemRewardEffects& e,GameEconomy& counters)
+        :state(stock),effects(e),th14_counters(&counters){}
+#endif
     bool collect(const ItemState&,bool& convert_power_items,const ItemPlayer* player=nullptr);
     bool add_power(i32 amount,bool& level_changed);
     bool add_life();
@@ -33,13 +37,17 @@ public:
     bool th16_collect(const ItemState&,const ItemPlayer&);
 #endif
 #if PORT_TITLE == 14
-    bool th14_bomb_fragment();
-    bool th14_life_fragment();
+    bool th14_bomb_fragment(i32 pieces=8);
+    bool th14_life_fragment(i32 life_pieces=0,i32 bomb_pieces=8);
     bool th14_life();
     bool th14_bomb();
     bool th14_combo_settle(bool dialogue);
+    bool th14_collect_with_combo(const ItemState&,bool&,const ItemPlayer*,const ItemPlayer*,Th14ItemCombo* combo_owner=nullptr);
 #endif
 private:
     GameEconomy& state;ItemRewardEffects& effects;
+#if PORT_TITLE == 14
+    GameEconomy* th14_counters=&state;
+#endif
 };
 }

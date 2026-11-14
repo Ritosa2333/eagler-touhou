@@ -36,7 +36,7 @@ i32 start_transforms(BulletState& b,BulletEnvironment& e)noexcept{
         case 1:b.active_transforms|=1;b.motion[0].timer.set(0,&e.rate);b.motion[0].vector.z=0;break;
         case 4:{
             auto& slot=b.motion[1];b.active_transforms|=4;slot.a=t.a;
-            slot.b=t.b<=-990.f?b.angle:normalize_angle(t.b>=990.f?bullet_aim(b.position,e.player)+t.c:t.b);
+            slot.b=t.b<=-990.f?b.angle:normalize_angle(t.b>=990.f?bullet_aim(b.position,e.th14_target(b.position))+t.c:t.b);
             slot.timer.set(0,&e.rate);slot.duration=t.p;const auto v=polar(slot.b,slot.a);slot.vector.x=v.x;slot.vector.y=v.y;
             if(b.transform_index&&b.transform_sound>=0)e.sound(b.transform_sound,b.position.x,true);break;
         }
@@ -50,7 +50,7 @@ i32 start_transforms(BulletState& b,BulletEnvironment& e)noexcept{
         // Unlike ETEX 4, its consumer does not replace scalar speed with vector length.
         case 0x200000:{
             auto& slot=b.motion[10];b.active_transforms|=op;slot.a=(t.a-b.speed)/float(t.p);
-            slot.b=t.b<=-990.f?b.angle:normalize_angle(t.b>=990.f?bullet_aim(b.position,e.player)+t.c:t.b);
+            slot.b=t.b<=-990.f?b.angle:normalize_angle(t.b>=990.f?bullet_aim(b.position,e.th14_target(b.position))+t.c:t.b);
             slot.timer.set(0,&e.rate);slot.duration=t.p;const auto v=polar(slot.b,slot.a);slot.vector.x=v.x;slot.vector.y=v.y;
             if(b.transform_index&&b.transform_sound>=0)e.sound(b.transform_sound,b.position.x,true);break;
         }
@@ -62,13 +62,13 @@ i32 start_transforms(BulletState& b,BulletEnvironment& e)noexcept{
         case 0x10:{
             auto& slot=b.motion[3];b.active_transforms|=op;
             switch(t.r){
-            case 0:slot.b=t.a<=-990.f?b.angle:normalize_angle(t.a>=990.f?bullet_aim(b.position,e.player):t.a);break;
+            case 0:slot.b=t.a<=-990.f?b.angle:normalize_angle(t.a>=990.f?bullet_aim(b.position,e.th14_target(b.position)):t.a);break;
             case 1:case 4:slot.b=t.a;break;
-            case 2:slot.b=normalize_angle(bullet_aim(b.motion[9].vector,e.player)+t.a);break;
+            case 2:slot.b=normalize_angle(bullet_aim(b.motion[9].vector,e.th14_target(b.motion[9].vector))+t.a);break;
             case 3:slot.b=normalize_angle(b.motion[9].b+t.a);break;
             case 5:{
                 if(!e.th14_visual_rng)return -2;const float delta=e.th14_visual_rng->signed_unit()*t.a;
-                slot.b=normalize_angle(t.a<=-990.f?b.angle+delta:t.a>=990.f?bullet_aim(b.position,e.player)+delta:delta);break;
+                slot.b=normalize_angle(t.a<=-990.f?b.angle+delta:t.a>=990.f?bullet_aim(b.position,e.th14_target(b.position))+delta:delta);break;
             }
             case 6:if(!e.th14_visual_rng)return -2;slot.b=e.th14_visual_rng->signed_unit()*t.a;break;
             default:break;
@@ -122,7 +122,7 @@ i32 start_transforms(BulletState& b,BulletEnvironment& e)noexcept{
         // Retail 418a81: >=990 is player aim plus (a-999), >=-990 is
         // an explicit normalized angle. Both scalars otherwise stay intact.
         case 0x40000:{
-            if(t.a>=990.f)b.angle=normalize_angle(normalize_angle(bullet_aim(b.position,e.player)+(t.a-999.f)));
+            if(t.a>=990.f)b.angle=normalize_angle(normalize_angle(bullet_aim(b.position,e.th14_target(b.position))+(t.a-999.f)));
             else if(t.a>=-990.f)b.angle=normalize_angle(t.a);
             if(t.b>=-990.f)b.speed=t.b;
             const auto v=polar(b.angle,b.speed);b.velocity.x=v.x;b.velocity.y=v.y;break;
@@ -267,8 +267,8 @@ i32 bullet_th14_step_tick(BulletState& b,BulletEnvironment& e)noexcept{
         slot.count=wrapping_add(slot.count,1);
         switch(b.th14_step_mode){
         case 0:case 5:b.angle=normalize_angle(b.angle+slot.b);break;
-        case 1:case 6:b.angle=normalize_angle(bullet_aim(b.position,e.player)+slot.b);break;
-        case 2:b.angle=normalize_angle(bullet_aim(b.motion[9].vector,e.player)+slot.b);break;
+        case 1:case 6:b.angle=normalize_angle(bullet_aim(b.position,e.th14_target(b.position))+slot.b);break;
+        case 2:b.angle=normalize_angle(bullet_aim(b.motion[9].vector,e.th14_target(b.motion[9].vector))+slot.b);break;
         case 3:b.angle=normalize_angle(b.motion[9].b+slot.b);break;
         case 4:b.angle=normalize_angle(slot.b);break;
         default:break;
@@ -379,9 +379,13 @@ bool BulletManager::cancel_rectangle_th14(Vec3 center,Vec2 size,const Th14Rectan
 }
 i32 BulletManager::spawn_th14(const Th14BulletEmitter& e,i32 index,i32 layer,float aim)noexcept{
     if(last_error)return -2;if(!th14_free)return 1;
-    auto& b=*th14_free;th14_free=b.th14_free_next;b.th14_free_next=nullptr;
+    auto& b=*th14_free;
+#if defined(TH14_MULTIPLAYER)
+    if(room_slots)room_slots->save(b);
+#endif
+    th14_free=b.th14_free_next;b.th14_free_next=nullptr;
     b.th14_active_previous=nullptr;b.th14_active_next=th14_active;if(th14_active)th14_active->th14_active_previous=&b;th14_active=&b;
-    BulletLaunch launch{};const bool accepted=bullet_th14_launch(e,index,layer,aim,animations.visual_rng,player,exclusion_squared,launch);
+    BulletLaunch launch{};const bool accepted=bullet_th14_launch(e,index,layer,aim,animations.visual_rng,th14_target(e.position),exclusion_squared,launch);
     b.position=launch.position;b.speed=launch.speed;b.angle=launch.angle;b.flags|=1;b.state=1;
     b.lifetime.set(0,&rate);b.auxiliary_timer.set(0,&rate);b.collision_delay=0;b.th14_size=1.f;
     if(!accepted){release(b);return -1;}
@@ -399,7 +403,7 @@ i32 BulletManager::spawn_th14(const Th14BulletEmitter& e,i32 index,i32 layer,flo
 }
 bool BulletManager::fire_th14(const Th14BulletEmitter& e){
     if(last_error||fire_depth>=64){last_error=4;return false;}++fire_depth;bool full=false;
-    const float aim=bullet_aim(e.position,player);
+    const float aim=bullet_aim(e.position,th14_target(e.position));
     for(i32 layer=0;layer<e.layers&&!full;++layer)for(i32 index=0;index<e.count;++index){
         const i32 result=spawn_th14(e,index,layer,aim);if(result==-2){--fire_depth;return false;}if(result==1){full=true;break;}
     }

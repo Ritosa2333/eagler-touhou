@@ -3081,6 +3081,19 @@ for(const presented of [true,false])test(`room ready requires native game menu p
  else assert.notEqual(node('#mpRoomResourceLabel').textContent,'Game loaded');
 });
 
+test('room resources can become ready when the Runtime has no native lobby preview',async()=>{
+ const host=developmentAcquisitionHost(['th09']);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const invite=api.encodeRoomInvite({g:'th09mp',r:'1234',f:true,a:'join',s:true});
+ const f=await mountBrowser({initial:'/?j='+invite,host,autoReady:false,socketBoundary:true,seedPackages:['th09']});
+ const session=api.getTestSession();
+ await until(()=>!!f.native?.envelope,'native program loading',15_000);
+ f.holdRoomPreview=true;
+ await React.act(async()=>f.native.emit('ready'));
+ await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','prepared without a title preview');
+ assert.equal(session.getRuntime().getSnapshot().phase,'prepared');
+ assert.equal(f.outbound.some(message=>message.command==='prepare-room'),false);
+});
+
 test('ordinary game loading reports success only after its first frame',async()=>{
  const f=await mountBrowser(),session=api.getTestSession();
  await start();await until(()=>session.getRuntime().getSnapshot().launched,'game acknowledged launch');

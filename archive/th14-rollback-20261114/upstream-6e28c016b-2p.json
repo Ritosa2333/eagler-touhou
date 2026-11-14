@@ -1,0 +1,38 @@
+{
+  "version": "1.00b-thp-c9cfc498fcdc",
+  "wasm": "c9cfc498fcdc2e13408191c2abeec894fd70c1df828db58dbd321c169f59bcd8",
+  "mode": "rollback",
+  "count": 2,
+  "delay": 90,
+  "jitter": 24,
+  "compared": 1815,
+  "peakBullets": 10,
+  "viewers": {
+    "spectatorFrame": 500,
+    "replayFrame": 500
+  },
+  "peers": [
+    {
+      "head": 1818,
+      "confirmed": 1815,
+      "corrections": 277,
+      "resimulated": 980,
+      "combatCorrections": 96,
+      "prediction": 12,
+      "route": "rtc",
+      "packets": 0,
+      "error": ""
+    },
+    {
+      "head": 1820,
+      "confirmed": 1818,
+      "corrections": 301,
+      "resimulated": 1003,
+      "combatCorrections": 104,
+      "prediction": 12,
+      "route": "rtc",
+      "packets": 3517,
+      "error": ""
+    }
+  ]
+}

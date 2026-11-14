@@ -3,6 +3,9 @@
 #include <memory>
 #include <unordered_map>
 namespace th11 {
+#if defined(TH14_MULTIPLAYER)
+class FrameImageTh14;
+#endif
 struct EnemySpawn {
     Vec3 position{};i32 score=0,drop=0,health=0;u32 mirrored=0,world_coordinates=0;
     i32 integers[4]{};float floats[4]{},extra_floats[4]{};
@@ -48,7 +51,14 @@ public:
 private:
     struct Entry {Enemy enemy{};EnemyScriptServices script;Entry(EnemyEnvironment& w,EnemyCommandEnvironment& c):script(enemy.state,w,c){}};
     EclProgram* program;EnemyEnvironment& environment;EnemyCommandEnvironment& commands;EnemyFrameWorld& world;
+#if defined(TH14_MULTIPLAYER)
+    std::unordered_map<Enemy*,std::shared_ptr<Entry>> entries;
+public:
+    void capture_room_frame(FrameImageTh14&);
+private:
+#else
     std::unordered_map<Enemy*,std::unique_ptr<Entry>> entries;
+#endif
     u32 spawn_depth=0;
 };
 }

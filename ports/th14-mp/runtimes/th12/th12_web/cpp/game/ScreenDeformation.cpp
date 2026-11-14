@@ -3,7 +3,12 @@
 #include "GraphicsMath.hpp"
 #include <cmath>
 namespace th11 {
-ScreenDeformation::~ScreenDeformation(){EnemyAnimations helper(manager);for(auto id:animations)helper.erase(id);if(control_animation)helper.erase(control_animation);}
+ScreenDeformation::~ScreenDeformation(){detach();}
+void ScreenDeformation::detach(){
+    EnemyAnimations helper(manager);for(auto id:animations)helper.erase(id);
+    if(control_animation)helper.erase(control_animation);
+    animations.clear();control_animation=0;
+}
 bool ScreenDeformation::initialize(AnmResource& text,u32 width,u32 height,bool second_target){
     if(width<2||height<3||width>128||height>128||!animations.empty())return false;
     if constexpr(kPortTitle==16)if(width!=17)return false;

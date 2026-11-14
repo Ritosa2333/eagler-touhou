@@ -1,4 +1,4 @@
-"""Build the TH14 SDL3/WebGL2 module from repository sources with Emscripten."""
+"""Build the TH14 multiplayer SDL3/WebGL2 module from repository sources with Emscripten."""
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
@@ -16,7 +16,7 @@ def prepare_host_shell(source, identity):
     for before, after in [('./th11-sdl.', './th14-sdl.'), ("game='th11'", "game='th14'"),
                           ('/savesth11', '/savesth14'), ('/thcrap/th11/', '/thcrap/th14/'),
                           ('scoreth11', 'scoreth14'), ('th11.cfg', 'th14.cfg'),
-                          (r'th11\.cfg', r'th14\.cfg'), ('th11_(?:', 'th14_(?:'),
+                          (r'th11\.cfg', r'th14\.cfg'), ('th11_(?:', 'th14_(?:'), ('th11mp_(?:', 'th14mp_(?:'),
                           ('TH11', 'TH14'), ('地灵殿', '辉针城')]:
         source = source.replace(before, after)
     anchor = 'const runtimeBuild=/*TH14_BUILD_INFO*/'
@@ -68,7 +68,16 @@ def main():
     tracked = set(source for source in sources if source.is_relative_to(repo))
     common_files = [*sorted(imgui.glob('*.h')), *sorted(imgui.glob('*.inl')), *sorted(imgui.glob('*.cpp')),
                     *sorted((shared / 'eagler/thprac').glob('Practice*')),
-                    shared / 'eagler/input/DialogueGesture.hpp']
+                    shared / 'eagler/input/DialogueGesture.hpp',
+                    shared / 'eagler/gameplay/CooperativeRules.hpp']
+    netplay = ('BrowserPeerTransport', 'InputReplay', 'NetplayCore', 'NetplayProtocol',
+               'NetplaySession', 'SessionChannel', 'WebSocketTransport')
+    sources += sorted((cpp / 'multiplayer').glob('*.cpp'))
+    sources += [common / 'src/netplay' / (name + '.cpp') for name in netplay]
+    tracked.update(p for p in sources if p.is_relative_to(repo))
+    common_files += [p for p in sources if p.is_relative_to(common)]
+    common_files += sorted((shared / 'eagler/netplay').glob('*.hpp'))
+    flags += ['-DTH14_MULTIPLAYER=1', '-I' + str(cpp / 'multiplayer')]
     common_bindings = {p.relative_to(common).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in common_files}
     for directory in (cpp, runtime / 'portable'):
         tracked.update(p for p in directory.rglob('*')
@@ -90,6 +99,13 @@ def main():
 
     link_flags = [str(portable / 'Th14WebGpuLibrary.js') if f == 'portable/sdl/Th14WebGpuLibrary.js' else f
                   for f in profile['linkFlags']]
+    link_flags += ['-lwebsocket.js']
+    names = ('room_open', 'room_frame', 'room_finished', 'room_close', 'room_rollback',
+             'room_preview', 'room_preview_ready', 'room_return',
+             'room_confirmed', 'room_live_status', 'room_replay_validate',
+             'room_replay_open', 'room_replay_pause', 'room_spectator_state', 'room_spectator_control')
+    link_flags = [f + ''.join(',_th14_' + name for name in names) if f.startswith('-sEXPORTED_FUNCTIONS=') else f
+                  for f in link_flags]
     with tempfile.TemporaryDirectory(dir=output, prefix='emsdk-') as temp:
         env.update(TMP=temp, TMPDIR=temp, TEMP=temp)
         with ThreadPoolExecutor(max_workers=args.jobs) as pool:

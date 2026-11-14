@@ -37,7 +37,11 @@ void TitleMenu::results(u32 pressed,u32 repeat){
             if(!exists(92)){create(92);create(18,193,2);}create(102);step(1);
             create(selection.character+150);create(selection.character*2+selection.partner+152);create(selection.difficulty+158);
         }
-        const i32 rank=scores.insert_score(selection.character*2+selection.partner,selection.difficulty,result_score,8,result_continues,result_timestamp,result_slowdown);
+        i32 stage=8;
+#if defined(TH14_MULTIPLAYER)
+        if(room_results)stage=room_result_stage;
+#endif
+        const i32 rank=scores.insert_score(selection.character*2+selection.partner,selection.difficulty,result_score,stage,result_continues,result_timestamp,result_slowdown);
         selection.stage=0;
         if(rank<0){cursor.select(-1);result_unranked=1;}
         else{timer.set(0,&animations.rate);cursor.wrap=1;cursor.select(rank);name_begin();result_unranked=0;}
@@ -58,7 +62,11 @@ void TitleMenu::results(u32 pressed,u32 repeat){
             close(selection.character*2+selection.partner+152);close(selection.difficulty+158);
             if constexpr(kPortTitle==14){
                 // Retail460fa2 skips replay saving for a continued ending.
-                if(result_continues){close(261);change(TitleScreen::Main);cursor.pop();music_request=0;}
+                if(result_continues
+#if defined(TH14_MULTIPLAYER)
+                   ||room_results
+#endif
+                ){close(261);change(TitleScreen::Main);cursor.pop();music_request=0;}
                 else change(TitleScreen::ReplaySave);
             }else change(TitleScreen::ReplaySave);
         }break;

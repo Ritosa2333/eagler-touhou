@@ -249,6 +249,60 @@ void Hud::display_bombs(i32 count,i32 fragments){
     const i32 numerator=signed_bits(u32(fragments)*6);signal(i++,i32(i16(numerator/8))+7);
     for(;i<8;++i)signal(i,3);
 }
+bool Hud::layout_coop(u32 seats){
+    if(seats<2||seats>3)return false;
+    if(coop_seats>1)return coop_seats==seats;
+    auto* root=animations.find(frame_animation);
+    if(!root)return false;
+    coop_seats=seats;
+    const auto move=[](AnmVm& vm,float delta){
+        const u32 resolution=(vm.flags2>>19)&7;
+        vm.position.y+=delta*(resolution==1||resolution==3?1.f:2.f);
+    };
+    const auto find=[&](i32 script)->AnmVm*{
+        for(auto* node=root->child.next;node;node=node->next)if(node->value->script_index==script)return node->value;
+        return nullptr;
+    };
+    struct Row {i32 script;float from,to;};
+    const float rotation=0;const Vec3 origin{};
+    for(u32 seat=0;seat<seats;++seat){
+        const float life=life_row(seat),bomb=bomb_row(seat),power=power_row(seat);
+        const Row rows[]={{8,100,life},{9,116,life+16},{10,138,bomb},{11,154,bomb+16},
+            {12,218,power},{19,132,life+23},{20,132,life+23},{21,170,bomb+23},{22,170,bomb+23},
+            {23,234,power+16},{24,234,power+16}};
+        for(const auto row:rows){
+            auto* vm=seat?animations.spawn(*root,row.script,88):find(row.script);
+            if(!vm)return false;
+            // Match the root's native child ownership; late stage teardown
+            // and HUD interrupts must see the cloned label and line VMs.
+            if(seat){
+                vm->child.next=root->child.next;
+                if(root->child.next)root->child.next->previous=&vm->child;
+                root->child.next=&vm->child;vm->child.previous=&root->child;
+            }
+            move(*vm,row.to-row.from);
+        }
+        for(u32 i=0;i<16;++i){
+            auto* vm=seat?animations.create(front,i32(29+i),5,0,false,false,&origin,nullptr,nullptr,false,&rotation):icon_th14(i);
+            if(!vm)return false;
+            if(seat)coop_icon_handles[seat-1][i]=vm->id;
+            move(*vm,i<8?life-100:bomb-138);
+        }
+    }
+    const Row team[]={{13,240,point_row()},{14,262,graze_row()},{25,256,point_row()+14},
+        {26,256,point_row()+14},{27,278,graze_row()+14},{28,278,graze_row()+14}};
+    for(const auto row:team){auto* vm=find(row.script);if(!vm)return false;move(*vm,row.to-row.from);}
+    return true;
+}
+void Hud::display_coop_stock(u32 seat,i32 count,i32 fragments,bool bomb){
+    count=std::clamp(count,0,8);
+    const auto signal=[&](i32 i,i32 label){if(auto* vm=coop_icon(seat,u32(i)+(bomb?8u:0u)))vm->interrupt(label);};
+    i32 i=0;
+    for(;i<count;++i)signal(i,2);
+    if(i==8)return;
+    signal(i++,7+std::clamp(fragments,0,bomb?7:2)*(bomb?6:5)/(bomb?8:3));
+    for(;i<8;++i)signal(i,3);
+}
 #endif
 bool Hud::boss_visible(const HudInput& input)const{
 #if PORT_TITLE == 14
@@ -422,7 +476,7 @@ bool Hud::queue_text(AsciiText& output,const HudInput& input){
     }
 #endif
 #if PORT_TITLE == 14
-    {const auto* first=icon_th14(0);const u8 alpha=first?u8(first->color>>24):0;
+    if(!input.cooperative){const auto* first=icon_th14(0);const u8 alpha=first?u8(first->color>>24):0;
     if(input.practice){
         HudScore counters;counters.displayed=score.displayed_value();
         counters.high=std::max(input.practice_high,counters.displayed);counters.high_continues=0;

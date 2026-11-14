@@ -49,7 +49,7 @@ i32 enemy_state_command(EnemyState& e,EclContext& c,EnemyGlobals& g,EnemyCommand
     // resolver and of the table it looks negative ids up in. The original does not check that - with a literal
     // argument its resolver returns 0 and it faults - so the port keeps this file's own convention, which is
     // case 0x1b4's: an unresolved reference is reported with -2 instead of being written through.
-    case 0x208:{float* ref=c.float_reference(0,g);if(!ref)return -2;*ref=aim_angle(Vec3{f(1),f(2),0},world.player_position);return 0;}
+    case 0x208:{float* ref=c.float_reference(0,g);if(!ref)return -2;const Vec3 origin{f(1),f(2),0};*ref=aim_angle(origin,world.aim_at(origin));return 0;}
     // TH12 moved TH11's 0x140/0x141 body (the two Vec2 argument readers) up to
     // 0x190/0x191, and gave 0x140/0x141 a different family over the Vec2s at
     // ebx+0x68 and ebx+0x9c (absolute/relative position). Evidence: th12.exe

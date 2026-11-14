@@ -3,6 +3,9 @@
 #include "BulletAppearance.hpp"
 #include <array>
 #include <memory>
+#if defined(TH14_MULTIPLAYER)
+#include "../multiplayer/FrameImageTh14.hpp"
+#endif
 namespace th11 {
 class AnmRenderer;
 struct Th14RectangleRotation;
@@ -19,6 +22,7 @@ struct BulletWorld {
     virtual bool sound(i32,float,bool){return false;}
     virtual i32 collision(const BulletState&){return -2;}
     virtual i32 th14_probe_collision(const BulletState&){return -2;}
+    virtual Vec3 th14_aim(Vec3,Vec3 fallback)const{return fallback;}
     virtual bool th14_curve_graze(Vec3){return false;}
     virtual bool th16_hit_effect(const Vec3&,i32,const Vec3&){return false;}
     virtual bool th16_graze(const Vec3&){return false;}
@@ -36,6 +40,9 @@ struct BulletWorld {
 };
 class BulletManager final:public BulletEnvironment {
 public:
+#if PORT_TITLE == 14
+    Vec3 th14_target(Vec3 origin)const override{return world.th14_aim(origin,player);}
+#endif
     static constexpr u32 capacity=2000;
     BulletManager(AnmResource&,AnmEnvironment&,BulletWorld&,u16 file_id=6);
     BulletState& at(u32 index)noexcept{return storage[index];}
@@ -82,6 +89,12 @@ public:
     bool sound(i32 id,float x,bool positional)override{return world.sound(id,x,positional);}
     void release(BulletState&)noexcept;
     void reset()noexcept;
+#if defined(TH14_MULTIPLAYER)
+    using RoomSlots=SlotImageTh14<BulletState,capacity>;
+    RoomSlots* room_slots=nullptr;
+    void capture_room_frame(FrameImageTh14&,RoomSlots&);
+    void room_digest(u32&)const;
+#endif
 private:
 #if PORT_TITLE == 14 && defined(TH14_CPP_STAGE_RESOURCE_HANDSHAKE)
     friend class GameBattle;

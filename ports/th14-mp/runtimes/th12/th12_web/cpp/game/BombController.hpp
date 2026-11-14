@@ -16,6 +16,8 @@ struct BombWorld {
     virtual bool th14_bomb_freeze(bool){return false;}
     virtual bool th14_bomb_cancel(Vec3,float,u32){return false;}
     virtual bool th14_bomb_dialogue()const{return false;}
+    virtual void th14_bomb_invincibility(i32){}
+    virtual u32 th14_shield_refund()const{return 3;}
     virtual bool th14_bomb_circle(Vec3,float,float,i32,i32){return false;}
     virtual bool th14_bomb_item(i32,Vec3,float,float){return false;}
     virtual bool th14_bomb_rectangle(Vec3,Vec2,float,i32,i32){return false;}
@@ -52,13 +54,25 @@ public:
     BombController(AnmManager&,AnmResource&,PlayerFrame&,BombWorld&,u16 file=7,AnmResource* text=nullptr);
     ~BombController();
     bool supported()const noexcept{return selection>=0&&selection<6&&((selection!=2&&selection!=3)||text_resource);}
+#if PORT_TITLE == 14
+    void clear_coop();
+#endif
     const ScreenDeformation* distortion()const noexcept{return mesh.get();}
     i32 start();
     bool update();
     bool damage(const Vec3&,const Vec2&,i32&);
 private:
     AnmManager& animations;AnmResource& resource;PlayerFrame& player;BombWorld& world;u16 file_id;
-    AnmResource* text_resource;std::unique_ptr<ScreenDeformation> mesh;
+    AnmResource* text_resource;
+#if defined(TH14_MULTIPLAYER)
+    std::shared_ptr<ScreenDeformation> mesh;
+public:
+    void capture_room_frame(FrameImageTh14&);
+private:
+#else
+    std::unique_ptr<ScreenDeformation> mesh;
+#endif
+    void clear_mesh(){if(mesh)mesh->detach();mesh.reset();}
     bool fail_spell();bool sound(i32,bool=false);bool create(u32&,i32,bool);
     bool body(i32);void invincible(i32);void interrupt(u32,i16);
     AnmVm* child(i32);Vec3 game_position(const AnmVm&)const;

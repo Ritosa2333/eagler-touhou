@@ -23,7 +23,8 @@ void TitleMenu::main_th14(u32 pressed,u32 repeat){
     switch(substate){
     case 0:
         cursor.count=10;cursor.wrap=1;if(!unlocked()&&cursor.disabled_count<16)cursor.disabled[cursor.disabled_count++]=1;
-        if(selection.flags&32)cursor.select(3);else if(selection.flags&16)cursor.select(2);
+        if(room_preview)cursor.select(7);
+        else if(selection.flags&32)cursor.select(3);else if(selection.flags&16)cursor.select(2);
         step(1);
         if(flags&2){create(86);create(91);flags&=~2u;}
         else{
@@ -38,12 +39,12 @@ void TitleMenu::main_th14(u32 pressed,u32 repeat){
     case 2:
         move(pressed|repeat,16,32);
         if(cursor.previous!=cursor.selected){sounds.push_back(12);highlight(0);arrange();}
-        if(pressed&0x102){
+        if((pressed&0x102)&&!room_preview){
             sounds.push_back(11);
             if(cursor.selected==9){step(4);return;}
             cursor.select(9);highlight(0);arrange();
         }
-        if(pressed&0x80001){
+        if((pressed&0x80001)&&(!room_preview||cursor.selected==7)){
             family(0,6);sounds.push_back(cursor.selected==9?11:10);
             if(cursor.selected!=7&&cursor.selected!=9){close(91);family(306,1);}
             step(4);

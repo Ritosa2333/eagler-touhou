@@ -72,7 +72,12 @@ public:
     AnmResource& animations;
     AnmResource& text;
     std::vector<AnmVm> object_animations;
+#if defined(TH14_MULTIPLAYER)
+    std::shared_ptr<ScreenDeformation> mesh;
+    void capture_room_frame(FrameImageTh14&);
+#else
     std::unique_ptr<ScreenDeformation> mesh;
+#endif
     u32& background_color;
     u16 file_id;
     SceneCamera* active_camera=nullptr;

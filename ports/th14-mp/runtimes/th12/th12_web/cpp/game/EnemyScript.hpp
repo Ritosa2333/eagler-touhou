@@ -1,5 +1,9 @@
 #pragma once
 #include "EnemyCommands.hpp"
+#if defined(TH14_MULTIPLAYER)
+#include <memory>
+#include <unordered_map>
+#endif
 namespace th11 {
 struct EnemyScriptError {
     const EclInstruction* instruction=nullptr;i32 thread_id=0;float time=0;u32 opcode=0;
@@ -9,6 +13,9 @@ struct EnemyScriptError {
 class EnemyScriptServices final:public EclServices {
 public:
     EnemyGlobals globals;EnemyCommandEnvironment& commands;EnemyScriptError error;
+#if defined(TH14_MULTIPLAYER)
+    std::unordered_map<void*,std::shared_ptr<void>> thread_storage;
+#endif
     EnemyScriptServices(EnemyState& e,EnemyEnvironment& w,EnemyCommandEnvironment& c):globals(e,w),commands(c){}
     i32 update(float elapsed);
     i32 command(EclContext&)override;

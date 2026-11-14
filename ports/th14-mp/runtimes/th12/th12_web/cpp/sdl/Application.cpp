@@ -14,6 +14,9 @@
 #include "PracticeUiTh14.hpp"
 #include "../game/MusicCatalog.hpp"
 #include "../game/GameSession.hpp"
+#if defined(TH14_MULTIPLAYER)
+#include "../multiplayer/RoomTh14.hpp"
+#endif
 #if PORT_TITLE == 14
 #include "../game/ReplayDescriptionTh14.hpp"
 #include "../../../portable/sdl/ReplayViewerClockTh14.hpp"
@@ -216,6 +219,366 @@ struct Application:StageResourceEffects
     u32 process_cookie=reference_process_cookie();
     u32 initial_ticks=th14_clock_ticks();
     GameSession session{initial_ticks,false};
+#if defined(TH14_MULTIPLAYER)
+    std::unique_ptr<RoomTh14> room;
+    u64 room_clock=0;
+    bool room_draw_pending=false;
+    bool room_preview=false;
+    double room_refresh_begin=0,room_repair_cost=2.0;
+    u32 room_heap_sample_frame=Netplay::INVALID_FRAME;
+    std::size_t room_heap_overhead=0;
+    struct LogicalGraphics final:ZunGraphics {
+        touhou::graphics::PipelineState state;
+        u32 texture(const AnmResource&,u32)override{return 1;}
+        void bind_texture(u32)override{}
+        touhou::graphics::PipelineState& pipeline()override{return state;}
+        void set_layout(touhou::graphics::VertexLayout)override{}
+        void set_matrix(touhou::graphics::MatrixKind,const Matrix4&)override{}
+        void triangles(u32,const void*,u32)override{}
+        void primitives(touhou::graphics::Topology,u32,const void*,u32)override{}
+        bool select_target(const AnmResource*,u32)override{return true;}
+        bool clear_target(u32,const GraphicsViewport*,u32)override{return true;}
+    } room_logical_graphics;
+    AnmRenderer room_logical_renderer{room_logical_graphics};
+
+    bool boot_room(){
+        const auto& setup=room->setup;
+        session.coop_seats=setup.seats;session.coop_viewer=setup.local;session.coop_loadouts=setup.loadouts;
+        session.practice_enabled=false;
+        session.menu_selection={};session.practice_request={};
+        room_clock=0;session.stage_load_clock=[this](){return room_clock;};
+        auto& a=session.animations;
+        // Native stack compatibility data must start identically on peers.
+        a.th14_native_stack.configure(0xbb40e64fu);
+        a.script_rng.set_seed(u16(setup.seed));a.script_rng.set_call_count(0);
+        a.visual_rng.set_seed(u16(setup.seed));a.visual_rng.set_call_count(0);
+        const auto p=setup.loadouts[0];
+        if(!session.begin(resources,setup.difficulty==4?7:1,p.character,p.subtype,setup.difficulty,false,false,false)){
+            error=session.error;return false;
+        }
+        if(!play_stage_music(session.state.stage,true))return false;
+        room_heap_sample_frame=Netplay::INVALID_FRAME;
+        room_heap_overhead=0;
+        room->started=true;room_draw_pending=true;
+        return true;
+    }
+    bool restart_room(u32 next_frame){
+        // The pause menu commits only exact inputs. Keep the transport and
+        // input history so viewers and replay playback see the same restart.
+        room->stage_start_frame=next_frame;
+        audio.effects.reset();
+        audio.pause_sounds(false);
+        renderer.invalidate();
+        return boot_room();
+    }
+    bool step_room(const Netplay::InputReplay::Frame& keys,u32 frame){
+        room_clock=u64(frame-room->stage_start_frame+1)*16666667;
+        if(session.battle)session.battle->th14_current_music=audio.current_music();
+        const auto before=session.state.phase;
+        if(!session.update(RoomTh14::to_input(keys))){error=session.error;return false;}
+        if(session.room_restart_requested)return restart_room(frame+1);
+        room_pause_audio(before);
+        room_draw_pending=true;
+        return audio_events()&&text_events();
+    }
+    void room_pause_audio(GameSessionPhase before){
+        if(before!=GameSessionPhase::paused&&session.state.phase==GameSessionPhase::paused){
+            audio.pause_sounds(true);
+            if(music_follows_pause())audio.pause_music(true);
+        }
+    }
+    bool draw_room_logical(){
+        auto& logical=room_logical_renderer;
+        room_logical_graphics.state=graphics.pipeline();
+        logical.render_width=renderer.render_width;logical.render_height=renderer.render_height;
+        logical.logical_draw=true;
+        logical.invalidate();
+        if(!session.draw(logical)){error=session.error;return false;}
+        logical.flush();
+        // No GPU capture may be delivered from a discarded timeline.
+        return true;
+    }
+    bool render_room(){
+        if(!room_draw_pending||session.state.phase==GameSessionPhase::finished)return true;
+        room_draw_pending=false;
+        if(!capture_pause_backdrop())return false;
+        if(!session.draw(renderer)){error=session.error;return false;}
+        th14_consume_deferred_captures(session.animations.deferred_captures,session,graphics,renderer);
+        graphics.present();
+        return true;
+    }
+    bool room_can_batch()const noexcept{
+        return room&&room->started&&room->setup.prediction&&!room->spectator&&!room->playback&&!room->finished;
+    }
+    bool confirm_room(u64 now){
+        Netplay::InputReplay::Frame keys;
+        while(room->inputs.ConfirmedInputs(room->confirmed,&keys)){
+            const auto number=room->confirmed;
+            auto& output=room->state_at(number);
+            if(output.number!=number||!room->record(number,keys,output.stage,output.restart,now)){
+                error="TH14 confirmed input output missing";return false;
+            }
+            room->confirmed_status[(number+1)%room->confirmed_status.size()]=output.status;
+            ++room->confirmed;
+            if(session.battle){
+                // Do not send sounds from a speculative input twice.
+                session.battle->events.swap(output.events);
+                if(!audio_events())return false;
+                session.battle->events.swap(output.events);
+                for(auto& request:output.text)session.battle->dialogue_text_requests.push_back(std::move(request));
+                if((!output.text.empty()||!waiting_text.empty())&&!text_events())return false;
+            }else if(session.ending){
+                if(!audio_events()||!text_events())return false;
+            }
+            room->finished=output.terminal;
+            room->local_ending=output.ending;
+            room->local_results=output.results;
+            room->cleared=output.cleared;
+            room->recycle_checkpoint(output);
+            if(room->finished){
+                if(!save_room()||!room->finish_publication(now)){error="TH14 room finalization failed";return false;}
+                break;
+            }
+        }
+        return true;
+    }
+    enum class RoomTick { Advanced, Waiting, Failed };
+    RoomTick simulate_room(u64 now,bool final_draw){
+        auto& r=*room;
+        const auto number=r.frame;
+        const auto decision=r.inputs.PrepareFrame(number);
+        const auto frontier=r.inputs.ConfirmedThroughAllRemotes();
+        const bool speculative=frontier==Netplay::INVALID_FRAME||number>frontier;
+        const auto input=RoomTh14::to_input(decision.inputs);
+        if(!decision.canAdvance||(!number&&(frontier==Netplay::INVALID_FRAME||frontier<r.setup.delay))||
+           (speculative&&(r.blocked==number||!r.started||!session.can_predict_room())))return RoomTick::Waiting;
+        if(speculative&&std::any_of(input.room_menu_buttons.begin(),input.room_menu_buttons.end(),[](u32 buttons){return buttons&256;})){
+            r.blocked=number;
+            return RoomTick::Waiting;
+        }
+        if(!r.started&&!boot_room())return RoomTick::Failed;
+        auto& output=r.state_at(number);
+        const bool reuse=speculative&&r.restored_checkpoint==number;
+        r.restored_checkpoint=Netplay::INVALID_FRAME;
+        if(reuse)output.clear_output();else r.recycle_checkpoint(output);
+        output.number=number;
+        auto* battle=session.battle.get();
+        if(speculative){
+            if(!reuse){
+                constexpr std::size_t arena_budget=144u*1024*1024;
+                // Leave space for the live simulation and the containers
+                // whose owners are copied by the checkpoint.
+                constexpr std::size_t heap_guard=672u*1024*1024;
+                output.reuse_checkpoint_storage(r.spare_checkpoint);
+                auto reserved=r.checkpoint_bytes();
+                if(room_heap_sample_frame==Netplay::INVALID_FRAME||
+                   (number>=room_heap_sample_frame&&number-room_heap_sample_frame>=60)){
+                    const auto used=std::size_t(mallinfo().uordblks);
+                    room_heap_overhead=used-std::min(used,reserved);
+                    room_heap_sample_frame=number;
+                }
+                const auto used=room_heap_overhead+reserved;
+                if(used>heap_guard||reserved>=arena_budget){
+                    r.spare_checkpoint.release_checkpoint();
+                    reserved=r.checkpoint_bytes();
+                }
+                const auto own=output.image.reserved_bytes();
+                const auto used_after_trim=room_heap_overhead+reserved;
+                const auto headroom=heap_guard-std::min(heap_guard,used_after_trim);
+                const auto room_headroom=arena_budget-std::min(arena_budget,reserved);
+                output.image.begin(own+std::min(headroom,room_headroom));
+                session.capture_room_frame(output.image,output.bullets,output.items);
+                if(!output.image.ready()){
+                    // Capture precedes mutation. Wait for exact input on
+                    // this frame if we cannot store a complete checkpoint.
+                    output.clear();
+                    output.release_checkpoint();
+                    r.blocked=number;
+                    ++r.memory_wait_frames;
+                    return RoomTick::Waiting;
+                }
+            }
+            battle->bullets.room_slots=&output.bullets;battle->items.room_slots=&output.items;
+            battle->room_speculative=true;battle->room_boundary=false;
+        }
+        room_clock=u64(number-r.stage_start_frame+1)*16666667;
+        if(battle)battle->th14_current_music=audio.current_music();
+        const auto before=session.state.phase;
+        const bool updated=session.update(input);
+        const bool ending=session.state.phase==GameSessionPhase::stage&&session.battle&&
+            session.battle->completion.state.exit==StageExit::Ending;
+        if(speculative){
+            battle->room_speculative=false;battle->bullets.room_slots=nullptr;battle->items.room_slots=nullptr;
+            if(battle->room_boundary||ending||session.state.phase!=GameSessionPhase::stage||
+               !battle->dialogue_text_requests.empty()||
+               session.animations.deferred_captures.first_file_index()>=0){
+                output.bullets.restore();output.items.restore();
+                output.image.restore();r.recycle_checkpoint(output);r.blocked=number;
+                return RoomTick::Waiting;
+            }
+        }
+        if(!updated){error=session.error;return RoomTick::Failed;}
+        room_pause_audio(before);
+        if(r.blocked==number)r.blocked=Netplay::INVALID_FRAME;
+        output.stage=session.state.stage?session.state.stage:u32(session.menu_selection.stage);
+        if(!output.stage)output.stage=r.setup.difficulty==4?7:1;
+        output.restart=session.room_restart_requested;
+        if(output.restart&&!restart_room(number+1))return RoomTick::Failed;
+        output.ending=ending;
+        output.terminal=ending||session.state.phase==GameSessionPhase::finished;
+        output.cleared=ending||(output.terminal&&session.battle&&
+            session.battle->completion.state.exit==StageExit::Results);
+        output.results=!ending&&output.terminal&&session.battle&&
+            (output.cleared||session.battle->game_over_requested);
+        if(session.battle){
+            output.events.swap(session.battle->events);
+            output.text.swap(session.battle->dialogue_text_requests);
+        }
+        if(!r.inputs.MarkSimulated(number,decision)){error="TH14 cannot mark room frame simulated";return RoomTick::Failed;}
+        ++r.frame;
+        if(number<r.replay_until)++r.resimulated;
+        if(!final_draw&&session.state.phase!=GameSessionPhase::paused&&session.animations.deferred_captures.first_file_index()<0){
+            if(!draw_room_logical())return RoomTick::Failed;
+            room_draw_pending=false;
+        }else room_draw_pending=true;
+        output.status=th14_room_status(session,number+1);
+        return confirm_room(now)?RoomTick::Advanced:RoomTick::Failed;
+    }
+    bool run_room(u32 held,int touch,float x,float y,bool pause_key){
+        const auto now_us=u64(SDL_GetTicksNS()/1000);
+        const auto now=now_us/1000;
+        if(room->spectator){
+            if(!room->receive()){
+                error=room->transport.LastError();
+                if(error.empty())error="TH14 spectator stream interrupted";
+                return false;
+            }
+            const auto restore=[this](const Netplay::SpectatorStageEvent&){return boot_room();};
+            const bool fast=room->viewer.FastForwarding();
+            const auto step=[this,fast](const Netplay::SpectatorFramePacket& p,bool){
+                if(fast&&room_draw_pending){
+                    if(session.state.phase==GameSessionPhase::paused||session.animations.deferred_captures.first_file_index()>=0){
+                        if(!render_room())return false;
+                    }else if(!draw_room_logical())return false;
+                }
+                return step_room(p.inputs,p.frame);
+            };
+            // The restore may load a stage. Start the budget after that work.
+            double deadline=0;
+            const auto yield=[&]{const auto now=emscripten_get_now();if(!deadline)deadline=now+5;return now>=deadline;};
+            return room->viewer.Step(restore,step,yield,fast?32:1)&&render_room();
+        }
+        if(room->playback){
+            if(!room->started&&!boot_room())return false;
+            if(!room->paused&&!room->finished){
+                if(const auto* keys=room->replay.FrameAt(room->frame)){
+                    if(!step_room(*keys,room->frame++))return false;
+                }
+                room->finished=room->frame>=room->replay.Info().frameCount;
+            }
+            return render_room();
+        }
+        Netplay::FrameInput local(u16((held&0x2fbu)|(pause_key?256u:0u)));
+        if(touch){
+            local.analogMode=Netplay::AnalogMode::DirectTouch;
+            local.x=x;local.y=y;local.unlimited=touch==2;local.touchUsed=true;
+        }
+        auto& r=*room;
+        const bool exact=r.blocked==r.frame||!session.can_predict_room();
+        const unsigned lead=r.setup.prediction?(exact?Netplay::ConfirmedInputClock::MaxLead:2u):0;
+        if(!r.poll(now)||!r.capture(now_us,lead,local)){error=r.channel.ErrorText();return false;}
+        if(!r.gate.CanStart())return true;
+        if(r.finished){
+            if(!r.finish_publication(now)){error=r.channel.ErrorText();return false;}
+            if(!r.local_ending&&!r.local_results)return true;
+            // Keep the final input fence and spectator upload draining, but
+            // feed only this browser's controls into the ending and ranking.
+            auto& phase=session.state.phase;
+            if(r.local_ending&&phase==GameSessionPhase::stage){
+                if(!session.open_room_ending()){error=session.error;return false;}
+            }else if(r.local_results&&phase==GameSessionPhase::finished&&session.battle){
+                if(!session.open_room_results(r.cleared)){error=session.error;return false;}
+            }else if(phase==GameSessionPhase::finished)return true;
+            const bool loading=session.ending&&session.ending->resource_loading();
+            GameSessionInput input;input.held=held&0x3fbu;input.pause=pause_key;
+            if(!session.update(input)){error=session.error;return false;}
+            if(loading&&session.ending&&session.ending->resource_loading()&&!session.ending->finish_resource_loading()){
+                error=session.ending->error;return false;
+            }
+            if(session.title&&session.title->screen==TitleScreen::Main){
+                phase=GameSessionPhase::finished;
+                return true;
+            }
+            room_draw_pending=true;
+            return audio_events()&&text_events()&&render_room();
+        }
+        if(r.inputs.HasRollbackRequest()){
+            const auto first=r.inputs.RollbackFrame();
+            auto& saved=r.state_at(first);
+            if(first<r.confirmed||saved.number!=first||!r.inputs.RewindSimulationTo(first)){
+                error="TH14 rollback checkpoint expired";return false;
+            }
+            if(session.battle&&(session.battle->bullets.active_count||session.battle->lasers.active_count))++r.combat_corrections;
+            r.replay_until=std::max(r.replay_until,r.frame);
+            // Hot slots are already complete in the target image. For an
+            // idle slot reused only later, the first write's image is its
+            // target payload. Avoid copying the same active slots once per
+            // resimulated frame on dense patterns.
+            BulletManager::RoomSlots::Restored bullet_restored;
+            ItemManager::RoomSlots::Restored item_restored;
+            for(u32 n=first;n<r.frame;++n){
+                const auto& frame=r.state_at(n);
+                frame.bullets.restore_first(bullet_restored);
+                frame.items.restore_first(item_restored);
+            }
+            saved.image.restore();
+            for(auto& abandoned:r.history)if(abandoned.number!=Netplay::INVALID_FRAME&&abandoned.number>=first){
+                if(&abandoned==&saved)abandoned.clear_output();
+                else r.recycle_checkpoint(abandoned);
+            }
+            r.restored_checkpoint=first;
+            r.frame=first;r.blocked=Netplay::INVALID_FRAME;++r.corrections;
+            renderer.invalidate();
+        }
+        if(!confirm_room(now)||r.finished)return error.empty();
+        if(r.frame<r.replay_until){
+            const double begin=emscripten_get_now(),minimum_slice=begin+6;
+            // Like TH17, leave time for the fresh tick and presentation.
+            // Use spare time on light frames without giving dense repairs an
+            // unbounded loop or making late browser callbacks stop advancing.
+            const double refresh_deadline=room_refresh_begin+16.667-3;
+            unsigned ticks=0;
+            for(;r.frame<r.replay_until&&ticks<r.setup.prediction;++ticks){
+                const double start=emscripten_get_now();
+                if(ticks&&!(ticks<4&&start<minimum_slice)&&start+room_repair_cost>=refresh_deadline)break;
+                const auto result=simulate_room(now,false);
+                if(result==RoomTick::Failed)return false;
+                if(result==RoomTick::Waiting)return render_room();
+                if(room_draw_pending&&!render_room())return false;
+                if(session.state.phase==GameSessionPhase::paused)return true;
+                room_repair_cost=room_repair_cost*.875+std::clamp(emscripten_get_now()-start,.05,30.)*.125;
+                if(r.finished)return true;
+            }
+            if(r.frame<r.replay_until)return render_room();
+            r.replay_until=0;
+        }
+        const bool can_skip=room_can_batch()&&coalesce_browser_draw&&session.animations.deferred_captures.first_file_index()<0;
+        const auto result=simulate_room(now,!can_skip);
+        if(result==RoomTick::Failed)return false;
+        if(can_skip&&session.animations.deferred_captures.first_file_index()<0)return true;
+        return render_room();
+    }
+    bool save_room(){
+        if(!room||room->spectator||room->playback||!room->confirmed)return true;
+        std::vector<u8> bytes;
+        if(!room->replay.Encode(&bytes))return false;
+        char file[80];
+        std::snprintf(file,sizeof(file),"/save/replay/th14mp_ud%04x.rpyx",u32(room->setup.id)&65535);
+        if(!write_file(file,bytes))return false;
+        if(room->finished&&!room->setup.local)Netplay::BrowserPeerTransport::ShareSpectatorReplay(bytes.data(),bytes.size(),true);
+        return true;
+    }
+#endif
 #else
     GameSession session;
 #endif
@@ -304,6 +667,9 @@ struct Application:StageResourceEffects
     }
 #if PORT_TITLE == 14
     ~Application(){
+#if defined(TH14_MULTIPLAYER)
+        room.reset();
+#endif
         cancel_boot_worker();session.shutdown();stage_uploads.cancel_all();
         // GameSession is declared before the host wait/upload members. Detach
         // only after shutdown, while all host members and controllers live.
@@ -382,6 +748,9 @@ struct Application:StageResourceEffects
 #endif
     bool save_scores(){
         if(!initialized)return true;
+#if defined(TH14_MULTIPLAYER)
+        if(room)return save_room();
+#endif
 #if PORT_TITLE == 14
         // Closing an incomplete cold load must not persist zero-filled records.
         if(!boot_scores_initialized)return true;
@@ -477,6 +846,22 @@ struct Application:StageResourceEffects
         return true;
     }
 #endif
+    bool capture_pause_backdrop(){
+        if(!session.pause_menu||!session.pause_menu->capture_requested)return true;
+        auto& menu=*session.pause_menu;
+        auto* vm=session.animations.find(menu.background_animation);if(!vm||!vm->sprite||!vm->resource){error="Pause screenshot sprite missing";return false;}
+        const auto& sprite=*vm->sprite;const u32 target=graphics.texture(*vm->resource,sprite.texture);renderer.flush();
+        i32 from[]={32,16,416,464};u32 source=GraphicsDevice::screen;
+#if PORT_TITLE == 14
+        const auto capture=th14_immediate_capture_source(session,float(session.config.render_width())/640.f);
+        std::copy(capture.rectangle,capture.rectangle+4,from);
+        if(capture.text_intermediate){source=graphics.texture(session.resources.core.text,3);if(!source){error="Pause capture source texture missing";return false;}}
+#endif
+        const i32 to[]={i32(sprite.x),i32(sprite.y),i32(sprite.x+sprite.width),i32(sprite.y+sprite.height)};
+        if(!graphics.backend.resample(source,from,target,to,nullptr,0,0)){error="Pause GPU capture failed";return false;}
+        graphics.changed(target);renderer.invalidate();menu.capture_requested=false;
+        return true;
+    }
     bool audio_events(bool result_entry=false){
 #if PORT_TITLE == 14 && defined(TH14_CPP_BOOT_WORKER)
         // Preserve startup music/events until the separate prepared owner is
@@ -603,7 +988,7 @@ struct Application:StageResourceEffects
 #if PORT_TITLE == 14
         // First entry waits before battle construction; later entries keep
         // the existing world until the incoming resources are ready.
-        {
+        if(defer_initial_stage_decode()){
             cancel_boot_worker();
             boot_uploads.clear();boot_upload_index=0;
             boot_stage_owner=&stage;
@@ -637,7 +1022,7 @@ struct Application:StageResourceEffects
     }
 #if PORT_TITLE == 14
     bool core_ready()const override{return core_loading_done;}
-    bool defer_initial_stage_decode()const override{return true;}
+    bool defer_initial_stage_decode()const override{return session.coop_seats==1;}
 #if defined(TH14_CPP_BOOT_WORKER)
     void read_cpp_boot_publications(){
         if(!boot_cpp_resources)return;
@@ -689,7 +1074,7 @@ struct Application:StageResourceEffects
         title_cpp_resources.reset();return true;
     }
 #if defined(TH14_CPP_INITIAL_LOADING)
-    bool initial_cpp_worker_enabled()const override{return true;}
+    bool initial_cpp_worker_enabled()const override{return session.coop_seats==1;}
     bool begin_initial_cpp_loading()override{
         if(!initial_cpp_resources||!initial_cpp_resources->begin()){
             error="TH14 initial C++ resource worker could not start";graphics.error=error;return false;
@@ -1290,6 +1675,7 @@ struct Application:StageResourceEffects
         schedule_th14_work(finish_stage_worker_wait,token.release(),60);
     }
     bool begin_stage_worker_wait(bool initial)override{
+        if(session.coop_seats>1)return true;
         stop_stage_wait_channels();
         stage_worker_wait.begin(initial);
 #if defined(TH14_SHARED_SCENE_COPY)
@@ -1319,7 +1705,7 @@ struct Application:StageResourceEffects
         }
         return true;
     }
-    bool stage_worker_wait_ready()const override{return stage_worker_wait.ready(u64(SDL_GetTicksNS()));}
+    bool stage_worker_wait_ready()const override{return session.coop_seats>1||stage_worker_wait.ready(u64(SDL_GetTicksNS()));}
     void stop_stage_workers()noexcept override{
 #if defined(TH14_CPP_INITIAL_LOADING)
         if(initial_cpp_resources){initial_cpp_resources->cancel_and_join();initial_cpp_resources.reset();}
@@ -1342,10 +1728,10 @@ struct Application:StageResourceEffects
 #endif
     }
 #if defined(TH14_CPP_STAGE_WORKER)
-    bool stage_cpp_worker_enabled()const override{return true;}
+    bool stage_cpp_worker_enabled()const override{return session.coop_seats==1;}
 #endif
 #if defined(TH14_PHYSICAL_STAGE_MEMORY)
-    bool stage_memory_worker_enabled()const override{return true;}
+    bool stage_memory_worker_enabled()const override{return session.coop_seats==1;}
     ReplayRngRestoreResultTh14 stage_memory_worker(const StageRestoreMemoryTh14& packet,u32 stack,bool playback)override{
         const auto status=th14_stage_memory_poll(u32(reinterpret_cast<uintptr_t>(&packet)),stack,playback?1:0);
         return status==0?ReplayRngRestoreResultTh14::Waiting:status==1?ReplayRngRestoreResultTh14::Ready:ReplayRngRestoreResultTh14::Failed;
@@ -1358,10 +1744,12 @@ struct Application:StageResourceEffects
             point==P::ScriptSeedStored?1:point==P::GameplayCounterCleared?2:~0u;
     }
     ReplayRngRestoreResultTh14 stage_rng_store_readiness(ReplayRngRestorePointTh14 point)const override{
+        if(session.coop_seats>1)return ReplayRngRestoreResultTh14::Ready;
         const auto status=th14_stage_restore_ready(stage_restore_operation(point));
         return status==1?ReplayRngRestoreResultTh14::Ready:status==0?ReplayRngRestoreResultTh14::Waiting:ReplayRngRestoreResultTh14::Failed;
     }
     bool stage_rng_store_committed(ReplayRngRestorePointTh14 point)override{
+        if(session.coop_seats>1)return true;
         return th14_stage_restore_committed(stage_restore_operation(point))!=0;
     }
     ReplayRngRestoreResultTh14 stage_replay_snapshot_readiness()const override{
@@ -1408,7 +1796,7 @@ struct Application:StageResourceEffects
 #endif
         return true;
     }
-    bool stage_ready()const override{return boot_uploads.empty()&&initial_decode_complete;}
+    bool stage_ready()const override{return session.coop_seats>1||boot_uploads.empty()&&initial_decode_complete;}
 #if defined(TH14_WEBGPU_BACKEND) && defined(TH14_ARCHIVE_WORKER)
     void dispatch_stage_decode(){
         if(!stage_decode.dispatchable())return;
@@ -1435,13 +1823,14 @@ struct Application:StageResourceEffects
     }
 #endif
 #if defined(TH14_CPP_STAGE_DECODE) && !(defined(TH14_WEBGPU_BACKEND) && defined(TH14_ARCHIVE_WORKER))
-    bool stage_cpp_decode_enabled()const override{return true;}
+    bool stage_cpp_decode_enabled()const override{return session.coop_seats==1;}
     bool finish_cpp_stage_tail(u32 number,u32 mode_flags,Timer& clock,const float* rate,StageCppWorkerTh14& worker)override{
         if(!StageCppWorkerScopeTh14::owns(&session))return false;
         return th14_finish_stage_audio_tail(number,mode_flags,(session.persistent_config().bytes[0x38]&0x10)!=0,
             audio.music_requests(),frame_statistics,clock,rate,worker);
     }
-    StageResourceEffects::DecodeResult decode_stage_phase(GameResources&,StageResources& stage,StageResourceEffects::Phase phase,u32 selection)override{
+    StageResourceEffects::DecodeResult decode_stage_phase(GameResources& source,StageResources& stage,StageResourceEffects::Phase phase,u32 selection)override{
+        if(session.coop_seats>1)return StageResourceEffects::decode_stage_phase(source,stage,phase,selection);
         const auto result=session.cpp_stage_decode(stage,phase,selection);
 #if defined(TH14_CPP_STAGE_RESOURCE_HANDSHAKE)
         StageResources* offered_owner=nullptr;AnmResource* resource=nullptr;u16 file=0;Phase offered_phase;
@@ -1455,6 +1844,7 @@ struct Application:StageResourceEffects
     }
 #endif
     bool prepare_stage_phase(StageResources& stage,StageResourceEffects::Phase phase)override{
+        if(session.coop_seats>1)return StageResourceEffects::prepare_stage_phase(stage,phase);
         renderer.flush();graphics.error.clear();
 #if defined(TH14_CPP_STAGE_RESOURCE_HANDSHAKE) && !(defined(TH14_WEBGPU_BACKEND) && defined(TH14_ARCHIVE_WORKER))
         if(!stage_uploads.complete_phase(stage,phase)){graphics.error="TH14 stage file upload still pending";return false;}
@@ -1463,9 +1853,10 @@ struct Application:StageResourceEffects
 #endif
         return true;
     }
-    bool stage_phase_ready(StageResourceEffects::Phase phase)const override{return stage_uploads.ready(phase);}
+    bool stage_phase_ready(StageResourceEffects::Phase phase)const override{return session.coop_seats>1||stage_uploads.ready(phase);}
 #if defined(TH14_SHARED_SCENE_COPY)
     CameraReadResult read_stage_camera_word(const SceneCamera& source,u32 word,u32 offset,u32& value)override{
+        if(session.coop_seats>1)return StageResourceEffects::read_stage_camera_word(source,word,offset,value);
         static const auto layout=[](){std::array<u32,75> result{};
             for(u32 i=0;i<75;++i)result[i]=SceneCameraReadJobTh14::source_offset(i);return result;}();
         const auto status=th14_shared_scene_read(u32(reinterpret_cast<uintptr_t>(&source)),
@@ -1474,6 +1865,7 @@ struct Application:StageResourceEffects
     }
 #endif
     void finish_stage_phases(StageResources& stage,u32)override{
+        if(session.coop_seats>1)return;
 #if defined(TH14_SHARED_SCENE_COPY)
         th14_shared_scene_cancel();
 #endif
@@ -1488,7 +1880,12 @@ struct Application:StageResourceEffects
         stop_stage_workers();
         stage_uploads.cancel(stage);release(stage);
     }
-    bool defer_ending_loading()const override{return true;}
+    bool defer_ending_loading()const override{
+#if defined(TH14_MULTIPLAYER)
+        if(room&&room->local_ending)return true;
+#endif
+        return session.coop_seats==1;
+    }
     bool begin_ending_loading()override{
         if(!boot_loading.begin(session.animations,session.resources.core.ascii)){graphics.error="TH14 ending loading animation creation failed";return false;}
         return true;
@@ -2055,19 +2452,7 @@ struct Application:StageResourceEffects
             if(menu.replay_save_requested){if(!save_replay(menu.replay_file+1,menu.entered_name.data()))return false;menu.replay_save_requested=false;menu.pending_replay.reset();scan_replays();if(!save_scores())return false;}
         }
         if(session.pause_menu){auto& menu=*session.pause_menu;
-            if(menu.capture_requested){
-                auto* vm=session.animations.find(menu.background_animation);if(!vm||!vm->sprite||!vm->resource){error="Pause screenshot sprite missing";return false;}
-                const auto& sprite=*vm->sprite;const u32 target=graphics.texture(*vm->resource,sprite.texture);renderer.flush();
-                i32 from[]={32,16,416,464};u32 source=GraphicsDevice::screen;
-#if PORT_TITLE == 14
-                const auto capture=th14_immediate_capture_source(session,float(session.config.render_width())/640.f);
-                std::copy(capture.rectangle,capture.rectangle+4,from);
-                if(capture.text_intermediate){source=graphics.texture(session.resources.core.text,3);if(!source){error="Pause capture source texture missing";return false;}}
-#endif
-                const i32 to[]={i32(sprite.x),i32(sprite.y),i32(sprite.x+sprite.width),i32(sprite.y+sprite.height)};
-                if(!graphics.backend.resample(source,from,target,to,nullptr,0,0)){error="Pause GPU capture failed";return false;}
-                graphics.changed(target);renderer.invalidate();menu.capture_requested=false;
-            }
+            if(!capture_pause_backdrop())return false;
             if(menu.scan_requested)scan_replays();
             if(menu.recording_metadata_requested){menu.timestamp=u64(std::time(nullptr));std::memcpy(session.recording.header.data()+12,&menu.timestamp,8);}
             if(menu.save_requested){if(!save_replay(menu.cursor.selected+1,menu.entered_name.data()))return false;menu.save_requested=false;scan_replays();if(!save_scores())return false;}
@@ -2190,6 +2575,7 @@ struct Application:StageResourceEffects
 #if PORT_TITLE == 14
         close_hosted_replay();
         audio.discard_paused_sounds();
+        waiting_text.clear();
 #endif
         if(!save_scores())return false;
         if(!session.return_to_title()){error=session.error;return false;}
@@ -2271,9 +2657,10 @@ touhou::input::TouchState touch_state(){
     touhou::input::TouchState s;auto& session=app.session;
     if(session.state.phase!=GameSessionPhase::stage||!session.battle||!session.battle->player)return s;
     if(session.state.replay){s.context=3;return s;}
-    const auto& player=*session.battle->player;const auto& p=player.motion.state;
+    const auto& battle=*session.battle;
+    const auto& player=battle.pilot(battle.coop_viewer);const auto& p=player.motion.state;
     s.context=session.battle->dialogue&&session.battle->dialogue->active?2:1;
-    s.instance=int(session.state.stage);s.ready=player.state.life_state==1;
+    s.instance=int(session.state.stage);s.ready=battle.pilot_live(battle.coop_viewer)&&player.state.life_state==1;
     s.x=p.position.x;s.y=p.position.y;s.fast=float(p.normal_speed)/128;s.slow=float(p.focus_speed)/128;
     s.min_x=-184;s.max_x=184;s.min_y=32;s.max_y=432;return s;
 }
@@ -2347,6 +2734,12 @@ bool sample_and_tick_once(){
     if(auto* b=app.session.battle.get()){b->player_input.movement.touch_mode=sample.motion;b->player_input.movement.touch_x=sample.x;b->player_input.movement.touch_y=sample.y;}
     const u32 raw=sample_controller()|keyboard_keys(keys);
     const u32 held=(raw&~0x80100u)|((raw&0x80000)?256:0);
+#if defined(TH14_MULTIPLAYER)
+    if(app.room&&app.core_loading_done&&
+       (app.room->started||app.session.state.phase==GameSessionPhase::title))
+        return app.run_room(held,sample.motion,sample.x,sample.y,(raw&256)!=0);
+    if(app.room)return app.tick_once(0,false);
+#endif
 #if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
     PracticeUiTh14::sample_keys(held);
 #endif
@@ -2451,6 +2844,163 @@ EMSCRIPTEN_KEEPALIVE const float* th11_audio_samples(){static float pcm[2048];re
 EMSCRIPTEN_KEEPALIVE const char* th11_error(){return th11::sdl::app.error.c_str();}
 EMSCRIPTEN_KEEPALIVE unsigned th11_frame(){return th11::sdl::app.session.state.frame;}
 EMSCRIPTEN_KEEPALIVE unsigned th11_phase(){return unsigned(th11::sdl::app.session.state.phase);}
+#if defined(TH14_MULTIPLAYER)
+EMSCRIPTEN_KEEPALIVE int th14_room_preview(){
+    auto& app=th11::sdl::app;
+    if(!app.initialized||app.room)return 0;
+    app.room_preview=true;
+    app.session.room_title_preview=true;
+    if(app.session.title)app.session.title->room_preview=true;
+    return 1;
+}
+EMSCRIPTEN_KEEPALIVE int th14_room_preview_ready(){
+    const auto& app=th11::sdl::app;
+    const auto* title=app.session.title.get();
+    return app.room_preview&&app.hosted_replay_open_ready()&&title&&
+        title->screen==th11::TitleScreen::Main&&title->substate==2;
+}
+EMSCRIPTEN_KEEPALIVE int th14_room_return(){
+    auto& app=th11::sdl::app;
+    if(app.room){app.room->transport.Close();app.room.reset();}
+    app.room_draw_pending=false;
+    app.session.coop_seats=1;
+    app.session.coop_viewer=0;
+    app.session.room_title_preview=true;
+    app.session.stage_load_clock=[](){return th11::u64(SDL_GetTicksNS());};
+    if(!app.return_to_title())return 0;
+    return th14_room_preview();
+}
+EMSCRIPTEN_KEEPALIVE int th14_room_open(const unsigned* w,unsigned n,const char* url,const char* viewer){
+    using namespace th11;
+    auto& app=sdl::app;
+    if(!w||n!=19||w[0]!=2||app.room)return 0;
+    auto room=std::make_unique<RoomTh14>();auto& s=room->setup;
+    s.seats=w[1];s.local=w[2];s.difficulty=w[3];s.seed=w[4];s.id=u64(w[5])|(u64(w[6])<<32);s.delay=w[7];
+    for(u32 i=0;i<3;++i){
+        if(w[8+i*2]>2||w[9+i*2]>1)return 0;
+        s.loadouts[i]={u8(w[8+i*2]),u8(w[9+i*2])};
+    }
+    std::copy_n(w+14,4,s.build.begin());
+    s.prediction=w[18];
+    if(!room->begin(url,viewer,u64(SDL_GetTicks())))return 0;
+    app.room_preview=false;
+    app.session.room_title_preview=false;
+    app.room=std::move(room);return 1;
+}
+EMSCRIPTEN_KEEPALIVE unsigned th14_room_frame(){
+    const auto& room=th11::sdl::app.room;
+    return room?(room->spectator?room->viewer.Position():room->frame):0;
+}
+EMSCRIPTEN_KEEPALIVE const unsigned* th14_room_rollback(){
+    static std::array<th11::u32,6> value;
+    const auto& room=th11::sdl::app.room;
+    if(!room)return nullptr;
+    value={room->frame,room->confirmed,room->corrections,room->resimulated,
+        room->combat_corrections,room->setup.prediction};return value.data();
+}
+EMSCRIPTEN_KEEPALIVE unsigned th14_checkpoint_bytes(){
+    const auto& room=th11::sdl::app.room;
+    return room?unsigned(room->checkpoint_bytes()):0;
+}
+EMSCRIPTEN_KEEPALIVE unsigned th14_checkpoint_wait_frames(){
+    const auto& room=th11::sdl::app.room;
+    return room?room->memory_wait_frames:0;
+}
+EMSCRIPTEN_KEEPALIVE const unsigned* th14_checkpoint_breakdown(){
+    const auto& room=th11::sdl::app.room;
+    if(!room)return nullptr;
+    static std::array<th11::u32,3> bytes;
+    bytes=room->checkpoint_breakdown();
+    return bytes.data();
+}
+EMSCRIPTEN_KEEPALIVE unsigned th14_room_cleared(){
+    const auto& room=th11::sdl::app.room;
+    return room&&room->cleared;
+}
+EMSCRIPTEN_KEEPALIVE const float* th14_room_pilot_status(){
+    const auto& app=th11::sdl::app;
+    const auto& battle=app.session.battle;
+    if(!app.room||!battle||!battle->stage_active)return nullptr;
+    const auto seat=app.session.coop_viewer;
+    const auto& player=battle->pilot(seat);
+    const auto& position=player.motion.state.position;
+    const auto& stock=battle->pilot_economy(seat);
+    th11::Vec3 boss;
+    const bool has_boss=battle->boss_position(boss);
+    static std::array<float,9> value;
+    value={position.x,position.y,float(player.state.life_state),
+        float(player.state.invincibility.current),float(stock.lives),float(stock.th14_bombs),
+        float(stock.power),has_boss?boss.x:0.f,float(has_boss)};
+    return value.data();
+}
+EMSCRIPTEN_KEEPALIVE const float* th14_room_bullet_field(){
+    const auto& app=th11::sdl::app;
+    const auto& battle=app.session.battle;
+    if(!app.room||!battle||!battle->stage_active)return nullptr;
+    // Read-only position samples for browser diagnostics. Collect on demand.
+    static std::array<float,1+th11::BulletManager::capacity*5> value;
+    unsigned count=0;
+    for(auto* bullet=battle->bullets.first_th14();bullet;bullet=bullet->th14_active_next){
+        if((bullet->state!=1&&bullet->state!=2)||!(bullet->flags&2)||bullet->collision_delay)continue;
+        auto* row=value.data()+1+count++*5;
+        row[0]=bullet->position.x;row[1]=bullet->position.y;
+        row[2]=bullet->velocity.x;row[3]=bullet->velocity.y;
+        row[4]=bullet->hitbox.x*.5f*bullet->th14_size+2.f;
+    }
+    value[0]=float(count);
+    return value.data();
+}
+EMSCRIPTEN_KEEPALIVE const unsigned* th14_room_confirmed(unsigned frame){
+    const auto& r=th11::sdl::app.room;
+    if(!r||!frame||frame>r->confirmed)return nullptr;
+    const auto& value=r->confirmed_status[frame%r->confirmed_status.size()];
+    return value[0]==frame?value.data():nullptr;
+}
+EMSCRIPTEN_KEEPALIVE const unsigned* th14_room_live_status(){
+    static std::array<th11::u32,8> value;
+    auto& app=th11::sdl::app;
+    if(!app.room)return nullptr;
+    const auto& room=*app.room;
+    value=th11::th14_room_status(app.session,room.spectator?room.viewer.Position():room.frame);
+    return value.data();
+}
+EMSCRIPTEN_KEEPALIVE int th14_room_finished(){
+    const auto& app=th11::sdl::app;
+    const auto& room=app.room;
+    return room&&((room->finished&&(!(room->local_ending||room->local_results)||app.session.state.phase==th11::GameSessionPhase::finished)&&
+        (!room->local_results||!app.session.battle)&&
+        (room->playback||(room->channel.Retiring()&&(room->setup.local||!room->publish))))||
+        (room->spectator&&room->viewer.History().Ended()&&room->viewer.Position()>=room->viewer.Edge()));
+}
+EMSCRIPTEN_KEEPALIVE int th14_room_replay_validate(const th11::u8* bytes,unsigned size,const unsigned* build){
+    if(!build)return 0;
+    Netplay::InputReplayInfo info;th11::RoomSetupTh14 setup;
+    return Netplay::InputReplay::Inspect(bytes,size,&info)&&setup.read(info,{build[0],build[1],build[2],build[3]});
+}
+EMSCRIPTEN_KEEPALIVE int th14_room_replay_open(const th11::u8* bytes,unsigned size,const unsigned* build){
+    auto& app=th11::sdl::app;
+    if(!build||app.room)return 0;
+    auto room=std::make_unique<th11::RoomTh14>();
+    if(!room->replay.Decode(bytes,size)||!room->setup.read(room->replay.Info(),{build[0],build[1],build[2],build[3]}))return 0;
+    room->playback=true;app.room=std::move(room);return 1;
+}
+EMSCRIPTEN_KEEPALIVE int th14_room_replay_pause(unsigned paused){
+    auto& room=th11::sdl::app.room;
+    if(!room||!room->playback)return 0;room->paused=paused!=0;return 1;
+}
+EMSCRIPTEN_KEEPALIVE const char* th14_room_spectator_state(){
+    auto& room=th11::sdl::app.room;
+    return room&&room->spectator?room->view.State(room->viewer):nullptr;
+}
+EMSCRIPTEN_KEEPALIVE int th14_room_spectator_control(const char* run,const char* action,unsigned target){
+    auto& room=th11::sdl::app.room;
+    return room&&room->spectator&&room->view.Control(room->viewer,run,action,target);
+}
+EMSCRIPTEN_KEEPALIVE void th14_room_close(){
+    auto& app=th11::sdl::app;
+    if(app.room){app.room->transport.Close();app.room.reset();}
+}
+#endif
 // The stage is what tells a browser run apart from the title demo: the attract demo plays a fixed replay, so a
 // stage number that changes, and a frame counter that advances inside it, is the evidence that a game is running.
 EMSCRIPTEN_KEEPALIVE unsigned th11_stage(){return th11::sdl::app.session.state.stage;}
@@ -2476,6 +3026,16 @@ EMSCRIPTEN_KEEPALIVE unsigned th11_input(unsigned kind){const auto& g=th11::sdl:
 // every stage change is a leak, while a flat footprint at the moment of failure is corruption.
 EMSCRIPTEN_KEEPALIVE unsigned th11_heap_bytes(){return unsigned(emscripten_get_heap_size());}
 EMSCRIPTEN_KEEPALIVE unsigned th11_dynamic_allocs(){return unsigned(mallinfo().uordblks);}
+#if PORT_TITLE == 14
+EMSCRIPTEN_KEEPALIVE const unsigned* th14_battle_diagnostics(){
+    static std::array<th11::u32,5> value;
+    const auto& battle=th11::sdl::app.session.battle;
+    if(!battle||!battle->stage_active)return nullptr;
+    value={battle->spell_flags,th11::u32(battle->spell_id),th11::u32(battle->spell_elapsed),
+        battle->bullets.active_count,battle->items.active_count};
+    return value.data();
+}
+#endif
 EMSCRIPTEN_KEEPALIVE int th11_pause(){return th11::sdl::app.pause()?1:0;}
 EMSCRIPTEN_KEEPALIVE int th11_resume(){return th11::sdl::app.resume()?1:0;}
 #if PORT_TITLE == 14
@@ -2510,6 +3070,9 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
     request_frames([](double time,void* epoch)->EM_BOOL{
         if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
         const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
+#if defined(TH14_MULTIPLAYER)
+        if(app.room)app.room_refresh_begin=begin;
+#endif
         if(suspended){cadence.reset();
 #if PORT_TITLE == 14
             app.hosted_cadence.reset();
@@ -2525,9 +3088,19 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
         const double speed=1.;
 #endif
         const bool practice_replay_speed=speed!=1.&&app.session.state.replay;
-        const bool can_coalesce=app.can_coalesce_browser_draw(practice_replay_speed);
+        const auto can_batch=[&]{
+#if defined(TH14_MULTIPLAYER)
+            if(app.room_can_batch())return true;
+#endif
+            return app.can_coalesce_browser_draw(practice_replay_speed);
+        };
+        const bool can_coalesce=can_batch();
+        unsigned burst=can_coalesce&&speed>1.?8:2;
+#if defined(TH14_MULTIPLAYER)
+        if(app.room_can_batch())burst=3;
+#endif
         const auto limit=viewer?app.hosted_cadence.advance(delta,app.hosted_replay_rate):
-            cadence.advance_display(delta*(can_coalesce?speed:1.),can_coalesce,can_coalesce&&speed>1.?8:2);
+            cadence.advance_display(delta*(can_coalesce?speed:1.),can_coalesce,burst);
         const bool backpressured=limit&&can_coalesce&&app.graphics.backend.browser_draw_backpressured();
 #else
         const auto limit=cadence.advance(delta);
@@ -2536,19 +3109,25 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
         unsigned ticks=0;
         for(;ticks<limit&&ok;++ticks){
 #if PORT_TITLE == 14
-            if(ticks&&!(viewer&&app.hosted_replay&&app.session.state.replay&&app.session.state.phase==th11::GameSessionPhase::stage)&&!app.can_coalesce_browser_draw(practice_replay_speed))break;
+            if(ticks&&!(viewer&&app.hosted_replay&&app.session.state.replay&&app.session.state.phase==th11::GameSessionPhase::stage)&&!can_batch())break;
             app.coalesce_browser_draw=!viewer&&(backpressured||ticks+1<limit);
 #endif
             ok=sample_and_tick();
         }
 #if PORT_TITLE == 14
         app.coalesce_browser_draw=false;
+#if defined(TH14_MULTIPLAYER)
+        if(ticks&&ok&&app.room_can_batch()&&!backpressured)ok=app.render_room();
+#endif
 #endif
 #else
         const auto ticks=cadence.advance(delta);bool ok=true;app.graphics.backend.defer=true;
         for(unsigned n=0;n<ticks&&ok;++n)ok=sample_and_tick();
 #endif
         app.graphics.backend.commit();app.graphics.backend.defer=false;
+#if defined(TH14_MULTIPLAYER)
+        if(app.room&&app.room->started)app.audio.update();
+#endif
         app.audio.pump();
         if(ticks)th11_browser_frame(ok?1:0,emscripten_get_now()-begin,ticks);
         if(!ok)running=false;return running?EM_TRUE:EM_FALSE;

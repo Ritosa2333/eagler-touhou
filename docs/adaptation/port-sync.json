@@ -1921,6 +1921,12 @@
           "note": "练习计数接入多人端本地练习，联机房间保持既有面板和检查点格式；保留多人端现有作弊权限及录像规则。"
         }
       ]
+    },
+    "th14": {
+      "normal": "ports/th14",
+      "multiplayer": "ports/th14-mp",
+      "base": "c4faf858a047bfe2b26d6274ab946a5166ec576e",
+      "history": []
     }
   }
 }

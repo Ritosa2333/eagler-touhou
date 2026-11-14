@@ -16,6 +16,8 @@ struct EnemyFrameWorld {
 #if PORT_TITLE == 14
     virtual u32 th14_practice_flags()const{return 0;}
     virtual bool th14_damage_dialogue()const{return false;}
+    virtual bool th14_coop_damage_rules()const{return false;}
+    virtual float th14_effective_knife_slowdown(const EnemyState& e)const{return e.th14_knife_slowdown;}
 #endif
     virtual bool player_collision(EnemyState&,float,i32&){return false;}
     virtual bool tick_callback(EnemyState&,i32&){return false;}

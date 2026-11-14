@@ -20,6 +20,7 @@ public:
     u32 control_animation=0;
     explicit ScreenDeformation(AnmManager& m):manager(m){}
     ~ScreenDeformation();
+    void detach();
     bool initialize(AnmResource& text,u32 width=side,u32 height=side,bool second_target=false);
     void rectangle(float x,float y,float width,float height);
     void update(EnemyState&,i32 spell_id);

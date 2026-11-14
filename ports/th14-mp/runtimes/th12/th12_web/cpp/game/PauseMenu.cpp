@@ -182,7 +182,7 @@ bool PauseMenu::update(u32 pressed,u32 repeat){
                 // duplicate disable entry present in the retail cursor.
                 if(forced){for(i32 choice:{3,2,0})cursor.disabled[cursor.disabled_count++]=choice;}
                 else{if(replay){for(i32 choice:{2,3})cursor.disabled[cursor.disabled_count++]=choice;}
-                    if(continues>0)cursor.disabled[cursor.disabled_count++]=2;}
+                    if(continues>0||cooperative)cursor.disabled[cursor.disabled_count++]=2;}
             }else{if(forced||replay)cursor.disabled[cursor.disabled_count++]=2;
                 if(forced)cursor.disabled[cursor.disabled_count++]=0;}
             cursor.wrap=1;cursor.select(forced?1:0);family(menu_animation,cursor.selected+7);forced_exit=forced;
