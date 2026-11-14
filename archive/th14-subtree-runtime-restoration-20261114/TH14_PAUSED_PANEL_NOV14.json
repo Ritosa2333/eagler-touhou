@@ -1,0 +1,58 @@
+{
+  "schema": "th14-paused-panel/1",
+  "passed": true,
+  "scope": "optional practice panel while hosted replay viewer paused; finite first-stage browser fragment",
+  "wasm": "2e4b1f5b38f61c94811c3faa5ed17de0bb04e397fe26858369c1e03ce03de65b",
+  "generation": "c557963dca60d8a6a192ee325d9700303f10d3e72942994b3537572f53862814",
+  "nativeComponentCases": 576,
+  "nativeOldCasesRejected": 24,
+  "nativeUnchangedControls": 552,
+  "eventPumpCases": 144,
+  "eventOldCasesRejected": 24,
+  "eventUnchangedControls": 120,
+  "mockPortsDeclared": true,
+  "silent": {
+    "music": 0,
+    "sfx": 0
+  },
+  "browser": {
+    "baselinePausedF12DidNotDraw": true,
+    "candidatePausedFrame": 418,
+    "modalOpenedWhilePaused": true,
+    "mouseCheckAndUncheckWhilePaused": true,
+    "closedRestoresInputShield": true,
+    "progressRemainedAt418AcrossUiActions": true,
+    "gameViewport": {
+      "x": 135,
+      "y": 89,
+      "width": 609,
+      "height": 457,
+      "pixels": 278313,
+      "changedPixelsAfterPanelClose": 0
+    },
+    "resumeObservedFrame": 419,
+    "nextPauseFrame": 888,
+    "noSeek": true,
+    "fullReplay": false,
+    "reloadAfterUiActionsVerified": true,
+    "actualInternalRngRead": false,
+    "reloadPausedFrame": 637,
+    "reloadPanelOpenAndClosePassed": true
+  },
+  "sourceBindingsVerified": 387,
+  "runtimeFilePackageVerified": 32,
+  "unitsRecompiled": 2,
+  "objectsHashReused": 151,
+  "productionChanged": false,
+  "completeGame": false,
+  "localProofHashes": {
+    "browser-baseline-paused.png": "b6ca4ea65a4e26d33c1338787097a61bd3bd8ca85033b247369840318331da80",
+    "browser-paused-before.png": "22e2f668d79fa7e2d0e5dc15c6b69fdce26c05d578ed2720d0ece5efeedbcf4d",
+    "browser-paused-checked.png": "85fd6ea9adf2951bbc34d376b06c76f064c469020eb6feb93656b3de0c28f74f",
+    "browser-paused-closed.png": "4a453b2c7362a475d2d6515bb8fd6863e107a8c01ebeebeed61d760cd546c2dd",
+    "browser-paused-open.png": "d104b58d58a546960a8d308aa90a0434a2a9456606f4f4f72946ae2a5a82c852",
+    "browser-resume-stop.png": "9bfea27caab467fe43e5369e8d7d03ff2b9836201e121d568487c8285be548f6",
+    "browser-reload-open.png": "26667acdcd11b4f75a503b9faf34bf1338fb0cf2da65f35d9416c0d9bfc7af97",
+    "browser-reload-stop.png": "82dc64d1b4dd1c8b7480b90165f4c026061b12a5f1fcb8689934343cfc3db994"
+  }
+}
