@@ -1,0 +1,201 @@
+{
+  "schema": "th14/dialogue-touch/1",
+  "dialogueBrowser": {
+    "schema": "th14/dialogue-cycle-browser/1",
+    "sourceCommit": "bd2e0463c54baac65d4291c02be5fedaafd9023c",
+    "wasm": "811dc8cb1ffd607f12b7ca23b8dc2b2aee76e5cdc8a0fbca72f7d08c2e542053",
+    "generation": "7a459b6cb44ea023f15551de7afa380dae5e1db0f8fc076692d7deeeea1f29d6",
+    "site": "http://localhost:8231/?game=th14",
+    "actualWebGl2": true,
+    "music": "ogg streaming",
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "menuRoute": [
+      "Practice Start",
+      "Normal",
+      "Reimu A",
+      "custom",
+      "stage 1",
+      "Boss normal 1",
+      "dialogue enabled",
+      "cycle 5 (life fragment)"
+    ],
+    "practiceSetupUsedVisibleControlsOnly": true,
+    "dialoguePauseOverlayObserved": true,
+    "dialogueResumedWithVisiblePortraitsAndText": true,
+    "advancedSettingsToggledWhileDialoguePaused": true,
+    "advancedSettingsGhostObservedAfterResume": false,
+    "cycleDisplay": {
+      "totalBonus": 4,
+      "extendCount": 0,
+      "normalBonusTiers": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "doubleBonus": 0,
+      "nextBonus": "life fragment highlighted",
+      "miss": 0,
+      "bomb": 0
+    },
+    "keyboardMovementExercisedDuringDialogue": true,
+    "actualTouchDeviceAccepted": false,
+    "wholeRunStatisticsUiAcrossStagesAccepted": false,
+    "laterScreenshotContext": "browser-dialogue-cycle-paused.jpg is a later active dialogue/info observation; its filename does not establish a paused state.",
+    "screenshots": {
+      "browser-dialogue-before.jpg": "f160acc63569ef92eca6b848ed9fa3433c9e21f2ed7f1ca2d438a91bc196f902",
+      "browser-dialogue-paused.jpg": "26eb8e7c45b6efee16ec2c1f54aba12b30cb265e3a04cde2c830ee39551749f2",
+      "browser-dialogue-resumed-info.jpg": "f5d7f3067762ca9ffc234991b45bae9b2558171d16200ecadfb5a6f1358ba035",
+      "browser-dialogue-cycle-paused.jpg": "17b77ef8ed34b04800cba891340d9f152cad1b2df0ac6584fbb3e9b81b27508c"
+    },
+    "noGameAssetCopies": true,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "frontendTouchRegression": {
+    "passed": true,
+    "beforeExit": 1,
+    "afterExit": 0,
+    "newCases": 6,
+    "oldSourceRejected": true,
+    "patchRestrictedToTh14": true,
+    "realHardwareAccepted": false,
+    "productionChanged": false,
+    "completeGame": false,
+    "sourceSha256": "ffe7919c9c893ae1e3f56d1ffb780ffbc5714d24c082c3b647406d91fd8cec5c",
+    "testSha256": "3be77b9e0ac7f524e10324e228376d5560736ed9609354473e76f954fa1339ca"
+  },
+  "nativeGestureIntegration": {
+    "passed": true,
+    "moduleSha256": "855215d70e4df2a32984d56d5ef9395f6b7f051625837bd5a1cdd2fc9a8de26b",
+    "sourceBindings": {
+      "H:\\code\\thp\\artifacts\\th14\\current-concurrent-mixer-nov14\\overlay-capture-fix\\core\\runtimes\\th12\\portable\\input\\TouchController.hpp": "71c23d645257e70afdc1828360ec624a0332c4e566d720660d554ed8b7784997",
+      "H:\\code\\thp\\artifacts\\th14\\current-concurrent-mixer-nov14\\overlay-capture-fix\\common\\include\\eagler\\input\\DialogueGesture.hpp": "df890d20be54aeb92652eadfa4ce1be0028086a2fe056fe87b2abd88f1daed2f"
+    },
+    "normalAccessControl": true,
+    "cases": [
+      {
+        "version": "before",
+        "case": "pointercancel",
+        "output": 1,
+        "dialogueConfirm": true,
+        "tap": false,
+        "interruptedTap": true
+      },
+      {
+        "version": "before",
+        "case": "lostpointercapture",
+        "output": 1,
+        "dialogueConfirm": true,
+        "tap": false,
+        "interruptedTap": true
+      },
+      {
+        "version": "before",
+        "case": "ios-touchcancel",
+        "output": 1,
+        "dialogueConfirm": true,
+        "tap": false,
+        "interruptedTap": true
+      },
+      {
+        "version": "before",
+        "case": "pointer-tap",
+        "output": 1,
+        "dialogueConfirm": true,
+        "tap": true,
+        "interruptedTap": false
+      },
+      {
+        "version": "before",
+        "case": "ios-tap",
+        "output": 1,
+        "dialogueConfirm": true,
+        "tap": true,
+        "interruptedTap": false
+      },
+      {
+        "version": "before",
+        "case": "drag-cancel",
+        "output": 0,
+        "dialogueConfirm": false,
+        "tap": false,
+        "interruptedTap": false
+      },
+      {
+        "version": "after",
+        "case": "pointercancel",
+        "output": 0,
+        "dialogueConfirm": false,
+        "tap": false,
+        "interruptedTap": true
+      },
+      {
+        "version": "after",
+        "case": "lostpointercapture",
+        "output": 0,
+        "dialogueConfirm": false,
+        "tap": false,
+        "interruptedTap": true
+      },
+      {
+        "version": "after",
+        "case": "ios-touchcancel",
+        "output": 0,
+        "dialogueConfirm": false,
+        "tap": false,
+        "interruptedTap": true
+      },
+      {
+        "version": "after",
+        "case": "pointer-tap",
+        "output": 1,
+        "dialogueConfirm": true,
+        "tap": true,
+        "interruptedTap": false
+      },
+      {
+        "version": "after",
+        "case": "ios-tap",
+        "output": 1,
+        "dialogueConfirm": true,
+        "tap": true,
+        "interruptedTap": false
+      },
+      {
+        "version": "after",
+        "case": "drag-cancel",
+        "output": 0,
+        "dialogueConfirm": false,
+        "tap": false,
+        "interruptedTap": false
+      }
+    ],
+    "oldInterruptedTapsConfirmedDialogue": 3,
+    "fixedInterruptedTapsConfirmedDialogue": 0,
+    "intentionalTapControlsAccepted": 2,
+    "actualLauncherEventHandlersToActualCppGesture": true,
+    "syntheticDomAndControlledComponentTiming": true,
+    "hardwareOrSafariDeviceAccepted": false,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "frontendBuild": {
+    "passed": true,
+    "checks": [
+      "typecheck.log",
+      "frontend-build.log"
+    ],
+    "wasmRebuilt": false,
+    "coreSourceUnchanged": true,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "runtimeGeneration": "7a459b6cb44ea023f15551de7afa380dae5e1db0f8fc076692d7deeeea1f29d6",
+  "runtimeResponsesVerified": 32,
+  "coreSourceAndWasmUnchanged": true,
+  "hardwareOrSafariDeviceAccepted": false,
+  "productionChanged": false,
+  "completeGame": false
+}
