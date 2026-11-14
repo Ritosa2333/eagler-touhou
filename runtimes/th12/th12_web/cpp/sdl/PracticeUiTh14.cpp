@@ -162,6 +162,9 @@ void configure(GameSession& s,bool enabled,int language){
     params={};params.stage=1;rank=1;shot=0;
     speed={};reset_speed_ui=true;reaction_test.Reset();everlasting_bgm=false;
     key_monitor={};key_monitor_on=show_lock_timer=show_items=show_bonus=show_hitboxes=show_drop_bar=show_license=false;
+    s.practice_key_sample=[](u32 bits){
+        if(game&&game->practice_enabled&&key_monitor_on)key_monitor.record(14,bits);
+    };
     s.purple_show_history=s.purple_fast_retry=false;s.purple_laser={};boss_range=.5f;
     for(bool& open:opt_open)open=true;
     lock_running=false;lock_frames=last_sample_stage=last_sample_frame=0;
@@ -177,9 +180,8 @@ double speed_scale() noexcept{
         !game->state.demo&&!modal()?
         std::min(8.,(1./60.)/speed.interval(game->state.replay,held[17],held[16],held[32])):1.;
 }
-void sample_keys(u32 bits){
+void sample_keys(u32){
     if(!game||!game->practice_enabled||game->state.phase!=GameSessionPhase::stage)return;
-    if(key_monitor_on)key_monitor.record(14,bits);
     if(game->state.stage!=last_sample_stage||game->state.frame<last_sample_frame)lock_running=false;
     last_sample_stage=game->state.stage;last_sample_frame=game->state.frame;
     if(game->practice_tools&PrTime){if(!lock_running)lock_frames=0;++lock_frames;lock_running=true;}

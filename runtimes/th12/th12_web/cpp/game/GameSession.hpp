@@ -120,6 +120,7 @@ public:
     bool purple_show_history=false,purple_fast_retry=false;
     u32 purple_retry_misses=0;
     bool practice_enabled=false,practice_input_captured=false;
+    void (*practice_key_sample)(u32)=nullptr;
     u32 practice_tools=0;
     size_t practice_event=0;
 #endif
