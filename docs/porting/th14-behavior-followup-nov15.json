@@ -122,5 +122,66 @@
     "completeGame": false
   },
   "publicBrowserAfterActivationAccepted": false,
-  "completeGame": false
+  "completeGame": false,
+  "focusRecovery": {
+    "schema": "th14/focus-recovery/1",
+    "standard": "observable behavior alignment",
+    "generation": "ea4e3257b8d4baa316594249f522cf8897c0d479bbf23e74db5bfde937c00a49",
+    "scope": "actual ordinary Reimu A Normal canvas-to-web-settings focus ownership and recovery; separate synthetic loss controls",
+    "actualBrowser": {
+      "newGameStarted": true,
+      "initialPreparationLostToGameOver": true,
+      "preparationFailureRetained": "preparation-ranking.png",
+      "secondStartPausedImmediately": true,
+      "rightMovementBeforeFocusChange": true,
+      "webSettingsFocusObserved": {
+        "activeTag": "SPAN",
+        "activeLabel": "游戏音乐"
+      },
+      "confirmZDidNotResumeGame": true,
+      "escapeClosedWebPopupOnly": true,
+      "canvasClickRestoredFocus": true,
+      "resumedAndNewLeftMovementThenPaused": true,
+      "directionKeyReleasedBeforeFocusChange": true,
+      "heldKeyAcrossFocusLossAccepted": false,
+      "realTabHiddenAccepted": false,
+      "helperTabObservedOldPageStillVisible": true,
+      "helperTabClosed": true
+    },
+    "componentChecks": {
+      "source": "launcher/tests/react-main/player-keyboard.test.mjs",
+      "sourceHead": "a08ff057e6d367bac81e397ea051f6021dcc2422",
+      "command": "/home/i/.bun/bin/bun run ./node_modules/vitest/vitest.mjs run tests/react-main/player-keyboard.test.mjs -t \"keyboard: (blur|hidden|pagehide) releases\"",
+      "passed": 3,
+      "skipped": 21,
+      "syntheticJsdomNotRealBrowser": true,
+      "initialNodeInvocationRejectedMissingBunRuntime": true,
+      "recoveredUsingExistingBun": true
+    },
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "sourceChanged": false,
+    "productionChanged": false,
+    "completeGame": false,
+    "proofHashes": {
+      "escape-popup-only.png": "8d540e270496e636d344dc82fdf8ed0a7f01123bb1c20d178a67a3e287f45a36",
+      "left-restored-paused.png": "e0d51da08f771ff19a32c7d94e34783d4ccbd1b243c882b6752eab81617e71bd",
+      "left-restored-paused.txt": "4503fb6c83ba4cb0142591568e7048a968ff1ccc87453a89cf599c33e5dd9eb6",
+      "preparation-ranking.png": "4d8bd98e3080411dac8b99ce5c7b860719b7b21b9dcc705189994578b6d60526",
+      "right-paused.png": "26577f38d00212a2a7b439552ca29fb820e14576f70c6dd1b62aacda6a9fb403",
+      "web-settings-focus.png": "4f26870d5e4f7b2ffc482897107de80161618ea1d9ce67a676cc466d8ec15bbc",
+      "web-settings-focus.txt": "0c096a5a6c3b7c44ee0d7ad5da480f932a086a6432b0877b87c151f155a7f318",
+      "web-z-owned.png": "94404e047faf2c1787738aebaaf6a5ccc1b392fe22a2c980727db0e92633e010"
+    },
+    "publicObservation": {
+      "tabId": "57",
+      "url": "https://wth.saop.cc/?game=th14",
+      "inventoryConfirmedTabAndPageTitle": true,
+      "nativeReadTimedOut": true,
+      "documentedScreenshotAlternativeTimedOut": true,
+      "actualPublicGameplayAccepted": false,
+      "productionRestarted": false,
+      "securitySettingsChanged": false
+    }
+  }
 }
