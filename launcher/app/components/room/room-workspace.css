@@ -251,7 +251,7 @@ body:has(#player.room-workspace) :is(.ui-kit-select-content,.ui-menu)[data-ui-su
 .room-chat-history{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 32px;gap:4px;height:152px;margin-bottom:12px}
 .room-chat-unread.ui-kit-button {position:absolute;right:32px;bottom:8px;z-index:1;gap:3px;width:auto;height:auto;min-height:0;max-width:calc(100% - 48px);padding:3px 6px;border-radius:999px;box-shadow:0 2px 8px #0003;font-size:12px;line-height:1.25}
 .room-chat-unread svg {width:14px;height:14px;flex:none}
-.room-chat-history-viewport{min-height:0;overflow-y:auto;overflow-x:hidden;overflow-anchor:none;overscroll-behavior-y:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;font-size:14px;line-height:1.65}
+.room-chat-history-viewport{min-height:0;overflow:hidden;overflow-anchor:none;font-size:14px;line-height:1.65}
 .room-chat-history-rows{display:grid;align-content:end;gap:6px;min-height:100%}
 .room-chat-history-rows>p{margin:0;overflow-wrap:anywhere}
 .room-chat-history .chat-report-trigger{padding:0}

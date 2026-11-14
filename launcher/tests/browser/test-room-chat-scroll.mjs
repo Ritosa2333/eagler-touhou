@@ -69,7 +69,12 @@ try {
  await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:box.left+box.width/2,y:box.top+25}]});
  for(let y=35;y<=125;y+=15) await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:box.left+box.width/2,y:box.top+y}]});
  await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
- await mobile.waitForFunction(before=>document.querySelector('.room-chat-history-viewport').scrollTop<before,{},beforeSwipe);
+ assert(beforeSwipe>0,'mobile starts at the latest message with older messages offscreen');
+ await mobile.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ assert.equal(await mobile.$eval('.room-chat-history-viewport',node=>node.scrollTop),beforeSwipe,'swiping the mobile chat viewport does not scroll it');
+ await mobile.focus('.room-chat-history [role=slider]');
+ await mobile.keyboard.press('Home');
+ await mobile.waitForFunction(()=>document.querySelector('.room-chat-history-viewport').scrollTop===0);
  assert.equal(await mobile.$eval('.room-chat-history-viewport',node=>getComputedStyle(node).scrollbarWidth),'none','mobile uses only its custom slider');
  await touch.detach();
  await mobile.$eval('.room-chat-history-viewport',log=>{log.scrollTop=0;}); await mobile.evaluate(()=>new Promise(requestAnimationFrame));
