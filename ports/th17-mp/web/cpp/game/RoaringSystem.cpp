@@ -69,7 +69,11 @@ bool RoaringSystem::activate(){
     if(state.kind!=4&&!create(visuals.animal_effect,state.kind+40,player.position,primary_pilot))return false;
     if(!animations.retire(visuals.mode_effect)||!create(visuals.mode_effect,32,player.position,primary_pilot)){if(error.empty())error=animations.error;return false;}
     if(!host.sound(77,true)){error="Roaring start audio failed";return false;}
-    state.flags&=~0xf0u;for(i32 value:state.inventory)if(value>=8&&value<=14)state.flags=(state.flags&~0xf0u)|(u32(value-7)<<4);state.reserve_count=0;return true;
+    state.flags&=~0xf0u;for(i32 value:state.inventory)if(value>=8&&value<=14)state.flags=(state.flags&~0xf0u)|(u32(value-7)<<4);state.reserve_count=0;
+    // thprac 0x40FC8A: count the Roaring, its animal and the special spirits it was built from.
+    ++session.practice_roars;if(state.kind>=1&&state.kind<=3)++session.practice_roar_animals[state.kind-1];
+    for(i32 value:state.inventory)if(value>=8&&value<=14)++session.practice_special_spirits;
+    return true;
 }
 bool RoaringSystem::collect(i32 kind){
     error.clear();if(kind<1||kind>14||state.count<0||state.count>5||state.reserve_count<0||state.reserve_count>5){error="Invalid animal inventory state";return false;}
@@ -83,7 +87,9 @@ bool RoaringSystem::break_roaring(bool death){
     visuals.outer_timer=visuals.inner_timer=visuals.animal_effect=0;if(state.kind==2&&!stop_orbs())return false;
     state.flags=(state.flags&~8u)|(death?8u:0u)|4;state.countdown.set(40);visuals.damage_source=damage.circle(player.position,8,0,40,5);if(state.kind==3)player.behavior_flags|=0x40;
     if(!(state.flags&0x800)&&!death&&(spell.flags&1)){if(spell.frame>=60){spell.bonus=0;spell.flags&=~0x22u;}else if(session.bomb_state==1)spell.flags|=0x20;}
-    invulnerability.set(60);break_count=wrapping_add(break_count,1);break_chain=0;return true;
+    invulnerability.set(60);break_count=wrapping_add(break_count,1);break_chain=0;
+    ++session.practice_roar_breaks; // thprac 0x40F880
+    return true;
 }
 bool RoaringSystem::item_reward(i32 kind,Vec3& primary,Vec3& scatter){
     if(kind==4||kind==5){if(!host.item(kind==4?6:4,primary,-1.5707963705062866f,2.2f,10,-1)){error="Roaring fragment reward failed";return false;}primary.y=float(primary.y-30.f);}

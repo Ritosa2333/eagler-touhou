@@ -315,6 +315,7 @@ ChainCallbackResult Supervisor::OnUpdate(Supervisor *s)
                     g_GameManager.deaths = 0;
                     g_GameManager.bombsUsed = 0;
                     g_GameManager.spellcardsCaptured = 0;
+                    PracticeRuntime::ResetTracker();
                 }
                 if (GameManager::RegisterChain() != ZUN_SUCCESS)
                 {
