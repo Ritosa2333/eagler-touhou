@@ -938,5 +938,228 @@
     "runtimeModified": false,
     "fullReplayAlignmentAccepted": false,
     "completeGame": false
+  },
+  "boundedBeamWindow": {
+    "schema": "th14/beam-window-trace/1",
+    "passed": true,
+    "controls": [
+      {
+        "mode": "baseline",
+        "pairedStageFrameKeys": 34485,
+        "comparedFields": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          9,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31
+        ],
+        "minimumControlFrame": 60,
+        "stateDifferences": 0,
+        "terminalOutcomePreserved": true,
+        "finalScore": 82434130
+      },
+      {
+        "mode": "candidate",
+        "pairedStageFrameKeys": 32339,
+        "comparedFields": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          9,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31
+        ],
+        "minimumControlFrame": 60,
+        "stateDifferences": 0,
+        "terminalOutcomePreserved": true,
+        "finalScore": 73218790
+      }
+    ],
+    "firstTraceDifference": {
+      "row": 359,
+      "baseline": {
+        "stage": 3,
+        "frame": 2935,
+        "phase": 1,
+        "bits": 2147483646,
+        "values": [
+          249.158447265625,
+          null,
+          39.709999084472656,
+          362.8900146484375,
+          -1.675516128540039,
+          34.86000061035156,
+          125.37999725341797,
+          12,
+          16,
+          135,
+          12
+        ]
+      },
+      "candidate": {
+        "stage": 3,
+        "frame": 2935,
+        "phase": 1,
+        "bits": 2147483646,
+        "values": [
+          249.158447265625,
+          249.158447265625,
+          39.709999084472656,
+          362.8900146484375,
+          -1.675516128540039,
+          34.86000061035156,
+          125.37999725341797,
+          12,
+          16,
+          135,
+          12
+        ]
+      }
+    },
+    "firstScoreDifference": {
+      "stage": 3,
+      "frame": 2957,
+      "baselineScore": 62062900,
+      "candidateScore": 62062910
+    },
+    "rows": {
+      "baseline": 527,
+      "candidate": 551
+    },
+    "columns": [
+      "previous",
+      "result",
+      "originX",
+      "originY",
+      "angle",
+      "targetX",
+      "targetY",
+      "radius",
+      "width",
+      "timer",
+      "damage"
+    ],
+    "nativeOracle": {
+      "schema": "th14/beam-window-native-oracle/1",
+      "passed": true,
+      "stage": 3,
+      "controlFrame": 2935,
+      "actualOriginalBeamBody": true,
+      "originalInstructionBytesPatched": 0,
+      "executableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+      "anmAndCookieServicesDeclaredExternal": true,
+      "callerScratchDeclaredFromCapturedPort": true,
+      "originalFullCallerHistoryValidated": false,
+      "cases": [
+        {
+          "scratchBits": 2147483646,
+          "nativeLengthBits": 2147483646,
+          "nativeAreaLengthBits": 2147483646,
+          "returnValue": 0,
+          "events": []
+        },
+        {
+          "scratchBits": 0,
+          "nativeLengthBits": 1090519040,
+          "nativeAreaLengthBits": 1090519040,
+          "returnValue": 0,
+          "events": []
+        },
+        {
+          "scratchBits": 1065353216,
+          "nativeLengthBits": 1091567616,
+          "nativeAreaLengthBits": 1091567616,
+          "returnValue": 0,
+          "events": []
+        }
+      ],
+      "baselinePreservesNativeNanForDeclaredInput": true,
+      "guardedLength": 249.158447265625,
+      "guardIsIntentionalBehaviorCorrection": true,
+      "nativeValuesFedBackToGame": false,
+      "fullReplayAlignmentAccepted": false,
+      "completeGame": false
+    },
+    "artifactBindings": {
+      "baseline/report.json": {
+        "sha256": "34ee0fb6a5137d05dfbd6cc3a389a90a937b45e6c753d494b05518c45fd322f6",
+        "bytes": 120621
+      },
+      "baseline/beam-trace.json": {
+        "sha256": "913856ee02081ad4768fbec006538a4c16cf45568fe8e5b194a629cbcfcfcc02",
+        "bytes": 185393
+      },
+      "baseline/selected-state.u32": {
+        "sha256": "ce5feed5a287c437e956d7d96ec521751da3ca1ce803d03edeab66c9432ed565",
+        "bytes": 4502016
+      },
+      "baseline/platform.json": {
+        "sha256": "cdcbcfd4b71bbc71d53c00e88025697a3a041f546b4df489a57c1b79161060c9",
+        "bytes": 73657
+      },
+      "baseline/executed-driver.mjs": {
+        "sha256": "112bba4c865a808e450a58d5dc42144a503abe91684df28344fe756a0c927da0",
+        "bytes": 13196
+      },
+      "candidate/report.json": {
+        "sha256": "9a51b383c2ba0221f6af9f48411db6fb1bd32e1853c9f87493582dc1da44dbf4",
+        "bytes": 117792
+      },
+      "candidate/beam-trace.json": {
+        "sha256": "128c51e3e57697dc14110af351de24a7d99d44608b1dd787ed50bcdebf70fc3e",
+        "bytes": 193933
+      },
+      "candidate/selected-state.u32": {
+        "sha256": "6ede1aceb9c0b312bac45ea8a56ff9225600eacbdd0998471880142219aeb4c1",
+        "bytes": 4222976
+      },
+      "candidate/platform.json": {
+        "sha256": "2a3451a1cd40d472ecdc28fbeb1e4bbfbb295d218b6c26deac424f41c9565895",
+        "bytes": 73656
+      },
+      "candidate/executed-driver.mjs": {
+        "sha256": "112bba4c865a808e450a58d5dc42144a503abe91684df28344fe756a0c927da0",
+        "bytes": 13196
+      }
+    },
+    "scope": "finite window, declared original beam caller inputs and last-stage/frame diagnostic projection; not whole-game or original full caller-history equivalence",
+    "runtimeSourceModified": false,
+    "productionChanged": false,
+    "silent": true,
+    "fullReplayAlignmentAccepted": false,
+    "completeGame": false
   }
 }
