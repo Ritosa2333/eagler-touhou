@@ -1,0 +1,138 @@
+{
+  "schema": "th14/replay-end-presentation/1",
+  "passed": true,
+  "scope": "native final HUD animation completion before hosted viewer freeze",
+  "sourceParent": "7cf3366984281af8bad95a8867489b9c83cf349e",
+  "sourceFile": "ports/th14/runtimes/th12/th12_web/cpp/sdl/Application.cpp",
+  "sourceBefore": "6010791b0d8f053a986226a073256d156035d86dd1f6c61236bef116c353c0ef",
+  "sourceAfter": "100abbe87c092f97f1b869f821bd098a859caa23fcafd6333c82afac88268904",
+  "wasm": "3f7ff5a2cd11fc28acb0b70168b5253a985d8368768b2e8db604341a1994971f",
+  "generation": "ea4e3257b8d4baa316594249f522cf8897c0d479bbf23e74db5bfde937c00a49",
+  "sourceBindings": 387,
+  "commonBindings": 25,
+  "rawCoreRuntimeFiles": 18,
+  "assembledRuntimeFiles": 32,
+  "unitsRecompiled": 1,
+  "objectsVerifiedReused": 152,
+  "onlyHostedStatusReadinessChanged": true,
+  "gameScoreOrInputWritesAdded": false,
+  "nativeEndMenuHudUpdateRetained": true,
+  "musicVolume": 0,
+  "sfxVolume": 0,
+  "music": "ogg streaming",
+  "practiceToolsEnabled": false,
+  "actualBrowserExtra": {
+    "inputSha256": "3979ae43be068d2fff96ddf432d0363e9677b8c39e9901ea3c49331c4858aca1",
+    "frames": 46936,
+    "hudScoreBeforeRepair": 423091300,
+    "observedFinalHudScore": 732411200,
+    "archiveScore": 732411200,
+    "finalHudMatchesArchive": true,
+    "graze": 12484,
+    "power": 400,
+    "pointText": "61,590",
+    "rate": 8,
+    "seekOrStageSkipUsed": false,
+    "endingMenuHeld": true,
+    "currentScoreMemoryReadDirectly": false,
+    "authoredStatusRequiresHudEqualityWithActualScore": true
+  },
+  "actualBrowserControls": [
+    {
+      "kind": "successful spell practice",
+      "inputSha256": "02ec75303e6c0a3a5de003569aad923fb96cf677e7d493124d753d68639c64b7",
+      "frames": 1737,
+      "hudScore": 3179620,
+      "ended": true,
+      "rate": 8
+    },
+    {
+      "kind": "failed spell practice",
+      "inputSha256": "c460de45155f1e677d1553e94dedb1b3a12b8591c842f08f7346fe514f9646d6",
+      "frames": 589,
+      "hudScore": 0,
+      "ended": true,
+      "rate": 1,
+      "earlyCursorNotForcedToDeclaredTail": true
+    }
+  ],
+  "component": {
+    "passed": true,
+    "cases": [
+      {
+        "scenario": 0,
+        "settleTicks": 54,
+        "totalUnchanged": true
+      },
+      {
+        "scenario": 1,
+        "settleTicks": 34,
+        "totalUnchanged": true
+      },
+      {
+        "scenario": 2,
+        "unchanged": true
+      },
+      {
+        "scenario": 3,
+        "unchanged": true
+      },
+      {
+        "scenario": 4,
+        "unchanged": true
+      },
+      {
+        "scenario": 5,
+        "unchanged": true
+      },
+      {
+        "scenario": 6,
+        "unchanged": true
+      },
+      {
+        "scenario": 7,
+        "unchanged": true
+      },
+      {
+        "scenario": 8,
+        "settleTicks": 1728,
+        "totalUnchanged": true
+      }
+    ],
+    "baselineRejected": 3,
+    "hostRegression": {
+      "baselineFrozenScore": 428880400,
+      "candidateSettledScore": 732411200,
+      "actualScoreUnchanged": true
+    },
+    "scope": "actual extracted Application status plus actual HUD scalar and authored host; session/menu stand-ins; no full browser acceptance",
+    "completeGame": false
+  },
+  "saveBeforeBytes": 21647,
+  "saveAfterExtraBytes": 21647,
+  "saveAfterControlsBytes": 21647,
+  "allThreeScoreFilesByteIdentical": true,
+  "scoreSha256": "215d06fe70feae61d45c7cc5616d94dccac753940a0fd9b5eb06c3ea70f9fb70",
+  "saveBaselineAlreadyIncludesExtraMusicFlags": true,
+  "browserConsoleErrors": [],
+  "newGameAssetCopies": 0,
+  "publicSiteUiAccepted": false,
+  "allModesAccepted": false,
+  "productionChanged": false,
+  "completeGame": false,
+  "privateEvidenceSha256": {
+    "browser-start.png": "20473c060a27a78a1d37d2beeae7a732c8fa2bd804e7576f8585c201cce5f889",
+    "browser-middle.txt": "86b164c9313b6d33bad36534d80ea01ccb4959f53963500ecf4ad7fde0ba5b19",
+    "browser-middle.png": "04273bc061ef1e84cd9c12c75999d7d5940bff94577223a68ef8c03aa355192a",
+    "browser-end.txt": "ca085180975a2aa518886ffe6631c22d89b3fa7de198a25a5e077a2503334686",
+    "browser-end.png": "4b5b114bd34af68c59b813056581d0457210346f34138bbd462d76bdbba57b79",
+    "browser-success-spell.txt": "01ed8484f142c09ba5ddd5b9875224e254c3102bb0e41b50a8788fab1df90ff1",
+    "browser-success-spell.png": "8afd7c4e4dafee9c91f00520feb947013b2262d64cbad23b2da2c5c915f6c817",
+    "browser-failure-spell.txt": "52819cdf9bb18c04c51f1bbf2b210f3d5a4e8b149856c2bf3d89440ee3e4642b",
+    "browser-failure-spell.png": "c52475717af27078458fac41bd7230f79734cbba07d2b5465610a92bdea63a73",
+    "browser-after-download.png": "273383361e68273995f365352377017bdb46c78ab9a151136ba3c45e72f24e37",
+    "browser-controls-after-download.png": "273383361e68273995f365352377017bdb46c78ab9a151136ba3c45e72f24e37",
+    "component-qualified.json": "3f10ea67e16e61bd59bf024ebbee62f7b1ad2074b4b3fc2b5b0eb20ede37435e",
+    "source-qualified.json": "996aa6d6e0d944c84c0d335a9d0355f20c2b1ec265da5087d8a5338336a4a5fa"
+  }
+}
