@@ -55,8 +55,8 @@ function useRatingSummary(username: string | undefined, enabled: boolean) {
   return enabled && result?.username === username ? result?.summary : undefined;
 }
 
-export function PlayerProfileCard({username,name,avatar,cover:banner,showRating=true,showTotal=true,boardRating,ratingCard}: {
-  username?: string; name: string; avatar?: string; cover?: string; showRating?: boolean;
+export function PlayerProfileCard({username,name,avatar,highResolutionAvatar,cover:banner,showRating=true,showTotal=true,boardRating,ratingCard}: {
+  username?: string; name: string; avatar?: string; highResolutionAvatar?: string; cover?: string; showRating?: boolean;
   showTotal?: boolean; boardRating?: BoardRating; ratingCard?: Th09RatingCard | null;
 }) {
   const {t,locale} = useLocale();
@@ -69,10 +69,25 @@ export function PlayerProfileCard({username,name,avatar,cover:banner,showRating=
     ?? details?.characters ?? favorites ?? [] : [];
   const total = showRating && showTotal ? ratingCard?.rating ?? (scores ? boardRating?.rating : details?.total) : undefined;
   const number = new Intl.NumberFormat(locale);
+  const [decodedAvatar, setDecodedAvatar] = useState<string>();
+  useEffect(() => {
+    if (!highResolutionAvatar || highResolutionAvatar === avatar) return;
+    let active = true;
+    const image = new Image();
+    image.src = highResolutionAvatar;
+    void image.decode().then(() => {
+      if (active) setDecodedAvatar(highResolutionAvatar);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [avatar, highResolutionAvatar]);
   return <article className="player-profile-card" aria-label={name}>
     <header className="player-profile-card-identity">
       <ProfileCover className="player-profile-card-cover" src={banner && dataImage.test(banner) ? banner : undefined}/>
-      <AccountAvatar src={avatar}/>
+      <div className="player-profile-card-avatar">
+        <AccountAvatar src={avatar}/>
+        {decodedAvatar && decodedAvatar === highResolutionAvatar &&
+          <img className="player-profile-card-avatar-detail" src={decodedAvatar} alt=""/>}
+      </div>
       <div className="player-profile-card-name"><h3>{name}</h3>{username && <span>@{username}</span>}</div>
       {username && <Button variant="ghost" size="sm" className="player-profile-card-home" asChild>
         <a href={withUiLanguage('/u/'+encodeURIComponent(username),locale)} target="_blank" rel="noopener">
@@ -110,7 +125,7 @@ function PlayerCardDetails({username,name,avatar,boardRating,ratingCard}: {
   }, [username]);
   const visibility = profile && normalizeProfileDisplay(profile.details?.display).visible;
   return <PlayerProfileCard username={username} name={profile?.nickname || name} cover={profile?.details?.cover}
-    avatar={profile?.details?.avatar || avatar} boardRating={boardRating} ratingCard={ratingCard}
+    avatar={avatar} highResolutionAvatar={profile?.details?.avatar} boardRating={boardRating} ratingCard={ratingCard}
     showRating={visibility?.versus ?? true} showTotal={visibility?.records ?? !!(boardRating || ratingCard)}/>;
 }
 
