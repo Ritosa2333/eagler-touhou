@@ -1277,5 +1277,595 @@
     "driverSha256": "ab42fef98a89de5bdafac1dbc35fd777c9f8b195b80cad741326625bedd6fda5",
     "silent": true,
     "completeGame": false
+  },
+  "marisabNativeTrajectory": {
+    "schema": "th14/marisab-native-trajectory/1",
+    "evidenceAuditPassed": true,
+    "inputSha256": "e452a97814aecdb9480540761dfaed979c865be62d57a32a616720a6114913af",
+    "actualOriginalWindowsProcess": true,
+    "intactInput": true,
+    "unchangedOtherArchiveEntries": 226,
+    "originalInstructionBytesPatched": 0,
+    "rngOrCounterWrites": 0,
+    "attractFlagClearOnly": {
+      "name": "declared warm replay case",
+      "address": 5200056,
+      "beforeFlags": 64,
+      "afterFlags": 0,
+      "attractBitClearOnly": true,
+      "gameplayRngOrHealthOrInputOrCounterWrites": false
+    },
+    "callbacks": 37279,
+    "elapsedSeconds": 663.3271838999353,
+    "terminal": {
+      "stage": 3,
+      "controlFrame": 4886,
+      "score": 181581410,
+      "lives": 4294967295,
+      "stableMenuSamples": 3
+    },
+    "plannedStage4BoundaryReached": false,
+    "plannedLateBulletSnapshotsReached": false,
+    "originalCompletedFullReplay": false,
+    "unprotectedProviderMatchesObservedNative": {
+      "schema": "th14/stage-trajectory-comparison/1",
+      "auditCompleted": true,
+      "stage": 3,
+      "pairedStageFrames": 4886,
+      "frameRange": [
+        1,
+        4886
+      ],
+      "nativeCallbacks": 37279,
+      "portCallbacks": 4886,
+      "nativeDuplicateStageFrameKeys": 149,
+      "portDuplicateStageFrameKeys": 0,
+      "pairing": "last occurrence of stage/control frame, diagnostic only; raw tapes unchanged",
+      "firstObservableDifference": null,
+      "firstByField": {
+        "scriptSeed": {
+          "controlFrame": 1,
+          "nativeCallback": 32394,
+          "portCallback": 1,
+          "native": 64968,
+          "port": 56432
+        },
+        "scriptCalls": {
+          "controlFrame": 1,
+          "nativeCallback": 32394,
+          "portCallback": 1,
+          "native": 2348678,
+          "port": 1360
+        }
+      },
+      "differenceCounts": {
+        "scriptSeed": 4886,
+        "scriptCalls": 4886
+      },
+      "firstGrazeWindow": [],
+      "nativeCaptureBoundaryReached": false,
+      "portRequestedBoundaryPassed": false,
+      "portOriginalAssertionRetained": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n3 !== 4\n\n    at file:///H:/code/thp/tools/th14-check-marisab-stage3-replay-nov14.mjs:83:46",
+      "nativeInputSha256": "e452a97814aecdb9480540761dfaed979c865be62d57a32a616720a6114913af",
+      "portInputSha256": "e452a97814aecdb9480540761dfaed979c865be62d57a32a616720a6114913af",
+      "nativeTapeSha256": "c16da439a7f3875ec4454546ab25351273bfb5947afe0630c16a769adf19345a",
+      "portTapeSha256": "abb5d1d65ae309ee884048d7f7d958d6dc700c99956f5a241c66d4a4da89b6bf",
+      "nativeReportSha256": "85cb9a01f168dd9f7980faa4f4d113e44d98b42730b1fee22732665f47e7d1f0",
+      "portReportSha256": "a277f0670f17d4aec359341755264b0d810a28103a0781010703f79a14b1499a",
+      "originalInstructionBytesPatched": 0,
+      "runtimeReferenceFeedback": false,
+      "silent": true,
+      "allModesAccepted": false,
+      "fullGpuAccepted": false,
+      "completeGame": false,
+      "toolSha256": "7953027887edd88e23db61aaff7e6cfe06153cc216bc22df160b0c544c10e64f"
+    },
+    "protectedProviderComparison": {
+      "schema": "th14/stage-trajectory-comparison/1",
+      "auditCompleted": true,
+      "stage": 3,
+      "pairedStageFrames": 4886,
+      "frameRange": [
+        1,
+        4886
+      ],
+      "nativeCallbacks": 37279,
+      "portCallbacks": 17712,
+      "nativeDuplicateStageFrameKeys": 149,
+      "portDuplicateStageFrameKeys": 0,
+      "pairing": "last occurrence of stage/control frame, diagnostic only; raw tapes unchanged",
+      "firstObservableDifference": {
+        "field": "scoreUnits",
+        "controlFrame": 2172,
+        "nativeCallback": 34565,
+        "portCallback": 2172,
+        "native": 17248777,
+        "port": 17248778
+      },
+      "firstByField": {
+        "scriptSeed": {
+          "controlFrame": 1,
+          "nativeCallback": 32394,
+          "portCallback": 1,
+          "native": 64968,
+          "port": 56432
+        },
+        "scriptCalls": {
+          "controlFrame": 1,
+          "nativeCallback": 32394,
+          "portCallback": 1,
+          "native": 2348678,
+          "port": 1360
+        },
+        "visualSeed": {
+          "controlFrame": 2171,
+          "nativeCallback": 34564,
+          "portCallback": 2171,
+          "native": 2011,
+          "port": 64502
+        },
+        "visualCalls": {
+          "controlFrame": 2171,
+          "nativeCallback": 34564,
+          "portCallback": 2171,
+          "native": 3970,
+          "port": 3972
+        },
+        "scoreUnits": {
+          "controlFrame": 2172,
+          "nativeCallback": 34565,
+          "portCallback": 2172,
+          "native": 17248777,
+          "port": 17248778
+        },
+        "enemies": {
+          "controlFrame": 2180,
+          "nativeCallback": 34573,
+          "portCallback": 2180,
+          "native": 5,
+          "port": 4
+        },
+        "playerShots": {
+          "controlFrame": 2188,
+          "nativeCallback": 34581,
+          "portCallback": 2188,
+          "native": 22,
+          "port": 21
+        },
+        "pointValue": {
+          "controlFrame": 2280,
+          "nativeCallback": 34673,
+          "portCallback": 2280,
+          "native": 7891100,
+          "port": 7891300
+        },
+        "graze": {
+          "controlFrame": 2288,
+          "nativeCallback": 34681,
+          "portCallback": 2288,
+          "native": 23027,
+          "port": 23028
+        },
+        "lifeState": {
+          "controlFrame": 2343,
+          "nativeCallback": 34736,
+          "portCallback": 2343,
+          "native": 4,
+          "port": 1
+        },
+        "stateTimer": {
+          "controlFrame": 2343,
+          "nativeCallback": 34736,
+          "portCallback": 2343,
+          "native": 0,
+          "port": 2342
+        },
+        "invincibility": {
+          "controlFrame": 2343,
+          "nativeCallback": 34736,
+          "portCallback": 2343,
+          "native": 6,
+          "port": 0
+        },
+        "x": {
+          "controlFrame": 2344,
+          "nativeCallback": 34737,
+          "portCallback": 2344,
+          "native": 22168,
+          "port": 21716
+        },
+        "y": {
+          "controlFrame": 2344,
+          "nativeCallback": 34737,
+          "portCallback": 2344,
+          "native": 20132,
+          "port": 19680
+        },
+        "shotTimer": {
+          "controlFrame": 2344,
+          "nativeCallback": 34737,
+          "portCallback": 2344,
+          "native": 13,
+          "port": 14
+        },
+        "lives": {
+          "controlFrame": 2352,
+          "nativeCallback": 34745,
+          "portCallback": 2352,
+          "native": 1,
+          "port": 2
+        },
+        "power": {
+          "controlFrame": 2355,
+          "nativeCallback": 34748,
+          "portCallback": 2355,
+          "native": 350,
+          "port": 400
+        },
+        "weaponMode": {
+          "controlFrame": 2358,
+          "nativeCallback": 34751,
+          "portCallback": 2358,
+          "native": 0,
+          "port": 1
+        },
+        "bombs": {
+          "controlFrame": 2382,
+          "nativeCallback": 34775,
+          "portCallback": 2382,
+          "native": 3,
+          "port": 0
+        },
+        "lifeFragments": {
+          "controlFrame": 2438,
+          "nativeCallback": 34831,
+          "portCallback": 2438,
+          "native": 2,
+          "port": 0
+        },
+        "bombFragments": {
+          "controlFrame": 3703,
+          "nativeCallback": 36096,
+          "portCallback": 3703,
+          "native": 6,
+          "port": 7
+        }
+      },
+      "differenceCounts": {
+        "scriptSeed": 4886,
+        "scriptCalls": 4886,
+        "visualSeed": 2614,
+        "visualCalls": 2614,
+        "scoreUnits": 2661,
+        "enemies": 1524,
+        "playerShots": 2057,
+        "pointValue": 2590,
+        "graze": 2462,
+        "lifeState": 312,
+        "stateTimer": 2544,
+        "invincibility": 1003,
+        "x": 2505,
+        "y": 2543,
+        "shotTimer": 1888,
+        "lives": 2535,
+        "power": 2532,
+        "weaponMode": 65,
+        "bombs": 1672,
+        "lifeFragments": 2449,
+        "bombFragments": 1184
+      },
+      "firstGrazeWindow": [
+        {
+          "frame": 2284,
+          "nativeCallback": 34677,
+          "portCallback": 2284,
+          "native": {
+            "movementHeld": 65,
+            "movementPressed": 0,
+            "x": 16144,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248857,
+            "graze": 23027,
+            "pointValue": 7892100,
+            "enemies": 5,
+            "playerShots": 22
+          },
+          "port": {
+            "movementHeld": 65,
+            "movementPressed": 0,
+            "x": 16144,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248860,
+            "graze": 23027,
+            "pointValue": 7892100,
+            "enemies": 5,
+            "playerShots": 22
+          }
+        },
+        {
+          "frame": 2285,
+          "nativeCallback": 34678,
+          "portCallback": 2285,
+          "native": {
+            "movementHeld": 65,
+            "movementPressed": 0,
+            "x": 15504,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248858,
+            "graze": 23027,
+            "pointValue": 7892100,
+            "enemies": 5,
+            "playerShots": 20
+          },
+          "port": {
+            "movementHeld": 65,
+            "movementPressed": 0,
+            "x": 15504,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248861,
+            "graze": 23027,
+            "pointValue": 7892100,
+            "enemies": 5,
+            "playerShots": 20
+          }
+        },
+        {
+          "frame": 2286,
+          "nativeCallback": 34679,
+          "portCallback": 2286,
+          "native": {
+            "movementHeld": 1,
+            "movementPressed": 0,
+            "x": 14864,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248859,
+            "graze": 23027,
+            "pointValue": 7892100,
+            "enemies": 5,
+            "playerShots": 20
+          },
+          "port": {
+            "movementHeld": 1,
+            "movementPressed": 0,
+            "x": 14864,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248862,
+            "graze": 23027,
+            "pointValue": 7892100,
+            "enemies": 5,
+            "playerShots": 20
+          }
+        },
+        {
+          "frame": 2287,
+          "nativeCallback": 34680,
+          "portCallback": 2287,
+          "native": {
+            "movementHeld": 1,
+            "movementPressed": 0,
+            "x": 14864,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248859,
+            "graze": 23027,
+            "pointValue": 7892100,
+            "enemies": 5,
+            "playerShots": 19
+          },
+          "port": {
+            "movementHeld": 1,
+            "movementPressed": 0,
+            "x": 14864,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248862,
+            "graze": 23027,
+            "pointValue": 7892100,
+            "enemies": 5,
+            "playerShots": 19
+          }
+        },
+        {
+          "frame": 2288,
+          "nativeCallback": 34681,
+          "portCallback": 2288,
+          "native": {
+            "movementHeld": 1,
+            "movementPressed": 0,
+            "x": 14864,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248860,
+            "graze": 23027,
+            "pointValue": 7892100,
+            "enemies": 5,
+            "playerShots": 18
+          },
+          "port": {
+            "movementHeld": 1,
+            "movementPressed": 0,
+            "x": 14864,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248863,
+            "graze": 23028,
+            "pointValue": 7892200,
+            "enemies": 4,
+            "playerShots": 18
+          }
+        },
+        {
+          "frame": 2289,
+          "nativeCallback": 34682,
+          "portCallback": 2289,
+          "native": {
+            "movementHeld": 1,
+            "movementPressed": 0,
+            "x": 14864,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248860,
+            "graze": 23027,
+            "pointValue": 7892100,
+            "enemies": 5,
+            "playerShots": 18
+          },
+          "port": {
+            "movementHeld": 1,
+            "movementPressed": 0,
+            "x": 14864,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248863,
+            "graze": 23028,
+            "pointValue": 7892200,
+            "enemies": 4,
+            "playerShots": 18
+          }
+        },
+        {
+          "frame": 2290,
+          "nativeCallback": 34683,
+          "portCallback": 2290,
+          "native": {
+            "movementHeld": 1,
+            "movementPressed": 0,
+            "x": 14864,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248861,
+            "graze": 23028,
+            "pointValue": 7892200,
+            "enemies": 5,
+            "playerShots": 16
+          },
+          "port": {
+            "movementHeld": 1,
+            "movementPressed": 0,
+            "x": 14864,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248864,
+            "graze": 23028,
+            "pointValue": 7892200,
+            "enemies": 3,
+            "playerShots": 16
+          }
+        },
+        {
+          "frame": 2291,
+          "nativeCallback": 34684,
+          "portCallback": 2291,
+          "native": {
+            "movementHeld": 1,
+            "movementPressed": 0,
+            "x": 14864,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248862,
+            "graze": 23028,
+            "pointValue": 7892200,
+            "enemies": 4,
+            "playerShots": 16
+          },
+          "port": {
+            "movementHeld": 1,
+            "movementPressed": 0,
+            "x": 14864,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248864,
+            "graze": 23028,
+            "pointValue": 7892200,
+            "enemies": 3,
+            "playerShots": 16
+          }
+        },
+        {
+          "frame": 2292,
+          "nativeCallback": 34685,
+          "portCallback": 2292,
+          "native": {
+            "movementHeld": 1,
+            "movementPressed": 0,
+            "x": 14864,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248862,
+            "graze": 23029,
+            "pointValue": 7892300,
+            "enemies": 4,
+            "playerShots": 17
+          },
+          "port": {
+            "movementHeld": 1,
+            "movementPressed": 0,
+            "x": 14864,
+            "y": 30788,
+            "lifeState": 1,
+            "invincibility": 0,
+            "scoreUnits": 17248864,
+            "graze": 23029,
+            "pointValue": 7892300,
+            "enemies": 3,
+            "playerShots": 17
+          }
+        }
+      ],
+      "nativeCaptureBoundaryReached": false,
+      "nativeInputSha256": "e452a97814aecdb9480540761dfaed979c865be62d57a32a616720a6114913af",
+      "portInputSha256": "e452a97814aecdb9480540761dfaed979c865be62d57a32a616720a6114913af",
+      "nativeTapeSha256": "c16da439a7f3875ec4454546ab25351273bfb5947afe0630c16a769adf19345a",
+      "portTapeSha256": "b13c2eee91d2f02a09f7ef78e5390df56665e548ec02dfa466664ce25076113e",
+      "nativeReportSha256": "85cb9a01f168dd9f7980faa4f4d113e44d98b42730b1fee22732665f47e7d1f0",
+      "portReportSha256": "29208b358a299158dcacdde0bc900bd268ab32ae0a7608d12f5f4b34243ea867",
+      "originalInstructionBytesPatched": 0,
+      "runtimeReferenceFeedback": false,
+      "silent": true,
+      "allModesAccepted": false,
+      "fullGpuAccepted": false,
+      "completeGame": false,
+      "toolSha256": "3d3e6adf66c92b72fae61e4c0a8ae05dac78aed410da1f5cf1605ca9cdf71dcf"
+    },
+    "singleChangedRuntimeProvider": "ShotCallbacksTh14.cpp",
+    "guardChangesObservableGameplay": true,
+    "scriptRngDifferenceIsNotAnIndependentFailure": true,
+    "wrapperFailureRetained": "Launch-time runner used error is None although observer success is empty string. Original report has no error/debug exception; no capture restart or report edit.",
+    "baselineDriverFailureRetained": "The bounded replay driver expected stage4, but the unprotected variant naturally ended at stage3. Original failed report retained; tape comparison explicitly permits this declared natural-end diagnostic.",
+    "artifactBindings": {
+      "artifacts/th14/current-concurrent-mixer-nov14/marisab-native-trajectory/native/report.json": "85cb9a01f168dd9f7980faa4f4d113e44d98b42730b1fee22732665f47e7d1f0",
+      "artifacts/th14/current-concurrent-mixer-nov14/marisab-native-trajectory/native/selected-state.u32": "c16da439a7f3875ec4454546ab25351273bfb5947afe0630c16a769adf19345a",
+      "artifacts/th14/current-concurrent-mixer-nov14/marisab-native-trajectory/native/untouched-first-player.json": "a42264132b65a4b46132e64cc50e2c1da86b95382eea4d53ce4e5d9bf1668b79",
+      "artifacts/th14/current-concurrent-mixer-nov14/marisab-stage3-replay/baseline/report.json": "a277f0670f17d4aec359341755264b0d810a28103a0781010703f79a14b1499a",
+      "artifacts/th14/current-concurrent-mixer-nov14/marisab-stage3-replay/baseline/selected-state.u32": "abb5d1d65ae309ee884048d7f7d958d6dc700c99956f5a241c66d4a4da89b6bf"
+    },
+    "nativeProductionCorrectionChosen": false,
+    "runtimeSourceModified": false,
+    "productionChanged": false,
+    "silent": true,
+    "completeGame": false
   }
 }
