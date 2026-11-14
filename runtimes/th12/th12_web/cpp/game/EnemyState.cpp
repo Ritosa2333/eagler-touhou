@@ -247,8 +247,8 @@ double EnemyGlobals::floating(i32 id){
     case -9997:case -9977:return enemy.current.position.x;case -9996:case -9976:return enemy.current.position.y;
     case -9995:case -9975:return enemy.absolute.position.x;case -9994:case -9974:return enemy.absolute.position.y;
     case -9993:case -9973:return enemy.relative.position.x;case -9992:case -9972:return enemy.relative.position.y;
-    case -9991:case -9965:return environment.player_position.x;case -9990:case -9964:return environment.player_position.y;
-    case -9989:return player_aim_angle(enemy.current.position,environment.player_position);
+    case -9991:case -9965:return environment.aim_at(enemy.current.position).x;case -9990:case -9964:return environment.aim_at(enemy.current.position).y;
+    case -9989:return player_aim_angle(enemy.current.position,environment.aim_at(enemy.current.position));
     // TH14 42b352 reads enemy+14b4: phase timer fractional, not lifetime.
     case -9988:return kPortTitle==14?enemy.timer_2bc.fractional:enemy.lifetime.fractional;
     case -9986:return (enemy.flags>>(kPortTitle==14?24:20))&1;
@@ -259,8 +259,8 @@ double EnemyGlobals::floating(i32 id){
     case -9962:return environment.boss?environment.boss->current.position.y:0;
     case -9960:return environment.rank;case -9959:return environment.difficulty;
     case -9958:return float(std::atan2(double(enemy.current.velocity.y),double(enemy.current.velocity.x)));
-    case -9957:return 1;case -9956:return player_aim_angle(enemy.absolute.position,environment.player_position);
-    case -9955:return player_aim_angle(enemy.relative.position,environment.player_position);case -9954:return enemy.health;
+    case -9957:return 1;case -9956:return player_aim_angle(enemy.absolute.position,environment.aim_at(enemy.absolute.position));
+    case -9955:return player_aim_angle(enemy.relative.position,environment.aim_at(enemy.relative.position));case -9954:return enemy.health;
     case -9953:case -9952:case -9951:case -9950:return environment.difficulty==id+9953;
     case -9946:return environment.enemy_count;
     case -9945:
@@ -268,7 +268,7 @@ double EnemyGlobals::floating(i32 id){
         if(environment.th14_practice_fake_type)return environment.character*2+environment.th14_practice_fake_type-1;
 #endif
         return signed_bits(u32(environment.character)*2+u32(environment.subtype));
-    case -9944:return position_distance(enemy.current.position,environment.player_position);
+    case -9944:return position_distance(enemy.current.position,environment.aim_at(enemy.current.position));
     default:return 0;
     }
 }

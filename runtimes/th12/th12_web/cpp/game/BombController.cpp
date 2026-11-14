@@ -42,7 +42,12 @@ bool BombController::body(i32 script){
 #endif
     return bound&&player.motion.body.update(animations)>=0;
 }
-void BombController::invincible(i32 frames){player.state.invincibility.set(frames,&animations.rate);}
+void BombController::invincible(i32 frames){
+    player.state.invincibility.set(frames,&animations.rate);
+#if PORT_TITLE == 14
+    world.th14_bomb_invincibility(frames);
+#endif
+}
 bool BombController::fail_spell(){auto& spell=player.spell;if(spell.flags&1){if(spell.elapsed>=60){spell.bonus=0;spell.flags&=~0x22u;}else if(state.active&&(kPortTitle==14||selection!=5))spell.flags|=0x20;}return true;}
 void BombController::interrupt(u32 id,i16 label){if(auto* vm=animations.find(id))for(auto* n=&vm->child;n;n=n->next)n->value->interrupt(label);}
 AnmVm* BombController::child(i32 script){auto* vm=animations.find(state.animation);if(!vm){state.animation=0;return nullptr;}for(auto* n=&vm->child;n;n=n->next)if(n->value->script_index==script)return n->value;return nullptr;}
@@ -135,6 +140,17 @@ i32 BombController::start(){
     }
     auto& count=world.bomb_count();count=wrapping_add(count,1);return 0;
 }
+#if PORT_TITLE == 14
+void BombController::clear_coop(){
+    EnemyAnimations helper(animations);
+    helper.erase(state.animation);
+    helper.erase(state.auxiliary);
+    for(auto& orb:th14_orbs)helper.erase(orb.animation);
+    clear_mesh();state={};th14_orbs={};th14_orbs_allocated=th14_reimu_allocated=false;
+    th14_reimu_areas.fill(256);player.th14_scale.flags&=~12u;
+    player.motion.state.th14_movement_factor=1;
+}
+#endif
 i32 BombController::tick(){
     AnmVm* vm=nullptr;
     if(kPortTitle!=14||selection!=4||!state.th14_mode){vm=animations.find(state.animation);if(!vm)state.animation=0;}
@@ -238,10 +254,13 @@ i32 BombController::tick(){
                 const i32 t=state.elapsed.current;if(t<60)player.motion.state.th14_movement_factor=0;else if(t==120)state.active=2;
                 if(t==720||world.th14_bomb_dialogue()){
                     if(!sound(47,true))return -2;EnemyAnimations helper(animations);helper.erase(state.animation);state.animation=0;player.th14_scale.flags&=~8u;
-                    Vec3 p=state.position;p.x-=16.f;p.y-=64.f;p.z=0;
-                    if(!world.th14_bomb_item(6,p,-1.5707963705062866f,2.200000047683716f))return -2;
-                    p.x+=32.f;if(!world.th14_bomb_item(6,p,-1.5707963705062866f,2.200000047683716f))return -2;
-                    p.x-=16.f;p.y-=32.f;if(!world.th14_bomb_item(6,p,-1.5707963705062866f,2.200000047683716f))return -2;return -1;
+                    const auto count=world.th14_shield_refund();
+                    constexpr float offsets[]={-16.f,16.f,0.f};
+                    for(u32 n=0;n<count;++n){
+                        const Vec3 p{state.position.x+(count==1?0.f:offsets[n]),state.position.y-(n==2?96.f:64.f),0};
+                        if(!world.th14_bomb_item(6,p,-1.5707963705062866f,2.200000047683716f))return -2;
+                    }
+                    return -1;
                 }
                 if(t<=720){vm->flags|=8;vm->scale.x=1.f-(state.elapsed.fractional/720.f)*.8999999761581421f;}
                 return cancel_auxiliary()?0:-2;
@@ -282,7 +301,7 @@ i32 BombController::tick(){
     }
     if(selection==3){
         if(!vm)return -1;
-        if(state.elapsed.current>90){interrupt(state.animation,1);mesh.reset();return -1;}
+        if(state.elapsed.current>90){interrupt(state.animation,1);clear_mesh();return -1;}
         update_distortion();return world.bomb_cancel_beam(state.position,!(player.spell.flags&1))?0:-2;
     }
     if(selection==5){
@@ -312,7 +331,7 @@ i32 BombController::tick(){
         }
         return 0;
     }
-    invincible(40);if(!vm){if(selection==2)mesh.reset();return -1;}
+    invincible(40);if(!vm){if(selection==2)clear_mesh();return -1;}
     if(selection==2){
         state.position=player.motion.state.position;EnemyAnimations helper(animations);helper.position(state.animation,state.position,true);
         if(!world.bomb_cancel(state.position,state.radius,!(player.spell.flags&1),false))return -2;
@@ -378,7 +397,7 @@ Vec3 BombController::th14_raw_position(const AnmVm& vm)const{
     }return p;
 }
 bool BombController::create_distortion(){
-    if(!text_resource)return false;mesh=std::make_unique<ScreenDeformation>(animations);
+    if(!text_resource)return false;clear_mesh();mesh=std::make_unique<ScreenDeformation>(animations);
     if(selection==2){
         if(!mesh->initialize(*text_resource,13,13))return false;
         mesh->rectangle(float(double(state.position.x)-17),float(double(state.position.y)-17),34,34);

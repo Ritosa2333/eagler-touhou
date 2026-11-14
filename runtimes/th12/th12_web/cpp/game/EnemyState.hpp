@@ -173,6 +173,8 @@ struct EnemyState {
     Th14WaveMovement th14_absolute_wave{},th14_relative_wave{}; // Native movement +c..14 and +30.
     struct Th14PositionModes {i32 axis[3];u32 flags;};
     Th14PositionModes th14_absolute_position_modes{},th14_relative_position_modes{}; // Native position band +54..64.
+    mutable u32 th14_coop_damage_remainder=0;
+    std::array<float,3> th14_coop_knife_slowdown{};
 #endif
     u32& animation_handle(u32 slot)noexcept{
 #if PORT_TITLE == 14 || PORT_TITLE == 16
@@ -227,10 +229,14 @@ static_assert(offsetof(EnemyState,script_owner)==0x1630);
 // and it is a member for the same reason indexed_values is.
 // The two native triples at +0x3dd8/+0x3e98 (0x180) replace the two role-named arrays the port
 // used to keep in their place, and 0x2be's 0x354-byte request is the only new storage.
-static_assert(sizeof(EnemyState)==0x16b8+0x140+4+0x9c+(kPortTitle==14?500+0x39c0+0x374+12+64:kPortTitle==16?148+4*sizeof(FloatInterpolator)+sizeof(Timer)+1024+0x39c0:0));
-static_assert(sizeof(Enemy)==0x26f4+0x140+4+0x9c+sizeof(EclContext)-0x1024+(kPortTitle==14?500+0x39c0+0x374+12+64:kPortTitle==16?148+4*sizeof(FloatInterpolator)+sizeof(Timer)+1024+0x39c0:0));
+constexpr std::size_t th14_enemy_extension=500+0x39c0+0x374+12+68+sizeof(std::array<float,3>);
+static_assert(sizeof(EnemyState)==0x16b8+0x140+4+0x9c+(kPortTitle==14?th14_enemy_extension:kPortTitle==16?148+4*sizeof(FloatInterpolator)+sizeof(Timer)+1024+0x39c0:0));
+static_assert(sizeof(Enemy)==0x26f4+0x140+4+0x9c+sizeof(EclContext)-0x1024+(kPortTitle==14?th14_enemy_extension:kPortTitle==16?148+4*sizeof(FloatInterpolator)+sizeof(Timer)+1024+0x39c0:0));
 struct EnemyEnvironment {
     Rng random;float rate=1;Vec3 player_position,camera_delta;
+    Vec3 (*th14_aim)(Vec3,void*)=nullptr;
+    void* th14_aim_user=nullptr;
+    Vec3 aim_at(Vec3 origin)const{return th14_aim?th14_aim(origin,th14_aim_user):player_position;}
     i32 rank=0,difficulty=0,character=0,subtype=0,shared_integers[3]{},enemy_count=0;
 #if PORT_TITLE == 14
     u32 th14_practice_tools=0;

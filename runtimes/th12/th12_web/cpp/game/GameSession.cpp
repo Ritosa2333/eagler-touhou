@@ -320,6 +320,10 @@ void GameSession::reset_state(bool retain_transition) noexcept {
     title_manual.reset();
 #endif
     pause_menu.reset();menu_input={};
+#if defined(TH14_MULTIPLAYER)
+    room_menu={};
+    room_restart_requested=false;
+#endif
 #if PORT_TITLE == 14
     if(title&&retain_title_animations){
         // Title45982f calls47f140(handle[261],1): its ASCII19 root and
@@ -455,7 +459,8 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
     // 435da5..435e17, after the player has installed its live step.
     if(!replay&&!(resources.effects&&resources.effects->initial_cpp_worker_enabled())){
         const auto& shot=resources.core.shots[shot_file_slot(u32(character),u32(subtype))].header;
-        economy.power=std::min(stage==1&&state.spell_practice_id<0?100:400,shot.max_power_level*100);
+        const i32 max_level=coop_seats>1?4:shot.max_power_level;
+        economy.power=std::min(stage==1&&state.spell_practice_id<0?100:400,max_level*100);
     }
 #else
     if(!replay&&stage>=2&&stage<=6){const auto& shot=resources.core.shots[shot_file_slot(u32(character),u32(subtype))].header;economy.power=shot.max_power_level*(kPortTitle==16?100:shot.power_step);}
@@ -657,6 +662,7 @@ bool GameSession::activate_stage(){
     battle->replaying=state.replay;battle->demo=state.demo;battle->replay_entry=entry;
 #if PORT_TITLE == 14
     battle->on_game_over=[this](bool replay){
+        if(coop_seats>1){state.phase=GameSessionPhase::finished;return true;}
         if(replay)return !interactive||pause();
         return open_result(false);
     };
@@ -686,6 +692,9 @@ bool GameSession::activate_stage(){
         battle.reset();
         return false;
     }
+#if PORT_TITLE == 14
+    if(coop_seats>1&&!battle->setup_coop(coop_loadouts,coop_seats,coop_viewer))return fail(battle->error.c_str());
+#endif
 #if PORT_TITLE == 14
     constexpr i32 minimum[]={1000000,1000000,1000000,1000000,1000000};
 #else
@@ -788,19 +797,21 @@ bool GameSession::update(const GameSessionInput& input) {
         if(title->replay_start_requested){auto entry=title->replay_files[title->replay_file];last_replay_file=title->replay_file;const u32 stage=title->replay_stage+1;
             if(entry->file.empty()&&(!resources.effects||!resources.effects->read_replay(entry->path,entry->file)))return fail("selected replay could not be loaded");
             return finish_scene_switch(begin_replay(*source,entry->file.data(),u32(entry->file.size()),stage));}
+#ifndef __EMSCRIPTEN__
         if(title_idle>=1800){
             const DemoPlaylist playlist=demo_playlist();const auto path=std::string(playlist.names[demo_index<playlist.step?demo_index:0]);
             demo_index=(demo_index+1)%playlist.step;title_idle=0;std::vector<u8> bytes;
             if(!source->read(path,bytes))return fail("original demo resource missing");
             return finish_scene_switch(begin_replay(*source,bytes.data(),u32(bytes.size()),0,true));
         }
+#endif
     }
     if(state.phase==GameSessionPhase::loading)return true;
 #if PORT_TITLE == 14
     // Consume the preceding dialogue/HUD request at Supervisor1, before the
     // incoming callback pass. The loader is launched here, not at ANM29's tail.
     if(state.phase==GameSessionPhase::stage&&battle&&battle->completion.state.exit==StageExit::NextStage){
-        th14_stage_score_save(scores,spell_records,clear_records,[this](const std::vector<u8>& bytes){
+        if(coop_seats==1)th14_stage_score_save(scores,spell_records,clear_records,[this](const std::vector<u8>& bytes){
             return !resources.effects||resources.effects->write_stage_score(bytes);
         });
         const u32 next=u32(battle->completion.state.next_stage);
@@ -891,14 +902,19 @@ bool GameSession::update(const GameSessionInput& input) {
 #if PORT_TITLE == 14
     bool overlay_already_updated=initial_overlay_already_updated;
 #endif
-    const bool pause_edge=input.pause&&!last_pause;
+    bool pause_edge=input.pause&&!last_pause;
+#if defined(TH14_MULTIPLAYER)
+    const auto shared=room_menu.Update(input.room_menu_buttons,coop_seats);
+    if(coop_seats>1)pause_edge=(shared.pressed&256)!=0;
+#endif
     const bool confirm_edge=(edges.pressed&0x101u)!=0;
     last_held=input.held;
     last_pause=input.pause;
     if(state.phase==GameSessionPhase::ending){
         if(!ending)return fail("ending lifetime missing");
 #if PORT_TITLE == 14
-        const u32 raw=(input.held&~256u)|((input.held&256)?0x80000:0)|(input.pause?256:0);
+        const u32 held=input.held;
+        const u32 raw=(held&~256u)|((held&256)?0x80000:0)|(input.pause?256:0);
         if(!ending->dispatch(game_input,raw))return fail(ending->error.c_str());
 #else
         game_input.update((input.held&~256u)|((input.held&256)?0x80000:0));
@@ -923,12 +939,20 @@ bool GameSession::update(const GameSessionInput& input) {
     }
     if(state.phase==GameSessionPhase::paused||state.phase==GameSessionPhase::game_over){
         if(!pause_menu)return fail("pause menu lifetime missing");
-        menu_input.update((input.held&~256u)|((input.held&256)?0x80000:0)|(input.pause?256:0));
+        u32 pause_buttons=(input.held&~256u)|((input.held&256)?0x80000:0)|(input.pause?256:0);
+#if defined(TH14_MULTIPLAYER)
+        if(coop_seats>1)pause_buttons=shared.held;
+#endif
+        menu_input.update(pause_buttons);
 #if PORT_TITLE == 14
         // Retail47aac5 registers overlay8 before448080's menu9 callback.
         if(!animations.update(true))return fail("pause ANM update failed");
 #endif
-        if(!pause_menu->update(menu_input.pressed,menu_input.long_repeat))return fail(pause_menu->error.c_str());
+        u32 menu_pressed=menu_input.pressed;
+#if defined(TH14_MULTIPLAYER)
+        if(coop_seats>1)menu_pressed=shared.pressed;
+#endif
+        if(!pause_menu->update(menu_pressed,menu_input.long_repeat))return fail(pause_menu->error.c_str());
 #if PORT_TITLE == 14
         auto& menu=*pause_menu;
         if(menu.manual_requested&&menu.timer.current>=20&&!menu.manual_resource){
@@ -964,8 +988,16 @@ bool GameSession::update(const GameSessionInput& input) {
 #else
             return resume();
 #endif
-        case PauseAction::Title:return return_to_title();
-        case PauseAction::Restart:return restart_run(false);
+        case PauseAction::Title:
+#if PORT_TITLE == 14
+            if(coop_seats>1){state.phase=GameSessionPhase::finished;return true;}
+#endif
+            return return_to_title();
+        case PauseAction::Restart:
+#if defined(TH14_MULTIPLAYER)
+            if(coop_seats>1){room_restart_requested=true;return true;}
+#endif
+            return restart_run(false);
         case PauseAction::Continue:
 #if PORT_TITLE == 14
             if(!continue_run_th14())return false;
@@ -992,6 +1024,7 @@ bool GameSession::update(const GameSessionInput& input) {
         // Its state0 activation dispatches the first main-menu update later
         // in that callback. Our TitleMenu is constructed as Main, so its
         // first session frame must likewise leave the idle counter alone.
+#if PORT_TITLE != 14 || !defined(__EMSCRIPTEN__)
         if(title->screen==TitleScreen::Main&&(kPortTitle!=14||state.frame!=0)){++title_idle;if(raw
 #if PORT_TITLE == 14
             ||practice_input_captured
@@ -1011,6 +1044,7 @@ bool GameSession::update(const GameSessionInput& input) {
             }
 #endif
         }
+#endif
         game_input.update(raw);title->held=raw;
 #if PORT_TITLE == 14
         if(title_manual)title->manual_finished=title_manual->manual_finished;
@@ -1156,12 +1190,20 @@ bool GameSession::update(const GameSessionInput& input) {
             game_input.update(input.held,config.auto_focus());
 #endif
             edges.held=game_input.held;edges.pressed=game_input.pressed;edges.released=game_input.released;
-            if(battle->stage_active&&!recording_active){recording.finish_stage();if(!record_stage_entry(false))return false;}
+            if(
+#if PORT_TITLE == 14
+                coop_seats==1&&
+#endif
+                battle->stage_active&&!recording_active){recording.finish_stage();if(!record_stage_entry(false))return false;}
             const auto& motion=battle->player_input.movement;
 #if PORT_TITLE == 14
             recording.record_tools(economy.th14_practice_tools);
 #endif
-            if(!recording.tick(edges.held,edges.pressed,edges.released,input.recording_fps,motion.touch_mode,motion.touch_x,motion.touch_y))return fail("replay recording limit reached");
+            if(
+#if PORT_TITLE == 14
+                coop_seats==1&&
+#endif
+                !recording.tick(edges.held,edges.pressed,edges.released,input.recording_fps,motion.touch_mode,motion.touch_x,motion.touch_y))return fail("replay recording limit reached");
         }
 #if PORT_TITLE == 14
         if(animations.th14_native_stack.practice_laser){
@@ -1173,6 +1215,7 @@ bool GameSession::update(const GameSessionInput& input) {
         battle->enemy_environment.th14_practice_tools=economy.th14_practice_tools;
         edges.dialogue_skip_frames=game_input.held_frames[9];
         edges.dialogue_fire_frames=game_input.held_frames[0];
+        edges.coop=input.coop;
 #endif
         battle->set_input(edges);return true;
         }
@@ -1237,6 +1280,9 @@ bool GameSession::update(const GameSessionInput& input) {
         }
 #endif
         if(battle->game_over_requested){
+#if PORT_TITLE == 14
+            if(coop_seats>1)return true;
+#endif
             if(state.phase==GameSessionPhase::paused||state.phase==GameSessionPhase::game_over)return true;
             if(state.replay){
                 if(interactive){
@@ -1253,11 +1299,19 @@ bool GameSession::update(const GameSessionInput& input) {
 #if PORT_TITLE == 14
         if(battle->th14_spell_result_requested){if(state.replay){if(interactive)return return_to_title();state.phase=GameSessionPhase::finished;return true;}return open_result(true);}
 #endif
-        if(battle->completion.state.exit==StageExit::Results)return open_result(true);
+        if(battle->completion.state.exit==StageExit::Results){
+#if defined(TH14_MULTIPLAYER)
+            if(coop_seats>1){state.phase=GameSessionPhase::finished;return true;}
+#endif
+            return open_result(true);
+        }
 #if PORT_TITLE != 14
         if(battle->completion.state.exit==StageExit::Ending)return open_ending();
 #endif
         if(battle->completion.state.exit==StageExit::Title||battle->completion.state.exit==StageExit::ReplayEnd){
+#if defined(TH14_MULTIPLAYER)
+            if(coop_seats>1){state.phase=GameSessionPhase::finished;return true;}
+#endif
 #if PORT_TITLE == 14
             // The completion effect opened the forced menu at its actual
             // dialogue/HUD request, before normal ANM29 in this same pass.
@@ -1354,6 +1408,9 @@ bool GameSession::pause() {
 #if PORT_TITLE != 14
         animations.rate=1;
 #endif
+#if PORT_TITLE == 14
+        pause_menu->cooperative=coop_seats>1;
+#endif
         if(!pause_menu->begin(state.replay))return fail(pause_menu->error.c_str());
     }
     animations.rate=1;state.phase=GameSessionPhase::paused;
@@ -1393,12 +1450,52 @@ bool GameSession::open_result(bool completed){
     state.phase=GameSessionPhase::game_over;menu_input.update(last_held);return true;
 }
 
+#if defined(TH14_MULTIPLAYER)
+bool GameSession::open_room_ending(){
+    if(!battle||battle->completion.state.exit!=StageExit::Ending||coop_viewer>=coop_seats)
+        return fail("TH14 local ending requires a cleared multiplayer stage");
+    return open_ending();
+}
+bool GameSession::open_room_results(bool cleared){
+    if(!battle||coop_viewer>=coop_seats)return fail("TH14 multiplayer result requires a battle");
+    const auto& local=coop_loadouts[coop_viewer];
+    menu_selection.character=local.character;
+    menu_selection.partner=local.subtype;
+    menu_selection.difficulty=state.difficulty;
+    completed_score=th14_hud_load(battle->pilot_economy(coop_viewer).score_units);
+    completed_continues=battle->hud.score.continues;
+    room_result_stage=cleared?8:i32(state.stage);
+    completed_run=true;
+    return open_results();
+}
+#endif
+
 bool GameSession::open_ending(){
     if(!source||!battle||state.replay)return fail("ending requires a completed live game");
     completed_score=th14_hud_load(economy.score_units);completed_continues=battle->hud.score.continues;
-    recording.spell_times(battle->spell_timing.records);if(!recording.finish_stage(true))return fail("completed recording finalization failed");
+    if(
+#if PORT_TITLE == 14
+        coop_seats==1
+#else
+        true
+#endif
+    ){recording.spell_times(battle->spell_timing.records);if(!recording.finish_stage(true))return fail("completed recording finalization failed");}
+#if defined(TH14_MULTIPLAYER)
+    const u32 cleared_stage=state.stage;
+#endif
     menu_selection.character=state.character;menu_selection.partner=state.subtype;menu_selection.difficulty=state.difficulty;
+#if defined(TH14_MULTIPLAYER)
+    if(coop_seats>1){
+        const auto& local=coop_loadouts[coop_viewer];
+        menu_selection.character=local.character;menu_selection.partner=local.subtype;
+        completed_score=th14_hud_load(battle->pilot_economy(coop_viewer).score_units);
+        room_result_stage=8;
+    }
+#endif
     scores.write_records(spell_records,clear_records);reset_state();completed_run=true;
+#if defined(TH14_MULTIPLAYER)
+    if(coop_seats>1)state.stage=cleared_stage;
+#endif
     if(!initialize_compositor())return fail("ending compositor initialization failed");
     reset_compositor_cameras(false);animations.rate=1;
     ending=std::make_unique<Ending>(animations,resources.core.text,scores);
@@ -1406,13 +1503,15 @@ bool GameSession::open_ending(){
     ending->effects=resources.effects;
 #endif
     if(!ending->begin(*source,menu_selection.character*2+menu_selection.partner,menu_selection.difficulty,completed_continues))return fail(ending->error.c_str());
+#if defined(TH14_MULTIPLAYER)
+    if(coop_seats>1)ending->seen=0;
+#endif
     if(resources.effects)for(auto& entry:ending->resources)if(!resources.effects->prepare_animation(entry.second))return fail("ending texture preparation failed");
     state.phase=GameSessionPhase::ending;return true;
 }
 bool GameSession::open_results(){
     if(!source||!completed_run)return fail("completed game metadata missing");
-    if(!open_title(*source,false,TitleScreen::Results))return false;
-    title->flags=0;title->result_score=completed_score;title->result_continues=completed_continues;title->result_timestamp=recording_timestamp;return true;
+    return open_title(*source,false,TitleScreen::Results);
 }
 
 bool GameSession::restart_run(bool continuation){
@@ -1517,9 +1616,22 @@ bool GameSession::activate_title(GameResources& data,bool first,TitleScreen scre
         animations.retire_resource(*file);
 #endif
     title=std::make_unique<TitleMenu>(animations,resources.core.title,resources.core.title_variant,resources.core.ascii,scores);
+#if defined(TH14_MULTIPLAYER)
+    title->room_preview=room_title_preview;
+#endif
     title_ascii=std::make_unique<AsciiText>(resources.core.ascii);title->text_resource=&resources.core.text;
     title->selection=menu_selection;title->config=config;title->flags=first?3:1;
     title->change(screen);title->cursor.count=kPortTitle==14?10:8;
+    if(screen==TitleScreen::Results){
+        title->flags=0;
+        title->result_score=completed_score;
+        title->result_continues=completed_continues;
+        title->result_timestamp=recording_timestamp;
+#if defined(TH14_MULTIPLAYER)
+        title->room_results=coop_seats>1;
+        title->room_result_stage=room_result_stage;
+#endif
+    }
     if(menu_selection.difficulty==4)title->cursor.select(1);
     if(screen!=TitleScreen::Main){title->cursor.select(screen==TitleScreen::Replays?(kPortTitle==14?4:3):0);title->cursor.push();}
     std::vector<u8> comments;if(!data.read("musiccmt.txt",comments)||!title->load_music_comments(comments.data(),u32(comments.size())))return fail("title music metadata missing");
@@ -1533,6 +1645,10 @@ bool GameSession::sample_spell_clock(double now){
 }
 #endif
 bool GameSession::draw(AnmRenderer& renderer,AsciiText* overlay) {
+#if PORT_TITLE == 14
+    struct RestoreOpacity {AnmRenderer& r;~RestoreOpacity(){r.coop_opacity=nullptr;r.coop_opacity_user=nullptr;}} restore{renderer};
+    if(battle&&battle->coop_seats>1){renderer.coop_opacity=GameBattle::coop_sprite_opacity;renderer.coop_opacity_user=battle.get();}
+#endif
     if(state.phase==GameSessionPhase::title&&title&&title_ascii){
         title_ascii->clear();title->queue_ascii(*title_ascii);
     }

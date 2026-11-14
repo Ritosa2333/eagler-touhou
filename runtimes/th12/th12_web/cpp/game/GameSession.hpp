@@ -1,4 +1,7 @@
 #pragma once
+#if defined(TH14_MULTIPLAYER)
+#include <eagler/netplay/CooperativeMenuInput.hpp>
+#endif
 #include "PracticeTh14.hpp"
 #if PORT_TITLE == 14
 #include "PracticeLaserPurpleTh14.hpp"
@@ -53,6 +56,8 @@ struct GameSessionInput {
     float recording_fps=60;
 #if PORT_TITLE == 14
     u32 dialogue_skip_frames=0,dialogue_fire_frames=0;
+    Th14CoopFrame coop{};
+    std::array<u32,3> room_menu_buttons{};
 #endif
 };
 
@@ -123,6 +128,10 @@ public:
 #endif
     SceneCompositor compositor{animations};
     GameEconomy economy;
+#if PORT_TITLE == 14
+    std::array<Th14CoopLoadout,3> coop_loadouts{};
+    u32 coop_seats=1,coop_viewer=0;
+#endif
     SpellRecords spell_records;
     ClearRecords clear_records;
     ScoreFile scores;
@@ -215,6 +224,14 @@ public:
 #endif
         ; }
     bool battle_callbacks_attached() const noexcept { return battle_attached; }
+#if defined(TH14_MULTIPLAYER)
+    void capture_room_frame(FrameImageTh14&,BulletManager::RoomSlots&,ItemManager::RoomSlots&);
+    bool room_title_preview=false;
+    bool room_restart_requested=false;
+    bool can_predict_room()const;
+    bool open_room_ending();
+    bool open_room_results(bool cleared);
+#endif
 #if PORT_TITLE == 14
     // Main may observe Loading and this Main-owned attachment flag while
     // an initial worker constructs the private battle. Do not inspect its
@@ -261,6 +278,9 @@ private:
     bool open_results();
     bool completed_run=false;
     i32 completed_score=0,completed_continues=0;
+#if defined(TH14_MULTIPLAYER)
+    i32 room_result_stage=8;
+#endif
     u32 initial_stage=1;
     i32 next_continues=0;
 #if PORT_TITLE == 14
@@ -270,6 +290,9 @@ private:
 #endif
     float paused_rate=1;
     GameInput menu_input;
+#if defined(TH14_MULTIPLAYER)
+    Netplay::CooperativeMenuInput<u32> room_menu;
+#endif
     u32 title_idle=0,demo_index=0;
     i32 last_replay_file=0;
     GameResources* source=nullptr;

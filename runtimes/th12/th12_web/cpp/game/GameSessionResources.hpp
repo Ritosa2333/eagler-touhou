@@ -159,6 +159,7 @@ public:
     bool select_player(u32 character,u32 subtype);
     bool load_selected_player(u32 character,u32 subtype);
     bool load_selected_player_from(GameResources&,u32 character,u32 subtype);
+    bool load_coop_player(u32 character,u32 subtype,AnmResource&,ShtResource&);
     void cancel_selected_player()noexcept{selected_player_pending=-1;}
     bool prepare_stage();
     using PhaseResult=StageResourceEffects::DecodeResult;

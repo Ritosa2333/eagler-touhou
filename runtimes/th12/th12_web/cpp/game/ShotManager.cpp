@@ -23,6 +23,15 @@ void ShotManager::start_stage_th14()noexcept{
     th14_shot_pool=Th14ShotPool{};
     th14_area_cursor=0;
 }
+void ShotManager::clear_coop_th14(){
+    for(auto& s:shots)if(s.state){
+        erase(s.animation);erase(s.extra_animation);
+        s.state=0;
+    }
+    th14_areas={};th14_area_owners={};
+    laser_active={};locked_target=nullptr;target_locked=0;
+    start_stage_th14();
+}
 #endif
 void ShotManager::interrupt(u32 id,i16 label){family(animations.find(id),[&](AnmVm& a){a.interrupt(label);});}
 void ShotManager::erase(u32 id){family(animations.find(id),[](AnmVm& a){if constexpr(kPortTitle==14)a.flags2|=0x20;else a.flags|=0x4000000;});}
@@ -129,6 +138,10 @@ i32 ShotManager::spawn(const ShotSpec& spec,i32 firing_frame,const Vec3& origin)
 #endif
     if(!vm){last_error=2;return -2;}s.animation=vm->id;
 #if PORT_TITLE == 14
+    if(coop_draw_file){
+        vm->reserved_3a0=coop_draw_file;
+        for(auto* n=vm->child.next;n;n=n->next)n->value->reserved_3a0=coop_draw_file;
+    }
     if(vm->flags2&0x40){vm->rotation.z=spec.angle;vm->flags|=4;}
 #else
     if(vm->flags&0x8000000){vm->rotation.z=spec.angle;vm->flags|=4;}

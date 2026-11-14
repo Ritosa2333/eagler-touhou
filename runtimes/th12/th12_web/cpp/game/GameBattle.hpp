@@ -25,6 +25,7 @@
 #include "StageCompletion.hpp"
 #include "Hud.hpp"
 #if PORT_TITLE == 14
+#include "CoopTh14.hpp"
 #include "StagedLoaderPrototype.hpp"
 #include "SceneCameraReadJobTh14.hpp"
 #include "LoadingTh14.hpp"
@@ -112,6 +113,53 @@ public:
     u32 th16_spell_background=0;
 #endif
 #if PORT_TITLE == 14
+    struct Teammate {
+        GameEconomy economy;
+        AnmResource animation;
+        ShtResource shot;
+        std::unique_ptr<PlayerFrame> player;
+        std::unique_ptr<BombController> bomb;
+    };
+    std::array<std::unique_ptr<Teammate>,2> teammates;
+    std::array<Th14Ghost,3> ghosts{};
+    std::array<u8,3> life_taps{},power_taps{};
+    std::array<u32,3> coop_held{};
+    Th14CoopFrame coop_input{};
+    u32 coop_seats=1,coop_viewer=0,coop_actor=0,coop_skip=0,coop_grazer=0;
+    Timer coop_bomb_invincibility;
+    std::array<Timer,3> coop_marisa_b_cooldown{};
+    i32 coop_knife_owner=-1;
+    struct CoopActor {
+        GameBattle& battle;
+        u32 previous;
+        CoopActor(GameBattle& b,u32 seat):battle(b),previous(b.coop_actor){b.coop_actor=seat;}
+        ~CoopActor(){battle.coop_actor=previous;}
+    };
+    bool setup_coop(const std::array<Th14CoopLoadout,3>&,u32 seats,u32 viewer);
+    bool update_coop();
+    bool start_coop_stage();
+    bool draw_coop_players(AnmRenderer&);
+    static u8 coop_sprite_opacity(const void*,const AnmVm&);
+    bool queue_coop_hud();
+    bool coop_game_over(bool);
+    bool coop_revive(u32);
+    bool coop_transfers();
+    bool coop_bomb_available(u32)const;
+    bool coop_collect(ItemState&,bool&);
+    bool coop_damage(const EnemyState&,Vec3,const Vec2*,float,float,i32&,bool=false,bool* =nullptr);
+    PlayerFrame& pilot(u32 seat)const{return seat?*teammates[seat-1]->player:*player;}
+    BombController* pilot_bomb(u32 seat)const{return seat?teammates[seat-1]->bomb.get():bomb.get();}
+    GameEconomy& pilot_economy(u32 seat)const{return seat?teammates[seat-1]->economy:economy;}
+    bool pilot_live(u32 seat)const{return ghosts[seat].random==0;}
+#if defined(TH14_MULTIPLAYER)
+    void capture_room_frame(FrameImageTh14&,BulletManager::RoomSlots&,ItemManager::RoomSlots&);
+    bool room_speculative=false,room_boundary=false;
+    std::unordered_map<ScreenDeformation*,std::shared_ptr<ScreenDeformation>> room_deformations;
+#endif
+    void assign_coop_items();
+    Vec3 th14_aim(Vec3 origin,Vec3 solo)const override;
+    static Vec3 th14_enemy_aim(Vec3 origin,void* battle);
+    i32 th14_collision_all(Vec3 origin,const std::function<PlayerCollisionResult(const PlayerFrame&)>&,bool probe=false);
     u32 th14_dialogue_skip_frames=0,th14_dialogue_fire_frames=0;
     u32 th14_spell_background=0;
     bool th14_spell_result_requested=false;
@@ -228,6 +276,9 @@ public:
     bool dialogue_close()override;
     bool dialogue_waiting()const override{return dialogue&&dialogue->active&&!dialogue->state.release_signal;}
     bool dialogue_text(const DialogueText& request)override{
+#if defined(TH14_MULTIPLAYER)
+        if(room_speculative){room_boundary=true;return false;}
+#endif
 #if PORT_TITLE == 14
         if(resources.effects)if(auto* device=resources.effects->dialogue_text_device())return device->dialogue_text(request);
 #endif
@@ -318,7 +369,11 @@ public:
 #if PORT_TITLE == 14
     AnmVm* callback_th14_visual()override{return &compositor.copies[3];}
     bool th14_spawn_enemy(const char* name,const EnemySpawn& value)override{return enemies.spawn(name,value)!=nullptr;}
-    bool callback_th14_player_scale(float value)override{return player&&player->set_th14_scale(value);}
+    bool callback_th14_player_scale(float value)override{
+        if(!player)return false;
+        for(u32 seat=0;seat<coop_seats;++seat)if(pilot_live(seat)&&!pilot(seat).set_th14_scale(value))return false;
+        return true;
+    }
     bool th14_hit_item(i32 type,Vec3 p,float angle,float speed)override{return items.spawn(type,p,0xffffffff,angle,speed)==0;}
     // Native VisualManager+10 owns effect.anm; +14 owns bullet.anm.
     // 452183 passes layer -1 so effect149 retains its template layer/children.
@@ -328,9 +383,10 @@ public:
         events.push_back({BattleEventKind::SoundPan,20,pan});return true;
     }
     bool th14_beam_stop()override{events.push_back({BattleEventKind::StopSound,20});return true;}
-    bool th14_knife_slowdown(Enemy& e,float delta)override{shot_th14_sakuya_slowdown(e.state,delta,spell_flags,spell_id);return true;}
+    bool th14_knife_slowdown(Enemy&,float)override;
     bool th14_beam_hit_effect(Vec3 p,float angle,Vec3 travel)override{
-        auto* vm=animations.create(resources.core.players[enemy_environment.character],8,kPortTitle==14?9:7,22,false,false,&p);if(!vm)return false;
+        auto& bank=coop_actor?teammates[coop_actor-1]->animation:resources.core.players[enemy_environment.character];
+        auto* vm=animations.create(bank,8,kPortTitle==14?9:7,22,false,false,&p);if(!vm)return false;
         animations.th14_native_stack.beam_effect_published(vm->id);
         vm->flags|=4;vm->rotation.z=angle;auto& v=vm->position_interpolation;
         v.duration=20;v.mode=InterpolationMode::Decelerate2;v.timer.set(0,&animations.rate);
@@ -342,18 +398,27 @@ public:
         if(!vm)return false;vm->color=color;return true;
     }
     bool th14_bomb_dialogue()const override{return dialogue&&dialogue->active;}
+    void th14_bomb_invincibility(i32)override;
+    u32 th14_shield_refund()const override{return th14_coop_shield_refund(coop_seats);}
 #if PORT_TITLE == 14
     bool th14_damage_dialogue()const override{return dialogue&&dialogue->active;}
+    bool th14_coop_damage_rules()const override{return coop_seats>1;}
+    float th14_effective_knife_slowdown(const EnemyState&)const override;
     u32 th14_practice_flags()const override{return economy.th14_practice_tools;}
 #endif
     bool th14_reimu_bomb_hit_effect(Vec3 p,float angle)override{
         return animations.create(resources.core.effect,58,8,0,false,false,&p,nullptr,nullptr,false,&angle)!=nullptr;
     }
     bool th14_bomb_circle(Vec3 p,float radius,float growth,i32 duration,i32 damage)override{
+#if PORT_TITLE == 14
+        if(coop_seats>1)return pilot(coop_actor).shots.th14_bomb_circle(p,radius,growth,duration,damage);
+#endif
         return player&&player->shots.th14_bomb_circle(p,radius,growth,duration,damage);
     }
-    bool th14_bomb_item(i32 type,Vec3 p,float angle,float speed)override{return items.spawn(type,p,0xffffffff,angle,speed)==0;}
-    bool th14_bomb_rectangle(Vec3 p,Vec2 size,float angle,i32 duration,i32 damage)override{return player&&player->shots.th14_bomb_rectangle(p,size,angle,duration,damage);}
+    bool th14_bomb_item(i32 type,Vec3 p,float angle,float speed)override{
+        return items.spawn_ordinary_th14(type,p,angle,speed,0,coop_seats>1?i32(coop_actor):-1)==0;
+    }
+    bool th14_bomb_rectangle(Vec3 p,Vec2 size,float angle,i32 duration,i32 damage)override{return player&&pilot(coop_actor).shots.th14_bomb_rectangle(p,size,angle,duration,damage);}
     bool th14_bomb_cancel_rectangle(Vec3 p,Vec2 size,float angle,u32 rewards)override{
         const Th14RectangleRotation rotation{angle};
         return bullets.cancel_rectangle_th14(p,size,rotation,rewards)&&lasers.cancel_rectangle_th14(p,size,rotation,rewards)>=0;
@@ -366,6 +431,7 @@ public:
     bool th14_bomb_shake_short(i32 duration,i32 from,i32 to)override{shakes.start(duration,from,to,&animations.rate);return true;}
     EnemyLink* th14_bomb_enemies()const override{return enemies.first;}
     bool callback_th14_damage(const EnemyState& e,Vec3 p,const Vec2* size,float radius,float angle,i32& out)override{
+        if(coop_seats>1)return coop_damage(e,p,size,radius,angle,out);
         if(!player)return false;const auto& timer=player->state.state_timer;
         return player->shots.damage_th14(p,size,radius,angle,timer.previous!=timer.current,economy,out,u32(e.instance_id),u32(e.instance_id),e.script_owner);
     }
@@ -385,7 +451,7 @@ public:
     bool cancel_reward(Vec3 p) override { return point_reward(p); }
     bool create_deformation(EnemyState&) override;
     bool deform(EnemyState& e) override { e.deformation->update(e,spell_id);return true; }
-    bool release_deformation(EnemyState& e) override { delete e.deformation;e.deformation=nullptr;return true; }
+    bool release_deformation(EnemyState& e) override;
     void clear_shot_targets(Enemy*) override;
     bool project_spawn(Vec3,Vec3&) override;
 
@@ -447,19 +513,27 @@ public:
     bool boss_position(Vec3&) override;
 
     bool effect(Vec3 p,i32 script) override { return visual(p,script); }
-    bool collect(ItemState& item,bool& convert) override { return item_rewards.collect(item,convert,&items.player); }
+    bool collect(ItemState& item,bool& convert) override {
+#if PORT_TITLE == 14
+        if(coop_seats>1)return coop_collect(item,convert);
+#endif
+        return item_rewards.collect(item,convert,&items.player);
+    }
 #if PORT_TITLE == 16
     bool item_th16_collect(ItemState&)override;
     bool item_th16_spawn_notice(Vec3,i32)override;
 #endif
 #if PORT_TITLE == 14
     i32& item_th14_drop_counter()override{return economy.th14_special_drop_count;}
+    i32 item_th14_power(u32 seat,i32)const override{return pilot_economy(seat).power;}
     Th14ItemCombo& item_th14_combo_state()override{return economy.th14_combo;}
     bool item_th14_combo_settle()override{
         const i32 count=economy.th14_combo.count;
         if(count>=20)++economy.th14_practice_collections[std::min(count/10-2,4)];
         return item_rewards.th14_combo_settle(dialogue&&dialogue->active);
     }
+    bool item_th14_combo_settle_seat(u32 seat)override;
+    Th14ItemCombo& item_th14_combo_seat(u32 seat)override{return pilot_economy(seat).th14_combo;}
     bool th14_combo_drop(i32 type,Vec3 p,i32 delay)override{return items.spawn_ordinary_th14(type,p,-1.5707963705062866f,2.2f,delay)==0;}
     bool th14_combo_popup(Vec3 p,i32 value,u32 color,float multiplier)override{
         popups.add_bonus(p,value,color,multiplier,&animations.rate);
@@ -476,7 +550,12 @@ public:
     bool power_changed() override;
     bool lives_changed(i32 lives,i32 fragments) override { return display_lives(lives,fragments); }
 #if PORT_TITLE == 14 || PORT_TITLE == 16
-    bool bombs_changed(i32 count,i32 fragments)override{hud.display_bombs(count,fragments);events.push_back({BattleEventKind::Bombs,count,fragments});return true;}
+    bool bombs_changed(i32 count,i32 fragments)override{
+#if PORT_TITLE == 14
+        if(coop_seats>1){hud.display_coop_stock(coop_actor,count,fragments,true);return true;}
+#endif
+        hud.display_bombs(count,fragments);events.push_back({BattleEventKind::Bombs,count,fragments});return true;
+    }
 #endif
 
     bool player_sound(i32 id) override { return sound(id,0,false); }
@@ -501,7 +580,7 @@ public:
 #if PORT_TITLE == 14
     // shared_integers[1] is the ECL-visible bomb counter, which stage and boss
     // scripts reset; the practice panel counts every Bomb of the run.
-    void bomb_used()override{++economy.th14_practice_bombs;}
+    void bomb_used()override{++pilot_economy(coop_actor).th14_practice_bombs;}
 #endif
     bool bomb_background_color(u32 color)override{if(!stage)return false;stage->state.tint=color;return true;}
     bool bomb_refund_power()override{bool changed=false;return item_rewards.add_power(10,changed)&&power_changed();}
@@ -512,6 +591,9 @@ public:
     bool spawn_item(i32 type,Vec3 p,u32 color,float angle,float speed) override {
         // Death subtracts power inside the player callback before spawning
         // drops. The frame-start item snapshot is stale at this boundary.
+#if PORT_TITLE == 14
+        if(coop_seats>1)return items.spawn_ordinary_th14(type,p,angle,speed,0,i32(coop_actor))==0;
+#endif
         items.player.power=economy.power;items.player.max_power=economy.max_power;
         return items.spawn(type,p,color,angle,speed)==0;
     }

@@ -6,6 +6,7 @@
 #include "Localization.hpp"
 #include "GameSession.hpp"
 #include "StagePreRngTh14.hpp"
+#include "StageCopyTailTh14.hpp"
 #include "SpellTh14Visuals.hpp"
 #include "SpellTh16Visuals.hpp"
 #include "BulletTh16.hpp"
@@ -75,8 +76,36 @@ GameBattle::GameBattle(GameSessionResources& r,AnmManager& a,GameEconomy& e,Spel
     callback_shared_visual.initialize();
 }
 
-GameBattle::~GameBattle(){for(auto* node=enemies.first;node;node=node->next)release_deformation(node->value->state);if(dialogue)dialogue->clear();for(auto& vm:spell_backgrounds)animations.release_geometry(vm);}
-bool GameBattle::create_deformation(EnemyState& e){auto effect=std::make_unique<ScreenDeformation>(animations);if(!effect->initialize(resources.core.text))return false;e.deformation=effect.release();return true;}
+GameBattle::~GameBattle(){for(auto* node=enemies.first;node;node=node->next)release_deformation(node->value->state);if(dialogue)dialogue->clear();for(auto& vm:spell_backgrounds)animations.release_geometry(vm);
+#if PORT_TITLE == 14
+    for(auto& p:teammates)if(p){
+        animations.retire_resource(p->animation);
+        if(resources.effects)resources.effects->release_animation(p->animation);
+    }
+#endif
+#if PORT_TITLE == 16
+#endif
+}
+bool GameBattle::create_deformation(EnemyState& e){
+#if defined(TH14_MULTIPLAYER)
+    auto effect=std::make_shared<ScreenDeformation>(animations);
+    if(!effect->initialize(resources.core.text))return false;
+    e.deformation=effect.get();room_deformations.emplace(e.deformation,std::move(effect));
+#else
+    auto effect=std::make_unique<ScreenDeformation>(animations);
+    if(!effect->initialize(resources.core.text))return false;
+    e.deformation=effect.release();
+#endif
+    return true;
+}
+bool GameBattle::release_deformation(EnemyState& e){
+#if defined(TH14_MULTIPLAYER)
+    if(e.deformation){e.deformation->detach();room_deformations.erase(e.deformation);}
+#else
+    delete e.deformation;
+#endif
+    e.deformation=nullptr;return true;
+}
 #if PORT_TITLE == 14
 bool GameBattle::prepare_initial_scene(bool complete){
     if(initialized||!player||stage||!resources.stage)return unavailable("invalid initial scene owner");
@@ -366,6 +395,10 @@ bool GameBattle::retire_stage_owner(){
     // Retail4363ea clears the item pools before retiring the enemy owner.
     // Items must not remain collectible during the incoming worker wait.
     items.reset();
+    if(coop_seats>1)for(u32 seat=0;seat<coop_seats;++seat){
+        pilot(seat).shots.clear_coop_th14();
+        if(auto* b=pilot_bomb(seat))b->clear_coop();
+    }
     if(!enemies.retire())return false;
     // 4227d6..42281d unloads the six ECL animation files during owner
     // retirement. Their live VMs must leave ANM29 before loading's children.
@@ -523,7 +556,22 @@ prototype::Work GameBattle::prepare_stage_timeline(){
         bomb->selection=enemy_environment.character*2+enemy_environment.subtype;
         if constexpr(kPortTitle==14)spells.timer.set(0,&animations.rate);
     }
-    resources.finish_stage_parts();pending_stage=0;next_stage_source=nullptr;return prototype::Work::Ready;
+    resources.finish_stage_parts();
+#if defined(TH14_MULTIPLAYER) && defined(TH14_CPP_STAGE_DECODE)
+    if(coop_seats>1){
+        enemy_commands.th14_set_stage_section(0);
+        enemy_commands.th14_complete_loading_flags();
+        animations.th14_effect_stop=0;
+        th14_defer_stage_copy_tail(compositor.copies);
+        // Multiplayer loads synchronously. Publish the same Control state
+        // here that the solo decoder would publish from its worker.
+        if(auto* control=animations.th14_control.get()){
+            control->flags&=~4u;
+            control->callbacks_enabled=1;
+        }
+    }
+#endif
+    pending_stage=0;next_stage_source=nullptr;return prototype::Work::Ready;
 }
 bool GameBattle::finish_stage_loading(){
     return !pending_stage;
@@ -598,6 +646,9 @@ bool GameBattle::enter_stage_transition(u32 number){
 bool GameBattle::activate_stage(){
     bullets.reset();animations.retire_resource(resources.core.bullet);
     if(!player->start_stage())return false;
+#if PORT_TITLE == 14
+    if(coop_seats>1&&!start_coop_stage())return false;
+#endif
     if(replaying&&!player->restore_replay_position(replay_entry))return false;
     items.reset();
 #if PORT_TITLE == 14
@@ -648,6 +699,7 @@ bool GameBattle::stage_control(){
 }
 void GameBattle::set_input(const GameSessionInput& input) {
 #if PORT_TITLE == 14
+    coop_input=input.coop;
     th14_dialogue_skip_frames=input.dialogue_skip_frames;
     th14_dialogue_fire_frames=input.dialogue_fire_frames;
 #endif
@@ -693,6 +745,22 @@ void GameBattle::synchronize_player() {
 #if PORT_TITLE == 14
     items.player.character=enemy_environment.character;
     items.player.bomb_attract=bomb&&special_active==1&&bomb->state.elapsed.current<60;
+    if(coop_seats>1){
+        spells.bomb_active=false;
+        special_active=0;
+        assign_coop_items();
+        const Vec3 boss_origin=enemy_commands.bosses[0]?enemy_commands.bosses[0]->current.position:Vec3{0,224,0};
+        const Vec3 aimed=th14_aim(boss_origin,position);
+        enemy_environment.player_position=aimed;
+        u32 live=0;
+        for(u32 seat=0;seat<coop_seats;++seat){
+            if(pilot_live(seat)&&pilot(seat).state.life_state==1)++live;
+            if(const auto* b=pilot_bomb(seat);b&&b->state.active==1&&(b->selection!=4||b->state.th14_mode!=0)){
+                spells.bomb_active=true;special_active=1;
+            }
+        }
+        if(live)player_state=1;
+    }
 #endif
 #if PORT_TITLE == 16
     items.player.character=enemy_environment.character;
@@ -835,6 +903,10 @@ bool GameBattle::update(const std::function<bool()>& sample_input
     // The previous frame's item pickups advance before this player snapshot.
     popups.update(animations.rate);
     synchronize_player();
+#if PORT_TITLE == 14
+    if(coop_seats>1){if(!update_coop())return false;}
+    else {
+#endif
     if(player_live&&player){
         player->spell={spell_flags,spell_elapsed,spell_bonus};
         if(before_player_update)before_player_update(*this);
@@ -847,6 +919,9 @@ bool GameBattle::update(const std::function<bool()>& sample_input
         if(!bomb->update()){if(error.empty())error="unimplemented or failed Bomb branch "+std::to_string(bomb->selection);last_error=-608;return false;}
         spell_flags=player->spell.flags;spell_bonus=player->spell.bonus;
     }
+#if PORT_TITLE == 14
+    }
+#endif
     synchronize_player();
     target_locked=false;
     if(stage_active&&
@@ -874,14 +949,18 @@ bool GameBattle::update(const std::function<bool()>& sample_input
        !animations.th14_control.item_updates_blocked()&&
 #endif
        !items.update()){last_error=-1004;error="item update failed: "+std::to_string(items.last_error);return false;}
-    if(spell_flags&1){Vec3 boss;if(!boss_position(boss)||!spells.update(player->motion.state.position.y,boss,kPortTitle==14?special_active==1:special_active!=0)){last_error=-1006;if(error.empty())error="spell update";return false;}}
+    if(spell_flags&1){Vec3 boss;if(!boss_position(boss)||!spells.update(player->motion.state.position.y,boss,spells.bomb_active)){last_error=-1006;if(error.empty())error="spell update";return false;}}
     completion.update();
     // TH14 boss rings/stars precede the MSG update at430d7b. The indicator
     // follows it at430dfe, including the frame that retires the dialogue.
     if(!hud.update(hud_input())){last_error=-1010;error="HUD update";return false;}
-    if(dialogue&&dialogue->active){const i32 result=dialogue->update(player_input.movement.held,player_input.movement.pressed
+    if(dialogue&&dialogue->active){const i32 result=dialogue->update(player_input.movement.held
 #if PORT_TITLE == 14
-        ,th14_dialogue_skip_frames,th14_dialogue_fire_frames
+        |(coop_skip?0x200u:0)
+#endif
+        ,player_input.movement.pressed
+#if PORT_TITLE == 14
+        ,std::max(th14_dialogue_skip_frames,coop_skip),th14_dialogue_fire_frames
 #endif
     );if(result<0){last_error=-1007;if(error.empty())error=dialogue->error+" MSG opcode "+std::to_string(dialogue->last_opcode);return false;}if(result){
 #if PORT_TITLE != 14
@@ -942,7 +1021,11 @@ bool GameBattle::draw(AnmRenderer& renderer,SceneDrawKind kind
             hud.spell_time_animation=0;hud.show_spell_time=false;
         }
 #endif
-        return hud.draw_inner(renderer,hud_input())&&hud.queue_text(ascii,hud_input());
+        return hud.draw_inner(renderer,hud_input())&&hud.queue_text(ascii,hud_input())
+#if PORT_TITLE == 14
+            &&(coop_seats==1||queue_coop_hud())
+#endif
+            ;
     case SceneDrawKind::HudOuter:return hud.draw_outer(renderer,hud_input());
     case SceneDrawKind::AsciiInner:return ascii.draw(renderer,1,compositor.full_camera,compositor.play_camera);
     case SceneDrawKind::AsciiOuter:return ascii.draw(renderer,0,compositor.full_camera,compositor.play_camera);
@@ -980,7 +1063,11 @@ bool GameBattle::draw(AnmRenderer& renderer,SceneDrawKind kind
             spell_titles[2]=0;
         }
         return true;
-    case SceneDrawKind::Player:return player&&player->draw(renderer);
+    case SceneDrawKind::Player:
+#if PORT_TITLE == 14
+        if(coop_seats>1)return draw_coop_players(renderer);
+#endif
+        return player&&player->draw(renderer);
     case SceneDrawKind::Items:
 #if PORT_TITLE == 14 && defined(TH14_CPP_STAGE_DECODE)
         if(animations.th14_control.combat_draw_blocked())return true;
@@ -1004,6 +1091,9 @@ bool GameBattle::draw(AnmRenderer& renderer,SceneDrawKind kind
 HudInput GameBattle::hud_input()const{
     HudInput input;input.player_present=bool(player);
 #if PORT_TITLE == 14
+    input.cooperative=coop_seats>1;
+#endif
+#if PORT_TITLE == 14
     input.character=enemy_environment.character;
     // Boss-name4350b0 reads global4f5844 (practice selection), not Spell+78.
     input.subtype=enemy_environment.subtype;input.spell_id=enemy_environment.spell_practice_id;input.spell_flags=spell_flags;
@@ -1021,6 +1111,18 @@ bool GameBattle::project_spawn(Vec3 position,Vec3& projected){
     projected=GraphicsMath::project(position,camera.viewport,camera.projection,camera.view,world);return true;
 }
 bool GameBattle::start_bomb(){
+#if PORT_TITLE == 14
+    if(coop_seats>1){
+        if(!coop_bomb_available(coop_actor))return false;
+        auto& controller=*pilot_bomb(coop_actor);
+        if(controller.start()!=0)return false;
+        if(controller.selection==3)coop_marisa_b_cooldown[coop_actor].set(500,&animations.rate);
+        // Reimu's controller first grants invincibility in its update,
+        // after all seats have already had a chance to press Bomb.
+        if(controller.selection<=1)th14_bomb_invincibility(40);
+        return true;
+    }
+#endif
     if(!bomb||!bomb->supported())return unavailable("unreconstructed Bomb activation");
     const i32 result=bomb->start();
     if(result==-2)error="bomb start failed: bomb_error="+std::to_string(bomb->last_error)+" supported="+std::to_string(bomb->supported()?1:0)+" script="+std::to_string(bomb->create_script)+" opcode="+std::to_string(bomb->create_opcode)+" depth="+std::to_string(bomb->create_depth)+" scripts="+std::to_string(bomb->create_scripts)+" previous=["+error+"]";
@@ -1040,7 +1142,15 @@ bool GameBattle::callback_move_player(Vec3 p){
     return true;
 }
 bool GameBattle::callback_indicator(i16 interrupt,bool update){if(interrupt)callback_shared_visual.interrupt(interrupt);return !update||callback_shared_visual.update(animations)!=-2;}
-bool GameBattle::special_damage(const Vec3& p,const Vec2& size,i32& damage){return bomb&&bomb->damage(p,size,damage);}
+bool GameBattle::special_damage(const Vec3& p,const Vec2& size,i32& damage){
+#if PORT_TITLE == 14
+    if(coop_seats>1){
+        auto* controller=pilot_bomb(coop_actor);
+        return controller&&controller->damage(p,size,damage);
+    }
+#endif
+    return bomb&&bomb->damage(p,size,damage);
+}
 bool GameBattle::bomb_cancel(Vec3 p,float radius,u32 rewards,bool convert){
     const BulletCancelContext context{player->spell.flags,spell_id};
     if(convert?!bullets.convert_circle(p,radius,rewards&1,context):!bullets.cancel_circle(p,radius,rewards&1,true,context))return false;
@@ -1075,12 +1185,19 @@ bool GameBattle::cancel_shot(Vec3 position,float angle) {
 }
 #if PORT_TITLE == 14
 bool GameBattle::th14_probe_damage(EnemyState& e,i32& out,bool& bomb_contact){
+    if(coop_seats>1)return coop_damage(e,e.current.position,e.flags&0x1000?&e.hitbox:nullptr,e.flags&0x1000?0:e.hitbox.x*.5f,e.flags&0x1000?e.animation_angle:0,out,true,&bomb_contact);
     if(!player)return false;const auto& timer=player->state.state_timer;
     return player->shots.damage_th14(e.current.position,e.flags&0x1000?&e.hitbox:nullptr,e.flags&0x1000?0:e.hitbox.x*.5f,e.flags&0x1000?e.animation_angle:0,timer.previous!=timer.current,economy,out,u32(e.instance_id),u32(e.instance_id),e.script_owner,true,&bomb_contact);
 }
 #endif
 bool GameBattle::shot_damage(EnemyState& e,i32& out) {
     if(!player)return false;
+#if PORT_TITLE == 14
+    if(coop_seats>1){
+        if(!coop_damage(e,e.current.position,e.flags&0x1000?&e.hitbox:nullptr,e.flags&0x1000?0:e.hitbox.x*.5f,e.flags&0x1000?e.animation_angle:0,out))return false;
+        damage_total=wrapping_add(damage_total,u32(out));return true;
+    }
+#endif
     const auto& timer=player->state.state_timer;
     const bool hit=
 #if PORT_TITLE == 14
@@ -1099,9 +1216,15 @@ bool GameBattle::shot_damage(EnemyState& e,i32& out) {
 i32 GameBattle::apply_collision(PlayerCollisionResult result) {
     if(result.trigger_hit){
         if(!player){last_error=-602;return -2;}
-        player->spell={spell_flags,spell_elapsed,spell_bonus};
-        if(!player->hit()){last_error=-602;return -2;}
-        spell_flags=player->spell.flags;spell_bonus=player->spell.bonus;
+        auto& p=
+#if PORT_TITLE == 14
+            pilot(coop_actor);
+#else
+            *player;
+#endif
+        p.spell={spell_flags,spell_elapsed,spell_bonus};
+        if(!p.hit()){last_error=-602;return -2;}
+        spell_flags=p.spell.flags;spell_bonus=p.spell.bonus;
     }
     return i32(result.kind);
 }
@@ -1119,12 +1242,26 @@ bool GameBattle::player_collision(EnemyState& e,float radius,i32& out) {
         const Vec3 start{e.current.position.x-sine*half,e.current.position.y+cosine*half,e.current.position.z};
         out=collision(start,e.animation_angle,e.collision_box.x,e.collision_box.y);return out>=0;
     }
+    if(coop_seats>1){
+        out=th14_collision_all(e.current.position,[&](const PlayerFrame& p){
+            auto shape=p.collision();shape.dialogue_active=dialogue&&dialogue->active;
+            return shape.circle({e.current.position.x,e.current.position.y},radius);
+        });return out>=0;
+    }
 #endif
     auto shape=player->collision();shape.dialogue_active=dialogue&&dialogue->active;
     out=apply_collision(shape.circle({e.current.position.x,e.current.position.y},radius));return out>=0;
 }
 i32 GameBattle::collision(const BulletState& b) {
     if(!player)return -2;
+#if PORT_TITLE == 14
+    if(coop_seats>1)return th14_collision_all(b.position,[&](const PlayerFrame& p){
+        auto shape=p.collision();shape.dialogue_active=dialogue&&dialogue->active;
+        Vec2 size=b.hitbox;if(b.flags&0x40){size.x*=b.th14_size;size.y*=b.th14_size;}
+        const Vec2 point{b.position.x,b.position.y};
+        return b.flags&0x10?shape.circle(point,size.x):shape.rectangle(point,size);
+    });
+#endif
     auto shape=player->collision();const Vec2 p{b.position.x,b.position.y};
     shape.dialogue_active=dialogue&&dialogue->active;
 #if PORT_TITLE == 14 || PORT_TITLE == 16
@@ -1139,6 +1276,14 @@ i32 GameBattle::collision(const BulletState& b) {
     return apply_collision(b.flags&0x10?shape.circle(p,b.hitbox.x):shape.rectangle(p,b.hitbox));
 }
 i32 GameBattle::th14_probe_collision(const BulletState& b){
+#if PORT_TITLE == 14
+    if(coop_seats>1)return th14_collision_all(b.position,[&](const PlayerFrame& p){
+        auto shape=p.collision();shape.dialogue_active=dialogue&&dialogue->active;
+        Vec2 size=b.hitbox;if(b.flags&0x40){size.x*=b.th14_size;size.y*=b.th14_size;}
+        const Vec2 point{b.position.x,b.position.y};
+        return b.flags&0x10?shape.circle(point,size.x,true):shape.rectangle(point,size,true);
+    },true);
+#endif
     if(!player)return -2;auto shape=player->collision();shape.dialogue_active=dialogue&&dialogue->active;
     const Vec2 p{b.position.x,b.position.y};Vec2 size=b.hitbox;
 #if PORT_TITLE == 14
@@ -1147,6 +1292,13 @@ i32 GameBattle::th14_probe_collision(const BulletState& b){
     return i32((b.flags&0x10?shape.circle(p,size.x,true):shape.rectangle(p,size,true)).kind);
 }
 i32 GameBattle::collision(Vec3 p,float angle,float width,float length) {
+#if PORT_TITLE == 14
+    if(coop_seats>1)return th14_collision_all(p,[&](const PlayerFrame& pilot){
+        auto shape=pilot.collision();shape.bomb_active=dialogue&&dialogue->active;
+        const auto half=pilot.state.hit_half;
+        return shape.laser({p.x,p.y},{half.x,half.y},angle,width,length);
+    });
+#endif
     if(!player)return -2;const auto half=player->state.hit_half;
     auto shape=player->collision();
 #if PORT_TITLE == 14
@@ -1157,6 +1309,13 @@ i32 GameBattle::collision(Vec3 p,float angle,float width,float length) {
     return apply_collision(shape.laser({p.x,p.y},{half.x,half.y},angle,width,length));
 }
 i32 GameBattle::warning_collision(Vec3 p,float angle,float width,float length) {
+#if PORT_TITLE == 14
+    if(coop_seats>1)return th14_collision_all(p,[&](const PlayerFrame& pilot){
+        auto shape=pilot.collision();shape.bomb_active=dialogue&&dialogue->active;
+        const auto half=pilot.state.hit_half;
+        return shape.laser({p.x,p.y},{half.x,half.y},angle,width,length,true);
+    },true);
+#endif
     if(!player)return -2;const auto half=player->state.hit_half;
     auto shape=player->collision();
 #if PORT_TITLE == 14
@@ -1169,6 +1328,7 @@ i32 GameBattle::warning_collision(Vec3 p,float angle,float width,float length) {
 void GameBattle::clear_shot_targets(Enemy* enemy) { if(player)player->shots.invalidate_target(enemy);
 #if PORT_TITLE == 14
     if(bomb)bomb->invalidate_target(enemy);
+    for(auto& t:teammates)if(t){t->player->shots.invalidate_target(enemy);t->bomb->invalidate_target(enemy);}
 #endif
     ShotWorld::enemies=enemies.first; }
 bool GameBattle::boss_position(Vec3& out) { if(!enemy_commands.bosses[0])return false;out=enemy_commands.bosses[0]->current.position;return true; }
@@ -1269,8 +1429,16 @@ bool GameBattle::popup(Vec3 p,i32 value,u32 color) {popups.add(p,value,color,&an
 bool GameBattle::notify(i32 value) {
     events.push_back({BattleEventKind::Notification,value});return hud.notice(value);
 }
-bool GameBattle::display_lives(i32 lives,i32 fragments) {hud.display_lives(lives,fragments);events.push_back({BattleEventKind::Lives,lives,fragments});return true;}
+bool GameBattle::display_lives(i32 lives,i32 fragments) {
+#if PORT_TITLE == 14
+    if(coop_seats>1){hud.display_coop_stock(coop_actor,lives,fragments,false);return true;}
+#endif
+    hud.display_lives(lives,fragments);events.push_back({BattleEventKind::Lives,lives,fragments});return true;
+}
 bool GameBattle::power_changed() {
+#if PORT_TITLE == 14
+    if(coop_seats>1)return pilot(coop_actor).rebuild_th14_options();
+#endif
 #if PORT_TITLE == 16
     if(!player||!player->rebuild_th16_options()){items.last_error=1690;return false;}return true;
 #else
@@ -1282,12 +1450,15 @@ bool GameBattle::enemy_death() {
     // 0x431307 increments manager +0x10 and resets +0x18. This is a player
     // death counter visible to ECL, not the erase-all-enemies operation.
 #if PORT_TITLE == 14
-    ++economy.th14_practice_misses;
+    ++pilot_economy(coop_actor).th14_practice_misses;
 #endif
     enemy_environment.shared_integers[0]=wrapping_add(enemy_environment.shared_integers[0],1);
     enemy_environment.shared_integers[2]=0;return true;
 }
 bool GameBattle::game_over(bool replay) {
+#if PORT_TITLE == 14
+    if(coop_seats>1)return coop_game_over(replay);
+#endif
     game_over_requested=true;events.push_back({BattleEventKind::GameOver,i32(replay)});
 #if PORT_TITLE == 14
     // 44defc/44df05 opens the menu before the remaining Player updates.
@@ -1298,7 +1469,7 @@ bool GameBattle::game_over(bool replay) {
 bool GameBattle::register_graze() { if(economy.graze<99999999)++economy.graze;return true; }
 #if PORT_TITLE == 14
 bool GameBattle::th14_curve_graze(Vec3 contact){
-    if(!player)return false;const Vec3 position=th14_graze(economy,player->motion.state.position,contact);
+    if(!player)return false;const Vec3 position=th14_graze(economy,pilot(coop_grazer).motion.state.position,contact);
     // 4504a9 passes -1; effect24 keeps its template layer18.
     if(!animations.create(resources.core.effect,24,8,u32(-1),false,false,&position))return false;
     sound(42,contact.x,true);return true;
@@ -1427,6 +1598,9 @@ bool GameBattle::start_dialogue(i32 id){
         }
         if(id==-2){error="TH16 ending/results request is not yet implemented";return false;}
     }
+#if defined(TH14_MULTIPLAYER)
+    if(room_speculative){room_boundary=true;return false;}
+#endif
     if(!dialogue||!dialogue->begin(resources.stage->messages[stage_dialogue_index(u32(enemy_environment.character),u32(enemy_environment.subtype))],id)){if(dialogue)error=dialogue->error;return false;}
 #if PORT_TITLE == 14
         // Retail MSG constructor 4320b1..4320c4 cancels bullets/lasers

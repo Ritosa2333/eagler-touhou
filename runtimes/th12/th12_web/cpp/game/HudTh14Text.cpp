@@ -6,25 +6,23 @@
 #include <algorithm>
 namespace th11 {
 #if PORT_TITLE == 14
-namespace {
-void grouped(char* out,u32 value){
+void th14_grouped_number(char (&out)[64],u32 value){
     if(value<1000)std::snprintf(out,64,"%u",value);
     else if(value<1000000)std::snprintf(out,64,"%u,%03u",value/1000,value%1000);
     else if(value<1000000000)std::snprintf(out,64,"%u,%03u,%03u",value/1000000,value/1000%1000,value%1000);
     else std::snprintf(out,64,"%u,%03u,%03u,%03u",value/1000000000,value/1000000%1000,value/1000%1000,value%1000);
 }
-void score_text(char* out,u32 value,i32 continues){
+void th14_score_number(char (&out)[64],u32 value,i32 continues){
     if(value<100)std::snprintf(out,64,"%d",signed_bits(value*10u+u32(continues)));
     else if(value<100000)std::snprintf(out,64,"%u,%02u%d",value/100,value%100,continues);
     else if(value<100000000)std::snprintf(out,64,"%u,%03u,%02u%d",value/100000,value/100%1000,value%100,continues);
     else std::snprintf(out,64,"%u,%03u,%03u,%02u%d",value/100000000,value/100000%1000,value/100%1000,value%100,continues);
 }
-}
 bool th14_hud_awards(AsciiText& output,const Th14HudAwards& data){
     // Retail431140..43144a: grouped result bonus and two spell-time rows.
     AsciiStyle style;style.font=4;style.pass=2;char text[64];
     if(data.result){
-        grouped(text,u32(data.bonus));style.color=u32(data.result_alpha)<<24|0xffffff;
+        th14_grouped_number(text,u32(data.bonus));style.color=u32(data.result_alpha)<<24|0xffffff;
         style.horizontal=0;
         if(!output.add(text,{224,200,0},style))return false;
     }
@@ -67,7 +65,7 @@ bool th14_hud_counters(AsciiText& output,const GameEconomy& e,const HudScore& sc
         switch(kind){
         case T::High:case T::Score:
             style.scale={1,1};if(kind==T::High)style.color=u32(alpha)<<24|0x808080;
-            score_text(text,u32(value),suffix);return put(x,kind==T::High?44.f:66.f,true);
+            th14_score_number(text,u32(value),suffix);return put(x,kind==T::High?44.f:66.f,true);
         case T::Life:case T::Bombs:
             std::snprintf(text,sizeof text,"%3d",value);return put(x,kind==T::Life?122.f:160.f);
         case T::LifeRequirement:case T::BombRequirement:
@@ -84,7 +82,7 @@ bool th14_hud_counters(AsciiText& output,const GameEconomy& e,const HudScore& sc
             return put(x,kind==T::PowerInteger||kind==T::PowerMaximum?216.f:223.f);
         case T::Points:case T::Graze:
             style.scale={1,1};style.color=u32(alpha)<<24|(kind==T::Points?0x40c0ff:0x808080);
-            grouped(text,u32(value));return put(x,kind==T::Points?238.f:260.f,true);
+            th14_grouped_number(text,u32(value));return put(x,kind==T::Points?238.f:260.f,true);
         }return false;
     });
 }

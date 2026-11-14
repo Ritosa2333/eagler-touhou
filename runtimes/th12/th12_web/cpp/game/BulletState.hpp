@@ -62,6 +62,7 @@ static_assert(offsetof(BulletState,position_interpolation)==0x8c0+kAnmVmExtensio
 struct BulletEnvironment {
     float rate=1;Vec3 player{},default_tangent{};
 #if PORT_TITLE == 14
+    virtual Vec3 th14_target(Vec3)const{return player;}
     Vec2 th14_bounce_bounds{};
     Rng* th14_visual_rng=nullptr;
     virtual bool fire_th14(const Th14BulletEmitter&){return false;}

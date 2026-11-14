@@ -52,15 +52,16 @@ i32 enemy_frame(EnemyScriptServices& script,EnemyFrameWorld& world){
 #if PORT_TITLE == 14
     // Retail 424710 wraps the entire 424810 update, including movement,
     // callbacks and both enemy clocks. Restore on every exit from that update.
+    const float knife_slowdown=world.th14_effective_knife_slowdown(e);
     struct KnifeRateScope {
         EnemyState& enemy;float& rate;float* anm_rate;
         float saved_rate,saved_anm_rate;bool slowed;
         ~KnifeRateScope(){if(slowed){rate=saved_rate;if(anm_rate)th14_rate_store(anm_rate,saved_anm_rate);enemy.th14_knife_clock_applied=true;}}
     } knife_rate{e,environment.rate,script.commands.th14_rate_target,environment.rate,
-        script.commands.th14_rate_target?th14_rate_load(script.commands.th14_rate_target):environment.rate,e.th14_knife_slowdown>0};
+        script.commands.th14_rate_target?th14_rate_load(script.commands.th14_rate_target):environment.rate,knife_slowdown>0};
     if(auto* anm=script.commands.animations)if(knife_rate.slowed||e.th14_knife_clock_applied)
-        for(u32 i=0;i<16;++i)if(auto* vm=anm->lookup(e.animation_handle(i)))vm->slowdown_factor=knife_rate.slowed?e.th14_knife_slowdown:0;
-    if(knife_rate.slowed){environment.rate=enemy_th14_knife_rate(knife_rate.saved_rate,e.th14_knife_slowdown);if(knife_rate.anm_rate)th14_rate_store(knife_rate.anm_rate,environment.rate);}
+        for(u32 i=0;i<16;++i)if(auto* vm=anm->lookup(e.animation_handle(i)))vm->slowdown_factor=knife_slowdown;
+    if(knife_rate.slowed){environment.rate=enemy_th14_knife_rate(knife_rate.saved_rate,knife_slowdown);if(knife_rate.anm_rate)th14_rate_store(knife_rate.anm_rate,environment.rate);}
 #endif
     if constexpr(kPortTitle==16){
         // Retail41d2eb..41d301 guards and marks this frame before movement.
@@ -120,17 +121,21 @@ i32 enemy_frame(EnemyScriptServices& script,EnemyFrameWorld& world){
 #else
         if(u32(e.damage_callback)?!world.damage_callback(e,damage):!world.shot_damage(e,damage)){if constexpr(kPortTitle==16)trace_point=9022;return -2;}
 #endif
-        if(world.player_state==0||world.player_state==2)damage/=5;
 #if PORT_TITLE == 14
+        if(!world.th14_coop_damage_rules()&&(world.player_state==0||world.player_state==2))damage/=5;
         // Retail423ad2..423ae2 collects hits/callbacks first, then zeroes
         // damage while the live dialogue owner at4db550+194 is present.
         if(world.th14_damage_dialogue()||(world.th14_practice_flags()&PrEnemy))damage=0;
-#endif
-        if((world.spell_flags&1)&&world.spell_id>=0x9e&&world.spell_id<=0xa1&&(world.special_active||world.special_ending)&&!(world.player_flags&4))damage/=5;
-        if constexpr(kPortTitle==14){
+        if(!world.th14_coop_damage_rules()){
+            if((world.spell_flags&1)&&world.spell_id>=0x9e&&world.spell_id<=0xa1&&
+               (world.special_active||world.special_ending)&&!(world.player_flags&4))damage/=5;
             bool resistant_sound=false;damage=enemy_th14_bomb_damage(e,damage,world.special_active,resistant_sound);
             if(resistant_sound&&!world.sound(36,e.current.position.x))return -2;
         }
+#else
+        if(world.player_state==0||world.player_state==2)damage/=5;
+        if((world.spell_flags&1)&&world.spell_id>=0x9e&&world.spell_id<=0xa1&&(world.special_active||world.special_ending)&&!(world.player_flags&4))damage/=5;
+#endif
         if(!enlarged&&damage){
             // TH14 423b8a..423b9b is signed division by30 (88888889,
             // add numerator, SAR4), before the independent health scaling.

@@ -86,7 +86,12 @@ void AnmRenderer::upload_camera(const SceneCamera& value){
 
 u32 AnmRenderer::color(const AnmVm& vm)const noexcept {const bool secondary=(kPortTitle==13||kPortTitle==14)?((vm.th13_native_flags>>17)&3)==1:(vm.flags&0x8000)!=0;return tinted_color(secondary?vm.secondary_color:vm.color);}
 
-u32 AnmRenderer::tinted_color(u32 original)const noexcept {if(!tint_enabled)return original;u32 out=0;for(u32 shift=0;shift<32;shift+=8)out|=std::min(255u,(((original>>shift)&255)*((tint>>shift)&255))>>7)<<shift;return out;}
+u32 AnmRenderer::tinted_color(u32 original)const noexcept {
+#if PORT_TITLE == 14
+    original=(original&0xffffffu)|(((original>>24)*coop_draw_alpha/255u)<<24);
+#endif
+    if(!tint_enabled)return original;u32 out=0;for(u32 shift=0;shift<32;shift+=8)out|=std::min(255u,(((original>>shift)&255)*((tint>>shift)&255))>>7)<<shift;return out;
+}
 
 void AnmRenderer::material(const AnmVm& vm){
 
@@ -207,7 +212,13 @@ int AnmRenderer::submit_quad(AnmVm& vm,Vec3 (&positions)[4],bool pixel,const u32
 
     // 47581c..4759a7 precedes the visibility test, including clipped calls.
 
-    for(u32 i=0;i<4;++i){th14_quad[i].position=positions[i];vm.screen_quad_positions[i]=positions[i];th14_quad[i].uv=anm_vertex_uv(vm,i);}
+    for(u32 i=0;i<4;++i){
+        vm.screen_quad_positions[i]=positions[i];
+#if defined(TH14_MULTIPLAYER)
+        if(logical_draw)continue;
+#endif
+        th14_quad[i].position=positions[i];th14_quad[i].uv=anm_vertex_uv(vm,i);
+    }
 
 #endif
 
@@ -215,26 +226,35 @@ int AnmRenderer::submit_quad(AnmVm& vm,Vec3 (&positions)[4],bool pixel,const u32
 
     if(max_x<double(viewport.x)||max_y<double(viewport.y)||min_x>double(viewport.x+viewport.width)||min_y>double(viewport.y+viewport.height))return 0;
 
-    material(vm);u32 diffuse=color(vm);u32 gradient[4];
-
-    if constexpr(kPortTitle==13||kPortTitle==14){const u32 mode=(vm.th13_native_flags>>17)&3;if(!colors&&mode>=2){const auto a=tinted_color(vm.color),b=tinted_color(vm.secondary_color);gradient[0]=a;gradient[1]=mode==2?b:a;gradient[2]=mode==2?a:b;gradient[3]=b;colors=gradient;}}
-
 #if PORT_TITLE == 14
-
-    if(!colors){
+    u32 inherited=0;
+    const auto mode=(vm.th13_native_flags>>17)&3;
+    const bool solid=!colors&&mode<2;
+    if(solid){
 
         // Solid color modes update +53c before the global tint; gradients
 
         // leave that cache intact. The independent-position flag is irrelevant.
 
-        u32 value=((vm.th13_native_flags>>17)&3)==1?vm.secondary_color:vm.color;
+        u32 value=mode==1?vm.secondary_color:vm.color;
 
         if((vm.flags2&0x1000000)&&vm.parent){u32 mixed=0;for(u32 shift=0;shift<32;shift+=8)mixed|=std::min(255u,(((value>>shift)&255)*((vm.parent->inherited_color>>shift)&255))>>7)<<shift;value=mixed;}
 
-        vm.inherited_color=value;diffuse=tinted_color(value);
+        inherited=vm.inherited_color=value;
 
     }
+#if defined(TH14_MULTIPLAYER)
+    // These intermediate draws maintain mutable ANM state but never reach
+    // the device. Do not build a batch just for the null graphics sink.
+    if(logical_draw)return 0;
+#endif
+#endif
+    material(vm);u32 diffuse=color(vm);u32 gradient[4];
 
+    if constexpr(kPortTitle==13||kPortTitle==14){const u32 mode=(vm.th13_native_flags>>17)&3;if(!colors&&mode>=2){const auto a=tinted_color(vm.color),b=tinted_color(vm.secondary_color);gradient[0]=a;gradient[1]=mode==2?b:a;gradient[2]=mode==2?a:b;gradient[3]=b;colors=gradient;}}
+
+#if PORT_TITLE == 14
+    if(solid)diffuse=tinted_color(inherited);
 #endif
 
 #if PORT_TITLE == 14
@@ -264,6 +284,11 @@ int AnmRenderer::draw_ascii_sprite(AnmVm& vm){
     // 401670 submits 44fe30/44f880 directly, including zero-alpha glyphs.
 
     if(!vm.sprite||!vm.resource)return -2;
+#if PORT_TITLE == 14 && defined(TH14_MULTIPLAYER)
+    // AsciiText owns a temporary glyph VM and restores its camera at the
+    // end of the pass, so there is no persistent quad state to update.
+    if(logical_draw)return 0;
+#endif
 
     #if PORT_TITLE == 14
     Vec3 positions[4];if(!anm_th14_ascii_quad_positions(vm,positions,render_space_th14()))return -2;
@@ -328,6 +353,11 @@ int AnmRenderer::draw_transition_type0(AnmVm& vm){
 #endif
 
 int AnmRenderer::draw(AnmVm& vm){
+#if PORT_TITLE == 14
+    struct RestoreAlpha {u8& alpha;u8 previous;~RestoreAlpha(){alpha=previous;}} restore{coop_draw_alpha,coop_draw_alpha};
+    if(coop_opacity)coop_draw_alpha=coop_opacity(coop_opacity_user,vm);
+    if(!coop_draw_alpha)return 0;
+#endif
 
 #if PORT_TITLE == 14
 

@@ -80,7 +80,8 @@ bool th14_damage_circle_rectangle(Vec3 rectangle,Vec2 size,const Th14RectangleRo
     a=x+hx;return r2>a*a+b*b;
 }
 bool th14_damage_collect(std::array<Th14DamageArea,256>& areas,Th14DamageWorld& world,Vec3 p,const Vec2* size,float radius,float angle,
-    bool frame_advanced,bool probe,u32 argument,u32 stamp,i32 cap,GameEconomy& economy,i32& damage,bool& bomb,Vec3* last_hit,NativeStackTh14* stack)noexcept{
+    bool frame_advanced,bool probe,u32 argument,u32 stamp,i32 cap,GameEconomy& economy,i32& damage,bool& bomb,Vec3* last_hit,
+    NativeStackTh14* stack,float bomb_ratio)noexcept{
     damage=0;if(!frame_advanced)return true;bomb=false;
     for(u32 j=0;j<areas.size();++j){auto& a=areas[j];if(!(a.flags&1))continue;
         if(a.timer.current==a.timer.previous)continue;
@@ -91,9 +92,12 @@ bool th14_damage_collect(std::array<Th14DamageArea,256>& areas,Th14DamageWorld& 
             else overlaps=th14_damage_circle_rectangle(a.position,a.size,a.angle,p,radius,stack);
         }else if(size)overlaps=th14_damage_circle_rectangle(p,*size,angle,a.position,a.radius,stack);
         else{const float x=a.position.x-p.x,y=a.position.y-p.y,r=a.radius+radius;overlaps=x*x+y*y<=r*r;}
-        if(!overlaps||(stamp&&a.stamp==stamp))continue;if(stamp)a.stamp=stamp;if(a.flags&4)bomb=true;
+        if(!overlaps||(stamp&&a.stamp==stamp))continue;if(stamp)a.stamp=stamp;
+        const bool bomb_hit=(a.flags&4)!=0;
+        if(bomb_hit&&bomb_ratio>0)bomb=true;
         i32 hit=a.damage;
         if(!probe){if(a.callback){a.argument=argument;if(!world.hit(j,a,p,size,radius,angle,hit))return false;}a.total=wrapping_add(a.total,a.damage);}
+        if(bomb_hit&&bomb_ratio<1.f)hit=truncate_int(float(hit)*bomb_ratio);
         damage=wrapping_add(damage,hit);if(last_hit)*last_hit=a.position;
         if(a.maximum<9999999&&a.total>=a.maximum){a.flags&=~1u;a.damage=0;}
     }

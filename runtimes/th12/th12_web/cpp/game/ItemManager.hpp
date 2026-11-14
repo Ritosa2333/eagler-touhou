@@ -7,6 +7,9 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#if defined(TH14_MULTIPLAYER)
+#include "../multiplayer/FrameImageTh14.hpp"
+#endif
 namespace th11 {
 struct EnemyDrop;
 #if PORT_TITLE == 16
@@ -20,6 +23,8 @@ struct ItemState {
     Timer lifetime;i32 state,type,display_type;float attraction_speed;i32 delay;
 #if PORT_TITLE == 14
     ItemState* th14_free_next;u32 th14_generation;AnmVm th14_indicator;
+    i32 th14_owner=-1,th14_attractor=-1;
+    i32 th14_combo_owner=-1;
 #endif
 #if PORT_TITLE == 16
     ItemState* th16_free_next;u32 th16_generation;i32 th16_force_attract;
@@ -60,6 +65,9 @@ struct ItemWorld {
     virtual i32& item_th14_drop_counter(){return th14_drop_counter;}
     virtual Th14ItemCombo& item_th14_combo_state(){return th14_combo;}
     virtual bool item_th14_combo_settle(){return false;}
+    virtual Th14ItemCombo& item_th14_combo_seat(u32){return item_th14_combo_state();}
+    virtual bool item_th14_combo_settle_seat(u32){return item_th14_combo_settle();}
+    virtual i32 item_th14_power(u32,i32 current)const{return current;}
     virtual bool item_th14_spawn_notice(Vec3,i32){return false;}
 #endif
 };
@@ -81,6 +89,12 @@ public:
     bool update();
     void reset()noexcept;
     bool draw(AnmRenderer&);
+#if defined(TH14_MULTIPLAYER)
+    using RoomSlots=SlotImageTh14<ItemState,capacity>;
+    RoomSlots* room_slots=nullptr;
+    void capture_room_frame(FrameImageTh14&,RoomSlots&);
+    void room_digest(u32&)const;
+#endif
     bool activate(ItemState&);
     void attract_all();
     bool convert_power_items();
@@ -102,7 +116,12 @@ public:
     bool cancel_reward_th14(Vec3);
     bool cancel_reward_th14(Vec3,u32 rewards,u32 reward_count,u32 spell_flags);
     i32 spawn_cancel_th14(i32,Vec3,float,float);
-    i32 spawn_ordinary_th14(i32,Vec3,float,float,i32 delay=0);
+    i32 spawn_ordinary_th14(i32,Vec3,float,float,i32 delay=0,i32 owner=-1);
+    std::array<ItemPlayer,3> th14_pilots{};
+    std::array<bool,3> th14_pilot_live{};
+    u32 th14_pilot_count=1,th14_collector=0;
+    i32 th14_poc_owner=-1;
+    bool th14_stage_attract=false;
     bool scatter_th14(EnemyDrop&,Vec3);
     void release_th14(ItemState&)noexcept;
     u32 th14_spawn_count=0,th14_cancel_count=0,th14_generation=0;

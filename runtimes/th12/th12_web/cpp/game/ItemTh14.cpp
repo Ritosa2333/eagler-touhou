@@ -12,9 +12,13 @@ void ItemManager::mark_th14_slot(const ItemState& item,bool occupied)noexcept{
     else word&=~bit;
 }
 
-i32 ItemManager::spawn_ordinary_th14(i32 type,Vec3 p,float angle,float speed,i32 delay){
+i32 ItemManager::spawn_ordinary_th14(i32 type,Vec3 p,float angle,float speed,i32 delay,i32 owner){
     if(last_error)return -2;++th14_spawn_count;auto* selected=th14_ordinary_free;if(!selected)return 0;
-    auto& i=*selected;i.state=1;i.position=p;
+    auto& i=*selected;
+#if defined(TH14_MULTIPLAYER)
+    if(room_slots)room_slots->save(i);
+#endif
+    i.state=1;i.position=p;i.th14_owner=owner;i.th14_attractor=i.th14_combo_owner=-1;
     mark_th14_slot(i,true);
     if(i.position.x<=-192.f)i.position.x=-192.f;else if(i.position.x>=192.f)i.position.x=192.f;
     if(type==12){auto& count=world.item_th14_drop_counter();count=wrapping_add(count,1);type=count%5==0?4:6;}
@@ -43,7 +47,11 @@ bool ItemManager::scatter_th14(EnemyDrop& drops,Vec3 position){
 i32 ItemManager::spawn_cancel_th14(i32 type,Vec3 p,float angle,float speed){
     if(last_error)return -2;
     ++th14_spawn_count;auto* selected=th14_cancel_free;if(!selected)return 0;
-    auto& item=*selected;item.th14_generation=th14_generation;
+    auto& item=*selected;
+#if defined(TH14_MULTIPLAYER)
+    if(room_slots)room_slots->save(item);
+#endif
+    item.th14_generation=th14_generation;item.th14_owner=item.th14_attractor=item.th14_combo_owner=-1;
     const i32 count=signed_bits(th14_spawn_count),load=signed_bits(th14_cancel_count);
     item.delay=load>=1024?count%32+16:load>=512?count%16+8:load>=256?count%8+4:count%4;
     item.state=5;item.type=item.display_type=type;item.position=p;
@@ -78,13 +86,48 @@ bool ItemManager::update_th14(){
         const float x=i.velocity.x*animations.rate,y=i.velocity.y*animations.rate,z=i.velocity.z*animations.rate;
         i.position.x=i.position.x+x;i.position.y=i.position.y+y;i.position.z=i.position.z+z;
     };
-    const auto home_item=[&](ItemState& i){
-        if(i.state==3&&i.type!=9&&i.type!=10&&i.type!=11)world.item_th14_combo_state().timer=8;
+    const bool coop=th14_pilot_count>1;
+    const auto eligible=[&](const ItemState& i,u32 seat){
+        return th14_pilot_live[seat]&&th14_pilots[seat].state!=2&&th14_pilots[seat].state!=4&&
+            (i.th14_owner<0||i.th14_owner==i32(seat));
+    };
+    const auto attracts=[&](const ItemPlayer& p){
+        return (p.state!=2&&p.state!=4&&p.position.y<(p.character==1?148.f:128.f))||p.bomb_attract||p.force_attract;
+    };
+    const auto nearest=[&](const ItemState& i,const auto& accept){
+        i32 best=-1;float distance=0;
+        for(u32 seat=0;seat<th14_pilot_count;++seat)if(eligible(i,seat)&&accept(th14_pilots[seat])){
+            const auto p=th14_pilots[seat].position;
+            const float x=p.x-i.position.x,y=p.y-i.position.y,d=x*x+y*y;
+            if(best<0||d<distance){best=i32(seat);distance=d;}
+        }
+        return best;
+    };
+    const auto pilot_ready=[&](u32 seat){
+        const auto state=th14_pilots[seat].state;
+        return th14_pilot_live[seat]&&state!=2&&state!=4;
+    };
+    if(coop){
+        if(th14_poc_owner>=0){
+            const auto seat=u32(th14_poc_owner);
+            if(!pilot_ready(seat)||(!th14_stage_attract&&!attracts(th14_pilots[seat])&&
+               world.item_th14_combo_seat(seat).timer<=0))th14_poc_owner=-1;
+        }
+        if(th14_poc_owner<0)for(u32 seat=0;seat<th14_pilot_count;++seat){
+            if(pilot_ready(seat)&&(th14_stage_attract||attracts(th14_pilots[seat]))){
+                th14_poc_owner=i32(seat);
+                break;
+            }
+        }
+    }
+    const auto home_item=[&](ItemState& i,const ItemPlayer& player){
+        if(i.state==3&&i.type>=1&&i.type<=8&&(!coop||i.th14_combo_owner>=0))
+            world.item_th14_combo_seat(coop?u32(i.th14_combo_owner):0).timer=8;
         const float dx=player.position.x-i.position.x,dy=player.position.y-i.position.y;
         const float angle=dx==0&&dy==0?1.5707963705062866f:float(std::atan2(double(dy),double(dx)));
         const auto v=polar(angle,i.attraction_speed);i.velocity.x=v.x;i.velocity.y=v.y;step(i);
         if(i.attraction_speed<12.f)i.attraction_speed=i.attraction_speed+.2f;
-        if(player.state==4){i.velocity.x=i.velocity.y=0;i.state=1;}
+        if(player.state==4){i.velocity.x=i.velocity.y=0;i.state=1;i.th14_combo_owner=-1;}
     };
     // Only skip an empty page when the scan reaches it. The ordinary ordered
     // scan within the page still sees items a callback adds to later slots.
@@ -95,8 +138,39 @@ bool ItemManager::update_th14(){
             auto& i=storage[n];
             if(!i.state)continue;
             const bool ordinary=i.type>=1&&i.type<=8;
-            const float line=player.character==1?148.f:128.f;
-            const bool attract=(player.state!=2&&player.state!=4&&player.position.y<line)||player.bomb_attract||player.force_attract;
+            if(coop){
+                if(ordinary&&i.state==1)i.th14_attractor=i.th14_combo_owner=-1;
+                if(i.th14_attractor>=0&&!eligible(i,u32(i.th14_attractor))){
+                    i.th14_attractor=-1;
+                    if(i.state==4)i.state=1;
+                }
+                if(!ordinary&&(i.state==1||i.state==2||i.state==3)){
+                    if(i.th14_attractor<0)i.th14_attractor=nearest(i,[](const ItemPlayer&){return true;});
+                }else if(ordinary&&(i.state==1||i.state==4||(i.state==3&&i.th14_attractor<0))){
+                    const i32 owner=i.th14_owner>=0?i.th14_owner:th14_poc_owner;
+                    if(owner>=0&&eligible(i,u32(owner))&&(i.state==3||owner==th14_poc_owner)&&
+                       (i.state==3||th14_stage_attract||attracts(th14_pilots[u32(owner)]))){
+                        i.th14_attractor=owner;
+                        if(i.th14_owner<0)i.th14_combo_owner=owner;
+                    }
+                }
+                if(i.state==3&&i.th14_attractor<0){
+                    i.state=ordinary?1:2;
+                    if(!ordinary)i.velocity={};
+                    i.th14_combo_owner=-1;
+                }
+                const bool power=i.type==1||i.type==3||i.type==8;
+                if(power&&i.th14_combo_owner>=0&&i.th14_attractor>=0){
+                    const auto& pilot=th14_pilots[u32(i.th14_attractor)];
+                    if(pilot.power>=pilot.max_power){
+                        const i32 receiver=nearest(i,[](const ItemPlayer& p){return p.power<p.max_power;});
+                        if(receiver>=0)i.th14_attractor=receiver;
+                    }
+                }
+            }
+            const auto& target=coop&&i.th14_attractor>=0?th14_pilots[u32(i.th14_attractor)]:player;
+            const bool attract=coop?i.th14_attractor>=0&&(i.state!=4||i.th14_combo_owner>=0||
+                (i.th14_owner>=0&&(th14_stage_attract||attracts(target)))):attracts(player);
             if(!ordinary&&(i.type<9||i.type>11)){last_error=141;return false;}
             if(i.state==5){
                 i.delay=wrapping_sub(i.delay,1);if(i.delay<0&&!activate(i))return false;
@@ -107,7 +181,7 @@ bool ItemManager::update_th14(){
                 if(i.delay>0){i.delay=wrapping_sub(i.delay,1);
                     if(!i.delay&&(i.type==4||i.type==5||i.type==6||i.type==7)&&!world.item_th14_spawn_notice(i.position,i.type)){last_error=150;return false;}continue;}
                 if(attract){
-                    i.attraction_speed=player.attraction_speed;i.state=3;home_item(i);
+                    i.attraction_speed=target.attraction_speed;i.state=3;home_item(i,target);
                 }
                 else{
                     step(i);const float acceleration=animations.rate*.03f;i.velocity.y=i.velocity.y+acceleration;
@@ -117,27 +191,45 @@ bool ItemManager::update_th14(){
                 }
             }else if(i.state==2){
                 step(i);const float acceleration=animations.rate*.03f;i.velocity.y=i.velocity.y+acceleration;
-                if(i.velocity.y>=0){i.attraction_speed=player.attraction_speed;i.state=3;home_item(i);}
+                if(i.velocity.y>=0&&(!coop||i.th14_attractor>=0)){
+                    i.attraction_speed=target.attraction_speed;i.state=3;home_item(i,target);
+                }else if(coop&&!ordinary&&i.velocity.y>=0)i.velocity={};
                 else if(i.position.y>472){release_th14(i);continue;}
-            }else if(i.state==3)home_item(i);
-            else if(i.state==4){if(attract){i.attraction_speed=player.attraction_speed;i.state=3;}home_item(i);}
+            }else if(i.state==3)home_item(i,target);
+            else if(i.state==4){if(attract){i.attraction_speed=target.attraction_speed;i.state=3;}home_item(i,target);}
             else{last_error=142;return false;}
-            if(player.state!=2&&player.pickup.contains(i.position)){
+            const i32 collector=coop?(i.state==3&&i.th14_attractor>=0
+                ?(target.pickup.contains(i.position)?i.th14_attractor:-1)
+                :nearest(i,[&](const ItemPlayer& p){return p.pickup.contains(i.position);})):
+                player.state!=2&&player.pickup.contains(i.position)?0:-1;
+            if(collector>=0){
+                th14_collector=u32(collector);
                 th14_last_collect_type=i.type;bool convert=false;if(!world.collect(i,convert)){last_error=143;return false;}
+                if(coop){
+                    auto& p=th14_pilots[u32(collector)];
+                    p.power=world.item_th14_power(u32(collector),p.power);
+                }
                 if(i.type!=9&&!world.sound(37,i.position.x)){last_error=144;return false;}
                 release_th14(i);continue;
             }
-            if(player.state!=2&&i.state!=3&&i.state!=4&&ordinary){
-                const auto& bounds=player.focused?player.focused_attract:player.unfocused_attract;
-                if(bounds.contains(i.position)){i.state=4;i.attraction_speed=player.attraction_speed/3.f;}
+            if(i.state!=3&&i.state!=4&&ordinary){
+                const auto near=[&](const ItemPlayer& p){return (p.focused?p.focused_attract:p.unfocused_attract).contains(i.position);};
+                const i32 seat=coop?nearest(i,near):player.state!=2&&near(player)?0:-1;
+                if(seat>=0){
+                    if(coop)i.th14_attractor=seat;
+                    i.state=4;i.attraction_speed=(coop?th14_pilots[u32(seat)]:player).attraction_speed/3.f;
+                }
             }
             if((i.vm.flags&1)&&i.vm.update(animations)<0){last_error=145;return false;}
             if((i.th14_indicator.flags&1)&&i.th14_indicator.update(animations)<0){last_error=149;return false;}
             i.lifetime.tick();++active_count;
         }
     }
-    auto& combo=world.item_th14_combo_state();
-    if(combo.timer>0){combo.timer=wrapping_sub(combo.timer,1);if(!combo.timer&&!world.item_th14_combo_settle()){last_error=151;return false;}}
+    for(u32 seat=0;seat<th14_pilot_count;++seat){
+        auto& combo=world.item_th14_combo_seat(seat);
+        if(combo.timer>0){combo.timer=wrapping_sub(combo.timer,1);if(!combo.timer&&!world.item_th14_combo_settle_seat(seat)){last_error=151;return false;}}
+    }
+    th14_stage_attract=false;
     return true;
 }
 bool ItemManager::draw_th14(AnmRenderer& renderer){

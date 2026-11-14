@@ -32,7 +32,12 @@ Enemy* EnemyManager::spawn(const char* name,const EnemySpawn& parameters){
         failed_spawn(last_error?1:2);
 #endif
         last_error=-2;return nullptr;}
-    auto entry=std::make_unique<Entry>(environment,commands);auto& enemy=entry->enemy;auto& e=enemy.state;
+#if defined(TH14_MULTIPLAYER)
+    auto entry=std::make_shared<Entry>(environment,commands);
+#else
+    auto entry=std::make_unique<Entry>(environment,commands);
+#endif
+    auto& enemy=entry->enemy;auto& e=enemy.state;
     enemy.script.initialize_context();enemy.script.program=program;enemy.script.select_subroutine(name);
     if(!enemy.script.root.instruction){
 #if PORT_TITLE == 16

@@ -18,6 +18,12 @@ public:
     int draw(AnmVm& vm);
 #if PORT_TITLE == 14
     u32 render_width=640,render_height=480;
+    const void* coop_opacity_user=nullptr;
+    u8 (*coop_opacity)(const void*,const AnmVm&)=nullptr;
+    u8 coop_draw_alpha=255;
+#if defined(TH14_MULTIPLAYER)
+    bool logical_draw=false;
+#endif
     int draw_transition_type0(AnmVm& vm);
     AnmRenderSpace render_space_th14()const noexcept;
 #endif

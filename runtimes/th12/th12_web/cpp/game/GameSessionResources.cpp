@@ -162,13 +162,27 @@ bool GameSessionResources::load_selected_player(u32 character,u32 subtype){
     if(!core_source)return core_error(error,"TH14 pending player resource owner changed");
     return load_selected_player_from(*core_source,character,subtype);
 }
+bool GameSessionResources::load_coop_player(u32 character,u32 subtype,AnmResource& file,ShtResource& shot){
+    if(!core_source||!player_selection_valid(i32(character),i32(subtype)))return core_error(error,"invalid TH14 teammate loadout");
+    if(!core_source->open_anm(player_file_name(character,subtype),file)||
+       !core_source->open_sht(shot_file_name(shot_file_slot(character,subtype)),shot))
+        return core_error(error,core_source->error().c_str());
+    if(animation_manager&&!animation_manager->prepare_resource(file,9))return core_error(error,animation_manager->last_error_text().c_str());
+    if(effects&&!effects->prepare_animation(file))return core_error(error,effects->last_error().c_str());
+    return true;
+}
 bool GameSessionResources::load_selected_player_from(GameResources& reader,u32 character,u32 subtype){
     if(!core_source||!player_selection_valid(i32(character),i32(subtype))||selected_player_pending!=i32(character*2+subtype))
         return core_error(error,"TH14 pending player resource owner changed");
     auto& file=core.players[character];
     if(animation_manager&&animation_manager->references(file))return core_error(error,"TH14 pending player resource still referenced");
     if(!reader.open_anm(player_file_name(character,subtype),file))return core_error(error,(std::string("player ANM: ")+file.detail).c_str());
-    if(animation_manager&&(!effects||!effects->defer_initial_stage_decode())&&!animation_manager->prepare_resource(file,9))return core_error(error,animation_manager->last_error_text().c_str());
+    if(!effects||!effects->defer_initial_stage_decode()){
+        if(animation_manager&&!animation_manager->prepare_resource(file,9))return core_error(error,animation_manager->last_error_text().c_str());
+        if(effects&&!effects->prepare_animation(file))return core_error(error,effects->last_error().c_str());
+        const u32 slot=shot_file_slot(character,subtype);
+        if(!reader.open_sht(shot_file_name(slot),core.shots[slot]))return core_error(error,reader.error().c_str());
+    }
     selected_player_pending=-1;return true;
 }
 #endif

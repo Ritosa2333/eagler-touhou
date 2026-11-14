@@ -1,6 +1,13 @@
 #pragma once
 #include "LaserState.hpp"
+#if defined(TH14_MULTIPLAYER)
+#include <memory>
+#include <unordered_map>
+#endif
 namespace th11 {
+#if defined(TH14_MULTIPLAYER)
+class FrameImageTh14;
+#endif
 class LaserManager final:public LaserWorld {
 public:
     static constexpr u32 capacity=kPortTitle==16?512:256;
@@ -28,6 +35,9 @@ public:
     i32 spawn_th14_curve(const u8* request,const std::vector<Th14CurveNode>* inherited=nullptr);
     bool reset_th14();
     bool freeze_th14(bool);
+#endif
+#if defined(TH14_MULTIPLAYER)
+    void capture_room_frame(FrameImageTh14&);
 #endif
     bool update(bool paused=false,bool frozen=false);
     bool draw(AnmRenderer&,bool paused=false);
@@ -73,6 +83,10 @@ public:
     bool th14_line_spawn(const u8* request)override{spawn_th14_line(request);return !last_error;}
 #endif
 private:
+#if defined(TH14_MULTIPLAYER)
+    std::unordered_map<LaserState*,std::shared_ptr<void>> room_lasers;
+    template<class T> void own_room_laser(T* laser){room_lasers.emplace(&laser->base,std::shared_ptr<T>(laser));}
+#endif
 #if PORT_TITLE == 14
     i32 th14_line_cut(Th14LaserLine&,Vec3,Vec2,const Th14RectangleRotation&,u32,bool);
     i32 th14_infinite_cut(Th14LaserInfinite&,Vec3,Vec2,const Th14RectangleRotation&,u32,bool);

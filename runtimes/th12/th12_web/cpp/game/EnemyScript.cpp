@@ -266,6 +266,18 @@ i32 EnemyScriptServices::command(EclContext& context){
     if(result==-2)error={context.instruction,context.thread_id,context.time,context.instruction->opcode};
     return result;
 }
-void* EnemyScriptServices::allocate(u32 bytes){return std::calloc(1,bytes);}
-void EnemyScriptServices::release(void* p){std::free(p);}
+void* EnemyScriptServices::allocate(u32 bytes){
+    void* p=std::calloc(1,bytes);
+#if defined(TH14_MULTIPLAYER)
+    if(p)thread_storage.emplace(p,std::shared_ptr<void>(p,std::free));
+#endif
+    return p;
+}
+void EnemyScriptServices::release(void* p){
+#if defined(TH14_MULTIPLAYER)
+    thread_storage.erase(p);
+#else
+    std::free(p);
+#endif
+}
 }

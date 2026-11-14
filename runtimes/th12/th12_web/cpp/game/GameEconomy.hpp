@@ -31,6 +31,7 @@ struct GameEconomy {
     // known (4375fd), but no gameplay consumer has been identified.
     i32 th14_reserved_54=0;
     i32 th14_bombs=3,th14_bomb_fragments=0,th14_life_awards=0;
+    i32 th14_initial_bombs=3,th14_small_power=1;
     Th14ItemCombo th14_combo;
     // thprac in-game info counters. They count the whole run, like thprac's
     // own counters (reset by its game-start hook only); GameBattle is rebuilt

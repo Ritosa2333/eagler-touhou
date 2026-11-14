@@ -307,8 +307,8 @@ bool PlayerFrame::death_frame(){
         else{state.life_state=0;animations.rate=1;
 #if PORT_TITLE == 14
         if(!shots.th14_death_area(motion.state.position))return false;
-        economy.th14_bombs=3;
-        if(!world.bombs_changed(3,economy.th14_bomb_fragments))return false;
+        economy.th14_bombs=economy.th14_initial_bombs;
+        if(!world.bombs_changed(economy.th14_bombs,economy.th14_bomb_fragments))return false;
 #elif PORT_TITLE == 16
         if(!shots.th16_sources.circle(motion.state.position,32.f,16.f,30,150))return false;
         economy.th16_bombs=3;if(!world.bombs_changed(3,economy.th16_bomb_fragments))return false;

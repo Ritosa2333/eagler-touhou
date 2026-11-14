@@ -212,7 +212,7 @@ i32 enemy_th14_movement_command(EnemyState& e,EclContext& c,EnemyGlobals& g)noex
     if(op==414||op==415){
         // Retail 427199/4271c2 copies the player's raw XYZ; it does not
         // combine movement, reset velocity or alter the movement nibble.
-        (op==414?e.absolute:e.relative).position=g.environment.player_position;return 0;
+        (op==414?e.absolute:e.relative).position=g.environment.aim_at(e.current.position);return 0;
     }
     if(op==418||op==419){
         // Retail 426d48: write velocity XY and immediately refresh the

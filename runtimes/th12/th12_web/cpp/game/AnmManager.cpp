@@ -36,7 +36,7 @@ AnmManager::~AnmManager(){
 #if defined(TH14_NATIVE_CRITICAL_SECTIONS)
     th14_critical_sections::ContainerGuard guard(th14_critical_sections::containers);
 #endif
-for(auto& [vm,size]:geometry_sizes){std::free(vm->geometry);vm->geometry=nullptr;}}
+for(auto& [vm,size]:geometry_sizes)free_geometry(*vm);}
 #if PORT_TITLE == 14
 bool AnmManager::prepare_resource(AnmResource& file,u16 file_id){
     if(file.templates)return true;
@@ -165,7 +165,14 @@ AnmVm* AnmManager::create(AnmResource& file,i32 script,u16 file_id,u32 layer,boo
 #endif
     record_index=g_creation_count%kCreationCapacity;
     {auto& r=g_creations[record_index];r={script,layer,file_id,&file,spawn_depth,0u};++g_creation_count;}
-    if(available.empty()){storage.push_back(std::make_unique<AnmVm>());vm=storage.back().get();if constexpr(kPortTitle==16)vm->layer=14;vm->initialize();}else{vm=available.back();available.pop_back();}
+    if(available.empty()){
+#if defined(TH14_MULTIPLAYER)
+        storage.push_back(std::make_shared<AnmVm>());
+#else
+        storage.push_back(std::make_unique<AnmVm>());
+#endif
+        vm=storage.back().get();if constexpr(kPortTitle==16)vm->layer=14;vm->initialize();
+    }else{vm=available.back();available.pop_back();}
 #if PORT_TITLE == 14
     if(th14_native_slots.find(vm)==th14_native_slots.end())th14_native_slots.emplace(vm,th14_unused_slots?--th14_unused_slots:8191);
 #endif
@@ -281,7 +288,7 @@ void AnmManager::destroy(AnmVm& vm){
 #endif
     for(u32 i=0;i<2;++i){if(heads[i]==&vm.registry)heads[i]=vm.registry.next;if(tails[i]==&vm.registry)tails[i]=vm.registry.previous;}
     auto unlink=[](AnmVm::Node& node){if(node.next)node.next->previous=node.previous;if(node.previous)node.previous->next=node.next;node.next=node.previous=nullptr;};
-    unlink(vm.registry);unlink(vm.child);active.erase(vm.id);if(auto it=geometry_sizes.find(&vm);it!=geometry_sizes.end()){std::free(vm.geometry);vm.geometry=nullptr;geometry_sizes.erase(it);}
+    unlink(vm.registry);unlink(vm.child);active.erase(vm.id);if(auto it=geometry_sizes.find(&vm);it!=geometry_sizes.end()){free_geometry(vm);geometry_sizes.erase(it);}
 #if PORT_TITLE == 14
     const auto slot=th14_native_slots.find(&vm);
     if(slot!=th14_native_slots.end()&&slot->second==8191){
@@ -415,13 +422,28 @@ bool AnmManager::allocate_geometry(AnmVm& vm,u32 bytes){
 #endif
 
     if(!bytes||bytes>16*1024*1024)return false;void* p=std::calloc(1,bytes);if(!p)return false;
-    if(geometry_sizes.find(&vm)!=geometry_sizes.end())std::free(vm.geometry);vm.geometry=p;geometry_sizes[&vm]=bytes;return true;
+    if(geometry_sizes.find(&vm)!=geometry_sizes.end())free_geometry(vm);
+#if defined(TH14_MULTIPLAYER)
+    geometry_owners.emplace(p,std::shared_ptr<void>(p,std::free));
+    geometry_addresses[&vm]=p;
+#endif
+    vm.geometry=p;geometry_sizes[&vm]=bytes;return true;
+}
+void AnmManager::free_geometry(AnmVm& vm){
+#if defined(TH14_MULTIPLAYER)
+    if(auto it=geometry_addresses.find(&vm);it!=geometry_addresses.end()){
+        geometry_owners.erase(it->second);geometry_addresses.erase(it);
+    }
+#else
+    std::free(vm.geometry);
+#endif
+    vm.geometry=nullptr;
 }
 void AnmManager::release_geometry(AnmVm& vm){
 #if defined(TH14_NATIVE_CRITICAL_SECTIONS)
     th14_critical_sections::ContainerGuard guard(th14_critical_sections::containers);
 #endif
-auto it=geometry_sizes.find(&vm);if(it!=geometry_sizes.end()){std::free(vm.geometry);vm.geometry=nullptr;geometry_sizes.erase(it);}}
+auto it=geometry_sizes.find(&vm);if(it!=geometry_sizes.end()){free_geometry(vm);geometry_sizes.erase(it);}}
 bool AnmManager::update_geometry(AnmVm& vm){
 #if defined(TH14_NATIVE_CRITICAL_SECTIONS)
     const u32 bytes=geometry_bytes(vm);if(!bytes)return false;

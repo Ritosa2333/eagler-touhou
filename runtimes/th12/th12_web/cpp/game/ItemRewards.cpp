@@ -97,10 +97,10 @@ bool ItemRewards::th16_collect(const ItemState& item,const ItemPlayer& player){
 }
 #endif
 #if PORT_TITLE == 14
-bool ItemRewards::th14_bomb_fragment(){
+bool ItemRewards::th14_bomb_fragment(i32 pieces){
     if(state.th14_bombs>=8){state.th14_bomb_fragments=0;return true;}
     state.th14_bomb_fragments=wrapping_add(state.th14_bomb_fragments,1);
-    if(state.th14_bomb_fragments>=8){
+    if(state.th14_bomb_fragments>=pieces){
         state.th14_bombs=wrapping_add(state.th14_bombs,1);state.th14_bomb_fragments=0;
         if(state.th14_bombs>8)state.th14_bombs=8;
         else if(!effects.sound(46,0,false))return false;
@@ -108,11 +108,12 @@ bool ItemRewards::th14_bomb_fragment(){
     }
     return effects.bombs_changed(state.th14_bombs,state.th14_bomb_fragments);
 }
-bool ItemRewards::th14_life_fragment(){
-    if(state.lives>=8){if(!th14_bomb_fragment())return false;state.life_fragments=0;return true;}
+bool ItemRewards::th14_life_fragment(i32 life_pieces,i32 bomb_pieces){
+    if(state.lives>=8){if(!th14_bomb_fragment(bomb_pieces))return false;state.life_fragments=0;return true;}
+    const auto required=[&]{return life_pieces?life_pieces:th14_life_fragment_requirement(state.th14_life_awards);};
     state.life_fragments=wrapping_add(state.life_fragments,1);
-    while(state.life_fragments>=th14_life_fragment_requirement(state.th14_life_awards)){
-        state.life_fragments=wrapping_sub(state.life_fragments,th14_life_fragment_requirement(state.th14_life_awards));
+    while(state.life_fragments>=required()){
+        state.life_fragments=wrapping_sub(state.life_fragments,required());
         if(state.lives<8){state.lives=std::min(wrapping_add(state.lives,1),8);
             if(!effects.lives_changed(state.lives,state.life_fragments)||!effects.sound(17,0,false)||!effects.notify(4))return false;}
         state.th14_life_awards=wrapping_add(state.th14_life_awards,1);
@@ -145,7 +146,7 @@ bool ItemRewards::th14_combo_settle(bool dialogue){
     else if(combo.count>=5){if(!effects.th14_combo_popup(p,-1,0x80a0a0a0,0.f))return false;amount=0;}
     else amount=0;
     if(color){if(!effects.sound(57,p.x,true)||!effects.th14_combo_popup(p,amount,color,multiplier))return false;
-        if(amount>0){state.add_score(amount);if(!effects.th14_combo_drop(fragment?4:12,p,dialogue?0:40))return false;}}
+        if(amount>0){th14_counters->add_score(amount);if(!effects.th14_combo_drop(fragment?4:12,p,dialogue?0:40))return false;}}
     combo.count=combo.total=0;return true;
 }
 #endif
@@ -182,13 +183,21 @@ bool ItemRewards::add_life_fragment(){
 }
 bool ItemRewards::collect(const ItemState& item,bool& convert,const ItemPlayer* player){
 #if PORT_TITLE == 14
+    return th14_collect_with_combo(item,convert,player,player);
+}
+bool ItemRewards::th14_collect_with_combo(const ItemState& item,bool& convert,const ItemPlayer* player,const ItemPlayer* attractor,Th14ItemCombo* combo_owner){
     if(item.type==4)return th14_life_fragment();
     if(item.type==5)return th14_life();
     if(item.type==6)return th14_bomb_fragment();
     if(item.type==7)return th14_bomb();
     if(item.type==8){
+        if(combo_owner){
+            ++combo_owner->count;
+            combo_owner->total=wrapping_add(combo_owner->total,100);
+            combo_owner->position=attractor->position;
+        }
         if(state.power>=state.max_power){
-            state.add_point_value(10000);
+            th14_counters->add_point_value(10000);
             return effects.popup(item.position,100,0xff40ff40)&&effects.sound(13,item.position.x,true);
         }
         if(state.power_step<=0)return false;state.power=wrapping_add(state.power,state.max_power);
@@ -200,12 +209,17 @@ bool ItemRewards::collect(const ItemState& item,bool& convert,const ItemPlayer* 
     if(item.type==1||item.type==2||item.type==3){
         if(!player)return false;
         const float line=player->character==1?148.f:128.f;
-        const bool combo=player->position.y<=line||item.state==3;
-        const auto record_combo=[&](i32 award){auto& c=state.th14_combo;c.count=wrapping_add(c.count,1);c.total=wrapping_add(c.total,award);c.position=player->position;};
+        const bool combo=combo_owner||(attractor&&(player->position.y<=line||item.state==3));
+        const auto record_combo=[&](i32 award){
+            auto& c=combo_owner?*combo_owner:state.th14_combo;
+            c.count=wrapping_add(c.count,1);
+            c.total=wrapping_add(c.total,award);
+            c.position=attractor->position;
+        };
         if(item.type==3){
             i32 award=100;
             if(state.power>=state.max_power){
-                award=20000;state.add_score(award);
+                award=20000;th14_counters->add_score(award);
                 if(!effects.popup(item.position,award,0xff808080)||!effects.sound(13,item.position.x,true))return false;
             }else{
                 if(state.power_step<=0)return false;state.power=wrapping_add(state.power,state.power_step);
@@ -214,22 +228,23 @@ bool ItemRewards::collect(const ItemState& item,bool& convert,const ItemPlayer* 
                     if(!effects.power_changed()||!effects.sound(13,item.position.x,true)||!effects.popup(item.position,-1,0xffffff40))return false;
                 }
             }
-            state.add_score(award);if(combo)record_combo(award);return true;
+            th14_counters->add_score(award);if(combo)record_combo(award);return true;
         }
         if(item.type==1){
             i32 award=100;
             if(state.power>=state.max_power){award=10000;if(!effects.popup(item.position,award,0xffffffff))return false;}
             else{
                 if(state.power_step<=0)return false;
-                state.power=wrapping_add(state.power,1);
+                const i32 amount=state.th14_small_power;
+                state.power=wrapping_add(state.power,amount);
                 if(state.power>state.max_power){state.power=state.max_power;if(!effects.notify(2))return false;}
-                if(wrapping_sub(state.power,1)/state.power_step!=state.power/state.power_step){
+                if(wrapping_sub(state.power,amount)/state.power_step!=state.power/state.power_step){
                     if(!effects.power_changed()||!effects.popup(item.position,-1,0xffffff40)||!effects.sound(13,item.position.x,true))return false;
                 }
             }
-            state.add_score(award);if(combo)record_combo(award);return true;
+            th14_counters->add_score(award);if(combo)record_combo(award);return true;
         }
-        const i32 base=state.point_value/100,rounded=wrapping_sub(base,base%10);
+        const i32 base=th14_counters->point_value/100,rounded=wrapping_sub(base,base%10);
         const i32 distance=wrapping_sub(truncate_int(player->position.y),player->character==1?148:128);
         const i32 slope=signed_bits(u32(wrapping_sub(0,rounded))*3)/4;
         const i32 drop=signed_bits(u32(slope)*u32(distance))/450;
@@ -237,11 +252,11 @@ bool ItemRewards::collect(const ItemState& item,bool& convert,const ItemPlayer* 
         const i32 award=combo?std::max(10,signed_bits(u32(rounded/10)*10)):std::max(10,signed_bits(u32(value/10)*10));
         if(!effects.popup(item.position,award,combo?0xffffff00:0xffffffff))return false;
         if(combo)record_combo(award);
-        state.add_score(award);state.th14_point_items=wrapping_add(state.th14_point_items,1);return true;
+        th14_counters->add_score(award);th14_counters->th14_point_items=wrapping_add(th14_counters->th14_point_items,1);return true;
     }
     // 438b95/438b9f -> 439d30 + 41d5e0: cancel items never award power.
     if(item.type<9||item.type>11)return false;
-    state.add_point_value(item.type==11?2000:200);state.add_score(10);return true;
+    th14_counters->add_point_value(item.type==11?2000:200);th14_counters->add_score(10);return true;
 #endif
     bool changed=false;const auto p=item.position;
     switch(item.type){

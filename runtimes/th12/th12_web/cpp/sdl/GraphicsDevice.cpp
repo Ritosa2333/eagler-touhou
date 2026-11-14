@@ -101,6 +101,22 @@ bool patched_texture(const AnmResource& file,const AnmTexture& source,u32 index,
 }
 }
 #endif
+#if defined(TH14_MULTIPLAYER)
+namespace {
+void clear_room_front_logo(AnmTexture& atlas){
+    // Like TH17, extend the original frame artwork across the logo. The
+    // TH14 logo ends above the bottom trim, so blend back to the original there.
+    constexpr u32 stride=1024*4,left=64*4,width=448*4;
+    constexpr u32 top=640,logo_top=656,logo_bottom=896,bottom=928;
+    for(u32 y=top;y<bottom;++y){
+        auto* row=atlas.pixels.data()+y*stride+left;
+        const auto* reflected=atlas.pixels.data()+(2*top-1-y)*stride+left;
+        const auto fade=std::min({256u,(y-top)*256/(logo_top-top),(bottom-y)*256/(bottom-logo_bottom)});
+        for(u32 x=0;x<width;++x)row[x]=u8((row[x]*(256-fade)+reflected[x]*fade)/256);
+    }
+}
+}
+#endif
 touhou::sdl::Surface GraphicsDevice::resolve(void* owner,u32 id){
     auto& device=*static_cast<GraphicsDevice*>(owner);auto it=device.textures.find(id);if(it==device.textures.end())return {};
     auto& t=it->second;auto& image=t.image;return {id,image.width,image.height,image.format,image.pitch,image.pixels.data(),u32(image.pixels.size()),t.revision};
@@ -146,7 +162,18 @@ bool GraphicsDevice::prepare_texture(AnmResource& file,u32 index,u32& handle,boo
 #else
     const AnmTexture& selected=source;
 #endif
-    const bool loaded=texture.image.load(selected,low_color
+#if defined(TH14_MULTIPLAYER)
+    AnmTexture room_front;
+    if(selected.name=="front/front00.png"&&selected.pixel_format==1&&
+       selected.pixel_width==1024&&selected.pixel_height==1024&&selected.pixels.size()==1024*1024*4){
+        room_front=selected;
+        clear_room_front_logo(room_front);
+    }
+    const auto& image_source=room_front.pixels.empty()?selected:room_front;
+#else
+    const auto& image_source=selected;
+#endif
+    const bool loaded=texture.image.load(image_source,low_color
 #if PORT_TITLE == 14
             ,texture_high_precision&&*texture_high_precision,textures.at(screen).image.width
 #endif

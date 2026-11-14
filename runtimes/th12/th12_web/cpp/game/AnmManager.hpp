@@ -16,6 +16,9 @@
 #include <unordered_map>
 #include <vector>
 namespace th11 {
+#if defined(TH14_MULTIPLAYER)
+class FrameImageTh14;
+#endif
 class AnmManager final:public AnmEnvironment {
 public:
     ~AnmManager() override;
@@ -121,14 +124,26 @@ return active.size();}
     // Those fields as one line, for a report that has to carry a manager failure upward.
     std::string last_error_text()const;
 private:
+#if defined(TH14_MULTIPLAYER)
+    std::unordered_map<void*,std::shared_ptr<void>> geometry_owners;
+    std::unordered_map<AnmVm*,void*> geometry_addresses;
+public:
+    void capture_room_frame(FrameImageTh14&);
+private:
+#endif
     void record_failure(const AnmVm& vm);
+#if defined(TH14_MULTIPLAYER)
+    std::vector<std::shared_ptr<AnmVm>> storage;
+#else
     std::vector<std::unique_ptr<AnmVm>> storage;
+#endif
     std::vector<AnmVm*> available;
     std::unordered_map<u32,AnmVm*> active;
     std::unordered_map<AnmVm*,u32> geometry_sizes;
     AnmVm::Node* heads[2]{},*tails[2]{};
     std::array<AnmVm*,kPortTitle==16?43:kPortTitle==14?36:kPortTitle==13?33:31> layers{};
     u32 next_id=0,spawn_depth=0;
+    void free_geometry(AnmVm&);
 #if PORT_TITLE == 14
     static constexpr u32 th14_overlay_layer=34;
     std::array<AnmVm**,36> th14_draw_tail{};

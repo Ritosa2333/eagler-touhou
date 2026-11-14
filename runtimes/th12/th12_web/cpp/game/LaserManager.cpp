@@ -7,6 +7,9 @@ i32 LaserManager::issue_id()noexcept{next_id=wrapping_add(next_id,1);if(next_id<
 void LaserManager::append(LaserState& b)noexcept{b.previous=tail;b.next=nullptr;tail->next=&b;tail=&b;++active_count;}
 void LaserManager::release(LaserState& b)noexcept{
     b.previous->next=b.next;if(b.next)b.next->previous=b.previous;if(tail==&b)tail=b.previous;--active_count;
+#if defined(TH14_MULTIPLAYER)
+    if(room_lasers.erase(&b))return;
+#endif
 #if PORT_TITLE == 16
     if(b.type==0){delete reinterpret_cast<Th16LaserLine*>(&b);return;}
 #endif
@@ -266,11 +269,17 @@ bool LaserManager::freeze_th14(bool value){
 i32 LaserManager::spawn_th14_line(const u8* request){
     last_error=0;if(!updating)sync();if(active_count>=capacity)return 0;const i32 id=issue_id();auto* laser=new(std::nothrow) Th14LaserLine{};
     if(!laser){last_error=-2;return 0;}laser->base.initialize(&rate);laser->base.id=id;append(laser->base);
+#if defined(TH14_MULTIPLAYER)
+    own_room_laser(laser);
+#endif
     if(!laser_th14_line_initialize(*laser,request,resource,animations,*this,file_id)){last_error=-2;release(laser->base);return 0;}return id;
 }
 i32 LaserManager::spawn_th14_infinite(const u8* request){
     last_error=0;if(!updating)sync();if(active_count>=capacity)return 0;const i32 id=issue_id();auto* laser=new(std::nothrow) Th14LaserInfinite{};
     if(!laser){last_error=-2;return 0;}laser->base.initialize(&rate);laser->base.type=1;laser->base.id=id;append(laser->base);
+#if defined(TH14_MULTIPLAYER)
+    own_room_laser(laser);
+#endif
     if(!laser_th14_infinite_initialize(*laser,request,resource,animations,*this,file_id)){last_error=-2;release(laser->base);return 0;}return id;
 }
 bool LaserManager::reset_th14(){
@@ -282,14 +291,22 @@ i32 LaserManager::spawn_th14_curve(const u8* request,const std::vector<Th14Curve
     last_error=0;if(!updating)sync();if(active_count>=capacity)return 0;const i32 id=issue_id();auto* curve=new(std::nothrow) Th14LaserCurve{};
     if(!curve){last_error=-2;return 0;}curve->base.initialize(&rate);curve->base.id=id;
     if(!laser_th14_curve_initialize(*curve,request,resource,animations,*this,file_id,inherited)){delete curve;last_error=-2;return 0;}
-    append(curve->base);return id;
+    append(curve->base);
+#if defined(TH14_MULTIPLAYER)
+    own_room_laser(curve);
+#endif
+    return id;
 }
 i32 LaserManager::spawn_th14_shell(const u8* request){
     last_error=0;if(!updating)sync();if(active_count>=capacity)return 0;const i32 id=issue_id();auto* shell=new(std::nothrow) Th14LaserShell{};
     if(!shell){last_error=-2;return 0;}auto& b=shell->base;b.initialize(&rate);b.state=b.type=3;
     std::memcpy(shell->request,request,0x354);std::memcpy(&b.position,request,12);std::memcpy(&b.width,request+0x18,4);std::memcpy(&b.length,request+0x20,4);
     std::memcpy(&b.id,request+0x28,4);std::memcpy(&b.protection,request+0x2c,4);for(auto& value:shell->history)value=b.length;
-    append(b);return id;
+    append(b);
+#if defined(TH14_MULTIPLAYER)
+    own_room_laser(shell);
+#endif
+    return id;
 }
 #endif
 }

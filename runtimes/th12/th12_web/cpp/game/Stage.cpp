@@ -71,6 +71,7 @@ bool Stage::stage_animation(AnmVm& vm,i32 script){
     if(vm.update(manager)<0){error="stage animation execution failed";return false;}return true;
 }
 bool Stage::stage_deformation(i32 mode){
+    if(mesh)mesh->detach();
     mesh.reset();state.deformation=0;auto next=std::make_unique<ScreenDeformation>(manager);
     if(!next->initialize(text,17,mode==1?(kPortTitle==16?7:25):17,false)){error="stage deformation initialization failed";return false;}
     mesh=std::move(next);state.deformation=1;return true;

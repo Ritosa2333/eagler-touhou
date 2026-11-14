@@ -122,6 +122,10 @@ class ShotManager
 {
 public:
 #if PORT_TITLE == 14
+    u16 coop_draw_file=0;
+#if defined(TH14_MULTIPLAYER)
+    u32 room_state_digest()const;
+#endif
     // Preserve rejected beam inputs for native comparison after a frame fails.
     std::array<float,12> th14_beam_failure{};
 #endif
@@ -154,8 +158,10 @@ public:
     // 44cdb7..44ce1d rebuilds the free list, retaining shot records;
     // 44d04e resets the damage-area allocation cursor, retaining areas.
     void start_stage_th14()noexcept;
+    void clear_coop_th14();
     bool th14_empty_damage(bool frame_advanced,i32& result)const noexcept;
-    bool damage_th14(Vec3,const Vec2*,float radius,float angle,bool frame_advanced,GameEconomy&,i32&,u32 argument=0,u32 stamp=0,Enemy* hit_target=nullptr,bool probe=false,bool* bomb_contact=nullptr);
+    bool damage_th14(Vec3,const Vec2*,float radius,float angle,bool frame_advanced,GameEconomy&,i32&,u32 argument=0,u32 stamp=0,
+        Enemy* hit_target=nullptr,bool probe=false,bool* bomb_contact=nullptr,float bomb_ratio=1.f);
     void update_th14_areas()noexcept;
     bool th14_death_area(Vec3);
     bool th14_bomb_circle(Vec3,float radius,float growth,i32 duration,i32 damage);
@@ -171,6 +177,9 @@ public:
     const ShotState& at(u32 index)const noexcept{return shots[index];}
 private:
     ShtResource& resource;AnmResource& animation_resource;AnmManager& animations;ShotWorld& world;u16 file_id;
+#if defined(TH14_MULTIPLAYER)
+    friend class GameBattle;
+#endif
     std::array<ShotState,256> shots{};
     ShotSpec converted_laser_spec{30,0,20,{0,0},{24,24},0,12,0,0,4,5,24,ShotSpawn::ConvertedLaser,ShotUpdate::ConvertedLaser,0,0};
     bool on_spawn(ShotState&,i32);

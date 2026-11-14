@@ -9,6 +9,9 @@
 
 namespace th11 {
 struct HudInput {
+#if PORT_TITLE == 14
+    bool cooperative=false;
+#endif
     Vec3 player_position{};
     bool player_present=true,dialogue=false,spell=false;
     i32 stage=1,section=0,seconds=-1,hundredths=0;
@@ -66,6 +69,18 @@ public:
     // Their scripts select layer 24; they have no separate HUD draw callback.
     u32 icon_handles[16]{};
     AnmVm* icon_th14(u32 index)const noexcept {return index<16?animations.find(icon_handles[index]):nullptr;}
+    u32 coop_icon_handles[2][16]{};
+    u32 coop_seats=1;
+    bool layout_coop(u32 seats);
+    float life_row(u32 seat)const noexcept{return 96.f+seat*(coop_seats==3?108.f:120.f);}
+    float bomb_row(u32 seat)const noexcept{return life_row(seat)+38.f;}
+    float power_row(u32 seat)const noexcept{return life_row(seat)+86.f;}
+    float point_row()const noexcept{return coop_seats==3?426.f:342.f;}
+    float graze_row()const noexcept{return point_row()+22.f;}
+    AnmVm* coop_icon(u32 seat,u32 index)const noexcept{
+        return seat?animations.find(coop_icon_handles[seat-1][index]):icon_th14(index);
+    }
+    void display_coop_stock(u32 seat,i32 count,i32 fragments,bool bomb);
     bool bind_icons_th14();
     void display_bombs(i32 count,i32 fragments);
     bool boss_name_th14(const HudInput&);

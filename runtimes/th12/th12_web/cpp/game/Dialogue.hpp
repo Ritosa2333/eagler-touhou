@@ -73,6 +73,9 @@ public:
     // 0 remains active, 1 ended, -2 failed. Elapsed is ticked by the HUD owner.
     i32 update(u32 held,u32 pressed,u32 skip_frames=0,u32 fire_frames=0);
 private:
+#if defined(TH14_MULTIPLAYER)
+    friend class GameBattle;
+#endif
     AnmManager& manager;EnemyAnimations families;
     AnmResource& text;AnmResource& player;AnmResource& front;AnmResource& enemy;AnmResource& logo;
     DialogueEffects& effects;const u8* end=nullptr;

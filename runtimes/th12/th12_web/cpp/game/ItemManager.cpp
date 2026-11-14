@@ -90,6 +90,7 @@ void ItemManager::home(ItemState& item){
 }
 void ItemManager::attract_all(){
 #if PORT_TITLE == 14
+    if(th14_pilot_count>1){th14_stage_attract=true;return;}
     for(u32 page=0;page<th14_occupied.size();++page){
         if(!th14_page_occupied(page))continue;
         const u32 end=std::min((page+1)*th14_word_bits,capacity);

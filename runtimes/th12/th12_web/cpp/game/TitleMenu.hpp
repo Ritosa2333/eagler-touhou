@@ -38,6 +38,7 @@ public:
     std::vector<i32> sounds;
     bool start_requested=false,fade_requested=false;
 #if PORT_TITLE == 14
+    bool room_preview=false;
     bool manual_requested=false,manual_finished=false,manual_release_requested=false;
     float manual_origin_x=0;
     bool th14_practice_overlay_enabled=false;
@@ -69,6 +70,10 @@ public:
     MenuCursor name_cursor;
     std::array<char,9> entered_name{};
     i32 name_length=0,result_unranked=0,result_score=0,result_continues=0;
+#if defined(TH14_MULTIPLAYER)
+    bool room_results=false;
+    i32 room_result_stage=8;
+#endif
     u64 result_timestamp=0;float result_slowdown=0;
     bool replay_save_requested=false;
     std::shared_ptr<ReplayEntry> pending_replay;
