@@ -4,6 +4,8 @@
 #if PORT_TITLE == 14
 #include "GameEconomy.hpp"
 #endif
+#include <array>
+#include <cstdint>
 #include <memory>
 namespace th11 {
 struct EnemyDrop;

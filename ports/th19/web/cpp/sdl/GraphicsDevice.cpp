@@ -63,6 +63,12 @@ TextureAllocation GraphicsDevice::create_texture(const u8* bytes, u32 count) {
     const u32 id = impl_->next++;
     impl_->textures.emplace(id, std::move(t));
     backend.prepare(id);
+    // prepare() has uploaded the image, and the renderer uploads again only
+    // when the revision changes, which never happens to a decoded image (it
+    // is never a render or capture target). Drop the CPU copy so the image
+    // is held once, by the GPU. A swap, not shrink_to_fit: built with
+    // -fno-exceptions, libstdc++ makes shrink_to_fit a no-op.
+    std::vector<u8>().swap(impl_->textures.at(id).pixels);
     return { id, u32(w), u32(h) };
 }
 

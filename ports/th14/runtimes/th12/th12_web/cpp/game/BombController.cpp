@@ -66,7 +66,7 @@ i32 BombController::start(){
 #if PORT_TITLE == 14
     if(selection==0){
         state.position=player.motion.state.position;
-        if(!sound(49))return fail(-4);fail_spell();auto& count=world.bomb_count();count=wrapping_add(count,1);
+        if(!sound(49))return fail(-4);fail_spell();auto& count=world.bomb_count();count=wrapping_add(count,1);world.bomb_used();
         th14_reimu_areas.fill(256);th14_reimu_angles.fill(0);th14_reimu_shift={};th14_reimu_allocated=true;
         if(!create(state.animation,14,true)||!create(state.auxiliary,24,true))return fail(-4);
         constexpr float heights[]={96,80,64,40};constexpr i32 duration[]={300,100,70,50};
@@ -77,28 +77,28 @@ i32 BombController::start(){
         th14_reimu_positions.fill(state.position);player.th14_scale.flags|=4;return 0;
     }
     if(selection==1){
-        if(!sound(49))return fail(-4);fail_spell();auto& count=world.bomb_count();count=wrapping_add(count,1);
+        if(!sound(49))return fail(-4);fail_spell();auto& count=world.bomb_count();count=wrapping_add(count,1);world.bomb_used();
         th14_orbs={};th14_orbs_allocated=true;if(!create(state.auxiliary,24,true))return fail(-4);return 0;
     }
     if(selection==2){
         state.growth=-1.5707963705062866f;if(!sound(49)||!create(state.animation,19,true))return fail(-4);
-        fail_spell();invincible(120);auto& count=world.bomb_count();count=wrapping_add(count,1);
+        fail_spell();invincible(120);auto& count=world.bomb_count();count=wrapping_add(count,1);world.bomb_used();
         if(!world.th14_bomb_shake(3,60,240,30)||!create(state.auxiliary,27,true))return fail(-4);
         player.th14_scale.flags|=4;return 0;
     }
     if(selection==4){
-        fail_spell();auto& count=world.bomb_count();count=wrapping_add(count,1);invincible(120);
+        fail_spell();auto& count=world.bomb_count();count=wrapping_add(count,1);world.bomb_used();invincible(120);
         if(!create(state.animation,16,true)||!create(state.auxiliary,19,true)||!sound(50))return fail(-4);
         player.th14_scale.flags|=8;state.th14_mode=0;return 0;
     }
     if(selection==3){
         if(!sound(49)||!create(state.animation,28,true))return fail(-4);
-        fail_spell();invincible(200);auto& count=world.bomb_count();count=wrapping_add(count,1);
+        fail_spell();invincible(200);auto& count=world.bomb_count();count=wrapping_add(count,1);world.bomb_used();
         if(!create(state.auxiliary,33,true)){EnemyAnimations helper(animations);helper.erase(state.animation);return fail(-4);}
         state.growth=0;return 0;
     }
     if(selection==5){
-        fail_spell();auto& count=world.bomb_count();count=wrapping_add(count,1);invincible(180);
+        fail_spell();auto& count=world.bomb_count();count=wrapping_add(count,1);world.bomb_used();invincible(180);
         if(!create(state.animation,21,false)||!create(state.auxiliary,20,true)||!sound(51)){
             EnemyAnimations helper(animations);helper.erase(state.animation);helper.erase(state.auxiliary);return fail(-4);
         }
