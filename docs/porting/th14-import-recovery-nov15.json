@@ -1,0 +1,51 @@
+{
+  "schema": "th14/import-recovery/1",
+  "standard": "observable behavior alignment",
+  "source": {
+    "sourceParent": "9f02fdc88d1a71a9c7ce87b580946b4540404258",
+    "path": "launcher/app/components/player/ReplayWorkspace.tsx",
+    "beforeSha256": "c047acb28a28972eb432ad160afd8f83801e2addcd650c58a15e2d99485b08a1",
+    "afterSha256": "cc1cd33b7ffe03f60d20260da8c902aa584d815f569100ee059d4c8a7f46c92d",
+    "change": "clear previous import error in both chooser-button and dropped-file paths; retain real rejection reporting",
+    "baselineActualInvalidThenValidRetainedOldError": true,
+    "gameOrRuntimeSourceChanged": false,
+    "productionChanged": false,
+    "completeGame": false,
+    "firstCandidateSha256": "96fbc3d90dd869ea919a30b67556bd26239e067676f679f3f9b2efa79bb4826f",
+    "firstCandidateActualButtonRegressionFailed": true
+  },
+  "browser": {
+    "qualified": true,
+    "actualChooserInvalidThenValid": true,
+    "invalidInputBytes": 39,
+    "invalidInputSha256": "4ecb98321151c70aaa878b02b477606680742e1daaa78a0dd88bf399c3c21466",
+    "validInputBytes": 1734,
+    "validInputSha256": "02ec75303e6c0a3a5de003569aad923fb96cf677e7d493124d753d68639c64b7",
+    "beforeReplayCount": 5,
+    "afterInvalidReplayCount": 5,
+    "afterValidReplayCount": 6,
+    "existingReplayRowsRetained": true,
+    "invalidRejected": true,
+    "oldErrorClearedAfterValid": true,
+    "firstCandidateButtonRegressionFailed": true,
+    "wrongLocalInputPathWasRejectedAsEmptyAndNotCounted": true,
+    "actualDropPathAccepted": false,
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "wholeEncodedEqual": true,
+    "scoreBytes": 21641,
+    "scoreSha256": "21cad13473a17c44064412e8a5302e3c1597330cedaa2a5d6d0072cd9dc4c55b"
+  },
+  "build": {
+    "typecheckPassed": true,
+    "frontendBuildPassed": true,
+    "runtimeUnchanged": true,
+    "runtimeFiles": 32,
+    "generation": "55696f7fc59af78c3c91fb87bae0e4a3cde4d890b126cc04e1af643a0b37eda8",
+    "wasm": "3f7ff5a2cd11fc28acb0b70168b5253a985d8368768b2e8db604341a1994971f",
+    "formalThpracAvailable": false,
+    "copyOnWriteForced": true
+  },
+  "productionChanged": false,
+  "completeGame": false
+}
