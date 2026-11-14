@@ -1,0 +1,91 @@
+{
+  "schema": "th14/current-legacy-marisaa-replay/1",
+  "qualified": true,
+  "acceptanceStandard": "observable-behavior-alignment",
+  "inputSha256": "aec3b3045be9a0ddd4e7e4005182a9561e97f9d3f66f7f93a81397a1b614ec92",
+  "moduleSha256": "41ab53f7cdd928812561919938c89862f3123f927b6a8504708187252f02c5fd",
+  "normalizedGameSessionMatchesProduction098f": true,
+  "sharedBindingsMatch": true,
+  "declaredSdkBrowserWrapperDifferences": [
+    "runtimes/th12/th12_web/cpp/game/GameSession.cpp",
+    "runtimes/th12/th12_web/cpp/sdl/Application.cpp",
+    "runtimes/th12/th12_web/cpp/sdl/GraphicsDevice.cpp",
+    "runtimes/th12/th12_web/cpp/sdl/GraphicsDevice.hpp",
+    "runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp",
+    "runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.hpp"
+  ],
+  "nativeReferenceSha256": "77438d6ffd9cc556f98ea996e5f963ade00a7cc56c0c59a36b540092940e2140",
+  "reportSha256": "316f896de923975a7ca637442d772a5227623888f01cf5fd3e5b425d11a79d31",
+  "descriptionSha256": "49129a74d4edf31040ad44df1db1057e70f2bde0c745593c4c7a742467ba19b4",
+  "startStage": 1,
+  "endStage": 3,
+  "localEndFrame": 13734,
+  "cumulativeEndFrame": 34783,
+  "score": 82434130,
+  "matchedTerminalFields": {
+    "scoreUnits": {
+      "original": 8243413,
+      "current": 8243413
+    },
+    "graze": {
+      "original": 1353,
+      "current": 1353
+    },
+    "power": {
+      "original": 100,
+      "current": 100
+    },
+    "livesUnsigned": {
+      "original": 4294967295,
+      "current": 4294967295
+    },
+    "lifeFragments": {
+      "original": 0,
+      "current": 0
+    },
+    "bombs": {
+      "original": 3,
+      "current": 3
+    },
+    "bombFragments": {
+      "original": 0,
+      "current": 0
+    },
+    "playerXBits": {
+      "original": 4294957136,
+      "current": 4294957136
+    },
+    "playerYBits": {
+      "original": 46181,
+      "current": 46181
+    },
+    "lifeState": {
+      "original": 2,
+      "current": 2
+    }
+  },
+  "earlierGuardedBrowser": {
+    "cumulativeFrame": 32637,
+    "score": 73218790,
+    "source": "85a60542"
+  },
+  "naturalEarlyEndMatchesPriorOriginalReference": true,
+  "entireReplayCompleted": false,
+  "allIntermediateStatesAccepted": false,
+  "differentObservationBoundariesNotCompared": [
+    "player shot count",
+    "enemy count",
+    "RNG and callback timing"
+  ],
+  "retired": true,
+  "silentMemoryAudio": true,
+  "graphicsRecordingOnly": true,
+  "currentBrowserAccepted": false,
+  "publicBrowserReadAttemptsTimedOut": true,
+  "publicHttpStatus": 200,
+  "productionRuntimeGenerationObserved": "34f6e4b183b57e273555cae385ad12338484102a3a4517600662fb0784dc909c",
+  "productionChanged": false,
+  "completeGame": false,
+  "publicHeadersSha256": "bab035132af0cffd82cb8c7399be5ec11bb23a9f9f6f310c2d55c9780619bd48",
+  "productionManifestSha256": "8307293c30b62757476406e2208bab5e51aaaf1bfa0e0ddfc06a3db3fefd38f1"
+}
