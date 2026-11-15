@@ -1,3 +1,6 @@
+import {relayFailureDetail} from './network-failure';
+import {publishedPc98Multiplayer} from './published-multiplayer';
+import type {RelayAttempt} from '../../src/launcher/relay-entry-routing.mts';
 import {normalizePublicNickname} from '../../src/contracts/public-nickname.mts';
 import {
   PRODUCT_IDS,
@@ -18,12 +21,14 @@ import type { MultiplayerRoomSessionStore } from '../../src/launcher/multiplayer
 import { encodeRoomInvite, ROOM_INVITE_KEY } from '../../src/launcher/room-invite.mts';
 import type { UiMessageKey, UiMessageParams } from '../../src/launcher/i18n.mts';
 import { parseTh09PlayerStats, type Th09PlayerStats } from '../../src/launcher/th09-room-stats.mts';
+import {parseRoomAccountProfile, type RoomAccountProfile} from '../../src/launcher/room-account-profile.mts';
 
 export type DirectoryConnection = 'loading' | 'live' | 'offline' | 'unsupported' | 'missing';
 export type DirectoryFormMode = 'create' | 'join';
 export interface DirectorySeat {
   loadout?: number;
   name?: string;
+  profile?: RoomAccountProfile;
   machineSign?: string;
   stats?: Th09PlayerStats;
   initial: string;
@@ -33,6 +38,8 @@ export interface DirectorySeat {
 }
 export interface DirectoryRoom {
   startedAt?: number;
+  createdAt?: number;
+  listeningTrack?: { name: string; artist: string };
   product: MultiplayerProductId;
   code: string;
   capacity: 2 | 3;
@@ -46,6 +53,7 @@ export interface DirectoryRoom {
   seats: readonly (DirectorySeat | null)[];
   disableCheatMovement: boolean;
   challengeMode: boolean;
+  unrated?: boolean;
 }
 export interface DirectoryMembership {
   product: MultiplayerProductId;
@@ -60,6 +68,7 @@ export interface DirectoryForm {
   code: string;
   visibility: 'public' | 'private';
   disableCheatMovement: boolean;
+  unrated?: boolean;
   validationMessage: string;
 }
 export interface DirectorySnapshot {
@@ -70,8 +79,10 @@ export interface DirectorySnapshot {
   mine: DirectoryMembership | null;
   recovering: DirectoryMembership | null;
   supportsRecovery: boolean;
+  globalRoomCodes: boolean;
   connection: DirectoryConnection;
   connectionInterrupted: boolean;
+  connectionDetail?: string;
   loading: boolean;
   initialized: boolean;
   leaving: boolean;
@@ -81,11 +92,12 @@ export interface DirectorySnapshot {
   siteManifest: SiteManifest | null;
 }
 export interface DirectorySocket {
+  readonly failedAttempts?: readonly RelayAttempt[];
   readonly readyState: number;
   send(data: string): void;
   close(code?: number, reason?: string): void;
   addEventListener(type: 'message', listener: (event: { data: unknown }) => void): void;
-  addEventListener(type: 'close', listener: (event: { code: number }) => void): void;
+  addEventListener(type: 'close', listener: (event: { code: number; reason?: string }) => void): void;
   addEventListener(type: 'error', listener: () => void): void;
 }
 export interface LobbyDirectoryOptions {
@@ -100,6 +112,8 @@ export interface LobbyDirectoryOptions {
   launcherUrl(): string;
   navigateToRoom(url: string): void;
   selectedProduct?: string;
+  /** Prefer local filtering while the full directory fits in one response. */
+  clientSideFiltering?: boolean;
   testBuild?: boolean;
   /** Router normalizes the directory filter; this service never writes history. */
   onSelectedProductNormalized?(product: MultiplayerProductId): void;
@@ -147,6 +161,8 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   let bootController: AbortController | null = null;
   let bootGeneration = 0;
   let pendingEntry: { owner: object | undefined; run(): void } | null = null;
+  let localFiltering = options.clientSideFiltering === true;
+  const requestedFilter = (product = snapshot.selectedProduct) => localFiltering ? '' : product;
   const initialProduct = isMultiplayerProductId(options.selectedProduct || '')
     ? (options.selectedProduct as MultiplayerProductId)
     : '';
@@ -158,6 +174,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     mine: null,
     recovering: null,
     supportsRecovery: false,
+    globalRoomCodes: false,
     connection: 'loading',
     connectionInterrupted: false,
     loading: true,
@@ -180,11 +197,11 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   function publish(patch: Partial<DirectorySnapshot> = {}) {
     if (disposed) return;
     const next = { ...snapshot, ...patch };
-    if (next.connection === 'live') next.connectionInterrupted = false;
+    if (next.connection === 'live') {next.connectionInterrupted = false; next.connectionDetail = undefined;}
     else if (next.connection !== 'loading') next.connectionInterrupted = true;
     next.loading =
       next.connection === 'loading' ||
-      (next.connection === 'live' && loadedProduct !== next.selectedProduct);
+      (next.connection === 'live' && loadedProduct !== requestedFilter(next.selectedProduct));
     next.visibleRooms = next.loading
       ? []
       : next.rooms.filter((room) => !next.selectedProduct || room.product === next.selectedProduct);
@@ -232,23 +249,23 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   }
   function refresh() {
     if (disposed || socket?.readyState !== 1) return;
-    requestedProduct = snapshot.selectedProduct;
-    socket.send(JSON.stringify({ type: 'refresh', product: snapshot.selectedProduct }));
+    requestedProduct = requestedFilter();
+    socket.send(JSON.stringify({ type: 'refresh', product: requestedProduct }));
     if (directoryReplyTimer === null) {
       const requestedSocket = socket;
       directoryReplyTimer = later(() => {
         if (socket !== requestedSocket) return;
-        publish({ connection: 'offline' });
+        publish({connection: 'offline', connectionDetail: options.translate('network.relayNoReply')});
         disconnect();
         scheduleReconnect();
       }, 20000);
     }
     clear(listTimer);
     listTimer = null;
-    if (loadedProduct !== snapshot.selectedProduct)
+    if (loadedProduct !== requestedFilter())
       listTimer = later(() => {
         listTimer = null;
-        if (socket?.readyState === 1 && loadedProduct !== snapshot.selectedProduct) refresh();
+        if (socket?.readyState === 1 && loadedProduct !== requestedFilter()) refresh();
       }, 3000);
   }
   function parseRoom(value: unknown): DirectoryRoom | null {
@@ -277,20 +294,24 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       const initial =
         [
           ...String(seat?.initial ?? value)
+            // biome-ignore lint/suspicious/noControlCharactersInRegex: Strip C0 and DEL controls from remote player initials.
             .replace(/[\u0000-\u001f\u007f]/g, '')
             .trim(),
         ][0] || '?';
+      const profile = parseRoomAccountProfile(seat?.profile);
       return Object.freeze({
         initial,
+        ...(profile ? {profile} : {}),
         ...(Number.isInteger(seat?.loadout) && Number(seat?.loadout) >= 0 && Number(seat?.loadout) < policy.loadouts.length ? {loadout: Number(seat?.loadout)} : {}),
         ...(row.publicNames === true ? {name:normalizePublicNickname(seat?.name)} : {}),
-        ...(row.product === 'th09mp'
+        ...((row.product === 'th09mp' || row.product === 'th19mp')
           ? {
               machineSign:
                 typeof seat?.machineSign === 'string'
                   ? [
                       ...seat.machineSign
                         .replace(
+                          // biome-ignore lint/suspicious/noControlCharactersInRegex: Remote machine labels must exclude C0, DEL and invisible direction controls.
                           /[\u0000-\u001f\u007f\u061c\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/g,
                           '',
                         )
@@ -307,13 +328,20 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         controlMode: multiplayerControlMode(seat?.controlMode),
       });
     });
+    const track = record(row.listeningTrack);
+    const trackName = typeof track?.name === 'string' ? track.name.slice(0, 64).trim() : '';
     return Object.freeze({
+      ...(trackName ? {listeningTrack: {
+        name: trackName,
+        artist: typeof track?.artist === 'string' ? track.artist.slice(0, 64).trim() : '',
+      }} : {}),
       product: row.product,
       code: row.code,
       capacity,
       seats: Object.freeze(seats),
       disableCheatMovement: row.disableCheatMovement === true,
       challengeMode: row.challengeMode === true,
+      ...(row.unrated === true && row.product === 'th09mp' ? {unrated: true} : {}),
       players: seats.filter(Boolean).length,
       ready: bounded(row.ready, capacity),
       spectators: bounded(row.spectators, 999),
@@ -322,6 +350,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       joinable: row.joinable === true,
       spectatable: row.phase !== 'lobby' && row.spectatable === true,
       ...(typeof row.startedAt === 'number' && Number.isSafeInteger(row.startedAt) && row.startedAt > 0 ? {startedAt: row.startedAt} : {}),
+      ...(typeof row.createdAt === 'number' && Number.isSafeInteger(row.createdAt) && row.createdAt > 0 ? {createdAt: row.createdAt} : {}),
     });
   }
   function connect() {
@@ -329,12 +358,13 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     if (!relay || disposed || snapshot.leaving) return;
     loadedProduct = null;
     requestedProduct = '';
+    localFiltering = options.clientSideFiltering === true;
     publish({ connection: 'loading' });
     let next: DirectorySocket;
     try {
       next = options.createSocket(buildMultiplayerDirectoryRelayUrl(relay, options.memberId()));
     } catch {
-      publish({ connection: 'offline' });
+      publish({connection: 'offline', connectionDetail: relayFailureDetail(options.translate)});
       scheduleReconnect();
       return;
     }
@@ -342,7 +372,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     let received = false;
     handshakeTimer = later(() => {
       if (socket !== next || received) return;
-      publish({ connection: 'offline' });
+      publish({connection: 'offline', connectionDetail: options.translate('network.relayNoReply')});
       disconnect();
       scheduleReconnect();
     }, 20000);
@@ -394,7 +424,11 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       const rooms = candidates.filter(room => room.players > 0 || room.spectators > 0);
       loadedProduct =
         typeof message.product === 'string' ? message.product : first ? '' : requestedProduct;
-      if (loadedProduct === snapshot.selectedProduct) {
+      // A capped all-games response cannot answer every per-game filter.
+      const truncatedDirectory = localFiltering && loadedProduct === '' &&
+        bounded(message.total, 100000) > candidates.length;
+      if (truncatedDirectory) localFiltering = false;
+      if (loadedProduct === requestedFilter()) {
         clear(listTimer);
         listTimer = null;
       }
@@ -403,11 +437,12 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         recovering,
         notice: noticeText,
         supportsRecovery: message.membershipRecovery === true,
+        globalRoomCodes: message.globalRoomCodes === true,
         rooms: Object.freeze(rooms),
         total: Math.max(rooms.length, bounded(message.total, 100000) - (candidates.length - rooms.length)),
         connection: 'live',
       });
-      if (first && snapshot.selectedProduct) refresh();
+      if ((first || truncatedDirectory) && requestedFilter()) refresh();
     });
     next.addEventListener('close', (event) => {
       if (disposed || socket !== next) return;
@@ -420,6 +455,9 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       const unsupported = !received && event.code === 1008;
       publish({
         recovering: null,
+        connectionInterrupted: true,
+        connectionDetail: received ? options.translate('network.relayClosed', {code: event.code})
+          : relayFailureDetail(options.translate, next.failedAttempts, event.code),
         ...(hadRecovery ? { notice: options.translate('lobby.releaseFailed') } : {}),
         connection: unsupported ? 'unsupported' : received ? 'loading' : 'offline',
       });
@@ -427,7 +465,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     });
     next.addEventListener('error', () => {
       if (disposed || socket !== next) return;
-      publish({ connection: 'offline' });
+      publish({connection: 'offline', connectionDetail: relayFailureDetail(options.translate, next.failedAttempts)});
       disconnect();
       scheduleReconnect();
     });
@@ -474,10 +512,10 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       const products = PRODUCT_IDS.filter(
         (product): product is MultiplayerProductId =>
           isMultiplayerProductId(product) &&
-          productEnabledForBuild(product, options.testBuild === true || manifest.shared.testBuild === true) &&
-          !!manifest.games[gameIdForProduct(product)],
+          (productEnabledForBuild(product, options.testBuild === true || manifest.shared.testBuild === true) || publishedPc98Multiplayer(product, manifest)) &&
+          !!manifest.games[gameIdForProduct(product)]?.multiplayerRuntime,
       );
-      const selectedProduct = products.includes(snapshot.selectedProduct as MultiplayerProductId)
+      const selectedProduct = !snapshot.selectedProduct ? '' : products.includes(snapshot.selectedProduct as MultiplayerProductId)
         ? snapshot.selectedProduct
         : products[0] || '';
       relay = manifest.shared.netplayRelay || '';
@@ -492,7 +530,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       else connect();
     } catch {
       if (!disposed && generation === bootGeneration && !snapshot.leaving) {
-        publish({ connection: 'offline' });
+        publish({connection: 'offline', connectionDetail: options.translate('network.manifestUnavailable')});
         scheduleReconnect();
       }
     } finally {
@@ -507,17 +545,18 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   }
   function selectProduct(product: string) {
     if (
-      !isMultiplayerProductId(product) ||
+      (product !== '' && !isMultiplayerProductId(product)) ||
       snapshot.selectedProduct === product ||
-      ((snapshot.initialized || snapshot.products.length > 0) &&
-        !snapshot.products.includes(product))
+      (product !== '' && (snapshot.initialized || snapshot.products.length > 0) &&
+        !snapshot.products.includes(product as MultiplayerProductId))
     )
       return;
     // A room return can supply its filter before this view's first manifest.
     // Keep that request for initialize() to validate against the loaded catalog.
-    loadedProduct = null;
-    publish({ selectedProduct: product });
+    if (!localFiltering) loadedProduct = null;
+    publish({ selectedProduct: product as MultiplayerProductId | '' });
     clear(filterTimer);
+    if (localFiltering) return;
     filterTimer = later(() => {
       filterTimer = null;
       refresh();
@@ -550,7 +589,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     patch: Partial<
       Pick<
         DirectoryForm,
-        'product' | 'capacity' | 'difficulty' | 'code' | 'visibility' | 'disableCheatMovement'
+        'product' | 'capacity' | 'difficulty' | 'code' | 'visibility' | 'disableCheatMovement' | 'unrated'
       >
     >,
   ) {
@@ -581,6 +620,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     }
     if (patch.disableCheatMovement !== undefined)
       next.disableCheatMovement = patch.disableCheatMovement;
+    if (patch.unrated !== undefined) next.unrated = patch.unrated;
     publish({ form: Object.freeze(next) });
   }
   function enterRoom(
@@ -592,6 +632,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     visibility: 'public' | 'private' = 'public',
     disableCheatMovement = false,
     spectator = false,
+    unrated = false,
   ) {
     if (disposed || snapshot.leaving || snapshot.connection !== 'live') return;
     if (snapshot.mine) {
@@ -609,6 +650,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
           created: true,
           visibility,
           disableCheatMovement,
+          ...(product === 'th09mp' && unrated ? {unrated: true} : {}),
         },
         seat: 0,
         ready: false,
@@ -631,6 +673,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
               d: difficulty,
               v: visibility,
               c: disableCheatMovement,
+              u: unrated,
             }
           : {}),
       }),
@@ -659,10 +702,12 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     const created = form.mode === 'create';
     if (created) {
       code = generateMultiplayerRoomCode(options.randomWord);
-      while (snapshot.rooms.some((room) => room.product === form.product && room.code === code))
+      while (snapshot.rooms.some((room) => (snapshot.globalRoomCodes || room.product === form.product) && room.code === code))
         code = String(1000 + ((Number(code) - 999) % 9000));
     }
-    const product = form.product;
+    const product = !created && snapshot.globalRoomCodes
+      ? snapshot.rooms.find(room => room.code === code)?.product ?? form.product
+      : form.product;
     pendingEntry = {
       owner,
       run: () =>
@@ -674,6 +719,8 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
           form.difficulty,
           form.visibility,
           form.disableCheatMovement,
+          false,
+          form.unrated,
         ),
     };
     return 'close';

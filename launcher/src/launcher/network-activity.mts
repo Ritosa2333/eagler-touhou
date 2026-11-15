@@ -421,7 +421,7 @@ export function createNetworkActivityTracker({
         request.withCredentials = init.credentials === "include";
         if (init.headers) {
           const headers = new Headers(init.headers);
-          headers.forEach((value, name) => request.setRequestHeader(name, value));
+          headers.forEach((value, name) => {request.setRequestHeader(name, value);});
         }
         request.onprogress = event => update(id, {
           phase: "receiving",

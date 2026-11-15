@@ -62,10 +62,10 @@ BulletLaserSource laserSource(const eb::State& bullet, bool vmAlive) {
   return {{bullet.x, bullet.y, 0},
           vmAlive,
           bullet.phase,
-          bullet.program.records[9].c,
-          bullet.program.records[9].a,
-          bullet.program.records[9].b,
-          {bullet.program.records[10].a, bullet.program.records[10].b, 0}};
+          bullet.program().records[9].c,
+          bullet.program().records[9].a,
+          bullet.program().records[9].b,
+          {bullet.program().records[10].a, bullet.program().records[10].b, 0}};
 }
 EnemyCallbackResult runEnemyCallback(int selector, EnemyCallbackContext& context, Manager& manager,
                                      World& world, std::span<const BulletLaserSource> bullets) {

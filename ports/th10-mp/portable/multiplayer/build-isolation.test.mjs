@@ -31,3 +31,12 @@ test('fixture mode requires the explicit TH10 multiplayer variant',()=>{
   assert.match(result.stderr,/TH10 fixture builds require/);
  }
 });
+
+test('a different title cannot silently select the th10 normal or multiplayer build',()=>{
+ for(const args of [['--th08'],['--th07','--multiplayer']]){
+  const result=spawnSync(process.execPath,['portable/build.mjs',...args,'--print-plan'],
+                        {cwd:root,encoding:'utf8',windowsHide:true});
+  assert.notEqual(result.status,0);
+  assert.match(result.stderr,/supports th10 only/);
+ }
+});

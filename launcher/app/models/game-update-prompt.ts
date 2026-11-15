@@ -41,7 +41,7 @@ export function createGameUpdatePrompt({decisions, translate: t, current, busy, 
     pending.delete(activeKey); shown.add(activeKey); prompting = true; promptKey = activeKey;
     try {
       const choicePending = decisions.askDecision({
-        title: t('update.readyTitle', {game: context.product.toUpperCase()}),
+        title: t('update.readyTitle', {game: context.product}),
         message: t('update.readyMessage'), confirmText: t('update.restartNow'),
         cancelText: t('update.nextLaunch'), confirmOnEnter: true,
       });

@@ -1,7 +1,8 @@
+import {uiContractAttributes} from './mounted-dom-environment.mjs';
 import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
 /** Pinned-main network dialog parity: synthetic DOM/MemoryRouter and fake IO.
  * No browser, server, live WebSocket/ICE/TURN, native top-layer or pixel claim. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -222,7 +223,7 @@ async function mount(initial = {}, {locale = 'en', strict = false} = {}) {
   mounts.add(m); await render(); return m;
 }
 function normalized(node) {
-  const attrs = [...node.attributes].filter(attr => !attr.name.startsWith('data-i18n') && attr.name !== 'open')
+  const attrs = uiContractAttributes(node).filter(attr => !attr.name.startsWith('data-i18n') && attr.name !== 'open')
     .map(attr => [attr.name, attr.value]).sort(([a], [b]) => a.localeCompare(b));
   const children = []; let text = '';
   const flush = () => {const value = text.replace(/\s+/g, ' ').trim(); if (value) children.push(value); text = '';};
@@ -250,15 +251,17 @@ for (const locale of ['zh-CN', 'en']) test(`original dialog copy/classes/IDs/ARI
 
 for (const locale of ['zh-CN', 'en']) test(`original inline MP diagnostics reuses one real probe owner and exact controls (${locale})`, async () => {
   const f = transport(), ref = React.createRef(), container = env.document.createElement('div');
-  env.document.body.append(container); const root = createRoot(container); mounts.add({root}); let guides = 0;
+  env.document.body.append(container); const root = createRoot(container); mounts.add({root});
   await step(() => root.render(React.createElement(React.StrictMode, null, React.createElement(api.LocaleProvider, {locale},
-    React.createElement(api.MultiplayerDiagnostics, {ref, getRelayUrl: () => relayUrl, onGuide: () => guides++})))));
+    React.createElement(api.MultiplayerDiagnostics, {ref, getRelayUrl: () => relayUrl, guideHref: '/docs/multiplayer/th07'})))));
   const original = new env.window.DOMParser().parseFromString(pinned('public/index.html'), 'text/html');
   const expected = n('#mpNetworkDiagnostics', original);
   for (const node of expected.querySelectorAll('[data-i18n]')) node.textContent = t(locale, node.dataset.i18n);
-  assert.deepEqual(normalized(n('#mpNetworkDiagnostics')), normalized(expected));
+  const actual = n('#mpNetworkDiagnostics').cloneNode(true);
+  actual.querySelector('#mpGuideOpen').remove(); expected.querySelector('#mpGuideOpen').remove();
+  assert.deepEqual(normalized(actual), normalized(expected));
   assert.equal(env.document.querySelectorAll('#mpNetworkResults').length, 1); assert.equal(f.sockets.length, 0);
-  await step(() => n('#mpGuideOpen').click()); assert.equal(guides, 1); assert.equal(f.sockets.length, 0);
+  assert.equal(n('#mpGuideOpen').getAttribute('href'), '/docs/multiplayer/th07');
   await step(() => {n('#mpNetworkCheck').click(); n('#mpNetworkCheck').click();});
   assert.equal(f.sockets.length, 1); assert.equal(ref.current.isRunning(), true);
   assert.equal(n('#mpNetworkCheck').classList.contains('running'), true); assert.equal(n('#mpNetworkCheck').getAttribute('aria-disabled'), 'true');
@@ -272,7 +275,7 @@ test('document-lived borrowed probe model retains pending/results across inline,
   const f = transport(), {model} = modelFixture('en'), container = env.document.createElement('div'), ref = React.createRef();
   env.document.body.append(container); const root = createRoot(container); const mounted = {root}; mounts.add(mounted);
   await step(() => root.render(React.createElement(React.StrictMode, null, React.createElement(api.LocaleProvider, {locale: 'en'},
-    React.createElement(api.MultiplayerDiagnostics, {model, ref, getRelayUrl: () => relayUrl, onGuide() {}})))));
+    React.createElement(api.MultiplayerDiagnostics, {model, ref, getRelayUrl: () => relayUrl, guideHref: '/docs/multiplayer/th07'})))));
   await step(() => n('#mpNetworkCheck').click()); assert.equal(model.getSnapshot().running, true); assert.equal(f.sockets.length, 1);
   await step(() => root.unmount()); mounts.delete(mounted);
   const modal = await mount({model}, {strict: true});

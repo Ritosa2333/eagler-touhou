@@ -1,9 +1,11 @@
+import {Button as UiButton} from '../../ui/controls';
+import {OverflowText} from '../../ui/overflow-text';
 import {useLocale} from '../../i18n';
 import type {RoomOwnerSnapshot, MultiplayerRoomService} from '../../services/multiplayer-room';
 import {OptionSwitch} from '../settings/TouchSettingsFields';
 import type {RoomNetworkPresentation} from './types';
 
-export function RoomPacketLoss({state, network, service}: {state: RoomOwnerSnapshot; network: RoomNetworkPresentation; service: MultiplayerRoomService}) {
+export function RoomPacketLoss({state, network, service}: {state: RoomOwnerSnapshot; network: Pick<RoomNetworkPresentation, 'loss' | 'lossReady' | 'testLoss'>; service: Pick<MultiplayerRoomService, 'setPreferTurn'>}) {
   const {t} = useLocale(), room = state.room;
   if (!room?.synced || room.phase !== 'lobby' || state.seat == null || state.spectatorRequested) return null;
   const peers = (room.seats || []).slice(0, room.playerCount).flatMap((seat, index) => seat && !seat.offline && index !== state.seat ? [{seat, index}] : []);
@@ -12,14 +14,14 @@ export function RoomPacketLoss({state, network, service}: {state: RoomOwnerSnaps
   const ready = state.connected && peers.some(({seat}) => lanes.some(lane => network.lossReady(seat.clientId, lane)));
   return <section className="room-packet-loss" aria-labelledby="mpPacketLossTitle">
     <header><div><h3 id="mpPacketLossTitle">{t('room.packetLoss')}</h3><p>{t('room.packetLossHint')}</p></div>
-      <button id="mpPacketLossTest" type="button" disabled={!ready || running || state.launchBusy} onClick={() => network.testLoss()}>{t(running ? 'room.packetLossRunning' : 'room.packetLossTest')}</button>
+      <UiButton id="mpPacketLossTest" type="button" disabled={!ready || running || state.launchBusy} onClick={() => network.testLoss()}>{t(running ? 'room.packetLossRunning' : 'room.packetLossTest')}</UiButton>
     </header>
     <div className="room-turn-preference">
       <div><label htmlFor="mpPreferTurn">{t('room.preferTurn')}</label><p id="mpPreferTurnHint">{t('room.preferTurnHint')}</p></div>
       <OptionSwitch id="mpPreferTurn" label={t('room.preferTurn')} describedBy="mpPreferTurnHint" checked={state.preferTurn} disabled={!state.connected || state.launchBusy || state.checkBusy} onChange={() => service.setPreferTurn(!state.preferTurn)}/>
     </div>
     <div role="status" aria-live="polite">{!peers.length ? <p>{t('room.waitPeer')}</p> : peers.map(({seat, index}) => <div className="room-packet-loss-peer" key={seat.clientId}>
-      <strong>{state.nickname ? seat.name || `P${index + 1}` : `P${index + 1}`}</strong>
+      <strong><OverflowText>{state.nickname ? seat.name || `P${index + 1}` : `P${index + 1}`}</OverflowText></strong>
       {lanes.map(lane => {
         const result = network.loss(seat.clientId, lane);
         return <div className="room-packet-loss-row" key={lane} data-loss-lane={lane} data-loss-peer={seat.clientId}>

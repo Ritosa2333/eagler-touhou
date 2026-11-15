@@ -12,7 +12,9 @@ const port = listener.address().port;
 await new Promise((resolve, reject) => listener.close(error => error ? reject(error) : resolve()));
 const child = spawn(process.execPath, [fileURLToPath(new URL('../src/netplay-relay.mjs', import.meta.url))], {
   env: {...process.env, EAGLER_NETPLAY_RELAY_HOST: '127.0.0.1', EAGLER_NETPLAY_RELAY_PORT: String(port),
-    EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',EAGLER_NETPLAY_MAX_ROOMS_PER_IP:'16',
+    EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',
+    EAGLER_NETPLAY_MAX_ROOMS_PER_IP:String(spectatorGames.length),
+    EAGLER_NETPLAY_ROOM_LOOKUPS_PER_MINUTE:String(spectatorGames.length),
     EAGLER_NETPLAY_MAX_CONNECTIONS_PER_IP:'160',EAGLER_NETPLAY_CONNECTIONS_PER_MINUTE:'120'},
   stdio: ['ignore', 'pipe', 'pipe'],
   windowsHide: true,
@@ -45,9 +47,9 @@ const send = (socket, message) => socket.ws.send(JSON.stringify(message));
 const latest = socket => [...socket.json].reverse().find(message => message.room && typeof message.room === 'object')?.room;
 try {
   await wait(() => log.includes('listening'), 'relay ready');
-  for(const [game, definition] of spectatorGames){
+  for(const [index, [game, definition]] of spectatorGames.entries()){
   const product=game+'mp',timing=multiplayerInputTimingPolicy(definition.multiplayer);
-  const room=product+'-720001';
+  const room=product+'-'+(720001+index);
   const hostId=product+'_chat_host',viewerId=product+'_chat_viewer';
   const host = await open(`room=${room}&lobby=${hostId}&member=${product}_chat_member_host`);
   const guest = await open(`room=${room}&lobby=${product}_chat_guest&member=${product}_chat_member_guest`);
@@ -66,7 +68,7 @@ try {
   send(host, {type: 'start',adonisMode:timing.rollback?0:1,predictionLimit:timing.predictionLimit});
   await wait(() => host.json.some(message => message.type === 'start' && message.serial === 1), 'room started');
 
-  send(viewer, {type: 'quick-chat', serial: 1, phrase: 'thanks'});
+  send(viewer, {type: 'quick-chat', serial: 1, phrase: 'you-first'});
   for (const socket of [host, guest, viewer]) {
     await wait(() => socket.json.some(message => message.type === 'quick-chat' &&
       message.clientId === viewerId && message.seat === -1 && message.spectator === true),
@@ -75,11 +77,13 @@ try {
   const spectatorMessage = host.json.findLast(message => message.type === 'quick-chat' && message.clientId === viewerId);
   assert.deepEqual({room: spectatorMessage.room, serial: spectatorMessage.serial, seat: spectatorMessage.seat,
     spectator: spectatorMessage.spectator, phrase: spectatorMessage.phrase},
-  {room, serial: 1, seat: -1, spectator: true, phrase: 'thanks'});
+  {room, serial: 1, seat: -1, spectator: true, phrase: 'you-first'});
 
   send(host, {type: 'quick-chat', serial: 1, phrase: 'follow-me'});
-  await wait(() => viewer.json.some(message => message.type === 'quick-chat' &&
-    message.clientId === hostId && message.seat === 0 && message.spectator !== true), 'player message reaches spectator');
+  const receivedPlayerMessage = socket => socket.json.some(message => message.type === 'quick-chat' &&
+    message.clientId === hostId && message.seat === 0 && message.spectator !== true);
+  await wait(() => receivedPlayerMessage(viewer) && receivedPlayerMessage(host),
+    'player message reaches spectator and sender');
 
   const beforeRejected = host.json.filter(message => message.type === 'quick-chat').length;
   send(outsider, {type: 'quick-chat', serial: 1, phrase: 'thanks'});

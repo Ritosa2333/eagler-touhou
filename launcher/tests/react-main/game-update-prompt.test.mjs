@@ -1,4 +1,4 @@
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {createDecisionStore} from '../../app/models/decisions.ts';
 import {createGameUpdatePrompt} from '../../app/models/game-update-prompt.ts';

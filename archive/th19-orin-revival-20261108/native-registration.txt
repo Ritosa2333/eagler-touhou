@@ -1,0 +1,54 @@
+
+MATCH
+004fd574: test eax, eax
+004fd576: je 0x4fd58a
+004fd578: mov eax, dword ptr [esi + 0x68e0]
+004fd57e: push 0
+004fd580: mov ecx, dword ptr [eax + 8]
+004fd583: call 0x40b4b0
+004fd588: mov esi, eax
+004fd58a: lea eax, [esi + 0x14d0]
+004fd590: pop esi
+004fd591: pop ebp
+004fd592: ret 4
+004fd595: mov eax, dword ptr [esi + 0x68e0]
+004fd59b: push 0
+004fd59d: mov ecx, dword ptr [eax + 8]
+004fd5a0: call 0x40b4b0
+004fd5a5: test eax, eax
+
+MATCH
+004fdc2e: call 0x40b4b0
+004fdc33: test eax, eax
+004fdc35: je 0x4fe163
+004fdc3b: mov eax, dword ptr [esi + 0x68e0]
+004fdc41: push 0
+004fdc43: mov ecx, dword ptr [eax + 8]
+004fdc46: call 0x40b4b0
+004fdc4b: mov eax, dword ptr [eax + 0x14d0]
+004fdc51: pop edi
+004fdc52: pop esi
+004fdc53: mov esp, ebp
+004fdc55: pop ebp
+004fdc56: ret 4
+004fdc59: mov eax, dword ptr [esi + 0x68e0]
+004fdc5f: push 0
+004fdc61: mov ecx, dword ptr [eax + 8]
+
+MATCH
+004fde31: ret 4
+004fde34: mov eax, dword ptr [esi + 0x14cc]
+004fde3a: pop edi
+004fde3b: pop esi
+004fde3c: mov esp, ebp
+004fde3e: pop ebp
+004fde3f: ret 4
+004fde42: mov eax, dword ptr [esi + 0x14d0]
+004fde48: pop edi
+004fde49: pop esi
+004fde4a: mov esp, ebp
+004fde4c: pop ebp
+004fde4d: ret 4
+004fde50: mov eax, dword ptr [esi + 0x14d4]
+004fde56: pop edi
+004fde57: pop esi

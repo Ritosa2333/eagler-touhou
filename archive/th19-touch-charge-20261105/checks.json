@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "charge": {
+    "game": "th19",
+    "label": "蓄力",
+    "code": "KeyX",
+    "mode": "hold-release"
+  },
+  "bomb": {
+    "code": "KeyC",
+    "separateButton": true
+  },
+  "otherGames": {
+    "th11": "C tap",
+    "th13": "C tap",
+    "otherVisibilityUnchanged": true
+  },
+  "unitTests": {
+    "passed": true,
+    "count": 29,
+    "scope": "Player touch ownership, ordinary function key tap, TH19 profiles"
+  },
+  "typecheck": {
+    "ui": true,
+    "tools": true
+  },
+  "documentation": {
+    "passed": true,
+    "documents": 419
+  },
+  "runtimeSha256": "b1bb23629fb6ef6023c2cb1c959021600e1c185980e536a3450a054b27506488",
+  "runtimeRecompiled": false,
+  "roomBrowser": {
+    "passed": true,
+    "rtc": true,
+    "nativeHoldObservedOnBothPeers": true,
+    "nativeReleaseObservedOnBothPeers": true,
+    "frames": 400,
+    "matchingHashFrames": [
+      120,
+      240,
+      360
+    ],
+    "errors": []
+  },
+  "singleplayerBrowser": {
+    "passed": true,
+    "visibleLabel": "蓄力",
+    "heldCharge": 500,
+    "releaseTier": 1,
+    "bombsBefore": 3,
+    "bombsAfter": 2,
+    "errors": []
+  }
+}

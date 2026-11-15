@@ -1,0 +1,17 @@
+✔ external source/output ownership rejects ancestors, descendants and existing parent aliases before writes (424.7847ms)
+▶ external conversion preserves the verified source frontend rather than caller selection
+  ✔ React source remains React with unset selection and unavailable checkout artifact (7416.5429ms)
+  ✔ isolated source preserves exact origin, mount and rebuilt Runtime-bound worker (6801.3425ms)
+  ✔ default source keeps its verified React bytes when caller artifact is unavailable (6174.9ms)
+  ✔ unsupported isolated relocation fails before replacing existing output (3069.3022ms)
+  ✔ missing frontend bytes or isolated origin cannot fall back to main or replace output (1418.79ms)
+  ✔ a valid but different Runtime Release cannot replace the hosted Runtime identity (6327.4902ms)
+✔ external conversion preserves the verified source frontend rather than caller selection (52846.8214ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 53381.6942

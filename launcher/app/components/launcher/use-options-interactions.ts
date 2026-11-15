@@ -12,6 +12,8 @@ export function useOptionsInteractions(ref: RefObject<HTMLElement | null>, open:
     };
     const keydown = (event: KeyboardEvent) => {
       if (!current.current.open || event.defaultPrevented) return;
+      const nestedDialog = event.target instanceof Element ? event.target.closest('dialog[open]') : null;
+      if (nestedDialog && panel.contains(nestedDialog)) return;
       if (['PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown'].includes(event.key) && event.target instanceof Element && !event.target.closest('.options-scroll,input,select,textarea')) {
         event.preventDefault();
         const scroll = panel.querySelector<HTMLElement>('.options-scroll'); if (!scroll) return;

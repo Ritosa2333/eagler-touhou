@@ -47,7 +47,7 @@ export async function preparePackageModuleFixture({project = defaultProject} = {
   const modules = await browserModuleClosure({root: project, entries, resolveFile: resolveModule});
   const inputs = new Map(), optionalMissing = [];
   for (const path of modules) inputs.set(path, {source: resolveModule(path), bytes: await ordinaryBytes(resolveModule(path))});
-  const document = 'faq.html', source = resolve(project, 'public', document);
+  const document = 'compatibility.html', source = resolve(project, 'public', document);
   const html = await ordinaryBytes(source); inputs.set(document, {source, bytes: html});
   const pending = [];
   function visit(node) {

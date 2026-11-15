@@ -5,6 +5,6 @@ namespace th15 {
 struct AnmOverlay {
  std::array<std::unique_ptr<AnmVm>,5> panels;
  i32 mode=0,frames=0;
- AnmOverlay()=default;AnmOverlay(const AnmOverlay&);
+ AnmOverlay()=default;AnmOverlay(const AnmOverlay&);AnmOverlay& operator=(const AnmOverlay&);
 };
 }

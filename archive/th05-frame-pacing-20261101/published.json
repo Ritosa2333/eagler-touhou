@@ -1,0 +1,25 @@
+{
+  "siteUrl": "https://test.touhou.vip/",
+  "previous": "/var/www/eagler-touhou-test/releases/th05-render-input-20261101-e63ee6d10d3d",
+  "candidate": "/var/www/eagler-touhou-test/releases/th05-frame-pacing-20261101-190dd5050d3b",
+  "releaseId": "sha256-1973309be54de7715d66d8ed104305823859749935e15c6f5a38152f70607c6d",
+  "buildId": "4b916af41213aac807d3",
+  "generation": "8c2905cda2de1658096c792582c275e2b38fcef3506a73e86f7598e91ee49457",
+  "packageRevision": "c2bdca7b5b842835",
+  "files": 7678,
+  "preserved": 7405,
+  "sourceExceptions": [],
+  "publishedAt": "2026-11-01T09:16:12Z",
+  "nginxBefore": "b810d4148505b4f6203c00208c397c5184de2ca2338bfba3cc61e8bffc220689",
+  "nginxAfter": "b810d4148505b4f6203c00208c397c5184de2ca2338bfba3cc61e8bffc220689",
+  "protected": {
+    "eagler-touhou": {
+      "target": "/var/www/eagler-touhou/releases/mandatory-migration-20261031-01",
+      "deployment": "bb9cdb5261e517b3e604ec798967991ebe575ac5041d13cee90a3a08fff46764"
+    },
+    "eagler-touhou-beta": {
+      "target": "/var/www/eagler-touhou-beta/releases/relay-session-d48252551-20261028",
+      "deployment": "34c5ab9d5ca4b8e9c3921087fae0941af50909334029e60a9ad6b3c45e6e0d46"
+    }
+  }
+}

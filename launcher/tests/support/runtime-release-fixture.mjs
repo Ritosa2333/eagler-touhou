@@ -5,7 +5,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { PRODUCT_CONTENT } from "../../lib/content-definition.mjs";
 import { PRODUCT_GAMES } from "../../lib/contracts/product-catalog.mjs";
-import { RUNTIME_RELEASE_SCHEMA, runtimeStem, validateRuntimeReleaseManifest } from "../../lib/runtime-release.mjs";
+import { RUNTIME_RELEASE_SCHEMA, runtimeStem, sharesRuntime, validateRuntimeReleaseManifest } from "../../lib/runtime-release.mjs";
 import { readFile } from "node:fs/promises";
 import { extractGameDataLayout } from "../../lib/runtime-data-layout.mjs";
 
@@ -22,7 +22,7 @@ function preloadFixture(game) {
 }
 
 function flatRuntimeShellFixture(game, variant, provider) {
-  return `<script>
+  return `<!doctype html><html><head></head><body><script>
 const protocol="eagler-touhou/1",game="${game}";
 const epoch=Number(new URLSearchParams(location.search).get("runtimeEpoch"));
 window.addEventListener("message",event=>{const message=event.data||{};if(message.epoch!==epoch)return;});
@@ -30,7 +30,7 @@ window.parent.postMessage({protocol,game,epoch,event:"ready"},location.origin);
 const prepare=window.parent.__eaglerPrepareManagedRuntimeDataV1;
 prepare({game,generation:"fixture",epoch});
 ${provider === "emscripten-preload" ? "Module.getPreloadedPackage;" : ""}
-</script>${variant}`;
+</script>${variant}</body></html>`;
 }
 
 function directoryProtocolFixture(game) {
@@ -50,16 +50,17 @@ return parentWindow.__eaglerPrepareManagedRuntimeDataV1({game,generation:"fixtur
 
 // Workspace Host integration may substitute real preload programs. Other
 // registered products remain synthetic and are never presented as game proof.
-export async function writeSyntheticRuntimeRelease(root, {preloadBuilds = {}} = {}) {
+export async function writeSyntheticRuntimeRelease(root, {preloadBuilds = {}, legacyTh09 = false} = {}) {
   const games = {};
   for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
+    if (!PRODUCT_CONTENT[game]) continue;
     const stem = runtimeStem(game);
     const preload = product.dataProvider === "emscripten-preload" ? preloadFixture(game) : null;
     const dataLayout = preloadBuilds[game]
       ? extractGameDataLayout(await readFile(resolve(preloadBuilds[game].runtime, `${stem}.js`), "utf8"), game).layout
       : preload?.layout || PRODUCT_CONTENT[game].dataLayout;
     const variants = [["runtime", `runtime/${game}`, "normal"]];
-    if (product.multiplayerRuntime) variants.push(["multiplayerRuntime", `runtime/${game}/multiplayer`, "multiplayer"]);
+    if (product.multiplayerRuntime && (!sharesRuntime(game) || legacyTh09)) variants.push(["multiplayerRuntime", `runtime/${game}/multiplayer`, "multiplayer"]);
     const entry = {
       dataProvider: product.dataProvider,
       dataLayout,
@@ -73,7 +74,7 @@ export async function writeSyntheticRuntimeRelease(root, {preloadBuilds = {}} = 
       const target = resolve(root, runtimeRoot);
       await mkdir(target, { recursive: true });
       const html = Buffer.from(product.runtimeFileLayout === "directory"
-        ? `<meta name="eagler-data-provider" content="${product.dataProvider}">${variant}`
+        ? `<!doctype html><html><head><meta name="eagler-data-provider" content="${product.dataProvider}"></head><body>${variant}</body></html>`
         : flatRuntimeShellFixture(game, variant, product.dataProvider));
       const js = Buffer.from(preload?.script || `globalThis.__fixture=${JSON.stringify(game)};`);
       const wasm = Buffer.from(`${game}:${variant}:wasm`);
@@ -109,6 +110,7 @@ export async function writeSyntheticRuntimeRelease(root, {preloadBuilds = {}} = 
         files: Object.fromEntries(Object.entries(payloads).map(([name, bytes]) => [name, identity(bytes)])),
       };
     }
+    if (sharesRuntime(game) && !legacyTh09) entry.multiplayerRuntime = entry.runtime;
     games[game] = entry;
   }
   const manifest = validateRuntimeReleaseManifest({

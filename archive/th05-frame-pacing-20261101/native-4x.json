@@ -1,0 +1,277 @@
+{
+  "backgrounds": [
+    {
+      "stage": 1,
+      "age": 0,
+      "differences": 0,
+      "oldDraws": 85,
+      "newDraws": 2
+    },
+    {
+      "stage": 1,
+      "age": 280,
+      "differences": 0,
+      "oldDraws": 86,
+      "newDraws": 2
+    },
+    {
+      "stage": 1,
+      "age": 840,
+      "differences": 0,
+      "oldDraws": 92,
+      "newDraws": 2
+    },
+    {
+      "stage": 2,
+      "age": 0,
+      "differences": 0,
+      "oldDraws": 182,
+      "newDraws": 2
+    },
+    {
+      "stage": 2,
+      "age": 280,
+      "differences": 0,
+      "oldDraws": 182,
+      "newDraws": 2
+    },
+    {
+      "stage": 2,
+      "age": 840,
+      "differences": 0,
+      "oldDraws": 1,
+      "newDraws": 1
+    },
+    {
+      "stage": 3,
+      "age": 0,
+      "differences": 0,
+      "oldDraws": 381,
+      "newDraws": 2
+    },
+    {
+      "stage": 3,
+      "age": 280,
+      "differences": 0,
+      "oldDraws": 387,
+      "newDraws": 2
+    },
+    {
+      "stage": 3,
+      "age": 840,
+      "differences": 0,
+      "oldDraws": 326,
+      "newDraws": 2
+    },
+    {
+      "stage": 4,
+      "age": 0,
+      "differences": 0,
+      "oldDraws": 597,
+      "newDraws": 2
+    },
+    {
+      "stage": 4,
+      "age": 280,
+      "differences": 0,
+      "oldDraws": 601,
+      "newDraws": 2
+    },
+    {
+      "stage": 4,
+      "age": 840,
+      "differences": 0,
+      "oldDraws": 601,
+      "newDraws": 2
+    },
+    {
+      "stage": 5,
+      "age": 0,
+      "differences": 0,
+      "oldDraws": 90,
+      "newDraws": 2
+    },
+    {
+      "stage": 5,
+      "age": 280,
+      "differences": 0,
+      "oldDraws": 95,
+      "newDraws": 2
+    },
+    {
+      "stage": 5,
+      "age": 840,
+      "differences": 0,
+      "oldDraws": 85,
+      "newDraws": 2
+    },
+    {
+      "stage": 7,
+      "age": 0,
+      "differences": 0,
+      "oldDraws": 131,
+      "newDraws": 2
+    },
+    {
+      "stage": 7,
+      "age": 280,
+      "differences": 0,
+      "oldDraws": 136,
+      "newDraws": 2
+    },
+    {
+      "stage": 7,
+      "age": 840,
+      "differences": 0,
+      "oldDraws": 134,
+      "newDraws": 2
+    }
+  ],
+  "stages": [
+    {
+      "stage": 1,
+      "segment": 0,
+      "mean": 0.3625000002128737,
+      "p95": 1.399999976158142,
+      "max": 2,
+      "draws": 13.946428571428571
+    },
+    {
+      "stage": 1,
+      "segment": 1,
+      "mean": 1.4375,
+      "p95": 2.5,
+      "max": 4.5999999940395355,
+      "draws": 21.428571428571427
+    },
+    {
+      "stage": 1,
+      "segment": 2,
+      "mean": 1.4000000006386213,
+      "p95": 2.199999988079071,
+      "max": 2.699999988079071,
+      "draws": 26.660714285714285
+    },
+    {
+      "stage": 1,
+      "segment": 3,
+      "mean": 0.9285714285714286,
+      "p95": 1.2000000178813934,
+      "max": 2.2000000178813934,
+      "draws": 15.535714285714286
+    },
+    {
+      "stage": 3,
+      "segment": 0,
+      "mean": 0.8928571433893272,
+      "p95": 1.300000011920929,
+      "max": 4.300000011920929,
+      "draws": 13.571428571428571
+    },
+    {
+      "stage": 3,
+      "segment": 1,
+      "mean": 1.1267857141792774,
+      "p95": 1.699999988079071,
+      "max": 1.9000000059604645,
+      "draws": 38.339285714285715
+    },
+    {
+      "stage": 3,
+      "segment": 2,
+      "mean": 1.264285714498588,
+      "p95": 1.800000011920929,
+      "max": 2.0999999940395355,
+      "draws": 81.92857142857143
+    },
+    {
+      "stage": 3,
+      "segment": 3,
+      "mean": 1.4839285707899503,
+      "p95": 2.0999999940395355,
+      "max": 2.899999976158142,
+      "draws": 111.71428571428571
+    },
+    {
+      "stage": 4,
+      "segment": 0,
+      "mean": 0.8946428575686046,
+      "p95": 1.5,
+      "max": 2,
+      "draws": 11.910714285714286
+    },
+    {
+      "stage": 4,
+      "segment": 1,
+      "mean": 1.0875000001064368,
+      "p95": 1.5,
+      "max": 1.699999988079071,
+      "draws": 71.75
+    },
+    {
+      "stage": 4,
+      "segment": 2,
+      "mean": 1.3285714286778654,
+      "p95": 1.800000011920929,
+      "max": 2.199999988079071,
+      "draws": 111.25
+    },
+    {
+      "stage": 4,
+      "segment": 3,
+      "mean": 1.8357142848627908,
+      "p95": 2.9000000059604645,
+      "max": 4.199999988079071,
+      "draws": 197.25
+    }
+  ],
+  "laser": {
+    "horizontal": {
+      "body": 9,
+      "white": 5
+    },
+    "vertical": {
+      "body": 9,
+      "white": 5
+    }
+  },
+  "slowUi": {
+    "expanded": 7,
+    "before": 1,
+    "after": 0,
+    "paused": 1,
+    "resumed": true
+  },
+  "cpuRate": 4,
+  "cadence": {
+    "ticks": 673,
+    "renders": 673,
+    "presents": 673,
+    "elapsed": 12464.59999999404,
+    "fps": 45.99080184018022,
+    "audio": {
+      "backend": "uth05-browser-audio",
+      "robust": true,
+      "mode": "ogg",
+      "decodeMode": "stream",
+      "musicSource": "original",
+      "track": "ST02.M2",
+      "path": "/music/st02-m86-opus64-single-loop-v2.ogg",
+      "playing": true,
+      "loopStart": 12.11,
+      "loopEnd": 152.567,
+      "queuedMs": 0,
+      "underruns": 0,
+      "sfx": {
+        "backend": "uth05win-original-se",
+        "played": 1273,
+        "restarted": 1261,
+        "active": [
+          2
+        ]
+      }
+    }
+  },
+  "errors": [],
+  "passed": true
+}

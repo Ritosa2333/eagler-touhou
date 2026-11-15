@@ -1,0 +1,8 @@
+@layer foundation {
+/* Shared chrome and compatibility styles for the remaining launcher modules. */
+
+/* Shared launcher chrome, including the existing real directory and menus. */
+body:not(.mp-room-active):has(.book-masthead){--ui-font:var(--kit-font);background:var(--book-bg);color:var(--book-ink)}
+body:not(.mp-room-active):has(.book-masthead):before,body:not(.mp-room-active):has(.book-masthead):after{display:none}
+
+}

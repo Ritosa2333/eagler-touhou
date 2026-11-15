@@ -1,0 +1,107 @@
+{
+  "date": "2026-11-01",
+  "environment": {
+    "os": "Windows",
+    "node": "v26.7.0",
+    "emscripten": "6.0.9-git",
+    "browser": "Chromium, software WebGL"
+  },
+  "source": {
+    "repository": "https://github.com/Goan114/uth05win-vibe",
+    "commit": "0c31261ea528db9747962e73b36c5105d2d41b78"
+  },
+  "checks": [
+    {
+      "command": "npm run typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "npm run build",
+      "result": "passed"
+    },
+    {
+      "command": "node --test ports/th05/tests/managed-adapter.test.mjs",
+      "result": "passed",
+      "tests": 7
+    },
+    {
+      "command": "node --test launcher/tests/react-main/{game-preparation,settings-primitives,settings-invalidation}.test.mjs",
+      "result": "passed",
+      "tests": 71
+    },
+    {
+      "command": "node ports/th05/tests/browser.mjs",
+      "result": "passed",
+      "report": "browser-production.json"
+    },
+    {
+      "command": "TH05_BROWSER_TESTS=1 node ports/th05/tests/browser.mjs",
+      "result": "passed",
+      "report": "browser-native.json",
+      "nativeStageCases": 84
+    },
+    {
+      "command": "node ports/th05/tests/launcher.mjs",
+      "result": "passed",
+      "report": "launcher.json"
+    },
+    {
+      "command": "node ports/th05/tests/presentation.mjs",
+      "result": "passed"
+    },
+    {
+      "command": "node launcher/tests/test-product-catalog.mjs",
+      "result": "passed"
+    },
+    {
+      "command": "node launcher/tests/test-runtime-source-plan.mjs",
+      "result": "passed",
+      "variants": 21
+    },
+    {
+      "command": "node launcher/tests/test-replay-files.mjs",
+      "result": "passed"
+    },
+    {
+      "command": "node --test launcher/tests/react-main/external-frontend-artifact.test.mjs",
+      "result": "passed",
+      "tests": 8
+    },
+    {
+      "command": "tools/ports/check-history.py verify_subtree, TH05 candidate",
+      "result": "passed",
+      "report": "source-history.json"
+    },
+    {
+      "command": "node tools/ports/check.mjs --game=th05 --variant=normal --write-status",
+      "result": "passed",
+      "gates": 9,
+      "source": "../../docs/adaptation/status.json"
+    }
+  ],
+  "workspaceSuite": {
+    "initial": {
+      "tests": 1588,
+      "passed": 1579,
+      "failed": 9
+    },
+    "externalPackagingRetest": {
+      "tests": 8,
+      "passed": 8,
+      "failed": 0
+    },
+    "returnToRoomRetest": {
+      "tests": 7,
+      "failed": 7,
+      "error": "Actual node missing: .room-workspace-fullscreen",
+      "baseline": "TH06 reproduces the same failure at original HEAD 4dff5b2fd; baseline-room.log"
+    }
+  },
+  "scope": {
+    "nativeMatrix": "4 characters × 7 stages × 3 starting positions, up to 160 native steps per case",
+    "touchReplay": "24 frames matched recorded player positions exactly",
+    "audio": "Verified PR bytes, browser decoding/playback state, original loop points, album full-loop and independent SFX",
+    "fullGameClear": false,
+    "originalPc98DeterminismComparison": false
+  }
+}

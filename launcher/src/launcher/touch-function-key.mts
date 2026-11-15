@@ -1,8 +1,7 @@
-// Reserved ordinary C input. Future titles opt in here; title mechanics never
-// belong to Launcher. Tap is the default; future titles can explicitly opt
-// into hold semantics for charge/release mechanics.
+// Ordinary special input remains a C tap. TH19 uses its own X hold/release input.
 export const functionKeySpec = Object.freeze({ code: "KeyC", key: "c", keyCode: 67 });
-export const functionKeyGames: ReadonlySet<string> = new Set(["th11"]);
+export const th19ChargeKeySpec = Object.freeze({code:"KeyX",key:"x",keyCode:88});
+export const functionKeyGames: ReadonlySet<string> = new Set(["th11", "th13", "th19", "hsob"]);
 
 export function createFunctionKeyOwner(send: (down: boolean) => void,
   mode: "tap" | "hold" = "tap",

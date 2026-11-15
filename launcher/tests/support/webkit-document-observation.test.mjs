@@ -1,7 +1,7 @@
 import {readUiHistoryText} from './ui-history.mjs';
 /** Setup/source/DOM observations only: never imports or launches Playwright,
  * packages native games, or establishes WebKit/input/storage acceptance. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';

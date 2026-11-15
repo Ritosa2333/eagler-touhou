@@ -20,7 +20,7 @@ TH06、TH07 共目录双构建；TH08、TH10、TH11、TH15 分普通版和 MP �
 
 ## 工具链
 
-使用仓库外或被忽略的 `toolchains/` 目录安装官方 [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html)。Windows、Linux 和 macOS 共用同一源码构建入口，通过 `--emsdk` 指定 SDK，通过 `--emscripten-version` 核对版本。Node 构建当前使用 6.0.9；TH06、TH07 的根 CI 配方登记其构建版本。
+使用仓库外或被忽略的 `toolchains/` 目录安装官方 [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html)。Windows、Linux 和 macOS 共用同一源码构建入口，通过 `--emsdk` 指定 SDK，通过 `--emscripten-version` 核对版本。Node 构建使用 6.0.9，TH06 和 TH07 的 CMake 构建使用 6.0.5。
 
 TH06、TH07 使用 CMake 3.20 以上与 Ninja，并按根 `.gitmodules` 初始化本作 SDL 子模块。原版素材、字体和可选练习扩展通过显式构建参数提供。构建入口输出成功记录到 `artifacts/validation/source-builds/`，其中包含模式、工具链、参数和实际源码身份。
 

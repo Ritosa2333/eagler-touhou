@@ -1,0 +1,96 @@
+{
+  "passed": true,
+  "staged": false,
+  "profile": "android",
+  "collections": [
+    {
+      "game": 4,
+      "backend": "uth05-browser-audio",
+      "robust": true,
+      "mode": "ogg",
+      "decodeMode": "full",
+      "musicSource": "original",
+      "track": "G_OP.M2",
+      "path": "/music/room-g_op.ogg",
+      "playing": true,
+      "loopStart": 0.011609977,
+      "loopEnd": 93.355827664,
+      "queuedMs": 0,
+      "underruns": 0,
+      "sfx": {
+        "backend": "uth05win-original-se",
+        "played": 16,
+        "restarted": 13,
+        "active": []
+      }
+    },
+    {
+      "game": 3,
+      "backend": "uth05-browser-audio",
+      "robust": true,
+      "mode": "ogg",
+      "decodeMode": "full",
+      "musicSource": "original",
+      "track": "Y_OP.M2",
+      "path": "/music/room-y_op.ogg",
+      "playing": true,
+      "loopStart": 0.023219955,
+      "loopEnd": 102.817959184,
+      "queuedMs": 0,
+      "underruns": 0,
+      "sfx": {
+        "backend": "uth05win-original-se",
+        "played": 16,
+        "restarted": 13,
+        "active": []
+      }
+    },
+    {
+      "game": 2,
+      "backend": "uth05-browser-audio",
+      "robust": true,
+      "mode": "ogg",
+      "decodeMode": "full",
+      "musicSource": "original",
+      "track": "H_OP.M2",
+      "path": "/music/room-h_op.ogg",
+      "playing": true,
+      "loopStart": 0.417959184,
+      "loopEnd": 82.39600907,
+      "queuedMs": 0,
+      "underruns": 0,
+      "sfx": {
+        "backend": "uth05win-original-se",
+        "played": 16,
+        "restarted": 13,
+        "active": []
+      }
+    },
+    {
+      "game": 1,
+      "backend": "uth05-browser-audio",
+      "robust": true,
+      "mode": "ogg",
+      "decodeMode": "full",
+      "musicSource": "original",
+      "track": "R_00.M2",
+      "path": "/music/room-r_00.ogg",
+      "playing": true,
+      "loopStart": 0.034829932,
+      "loopEnd": 89.849614512,
+      "queuedMs": 0,
+      "underruns": 0,
+      "sfx": {
+        "backend": "uth05win-original-se",
+        "played": 16,
+        "restarted": 13,
+        "active": []
+      }
+    }
+  ],
+  "decode": {
+    "tracks": 84,
+    "minPeak": 0.27670586109161377
+  },
+  "errors": []
+}

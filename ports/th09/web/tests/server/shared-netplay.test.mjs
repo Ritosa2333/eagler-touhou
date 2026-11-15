@@ -215,20 +215,30 @@ test('launcher and in-game entries share the TH09 room through the common peer t
 test('stopping optional spectators keeps match statistics and repeated Retry bounded', async () => {
   const box=harness(true);let pair;
   try {
-    pair=await connectPair(box);const {left,leftCore}=pair,reports=[];
+    pair=await connectPair(box);const {left,right,leftCore}=pair,reports=[],peerReports=[];
     left.onMatch=value=>reports.push(value);
+    right.onMatch=value=>peerReports.push(value);
+    left.startMatchReport(0);right.startMatchReport(0);
     left.stopSpectators('optional stream stopped');
     const at=leftCore._th09_rollback_info()/4;
     leftCore.HEAPU32[at+1]=3600;left.frame();
-    assert.deepEqual(reports,[{start:0,frames:3600}]);
-    left.endMatch(3700,1);left.endMatch(3700,1);
-    assert.deepEqual(reports[1],{start:0,frames:3700,winner:1});
+    assert.deepEqual(reports,[{start:0,frames:0},{start:0,frames:3600}]);
+    left.finishMatchReport(3700,1,3,10);right.finishMatchReport(3700,1,3,10);
+    left.finishMatchReport(3700,1,3,10);
+    const result={start:0,frames:3700,winner:1,characters:[3,10]};
+    assert.deepEqual(reports[2],result);
+    assert.deepEqual(peerReports,[result]);
+    leftCore.HEAPU32[at+1]=8000;left.frame();
+    assert.equal(reports.length,3,'the clock stops at the deciding frame');
+    left.endMatch(3750);
     for(let n=1;n<=1000;n++){
+      left.startMatchReport(n*4000);
       left.beginMatch(n*4000,new Uint8Array(50));
-      left.endMatch(n*4000+3700,n%2);
+      left.finishMatchReport(n*4000+3700,n%2,0,1);
+      left.endMatch(n*4000+3800);
     }
-    assert.equal(reports.length,2002);
-    assert.deepEqual(reports[2],{start:4000,frames:0},'new match immediately resets its clock');
+    assert.equal(reports.length,2003);
+    assert.deepEqual(reports[3],{start:4000,frames:0},'new match immediately resets its clock');
     assert.equal(left.spectatorPending.length,0,'stopped stream must retain no new start/end packets');
     assert.equal(left.connected,true);assert.equal(left.active,true);
   } finally {pair?.left.close();pair?.right.close();box.restore();}
@@ -351,6 +361,38 @@ for(const transportEnd of [-1,3]) test(`viewer drains buffered final packets acr
     state[1]=127;viewer.frame();assert.equal(viewer.connected,true);assert.equal(results,0);
     state[1]=129;viewer.frame();assert.equal(viewer.connected,false);assert.equal(results,1);
     assert.equal(pair.left.connected,true);assert.equal(pair.right.connected,true);
+  }finally{viewer?.close();pair?.left.close();pair?.right.close();box.restore();}
+});
+
+test('a paused viewer retains overflow frames and the end packet until native playback catches up',async()=>{
+  const box=harness(true);let pair,viewer;
+  try{
+    pair=await connectPair(box);const core=box.core();
+    let played=0,received=0,finished=false;
+    core._th09_spectator_frame=()=>played;
+    core._th09_spectator_feed=frame=>{
+      if(frame!==received||received-played>=4096)return 0;
+      ++received;return 1;
+    };
+    core._th09_spectator_finish=frame=>{finished=frame===received;return +finished;};
+    viewer=new SharedNetplay(core,{onStatus(){},onClose(){},onResult(){}});
+    await viewer.connect({netplayUrl:'wss://example.test/netplay?room=th09mp-1234&run=1&spectator=c12345678',
+      netplayPlayerCount:2,netplaySpectator:true,netplaySpectatorId:'c12345678',netplaySeed:1234,
+      netplayDifficulty:2,netplayLoadouts:[{character:3},{character:10}]});viewer.pump();
+    for(let frame=0;frame<=5000;frame++){
+      const end=frame===5000,bytes=new Uint8Array(end?24:46);
+      bytes.set(end?[84,57,83,69,1,0,2,0]:[84,57,83,80,1,3,2,0]);
+      new DataView(bytes.buffer).setUint32(8,frame,true);bytes.fill(0xaa,12,24);viewer.receive(bytes);
+    }
+    viewer.drainSpectatorHistory();
+    assert.equal(viewer.connected,true);
+    assert.equal(received,4096);
+    assert.equal(finished,false);
+    played=1000;
+    for(let batch=0;batch<15;batch++)viewer.drainSpectatorHistory();
+    assert.equal(received,5000);
+    assert.equal(finished,true);
+    assert.equal(viewer.connected,true);
   }finally{viewer?.close();pair?.left.close();pair?.right.close();box.restore();}
 });
 

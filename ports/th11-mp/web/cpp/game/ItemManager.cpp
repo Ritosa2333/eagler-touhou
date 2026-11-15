@@ -38,7 +38,7 @@ bool ItemManager::BeginRollbackFrame(Netplay::RollbackJournal& journal){
     capture(activity);
     capture(player);capture(cancel_cursor);capture(cancel_spawn_count);capture(active_count);capture(last_error);
     capture(multiplayer_targets);capture(multiplayer_current_target);
-    capture(multiplayer_spawning_transfer);capture(multiplayer_fan);
+    capture(multiplayer_spawning_transfer);capture(multiplayer_fan);capture(multiplayer_death_drops);
     for(u32 i=0;i<capacity;){
         if(activity.valid&&!exposed->count)i=activity.next(i);
         if(i==capacity)break;
@@ -57,7 +57,7 @@ void ItemManager::reset()noexcept{
 #endif
     std::memset(storage.get(),0,sizeof(ItemState)*capacity);active_count=0;last_error=0;
 #ifdef TH11_MULTIPLAYER
-    multiplayer_targets.fill(-1);multiplayer_current_target=-1;multiplayer_fan.fill(0);
+    multiplayer_targets.fill(-1);multiplayer_current_target=-1;multiplayer_fan.fill(0);multiplayer_death_drops.fill(false);
     activity.clear();
 #endif
 }
@@ -69,7 +69,7 @@ bool ItemManager::bind(ItemState& item,i32 script){
     // The caller sets 16x16 before the original bind, whose second reset clears it.
     if(item.vm.update(animations)<0){last_error=2;return false;}return true;
 }
-i32 ItemManager::spawn(i32 type,Vec3 position,u32 color,float angle,float speed){
+i32 ItemManager::spawn(i32 type,Vec3 position,u32 color,float angle,float speed,bool death_drop){
 #ifdef TH11_MULTIPLAYER
     const auto copies=world.multiplayer_world()&&!multiplayer_spawning_transfer?world.multiplayer_item_copies(type):1;
     if(copies>1){
@@ -78,14 +78,14 @@ i32 ItemManager::spawn(i32 type,Vec3 position,u32 color,float angle,float speed)
         const float half=float(copies-1)*9,inset=half+6;const float center=std::clamp(position.x,-192+inset,192-inset);
         const bool fan=angle==-1.5707963705062866f&&speed==2.2f;
         for(unsigned n=0;n<copies;++n){auto origin=position;origin.x=center+18*(float(n)-float(copies-1)*.5f);ItemState* item=nullptr;
-            if(spawn_single(type,origin,color,angle,speed,&item)<0)return -2;
+            if(spawn_single(type,origin,color,angle,speed,&item,death_drop)<0)return -2;
             if(item&&fan){item->velocity.x=float(double(animations.script_rng.signed_unit())*.5);item->velocity.y=float(-double(speed)-double(animations.script_rng.unit())*.6);multiplayer_fan[item-storage.get()]=1;}
         }return 0;
     }
 #endif
-    return spawn_single(type,position,color,angle,speed);
+    return spawn_single(type,position,color,angle,speed,nullptr,death_drop);
 }
-i32 ItemManager::spawn_single(i32 type,Vec3 position,u32 color,float angle,float speed,ItemState** out){
+i32 ItemManager::spawn_single(i32 type,Vec3 position,u32 color,float angle,float speed,ItemState** out,bool death_drop){
     if(last_error)return -2;
     if(type==8){
         auto& item=storage[ordinary_capacity+cancel_cursor];++cancel_spawn_count;
@@ -116,6 +116,9 @@ i32 ItemManager::spawn_single(i32 type,Vec3 position,u32 color,float angle,float
     if(world.multiplayer_world())full=!multiplayer_spawning_transfer&&world.multiplayer_power_full();
 #endif
     if(full&&(type==1||type==4||type==10||type==11))type=9;
+#ifdef TH11_MULTIPLAYER
+    multiplayer_death_drops[selected-storage.get()]=death_drop&&type!=9;
+#endif
     if(type==5&&(!world.effect(item.position,0x73)||!world.sound(0x34,item.position.x))){last_error=3;return -2;}
     item.type=item.display_type=type;if(type==10)item.display_type=1;else if(type==11)item.display_type=4;
     if(!bind(item,item.display_type+0x60))return -2;item.vm.color=color;return 0;
@@ -150,6 +153,8 @@ bool ItemManager::update(){
     for(u32 i=next_active(0);i<capacity;i=next_active(i+1)){auto& item=storage[i];if(!item.state)continue;
 #ifdef TH11_MULTIPLAYER
         if(world.multiplayer_world()&&!world.multiplayer_item_player(item,player)){player=ItemPlayer{};player.state=2;}
+        // Keep an overflow death drop in place until its reserved pilot can pick it up.
+        if(i<ordinary_capacity&&multiplayer_death_drops[i]&&player.state==2&&multiplayer_current_target>=0){++active_count;continue;}
 #endif
         if(item.state==5){item.delay=wrapping_sub(item.delay,1);if(item.delay<0&&!activate(item))return false;continue;}
 #ifdef TH11_MULTIPLAYER

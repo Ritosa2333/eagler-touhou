@@ -17,7 +17,7 @@ export function safePath(raw) {
   const path = raw.split('?')[0];
   let decoded;
   try { decoded = decodeURIComponent(path); } catch { return false; }
-  return (/^\/(games|shared|language|language-updates)\//.test(path) || /^\/runtime\/(?:[A-Za-z0-9_-]+\/)+[a-f0-9]{64}\/fonts\/[A-Za-z0-9._-]+$/.test(path)) && !/[\\\x00-\x20\x7f]/.test(decoded)
+  return (/^\/(games|shared|language)\//.test(path) || /^\/runtime\/(?:[A-Za-z0-9_-]+\/)+[a-f0-9]{64}\/fonts\/[A-Za-z0-9._-]+$/.test(path)) && !/[\\\x00-\x20\x7f]/.test(decoded)
     && !decoded.split('/').some(part => part === '.' || part === '..')
     && !/%(?:2f|5c|25)/i.test(path);
 }

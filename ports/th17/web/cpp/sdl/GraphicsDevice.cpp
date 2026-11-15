@@ -13,7 +13,7 @@ bool GraphicsDevice::initialize(){
     SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT,"#canvas");
     if(!backend.initialize()){error=backend.error();return false;}SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(),"Touhou 17");SDL_SetWindowSize(SDL_GL_GetCurrentWindow(),640*render_scale,480*render_scale);backend.state.target=screen;backend.state.depth=depth;configure_game(1);return true;
 }
-bool GraphicsDevice::preload(AnmResource& file,bool low_color,const AnmResource* detailed){
+bool GraphicsDevice::preload(AnmResource& file,bool low_color,const AnmResource* detailed,bool room_front){
     if(resources.find(&file)!=resources.end())return true;
     if(detailed){
         // The caller normalizes detailed glyph rectangles to logical pixels
@@ -28,10 +28,20 @@ bool GraphicsDevice::preload(AnmResource& file,bool low_color,const AnmResource*
     if(detailed)file.alpha_bounds.clear();
     std::vector<u32> handles;handles.reserve(file.textures.size());
     for(u32 index=0;index<file.textures.size();index++){const auto& source=detailed?detailed->textures[index]:file.textures[index];Texture texture;texture.resource=&file;texture.renderScale=source.kind==AnmTexture::Kind::RenderTarget?render_scale:1;
-        if(!texture.image.load(source,low_color)){error="Unable to prepare ANM texture: "+source.name;for(const auto id:handles){backend.release(id);textures.erase(id);}return false;}
+        AnmTexture patched;
+        const bool translated=language_pack&&patch_texture(detailed?*detailed:file,source,index,patched);
+        if(translated)file.alpha_bounds.clear();
+        if(!texture.image.load(translated?patched:source,low_color)){error="Unable to prepare ANM texture: "+source.name;for(const auto id:handles){backend.release(id);textures.erase(id);}return false;}
+#if TH17_MULTIPLAYER
+        if(room_front&&source.name=="front/front00.png"&&layout_room_front(texture.image))file.alpha_bounds.clear();
+#endif
         const auto id=next_handle++;textures.emplace(id,std::move(texture));handles.push_back(id);backend.prepare(id);
     }
-    resources.emplace(&file,std::move(handles));return true;
+    resources.emplace(&file,std::move(handles));
+    // Sprite bounds are already cached and the device owns the prepared
+    // pixels, including any replacement atlas or format conversion.
+    for(auto& source:file.textures)std::vector<u8>().swap(source.pixels);
+    return true;
 }
 void GraphicsDevice::unload(const AnmResource& file){
     if(last_resource==&file){last_resource=nullptr;last_resource_handles=nullptr;}
@@ -53,11 +63,13 @@ bool GraphicsDevice::select_target(const AnmResource* file,u32 index){
     backend.viewport({0,0,image.width,image.height,0,1});return true;
 }
 bool GraphicsDevice::clear_target(u32 color,const GraphicsViewport* rect){
+    if(logical_drawing)return true;
     if(rect){const i32 box[]={i32(rect->x),i32(rect->y),i32(rect->x+rect->width),i32(rect->y+rect->height)};backend.clear(1,color,1,0,box,1);}
     else backend.clear(1,color,1,0);
     return true;
 }
 bool GraphicsDevice::clear_depth(const GraphicsViewport* rect){
+    if(logical_drawing)return true;
     if(rect){const i32 box[]={i32(rect->x),i32(rect->y),i32(rect->x+rect->width),i32(rect->y+rect->height)};backend.clear(2,0,1,0,box,1);}
     else backend.clear(2,0,1,0);
     return true;

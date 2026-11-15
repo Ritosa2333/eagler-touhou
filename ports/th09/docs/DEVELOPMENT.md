@@ -6,10 +6,10 @@
 
 ## 构建并在 Launcher 启动
 
-需要 Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9、`ffmpeg` 和 `ffprobe`。原版目录需含日文 th09 1.50a 的 `th09.exe`、`th09.dat`、`thbgm.dat`。准备独立字体目录，包含 `blend.bin`（131072 字节）、`msgothic.ttc`，以及 `cp932.bin`（131072 字节）或 `codepages.bin`（262144 字节）。`msgothic.ttc` 可从 Windows 字体目录复制，其余私有字体资源来自已有字体资源包。
+需要 Bun 1.4.4、Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9、`ffmpeg` 和 `ffprobe`。原版目录需含日文 th09 1.50a 的 `th09.exe`、`th09.dat`、`thbgm.dat`。准备独立字体目录，包含 `blend.bin`（131072 字节）、`msgothic.ttc`，以及 `cp932.bin`（131072 字节）或 `codepages.bin`（262144 字节）。`msgothic.ttc` 可从 Windows 字体目录复制，其余私有字体资源来自已有字体资源包。
 
 ```powershell
-npm --prefix launcher ci --ignore-scripts # 仅首次安装
+bun --bun run --cwd launcher install:locked # 仅首次安装
 node ports/th09/web/scripts/prepare-retail-assets.mjs --help
 node ports/th09/web/scripts/prepare-retail-assets.mjs 'C:\Games\TH09' --font-root 'C:\local-content\th09-fonts'
 node launcher/scripts/prepare-th09-content.mjs --original='C:\Games\TH09' --output='ports/th09/assets-ogg'
@@ -21,12 +21,11 @@ $env:EAGLER_COMMON_ROOT=(Resolve-Path 'common').Path
 $env:EAGLER_TOUHOU_NETPLAY_RELAY='ws://127.0.0.1:18142/'
 node launcher/scripts/build-runtime.mjs --game=th09 --variant=normal --emsdk='C:\tools\emsdk'
 node ports/th09/web/scripts/build-eagler.mjs
-node ports/th09/web/scripts/build-eagler.mjs --multiplayer
-npm --prefix launcher run build
+bun --bun run --cwd launcher build
 npm --prefix launcher run dev:workspace
 ```
 
-资源准备入口为 [`prepare-retail-assets.mjs`](../web/scripts/prepare-retail-assets.mjs) 和 [`prepare-th09-content.mjs`](../../../launcher/scripts/prepare-th09-content.mjs)。准备的游戏内容在 `ports/th09/assets-ogg/`，包括 `th09.data` 和 19 首 `music/*.ogg`。Runtime 内容目录还需 `ports/th09/web/assets/sdl-native/cp932.bin`、`blend.bin`。编译产物在 `ports/th09/web/artifacts/sdl-release/`；两种模式的打包产物在 `ports/th09/web/build-eagler/`、`ports/th09/web/build-eagler-multiplayer/`。Launcher 地址为 <http://127.0.0.1:8130/>。房间联调另开终端：首次运行 `npm --prefix services/relay ci --ignore-scripts`，之后运行 `npm --prefix services/relay start`。
+资源准备入口为 [`prepare-retail-assets.mjs`](../web/scripts/prepare-retail-assets.mjs) 和 [`prepare-th09-content.mjs`](../../../launcher/scripts/prepare-th09-content.mjs)。准备的游戏内容在 `ports/th09/assets-ogg/`，包括 `th09.data` 和 19 首 `music/*.ogg`。Runtime 内容目录还需 `ports/th09/web/assets/sdl-native/cp932.bin`、`blend.bin`。编译产物在 `ports/th09/web/artifacts/sdl-release/`；普通和多人入口共用 `ports/th09/web/build-eagler/`。Launcher 通过 `runtimeVariant` 选择模式和存档目录。Launcher 地址为 <http://127.0.0.1:8130/>。房间联调另开终端：首次运行 `npm --prefix services/relay ci --ignore-scripts`，之后运行 `npm --prefix services/relay start`。
 
 ## 源码与验证
 
@@ -38,6 +37,10 @@ npm --prefix launcher run dev:workspace
 | 原版 C++ 对照 | 上表 WASI 模块；日文 1.50a `th09.exe`、`th09.dat`、`thbgm.dat`；`ports/th09/web/reference/native/unicorn-bounded.wasm`；Node 依赖 `@alexaltea/unicorn-js@2.1.4` | 首次运行 `npm --prefix ports/th09/web ci` 和 `npm install --prefix ports/th09/web --no-save --package-lock=false @alexaltea/unicorn-js@2.1.4`；之后运行 `npm --prefix ports/th09/web test`。 |
 | 对战回滚组件 | WASI SDK 34.0；仓库 `common/`；Node.js 22.18 以上 | 设置 `$env:WASI_SDK_BIN='C:\tools\wasi-sdk-34.0-x86_64-windows\bin'`、`$env:EAGLER_COMMON_ROOT=(Resolve-Path 'common').Path`，运行 `npm --prefix ports/th09/web run test:rollback`。报告写入 `ports/th09/web/artifacts/multiplayer-tests/`。 |
 | Ghidra 源码分析 | th09 原版 EXE；Ghidra 与 JDK 安装目录 | 设置 `$env:TH09_DECOMP_TOOLS='C:\tools\decomp'`，运行 `npm --prefix ports/th09/web run cpp:analyze`。分析产物写入 `ports/th09/web/artifacts/cpp/analysis/`。 |
+
+用 [external-replay.test.mjs](../web/tests/cpp/external-replay.test.mjs) 对照原版录像时，`TH09_REPLAY_FILE` 指定录像，双人对战用 `TH09_REPLAY_STAGE=9`。设置 `TH09_RNG_CHECK=1` 可逐帧核对 RNG 种子、调用次数、回放进度和回合结算。
+
+已有原版双人录像的 RNG 记录时，设置 `TH09_RNG_TRACE_FILE` 指向同一录像的 `TH09RNG2` 文件，即可直接逐帧对照 Web 回放。
 
 `build-sdl.mjs` 直接构建宿主时可显式指定 Emscripten SDK：`node ports/th09/web/scripts/build-sdl.mjs --release --emsdk 'C:\tools\emsdk'`。该 SDK 路径须含 `.emscripten` 和 Emscripten 6.0.9 的 `install/` 或 `upstream/` 文件；宿主文件写入 `ports/th09/web/artifacts/sdl-release/`。
 
@@ -56,6 +59,10 @@ npm --prefix launcher run dev:workspace
 正式 Runtime 导出 `th09_room_return`，结束当前对局、清理旁观状态与待退出标记，回到原生标题菜单。Launcher 保留同一 iframe、Module 和已加载资源，菜单呈现后完成 `return-room` 响应。普通版与多人版共用该生产接口，构建时核对导出存在；连续旁观往返核对菜单持续刷新与再次开局。
 
 ## 回滚蓄力与 Replay
+
+`charge-history` 组件测试比较蓄力录像的逐帧数据，并测量 20 分钟合成记录的大小。
+
+触控在宣言、场地时停和死亡期间丢弃拖动位移，恢复时以人物当前位置重新建立目标。手指可持续按住，也可在死亡期间按下；`touch-controller` 组件测试覆盖恢复后的连续拖动。`web/tests/multiplayer/touch-stop-browser.mjs` 使用真实游戏和原生输入采样，检查连续三次宣言恢复时没有积压位移。
 
 ### 房间开关与启动参数
 
@@ -112,9 +119,9 @@ Runtime 在 HELLO 前完成配置，并将蓄力规则和批次协议纳入 game
 
 ### 录像格式与兼容
 
-本地优先 Replay 使用 `T9CHARGE/1` 尾部扩展，保存十个关卡计数和按原生录像输入帧索引排列的蓄力记录，经 LZSS 压缩并校验，导出文件名为 `.rpyx`。
+本地优先 Replay 将蓄力记录写入 `T9CHARGE/3`。各字段的位差按列写成变长整数，再用 DEFLATE 压缩。读取兼容版本 1、2。
 
-关闭本地优先后，游戏逻辑和蓄力输入按原版方式记录。不含触控扩展的录像以原版 `.rpy` 导出，含触控轨道的录像以 `.rpyx` 导出。蓄力轨道与触控轨道共存时，`THMOTION` 保持在文件末尾。
+含蓄力或触控轨道的录像导出为 `.rpyx`，纯原生录像导出为 `.rpy`。`T9X1` 用 DEFLATE 压缩 `.rpyx` 的原生输入段，尾部扩展沿用独立轨道。文件末尾的触控轨道择小写入 `THMOTION/2` 至 `/5`。版本 4 压缩帧号和坐标的差分，版本 5 用字典索引保存重复的精确坐标。
 
 原版 `.rpy` 和已有触控 `.rpyx` 按文件中的记录播放，房间蓄力开关不改变回放规则。
 

@@ -23,6 +23,7 @@ public:
     Vec2 offset{};GraphicsViewport viewport;AnmCamera camera;bool tint_enabled=false;u32 tint=0x80808080;
     std::string error;explicit AnmRenderer(ZunGraphics& graphics):graphics(graphics){vertices.reserve(6144);shapes.reserve(192);}
     void flush();void invalidate();void set_viewport(const GraphicsViewport&);void set_camera(const AnmCamera&);
+    bool logical_frame()const noexcept{return graphics.logical_frame();}
     int draw(AnmVm&);int draw_glyph(AnmVm&);bool draw_layer(const std::vector<AnmVm*>&);
     int draw_screen_strip(AnmVm&,const AnmGeometryVertex*,u32 count);
     const std::vector<AnmGeometryVertex>& pending()const noexcept{return vertices;}

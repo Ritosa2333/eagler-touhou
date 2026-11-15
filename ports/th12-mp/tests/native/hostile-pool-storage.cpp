@@ -35,7 +35,7 @@ void verify(){
   bullets.clear();resetHostilePool();Reference r;
   hostilePool.cursor=r.pool.cursor=1337;
   for(size_t i=0;i<hostilePool.cancelEffects.size();++i)hostilePool.cancelEffects[i]=r.pool.cancelEffects[i]=int(i%37);
-  auto refresh=[&]{refreshHostilePointers();r.refresh();r.check();};
+  auto refresh=[&]{refreshProjectilePointers();r.refresh();r.check();};
   auto release=[&](u32 id){releaseHostileBullet(id);r.release(id);r.check();};
   for(unsigned i=0;i<2000;++i)append(i?i:0xffffffffu,int(i));
   refresh();for(int n=0;n<4;++n)refresh();release(0xffffffffu);release(0xffffffffu);release(7777777);
@@ -66,14 +66,35 @@ void verifyWorld(){
     selectStage(1);multiplayer::Options options;options.count=count;
     require(multiplayer::begin(options),"start synthetic rollback world");
     for(unsigned i=0;i<200;++i)append(i+100,int(i));
-    hostilePool.cursor=919;refreshHostilePointers();
+    hostilePool.cursor=919;refreshProjectilePointers();
     const auto before=multiplayer::canonicalHash();const auto pool=hostilePool;multiplayer::WorldState saved;
-    bullets.clear();for(unsigned i=0;i<300;++i)append(i+10000,int(i));refreshHostilePointers();
+    bullets.clear();for(unsigned i=0;i<300;++i)append(i+10000,int(i));refreshProjectilePointers();
     saved.restore();require(multiplayer::canonicalHash()==before&&hostilePool.cursor==pool.cursor&&hostilePool.phases==pool.phases&&hostilePool.cancelEffects==pool.cancelEffects,
       "rollback reconstructs derived index while retaining physical pool state");
     Reference expected;expected.pool=pool;expected.refresh();expected.check();
     for(unsigned i=100;i<300;i+=3){releaseHostileBullet(i);expected.release(i);expected.check();}
     releaseHostileBullet(10000);expected.release(10000);expected.check();
+    // An authored wave shares its program, but each projectile restores its
+    // own cursor and motion. A later emission cannot modify the retained wave.
+    bullets.clear();resetHostilePool();
+    eb::Emission wave;wave.y=120;wave.count=4;wave.speed=1;
+    eb::set(wave.program,0,false,0x1000,30,0,0,0);
+    emitHostileEmission(wave,false);
+    require(bullets.size()==4 && &bullets[0].enemy.program()==&bullets[3].enemy.program(),
+            "bullets from a single wave share their immutable program");
+    bullets[0].enemy.cursor=3;bullets[0].enemy.wait.timer=17;
+    const multiplayer::WorldState waveState;
+    bullets[0].enemy.cursor=0;bullets[0].enemy.wait.timer=0;
+    bullets.clear();resetHostilePool();
+    eb::set(wave.program,0,false,0x1000,60,0,0,0);
+    emitHostileEmission(wave,false);
+    require(bullets[0].enemy.program().records[0].c==60,"new wave uses updated emitter program");
+    waveState.restore();
+    require(bullets.size()==4&&bullets[0].enemy.program().records[0].c==30&&
+            &bullets[0].enemy.program()==&bullets[3].enemy.program()&&
+            bullets[0].enemy.cursor==3&&bullets[0].enemy.wait.timer==17&&
+            bullets[3].enemy.cursor==1&&bullets[3].enemy.wait.timer==30,
+            "rollback preserves shared instructions and per-bullet progress");
   }
 }
 #endif
@@ -89,9 +110,9 @@ int main(int argc,char** argv){
 #ifdef TH12_MULTIPLAYER
   verifyWorld();bullets.clear();resetHostilePool();
 #endif
-  for(unsigned i=0;i<1000;++i)append(i+1,int(i));refreshHostilePointers();
+  for(unsigned i=0;i<1000;++i)append(i+1,int(i));refreshProjectilePointers();
   allocations=0;counting=true;const auto begin=std::chrono::steady_clock::now();
-  for(unsigned n=0;n<1000;++n)refreshHostilePointers();
+  for(unsigned n=0;n<1000;++n)refreshProjectilePointers();
   const double elapsed=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-begin).count();counting=false;
   if(!reference)require(!allocations,"steady hostile index rebuild has no allocations");
   std::printf("{\"refreshes\":1000,\"bullets\":1000,\"allocations\":%zu,\"elapsedMs\":%.3f,\"outputHash\":\"%016llx\"}\n",allocations,elapsed,(unsigned long long)digest);

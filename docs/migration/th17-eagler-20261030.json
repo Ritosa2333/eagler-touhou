@@ -4713,5 +4713,20 @@
       "scope": "existing ports/th12 Git subtree export on Windows",
       "error": "Git Bash segmentation fault"
     }
+  },
+  "currentMode": "git-subtree",
+  "commit": "ca7f023250303110577978aaf717787b674d3aee",
+  "gitHistoryOrigin": {
+    "kind": "monorepo-directory-projection",
+    "deliveryImport": "4f310d73b648c9e4a75fb18efd461eccb3b5d8fa",
+    "sourceRegistration": "docs/migration/th17-eagler-20261030.json",
+    "projectionCommits": 27
+  },
+  "subtree": {
+    "upstreamCommit": "ca7f023250303110577978aaf717787b674d3aee",
+    "initialJoin": "b49f2b9969497fdf61dc2ea8637fbb13699fa5c6",
+    "initialSplit": "cd3e5490abe8a04e35a2b588dd3ec13c5844c85d",
+    "latestJoin": "b49f2b9969497fdf61dc2ea8637fbb13699fa5c6",
+    "currentSplit": "cd3e5490abe8a04e35a2b588dd3ec13c5844c85d"
   }
 }

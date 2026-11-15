@@ -48,18 +48,31 @@ export function createTouchLayoutModel({storage}: {storage: TouchLayoutStorage |
   };
   const windowPositions = createTouchLayoutWindowPositionStore({storage});
   let saved: TouchLayout | null = null, draft: TouchLayout | null = null, editing = false;
+  const automaticDefaults = new Map<TouchLayoutOrientation, TouchLayoutProfile | null>();
   let orientation: TouchLayoutOrientation = 'landscape', selected: TouchLayoutControlName = 'bomb';
   let lastSave: TouchLayoutPersistResult | null = null, revision = 0;
   let snapshot: TouchLayoutSnapshot;
   function publish() {
-    snapshot = Object.freeze({isEditing: editing, dirty: editing && JSON.stringify(canonicalTouchLayout(draft)) !== JSON.stringify(saved),
+    const changes = cloneTouchLayout(draft);
+    if (changes) for (const [direction, defaults] of automaticDefaults) {
+      if (!saved?.profiles[direction] && defaults &&
+          JSON.stringify(changes.profiles[direction]) === JSON.stringify(defaults)) changes.profiles[direction] = null;
+    }
+    snapshot = Object.freeze({isEditing: editing, dirty: editing && JSON.stringify(canonicalTouchLayout(changes)) !== JSON.stringify(saved),
       saved: cloneTouchLayout(saved), draft: cloneTouchLayout(draft), orientation, selected, lastSave, revision: ++revision});
     for (const listener of listeners) listener();
   }
   function ensure(defaults: TouchLayoutProfile) {
     draft ??= emptyTouchLayout();
     const profile = draft.profiles[orientation];
-    if (!profile) {draft.profiles[orientation] = cloneTouchLayoutProfile(defaults); return;}
+    const previousDefaults = automaticDefaults.get(orientation);
+    if (!profile || (!saved?.profiles[orientation] && previousDefaults && JSON.stringify(profile) === JSON.stringify(previousDefaults))) {
+      // Untouched defaults follow authored responsive geometry. Resizing must
+      // not turn them into a fixed layout captured at the previous resolution.
+      draft.profiles[orientation] = cloneTouchLayoutProfile(defaults);
+      automaticDefaults.set(orientation, cloneTouchLayoutProfile(defaults));
+      return;
+    }
     const missing = touchLayoutControlNames.filter(name => !profile.controls[name]);
     for (const name of missing) {
       const value = defaults.controls[name];
@@ -67,7 +80,7 @@ export function createTouchLayoutModel({storage}: {storage: TouchLayoutStorage |
     }
     normalizeTouchLayoutPriorityOrder(profile.controls);
     // Schema extensions are migration, not a user edit. Mirror only existing
-    // saved profiles. A first default profile remains a materialized draft.
+    // saved profiles. Untouched default previews are not user edits.
     const baseline = saved?.profiles[orientation];
     if (missing.length && baseline) {
       for (const name of missing) if (defaults.controls[name]) baseline.controls[name] = {...defaults.controls[name]!};
@@ -88,12 +101,13 @@ export function createTouchLayoutModel({storage}: {storage: TouchLayoutStorage |
       const next = game === 'th075' ? 'th075' : 'shared';
       if (scope === next) return;
       sessionLayouts.set(scope, cloneTouchLayout(saved));
-      scope = next; editing = false; draft = null; lastSave = null;
+      scope = next; editing = false; draft = null; lastSave = null; automaticDefaults.clear();
       saved = sessionLayouts.has(scope) ? cloneTouchLayout(sessionLayouts.get(scope) ?? null) : loadTouchLayoutFromStorage(layoutStorage);
       publish();
     },
     begin(next: TouchLayoutOrientation, defaults: TouchLayoutProfile, visible: readonly TouchLayoutControlName[]) {
       if (editing) return;
+      automaticDefaults.clear();
       orientation = next; editing = true; lastSave = null; draft = cloneTouchLayout(saved) ?? emptyTouchLayout();
       ensure(defaults);
       selected = visible.reduce((best, name) => (profile().controls[name]?.priority ?? touchLayoutControlMeta[name].priority) >
@@ -124,9 +138,9 @@ export function createTouchLayoutModel({storage}: {storage: TouchLayoutStorage |
       if (!editing || !draft) throw new Error('touch.draftUnavailable');
       lastSave = persistTouchLayoutResult(layoutStorage, draft);
       // A blocked durable write still commits the session's usable layout.
-      saved = lastSave.value; draft = cloneTouchLayout(saved) ?? emptyTouchLayout(); publish(); return lastSave;
+      saved = lastSave.value; draft = cloneTouchLayout(saved) ?? emptyTouchLayout(); automaticDefaults.clear(); publish(); return lastSave;
     },
-    discard() {editing = false; draft = null; lastSave = null; publish();},
+    discard() {editing = false; draft = null; lastSave = null; automaticDefaults.clear(); publish();},
     windowPositions,
   });
 }

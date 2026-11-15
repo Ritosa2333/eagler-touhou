@@ -20,6 +20,26 @@ test('SDL clock keeps 60 logical ticks under 144 Hz presentation and rebases ful
       c.reset();credited=0;c.advance(0);ticks=0;
       for(unsigned i=1;i<=600;++i)ticks+=c.advance(i/60.,1./60.,pace);
       assert(ticks==588);assert(credited>9.999&&credited<10.001);
+      c.reset();c.advance(0);
+      for(unsigned i=1;i<=120;++i){
+        const auto now=i/60.+(i%2?-.0004:0.);
+        assert(c.advance(now,FrameClock::interval,nullptr,true)==1);
+      }
+      assert(c.advance(122/60.,FrameClock::interval,nullptr,true)==2);
+      c.reset();c.advance(0);ticks=0;
+      for(unsigned i=1;i<=120;++i)ticks+=c.advance(i/120.,FrameClock::interval,nullptr,true);
+      assert(ticks==60);
+      c.reset();c.advance(0);ticks=0;
+      for(unsigned i=1;i<=600;++i)ticks+=c.advance(i/60.,FrameClock::interval,pace,true);
+      assert(ticks>=587&&ticks<=589);
+      c.reset();c.present(0,true);c.advance(0);ticks=0;unsigned highRefreshPresents=0;
+      for(unsigned i=1;i<=480;++i){
+        const auto now=i/240.+(i%8==4?-.0004:0.);
+        if(!c.present(now,true))continue;
+        assert(c.advance(now,FrameClock::interval,nullptr,true)==1);
+        ++highRefreshPresents;
+      }
+      assert(highRefreshPresents==120);
       c.reset();assert(c.present(0,true));assert(!c.present(1./144,true));
       assert(c.present(2./144,false));
       c.reset();c.advance(0);c.present(0,true);ticks=0;unsigned presented=0;
@@ -28,6 +48,19 @@ test('SDL clock keeps 60 logical ticks under 144 Hz presentation and rebases ful
         presented+=c.present(i/144.,true);
       }
       assert(ticks==120&&presented==60); // accelerated logic obeys the display limit
+      // Ordinary viewing uses the simulation tick to decide when to draw. A
+      // browser callback just before a tick boundary must not cause a repeat
+      // followed by a two-tick jump, or accumulate time across callbacks.
+      for(unsigned rate:{30u,60u,120u,144u}){
+        c.reset();c.advance(0);ticks=presented=0;
+        for(unsigned i=1;i<=rate*10;++i){
+          const double now=double(i)/rate-(i%2?.0006:0.);
+          const unsigned batch=c.advance(now,FrameClock::interval,nullptr,false,.002);
+          ticks+=batch;presented+=batch!=0;
+          assert(batch<=(rate==30?2u:1u));
+        }
+        assert(ticks==600&&presented==(rate==30?300:600));
+      }
       th12host::PresentationCounter pictures;pictures.frame(0,1,0,true);
       for(unsigned i=1;i<=120;++i)pictures.frame(i*1000./120,1,i/2.,true);
       assert(pictures.value()>119&&pictures.value()<121);

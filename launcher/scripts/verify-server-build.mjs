@@ -8,8 +8,9 @@ import { basename, dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import { parse } from "acorn";
+import { parse as parseHtml } from "parse5";
 import { canonicalPackagePayload, validatePackageDescriptor } from "../package/package-descriptor.mjs";
-import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { PRODUCT_GAMES, productRequiresImport } from "../lib/contracts/product-catalog.mjs";
 import { runtimeFileNames } from "../lib/runtime-release.mjs";
 import { RELEASE_CATALOG_FILE, releaseCatalogEntryUrl, validateReleaseCatalog } from "../lib/contracts/release-catalog.mjs";
 import { SITE_MANIFEST_FILE, validateSiteManifest } from "../lib/contracts/site-manifest.mjs";
@@ -26,7 +27,7 @@ import { BUILD_AUTHORITY_PUBLICATION, classifyBuildProfile } from "../lib/build-
 import { hostArtworkFiles } from "../lib/host-artwork.mjs";
 import { assertAppShellContract } from "../lib/app-shell-validation.mjs";
 import { APP_SHELL_RETIREMENT_WORKER } from "../lib/app-shell-retirement.mjs";
-import { readReactFrontendArtifact } from "../lib/react-frontend-artifact.mjs";
+import { assertReactFrontendGameCoverage, readReactFrontendArtifact } from "../lib/react-frontend-artifact.mjs";
 import { STATIC_APP_SHELL_FILES } from "../lib/frontend-static-manifest.mjs";
 import { browserModuleClosure } from "../lib/browser-module-graph.mjs";
 import { normalizeSiteUrl } from "../lib/site-metadata.mjs";
@@ -50,27 +51,23 @@ if (!inferredAuthority || (deployment.authority != null && deployment.authority 
 }
 // The verified deployment owns its frontend identity. The verifier's process
 // environment cannot switch a published site to a different artifact graph.
+if (deployment.betaPrograms || releaseIdentity?.parameters?.betaPrograms) throw new Error("Separate beta program publications are retired");
 if (deployment.frontend?.kind !== "react") throw new Error("Current publications must use the React frontend");
-let reactFrontend = null;
-if (Object.hasOwn(deployment, "frontend")) {
-  if (deployment.frontend?.kind !== "react" || typeof deployment.frontend.mountPath !== "string" ||
-      !deployment.frontend.validationMetadata) throw new Error("invalid deployment frontend identity");
-  reactFrontend = await readReactFrontendArtifact({directory: root,
-    metadata: deployment.frontend.validationMetadata, expectedMountPath: deployment.frontend.mountPath});
-  const provenance = {kind: "react", mountPath: reactFrontend.mountPath};
-  if (!isDeepStrictEqual(releaseIdentity?.parameters?.frontend, provenance)) {
-    throw new Error("deployment frontend does not match Release Manifest provenance");
-  }
-  const selectedSite = deployment.siteUrl ? new URL(normalizeSiteUrl(deployment.siteUrl)) : null;
-  if (selectedSite && selectedSite.pathname !== reactFrontend.mountPath) throw new Error("site URL does not match the React frontend artifact mount");
-  if (!reactAppShellMatchesSite(reactFrontend.appShell, selectedSite)) {
-    throw new Error("React App Shell deployment does not match its exact isolated origin and mount");
-  }
-  if ((reactFrontend.appShell === null) !== (deployment.appShell === null)) {
-    throw new Error("React App Shell deployment does not match its artifact permission");
-  }
-} else if (releaseIdentity?.parameters?.frontend != null) {
+if (typeof deployment.frontend.mountPath !== "string" ||
+    !deployment.frontend.validationMetadata) throw new Error("invalid deployment frontend identity");
+const reactFrontend = await readReactFrontendArtifact({directory: root,
+  metadata: deployment.frontend.validationMetadata, expectedMountPath: deployment.frontend.mountPath});
+const provenance = {kind: "react", mountPath: reactFrontend.mountPath};
+if (!isDeepStrictEqual(releaseIdentity?.parameters?.frontend, provenance)) {
   throw new Error("deployment frontend does not match Release Manifest provenance");
+}
+const selectedSite = deployment.siteUrl ? new URL(normalizeSiteUrl(deployment.siteUrl)) : null;
+if (selectedSite && selectedSite.pathname !== reactFrontend.mountPath) throw new Error("site URL does not match the React frontend artifact mount");
+if (!reactAppShellMatchesSite(reactFrontend.appShell, selectedSite)) {
+  throw new Error("React App Shell deployment does not match its exact isolated origin and mount");
+}
+if ((reactFrontend.appShell === null) !== (deployment.appShell === null)) {
+  throw new Error("React App Shell deployment does not match its artifact permission");
 }
 const declaredResourceMode = deployment.resourceMode || "hosted";
 const resourceMode = normalizeResourceMode(declaredResourceMode);
@@ -78,13 +75,13 @@ if (!resourceMode) throw new Error("invalid deployment resourceMode");
 const games = validateSiteManifest(JSON.parse(await readFile(resolve(root, SITE_MANIFEST_FILE), "utf8")));
 await verifyLegacySiteManifestAlias(root, games);
 const gameIds = Object.keys(games.games);
+assertReactFrontendGameCoverage(reactFrontend, gameIds);
 if (!gameIds.length || gameIds.some(game => !Object.hasOwn(PRODUCT_GAMES, game))) {
   throw new Error("Site Manifest contains no products or an unregistered product");
 }
 const preloadGames = gameIds.filter(game => PRODUCT_GAMES[game].dataProvider === "emscripten-preload");
-if (!deployment.files.some(item => item.path === "touch-guide.css")) throw new Error("touch guide stylesheet missing from deployment");
 if (!deployment.files.some(item => item.path === "site.webmanifest")) throw new Error("Home Screen Web App manifest missing from deployment");
-if (reactFrontend && !reactFrontend.appShell) {
+if (!reactFrontend.appShell) {
   if (!deployment.files.some(item => item.path === "app-shell-sw.js") ||
       await readFile(resolve(root, "app-shell-sw.js"), "utf8") !== APP_SHELL_RETIREMENT_WORKER) {
     throw new Error("disabled React App Shell must publish its canonical retirement worker");
@@ -93,16 +90,12 @@ if (reactFrontend && !reactFrontend.appShell) {
 if (!deployment.files.some(item => item.path === "migrate.html")) throw new Error("origin migration page missing from deployment");
 if (!deployment.files.some(item => item.path === "about.html")) throw new Error("about page missing from deployment");
 if (!deployment.files.some(item => item.path === "faq.html")) throw new Error("FAQ page missing from deployment");
-if (!deployment.files.some(item => item.path === "about.css")) throw new Error("about stylesheet missing from deployment");
 if (!deployment.files.some(item => item.path === "content/FIRST_USE_NOTICE.html")) throw new Error("content/FIRST_USE_NOTICE.html missing from deployment");
 if (!deployment.files.some(item => item.path === "content/MULTIPLAYER.html")) throw new Error("content/MULTIPLAYER.html missing from deployment");
 for (const font of ["yatra-one-latin.woff2", "chill-round-gothic-site-medium.woff2", "chill-round-gothic-site-bold.woff2", "chill-round-gothic-site-heavy.woff2"]) {
   if (!deployment.files.some(item => item.path === `assets/fonts/${font}`)) throw new Error(`UI font missing from deployment: ${font}`);
 }
-
-{
-  if (reactFrontend.appShell) assertAppShellContract(deployment.appShell, games, {shellFiles: reactFrontend.shellFiles});
-}
+if (reactFrontend.appShell) assertAppShellContract(deployment.appShell, games, {shellFiles: reactFrontend.shellFiles});
 if (games.shared.runtimeManifest) {
   await verifyRuntimePublication(root, games);
   const bytes = await readFile(resolve(root, RUNTIME_MANIFEST_FILE));
@@ -127,6 +120,7 @@ if (deployment.appShell) {
 }
 
 const knownHostUiPaths = new Set(hostArtworkFiles(Object.keys(PRODUCT_GAMES)).map(name => `assets/${name}`));
+const selectedArtwork = hostArtworkFiles(gameIds);
 const inventoryPaths = new Set();
 for (const item of deployment.files) {
   if (item.path.includes("..") || item.path.startsWith("/")) throw new Error(`unsafe inventory path: ${item.path}`);
@@ -147,7 +141,7 @@ for (const item of deployment.files) {
   }
 }
 if (inferredAuthority === BUILD_AUTHORITY_PUBLICATION) {
-  for (const name of hostArtworkFiles(gameIds)) {
+  for (const name of selectedArtwork) {
     const path = `assets/${name}`;
     if (!inventoryPaths.has(path)) throw new Error(`required host artwork missing from deployment: ${path}`);
   }
@@ -187,18 +181,17 @@ if (/<script\b[^>]+src=/i.test(migrationHtml) || /<link\b[^>]+stylesheet/i.test(
 
 async function verifyHtmlReferences(relativeHtmlPath) {
   const htmlPath = resolve(root, relativeHtmlPath);
-  // Inline script/style bodies routinely contain `<` and `>` (comparisons, arrow
-  // functions), which the tag scanner below would otherwise read as markup and
-  // then mistake e.g. `image.src = source;` for a tag attribute. Strip comment
-  // and script/style bodies while keeping their opening tags so real `src`/`href`
-  // attributes on those elements are still verified.
-  const html = (await readFile(htmlPath, "utf8"))
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<script\b([^>]*)>[\s\S]*?<\/script>/gi, "<script$1></script>")
-    .replace(/<style\b([^>]*)>[\s\S]*?<\/style>/gi, "<style$1></style>");
-  for (const tagMatch of html.matchAll(/<[^>]+>/g)) {
-    for (const match of tagMatch[0].matchAll(/\b(?:src|href)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)) {
-      const value = match[1] ?? match[2] ?? match[3];
+  const document = parseHtml(await readFile(htmlPath, "utf8"));
+  function* references(node) {
+    for (const attribute of node.attrs || []) {
+      if (attribute.name === "src" || attribute.name === "href") yield attribute.value;
+    }
+    for (const child of node.childNodes || []) yield* references(child);
+    if (node.content) yield* references(node.content);
+  }
+  // Parse real attributes: React hydration payloads can contain escaped markup
+  // and inline code containing src/href, neither of which loads a resource.
+  for (const value of references(document)) {
       if (!value || /^(?:data:|https?:|mailto:|#)/i.test(value)) continue;
       const pathname = value.split(/[?#]/, 1)[0];
       if (!pathname) continue;
@@ -215,11 +208,9 @@ async function verifyHtmlReferences(relativeHtmlPath) {
         throw new Error(`missing HTML resource: ${relativeHtmlPath} -> ${value}`);
       }
       if (!info.isFile() && !info.isDirectory()) throw new Error(`invalid HTML resource: ${relativeHtmlPath} -> ${value}`);
-    }
   }
 }
-const htmlPaths = ["index.html", "migrate.html", "about.html", "faq.html"];
-htmlPaths.push("en.html");
+const htmlPaths = ["index.html", "migrate.html", "about.html", "faq.html", "en.html"];
 for (const game of gameIds) {
   const entry = games.games[game];
   for (const runtime of [entry.runtime, entry.multiplayerRuntime].filter(Boolean)) {
@@ -306,7 +297,7 @@ if (resourceMode === RESOURCE_MODE_HOSTED) {
     }
   }
   if (publishedPayloads.some(path => !siteLanguagePacks.has(path))) throw new Error("external deployment must not bundle game/shared payloads");
-  if (Object.keys(releaseCatalog.games).sort().join(",") !== [...gameIds].sort().join(",")) {
+  if (Object.keys(releaseCatalog.games).sort().join(",") !== gameIds.filter(game => !productRequiresImport(game)).sort().join(",")) {
     throw new Error("external deployment must publish every selected Package Descriptor");
   }
 }
@@ -329,7 +320,7 @@ const sharedFontMounts = resourceMode === RESOURCE_MODE_HOSTED
   ? [games.shared.vanillaFont, games.shared.unicodeFont]
     .map(value => `/${basename(new URL(value, "https://eagler.invalid/").pathname)}`)
   : [];
-{
+if (reactFrontend) {
   // React's document is hydrated, so its inert entry belongs to emitted JSX,
   // not static index markup. Inspect syntax rather than executing UI code or
   // accepting a copied legacy app.js as proof of the selected implementation.
@@ -512,7 +503,7 @@ for (const game of preloadGames) {
 }
 
 if (resourceMode === RESOURCE_MODE_EXTERNAL) {
-  for (const game of gameIds) {
+  for (const game of gameIds.filter(game => !productRequiresImport(game))) {
     const entry = games.games[game];
     const published = releaseCatalog.games[game];
     if (!published || !entry.package || entry.package.revision !== published.revision ||

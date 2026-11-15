@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "defaultRules": [
+    0,
+    1,
+    1,
+    4,
+    4,
+    1,
+    1,
+    0,
+    0
+  ],
+  "defaultLives": 5,
+  "selectableLives": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "equalStartingLivesRequired": true,
+  "timeLimit": "disabled",
+  "barrierRecovery": "manual-charge-only",
+  "removedUiControls": [
+    "timeLimit",
+    "separateP2Life",
+    "P1BarrierRecovery",
+    "P2BarrierRecovery"
+  ],
+  "unitTests": 5,
+  "relayRulesPassed": true,
+  "typecheck": {
+    "ui": true,
+    "tools": true
+  },
+  "runtimeSha256": "b1bb23629fb6ef6023c2cb1c959021600e1c185980e536a3450a054b27506488",
+  "portSource": {
+    "normal": "10/10",
+    "multiplayer": "9/9"
+  },
+  "documentation": {
+    "passed": true,
+    "documents": 418
+  },
+  "launcherRoom": {
+    "passed": true,
+    "defaultLives": 5,
+    "changedLives": 4,
+    "removedControlsVerified": true,
+    "confirmedFrames": 360,
+    "rtcHashesMatched": true,
+    "browserErrors": []
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "nativeUnitTests": {
+    "passed": 21,
+    "failed": 0
+  },
+  "portContracts": "10/10",
+  "typecheck": true,
+  "stockContractAndRelay": true,
+  "roomAndLauncherRegression": {
+    "passed": 136,
+    "failed": 2,
+    "failures": [
+      {
+        "test": "test-adapter-capabilities.mjs",
+        "error": "Existing musicSource optional/required expectation differs"
+      },
+      {
+        "test": "test-runtime-protocol-contract.mjs",
+        "error": "Workspace th13 is not configured"
+      }
+    ]
+  },
+  "nativeStockRestartCases": 16,
+  "rollbackWorldAudioCases": 40,
+  "reviewedMarkerPixelMatches": 12
+}

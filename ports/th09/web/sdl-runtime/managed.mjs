@@ -7,8 +7,8 @@ import {exportReplayName,importReplayName} from './motion-replay.mjs';
 import {createAutoReplay} from './auto-replay.mjs';
 import {createReplayPlayer} from './replay-player.mjs';
 const game='th09',protocol='eagler-touhou/1',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas'),$=s=>document.querySelector(s);
-// Variant identity is stamped by the builder, including offline Replay viewers.
-const runtimeVariant=document.querySelector('meta[name="eagler-runtime-variant"]')?.content;
+// The Launcher supplies the session mode for play and offline Replay viewers.
+const runtimeVariant=query.get('runtimeVariant')??'normal';
 if(!['normal','multiplayer'].includes(runtimeVariant))throw Error('Invalid TH09 Runtime variant');
 const saveRoot=runtimeVariant==='multiplayer'?'/savesth09mp':'/savesth09';
 const epoch=Number(query.get('runtimeEpoch')),validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
@@ -49,6 +49,12 @@ function touchPolicy(value){
 }
 let launchSerial=0,roomOwned=false;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...((event==='first-frame'||event==='room-menu')?{launchSerial}:{}),...fields},location.origin);
+function replayBoundary(frame,winner){
+ if(winner<0){
+  netplay?.startMatchReport(frame);
+  autoReplay?.begin(frame);
+ }else autoReplay?.end(frame,winner);
+}
 const values=(fn,n)=>Array.from(core.HEAP32.subarray(fn()/4,fn()/4+n));
 const status=()=>({title:values(core._th09_title_status,8),session:values(core._th09_session_status,8),touch:values(core._th09_touch_state,4)});
 const err=()=>{const a=core.HEAPU8.subarray(core._th09_error());return new TextDecoder().decode(a.subarray(0,a.indexOf(0)));};
@@ -264,7 +270,7 @@ for(const [name,type] of [['pointerdown',0],['pointermove',1],['pointerup',2],['
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();clearKeyboard();fatal(Error('图形环境失效，请退出后重新开始。'));});window.addEventListener('pagehide',()=>{revokeLifetime(true);replayPlayer?.close();clearKeyboard();if(launched){netplay?.close();core._th09_loop_pause(1);void save();}});
 const initialized=(async()=>{
  const initializingLifetime=lifetime;let last=performance.now(),lastFrames=0;
-  core=await createModule({canvas,resetBrowserKeyboard:()=>keyboard.clear(),printErr:console.error,onNetworkRequest:openNetwork,onNetworkReplayBoundary:(frame,winner)=>winner<0?autoReplay?.begin(frame):autoReplay?.end(frame,winner),onNetworkResult:()=>netplay?.result(),onNetworkInput:(...args)=>netplay?.input(...args),onNetworkSpectatorBegin:(...args)=>netplay?.beginMatch(...args),onNetworkSpectatorEnd:(...args)=>netplay?.endMatch(...args),onNetworkSpectatorRound:(frame,round,replayFrame)=>{autoReplay?.roundStart(replayFrame);netplay?.roundStart(frame,round);},onNetworkSpectatorFrame:(...args)=>netplay?.publish(...args),onGameFrame(ok,ms){if(!ok){fatal(Error(err()));return;}netplay?.frame();if(!first){first=true;emit('first-frame');}const current=core._th09_storage_revision();if(current!==revision){revision=current;void sync().catch(fatal);}const now=performance.now(),frames=status().title[0];if(now-last>=1000){emit('frame-health',{fps:(frames-lastFrames)*1000/(now-last),maxGapMs:ms});emit('audio-health',{backend:'script',robust:core.SDL3?.audioContext?.state==='running'});last=now;lastFrames=frames;}const title=status().title;if(title[7]===0||(netplay?.finished&&title[1]&&title[2]===1)||(netplay?.spectator&&!netplay.timelineExperiment&&title[1]&&(title[2]===14||title[2]===1)))void stop().catch(fatal);}});
+  core=await createModule({canvas,resetBrowserKeyboard:()=>keyboard.clear(),printErr:console.error,onNetworkRequest:openNetwork,onNetworkReplayBoundary:replayBoundary,onNetworkMatchDecided:(...args)=>netplay?.finishMatchReport(...args),onNetworkResult:()=>netplay?.result(),onNetworkInput:(...args)=>netplay?.input(...args),onNetworkSpectatorBegin:(...args)=>netplay?.beginMatch(...args),onNetworkSpectatorEnd:frame=>netplay?.endMatch(frame),onNetworkSpectatorRound:(frame,round,replayFrame)=>{autoReplay?.roundStart(replayFrame);netplay?.roundStart(frame,round);},onNetworkSpectatorFrame:(...args)=>netplay?.publish(...args),onGameFrame(ok,ms){if(!ok){fatal(Error(err()));return;}netplay?.frame();if(!first){first=true;emit('first-frame');}const current=core._th09_storage_revision();if(current!==revision){revision=current;void sync().catch(fatal);}const now=performance.now(),frames=status().title[0];if(now-last>=1000){emit('frame-health',{fps:(frames-lastFrames)*1000/(now-last),maxGapMs:ms});emit('audio-health',{backend:'script',robust:core.SDL3?.audioContext?.state==='running'});last=now;lastFrames=frames;}const title=status().title;if(title[7]===0||(netplay?.finished&&title[1]&&title[2]===1)||(netplay?.spectator&&!netplay.timelineExperiment&&title[1]&&(title[2]===14||title[2]===1)))void stop().catch(fatal);}});
  assertLifetime(initializingLifetime,core);
  window.Module=core;window.FS=core.FS;core.SDL3=core.SDL3||{};if(parent!==window&&parent.__touhouAudioContext)core.SDL3.audioContext=parent.__touhouAudioContext;
  core.FS.mkdirTree(saveRoot);core.FS.mount(core.IDBFS,{},saveRoot);await sync(true);assertLifetime(initializingLifetime,core);core.FS.mkdirTree(saveRoot+'/replay');core.FS.symlink(saveRoot,'/save');

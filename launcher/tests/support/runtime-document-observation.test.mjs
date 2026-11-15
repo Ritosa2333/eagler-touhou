@@ -1,6 +1,6 @@
 import {readUiHistoryText} from './ui-history.mjs';
 /** DOM/setup evidence only. JSDOM is not a browser navigation/Runtime gate. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';

@@ -8,7 +8,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { reactFrontendArtifactDirectory, readReactFrontendArtifact } from "../../lib/react-frontend-artifact.mjs";
 import { privateFrontendAssetSource } from "../../lib/private-frontend-assets.mjs";
 import { normalizeSiteUrl, writeSiteMetadata } from "../../lib/site-metadata.mjs";
-import { inspectHostWorkspace } from "../../lib/host-workspace.mjs";
+import { HOST_WORKSPACE_GAMES as GAMES, inspectHostWorkspace } from "../../lib/host-workspace.mjs";
 import { PRODUCT_CONTENT } from "../../lib/content-definition.mjs";
 import { PRODUCT_GAMES } from "../../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../../lib/workspace-layout.mjs";
@@ -16,7 +16,6 @@ import { ensurePythonEnvironment } from "./python-environment.mjs";
 import { ensureThtk } from "./thtk.mjs";
 import { run } from "./process.mjs";
 
-const GAMES = Object.freeze(Object.keys(PRODUCT_CONTENT));
 const DEFAULT_LANGUAGES = Object.freeze(["ja", "lang_zh-hans", "lang_en"]);
 
 // Full artifact preflight runs after operator dependency setup, before content preparation.
@@ -262,7 +261,11 @@ async function prepareLanguages(projectRoot, layout, python, thtk, font) {
       if (preparation.inputMode === "archives") {
         args.push("--archives", PRODUCT_CONTENT[game].original.files.map(name => resolve(layout.games[game], name)).join(";"));
       } else if (preparation.inputMode === "archive" && preparation.archive) {
-        args.push("--archive", resolve(layout.games[game], preparation.archive));
+        const original = resolve(layout.games[game], preparation.archive);
+        const archive = preparation.preparedArchive && !await fileExists(original)
+          ? resolve(layout.games[game], preparation.preparedArchive)
+          : original;
+        args.push("--archive", archive);
       } else {
         throw new Error(`${game}: invalid language Host preparation input mode`);
       }
@@ -311,6 +314,7 @@ async function prepareDeclaredContent(projectRoot, layout, python, thtk) {
       prepared[game] = output;
       continue;
     }
+    if (!declaration.script) throw new Error(`${game}: provide complete prepared content at ${supplied} (DATA, music and artwork)`);
     const preparationScript = resolve(projectRoot, declaration.script);
     if (!await fileExists(preparationScript)) {
       throw new Error(`${game.toUpperCase()} content is missing: provide ${supplied} or ${declaration.script}`);

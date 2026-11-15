@@ -6,6 +6,7 @@
 #include "game/BossHud.hpp"
 #include "game/CameraEffects.hpp"
 #include "game/PresentationGeometry.hpp"
+#include "game/PresentationTracking.hpp"
 #include "wasm/Api.hpp"
 #include <algorithm>
 #include <cmath>
@@ -188,8 +189,11 @@ void Scene::capture_background(){
             // Clip the near plane before projection; never discard a whole tile
             // just because one corner is behind the camera.
             for(int plane=0;plane<2;++plane){
-                const double limit=plane?exe.far_plane:exe.near_plane;clipped.clear();
+                const double limit=plane?exe.far_plane:exe.near_plane;
                 const auto keep=[&](double d){return plane?d<=0:d>=0;};
+                const auto inside=[&](const P& vertex){return keep(vertex.depth-limit);};
+                if(std::all_of(polygon.begin(),polygon.end(),inside))continue;
+                clipped.clear();
                 for(size_t i=0;i<polygon.size();++i){const P& p=polygon[i];const P& n=polygon[(i+1)%polygon.size()];const bool in=keep(p.depth-limit);
                     if(in)clipped.push_back(p);
                     if(in!=keep(n.depth-limit)){const double t=(limit-p.depth)/(n.depth-p.depth);
@@ -220,6 +224,7 @@ void Scene::capture_background(){
 void Scene::capture(const Options& o){
     using namespace th12;
     poses.clear();texts.clear();dialogues.clear();live_fps_text=-1;
+    stage_backdrops.fill(-1);
     const float* raw=th12_hud();std::copy_n(raw,hud.size(),hud.begin());
     const i32 stored=th12_score_stored();hud[3]=float(double(stored)*10);hud[40]=hud[3];
     if(o.score_low_digit){hud[3]+=float(o.score_low_digit);hud[40]+=float(o.score_low_digit);}
@@ -246,7 +251,7 @@ void Scene::capture(const Options& o){
         a.visible=(r.flags&3)==3;
         // Original 45c93e/45c95b tests primary alpha even when flag10000 selects secondary.
         if((a.mode==0||a.mode==1)&&primary.a==0)a.visible=false;
-        p.x=r.x;p.y=r.y;p.alpha=r.alpha;p.id=r.id;p.owner=r.owner;p.logical=true;p.has_order=true;p.order=i;p.continuity=(u64(1)<<63)|r.id;
+        p.x=r.x;p.y=r.y;p.alpha=r.alpha;p.id=r.id;p.owner=r.owner;p.logical=true;p.has_order=true;p.order=i;p.continuity=(u64(1)<<63)|r.id;p.continuity_revision=presentation::revision(r.owner);
         owners.push_back(r.owner);logical_poses.push_back(p);
     }
     const auto* mesh_records=meshDrawState.data();
@@ -255,15 +260,40 @@ void Scene::capture(const Options& o){
     const auto owned=[&](u32 id){return std::binary_search(owners.begin(),owners.end(),id);};
     const auto find_logical=[&](i32 bank,i32 sprite_id)->const Pose*{for(const auto& p:logical_poses)if(p.a.bank==bank&&p.a.sprite==sprite_id)return &p;return nullptr;};
     // Logical poses, without the text VMs replaced by dialogue lines.
-    for(const auto& p:logical_poses){if(p.a.bank==BankText&&((p.a.sprite>=0&&p.a.sprite<4)||p.a.sprite==7))continue;poses.push_back(p);}
-    // Dialogue lines: the text VMs 0..3 carry the MSG text records.
-    for(const auto& p:logical_poses){
-        if(p.a.bank!=BankText||p.a.sprite<0||p.a.sprite>=4||!p.a.visible)continue;
-        const auto& record=messageVM.textRecords[size_t(p.a.sprite)];if(record.bytes.empty())continue;
+    for(size_t i=0;i<logical_poses.size();++i){
+        const auto& p=logical_poses[i];
+        if(p.a.bank==BankStage&&p.owner>=0xc0000000u&&p.owner<0xc0000008u){
+            if(!(stageState.flags&8))stage_backdrops[p.owner-0xc0000000u]=i32(i);
+            continue;
+        }
+        if(p.a.bank==BankText&&((p.a.sprite>=0&&p.a.sprite<4)||p.a.sprite==7))continue;
+        poses.push_back(p);
+    }
+    // Native MSG remains authoritative. Multiplayer language views select
+    // local text surfaces by its retail entry/PC, without modifying any VM.
+    const auto* local_message=translated_message(messageVM.entry,messageVM.pc);
+    const auto append_dialogue=[&](Pose p,const message_system::TextRecord& record){
+        if(record.bytes.empty())return;
         const AnmSprite* sp=sprite(BankText,p.a.sprite);
-        Dialogue d;d.bytes=record.bytes;d.text=decode_cp932(record.bytes);d.offset=record.offset;d.spacing=record.spacing;d.style=record.style;d.color=record.color;
+        Dialogue d;d.bytes=record.bytes;
+        if(const auto* text=translated_dialogue(record.bytes)){d.text=text->text;d.byte_widths=text->byte_widths;}
+        else d.text=decode_cp932(record.bytes);
+        d.offset=record.offset;d.spacing=record.spacing;d.style=record.style;d.color=record.color;
         d.width=sp?sp->w:354;d.height=sp?sp->h:17;d.source_width=std::min<u32>(1024,u32(2*d.width+22));d.source_height=36;
-        Pose q=p;q.kind=Pose::DialogueLine;q.item=u32(dialogues.size());dialogues.push_back(std::move(d));poses.push_back(q);
+        p.kind=Pose::DialogueLine;p.item=u32(dialogues.size());dialogues.push_back(std::move(d));poses.push_back(p);
+    };
+    if(local_message){
+        for(i32 slot=0;slot<4;++slot){
+            const i32 line=slot%2;const Pose* source=nullptr;
+            for(const auto& p:logical_poses)if(p.a.bank==BankText&&p.a.sprite>=0&&p.a.sprite<2&&p.a.visible&&p.a.alpha>0){
+                if(!source)source=&p;if(p.a.sprite==line){source=&p;break;}}
+            if(!source)continue;
+            Pose p=*source;p.y+=22*(line-source->a.sprite)-(slot>=2?6:0);p.a.sprite=slot;
+            append_dialogue(p,(*local_message)[slot]);
+        }
+    }else for(const auto& p:logical_poses){
+        if(p.a.bank!=BankText||p.a.sprite<0||p.a.sprite>=4||!p.a.visible)continue;
+        append_dialogue(p,messageVM.textRecords[size_t(p.a.sprite)]);
     }
     for(i32 i=0;i<meshes;++i){Pose p;p.kind=Pose::Mesh;p.item=u32(i);const auto& m=mesh_records[i];p.a.bank=m.bank;p.a.sprite=m.sprite;p.a.layer=m.layer;p.a.blend=m.blend;
         p.id=m.nodeId;p.owner=m.owner;p.mesh_pass0=m.pass==0;p.has_priority=true;p.priority=m.drawPriority;p.has_order=true;p.order=i;poses.push_back(p);}
@@ -408,7 +438,7 @@ void Scene::capture(const Options& o){
     if(!runtime_options.limit_presentation){
         current_motion.reserve(poses.size());
         for(const auto& p:poses)if(p.continuity&&p.kind==Pose::State&&p.priority<42&&p.a.mode<4&&p.a.bank!=BankStage)
-            current_motion.emplace_back(p.continuity,Motion{p.x,p.y,p.a.x,p.a.y,p.a.rotation,p.a.bank,p.a.mode});
+            current_motion.emplace_back(p.continuity,Motion{p.x,p.y,p.a.x,p.a.y,p.a.rotation,p.a.bank,p.a.mode,p.continuity_revision});
         std::sort(current_motion.begin(),current_motion.end(),[](const auto& a,const auto& b){return a.first<b.first;});
     }
 }
@@ -491,6 +521,7 @@ Texture Scene::dialogue_texture(const Dialogue& d){
     auto& cache=d.menu?menu_cache:dialogue_cache;
     std::string key(reinterpret_cast<const char*>(&d.offset),sizeof(i32)*3);key+=d.bytes;key+='|';
     key.append(reinterpret_cast<const char*>(d.text.data()),d.text.size()*sizeof(char32_t));key+='|';
+    if(!d.byte_widths.empty())key.append(reinterpret_cast<const char*>(d.byte_widths.data()),d.byte_widths.size()*sizeof(u32));key+='|';
     for(const float v:{d.width,d.height,d.source_x,d.source_y})key.append(reinterpret_cast<const char*>(&v),4);
     for(const u32 v:{d.color,d.source_width,d.source_height,d.foreground,u32(d.raster),u32(d.localized_spell)})key.append(reinterpret_cast<const char*>(&v),4);
     for(auto it=cache.begin();it!=cache.end();++it)if(it->key==key){cache.splice(cache.begin(),cache,it);return cache.front().texture;}
@@ -500,7 +531,6 @@ Texture Scene::dialogue_texture(const Dialogue& d){
     Canvas canvas;canvas.reset(d.source_width,d.source_height);
     const auto draw=[&](const std::u32string& text,float x,float scale_x=1){
         const float y=d.raster?d.source_y:2;
-        for(const auto& off:d.outline)raster.fill(canvas,text,x+off[0]*scale_x,y+off[1]-2,serif,weight,size,0x000000,0,scale_x);
         raster.fill(canvas,text,x,y,serif,weight,size,rgb,0,scale_x);
     };
     if(d.localized_spell){
@@ -514,8 +544,12 @@ Texture Scene::dialogue_texture(const Dialogue& d){
         }
         draw(d.text,std::max(0.f,available-width),scale_x);
     }
+    else if(d.spacing&&!d.byte_widths.empty()){
+        i64 column=0;for(size_t i=0;i<d.text.size();++i){draw(std::u32string(1,d.text[i]),float(2*d.offset+column*d.spacing));column+=d.byte_widths[i];}
+    }
     else if(d.spacing){for(size_t i=0;i<d.bytes.size();i+=2)draw(decode_cp932(d.bytes.substr(i,2)),float(2*d.offset+i64(i)*d.spacing));}
     else draw(d.text,d.raster?d.source_x:float(2*d.offset+2));
+    canvas.outline_text();
     Texture t;t.name=gpu.create_texture(canvas.width,canvas.height,canvas.rgba.data(),true);t.w=float(canvas.width);t.h=float(canvas.height);t.repeat=false;
     cache.push_front({key,t});
     if(cache.size()>(d.menu?96u:16u)){gpu.delete_texture(cache.back().texture.name);cache.pop_back();}
@@ -560,6 +594,13 @@ void Scene::stage_surface(i32 priority,i32 clip,bool& copied,bool& composited){
 void Scene::render(float alpha,float live_fps){
     if(live_fps>=0&&live_fps_text>=0){auto& t=texts[size_t(live_fps_text)];t.text=fixed1(live_fps?double(live_fps)+.05:0)+"fps";t.x=f32(588.0-std::max<double>(0,double(t.text.size())-7)*7);t.color=live_fps<=30?0xff5050ff:live_fps<40?0xffa0a0ff:0xffffffff;}
     gpu.begin();gpu.clip(1);gpu.fog_color(fog.r,fog.g,fog.b);gpu.clear(fog);
+    // 4039d9 draws Stage+1cc's eight embedded VMs in slot order, with
+    // depth writes disabled, before 403a8f submits the 3D STD scenery.
+    for(const i32 index:stage_backdrops){
+        if(index<0)continue;
+        const auto& p=logical_poses[size_t(index)];
+        draw_state(p.a,p.x,p.y,p.angle,p.scale,p.alpha,nullptr);
+    }
     gpu.primitive(Renderer::Triangles);
     for(const auto& t:triangles){const Texture tex=texture(BankStage,t.entry);if(!tex.name)continue;gpu.material(t.blend);gpu.bind(tex,t.point);for(const auto& v:t.v)gpu.push(v);}
     gpu.flush();
@@ -571,9 +612,11 @@ void Scene::render(float alpha,float live_fps){
             if(old!=previous_motion.end()&&old->first==captured.continuity){
                 const auto& m=old->second;const auto& p=captured;
                 // Identity is persistent; jumps such as Murasa's teleport use the
-                // destination immediately. Presentation never writes core state.
+                // destination immediately. ECL setters change continuity via the
+                // owner revision, including the small departure/arrival jitter.
+                // Presentation never writes core state.
                 const float dx=p.x+p.a.x-m.x-m.ax,dy=p.y+p.a.y-m.y-m.ay;
-                if(m.bank==p.a.bank&&m.mode==p.a.mode&&dx*dx+dy*dy<4096){
+                if(m.revision==p.continuity_revision&&m.bank==p.a.bank&&m.mode==p.a.mode&&dx*dx+dy*dy<4096){
                     const auto mix=[alpha](float a,float b){return b+(b-a)*alpha;};
                     interpolated=p;interpolated.x=mix(m.x,p.x);interpolated.y=mix(m.y,p.y);
                     interpolated.a.x=mix(m.ax,p.a.x);interpolated.a.y=mix(m.ay,p.a.y);
@@ -646,7 +689,7 @@ void Scene::render_menu(const std::vector<Appearance>& list,float x,float y,bool
         if(!a.visible||a.alpha<=0)continue;
         // A menu line: 32px MS Gothic at half size with a black outline.
         Dialogue d;d.text=a.text->text;d.menu=d.raster=true;d.width=a.text->width;d.height=a.text->height;d.source_width=u32(d.width*2);d.source_height=u32(d.height*2);
-        d.source_x=0;d.source_y=0;d.foreground=a.text->color;const i32 outline[4][2]{{2,2},{-2,2},{2,-2},{-2,-2}};std::memcpy(d.outline,outline,sizeof outline);
+        d.source_x=0;d.source_y=0;d.foreground=a.text->color;
         draw_text_quad(d,a,x+a.x,y+a.y,1,nullptr);
     }
     if(texts)for(const auto& t:*texts)render_text(t);

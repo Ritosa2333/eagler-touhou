@@ -1,4 +1,4 @@
-import test,{before} from 'node:test';
+import {test, beforeAll as before} from 'vitest';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import {fileURLToPath} from 'node:url';

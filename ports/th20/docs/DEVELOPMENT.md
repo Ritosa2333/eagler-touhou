@@ -9,7 +9,7 @@ TH20 使用 SDL3、WebGL2、FreeType 和 CP932 字符映射。游戏模块在 `s
 准备 Node.js 22.18 以上、Python 3 和 Emscripten 6.0.9。从仓库根目录运行：
 
 ```sh
-npm --prefix launcher ci --ignore-scripts
+bun --bun run --cwd launcher install:locked
 node launcher/scripts/build-runtime.mjs --game=th20 --variant=normal --emsdk=/path/to/emsdk --emscripten-version=6.0.9
 node ports/th20/portable/package-eagler.mjs
 ```

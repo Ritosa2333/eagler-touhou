@@ -4,7 +4,7 @@ import { cp, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
-import { RUNTIME_RELEASE_SCHEMA, runtimeStem, runtimeFileNames, validateRuntimeReleaseManifest, verifyRuntimeRelease, directoryFeatureAttestation } from "../lib/runtime-release.mjs";
+import { sharesRuntime, assertSharedRuntimeShell, RUNTIME_RELEASE_SCHEMA, runtimeStem, runtimeFileNames, validateRuntimeReleaseManifest, verifyRuntimeRelease, directoryFeatureAttestation } from "../lib/runtime-release.mjs";
 import { extractGameDataLayout } from "../lib/runtime-data-layout.mjs";
 import { assertRuntimeDataShell } from "../lib/runtime-data-provider.mjs";
 
@@ -21,9 +21,10 @@ const required = name => {
 const output = required("output");
 const temporaryRoot = resolve(dirname(output), ".tmp");
 const staging = resolve(temporaryRoot, `${basename(output)}.staging-${randomUUID()}`);
-const builds = Object.fromEntries(Object.entries(PRODUCT_GAMES).flatMap(([game, product]) => [
+const selectedGames = Object.keys(PRODUCT_GAMES).filter(game => !PRODUCT_GAMES[game].buildOptIn || args[`${game}-build`] !== undefined);
+const builds = Object.fromEntries(selectedGames.flatMap(game => [
   [game, required(`${game}-build`)],
-  ...(product.multiplayerRuntime ? [[`${game}Multiplayer`, required(`${game}-multiplayer-build`)]] : []),
+  ...(PRODUCT_GAMES[game].multiplayerRuntime && !sharesRuntime(game) ? [[`${game}Multiplayer`, required(`${game}-multiplayer-build`)]] : []),
 ]));
 
 async function identity(path) {
@@ -43,7 +44,8 @@ async function copyVariant(game, build, root, variant) {
   const stem = runtimeStem(game);
   const html = await readFile(resolve(build, `${stem}.html`), "utf8");
   assertRuntimeDataShell(html, game, variant);
-  if (game === "th09" && variant === "multiplayer") {
+  if (sharesRuntime(game)) assertSharedRuntimeShell(html, game);
+  if (game === "th09") {
     const wasm = await readFile(resolve(build, "th09.wasm"));
     const exports = new Set(WebAssembly.Module.exports(new WebAssembly.Module(wasm)).map(entry => entry.name));
     const required = ["th09_peer_url_buffer", "th09_peer_connect", "th09_peer_state", "th09_network_room_begin"];
@@ -86,13 +88,15 @@ await rm(staging, { recursive: true, force: true });
 await mkdir(staging, { recursive: true });
 try {
 const games = {};
-for (const game of Object.keys(PRODUCT_GAMES)) {
+for (const game of selectedGames) {
   const product = PRODUCT_GAMES[game];
   const normalBuild = builds[game];
   const normalRoot = `runtime/${game}`;
   const runtime = await immutableVariant(game, normalBuild, normalRoot, "normal");
   let multiplayerRuntime = null;
-  if (product.multiplayerRuntime) {
+  if (sharesRuntime(game)) {
+    multiplayerRuntime = runtime;
+  } else if (product.multiplayerRuntime) {
     const multiplayerBuild = builds[`${game}Multiplayer`];
     const multiplayerRoot = `runtime/${game}/multiplayer`;
     multiplayerRuntime = await immutableVariant(game, multiplayerBuild, multiplayerRoot, "multiplayer");
@@ -104,7 +108,7 @@ for (const game of Object.keys(PRODUCT_GAMES)) {
     const normalJs = await readFile(resolve(normalBuild, `${game}.js`), "utf8");
     normalLayout = extractGameDataLayout(normalJs, game);
     dataLayout = normalLayout.layout;
-    if (multiplayerRuntime) {
+    if (multiplayerRuntime && multiplayerRuntime !== runtime) {
       const multiplayerJs = await readFile(resolve(builds[`${game}Multiplayer`], `${game}.js`), "utf8");
       const multiplayerLayout = extractGameDataLayout(multiplayerJs, game);
       if (normalLayout.layout !== multiplayerLayout.layout || normalLayout.bytes !== multiplayerLayout.bytes) {

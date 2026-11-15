@@ -1,4 +1,5 @@
 import type {
+  CurrentPackageGeneration,
   InstalledPackageGeneration,
   InstalledPackageResult,
   PackageDescriptor,
@@ -17,6 +18,7 @@ export interface PublishedPackageFileSelection {
 
 export interface InstallPublishedPackageOptions extends Omit<PublishedPackageFileSelection, "current"> {
   gameVersion?: "original" | "beauty";
+  preferredLanguage?: string;
   catalog: unknown;
   catalogUrl: string;
   preserveLocalSource?: boolean;
@@ -44,6 +46,10 @@ export function fetchPublishedPackage(game: string, options: {
 }): Promise<{entry: unknown; descriptor: PackageDescriptor; descriptorUrl: string} | null>;
 
 export function installedComponentIds(generation: InstalledPackageGeneration | null): string[];
+export function publishedLanguageSelection(
+  descriptor: PackageDescriptor,
+  preferredLanguage?: string,
+): Readonly<Record<string, readonly string[]>>;
 
 export function installPublishedPackage(
   game: string,
@@ -60,3 +66,10 @@ export function publishedPackageStatus(game: string, catalog: unknown): Promise<
   published: unknown;
   updateAvailable: boolean;
 }>;
+
+export function repairInstalledPackage(installed: CurrentPackageGeneration, options: {
+  getPublication: () => Promise<{catalog: unknown; catalogUrl: string}>;
+  fetchImpl?: typeof fetch;
+  signal?: AbortSignal;
+  onProgress?: (progress: PackageInstallProgress) => void;
+}): Promise<InstalledPackageGeneration>;

@@ -1,0 +1,3 @@
+$ node tools/ports/check.mjs "--game=th19" "--variant=both" --write-status
+th19/normal: PASS (10/10 checks)
+th19/multiplayer: PASS (9/9 checks)

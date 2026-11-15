@@ -89,7 +89,6 @@ function openRuntime({epoch = 73, holdModule = false, holdData = false, holdConn
   const elements = new Map();
   document.querySelector = selector => {
     if (selector === 'canvas') return canvas;
-    if (selector === 'meta[name="eagler-runtime-variant"]') return {content: 'multiplayer'};
     if (!elements.has(selector)) elements.set(selector, {textContent: ''});
     return elements.get(selector);
   };
@@ -166,7 +165,7 @@ function openRuntime({epoch = 73, holdModule = false, holdData = false, holdConn
     console, URL, URLSearchParams, Uint8Array, Int32Array, ArrayBuffer, TextDecoder, Promise, queueMicrotask,
     window, document, parent, innerWidth: 800, innerHeight: 600,
     location: {origin: ORIGIN, href: ORIGIN + '/runtime/th09/multiplayer/th09.html',
-      search: '?managedData=1&runtimeEpoch=' + epoch + '&gameGeneration=fixture-generation'},
+      search: '?managedData=1&runtimeVariant=multiplayer&runtimeEpoch=' + epoch + '&gameGeneration=fixture-generation'},
     performance: {now: () => clock, mark: name => note('mark', {name})},
     Date: {now: () => 1700000000000 + clock},
     requestAnimationFrame: callback => schedule(callback, 1000 / 60, 'raf'),

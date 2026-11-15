@@ -5,6 +5,7 @@ import {
   parseRuntimeDownloadProgress, type RuntimeDownloadProgress, type RuntimeManifest,
 } from "../contracts/runtime-generations.mjs";
 import {consumeNetworkBody} from './network-activity.mjs';
+import {sha256Hex} from './sha256.mjs';
 
 export interface PreparedRuntime {
   url: string;
@@ -26,8 +27,7 @@ interface LaunchOptions {
   onProgress?: (progress: RuntimeDownloadProgress) => void;
 }
 async function digest(bytes: ArrayBuffer): Promise<string> {
-  return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
-    byte => byte.toString(16).padStart(2, "0")).join("");
+  return sha256Hex(bytes);
 }
 async function bounded<T>(task: PromiseLike<T>, timeout: number, fallback: T): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -131,7 +131,7 @@ export async function prepareRuntimeLaunch(runtime: string, {
     const text = await response.text();
     if (text.length > 4 * 1024 * 1024) throw new Error("Runtime Manifest exceeds size limit");
     return validateRuntimeManifest(JSON.parse(text));
-  }).catch(() => null);
+  }, 0, 'no-cache').catch(() => null);
   const workerTask = Promise.resolve(worker === undefined ? runtimeProgramWorker(base.href) : worker);
   const target = await bounded(workerTask, 5000, null);
   const requestedRoot = parseRuntimeGenerationPath(path)?.root || path.slice(0, path.lastIndexOf('/') + 1);

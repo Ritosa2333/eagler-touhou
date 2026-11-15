@@ -2,7 +2,7 @@
 
 回滚通过输入历史和状态日志恢复游戏世界，再按帧确认顺序提交音频、存档、Replay 与观战输出。维护多人帧循环时，按下方分工接入公共核心与各作状态。
 
-配套阅读：[联机输入时序与 Adonis](netplay.md)；[适配总览](../adaptation/README.md)。旧回滚手册保留为基线 `991e7cdf9060252e022eba25431254c6a0ce73e9` 的历史材料：[回滚 Playbook](https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md)。实验记录列出了当时的构建、输入和设备条件。
+配套阅读：[联机输入时序与 Adonis](netplay.md)；[适配总览](../adaptation/README.md)。旧回滚手册保留为基线 `991e7cdf9060252e022eba25431254c6a0ce73e9` 的历史材料：[回滚 Playbook](https://github.com/Ritosa2333/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md)。实验记录列出了当时的构建、输入和设备条件。
 
 ## 所有权边界
 
@@ -18,25 +18,31 @@
 
 常见标题侧所有者：
 
+- TH05：[`Netplay.cpp`](../../ports/th05-mp/portable/Netplay.cpp) 协调公共输入核心、8 帧世界日志和确认音频；[`WorldRollback.cpp`](../../ports/th05-mp/Game/Coop/WorldRollback.cpp) 捕获原生固定对象，场景与资源工厂经过完整确认边界。
+
 - TH08：[`RollbackDriver`](../../ports/th08-mp/web/cpp/multiplayer/RollbackDriver.cpp) 协调帧和输出；[`WorldJournal`](../../ports/th08-mp/web/cpp/multiplayer/WorldJournal.cpp) 组合主状态、敌人池、对象池与资源日志；`PoolsJournal`、`EnemyJournal`、`TextureJournal` 负责各自区域。
 - TH09：[`RollbackSession`](../../ports/th09/web/cpp/multiplayer/RollbackSession.cpp) 管理输入帧；[`Application.cpp`](../../ports/th09/web/cpp/sdl/Application.cpp) 的 `checkpoint`、`rollback_tick` 及 SDL 帧循环接管标题世界、恢复和重模拟。
 - TH10：[`RollbackState`](../../ports/th10-mp/web/cpp/multiplayer/RollbackState.cpp) 通过稀疏池捕获器和 `RollbackJournal` 接线各领域状态；`NetplayRuntime` 只提供网络和输入决策。
 - TH11：`NetplayRuntime` 持有帧前沿和提交水位；[`WorldRollback`](../../ports/th11-mp/web/cpp/game/WorldRollback.cpp) 与 `StageRollback`、`EnemyRollback`、`AnmRollback` 管理标题状态。
-- th15：[`NetplayRuntime`](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 默认使用纯延迟；开启回滚后使用十二帧预测窗口，由 `AppFrameState` 保存应用与战斗快照，恢复后重演并在确认帧提交音频、录像和旁观输出。暂停、对话和场景工厂使用真实输入边界。实验构建与压力验证见[归档记录](../../archive/th15-rollback-20261026/th15-rollback-experiment-20261026.md)。
+- th15：[`NetplayRuntime`](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 默认启用回滚并使用十二帧预测窗口，由 `AppFrameState` 保存应用与战斗快照，恢复后重演并在确认帧提交音频、录像和旁观输出。暂停、对话和场景工厂使用真实输入边界。实验构建与压力验证见[归档记录](../../archive/th15-rollback-20261026/th15-rollback-experiment-20261026.md)。
 
 ## 一帧的输入与恢复路径
 
 1. 物理设备采样由标题当前捕获前沿拥有。一次采样生成不可变 `FrameInput`；重传和历史重模拟复用它。
 2. [`RollbackCore::ScheduleLocalInput`](../../common/src/netplay/NetplayCore.cpp) 将采样帧 `N` 安排到 `N + inputDelay`。输入延迟的起始空帧是确定性中性输入。
-3. `PrepareFrame(F)` 为每个席位取实际输入，或按标题配置预测最近确认输入。方向预测时限可独立短于总回滚历史；炸弹、菜单等边沿动作通常要求实际输入。
+3. `PrepareFrame(F)` 优先使用该帧收到的实际输入。缺帧时，各席位以自己的连续确认输入为预测基准；一个乱序到达的输入可以用于它自己的帧，不能作为后续缺帧的基准。炸弹、菜单等边沿动作由标题保留真实输入边界。
 4. 标题用该决策执行逻辑更新，然后调用 `MarkSimulated()`。核心保存该帧用了哪些输入及预测位图。
-5. 新远端输入到达时，核心比较它与已用预测输入。相同则确认该帧；不同则保留最早 `RollbackFrame`。
+5. 新远端输入到达时，核心比较它与已用预测输入。实际不一致的帧保留为必须恢复的目标。乱序缺口补齐后，新基准可能改变还未收到实际输入的后续帧；这类预测差异在使用恢复目标前重新核对，同一批里随后到达的实际输入可以取消它。两类目标取最早帧。
 6. 标题先关闭当前检查点，再恢复到目标帧开始之前。`RollbackJournal::UndoTo()` 返回检查点的起始帧；跨帧检查点会从其起始帧重新执行。
-7. 标题调用 `RewindSimulationTo()`，让核心丢弃被放弃的未来决策。已捕获的本地输入、已收到的真实远端输入、确认前沿和 ACK 前沿继续保留。
+7. 标题调用 `RewindSimulationTo()`，让核心验证并清理被放弃的逻辑帧区间。已捕获的本地输入、已收到的真实远端输入、确认前沿和 ACK 前沿继续保留。
 8. 标题从恢复后的逻辑帧逐帧重模拟，读取核心保留的 `UsedInput` 或确定后的实际输入，不读取 DOM、触控或手柄状态。
 9. 对应帧在所有远端席位均确认且没有待纠正事务后，标题才退休日志并提交音频、Replay、观战或文件输出。
 
 `RollbackCore` 的 `ConfirmedThroughAllRemotes()` 是所有远端连续确认前沿的最小值；`AcknowledgedLocalThroughAllRemotes()` 是其他席位已确认收到本地输入的前沿。会话退休和新一轮切换分别使用这些水位。分别读取这两个水位，完成各自对应的退休屏障。
+
+持续按键在现有回滚窗口内延续。在最近 32 帧内连续确认三次不超过 3 帧的方向短点时，预测新短点会在第三帧后松开。一旦真实输入继续按住，就恢复延续。摇杆和绝对触屏位置可以保持。相对滑动位移与手势开始只使用一次。TH19 的独立预测器遵循相同规则。连续输入预测参考了 [HiganRTool](https://github.com/Mako-th/HiganRTool/blob/539e676b42514d9ce5deb7e709ab9e4bb9ed632d/src/core/src/rollback.rs#L1333-L1342)。
+
+各作品的检查点、补算预算和场景边界由各自的运行时管理。TH17 会在落后的触控席可安全采样时，于两次绘制之间采集并发送下一个输入槽，补算仍由逻辑帧循环执行。
 
 ## 检查点和日志规则
 
@@ -89,7 +95,7 @@
 - 发生生命周期切换时先完成本阶段历史对账，再关闭阶段资源及日志；网络会话另走输入确认和 ACK 退休屏障。
 - 纯延迟模式每帧只在全部真实输入到达后推进，因此不需要预测撤销存储；确认后的音频、存档、Replay 和对象池仍按各自所有权提交。
 
-TH09 输出环按“最旧未发布帧”保留空间，标题驱动同时管理纠正前沿和输出提交游标，供音频、Replay 与观战按序发布。细节见固定基线报告的 [TH09 确认输出保留记录](https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md#th09-confirmed-output-retention-issue-89-2026-10-16)。
+TH09 输出环按“最旧未发布帧”保留空间，标题驱动同时管理纠正前沿和输出提交游标，供音频、Replay 与观战按序发布。细节见固定基线报告的 [TH09 确认输出保留记录](https://github.com/Ritosa2333/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md#th09-confirmed-output-retention-issue-89-2026-10-16)。
 
 ## 标题差异
 
@@ -101,7 +107,7 @@ TH09 输出环按“最旧未发布帧”保留空间，标题驱动同时管理
 | TH09MP | [`RollbackSession`](../../ports/th09/web/cpp/multiplayer/RollbackSession.hpp) `History=8`，仅 2 人；DirectTouch 表示绝对场地目标。 | `Application.cpp` 在 Present 后安排异步恢复，并由 `RecoverySchedule` ticket/loop epoch 取消过期回调。短缺输入不再通过放慢本地采样节奏解决。 |
 | TH10MP | [`core_config`](../../ports/th10-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 设置 `maxRollbackFrames=12`；[`RollbackState`](../../ports/th10-mp/web/cpp/multiplayer/RollbackState.cpp) 包含稀疏对象池捕获和多个 typed slot owner。 | 产品目录 `rollbackLimit=12`；其未设置 `sendPredictionLimit`，公共策略函数回退到 8。C++ 核心历史窗为 12，发送预测上限为 8；修改时分别核对这两个字段。 |
 | TH11MP | [`SessionSetup::MaxRollbackFrames=12`](../../ports/th11-mp/web/cpp/multiplayer/SessionSetup.hpp)；世界、阶段、敌人和 ANM 各自有日志。 | 固定的提交水位与阶段租约参与资源退休；`WorldRollback::CanCapture()` 会拒绝暂停状态及暂停菜单拥有期间的捕获。 |
-| th15 MP | [`NetplayRuntime`](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 按房间时序选择精确输入或十二帧预测；`AppFrameState`、`StageFrameState` 与 `BattleFrameState` 恢复应用及游戏世界。 | 产品目录 `rollbackLimit=12`、`rollbackDefault=false`；暂停、对话和场景工厂在真实输入边界执行，副作用沿确认前沿提交。 |
+| th15 MP | [`NetplayRuntime`](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 按房间时序选择精确输入或十二帧预测；`AppFrameState`、`StageFrameState` 与 `BattleFrameState` 恢复应用及游戏世界。 | 产品目录 `rollbackLimit=12`，默认启用回滚；暂停、对话和场景工厂在真实输入边界执行，副作用沿确认前沿提交。 |
 
 ## TH08 与 TH09 的可复用经验
 
@@ -111,7 +117,7 @@ TH08 的受控分析中，fixture 的 `Update` 大部分成本来自 Bullet job�
 
 TH08 MP 的活动索引在 Item 更新后、Bullet/Laser 更新前重建，替换每名玩家每次扫描 192 个取消区域槽的路径。正向执行与重模拟逐帧刷新索引，其生命周期覆盖这些游戏任务，存档保存原始游戏状态。目标筛选只在瞄准 extra 实际需要时运行；远距离碰撞拒绝保留精确几何回退。
 
-历史受控基准采用 4 倍 CPU 限速：2P Update 从 6.40 ms 降至 2.40 ms，3P 从 8.96 ms 降至 2.92 ms。该基准用同世界、同输入比较更新路径；设备与发布验收按适配表覆盖手机、长流程和音频。完整测量记录见 [TH08 Update 复用报告](https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback/th08-mp-base-update-reuse-2026-09-27.md)。
+历史受控基准采用 4 倍 CPU 限速：2P Update 从 6.40 ms 降至 2.40 ms，3P 从 8.96 ms 降至 2.92 ms。该基准用同世界、同输入比较更新路径；设备与发布验收按适配表覆盖手机、长流程和音频。完整测量记录见 [TH08 Update 复用报告](https://github.com/Ritosa2333/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback/th08-mp-base-update-reuse-2026-09-27.md)。
 
 ### TH09：保持已采样输入，恢复安排不制造额外延迟
 
@@ -122,7 +128,21 @@ TH08 MP 的活动索引在 Item 更新后、Bullet/Laser 更新前重建，替�
 - 真实采样沿 `RollbackSession::Capture()` 发生一次；历史 `Prepare/Complete` 和 `Restored()` 只消费缓存输入。`PacedElapsedMs()` 将 Adonis 建议应用到外层经过时间，而非改变固定逻辑 tick。
 - 确认输出环的退休点独立于“待纠正帧”。按最旧未提交输出保留空间，恢复工作跨显示回调时，已经确认的音频/Replay/观战帧仍可顺序排空。
 
-输入恢复记录：[TH09 输入调度与 Present 后恢复](https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md#th09-input-scheduling-and-post-present-recovery-2026-10-16)。
+输入恢复记录：[TH09 输入调度与 Present 后恢复](https://github.com/Ritosa2333/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md#th09-input-scheduling-and-post-present-recovery-2026-10-16)。
+
+### th15：值状态、版本身份与基础更新成本
+
+五帧纠正包含恢复、五次历史演算和一次新帧推进，基础更新成本会被重复支付。th15 将受控子弹的运动状态与变换程序分开，ANM 采用可平凡复制的值状态，空闲插值器在新命令到来时唤醒。快照采用每页 64 个 VM 的稳定存储，深层几何复制复用已有容量。
+
+冷程序、图集与分席位擦弹状态按单调版本更新。道具空槽在出生、回收、清空和章节替换时更新版本，活动道具与其动画照常捕获。恢复只回退对象的版本身份，分配版本的计数器继续前进，避免分歧未来误用旧缓存。公开可变引用一旦逸出，该槽位永久走完整捕获路径。复杂几何、父子关系与注册动画继续由所有权图恢复。
+
+存档的封装编码块按私有版本复用，公开的命名记录逐帧复制。子弹更新期间复用玩家几何边界，候选范围先做整体拒绝，再检查各席位，命中与宿主回调使缓存失效。精确碰撞继续读取实时存活、无敌、放雷和对话状态。
+
+历史 Draw 执行会影响后续演算的写入，并省去最终画面才需要的顶点打包。多人子弹的擦弹视图原本写入临时 VM，可直接完成其持久状态准备。性能验收同时比较完整输入执行的世界指纹、确认录像输入和 canvas，测量范围包含音频泵、帧日志、恢复、重模拟与最终绘制提交。对应构建与数据见 [th15 性能验证](../../archive/th15-rollback-performance-20261105/README.md)。
+
+th15 的实时联机循环复用公共 `PendingFrameSchedule`。缺包保留当前到期更新，收包可在两次 rAF 之间唤醒；短时积欠的更新在提交画面后继续执行，每次回调最多推进两帧，第二帧须已确认。只有 rAF 增加时钟额度，历史纠正复用已采样输入。
+
+恢复被暂停边界打断时，已呈现的历史前沿与当前恢复游标分别计数。恢复尾部结束后继续执行原先到期的新帧，避免将历史重演当成新推进。双人／三人世界、确认录像、部分恢复和旧回调失效的验证见 [th15 输入时序验证](../../archive/th15-input-latency-20261105/README.md)。
 
 ## 修改回滚覆盖时的检查顺序
 

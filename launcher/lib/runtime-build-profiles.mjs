@@ -60,7 +60,7 @@ export function validateRuntimeBuildConfig(config) {
   validateCache(config.defaults.cache, "defaults");
   if (!plainObject(config.games)) throw new Error("runtime build games are missing");
 
-  const registered = Object.keys(PRODUCT_GAMES).sort();
+  const registered = Object.keys(PRODUCT_GAMES).filter(game => !PRODUCT_GAMES[game].buildOptIn || Object.hasOwn(config.games, game)).sort();
   const configured = Object.keys(config.games).sort();
   if (registered.join("\0") !== configured.join("\0")) {
     throw new Error(`runtime build config games must match product registry: ${configured.join(", ")}`);

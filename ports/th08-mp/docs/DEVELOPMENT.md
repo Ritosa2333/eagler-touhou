@@ -6,10 +6,10 @@
 
 ## 构建并在 Launcher 启动
 
-需要 Node.js 22.18 以上、Python 3 和 Emscripten SDK 6.0.9（示例路径为 `C:\tools\emsdk`，命令中的 `--emsdk` 指向 SDK 根目录）。首次使用安装 Launcher 依赖。准备本机 `th08.dat`；`EAGLER_FONT_ROOT` 目录须含 `blend.bin`、`cp932.bin`。Host 另需可读的日文字体和 Unifont。
+需要 Bun 1.4.4、Node.js 22.18 以上、Python 3 和 Emscripten SDK 6.0.9（示例路径为 `C:\tools\emsdk`，命令中的 `--emsdk` 指向 SDK 根目录）。首次使用安装 Launcher 依赖。准备本机 `th08.dat`；`EAGLER_FONT_ROOT` 目录须含 `blend.bin`、`cp932.bin`。Host 另需可读的日文字体和 Unifont。
 
 ```powershell
-npm --prefix launcher ci --ignore-scripts # 仅首次安装
+bun --bun run --cwd launcher install:locked # 仅首次安装
 $env:EAGLER_FONT_ROOT='C:\local-content\th08-fonts'
 $env:EAGLER_TH08_DATA_FILE='C:\Games\TH08\th08.dat'
 $env:EAGLER_DEVELOPMENT_VANILLA_FONT='C:\Windows\Fonts\msgothic.ttc'
@@ -18,7 +18,7 @@ $env:EAGLER_DEVELOPMENT_GAMES='th08'
 $env:EAGLER_TOUHOU_NETPLAY_RELAY='ws://127.0.0.1:18142/'
 node launcher/scripts/build-runtime.mjs --game=th08 --variant=multiplayer --emsdk='C:\tools\emsdk'
 node ports/th08-mp/portable/package-eagler.mjs --multiplayer
-npm --prefix launcher run build
+bun --bun run --cwd launcher build
 npm --prefix launcher run dev:workspace
 ```
 

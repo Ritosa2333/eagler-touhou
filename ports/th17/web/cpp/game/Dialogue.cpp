@@ -24,25 +24,54 @@ bool Dialogue::speaking(i32 value,i32 portrait){
 }
 void Dialogue::position_text(){if(speaker==0){if(auto* vm=find(text_handles[0]))vm->visual.translation=position;}else if(speaker==1||speaker==2)for(auto& h:text_handles)if(auto* vm=find(h))vm->visual.translation=position;}
 bool Dialogue::child_width(float value){auto* root=find(bubble);if(!root)return true;for(i32 index=0;;index++){auto* child=animations.registry.find_child_script(*root,-1,index);if(!child)break;child->variables.floats[0]=value;}return true;}
-bool Dialogue::balloon(i32 style,float value){if(!animations.retire(bubble))return false;bubble=create(resources.front,287+style,{position.x,position.y,0});if(!bubble)return false;bubble_style=style;return child_width(value);}
+bool Dialogue::balloon(i32 style,float value){
+    if(!animations.retire(bubble))return false;
+    auto anchor=position;anchor.z=0;
+    if(line_widths[0]>=0||line_widths[1]>=0){
+        // Balloon coordinates use the 1280-wide ANM space. The gameplay
+        // viewport starts at x=32 and spans 384 pixels at 640x480.
+        constexpr float field_left=2.f*32.f+8.f;
+        constexpr float field_right=2.f*(32.f+384.f)-8.f;
+        constexpr float tip_padding=24.f;
+        const float body_reach=value+112.f;
+        anchor.x=speaker==0?std::clamp(anchor.x,field_left+tip_padding,field_right-body_reach)
+                           :std::clamp(anchor.x,field_left+body_reach,field_right-tip_padding);
+    }
+    bubble=create(resources.front,287+style,anchor);
+    if(!bubble)return false;
+    bubble_style=style;
+    return child_width(value);
+}
 bool Dialogue::lines(const std::string& value){
     const bool second=line!=0;const u32 index=second?1:0,annotation=second?3:2;
-    if(!second&&!cleared){width=0;for(u32 i=0;i<4;i++)if(!text(text_handles[i],colors[speaker],0,(flags>>1)&1,0,i>=2?1:0,"  "))return false;cleared=1;for(auto h:text_handles)if(!interrupt(h,3))return false;}
+    if(!second&&!cleared){width=0;line_widths.fill(-1);for(u32 i=0;i<4;i++)if(!text(text_handles[i],colors[speaker],0,(flags>>1)&1,0,i>=2?1:0,"  "))return false;cleared=1;for(auto h:text_handles)if(!interrupt(h,3))return false;}
     if(!value.empty()&&value[0]=='|'){
         const auto first=value.find(','),last=first==std::string::npos?first:value.find(',',first+1);if(first==std::string::npos||last==std::string::npos)return check(false,"Invalid dialogue annotation");
         const i32 x=std::atoi(value.c_str()+1),y=std::atoi(value.c_str()+first+1);auto* vm=find(text_handles[annotation]);if(!vm)return check(false,"Dialogue annotation animation unavailable");vm->visual.render_flags|=0x1000;
         if(!text(text_handles[annotation],0,0xa0a0a0,2,x,y,value.substr(last+1)))return false;vm->visual.translation=position;return interrupt(text_handles[annotation],2,!second);
     }
-    const u32 rounded=(u32(value.size())*8&~15u)-28;const float requested=float(float(rounded)+float(rounded));width=std::max(width,requested);
+    const i32 style=(flags>>1)&1;
+    if(auto* vm=find(text_handles[index]))line_widths[index]=host.dialogue_width(*vm,value,style);
+    const auto measured=line_widths[index];
+    const u32 rounded=(u32(value.size())*8&~15u)-28;
+    const float requested=measured>=0?float(std::clamp(measured-40,0,line_width_limit-40)):float(rounded)*2.f;
+    width=std::max(width,requested);
     if(!balloon((((flags>>2)&15)+(second?8:0))*3+speaker,width)||!child_width(float(width+16.f)))return false;
-    if(!text(text_handles[index],colors[speaker],0,(flags>>1)&1,0,0,value))return false;position_text();
+    if(!text(text_handles[index],colors[speaker],0,style,0,0,value))return false;position_text();
     if(!interrupt(text_handles[index],2,true))return false;if(second)line=cleared=0;else line++;return true;
 }
 bool Dialogue::follow_balloon(){
     auto* root=find(bubble);if(!root)return true;auto* child=animations.registry.find_child_script(*root,bubble_style+183,0);if(!child)return true;Vec3 p;if(!check(anm_position(*child,p),"Dialogue bubble position failed"))return false;
     const float scale=float(2.f/animations.scene_environment().resolution_scale);p.x=float(p.x*scale);p.y=float(p.y*scale);
     if(speaker==0)p.x=float(p.x-36.f);else if(speaker==1){if(child->visual.scale.x>=1)p.x=float(p.x+26.f);else p.x=float(float(float(float(child->visual.scale.x+.125f)*32.f)-6.f)+p.x);}else if(speaker==2)p.x=float(float(float(float(child->visual.scale.x+.125f)*16.f)-6.f)+p.x);
-    for(auto& h:text_handles)if(auto* vm=find(h))vm->visual.translation=p;return true;
+    const i32 widest=std::max({40,line_widths[0],line_widths[1]});
+    for(u32 slot=0;slot<text_handles.size();++slot)if(auto* vm=find(text_handles[slot])){
+        auto anchor=p;
+        const auto measured=line_widths[slot%2];
+        if(measured>=0)anchor.x+=float(widest-measured)*.5f+(speaker==0?8.f:12.f);
+        vm->visual.translation=anchor;
+    }
+    return true;
 }
 i32 Dialogue::update(const DialogueInput& input){
     if(!initialized||!error.empty())return check(false,"Dialogue unavailable"),-1;animations.rate=input.rate;if(complete_pulse>0)complete_pulse--;

@@ -79,16 +79,14 @@ async function openLobby(port, room, clientId, policy = '') {
   assert.equal(initial.room.prankMode, false, 'prank mode stays disabled at room creation');
   const product = room.split('-')[0];
   const initialPolicy = multiplayerInputTimingPolicy(multiplayerConfigForProduct(product));
-  const defaultRollback = initialPolicy.rollback && product !== 'th15mp';
+  const defaultRollback = initialPolicy.rollback;
   assert.equal(initial.room.predictionLimit, defaultRollback ? initialPolicy.predictionLimit : 0, `${room}: initial prediction policy`);
   assert.equal(initial.room.adonisMode, defaultRollback ? 0 : 1, `${room}: initial timing mode`);
   return socket;
 }
 
 async function sendAndReceive(socket, message) {
-  const response = nextJson(socket);
-  socket.send(JSON.stringify(message));
-  return response;
+  return sendAndMatch(socket, message, response => response.type === "state" || response.type === "error");
 }
 async function sendAndMatch(socket,message,predicate) {
   // Keep one listener until the match: several frames may arrive in one pump.
@@ -152,7 +150,8 @@ async function verifyModes(port, product) {
   const host = await openLobby(port, room, `${product}_modes_host`, 'intent=create&prankMode=1'), guest = await openLobby(port, room, `${product}_modes_guest`);
   try {
     await sendAndMatch(host, {type:'take-seat',seat:0,loadout:0}, r => r.room?.seats[0]);
-    await sendAndMatch(guest, {type:'take-seat',seat:1,loadout:1}, r => r.room?.seats[1]);
+    const guestLoadout = Math.min(1, capability.loadouts.length - 1);
+    await sendAndMatch(guest, {type:'take-seat',seat:1,loadout:guestLoadout}, r => r.room?.seats[1]);
     await sendAndMatch(host, {type:'set-ready',ready:true}, r => r.room?.seats[0]?.ready);
     await sendAndMatch(guest, {type:'set-ready',ready:true}, r => r.room?.seats[1]?.ready);
     await sendAndMatch(guest, {type:'settings',challengeMode:true,prankMode:true}, r => r.type==='error');

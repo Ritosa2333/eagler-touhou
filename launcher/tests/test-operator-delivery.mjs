@@ -1,15 +1,24 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import {
   assertHostedSiteMatchesOperatorProfile,
   validateOperatorProfile,
 } from "../tools/maintainer/operator-delivery.mjs";
 
+test("operator delivery", async () => {
 const profile = validateOperatorProfile(JSON.parse(await readFile(
   resolve("tools/maintainer/operator-delivery/profile.json"), "utf8"
 )));
+const preview = {...profile, games: Object.fromEntries(Object.keys(PRODUCT_GAMES)
+  .filter(game => Object.hasOwn(profile.games, game) || game === 'th13')
+  .map(game => [game, profile.games[game] ?? {languages: ['ja'], music: ['ogg'], thprac: false, runtimeVariants: ['normal']}]))};
+assert.equal(validateOperatorProfile(preview), preview);
+const missingRequired = structuredClone(preview);
+delete missingRequired.games.th06;
+assert.throws(() => validateOperatorProfile(missingRequired), /every default build game/);
 const manifest = {
   schema: "eagler-touhou/site-manifest/1",
   shared: {
@@ -30,6 +39,12 @@ const manifest = {
 };
 
 assert.equal(assertHostedSiteMatchesOperatorProfile(manifest, profile), profile);
+const optInProfile = structuredClone(profile);
+optInProfile.games.th13 = structuredClone(profile.games.th12);
+assert.throws(() => validateOperatorProfile(optInProfile), /every default build game/);
+const missingGame = structuredClone(profile);
+delete missingGame.games.th06;
+assert.throws(() => validateOperatorProfile(missingGame), /every default build game/);
 
 const missingLanguage = structuredClone(manifest);
 missingLanguage.games.th06.languageOptions = missingLanguage.games.th06.languageOptions.filter(entry => entry.id !== "lang_en");
@@ -46,3 +61,4 @@ assert.throws(
 );
 
 console.log("Internal Operator delivery profile: PASS");
+});

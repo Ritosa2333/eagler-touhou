@@ -39,6 +39,9 @@ export interface LauncherNetplayState {
   spectatorCount: number;
   challengeMode?: boolean;
   chapterThreshold?: number;
+  th19Rules?: number[];
+  initialSpares?: number;
+  initialBombs?: number;
   prankMode?: boolean;
 }
 
@@ -65,6 +68,10 @@ export interface LauncherState {
 }
 
 export interface MultiplayerRoomState {
+  unrated?: boolean;
+  th19Rules?: number[];
+  initialSpares?: number;
+  initialBombs?: number;
   runtimeGeneration?: string;
   visibility?: 'public' | 'private';
   disableCheatMovement?: boolean;
@@ -89,6 +96,7 @@ export interface MultiplayerRoomState {
   spectators?: NormalizedMultiplayerLobbySnapshot['spectators'];
   spectatorCount?: number;
   spectatorTimeline?: boolean;
+  swarmSelected?: boolean;
   synced?: boolean;
   [key: string]: unknown;
 }
@@ -133,6 +141,7 @@ export interface BootWatchdog {
 export interface MidiSynth {
   send(bytes: readonly number[]): void;
   reset(): void;
+  setMasterVol?(volume: number): void;
   getAudioContext(): AudioContext;
 }
 

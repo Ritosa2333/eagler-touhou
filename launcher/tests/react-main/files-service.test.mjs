@@ -1,7 +1,7 @@
 /** Adapter regression against main app6220–6440/6850–6889 event order.
  * Synthetic Runtime/file ports only: no native persistence/browser/download PASS.
  * Original main tests remain unchanged. No abandoned candidate tests imported. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {existsSync} from 'node:fs';

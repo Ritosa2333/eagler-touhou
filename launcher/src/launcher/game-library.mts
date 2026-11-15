@@ -137,7 +137,7 @@ function bindGameLibraryShelves(shelves: Iterable<HTMLElement>, options: GameLib
     const rail = shelf.querySelector<HTMLElement>(".game-rail");
     if (!rail) continue;
     const cards = [...rail.querySelectorAll<HTMLAnchorElement>(".game")];
-    cards.forEach(card => applyCoverAccent(card, cleanups));
+    cards.forEach(card => {applyCoverAccent(card, cleanups);});
     const root = shelf.querySelector<HTMLElement>(".shelf-minimap")!;
     const dock = root.querySelector<HTMLElement>(".minimap-dock")!;
     const toggles = [...root.querySelectorAll<HTMLButtonElement>(".minimap-toggle")];
@@ -191,7 +191,7 @@ function bindGameLibraryShelves(shelves: Iterable<HTMLElement>, options: GameLib
     const highlight = (id: string) => {
       if (activeId === id) return;
       activeId = id; currentProduct = id;
-      cards.forEach(card => card.classList.toggle("nav-preview", productOf(card) === id));
+      cards.forEach(card => {card.classList.toggle("nav-preview", productOf(card) === id);});
       for (const button of toggles) {
         const current = button.dataset.minimapPreview === id;
         button.classList.toggle("is-current", current);
@@ -378,14 +378,14 @@ function bindGameLibraryShelves(shelves: Iterable<HTMLElement>, options: GameLib
     });
     // Browsing a different cover must not reach the application's Tools route.
     // A second activation of the current cover keeps the existing route owner.
-    cards.forEach(card => listen(card, "click", event => {
+    cards.forEach(card => {listen(card, "click", event => {
       if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
       const id = productOf(card)!;
       if (activeId !== id && !options.openOnFirstClick?.(id)) {
         event.preventDefault(); event.stopImmediatePropagation();
         select(id);
       }
-    }, { capture: true }));
+    }, { capture: true });});
     for (const toggle of toggles) {
       listen(toggle, "click", event => {
         if (performance.now() < suppressClickUntil) return;
@@ -456,7 +456,7 @@ function bindGameLibraryShelves(shelves: Iterable<HTMLElement>, options: GameLib
     selectors.push(product => { if (cardFor(product)) select(product); });
   }
   return {
-    selectProduct: (product: string) => selectors.forEach(select => select(product)),
+    selectProduct: (product: string) => selectors.forEach(select => {select(product);}),
     getSelectedProduct: () => currentProduct,
     dispose: () => { for (const cleanup of cleanups.splice(0).reverse()) cleanup(); },
   };

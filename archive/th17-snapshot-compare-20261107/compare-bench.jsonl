@@ -1,0 +1,14 @@
+{"trial":0,"method":"memcmp","bytes":804,"iterations":2400000,"matches":1800000,"milliseconds":154.270}
+{"trial":0,"method":"grouped","bytes":804,"iterations":2400000,"matches":1800000,"milliseconds":89.420}
+{"trial":1,"method":"grouped","bytes":804,"iterations":2400000,"matches":1800000,"milliseconds":88.359}
+{"trial":1,"method":"memcmp","bytes":804,"iterations":2400000,"matches":1800000,"milliseconds":159.617}
+{"trial":2,"method":"memcmp","bytes":804,"iterations":2400000,"matches":1800000,"milliseconds":149.249}
+{"trial":2,"method":"grouped","bytes":804,"iterations":2400000,"matches":1800000,"milliseconds":91.055}
+{"trial":3,"method":"grouped","bytes":804,"iterations":2400000,"matches":1800000,"milliseconds":88.421}
+{"trial":3,"method":"memcmp","bytes":804,"iterations":2400000,"matches":1800000,"milliseconds":147.113}
+{"trial":4,"method":"memcmp","bytes":804,"iterations":2400000,"matches":1800000,"milliseconds":150.622}
+{"trial":4,"method":"grouped","bytes":804,"iterations":2400000,"matches":1800000,"milliseconds":87.694}
+{"trial":5,"method":"grouped","bytes":804,"iterations":2400000,"matches":1800000,"milliseconds":88.369}
+{"trial":5,"method":"memcmp","bytes":804,"iterations":2400000,"matches":1800000,"milliseconds":149.085}
+{"trial":6,"method":"memcmp","bytes":804,"iterations":2400000,"matches":1800000,"milliseconds":150.652}
+{"trial":6,"method":"grouped","bytes":804,"iterations":2400000,"matches":1800000,"milliseconds":88.851}

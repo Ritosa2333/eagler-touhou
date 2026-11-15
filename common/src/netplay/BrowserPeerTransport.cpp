@@ -13,7 +13,7 @@ namespace Netplay
 EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, int localPlayer, int playerCount, int stageSpectatorHistory), {
     const decode = ptr => {
         const end = HEAPU8.indexOf(0, ptr);
-        return new TextDecoder().decode(HEAPU8.subarray(ptr, end >= 0 ? end : HEAPU8.length));
+        return new TextDecoder().decode(HEAPU8.slice(ptr, end >= 0 ? end : HEAPU8.length));
     };
     const relayUrl = decode(relayUrlPtr);
     const tag = decode(tagPtr);
@@ -44,7 +44,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             let sequence = 0, receivedSequence = 0, pendingBytes = 0, receivedBytes = 0;
             let replayQueue = [];
             let epoch = 0, proposal = null, verification = null, switchedAt = -Infinity;
-            let recoveryUntil = 0, lastNeed = -Infinity, verifyAfter = 0;
+            let recoveryUntil = 0, recoveryProbe = 0, lastNeed = -Infinity, verifyAfter = 0;
             let ackPending = false;
             const policy = Object.freeze({
                 windowMs: 6000, probeTimeoutMs: 1000, primaryIntervalMs: 250,
@@ -57,6 +57,8 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 path.samples = [];
                 path.probeSequence = 0;
                 path.lastProbe = -Infinity;
+                path.lastSuccessfulProbe = 0;
+                path.lastRoundTripAt = -Infinity;
                 path.baseline = Infinity;
                 return path;
             };
@@ -241,12 +243,26 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 if (!started || !supported || !eligible()) return false;
                 const other = active === primary ? backup : primary;
                 if (!ready(other)) return false;
-                recoveryUntil ||= now() + 7000;
+                if (!recoveryUntil) {
+                    recoveryUntil = now() + 7000;
+                    recoveryProbe = active.probeSequence;
+                }
                 verify(true);
                 if (!controller && now() - lastNeed >= 1000) {
                     lastNeed = now(); sendEverywhere({kind: 'need'});
                 }
                 return true;
+            }
+            function finishRecovery(path) {
+                // A fresh input round trip and acknowledgement of all queued controls
+                // prove progress. An open DataChannel or a pre-failure pong does not.
+                // Preserve accepted epochs until the reliable handoff completes.
+                if (!recoveryUntil || path !== active || !ready(path) || proposal ||
+                    pendingControl.size || path.lastSuccessfulProbe <= recoveryProbe ||
+                    now() - path.lastRoundTripAt > policy.probeTimeoutMs) return;
+                recoveryUntil = 0;
+                if (verification) verification.force = false;
+                diagnostic('recovered');
             }
             function receive(path, kind, data) {
                 if (!alive() || path.closed) return true;
@@ -268,6 +284,9 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                         if (sample && sample.rtt == null) {
                             sample.rtt = Math.max(0, now() - sample.at);
                             path.baseline = Math.min(path.baseline, sample.rtt);
+                            path.lastSuccessfulProbe = Math.max(path.lastSuccessfulProbe, sample.id);
+                            path.lastRoundTripAt = now();
+                            finishRecovery(path);
                         }
                     } else if (supported && kind === 'control') {
                         if (m.kind === 'pause') suspend();
@@ -278,6 +297,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                             for (const [id, packet] of pendingControl) {
                                 if (id <= m.sequence) { pendingBytes -= packet.byteLength; pendingControl.delete(id); }
                             }
+                            finishRecovery(path);
                         } else if (m.kind === 'switch' && !controller && Number.isSafeInteger(m.epoch) && m.epoch === epoch + 1 &&
                             m.generation === generation && ['primary', 'turn'].includes(m.path)) {
                             const next = m.path === 'primary' ? primary : backup;
@@ -333,6 +353,12 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             }
             function suspend() {
                 quietUntil = now() + 2000;
+                if (recoveryUntil) {
+                    // Hidden pages and scheduler gaps cannot spend the active recovery
+                    // budget. Require new probes after the existing settling window.
+                    recoveryUntil = quietUntil + 7000;
+                    recoveryProbe = active.probeSequence;
+                }
                 verification = null;
                 // An accepted/committed epoch is a promise, not a quality sample.
                 // Keep it across browser suspension so a delayed commit cannot leave
@@ -1039,7 +1065,7 @@ EM_JS(int, eagler_spectator_connect,
       (const char *relayUrlPtr, const char *spectatorIdPtr, const char *tagPtr, int playerCount, int stageSpectatorHistory), {
     const decode = ptr => {
         const end = HEAPU8.indexOf(0, ptr);
-        return new TextDecoder().decode(HEAPU8.subarray(ptr, end >= 0 ? end : HEAPU8.length));
+        return new TextDecoder().decode(HEAPU8.slice(ptr, end >= 0 ? end : HEAPU8.length));
     };
     const tag = decode(tagPtr);
     if (!/^[A-Za-z0-9_-]{1,32}$/.test(tag)) return 0;
@@ -1144,7 +1170,7 @@ EM_JS(int, eagler_spectator_connect,
                         if(file.session!==session||file.offset!==offset||file.bytes.length!==total||file.extended!==!!wire[2])return;
                         file.bytes.set(wire.subarray(20),offset);file.offset+=wire.length-20;
                         if(file.offset===total){
-                            const prefix=({th06:'th6',th07:'th7',th08:'th8',th10:'th10',th11:'th11',th15:'th15mp'})[tag]||tag;
+                            const prefix=({th06:'th6',th07:'th7',th08:'th8',th10:'th10',th11:'th11',th14:'th14mp',th15:'th15mp',th17:'th17mp'})[tag]||tag;
                             const suffix=((parseInt(session.slice(0,8),16)^parseInt(session.slice(8),16))>>>0).toString(36).slice(-4).padStart(4,'0');
                             state.spectatorReplay={session,bytes:file.bytes,name:prefix+'_ud'+suffix+(file.extended?'.rpyx':'.rpy')};state.replayReceiving=null;
                         }

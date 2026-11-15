@@ -1,5 +1,5 @@
 /** Main app1093–1184 and unchanged lifecycle guards; synthetic SW ports only. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';

@@ -32,6 +32,7 @@ public:
     // A full-screen black rectangle's alpha (MSG 13 / 14 fades), or 0.
     float shade()const;
     bool credits()const{return in_credits;}
+    void skip(){done=true;}
 private:
     AnimationSampler& sampler;i32 text_bank;std::vector<EndingCommand> commands,staff;i32 difficulty;bool seen;Hooks hooks;
     std::vector<std::pair<i32,i32>> banks; // MSG bank slot -> loaded bank

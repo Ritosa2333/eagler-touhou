@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   createMultiplayerPreferenceStore,
@@ -6,6 +7,7 @@ import {
   normalizePreferredLoadout,
 } from "../.cache/build/browser/assets/launcher/multiplayer-preferences.mjs";
 
+test("multiplayer preferences", async () => {
 class MemoryStorage {
   constructor(entries = []) { this.values = new Map(entries); }
   getItem(key) { return this.values.has(key) ? this.values.get(key) : null; }
@@ -36,6 +38,11 @@ assert.equal(createMultiplayerPreferenceStore({storage}).replayAutoSave('th09mp'
 preferences.persistReplayAutoSave('th09mp', true);
 assert.equal(preferences.replayAutoSave('th09mp'), true);
 assert.equal(preferences.replayAutoSave('th07mp'), false);
+assert.equal(preferences.replayAutoSave('th19mp'), true);
+preferences.persistReplayAutoSave('th19mp',false);
+assert.equal(createMultiplayerPreferenceStore({storage}).replayAutoSave('th19mp'),false);
+assert.equal(preferences.replayAutoSave('th09mp'),true,'each title owns its recording preference');
+preferences.persistReplayAutoSave('th19mp',true);
 assert.deepEqual(preferences.load({ product: "th06mp", multiplayer: true, maxLoadout: 4 }), {
   shareSingleplayerSettings: false,
   preferredLoadout: 3,
@@ -73,3 +80,4 @@ console.log(JSON.stringify({
   ordinaryProduct: "share-default-no-loadout-reset",
   storageFailure: "non-fatal",
 }));
+});

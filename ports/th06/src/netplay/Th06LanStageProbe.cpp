@@ -247,6 +247,9 @@ bool RestoreSpectatorReplayStart(const SpectatorStageEvent& event) {
     if(event.game!='6'||event.schema!=SPECTATOR_REPLAY_SCHEMA||
        !SpectatorReplayStart::Prepare(event.state,event.stage,event.playerCount))return false;
     SideEffects::SetSpeculative(true);
+    // Spectator restore bypasses the title's normal transition and must retire
+    // its calc, draw and texture owners before the new stage claims their slots.
+    g_Chain.Cut(g_MainMenu.chainCalc);
     GameManager::CutChain();
     ReplayManager::SaveReplay(nullptr,nullptr);
     SpectatorReplayStart::prepared.setup.spectator=true;
@@ -1573,7 +1576,7 @@ bool Initialize()
     coreConfig.predictableButtons =
         TH_BUTTON_DIRECTION | TH_BUTTON_FOCUS | TH_BUTTON_SHOOT | TH_BUTTON_SKIP;
     coreConfig.directionButtons = TH_BUTTON_DIRECTION;
-    coreConfig.maxDirectionPredictionFrames = 3;
+    coreConfig.prediction = InputPrediction::ConfirmedHold;
     if (!g_SpectatorMode && !g_Core.Reset(coreConfig))
         return false;
 

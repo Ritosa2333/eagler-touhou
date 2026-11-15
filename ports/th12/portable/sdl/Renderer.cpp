@@ -36,8 +36,12 @@ void main(){pixel=texture(atlas,texcoord)*tint;pixel.rgb=mix(pixel.rgb,fogColor,
 
 float native_pixel(float n){
     // 459e50 uses x87 nearest-even before the D3D half-pixel adjustment.
+#ifdef __EMSCRIPTEN__
+    return std::nearbyint(n); // WebAssembly's nearest instruction is ties-to-even.
+#else
     const double floor=std::floor(double(n)),fraction=double(n)-floor;
     return float(fraction==.5?floor+(std::fabs(std::fmod(floor,2.))==1?1:0):std::round(double(n)));
+#endif
 }
 Corners quad_corners(float x,float y,float w,float h,float angle,i32 ax,i32 ay,bool pixel){
     const double left=ax==1?0:ax==2?-double(w):-double(w)/2,top=ay==1?0:ay==2?-double(h):-double(h)/2,c=std::cos(double(angle)),s=std::sin(double(angle));
@@ -78,9 +82,12 @@ bool Renderer::initialize(u32 scale,std::string& error){
     program=glCreateProgram();glAttachShader(program,vs);glAttachShader(program,fs);glLinkProgram(program);glDeleteShader(vs);glDeleteShader(fs);
     GLint ok=0;glGetProgramiv(program,GL_LINK_STATUS,&ok);if(!ok){char log[1024]{};glGetProgramInfoLog(program,sizeof log,nullptr,log);error=log;return false;}
     glUseProgram(program);fog_uniform=glGetUniformLocation(program,"fogColor");glUniform1i(glGetUniformLocation(program,"atlas"),0);
-    glGenVertexArrays(1,&vao);glBindVertexArray(vao);glGenBuffers(1,&vbo);glBindBuffer(GL_ARRAY_BUFFER,vbo);
     const struct {GLuint slot;GLint count;size_t offset;} attributes[]{{0,2,0},{1,2,8},{2,4,16},{3,2,32}};
-    for(const auto& a:attributes){glEnableVertexAttribArray(a.slot);glVertexAttribPointer(a.slot,a.count,GL_FLOAT,GL_FALSE,sizeof(Vertex),reinterpret_cast<const void*>(a.offset));}
+    for(auto& stream:streams){
+        glGenVertexArrays(1,&stream.vao);glBindVertexArray(stream.vao);
+        glGenBuffers(1,&stream.vbo);glBindBuffer(GL_ARRAY_BUFFER,stream.vbo);
+        for(const auto& a:attributes){glEnableVertexAttribArray(a.slot);glVertexAttribPointer(a.slot,a.count,GL_FLOAT,GL_FALSE,sizeof(Vertex),reinterpret_cast<const void*>(a.offset));}
+    }
     const u8 white[4]{255,255,255,255};solid_={create_texture(1,1,white,true),1,1,false,false,true};
     // Offscreen target in 640x480 units x scale.
     const GLsizei w=GLsizei(640*scale_),h=GLsizei(480*scale_);
@@ -104,10 +111,15 @@ bool Renderer::initialize(u32 scale,std::string& error){
     batch.reserve(60*256);return true;
 }
 void Renderer::shutdown(){
-    if(program)glDeleteProgram(program);if(vbo)glDeleteBuffers(1,&vbo);if(vao)glDeleteVertexArrays(1,&vao);
+    if(program)glDeleteProgram(program);
+    for(auto& stream:streams){
+        if(stream.vbo)glDeleteBuffers(1,&stream.vbo);
+        if(stream.vao)glDeleteVertexArrays(1,&stream.vao);
+        stream={};
+    }
     for(u32* t:{&target_texture,&surface_.name,&pause_.name,&solid_.name})if(*t)glDeleteTextures(1,t);
     for(u32* f:{&target,&pause_target})if(*f)glDeleteFramebuffers(1,f);
-    program=vbo=vao=0;
+    program=0;stream_index=stream_used=0;
 }
 u32 Renderer::create_texture(u32 w,u32 h,const u8* rgba,bool clamp){
     // Text textures are made mid-frame: draw what is queued with the texture
@@ -128,20 +140,33 @@ bool Renderer::upload_next(AnmFile& file){
 void Renderer::release(AnmFile& file){for(auto& e:file.entries)if(e.texture){GLuint t=e.texture;glDeleteTextures(1,&t);e.texture=0;}}
 
 void Renderer::begin(Color c){
+    stream_index=(stream_index+1)%streams.size();
+    auto& stream=streams[stream_index];
     glBindFramebuffer(GL_FRAMEBUFFER,target);glViewport(0,0,GLsizei(640*scale_),GLsizei(480*scale_));glDisable(GL_SCISSOR_TEST);
-    glClearColor(c.r,c.g,c.b,c.a);glClear(GL_COLOR_BUFFER_BIT);glUseProgram(program);glBindVertexArray(vao);glBindBuffer(GL_ARRAY_BUFFER,vbo);
+    glClearColor(c.r,c.g,c.b,c.a);glClear(GL_COLOR_BUFFER_BIT);glUseProgram(program);glBindVertexArray(stream.vao);glBindBuffer(GL_ARRAY_BUFFER,stream.vbo);
     draws=vertices=0;current=0;batch.clear();primitive_=Triangles;blend_=-2;material(0);fog_color(0,0,0);
+#ifndef __EMSCRIPTEN__
     // A fresh store for this frame's vertices (the GPU may still read the last one).
-    if(!stream_capacity)stream_capacity=size_t(1)<<20;glBufferData(GL_ARRAY_BUFFER,GLsizeiptr(stream_capacity),nullptr,GL_STREAM_DRAW);stream_used=0;
+    if(!stream.capacity)stream.capacity=64*1024;
+    glBufferData(GL_ARRAY_BUFFER,GLsizeiptr(stream.capacity),nullptr,GL_STREAM_DRAW);
+#endif
+    stream_used=0;
 }
 void Renderer::flush(){
-    if(batch.empty())return;glBindTexture(GL_TEXTURE_2D,current);
-    // Each draw appends to the frame's buffer: no new buffer store per draw,
-    // and a range nothing has drawn from yet needs no wait.
+    if(batch.empty())return;
+    // bind() already set the texture for this batch. Zero also marks a
+    // direct bind (texture creation or a surface copy) outside that path.
+    if(!current)glBindTexture(GL_TEXTURE_2D,0);
+    // WebGL rotates buffers and keeps their storage. A size-only allocation
+    // initializes the whole store, so allocate only on first use or growth.
+    auto& stream=streams[stream_index];
     const size_t bytes=batch.size()*sizeof(Vertex);
-    if(!stream_capacity||stream_used+bytes>stream_capacity){
-        while(stream_capacity<bytes)stream_capacity=std::max<size_t>(stream_capacity*2,size_t(1)<<20);
-        glBufferData(GL_ARRAY_BUFFER,GLsizeiptr(stream_capacity),nullptr,GL_STREAM_DRAW);stream_used=0;
+    if(stream_used+bytes>stream.capacity){
+        // Grow for the combined demand, so subsequent dense frames can fit
+        // their draws without reallocating in the middle of presentation.
+        const size_t needed=stream_used+bytes;
+        stream.capacity=std::max({size_t(64*1024),stream.capacity*2,needed});
+        glBufferData(GL_ARRAY_BUFFER,GLsizeiptr(stream.capacity),nullptr,GL_STREAM_DRAW);stream_used=0;
     }
     glBufferSubData(GL_ARRAY_BUFFER,GLintptr(stream_used),GLsizeiptr(bytes),batch.data());
     glDrawArrays(primitive_==Triangles?GL_TRIANGLES:primitive_==Lines?GL_LINES:GL_LINE_STRIP,GLint(stream_used/sizeof(Vertex)),GLsizei(batch.size()));
@@ -165,7 +190,10 @@ void Renderer::texture_parameters(u32 name,bool point,bool wu,bool wv){
 void Renderer::bind(const Texture& t,bool point,i32 flags){
     if(flags<0)flags=t.address_flags;
     const bool wu=flags<0?t.repeat:(flags&1),wv=flags<0?t.repeat:(flags&2);
-    if(current!=t.name||point_!=point||wrap_u!=wu||wrap_v!=wv){flush();current=t.name;point_=point;wrap_u=wu;wrap_v=wv;glBindTexture(GL_TEXTURE_2D,t.name);texture_parameters(t.name,point,wu,wv);}
+    if(current!=t.name||point_!=point||wrap_u!=wu||wrap_v!=wv){
+        flush();if(current!=t.name||!current)glBindTexture(GL_TEXTURE_2D,t.name);
+        current=t.name;point_=point;wrap_u=wu;wrap_v=wv;texture_parameters(t.name,point,wu,wv);
+    }
 }
 void Renderer::push(const Vertex& v){batch.push_back(v);}
 void Renderer::quad(const Corners& c,float u0,float u1,float v0,float v1,bool flip,const Color& k,float ox,float oy){
@@ -184,7 +212,10 @@ void Renderer::region(const Texture& t,float sx,float sy,float sw,float sh,float
     material(blend);bind(t,o.point);primitive(Triangles);
     const Corners c=o.mode==0||o.mode==1?native_quad_corners(x,y,w,h,angle,o.anchor_x,o.anchor_y,o.mode,o.shake):quad_corners(x,y,w,h,angle,o.anchor_x,o.anchor_y,o.pixel);
     const float end_x=sx+sw*o.uv_scale_x,end_y=sy+sh*o.uv_scale_y;
-    quad(c,sx/t.w+o.u,end_x/t.w+o.u,sy/t.h+o.v,end_y/t.h+o.v,t.flip_y,{tint.r,tint.g,tint.b,alpha});
+    // Mode1 retains native integer pixel centers when rasterized by GLES.
+    // This also preserves the bright center of 1.024px laser warnings.
+    const float raster_offset=o.mode==1?.5f:0;
+    quad(c,sx/t.w+o.u,end_x/t.w+o.u,sy/t.h+o.v,end_y/t.h+o.v,t.flip_y,{tint.r,tint.g,tint.b,alpha},raster_offset,raster_offset);
 }
 void Renderer::solid_triangles(const Vertex* v,const u32* indices,u32 count,i32 blend){
     material(blend);bind(solid_,true);primitive(Triangles);for(u32 i=0;i<count;++i){Vertex p=v[indices[i]];p.u=p.v=.5f;p.depth=1;p.fog=0;batch.push_back(p);}
@@ -208,8 +239,8 @@ void Renderer::present(i32 ww,i32 wh){
     // Aspect-correct fit with pure black bars (OLED friendly), like the other ports.
     const i32 tw=i32(640*scale_),th=i32(480*scale_);i32 w=ww,h=ww*3/4;if(h>wh){h=wh;w=wh*4/3;}const i32 x=(ww-w)/2,y=(wh-h)/2;
     glBindFramebuffer(GL_READ_FRAMEBUFFER,target);glBindFramebuffer(GL_DRAW_FRAMEBUFFER,0);
-    glViewport(0,0,ww,wh);glClearColor(0,0,0,1);glClear(GL_COLOR_BUFFER_BIT);
-    glBlitFramebuffer(0,0,tw,th,x,y,x+w,y+h,GL_COLOR_BUFFER_BIT,GL_LINEAR);
+    if(w!=ww||h!=wh){glClearColor(0,0,0,1);glClear(GL_COLOR_BUFFER_BIT);}
+    glBlitFramebuffer(0,0,tw,th,x,y,x+w,y+h,GL_COLOR_BUFFER_BIT,w==tw&&h==th?GL_NEAREST:GL_LINEAR);
     glBindFramebuffer(GL_FRAMEBUFFER,target);
 }
 const u8* Renderer::read_pixels(){

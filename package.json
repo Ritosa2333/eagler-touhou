@@ -3,14 +3,17 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.18"
+    "node": ">=22.18",
+    "bun": ">=1.4.4"
   },
   "scripts": {
-    "dev": "npm --prefix launcher run dev",
+    "dev": "bun --bun run --cwd launcher dev",
     "start": "npm --prefix launcher start",
-    "build": "npm --prefix launcher run build",
-    "typecheck": "npm --prefix launcher run typecheck",
-    "test": "npm --prefix launcher test",
+    "build": "bun --bun run --cwd launcher build",
+    "typecheck": "bun --bun run --cwd launcher typecheck",
+    "test": "bun --bun run --cwd launcher test",
+    "test:ui-system:browser": "npm --prefix launcher run test:ui-system:browser --",
+    "test:ui-motion:browser": "npm --prefix launcher run test:ui-motion:browser --",
     "build:runtime": "node launcher/scripts/build-runtime.mjs",
     "workspace": "node tools/workspace.mjs",
     "docs:check": "node tools/docs/check.mjs",
@@ -24,6 +27,20 @@
     "ports:rooms": "node tools/ports/room-browser.mjs",
     "ports:mp": "node tools/ports/mp-browser.mjs",
     "ports:history": "python tools/ports/project-history.py --repo .",
-    "ports:audit": "python tools/ports/audit-history.py --repo ."
-  }
+    "ports:audit": "python tools/ports/audit-history.py --repo .",
+    "i18n:compile": "bun --bun run --cwd launcher i18n:compile",
+    "i18n:check": "bun --bun run --cwd launcher i18n:check",
+    "i18n:check:migration": "bun --bun run --cwd launcher i18n:check:migration",
+    "lint": "bun --bun run --cwd launcher lint",
+    "lint:fix": "bun --bun run --cwd launcher lint:fix",
+    "format": "bun --bun run --cwd launcher format",
+    "format:check": "bun --bun run --cwd launcher format:check",
+    "test:unit": "bun --bun run --cwd launcher test:unit",
+    "test:build": "bun --bun run --cwd launcher test:build",
+    "test:support": "bun --bun run --cwd launcher test:support",
+    "i18n:audit": "bun --bun run --cwd launcher i18n:audit",
+    "test:repository": "bun --bun run --cwd launcher test:repository",
+    "test:workspace": "bun --bun run --cwd launcher test:workspace"
+  },
+  "packageManager": "bun@1.4.4"
 }

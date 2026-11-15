@@ -1,0 +1,13 @@
+@layer components {
+.game-help-content{padding:0 20px 20px;scrollbar-gutter:stable}
+.game-help-content .options-group{border-bottom:1px solid var(--kit-border)}
+.game-help-content .options-group:last-child{border-bottom:0}
+.game-help-content .options-group-head{min-height:52px;padding:12px 0;font-size:14px}
+.game-help-section{padding:0 0 16px}
+.game-help-section[hidden]{display:none}
+.game-help-keys{margin:16px 0;display:grid;gap:0}
+.game-help-keys>div{display:grid;grid-template-columns:minmax(96px,28%) minmax(0,1fr);gap:12px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--kit-border)}
+.game-help-keys>div:last-child{border-bottom:0}
+.game-help-keys :is(dt,dd){margin:0;min-width:0}
+.game-help-keys kbd{display:inline-block;max-width:100%;box-sizing:border-box;padding:2px 7px;border:1px solid var(--kit-border);border-radius:4px;background:var(--kit-muted);color:var(--kit-foreground);font:500 13px/1.7 var(--kit-font);overflow-wrap:anywhere}
+}

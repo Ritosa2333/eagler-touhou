@@ -48,6 +48,7 @@ export function parseSpectatorPlayback(value: unknown): Readonly<SpectatorPlayba
     if (!object(raw) || !uint(raw.id) || !raw.id || ids.has(raw.id) || !uint(raw.frame) ||
         raw.frame < lastFrame || raw.frame > state.received || !uint(raw.stage, 65535) ||
         !uint(raw.bossSlots, 255) || !(raw.kind === 'stage' && raw.bossSlots === 0 || raw.kind === 'boss' && raw.bossSlots > 0) ||
+        // biome-ignore lint/suspicious/noControlCharactersInRegex: Protocol node labels explicitly reject C0 and DEL controls.
         raw.label !== undefined && (typeof raw.label !== 'string' || !raw.label.length || raw.label.length > 48 || /[\x00-\x1f\x7f]/.test(raw.label))) return null;
     ids.add(raw.id); lastFrame = raw.frame;
     nodes.push(Object.freeze({id: raw.id, kind: raw.kind, frame: raw.frame, stage: raw.stage, bossSlots: raw.bossSlots,

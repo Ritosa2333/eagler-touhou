@@ -18,7 +18,7 @@ std::vector<MusicTrackInfo> prepared_music_comments(){
     return tracks;
 }
 const double* Game::host_state_values(){
-    const auto* h=th12_hud();const bool playing=session&&menus&&menus->state.scene==MenuScene::Playing&&phase==Phase::Menu;
+    const bool playing=session&&menus&&menus->state.scene==MenuScene::Playing&&phase==Phase::Menu;
 #ifdef TH12_MULTIPLAYER
     const bool network_game=mp_playing&&!mp_result&&!ending&&playing;
 #else
@@ -30,10 +30,12 @@ const double* Game::host_state_values(){
 #endif
         ;
     const char* kind=!(playing||network_game)?"menu":replaying?"replay":th12::messageVM.active&&(th12::messageVM.flags&1||th12::messageVM.wait>0)?"dialogue":"game";
-    float player_x=h[1],player_y=h[2];
+    // The host only needs the fixed-point position. The HUD also scans the
+    // enemy list, which the renderer already does when capturing the scene.
+    int player_x=th12::px,player_y=th12::py;
 #ifdef TH12_MULTIPLAYER
     if(mp_playing&&mp_local>=0&&mp_local<int(th12::multiplayer::options.count)){
-        const auto& p=th12::multiplayer::pilots[size_t(mp_local)];player_x=p.px/128.f;player_y=p.py/128.f;
+        const auto& p=th12::multiplayer::pilots[size_t(mp_local)];player_x=p.px;player_y=p.py;
     }
 #endif
     host_track=audio.music_name();
@@ -52,7 +54,7 @@ const double* Game::host_state_values(){
     v[HostShot]=session?session->run.shot:0;
     v[HostCursor]=session?session->cursor:0;
     v[HostInstance]=th12_player_instance();
-    v[HostX]=int(std::lround(player_x*128));v[HostY]=int(std::lround(player_y*128));
+    v[HostX]=player_x;v[HostY]=player_y;
     v[HostFast]=th12_player_speed(0);v[HostSlow]=th12_player_speed(1);
     v[HostPaused]=external_paused||(menus&&(menus->state.scene==MenuScene::Pause||menus->state.scene==MenuScene::PauseConfirm));
     v[HostCaptureSerial]=capture_serial;v[HostDrawCalls]=gpu.draws;v[HostVertices]=gpu.vertices;

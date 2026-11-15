@@ -1,10 +1,13 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   canUseExistingInstallationAfterRemoteFailure,
   desiredFilesForPublishedPackage,
   installedComponentIds,
+  publishedLanguageSelection,
 } from "../package/package-launcher.mjs";
 
+test("package launcher", async () => {
 const descriptor = {
   schema: "eagler-touhou/package/1",
   game: "th08",
@@ -64,6 +67,14 @@ assert.throws(() => desiredFilesForPublishedPackage(descriptor, {
 }), /unknown requested Package component entry/,
   "an unavailable selected entry must fail instead of silently widening the component download");
 
+const externalLanguages = { ...descriptor, components: { ogg: descriptor.components.ogg } };
+assert.deepEqual(desiredFilesForPublishedPackage(externalLanguages, {
+  current, selectedComponentEntries: publishedLanguageSelection(externalLanguages, "lang_zh-hans"),
+}), ["html", "js", "wasm", "data", "o1"], "a separate site translation must not block a base Package update");
+assert.deepEqual(publishedLanguageSelection(descriptor, "lang_zh-hans"), { language: ["lang_zh-hans"] });
+assert.deepEqual(publishedLanguageSelection(descriptor, "ja"), { language: [] });
+assert.deepEqual(publishedLanguageSelection(descriptor, "lang_missing"), {});
+
 const descriptorWithoutO2 = structuredClone(descriptor);
 descriptorWithoutO2.revision = "r3";
 descriptorWithoutO2.components.ogg.files = ["o1"];
@@ -88,3 +99,4 @@ for (const fallbackState of [
     "a first-install or unavailable Site Manifest must not claim that an existing installation will be used");
 }
 console.log("Package Launcher policy contract: PASS (fetch cancellation is Browser-owned)");
+});

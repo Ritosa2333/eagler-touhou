@@ -61,7 +61,9 @@ P1 在旁观上传 WebSocket 上按序发送 `spectator-session`，包含十六�
 
 作品在每次执行帧时记录全席输入、阶段号、可选完整 checkpoint 和本帧 Boss slots；回滚重演也更新尚未确认的记录。发布器只在 reconcile 后按确认前沿与已模拟前沿的较小值顺序发送 checkpoint、输入和节点。新阶段 checkpoint 必须先于该阶段第一份输入；Boss 节点依赖当前 checkpoint，并保留该 checkpoint 到节点之间的所有输入。发布环容量为 256 帧。
 
-Relay 先完整校验新 checkpoint，再把 late-join 历史起点切换到该 checkpoint；新的观众收到当前有效 checkpoint、其后连续输入/节点及 Relay 生成的 bootstrap。Relay 当前历史和单个本地观众档案上限均为 108,000 帧或 16 MiB wire bytes。每个 checkpoint state 最多 4 KiB。超限、缺帧或身份不符会停止该旁观流；玩家流继续。
+默认按关保留旁观历史。Relay 校验新 checkpoint 后更新历史起点，新观众收到当前有效 checkpoint、其后连续输入和节点，以及 Relay 生成的 bootstrap。Relay 当前历史和单个本地观众档案上限均为 108,000 帧或 16 MiB wire bytes。每个 checkpoint state 最多 4 KiB。超限、缺帧或身份不符会停止该旁观流；玩家流继续。
+
+TH17 的关头 schema 3 保留从首个关头起的确认输入。后续关头提供分关导航，观众跨关时沿原生流程延续同一战斗场景，包括仍在生效的暴走、动画和道具。中途入场从首个关头后台重演至本次加入时可播放的最近分关位置，再按正常速度播放。回跳同样从首个关头重演，整个 run 使用同一历史容量上限。
 
 ### 合作观众生命周期
 
@@ -84,6 +86,7 @@ Relay 先完整校验新 checkpoint，再把 late-join 历史起点切换到该 
 | th10-mp | `'A'` | [`SpectatorStageState.cpp`](../../ports/th10-mp/web/cpp/multiplayer/SpectatorStageState.cpp) 编码多人 Replay 的关头；[`WorldPlayerMultiplayer.cpp`](../../ports/th10-mp/web/cpp/multiplayer/WorldPlayerMultiplayer.cpp) 接入阶段边界。 |
 | th11-mp | `'B'` | [`SpectatorStageState.hpp`](../../ports/th11-mp/web/cpp/multiplayer/SpectatorStageState.hpp) 编码原生 ReplayStageState 与多人资源；[`NetplayRuntime.cpp`](../../ports/th11-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 负责发布与播放。 |
 | th15-mp | `'F'` | [`SpectatorReplayStart.cpp`](../../ports/th15-mp/web/cpp/multiplayer/SpectatorReplayStart.cpp) 捕获/恢复阶段点；[`NetplayRuntime.cpp`](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 发布确认历史。 |
+| th17-mp | `'G'` | [`StageEntry.cpp`](../../ports/th17-mp/web/cpp/multiplayer/StageEntry.cpp) 编码关头；[`RoomPlayback.inc`](../../ports/th17-mp/web/cpp/sdl/RoomPlayback.inc) 从首个关头连续重演确认输入。 |
 | TH20 | — | 当前产品目录未声明 Multiplayer，因此没有 E?SV 旁观流；见 [`product-catalog.mts`](../../launcher/src/contracts/product-catalog.mts)。 |
 
 ## th09 独立格式与时间坐标

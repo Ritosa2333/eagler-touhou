@@ -1,0 +1,21 @@
+{
+  "previous": "/var/www/eagler-touhou/releases/th05-spectator-status-20261102",
+  "candidate": "/var/www/eagler-touhou/releases/th05-dialogue-20261102",
+  "releaseId": "sha256-237bb3004af6641e9cabc3b0ebd8310d51ae60e99be1bf3bfca11bad1e5e64ca",
+  "buildId": "a316d366dbba36b5ca1a",
+  "siteUrl": "https://touhouonline.com/",
+  "files": 8075,
+  "preserved": 8043,
+  "updates": [
+    {
+      "game": "th05",
+      "variant": "multiplayer",
+      "root": "runtime/th05/multiplayer/",
+      "previousGeneration": "bb14d39b3f0daf05ea9f999cd93b3f3262bd4c7671e1344f539bc4b2ddb11b4f",
+      "generation": "cf7c55653583139f6ed9d5eac9396bdb0aa32c57d8dcd7b9121fcd770821669a",
+      "files": 26
+    }
+  ],
+  "revision": "c38e13d774dfd43e7ac39f9bd150728e30cead6b",
+  "syncPointerExceptions": []
+}

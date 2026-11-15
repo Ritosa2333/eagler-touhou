@@ -9,8 +9,9 @@ const root = resolve(import.meta.dirname, '../..');
 const readConfig = async name => JSON.parse(await readFile(resolve(root, 'launcher/config', name), 'utf8'));
 
 export function buildRuntimeTestTargets(products, builds, workspace) {
-  assert.deepEqual(Object.keys(builds.games).sort(), Object.keys(products).sort(), 'Build games must match the product catalog');
-  return Object.entries(products).flatMap(([game, product]) => {
+  const configured = Object.entries(products).filter(([game, product]) => !product.buildOptIn || Object.hasOwn(builds.games, game));
+  assert.deepEqual(Object.keys(builds.games).sort(), configured.map(([game]) => game).sort(), 'Build games must match the product catalog');
+  return configured.flatMap(([game, product]) => {
     const build = builds.games[game];
     assert.equal(!!build.variants.multiplayer, !!product.multiplayerRuntime, `${game}: multiplayer build mismatch`);
     return ['normal', ...(product.multiplayerRuntime ? ['multiplayer'] : [])].map(variant => {

@@ -1,6 +1,6 @@
 /** Main netplay-calibration-{connection,report} source contracts. Synthetic
  * authenticated-epoch inputs/clock/DOM only; no live transport or upload. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
@@ -16,6 +16,7 @@ before(async () => {
   const file = resolve(work, 'owner.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export * from './app/models/netplay-calibration.ts';
+    export {LocaleProvider, translate} from './app/i18n.tsx';
     export {NetplayConnectionWindow} from './app/components/NetplayConnectionWindow.tsx';
     export {NetplayCalibrationReport} from './app/components/NetplayCalibrationReport.tsx';
   `}, outfile: file, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', packages: 'external', logLevel: 'silent',
@@ -71,15 +72,15 @@ test('calibration connection preserves original bilingual copy and measured P95 
   const {model} = fixture(); model.record(ready(), 1);
   const network = {connection: {hidden: true, peerRows: []}, calibrationEligible: true, returnToRoom: false};
   const container = env.document.createElement('div'); env.document.body.append(container); root = createRoot(container);
-  await React.act(async () => root.render(React.createElement(owner.NetplayConnectionWindow, {network, calibration: model, english: true, onReturn() {}})));
+  await React.act(async () => root.render(React.createElement(owner.LocaleProvider, {locale:'en'}, React.createElement(owner.NetplayConnectionWindow, {network, calibration: model, onReturn() {}}))));
   assert.equal(env.document.getElementById('netplayConnectionTitle').textContent, 'Connection measured');
   assert.deepEqual([...env.document.querySelectorAll('tbody tr:first-child td')].map(node => node.textContent), ['100.00 ms', '150.00 ms']);
   assert.equal(env.document.getElementById('netplayCalibrationDismiss').textContent, 'Dismiss');
   await React.act(async () => model.record({phase: 'unavailable', reason: 8}, 1));
   assert.equal(env.document.getElementById('netplayConnectionSummary').textContent, 'The measured delay is too high. Return to the room and choose a manual delay.');
-  const copy = owner.calibrationConnectionCopy({phase: 'retrying', attempt: 2, maxAttempts: 4}, false);
+  const copy = owner.calibrationConnectionCopy({phase: 'retrying', attempt: 2, maxAttempts: 4}, (key,params) => owner.translate('zh-CN',key,params));
   assert.equal(copy.title, '连接波动，正在重新测量…'); assert.equal(copy.summary, '准备第 2/4 次测量，正在等待所有玩家恢复。');
-  await React.act(async () => root.render(React.createElement(owner.NetplayConnectionWindow, {network: {...network, calibrationEligible: false}, calibration: model, english: true, onReturn() {}})));
+  await React.act(async () => root.render(React.createElement(owner.LocaleProvider, {locale:'en'}, React.createElement(owner.NetplayConnectionWindow, {network: {...network, calibrationEligible: false}, calibration: model, english: true, onReturn() {}}))));
   assert.equal(env.document.getElementById('netplayConnectionWindow').hidden, true, 'ineligible native connection suppresses calibration override'); model.dispose();
 });
 
@@ -87,7 +88,7 @@ test('calibration report clipboard is click-only; failure selects text; reset cl
   const {model} = fixture(); model.record(ready(), 1); let writes = 0, fail = true, resolveWrite;
   const clipboard = {writeText: async value => {writes++; assert.equal(JSON.parse(value).liveNetworkDisplay, 'live 77/0ms'); if (fail) throw new Error('denied'); await new Promise(resolve => {resolveWrite = resolve;});}};
   const container = env.document.createElement('div'); env.document.body.append(container); root = createRoot(container);
-  await React.act(async () => root.render(React.createElement(owner.NetplayCalibrationReport, {model, english: false, currentNetwork: () => 'live 77/0ms', clipboard})));
+  await React.act(async () => root.render(React.createElement(owner.NetplayCalibrationReport, {model, currentNetwork: () => 'live 77/0ms', clipboard})));
   assert.equal(writes, 0); await React.act(async () => env.document.getElementById('netplayCalibrationReport').click());
   assert.equal(writes, 0); assert.equal(env.document.getElementById('netplayCalibrationDialog').open, true);
   await React.act(async () => env.document.getElementById('netplayCalibrationCopy').click());

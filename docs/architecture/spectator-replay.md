@@ -9,6 +9,7 @@
 | th10 | 多人 Replay 录像器的 ReplayCheckpoint | 原生 Replay bootstrap、玩家入场初始化与 activation |
 | th11 | 原生 ReplayStageState 与多人共享资源 | GameSession 构造、原生 Replay 输入采样边界 |
 | th15 | 每席位的原生 t15r ReplayStageSnapshot | SessionReplay 与 SessionActivation |
+| th17 | 原生 ReplayStageState、各席位资源与位置、共享动物灵和输入边沿 | 新关卡构造完成后的首个网络输入边界 |
 
 玩家子弹、Bomb、ANM、ECL 和场景资源由游戏正常创建。各作按自己的 Replay 生命周期采集和应用入口数据，激活帧与该帧输入一起进入连续历史。th09 的对战旁观沿用其比赛回放入口。
 

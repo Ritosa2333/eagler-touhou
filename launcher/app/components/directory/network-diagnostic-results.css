@@ -1,0 +1,19 @@
+@layer components {
+.mp-network-results{box-sizing:border-box;width:100%;padding:16px;border:1px solid var(--kit-border);border-radius:8px;background:var(--kit-card);color:var(--kit-foreground);font:400 12px/1.5 var(--kit-font);box-shadow:none}
+.mp-network-results[hidden]{display:none}
+.mp-network-group+.mp-network-group{margin-top:16px}
+.mp-network-group h3{margin:0 0 8px;color:var(--kit-muted-foreground);font:500 12px/1.5 var(--kit-font);letter-spacing:0}
+.mp-network-group-rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.mp-network-result{display:grid;grid-template-columns:minmax(0,1fr) auto 14px;align-items:center;gap:8px;min-width:0;min-height:44px;padding:8px 10px;border-radius:6px;background:var(--kit-muted);color:var(--kit-muted-foreground);font:400 12px/1.5 var(--kit-font)}
+.mp-network-result output{min-width:0;color:var(--kit-foreground);font:500 12px/1.5 var(--kit-font);text-align:right;overflow-wrap:anywhere}
+.mp-network-result i{box-sizing:border-box;width:12px;height:12px;border:1.5px solid var(--kit-border);border-top-color:var(--kit-muted-foreground);border-radius:50%;animation:network-result-spin .7s linear infinite}
+.mp-network-result[data-state='good']{background:color-mix(in srgb,var(--kit-success) 8%,var(--kit-card))}
+.mp-network-result[data-state='bad']{background:color-mix(in srgb,var(--kit-destructive) 7%,var(--kit-card))}
+.mp-network-result[data-state='good'] output{color:var(--kit-success)}
+.mp-network-result[data-state='bad'] output{color:var(--kit-destructive)}
+.mp-network-result:is([data-state='good'],[data-state='bad']) i{display:grid;place-items:center;width:14px;height:14px;border:0;border-radius:0;animation:none}
+.mp-network-result[data-state='good'] i::before{content:'';width:7px;height:4px;border:solid var(--kit-success);border-width:0 0 1.5px 1.5px;transform:rotate(-45deg)}
+.mp-network-result[data-state='bad'] i::before{content:'×';color:var(--kit-destructive);font:16px/1 var(--kit-font)}
+@keyframes network-result-spin{to{transform:rotate(360deg)}}
+@media(max-width:480px){.mp-network-group-rows{grid-template-columns:1fr}}
+}

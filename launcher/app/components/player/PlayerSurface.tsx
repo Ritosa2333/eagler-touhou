@@ -1,3 +1,4 @@
+import {useLocale} from '../../i18n';
 import {createContext, useLayoutEffect, useState, type CSSProperties, type ReactNode, type RefCallback} from 'react';
 import {useWorkspaceViewport} from './use-workspace-viewport';
 import './workspace-viewport.css';
@@ -10,6 +11,7 @@ export function PlayerSurface({open, editing, replayWorkspace = false, roomWorks
   open: boolean; editing: boolean; replayWorkspace?: boolean; roomWorkspace?: boolean; preview?: boolean; previewImage?: string; onElement: RefCallback<HTMLElement>;
   onFrame?: RefCallback<HTMLIFrameElement>; children?: ReactNode;
 }) {
+  const {t} = useLocale();
   const [stage, setStage] = useState<HTMLDivElement | null>(null);
   useWorkspaceViewport(stage, roomWorkspace || replayWorkspace);
   useLayoutEffect(() => {
@@ -37,7 +39,7 @@ export function PlayerSurface({open, editing, replayWorkspace = false, roomWorks
     id="player" data-launcher-document="" aria-hidden={!open}>
     <PlayerStage value={stage}>{children}</PlayerStage>
     <div ref={setStage} className="player-stage" style={replayWorkspace || roomWorkspace ? undefined : {display: 'contents'}}>
-      <div className="game-viewport" id="gameViewport"><iframe ref={onFrame} id="gameFrame" title="Touhou game" allow="autoplay; fullscreen" tabIndex={roomWorkspace ? -1 : 0}/></div>
+      <div className="game-viewport" id="gameViewport"><iframe ref={onFrame} id="gameFrame" title={t('player.frameTitle')} allow="autoplay; fullscreen" tabIndex={roomWorkspace ? -1 : 0}/></div>
     </div>
   </section>;
 }

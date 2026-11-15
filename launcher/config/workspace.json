@@ -26,6 +26,13 @@
     "resources": "services/resource-router",
     "th12": "ports/th12",
     "th12mp": "ports/th12-mp",
-    "th17": "ports/th17"
+    "th13": "ports/th13",
+    "th17": "ports/th17",
+    "th17mp": "ports/th17-mp",
+    "th05": "ports/th05",
+    "th05mp": "ports/th05-mp",
+    "th19": "ports/th19",
+    "th14": "ports/th14",
+    "th14mp": "ports/th14-mp"
   }
 }

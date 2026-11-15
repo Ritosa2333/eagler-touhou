@@ -9,7 +9,6 @@ export type GamepadBindings = Record<GamepadAction, GamepadControl[]>;
 export interface GamepadProfile {bindings:GamepadBindings; threshold:number}
 export interface GamepadChoice {key:string; name:string; index:number; standard:boolean}
 export interface GamepadMappingSnapshot {enabled:boolean; seats:readonly string[]; profiles:Readonly<Record<string,GamepadProfile>>; devices:readonly GamepadChoice[]; supported:boolean; learning:GamepadAction|null; active:number;deviceActive:Readonly<Record<string,number>>}
-const storageKey='eagler-touhou-gamepad-mapping-v1';
 const emptyBindings=():GamepadBindings=>({shoot:[],bomb:[],focus:[],pause:[],up:[],down:[],left:[],right:[],skip:[],confirm:[],action:[],restart:[]});
 export function defaultGamepadProfile(standard:boolean):GamepadProfile {
   const bindings=emptyBindings();
@@ -41,9 +40,10 @@ export interface GamepadMappingModel {
 }
 /** No rendering timer feeds gameplay. sample() reads a fresh device snapshot
  * synchronously on the Runtime's input stack. refresh() is only for the editor. */
-export function createGamepadMappingModel({storage,getGamepads}: {
-  storage:Pick<Storage,'getItem'|'setItem'>|null; getGamepads?:()=>readonly (GamepadDevice|null)[];
+export function createGamepadMappingModel({storage,getGamepads,scope}: {
+  storage:Pick<Storage,'getItem'|'setItem'>|null; scope?:'th19'; getGamepads?:()=>readonly (GamepadDevice|null)[];
 }):GamepadMappingModel {
+  const storageKey=scope?'eagler-touhou-'+scope+'-gamepad-mapping-v1':'eagler-touhou-gamepad-mapping-v1';
   const listeners=new Set<()=>void>();
   let enabled=false,seats=['',''],profiles:Record<string,GamepadProfile>={},devices:GamepadChoice[]=[],active=0,deviceActive:Record<string,number>={};
   let learning:{key:string;action:GamepadAction;buttons:boolean[];axes:number[];released:boolean}|null=null;

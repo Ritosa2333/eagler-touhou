@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   allocateReplayName,
@@ -11,9 +12,33 @@ import {
   planReplayArchiveImport,
   ReplayArchiveScanError,
   replayImportAccept,
+  replayImportAcceptFor,
   selectReplayExportPaths,
 } from "../.cache/build/browser/assets/launcher/replay-files.mjs";
 
+test("HSoB uses native DAT paths and preserves occupied Replay slots", () => {
+  const prefix = "Main_replay";
+  const native = "Main_replay01.dat";
+  const backup = "Package_common_SaveData.dat";
+  assert.equal(replayImportAcceptFor("hsob"), ".zip,.dat");
+  assert.equal(isReplayImportFileName(native, "hsob"), true);
+  assert.equal(isReplayImportFileName(backup, "hsob"), false);
+  assert.equal(isReplayImportFileName(native, "th06"), false);
+  assert.equal(isReplayFilePath("replay/" + native), true);
+  assert.equal(isReplayFilePath("replay/backup/" + native), false);
+  assert.equal(allocateReplayName(prefix, [], native.toUpperCase()), native);
+  const paths = ["replay/" + native];
+  const guard = createReplayArchiveExtractionGuard({prefix, maxFileBytes: 1024, maxExpandedBytes: 2048});
+  assert.equal(guard.filter({name: native, originalSize: 500}), true);
+  assert.equal(guard.filter({name: backup, originalSize: 500}), false);
+  assert.deepEqual(planReplayArchiveImport(prefix, guard.paths, paths), {
+    ok: true,
+    entries: [{sourcePath: native, targetPath: "replay/Main_replayud0000.dat", kind: "replay"}],
+  });
+  assert.deepEqual(selectReplayExportPaths([...paths, backup]), paths);
+});
+
+test("replay files", async () => {
 assert.equal(replayImportAccept, ".zip,.rpy,.rpyx,.rep");
 assert.equal(isReplayFilePath("replay/replay000.rep"), true);
 assert.equal(isValidReplayName("th075", "replay000.rep"), true);
@@ -26,6 +51,45 @@ assert.equal(isReplayFilePath("replay/th6_01.rpy"), true);
 assert.equal(isReplayFilePath("replay/th7_ud00af.rpyx"), true);
 assert.equal(isReplayFilePath("replay/th6_01.rpy.thprac.json"), false);
 assert.equal(isReplayFilePath("other/th6_01.rpy"), false);
+
+assert.equal(isValidReplayName("th05", "replay00.rpy"), true);
+assert.equal(isValidReplayName("th05", "REPLAY99.RPY"), true);
+assert.equal(isValidReplayName("th05", "replay100.rpy"), false);
+assert.equal(isValidReplayName("th05", "replay0.rpy"), false);
+assert.equal(isValidReplayName("th05", "replay00.rpyx"), false);
+assert.equal(isValidReplayName("th05", "th05_01.rpy"), false);
+assert.equal(isValidReplayName("th05", "folder/replay00.rpy"), false);
+assert.equal(isReplayFilePath("replay/replay00.rpy"), true);
+assert.equal(isReplayFilePath("replay/slotA/replay00.rpy"), true);
+assert.equal(isReplayFilePath("replay/slotA/nested/replay00.rpy"), false);
+assert.equal(allocateReplayName("th05", [], "replay00.rpy"), "replay00.rpy");
+assert.equal(allocateReplayName("th05", ["replay/REPLAY00.RPY"], "replay00.rpy"), "replay01.rpy");
+assert.equal(allocateReplayName("th05", ["replay/replay00.rpy"], "other.rpy", false, "replay/slotA"), "replay00.rpy",
+  "a slot occupied in the root replay directory must remain available in a selected subdirectory");
+assert.equal(allocateReplayName("th05", ["replay/slotA/replay00.rpy"], "other.rpy", false, "replay/slotA"), "replay01.rpy");
+assert.equal(allocateReplayName("th05", Array.from({length: 100}, (_, index) =>
+  `replay/replay${String(index).padStart(2, "0")}.rpy`), "other.rpy"), null,
+  "TH05 must stop after all 100 retail slots are occupied");
+const th05FullArchive = planReplayArchiveImport("th05", [
+  ...Array.from({length: 100}, (_, index) => `backup/replay${String(index).padStart(2, "0")}.rpy`),
+  "backup/extra.rpy",
+], []);
+assert.deepEqual(th05FullArchive, {ok: false, reason: "slots-exhausted"});
+const th05NestedImport = planReplayArchiveImport("th05", [
+  "backup/slotA/replay00.rpy",
+  "backup/slotA/bonus.rpy",
+], ["replay/slotA/REPLAY00.RPY"], false, source => `replay/${source.split("/")[1]}`);
+assert.deepEqual(th05NestedImport, {
+  ok: true,
+  entries: [
+    {sourcePath: "backup/slotA/bonus.rpy", targetPath: "replay/slotA/replay01.rpy", kind: "replay"},
+    {sourcePath: "backup/slotA/replay00.rpy", targetPath: "replay/slotA/replay02.rpy", kind: "replay"},
+  ],
+}, "archive slot allocation must stay within the selected subdirectory and skip occupied names");
+assert.equal(isValidReplayName("th6", "th6_01.rpy"), true);
+assert.equal(allocateReplayName("th6", [], "th6_01.rpy"), "th6_01.rpy");
+assert.equal(allocateReplayName("th6", ["replay/th6_01.rpy"], "th6_01.rpy"), "th6_ud0000.rpy",
+  "the existing non-TH05 collision naming scheme must remain unchanged");
 
 assert.deepEqual(selectReplayExportPaths([
   "replay/orphan.rpy.thprac.json",
@@ -142,3 +206,4 @@ console.log(JSON.stringify({
   replayMetadata: "embedded-prac-only",
   collision: "case-insensitive",
 }));
+});

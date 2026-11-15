@@ -1,6 +1,6 @@
 # 参与开发
 
-先选择一项工作，运行对应组件，再开始修改。需要 Git 和 Node.js 24（最低 22.18）；游戏编译所需的工具链在各作开发指南中列出。
+先选择一项工作，运行对应组件，再开始修改。前端需要 Git 和 Bun 1.4.4；工作区工具使用 Node.js 24，游戏编译所需的工具链在各作开发指南中列出。
 
 ## 1. 取需要的目录
 
@@ -10,13 +10,13 @@
 git clone --filter=blob:none --sparse https://github.com/YOUR-NAME/eagler-touhou.git
 cd eagler-touhou
 git sparse-checkout set launcher common tools docs
-git remote add upstream https://github.com/YomotsuHisami/eagler-touhou.git
+git remote add upstream https://github.com/Ritosa2333/eagler-touhou.git
 git switch -c your-change
 ```
 
 | 工作 | 接下来的命令或文档 |
 | --- | --- |
-| 前端 | `npm --prefix launcher ci --ignore-scripts`，然后 `npm run dev` |
+| 前端 | `bun install --cwd launcher --frozen-lockfile --ignore-scripts`，然后 `bun run dev` |
 | 前端与 th10 | `node tools/workspace.mjs select th10`，然后读[本地联调](launcher/docs/DEVELOPMENT.md) |
 | th10 普通版与 MP | `node tools/workspace.mjs select th10 --variant=both` |
 | Relay | `git sparse-checkout add services/relay`，然后读[服务开发](services/relay/README.md) |
@@ -69,9 +69,11 @@ monorepo 的 `main` 集成普通版与 MP。向独立作品源仓库回推时，
 
 ```sh
 npm run docs:check
-npm run typecheck
-npm run build
-npm test
+bun run lint
+bun run i18n:check
+bun run typecheck
+bun run build
+bun run test
 ```
 
 以上包含文档和前端检查。游戏改动再运行该作开发指南中的编译与行为检查；Relay 等服务运行自身测试。
@@ -84,9 +86,9 @@ npm test
 
 ## 5. 提交与合并
 
-走 PR 时，确认 `git diff` 中的内容与本次工作一致，提交到你的分支并创建 PR。正文说明改了什么、影响哪些作品和模式、运行了哪些检查，并链接相关适配表和记录。
+需要别人审核时开 PR。确认 `git diff` 中的内容与本次工作一致，提交到你的分支并创建 PR。正文说明改了什么、影响哪些作品和模式、运行了哪些检查，并链接相关适配表和记录。
 
-主分支始终要求 `Checks` 汇总通过。仓库管理员、维护者和写入协作者可以直接推送或强制推送 `main`。强制推送时使用 `--force-with-lease`，并核对远端提交。其他贡献者通过 PR 提交，主分支禁止删除。
+有写入权限的协作者处理小改动时，推荐在 `Checks` 通过后直接推送 `main`。其他贡献者通过 PR 提交，主分支禁止删除。
 
 作品目录与普通版到 MP 历史同步的 PR 使用 **Create a merge commit**，保留来源提交和同步节点的父链。合入后刷新目录历史或子树导出端，确认原仓库提交仍是祖先。主分支的 `Checks` 汇总以来源历史、变更范围、启动器与共享契约类型检查、源码契约、文档与发布清单为合并门槛。完整的 `check`、作品原生、WASM、浏览器与服务回归继续运行并报告结果。
 

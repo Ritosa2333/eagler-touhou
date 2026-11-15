@@ -1,0 +1,50 @@
+{
+  "passed": true,
+  "nativeRuntimeSha256": "9f4deba156b54654567269a2d3be0a24c8a9a3fcdddf55aa3d5072413203fe95",
+  "keyboard": {
+    "charge": "KeyX",
+    "bomb": "KeyC",
+    "storageScope": "th19",
+    "otherTitlesUnchanged": true
+  },
+  "portSource": {
+    "normal": "10/10",
+    "multiplayer": "9/9"
+  },
+  "typecheck": {
+    "ui": true,
+    "tools": true
+  },
+  "behavioralTests": {
+    "inputOwners": 45,
+    "sharedTouch": 51,
+    "th19Isolation": 4,
+    "runtimeOptionsAndRoomPersistenceIncludingIsolation": 6,
+    "roomServiceAndProtocolModel": 92,
+    "nativeTransportAndRollback": 7
+  },
+  "relayRules": {
+    "passed": true,
+    "checks": [
+      "defaults",
+      "nine native indices",
+      "remote synchronization",
+      "ready invalidation",
+      "bounds rejection",
+      "non-TH19 rejection"
+    ]
+  },
+  "browserEvidence": [
+    "native-report.json",
+    "launcher-room-report.json",
+    "launcher-gameplay-report.json",
+    "sfx-report.json"
+  ],
+  "remotePushPerformed": false,
+  "existingWorkspaceCheck": {
+    "passed": false,
+    "test": "launcher/tests/test-runtime-protocol-contract.mjs",
+    "reason": "The existing test iterates the opt-in TH13 product, which has no workspace source entry (unknown workspace repository: th13). TH19 normal and multiplayer per-port runtime protocol gates both pass.",
+    "changedByThisFix": false
+  }
+}

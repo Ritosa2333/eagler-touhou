@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>启动器 | 布局检测</title><link rel="stylesheet" href="./layout-watch.css"></head>
+<body data-app-base="__APP_BASE__">
+  <iframe id="preview" title="启动器预览" allow="fullscreen" allowfullscreen></iframe>
+  <div id="marks" aria-hidden="true"></div>
+  <button id="watchToggle" class="watch-toggle" aria-expanded="false" aria-controls="watchPanel"><i></i>布局检测 <span id="changeCount">0</span></button>
+  <section id="watchPanel" class="watch-panel" aria-label="布局检测" hidden>
+    <header><strong>布局检测</strong><span id="watchStatus" role="status">连接中</span><button id="collapse">收起</button></header>
+    <div class="watch-controls"><button id="pause">暂停</button><button id="inspect">检查当前页</button><button id="clear">清空</button><button id="export">导出记录</button></div>
+    <div class="watch-options"><label>灵敏度 <select id="threshold"><option value="2">2 px</option><option value="4">4 px</option><option value="8">8 px</option></select></label><label><input id="includeMotion" type="checkbox">记录平滑动效</label><label><input id="freeze" type="checkbox">固定标记</label></div>
+    <p class="watch-key"><span>橙色：变化前</span><span>蓝色：变化后</span></p>
+    <ol id="changes" class="watch-changes"></ol>
+    <p id="empty">照常操作启动器，变化会列在这里。</p>
+    <footer id="watchHint">记录点击后的位移与尺寸变化。记录不自动判定为问题。</footer>
+  </section>
+  <script type="module" src="./layout-watch.mjs"></script>
+</body></html>

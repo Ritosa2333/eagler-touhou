@@ -6,6 +6,7 @@
 
 | 游戏 | 普通版源码 | MP 源码 | 构建方式 |
 | --- | --- | --- | --- |
+| th05 | `ports/th05` | `ports/th05-mp` | 原生 C++／GLES2，原版与 thprac 共用 Wasm |
 | th06 | `ports/th06` | `ports/th06` | 共用源码，分别构建 normal 与 multiplayer |
 | th07 | `ports/th07` | `ports/th07` | 共用源码，分别构建 normal 与 multiplayer |
 | th075 | `ports/th075` | `ports/th075-mp` | 分目录、分模式构建 |
@@ -16,6 +17,7 @@
 | th12 | `ports/th12` | `ports/th12-mp` | Web 使用 `scripts/build-eagler.mjs`；CMake 可构建 SDL3 / GLES 3 普通版与多人应用；两侧正式 Web 入口均为 SDL3／GLES |
 | th15 | `ports/th15` | `ports/th15-mp` | 分目录、分模式构建 |
 | th17 | `ports/th17` | — | 普通版 SDL3 / WebGL2 |
+| th19 | `ports/th19` | `ports/th19` | 共用 SDL3 / WebGL2 源码，分别打包 normal 与 multiplayer |
 | th20 | `ports/th20` | — | 普通版实验适配 |
 
 目录来自 [`launcher/config/workspace.json`](launcher/config/workspace.json)，构建命令来自 [`launcher/config/runtime-builds.json`](launcher/config/runtime-builds.json)。`node tools/workspace.mjs list` 直接读取这两份配置。

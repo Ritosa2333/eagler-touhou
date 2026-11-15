@@ -25,6 +25,18 @@ test('a new product joins the matrix through build and workspace declarations', 
   assert.throws(() => buildRuntimeTestTargets({newGame: {}}, {games: {}}, {repositories: {}}), /catalog/);
 });
 
+test('opt-in products join coverage when configured and cannot replace required products', () => {
+  const products = {stable: {}, preview: {buildOptIn: true}};
+  const build = {workspaceRepository: 'owner', variants: {normal: {}}};
+  const workspace = {repositories: {owner: 'ports/owner'}};
+  const targets = games => buildRuntimeTestTargets(products, {games}, workspace).map(runtimeTargetKey);
+  assert.deepEqual(targets({stable: build}), ['stable/normal']);
+  assert.deepEqual(targets({stable: build, preview: build}), ['stable/normal', 'preview/normal']);
+  assert.throws(() => targets({preview: build}), /catalog/);
+  assert.throws(() => targets({stable: build, unknown: build}), /catalog/);
+  assert.throws(() => targets({stable: build, preview: {...build, workspaceRepository: 'missing'}}), /missing source owner/);
+});
+
 test('a private manifest cannot shrink required coverage or repeat a Runtime', async () => {
   const required = await runtimeTestTargets({game: 'th12'}), targets = required.map(input);
   assert.deepEqual(selectRuntimeInputs({targets}, required), targets);

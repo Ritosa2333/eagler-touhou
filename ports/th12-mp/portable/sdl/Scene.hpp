@@ -60,13 +60,13 @@ public:
     AnimationSampler& sampler(){return sampler_;}
 private:
     struct Dialogue {std::u32string text;std::string bytes;i32 offset=0,spacing=0,style=0;u32 color=0xd8d8d8;float width=354,height=17;u32 source_width=730,source_height=36;
-        bool raster=false,menu=false,localized_spell=false;float source_x=0,source_y=2;u32 foreground=0xffffff;i32 outline[4][2]{{2,4},{-2,4},{2,0},{-2,0}};};
+        bool raster=false,menu=false,localized_spell=false;std::vector<u32> byte_widths;float source_x=0,source_y=2;u32 foreground=0xffffff;};
     struct Pose {
         enum Kind:u8 {State,NativeText,HudCounters,Rectangle,Mesh,DialogueLine,BeamTrail,Trail,Beam} kind=State;
         Appearance a;float x=0,y=0,angle=0,scale=1,alpha=1;
         bool has_priority=false;i32 priority=0;i32 clip=-1;i8 clipped=-1;bool has_order=false;i32 order=0;u32 index=0;
         u32 owner=0,id=0;bool logical=false,mesh_pass0=false;
-        u64 continuity=0;
+        u64 continuity=0;u32 continuity_revision=0;
         u32 item=0; // text / dialogue / mesh index
         float bounds[4]{};u32 argb=0;u32 start=0,end=0;float width=0;
     };
@@ -84,11 +84,12 @@ private:
     struct BackgroundQuad {bool ready=false;std::array<std::array<double,3>,4> corners{};};
     std::vector<BackgroundQuad> background_quads;
     std::vector<Pose> poses;std::vector<u32> sorted;std::vector<TextDescriptor> texts;std::vector<Dialogue> dialogues;std::vector<Triangle> triangles;
+    std::array<i32,8> stage_backdrops{};
     std::vector<Appearance> scratch;std::vector<Pose> logical_poses;std::vector<u32> owners;FrameLookup schedule_ids;PriorityBuckets draw_buckets,menu_buckets;std::vector<u32> menu_order;Pose shaken; // per-frame scratch
     struct ClipVertex {double cx,cy,depth,u,v;};
     std::vector<ClipVertex> clip_polygon,clip_output;std::vector<Vertex> clip_projected;
     std::vector<Vertex> fan_vertices;std::vector<u32> fan_indices;
-    struct Motion {float x,y,ax,ay,rotation;i32 bank,mode;};
+    struct Motion {float x,y,ax,ay,rotation;i32 bank,mode;u32 revision=0;};
     std::vector<std::pair<u64,Motion>> previous_motion,current_motion;
     std::array<float,41> hud{};std::array<float,2> shake{};bool has_surface=false;Color fog{0,0,0,1};
     struct Cached {std::string key;Texture texture;};std::list<Cached> dialogue_cache,menu_cache;

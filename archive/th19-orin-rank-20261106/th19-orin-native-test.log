@@ -1,0 +1,11 @@
+rank=0 y=329 first=-1 total=0
+rank=0 y=330 first=-1 total=0
+rank=19 y=329 first=-1 total=0
+rank=19 y=330 first=-1 total=0
+rank=20 y=329 first=114 total=30
+rank=20 y=330 first=-1 total=0
+rank=30 y=329 first=111 total=30
+rank=30 y=330 first=-1 total=0
+rank=50 y=329 first=105 total=30
+rank=50 y=330 first=-1 total=0
+Orin original ECL / rank checks PASS

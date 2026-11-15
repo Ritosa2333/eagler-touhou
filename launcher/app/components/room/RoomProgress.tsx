@@ -1,3 +1,5 @@
+import {Button as UiButton} from '../../ui/controls';
+import {Progress, ProgressIndicator} from '../../ui/progress';
 import {useLocale} from '../../i18n';
 import type {RoomOwnerSnapshot, MultiplayerRoomService} from '../../services/multiplayer-room';
 import type {TransferSnapshot} from '../../models/transfer';
@@ -17,17 +19,17 @@ export function ResourceTracks({progress, transfer, identifiers = false}: {progr
     const indeterminate = active && (native ? native.indeterminate : value === null);
     const label = t(stage === 'package' ? 'room.baseResources' : 'room.resourceLoading');
     return <div key={stage} className="mp-resource-row" data-resource-stage={stage}>
-      <span>{label}</span><div className={'mp-room-resource-track' + (indeterminate ? ' indeterminate' : '')}
-        id={identifiers ? stage === 'package' ? 'mpRoomResourceTrack' : 'mpRoomLoadingTrack' : undefined} role="progressbar"
-        aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={indeterminate ? undefined : value ?? 0}>
-        <span id={identifiers ? stage === 'package' ? 'mpRoomResourceFill' : 'mpRoomLoadingFill' : undefined} style={{width: native?.barWidth ?? ((value ?? 0) + '%')}}/>
-      </div>
+      <span>{label}</span><Progress className="mp-room-resource-track" value={indeterminate ? null : value ?? 0}
+        id={identifiers ? stage === 'package' ? 'mpRoomResourceTrack' : 'mpRoomLoadingTrack' : undefined} aria-label={label}>
+        <ProgressIndicator asChild><span id={identifiers ? stage === 'package' ? 'mpRoomResourceFill' : 'mpRoomLoadingFill' : undefined}
+          style={indeterminate ? undefined : {width: native?.barWidth ?? ((value ?? 0) + '%')}}/></ProgressIndicator>
+      </Progress>
       <span className="mp-resource-percent">{indeterminate ? '—' : `${Math.round(value ?? 0)}%`}</span>
     </div>;
   })}</div>;
 }
 
-export function RoomProgress({state, service, transfer}: {state: RoomOwnerSnapshot; service: MultiplayerRoomService; transfer?: TransferSnapshot}) {
+export function RoomProgress({state, service, transfer, showLabel = true}: {state: RoomOwnerSnapshot; service: MultiplayerRoomService; transfer?: TransferSnapshot; showLabel?: boolean}) {
   const {t} = useLocale(), progress = state.preparation, status = progress?.status ?? 'preparing';
   const spectatorLoading = state.spectatorRequested && state.launchBusy && status === 'ready';
   const label = t(spectatorLoading ? 'room.loadingSpectator' : status === 'ready' ? 'room.resourcesReady' :
@@ -36,10 +38,10 @@ export function RoomProgress({state, service, transfer}: {state: RoomOwnerSnapsh
   const displayed = spectatorLoading ? {...progress!, status: 'preparing' as const, stage: 'runtime' as const, runtimePercent: null, percent: null} : progress;
   return <div className="mp-room-resource-progress" id="mpRoomResourceProgress" hidden={!state.room}
     data-status={spectatorLoading ? 'preparing' : status} title={progress?.error || ''}>
-    <span id="mpRoomResourceLabel" role="status">{label}</span>
+    <span id="mpRoomResourceLabel" role="status" hidden={!showLabel}>{label}</span>
     <span id="mpRoomResourceAmount">{progress?.total ? roomMiB(progress.loaded) + ' / ' + roomMiB(progress.total) : ''}</span>
-    <button id="mpRoomResourceCancel" type="button" hidden={status !== 'preparing' || progress?.stage !== 'package'} onClick={service.cancelPreparation}>{t('room.cancelDownload')}</button>
-    <button id="mpRoomResourceRetry" type="button" hidden={status !== 'failed' && status !== 'cancelled'} onClick={service.retryPreparation}>{t('room.retryDownload')}</button>
+    <UiButton id="mpRoomResourceCancel" type="button" hidden={status !== 'preparing' || progress?.stage !== 'package'} onClick={service.cancelPreparation}>{t('room.cancelDownload')}</UiButton>
+    <UiButton id="mpRoomResourceRetry" type="button" hidden={status !== 'failed' && status !== 'cancelled'} onClick={service.retryPreparation}>{t('room.retryDownload')}</UiButton>
     <ResourceTracks progress={displayed} transfer={transfer} identifiers/>
   </div>;
 }

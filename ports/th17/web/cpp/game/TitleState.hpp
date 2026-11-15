@@ -10,6 +10,7 @@ struct GameSelection {
 };
 struct TitleSelectionSettings {i32 configured_difficulty=1,last_spell_character=0,preferred_animal=0,practice_stage=0;};
 struct TitleState {
+    bool room_preview=false;
     MenuCursor menu,spell_character;TitleScreen screen=TitleScreen::Main,previous_screen=TitleScreen::Initialize;
     i32 substate=0;Timer age{};u32 flags=2;i32 return_reason=0;
     std::array<u32,335> handles{};u32 portrait=0;

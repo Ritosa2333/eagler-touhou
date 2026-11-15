@@ -1,4 +1,7 @@
 #include "Renderer.hpp"
+#if TH_ENABLE_THPRAC
+#include <imgui.h>
+#endif
 #include "Shaders.hpp"
 #include "ResampleShader.hpp"
 #include <emscripten.h>
@@ -64,7 +67,11 @@ bool Renderer::initialize(){
  glGenVertexArrays(1,&resampleVao);glGenTextures(1,&weightTexture);
  warming=false;set_current(this);return true;
 }
-Renderer::~Renderer(){discard();if(context){SDL_GL_MakeCurrent(window,context);for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);glDeleteBuffers(1,&quadIndices);SDL_GL_DestroyContext(context);}if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
+Renderer::~Renderer(){discard();if(context){SDL_GL_MakeCurrent(window,context);for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second.vao);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);glDeleteBuffers(1,&quadIndices);
+#if TH_ENABLE_THPRAC
+ glDeleteProgram(imguiProgram);glDeleteVertexArrays(1,&imguiVao);glDeleteBuffers(1,&imguiVbo);glDeleteBuffers(1,&imguiEbo);glDeleteTextures(1,&imguiFontTexture);
+#endif
+ SDL_GL_DestroyContext(context);}if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
 void Renderer::bind_texture(GLuint id){if(boundTexture!=id){glBindTexture(GL_TEXTURE_2D,id);boundTexture=id;++stats.textureBinds;}}
 void Renderer::bind_framebuffer(GLenum target,GLuint id){
  const bool read=target!=GL_DRAW_FRAMEBUFFER,draw=target!=GL_READ_FRAMEBUFFER;
@@ -84,8 +91,12 @@ void Renderer::transform(MatrixKind kind,const void* p){auto& m=state.matrix[u32
 void Renderer::viewport(const Viewport& v){state.viewport=v;}
 void Renderer::select(const State& s){
  const auto& p=s.pipeline;auto arg=[](Argument a){return u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u);};
- std::array<u32,10> key{u32(!!s.texture),u32(p.alphaTest),u32(p.fog),u32(p.color.operation),u32(p.alpha.operation),arg(p.color.first),arg(p.color.second),arg(p.alpha.first),arg(p.alpha.second),u32(p.alphaCompare)|(u32(version==10&&p.depthTest&&(p.depthWrite||p.depthCompare!=Compare::Always))<<8)};auto it=programs.find(key);
- if(it==programs.end()&&!warming){program=&generic;++stats.genericBatches;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}return;}
+ const std::array<u32,10> key{u32(!!s.texture),u32(p.alphaTest),u32(p.fog),u32(p.color.operation),u32(p.alpha.operation),arg(p.color.first),arg(p.color.second),arg(p.alpha.first),arg(p.alpha.second),u32(p.alphaCompare)|(u32(version==10&&p.depthTest&&(p.depthWrite||p.depthCompare!=Compare::Always))<<8)};
+ const auto bind=[&](Program& next){program=&next;if(program==&generic)++stats.genericBatches;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}};
+ if(!warming&&key==selectedProgramKey){bind(*program);return;}
+ if(!warming)selectedProgramKey=key;
+ auto it=programs.find(key);
+ if(it==programs.end()&&!warming){bind(generic);return;}
  if(it==programs.end()){
   ++stats.programCompiles;
   static const char* constants[]{"hasTexture","alphaTest","fogEnabled","colorOp","alphaOp","colorArg1","colorArg2","alphaArg1","alphaArg2","alphaFunc"};
@@ -98,12 +109,16 @@ void Renderer::select(const State& s){
   const char* names[]{"viewport","transformed","textureTransform","instanced","world","view","projection","textureMatrix","fogEnabled","rangeFog","fogMode","fogParams","fogColor","hasTexture","factor","colorOp","colorArg1","colorArg2","alphaOp","alphaArg1","alphaArg2","alphaTest","alphaRef","alphaFunc","depth16","tex"};
   for(int i=0;i<26;i++)p.uniforms[i].location=glGetUniformLocation(p.id,names[i]);it=programs.emplace(key,p).first;
  }
- program=&it->second;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}
+ bind(it->second);
 }
 void Renderer::uniform(int i,int n,const float* p){auto& u=program->uniforms[i];if(u.location<0)return;if(u.count==n&&!std::memcmp(u.value.data(),p,n*4))return;std::memcpy(u.value.data(),p,n*4);u.count=n;if(n==16)glUniformMatrix4fv(u.location,1,false,p);else if(n==4)glUniform4fv(u.location,1,p);else if(n==3)glUniform3fv(u.location,1,p);else glUniform1f(u.location,*p);}
 void Renderer::integer(int i,int n){auto& u=program->uniforms[i];if(u.location<0)return;float f=float(n);if(u.count==1&&u.value[0]==f)return;u.count=1;u.value[0]=f;glUniform1i(u.location,n);}
+void Renderer::bind_array_buffer(GLuint id){
+ if(boundArrayBuffer!=id){glBindBuffer(GL_ARRAY_BUFFER,id);boundArrayBuffer=id;}
+}
 u32 Renderer::upload(Stream& s,GLenum target,const void* bytes,u32 count,u32 minimum){
- glBindBuffer(target,s.id);stats.vertexUploadBytes+=count;
+ if(target==GL_ARRAY_BUFFER)bind_array_buffer(s.id);else glBindBuffer(target,s.id);
+ stats.vertexUploadBytes+=count;
 #ifdef __EMSCRIPTEN__
  // Replace the backing store for each submitted batch. Updating successive
  // subranges while previous draws still reference the store stalls some mobile
@@ -123,7 +138,7 @@ void Renderer::changed(u32 id,u32 previous,const std::array<u32,4>& region){
  else {g.dirty={};g.dirtyBase=~0u;}
 }
 Renderer::GPU& Renderer::surface(u32 h){
- auto s=resolve(owner,h);if(!s.handle||!s.width||!s.height){std::fprintf(stderr,"SDL invalid surface %u\n",h);std::abort();}auto& g=surfaces[h];if(!g.texture){glGenTextures(1,&g.texture);glGenFramebuffers(1,&g.framebuffer);bind_texture(g.texture);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,g.texture,0);}
+ auto s=resolve(owner,h);if(!s.handle||!s.width||!s.height){std::fprintf(stderr,"SDL invalid surface %u\n",h);std::abort();}auto& g=surfaces[h];g.renderScale=s.renderScale;if(!g.texture){glGenTextures(1,&g.texture);glGenFramebuffers(1,&g.framebuffer);bind_texture(g.texture);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,g.texture,0);}
  // Merge every known CPU edit since the last upload. Unknown edits retain
  // the full-image path so overlapping writes cannot be lost.
  const auto& r=g.dirty;
@@ -226,11 +241,21 @@ void Renderer::flush_batch(){if(!batching)return;batching=false;if(instancing)is
 void Renderer::flush(){flush_batch();drain();}
 void Renderer::drain(){
  if(queuedDraws.empty())return;
- if(additive_batches){
+ // Most story passes submit fewer draws than the merge threshold. Submit
+ // those spans directly without building a plan that would keep every draw.
+ constexpr size_t minimumAdditiveSpan=16;
+ if(additive_batches&&queuedDraws.size()>=minimumAdditiveSpan){
   // Nonnegative additive color commutes on normalized 8-bit targets. No draw
   // may read existing depth. A span may have only one compatible depth-writing
   // group, whose internal primitive order remains unchanged after grouping.
-  const auto additive=[this](const QueuedDraw& q){const auto& p=q.state.pipeline;const auto f=resolve(owner,q.state.target).format;return (!p.depthTest||p.depthCompare==Compare::Always)&&!p.dither&&p.blend&&!p.separateAlphaBlend&&p.blendEquation==BlendEquation::Add&&p.destinationBlend==BlendFactor::One&&(p.sourceBlend==BlendFactor::One||p.sourceBlend==BlendFactor::SourceAlpha)&&(f==PixelFormat::Bgra8||f==PixelFormat::Bgrx8);};
+  const auto additive=[this](const QueuedDraw& q){
+   const auto& p=q.state.pipeline;
+   if((p.depthTest&&p.depthCompare!=Compare::Always)||p.dither||!p.blend||p.separateAlphaBlend||
+       p.blendEquation!=BlendEquation::Add||p.destinationBlend!=BlendFactor::One||
+       (p.sourceBlend!=BlendFactor::One&&p.sourceBlend!=BlendFactor::SourceAlpha))return false;
+   const auto format=resolve(owner,q.state.target).format;
+   return format==PixelFormat::Bgra8||format==PixelFormat::Bgrx8;
+  };
   const auto compatible=[this](const QueuedDraw& first,const QueuedDraw& q){const bool instances=q.instanceSize&&first.instanceSize;if(q.quads!=first.quads||q.topology!=first.topology||bool(q.instanceSize)!=bool(first.instanceSize)||!equal(q.state,first.state,instances))return false;if(instances)return q.size==first.size&&!std::memcmp(vertexArena.data()+q.offset,vertexArena.data()+first.offset,q.size);return q.topology==Topology::Triangles||q.topology==Topology::Lines;};
   // Keep the grouping plan in reusable flat arenas. The previous nested
   // vectors allocated a tiny heap block for every retained draw on every
@@ -242,7 +267,7 @@ void Renderer::drain(){
    if(!additive(queuedDraws[at])){retain(at,at+1);++at;continue;}
    size_t end=at+1,writer=queuedDraws[at].state.pipeline.depthTest&&queuedDraws[at].state.pipeline.depthWrite?at:queuedDraws.size();
    while(end<queuedDraws.size()&&queuedDraws[end].state.target==queuedDraws[at].state.target&&queuedDraws[end].state.depth==queuedDraws[at].state.depth&&additive(queuedDraws[end])){const auto& q=queuedDraws[end];if(q.state.pipeline.depthTest&&q.state.pipeline.depthWrite){if(writer!=queuedDraws.size()&&!compatible(queuedDraws[writer],q))break;writer=end;}++end;}
-   if(end-at<16){retain(at,end);at=end;continue;}
+   if(end-at<minimumAdditiveSpan){retain(at,end);at=end;continue;}
    const size_t firstGroup=mergeGroups.size();bool spanMerged=false;
    for(size_t i=at;i<end;i++){const auto& q=queuedDraws[i];size_t group=firstGroup;for(;group<mergeGroups.size();group++)if(compatible(queuedDraws[mergeGroups[group].first],q))break;
     mergeNext[i]=endLink;
@@ -287,8 +312,15 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  // fill path, whose immediate rasterization is covered by pixel regressions.
  if(staged_uploads&&!draining&&!index&&(d.layout.uv!=VertexAttributes::absent||primitive==Topology::Lines)){
   const size_t alignment=d.stride*(quads?4:1);const u32 offset=u32((vertexArena.size()+alignment-1)/alignment*alignment),io=u32(instanceArena.size());
-  vertexArena.resize(size_t(offset)+size);if(size)std::memcpy(vertexArena.data()+offset,data,size);
-  instanceArena.resize(size_t(io)+instanceSize);if(instanceSize)std::memcpy(instanceArena.data()+io,instance,instanceSize);
+  vertexArena.resize(offset);
+  if(size){
+   const auto* bytes=static_cast<const u8*>(data);
+   vertexArena.insert(vertexArena.end(),bytes,bytes+size);
+  }
+  if(instanceSize){
+   const auto* bytes=static_cast<const u8*>(instance);
+   instanceArena.insert(instanceArena.end(),bytes,bytes+instanceSize);
+  }
   queuedDraws.push_back({d,primitive,count,offset,size,io,instanceSize,quads});stats.copiedBytes+=size+instanceSize;
   if(vertexArena.size()+instanceArena.size()>=4*1048576)drain();return;
  }
@@ -297,7 +329,7 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  if(all||cached.dither!=p.dither)p.dither?glEnable(GL_DITHER):glDisable(GL_DITHER);
  GPU* texture=d.texture?&surface(d.texture):nullptr;const bool consumesDepth=p.depthTest&&(p.depthWrite||p.depthCompare!=Compare::Always);auto& g=target(d.target,lazy_depth_clears&&!consumesDepth?~0u:d.depth);const auto& v=d.viewport;
  if(lazy_depth_clears&&p.depthTest&&(p.depthWrite||p.depthCompare!=Compare::Always))flush_depth(d.depth,d.target);
- const auto scale=resolve(owner,d.target).renderScale;const Viewport physical{v.x*scale,v.y*scale,v.width*scale,v.height*scale,v.min,v.max};
+ const auto scale=g.renderScale;const Viewport physical{v.x*scale,v.y*scale,v.width*scale,v.height*scale,v.min,v.max};
  if(!drawState.has_viewport||std::memcmp(&drawState.viewport,&physical,sizeof(physical))){glViewport(physical.x,physical.y,physical.width,physical.height);glDepthRangef(v.min,v.max);drawState.viewport=physical;drawState.has_viewport=true;}select(d);
  float vp[]{float(v.x),float(v.y),float(v.width),float(v.height)};uniform(0,4,vp);const bool transformed=d.layout.screen;
  integer(1,transformed);integer(2,p.textureTransform);integer(3,!!instance);
@@ -305,9 +337,17 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  // world sprites supply world/texture matrices and tint through attributes.
  // Do not upload unused matrices after every intervening background draw.
  if(!transformed){for(int i=0;i<4;i++)if(!(instance&&(i==0||i==3))&&(i!=3||p.textureTransform))uniform(4+i,16,d.matrix[i].data());}
- integer(8,p.fog);if(p.fog){integer(9,p.rangeFog);integer(10,u32(p.fogMode));float fog[]{p.fogNear,p.fogFar,p.fogDensity};uniform(11,3,fog);uniform(12,4,color(p.fogColor).data());}integer(13,!!texture);if(!instance)uniform(14,4,color(p.textureFactor).data());
- auto arg=[](Argument a){return int(u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u));};
- integer(15,u32(p.color.operation));integer(16,arg(p.color.first));integer(17,arg(p.color.second));integer(18,u32(p.alpha.operation));integer(19,arg(p.alpha.first));integer(20,arg(p.alpha.second));integer(21,p.alphaTest);float alpha=float(p.alphaReference)/255;uniform(22,1,&alpha);integer(23,u32(p.alphaCompare));integer(24,version==10&&p.depthTest&&d.depth&&resolve(owner,d.depth).format==PixelFormat::Depth16);
+ // The vertex shader still reads fogEnabled in specialized programs.
+ integer(8,p.fog);
+ if(p.fog){integer(9,p.rangeFog);integer(10,u32(p.fogMode));float fog[]{p.fogNear,p.fogFar,p.fogDensity};uniform(11,3,fog);uniform(12,4,color(p.fogColor).data());}
+ if(!instance&&program->uniforms[14].location>=0)uniform(14,4,color(p.textureFactor).data());
+ // Prelinked variants bake these combiner inputs into the fragment shader.
+ if(program==&generic){
+  auto arg=[](Argument a){return int(u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u));};
+  integer(13,!!texture);integer(15,u32(p.color.operation));integer(16,arg(p.color.first));integer(17,arg(p.color.second));integer(18,u32(p.alpha.operation));integer(19,arg(p.alpha.first));integer(20,arg(p.alpha.second));integer(21,p.alphaTest);integer(23,u32(p.alphaCompare));
+ }
+ float alpha=float(p.alphaReference)/255;uniform(22,1,&alpha);
+ if(program->uniforms[24].location>=0)integer(24,version==10&&p.depthTest&&d.depth&&resolve(owner,d.depth).format==PixelFormat::Depth16);
  if(texture){
   bind_texture(texture->texture);
   constexpr GLint address[]{GL_REPEAT,GL_MIRRORED_REPEAT,GL_CLAMP_TO_EDGE};GLint sampler[]{address[u32(p.addressU)],address[u32(p.addressV)],p.minFilter==Filter::Nearest?GL_NEAREST:GL_LINEAR,p.magFilter==Filter::Nearest?GL_NEAREST:GL_LINEAR};
@@ -333,10 +373,10 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  if(all||cached.colorMask!=p.colorMask)glColorMask(!!(p.colorMask&1),!!(p.colorMask&2),!!(p.colorMask&4),!!(p.colorMask&8));
  cached=p;drawState.valid=true;
  const std::array<u32,6> layoutKey{d.stride,u32(d.layout.screen),d.layout.diffuse,d.layout.specular,d.layout.uv,u32(!!instance)};
- auto& vao=layouts[layoutKey];const bool setup=!vao;
+ auto& layout=layouts[layoutKey];auto& vao=layout.vao;const bool setup=!vao;
  if(setup)glGenVertexArrays(1,&vao);if(currentLayout!=vao){glBindVertexArray(vao);currentLayout=vao;}
  const u32 base=draining?0:upload(vertices,GL_ARRAY_BUFFER,data,size,1048576);
- if(draining&&setup)glBindBuffer(GL_ARRAY_BUFFER,vertices.id);
+ if(draining&&setup)bind_array_buffer(vertices.id);
 #ifdef __EMSCRIPTEN__
  if(setup){
 #else
@@ -353,23 +393,29 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,transformed?4:3,GL_FLOAT,fa
  // than replacing this compact instance buffer. The vertex arena stays shared.
  if(instance){u32 b=draining&&instanceOffset!=~0u?instanceOffset:upload(instances,GL_ARRAY_BUFFER,instance,instanceSize,65536);
 #ifdef __EMSCRIPTEN__
- if(setup||instanceBases[vao]!=b){
+ if(setup||layout.instanceBase!=b){
 #else
  {
 #endif
- if(draining)glBindBuffer(GL_ARRAY_BUFFER,instances.id);instanceBases[vao]=b;
- for(int i=0;i<4;i++){glEnableVertexAttribArray(4+i);glVertexAttribPointer(4+i,4,GL_FLOAT,false,instanceStride,reinterpret_cast<void*>(b+i*16));glVertexAttribDivisor(4+i,1);glEnableVertexAttribArray(9+i);glVertexAttribPointer(9+i,4,GL_FLOAT,false,instanceStride,reinterpret_cast<void*>(b+68+i*16));glVertexAttribDivisor(9+i,1);}glEnableVertexAttribArray(8);glVertexAttribPointer(8,4,GL_UNSIGNED_BYTE,true,instanceStride,reinterpret_cast<void*>(b+64));glVertexAttribDivisor(8,1);}
+ if(draining)bind_array_buffer(instances.id);layout.instanceBase=b;
+ // Enabled attributes and divisors belong to this instanced VAO. ImGui and
+ // resampling use their own VAOs; only pointers change with the batch offset.
+ if(setup)for(int location=4;location<=12;location++){glEnableVertexAttribArray(location);glVertexAttribDivisor(location,1);}
+ for(int i=0;i<4;i++){glVertexAttribPointer(4+i,4,GL_FLOAT,false,instanceStride,reinterpret_cast<void*>(b+i*16));glVertexAttribPointer(9+i,4,GL_FLOAT,false,instanceStride,reinterpret_cast<void*>(b+68+i*16));}glVertexAttribPointer(8,4,GL_UNSIGNED_BYTE,true,instanceStride,reinterpret_cast<void*>(b+64));}
  glDrawArraysInstanced(mode,draining?drawOffset/d.stride:0,n,instanceSize/instanceStride);}
  else if(quads){
   // Four vertices per sprite, with exactly the original two triangles and
   // provoking vertices. A reusable index table also addresses each aligned
   // sprite span without changing any VAO attribute pointers on WebGL2.
   const u32 first=draining?drawOffset/d.stride/4:0,required=first+count/2;
-  if(!quadIndices)glGenBuffers(1,&quadIndices);glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,quadIndices);
+  if(!quadIndices)glGenBuffers(1,&quadIndices);
+  // Element buffers belong to the VAO. Ordinary indexed draws can replace
+  // this binding, while utility passes use their own vertex arrays.
+  if(layout.elements!=quadIndices){glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,quadIndices);layout.elements=quadIndices;}
   if(required>quadIndexCapacity){quadIndexCapacity=std::max(required,std::max(1024u,quadIndexCapacity*2));std::vector<u32> table(size_t(quadIndexCapacity)*6);for(u32 i=0;i<quadIndexCapacity;i++){const u32 v=i*4;const u32 row[]={v,v+1,v+2,v+1,v+2,v+3};std::copy(std::begin(row),std::end(row),table.begin()+size_t(i)*6);}glBufferData(GL_ELEMENT_ARRAY_BUFFER,table.size()*sizeof(u32),table.data(),GL_STATIC_DRAW);stats.vertexUploadBytes+=table.size()*sizeof(u32);++stats.bufferReplacements;}
   glDrawElements(GL_TRIANGLES,count*3,GL_UNSIGNED_INT,reinterpret_cast<void*>(size_t(first)*6*sizeof(u32)));
  }
- else if(index){u32 b=upload(indices,GL_ELEMENT_ARRAY_BUFFER,index,n*(indexFormat==IndexType::UInt16?2:4),65536);glDrawElements(mode,n,indexFormat==IndexType::UInt16?GL_UNSIGNED_SHORT:GL_UNSIGNED_INT,reinterpret_cast<void*>(b));}
+ else if(index){u32 b=upload(indices,GL_ELEMENT_ARRAY_BUFFER,index,n*(indexFormat==IndexType::UInt16?2:4),65536);layout.elements=indices.id;glDrawElements(mode,n,indexFormat==IndexType::UInt16?GL_UNSIGNED_SHORT:GL_UNSIGNED_INT,reinterpret_cast<void*>(b));}
  else glDrawArrays(mode,draining?drawOffset/d.stride:0,n);g.rendered=true;
 }
 void Renderer::queue_depth(float value,const i32* rects,u32 count){
@@ -458,6 +504,7 @@ void Renderer::read(u32 id){flush();auto it=surfaces.find(id);if(it==surfaces.en
 void Renderer::release(u32 id){flush();for(auto& [depth,value]:depths)if(depth!=id&&std::any_of(value.pending.begin(),value.pending.end(),[&](const auto& c){return c.target==id;}))flush_depth(depth);auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);depths.erase(d);}auto it=surfaces.find(id);if(it==surfaces.end())return;glDeleteTextures(1,&it->second.texture);glDeleteFramebuffers(1,&it->second.framebuffer);surfaces.erase(it);boundTexture=readFramebuffer=drawFramebuffer=~0u;}
 void Renderer::present(u32 id){flush();pending=id;stats.frames++;if(!defer)commit();}
 bool Renderer::commit(){if(!pending)return false;auto s=resolve(owner,pending);auto& g=surface(pending);pending=0;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);int width=640,height=480;SDL_GetWindowSizeInPixels(window,&width,&height);glBlitFramebuffer(0,0,s.width*s.renderScale,s.height*s.renderScale,0,height,width,0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;return true;}
+#include "ImguiRenderer.inc"
 }
 extern "C" {
 const touhou::sdl::Statistics* sdl_stats(){static touhou::sdl::Statistics zero{};return touhou::sdl::current()?&touhou::sdl::current()->stats:&zero;}

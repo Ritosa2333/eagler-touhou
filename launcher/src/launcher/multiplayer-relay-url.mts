@@ -12,9 +12,11 @@ const relayRoleParams = Object.freeze([
   "intent",
   "visibility",
   "disableCheatMovement",
+  "unrated",
   "disableLocalChargePriority",
   "challengeMode",
   "chapterThreshold",
+  "th19Rules",
   "prankMode",
   "difficulty",
   "runtimeGeneration",
@@ -56,7 +58,7 @@ export function multiplayerTransportRoomId(product: string, roomCode: string): s
 
 export function buildMultiplayerLobbyRelayUrl(
   baseUrl: string,
-  { product, roomCode, clientId, memberId, intent, visibility, disableCheatMovement, disableLocalChargePriority, challengeMode, chapterThreshold, prankMode, playerCount, difficulty }: { product: string; roomCode: string; clientId: string; memberId?: string; intent?: string; visibility?: "public" | "private"; disableCheatMovement?: boolean; disableLocalChargePriority?: boolean; challengeMode?:boolean; chapterThreshold?:number; prankMode?:boolean; playerCount?: number; difficulty?: number },
+  { product, roomCode, clientId, memberId, intent, visibility, disableCheatMovement, unrated, disableLocalChargePriority, challengeMode, chapterThreshold, th19Rules, prankMode, playerCount, difficulty }: { product: string; roomCode: string; clientId: string; memberId?: string; intent?: string; visibility?: "public" | "private"; disableCheatMovement?: boolean; unrated?: boolean; disableLocalChargePriority?: boolean; challengeMode?:boolean; chapterThreshold?:number; th19Rules?:number[]; prankMode?:boolean; playerCount?: number; difficulty?: number },
 ): MultiplayerLobbyRelayUrl {
   const url = relayUrl(baseUrl);
   clearRelayRole(url);
@@ -68,9 +70,11 @@ export function buildMultiplayerLobbyRelayUrl(
   if (intent === "create") {
     url.searchParams.set("visibility", visibility === "private" ? "private" : "public");
     url.searchParams.set("disableCheatMovement", disableCheatMovement ? "1" : "0");
+    if (product === 'th09mp' && unrated) url.searchParams.set('unrated', '1');
     if(product === 'th09mp')url.searchParams.set('disableLocalChargePriority',disableLocalChargePriority?'1':'0');
     if(challengeMode!==undefined)url.searchParams.set("challengeMode",challengeMode?"1":"0");
     if(product === "th15mp" && chapterThreshold !== undefined)url.searchParams.set("chapterThreshold",String(chapterThreshold));
+    if(product === 'th19mp' && th19Rules !== undefined)url.searchParams.set('th19Rules',JSON.stringify(th19Rules));
     if(prankMode!==undefined)url.searchParams.set("prankMode","0");
     if (playerCount != null) url.searchParams.set("players", String(playerCount));
     if (difficulty != null) url.searchParams.set("difficulty", String(difficulty));

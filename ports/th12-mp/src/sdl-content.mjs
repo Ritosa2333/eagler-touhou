@@ -62,14 +62,39 @@ function translationData(provider,original,translated){
   const records=new Map(),ambiguous=new Set();
   const add=(scope,source,target)=>{if(!source||target===undefined||target===null)return;const key=scope+'\0'+source,value=plain(target);if(records.has(key)&&records.get(key)!==value){ambiguous.add(key);return;}records.set(key,value);};
   const overlay=provider?.overlay;
-  for(const [resource,table]of Object.entries(overlay?.dialogue??{}))for(const record of Object.values(table))add(resource,sjis.decode(hex(record.sourceHex)),record.text);
+  // Dialogue patches carry verified UTF-8 bytes, not CP932. Keep their exact
+  // byte keys separate from the original spell/ending Unicode lookup.
+  const dialogue=new Map();
+  for(const [resource,table]of Object.entries(overlay?.dialogue??{}))for(const record of Object.values(table)){
+    const text=plain(record.text),widths=record.byteWidths?.length===[...text].length?record.byteWidths:[...text].map(c=>c.codePointAt(0)<128?1:2);
+    dialogue.set(resource+'\0'+record.sourceHex,{resource,source:hex(record.sourceHex),text,widths});
+  }
   for(const record of Object.values(overlay?.spells??{}))add('',sjis.decode(hex(record.sourceHex)),record.text);
   for(let i=0;i<(original.endings??[]).length;i++){
     const source=original.endings[i],target=translated.endings[i];
     for(const command of source.commands){if(command.op!==3)continue;const replacement=target.commands.find(c=>c.op===3&&c.offset===command.offset);if(replacement?.localized)add('',command.text,replacement.text);}
   }
-  const values=[...records].filter(([key])=>!ambiguous.has(key)),w=new Writer().bytes('TH12LOC1').word(values.length);
-  for(const [key,value]of values){const at=key.indexOf('\0');w.text(key.slice(0,at)).text(key.slice(at+1)).text(value);}return w.finish();
+  const values=[...records].filter(([key])=>!ambiguous.has(key)),w=new Writer().bytes('TH12LOC2').word(values.length);
+  for(const [key,value]of values){const at=key.indexOf('\0');w.text(key.slice(0,at)).text(key.slice(at+1)).text(value);}
+  w.word(dialogue.size);
+  for(const record of dialogue.values()){
+    w.text(record.resource).word(record.source.length).bytes(record.source).text(record.text).word(record.widths.length);
+    for(const width of record.widths)w.word(width);
+  }
+  const views=Object.keys(overlay?.dialogue??{}).map(resource=>[resource,provider?.messageStates?.(resource)]).filter(([,entries])=>entries);
+  w.word(views.length);
+  for(const [resource,entries]of views){
+    w.text(resource).word(entries.length);
+    for(const states of entries){
+      const frames=[],byContent=new Map(),indices=[];
+      for(const [pc,records]of states){const key=JSON.stringify(records);let index=byContent.get(key);
+        if(index===undefined){index=frames.length;byContent.set(key,index);frames.push(records);}indices.push([pc,index]);}
+      w.word(frames.length);
+      for(const records of frames)for(const record of records){const raw=hex(record.textHex??'');w.word(raw.length).bytes(raw).word(record.offset??0).word(record.spacing??0).word(record.style??0).word(record.color??0);}
+      w.word(indices.length);for(const [pc,index]of indices)w.word(pc).word(index);
+    }
+  }
+  return w.finish();
 }
 export async function mountSdlContent(core,assets,{progress=()=>{}}={}){
   const FS=core.FS;FS.mkdirTree('/game/overrides');FS.mkdirTree('/game/music');FS.mkdirTree('/savesth12/replay');
@@ -85,7 +110,9 @@ export async function mountSdlContent(core,assets,{progress=()=>{}}={}){
   for(const ending of [...originalMenu.endings,originalMenu.credits])rawNames.add(ending.file);
   let count=0;
   for(const name of rawNames){
-    if(known&&!known.has(name))continue;const response=await assets.fetchBase('/assets/'+name);if(!response.ok)continue;
+    if(known&&!known.has(name))continue;
+    const path='/assets/'+name;
+    const response=await (/^st0[1-7]_0[012][ab]\.msg$/.test(name)?assets.fetch(path):assets.fetchBase(path));if(!response.ok)continue;
     FS.writeFile('/game/'+name,new Uint8Array(await response.arrayBuffer()));progress(++count,rawNames.size);
   }
   for(const [name,meta]of Object.entries(allAtlases)){

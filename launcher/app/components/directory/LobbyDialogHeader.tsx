@@ -1,3 +1,4 @@
+import {BookButton} from '../launcher/BookButton';
 import type {ReactNode} from 'react';
 
 export interface LobbyDialogHeaderProps {
@@ -10,5 +11,5 @@ export interface LobbyDialogHeaderProps {
 }
 /** Shared directory header presentation. Its carrier owns all close semantics. */
 export function LobbyDialogHeader({titleId, title, closeId, closeLabel, closeContent, onCloseRequest}: LobbyDialogHeaderProps) {
-  return <div className="lobby-dialog-head"><h2 id={titleId}>{title}</h2><button className="lobby-close" id={closeId} type="button" aria-label={closeLabel} onClick={onCloseRequest}>{closeContent}</button></div>;
+  return <div className="lobby-dialog-head"><h2 id={titleId}>{title}</h2><BookButton variant="icon" className="lobby-close" id={closeId} type="button" aria-label={closeLabel} onClick={onCloseRequest}>{closeContent}</BookButton></div>;
 }

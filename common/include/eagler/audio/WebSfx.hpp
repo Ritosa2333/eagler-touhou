@@ -7,7 +7,7 @@
 // Prerecorded effects bypass the mixed music queue without a second sequencer.
 EM_JS(double, eagler_web_sfx_command,
       (int op, unsigned id, const void* pcm, unsigned frames, unsigned channels,
-       unsigned rate, int format, double value), {
+       unsigned rate, int format, double value, double balance), {
     // BEGIN_WEB_SFX_JS
     const ctx = Module['SDL3'] && Module['SDL3'].audioContext;
     if (op === 10) Module['eaglerSfxPaused'] = !!value;
@@ -24,19 +24,25 @@ EM_JS(double, eagler_web_sfx_command,
             if (v.node) p += Math.max(0, ctx.currentTime - v.started) * v.speed;
             return v.loop ? p % v.buffer.duration : Math.min(p, v.buffer.duration);
         };
-        const stop = v => {
-            v.offset = cursor(v);
+        const releaseOutput = v => {
+            if (v.outputConnected) { v.merge.disconnect();v.outputConnected = false; }
+        };
+        const stop = (v, restarting = false) => {
+            v.offset = restarting ? 0 : cursor(v);
             if (v.node) {
                 v.node.onended = null;
                 v.node.stop();
                 v.node.disconnect();
                 v.node = null;
             }
+            if (!restarting || Module['eaglerSfxPaused']) releaseOutput(v);
             v.playing = false;
         };
         const gains = v => {
-            v.left.gain.setValueAtTime(v.volume * (v.pan > 0 ? 1 - v.pan : 1), ctx.currentTime);
-            v.right.gain.setValueAtTime(v.volume * (v.pan < 0 ? 1 + v.pan : 1), ctx.currentTime);
+            const left = v.volume * (v.pan > 0 ? 1 - v.pan : 1);
+            const right = v.volume * (v.pan < 0 ? 1 + v.pan : 1);
+            if (left !== v.leftGain) {v.left.gain.setValueAtTime(left, ctx.currentTime);v.leftGain = left;}
+            if (right !== v.rightGain) {v.right.gain.setValueAtTime(right, ctx.currentTime);v.rightGain = right;}
         };
         const start = v => {
             v.playing = true;
@@ -47,11 +53,12 @@ EM_JS(double, eagler_web_sfx_command,
             node.loop = v.loop;
             node.playbackRate.value = v.speed;
             node.connect(v.split);
+            if (!v.outputConnected) {v.merge.connect(ctx.destination);v.outputConnected = true;}
             v.node = node;
             v.started = ctx.currentTime;
             node.onended = () => {
                 if (v.node !== node) return;
-                node.disconnect();v.node = null;v.playing = false;v.offset = v.buffer.duration;
+                node.disconnect();v.node = null;v.playing = false;v.offset = v.buffer.duration;releaseOutput(v);
             };
             node.start(0, v.offset);
         };
@@ -80,9 +87,10 @@ EM_JS(double, eagler_web_sfx_command,
             }
             const v = {buffer, split:ctx.createChannelSplitter(2), left:ctx.createGain(),
                 right:ctx.createGain(), merge:ctx.createChannelMerger(2), volume:1, pan:0,
-                offset:0, started:0, speed:1, loop:false, playing:false, node:null};
+                offset:0, started:0, speed:1, loop:false, playing:false, node:null,
+                outputConnected:false, leftGain:null, rightGain:null};
             v.split.connect(v.left,0);v.split.connect(v.right,1);
-            v.left.connect(v.merge,0,0);v.right.connect(v.merge,0,1);v.merge.connect(ctx.destination);
+            v.left.connect(v.merge,0,0);v.right.connect(v.merge,0,1);
             pool.voices.set(id,v);pool.gains(v);return 1;
         } catch (_) { return 0; }
     }
@@ -108,6 +116,10 @@ EM_JS(double, eagler_web_sfx_command,
     case 8: return pool.cursor(v)*v.buffer.sampleRate;
     case 9: return +v.playing;
     case 11: return 1;
+    case 13:
+        pool.stop(v,true);
+        v.volume=Math.max(0,value);v.pan=Math.max(-1,Math.min(1,balance));v.loop=!!format;
+        pool.gains(v);pool.start(v);break;
     }
     return 1;
     // END_WEB_SFX_JS
@@ -117,9 +129,9 @@ EM_JS(double, eagler_web_sfx_command,
 namespace eagler::audio::web_sfx {
 inline unsigned key(const void* voice) { return static_cast<unsigned>(reinterpret_cast<std::uintptr_t>(voice)); }
 inline double command(int op, unsigned id=0, const void* pcm=nullptr, unsigned frames=0,
-                      unsigned channels=0, unsigned rate=0, int format=0, double value=0) {
+                      unsigned channels=0, unsigned rate=0, int format=0, double value=0, double balance=0) {
 #ifdef __EMSCRIPTEN__
-    return eagler_web_sfx_command(op,id,pcm,frames,channels,rate,format,value);
+    return eagler_web_sfx_command(op,id,pcm,frames,channels,rate,format,value,balance);
 #else
     return 0;
 #endif
@@ -130,6 +142,9 @@ inline bool upload(const void* voice,const void* pcm,unsigned frames,unsigned ch
 inline bool contains(const void* voice) { return command(11,key(voice))!=0; }
 inline void erase(const void* voice) { command(1,key(voice)); }
 inline bool play(const void* voice,bool loop=false) { return command(2,key(voice),nullptr,0,0,0,0,loop)!=0; }
+inline bool restart(const void* voice,float gain,float balance,bool loop) {
+    return command(13,key(voice),nullptr,0,0,0,loop,gain,balance)!=0;
+}
 inline void stop(const void* voice) { command(3,key(voice)); }
 inline void seek(const void* voice,unsigned frame,unsigned rate) { command(4,key(voice),nullptr,0,0,rate,0,frame); }
 inline void volume(const void* voice,float gain) { command(5,key(voice),nullptr,0,0,0,0,gain); }

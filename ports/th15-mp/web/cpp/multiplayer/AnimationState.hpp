@@ -22,6 +22,7 @@ public:
     // Reconstruct dynamic gameplay owners before resolving their embedded VMs.
     bool restore(AnmRegistry&,const RootResolver& roots={},const SpriteResolver& sprites={})const;
     bool ready()const noexcept;
+    void discard()noexcept;
     size_t instances()const noexcept;
     size_t retained_bytes()const noexcept;
 };

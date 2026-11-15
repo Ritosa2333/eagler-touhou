@@ -1,0 +1,1353 @@
+{
+  "schema": "eagler-touhou/th05-test-deploy/1",
+  "siteUrl": "https://test.touhou.vip/",
+  "base": "/var/www/eagler-touhou-test",
+  "baselineDeploymentSha256": "8877bb67484122d586c0fd0ad5d1343620163b80c066c6f748f83ab48fa1e601",
+  "baselineNginxSha256": "d11b481f175fb15953c0a7a337324ea44da278bbfcd49c7bca049c9a208dd346",
+  "frontend": {
+    "kind": "react",
+    "mountPath": "/",
+    "validationMetadata": {
+      "manifest": {
+        "_components-DCXasuDn.js": {
+          "file": "assets/components-DCXasuDn.js",
+          "name": "components"
+        },
+        "_jsx-runtime-dLopkF8M.js": {
+          "file": "assets/jsx-runtime-dLopkF8M.js",
+          "name": "jsx-runtime",
+          "imports": [
+            "_components-DCXasuDn.js"
+          ]
+        },
+        "_legacy-game-pack-BZyEd4_V.js": {
+          "file": "assets/legacy-game-pack-BZyEd4_V.js",
+          "name": "legacy-game-pack"
+        },
+        "app/entry.client.tsx": {
+          "file": "assets/entry.client-DbcLqyPP.js",
+          "name": "entry.client",
+          "src": "app/entry.client.tsx",
+          "isEntry": true,
+          "imports": [
+            "_components-DCXasuDn.js",
+            "_jsx-runtime-dLopkF8M.js"
+          ]
+        },
+        "app/root.tsx?__react-router-build-client-route": {
+          "file": "assets/root-CoVFBJQq.js",
+          "name": "root",
+          "src": "app/root.tsx?__react-router-build-client-route",
+          "isEntry": true,
+          "imports": [
+            "_components-DCXasuDn.js",
+            "_jsx-runtime-dLopkF8M.js",
+            "_legacy-game-pack-BZyEd4_V.js"
+          ],
+          "dynamicImports": [
+            "app/root.tsx?__react-router-build-client-route",
+            "src/launcher/package-feature.mts"
+          ],
+          "css": [
+            "assets/root-BdCl_Idk.css"
+          ],
+          "assets": [
+            "assets/launcher-background-BiUjKY5p.webp",
+            "assets/touhou98-DT4VlVq-.woff2",
+            "assets/yatra-one-latin-D3UULBaH.woff2",
+            "assets/chill-round-gothic-site-medium-critical-GINwbEIH.woff2",
+            "assets/chill-round-gothic-site-bold-critical-BeC4Rmc5.woff2",
+            "assets/unifont-site-DK1S7cmp.woff2"
+          ]
+        },
+        "app/routes/surface.tsx?__react-router-build-client-route": {
+          "file": "assets/surface-BuvVOzaT.js",
+          "name": "surface",
+          "src": "app/routes/surface.tsx?__react-router-build-client-route",
+          "isEntry": true,
+          "imports": [
+            "_components-DCXasuDn.js"
+          ]
+        },
+        "public/assets/fonts/chill-round-gothic-site-bold-critical.woff2": {
+          "file": "assets/chill-round-gothic-site-bold-critical-BeC4Rmc5.woff2",
+          "src": "public/assets/fonts/chill-round-gothic-site-bold-critical.woff2"
+        },
+        "public/assets/fonts/chill-round-gothic-site-medium-critical.woff2": {
+          "file": "assets/chill-round-gothic-site-medium-critical-GINwbEIH.woff2",
+          "src": "public/assets/fonts/chill-round-gothic-site-medium-critical.woff2"
+        },
+        "public/assets/fonts/touhou98.woff2": {
+          "file": "assets/touhou98-DT4VlVq-.woff2",
+          "src": "public/assets/fonts/touhou98.woff2"
+        },
+        "public/assets/fonts/unifont-site.woff2": {
+          "file": "assets/unifont-site-DK1S7cmp.woff2",
+          "src": "public/assets/fonts/unifont-site.woff2"
+        },
+        "public/assets/fonts/yatra-one-latin.woff2": {
+          "file": "assets/yatra-one-latin-D3UULBaH.woff2",
+          "src": "public/assets/fonts/yatra-one-latin.woff2"
+        },
+        "public/assets/launcher-background.webp": {
+          "file": "assets/launcher-background-BiUjKY5p.webp",
+          "src": "public/assets/launcher-background.webp"
+        },
+        "src/launcher/package-feature.mts": {
+          "file": "assets/package-feature-Bhm7_uyy.js",
+          "name": "package-feature",
+          "src": "src/launcher/package-feature.mts",
+          "isDynamicEntry": true,
+          "imports": [
+            "_legacy-game-pack-BZyEd4_V.js"
+          ]
+        }
+      },
+      "graph": {
+        "schema": "eagler-touhou/react-app-shell-graph/1",
+        "mountPath": "/",
+        "appShell": {
+          "schema": "eagler-touhou/react-app-shell/1",
+          "origin": "same-origin",
+          "mountPath": "/"
+        },
+        "shellFiles": [
+          "about.css",
+          "about.html",
+          "assets/chill-round-gothic-site-bold-critical-BeC4Rmc5.woff2",
+          "assets/chill-round-gothic-site-medium-critical-GINwbEIH.woff2",
+          "assets/components-DCXasuDn.js",
+          "assets/entry.client-DbcLqyPP.js",
+          "assets/favicon.ico",
+          "assets/fonts/chill-round-gothic-site-bold-critical.woff2",
+          "assets/fonts/chill-round-gothic-site-heavy.woff2",
+          "assets/fonts/chill-round-gothic-site-medium-critical.woff2",
+          "assets/fonts/touhou98.woff2",
+          "assets/fonts/unifont-site.woff2",
+          "assets/fonts/yatra-one-latin.woff2",
+          "assets/jsx-runtime-dLopkF8M.js",
+          "assets/launcher-background-BiUjKY5p.webp",
+          "assets/launcher-background.webp",
+          "assets/legacy-game-pack-BZyEd4_V.js",
+          "assets/manifest-87980abe.js",
+          "assets/notice-bilibili.svg",
+          "assets/notice-github.svg",
+          "assets/notice-qq.svg",
+          "assets/notice-touhou-cloud.png",
+          "assets/package-feature-Bhm7_uyy.js",
+          "assets/player-chat.svg",
+          "assets/player-live.svg",
+          "assets/player-pause.svg",
+          "assets/player-play.svg",
+          "assets/quick-chat/1.wav",
+          "assets/quick-chat/bomb-me.wav",
+          "assets/quick-chat/bomb-you.wav",
+          "assets/quick-chat/follow-me.wav",
+          "assets/quick-chat/last-game.wav",
+          "assets/quick-chat/last.wav",
+          "assets/quick-chat/leaving.wav",
+          "assets/quick-chat/request-life.wav",
+          "assets/quick-chat/request-power.wav",
+          "assets/quick-chat/share-resources.wav",
+          "assets/quick-chat/spread-out.wav",
+          "assets/quick-chat/stop-fire.wav",
+          "assets/quick-chat/thanks.wav",
+          "assets/quick-chat/xxzj.wav",
+          "assets/replay-arrow-counter-clockwise.svg",
+          "assets/replay-arrow-left.svg",
+          "assets/replay-dots-three.svg",
+          "assets/replay-file-text.svg",
+          "assets/replay-folder.svg",
+          "assets/replay-upload-simple.svg",
+          "assets/room-caret-left.svg",
+          "assets/room-caret-right.svg",
+          "assets/room-chart-bar.svg",
+          "assets/room-copy.svg",
+          "assets/room-gear-six.svg",
+          "assets/room-sliders-horizontal.svg",
+          "assets/room-user.svg",
+          "assets/room-users.svg",
+          "assets/root-BdCl_Idk.css",
+          "assets/root-CoVFBJQq.js",
+          "assets/site-menu-close.svg",
+          "assets/site-menu.svg",
+          "assets/surface-BuvVOzaT.js",
+          "assets/touch-rotate-landscape.webp",
+          "assets/touhou98-DT4VlVq-.woff2",
+          "assets/unifont-site-DK1S7cmp.woff2",
+          "assets/yatra-one-latin-D3UULBaH.woff2",
+          "compatibility.html",
+          "content/FIRST_USE_NOTICE.html",
+          "content/MULTIPLAYER.html",
+          "en.html",
+          "faq.html",
+          "favicon.ico",
+          "features.css",
+          "index.html",
+          "lobby.html",
+          "robots.txt",
+          "site-pages.css",
+          "site-pages.mjs",
+          "site.webmanifest",
+          "styles.css",
+          "uptime/index.html",
+          "vendor/fflate.min.js",
+          "vendor/webaudio-tinysynth.min.js"
+        ]
+      }
+    }
+  },
+  "frontendFiles": [
+    "ASSETS.md",
+    "NOTICE.txt",
+    "README.md",
+    "THIRD_PARTY.md",
+    "about.css",
+    "about.html",
+    "assets/LICENSE-Phosphor.txt",
+    "assets/chill-round-gothic-site-bold-critical-BeC4Rmc5.woff2",
+    "assets/chill-round-gothic-site-medium-critical-GINwbEIH.woff2",
+    "assets/components-DCXasuDn.js",
+    "assets/donation.webp",
+    "assets/entry.client-DbcLqyPP.js",
+    "assets/favicon.ico",
+    "assets/fonts/OFL-ChillRoundGothic.txt",
+    "assets/fonts/OFL-Unifont.txt",
+    "assets/fonts/OFL-YatraOne.txt",
+    "assets/fonts/chill-round-gothic-site-bold-critical.woff2",
+    "assets/fonts/chill-round-gothic-site-bold-deferred.woff2",
+    "assets/fonts/chill-round-gothic-site-bold.woff2",
+    "assets/fonts/chill-round-gothic-site-heavy.woff2",
+    "assets/fonts/chill-round-gothic-site-medium-critical.woff2",
+    "assets/fonts/chill-round-gothic-site-medium-deferred.woff2",
+    "assets/fonts/chill-round-gothic-site-medium.woff2",
+    "assets/fonts/touhou98.woff2",
+    "assets/fonts/unifont-site.woff2",
+    "assets/fonts/yatra-one-latin.woff2",
+    "assets/jsx-runtime-dLopkF8M.js",
+    "assets/launcher-background-BiUjKY5p.webp",
+    "assets/launcher-background.webp",
+    "assets/legacy-game-pack-BZyEd4_V.js",
+    "assets/manifest-87980abe.js",
+    "assets/notice-bilibili.svg",
+    "assets/notice-github.svg",
+    "assets/notice-qq.svg",
+    "assets/notice-touhou-cloud.png",
+    "assets/package-feature-Bhm7_uyy.js",
+    "assets/phosphor-ui-icons.json",
+    "assets/player-chat.svg",
+    "assets/player-live.svg",
+    "assets/player-pause.svg",
+    "assets/player-play.svg",
+    "assets/quick-chat/1.wav",
+    "assets/quick-chat/bomb-me.wav",
+    "assets/quick-chat/bomb-you.wav",
+    "assets/quick-chat/follow-me.wav",
+    "assets/quick-chat/last-game.wav",
+    "assets/quick-chat/last.wav",
+    "assets/quick-chat/leaving.wav",
+    "assets/quick-chat/request-life.wav",
+    "assets/quick-chat/request-power.wav",
+    "assets/quick-chat/share-resources.wav",
+    "assets/quick-chat/spread-out.wav",
+    "assets/quick-chat/stop-fire.wav",
+    "assets/quick-chat/thanks.wav",
+    "assets/quick-chat/xxzj.wav",
+    "assets/replay-arrow-counter-clockwise.svg",
+    "assets/replay-arrow-left.svg",
+    "assets/replay-dots-three.svg",
+    "assets/replay-file-text.svg",
+    "assets/replay-folder.svg",
+    "assets/replay-upload-simple.svg",
+    "assets/room-caret-left.svg",
+    "assets/room-caret-right.svg",
+    "assets/room-chart-bar.svg",
+    "assets/room-copy.svg",
+    "assets/room-gear-six.svg",
+    "assets/room-icons-LICENSE.txt",
+    "assets/room-sliders-horizontal.svg",
+    "assets/room-user.svg",
+    "assets/room-users.svg",
+    "assets/root-BdCl_Idk.css",
+    "assets/root-CoVFBJQq.js",
+    "assets/site-menu-close.svg",
+    "assets/site-menu.svg",
+    "assets/surface-BuvVOzaT.js",
+    "assets/touch-rotate-landscape.webp",
+    "assets/touhou98-DT4VlVq-.woff2",
+    "assets/unifont-site-DK1S7cmp.woff2",
+    "assets/yatra-one-latin-D3UULBaH.woff2",
+    "compatibility.html",
+    "content/FIRST_USE_NOTICE.html",
+    "content/MULTIPLAYER.html",
+    "en.html",
+    "faq.html",
+    "favicon.ico",
+    "features.css",
+    "index.html",
+    "legacy-mount-retirement-sw.js",
+    "legacy/chunks/chunk-2YSLDI5C.mjs",
+    "legacy/chunks/chunk-5UOAMCPL.mjs",
+    "legacy/legacy-game-pack.mjs",
+    "legacy/legacy-import-storage.mjs",
+    "legacy/legacy-package-adapter.mjs",
+    "lobby.css",
+    "lobby.html",
+    "migrate.html",
+    "robots.txt",
+    "runtime-program-sw.js",
+    "site-pages.css",
+    "site-pages.mjs",
+    "site.webmanifest",
+    "sitemap.xml",
+    "styles.css",
+    "touch-guide.css",
+    "ui-fonts-deferred.css",
+    "ui-fonts.css",
+    "uptime/index.html",
+    "vendor/fflate.LICENSE",
+    "vendor/fflate.min.js",
+    "vendor/webaudio-tinysynth.LICENSE",
+    "vendor/webaudio-tinysynth.min.js"
+  ],
+  "files": [
+    {
+      "path": "about.css",
+      "bytes": 1516,
+      "sha256": "7ef30d3a674de7dfb137734640907f60117f74f5058c6e828f74b992bd0ec3b0"
+    },
+    {
+      "path": "about.html",
+      "bytes": 2229,
+      "sha256": "f2989222a4ec80b020f89f49969163ecb8d3dccf84f7710646a3825f05933d14"
+    },
+    {
+      "path": "assets/chill-round-gothic-site-bold-critical-BeC4Rmc5.woff2",
+      "bytes": 32684,
+      "sha256": "4e89cc9c877c0898362d570465e2229aec979b0b72e790e4733a90dd830c4589"
+    },
+    {
+      "path": "assets/chill-round-gothic-site-medium-critical-GINwbEIH.woff2",
+      "bytes": 32340,
+      "sha256": "ef33973fb5b184dc5fdca3353d51b34dd3e66526ee67ed899f8138813a5d66d2"
+    },
+    {
+      "path": "assets/components-DCXasuDn.js",
+      "bytes": 87567,
+      "sha256": "88ce05f032c13b78e413e87ac584ae2600147671f10b3972e858ade079908e1c"
+    },
+    {
+      "path": "assets/donation.webp",
+      "bytes": 18148,
+      "sha256": "fd60275efef1bb58390fc33a896270b067b2c1cdc0fe891d781f5581716eaa79"
+    },
+    {
+      "path": "assets/entry.client-DbcLqyPP.js",
+      "bytes": 210921,
+      "sha256": "c58b1209fd843d4e69dddc7e1ffd20de423b97347c5f606ffa21d8dd8a0f9932"
+    },
+    {
+      "path": "assets/favicon.ico",
+      "bytes": 8624,
+      "sha256": "7a463161ffd67abdd632d2a2cb24c4be7f82b85feca7a0f87fee5d1eff5934b4"
+    },
+    {
+      "path": "assets/fonts/chill-round-gothic-site-bold-critical.woff2",
+      "bytes": 32684,
+      "sha256": "4e89cc9c877c0898362d570465e2229aec979b0b72e790e4733a90dd830c4589"
+    },
+    {
+      "path": "assets/fonts/chill-round-gothic-site-bold-deferred.woff2",
+      "bytes": 134536,
+      "sha256": "0f47dad2fa2c7eeb9490037a91dbcd5fe50def1c247c89eeae3836f01df1e631"
+    },
+    {
+      "path": "assets/fonts/chill-round-gothic-site-bold.woff2",
+      "bytes": 168420,
+      "sha256": "86f00f3f16d5e9ac692ede91ffb7ed3ffb87bbaa8aa95695cc4f13c1440dd91d"
+    },
+    {
+      "path": "assets/fonts/chill-round-gothic-site-heavy.woff2",
+      "bytes": 3912,
+      "sha256": "940be9d0b1c695773f100b2f1cfb60b090e99f3632f784054c78d45d3a789c80"
+    },
+    {
+      "path": "assets/fonts/chill-round-gothic-site-medium-critical.woff2",
+      "bytes": 32340,
+      "sha256": "ef33973fb5b184dc5fdca3353d51b34dd3e66526ee67ed899f8138813a5d66d2"
+    },
+    {
+      "path": "assets/fonts/chill-round-gothic-site-medium-deferred.woff2",
+      "bytes": 132736,
+      "sha256": "5284389e58f72bb7da3402ffebc42a3ba4a1ab1e3111e2ebc11d67ba5fff60d9"
+    },
+    {
+      "path": "assets/fonts/chill-round-gothic-site-medium.woff2",
+      "bytes": 166356,
+      "sha256": "c61d9f75feba3b4bf1d584774e2debd8d0b9d011a5a0a1eec4f1b8212cae2ac0"
+    },
+    {
+      "path": "assets/fonts/OFL-ChillRoundGothic.txt",
+      "bytes": 4448,
+      "sha256": "c5ee995cc1ebc563bb9c9ba1ea9e421864d77484967f7197ac8ec7d199978259"
+    },
+    {
+      "path": "assets/fonts/OFL-Unifont.txt",
+      "bytes": 4688,
+      "sha256": "787fdbf8834c8abfd12a92e1c611e7c53d60e19b08ae99562a763e05b452722d"
+    },
+    {
+      "path": "assets/fonts/OFL-YatraOne.txt",
+      "bytes": 4438,
+      "sha256": "71e5222c549d85a1403b6e709b4328b81d7b51ba021b8bd20df89550da80c087"
+    },
+    {
+      "path": "assets/fonts/touhou98.woff2",
+      "bytes": 9416,
+      "sha256": "fa0087199674045dfc6dd9fd161d93035478f9aa139a06f362a0e35547a68091"
+    },
+    {
+      "path": "assets/fonts/unifont-site.woff2",
+      "bytes": 23504,
+      "sha256": "4b44849d2424a813ae33e031304c21874ce1633aff0d51398fa1eda071ef9ee8"
+    },
+    {
+      "path": "assets/fonts/yatra-one-latin.woff2",
+      "bytes": 18568,
+      "sha256": "efcdf4e36d87eb7d497afb6e4d66c49478dd6826b2cc9ae036d894a713eaa419"
+    },
+    {
+      "path": "assets/jsx-runtime-dLopkF8M.js",
+      "bytes": 37706,
+      "sha256": "e73173ec943d2f3e0551cc9e84c40c1a77a917dbf9b527d872590cc017a7d2ae"
+    },
+    {
+      "path": "assets/launcher-background-BiUjKY5p.webp",
+      "bytes": 204260,
+      "sha256": "9a3a4256ab3384a1ead0f98b92ee1b47ac14bc7ee2b0a2bf3b821b826e49f415"
+    },
+    {
+      "path": "assets/launcher-background.webp",
+      "bytes": 204260,
+      "sha256": "9a3a4256ab3384a1ead0f98b92ee1b47ac14bc7ee2b0a2bf3b821b826e49f415"
+    },
+    {
+      "path": "assets/legacy-game-pack-BZyEd4_V.js",
+      "bytes": 75896,
+      "sha256": "5ab7f7590f338a5b26d5e10dcbf14aa50215aa589a13f18c35af0c7ae504e5fd"
+    },
+    {
+      "path": "assets/LICENSE-Phosphor.txt",
+      "bytes": 1092,
+      "sha256": "ddbe6082ec3cf979db47e5af549d2849c5d6182b3e005ef91ce1dbb9eb122f11"
+    },
+    {
+      "path": "assets/manifest-87980abe.js",
+      "bytes": 2238,
+      "sha256": "ee65e803fa7d0b3014c26eaebb5606be65f11529bd9f86648031bf0473b4d66a"
+    },
+    {
+      "path": "assets/notice-bilibili.svg",
+      "bytes": 1160,
+      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7"
+    },
+    {
+      "path": "assets/notice-github.svg",
+      "bytes": 679,
+      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca"
+    },
+    {
+      "path": "assets/notice-qq.svg",
+      "bytes": 508,
+      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829"
+    },
+    {
+      "path": "assets/notice-touhou-cloud.png",
+      "bytes": 23262,
+      "sha256": "8fa084c92d17a6943d1e5aaf54b18c2b546ce2708adca3407b41d347a9f3007d"
+    },
+    {
+      "path": "assets/package-feature-Bhm7_uyy.js",
+      "bytes": 252,
+      "sha256": "fd370186a5a782ecd25742f0b8d410b2a8133719cbdb2962d3b2609dee01f323"
+    },
+    {
+      "path": "assets/phosphor-ui-icons.json",
+      "bytes": 3793,
+      "sha256": "2e55109c616bfab2154f78d05ddf7edce2776d63e7e4bc8ca382677cbed48d20"
+    },
+    {
+      "path": "assets/player-chat.svg",
+      "bytes": 448,
+      "sha256": "efdb68b49cb030dcc6d04abf6f4e9368a0a9e7870d0145e62badcc99e58ca288"
+    },
+    {
+      "path": "assets/player-live.svg",
+      "bytes": 275,
+      "sha256": "52f1ed5a89f1a38bf8537b38bd2da0501e396fc4cb03a2cdde38d248ceb03fbe"
+    },
+    {
+      "path": "assets/player-pause.svg",
+      "bytes": 320,
+      "sha256": "7a9a8fe311234262b85c6e332f77db4ba9a59b6ca4292c41d327977cf61a2fc9"
+    },
+    {
+      "path": "assets/player-play.svg",
+      "bytes": 293,
+      "sha256": "885b3ed2095889c4ff063dac35dc424cb9f6c00273ab44e2f90dc9dadbee661a"
+    },
+    {
+      "path": "assets/quick-chat/1.wav",
+      "bytes": 22268,
+      "sha256": "a054dc331c1b6a36f3c2acb86ac1cfdd7067370902a2db63c017a0cad484298d"
+    },
+    {
+      "path": "assets/quick-chat/bomb-me.wav",
+      "bytes": 27708,
+      "sha256": "3addf3c70da6a99fb570b59ed0ea9d1620c36e4dbfa3d3b51df8275bfb0da4c0"
+    },
+    {
+      "path": "assets/quick-chat/bomb-you.wav",
+      "bytes": 33308,
+      "sha256": "77e4a30b1e02acd8579631cc7089b96d1f5ef375eed42436e77549e8cda81d03"
+    },
+    {
+      "path": "assets/quick-chat/follow-me.wav",
+      "bytes": 31868,
+      "sha256": "fa51bf88f01be74b4b33271f125eb02de6f78be97e873934aff6dd821dd86a78"
+    },
+    {
+      "path": "assets/quick-chat/last-game.wav",
+      "bytes": 35548,
+      "sha256": "b8b46b382774f37fa9d1ddb283069cee292b7bc5b75c99c8147f9a0319d13ae4"
+    },
+    {
+      "path": "assets/quick-chat/last.wav",
+      "bytes": 50268,
+      "sha256": "e6f7efd86bd3f79c650ce13f2f3f1b5687a2ba31d65a89f5d246f9be5a666d09"
+    },
+    {
+      "path": "assets/quick-chat/leaving.wav",
+      "bytes": 64428,
+      "sha256": "795f6d3e0167faa70929e685ca9a6ac78e2645c42646558137c59ace79d6efbb"
+    },
+    {
+      "path": "assets/quick-chat/request-life.wav",
+      "bytes": 37788,
+      "sha256": "a5ad0a185bc7dde9cc84411921217be1f68419a2a123bfa2a4c3b6eb45f2b3cc"
+    },
+    {
+      "path": "assets/quick-chat/request-power.wav",
+      "bytes": 40508,
+      "sha256": "ffb335a3791d90ac6a1d8c4028da8ceabc68b3cbbbcbe066c680de814fe2feae"
+    },
+    {
+      "path": "assets/quick-chat/share-resources.wav",
+      "bytes": 44028,
+      "sha256": "7cfd6e6ef3ce492456916d02751cb21b620e2e0082c8ad6433220f918c14b562"
+    },
+    {
+      "path": "assets/quick-chat/spread-out.wav",
+      "bytes": 27868,
+      "sha256": "fec0b34b12c5cfd90335989c142c764f5a9daeb656555a416fd7875971025a91"
+    },
+    {
+      "path": "assets/quick-chat/stop-fire.wav",
+      "bytes": 35388,
+      "sha256": "507de44870d86eb2e43d86154b81e6b2d002b4eefe4d9e2d663bbe2336e45f9d"
+    },
+    {
+      "path": "assets/quick-chat/thanks.wav",
+      "bytes": 30428,
+      "sha256": "1dbdfa77bf57c5f16d80e55ad66a761e7accc6e9607f44ffc483aec8f71032a8"
+    },
+    {
+      "path": "assets/quick-chat/xxzj.wav",
+      "bytes": 30428,
+      "sha256": "1dbdfa77bf57c5f16d80e55ad66a761e7accc6e9607f44ffc483aec8f71032a8"
+    },
+    {
+      "path": "assets/replay-arrow-counter-clockwise.svg",
+      "bytes": 325,
+      "sha256": "4eb160d5ae781107c674481ac081962e6bce6281a646129e6c3f960b9dd5dac6"
+    },
+    {
+      "path": "assets/replay-arrow-left.svg",
+      "bytes": 248,
+      "sha256": "3c2001cf957d182fc54927e4b286cc8cf66dd97830f441ca2650d42a63a9006a"
+    },
+    {
+      "path": "assets/replay-dots-three.svg",
+      "bytes": 237,
+      "sha256": "ca4e748007101155641ec3041cd129bb03a8030d0eed16e313b9dd75e6beac77"
+    },
+    {
+      "path": "assets/replay-file-text.svg",
+      "bytes": 416,
+      "sha256": "9a580a038cce9f6dd223597864abe1b5c5c03bf8176d2f7171574598468b16f7"
+    },
+    {
+      "path": "assets/replay-folder.svg",
+      "bytes": 305,
+      "sha256": "4a882bcd4a91ae0a01887024f08d358932f183b6b171e87a3e48c5910364d507"
+    },
+    {
+      "path": "assets/replay-upload-simple.svg",
+      "bytes": 324,
+      "sha256": "d2b22b75affd718a4a24d71ee71586b277cf48ddb7d52b7d7d0a85b47f8b12d1"
+    },
+    {
+      "path": "assets/room-caret-left.svg",
+      "bytes": 200,
+      "sha256": "623bf248fe21a8170344e168aaac2e174119cea5d7c5d0fb0dc84f581009475f"
+    },
+    {
+      "path": "assets/room-caret-right.svg",
+      "bytes": 219,
+      "sha256": "e6dec01e074807965b7f3146b976a9b5e82c31d9c2c88aeb52e77cc2ab16c1d7"
+    },
+    {
+      "path": "assets/room-chart-bar.svg",
+      "bytes": 282,
+      "sha256": "d161e503af4f5386a370ffd742d19d85e98625fd6d6eadbabbdb36d58dcca22c"
+    },
+    {
+      "path": "assets/room-copy.svg",
+      "bytes": 279,
+      "sha256": "5a892fc6a72866e60c67db2088a87653cf44b57b1a5d183b36e950cdc5dd66b3"
+    },
+    {
+      "path": "assets/room-gear-six.svg",
+      "bytes": 1462,
+      "sha256": "2bb05ec80cc37505a3f21c74989dbb297ab8442a668f5ffbd6a8f7c1d5794c7b"
+    },
+    {
+      "path": "assets/room-icons-LICENSE.txt",
+      "bytes": 1092,
+      "sha256": "ddbe6082ec3cf979db47e5af549d2849c5d6182b3e005ef91ce1dbb9eb122f11"
+    },
+    {
+      "path": "assets/room-sliders-horizontal.svg",
+      "bytes": 360,
+      "sha256": "1d937baa3bc51ec4052364edf30cf8991d550920534f5d413eb9f60535cc1916"
+    },
+    {
+      "path": "assets/room-user.svg",
+      "bytes": 340,
+      "sha256": "787434f7fef95f20e137d309d3c6b8b471548c55c9dfc137ae10625d70959d11"
+    },
+    {
+      "path": "assets/room-users.svg",
+      "bytes": 506,
+      "sha256": "b3385e4c6aa03f7e16d1b03887c2cdff9900f5a7edbd5ea5176055938ccfb908"
+    },
+    {
+      "path": "assets/root-BdCl_Idk.css",
+      "bytes": 430365,
+      "sha256": "d3e0bbd38b80e9f13e87f112c6b2a78506d340408e0626e324c7b25fef18ffb1"
+    },
+    {
+      "path": "assets/root-CoVFBJQq.js",
+      "bytes": 1108197,
+      "sha256": "187230b8adf8ed5fd3270bf15f12ef401d9fb78013bca09c6da012d605d8e778"
+    },
+    {
+      "path": "assets/site-menu-close.svg",
+      "bytes": 284,
+      "sha256": "7397b15e1fa66eaf6ff9b59fe91d483cb5c3bcf75b2fe052097ab6f0593b513a"
+    },
+    {
+      "path": "assets/site-menu.svg",
+      "bytes": 253,
+      "sha256": "fb1851842c74b40a3f42ce3d6ae0e67ede556b624218e79c0f4ead7d9ceec51f"
+    },
+    {
+      "path": "assets/surface-BuvVOzaT.js",
+      "bytes": 99,
+      "sha256": "e0114b9e9b8ece6ebc1ace7a8a06d396c694ad202625dea4fffc55c50b218172"
+    },
+    {
+      "path": "assets/th05-card.webp",
+      "bytes": 53702,
+      "sha256": "409db05b236dbbe4694536e3846903b65dfee5ca200101a65bfa9f776ead7062"
+    },
+    {
+      "path": "assets/touch-rotate-landscape.webp",
+      "bytes": 141862,
+      "sha256": "1c3c108d68d3509b8ebd3c96843dd4e6afc8bf863911923cd2be6fda6a34f378"
+    },
+    {
+      "path": "assets/touhou98-DT4VlVq-.woff2",
+      "bytes": 9416,
+      "sha256": "fa0087199674045dfc6dd9fd161d93035478f9aa139a06f362a0e35547a68091"
+    },
+    {
+      "path": "assets/unifont-site-DK1S7cmp.woff2",
+      "bytes": 23504,
+      "sha256": "4b44849d2424a813ae33e031304c21874ce1633aff0d51398fa1eda071ef9ee8"
+    },
+    {
+      "path": "assets/yatra-one-latin-D3UULBaH.woff2",
+      "bytes": 18568,
+      "sha256": "efcdf4e36d87eb7d497afb6e4d66c49478dd6826b2cc9ae036d894a713eaa419"
+    },
+    {
+      "path": "ASSETS.md",
+      "bytes": 3129,
+      "sha256": "c56c47cbaab19cba517125f6c5ec3d6687d80419662f387ec49b64e8845038ff"
+    },
+    {
+      "path": "compatibility.html",
+      "bytes": 7302,
+      "sha256": "787c1873ee9d4a7a1da7908394fa447790e6b399b7adfe2183e23eeb6ad8504e"
+    },
+    {
+      "path": "content/FIRST_USE_NOTICE.html",
+      "bytes": 1109,
+      "sha256": "4668f6c911d6cb89e19a21636f5ae7208d9938db53f26620e1d02294819e10a0"
+    },
+    {
+      "path": "content/MULTIPLAYER.html",
+      "bytes": 16138,
+      "sha256": "19bd529fb73bdcc6c8a801c534204dc484b4376637c526a77cad092b461683ff"
+    },
+    {
+      "path": "en.html",
+      "bytes": 54211,
+      "sha256": "3574b9a78efdbea6ee2d5ea6c69edef2b1de7d0ab05be45c3d9def9ec085c61d"
+    },
+    {
+      "path": "faq.html",
+      "bytes": 8727,
+      "sha256": "9746e06a4ed743b7b7a286f286ad9a1667f5c6701b644392f22d70fd4545fe49"
+    },
+    {
+      "path": "favicon.ico",
+      "bytes": 8624,
+      "sha256": "7a463161ffd67abdd632d2a2cb24c4be7f82b85feca7a0f87fee5d1eff5934b4"
+    },
+    {
+      "path": "features.css",
+      "bytes": 206274,
+      "sha256": "ceedaad45dbaf7c1bf2cc041a1db81e456b06c4acf3504270ff39ae9775a8b65"
+    },
+    {
+      "path": "games/th05/language/lang_zh-hans.zip",
+      "bytes": 21050,
+      "sha256": "f05a1c93332bab2a01ef261ad7d4a1e426d2a1b0e6e8daadfb9460812ed44cc5"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-01.ogg",
+      "bytes": 1808643,
+      "sha256": "e87610aa473b5140d992aeb564a1c311c1cda0024808c9b2189ef9915b7f9c75"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-02.ogg",
+      "bytes": 3076982,
+      "sha256": "6f17b7abc6a1702caec7e828af5ee49d644e1549127a18f992f43c4f6f30cdcc"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-03.ogg",
+      "bytes": 1545064,
+      "sha256": "f60a422ac3617aa6065fdf5daee3594fb8a848b97bb7fdca408d6f4521b27bf7"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-04.ogg",
+      "bytes": 1820724,
+      "sha256": "570f449fcfeebfce3803133e7a2c453436bb0ac27840e20f80553bf3a7e0faff"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-05.ogg",
+      "bytes": 1197108,
+      "sha256": "9cc34082a4a6259e834c1fc1b653e92969b8cd1ef4f6d52291fad95470d1d9c3"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-06.ogg",
+      "bytes": 3040758,
+      "sha256": "14c1d799684afe943c11a6d1901325ea538ddcdcfc5f0d040dba4576c6c2863d"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-07.ogg",
+      "bytes": 2190071,
+      "sha256": "4a262c6e471f171a132eb8ee01edf4da842048852539b64018262a917ec36a0c"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-08.ogg",
+      "bytes": 2253292,
+      "sha256": "64670bca54d6ecd91eab7eb015fc41f60f884d52297e4455f48fcd7aed452db4"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-09.ogg",
+      "bytes": 2221503,
+      "sha256": "b09f3a82a6705702f76eeffe8d127f99dfc4c98c86dcfce6257014bf1895e4a2"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-10.ogg",
+      "bytes": 1589081,
+      "sha256": "dd057595dfb9b44ef6c008bafef69e6b0b81daaf0d55c7b874a924eeccf5d476"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-11.ogg",
+      "bytes": 1075237,
+      "sha256": "9e97b79fb89e428ea4913824c22450b7e0a091dde07dd164dfe4e90ca9e3df0c"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-12.ogg",
+      "bytes": 2669972,
+      "sha256": "0ce5c574c45d788b38f66f5a4827707b5f7c2e384bd8326050351eb032b952d0"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-13.ogg",
+      "bytes": 2407597,
+      "sha256": "7bb9aeeb69bd20cb40a4d95bbaf61f42d1d4f84724dd5888f2b827c99346761b"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-14.ogg",
+      "bytes": 982677,
+      "sha256": "d2439689423fe0fa5125952a56ef9533187ab53ada0d88a66da3d8352352502d"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-15.ogg",
+      "bytes": 2862965,
+      "sha256": "ce174cbeb321c29f0eb36f1a2b1bea9e76eba7237242179907d1c5b091e75b61"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-16.ogg",
+      "bytes": 2309914,
+      "sha256": "19ff027f2a82fe1ba77afb8ba69b57643ebb2e87a75a76e7cf801c17918bae8d"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-17.ogg",
+      "bytes": 1795874,
+      "sha256": "bf081bf8604a432999a81024ea4bef9838aeaa03f170a82f87a290b216bd70fa"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-18.ogg",
+      "bytes": 1017465,
+      "sha256": "2526a51ffcc4043ae0343d2e17ac0a1df4aa56cb156eb1109e50bce6bec71751"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-19.ogg",
+      "bytes": 867360,
+      "sha256": "76415b57bad9ca66c00e15f824ca2f705e8567a36298dde4dfaa8dd49a1155e0"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-20.ogg",
+      "bytes": 749623,
+      "sha256": "b514b9a161ced2f2d0a1a3b0fcb6db6c8c2eca049f82b7554bcff9f36e45fa55"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-21.ogg",
+      "bytes": 1716731,
+      "sha256": "1a0a1833fb8fc8b710078039acb74635d21a5c42a693ba413497d6fedd6c61c0"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-22.ogg",
+      "bytes": 917911,
+      "sha256": "f879f1d97f63e95ef43abbfc37285e1e0d8bd0997596d34c4b16bbcf329905dc"
+    },
+    {
+      "path": "games/th05/music/ogg/akyu-23.ogg",
+      "bytes": 2168027,
+      "sha256": "e56ab8d3a0fadf9a026c03487570900dab7be0e8ef98a1b3ba777f6d694cac05"
+    },
+    {
+      "path": "games/th05/music/ogg/ed00-m86-opus64-single-loop-v2.ogg",
+      "bytes": 659540,
+      "sha256": "69e87c0c25c17b3a5bc68b6302635fc4c6b36e18deb647a4b29d5283a45eb274"
+    },
+    {
+      "path": "games/th05/music/ogg/ed01-m86-opus64-single-loop-v2.ogg",
+      "bytes": 558496,
+      "sha256": "54f0ae64c865e53d81764074fa835bd329d5216cb7509870740986e6ac6b7fbf"
+    },
+    {
+      "path": "games/th05/music/ogg/ed02-m86-opus64-single-loop-v2.ogg",
+      "bytes": 557293,
+      "sha256": "00aab55f37f17604bcb0565b2832158de30831ef562534e91ffe5c6a46a3fa1a"
+    },
+    {
+      "path": "games/th05/music/ogg/exed-m86-opus64-single-loop-v2.ogg",
+      "bytes": 756045,
+      "sha256": "7f51b3695f856231427b495908a5f81e4090887c583c26c39cc7f3178a35bbcf"
+    },
+    {
+      "path": "games/th05/music/ogg/name-m86-opus64-single-loop-v2.ogg",
+      "bytes": 552187,
+      "sha256": "d142ac499555b376d40940bd39a416c70094336e2a47d998ae4d981953d295ad"
+    },
+    {
+      "path": "games/th05/music/ogg/op-m86-opus64-single-loop-v2.ogg",
+      "bytes": 667480,
+      "sha256": "6a3cc8782ad7b51fe325527d311bf8e4222bbb95705a7a523867abcfecb5301e"
+    },
+    {
+      "path": "games/th05/music/ogg/st00-m86-opus64-single-loop-v2.ogg",
+      "bytes": 1285774,
+      "sha256": "36fcb31140de708e45a71dade03e4ae86a70c61af4de54bfa72fba85bf910867"
+    },
+    {
+      "path": "games/th05/music/ogg/st00b-m86-opus64-single-loop-v2.ogg",
+      "bytes": 1016150,
+      "sha256": "9abb11e8327abe44cc7b92c2a1d2b1651e4d72bd465135688ef0a55b2225ebb0"
+    },
+    {
+      "path": "games/th05/music/ogg/st01-m86-opus64-single-loop-v2.ogg",
+      "bytes": 663294,
+      "sha256": "27a33f047183b84ed078335fb3093cd377200cab713c59c825d0eb82185797d1"
+    },
+    {
+      "path": "games/th05/music/ogg/st01b-m86-opus64-single-loop-v2.ogg",
+      "bytes": 761350,
+      "sha256": "c01c762622bb061728f3b06a17aadbcf56d45ce7b7ad2c8c47bc93d564e6a0b4"
+    },
+    {
+      "path": "games/th05/music/ogg/st02-m86-opus64-single-loop-v2.ogg",
+      "bytes": 1240315,
+      "sha256": "e3ae1ac13e6e5c69ef0948d277ae8e5097922fe7401306a7bdf6186696652d09"
+    },
+    {
+      "path": "games/th05/music/ogg/st02b-m86-opus64-single-loop-v2.ogg",
+      "bytes": 799447,
+      "sha256": "d5c6fb5776cb7200329b8d00fd877b318b38d93044e88eb3d9682699cddd394b"
+    },
+    {
+      "path": "games/th05/music/ogg/st03-m86-opus64-single-loop-v2.ogg",
+      "bytes": 808135,
+      "sha256": "d38ca4b86225594ed600d9eb0a11d4596fa70b95ac373711a82f4e991c48e262"
+    },
+    {
+      "path": "games/th05/music/ogg/st03b-m86-opus64-single-loop-v2.ogg",
+      "bytes": 778332,
+      "sha256": "ad49af5feeb72f8b4c6e6de8f780f43d85def9e217931735a2265bb450474131"
+    },
+    {
+      "path": "games/th05/music/ogg/st03c-m86-opus64-single-loop-v2.ogg",
+      "bytes": 1027511,
+      "sha256": "31f451e279ef2ad3b8edeb58abd82419a0d18668e1ff3919c4caa5199f1f2593"
+    },
+    {
+      "path": "games/th05/music/ogg/st03d-m86-opus64-single-loop-v2.ogg",
+      "bytes": 638764,
+      "sha256": "fa0d0f7ada1247999a93d3ecd656da45fd04ea036cefe5b78a3b9bac8e2fd2b9"
+    },
+    {
+      "path": "games/th05/music/ogg/st04-m86-opus64-single-loop-v2.ogg",
+      "bytes": 990737,
+      "sha256": "dd32bf88a5238411fa1b6ca20643356f2e73c6e87665481e42a3d4850a30ecd1"
+    },
+    {
+      "path": "games/th05/music/ogg/st04b-m86-opus64-single-loop-v2.ogg",
+      "bytes": 890451,
+      "sha256": "2056b9307e0f52f5e2b11ae1c9d764da7eb616f31680c7d4776b12c43f8a7ab4"
+    },
+    {
+      "path": "games/th05/music/ogg/st05-m86-opus64-single-loop-v2.ogg",
+      "bytes": 356981,
+      "sha256": "67724f53630caf98a3e654470f2c8b63269f373408a3e73b2c5e8c30d7918623"
+    },
+    {
+      "path": "games/th05/music/ogg/st05b-m86-opus64-single-loop-v2.ogg",
+      "bytes": 1205523,
+      "sha256": "2c2b9f466aff5fba9fdcb976dd4c56b5ca8e27f3e85642f6e5e4cb9005d3aeeb"
+    },
+    {
+      "path": "games/th05/music/ogg/st06-m86-opus64-single-loop-v2.ogg",
+      "bytes": 1548121,
+      "sha256": "db2309c38948a852e90f676a4c28b3b544fc2559fc8004493a40d9c82b6d0d2d"
+    },
+    {
+      "path": "games/th05/music/ogg/st06b-m86-opus64-single-loop-v2.ogg",
+      "bytes": 736917,
+      "sha256": "d793e5058debeb99697a08f33c83844f03d2ed6d0f7004cb0af468e3c6052dad"
+    },
+    {
+      "path": "games/th05/music/ogg/staff-m86-opus64-single-loop-v2.ogg",
+      "bytes": 1264505,
+      "sha256": "fa0bb4b0b8ffa22af6d198c6fe5b84d02d13bd75fec16c1eb79ee536f49c8243"
+    },
+    {
+      "path": "games/th05/th05.data",
+      "bytes": 6215024,
+      "sha256": "3798696a8a8253316a340e970ff70e7e7d730e1f2714da25a5e723456a205baf"
+    },
+    {
+      "path": "host-manifest.json",
+      "bytes": 67793,
+      "sha256": "2fda7d29bf729678406af75732a21cd6ec239e81220a0e6c48a596e0e852ae35"
+    },
+    {
+      "path": "index.html",
+      "bytes": 53487,
+      "sha256": "abe42513588819d2e9a4904dc2dfc4eb3886f7e601a5e0e358beec5b87c81a28"
+    },
+    {
+      "path": "legacy/chunks/chunk-2YSLDI5C.mjs",
+      "bytes": 16794,
+      "sha256": "33a4322bdd632826bcdd65bea86e3b6f1b8729d25e0b538978089d914a15b89c"
+    },
+    {
+      "path": "legacy/chunks/chunk-5UOAMCPL.mjs",
+      "bytes": 24254,
+      "sha256": "7adca3a443c3e5534769a392937c890cfaa6f99fe6a747fec8c162f9645f1596"
+    },
+    {
+      "path": "legacy/legacy-game-pack.mjs",
+      "bytes": 8892,
+      "sha256": "a4b93cd4ac416bcd61b673d724d685dd5df80dd615019daef1f49735cca36a59"
+    },
+    {
+      "path": "legacy/legacy-import-storage.mjs",
+      "bytes": 630,
+      "sha256": "e16d8e1c81400139817837ef4555a2819214d0adff05b95b7237b141c203dccf"
+    },
+    {
+      "path": "legacy/legacy-package-adapter.mjs",
+      "bytes": 162,
+      "sha256": "4798a79171fc615b86bbb9ae7b429a4e317006e73a49be2b09e8a69cc041aff3"
+    },
+    {
+      "path": "legacy-mount-retirement-sw.js",
+      "bytes": 1142,
+      "sha256": "9b138a6e477ec3cc6ffe3b3948efe633cb26049378831d33a9e69d5880743fcb"
+    },
+    {
+      "path": "lobby.css",
+      "bytes": 24464,
+      "sha256": "bf325fe7b960599ac36b4f6c570b52b3e0ba871b084a3b6ebc310b2857ff29ab"
+    },
+    {
+      "path": "lobby.html",
+      "bytes": 29214,
+      "sha256": "9eda6abb5e815220f8ec87623fc636a066b731af17050b52da4ad605b05f78f2"
+    },
+    {
+      "path": "migrate.html",
+      "bytes": 58072,
+      "sha256": "feaaebc62fc94c5fbf14976835265b1256ca0b9c2bd47ea08a91e5c6d8f11f40"
+    },
+    {
+      "path": "NOTICE.txt",
+      "bytes": 404,
+      "sha256": "1af7cef1de6f2237e81aa63b61ca0789f386069647042408c330ab7e1472423a"
+    },
+    {
+      "path": "README.md",
+      "bytes": 9178,
+      "sha256": "56ca35240f203910a1126753df1c88cf1d7ba4fa015cbad1104aad44788b9e91"
+    },
+    {
+      "path": "release-catalog.json",
+      "bytes": 1356,
+      "sha256": "21d52085d5a23b4f8618e2fc7ee15557c1cc26db1d5e77d63d21eba28e3ee174"
+    },
+    {
+      "path": "robots.txt",
+      "bytes": 25,
+      "sha256": "1cbdbc6504be7abe1267d01d7f565bfcfe5851ba3f6a3754d1d61c8f8a2c6aa3"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/audio-layout.mjs",
+      "bytes": 28176,
+      "sha256": "5a7c7ba0eebb29896941c425df46015161433cf736000868da18cba35b4a2ab1"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/audio.mjs",
+      "bytes": 6648,
+      "sha256": "0bb1821af2ee62c27936f4e8a6ae50931b18bf423395332ee2bee9b31448f426"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/clock.mjs",
+      "bytes": 789,
+      "sha256": "281d9b4052092c87e9e31e31cb8138680f1bcde45b09ba1d421a52aeecaf2b34"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/data.mjs",
+      "bytes": 2735,
+      "sha256": "7a16146b497d8693687fc65146f61276291b0ecdd7dd87d36e06dcb8dbaca447"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/direct-input-bridge.mjs",
+      "bytes": 1318,
+      "sha256": "28a01c9b3f4fb181e8278995c602ae3f2bc0351856102755513266c47abb6062"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/directory-keyboard.mjs",
+      "bytes": 5180,
+      "sha256": "9c9d8d99b46a802650821dd96ddc96509aef5c0f7bc50220b8ebc26fc086642d"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/input.mjs",
+      "bytes": 3544,
+      "sha256": "d394a08393655c5b89e934efc9f90305372ef68515516c784410a796e2f6eaf5"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/keyboard-input-bridge.mjs",
+      "bytes": 4775,
+      "sha256": "2955402127f0ce1a90f50b01a6147272d423338596591fba0b502bc8a1ec0cd2"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/keyboard-owners.mjs",
+      "bytes": 1670,
+      "sha256": "b8d75f6aac5e493a09b69de0c5aef57aa4b2e91f5a46e91709aab29395afcfb3"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/managed.mjs",
+      "bytes": 6418,
+      "sha256": "c763d475e58cf9fdbfe310e8a2b25c83f8ded732152b9db074fd7b4bb59decf2"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/manifest.json",
+      "bytes": 205,
+      "sha256": "003c0dffc5ec7e4ee14e3270592cc550b95a28059978335030ccb320b34534d6"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/playback.mjs",
+      "bytes": 3358,
+      "sha256": "a17a117df30c1e20ddd26f932747a5db48b66be7a3bfc5bb5a6e5b707266ffc7"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/replay.mjs",
+      "bytes": 2719,
+      "sha256": "4df79f70cd7977a6bf35f242a27bbe6211f00780ffd27bcb3f8df2c717b2e272"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/runtime-generation.json",
+      "bytes": 3046,
+      "sha256": "4441d2de7418e91790716b4eca53a490a97e48140eade1440d038b2f43eec194"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/sfx.mjs",
+      "bytes": 2173,
+      "sha256": "db421e466fe160c8964afeabd427c112fe19c16433b5e25571e3eebc581668bf"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/shell.mjs",
+      "bytes": 13418,
+      "sha256": "4e8edb9ead050486e09cfb30c66ae52f9960ae6389ba1ae4faee2a87b2dae549"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/storage.mjs",
+      "bytes": 2475,
+      "sha256": "6fa13a926df4290292ec6b9ae74d384a4668e0e69f924d7b2389499bb451b98b"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/th05.html",
+      "bytes": 671,
+      "sha256": "d33601507eb1341fbcd710a6f23da4ee7be254cde404a49b3de3ddc4220229ad"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/th05.mjs",
+      "bytes": 144599,
+      "sha256": "35e01e194eb7c4a4ac8d38358555e3855307b76674e880fd4a573101c580d16f"
+    },
+    {
+      "path": "runtime/th05/811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509/th05.wasm",
+      "bytes": 1002779,
+      "sha256": "7f48d24b9874385536b6abc79176eaf7c5a58db42f0d56a2a9f3bbd829c5ff83"
+    },
+    {
+      "path": "runtime/th05/th05.html",
+      "bytes": 180,
+      "sha256": "305776b8f348f8668626d75d9b23d2bc11e8fa95cc4b3efd927ee9e18f67ffcf"
+    },
+    {
+      "path": "runtime-manifest.json",
+      "bytes": 174895,
+      "sha256": "c14eb2815bd0026289e99014376cfd85437b840c31412630ab8035d9cadf022a"
+    },
+    {
+      "path": "runtime-program-sw.js",
+      "bytes": 37073,
+      "sha256": "a02534dfd3c36eec2355714be6d9e2b7bf72b6743025ef32e467f6f3628d43d6"
+    },
+    {
+      "path": "site-manifest.json",
+      "bytes": 67793,
+      "sha256": "1c95182e758502cd3ec6100d67cf6726229cc20ea5365d7dc61f8f20f66cc2fd"
+    },
+    {
+      "path": "site-pages.css",
+      "bytes": 10848,
+      "sha256": "8aaa2a2c2a92d2777d47f068542e0a928c87537c896c05853063fbca0dc3c505"
+    },
+    {
+      "path": "site-pages.mjs",
+      "bytes": 478782,
+      "sha256": "b167b290ae8f3549c3c26b4022e0c65f8ff5985ee6942609df9e9a6cf8e170cd"
+    },
+    {
+      "path": "site.webmanifest",
+      "bytes": 784,
+      "sha256": "f0206e7bea2f962fde24b2bcca651d9abd3ff97c27396ec0c8eec3aa7361e9c8"
+    },
+    {
+      "path": "sitemap.xml",
+      "bytes": 169,
+      "sha256": "519d54c75cdc60db2e1ec32e3319534878e2262f9bb666e2c255a9110b226fe8"
+    },
+    {
+      "path": "styles.css",
+      "bytes": 96832,
+      "sha256": "c671df71840dc85f205778047b0ca14347f570135b8e086f094d72eafc9d45bf"
+    },
+    {
+      "path": "th05.package.json",
+      "bytes": 17399,
+      "sha256": "ca35f00981ed314072c065c4d2b1c092d3e7473df180c40ae7b1bcda54ba997b"
+    },
+    {
+      "path": "THIRD_PARTY.md",
+      "bytes": 4916,
+      "sha256": "105056113b5f42f2668c5bec81ea927de6f3e1ae93135086b6e22d6522085f78"
+    },
+    {
+      "path": "touch-guide.css",
+      "bytes": 18764,
+      "sha256": "c205a923d1ad5b439fbd5d8dc0237766bfdcc528c321aae4bd840ce8f8e90407"
+    },
+    {
+      "path": "ui-fonts-deferred.css",
+      "bytes": 10762,
+      "sha256": "71247cf687c834540b857160a6229bdbf6ed5ba246ef8a2e6671279bd40845e6"
+    },
+    {
+      "path": "ui-fonts.css",
+      "bytes": 1240,
+      "sha256": "a63479df93163580182cac7a60d36f3858e306ef0e24b04a68b0a74848bc638f"
+    },
+    {
+      "path": "uptime/index.html",
+      "bytes": 893,
+      "sha256": "58e819acb1a1f873127a0b7d438395eb36a3864724f64857da50e398f262015c"
+    },
+    {
+      "path": "vendor/fflate.LICENSE",
+      "bytes": 1089,
+      "sha256": "c4a2b81d52232155bf78d4ea54a514115d8b9dfb9c0de752af68662a5672efe9"
+    },
+    {
+      "path": "vendor/fflate.min.js",
+      "bytes": 33044,
+      "sha256": "462ef8041fc970e3615a20a9dd2b2e3047a073b2da729ef4f02b634bba8b7b83"
+    },
+    {
+      "path": "vendor/webaudio-tinysynth.LICENSE",
+      "bytes": 11558,
+      "sha256": "e03ba41d7fab20700769fe4118bab50d800cb74f990353a05d2f5fff1c228363"
+    },
+    {
+      "path": "vendor/webaudio-tinysynth.min.js",
+      "bytes": 42859,
+      "sha256": "864269534ada22f57da86884d8c8dd5f4c71ca3658c584f8a35d781965dff1ab"
+    }
+  ],
+  "generation": {
+    "generation": "811ca3c998bdbc288128c461f2a399ac9f9614aa233b6ff9df02b6dcadcec509",
+    "entry": "th05.html",
+    "files": [
+      {
+        "path": "audio-layout.mjs",
+        "bytes": 28176,
+        "sha256": "5a7c7ba0eebb29896941c425df46015161433cf736000868da18cba35b4a2ab1"
+      },
+      {
+        "path": "audio.mjs",
+        "bytes": 6648,
+        "sha256": "0bb1821af2ee62c27936f4e8a6ae50931b18bf423395332ee2bee9b31448f426"
+      },
+      {
+        "path": "clock.mjs",
+        "bytes": 789,
+        "sha256": "281d9b4052092c87e9e31e31cb8138680f1bcde45b09ba1d421a52aeecaf2b34"
+      },
+      {
+        "path": "data.mjs",
+        "bytes": 2735,
+        "sha256": "7a16146b497d8693687fc65146f61276291b0ecdd7dd87d36e06dcb8dbaca447"
+      },
+      {
+        "path": "direct-input-bridge.mjs",
+        "bytes": 1318,
+        "sha256": "28a01c9b3f4fb181e8278995c602ae3f2bc0351856102755513266c47abb6062"
+      },
+      {
+        "path": "directory-keyboard.mjs",
+        "bytes": 5180,
+        "sha256": "9c9d8d99b46a802650821dd96ddc96509aef5c0f7bc50220b8ebc26fc086642d"
+      },
+      {
+        "path": "input.mjs",
+        "bytes": 3544,
+        "sha256": "d394a08393655c5b89e934efc9f90305372ef68515516c784410a796e2f6eaf5"
+      },
+      {
+        "path": "keyboard-input-bridge.mjs",
+        "bytes": 4775,
+        "sha256": "2955402127f0ce1a90f50b01a6147272d423338596591fba0b502bc8a1ec0cd2"
+      },
+      {
+        "path": "keyboard-owners.mjs",
+        "bytes": 1670,
+        "sha256": "b8d75f6aac5e493a09b69de0c5aef57aa4b2e91f5a46e91709aab29395afcfb3"
+      },
+      {
+        "path": "managed.mjs",
+        "bytes": 6418,
+        "sha256": "c763d475e58cf9fdbfe310e8a2b25c83f8ded732152b9db074fd7b4bb59decf2"
+      },
+      {
+        "path": "manifest.json",
+        "bytes": 205,
+        "sha256": "003c0dffc5ec7e4ee14e3270592cc550b95a28059978335030ccb320b34534d6"
+      },
+      {
+        "path": "playback.mjs",
+        "bytes": 3358,
+        "sha256": "a17a117df30c1e20ddd26f932747a5db48b66be7a3bfc5bb5a6e5b707266ffc7"
+      },
+      {
+        "path": "replay.mjs",
+        "bytes": 2719,
+        "sha256": "4df79f70cd7977a6bf35f242a27bbe6211f00780ffd27bcb3f8df2c717b2e272"
+      },
+      {
+        "path": "sfx.mjs",
+        "bytes": 2173,
+        "sha256": "db421e466fe160c8964afeabd427c112fe19c16433b5e25571e3eebc581668bf"
+      },
+      {
+        "path": "shell.mjs",
+        "bytes": 13418,
+        "sha256": "4e8edb9ead050486e09cfb30c66ae52f9960ae6389ba1ae4faee2a87b2dae549"
+      },
+      {
+        "path": "storage.mjs",
+        "bytes": 2475,
+        "sha256": "6fa13a926df4290292ec6b9ae74d384a4668e0e69f924d7b2389499bb451b98b"
+      },
+      {
+        "path": "th05.html",
+        "bytes": 671,
+        "sha256": "d33601507eb1341fbcd710a6f23da4ee7be254cde404a49b3de3ddc4220229ad"
+      },
+      {
+        "path": "th05.mjs",
+        "bytes": 144599,
+        "sha256": "35e01e194eb7c4a4ac8d38358555e3855307b76674e880fd4a573101c580d16f"
+      },
+      {
+        "path": "th05.wasm",
+        "bytes": 1002779,
+        "sha256": "7f48d24b9874385536b6abc79176eaf7c5a58db42f0d56a2a9f3bbd829c5ff83"
+      }
+    ]
+  },
+  "packageRevision": "a39e0610d1bb1480",
+  "source": {
+    "nativeCommit": "0c31261ea528db9747962e73b36c5105d2d41b78",
+    "audioCommit": "6eb46ed1d4f581f109ffa494ea0d21d54c8b38df",
+    "wasmSha256": "7f48d24b9874385536b6abc79176eaf7c5a58db42f0d56a2a9f3bbd829c5ff83"
+  },
+  "releaseName": "th05-native-20261101-922cb60d4048"
+}

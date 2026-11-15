@@ -191,7 +191,7 @@ bool retire(){
     }
     return true;
 }
-bool advance_one(double us,bool resimulation,bool& advanced){
+bool advance_one(double us,bool resimulation,bool drawForward,bool& advanced){
     advanced=false;
     std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> inputs{};Netplay::FrameDecision decision;
     bool speculative=false;
@@ -207,7 +207,12 @@ bool advance_one(double us,bool resimulation,bool& advanced){
     History h{frame,digest,digest,counts,cancel,nullptr,{}};
     if(speculative){h.state=app->capture_rollback();if(!h.state)return fail("TH075 rollback capture unavailable");}
     app->rollbackSounds.clear();app->collectRollbackSound=!spectator&&session->Rollback();
-    app->rollbackResimulating=resimulation;app->graphics.suppress(resimulation);
+    // Keep the render-side battle state advancing on catch-up ticks without
+    // issuing GPU commands for frames the browser cannot present. Confirmed
+    // lifecycle actions still need the framebuffer for transitions.
+    const bool skipDraw=!drawForward&&!spectator&&session->Rollback()&&
+        app->rollback_predictable()&&!((inputs[0].buttons|inputs[1].buttons)&0x700);
+    app->rollbackResimulating=resimulation;app->graphics.suppress(resimulation||skipDraw);
     const bool played=play(inputs);
     app->graphics.suppress(false);app->rollbackResimulating=false;app->collectRollbackSound=false;
     if(!played)return false;
@@ -234,8 +239,8 @@ bool advance_one(double us,bool resimulation,bool& advanced){
     }
     return true;
 }
-bool step(const BattleSystemInput&,double us,bool* forwardAdvanced){
-    if(forwardAdvanced)*forwardAdvanced=false;
+bool step(double us,bool drawForward,bool& forwardAdvanced){
+    forwardAdvanced=false;
     if(!enabled||finished||finishing||connectionEnded||transport.Disconnected())return true;
     // Send the current physical sample before historical work. Reconciliation
     // must never postpone the peer's fresh input behind our snapshot/replay cost.
@@ -256,13 +261,12 @@ bool step(const BattleSystemInput&,double us,bool* forwardAdvanced){
         // A slow endpoint must yield to browser input/network/audio between
         // historical ticks. Keep the target and snapshots for the next callback.
         if(n&&emscripten_get_now()-reconcileStarted>=4.)break;
-        bool advanced;if(!advance_one(us,true,advanced))return false;
+        bool advanced;if(!advance_one(us,true,false,advanced))return false;
         if(!advanced){remember_state();return true;}
     }
     if(frame<resimTarget){remember_state();return true;}
     rollbackAudio.Finish(stop_sound);
-    bool advanced;if(!advance_one(us,false,advanced))return false;
-    if(forwardAdvanced)*forwardAdvanced=advanced;
+    if(!advance_one(us,false,drawForward,forwardAdvanced))return false;
     remember_state();return true;
 }
 void render(){} // A missing peer frame must not re-run BattleScene::render's camera update.

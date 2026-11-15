@@ -1,0 +1,37 @@
+@layer foundation, theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+@import './tokens.css';
+@import './patterns.css';
+@import './windows.css';
+@import './window-motion.css';
+@source './';
+@source '../components/';
+
+@custom-variant dark (&:is(.dark *));
+@theme inline {
+  --default-transition-duration:var(--ui-feedback-duration);
+  --default-transition-timing-function:var(--ui-feedback-easing);
+  --color-background:var(--kit-background);--color-foreground:var(--kit-foreground);
+  --color-card:var(--kit-card);--color-card-foreground:var(--kit-foreground);
+  --color-popover:var(--kit-popover);--color-popover-foreground:var(--kit-foreground);
+  --color-primary:var(--kit-primary);--color-primary-foreground:var(--kit-primary-foreground);
+  --color-secondary:var(--kit-secondary);--color-secondary-foreground:var(--kit-foreground);
+  --color-muted:var(--kit-muted);--color-muted-foreground:var(--kit-muted-foreground);
+  --color-accent:var(--kit-accent);--color-accent-foreground:var(--kit-foreground);
+  --color-destructive:var(--kit-destructive);--color-destructive-foreground:var(--kit-destructive-foreground);--color-border:var(--kit-border);
+  --color-input:var(--kit-input);--color-ring:var(--kit-ring);--font-sans:var(--kit-font);
+  --radius-sm:4px;--radius-md:6px;--radius-lg:8px;--radius-xl:12px;
+}
+.ui-kit-choice {transition:background-color 320ms cubic-bezier(.22,.7,.2,1),color 320ms cubic-bezier(.22,.7,.2,1),box-shadow 320ms cubic-bezier(.22,.7,.2,1)}
+@media(prefers-reduced-motion:reduce) {.ui-kit-choice {transition:none}}
+.less-motion .ui-kit-choice {transition:none}
+@media(prefers-reduced-motion:reduce) {.ui-skeleton {animation:none}}
+.less-motion .ui-skeleton {animation:none}
+@layer components {
+  .ui-kit-button,.ui-kit-choice,.ui-kit-select-trigger {cursor:pointer;line-height:1.4;touch-action:manipulation}
+  .ui-kit-input-group:has(:disabled) {opacity:.5}
+  .ui-kit-input-group .ui-kit-input:focus {border:0;outline:none;box-shadow:none}
+  .ui-kit-select-content {max-height:var(--radix-select-content-available-height);animation:kit-popover-in var(--ui-surface-duration) var(--ui-surface-easing)}
+  @keyframes kit-popover-in {from{opacity:0;translate:0 -3px}to{opacity:1;translate:0 0}}
+}

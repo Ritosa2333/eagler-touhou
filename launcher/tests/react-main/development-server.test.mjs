@@ -1,6 +1,6 @@
 /** Original development-server HTTP assertions with canonical TH10 identity-only
  * metadata selection. No Runtime/DATA is supplied or executed; no browser claim. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync, spawn} from 'node:child_process';
 import {mkdir, mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
@@ -22,7 +22,7 @@ before(async () => {
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 
 test('development-server HTTP contract uses the module declared by the rendered root', async () => {
-  execFileSync(process.execPath, ['tests/test-server.mjs'], {env: environment, encoding: 'utf8', stdio: 'pipe', timeout: 60000});
+  execFileSync(process.execPath, ['tests/support/server-http-contract.mjs'], {env: environment, encoding: 'utf8', stdio: 'pipe', timeout: 60000});
 });
 
 async function port() {
@@ -49,11 +49,14 @@ async function start({selected = null, env = environment} = {}) {
 test('selected React root serves real routes and retirement worker and rejects old UI/missing resources', async () => {
   const server = await start();
   try {
-    for (const path of ['/', '/en.html', '/lobby.html']) {
+    for (const path of ['/', '/en.html', '/lobby.html', '/uptime/', '/uptime/index.html']) {
       const response = await fetch(server.base + path); assert.equal(response.status, 200);
       const html = await response.text(); assert.match(html, /__reactRouterContext/);
       assert.doesNotMatch(html, /<script[^>]+src=["'](?:\.\/)?app\.js/);
     }
+    const directory = await fetch(server.base + '/uptime?lang=ja', {redirect: 'manual'});
+    assert.equal(directory.status, 308);
+    assert.equal(directory.headers.get('location'), '/uptime/?lang=ja');
     const worker = await fetch(server.base + '/app-shell-sw.js');
     assert.equal(worker.status, 200);
     assert.match(await worker.text(), /registration\.unregister/);
@@ -65,6 +68,19 @@ test('selected React root serves real routes and retirement worker and rejects o
     assert.match(host.headers.get('content-type'), /application\/json/);
     const module = artifact.browserEntrypoints.find(path => path.startsWith('assets/'));
     assert.equal((await fetch(server.base + '/' + module)).status, 200);
+  } finally {await server.stop();}
+});
+
+test('development manifest refreshes DATA identity after a rebuild', async () => {
+  const fixture=resolve(work,'th05-data');await mkdir(fixture,{recursive:true});
+  await writeFile(resolve(fixture,'th05.data'),'first');
+  const server=await start({env:{...environment,EAGLER_DEVELOPMENT_GAMES:'th05',EAGLER_TH05_CONTENT_DIR:fixture}});
+  try {
+    const getManifest=async()=>(await (await fetch(server.base+'/site-manifest.json')).json()).games.th05.gameData;
+    const first=await getManifest();assert.equal(first.bytes,5);
+    await writeFile(resolve(fixture,'th05.data'),'replacement');
+    const next=await getManifest();assert.equal(next.bytes,11);assert.notEqual(next.sha256,first.sha256);
+    const response=await fetch(server.base+next.source);assert.equal(await response.text(),'replacement');
   } finally {await server.stop();}
 });
 

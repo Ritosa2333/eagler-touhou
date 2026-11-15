@@ -1,6 +1,6 @@
 import {readUiHistoryText} from './ui-history.mjs';
 /** Carrier setup only. No browser, layout, native focus/input or animation gate. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';

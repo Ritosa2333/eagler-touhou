@@ -2,6 +2,8 @@
 
 Relay 为联机客户端提供房间目录、等待室、信令、WebSocket 回退、旁观转发和昵称服务。产品规则与昵称规范从 [`common/contracts/`](../../common/contracts/README.md) 读取。
 
+匿名昵称也可以作为独立 HTTP 服务运行。配置 `EAGLER_NETPLAY_NICKNAME_STATE`、`EAGLER_NETPLAY_NICKNAME_API_KEY` 和至少 32 字符的 `NICKNAME_BRIDGE_SECRET`，执行 `npm run start:anonymous-api`。它默认监听本机 18411 端口，支持通过 Bearer 凭据调用 `POST /current` 和 `POST /submit`。同一份游客数据库由一个审核进程使用。
+
 ## 本地运行
 
 需要 Node.js 22.13 或更新版本。在本目录安装依赖、运行测试并启动：
@@ -27,10 +29,26 @@ npm run package -- /absolute/path/to/new-relay-package
 | --- | --- | --- |
 | `EAGLER_NETPLAY_RELAY_HOST` | `0.0.0.0` | 监听地址 |
 | `EAGLER_NETPLAY_RELAY_PORT` | `18142` | 监听端口 |
+| `EAGLER_NETPLAY_STATUS_PORT` | 未启用 | 可选房间统计 HTTP 端口，仅监听 `127.0.0.1` |
+| `EAGLER_NETPLAY_LISTEN_TOGETHER` | 未启用 | 设为 `1` 开启等待室一起听协议 |
 | `EAGLER_NETPLAY_TRUSTED_PROXIES` | 空 | 可信反向代理 IP，逗号分隔 |
 | `EAGLER_NETPLAY_STUN_URLS` | `stun:stun.cloudflare.com:3478` | 客户端 ICE STUN 地址 |
 | `EAGLER_NETPLAY_TURN_URLS` | 空 | 可选 TURN 地址；需配置共享密钥或静态凭据 |
 | `EAGLER_NETPLAY_TURN_SHARED_SECRET` | 空 | 与 coturn 共用的短期凭据密钥 |
 | `EAGLER_NETPLAY_TURN_CONFIG_FILE` | 空 | 动态 TURN JSON 路径；统一更新房间测速、游戏信令与网络诊断 |
+| `EAGLER_NETPLAY_SWARM_TURN_URLS` | 空 | 标准 Swarm TURN 地址，配置后房间提供 Swarm 选项 |
+| `EAGLER_NETPLAY_SWARM_TURN_SHARED_SECRET` | 空 | 与 Swarm TURN 网关共用的短期凭据密钥 |
+| `SWARM_ACCESS_TOKEN` | 空 | 为支持本地 Swarm 的双人原生对局分配中继端口。凭据由 Relay 读取 |
+| `EAGLER_NETPLAY_NAT4_PORT_STEPS` | 空 | 已实测的 IPv4 端口步长，格式为逗号分隔的 `IPv4=步长`。`0` 表示同一 UDP socket 对不同目标使用同一公网端口 |
+| `EAGLER_NETPLAY_NAT4_OBSERVERS` | 空 | 双人原生对局专用的三个 STUN URL。支持上报 STUN 来源的客户端可用同一 ICE socket 推断固定或递增的公网端口。其他房间使用 `EAGLER_NETPLAY_STUN_URLS` |
 
 完整客户端入口见[协议参考](docs/protocol.md)，反向代理与运行配置见[部署说明](deploy/README.md)。测试源码位于 [`tests/`](tests/)，服务许可见 [`LICENSE`](LICENSE)。
+
+
+启用状态端口后，`GET /status` 返回 `checkedAt` 和按产品汇总的 `products`，每作包含 `rooms`、`waiting`、`playing`、`players`、`spectators`。产品范围随公共目录更新，源码与独立发布包共用实现，供状态页采集。响应只包含聚合计数，不含房号、昵称或客户端地址。统计在线入座者与旁观者，不统计未入座访客和独立传输连接，因此不能据此判断服务可安全重启。
+
+## 广播与性能验证
+
+状态广播组件负责合并快照与释放定时器，事件即时发送。房间目录在每次推送中共用公开房间摘要和按作品筛选的结果，成员恢复信息分别生成；拥塞连接恢复后接收当前视图。
+
+`npm run benchmark:directory` 使用本地模拟连接，测量 200 个房间、200 个目录订阅者的五轮推送，输出摘要计算次数、CPU 时间和进程内存。该基准包含模拟客户端，适合比较目录算法，线上容量需结合真实连接与旁观历史另测。

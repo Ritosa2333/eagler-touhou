@@ -24,12 +24,16 @@ struct RoaringHost {
 };
 class RoaringSystem {
     AnmManager& animations;Rng& random;DamageSources& damage;PlayerMotion& player;PlayerLifeSession& session;Timer& invulnerability;PlayerSpellStatus& spell;RoaringHost& host;i32 resource;
-    bool display_slot(i32);bool activate();bool create_orbs();bool scale_timers();bool update_rewards(float rate);bool finish();
+    bool display_slot(i32);bool activate();bool scale_timers();bool update_rewards(float rate);bool finish();
+    bool create_orbs(std::array<u32,3>&,const Vec3&);
+    bool update_orbs(std::array<u32,3>&,const Vec3&);
+    bool stop_orbs(std::array<u32,3>&);
+    bool stop_orbs();
     bool item_reward(i32,Vec3& primary,Vec3& scatter);
     bool interrupt(u32 handle,i32 label,bool immediate=false);
     bool create(u32& handle,i32 script,const Vec3& position={});
 public:
-    RoaringState state;RoaringVisuals visuals;i32& break_count; i32& break_chain;std::string error;
+    RoaringState state;RoaringVisuals visuals;std::array<std::array<u32,3>,2> partner_orbs{};i32& break_count; i32& break_chain;std::string error;
     RoaringSystem(AnmManager& a,Rng& r,DamageSources& d,PlayerMotion& p,PlayerLifeSession& s,Timer& t,PlayerSpellStatus& sp,RoaringHost& h,i32 id):animations(a),random(r),damage(d),player(p),session(s),invulnerability(t),spell(sp),host(h),resource(id),break_count(s.roaring_breaks),break_chain(s.enemy_chain){}
     ~RoaringSystem();
     bool initialize_hud();
@@ -38,6 +42,6 @@ public:
     bool break_roaring(bool death);
     bool reward_items();
     i32 otter_hit()noexcept{visuals.hit_delay=20;return -1;}
-    bool update(float rate,bool hud_collect,u32 held);
+    bool update(float rate,bool hud_collect,u32 held,const AnimalSpiritTargets* team=nullptr);
 };
 }

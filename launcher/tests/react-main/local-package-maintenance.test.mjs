@@ -1,6 +1,6 @@
 import {authoredSourcesPlugin} from './authored-sources.mjs';
 /** Supplemental scheduling/port fixtures for original app1396–1468; no browser or real storage acceptance. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';

@@ -78,7 +78,7 @@ void spectator_lab_logic(std::vector<u8>& bytes,GameBattle& battle){
  auto& items=*battle.items;
  row(0,0,{bullets.first_active(),bullets.first_free(),bullets.visible_count,unsigned(items.requests),unsigned(items.cancel_density),unsigned(items.cancel_stamp),unsigned(items.alternating_pieces),unsigned(items.active_count),bits(items.motion_scale)});
  w.Values(items.requests,items.cancel_density,items.cancel_stamp,items.alternating_pieces,items.active_count,items.motion_scale);flush();
- for(u32 id=1;id<=ItemManager::pool_size;++id){const auto& item=items.find(id)->state;if(!item.state)continue;
+ for(u32 id=1;id<=ItemManager::pool_size;++id){const auto& item=static_cast<const ItemManager&>(items).find(id)->state;if(!item.state)continue;
   row(2,id,{unsigned(item.state),unsigned(item.kind),unsigned(item.appearance),item.flags,bits(item.attraction_speed),unsigned(item.delay),unsigned(item.stamp),unsigned(item.extra0),unsigned(item.extra1),unsigned(battle.mp_item_targets[id-1]),bits(item.position.x),bits(item.position.y),bits(item.velocity.x),bits(item.velocity.y),unsigned(item.age.current),unsigned(item.auxiliary.current)});
   w.Values(id,item.state,item.kind,item.appearance,item.flags,item.attraction_speed,item.delay,item.stamp,item.extra0,item.extra1,battle.mp_item_targets[id-1]);
   vec(item.position);vec(item.velocity);timer(item.age);timer(item.auxiliary);flush();

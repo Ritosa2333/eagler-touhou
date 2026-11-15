@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { adaptationMarkdown, notApplicable, portDefinitions } from './new-adaptation.mjs';
+import { adaptationMarkdown, MANUAL_EVIDENCE, notApplicable, portDefinitions, preserveManualEvidence } from './new-adaptation.mjs';
 import {
   assertIndexWriteAllowed,
   checkDocumentLinks,
@@ -22,6 +22,13 @@ const checklist = JSON.parse(readFileSync(new URL('../../docs/adaptation/checkli
 const capabilitySource = readFileSync(new URL('../../launcher/src/contracts/adapter-capabilities.mts', import.meta.url), 'utf8');
 const requiredContracts = extractRequiredBehaviorContracts(capabilitySource);
 const port = portDefinitions().find(item => item.game === 'th06');
+
+test('TH05 source adaptation records cover both Runtime variants', () => {
+  const ports = portDefinitions();
+  assert.deepEqual(ports.filter(item => item.game === 'th05').map(({directory,variants}) => [directory,variants]),
+    [['ports/th05',['normal']],['ports/th05-mp',['multiplayer']]]);
+  assert.ok(ports.some(item => item.game === 'th06'));
+});
 
 test('license inventory includes license directories and excludes notice code and generated HTML', () => {
   for (const path of ['ports/th09/web/licenses/FreeType.txt', 'ports/th09/web/cpp/licenses/th08-reference-MIT.txt',
@@ -57,6 +64,26 @@ test('authored player links resolve at the published site root and still reject 
   }
 });
 
+test('authored player links resolve declared React Router pages while missing routes still fail', () => {
+  const root = mkdtempSync(resolve(tmpdir(), 'eagler-react-router-docs-'));
+  try {
+    mkdirSync(resolve(root, 'launcher/app'), { recursive: true });
+    writeFileSync(resolve(root, 'launcher/app/routes.ts'), [
+      "import { route } from '@react-router/dev/routes';",
+      "export default [route('faq.html', 'routes/help.tsx')];",
+    ].join('\n'));
+
+    assert.deepEqual(checkDocumentLinks({ docPath: 'launcher/NOTICE.txt',
+      content: '[常见问题](faq.html)', root }), []);
+    assert.equal(checkDocumentLinks({ docPath: 'launcher/NOTICE.txt',
+      content: '[不存在的路由](missing.html)', root }).length, 1);
+    assert.equal(checkDocumentLinks({ docPath: 'docs/example.md',
+      content: '[FAQ](faq.html)', root }).length, 1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 function rowWithStatus(markdown, id, variantColumn, status, note) {
   const lines = markdown.split('\n');
   const index = lines.findIndex(line => line.startsWith(`| ${id} |`));
@@ -71,6 +98,17 @@ function rowWithStatus(markdown, id, variantColumn, status, note) {
 test('generated adaptation table covers all 117 IDs and matches recipe columns', () => {
   const markdown = adaptationMarkdown(port);
   assert.deepEqual(validateAdaptationMarkdown(markdown, { port, checklist }), []);
+});
+
+for (const newline of ['\n', '\r\n']) test(`status refresh follows the existing ${newline === '\n' ? 'LF' : 'CRLF'} prefix and preserves manual evidence exactly`, () => {
+  const manual = `${MANUAL_EVIDENCE}\r\n\r\n## 运行验收记录\n保留原始字节\r\n`;
+  const existingPrefix = ['# 旧表', '旧内容', ''].join(newline);
+  const generated = `# 新表\n\n自动检查内容\n\n${MANUAL_EVIDENCE}\n\n默认人工记录\n`;
+  const existing = existingPrefix + manual;
+  const updated = preserveManualEvidence(generated, existing);
+  const generatedPrefix = generated.slice(0, generated.indexOf(MANUAL_EVIDENCE)).replace(/\r\n|\n/g, newline);
+  assert.equal(updated, generatedPrefix + manual);
+  assert.equal(updated.slice(updated.indexOf(MANUAL_EVIDENCE)), manual, 'the marker and manual section remain byte-for-byte identical');
 });
 
 test('cooperative multiplayer rules do not apply to TH09 versus mode', () => {

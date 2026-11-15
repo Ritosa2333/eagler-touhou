@@ -1,6 +1,4 @@
-/** L0 artifact/source ownership contract. Mutation: none. Proves packaged
- * frontend/App Shell files have one owner and original-game-derived host art
- * is not part of repository-owned frontend assets. Does NOT prove rendering. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { access, readdir } from "node:fs/promises";
 import { relative, resolve } from "node:path";
@@ -16,6 +14,18 @@ import {
 } from "../lib/frontend-manifest.mjs";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { PRIVATE_FRONTEND_ASSETS } from "../lib/private-frontend-assets.mjs";
+
+test("frontend manifest", async () => {
+/** L0 artifact/source ownership contract. Mutation: none. Proves packaged
+ * frontend/App Shell files have one owner and original-game-derived host art
+ * is not part of repository-owned frontend assets. Does NOT prove rendering. */
+
+
+
+
+
+
+
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const publicRoot = resolve(project, "public");
@@ -87,6 +97,9 @@ const allowed=new Set([...STATIC_FRONTEND_PACKAGE_FILES,'bootstrap/index.html','
 for(const path of publicFiles) assert.ok(allowed.has(path),`undeclared public source ${path}`);
 assert.equal(new Set(PRIVATE_FRONTEND_ASSETS.map(asset => asset.target)).size, PRIVATE_FRONTEND_ASSETS.length,
   "private frontend publication targets must be unique");
+const th09Portraits = PRIVATE_FRONTEND_ASSETS.filter(asset => asset.target.startsWith('assets/th09-portraits/'));
+assert.deepEqual(th09Portraits.map(asset => asset.target), Array.from({length: 16}, (_, id) => `assets/th09-portraits/${id}.webp`));
+assert.ok(th09Portraits.every(asset => !APP_SHELL_FILES.includes(asset.target)), 'character portraits load on demand');
 for (const asset of PRIVATE_FRONTEND_ASSETS) {
   assert.match(asset.source, /^private-assets\/[a-z0-9][a-z0-9._/-]*$/,
     "private frontend sources must stay inside the ignored private-assets directory");
@@ -96,3 +109,4 @@ for (const asset of PRIVATE_FRONTEND_ASSETS) {
 console.log(JSON.stringify({ frontendManifest: "PASS", packaged: FRONTEND_PACKAGE_FILES.length, appShell: APP_SHELL_FILES.length, games: gameIds }));
 
 assert.throws(()=>hostArtworkFiles(["unknown"]), /unknown artwork product/);
+});

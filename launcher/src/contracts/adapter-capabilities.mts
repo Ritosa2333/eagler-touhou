@@ -262,6 +262,9 @@ export interface GameOptionClassification {
 // This closes a common ambiguity where a Launcher switch existed before anyone
 // decided whether the next Runtime had to implement it.
 export const GAME_OPTION_CLASSIFICATION = Object.freeze({
+  th05MultiplayerDisplay: {capability: "multiplayer", class: "optional", owner: "product"},
+  renderScale: {capability: "render-resolution", class: "optional", owner: "product"},
+  th075NativeResolution: {capability: "multiplayer", class: "optional", owner: "product"},
   thpracEnabled: { capability: "thprac", class: "optional", owner: "product" },
   thpracTouchControlsEnabled: { capability: "thprac-touch-bridge", class: "profile-required", owner: "launcher-runtime" },
   magnifierEnabled: { capability: "magnifier", class: "inherited", owner: "launcher" },
@@ -269,6 +272,8 @@ export const GAME_OPTION_CLASSIFICATION = Object.freeze({
   focusHitboxEnabled: { capability: "focus-hitbox", class: "optional", owner: "product" },
   faithBarEnabled: { capability: "faith-bar", class: "optional", owner: "product" },
   frameLimit60Enabled: { capability: "frame-limit-control", class: "inherited", owner: "launcher" },
+  bgmVolume: { capability: "game-volume-control", class: "inherited", owner: "launcher" },
+  sfxVolume: { capability: "game-volume-control", class: "inherited", owner: "launcher" },
   touchEnabled: { capability: "touch-controls", class: "required", owner: "launcher-runtime" },
   touchMovementMode: { capability: "touch-controls", class: "required", owner: "launcher-runtime", note: "all four movement modes belong to REQUIRED_TOUCH_BEHAVIORS" },
   touchSensitivity: { capability: "touch-controls", class: "required", owner: "launcher-runtime", note: "100–300 percent protocol range" },
@@ -295,8 +300,9 @@ export const INHERITED_LAUNCHER_CAPABILITIES = Object.freeze([
   { id: "package-manager-ui", class: "inherited", owner: "launcher", summary: "Package Store install/update/import and transfer UI" },
   { id: "launcher-localization", class: "inherited", owner: "launcher", summary: "Launcher interface localization; distinct from optional in-game language packages" },
   { id: "pwa-app-shell", class: "inherited", owner: "launcher", summary: "Service Worker/App Shell lifecycle for Launcher-owned files" },
-  { id: "site-information", class: "inherited", owner: "launcher", summary: "FAQ, first-use notice, site notice and support surfaces" },
+  { id: "site-information", class: "inherited", owner: "launcher", summary: "FAQ, first-use notice and support surfaces" },
   { id: "frame-limit-control", class: "inherited", owner: "launcher", summary: "shared 60 Hz presentation-limit UI; the Runtime obligation is the required presentation-cadence contract" },
+  { id: "game-volume-control", class: "inherited", owner: "launcher", summary: "shared live volume settings for game music and sound effects, with temporary music muting during room playback" },
 ] satisfies readonly AdapterCapabilityDefinition[]);
 
 // A profile-required capability becomes mandatory when its parent optional
@@ -320,6 +326,9 @@ export const PROFILE_REQUIRED_CAPABILITIES = Object.freeze([
 // their declarations; a new adapter is not incomplete merely because one is
 // false or absent.
 export const OPTIONAL_PRODUCT_CAPABILITIES = Object.freeze([
+  { id: "music-source-selection", class: "optional", owner: "product", declaration: "musicRuntime.sources",
+    verification: ["unit:tests/react-main/game-preparation.test.mjs"],
+    summary: "select a declared OGG music source while keeping preference, acquired files and Runtime configuration aligned" },
   { id: "midi-music", class: "optional", owner: "product", declaration: "musicCapabilities.midi",
     verification: ["workspace:tests/test-midi-capability-contract.mjs", "browser:tests/browser/test-music-selection.py"],
     summary: "MIDI playback in addition to normal OGG music" },
@@ -338,6 +347,9 @@ export const OPTIONAL_PRODUCT_CAPABILITIES = Object.freeze([
   { id: "faith-bar", class: "optional", owner: "product", declaration: "display.faithBar",
     verification: ["repository:tests/test-product-catalog.mjs", "repository:tests/test-game-preferences.mjs", "browser:tests/test-th10-original-options-browser.mjs"],
     summary: "original player overhead faith gauge controlled through the title's custom configuration" },
+  { id: "render-resolution", class: "optional", owner: "product", declaration: "renderScales",
+    verification: ["unit:tests/react-main/game-preparation.test.mjs", "unit:tests/react-main/settings-primitives.test.mjs"],
+    summary: "local drawing buffer scale applied during runtime initialization" },
   { id: "hint-files", class: "optional", owner: "product", declaration: "storage.hintFiles",
     verification: ["repository:tests/test-product-catalog.mjs", "browser:tests/test-th10-original-options-browser.mjs"],
     summary: "original stage Hint text files in mutable save storage" },

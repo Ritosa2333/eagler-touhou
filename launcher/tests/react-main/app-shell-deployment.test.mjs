@@ -1,5 +1,5 @@
 /** Build declarations and synthetic document metadata only; no SW operations. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {readReactAppShellDeployment, validateReactAppShellDeployment, normalizeReactMountPath} from '../../app/services/app-shell-deployment.ts';
 import {reactDeploymentConfig} from '../../scripts/ui-rewrite/deployment-config.ts';

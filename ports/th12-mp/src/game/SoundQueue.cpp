@@ -36,21 +36,26 @@ void Queue::stop(int id) {
       return;
     }
 }
-std::vector<Event> Queue::events() const {
-  std::vector<Event> result;
+Events Queue::captureEvents() const {
+  Events result;
   for (const auto& slot : slots_) {
     if (slot.id < 0)
       break;
     int sum = 0;
     for (int i = 0; i < slot.count; ++i)
       sum += slot.pans[size_t(i)];
-    result.push_back(
-        {slot.id, slot.count > 0 ? sum / slot.count : 0, slot.count, slot.count < 0 ? 1 : 0});
+    result.values[result.count++] =
+        {slot.id, slot.count > 0 ? sum / slot.count : 0, slot.count, slot.count < 0 ? 1 : 0};
   }
   return result;
 }
+std::vector<Event> Queue::events() const {
+  const auto result = captureEvents();
+  return {result.begin(), result.end()};
+}
 int capture() {
-  drawState = queue.events();
+  const auto events = queue.captureEvents();
+  drawState.assign(events.begin(), events.end());
   return int(drawState.size());
 }
 } // namespace th12::sound_system

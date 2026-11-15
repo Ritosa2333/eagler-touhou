@@ -1,0 +1,21 @@
+{
+  "previous": "/var/www/eagler-touhou/releases/th05-dialogue-20261102",
+  "candidate": "/var/www/eagler-touhou/releases/th05-battle-20261102",
+  "releaseId": "sha256-6b25a13591b2f4dc5f699c4ce014bc9cebaaa9c3458139ece7addce65bfbf76c",
+  "buildId": "4f1e8e519ac92a4f6e8d",
+  "siteUrl": "https://touhouonline.com/",
+  "files": 8102,
+  "preserved": 8070,
+  "updates": [
+    {
+      "game": "th05",
+      "variant": "multiplayer",
+      "root": "runtime/th05/multiplayer/",
+      "previousGeneration": "cf7c55653583139f6ed9d5eac9396bdb0aa32c57d8dcd7b9121fcd770821669a",
+      "generation": "9df5d4f97a30ea47b3118bd548424e74dcad8e9a5e45d94f8f25d603969f93e8",
+      "files": 26
+    }
+  ],
+  "revision": "4360221118859a675951e443a5c31a6c75e0822f",
+  "syncPointerExceptions": []
+}

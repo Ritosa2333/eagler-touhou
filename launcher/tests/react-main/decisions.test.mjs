@@ -1,5 +1,5 @@
 /** Main app.mts3114–3153 decision contract, plain-store adapter coverage. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {createDecisionStore} from '../../app/models/decisions.ts';
 
@@ -64,4 +64,15 @@ test('disposal rejects a reentrant warning requested by its cancellation subscri
   assert.equal(await original, 'cancel');
   assert.equal(store.getSnapshot(), null, 'a cancellation notification cannot resurrect the surface');
   assert.equal(await reentrant, 'cancel');
+});
+
+test('text input shares the decision owner, preserves empty values and releases on cancel/disposal', async () => {
+  const store = createDecisionStore(), options = {input: {label: 'File name', defaultValue: 'th10_01.rpy'}};
+  const first = store.askText(options), snapshot = store.getSnapshot();
+  assert.equal(await store.askText(options), null);
+  assert.equal(store.getSnapshot(), snapshot);
+  store.resolve('confirm', ''); assert.equal(await first, '');
+  const cancelled = store.askText(options); store.resolve('cancel', 'ignored'); assert.equal(await cancelled, null);
+  const disposed = store.askText(options); store.dispose(); assert.equal(await disposed, null);
+  assert.equal(await store.askText(options), null);
 });

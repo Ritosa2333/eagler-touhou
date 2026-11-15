@@ -137,6 +137,7 @@ void explodeReimuBOrb(pw::ReimuBOrb& orb) {
   eventBits |= 1;
 }
 bool startPlayerBomb() {
+  if (multiplayer::active && multiplayer::options.challenge) return false;
   if (pilot().playerBomb.active || (multiplayer::active && multiplayer::anyBomb()))
     return false;
   const int loadout = pilot().character * 2 + pilot().shot;
@@ -1158,9 +1159,10 @@ void tickPlayer(int held, int pressed) {
       ++phasePlayerCounters[0];
       phasePlayerCounters[2] = 0;
       practice::recordMiss();
-      if(multiplayer::active) ++pilot().misses;
-      if (!practice::tool(practice::InfiniteLives) ||
-          (practice::toolSettings().map_inf_life_to_no_continue && pilot().resources.lives>0)) --pilot().resources.lives;
+      if(multiplayer::active && pilot().misses != 0xffffffffu) ++pilot().misses;
+      if ((!multiplayer::active || !multiplayer::options.challenge) &&
+          (!practice::tool(practice::InfiniteLives) ||
+           (practice::toolSettings().map_inf_life_to_no_continue && pilot().resources.lives>0))) --pilot().resources.lives;
       pilot().resources.addRank(-1024);
       pilot().playerState = 2;
       pilot().playerStateTicks = 0;

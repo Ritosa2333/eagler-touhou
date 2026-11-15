@@ -1,0 +1,34 @@
+{
+  "version": "1.00b-thp-6dcfcbf24628",
+  "wasm": "6dcfcbf24628e2a735bd4395739a4110d38c25acbcd0d56b6a0a89df71e3efad",
+  "mode": "manual-delay",
+  "count": 2,
+  "delay": 70,
+  "jitter": 24,
+  "compared": 623,
+  "peakBullets": 3,
+  "peers": [
+    {
+      "head": 623,
+      "confirmed": 623,
+      "corrections": 0,
+      "resimulated": 0,
+      "combatCorrections": 0,
+      "prediction": 0,
+      "route": "rtc",
+      "packets": 0,
+      "error": ""
+    },
+    {
+      "head": 625,
+      "confirmed": 625,
+      "corrections": 0,
+      "resimulated": 0,
+      "combatCorrections": 0,
+      "prediction": 0,
+      "route": "rtc",
+      "packets": 1125,
+      "error": ""
+    }
+  ]
+}

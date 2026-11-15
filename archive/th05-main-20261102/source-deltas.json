@@ -1,0 +1,124 @@
+{
+  "base": "370cd01f19c0a916fa425f2d1820fa479e3b07cf",
+  "sourceCommit": "6a34d1f3b2f8abcab0d6efac3d92887a975b0c2c",
+  "files": [
+    {
+      "path": "common/contracts/product-catalog.d.mts",
+      "sha256": "298a21cc4de1cbbc354065c7c664ba8cdda88370014769844bc456aabbe6f662"
+    },
+    {
+      "path": "common/contracts/product-catalog.mjs",
+      "sha256": "240f71dd948d00714f7ac93bf34a92146d55bdecf1638cf99c79754fa966a914"
+    },
+    {
+      "path": "common/contracts/th05-initial-stock.d.mts",
+      "sha256": "0147ab71a6c9c127958ac397d6d0a1e55af4d7d8c7ead7244c94d3e0fb35064a"
+    },
+    {
+      "path": "common/contracts/th05-initial-stock.mjs",
+      "sha256": "690ee00ce5f5eb63deecaa6fbfd68e505450f56d5bd5656593481d3ca7db1cd3"
+    },
+    {
+      "path": "launcher/app/components/launcher/ClassicsShelf.tsx",
+      "sha256": "f603d8e6c677e457edb197156f04b1f492546d97e0d063e1b394c52c5e87c5c4"
+    },
+    {
+      "path": "launcher/app/components/launcher/LibraryCards.tsx",
+      "sha256": "c82243b48de2c10bc902a5e96014df969cba9ea5b6f41a400f1c1670eec90e19"
+    },
+    {
+      "path": "launcher/app/components/launcher/LibrarySurface.tsx",
+      "sha256": "ed507d3c14e7c6b11b86d908a0fb9a810ecdbd9e55c11da6dd251020b0df7f23"
+    },
+    {
+      "path": "launcher/app/components/player/PlayerControls.tsx",
+      "sha256": "522fc41d65abbc0d36256c834b16ebda25d4c950b5db18c7e8420becf92a6844"
+    },
+    {
+      "path": "launcher/app/components/room/RoomGameSettings.tsx",
+      "sha256": "1e1f986d1326be1f9d95a72c0c789dd24b0da721efe48d665fec64db79ff01f3"
+    },
+    {
+      "path": "launcher/app/components/settings/SettingsBody.tsx",
+      "sha256": "875cb9f24764b62a17f7ed23c1dd5d592ea7a86640ae08debd8202bfd349675b"
+    },
+    {
+      "path": "launcher/app/components/settings/Th05MultiplayerDisplay.tsx",
+      "sha256": "c2978035ad8f21ca383df6fbc84da4e8b7fc752a5f25ce8f7684f2d922a8fff0"
+    },
+    {
+      "path": "launcher/app/models/game-settings.ts",
+      "sha256": "179042b9938ac414abbf81ef0ee6886318215a016e1126a94a53e9270cbacc16"
+    },
+    {
+      "path": "launcher/app/services/game-preparation.ts",
+      "sha256": "aa78d04240c5bbf230af3738a4717ea4ae78c351a1585531a5dabf3e569bb2ec"
+    },
+    {
+      "path": "launcher/app/services/game-resources.ts",
+      "sha256": "e65b1a745264631a557b190f6875f1fe753530f1cfef62eede74bc2d4f4e2bf9"
+    },
+    {
+      "path": "launcher/app/services/multiplayer-room.ts",
+      "sha256": "849631c46bf715dd3190a184f0037ddf67f0da3ca54a93abf37502d4db33c20a"
+    },
+    {
+      "path": "launcher/app/services/package-acquisition.ts",
+      "sha256": "2f6d7801ce1597d6b8b1d44133b328a5a6081f2bcd54d61dd140f18f5a26ff0b"
+    },
+    {
+      "path": "launcher/app/session/browser-session.ts",
+      "sha256": "c19150b2dc61243c84d02cb3ac8af296a8284bd4e7bf4db433aa93dec99bcff8"
+    },
+    {
+      "path": "launcher/lib/shared-contract-sources.mjs",
+      "sha256": "001acccfdbc0172ac4d837ecd9661de72a9afc8b4eb0c8f7c86fc16ed7b4f35c"
+    },
+    {
+      "path": "launcher/public/styles.css",
+      "sha256": "adc25857221cae87dc8f94ce592e581048090e2885f40377e4e9d26f1ae0bd0a"
+    },
+    {
+      "path": "launcher/src/contracts/runtime-protocol.mts",
+      "sha256": "5623a64448546c66b19e6dc214623efd091afd13702481eb57b90d603af7fd04"
+    },
+    {
+      "path": "launcher/src/launcher/app-types.mts",
+      "sha256": "62e5c30af1d2caa0623cd9a97cbaf404f1554db78e42c430ac2aedabd244137a"
+    },
+    {
+      "path": "launcher/src/launcher/game-preferences.mts",
+      "sha256": "38e30232d228a396b08c2abbd09b51030b3545a56b6b21764f149549dfd4bdc6"
+    },
+    {
+      "path": "launcher/src/launcher/i18n.mts",
+      "sha256": "849867a6664225a1569f9f9fdab40ac143d40f197b436c29154b29c73cc837a4"
+    },
+    {
+      "path": "launcher/src/launcher/multiplayer-lobby-snapshot.mts",
+      "sha256": "4b8140d3a7e7e69346419aa2071b5f67e284aef030baaeac1c144165beb8c665"
+    },
+    {
+      "path": "launcher/src/launcher/multiplayer-room-session.mts",
+      "sha256": "f929b64dc8e1534e5352845ead5c008dbf68c36bc3893737111270ecee8553cb"
+    },
+    {
+      "path": "launcher/src/launcher/multiplayer-runtime-options.mts",
+      "sha256": "8924c3f5283468f171d14282beeee71b89c6c59ae7024201939778dfbef1d5f3"
+    },
+    {
+      "path": "launcher/src/launcher/music-availability.mts",
+      "sha256": "78a81996a4d2c5f940affc79784a44acaa6c4a01b67170fd442f28256654bbb2"
+    },
+    {
+      "path": "launcher/src/launcher/replay-files.mts",
+      "sha256": "e05d40a461d65bb222bb8930c662616049c699a31e42ca8bfe91f0c3733ce5de"
+    },
+    {
+      "path": "launcher/src/launcher/th05-initial-stock.mts",
+      "sha256": "807e533d3405915d21509a6aa62ece6736647cd1eab867a63293fc71d667904c"
+    }
+  ],
+  "publicationCommit": "106b9d0f92fe06150c620bb2eff193bfc03b2407",
+  "retainedFullscreen": "cb19ff2c764707c4b758dbdb67a7470ccb27a493"
+}

@@ -1,0 +1,18 @@
+{
+  "schema": "eagler-touhou/source-import/1",
+  "repository": "https://github.com/AdingApkgg/thp",
+  "branch": "main",
+  "sourceCommit": "5eb4ac87d227027f390fa006e1126a094b820860",
+  "sourceScope": "TH14 multiplayer fork of the normal port at c4faf858a047bfe2b26d6274ab946a5166ec576e",
+  "commit": "b36956a726f0727a3dedef5fe53094e2798e8b21",
+  "destination": "ports/th14-mp",
+  "mode": "source-history-connection",
+  "currentMode": "git-subtree",
+  "subtree": {
+    "upstreamCommit": "b36956a726f0727a3dedef5fe53094e2798e8b21",
+    "initialJoin": "c78431ba20dc622f90815317786baaa0fa99c47b",
+    "initialSplit": "e76130709b492d88a1e54ec7ac71f452061e7be4",
+    "latestJoin": "c78431ba20dc622f90815317786baaa0fa99c47b",
+    "currentSplit": "e76130709b492d88a1e54ec7ac71f452061e7be4"
+  }
+}

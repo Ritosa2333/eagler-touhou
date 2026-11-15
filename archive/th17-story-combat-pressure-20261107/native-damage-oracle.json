@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-07",
+  "target": {
+    "game": "th17",
+    "version": "1.00b",
+    "language": "Japanese",
+    "executable": "../../../games/th17/original/th17.exe",
+    "sha256": "85cb011e2e43b316c8fa42a3c402565ecdf2f4379f3bab66d86bcb7beef8255f",
+    "imageBase": 4194304,
+    "completeGame": true
+  },
+  "coreSha256": "271f1d65c8ef95e43a95c884a30c76f7b224c2d25f2dac5a5477ad11dae9a600",
+  "passed": true,
+  "spawns": 1280,
+  "frames": 96,
+  "queries": 3072,
+  "checks": 21184,
+  "originalFunctions": [
+    "0x449c80",
+    "0x449de0",
+    "0x447ef3..0x448047",
+    "0x44b090"
+  ],
+  "scope": "256-slot rotating damage pool, cooldown and priority-group overlap rules, saturation/reuse, timer/motion/radius updates, rotated rectangle/circle contacts, preview, target deduplication, caps, damage budgets and score. Shot-specific hit callbacks and bomb damage are separate integrations."
+}

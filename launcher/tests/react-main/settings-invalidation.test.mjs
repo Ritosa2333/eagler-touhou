@@ -1,7 +1,7 @@
 /** Supplemental source-derived policy tests. Original browser scenarios remain
  * primary acceptance; this does not exercise native Runtime or saved files.
  * Main app.mts4880–4904,6587–6617,8680–8705,8737–8739,8914–8943,8531–8538. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync} from 'node:fs';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
@@ -36,6 +36,27 @@ function fixture(productId = 'th06') {
   model.hydrate(context);
   return {model, context, changes, reset: () => api.settingsChangeResetsRuntime(changes.at(-1))};
 }
+
+test('game volume previews are live and committed levels belong to the game', () => {
+  const values = new Map(), changes = [];
+  const storage = {getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value)};
+  const model = api.createGameSettingsModel({storage, onChange: change => changes.push(change)});
+  const {context} = fixture('th06mp');
+  model.hydrate(context);
+  const before = new Map(values);
+  model.previewVolume('bgmVolume', 35);
+  model.previewVolume('sfxVolume', 65);
+  assert.deepEqual(values, before);
+  assert.equal(api.settingsChangeResetsRuntime(changes.at(-1)), false);
+  model.commitPreferences();
+  model.hydrate({...context, productId: 'th07'});
+  assert.equal(model.getSnapshot().options.bgmVolume, 100);
+  model.hydrate({...context, productId: 'th06'});
+  assert.equal(model.getSnapshot().options.bgmVolume, 35);
+  assert.equal(model.getSnapshot().options.sfxVolume, 65);
+  model.setOption('bgmVolume', 20);
+  assert.equal(api.settingsChangeResetsRuntime(changes.at(-1)), false);
+});
 
 for (const productId of ['th11', 'th11mp']) test(`${productId} starts high refresh disabled when opening legacy settings and remembers a later opt-in`, () => {
   for (const shared of [true, false]) {
@@ -104,7 +125,9 @@ test('main lobby language/music/frame limit persist without reset; ordinary opti
   f.model.setOption('frameLimit60Enabled', !f.model.getSnapshot().options.frameLimit60Enabled); assert.equal(f.reset(), false);
   f.model.setOption('alwaysHitbox', !f.model.getSnapshot().options.alwaysHitbox); assert.equal(f.reset(), true);
   f.model.setOption('externalMidiDeviceId', 'selected-output'); assert.equal(f.reset(), true);
-  f.model.setShareSingleplayerSettings(!f.model.getSnapshot().shareSingleplayerSettings); assert.equal(f.reset(), true);
+  const revision = f.model.getSnapshot().revision;
+  f.model.setShareSingleplayerSettings(false); assert.equal(f.model.getSnapshot().revision, revision);
+  assert.equal(f.model.getSnapshot().shareSingleplayerSettings, true);
 });
 
 test('main actual product change resets; initial/same-product hydrate and context/presentation do not', () => {
@@ -268,4 +291,20 @@ test('game version persists per game across SP/MP while language/options remain 
   assert.equal(model.getSnapshot().gameVersion,'original');
   model.hydrate(context);assert.equal(model.getSnapshot().gameVersion,'beauty');
   model.setGameVersion('original');assert.equal(model.getSnapshot().language,'ja');
+});
+
+test('single-player and multiplayer bind common options while keeping practice single-player only', () => {
+  const saved = new Map(), storage = {getItem: key => saved.get(key) ?? null, setItem: (key, value) => saved.set(key, value)};
+  saved.set('eagler-touhou-th06mp-share-singleplayer-settings-v1', '0');
+  const model = api.createGameSettingsModel({storage}), context = fixture().context;
+  model.hydrate(context); model.setMusic('none'); model.setLanguage('ja'); model.setOption('thpracEnabled', true);
+  model.hydrate({...context, productId: 'th06mp'});
+  assert.equal(model.getSnapshot().preferenceId, 'th06');
+  assert.equal(model.getSnapshot().music, 'none'); assert.equal(model.getSnapshot().language, 'ja');
+  assert.equal(model.getSnapshot().shareSingleplayerSettings, true);
+  assert.equal(model.getSnapshot().options.thpracEnabled, false);
+  model.setOption('pixelPerfectEnabled', true); model.setMusic('midi');
+  model.hydrate(context);
+  assert.equal(model.getSnapshot().options.pixelPerfectEnabled, true); assert.equal(model.getSnapshot().music, 'midi');
+  assert.equal(model.getSnapshot().options.thpracEnabled, true, 'multiplayer saves retain the single-player practice preference');
 });

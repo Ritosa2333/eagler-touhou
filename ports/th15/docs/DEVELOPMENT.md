@@ -2,16 +2,18 @@
 
 构建先串行准备 SDK 中的 SDL 与字体依赖，再并行编译游戏源码；本地对象缓存与 SDK 缓存独立维护。
 
+触屏与桌面默认使用相同的 2 倍渲染倍率，不再按触屏类型自动降低画质。显式指定 `renderScale=1` 时使用 1 倍，`node --test tools/ports/mobile-render-scale.test.mjs` 验证默认值、参数优先级和原生启动接线。
+
 当前适配记录见[TH15 适配表](../ADAPTATION.md)。以下命令从仓库根目录运行，示例使用 PowerShell。
 
 Launcher 的改键与标准化手柄动作经共用浏览器桥进入原生键盘路径。常显判定点复用本作原生低速动画，在独立绘制状态中按原有层级呈现，开关由 `alwaysHitbox` 控制。
 
 ## 构建并在 Launcher 启动
 
-需要 Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9 和 `ffmpeg`。原版目录需含 `th15.dat`、`thbgm.dat`；`EAGLER_FONT_ROOT` 指向含 `cp932.bin` 的目录。未安装 Emscripten 时可运行 `python ports/th15/tools/download-emscripten.py`。
+需要 Bun 1.4.4、Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9 和 `ffmpeg`。原版目录需含 `th15.dat`、`thbgm.dat`；`EAGLER_FONT_ROOT` 指向含 `cp932.bin` 的目录。未安装 Emscripten 时可运行 `python ports/th15/tools/download-emscripten.py`。
 
 ```powershell
-npm --prefix launcher ci --ignore-scripts # 仅首次安装
+bun --bun run --cwd launcher install:locked # 仅首次安装
 node launcher/scripts/prepare-th15-content.mjs --original='C:\Games\TH15' --output='ports/th15/assets-ogg'
 $env:EAGLER_FONT_ROOT='C:\local-content\th15-fonts'
 $env:EAGLER_TH15_CONTENT_DIR=(Resolve-Path 'ports/th15/assets-ogg').Path
@@ -20,7 +22,7 @@ $env:EAGLER_DEVELOPMENT_UNICODE_FONT='C:\local-content\fonts\unifont-15.1.05.otf
 $env:EAGLER_DEVELOPMENT_GAMES='th15'
 node launcher/scripts/build-runtime.mjs --game=th15 --variant=normal --emsdk='/path/to/emsdk'
 node ports/th15/portable/package-eagler.mjs
-npm --prefix launcher run build
+bun --bun run --cwd launcher build
 npm --prefix launcher run dev:workspace
 ```
 

@@ -1,22 +1,22 @@
 /** Shared original authored-guide transformation and local tab interactions.
  * Requires already-sanitized content; owns no fetch, dialog, history or React state. */
+import {translateUi, type UiLocale} from './i18n.mjs';
 interface AuthoredGuideGroup {
   key: string;
   nodes: HTMLElement[];
 }
 
 const GUIDE_GAMES = Object.freeze([
-  Object.freeze({ id: "th06", short: "TH06", title: "红魔乡" }),
-  Object.freeze({ id: "th07", short: "TH07", title: "妖妖梦" }),
-  Object.freeze({ id: "th08", short: "TH08", title: "永夜抄" }),
-  Object.freeze({ id: "th09", short: "TH09", title: "花映塚" }),
-  Object.freeze({ id: "th10", short: "TH10", title: "风神录" }),
-  Object.freeze({ id: "th11", short: "TH11", title: "地灵殿" }),
-  Object.freeze({ id: "th15", short: "TH15", title: "绀珠传" }),
+  Object.freeze({ id: "th06" }),
+  Object.freeze({ id: "th07" }),
+  Object.freeze({ id: "th08" }),
+  Object.freeze({ id: "th09" }),
+  Object.freeze({ id: "th10" }),
+  Object.freeze({ id: "th11" }),
+  Object.freeze({ id: "th15" }),
 ] as const);
 
 export const DEFAULT_GUIDE_GAME = "th07";
-const COMMON_GROUP = "通用规则";
 
 function normalizedGroupHeading(value: string): string {
   return value.replace(/\s+/g, " ").trim();
@@ -96,10 +96,11 @@ function makeDisclosure(documentObj: Document, scope: "common" | "specific", lab
   return { details, body };
 }
 
-export function buildRuleGuide(target: HTMLElement, documentObj: Document, initialGameId: string): void {
+export function buildRuleGuide(target: HTMLElement, documentObj: Document, initialGameId: string, locale: UiLocale = 'zh-CN'): void {
   if (!target.children?.length) return;
+  const t = (key: Parameters<typeof translateUi>[1]) => translateUi(locale, key);
   const groups = collectAuthoredGroups(target);
-  const commonGroup = groups.get(COMMON_GROUP);
+  const commonGroup = groups.get(t('guide.common'));
   if (!commonGroup) return;
 
   const guide = documentObj.createElement("div");
@@ -111,14 +112,14 @@ export function buildRuleGuide(target: HTMLElement, documentObj: Document, initi
   const gameTabs = documentObj.createElement("div");
   gameTabs.className = "multiplayer-rule-game-tabs";
   gameTabs.setAttribute("role", "tablist");
-  gameTabs.setAttribute("aria-label", "作品");
+  gameTabs.setAttribute("aria-label", t('guide.games'));
   for (const game of GUIDE_GAMES) {
     const button = documentObj.createElement("button");
     button.type = "button";
     button.className = "multiplayer-rule-game-tab";
     button.dataset.game = game.id;
     button.setAttribute("role", "tab");
-    button.textContent = game.title;
+    button.textContent = t(`guide.${game.id}`);
     gameTabs.append(button);
   }
   nav.append(gameTabs);
@@ -130,13 +131,13 @@ export function buildRuleGuide(target: HTMLElement, documentObj: Document, initi
     const panel = documentObj.createElement("div");
     panel.className = "multiplayer-rule-panel";
     panel.dataset.game = game.id;
-    const common = makeDisclosure(documentObj, "common", "通用规则", false);
+    const common = makeDisclosure(documentObj, "common", t('guide.common'), false);
     appendAuthoredGroup(common.body, documentObj, commonGroup);
-    const specific = makeDisclosure(documentObj, "specific", "本作特有规则", false);
-    appendAuthoredGroup(specific.body, documentObj, groups.get(`${game.short} ${game.title}`), "本作特有规则");
+    const specific = makeDisclosure(documentObj, "specific", t('guide.specific'), false);
+    appendAuthoredGroup(specific.body, documentObj, [...groups.values()].find(group => group.key.toLowerCase().startsWith(game.id + ' ')), t('guide.specific'));
     if (!specific.body.children.length) {
       const empty = documentObj.createElement("p");
-      empty.textContent = "无";
+      empty.textContent = t('guide.none');
       specific.body.append(empty);
     }
     panel.append(common.details, specific.details);

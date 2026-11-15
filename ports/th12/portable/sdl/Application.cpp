@@ -18,10 +18,13 @@
 
 namespace th12host {
 namespace {
+#ifdef __EMSCRIPTEN__
+constexpr int WebCanvasWidth=640,WebCanvasHeight=480;
+#endif
 u32 input_bit(int key){
     switch(key){case 90:return InShot;case 88:return InBomb;case 16:return InFocus;case 17:return InSkip;
     case 37:return InLeft;case 38:return InUp;case 39:return InRight;case 40:return InDown;
-    case 27:return InPause;case 13:return InEnter;case 82:return InRetry;default:return 0;}
+    case 27:return InPause;case 13:return InEnter;case 82:return InRetry;case 81:return InQuit;default:return 0;}
 }
 int virtual_key(SDL_Keycode key){
     if(key>=SDLK_A&&key<=SDLK_Z)return int(key-SDLK_A)+'A';
@@ -59,7 +62,7 @@ struct Application {
         if(k[SDL_SCANCODE_Z])held|=InShot;if(k[SDL_SCANCODE_X])held|=InBomb;
         if(k[SDL_SCANCODE_LSHIFT]||k[SDL_SCANCODE_RSHIFT])held|=InFocus;
         if(k[SDL_SCANCODE_LCTRL]||k[SDL_SCANCODE_RCTRL])held|=InSkip;
-        if(k[SDL_SCANCODE_ESCAPE])held|=InPause;if(k[SDL_SCANCODE_R])held|=InRetry;
+        if(k[SDL_SCANCODE_ESCAPE])held|=InPause;if(k[SDL_SCANCODE_R])held|=InRetry;if(k[SDL_SCANCODE_Q])held|=InQuit;
         if(k[SDL_SCANCODE_RETURN]&&!k[SDL_SCANCODE_LALT]&&!k[SDL_SCANCODE_RALT])held|=InEnter;
         for(auto* pad:pads)if(SDL_GamepadConnected(pad)){
             const float px=SDL_GetGamepadAxis(pad,SDL_GAMEPAD_AXIS_LEFTX)/32768.f,py=SDL_GetGamepadAxis(pad,SDL_GAMEPAD_AXIS_LEFTY)/32768.f;
@@ -126,7 +129,16 @@ extern "C" SDL_AppResult SDL_AppInit(void** state,int argc,char** argv){
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3);SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,backend?3:0);
 #endif
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
+#ifdef __EMSCRIPTEN__
+        // The page scales the canvas. Keep the WebGL backbuffer at the
+        // game's render size instead of blitting into a larger HiDPI buffer.
+        active->window=SDL_CreateWindow("Touhou 12 - Undefined Fantastic Object",WebCanvasWidth,WebCanvasHeight,SDL_WINDOW_OPENGL);
+        // SDL initially adopts the canvas's CSS size. Restore the backing
+        // size once, then let CSS handle iframe and browser-toolbar resizes.
+        if(active->window)SDL_SetWindowSize(active->window,WebCanvasWidth,WebCanvasHeight);
+#else
         active->window=SDL_CreateWindow("Touhou 12 - Undefined Fantastic Object",960,720,SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE|SDL_WINDOW_HIGH_PIXEL_DENSITY);
+#endif
         if(active->window)active->context=SDL_GL_CreateContext(active->window);
         if(!active->context&&active->window){SDL_DestroyWindow(active->window);active->window=nullptr;}
     }
@@ -147,7 +159,11 @@ extern "C" SDL_AppResult SDL_AppIterate(void* state){
     if(th12::multiplayer::active)pace=[](double elapsed){return th12::multiplayer::session.network.PacedElapsed(elapsed*1000)/1000;};
 #endif
     const unsigned ticks=app.clock.advance(now,period,pace);
-    const bool draw_frame=app.clock.present(now,runtime_options.limit_presentation);
+    const bool limited=runtime_options.limit_presentation;
+    // At the normal 60 Hz game rate, submit on the callback that advances
+    // the world. Independent deadlines can draw twice and skip a new world.
+    const bool draw_frame=limited&&!pace&&period==FrameClock::interval&&app.game->draw_on_game_tick()
+        ?app.clock.present_after_tick(now,ticks):app.clock.present(now,limited);
     if(!ticks&&!draw_frame){
 #ifndef __EMSCRIPTEN__
         SDL_Delay(1);
@@ -179,7 +195,12 @@ extern "C" SDL_AppResult SDL_AppEvent(void* state,SDL_Event* event){
     case SDL_EVENT_QUIT:stop_source="sdl-quit";return SDL_APP_SUCCESS;
     case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
     case SDL_EVENT_WINDOW_ENTER_FULLSCREEN:
-    case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN:app.clock.reset();break;
+    case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN:
+#ifdef __EMSCRIPTEN__
+        if(event->type==SDL_EVENT_WINDOW_LEAVE_FULLSCREEN)
+            SDL_SetWindowSize(app.window,WebCanvasWidth,WebCanvasHeight);
+#endif
+        app.clock.reset();break;
     case SDL_EVENT_GAMEPAD_ADDED:app.add(event->gdevice.which);break;
     case SDL_EVENT_GAMEPAD_REMOVED:app.remove(event->gdevice.which);break;
     case SDL_EVENT_WINDOW_FOCUS_LOST:

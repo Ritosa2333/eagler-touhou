@@ -178,7 +178,7 @@ export function createGameZoomController(options: GameZoomControllerOptions) {
       y: base.y + state.y + point.y * state.scale,
     });
     const pinch = state.pinch;
-    if (!pinch || !pinch.ids.every(id => state.pointers.has(id))) return;
+    if (!pinch?.ids.every(id => state.pointers.has(id))) return;
     const a = state.pointers.get(pinch.ids[0]);
     const b = state.pointers.get(pinch.ids[1]);
     if (!a || !b) return;

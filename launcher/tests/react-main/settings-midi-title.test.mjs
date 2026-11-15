@@ -3,7 +3,7 @@ import {synchronizedMainAuthority} from './source-text.mjs';
  * public/index.html447/544 music labels after original static translations.
  * Synthetic DOM and fake device availability only; no browser permission,
  * native MIDI, rendered tooltip or gameplay claim. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -53,10 +53,7 @@ function expected({visible, supported, locale, prefix}) {
 }
 for (const locale of ['zh-CN', 'en']) for (const productId of ['th06', 'th06mp']) test(`${locale} ${productId}: music label and MIDI title/disabled follow main across locale/support/visibility`, async () => {
   owners.setUiLocale(locale, {persist: false, notify: false});
-  const originalDocument = new env.window.DOMParser().parseFromString(originalHTML, 'text/html');
-  owners.applyStaticTranslations(originalDocument);
   const musicId = productId.endsWith('mp') ? 'mpMusicSelect' : 'musicSelect';
-  const originalMusicLabel = originalDocument.getElementById(musicId).getAttribute('aria-label');
   const values = new Map(), storage = {getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, String(value))};
   const model = owners.createGameSettingsModel({storage});
   model.hydrate({productId, uiLocale: locale, languages: [{id: 'ja', title: '日本語'}],
@@ -76,11 +73,10 @@ for (const locale of ['zh-CN', 'en']) for (const productId of ['th06', 'th06mp']
   const prefix = productId.endsWith('mp') ? 'mpExternalMidi' : 'externalMidi';
   const button = env.document.getElementById(`${prefix}Toggle`);
   const musicSelect = env.document.getElementById(musicId);
-  assert.equal(musicSelect.getAttribute('aria-label'), originalMusicLabel, 'Preserve the actual original native label, including absence');
-  // Original custom-select.mts falls back to common.selectOption when the
-  // native select has neither aria-label nor a linked label element.
+  const musicLabel = owners.translate(locale, 'settings.music');
+  assert.equal(musicSelect.getAttribute('aria-label'), musicLabel);
   assert.equal(musicSelect.parentElement.querySelector('.mizuki-select-trigger').getAttribute('aria-label'),
-    originalMusicLabel || owners.translate(locale, 'common.selectOption'));
+    musicLabel, 'the visible control has the localized music label');
   function compare() {
     const visible = model.getSnapshot().music === 'midi', actual = {title: button.title, disabled: button.disabled, hidden: env.document.getElementById(`${prefix}Option`).hidden};
     assert.deepEqual(actual, expected({visible, supported: midi.supported, locale, prefix}));

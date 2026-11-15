@@ -3,7 +3,8 @@ import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import http from 'node:http';
-import { start } from './router.mjs';
+import { start, safePath } from './router.mjs';
+assert.equal(safePath('/language-updates/th075/en.zip'),false);
 const root = await mkdtemp(join(tmpdir(), 'eagler-router-'));
 for (let i=6;i<14;i++) {
  const name=`th${String(i).padStart(2,'0')}`;
@@ -46,9 +47,9 @@ try {
  console.log('verified deployment inventory and mismatch exclusion verified');
 } finally {globalThis.fetch=original;service?.close();}
 
-await writeFile(join(root,'th075.package.json'),JSON.stringify({files:{language:{source:'/language-updates/th075/en.zip',sha256:'c'.repeat(64),bytes:4}}}));
+await writeFile(join(root,'th075.package.json'),JSON.stringify({files:{language:{source:'/language/th075/en.zip',sha256:'c'.repeat(64),bytes:4}}}));
 const otherInventory=join(root,'other-inventory.json');
-const matching={...inventory,'/language-updates/th075/en.zip':{sha256:'c'.repeat(64),bytes:4}};
+const matching={...inventory,'/language/th075/en.zip':{sha256:'c'.repeat(64),bytes:4}};
 await writeFile(otherInventory,JSON.stringify(matching));
 await writeFile(inventoryFile,JSON.stringify(matching));
 try {
@@ -65,7 +66,7 @@ try {
  const value=JSON.parse(routes.body);assert.equal(value.sources[0],regular.headers.location);
  assert.equal(value.bytes,1);assert.equal(value.sha256,'a'.repeat(64));assert.equal(value.sources.length,2);
  assert(value.sources.every(url=>url.endsWith('/games/th06/th06.data?v=abc')));
- const language=await request('/_eagler/resource-routes?path='+encodeURIComponent('/language-updates/th075/en.zip'));assert.equal(language.status,200);
+ const language=await request('/_eagler/resource-routes?path='+encodeURIComponent('/language/th075/en.zip'));assert.equal(language.status,200);
  assert.equal(JSON.parse(language.body).sources.length,2);
  assert.equal((await request('/_eagler/resource-routes?path='+encodeURIComponent('/games/missing/file.data'))).status,404);
  assert.equal((await request('/_eagler/resource-routes?path='+encodeURIComponent('/games/%2e%2e/private'))).status,404);

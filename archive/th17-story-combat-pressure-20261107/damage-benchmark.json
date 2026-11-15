@@ -1,0 +1,23 @@
+[
+  {
+    "pattern": 0,
+    "queries": 15000,
+    "activeSources": 176,
+    "baselineMs": 48.15939999999999,
+    "optimizedMs": 15.961600000000004
+  },
+  {
+    "pattern": 1,
+    "queries": 15000,
+    "activeSources": 176,
+    "baselineMs": 39.709700000000055,
+    "optimizedMs": 24.057999999999993
+  },
+  {
+    "pattern": 2,
+    "queries": 15000,
+    "activeSources": 176,
+    "baselineMs": 41.35940000000005,
+    "optimizedMs": 40.85000000000002
+  }
+]

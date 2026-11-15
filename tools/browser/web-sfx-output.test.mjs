@@ -24,7 +24,7 @@ async function render(commandBody) {
       const Module = {SDL3: {audioContext: ctx}}, heap = new Uint8Array(frames * 2 * 4);
       const pcm = new Float32Array(heap.buffer);
       for (let i = 0; i < frames; i++) {pcm[i * 2] = .25; pcm[i * 2 + 1] = -.5;}
-      const command = new Function('Module', 'HEAPU8', 'op', 'id', 'pcm', 'frames', 'channels', 'rate', 'format', 'value', commandBody);
+      const command = new Function('Module', 'HEAPU8', 'op', 'id', 'pcm', 'frames', 'channels', 'rate', 'format', 'value', 'balance', commandBody);
       const call = (op, value = 0) => command(Module, heap, op, 1, 0, frames, 2, rate, 0, value);
 
       // A separately scheduled track continues while the production SFX pool pauses.
@@ -39,7 +39,7 @@ async function render(commandBody) {
         if (i === 0) {call(10, 1); cursors.push(call(8));}
         if (i === 1) {cursors.push(call(8)); call(5, .4); call(6, -.5); call(10, 0);}
         if (i === 2) call(3);
-        if (i === 3) call(2);
+        if (i === 3) command(Module, heap, 13, 1, 0, 0, 0, 0, 0, .4, -.5);
         if (i === 4) call(12);
         await ctx.resume();
       }

@@ -10,7 +10,12 @@
 
 namespace th12host {
 std::u32string decode_cp932(const std::string& bytes,bool localize=true);
-struct Canvas {u32 width=0,height=0;std::vector<u8> rgba;void reset(u32 w,u32 h){width=w;height=h;rgba.assign(size_t(w)*h*4,0);}};
+struct Canvas {
+    u32 width=0,height=0;
+    std::vector<u8> rgba;
+    void reset(u32 w,u32 h){width=w;height=h;rgba.assign(size_t(w)*h*4,0);}
+    void outline_text();
+};
 class TextRaster {
 public:
     TextRaster();~TextRaster();

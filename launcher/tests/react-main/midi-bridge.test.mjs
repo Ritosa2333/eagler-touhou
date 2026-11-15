@@ -1,6 +1,6 @@
 /** Main1661–1700/4991–5022 behavior with synthetic MIDI/focus/event ports.
  * No real AudioContext, permission dialog, MIDI hardware or audible output PASS. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';

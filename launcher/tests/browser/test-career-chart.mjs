@@ -1,0 +1,151 @@
+import assert from 'node:assert/strict';
+import puppeteer from 'puppeteer-core';
+import {mkdir, writeFile} from 'node:fs/promises';
+const base = process.argv[2] || 'http://127.0.0.1:5173/';
+const output = '.cache/career-chart';
+await mkdir(output, {recursive: true});
+const browser = await puppeteer.launch({executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true});
+const errors = [], report = [];
+const clickText = (page, scope, text) => page.evaluate(({scope, text}) => {
+  const button = [...document.querySelectorAll(scope + ' button')].find(button => button.textContent === text);
+  if (!button) throw new Error('Missing button: ' + text); button.click();
+}, {scope, text});
+const nextFrame = page => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+const zoom = page => page.$eval('.career-map-sheet', el => new DOMMatrix(getComputedStyle(el).transform).a);
+const enter = async page => {
+  await page.goto(new URL('profile.html', base).href, {waitUntil: 'networkidle2'});
+  await clickText(page, '.profile-tabs', '生涯'); await page.waitForSelector('.career-showcase'); await page.waitForFunction(() => !document.documentElement.classList.contains('profile-transition'));
+  await page.evaluate(() => document.fonts.ready);
+};
+try {
+  const page = await browser.newPage(); page.on('pageerror', error => errors.push(error.message));
+  await page.setViewport({width: 1440, height: 1000}); await enter(page);
+  await page.waitForFunction(() => {const canvas=document.querySelector('.career-thumbnail canvas');return canvas?.getContext('2d').getImageData(20,50,1,1).data[3]>0;});
+  assert.ok(await page.$eval('.career-thumbnail canvas', canvas => {const data=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;return data.some((value,index)=>index%4===3&&value>0&&data[index-1]<200);}));
+  assert.ok(await page.$eval('.career-showcase .career-thumbnail', button => {
+    const canvas = button.querySelector('canvas').getBoundingClientRect(), frame = button.getBoundingClientRect();
+    return Math.abs(canvas.width - (frame.width - 2)) < 2 && Math.abs(canvas.height - (frame.height - 2)) < 2;
+  }));
+  await page.screenshot({path: output + '/desktop-card.png', fullPage: true});
+  await page.click('.career-showcase .career-thumbnail'); await page.waitForSelector('.career-map-cell'); await nextFrame(page);
+  assert.equal(await page.$$eval('.career-map-cell', cells => cells.length), 1110);
+  assert.equal(await page.$$eval('[data-cell-key^="TH20-"]', cells => cells.length), 40);
+  assert.ok(await page.$$eval('.career-map-cell', cells => cells.every(cell =>
+    Number.parseFloat(cell.style.left) * 2 % 1 === 0 && Number.parseFloat(cell.style.top) * 2 % 1 === 0)));
+
+  assert.ok(await page.$eval('.career-map-sheet', sheet => {const area=sheet.parentElement; return Math.abs(sheet.getBoundingClientRect().width - (area.clientWidth - 48)) < 2;}));
+  assert.equal(await page.$eval('dialog', dialog => dialog.matches(':modal')), true);
+  assert.equal(await page.$eval('input[type=file]', input => getComputedStyle(input).display), 'none');
+  await page.click('.career-help-trigger');
+  await page.waitForSelector('.career-help-dialog[open]');
+  assert.match(await page.$eval('.career-help-content', el => el.textContent), /Final A.*Final B/);
+  assert.equal(await page.$$eval('.career-help-games>div', el => el.length), 33);
+  await page.keyboard.press('Escape'); await page.waitForSelector('.career-help-dialog', {hidden: true});
+  assert.equal(await page.$eval('.career-viewer', dialog => dialog.matches(':modal')), true);
+  report.push('Help button, all game abbreviations, route explanations and Escape return to viewer');
+  const initialZoom = await zoom(page), area = await page.$eval('.career-map-viewport', element => {const r = element.getBoundingClientRect(); return {x:r.x,y:r.y,w:r.width,h:r.height};});
+  await page.mouse.move(area.x + area.w / 2, area.y + area.h / 2); await page.mouse.wheel({deltaY: -300}); await nextFrame(page);
+  assert.ok(await zoom(page) > initialZoom);
+  const beforeDrag = await page.$eval('.career-map-sheet', element => getComputedStyle(element).transform);
+  await page.mouse.down(); await page.mouse.move(area.x + area.w / 2 + 100, area.y + area.h / 2 + 50, {steps: 8}); await page.mouse.up(); await nextFrame(page);
+  assert.notEqual(await page.$eval('.career-map-sheet', element => getComputedStyle(element).transform), beforeDrag);
+  const rememberedZoom = await zoom(page);
+  await page.keyboard.press('Escape'); await page.waitForSelector('dialog', {hidden: true}); await page.click('.career-showcase .career-thumbnail'); await page.waitForSelector('.career-map-cell'); await nextFrame(page);
+  assert.equal(await zoom(page), rememberedZoom);
+  report.push('Full chart, wheel zoom, drag, Escape and remembered viewport');
+  await clickText(page, '.career-viewer-actions', '编辑记录'); await nextFrame(page);
+  await page.select('select[aria-label="查找作品"]', 'UFO'); await page.evaluate(() => [...document.querySelectorAll('.career-finder-difficulties button')].find(el => el.textContent === 'N').click()); await page.click('[data-locate-cell="UFO-Ra-N"]');
+  await clickText(page, '.career-brushes', 'NN'); await nextFrame(page);
+  const position = await page.$eval('.career-map-cell[title="东方星莲船 · Ra · Normal"]', el => {const r = el.getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2};});
+  await page.mouse.click(position.x, position.y); await nextFrame(page);
+  assert.equal(await page.$eval('.career-map-cell[title="东方星莲船 · Ra · Normal"]', el => el.getAttribute('aria-pressed')), 'true');
+  assert.equal(await page.evaluate(() => localStorage.getItem('eagler.book.player-career-chart-v2')), null);
+  await clickText(page, '.career-brushes', '单格详情'); await nextFrame(page);
+  await page.select('.career-cell-form select[name=misses]', '2');
+  await page.click('.career-cell-form input[name=focus]'); await page.type('.career-cell-form textarea[name=note]', '星莲船 demo record');
+  await clickText(page, '.career-cell-form', '应用到草稿'); await nextFrame(page);
+  await clickText(page, '.career-viewer-actions', '保存记录'); await nextFrame(page);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('eagler.book.player-career-chart-v2')));
+  assert.equal(saved['UFO-Ra-N'].misses, '2'); assert.equal(saved['UFO-Ra-N'].bombs, '0'); assert.equal(saved['UFO-Ra-N'].focus, true);
+  report.push('Unhosted game editing, NN brush, detailed counts, limitations and explicit persistence');
+  await clickText(page, '.career-viewer-actions', '编辑记录');
+  await clickText(page, '.career-brushes', '擦除');
+  await page.select('select[aria-label="查找作品"]', 'UFO'); await page.evaluate(() => [...document.querySelectorAll('.career-finder-difficulties button')].find(el => el.textContent === 'N').click()); await page.click('[data-locate-cell="UFO-Ra-N"]'); await nextFrame(page);
+  const erasePosition = await page.$eval('.career-map-cell[title="东方星莲船 · Ra · Normal"]', el => {const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};});
+  await page.mouse.click(erasePosition.x, erasePosition.y); await nextFrame(page);
+  await page.keyboard.press('Escape'); await page.waitForSelector('.career-discard');
+  await clickText(page, '.career-discard', '放弃修改并关闭'); await page.waitForSelector('dialog', {hidden: true});
+  await enter(page); await page.click('.career-showcase .career-thumbnail'); await page.waitForSelector('.career-map-cell');
+  assert.equal(await page.$eval('.career-map-cell[title="东方星莲船 · Ra · Normal"]', el => el.getAttribute('aria-pressed')), 'true');
+  report.push('Dirty close protection, discard and reload retain saved records');
+  await page.evaluate(() => {window.careerDownloads=[]; HTMLAnchorElement.prototype.click=function(){window.careerDownloads.push({name:this.download,href:this.href});};});
+  await clickText(page, '.career-viewer-actions', '导出 PNG');
+  const png = await page.evaluate(async () => {const image=new Image();image.src=window.careerDownloads.at(-1).href;await image.decode();const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);return {w:image.width,h:image.height,alpha:ctx.getImageData(image.width-2,image.height-2,1,1).data[3]};});
+  assert.equal(png.w,1600); assert.ok(png.h < 2800); assert.equal(png.alpha,255);
+  // Select display toggles by their visible labels.
+  const toggle = label => page.evaluate(label => {const el=[...document.querySelectorAll('.career-check')].find(el=>el.textContent===label);el.querySelector('input').click();}, label);
+  // Export the same chart with a transparent background.
+  await page.evaluate(()=>{const el=[...document.querySelectorAll('.career-check')].find(el=>el.textContent==='透明 PNG 背景').querySelector('input');if(!el.checked)el.click();});
+  await nextFrame(page); await clickText(page,'.career-viewer-actions','导出 PNG');
+  assert.equal(await page.evaluate(async()=>{const image=new Image();image.src=window.careerDownloads.at(-1).href;await image.decode();const c=document.createElement('canvas');c.width=image.width;c.height=image.height;const ctx=c.getContext('2d');ctx.drawImage(image,0,0);return ctx.getImageData(image.width-2,image.height-2,1,1).data[3];}),0);
+  await toggle('显示 Easy'); await nextFrame(page);
+  assert.equal(await page.$$eval('.career-map-cell', cells => new Set(cells.map(cell => cell.dataset.cellKey)).size), await page.$$eval('.career-map-cell', cells => cells.length));
+  assert.equal(await page.$$eval('[data-cell-key="IN-BT-B-N"]', cells => cells.length), 1);
+  assert.equal(await page.$$eval('[data-cell-key="IN-BT-A-N"]', cells => cells.length), 1);
+  await toggle('显示 Easy'); await nextFrame(page);
+  await toggle('显示附加作品'); await nextFrame(page); assert.ok(await page.$$eval('.career-map-cell',cells=>cells.length)<1110);
+  await toggle('显示附加作品'); await nextFrame(page);
+  // Restore Easy if needed and ensure display filters never modify saved data.
+  await page.evaluate(()=>{const el=[...document.querySelectorAll('.career-check')].find(el=>el.textContent==='显示 Easy').querySelector('input');if(!el.checked)el.click();});
+  await nextFrame(page); assert.equal(await page.$$eval('.career-map-cell',cells=>cells.length),1110);
+  assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('eagler.book.player-career-chart-v2'))),saved);
+  report.push('PNG dimensions/opacity, transparent export and non-destructive display filters');
+  await clickText(page,'.career-backup-actions','导出 JSON');
+  const backup=await page.evaluate(async()=>JSON.parse(await(await fetch(window.careerDownloads.at(-1).href)).text()));
+  assert.equal(backup.version,2);assert.deepEqual(backup.records,saved);
+  await writeFile(output+'/import.json',JSON.stringify(backup));
+  const uploader=await page.$('input[type=file]');await uploader.uploadFile(output+'/import.json');
+  await page.waitForSelector('.career-brushes');assert.match(await page.$eval('.career-viewer-status',el=>el.textContent),/草稿/);
+  await clickText(page,'.career-viewer-actions','保存记录');
+  await clickText(page,'.career-map-tools','适应屏幕');await nextFrame(page);
+  await page.screenshot({path:output+'/desktop-viewer.png'});
+  report.push('JSON backup export/import stages a reviewable draft');
+  const mobile=await browser.newPage();mobile.on('pageerror',error=>errors.push(error.message));
+  await mobile.setViewport({width:390,height:844,isMobile:true,hasTouch:true,deviceScaleFactor:2});await enter(mobile);
+  await mobile.click('.career-showcase .career-thumbnail');await mobile.waitForSelector('.career-map-cell');await nextFrame(mobile);
+  assert.equal(await mobile.$eval('dialog',el=>el.getBoundingClientRect().width),390);
+  const mobileZoom=await zoom(mobile), mobileArea=await mobile.$eval('.career-map-viewport',el=>{const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};});
+  const client=await mobile.createCDPSession();
+  await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:mobileArea.x-35,y:mobileArea.y,id:1},{x:mobileArea.x+35,y:mobileArea.y,id:2}]});
+  for(let n=1;n<=4;n++)await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:mobileArea.x-35-n*12,y:mobileArea.y,id:1},{x:mobileArea.x+35+n*12,y:mobileArea.y,id:2}]});
+  await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await nextFrame(mobile);
+  assert.ok(await zoom(mobile)>mobileZoom);await mobile.screenshot({path:output+'/mobile-viewer.png'});
+  await mobile.click('.career-help-trigger'); await mobile.waitForSelector('.career-help-dialog[open]');
+  assert.ok(await mobile.$eval('.career-help-dialog', el => el.getBoundingClientRect().width <= innerWidth));
+  await mobile.screenshot({path:output+'/mobile-help.png'});
+  await mobile.click('button[aria-label="关闭说明"]'); await mobile.waitForSelector('.career-help-dialog', {hidden: true});
+  await mobile.click('button[aria-label="关闭全屏通关图"]');await mobile.waitForSelector('dialog',{hidden:true});
+  await page.bringToFront();
+  await page.goto(new URL('profile.html', base).href, {waitUntil: 'networkidle2'});
+  assert.ok(await page.$eval('.career-overview .career-thumbnail', button => {
+    const frame = button.getBoundingClientRect(), canvas = button.querySelector('canvas').getBoundingClientRect();
+    return frame.height < canvas.height / 2 && Math.abs(canvas.width - frame.width + 2) < 2;
+  }));
+  await page.click('.career-overview .career-thumbnail');
+  assert.equal(await page.$eval('.career-overview .career-thumbnail', el => el.getAttribute('aria-expanded')), 'true');
+  assert.equal(await page.$('.career-viewer[open]'), null);
+  assert.ok(await page.$eval('.career-overview .career-thumbnail', button => Math.abs(button.getBoundingClientRect().height - button.querySelector('canvas').getBoundingClientRect().height - 2) < 2));
+  await page.click('.career-overview-toggle');
+  assert.equal(await page.$eval('.career-overview .career-thumbnail', el => el.getAttribute('aria-expanded')), 'false');
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate(theme => document.documentElement.dataset.bookTheme = theme, theme);
+    await page.waitForFunction(theme => {
+      const rgb = document.querySelector('.career-overview canvas').getContext('2d').getImageData(0,0,1,1).data;
+      return theme === 'light' ? rgb[0] === 255 : rgb[0] === 32;
+    }, {}, theme);
+    await page.screenshot({path:output+'/overview-'+theme+'.png',fullPage:true});
+  }
+  report.push('Overview expands and collapses inline; canvas responds to light and dark themes');
+  assert.deepEqual(errors,[]);report.push('390px mobile layout, native two-finger pinch and close');
+  await writeFile(output+'/report.json',JSON.stringify({passed:true,report},null,2));console.log(JSON.stringify({passed:true,report},null,2));
+}finally{await browser.close();}

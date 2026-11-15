@@ -2,7 +2,6 @@
 #include "PresentationTracking.hpp"
 #include "GameState.hpp"
 #include "UfoEffects.hpp"
-#include <unordered_set>
 
 namespace th12 {
 namespace {
@@ -341,13 +340,16 @@ void ItemPresentation::sync(anm_logic::Scene& scene, const item_system::Manager&
       scene.tickEmbedded(key);
     lastStockFrame_ = frame;
   }
-  std::unordered_set<uint32_t> active;
   for (const auto& entity : manager.entities)
     if (entity.active()) {
-      active.insert(entity.id);
       auto* record = ensureItem(scene, entity);
-      if (!record)
+      if (!record) {
+        // A delayed item or an unavailable bank can still have an existing binding.
+        if (auto at = items_.find(entity.id); at != items_.end())
+          at->second.seenInSync = true;
         continue;
+      }
+      record->seenInSync = true;
       // A host without Item22's precise tail hook can catch up by the original
       // successful-tail counter. This never advances a newly reused slot0.
       if (!record->aggregate)
@@ -361,7 +363,7 @@ void ItemPresentation::sync(anm_logic::Scene& scene, const item_system::Manager&
         updateItemPose(scene, *record, entity);
     }
   for (auto at = items_.begin(); at != items_.end();)
-    if (!active.contains(at->first)) {
+    if (!at->second.seenInSync) {
       auto& record = at->second;
       if (!record.aggregate) {
         scene.remove(record.body);
@@ -371,8 +373,10 @@ void ItemPresentation::sync(anm_logic::Scene& scene, const item_system::Manager&
       if (record.hint)
         scene.remove(record.hint);
       at = items_.erase(at);
-    } else
+    } else {
+      at->second.seenInSync = false;
       ++at;
+    }
   for (auto at = overlays_.begin(); at != overlays_.end();)
     if (!scene.find(at->second))
       at = overlays_.erase(at);

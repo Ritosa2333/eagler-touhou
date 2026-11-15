@@ -1,0 +1,286 @@
+{
+  "passed": true,
+  "scope": "640x450 native image, excluding wall clock FPS footer",
+  "screens": [
+    {
+      "screen": "2p-stage1-warp0",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage1-warp0-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage1-warp2",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage1-warp2-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage2-warp0",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage2-warp0-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage2-warp2",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage2-warp2-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage3-warp0",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage3-warp0-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage3-warp2",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage3-warp2-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage4-warp0",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage4-warp0-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage4-warp2",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage4-warp2-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage5-warp0",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage5-warp0-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage5-warp2",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage5-warp2-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage6-warp0",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage6-warp0-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage6-warp2",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage6-warp2-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage7-warp0",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage7-warp0-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage7-warp2",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "2p-stage7-warp2-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage1-warp0",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage1-warp0-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage1-warp2",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage1-warp2-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage2-warp0",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage2-warp0-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage2-warp2",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage2-warp2-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage3-warp0",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage3-warp0-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage3-warp2",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage3-warp2-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage4-warp0",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage4-warp0-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage4-warp2",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage4-warp2-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage5-warp0",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage5-warp0-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage5-warp2",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage5-warp2-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage6-warp0",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage6-warp0-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage6-warp2",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage6-warp2-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage7-warp0",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage7-warp0-effect",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage7-warp2",
+      "same": true,
+      "differenceBounds": null
+    },
+    {
+      "screen": "3p-stage7-warp2-effect",
+      "same": true,
+      "differenceBounds": null
+    }
+  ]
+}

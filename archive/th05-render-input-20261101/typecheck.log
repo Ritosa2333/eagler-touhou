@@ -1,0 +1,12 @@
+
+> eagler-touhou@0.1.0 typecheck
+> npm run typecheck:ui-rewrite && npm run typecheck:ui-rewrite:tools
+
+
+> eagler-touhou@0.1.0 typecheck:ui-rewrite
+> tsc -p tsconfig.ui-rewrite.json
+
+
+> eagler-touhou@0.1.0 typecheck:ui-rewrite:tools
+> tsc -p tsconfig.ui-rewrite.tools.json
+

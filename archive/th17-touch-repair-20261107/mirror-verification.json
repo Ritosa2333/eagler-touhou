@@ -1,0 +1,9 @@
+{
+  "status": "published",
+  "identity": "2120e0a5be238b4f05a9afbae9e048d4b054fe6881f540339a9555e81f821534",
+  "previous": "/var/www/eagler-touhou/releases/hk-formal-th17-frame-spikes-610a07110-a96981cdf1ca",
+  "current": "/var/www/eagler-touhou/releases/hk-formal-th17-touch-repair-d7b4e55a1-2120e0a5be23",
+  "files": 9669,
+  "releaseId": "sha256-13fe66addf4cb59e9f432f61cb682a720fd7cfd45f36a360f542cf9af65c2978",
+  "wasmSha256": "c9a287a32e77fbb24112784ff1d9dcdcd67c551cbf83f30cc736fabf025ccd81"
+}

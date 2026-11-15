@@ -2,7 +2,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
 /** Mounted actual TransferPanel + model, synthetic jsdom/time/command ports.
  * Main public/index822–837 and app3489–3547 own the expected markup/behavior.
  * This does not validate authored CSS pixels or native transfer/permissions. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -51,10 +51,13 @@ for (const locale of ['zh-CN', 'en']) test(`original transfer/MIDI copy, IDs and
   assert.deepEqual(f.calls.at(-1), ['retry', 1800000]); assert.equal(element('transferRetry').hidden, true); assert.equal(element('transferWarning').textContent, f.text('transfer.retryingOgg'));
 });
 
-test('original network datasets/bar class and iOS debug text reflect actual transfer owner', async () => {
+test('network ownership, indeterminate progress and iOS debug text reflect the actual transfer owner', async () => {
   const f = await mount();
   await React.act(async () => f.model.runtimeTransfer({phase: 'requesting'}));
-  assert.equal(element('transferBar').parentElement.classList.contains('indeterminate'), true); assert.equal(element('transferBar').style.width, '34%');
+  const progress=element('transferBar').parentElement;
+  assert.equal(progress.getAttribute('role'),'progressbar');
+  assert.equal(progress.dataset.state,'indeterminate');
+  assert.equal(progress.hasAttribute('aria-valuenow'),false,'an unknown total must not announce a made-up percentage');
   const task = {id: 'one', url: '/fixture', title: 'source title', label: 'source label', kind: 'metadata', phase: 'requesting', loaded: 0, total: 0, startedAt: 0, updatedAt: 0};
   await React.act(async () => {f.model.networkSnapshot({active: [task], count: 1, loaded: 0, total: 0}); f.frame();});
   assert.equal(element('transfer').dataset.networkOwned, '1'); assert.equal(element('transfer').dataset.networkActive, '1');

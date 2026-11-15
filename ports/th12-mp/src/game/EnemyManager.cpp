@@ -45,6 +45,31 @@ void synchronizeEnemyHitPresentation(Enemy& e) {
     pose.secondary = 0xff0000ffu;
   }
 }
+void synchronizeEnemyMovementAnimation(Enemy& e) {
+  // Original414048..4141b9 uses the last413700 combined displacement,
+  // including ECL setters. Rebind only on a direction transition.
+  if (!(e.flags & 0x80000u)) return;
+  const int direction = e.animationVelocityX < -double(.03f) ? -1 :
+                        e.animationVelocityX > double(.03f) ? 1 : 0;
+  if (direction == e.movementDirection) return;
+  const int previous = e.movementDirection;
+  const int offset = previous == 0 ? (direction == -1 ? 1 : 2) :
+                     previous == -1 ? (direction == 0 ? 3 : 2) :
+                                      (direction == 0 ? 4 : 1);
+  auto* old = animationScene.find(enemyAnimationKey(e.id, 0));
+  if (!old) return;
+  const auto bank = old->vm.state().bank;
+  const std::array<float,3> position{old->vm.state().engineX,
+      old->vm.state().engineY,old->vm.state().engineZ};
+  const std::array<float,3> scriptPosition{old->vm.state().x,
+      old->vm.state().y,old->vm.state().z};
+  e.movementDirection = direction;
+  const int script = e.movementAnimation + offset;
+  e.animationSlots[0] = script;e.animationBanks[0] = bank;
+  animationScene.bind(enemyAnimationKey(e.id, 0),e.id,bank,script,
+      anm_logic::Membership::Primary,position[0],position[1],{},true,&scriptPosition,
+      224,16,8,false,position[2]);
+}
 void synchronizeEnemyAnimations(Enemy& e) {
   // 414220..4142b4 runs after ECL and callbacks. Per-slot offsets live on
   // Enemy; parent-slot linking adds only that VM's script XYZ, not its engine.
@@ -207,6 +232,7 @@ void finishEnemyUpdate(Enemy& e) {
       !e.bodyImmunityTicks) {
     multiplayer::enemyCollision(e);
   }
+  synchronizeEnemyMovementAnimation(e);
   synchronizeEnemyAnimations(e);
   synchronizeEnemyHitPresentation(e);
   // 414a29..414a65: timers and age advance after interrupts and body collision.

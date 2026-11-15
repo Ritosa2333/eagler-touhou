@@ -17,11 +17,13 @@ class StageGameplay;
 // below and use the same scheduler as the priority-16 game callback.
 struct StageGameplayServices {
     virtual ~StageGameplayServices()=default;
+    virtual bool rollback_boundary(){return true;}
     virtual bool audio(i32,float,PlayerShots::SoundAction,bool)=0;
     virtual bool popup(const Vec3&,i32,u32)=0;virtual bool trophy(i32)=0;
     virtual bool game_over()=0;virtual bool finish_practice()=0;
     virtual bool record_play_time()=0;virtual bool return_to_title()=0;
     virtual bool dialogue_text(AnmVm&,u32,u32,i32,i32,i32,const std::string&)=0;
+    virtual i32 dialogue_width(AnmVm&,const std::string&,i32){return -1;}
     virtual bool spell_title(AnmVm&,const std::string&)=0;
     virtual bool music_control(i32 operation,i32 value)=0;
     virtual bool music_fade(i32 seconds)=0;virtual bool unlock_music(i32)=0;
@@ -66,6 +68,7 @@ public:
     RunStageObjects& run_objects()noexcept{return objects;}
     std::unique_ptr<RunStageObjects> take_run_objects()noexcept{return std::move(owned_objects);}
     bool ready()const noexcept{return prepared;}bool active()const noexcept{return started;}
+    void save_rollback(multiplayer::FrameImage&);
     FrameScheduler& frame_scheduler()noexcept{return scheduler;}
 };
 }

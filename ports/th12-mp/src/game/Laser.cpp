@@ -1,9 +1,20 @@
 #include "Laser.hpp"
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <limits>
 
 namespace th12::laser {
+namespace {
+std::unique_ptr<Laser> makeLaser(Kind kind) {
+  switch (kind) {
+    case Kind::Moving: return std::make_unique<MovingLaser>();
+    case Kind::Timed: return std::make_unique<TimedLaser>();
+    case Kind::Curve: return std::make_unique<CurveLaser>();
+  }
+  return {};
+}
+}
 Manager::Manager(const Manager& other) { *this = other; }
 Manager& Manager::operator=(const Manager& other) {
   if (this == &other) return *this;
@@ -13,12 +24,7 @@ Manager& Manager::operator=(const Manager& other) {
     // Capture and restore revisit these ordered slots. Keep the object and
     // curve-node capacity only when its virtual implementation still fits.
     if (at == objects_.end() || (*at)->state.kind != source->state.kind) {
-      std::unique_ptr<Laser> next;
-      switch (source->state.kind) {
-        case Kind::Moving: next = std::make_unique<MovingLaser>(); break;
-        case Kind::Timed: next = std::make_unique<TimedLaser>(); break;
-        case Kind::Curve: next = std::make_unique<CurveLaser>(); break;
-      }
+      auto next = makeLaser(source->state.kind);
       if (at == objects_.end()) at = objects_.insert(at, std::move(next));
       else *at = std::move(next);
     }
@@ -27,6 +33,28 @@ Manager& Manager::operator=(const Manager& other) {
   }
   objects_.erase(at, objects_.end());
   return *this;
+}
+Manager::Snapshot Manager::snapshot() const {
+  Snapshot saved;
+  snapshot(saved);
+  return saved;
+}
+void Manager::snapshot(Snapshot& saved) const {
+  saved.serial = serial_;
+  saved.objects.resize(objects_.size());
+  size_t index = 0;
+  for (const auto& object : objects_) saved.objects[index++] = object->state;
+}
+void Manager::restore(const Snapshot& saved) {
+  serial_ = saved.serial;
+  auto at = objects_.begin();
+  for (const auto& state : saved.objects) {
+    if (at == objects_.end()) at = objects_.insert(at, makeLaser(state.kind));
+    else if ((*at)->state.kind != state.kind) *at = makeLaser(state.kind);
+    (*at)->state = state;
+    ++at;
+  }
+  objects_.erase(at, objects_.end());
 }
 namespace {
 constexpr float pi = 3.1415927410125732f, tau = 6.2831854820251465f;
@@ -667,14 +695,24 @@ bool CurveLaser::update(Manager& manager, World& world) {
     return true;
   float total = 0;
   bool grazed = false;
+  bool haveOffset = false;
+  uint32_t lastAngle = 0, lastSpeed = 0;
+  Vec3 offset{};
   for (size_t i = 0; i + 1 < s.nodes.size(); ++i) {
     const auto& node = s.nodes[i];
     total = fadd(total, node.speed);
     // 42cb72..42cb81 skips only totals below16; equality is queried.
     if (total < 16)
       continue;
-    auto r = world.lineCollision(add(node.position, direction(node.angle, node.speed * .5f)),
-                                 node.angle, s.width * .5f, node.speed);
+    const auto angleBits = std::bit_cast<uint32_t>(node.angle);
+    const auto speedBits = std::bit_cast<uint32_t>(node.speed);
+    if (!haveOffset || angleBits != lastAngle || speedBits != lastSpeed) {
+      offset = direction(node.angle, node.speed * .5f);
+      lastAngle = angleBits;
+      lastSpeed = speedBits;
+      haveOffset = true;
+    }
+    auto r = world.lineCollision(add(node.position, offset), node.angle, s.width * .5f, node.speed);
     if (r == Collision::Hit)
       clearRectangle(manager, world, world.playerPosition(), {32, 32, 0}, false, true);
     else if (r == Collision::Graze && !grazed && s.grazeAge.current % 3 == 0) {

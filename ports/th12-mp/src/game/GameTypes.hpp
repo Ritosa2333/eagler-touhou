@@ -144,6 +144,8 @@ struct Enemy {
         relativeSpeed = 0, hit = 12;
   int life = 30, score = 1000, drop = 1, age = 0, bank = 1, boundBank = 1, animation = 0,
       baseAnimation = 0, animationAge = 0;
+  int movementAnimation = 0, movementDirection = 0; // Native+22c/+230.
+  float animationVelocityX = 0; // Native+40, before combined-position flooring/clamp.
   bool active = true, boss = false, hidden = false, controller = false, invincible = false,
        mirror = false, timedOut = false;
   u32 flags = 0;

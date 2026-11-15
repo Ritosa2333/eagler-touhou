@@ -1,0 +1,24 @@
+{
+  "sourceHead": "377d30027e82119b76b848b06fa596a70f05a785",
+  "game": "th05",
+  "mergeBases": [
+    "315e7a92dc06dc6bed6bfd59b21258578429d043"
+  ],
+  "aheadBehind": "0\t5",
+  "results": {
+    "th05": {
+      "head": "315e7a92dc06dc6bed6bfd59b21258578429d043",
+      "ref": "refs/heads/port-history/th05",
+      "initialAncestor": true,
+      "latestAncestor": true,
+      "treeMatches": true
+    },
+    "th05mp": {
+      "head": "6c37f2b4a5823713c27a8438130b6bc142b7247e",
+      "ref": "refs/heads/port-history/th05mp",
+      "initialAncestor": true,
+      "latestAncestor": true,
+      "treeMatches": true
+    }
+  }
+}

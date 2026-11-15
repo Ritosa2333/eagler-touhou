@@ -1,0 +1,20 @@
+{
+  "backgrounds": [],
+  "stages": [],
+  "idle": {
+    "scene": 4,
+    "inputScene": 14
+  },
+  "playing": {
+    "scene": 4,
+    "inputScene": 14,
+    "x": 244,
+    "y": 212.5
+  },
+  "stopped": {
+    "scene": 2,
+    "inputScene": 2
+  },
+  "passed": true,
+  "errors": []
+}

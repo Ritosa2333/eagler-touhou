@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   createMultiplayerIdentityStore,
@@ -9,7 +10,9 @@ import {
   normalizeMultiplayerDisplayName,
   validMultiplayerClientId,
 } from "../.cache/build/browser/assets/launcher/multiplayer-identity.mjs";
+import {normalizePublicNickname, parsePublicNicknameState} from "../.cache/build/browser/assets/contracts/public-nickname.mjs";
 
+test("multiplayer identity", async () => {
 class MemoryStorage {
   constructor(entries = []) { this.values = new Map(entries); }
   getItem(key) { return this.values.has(key) ? this.values.get(key) : null; }
@@ -25,6 +28,11 @@ assert.throws(() => generateMultiplayerRoomCode(() => -1), /Invalid/);
 
 assert.equal(normalizeMultiplayerDisplayName("  A\u0000B\nC  "), "ABC");
 assert.equal(normalizeMultiplayerDisplayName("一二三四五六七八九十十一十二十三"), "一二三四五六七八九十十一");
+const longNickname = "A".repeat(33);
+assert.equal(normalizePublicNickname(longNickname), "A".repeat(12), "names longer than twelve code points normalize to the public limit");
+assert.equal(parsePublicNicknameState({name:longNickname,status:"approved",registered:false}).name, "A".repeat(12));
+assert.equal(parsePublicNicknameState({name:longNickname,status:"approved",registered:true}).name, "A".repeat(12));
+assert.equal(normalizeMultiplayerDisplayName(longNickname), "A".repeat(12), "roster display uses the same twelve-code-point limit");
 assert.equal(multiplayerDisplayInitial("  琪露诺  "), "琪");
 assert.equal(multiplayerDisplayInitial("", "P"), "P");
 // Every Unicode Bidi_Control is removed, including the Arabic letter mark
@@ -124,3 +132,4 @@ for (const sessionStorage of [null, hostile, {
   assert.equal(isolated.lobbyClientId("th07mp"), other);
 }
 console.log("Multiplayer identity without session storage: PASS");
+});

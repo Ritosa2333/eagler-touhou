@@ -1,0 +1,5 @@
+$ bun --bun run typecheck:ui-rewrite && bun --bun run typecheck:ui-rewrite:tools
+$ bun scripts/compile-i18n.mjs && bun --bun run tsc -p tsconfig.ui-rewrite.json
+UI messages: current
+$ bun scripts/compile-i18n.mjs && bun --bun run tsc -p tsconfig.ui-rewrite.tools.json
+UI messages: current

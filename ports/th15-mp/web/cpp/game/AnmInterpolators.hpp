@@ -12,6 +12,6 @@ struct AnmInterpolators {
     ColorInterpolation secondary_color;
     AlphaInterpolation secondary_alpha;
     ScalarInterpolation uv_x,uv_y;
-    void advance(AnmVariables&,AnmVisualState&,float rate)noexcept;
+    bool advance(AnmVariables&,AnmVisualState&,float rate)noexcept;
 };
 }

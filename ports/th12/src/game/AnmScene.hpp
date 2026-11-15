@@ -24,6 +24,8 @@ class Scene {
   std::unordered_map<uint32_t, std::shared_ptr<Node>> nodes_;
   Node* executing_ = nullptr;
   uint32_t nextId_ = 1;
+  std::vector<uint32_t> retired_;
+  void retire(Node& node);
   Runtime runtimeFor(Node& node);
   void tickNode(Node& node);
   void traverse(std::list<std::shared_ptr<Node>>& list);

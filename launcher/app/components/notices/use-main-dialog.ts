@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useLayoutEffect, useRef} from 'react';
+import {animateSurface, type SurfaceAnimation, type SurfaceKind} from '../../ui/surface-motion';
 
 export interface MainDialogProps {
   open: boolean;
@@ -9,21 +10,15 @@ export interface MainDialogProps {
   /** Domain cleanup after an actual user/Router close, not StrictMode disposal. */
   onClosed?(): void;
 }
-export interface MainDialogAnimation {finished: Promise<unknown>; cancel(): void;}
-export type MainDialogMotion = (dialog: HTMLDialogElement, phase: 'enter' | 'exit', fromCurrent: boolean) => MainDialogAnimation | null;
-interface MainDialogMotionOptions {motion: MainDialogMotion; immediateClose?: boolean;}
-/** One native-dialog lifecycle; existing numeric callers retain their CSS timer.
- * Completion-driven motion is opt-in and never owns presence or navigation.
+interface MainDialogOptions {motion?: SurfaceKind | false; immediateClose?: boolean; returnValue?: string;}
+/** One native-dialog lifecycle. Shared motion never owns presence or navigation.
  * Router Back closes without recursively requesting another history change.
  * The parent dialog is left open when a child native dialog is presented.
  */
-export function useMainDialog({open, suspended = false, onCloseRequest, onClosed}: MainDialogProps, timing: number | MainDialogMotionOptions = 220, animationName?: string, returnValue?: string) {
-  const duration = typeof timing === 'number' ? timing : null;
-  const motion = typeof timing === 'number' ? undefined : timing.motion;
-  const immediateClose = typeof timing === 'number' ? false : !!timing.immediateClose;
+export function useMainDialog({open, suspended = false, onCloseRequest, onClosed}: MainDialogProps,
+  {motion = 'dialog', immediateClose = false, returnValue}: MainDialogOptions = {}) {
   const ref = useRef<HTMLDialogElement>(null);
-  const animation = useRef<MainDialogAnimation | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const animation = useRef<SurfaceAnimation | null>(null);
   const finish = useRef<(() => void) | null>(null);
   const notifyAfterClose = useRef(false);
   const suspendedFocus = useRef<HTMLElement | null>(null);
@@ -36,11 +31,10 @@ export function useMainDialog({open, suspended = false, onCloseRequest, onClosed
     dialog.close(value);
   }, []);
   const clear = useCallback(() => {
-    if (timer.current !== null) clearTimeout(timer.current);
-    timer.current = null; finish.current = null; notifyAfterClose.current = false;
+    finish.current = null; notifyAfterClose.current = false;
     const previous = animation.current; animation.current = null; previous?.cancel();
   }, []);
-  const observe = useCallback((active: MainDialogAnimation, completed?: () => void) => {
+  const observe = useCallback((active: SurfaceAnimation, completed?: () => void) => {
     const settled = () => {
       if (animation.current !== active) return;
       // Current cancellation also settles the native owner. Owner-triggered
@@ -73,19 +67,18 @@ export function useMainDialog({open, suspended = false, onCloseRequest, onClosed
       if (shouldNotify) callback.current.onCloseRequest();
     };
     finish.current = complete;
-    if (immediate || immediateClose || (duration !== null && duration <= 0) || matchMedia('(prefers-reduced-motion: reduce)').matches) complete();
+    if (immediate || immediateClose || motion === false) complete();
     else {
       dialog.classList.add('closing');
-      if (motion) {
-        const next = motion(dialog, 'exit', true), previous = animation.current;
-        animation.current = next; previous?.cancel();
-        if (next) observe(next, complete); else complete();
-      } else timer.current = setTimeout(complete, duration!);
+      const next = animateSurface(dialog, 'exit', {kind: motion, fromCurrent: true}), previous = animation.current;
+      animation.current = next; previous?.cancel();
+      if (next) observe(next, complete); else complete();
     }
-  }, [clear, closeNative, duration, returnValue, immediateClose, motion, observe]);
+  }, [clear, closeNative, returnValue, immediateClose, motion, observe]);
   useLayoutEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
+    dialog.toggleAttribute('data-window-managed', motion !== false);
     if (suspended) {
       if (open) lifetimeOpen.current = true;
       else if (lifetimeOpen.current) {lifetimeOpen.current = false; callback.current.onClosed?.();}
@@ -95,8 +88,8 @@ export function useMainDialog({open, suspended = false, onCloseRequest, onClosed
     } else if (open) {
       lifetimeOpen.current = true;
       const wasOpen = dialog.open;
-      if (motion && !wasOpen) dialog.showModal();
-      const opening = motion?.(dialog, 'enter', wasOpen) ?? null;
+      if (!wasOpen) dialog.showModal();
+      const opening = motion === false ? null : animateSurface(dialog, 'enter', {kind: motion, fromCurrent: wasOpen});
       clear(); dialog.classList.remove('closing');
       if (!dialog.open) dialog.showModal();
       if (opening) {animation.current = opening; observe(opening);}
@@ -129,6 +122,5 @@ export function useMainDialog({open, suspended = false, onCloseRequest, onClosed
   return {ref, finishPendingClose: () => finish.current?.(), cancelPendingClose: () => {clear(); ref.current?.classList.remove('closing');}, requestClose: () => close(true), requestImmediateClose: () => close(true, true),
     onCancel: (event: {preventDefault(): void}) => {event.preventDefault(); close(true);},
     onClick: (event: {target: EventTarget; currentTarget: EventTarget}) => {if (event.target === event.currentTarget) close(true);},
-    onAnimationEnd: (event: {animationName: string}) => {if (animationName && event.animationName === animationName) finish.current?.();},
   };
 }

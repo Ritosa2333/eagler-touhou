@@ -24,6 +24,7 @@ struct BombContext {
     i32 player_resource=10;bool hud_available=true,hud_collect=false,roaring_available=true,enemy_available=true;
 };
 class BombController {
+    friend class GameBattle;
 protected:
     BombContext& context;float rate=1;
     virtual bool start()=0;virtual bool frame(bool& finished)=0;

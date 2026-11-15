@@ -233,7 +233,7 @@ self.addEventListener("fetch", event => {
           if (text.length > 4 * 1024 * 1024) throw new Error("Runtime Manifest too large");
           EaglerRuntimeGenerations.validateRuntimeManifest(JSON.parse(text));
           return response;
-        });
+        }, {cache: "no-cache"});
       } catch (error) {
         if (error?.siteAccessDenied) throw error;
         return new Response(JSON.stringify(self.__EAGLER_RUNTIME_MANIFEST), {
@@ -253,7 +253,8 @@ self.addEventListener("fetch", event => {
     }, {stallMs: 1500}));
     return;
   }
-  const entry = manifestByPathname.get(url.pathname);
+  const entry = manifestByPathname.get(url.pathname) ?? (event.request.mode === "navigate"
+    ? manifestByPathname.get(url.pathname.replace(/\/?$/, "/index.html")) : undefined);
   if (entry) event.respondWith(shellCacheFirst(entry));
 });
 

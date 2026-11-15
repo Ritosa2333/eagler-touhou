@@ -61,6 +61,17 @@ EMSCRIPTEN_KEEPALIVE int eagler_replay_open(const char* path,unsigned stage){
         if(!MultiplayerGameplay::Configure(session))return 0;
     }else MultiplayerGameplay::ResetToSinglePlayer(u8(g_GameManager.character),u8(g_GameManager.shotType));
 #endif
+    // Match the in-game replay menu before GameManager captures the defaults.
+    for (const auto offset : h.stageReplayDataOffsets)
+    {
+        if (!offset)
+            continue;
+
+        const auto* firstStage = reinterpret_cast<const StageReplayData*>(decoded.data() + offset);
+        g_GameManager.livesRemaining = firstStage->livesRemaining;
+        g_GameManager.bombsRemaining = firstStage->bombsRemaining;
+        break;
+    }
     for(unsigned n=0;n<7;n++)lengths[n]=length(h,decoded,n);
     g_GameManager.currentStage=stage-1;g_Supervisor.wantedState=SUPERVISOR_STATE_MAINMENU;g_Supervisor.curState=SUPERVISOR_STATE_GAMEMANAGER;start_stage=stage;started=false;return 1;
 }

@@ -1,4 +1,4 @@
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 const result = await build({entryPoints:[new URL('../src/launcher/spectator-playback.mts',import.meta.url).pathname.replace(/^\/([A-Za-z]:)/,'$1')], bundle:true, platform:'node',format:'esm',write:false});

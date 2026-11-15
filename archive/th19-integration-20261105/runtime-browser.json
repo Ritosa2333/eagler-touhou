@@ -1,0 +1,64 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "check": "IndexedDB restore and path boundary",
+      "passed": true
+    },
+    {
+      "check": "RTC exact-input mode",
+      "passed": true,
+      "frames": [
+        363,
+        363
+      ],
+      "hashes": [
+        [
+          120,
+          191122355
+        ],
+        [
+          240,
+          2063129827
+        ],
+        [
+          360,
+          1661993424
+        ]
+      ]
+    },
+    {
+      "check": "Native room return retains the loaded core",
+      "mode": 1,
+      "passed": true
+    },
+    {
+      "check": "RTC rollback mode",
+      "passed": true,
+      "frames": [
+        361,
+        368
+      ],
+      "hashes": [
+        [
+          120,
+          191122355
+        ],
+        [
+          240,
+          2063129827
+        ],
+        [
+          360,
+          1661993424
+        ]
+      ]
+    },
+    {
+      "check": "Native room return retains the loaded core",
+      "mode": 0,
+      "passed": true
+    }
+  ],
+  "errors": []
+}

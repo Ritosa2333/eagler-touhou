@@ -1,6 +1,6 @@
 // The native adapter owns parsing, stage bootstrap, fixed ticks and EOF.
 // This host owns only asynchronous command ordering and presentation pacing.
-export function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresentation=()=>false,stopLoop,prepare=async()=>{},audioState=()=>true,onState=()=>{},onError=()=>{},raf=fn=>requestAnimationFrame(fn),cancel=id=>cancelAnimationFrame(id),defer,cancelDeferred,now=()=>performance.now(),hidden=()=>document.hidden}) {
+export function createLocalReplay({inspect,open,step,state,relocate,canRelocate=()=>!!relocate,present=()=>{},deferPresentation=()=>false,stopLoop,prepare=async()=>{},audioState=()=>true,onState=()=>{},onError=()=>{},raf=fn=>requestAnimationFrame(fn),cancel=id=>cancelAnimationFrame(id),defer,cancelDeferred,now=()=>performance.now(),hidden=()=>document.hidden}) {
   let selected=null,path='',paused=false,rate=1,target=null,startFrame=0,last=null,credit=0,animation=0,continuation=0,closed=false,lastReport=-Infinity;
   let channel=null,pendingTask=null,taskSerial=0;
   function soon(fn){
@@ -12,7 +12,7 @@ export function createLocalReplay({inspect,open,step,state,present=()=>{},deferP
     const id=++taskSerial;pendingTask={id,fn};channel.port2.postMessage(id);return id;
   }
   function cancelScheduled(){if(animation)cancel(animation);if(continuation){if(cancelDeferred)cancelDeferred(continuation);else pendingTask=null;}animation=continuation=0;}
-  function report(){if(!selected)return;const native=state();onState({kind:'replay',path,difficulty:selected.difficulty,...native,startFrame,paused,rate,seeking:target!==null,target,description:selected});}
+  function report(){if(!selected)return;const native=state();onState({kind:'replay',path,difficulty:selected.difficulty,...native,startFrame,paused,rate,seeking:target!==null,target,description:selected,...(canRelocate()?{fileRelocation:1}:{})});}
   function syncAudio(){return audioState({paused:closed||!selected||paused,hidden:hidden(),seeking:target!==null,ended:!!selected&&!!state().ended})!==false;}
   function schedule(){if(animation||continuation||closed)return;if(target!==null&&!hidden())continuation=soon(draw);else animation=raf(draw);}
   function draw(time){animation=continuation=0;if(closed||!selected)return;
@@ -53,6 +53,12 @@ export function createLocalReplay({inspect,open,step,state,present=()=>{},deferP
       if(closed)throw Error('录像播放器已关闭');
       const {action,value}=message;
       if(action==='inspect')return {description:await inspect(message.path)};
+      if(action==='relocate'){
+        // A file mutation may finish after the user selects another recording.
+        if(!selected||path!==message.path)return {};
+        if(!canRelocate()||!relocate)throw Error('Replay relocation is not supported');
+        await relocate(path,message.target);path=message.target;report();return {};
+      }
       if(action==='open'){
         const next=await inspect(message.path),stage=message.stage??next.stages[0]?.id;
         if(!next.stages.some(item=>item.id===stage))throw Error('录像没有此关卡');

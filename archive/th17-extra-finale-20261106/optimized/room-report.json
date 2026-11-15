@@ -1,0 +1,1239 @@
+{
+  "rollback": true,
+  "extended": false,
+  "difficulty": 4,
+  "version": "1.0.14-eagler-ef7ecb715d85",
+  "wasm": "ef7ecb715d85ac5f5204a89a26325981f8a281b98baecd32a03dd0823cb25455",
+  "throughStageTwo": false,
+  "denseExtra": true,
+  "extraBoss": true,
+  "extraFinale": true,
+  "injectedDelayMs": 145,
+  "jitterMs": 20,
+  "cpuThrottle": 2,
+  "cpuWarmupThrough": 9000,
+  "reports": [
+    {
+      "room": "th17mp-room-test-3",
+      "seats": 3,
+      "comparedFrames": 28783,
+      "maxEnemyBullets": 1999,
+      "maxLasers": 121,
+      "activeSpellFrames": 14472,
+      "dialogueFrames": 728,
+      "bossNonspellFrames": 5400,
+      "stageTwoFrames": 0,
+      "denseWindows": [
+        {
+          "frame": 26747,
+          "stageClock": 26701,
+          "bullets": 1999,
+          "spell": 75
+        },
+        {
+          "frame": 25805,
+          "stageClock": 25759,
+          "bullets": 1251,
+          "spell": 75
+        },
+        {
+          "frame": 24080,
+          "stageClock": 24034,
+          "bullets": 1150,
+          "spell": 75
+        },
+        {
+          "frame": 24684,
+          "stageClock": 24638,
+          "bullets": 1061,
+          "spell": 75
+        },
+        {
+          "frame": 11529,
+          "stageClock": 11483,
+          "bullets": 1028,
+          "spell": 67
+        }
+      ],
+      "bossPatterns": [
+        {
+          "boss": 195,
+          "spell": 88,
+          "routine": 135,
+          "first": 4530,
+          "last": 4932,
+          "peak": 811,
+          "lasers": 0,
+          "peakFrame": 4918,
+          "peakClock": 4872
+        },
+        {
+          "boss": 195,
+          "spell": -1,
+          "routine": 133,
+          "first": 4933,
+          "last": 5112,
+          "peak": 788,
+          "lasers": 0,
+          "peakFrame": 4933,
+          "peakClock": 4887
+        },
+        {
+          "boss": 195,
+          "spell": 89,
+          "routine": 137,
+          "first": 5113,
+          "last": 5595,
+          "peak": 426,
+          "lasers": 6,
+          "peakFrame": 5508,
+          "peakClock": 5462
+        },
+        {
+          "boss": 195,
+          "spell": -1,
+          "routine": 134,
+          "first": 5596,
+          "last": 5775,
+          "peak": 343,
+          "lasers": 0,
+          "peakFrame": 5596,
+          "peakClock": 5550
+        },
+        {
+          "boss": 195,
+          "spell": 90,
+          "routine": 140,
+          "first": 5776,
+          "last": 6156,
+          "peak": 62,
+          "lasers": 0,
+          "peakFrame": 6142,
+          "peakClock": 6096
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 1,
+          "first": 10662,
+          "last": 11122,
+          "peak": 233,
+          "lasers": 0,
+          "peakFrame": 11021,
+          "peakClock": 10975
+        },
+        {
+          "boss": 526,
+          "spell": 91,
+          "routine": 28,
+          "first": 11127,
+          "last": 11659,
+          "peak": 1028,
+          "lasers": 0,
+          "peakFrame": 11529,
+          "peakClock": 11483
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 4,
+          "first": 11660,
+          "last": 12149,
+          "peak": 372,
+          "lasers": 0,
+          "peakFrame": 11660,
+          "peakClock": 11614
+        },
+        {
+          "boss": 526,
+          "spell": 92,
+          "routine": 41,
+          "first": 12150,
+          "last": 12702,
+          "peak": 253,
+          "lasers": 121,
+          "peakFrame": 12150,
+          "peakClock": 12104
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 6,
+          "first": 12703,
+          "last": 13241,
+          "peak": 177,
+          "lasers": 0,
+          "peakFrame": 13086,
+          "peakClock": 13040
+        },
+        {
+          "boss": 526,
+          "spell": 93,
+          "routine": 43,
+          "first": 13242,
+          "last": 13792,
+          "peak": 227,
+          "lasers": 0,
+          "peakFrame": 13792,
+          "peakClock": 13746
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 8,
+          "first": 13793,
+          "last": 14343,
+          "peak": 315,
+          "lasers": 0,
+          "peakFrame": 14312,
+          "peakClock": 14266
+        },
+        {
+          "boss": 526,
+          "spell": 94,
+          "routine": 46,
+          "first": 14344,
+          "last": 14925,
+          "peak": 304,
+          "lasers": 0,
+          "peakFrame": 14344,
+          "peakClock": 14298
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 10,
+          "first": 14926,
+          "last": 15658,
+          "peak": 229,
+          "lasers": 0,
+          "peakFrame": 15228,
+          "peakClock": 15182
+        },
+        {
+          "boss": 526,
+          "spell": 95,
+          "routine": 48,
+          "first": 15659,
+          "last": 16465,
+          "peak": 263,
+          "lasers": 0,
+          "peakFrame": 16464,
+          "peakClock": 16418
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 12,
+          "first": 16466,
+          "last": 17187,
+          "peak": 418,
+          "lasers": 0,
+          "peakFrame": 17080,
+          "peakClock": 17034
+        },
+        {
+          "boss": 526,
+          "spell": 96,
+          "routine": 52,
+          "first": 17188,
+          "last": 17779,
+          "peak": 400,
+          "lasers": 44,
+          "peakFrame": 17188,
+          "peakClock": 17142
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 14,
+          "first": 17780,
+          "last": 18375,
+          "peak": 192,
+          "lasers": 0,
+          "peakFrame": 18107,
+          "peakClock": 18061
+        },
+        {
+          "boss": 526,
+          "spell": 97,
+          "routine": 56,
+          "first": 18376,
+          "last": 19025,
+          "peak": 848,
+          "lasers": 0,
+          "peakFrame": 18905,
+          "peakClock": 18859
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 16,
+          "first": 19026,
+          "last": 19605,
+          "peak": 549,
+          "lasers": 0,
+          "peakFrame": 19516,
+          "peakClock": 19470
+        },
+        {
+          "boss": 526,
+          "spell": 98,
+          "routine": 58,
+          "first": 19606,
+          "last": 20833,
+          "peak": 509,
+          "lasers": 0,
+          "peakFrame": 19606,
+          "peakClock": 19560
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 18,
+          "first": 20834,
+          "last": 21013,
+          "peak": 25,
+          "lasers": 0,
+          "peakFrame": 20834,
+          "peakClock": 20788
+        },
+        {
+          "boss": 526,
+          "spell": 99,
+          "routine": 61,
+          "first": 21014,
+          "last": 26893,
+          "peak": 1999,
+          "lasers": 0,
+          "peakFrame": 26747,
+          "peakClock": 26701
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 2,
+          "first": 26894,
+          "last": 27073,
+          "peak": 424,
+          "lasers": 0,
+          "peakFrame": 26894,
+          "peakClock": 26848
+        },
+        {
+          "boss": 526,
+          "spell": 100,
+          "routine": 29,
+          "first": 27074,
+          "last": 28902,
+          "peak": 766,
+          "lasers": 0,
+          "peakFrame": 28837,
+          "peakClock": 28791
+        }
+      ],
+      "matchedMemory": {
+        "start": 0,
+        "matched": 353,
+        "metrics": {
+          "heap": {
+            "before": {
+              "median": 289051472,
+              "p95": 316434928,
+              "max": 323798080
+            },
+            "after": {
+              "median": 276720392,
+              "p95": 294902888,
+              "max": 299337552
+            },
+            "delta": {
+              "median": -11818704,
+              "p95": 528520,
+              "max": 594696
+            }
+          },
+          "unusedCapacity": {
+            "before": {
+              "median": 0,
+              "p95": 2798320,
+              "max": 6350560
+            },
+            "after": {
+              "median": 0,
+              "p95": 0,
+              "max": 0
+            },
+            "delta": {
+              "median": 0,
+              "p95": 0,
+              "max": 0
+            }
+          },
+          "bulletState": {
+            "before": {
+              "median": 2718408,
+              "p95": 6146044,
+              "max": 9599424
+            },
+            "after": {
+              "median": 2718408,
+              "p95": 6146044,
+              "max": 9599424
+            },
+            "delta": {
+              "median": 0,
+              "p95": 0,
+              "max": 0
+            }
+          },
+          "bulletVisual": {
+            "before": {
+              "median": 4942320,
+              "p95": 11619720,
+              "max": 18196816
+            },
+            "after": {
+              "median": 4913268,
+              "p95": 11612880,
+              "max": 18196528
+            },
+            "delta": {
+              "median": -13692,
+              "p95": -180,
+              "max": 0
+            }
+          },
+          "itemVisual": {
+            "before": {
+              "median": 16671360,
+              "p95": 33342720,
+              "max": 35748288
+            },
+            "after": {
+              "median": 1716336,
+              "p95": 4488120,
+              "max": 8318048
+            },
+            "delta": {
+              "median": -13353284,
+              "p95": -2476488,
+              "max": 0
+            }
+          },
+          "idleItemVisual": {
+            "before": {
+              "median": 13205192,
+              "p95": 30590208,
+              "max": 32995776
+            },
+            "after": {
+              "median": 105924,
+              "p95": 245376,
+              "max": 264672
+            },
+            "delta": {
+              "median": -13099268,
+              "p95": -2430792,
+              "max": 0
+            }
+          },
+          "animation": {
+            "before": {
+              "median": 8048400,
+              "p95": 16064880,
+              "max": 27784080
+            },
+            "after": {
+              "median": 7724640,
+              "p95": 14157280,
+              "max": 27784080
+            },
+            "delta": {
+              "median": 0,
+              "p95": 0,
+              "max": 3040
+            }
+          }
+        }
+      },
+      "lateMatchedMemory": {
+        "start": 14926,
+        "matched": 274,
+        "metrics": {
+          "heap": {
+            "before": {
+              "median": 295626864,
+              "p95": 317777096,
+              "max": 323798080
+            },
+            "after": {
+              "median": 280356704,
+              "p95": 295085792,
+              "max": 299337552
+            },
+            "delta": {
+              "median": -12379680,
+              "p95": 542856,
+              "max": 594696
+            }
+          },
+          "unusedCapacity": {
+            "before": {
+              "median": 0,
+              "p95": 2380320,
+              "max": 6350560
+            },
+            "after": {
+              "median": 0,
+              "p95": 0,
+              "max": 0
+            },
+            "delta": {
+              "median": 0,
+              "p95": 0,
+              "max": 0
+            }
+          },
+          "bulletState": {
+            "before": {
+              "median": 3023612,
+              "p95": 6866128,
+              "max": 9599424
+            },
+            "after": {
+              "median": 3023612,
+              "p95": 6866128,
+              "max": 9599424
+            },
+            "delta": {
+              "median": 0,
+              "p95": 0,
+              "max": 0
+            }
+          },
+          "bulletVisual": {
+            "before": {
+              "median": 5597704,
+              "p95": 12945376,
+              "max": 18196816
+            },
+            "after": {
+              "median": 5551828,
+              "p95": 12938512,
+              "max": 18196528
+            },
+            "delta": {
+              "median": -17604,
+              "p95": -156,
+              "max": 0
+            }
+          },
+          "itemVisual": {
+            "before": {
+              "median": 16671360,
+              "p95": 33342720,
+              "max": 35748288
+            },
+            "after": {
+              "median": 1698528,
+              "p95": 3679016,
+              "max": 5469136
+            },
+            "delta": {
+              "median": -15026256,
+              "p95": -2513280,
+              "max": 0
+            }
+          },
+          "idleItemVisual": {
+            "before": {
+              "median": 14849296,
+              "p95": 30518400,
+              "max": 32995776
+            },
+            "after": {
+              "median": 119112,
+              "p95": 244800,
+              "max": 264672
+            },
+            "delta": {
+              "median": -14727216,
+              "p95": -2463440,
+              "max": 0
+            }
+          },
+          "animation": {
+            "before": {
+              "median": 8087920,
+              "p95": 16046640,
+              "max": 27784080
+            },
+            "after": {
+              "median": 7770240,
+              "p95": 14157280,
+              "max": 27784080
+            },
+            "delta": {
+              "median": 0,
+              "p95": 0,
+              "max": 3040
+            }
+          }
+        }
+      },
+      "settledPeaks": [
+        {
+          "boss": 195,
+          "spell": 88,
+          "routine": 135,
+          "first": 4530,
+          "bullets": 811,
+          "lasers": 0,
+          "bulletClock": 4872
+        },
+        {
+          "boss": 195,
+          "spell": 89,
+          "routine": 137,
+          "first": 5113,
+          "bullets": 426,
+          "lasers": 6,
+          "bulletClock": 5462,
+          "laserClock": 5278
+        },
+        {
+          "boss": 195,
+          "spell": 90,
+          "routine": 140,
+          "first": 5776,
+          "bullets": 62,
+          "lasers": 0,
+          "bulletClock": 6096
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 1,
+          "first": 10662,
+          "bullets": 233,
+          "lasers": 0,
+          "bulletClock": 10975
+        },
+        {
+          "boss": 526,
+          "spell": 91,
+          "routine": 28,
+          "first": 11127,
+          "bullets": 1028,
+          "lasers": 0,
+          "bulletClock": 11483
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 4,
+          "first": 11660,
+          "bullets": 265,
+          "lasers": 0,
+          "bulletClock": 12099
+        },
+        {
+          "boss": 526,
+          "spell": 92,
+          "routine": 41,
+          "first": 12150,
+          "bullets": 0,
+          "lasers": 121,
+          "laserClock": 12433
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 6,
+          "first": 12703,
+          "bullets": 177,
+          "lasers": 0,
+          "bulletClock": 13040
+        },
+        {
+          "boss": 526,
+          "spell": 93,
+          "routine": 43,
+          "first": 13242,
+          "bullets": 227,
+          "lasers": 0,
+          "bulletClock": 13746
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 8,
+          "first": 13793,
+          "bullets": 315,
+          "lasers": 0,
+          "bulletClock": 14266
+        },
+        {
+          "boss": 526,
+          "spell": 94,
+          "routine": 46,
+          "first": 14344,
+          "bullets": 60,
+          "lasers": 0,
+          "bulletClock": 14838
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 10,
+          "first": 14926,
+          "bullets": 229,
+          "lasers": 0,
+          "bulletClock": 15182
+        },
+        {
+          "boss": 526,
+          "spell": 95,
+          "routine": 48,
+          "first": 15659,
+          "bullets": 263,
+          "lasers": 0,
+          "bulletClock": 16418
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 12,
+          "first": 16466,
+          "bullets": 418,
+          "lasers": 0,
+          "bulletClock": 17034
+        },
+        {
+          "boss": 526,
+          "spell": 96,
+          "routine": 52,
+          "first": 17188,
+          "bullets": 179,
+          "lasers": 44,
+          "bulletClock": 17693,
+          "laserClock": 17685
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 14,
+          "first": 17780,
+          "bullets": 192,
+          "lasers": 0,
+          "bulletClock": 18061
+        },
+        {
+          "boss": 526,
+          "spell": 97,
+          "routine": 56,
+          "first": 18376,
+          "bullets": 848,
+          "lasers": 0,
+          "bulletClock": 18859
+        },
+        {
+          "boss": 526,
+          "spell": -1,
+          "routine": 16,
+          "first": 19026,
+          "bullets": 549,
+          "lasers": 0,
+          "bulletClock": 19470
+        },
+        {
+          "boss": 526,
+          "spell": 98,
+          "routine": 58,
+          "first": 19606,
+          "bullets": 29,
+          "lasers": 0,
+          "bulletClock": 20009
+        },
+        {
+          "boss": 526,
+          "spell": 99,
+          "routine": 61,
+          "first": 21014,
+          "bullets": 1999,
+          "lasers": 0,
+          "bulletClock": 26701
+        },
+        {
+          "boss": 526,
+          "spell": 100,
+          "routine": 29,
+          "first": 27074,
+          "bullets": 766,
+          "lasers": 0,
+          "bulletClock": 28791
+        }
+      ],
+      "diagnostics": [
+        {
+          "corrections": 2478,
+          "resimulated": 16100,
+          "maxPrediction": 12,
+          "combatCorrections": 2149,
+          "spellCorrections": 1282,
+          "lastConfirmed": 29019,
+          "phase": 1,
+          "peakLinearMemory": 577437696,
+          "peakLiveHeap": 467816984,
+          "densePeakLiveHeap": 308797480,
+          "finalFirst": 27074,
+          "finalLast": 28902,
+          "finalFinished": 28903,
+          "captures": 42118,
+          "captureUs": 80167468,
+          "replaySlices": 3742,
+          "logicalDraws": 13929,
+          "stageCorrections": 727,
+          "bossCorrections": 469,
+          "bossCosts": [
+            {
+              "boss": 195,
+              "nonspell": {
+                "physical": 864,
+                "physicalUs": 320000,
+                "logical": 199,
+                "logicalUs": 34000,
+                "capture": 534,
+                "captureUs": 590744,
+                "repairs": {
+                  "count": 66,
+                  "p50": 5.179999999701977,
+                  "p95": 9.559999994933605,
+                  "max": 15.140000000596046
+                }
+              },
+              "spell": {
+                "physical": 1380,
+                "physicalUs": 632000,
+                "logical": 659,
+                "logicalUs": 94000,
+                "capture": 1976,
+                "captureUs": 1987518,
+                "repairs": {
+                  "count": 215,
+                  "p50": 5.0999999940395355,
+                  "p95": 8.399999998509884,
+                  "max": 10.984999999403954
+                }
+              },
+              "dense": {
+                "physical": 536,
+                "physicalUs": 298000,
+                "logical": 254,
+                "logicalUs": 43000,
+                "capture": 774,
+                "captureUs": 912084,
+                "repairs": {
+                  "count": 88,
+                  "p50": 5.545000001788139,
+                  "p95": 9.530000001192093,
+                  "max": 15.140000000596046
+                }
+              }
+            },
+            {
+              "boss": 526,
+              "nonspell": {
+                "physical": 5574,
+                "physicalUs": 5819000,
+                "logical": 2668,
+                "logicalUs": 1027000,
+                "capture": 7614,
+                "captureUs": 16431153,
+                "repairs": {
+                  "count": 1161,
+                  "p50": 9.125,
+                  "p95": 11.640000000596046,
+                  "max": 42.25999999791384
+                }
+              },
+              "spell": {
+                "physical": 14342,
+                "physicalUs": 14629000,
+                "logical": 6426,
+                "logicalUs": 2143000,
+                "capture": 19670,
+                "captureUs": 44718397,
+                "repairs": {
+                  "count": 2975,
+                  "p50": 9.070000000298023,
+                  "p95": 12.33500000089407,
+                  "max": 23.12000000476837
+                }
+              },
+              "dense": {
+                "physical": 5517,
+                "physicalUs": 6884000,
+                "logical": 2079,
+                "logicalUs": 966000,
+                "capture": 7107,
+                "captureUs": 19061453,
+                "repairs": {
+                  "count": 1146,
+                  "p50": 9.465000003576279,
+                  "p95": 13.159999996423721,
+                  "max": 23.100000001490116
+                }
+              }
+            }
+          ],
+          "updates": {
+            "count": 22504,
+            "p50": 4.870000004768372,
+            "p95": 9.41499999910593,
+            "max": 148.62999999523163
+          },
+          "repairs": {
+            "count": 5913,
+            "p50": 8.659999996423721,
+            "p95": 11.910000003874302,
+            "max": 45.69500000029802
+          },
+          "denseUpdates": {
+            "count": 6363,
+            "p50": 6.16499999910593,
+            "p95": 10.554999999701977,
+            "max": 148.62999999523163
+          },
+          "denseRepairs": {
+            "count": 1572,
+            "p50": 9.259999997913837,
+            "p95": 13.275000005960464,
+            "max": 45.69500000029802
+          }
+        },
+        {
+          "corrections": 3342,
+          "resimulated": 7851,
+          "maxPrediction": 12,
+          "combatCorrections": 2919,
+          "spellCorrections": 1520,
+          "lastConfirmed": 29022,
+          "phase": 1,
+          "peakLinearMemory": 400949248,
+          "peakLiveHeap": 365117656,
+          "densePeakLiveHeap": 296056528,
+          "finalFirst": 27074,
+          "finalLast": 28902,
+          "finalFinished": 28903,
+          "captures": 35050,
+          "captureUs": 73090335,
+          "replaySlices": 984,
+          "logicalDraws": 4998,
+          "stageCorrections": 1300,
+          "bossCorrections": 522,
+          "bossCosts": [
+            {
+              "boss": 195,
+              "nonspell": {
+                "physical": 914,
+                "physicalUs": 359000,
+                "logical": 123,
+                "logicalUs": 16000,
+                "capture": 511,
+                "captureUs": 524985,
+                "repairs": {
+                  "count": 84,
+                  "p50": 3.4799999967217445,
+                  "p95": 9.964999996125698,
+                  "max": 10.82999999821186
+                }
+              },
+              "spell": {
+                "physical": 1522,
+                "physicalUs": 623000,
+                "logical": 390,
+                "logicalUs": 55000,
+                "capture": 1889,
+                "captureUs": 1700561,
+                "repairs": {
+                  "count": 272,
+                  "p50": 3.7249999940395355,
+                  "p95": 6.884999997913837,
+                  "max": 15.28999999910593
+                }
+              },
+              "dense": {
+                "physical": 582,
+                "physicalUs": 377000,
+                "logical": 141,
+                "logicalUs": 23000,
+                "capture": 718,
+                "captureUs": 790159,
+                "repairs": {
+                  "count": 104,
+                  "p50": 4.059999994933605,
+                  "p95": 8.855000004172325,
+                  "max": 15.28999999910593
+                }
+              }
+            },
+            {
+              "boss": 526,
+              "nonspell": {
+                "physical": 5569,
+                "physicalUs": 7947000,
+                "logical": 637,
+                "logicalUs": 254000,
+                "capture": 5896,
+                "captureUs": 14555842,
+                "repairs": {
+                  "count": 511,
+                  "p50": 8.645000003278255,
+                  "p95": 12.394999995827675,
+                  "max": 24.309999994933605
+                }
+              },
+              "spell": {
+                "physical": 14315,
+                "physicalUs": 19515000,
+                "logical": 1712,
+                "logicalUs": 657000,
+                "capture": 15453,
+                "captureUs": 41440695,
+                "repairs": {
+                  "count": 1512,
+                  "p50": 8.675000004470348,
+                  "p95": 12.929999999701977,
+                  "max": 29.92000000178814
+                }
+              },
+              "dense": {
+                "physical": 5539,
+                "physicalUs": 10309000,
+                "logical": 694,
+                "logicalUs": 373000,
+                "capture": 5884,
+                "captureUs": 19461260,
+                "repairs": {
+                  "count": 683,
+                  "p50": 9.490000002086163,
+                  "p95": 14.034999996423721,
+                  "max": 29.92000000178814
+                }
+              }
+            }
+          ],
+          "delayedPackets": 116582,
+          "updates": {
+            "count": 25377,
+            "p50": 4.615000002086163,
+            "p95": 10.67000000178814,
+            "max": 192.04500000178814
+          },
+          "repairs": {
+            "count": 3837,
+            "p50": 6.25,
+            "p95": 12.42000000178814,
+            "max": 156.40999999642372
+          },
+          "denseUpdates": {
+            "count": 6921,
+            "p50": 7.059999994933605,
+            "p95": 13.080000005662441,
+            "max": 192.04500000178814
+          },
+          "denseRepairs": {
+            "count": 1095,
+            "p50": 8.929999999701977,
+            "p95": 14.130000002682209,
+            "max": 156.40999999642372
+          }
+        },
+        {
+          "corrections": 1406,
+          "resimulated": 4091,
+          "maxPrediction": 12,
+          "combatCorrections": 1198,
+          "spellCorrections": 772,
+          "lastConfirmed": 29019,
+          "phase": 1,
+          "peakLinearMemory": 400949248,
+          "peakLiveHeap": 348398696,
+          "densePeakLiveHeap": 293392840,
+          "finalFirst": 27074,
+          "finalLast": 28902,
+          "finalFinished": 28903,
+          "captures": 22542,
+          "captureUs": 67258463,
+          "replaySlices": 724,
+          "logicalDraws": 2702,
+          "stageCorrections": 324,
+          "bossCorrections": 310,
+          "bossCosts": [
+            {
+              "boss": 195,
+              "nonspell": {
+                "physical": 884,
+                "physicalUs": 420000,
+                "logical": 45,
+                "logicalUs": 3000,
+                "capture": 242,
+                "captureUs": 252273,
+                "repairs": {
+                  "count": 26,
+                  "p50": 3.1700000017881393,
+                  "p95": 4.634999997913837,
+                  "max": 5.105000004172325
+                }
+              },
+              "spell": {
+                "physical": 1289,
+                "physicalUs": 664000,
+                "logical": 18,
+                "logicalUs": 2000,
+                "capture": 450,
+                "captureUs": 568747,
+                "repairs": {
+                  "count": 22,
+                  "p50": 2.4600000008940697,
+                  "p95": 4.075000002980232,
+                  "max": 4.454999998211861
+                }
+              },
+              "dense": {
+                "physical": 504,
+                "physicalUs": 417000,
+                "logical": 5,
+                "logicalUs": 1000,
+                "capture": 115,
+                "captureUs": 132550,
+                "repairs": {
+                  "count": 5,
+                  "p50": 3.1099999994039536,
+                  "p95": 4.454999998211861,
+                  "max": 4.454999998211861
+                }
+              }
+            },
+            {
+              "boss": 526,
+              "nonspell": {
+                "physical": 5527,
+                "physicalUs": 9077000,
+                "logical": 560,
+                "logicalUs": 228000,
+                "capture": 4754,
+                "captureUs": 15163531,
+                "repairs": {
+                  "count": 424,
+                  "p50": 8.534999996423721,
+                  "p95": 11.875,
+                  "max": 40.90500000119209
+                }
+              },
+              "spell": {
+                "physical": 13965,
+                "physicalUs": 22226000,
+                "logical": 1429,
+                "logicalUs": 613000,
+                "capture": 11887,
+                "captureUs": 42198247,
+                "repairs": {
+                  "count": 1195,
+                  "p50": 9.089999996125698,
+                  "p95": 13.469999998807907,
+                  "max": 21.395000003278255
+                }
+              },
+              "dense": {
+                "physical": 5493,
+                "physicalUs": 11500000,
+                "logical": 780,
+                "logicalUs": 387000,
+                "capture": 5322,
+                "captureUs": 18957930,
+                "repairs": {
+                  "count": 646,
+                  "p50": 9.67000000178814,
+                  "p95": 14.25,
+                  "max": 21.395000003278255
+                }
+              }
+            }
+          ],
+          "updates": {
+            "count": 27055,
+            "p50": 5.2299999967217445,
+            "p95": 11.475000001490116,
+            "max": 221.9050000011921
+          },
+          "repairs": {
+            "count": 2113,
+            "p50": 8.659999996423721,
+            "p95": 13.339999996125698,
+            "max": 152.73499999940395
+          },
+          "denseUpdates": {
+            "count": 7196,
+            "p50": 7.159999996423721,
+            "p95": 13.685000002384186,
+            "max": 221.9050000011921
+          },
+          "denseRepairs": {
+            "count": 828,
+            "p50": 9.71000000089407,
+            "p95": 14.479999996721745,
+            "max": 152.73499999940395
+          }
+        }
+      ],
+      "last": [
+        28903,
+        3,
+        0,
+        7,
+        28857,
+        1,
+        0,
+        28542,
+        123398,
+        4,
+        46,
+        22904256,
+        5248,
+        51200,
+        5,
+        8,
+        4294962048,
+        51200,
+        5,
+        8,
+        0,
+        33920,
+        5,
+        8,
+        400,
+        400,
+        400,
+        567,
+        3,
+        0,
+        2,
+        1794382,
+        3417327603,
+        0,
+        1024,
+        0,
+        1048576000,
+        20255,
+        1,
+        100,
+        1829,
+        526,
+        65
+      ]
+    }
+  ]
+}

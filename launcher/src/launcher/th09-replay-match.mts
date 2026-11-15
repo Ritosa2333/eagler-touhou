@@ -26,6 +26,7 @@ export const th09ReplayMatchLabel = (match: Th09ReplayMatch): string => match.na
 export function th09ReplayImportDirectory(path: string): string {
   const parts = path.split('/');
   if (parts.length !== 3 || parts[0] !== 'replay') return 'replay';
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Imported directory names exclude C0 and DEL to keep paths portable.
   const folder = parts[1]!.replace(/[<>:"/\\|?*\u0000-\u001f\u007f]/g, '_').slice(0, 128).replace(/[. ]+$/g, '');
   return folder && folder !== '.' && folder !== '..' ? `replay/${folder}` : 'replay';
 }
@@ -34,5 +35,6 @@ export function isTh09ReplayDirectory(path: string): boolean {
   if (path === 'replay') return true;
   const parts = path.split('/'), name = parts[1];
   return parts.length === 2 && parts[0] === 'replay' && !!name && name.length <= 128 &&
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: Reject control characters at the Replay path boundary.
     name !== '.' && name !== '..' && !/[<>:"\\|?*\u0000-\u001f\u007f]/.test(name) && !/[. ]$/.test(name);
 }

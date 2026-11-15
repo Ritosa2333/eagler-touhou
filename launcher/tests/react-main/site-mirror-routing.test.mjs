@@ -1,4 +1,5 @@
-import test from 'node:test';
+import {test} from 'vitest';
+import {Request} from 'undici/index.js';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile, mkdtemp, writeFile} from 'node:fs/promises';
@@ -83,7 +84,7 @@ test('nested shells discover resources at the mirror origin root', async () => {
 
 test('build pins deployment configuration, metadata and descriptors to the shell release', async t => {
   const directory = await mkdtemp(join(tmpdir(), 'site-mirror-build-'));
-  t.after(async () => {const {rm} = await import('node:fs/promises'); await rm(directory, {recursive:true,force:true});});
+  t.onTestFinished(async () => {const {rm} = await import('node:fs/promises'); await rm(directory, {recursive:true,force:true});});
   for (const [path, value] of Object.entries({
     'index.html':'<h1>launcher</h1>', 'site-network.json':JSON.stringify(config),
     'site-manifest.json':'{}', 'host-manifest.json':'{}',

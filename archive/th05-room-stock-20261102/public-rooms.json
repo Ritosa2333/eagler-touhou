@@ -1,0 +1,222 @@
+{
+  "siteUrl": "https://test.touhou.vip/",
+  "scope": "Actual shared room controls, all-seat ready reset, production native initial stocks and game frames in desktop Chromium",
+  "tests": [
+    {
+      "players": 2,
+      "route": "rtc",
+      "generation": "29d8e8b2eee4fc7fe7b2dd69105dc7502aca73e328a318897a7aa12b8b3c40c0",
+      "requested": {
+        "spares": 5,
+        "bombs": 0
+      },
+      "frames": 600,
+      "sourceCommit": "6e90426f98a6905b441cf6d1e7cd0d835c537dda",
+      "harnessSha256": "5e949edff47457979fae39d80ff9074861d4240a8db98c3134c50f3def6d07b2",
+      "passed": true,
+      "finishedAt": "2026-11-01T17:15:09.008Z",
+      "steps": [
+        "P1-directory",
+        "P1-room",
+        "P2-directory",
+        "P2-room",
+        "P1-ready",
+        "P2-ready",
+        "team-initial-stock",
+        "enable-rollback",
+        "synchronized-start",
+        "actual-native-frame-600"
+      ],
+      "seats": [
+        {
+          "active": true,
+          "frame": 602,
+          "confirmed": 600,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "rollback": 0,
+          "resimulated": 0,
+          "initialStock": [
+            [
+              6,
+              0
+            ],
+            [
+              6,
+              0
+            ]
+          ],
+          "options": {
+            "player": 0,
+            "players": 2,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8,
+            "initialSpares": 5,
+            "initialBombs": 0
+          }
+        },
+        {
+          "active": true,
+          "frame": 603,
+          "confirmed": 599,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "rollback": 0,
+          "resimulated": 0,
+          "initialStock": [
+            [
+              6,
+              0
+            ],
+            [
+              6,
+              0
+            ]
+          ],
+          "options": {
+            "player": 1,
+            "players": 2,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8,
+            "initialSpares": 5,
+            "initialBombs": 0
+          }
+        }
+      ]
+    },
+    {
+      "players": 3,
+      "route": "relay",
+      "generation": "29d8e8b2eee4fc7fe7b2dd69105dc7502aca73e328a318897a7aa12b8b3c40c0",
+      "requested": {
+        "spares": 0,
+        "bombs": 0
+      },
+      "frames": 600,
+      "sourceCommit": "6e90426f98a6905b441cf6d1e7cd0d835c537dda",
+      "harnessSha256": "5e949edff47457979fae39d80ff9074861d4240a8db98c3134c50f3def6d07b2",
+      "passed": true,
+      "finishedAt": "2026-11-01T17:16:30.242Z",
+      "steps": [
+        "P1-directory",
+        "P1-room",
+        "P2-directory",
+        "P2-room",
+        "P3-directory",
+        "P3-room",
+        "P1-ready",
+        "P2-ready",
+        "P3-ready",
+        "team-initial-stock",
+        "enable-rollback",
+        "synchronized-start",
+        "actual-native-frame-600"
+      ],
+      "seats": [
+        {
+          "active": true,
+          "frame": 601,
+          "confirmed": 596,
+          "route": "relay",
+          "failed": false,
+          "error": "",
+          "rollback": 0,
+          "resimulated": 0,
+          "initialStock": [
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "options": {
+            "player": 0,
+            "players": 3,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8,
+            "initialSpares": 0,
+            "initialBombs": 0
+          }
+        },
+        {
+          "active": true,
+          "frame": 603,
+          "confirmed": 596,
+          "route": "relay",
+          "failed": false,
+          "error": "",
+          "rollback": 0,
+          "resimulated": 0,
+          "initialStock": [
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "options": {
+            "player": 1,
+            "players": 3,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8,
+            "initialSpares": 0,
+            "initialBombs": 0
+          }
+        },
+        {
+          "active": true,
+          "frame": 601,
+          "confirmed": 595,
+          "route": "relay",
+          "failed": false,
+          "error": "",
+          "rollback": 0,
+          "resimulated": 0,
+          "initialStock": [
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "options": {
+            "player": 2,
+            "players": 3,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8,
+            "initialSpares": 0,
+            "initialBombs": 0
+          }
+        }
+      ]
+    }
+  ]
+}

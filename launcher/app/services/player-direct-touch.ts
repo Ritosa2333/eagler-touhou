@@ -45,7 +45,11 @@ export function bindPlayerDirectTouch({surface, frame, ios, zoom, context, allow
     if (ios) return; const contact = points.get(event.pointerId); if (!contact) return;
     event.preventDefault(); const p = Number.isFinite(event.clientX) ? point(event, zoom.isActive()) : null;
     if (p) Object.assign(contact, p); points.delete(event.pointerId);
-    if (zoom.isActive()) zoom.endPointer(event); postDirectTouch(context(), 'up', contact); if (!points.size) invalidate();
+    if (zoom.isActive()) zoom.endPointer(event);
+    const runtime = context();
+    if (event.type !== 'pointerup' && runtime.game === 'hsob') postTouchCancel(runtime);
+    else postDirectTouch(runtime, 'up', contact);
+    if (!points.size) invalidate();
   }
   on('pointerup', release); on('pointercancel', release); on('lostpointercapture', release);
   on('touchstart', event => {
@@ -67,11 +71,15 @@ export function bindPlayerDirectTouch({surface, frame, ios, zoom, context, allow
   }, {passive: false});
   const releaseIos = (event: TouchEvent) => {
     if (!ios) return; event.preventDefault();
+    const runtime = context();
+    const cancelled = event.type === 'touchcancel' && runtime.game === 'hsob';
     for (const touch of Array.from(event.changedTouches)) {
       const contact = points.get(touch.identifier); if (!contact) continue;
       const p = point(touch, zoom.isActive()); if (p) Object.assign(contact, p);
-      points.delete(touch.identifier); if (zoom.isActive()) zoom.endPointer(zoomInput(touch)); postDirectTouch(context(), 'up', contact);
+      points.delete(touch.identifier); if (zoom.isActive()) zoom.endPointer(zoomInput(touch));
+      if (!cancelled) postDirectTouch(runtime, 'up', contact);
     }
+    if (cancelled) postTouchCancel(runtime);
     if (!points.size) invalidate();
   };
   on('touchend', releaseIos, {passive: false}); on('touchcancel', releaseIos, {passive: false});

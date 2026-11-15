@@ -1,0 +1,16 @@
+{
+  "sourceHead": "194f57e4a93025b3a215fb10407297acb9738ae7",
+  "game": "th05",
+  "target": "ports/th05-mp",
+  "merged": "a3021acf4ae16d3072a8fcd9bdf1aa54fdb76675",
+  "tree": "0eba3002a5490af917bca0576d67e473607eed00",
+  "parents": [
+    "194f57e4a93025b3a215fb10407297acb9738ae7",
+    "a3021acf4ae16d3072a8fcd9bdf1aa54fdb76675"
+  ],
+  "message": "fix(th05mp): merge four-pixel hitbox display from normal port\n\ngit-subtree-dir: ports/th05-mp\ngit-subtree-mainline: 194f57e4a93025b3a215fb10407297acb9738ae7\ngit-subtree-split: a3021acf4ae16d3072a8fcd9bdf1aa54fdb76675\nPort-History-Writeback: 1\n",
+  "changed": [
+    "ports/th05-mp/Game/Stage/Chara/Chara.cpp"
+  ],
+  "candidateCommit": "fcf0ae6c6700989d8c92dc885351c4f0e00a7f19"
+}

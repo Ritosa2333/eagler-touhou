@@ -1,0 +1,47 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "check": "Launcher online DATA and OGG installation, configure and first frame",
+      "passed": true
+    },
+    {
+      "check": "Story difficulty, character selection, dialogue, battle and keyboard movement",
+      "passed": true,
+      "movement": {
+        "before": 0,
+        "after": 36000
+      }
+    },
+    {
+      "check": "Native pause menu",
+      "passed": true
+    }
+  ],
+  "diagnostics": {
+    "sfxVoices": 7,
+    "storageRevision": 0,
+    "title": [
+      1301,
+      11,
+      0,
+      4,
+      1,
+      0,
+      1,
+      1,
+      0,
+      210,
+      0,
+      0,
+      0,
+      1,
+      1,
+      2,
+      16,
+      486,
+      0
+    ]
+  },
+  "errors": []
+}

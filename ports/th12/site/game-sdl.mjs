@@ -19,6 +19,7 @@ const encoder=new TextEncoder();
 let core,store,localization,emit=()=>{},launched=false,terminated=false,firstFrame=false;
 let options={limitPresentationTo60:true},music='ogg',state={kind:'menu',key:'inactive',ready:false};
 let healthAt=0,frames=0,lastFrame=0,maxGap=0,syncedAt=0,syncQueue=Promise.resolve(),oldFiles=new Map();
+const dirtySaves=new Set();
 let viewer=null;const failedMusic=new Set(),preparedMusic=new Set(); // Existing files and in-flight requests, retained for this core.
 let lastFailure='',nativeStarted=false;const startupLog=[];
 const copy=value=>new Uint8Array(value.buffer,value.byteOffset,value.byteLength).slice();
@@ -79,24 +80,34 @@ function frame(){
       assets.fetch('/assets/music/'+track+'.ogg').then(async response=>{if(!response.ok)throw Error('音乐加载失败：'+track);core.FS.writeFile('/game/music/'+track+'.ogg',new Uint8Array(await response.arrayBuffer()));core._th12_host_refresh_music();}).catch(error=>musicFailed(track,error));
   }
   if(viewer&&now-viewer.reportedAt>=100){const part=viewer.parts.find(p=>p.stage===state.stage);emit({event:'runtime-info',playback:{kind:'replay',path:viewer.path,frame:(part?.start??0)+(state.cursor??0),total:viewer.total,stage:state.stage,startFrame:viewer.startFrame,startStage:viewer.startStage,difficulty:viewer.replay.difficulty,paused:state.paused,rate:viewer.rate,seeking:!!state.seeking,target:viewer.target,preparing:state.scene==='loading',ended:state.scene!=='replay-playing'&&state.scene!=='loading',description:viewer.description}});viewer.reportedAt=now;}
-  if(now-syncedAt>5000){syncedAt=now;syncRuntime().catch(fail);}
+  if(now-syncedAt>5000){syncedAt=now;syncRuntime(true).catch(fail);}
 }
 function paths(FS,directory){
   return FS.readdir(directory).filter(name=>name!=='.'&&name!=='..').flatMap(name=>{const path=directory+'/'+name;return FS.isDir(FS.stat(path).mode)?paths(FS,path):[path];});
 }
 function mountSave(path,bytes){if(!core)return;core.FS.mkdirTree(path.slice(0,path.lastIndexOf('/')));core.FS.writeFile(path,bytes);}
 async function loadSaves(){oldFiles=new Map();for(const path of await store.list()){const bytes=await store.read(path);if(bytes){oldFiles.set(path,copy(bytes));mountSave(path,bytes);}}}
-function syncRuntime(){
+function syncRuntime(incremental=false){
   syncQueue=syncQueue.catch(()=>{}).then(async()=>{
     if(!core||!nativeStarted){await store?.sync();return;}
-    if(!terminated)core._th12_host_flush();const current=new Set();
-    for(const path of paths(core.FS,'/savesth12')){
-      try{allowedPath(path);}catch{continue;}
-      current.add(path);const bytes=core.FS.readFile(path);
-      if(!equal(oldFiles.get(path),bytes)){await store.write(path,bytes);oldFiles.set(path,bytes.slice());}
+    if(!terminated)core._th12_host_flush();
+    const current=new Set();
+    const pending=[...dirtySaves];
+    dirtySaves.clear();
+    try{
+      const candidates=incremental?pending:paths(core.FS,'/savesth12');
+      for(const path of candidates){
+        try{allowedPath(path);}catch{continue;}
+        if(incremental&&!core.FS.analyzePath(path).exists)continue;
+        current.add(path);const bytes=core.FS.readFile(path);
+        if(!equal(oldFiles.get(path),bytes)){await store.write(path,bytes);oldFiles.set(path,bytes);}
+      }
+      if(!incremental)for(const path of oldFiles.keys())if(!current.has(path)){await store.remove(path);oldFiles.delete(path);}
+      await store.sync();
+    }catch(error){
+      for(const path of pending)dirtySaves.add(path);
+      throw error;
     }
-    for(const path of oldFiles.keys())if(!current.has(path)){await store.remove(path);oldFiles.delete(path);}
-    await store.sync();
   });return syncQueue;
 }
 function practicePointer(message){
@@ -165,6 +176,7 @@ async function launch(){
     await loadSaves();const locale=practiceLocale==='ja-JP'?2:practiceLocale==='en-US'?1:0;
     core._th12_host_options(Number(options.limitPresentationTo60!==false),Number(!!options.alwaysHitbox),Number(options.thpracEnabled!==false),locale,Number(music!=='none'));
     core._th12_host_music_mode(Number(options.oggDecodeMode==='full'));
+    core.th12SaveWritten=path=>dirtySaves.add(path);
     const exitCode=core.callMain(['--data-dir','/game','--save-dir','/savesth12']);
     if(terminated||exitCode)throw sdlStopError(exitCode??1,lastFailure,{source:'call-main'},{started:false,logs:startupLog});
     window.__th12Runtime={core,state:()=>readSdlHostState(core)};

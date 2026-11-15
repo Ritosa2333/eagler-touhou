@@ -112,16 +112,73 @@ try{
  const openVertices=(await state()).practiceVertices;assert(openVertices>closedVertices+100,'hosted THPrac mouse must expand the speed settings');
  await page.screenshot({path:resolve(out,'thprac-mouse-expanded.png')});console.log('THPRAC_HOSTED_MOUSE_PASS',{closedVertices,openVertices});
 
+ // This display option must refresh cached text without hiding the game,
+ // including while the advanced panel has frozen the simulation.
+ async function clickPractice(x,y){
+  const point=await frame.evaluate(({x,y})=>{const r=document.querySelector('#screen').getBoundingClientRect();return {x:r.left+x*r.width/640,y:r.top+y*r.height/480};},{x,y});
+  for(const type of ['move','down','up']){await page.evaluate(p=>rpc(0,'thprac-mouse',p),{type,...point});await page.waitForTimeout(100);}
+ }
+ await clickPractice(20,42); // Close speed settings before opening Gameplay.
+ await clickPractice(20,69);
+ const beforeCompleteHistory=await state();
+ await clickPractice(18,278); // Complete spellcard capture rate.
+ const completeHistoryPanel=await state();
+ assert(completeHistoryPanel.captureSerial>beforeCompleteHistory.captureSerial,'changing history display refreshes the frozen presentation');
  await press('F12');await wait(s=>!s.capturing);
+ assert((await state()).vertices>100,'complete spell history must not blank the game');
+ await page.screenshot({path:resolve(out,'complete-spell-history.png')});
+ console.log('COMPLETE_SPELL_HISTORY_PASS',{beforeCompleteHistory,completeHistoryPanel,playing:await state()});
  const fullscreen=[];
+ // Mobile browser chrome and launcher layout can resize the iframe during play.
+ // The CSS viewport should move without reallocating the game's WebGL buffer.
+ const backingSize=()=>frame.evaluate(()=>{
+   const canvas=document.querySelector('#screen');
+   return [canvas.width,canvas.height];
+ });
+ for(const [width,height] of [[390,310],[390,270],[640,480]]){
+   await page.locator('#p0').evaluate((element,[w,h])=>{
+     element.style.width=w+'px';element.style.height=h+'px';
+   },[width,height]);
+   await frame.waitForFunction(([w,h])=>innerWidth===w&&innerHeight===h,[width,height]);
+   await page.waitForTimeout(120);
+   assert.deepEqual(await backingSize(),[640,480],'window resize keeps the WebGL backing size');
+ }
  for(let i=0;i<2;i++){
    await frame.evaluate(async()=>{if(document.fullscreenElement)await document.exitFullscreen();else await document.querySelector('#screen').requestFullscreen();});
    await page.waitForTimeout(500);fullscreen.push(await state());
  }
+ assert.deepEqual(await backingSize(),[640,480],'exiting fullscreen restores the fixed WebGL backing size');
  await press('Escape');await wait(s=>s.scene==='paused'&&s.menuReady);await page.screenshot({path:resolve(out,'pause.png')});
  await press('ArrowDown');await press('ArrowDown');await press('Enter');await wait(s=>s.scene==='pause-confirm'&&s.menuReady);
  await press('ArrowUp');await press('Enter');await wait(s=>s.scene==='replay-save'&&s.menuReady);
  await press('Enter');await wait(s=>s.scene==='name'&&s.menuReady);await press('Enter');
+ // Verify autosave before invoking the explicit full synchronization in list.
+ await frame.evaluate(()=>{
+   const {FS}=window.__th12Runtime.core;
+   const archive='/savesth12/replay/th12_archive.rpy';
+   FS.writeFile(archive,new Uint8Array(1024*1024));
+   const readFile=FS.readFile;
+   window.autosaveReads=[];
+   window.autosaveFlushSeen=false;
+   FS.readFile=function(path,...args){
+     if(path===archive)autosaveReads.push(path);
+     if(path==='/savesth12/scoreth12.dat')window.autosaveFlushSeen=true;
+     return readFile.call(this,path,...args);
+   };
+   window.finishAutosaveCheck=()=>{FS.readFile=readFile;FS.unlink(archive);return autosaveReads;};
+   window.autosavedReplay=()=>new Promise((resolve,reject)=>{
+     const open=indexedDB.open('/savesth12');
+     open.onerror=()=>reject(open.error);
+     open.onsuccess=()=>{
+       const db=open.result;
+       const request=db.transaction('FILE_DATA').objectStore('FILE_DATA').get('/savesth12/replay/th12_01.rpy');
+       request.onsuccess=()=>{db.close();resolve((request.result?.contents?.byteLength??0)>176);};
+       request.onerror=()=>{db.close();reject(request.error);};
+     };
+   });
+ });
+ await frame.waitForFunction(()=>window.autosaveFlushSeen&&window.autosavedReplay(),null,{polling:250,timeout:12000});
+ assert.deepEqual(await frame.evaluate(()=>window.finishAutosaveCheck()),[],'autosave skips unchanged replay files');
  const listing=await page.evaluate(()=>rpc(0,'list'));const replay=listing.files.find(f=>f.path.endsWith('th12_01.rpy'));assert(replay?.size>176);
  const info=await page.evaluate(path=>rpc(0,'playback',{action:'inspect',path}),replay.path);assert.equal(info.description.mode,'story');
  await page.evaluate(path=>rpc(0,'playback',{action:'open',path}),replay.path);await wait(s=>s.scene==='replay-playing');

@@ -1,0 +1,208 @@
+{
+  "passed": true,
+  "errors": [],
+  "menus": [
+    {
+      "vs": false,
+      "easy": [
+        1,
+        0
+      ],
+      "easyBoundary": [
+        1,
+        0
+      ],
+      "lunatic": [
+        1,
+        3
+      ],
+      "lunaticBoundary": [
+        1,
+        3
+      ]
+    },
+    {
+      "vs": true,
+      "easy": [
+        1,
+        0
+      ],
+      "easyBoundary": [
+        1,
+        0
+      ],
+      "lunatic": [
+        1,
+        3
+      ],
+      "lunaticBoundary": [
+        1,
+        3
+      ]
+    }
+  ],
+  "returns": [
+    {
+      "vs": false,
+      "rank": 0,
+      "before": [
+        1,
+        0
+      ],
+      "character": [
+        9,
+        0
+      ],
+      "after": [
+        1,
+        0
+      ],
+      "elapsed": 6
+    },
+    {
+      "vs": false,
+      "rank": 1,
+      "before": [
+        1,
+        1
+      ],
+      "character": [
+        9,
+        1
+      ],
+      "after": [
+        1,
+        1
+      ],
+      "elapsed": 6
+    },
+    {
+      "vs": false,
+      "rank": 2,
+      "before": [
+        1,
+        2
+      ],
+      "character": [
+        9,
+        2
+      ],
+      "after": [
+        1,
+        2
+      ],
+      "elapsed": 6
+    },
+    {
+      "vs": false,
+      "rank": 3,
+      "before": [
+        1,
+        3
+      ],
+      "character": [
+        9,
+        3
+      ],
+      "after": [
+        1,
+        3
+      ],
+      "elapsed": 6
+    },
+    {
+      "vs": true,
+      "rank": 0,
+      "before": [
+        1,
+        0
+      ],
+      "character": [
+        9,
+        0
+      ],
+      "after": [
+        1,
+        0
+      ],
+      "elapsed": 6
+    },
+    {
+      "vs": true,
+      "rank": 1,
+      "before": [
+        1,
+        1
+      ],
+      "character": [
+        9,
+        1
+      ],
+      "after": [
+        1,
+        1
+      ],
+      "elapsed": 6
+    },
+    {
+      "vs": true,
+      "rank": 2,
+      "before": [
+        1,
+        2
+      ],
+      "character": [
+        9,
+        2
+      ],
+      "after": [
+        1,
+        2
+      ],
+      "elapsed": 6
+    },
+    {
+      "vs": true,
+      "rank": 3,
+      "before": [
+        1,
+        3
+      ],
+      "character": [
+        9,
+        3
+      ],
+      "after": [
+        1,
+        3
+      ],
+      "elapsed": 6
+    }
+  ],
+  "vsOptions": {
+    "first": [
+      2,
+      0
+    ],
+    "firstUp": [
+      2,
+      0
+    ],
+    "firstLeft": [
+      2,
+      0
+    ],
+    "fifth": [
+      2,
+      4
+    ],
+    "fifthDown": [
+      2,
+      4
+    ],
+    "fifthRight": [
+      2,
+      4
+    ]
+  }
+}

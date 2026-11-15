@@ -158,13 +158,14 @@ export function createThcrapClient({
       if (!isGameAsset && !isSharedThemes && !isStringDefs && !isRootGameOptions && !isFont && !isGlobalOptions) continue;
       // The TH15 adapter targets Japanese 1.00b and must not mount 1.00a's bank.
       if (gameId === "th15" && rawPath === "th15/text.v1.00a.anm") continue;
+      if (gameId === "th14" && /^th14\/text\.v(?!1\.00b\.anm$)/i.test(rawPath)) continue;
       // A language patch can contain thcrap-only executable tables such as
       // stringlocs/binhacks. They cannot be interpreted by the native port and
       // must not make an otherwise complete runtime pack look half-supported.
       // stringdefs.js is different: it is the data table consumed by
       // thcrap's strings/ascii hooks, so keep it for deterministic compilation
       // into the native/Web runtime localization pack.
-      if (isGameAsset && /\.js$/i.test(rawPath) &&
+      if (isGameAsset && /\.js$/i.test(rawPath) && !(gameId === "th17" && rawPath === "th17/trophy.js") &&
           !new RegExp(`^${gameId}/(?:spells|stages|musiccmt|spellcomments|stringdefs|${gameId})\\.js$`, "i").test(rawPath)) continue;
       const path = isGameAsset ? assertPatchPath(rawPath, gameId) : assertAssetPath(rawPath);
       if (!Number.isInteger(crc) || crc < 0 || crc > 0xffffffff) continue;

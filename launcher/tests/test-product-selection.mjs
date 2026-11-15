@@ -1,10 +1,16 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { assertProductEntriesRegistered, normalizeProductSelection, selectProductEntries } from "../lib/product-selection.mjs";
 
-assert.deepEqual(normalizeProductSelection(), Object.keys(PRODUCT_GAMES));
+test("product selection", async () => {
+assert.deepEqual(normalizeProductSelection(), Object.keys(PRODUCT_GAMES).filter(game => PRODUCT_GAMES[game].buildOptIn !== true));
+assert.equal(normalizeProductSelection().includes('th13'), false, 'Production defaults do not require th13 assets');
+assert.deepEqual(normalizeProductSelection('th13'), ['th13'], 'Validation builds explicitly select th13');
+assert.deepEqual(normalizeProductSelection(["th13"]), ["th13"]);
+assert.equal(PRODUCT_GAMES.th13.testOnly, true, 'Opt-in does not expose the production card');
 assert.deepEqual(normalizeProductSelection(["th07"]), ["th07"]);
 assert.deepEqual(normalizeProductSelection("th08,th06"), ["th06", "th08"]);
 for (const value of [[], ["th99"], ["th06", "th06"], "th99"]) {
@@ -23,3 +29,4 @@ assert.match(publicInstallVerifier, /isGameId\(game\)/,
 assert.doesNotMatch(publicInstallVerifier, /th\(\?:06\|07\|08\|10\)/,
   "public first-install verifier must not carry a second hard-coded game registry");
 console.log(JSON.stringify({ defaultGames: Object.keys(PRODUCT_GAMES), subset: true }));
+});

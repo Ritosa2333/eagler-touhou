@@ -1,0 +1,205 @@
+
+ RUN  v5.0.5 <workspace>/launcher
+
+stdout | tests/test-operator-delivery.mjs > operator delivery
+Internal Operator delivery profile: PASS
+
+ ✓ |repository| tests/test-operator-delivery.mjs > operator delivery 7ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > directory preserves main host-existence product subset and 3s retry without declaring socket offline 6ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > directory applies test-product visibility to filters and creation: normal 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > directory applies test-product visibility to filters and creation: manifest-test 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > directory applies test-product visibility to filters and creation: query-test 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > directory 10s manifest timeout and StrictMode-style suspend/resume do not strand leaving 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > directory retains form values across cancel and enters only after committed form close 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > directory release retains membership/session until authoritative removal and snapshots are bounded 6ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > rollback products default to D0 for both room creation and restored invites 11ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room program versions refresh before readiness and pin the agreed generation into transport 4ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > late spectator admission requires the running match program: matches=false 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > late spectator admission requires the running match program: matches=true 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room program versions block old relay readiness and failed preparation launch 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > host spectator moves bind the target, wait for relay state and preserve membership 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > legacy room wire minimizes names until the server advertises moderation and normalizes challenge/prank 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room take-seat commits only relay snapshot, and stale movement confirmation cannot seat in successor 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room restores created directory session and dispose preserves reload storage 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room serial/reconnect/terminal handling distinguishes observed rounds from applied starts and rejects old sockets 3ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > a reconnect snapshot recovers a missed player start exactly once 9ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room snapshots do not start a lobby, an already running round or an unadmitted spectator 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > live relay reconnect recovers a lost start without a duplicate Runtime launch 11778ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room preflight waits the real preparation and check ports, coalesces clicks, and ignores stale completion 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room package cancel aborts only package work, unreaddies, prevents launch, and permits explicit retry 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room runtime-stage preparation cannot take package cancellation path and progress is socket-deduplicated 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room resource switch aborts old preparation, requests all-seat unready, and ignores late completion 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > settings reload pauses resource work and readiness until explicit resume 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > discarding draft room settings revalidates without releasing prepared resources 10ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > every playing or full directory room admits spectators even without mid-run playback 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room preparation uses canonical package-only install and verifies current Runtime without app-shell worker 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > fresh development room installs declared DATA through canonical acquisition with an empty release catalog 3ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room preparation verifies the current generation with its real worker and ignores aborted tracker callbacks 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room program downloads share visible byte progress and release their own tasks (complete) 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room program downloads share visible byte progress and release their own tasks (cancel) 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room preparation classifies install errors while preserving original cancellation identity 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room import failure cancels the existing import without opening a second modal or sending ready 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room original count/difficulty actions retain their distinct phase policy from rule buttons 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room failure awaits actual Player cleanup before clearing busy and shows check failure for4000ms 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > TH09 title-room reset clears membership without invoking ordinary departure route 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > original initial non-MP invite fallback selects default MP without changing supplied token 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > cancelled / null 10ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > cancelled / {"manual":true,"continuation":{"kind":"install-only"}} 3ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > cancelled / {"manual":true,"continuation":{"kind":"launch"}} 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > cancelled / {"manual":false,"continuation":{"kind":"install-only"}} 3ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > failed / null 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > failed / {"manual":true,"continuation":{"kind":"install-only"}} 3ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > failed / {"manual":true,"continuation":{"kind":"launch"}} 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > failed / {"manual":false,"continuation":{"kind":"install-only"}} 4ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > preparing / null 8ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > preparing / {"manual":true,"continuation":{"kind":"install-only"}} 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > preparing / {"manual":true,"continuation":{"kind":"launch"}} 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > preparing / {"manual":false,"continuation":{"kind":"install-only"}} 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > ready / null 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > ready / {"manual":true,"continuation":{"kind":"install-only"}} 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > ready / {"manual":true,"continuation":{"kind":"launch"}} 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > ready / {"manual":false,"continuation":{"kind":"install-only"}} 3ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > importing / null 7ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > importing / {"manual":true,"continuation":{"kind":"install-only"}} 3ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > importing / {"manual":true,"continuation":{"kind":"launch"}} 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > importing / {"manual":false,"continuation":{"kind":"install-only"}} 3ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > room Retry matches pinned handler eligibility, cleanup order and continuation filtering > absent room 3ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > TH11 owner switches Direct D0/P12 and pure delay while preserving 2P/3P Extra runtime options 3ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > rapid loadout changes ignore stale snapshots and cannot ready/start until latest socket echo 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > TH09 spectator invite joins without seating and waits for authoritative spectator-start 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > th05mp resumes an admitted spectator launch after explicit resource recovery 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > th06mp resumes an admitted spectator launch after explicit resource recovery 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > th07mp resumes an admitted spectator launch after explicit resource recovery 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > th075mp resumes an admitted spectator launch after explicit resource recovery 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > th08mp resumes an admitted spectator launch after explicit resource recovery 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > th09mp resumes an admitted spectator launch after explicit resource recovery 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > th10mp resumes an admitted spectator launch after explicit resource recovery 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > th11mp resumes an admitted spectator launch after explicit resource recovery 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > th12mp resumes an admitted spectator launch after explicit resource recovery 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > th15mp resumes an admitted spectator launch after explicit resource recovery 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > spectator resource recovery requires a pending authorized launch and current observer role 2ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > an in-flight spectator resource retry cannot launch after role departure or owner disposal 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > TH09 stream startup race retries the same match without a next-match warning 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > leaving a pending TH09 spectator seat cancels admission retry 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > TH09 ordinary room entry during play neither seats nor starts the visitor 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > TH09 directory admits full and starting rooms before spectator history is ready 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > Directory observer intent never auto-reserves a player seat: th05mp 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > Directory observer intent never auto-reserves a player seat: th06mp 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > Directory observer intent never auto-reserves a player seat: th07mp 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > Directory observer intent never auto-reserves a player seat: th075mp 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > Directory observer intent never auto-reserves a player seat: th08mp 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > Directory observer intent never auto-reserves a player seat: th10mp 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > Directory observer intent never auto-reserves a player seat: th11mp 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > Directory observer intent never auto-reserves a player seat: th12mp 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > Directory observer intent never auto-reserves a player seat: th15mp 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > directory join falls back to a spectator when a room fills or starts: lobby 1ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > directory join falls back to a spectator when a room fills or starts: playing 0ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > public nickname commits only an authoritative approval and ignores stale connection replies 49ms
+ ✓ |unit| tests/react-main/multiplayer-services.test.mjs > existing local nickname migrates only after the moderation handshake without publishing the legacy initial 1ms
+[vitest-pool]: Timeout terminating forks worker for test files <workspace>/launcher/tests/react-main/multiplayer-services.test.mjs.
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > TH05 album preference survives settings restore and maps to its configure music source 28ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > TH05 native thprac preference reaches configure without a Windows session payload 1ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > TH05 album preparation sends the source to Runtime and reads its declared OGG targets 44ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > TH05 album acquisition includes its declared soundtrack files 4ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > th11 high refresh setting reaches Runtime without changing room options 2ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > th11mp high refresh setting reaches Runtime without changing room options 0ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > room program version policy reaches code preparation before native ready and configure 8ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > room-preload program version policy reaches code preparation before native ready and configure 4ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 5890: local current is chosen without initializing or waiting for remote metadata 1ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 490 and built-in manifest: a known Catalog can supply missing resource components while Host metadata is unavailable 4ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 458–483: a declared non-DATA resource with a .data suffix remains a valid native FS resource 2ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 507–532 and descriptor policy: an explicitly empty non-OGG resource may be materialized 1ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 6263: file-only reaches native ready without configure, MIDI, language or gameplay 2ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 4018 and original package/legacy tests: historical runtime is accepted, executable files excluded from FS 21ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 4018 and original package/legacy tests: historical runtimes is accepted, executable files excluded from FS 1ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 5948: hosted preload retains validated authority and asset URL without fake Package generation 2ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 5971: resolved Runtime plan hook precedes native navigation and distinguishes direct DATA from managed Package loading 5ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > offline-first: cached acquisition never waits for an update decision or download 1ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > room entry: confirm update decision finishes before native preparation and never defers a match update 1ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > room entry: cancel update decision finishes before native preparation and never defers a match update 0ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > th06: beauty selection requires a committed local installation 1ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > th06mp: beauty selection requires a committed local installation 11ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > in-game room resource warming does not navigate or configure the running native title 1ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > room entry: cancellation during update decision cannot install or replace the current package 1ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > offline-first: failed background download keeps current and never announces an update 1ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > offline-first: updates start after launch and notify only after download succeeds 19ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 5904: ordinary acquisition cancellation exists only during an actual install and always finishes 2ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 3953: development resource acquisition has the same actual-operation cancellation lifetime 3ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 1392/5744: acquisition injects per-game foreground fetch and quiet background update fetch separately 1ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 4126 and language-fallback original: native ready precedes optional language; failure uses Japanese for this launch only 6ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 4126: cancelling language aborts launch rather than choosing optional Japanese fallback 4ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > complete-set OGG startup waits for every declared file and preserves DATA 2ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > room native preload mounts the complete OGG set before reporting prepared 9ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 5768 and music availability original: exactly two OGG tracks gate startup, DATA stays pinned, remaining tracks start after launch 8ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main concurrent OGG startup waits for both tracks even when the second finishes first 4ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 5807: cancelling optional OGG selects launch-only MIDI without rewriting explicit OGG preference 3ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main optional startup music operation has a distinct bounded cancellation lifetime and always finishes 9ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > loaded Package cannot be replaced by optional resources from another DATA generation 2ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 5850: in-flight background OGG may persist after close but never writes into a replacement/native-closed document 5ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 1048 and 4114: multiplayer game check uses native-ready continuation, waits for a frame, retires without gameplay transport or save 4ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > historical OGG: optional size/hash and descriptor-declared target remain accepted like main createLocalMusicInstall 4ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 1506/2001: metadata arrival resolves default language from saved choice, not a temporary Japanese-only catalog 1ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main disclosure lifetime: ordinary product changes preserve folds; a fresh lobby options lifetime restores its defaults only 1ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 3630: initial two OGG reads run together; failure fences a sibling that completes after MIDI fallback 4ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > main 3630–3668: remaining local reads use concurrency two and stop sibling writes/progress after failure 5ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > TH075 imports its deployed 333.6 MiB package within a bounded per-game limit 1ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > th09 direct Replay prepares and mounts every OGG before launch (ogg-stream) 3ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > th09 direct Replay prepares and mounts every OGG before launch (ogg-full) 1ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > th09mp direct Replay prepares and mounts every OGG before launch (ogg-stream) 2ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > th09mp direct Replay prepares and mounts every OGG before launch (ogg-full) 2ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > background OGG publishes committed partial metadata once on failure 4ms
+ ✓ |unit| tests/react-main/game-preparation.test.mjs > background OGG publishes committed partial metadata once on cancel 2ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > spectator gameplay rejects input and its authenticated native result menu owns local input 10ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > game check preserves its original failure and releases its owner 7ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > game check preserves its original failure together with failed frame retirement and releases its owner 2ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: worker downloads share document network accounting and cannot survive cancellation 4ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > TH12: fonts use acknowledged resource messages before configure without global Module/FS 5ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > room preload: binding a run reuses the epoch/DATA and retains the prepared resource payload 3ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > room return keeps the same engine, synchronizes first and rejects first frames from an older launch 4ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > native menu return cancels an unfinished first-frame wait without retiring the loaded engine 3ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > a Runtime without room-return support stays loaded when return is requested 3ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > room preload: a stale run cannot configure a replacement engine 2ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > room preview is prelaunch, native-acknowledged, and binds the same engine without remounting resources 2ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > a title preview frame cannot unlock a room launch; its next real frame releases the launch waiter 4ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: validated direct preload uses original asset URL, one frame and ACK-based ordinary launch 14ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: save consent precedes native presentation cleanup, which precedes iframe retirement 3ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: launch and retirement replace the active child history entry 5ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: Stay after failed save keeps fullscreen and iframe intact 4ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: child browsing context is retired only after accepted close and blank navigation 4ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > Replay mutation keeps playback path handoff inside the same exclusive file owner 9ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: Player retirement waits for the blank child document to commit before resolving close 1ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: optional first-frame wait remains pending after ACK; 14-second failure keeps acknowledged runtime alive 1ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: optional first-frame event settles the actual waiter without advancing a timer 2ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: directory wait is 122 seconds while post-ACK diagnostic is nonfatal at 12 seconds 2ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: networked launch has no local first-frame diagnostic watchdog 1ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: spectator room retirement is epoch-bound and never sent to a player 1ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: native-ready continuation commits the actual spectator role before configure 1ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: no-generation path requires exact hosted preload authority and cannot claim managed resources 11ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: managed code and DATA stay separately leased and bound to exact generation/epoch 3ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: stale epoch, foreign source and foreign origin cannot settle current commands 2ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: cancellation fences pending DATA from the successor even with one stable iframe 1ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: replacement document cannot authenticate a ready session or receive stale work 1ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: main live catalog entry keeps managed DATA without requiring unpublished code manifest 2ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: main live host entry keeps managed DATA without requiring unpublished code manifest 7ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: offline launch checks updates only after ACK and notifies only for a complete successor 5ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: retired-first program checks cannot consume another epoch's update notice 5ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: current-first program checks cannot consume another epoch's update notice 1ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: offline local package resolves the owning worker program before exact document binding 1ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: file-only readiness skips configure/resources and cannot launch gameplay 2ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: optional network first-frame wait lasts 122 seconds without a local diagnostic 1ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: main nonterminal error preserves live save RPC and native writer 1ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: main runtime-error still rejects the optional first-frame waiter 1ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: original readiness, RPC timeout and response fallback keys remain authoritative 3ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: native file lock is acquired before its deferred callback and blocks same-tick launch 4ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: terminal invalidation before a deferred file callback cannot grant it a replacement epoch 2ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: published file preparation retries retain canonical epoch ownership through ready 2ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: published file preparation retries retain canonical epoch ownership through failure 1ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: failed retirement on a later preparation retry retains its original error and current owner 1ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: authenticated ordinary terminal context survives reset without changing the wire event 1ms
+ ✓ |unit| tests/react-main/runtime-service.test.mjs > runtime: authenticated file-only terminal context survives reset without changing the wire event 0ms
+
+ Test Files  4 passed (4)
+      Tests  192 passed (192)
+   Start at  23:36:56
+   Duration  50.35s (tests 98%, transform 1%, import 1%)
+

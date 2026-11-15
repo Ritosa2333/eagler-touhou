@@ -1,0 +1,205 @@
+{
+  "schema": "th12-original-enemy-movement-animation/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "boundary": "Original414048..4141b9 with actual ANM factory; controlled pre-floor displacement and previous direction, all transition and threshold cases. GPU and full replay outside this fixture.",
+  "cases": [
+    {
+      "previous": -1,
+      "velocity": -1.0,
+      "direction": -1,
+      "scripts": []
+    },
+    {
+      "previous": -1,
+      "velocity": -0.03000001050531864,
+      "direction": -1,
+      "scripts": []
+    },
+    {
+      "previous": -1,
+      "velocity": -0.029999999329447746,
+      "direction": 0,
+      "scripts": [
+        10
+      ]
+    },
+    {
+      "previous": -1,
+      "velocity": -0.019999999552965164,
+      "direction": 0,
+      "scripts": [
+        10
+      ]
+    },
+    {
+      "previous": -1,
+      "velocity": 0.0,
+      "direction": 0,
+      "scripts": [
+        10
+      ]
+    },
+    {
+      "previous": -1,
+      "velocity": 0.019999999552965164,
+      "direction": 0,
+      "scripts": [
+        10
+      ]
+    },
+    {
+      "previous": -1,
+      "velocity": 0.029999999329447746,
+      "direction": 0,
+      "scripts": [
+        10
+      ]
+    },
+    {
+      "previous": -1,
+      "velocity": 0.03000001050531864,
+      "direction": 1,
+      "scripts": [
+        9
+      ]
+    },
+    {
+      "previous": -1,
+      "velocity": 1.0,
+      "direction": 1,
+      "scripts": [
+        9
+      ]
+    },
+    {
+      "previous": 0,
+      "velocity": -1.0,
+      "direction": -1,
+      "scripts": [
+        8
+      ]
+    },
+    {
+      "previous": 0,
+      "velocity": -0.03000001050531864,
+      "direction": -1,
+      "scripts": [
+        8
+      ]
+    },
+    {
+      "previous": 0,
+      "velocity": -0.029999999329447746,
+      "direction": 0,
+      "scripts": []
+    },
+    {
+      "previous": 0,
+      "velocity": -0.019999999552965164,
+      "direction": 0,
+      "scripts": []
+    },
+    {
+      "previous": 0,
+      "velocity": 0.0,
+      "direction": 0,
+      "scripts": []
+    },
+    {
+      "previous": 0,
+      "velocity": 0.019999999552965164,
+      "direction": 0,
+      "scripts": []
+    },
+    {
+      "previous": 0,
+      "velocity": 0.029999999329447746,
+      "direction": 0,
+      "scripts": []
+    },
+    {
+      "previous": 0,
+      "velocity": 0.03000001050531864,
+      "direction": 1,
+      "scripts": [
+        9
+      ]
+    },
+    {
+      "previous": 0,
+      "velocity": 1.0,
+      "direction": 1,
+      "scripts": [
+        9
+      ]
+    },
+    {
+      "previous": 1,
+      "velocity": -1.0,
+      "direction": -1,
+      "scripts": [
+        8
+      ]
+    },
+    {
+      "previous": 1,
+      "velocity": -0.03000001050531864,
+      "direction": -1,
+      "scripts": [
+        8
+      ]
+    },
+    {
+      "previous": 1,
+      "velocity": -0.029999999329447746,
+      "direction": 0,
+      "scripts": [
+        11
+      ]
+    },
+    {
+      "previous": 1,
+      "velocity": -0.019999999552965164,
+      "direction": 0,
+      "scripts": [
+        11
+      ]
+    },
+    {
+      "previous": 1,
+      "velocity": 0.0,
+      "direction": 0,
+      "scripts": [
+        11
+      ]
+    },
+    {
+      "previous": 1,
+      "velocity": 0.019999999552965164,
+      "direction": 0,
+      "scripts": [
+        11
+      ]
+    },
+    {
+      "previous": 1,
+      "velocity": 0.029999999329447746,
+      "direction": 0,
+      "scripts": [
+        11
+      ]
+    },
+    {
+      "previous": 1,
+      "velocity": 0.03000001050531864,
+      "direction": 1,
+      "scripts": []
+    },
+    {
+      "previous": 1,
+      "velocity": 1.0,
+      "direction": 1,
+      "scripts": []
+    }
+  ]
+}

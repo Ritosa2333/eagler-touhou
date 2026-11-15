@@ -15,6 +15,7 @@
 - `nginx -t` 通过，WebSocket Upgrade 请求可经 `/netplay-relay/` 建立连接。
 - 服务监听地址与 Nginx 上游相同，环境文件中的可信代理 IP 与连接来源一致。
 - 用公网代理验证来自不同 IP 的房间配额相互隔离；离开房间后配额释放。
+- 配置 `EAGLER_NETPLAY_STATUS_PORT` 时，核对本机 `GET /status` 随入座、旁观和离开更新；标准发布包已包含该接口，无需额外注入模块。端口占用或配置无效会使服务启动失败。
 - 双端分别验证直连和 TURN 能进入 `route=rtc`。连接失败时两端收到 `route=failed` 并回到等待室。
 
 ## 对战链路

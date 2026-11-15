@@ -1,0 +1,55 @@
+{
+  "passed": false,
+  "errors": [],
+  "samples": [
+    {
+      "peak": 0.2799789607524872,
+      "context": "running",
+      "starts": [
+        {
+          "hasNode": true,
+          "offset": 0,
+          "volume": 0.31848573684692383,
+          "time": 3.0011791383219957
+        }
+      ]
+    },
+    {
+      "peak": 0,
+      "context": "running",
+      "starts": [
+        {
+          "hasNode": false,
+          "offset": 0.049977324263038546,
+          "volume": 0.31848573684692383,
+          "time": 3.7413151927437642
+        }
+      ]
+    },
+    {
+      "peak": 0,
+      "context": "running",
+      "starts": [
+        {
+          "hasNode": false,
+          "offset": 0.049977324263038546,
+          "volume": 0.31848573684692383,
+          "time": 4.481451247165533
+        }
+      ]
+    },
+    {
+      "peak": 0,
+      "context": "running",
+      "starts": [
+        {
+          "hasNode": false,
+          "offset": 0.049977324263038546,
+          "volume": 0.31848573684692383,
+          "time": 5.070657596371882
+        }
+      ]
+    }
+  ],
+  "failure": "AssertionError [ERR_ASSERTION]: every repeat of native menu SFX must produce nonzero PCM\n    at file:///<workspace>/ports/th19/tests/sfx-browser-smoke.mjs:36:2"
+}

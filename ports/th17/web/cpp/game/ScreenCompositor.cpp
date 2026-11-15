@@ -20,7 +20,12 @@ bool ScreenCompositor::run(u32 pass){
  switch(pass){
  case 0:
   if(active){// Shot culling uses the 384x448 content, not the 408x472 border camera.
-   environment.playfield_origin={float(environment.screen_offsets[0])-192.f,float(environment.screen_offsets[1])};if(!graphics.clear_target(0xffffffff,nullptr)||!graphics.clear_depth(nullptr)||!select(main)||!graphics.clear_target(clear_color,&region)||!graphics.clear_depth(&region))return fail("Screen compositor frame clear failed");playfield_size={384,448};environment.screen_offsets[2]=i32(environment.screen_width)/2;environment.screen_offsets[3]=truncate_int(float(float(environment.screen_height)-448.f))/2;}
+   // The screen surface is first used in pass 7, which clears it before
+   // compositing. This pass only needs to initialize the main playfield.
+   environment.playfield_origin={float(environment.screen_offsets[0])-192.f,float(environment.screen_offsets[1])};
+   if((!skip_opening_screen_clear&&(!graphics.clear_target(0xffffffff,nullptr)||!graphics.clear_depth(nullptr)))||!select(main))return fail("Screen compositor frame clear failed");
+   if(!skip_initial_playfield_clear&&(!graphics.clear_target(clear_color,&region)||!graphics.clear_depth(&region)))return fail("Screen compositor playfield clear failed");
+   playfield_size={384,448};environment.screen_offsets[2]=i32(environment.screen_width)/2;environment.screen_offsets[3]=truncate_int(float(float(environment.screen_height)-448.f))/2;}
   else if(!graphics.clear_target(clear_color,nullptr)||!graphics.clear_depth(nullptr))return fail("Screen compositor frame clear failed");
   renderer.invalidate();renderer.tint_enabled=false;renderer.tint=0x80808080;renderer.offset={};return views.camera(DrawCamera::Fullscreen,false)||fail("Screen compositor full-screen camera failed");
  case 1:if(!active)return true;return select(alternate)&&(graphics.clear_depth(&region)||fail("Screen compositor depth clear failed"));

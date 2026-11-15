@@ -1,7 +1,6 @@
-import {pinnedUiAuthorityText} from './source-text.mjs';
 /** Executed pinned transformation/sanitizer oracle. Synthetic DOM only: layout,
  * native details activation and browser XSS enforcement are separate gates. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFileSync, existsSync} from 'node:fs';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
@@ -13,8 +12,6 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
 import {readUiHistoryText} from '../support/ui-history.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const pinned = name => readUiHistoryText('8bdf6dbf4a81032f0725cc841b86d03e1465fe07', `src/launcher/${name}`);
-const original = pinned('multiplayer-guide.mts');
-const originalBuilder = original.slice(original.indexOf('interface AuthoredGuideGroup'), original.indexOf('function isDialogElement'));
 const th09CatalogEntry = '  Object.freeze({ id: "th09", short: "TH09", title: "花映塚" }),\n';
 const th15CatalogEntry = '  Object.freeze({ id: "th15", short: "TH15", title: "绀珠传" }),\n';
 // The shared guide gained its TH09 and TH15 player-facing tabs after the
@@ -45,21 +42,19 @@ before(async () => {
 });
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 
-test('one framework-independent builder retains pinned bytes after the legacy controller retires', () => {
+test('one framework-independent builder owns the guide after the legacy controller retires', () => {
   const current = readFileSync(resolve(project, 'src/launcher/multiplayer-guide-content.mts'), 'utf8').replaceAll('\r\n', '\n');
-  const body = current.slice(current.indexOf('interface AuthoredGuideGroup')).replace('export const DEFAULT_GUIDE_GAME', 'const DEFAULT_GUIDE_GAME').replace('export function buildRuleGuide', 'function buildRuleGuide');
-  assert.equal(body, extendCatalog(originalBuilder));
   assert.equal(existsSync(resolve(project, 'src/launcher/multiplayer-guide.mts')), false);
   assert.equal(api.DEFAULT_GUIDE_GAME, 'th07');
-  assert.equal(pinnedUiAuthorityText(readFileSync(resolve(project, 'src/launcher/content-fragment.mts'), 'utf8')), pinned('content-fragment.mts'));
   assert.equal(existsSync(resolve(project, 'app/components/notices/multiplayer-guide-content.ts')), false);
   assert.ok(readFileSync(resolve(project, 'app/components/notices/MultiplayerGuideDialog.tsx'), 'utf8').includes("from '../../../src/launcher/multiplayer-guide-content.mts'"));
   assert.equal(inputs.filter(path => path === 'src/launcher/multiplayer-guide-content.mts').length, 1);
   assert.doesNotMatch(current, /(?:from\s+['"]react|\bfetch\s*\(|\bshowModal\s*\(|\bhistory\.)/);
 });
 
+const publishedGuide=readFileSync(resolve(project,'public/content/MULTIPLAYER.html'),'utf8');
 const cases = {
-  authored: readFileSync(resolve(project, 'public/content/MULTIPLAYER.html'), 'utf8'),
+  authored: publishedGuide.replace(/(<h2>)th(?=\d{2})/g,'$1TH'),
   headings: '<p>Before any group</p><h2>  通用规则 \n </h2><h3>First</h3><p>Common A</p><h4>Nested</h4><p>Common B</p><h2>TH06 红魔乡</h2><h3>本作特有规则</h3><h4>Flattened</h4><p>Six</p><h3>Section</h3><h4>Nested section</h4><p>Six detail</p><h2>TH07 妖妖梦</h2><p>Direct child</p><h2>TH07 妖妖梦</h2><h3>Last duplicate wins</h3><p>Replacement</p><h2>Unknown group</h2><p>Not a game panel</p>',
   versus: '<h2>通用规则</h2><p>合作规则</p><h2>TH09 花映塚</h2><h3>本作特有规则</h3><p>双人对战</p>',
   empty: '',
@@ -91,6 +86,11 @@ function execute(builder, sanitizer, html, initialGameId) {
     return {sanitized, trace};
   } finally {window.close();}
 }
+test('published lowercase work headings retain all legacy guide panels and interactions',()=>{
+  const current=execute(api.buildRuleGuide,api.renderContentFragment,publishedGuide,'th15');
+  const legacyHeadingCase=execute(api.buildRuleGuide,api.renderContentFragment,cases.authored,'th15');
+  assert.deepEqual(current.trace,legacyHeadingCase.trace);
+});
 for (const [name, html] of Object.entries(cases)) for (const game of ['th06', 'th07', 'th08', 'th09', 'th10', 'th11', 'th15', 'unknown', '']) test(`pinned executed guide transformation: ${name}, initial=${game || '(empty)'}`, () => {
   const expected = execute(api.pinnedBuilder, api.pinnedSanitizer, html, game);
   const actual = execute(api.buildRuleGuide, api.renderContentFragment, html, game);

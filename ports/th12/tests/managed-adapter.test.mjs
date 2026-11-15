@@ -60,7 +60,7 @@ test('managed presentation: actual browser loop keeps 60 Hz logic at 60, 120 and
   assert.ok(interpolation,'actual browser interpolation selector');
   for(const hz of [60,120,144])for(const limited of [false,true]){
     let ticks=0,draws=0;
-    const context={terminated:false,backgrounded:false,fatalError:false,last:0,lastPresentation:0,accumulator:0,presentationInterval:1000/60,presentationCadence:new PresentationCadence(),
+    const context={terminated:false,backgrounded:false,fatalError:false,viewportClockReset:false,last:0,lastPresentation:0,accumulator:0,presentationInterval:1000/60,presentationCadence:new PresentationCadence(),
       presentationLimiter:new PresentationLimiter(),needsPresentationInterpolation,needsPresentationCapture,
       runtimeOptions:{limitPresentationTo60:limited},TICK:1000/60,meter:{frame(){}},loadingScreen:{advance(){},renderOverlay(){}},
       ready:true,busy:false,session:null,model:{actions:[],state:{scene:'playing'}},profile:{settings:{keyMap:{}}},
@@ -82,7 +82,7 @@ test('a saturated catch-up budget still publishes a fresh game picture on every 
   const interpolation=source.match(/^function interpolateGamePresentation\(\)\{.*\}$/m)?.[0];assert.ok(interpolation);
   for(const interval of [150,200,250]){
     let ticks=0,captured=0;const pictures=[];
-    const context={terminated:false,backgrounded:false,fatalError:false,last:0,accumulator:0,presentationInterval:0,presentationCadence:new PresentationCadence(),
+    const context={terminated:false,backgrounded:false,fatalError:false,viewportClockReset:false,last:0,accumulator:0,presentationInterval:0,presentationCadence:new PresentationCadence(),
       runtimeOptions:{limitPresentationTo60:false},presentationLimiter:new PresentationLimiter(),TICK:1000/60,meter:{frame(){}},loadingScreen:{advance(){},renderOverlay(){}},
       ready:true,busy:false,session:null,model:{actions:[],state:{scene:'playing'}},profile:{settings:{keyMap:{}}},
       keyDown:()=>false,previousPadUI:0,logicalStep:1000/60,captureThisTick:false,launched:false,

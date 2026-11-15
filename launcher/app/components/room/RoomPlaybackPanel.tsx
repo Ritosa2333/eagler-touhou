@@ -1,10 +1,13 @@
 import {useLayoutEffect, useRef, useState, type ReactNode} from 'react';
+import {useSurfaceMotion} from '../../ui/use-surface-motion';
 
 /** Measure the controls' natural height so the chat yields space continuously,
  * including the native th09 panel and its own expand/collapse changes. */
 export function RoomPlaybackPanel({workspace, children}: {workspace: HTMLElement; children: ReactNode}) {
   const content = useRef<HTMLDivElement>(null);
+  const surface = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
+  useSurfaceMotion(surface, height > 0 ? 'enter' : null, {kind: 'content'});
   useLayoutEffect(() => {
     const element = content.current;
     if (!element) return;
@@ -18,7 +21,7 @@ export function RoomPlaybackPanel({workspace, children}: {workspace: HTMLElement
     measure();
     return () => {observer.disconnect(); workspace.style.removeProperty('--room-playback-height');};
   }, [workspace]);
-  return <div className="room-workspace-playback" data-visible={height > 0} style={{height}} inert={height === 0} aria-hidden={height === 0}>
+  return <div ref={surface} className="room-workspace-playback" data-visible={height > 0} style={{height}} inert={height === 0} aria-hidden={height === 0}>
     <div ref={content} className="room-workspace-playback-content">{children}</div>
   </div>;
 }

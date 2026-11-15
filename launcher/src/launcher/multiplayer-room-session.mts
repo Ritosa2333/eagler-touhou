@@ -1,4 +1,6 @@
+import {validTh19VersusRules} from './th19-versus-rules.mjs';
 import {validTh15ChapterThreshold} from "./th15-chapter-reward.mjs";
+import {validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
 export const multiplayerRoomSessionStorageKey = (product: string): string =>
   `eagler-touhou-${product}-room-v1`;
 
@@ -12,9 +14,13 @@ export interface MultiplayerRoomSessionSnapshot {
   room: {
     visibility?: "public" | "private";
     disableCheatMovement?: boolean;
+    unrated?: boolean;
     disableLocalChargePriority?: boolean;
     challengeMode?:boolean;
   chapterThreshold?: number;
+    th19Rules?: number[];
+  initialSpares?: number;
+    initialBombs?: number;
     prankMode?:boolean;
     code: string;
     playerCount: 2 | 3;
@@ -63,8 +69,11 @@ export function createMultiplayerRoomSessionStore({
           code: snapshot.room.code,
           visibility: snapshot.room.visibility,
           disableCheatMovement: snapshot.room.disableCheatMovement,
+          unrated: snapshot.room.unrated,
           disableLocalChargePriority: snapshot.room.disableLocalChargePriority,
           chapterThreshold:snapshot.room.chapterThreshold,challengeMode:snapshot.room.challengeMode,prankMode:snapshot.room.prankMode,
+          th19Rules:product==='th19mp'?snapshot.room.th19Rules:undefined,
+          initialSpares:snapshot.room.initialSpares,initialBombs:snapshot.room.initialBombs,
           playerCount: snapshot.room.playerCount,
           difficulty: snapshot.room.difficulty,
           created: !!snapshot.room.created,
@@ -109,8 +118,12 @@ export function createMultiplayerRoomSessionStore({
         code: roomCode,
         visibility: room.visibility === "private" ? "private" : "public",
         disableCheatMovement: room.disableCheatMovement === true,
+        ...(product === 'th09mp' && typeof room.unrated === 'boolean' ? {unrated: room.unrated} : {}),
         ...(product === 'th09mp' ? {disableLocalChargePriority: room.disableLocalChargePriority === true} : {}),
         ...(validTh15ChapterThreshold(room.chapterThreshold)?{chapterThreshold:room.chapterThreshold}:{}),
+        ...(product==='th19mp'&&validTh19VersusRules(room.th19Rules)?{th19Rules:[...room.th19Rules]}:{}),
+        ...(product==='th05mp'&&validTh05InitialSpares(room.initialSpares)?{initialSpares:room.initialSpares as number}:{}),
+        ...(product==='th05mp'&&validTh05InitialBombs(room.initialBombs)?{initialBombs:room.initialBombs as number}:{}),
         ...(room.challengeMode!==undefined?{challengeMode:room.challengeMode===true}:{}),
         ...(room.prankMode!==undefined?{prankMode:room.prankMode===true}:{}),
         playerCount,

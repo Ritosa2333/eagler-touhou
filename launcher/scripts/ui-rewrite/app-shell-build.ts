@@ -3,15 +3,16 @@ import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {parse, type DefaultTreeAdapterMap} from 'parse5';
 import {buildAppShell} from '../../lib/app-shell-build.mjs';
-import {STATIC_APP_SHELL_FILES, HOST_SITE_ARTWORK_FILES} from '../../lib/frontend-static-manifest.mjs';
+import {STATIC_APP_SHELL_FILES, HOST_SITE_ARTWORK_FILES, REACT_DOCUMENT_FILES, UI_REVIEW_DOCUMENT, hasUiReviewEntry, isOnDemandFrontendAsset} from '../../lib/frontend-static-manifest.mjs';
 import {buildRuntimeGenerationWorkerSource} from '../../lib/frontend-assets.mjs';
 import * as runtimeContract from '../../src/contracts/runtime-generations.mts';
 import {writeFileAtomic} from '../../lib/atomic-file.mjs';
 import {normalizeReactMountPath, REACT_APP_SHELL_META, validateReactAppShellDeployment, type ReactAppShellDeployment} from '../../app/services/app-shell-deployment.ts';
-import {readReactFrontendArtifact} from '../../lib/react-frontend-artifact.mjs';
+import {readReactFrontendArtifact, reactDocumentAssetUrl} from '../../lib/react-frontend-artifact.mjs';
 import {writeAppShellRetirementWorker} from '../../lib/app-shell-retirement.mjs';
+import {PRODUCT_GAMES} from '../../src/contracts/product-catalog.mts';
 
-interface ReactShellGraph {schema: string; mountPath: string; appShell: ReactAppShellDeployment | null; shellFiles: string[]}
+interface ReactShellGraph {schema: string; mountPath: string; appShell: ReactAppShellDeployment | null; gameIds: string[]; shellFiles: string[]}
 interface BuildOptions {
   clientDirectory: string;
   mountPath: string;
@@ -24,7 +25,7 @@ interface BuildOptions {
  * manifest owns the emitted chunk, asset and dynamic-import dependency graph. */
 export async function writeReactAppShellGraph({clientDirectory, mountPath, appShell = null}: {clientDirectory: string; mountPath: string; appShell?: ReactAppShellDeployment | null}) {
   normalizeReactMountPath(mountPath);
-  const manifest = JSON.parse(await readFile(resolve(clientDirectory, '.vite/manifest.json'), 'utf8')) as Record<string, {file: string; css?: string[]; assets?: string[]; imports?: string[]; dynamicImports?: string[]}>;
+  const manifest = JSON.parse(await readFile(resolve(clientDirectory, '.vite/manifest.json'), 'utf8')) as Record<string, {file: string; src?: string; isEntry?: boolean; css?: string[]; assets?: string[]; imports?: string[]; dynamicImports?: string[]}>;
   const generatedFiles: string[] = [];
   for (const entry of Object.values(manifest)) {
     if (!entry || typeof entry.file !== 'string') throw new Error('Invalid Vite browser manifest');
@@ -35,8 +36,10 @@ export async function writeReactAppShellGraph({clientDirectory, mountPath, appSh
   // module/CSS graph for the old entrypoint graph. No legacy app.js is copied.
   const retiredEntryStyles = new Set(['lobby.css', 'touch-guide.css']);
   const staticFiles = STATIC_APP_SHELL_FILES.filter(path => !retiredEntryStyles.has(path));
+  if (hasUiReviewEntry(manifest)) staticFiles.push(UI_REVIEW_DOCUMENT.file);
   const graph: ReactShellGraph = {schema: 'eagler-touhou/react-app-shell-graph/1', mountPath, appShell,
-    shellFiles: [...new Set([...staticFiles, ...generatedFiles])].sort()};
+    gameIds: Object.keys(PRODUCT_GAMES).sort(),
+    shellFiles: [...new Set([...staticFiles, ...generatedFiles.filter(path => !isOnDemandFrontendAsset(path))])].sort()};
   await writeFileAtomic(resolve(clientDirectory, '.vite/react-app-shell-graph.json'), JSON.stringify(graph, null, 2) + '\n');
   return graph;
 }
@@ -60,15 +63,15 @@ export async function buildReactAppShell({clientDirectory, mountPath, appShell, 
   if (appShell && validateReactAppShellDeployment(appShell).mountPath !== mountPath) throw new Error('React App Shell configuration does not match this mount');
   const shellFiles = [...new Set([...graph.shellFiles, ...additionalShellFiles])].sort();
   const hasModule = shellFiles.some(path => /^assets\/.+\.js$/.test(path));
-  if (!hasModule || ['index.html', 'en.html', 'lobby.html', 'about.html', 'faq.html', 'styles.css'].some(path => !shellFiles.includes(path))) throw new Error('Incomplete React App Shell graph');
+  if (!hasModule || ['index.html', 'en.html', 'ja.html', 'lobby.html', 'profile.html', 'login.html', 'about.html', 'faq.html', 'styles.css'].some(path => !shellFiles.includes(path))) throw new Error('Incomplete React App Shell graph');
   for (const path of shellFiles) {
     if (!/^[A-Za-z0-9_.\/-]+$/.test(path) || path.split('/').some(part => !part || part.startsWith('.')) || path.startsWith('/') ||
-      /^(?:runtime\/|legacy\/|docs\/|src\/|app\/|tests\/|tools\/|package\/|assets\/(?:launcher|contracts)\/)/.test(path) ||
+      (/^(?:runtime\/|legacy\/|docs\/|src\/|app\/|tests\/|tools\/|package\/|assets\/(?:launcher|contracts)\/)/.test(path) && !REACT_DOCUMENT_FILES.includes(path)) ||
       ['app.js', 'migrate.html', 'legacy-mount-retirement-sw.js', 'app-shell-sw.js', 'runtime-manifest.json'].includes(path)) throw new Error(`Forbidden React App Shell file: ${path}`);
     const info = await stat(resolve(clientDirectory, path));
     if (!info.isFile() || info.size === 0) throw new Error(`React App Shell input is empty or missing: ${path}`);
   }
-  for (const file of ['index.html', 'en.html', 'lobby.html']) {
+  for (const file of ['index.html', 'en.html', 'ja.html', 'lobby.html', 'profile.html', 'login.html']) {
     const nodes = elements(await readFile(resolve(clientDirectory, file), 'utf8'));
     const metadata = nodes.filter(node => node.tagName === 'meta' && node.attrs.some(attr => attr.name === 'name' && attr.value === REACT_APP_SHELL_META));
     if (metadata.length !== (appShell ? 1 : 0) || appShell && metadata[0].attrs.find(attr => attr.name === 'content')?.value !== JSON.stringify(appShell)) throw new Error(`React App Shell metadata mismatch: ${file}`);
@@ -78,13 +81,13 @@ export async function buildReactAppShell({clientDirectory, mountPath, appShell, 
       // React Router writes its generated route manifest after Vite's client
       // writeBundle hook. Its exact document reference is a build-owned input,
       // not a glob that could accidentally admit unrelated files.
-      const relative = url.startsWith(mountPath) ? url.slice(mountPath.length) : '';
+      const relative = url.startsWith(mountPath) ? reactDocumentAssetUrl(url, node.tagName).slice(mountPath.length) : '';
       if (/^assets\/manifest-[a-f0-9]+\.js$/.test(relative) && !shellFiles.includes(relative)) {
         const info = await stat(resolve(clientDirectory, relative));
         if (!info.isFile() || !info.size) throw new Error('Missing React Router route manifest');
         shellFiles.push(relative);
       }
-      if (!url.startsWith(mountPath + 'assets/') || !shellFiles.includes(url.slice(mountPath.length))) throw new Error(`React document asset escapes its graph/mount: ${url}`);
+      if (!url.startsWith(mountPath + 'assets/') || !shellFiles.includes(relative)) throw new Error(`React document asset escapes its graph/mount: ${url}`);
     }
   }
   await writeFileAtomic(resolve(clientDirectory, '.vite/react-app-shell-graph.json'), JSON.stringify({...graph, shellFiles: shellFiles.slice().sort()}, null, 2) + '\n');

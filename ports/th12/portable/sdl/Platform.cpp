@@ -6,6 +6,9 @@
 #include <ctime>
 #include <filesystem>
 #include <algorithm>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #ifndef NOMINMAX
@@ -102,6 +105,9 @@ bool write_file(const std::string& path,const u8* data,size_t size){
         if(ec){std::error_code restore;fs::rename(native_path(backup),native_path(path),restore);return false;}
         fs::remove(native_path(backup),ec);return true;
     }
+#endif
+#ifdef __EMSCRIPTEN__
+    if(!ec)EM_ASM({Module.th12SaveWritten?.(UTF8ToString($0));},path.c_str());
 #endif
     return !ec;
 #endif

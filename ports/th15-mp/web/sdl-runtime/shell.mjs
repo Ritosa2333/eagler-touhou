@@ -2,6 +2,7 @@ import {installStartupBranding,finishStartupAnimation} from './startup-branding.
 import createModule from './th15.mjs';
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
 import {scanCodes} from './keyboard.mjs';
+import {createSaveSync} from './save-sync.mjs';
 // BEGIN GENERATED SPECTATOR PLAYBACK
 // Generated from eagler-common/browser/spectator-playback.mjs.
 // Native playback owns every cursor and restore. The shell only transports
@@ -232,7 +233,7 @@ const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const saveRoot=runtimeBuild.multiplayer?'/savesth15mp':'/savesth15';
 let multiplayerBridge=null;
-let core,launched=false,first=false,stopping=false,options={},music=true,chain=Promise.resolve(),queue=Promise.resolve();
+let core,launched=false,first=false,stopping=false,options={},music=true,queue=Promise.resolve();
 let roomPreview=false;
 let launchSerial=0,roomOwned=false;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...((event==='first-frame'||event==='room-menu')?{launchSerial}:{}),...fields},location.origin);
@@ -247,7 +248,7 @@ const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:lo
 function clearKeyboard(){keyboard.clear();core?._th15_keys_clear();}
 const err=()=>{let p=runtimeBuild.multiplayer?core._th15_mp_error():core._th15_error();if(runtimeBuild.multiplayer&&!core.HEAPU8[p])p=core._th15_error();const end=core.HEAPU8.indexOf(0,p);return new TextDecoder().decode(core.HEAPU8.subarray(p,end<0?p+256:end));};
 const fatal=e=>{const message=e?.message||String(e);globalThis.__eaglerCrashReporterV1?.fatal(e);$('#error').textContent=message;core?._th15_loop_pause(1);emit('error',{error:message});};
-const sync=(populate=false)=>{const current=chain.then(()=>new Promise((r,j)=>core.FS.syncfs(populate,e=>e?j(e):r())));chain=current.catch(()=>{});return current;};
+const sync=createSaveSync(()=>core);
 const save=()=>{multiplayerBridge?.save();if(launched&&!core._th15_save_scores())throw Error(err());return sync();};
 function closeAudio(){
  // The launcher owns the shared context. SDL owns and must disconnect its
@@ -258,6 +259,11 @@ function closeAudio(){
 }
 async function stop(){if(stopping)return;if(roomOwned&&!options.replayViewer){stopping=true;try{await save();await command({command:'return-room'});emit('room-menu');}finally{stopping=false;}return;}stopping=true;localReplay.close();spectatorPlayback.stop();try{core._th15_loop_stop();await save();multiplayerBridge?.close();closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth15(?:mp)?\//,'').replace(/^\//,'');if(!/^(?:scoreth15\.dat|th15\.cfg|replay\/(?:[^./\\\x00-\x1f][^/\\\x00-\x1f]{0,127}\/)?th15(?:mp)?_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?|autosave\/save[0-3]_[0-4]\.dat)$/.test(name))throw Error('存档路径无效');return name;}
+function renderScale(options, requested) {
+ if (options.renderScale === 1 || options.renderScale === 2) return options.renderScale;
+ if (requested === 1 || requested === 2) return requested;
+ return 2;
+}
 function apply(){core.eaglerOptions=options;core._th15_always_hitbox(+(options.alwaysHitbox===true));core._th15_limit_presentation(+!!options.limitPresentationTo60);core._th15_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(runtimeBuild.multiplayer&&options.touchMovementMode==='joystick-free'?'joystick':options.touchMovementMode)),Math.max(100,Math.min(300,Number(options.touchSensitivity)||100))/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);core._th15_music_enabled(+music);}
 async function resource(r){
  if(!['/msgothic.ttc','/unifont.otf','/fonts/cp932.bin'].includes(r.path)&&!/^\/music\/(?:th15_\d{2}|th128_08)\.ogg$/.test(r.path))throw Error('资源路径无效');
@@ -290,7 +296,7 @@ const localReplay=createNativeLocalReplay({core:()=>core,module:()=>core,physica
 async function initializeTitle(){
  await installStartupBranding(core,{game,builtAt:(await(await fetch('./manifest.json')).json()).builtAt});
  let scaleOption=query.get('renderScale');if(!scaleOption)try{scaleOption=new URLSearchParams(parent.location.search).get('renderScale');}catch{}
- const requested=Number(scaleOption);core._th15_render_scale(options.renderScale===1?1:options.renderScale===2?2:requested===1?1:2);
+ const requested=Number(scaleOption);core._th15_render_scale(renderScale(options,requested));
  if(!core._th15_prepare_loading())throw Error(err());$('#loading').textContent='';
  const startupImageAt=performance.now();performance.mark('eagler-startup-image');
  await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);

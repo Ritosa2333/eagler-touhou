@@ -211,11 +211,22 @@ try{
     await press('Enter');
     await wait(()=>frames()[0].evaluate(()=>__th12Runtime.menu().scene==='name'&&__th12Runtime.menu().ready),'original Replay name ready');
     await press('Enter');
-    await wait(async()=>{const listing=await page.evaluate(()=>rpc(0,'list'));return listing.files.some(f=>f.path.endsWith('/th12_mp_01.rpy')&&f.size>176);},'original numbered Replay slot and name');
+    await wait(()=>frames()[0].evaluate(()=>new Promise((resolve,reject)=>{
+      const open=indexedDB.open('/savesth12mp');
+      open.onerror=()=>reject(open.error);
+      open.onsuccess=()=>{
+        const db=open.result,request=db.transaction('FILE_DATA').objectStore('FILE_DATA').get('/savesth12/replay/th12_mp_01.rpy');
+        request.onsuccess=()=>{db.close();resolve((request.result?.contents?.byteLength??0)>176);};
+        request.onerror=()=>{db.close();reject(request.error);};
+      };
+    })),'original numbered Replay slot persists without launcher sync');
     await page.locator('#p0').screenshot({path:resolve(out,'replay-save.png')});
   }
   await page.evaluate(n=>Promise.all(Array.from({length:n},(_,s)=>rpc(s,'return-room'))),count);
   const files=await page.evaluate(()=>rpc(0,'list')),replay=files.files.find(f=>f.path.includes('th12_mp_'));assert(replay?.size>176,'confirmed Replay saved');
+  const autosave=files.files.find(f=>/\/th12_mp_\d{10,}\.rpy$/.test(f.path));
+  assert(autosave?.size>176,'confirmed autosave is listed');
+  assert(await frames()[0].evaluate(path=>__th12Runtime.core.FS.analyzePath('/savesth12/'+path).exists,autosave.path),'native Replay menu can see the autosave without reloading');
   await page.evaluate(music=>rpc(0,'configure',{music,language:'ja',options:{replayViewer:true,thpracEnabled:false}}),music);
   const description=await page.evaluate(path=>rpc(0,'playback',{action:'inspect',path}),replay.path);assert.equal(description.description.mode,'multiplayer');
   await page.evaluate(path=>rpc(0,'playback',{action:'open',path}),replay.path);

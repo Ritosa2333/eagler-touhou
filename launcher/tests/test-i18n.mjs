@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { FRONTEND_PACKAGE_FILES, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
@@ -12,15 +13,17 @@ import {
   validateUiCatalogs,
 } from "../.cache/build/browser/assets/launcher/i18n.mjs";
 
+test("i18n", async () => {
 const index = await readFile(resolveFrontendPackageSource("index.html"), "utf8");
 
-assert.deepEqual(UI_LOCALES, ["zh-CN", "en"]);
+assert.deepEqual(UI_LOCALES, ["zh-CN", "en", "ja"]);
 assert.equal(resolveUiLocale("zh-CN"), "zh-CN");
 assert.equal(resolveUiLocale("zh-TW"), "zh-CN");
-assert.equal(resolveUiLocale("ja-JP"), "en");
+assert.equal(resolveUiLocale("ja-JP"), "ja");
 const keys = validateUiCatalogs();
 assert.deepEqual(Object.keys(UI_MESSAGES["zh-CN"]), keys);
 assert.deepEqual(Object.keys(UI_MESSAGES.en), keys);
+assert.deepEqual(Object.keys(UI_MESSAGES.ja), keys);
 for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
   if (!product.multiplayer) continue;
   assert.ok(keys.includes(product.multiplayer.titleKey), `${game}: Multiplayer product title is missing from UI catalogs: ${product.multiplayer.titleKey}`);
@@ -67,5 +70,7 @@ assert.match(index, /<meta name="description"/);
 assert.ok(FRONTEND_PACKAGE_FILES.some(path=>path.startsWith('assets/')&&path.endsWith('.js')));
 assert.ok(FRONTEND_PACKAGE_FILES.includes("en.html"),
   "the English UI must have an independently crawlable document");
+assert.ok(FRONTEND_PACKAGE_FILES.includes('ja.html'), 'Japanese has an independently crawlable document');
 
 console.log(JSON.stringify({ locales: UI_LOCALES, keys: keys.length, catalogs: "PASS", launcherControl: "PASS" }));
+});

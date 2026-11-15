@@ -1,6 +1,8 @@
 #include "../../cpp/multiplayer/ChargeHistory.hpp"
 #include "../../cpp/game/ChargeReplayTrack.hpp"
 #include "../../cpp/game/TouchMotionTrack.hpp"
+#include "../../cpp/game/Lzss.hpp"
+#include <memory>
 #include <cstdio>
 #include <cstdlib>
 #define CHECK(x) do{if(!(x)){std::fprintf(stderr,"%s:%d: %s\n",__FILE__,__LINE__,#x);std::abort();}}while(0)
@@ -59,5 +61,40 @@ int main(){
     auto broken=trailer;broken[5]^=1;CHECK(!playback.load(broken.data(),u32(broken.size())));
     CHECK(!recording.record(9,1,false,samples));
     ChargeReplayTrack ordinary;std::array<u8,50> native{};CHECK(ordinary.load(native.data(),native.size())&&!ordinary.enabled&&ordinary.trailer().empty());
+    ChargeReplayTrack longRun;
+    for(u32 frame=0;frame<72000;++frame){
+        std::array<ChargeSample,2> values{};
+        for(u32 side=0;side<2;++side){auto& v=values[side];const u32 tick=frame%(side?237:181);v.active=1;
+            v.charge=float(tick)*1.125f;v.charging_time={i32(tick)-1,float(tick)+.25f,i32(tick)};
+            v.full_charge={i32(frame)-1,float(frame),i32(frame)};
+            if(tick==0){v.events=ChargeSample::End;v.released=200;}
+        }
+        CHECK(longRun.record(frame/24000,frame%24000,false,values));
+    }
+    std::vector<u8> rows(40+72000*88);u32 offset=40;
+    for(u32 stage=0;stage<10;++stage){charge_record::word(rows.data()+stage*4,u32(longRun.stages[stage].size()));
+        for(const auto& e:longRun.stages[stage]){auto* at=rows.data()+offset;charge_record::word(at,e.frame);charge_record::word(at+4,e.hold);
+            charge_record::encode(e.samples[0],at+8);charge_record::encode(e.samples[1],at+48);offset+=88;
+        }
+    }
+    auto codec=std::make_unique<Lzss>();auto packed=codec->encode(rows.data(),u32(rows.size()));
+    std::vector<u8> legacy(4+packed.size()+24);charge_record::word(legacy.data(),u32(rows.size()));std::copy(packed.begin(),packed.end(),legacy.begin()+4);
+    auto* footer=legacy.data()+legacy.size()-24;std::memcpy(footer,"T9CHARGE",8);charge_record::word(footer+8,9);charge_record::word(footer+12,1);
+    const u32 length=u32(legacy.size())-24;charge_record::word(footer+16,length);charge_record::word(footer+20,touch::MotionTrack::hash(legacy.data(),length));
+    auto compact=longRun.trailer();CHECK(compact.size()<legacy.size()/10);
+    for(const auto* bytes:{&legacy,&compact}){ChargeReplayTrack loaded;CHECK(loaded.load(bytes->data(),u32(bytes->size())));
+        CHECK(loaded.trailer()==compact);
+        for(u32 stage=0;stage<10;++stage){CHECK(loaded.stages[stage].size()==longRun.stages[stage].size());
+            for(u32 i=0;i<loaded.stages[stage].size();++i){const auto& a=loaded.stages[stage][i];const auto& b=longRun.stages[stage][i];CHECK(a.frame==b.frame&&a.hold==b.hold&&a.samples==b.samples);}
+        }
+    }
+    for(const std::vector<u8> invalidRuns:{std::vector<u8>{0,41},std::vector<u8>{0,0},std::vector<u8>{0,128},std::vector<u8>{0,39}}){
+        auto badPacked=codec->encode(invalidRuns.data(),u32(invalidRuns.size()));std::vector<u8> bad(8+badPacked.size()+24);
+        charge_record::word(bad.data(),40);charge_record::word(bad.data()+4,u32(invalidRuns.size()));std::copy(badPacked.begin(),badPacked.end(),bad.begin()+8);
+        auto* end=bad.data()+bad.size()-24;std::memcpy(end,"T9CHARGE",8);charge_record::word(end+8,9);charge_record::word(end+12,2);
+        const u32 n=u32(bad.size())-24;charge_record::word(end+16,n);charge_record::word(end+20,touch::MotionTrack::hash(bad.data(),n));
+        ChargeReplayTrack invalid;CHECK(!invalid.load(bad.data(),u32(bad.size())));
+    }
+    std::printf("20-minute charge track | old %zu bytes | new %zu bytes\n",legacy.size(),compact.size());
     std::puts("Charge history | immutable samples | correction | ordered confirmation | ACK | bounded ring | mod Replay | touch coexistence: PASS");
 }

@@ -9,6 +9,7 @@ public:
  bool read(ResourceEdition,const std::string&,std::vector<u8>&)override;
  bool retain(ResourceEdition,const std::string&);
  static bool chinese();
+ static bool on_demand();
  static bool read_file(const std::string&,std::vector<u8>&,u32 limit=134217728);
  static bool write_file(const std::string&,const void*,u32);
 };

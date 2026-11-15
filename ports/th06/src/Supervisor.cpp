@@ -310,7 +310,13 @@ ChainCallbackResult Supervisor::OnUpdate(Supervisor *s)
                 // recorder here, after GameManager has stopped recording and
                 // before RegisterChain can reuse stale stage/input pointers.
                 if (PracticeRuntime::ConsumeReplayResetOnReinit())
+                {
                     ReplayManager::SaveReplay(NULL, NULL);
+                    g_GameManager.deaths = 0;
+                    g_GameManager.bombsUsed = 0;
+                    g_GameManager.spellcardsCaptured = 0;
+                    PracticeRuntime::ResetTracker();
+                }
                 if (GameManager::RegisterChain() != ZUN_SUCCESS)
                 {
                     return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
@@ -332,6 +338,15 @@ ChainCallbackResult Supervisor::OnUpdate(Supervisor *s)
                     g_GameManager.currentStage = 0;
                 else
                     g_GameManager.currentStage--;
+                // RegisterChain snapshots these counts for respawns and
+                // continues. Restore the starting stock before it reads them.
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                if (!MultiplayerGameplay::IsMultiplayer())
+#endif
+                {
+                    g_GameManager.livesRemaining = s->defaultConfig.lifeCount;
+                    g_GameManager.bombsRemaining = s->defaultConfig.bombCount;
+                }
                 ReplayManager::SaveReplay(NULL, NULL);
                 if (GameManager::RegisterChain() != ZUN_SUCCESS)
                 {

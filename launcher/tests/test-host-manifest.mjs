@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   SITE_MANIFEST_FILE,
@@ -6,6 +7,7 @@ import {
   validateSiteManifest,
 } from "../lib/contracts/site-manifest.mjs";
 
+test("host manifest", async () => {
 const game = {
   runtime: "runtime/th06/th06.html?hosted=1&v=1",
   multiplayerRuntime: "runtime/th06/multiplayer/th06.html?hosted=1&v=2",
@@ -19,6 +21,21 @@ const game = {
   music: { midi: { files: [] } },
   features: { thprac: true, focusHitbox: true },
 };
+
+// Existing TH14 packages may still contain FLAC in their recorded-music component.
+const flac = structuredClone(game);
+flac.runtime = "runtime/th14/th14.html?hosted=1";
+delete flac.multiplayerRuntime;
+flac.gameData.path = "th14.dat";
+flac.music.ogg = {files: ["th14_01.flac"], sizes: [42], sha256: ["c".repeat(64)], version: "sha256-" + "d".repeat(64)};
+const manifestFor = entry => ({schema: SITE_MANIFEST_SCHEMA, protocol: "eagler-touhou/1",
+  profile: "web-validation-music", shared: {resourceMode: "hosted", vanillaFont: "shared/msgothic.ttc", unicodeFont: "shared/unifont.otf"}, games: {th14: entry}});
+assert.doesNotThrow(() => validateSiteManifest(manifestFor(flac)));
+assert.throws(() => validateSiteManifest({...manifestFor(flac), games: {th06: {...game, music: flac.music}}}), /invalid Site Manifest games/);
+for (const filename of ["../th14_01.flac", "th14_01.exe", "th14_01.flac/escape"]) {
+  const invalid = structuredClone(flac); invalid.music.ogg.files = [filename];
+  assert.throws(() => validateSiteManifest(manifestFor(invalid)), /invalid Site Manifest games/);
+}
 
 const languagePack = {
   url: "games/th06/language/lang_en.zip",
@@ -165,3 +182,4 @@ console.log(JSON.stringify({ hostManifest: "PASS", subsetProducts: true }));
 
 for (const testBuild of [false, true]) assert.equal(validateSiteManifest({...hosted, shared:{...hosted.shared,testBuild}}).shared.testBuild,testBuild);
 for (const testBuild of ["true", "false", 0, 1, null]) assert.throws(()=>validateSiteManifest({...hosted,shared:{...hosted.shared,testBuild}}),/testBuild/);
+});

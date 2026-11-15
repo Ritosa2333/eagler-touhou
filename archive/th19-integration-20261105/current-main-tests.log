@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 <workspace>/launcher
+
+stdout | tests/test-release-entry.mjs > release entry
+Release entry output ownership: PASS
+
+ ✓ |repository| tests/test-release-entry.mjs > release entry 20541ms
+[vitest-pool]: Timeout terminating forks worker for test files <workspace>/launcher/tests/test-release-entry.mjs.
+stdout | tests/test-host-artwork-adapter-coverage.mjs > host artwork adapter coverage
+{"hostArtworkAdapterCoverage":"PASS","games":["th05","th06","th07","th075","th08","th09","th10","th20","th11","th15","th12","th17","th19"]}
+
+ ✓ |repository| tests/test-host-artwork-adapter-coverage.mjs > host artwork adapter coverage 1798ms
+stdout | tests/test-development-site-manifest.mjs > development site manifest
+{"developmentHostManifest":"PASS","games":["th05","th06","th07","th075","th08","th09","th10","th11","th12","th15","th17","th19","th20"]}
+
+ ✓ |repository| tests/test-development-site-manifest.mjs > development site manifest 906ms
+stdout | tests/test-runtime-source-plan.mjs > runtime source plan
+Runtime source plans: PASS (22 variants, shared dependencies, explicit tools, invalid inputs)
+
+ ✓ |repository| tests/test-runtime-source-plan.mjs > runtime source plan 1000ms
+stdout | tests/test-origin-migration.mjs > origin migration
+{"originMigration":"PASS","protocol":"browser-to-browser","indexedDbOwners":55,"cacheOwners":2,"exactLegacyLocalStorageKeys":1,"serverUpload":false}
+
+ ✓ |repository| tests/test-origin-migration.mjs > origin migration 17ms
+stdout | tests/test-product-catalog.mjs > product catalog
+Product catalog policy: PASS
+
+ ✓ |repository| tests/test-product-catalog.mjs > product catalog 15ms
+stdout | tests/test-operator-delivery.mjs > operator delivery
+Internal Operator delivery profile: PASS
+
+ ✓ |repository| tests/test-operator-delivery.mjs > operator delivery 9ms
+
+ Test Files  7 passed (7)
+      Tests  7 passed (7)
+   Start at  08:21:13
+   Duration  66.69s (tests 71%, import 18%, transform 11%, setup 1%)
+

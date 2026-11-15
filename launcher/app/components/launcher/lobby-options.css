@@ -1,3 +1,4 @@
+@layer foundation {
 /* Same-document replacement for main lobby.css139 iframe. No new design.
    Original iframe body font/color is independent of directory 15px/1.5.
    medium preserves the browser default rather than a fixed user font size. */
@@ -18,3 +19,5 @@
 :is(#eaglerPreload,#lobbyPreload)[data-route-preload]{display:grid!important}
 /* Root's lobby stylesheet adapter excludes marked original-document roots and
    descendants from lobby.css5–8/105–106, including moved menus and overlays. */
+
+}

@@ -1,4 +1,4 @@
-import test from 'node:test';
+import {test,afterAll} from 'vitest';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -8,7 +8,7 @@ import {pathToFileURL, fileURLToPath} from 'node:url';
 const work = await mkdtemp(join(tmpdir(), 'relay-entry-'));
 await build({entryPoints: [fileURLToPath(new URL('../../src/launcher/relay-entry-routing.mts', import.meta.url))], bundle: true, platform: 'node', format: 'esm', outfile: join(work, 'routing.mjs')});
 const {createRelayEntryRouting} = await import(pathToFileURL(join(work, 'routing.mjs')));
-test.after(() => rm(work, {recursive: true, force: true}));
+afterAll(() => rm(work, {recursive: true, force: true}));
 const primary = 'wss://primary.example/netplay/';
 const backup = 'wss://backup.example/netplay/';
 class Socket extends EventTarget {
@@ -27,6 +27,30 @@ function fixture(timeout = 1000) {
   return {router, sockets};
 }
 const flush = () => new Promise(resolve => queueMicrotask(resolve));
+
+test('room, directory and diagnostic roles use ordinary relay entries and preserve identity', async () => {
+  const {router, sockets} = fixture();
+  const query = '?room=th09-1234&run=run-1&member=a%2Bb&lobby=1';
+  assert.equal(router.resolve(primary), primary);
+  const routed = router.createSocket(primary + query);
+  await flush();
+  assert.equal(sockets[0].url, primary + query);
+  sockets[0].fail(); sockets[1].open();
+  assert.equal(sockets[1].url, backup + query);
+  for (const role of ['directory', 'diagnostic']) {
+    const client = router.createSocket(primary + query + `&${role}=1`);
+    await flush();
+    const url = new URL(sockets.at(-1).url);
+    assert.equal(url.origin, new URL(backup).origin);
+    assert.equal(url.searchParams.get('room'), 'th09-1234');
+    assert.equal(url.searchParams.get('run'), 'run-1');
+    assert.equal(url.searchParams.get('member'), 'a+b');
+    assert.equal(url.searchParams.has('channel'), false);
+    assert.equal(url.searchParams.get(role), '1');
+    client.close();
+  }
+  routed.close();
+});
 test('primary success makes no backup connection', async () => {
   const {router, sockets} = fixture();
   const routed = router.createSocket(primary + '?room=th09-1234&member=a%2Bb');
@@ -76,6 +100,9 @@ test('all failed entries report one terminal failure', async () => {
   routed.addEventListener('error', () => errors++); routed.addEventListener('close', () => closes++);
   await flush(); sockets[0].fail(); sockets[1].fail();
   assert.equal(errors, 1); assert.equal(closes, 1); assert.equal(routed.readyState, 3);
+  assert.deepEqual(routed.failedAttempts, [
+    {host: 'primary.example', reason: 'connection'}, {host: 'backup.example', reason: 'connection'},
+  ]);
 });
 test('application rejection does not try another entry', async () => {
   const {router, sockets} = fixture();

@@ -2,13 +2,16 @@
  * The clock and media queries are explicit fixtures. No browser, rendered CSS,
  * mobile device, native runtime, network or deployment validation is claimed.
  */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
+import {authoredSourcesPlugin} from './authored-sources.mjs';
 import {installMountedDom} from './mounted-dom-environment.mjs';
+import {installNativeTimeline} from './native-animation-environment.mjs';
+const motions=[];
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
 let env, work, React, createRoot, createMemoryRouter, RouterProvider, useLocation, useNavigate, owners;
@@ -16,6 +19,7 @@ let mounted = null;
 
 before(async () => {
   env = installMountedDom();
+  installNativeTimeline(env.window,motions);
   React = await import('react');
   ({createRoot} = await import('react-dom/client'));
   ({createMemoryRouter, RouterProvider, useLocation, useNavigate} = await import('react-router'));
@@ -26,6 +30,7 @@ before(async () => {
     export {OptionsOwnership} from './app/components/launcher/options-ownership.ts';
     export {useLibraryOptionsPresence} from './app/components/launcher/use-library-options-presence.ts';
     export {OptionsPanel} from './app/components/launcher/OptionsPanel.tsx';
+    export {OptionsBackdrop} from './app/components/launcher/OptionsBackdrop.tsx';
     export {LibrarySurface} from './app/components/launcher/LibrarySurface.tsx';
     export {LibraryCards} from './app/components/launcher/LibraryCards.tsx';
     export {LobbyOptionsHost} from './app/components/launcher/LobbyOptionsHost.tsx';
@@ -33,7 +38,7 @@ before(async () => {
     export {LocaleProvider} from './app/i18n.tsx';
     export {createLibraryProducts} from './app/components/launcher/products.ts';
   `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', outfile: output,
-  packages: 'external', logLevel: 'silent'});
+  packages: 'external', logLevel: 'silent', plugins: [authoredSourcesPlugin(project)]});
   owners = await import(pathToFileURL(output).href);
 });
 
@@ -45,10 +50,11 @@ afterEach(async () => {
     mounted = null;
   }
   assert.deepEqual(env.errors, [], 'uncaught DOM/React errors fail this synthetic fixture');
-  assert.equal(env.document.querySelectorAll('.mizuki-select-menu').length, 0, 'detached menus are disposed');
+  assert.equal(env.document.querySelectorAll('.ui-select-content').length, 0, 'detached menus are disposed');
   assert.equal(env.document.body.classList.contains('library-tools-open'), false);
   assert.equal(env.document.body.classList.contains('library-tools-closing'), false);
   env.document.body.replaceChildren();
+  motions.length=0;
 });
 after(async () => {env?.close(); if (work) await rm(work, {recursive: true, force: true});});
 
@@ -94,18 +100,18 @@ async function mount({entry = '/?game=th06', mobile = true, coarse = false, noHo
     const productId = new URLSearchParams(location.search).get('game');
     const context = location.pathname === '/lobby.html' ? 'lobby' : 'library';
     const presence = owners.useLibraryOptionsPresence({open: productId !== null, context,
-      product: products.find(product => product.id === productId), lessMotion, concealed: location.hash === '#playing'});
+      product: products.find(product => product.id === productId), lessMotion, concealed: location.hash === '#playing', focusActive: location.hash !== '#touch'});
     observed.push(presence);
     const onBack = () => navigate(context === 'lobby' ? '/lobby.html' : '/');
     const panel = presence.product && React.createElement(owners.OptionsPanel, {product: presence.product,
-      open: presence.open, onBack, assetUrl: path => `/fixtures/${path}`},
+      open: presence.open, closing:presence.closing, onBack, assetUrl: path => `/fixtures/${path}`},
     React.createElement(owners.MainSelect, {id: 'presenceSelect', 'aria-label': 'Synthetic options select', defaultValue: 'a'},
       React.createElement('option', {value: 'a'}, 'A'), React.createElement('option', {value: 'b'}, 'B')));
     return React.createElement(owners.OptionsOwnership, {value: presence.targets}, React.createElement(owners.LocaleProvider, {locale: 'en'},
-      context === 'library' ? React.createElement(owners.LibrarySurface, {products,
+      context === 'library' ? React.createElement(React.Fragment,null,React.createElement(owners.LibrarySurface, {products,
         selectedProduct: 'th06', openedProduct: presence.openedProduct, optionsOpen: presence.open,
         onSelect() {}, onActivate: id => navigate(`/?game=${id}`), onBack,
-        masthead: null, footer: null, lobbyHref: '/lobby.html', roomUsersArtwork: '/fixtures/room-users.svg'}, panel)
+        masthead: null, lobbyHref: '/lobby.html', roomUsersArtwork: '/fixtures/room-users.svg'}), React.createElement(owners.OptionsBackdrop,{onBack}),panel)
         : React.createElement('div', {'data-fixture-lobby': true, className: 'main library-layout'},
           React.createElement('div', {className: 'game-library', inert: presence.open},
             React.createElement(owners.LibraryCards, {products, variant: 'lobby', selectedProduct: 'th06', openedProduct: presence.openedProduct,
@@ -137,258 +143,139 @@ function watchFocus(element) {
   };
   return calls;
 }
-function assertOpen(product = 'th06') {
+function assertOpen(product = 'th06',closing=false) {
   assert.equal(hasBodyClass('library-tools-open'), true);
   assert.equal(node('.tools').getAttribute('role'), 'dialog');
-  assert.equal(node('.tools').getAttribute('aria-modal'), 'true');
-  assert.equal(node('.tools').getAttribute('aria-hidden'), 'false');
+  assert.equal(node('.tools').getAttribute('aria-modal'),closing?null:'true');
+  assert.equal(node('.tools').getAttribute('data-state'),closing?'closed':'open');
+  assert.equal(node('.tools').hasAttribute('inert'),closing);
   assert.equal(node('.tools').classList.contains('is-open'), true);
   assert.ok(node('.game-library').hasAttribute('inert'));
-  assert.equal(node('.game.selected').dataset.game, product);
-  assert.equal(node('.game.selected').getAttribute('aria-current'), 'page');
+  assert.equal(node(':is(.game.selected,.book-game-link[aria-current="page"])').dataset.game, product);
+  assert.equal(node(':is(.game.selected,.book-game-link[aria-current="page"])').getAttribute('aria-current'), 'page');
 }
 function assertClosed() {
   assert.equal(hasBodyClass('library-tools-open'), false);
   assert.equal(hasBodyClass('library-tools-closing'), false);
-  assert.equal(node('.tools').getAttribute('role'), 'complementary');
-  assert.equal(node('.tools').getAttribute('aria-modal'), 'false');
-  assert.equal(node('.tools').getAttribute('aria-hidden'), 'true');
+  assert.equal(node('.tools').getAttribute('role'), 'dialog');
+  assert.equal(node('.tools').hasAttribute('aria-modal'), false, 'a closed inert surface does not claim modal ownership');
+  assert.equal(node('.tools').hasAttribute('inert'), true);
   assert.equal(node('.tools').classList.contains('is-open'), false);
   assert.equal(node('.game-library').hasAttribute('inert'), false);
-  assert.equal(env.document.querySelector('.game.selected'), null);
-  assert.equal(node('.game-th06').getAttribute('aria-current'), 'false');
+  assert.equal(env.document.querySelector(':is(.game.selected,.book-game-link[aria-current="page"])'), null);
+  assert.equal(node(':is(.game-th06,.book-game-link[data-game="th06"])').getAttribute('aria-current'), 'false');
 }
 
-test('mobile close retains exact panel/selection for 240 ms, closes detached menus, then restores focus', async () => {
-  const {clock} = await mount();
-  const panel = node('.tools'), selected = node('.game.selected'), focusCalls = watchFocus(selected);
-  const trigger = node('.mizuki-select-trigger');
-  await React.act(async () => {trigger.click();});
-  const menu = node('.mizuki-select-menu');
-  assert.equal(menu.parentNode, env.document.body, 'menu is genuinely detached from the panel');
-  assert.equal(menu.hidden, false);
-  await React.act(async () => {node('#libraryBack').click();});
-  assert.equal(mounted.router.state.location.search, '', 'Router commits home before visual exit');
-  const committedKey = mounted.router.state.location.key;
-  assertOpen();
-  assert.equal(hasBodyClass('library-tools-closing'), true);
-  assert.equal(menu.hidden, true);
-  assert.equal(trigger.getAttribute('aria-expanded'), 'false');
-  assert.equal(node('.tools'), panel);
-  assert.equal([...clock.tasks.values()].filter(task => task.delay === 240).length, 1);
-  assert.deepEqual(focusCalls, []);
-  await clock.advance(239);
-  assertOpen();
-  await clock.advance(1);
-  assertClosed();
-  assert.equal(node('.tools'), panel, 'original panel remains mounted even at home');
-  assert.equal(mounted.router.state.location.key, committedKey, 'settling never writes another history entry');
-  assert.equal(env.document.activeElement, selected);
-  assert.deepEqual(focusCalls, [{options: {preventScroll: true}, inert: false, open: false, closing: false}]);
-});
 
-for (const media of [{}, {mobile: false}, {reduced: true}, {lessMotion: true}, {mobile: false, coarse: true}]) {
-  test(`directory native carrier follows the shared close deadline and keeps selected card focus ${JSON.stringify(media)}`, async () => {
-    const {clock} = await mount({entry: '/lobby.html?game=th06', ...media});
-    const panel = node('.tools'), dialog = node('#lobbyOptionsDialog'), card = node('.game.selected');
-    assertOpen(); assert.equal(dialog.open, true);
-    await React.act(async () => node('#libraryBack').click());
-    assert.equal(mounted.router.state.location.pathname, '/lobby.html');
-    const immediate = media.reduced || media.lessMotion;
-    const deadline = media.mobile === false && !media.coarse ? 520 : 240;
-    if (!immediate) {
-      assertOpen(); assert.equal(dialog.open, true); assert.equal(hasBodyClass('library-tools-closing'), true);
-      assert.equal([...clock.tasks.values()].filter(task => task.delay === deadline).length, 1, 'one common owner, no carrier timer');
-      await clock.advance(deadline - 1); assert.equal(dialog.open, true);
-      await clock.advance(1);
-    }
-    assertClosed(); assert.equal(dialog.open, false); assert.equal(node('.tools'), panel);
-    assert.equal(env.document.activeElement, card); assert.equal([...clock.tasks.values()].some(task => task.delay === 240 || task.delay === 520 || task.delay === 650), false);
-  });
+function currentMotion() {
+  const panel=node('.tools');
+  const motion=motions.findLast(item=>item.node===panel&&!item.settled&&!item.cancelled);
+  assert.ok(motion,'Options have an active native animation');return motion;
 }
-test('directory reopen cancels a shared exit without closing the retained native carrier', async () => {
-  const {clock} = await mount({entry: '/lobby.html?game=th06'});
-  const dialog = node('#lobbyOptionsDialog'), panel = node('.tools');
-  await navigate('/lobby.html');
-  const pending = [...clock.tasks.values()].find(task => task.delay === 240); assert.ok(pending);
-  await clock.advance(100); await navigate('/lobby.html?game=th07');
-  await React.act(async () => pending.run()); await clock.advance(500);
-  assertOpen('th07'); assert.equal(dialog.open, true); assert.equal(node('.tools'), panel);
-  assert.equal(hasBodyClass('library-tools-closing'), false);
-});
-
-test('desktop close retains the established slide/fade for 520 ms before releasing selection and focus', async () => {
-  const {clock} = await mount({mobile: false});
-  const selected = node('.game.selected'), focusCalls = watchFocus(selected);
-  await navigate('/'); assertOpen(); assert.equal(hasBodyClass('library-tools-closing'), true);
-  await clock.advance(519); assertOpen(); assert.deepEqual(focusCalls, []);
-  await clock.advance(1); assertClosed(); assert.equal(env.document.activeElement, selected);
-});
-for (const [label, media] of [
-  ['reduced motion', {reduced: true}],
-  ['site less motion', {lessMotion: true}],
-]) test(`${label}: close settles immediately with no exit timer`, async () => {
-  const {clock} = await mount(media);
-  const selected = node('.game.selected'), focusCalls = watchFocus(selected);
-  await navigate('/');
-  assertClosed();
-  assert.equal([...clock.tasks.values()].some(task => task.delay === 240), false);
-  assert.equal(env.document.activeElement, selected);
-  assert.deepEqual(focusCalls, [{options: {preventScroll: true}, inert: false, open: false, closing: false}]);
-});
-
-for (const [label, media] of [['coarse pointer', {coarse: true}], ['no hover', {noHover: true}]]) {
-  test(`wide ${label} still uses original mobile exit query`, async () => {
-    const {clock} = await mount({mobile: false, ...media});
-    await navigate('/');
-    assertOpen();
-    assert.equal(hasBodyClass('library-tools-closing'), true);
-    await clock.advance(240);
-    assertClosed();
-  });
+async function finishOptions() {
+  const panel=node('.tools');currentMotion();
+  await React.act(async()=>{for(const motion of motions.filter(item=>(item.node===panel||item.node.id==='libraryBackdrop')&&!item.settled&&!item.cancelled))motion.finish();});
 }
 
-test('reopen cancels an old completion and retains the newly selected product', async () => {
-  const {clock} = await mount();
-  const firstCard = node('.game.selected'), firstFocus = watchFocus(firstCard);
-  await navigate('/');
-  const oldCompletion = [...clock.tasks.values()].find(task => task.delay === 240);
-  assert.ok(oldCompletion);
-  await clock.advance(100);
-  await navigate('/?game=th07');
-  assertOpen('th07');
-  assert.equal(hasBodyClass('library-tools-closing'), false);
-  assert.equal(node('#gameId').dataset.game, 'th07');
-  assert.equal(clock.tasks.has(oldCompletion.id), false);
-  await React.act(async () => {oldCompletion.run();});
-  await clock.advance(500);
-  assertOpen('th07');
-  assert.deepEqual(firstFocus, [], 'obsolete callback cannot focus the old selected card');
-  const nextCard = node('.game.selected'), nextFocus = watchFocus(nextCard);
-  await navigate('/'); await clock.advance(240);
-  assertClosed();
-  assert.equal(env.document.activeElement, nextCard);
-  assert.equal(nextFocus.length, 1);
+for(const context of ['library','lobby'])for(const device of ['desktop','mobile','coarse'])test(context+' '+device+': route commits before completion, preserving controls and selection until focus can return',async()=>{
+  const home=context==='lobby'?'/lobby.html':'/';
+  const {clock,observed}=await mount({entry:home+'?game=th06',mobile:device==='mobile',coarse:device==='coarse'});
+  const panel=node('.tools'),card=node(':is(.game.selected,.book-game-link[aria-current="page"])'),focus=watchFocus(card);
+  await React.act(async()=>{panel.querySelector('.ui-select-trigger').click();});
+  assert.ok(node('.ui-select-content'));
+  await navigate(home);
+  assert.equal(mounted.router.state.location.search,'');assertOpen('th06',true);assert.equal(hasBodyClass('library-tools-closing'),true);
+  assert.equal(node('.tools'),panel);assert.equal(observed.at(-1).closing,true);
+  assert.equal(env.document.querySelector('.ui-select-content'),null);assert.deepEqual(focus,[]);
+  if(context==='lobby')assert.equal(node('#lobbyOptionsDialog').open,true);
+  await clock.advance(10000);assertOpen('th06',true);assert.deepEqual(focus,[]);
+  await finishOptions();assertClosed();assert.equal(node('.tools'),panel);
+  assert.equal(observed.at(-1).closing,false);assert.equal(env.document.activeElement,card);
+  assert.equal(focus.length,1);assert.equal(focus[0].inert,false);
+  if(context==='lobby')assert.equal(node('#lobbyOptionsDialog').open,false);
 });
 
-test('repeated closed Router updates do not restart the original deadline', async () => {
-  const {clock} = await mount();
-  await navigate('/');
-  const original = [...clock.tasks.values()].find(task => task.delay === 240);
-  await clock.advance(100);
-  await navigate('/?keep=still-home');
-  assert.equal([...clock.tasks.values()].find(task => task.delay === 240), original);
-  await clock.advance(140);
-  assertClosed();
-  assert.equal(mounted.router.state.location.search, '?keep=still-home');
+for(const setting of ['system','site','zero','unsupported'])test(setting+': no-motion closing releases selection immediately',async()=>{
+  const {clock}=await mount({reduced:setting==='system',lessMotion:setting==='site'});
+  const panel=node('.tools');
+  if(setting==='zero')panel.style.setProperty('--ui-surface-duration','0ms');
+  if(setting==='unsupported')panel.animate=undefined;
+  await navigate('/');assertClosed();
+  assert.equal([...clock.tasks.values()].some(task=>task.delay===220||task.delay===180),false);
 });
 
-test('context switch retires a library exit without stealing focus in the lobby', async () => {
-  const {clock} = await mount();
-  const oldCard = node('.game.selected'), focusCalls = watchFocus(oldCard);
-  await navigate('/');
-  const oldCompletion = [...clock.tasks.values()].find(task => task.delay === 240);
-  await navigate('/lobby.html');
-  assert.equal(hasBodyClass('library-tools-open'), false);
-  assert.equal(hasBodyClass('library-tools-closing'), false);
-  assert.equal(clock.tasks.has(oldCompletion.id), false);
-  await React.act(async () => {oldCompletion.run();});
-  assert.deepEqual(focusCalls, []);
-  assert.ok(node('[data-fixture-lobby]'));
+test('reopening cancels the prior close and cannot move focus to a retired selection',async()=>{
+  const {clock}=await mount();const first=node(':is(.game.selected,.book-game-link[aria-current="page"])'),firstFocus=watchFocus(first);
+  await navigate('/');const closing=currentMotion();
+  await navigate('/?game=th07');assert.equal(closing.cancelled,true);assertOpen('th07');
+  await React.act(async()=>closing.finish());await clock.advance(10000);assertOpen('th07');assert.deepEqual(firstFocus,[]);
+  await finishOptions();assertOpen('th07');
+  const second=node(':is(.game.selected,.book-game-link[aria-current="page"])'),secondFocus=watchFocus(second);
+  await navigate('/');await finishOptions();assertClosed();assert.equal(secondFocus.length,1);assert.deepEqual(firstFocus,[]);
 });
 
-test('lobby route commits before the shared visual close retires its native carrier', async () => {
-  const {clock, observed} = await mount({entry: '/lobby.html?game=th06'});
-  await navigate('/lobby.html');
-  assert.equal(mounted.router.state.location.search, '');
-  assert.equal(observed.at(-1).open, true);
-  assert.equal(observed.at(-1).closing, true);
-  assert.equal(node('#lobbyOptionsDialog').open, true);
-  await clock.advance(240);
-  assert.equal(observed.at(-1).open, false);
-  assert.equal(observed.at(-1).closing, false);
-  assert.equal(hasBodyClass('library-tools-open'), false);
-  assert.equal([...clock.tasks.values()].some(task => task.delay === 240), false);
+test('repeated closed Router updates do not restart a pending animation',async()=>{
+  await mount();await navigate('/');const closing=currentMotion();
+  await navigate('/?keep=still-home');assert.equal(currentMotion(),closing);
+  await finishOptions();assertClosed();assert.equal(mounted.router.state.location.search,'?keep=still-home');
 });
 
-test('StrictMode and unmount leave no timer, stale focus callback or body state', async () => {
-  const {clock} = await mount({strict: true});
+test('context changes retire the old exit without stealing focus',async()=>{
+  await mount();const focus=watchFocus(node(':is(.game.selected,.book-game-link[aria-current="page"])'));
+  await navigate('/');const closing=currentMotion();await navigate('/lobby.html');
+  assert.equal(closing.cancelled,true);assert.equal(hasBodyClass('library-tools-open'),false);assert.equal(hasBodyClass('library-tools-closing'),false);
+  await React.act(async()=>closing.finish());assert.deepEqual(focus,[]);assert.ok(node('[data-fixture-lobby]'));
+});
+
+test('StrictMode and unmount cancel effects and stale callbacks without body state or focus changes',async()=>{
+  const {clock}=await mount({strict:true});assertOpen();const focus=watchFocus(node(':is(.game.selected,.book-game-link[aria-current="page"])'));
+  await navigate('/');const closing=currentMotion();await unmount();assert.equal(closing.cancelled,true);
+  await React.act(async()=>closing.finish());await clock.advance(10000);
+  assert.deepEqual(focus,[]);assert.equal(hasBodyClass('library-tools-open'),false);assert.equal(hasBodyClass('library-tools-closing'),false);
+});
+
+test('initial closed state never creates an animation, selection or focus return',async()=>{
+  const {observed}=await mount({entry:'/',strict:true});assert.equal(observed.at(-1).open,false);
+  assert.equal(env.document.querySelector(':is(.game.selected,.book-game-link[aria-current="page"])'),null);assert.equal(motions.length,0);
+});
+
+test('touch foreground suspends options focus until the same options surface returns', async () => {
+  await mount();
+  const back = node('#libraryBack'), focus = watchFocus(back);
+  await navigate('/?game=th06#touch');
   assertOpen();
-  const selected = node('.game.selected'), focusCalls = watchFocus(selected);
-  await navigate('/');
-  assertOpen();
-  const completion = [...clock.tasks.values()].find(task => task.delay === 240);
-  assert.ok(completion);
-  await unmount();
-  assert.equal(clock.tasks.has(completion.id), false);
-  await React.act(async () => {completion.run();});
-  await clock.advance(500);
-  assert.deepEqual(focusCalls, []);
-  assert.equal(hasBodyClass('library-tools-open'), false);
-  assert.equal(hasBodyClass('library-tools-closing'), false);
-});
-
-test('initial closed state never creates a selection or restores focus', async () => {
-  const {clock, observed} = await mount({entry: '/', strict: true});
-  assert.equal(observed.at(-1).open, false);
-  assert.equal(hasBodyClass('library-tools-open'), false);
-  assert.equal(hasBodyClass('library-tools-closing'), false);
-  assert.equal(env.document.querySelector('.game.selected'), null);
-  assert.equal([...clock.tasks.values()].some(task => task.delay === 240), false);
-});
-
-// main4564–4573: a running game conceals retained Options; it does not close
-// selection or move focus back into the library behind the Player.
-test('launched Player conceals retained Options without a close animation or card focus', async () => {
-  const {clock} = await mount();
-  const panel = node('.tools'), selected = node('.game.selected'), focusCalls = watchFocus(selected);
-  await navigate('/?game=th06#playing');
-  assertClosed();
-  assert.equal(node('.tools'), panel);
-  assert.equal(mounted.router.state.location.search, '?game=th06');
-  await clock.advance(240);
-  assert.equal(focusCalls.length, 0);
+  assert.deepEqual(focus, [], 'a retained options panel must not steal focus from the touch editor');
   await navigate('/?game=th06');
   assertOpen();
-  assert.equal(node('.tools'), panel);
+  assert.equal(focus.length, 1);
+  assert.equal(focus[0].options.preventScroll, true);
+  assert.equal(env.document.activeElement, back);
 });
 
-for (const context of ['library', 'lobby']) for (const [mobile, duration] of [[true, 200], [false, 480], [true, 360]]) {
-  test(`${context}: one common closing CSS change drives the ${duration} ms transform plus margin`, async () => {
-    const home = context === 'lobby' ? '/lobby.html' : '/';
-    const {clock} = await mount({mobile, entry: `${home}?game=th06`});
-    const css = env.document.createElement('style');
-    css.textContent = `.tools {transition-property: opacity, transform; transition-duration: 9s, 7s; transition-delay: 0s;} body.library-tools-closing .tools {transition-duration: 9s, ${duration}ms;}`;
-    env.document.body.append(css);
-    await navigate(home);
-    assertOpen();
-    assert.equal([...clock.tasks.values()].filter(task => task.delay === duration + 40).length, 1);
-    if (context === 'lobby') assert.equal(node('#lobbyOptionsDialog').open, true);
-    await clock.advance(duration + 39); assertOpen();
-    await clock.advance(1); assertClosed();
-    if (context === 'lobby') assert.equal(node('#lobbyOptionsDialog').open, false);
-  });
-}
-
-test('authored zero transform motion retires immediately rather than using the no-CSS fallback', async () => {
-  const {clock} = await mount();
-  node('.tools').style.transitionProperty = 'transform';
-  node('.tools').style.transitionDuration = '0s';
-  await navigate('/'); assertClosed();
-  assert.equal([...clock.tasks.values()].some(task => task.delay === 240 || task.delay === 40), false);
+test('launched Player conceals retained options and restores the same nodes when it leaves',async()=>{
+  await mount();const panel=node('.tools'),focus=watchFocus(node(':is(.game.selected,.book-game-link[aria-current="page"])'));
+  await navigate('/?game=th06#playing');assertClosed();assert.equal(node('.tools'),panel);assert.deepEqual(focus,[]);
+  await navigate('/?game=th06');assertOpen();assert.equal(node('.tools'),panel);
 });
 
-test('inactive retained carrier cannot capture active card return focus or entrance measurement', async () => {
-  const decoy = env.document.createElement('section');
-  decoy.innerHTML = '<a class="game selected" href="#wrong">Inactive</a><div class="main library-layout"><aside class="tools"></aside></div>';
-  env.document.body.prepend(decoy);
-  const wrong = decoy.querySelector('a'), wrongFocus = watchFocus(wrong);
-  let measurements = 0;
-  decoy.querySelector('.tools').getBoundingClientRect = () => {measurements++; return new env.window.DOMRect();};
-  const {clock} = await mount();
-  const active = env.document.querySelector('.sheet .game.selected');
-  await navigate('/'); await clock.advance(240);
-  assert.equal(env.document.activeElement, active);
-  assert.deepEqual(wrongFocus, []);
-  assert.equal(measurements, 0);
+for(const [context,mobile] of [['library',true],['library',false],['lobby',true],['lobby',false]])test(`${context} ${mobile?'phone':'desktop'}: a surface timing token controls the real animation, with no mirrored deadline`,async()=>{
+  const home=context==='lobby'?'/lobby.html':'/';const {clock}=await mount({entry:home+'?game=th06',mobile});
+  node('.tools').style.setProperty(mobile?'--ui-surface-duration':'--ui-window-exit-duration','360ms');await navigate(home);
+  assert.equal(currentMotion().options.duration,360);await clock.advance(10000);assertOpen('th06',true);await finishOptions();assertClosed();
+});
+
+test('enabling less motion during close finishes the active effect and restores focus once',async()=>{
+  await mount();const focus=watchFocus(node(':is(.game.selected,.book-game-link[aria-current="page"])'));await navigate('/');
+  await React.act(async()=>{env.document.body.classList.add('less-motion');});
+  assertClosed();assert.equal(focus.length,1);env.document.body.classList.remove('less-motion');
+});
+
+test('inactive retained carriers cannot capture focus or force entrance measurements',async()=>{
+  const decoy=env.document.createElement('section');decoy.innerHTML='<a class="game selected" href="#wrong">Inactive</a><div class="main library-layout"><aside class="tools"></aside></div>';
+  env.document.body.prepend(decoy);const wrongFocus=watchFocus(decoy.querySelector('a'));let measurements=0;
+  decoy.querySelector('.tools').getBoundingClientRect=()=>{measurements++;return new env.window.DOMRect();};
+  await mount();const active=env.document.querySelector('.sheet :is(.game.selected,.book-game-link[aria-current="page"])');
+  await navigate('/');
+  await React.act(async()=>{for(const motion of motions.filter(item=>!item.settled&&!item.cancelled))motion.finish();});
+  assert.equal(env.document.activeElement,active);assert.deepEqual(wrongFocus,[]);assert.equal(measurements,0);
 });

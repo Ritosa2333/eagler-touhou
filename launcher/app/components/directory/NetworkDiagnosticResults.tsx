@@ -1,5 +1,6 @@
 import {useLocale} from '../../i18n';
 import type {NetworkDiagnosticsSnapshot} from './network-diagnostics-model';
+import './network-diagnostic-results.css';
 /** Same original result tree in index468–490 and lobby112–130. Root mounts
  * only the presentation belonging to its document context to keep IDs unique. */
 export function NetworkDiagnosticResults({snapshot}: {snapshot: NetworkDiagnosticsSnapshot}) {

@@ -1,0 +1,226 @@
+{
+  "passed": true,
+  "staged": false,
+  "vanilla": true,
+  "origin": "https://test.touhou.vip",
+  "cards": [
+    {
+      "game": "th05",
+      "product": null,
+      "shelf": "singleplayer",
+      "href": "https://test.touhou.vip/?game=th05",
+      "hidden": false
+    },
+    {
+      "game": "th06",
+      "product": null,
+      "shelf": "singleplayer",
+      "href": "https://test.touhou.vip/?game=th06",
+      "hidden": false
+    },
+    {
+      "game": "th07",
+      "product": null,
+      "shelf": "singleplayer",
+      "href": "https://test.touhou.vip/?game=th07",
+      "hidden": false
+    },
+    {
+      "game": "th075",
+      "product": null,
+      "shelf": "singleplayer",
+      "href": "https://test.touhou.vip/?game=th075",
+      "hidden": false
+    },
+    {
+      "game": "th08",
+      "product": null,
+      "shelf": "singleplayer",
+      "href": "https://test.touhou.vip/?game=th08",
+      "hidden": false
+    },
+    {
+      "game": "th09",
+      "product": null,
+      "shelf": "singleplayer",
+      "href": "https://test.touhou.vip/?game=th09",
+      "hidden": false
+    },
+    {
+      "game": "th10",
+      "product": null,
+      "shelf": "singleplayer",
+      "href": "https://test.touhou.vip/?game=th10",
+      "hidden": false
+    },
+    {
+      "game": "th11",
+      "product": null,
+      "shelf": "singleplayer",
+      "href": "https://test.touhou.vip/?game=th11",
+      "hidden": false
+    },
+    {
+      "game": "th12",
+      "product": null,
+      "shelf": "singleplayer",
+      "href": "https://test.touhou.vip/?game=th12",
+      "hidden": false
+    },
+    {
+      "game": "th13",
+      "product": null,
+      "shelf": "singleplayer",
+      "href": "https://test.touhou.vip/?game=th13",
+      "hidden": false
+    },
+    {
+      "game": "th15",
+      "product": null,
+      "shelf": "singleplayer",
+      "href": "https://test.touhou.vip/?game=th15",
+      "hidden": false
+    },
+    {
+      "game": "th17",
+      "product": null,
+      "shelf": "singleplayer",
+      "href": "https://test.touhou.vip/?game=th17",
+      "hidden": false
+    },
+    {
+      "game": "th20",
+      "product": null,
+      "shelf": "singleplayer",
+      "href": "https://test.touhou.vip/?game=th20",
+      "hidden": false
+    },
+    {
+      "game": "th01",
+      "product": null,
+      "shelf": "classics",
+      "href": "https://test.touhou.vip/th01",
+      "hidden": false
+    },
+    {
+      "game": "th02",
+      "product": null,
+      "shelf": "classics",
+      "href": "https://test.touhou.vip/th02",
+      "hidden": false
+    },
+    {
+      "game": "th03",
+      "product": null,
+      "shelf": "classics",
+      "href": "https://test.touhou.vip/th03",
+      "hidden": false
+    },
+    {
+      "game": "th04",
+      "product": null,
+      "shelf": "classics",
+      "href": "https://test.touhou.vip/th04",
+      "hidden": false
+    },
+    {
+      "game": "th05",
+      "product": "th05-standalone",
+      "shelf": "multiplayer",
+      "href": "https://test.touhou.vip/th05",
+      "hidden": false
+    },
+    {
+      "game": "th06",
+      "product": "th06mp",
+      "shelf": "multiplayer",
+      "href": "https://test.touhou.vip/?game=th06mp",
+      "hidden": false
+    },
+    {
+      "game": "th07",
+      "product": "th07mp",
+      "shelf": "multiplayer",
+      "href": "https://test.touhou.vip/?game=th07mp",
+      "hidden": false
+    },
+    {
+      "game": "th075",
+      "product": "th075mp",
+      "shelf": "multiplayer",
+      "href": "https://test.touhou.vip/?game=th075mp",
+      "hidden": false
+    },
+    {
+      "game": "th08",
+      "product": "th08mp",
+      "shelf": "multiplayer",
+      "href": "https://test.touhou.vip/?game=th08mp",
+      "hidden": false
+    },
+    {
+      "game": "th09",
+      "product": "th09mp",
+      "shelf": "multiplayer",
+      "href": "https://test.touhou.vip/?game=th09mp",
+      "hidden": false
+    },
+    {
+      "game": "th10",
+      "product": "th10mp",
+      "shelf": "multiplayer",
+      "href": "https://test.touhou.vip/?game=th10mp",
+      "hidden": false
+    },
+    {
+      "game": "th11",
+      "product": "th11mp",
+      "shelf": "multiplayer",
+      "href": "https://test.touhou.vip/?game=th11mp",
+      "hidden": false
+    },
+    {
+      "game": "th12",
+      "product": "th12mp",
+      "shelf": "multiplayer",
+      "href": "https://test.touhou.vip/?game=th12mp",
+      "hidden": false
+    },
+    {
+      "game": "th15",
+      "product": "th15mp",
+      "shelf": "multiplayer",
+      "href": "https://test.touhou.vip/?game=th15mp",
+      "hidden": false
+    }
+  ],
+  "native": {
+    "enabled": 0,
+    "codepage": 932,
+    "scene": 2,
+    "ticks": 260,
+    "font": "/msgothic.ttc",
+    "audio": {
+      "backend": "uth05-browser-audio",
+      "robust": true,
+      "mode": "ogg",
+      "decodeMode": "full",
+      "musicSource": "original",
+      "track": "OP.M2",
+      "path": "/music/op-m86-opus64-single-loop-v2.ogg",
+      "playing": true,
+      "loopStart": 0.018,
+      "loopEnd": 82.099,
+      "queuedMs": 0,
+      "underruns": 0,
+      "sfx": {
+        "backend": "uth05win-original-se",
+        "played": 12,
+        "restarted": 7,
+        "active": []
+      }
+    }
+  },
+  "runtimeErrors": [],
+  "errors": []
+}

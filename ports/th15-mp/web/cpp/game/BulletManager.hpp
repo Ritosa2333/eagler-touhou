@@ -4,20 +4,25 @@
 #include <functional>
 #include <bitset>
 namespace th15 {
+class BulletScene;
 namespace multiplayer {class BulletFrameState;}
 struct BulletManagerHost:BulletSoundHost {virtual ~BulletManagerHost()=default;virtual BulletFrameHost& bullet(u32 slot)=0;virtual void prepare(u32 slot,BulletFrameContext& context)=0;virtual const std::string* failure()const noexcept{return nullptr;}};
 class BulletManager final:public BulletEmissionHost {
     friend class BulletCheckpoint;
     friend class BulletScene;
     friend class multiplayer::BulletFrameState;
+    friend void inherit_nearby_bullet_motion(BulletManager&)noexcept;
+    friend void scale_bullets_near_players(BulletManager&,const PlayerCollision*,u32,float,bool)noexcept;
+    friend bool cancel_unmarked_bullets(BulletScene&,const Vec3&,float);
     struct Slot {BulletState state;u32 free_next=UINT32_MAX,active_next=UINT32_MAX,active_previous=UINT32_MAX;bool active=false;};
     std::vector<Slot> slots;u32 free_head=UINT32_MAX,active_head=UINT32_MAX;
     // Copy cold slots only when their content changes. The serial never rewinds:
     // divergent futures must not reuse the identity of an abandoned snapshot.
     inline static u64 snapshot_serial=0;
-    std::vector<u64> snapshot_versions;
+    std::vector<u64> snapshot_versions,snapshot_runtime_versions;
     std::bitset<2000> snapshot_exposed;
-    void changed(u32 index)noexcept{snapshot_versions[index]=++snapshot_serial;}
+    void changed(u32 index)noexcept{snapshot_versions[index]=snapshot_runtime_versions[index]=++snapshot_serial;}
+    void runtime_changed(u32 index)noexcept{snapshot_runtime_versions[index]=++snapshot_serial;}
     BulletManagerHost& host;
     u32 acquire()noexcept;
 public:

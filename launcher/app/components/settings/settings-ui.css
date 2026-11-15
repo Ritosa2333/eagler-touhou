@@ -1,0 +1,559 @@
+@layer components {
+  .input-settings-dialog.ui-kit-dialog {
+    --input-dialog-limit: min(680px, calc(100dvh - 64px));
+    --input-gutter: 24px;
+    --input-label-width: 72px;
+    --input-control-height: 36px;
+    width: min(680px, calc(100vw - 32px));
+    height: var(--input-dialog-limit);
+    max-height: var(--input-dialog-limit);
+    padding: 0;
+    overflow: hidden;
+  }
+  .input-settings-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: var(--input-dialog-limit);
+    min-height: 0;
+  }
+  .input-settings-body > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: none;
+    min-height: 64px;
+    padding: 10px calc(var(--input-gutter) - 8px) 10px var(--input-gutter);
+    border-bottom: 1px solid var(--kit-border);
+    background: var(--kit-card);
+  }
+  .input-settings-body > header h2 {
+    margin: 0;
+    font: 600 17px / 1.4 var(--kit-font);
+    color: var(--kit-foreground);
+  }
+  .input-settings-dialog .input-dialog-scroll {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 20px var(--input-gutter);
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+  }
+  .input-settings-dialog .input-dialog-close {
+    position: static;
+    margin: 0;
+    min-width: 44px;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--kit-muted-foreground);
+  }
+  .input-settings-dialog .input-device-tabs {
+    display: flex;
+    flex: none;
+    gap: 24px;
+    margin: 0;
+    padding: 0 var(--input-gutter);
+    border-bottom: 1px solid var(--kit-border);
+    background: transparent;
+  }
+  .input-settings-dialog .input-device-tabs .ui-tabs-trigger {
+    flex: none;
+    position: relative;
+  }
+  .input-settings-dialog .input-config .input-device-tabs {
+    padding: 0;
+    margin: 16px 0;
+  }
+  .input-settings-dialog .input-context-toolbar {
+    display: grid;
+    grid-template-columns: var(--input-label-width) minmax(0, 1fr);
+    align-items: center;
+    flex: none;
+    gap: 12px;
+    min-height: 60px;
+    margin: 0;
+    padding: 12px var(--input-gutter);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    border: 0;
+    border-bottom: 1px solid var(--kit-border);
+    border-radius: 0;
+    background: var(--kit-muted);
+    color: var(--kit-muted-foreground);
+  }
+  .input-settings-dialog .input-context-toolbar > label {
+    flex: none;
+    margin: 0;
+    white-space: nowrap;
+    font: 500 12px / 1.5 var(--kit-font);
+    color: var(--kit-muted-foreground);
+  }
+  .input-settings-dialog .input-context-toolbar > .ui-select {
+    flex: 1;
+    min-width: 0;
+  }
+  .input-config {
+    min-width: 0;
+    padding: 0;
+    color: var(--kit-foreground);
+    font: 400 13px / 1.5 var(--kit-font);
+  }
+  .input-config .input-layout-toolbar {
+    display: grid;
+    grid-template-columns: var(--input-label-width, 72px) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 16px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .input-config .input-layout-toolbar > label {
+    font: 500 13px / 1.5 var(--kit-font);
+    color: var(--kit-foreground);
+  }
+  .input-config .input-layout-toolbar > .ui-select {
+    min-width: 0;
+    width: 100%;
+  }
+  .input-config .input-layout-toolbar > .ui-select:last-child {
+    grid-column: 2 / -1;
+  }
+  .input-settings-dialog .ui-select-trigger {
+    min-height: var(--input-control-height);
+  }
+  .input-config .input-config-button {
+    min-height: var(--input-control-height, 36px);
+    border-radius: 6px;
+    font: 500 12px / 1.5 var(--kit-font);
+  }
+  .input-config .input-config-hint {
+    margin: 12px 0;
+    color: var(--kit-muted-foreground);
+    font: 400 12px / 1.65 var(--kit-font);
+  }
+  .input-config .input-binding-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    color: var(--kit-foreground);
+    font: 400 13px / 1.5 var(--kit-font);
+  }
+  .input-config .input-binding-table :is(th, td) {
+    padding: 4px 8px;
+    border: 0;
+    border-bottom: 1px solid var(--kit-border);
+    text-align: left;
+    vertical-align: middle;
+    color: var(--kit-foreground);
+    background: transparent;
+    font: 400 13px / 1.5 var(--kit-font);
+  }
+  .input-config .input-binding-table thead th {
+    color: var(--kit-muted-foreground);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .input-config .input-binding-table th:first-child {
+    width: 38%;
+    padding-left: 0;
+  }
+  .input-config .input-binding-table tbody th {
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+  .input-config .input-binding-table :is(th, td):last-child {
+    width: 44px;
+    padding-inline: 0;
+  }
+  .input-config .input-binding-button {
+    flex-wrap: wrap;
+    width: 100%;
+    min-height: var(--input-control-height, 36px);
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--kit-foreground);
+    font: 400 13px / 1.5 var(--kit-font);
+  }
+  .input-config .input-binding-button:hover {
+    background: var(--kit-muted);
+  }
+  .input-config .input-binding-button[aria-pressed="true"] {
+    box-shadow: inset 0 0 0 1px var(--kit-ring);
+    background: var(--kit-muted);
+  }
+  .input-config .input-keycap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    min-height: 24px;
+    margin: 0;
+    padding: 2px 7px;
+    border: 1px solid var(--kit-border);
+    border-radius: 4px;
+    background: var(--kit-muted);
+    color: var(--kit-foreground);
+    box-shadow: 0 1px 1px #00000008;
+    font: 500 11px / 1.4 var(--kit-font);
+  }
+  .input-config .input-keycap.secondary {
+    opacity: 0.65;
+  }
+  .input-config .input-binding-reset {
+    min-width: 44px;
+    min-height: 44px;
+    box-shadow: none;
+    color: var(--kit-muted-foreground);
+  }
+  .input-binding-empty,
+  .input-binding-listening {
+    color: var(--kit-muted-foreground);
+    white-space: normal;
+    text-align: left;
+  }
+  .input-config .input-config-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 16px 0 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--kit-muted-foreground);
+    font-size: 12px;
+    letter-spacing: normal;
+    text-transform: none;
+  }
+  .input-config-footer > span {
+    flex: 1;
+    min-width: 120px;
+  }
+  .input-config-footer > .input-config-button {
+    margin-left: auto;
+  }
+  .input-config-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-left: auto;
+  }
+  .input-config .input-save-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 16px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .input-config .input-save-layout input {
+    min-width: 0;
+    width: 100%;
+    min-height: var(--input-control-height, 36px);
+    padding: 7px 10px;
+    border: 1px solid var(--kit-input);
+    border-radius: 6px;
+    background: var(--kit-background);
+    color: var(--kit-foreground);
+    font: 400 13px / 1.5 var(--kit-font);
+  }
+  .input-config .input-gamepad-enable {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    margin: 0 0 12px;
+    color: var(--kit-foreground);
+    font-size: 13px;
+  }
+  .input-config .input-axis-threshold {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    color: var(--kit-foreground);
+    font-size: 13px;
+  }
+  .input-axis-threshold > .ui-kit-slider {
+    grid-column: 1 / -1;
+  }
+  .input-axis-threshold > output {
+    color: var(--kit-muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+  .input-local-player-panel {
+    min-width: 0;
+  }
+  .input-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .touch-settings-fields {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    display: block;
+    width: auto;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--kit-foreground);
+    font: 400 13px / 1.5 var(--kit-font);
+  }
+  .touch-settings-fields .touch-layout-settings-list {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    color: inherit;
+  }
+  .touch-settings-fields .touch-layout-setting-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+    padding: 10px 0;
+    border: 0;
+    border-bottom: 1px solid var(--kit-border);
+    background: transparent;
+    color: var(--kit-foreground);
+    font: 500 13px / 1.5 var(--kit-font);
+  }
+  .touch-settings-fields .touch-layout-setting-row > label {
+    color: inherit;
+    font: inherit;
+  }
+  .touch-settings-fields .touch-layout-setting-row:has(> label + .ui-select) {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding-block: 10px;
+  }
+  .touch-settings-fields .touch-layout-setting-row:has(> .ui-switch) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 12px;
+  }
+  .touch-settings-fields .touch-layout-setting-row .ui-switch {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    min-width: 44px;
+    background: transparent;
+  }
+  .touch-settings-fields .touch-layout-setting-row small {
+    display: block;
+    margin: 2px 0 0;
+    color: var(--kit-muted-foreground);
+    font: 400 11px / 1.5 var(--kit-font);
+  }
+  .touch-settings-fields .touch-sensitivity-presets {
+    display: flex;
+    width: 100%;
+    padding: 3px;
+    gap: 2px;
+    border: 1px solid var(--kit-border);
+    border-radius: 6px;
+    background: var(--kit-muted);
+  }
+  .touch-settings-fields .touch-sensitivity-presets button {
+    flex: 1;
+    min-width: 0;
+    height: 32px;
+    min-height: 32px;
+    padding: 6px 4px;
+    box-shadow: none;
+    font: 500 12px / 1.5 var(--kit-font);
+  }
+  .touch-settings-fields .touch-sensitivity-custom > span {
+    color: var(--kit-muted-foreground);
+    font: 400 12px / 1.5 var(--kit-font);
+  }
+  .touch-settings-fields :is(.touch-sensitivity-heading, .touch-opacity-heading) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--kit-foreground);
+    font-size: 13px;
+  }
+  .touch-settings-fields output {
+    color: var(--kit-muted-foreground);
+    font: 500 12px / 1.5 var(--kit-font);
+    font-variant-numeric: tabular-nums;
+  }
+  .touch-settings-fields .touch-layout-viewport-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .touch-settings-fields .touch-layout-viewport-actions > button {
+    flex: 1;
+  }
+  /* Game buttons retain their layout geometry. The workbench is application UI. */
+  #touchLayoutEditor.touch-layout-editor {
+    --workbench-height: min(520px, calc(100dvh - 32px));
+    width: min(320px, calc(100vw - 32px));
+    max-height: var(--workbench-height);
+    border: 1px solid var(--kit-border);
+    border-radius: 10px;
+    background: var(--kit-card);
+    color: var(--kit-foreground);
+    font: 400 13px / 1.5 var(--kit-font);
+    box-shadow: 0 10px 36px #0004;
+    backdrop-filter: none;
+  }
+  #touchLayoutEditor .touch-workbench-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 48px;
+    padding: 1px 6px 1px 12px;
+    border-bottom: 1px solid var(--kit-border);
+    background: var(--kit-card);
+    border-radius: 10px 10px 0 0;
+    color: var(--kit-foreground);
+  }
+  #touchLayoutEditor .touch-layout-editor-copy {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 0;
+    color: var(--kit-foreground);
+  }
+  #touchLayoutEditor .touch-layout-editor-copy strong {
+    font: 600 14px / 1.5 var(--kit-font);
+    color: var(--kit-foreground);
+  }
+  #touchLayoutEditor .touch-layout-editor-copy em {
+    padding: 3px 6px;
+    border-radius: 4px;
+    background: var(--kit-muted);
+    font: 400 11px / 1.5 var(--kit-font);
+    color: var(--kit-muted-foreground);
+  }
+  #touchLayoutEditor .touch-workbench-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: calc(var(--workbench-height) - 48px);
+  }
+  #touchLayoutEditor .touch-workbench-scroll {
+    min-height: 0;
+    overflow: auto;
+    padding: 10px 12px;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  #touchLayoutEditor .touch-layout-arrangement {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--kit-foreground);
+  }
+  #touchLayoutEditor .touch-layout-secondary-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  #touchLayoutEditor .touch-workbench-note {
+    margin: 0;
+    color: var(--kit-muted-foreground);
+    font: 400 11px / 1.5 var(--kit-font);
+  }
+  #touchLayoutEditor .touch-workbench-divider {
+    margin: 12px 0 0;
+    border: 0;
+    border-top: 1px solid var(--kit-border);
+  }
+  #touchLayoutEditor .touch-layout-editor-actions {
+    display: flex;
+    gap: 8px;
+  }
+  #touchLayoutEditor .touch-layout-editor-actions > button {
+    flex: 1;
+  }
+  #touchLayoutEditor .touch-workbench-footer {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    gap: 6px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--kit-border);
+    background: var(--kit-card);
+    border-radius: 0 0 10px 10px;
+  }
+  #touchLayoutEditor .touch-workbench-footer > small {
+    color: var(--kit-muted-foreground);
+    font: 400 11px / 1.5 var(--kit-font);
+  }
+  #touchLayoutEditor.is-collapsed .touch-workbench-body {
+    display: none;
+  }
+  #touchLayoutEditor input[type="range"] {
+    width: 100%;
+    min-height: 32px;
+    accent-color: var(--kit-primary);
+  }
+  @media (orientation: portrait) {
+    #touchLayoutEditor.touch-layout-editor {
+      --workbench-height: min(520px, 50dvh);
+    }
+  }
+  @media (max-width: 780px), (pointer: coarse) {
+    .input-settings-dialog.ui-kit-dialog {
+      --input-dialog-limit: min(720px, calc(100dvh - 32px));
+      --input-gutter: 16px;
+      --input-label-width: 60px;
+      --input-control-height: 44px;
+      width: calc(100vw - 24px);
+    }
+    .input-settings-dialog .input-dialog-scroll {
+      padding-block: 16px;
+    }
+    .input-settings-dialog .input-context-toolbar,
+    .input-config .input-layout-toolbar {
+      column-gap: 8px;
+    }
+    .touch-settings-fields .touch-sensitivity-presets button {
+      height: 44px;
+      min-height: 44px;
+    }
+  }
+}

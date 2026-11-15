@@ -1,0 +1,52 @@
+{
+  "sourceCommit": "436022111",
+  "scope": "Identical native battle cases and reordered delayed inputs. Desktop CPU samples use 4x DevTools throttling and disabled audio; no phone FPS claim.",
+  "explosion": [
+    {
+      "players": 2,
+      "kind": "mai-explosion",
+      "confirmedFrames": 150,
+      "beforeWaits": 600,
+      "afterWaits": 4
+    },
+    {
+      "players": 2,
+      "kind": "yuki-explosion",
+      "confirmedFrames": 150,
+      "beforeWaits": 600,
+      "afterWaits": 4
+    },
+    {
+      "players": 3,
+      "kind": "mai-explosion",
+      "confirmedFrames": 150,
+      "beforeWaits": 1050,
+      "afterWaits": 68
+    },
+    {
+      "players": 3,
+      "kind": "yuki-explosion",
+      "confirmedFrames": 150,
+      "beforeWaits": 1050,
+      "afterWaits": 68
+    }
+  ],
+  "render": [
+    {
+      "stage": 3,
+      "rounds": 3,
+      "framesPerRound": 900,
+      "beforeMeanMs": 0.7272222222215324,
+      "afterMeanMs": 0.5943703703682318,
+      "reduction": 0.18268398268614816
+    },
+    {
+      "stage": 4,
+      "rounds": 3,
+      "framesPerRound": 900,
+      "beforeMeanMs": 0.8094074074082352,
+      "afterMeanMs": 0.6908888888897167,
+      "reduction": 0.14642628351774178
+    }
+  ]
+}

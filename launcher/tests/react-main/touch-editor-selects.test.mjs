@@ -1,7 +1,7 @@
 /** Pinned main app.mts4504–4510,6933–6945,7433–7449,9490–9527: native
  * fullscreen menu hosts, workbench dismissal and editor lifecycle. Synthetic DOM only;
  * not evidence of real fullscreen top-layer paint or browser focus behavior. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -21,7 +21,8 @@ before(async () => {
   work = await mkdtemp(resolve(project, '.cache/touch-editor-selects-'));
   const outfile = resolve(work, 'components.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
-    export {MainSelect} from './app/components/launcher/MainSelect.tsx';
+    export {MainSelect,closeMainSelectMenus} from './app/components/launcher/MainSelect.tsx';
+    export {Select,SelectTrigger,SelectValue,SelectContent,SelectItem,closeSelectMenus} from './app/ui/select.tsx';
     export {TouchLayoutEditor} from './app/components/settings/TouchLayoutEditor.tsx';
     export {createGameSettingsModel} from './app/models/game-settings.ts';
     export {createTouchLayoutModel} from './app/models/touch-layout.ts';
@@ -31,7 +32,7 @@ before(async () => {
 });
 afterEach(async () => {
   if (root) {await React.act(async () => root.unmount()); root = null;}
-  assert.equal(env.document.querySelectorAll('.mizuki-select-menu').length, 0);
+  assert.equal(env.document.querySelectorAll('.ui-select-content').length, 0);
   assert.equal(env.document.querySelectorAll('.mizuki-select').length, 0);
   assert.deepEqual(env.errors.splice(0), []);
   fullscreen = null; webkitFullscreen = null; env.document.body.replaceChildren();
@@ -44,30 +45,54 @@ async function mount(children) {
   await React.act(async () => root.render(el(React.StrictMode, null, children)));
 }
 async function click(target) {await React.act(async () => (typeof target === 'string' ? n(target) : target).click());}
+async function touchTap(target, pointerId) {await React.act(async () => {
+  const bounds = target.getBoundingClientRect();
+  const pointer = {bubbles: true, cancelable: true, pointerId, pointerType: 'touch', button: 0, clientX: bounds.left + bounds.width / 2, clientY: bounds.top + bounds.height / 2};
+  target.dispatchEvent(new env.window.PointerEvent('pointerdown', pointer));
+  target.dispatchEvent(new env.window.PointerEvent('pointerup', pointer));
+  target.dispatchEvent(new env.window.MouseEvent('click', {bubbles: true, cancelable: true}));
+});}
+async function touchRetargetedTap(downTarget, clickTarget, pointerId) {
+  const bounds = clickTarget.getBoundingClientRect();
+  const pointer = {bubbles: true, cancelable: true, pointerId, pointerType: 'touch', button: 0, clientX: bounds.left + bounds.width / 2, clientY: bounds.top + bounds.height / 2};
+  await React.act(async () => {downTarget.dispatchEvent(new env.window.PointerEvent('pointerdown', pointer));});
+  await React.act(async () => {downTarget.dispatchEvent(new env.window.Event('touchstart', {bubbles: true, cancelable: true}));});
+  await React.act(async () => {downTarget.dispatchEvent(new env.window.PointerEvent('pointerup', pointer));});
+  await React.act(async () => {downTarget.dispatchEvent(new env.window.Event('touchend', {bubbles: true, cancelable: true}));});
+  await React.act(async () => {clickTarget.dispatchEvent(new env.window.MouseEvent('click', {bubbles: true, cancelable: true, detail: 1}));});
+}
 function select() {return el(api.MainSelect, {id: 'hostSelect', className: 'option-select', defaultValue: 'a'}, el('option', {value: 'a'}, 'A'), el('option', {value: 'b'}, 'B'));}
+function uiKitSelect() {
+  return el(api.Select, {defaultValue: 'number'},
+    el(api.SelectTrigger, {id: 'sort-trigger', 'aria-label': 'Sort'}, el(api.SelectValue)),
+    el(api.SelectContent, null,
+      el(api.SelectItem, {value: 'number'}, 'By number'),
+      el(api.SelectItem, {value: 'name'}, 'By name')));
+}
 
-for (const target of ['body', 'player', 'webkit-player', 'root', 'foreign', 'dialog']) test(`Main custom select chooses original ${target} host`, async () => {
+for (const target of ['windowed', 'player', 'webkit-player', 'root', 'foreign', 'dialog']) test(`Main select keeps the menu above its ${target} player`, async () => {
   await mount(el('section', {id: 'player'}, target === 'dialog' ? el('dialog', {open: true, id: 'nativeDialog'}, select()) : select()));
   if (target === 'player' || target === 'dialog') fullscreen = n('#player');
   if (target === 'webkit-player') webkitFullscreen = n('#player');
   if (target === 'root') fullscreen = env.document.documentElement;
   if (target === 'foreign') {fullscreen = env.document.createElement('section'); env.document.body.append(fullscreen);}
   await click('.mizuki-select-trigger');
-  const menu = n('.mizuki-select-menu:not([hidden])');
-  assert.equal(menu.parentElement, target === 'dialog' ? n('#nativeDialog') : ['player', 'webkit-player'].includes(target) ? n('#player') : env.document.body);
+  const menu = n('.ui-select-content');
+  assert.equal(menu.closest('[data-radix-popper-content-wrapper]').parentElement.id, target === 'dialog' ? 'nativeDialog' : 'player');
   await click(menu.querySelector('[data-value="b"]'));
-  assert.equal(n('#hostSelect').value, 'b'); assert.equal(menu.hidden, true);
-  assert.equal(env.document.activeElement, n('.mizuki-select-trigger'));
+  assert.equal(n('#hostSelect').value, 'b'); assert.equal(!menu.isConnected, true);
+  assert.equal(env.document.activeElement.classList.contains('mizuki-select-trigger'), true);
 });
 
 test('Main select reopens the same menu in the current fullscreen host', async () => {
   await mount(el('section', {id: 'player'}, select()));
-  await click('.mizuki-select-trigger'); const menu = n('.mizuki-select-menu'); assert.equal(menu.parentElement, env.document.body);
-  await click('.mizuki-select-trigger'); fullscreen = n('#player');
-  await click('.mizuki-select-trigger'); assert.equal(menu.parentElement, n('#player'));
-  await click('.mizuki-select-trigger'); fullscreen = null;
-  await click('.mizuki-select-trigger'); assert.equal(menu.parentElement, env.document.body);
-  assert.equal(env.document.querySelectorAll('.mizuki-select-menu').length, 1);
+  const viewport=env.document.createElement('div');viewport.id='gameViewport';n('#player').append(viewport);
+  await click('.mizuki-select-trigger'); const menu = n('.ui-select-content'); assert.equal(menu.closest('[data-radix-popper-content-wrapper]').parentElement.id,'player');
+  await React.act(async()=>api.closeMainSelectMenus()); fullscreen = viewport;
+  await click('.mizuki-select-trigger'); const reopened = n('.ui-select-content'); assert.equal(reopened.closest('[data-radix-popper-content-wrapper]').parentElement.id,'gameViewport');
+  await React.act(async()=>api.closeMainSelectMenus()); fullscreen = null;
+  await click('.mizuki-select-trigger'); const again = n('.ui-select-content'); assert.equal(again.closest('[data-radix-popper-content-wrapper]').parentElement.id,'player');
+  assert.equal(env.document.querySelectorAll('.ui-select-content').length, 1);
 });
 
 async function editor({storage = null} = {}) {
@@ -85,18 +110,152 @@ async function editor({storage = null} = {}) {
   assert.equal(model.getSnapshot().isEditing, true); assert.deepEqual(errors, []);
   return {player, model, settings, errors};
 }
-async function openMovementMenu() {await click(n('#touchMovementMode').closest('.mizuki-select').querySelector('.mizuki-select-trigger')); return n('.mizuki-select-menu:not([hidden])');}
+async function openMovementMenu() {await click(n('#touchMovementMode').closest('.mizuki-select').querySelector('.mizuki-select-trigger')); return n('.ui-select-content');}
+
+test('Touch select trigger toggles its popup closed on a second activation', async () => {
+  const f = await editor(), trigger = n('#touchMovementMode-trigger');
+  await click(trigger);
+  assert.equal(n('.ui-select-content').isConnected, true);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'true');
+  await click(trigger);
+  assert.equal(env.document.querySelector('.ui-select-content'), null);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+  assert.deepEqual(f.errors, []);
+});
+
+test('Touch taps close the currently open selector without reopening it', async () => {
+  const f = await editor(), trigger = n('#touchMovementMode-trigger');
+  await touchTap(trigger, 41);
+  assert.equal(n('.ui-select-content').isConnected, true);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'true');
+  await touchTap(trigger, 42);
+  assert.equal(env.document.querySelector('.ui-select-content'), null);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+  assert.equal(env.document.activeElement, trigger);
+  let outsideClicks = 0;
+  const outside = env.document.createElement('button'); outside.id = 'outsideSelectAction'; outside.addEventListener('click', () => outsideClicks++); env.document.body.append(outside);
+  await click(outside); assert.equal(outsideClicks, 1, 'consuming the compatibility click must not swallow another control');
+  const nextTrigger = n('#touchFocusMode-trigger'); await touchTap(nextTrigger, 53);
+  assert.equal(nextTrigger.getAttribute('aria-expanded'), 'true', 'the next selector has its own activation sequence');
+  assert.equal(env.document.querySelectorAll('.ui-select-content').length, 1);
+  assert.deepEqual(f.errors, []);
+});
+
+test('A touch compatibility click cannot reopen a selector dismissed by the earlier pointerdown', async () => {
+  const f = await editor(), trigger = n('#touchMovementMode-trigger');
+  await touchTap(trigger, 51);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'true');
+  assert.equal(n('.ui-select-content').isConnected, true);
+  await touchRetargetedTap(env.document.body, trigger, 52);
+  assert.equal(env.document.querySelector('.ui-select-content'), null);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+  assert.equal(env.document.activeElement, trigger);
+  assert.deepEqual(f.errors, []);
+});
+
+test('UI-kit select uses the same touch toggle, focus return, and popup styling as MainSelect', async () => {
+  await mount(uiKitSelect());
+  const trigger = n('#sort-trigger');
+  assert.equal(trigger.classList.contains('ui-select-trigger'), true);
+  assert.equal(trigger.classList.contains('ui-kit-select-trigger'), true);
+  await touchTap(trigger, 61);
+  assert.equal(n('.ui-select-content').classList.contains('ui-kit-select-content'), true);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'true');
+  await touchTap(trigger, 62);
+  assert.equal(env.document.querySelector('.ui-select-content'), null);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+  assert.equal(env.document.activeElement, trigger);
+});
+
+test('UI-kit select consumes only the retargeted touch click and leaves other controls active', async () => {
+  await mount(uiKitSelect());
+  const trigger = n('#sort-trigger');
+  await touchTap(trigger, 71);
+  await touchRetargetedTap(env.document.body, trigger, 72);
+  assert.equal(env.document.querySelector('.ui-select-content'), null);
+  assert.equal(env.document.activeElement, trigger);
+  let outsideClicks = 0;
+  const outside = env.document.createElement('button');
+  outside.addEventListener('click', () => outsideClicks++);
+  env.document.body.append(outside);
+  await click(outside);
+  assert.equal(outsideClicks, 1);
+});
+
+test('controlled UI-kit select reports close requests while its open prop remains authoritative', async () => {
+  const requests = [];
+  await mount(el(api.Select, {open: true, defaultValue: 'number', onOpenChange: (next) => requests.push(next)},
+    el(api.SelectTrigger, {id: 'controlled-sort-trigger', 'aria-label': 'Sort'}, el(api.SelectValue)),
+    el(api.SelectContent, null, el(api.SelectItem, {value: 'number'}, 'By number'))));
+  const trigger = n('#controlled-sort-trigger');
+  await click(trigger);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'true', 'a controlled parent still owns the displayed state');
+  await click(trigger);
+  assert.deepEqual(requests, [false, false], 'a rejected close request does not corrupt the next interaction');
+});
+
+test('UI-kit and native form selects share one open popup and keyboard selection flow', async () => {
+  await mount(el('div', null, uiKitSelect(), select()));
+  n('#sort-trigger').getBoundingClientRect = () => new env.window.DOMRect(100, 50, 150, 44);
+  await click('#sort-trigger');
+  assert.equal(env.document.querySelectorAll('.ui-select-content').length, 1);
+  await click('.mizuki-select-trigger');
+  assert.equal(env.document.querySelectorAll('.ui-select-content').length, 1, 'opening a second adapter closes the first popup');
+  await React.act(async () => n('#hostSelect-trigger').dispatchEvent(new env.window.KeyboardEvent('keydown', {key: 'Escape', bubbles: true, cancelable: true})));
+  assert.equal(env.document.querySelector('.ui-select-content'), null);
+  await React.act(async () => n('#sort-trigger').dispatchEvent(new env.window.KeyboardEvent('keydown', {key: 'ArrowDown', bubbles: true, cancelable: true})));
+  assert.ok(n('.ui-select-content'));
+  const nameOption = [...env.document.querySelectorAll('[role="option"]')].find((option) => option.textContent.includes('By name'));
+  assert.ok(nameOption);
+  nameOption.getBoundingClientRect = () => new env.window.DOMRect(300, 120, 120, 40);
+  await touchTap(nameOption, 81);
+  assert.equal(env.document.querySelector('.ui-select-content'), null);
+  assert.match(n('#sort-trigger').textContent, /By name/);
+});
+
+test('Changing touch opacity does not clear the editor layout or reset its opacity style', async () => {
+  const f = await editor(), control = n('#touchBomb');
+  const layoutX = control.style.getPropertyValue('--touch-layout-x');
+  const classObserver = new env.window.MutationObserver(() => {}), styleObserver = new env.window.MutationObserver(() => {});
+  classObserver.observe(f.player, {attributes: true, attributeFilter: ['class'], attributeOldValue: true});
+  styleObserver.observe(f.player, {attributes: true, attributeFilter: ['style'], attributeOldValue: true});
+  await React.act(async () => {f.settings.setOption('touchControlOpacity', 75); await Promise.resolve();});
+  const classChanges = classObserver.takeRecords(), styleChanges = styleObserver.takeRecords();
+  classObserver.disconnect(); styleObserver.disconnect();
+  assert.equal(f.player.classList.contains('touch-layout-custom'), true);
+  assert.equal(f.player.style.getPropertyValue('--touch-control-opacity'), '0.75');
+  assert.equal(control.style.getPropertyValue('--touch-layout-x'), layoutX);
+  assert.deepEqual(classChanges, [], 'an option update must not remove and reapply the custom-layout class');
+  assert.ok(styleChanges.every(change => change.oldValue?.includes('--touch-control-opacity:')),
+    'the opacity style should update directly without briefly falling back to its default');
+  assert.deepEqual(f.errors, []);
+});
 
 test('Keyboard-style workbench collapse closes the real fullscreen menu and expansion does not resurrect it', async () => {
   const f = await editor(), menu = await openMovementMenu();
-  assert.equal(menu.parentElement, f.player); assert.equal(menu.hidden, false);
+  assert.equal(menu.closest('[data-radix-popper-content-wrapper]').parentElement, f.player); assert.equal(!menu.isConnected, false);
+  assert.equal(menu.getAttribute('data-ui-surface'), 'application');
+  await pointer('pointerdown', menu, 81, 120);
+  assert.equal(n('#touchSensitivityPreview').classList.contains('active'), false, 'application portal input is not treated as canvas preview');
+  await pointer('pointerup', menu, 81, 120);
   // HTMLElement.click emits no pointerdown: the workbench itself must dismiss
   // the detached menu, rather than relying on the document pointer listener.
   await click('#touchLayoutCollapse');
-  assert.equal(n('#touchWorkbenchBody').hidden, true); assert.equal(menu.hidden, true);
+  assert.equal(n('#touchWorkbenchBody').hidden, true); assert.equal(!menu.isConnected, true);
   assert.equal(n('#touchMovementMode').closest('.mizuki-select').querySelector('.mizuki-select-trigger').getAttribute('aria-expanded'), 'false');
-  await click('#touchLayoutCollapse'); assert.equal(n('#touchWorkbenchBody').hidden, false); assert.equal(menu.hidden, true);
-  assert.equal(await openMovementMenu(), menu); assert.deepEqual(f.errors, []);
+  await click('#touchLayoutCollapse'); assert.equal(n('#touchWorkbenchBody').hidden, false); assert.equal(!menu.isConnected, true);
+  const reopened = await openMovementMenu();
+  assert.equal(reopened.isConnected, true); assert.equal(env.document.querySelectorAll('.ui-select-content').length, 1); assert.deepEqual(f.errors, []);
+});
+
+test('Game-marked surface remains an active touch-layout preview target', async () => {
+  const f = await editor(), surface = n('#gameViewport');
+  surface.setAttribute('data-ui-surface', 'game');
+  await pointer('pointerdown', surface, 420, 240);
+  assert.equal(n('#touchSensitivityPreview').classList.contains('active'), true);
+  await pointer('pointerup', env.document, 420, 240);
+  assert.equal(n('#touchSensitivityPreview').classList.contains('active'), false);
+  assert.deepEqual(f.errors, []);
 });
 
 test('Restoring the workbench after viewport adjustment closes its detached select', async () => {
@@ -104,8 +263,8 @@ test('Restoring the workbench after viewport adjustment closes its detached sele
   await click('#touchViewportAdjust'); assert.equal(n('#touchLayoutEditor').hidden, true);
   // A retained/programmatically reopened menu must follow main's explicit
   // syncTouchLayoutWorkbench close when viewport editing finishes.
-  const menu = await openMovementMenu(); assert.equal(menu.hidden, false);
-  await click('#touchViewportDone'); assert.equal(n('#touchLayoutEditor').hidden, false); assert.equal(menu.hidden, true);
+  const menu = await openMovementMenu(); assert.equal(!menu.isConnected, false);
+  await click('#touchViewportDone'); assert.equal(n('#touchLayoutEditor').hidden, false); assert.equal(!menu.isConnected, true);
   assert.deepEqual(f.errors, []);
 });
 
@@ -159,10 +318,10 @@ test('Safe-zone resize and orientation events refresh the real draft; teardown r
   const previousObserver = globalThis.ResizeObserver, orientationDescriptor = Object.getOwnPropertyDescriptor(env.window.screen, 'orientation');
   const width = Object.getOwnPropertyDescriptor(env.document.documentElement, 'clientWidth'), height = Object.getOwnPropertyDescriptor(env.document.documentElement, 'clientHeight');
   const observed = [], orientation = new env.window.EventTarget();
-  globalThis.ResizeObserver = class {constructor(callback) {this.callback = callback; observed.push(this);} observe(node) {this.node = node;} disconnect() {this.disconnected = true;}};
+  globalThis.ResizeObserver = class {constructor(callback) {this.callback = callback; observed.push(this);} observe(node) {this.node = node;} unobserve(node) {if(this.node === node) this.disconnected = true;} disconnect() {this.disconnected = true;}};
   Object.defineProperty(env.window.screen, 'orientation', {configurable: true, value: orientation});
   try {
-    const f = await editor(), observer = observed.findLast(value => !value.disconnected);
+    const f = await editor(), observer = observed.findLast(value => value.node === n('#touchLayoutSafeZone') && !value.disconnected);
     assert.equal(observer.node, n('#touchLayoutSafeZone'));
     let revision = f.model.getSnapshot().revision;
     await React.act(async () => observer.callback([]));
@@ -201,7 +360,7 @@ test('Viewport Done restores the current orientation’s saved workbench positio
     assert.equal(f.model.getSnapshot().orientation, 'portrait'); assert.equal(panel.hidden, true);
     await click('#touchViewportDone');
     assert.equal(panel.hidden, false);
-    assert.equal(panel.style.left, '263px'); assert.equal(panel.style.top, '200px');
+    assert.equal(panel.style.left, '143px'); assert.equal(panel.style.top, '440px');
     assert.deepEqual(f.errors, []);
   } finally {
     for (const [name, descriptor] of [['clientWidth', width], ['clientHeight', height]]) {if (descriptor) Object.defineProperty(env.document.documentElement, name, descriptor); else delete env.document.documentElement[name];}
@@ -222,4 +381,31 @@ test('TH075 layout is independent from shared shooters and persists across game 
   model.setGame('th075');assert.equal(model.getSnapshot().saved.profiles.landscape.controls.joystick.x,.7);
   const reopened=api.createTouchLayoutModel({storage});reopened.hydrate();reopened.setGame('th075');
   assert.equal(reopened.getSnapshot().saved.profiles.landscape.controls.joystick.x,.7);
+});
+
+test('responsive defaults resample within an orientation while edited and saved layouts keep their positions', () => {
+  const values=new Map(),storage={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
+  const defaults=y=>({controls:Object.fromEntries(api.touchLayoutControlNames.map(name=>[name,{x:.2,y,scale:1,priority:api.touchLayoutControlMeta[name].priority}])),viewport:{x:0}});
+  const model=api.createTouchLayoutModel({storage});model.hydrate();
+  model.begin('landscape',defaults(.8),['bomb']);
+  assert.equal(model.getSnapshot().dirty,false,'opening an unsaved default is a preview');
+  model.ensureOrientation('landscape',defaults(.6));
+  model.ensureOrientation('portrait',defaults(.7));
+  assert.equal(model.getSnapshot().dirty,false,'resizing and rotating an untouched preview do not request discard');
+  model.ensureOrientation('landscape',defaults(.6));
+  assert.equal(model.getSnapshot().draft.profiles.landscape.controls.bomb.y,.6);
+  assert.equal(values.size,0,'resizing a default preview never writes an override');
+  model.updateControl('bomb',{y:.4,scale:1.5});
+  assert.equal(model.getSnapshot().dirty,true,'manual placement changes still require save or discard');
+  model.ensureOrientation('landscape',defaults(.3));
+  assert.equal(model.getSnapshot().draft.profiles.landscape.controls.bomb.y,.4);
+  assert.equal(model.getSnapshot().draft.profiles.landscape.controls.bomb.scale,1.5);
+  model.ensureOrientation('portrait',defaults(.7));model.ensureOrientation('portrait',defaults(.5));
+  assert.equal(model.getSnapshot().draft.profiles.portrait.controls.bomb.y,.5);
+  model.save();model.discard();model.begin('landscape',defaults(.2),['bomb']);
+  assert.equal(model.getSnapshot().dirty,false,'saved layouts reopen cleanly');
+  model.ensureOrientation('landscape',defaults(.1));
+  assert.equal(model.getSnapshot().draft.profiles.landscape.controls.bomb.y,.4);
+  model.ensureOrientation('portrait',defaults(.1));
+  assert.equal(model.getSnapshot().draft.profiles.portrait.controls.bomb.y,.5);
 });

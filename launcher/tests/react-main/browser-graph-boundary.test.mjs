@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {after, before, test} from 'node:test';
+import {afterAll as after, beforeAll as before, test} from 'vitest';
 import {mkdtemp, mkdir, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';

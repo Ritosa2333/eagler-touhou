@@ -1,4 +1,6 @@
+import {validTh19VersusRules} from './th19-versus-rules.mjs';
 import { validTh15ChapterThreshold } from "./th15-chapter-reward.mjs";
+import {validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
 import {
   parseMeasuredNetplayTiming,
   resolveAdonisPredictionReserve,
@@ -14,16 +16,19 @@ import {
   validMultiplayerClientId,
 } from './multiplayer-identity.mjs';
 import { parseTh09PlayerStats, type Th09PlayerStats } from './th09-room-stats.mjs';
+import {parseRoomAccountProfile, type RoomAccountProfile} from './room-account-profile.mjs';
 
 export interface MultiplayerLobbySeat {
   clientId: string;
   name: string;
+  profile?: RoomAccountProfile;
   stats?: Th09PlayerStats;
   loadout: number;
   ready: boolean;
   runtimeGeneration?: string;
   offline: boolean;
   controlMode: ReturnType<typeof multiplayerControlMode>;
+  touchEnabled?: boolean;
   mobileDevice: boolean;
   resource: MultiplayerResourceProgress | null;
 }
@@ -39,13 +44,18 @@ export interface MultiplayerResourceProgress {
 export interface MultiplayerLobbySpectator {
   clientId: string;
   name: string;
+  profile?: RoomAccountProfile;
 }
 
 export interface NormalizedMultiplayerLobbySnapshot {
+  th19Rules?: number[];
+  initialSpares?: number;
+  initialBombs?: number;
   timingChoice?: 'auto' | number;
   startedAt?: number;
   visibility: 'public' | 'private';
   disableCheatMovement: boolean;
+  unrated?: boolean;
   disableLocalChargePriority?: boolean;
   challengeMode?: boolean;
   chapterThreshold?: number;
@@ -64,6 +74,7 @@ export interface NormalizedMultiplayerLobbySnapshot {
   spectators: MultiplayerLobbySpectator[];
   spectatorCount: number;
   spectatorTimeline?: boolean;
+  swarmSelected?: boolean;
   seats: Array<MultiplayerLobbySeat | null>;
   localSeat: number | null;
   localSpectator: boolean;
@@ -96,6 +107,8 @@ export function normalizeMultiplayerLobbySnapshot(
   },
 ): NormalizedMultiplayerLobbySnapshot | null {
   const source = record(value);
+  if(source?.th19Rules!==undefined&&!validTh19VersusRules(source.th19Rules))return null;
+  if(source&&(source.initialSpares!==undefined&&!validTh05InitialSpares(source.initialSpares)||source.initialBombs!==undefined&&!validTh05InitialBombs(source.initialBombs)))return null;
   if (!source ||
     (source.chapterThreshold !== undefined &&
       !validTh15ChapterThreshold(source.chapterThreshold))
@@ -161,7 +174,8 @@ export function normalizeMultiplayerLobbySnapshot(
         const item = record(entry);
         const clientId = String(item?.clientId || '');
         if (!validMultiplayerClientId(clientId)) return [];
-        return [{ clientId, name: normalizeMultiplayerDisplayName(item?.name || '') }];
+        const profile = parseRoomAccountProfile(item?.profile);
+        return [{clientId, name: normalizeMultiplayerDisplayName(item?.name || ''), ...(profile ? {profile} : {})}];
       })
     : [];
 
@@ -184,9 +198,11 @@ export function normalizeMultiplayerLobbySnapshot(
       loadout >= normalizedLoadoutCount
     )
       return null;
+    const profile = parseRoomAccountProfile(seat.profile);
     return {
       clientId,
       name: normalizeMultiplayerDisplayName(seat.name || ''),
+      ...(profile ? {profile} : {}),
       stats: parseTh09PlayerStats(seat.stats),
       loadout,
       ready: !!seat.ready,
@@ -194,6 +210,7 @@ export function normalizeMultiplayerLobbySnapshot(
         ? {runtimeGeneration: seat.runtimeGeneration} : {}),
       offline: !!seat.offline,
       controlMode: multiplayerControlMode(seat.controlMode),
+      ...(typeof seat.touchEnabled === 'boolean' ? {touchEnabled: seat.touchEnabled} : {}),
       mobileDevice: seat.mobileDevice === true,
       resource: normalizeResourceProgress(seat.resource),
     };
@@ -208,11 +225,15 @@ export function normalizeMultiplayerLobbySnapshot(
 
   return {
     playerCount,
+    ...(source.th19Rules!==undefined?{th19Rules:[...source.th19Rules as number[]]}:{}),
+    ...(source.initialSpares!==undefined?{initialSpares:source.initialSpares as number}:{}),
+    ...(source.initialBombs!==undefined?{initialBombs:source.initialBombs as number}:{}),
     ...(source.chapterThreshold !== undefined
       ? { chapterThreshold: source.chapterThreshold as number }
       : {}),
     visibility: source.visibility === 'private' ? 'private' : 'public',
     disableCheatMovement: source.disableCheatMovement === true,
+    ...(typeof source.unrated === 'boolean' ? {unrated: source.unrated} : {}),
     ...(source.disableLocalChargePriority !== undefined ? {disableLocalChargePriority: source.disableLocalChargePriority === true} : {}),
     ...(source.challengeMode !== undefined ? { challengeMode: source.challengeMode === true } : {}),
     ...(source.prankMode !== undefined ? { prankMode: false } : {}),
@@ -232,6 +253,7 @@ export function normalizeMultiplayerLobbySnapshot(
     spectators,
     spectatorCount,
     ...(source.spectatorTimeline === true ? { spectatorTimeline: true } : {}),
+    ...(source.swarmSelected === true ? { swarmSelected: true } : {}),
     seats,
     localSeat,
     localSpectator,

@@ -1,0 +1,279 @@
+{
+  "schema": "eagler-touhou/source-build/1",
+  "game": "th05",
+  "variant": "normal",
+  "owner": "th05",
+  "source": "C:\\Users\\w3051\\Desktop\\eagler\\eagler-touhou\\ports\\th05",
+  "common": "C:\\Users\\w3051\\Desktop\\eagler\\eagler-touhou\\common",
+  "features": {
+    "thcrap": true,
+    "thprac": true
+  },
+  "toolchain": {
+    "root": "C:\\Users\\w3051\\Desktop\\eagler\\th08\\tools\\emsdk",
+    "compiler": "C:\\Users\\w3051\\Desktop\\eagler\\th08\\tools\\emsdk\\install\\emscripten\\emcc.py",
+    "version": "6.0.9-git",
+    "metadata": {
+      "version": "6.0.9",
+      "url": "https://storage.googleapis.com/webassembly/emscripten-releases-builds/win/f04ea239d533260dd1db760dd2d668d5f9a88d6b/wasm-binaries.zip",
+      "size": 654169912,
+      "md5": "8cfb4f89c1349d4aed4acb91dde898e5"
+    }
+  },
+  "environment": {
+    "EMSDK": "C:\\Users\\w3051\\Desktop\\eagler\\th08\\tools\\emsdk",
+    "TH09_EMSDK": "C:\\Users\\w3051\\Desktop\\eagler\\th08\\tools\\emsdk",
+    "TH15_EMSDK": "C:\\Users\\w3051\\Desktop\\eagler\\th08\\tools\\emsdk",
+    "EM_CONFIG": "C:\\Users\\w3051\\Desktop\\eagler\\th08\\tools\\emsdk\\.emscripten",
+    "PYTHON": "python",
+    "TH_PYTHON": "python",
+    "EMCC_CORES": "4",
+    "TH_BUILD_JOBS": "4",
+    "EAGLER_COMMON_ROOT": "C:\\Users\\w3051\\Desktop\\eagler\\eagler-touhou\\common",
+    "EAGLER_COMMON_NETPLAY_ROOT": "C:\\Users\\w3051\\Desktop\\eagler\\eagler-touhou\\common",
+    "TH_ENABLE_THCRAP": "1",
+    "TH_ENABLE_THPRAC": "1"
+  },
+  "steps": [
+    {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\w3051\\Desktop\\eagler\\eagler-touhou\\ports\\th05\\scripts\\build-eagler.mjs"
+      ],
+      "cwd": "C:\\Users\\w3051\\Desktop\\eagler\\eagler-touhou\\ports\\th05"
+    }
+  ],
+  "sources": {
+    "source": {
+      "revision": "56b4e1edb470daaadc9dd84a4f2886f0ce0039dd",
+      "sourcePath": "ports/th05",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "42938d564bccc5a469f5794f411599f825e850236c744187b642aed5f431eca3",
+      "untracked": [
+        {
+          "path": ".gitignore",
+          "sha256": "b7a445dc837b5e14e5bfc9a2cdc401be96b13bdbfafaa13d710b875b51fe4db2"
+        },
+        {
+          "path": "ADAPTATION.md",
+          "sha256": "9e62edc8d573be6a15036d052742848cd5089569a122e0ebba000f42f5e690cd"
+        },
+        {
+          "path": "README-UPSTREAM.md",
+          "sha256": "d1926e14a39c2d7fda639cca1df0bc6df91233e8bd72e742284033c8e968d639"
+        },
+        {
+          "path": "docs/DEVELOPMENT.md",
+          "sha256": "6fb7b31c0a9a836a288da0ab990f38dd7ccd41f0795204787e43f2f57a48d184"
+        },
+        {
+          "path": "portable/Audio.hpp",
+          "sha256": "3c7b2d2e1b8b0584b06e1d7bf1fbf2dffcac50e2fc539590a49c6e4d226b7c18"
+        },
+        {
+          "path": "portable/Bitmap.hpp",
+          "sha256": "61654720d871eb968b4c3c9c38e3f6f96f46d095db9e1252c1ef8e82611e2182"
+        },
+        {
+          "path": "portable/Game.cpp",
+          "sha256": "94c327d786fd778a4b6db30bda93f842f1c3b340697eeffa2d78c6d6a4ce7d9a"
+        },
+        {
+          "path": "portable/Graphics.cpp",
+          "sha256": "26786c00f494911af71669a00af52babd130040180c7ba37c933475ec3faba76"
+        },
+        {
+          "path": "portable/Graphics.hpp",
+          "sha256": "e7cbf7781ae7a017ce4ba7ff3f18437d8f0899cd674faee063c395e28cdfe997"
+        },
+        {
+          "path": "portable/Input.hpp",
+          "sha256": "5d6ebedca5b039070e3120b1e1030f9b269a44cd88eab2600b6d35e739c17053"
+        },
+        {
+          "path": "portable/Localization.hpp",
+          "sha256": "002bac5cd24df2c97c5a01049f0615fcfbd648c226cd9a75fd33c9e35de93387"
+        },
+        {
+          "path": "portable/LocalizationTable.inc",
+          "sha256": "fd8f416bfead77ce580f22859d8efb0ef485a2745d34532190e8ec5f429303d8"
+        },
+        {
+          "path": "portable/Platform.cpp",
+          "sha256": "f7d1820dd8dd94afb9e2c0b20406b857cbbabd499a864cc54753a5e6e9540d67"
+        },
+        {
+          "path": "portable/Platform.hpp",
+          "sha256": "fdd57375cf450e1b81041d45c3137014d4f59eebb6da4d727dfe36ea3bc3ed38"
+        },
+        {
+          "path": "portable/Text.cpp",
+          "sha256": "fe2e65c1e2a88957636f60af1fcdb35c08110bd6f2e93bfb41b885cb21bd25a9"
+        },
+        {
+          "path": "portable/UI.cpp",
+          "sha256": "49c11acd34b3bd6fb0890068d09d8365e53f4b793153238e668fe8272515ead1"
+        },
+        {
+          "path": "portable/Window.hpp",
+          "sha256": "b058e98afb519534ab336ac50cf28d29f47c2d22b7eeb69c3b0e9fabb76f8481"
+        },
+        {
+          "path": "portable/locales.json",
+          "sha256": "5cd6573db81bcfdab5a8d1ca1bcfc497a048deba82283eee5edfbc2b73b41bc7"
+        },
+        {
+          "path": "portable/shims/direct.h",
+          "sha256": "090610911135f4d7704acbab0ec8dcab1d60fd9385a760df5175e3193f29c672"
+        },
+        {
+          "path": "portable/shims/shlwapi.h",
+          "sha256": "31cc28a19869cefce202e05979fc715f9ad4facdb70a846bf975cf314ec4d47b"
+        },
+        {
+          "path": "portable/shims/tchar.h",
+          "sha256": "31cc28a19869cefce202e05979fc715f9ad4facdb70a846bf975cf314ec4d47b"
+        },
+        {
+          "path": "portable/shims/windows.h",
+          "sha256": "31cc28a19869cefce202e05979fc715f9ad4facdb70a846bf975cf314ec4d47b"
+        },
+        {
+          "path": "resources/audio/akyu.json",
+          "sha256": "a5af8d23471dc50193696d9810326fc1774c0493dddf913cec7d6082aec3a239"
+        },
+        {
+          "path": "resources/audio/original.json",
+          "sha256": "dfd05b2bf4b3c9f378a1688a234d8809eb880cc5e39cce2ef0f1333bf23978d9"
+        },
+        {
+          "path": "resources/audio/sfx.json",
+          "sha256": "e7ebde44e6fd1c53e5277e58ee835ec2118addaebb4a5316512b2a8a7f6e245a"
+        },
+        {
+          "path": "scripts/build-eagler.mjs",
+          "sha256": "04227e92651228e3ead9dd564cf8d2f4da2724a8f10e9554b8fcb46b7734920f"
+        },
+        {
+          "path": "scripts/generate-audio-layout.mjs",
+          "sha256": "d397e09f1a3642f341136307af1622b32027819ba71e6eb5af1889e12ca398f2"
+        },
+        {
+          "path": "scripts/generate-locales.py",
+          "sha256": "fb28c674a0e6bced16b65c86790079bbea7d94d31bf19ed2785e28e09d91c2db"
+        },
+        {
+          "path": "scripts/import-pr143-audio.mjs",
+          "sha256": "e7283a7f8a7a3bdf87e92a06db6c14caee8d9bed1542230b5fe41d1b313450a7"
+        },
+        {
+          "path": "scripts/prepare-artwork.py",
+          "sha256": "a25eca60cb248c4dccd44a0a528e1a15c4d929650e9db16f43108c67c01d7693"
+        },
+        {
+          "path": "scripts/prepare-content.mjs",
+          "sha256": "d7f7ca8313031f0530dbb949d67b2ebf8d64067033450c32744466b852002d45"
+        },
+        {
+          "path": "scripts/prepare-web-source.py",
+          "sha256": "46984dd82cb8828503c5f40fe1ca3509ec8d62c42b27ecb2f05e5470678d7e9c"
+        },
+        {
+          "path": "source-import.json",
+          "sha256": "170120e30ac4664ce8dcaac88bd84a9d9b20e4fff3a5aedfa7502d6710df8617"
+        },
+        {
+          "path": "tests/BrowserNativeTests.cpp",
+          "sha256": "f20dfa85ac85902d963880effb37a8145addbeb3014915c5ebabf40e780315a9"
+        },
+        {
+          "path": "tests/browser.mjs",
+          "sha256": "bd4d0c7046bcdac46b616523db57003692b0a008e319b268cc2d47c43e96bec2"
+        },
+        {
+          "path": "tests/launcher.mjs",
+          "sha256": "ff40a5a6877147c32c49e2b5e5dd552f157dc50560457ea698296e4dae60307a"
+        },
+        {
+          "path": "tests/managed-adapter.test.mjs",
+          "sha256": "55b0578aa278b21fd3a6560267a76dd0aa44b5563303630cc1c47afd52a33536"
+        },
+        {
+          "path": "tests/presentation.mjs",
+          "sha256": "2aee318ca564384c392b623e47d29ba91b841184aed1e8f5ea775043350f51f4"
+        },
+        {
+          "path": "web/audio-layout.mjs",
+          "sha256": "5a7c7ba0eebb29896941c425df46015161433cf736000868da18cba35b4a2ab1"
+        },
+        {
+          "path": "web/audio.mjs",
+          "sha256": "0bb1821af2ee62c27936f4e8a6ae50931b18bf423395332ee2bee9b31448f426"
+        },
+        {
+          "path": "web/clock.mjs",
+          "sha256": "281d9b4052092c87e9e31e31cb8138680f1bcde45b09ba1d421a52aeecaf2b34"
+        },
+        {
+          "path": "web/data.mjs",
+          "sha256": "7a16146b497d8693687fc65146f61276291b0ecdd7dd87d36e06dcb8dbaca447"
+        },
+        {
+          "path": "web/input.mjs",
+          "sha256": "d394a08393655c5b89e934efc9f90305372ef68515516c784410a796e2f6eaf5"
+        },
+        {
+          "path": "web/managed.mjs",
+          "sha256": "c763d475e58cf9fdbfe310e8a2b25c83f8ded732152b9db074fd7b4bb59decf2"
+        },
+        {
+          "path": "web/playback.mjs",
+          "sha256": "a17a117df30c1e20ddd26f932747a5db48b66be7a3bfc5bb5a6e5b707266ffc7"
+        },
+        {
+          "path": "web/replay.mjs",
+          "sha256": "4df79f70cd7977a6bf35f242a27bbe6211f00780ffd27bcb3f8df2c717b2e272"
+        },
+        {
+          "path": "web/sfx.mjs",
+          "sha256": "db421e466fe160c8964afeabd427c112fe19c16433b5e25571e3eebc581668bf"
+        },
+        {
+          "path": "web/shell.mjs",
+          "sha256": "5e58795cf8d9519b86b76aee776f60cbe78deb5abeb33f2c717f689b66a06005"
+        },
+        {
+          "path": "web/storage.mjs",
+          "sha256": "6fa13a926df4290292ec6b9ae74d384a4668e0e69f924d7b2389499bb451b98b"
+        },
+        {
+          "path": "web/th05.html",
+          "sha256": "d33601507eb1341fbcd710a6f23da4ee7be254cde404a49b3de3ddc4220229ad"
+        }
+      ],
+      "submodules": [],
+      "dirty": true,
+      "sha256": "8bacd92704c08cafdf9e441f4228985d9983d20afd3d79a57e0e085a8d7de24f"
+    },
+    "common": {
+      "revision": "56b4e1edb470daaadc9dd84a4f2886f0ce0039dd",
+      "sourcePath": "common",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "4f4067a400bfeb187f60d3f53ef689124cfaf953a94b0ea2705bc2fa2a709a61",
+      "untracked": [],
+      "submodules": [],
+      "dirty": true,
+      "sha256": "0ab33438ed086347722f9d7360015f442d4f7f93ba0774e8eb2374663eb38a71"
+    },
+    "netplayCommon": {
+      "revision": "56b4e1edb470daaadc9dd84a4f2886f0ce0039dd",
+      "sourcePath": "common",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "4f4067a400bfeb187f60d3f53ef689124cfaf953a94b0ea2705bc2fa2a709a61",
+      "untracked": [],
+      "submodules": [],
+      "dirty": true,
+      "sha256": "0ab33438ed086347722f9d7360015f442d4f7f93ba0774e8eb2374663eb38a71"
+    }
+  }
+}

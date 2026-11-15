@@ -1,5 +1,5 @@
 /** Synthetic mounted DOM interaction contracts only, not browser/layout evidence. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -17,8 +17,8 @@ before(async () => {
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export {OptionsBackdrop} from './app/components/launcher/OptionsBackdrop.tsx';
     export {useOptionsInteractions} from './app/components/launcher/use-options-interactions.ts';
+    export {useOptionsViewport} from './app/components/launcher/use-options-viewport.ts';
     export {OptionsOwnership, useOptionsTarget} from './app/components/launcher/options-ownership.ts';
-    export {optionsTransformDuration} from './app/components/launcher/use-library-options-presence.ts';
     export {RoomSettingsDrawer} from './app/components/room/RoomSettingsDrawer.tsx';
     export {LocaleProvider} from './app/i18n.tsx';
   `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', outfile: output, packages: 'external', logLevel: 'silent'});
@@ -72,14 +72,28 @@ test('scoped registration isolates multiple owners and cleans local refs without
   await render(null); assert.equal(b.panel, null); assert.equal(locals[1].current, null);
 });
 
-test('transform timing handles CSS lists, all overrides, negative delays and explicit no motion', () => {
-  const node = env.document.createElement('aside'); env.document.body.append(node);
-  assert.equal(owners.optionsTransformDuration(node), null, 'no stylesheets/inline source');
-  for (const [property, duration, delay, expected] of [
-    ['opacity, transform', '9s, 200ms', '0s', 200],
-    ['opacity, color, transform', '100ms, .48s', '0s, 20ms', 100],
-    ['all, transform', '500ms, 200ms', '10ms', 210],
-    ['transform, all', '200ms, 480ms', '-.08s', 400],
-    ['transform', '0s', '0s', 0], ['none', '480ms', '0s', 0], ['opacity', '480ms', '0s', 0],
-  ]) {node.style.transitionProperty = property; node.style.transitionDuration = duration; node.style.transitionDelay = delay; assert.equal(owners.optionsTransformDuration(node), expected);}
+test('options keep content-gutter width through modal resize and close, while respecting pinch zoom', async () => {
+  const viewportDescriptor=Object.getOwnPropertyDescriptor(env.window,'visualViewport');
+  const bodyDescriptor=Object.getOwnPropertyDescriptor(env.document.body,'getBoundingClientRect');
+  const viewport=Object.assign(new env.window.EventTarget(),{width:390.25,height:844,scale:1,offsetTop:0,offsetLeft:0});
+  let contentWidth=380.25;
+  Object.defineProperty(env.window,'visualViewport',{configurable:true,value:viewport});
+  env.document.body.getBoundingClientRect=()=>new env.window.DOMRect(0,0,contentWidth,viewport.height);
+  function Fixture(){const ref=React.useRef(null);owners.useOptionsViewport(ref);return React.createElement('aside',{ref,id:'viewport-fixture'});}
+  const resize=()=>React.act(async()=>{viewport.dispatchEvent(new env.window.Event('resize'));await new Promise(resolve=>env.window.requestAnimationFrame(()=>env.window.requestAnimationFrame(resolve)));});
+  try {
+    await render(React.createElement(Fixture));const panel=env.document.querySelector('#viewport-fixture');
+    assert.equal(panel.style.getPropertyValue('--options-view-width'),'380.25px');
+    contentWidth=834.25;viewport.width=844.25;viewport.height=390;
+    await resize();assert.equal(panel.style.getPropertyValue('--options-view-width'),'834.25px');
+    assert.equal(panel.style.getPropertyValue('--options-view-height'),'390px');
+    viewport.width=834.25;await resize();
+    assert.equal(panel.style.getPropertyValue('--options-view-width'),'834.25px','closing the modal does not shift the options');
+    viewport.scale=2;viewport.width=417;await resize();
+    assert.equal(panel.style.getPropertyValue('--options-view-width'),'834.25px','pinch zoom is left to the browser');
+  } finally {
+    await render(null);
+    if(viewportDescriptor)Object.defineProperty(env.window,'visualViewport',viewportDescriptor);else delete env.window.visualViewport;
+    if(bodyDescriptor)Object.defineProperty(env.document.body,'getBoundingClientRect',bodyDescriptor);else delete env.document.body.getBoundingClientRect;
+  }
 });

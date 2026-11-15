@@ -83,6 +83,27 @@ export function selectedRtcPair(stats: StatsCollection): StatsRecord | null {
   return null;
 }
 
+export interface RtcPathSummary {
+  path: "direct" | "turn" | "rtc";
+  protocol: string | null;
+  family: string | null;
+}
+
+/** Only the selected pair describes where game traffic is actually sent. */
+export function selectedRtcPath(stats: StatsCollection, pair = selectedRtcPair(stats)): RtcPathSummary {
+  const candidate = (id: unknown): StatsRecord | null => {
+    const value = typeof id === "string" ? stats.get(id) : null;
+    return value && typeof value === "object" ? value as StatsRecord : null;
+  };
+  const local = candidate(pair?.localCandidateId), remote = candidate(pair?.remoteCandidateId);
+  const kinds = [local?.candidateType, remote?.candidateType];
+  const path = kinds.includes("relay") ? "turn" : kinds.every(kind => ["host", "srflx", "prflx"].includes(String(kind))) ? "direct" : "rtc";
+  const address = String(local?.address || local?.ip || remote?.address || remote?.ip || "");
+  const family = address.includes(":") ? "IPv6" : /^(?:\d{1,3}\.){3}\d{1,3}$/.test(address) && address.split(".").every(part => Number(part) <= 255) ? "IPv4" : null;
+  const protocol = typeof local?.protocol === "string" ? local.protocol : typeof remote?.protocol === "string" ? remote.protocol : null;
+  return {path, protocol, family};
+}
+
 export function appendRttSample(previous: readonly number[], rttMs: number, limit = 20) {
   if (!Number.isFinite(rttMs) || rttMs < 0) return { samples: [...previous], rttMs: null, variationMs: null };
   const capacity = Math.max(1, Math.trunc(limit) || 20);

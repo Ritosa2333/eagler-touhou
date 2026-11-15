@@ -1,7 +1,12 @@
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
-import { select } from './test-shared-font-selection.mjs';
+import {fontSelectionFixture} from './support/shared-font-selection-fixture.mjs';
 import {pathToFileURL} from 'node:url';
 import {workspacePath} from '../lib/workspace-layout.mjs';
+
+test("shared font selection workspace", async () => {
+const {select, close}=await fontSelectionFixture();
+try {
 const host = process.env.EAGLER_TH11_HOST_MODULE || pathToFileURL(workspacePath('th11', 'web/sdl-runtime/eagler-host.mjs')).href;
 const {resourcePath, installResources} = await import(host);
 assert.equal(resourcePath('/msgothic.ttc', 'th11'), true, 'TH11 accepts its shared original-text font');
@@ -12,3 +17,6 @@ for (const language of ['ja', 'lang_zh-hans']) {
 }
 assert.deepEqual(installed, ['/msgothic.ttc','/unifont.otf','/msgothic.ttc','/unifont.otf'], 'Japanese and localized selections satisfy the real TH11 resource installer');
 console.log('TH11 shared-font Runtime installation: PASS');
+
+} finally {await close();}
+});

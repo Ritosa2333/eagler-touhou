@@ -21,3 +21,19 @@ export function liveRuntimeEntryAuthorized(plan: {
       ['https:', 'http:'].includes(entry.protocol) && !entry.username && !entry.password && !entry.hash;
   } catch {return false;}
 }
+
+export function th075SplitAssetUrl(plan: {
+  game: GameId; runtimeVariant: 'normal' | 'multiplayer'; entry: string;
+  runtimeHost?: SiteManifest; publishedRuntime: boolean;
+}, baseUrl: string) {
+  const host = validateSiteManifest(plan.runtimeHost);
+  const game = host.games.th075;
+  const split = game?.th075MultiplayerAssets;
+  const entry = new URL(plan.entry, baseUrl);
+  if (plan.game !== 'th075' || plan.runtimeVariant !== 'multiplayer' || !game?.multiplayerRuntime || !split ||
+      plan.publishedRuntime !== !!host.shared.runtimeManifest ||
+      new URL(game.multiplayerRuntime, baseUrl).href !== entry.href ||
+      entry.origin !== new URL(baseUrl).origin || !/^https?:$/.test(entry.protocol) || entry.username || entry.password || entry.hash)
+    throw new Error('Host does not authorize TH075 multiplayer assets');
+  return {url: new URL(split.path, baseUrl), sha256: split.sha256};
+}

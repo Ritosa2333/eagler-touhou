@@ -3,14 +3,14 @@ import { useLocale } from '../../i18n';
 import type { createRuntimeDiagnostics } from '../../models/runtime-diagnostics';
 
 const netplayRows = [
-  ['session', 'runtimeNetplaySessionDiag', '联机 --'],
-  ['inputDelay', 'runtimeNetplayInputDelayDiag', '输入延迟 --f'],
-  ['route', 'runtimeNetplayRouteDiag', '网络 --'],
-  ['frame', 'runtimeNetplayFrameDiag', '同步 --'],
-  ['rollback', 'runtimeNetplayRollbackDiag', '回滚 --'],
-  ['quality', 'runtimeNetplayQualityDiag', '质量 --'],
-  ['recovery', 'runtimeNetplayRecoveryDiag', '输入 --'],
-  ['ice', 'runtimeNetplayIceDiag', 'ICE --'],
+  ['session', 'runtimeNetplaySessionDiag'],
+  ['inputDelay', 'runtimeNetplayInputDelayDiag'],
+  ['route', 'runtimeNetplayRouteDiag'],
+  ['frame', 'runtimeNetplayFrameDiag'],
+  ['rollback', 'runtimeNetplayRollbackDiag'],
+  ['quality', 'runtimeNetplayQualityDiag'],
+  ['recovery', 'runtimeNetplayRecoveryDiag'],
+  ['ice', 'runtimeNetplayIceDiag'],
 ] as const;
 export type NetplayDiagnosticLines = Partial<Record<(typeof netplayRows)[number][1], string>>;
 /** Original index1066–1078. Model owns actual Runtime health; optional MP lines
@@ -40,9 +40,9 @@ export function RuntimeDiagnostics({
       <span id="runtimeAudioDiag">{state.audio}</span>
       <span id="runtimeRendererDiag">{state.renderer}</span>
       <span id="runtimeGapDiag">{state.frame}</span>
-      {netplayRows.map(([key, id, initial]) => (
+      {netplayRows.map(([key, id]) => (
         <span key={key} id={id} hidden={netplay?.[id] === undefined}>
-          {netplay?.[id] ?? initial}
+          {netplay?.[id]}
         </span>
       ))}
       {children}

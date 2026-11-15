@@ -12,14 +12,24 @@ const sdk=resolve(process.env.TH17_EMSDK||process.env.EMSDK||resolve(workspace,'
 const emcc=['install','upstream'].map(layout=>resolve(sdk,layout,'emscripten/emcc.py')).find(existsSync);
 if(!emcc&&!printingRuntimeInputs)throw Error('Set TH17_EMSDK or EMSDK to an Emscripten SDK');
 const release=process.argv.includes('--release');
+const thprac=process.argv.includes('--thprac');
+const multiplayer=process.argv.includes('--multiplayer');
+if(multiplayer)throw Error('Build TH17 multiplayer from ports/th17-mp');
+const roomBenchmark=process.argv.includes('--room-benchmark');
+if(multiplayer&&thprac)throw Error('TH17 multiplayer builds do not include thprac');
+if(roomBenchmark&&(!release||!multiplayer||!process.env.TH17_OUTPUT))throw Error('Room benchmark needs a dedicated release multiplayer output');
+const imguiRoot=resolve(commonRoot,'third_party/imgui');
 const target=JSON.parse(readFileSync(resolve(root,'target.json'),'utf8'));
-const out=resolve(root,process.env.TH17_OUTPUT||(release?'artifacts/sdl-release':'artifacts/sdl-application'));
+const out=resolve(root,process.env.TH17_OUTPUT||(multiplayer?'artifacts/sdl-multiplayer':release?'artifacts/sdl-release':'artifacts/sdl-application'));
 const objects=resolve(out,'objects');if(!printingRuntimeInputs)mkdirSync(objects,{recursive:true});
 const env={...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:'4'};
 // Keep strict floating-point semantics; whole-program optimization can inline
 // the small animation/render interfaces without changing replay arithmetic.
 const optimize=process.env.TH17_OPTIMIZE!=='baseline';
-const common=['-I'+resolve(commonRoot,'include'),...(optimize?['-O3','-flto']:['-O2']),'-g0','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-DTH_NATIVE_PLATFORM=1',`-DTH17_DEVELOPMENT_HARNESS=${release?0:1}`,'--use-port=sdl3'];
+const common=['-I'+resolve(commonRoot,'include'),...(optimize?['-O3','-flto']:['-O2']),'-g0','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-DTH_NATIVE_PLATFORM=1',`-DTH17_DEVELOPMENT_HARNESS=${release?0:1}`,'--use-port=sdl3','--use-port=sdl3_ttf'];
+if(thprac)common.push('-DTH_ENABLE_THPRAC=1','-DIMGUI_DISABLE_WIN32_FUNCTIONS','-I'+imguiRoot);
+if(multiplayer)common.push('-DTH17_MULTIPLAYER=1','-I'+resolve(root,'cpp/multiplayer'));
+if(roomBenchmark)common.push('-DTH17_ROOM_BENCHMARK=1');
 // The full object list can exceed Windows' 32K process command limit after extraction.
 // Emscripten expands UTF-8 response files before parsing the same compiler flags.
 const run=args=>{
@@ -28,9 +38,11 @@ const run=args=>{
  return new Promise((resolveRun,reject)=>{const p=spawn(process.env.TH_PYTHON||process.env.PYTHON||'python',[emcc,...(response?['@'+response]:args)],{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']});let log='';for(const s of [p.stdout,p.stderr])s.on('data',b=>{log+=b;process.stdout.write(b);});p.on('error',reject);p.on('exit',code=>code?reject(Error('TH17 SDL build failed '+code+'\n'+log)):resolveRun());}).finally(()=>{if(response)unlinkSync(response);});
 };
 const files=dir=>readdirSync(resolve(root,dir),{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(dir+'/'+e.name):e.name.endsWith('.cpp')?[resolve(root,dir,e.name)]:[]);
-const source=[...files('cpp/game'),...files('cpp/sdl'),...(release?[]:[resolve(root,'tests/sdl/application-exports.cpp')]),resolve(workspace,'portable/sdl/Renderer.cpp')];
+const source=[...files('cpp/game'),...files('cpp/sdl'),...(release?[]:[resolve(root,'tests/sdl/application-exports.cpp')]),resolve(workspace,'portable/sdl/Renderer.cpp'),...(thprac?['imgui','imgui_draw','imgui_widgets','imgui_tables','imgui_freetype'].map(name=>resolve(imguiRoot,name+'.cpp')):[])];
+if(multiplayer)source.push(...files('cpp/multiplayer'),...['BrowserPeerTransport','NetplayCore','NetplayProtocol','NetplaySession','SessionChannel','WebSocketTransport','InputReplay'].map(name=>resolve(commonRoot,'src/netplay',name+'.cpp')));
 const headerFiles=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headerFiles(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
-const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...headerInputs(resolve(commonRoot,'include/eagler/input'),resolve(commonRoot,'include/eagler/audio'),resolve(commonRoot,'browser'))].sort();
+const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...headerInputs(resolve(commonRoot,'include/eagler/input'),resolve(commonRoot,'include/eagler/audio'),resolve(commonRoot,'browser'),resolve(commonRoot,'include/eagler/text'),resolve(commonRoot,'include/eagler/thprac')),...(thprac?headerFiles(imguiRoot):[])].sort();
+if(multiplayer)headers.push(...headerInputs(resolve(commonRoot,'include/eagler/netplay')));
 await printRuntimeInputs({workspace,root,sources:source,headers,flags:common});
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const headerHash=sha(headers.map(p=>p+sha(readFileSync(p))).join('\n'));
@@ -40,5 +52,5 @@ await run([...common,'-x','c++','-fsyntax-only','-']);
 const objectsBuilt=[];let cursor=0;await Promise.all(Array.from({length:4},async()=>{while(cursor<source.length){const i=cursor++;objectsBuilt[i]=await compile(source[i]);}}));
 const loader=resolve(out,release?'th17.mjs':'th17-application.mjs');
 const exports=['_malloc','_free'];
-await run([...common,...(!release&&process.argv.includes('--profile')?['--profiling-funcs']:[]),'--no-entry','-lexports.js','-sDEFAULT_TO_CXX=1','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,worker','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576','-sINITIAL_MEMORY=134217728','-sMAXIMUM_MEMORY=1073741824','-sFILESYSTEM=1','-lidbfs.js','-sEXPORTED_RUNTIME_METHODS=FS,IDBFS,HEAPU8,HEAP32,HEAPU32','-sINVOKE_RUN=0','-sEXIT_RUNTIME=0','-sMIN_WEBGL_VERSION=2','-sMAX_WEBGL_VERSION=2','-sGL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0','-sEXPORTED_FUNCTIONS='+exports.join(','),...objectsBuilt,'-o',loader]);
-const wasm=readFileSync(loader.replace('.mjs','.wasm'));const report={builtAt:new Date().toISOString(),features:{thprac:false,languages:false,focusHitbox:false},compilerOptions:common,kind:release?'th17-sdl3-application-release':'th17-sdl3-application-integration-development',completeGame:release&&target.completeGame===true,bytes:wasm.length,sha256:sha(wasm),architecture:{loop:'cpp-fixed-60hz-bounded-catchup',audio:'miniaudio-sdl3',input:'cpp-sdl3-continuous-recorded-touch',files:'sdl-io-idbfs',launcher:'eagler-touhou/1',renderer:'shared portable/sdl/Renderer.cpp via SDL3/WebGL2',graphicsInterface:'semantic-state-texture-matrix',vertexUpload:'web-bufferData-direct-game-batches-cached-vao',fonts:'compiled SDL3 FontDevice with original measured RGB coverage; complete title/run/pause/ending application'},headers:Object.fromEntries(headers.map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(readFileSync(p))])),sources:Object.fromEntries(source.map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(readFileSync(p))]))};writeFileSync(resolve(out,'build.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({loader,bytes:wasm.length,sha256:report.sha256}));
+await run([...common,...(!release&&process.argv.includes('--profile')?['--profiling-funcs']:[]),'--no-entry','-lexports.js',...(multiplayer?['-lwebsocket.js']:[]),'-sDEFAULT_TO_CXX=1','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,worker','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576','-sINITIAL_MEMORY=134217728','-sMAXIMUM_MEMORY=1073741824','-sFILESYSTEM=1','-lidbfs.js','-sEXPORTED_RUNTIME_METHODS=FS,IDBFS,HEAPU8,HEAP32,HEAPU32','-sINVOKE_RUN=0','-sEXIT_RUNTIME=0','-sMIN_WEBGL_VERSION=2','-sMAX_WEBGL_VERSION=2','-sGL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0','-sEXPORTED_FUNCTIONS='+exports.join(','),...objectsBuilt,'-o',loader]);
+const wasm=readFileSync(loader.replace('.mjs','.wasm'));const report={builtAt:new Date().toISOString(),features:{thprac,languages:true,focusHitbox:false,...(multiplayer?{multiplayer:true}:{}),...(roomBenchmark?{roomBenchmark:true}:{})},compilerOptions:common,kind:roomBenchmark?'th17-room-benchmark':release?'th17-sdl3-application-release':'th17-sdl3-application-integration-development',completeGame:release&&target.completeGame===true,bytes:wasm.length,sha256:sha(wasm),architecture:{loop:'cpp-fixed-60hz-bounded-catchup',audio:'miniaudio-sdl3',input:'cpp-sdl3-continuous-recorded-touch',files:'sdl-io-idbfs',launcher:'eagler-touhou/1',renderer:'shared portable/sdl/Renderer.cpp via SDL3/WebGL2',graphicsInterface:'semantic-state-texture-matrix',vertexUpload:'web-bufferData-direct-game-batches-cached-vao',fonts:'on-demand SDL3 rasterization from shared MS Gothic and Unifont'},headers:Object.fromEntries(headers.map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(readFileSync(p))])),sources:Object.fromEntries(source.map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(readFileSync(p))]))};writeFileSync(resolve(out,'build.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({loader,bytes:wasm.length,sha256:report.sha256}));

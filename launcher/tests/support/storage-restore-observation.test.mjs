@@ -1,7 +1,7 @@
 import {execFileSync} from 'node:child_process';
 import {readUiHistoryText} from './ui-history.mjs';
 /** Setup/identity/synthetic-dispatch only; never launches a browser or Runtime. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
