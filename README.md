@@ -21,6 +21,8 @@
 
 六线及 EX 的 CPU 验收见 [docs/acceptance-20261115.json](docs/acceptance-20261115.json)，新增修复和浏览器证据见 [docs/completion-checkpoint-20261115.json](docs/completion-checkpoint-20261115.json)，剩余任务见 [docs/STATUS.md](docs/STATUS.md)。
 
+还原、移植、Web适配与多人联机分别记录，阶段职责和能力清单见 [ADAPTATION.md](ADAPTATION.md)。已完成阶段的证据直接复用，不因后续适配而重复验收。
+
 ## 源码内容
 
 - `src/`：private100 的 226 个原生源文件，编译清单含 83 个翻译单元、205 个导出符号。
